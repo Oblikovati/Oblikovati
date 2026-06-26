@@ -60,6 +60,12 @@ struct GpuBuffer {
 // so they cannot share one image). See ADR — per-document multiple views.
 static const int kMaxTiles = 4;
 
+// kFramesInFlight rings the per-frame offscreen resources so the CPU never blocks on the
+// just-submitted fence (#1421). 2 is enough to overlap one frame's GPU work with the next frame's
+// CPU recording; it matches the app's triple-buffered swapchain throttle well enough. A static
+// scene being orbited then pipelines instead of fully serialising CPU↔GPU every frame.
+static const int kFramesInFlight = 2;
+
 // Target is one size-dependent offscreen render target: a color+depth image, its
 // framebuffer, and the ImGui sampled-image set that draws it into a panel. One per tile.
 struct Target {
@@ -72,6 +78,24 @@ struct Target {
     VkImageView     depthView = VK_NULL_HANDLE;
     VkFramebuffer   framebuffer = VK_NULL_HANDLE;
     VkDescriptorSet texture = VK_NULL_HANDLE; // ImGui sampled-image set
+};
+
+// FrameRes is everything one tile renders into, kept per (slot, frame-in-flight) so tiles are
+// independent and a frame's GPU work can stay in flight while the next frame records (#1421). The
+// CPU never blocks on the just-submitted fence; it instead waits on the N-frames-old frameFence
+// before reusing a ring slot. The shadow stack is lazy — only built when a shadowed render needs it
+// (a 1×1 default keeps descriptor binding 2 valid until then). Each tile's offscreen submit signals
+// `sem`, which the ImGui swapchain pass waits on, so the model image is ready without a CPU stall.
+struct FrameRes {
+    Target          target;                        // offscreen color+depth + ImGui sampled set
+    GpuBuffer       instbuf;                        // per-instance model matrices (binding 1, ADR-0038)
+    VkBuffer        uboBuf = VK_NULL_HANDLE;        // scene-lighting UBO (binding 0)
+    VkDeviceMemory  uboMem = VK_NULL_HANDLE;
+    void*           uboMapped = nullptr;
+    VkDescriptorSet sceneSet = VK_NULL_HANDLE;      // binds this frame's ubo + shared env + this ring's shadow
+    VkCommandBuffer cmd = VK_NULL_HANDLE;
+    VkSemaphore     sem = VK_NULL_HANDLE;           // offscreen-done → the ImGui pass waits on it (#1421)
+    bool            pending = false;                // recorded this frame, awaiting the batched submit
 };
 
 struct Viewport {
@@ -91,14 +115,11 @@ struct Viewport {
     VkShaderModule  skyFragModule = VK_NULL_HANDLE;
     VkSampler       sampler = VK_NULL_HANDLE;
 
-    // Scene-lighting descriptor set + its host-visible, persistently mapped UBO. sceneData is
-    // the CPU-side copy obk_viewport_set_lighting writes; render memcpy's it into the UBO.
+    // Scene-lighting descriptor layout + pool (the per-frame descriptor SET + its UBO live in
+    // FrameRes so each in-flight frame has its own — #1421). sceneData is the CPU-side copy
+    // obk_viewport_set_lighting writes; each render memcpy's it into the current frame's UBO.
     VkDescriptorSetLayout setLayout = VK_NULL_HANDLE;
     VkDescriptorPool      descPool = VK_NULL_HANDLE;
-    VkDescriptorSet       sceneSet = VK_NULL_HANDLE;
-    VkBuffer              uboBuf = VK_NULL_HANDLE;
-    VkDeviceMemory        uboMem = VK_NULL_HANDLE;
-    void*                 uboMapped = nullptr;
     float                 sceneData[kSceneFloats] = {0};
 
     // Equirectangular HDR environment for image-based lighting (descriptor binding 1). A 1×1
@@ -114,26 +135,35 @@ struct Viewport {
     float           skyboxInvVP[16] = {0};
     bool            skyboxShow = false;
 
-    // Sun shadow map (descriptor binding 2): a depth image rendered from the primary light's
-    // POV each frame when shadows are enabled, sampled with PCF in the surface shader.
+    // Sun shadow map (descriptor binding 2): rendered from the primary light's POV when shadows are
+    // enabled, sampled with PCF. The pass/sampler/pipeline are shared; the depth image is rung per
+    // frame-in-flight (frameShadow*[r]) so a frame's shadow isn't overwritten while the previous
+    // frame still samples it (#1421). It is rendered ONCE per frame (frameShadowDone[r]) — the light
+    // is scene-global, identical for every tile — and all tiles' scene sets sample that ring's map.
     VkRenderPass    shadowPass = VK_NULL_HANDLE;
-    VkImage         shadowImage = VK_NULL_HANDLE;
-    VkDeviceMemory  shadowMem = VK_NULL_HANDLE;
-    VkImageView     shadowView = VK_NULL_HANDLE;
     VkSampler       shadowSampler = VK_NULL_HANDLE;
-    VkFramebuffer   shadowFB = VK_NULL_HANDLE;
     VkPipeline      shadowPipeline = VK_NULL_HANDLE;
+    VkImage         frameShadowImage[kFramesInFlight] = {VK_NULL_HANDLE};
+    VkDeviceMemory  frameShadowMem[kFramesInFlight] = {VK_NULL_HANDLE};
+    VkImageView     frameShadowView[kFramesInFlight] = {VK_NULL_HANDLE};
+    VkFramebuffer   frameShadowFB[kFramesInFlight] = {VK_NULL_HANDLE};
+    bool            frameShadowDone[kFramesInFlight] = {false};
 
     VkCommandPool   cmdPool = VK_NULL_HANDLE;
-    VkCommandBuffer cmd = VK_NULL_HANDLE;
-    VkFence         fence = VK_NULL_HANDLE;
+    VkFence         fence = VK_NULL_HANDLE; // synchronous one-off transfers (readback, window capture)
 
-    // Size-dependent targets, one per tile (recreated on resize). targets[0] is the
-    // single-view target; the quad layout uses up to kMaxTiles.
-    Target          targets[kMaxTiles];
+    // Offscreen frames-in-flight ring (#1421). Each tile renders into slots[slot][frameIndex % N];
+    // the CPU waits on the N-frames-old frameFence (already signalled, no stall) before reusing a ring
+    // slot, and the per-tile semaphores hand the finished images to the ImGui swapchain pass. One
+    // batched submit per frame signals frameFence[r]. pendingSems collects this frame's tile semaphores.
+    FrameRes        slots[kMaxTiles][kFramesInFlight];
+    VkFence         frameFence[kFramesInFlight] = {VK_NULL_HANDLE};
+    uint64_t        frameIndex = 0;
+    VkSemaphore     pendingSems[kMaxTiles] = {VK_NULL_HANDLE};
+    int             pendingCount = 0;
+    bool            frameSubmitted = false; // this frame's offscreen batch already went out (e.g. a mid-frame readback flushed it)
 
     GpuBuffer       vbuf, ibuf; // concatenated vertex + index geometry (HOST_VISIBLE, persistently mapped)
-    GpuBuffer       instbuf;    // per-instance model matrices (binding 1, ADR-0038)
 
     // The merged-mesh identity (FNV-64 from the Go atlas key) currently resident in vbuf/ibuf. When
     // the next render carries the same key the concatenation + re-upload is skipped entirely, so a
@@ -603,48 +633,66 @@ void create_scene_resources(HeadContext* c, Viewport* v) {
     lci.bindingCount = 3;
     lci.pBindings = binds;
     vkCreateDescriptorSetLayout(c->device, &lci, nullptr, &v->setLayout);
-
-    VkBufferCreateInfo bi{};
-    bi.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bi.size = sizeof(v->sceneData);
-    bi.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    bi.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    vkCreateBuffer(c->device, &bi, nullptr, &v->uboBuf);
-    VkMemoryRequirements req;
-    vkGetBufferMemoryRequirements(c->device, v->uboBuf, &req);
-    VkMemoryAllocateInfo ai{};
-    ai.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    ai.allocationSize = req.size;
-    ai.memoryTypeIndex = obk_find_memory_type(c->physical, req.memoryTypeBits,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    vkAllocateMemory(c->device, &ai, nullptr, &v->uboMem);
-    vkBindBufferMemory(c->device, v->uboBuf, v->uboMem, 0);
-    vkMapMemory(c->device, v->uboMem, 0, sizeof(v->sceneData), 0, &v->uboMapped);
     default_headlight(v->sceneData);
 
-    VkDescriptorPoolSize ps[2] = {{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1},
-                                  {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2}};
+    // One descriptor set + UBO per (slot, frame-in-flight) so each in-flight frame binds its own
+    // lighting/shadow without racing the previous frame still on the GPU (#1421).
+    const uint32_t nSets = kMaxTiles * kFramesInFlight;
+    VkDescriptorPoolSize ps[2] = {{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, nSets},
+                                  {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2 * nSets}};
     VkDescriptorPoolCreateInfo pci{};
     pci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    pci.maxSets = 1;
+    pci.maxSets = nSets;
     pci.poolSizeCount = 2;
     pci.pPoolSizes = ps;
     vkCreateDescriptorPool(c->device, &pci, nullptr, &v->descPool);
-    VkDescriptorSetAllocateInfo dai{};
-    dai.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    dai.descriptorPool = v->descPool;
-    dai.descriptorSetCount = 1;
-    dai.pSetLayouts = &v->setLayout;
-    vkAllocateDescriptorSets(c->device, &dai, &v->sceneSet);
-    VkDescriptorBufferInfo dbi{v->uboBuf, 0, sizeof(v->sceneData)};
-    VkWriteDescriptorSet w{};
-    w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    w.dstSet = v->sceneSet;
-    w.dstBinding = 0;
-    w.descriptorCount = 1;
-    w.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    w.pBufferInfo = &dbi;
-    vkUpdateDescriptorSets(c->device, 1, &w, 0, nullptr);
+
+    for (int s = 0; s < kMaxTiles; s++) {
+        for (int f = 0; f < kFramesInFlight; f++) {
+            FrameRes* fr = &v->slots[s][f];
+            VkBufferCreateInfo bi{};
+            bi.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+            bi.size = sizeof(v->sceneData);
+            bi.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+            bi.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+            vkCreateBuffer(c->device, &bi, nullptr, &fr->uboBuf);
+            VkMemoryRequirements req;
+            vkGetBufferMemoryRequirements(c->device, fr->uboBuf, &req);
+            VkMemoryAllocateInfo ai{};
+            ai.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+            ai.allocationSize = req.size;
+            ai.memoryTypeIndex = obk_find_memory_type(c->physical, req.memoryTypeBits,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+            vkAllocateMemory(c->device, &ai, nullptr, &fr->uboMem);
+            vkBindBufferMemory(c->device, fr->uboBuf, fr->uboMem, 0);
+            vkMapMemory(c->device, fr->uboMem, 0, sizeof(v->sceneData), 0, &fr->uboMapped);
+            std::memcpy(fr->uboMapped, v->sceneData, sizeof(v->sceneData));
+
+            VkDescriptorSetAllocateInfo dai{};
+            dai.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+            dai.descriptorPool = v->descPool;
+            dai.descriptorSetCount = 1;
+            dai.pSetLayouts = &v->setLayout;
+            vkAllocateDescriptorSets(c->device, &dai, &fr->sceneSet);
+            VkDescriptorBufferInfo dbi{fr->uboBuf, 0, sizeof(v->sceneData)};
+            VkWriteDescriptorSet w{};
+            w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            w.dstSet = fr->sceneSet;
+            w.dstBinding = 0;
+            w.descriptorCount = 1;
+            w.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            w.pBufferInfo = &dbi;
+            vkUpdateDescriptorSets(c->device, 1, &w, 0, nullptr);
+        }
+    }
+}
+
+// for_each_frame runs fn over every per-(slot,frame) FrameRes — used to fan descriptor updates
+// (env image, shadow map) out to all the ringed scene descriptor sets.
+template <typename F>
+void for_each_frame(Viewport* v, F fn) {
+    for (int s = 0; s < kMaxTiles; s++)
+        for (int f = 0; f < kFramesInFlight; f++) fn(&v->slots[s][f]);
 }
 
 // img_barrier records a whole-image layout transition over all mip levels.
@@ -663,17 +711,20 @@ void img_barrier(VkCommandBuffer cmd, VkImage img, uint32_t levels, VkImageLayou
     vkCmdPipelineBarrier(cmd, srcS, dstS, 0, 0, nullptr, 0, nullptr, 1, &b);
 }
 
-// write_env_descriptor points descriptor binding 1 at the current environment image + sampler.
+// write_env_descriptor points binding 1 (the environment image + sampler) of EVERY ringed scene set
+// at the current env image — the env is shared across all in-flight frames (#1421).
 void write_env_descriptor(HeadContext* c, Viewport* v) {
     VkDescriptorImageInfo ii{v->envSampler, v->envView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
-    VkWriteDescriptorSet w{};
-    w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    w.dstSet = v->sceneSet;
-    w.dstBinding = 1;
-    w.descriptorCount = 1;
-    w.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    w.pImageInfo = &ii;
-    vkUpdateDescriptorSets(c->device, 1, &w, 0, nullptr);
+    for_each_frame(v, [&](FrameRes* fr) {
+        VkWriteDescriptorSet w{};
+        w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        w.dstSet = fr->sceneSet;
+        w.dstBinding = 1;
+        w.descriptorCount = 1;
+        w.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        w.pImageInfo = &ii;
+        vkUpdateDescriptorSets(c->device, 1, &w, 0, nullptr);
+    });
 }
 
 // destroy_env_image frees the current environment image/view/memory (the sampler persists).
@@ -835,12 +886,11 @@ void create_shadow_pass(HeadContext* c, Viewport* v) {
     vkCreateRenderPass(c->device, &rp, nullptr, &v->shadowPass);
 }
 
-// create_shadow_target allocates the shadow depth image, its sampling view, a border-white
-// sampler (so points outside the light frustum read as lit), and the framebuffer.
+// create_shadow_target allocates the per-frame-in-flight shadow depth images, their sampling views
+// and framebuffers, plus the shared border-white sampler (so points outside the light frustum read
+// as lit). One map per ring slot so a frame's shadow isn't overwritten while the previous frame
+// still samples it (#1421).
 void create_shadow_target(HeadContext* c, Viewport* v) {
-    v->shadowView = make_image(c, kDepthFormat,
-        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-        VK_IMAGE_ASPECT_DEPTH_BIT, kShadowDim, kShadowDim, &v->shadowImage, &v->shadowMem);
     VkSamplerCreateInfo si{};
     si.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     si.magFilter = si.minFilter = VK_FILTER_LINEAR;
@@ -848,14 +898,20 @@ void create_shadow_target(HeadContext* c, Viewport* v) {
     si.addressModeU = si.addressModeV = si.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
     si.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
     vkCreateSampler(c->device, &si, nullptr, &v->shadowSampler);
-    VkFramebufferCreateInfo fb{};
-    fb.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    fb.renderPass = v->shadowPass;
-    fb.attachmentCount = 1;
-    fb.pAttachments = &v->shadowView;
-    fb.width = fb.height = kShadowDim;
-    fb.layers = 1;
-    vkCreateFramebuffer(c->device, &fb, nullptr, &v->shadowFB);
+    for (int f = 0; f < kFramesInFlight; f++) {
+        v->frameShadowView[f] = make_image(c, kDepthFormat,
+            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+            VK_IMAGE_ASPECT_DEPTH_BIT, kShadowDim, kShadowDim,
+            &v->frameShadowImage[f], &v->frameShadowMem[f]);
+        VkFramebufferCreateInfo fb{};
+        fb.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        fb.renderPass = v->shadowPass;
+        fb.attachmentCount = 1;
+        fb.pAttachments = &v->frameShadowView[f];
+        fb.width = fb.height = kShadowDim;
+        fb.layers = 1;
+        vkCreateFramebuffer(c->device, &fb, nullptr, &v->frameShadowFB[f]);
+    }
 }
 
 // create_shadow_pipeline builds the depth-only caster pipeline: the mesh vertex shader (no
@@ -926,16 +982,21 @@ void create_shadow_resources(HeadContext* c, Viewport* v) {
     create_shadow_pass(c, v);
     create_shadow_target(c, v);
     create_shadow_pipeline(c, v);
-    VkDescriptorImageInfo ii{v->shadowSampler, v->shadowView,
-                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
-    VkWriteDescriptorSet w{};
-    w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    w.dstSet = v->sceneSet;
-    w.dstBinding = 2;
-    w.descriptorCount = 1;
-    w.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    w.pImageInfo = &ii;
-    vkUpdateDescriptorSets(c->device, 1, &w, 0, nullptr);
+    // Each ring slot f's scene sets (all tiles) sample that ring's shadow map (#1421).
+    for (int s = 0; s < kMaxTiles; s++) {
+        for (int f = 0; f < kFramesInFlight; f++) {
+            VkDescriptorImageInfo ii{v->shadowSampler, v->frameShadowView[f],
+                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+            VkWriteDescriptorSet w{};
+            w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            w.dstSet = v->slots[s][f].sceneSet;
+            w.dstBinding = 2;
+            w.descriptorCount = 1;
+            w.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            w.pImageInfo = &ii;
+            vkUpdateDescriptorSets(c->device, 1, &w, 0, nullptr);
+        }
+    }
     v->sceneData[kShadowParams + 3] = 1.0f / float(kShadowDim); // texel size
 }
 
@@ -1001,14 +1062,28 @@ void obk_viewport_init(void* h, const uint32_t* vert, int vlen, const uint32_t* 
     cp.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     cp.queueFamilyIndex = c->queueFamily;
     vkCreateCommandPool(c->device, &cp, nullptr, &v->cmdPool);
+    // One command buffer + offscreen-done semaphore per (slot, frame-in-flight); one fence per
+    // frame-in-flight signalled by that frame's batched submit; plus a fence for synchronous
+    // one-off transfers (readback / window capture). The frame fences start SIGNALLED so the first
+    // kFramesInFlight frames don't block waiting on a never-submitted ring slot (#1421).
     VkCommandBufferAllocateInfo cb{};
     cb.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     cb.commandPool = v->cmdPool;
     cb.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     cb.commandBufferCount = 1;
-    vkAllocateCommandBuffers(c->device, &cb, &v->cmd);
+    VkSemaphoreCreateInfo sci{};
+    sci.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    for (int s = 0; s < kMaxTiles; s++) {
+        for (int f = 0; f < kFramesInFlight; f++) {
+            vkAllocateCommandBuffers(c->device, &cb, &v->slots[s][f].cmd);
+            vkCreateSemaphore(c->device, &sci, nullptr, &v->slots[s][f].sem);
+        }
+    }
     VkFenceCreateInfo fi{};
     fi.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fi.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+    for (int f = 0; f < kFramesInFlight; f++) vkCreateFence(c->device, &fi, nullptr, &v->frameFence[f]);
+    fi.flags = 0;
     vkCreateFence(c->device, &fi, nullptr, &v->fence);
 
     // Bind a 1×1 default to the environment sampler now that the transfer fence/command pool
@@ -1032,7 +1107,12 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
     HeadContext* c = (HeadContext*)h;
     Viewport* v = c->viewport;
     if (!v || w <= 0 || hh <= 0) return;
-    Target* t = &v->targets[slotIndex(slot)];
+    // This tile renders into its own ring slot for the current frame-in-flight (#1421); the ring's
+    // old fence was already waited in obk_viewport_frame_begin, so the resources here are free.
+    const int r = (int)(v->frameIndex % kFramesInFlight);
+    FrameRes* fr = &v->slots[slotIndex(slot)][r];
+    Target* t = &fr->target;
+    VkCommandBuffer cmd = fr->cmd;
     ensure_target(c, v, t, w, hh); // may clear v->geomKey (target recreated → re-upload, #1218)
 
     // One interleaved vertex buffer and one index buffer hold the streams back to back, in
@@ -1058,6 +1138,11 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
     const bool geomResident = geomKey != 0 && geomKey == v->geomKey &&
                               v->vbuf.buffer != VK_NULL_HANDLE && v->ibuf.buffer != VK_NULL_HANDLE;
     if (!geomResident) {
+        // vbuf/ibuf are SHARED across the in-flight ring; re-uploading (or growing) them while a
+        // previous frame still reads them would corrupt that frame. Re-uploads happen only on a real
+        // geometry change (rare — not the orbit path, #1422), so draining the ring here is cheap and
+        // keeps the shared geometry safe under frames-in-flight (#1421).
+        vkWaitForFences(c->device, kFramesInFlight, v->frameFence, VK_TRUE, UINT64_MAX);
         std::vector<float> verts;
         verts.reserve((size_t)(occVC + triVC + lineVC + hidVC + topTriVC + topLineVC) * kVertexFloats);
         verts.insert(verts.end(), occV, occV + (size_t)occVC * kVertexFloats);
@@ -1087,60 +1172,62 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
     // its own world space — unchanged output).
     static const float kIdentity[16] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
     if (matCount > 0 && mats) {
-        upload_geom(c, &v->instbuf, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, mats, (size_t)matCount * 16 * sizeof(float));
+        upload_geom(c, &fr->instbuf, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, mats, (size_t)matCount * 16 * sizeof(float));
     } else {
-        upload_geom(c, &v->instbuf, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, kIdentity, sizeof(kIdentity));
+        upload_geom(c, &fr->instbuf, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, kIdentity, sizeof(kIdentity));
     }
 
-    // Refresh the scene-lighting UBO from the CPU copy (coherent mapped memory, so the copy is
-    // visible to the GPU without an explicit flush).
-    if (v->uboMapped) std::memcpy(v->uboMapped, v->sceneData, sizeof(v->sceneData));
+    // Refresh THIS frame's scene-lighting UBO from the CPU copy (coherent mapped memory, so the copy
+    // is visible to the GPU without an explicit flush).
+    if (fr->uboMapped) std::memcpy(fr->uboMapped, v->sceneData, sizeof(v->sceneData));
 
-    vkResetCommandBuffer(v->cmd, 0);
+    vkResetCommandBuffer(cmd, 0);
     VkCommandBufferBeginInfo bi{};
     bi.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    vkBeginCommandBuffer(v->cmd, &bi);
+    vkBeginCommandBuffer(cmd, &bi);
 
-    // Shadow pass: render the casters' depth from the sun's POV into the shadow map, when
-    // shadows are enabled and there is geometry to cast. The light matrix rides the mvp slot.
-    if (v->sceneData[kShadowParams] > 0.5f && (occIC > 0 || triIC > 0)) {
+    // Shadow pass: render the casters' depth from the sun's POV into THIS ring's shadow map, when
+    // shadows are enabled and there is geometry to cast. The light is scene-global, so the map is
+    // rendered ONCE per frame (the first tile, frameShadowDone[r]) and every tile samples it (#1421).
+    if (v->sceneData[kShadowParams] > 0.5f && (occIC > 0 || triIC > 0) && !v->frameShadowDone[r]) {
+        v->frameShadowDone[r] = true;
         VkClearValue sclear;
         sclear.depthStencil = {1.0f, 0};
         VkRenderPassBeginInfo srp{};
         srp.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         srp.renderPass = v->shadowPass;
-        srp.framebuffer = v->shadowFB;
+        srp.framebuffer = v->frameShadowFB[r];
         srp.renderArea.extent = {kShadowDim, kShadowDim};
         srp.clearValueCount = 1;
         srp.pClearValues = &sclear;
-        vkCmdBeginRenderPass(v->cmd, &srp, VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdBeginRenderPass(cmd, &srp, VK_SUBPASS_CONTENTS_INLINE);
         VkViewport sv{0, 0, (float)kShadowDim, (float)kShadowDim, 0.0f, 1.0f};
         VkRect2D ss{{0, 0}, {kShadowDim, kShadowDim}};
-        vkCmdSetViewport(v->cmd, 0, 1, &sv);
-        vkCmdSetScissor(v->cmd, 0, 1, &ss);
+        vkCmdSetViewport(cmd, 0, 1, &sv);
+        vkCmdSetScissor(cmd, 0, 1, &ss);
         VkDeviceSize zero = 0;
-        VkBuffer vbufs[2] = {v->vbuf.buffer, v->instbuf.buffer};
+        VkBuffer vbufs[2] = {v->vbuf.buffer, fr->instbuf.buffer};
         VkDeviceSize voffs[2] = {0, 0};
-        vkCmdBindVertexBuffers(v->cmd, 0, 2, vbufs, voffs); // binding 0 = verts, 1 = instance matrices
-        vkCmdBindIndexBuffer(v->cmd, v->ibuf.buffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindVertexBuffers(cmd, 0, 2, vbufs, voffs); // binding 0 = verts, 1 = instance matrices
+        vkCmdBindIndexBuffer(cmd, v->ibuf.buffer, 0, VK_INDEX_TYPE_UINT32);
         PushConstants sp{};
         std::memcpy(sp.mvp, &v->sceneData[kShadowVP], sizeof(sp.mvp));
-        vkCmdPushConstants(v->cmd, v->layout,
+        vkCmdPushConstants(cmd, v->layout,
             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(sp), &sp);
-        vkCmdBindPipeline(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->shadowPipeline);
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->shadowPipeline);
         if (recCount > 0 && recs) { // instanced: each face-stream record casts at its instances
             for (int r = 0; r < recCount; r++) {
                 const int32_t* rec = recs + (size_t)r * kDrawRecInts;
                 if ((rec[0] == kStreamOcc || rec[0] == kStreamTri) && rec[2] > 0 && rec[5] > 0) {
-                    vkCmdDrawIndexed(v->cmd, (uint32_t)rec[2], (uint32_t)rec[5], (uint32_t)rec[1], rec[3], (uint32_t)rec[4]);
+                    vkCmdDrawIndexed(cmd, (uint32_t)rec[2], (uint32_t)rec[5], (uint32_t)rec[1], rec[3], (uint32_t)rec[4]);
                 }
             }
         } else {
-            if (occIC > 0) vkCmdDrawIndexed(v->cmd, (uint32_t)occIC, 1, (uint32_t)occFirst, occBase, 0);
-            if (triIC > 0) vkCmdDrawIndexed(v->cmd, (uint32_t)triIC, 1, (uint32_t)triFirst, triBase, 0);
+            if (occIC > 0) vkCmdDrawIndexed(cmd, (uint32_t)occIC, 1, (uint32_t)occFirst, occBase, 0);
+            if (triIC > 0) vkCmdDrawIndexed(cmd, (uint32_t)triIC, 1, (uint32_t)triFirst, triBase, 0);
         }
-        vkCmdEndRenderPass(v->cmd);
+        vkCmdEndRenderPass(cmd);
     }
 
     VkClearValue clears[2];
@@ -1153,18 +1240,18 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
     rp.renderArea.extent = {(uint32_t)w, (uint32_t)hh};
     rp.clearValueCount = 2;
     rp.pClearValues = clears;
-    vkCmdBeginRenderPass(v->cmd, &rp, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(cmd, &rp, VK_SUBPASS_CONTENTS_INLINE);
 
     VkViewport vpRect{0, 0, (float)w, (float)hh, 0.0f, 1.0f};
     VkRect2D scissor{{0, 0}, {(uint32_t)w, (uint32_t)hh}};
-    vkCmdSetViewport(v->cmd, 0, 1, &vpRect);
-    vkCmdSetScissor(v->cmd, 0, 1, &scissor);
-    vkCmdSetDepthBias(v->cmd, 0.0f, 0.0f, 0.0f); // default: solid geometry draws at zero bias
+    vkCmdSetViewport(cmd, 0, 1, &vpRect);
+    vkCmdSetScissor(cmd, 0, 1, &scissor);
+    vkCmdSetDepthBias(cmd, 0.0f, 0.0f, 0.0f); // default: solid geometry draws at zero bias
 
     // The scene-lighting + environment set (set 0) is shared by the skybox and every geometry
     // pipeline; bind it once, before any draw, so the background renders even with no geometry.
-    vkCmdBindDescriptorSets(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->layout, 0, 1,
-                            &v->sceneSet, 0, nullptr);
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->layout, 0, 1,
+                            &fr->sceneSet, 0, nullptr);
 
     // Skybox background: drawn first (far plane, no depth write) so geometry overdraws it. The
     // push block carries the inverse view-projection in the mvp slot for ray reconstruction.
@@ -1175,18 +1262,18 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
         sky.camPosLit[1] = camPos ? camPos[1] : 0.0f;
         sky.camPosLit[2] = camPos ? camPos[2] : 0.0f;
         sky.camPosLit[3] = 1.0f;
-        vkCmdPushConstants(v->cmd, v->layout,
+        vkCmdPushConstants(cmd, v->layout,
             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(sky), &sky);
-        vkCmdBindPipeline(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->skyboxPipeline);
-        vkCmdDraw(v->cmd, 3, 1, 0, 0);
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->skyboxPipeline);
+        vkCmdDraw(cmd, 3, 1, 0, 0);
     }
 
     if (haveGeometry) {
         VkDeviceSize zero = 0;
-        VkBuffer vbufs[2] = {v->vbuf.buffer, v->instbuf.buffer};
+        VkBuffer vbufs[2] = {v->vbuf.buffer, fr->instbuf.buffer};
         VkDeviceSize voffs[2] = {0, 0};
-        vkCmdBindVertexBuffers(v->cmd, 0, 2, vbufs, voffs); // binding 0 = verts, 1 = instance matrices
-        vkCmdBindIndexBuffer(v->cmd, v->ibuf.buffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindVertexBuffers(cmd, 0, 2, vbufs, voffs); // binding 0 = verts, 1 = instance matrices
+        vkCmdBindIndexBuffer(cmd, v->ibuf.buffer, 0, VK_INDEX_TYPE_UINT32);
         PushConstants push{};
         std::memcpy(push.mvp, mvp, sizeof(push.mvp));
         push.camPosLit[0] = camPos ? camPos[0] : 0.0f;
@@ -1195,7 +1282,7 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
         for (int i = 0; i < 4; i++) push.clip[i] = clip ? clip[i] : 0.0f; // section plane (M12-F04)
         auto pushLit = [&](float lit) {
             push.camPosLit[3] = lit;
-            vkCmdPushConstants(v->cmd, v->layout,
+            vkCmdPushConstants(cmd, v->layout,
                 VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(push), &push);
         };
         if (recCount > 0 && recs) {
@@ -1210,7 +1297,7 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
                 int stream = rec[0];
                 if (stream < 0 || stream > 5 || rec[2] <= 0 || rec[5] <= 0) continue;
                 if (stream != curStream) {
-                    vkCmdBindPipeline(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipes[stream]);
+                    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipes[stream]);
                     pushLit(stream == kStreamTri ? (v->normalDebug ? 2.0f : 1.0f)
                                                  : (stream == kStreamOcc ? 1.0f : 0.0f));
                     curStream = stream;
@@ -1218,35 +1305,35 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
                 float bias = 0.0f;
                 if (stream == kStreamLine) bias = -1.0f;              // edges win the z-fight vs faces
                 else if (stream == kStreamTri && rec[6]) bias = 2.0f; // overlay fill pushed back
-                vkCmdSetDepthBias(v->cmd, bias, 0.0f, bias);
-                vkCmdDrawIndexed(v->cmd, (uint32_t)rec[2], (uint32_t)rec[5],
+                vkCmdSetDepthBias(cmd, bias, 0.0f, bias);
+                vkCmdDrawIndexed(cmd, (uint32_t)rec[2], (uint32_t)rec[5],
                                  (uint32_t)rec[1], rec[3], (uint32_t)rec[4]);
             }
-            vkCmdSetDepthBias(v->cmd, 0.0f, 0.0f, 0.0f);
+            vkCmdSetDepthBias(cmd, 0.0f, 0.0f, 0.0f);
         } else {
         // 1) occluder faces — depth only, hide edges behind unseen geometry.
         if (occIC > 0) {
             pushLit(1.0f);
-            vkCmdBindPipeline(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->occluderPipeline);
-            vkCmdDrawIndexed(v->cmd, (uint32_t)occIC, 1, (uint32_t)occFirst, occBase, 0);
+            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->occluderPipeline);
+            vkCmdDrawIndexed(cmd, (uint32_t)occIC, 1, (uint32_t)occFirst, occBase, 0);
         }
         // 2) shaded triangles — color + depth, per-vertex shading mode. In normal-debug mode
         //    (lit flag 2.0) the shader colors them by raw facing (front green / back red).
         if (triIC > 0) {
             pushLit(v->normalDebug ? 2.0f : 1.0f);
-            vkCmdBindPipeline(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->triPipeline);
+            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->triPipeline);
             int opaque = triBiasFirst;
             if (opaque < 0 || opaque > triIC) opaque = triIC; // guard against a bad split index
             if (opaque > 0) {
-                vkCmdDrawIndexed(v->cmd, (uint32_t)opaque, 1, (uint32_t)triFirst, triBase, 0);
+                vkCmdDrawIndexed(cmd, (uint32_t)opaque, 1, (uint32_t)triFirst, triBase, 0);
             }
             // Reference-overlay fills (work planes) draw last with a small depth push-back so a
             // coplanar solid face wins the depth test (no z-fighting); reset after.
             if (triIC - opaque > 0) {
-                vkCmdSetDepthBias(v->cmd, 2.0f, 0.0f, 2.0f);
-                vkCmdDrawIndexed(v->cmd, (uint32_t)(triIC - opaque), 1,
+                vkCmdSetDepthBias(cmd, 2.0f, 0.0f, 2.0f);
+                vkCmdDrawIndexed(cmd, (uint32_t)(triIC - opaque), 1,
                                  (uint32_t)(triFirst + opaque), triBase, 0);
-                vkCmdSetDepthBias(v->cmd, 0.0f, 0.0f, 0.0f);
+                vkCmdSetDepthBias(cmd, 0.0f, 0.0f, 0.0f);
             }
         }
         // 3) solid edges — depth-tested, so only the visible portions appear. A small negative
@@ -1258,43 +1345,108 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
         //    hidden-edge pass below handles those).
         if (lineIC > 0) {
             pushLit(0.0f);
-            vkCmdSetDepthBias(v->cmd, -1.0f, 0.0f, -1.0f);
-            vkCmdBindPipeline(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->linePipeline);
-            vkCmdDrawIndexed(v->cmd, (uint32_t)lineIC, 1, (uint32_t)lineFirst, lineBase, 0);
-            vkCmdSetDepthBias(v->cmd, 0.0f, 0.0f, 0.0f);
+            vkCmdSetDepthBias(cmd, -1.0f, 0.0f, -1.0f);
+            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->linePipeline);
+            vkCmdDrawIndexed(cmd, (uint32_t)lineIC, 1, (uint32_t)lineFirst, lineBase, 0);
+            vkCmdSetDepthBias(cmd, 0.0f, 0.0f, 0.0f);
         }
         // 4) hidden edges — reversed depth test, drawn only where occluded (dashed geometry).
         if (hidIC > 0) {
             pushLit(0.0f);
-            vkCmdBindPipeline(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->hiddenPipeline);
-            vkCmdDrawIndexed(v->cmd, (uint32_t)hidIC, 1, (uint32_t)hidFirst, hidBase, 0);
+            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->hiddenPipeline);
+            vkCmdDrawIndexed(cmd, (uint32_t)hidIC, 1, (uint32_t)hidFirst, hidBase, 0);
         }
         // 5) on-top faces — depth test disabled, so client-graphics overlays draw over the
         //    model. Drawn flat-lit (the overlay color is authoritative), after everything else.
         if (topTriIC > 0) {
             pushLit(0.0f);
-            vkCmdBindPipeline(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->topTriPipeline);
-            vkCmdDrawIndexed(v->cmd, (uint32_t)topTriIC, 1, (uint32_t)topTriFirst, topTriBase, 0);
+            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->topTriPipeline);
+            vkCmdDrawIndexed(cmd, (uint32_t)topTriIC, 1, (uint32_t)topTriFirst, topTriBase, 0);
         }
         // 6) on-top lines — depth test disabled (burn-through markers/edges).
         if (topLineIC > 0) {
             pushLit(0.0f);
-            vkCmdBindPipeline(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->topLinePipeline);
-            vkCmdDrawIndexed(v->cmd, (uint32_t)topLineIC, 1, (uint32_t)topLineFirst, topLineBase, 0);
+            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->topLinePipeline);
+            vkCmdDrawIndexed(cmd, (uint32_t)topLineIC, 1, (uint32_t)topLineFirst, topLineBase, 0);
         }
         } // end legacy (non-instanced) draws
     }
 
-    vkCmdEndRenderPass(v->cmd);
-    vkEndCommandBuffer(v->cmd);
+    vkCmdEndRenderPass(cmd);
+    vkEndCommandBuffer(cmd);
 
-    VkSubmitInfo submit{};
-    submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submit.commandBufferCount = 1;
-    submit.pCommandBuffers = &v->cmd;
-    vkResetFences(c->device, 1, &v->fence);
-    vkQueueSubmit(c->queue, 1, &submit, v->fence);
-    vkWaitForFences(c->device, 1, &v->fence, VK_TRUE, UINT64_MAX);
+    // Don't submit per tile: mark this tile pending and queue its offscreen-done semaphore. The whole
+    // frame's tiles go out in ONE batched submit at obk_viewport_frame_flush, and the ImGui swapchain
+    // pass waits on these semaphores — so the CPU never blocks on the offscreen fence here (#1421).
+    if (!fr->pending) {
+        fr->pending = true;
+        v->pendingSems[v->pendingCount++] = fr->sem;
+    }
+}
+
+// obk_viewport_frame_begin opens an offscreen frame: it advances to the current ring slot and waits
+// on that slot's fence (signalled kFramesInFlight frames ago, so already done — no stall), making the
+// ring's command buffers / targets / instance+lighting buffers safe to overwrite. A no-op before the
+// viewport exists. Called from obk_head_begin_frame.
+void obk_viewport_frame_begin(HeadContext* c) {
+    Viewport* v = c ? c->viewport : nullptr;
+    if (!v) return;
+    const int r = (int)(v->frameIndex % kFramesInFlight);
+    vkWaitForFences(c->device, 1, &v->frameFence[r], VK_TRUE, UINT64_MAX);
+    v->frameShadowDone[r] = false;
+    v->frameSubmitted = false;
+    v->pendingCount = 0;
+    for (int s = 0; s < kMaxTiles; s++) v->slots[s][r].pending = false;
+}
+
+// submit_offscreen sends this frame's recorded tiles out in ONE vkQueueSubmit (fewer submits —
+// #1421), each tile signalling its own semaphore (for the ImGui pass) and the batch signalling the
+// ring fence (so the next reuse of this ring slot waits on it). Idempotent within a frame: a
+// mid-frame readback flushes early, then obk_viewport_frame_flush skips the re-submit. Does NOT
+// advance frameIndex (that happens once, at frame flush).
+void submit_offscreen(HeadContext* c, Viewport* v, bool signalSems) {
+    if (v->frameSubmitted) return;
+    v->frameSubmitted = true;
+    const int r = (int)(v->frameIndex % kFramesInFlight);
+    if (v->pendingCount == 0) return;
+    VkSubmitInfo subs[kMaxTiles]{};
+    VkCommandBuffer cmds[kMaxTiles];
+    int n = 0;
+    for (int s = 0; s < kMaxTiles; s++) {
+        FrameRes* fr = &v->slots[s][r];
+        if (!fr->pending) continue;
+        cmds[n] = fr->cmd;
+        subs[n].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        subs[n].commandBufferCount = 1;
+        subs[n].pCommandBuffers = &cmds[n];
+        // Only signal the offscreen-done semaphore when the ImGui pass will actually wait on it this
+        // frame. A minimized/skipped frame that signalled but never waited would leave the binary
+        // semaphore signalled and trip a re-signal error next time the ring slot is reused (#1421).
+        if (signalSems) {
+            subs[n].signalSemaphoreCount = 1;
+            subs[n].pSignalSemaphores = &fr->sem;
+        }
+        fr->pending = false;
+        n++;
+    }
+    vkResetFences(c->device, 1, &v->frameFence[r]);
+    vkQueueSubmit(c->queue, (uint32_t)n, subs, v->frameFence[r]);
+}
+
+// obk_viewport_frame_flush closes the offscreen frame: it submits the batch (if a readback didn't
+// already), reports the tile semaphores via outSems/outCount so the caller's swapchain submit waits
+// on them (no CPU stall — #1421), and advances the ring. present==0 (minimized frame, no swapchain
+// submit to wait the semaphores) submits without signalling them and reports none. Called from
+// obk_head_end_frame.
+void obk_viewport_frame_flush(HeadContext* c, VkSemaphore* outSems, int* outCount, int present) {
+    Viewport* v = c ? c->viewport : nullptr;
+    if (!v) { if (outCount) *outCount = 0; return; }
+    submit_offscreen(c, v, present != 0);
+    int n = present ? v->pendingCount : 0;
+    if (outSems) for (int i = 0; i < n; i++) outSems[i] = v->pendingSems[i];
+    if (outCount) *outCount = n;
+    v->pendingCount = 0;
+    v->frameIndex++;
 }
 
 // obk_viewport_set_lighting copies the packed scene-lighting UBO (viewport.PackLighting's
@@ -1382,7 +1534,12 @@ int obk_viewport_readback(void* h, int slot, unsigned char* out, int cap, int* w
     HeadContext* c = (HeadContext*)h;
     Viewport* v = c ? c->viewport : nullptr;
     if (!v) return 0;
-    Target* t = &v->targets[slotIndex(slot)];
+    // The offscreen pass is deferred (#1421): flush this frame's batch and wait for it so the color
+    // image is actually rendered before we copy it (readback runs mid-frame, before the frame flush).
+    const int r = (int)(v->frameIndex % kFramesInFlight);
+    submit_offscreen(c, v, true);
+    vkWaitForFences(c->device, 1, &v->frameFence[r], VK_TRUE, UINT64_MAX);
+    Target* t = &v->slots[slotIndex(slot)][r].target;
     if (t->colorImage == VK_NULL_HANDLE || t->width <= 0 || t->height <= 0) return 0;
     int need = t->width * t->height * 4;
     if (w) *w = t->width;
@@ -1518,12 +1675,14 @@ int obk_window_capture(void* h, unsigned char* out, int cap, int* w, int* hh) {
     return need;
 }
 
-// obk_viewport_texture returns the ImGui texture handle for the rendered color image
-// (0 before the first render), to be drawn with ImGui::Image.
+// obk_viewport_texture returns the ImGui texture handle for THIS frame's offscreen image (the
+// current ring slot), to be drawn with ImGui::Image. The image is rendered by the batched offscreen
+// submit at frame flush; the ImGui pass waits on its semaphore, so it is ready when sampled (#1421).
 uint64_t obk_viewport_texture(void* h, int slot) {
     HeadContext* c = (HeadContext*)h;
     if (!c->viewport) return 0;
-    return (uint64_t)c->viewport->targets[slotIndex(slot)].texture;
+    const int r = (int)(c->viewport->frameIndex % kFramesInFlight);
+    return (uint64_t)c->viewport->slots[slotIndex(slot)][r].target.texture;
 }
 
 // obk_viewport_geom_uploads returns the running count of actual geometry (vbuf/ibuf) re-uploads.
@@ -1538,11 +1697,25 @@ uint64_t obk_viewport_geom_uploads(void* h) {
 void obk_viewport_destroy(HeadContext* c) {
     Viewport* v = c->viewport;
     if (!v) return;
-    for (int i = 0; i < kMaxTiles; i++) destroy_target(c, &v->targets[i]);
+    // Per-(slot, frame-in-flight) resources: offscreen target, instance buffer, lighting UBO and the
+    // offscreen-done semaphore (the command buffers and descriptor sets are freed with their pools).
+    for (int s = 0; s < kMaxTiles; s++) {
+        for (int f = 0; f < kFramesInFlight; f++) {
+            FrameRes* fr = &v->slots[s][f];
+            destroy_target(c, &fr->target);
+            if (fr->instbuf.mapped) vkUnmapMemory(c->device, fr->instbuf.memory);
+            if (fr->instbuf.buffer) vkDestroyBuffer(c->device, fr->instbuf.buffer, nullptr);
+            if (fr->instbuf.memory) vkFreeMemory(c->device, fr->instbuf.memory, nullptr);
+            if (fr->uboMapped) vkUnmapMemory(c->device, fr->uboMem);
+            if (fr->uboBuf) vkDestroyBuffer(c->device, fr->uboBuf, nullptr);
+            if (fr->uboMem) vkFreeMemory(c->device, fr->uboMem, nullptr);
+            if (fr->sem) vkDestroySemaphore(c->device, fr->sem, nullptr);
+        }
+    }
     // Free the geometry buffers before vkDestroyDevice so no VkDeviceMemory leaks past device
     // teardown (VUID-vkDestroyDevice-device-05137, surfaced by object-lifetime validation on a real
     // GPU — lavapipe did not flag it).
-    GpuBuffer* geom[] = {&v->vbuf, &v->ibuf, &v->instbuf};
+    GpuBuffer* geom[] = {&v->vbuf, &v->ibuf};
     for (GpuBuffer* b : geom) {
         if (b->mapped) vkUnmapMemory(c->device, b->memory); // persistent map (#1422)
         if (b->buffer) vkDestroyBuffer(c->device, b->buffer, nullptr);
@@ -1550,16 +1723,16 @@ void obk_viewport_destroy(HeadContext* c) {
     }
     destroy_env_image(c, v);
     if (v->envSampler) vkDestroySampler(c->device, v->envSampler, nullptr);
-    if (v->shadowFB) vkDestroyFramebuffer(c->device, v->shadowFB, nullptr);
-    if (v->shadowView) vkDestroyImageView(c->device, v->shadowView, nullptr);
-    if (v->shadowImage) vkDestroyImage(c->device, v->shadowImage, nullptr);
-    if (v->shadowMem) vkFreeMemory(c->device, v->shadowMem, nullptr);
+    for (int f = 0; f < kFramesInFlight; f++) {
+        if (v->frameShadowFB[f]) vkDestroyFramebuffer(c->device, v->frameShadowFB[f], nullptr);
+        if (v->frameShadowView[f]) vkDestroyImageView(c->device, v->frameShadowView[f], nullptr);
+        if (v->frameShadowImage[f]) vkDestroyImage(c->device, v->frameShadowImage[f], nullptr);
+        if (v->frameShadowMem[f]) vkFreeMemory(c->device, v->frameShadowMem[f], nullptr);
+        if (v->frameFence[f]) vkDestroyFence(c->device, v->frameFence[f], nullptr);
+    }
     if (v->shadowSampler) vkDestroySampler(c->device, v->shadowSampler, nullptr);
     if (v->shadowPipeline) vkDestroyPipeline(c->device, v->shadowPipeline, nullptr);
     if (v->shadowPass) vkDestroyRenderPass(c->device, v->shadowPass, nullptr);
-    if (v->uboMapped) vkUnmapMemory(c->device, v->uboMem);
-    if (v->uboBuf) vkDestroyBuffer(c->device, v->uboBuf, nullptr);
-    if (v->uboMem) vkFreeMemory(c->device, v->uboMem, nullptr);
     if (v->descPool) vkDestroyDescriptorPool(c->device, v->descPool, nullptr);
     if (v->setLayout) vkDestroyDescriptorSetLayout(c->device, v->setLayout, nullptr);
     vkDestroyFence(c->device, v->fence, nullptr);
