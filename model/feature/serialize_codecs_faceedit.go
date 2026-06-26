@@ -1,0 +1,51 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package feature
+
+// Codec registrations for the direct face-edit family (split, move-face, face-offset, delete-face,
+// replace-face). They share one decode (restoreFaceEdit dispatches on the kind) but each persists a
+// different slice of FaceEditData; split and delete-face carry only their face keys (the generic
+// faceEditor path). Encode and decode are paired so they cannot drift (#1416).
+
+// decodeFaceEdit rebuilds any face-edit kind, dispatching on the kind string inside restoreFaceEdit.
+func decodeFaceEdit(rc *restoreContext, fd FeatureData) (*PartFeature, error) {
+	return restoreFaceEdit(rc.fs, fd.Kind, fd.FaceEdit)
+}
+
+func init() {
+	registerFeatureCodec("move-face", featureCodec{
+		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
+			fd.FaceEdit = serializeMoveFace(f.(*MoveFaceFeature))
+			return nil
+		},
+		decode: decodeFaceEdit,
+	})
+	registerFeatureCodec("face-offset", featureCodec{
+		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
+			fo := f.(*FaceOffsetFeature)
+			fd.FaceEdit = &FaceEditData{Faces: encodeKeys(fo.FaceKeys()), Distance: fo.Distance(),
+				Approximation: approximationName(fo.Approximation())}
+			return nil
+		},
+		decode: decodeFaceEdit,
+	})
+	registerFeatureCodec("replace-face", featureCodec{
+		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
+			rf := f.(*ReplaceFaceFeature)
+			fd.FaceEdit = &FaceEditData{Faces: encodeKeys(rf.FaceKeys()), Target: encodeKey(rf.TargetKey())}
+			return nil
+		},
+		decode: decodeFaceEdit,
+	})
+	// split and delete-face carry only their face keys, via the generic faceEditor interface (any
+	// feature exposing FaceKeys() that is not one of the explicit kinds above).
+	for _, kind := range []string{"split", "delete-face"} {
+		registerFeatureCodec(kind, featureCodec{
+			encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
+				fd.FaceEdit = &FaceEditData{Faces: encodeKeys(f.(faceEditor).FaceKeys())}
+				return nil
+			},
+			decode: decodeFaceEdit,
+		})
+	}
+}
