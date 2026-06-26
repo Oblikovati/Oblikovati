@@ -36,6 +36,12 @@ func curvedConeCylinderIntersect(op PartFeatureOperation, target, tool *topo.Bod
 	if op != Intersect {
 		return nil, false
 	}
+	// EPIC #1403: route cone∩cylinder through the GENERAL pipeline first (no bespoke loop→body
+	// constructor); the hand-built ConeCylinderIntersect stays as a fallback for the cases the general
+	// path still declines, so no OCC matrix case regresses.
+	if res, ok := brep.ConeCylinderIntersectGeneral(target, tool, rec); ok && validBooleanSolid(res) {
+		return res, true
+	}
 	res, ok := brep.ConeCylinderIntersect(target, tool, rec)
 	if !ok || !validBooleanSolid(res) {
 		return nil, false
