@@ -129,7 +129,10 @@ func (c ruledUV) point3(u, v float64) math.Point3 {
 	return c.base.TranslateBy(c.axis.Scale(math.Scalar(v))).TranslateBy(radial.Scale(math.Scalar(rad)))
 }
 
-// coneSideUVSplit splits a full periodic frustum side by the (u,v) arrangement (newConeUV + splitSide).
+// coneSideUVSplit splits a full periodic frustum side. The general (u,v)-arrangement trimmer (trimByImprint)
+// now drives the whole cylinder side; the cone reuses the same path but its hyperbola/parabola arm sections
+// and span-end rulings still need their weld reconciled (a valid face emits, but the assembled solid is not
+// yet manifold), so the analytic splitSide stands here until that lands (Oblikovati#1405).
 func coneSideUVSplit(f curvedFace, cone geom.Cone, conic geom.Curve3, band coneSideBand_, plane geom.Plane, n math.Vector3) ([]curvedFace, []loopEdge, error) {
 	return newConeUV(cone, band, plane, n).splitSide(f, cone, conic)
 }
