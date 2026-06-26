@@ -13,6 +13,7 @@ import (
 	"oblikovati.org/event"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/doc"
+	"oblikovati.org/model/drawing"
 )
 
 // maxSessionTxEvents bounds the append-only transaction log so a very long session cannot
@@ -70,10 +71,14 @@ type recipeStore interface {
 	MarshalSnapshot() ([]byte, error)
 }
 
-// Part and assembly definitions are the concrete recipe stores a snapshot event navigates.
+// Part and assembly definitions and drawing content are the concrete recipe stores a snapshot event
+// navigates. Drawing content joined them in #1448 so a wire drawing edit (views/annotations/
+// dimensions/sketches/sheets), classified mutating in #1426/#1447 for replication, also records an
+// undo step — its undo labels were dead until DrawingContent gained snapshot support.
 var (
 	_ recipeStore = (*compdef.PartComponentDefinition)(nil)
 	_ recipeStore = (*compdef.AssemblyComponentDefinition)(nil)
+	_ recipeStore = (*drawing.Content)(nil)
 )
 
 // docHistory is one document's transaction-event stream: the [command.History] (the
