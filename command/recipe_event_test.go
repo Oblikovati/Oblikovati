@@ -18,9 +18,20 @@ func (f *fakeRecipeStore) RestoreSnapshot(snapshot []byte) error {
 	return nil
 }
 
+// logWith seeds a snapshot log with the given position snapshots and returns it, the helper
+// every event-stream test records its before/after positions against.
+func logWith(snaps ...string) *SnapshotLog {
+	l := NewSnapshotLog()
+	for _, s := range snaps {
+		l.Append([]byte(s))
+	}
+	return l
+}
+
 func TestRecipeEventApplyRevertRestoreSnapshots(t *testing.T) {
 	store := &fakeRecipeStore{current: "v1"}
-	e := NewRecipeEvent("Edit", []byte("v1"), []byte("v2"), store)
+	log := logWith("v1", "v2") // positions 0 and 1
+	e := NewRecipeEvent("Edit", 0, 1, log, store)
 	if e.Label() != "Edit" {
 		t.Fatalf("Label = %q", e.Label())
 	}
@@ -47,13 +58,14 @@ func TestRecipeEventApplyRevertRestoreSnapshots(t *testing.T) {
 func TestRecordNavigatesStreamWithoutReapplying(t *testing.T) {
 	store := &fakeRecipeStore{current: "base"}
 	h := NewHistory()
+	log := logWith("base") // position 0 = open-state baseline
 
 	// Two interactions: base→a, then a→b. The model already holds the result when
-	// each event is recorded.
+	// each event is recorded; each appends its after-snapshot to the shared log.
 	store.current = "a"
-	h.Record(NewRecipeEvent("first", []byte("base"), []byte("a"), store))
+	h.Record(NewRecipeEvent("first", 0, log.Append([]byte("a")), log, store))
 	store.current = "b"
-	h.Record(NewRecipeEvent("second", []byte("a"), []byte("b"), store))
+	h.Record(NewRecipeEvent("second", 1, log.Append([]byte("b")), log, store))
 
 	if got := store.restores; got != 0 {
 		t.Fatalf("Record must not restore; restores = %d", got)
@@ -91,13 +103,15 @@ func TestRecordNavigatesStreamWithoutReapplying(t *testing.T) {
 func TestRecordTruncatesRedoTail(t *testing.T) {
 	store := &fakeRecipeStore{}
 	h := NewHistory()
-	h.Record(NewRecipeEvent("a", []byte("0"), []byte("1"), store))
-	h.Record(NewRecipeEvent("b", []byte("1"), []byte("2"), store))
+	log := logWith("0") // baseline
+	h.Record(NewRecipeEvent("a", 0, log.Append([]byte("1")), log, store))
+	h.Record(NewRecipeEvent("b", 1, log.Append([]byte("2")), log, store))
 	_ = h.Undo() // cursor before "b"
 	if !h.CanRedo() {
 		t.Fatal("expected a redo branch after undo")
 	}
-	h.Record(NewRecipeEvent("c", []byte("1"), []byte("3"), store)) // new edit
+	log.TruncateTo(2)                                                     // a new edit discards the redo branch position
+	h.Record(NewRecipeEvent("c", 1, log.Append([]byte("3")), log, store)) // new edit
 	if h.CanRedo() {
 		t.Error("new edit did not truncate the redo branch")
 	}

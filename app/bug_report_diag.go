@@ -43,10 +43,29 @@ func (s *Session) TransactionLog() []report.TransactionEvent {
 			Time:     e.when.Format("15:04:05"),
 			Document: e.doc,
 			Label:    e.label,
-			Recipe:   string(e.recipe),
+			Recipe:   s.auditRecipe(e),
 		})
 	}
 	return out
+}
+
+// auditRecipe reconstructs one audit event's after-step recipe from its document's delta log
+// (#1424), or "" when the step recorded no recipe (non-recipe content, a marshal failure, or a
+// position since trimmed by the audit bound). The bug report renders the reconstructed recipe
+// exactly as the old full-copy form did, so a triager still sees the replayable command payload.
+func (s *Session) auditRecipe(e sessionTxEvent) string {
+	if e.pos < 0 {
+		return ""
+	}
+	log, ok := s.txAudit[e.docID]
+	if !ok {
+		return ""
+	}
+	r, err := log.At(e.pos)
+	if err != nil {
+		return ""
+	}
+	return string(r)
 }
 
 // documentMarshaler is the optional capability of the session's store that renders a

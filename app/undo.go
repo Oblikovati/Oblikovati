@@ -23,13 +23,16 @@ const maxSessionTxEvents = 2000
 
 // sessionTxEvent is one committed transaction recorded for the life of the session — an
 // append-only audit of what the user did since the app opened, independent of the
-// per-document undo stacks (which shrink on undo). recipe is the document's full parametric
-// recipe after the step (the complete command payload), so the sequence replays precisely.
+// per-document undo stacks (which shrink on undo). The document's after-step recipe (the
+// replayable command payload) is delta-encoded in the per-document audit log (#1424); the
+// event keeps only the document id and the position there, so the audit no longer retains a
+// full recipe copy per step (the old form was ~2 GB at the 2000-event bound on a large model).
 type sessionTxEvent struct {
-	when   time.Time
-	doc    string
-	label  string
-	recipe []byte
+	when  time.Time
+	doc   string
+	docID doc.ID
+	label string
+	pos   int // position in s.txAudit[docID] the after-step recipe reconstructs from
 }
 
 // watchTransactions appends every committed transaction (on any document) to the session's
@@ -39,23 +42,76 @@ type sessionTxEvent struct {
 // commitRecipeDelta advances the snapshot, so the content's recipe is the after-state.
 func (s *Session) watchTransactions() {
 	event.Subscribe(s.bus, event.After, func(_ event.Context, e TransactionCommitted) event.Outcome {
-		name, recipe := "untitled", []byte(nil)
-		if d, ok := s.workspace.ByID(e.Document); ok {
-			name = d.DisplayName()
-			if rc, ok := d.Content().(recipeStore); ok {
-				if r, err := rc.MarshalSnapshot(); err != nil {
-					s.reportSnapshotFailure("capturing the session-log recipe", d, err) // #1425: not silent
-				} else {
-					recipe = r
-				}
-			}
-		}
-		s.txEvents = append(s.txEvents, sessionTxEvent{when: time.Now().UTC(), doc: name, label: e.Label, recipe: recipe})
-		if len(s.txEvents) > maxSessionTxEvents {
-			s.txEvents = s.txEvents[len(s.txEvents)-maxSessionTxEvents:]
-		}
+		s.appendAuditEvent(e.Document, e.Label)
 		return event.Continue()
 	})
+}
+
+// appendAuditEvent records one committed step in the session audit, delta-encoding the
+// document's after-step recipe into its per-document log and keeping only the position there
+// (#1424). pos is -1 when the step has no recipe to replay (non-recipe content, or a marshal
+// failure already surfaced), which the report renders as an empty recipe — the old behaviour.
+func (s *Session) appendAuditEvent(id doc.ID, label string) {
+	name, pos := "untitled", -1
+	if d, ok := s.workspace.ByID(id); ok {
+		name = d.DisplayName()
+		if rc, ok := d.Content().(recipeStore); ok {
+			if r, err := rc.MarshalSnapshot(); err != nil {
+				s.reportSnapshotFailure("capturing the session-log recipe", d, err) // #1425: not silent
+			} else {
+				pos = s.auditLog(id).Append(r)
+			}
+		}
+	}
+	s.txEvents = append(s.txEvents, sessionTxEvent{when: time.Now().UTC(), doc: name, docID: id, label: label, pos: pos})
+	s.boundAuditLog()
+}
+
+// auditLog returns the per-document delta log the session audit appends recipes to, creating it
+// on first use.
+func (s *Session) auditLog(id doc.ID) *command.SnapshotLog {
+	log, ok := s.txAudit[id]
+	if !ok {
+		log = command.NewSnapshotLog()
+		s.txAudit[id] = log
+	}
+	return log
+}
+
+// boundAuditLog caps the audit at maxSessionTxEvents, dropping the oldest events and reclaiming
+// the audit-log positions no surviving event still references — per document, trimming everything
+// before its earliest live position, and discarding a document's log once nothing references it.
+// This keeps the audit's memory bounded without ever holding a full recipe copy per step (#1424).
+func (s *Session) boundAuditLog() {
+	if len(s.txEvents) <= maxSessionTxEvents {
+		return
+	}
+	s.txEvents = s.txEvents[len(s.txEvents)-maxSessionTxEvents:]
+	reclaimAuditLogs(s.txEvents, s.txAudit)
+}
+
+// reclaimAuditLogs frees the audit-log positions no surviving event references: per document it
+// trims everything before that document's earliest live position, and discards a document's log
+// entirely once nothing references it. Pure over its arguments so the bound's bookkeeping is
+// unit-testable without driving thousands of events (#1424).
+func reclaimAuditLogs(live []sessionTxEvent, audit map[doc.ID]*command.SnapshotLog) {
+	earliest := map[doc.ID]int{}
+	for _, e := range live {
+		if e.pos < 0 {
+			continue
+		}
+		if p, ok := earliest[e.docID]; !ok || e.pos < p {
+			earliest[e.docID] = e.pos
+		}
+	}
+	for id, log := range audit {
+		keep, ok := earliest[id]
+		if !ok {
+			delete(audit, id)
+			continue
+		}
+		_ = log.TruncateFront(keep)
+	}
 }
 
 // recipeStore is the document content the app's undo stream records: content whose entire
@@ -89,7 +145,15 @@ var (
 // stream begins when the document is opened (snapshot captures the open state), per
 // the event-sourcing model: current state is the fold of all events since open.
 type docHistory struct {
-	hist     *command.History
+	hist *command.History
+	// log delta-encodes every cursor position of this document's stream (Oblikovati#1424):
+	// position 0 is the open-state baseline, each recorded edit appends its after-snapshot, and
+	// a RecipeEvent stores only its before/after positions. It replaces the two full-recipe
+	// copies the old per-edit storage held, so a long session's undo stream is O(N) not O(N²).
+	log *command.SnapshotLog
+	// snapshot is the recipe the model holds at the current cursor position, kept verbatim for
+	// the no-op-delta check and the empty-baseline guard (#1425); the navigable stream lives in
+	// log.
 	snapshot []byte
 
 	// groupDepth > 0 means a bounded transaction is open: per-edit recording is
@@ -165,9 +229,12 @@ func (s *Session) documentHistory(d *doc.Document) *docHistory {
 	if dh, ok := s.histories[d.ID()]; ok {
 		return dh
 	}
-	dh := &docHistory{hist: command.NewHistory()}
+	dh := &docHistory{hist: command.NewHistory(), log: command.NewSnapshotLog()}
 	if err := dh.resync(d); err != nil {
 		s.reportSnapshotFailure("capturing the open-state baseline", d, err) // #1425: empty baseline guarded at commit
+	}
+	if len(dh.snapshot) > 0 {
+		dh.log.Append(dh.snapshot) // seed position 0 with the open-state baseline
 	}
 	dh.hist.OnChange(func() {
 		d.MarkDirty()
@@ -224,7 +291,13 @@ func (s *Session) commitRecipeDelta(d *doc.Document, dh *docHistory, content rec
 		s.revertVetoedCommit(d, dh, content, label, out.Reason)
 		return
 	}
-	dh.hist.Record(command.NewRecipeEvent(label, dh.snapshot, after, content))
+	// Append the after-snapshot as a new stream position and record the event by position, not
+	// by value (Oblikovati#1424). beforePos is the current cursor (hist.Len()); truncating the
+	// log to it drops any redo-branch positions in lockstep with Record clearing the redo stack.
+	beforePos := dh.hist.Len()
+	dh.log.TruncateTo(beforePos + 1)
+	afterPos := dh.log.Append(after)
+	dh.hist.Record(command.NewRecipeEvent(label, beforePos, afterPos, dh.log, content))
 	dh.snapshot = after
 	s.resyncDerivedTables(d, map[string]bool{})
 	event.Emit(s.bus, event.After, TransactionCommitted{Document: d.ID(), Label: label})
