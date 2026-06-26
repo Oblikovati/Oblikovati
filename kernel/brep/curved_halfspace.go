@@ -63,12 +63,9 @@ func torusHalfSpaceCut(body *topo.Body, torus geom.Torus, plane geom.Plane, n ma
 	case perpendicularToTorusAxis(n, torus):
 		res, err := torusHalfSpace(body, torus, plane) // ⟂ cut → trimmed torus band + annular lid
 		return res, true, err
-	// The single-oval CAP now routes through the unified (u,v)-arrangement trimmer (torusSideSplit, via
-	// generalHalfSpace's handled=false fallthrough below), the first spiric case migrated off the bespoke
-	// ladder (#1406). The remaining spiric cases stay analytic here until their migration step.
-	case torusSingleOvalComplement(torus, plane):
-		res, err := torusComplementHalfSpace(torus, plane) // axis-∥ → genus-1 complement + planar lid
-		return res, true, err
+	// The single-oval CAP and its genus-1 COMPLEMENT now route through the unified (u,v)-arrangement trimmer
+	// (torusSideSplit, via generalHalfSpace's handled=false fallthrough below) — the same spiric section, the
+	// kept side chosen by the section's sign (#1406). The remaining spiric cases stay analytic until migrated.
 	case torusTwoOvalBand(torus, plane):
 		res, err := torusTwoOvalHalfSpace(torus, plane) // axis-∥ through the hole → v-wrapping band + 2 lids
 		return res, true, err

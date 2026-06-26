@@ -49,25 +49,11 @@ func torusSingleOvalComplement(t geom.Torus, plane geom.Plane) bool {
 	return ok && k > 0
 }
 
-// The single-oval CAP (formerly torusObliqueHalfSpace) now routes through the unified (u,v)-arrangement
-// trimmer (torusSideSplit, curved_halfspace_torus_uv.go), the first spiric case migrated off the bespoke
-// builders (#1406). Its complement still builds analytically below until its own migration step.
-
-// torusComplementHalfSpace keeps the genus-1 COMPLEMENT (the full torus minus the oval cap) a plane
-// parallel to the torus axis leaves on its negative side. The caller must have checked
-// [torusSingleOvalComplement]. The kept torus face wraps the whole torus with the oval as a hole.
-func torusComplementHalfSpace(t geom.Torus, plane geom.Plane) (*topo.Body, error) {
-	phi, m, k, c := geom.TorusSectionCoeffs(t, plane)
-	vc := torusOvalHalfSpan(t, m, k)
-	return buildTorusOvalSolid(t, phi, m, k, c, -vc, vc, unit(plane.Normal()), plane, true)
-}
-
-// torusOvalHalfSpan returns the tube angle vc where the section oval pinches: cos vc = (|K|/M − R)/r,
-// where the two spiric branches meet (w = ±1). The oval runs v ∈ [−vc, vc].
-func torusOvalHalfSpan(t geom.Torus, m, k float64) float64 {
-	cosVc := (stdmath.Abs(k)/m - t.MajorRadius) / t.MinorRadius
-	return stdmath.Acos(clampUnitF(cosVc))
-}
+// The single-oval CAP (formerly torusObliqueHalfSpace) AND its genus-1 COMPLEMENT (formerly
+// torusComplementHalfSpace) now route through the unified (u,v)-arrangement trimmer (torusSideSplit,
+// curved_halfspace_torus_uv.go) — the same spiric section, the kept side chosen by the section's sign, the
+// complement emitted as an outerless face with the oval as a hole (#1406). buildTorusOvalSolid below still
+// serves the oblique single-oval cut until it too is migrated.
 
 // buildTorusOvalSolid assembles a torus cap or its complement: the two spiric branches (+1 and −1) over
 // the same tube-angle range form a bigon (they meet at the oval's v-extremes), closed by one torus face
