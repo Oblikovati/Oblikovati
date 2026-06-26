@@ -174,8 +174,8 @@ func TestBaselineAndSessionLogSurfaceContentMarshalFailure(t *testing.T) {
 	if len(s.txEvents) != beforeEvents+1 {
 		t.Errorf("the audit event was dropped on a marshal failure: %d → %d", beforeEvents, len(s.txEvents))
 	}
-	if r := s.txEvents[len(s.txEvents)-1].recipe; r != nil {
-		t.Errorf("a failed-marshal audit recipe should be nil, got %d bytes", len(r))
+	if pos := s.txEvents[len(s.txEvents)-1].pos; pos != -1 {
+		t.Errorf("a failed-marshal audit event should record no recipe position, got pos = %d", pos)
 	}
 	if !s.messageCenter.hasErrors {
 		t.Error("session-log marshal failure was not surfaced (silent discard, #1425)")
