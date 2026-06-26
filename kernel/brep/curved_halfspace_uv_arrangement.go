@@ -4,6 +4,7 @@ package brep
 
 import (
 	stdmath "math"
+	"sort"
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
@@ -70,7 +71,10 @@ const imprintSampleCount = 256
 // The azimuth seam (u wrapping 2π↔0) is left for the arrangement to resolve — sampleImprintUV reports the
 // raw branch [0,2π); seam unwrapping is applied when segments are assembled into the band.
 func (c ruledUV) sampleImprintUV(curve geom.Curve3) []uvSeg {
-	t0, t1 := curve.Domain()
+	t0, t1, ok := c.clipParams(curve)
+	if !ok || t0 == t1 {
+		return nil
+	}
 	segs := make([]uvSeg, 0, imprintSampleCount)
 	prevT := t0
 	prevP := c.paramOf(curve.PointAt(t0))
@@ -81,6 +85,67 @@ func (c ruledUV) sampleImprintUV(curve geom.Curve3) []uvSeg {
 		prevT, prevP = t, p
 	}
 	return segs
+}
+
+// clipParams returns the parameter window over which an imprint curve should be sampled: its whole domain
+// when finite (an ellipse, a clipped arc), but for an UNBOUNDED curve (a ruling line, or an open
+// hyperbola/parabola arm of a cone cut) the sub-range where it lies within the band's axial extent — so
+// sampling stays finite and on the side. A ruling is linear in v, solved directly; a general unbounded
+// curve is windowed by numerically finding its band-edge crossings.
+func (c ruledUV) clipParams(curve geom.Curve3) (t0, t1 float64, ok bool) {
+	lo, hi := curve.Domain()
+	if !stdmath.IsInf(lo, 0) && !stdmath.IsInf(hi, 0) {
+		return lo, hi, true
+	}
+	if line, isLine := curve.(geom.Line); isLine {
+		d := float64(line.Dir.AsVector().Dot(c.axis))
+		if stdmath.Abs(d) < 1e-12 {
+			return 0, 0, false // a ruling perpendicular to the axis cannot bound a v-band
+		}
+		v0 := float64(c.base.VectorTo(line.Origin).Dot(c.axis))
+		return (c.band.vMin - v0) / d, (c.band.vMax - v0) / d, true
+	}
+	return c.clipParamsNumeric(curve)
+}
+
+// clipParamsNumeric windows an unbounded curve to the band by scanning a finite bracket (proportional to
+// the band's 3D size) for where its axial coordinate v crosses vMin and vMax, then bisecting each crossing.
+// It assumes v is monotone through the band — true for the open conic arms a half-space cut produces.
+func (c ruledUV) clipParamsNumeric(curve geom.Curve3) (t0, t1 float64, ok bool) {
+	b := 4 * (c.band.vMax - c.band.vMin + 2*stdmath.Max(c.band.rBot, c.band.rTop) + 1)
+	vAt := func(t float64) float64 { return float64(c.paramOf(curve.PointAt(t)).Y) }
+	a, okA := bisectVCrossing(vAt, c.band.vMin, -b, b)
+	d, okD := bisectVCrossing(vAt, c.band.vMax, -b, b)
+	if !okA || !okD {
+		return 0, 0, false
+	}
+	return a, d, true
+}
+
+// bisectVCrossing scans [lo,hi] for an interval where vAt crosses target, then bisects it to the crossing
+// parameter. Returns ok=false when no crossing is bracketed.
+func bisectVCrossing(vAt func(float64) float64, target, lo, hi float64) (float64, bool) {
+	const scan = 256
+	prevT := lo
+	prevV := vAt(lo) - target
+	for i := 1; i <= scan; i++ {
+		t := lo + (hi-lo)*float64(i)/scan
+		v := vAt(t) - target
+		if (prevV <= 0) != (v <= 0) {
+			a, b := prevT, t
+			for j := 0; j < 50; j++ {
+				m := (a + b) / 2
+				if (vAt(a)-target <= 0) == (vAt(m)-target <= 0) {
+					a = m
+				} else {
+					b = m
+				}
+			}
+			return (a + b) / 2, true
+		}
+		prevT, prevV = t, v
+	}
+	return 0, false
 }
 
 // unwrapAzimuthNear shifts x by whole turns (2π) so it lands within ±π of ref, turning a wrapped azimuth
@@ -417,25 +482,81 @@ func clamp01(t float64) float64 {
 
 // emitLoopEdges re-emits a (u,v) boundary loop as a chain of exact analytic loopEdges: recover each dedge's
 // analytic source, merge consecutive edges that share a curve into one run, and emit each run as a single
-// loopEdge (a rim arc, an imprint sub-arc, or a seam ruling). This is the bridge back to the B-rep face.
-func (c ruledUV) emitLoopEdges(loop []dedge, segs []uvSeg) ([]loopEdge, bool) {
+// loopEdge (a rim arc, an imprint sub-arc, or a seam ruling). It returns the full boundary chain and,
+// separately, the imprint (section) sub-arcs alone — the cut edges the planar lid re-uses (reversed).
+func (c ruledUV) emitLoopEdges(loop []dedge, segs []uvSeg) (face, section []loopEdge, ok bool) {
 	rec := make([]recoveredEdge, 0, len(loop))
 	for _, d := range loop {
-		re, ok := c.recoverEdge(d, segs)
-		if !ok {
-			return nil, false
+		re, good := c.recoverEdge(d, segs)
+		if !good {
+			return nil, nil, false
 		}
 		rec = append(rec, re)
 	}
-	var edges []loopEdge
 	for _, run := range mergeRuns(rec) {
-		e, ok := c.emitRun(run)
-		if !ok {
-			return nil, false
+		e, good := c.emitRun(run)
+		if !good {
+			return nil, nil, false
 		}
-		edges = append(edges, e)
+		face = append(face, e)
+		if run[0].kind == segImprint {
+			section = append(section, e)
+		}
 	}
-	return edges, true
+	return face, section, true
+}
+
+// trimByImprint is the general ruled-side split: it trims the side by the (u,v) imprint of the given
+// analytic curves, keeping the cells the material predicate selects, and returns the kept curvedFace(s)
+// and the section (cut) arcs that bound the planar lid. It is the arrangement replacement for the analytic
+// splitSide — a plane cut passes its section conic and the half-space predicate, while a general
+// curved∩curved cut passes its projected imprint and membership test (#1405).
+func (c ruledUV) trimByImprint(f curvedFace, surface geom.Surface, imprint []geom.Curve3, material materialPredicate) ([]curvedFace, []loopEdge, error) {
+	var imp []uvSeg
+	for _, cv := range imprint {
+		imp = append(imp, c.sampleImprintUV(cv)...)
+	}
+	segs := c.assembleBandSegments(imp)
+	kept := keptCells(c.arrangeBand(segs), material)
+	if len(kept) == 0 {
+		return nil, nil, nil // the whole side is on the dropped side
+	}
+	loops := chainLoops(keptBoundaryEdges(kept))
+	faceLoops := make([]curvedLoop, 0, len(loops))
+	var lid []loopEdge
+	for _, lp := range loops {
+		edges, section, ok := c.emitLoopEdges(lp, segs)
+		if !ok {
+			return nil, nil, ErrUnsupportedHalfSpace
+		}
+		faceLoops = append(faceLoops, curvedLoop{edges: edges})
+		lid = append(lid, reverseEdgeChain(section)...) // the lid uses each section arc opposite the side
+	}
+	kf := curvedFace{surface: surface, reversed: f.reversed, lineage: f.lineage, loops: c.orderLoops(faceLoops)}
+	return []curvedFace{kf}, lid, nil
+}
+
+// orderLoops orders a kept face's boundary loops by descending axial level (the higher-v boundary first),
+// matching the analytic splitSide convention where loops[0] is the upper (hi) boundary and the stitcher
+// treats it as the outer loop. A single-loop face is unchanged.
+func (c ruledUV) orderLoops(loops []curvedLoop) []curvedLoop {
+	if len(loops) < 2 {
+		return loops
+	}
+	sort.SliceStable(loops, func(i, j int) bool { return c.meanV(loops[i]) > c.meanV(loops[j]) })
+	return loops
+}
+
+// meanV is a loop's mean axial level (the average v of its edge endpoints), used only to order loops.
+func (c ruledUV) meanV(l curvedLoop) float64 {
+	sum := 0.0
+	for _, e := range l.edges {
+		sum += float64(c.paramOf(e.start()).Y) + float64(c.paramOf(e.end()).Y)
+	}
+	if len(l.edges) == 0 {
+		return 0
+	}
+	return sum / float64(2*len(l.edges))
 }
 
 // mergeRuns groups consecutive recovered edges that lie on the same analytic curve into runs, so a chain of

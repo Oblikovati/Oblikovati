@@ -234,6 +234,34 @@ func TestKeptBoundaryTongueSingleLoop(t *testing.T) {
 	}
 }
 
+// TestTrimByImprintProducesValidFace: the end-to-end arrangement trim of a wrapping cut yields one kept
+// curvedFace with two boundary loops whose edges lie on the cylinder, plus a non-empty lid section — the
+// whole project→assemble→subdivide→classify→boundary→re-emit pipeline (Oblikovati#1405).
+func TestTrimByImprintProducesValidFace(t *testing.T) {
+	c := cylinderRuledUV(3, -5, 5)
+	c.s = 1 // g(u,v)=v -> keep v<0
+	surf, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3)
+	cf := curvedFace{surface: surf}
+	circ, _ := geom.NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 3)
+	faces, lid, err := c.trimByImprint(cf, surf, []geom.Curve3{circ}, c.halfSpaceMaterial())
+	if err != nil || len(faces) != 1 {
+		t.Fatalf("trimByImprint: err=%v faces=%d, want 1 face", err, len(faces))
+	}
+	if len(faces[0].loops) != 2 {
+		t.Fatalf("kept face has %d loops, want 2 (the wrapping band)", len(faces[0].loops))
+	}
+	for li, lp := range faces[0].loops {
+		for ei, e := range lp.edges {
+			if r := distFromAxis(e.start(), c); stdmath.Abs(r-3) > 1e-6 {
+				t.Errorf("loop %d edge %d start off the cylinder: radius %.6f", li, ei, r)
+			}
+		}
+	}
+	if len(lid) == 0 {
+		t.Error("trimByImprint returned no lid section arcs")
+	}
+}
+
 // distFromAxis returns p's perpendicular distance from the side's axis (its cylinder radius).
 func distFromAxis(p math.Point3, c ruledUV) float64 {
 	d := c.base.VectorTo(p)
@@ -253,7 +281,7 @@ func TestEmitLoopEdgesStructurallyValid(t *testing.T) {
 		t.Fatalf("want 2 boundary loops, got %d", len(loops))
 	}
 	for li, lp := range loops {
-		edges, ok := c.emitLoopEdges(lp, segs)
+		edges, _, ok := c.emitLoopEdges(lp, segs)
 		if !ok || len(edges) == 0 {
 			t.Fatalf("loop %d: emit failed (ok=%v, %d edges)", li, ok, len(edges))
 		}
