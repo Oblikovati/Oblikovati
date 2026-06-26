@@ -315,6 +315,54 @@ func TestClipParamsMultiArmHyperbola(t *testing.T) {
 	}
 }
 
+// TestTrimByImprintIslandHole: a CLOSED imprint loop inside a ruled face (not reaching a rim) with the
+// material kept OUTSIDE it produces a trimmed face carrying that loop as an inner HOLE — the island case
+// the general arrangement handles that the single-valued analytic walk never could (Oblikovati#1405, the
+// curved∩curved generality). The material is given as a seam-aware 3D test (point3 handles the shifted
+// frame), the form a curved∩curved membership predicate takes.
+func TestTrimByImprintIslandHole(t *testing.T) {
+	c := cylinderRuledUV(3, -5, 5)
+	corners := []math.Point2{math.P2(2, -1), math.P2(3, -1), math.P2(3, 1), math.P2(2, 1)}
+	var curves []geom.Curve3
+	for i := 0; i < 4; i++ {
+		a := c.point3(float64(corners[i].X), float64(corners[i].Y))
+		b := c.point3(float64(corners[(i+1)%4].X), float64(corners[(i+1)%4].Y))
+		curves = append(curves, geom.NewLineSegment(a, b))
+	}
+	center := c.point3(2.5, 0) // 3D centre of the island (absolute frame)
+	keepOutside := func(cc ruledUV) materialPredicate {
+		return func(uv math.Point2) bool {
+			// near the island centre on the cylinder ≈ inside the island; keep everything else.
+			return float64(cc.point3(uv.X, uv.Y).DistanceTo(center)) > 1.6
+		}
+	}
+	surf, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3)
+	faces, _, err := c.trimByImprint(curvedFace{surface: surf}, surf, curves, keepOutside)
+	if err != nil || len(faces) != 1 {
+		t.Fatalf("trimByImprint: err=%v faces=%d, want 1", err, len(faces))
+	}
+	// the kept band has its two rim loops PLUS the island as an inner loop.
+	if got := len(faces[0].loops); got != 3 {
+		t.Fatalf("kept face has %d loops, want 3 (two rims + the island hole)", got)
+	}
+	// exactly one loop is the island (none of its edges touch a rim level vMin/vMax).
+	islands := 0
+	for _, lp := range faces[0].loops {
+		interior := true
+		for _, e := range lp.edges {
+			if v := float64(c.paramOf(e.start()).Y); stdmath.Abs(v-5) < 0.1 || stdmath.Abs(v+5) < 0.1 {
+				interior = false
+			}
+		}
+		if interior {
+			islands++
+		}
+	}
+	if islands != 1 {
+		t.Errorf("found %d interior (island) loops, want 1", islands)
+	}
+}
+
 // distFromAxis returns p's perpendicular distance from the side's axis (its cylinder radius).
 func distFromAxis(p math.Point3, c ruledUV) float64 {
 	d := c.base.VectorTo(p)

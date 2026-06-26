@@ -335,11 +335,46 @@ func (c ruledUV) arrangeBand(segs []uvSeg) []Face2D {
 func keptCells(cells []Face2D, material materialPredicate) []Face2D {
 	var kept []Face2D
 	for _, cell := range cells {
-		if p, ok := interiorPointOf(cell.Outer); ok && material(p) {
+		if p, ok := interiorOfCell(cell); ok && material(p) {
 			kept = append(kept, cell)
 		}
 	}
 	return kept
+}
+
+// interiorOfCell returns a point inside the cell's outer loop but OUTSIDE every hole, so a cell that
+// contains an island (a dropped region) is classified by its own material, not the island's. The centroid
+// serves when it misses the holes; else a short step from an outer-edge midpoint toward the centroid lands
+// near the boundary, clear of any central hole.
+func interiorOfCell(cell Face2D) (math.Point2, bool) {
+	if c := centroidOf(cell.Outer); insideCell(c, cell) {
+		return c, true
+	}
+	c := centroidOf(cell.Outer)
+	for i := range cell.Outer {
+		a, b := cell.Outer[i], cell.Outer[(i+1)%len(cell.Outer)]
+		mid := math.P2((float64(a.X)+float64(b.X))/2, (float64(a.Y)+float64(b.Y))/2)
+		for _, f := range []float64{1e-3, 1e-2, 0.1, 0.5} {
+			p := math.P2(lerp(float64(mid.X), float64(c.X), f), lerp(float64(mid.Y), float64(c.Y), f))
+			if insideCell(p, cell) {
+				return p, true
+			}
+		}
+	}
+	return c, false
+}
+
+// insideCell reports whether p is inside the cell's outer loop and outside all its holes.
+func insideCell(p math.Point2, cell Face2D) bool {
+	if !pointInPolygon2D(p, cell.Outer) {
+		return false
+	}
+	for _, h := range cell.Holes {
+		if pointInPolygon2D(p, h) {
+			return false
+		}
+	}
+	return true
 }
 
 // interiorPointOf returns a point strictly inside the simple polygon (and ok). The centroid serves for a
