@@ -4,6 +4,7 @@ package ops
 
 import (
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -44,6 +45,19 @@ func (op PartFeatureOperation) String() string {
 // planar-faceted operands, falling back to triangle-soup CSG when an operand has a curved
 // face. Result-face lineage flows from the operands, so reference keys stay rebindable.
 func Boolean(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, error) {
+	return BooleanWithDiagnostics(op, target, tool, nil)
+}
+
+// CodeBooleanCSGFallback marks a boolean that abandoned the exact analytic/planar B-rep path for
+// triangle-soup CSG — a tracked defect: the result keeps no analytic surfaces and can hide a
+// volume-preserving topology error the volume guard misses (Oblikovati#1407).
+const CodeBooleanCSGFallback diag.Code = "boolean.csg-fallback"
+
+// BooleanWithDiagnostics is [Boolean] with a diagnostic [diag.Recorder] (pass nil to discard). Whenever
+// the operation falls back from the exact analytic/planar path to triangle-soup CSG it records a Defect
+// diagnostic naming the operation and operands, so callers and tests can SEE and count the fallback
+// instead of silently shipping a faceted mesh (Oblikovati#1407).
+func BooleanWithDiagnostics(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, error) {
 	lin := topo.NewLineage(topo.Tok("boolean", op.String(), 0))
 	if op == NewBody {
 		return tool, nil
@@ -51,11 +65,11 @@ func Boolean(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, erro
 	rel := classify(target, tool)
 	switch op {
 	case Join:
-		return join(lin, target, tool, rel)
+		return join(lin, target, tool, rel, rec)
 	case Cut:
-		return cut(lin, target, tool, rel)
+		return cut(lin, target, tool, rel, rec)
 	default: // Intersect
-		return intersect(lin, target, tool, rel)
+		return intersect(lin, target, tool, rel, rec)
 	}
 }
 
@@ -64,14 +78,14 @@ func Boolean(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, erro
 // inner shell is discarded rather than kept as a floating interior wall — the old MergeBodies path
 // concatenated both shells and double-counted the volume (#1316). Disjoint bodies merge into one
 // multi-lump body (each a separate valid shell); intersecting bodies go to the face-splitting boolean.
-func join(lin topo.Lineage, target, tool *topo.Body, rel relation) (*topo.Body, error) {
+func join(lin topo.Lineage, target, tool *topo.Body, rel relation, rec *diag.Recorder) (*topo.Body, error) {
 	switch rel {
 	case targetContainsTool:
 		return target, nil // tool lies inside target → union is target alone
 	case toolContainsTarget:
 		return tool, nil
 	case intersecting:
-		return booleanGeneral(Join, target, tool, lin)
+		return booleanGeneral(Join, target, tool, lin, rec)
 	default: // disjoint: two separate lumps form a valid multi-shell body
 		return topo.MergeBodies(lin, true, target, tool), nil
 	}
@@ -81,17 +95,17 @@ func join(lin topo.Lineage, target, tool *topo.Body, rel relation) (*topo.Body, 
 // — it is sound under chaining and yields a low-face-count solid — falling back to the
 // triangle-soup BSP CSG only when an operand has a non-planar face the B-rep path can't take
 // (a cylinder, cone, etc.). A nil B-rep result is a (valid) empty body.
-func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.Lineage) (*topo.Body, error) {
+func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.Lineage, rec *diag.Recorder) (*topo.Body, error) {
 	if body, ok := curvedExactBoolean(op, target, tool); ok {
 		return body, nil // an exact analytic curved result (M2 #1334/#1335) — keeps surfaces, no CSG soup
 	}
 	bop, ok := toBrepOp(op)
 	if !ok {
-		return booleanCSG(op, target, tool, lin)
+		return booleanCSG(op, target, tool, lin, rec)
 	}
 	body, err := brep.Boolean(bop, target, tool)
 	if err != nil {
-		return booleanCSG(op, target, tool, lin) // non-planar operand → triangle CSG
+		return booleanCSG(op, target, tool, lin, rec) // non-planar operand → triangle CSG
 	}
 	if body == nil {
 		return topo.MergeBodies(lin, true), nil
@@ -109,7 +123,7 @@ func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.L
 		// Validate().Valid, which does not require Closed. T-junction removal now always closes
 		// the cage (#1336), so this is belt-and-braces: never replace a sound planar result with
 		// an open one.
-		if csg, cerr := booleanCSG(op, target, tool, lin); cerr == nil && csg != nil && validBooleanSolid(csg) {
+		if csg, cerr := booleanCSG(op, target, tool, lin, rec); cerr == nil && csg != nil && validBooleanSolid(csg) {
 			return csg, nil
 		}
 	}
@@ -234,7 +248,10 @@ func toBrepOp(op PartFeatureOperation) (brep.Op, bool) {
 // declined. The supported curved booleans keep their analytic surfaces and never land here — the
 // TestCurvedBooleansStayExact guard pins that. CSG remains for the unsupported long tail (arbitrary
 // freeform/NURBS overlaps), where a faceted-but-watertight result still beats failing.
-func booleanCSG(op PartFeatureOperation, target, tool *topo.Body, lin topo.Lineage) (*topo.Body, error) {
+func booleanCSG(op PartFeatureOperation, target, tool *topo.Body, lin topo.Lineage, rec *diag.Recorder) (*topo.Body, error) {
+	rec.Recordf(CodeBooleanCSGFallback, diag.Defect,
+		"%s fell back to triangle-soup CSG (target %d faces, tool %d faces): no exact analytic/planar path",
+		op, len(target.Faces()), len(tool.Faces()))
 	a, b := bodyTriangles(target), bodyTriangles(tool)
 	// One model-relative on-plane tolerance for the BSP, scaled to the larger operand
 	// (ADR-0042) so a sub-µm boolean classifies coplanarity correctly.
@@ -254,18 +271,18 @@ func booleanCSG(op PartFeatureOperation, target, tool *topo.Body, lin topo.Linea
 	return topo.MergeBodies(lin, true), nil
 }
 
-func cut(lin topo.Lineage, target, tool *topo.Body, rel relation) (*topo.Body, error) {
+func cut(lin topo.Lineage, target, tool *topo.Body, rel relation, rec *diag.Recorder) (*topo.Body, error) {
 	switch rel {
 	case disjoint:
 		return target, nil // tool removes nothing
 	case toolContainsTarget:
 		return topo.MergeBodies(lin, true), nil // target fully removed → empty
 	default: // targetContainsTool (a void/cavity) and intersecting need face splitting
-		return booleanGeneral(Cut, target, tool, lin)
+		return booleanGeneral(Cut, target, tool, lin, rec)
 	}
 }
 
-func intersect(lin topo.Lineage, target, tool *topo.Body, rel relation) (*topo.Body, error) {
+func intersect(lin topo.Lineage, target, tool *topo.Body, rel relation, rec *diag.Recorder) (*topo.Body, error) {
 	switch rel {
 	case disjoint:
 		return topo.MergeBodies(lin, true), nil // nothing in common → empty
@@ -274,7 +291,7 @@ func intersect(lin topo.Lineage, target, tool *topo.Body, rel relation) (*topo.B
 	case toolContainsTarget:
 		return target, nil
 	default:
-		return booleanGeneral(Intersect, target, tool, lin)
+		return booleanGeneral(Intersect, target, tool, lin, rec)
 	}
 }
 
