@@ -244,7 +244,7 @@ func TestTrimByImprintProducesValidFace(t *testing.T) {
 	surf, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3)
 	cf := curvedFace{surface: surf}
 	circ, _ := geom.NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 3)
-	faces, lid, err := c.trimByImprint(cf, surf, []geom.Curve3{circ}, c.halfSpaceMaterial())
+	faces, lid, err := c.trimByImprint(cf, surf, []geom.Curve3{circ}, ruledUV.halfSpaceMaterial)
 	if err != nil || len(faces) != 1 {
 		t.Fatalf("trimByImprint: err=%v faces=%d, want 1 face", err, len(faces))
 	}
@@ -272,7 +272,7 @@ func TestTrimByImprintReversesTopRim(t *testing.T) {
 	c.band.topRimReversed = true // the source side traverses the top rim reversed
 	surf, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3)
 	circ, _ := geom.NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 3)
-	faces, _, err := c.trimByImprint(curvedFace{surface: surf}, surf, []geom.Curve3{circ}, c.halfSpaceMaterial())
+	faces, _, err := c.trimByImprint(curvedFace{surface: surf}, surf, []geom.Curve3{circ}, ruledUV.halfSpaceMaterial)
 	if err != nil || len(faces) != 1 || len(faces[0].loops) != 2 {
 		t.Fatalf("trimByImprint: err=%v faces=%d", err, len(faces))
 	}

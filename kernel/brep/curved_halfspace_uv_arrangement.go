@@ -32,8 +32,11 @@ func (c ruledUV) paramOf(p math.Point3) math.Point2 {
 	d := c.base.VectorTo(p)
 	v := float64(d.Dot(c.axis))
 	radial := d.Sub(c.axis.Scale(math.Scalar(v)))
-	u := stdmath.Atan2(float64(radial.Dot(c.binor)), float64(radial.Dot(c.ref)))
-	if u < 0 {
+	// atan2 ∈ [−π, π] and seamU ∈ [0, 2π), so u ∈ [−3π, π]: only a lower wrap is needed. (An upper clamp
+	// would map a point at azimuth ≈2π−ε, which rounds to 2π after the wrap, down to 0 — a false seam
+	// discontinuity that leaves an un-split wrap segment.)
+	u := stdmath.Atan2(float64(radial.Dot(c.binor)), float64(radial.Dot(c.ref))) - c.seamU
+	for u < 0 {
 		u += 2 * stdmath.Pi
 	}
 	return math.P2(u, v)
@@ -281,9 +284,38 @@ func (c ruledUV) curveV(curve geom.Curve3, t float64) float64 {
 type materialPredicate func(uv math.Point2) bool
 
 // halfSpaceMaterial is the plane-cut predicate: a band point is kept where the signed distance g(u,v) is
-// negative, exactly the {g<0} region the single-valued walk traced as a v-interval.
+// negative, exactly the {g<0} region the single-valued walk traced as a v-interval. It is passed to
+// trimByImprint as a builder (ruledUV.halfSpaceMaterial) so it is bound to the seam-shifted frame.
 func (c ruledUV) halfSpaceMaterial() materialPredicate {
 	return func(uv math.Point2) bool { return c.aU(uv.X)+uv.Y*c.bU(uv.X) < 0 }
+}
+
+// chooseSeamU returns an azimuth for the arrangement's artificial seam that is clear of the imprint: the
+// midpoint of the widest gap between the imprint's azimuths (the wrap gap included). Placing the seam there
+// keeps a section arm from grazing it, which would otherwise collapse the (u,v) arrangement (#1405). With
+// no imprint, or one that covers every azimuth, it returns 0 (the default seam).
+func (c ruledUV) chooseSeamU(imprint []geom.Curve3) float64 {
+	var us []float64
+	for _, cv := range imprint {
+		for _, s := range c.sampleImprintUV(cv) { // c.seamU is still 0 here, so these are absolute azimuths
+			us = append(us, float64(s.a.X))
+		}
+	}
+	if len(us) == 0 {
+		return 0
+	}
+	sort.Float64s(us)
+	twoPi := 2 * stdmath.Pi
+	bestGap, bestMid := us[0]+twoPi-us[len(us)-1], (us[len(us)-1]+us[0]+twoPi)/2
+	for i := 1; i < len(us); i++ {
+		if g := us[i] - us[i-1]; g > bestGap {
+			bestGap, bestMid = g, (us[i]+us[i-1])/2
+		}
+	}
+	for bestMid >= twoPi {
+		bestMid -= twoPi
+	}
+	return bestMid
 }
 
 // arrangeBand runs the planar subdivision on the assembled band, returning the cells as (u,v) polygons
@@ -572,13 +604,14 @@ func (c ruledUV) emitLoopEdges(loop []dedge, segs []uvSeg) (face, section []loop
 // and the section (cut) arcs that bound the planar lid. It is the arrangement replacement for the analytic
 // splitSide — a plane cut passes its section conic and the half-space predicate, while a general
 // curved∩curved cut passes its projected imprint and membership test (#1405).
-func (c ruledUV) trimByImprint(f curvedFace, surface geom.Surface, imprint []geom.Curve3, material materialPredicate) ([]curvedFace, []loopEdge, error) {
+func (c ruledUV) trimByImprint(f curvedFace, surface geom.Surface, imprint []geom.Curve3, materialOf func(ruledUV) materialPredicate) ([]curvedFace, []loopEdge, error) {
+	c.seamU = c.chooseSeamU(imprint) // move the artificial seam clear of the imprint before arranging
 	var imp []uvSeg
 	for _, cv := range imprint {
 		imp = append(imp, c.sampleImprintUV(cv)...)
 	}
 	segs := c.assembleBandSegments(imp)
-	kept := keptCells(c.arrangeBand(segs), material)
+	kept := keptCells(c.arrangeBand(segs), materialOf(c))
 	if len(kept) == 0 {
 		return nil, nil, nil // the whole side is on the dropped side
 	}
@@ -719,7 +752,9 @@ func (c ruledUV) emitRimRun(run []recoveredEdge) (loopEdge, bool) {
 	if stdmath.Abs(span) >= 2*stdmath.Pi-1e-6 {
 		return loopEdge{curve: circle, t0: 0, t1: 1}, true // a full rim circle, reused whole
 	}
-	arc, err := geom.NewArc3d(center, c.axis, c.ref, radius, float64(run[0].a.X), span)
+	// NewArc3d's start angle is measured on the surface's own ref frame, so add seamU back to the
+	// seam-relative u of the run's start.
+	arc, err := geom.NewArc3d(center, c.axis, c.ref, radius, float64(run[0].a.X)+c.seamU, span)
 	if err != nil {
 		return loopEdge{}, false
 	}

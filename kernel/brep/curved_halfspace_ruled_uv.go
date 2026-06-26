@@ -35,6 +35,11 @@ type ruledUV struct {
 	radSlope, radConst float64 // rad(v) = radSlope·v + radConst (cone: tanα, 0; cylinder: 0, R)
 	band               coneSideBand_
 	p, q, s, t, uN     float64
+	// seamU rotates the (u,v) parameter origin for the arrangement trim only: the artificial azimuth seam
+	// (u=0≡2π) is moved to absolute azimuth seamU so it falls clear of the imprint's rim crossings (a
+	// section arm grazing the seam otherwise breaks the arrangement, #1405). paramOf reports u relative to
+	// seamU; point3/aU/bU add it back. The analytic walk leaves it 0, so its parameterisation is unchanged.
+	seamU float64
 }
 
 // newConeUV builds the (u, v) model of a frustum side cut by a plane (n the unit plane normal).
@@ -69,11 +74,12 @@ func newRuledUV(base math.Point3, axis, ref math.Vector3, radSlope, radConst flo
 	}
 }
 
-// aU returns a(u) = p + q·cos(u−uN), the v-independent part of the signed distance g(u,v)=a(u)+v·b(u).
-func (c ruledUV) aU(u float64) float64 { return c.p + c.q*stdmath.Cos(u-c.uN) }
+// aU returns a(u) = p + q·cos(u−uN), the v-independent part of the signed distance g(u,v)=a(u)+v·b(u). u is
+// relative to the seam origin (seamU), so the absolute azimuth used against uN is u+seamU.
+func (c ruledUV) aU(u float64) float64 { return c.p + c.q*stdmath.Cos(u+c.seamU-c.uN) }
 
 // bU returns b(u) = s + t·cos(u−uN), the coefficient of v in the signed distance g(u,v)=a(u)+v·b(u).
-func (c ruledUV) bU(u float64) float64 { return c.s + c.t*stdmath.Cos(u-c.uN) }
+func (c ruledUV) bU(u float64) float64 { return c.s + c.t*stdmath.Cos(u+c.seamU-c.uN) }
 
 // sectionV returns the axial distance v where the cut plane meets the side at azimuth u — the section
 // curve v(u) = −a(u)/b(u). It returns 0 where b(u)≈0 (the plane is parallel to the ruling at u, no finite
@@ -122,19 +128,22 @@ func (c ruledUV) keptV(u float64) (lo, hi float64, ok bool) {
 	}
 }
 
-// point3 returns the surface point at (u, v): base + v·â + (radSlope·v+radConst)·r̂(u).
+// point3 returns the surface point at (u, v): base + v·â + (radSlope·v+radConst)·r̂(u). u is relative to the
+// seam origin (seamU), so the absolute azimuth on the surface frame is u+seamU.
 func (c ruledUV) point3(u, v float64) math.Point3 {
-	radial := c.ref.Scale(math.Scalar(stdmath.Cos(u))).Add(c.binor.Scale(math.Scalar(stdmath.Sin(u))))
+	a := u + c.seamU
+	radial := c.ref.Scale(math.Scalar(stdmath.Cos(a))).Add(c.binor.Scale(math.Scalar(stdmath.Sin(a))))
 	rad := c.radSlope*v + c.radConst
 	return c.base.TranslateBy(c.axis.Scale(math.Scalar(v))).TranslateBy(radial.Scale(math.Scalar(rad)))
 }
 
-// coneSideUVSplit splits a full periodic frustum side. The general (u,v)-arrangement trimmer (trimByImprint,
-// with the multi-arm clipParams) now handles most cone cuts (axis-∥ flat, parabola, vertex-inside, ellipse),
-// but the OBLIQUE hyperbola still arranges wrong — its two arms leave the band's interior cell misclassified
-// — so the analytic splitSide stands here until that arrangement case is reconciled (Oblikovati#1405).
+// coneSideUVSplit splits a full periodic frustum side by the general (u,v)-arrangement trimmer (newConeUV +
+// trimByImprint), the same path the cylinder side uses — the cone's a(u)+v·b(u) signed distance and its
+// conic section (ellipse, hyperbola branch or parabola, windowed to the band by clipParams, the seam moved
+// clear of the section by chooseSeamU) flow through it uniformly (Oblikovati#1405).
 func coneSideUVSplit(f curvedFace, cone geom.Cone, conic geom.Curve3, band coneSideBand_, plane geom.Plane, n math.Vector3) ([]curvedFace, []loopEdge, error) {
-	return newConeUV(cone, band, plane, n).splitSide(f, cone, conic)
+	c := newConeUV(cone, band, plane, n)
+	return c.trimByImprint(f, cone, []geom.Curve3{conic}, ruledUV.halfSpaceMaterial)
 }
 
 // coneApexSideSplit splits a FULL cone side (apex + one rim) by the (u,v) arrangement. The apex is the
@@ -176,7 +185,7 @@ func (c ruledUV) apexCapSide(f curvedFace, surface geom.Surface, conic geom.Curv
 // cut (within-band / clips-rim / tongue), the latter the case the line-only cylinder split deferred to CSG.
 func cylinderSideUVSplit(f curvedFace, cyl geom.Cylinder, curves []geom.Curve3, band coneSideBand_, plane geom.Plane, n math.Vector3) ([]curvedFace, []loopEdge, error) {
 	c := newCylinderUV(cyl, band, plane, n)
-	return c.trimByImprint(f, cyl, curves, c.halfSpaceMaterial())
+	return c.trimByImprint(f, cyl, curves, ruledUV.halfSpaceMaterial)
 }
 
 // splitSide builds the kept region {g<0} of a ruled side in (u,v). The WRAPPING case (kept v-interval
