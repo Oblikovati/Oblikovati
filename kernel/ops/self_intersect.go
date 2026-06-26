@@ -28,10 +28,11 @@ type SelfIntersection struct {
 // Example: if hits := ops.SelfIntersections(body, ops.DefaultQuality()); len(hits) > 0 { reject(body) }
 func SelfIntersections(b *topo.Body, q Quality) []SelfIntersection {
 	faces := b.Faces()
-	meshes := make([]*Mesh, len(faces))
+	tris := make([][][3]math.Point3, len(faces))
 	boxes := make([]math.Box, len(faces))
+	bvhs := make([]*triBVH, len(faces)) // built lazily the first time a face is the queried-against side
 	for i, f := range faces {
-		meshes[i] = TessellateFace(f, q)
+		tris[i] = meshTriangles(TessellateFace(f, q))
 		boxes[i] = f.RangeBox()
 	}
 	var out []SelfIntersection
@@ -40,11 +41,14 @@ func SelfIntersections(b *topo.Body, q Quality) []SelfIntersection {
 			if !boxes[i].Intersects(boxes[j]) {
 				continue
 			}
-			// Don't skip the whole pair when the faces merely touch (#1321): test every triangle
-			// pair and discard only crossings that land ON the shared boundary (the legitimate edge/
-			// vertex contact). A crossing AWAY from the shared topology is a real interpenetration.
+			// Don't skip the whole pair when the faces merely touch (#1321): test triangle pairs and
+			// discard only crossings that land ON the shared boundary (the legitimate edge/vertex
+			// contact). A crossing AWAY from the shared topology is a real interpenetration.
 			shared := sharedFaceBoundary(faces[i], faces[j])
-			if p, hit := meshesCrossOffBoundary(meshes[i], meshes[j], shared, q.tol()); hit {
+			if bvhs[j] == nil {
+				bvhs[j] = newTriBVH(tris[j])
+			}
+			if p, hit := meshCrossesOffBoundary(tris[i], bvhs[j], shared, q.tol()); hit {
 				out = append(out, SelfIntersection{FaceA: faces[i], FaceB: faces[j], Witness: p})
 			}
 		}
@@ -78,17 +82,26 @@ func sharedFaceBoundary(a, b *topo.Face) [][2]math.Point3 {
 	return shared
 }
 
-// meshesCrossOffBoundary tests every triangle pair of the two face meshes and returns the first
-// crossing whose witness lies farther than tol from the shared boundary — the first real
-// interpenetration. Crossings on the shared boundary are the faces' legitimate contact and ignored.
-func meshesCrossOffBoundary(a, b *Mesh, shared [][2]math.Point3, tol float64) (math.Point3, bool) {
-	for i := 0; i+2 < len(a.Indices); i += 3 {
-		t1 := meshTriangle(a, i)
-		for j := 0; j+2 < len(b.Indices); j += 3 {
-			p, hit := trianglesIntersect(t1, meshTriangle(b, j))
+// meshCrossesOffBoundary tests each triangle of mesh A against only the B triangles its box overlaps
+// (found through the B-side BVH, not an all-pairs scan, #1411) and returns the first crossing whose
+// witness lies farther than tol from the shared boundary — the first real interpenetration. The exact
+// Möller test and the boundary filter are unchanged, so detection is identical to the old scan; only
+// the candidates it runs on are pruned. Crossings on the shared boundary are legitimate contact.
+func meshCrossesOffBoundary(aTris [][3]math.Point3, bBVH *triBVH, shared [][2]math.Point3, tol float64) (math.Point3, bool) {
+	var witness math.Point3
+	found := false
+	for _, t1 := range aTris {
+		box := math.BoxFromPoints(t1[0], t1[1], t1[2])
+		bBVH.query(box, func(j int) bool {
+			p, hit := trianglesIntersect(t1, bBVH.tris[j])
 			if hit && !onSharedBoundary(p, shared, tol) {
-				return p, true
+				witness, found = p, true
+				return true // stop the BVH walk at the first real crossing
 			}
+			return false
+		})
+		if found {
+			return witness, true
 		}
 	}
 	return math.Point3{}, false
