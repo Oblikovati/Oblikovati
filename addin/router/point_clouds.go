@@ -21,22 +21,22 @@ import (
 
 // registerPointCloudHandlers wires the pointClouds.* methods.
 func (r *Router) registerPointCloudHandlers() {
-	r.handlers[wire.MethodPointCloudsAttach] = attachPointCloud
-	r.handlers[wire.MethodPointCloudsList] = listPointClouds
-	r.handlers[wire.MethodPointCloudsGet] = getPointCloud
-	r.handlers[wire.MethodPointCloudsDelete] = deletePointCloud
-	r.handlers[wire.MethodPointCloudsSetVisible] = setPointCloudVisible
-	r.handlers[wire.MethodPointCloudsSetTransform] = setPointCloudTransform
-	r.handlers[wire.MethodPointCloudsSetScale] = setPointCloudScale
-	r.handlers[wire.MethodPointCloudsSetDensity] = setPointCloudDensity
-	r.handlers[wire.MethodPointCloudsToModelSpace] = pointCloudToModelSpace
-	r.handlers[wire.MethodPointCloudsFromModelSpace] = pointCloudFromModelSpace
-	r.handlers[wire.MethodPointCloudsAddCrop] = addPointCloudCrop
-	r.handlers[wire.MethodPointCloudsListCrops] = listPointCloudCrops
-	r.handlers[wire.MethodPointCloudsDeleteCrop] = deletePointCloudCrop
-	r.handlers[wire.MethodPointCloudsSetCropActive] = setPointCloudCropActive
-	r.handlers[wire.MethodPointCloudsFitPlane] = fitPointCloudPlane
-	r.handlers[wire.MethodPointCloudsNearestPoint] = nearestPointCloudPoint
+	r.readOnly(wire.MethodPointCloudsAttach, attachPointCloud)
+	r.readOnly(wire.MethodPointCloudsList, listPointClouds)
+	r.readOnly(wire.MethodPointCloudsGet, getPointCloud)
+	r.readOnly(wire.MethodPointCloudsDelete, deletePointCloud)
+	r.readOnly(wire.MethodPointCloudsSetVisible, setPointCloudVisible)
+	r.readOnly(wire.MethodPointCloudsSetTransform, setPointCloudTransform)
+	r.readOnly(wire.MethodPointCloudsSetScale, setPointCloudScale)
+	r.readOnly(wire.MethodPointCloudsSetDensity, setPointCloudDensity)
+	r.readOnly(wire.MethodPointCloudsToModelSpace, pointCloudToModelSpace)
+	r.readOnly(wire.MethodPointCloudsFromModelSpace, pointCloudFromModelSpace)
+	r.readOnly(wire.MethodPointCloudsAddCrop, addPointCloudCrop)
+	r.readOnly(wire.MethodPointCloudsListCrops, listPointCloudCrops)
+	r.readOnly(wire.MethodPointCloudsDeleteCrop, deletePointCloudCrop)
+	r.readOnly(wire.MethodPointCloudsSetCropActive, setPointCloudCropActive)
+	r.readOnly(wire.MethodPointCloudsFitPlane, fitPointCloudPlane)
+	r.readOnly(wire.MethodPointCloudsNearestPoint, nearestPointCloudPoint)
 }
 
 // attachPointCloud reads the scan file, embeds its bytes as a resource, decodes its points, and

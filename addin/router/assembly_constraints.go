@@ -20,23 +20,23 @@ import (
 
 // registerAssemblyConstraintHandlers wires the assemblyConstraints.* methods.
 func (r *Router) registerAssemblyConstraintHandlers() {
-	r.handlers[wire.MethodAssemblyConstraintsList] = assemblyConstraintsList
-	r.handlers[wire.MethodAssemblyConstraintsAddMate] = assemblyAddMate
-	r.handlers[wire.MethodAssemblyConstraintsAddFlush] = assemblyAddFlush
-	r.handlers[wire.MethodAssemblyConstraintsAddAngle] = assemblyAddAngle
-	r.handlers[wire.MethodAssemblyConstraintsAddTangent] = assemblyAddTangent
-	r.handlers[wire.MethodAssemblyConstraintsAddInsert] = assemblyAddInsert
-	r.handlers[wire.MethodAssemblyConstraintsSnap] = assemblySnapConstrain
-	r.handlers[wire.MethodAssemblyConstraintsAddSymmetry] = assemblyAddSymmetry
-	r.handlers[wire.MethodAssemblyConstraintsAddRotateRotate] = assemblyAddRotateRotate
-	r.handlers[wire.MethodAssemblyConstraintsAddRotateTranslate] = assemblyAddRotateTranslate
-	r.handlers[wire.MethodAssemblyConstraintsAddTranslateTranslate] = assemblyAddTranslateTranslate
-	r.handlers[wire.MethodAssemblyConstraintsAddTransitional] = assemblyAddTransitional
-	r.handlers[wire.MethodAssemblyConstraintsAddCustom] = assemblyAddCustom
-	r.handlers[wire.MethodAssemblyConstraintsDelete] = assemblyConstraintDelete
-	r.handlers[wire.MethodAssemblyConstraintsSetLimits] = assemblyConstraintSetLimits
-	r.handlers[wire.MethodAssemblyConstraintsSolve] = assemblyConstraintsSolve
-	r.handlers[wire.MethodAssemblyConstraintsHealth] = assemblyConstraintsHealth
+	r.readOnly(wire.MethodAssemblyConstraintsList, assemblyConstraintsList)
+	r.readOnly(wire.MethodAssemblyConstraintsAddMate, assemblyAddMate)
+	r.readOnly(wire.MethodAssemblyConstraintsAddFlush, assemblyAddFlush)
+	r.readOnly(wire.MethodAssemblyConstraintsAddAngle, assemblyAddAngle)
+	r.readOnly(wire.MethodAssemblyConstraintsAddTangent, assemblyAddTangent)
+	r.readOnly(wire.MethodAssemblyConstraintsAddInsert, assemblyAddInsert)
+	r.readOnly(wire.MethodAssemblyConstraintsSnap, assemblySnapConstrain)
+	r.readOnly(wire.MethodAssemblyConstraintsAddSymmetry, assemblyAddSymmetry)
+	r.readOnly(wire.MethodAssemblyConstraintsAddRotateRotate, assemblyAddRotateRotate)
+	r.readOnly(wire.MethodAssemblyConstraintsAddRotateTranslate, assemblyAddRotateTranslate)
+	r.readOnly(wire.MethodAssemblyConstraintsAddTranslateTranslate, assemblyAddTranslateTranslate)
+	r.readOnly(wire.MethodAssemblyConstraintsAddTransitional, assemblyAddTransitional)
+	r.readOnly(wire.MethodAssemblyConstraintsAddCustom, assemblyAddCustom)
+	r.readOnly(wire.MethodAssemblyConstraintsDelete, assemblyConstraintDelete)
+	r.readOnly(wire.MethodAssemblyConstraintsSetLimits, assemblyConstraintSetLimits)
+	r.readOnly(wire.MethodAssemblyConstraintsSolve, assemblyConstraintsSolve)
+	r.readOnly(wire.MethodAssemblyConstraintsHealth, assemblyConstraintsHealth)
 }
 
 // assemblyConstraintsList returns the active assembly's constraint set.

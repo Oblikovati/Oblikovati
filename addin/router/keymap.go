@@ -14,13 +14,13 @@ import (
 // registerKeymapHandlers wires command alias & keyboard-shortcut customization (M05-F17,
 // #831): list the catalog, rebind a shortcut, set an alias, reset one/all, import/export.
 func (r *Router) registerKeymapHandlers() {
-	r.handlers[wire.MethodKeymapList] = listKeymap
-	r.handlers[wire.MethodKeymapSetChord] = setKeymapChord
-	r.handlers[wire.MethodKeymapSetAlias] = setKeymapAlias
-	r.handlers[wire.MethodKeymapReset] = resetKeymapBinding
-	r.handlers[wire.MethodKeymapResetAll] = resetKeymapAll
-	r.handlers[wire.MethodKeymapExport] = exportKeymap
-	r.handlers[wire.MethodKeymapImport] = importKeymap
+	r.readOnly(wire.MethodKeymapList, listKeymap)
+	r.readOnly(wire.MethodKeymapSetChord, setKeymapChord)
+	r.readOnly(wire.MethodKeymapSetAlias, setKeymapAlias)
+	r.readOnly(wire.MethodKeymapReset, resetKeymapBinding)
+	r.readOnly(wire.MethodKeymapResetAll, resetKeymapAll)
+	r.readOnly(wire.MethodKeymapExport, exportKeymap)
+	r.readOnly(wire.MethodKeymapImport, importKeymap)
 }
 
 // listKeymap returns the full binding catalog (wire keymap.list).

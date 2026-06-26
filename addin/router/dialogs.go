@@ -11,10 +11,10 @@ import (
 
 // registerDialogHandlers wires the host-dialog methods (M05-F08, #615).
 func (r *Router) registerDialogHandlers() {
-	r.handlers[wire.MethodDialogsShowFileDialog] = showFileDialog
-	r.handlers[wire.MethodDialogsShowWebDialog] = showWebDialog
-	r.handlers[wire.MethodDialogsCloseWebDialog] = closeWebDialog
-	r.handlers[wire.MethodDialogsListWebViews] = listWebViews
+	r.readOnly(wire.MethodDialogsShowFileDialog, showFileDialog)
+	r.readOnly(wire.MethodDialogsShowWebDialog, showWebDialog)
+	r.readOnly(wire.MethodDialogsCloseWebDialog, closeWebDialog)
+	r.readOnly(wire.MethodDialogsListWebViews, listWebViews)
 }
 
 // showFileDialog queues a file-dialog ask; the choice arrives as dialog.fileChosen.

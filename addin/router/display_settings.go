@@ -15,10 +15,10 @@ import (
 // registerDisplayHandlers wires the application display options and per-document display
 // settings methods (M16-F07, #643).
 func (r *Router) registerDisplayHandlers() {
-	r.handlers[wire.MethodDisplayGetOptions] = getDisplayOptions
-	r.handlers[wire.MethodDisplaySetOptions] = setDisplayOptions
-	r.handlers[wire.MethodDocumentGetDisplaySettings] = getDisplaySettings
-	r.handlers[wire.MethodDocumentSetDisplaySettings] = setDisplaySettings
+	r.readOnly(wire.MethodDisplayGetOptions, getDisplayOptions)
+	r.readOnly(wire.MethodDisplaySetOptions, setDisplayOptions)
+	r.readOnly(wire.MethodDocumentGetDisplaySettings, getDisplaySettings)
+	r.readOnly(wire.MethodDocumentSetDisplaySettings, setDisplaySettings)
 }
 
 // getDisplayOptions returns the application-level display options (wire.MethodDisplayGetOptions).

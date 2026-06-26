@@ -18,8 +18,8 @@ import (
 // registerFontHandlers wires the font-picker methods: list the selectable faces, and set a
 // sketch text entity's font (embedding the chosen face into the document) — ADR-0031.
 func (r *Router) registerFontHandlers() {
-	r.handlers[wire.MethodFontsList] = listFonts
-	r.handlers[wire.MethodSketchSetTextFont] = setTextFont
+	r.readOnly(wire.MethodFontsList, listFonts)
+	r.readOnly(wire.MethodSketchSetTextFont, setTextFont)
 }
 
 // listFonts returns every face the picker can offer: the application's bundled faces (source

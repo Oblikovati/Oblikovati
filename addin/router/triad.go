@@ -11,12 +11,12 @@ import (
 
 // registerTriadHandlers wires the gizmo methods (M05-F13, #620).
 func (r *Router) registerTriadHandlers() {
-	r.handlers[wire.MethodTriadShow] = showTriad
-	r.handlers[wire.MethodTriadUpdate] = updateTriad
-	r.handlers[wire.MethodTriadHide] = hideTriad
-	r.handlers[wire.MethodTriadGet] = getTriad
-	r.handlers[wire.MethodManipulatorsSet] = setManipulators
-	r.handlers[wire.MethodManipulatorsRemove] = removeManipulators
+	r.readOnly(wire.MethodTriadShow, showTriad)
+	r.readOnly(wire.MethodTriadUpdate, updateTriad)
+	r.readOnly(wire.MethodTriadHide, hideTriad)
+	r.readOnly(wire.MethodTriadGet, getTriad)
+	r.readOnly(wire.MethodManipulatorsSet, setManipulators)
+	r.readOnly(wire.MethodManipulatorsRemove, removeManipulators)
 }
 
 func showTriad(s *app.Session, args json.RawMessage) (json.RawMessage, error) {

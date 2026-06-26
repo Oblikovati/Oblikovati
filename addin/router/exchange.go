@@ -16,11 +16,11 @@ import (
 // registerExchangeHandlers wires the foreign mesh-format import/export methods
 // (documents.import / documents.export, M17-F04).
 func (r *Router) registerExchangeHandlers() {
-	r.handlers[wire.MethodDocumentsImport] = importDocument
-	r.handlers[wire.MethodDocumentsExport] = exportDocument
-	r.handlers[wire.MethodImportDWG] = importDWG
-	r.handlers[wire.MethodImportDXF] = importDXF
-	r.handlers[wire.MethodExportDXF] = exportDXF
+	r.mutating(wire.MethodDocumentsImport, "Import", importDocument)
+	r.readOnly(wire.MethodDocumentsExport, exportDocument)
+	r.readOnly(wire.MethodImportDWG, importDWG)
+	r.readOnly(wire.MethodImportDXF, importDXF)
+	r.readOnly(wire.MethodExportDXF, exportDXF)
 }
 
 // importDWG imports a .dwg into the active part: a planar drawing onto the named

@@ -15,11 +15,11 @@ import (
 // registerNamedViewHandlers wires named-view capture/restore and the standard-orientation jump
 // (M16-F03, #404/#409).
 func (r *Router) registerNamedViewHandlers() {
-	r.handlers[wire.MethodViewsCaptureNamed] = captureNamedView
-	r.handlers[wire.MethodViewsListNamed] = listNamedViews
-	r.handlers[wire.MethodViewsRestoreNamed] = restoreNamedView
-	r.handlers[wire.MethodViewsDeleteNamed] = deleteNamedView
-	r.handlers[wire.MethodViewSetOrientation] = setViewOrientation
+	r.readOnly(wire.MethodViewsCaptureNamed, captureNamedView)
+	r.readOnly(wire.MethodViewsListNamed, listNamedViews)
+	r.readOnly(wire.MethodViewsRestoreNamed, restoreNamedView)
+	r.readOnly(wire.MethodViewsDeleteNamed, deleteNamedView)
+	r.readOnly(wire.MethodViewSetOrientation, setViewOrientation)
 }
 
 // captureNamedView saves the active view's camera under a name (wire.MethodViewsCaptureNamed).

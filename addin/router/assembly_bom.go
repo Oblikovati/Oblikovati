@@ -21,8 +21,8 @@ import (
 
 // registerAssemblyBOMHandlers wires the assembly.bom* methods.
 func (r *Router) registerAssemblyBOMHandlers() {
-	r.handlers[wire.MethodAssemblyBOMView] = assemblyBOMView
-	r.handlers[wire.MethodAssemblyBOMExport] = assemblyBOMExport
+	r.readOnly(wire.MethodAssemblyBOMView, assemblyBOMView)
+	r.readOnly(wire.MethodAssemblyBOMExport, assemblyBOMExport)
 }
 
 // assemblyBOMView returns the requested BOM view of the active assembly.

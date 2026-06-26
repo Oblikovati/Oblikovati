@@ -11,10 +11,10 @@ import (
 
 // registerMiniToolbarHandlers wires the in-canvas mini-toolbar methods (M05-F07, #614).
 func (r *Router) registerMiniToolbarHandlers() {
-	r.handlers[wire.MethodMiniToolbarSet] = setMiniToolbar
-	r.handlers[wire.MethodMiniToolbarUpdate] = updateMiniToolbar
-	r.handlers[wire.MethodMiniToolbarRemove] = removeMiniToolbar
-	r.handlers[wire.MethodMiniToolbarList] = listMiniToolbars
+	r.readOnly(wire.MethodMiniToolbarSet, setMiniToolbar)
+	r.readOnly(wire.MethodMiniToolbarUpdate, updateMiniToolbar)
+	r.readOnly(wire.MethodMiniToolbarRemove, removeMiniToolbar)
+	r.readOnly(wire.MethodMiniToolbarList, listMiniToolbars)
 }
 
 func setMiniToolbar(s *app.Session, args json.RawMessage) (json.RawMessage, error) {

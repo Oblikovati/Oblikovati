@@ -12,20 +12,20 @@ import (
 // registerMessagingHandlers wires the status / progress / balloon / prompt /
 // message-center methods (M05-F09, #616).
 func (r *Router) registerMessagingHandlers() {
-	r.handlers[wire.MethodStatusSetText] = setStatusText
-	r.handlers[wire.MethodStatusGetText] = getStatusText
-	r.handlers[wire.MethodProgressBegin] = beginProgress
-	r.handlers[wire.MethodProgressUpdate] = updateProgress
-	r.handlers[wire.MethodProgressEnd] = endProgress
-	r.handlers[wire.MethodBalloonTipRegister] = registerBalloonTip
-	r.handlers[wire.MethodBalloonTipShow] = showBalloonTip
-	r.handlers[wire.MethodPromptsShow] = showPrompt
-	r.handlers[wire.MethodErrorsAddMessage] = addErrorMessage
-	r.handlers[wire.MethodErrorsBeginSection] = beginMessageSection
-	r.handlers[wire.MethodErrorsEndSection] = endMessageSection
-	r.handlers[wire.MethodErrorsList] = listErrors
-	r.handlers[wire.MethodErrorsClear] = clearErrors
-	r.handlers[wire.MethodErrorsShow] = showErrors
+	r.readOnly(wire.MethodStatusSetText, setStatusText)
+	r.readOnly(wire.MethodStatusGetText, getStatusText)
+	r.readOnly(wire.MethodProgressBegin, beginProgress)
+	r.readOnly(wire.MethodProgressUpdate, updateProgress)
+	r.readOnly(wire.MethodProgressEnd, endProgress)
+	r.readOnly(wire.MethodBalloonTipRegister, registerBalloonTip)
+	r.readOnly(wire.MethodBalloonTipShow, showBalloonTip)
+	r.readOnly(wire.MethodPromptsShow, showPrompt)
+	r.readOnly(wire.MethodErrorsAddMessage, addErrorMessage)
+	r.readOnly(wire.MethodErrorsBeginSection, beginMessageSection)
+	r.readOnly(wire.MethodErrorsEndSection, endMessageSection)
+	r.readOnly(wire.MethodErrorsList, listErrors)
+	r.readOnly(wire.MethodErrorsClear, clearErrors)
+	r.readOnly(wire.MethodErrorsShow, showErrors)
 }
 
 func setStatusText(s *app.Session, args json.RawMessage) (json.RawMessage, error) {

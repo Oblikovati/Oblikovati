@@ -18,9 +18,9 @@ import (
 
 // registerDrawingStyleHandlers wires the drawingStyles.* methods.
 func (r *Router) registerDrawingStyleHandlers() {
-	r.handlers[wire.MethodDrawingStylesListStandards] = drawingStylesListStandards
-	r.handlers[wire.MethodDrawingStylesGetActiveStyle] = drawingStylesGetActiveStyle
-	r.handlers[wire.MethodDrawingStylesSetStandard] = drawingStylesSetStandard
+	r.readOnly(wire.MethodDrawingStylesListStandards, drawingStylesListStandards)
+	r.readOnly(wire.MethodDrawingStylesGetActiveStyle, drawingStylesGetActiveStyle)
+	r.readOnly(wire.MethodDrawingStylesSetStandard, drawingStylesSetStandard)
 }
 
 func drawingStylesListStandards(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {

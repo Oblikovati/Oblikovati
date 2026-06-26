@@ -3,6 +3,7 @@
 package router
 
 import (
+	"encoding/json"
 	"testing"
 
 	"oblikovati.org/addin/opregistry"
@@ -86,26 +87,20 @@ func TestCentralSeamRecordsWorkPlaneUndo(t *testing.T) {
 	}
 }
 
-// TestMutatingMethodConsistency guards the single source of truth against drift, so the
-// central seam keeps holding as methods are added:
-//   - every mutating method must be a real router handler (a typo'd constant is dead);
-//   - the four transaction-control methods must be broadcast-only (an empty label) — recording
-//     an undo step while moving the cursor would corrupt the stream;
-//   - the families this fix unblocked must keep a non-empty label (a regression tripwire).
-func TestMutatingMethodConsistency(t *testing.T) {
-	r := New(opregistry.Default())
-	for method := range mutatingMethods {
-		if _, ok := r.handlers[method]; !ok {
-			t.Errorf("mutatingMethods[%q] is not a registered router handler", method)
-		}
-	}
+// TestMutatingMethodLabels checks the undo-label contract of the registered mutating handlers,
+// reading the live classification (MutatingMethods) the handlers declare — there is no separate table:
+//   - the transaction-control methods must be broadcast-only (an empty label) — recording an undo step
+//     while moving the cursor would corrupt the stream;
+//   - the families the central seam unblocked must keep a non-empty label (a regression tripwire).
+func TestMutatingMethodLabels(t *testing.T) {
+	mut := New(opregistry.Default()).MutatingMethods()
 
 	for _, m := range []string{
 		wire.MethodTransactionUndo, wire.MethodTransactionRedo,
 		wire.MethodTransactionEnd, wire.MethodTransactionAbort,
 	} {
-		if mutatingMethods[m] != "" {
-			t.Errorf("transaction-control method %q must have an empty undo label, got %q", m, mutatingMethods[m])
+		if label, ok := mut[m]; !ok || label != "" {
+			t.Errorf("transaction-control method %q must be mutating with an empty undo label, got ok=%v label=%q", m, ok, label)
 		}
 	}
 
@@ -113,8 +108,43 @@ func TestMutatingMethodConsistency(t *testing.T) {
 		wire.MethodFeaturesAdd, wire.MethodSketchAddEntity,
 		wire.MethodWorkPlanesCreate, wire.MethodAssemblyFeaturesAdd,
 	} {
-		if mutatingMethods[m] == "" {
+		if mut[m] == "" {
 			t.Errorf("method %q must record an undo step (non-empty label); the central seam regressed", m)
 		}
 	}
+}
+
+// TestMutatingDeclarationDrivesRecording is the #1426 drift guard: undo recording + replication are
+// driven by the handler's OWN declaration (readOnly vs mutating), so a method cannot be mutating yet
+// silently absent from a table — there is no table. A handler registered read-only is not in the
+// mutating set; one registered mutating is, with its label. This replaces the old one-directional
+// table-parity check, which could not catch a mutating handler missing from the table.
+func TestMutatingDeclarationDrivesRecording(t *testing.T) {
+	r := New(opregistry.Default())
+	nop := func(_ *app.Session, _ json.RawMessage) (json.RawMessage, error) { return nil, nil }
+
+	r.readOnly("test.queryOnly", nop)
+	r.mutating("test.editsDoc", "Test Edit", nop)
+	mut := r.MutatingMethods()
+
+	if _, isMut := mut["test.queryOnly"]; isMut {
+		t.Error("a read-only handler must not be classified mutating (it would wrongly record + replicate)")
+	}
+	if label, isMut := mut["test.editsDoc"]; !isMut || label != "Test Edit" {
+		t.Errorf("a mutating handler must be classified mutating with its label, got ok=%v label=%q", isMut, label)
+	}
+}
+
+// TestDuplicateRegistrationPanics guards against a copy-paste handler that would silently shadow another
+// (and could change its mutation classification). set() is the one registration chokepoint.
+func TestDuplicateRegistrationPanics(t *testing.T) {
+	r := New(opregistry.Default())
+	nop := func(_ *app.Session, _ json.RawMessage) (json.RawMessage, error) { return nil, nil }
+	defer func() {
+		if recover() == nil {
+			t.Error("registering the same method twice must panic, not silently shadow the first handler")
+		}
+	}()
+	r.readOnly("test.dup", nop)
+	r.readOnly("test.dup", nop)
 }

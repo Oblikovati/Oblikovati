@@ -13,11 +13,11 @@ import (
 // registerGraphicsObjectModelHandlers wires the retained-mode node mutations and the named
 // color-mapper registry of the client-graphics object model (M16-F05, #641).
 func (r *Router) registerGraphicsObjectModelHandlers() {
-	r.handlers[wire.MethodGraphicsNodeSetTransform] = setGraphicsNodeTransform
-	r.handlers[wire.MethodGraphicsNodeSetVisible] = setGraphicsNodeVisible
-	r.handlers[wire.MethodGraphicsNodeSetSelectable] = setGraphicsNodeSelectable
-	r.handlers[wire.MethodClientGraphicsRegisterMapper] = registerColorMapper
-	r.handlers[wire.MethodClientGraphicsListMappers] = listColorMappers
+	r.readOnly(wire.MethodGraphicsNodeSetTransform, setGraphicsNodeTransform)
+	r.readOnly(wire.MethodGraphicsNodeSetVisible, setGraphicsNodeVisible)
+	r.readOnly(wire.MethodGraphicsNodeSetSelectable, setGraphicsNodeSelectable)
+	r.readOnly(wire.MethodClientGraphicsRegisterMapper, registerColorMapper)
+	r.readOnly(wire.MethodClientGraphicsListMappers, listColorMappers)
 }
 
 // setGraphicsNodeTransform moves one node without resubmitting its mesh

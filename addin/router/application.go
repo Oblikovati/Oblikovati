@@ -13,7 +13,7 @@ import (
 // registerApplicationHandlers wires the host-application info methods an add-in can
 // query at runtime (the ThisApplication version surface).
 func (r *Router) registerApplicationHandlers() {
-	r.handlers[wire.MethodApplicationApiVersion] = applicationApiVersion
+	r.readOnly(wire.MethodApplicationApiVersion, applicationApiVersion)
 }
 
 // applicationApiVersion reports the semantic version of the api contract this host

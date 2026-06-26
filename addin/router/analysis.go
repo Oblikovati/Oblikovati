@@ -19,9 +19,9 @@ import (
 
 // registerAnalysisHandlers wires the analysis.* methods.
 func (r *Router) registerAnalysisHandlers() {
-	r.handlers[wire.MethodAnalysisMassProperties] = analysisMassProperties
-	r.handlers[wire.MethodAnalysisMeasure] = analysisMeasure
-	r.handlers[wire.MethodAnalysisModelHealth] = analysisModelHealth
+	r.readOnly(wire.MethodAnalysisMassProperties, analysisMassProperties)
+	r.readOnly(wire.MethodAnalysisMeasure, analysisMeasure)
+	r.readOnly(wire.MethodAnalysisModelHealth, analysisModelHealth)
 }
 
 func analysisModelHealth(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {

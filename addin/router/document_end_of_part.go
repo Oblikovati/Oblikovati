@@ -13,8 +13,8 @@ import (
 
 // registerEndOfPartHandlers wires the part end-of-part rollback-marker methods (#141).
 func (r *Router) registerEndOfPartHandlers() {
-	r.handlers[wire.MethodDocumentGetEndOfPart] = getEndOfPart
-	r.handlers[wire.MethodDocumentSetEndOfPart] = setEndOfPart
+	r.readOnly(wire.MethodDocumentGetEndOfPart, getEndOfPart)
+	r.readOnly(wire.MethodDocumentSetEndOfPart, setEndOfPart)
 }
 
 // getEndOfPart returns the active part's end-of-part marker state

@@ -22,20 +22,20 @@ import (
 
 // registerAssemblyJointHandlers wires the assemblyJoints.* and dsJoints.* methods.
 func (r *Router) registerAssemblyJointHandlers() {
-	r.handlers[wire.MethodAssemblyJointsList] = assemblyJointsList
-	r.handlers[wire.MethodAssemblyJointsAddRigid] = jointAdder((*assembly.JointSet).AddRigid)
-	r.handlers[wire.MethodAssemblyJointsAddRotational] = jointAdder((*assembly.JointSet).AddRotational)
-	r.handlers[wire.MethodAssemblyJointsAddSlider] = jointAdder((*assembly.JointSet).AddSlider)
-	r.handlers[wire.MethodAssemblyJointsAddCylindrical] = jointAdder((*assembly.JointSet).AddCylindrical)
-	r.handlers[wire.MethodAssemblyJointsAddPlanar] = jointAdder((*assembly.JointSet).AddPlanar)
-	r.handlers[wire.MethodAssemblyJointsAddBall] = jointAdder((*assembly.JointSet).AddBall)
-	r.handlers[wire.MethodAssemblyJointsDelete] = assemblyJointDelete
-	r.handlers[wire.MethodAssemblyJointsSetLimits] = assemblyJointSetLimits
-	r.handlers[wire.MethodAssemblyJointsSetFlip] = assemblyJointSetFlip
-	r.handlers[wire.MethodDSJointsList] = dsJointsList
-	r.handlers[wire.MethodDSJointsAdd] = dsJointAdd
-	r.handlers[wire.MethodDSJointsSetImposedMotion] = dsJointSetImposedMotion
-	r.handlers[wire.MethodDSJointsDelete] = dsJointDelete
+	r.readOnly(wire.MethodAssemblyJointsList, assemblyJointsList)
+	r.readOnly(wire.MethodAssemblyJointsAddRigid, jointAdder((*assembly.JointSet).AddRigid))
+	r.readOnly(wire.MethodAssemblyJointsAddRotational, jointAdder((*assembly.JointSet).AddRotational))
+	r.readOnly(wire.MethodAssemblyJointsAddSlider, jointAdder((*assembly.JointSet).AddSlider))
+	r.readOnly(wire.MethodAssemblyJointsAddCylindrical, jointAdder((*assembly.JointSet).AddCylindrical))
+	r.readOnly(wire.MethodAssemblyJointsAddPlanar, jointAdder((*assembly.JointSet).AddPlanar))
+	r.readOnly(wire.MethodAssemblyJointsAddBall, jointAdder((*assembly.JointSet).AddBall))
+	r.readOnly(wire.MethodAssemblyJointsDelete, assemblyJointDelete)
+	r.readOnly(wire.MethodAssemblyJointsSetLimits, assemblyJointSetLimits)
+	r.readOnly(wire.MethodAssemblyJointsSetFlip, assemblyJointSetFlip)
+	r.readOnly(wire.MethodDSJointsList, dsJointsList)
+	r.readOnly(wire.MethodDSJointsAdd, dsJointAdd)
+	r.readOnly(wire.MethodDSJointsSetImposedMotion, dsJointSetImposedMotion)
+	r.readOnly(wire.MethodDSJointsDelete, dsJointDelete)
 }
 
 // assemblyJointsList returns the active assembly's joint set.

@@ -13,9 +13,9 @@ import (
 
 // registerOptionHandlers wires the typed application-option groups (M05-F11, #618).
 func (r *Router) registerOptionHandlers() {
-	r.handlers[wire.MethodOptionsListGroups] = listOptionGroups
-	r.handlers[wire.MethodOptionsGetGroup] = getOptionGroup
-	r.handlers[wire.MethodOptionsSetGroup] = setOptionGroup
+	r.readOnly(wire.MethodOptionsListGroups, listOptionGroups)
+	r.readOnly(wire.MethodOptionsGetGroup, getOptionGroup)
+	r.readOnly(wire.MethodOptionsSetGroup, setOptionGroup)
 }
 
 // optionGroupNames is the stable group order of options.listGroups.

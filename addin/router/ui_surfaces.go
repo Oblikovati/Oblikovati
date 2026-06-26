@@ -12,14 +12,14 @@ import (
 // registerUISurfaceHandlers wires the add-in UI surfaces of M05-F03: browser panes
 // (#256), dockable windows and the environment listing (#247).
 func (r *Router) registerUISurfaceHandlers() {
-	r.handlers[wire.MethodBrowserSetPane] = setBrowserPane
-	r.handlers[wire.MethodBrowserDeletePane] = deleteBrowserPane
-	r.handlers[wire.MethodBrowserListPanes] = listBrowserPanes
-	r.handlers[wire.MethodDockableWindowsSet] = setDockableWindow
-	r.handlers[wire.MethodDockableWindowsSetVisible] = setDockableWindowVisible
-	r.handlers[wire.MethodDockableWindowsDelete] = deleteDockableWindow
-	r.handlers[wire.MethodDockableWindowsList] = listDockableWindows
-	r.handlers[wire.MethodUIListEnvironments] = listEnvironments
+	r.readOnly(wire.MethodBrowserSetPane, setBrowserPane)
+	r.readOnly(wire.MethodBrowserDeletePane, deleteBrowserPane)
+	r.readOnly(wire.MethodBrowserListPanes, listBrowserPanes)
+	r.readOnly(wire.MethodDockableWindowsSet, setDockableWindow)
+	r.readOnly(wire.MethodDockableWindowsSetVisible, setDockableWindowVisible)
+	r.readOnly(wire.MethodDockableWindowsDelete, deleteDockableWindow)
+	r.readOnly(wire.MethodDockableWindowsList, listDockableWindows)
+	r.readOnly(wire.MethodUIListEnvironments, listEnvironments)
 }
 
 // setBrowserPane creates or replaces an add-in browser pane (wire browser.setPane).

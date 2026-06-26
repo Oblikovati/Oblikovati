@@ -12,9 +12,9 @@ import (
 
 // registerColorSchemeHandlers wires the application color-scheme methods (M16-F06, #642).
 func (r *Router) registerColorSchemeHandlers() {
-	r.handlers[wire.MethodColorSchemesList] = listColorSchemes
-	r.handlers[wire.MethodColorSchemesGetActive] = getActiveColorScheme
-	r.handlers[wire.MethodColorSchemesSetActive] = setActiveColorScheme
+	r.readOnly(wire.MethodColorSchemesList, listColorSchemes)
+	r.readOnly(wire.MethodColorSchemesGetActive, getActiveColorScheme)
+	r.readOnly(wire.MethodColorSchemesSetActive, setActiveColorScheme)
 }
 
 // listColorSchemes returns every application color scheme, flagging the active one

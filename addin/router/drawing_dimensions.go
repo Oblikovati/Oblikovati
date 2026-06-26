@@ -17,15 +17,15 @@ import (
 
 // registerDrawingDimensionHandlers wires the drawingDimensions.* methods.
 func (r *Router) registerDrawingDimensionHandlers() {
-	r.handlers[wire.MethodDrawingDimensionsList] = drawingDimensionsList
-	r.handlers[wire.MethodDrawingDimensionsAddLinear] = drawingDimensionsAddLinear
-	r.handlers[wire.MethodDrawingDimensionsAddRadial] = drawingDimensionsAddRadial
-	r.handlers[wire.MethodDrawingDimensionsAddAngular] = drawingDimensionsAddAngular
-	r.handlers[wire.MethodDrawingDimensionsAddBaseline] = drawingDimensionsAddBaseline
-	r.handlers[wire.MethodDrawingDimensionsAddChain] = drawingDimensionsAddChain
-	r.handlers[wire.MethodDrawingDimensionsAddOrdinate] = drawingDimensionsAddOrdinate
-	r.handlers[wire.MethodDrawingDimensionsAddArcLength] = drawingDimensionsAddArcLength
-	r.handlers[wire.MethodDrawingDimensionsDelete] = drawingDimensionsDelete
+	r.readOnly(wire.MethodDrawingDimensionsList, drawingDimensionsList)
+	r.readOnly(wire.MethodDrawingDimensionsAddLinear, drawingDimensionsAddLinear)
+	r.readOnly(wire.MethodDrawingDimensionsAddRadial, drawingDimensionsAddRadial)
+	r.readOnly(wire.MethodDrawingDimensionsAddAngular, drawingDimensionsAddAngular)
+	r.readOnly(wire.MethodDrawingDimensionsAddBaseline, drawingDimensionsAddBaseline)
+	r.readOnly(wire.MethodDrawingDimensionsAddChain, drawingDimensionsAddChain)
+	r.readOnly(wire.MethodDrawingDimensionsAddOrdinate, drawingDimensionsAddOrdinate)
+	r.readOnly(wire.MethodDrawingDimensionsAddArcLength, drawingDimensionsAddArcLength)
+	r.readOnly(wire.MethodDrawingDimensionsDelete, drawingDimensionsDelete)
 }
 
 // activeSheetDimensions returns the active drawing's active-sheet dimension collection.

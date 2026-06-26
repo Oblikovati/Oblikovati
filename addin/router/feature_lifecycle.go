@@ -229,12 +229,12 @@ func reorderFeature(s *app.Session, raw json.RawMessage) (json.RawMessage, error
 // registerFeatureHandlers wires the features.* methods: creation (list/add, backed by
 // the operation registry) and the post-placement lifecycle (issue #140).
 func (r *Router) registerFeatureHandlers() {
-	r.handlers[wire.MethodFeaturesList] = r.listFeatureKinds
-	r.handlers[wire.MethodFeaturesAdd] = r.addFeature
-	r.handlers[wire.MethodFeaturesGet] = getFeature
-	r.handlers[wire.MethodFeaturesEdit] = editFeature
-	r.handlers[wire.MethodFeaturesDelete] = deleteFeature
-	r.handlers[wire.MethodFeaturesRename] = renameFeature
-	r.handlers[wire.MethodFeaturesSetSuppressed] = setFeatureSuppressed
-	r.handlers[wire.MethodFeaturesReorder] = reorderFeature
+	r.readOnly(wire.MethodFeaturesList, r.listFeatureKinds)
+	r.mutating(wire.MethodFeaturesAdd, "Add Feature", r.addFeature)
+	r.readOnly(wire.MethodFeaturesGet, getFeature)
+	r.mutating(wire.MethodFeaturesEdit, "Edit Feature", editFeature)
+	r.mutating(wire.MethodFeaturesDelete, "Delete Feature", deleteFeature)
+	r.mutating(wire.MethodFeaturesRename, "Rename Feature", renameFeature)
+	r.mutating(wire.MethodFeaturesSetSuppressed, "Suppress Feature", setFeatureSuppressed)
+	r.mutating(wire.MethodFeaturesReorder, "Reorder Features", reorderFeature)
 }
