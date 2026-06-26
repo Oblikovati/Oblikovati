@@ -79,13 +79,14 @@ func unrolledWallCDT(s geom.Surface, q Quality, outer3D []math.Point3, holes3D [
 		pos = append(pos, s.PointAt(g[0], g[1]))
 		nrm = append(nrm, s.NormalAt(g[0], g[1]))
 	}
-	tris := constrainedDelaunayRefined(uv, loops, nFrontier)
+	tris, unrecovered, leaked := constrainedDelaunayRefinedChecked(uv, loops, nFrontier)
 	if len(tris) == 0 {
 		return boundaryPatchMesh(s, outer3D, holes3D)
 	}
 	m := patchMeshFrom(pos, nrm, tris)
 	repairFolds(m, 8)
 	recordCapSaturation(m, saturated, q)
+	recordConstraintLeak(m, unrecovered, leaked) // #1410: surface non-recovery; never a silent boundary leak
 	return m
 }
 
