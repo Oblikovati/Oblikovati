@@ -50,6 +50,12 @@ func curvedConeConeIntersect(op PartFeatureOperation, target, tool *topo.Body, r
 	if op != Intersect {
 		return nil, false
 	}
+	// EPIC #1403: route cone∩cone through the GENERAL SSI→trim→classify→stitch pipeline (no bespoke
+	// loop→body constructor). The hand-built ConeConeIntersect stays as a fallback for configurations the
+	// general path still declines (a full cone reaching its apex), so no OCC case regresses.
+	if res, ok := brep.ConeConeIntersectGeneral(target, tool, rec); ok && validBooleanSolid(res) {
+		return res, true
+	}
 	res, ok := brep.ConeConeIntersect(target, tool, rec)
 	if !ok || !validBooleanSolid(res) {
 		return nil, false

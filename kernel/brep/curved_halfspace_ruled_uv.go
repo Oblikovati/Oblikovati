@@ -40,6 +40,17 @@ type ruledUV struct {
 	// section arm grazing the seam otherwise breaks the arrangement, #1405). paramOf reports u relative to
 	// seamU; point3/aU/bU add it back. The analytic walk leaves it 0, so its parameterisation is unchanged.
 	seamU float64
+
+	// General curved∩curved mode (#1403): when solidMode is set the side is cut not by a plane half-space
+	// but by another SOLID's SSI imprint, so a band point is kept by 3D solid membership (keptBySolid) —
+	// keep(op, isB, insideOther(point)) — instead of the linear plane predicate g(u,v)<0. The plane
+	// coefficients (p,q,s,t,uN) are then unused; the geometry frame (base/axis/radSlope/…) drives point3.
+	// insideOther is the other solid's point-membership oracle (analytic per primitive — a cone/cylinder
+	// solid's faces are curved, so the planar ray-cast insideSolid does not apply).
+	solidMode   bool
+	solidOp     Op
+	solidIsB    bool
+	insideOther func(math.Point3) bool
 }
 
 // ruledUV satisfies uvSide: a singly-periodic surface whose v is the bounded axial band (#1406).
@@ -51,6 +62,11 @@ func (c *ruledUV) placeSeams(imprint []geom.Curve3) { c.seamU = c.chooseSeamU(im
 
 // vPeriodic reports that a ruled side's v (axial distance) does NOT wrap — only u does (uvSide).
 func (c ruledUV) vPeriodic() bool { return false }
+
+// multiFace reports whether the kept region may be disconnected (uvSide): only the general curved∩curved
+// cut (solidMode) can leave several faces (the two lens caps a rod punches in a fat cone); a plane half-space
+// always leaves one connected region (#1403).
+func (c ruledUV) multiFace() bool { return c.solidMode }
 
 // assembleSegments samples the imprint and adds the rim+seam frame the arrangement subdivides (uvSide).
 func (c ruledUV) assembleSegments(imprint []geom.Curve3) []uvSeg {
