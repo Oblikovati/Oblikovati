@@ -48,7 +48,7 @@ func TestSampleImprintUVOnRimCircle(t *testing.T) {
 	const r, vMin = 3.0, -5.0
 	c := cylinderRuledUV(r, vMin, 5)
 	rim, _ := geom.NewCircle(math.P3(0, 0, vMin), math.V3(0, 0, 1), r) // the bottom rim, z=vMin
-	segs := c.sampleImprintUV(rim, 0, 1)
+	segs := c.sampleImprintUV(rim)
 	if len(segs) != imprintSampleCount {
 		t.Fatalf("sampled %d segments, want %d", len(segs), imprintSampleCount)
 	}
@@ -101,7 +101,7 @@ func TestAssembleBandSegmentsClosesRectangle(t *testing.T) {
 	const vMin, vMax = -5.0, 5.0
 	c := cylinderRuledUV(3, vMin, vMax)
 	rim, _ := geom.NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 3) // a v=0 horizontal cut imprint
-	segs := c.assembleBandSegments(c.sampleImprintUV(rim, 0, 1))
+	segs := c.assembleBandSegments(c.sampleImprintUV(rim))
 
 	rims, seams := 0, 0
 	for _, s := range segs {
@@ -133,7 +133,7 @@ func (c ruledUV) horizontalCutImprint(t *testing.T, v float64) []uvSeg {
 	if err != nil {
 		t.Fatalf("NewCircle: %v", err)
 	}
-	return c.sampleImprintUV(circ, 0, 1)
+	return c.sampleImprintUV(circ)
 }
 
 // TestKeptCellsClassifiesByMaterial: two horizontal imprint cuts split the band into three v-bands; the
@@ -179,5 +179,51 @@ func TestInteriorPointOfConcave(t *testing.T) {
 	p, ok := interiorPointOf(lShape)
 	if !ok || !pointInPolygon2D(p, lShape) {
 		t.Errorf("interiorPointOf returned %v (ok=%v), not inside the L-shape", p, ok)
+	}
+}
+
+// TestKeptBoundaryWrappingBandTwoLoops: a v=0 cut keeping the v<0 half is a band that WRAPS the seam — its
+// boundary must be two closed loops (the bottom rim and the section), with the artificial seam edges
+// dissolved by the cross-seam cancellation (Oblikovati#1405).
+func TestKeptBoundaryWrappingBandTwoLoops(t *testing.T) {
+	c := cylinderRuledUV(3, -5, 5)
+	c.s = 1 // g(u,v)=v -> keep v<0
+	cells := c.arrangeBand(c.assembleBandSegments(c.horizontalCutImprint(t, 0)))
+	loops := chainLoops(keptBoundaryEdges(keptCells(cells, c.halfSpaceMaterial())))
+	if len(loops) != 2 {
+		t.Fatalf("wrapping band: %d boundary loops, want 2 (rim + section)", len(loops))
+	}
+	atRim, atSection := false, false
+	for _, lp := range loops {
+		allRim, allSec := true, true
+		for _, e := range lp {
+			if stdmath.Abs(float64(e.a.Y)+5) > 1e-6 {
+				allRim = false
+			}
+			if stdmath.Abs(float64(e.a.Y)) > 1e-6 {
+				allSec = false
+			}
+		}
+		atRim, atSection = atRim || allRim, atSection || allSec
+	}
+	if !atRim || !atSection {
+		t.Errorf("loops are not {bottom rim, section}: atRim=%v atSection=%v", atRim, atSection)
+	}
+}
+
+// TestKeptBoundaryTongueSingleLoop: two vertical-ruling imprints carve a u-span that does NOT touch the
+// seam; keeping the middle span is a non-wrapping tongue whose boundary is a single loop (two rulings + two
+// rim arcs), with no seam edge involved (Oblikovati#1405).
+func TestKeptBoundaryTongueSingleLoop(t *testing.T) {
+	c := cylinderRuledUV(3, -5, 5)
+	left := c.sampleImprintUV(geom.NewLineSegment(c.point3(stdmath.Pi/2, -5), c.point3(stdmath.Pi/2, 5)))
+	right := c.sampleImprintUV(geom.NewLineSegment(c.point3(3*stdmath.Pi/2, -5), c.point3(3*stdmath.Pi/2, 5)))
+	cells := c.arrangeBand(c.assembleBandSegments(append(left, right...)))
+	kept := keptCells(cells, func(uv math.Point2) bool { return uv.X > stdmath.Pi/2 && uv.X < 3*stdmath.Pi/2 })
+	if len(kept) != 1 {
+		t.Fatalf("tongue: %d kept cells, want 1", len(kept))
+	}
+	if loops := chainLoops(keptBoundaryEdges(kept)); len(loops) != 1 {
+		t.Fatalf("tongue: %d boundary loops, want 1", len(loops))
 	}
 }

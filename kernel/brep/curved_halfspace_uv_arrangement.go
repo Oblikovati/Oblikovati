@@ -64,12 +64,13 @@ type uvSeg struct {
 // imprint arcs to the arrangement weld (1e-7) at part scale, while keeping the planar arrangement small.
 const imprintSampleCount = 256
 
-// sampleImprintUV samples an analytic imprint curve over [t0, t1] into tagged (u,v) segments on the side.
-// Each sample inverts the 3D curve point to (u,v) via paramOf; consecutive samples become one uvSeg
-// carrying the curve and its endpoint parameters, so a later boundary walk re-emits exact sub-arcs. The
-// azimuth seam (u wrapping 2π↔0) is left for the arrangement to resolve — sampleImprintUV reports the raw
-// branch [0,2π); seam unwrapping is applied when segments are assembled into the band.
-func (c ruledUV) sampleImprintUV(curve geom.Curve3, t0, t1 float64) []uvSeg {
+// sampleImprintUV samples an analytic imprint curve over its whole domain into tagged (u,v) segments on
+// the side. Each sample inverts the 3D curve point to (u,v) via paramOf; consecutive samples become one
+// uvSeg carrying the curve and its endpoint parameters, so a later boundary walk re-emits exact sub-arcs.
+// The azimuth seam (u wrapping 2π↔0) is left for the arrangement to resolve — sampleImprintUV reports the
+// raw branch [0,2π); seam unwrapping is applied when segments are assembled into the band.
+func (c ruledUV) sampleImprintUV(curve geom.Curve3) []uvSeg {
+	t0, t1 := curve.Domain()
 	segs := make([]uvSeg, 0, imprintSampleCount)
 	prevT := t0
 	prevP := c.paramOf(curve.PointAt(t0))
@@ -219,3 +220,130 @@ func centroidOf(poly []math.Point2) math.Point2 {
 
 // lerp linearly interpolates from a to b by fraction f.
 func lerp(a, b, f float64) float64 { return a + f*(b-a) }
+
+// seamWeld grid (matches the arrangement welder, arrTol/tjTol family) used to identify (u,v) boundary
+// vertices, with the azimuth seam folded: u=2π is the SAME ruling as u=0, so both weld to one vertex.
+const seamWeldGrid = 1e-7
+
+// seamWelder welds (u,v) points onto shared indices with the azimuth seam identified (u=2π≡u=0). Folding
+// the seam is what turns the artificial seam edges of a wrapping kept region into reverse twins that cancel.
+type seamWelder struct {
+	index  map[[2]int64]int
+	points []math.Point2
+}
+
+func newSeamWelder() *seamWelder { return &seamWelder{index: map[[2]int64]int{}} }
+
+// add returns the welded index of p, normalising u=2π to u=0 first so a seam vertex on either side of the
+// parameter rectangle maps to one ruling vertex.
+func (w *seamWelder) add(p math.Point2) int {
+	u := float64(p.X)
+	if stdmath.Abs(u-2*stdmath.Pi) < seamWeldGrid {
+		u = 0
+	}
+	k := [2]int64{int64(stdmath.Round(u / seamWeldGrid)), int64(stdmath.Round(float64(p.Y) / seamWeldGrid))}
+	if i, ok := w.index[k]; ok {
+		return i
+	}
+	w.index[k] = len(w.points)
+	w.points = append(w.points, p)
+	return len(w.points) - 1
+}
+
+// dedge is one directed (u,v) boundary edge of the kept region: the seam-welded endpoint indices for
+// cancellation/chaining, and the original (u,v) endpoints (a may sit at u=2π even when welded to u=0) for
+// re-emitting the exact analytic curve.
+type dedge struct {
+	from, to int
+	a, b     math.Point2
+}
+
+// keptBoundaryEdges returns the directed boundary edges of the kept region. It collects every kept cell's
+// oriented boundary (outer CCW, holes CW), welds endpoints with the seam folded, then keeps only edges
+// whose reverse is absent: an edge interior to the kept region (bordering two kept cells, or a seam edge a
+// wrapping region traverses on both sides) appears as a reverse-twin pair and cancels, leaving exactly the
+// edges between kept material and dropped material (or the band rims). This is the cross-seam merge and the
+// shared-edge dissolve in one pass (#1405).
+func keptBoundaryEdges(kept []Face2D) []dedge {
+	w := newSeamWelder()
+	var all []dedge
+	add := func(poly []math.Point2) {
+		for i, n := 0, len(poly); i < n; i++ {
+			a, b := poly[i], poly[(i+1)%n]
+			if a.DistanceTo(b) <= arrTol {
+				continue // a degenerate edge
+			}
+			all = append(all, dedge{from: w.add(a), to: w.add(b), a: a, b: b})
+		}
+	}
+	for _, cell := range kept {
+		add(cell.Outer)
+		for _, h := range cell.Holes {
+			add(h)
+		}
+	}
+	present := make(map[[2]int]bool, len(all))
+	for _, e := range all {
+		present[[2]int{e.from, e.to}] = true
+	}
+	survivors := make([]dedge, 0, len(all))
+	for _, e := range all {
+		// A full-wrap edge (an uncut rim/section circle: both ends weld to the seam vertex) is its own
+		// closed loop and has no distinct reverse, so it is never canceled. Any other edge survives only if
+		// its reverse is absent — the shared-edge dissolve and the cross-seam merge.
+		if e.from == e.to || !present[[2]int{e.to, e.from}] {
+			survivors = append(survivors, e)
+		}
+	}
+	return survivors
+}
+
+// chainLoops links the surviving directed boundary edges into closed loops by following each edge's `to`
+// vertex to the next edge that starts there. A valid kept-region boundary has matched in/out degree at
+// every vertex, so following any unused outgoing edge closes each loop; the result is one loop per
+// connected boundary component (a wrapping band yields two — a rim loop and a section loop). A full-wrap
+// edge (from==to) is its own one-edge loop.
+func chainLoops(edges []dedge) [][]dedge {
+	out := make(map[int][]int) // vertex -> indices of edges starting there
+	for i, e := range edges {
+		out[e.from] = append(out[e.from], i)
+	}
+	used := make([]bool, len(edges))
+	var loops [][]dedge
+	for i := range edges {
+		if !used[i] {
+			loops = append(loops, walkLoop(i, edges, out, used))
+		}
+	}
+	return loops
+}
+
+// walkLoop follows the boundary from edge i, marking edges used, until it returns to the start vertex (or a
+// full-wrap singleton, or a dead end). out maps each vertex to the edges leaving it.
+func walkLoop(i int, edges []dedge, out map[int][]int, used []bool) []dedge {
+	start := edges[i].from
+	var loop []dedge
+	for cur := i; ; {
+		used[cur] = true
+		loop = append(loop, edges[cur])
+		if edges[cur].from == edges[cur].to || edges[cur].to == start {
+			break // a full-wrap singleton, or the loop closed back to its start
+		}
+		next := nextUnused(out[edges[cur].to], used)
+		if next < 0 {
+			break
+		}
+		cur = next
+	}
+	return loop
+}
+
+// nextUnused returns the first not-yet-used edge index from a vertex's outgoing list, or -1.
+func nextUnused(candidates []int, used []bool) int {
+	for _, i := range candidates {
+		if !used[i] {
+			return i
+		}
+	}
+	return -1
+}
