@@ -24,16 +24,16 @@ import (
 // registerAssemblyOccurrenceHandlers wires the assembly.* occurrence methods.
 func (r *Router) registerAssemblyOccurrenceHandlers() {
 	r.readOnly(wire.MethodAssemblyOccurrences, assemblyOccurrences)
-	r.readOnly(wire.MethodAssemblyPlace, assemblyPlace)
-	r.readOnly(wire.MethodAssemblyPlaceByDefinition, assemblyPlaceByDefinition)
-	r.readOnly(wire.MethodAssemblyPlaceByDefinitionBatch, assemblyPlaceByDefinitionBatch)
-	r.readOnly(wire.MethodAssemblyTransform, assemblyTransform)
-	r.readOnly(wire.MethodAssemblyGround, assemblyGround)
-	r.readOnly(wire.MethodAssemblySetFlexible, assemblySetFlexible)
-	r.readOnly(wire.MethodAssemblySetFlexibleChild, assemblySetFlexibleChild)
-	r.readOnly(wire.MethodAssemblySuppress, assemblySuppress)
-	r.readOnly(wire.MethodAssemblyReplace, assemblyReplace)
-	r.readOnly(wire.MethodAssemblyRemove, assemblyRemove)
+	r.mutating(wire.MethodAssemblyPlace, "Place Component", assemblyPlace)
+	r.mutating(wire.MethodAssemblyPlaceByDefinition, "Place Component", assemblyPlaceByDefinition)
+	r.mutating(wire.MethodAssemblyPlaceByDefinitionBatch, "Place Components", assemblyPlaceByDefinitionBatch)
+	r.mutating(wire.MethodAssemblyTransform, "Move Component", assemblyTransform)
+	r.mutating(wire.MethodAssemblyGround, "Ground Component", assemblyGround)
+	r.mutating(wire.MethodAssemblySetFlexible, "Set Flexible", assemblySetFlexible)
+	r.mutating(wire.MethodAssemblySetFlexibleChild, "Set Flexible", assemblySetFlexibleChild)
+	r.mutating(wire.MethodAssemblySuppress, "Suppress Component", assemblySuppress)
+	r.mutating(wire.MethodAssemblyReplace, "Replace Component", assemblyReplace)
+	r.mutating(wire.MethodAssemblyRemove, "Delete Component", assemblyRemove)
 }
 
 // assemblyOccurrences returns the active assembly's occurrence tree.

@@ -23,19 +23,19 @@ import (
 // registerAssemblyJointHandlers wires the assemblyJoints.* and dsJoints.* methods.
 func (r *Router) registerAssemblyJointHandlers() {
 	r.readOnly(wire.MethodAssemblyJointsList, assemblyJointsList)
-	r.readOnly(wire.MethodAssemblyJointsAddRigid, jointAdder((*assembly.JointSet).AddRigid))
-	r.readOnly(wire.MethodAssemblyJointsAddRotational, jointAdder((*assembly.JointSet).AddRotational))
-	r.readOnly(wire.MethodAssemblyJointsAddSlider, jointAdder((*assembly.JointSet).AddSlider))
-	r.readOnly(wire.MethodAssemblyJointsAddCylindrical, jointAdder((*assembly.JointSet).AddCylindrical))
-	r.readOnly(wire.MethodAssemblyJointsAddPlanar, jointAdder((*assembly.JointSet).AddPlanar))
-	r.readOnly(wire.MethodAssemblyJointsAddBall, jointAdder((*assembly.JointSet).AddBall))
-	r.readOnly(wire.MethodAssemblyJointsDelete, assemblyJointDelete)
-	r.readOnly(wire.MethodAssemblyJointsSetLimits, assemblyJointSetLimits)
-	r.readOnly(wire.MethodAssemblyJointsSetFlip, assemblyJointSetFlip)
+	r.mutating(wire.MethodAssemblyJointsAddRigid, "Add Joint", jointAdder((*assembly.JointSet).AddRigid))
+	r.mutating(wire.MethodAssemblyJointsAddRotational, "Add Joint", jointAdder((*assembly.JointSet).AddRotational))
+	r.mutating(wire.MethodAssemblyJointsAddSlider, "Add Joint", jointAdder((*assembly.JointSet).AddSlider))
+	r.mutating(wire.MethodAssemblyJointsAddCylindrical, "Add Joint", jointAdder((*assembly.JointSet).AddCylindrical))
+	r.mutating(wire.MethodAssemblyJointsAddPlanar, "Add Joint", jointAdder((*assembly.JointSet).AddPlanar))
+	r.mutating(wire.MethodAssemblyJointsAddBall, "Add Joint", jointAdder((*assembly.JointSet).AddBall))
+	r.mutating(wire.MethodAssemblyJointsDelete, "Delete Joint", assemblyJointDelete)
+	r.mutating(wire.MethodAssemblyJointsSetLimits, "Edit Joint", assemblyJointSetLimits)
+	r.mutating(wire.MethodAssemblyJointsSetFlip, "Edit Joint", assemblyJointSetFlip)
 	r.readOnly(wire.MethodDSJointsList, dsJointsList)
-	r.readOnly(wire.MethodDSJointsAdd, dsJointAdd)
-	r.readOnly(wire.MethodDSJointsSetImposedMotion, dsJointSetImposedMotion)
-	r.readOnly(wire.MethodDSJointsDelete, dsJointDelete)
+	r.mutating(wire.MethodDSJointsAdd, "Add Joint", dsJointAdd)
+	r.mutating(wire.MethodDSJointsSetImposedMotion, "Edit Joint Motion", dsJointSetImposedMotion)
+	r.mutating(wire.MethodDSJointsDelete, "Delete Joint", dsJointDelete)
 }
 
 // assemblyJointsList returns the active assembly's joint set.
