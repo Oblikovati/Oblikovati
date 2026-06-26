@@ -38,6 +38,13 @@ func (d *PartComponentDefinition) RestoreSnapshot(snapshot []byte) error {
 	if err := json.Unmarshal(snapshot, &r); err != nil {
 		return fmt.Errorf("compdef: parse part snapshot: %w", err)
 	}
+	// Incremental path: when the snapshot changed only a feature tail (Oblikovati#1424), reuse the
+	// live engine's cached prefix instead of rebuilding the whole program from an empty engine. The
+	// full reset+rebuild below stays the fallback for any other change (a parameter, a sketch, a
+	// reorder before the tail), so a missed fast path only costs speed, never correctness.
+	if prefix, ok := d.fastRestorePrefix(r); ok {
+		return d.restoreFeatureTail(r, prefix)
+	}
 	d.resetRecipe()
 	return d.applyRecipeStruct(r)
 }
