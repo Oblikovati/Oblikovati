@@ -38,13 +38,25 @@ func (c ruledUV) paramOf(p math.Point3) math.Point2 {
 	return math.P2(u, v)
 }
 
+// segKind tags what a (u,v) segment re-emits to when it bounds a kept cell: an imprint sub-arc (the cut),
+// a band rim (constant v, a circle arc), or the azimuth SEAM ruling (u=0≡2π — an ARTIFICIAL edge that
+// closes the parameter rectangle for the arrangement and dissolves wherever the kept region wraps it).
+type segKind int
+
+const (
+	segImprint segKind = iota
+	segRim
+	segSeam
+)
+
 // uvSeg is one sampled segment of an imprint curve in the side's (u,v) band, tagged with the analytic
 // curve it came from and the curve parameters at its endpoints, so the arrangement can re-emit the exact
 // curve sub-arc (an ellipse/hyperbola/parabola arm) for a boundary chain rather than the sampled polyline.
 type uvSeg struct {
 	a, b   math.Point2 // (u,v) endpoints
-	curve  geom.Curve3 // the source analytic imprint curve
+	curve  geom.Curve3 // the source analytic curve this segment re-emits to
 	tA, tB float64     // its parameters at a and b
+	kind   segKind
 }
 
 // imprintSampleCount is the number of segments one analytic imprint curve is sampled into across its
@@ -64,8 +76,73 @@ func (c ruledUV) sampleImprintUV(curve geom.Curve3, t0, t1 float64) []uvSeg {
 	for i := 1; i <= imprintSampleCount; i++ {
 		t := t0 + (t1-t0)*float64(i)/imprintSampleCount
 		p := c.paramOf(curve.PointAt(t))
-		segs = append(segs, uvSeg{a: prevP, b: p, curve: curve, tA: prevT, tB: t})
+		segs = append(segs, uvSeg{a: prevP, b: p, curve: curve, tA: prevT, tB: t, kind: segImprint})
 		prevT, prevP = t, p
 	}
 	return segs
+}
+
+// unwrapAzimuthNear shifts x by whole turns (2π) so it lands within ±π of ref, turning a wrapped azimuth
+// pair into a monotone run — so a segment's true u-extent (and whether it crosses the seam) is unambiguous.
+func unwrapAzimuthNear(ref, x float64) float64 {
+	for x-ref > stdmath.Pi {
+		x -= 2 * stdmath.Pi
+	}
+	for x-ref < -stdmath.Pi {
+		x += 2 * stdmath.Pi
+	}
+	return x
+}
+
+// splitSeamCrossing splits an imprint segment whose endpoints straddle the azimuth seam (the shorter arc
+// between them crosses u=0≡2π) into two segments meeting AT the seam, so no segment spans the discontinuity
+// — the arrangement sees a clean parameter rectangle. v and the curve parameter are interpolated to the
+// seam crossing. A segment that does not straddle the seam is returned unchanged.
+func splitSeamCrossing(s uvSeg) []uvSeg {
+	ub := unwrapAzimuthNear(s.a.X, s.b.X)
+	if ub >= 0 && ub <= 2*stdmath.Pi {
+		return []uvSeg{s} // wholly inside the band, no seam crossing
+	}
+	seamU, otherU := 0.0, 2*stdmath.Pi
+	if ub > 2*stdmath.Pi { // the run climbs past 2π: a → 2π, then 0 → b
+		seamU, otherU = 2*stdmath.Pi, 0
+	}
+	f := (seamU - s.a.X) / (ub - s.a.X)
+	vSeam := s.a.Y + f*(s.b.Y-s.a.Y)
+	tSeam := s.tA + f*(s.tB-s.tA)
+	return []uvSeg{
+		{a: s.a, b: math.P2(seamU, vSeam), curve: s.curve, tA: s.tA, tB: tSeam, kind: s.kind},
+		{a: math.P2(otherU, vSeam), b: s.b, curve: s.curve, tA: tSeam, tB: s.tB, kind: s.kind},
+	}
+}
+
+// bandFrameSegments returns the four straight (u,v) edges that bound the parameter rectangle for the
+// arrangement: the bottom rim (v=vMin) and top rim (v=vMax) — each a single horizontal segment in (u,v),
+// tagged to its rim circle — and the two seam verticals (u=0 and u=2π), tagged to the shared seam ruling.
+// The rims are genuine surface boundaries; the seam verticals are artificial and dissolve where the kept
+// region wraps them (resolved when cells are merged across the seam).
+func (c ruledUV) bandFrameSegments() []uvSeg {
+	twoPi := 2 * stdmath.Pi
+	seam := geom.NewLineSegment(c.point3(0, c.band.vMin), c.point3(0, c.band.vMax))
+	return []uvSeg{
+		{a: math.P2(0, c.band.vMin), b: math.P2(twoPi, c.band.vMin), curve: c.band.bottomCirc, tA: 0, tB: 1, kind: segRim},
+		{a: math.P2(0, c.band.vMax), b: math.P2(twoPi, c.band.vMax), curve: c.band.topCirc, tA: 0, tB: 1, kind: segRim},
+		{a: math.P2(0, c.band.vMin), b: math.P2(0, c.band.vMax), curve: seam, tA: 0, tB: 1, kind: segSeam},
+		{a: math.P2(twoPi, c.band.vMin), b: math.P2(twoPi, c.band.vMax), curve: seam, tA: 0, tB: 1, kind: segSeam},
+	}
+}
+
+// assembleBandSegments builds the full tagged (u,v) segment set the arrangement subdivides: every imprint
+// segment (seam-split so none spans the azimuth discontinuity) plus the rim+seam frame that closes the
+// parameter rectangle. Degenerate segments (both endpoints welded by the seam split) are dropped.
+func (c ruledUV) assembleBandSegments(imprint []uvSeg) []uvSeg {
+	out := make([]uvSeg, 0, len(imprint)+4)
+	for _, s := range imprint {
+		for _, split := range splitSeamCrossing(s) {
+			if split.a.DistanceTo(split.b) > arrTol {
+				out = append(out, split)
+			}
+		}
+	}
+	return append(out, c.bandFrameSegments()...)
 }

@@ -65,3 +65,63 @@ func TestSampleImprintUVOnRimCircle(t *testing.T) {
 		}
 	}
 }
+
+// TestSplitSeamCrossingSplitsAtSeam: an imprint segment whose endpoints straddle the seam (its short arc
+// crosses u=0≡2π) is split into two segments meeting exactly at the seam, with v and the curve parameter
+// interpolated; a non-straddling segment passes through unchanged (Oblikovati#1405).
+func TestSplitSeamCrossingSplitsAtSeam(t *testing.T) {
+	twoPi := 2 * stdmath.Pi
+	// climbs past 2π: a=(6.0, 1) -> b=(0.2, 3); the short arc crosses the seam at u=2π.
+	up := uvSeg{a: math.P2(6.0, 1), b: math.P2(0.2, 3), curve: nil, tA: 0, tB: 1, kind: segImprint}
+	got := splitSeamCrossing(up)
+	if len(got) != 2 {
+		t.Fatalf("seam-straddling segment split into %d, want 2", len(got))
+	}
+	if stdmath.Abs(got[0].b.X-twoPi) > 1e-12 || got[1].a.X != 0 {
+		t.Errorf("split not anchored at the seam: end of first=%.4f, start of second=%.4f (want 2π, 0)", got[0].b.X, got[1].a.X)
+	}
+	if stdmath.Abs(got[0].b.Y-got[1].a.Y) > 1e-12 {
+		t.Errorf("v discontinuous across the seam: %.6f vs %.6f", got[0].b.Y, got[1].a.Y)
+	}
+	// continuity of the curve parameter: first runs tA->tSeam, second tSeam->tB
+	if got[0].tB != got[1].tA {
+		t.Errorf("curve parameter discontinuous across the seam: %.6f vs %.6f", got[0].tB, got[1].tA)
+	}
+	// a non-straddling segment is unchanged
+	inside := uvSeg{a: math.P2(1.0, 0), b: math.P2(2.0, 1), kind: segImprint}
+	if s := splitSeamCrossing(inside); len(s) != 1 || s[0] != inside {
+		t.Errorf("a non-straddling segment was altered: %+v", s)
+	}
+}
+
+// TestAssembleBandSegmentsClosesRectangle: assembling an imprint with the rim+seam frame yields a closed
+// parameter rectangle — the four frame edges span [0,2π]×[vMin,vMax] and share the rectangle corners — and
+// no assembled segment spans the seam discontinuity (Oblikovati#1405).
+func TestAssembleBandSegmentsClosesRectangle(t *testing.T) {
+	const vMin, vMax = -5.0, 5.0
+	c := cylinderRuledUV(3, vMin, vMax)
+	rim, _ := geom.NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 3) // a v=0 horizontal cut imprint
+	segs := c.assembleBandSegments(c.sampleImprintUV(rim, 0, 1))
+
+	rims, seams := 0, 0
+	for _, s := range segs {
+		if du := stdmath.Abs(s.b.X - s.a.X); du > stdmath.Pi && s.kind == segImprint {
+			t.Errorf("an imprint segment spans the seam: a=%v b=%v", s.a, s.b)
+		}
+		switch s.kind {
+		case segRim:
+			rims++
+			if s.a.X != 0 || stdmath.Abs(s.b.X-2*stdmath.Pi) > 1e-12 {
+				t.Errorf("rim segment does not span [0,2π]: a=%v b=%v", s.a, s.b)
+			}
+		case segSeam:
+			seams++
+			if stdmath.Abs(s.a.Y-vMin) > 1e-12 || stdmath.Abs(s.b.Y-vMax) > 1e-12 {
+				t.Errorf("seam segment does not span [vMin,vMax]: a=%v b=%v", s.a, s.b)
+			}
+		}
+	}
+	if rims != 2 || seams != 2 {
+		t.Errorf("frame has %d rims and %d seams, want 2 and 2", rims, seams)
+	}
+}
