@@ -101,6 +101,33 @@ func TestSplitSeamCrossingSplitsAtSeam(t *testing.T) {
 	}
 }
 
+// TestSplitVSeamCrossingSplitsAtTubeSeam: a segment whose endpoints straddle the TUBE seam (v=0≡2π) is split
+// into two meeting AT v=0/2π, with u and the curve parameter interpolated — the v-analogue of the azimuth
+// split, needed for the two-oval band whose ovals wrap the tube (Oblikovati#1406).
+func TestSplitVSeamCrossingSplitsAtTubeSeam(t *testing.T) {
+	twoPi := 2 * stdmath.Pi
+	// climbs past 2π in v: a=(1, 6.0) -> b=(3, 0.2); the short arc crosses the tube seam at v=2π.
+	up := uvSeg{a: math.P2(1, 6.0), b: math.P2(3, 0.2), tA: 0, tB: 1, kind: segImprint}
+	got := splitVSeamCrossing(up)
+	if len(got) != 2 {
+		t.Fatalf("v-seam-straddling segment split into %d, want 2", len(got))
+	}
+	if stdmath.Abs(float64(got[0].b.Y)-twoPi) > 1e-12 || got[1].a.Y != 0 {
+		t.Errorf("split not anchored at the tube seam: end-v=%.4f start-v=%.4f (want 2π, 0)", got[0].b.Y, got[1].a.Y)
+	}
+	if stdmath.Abs(float64(got[0].b.X)-float64(got[1].a.X)) > 1e-12 {
+		t.Errorf("u discontinuous across the tube seam: %.6f vs %.6f", got[0].b.X, got[1].a.X)
+	}
+	if got[0].tB != got[1].tA {
+		t.Errorf("curve parameter discontinuous across the tube seam: %.6f vs %.6f", got[0].tB, got[1].tA)
+	}
+	// a segment not straddling the tube seam passes through unchanged.
+	inside := uvSeg{a: math.P2(1, 1.0), b: math.P2(2, 2.0), kind: segImprint}
+	if s := splitVSeamCrossing(inside); len(s) != 1 || s[0] != inside {
+		t.Errorf("a non-straddling segment was altered: %+v", s)
+	}
+}
+
 // TestAssembleBandSegmentsClosesRectangle: assembling an imprint with the rim+seam frame yields a closed
 // parameter rectangle — the four frame edges span [0,2π]×[vMin,vMax] and share the rectangle corners — and
 // no assembled segment spans the seam discontinuity (Oblikovati#1405).
@@ -148,7 +175,7 @@ func (c ruledUV) horizontalCutImprint(t *testing.T, v float64) []uvSeg {
 func TestKeptCellsClassifiesByMaterial(t *testing.T) {
 	c := cylinderRuledUV(3, -5, 5)
 	imprint := append(c.horizontalCutImprint(t, -2), c.horizontalCutImprint(t, 2)...)
-	cells := c.arrangeBand(c.assembleBandSegments(imprint))
+	cells := arrangeBand(c.assembleBandSegments(imprint))
 	if len(cells) != 3 {
 		t.Fatalf("got %d cells, want 3 (v<-2, -2<v<2, v>2)", len(cells))
 	}
@@ -167,7 +194,7 @@ func TestKeptCellsClassifiesByMaterial(t *testing.T) {
 func TestHalfSpaceMaterialKeepsNegativeSide(t *testing.T) {
 	c := cylinderRuledUV(3, -5, 5)
 	c.s = 1 // g(u,v) = p + v·s = v  -> kept where v < 0
-	cells := c.arrangeBand(c.assembleBandSegments(c.horizontalCutImprint(t, 0)))
+	cells := arrangeBand(c.assembleBandSegments(c.horizontalCutImprint(t, 0)))
 	kept := keptCells(cells, c.halfSpaceMaterial())
 	if len(kept) != 1 {
 		t.Fatalf("kept %d cells, want 1 (the v<0 half)", len(kept))
@@ -195,8 +222,8 @@ func TestInteriorPointOfConcave(t *testing.T) {
 func TestKeptBoundaryWrappingBandTwoLoops(t *testing.T) {
 	c := cylinderRuledUV(3, -5, 5)
 	c.s = 1 // g(u,v)=v -> keep v<0
-	cells := c.arrangeBand(c.assembleBandSegments(c.horizontalCutImprint(t, 0)))
-	loops := chainLoops(keptBoundaryEdges(keptCells(cells, c.halfSpaceMaterial())))
+	cells := arrangeBand(c.assembleBandSegments(c.horizontalCutImprint(t, 0)))
+	loops := chainLoops(keptBoundaryEdges(keptCells(cells, c.halfSpaceMaterial()), false))
 	if len(loops) != 2 {
 		t.Fatalf("wrapping band: %d boundary loops, want 2 (rim + section)", len(loops))
 	}
@@ -225,12 +252,12 @@ func TestKeptBoundaryTongueSingleLoop(t *testing.T) {
 	c := cylinderRuledUV(3, -5, 5)
 	left := c.sampleImprintUV(geom.NewLineSegment(c.point3(stdmath.Pi/2, -5), c.point3(stdmath.Pi/2, 5)))
 	right := c.sampleImprintUV(geom.NewLineSegment(c.point3(3*stdmath.Pi/2, -5), c.point3(3*stdmath.Pi/2, 5)))
-	cells := c.arrangeBand(c.assembleBandSegments(append(left, right...)))
+	cells := arrangeBand(c.assembleBandSegments(append(left, right...)))
 	kept := keptCells(cells, func(uv math.Point2) bool { return uv.X > stdmath.Pi/2 && uv.X < 3*stdmath.Pi/2 })
 	if len(kept) != 1 {
 		t.Fatalf("tongue: %d kept cells, want 1", len(kept))
 	}
-	if loops := chainLoops(keptBoundaryEdges(kept)); len(loops) != 1 {
+	if loops := chainLoops(keptBoundaryEdges(kept, false)); len(loops) != 1 {
 		t.Fatalf("tongue: %d boundary loops, want 1", len(loops))
 	}
 }
@@ -244,7 +271,7 @@ func TestTrimByImprintProducesValidFace(t *testing.T) {
 	surf, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3)
 	cf := curvedFace{surface: surf}
 	circ, _ := geom.NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 3)
-	faces, lid, err := c.trimByImprint(cf, surf, []geom.Curve3{circ}, ruledUV.halfSpaceMaterial)
+	faces, lid, err := trimByImprint(&c, cf, surf, []geom.Curve3{circ}, ruledMaterial(&c))
 	if err != nil || len(faces) != 1 {
 		t.Fatalf("trimByImprint: err=%v faces=%d, want 1 face", err, len(faces))
 	}
@@ -272,7 +299,7 @@ func TestTrimByImprintReversesTopRim(t *testing.T) {
 	c.band.topRimReversed = true // the source side traverses the top rim reversed
 	surf, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3)
 	circ, _ := geom.NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 3)
-	faces, _, err := c.trimByImprint(curvedFace{surface: surf}, surf, []geom.Curve3{circ}, ruledUV.halfSpaceMaterial)
+	faces, _, err := trimByImprint(&c, curvedFace{surface: surf}, surf, []geom.Curve3{circ}, ruledMaterial(&c))
 	if err != nil || len(faces) != 1 || len(faces[0].loops) != 2 {
 		t.Fatalf("trimByImprint: err=%v faces=%d", err, len(faces))
 	}
@@ -330,14 +357,16 @@ func TestTrimByImprintIslandHole(t *testing.T) {
 		curves = append(curves, geom.NewLineSegment(a, b))
 	}
 	center := c.point3(2.5, 0) // 3D centre of the island (absolute frame)
-	keepOutside := func(cc ruledUV) materialPredicate {
+	// keepOutside reads c.point3 LATE (after trimByImprint shifts c's seam): point3 adds seamU back, so the
+	// 3D test stays in the absolute frame the fixed centre was computed in — the curved∩curved predicate form.
+	keepOutside := func() materialPredicate {
 		return func(uv math.Point2) bool {
 			// near the island centre on the cylinder ≈ inside the island; keep everything else.
-			return float64(cc.point3(uv.X, uv.Y).DistanceTo(center)) > 1.6
+			return float64(c.point3(uv.X, uv.Y).DistanceTo(center)) > 1.6
 		}
 	}
 	surf, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3)
-	faces, _, err := c.trimByImprint(curvedFace{surface: surf}, surf, curves, keepOutside)
+	faces, _, err := trimByImprint(&c, curvedFace{surface: surf}, surf, curves, keepOutside)
 	if err != nil || len(faces) != 1 {
 		t.Fatalf("trimByImprint: err=%v faces=%d, want 1", err, len(faces))
 	}
@@ -377,12 +406,12 @@ func TestEmitLoopEdgesStructurallyValid(t *testing.T) {
 	c := cylinderRuledUV(3, -5, 5)
 	c.s = 1 // g(u,v)=v -> keep v<0
 	segs := c.assembleBandSegments(c.horizontalCutImprint(t, 0))
-	loops := chainLoops(keptBoundaryEdges(keptCells(c.arrangeBand(segs), c.halfSpaceMaterial())))
+	loops := chainLoops(keptBoundaryEdges(keptCells(arrangeBand(segs), c.halfSpaceMaterial()), false))
 	if len(loops) != 2 {
 		t.Fatalf("want 2 boundary loops, got %d", len(loops))
 	}
 	for li, lp := range loops {
-		edges, _, ok := c.emitLoopEdges(lp, segs)
+		edges, _, ok := emitLoopEdges(&c, lp, segs)
 		if !ok || len(edges) == 0 {
 			t.Fatalf("loop %d: emit failed (ok=%v, %d edges)", li, ok, len(edges))
 		}

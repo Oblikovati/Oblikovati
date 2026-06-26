@@ -63,20 +63,15 @@ func torusHalfSpaceCut(body *topo.Body, torus geom.Torus, plane geom.Plane, n ma
 	case perpendicularToTorusAxis(n, torus):
 		res, err := torusHalfSpace(body, torus, plane) // ⟂ cut → trimmed torus band + annular lid
 		return res, true, err
-	case torusSingleOvalCap(torus, plane):
-		res, err := torusObliqueHalfSpace(torus, plane) // axis-∥ → single-oval cap + planar lid
-		return res, true, err
-	case torusSingleOvalComplement(torus, plane):
-		res, err := torusComplementHalfSpace(torus, plane) // axis-∥ → genus-1 complement + planar lid
-		return res, true, err
-	case torusTwoOvalBand(torus, plane):
-		res, err := torusTwoOvalHalfSpace(torus, plane) // axis-∥ through the hole → v-wrapping band + 2 lids
-		return res, true, err
-	case torusObliqueOval(torus, plane):
-		res, err := torusObliqueOvalHalfSpace(torus, plane) // tilted single-oval bite → cap or complement
-		return res, true, err
-	case torusTwoObliqueOval(torus, plane):
-		res, err := torusTwoOvalHalfSpace(torus, plane) // tilted cut through the hole → v-wrapping band + 2 lids
+	// Every SPIRIC torus cut — single-oval cap, its genus-1 complement, the v-wrapping two-oval band, and the
+	// tilted oblique oval / figure-eight — now routes through the unified (u,v)-arrangement trimmer
+	// (torusSideSplit, via generalHalfSpace's handled=false fallthrough below): the kept region's topology and
+	// kept side emerge from the arrangement and the section's sign, no predicate ladder (#1406). The single
+	// remaining special case is the DEGENERATE axis-parallel figure-eight tangent (the exact zero-width band
+	// limit — two ovals merged into a self-touching loop the arrangement composition can't re-cut), which
+	// keeps the analytic band builder, as OCC-class kernels special-case exact tangencies.
+	case torusAxisParallelFigureEight(torus, plane):
+		res, err := torusTwoOvalHalfSpace(torus, plane) // exact inner-equator tangent → analytic band (zero-width limit)
 		return res, true, err
 	}
 	return nil, false, nil

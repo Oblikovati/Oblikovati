@@ -24,7 +24,7 @@ func curvedStitch(faces []curvedFace) *topo.Body {
 	bld := topo.NewBuilder(true, topo.NewLineage(topo.Tok("curvedbool", "body", 0)))
 	w := &curveWelder{bld: bld, verts: map[string]*topo.Vertex{}, edges: map[string]*topo.Edge{}}
 	for _, f := range faces {
-		specs := w.loopSpecs(f.loops)
+		specs := w.loopSpecs(f.loops, f.outerless)
 		if f.reversed {
 			bld.AddReversedFace(f.surface, f.lineage, specs...)
 		} else {
@@ -43,8 +43,10 @@ type curveWelder struct {
 	ne    int
 }
 
-// loopSpecs turns a face's curved loops into builder loop specs (outer first, the rest holes).
-func (w *curveWelder) loopSpecs(loops []curvedLoop) []topo.LoopSpec {
+// loopSpecs turns a face's curved loops into builder loop specs (outer first, the rest holes). When
+// outerless, EVERY loop is a hole — a face on a closed surface that wraps the whole surface minus its holes
+// (the torus complement, #1406), which has no outer loop.
+func (w *curveWelder) loopSpecs(loops []curvedLoop, outerless bool) []topo.LoopSpec {
 	specs := make([]topo.LoopSpec, 0, len(loops))
 	for li, loop := range loops {
 		uses := make([]topo.Use, 0, len(loop.edges))
@@ -52,7 +54,7 @@ func (w *curveWelder) loopSpecs(loops []curvedLoop) []topo.LoopSpec {
 			edge, reversed := w.edge(le)
 			uses = append(uses, topo.Use{Edge: edge, Reversed: reversed})
 		}
-		if li == 0 {
+		if li == 0 && !outerless {
 			specs = append(specs, topo.OuterLoop(uses...))
 		} else {
 			specs = append(specs, topo.InnerLoop(uses...))
@@ -91,10 +93,20 @@ func (w *curveWelder) edge(le loopEdge) (*topo.Edge, bool) {
 }
 
 // newEdge creates and records a welded edge oriented along this loop's traversal (so the creating loop
-// uses it forward, except a reversed-sweep closed circle).
+// uses it forward, except a reversed-sweep closed circle). An OPEN spiric branch is stored in its native
+// direction (V0<V1, see spiricArcOf) and anchored to the curve's own endpoints, so the reversed flag — not a
+// flipped curve — orients it; the direction-sensitive spiric mesher then meshes the same patch either way.
 func (w *curveWelder) newEdge(le loopEdge, a, b math.Point3, key string, closed bool) (*topo.Edge, bool) {
+	curve := edgeCurveFor(le)
+	if sa, ok := curve.(geom.SpiricArc); ok && !closed {
+		ca, cb := sa.PointAt(0), sa.PointAt(1)
+		e := w.bld.AddEdge(curve, w.vertex(ca), w.vertex(cb), topo.NewLineage(topo.Tok("curvedbool", "e", w.ne)))
+		w.ne++
+		w.edges[key] = e
+		return e, roundKey(ca) != roundKey(a) // reversed when this loop starts at the arc's far end
+	}
 	va, vb := w.vertex(a), w.vertex(b)
-	e := w.bld.AddEdge(edgeCurveFor(le), va, vb, topo.NewLineage(topo.Tok("curvedbool", "e", w.ne)))
+	e := w.bld.AddEdge(curve, va, vb, topo.NewLineage(topo.Tok("curvedbool", "e", w.ne)))
 	w.ne++
 	w.edges[key] = e
 	if closed {
@@ -147,9 +159,26 @@ func conicEdgeCurveFor(le loopEdge) geom.Curve3 {
 		return c // the re-anchored elliptical rim/lid of an oblique cone cut tessellates over its sweep
 	case geom.EllipseFull:
 		return ellipseArcOf(c, le.t0, le.t1) // a section sub-arc of a full ellipse (the (u,v) cone split)
+	case geom.SpiricArc:
+		return spiricArcOf(c, le.t0, le.t1) // a torus-cut spiric branch, oriented to the loop's traversal
 	default:
 		return c
 	}
+}
+
+// spiricArcOf restricts a SpiricArc to its loop sub-range [t0, t1], stored in its NATIVE tube-angle direction
+// (V0 < V1) regardless of how this loop walks it — orientation is carried by the edge's reversed flag, not by
+// flipping V0/V1. A reversed-range edge (V0 > V1) would mesh as a DIFFERENT region in the direction-sensitive
+// spiric loft (the two branches of a bigon must both be native so the cap patch comes out the right size,
+// #1406); newEdge anchors the edge to this native arc's endpoints so the reversed flag stays correct.
+func spiricArcOf(sa geom.SpiricArc, t0, t1 float64) geom.Curve3 {
+	v0 := sa.V0 + t0*(sa.V1-sa.V0)
+	v1 := sa.V0 + t1*(sa.V1-sa.V0)
+	if v0 > v1 {
+		v0, v1 = v1, v0
+	}
+	sa.V0, sa.V1 = v0, v1
+	return sa
 }
 
 // ellipseArcOf builds the EllipticalArc covering a full ellipse's parameter sub-range [t0, t1]

@@ -142,6 +142,35 @@ func TestTorusLiesOnTube(t *testing.T) {
 	}
 }
 
+// TestTorusParamAtInvertsPointAt: ParamAt is the exact inverse of PointAt over the (u,v) torus — a sampled
+// (u,v) round-trips back to itself (within wrap). The (u,v)-arrangement torus trimmer (Oblikovati#1406)
+// inverts each sampled spiric point through ParamAt, so the inverse must be tight, not just close.
+func TestTorusParamAtInvertsPointAt(t *testing.T) {
+	tor, _ := NewTorus(math.P3(1, -2, 3), math.V3(0, 0, 1), 5, 2)
+	for i := 0; i < 12; i++ {
+		u := 2 * stdmath.Pi * float64(i) / 12
+		for j := 0; j < 12; j++ {
+			v := 2 * stdmath.Pi * float64(j) / 12
+			gu, gv := tor.ParamAt(tor.PointAt(u, v))
+			if du := angleGap(gu, u); du > 1e-9 {
+				t.Errorf("ParamAt(PointAt(%.4f,%.4f)).u = %.9f, want %.4f (gap %.2e)", u, v, gu, u, du)
+			}
+			if dv := angleGap(gv, v); dv > 1e-9 {
+				t.Errorf("ParamAt(PointAt(%.4f,%.4f)).v = %.9f, want %.4f (gap %.2e)", u, v, gv, v, dv)
+			}
+		}
+	}
+}
+
+// angleGap returns the absolute difference between two angles, accounting for the 0≡2π wrap.
+func angleGap(a, b float64) float64 {
+	d := stdmath.Abs(a - b)
+	if d > stdmath.Pi {
+		d = 2*stdmath.Pi - d
+	}
+	return d
+}
+
 func TestSurfaceDomainsAreOrdered(t *testing.T) {
 	for _, c := range sampleSurfaces(t) {
 		ulo, uhi := c.s.UDomain()

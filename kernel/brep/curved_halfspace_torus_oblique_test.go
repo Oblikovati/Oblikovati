@@ -79,38 +79,6 @@ func TestHalfSpaceCutTorusAxisParallelComplement(t *testing.T) {
 	}
 }
 
-// torusSingleOvalCap and ...Complement split the axis-parallel single-oval cut by which side is kept (the
-// small cap, K<0, vs the genus-1 complement, K>0); every other plane (perpendicular, a clearing or two-oval
-// offset) belongs to neither, so it defers to the band path or CSG.
-func TestTorusSingleOvalCapGuards(t *testing.T) {
-	tor, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
-	for _, tc := range []struct {
-		name     string
-		origin   math.Point3
-		normal   math.Vector3
-		cap, cmp bool
-	}{
-		{"axis-∥ cap (kept side)", math.P3(0, 6, 0), math.V3(0, -1, 0), true, false},
-		{"axis-∥ complement (kept side)", math.P3(0, 6, 0), math.V3(0, 1, 0), false, true},
-		{"perpendicular to axis", math.P3(0, 0, 1), math.V3(0, 0, 1), false, false},
-		{"clears the tube (offset > R+r)", math.P3(0, 8, 0), math.V3(0, -1, 0), false, false},
-		{"two-oval offset (< R−r)", math.P3(0, 2, 0), math.V3(0, -1, 0), false, false},
-	} {
-		plane, _ := geom.NewPlane(tc.origin, tc.normal)
-		if got := torusSingleOvalCap(tor, plane); got != tc.cap {
-			t.Errorf("%s: torusSingleOvalCap = %v, want %v", tc.name, got, tc.cap)
-		}
-		if got := torusSingleOvalComplement(tor, plane); got != tc.cmp {
-			t.Errorf("%s: torusSingleOvalComplement = %v, want %v", tc.name, got, tc.cmp)
-		}
-	}
-}
-
-// clampUnitF folds arccos arguments into [−1, 1] (the oval's v-extremes can nudge past by FP error).
-func TestClampUnitF(t *testing.T) {
-	for _, tc := range []struct{ in, want float64 }{{1.0001, 1}, {-1.0001, -1}, {0.3, 0.3}} {
-		if got := clampUnitF(tc.in); got != tc.want {
-			t.Errorf("clampUnitF(%g) = %g, want %g", tc.in, got, tc.want)
-		}
-	}
-}
+// The cap/complement predicate ladder (torusSingleOvalCap/Complement, torusAxisParallelOval) and the clampUnitF
+// helper were removed when the single oval migrated to the unified (u,v)-arrangement trimmer (#1406); the
+// integration tests above (TestHalfSpaceCutTorusAxisParallelOvalCap/Complement) now exercise that path.

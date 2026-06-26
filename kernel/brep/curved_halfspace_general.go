@@ -89,10 +89,30 @@ func ruledFaceSides(f curvedFace, plane geom.Plane, n math.Vector3, res geom.Res
 	return pos, neg
 }
 
+// bareTorusSpiricSplit trims a BARE torus (no loops) cut by a non-perpendicular plane through the unified
+// (u,v)-arrangement, since the analytic intersection defers the spiric quartic (planeTorusCurve handles only
+// the perpendicular two-circle cut). ok=false — defer to the normal split path — for a perpendicular cut, a
+// clearing plane, or a spiric topology not yet migrated (torusSideSplit returns ErrUnsupportedHalfSpace),
+// which then keeps/drops a cleared face whole and leaves an un-migrated spiric to the CSG fallback (#1406).
+func bareTorusSpiricSplit(f curvedFace, plane geom.Plane, n math.Vector3) ([]curvedFace, []loopEdge, bool) {
+	tor, ok := f.surface.(geom.Torus)
+	if !ok || len(f.loops) != 0 || perpendicularToTorusAxis(n, tor) {
+		return nil, nil, false
+	}
+	pieces, section, err := torusSideSplit(f, tor, plane)
+	if err != nil {
+		return nil, nil, false // ErrUnsupportedHalfSpace: defer to the normal path
+	}
+	return pieces, section, true
+}
+
 // splitFaceByPlane splits one face by the cutting plane, returning the kept (negative-side) sub-faces
 // and the section arcs that bound the lid. A face the plane does not cross is kept whole or dropped; a
 // boundary-less face (sphere) splits into the kept cap; a looped face crossed by the imprint defers.
 func splitFaceByPlane(f curvedFace, plane geom.Plane, n math.Vector3, res geom.Resolution) ([]curvedFace, []loopEdge, error) {
+	if pieces, section, ok := bareTorusSpiricSplit(f, plane, n); ok {
+		return pieces, section, nil
+	}
 	curves, handled := curvedImprint(f, curvedFace{surface: plane}, res)
 	if !handled {
 		return nil, nil, ErrUnsupportedHalfSpace
