@@ -16,22 +16,10 @@ import (
 // band (one torus face wrapping the tube between the two ovals) is closed by TWO planar oval-disk lids (the
 // two tube cross-sections the plane carves), unlike the single-oval cut's one lid.
 
-// torusTwoOvalBand reports whether plane cuts two ovals from torus: PARALLEL to the axis (m·axis ≈ 0) with
-// the offset up to the inner tube radius (0 < |K|/M ≤ R−r). Below R−r the plane passes through the hole and
-// cuts both walls as two separate ovals; AT R−r exactly it is tangent to the inner equator and the two ovals
-// touch in a FIGURE-EIGHT pinch (Oblikovati/Oblikovati#1375). The band loft handles the pinch as the band's
-// zero-width limit there, so the same path serves both; above R−r the section is a single oval, handled
-// elsewhere. At |K|/M = 0 the plane passes through the axis (the ovals degenerate to meridian circles, still
-// deferred).
-func torusTwoOvalBand(t geom.Torus, plane geom.Plane) bool {
-	_, m, k, c := geom.TorusSectionCoeffs(t, plane)
-	if stdmath.Abs(c) > cylinderAxisCosTol || m <= cylinderAxisCosTol {
-		return false
-	}
-	tol := torusSectionTol(t)
-	ratio := stdmath.Abs(k) / m
-	return ratio > tol && ratio < t.MajorRadius-t.MinorRadius+tol
-}
+// The two-oval band classification (formerly torusTwoOvalBand) is gone: a plane through the hole that cuts
+// two ovals now routes through the unified (u,v)-arrangement trimmer (torusSideSplit), whose torusSpiricSection
+// reads the two-oval topology from the section's absent-arc, not a predicate (#1406). Only the degenerate
+// inner-equator tangent below stays analytic. The band builder (buildTorusTwoOvalSolid) serves it.
 
 // torusAxisParallelFigureEight reports the DEGENERATE tangent: an axis-parallel plane whose offset equals the
 // inner tube radius (|K|/M ≈ R−r) is tangent to the inner equator, so the two ovals merge into a FIGURE-EIGHT

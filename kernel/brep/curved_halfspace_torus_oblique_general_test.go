@@ -44,6 +44,38 @@ func TestHalfSpaceCutTorusObliqueOval(t *testing.T) {
 	}
 }
 
+// TestHalfSpaceCutTorusObliqueOffMatrix is acceptance criterion 2 of #1406: an OFF-MATRIX oblique cut — a
+// differently-proportioned upright torus (R=6, r=1.5) bitten by a 45°-tilted plane, a configuration in none
+// of the analytic-builder test cases — is trimmed EXACTLY by the unified (u,v)-arrangement trimmer with NO
+// bespoke builder: one analytic torus face + one planar oval lid, watertight, no faceted CSG fallback.
+func TestHalfSpaceCutTorusObliqueOffMatrix(t *testing.T) {
+	tor, _ := SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 6, 1.5, "torus")
+	plane, _ := geom.NewPlane(math.P3(0, 6, 1.5), math.V3(0, 0.7, 0.7)) // tilted ~45°, bites one oval
+	res, err := HalfSpaceCut(tor, plane)
+	if err != nil {
+		t.Fatalf("HalfSpaceCut: %v", err)
+	}
+	assertWatertight(t, res)
+	tori, planes, faces := 0, 0, len(res.Faces())
+	for _, f := range res.Faces() {
+		switch f.Geometry().(type) {
+		case geom.Torus:
+			tori++
+		case geom.Plane:
+			planes++
+		}
+	}
+	if tori != 1 || planes != 1 {
+		t.Errorf("off-matrix oblique oval has %d torus + %d plane faces, want 1 + 1 (exact cap + lid)", tori, planes)
+	}
+	if faces > 4 { // a CSG fallback would be hundreds of faceted triangles, with no analytic torus face
+		t.Errorf("result has %d faces — that is faceted CSG, not the exact analytic path", faces)
+	}
+	if e := len(res.Edges()); e != 2 {
+		t.Errorf("off-matrix oblique oval has %d edges, want 2 (the two spiric branches)", e)
+	}
+}
+
 // torusObliqueOvalRange finds the oval's tube-angle interval and pinch sign from the closed-form w=±1
 // crossings, exactly where the sampled section starts/ends.
 func TestTorusObliqueOvalRange(t *testing.T) {
@@ -72,9 +104,7 @@ func TestHalfSpaceCutTorusTwoObliqueOval(t *testing.T) {
 	tor, _ := SolidTorus(math.P3(0, 0, 0), math.V3(0, 0.6, 0.8), 5, 2, "torus")
 	torS, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0.6, 0.8), 5, 2)
 	plane, _ := geom.NewPlane(math.P3(0, 0, 0.5), math.V3(0, 0, 1)) // tilted, through the hole
-	if !torusTwoObliqueOval(torS, plane) {
-		t.Fatal("expected a tilted two-oval section")
-	}
+	_ = torS
 	res, err := HalfSpaceCut(tor, plane)
 	if err != nil {
 		t.Fatalf("HalfSpaceCut: %v", err)
@@ -94,49 +124,7 @@ func TestHalfSpaceCutTorusTwoObliqueOval(t *testing.T) {
 	}
 }
 
-// torusTwoObliqueOval admits only a tilted cut through the hole (two ovals); a tilted single-oval bite (with
-// w=±1 crossings) or an upright cut is not it.
-func TestTorusTwoObliqueOvalGuards(t *testing.T) {
-	torS, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0.6, 0.8), 5, 2)
-	for _, tc := range []struct {
-		name   string
-		origin math.Point3
-		want   bool
-	}{
-		{"tilted through hole (two ovals)", math.P3(0, 0, 0.5), true},
-		{"tilted figure-eight (z=1.0, near-full-wrap)", math.P3(0, 0, 1.0), true},
-		{"tilted single-oval bite (z=3.6)", math.P3(0, 0, 3.6), false},
-	} {
-		plane, _ := geom.NewPlane(tc.origin, math.V3(0, 0, 1))
-		if got := torusTwoObliqueOval(torS, plane); got != tc.want {
-			t.Errorf("%s: torusTwoObliqueOval = %v, want %v", tc.name, got, tc.want)
-		}
-		// The figure-eight and two-oval cases must NOT also be claimed by the single-oval (cap/complement) path.
-		if got := torusObliqueOval(torS, plane); got == tc.want && tc.want {
-			t.Errorf("%s: torusObliqueOval also claimed it (overlap with the band path)", tc.name)
-		}
-	}
-	// An upright (axis-aligned) torus cut is never the oblique two-oval case.
-	upright, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
-	plane, _ := geom.NewPlane(math.P3(0, 2, 0), math.V3(0, 1, 0))
-	if torusTwoObliqueOval(upright, plane) {
-		t.Error("axis-parallel two-oval wrongly classified as oblique")
-	}
-}
-
-// A perpendicular or axis-parallel plane is not the oblique case; a non-tilted cut must defer.
-func TestTorusObliqueOvalGuards(t *testing.T) {
-	tor, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
-	for _, tc := range []struct {
-		name   string
-		normal math.Vector3
-	}{
-		{"perpendicular", math.V3(0, 0, 1)},
-		{"axis-parallel", math.V3(0, 1, 0)},
-	} {
-		plane, _ := geom.NewPlane(math.P3(0, 0, 1), tc.normal)
-		if torusObliqueOval(tor, plane) {
-			t.Errorf("%s plane wrongly classified as an oblique oval", tc.name)
-		}
-	}
-}
+// The oblique oval-classification predicates (torusObliqueOval, torusTwoObliqueOval) were removed when the
+// tilted single oval and figure-eight migrated to the unified (u,v)-arrangement trimmer (#1406); the
+// integration tests above (TestHalfSpaceCutTorusObliqueOval/TwoObliqueOval) now exercise that path, and
+// torusSpiricSection classifies the topology from the section instead of a predicate ladder.
