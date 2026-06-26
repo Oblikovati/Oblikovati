@@ -205,12 +205,50 @@ func (c ruledUV) assembleBandSegments(imprint []uvSeg) []uvSeg {
 	out := make([]uvSeg, 0, len(imprint)+4)
 	for _, s := range imprint {
 		for _, split := range splitSeamCrossing(s) {
-			if split.a.DistanceTo(split.b) > arrTol {
-				out = append(out, split)
+			// Clip each imprint segment to the band's axial range: a section can leave [vMin,vMax] (a tilted
+			// cut's ellipse rises past the rim), and sampling that out-of-band part would inject a spurious
+			// arc; clipping lands the imprint exactly on the rim where it crosses, the real rim split.
+			for _, clipped := range clipSegToVBand(split, c.band.vMin, c.band.vMax) {
+				if clipped.a.DistanceTo(clipped.b) > arrTol {
+					out = append(out, clipped)
+				}
 			}
 		}
 	}
 	return append(out, c.bandFrameSegments()...)
+}
+
+// clipSegToVBand clips a (u,v) imprint segment to the axial band [vMin,vMax], returning the in-band part
+// (with u and the curve parameter interpolated to the rim crossing) or nothing when the segment lies wholly
+// outside. The band rims then bound the imprint exactly where it would otherwise overshoot.
+func clipSegToVBand(s uvSeg, vMin, vMax float64) []uvSeg {
+	a, b := float64(s.a.Y), float64(s.b.Y)
+	if (a < vMin && b < vMin) || (a > vMax && b > vMax) {
+		return nil
+	}
+	if a >= vMin && a <= vMax && b >= vMin && b <= vMax {
+		return []uvSeg{s}
+	}
+	t0, t1 := 0.0, 1.0
+	if dv := b - a; dv != 0 {
+		lo, hi := (vMin-a)/dv, (vMax-a)/dv
+		if lo > hi {
+			lo, hi = hi, lo
+		}
+		t0, t1 = stdmath.Max(t0, lo), stdmath.Min(t1, hi)
+	}
+	if t0 >= t1 {
+		return nil
+	}
+	return []uvSeg{{
+		a: lerpUV(s.a, s.b, t0), b: lerpUV(s.a, s.b, t1),
+		curve: s.curve, tA: lerp(s.tA, s.tB, t0), tB: lerp(s.tA, s.tB, t1), kind: s.kind,
+	}}
+}
+
+// lerpUV linearly interpolates a (u,v) point between a and b by fraction t.
+func lerpUV(a, b math.Point2, t float64) math.Point2 {
+	return math.P2(lerp(float64(a.X), float64(b.X), t), lerp(float64(a.Y), float64(b.Y), t))
 }
 
 // materialPredicate reports whether a (u,v) point of the band is on the KEPT side of the imprint. For a
@@ -493,7 +531,7 @@ func (c ruledUV) emitLoopEdges(loop []dedge, segs []uvSeg) (face, section []loop
 		}
 		rec = append(rec, re)
 	}
-	for _, run := range mergeRuns(rec) {
+	for _, run := range mergeRuns(rotateToTransition(rec)) {
 		e, good := c.emitRun(run)
 		if !good {
 			return nil, nil, false
@@ -521,42 +559,98 @@ func (c ruledUV) trimByImprint(f curvedFace, surface geom.Surface, imprint []geo
 	if len(kept) == 0 {
 		return nil, nil, nil // the whole side is on the dropped side
 	}
-	loops := chainLoops(keptBoundaryEdges(kept))
-	faceLoops := make([]curvedLoop, 0, len(loops))
-	var lid []loopEdge
-	for _, lp := range loops {
-		edges, section, ok := c.emitLoopEdges(lp, segs)
-		if !ok {
-			return nil, nil, ErrUnsupportedHalfSpace
-		}
-		faceLoops = append(faceLoops, curvedLoop{edges: edges})
-		lid = append(lid, reverseEdgeChain(section)...) // the lid uses each section arc opposite the side
+	emitted, ok := c.emitKeptLoops(chainLoops(keptBoundaryEdges(kept)), segs)
+	if !ok {
+		return nil, nil, ErrUnsupportedHalfSpace
 	}
-	kf := curvedFace{surface: surface, reversed: f.reversed, lineage: f.lineage, loops: c.orderLoops(faceLoops)}
+	faceLoops, lid := c.orientLoops(emitted, c.wrapsAllU())
+	kf := curvedFace{surface: surface, reversed: f.reversed, lineage: f.lineage, loops: faceLoops}
 	return []curvedFace{kf}, lid, nil
 }
 
-// orderLoops orders a kept face's boundary loops by descending axial level (the higher-v boundary first),
-// matching the analytic splitSide convention where loops[0] is the upper (hi) boundary and the stitcher
-// treats it as the outer loop. A single-loop face is unchanged.
-func (c ruledUV) orderLoops(loops []curvedLoop) []curvedLoop {
-	if len(loops) < 2 {
-		return loops
-	}
-	sort.SliceStable(loops, func(i, j int) bool { return c.meanV(loops[i]) > c.meanV(loops[j]) })
-	return loops
+// emittedLoop is one re-emitted boundary loop awaiting orientation: its full edge chain, the imprint
+// (section) sub-arcs alone (for the lid), and its mean axial level (to order hi boundary first).
+type emittedLoop struct {
+	face    []loopEdge
+	section []loopEdge
+	mv      float64
 }
 
-// meanV is a loop's mean axial level (the average v of its edge endpoints), used only to order loops.
-func (c ruledUV) meanV(l curvedLoop) float64 {
-	sum := 0.0
-	for _, e := range l.edges {
-		sum += float64(c.paramOf(e.start()).Y) + float64(c.paramOf(e.end()).Y)
+// emitKeptLoops re-emits every (u,v) boundary loop to analytic edges, sorted with the higher (hi) boundary
+// first to match the analytic split convention (loops[0] is the hi boundary / outer loop).
+func (c ruledUV) emitKeptLoops(loops [][]dedge, segs []uvSeg) ([]emittedLoop, bool) {
+	out := make([]emittedLoop, 0, len(loops))
+	for _, lp := range loops {
+		face, section, ok := c.emitLoopEdges(lp, segs)
+		if !ok {
+			return nil, false
+		}
+		out = append(out, emittedLoop{face: face, section: section, mv: meanEdgeV(c, face)})
 	}
-	if len(l.edges) == 0 {
+	sort.SliceStable(out, func(i, j int) bool { return out[i].mv > out[j].mv })
+	return out, true
+}
+
+// orientLoops applies the analytic splitSide orientation convention to the ordered loops: the lo boundaries
+// and the default hi boundary are forward with their section arcs reversed into the lid; but in a WRAPPING
+// band the hi loop is REVERSED when it carries a rim and the source side traversed its top rim reversed
+// (band.topRimReversed), the lid then taking that loop's section arcs forward — so the rebuilt rim keeps the
+// sense opposite its cap and the band, lid and caps stay a consistent manifold. The reversal is gated on
+// wrapping because a non-wrapping tongue is one mixed loop the analytic tongueSide leaves un-reversed
+// (#1405, mirroring curved_halfspace_ruled_uv.go's splitSide vs tongueSide).
+func (c ruledUV) orientLoops(loops []emittedLoop, wrapping bool) ([]curvedLoop, []loopEdge) {
+	faceLoops := make([]curvedLoop, 0, len(loops))
+	var lid []loopEdge
+	for i, e := range loops {
+		face, lidSec := e.face, reverseEdgeChain(e.section)
+		if i == 0 && wrapping && c.band.topRimReversed && allRimEdges(e.face) {
+			face, lidSec = reverseEdgeChain(e.face), e.section
+		}
+		faceLoops = append(faceLoops, curvedLoop{edges: face})
+		lid = append(lid, lidSec...)
+	}
+	return faceLoops, lid
+}
+
+// allRimEdges reports whether every edge of a loop is a rim (circle/arc) — a PURE top-rim hi boundary, the
+// only wrapping hi loop the topRimReversed whole-loop reversal applies to; a mixed section+rim hi boundary
+// (a clips-rim annulus) keeps its arrangement orientation instead.
+func allRimEdges(edges []loopEdge) bool {
+	for _, e := range edges {
+		switch e.curve.(type) {
+		case geom.Circle, geom.Arc3d:
+		default:
+			return false
+		}
+	}
+	return len(edges) > 0
+}
+
+// meanEdgeV is the mean axial level of an edge chain (the average v of its endpoints), used to order the
+// hi boundary loop first.
+func meanEdgeV(c ruledUV, edges []loopEdge) float64 {
+	if len(edges) == 0 {
 		return 0
 	}
-	return sum / float64(2*len(l.edges))
+	sum := 0.0
+	for _, e := range edges {
+		sum += float64(c.paramOf(e.start()).Y) + float64(c.paramOf(e.end()).Y)
+	}
+	return sum / float64(2*len(edges))
+}
+
+// rotateToTransition rotates the recovered loop so it begins at a curve boundary (where the kind/curve
+// changes), so every run mergeRuns forms is ONE contiguous arc. Without it a loop that happens to start in
+// the middle of a curve splits that curve into two runs around the loop seam — and a closed conic run that
+// wraps re-emits as a spurious full curve. A loop on a single curve (no transition) is returned unchanged.
+func rotateToTransition(rec []recoveredEdge) []recoveredEdge {
+	n := len(rec)
+	for i := 0; i < n; i++ {
+		if !sameRun(rec[(i-1+n)%n], rec[i]) {
+			return append(append([]recoveredEdge{}, rec[i:]...), rec[:i]...)
+		}
+	}
+	return rec
 }
 
 // mergeRuns groups consecutive recovered edges that lie on the same analytic curve into runs, so a chain of

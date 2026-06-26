@@ -262,6 +262,26 @@ func TestTrimByImprintProducesValidFace(t *testing.T) {
 	}
 }
 
+// TestTrimByImprintReversesTopRim: when the source side traverses its top rim reversed (topRimReversed) and
+// the kept wrapping band's hi boundary is the PURE top rim, orientLoops reverses that loop so the rebuilt
+// rim stays opposite its cap — the analytic splitSide convention reproduced through the arrangement (#1405).
+func TestTrimByImprintReversesTopRim(t *testing.T) {
+	c := cylinderRuledUV(3, -5, 5)
+	c.s = -1                     // g(u,v) = -v -> keep v>0, so the hi boundary is the top rim
+	c.band.topRimReversed = true // the source side traverses the top rim reversed
+	surf, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3)
+	circ, _ := geom.NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 3)
+	faces, _, err := c.trimByImprint(curvedFace{surface: surf}, surf, []geom.Curve3{circ}, c.halfSpaceMaterial())
+	if err != nil || len(faces) != 1 || len(faces[0].loops) != 2 {
+		t.Fatalf("trimByImprint: err=%v faces=%d", err, len(faces))
+	}
+	// loops[0] is the hi boundary = the top rim (a full circle); it must be present and on the cylinder.
+	hi := faces[0].loops[0].edges
+	if !allRimEdges(hi) {
+		t.Errorf("hi loop is not the pure top rim (edges: %d)", len(hi))
+	}
+}
+
 // distFromAxis returns p's perpendicular distance from the side's axis (its cylinder radius).
 func distFromAxis(p math.Point3, c ruledUV) float64 {
 	d := c.base.VectorTo(p)
