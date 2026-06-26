@@ -143,7 +143,11 @@ void setup_window(HeadContext* c, VkSurfaceKHR surface, int w, int h) {
         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 }
 
-void frame_render(HeadContext* c, ImDrawData* dd) {
+// kMaxOffscreenTiles mirrors viewport.cpp's kMaxTiles — the most offscreen-viewport semaphores the
+// ImGui swapchain submit may wait on in one frame (one per visible tile in the quad layout, #1421).
+static const int kMaxOffscreenTiles = 4;
+
+void frame_render(HeadContext* c, ImDrawData* dd, VkSemaphore* offscreenSems, int offscreenCount) {
     ImGui_ImplVulkanH_Window* wd = &c->window_data;
     VkSemaphore acq = wd->FrameSemaphores[wd->SemaphoreIndex].ImageAcquiredSemaphore;
     VkSemaphore done = wd->FrameSemaphores[wd->SemaphoreIndex].RenderCompleteSemaphore;
@@ -173,12 +177,24 @@ void frame_render(HeadContext* c, ImDrawData* dd) {
     ImGui_ImplVulkan_RenderDrawData(dd, fd->CommandBuffer);
     vkCmdEndRenderPass(fd->CommandBuffer);
     vkEndCommandBuffer(fd->CommandBuffer);
-    VkPipelineStageFlags stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    // Wait on the image-acquired semaphore plus every offscreen-viewport tile rendered this frame
+    // (#1421): the ImGui pass samples those offscreen images at FRAGMENT_SHADER, so it must wait for
+    // their offscreen submits on the GPU — which is what lets the CPU skip the per-frame fence stall.
+    VkSemaphore waits[1 + kMaxOffscreenTiles];
+    VkPipelineStageFlags stages[1 + kMaxOffscreenTiles];
+    waits[0] = acq;
+    stages[0] = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    int nWait = 1;
+    for (int i = 0; i < offscreenCount && nWait <= kMaxOffscreenTiles; i++) {
+        waits[nWait] = offscreenSems[i];
+        stages[nWait] = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        nWait++;
+    }
     VkSubmitInfo submit{};
     submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submit.waitSemaphoreCount = 1;
-    submit.pWaitSemaphores = &acq;
-    submit.pWaitDstStageMask = &stage;
+    submit.waitSemaphoreCount = (uint32_t)nWait;
+    submit.pWaitSemaphores = waits;
+    submit.pWaitDstStageMask = stages;
     submit.commandBufferCount = 1;
     submit.pCommandBuffers = &fd->CommandBuffer;
     submit.signalSemaphoreCount = 1;
@@ -452,6 +468,7 @@ void obk_head_begin_frame(void* h) {
             c->swapChainRebuild = false;
         }
     }
+    obk_viewport_frame_begin(c); // open the offscreen ring slot for this frame (waits the old fence, #1421)
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     obk_apply_inject(); // override the real cursor with injected input, if a test set it
@@ -467,8 +484,14 @@ void obk_head_end_frame(void* h, float r, float g, float b) {
     c->window_data.ClearValue.color.float32[1] = g;
     c->window_data.ClearValue.color.float32[2] = b;
     c->window_data.ClearValue.color.float32[3] = 1.0f;
+    // Close the offscreen ring: submit this frame's viewport tiles in one batch and collect their
+    // semaphores so the swapchain submit waits on them (no CPU stall — #1421). A minimized frame has
+    // no swapchain submit to wait them, so flush with present=0 (submit without signalling).
+    VkSemaphore offscreenSems[kMaxOffscreenTiles];
+    int offscreenCount = 0;
+    obk_viewport_frame_flush(c, offscreenSems, &offscreenCount, minimized ? 0 : 1);
     if (!minimized) {
-        frame_render(c, dd);
+        frame_render(c, dd, offscreenSems, offscreenCount);
         frame_present(c);
     }
 }

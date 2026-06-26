@@ -41,6 +41,14 @@ uint32_t obk_find_memory_type(VkPhysicalDevice phys, uint32_t type_bits,
 // (C linkage) and called from app.cpp on teardown.
 extern "C" void obk_viewport_destroy(HeadContext* c);
 
+// Offscreen frames-in-flight ring hooks (#1421), defined in viewport.cpp and driven by the frame
+// boundary in app.cpp. frame_begin waits on the ring slot that is about to be reused (no stall on
+// the current frame). frame_flush submits this frame's offscreen tiles in one batch and returns the
+// per-tile semaphores via outSems/outCount, which the swapchain submit waits on so the ImGui pass
+// samples a finished image without a CPU stall. Both no-op before the viewport is initialized.
+extern "C" void obk_viewport_frame_begin(HeadContext* c);
+extern "C" void obk_viewport_frame_flush(HeadContext* c, VkSemaphore* outSems, int* outCount, int present);
+
 // obk_icons_destroy frees the ribbon-icon texture cache (images + sampler); defined in
 // texture.cpp (C linkage) and called from app.cpp on teardown.
 extern "C" void obk_icons_destroy(HeadContext* c);

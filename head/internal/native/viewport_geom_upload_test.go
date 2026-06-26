@@ -41,33 +41,44 @@ func TestViewportGeomUploadDirtySkip(t *testing.T) {
 
 	const keyA, keyB uint64 = 0xA11CE, 0xB0B
 	render(keyA, 640, 480)
-	if got := w.ViewportGeomUploads(); got != 1 {
-		t.Fatalf("first render: geom uploads = %d, want 1", got)
+	// Warm up the frames-in-flight ring (#1421): each ring slot has its own offscreen target, and the
+	// first use of each creates it — a recreation that (correctly, per #1218) forces a re-upload. So
+	// the steady state begins only after every ring slot has rendered keyA at this size.
+	for i := 0; i < 6; i++ {
+		render(keyA, 640, 480)
 	}
-	// Static orbit: same geometry (keyA), moving camera, several frames — ZERO further uploads.
+	// Static orbit: same geometry (keyA), moving camera, several frames — ZERO further uploads, no
+	// matter the ring depth. This is the #1422 property.
+	base := w.ViewportGeomUploads()
 	for i := 0; i < 5; i++ {
 		render(keyA, 640, 480)
 	}
-	if got := w.ViewportGeomUploads(); got != 1 {
-		t.Errorf("static orbit re-uploaded geometry: uploads = %d, want 1 (only the MVP should change) — #1422", got)
+	if got := w.ViewportGeomUploads(); got != base {
+		t.Errorf("static orbit re-uploaded geometry: uploads went %d→%d, want no change (only the MVP should change) — #1422", base, got)
 	}
-	// A genuine geometry change (new key) must upload exactly once, then hold.
+	// A genuine geometry change (new key) re-uploads exactly once — the resident key is shared across
+	// the ring, so once the first tile uploads keyB every other frame skips.
 	render(keyB, 640, 480)
 	render(keyB, 640, 480)
-	if got := w.ViewportGeomUploads(); got != 2 {
-		t.Errorf("geometry change: uploads = %d, want 2 (one re-upload on the changed frame, then skip)", got)
+	if got := w.ViewportGeomUploads(); got != base+1 {
+		t.Errorf("geometry change: uploads went %d→%d, want +1 (one re-upload then skip)", base, got)
 	}
-	// #1218 guard: a resize recreates the target; even with UNCHANGED geometry the next render must
-	// re-upload, or the recreated target samples stale/blank geometry.
-	render(keyB, 400, 300)
-	if got := w.ViewportGeomUploads(); got != 3 {
-		t.Errorf("after target recreation: uploads = %d, want 3 (recreation must force a re-upload) — #1218", got)
+	// #1218 guard: a resize recreates each ring slot's target on its next use, and a recreated target
+	// must re-upload (or it samples stale/blank geometry). Render enough frames to cover the ring; the
+	// upload count MUST climb (no stale geometry), which is the regression M34-F4 missed.
+	resizeBase := w.ViewportGeomUploads()
+	for i := 0; i < 6; i++ {
+		render(keyB, 400, 300)
 	}
-	// The legacy/unknown path (geomKey 0) never skips, so it is always safe.
+	if got := w.ViewportGeomUploads(); got <= resizeBase {
+		t.Errorf("after resize: uploads stayed %d, want an increase (recreated targets must re-upload) — #1218", got)
+	}
+	// The legacy/unknown path (geomKey 0) never skips, so it always re-uploads — at least once per frame.
+	legacyBase := w.ViewportGeomUploads()
 	render(0, 400, 300)
 	render(0, 400, 300)
-	if got := w.ViewportGeomUploads(); got != 5 {
-		t.Errorf("legacy geomKey 0: uploads = %d, want 5 (geomKey 0 always uploads)", got)
+	if got := w.ViewportGeomUploads(); got != legacyBase+2 {
+		t.Errorf("legacy geomKey 0: uploads went %d→%d, want +2 (geomKey 0 always uploads)", legacyBase, got)
 	}
 
 	// Image-parity sanity: after all that, the offscreen image is still a real render, not blank.
