@@ -212,8 +212,21 @@ func (fs *PartFeatures) PreviewResult(candidate Feature) ([]*topo.Body, error) {
 }
 
 // evaluate runs one feature, updating its health/cache and returning the running
-// body state after it.
+// body state after it. It captures the model parameters the feature read directly
+// (its suppression condition and its own recompute, e.g. a sheet-metal thickness)
+// into pf.paramReads, so a later parameter edit can skip the feature when it touches
+// none of them (Oblikovati#1414).
 func (fs *PartFeatures) evaluate(pf *PartFeature, bodies []*topo.Body, sick map[ID]bool) []*topo.Body {
+	if fs.params == nil {
+		return fs.evaluateBody(pf, bodies, sick)
+	}
+	var out []*topo.Body
+	pf.paramReads = fs.params.Track(func() { out = fs.evaluateBody(pf, bodies, sick) })
+	return out
+}
+
+// evaluateBody is evaluate without the parameter-read capture (see evaluate).
+func (fs *PartFeatures) evaluateBody(pf *PartFeature, bodies []*topo.Body, sick map[ID]bool) []*topo.Body {
 	pf.dirty = false
 	if pf.suppress || (pf.condition != nil && pf.condition.holds(fs.params)) {
 		pf.health = health.Health{Status: health.Suppressed}
