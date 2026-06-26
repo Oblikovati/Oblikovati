@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
@@ -279,6 +280,38 @@ func TestTrimByImprintReversesTopRim(t *testing.T) {
 	hi := faces[0].loops[0].edges
 	if !allRimEdges(hi) {
 		t.Errorf("hi loop is not the pure top rim (edges: %d)", len(hi))
+	}
+}
+
+// TestClipParamsMultiArmHyperbola: a plane parallel to a cone's axis cuts it in a hyperbola whose two arms
+// both lie in the band (the joining vertex falls below it), so clipParams must return TWO parameter ranges,
+// each spanning the band height — the multi-arm windowing a cone cut needs (Oblikovati#1405).
+func TestClipParamsMultiArmHyperbola(t *testing.T) {
+	cone, _ := SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 6, "c")
+	plane, _ := geom.NewPlane(math.P3(2, 0, 0), math.V3(1, 0, 0)) // axis-parallel → hyperbola, two arms
+	var sf *topo.Face
+	for _, f := range cone.Faces() {
+		if _, ok := f.Geometry().(geom.Cone); ok {
+			sf = f
+		}
+	}
+	cf := curvedFace{surface: sf.Geometry(), reversed: sf.Reversed(), loops: loopsOf(sf), lineage: sf.Lineage()}
+	curves, _ := curvedImprint(cf, curvedFace{surface: plane}, geom.ResolutionForBox(cone.RangeBox()))
+	if len(curves) != 1 {
+		t.Fatalf("want one conic section, got %d", len(curves))
+	}
+	_, band, _ := fullConeSideBand(cf)
+	c := newConeUV(sf.Geometry().(geom.Cone), band, plane, math.V3(1, 0, 0))
+	ranges := c.clipParams(curves[0])
+	if len(ranges) != 2 {
+		t.Fatalf("hyperbola has two arms in the band, clipParams returned %d ranges", len(ranges))
+	}
+	for i, r := range ranges {
+		v0, v1 := c.curveV(curves[0], r[0]), c.curveV(curves[0], r[1])
+		lo, hi := stdmath.Min(v0, v1), stdmath.Max(v0, v1)
+		if lo > band.vMin+0.5 || hi < band.vMax-0.5 {
+			t.Errorf("arm %d spans v[%.2f,%.2f], should cover the band [%.2f,%.2f]", i, lo, hi, band.vMin, band.vMax)
+		}
 	}
 }
 

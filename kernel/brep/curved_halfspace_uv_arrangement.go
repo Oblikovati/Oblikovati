@@ -71,8 +71,16 @@ const imprintSampleCount = 256
 // The azimuth seam (u wrapping 2π↔0) is left for the arrangement to resolve — sampleImprintUV reports the
 // raw branch [0,2π); seam unwrapping is applied when segments are assembled into the band.
 func (c ruledUV) sampleImprintUV(curve geom.Curve3) []uvSeg {
-	t0, t1, ok := c.clipParams(curve)
-	if !ok || t0 == t1 {
+	var segs []uvSeg
+	for _, r := range c.clipParams(curve) {
+		segs = append(segs, c.sampleRange(curve, r[0], r[1])...)
+	}
+	return segs
+}
+
+// sampleRange samples one curve parameter interval [t0,t1] into tagged (u,v) segments.
+func (c ruledUV) sampleRange(curve geom.Curve3, t0, t1 float64) []uvSeg {
+	if t0 == t1 {
 		return nil
 	}
 	segs := make([]uvSeg, 0, imprintSampleCount)
@@ -87,65 +95,55 @@ func (c ruledUV) sampleImprintUV(curve geom.Curve3) []uvSeg {
 	return segs
 }
 
-// clipParams returns the parameter window over which an imprint curve should be sampled: its whole domain
-// when finite (an ellipse, a clipped arc), but for an UNBOUNDED curve (a ruling line, or an open
-// hyperbola/parabola arm of a cone cut) the sub-range where it lies within the band's axial extent — so
-// sampling stays finite and on the side. A ruling is linear in v, solved directly; a general unbounded
-// curve is windowed by numerically finding its band-edge crossings.
-func (c ruledUV) clipParams(curve geom.Curve3) (t0, t1 float64, ok bool) {
+// clipParams returns the parameter sub-ranges over which an imprint curve should be sampled: its whole
+// domain when finite (an ellipse / clipped arc — clipSegToVBand then trims any out-of-band part), but for an
+// UNBOUNDED curve (a ruling line, or an open hyperbola/parabola of a cone cut) only the sub-ranges where it
+// lies within the band's axial extent. A cone cut's hyperbola has TWO arms in the band (the joining vertex
+// is outside it), so this can return more than one range — each a separate boundary arc.
+func (c ruledUV) clipParams(curve geom.Curve3) [][2]float64 {
 	lo, hi := curve.Domain()
 	if !stdmath.IsInf(lo, 0) && !stdmath.IsInf(hi, 0) {
-		return lo, hi, true
+		return [][2]float64{{lo, hi}}
 	}
 	if line, isLine := curve.(geom.Line); isLine {
 		d := float64(line.Dir.AsVector().Dot(c.axis))
 		if stdmath.Abs(d) < 1e-12 {
-			return 0, 0, false // a ruling perpendicular to the axis cannot bound a v-band
+			return nil // a ruling perpendicular to the axis cannot bound a v-band
 		}
 		v0 := float64(c.base.VectorTo(line.Origin).Dot(c.axis))
-		return (c.band.vMin - v0) / d, (c.band.vMax - v0) / d, true
+		return [][2]float64{{(c.band.vMin - v0) / d, (c.band.vMax - v0) / d}}
 	}
-	return c.clipParamsNumeric(curve)
+	return c.inBandRanges(curve)
 }
 
-// clipParamsNumeric windows an unbounded curve to the band by scanning a finite bracket (proportional to
-// the band's 3D size) for where its axial coordinate v crosses vMin and vMax, then bisecting each crossing.
-// It assumes v is monotone through the band — true for the open conic arms a half-space cut produces.
-func (c ruledUV) clipParamsNumeric(curve geom.Curve3) (t0, t1 float64, ok bool) {
+// inBandRanges scans an unbounded curve over a finite bracket (proportional to the band's 3D size) and
+// returns every maximal sub-range whose axial coordinate v lies within the band. Each range straddles its
+// band crossings by one sample so clipSegToVBand can refine the exact crossing; multiple ranges arise when
+// the curve enters the band more than once (the two arms of a cone-cut hyperbola).
+func (c ruledUV) inBandRanges(curve geom.Curve3) [][2]float64 {
 	b := 4 * (c.band.vMax - c.band.vMin + 2*stdmath.Max(c.band.rBot, c.band.rTop) + 1)
-	vAt := func(t float64) float64 { return float64(c.paramOf(curve.PointAt(t)).Y) }
-	a, okA := bisectVCrossing(vAt, c.band.vMin, -b, b)
-	d, okD := bisectVCrossing(vAt, c.band.vMax, -b, b)
-	if !okA || !okD {
-		return 0, 0, false
+	const scan = 2048
+	inBand := func(t float64) bool {
+		v := c.curveV(curve, t)
+		return v >= c.band.vMin && v <= c.band.vMax
 	}
-	return a, d, true
-}
-
-// bisectVCrossing scans [lo,hi] for an interval where vAt crosses target, then bisects it to the crossing
-// parameter. Returns ok=false when no crossing is bracketed.
-func bisectVCrossing(vAt func(float64) float64, target, lo, hi float64) (float64, bool) {
-	const scan = 256
-	prevT := lo
-	prevV := vAt(lo) - target
-	for i := 1; i <= scan; i++ {
-		t := lo + (hi-lo)*float64(i)/scan
-		v := vAt(t) - target
-		if (prevV <= 0) != (v <= 0) {
-			a, b := prevT, t
-			for j := 0; j < 50; j++ {
-				m := (a + b) / 2
-				if (vAt(a)-target <= 0) == (vAt(m)-target <= 0) {
-					a = m
-				} else {
-					b = m
-				}
-			}
-			return (a + b) / 2, true
+	var ranges [][2]float64
+	open, start, prev := false, 0.0, -b
+	for i := 0; i <= scan; i++ {
+		t := -b + 2*b*float64(i)/scan
+		switch in := inBand(t); {
+		case in && !open:
+			start, open = prev, true
+		case !in && open:
+			ranges = append(ranges, [2]float64{start, t})
+			open = false
 		}
-		prevT, prevV = t, v
+		prev = t
 	}
-	return 0, false
+	if open {
+		ranges = append(ranges, [2]float64{start, b})
+	}
+	return ranges
 }
 
 // unwrapAzimuthNear shifts x by whole turns (2π) so it lands within ±π of ref, turning a wrapped azimuth
