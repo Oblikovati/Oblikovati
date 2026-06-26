@@ -42,6 +42,34 @@ type ruledUV struct {
 	seamU float64
 }
 
+// ruledUV satisfies uvSide: a singly-periodic surface whose v is the bounded axial band (#1406).
+var _ uvSide = (*ruledUV)(nil)
+
+// setSeamU moves the arrangement's artificial azimuth seam to absolute azimuth u (uvSide).
+func (c *ruledUV) setSeamU(u float64) { c.seamU = u }
+
+// vPeriodic reports that a ruled side's v (axial distance) does NOT wrap — only u does (uvSide).
+func (c ruledUV) vPeriodic() bool { return false }
+
+// assembleSegments samples the imprint and adds the rim+seam frame the arrangement subdivides (uvSide).
+func (c ruledUV) assembleSegments(imprint []geom.Curve3) []uvSeg {
+	var imp []uvSeg
+	for _, cv := range imprint {
+		imp = append(imp, c.sampleImprintUV(cv)...)
+	}
+	return c.assembleBandSegments(imp)
+}
+
+// finalizeLoops drops the degenerate apex-pole rim loop from a kept cone face (uvSide; see dropApexLoop).
+func (c ruledUV) finalizeLoops(loops []curvedLoop) []curvedLoop { return c.dropApexLoop(loops) }
+
+// ruledMaterial wraps a ruled side's half-space predicate as a uvSide materialOf builder: a closure (not a
+// bound method value) so the predicate reads the receiver AFTER trimByImprint has shifted its seam. A method
+// value would freeze the pre-seam receiver and misclassify cells against an unshifted frame.
+func ruledMaterial(c *ruledUV) func() materialPredicate {
+	return func() materialPredicate { return c.halfSpaceMaterial() }
+}
+
 // newConeUV builds the (u, v) model of a frustum side cut by a plane (n the unit plane normal).
 func newConeUV(cone geom.Cone, band coneSideBand_, plane geom.Plane, n math.Vector3) ruledUV {
 	tanA := stdmath.Tan(cone.HalfAngle)
@@ -132,7 +160,7 @@ func (c ruledUV) point3(u, v float64) math.Point3 {
 // clear of the section by chooseSeamU) flow through it uniformly (Oblikovati#1405).
 func coneSideUVSplit(f curvedFace, cone geom.Cone, conic geom.Curve3, band coneSideBand_, plane geom.Plane, n math.Vector3) ([]curvedFace, []loopEdge, error) {
 	c := newConeUV(cone, band, plane, n)
-	return c.trimByImprint(f, cone, []geom.Curve3{conic}, ruledUV.halfSpaceMaterial)
+	return trimByImprint(&c, f, cone, []geom.Curve3{conic}, ruledMaterial(&c))
 }
 
 // coneApexSideSplit splits a FULL cone side (apex + one rim) by the (u,v) arrangement. The apex is the
@@ -144,7 +172,8 @@ func coneApexSideSplit(f curvedFace, cone geom.Cone, conic geom.Curve3, band con
 	// Both apex sides go through the general arrangement trim. Apex dropped → a frustum-like band; apex kept
 	// → the kept face closes to the apex as a single loop, the apex an interior pole (the degenerate v=0
 	// rim loop is dropped inside trimByImprint, dropApexLoop).
-	return newConeUV(cone, band, plane, n).trimByImprint(f, cone, []geom.Curve3{conic}, ruledUV.halfSpaceMaterial)
+	c := newConeUV(cone, band, plane, n)
+	return trimByImprint(&c, f, cone, []geom.Curve3{conic}, ruledMaterial(&c))
 }
 
 // cylinderSideUVSplit splits a full periodic cylinder side by the general (u,v)-arrangement trimmer
@@ -152,5 +181,5 @@ func coneApexSideSplit(f curvedFace, cone geom.Cone, conic geom.Curve3, band con
 // (within-band / clips-rim / tongue), all flow through it uniformly (Oblikovati#1405).
 func cylinderSideUVSplit(f curvedFace, cyl geom.Cylinder, curves []geom.Curve3, band coneSideBand_, plane geom.Plane, n math.Vector3) ([]curvedFace, []loopEdge, error) {
 	c := newCylinderUV(cyl, band, plane, n)
-	return c.trimByImprint(f, cyl, curves, ruledUV.halfSpaceMaterial)
+	return trimByImprint(&c, f, cyl, curves, ruledMaterial(&c))
 }

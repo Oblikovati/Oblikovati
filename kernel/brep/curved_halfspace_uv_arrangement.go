@@ -321,7 +321,7 @@ func (c ruledUV) chooseSeamU(imprint []geom.Curve3) float64 {
 // arrangeBand runs the planar subdivision on the assembled band, returning the cells as (u,v) polygons
 // (outer loop + nested holes). It is the periodic band flattened to a rectangle; cross-seam adjacency is
 // reconciled later when the kept region's boundary is walked.
-func (c ruledUV) arrangeBand(segs []uvSeg) []Face2D {
+func arrangeBand(segs []uvSeg) []Face2D {
 	in := make([][2]math.Point2, 0, len(segs))
 	for _, s := range segs {
 		in = append(in, [2]math.Point2{s.a, s.b})
@@ -420,21 +420,29 @@ const seamWeldGrid = 1e-7
 
 // seamWelder welds (u,v) points onto shared indices with the azimuth seam identified (u=2π≡u=0). Folding
 // the seam is what turns the artificial seam edges of a wrapping kept region into reverse twins that cancel.
+// On a v-periodic surface (a torus) the tube seam is folded too (v=2π≡v=0), so a kept region wrapping the
+// tube cancels its v-seam edges the same way a wrapping band cancels its u-seam (Oblikovati#1406).
 type seamWelder struct {
-	index  map[[2]int64]int
-	points []math.Point2
+	index     map[[2]int64]int
+	points    []math.Point2
+	vPeriodic bool
 }
 
-func newSeamWelder() *seamWelder { return &seamWelder{index: map[[2]int64]int{}} }
+func newSeamWelder(vPeriodic bool) *seamWelder {
+	return &seamWelder{index: map[[2]int64]int{}, vPeriodic: vPeriodic}
+}
 
-// add returns the welded index of p, normalising u=2π to u=0 first so a seam vertex on either side of the
-// parameter rectangle maps to one ruling vertex.
+// add returns the welded index of p, normalising u=2π to u=0 (and, on a v-periodic surface, v=2π to v=0)
+// first so a seam vertex on either side of the parameter rectangle maps to one ruling/tube vertex.
 func (w *seamWelder) add(p math.Point2) int {
-	u := float64(p.X)
+	u, v := float64(p.X), float64(p.Y)
 	if stdmath.Abs(u-2*stdmath.Pi) < seamWeldGrid {
 		u = 0
 	}
-	k := [2]int64{int64(stdmath.Round(u / seamWeldGrid)), int64(stdmath.Round(float64(p.Y) / seamWeldGrid))}
+	if w.vPeriodic && stdmath.Abs(v-2*stdmath.Pi) < seamWeldGrid {
+		v = 0
+	}
+	k := [2]int64{int64(stdmath.Round(u / seamWeldGrid)), int64(stdmath.Round(v / seamWeldGrid))}
 	if i, ok := w.index[k]; ok {
 		return i
 	}
@@ -457,8 +465,8 @@ type dedge struct {
 // wrapping region traverses on both sides) appears as a reverse-twin pair and cancels, leaving exactly the
 // edges between kept material and dropped material (or the band rims). This is the cross-seam merge and the
 // shared-edge dissolve in one pass (#1405).
-func keptBoundaryEdges(kept []Face2D) []dedge {
-	w := newSeamWelder()
+func keptBoundaryEdges(kept []Face2D, vPeriodic bool) []dedge {
+	w := newSeamWelder(vPeriodic)
 	var all []dedge
 	add := func(poly []math.Point2) {
 		for i, n := 0, len(poly); i < n; i++ {
@@ -556,7 +564,7 @@ type recoveredEdge struct {
 // and source curve, and (for an imprint edge) interpolating the curve parameter at each endpoint from the
 // matched segment's tagged endpoints. The dedge is a sub-piece of exactly one assembled segment, found by
 // its midpoint's perpendicular distance.
-func (c ruledUV) recoverEdge(d dedge, segs []uvSeg) (recoveredEdge, bool) {
+func recoverEdge(d dedge, segs []uvSeg) (recoveredEdge, bool) {
 	mid := math.P2((float64(d.a.X)+float64(d.b.X))/2, (float64(d.a.Y)+float64(d.b.Y))/2)
 	best, bestDist := -1, tjTol
 	for i, s := range segs {
@@ -612,10 +620,10 @@ func clamp01(t float64) float64 {
 // analytic source, merge consecutive edges that share a curve into one run, and emit each run as a single
 // loopEdge (a rim arc, an imprint sub-arc, or a seam ruling). It returns the full boundary chain and,
 // separately, the imprint (section) sub-arcs alone — the cut edges the planar lid re-uses (reversed).
-func (c ruledUV) emitLoopEdges(loop []dedge, segs []uvSeg) (face, section []loopEdge, ok bool) {
+func emitLoopEdges(c uvSide, loop []dedge, segs []uvSeg) (face, section []loopEdge, ok bool) {
 	rec := make([]recoveredEdge, 0, len(loop))
 	for _, d := range loop {
-		re, good := c.recoverEdge(d, segs)
+		re, good := recoverEdge(d, segs)
 		if !good {
 			return nil, nil, false
 		}
@@ -632,32 +640,6 @@ func (c ruledUV) emitLoopEdges(loop []dedge, segs []uvSeg) (face, section []loop
 		}
 	}
 	return face, section, true
-}
-
-// trimByImprint is the general ruled-side split: it trims the side by the (u,v) imprint of the given
-// analytic curves, keeping the cells the material predicate selects, and returns the kept curvedFace(s)
-// and the section (cut) arcs that bound the planar lid. It is the arrangement replacement for the analytic
-// splitSide — a plane cut passes its section conic and the half-space predicate, while a general
-// curved∩curved cut passes its projected imprint and membership test (#1405).
-func (c ruledUV) trimByImprint(f curvedFace, surface geom.Surface, imprint []geom.Curve3, materialOf func(ruledUV) materialPredicate) ([]curvedFace, []loopEdge, error) {
-	c.seamU = c.chooseSeamU(imprint) // move the artificial seam clear of the imprint before arranging
-	var imp []uvSeg
-	for _, cv := range imprint {
-		imp = append(imp, c.sampleImprintUV(cv)...)
-	}
-	segs := c.assembleBandSegments(imp)
-	kept := keptCells(c.arrangeBand(segs), materialOf(c))
-	if len(kept) == 0 {
-		return nil, nil, nil // the whole side is on the dropped side
-	}
-	emitted, ok := c.emitKeptLoops(chainLoops(keptBoundaryEdges(kept)), segs)
-	if !ok {
-		return nil, nil, ErrUnsupportedHalfSpace
-	}
-	faceLoops, lid := c.orientLoops(emitted, c.wrapsAllU())
-	faceLoops = c.dropApexLoop(faceLoops)
-	kf := curvedFace{surface: surface, reversed: f.reversed, lineage: f.lineage, loops: faceLoops}
-	return []curvedFace{kf}, lid, nil
 }
 
 // dropApexLoop removes a degenerate apex-rim loop from a kept cone face. When the band's bottom rim is the
@@ -697,10 +679,10 @@ type emittedLoop struct {
 
 // emitKeptLoops re-emits every (u,v) boundary loop to analytic edges, sorted with the higher (hi) boundary
 // first to match the analytic split convention (loops[0] is the hi boundary / outer loop).
-func (c ruledUV) emitKeptLoops(loops [][]dedge, segs []uvSeg) ([]emittedLoop, bool) {
+func emitKeptLoops(c uvSide, loops [][]dedge, segs []uvSeg) ([]emittedLoop, bool) {
 	out := make([]emittedLoop, 0, len(loops))
 	for _, lp := range loops {
-		face, section, ok := c.emitLoopEdges(lp, segs)
+		face, section, ok := emitLoopEdges(c, lp, segs)
 		if !ok {
 			return nil, false
 		}
@@ -747,7 +729,7 @@ func allRimEdges(edges []loopEdge) bool {
 
 // meanEdgeV is the mean axial level of an edge chain (the average v of its endpoints), used to order the
 // hi boundary loop first.
-func meanEdgeV(c ruledUV, edges []loopEdge) float64 {
+func meanEdgeV(c uvSide, edges []loopEdge) float64 {
 	if len(edges) == 0 {
 		return 0
 	}
