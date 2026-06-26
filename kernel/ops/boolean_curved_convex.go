@@ -4,6 +4,7 @@ package ops
 
 import (
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -19,7 +20,7 @@ import (
 // curvedConvexIntersect returns the exact intersection of a curved solid with a convex planar tool, or
 // ok=false to defer to CSG. Only the Intersect operation maps to a half-space composition; Join and Cut
 // (a box is not a half-space complement) stay on the existing path.
-func curvedConvexIntersect(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, bool) {
+func curvedConvexIntersect(op PartFeatureOperation, target, tool *topo.Body, _ *diag.Recorder) (*topo.Body, bool) {
 	if op != Intersect {
 		return nil, false
 	}

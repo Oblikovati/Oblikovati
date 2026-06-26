@@ -21,7 +21,7 @@ func TestPartialPenetrationPlugIsWatertight(t *testing.T) {
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	stub, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 6) // ends at x=0, inside the fat
 
-	res, ok := PartialPenetrationIntersect(fat, stub)
+	res, ok := PartialPenetrationIntersect(fat, stub, nil)
 	if !ok {
 		t.Fatal("partial-penetration intersection declined; want a three-face plug")
 	}
@@ -56,7 +56,7 @@ func TestPartialPenetrationBlindHoleIsWatertight(t *testing.T) {
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	stub, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 6)
 
-	res, ok := PartialPenetrationCut(fat, stub)
+	res, ok := PartialPenetrationCut(fat, stub, nil)
 	if !ok {
 		t.Fatal("blind-hole cut declined; want a five-face pocketed solid")
 	}
@@ -97,7 +97,7 @@ func TestPartialPenetrationJoinIsWatertight(t *testing.T) {
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	stub, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 6)
 
-	res, ok := PartialPenetrationJoin(fat, stub)
+	res, ok := PartialPenetrationJoin(fat, stub, nil)
 	if !ok {
 		t.Fatal("partial-penetration join declined; want a five-face stubbed solid")
 	}
@@ -132,7 +132,7 @@ func TestPartialPenetrationRodMinusFatStub(t *testing.T) {
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	stub, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 6)
 
-	res, ok := PartialPenetrationCut(stub, fat) // target is the rod
+	res, ok := PartialPenetrationCut(stub, fat, nil) // target is the rod
 	if !ok {
 		t.Fatal("rod − fat declined; want a single rod stub lump")
 	}
@@ -157,7 +157,7 @@ func TestPartialPenetrationRodMinusFatStub(t *testing.T) {
 func TestPartialPenetrationFullCrossingDefers(t *testing.T) {
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	thru, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12) // spans both walls
-	if _, ok := PartialPenetrationIntersect(fat, thru); ok {
+	if _, ok := PartialPenetrationIntersect(fat, thru, nil); ok {
 		t.Error("a full crossing (two loops) should defer from the plug assembler (ok=false)")
 	}
 }
@@ -167,7 +167,7 @@ func TestPartialPenetrationFullCrossingDefers(t *testing.T) {
 func TestPartialPenetrationContainedRodDefers(t *testing.T) {
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	inside, _ := SolidCylinder(math.P3(-1, 0, 0), math.V3(1, 0, 0), 0.5, 2) // x∈[-1,1], wholly inside
-	if _, ok := PartialPenetrationIntersect(fat, inside); ok {
+	if _, ok := PartialPenetrationIntersect(fat, inside, nil); ok {
 		t.Error("a fully-contained rod should defer from the plug assembler (ok=false)")
 	}
 }

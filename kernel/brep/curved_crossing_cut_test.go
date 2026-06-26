@@ -21,7 +21,7 @@ func TestCrossingCylinderCutDrill(t *testing.T) {
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	thin, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
 
-	res, ok := CrossingCylinderCut(fat, thin)
+	res, ok := CrossingCylinderCut(fat, thin, nil)
 	if !ok {
 		t.Fatal("drill (fat − rod) declined; want a four-face solid")
 	}
@@ -73,7 +73,7 @@ func TestCrossingCylinderCutRodMinusFatStubs(t *testing.T) {
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	thin, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
 
-	res, ok := CrossingCylinderCut(thin, fat) // target is the rod
+	res, ok := CrossingCylinderCut(thin, fat, nil) // target is the rod
 	if !ok {
 		t.Fatal("rod − fat declined; want two disconnected rod stubs")
 	}
@@ -97,7 +97,7 @@ func TestCrossingCylinderCutRodMinusFatStubs(t *testing.T) {
 func TestCrossingCylinderCutNonCylinderDefers(t *testing.T) {
 	block, _ := SolidBlock(math.P3(-2, -2, -2), math.P3(2, 2, 2), "b")
 	cyl, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 1, 12)
-	if _, ok := CrossingCylinderCut(block, cyl); ok {
+	if _, ok := CrossingCylinderCut(block, cyl, nil); ok {
 		t.Error("a block − cylinder should defer from the drill assembler (ok=false)")
 	}
 }

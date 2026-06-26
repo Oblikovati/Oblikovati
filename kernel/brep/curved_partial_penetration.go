@@ -5,6 +5,7 @@ package brep
 import (
 	stdmath "math"
 
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -36,9 +37,9 @@ func partLin(role string) topo.Lineage { return topo.NewLineage(topo.Tok("partpe
 //
 //	fat, _  := brep.SolidCylinder(math.P3(0,0,-6), math.V3(0,0,1), 3, 12)
 //	stub, _ := brep.SolidCylinder(math.P3(-6,0,0), math.V3(1,0,0), 1.5, 6) // ends at x=0, inside the fat
-//	res, ok := brep.PartialPenetrationIntersect(fat, stub)
-func PartialPenetrationIntersect(a, b *topo.Body) (*topo.Body, bool) {
-	p, ok := partialPlugPartsOf(a, b)
+//	res, ok := brep.PartialPenetrationIntersect(fat, stub, nil)
+func PartialPenetrationIntersect(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
+	p, ok := partialPlugPartsOf(a, b, rec)
 	if !ok {
 		return nil, false
 	}
@@ -67,24 +68,24 @@ type partialPlugParts struct {
 // full crossing and return both loops). Which body is the rod is unknown up front, so both orderings are
 // tried; the rod-first ordering is the one that yields exactly one loop encircling that body and exactly one
 // of that body's ends inside the other.
-func partialPlugPartsOf(a, b *topo.Body) (*partialPlugParts, bool) {
-	if p, ok := tryPartialPlug(a, b); ok {
+func partialPlugPartsOf(a, b *topo.Body, rec *diag.Recorder) (*partialPlugParts, bool) {
+	if p, ok := tryPartialPlug(a, b, rec); ok {
 		return p, true
 	}
-	if p, ok := tryPartialPlug(b, a); ok {
+	if p, ok := tryPartialPlug(b, a, rec); ok {
 		return p, true
 	}
-	if p, ok := tryConePartialPlug(a, b); ok {
+	if p, ok := tryConePartialPlug(a, b, rec); ok {
 		return p, true
 	}
-	return tryConePartialPlug(b, a)
+	return tryConePartialPlug(b, a, rec)
 }
 
 // tryPartialPlug resolves a cylinder-rod partial plug treating rodBody as the penetrating rod (traced first),
 // or ok=false when that does not hold: not exactly one imprint loop, the loop does not encircle rodBody, or
 // not exactly one of rodBody's ends lies inside fatBody.
-func tryPartialPlug(rodBody, fatBody *topo.Body) (*partialPlugParts, bool) {
-	loops, ok := crossingCylinderImprint(rodBody, fatBody)
+func tryPartialPlug(rodBody, fatBody *topo.Body, rec *diag.Recorder) (*partialPlugParts, bool) {
+	loops, ok := crossingCylinderImprint(rodBody, fatBody, rec)
 	if !ok {
 		return nil, false
 	}
@@ -102,8 +103,8 @@ func tryPartialPlug(rodBody, fatBody *topo.Body) (*partialPlugParts, bool) {
 // coneCylinderImprint always traces the cone within its own apex-distance band, so a cone ending inside the
 // fat yields the single entry loop (the blind end is interior, no exit loop). ok=false unless coneBody is a
 // bare cone, fatBody a bare cylinder, and the partial-plug conditions hold (see partialPlugFrom).
-func tryConePartialPlug(coneBody, fatBody *topo.Body) (*partialPlugParts, bool) {
-	loops, ok := coneCylinderImprint(coneBody, fatBody)
+func tryConePartialPlug(coneBody, fatBody *topo.Body, rec *diag.Recorder) (*partialPlugParts, bool) {
+	loops, ok := coneCylinderImprint(coneBody, fatBody, rec)
 	if !ok {
 		return nil, false
 	}
@@ -210,9 +211,9 @@ func partialPlug(p *partialPlugParts) *topo.Body {
 //	fat, _  := brep.SolidCylinder(math.P3(0,0,-6), math.V3(0,0,1), 3, 12)
 //	stub, _ := brep.SolidCylinder(math.P3(-6,0,0), math.V3(1,0,0), 1.5, 6)
 //	res, ok := brep.PartialPenetrationCut(fat, stub) // fat with a blind pocket
-//	res, ok = brep.PartialPenetrationCut(stub, fat)  // the rod stub outside the fat
-func PartialPenetrationCut(target, tool *topo.Body) (*topo.Body, bool) {
-	p, ok := partialPlugPartsOf(target, tool)
+//	res, ok = brep.PartialPenetrationCut(stub, fat, nil)  // the rod stub outside the fat
+func PartialPenetrationCut(target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
+	p, ok := partialPlugPartsOf(target, tool, rec)
 	if !ok {
 		return nil, false
 	}
@@ -233,8 +234,8 @@ func partialRodMinusFat(p *partialPlugParts) *topo.Body {
 // to defer. The result is the fat with a single rod STUB sticking out the entry side: the fat's two caps,
 // its holed side wall, the rod-wall stub band from the lens out to the rod's entry end, and the rod's entry
 // end cap.
-func PartialPenetrationJoin(a, b *topo.Body) (*topo.Body, bool) {
-	p, ok := partialPlugPartsOf(a, b)
+func PartialPenetrationJoin(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
+	p, ok := partialPlugPartsOf(a, b, rec)
 	if !ok {
 		return nil, false
 	}

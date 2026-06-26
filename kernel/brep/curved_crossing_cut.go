@@ -5,6 +5,7 @@ package brep
 import (
 	stdmath "math"
 
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -30,9 +31,9 @@ import (
 //	fat, _  := brep.SolidCylinder(math.P3(0,0,-6), math.V3(0,0,1), 3, 12)
 //	thin, _ := brep.SolidCylinder(math.P3(-6,0,0), math.V3(1,0,0), 1.5, 12)
 //	res, ok := brep.CrossingCylinderCut(fat, thin) // fat with a tunnel
-//	res, ok = brep.CrossingCylinderCut(thin, fat)  // the two rod stubs
-func CrossingCylinderCut(target, tool *topo.Body) (*topo.Body, bool) {
-	p, ok := crossingPartsOf(target, tool)
+//	res, ok = brep.CrossingCylinderCut(thin, fat, nil)  // the two rod stubs
+func CrossingCylinderCut(target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
+	p, ok := crossingPartsOf(target, tool, rec)
 	if !ok {
 		return nil, false
 	}
@@ -63,8 +64,8 @@ type crossingParts struct {
 // crossingPartsOf resolves two bodies into crossingParts, or ok=false when they are not two bare cylinders
 // crossing in the thin-through-fat configuration (exactly two imprint loops, one cylinder the rod both
 // encircle).
-func crossingPartsOf(a, b *topo.Body) (*crossingParts, bool) {
-	loops, ok := crossingCylinderImprint(a, b)
+func crossingPartsOf(a, b *topo.Body, rec *diag.Recorder) (*crossingParts, bool) {
+	loops, ok := crossingCylinderImprint(a, b, rec)
 	if !ok || len(loops) != 2 {
 		return nil, false
 	}

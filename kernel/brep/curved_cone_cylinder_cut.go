@@ -3,6 +3,7 @@
 package brep
 
 import (
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -29,9 +30,9 @@ import (
 //	cone, _ := brep.SolidCylinderCone(math.P3(-6,0,0), math.P3(6,0,0), 1, 2.5, "cone")
 //	cyl, _  := brep.SolidCylinder(math.P3(0,0,-6), math.V3(0,0,1), 3, 12)
 //	res, ok := brep.ConeCylinderCut(cyl, cone) // fat with a tapered tunnel
-//	res, ok = brep.ConeCylinderCut(cone, cyl)  // the two cone stubs
-func ConeCylinderCut(target, tool *topo.Body) (*topo.Body, bool) {
-	p, ok := coneCrossingPartsOf(target, tool)
+//	res, ok = brep.ConeCylinderCut(cone, cyl, nil)  // the two cone stubs
+func ConeCylinderCut(target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
+	p, ok := coneCrossingPartsOf(target, tool, rec)
 	if !ok {
 		return nil, false
 	}
@@ -47,8 +48,8 @@ func ConeCylinderCut(target, tool *topo.Body) (*topo.Body, bool) {
 // coneCrossingPartsOf resolves a cone body and a cylinder body into crossingParts (with the cone as the rod),
 // or ok=false when they are not one bare cone crossing one fatter cylinder in the full-crossing configuration
 // (exactly two imprint loops, the cone the rod both loops encircle, both loops between the cone's caps).
-func coneCrossingPartsOf(a, b *topo.Body) (*crossingParts, bool) {
-	loops, ok := coneCylinderImprint(a, b)
+func coneCrossingPartsOf(a, b *topo.Body, rec *diag.Recorder) (*crossingParts, bool) {
+	loops, ok := coneCylinderImprint(a, b, rec)
 	if !ok || len(loops) != 2 {
 		return nil, false
 	}

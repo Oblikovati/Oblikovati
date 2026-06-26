@@ -5,6 +5,7 @@ package brep
 import (
 	stdmath "math"
 
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -31,9 +32,9 @@ func crossLin(role string) topo.Lineage { return topo.NewLineage(topo.Tok("cross
 //
 //	fat, _  := brep.SolidCylinder(math.P3(0,0,-6), math.V3(0,0,1), 3, 12)
 //	thin, _ := brep.SolidCylinder(math.P3(-6,0,0), math.V3(1,0,0), 1.5, 12)
-//	res, ok := brep.CrossingCylinderIntersect(fat, thin) // rod band capped by two lenses
-func CrossingCylinderIntersect(a, b *topo.Body) (*topo.Body, bool) {
-	loops, ok := crossingCylinderImprint(a, b)
+//	res, ok := brep.CrossingCylinderIntersect(fat, thin, nil) // rod band capped by two lenses
+func CrossingCylinderIntersect(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
+	loops, ok := crossingCylinderImprint(a, b, rec)
 	if !ok || len(loops) != 2 {
 		return nil, false
 	}

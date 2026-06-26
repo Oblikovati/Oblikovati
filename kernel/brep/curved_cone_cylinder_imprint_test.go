@@ -20,7 +20,7 @@ func TestConeCylinderImprintTwoCleanLoops(t *testing.T) {
 	cone, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
 	cyl, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 
-	loops, ok := coneCylinderImprint(cone, cyl)
+	loops, ok := coneCylinderImprint(cone, cyl, nil)
 	if !ok {
 		t.Fatal("cone–cylinder imprint declined; want two crossing loops")
 	}
@@ -38,7 +38,7 @@ func TestConeCylinderImprintTwoCleanLoops(t *testing.T) {
 func TestConeCylinderImprintOrderIndependent(t *testing.T) {
 	cone, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
 	cyl, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
-	if _, ok := coneCylinderImprint(cyl, cone); !ok {
+	if _, ok := coneCylinderImprint(cyl, cone, nil); !ok {
 		t.Error("cone–cylinder imprint should resolve with the cylinder passed first too")
 	}
 }
@@ -47,7 +47,7 @@ func TestConeCylinderImprintOrderIndependent(t *testing.T) {
 func TestConeCylinderImprintTwoCylindersDefer(t *testing.T) {
 	a, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
 	b, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
-	if _, ok := coneCylinderImprint(a, b); ok {
+	if _, ok := coneCylinderImprint(a, b, nil); ok {
 		t.Error("two cylinders should defer from the cone–cylinder imprint (ok=false)")
 	}
 }

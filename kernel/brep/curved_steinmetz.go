@@ -11,10 +11,13 @@ import (
 )
 
 // Equal-radius Steinmetz intersection (M2 Phase 2, Oblikovati/Oblikovati#1335). Two EQUAL-radius
-// perpendicular cylinders crossing through a common axis point intersect in the Steinmetz bicylinder. This
-// is the degenerate case the SSI imprint tracer cannot trace: the intersection curve is NOT a quartic
-// saddle but two planar ELLIPSES that cross at two pinch points (where the tracer's continuation stalls),
-// so it is fitted analytically here instead.
+// perpendicular cylinders crossing through a common axis point intersect in the Steinmetz bicylinder: the
+// intersection curve is NOT a quartic saddle but two planar ELLIPSES that cross at two pinch points. The
+// SSI imprint tracer now follows each ellipse straight through those pinches (Oblikovati#1404), so the
+// crossing imprint returns the two loops here too; but the bicylinder's four-lobe SOLID is still assembled
+// from EXACT analytic ellipse edges below (sharper than traced polylines, and a different topology from the
+// rod-band crossing result). Folding this constructor into a general loop→solid stitch is tracked under the
+// curved∩curved pipeline (Oblikovati#1403), for which the through-pinch tracer is the prerequisite.
 //
 // Geometry in the frame (a = axis A, b = axis B, n = a×b) through the axis crossing O, with equal radius R:
 // a surface point O + α·a + β·b + γ·n is on cyl A when β²+γ²=R² and on cyl B when α²+γ²=R², so on both when

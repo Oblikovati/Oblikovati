@@ -3,6 +3,7 @@
 package brep
 
 import (
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -28,9 +29,9 @@ import (
 //
 //	fat, _  := brep.SolidCylinder(math.P3(0,0,-6), math.V3(0,0,1), 3, 12)
 //	thin, _ := brep.SolidCylinder(math.P3(-6,0,0), math.V3(1,0,0), 1.5, 12)
-//	res, ok := brep.CrossingCylinderJoin(fat, thin)
-func CrossingCylinderJoin(a, b *topo.Body) (*topo.Body, bool) {
-	p, ok := crossingPartsOf(a, b)
+//	res, ok := brep.CrossingCylinderJoin(fat, thin, nil)
+func CrossingCylinderJoin(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
+	p, ok := crossingPartsOf(a, b, rec)
 	if !ok {
 		return nil, false
 	}

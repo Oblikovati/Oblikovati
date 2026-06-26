@@ -14,7 +14,13 @@ import (
 // saddle branches arbitrarily. This tracer instead marches the joint zero of the two surfaces: from
 // each seed it corrects onto the curve (project onto the intersection of the two tangent planes) and
 // steps along nb×no, the curve tangent, with adaptive direction — so loops close, branches stay
-// connected, and a tangency (parallel normals) is reported as a point rather than dropped.
+// connected, and an isolated tangency (parallel normals) is reported as a point rather than dropped.
+//
+// A curve that PASSES THROUGH a tangency or pinch — where two intersection branches cross and the
+// surface normals momentarily align, e.g. the two ellipses of an equal-radius Steinmetz crossing — is
+// traced straight through the singularity rather than stopping at it (Oblikovati#1404): the corrector
+// damps to a steepest-descent step where the tangent-plane intersection is ill-conditioned, so the
+// march re-acquires the curve on the far side and the loop closes instead of being dropped open.
 
 const (
 	ssiCorrectIters     = 40   // max corrector iterations per point
@@ -39,6 +45,12 @@ const (
 	ssiDedupSteps       = 1.5
 	ssiLoopCloseSteps   = 0.75
 	ssiTangencyGapSteps = 5.0
+	// ssiDescentGain damps the steepest-descent corrector step taken where the two surface normals are
+	// near-parallel (a tangency/pinch), so the corrector converges onto the curve through that singular
+	// neighbourhood instead of diverging — see correctorStep (#1404). A full (gain 1) Newton-on-the-gaps
+	// step overshoots when the normals coincide; half-stepping is unconditionally stable and still
+	// monotone, costing only a few extra iterations through the (rare, localised) near-parallel band.
+	ssiDescentGain = 0.5 // tol:numeric — under-relaxation of the near-tangency descent step
 )
 
 // ssiTracer holds the immutable context for one surface↔surface trace: the two surfaces, the base's
@@ -161,10 +173,13 @@ func orient(t, h math.Vector3) math.Vector3 {
 	return d
 }
 
-// correctToBothSurfaces pulls p onto the intersection of base and other by repeatedly projecting it
-// onto the intersection LINE of the two surfaces' tangent planes (the standard SSI corrector). Returns
-// the corrected point, the unit normals there, and whether it converged below tol. ok is false when
-// the normals are (near) parallel — the tangent-plane intersection is undefined, signalling a tangency.
+// correctToBothSurfaces pulls p onto the intersection of base and other by repeatedly stepping it toward
+// both surfaces (the standard SSI corrector). Returns the corrected point, the unit normals there, and
+// whether it converged below tol. Where the normals are well separated each step is the tangent-plane
+// intersection; through a tangency/pinch neighbourhood — where that step is ill-conditioned — it falls
+// back to a damped descent step so the curve is traced THROUGH the singularity rather than dropped at it
+// (correctorStep, #1404). ok is false only when no zero is reached within ssiCorrectIters (a genuine
+// mid-air stall: the predicted point has no nearby crossing, e.g. a march walking off a NURBS patch).
 func correctToBothSurfaces(base, other Surface, p math.Point3, tol float64) (math.Point3, math.Vector3, math.Vector3, bool) {
 	var nb, no math.Vector3
 	for i := 0; i < ssiCorrectIters; i++ {
@@ -180,13 +195,24 @@ func correctToBothSurfaces(base, other Surface, p math.Point3, tol float64) (mat
 		if db < tol && do < tol {
 			return p, nb, no, true
 		}
-		a, b, ok := tangentPlaneSolve(nb, no, sb, so)
-		if !ok {
-			return p, nb, no, false
-		}
-		p = p.TranslateBy(nb.Scale(math.Scalar(a)).Add(no.Scale(math.Scalar(b))))
+		p = p.TranslateBy(correctorStep(nb, no, sb, so))
 	}
 	return p, nb, no, false
+}
+
+// correctorStep returns one corrector displacement that drives the two signed tangent-plane gaps (sb, so)
+// toward zero. Where the normals are well separated it is the exact tangent-plane intersection step (lands
+// p on BOTH tangent planes). Where they are near-parallel — a tangency or pinch, the configuration #1404
+// must survive — that 2×2 system is ill-conditioned and blows up, so it falls back to a damped
+// steepest-descent step on ½(sb²+so²), whose gradient is sb·nb+so·no: unconditionally stable, still
+// monotone, and so converges onto a shallow transversal crossing (a near-pinch) and onto a true contact
+// (a pinch) instead of giving up and dropping the curve there.
+func correctorStep(nb, no math.Vector3, sb, so float64) math.Vector3 {
+	if a, b, ok := tangentPlaneSolve(nb, no, sb, so); ok {
+		return nb.Scale(math.Scalar(a)).Add(no.Scale(math.Scalar(b)))
+	}
+	gradient := nb.Scale(math.Scalar(sb)).Add(no.Scale(math.Scalar(so)))
+	return gradient.Scale(-ssiDescentGain)
 }
 
 // tangentPlaneSolve finds the step δ = a·nb + b·no that lands p on BOTH tangent planes:

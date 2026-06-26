@@ -19,7 +19,7 @@ func TestConeConeIntersectThreeFaces(t *testing.T) {
 	thin, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 0.8, 1.5, "thin")
 	fat, _ := SolidCylinderCone(math.P3(0, 0, -6), math.P3(0, 0, 6), 2, 4, "fat")
 
-	res, ok := ConeConeIntersect(thin, fat)
+	res, ok := ConeConeIntersect(thin, fat, nil)
 	if !ok {
 		t.Fatal("cone–cone intersection declined; want a three-face solid")
 	}
@@ -35,7 +35,7 @@ func TestConeConeIntersectThreeFaces(t *testing.T) {
 func TestConeConeIntersectOrderIndependent(t *testing.T) {
 	thin, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 0.8, 1.5, "thin")
 	fat, _ := SolidCylinderCone(math.P3(0, 0, -6), math.P3(0, 0, 6), 2, 4, "fat")
-	if _, ok := ConeConeIntersect(fat, thin); !ok {
+	if _, ok := ConeConeIntersect(fat, thin, nil); !ok {
 		t.Error("cone–cone intersection should resolve with the fat cone passed first too")
 	}
 }
@@ -44,7 +44,7 @@ func TestConeConeIntersectOrderIndependent(t *testing.T) {
 func TestConeConeIntersectConeCylinderDefer(t *testing.T) {
 	cone, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
 	cyl, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
-	if _, ok := ConeConeIntersect(cone, cyl); ok {
+	if _, ok := ConeConeIntersect(cone, cyl, nil); ok {
 		t.Error("a cone and a cylinder should defer from the cone–cone intersection (ok=false)")
 	}
 }

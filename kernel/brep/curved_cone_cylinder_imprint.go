@@ -3,6 +3,7 @@
 package brep
 
 import (
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 )
@@ -22,14 +23,14 @@ import (
 // or ok=false when the two bodies are not one bare cone and one bare cylinder, or no closed loop is traced.
 // The cone is the trace base, windowed to its apex-distance band [vMin, vMax]; the periodic angular
 // direction is left to the tracer.
-func coneCylinderImprint(a, b *topo.Body) ([]geom.Polyline, bool) {
+func coneCylinderImprint(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyline, bool) {
 	cone, cyl, vMin, vMax, ok := coneAndCylinder(a, b)
 	if !ok {
 		return nil, false
 	}
 	window := geom.SurfaceGrid{VMin: vMin, VMax: vMax}
 	res := geom.ResolutionForBox(a.RangeBox().Union(b.RangeBox())) // model-relative loop-closure weld (#1399)
-	loops := closedTraceLoops(geom.IntersectSurfaceSurface(cone, cyl, window), res)
+	loops := closedTraceLoops(geom.IntersectSurfaceSurface(cone, cyl, window), res, rec)
 	if len(loops) == 0 {
 		return nil, false
 	}

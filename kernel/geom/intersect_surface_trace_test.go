@@ -112,6 +112,95 @@ func TestSSINurbsPatchCutByPlane(t *testing.T) {
 	}
 }
 
+// closedOnly keeps the loops that close (first≈last) and have enough points to be a real curve, dropping
+// the single-point tangency markers, so a #1404 test asserts on the boundary loops the imprint consumes.
+func closedOnly(loops [][]math.Point3) [][]math.Point3 {
+	var out [][]math.Point3
+	for _, c := range loops {
+		if len(c) >= 4 && float64(c[0].DistanceTo(c[len(c)-1])) < 0.05 {
+			out = append(out, c)
+		}
+	}
+	return out
+}
+
+// passesNear reports whether some point of the loop comes within tol of p.
+func passesNear(loop []math.Point3, p math.Point3, tol float64) bool {
+	for _, q := range loop {
+		if float64(q.DistanceTo(p)) < tol {
+			return true
+		}
+	}
+	return false
+}
+
+// planarDiagonal reports whether the whole loop lies in the plane x=z OR the whole loop lies in x=−z — the
+// two Steinmetz ellipse planes for an x-axis and a z-axis cylinder of equal radius.
+func planarDiagonal(loop []math.Point3) bool {
+	inPlus, inMinus := true, true
+	for _, p := range loop {
+		if stdmath.Abs(float64(p.X)-float64(p.Z)) > 1e-4 {
+			inPlus = false
+		}
+		if stdmath.Abs(float64(p.X)+float64(p.Z)) > 1e-4 {
+			inMinus = false
+		}
+	}
+	return inPlus || inMinus
+}
+
+// TestSSITracesThroughSteinmetzPinch is the headline acceptance for Oblikovati#1404: two equal-radius
+// perpendicular cylinders intersect in two ellipses that CROSS at two pinch points (the Steinmetz
+// configuration). The tracer must follow each ellipse straight through both pinches and return two
+// topologically-complete closed loops — not stop at the first pinch and silently drop the open arcs, the
+// old behaviour that forced the bespoke curved_steinmetz analytic family.
+func TestSSITracesThroughSteinmetzPinch(t *testing.T) {
+	const r = 3.0
+	a, _ := NewCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), r) // axis x
+	b, _ := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), r) // axis z
+	loops := closedOnly(IntersectSurfaceSurface(a, b, SurfaceGrid{VMin: -r - 1, VMax: r + 1}))
+	if len(loops) != 2 {
+		t.Fatalf("got %d closed loops, want 2 (the two Steinmetz ellipses through the pinches)", len(loops))
+	}
+	onBothSurfaces(t, a, b, loops, 1e-4)
+	pinchLo, pinchHi := math.P3(0, -r, 0), math.P3(0, r, 0)
+	for i, loop := range loops {
+		if !passesNear(loop, pinchLo, 0.05) || !passesNear(loop, pinchHi, 0.05) {
+			t.Errorf("loop %d does not pass through both pinch points (0,±%g,0)", i, r)
+		}
+		if !planarDiagonal(loop) {
+			t.Errorf("loop %d is not planar in x=z or x=-z (a Steinmetz ellipse plane)", i)
+		}
+	}
+}
+
+// TestSSINearPinchKeepsBothLoops: two perpendicular cylinders whose radii differ by only 1e-6 meet in two
+// SEPARATE closed loops that approach within a few microns at a tight high-curvature near-pinch U-turn. The
+// corrector's near-tangency descent must follow that turn so BOTH loops come back closed — no silently
+// dropped chain (Oblikovati#1404).
+func TestSSINearPinchKeepsBothLoops(t *testing.T) {
+	a, _ := NewCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), 3.0)
+	b, _ := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3.0-1e-6)
+	loops := closedOnly(IntersectSurfaceSurface(a, b, SurfaceGrid{VMin: -4, VMax: 4}))
+	if len(loops) != 2 {
+		t.Fatalf("got %d closed loops, want 2 (a near-pinch must not drop a chain)", len(loops))
+	}
+	onBothSurfaces(t, a, b, loops, 1e-4)
+}
+
+// TestSSINearTangentSphereCylinderClosesLoops: a sphere just larger than the cylinder it surrounds cuts it
+// in two near-tangent circles; the descent corrector traces both as closed loops through the shallow
+// (near-parallel-normal) crossing rather than dropping them (Oblikovati#1404).
+func TestSSINearTangentSphereCylinderClosesLoops(t *testing.T) {
+	sp, _ := NewSphere(math.P3(0, 0, 0), 3.0001)
+	cy, _ := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3.0)
+	loops := closedOnly(IntersectSurfaceSurface(sp, cy, SurfaceGrid{}))
+	if len(loops) != 2 {
+		t.Fatalf("got %d closed loops, want 2 near-tangent circles", len(loops))
+	}
+	onBothSurfaces(t, sp, cy, loops, 1e-4)
+}
+
 // TestSSIAgreesWithAnalyticOnSpherePlane: the tracer's sphere∩plane circle must match the analytic
 // equator (radius and planarity), the acceptance cross-check against the analytic path.
 func TestSSIAgreesWithAnalyticOnSpherePlane(t *testing.T) {

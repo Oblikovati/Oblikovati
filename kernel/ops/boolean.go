@@ -96,7 +96,7 @@ func join(lin topo.Lineage, target, tool *topo.Body, rel relation, rec *diag.Rec
 // triangle-soup BSP CSG only when an operand has a non-planar face the B-rep path can't take
 // (a cylinder, cone, etc.). A nil B-rep result is a (valid) empty body.
 func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.Lineage, rec *diag.Recorder) (*topo.Body, error) {
-	if body, ok := curvedExactBoolean(op, target, tool); ok {
+	if body, ok := curvedExactBoolean(op, target, tool, rec); ok {
 		return body, nil // an exact analytic curved result (M2 #1334/#1335) — keeps surfaces, no CSG soup
 	}
 	bop, ok := toBrepOp(op)
@@ -146,9 +146,9 @@ func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.L
 //   - drilling a clean through-hole in an all-planar slab with a straight cylinder (a drilled plate: box − cylinder) (#1336);
 //   - the union of two coaxial equal-radius cylinders that overlap/abut → one taller cylinder (a coplanar/tangent overlap) (#1336);
 //   - the union of a cylinder seated flush on a planar face (a boss/spigot) → seat-face hole + outward wall + cap (a coplanar overlap) (#1336).
-func curvedExactBoolean(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, bool) {
+func curvedExactBoolean(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
 	for _, exact := range curvedExactPaths {
-		if body, ok := exact(op, target, tool); ok {
+		if body, ok := exact(op, target, tool, rec); ok {
 			return body, true
 		}
 	}
@@ -161,12 +161,13 @@ func curvedExactBoolean(op PartFeatureOperation, target, tool *topo.Body) (*topo
 // it to combine a still-analytic primitive (a revolved torus, an extruded cylinder) by its curved faces
 // before falling back to faceting the operands for the planar path (#129).
 func CurvedBoolean(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, bool) {
-	return curvedExactBoolean(op, target, tool)
+	return curvedExactBoolean(op, target, tool, nil)
 }
 
 // curvedExactPaths is the ordered list of exact analytic curved-boolean paths curvedExactBoolean tries; each
-// returns ok=false when it does not apply to (op, target, tool).
-var curvedExactPaths = []func(PartFeatureOperation, *topo.Body, *topo.Body) (*topo.Body, bool){
+// returns ok=false when it does not apply to (op, target, tool). The recorder carries the SSI imprint's
+// closure diagnostics (#1404) up to the boolean's caller; a path that takes no imprint ignores it.
+var curvedExactPaths = []func(PartFeatureOperation, *topo.Body, *topo.Body, *diag.Recorder) (*topo.Body, bool){
 	curvedConvexIntersect, curvedConvexSubtract,
 	curvedCrossingIntersect, curvedSteinmetzIntersect, curvedConeCylinderIntersect, curvedConeConeIntersect,
 	curvedPartialIntersect,

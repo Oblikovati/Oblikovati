@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -25,7 +26,7 @@ const axisAlignTol = 1e-7
 // curvedConvexSubtract returns cylinder − box when the box is an axial through-tunnel inside the cylinder,
 // or ok=false to defer. Only Cut maps here, and only with a curved target (the body being cut) and a
 // convex all-planar tool whose faces are each parallel or perpendicular to the cylinder axis.
-func curvedConvexSubtract(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, bool) {
+func curvedConvexSubtract(op PartFeatureOperation, target, tool *topo.Body, _ *diag.Recorder) (*topo.Body, bool) {
 	if op != Cut || !hasCurvedFace(target) || hasCurvedFace(tool) {
 		return nil, false
 	}

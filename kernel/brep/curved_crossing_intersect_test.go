@@ -44,7 +44,7 @@ func TestCrossingCylinderIntersectThinThroughFat(t *testing.T) {
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	thin, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
 
-	res, ok := CrossingCylinderIntersect(fat, thin)
+	res, ok := CrossingCylinderIntersect(fat, thin, nil)
 	if !ok {
 		t.Fatal("thin-through-fat intersection declined; want a three-face solid")
 	}
@@ -57,7 +57,7 @@ func TestCrossingCylinderIntersectOrderIndependent(t *testing.T) {
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	thin, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
 
-	res, ok := CrossingCylinderIntersect(thin, fat) // rod first
+	res, ok := CrossingCylinderIntersect(thin, fat, nil) // rod first
 	if !ok {
 		t.Fatal("rod-first intersection declined; the assembly must be order-independent")
 	}
@@ -68,7 +68,7 @@ func TestCrossingCylinderIntersectOrderIndependent(t *testing.T) {
 func TestCrossingCylinderIntersectNonCylinderDefers(t *testing.T) {
 	block, _ := SolidBlock(math.P3(-2, -2, -2), math.P3(2, 2, 2), "b")
 	cyl, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 1, 12)
-	if _, ok := CrossingCylinderIntersect(block, cyl); ok {
+	if _, ok := CrossingCylinderIntersect(block, cyl, nil); ok {
 		t.Error("intersection of a block and a cylinder should defer (ok=false)")
 	}
 }

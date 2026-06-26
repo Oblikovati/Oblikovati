@@ -21,7 +21,7 @@ func TestConeConeCutDrillsFat(t *testing.T) {
 	fat, _ := SolidCylinderCone(math.P3(0, 0, -6), math.P3(0, 0, 6), 2, 4, "fat")
 	thin, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 0.8, 1.5, "thin")
 
-	res, ok := ConeConeCut(fat, thin)
+	res, ok := ConeConeCut(fat, thin, nil)
 	if !ok {
 		t.Fatal("cone drill of cone declined; want a four-face solid")
 	}
@@ -39,7 +39,7 @@ func TestConeConeCutRodMinusFatStubs(t *testing.T) {
 	fat, _ := SolidCylinderCone(math.P3(0, 0, -6), math.P3(0, 0, 6), 2, 4, "fat")
 	thin, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 0.8, 1.5, "thin")
 
-	res, ok := ConeConeCut(thin, fat)
+	res, ok := ConeConeCut(thin, fat, nil)
 	if !ok {
 		t.Fatal("rod cone − fat cone declined; want two tapered stubs")
 	}
@@ -58,7 +58,7 @@ func TestConeConeCutRodMinusFatStubs(t *testing.T) {
 func TestConeConeCutConeCylinderDefer(t *testing.T) {
 	cone, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
 	cyl, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
-	if _, ok := ConeConeCut(cyl, cone); ok {
+	if _, ok := ConeConeCut(cyl, cone, nil); ok {
 		t.Error("a cone and a cylinder should defer from the cone–cone cut (ok=false)")
 	}
 }
