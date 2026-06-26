@@ -620,8 +620,36 @@ func (c ruledUV) trimByImprint(f curvedFace, surface geom.Surface, imprint []geo
 		return nil, nil, ErrUnsupportedHalfSpace
 	}
 	faceLoops, lid := c.orientLoops(emitted, c.wrapsAllU())
+	faceLoops = c.dropApexLoop(faceLoops)
 	kf := curvedFace{surface: surface, reversed: f.reversed, lineage: f.lineage, loops: faceLoops}
 	return []curvedFace{kf}, lid, nil
+}
+
+// dropApexLoop removes a degenerate apex-rim loop from a kept cone face. When the band's bottom rim is the
+// cone apex (rBot=0), an apex-kept cut emits that rim as a zero-radius circle at the apex point; the apex is
+// an interior POLE of the closed face, not a boundary, so the loop (carrying no section arcs, so no lid) is
+// dropped — leaving the single cut loop the analytic apexCapSide produced (#1405).
+func (c ruledUV) dropApexLoop(loops []curvedLoop) []curvedLoop {
+	if c.band.rBot > 1e-9 {
+		return loops
+	}
+	out := make([]curvedLoop, 0, len(loops))
+	for _, lp := range loops {
+		if !c.loopAtApex(lp) {
+			out = append(out, lp)
+		}
+	}
+	return out
+}
+
+// loopAtApex reports whether every edge of a loop sits at the cone apex (the degenerate v=0 rim point).
+func (c ruledUV) loopAtApex(lp curvedLoop) bool {
+	for _, e := range lp.edges {
+		if float64(e.start().DistanceTo(c.band.bottom)) > 1e-6 {
+			return false
+		}
+	}
+	return len(lp.edges) > 0
 }
 
 // emittedLoop is one re-emitted boundary loop awaiting orientation: its full edge chain, the imprint

@@ -81,17 +81,6 @@ func (c ruledUV) aU(u float64) float64 { return c.p + c.q*stdmath.Cos(u+c.seamU-
 // bU returns b(u) = s + t·cos(u−uN), the coefficient of v in the signed distance g(u,v)=a(u)+v·b(u).
 func (c ruledUV) bU(u float64) float64 { return c.s + c.t*stdmath.Cos(u+c.seamU-c.uN) }
 
-// sectionV returns the axial distance v where the cut plane meets the side at azimuth u — the section
-// curve v(u) = −a(u)/b(u). It returns 0 where b(u)≈0 (the plane is parallel to the ruling at u, no finite
-// section there); that azimuth's section is a vertical ruling handled by the span-end edge, not sampled here.
-func (c ruledUV) sectionV(u float64) float64 {
-	b := c.bU(u)
-	if stdmath.Abs(b) < 1e-12 {
-		return 0
-	}
-	return -c.aU(u) / b
-}
-
 // vPinchTol is the axial-distance margin below which a kept interval counts as PINCHED (empty). A tongue
 // pinches where the section meets a clamp rim (lo≈hi); when that azimuth lands exactly on a sample (a
 // symmetric cut puts the pinch on u=0/π/2π) the section value equals the rim to within rounding, so a
@@ -152,133 +141,16 @@ func coneSideUVSplit(f curvedFace, cone geom.Cone, conic geom.Curve3, band coneS
 // builds (it never references the degenerate apex rim). Apex KEPT → the kept face closes to the apex as a
 // single loop (the cut ellipse, or the notched rim), the apex an interior pole (apexCapSide).
 func coneApexSideSplit(f curvedFace, cone geom.Cone, conic geom.Curve3, band coneSideBand_, plane geom.Plane, n math.Vector3) ([]curvedFace, []loopEdge, error) {
-	uv := newConeUV(cone, band, plane, n)
-	if !uv.apexKept() {
-		return uv.splitSide(f, cone, conic) // apex on the dropped side: a frustum-like band, no apex pole
-	}
-	return uv.apexCapSide(f, cone, conic)
+	// Both apex sides go through the general arrangement trim. Apex dropped → a frustum-like band; apex kept
+	// → the kept face closes to the apex as a single loop, the apex an interior pole (the degenerate v=0
+	// rim loop is dropped inside trimByImprint, dropApexLoop).
+	return newConeUV(cone, band, plane, n).trimByImprint(f, cone, []geom.Curve3{conic}, ruledUV.halfSpaceMaterial)
 }
 
-// apexKept reports whether the cone apex (the v=0 pole) is on the kept (negative) side. A cone has q=0, so
-// a(0)=p is constant in u and the apex's signed distance g(0)=p; the apex is kept exactly when p<0.
-func (c ruledUV) apexKept() bool { return c.p < 0 }
-
-// apexCapSide builds the kept face when the apex is KEPT: the cone closes to its apex pole capped by the
-// cut, so the face is a SINGLE loop — the hi boundary (the full cut ellipse, or the rim notched by the
-// section) — with the apex an interior pole and no lower loop. The hi boundary is oriented like splitSide's
-// upper loop (reversed when it carries a rim shared with the base cap); the section caps the lid.
-func (c ruledUV) apexCapSide(f curvedFace, surface geom.Surface, conic geom.Curve3) ([]curvedFace, []loopEdge, error) {
-	hiEdges, hiSec, ok := c.boundaryLoop(conic, true)
-	if !ok {
-		return nil, nil, ErrUnsupportedHalfSpace
-	}
-	hiLoop, lidSec := hiEdges, reverseEdgeChain(hiSec)
-	if loopHasRim(hiEdges) && c.band.topRimReversed {
-		hiLoop, lidSec = reverseEdgeChain(hiEdges), hiSec
-	}
-	kept := curvedFace{surface: surface, reversed: f.reversed, lineage: f.lineage, loops: []curvedLoop{{edges: hiLoop}}}
-	return []curvedFace{kept}, lidSec, nil
-}
-
-// cylinderSideUVSplit splits a full periodic cylinder side by the (u,v) arrangement (newCylinderUV +
-// splitSide). It handles both the axis-parallel flat (b≡0 → a vertical-edged span) and an oblique ellipse
-// cut (within-band / clips-rim / tongue), the latter the case the line-only cylinder split deferred to CSG.
+// cylinderSideUVSplit splits a full periodic cylinder side by the general (u,v)-arrangement trimmer
+// (newCylinderUV + trimByImprint): the axis-parallel flat (a ruling-pair section), the oblique ellipse
+// (within-band / clips-rim / tongue), all flow through it uniformly (Oblikovati#1405).
 func cylinderSideUVSplit(f curvedFace, cyl geom.Cylinder, curves []geom.Curve3, band coneSideBand_, plane geom.Plane, n math.Vector3) ([]curvedFace, []loopEdge, error) {
 	c := newCylinderUV(cyl, band, plane, n)
 	return c.trimByImprint(f, cyl, curves, ruledUV.halfSpaceMaterial)
-}
-
-// splitSide builds the kept region {g<0} of a ruled side in (u,v). The WRAPPING case (kept v-interval
-// non-empty for every azimuth) is a band represented as a face with two boundary loops (no seam, like the
-// vertex-inside annulus #1374): the upper loop is the kept hi(u) curve and the lower loop the kept lo(u)
-// curve, each a closed chain of WHOLE rim arcs and section arcs split only at the rim crossings — so each
-// rim arc welds with the cap that shares it. A NON-WRAPPING arrangement — the interval empties at some
-// azimuths — is built by tongueSide as one span. surface is the kept face's analytic surface (cone/cylinder).
-func (c ruledUV) splitSide(f curvedFace, surface geom.Surface, conic geom.Curve3) ([]curvedFace, []loopEdge, error) {
-	if !c.wrapsAllU() {
-		return c.tongueSide(f, surface, conic) // a non-wrapping arrangement: one kept azimuth span
-	}
-	hiEdges, hiSec, ok1 := c.boundaryLoop(conic, true)
-	loEdges, loSec, ok2 := c.boundaryLoop(conic, false)
-	if !ok1 || !ok2 {
-		return nil, nil, ErrUnsupportedHalfSpace
-	}
-	// A ruled side's two rims run oppositely so the side stays consistent with both caps. The lo boundary is
-	// built CCW (forward); the UPPER boundary is reversed whenever it carries a rim that the source face
-	// traversed reversed (band.topRimReversed) — so the rebuilt rim keeps the sense opposite its kept cap.
-	// A frustum/cylinder traverses the top rim reversed; an apex-at-top full cone traverses its rim forward,
-	// so this is NOT a fixed flip. The lid uses each section sub-arc OPPOSITE to the band's final use of it.
-	hiLoop, lidHiSec := hiEdges, reverseEdgeChain(hiSec)
-	if loopHasRim(hiEdges) && c.band.topRimReversed {
-		hiLoop, lidHiSec = reverseEdgeChain(hiEdges), hiSec
-	}
-	kept := curvedFace{surface: surface, reversed: f.reversed, lineage: f.lineage,
-		loops: []curvedLoop{{edges: hiLoop}, {edges: loEdges}}}
-	lidSection := append(append([]loopEdge{}, lidHiSec...), reverseEdgeChain(loSec)...)
-	return []curvedFace{kept}, lidSection, nil
-}
-
-// tongueSide builds the kept face of a NON-WRAPPING arrangement: the kept v-interval is non-empty only
-// over a single azimuth span [u1, u2]. The kept region is one loop — the LOWER bound forward over [u1, u2],
-// the span-end ruling UP (lo→hi at u2), the UPPER bound reversed, the start ruling DOWN (hi→lo at u1).
-// At a PINCH end (cone tongue: section meets the clamp rim, lo≈hi) the ruling is degenerate and dropped;
-// at a FULL end (cylinder axis-parallel flat: the plane parallels the ruling, lo=vMin hi=vMax) the ruling
-// is the vertical cut line that bounds the lid. The section sub-arcs and the cut-line rulings cap the
-// planar lid together with the cap chords the same plane carves on the end caps (Oblikovati#1375).
-func (c ruledUV) tongueSide(f curvedFace, surface geom.Surface, conic geom.Curve3) ([]curvedFace, []loopEdge, error) {
-	u1, u2, ok := c.keptUSpan()
-	if !ok {
-		return nil, nil, ErrUnsupportedHalfSpace // not a single span
-	}
-	loEdges, loSec, ok1 := c.boundarySubChain(conic, u1, u2, false)
-	hiEdges, hiSec, ok2 := c.boundarySubChain(conic, u1, u2, true)
-	if !ok1 || !ok2 {
-		return nil, nil, ErrUnsupportedHalfSpace
-	}
-	endHi, hasHi := c.spanEndEdge(u2) // the ruling at u2, oriented lo→hi
-	endLo, hasLo := c.spanEndEdge(u1) // the ruling at u1, oriented lo→hi
-	loop := tongueLoop(loEdges, hiEdges, endHi, hasHi, endLo, hasLo)
-	section := tongueSection(loSec, hiSec, endHi, hasHi, endLo, hasLo)
-	kept := curvedFace{surface: surface, reversed: f.reversed, lineage: f.lineage, loops: []curvedLoop{{edges: loop}}}
-	return []curvedFace{kept}, section, nil
-}
-
-// tongueLoop assembles the single kept loop of a non-wrapping span: the lower bound forward, the u2 ruling
-// up (lo→hi), the upper bound reversed, the u1 ruling down (hi→lo). A degenerate (pinch) ruling is dropped.
-func tongueLoop(loEdges, hiEdges []loopEdge, endHi loopEdge, hasHi bool, endLo loopEdge, hasLo bool) []loopEdge {
-	loop := append([]loopEdge{}, loEdges...)
-	if hasHi {
-		loop = append(loop, endHi)
-	}
-	loop = append(loop, reverseEdgeChain(hiEdges)...)
-	if hasLo {
-		loop = append(loop, reverseEdge(endLo))
-	}
-	return loop
-}
-
-// tongueSection assembles the span's lid section edges, each OPPOSITE to the band's final use of it: the
-// lo section runs forward in the band so the lid reverses it, the hi section runs reversed so the lid uses
-// it forward, and each cut-line ruling likewise (the u2 ruling reversed, the u1 ruling forward).
-func tongueSection(loSec, hiSec []loopEdge, endHi loopEdge, hasHi bool, endLo loopEdge, hasLo bool) []loopEdge {
-	section := append(reverseEdgeChain(loSec), hiSec...)
-	if hasHi {
-		section = append(section, reverseEdge(endHi))
-	}
-	if hasLo {
-		section = append(section, endLo)
-	}
-	return section
-}
-
-// spanEndEdge returns the vertical ruling at azimuth u from the kept lo to hi, oriented lo→hi, and whether
-// it is non-degenerate. At a pinch end (lo≈hi) it returns false (the loop closes at the pinch vertex with
-// no edge); at a full end (the cut line of an axis-parallel flat) it returns the straight cut ruling.
-func (c ruledUV) spanEndEdge(u float64) (loopEdge, bool) {
-	lo, hi, _ := c.keptV(u)
-	if hi-lo < 1e-6 {
-		return loopEdge{}, false // pinched: no span-end ruling
-	}
-	seg := geom.NewLineSegment(c.point3(u, lo), c.point3(u, hi))
-	return loopEdge{curve: seg, t0: 0, t1: 1}, true
 }

@@ -114,15 +114,6 @@ func fullConeApexSideBand(f curvedFace, res geom.Resolution) (geom.Cone, coneSid
 	return cone, band, true
 }
 
-// conicArm builds the loop edge along an open conic section (a hyperbola branch or a parabola) from
-// start to end, its parameters the conic's own parameter values at the two rim feet (the loop edge's
-// t0/t1 are the curve parameter — θ for a hyperbola, the cross coordinate t for a parabola).
-func conicArm(conic geom.Curve3, start, end math.Point3) loopEdge {
-	t0, _ := geom.CurveParamAtPoint3(conic, start)
-	t1, _ := geom.CurveParamAtPoint3(conic, end)
-	return loopEdge{curve: conic, t0: t0, t1: t1}
-}
-
 // fullConeSideBand reports whether f is the GENUINE full periodic cone side — a geom.Cone bounded by
 // TWO closed-circle rims and the seam, the untrimmed frustum side the general looped split tangles on
 // — and returns its band. An already-trimmed band (one circle plus an ellipse/hyperbola rim, after a
