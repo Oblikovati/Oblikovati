@@ -184,9 +184,6 @@ func ConeCylinderIntersectGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Bo
 // the cone band inside the cylinder plus the two cylinder-wall lens caps. ok=false when the pair is not a
 // cone-through-cylinder crossing, so kernel/ops keeps the bespoke ConeCylinderIntersect fallback.
 func coneCylinderIntersectGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	if _, _, _, _, ok := coneAndCylinder(a, b); !ok {
-		return nil, false
-	}
 	loops, ok := coneCylinderImprint(a, b, rec)
 	if !ok || len(loops) == 0 {
 		return nil, false
@@ -203,12 +200,18 @@ func coneCylinderIntersectGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Bo
 		return nil, false
 	}
 	imprint := polylineCurves(loops)
-	keptCone, _, errA := coneSideSolidSplit(fCone, cone, coneBand, imprint, Intersection, coneBody == b, insideCyl)
-	keptCyl, _, errB := cylinderSideSolidSplit(fCyl, cyl, cylBand, imprint, Intersection, cylBody == b, insideCone)
-	if errA != nil || errB != nil || len(keptCone) == 0 || len(keptCyl) == 0 {
+	keptCone, okA := keptOrNone(coneSideSolidSplit(fCone, cone, coneBand, imprint, Intersection, coneBody == b, insideCyl))
+	keptCyl, okB := keptOrNone(cylinderSideSolidSplit(fCyl, cyl, cylBand, imprint, Intersection, cylBody == b, insideCone))
+	if !okA || !okB {
 		return nil, false
 	}
 	return curvedStitch(append(keptCone, keptCyl...)), true
+}
+
+// keptOrNone adapts a side split's (faces, lid, err) to (faces, ok): ok is true only when the split
+// succeeded and kept some geometry, so the two-sided drivers read as one short condition (#1403).
+func keptOrNone(faces []curvedFace, _ []loopEdge, err error) ([]curvedFace, bool) {
+	return faces, err == nil && len(faces) > 0
 }
 
 // ConeConeIntersectGeneral is the exported entry kernel/ops routes cone∩cone intersect through: the GENERAL
