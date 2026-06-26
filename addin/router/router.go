@@ -365,14 +365,14 @@ func (r *Router) registerSketchHandlers() {
 // and property edits (M22-F01). The 3D authoring methods (addEntity/addConstraint/
 // addDimension) are wired by their features (M22 F02+).
 func (r *Router) registerSketch3DHandlers() {
-	r.readOnly(wire.MethodSketch3DCreate, createSketch3D)
+	r.mutating(wire.MethodSketch3DCreate, "Create Sketch", createSketch3D)
 	r.readOnly(wire.MethodSketch3DList, listSketches3D)
 	r.readOnly(wire.MethodSketch3DGet, getSketch3D)
-	r.readOnly(wire.MethodSketch3DEdit, editSketch3D)
-	r.readOnly(wire.MethodSketch3DExitEdit, exitEditSketch3D)
-	r.readOnly(wire.MethodSketch3DSolve, solveSketch3D)
-	r.readOnly(wire.MethodSketch3DDelete, deleteSketch3D)
-	r.readOnly(wire.MethodSketch3DSetProperty, setSketch3DProperty)
+	r.mutating(wire.MethodSketch3DEdit, "", editSketch3D)
+	r.mutating(wire.MethodSketch3DExitEdit, "", exitEditSketch3D)
+	r.mutating(wire.MethodSketch3DSolve, "", solveSketch3D)
+	r.mutating(wire.MethodSketch3DDelete, "Delete Sketch", deleteSketch3D)
+	r.mutating(wire.MethodSketch3DSetProperty, "Edit Sketch", setSketch3DProperty)
 	r.readOnly(wire.MethodSketch3DEntities, enumerateEntities3D)
 	r.readOnly(wire.MethodSketch3DConstraints, enumerateConstraints3D)
 	r.readOnly(wire.MethodSketch3DDimensions, enumerateDimensions3D)
@@ -383,17 +383,17 @@ func (r *Router) registerSketch3DHandlers() {
 // registerSketch3DAuthoringHandlers wires the 3D-sketch mutation/query methods: entity/
 // constraint/dimension creation, profiles/paths, edit transform, and include.
 func (r *Router) registerSketch3DAuthoringHandlers() {
-	r.readOnly(wire.MethodSketch3DAddEntity, addSketch3DEntity)
-	r.readOnly(wire.MethodSketch3DAddConstraint, addSketch3DConstraint)
-	r.readOnly(wire.MethodSketch3DDeleteConstraint, deleteSketch3DConstraint)
-	r.readOnly(wire.MethodSketch3DAddDimension, addSketch3DDimension)
-	r.readOnly(wire.MethodSketch3DDriveDimension, driveSketch3DDimension)
+	r.mutating(wire.MethodSketch3DAddEntity, "Add Sketch Geometry", addSketch3DEntity)
+	r.mutating(wire.MethodSketch3DAddConstraint, "Add Constraint", addSketch3DConstraint)
+	r.mutating(wire.MethodSketch3DDeleteConstraint, "Delete Constraint", deleteSketch3DConstraint)
+	r.mutating(wire.MethodSketch3DAddDimension, "Add Dimension", addSketch3DDimension)
+	r.mutating(wire.MethodSketch3DDriveDimension, "Edit Dimension", driveSketch3DDimension)
 	r.readOnly(wire.MethodSketch3DProfiles, sketch3DProfiles)
 	r.readOnly(wire.MethodSketch3DPaths, sketch3DPaths)
-	r.readOnly(wire.MethodSketch3DTransform, transformSketch3D)
-	r.readOnly(wire.MethodSketch3DInclude, includeSketch3D)
-	r.readOnly(wire.MethodSketch3DIncludeSketch, includeSketch2DInto3D)
-	r.readOnly(wire.MethodSketch3DAddSurfaceCurve, addSketch3DSurfaceCurve)
+	r.mutating(wire.MethodSketch3DTransform, "Transform Sketch", transformSketch3D)
+	r.mutating(wire.MethodSketch3DInclude, "Project Geometry", includeSketch3D)
+	r.mutating(wire.MethodSketch3DIncludeSketch, "Project Geometry", includeSketch2DInto3D)
+	r.mutating(wire.MethodSketch3DAddSurfaceCurve, "Add Sketch Geometry", addSketch3DSurfaceCurve)
 }
 
 // registerSketchAuthoringHandlers wires the sketch mutation methods: property edits,
