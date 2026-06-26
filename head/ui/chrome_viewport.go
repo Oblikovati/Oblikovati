@@ -375,6 +375,40 @@ func updateViewportCamera(s *app.Session, pw, ph int, overCube bool) (scene.Came
 	return cam, hoveredPlane(s)
 }
 
+// Per-frame scratch buffers reused across frames so a static orbit allocates nothing here (#1423).
+// Safe because the render loop is single-threaded and each is consumed within the frame that fills it
+// (the overlay is flattened into the atlas; sources only feeds the highlight decorator; eye is copied
+// into the push constant by RenderViewport before it returns).
+var (
+	frameOverlayScratch []renderer.DrawItem
+	frameSourcesScratch []*topo.Body
+	frameEyeScratch     [3]float32
+)
+
+// frameOverlayList builds the overlay DrawList (body-tail items + ground) into the reused scratch
+// slice, so an orbit doesn't reallocate it each frame (#1423).
+func frameOverlayList(items, ground []renderer.DrawItem) renderer.DrawList {
+	frameOverlayScratch = append(frameOverlayScratch[:0], items...)
+	frameOverlayScratch = append(frameOverlayScratch, ground...)
+	return renderer.DrawList{Items: frameOverlayScratch}
+}
+
+// frameSources collects the group source bodies into the reused scratch slice (#1423).
+func frameSources(groups []app.InstanceGroup) []*topo.Body {
+	frameSourcesScratch = frameSourcesScratch[:0]
+	for _, g := range groups {
+		frameSourcesScratch = append(frameSourcesScratch, g.Source)
+	}
+	return frameSourcesScratch
+}
+
+// frameEye packs the camera eye into the reused scratch array; RenderViewport copies it into the push
+// constant synchronously, so handing back the shared slice is safe (#1423).
+func frameEye(cam scene.Camera) []float32 {
+	frameEyeScratch = [3]float32{float32(cam.Eye.X), float32(cam.Eye.Y), float32(cam.Eye.Z)}
+	return frameEyeScratch[:]
+}
+
 // frameMeshAndInstances builds the geometry the viewport draws: the instanced path (ADR-0038)
 // rebuilds the bodies from per-component LOCAL meshes (deduped, one per unique component) plus the
 // overlay/ground tail as one identity instance, returning the merged mesh + per-instance matrices +
@@ -389,14 +423,12 @@ func frameMeshAndInstances(s *app.Session, cam scene.Camera, list renderer.DrawL
 	// source-mesh cache (instancedSourceKey) and the body cache (bodyGeometryKey).
 	renderer.SetEdgeColor(displayEdgeColor(s))
 	if on, _ := s.MeshColors(); !on {
-		overlay := renderer.DrawList{Items: append(append([]renderer.DrawItem(nil), list.Items[bodyCount:]...), ground...)}
-		// Highlight against the group SOURCE bodies (already in hand), NOT activeBodies(s) — the
-		// latter is VisibleBodies → worldAssemblyBodies, which re-derives (TransformBody) every
-		// occurrence each frame, an O(occurrences) cost that defeats instancing on a big assembly.
-		sources := make([]*topo.Body, len(groups))
-		for i, g := range groups {
-			sources[i] = g.Source
-		}
+		// frameOverlayList/frameSources reuse scratch buffers (consumed within this frame), so a static
+		// orbit rebuilds neither's backing array (#1423). Sources highlight against the group SOURCE
+		// bodies (already in hand), NOT activeBodies(s) — the latter re-derives every occurrence each
+		// frame (TransformBody), an O(occurrences) cost that defeats instancing on a big assembly.
+		overlay := frameOverlayList(list.Items[bodyCount:], ground)
+		sources := frameSources(groups)
 		decorate := func(l renderer.DrawList) renderer.DrawList {
 			return highlightSelection(l, s.Selection().First(), sources)
 		}
@@ -465,7 +497,7 @@ func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene
 	m, mats, recs, geomKey := frameMeshAndInstances(s, cam, list, bodyCount, ground, groups, s.CulledInstances(cam))
 	frameStats.buildNs = time.Since(tb).Nanoseconds()
 	mvp := renderer.ViewProjection(cam, viewportNear, viewportFarPlane(s, cam, mn, mx, hasGeom))
-	eye := []float32{float32(cam.Eye.X), float32(cam.Eye.Y), float32(cam.Eye.Z)}
+	eye := frameEye(cam) // reused scratch; RenderViewport copies it into the push constant synchronously (#1423)
 	win.SetViewportLighting(viewport.PackLighting(s.SceneLighting()))
 	applyEnvironment(win, s.Environment())
 	applySkybox(win, s.Environment(), mvp)
