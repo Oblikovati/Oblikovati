@@ -248,7 +248,7 @@ func (r *Router) registerFileHandlers() {
 
 	// Document units of measure + unit/expression service (#146).
 	r.readOnly(wire.MethodDocumentsGetUnits, getDocumentUnits)
-	r.readOnly(wire.MethodDocumentsSetUnits, setDocumentUnits)
+	r.mutating(wire.MethodDocumentsSetUnits, "Set Units", setDocumentUnits)
 	r.readOnly(wire.MethodUnitsConvert, unitsConvert)
 	r.readOnly(wire.MethodUnitsGetStringFromValue, unitsGetStringFromValue)
 	r.readOnly(wire.MethodUnitsGetPreciseStringFromValue, unitsGetPreciseStringFromValue)
@@ -411,10 +411,10 @@ func (r *Router) registerSketchAuthoringHandlers() {
 	r.readOnly(wire.MethodSketchCopyTo, sketchCopyTo)
 	r.mutating(wire.MethodSketchAddPattern, "Sketch Pattern", addSketchPattern)
 	r.mutating(wire.MethodSketchOffset, "Offset Geometry", offsetSketchEntity)
-	r.readOnly(wire.MethodSketchAddImage, addSketchImage)
-	r.readOnly(wire.MethodSketchAddFillRegion, addFillRegion)
-	r.readOnly(wire.MethodSketchAddText, addText)
-	r.readOnly(wire.MethodSketchEditText, editText)
+	r.mutating(wire.MethodSketchAddImage, "Insert Image", addSketchImage)
+	r.mutating(wire.MethodSketchAddFillRegion, "Add Sketch Geometry", addFillRegion)
+	r.mutating(wire.MethodSketchAddText, "Add Text", addText)
+	r.mutating(wire.MethodSketchEditText, "Edit Text", editText)
 	r.readOnly(wire.MethodSketchGetText, getText)
 	r.readOnly(wire.MethodSketchAutoDimension, autoDimensionSketch)
 	r.mutating(wire.MethodSketchProject, "Project Geometry", projectGeometry)

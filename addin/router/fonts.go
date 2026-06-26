@@ -19,7 +19,7 @@ import (
 // sketch text entity's font (embedding the chosen face into the document) — ADR-0031.
 func (r *Router) registerFontHandlers() {
 	r.readOnly(wire.MethodFontsList, listFonts)
-	r.readOnly(wire.MethodSketchSetTextFont, setTextFont)
+	r.mutating(wire.MethodSketchSetTextFont, "Edit Text", setTextFont)
 }
 
 // listFonts returns every face the picker can offer: the application's bundled faces (source
