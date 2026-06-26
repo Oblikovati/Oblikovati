@@ -149,3 +149,33 @@ func TestConeConeIntersectGeneralOrderIndependent(t *testing.T) {
 	}
 	assertWatertight(t, res)
 }
+
+// TestConeCylinderIntersectGeneral: cone∩cylinder through the general pipeline yields a watertight solid —
+// the cone band inside the cylinder plus the two cylinder-wall lens caps — proving the two-sided recipe
+// reuses the cylinder side (one cone + one cylinder), the second EPIC #1403 migration.
+func TestConeCylinderIntersectGeneral(t *testing.T) {
+	cone, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
+	cyl, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
+	res, ok := coneCylinderIntersectGeneral(cone, cyl, nil)
+	if !ok {
+		t.Fatal("general cone∩cylinder declined; want the three-face intersection")
+	}
+	assertWatertight(t, res)
+	cones, cyls, planes := faceTypeCounts(t, res)
+	if cones != 1 || cyls != 2 || planes != 0 {
+		t.Errorf("got %d cone + %d cyl + %d plane faces, want 1 cone band + 2 cylinder lens caps", cones, cyls, planes)
+	}
+	// Order-independent + exported entry.
+	if _, ok := ConeCylinderIntersectGeneral(cyl, cone, nil); !ok {
+		t.Error("cone∩cylinder should resolve with the cylinder passed first too")
+	}
+}
+
+// TestConeCylinderIntersectGeneralDeclines: two cylinders are not the cone∩cylinder case.
+func TestConeCylinderIntersectGeneralDeclines(t *testing.T) {
+	c1, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1, 12)
+	c2, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
+	if _, ok := ConeCylinderIntersectGeneral(c1, c2, nil); ok {
+		t.Error("two cylinders should decline from the cone∩cylinder general path")
+	}
+}

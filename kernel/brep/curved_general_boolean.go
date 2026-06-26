@@ -90,6 +90,9 @@ func curvedSolidMembership(b *topo.Body) (func(math.Point3) bool, bool) {
 	if cone, vMin, vMax, ok := coneSolidParams(faces); ok {
 		return func(p math.Point3) bool { return pointInsideConeSolid(cone, vMin, vMax, p) }, true
 	}
+	if cyl, base, height, ok := cylinderSolidParams(faces); ok {
+		return func(p math.Point3) bool { return pointInsideCylinderSolid(cyl, base, height, p) }, true
+	}
 	return nil, false
 }
 
@@ -125,6 +128,36 @@ func coneSideFace(b *topo.Body) (curvedFace, geom.Cone, coneSideBand_, bool) {
 	return curvedFace{}, geom.Cone{}, coneSideBand_{}, false
 }
 
+// cylinderSideFace finds a cylinder side face of b: its curvedFace, the geom.Cylinder, and the rim band
+// (the same two-circle band the half-space path uses, with v the axial distance from the bottom rim).
+func cylinderSideFace(b *topo.Body) (curvedFace, geom.Cylinder, coneSideBand_, bool) {
+	for _, f := range facesOfAny(b) {
+		if _, isCyl := f.surface.(geom.Cylinder); !isCyl {
+			continue
+		}
+		if cyl, band, ok := fullCylinderSideBand(f); ok {
+			return f, cyl, band, true
+		}
+	}
+	return curvedFace{}, geom.Cylinder{}, coneSideBand_{}, false
+}
+
+// newCylinderUVSolid builds a cylinder side's (u,v) model for a general cut decided by `inside` under op.
+// A cylinder is the degenerate cone — constant radius R (radSlope 0, radConst R), v the axial distance from
+// the bottom rim centre (band.bottom) — so it reuses the whole ruled solid-membership trim (#1403).
+func newCylinderUVSolid(cyl geom.Cylinder, band coneSideBand_, op Op, isB bool, inside func(math.Point3) bool) ruledUV {
+	c := newRuledUVFrame(band.bottom, cyl.AxisDir.AsVector(), cyl.Ref.AsVector(), 0, cyl.Radius, band)
+	c.solidMode, c.solidOp, c.solidIsB, c.insideOther = true, op, isB, inside
+	return c
+}
+
+// cylinderSideSolidSplit trims a cylinder side by an SSI imprint, keeping the cells inside the other solid
+// (per op) — the cylinder counterpart of coneSideSolidSplit (#1403).
+func cylinderSideSolidSplit(f curvedFace, cyl geom.Cylinder, band coneSideBand_, imprint []geom.Curve3, op Op, isB bool, inside func(math.Point3) bool) ([]curvedFace, []loopEdge, error) {
+	c := newCylinderUVSolid(cyl, band, op, isB, inside)
+	return trimByImprint(&c, f, cyl, imprint, ruledSolidMaterial(&c))
+}
+
 // polylineCurves adapts SSI imprint loops (closed polylines) to the []geom.Curve3 trimByImprint consumes.
 // Each curve is a *geom.Polyline (a POINTER): the arrangement's run-merge compares edge curves by `==` to
 // fuse consecutive same-curve edges, and a geom.Polyline value is uncomparable (it holds a slice), so it
@@ -136,6 +169,49 @@ func polylineCurves(loops []geom.Polyline) []geom.Curve3 {
 		out[i] = &loops[i]
 	}
 	return out
+}
+
+// ConeCylinderIntersectGeneral is the exported entry kernel/ops routes cone∩cylinder intersect through: the
+// GENERAL curved∩curved pipeline (#1403), no bespoke loop→body constructor. ok=false outside the wired
+// frustum-through-cylinder case so the caller keeps its fallback.
+func ConeCylinderIntersectGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
+	return coneCylinderIntersectGeneral(a, b, rec)
+}
+
+// coneCylinderIntersectGeneral builds cone ∩ cylinder through the GENERAL pipeline (#1403): the SSI imprint,
+// then trimByImprint on the cone side and the cylinder side each keeping the part inside the other solid,
+// then curvedStitch. Same two-sided recipe as cone∩cone, with the cylinder side standing in for one cone —
+// the cone band inside the cylinder plus the two cylinder-wall lens caps. ok=false when the pair is not a
+// cone-through-cylinder crossing, so kernel/ops keeps the bespoke ConeCylinderIntersect fallback.
+func coneCylinderIntersectGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
+	loops, ok := coneCylinderImprint(a, b, rec)
+	if !ok || len(loops) == 0 {
+		return nil, false
+	}
+	coneBody, cylBody := a, b // identify which operand is the cone, which the cylinder
+	if _, _, _, okCone := coneSideFace(a); !okCone {
+		coneBody, cylBody = b, a
+	}
+	fCone, cone, coneBand, okCone := coneSideFace(coneBody)
+	fCyl, cyl, cylBand, okCyl := cylinderSideFace(cylBody)
+	insideCone, okMC := curvedSolidMembership(coneBody)
+	insideCyl, okMY := curvedSolidMembership(cylBody)
+	if !okCone || !okCyl || !okMC || !okMY {
+		return nil, false
+	}
+	imprint := polylineCurves(loops)
+	keptCone, okA := keptOrNone(coneSideSolidSplit(fCone, cone, coneBand, imprint, Intersection, coneBody == b, insideCyl))
+	keptCyl, okB := keptOrNone(cylinderSideSolidSplit(fCyl, cyl, cylBand, imprint, Intersection, cylBody == b, insideCone))
+	if !okA || !okB {
+		return nil, false
+	}
+	return curvedStitch(append(keptCone, keptCyl...)), true
+}
+
+// keptOrNone adapts a side split's (faces, lid, err) to (faces, ok): ok is true only when the split
+// succeeded and kept some geometry, so the two-sided drivers read as one short condition (#1403).
+func keptOrNone(faces []curvedFace, _ []loopEdge, err error) ([]curvedFace, bool) {
+	return faces, err == nil && len(faces) > 0
 }
 
 // ConeConeIntersectGeneral is the exported entry kernel/ops routes cone∩cone intersect through: the GENERAL
