@@ -107,7 +107,7 @@ func splitFaceByPlane(f curvedFace, plane geom.Plane, n math.Vector3, res geom.R
 		return capSplit(f, curves[0])
 	}
 	if cyl, band, ok := fullCylinderSideBand(f); ok {
-		return cylinderSideUVSplit(f, cyl, curves[0], band, plane, n)
+		return cylinderSideUVSplit(f, cyl, curves, band, plane, n)
 	}
 	if cone, band, ok := fullConeSideBand(f); ok {
 		return coneSideBandSplit(f, curves, cone, band, plane, n)
