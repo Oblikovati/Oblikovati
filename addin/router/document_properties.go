@@ -28,7 +28,7 @@ type propertyHolder interface {
 func (r *Router) registerDocumentPropertyHandlers() {
 	r.readOnly(wire.MethodDocumentsListProperties, listDocumentProperties)
 	r.readOnly(wire.MethodDocumentsGetProperty, getDocumentProperty)
-	r.readOnly(wire.MethodDocumentsSetProperty, setDocumentProperty)
+	r.mutating(wire.MethodDocumentsSetProperty, "Set Property", setDocumentProperty)
 }
 
 // documentProperties resolves the open document addressed by id to its property sets, erroring

@@ -63,6 +63,24 @@ func TestCentralSeamRecordsFeatureUndo(t *testing.T) {
 	}
 }
 
+// TestCentralSeamRecordsSketchTextUndo proves sketch annotation text added over the wire (sketch.addText)
+// is undoable — a sketch-authoring path missed by the original mutating table (#1426).
+func TestCentralSeamRecordsSketchTextUndo(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	call(t, r, s, "sketch.addText", `{"sketchIndex":0,"anchor":[1,1],"text":"PART A","height":"5 mm"}`, &wire.AddEntityIDResult{})
+
+	st := undoState(t, r, s)
+	if !st.CanUndo || st.NextUndo != "Add Text" {
+		t.Fatalf("after sketch.addText state = %+v, want canUndo with nextUndo=Add Text", st)
+	}
+
+	call(t, r, s, "transaction.undo", "{}", nil)
+	if st := undoState(t, r, s); st.NextUndo != "Create Sketch" {
+		t.Fatalf("after one undo nextUndo = %q, want \"Create Sketch\" (only the text reverted)", st.NextUndo)
+	}
+}
+
 // TestCentralSeamRecordsBodyDeleteUndo proves deleting a body over the wire (body.delete, which records
 // a DeleteBody feature) is one undo step that restores the body — body editing was read-only before #1426.
 func TestCentralSeamRecordsBodyDeleteUndo(t *testing.T) {
