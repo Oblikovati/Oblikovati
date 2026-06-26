@@ -41,36 +41,51 @@ func pointInCurvedFace(f curvedFace, p math.Point3) bool {
 }
 
 // loopWindingAngle returns the signed turning angle of a loop's boundary seen from p, summed around the
-// surface normal — ≈ +2π if the loop winds CCW around p (p inside it), ≈ 0 if p is outside.
+// surface normal — ≈ +2π if the loop winds CCW around p (p inside it), ≈ 0 if p is outside. Each edge is
+// walked in loopSampleCount base steps, and any step that subtends a large angle from p — the signature
+// of the boundary passing CLOSE to p, where the turning is rapid — is refined ADAPTIVELY until it does
+// not. So a thin feature can no longer slip BETWEEN samples and be mis-counted (the misclassification a
+// bare fixed count risks, #1407), while a boundary far from p is summed exactly as before (its base steps
+// already subtend little), keeping the established classification on every non-pathological case.
 func loopWindingAngle(loop curvedLoop, p math.Point3, normal math.Vector3) float64 {
-	pts := sampleLoopPoints(loop)
-	if len(pts) < 3 {
-		return 0
-	}
 	sum := 0.0
-	for i := range pts {
-		a := tangentComponent(p.VectorTo(pts[i]), normal)
-		b := tangentComponent(p.VectorTo(pts[(i+1)%len(pts)]), normal)
-		sum += signedAngleAround(a, b, normal)
+	for _, le := range loop.edges {
+		for k := 0; k < loopSampleCount; k++ {
+			ta := le.t0 + (le.t1-le.t0)*float64(k)/loopSampleCount
+			tb := le.t0 + (le.t1-le.t0)*float64(k+1)/loopSampleCount
+			sum += edgeWindingAngle(le, p, normal, ta, tb, le.curve.PointAt(ta), le.curve.PointAt(tb), 0)
+		}
 	}
 	return sum
 }
 
-// loopSampleCount is how many points to sample per loop edge for the winding sum — enough that a curved
-// edge's turning is captured, cheap enough for the inner loop of the split.
+// loopSampleCount is the BASE number of steps per loop edge for the winding sum — enough that a curved
+// edge's turning is captured; edgeWindingAngle refines below it wherever a step subtends a large angle.
 const loopSampleCount = 8
 
-// sampleLoopPoints samples a loop's boundary into ordered 3D points (each edge sampled across its
-// parameter range, the shared endpoints deduplicated by skipping each edge's last sample).
-func sampleLoopPoints(loop curvedLoop) []math.Point3 {
-	var pts []math.Point3
-	for _, le := range loop.edges {
-		for k := 0; k < loopSampleCount; k++ {
-			t := le.t0 + (le.t1-le.t0)*float64(k)/loopSampleCount
-			pts = append(pts, le.curve.PointAt(t))
-		}
+// maxWindingSubtend bounds the angle one step may subtend from p before it is split: keeping every
+// contribution small means a near-pass to p cannot be under-counted, so the winding sum is accurate to
+// that bound regardless of how close the boundary runs to p (#1407).
+const maxWindingSubtend = stdmath.Pi / 6 // 30°
+
+// maxWindingDepth caps the adaptive recursion: a boundary passing exactly through p makes the angle
+// ill-defined, so the split bottoms out there rather than spinning.
+const maxWindingDepth = 24
+
+// edgeWindingAngle returns the signed turning angle the edge arc from (t0,p0) to (t1,p1) subtends about
+// the normal as seen from p, refining the arc by recursive bisection until each piece subtends at most
+// maxWindingSubtend (or the depth cap) — exact angle integration in place of fixed-N sampling.
+func edgeWindingAngle(le loopEdge, p math.Point3, normal math.Vector3, t0, t1 float64, p0, p1 math.Point3, depth int) float64 {
+	a := tangentComponent(p.VectorTo(p0), normal)
+	b := tangentComponent(p.VectorTo(p1), normal)
+	ang := signedAngleAround(a, b, normal)
+	if stdmath.Abs(ang) <= maxWindingSubtend || depth >= maxWindingDepth {
+		return ang
 	}
-	return pts
+	tm := (t0 + t1) / 2
+	pm := le.curve.PointAt(tm)
+	return edgeWindingAngle(le, p, normal, t0, tm, p0, pm, depth+1) +
+		edgeWindingAngle(le, p, normal, tm, t1, pm, p1, depth+1)
 }
 
 // tangentComponent projects v onto the plane perpendicular to the unit normal (the surface tangent
