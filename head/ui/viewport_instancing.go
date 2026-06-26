@@ -6,7 +6,6 @@ package ui
 
 import (
 	"encoding/binary"
-	"fmt"
 	"hash"
 	"hash/fnv"
 	stdmath "math"
@@ -142,22 +141,37 @@ type frameAtlas struct {
 // (nil source) always draws as one identity instance. Records are stream-sorted so native binds
 // each pipeline once. This is all the per-frame work now — the heavy streams come from the cache.
 func (a *frameAtlas) assemble(visible map[*topo.Body][]math.Matrix4) ([]float32, []int32) {
-	var mats []float32
-	var recs [][7]int32
+	// Reuse the per-frame instance buffers across frames (the render loop is single-threaded, like
+	// frameAtlasCache): a static orbit then allocates nothing — only the buffer contents change. The
+	// native side memcpy's mats/recs synchronously during the RenderViewport cgo call, so handing back
+	// a buffer that the next frame overwrites is safe (#1423).
+	sc := &assembleScratch
+	sc.mats = sc.mats[:0]
+	sc.recs = sc.recs[:0]
 	for _, region := range a.regions {
 		tfs := regionTransforms(region, visible)
 		if len(tfs) == 0 {
 			continue
 		}
-		first := int32(len(mats) / 16)
+		first := int32(len(sc.mats) / 16)
 		for _, t := range tfs {
-			mats = append(mats, matrixFloats(t)...)
+			sc.mats = appendMatrixFloats(sc.mats, t) // write the 16 floats in place, no per-instance heap slice
 		}
 		for _, tmpl := range a.recs[region.start:region.end] {
-			recs = append(recs, [7]int32{tmpl[0], tmpl[1], tmpl[2], tmpl[3], first, int32(len(tfs)), tmpl[4]})
+			sc.recs = append(sc.recs, [7]int32{tmpl[0], tmpl[1], tmpl[2], tmpl[3], first, int32(len(tfs)), tmpl[4]})
 		}
 	}
-	return mats, flattenRecs(sortRecsByStream(recs))
+	return sc.mats, flattenRecsInto(&sc.flat, sortRecsInto(&sc.sorted, sc.recs))
+}
+
+// assembleScratch holds the per-frame instance matrices + draw records, reused every frame so the
+// steady-state orbit path is allocation-free (#1423). Package-level is safe because the render loop
+// is single-threaded (the same invariant frameAtlasCache relies on).
+var assembleScratch struct {
+	mats   []float32
+	recs   [][7]int32
+	sorted [][7]int32
+	flat   []int32
 }
 
 // regionTransforms returns the world matrices to draw a region this frame: the overlay (nil source)
@@ -173,13 +187,15 @@ func regionTransforms(region atlasRegion, visible map[*topo.Body][]math.Matrix4)
 // world space and are placed by the view-projection, not a model matrix).
 var identityInstance = []math.Matrix4{math.Identity4()}
 
-// flattenRecs packs the stream-sorted [7]int32 records into the flat []int32 native expects.
-func flattenRecs(recs [][7]int32) []int32 {
-	out := make([]int32, 0, len(recs)*7)
+// flattenRecsInto packs the stream-sorted [7]int32 records into the flat []int32 native expects,
+// reusing *out's backing array across frames (#1423).
+func flattenRecsInto(out *[]int32, recs [][7]int32) []int32 {
+	o := (*out)[:0]
 	for _, r := range recs {
-		out = append(out, r[:]...)
+		o = append(o, r[:]...)
 	}
-	return out
+	*out = o
+	return o
 }
 
 // mergedMesh assembles the six accumulated streams into one viewport.Mesh (the per-stream order
@@ -195,18 +211,19 @@ func (b *instanceBuilder) mergedMesh() viewport.Mesh {
 	return m
 }
 
-// sortRecsByStream returns the records grouped by stream id (stable), so the native binds each
-// stream's pipeline once. A simple bucket sort over the six fixed streams.
-func sortRecsByStream(recs [][7]int32) [][7]int32 {
-	out := make([][7]int32, 0, len(recs))
+// sortRecsInto returns the records grouped by stream id (stable), so the native binds each stream's
+// pipeline once. A simple bucket sort over the six fixed streams, reusing *out across frames (#1423).
+func sortRecsInto(out *[][7]int32, recs [][7]int32) [][7]int32 {
+	o := (*out)[:0]
 	for s := int32(0); s <= 5; s++ {
 		for _, r := range recs {
 			if r[0] == s {
-				out = append(out, r)
+				o = append(o, r)
 			}
 		}
 	}
-	return out
+	*out = o
+	return o
 }
 
 // buildInstancedFrame returns the merged mesh + per-frame instance matrices + draw records for
@@ -223,7 +240,10 @@ func buildInstancedFrame(allGroups, culledGroups []app.InstanceGroup, overlay re
 		return viewport.Mesh{}, nil, nil, "", false
 	}
 	atlas := cachedFrameAtlas(allGroups, overlay, cam, lookup, style, decorate, sourceKey)
-	visible := make(map[*topo.Body][]math.Matrix4, len(culledGroups))
+	// Reuse the visible-instances map across frames (single-threaded render loop) — clear keeps the
+	// buckets, so a static orbit re-maps the culled set without allocating a fresh map (#1423).
+	visible := visibleScratch
+	clear(visible)
 	for _, g := range culledGroups {
 		visible[g.Source] = g.Transforms
 	}
@@ -253,6 +273,10 @@ func geomUploadKey(key string) uint64 {
 // rebuilds (degrading to the pre-F1b cost, never incorrectly).
 var frameAtlasCache frameAtlas
 
+// visibleScratch is the reused source→transforms map assemble reads each frame (#1423); cleared and
+// refilled per frame from the culled set, so a static orbit allocates no fresh map.
+var visibleScratch = map[*topo.Body][]math.Matrix4{}
+
 // cachedFrameAtlas returns the atlas for the given sources + overlay, rebuilding it only when the
 // source signature (sourceKey, which bumps on any geometry/style/selection/placement change) or the
 // overlay content changes. The overlay is flattened every frame (it is small) so its hash can key
@@ -279,11 +303,16 @@ func cachedFrameAtlas(allGroups []app.InstanceGroup, overlay renderer.DrawList, 
 	return frameAtlasCache
 }
 
+// overlayHasher is reused across frames so keying the atlas cache on the overlay doesn't allocate a
+// fresh hasher every frame (#1423). Single-threaded render loop, so package-level state is safe.
+var overlayHasher = fnv.New64a()
+
 // overlayHash is an order-sensitive FNV-1a digest of the overlay mesh's streams, so the atlas cache
 // rebuilds when an overlay (work plane, sketch, gizmo, ground) appears, moves or disappears, but
 // holds while it is unchanged during an orbit.
 func overlayHash(m viewport.Mesh) uint64 {
-	h := fnv.New64a()
+	h := overlayHasher
+	h.Reset()
 	for _, s := range [][]float32{m.TriVerts, m.OccVerts, m.LineVerts, m.HidVerts, m.TopTriVerts, m.TopLineVerts} {
 		hashFloat32s(h, s)
 	}
@@ -334,9 +363,30 @@ func instancedSourceKey(s *app.Session) string {
 		return ""
 	}
 	ec := displayEdgeColor(s) // M16-F07: edge-color override is baked into the source mesh
-	return ver + "|" + strconv.Itoa(int(s.VisualStyle())) + "|" + fmt.Sprintf("%v", s.Selection().First()) +
-		"|" + fmt.Sprintf("%.3f", ec[0]+ec[1]*2+ec[2]*3)
+	// Key the highlighted-source cache on a selection SEQUENCE (bumped when the highlighted item
+	// changes) and a strconv'd edge-color digest — never fmt.Sprintf/%v, whose reflection ran on every
+	// frame even while orbiting a fixed selection (#1423).
+	return ver + "|" + strconv.Itoa(int(s.VisualStyle())) + "|" + strconv.Itoa(selectionSeq(s)) +
+		"|" + strconv.FormatFloat(float64(ec[0]+ec[1]*2+ec[2]*3), 'f', 3, 32)
 }
+
+// selectionSeq returns a counter that increments whenever the FIRST selected item (the one the source
+// mesh bakes its highlight from) changes identity. Selectable handles are comparable value structs, so
+// this is a plain == check — reflection-free and allocation-free, stable while orbiting a fixed
+// selection. Single-threaded render loop, so the package-level state is safe (#1423).
+func selectionSeq(s *app.Session) int {
+	f := s.Selection().First()
+	if f != lastSelFirst {
+		lastSelFirst = f
+		lastSelSeq++
+	}
+	return lastSelSeq
+}
+
+var (
+	lastSelFirst app.Selectable
+	lastSelSeq   int
+)
 
 // cachedSourceMesh returns g's flattened source mesh, rebuilding only when sourceKey changed.
 func cachedSourceMesh(src *topo.Body, cam scene.Camera, lookup renderer.SurfaceLookup,
@@ -394,14 +444,14 @@ func widenBounds(min, max *[3]float32, x, y, z float32) {
 	}
 }
 
-// matrixFloats returns t as 16 column-major float32 — the per-instance model matrix layout the
-// mesh.vert binding-1 mat4 expects.
-func matrixFloats(t math.Matrix4) []float32 {
-	var out [16]float32
+// appendMatrixFloats appends t as 16 column-major float32 — the per-instance model matrix layout the
+// mesh.vert binding-1 mat4 expects — directly onto dst, so a frame's matrices land in one reused
+// buffer instead of a heap slice per instance (#1423).
+func appendMatrixFloats(dst []float32, t math.Matrix4) []float32 {
 	for col := 0; col < 4; col++ {
 		for row := 0; row < 4; row++ {
-			out[col*4+row] = float32(t.At(row, col))
+			dst = append(dst, float32(t.At(row, col)))
 		}
 	}
-	return out[:]
+	return dst
 }
