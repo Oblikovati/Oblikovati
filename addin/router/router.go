@@ -448,9 +448,9 @@ func (r *Router) registerMaterialHandlers() {
 
 	// Body topology, queries and facet sets (M07 #293/#629/#630).
 	r.readOnly(wire.MethodBodyList, bodyList)
-	r.readOnly(wire.MethodBodySetVisible, bodySetVisible)
-	r.readOnly(wire.MethodBodyRename, bodyRename)
-	r.readOnly(wire.MethodBodyDelete, bodyDelete)
+	r.mutating(wire.MethodBodySetVisible, "", bodySetVisible)
+	r.mutating(wire.MethodBodyRename, "Rename Body", bodyRename)
+	r.mutating(wire.MethodBodyDelete, "Delete Body", bodyDelete)
 	r.readOnly(wire.MethodBodyPhysicalProps, bodyPhysicalProperties)
 	r.readOnly(wire.MethodBodyShells, bodyShells)
 	r.readOnly(wire.MethodBodyWires, bodyWires)

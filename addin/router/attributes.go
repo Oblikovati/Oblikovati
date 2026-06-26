@@ -22,11 +22,11 @@ import (
 
 // registerAttributeHandlers wires the attributes.* methods.
 func (r *Router) registerAttributeHandlers() {
-	r.readOnly(wire.MethodAttributesSet, setAttribute)
+	r.mutating(wire.MethodAttributesSet, "Set Attribute", setAttribute)
 	r.readOnly(wire.MethodAttributesGet, getAttribute)
 	r.readOnly(wire.MethodAttributesList, listAttributes)
 	r.readOnly(wire.MethodAttributesListSets, listAttributeSets)
-	r.readOnly(wire.MethodAttributesDelete, deleteAttribute)
+	r.mutating(wire.MethodAttributesDelete, "Delete Attribute", deleteAttribute)
 	r.readOnly(wire.MethodAttributesFind, findByAttribute)
 }
 
