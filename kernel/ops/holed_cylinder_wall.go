@@ -73,7 +73,8 @@ func unrolledWallCDT(s geom.Surface, q Quality, outer3D []math.Point3, holes3D [
 	}
 	uv, pos, nrm, loops := patchLoops2D(s, outer3D, holes3D, outer2D, holes2D)
 	nFrontier := len(uv)
-	for _, g := range adaptiveInteriorNodes(s, outerUV, holesUV, q, 1) {
+	nodes, saturated := adaptiveInteriorNodes(s, outerUV, holesUV, q, 1, false)
+	for _, g := range nodes {
 		uv = append(uv, [2]float64{g[0] * su, g[1] * sv})
 		pos = append(pos, s.PointAt(g[0], g[1]))
 		nrm = append(nrm, s.NormalAt(g[0], g[1]))
@@ -84,6 +85,7 @@ func unrolledWallCDT(s geom.Surface, q Quality, outer3D []math.Point3, holes3D [
 	}
 	m := patchMeshFrom(pos, nrm, tris)
 	repairFolds(m, 8)
+	recordCapSaturation(m, saturated, q)
 	return m
 }
 

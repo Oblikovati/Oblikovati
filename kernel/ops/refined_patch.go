@@ -208,7 +208,8 @@ func metricCDTPatch(s geom.Surface, su, sv float64, q Quality, outer3D []math.Po
 	for i := range holes3D {
 		loops = append(loops, b.addLoop(holes3D[i], holesUV[i]))
 	}
-	for _, g := range adaptiveInteriorNodes(s, outerUV, holesUV, q, refine) {
+	nodes, saturated := adaptiveInteriorNodes(s, outerUV, holesUV, q, refine, true)
+	for _, g := range nodes {
 		b.addInterior(g)
 	}
 	tris := constrainedDelaunay(b.scaled, loops)
@@ -217,6 +218,7 @@ func metricCDTPatch(s geom.Surface, su, sv float64, q Quality, outer3D []math.Po
 	}
 	m := patchMeshFrom(b.pos, b.nrm, tris)
 	repairFolds(m, 8)
+	recordCapSaturation(m, saturated, q)
 	return m, loops
 }
 
