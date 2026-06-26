@@ -20,7 +20,7 @@ import (
 func (r *Router) registerDrawingStyleHandlers() {
 	r.readOnly(wire.MethodDrawingStylesListStandards, drawingStylesListStandards)
 	r.readOnly(wire.MethodDrawingStylesGetActiveStyle, drawingStylesGetActiveStyle)
-	r.readOnly(wire.MethodDrawingStylesSetStandard, drawingStylesSetStandard)
+	r.mutating(wire.MethodDrawingStylesSetStandard, "Set Drawing Standard", drawingStylesSetStandard)
 }
 
 func drawingStylesListStandards(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
