@@ -46,6 +46,15 @@ type cdt struct {
 	// per-instance counter (each cdt runs on one goroutine, so no data race), read by tests to assert
 	// point location is near-linear, not the old O(N²) full scan.
 	walkSteps int
+	// incident[v] is a live triangle containing vertex v — the hint that lets constraint recovery find a
+	// vertex's star (and an edge incident to it) in O(deg) instead of an O(T) whole-mesh scan (#1409). It is
+	// built once before recovery (buildIncident) and kept current by touch() on every addTri/flip. nil
+	// before recovery, so insertion (which runs first) pays nothing; a stale entry is detected and rescanned.
+	incident []int
+	// flipSteps counts Lawson flips performed over this triangulation's life (recovery only — flip is
+	// called nowhere else), read by tests to assert constraint recovery flips O(crossings) edges, not the
+	// O(T²) whole-mesh rescan-per-flip the corridor walk replaced (#1409).
+	flipSteps int
 }
 
 func conKey(a, b int) [2]int {
