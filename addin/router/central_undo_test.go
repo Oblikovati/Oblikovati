@@ -62,6 +62,26 @@ func TestCentralSeamRecordsFeatureUndo(t *testing.T) {
 	}
 }
 
+// TestCentralSeamRecordsSketch3DEntityUndo proves 3D-sketch geometry added over the wire
+// (sketch3d.addEntity) is undoable and replicated, exactly like its 2D parallel. Before #1426 the whole
+// sketch3d authoring family was absent from the mutating table — silently non-undoable; wiring it through
+// the MutatingMethod interface fixes the drift.
+func TestCentralSeamRecordsSketch3DEntityUndo(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
+	call(t, r, s, "sketch3d.addEntity", `{"sketchIndex":0,"kind":"line","points":[[0,0,0],[3,0,4]]}`, &wire.AddSketch3DEntityResult{})
+
+	st := undoState(t, r, s)
+	if !st.CanUndo || st.NextUndo != "Add Sketch Geometry" {
+		t.Fatalf("after sketch3d.addEntity state = %+v, want canUndo with nextUndo=Add Sketch Geometry", st)
+	}
+
+	call(t, r, s, "transaction.undo", "{}", nil)
+	if st := undoState(t, r, s); st.NextUndo != "Create Sketch" {
+		t.Fatalf("after one undo nextUndo = %q, want \"Create Sketch\" (only the entity reverted)", st.NextUndo)
+	}
+}
+
 // TestCentralSeamRecordsSketchEntityUndo proves sketch geometry added over the wire
 // (sketch.addEntity) is undoable — another path that previously recorded nothing.
 func TestCentralSeamRecordsSketchEntityUndo(t *testing.T) {
