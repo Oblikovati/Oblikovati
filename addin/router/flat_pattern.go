@@ -26,20 +26,20 @@ import (
 // registerFlatPatternHandlers wires the flatPattern.* methods.
 func (r *Router) registerFlatPatternHandlers() {
 	r.readOnly(wire.MethodFlatPatternListOrientations, flatPatternListOrientations)
-	r.readOnly(wire.MethodFlatPatternAddOrientation, flatPatternAddOrientation)
+	r.mutating(wire.MethodFlatPatternAddOrientation, "Edit Flat Pattern", flatPatternAddOrientation)
 	r.readOnly(wire.MethodFlatPatternActivateOrientation, flatPatternActivateOrientation)
-	r.readOnly(wire.MethodFlatPatternDeleteOrientation, flatPatternDeleteOrientation)
+	r.mutating(wire.MethodFlatPatternDeleteOrientation, "Edit Flat Pattern", flatPatternDeleteOrientation)
 	r.readOnly(wire.MethodFlatPatternEdgesOfType, flatPatternEdgesOfType)
 	r.readOnly(wire.MethodFlatPatternFaces, flatPatternFaces)
 	r.readOnly(wire.MethodFlatPatternMapEntity, flatPatternMapEntity)
 	r.readOnly(wire.MethodFlatPatternListPlates, flatPatternListPlates)
 	r.readOnly(wire.MethodFlatPatternGetSettings, flatPatternGetSettings)
-	r.readOnly(wire.MethodFlatPatternSetSettings, flatPatternSetSettings)
+	r.mutating(wire.MethodFlatPatternSetSettings, "Edit Flat Pattern Settings", flatPatternSetSettings)
 	r.readOnly(wire.MethodFlatPatternListBendOrder, flatPatternListBendOrder)
-	r.readOnly(wire.MethodFlatPatternSetBendOrder, flatPatternSetBendOrder)
-	r.readOnly(wire.MethodFlatPatternAddCenterline, flatPatternAddCenterline)
+	r.mutating(wire.MethodFlatPatternSetBendOrder, "Edit Flat Pattern", flatPatternSetBendOrder)
+	r.mutating(wire.MethodFlatPatternAddCenterline, "Edit Flat Pattern", flatPatternAddCenterline)
 	r.readOnly(wire.MethodFlatPatternListCenterlines, flatPatternListCenterlines)
-	r.readOnly(wire.MethodFlatPatternDeleteCenterline, flatPatternDeleteCenterline)
+	r.mutating(wire.MethodFlatPatternDeleteCenterline, "Edit Flat Pattern", flatPatternDeleteCenterline)
 }
 
 func flatPatternAddCenterline(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {

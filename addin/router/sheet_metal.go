@@ -26,10 +26,10 @@ import (
 // registerSheetMetalHandlers wires the sheetMetal.* methods.
 func (r *Router) registerSheetMetalHandlers() {
 	r.readOnly(wire.MethodSheetMetalGetStyle, sheetMetalGetStyle)
-	r.readOnly(wire.MethodSheetMetalSetStyle, sheetMetalSetStyle)
+	r.mutating(wire.MethodSheetMetalSetStyle, "Edit Sheet Metal Style", sheetMetalSetStyle)
 	r.readOnly(wire.MethodSheetMetalBendAllowance, sheetMetalBendAllowance)
 	r.readOnly(wire.MethodSheetMetalBends, sheetMetalBends)
-	r.readOnly(wire.MethodSheetMetalUnfold, sheetMetalUnfold)
+	r.mutating(wire.MethodSheetMetalUnfold, "Create Flat Pattern", sheetMetalUnfold)
 }
 
 // activeSheetMetal returns the active part and its rule, or an error if the active document
