@@ -51,6 +51,7 @@ struct GpuBuffer {
     VkBuffer       buffer = VK_NULL_HANDLE;
     VkDeviceMemory memory = VK_NULL_HANDLE;
     VkDeviceSize   size = 0;
+    void*          mapped = nullptr; // persistent mapping for HOST_VISIBLE geometry (#1422)
 };
 } // namespace
 
@@ -131,8 +132,17 @@ struct Viewport {
     // single-view target; the quad layout uses up to kMaxTiles.
     Target          targets[kMaxTiles];
 
-    GpuBuffer       vbuf, ibuf; // concatenated vertex + index geometry (HOST_VISIBLE, uploaded per frame)
+    GpuBuffer       vbuf, ibuf; // concatenated vertex + index geometry (HOST_VISIBLE, persistently mapped)
     GpuBuffer       instbuf;    // per-instance model matrices (binding 1, ADR-0038)
+
+    // The merged-mesh identity (FNV-64 from the Go atlas key) currently resident in vbuf/ibuf. When
+    // the next render carries the same key the concatenation + re-upload is skipped entirely, so a
+    // static scene being orbited touches only the MVP push-constant (#1422). It tracks what is in the
+    // SHARED buffer (last uploaded by ANY tile), which is what makes the skip correct across tiles —
+    // a different tile's upload changes the key and forces this tile to re-upload. 0 = unknown (the
+    // legacy flatten path, or a freshly recreated target), which always re-uploads (the #1218 guard).
+    uint64_t        geomKey = 0;
+    uint64_t        geomUploads = 0; // count of actual vbuf/ibuf re-uploads, for the #1422 test instrument
 
     // Background the 3D pass clears to (themed; ADR-0021). Defaults reproduce the
     // pre-theming look so an un-themed build is unchanged.
@@ -422,6 +432,9 @@ VkPipeline create_skybox_pipeline(HeadContext* c, Viewport* v) {
 bool ensure_buffer(HeadContext* c, GpuBuffer* b, VkBufferUsageFlags usage,
                    VkMemoryPropertyFlags props, VkDeviceSize bytes) {
     if (b->buffer && b->size >= bytes) return false;
+    // A grow frees the old allocation; unmap its persistent mapping first so the handle does not
+    // dangle (the new, larger allocation is remapped lazily by upload_geom — #1422).
+    if (b->mapped) { vkUnmapMemory(c->device, b->memory); b->mapped = nullptr; }
     if (b->buffer) vkDestroyBuffer(c->device, b->buffer, nullptr);
     if (b->memory) vkFreeMemory(c->device, b->memory, nullptr);
     VkBufferCreateInfo bi{};
@@ -452,6 +465,20 @@ void upload(HeadContext* c, GpuBuffer* b, VkBufferUsageFlags usage, const void* 
     vkMapMemory(c->device, b->memory, 0, bytes, 0, &mapped);
     std::memcpy(mapped, data, (size_t)bytes);
     vkUnmapMemory(c->device, b->memory);
+}
+
+// upload_geom (re)sizes a HOST_VISIBLE|COHERENT geometry buffer and memcpys data into its
+// PERSISTENT mapping — mapped once at (re)allocation, never unmapped per frame. Coherent memory
+// makes the write visible to the GPU without an explicit flush, so the steady-state orbit path
+// does zero map/unmap syscalls (#1422), unlike the generic per-call upload() above (which the
+// rare readback-staging path still uses).
+void upload_geom(HeadContext* c, GpuBuffer* b, VkBufferUsageFlags usage, const void* data,
+                 VkDeviceSize bytes) {
+    if (bytes == 0) return;
+    ensure_buffer(c, b, usage,
+                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, bytes);
+    if (!b->mapped) vkMapMemory(c->device, b->memory, 0, VK_WHOLE_SIZE, 0, &b->mapped);
+    if (data) std::memcpy(b->mapped, data, (size_t)bytes);
 }
 
 VkImageView make_image(HeadContext* c, VkFormat fmt, VkImageUsageFlags usage,
@@ -509,6 +536,10 @@ void destroy_target(HeadContext* c, Target* t) {
 void ensure_target(HeadContext* c, Viewport* v, Target* t, int w, int h) {
     if (w == t->width && h == t->height && t->framebuffer != VK_NULL_HANDLE) return;
     vkDeviceWaitIdle(c->device);
+    // Recreating a target invalidates the geometry-resident assumption: M34-F4's geometry-skip
+    // rendered blank across target-recreation / dock-layout transitions (#1218). Clearing the key
+    // forces the next render to re-upload, so the recreated target is never sampled stale.
+    v->geomKey = 0;
     destroy_target(c, t);
     t->width = w;
     t->height = h;
@@ -985,8 +1016,9 @@ void obk_viewport_init(void* h, const uint32_t* vert, int vlen, const uint32_t* 
     init_default_env(c, v);
 }
 
-// obk_viewport_render uploads the flattened geometry, records the offscreen pass, and
-// submits it (waiting on a fence so the color image is ready to sample this frame).
+// obk_viewport_render uploads the geometry (only when geomKey marks it changed — #1422), records
+// the offscreen pass, and submits it (waiting on a fence so the color image is ready to sample
+// this frame). geomKey is the merged-mesh identity from the Go atlas cache; 0 means always upload.
 void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, const float* camPos,
                          const float* triV, int triVC, const uint32_t* triIdx, int triIC,
                          const float* occV, int occVC, const uint32_t* occIdx, int occIC,
@@ -995,12 +1027,13 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
                          const float* topTriV, int topTriVC, const uint32_t* topTriIdx, int topTriIC,
                          const float* topLineV, int topLineVC, const uint32_t* topLineIdx, int topLineIC,
                          int triBiasFirst, const float* clip,
-                         const float* mats, int matCount, const int32_t* recs, int recCount) {
+                         const float* mats, int matCount, const int32_t* recs, int recCount,
+                         uint64_t geomKey) {
     HeadContext* c = (HeadContext*)h;
     Viewport* v = c->viewport;
     if (!v || w <= 0 || hh <= 0) return;
     Target* t = &v->targets[slotIndex(slot)];
-    ensure_target(c, v, t, w, hh);
+    ensure_target(c, v, t, w, hh); // may clear v->geomKey (target recreated → re-upload, #1218)
 
     // One interleaved vertex buffer and one index buffer hold the streams back to back, in
     // draw order: occluder faces, shaded tris, solid lines, hidden lines, on-top tris, on-top
@@ -1010,40 +1043,53 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
     const int topTriBase = hidBase + hidVC, topLineBase = topTriBase + topTriVC;
     const int occFirst = 0, triFirst = occIC, lineFirst = occIC + triIC, hidFirst = occIC + triIC + lineIC;
     const int topTriFirst = hidFirst + hidIC, topLineFirst = topTriFirst + topTriIC;
+    // Whether there is any geometry to draw this frame, independent of whether it was (re)uploaded —
+    // a skipped upload (#1422) still draws the resident buffer, so the draw gate must use the counts.
+    const bool haveGeometry = (occVC + triVC + lineVC + hidVC + topTriVC + topLineVC) > 0;
 
-    // Concatenate the six streams into one vertex + one index buffer and upload them every frame.
-    // (M34-F4 tried to skip this on unchanged geometry: it holds in steady state but renders blank
-    // across viewport-target recreation/dock-layout transitions — a fragile offscreen-buffer-reuse
-    // interaction — so geometry is uploaded unconditionally for correctness; see #1218 for the
-    // careful re-attempt.)
-    std::vector<float> verts;
-    verts.reserve((size_t)(occVC + triVC + lineVC + hidVC + topTriVC + topLineVC) * kVertexFloats);
-    verts.insert(verts.end(), occV, occV + (size_t)occVC * kVertexFloats);
-    verts.insert(verts.end(), triV, triV + (size_t)triVC * kVertexFloats);
-    verts.insert(verts.end(), lineV, lineV + (size_t)lineVC * kVertexFloats);
-    verts.insert(verts.end(), hidV, hidV + (size_t)hidVC * kVertexFloats);
-    verts.insert(verts.end(), topTriV, topTriV + (size_t)topTriVC * kVertexFloats);
-    verts.insert(verts.end(), topLineV, topLineV + (size_t)topLineVC * kVertexFloats);
-    std::vector<uint32_t> idx;
-    idx.reserve((size_t)(occIC + triIC + lineIC + hidIC + topTriIC + topLineIC));
-    idx.insert(idx.end(), occIdx, occIdx + occIC);
-    idx.insert(idx.end(), triIdx, triIdx + triIC);
-    idx.insert(idx.end(), lineIdx, lineIdx + lineIC);
-    idx.insert(idx.end(), hidIdx, hidIdx + hidIC);
-    idx.insert(idx.end(), topTriIdx, topTriIdx + topTriIC);
-    idx.insert(idx.end(), topLineIdx, topLineIdx + topLineIC);
-    upload(c, &v->vbuf, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, verts.data(), verts.size() * sizeof(float));
-    upload(c, &v->ibuf, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, idx.data(), idx.size() * sizeof(uint32_t));
+    // Concatenate the six streams into one vertex + one index buffer and upload them — but ONLY when
+    // the geometry actually changed. geomKey identifies the merged mesh (from the Go atlas cache); when
+    // it matches what is already resident in vbuf/ibuf (last uploaded by any tile), the concatenation
+    // and the whole-model PCIe transfer are skipped, so orbiting a static scene touches only the MVP
+    // push-constant (#1422). geomKey == 0 (the legacy flatten path, or a freshly recreated target)
+    // always re-uploads — that, plus ensure_target clearing the key, is the #1218 blank-after-recreation
+    // guard. The draw offsets below are recomputed from the per-stream counts every frame regardless,
+    // so a skip stays consistent with the resident buffer (identical geometry ⇒ identical counts).
+    const bool geomResident = geomKey != 0 && geomKey == v->geomKey &&
+                              v->vbuf.buffer != VK_NULL_HANDLE && v->ibuf.buffer != VK_NULL_HANDLE;
+    if (!geomResident) {
+        std::vector<float> verts;
+        verts.reserve((size_t)(occVC + triVC + lineVC + hidVC + topTriVC + topLineVC) * kVertexFloats);
+        verts.insert(verts.end(), occV, occV + (size_t)occVC * kVertexFloats);
+        verts.insert(verts.end(), triV, triV + (size_t)triVC * kVertexFloats);
+        verts.insert(verts.end(), lineV, lineV + (size_t)lineVC * kVertexFloats);
+        verts.insert(verts.end(), hidV, hidV + (size_t)hidVC * kVertexFloats);
+        verts.insert(verts.end(), topTriV, topTriV + (size_t)topTriVC * kVertexFloats);
+        verts.insert(verts.end(), topLineV, topLineV + (size_t)topLineVC * kVertexFloats);
+        std::vector<uint32_t> idx;
+        idx.reserve((size_t)(occIC + triIC + lineIC + hidIC + topTriIC + topLineIC));
+        idx.insert(idx.end(), occIdx, occIdx + occIC);
+        idx.insert(idx.end(), triIdx, triIdx + triIC);
+        idx.insert(idx.end(), lineIdx, lineIdx + lineIC);
+        idx.insert(idx.end(), hidIdx, hidIdx + hidIC);
+        idx.insert(idx.end(), topTriIdx, topTriIdx + topTriIC);
+        idx.insert(idx.end(), topLineIdx, topLineIdx + topLineIC);
+        upload_geom(c, &v->vbuf, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, verts.data(), verts.size() * sizeof(float));
+        upload_geom(c, &v->ibuf, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, idx.data(), idx.size() * sizeof(uint32_t));
+        v->geomKey = geomKey; // what is now resident (0 stays 0 ⇒ legacy path never skips)
+        v->geomUploads++;
+    }
 
     // Per-instance model matrices (binding 1, ADR-0038) are small and change every frame (the
-    // frustum-culled set), so they stay HOST_VISIBLE and upload each frame. With matrices supplied,
-    // recs drive instanced per-(source,stream) draws; otherwise every stream draws as one identity
-    // instance (geometry in its own world space — unchanged output).
+    // frustum-culled set), so they upload each frame — but into the same persistent mapping as the
+    // geometry (upload_geom), so no per-frame map/unmap. With matrices supplied, recs drive instanced
+    // per-(source,stream) draws; otherwise every stream draws as one identity instance (geometry in
+    // its own world space — unchanged output).
     static const float kIdentity[16] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
     if (matCount > 0 && mats) {
-        upload(c, &v->instbuf, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, mats, (size_t)matCount * 16 * sizeof(float));
+        upload_geom(c, &v->instbuf, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, mats, (size_t)matCount * 16 * sizeof(float));
     } else {
-        upload(c, &v->instbuf, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, kIdentity, sizeof(kIdentity));
+        upload_geom(c, &v->instbuf, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, kIdentity, sizeof(kIdentity));
     }
 
     // Refresh the scene-lighting UBO from the CPU copy (coherent mapped memory, so the copy is
@@ -1135,7 +1181,7 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
         vkCmdDraw(v->cmd, 3, 1, 0, 0);
     }
 
-    if (!verts.empty()) {
+    if (haveGeometry) {
         VkDeviceSize zero = 0;
         VkBuffer vbufs[2] = {v->vbuf.buffer, v->instbuf.buffer};
         VkDeviceSize voffs[2] = {0, 0};
@@ -1480,6 +1526,15 @@ uint64_t obk_viewport_texture(void* h, int slot) {
     return (uint64_t)c->viewport->targets[slotIndex(slot)].texture;
 }
 
+// obk_viewport_geom_uploads returns the running count of actual geometry (vbuf/ibuf) re-uploads.
+// A static scene being orbited holds this constant — the dirty-skip means only the MVP changes.
+// Exposed for the #1422 regression test to assert "zero re-upload across frames"; 0 before init.
+uint64_t obk_viewport_geom_uploads(void* h) {
+    HeadContext* c = (HeadContext*)h;
+    if (!c || !c->viewport) return 0;
+    return c->viewport->geomUploads;
+}
+
 void obk_viewport_destroy(HeadContext* c) {
     Viewport* v = c->viewport;
     if (!v) return;
@@ -1489,6 +1544,7 @@ void obk_viewport_destroy(HeadContext* c) {
     // GPU — lavapipe did not flag it).
     GpuBuffer* geom[] = {&v->vbuf, &v->ibuf, &v->instbuf};
     for (GpuBuffer* b : geom) {
+        if (b->mapped) vkUnmapMemory(c->device, b->memory); // persistent map (#1422)
         if (b->buffer) vkDestroyBuffer(c->device, b->buffer, nullptr);
         if (b->memory) vkFreeMemory(c->device, b->memory, nullptr);
     }

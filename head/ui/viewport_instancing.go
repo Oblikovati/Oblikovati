@@ -218,9 +218,9 @@ func sortRecsByStream(recs [][7]int32) [][7]int32 {
 func buildInstancedFrame(allGroups, culledGroups []app.InstanceGroup, overlay renderer.DrawList, cam scene.Camera,
 	lookup renderer.SurfaceLookup, style renderer.VisualStyle,
 	decorate func(renderer.DrawList) renderer.DrawList, sourceKey string,
-) (viewport.Mesh, []float32, []int32, bool) {
+) (viewport.Mesh, []float32, []int32, string, bool) {
 	if len(allGroups) == 0 && len(overlay.Items) == 0 {
-		return viewport.Mesh{}, nil, nil, false
+		return viewport.Mesh{}, nil, nil, "", false
 	}
 	atlas := cachedFrameAtlas(allGroups, overlay, cam, lookup, style, decorate, sourceKey)
 	visible := make(map[*topo.Body][]math.Matrix4, len(culledGroups))
@@ -228,7 +228,24 @@ func buildInstancedFrame(allGroups, culledGroups []app.InstanceGroup, overlay re
 		visible[g.Source] = g.Transforms
 	}
 	mats, recs := atlas.assemble(visible)
-	return atlas.mesh, mats, recs, len(recs) > 0
+	// atlas.key identifies the merged mesh resident in the atlas; it is stable across an orbit (only
+	// the per-frame matrices/records change), so it drives the native geometry-upload dirty-skip (#1422).
+	return atlas.mesh, mats, recs, atlas.key, len(recs) > 0
+}
+
+// geomUploadKey hashes the atlas key (or any merged-mesh identity string) into the uint64 the native
+// renderer compares against its resident-geometry key to decide whether to re-upload (#1422). An empty
+// key returns 0, which the native side reads as "unknown" and always re-uploads (the legacy path).
+func geomUploadKey(key string) uint64 {
+	if key == "" {
+		return 0
+	}
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(key))
+	if k := h.Sum64(); k != 0 {
+		return k
+	}
+	return 1 // never collide with the 0 "always upload" sentinel
 }
 
 // frameAtlasCache retains the last built atlas. The render loop is single-threaded, so a single

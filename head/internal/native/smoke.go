@@ -63,7 +63,7 @@ func RunViewportSmoke(maxFrames int) int {
 	for i := 0; i < maxFrames && !w.ShouldClose(); i++ {
 		w.BeginFrame()
 		w.RenderViewport(0, 1280, 720, mvp[:], eye, verts, len(verts)/16, idx,
-			nil, 0, nil, nil, 0, nil, nil, 0, nil, nil, 0, nil, nil, 0, nil, len(idx), nil, nil, nil)
+			nil, 0, nil, nil, 0, nil, nil, 0, nil, nil, 0, nil, nil, 0, nil, len(idx), nil, nil, nil, 0)
 		w.EndFrame(0.10, 0.10, 0.12)
 	}
 	if path := os.Getenv("OBK_SMOKE_PNG"); path != "" {

@@ -380,7 +380,7 @@ func updateViewportCamera(s *app.Session, pw, ph int, overCube bool) (scene.Came
 // overlay/ground tail as one identity instance, returning the merged mesh + per-instance matrices +
 // draw records. It falls back to a single legacy flatten of the whole list (nil mats/recs) when
 // instancing does not apply — mesh-color debug mode (its own builder) or no keyable geometry.
-func frameMeshAndInstances(s *app.Session, cam scene.Camera, list renderer.DrawList, bodyCount int, ground []renderer.DrawItem, groups, culled []app.InstanceGroup) (viewport.Mesh, []float32, []int32) {
+func frameMeshAndInstances(s *app.Session, cam scene.Camera, list renderer.DrawList, bodyCount int, ground []renderer.DrawItem, groups, culled []app.InstanceGroup) (viewport.Mesh, []float32, []int32, uint64) {
 	if bodyCount < 0 || bodyCount > len(list.Items) {
 		bodyCount = len(list.Items)
 	}
@@ -400,12 +400,14 @@ func frameMeshAndInstances(s *app.Session, cam scene.Camera, list renderer.DrawL
 		decorate := func(l renderer.DrawList) renderer.DrawList {
 			return highlightSelection(l, s.Selection().First(), sources)
 		}
-		if m, mats, recs, ok := buildInstancedFrame(groups, culled, overlay, cam, s.SurfaceLookup(), s.VisualStyle(), decorate, instancedSourceKey(s)); ok {
-			return m, mats, recs
+		if m, mats, recs, key, ok := buildInstancedFrame(groups, culled, overlay, cam, s.SurfaceLookup(), s.VisualStyle(), decorate, instancedSourceKey(s)); ok {
+			return m, mats, recs, geomUploadKey(key)
 		}
 	}
-	list.Items = append(list.Items, ground...) // legacy: one flatten of the whole (world-space) list
-	return viewport.Flatten(list), nil, nil
+	// Legacy flatten: a fresh world-space mesh with no stable atlas key, so geomKey 0 ⇒ the native
+	// renderer always re-uploads it (correct, just unoptimised — the instanced path is the hot one).
+	list.Items = append(list.Items, ground...)
+	return viewport.Flatten(list), nil, nil, 0
 }
 
 // frameBounds is the model bounds for shadow + ground framing: the instance groups' transformed
@@ -460,7 +462,7 @@ func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene
 	// Draw only the instances inside the view frustum (M34-F1) — off-screen placements never reach
 	// the GPU upload. The bounds above still use the full set so shadows/framing don't shift on orbit.
 	// allGroups builds the retained vertex atlas (stable on orbit); culled drives the per-frame draws.
-	m, mats, recs := frameMeshAndInstances(s, cam, list, bodyCount, ground, groups, s.CulledInstances(cam))
+	m, mats, recs, geomKey := frameMeshAndInstances(s, cam, list, bodyCount, ground, groups, s.CulledInstances(cam))
 	frameStats.buildNs = time.Since(tb).Nanoseconds()
 	mvp := renderer.ViewProjection(cam, viewportNear, viewportFarPlane(s, cam, mn, mx, hasGeom))
 	eye := []float32{float32(cam.Eye.X), float32(cam.Eye.Y), float32(cam.Eye.Z)}
@@ -477,7 +479,7 @@ func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene
 		m.TopTriVerts, m.TopTriVCount, m.TopTriIndices,
 		m.TopLineVerts, m.TopLineVCount, m.TopLineIndices,
 		m.TriBiasFirst, s.ActiveSectionClip(), // section-plane clip (M12-F04)
-		mats, recs) // instanced draw (ADR-0038); nil mats/recs ⇒ legacy one-identity-instance path
+		mats, recs, geomKey) // instanced draw (ADR-0038); geomKey gates the geometry re-upload (#1422)
 	frameStats.gpuNs = time.Since(tg).Nanoseconds()
 	if tex := win.ViewportTexture(slot); tex != 0 {
 		native.SetCursorPos(cx, cy) // draw the image back over the invisible button
@@ -557,7 +559,7 @@ func modelOverlays(s *app.Session, cam scene.Camera, hovered *feature.WorkPlane,
 	list.Items = append(list.Items, activeToolPreviewItems(s)...)
 	list.Items = append(list.Items, pointCloudOverlay(s, cam)...)     // attached scans (M17-F06, #645)
 	list.Items = append(list.Items, s.SurfaceInterrogationItems()...) // reflection/highlight/isophote (M36-F12)
-	list.Items = append(list.Items, s.DeviationItems()...)             // deviation heatmap (M36-F14)
+	list.Items = append(list.Items, s.DeviationItems()...)            // deviation heatmap (M36-F14)
 	return list
 }
 
