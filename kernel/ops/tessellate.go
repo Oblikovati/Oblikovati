@@ -5,6 +5,7 @@ package ops
 import (
 	stdmath "math"
 
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -17,6 +18,23 @@ type Mesh struct {
 	Positions []math.Point3
 	Normals   []math.Vector3
 	Indices   []int
+	// Diagnostics carries any degradation the tessellator recorded while building this mesh — a cap it
+	// saturated, an exact path it declined — the diag channel's tessellation carrier, so a consumer sees
+	// the mesh may not meet tolerance instead of discovering it downstream (Oblikovati#1412). Empty means
+	// a clean tessellation.
+	Diagnostics []diag.Diagnostic
+}
+
+// Diagnose records a diagnostic onto the mesh — the emission site for a tessellator that degraded while
+// building it (e.g. saturated the interior-cell cap below the chord tolerance, #1412).
+func (m *Mesh) Diagnose(d diag.Diagnostic) { m.Diagnostics = append(m.Diagnostics, d) }
+
+// carryDiagnostics lifts a sub-mesh's diagnostics into m when the tessellator composes meshes, so a
+// degradation recorded deep in a component surfaces on the final face mesh.
+func (m *Mesh) carryDiagnostics(child *Mesh) {
+	if child != nil && len(child.Diagnostics) > 0 {
+		m.Diagnostics = append(m.Diagnostics, child.Diagnostics...)
+	}
 }
 
 // TriangleCount returns the number of triangles.
@@ -189,6 +207,7 @@ func mergeMesh(dst, src *Mesh) {
 	for _, idx := range src.Indices {
 		dst.Indices = append(dst.Indices, base+idx)
 	}
+	dst.carryDiagnostics(src) // a face's tessellation diagnostics surface on the whole-body mesh
 }
 
 // adaptiveParams returns the parameter breakpoints (lo…hi inclusive) at which eval's chord
