@@ -5,8 +5,115 @@ package brep
 import (
 	"testing"
 
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
+
+// box4 returns a closed CCW (area>0) square loop of dedges from (x0,y0) of the given side, as the (u,v)
+// boundary the grouping helpers consume.
+func box4(x0, y0, side float64) []dedge {
+	p := [4]math.Point2{
+		math.P2(x0, y0), math.P2(x0+side, y0), math.P2(x0+side, y0+side), math.P2(x0, y0+side),
+	}
+	out := make([]dedge, 4)
+	for i := range p {
+		out[i] = dedge{a: p[i], b: p[(i+1)%4]}
+	}
+	return out
+}
+
+// reverseLoop flips a dedge loop's winding (a CCW outer becomes a CW hole, area<0).
+func reverseDedgeLoop(loop []dedge) []dedge {
+	out := make([]dedge, len(loop))
+	for i, e := range loop {
+		out[len(loop)-1-i] = dedge{a: e.b, b: e.a}
+	}
+	return out
+}
+
+// TestGroupLoopFacesContainment pins the disjoint-faces grouping (#1403): two separated outer loops with a
+// hole nested in one become TWO faces, the hole attached to the outer that contains it — and the gate keeps
+// the half-space/wrapping cases as a single face. This exercises groupLoopFaces, smallestContainingFace,
+// dedgeLoopContains and loopPointInside, which the connected cone∩cone case (two outers, no hole) does not.
+func TestGroupLoopFacesContainment(t *testing.T) {
+	outerA := box4(0, 0, 10)                // contains the hole
+	hole := reverseDedgeLoop(box4(3, 3, 4)) // CW hole inside outerA
+	outerB := box4(20, 0, 10)               // disjoint second face
+	loops := [][]dedge{outerA, hole, outerB}
+
+	// Not multiFace, or wrapping → one face (the unchanged half-space convention).
+	if g := groupLoopFaces(false, false, loops); len(g) != 1 {
+		t.Errorf("non-multiface grouped into %d faces, want 1 (half-space convention)", len(g))
+	}
+	if g := groupLoopFaces(true, true, loops); len(g) != 1 {
+		t.Errorf("wrapping band grouped into %d faces, want 1", len(g))
+	}
+	// multiFace, non-wrapping → two faces: {outerA, hole} and {outerB}.
+	groups := groupLoopFaces(true, false, loops)
+	if len(groups) != 2 {
+		t.Fatalf("grouped into %d faces, want 2 (the two disjoint outers)", len(groups))
+	}
+	withHole := 0
+	for _, g := range groups {
+		if len(g) == 2 {
+			withHole++ // the face that received the nested hole
+		}
+	}
+	if withHole != 1 {
+		t.Errorf("%d faces carry the hole, want exactly 1 (the containing outer)", withHole)
+	}
+}
+
+// TestDedgeLoopContains pins the (u,v) point-in-polygon used to nest holes.
+func TestDedgeLoopContains(t *testing.T) {
+	sq := box4(0, 0, 10)
+	if !dedgeLoopContains(sq, math.P2(5, 5)) {
+		t.Error("center point reported outside the square")
+	}
+	if dedgeLoopContains(sq, math.P2(15, 5)) {
+		t.Error("external point reported inside the square")
+	}
+}
+
+// TestCurvedSolidMembershipDeclinesNonCone: the membership oracle handles a cone solid and declines a shape
+// it has no analytic test for, so the general path defers rather than misclassify.
+func TestCurvedSolidMembershipDeclinesNonCone(t *testing.T) {
+	cone, _ := SolidCylinderCone(math.P3(0, 0, -6), math.P3(0, 0, 6), 2, 4, "cone")
+	if _, ok := curvedSolidMembership(cone); !ok {
+		t.Error("cone solid membership should be available")
+	}
+	sph, _ := SolidSphere(math.P3(0, 0, 0), 3, "sph")
+	if _, ok := curvedSolidMembership(sph); ok {
+		t.Error("sphere solid membership is not wired yet; want ok=false so the caller defers")
+	}
+}
+
+// TestPointInsideConeSolid pins the analytic frustum membership at the band edges and the rim.
+func TestPointInsideConeSolid(t *testing.T) {
+	cone, _ := geom.NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), 0.5) // tan~0.546
+	if pointInsideConeSolid(cone, 2, 6, math.P3(0, 0, 1.5)) {
+		t.Error("point below vMin reported inside")
+	}
+	if pointInsideConeSolid(cone, 2, 6, math.P3(0, 0, 7)) {
+		t.Error("point above vMax reported inside")
+	}
+	if !pointInsideConeSolid(cone, 2, 6, math.P3(0, 0, 4)) {
+		t.Error("on-axis mid-band point reported outside")
+	}
+	if pointInsideConeSolid(cone, 2, 6, math.P3(100, 0, 4)) {
+		t.Error("far-off-axis point reported inside")
+	}
+}
+
+// TestConeConeIntersectGeneralDeclines: the exported entry and the driver decline a cone+cylinder (the
+// cone-cylinder case) and other non-frustum-crossing inputs, so kernel/ops keeps its fallback.
+func TestConeConeIntersectGeneralDeclines(t *testing.T) {
+	cone, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
+	cyl, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
+	if _, ok := ConeConeIntersectGeneral(cone, cyl, nil); ok {
+		t.Error("cone∩cylinder should decline from the cone∩cone general path (ok=false)")
+	}
+}
 
 // General curved∩curved pipeline (EPIC Oblikovati/Oblikovati#1403). The first pair routed through the
 // general SSI→trimByImprint→solid-membership→curvedStitch path (coneConeIntersectGeneral) must produce the

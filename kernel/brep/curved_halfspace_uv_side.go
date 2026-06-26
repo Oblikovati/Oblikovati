@@ -73,7 +73,7 @@ func trimByImprint(c uvSide, f curvedFace, surface geom.Surface, imprint []geom.
 	// cone's wall) — unlike a plane cut, which leaves one band/patch. groupLoopFaces splits the boundary
 	// loops into connected faces by (u,v) containment; a wrapping band or single patch stays one face, so
 	// the half-space path is unchanged (#1403).
-	for _, group := range groupLoopFaces(c, loops) {
+	for _, group := range groupLoopFaces(c.multiFace(), c.wrapsAllU(), loops) {
 		emitted, ok := emitKeptLoops(c, group, segs)
 		if !ok {
 			return nil, nil, ErrUnsupportedHalfSpace

@@ -744,8 +744,8 @@ func dedgeLoopArea(loop []dedge) float64 {
 // (CCW, area>0) is a face; each hole (CW) joins the smallest outer that contains it; DISJOINT outer loops
 // (the two lens caps a rod punches in a fat cone's wall) become SEPARATE faces — the generalization a
 // curved∩curved cut needs over a plane cut, where the kept region is always one connected piece.
-func groupLoopFaces(c uvSide, loops [][]dedge) [][][]dedge {
-	if !c.multiFace() || c.wrapsAllU() || len(loops) <= 1 {
+func groupLoopFaces(multiFace, wrapping bool, loops [][]dedge) [][][]dedge {
+	if !multiFace || wrapping || len(loops) <= 1 {
 		return [][][]dedge{loops} // half-space/torus, or a wrapping band, or a single patch — one face
 	}
 	var groups []*faceGroup
