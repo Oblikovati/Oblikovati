@@ -208,7 +208,7 @@ func (c ruledUV) assembleBandSegments(imprint []uvSeg) []uvSeg {
 			// Clip each imprint segment to the band's axial range: a section can leave [vMin,vMax] (a tilted
 			// cut's ellipse rises past the rim), and sampling that out-of-band part would inject a spurious
 			// arc; clipping lands the imprint exactly on the rim where it crosses, the real rim split.
-			for _, clipped := range clipSegToVBand(split, c.band.vMin, c.band.vMax) {
+			for _, clipped := range c.clipSegToVBand(split) {
 				if clipped.a.DistanceTo(clipped.b) > arrTol {
 					out = append(out, clipped)
 				}
@@ -218,37 +218,62 @@ func (c ruledUV) assembleBandSegments(imprint []uvSeg) []uvSeg {
 	return append(out, c.bandFrameSegments()...)
 }
 
-// clipSegToVBand clips a (u,v) imprint segment to the axial band [vMin,vMax], returning the in-band part
-// (with u and the curve parameter interpolated to the rim crossing) or nothing when the segment lies wholly
-// outside. The band rims then bound the imprint exactly where it would otherwise overshoot.
-func clipSegToVBand(s uvSeg, vMin, vMax float64) []uvSeg {
+// clipSegToVBand clips a (u,v) imprint segment to the axial band [vMin,vMax], returning the in-band part or
+// nothing when the segment lies wholly outside on one side. Crucially, an endpoint that leaves the band is
+// snapped to the EXACT curve parameter where the imprint crosses the rim (not a linear interpolation of the
+// sampled segment), so the rim-crossing 3D point equals plane∩rim and welds with the cap's matching arc —
+// the section ellipse is plane∩cylinder, so its v=rim crossing is exactly plane∩rim (#1405).
+func (c ruledUV) clipSegToVBand(s uvSeg) []uvSeg {
+	vMin, vMax := c.band.vMin, c.band.vMax
 	a, b := float64(s.a.Y), float64(s.b.Y)
 	if (a < vMin && b < vMin) || (a > vMax && b > vMax) {
 		return nil
 	}
-	if a >= vMin && a <= vMax && b >= vMin && b <= vMax {
-		return []uvSeg{s}
-	}
-	t0, t1 := 0.0, 1.0
-	if dv := b - a; dv != 0 {
-		lo, hi := (vMin-a)/dv, (vMax-a)/dv
-		if lo > hi {
-			lo, hi = hi, lo
-		}
-		t0, t1 = stdmath.Max(t0, lo), stdmath.Min(t1, hi)
-	}
-	if t0 >= t1 {
+	sa, ta := c.clipEndToBand(s, true)
+	sb, tb := c.clipEndToBand(s, false)
+	if sa.DistanceTo(sb) <= arrTol {
 		return nil
 	}
-	return []uvSeg{{
-		a: lerpUV(s.a, s.b, t0), b: lerpUV(s.a, s.b, t1),
-		curve: s.curve, tA: lerp(s.tA, s.tB, t0), tB: lerp(s.tA, s.tB, t1), kind: s.kind,
-	}}
+	return []uvSeg{{a: sa, b: sb, curve: s.curve, tA: ta, tB: tb, kind: s.kind}}
 }
 
-// lerpUV linearly interpolates a (u,v) point between a and b by fraction t.
-func lerpUV(a, b math.Point2, t float64) math.Point2 {
-	return math.P2(lerp(float64(a.X), float64(b.X), t), lerp(float64(a.Y), float64(b.Y), t))
+// clipEndToBand returns one endpoint of a segment clipped to the band: the endpoint unchanged when already
+// in [vMin,vMax], else the (u,v) and curve parameter where the imprint curve exactly reaches the nearer rim
+// (refined on the curve, between this end's parameter and the other's).
+func (c ruledUV) clipEndToBand(s uvSeg, isA bool) (math.Point2, float64) {
+	p, v, t, tOther := s.a, float64(s.a.Y), s.tA, s.tB
+	if !isA {
+		p, v, t, tOther = s.b, float64(s.b.Y), s.tB, s.tA
+	}
+	if v >= c.band.vMin && v <= c.band.vMax {
+		return p, t
+	}
+	vLim := c.band.vMin
+	if v > c.band.vMax {
+		vLim = c.band.vMax
+	}
+	tc := c.refineCurveV(s.curve, t, tOther, vLim)
+	return c.paramOf(s.curve.PointAt(tc)), tc
+}
+
+// refineCurveV bisects the imprint curve parameter between tOut (outside the band) and tIn (inside) to the
+// point where the curve's axial coordinate v equals vLim — the exact rim crossing.
+func (c ruledUV) refineCurveV(curve geom.Curve3, tOut, tIn, vLim float64) float64 {
+	out := tOut
+	for i := 0; i < 50; i++ {
+		tm := (tOut + tIn) / 2
+		if (c.curveV(curve, out)-vLim <= 0) == (c.curveV(curve, tm)-vLim <= 0) {
+			tOut = tm
+		} else {
+			tIn = tm
+		}
+	}
+	return (tOut + tIn) / 2
+}
+
+// curveV is the axial coordinate v of a 3D imprint curve at parameter t.
+func (c ruledUV) curveV(curve geom.Curve3, t float64) float64 {
+	return float64(c.paramOf(curve.PointAt(t)).Y)
 }
 
 // materialPredicate reports whether a (u,v) point of the band is on the KEPT side of the imprint. For a

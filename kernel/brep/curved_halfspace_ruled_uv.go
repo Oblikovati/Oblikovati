@@ -172,11 +172,8 @@ func (c ruledUV) apexCapSide(f curvedFace, surface geom.Surface, conic geom.Curv
 // splitSide). It handles both the axis-parallel flat (b≡0 → a vertical-edged span) and an oblique ellipse
 // cut (within-band / clips-rim / tongue), the latter the case the line-only cylinder split deferred to CSG.
 func cylinderSideUVSplit(f curvedFace, cyl geom.Cylinder, curves []geom.Curve3, band coneSideBand_, plane geom.Plane, n math.Vector3) ([]curvedFace, []loopEdge, error) {
-	// trimByImprint (the general arrangement trimmer) now reproduces the analytic result for the wrapping
-	// band, oblique-ellipse and axis-parallel cuts via the hi/lo orientation convention (orientLoops); the
-	// clips-rim case still needs the multi-face weld at the rim crossings reconciled before this can switch
-	// (Oblikovati#1405). Until then the analytic single-valued walk stands.
-	return newCylinderUV(cyl, band, plane, n).splitSide(f, cyl, curves[0])
+	c := newCylinderUV(cyl, band, plane, n)
+	return c.trimByImprint(f, cyl, curves, c.halfSpaceMaterial())
 }
 
 // splitSide builds the kept region {g<0} of a ruled side in (u,v). The WRAPPING case (kept v-interval
