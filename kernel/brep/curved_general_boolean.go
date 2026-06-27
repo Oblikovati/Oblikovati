@@ -183,16 +183,37 @@ func planarCapFaces(b *topo.Body) []curvedFace {
 	return caps
 }
 
-// reverseCurvedFaces flips each face's sense so it bounds the CAVITY a Difference carves: the tool's surface
-// inside the target, re-faced inward (AddReversedFace). curvedStitch then welds it to the target side along
-// the shared imprint, the cut wall opposite the surviving material (#1403).
+// reverseCurvedFaces flips each tool wall into the CAVITY a Difference carves: the sense flag (so the normal
+// points into the void) AND every loop's winding (so the boundary is walked the OTHER way). The tool keeps the
+// part INSIDE the target — a tunnel band whose imprint loop is walked the SAME way as the target's own hole —
+// so reversing the loop opposes them, the manifold-orientation a watertight cut needs (curvedStitch orients
+// each shared edge by its loop traversal, not the face sense). The tunnel is a ruled LOFT band
+// (twoClosedRimBandMesh), which lofts rim-to-rim regardless of winding, so the reversal does not change its
+// meshed region — only its orientation (#1403/#1476).
 func reverseCurvedFaces(faces []curvedFace) []curvedFace {
 	out := make([]curvedFace, len(faces))
 	for i, f := range faces {
 		f.reversed = !f.reversed
+		loops := make([]curvedLoop, len(f.loops))
+		for j, lp := range f.loops {
+			loops[j] = reverseCurvedLoop(lp)
+		}
+		f.loops = loops
 		out[i] = f
 	}
 	return out
+}
+
+// reverseCurvedLoop reverses a loop's traversal: each edge's direction (t0↔t1) and the edge order both flip,
+// so the loop walks the opposite way around the same boundary (#1476).
+func reverseCurvedLoop(lp curvedLoop) curvedLoop {
+	n := len(lp.edges)
+	rev := make([]loopEdge, n)
+	for i, e := range lp.edges {
+		e.t0, e.t1 = e.t1, e.t0
+		rev[n-1-i] = e
+	}
+	return curvedLoop{edges: rev}
 }
 
 // loopsClearOfCaps reports whether every imprint point sits STRICTLY between the side band's two cap levels

@@ -66,6 +66,12 @@ func (c torusUV) wrapsAllU() bool { return false }
 // multiFace: a torus half-space cut leaves one connected face; it is not on the general curved∩curved path (uvSide, #1403).
 func (c torusUV) multiFace() bool { return false }
 
+// wrappingSolidFaces: a torus is not on the general ruled solid-membership wrapping path, so it always defers
+// to the ordinary (u,v) emission (Oblikovati#1476).
+func (c torusUV) wrappingSolidFaces(_ []Face2D, _ []uvSeg, _ geom.Surface, _ curvedFace) ([]curvedFace, bool) {
+	return nil, false
+}
+
 // assembleSegments samples the spiric section, seam-splits it in u, and adds the four artificial seam edges
 // that close the (u,v) rectangle (uvSide). There is no v-band clip (v is periodic) and no rim — the torus is
 // closed, so the section is the only real boundary; the frame seams fold and dissolve.

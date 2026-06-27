@@ -229,11 +229,11 @@ func TestCrossingCylinderCutGeneral(t *testing.T) {
 	}
 }
 
-// TestCrossingCylinderJoinGeneral checks the STRUCTURE the general join builder emits (face composition +
-// edge-use counts), NOT orientation/region correctness: this builder is known broken (Oblikovati#1476 — it
-// meshes the wrong region, ∪ volume 194 vs 383) and is NOT wired into kernel/ops; crossing-cylinder JOIN stays
-// on the bespoke handler. Scoped to structure on purpose — edge-count watertightness is what masked the silent
-// fallback, so correctness is asserted in ops once #1476 lands (#1403).
+// TestCrossingCylinderJoinGeneral: target ∪ tool (fat side-breached by a crossing rod) through the general
+// pipeline yields the correct welded solid — the fat's holed wall (a keyhole-bridged tube), the two disjoint
+// rod stubs (split by connected band), and BOTH bodies' whole caps. The OUTSIDE-keep wrapping-band emission
+// (Oblikovati#1476) is what makes this mesh the right region; its volume is checked against OCC in ops
+// (TestCurvedBooleanVolumesMatchOCC, crossing ∪). Here we assert the watertight face structure (#1403/#1476).
 func TestCrossingCylinderJoinGeneral(t *testing.T) {
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	rod, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
@@ -243,14 +243,10 @@ func TestCrossingCylinderJoinGeneral(t *testing.T) {
 	}
 	assertWatertight(t, res)
 	cones, cyls, planes := faceTypeCounts(t, res)
-	// 2 cyl: the fat's holed wall (one connected band, 2 lens holes), and the rod's wall — which the general
-	// path keeps as ONE face carrying BOTH stubs (bottom-rim + two lens loops + top-rim), the disjoint stubs
-	// separated by the dropped middle band via trim winding (kept between rim↔lens, dropped between the two
-	// lenses). The volume sits UNDER OCC (chord deficit only), confirming the middle is correctly excluded.
-	// The bespoke handler splits this into two stub faces; the general path's compact 1-face form is an
-	// equally valid watertight manifold (#1403). 4 plane: 2 fat caps + 2 rod caps, all whole.
-	if cones != 0 || cyls != 2 || planes != 4 {
-		t.Errorf("got %d cone + %d cyl + %d plane faces, want 2 cyl (holed fat + rod both-stubs) + 4 plane (2 fat + 2 rod caps)", cones, cyls, planes)
+	// 3 cyl: the fat's holed wall (one keyhole-bridged tube with 2 lens holes) + the two rod stubs (the
+	// connected-band split separates them, unlike a single 4-loop face). 4 plane: 2 fat caps + 2 rod caps.
+	if cones != 0 || cyls != 3 || planes != 4 {
+		t.Errorf("got %d cone + %d cyl + %d plane faces, want 3 cyl (holed fat tube + 2 rod stubs) + 4 plane (2 fat + 2 rod caps)", cones, cyls, planes)
 	}
 }
 
