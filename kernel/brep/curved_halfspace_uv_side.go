@@ -42,6 +42,11 @@ type uvSide interface {
 	// (a fat cone's wall punched by a rod yields two disjoint lens caps); a plane half-space always leaves
 	// one connected region, so the ruled/torus half-space paths return false and emit a single face (#1403).
 	multiFace() bool
+	// wrappingSolidFaces emits the kept region directly as one curvedFace per connected band when it WRAPS
+	// the whole azimuth (the cut/join OUTSIDE/tunnel wall) — a tube the ordinary contractible-outer emission
+	// mis-files. ok=false for every other case (half-space, torus, the non-wrapping intersect), so they fall
+	// through to the standard (u,v) emission below (Oblikovati#1476).
+	wrappingSolidFaces(kept []Face2D, segs []uvSeg, surface geom.Surface, f curvedFace) ([]curvedFace, bool)
 	// orientLoops applies the surface's winding convention to the ordered boundary loops, returning the face
 	// loops, the section (cut) arcs that bound the planar lid (reversed into it), and whether the kept face is
 	// outerless — a closed-surface face whose loops are all holes (the genus-1 torus complement).
@@ -65,6 +70,11 @@ func trimByImprint(c uvSide, f curvedFace, surface geom.Surface, imprint []geom.
 	kept := keptCells(arrangeBand(segs), materialOf())
 	if len(kept) == 0 {
 		return nil, nil, nil // the whole side is on the dropped side
+	}
+	// A solid-membership side that WRAPS the whole azimuth (the cut/join OUTSIDE/tunnel wall) is a tube the
+	// contractible-outer emission below mis-files; emit it directly as one face per connected band (#1476).
+	if faces, ok := c.wrappingSolidFaces(kept, segs, surface, f); ok {
+		return faces, nil, nil
 	}
 	loops := dropArtificialLoops(c, chainLoops(keptBoundaryEdges(kept, c.vPeriodic())), segs)
 	var faces []curvedFace

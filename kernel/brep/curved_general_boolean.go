@@ -183,16 +183,37 @@ func planarCapFaces(b *topo.Body) []curvedFace {
 	return caps
 }
 
-// reverseCurvedFaces flips each face's sense so it bounds the CAVITY a Difference carves: the tool's surface
-// inside the target, re-faced inward (AddReversedFace). curvedStitch then welds it to the target side along
-// the shared imprint, the cut wall opposite the surviving material (#1403).
+// reverseCurvedFaces flips each tool wall into the CAVITY a Difference carves: the sense flag (so the normal
+// points into the void) AND every loop's winding (so the boundary is walked the OTHER way). The tool keeps the
+// part INSIDE the target — a tunnel band whose imprint loop is walked the SAME way as the target's own hole —
+// so reversing the loop opposes them, the manifold-orientation a watertight cut needs (curvedStitch orients
+// each shared edge by its loop traversal, not the face sense). The tunnel is a ruled LOFT band
+// (twoClosedRimBandMesh), which lofts rim-to-rim regardless of winding, so the reversal does not change its
+// meshed region — only its orientation (#1403/#1476).
 func reverseCurvedFaces(faces []curvedFace) []curvedFace {
 	out := make([]curvedFace, len(faces))
 	for i, f := range faces {
 		f.reversed = !f.reversed
+		loops := make([]curvedLoop, len(f.loops))
+		for j, lp := range f.loops {
+			loops[j] = reverseCurvedLoop(lp)
+		}
+		f.loops = loops
 		out[i] = f
 	}
 	return out
+}
+
+// reverseCurvedLoop reverses a loop's traversal: each edge's direction (t0↔t1) and the edge order both flip,
+// so the loop walks the opposite way around the same boundary (#1476).
+func reverseCurvedLoop(lp curvedLoop) curvedLoop {
+	n := len(lp.edges)
+	rev := make([]loopEdge, n)
+	for i, e := range lp.edges {
+		e.t0, e.t1 = e.t1, e.t0
+		rev[n-1-i] = e
+	}
+	return curvedLoop{edges: rev}
 }
 
 // loopsClearOfCaps reports whether every imprint point sits STRICTLY between the side band's two cap levels
@@ -241,13 +262,10 @@ func crossingCylinderSides(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyline
 }
 
 // CrossingCylinderCutGeneral builds target − tool through the GENERAL curved∩curved pipeline (#1403): the
-// target side kept OUTSIDE the tool (the breached wall), the target's caps whole, and the tool side kept
-// INSIDE the target and reversed (the tunnel wall).
-//
-// NOT WIRED — known broken (Oblikovati#1476): the OUTSIDE-keep wall meshes the WRONG region, so the result is
-// orientation-inconsistent or wrong-volume and validBooleanSolid rejects it. kernel/ops keeps crossing-cylinder
-// subtract on the bespoke CrossingCylinderCut until #1476 fixes the arrangement winding. Retained as the
-// scaffolding that fix builds on; the brep test only checks its edge-count/face structure, not correctness.
+// target side kept OUTSIDE the tool (the breached wall, a keyhole-bridged holed tube), the target's caps whole,
+// and the tool side kept INSIDE the target and reversed (the tunnel wall). The OUTSIDE-keep wrapping-band
+// emission (Oblikovati#1476) makes it mesh the right region, so kernel/ops adopts it (validBooleanSolid passes,
+// OCC drill rel 0.030); the bespoke CrossingCylinderCut stays as the fallback for the cases this declines.
 func CrossingCylinderCutGeneral(target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
 	loops, tgt, tl, ok := crossingCylinderSides(target, tool, rec)
 	if !ok {
@@ -279,13 +297,10 @@ func cutFaces(targetWall []curvedFace, target *topo.Body, toolWall []curvedFace)
 }
 
 // CrossingCylinderJoinGeneral builds target ∪ tool through the GENERAL curved∩curved pipeline (#1403): each
-// side keeps the part OUTSIDE the other (the Union keep-table — the fat's holed wall plus the two rod stubs),
-// and BOTH bodies keep their caps whole. The cut's sibling with NO face reversal.
-//
-// NOT WIRED — known broken (Oblikovati#1476): with the imprint weld fixed this now passes validBooleanSolid
-// but meshes the WRONG region (∪ volume 194 vs 383), so adopting it would be worse than the bespoke result.
-// kernel/ops keeps crossing-cylinder JOIN on the bespoke CrossingCylinderJoin until #1476 fixes the OUTSIDE-keep
-// arrangement winding. Retained as scaffolding; the brep test only checks its edge-count/face structure.
+// side keeps the part OUTSIDE the other (the Union keep-table — the fat's keyhole-bridged holed wall plus the
+// two split rod stubs), and BOTH bodies keep their caps whole. The cut's sibling with NO face reversal. The
+// OUTSIDE-keep wrapping-band emission (Oblikovati#1476) makes it mesh the right region, so kernel/ops adopts it
+// (validBooleanSolid passes, OCC ∪ rel 0.026); the bespoke CrossingCylinderJoin stays as the fallback.
 func CrossingCylinderJoinGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
 	loops, sa, sb, ok := crossingCylinderSides(a, b, rec)
 	if !ok {
