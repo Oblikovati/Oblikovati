@@ -1,0 +1,94 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package brep
+
+import (
+	"testing"
+
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+)
+
+// coneCutJoinPair builds the test cone pair: a radius-0.8→1.5 rod frustum (axis x) crossing a radius-2→4 fat
+// frustum (axis z).
+func coneCutJoinPair() (fat, rod *topo.Body) {
+	fat, _ = SolidCylinderCone(math.P3(0, 0, -6), math.P3(0, 0, 6), 2, 4, "fat")
+	rod, _ = SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 0.8, 1.5, "rod")
+	return fat, rod
+}
+
+// TestConeConeJoinGeneral: fat ∪ rod (two crossing frustums) through the general pipeline is a watertight
+// solid — the fat's keyhole-bridged holed wall, the two tapered rod stubs, and all four caps (#1403).
+func TestConeConeJoinGeneral(t *testing.T) {
+	fat, rod := coneCutJoinPair()
+	res, ok := ConeConeJoinGeneral(fat, rod, nil)
+	if !ok {
+		t.Fatal("general cone∪cone declined; want the welded solid")
+	}
+	assertWatertight(t, res)
+	cones, cyls, planes := faceTypeCounts(t, res)
+	// 3 cone: the fat's holed wall + the two rod stubs. 4 plane: 2 fat caps + 2 rod caps.
+	if cones != 3 || cyls != 0 || planes != 4 {
+		t.Errorf("got %d cone + %d cyl + %d plane faces, want 3 cone (holed fat + 2 stubs) + 4 plane caps", cones, cyls, planes)
+	}
+}
+
+// TestConeConeCutGeneral: fat − rod (drilling the fat frustum) through the general pipeline is a watertight
+// solid — the breached fat wall, its whole caps, and the reversed rod tunnel (#1403).
+func TestConeConeCutGeneral(t *testing.T) {
+	fat, rod := coneCutJoinPair()
+	res, ok := ConeConeCutGeneral(fat, rod, nil)
+	if !ok {
+		t.Fatal("general cone−cone declined; want the drilled solid")
+	}
+	assertWatertight(t, res)
+	cones, _, planes := faceTypeCounts(t, res)
+	// 2 cone: the breached fat wall + the rod tunnel. 2 plane: the fat's two whole caps.
+	if cones != 2 || planes != 2 {
+		t.Errorf("got %d cone + %d plane faces, want 2 cone (breached fat + tunnel) + 2 plane (fat caps)", cones, planes)
+	}
+}
+
+// TestConeCylinderCutJoinGeneralResolveOrder: the mixed cone/cylinder pair resolves each operand by type
+// (ruledOperandOf) regardless of which argument is the cone, so both argument orders are accepted (#1403).
+func TestConeCylinderCutJoinGeneralResolveOrder(t *testing.T) {
+	cyl, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
+	cone, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
+	if _, ok := ConeCylinderJoinGeneral(cyl, cone, nil); !ok {
+		t.Error("cone∪cylinder declined with cylinder first")
+	}
+	if _, ok := ConeCylinderJoinGeneral(cone, cyl, nil); !ok {
+		t.Error("cone∪cylinder declined with cone first")
+	}
+}
+
+// TestConePairDecline: a non-crossing pair (far apart, no imprint) declines so kernel/ops keeps its fallback.
+func TestConePairDecline(t *testing.T) {
+	a, _ := SolidCylinderCone(math.P3(0, 0, -6), math.P3(0, 0, 6), 2, 4, "a")
+	b, _ := SolidCylinderCone(math.P3(40, 0, 0), math.P3(52, 0, 0), 0.8, 1.5, "b") // far apart, no intersection
+	if _, ok := ConeConeJoinGeneral(a, b, nil); ok {
+		t.Error("non-intersecting frustums should decline from the join general path")
+	}
+	if _, ok := ConeConeCutGeneral(a, b, nil); ok {
+		t.Error("non-intersecting frustums should decline from the cut general path")
+	}
+}
+
+// TestRuledOperandOfResolvesType: ruledOperandOf builds a cone operand from a frustum body and a cylinder
+// operand from a cylinder body, carrying that surface forward for the split (#1403).
+func TestRuledOperandOfResolvesType(t *testing.T) {
+	cone, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
+	cyl, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
+	oc, okc := ruledOperandOf(cone)
+	oy, oky := ruledOperandOf(cyl)
+	if !okc || !oky {
+		t.Fatalf("ruledOperandOf failed: cone=%v cylinder=%v", okc, oky)
+	}
+	if _, isCone := oc.surface.(geom.Cone); !isCone {
+		t.Errorf("cone operand carries %T, want geom.Cone", oc.surface)
+	}
+	if _, isCyl := oy.surface.(geom.Cylinder); !isCyl {
+		t.Errorf("cylinder operand carries %T, want geom.Cylinder", oy.surface)
+	}
+}

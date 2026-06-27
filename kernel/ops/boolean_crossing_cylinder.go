@@ -188,6 +188,11 @@ func curvedConeCylinderCut(op PartFeatureOperation, target, tool *topo.Body, rec
 	if op != Cut {
 		return nil, false
 	}
+	// EPIC #1403: route cone∩cylinder subtract through the GENERAL ruled cut first (#1476 OUTSIDE-keep
+	// emission); the bespoke ConeCylinderCut stays as the fallback for the cases the general path declines.
+	if res, ok := brep.ConeCylinderCutGeneral(target, tool, rec); ok && validBooleanSolid(res) {
+		return res, true
+	}
 	res, ok := brep.ConeCylinderCut(target, tool, rec)
 	if !ok || !validBooleanSolid(res) {
 		return nil, false
@@ -201,6 +206,11 @@ func curvedConeCylinderCut(op PartFeatureOperation, target, tool *topo.Body, rec
 func curvedConeCylinderJoin(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
 	if op != Join {
 		return nil, false
+	}
+	// EPIC #1403: route cone∩cylinder JOIN through the GENERAL ruled join first (#1476 OUTSIDE-keep emission);
+	// the bespoke ConeCylinderJoin stays as the fallback for the cases the general path declines.
+	if res, ok := brep.ConeCylinderJoinGeneral(target, tool, rec); ok && validBooleanSolid(res) {
+		return res, true
 	}
 	res, ok := brep.ConeCylinderJoin(target, tool, rec)
 	if !ok || !validBooleanSolid(res) {
@@ -216,6 +226,11 @@ func curvedConeConeCut(op PartFeatureOperation, target, tool *topo.Body, rec *di
 	if op != Cut {
 		return nil, false
 	}
+	// EPIC #1403: route cone∩cone subtract through the GENERAL ruled cut first (#1476 OUTSIDE-keep emission);
+	// the bespoke ConeConeCut stays as the fallback for the cases the general path declines.
+	if res, ok := brep.ConeConeCutGeneral(target, tool, rec); ok && validBooleanSolid(res) {
+		return res, true
+	}
 	res, ok := brep.ConeConeCut(target, tool, rec)
 	if !ok || !validBooleanSolid(res) {
 		return nil, false
@@ -229,6 +244,11 @@ func curvedConeConeCut(op PartFeatureOperation, target, tool *topo.Body, rec *di
 func curvedConeConeJoin(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
 	if op != Join {
 		return nil, false
+	}
+	// EPIC #1403: route cone∩cone JOIN through the GENERAL ruled join first (#1476 OUTSIDE-keep emission);
+	// the bespoke ConeConeJoin stays as the fallback for the cases the general path declines.
+	if res, ok := brep.ConeConeJoinGeneral(target, tool, rec); ok && validBooleanSolid(res) {
+		return res, true
 	}
 	res, ok := brep.ConeConeJoin(target, tool, rec)
 	if !ok || !validBooleanSolid(res) {
