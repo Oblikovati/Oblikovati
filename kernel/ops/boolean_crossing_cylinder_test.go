@@ -386,13 +386,14 @@ func TestBooleanJoinEqualRadiusSteinmetz(t *testing.T) {
 }
 
 // TestBooleanIntersectEqualRadiusDefersFromExactPath: two EQUAL-radius perpendicular cylinders are the
-// Steinmetz case the imprint tracer cannot trace cleanly, so the exact path must decline (leaving the
-// boolean to its fallback) rather than emit a wrong analytic solid.
+// Steinmetz case — its bicylinder pinches into four lobes, which the general crossing-intersect path cannot
+// emit as a clean watertight solid. The path must therefore NOT be adopted (validBooleanSolid rejects it),
+// so the boolean falls to the dedicated analytic Steinmetz handler instead of emitting a wrong solid.
 func TestBooleanIntersectEqualRadiusDefersFromExactPath(t *testing.T) {
 	a, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	b, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12) // equal radius
 
-	if _, ok := brep.CrossingCylinderIntersect(a, b, nil); ok {
-		t.Error("equal-radius (Steinmetz) crossing should defer from the exact path (ok=false)")
+	if res, ok := brep.CrossingCylinderIntersectGeneral(a, b, nil); ok && ops.Validate(res).Valid {
+		t.Error("equal-radius (Steinmetz) crossing should not be adopted by the general intersect path")
 	}
 }
