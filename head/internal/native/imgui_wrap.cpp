@@ -23,6 +23,15 @@ int  obk_ig_menu_item_ex(const char* label, const char* shortcut, int enabled) {
 }
 
 void obk_ig_set_next_window_pos(float x, float y)  { ImGui::SetNextWindowPos(ImVec2(x, y)); }
+// Center the next window on the main viewport. A (0.5,0.5) pivot anchors the window's
+// midpoint to the viewport midpoint, so auto-sized content centers without us knowing
+// the window's size, and GetCenter() (not ImVec2(w/2,h/2)) keeps it correct off a
+// non-zero viewport origin under multi-monitor. Re-applied each frame (ImGuiCond_Always)
+// so a resized main window keeps the prompt centred (Oblikovati#1474).
+void obk_ig_center_next_window(void) {
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+}
 void obk_ig_set_next_window_size(float w, float h) { ImGui::SetNextWindowSize(ImVec2(w, h)); }
 void obk_ig_set_next_window_size_first_use(float w, float h) {
     ImGui::SetNextWindowSize(ImVec2(w, h), ImGuiCond_FirstUseEver);
@@ -165,6 +174,18 @@ void obk_ig_progress_bar(float fraction, float w, const char* overlay) {
 void obk_ig_main_viewport_size(float* w, float* h) {
     ImVec2 sz = ImGui::GetMainViewport()->Size;
     *w = sz.x; *h = sz.y;
+}
+// main_viewport_center is the anchor obk_ig_center_next_window pivots to; exposed so the
+// centering math is regression-testable (Oblikovati#1474).
+void obk_ig_main_viewport_center(float* x, float* y) {
+    ImVec2 c = ImGui::GetMainViewport()->GetCenter();
+    *x = c.x; *y = c.y;
+}
+// window_pos reads the current window's top-left (valid between Begin/End) — lets a test
+// confirm a centred window landed where the pivot put it.
+void obk_ig_window_pos(float* x, float* y) {
+    ImVec2 p = ImGui::GetWindowPos();
+    *x = p.x; *y = p.y;
 }
 // hover_seconds reports how long the last item has been hovered (the progressive
 // tooltip's expand timer).
