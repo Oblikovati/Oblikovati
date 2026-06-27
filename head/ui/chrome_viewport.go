@@ -99,7 +99,7 @@ func drawViewportRubberBands(s *app.Session, bx, by, cx, cy float32, pw, ph int,
 	drawBoxSelectRect(s, bx, by)                // the rubber-band selection rectangle, on top of the image
 	drawZoomWindowRect(s, bx, by)               // the Zoom Window rubber band (#913 N16), if armed
 	drawOrbitRing(bx, by, pw, ph)               // the Free-Orbit ring while F4 is held (#913 N5–N8)
-	drawNavigationBar(s, cx, cy, pw, ph)        // the floating nav-tool strip at the right edge (#913 N25)
+	drawNavigationBar(s, bx, by, pw, ph)        // the floating nav-tool strip at the right edge (#913 N25)
 	drawSteeringWheel(s, cx, cy)                // the on-cursor radial nav menu (#913 N26), if active
 	handleSketchHUD(s, bx, by, viewportHovered) // the 2D-sketch dynamic-input HUD (#790)
 }

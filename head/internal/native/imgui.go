@@ -82,6 +82,7 @@ void obk_ig_begin_disabled(int disabled);
 void obk_ig_end_disabled(void);
 int  obk_ig_want_capture_mouse(void);
 int  obk_ig_invisible_button(const char* id, float w, float h);
+int  obk_ig_begin_overlay_window(const char* name);
 int  obk_ig_is_item_active(void);
 int  obk_ig_is_item_hovered(void);
 int  obk_ig_mouse_down(int button);
@@ -893,6 +894,16 @@ func InvisibleButton(id string, w, h float32) {
 	c, free := cstr(id)
 	defer free()
 	C.obk_ig_invisible_button(c, C.float(w), C.float(h))
+}
+
+// BeginOverlayWindow opens a borderless, transparent, auto-sized floating window for on-canvas
+// controls (the Navigation Bar). As its own window it receives clicks on its buttons while the
+// viewport keeps drag-to-orbit everywhere else — ImGui routes the cursor to the topmost window under
+// it (#1468). Position it first with SetNextWindowPos; pair with End regardless of the return value.
+func BeginOverlayWindow(name string) bool {
+	c, free := cstr(name)
+	defer free()
+	return C.obk_ig_begin_overlay_window(c) != 0
 }
 
 // IsItemActive / IsItemHovered report the state of the most recent item (the viewport

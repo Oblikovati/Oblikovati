@@ -29,33 +29,39 @@ func (s *Session) HomeView() { s.SetCamera(s.Camera().Home(s.modelBounds())) }
 // view with the standard tween, recording view history so Previous View returns. A selected work
 // plane wins over a selected face. Reports whether a planar reference was selected (false ⇒ no-op).
 func (s *Session) LookAtSelection() bool {
-	if wp := s.SelectedWorkPlane(); wp != nil {
-		p := wp.Plane()
-		s.lookAtPlane(p.Origin(), p.Normal().AsVector(), p.YAxis().AsVector())
-		return true
-	}
-	if f, ok := s.SelectedFace(); ok {
-		if pl, planar := f.Geometry().(geom.Plane); planar {
-			_, up := pl.DerivativesAt(0, 0) // the plane's in-plane v-axis is a stable screen-up
-			s.lookAtPlane(f.RangeBox().Center(), pl.Normal(), up)
-			return true
-		}
-	}
-	return false
-}
-
-// CanLookAt reports whether the current selection has a planar reference LookAtSelection can face —
-// the enable predicate for the Look At command.
-func (s *Session) CanLookAt() bool {
-	if s.SelectedWorkPlane() != nil {
-		return true
-	}
-	f, ok := s.SelectedFace()
+	target, normal, up, ok := s.lookAtTarget()
 	if !ok {
 		return false
 	}
-	_, planar := f.Geometry().(geom.Plane)
-	return planar
+	s.lookAtPlane(target, normal, up)
+	return true
+}
+
+// lookAtTarget resolves the current selection to a plane the camera can face — a selected work plane
+// or a planar face — returning its centre, normal and a stable screen-up. ok=false when the selection
+// has no such target. Shared by LookAtSelection and CanLookAtSelection so the action and its
+// enablement can never disagree (#1468 follow-up).
+func (s *Session) lookAtTarget() (target math.Point3, normal, up math.Vector3, ok bool) {
+	if wp := s.SelectedWorkPlane(); wp != nil {
+		p := wp.Plane()
+		return p.Origin(), p.Normal().AsVector(), p.YAxis().AsVector(), true
+	}
+	if f, sel := s.SelectedFace(); sel {
+		if pl, planar := f.Geometry().(geom.Plane); planar {
+			_, v := pl.DerivativesAt(0, 0) // the plane's in-plane v-axis is a stable screen-up
+			return f.RangeBox().Center(), pl.Normal(), v, true
+		}
+	}
+	return math.Point3{}, math.Vector3{}, math.Vector3{}, false
+}
+
+// CanLookAt reports whether the current selection has a planar reference LookAtSelection can face (a
+// work plane or planar face) — the enable predicate for the Look At command, used to disable the
+// Navigation Bar's Look At button when a click would be a no-op (#1468 follow-up). It shares
+// lookAtTarget with the action, so the two can never disagree.
+func (s *Session) CanLookAt() bool {
+	_, _, _, ok := s.lookAtTarget()
+	return ok
 }
 
 // ToggleSteeringWheel shows or hides the SteeringWheels radial navigation menu (#913 N26) — a
