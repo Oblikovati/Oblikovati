@@ -122,3 +122,31 @@ func TestGeneralConeCutJoinIsAdopted(t *testing.T) {
 		})
 	}
 }
+
+// TestGeneralPartialIsAdopted guards the partial-penetration general drivers (a thin rod ending inside a
+// fatter cylinder, #1403 on the #1476 wrapping-band + cap generalisation): each must produce a
+// validBooleanSolid result so ops.Boolean adopts it instead of falling back to the bespoke handler.
+func TestGeneralPartialIsAdopted(t *testing.T) {
+	fat := func() *topo.Body { b, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12); return b }
+	stub := func() *topo.Body { b, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 6); return b }
+	cases := []struct {
+		name    string
+		general func() (*topo.Body, bool)
+	}{
+		{"partial ∩ (plug)", func() (*topo.Body, bool) { return brep.PartialPenetrationIntersectGeneral(fat(), stub(), nil) }},
+		{"partial − (blind hole)", func() (*topo.Body, bool) { return brep.PartialPenetrationCutGeneral(fat(), stub(), nil) }},
+		{"partial ∪ (entry stub)", func() (*topo.Body, bool) { return brep.PartialPenetrationJoinGeneral(fat(), stub(), nil) }},
+		{"partial − (rod stub lump)", func() (*topo.Body, bool) { return brep.PartialPenetrationCutGeneral(stub(), fat(), nil) }},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			res, ok := c.general()
+			if !ok {
+				t.Fatalf("%s: general driver declined; want the general path taken", c.name)
+			}
+			if r := Validate(res); !r.Valid {
+				t.Fatalf("%s: general result NOT adopted by validBooleanSolid (silent fallback): %+v", c.name, r)
+			}
+		})
+	}
+}
