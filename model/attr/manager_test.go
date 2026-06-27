@@ -155,3 +155,32 @@ func TestDecodeAttributesRejectsTruncated(t *testing.T) {
 		t.Error("DecodeAttributes accepted truncated data")
 	}
 }
+
+// TestAnchorsAndExternalKeyRoundTrip checks the per-target enumeration and that an external-anchor
+// (a wire reference key wrapped by identity.ExternalKey) survives serialize/reload and re-resolves.
+func TestAnchorsAndExternalKeyRoundTrip(t *testing.T) {
+	mgr := NewAttributeManager()
+	mgr.AttributeSets(identity.DocumentKey()).Set("traceon").Put("default", FloatValue(0))
+	mgr.AttributeSets(identity.ExternalKey([]byte("body-A"))).Set("traceon").Put("voltage", FloatValue(1000))
+	mgr.AttributeSets(identity.ExternalKey([]byte("body-B"))).Set("traceon").Put("voltage", FloatValue(-500))
+
+	if n := len(mgr.Anchors()); n != 3 {
+		t.Fatalf("anchors = %d, want 3 (document + two bodies)", n)
+	}
+
+	back, err := DecodeAttributes(mgr.Encode())
+	if err != nil {
+		t.Fatalf("DecodeAttributes: %v", err)
+	}
+	ss, ok := back.Lookup(identity.ExternalKey([]byte("body-A")))
+	if !ok {
+		t.Fatal("external anchor lost across reload (key did not re-resolve)")
+	}
+	a, _ := ss.Set("traceon").Attribute("voltage")
+	if a == nil {
+		t.Fatal("external attribute missing after reload")
+	}
+	if v, _ := a.Value().Float(); v != 1000 {
+		t.Errorf("body-A voltage = %g after reload, want 1000", v)
+	}
+}

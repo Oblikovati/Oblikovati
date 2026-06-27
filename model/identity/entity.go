@@ -37,6 +37,11 @@ const (
 	// KindDocument names the document itself — the anchor for document-level
 	// attribute sets (#155). There is one such key per document; see [DocumentKey].
 	KindDocument EntityKind = 20
+	// KindExternal anchors to an entity addressed by an opaque EXTERNAL reference
+	// key — a kernel/topo reference key (which sits below this package and cannot
+	// mint identity keys), as surfaced to add-ins by body.list / model.referenceKeys.
+	// The external key is stored verbatim as the payload; see [ExternalKey].
+	KindExternal EntityKind = 21
 )
 
 // DocumentKey is the single well-known reference key that names the document itself
@@ -44,6 +49,27 @@ const (
 // It is fixed (no lineage payload), so it survives recompute and round-trips through
 // the attribute codec like any other key.
 func DocumentKey() RefKey { return RefKey{kind: KindDocument} }
+
+// ExternalKey anchors attributes to an entity an add-in can name but this package did not mint:
+// it wraps the opaque external reference key the add-in received over the wire (a kernel/topo
+// reference key from body.list / model.referenceKeys) verbatim as the payload. Equal external
+// bytes — the same body/face re-minting the same reference key after a recompute — yield an equal
+// RefKey, so the anchored attributes are found again (the per-entity counterpart of [DocumentKey]).
+//
+// Example: ss := mgr.AttributeSets(identity.ExternalKey(bodyInfo.Key))
+func ExternalKey(external []byte) RefKey {
+	return RefKey{kind: KindExternal, payload: append([]byte(nil), external...)}
+}
+
+// ExternalRef returns the external reference key wrapped by [ExternalKey], and true, when this is
+// an external anchor; otherwise (a document or minted key) it returns nil, false. It is the
+// inverse used to render an anchor back to the wire target an add-in addressed it by.
+func (k RefKey) ExternalRef() ([]byte, bool) {
+	if k.kind != KindExternal {
+		return nil, false
+	}
+	return k.payload, true
+}
 
 // String returns a stable lowercase name for diagnostics.
 func (k EntityKind) String() string {
@@ -62,6 +88,8 @@ func (k EntityKind) String() string {
 		return "parameter"
 	case KindDocument:
 		return "document"
+	case KindExternal:
+		return "external"
 	default:
 		return "unknown"
 	}
