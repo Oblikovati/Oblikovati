@@ -137,3 +137,14 @@ func addCylBandCap(bld *topo.Builder, cyl geom.Cylinder, capCenter, pinchPt math
 	capPlane, _ := geom.NewPlane(capCenter, capOutward)
 	bld.AddFace(capPlane, steinLin(tag+"cap"), topo.OuterLoop(topo.Rev(eCap)))
 }
+
+// seamedCircle builds a cap circle whose angle-zero seam vertex is at seamPt (radius and centre on the
+// cap), so a cylinder wall sharing it can seam there. (Retained from the bespoke crossing handlers; the
+// equal-radius Steinmetz cut is now its only caller.)
+func seamedCircle(center math.Point3, axis math.UnitVector3, seamPt math.Point3, radius float64) geom.Circle {
+	ref, err := math.UnitVector3FromVector(center.VectorTo(seamPt))
+	if err != nil {
+		return geom.Circle{Center: center, Normal: axis, RefDir: axis, Radius: radius}
+	}
+	return geom.Circle{Center: center, Normal: axis, RefDir: ref, Radius: radius}
+}

@@ -22,13 +22,8 @@ func curvedCrossingIntersect(op PartFeatureOperation, target, tool *topo.Body, r
 	if op != Intersect {
 		return nil, false
 	}
-	// EPIC #1403: route crossing-cylinder intersect through the GENERAL pipeline first (no bespoke
-	// loop→body constructor); the hand-built CrossingCylinderIntersect stays as a fallback so no OCC case
-	// regresses.
-	if res, ok := brep.CrossingCylinderIntersectGeneral(target, tool, rec); ok && validBooleanSolid(res) {
-		return res, true
-	}
-	res, ok := brep.CrossingCylinderIntersect(target, tool, rec)
+	// EPIC #1403: route crossing-cylinder intersect through the GENERAL pipeline first (an out-of-scope pair declines to the planar CSG fallback.
+	res, ok := brep.CrossingCylinderIntersectGeneral(target, tool, rec)
 	if !ok || !validBooleanSolid(res) {
 		return nil, false
 	}
@@ -42,13 +37,8 @@ func curvedConeCylinderIntersect(op PartFeatureOperation, target, tool *topo.Bod
 	if op != Intersect {
 		return nil, false
 	}
-	// EPIC #1403: route cone∩cylinder through the GENERAL pipeline first (no bespoke loop→body
-	// constructor); the hand-built ConeCylinderIntersect stays as a fallback for the cases the general
-	// path still declines, so no OCC matrix case regresses.
-	if res, ok := brep.ConeCylinderIntersectGeneral(target, tool, rec); ok && validBooleanSolid(res) {
-		return res, true
-	}
-	res, ok := brep.ConeCylinderIntersect(target, tool, rec)
+	// EPIC #1403: route cone∩cylinder through the GENERAL pipeline first an out-of-scope pair declines to the planar CSG fallback.
+	res, ok := brep.ConeCylinderIntersectGeneral(target, tool, rec)
 	if !ok || !validBooleanSolid(res) {
 		return nil, false
 	}
@@ -62,13 +52,8 @@ func curvedConeConeIntersect(op PartFeatureOperation, target, tool *topo.Body, r
 	if op != Intersect {
 		return nil, false
 	}
-	// EPIC #1403: route cone∩cone through the GENERAL SSI→trim→classify→stitch pipeline (no bespoke
-	// loop→body constructor). The hand-built ConeConeIntersect stays as a fallback for configurations the
-	// general path still declines (a full cone reaching its apex), so no OCC case regresses.
-	if res, ok := brep.ConeConeIntersectGeneral(target, tool, rec); ok && validBooleanSolid(res) {
-		return res, true
-	}
-	res, ok := brep.ConeConeIntersect(target, tool, rec)
+	// EPIC #1403: route cone∩cone through the GENERAL SSI→trim→classify→stitch pipeline . An out-of-scope configuration declines to the planar CSG fallback.
+	res, ok := brep.ConeConeIntersectGeneral(target, tool, rec)
 	if !ok || !validBooleanSolid(res) {
 		return nil, false
 	}
@@ -98,12 +83,8 @@ func curvedPartialIntersect(op PartFeatureOperation, target, tool *topo.Body, re
 		return nil, false
 	}
 	// EPIC #1403: route the partial-penetration plug through the GENERAL pipeline first (#1476 wrapping-band +
-	// the cap generalisation that keeps the rod's interior-ending blind cap); the bespoke handler stays as the
-	// fallback for the cases the general path declines.
-	if res, ok := brep.PartialPenetrationIntersectGeneral(target, tool, rec); ok && validBooleanSolid(res) {
-		return res, true
-	}
-	res, ok := brep.PartialPenetrationIntersect(target, tool, rec)
+	// the cap generalisation that keeps the rod's interior-ending blind cap); an out-of-scope pair declines to the planar CSG fallback (booleanGeneral).
+	res, ok := brep.PartialPenetrationIntersectGeneral(target, tool, rec)
 	if !ok || !validBooleanSolid(res) {
 		return nil, false
 	}
@@ -117,11 +98,8 @@ func curvedPartialCut(op PartFeatureOperation, target, tool *topo.Body, rec *dia
 		return nil, false
 	}
 	// EPIC #1403: route the partial-penetration blind hole / stub through the GENERAL pipeline first (#1476);
-	// the bespoke PartialPenetrationCut stays as the fallback for the cases the general path declines.
-	if res, ok := brep.PartialPenetrationCutGeneral(target, tool, rec); ok && validBooleanSolid(res) {
-		return res, true
-	}
-	res, ok := brep.PartialPenetrationCut(target, tool, rec)
+	// an out-of-scope pair declines to the planar CSG fallback (booleanGeneral).
+	res, ok := brep.PartialPenetrationCutGeneral(target, tool, rec)
 	if !ok || !validBooleanSolid(res) {
 		return nil, false
 	}
@@ -136,11 +114,8 @@ func curvedPartialJoin(op PartFeatureOperation, target, tool *topo.Body, rec *di
 		return nil, false
 	}
 	// EPIC #1403: route the partial-penetration union (fat + entry stub) through the GENERAL pipeline first
-	// (#1476); the bespoke PartialPenetrationJoin stays as the fallback for the cases the general path declines.
-	if res, ok := brep.PartialPenetrationJoinGeneral(target, tool, rec); ok && validBooleanSolid(res) {
-		return res, true
-	}
-	res, ok := brep.PartialPenetrationJoin(target, tool, rec)
+	// (#1476); an out-of-scope pair declines to the planar CSG fallback (booleanGeneral).
+	res, ok := brep.PartialPenetrationJoinGeneral(target, tool, rec)
 	if !ok || !validBooleanSolid(res) {
 		return nil, false
 	}
@@ -205,11 +180,8 @@ func curvedConeCylinderCut(op PartFeatureOperation, target, tool *topo.Body, rec
 		return nil, false
 	}
 	// EPIC #1403: route cone∩cylinder subtract through the GENERAL ruled cut first (#1476 OUTSIDE-keep
-	// emission); the bespoke ConeCylinderCut stays as the fallback for the cases the general path declines.
-	if res, ok := brep.ConeCylinderCutGeneral(target, tool, rec); ok && validBooleanSolid(res) {
-		return res, true
-	}
-	res, ok := brep.ConeCylinderCut(target, tool, rec)
+	// emission); an out-of-scope pair declines to the planar CSG fallback (booleanGeneral).
+	res, ok := brep.ConeCylinderCutGeneral(target, tool, rec)
 	if !ok || !validBooleanSolid(res) {
 		return nil, false
 	}
@@ -224,11 +196,8 @@ func curvedConeCylinderJoin(op PartFeatureOperation, target, tool *topo.Body, re
 		return nil, false
 	}
 	// EPIC #1403: route cone∩cylinder JOIN through the GENERAL ruled join first (#1476 OUTSIDE-keep emission);
-	// the bespoke ConeCylinderJoin stays as the fallback for the cases the general path declines.
-	if res, ok := brep.ConeCylinderJoinGeneral(target, tool, rec); ok && validBooleanSolid(res) {
-		return res, true
-	}
-	res, ok := brep.ConeCylinderJoin(target, tool, rec)
+	// an out-of-scope pair declines to the planar CSG fallback (booleanGeneral).
+	res, ok := brep.ConeCylinderJoinGeneral(target, tool, rec)
 	if !ok || !validBooleanSolid(res) {
 		return nil, false
 	}
@@ -243,11 +212,8 @@ func curvedConeConeCut(op PartFeatureOperation, target, tool *topo.Body, rec *di
 		return nil, false
 	}
 	// EPIC #1403: route cone∩cone subtract through the GENERAL ruled cut first (#1476 OUTSIDE-keep emission);
-	// the bespoke ConeConeCut stays as the fallback for the cases the general path declines.
-	if res, ok := brep.ConeConeCutGeneral(target, tool, rec); ok && validBooleanSolid(res) {
-		return res, true
-	}
-	res, ok := brep.ConeConeCut(target, tool, rec)
+	// an out-of-scope pair declines to the planar CSG fallback (booleanGeneral).
+	res, ok := brep.ConeConeCutGeneral(target, tool, rec)
 	if !ok || !validBooleanSolid(res) {
 		return nil, false
 	}
@@ -262,11 +228,8 @@ func curvedConeConeJoin(op PartFeatureOperation, target, tool *topo.Body, rec *d
 		return nil, false
 	}
 	// EPIC #1403: route cone∩cone JOIN through the GENERAL ruled join first (#1476 OUTSIDE-keep emission);
-	// the bespoke ConeConeJoin stays as the fallback for the cases the general path declines.
-	if res, ok := brep.ConeConeJoinGeneral(target, tool, rec); ok && validBooleanSolid(res) {
-		return res, true
-	}
-	res, ok := brep.ConeConeJoin(target, tool, rec)
+	// an out-of-scope pair declines to the planar CSG fallback (booleanGeneral).
+	res, ok := brep.ConeConeJoinGeneral(target, tool, rec)
 	if !ok || !validBooleanSolid(res) {
 		return nil, false
 	}
@@ -296,12 +259,9 @@ func curvedCrossingCut(op PartFeatureOperation, target, tool *topo.Body, rec *di
 	}
 	// EPIC #1403: route crossing-cylinder subtract through the GENERAL pipeline first (the OUTSIDE-keep
 	// wrapping-band emission, Oblikovati#1476, makes it mesh the right region; the tool tunnel reverses into the
-	// cavity); the bespoke CrossingCylinderCut stays as a fallback for the cases the general path declines (a
+	// cavity); an out-of-scope pair declines to the CSG fallback (a
 	// breach reaching a cap, a partial penetration), so no OCC case regresses.
-	if res, ok := brep.CrossingCylinderCutGeneral(target, tool, rec); ok && validBooleanSolid(res) {
-		return res, true
-	}
-	res, ok := brep.CrossingCylinderCut(target, tool, rec)
+	res, ok := brep.CrossingCylinderCutGeneral(target, tool, rec)
 	if !ok || !validBooleanSolid(res) {
 		return nil, false
 	}
@@ -329,14 +289,10 @@ func curvedCrossingJoin(op PartFeatureOperation, target, tool *topo.Body, rec *d
 	if op != Join {
 		return nil, false
 	}
-	// EPIC #1403: route crossing-cylinder JOIN through the GENERAL pipeline first (the OUTSIDE-keep
-	// wrapping-band emission, Oblikovati#1476, makes it mesh the right region — the fat's keyhole-bridged holed
-	// wall plus the two split rod stubs); the bespoke CrossingCylinderJoin stays as a fallback for the cases the
-	// general path declines (a breach reaching a cap, equal radii), so no OCC case regresses.
-	if res, ok := brep.CrossingCylinderJoinGeneral(target, tool, rec); ok && validBooleanSolid(res) {
-		return res, true
-	}
-	res, ok := brep.CrossingCylinderJoin(target, tool, rec)
+	// EPIC #1403: crossing-cylinder JOIN is built by the GENERAL pipeline (the OUTSIDE-keep wrapping-band
+	// emission, Oblikovati#1476, meshes the fat's keyhole-bridged holed wall plus the two split rod stubs); an
+	// out-of-scope pair (a breach reaching a cap, equal radii) declines to the planar CSG fallback (booleanGeneral).
+	res, ok := brep.CrossingCylinderJoinGeneral(target, tool, rec)
 	if !ok || !validBooleanSolid(res) {
 		return nil, false
 	}
