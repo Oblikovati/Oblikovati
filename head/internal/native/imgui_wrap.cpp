@@ -62,10 +62,19 @@ void obk_ig_separator_vertical(void)         { ImGui::SeparatorEx(ImGuiSeparator
 // it. The band cannot be moved, resized, collapsed, or docked: the ribbon is window
 // chrome, not a palette. Pair with obk_ig_end regardless of the return value.
 int  obk_ig_begin_ribbon_band(const char* name, float height) {
-    ImGuiWindowFlags flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings;
+    // HorizontalScrollbar (not NoScrollbar) so a too-narrow window shows a scrollbar at the band
+    // bottom and the mouse wheel scrolls the overflowing buttons into view (Oblikovati#1471). The
+    // caller reserves the scrollbar's height so the panel-name strip is never hidden behind it.
+    ImGuiWindowFlags flags = ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoSavedSettings;
     return ImGui::BeginViewportSideBar(name, ImGui::GetMainViewport(), ImGuiDir_Up,
         height, flags) ? 1 : 0;
 }
+// scroll_max_x reports the current window's maximum horizontal scroll — >0 exactly when its content
+// overflows the window width, i.e. the ribbon's horizontal scrollbar is showing (#1471).
+float obk_ig_scroll_max_x(void) { return ImGui::GetScrollMaxX(); }
+// scrollbar_size is the style thickness of a scrollbar, so the ribbon can grow its band height by
+// exactly that to seat the horizontal scrollbar without covering content (#1471).
+float obk_ig_scrollbar_size(void) { return ImGui::GetStyle().ScrollbarSize; }
 
 // Cursor/layout probes for the ribbon's manual placement (screen space): the panel
 // name strip is pinned at a fixed band Y and centered under its button block, which

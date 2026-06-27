@@ -23,7 +23,8 @@ var prevEnv app.Environment
 func drawRibbon(s *app.Session) string {
 	force := contextualTab(s)
 	var activated string
-	if native.BeginRibbonBand("##ribbon", ribbonBandHeight()) && native.BeginTabBar("##ribbon-tabs") {
+	bandOpen := native.BeginRibbonBand("##ribbon", ribbonBandHeight())
+	if bandOpen && native.BeginTabBar("##ribbon-tabs") {
 		for _, tab := range app.BuildRibbon(s).Tabs {
 			if native.BeginTabItemSelected(tab.Name, tab.Name == force) {
 				if id := drawTabPanels(tab.Panels); id != "" {
@@ -34,9 +35,18 @@ func drawRibbon(s *app.Session) string {
 		}
 		native.EndTabBar()
 	}
+	if bandOpen {
+		// Remember (for next frame's height) whether the buttons overflow a too-narrow window, so
+		// the band grows to seat the horizontal scrollbar without covering the panel names (#1471).
+		ribbonScrollbarShown = native.ScrollMaxX() > 0
+	}
 	native.End()
 	return activated
 }
+
+// ribbonScrollbarShown is last frame's overflow state: true when the ribbon's content was wider than
+// the window, so a horizontal scrollbar is on screen and ribbonBandHeight reserves room for it.
+var ribbonScrollbarShown bool
 
 // ribbonMaxRows is how many small buttons stack in one panel column before the next
 // column starts (the classic ribbon stacks its small buttons three deep).
@@ -55,7 +65,11 @@ func ribbonGridHeight(m native.StyleMetrics) float32 {
 func ribbonBandHeight() float32 {
 	m := native.Metrics()
 	content := ribbonGridHeight(m) + m.ItemSpacingY + native.TextLineHeight()
-	return 2*m.WindowPadY + native.FrameHeight() + m.ItemSpacingY + content
+	h := 2*m.WindowPadY + native.FrameHeight() + m.ItemSpacingY + content
+	if ribbonScrollbarShown {
+		h += native.ScrollbarSize() // seat the horizontal scrollbar below the panel names (#1471)
+	}
+	return h
 }
 
 // drawTabPanels lays the tab's panels out horizontally — each panel is a layout group

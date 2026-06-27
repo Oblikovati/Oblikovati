@@ -104,6 +104,8 @@ void obk_ig_mouse_delta(float* dx, float* dy);
 void obk_ig_get_cursor_pos(float* x, float* y);
 void obk_ig_set_cursor_pos(float x, float y);
 int  obk_ig_begin_ribbon_band(const char* name, float height);
+float obk_ig_scroll_max_x(void);
+float obk_ig_scrollbar_size(void);
 void obk_ig_get_cursor_screen_pos(float* x, float* y);
 void obk_ig_set_cursor_screen_pos(float x, float y);
 void obk_ig_item_rect_max(float* x, float* y);
@@ -1054,6 +1056,14 @@ func BeginRibbonBand(name string, height float32) bool {
 	defer free()
 	return C.obk_ig_begin_ribbon_band(c, C.float(height)) != 0
 }
+
+// ScrollMaxX is the current window's maximum horizontal scroll offset; >0 means its content
+// overflows the window width (the ribbon band's horizontal scrollbar is showing, #1471).
+func ScrollMaxX() float32 { return float32(C.obk_ig_scroll_max_x()) }
+
+// ScrollbarSize is the style thickness of a scrollbar — the ribbon reserves this much extra band
+// height when the horizontal scrollbar is showing so it never covers the panel-name strip (#1471).
+func ScrollbarSize() float32 { return float32(C.obk_ig_scrollbar_size()) }
 
 // GetCursorScreenPos / SetCursorScreenPos read and write the layout cursor in screen
 // space — for pinning the ribbon's panel-name strip at a fixed band Y.
