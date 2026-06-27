@@ -16,22 +16,15 @@ import (
 // fractional / architectural) and the angle DMS toggle. Each edit writes the whole
 // units value back through the session (the same surface the API uses and the .obk
 // persists), so every open tool dialog and dimension immediately re-renders.
-func drawUnitsSettingsWindow(s *app.Session) {
-	if !s.UnitsSettingsOpen() {
-		return
+func drawUnitsSettingsBody(s *app.Session) {
+	u := s.DocumentUnits().Clone()
+	if editDocumentUnits(&u) {
+		s.SetDocumentUnits(u)
 	}
-	native.SetNextWindowSizeOnce(340, 360)
-	if native.Begin("Document Settings — Units") {
-		u := s.DocumentUnits().Clone()
-		if editDocumentUnits(&u) {
-			s.SetDocumentUnits(u)
-		}
-		native.Separator()
-		if native.Button("Done") {
-			s.CloseUnitsSettings()
-		}
+	native.Separator()
+	if native.Button("Done") {
+		s.CloseUnitsSettings()
 	}
-	native.End()
 }
 
 // editDocumentUnits draws the unit pickers, precision inputs and format controls

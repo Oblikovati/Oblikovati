@@ -14,32 +14,25 @@ import (
 // drawLightingWindow renders the Lighting settings panel while it is open: global exposure /
 // brightness / ambience sliders and per-light color, intensity and direction editing on the
 // active rig (M16/F03, ADR-0026). Edits write straight back to the session's live lighting.
-func drawLightingWindow(s *app.Session) {
-	if !s.LightingPanelOpen() {
-		return
+func drawLightingBody(s *app.Session) {
+	exposure := s.Exposure()
+	if native.SliderFloat("Exposure", &exposure, 0.1, 4) {
+		s.SetExposure(exposure)
 	}
-	native.SetNextWindowSizeOnce(360, 440)
-	if native.Begin("Lighting") {
-		exposure := s.Exposure()
-		if native.SliderFloat("Exposure", &exposure, 0.1, 4) {
-			s.SetExposure(exposure)
-		}
-		brightness := s.Brightness()
-		if native.SliderFloat("Brightness", &brightness, 0, 3) {
-			s.SetBrightness(brightness)
-		}
-		ambience := s.Ambience()
-		if native.SliderFloat("Ambience", &ambience, 0, 1) {
-			s.SetAmbience(ambience)
-		}
-		native.Separator()
-		drawLightRows(s)
-		native.Separator()
-		if native.Button("Done") {
-			s.CloseLightingPanel()
-		}
+	brightness := s.Brightness()
+	if native.SliderFloat("Brightness", &brightness, 0, 3) {
+		s.SetBrightness(brightness)
 	}
-	native.End()
+	ambience := s.Ambience()
+	if native.SliderFloat("Ambience", &ambience, 0, 1) {
+		s.SetAmbience(ambience)
+	}
+	native.Separator()
+	drawLightRows(s)
+	native.Separator()
+	if native.Button("Done") {
+		s.CloseLightingPanel()
+	}
 }
 
 // drawLightRows draws an editor block per active light (color, intensity, direction); a changed

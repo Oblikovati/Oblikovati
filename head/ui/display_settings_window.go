@@ -15,22 +15,15 @@ import (
 // #643): the active document's edge color, ground-plane visibility/color, shadow toggles and
 // textures. Each edit writes the whole settings value back through the session (the same
 // surface the API uses and the .obk persists).
-func drawDisplaySettingsWindow(s *app.Session) {
-	if !s.DisplaySettingsOpen() {
-		return
+func drawDisplaySettingsBody(s *app.Session) {
+	set := s.DisplaySettings(0)
+	if editDisplaySettings(&set) {
+		s.SetDisplaySettings(0, set)
 	}
-	native.SetNextWindowSizeOnce(320, 320)
-	if native.Begin("Display Settings") {
-		set := s.DisplaySettings(0)
-		if editDisplaySettings(&set) {
-			s.SetDisplaySettings(0, set)
-		}
-		native.Separator()
-		if native.Button("Done") {
-			s.CloseDisplaySettings()
-		}
+	native.Separator()
+	if native.Button("Done") {
+		s.CloseDisplaySettings()
 	}
-	native.End()
 }
 
 // editDisplaySettings draws the editable controls into set, returning whether any changed.

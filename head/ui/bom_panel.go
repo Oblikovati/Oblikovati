@@ -21,25 +21,18 @@ import (
 
 // drawBOMWindow renders the BOM panel when it is open. It rebuilds the view each frame from the
 // live assembly, so placing or deleting a component updates the list immediately.
-func drawBOMWindow(s *app.Session) {
-	if !s.BOMPanelOpen() {
-		return
+func drawBOMBody(s *app.Session) {
+	drawBOMControls(s)
+	native.Separator()
+	if view, err := s.AssemblyBOM(); err != nil {
+		native.Text(err.Error())
+	} else {
+		drawBOMTable(view)
 	}
-	native.SetNextWindowSizeOnce(720, 480)
-	if native.Begin("Bill of Materials") {
-		drawBOMControls(s)
-		native.Separator()
-		if view, err := s.AssemblyBOM(); err != nil {
-			native.Text(err.Error())
-		} else {
-			drawBOMTable(view)
-		}
-		native.Separator()
-		if native.Button("Done") {
-			s.CloseBOM()
-		}
+	native.Separator()
+	if native.Button("Done") {
+		s.CloseBOM()
 	}
-	native.End()
 }
 
 // drawBOMControls renders the view chooser (Structured / Parts Only) and the Export CSV button,

@@ -29,19 +29,23 @@ var browserSync browserSelectionSync
 // ImGui id (see drawNode). Reset at the top of each browser draw.
 var browserNodeSeq int
 
-// drawBrowser renders the model browser tree from the active document, then records the
-// selection so the next frame can detect a change for scroll-sync. When add-ins have
-// declared browser panes (M05-F03 #256), the window becomes a tab bar: the Model tree
-// first, then one tab per add-in pane.
-func drawBrowser(s *app.Session) {
-	if native.Begin("Model") {
-		if panes := s.BrowserPanes().List(); len(panes) > 0 {
-			drawBrowserPaneTabs(s, panes)
-		} else {
-			drawModelTree(s)
-		}
+// showBrowser toggles the Model browser (View ▸ Model Browser). It is head-local UI state and
+// defaults on — the model tree is the primary browsing surface — but it is now closable and
+// re-openable from the View menu like any other dockable window (Oblikovati#1473).
+var showBrowser = true
+
+// drawBrowserBody renders the model browser content: the model tree from the active document, or a
+// tab bar of the tree plus any add-in browser panes (M05-F03 #256). It records the selection so the
+// next frame can detect a change for scroll-sync, and brackets the tree-walk with the frame timer
+// (M34-F3). The shared dockable-panel path (drawDockablePanel) owns the window chrome (#1473).
+func drawBrowserBody(s *app.Session) {
+	start := frameClock()
+	if panes := s.BrowserPanes().List(); len(panes) > 0 {
+		drawBrowserPaneTabs(s, panes)
+	} else {
+		drawModelTree(s)
 	}
-	native.End()
+	recordBrowser(start)
 }
 
 // drawModelTree renders the built-in document tree (the Model pane's content).

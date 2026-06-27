@@ -17,20 +17,15 @@ import (
 // not model state, so it lives here in the head.
 var showPreferences bool
 
-// drawPreferencesWindow renders the Preferences window when open, as tabs: Sketch Grid
-// (spacing in the document's units, visibility, major-line interval) and Appearance (the
-// theme picker + editor). Edits write straight back to the session, so the grid and theme
-// update next frame.
-func drawPreferencesWindow(s *app.Session) {
-	if !showPreferences {
-		return
-	}
-	native.SetNextWindowSizeOnce(640, 480) // sensible default; the user can still resize
-	if native.Begin("Preferences") && native.BeginTabBar("##prefs-tabs") {
+// drawPreferencesBody renders the Preferences panel content as tabs: Sketch Grid (spacing in the
+// document's units, visibility, major-line interval) and Appearance (the theme picker + editor).
+// Edits write straight back to the session, so the grid and theme update next frame. The shared
+// dockable-panel path owns the closable window chrome (#1473).
+func drawPreferencesBody(s *app.Session) {
+	if native.BeginTabBar("##prefs-tabs") {
 		drawPreferencesTabs(s)
 		native.EndTabBar()
 	}
-	native.End()
 }
 
 // drawPreferencesTabs mounts each preference tab in order. Kept separate from the window

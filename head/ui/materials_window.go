@@ -52,28 +52,24 @@ func syncMaterialSelection(s *app.Session) {
 // appearance, edit a project-scoped copy (built-ins are read-only), assign it to the active
 // part, and read the part's physical properties. Edits flow straight to the session, so the
 // viewport recolors next frame (ADR-0022).
-func drawMaterialsWindow(s *app.Session) {
-	syncMaterialSelection(s) // keep the selectors pointed at the active document's part (every frame)
-	if !showMaterials {
+func drawMaterialsBody(s *app.Session) {
+	syncMaterialSelection(s) // keep the selectors pointed at the active document's part
+	if !native.BeginTabBar("##materials-tabs") {
 		return
 	}
-	native.SetNextWindowSizeOnce(420, 560)
-	if native.Begin("Materials") && native.BeginTabBar("##materials-tabs") {
-		if native.BeginTabItem("Materials") {
-			drawMaterialTab(s)
-			native.EndTabItem()
-		}
-		if native.BeginTabItem("Appearances") {
-			drawAppearanceTabContent(s)
-			native.EndTabItem()
-		}
-		if native.BeginTabItem("Physical") {
-			drawPhysicalReadout(s)
-			native.EndTabItem()
-		}
-		native.EndTabBar()
+	if native.BeginTabItem("Materials") {
+		drawMaterialTab(s)
+		native.EndTabItem()
 	}
-	native.End()
+	if native.BeginTabItem("Appearances") {
+		drawAppearanceTabContent(s)
+		native.EndTabItem()
+	}
+	if native.BeginTabItem("Physical") {
+		drawPhysicalReadout(s)
+		native.EndTabItem()
+	}
+	native.EndTabBar()
 }
 
 // drawMaterialTab renders the material selector, actions, and property editor.

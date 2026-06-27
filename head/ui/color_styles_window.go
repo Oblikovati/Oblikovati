@@ -15,29 +15,22 @@ import (
 // it lists the document's color styles, applies a clicked style to the selected body (so the
 // body renders in that style's color), and clears the selected body's style. The assignment
 // goes through the session — the same surface the API uses.
-func drawColorStylesWindow(s *app.Session) {
-	if !s.ColorStylesPanelOpen() {
-		return
+func drawColorStylesBody(s *app.Session) {
+	key, hasBody := s.SelectedBodyKey()
+	if hasBody {
+		native.Text(selectedStyleLabel(s, key))
+	} else {
+		native.Text("Select a body, then apply a style.")
 	}
-	native.SetNextWindowSizeOnce(300, 340)
-	if native.Begin("Color Styles") {
-		key, hasBody := s.SelectedBodyKey()
-		if hasBody {
-			native.Text(selectedStyleLabel(s, key))
-		} else {
-			native.Text("Select a body, then apply a style.")
-		}
-		native.Separator()
-		drawColorStyleRows(s, key, hasBody)
-		native.Separator()
-		if hasBody && native.Button("Clear style") {
-			s.ClearBodyColorStyle(key)
-		}
-		if native.Button("Done") {
-			s.CloseColorStylesPanel()
-		}
+	native.Separator()
+	drawColorStyleRows(s, key, hasBody)
+	native.Separator()
+	if hasBody && native.Button("Clear style") {
+		s.ClearBodyColorStyle(key)
 	}
-	native.End()
+	if native.Button("Done") {
+		s.CloseColorStylesPanel()
+	}
 }
 
 // selectedStyleLabel describes the style currently on the selected body.

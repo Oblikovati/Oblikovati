@@ -30,27 +30,20 @@ type historyDoc struct {
 // opened — the current state highlighted, save checkpoints flagged "*" — with click-to-jump.
 // Reads go through DocumentHistoryView and jumps through JumpDocumentTo (the same surface the
 // API uses), so a background part's timeline navigates without activating it.
-func drawHistoryBrowserWindow(s *app.Session) {
-	if !s.HistoryBrowserOpen() {
-		return
-	}
-	native.SetNextWindowSizeOnce(560, 440)
-	if native.Begin("History Browser") {
-		docs := historyDocuments(s)
-		if len(docs) == 0 {
-			native.Text("No open documents with an editable history.")
-		} else {
-			drawHistoryDocPicker(docs)
-			native.Separator()
-			native.Text("* = saved to disk    (highlighted row = current state)")
-			drawHistoryColumns(s, selectedHistoryDocs(docs))
-		}
+func drawHistoryBrowserBody(s *app.Session) {
+	docs := historyDocuments(s)
+	if len(docs) == 0 {
+		native.Text("No open documents with an editable history.")
+	} else {
+		drawHistoryDocPicker(docs)
 		native.Separator()
-		if native.Button("Close") {
-			s.CloseHistoryBrowser()
-		}
+		native.Text("* = saved to disk    (highlighted row = current state)")
+		drawHistoryColumns(s, selectedHistoryDocs(docs))
 	}
-	native.End()
+	native.Separator()
+	if native.Button("Close") {
+		s.CloseHistoryBrowser()
+	}
 }
 
 // historyDocuments lists the open documents that have a navigable timeline (parts, assemblies,
