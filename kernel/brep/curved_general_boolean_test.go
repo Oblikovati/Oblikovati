@@ -226,6 +226,59 @@ func TestCrossingCylinderCutGeneral(t *testing.T) {
 	}
 }
 
+// TestCrossingCylinderJoinGeneral: target ∪ tool (fat side-breached by a crossing rod) through the general
+// pipeline yields a watertight solid — the fat's holed wall, the two rod stubs, and BOTH bodies' whole caps.
+// This is the first JOIN migration (#1403): it reuses the cut's caps machinery but keeps both walls outward
+// (no reversal) and contributes the tool's caps too.
+func TestCrossingCylinderJoinGeneral(t *testing.T) {
+	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
+	rod, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
+	res, ok := CrossingCylinderJoinGeneral(fat, rod, nil)
+	if !ok {
+		t.Fatal("general crossing-cylinder join declined; want the welded solid")
+	}
+	assertWatertight(t, res)
+	cones, cyls, planes := faceTypeCounts(t, res)
+	// 2 cyl: the fat's holed wall (one connected band, 2 lens holes), and the rod's wall — which the general
+	// path keeps as ONE face carrying BOTH stubs (bottom-rim + two lens loops + top-rim), the disjoint stubs
+	// separated by the dropped middle band via trim winding (kept between rim↔lens, dropped between the two
+	// lenses). The volume sits UNDER OCC (chord deficit only), confirming the middle is correctly excluded.
+	// The bespoke handler splits this into two stub faces; the general path's compact 1-face form is an
+	// equally valid watertight manifold (#1403). 4 plane: 2 fat caps + 2 rod caps, all whole.
+	if cones != 0 || cyls != 2 || planes != 4 {
+		t.Errorf("got %d cone + %d cyl + %d plane faces, want 2 cyl (holed fat + rod both-stubs) + 4 plane (2 fat + 2 rod caps)", cones, cyls, planes)
+	}
+}
+
+// TestCrossingCylinderJoinGeneralDeclines: a non-crossing pair (far apart, no imprint) declines so kernel/ops
+// keeps its fallback.
+func TestCrossingCylinderJoinGeneralDeclines(t *testing.T) {
+	a, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 12)
+	b, _ := SolidCylinder(math.P3(20, 0, 0), math.V3(0, 0, 1), 1.5, 12) // far apart, no intersection
+	if _, ok := CrossingCylinderJoinGeneral(a, b, nil); ok {
+		t.Error("non-intersecting cylinders should decline from the join general path")
+	}
+}
+
+// TestJoinFacesAssembly: the union assembly keeps both walls outward (no reversal) and contributes both
+// bodies' caps — distinct from the cut, which reverses the tool wall and drops the tool's caps.
+func TestJoinFacesAssembly(t *testing.T) {
+	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
+	rod, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
+	wallA := []curvedFace{{reversed: false}}
+	wallB := []curvedFace{{reversed: false}}
+	faces := joinFaces(wallA, fat, wallB, rod)
+	for i, f := range faces {
+		if f.reversed {
+			t.Errorf("joinFaces[%d] reversed=true, want all walls/caps outward (union keeps outward sense)", i)
+		}
+	}
+	// 1 wallA + 2 fat caps + 1 wallB + 2 rod caps = 6 faces.
+	if len(faces) != 6 {
+		t.Errorf("joinFaces produced %d faces, want 6 (1 wallA + 2 fat caps + 1 wallB + 2 rod caps)", len(faces))
+	}
+}
+
 // TestReverseCurvedFaces: reversing flips the face sense (the cut wall faces into the cavity).
 func TestReverseCurvedFaces(t *testing.T) {
 	in := []curvedFace{{reversed: false}, {reversed: true}}

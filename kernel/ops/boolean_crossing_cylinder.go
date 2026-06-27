@@ -292,6 +292,12 @@ func curvedCrossingJoin(op PartFeatureOperation, target, tool *topo.Body, rec *d
 	if op != Join {
 		return nil, false
 	}
+	// EPIC #1403: route crossing-cylinder JOIN through the GENERAL pipeline first (no bespoke loop→body
+	// constructor); the hand-built CrossingCylinderJoin stays as a fallback for the cases the general path
+	// declines (a breach reaching a cap, equal radii), so no OCC case regresses.
+	if res, ok := brep.CrossingCylinderJoinGeneral(target, tool, rec); ok && validBooleanSolid(res) {
+		return res, true
+	}
 	res, ok := brep.CrossingCylinderJoin(target, tool, rec)
 	if !ok || !validBooleanSolid(res) {
 		return nil, false
