@@ -15,6 +15,12 @@ import (
 // cone∩cone, cone∩cyl) runs the SAME two recipes here — only the per-operand side-face / membership / UV-frame
 // builders differ, captured behind one ruledOperand so the cut and the join are written once. The OUTSIDE-keep
 // walls mesh through the wrapping-band emission (curved_general_wrapping_band.go, Oblikovati#1476).
+//
+// SCOPE: a CLEAN crossing whose imprint is a set of NON-self-intersecting loops (a thin rod or cone through a
+// fatter solid, fully or partially). The one ruled crossing this pipeline does NOT cover is the equal-radius
+// Steinmetz bicylinder, whose two ellipses pinch into a self-intersecting imprint the (u,v) arrangement cannot
+// split into lobes — it keeps its bespoke analytic constructor (see curved_steinmetz.go). An out-of-scope pair
+// declines from these drivers (validBooleanSolid rejects the result), so kernel/ops uses the bespoke handler.
 
 // ruledOperand bundles everything a general cut/join needs about ONE crossing ruled solid: its body, the
 // curved side face being trimmed, that face's analytic surface, a 3D solid-membership oracle, and a builder

@@ -14,10 +14,25 @@ import (
 // perpendicular cylinders crossing through a common axis point intersect in the Steinmetz bicylinder: the
 // intersection curve is NOT a quartic saddle but two planar ELLIPSES that cross at two pinch points. The
 // SSI imprint tracer now follows each ellipse straight through those pinches (Oblikovati#1404), so the
-// crossing imprint returns the two loops here too; but the bicylinder's four-lobe SOLID is still assembled
-// from EXACT analytic ellipse edges below (sharper than traced polylines, and a different topology from the
-// rod-band crossing result). Folding this constructor into a general loop→solid stitch is tracked under the
-// curved∩curved pipeline (Oblikovati#1403), for which the through-pinch tracer is the prerequisite.
+// crossing imprint returns the two loops here too; but the bicylinder's four-lobe SOLID is assembled from
+// EXACT analytic ellipse edges below.
+//
+// WHY THIS STAYS ANALYTIC and is NOT folded into the general curved∩curved pipeline (Oblikovati#1403, which
+// now builds every CLEAN ruled boolean — crossing-cylinder, cone∩cone, cone∩cylinder, partial penetration):
+// the equal-radius pinch makes the imprint SELF-INTERSECT, which violates the (u,v)-arrangement's clean-band
+// assumptions in four places at once, deep-diagnosed under #1403:
+//   1. wrapsAllU reads the pinch (the lobes meet at a single v) as kept at every azimuth, so the region looks
+//      like a wrapping band and the two lobes collapse into one face;
+//   2. the two lobes TOUCH at the two pinch vertices, so groupLoopFaces' containment cannot separate them;
+//   3. chainLoops walks each ellipse STRAIGHT THROUGH the degree-4 pinch vertex instead of turning into a
+//      lobe (an angular next-edge walk is necessary but, alone, not sufficient);
+//   4. the elliptical arcs do not weld at the shared pinch vertices.
+// Handling it generally needs a pinch-AWARE arrangement (split the region at the self-intersection into the
+// four lobes, then weld arcs at the shared pinch vertices) — a dedicated change touching wrapsAllU,
+// groupLoopFaces, chainLoops, emission and welding, with real regression risk to every working torus/cone/
+// cylinder cut. A general pipeline plus this small analytic special case is the deliberate, correct design;
+// kernel/ops routes equal-radius crossings here, and the general crossing path declines them (its result
+// fails validBooleanSolid, see boolean_crossing_cylinder_test.go).
 //
 // Geometry in the frame (a = axis A, b = axis B, n = a×b) through the axis crossing O, with equal radius R:
 // a surface point O + α·a + β·b + γ·n is on cyl A when β²+γ²=R² and on cyl B when α²+γ²=R², so on both when
