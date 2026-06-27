@@ -57,6 +57,21 @@ func TestEffectiveMaterialOverride(t *testing.T) {
 	}
 }
 
+func TestEffectiveMaterialID(t *testing.T) {
+	st := NewAssignmentStore()
+	if got := st.EffectiveMaterialID("b1"); got != "" {
+		t.Errorf("unassigned body material id = %q, want empty", got)
+	}
+	st.SetPartMaterial("steel")
+	st.SetBodyMaterial("b1", "aluminum-6061")
+	if got := st.EffectiveMaterialID("b1"); got != "aluminum-6061" {
+		t.Errorf("b1 material id = %q, want aluminum-6061 (override)", got)
+	}
+	if got := st.EffectiveMaterialID("b2"); got != "steel" {
+		t.Errorf("b2 material id = %q, want steel (part default)", got)
+	}
+}
+
 func TestSetEmptyClearsAssignment(t *testing.T) {
 	st := NewAssignmentStore()
 	st.SetBodyMaterial("b1", "steel")

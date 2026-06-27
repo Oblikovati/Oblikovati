@@ -49,6 +49,38 @@ func TestBodyListAndShells(t *testing.T) {
 	}
 }
 
+// TestBodyListReportsMaterial: body.list reports each body's effective material id — the
+// part default, then a body-level override winning over it — the read-back of the write-only
+// assignMaterial that an analysis add-in uses for per-body material models.
+func TestBodyListReportsMaterial(t *testing.T) {
+	r, s := boxPartSession(t)
+
+	var before wire.BodyListResult
+	call(t, r, s, "body.list", `{}`, &before)
+	if before.Bodies[0].MaterialID != "" {
+		t.Fatalf("unassigned body materialID = %q, want empty", before.Bodies[0].MaterialID)
+	}
+	key := before.Bodies[0].Key
+
+	// Part-level default reaches the body.
+	call(t, r, s, "model.assignMaterial", `{"materialId":"steel"}`, nil)
+	var afterPart wire.BodyListResult
+	call(t, r, s, "body.list", `{}`, &afterPart)
+	if afterPart.Bodies[0].MaterialID != "steel" {
+		t.Fatalf("materialID after part assign = %q, want steel", afterPart.Bodies[0].MaterialID)
+	}
+
+	// A body-level override wins over the part default. The reference key is raw bytes, so
+	// JSON-encode the args rather than string-formatting them.
+	assignArgs := mustJSON(t, wire.AssignMaterialArgs{BodyKey: key, MaterialID: "aluminum-6061"})
+	call(t, r, s, "model.assignMaterial", assignArgs, nil)
+	var afterBody wire.BodyListResult
+	call(t, r, s, "body.list", `{}`, &afterBody)
+	if afterBody.Bodies[0].MaterialID != "aluminum-6061" {
+		t.Fatalf("materialID after body override = %q, want aluminum-6061", afterBody.Bodies[0].MaterialID)
+	}
+}
+
 // TestBodyMinimumDistance: a transient travel polyline measured against the box — clearance above
 // the top face, tool-radius widening, and a piercing move clamped to 0; plus the malformed-input
 // guard. Distances are database units (cm); the box top is at z=5.
