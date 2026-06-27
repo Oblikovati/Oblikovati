@@ -66,6 +66,7 @@ func TestDockablePanelBodiesClickSafe(t *testing.T) {
 		func() { drawLightingBody(s) },
 		func() { drawColorStylesBody(s) },
 		func() { drawDisplaySettingsBody(s) },
+		func() { drawUnitsSettingsBody(s) },
 		func() { drawNamedViewsBody(s) },
 		func() { drawHistoryBrowserBody(s) },
 		func() { drawParametersBody(s) },

@@ -146,7 +146,6 @@ func drawChromeWindows(s *app.Session) {
 	// panel is hidden, so feedback is never lost.
 	pumpCommandFeedback(s)
 	drawDockablePanels(s)
-	drawUnitsSettingsWindow(s) // Tools ▸ Document Settings — Units (#146)
 	drawScriptConsole(s)
 	drawKeymapEditor(s)         // Tools ▸ Customize Keyboard (M05-F17)
 	drawCommandInput(s)         // command-alias input box (M05-F17)

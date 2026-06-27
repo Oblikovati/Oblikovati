@@ -16,8 +16,8 @@ import (
 func TestDockablePanelRegistryMembership(t *testing.T) {
 	want := []string{
 		"Model", "Parameters", "Materials", "Lighting", "Color Styles", "Display Settings",
-		"Named Views", "Bill of Materials", "History Browser", "Selection Filter", "Command",
-		"Preferences",
+		"Document Settings — Units", "Named Views", "Bill of Materials", "History Browser",
+		"Selection Filter", "Command", "Preferences",
 	}
 	byTitle := map[string]*dockablePanel{}
 	for i := range dockablePanels {

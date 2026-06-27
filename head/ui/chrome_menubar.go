@@ -135,13 +135,10 @@ func drawEditMenu(s *app.Session) {
 }
 
 // drawToolsMenu holds the action/settings commands. Dockable windows (Materials, Preferences,
-// Command Window, Selection Filter, …) used to live here too; they moved to the View menu, which is
-// now the single place to show/hide any panel (#1473).
+// Document Settings, Command Window, Selection Filter, …) used to live here too; they moved to the
+// View menu, which is now the single place to show/hide any panel (#1473).
 func drawToolsMenu(s *app.Session) {
 	if native.BeginMenu("Tools") {
-		if native.MenuItem("Document Settings — Units") { // #146: per-document units & precision
-			s.OpenUnitsSettings()
-		}
 		if native.MenuItem("Customize Keyboard") { // M05-F17: rebind shortcuts / aliases
 			s.OpenKeymapEditor()
 		}
