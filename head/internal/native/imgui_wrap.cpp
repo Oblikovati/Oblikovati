@@ -542,6 +542,17 @@ int  obk_ig_invisible_button(const char* id, float w, float h) {
         ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight |
         ImGuiButtonFlags_MouseButtonMiddle) ? 1 : 0;
 }
+// begin_overlay_window opens a borderless, transparent, auto-sized floating window for on-canvas
+// controls (the Navigation Bar). Being its OWN window — not items inside the viewport window — its
+// buttons receive clicks while the viewport's full-region InvisibleButton keeps the drag-to-orbit
+// everywhere else, because ImGui routes the cursor to the topmost window under it (#1468). Pair with
+// obk_ig_end regardless of the return value.
+int obk_ig_begin_overlay_window(const char* name) {
+    ImGuiWindowFlags f = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground |
+        ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking;
+    return ImGui::Begin(name, nullptr, f) ? 1 : 0;
+}
 int  obk_ig_is_item_active(void)             { return ImGui::IsItemActive() ? 1 : 0; }
 int  obk_ig_is_item_hovered(void)            { return ImGui::IsItemHovered() ? 1 : 0; }
 int  obk_ig_mouse_down(int button)           { return ImGui::IsMouseDown((ImGuiMouseButton)button) ? 1 : 0; }
