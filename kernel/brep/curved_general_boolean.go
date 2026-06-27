@@ -211,30 +211,52 @@ func loopsClearOfCaps(side ruledUV, loops []geom.Polyline) bool {
 	return true
 }
 
+// crossingSide bundles everything a crossing-cylinder general boolean needs about ONE operand: its cylinder
+// side face, the rim band, the geom.Cylinder, and a 3D solid-membership oracle for it. Both the cut and the
+// join trim one side against the OTHER side's `inside` oracle (#1403).
+type crossingSide struct {
+	face   curvedFace
+	cyl    geom.Cylinder
+	band   coneSideBand_
+	inside func(math.Point3) bool
+}
+
+// crossingCylinderSides resolves the shared inputs every crossing-cylinder general boolean (cut, join)
+// starts from: the SSI imprint (exactly two closed loops for a clean rod-through-fat crossing) and, for each
+// operand, its cylinder side face + rim band + solid-membership oracle. ok=false when the pair is not two
+// bare cylinders meeting in two closed loops, so each caller keeps its bespoke fallback (#1403).
+func crossingCylinderSides(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyline, crossingSide, crossingSide, bool) {
+	loops, ok := crossingCylinderImprint(a, b, rec)
+	if !ok || len(loops) != 2 {
+		return nil, crossingSide{}, crossingSide{}, false
+	}
+	fA, cylA, bandA, okA := cylinderSideFace(a)
+	fB, cylB, bandB, okB := cylinderSideFace(b)
+	insideA, okMA := curvedSolidMembership(a)
+	insideB, okMB := curvedSolidMembership(b)
+	if !okA || !okB || !okMA || !okMB {
+		return nil, crossingSide{}, crossingSide{}, false
+	}
+	return loops, crossingSide{fA, cylA, bandA, insideA}, crossingSide{fB, cylB, bandB, insideB}, true
+}
+
 // CrossingCylinderCutGeneral is the exported entry kernel/ops routes crossing-cylinder subtract through: the
 // GENERAL curved∩curved pipeline (#1403). target − tool drills a tunnel through the target: the target side
 // kept OUTSIDE the tool (the breached wall), the target's caps whole, and the tool side kept INSIDE the
 // target and reversed (the tunnel wall). ok=false outside the wired clean-side-breach crossing.
 func CrossingCylinderCutGeneral(target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	loops, ok := crossingCylinderImprint(target, tool, rec)
-	if !ok || len(loops) != 2 {
-		return nil, false
-	}
-	fA, cylA, bandA, okA := cylinderSideFace(target)
-	fB, cylB, bandB, okB := cylinderSideFace(tool)
-	insideA, okMA := curvedSolidMembership(target)
-	insideB, okMB := curvedSolidMembership(tool)
-	if !okA || !okB || !okMA || !okMB {
+	loops, tgt, tl, ok := crossingCylinderSides(target, tool, rec)
+	if !ok {
 		return nil, false
 	}
 	// Clean side-breach only: the tool must breach the target's SIDE between its caps (so the caps stay
 	// whole) and not reach the tool's own caps inside the target (a full crossing, both loops on the side).
-	if !loopsClearOfCaps(newCylinderUVSolid(cylA, bandA, Difference, false, insideB), loops) {
+	if !loopsClearOfCaps(newCylinderUVSolid(tgt.cyl, tgt.band, Difference, false, tl.inside), loops) {
 		return nil, false
 	}
 	imprint := polylineCurves(loops)
-	keptA, okKA := keptOrNone(cylinderSideSolidSplit(fA, cylA, bandA, imprint, Difference, false, insideB))
-	keptB, okKB := keptOrNone(cylinderSideSolidSplit(fB, cylB, bandB, imprint, Difference, true, insideA))
+	keptA, okKA := keptOrNone(cylinderSideSolidSplit(tgt.face, tgt.cyl, tgt.band, imprint, Difference, false, tl.inside))
+	keptB, okKB := keptOrNone(cylinderSideSolidSplit(tl.face, tl.cyl, tl.band, imprint, Difference, true, tgt.inside))
 	if !okKA || !okKB {
 		return nil, false
 	}
@@ -249,6 +271,45 @@ func cutFaces(targetWall []curvedFace, target *topo.Body, toolWall []curvedFace)
 	faces = append(faces, targetWall...)
 	faces = append(faces, planarCapFaces(target)...)
 	faces = append(faces, reverseCurvedFaces(toolWall)...)
+	return faces
+}
+
+// CrossingCylinderJoinGeneral is the exported entry kernel/ops routes crossing-cylinder JOIN through: the
+// GENERAL curved∩curved pipeline (#1403). target ∪ tool is the union of two crossing cylinders (a fat
+// cylinder side-breached by a rod passing right through it): each side keeps the part OUTSIDE the other
+// (the Union keep-table — the fat's holed wall plus the two rod stubs sticking out), and BOTH bodies keep
+// their caps whole. It is the cut's sibling with NO face reversal (a union's walls keep their outward sense)
+// and the tool's caps surviving too. ok=false outside the wired clean-side-breach crossing.
+func CrossingCylinderJoinGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
+	loops, sa, sb, ok := crossingCylinderSides(a, b, rec)
+	if !ok {
+		return nil, false
+	}
+	// Both bodies keep their caps whole, so the breach must lie strictly between EACH body's caps — a rod
+	// passing fully through a fat cylinder and sticking out each side (a breach that reaches a cap would need
+	// that planar cap trimmed, which this migration defers to the bespoke handler).
+	if !loopsClearOfCaps(newCylinderUVSolid(sa.cyl, sa.band, Union, false, sb.inside), loops) ||
+		!loopsClearOfCaps(newCylinderUVSolid(sb.cyl, sb.band, Union, true, sa.inside), loops) {
+		return nil, false
+	}
+	imprint := polylineCurves(loops)
+	keptA, okKA := keptOrNone(cylinderSideSolidSplit(sa.face, sa.cyl, sa.band, imprint, Union, false, sb.inside))
+	keptB, okKB := keptOrNone(cylinderSideSolidSplit(sb.face, sb.cyl, sb.band, imprint, Union, true, sa.inside))
+	if !okKA || !okKB {
+		return nil, false
+	}
+	return curvedStitch(joinFaces(keptA, a, keptB, b)), true
+}
+
+// joinFaces assembles a Union result's boundary: each operand's wall kept outside the other (the fat's holed
+// wall + the rod's two protruding stubs) plus BOTH operands' whole caps. Unlike the cut neither wall is
+// reversed — a union keeps every kept wall facing outward — and both bodies contribute their caps (#1403).
+func joinFaces(wallA []curvedFace, a *topo.Body, wallB []curvedFace, b *topo.Body) []curvedFace {
+	faces := make([]curvedFace, 0, len(wallA)+len(wallB)+4)
+	faces = append(faces, wallA...)
+	faces = append(faces, planarCapFaces(a)...)
+	faces = append(faces, wallB...)
+	faces = append(faces, planarCapFaces(b)...)
 	return faces
 }
 
