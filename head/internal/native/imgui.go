@@ -55,6 +55,8 @@ void obk_ig_indent(float w);
 void obk_ig_unindent(float w);
 void obk_ig_progress_bar(float fraction, float w, const char* overlay);
 void obk_ig_main_viewport_size(float* w, float* h);
+void obk_ig_main_viewport_center(float* x, float* y);
+void obk_ig_window_pos(float* x, float* y);
 float obk_ig_hover_seconds(void);
 int  obk_ig_begin_popup_context_item(const char* id);
 void obk_ig_open_popup(const char* id);
@@ -110,6 +112,7 @@ float obk_ig_frame_height(void);
 float obk_ig_text_line_height(void);
 void obk_ig_style_metrics(float* fpx, float* fpy, float* isx, float* isy, float* wpx, float* wpy);
 void obk_ig_set_next_window_pos(float x, float y);
+void obk_ig_center_next_window(void);
 void obk_ig_set_next_window_size(float w, float h);
 void obk_ig_set_next_window_size_first_use(float w, float h);
 
@@ -790,6 +793,22 @@ func MainViewportSize() (w, h float32) {
 	return float32(cw), float32(ch)
 }
 
+// MainViewportCenter is the point CenterNextWindow pivots the next window onto. Exposed
+// so the #1474 centering can be asserted; mirrors GetMainViewport()->GetCenter().
+func MainViewportCenter() (x, y float32) {
+	var cx, cy C.float
+	C.obk_ig_main_viewport_center(&cx, &cy)
+	return float32(cx), float32(cy)
+}
+
+// WindowPos reports the current window's top-left in screen pixels (valid between
+// Begin/End). Used to confirm a centred window landed where the pivot placed it.
+func WindowPos() (x, y float32) {
+	var cx, cy C.float
+	C.obk_ig_window_pos(&cx, &cy)
+	return float32(cx), float32(cy)
+}
+
 // HoverSeconds reports how long the last item has been hovered — drives the
 // progressive tooltip's expanded text (M05-F09).
 func HoverSeconds() float32 { return float32(C.obk_ig_hover_seconds()) }
@@ -973,6 +992,12 @@ func SetCursorPos(x, y float32) { C.obk_ig_set_cursor_pos(C.float(x), C.float(y)
 // in-window tests to put the viewport panel at a known rect so injected input lands on it.
 func SetNextWindowPos(x, y float32)  { C.obk_ig_set_next_window_pos(C.float(x), C.float(y)) }
 func SetNextWindowSize(w, h float32) { C.obk_ig_set_next_window_size(C.float(w), C.float(h)) }
+
+// CenterNextWindow anchors the next Begin's window to the centre of the main viewport
+// (a 0.5,0.5 pivot), so a prompt opens over the drawing rather than off in a corner.
+// Used for the graceful-close save prompt so it is not lost against the dark canvas
+// (Oblikovati#1474).
+func CenterNextWindow() { C.obk_ig_center_next_window() }
 
 // SetNextWindowSizeOnce sets the next window's size only the first time it is shown
 // (ImGuiCond_FirstUseEver), so it gives a sensible default the user can still resize.

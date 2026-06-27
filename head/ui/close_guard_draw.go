@@ -43,6 +43,7 @@ func drawCloseModal(s *app.Session) bool {
 		return true
 	}
 	exit := false
+	native.CenterNextWindow() // over the drawing, not lost in a corner (#1474)
 	if native.Begin("Save changes?") {
 		drawDirtyDocumentList(dirty)
 		exit = drawCloseModalButtons(s)

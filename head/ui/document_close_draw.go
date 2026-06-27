@@ -19,6 +19,7 @@ func drawDocumentClosePrompt(s *app.Session) {
 		return
 	}
 	d := closeDocumentModal.pending
+	native.CenterNextWindow() // over the drawing, not lost in a corner (#1474)
 	if native.Begin("Save document changes?##document-close") {
 		native.Text("Save changes to " + d.FullDocumentName() + " before closing?")
 		if native.Button("Save") {
