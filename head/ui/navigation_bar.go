@@ -14,21 +14,25 @@ import (
 // (HomeView/FitView/ArmZoomWindow/ToggleConstrainedOrbit/LookAtSelection); this only draws the
 // buttons and routes clicks, so it stays thin.
 
-// navBarButton is one Navigation Bar tool: an icon key, the session action it runs, and an optional
-// active-state predicate (a toggle/armed tool renders accented while on).
+// navBarButton is one Navigation Bar tool: an icon key, the session action it runs, an optional
+// active-state predicate (a toggle/armed tool renders accented while on), and an optional enabled
+// predicate (a nil enabled means always enabled; false greys the button out and blocks the click).
 type navBarButton struct {
 	id, icon string
 	run      func(*app.Session)
 	active   func(*app.Session) bool
+	enabled  func(*app.Session) bool
 }
 
 // navBarButtons are the bar's tools, top to bottom.
 var navBarButtons = []navBarButton{
-	{"navbar.home", "home", func(s *app.Session) { s.HomeView() }, nil},
-	{"navbar.fit", "zoom-all", func(s *app.Session) { s.FitView() }, nil},
-	{"navbar.zoomWindow", "zoom-window", func(s *app.Session) { s.ArmZoomWindow() }, (*app.Session).ZoomWindowArmed},
-	{"navbar.constrainedOrbit", "orbit-constrained", func(s *app.Session) { s.ToggleConstrainedOrbit() }, (*app.Session).ConstrainedOrbitActive},
-	{"navbar.lookAt", "look-at", func(s *app.Session) { s.LookAtSelection() }, nil},
+	{"navbar.home", "home", func(s *app.Session) { s.HomeView() }, nil, nil},
+	{"navbar.fit", "zoom-all", func(s *app.Session) { s.FitView() }, nil, nil},
+	{"navbar.zoomWindow", "zoom-window", func(s *app.Session) { s.ArmZoomWindow() }, (*app.Session).ZoomWindowArmed, nil},
+	{"navbar.constrainedOrbit", "orbit-constrained", func(s *app.Session) { s.ToggleConstrainedOrbit() }, (*app.Session).ConstrainedOrbitActive, nil},
+	// Look At only orients to a selected work plane / planar face, so it disables with nothing
+	// suitable selected — a click would otherwise be a silent no-op (#1468 follow-up).
+	{"navbar.lookAt", "look-at", func(s *app.Session) { s.LookAtSelection() }, nil, (*app.Session).CanLookAt},
 }
 
 const (
@@ -83,6 +87,10 @@ func drawNavBarButton(s *app.Session, b navBarButton, iconPx int) bool {
 		native.PushStyleColor("ButtonHovered", accentColor)
 		native.PushStyleColor("ButtonActive", accentColor)
 		defer native.PopStyleColor(3)
+	}
+	if b.enabled != nil && !b.enabled(s) {
+		native.BeginDisabled(true) // greys the icon and blocks the click when the tool can't run
+		defer native.EndDisabled()
 	}
 	clicked := native.ImageButton(b.id, tex, float32(iconPx), float32(iconPx), identityTint)
 	x0, y0 := native.ItemRectMin()

@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
+	"oblikovati.org/model/compdef"
 )
 
 // clickNavBarButton renders the viewport, locates the named nav-bar button's screen rect, and
@@ -65,4 +66,46 @@ func TestNavBarButtonClicksReachActions(t *testing.T) {
 			native.InjectMouseButton(native.MouseLeft, false)
 		})
 	}
+}
+
+// TestNavBarLookAtEnablement covers the Look At button's enable state (#1468 follow-up): it is
+// disabled — a click is a no-op — when nothing it can orient to is selected, and enabled (the click
+// swings the camera) once a work plane is selected.
+func TestNavBarLookAtEnablement(t *testing.T) {
+	win := newViewportWindow(t)
+	defer win.Destroy()
+	dockLaidOut = false
+	icons = nil
+	s := app.NewSession()
+	pd, err := compdef.AddPart(s.Workspace(), "lookat.opd", true)
+	if err != nil {
+		t.Fatalf("AddPart: %v", err)
+	}
+	_ = s.Workspace().SetActiveDocument(pd)
+	def := pd.Content().(*compdef.PartComponentDefinition)
+	if !s.ShowNavBar() {
+		t.Skip("nav bar hidden")
+	}
+
+	// Nothing selected: the button is disabled and a click moves nothing.
+	if s.CanLookAt() {
+		t.Fatal("precondition: nothing selected, CanLookAt should be false")
+	}
+	if !clickNavBarButton(win, s, "navbar.lookAt") {
+		t.Fatal("look-at button was not drawn")
+	}
+	if s.CameraAnimating() {
+		t.Error("Look At should be disabled (no-op) with nothing selected")
+	}
+
+	// Select a work plane: now enabled, the click swings the view to face it.
+	s.Selection().Add(app.WorkPlaneHandle{Plane: def.OriginPlanes()[0]})
+	if !s.CanLookAt() {
+		t.Fatal("CanLookAt should be true with a work plane selected")
+	}
+	clickNavBarButton(win, s, "navbar.lookAt")
+	if !s.CameraAnimating() {
+		t.Error("clicking the enabled Look At button did not start the look-at swing")
+	}
+	native.InjectMouseButton(native.MouseLeft, false)
 }
