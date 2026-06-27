@@ -952,7 +952,18 @@ func emitImprintRun(run []recoveredEdge) (loopEdge, bool) {
 		}
 		tEnd = prev
 		if lo, hi := curve.Domain(); stdmath.Abs(tEnd-t0) >= (hi-lo)-1e-6 {
-			return loopEdge{curve: curve, t0: lo, t1: hi}, true // the whole closed curve
+			// The whole closed curve, but KEEP the run's traversal sense: a boundary walked in the curve's
+			// DECREASING-parameter direction re-emits as [hi, lo], not [lo, hi]. Discarding the sign made the
+			// two walls of a general curved∩curved boolean emit a SHARED imprint loop identically, so the weld
+			// saw the same orientation on both faces (curvedStitch orients a closed edge by t1<t0) and the
+			// solid failed the orientation check — silently rejected by validBooleanSolid, falling back to the
+			// bespoke handler. The two walls walk the shared loop in OPPOSITE senses, so preserving the sign
+			// welds them consistently. A half-space cut keeps the forward sense it always had (its single kept
+			// region walks the closed section forward), so those paths are unchanged (#1403).
+			if tEnd < t0 {
+				return loopEdge{curve: curve, t0: hi, t1: lo}, true
+			}
+			return loopEdge{curve: curve, t0: lo, t1: hi}, true
 		}
 	}
 	return loopEdge{curve: curve, t0: t0, t1: tEnd}, true

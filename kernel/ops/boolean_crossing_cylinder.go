@@ -258,12 +258,10 @@ func curvedCrossingCut(op PartFeatureOperation, target, tool *topo.Body, rec *di
 	if op != Cut {
 		return nil, false
 	}
-	// EPIC #1403: route crossing-cylinder subtract through the GENERAL pipeline first (no bespoke
-	// loop→body constructor); the hand-built CrossingCylinderCut stays as a fallback for the cases the
-	// general path declines (a breach reaching a cap, a partial penetration), so no OCC case regresses.
-	if res, ok := brep.CrossingCylinderCutGeneral(target, tool, rec); ok && validBooleanSolid(res) {
-		return res, true
-	}
+	// EPIC #1403: the general ruled CUT (brep.CrossingCylinderCutGeneral) is NOT wired here yet — it produces
+	// an orientation-inconsistent or wrong-region solid that validBooleanSolid rejects (the OUTSIDE-keep region
+	// bug, Oblikovati#1476), so it would only ever fall back. Kept on the bespoke handler until that lands; the
+	// intersect general path IS adopted now that the imprint weld is fixed.
 	res, ok := brep.CrossingCylinderCut(target, tool, rec)
 	if !ok || !validBooleanSolid(res) {
 		return nil, false
@@ -292,12 +290,10 @@ func curvedCrossingJoin(op PartFeatureOperation, target, tool *topo.Body, rec *d
 	if op != Join {
 		return nil, false
 	}
-	// EPIC #1403: route crossing-cylinder JOIN through the GENERAL pipeline first (no bespoke loop→body
-	// constructor); the hand-built CrossingCylinderJoin stays as a fallback for the cases the general path
-	// declines (a breach reaching a cap, equal radii), so no OCC case regresses.
-	if res, ok := brep.CrossingCylinderJoinGeneral(target, tool, rec); ok && validBooleanSolid(res) {
-		return res, true
-	}
+	// EPIC #1403: the general ruled JOIN (brep.CrossingCylinderJoinGeneral) is NOT wired here yet — with the
+	// imprint weld fixed it now passes validBooleanSolid but meshes the WRONG region (OUTSIDE-keep holed-wall
+	// bug, Oblikovati#1476: ∪ volume 194 vs 383), so adopting it would be worse than the bespoke result. Kept
+	// on the bespoke handler until #1476 lands.
 	res, ok := brep.CrossingCylinderJoin(target, tool, rec)
 	if !ok || !validBooleanSolid(res) {
 		return nil, false

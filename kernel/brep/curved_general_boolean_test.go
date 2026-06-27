@@ -209,9 +209,12 @@ func TestCrossingCylinderIntersectGeneralDeclines(t *testing.T) {
 	}
 }
 
-// TestCrossingCylinderCutGeneral: target − tool (fat drilled by a crossing rod) through the general pipeline
-// yields a watertight solid — the breached fat side, its two whole caps, and the reversed rod tunnel wall.
-// This is the first CUT migration (#1403): it adds surviving planar caps + cut-wall face reversal.
+// TestCrossingCylinderCutGeneral checks the STRUCTURE the general cut builder emits — its face composition and
+// edge-USE-COUNT (every edge used twice). It does NOT assert orientation/region correctness: this builder is
+// known broken (Oblikovati#1476, the OUTSIDE-keep region bug) and is NOT wired into kernel/ops — crossing-
+// cylinder subtract stays on the bespoke handler. Orientation/volume are validated in ops (TestGeneral...
+// IsAdopted covers the intersect path; cut/join join that guard once #1476 lands). Edge-count watertightness
+// alone is exactly what masked the silent fallback, so this is intentionally scoped to structure (#1403).
 func TestCrossingCylinderCutGeneral(t *testing.T) {
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	rod, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
@@ -226,10 +229,11 @@ func TestCrossingCylinderCutGeneral(t *testing.T) {
 	}
 }
 
-// TestCrossingCylinderJoinGeneral: target ∪ tool (fat side-breached by a crossing rod) through the general
-// pipeline yields a watertight solid — the fat's holed wall, the two rod stubs, and BOTH bodies' whole caps.
-// This is the first JOIN migration (#1403): it reuses the cut's caps machinery but keeps both walls outward
-// (no reversal) and contributes the tool's caps too.
+// TestCrossingCylinderJoinGeneral checks the STRUCTURE the general join builder emits (face composition +
+// edge-use counts), NOT orientation/region correctness: this builder is known broken (Oblikovati#1476 — it
+// meshes the wrong region, ∪ volume 194 vs 383) and is NOT wired into kernel/ops; crossing-cylinder JOIN stays
+// on the bespoke handler. Scoped to structure on purpose — edge-count watertightness is what masked the silent
+// fallback, so correctness is asserted in ops once #1476 lands (#1403).
 func TestCrossingCylinderJoinGeneral(t *testing.T) {
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	rod, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
