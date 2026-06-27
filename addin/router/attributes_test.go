@@ -104,3 +104,60 @@ func TestAttributeHandlersRejectBadInput(t *testing.T) {
 		t.Error("find with a blank set should fail")
 	}
 }
+
+// TestAttributesPerTarget drives the per-entity (target) attribute round trip: tags anchored to
+// two different reference keys are independent of each other and of the document, each get/list
+// echoes its target, allTargets enumerates them, and the same target re-resolves the same anchor.
+func TestAttributesPerTarget(t *testing.T) {
+	r, s := emptyPartSession(t)
+	id := uint64(s.ActiveDocument().ID())
+	const set = "com.oblikovati.traceon"
+	const bodyA, bodyB = "body-ref-A", "body-ref-B"
+
+	// Two electrodes get different voltages; the document-scoped attribute is independent.
+	var res wire.AttributeResult
+	call(t, r, s, "attributes.set", mustJSON(t, wire.SetAttributeArgs{Document: id, Set: set, Name: "voltage", Value: types.DoubleVariant(1000), Target: bodyA}), &res)
+	if res.Attribute.Target != bodyA {
+		t.Errorf("set echoed target %q, want %q", res.Attribute.Target, bodyA)
+	}
+	call(t, r, s, "attributes.set", mustJSON(t, wire.SetAttributeArgs{Document: id, Set: set, Name: "voltage", Value: types.DoubleVariant(-500), Target: bodyB}), &res)
+	call(t, r, s, "attributes.set", mustJSON(t, wire.SetAttributeArgs{Document: id, Set: set, Name: "voltage", Value: types.DoubleVariant(0)}), &res) // document-scoped
+
+	// Each target reads back its own value (the same target re-resolves the same anchor).
+	expect := map[string]float64{bodyA: 1000, bodyB: -500}
+	for target, want := range expect {
+		call(t, r, s, "attributes.get", mustJSON(t, wire.GetAttributeArgs{Document: id, Set: set, Name: "voltage", Target: target}), &res)
+		if !res.Found || res.Attribute.Target != target {
+			t.Fatalf("get %s: found=%v target=%q", target, res.Found, res.Attribute.Target)
+		}
+		if v, _ := res.Attribute.Value.Double(); v != want {
+			t.Errorf("get %s voltage = %g, want %g", target, v, want)
+		}
+	}
+
+	// allTargets lists every anchor's attribute, each carrying its target (document + 2 bodies).
+	var list wire.ListAttributesResult
+	call(t, r, s, "attributes.list", mustJSON(t, wire.ListAttributesArgs{Document: id, Set: set, AllTargets: true}), &list)
+	seen := map[string]bool{}
+	for _, a := range list.Attributes {
+		seen[a.Target] = true
+	}
+	if !seen[bodyA] || !seen[bodyB] || !seen[""] {
+		t.Errorf("allTargets saw targets %v, want bodyA, bodyB and the document", seen)
+	}
+
+	// Deleting one target leaves the other intact.
+	var del wire.DeleteAttributeResult
+	call(t, r, s, "attributes.delete", mustJSON(t, wire.DeleteAttributeArgs{Document: id, Set: set, Name: "voltage", Target: bodyA}), &del)
+	if del.Removed != 1 {
+		t.Errorf("delete bodyA removed %d, want 1", del.Removed)
+	}
+	call(t, r, s, "attributes.get", mustJSON(t, wire.GetAttributeArgs{Document: id, Set: set, Name: "voltage", Target: bodyA}), &res)
+	if res.Found {
+		t.Error("bodyA attribute still present after delete")
+	}
+	call(t, r, s, "attributes.get", mustJSON(t, wire.GetAttributeArgs{Document: id, Set: set, Name: "voltage", Target: bodyB}), &res)
+	if !res.Found {
+		t.Error("bodyB attribute wrongly removed")
+	}
+}

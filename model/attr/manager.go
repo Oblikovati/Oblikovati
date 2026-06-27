@@ -59,6 +59,28 @@ func (m *AttributeManager) Remove(key identity.RefKey) bool {
 // Count returns the number of anchored objects.
 func (m *AttributeManager) Count() int { return len(m.byKey) }
 
+// Anchor is one anchored object: its reference key and its attribute sets — the unit a
+// "list every target" query iterates over.
+type Anchor struct {
+	Key  identity.RefKey
+	Sets *AttributeSets
+}
+
+// Anchors returns every anchored object, in key insertion order, so a caller can enumerate the
+// attributes of all targets (document and entities) at once. A corrupt anchor key is skipped
+// rather than failing the whole enumeration.
+func (m *AttributeManager) Anchors() []Anchor {
+	out := make([]Anchor, 0, len(m.order))
+	for _, k := range m.order {
+		key, err := identity.DecodeKey([]byte(k))
+		if err != nil {
+			continue
+		}
+		out = append(out, Anchor{Key: key, Sets: m.byKey[k]})
+	}
+	return out
+}
+
 // AttributeHit is one result of [AttributeManager.FindAttributes]: the anchoring
 // key plus the matching set and attribute.
 type AttributeHit struct {
