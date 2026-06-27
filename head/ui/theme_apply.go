@@ -134,15 +134,18 @@ func WindowClearColor() (r, g, b float32) {
 // accent paints the active tab, checkmark, slider grab, and selection. Each ImGui slot
 // appears under exactly one token, so apply order does not matter.
 var chromeBinding = map[types.ThemeToken][]string{
-	types.TokenChromeWindowBg:      {"WindowBg"},
-	types.TokenChromePanelBg:       {"ChildBg"},
-	types.TokenChromePopupBg:       {"PopupBg"},
-	types.TokenChromeMenuBarBg:     {"MenuBarBg"},
-	types.TokenChromeHeaderBg:      {"TitleBg", "TitleBgCollapsed", "Header"},
-	types.TokenChromeText:          {"Text", "InputTextCursor"},
-	types.TokenChromeTextDisabled:  {"TextDisabled"},
-	types.TokenChromeBorder:        {"Border", "Separator"},
-	types.TokenChromeControlBg:     {"FrameBg"},
+	types.TokenChromeWindowBg:     {"WindowBg"},
+	types.TokenChromePanelBg:      {"ChildBg"},
+	types.TokenChromePopupBg:      {"PopupBg"},
+	types.TokenChromeMenuBarBg:    {"MenuBarBg"},
+	types.TokenChromeHeaderBg:     {"TitleBg", "TitleBgCollapsed", "Header"},
+	types.TokenChromeText:         {"Text", "InputTextCursor"},
+	types.TokenChromeTextDisabled: {"TextDisabled"},
+	types.TokenChromeBorder:       {"Border", "Separator"},
+	// ScrollbarBg (the track groove) shares the recessed control background so the grab — painted
+	// by TokenChromeScrollbar below — actually contrasts against it. Binding both the track and the
+	// grab to one token left the grab invisible until dragged (Oblikovati#1471 follow-up).
+	types.TokenChromeControlBg:     {"FrameBg", "ScrollbarBg"},
 	types.TokenChromeControlHover:  {"FrameBgHovered", "SeparatorHovered"},
 	types.TokenChromeControlActive: {"FrameBgActive"},
 	types.TokenChromeButton:        {"Button", "Tab", "TabDimmed"},
@@ -153,7 +156,10 @@ var chromeBinding = map[types.ThemeToken][]string{
 		"SliderGrab", "SliderGrabActive", "HeaderHovered", "HeaderActive",
 		"SeparatorActive", "ScrollbarGrabActive", "TextSelectedBg",
 	},
-	types.TokenChromeScrollbar: {"ScrollbarBg", "ScrollbarGrab", "ScrollbarGrabHovered"},
+	// The scrollbar GRAB (the draggable slider) — the track is TokenChromeControlBg above and the
+	// dragged state is ScrollbarGrabActive under the accent, so the grab is visible at rest, not
+	// only while dragging (Oblikovati#1471 follow-up).
+	types.TokenChromeScrollbar: {"ScrollbarGrab", "ScrollbarGrabHovered"},
 }
 
 // applyChromeStyle pushes every chrome token's color into the ImGui slots it binds to.
