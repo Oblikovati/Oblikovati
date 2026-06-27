@@ -40,6 +40,18 @@ func curvedFaceCount(b *topo.Body) int {
 	return n
 }
 
+// exactlyOneCurvedPrimitive reports whether exactly one of target/tool is a BARE analytic primitive
+// (a single curved face — an extruded cylinder/cone, a revolved torus, a sphere) and the other is
+// all-planar. Only then can the exact M2 curved boolean keep the curved surface: a box drilled by a
+// cylinder tool keeps its cylindrical hole wall (#1472), the mirror of a curved solid cut by a planar
+// box (#1334/#1335). The single-curved-face gate is deliberately tight — a composite curved body (a
+// washer's two cylinder walls, a filleted edge) is NOT a primitive the half-space cut handles, so it
+// stays on the faceted planar path; CurvedBoolean can over-match such a body and cut it wrongly.
+func exactlyOneCurvedPrimitive(target, tool *topo.Body) bool {
+	tc, oc := curvedFaceCount(target), curvedFaceCount(tool)
+	return (tc == 1 && oc == 0) || (tc == 0 && oc == 1)
+}
+
 // planarized converts a body with analytic curved faces into a planar B-rep the exact boolean can
 // consume (it hangs on a full periodic curved face, #129). A SIMPLE extrude-circle cylinder becomes
 // a clean, key-stable N-gon prism (the fast path that keeps downstream edge identity); any OTHER

@@ -172,13 +172,14 @@ func combine(running []*topo.Body, body *topo.Body, op ops.PartFeatureOperation)
 		return append(append([]*topo.Body(nil), running...), body), nil
 	}
 	target := running[len(running)-1]
-	// First try the EXACT curved boolean on the still-analytic operands when the target is a BARE analytic
-	// primitive (exactly one curved face — a revolved torus, an extruded cylinder/cone, a sphere) and the
-	// tool is all-planar (a prism): those keep their curved faces through the M2 curved boolean
-	// (#1334/#1335). The single-curved-face gate is deliberately tight — a composite curved body (a washer's
-	// two cylinder walls, a filleted edge) is NOT a primitive the half-space cut handles, so it stays on the
-	// faceted planar path; CurvedBoolean can over-match such a body and cut it wrongly.
-	if curvedFaceCount(target) == 1 && curvedFaceCount(body) == 0 {
+	// First try the EXACT curved boolean on the still-analytic operands when exactly one of them is a BARE
+	// analytic primitive and the other is all-planar (see exactlyOneCurvedPrimitive): the result keeps the
+	// curved surface through the M2 curved boolean instead of being re-faceted into a prism. This routes BOTH
+	// directions — a curved solid cut by a planar box (#1334/#1335) AND a planar box drilled/joined by a
+	// cylinder/cone tool, which previously fell through to faceting and shattered the hole rim into 24 straight
+	// segments (#1472). CurvedBoolean takes (target, tool) in feature order; each kernel path checks its own
+	// operand roles, so the same call serves both directions.
+	if exactlyOneCurvedPrimitive(target, body) {
 		if res, ok := ops.CurvedBoolean(op, target, body); ok {
 			return appendCombined(running, res), nil
 		}
