@@ -62,8 +62,11 @@ func curvedConeConeIntersect(op PartFeatureOperation, target, tool *topo.Body, r
 
 // curvedSteinmetzIntersect returns the exact intersection of two equal-radius perpendicular cylinders (the
 // Steinmetz bicylinder), or ok=false to defer. Only Intersect maps here, and only a valid closed manifold
-// result is adopted. The SSI tracer now traces this equal-radius pinch (#1404), but the four-lobe bicylinder
-// solid is still built from exact analytic ellipse edges here; unifying it onto the traced loops is #1403.
+// result is adopted. This is the ONE crossing case kept on its bespoke analytic constructor (the general
+// curved∩curved pipeline, #1403, handles every other ruled pair): the equal-radius pinch makes the imprint
+// self-intersect into four lobes, which the general (u,v) arrangement cannot yet split or weld — see the
+// detailed rationale on brep.EqualRadiusSteinmetzIntersect. The general crossing path declines equal radii
+// (its result fails validBooleanSolid), so it does not race this handler.
 func curvedSteinmetzIntersect(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
 	if op != Intersect {
 		return nil, false
@@ -238,7 +241,9 @@ func curvedConeConeJoin(op PartFeatureOperation, target, tool *topo.Body, rec *d
 
 // curvedSteinmetzCut returns target − tool for two equal-radius perpendicular cylinders (the target with
 // the tool's saddle bite removed), or ok=false to defer. Only Cut maps here, and only a valid closed
-// manifold result is adopted.
+// manifold result is adopted. Like curvedSteinmetzIntersect, this stays on the bespoke analytic constructor:
+// the equal-radius pinch is the one case the general pipeline (#1403) does not handle — see the rationale on
+// brep.EqualRadiusSteinmetzIntersect.
 func curvedSteinmetzCut(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
 	if op != Cut {
 		return nil, false
@@ -270,7 +275,9 @@ func curvedCrossingCut(op PartFeatureOperation, target, tool *topo.Body, rec *di
 
 // curvedSteinmetzJoin returns target ∪ tool for two equal-radius perpendicular cylinders (the union of two
 // crossing cylinders of the same radius), or ok=false to defer. Only Join maps here, and only a valid closed
-// manifold result is adopted.
+// manifold result is adopted. Like curvedSteinmetzIntersect, this stays on the bespoke analytic constructor:
+// the equal-radius pinch is the one case the general pipeline (#1403) does not handle — see the rationale on
+// brep.EqualRadiusSteinmetzIntersect.
 func curvedSteinmetzJoin(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
 	if op != Join {
 		return nil, false
