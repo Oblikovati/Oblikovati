@@ -258,6 +258,12 @@ func curvedCrossingCut(op PartFeatureOperation, target, tool *topo.Body, rec *di
 	if op != Cut {
 		return nil, false
 	}
+	// EPIC #1403: route crossing-cylinder subtract through the GENERAL pipeline first (no bespoke
+	// loop→body constructor); the hand-built CrossingCylinderCut stays as a fallback for the cases the
+	// general path declines (a breach reaching a cap, a partial penetration), so no OCC case regresses.
+	if res, ok := brep.CrossingCylinderCutGeneral(target, tool, rec); ok && validBooleanSolid(res) {
+		return res, true
+	}
 	res, ok := brep.CrossingCylinderCut(target, tool, rec)
 	if !ok || !validBooleanSolid(res) {
 		return nil, false

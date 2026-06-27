@@ -208,3 +208,39 @@ func TestCrossingCylinderIntersectGeneralDeclines(t *testing.T) {
 		t.Error("cone+cylinder should decline from the crossing-cylinder general path")
 	}
 }
+
+// TestCrossingCylinderCutGeneral: target − tool (fat drilled by a crossing rod) through the general pipeline
+// yields a watertight solid — the breached fat side, its two whole caps, and the reversed rod tunnel wall.
+// This is the first CUT migration (#1403): it adds surviving planar caps + cut-wall face reversal.
+func TestCrossingCylinderCutGeneral(t *testing.T) {
+	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
+	rod, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
+	res, ok := CrossingCylinderCutGeneral(fat, rod, nil)
+	if !ok {
+		t.Fatal("general crossing-cylinder cut declined; want the drilled solid")
+	}
+	assertWatertight(t, res)
+	cones, cyls, planes := faceTypeCounts(t, res)
+	if cones != 0 || cyls != 2 || planes != 2 {
+		t.Errorf("got %d cone + %d cyl + %d plane faces, want 2 cyl (breached fat + rod tunnel) + 2 plane (fat caps)", cones, cyls, planes)
+	}
+}
+
+// TestReverseCurvedFaces: reversing flips the face sense (the cut wall faces into the cavity).
+func TestReverseCurvedFaces(t *testing.T) {
+	in := []curvedFace{{reversed: false}, {reversed: true}}
+	out := reverseCurvedFaces(in)
+	if !out[0].reversed || out[1].reversed {
+		t.Errorf("reverseCurvedFaces sense = {%v,%v}, want {true,false}", out[0].reversed, out[1].reversed)
+	}
+}
+
+// TestCrossingCylinderCutGeneralDeclines: a non-crossing pair (parallel, no imprint) declines so kernel/ops
+// keeps its fallback.
+func TestCrossingCylinderCutGeneralDeclines(t *testing.T) {
+	a, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 12)
+	b, _ := SolidCylinder(math.P3(20, 0, 0), math.V3(0, 0, 1), 1.5, 12) // far apart, no intersection
+	if _, ok := CrossingCylinderCutGeneral(a, b, nil); ok {
+		t.Error("non-intersecting cylinders should decline from the cut general path")
+	}
+}
