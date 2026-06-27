@@ -83,3 +83,42 @@ func TestGeneralCrossingCutJoinIsAdopted(t *testing.T) {
 		})
 	}
 }
+
+// TestGeneralConeCutJoinIsAdopted guards the cone-pair CUT and JOIN general drivers (#1403, on the #1476
+// wrapping-band emission): each must produce a validBooleanSolid result so ops.Boolean adopts it instead of
+// falling back to the bespoke handler.
+func TestGeneralConeCutJoinIsAdopted(t *testing.T) {
+	fatCone := func() *topo.Body {
+		b, _ := brep.SolidCylinderCone(math.P3(0, 0, -6), math.P3(0, 0, 6), 2, 4, "fat")
+		return b
+	}
+	rodCone := func() *topo.Body {
+		b, _ := brep.SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 0.8, 1.5, "thin")
+		return b
+	}
+	cyl := func() *topo.Body { b, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12); return b }
+	cone := func() *topo.Body {
+		b, _ := brep.SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
+		return b
+	}
+	cases := []struct {
+		name    string
+		general func() (*topo.Body, bool)
+	}{
+		{"cone − cone (drill)", func() (*topo.Body, bool) { return brep.ConeConeCutGeneral(fatCone(), rodCone(), nil) }},
+		{"cone ∪ cone", func() (*topo.Body, bool) { return brep.ConeConeJoinGeneral(fatCone(), rodCone(), nil) }},
+		{"cone − cylinder (drill)", func() (*topo.Body, bool) { return brep.ConeCylinderCutGeneral(cyl(), cone(), nil) }},
+		{"cone ∪ cylinder", func() (*topo.Body, bool) { return brep.ConeCylinderJoinGeneral(cyl(), cone(), nil) }},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			res, ok := c.general()
+			if !ok {
+				t.Fatalf("%s: general driver declined; want the general path taken", c.name)
+			}
+			if r := Validate(res); !r.Valid {
+				t.Fatalf("%s: general result NOT adopted by validBooleanSolid (silent fallback): %+v", c.name, r)
+			}
+		})
+	}
+}
