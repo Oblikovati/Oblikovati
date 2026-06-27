@@ -53,7 +53,8 @@ func bodyListResult(s *app.Session, part *compdef.PartComponentDefinition) (json
 }
 
 // bodyInfo builds a body's wire summary: its display name, visibility (#158), persistent
-// reference key and assigned color-style name (#1078).
+// reference key, assigned color-style name (#1078) and effective material id (the read-back
+// of the write-only assignMaterial, for analysis add-ins).
 func bodyInfo(s *app.Session, index int, b *topo.Body) wire.BodyInfo {
 	key := string(b.ReferenceKey())
 	style, _ := s.BodyColorStyle(key)
@@ -61,7 +62,7 @@ func bodyInfo(s *app.Session, index int, b *topo.Body) wire.BodyInfo {
 		Index: index, Name: bodyDisplayName(s, index, key), Solid: b.IsSolid(), Visible: s.BodyVisible(b),
 		Faces: len(b.Faces()), Edges: len(b.Edges()), Vertices: len(b.Vertices()),
 		Shells: len(b.Shells()), Wires: len(b.Wires()),
-		Key: key, Style: style,
+		Key: key, Style: style, MaterialID: s.BodyMaterialID(key),
 	}
 }
 

@@ -65,13 +65,21 @@ type AssetLookup interface {
 	DefaultAppearance() *Appearance
 }
 
+// EffectiveMaterialID returns the id of the material governing a body — its own override if
+// set, else the part default — or "" when none is assigned. It is the id-only form of
+// EffectiveMaterial, for callers (e.g. the body.list router) that report the assignment
+// without resolving the material's properties.
+func (s *AssignmentStore) EffectiveMaterialID(bodyKey string) string {
+	if id := s.bodyMaterial[bodyKey]; id != "" {
+		return id
+	}
+	return s.partMaterial
+}
+
 // EffectiveMaterial returns the material governing a body (its override, else the part
 // default), or false when none is assigned.
 func (s *AssignmentStore) EffectiveMaterial(look AssetLookup, bodyKey string) (*Material, bool) {
-	id := s.bodyMaterial[bodyKey]
-	if id == "" {
-		id = s.partMaterial
-	}
+	id := s.EffectiveMaterialID(bodyKey)
 	if id == "" {
 		return nil, false
 	}

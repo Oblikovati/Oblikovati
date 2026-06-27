@@ -29,6 +29,18 @@ func (s *Session) ActivePartMaterialID() string {
 	return part.Assignments().PartMaterial()
 }
 
+// BodyMaterialID returns the effective material id assigned to a body (its own override, else
+// the part default), or "" when none is assigned and there is no active part. The body.list
+// router reports it so an analysis add-in can resolve each body's material (#1078 read-back of
+// the write-only AssignMaterial).
+func (s *Session) BodyMaterialID(bodyKey string) string {
+	part, err := activePart(s)
+	if err != nil {
+		return ""
+	}
+	return part.Assignments().EffectiveMaterialID(bodyKey)
+}
+
 // ActivePartAppearanceID returns the active part's assigned part-level appearance id, or "".
 func (s *Session) ActivePartAppearanceID() string {
 	part, err := activePart(s)
