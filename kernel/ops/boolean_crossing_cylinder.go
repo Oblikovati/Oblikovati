@@ -97,6 +97,12 @@ func curvedPartialIntersect(op PartFeatureOperation, target, tool *topo.Body, re
 	if op != Intersect {
 		return nil, false
 	}
+	// EPIC #1403: route the partial-penetration plug through the GENERAL pipeline first (#1476 wrapping-band +
+	// the cap generalisation that keeps the rod's interior-ending blind cap); the bespoke handler stays as the
+	// fallback for the cases the general path declines.
+	if res, ok := brep.PartialPenetrationIntersectGeneral(target, tool, rec); ok && validBooleanSolid(res) {
+		return res, true
+	}
 	res, ok := brep.PartialPenetrationIntersect(target, tool, rec)
 	if !ok || !validBooleanSolid(res) {
 		return nil, false
@@ -109,6 +115,11 @@ func curvedPartialIntersect(op PartFeatureOperation, target, tool *topo.Body, re
 func curvedPartialCut(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
 	if op != Cut {
 		return nil, false
+	}
+	// EPIC #1403: route the partial-penetration blind hole / stub through the GENERAL pipeline first (#1476);
+	// the bespoke PartialPenetrationCut stays as the fallback for the cases the general path declines.
+	if res, ok := brep.PartialPenetrationCutGeneral(target, tool, rec); ok && validBooleanSolid(res) {
+		return res, true
 	}
 	res, ok := brep.PartialPenetrationCut(target, tool, rec)
 	if !ok || !validBooleanSolid(res) {
@@ -123,6 +134,11 @@ func curvedPartialCut(op PartFeatureOperation, target, tool *topo.Body, rec *dia
 func curvedPartialJoin(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
 	if op != Join {
 		return nil, false
+	}
+	// EPIC #1403: route the partial-penetration union (fat + entry stub) through the GENERAL pipeline first
+	// (#1476); the bespoke PartialPenetrationJoin stays as the fallback for the cases the general path declines.
+	if res, ok := brep.PartialPenetrationJoinGeneral(target, tool, rec); ok && validBooleanSolid(res) {
+		return res, true
 	}
 	res, ok := brep.PartialPenetrationJoin(target, tool, rec)
 	if !ok || !validBooleanSolid(res) {

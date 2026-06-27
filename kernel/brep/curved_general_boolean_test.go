@@ -260,20 +260,22 @@ func TestCrossingCylinderJoinGeneralDeclines(t *testing.T) {
 	}
 }
 
-// TestJoinFacesAssembly: the union assembly keeps both walls outward (no reversal) and contributes both
-// bodies' caps — distinct from the cut, which reverses the tool wall and drops the tool's caps.
+// TestJoinFacesAssembly: the union assembly keeps both walls outward (no reversal) and contributes each body's
+// caps that lie OUTSIDE the other solid — for a clean full crossing that is all four caps.
 func TestJoinFacesAssembly(t *testing.T) {
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	rod, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
+	fatOp, _ := cylinderOperand(fat)
+	rodOp, _ := cylinderOperand(rod)
 	wallA := []curvedFace{{reversed: false}}
 	wallB := []curvedFace{{reversed: false}}
-	faces := joinFaces(wallA, fat, wallB, rod)
+	faces := joinFaces(fatOp, wallA, rodOp, wallB)
 	for i, f := range faces {
 		if f.reversed {
 			t.Errorf("joinFaces[%d] reversed=true, want all walls/caps outward (union keeps outward sense)", i)
 		}
 	}
-	// 1 wallA + 2 fat caps + 1 wallB + 2 rod caps = 6 faces.
+	// 1 wallA + 2 fat caps + 1 wallB + 2 rod caps = 6 faces (all caps outside in a full crossing).
 	if len(faces) != 6 {
 		t.Errorf("joinFaces produced %d faces, want 6 (1 wallA + 2 fat caps + 1 wallB + 2 rod caps)", len(faces))
 	}

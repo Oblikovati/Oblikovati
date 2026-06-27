@@ -98,7 +98,7 @@ func ruledCutGeneral(target, tool ruledOperand, loops []geom.Polyline) (*topo.Bo
 	if !okT || !okL {
 		return nil, false
 	}
-	return curvedStitch(cutFaces(keptT, target.body, keptL)), true
+	return curvedStitch(cutFaces(target, keptT, tool, keptL)), true
 }
 
 // ruledJoinGeneral builds a ∪ b for two crossing ruled solids (#1403): each wall kept OUTSIDE the other (the
@@ -116,30 +116,56 @@ func ruledJoinGeneral(a, b ruledOperand, loops []geom.Polyline) (*topo.Body, boo
 	if !okA || !okB {
 		return nil, false
 	}
-	return curvedStitch(joinFaces(keptA, a.body, keptB, b.body)), true
+	return curvedStitch(joinFaces(a, keptA, b, keptB)), true
 }
 
 // cutFaces assembles a Difference result's boundary: the target's breached wall (kept outside the tool), the
-// target's whole caps (clean side-breach), and the tool's wall inside the target reversed into the cavity
-// (the tunnel/cut wall) — #1403.
-func cutFaces(targetWall []curvedFace, target *topo.Body, toolWall []curvedFace) []curvedFace {
-	faces := make([]curvedFace, 0, len(targetWall)+len(toolWall)+2)
+// target's caps that stay OUTSIDE the tool (whole), the tool's wall inside the target reversed into the cavity
+// (the tunnel/cut wall), and any tool cap that lies INSIDE the target reversed into the cavity (a blind-hole
+// pocket bottom). For a clean side-breach crossing both target caps are whole and no tool cap is inside, so it
+// reduces to the original behaviour; a partial penetration (the tool ending inside) keeps its blind cap (#1403).
+func cutFaces(target ruledOperand, targetWall []curvedFace, tool ruledOperand, toolWall []curvedFace) []curvedFace {
+	faces := make([]curvedFace, 0, len(targetWall)+len(toolWall)+4)
 	faces = append(faces, targetWall...)
-	faces = append(faces, planarCapFaces(target)...)
+	faces = append(faces, capsOutside(target.body, tool.inside)...)
 	faces = append(faces, reverseCurvedFaces(toolWall)...)
+	faces = append(faces, reverseCurvedFaces(capsInside(tool.body, target.inside))...)
 	return faces
 }
 
 // joinFaces assembles a Union result's boundary: each operand's wall kept outside the other (the fat's holed
-// wall + the rod's two protruding stubs) plus BOTH operands' whole caps. Unlike the cut neither wall is
-// reversed — a union keeps every kept wall facing outward — and both bodies contribute their caps (#1403).
-func joinFaces(wallA []curvedFace, a *topo.Body, wallB []curvedFace, b *topo.Body) []curvedFace {
+// wall + the rod's protruding stubs) plus each operand's caps that lie OUTSIDE the other solid. Unlike the cut
+// neither wall is reversed. For a clean crossing every cap is outside (so both bodies contribute all caps); a
+// partial penetration drops the tool's blind cap (inside the other) and keeps its entry cap (#1403).
+func joinFaces(a ruledOperand, wallA []curvedFace, b ruledOperand, wallB []curvedFace) []curvedFace {
 	faces := make([]curvedFace, 0, len(wallA)+len(wallB)+4)
 	faces = append(faces, wallA...)
-	faces = append(faces, planarCapFaces(a)...)
+	faces = append(faces, capsOutside(a.body, b.inside)...)
 	faces = append(faces, wallB...)
-	faces = append(faces, planarCapFaces(b)...)
+	faces = append(faces, capsOutside(b.body, a.inside)...)
 	return faces
+}
+
+// capsOutside returns a body's planar caps whose centre lies OUTSIDE the other solid — the caps a union/cut
+// keeps whole (#1403). capsInside returns those whose centre lies inside (a partial penetration's blind cap).
+func capsOutside(b *topo.Body, otherInside func(math.Point3) bool) []curvedFace {
+	return filterCaps(b, func(c math.Point3) bool { return !otherInside(c) })
+}
+
+func capsInside(b *topo.Body, otherInside func(math.Point3) bool) []curvedFace {
+	return filterCaps(b, otherInside)
+}
+
+// filterCaps keeps the planar caps whose plane origin (the cap's centre) satisfies keep. A crossing-pair cap is
+// cleanly inside or outside the other solid, so the centre decides the whole cap (#1403).
+func filterCaps(b *topo.Body, keep func(math.Point3) bool) []curvedFace {
+	var caps []curvedFace
+	for _, f := range planarCapFaces(b) {
+		if pl, ok := f.surface.(geom.Plane); ok && keep(pl.Origin) {
+			caps = append(caps, f)
+		}
+	}
+	return caps
 }
 
 // CrossingCylinderCutGeneral routes crossing-cylinder subtract through the general ruled cut (#1403/#1476):
@@ -216,4 +242,73 @@ func ConeCylinderJoinGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, b
 		return nil, false
 	}
 	return ruledJoinGeneral(oa, ob, loops)
+}
+
+// partialImprint returns the SINGLE imprint loop of a partial penetration — a thin rod that breaches one wall
+// of a fatter solid and ENDS inside it. The rod's short extent clips the would-be exit loop, so the imprint
+// must be traced ROD-first (its window leaves one loop); tracing fat-first windows the full crossing and
+// returns two loops. Which body is the rod is unknown, so both orderings are tried, accepting the one that
+// yields exactly one loop. ok=false for a full crossing (two loops either way) or no intersection (#1403).
+func partialImprint(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyline, bool) {
+	if l, ok := crossingCylinderImprint(a, b, rec); ok && len(l) == 1 {
+		return l, true
+	}
+	if l, ok := crossingCylinderImprint(b, a, rec); ok && len(l) == 1 {
+		return l, true
+	}
+	return nil, false
+}
+
+// PartialPenetrationCutGeneral routes a partial-penetration subtract through the general ruled cut (#1403):
+// fat − rod is a blind hole (the holed fat wall + the rod tunnel reversed + the rod's blind cap as the pocket
+// bottom); rod − fat is the single stub lump. The cap generalisation in cutFaces keeps the tool's blind cap
+// (inside the target) reversed and drops its entry cap. ok=false unless the pair is a clean single-breach
+// partial penetration.
+func PartialPenetrationCutGeneral(target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
+	loops, ok := partialImprint(target, tool, rec)
+	tgt, okT := ruledOperandOf(target)
+	tl, okL := ruledOperandOf(tool)
+	if !ok || !okT || !okL {
+		return nil, false
+	}
+	return ruledCutGeneral(tgt, tl, loops)
+}
+
+// PartialPenetrationJoinGeneral routes a partial-penetration JOIN through the general ruled join (#1403): the
+// fat with a single rod stub sticking out the entry side (the holed fat wall + both fat caps + the rod stub
+// from its entry cap to the lens + the rod's entry cap). cutFaces' sibling joinFaces drops the rod's blind cap
+// (inside the fat) via the cap generalisation. ok=false unless the pair is a clean single-breach penetration.
+func PartialPenetrationJoinGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
+	loops, ok := partialImprint(a, b, rec)
+	oa, okA := ruledOperandOf(a)
+	ob, okB := ruledOperandOf(b)
+	if !ok || !okA || !okB {
+		return nil, false
+	}
+	return ruledJoinGeneral(oa, ob, loops)
+}
+
+// PartialPenetrationIntersectGeneral routes a partial-penetration intersect (the rod plug inside the fat)
+// through the general pipeline (#1403): the fat-wall lens cap + the rod-wall band from the lens to the rod's
+// blind end + the rod's blind end cap (the planar disc inside the fat). Unlike a full crossing's intersect
+// (two curved lens caps, no planar cap) the plug carries the rod's interior-ending PLANAR cap, added by
+// capsInside. ok=false unless the pair is a clean single-breach penetration.
+func PartialPenetrationIntersectGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
+	loops, ok := partialImprint(a, b, rec)
+	oa, okA := ruledOperandOf(a)
+	ob, okB := ruledOperandOf(b)
+	if !ok || !okA || !okB {
+		return nil, false
+	}
+	imprint := polylineCurves(loops)
+	keptA, okKA := oa.split(imprint, Intersection, false, ob.inside)
+	keptB, okKB := ob.split(imprint, Intersection, true, oa.inside)
+	if !okKA || !okKB {
+		return nil, false
+	}
+	faces := append([]curvedFace{}, keptA...)
+	faces = append(faces, keptB...)
+	faces = append(faces, capsInside(a, ob.inside)...) // the rod's blind end cap (inside the other solid)
+	faces = append(faces, capsInside(b, oa.inside)...)
+	return curvedStitch(faces), true
 }
