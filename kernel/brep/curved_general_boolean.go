@@ -171,6 +171,87 @@ func polylineCurves(loops []geom.Polyline) []geom.Curve3 {
 	return out
 }
 
+// planarCapFaces returns a body's planar (cap) faces as curvedFaces, kept WHOLE — for a clean side-breach
+// cut the breach never reaches a cap, so the target's caps survive untouched in the result (#1403).
+func planarCapFaces(b *topo.Body) []curvedFace {
+	var caps []curvedFace
+	for _, f := range facesOfAny(b) {
+		if _, isPlane := f.surface.(geom.Plane); isPlane {
+			caps = append(caps, f)
+		}
+	}
+	return caps
+}
+
+// reverseCurvedFaces flips each face's sense so it bounds the CAVITY a Difference carves: the tool's surface
+// inside the target, re-faced inward (AddReversedFace). curvedStitch then welds it to the target side along
+// the shared imprint, the cut wall opposite the surviving material (#1403).
+func reverseCurvedFaces(faces []curvedFace) []curvedFace {
+	out := make([]curvedFace, len(faces))
+	for i, f := range faces {
+		f.reversed = !f.reversed
+		out[i] = f
+	}
+	return out
+}
+
+// loopsClearOfCaps reports whether every imprint point sits STRICTLY between the side band's two cap levels
+// (vMin, vMax) — a clean side-breach where the cut leaves both caps whole. A breach reaching a cap needs the
+// planar cap itself trimmed, which this first cut migration defers to the bespoke handler (#1403).
+func loopsClearOfCaps(side ruledUV, loops []geom.Polyline) bool {
+	margin := geom.ResolutionForSize(side.band.vMax - side.band.vMin).Plane()
+	for _, lp := range loops {
+		for _, p := range lp.Vertices {
+			v := float64(side.base.VectorTo(p).Dot(side.axis))
+			if v < side.band.vMin+margin || v > side.band.vMax-margin {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// CrossingCylinderCutGeneral is the exported entry kernel/ops routes crossing-cylinder subtract through: the
+// GENERAL curved∩curved pipeline (#1403). target − tool drills a tunnel through the target: the target side
+// kept OUTSIDE the tool (the breached wall), the target's caps whole, and the tool side kept INSIDE the
+// target and reversed (the tunnel wall). ok=false outside the wired clean-side-breach crossing.
+func CrossingCylinderCutGeneral(target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
+	loops, ok := crossingCylinderImprint(target, tool, rec)
+	if !ok || len(loops) != 2 {
+		return nil, false
+	}
+	fA, cylA, bandA, okA := cylinderSideFace(target)
+	fB, cylB, bandB, okB := cylinderSideFace(tool)
+	insideA, okMA := curvedSolidMembership(target)
+	insideB, okMB := curvedSolidMembership(tool)
+	if !okA || !okB || !okMA || !okMB {
+		return nil, false
+	}
+	// Clean side-breach only: the tool must breach the target's SIDE between its caps (so the caps stay
+	// whole) and not reach the tool's own caps inside the target (a full crossing, both loops on the side).
+	if !loopsClearOfCaps(newCylinderUVSolid(cylA, bandA, Difference, false, insideB), loops) {
+		return nil, false
+	}
+	imprint := polylineCurves(loops)
+	keptA, okKA := keptOrNone(cylinderSideSolidSplit(fA, cylA, bandA, imprint, Difference, false, insideB))
+	keptB, okKB := keptOrNone(cylinderSideSolidSplit(fB, cylB, bandB, imprint, Difference, true, insideA))
+	if !okKA || !okKB {
+		return nil, false
+	}
+	return curvedStitch(cutFaces(keptA, target, keptB)), true
+}
+
+// cutFaces assembles a Difference result's boundary: the target's breached wall (kept outside the tool), the
+// target's whole caps (clean side-breach), and the tool's wall inside the target reversed into the cavity
+// (the tunnel/cut wall) — #1403.
+func cutFaces(targetWall []curvedFace, target *topo.Body, toolWall []curvedFace) []curvedFace {
+	faces := make([]curvedFace, 0, len(targetWall)+len(toolWall)+2)
+	faces = append(faces, targetWall...)
+	faces = append(faces, planarCapFaces(target)...)
+	faces = append(faces, reverseCurvedFaces(toolWall)...)
+	return faces
+}
+
 // CrossingCylinderIntersectGeneral is the exported entry kernel/ops routes crossing-cylinder intersect
 // through: the GENERAL curved∩curved pipeline (#1403), no bespoke loop→body constructor. ok=false outside
 // the wired cylinder-through-cylinder crossing so the caller keeps its fallback.
