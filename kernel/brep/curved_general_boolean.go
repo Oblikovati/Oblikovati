@@ -262,13 +262,10 @@ func crossingCylinderSides(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyline
 }
 
 // CrossingCylinderCutGeneral builds target − tool through the GENERAL curved∩curved pipeline (#1403): the
-// target side kept OUTSIDE the tool (the breached wall), the target's caps whole, and the tool side kept
-// INSIDE the target and reversed (the tunnel wall).
-//
-// NOT WIRED — known broken (Oblikovati#1476): the OUTSIDE-keep wall meshes the WRONG region, so the result is
-// orientation-inconsistent or wrong-volume and validBooleanSolid rejects it. kernel/ops keeps crossing-cylinder
-// subtract on the bespoke CrossingCylinderCut until #1476 fixes the arrangement winding. Retained as the
-// scaffolding that fix builds on; the brep test only checks its edge-count/face structure, not correctness.
+// target side kept OUTSIDE the tool (the breached wall, a keyhole-bridged holed tube), the target's caps whole,
+// and the tool side kept INSIDE the target and reversed (the tunnel wall). The OUTSIDE-keep wrapping-band
+// emission (Oblikovati#1476) makes it mesh the right region, so kernel/ops adopts it (validBooleanSolid passes,
+// OCC drill rel 0.030); the bespoke CrossingCylinderCut stays as the fallback for the cases this declines.
 func CrossingCylinderCutGeneral(target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
 	loops, tgt, tl, ok := crossingCylinderSides(target, tool, rec)
 	if !ok {
@@ -300,13 +297,10 @@ func cutFaces(targetWall []curvedFace, target *topo.Body, toolWall []curvedFace)
 }
 
 // CrossingCylinderJoinGeneral builds target ∪ tool through the GENERAL curved∩curved pipeline (#1403): each
-// side keeps the part OUTSIDE the other (the Union keep-table — the fat's holed wall plus the two rod stubs),
-// and BOTH bodies keep their caps whole. The cut's sibling with NO face reversal.
-//
-// NOT WIRED — known broken (Oblikovati#1476): with the imprint weld fixed this now passes validBooleanSolid
-// but meshes the WRONG region (∪ volume 194 vs 383), so adopting it would be worse than the bespoke result.
-// kernel/ops keeps crossing-cylinder JOIN on the bespoke CrossingCylinderJoin until #1476 fixes the OUTSIDE-keep
-// arrangement winding. Retained as scaffolding; the brep test only checks its edge-count/face structure.
+// side keeps the part OUTSIDE the other (the Union keep-table — the fat's keyhole-bridged holed wall plus the
+// two split rod stubs), and BOTH bodies keep their caps whole. The cut's sibling with NO face reversal. The
+// OUTSIDE-keep wrapping-band emission (Oblikovati#1476) makes it mesh the right region, so kernel/ops adopts it
+// (validBooleanSolid passes, OCC ∪ rel 0.026); the bespoke CrossingCylinderJoin stays as the fallback.
 func CrossingCylinderJoinGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
 	loops, sa, sb, ok := crossingCylinderSides(a, b, rec)
 	if !ok {
