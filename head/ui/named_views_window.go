@@ -17,29 +17,22 @@ var namedViewNameBuf [64]byte
 // drawNamedViewsWindow renders the Named Views panel while it is open (M16-F03 #404): a name
 // field + Save button to capture the current camera, and a row per saved view with Restore and
 // Delete. The capture/restore/delete go through the session (the same surface the API uses).
-func drawNamedViewsWindow(s *app.Session) {
-	if !s.NamedViewsPanelOpen() {
-		return
-	}
-	native.SetNextWindowSizeOnce(300, 320)
-	if native.Begin("Named Views") {
-		native.InputText("Name", namedViewNameBuf[:])
-		native.SameLine()
-		if native.Button("Save") {
-			if name := bufString(namedViewNameBuf[:]); name != "" {
-				if _, err := s.CaptureNamedView(name); err == nil {
-					clearBuf(namedViewNameBuf[:])
-				}
+func drawNamedViewsBody(s *app.Session) {
+	native.InputText("Name", namedViewNameBuf[:])
+	native.SameLine()
+	if native.Button("Save") {
+		if name := bufString(namedViewNameBuf[:]); name != "" {
+			if _, err := s.CaptureNamedView(name); err == nil {
+				clearBuf(namedViewNameBuf[:])
 			}
 		}
-		native.Separator()
-		drawNamedViewRows(s)
-		native.Separator()
-		if native.Button("Done") {
-			s.CloseNamedViewsPanel()
-		}
 	}
-	native.End()
+	native.Separator()
+	drawNamedViewRows(s)
+	native.Separator()
+	if native.Button("Done") {
+		s.CloseNamedViewsPanel()
+	}
 }
 
 // drawNamedViewRows lists each saved named view with Restore and Delete actions.

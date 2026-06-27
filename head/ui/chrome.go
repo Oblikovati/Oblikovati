@@ -41,9 +41,6 @@ func DrawChrome(win *native.Window, s *app.Session) string {
 		activated = id
 	}
 	layoutDockedPanels()
-	browserStart := frameClock()
-	drawBrowser(s)
-	recordBrowser(browserStart)
 	drawViewportIfPresent(win, s)
 	drawChromeDialogs(s)
 	drawChromeWindows(s)
@@ -143,25 +140,20 @@ func drawSurfaceFeatureDialogs(s *app.Session) {
 }
 
 func drawChromeWindows(s *app.Session) {
-	drawBOMWindow(s) // Assemble ▸ Bill of Materials (#768)
-	drawParametersWindow(s)
-	drawPreferencesWindow(s)
-	drawMaterialsWindow(s)
-	drawLightingWindow(s)
-	drawNamedViewsWindow(s)      // View ▸ Named Views (M16-F03 #404)
-	drawColorStylesWindow(s)     // View ▸ Color Styles (M16-F02 #403/#408)
-	drawDisplaySettingsWindow(s) // View ▸ Display Settings (M16-F07 #643)
-	drawUnitsSettingsWindow(s)   // Tools ▸ Document Settings — Units (#146)
-	drawHistoryBrowserWindow(s)  // Edit ▸ History Browser (per-document timelines, side by side)
+	// All built-in dockable windows (Model browser, Parameters, Materials, Lighting, the Command
+	// REPL, …) render through the one shared closable path, so each gets a uniform close 'X' and a
+	// View-menu toggle (#1473). The prompt/status mirror runs every frame, even while the Command
+	// panel is hidden, so feedback is never lost.
+	pumpCommandFeedback(s)
+	drawDockablePanels(s)
+	drawUnitsSettingsWindow(s) // Tools ▸ Document Settings — Units (#146)
 	drawScriptConsole(s)
-	drawKeymapEditor(s)          // Tools ▸ Customize Keyboard (M05-F17)
-	drawCommandInput(s)          // command-alias input box (M05-F17)
-	drawCommandWindow(s)         // docked Command Window REPL panel (M26 F04)
-	drawUpdateWindow(s)          // Help ▸ Check for Updates notification
-	drawReportBugDialog(s)       // Help ▸ Report Bug
-	drawAddInCatalogueWindow(s)  // Tools ▸ Get Add-Ins… (#1164)
-	drawSelectionFilterWindow(s) // View ▸ Selection Filter & priority (#1222)
-	drawAddInPanels(s)           // add-in dockable windows (M05-F03)
+	drawKeymapEditor(s)         // Tools ▸ Customize Keyboard (M05-F17)
+	drawCommandInput(s)         // command-alias input box (M05-F17)
+	drawUpdateWindow(s)         // Help ▸ Check for Updates notification
+	drawReportBugDialog(s)      // Help ▸ Report Bug
+	drawAddInCatalogueWindow(s) // Tools ▸ Get Add-Ins… (#1164)
+	drawAddInPanels(s)          // add-in dockable windows (M05-F03)
 	// M26 F03: toasts / prompt modal / message-center windows are retired — every message
 	// now funnels into the docked Command Window, and prompts are answered inline there.
 	drawWebViews(s)          // web dialogs/views (M05-F08)

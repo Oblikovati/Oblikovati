@@ -41,27 +41,27 @@ var parametersUI = struct {
 var addKindNames = []string{"Numeric", "Text", "True/False"}
 
 // drawParametersWindow renders the Parameters dialog while it is open.
-func drawParametersWindow(s *app.Session) {
-	if !s.ParametersOpen() {
-		return
-	}
+func drawParametersBody(s *app.Session) {
 	if parametersUI.cells == nil {
 		parametersUI.cells = map[string][]byte{}
 	}
-	native.SetNextWindowSizeOnce(820, 520)
-	if native.Begin("Parameters") {
-		native.SetNextItemWidth(-1)
-		native.InputText("##param-search", parametersUI.search[:])
-		model, user := s.ParameterRows(bufString(parametersUI.search[:]))
-		drawParameterSection(s, "Model Parameters", "##model-params", model)
-		drawParameterSection(s, "User Parameters", "##user-params", user)
-		drawAddParameterRow(s)
-		native.Separator()
-		if native.Button("Done") {
-			s.CloseParameters()
-		}
+	native.SetNextItemWidth(-1)
+	native.InputText("##param-search", parametersUI.search[:])
+	model, user := s.ParameterRows(bufString(parametersUI.search[:]))
+	drawParameterSection(s, "Model Parameters", "##model-params", model)
+	drawParameterSection(s, "User Parameters", "##user-params", user)
+	drawAddParameterRow(s)
+	native.Separator()
+	if native.Button("Done") {
+		s.CloseParameters()
 	}
-	native.End()
+}
+
+// drawParametersEditors renders the Parameters panel's trailing child windows — the value-list,
+// tolerance and add-to-group editors are separate ImGui windows targeted from the table rows, so
+// they cannot live inside the panel body. The dockable-panel registry runs this via its `after`
+// hook, after the body's End (#1473).
+func drawParametersEditors(s *app.Session) {
 	drawValueListEditor(s)
 	drawToleranceEditor(s)
 	drawAddToGroupDialog(s)

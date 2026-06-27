@@ -17,6 +17,7 @@ func drawMenuBar(s *app.Session) {
 	}
 	drawFileMenu(s)
 	drawEditMenu(s)
+	drawViewMenu(s) // show/hide toggles for every registered dockable window (#1473)
 	drawToolsMenu(s)
 	drawHelpMenu(s)
 	drawCommandSearch(s) // the command search box (M05-F12)
@@ -124,12 +125,8 @@ func drawEditMenu(s *app.Session) {
 			_ = s.Redo()
 		}
 		native.Separator()
-		// History Browser complements undo/redo for long histories and multi-document
-		// assemblies: jump to any point on each document's timeline, side by side.
-		if native.MenuItem(checkLabel("History Browser", s.HistoryBrowserOpen())) {
-			s.ToggleHistoryBrowser()
-		}
-		native.Separator()
+		// History Browser (View ▸ History Browser) complements undo/redo for long histories and
+		// multi-document assemblies; like every panel it now toggles from the View menu (#1473).
 		if native.MenuItem("Cancel Tool (Esc)") && s.ActiveTool() != nil {
 			s.CancelTool()
 		}
@@ -137,14 +134,11 @@ func drawEditMenu(s *app.Session) {
 	}
 }
 
+// drawToolsMenu holds the action/settings commands. Dockable windows (Materials, Preferences,
+// Command Window, Selection Filter, …) used to live here too; they moved to the View menu, which is
+// now the single place to show/hide any panel (#1473).
 func drawToolsMenu(s *app.Session) {
 	if native.BeginMenu("Tools") {
-		if native.MenuItem("Materials") {
-			showMaterials = !showMaterials
-		}
-		if native.MenuItem("Preferences") {
-			showPreferences = !showPreferences
-		}
 		if native.MenuItem("Document Settings — Units") { // #146: per-document units & precision
 			s.OpenUnitsSettings()
 		}
@@ -156,12 +150,6 @@ func drawToolsMenu(s *app.Session) {
 		}
 		if native.MenuItem("Get Add-Ins…") { // #1164: browse/install/update add-ins from the catalogue
 			OpenAddInCatalogue(s)
-		}
-		if native.MenuItem(checkLabel("Command Window", s.CommandWindowOpen())) { // M26 F04: docked REPL
-			s.ToggleCommandWindow()
-		}
-		if native.MenuItem(checkLabel("Selection Filter", s.SelectionFilterWindowOpen())) { // #1222
-			s.ToggleSelectionFilterWindow()
 		}
 		native.Separator()
 		if native.MenuItem(checkLabel("Normal Debug (front green / back red)", normalDebugOn)) {

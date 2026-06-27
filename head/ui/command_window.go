@@ -52,17 +52,15 @@ const (
 
 // drawCommandWindow renders the docked Command Window when it is open. It supersedes the
 // old notification surfaces as the single feedback + command-entry surface (M26).
-func drawCommandWindow(s *app.Session) {
-	mirrorCommandFeedback(s) // always mirror prompt/status text, even while collapsed/hidden
-	if !s.CommandWindowOpen() {
-		return
-	}
-	// The window docks into the bottom band via the default dock layout (DockDefaultLayout's
-	// "Command" slot), where the removed status bar used to sit.
-	if native.Begin("Command") {
-		drawCommandWindowBody(s)
-	}
-	native.End()
+// drawCommandWindowBody is registered as the "Command" dockable panel (it docks into the bottom
+// band via the default dock layout's "Command" slot, #1473). The prompt/status mirror must run
+// every frame even while the window is hidden, so it is NOT in the body — pumpCommandFeedback
+// carries it, called unconditionally from drawChromeWindows.
+
+// pumpCommandFeedback mirrors the command prompt/status text into the session every frame, even
+// while the Command Window is collapsed or hidden, so feedback is never lost when the panel is off.
+func pumpCommandFeedback(s *app.Session) {
+	mirrorCommandFeedback(s)
 }
 
 // mirrorCommandFeedback appends the active command's current step prompt and any add-in status

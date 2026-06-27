@@ -13,28 +13,12 @@ import (
 // dropped row only reorders within this window (#1222).
 const selectionFilterPayload = "OBK_SELFILTER_ROW"
 
-// drawSelectionFilterWindow renders the Selection Filter & Priority window while it is open
-// (#1222): one checkbox per pickable entity type (enable/disable picking it) over a drag-to-
-// reorder priority list where the top row wins an ambiguous pick, plus Select All / Deselect All.
-// The X in the title bar closes it. Every edit writes straight back to the session's
-// SelectionFilterState, so the next click honours it immediately.
-func drawSelectionFilterWindow(s *app.Session) {
-	if !s.SelectionFilterWindowOpen() {
-		return
-	}
-	native.SetNextWindowSizeOnce(340, 400)
-	visible, open := native.BeginClosable("Selection Filter###selection-filter")
-	if visible {
-		drawSelectionFilterBody(s)
-	}
-	native.End()
-	if !open {
-		s.CloseSelectionFilterWindow()
-	}
-}
-
-// drawSelectionFilterBody draws the explanatory header, the reorderable kind rows, and the
-// Select All / Deselect All buttons.
+// drawSelectionFilterBody draws the Selection Filter & Priority panel (#1222): one checkbox per
+// pickable entity type (enable/disable picking it) over a drag-to-reorder priority list where the
+// top row wins an ambiguous pick, plus Select All / Deselect All. Every edit writes straight back to
+// the session's SelectionFilterState, so the next click honours it immediately. It is registered as
+// a dockable panel (#1473), which owns the closable window chrome — the explanatory header, the
+// reorderable kind rows, and the Select All / Deselect All buttons.
 func drawSelectionFilterBody(s *app.Session) {
 	st := s.SelectionFilterState()
 	native.Text("Tick to allow picking. Drag a row to set priority")
