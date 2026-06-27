@@ -240,10 +240,14 @@ func crossingCylinderSides(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyline
 	return loops, crossingSide{fA, cylA, bandA, insideA}, crossingSide{fB, cylB, bandB, insideB}, true
 }
 
-// CrossingCylinderCutGeneral is the exported entry kernel/ops routes crossing-cylinder subtract through: the
-// GENERAL curved∩curved pipeline (#1403). target − tool drills a tunnel through the target: the target side
-// kept OUTSIDE the tool (the breached wall), the target's caps whole, and the tool side kept INSIDE the
-// target and reversed (the tunnel wall). ok=false outside the wired clean-side-breach crossing.
+// CrossingCylinderCutGeneral builds target − tool through the GENERAL curved∩curved pipeline (#1403): the
+// target side kept OUTSIDE the tool (the breached wall), the target's caps whole, and the tool side kept
+// INSIDE the target and reversed (the tunnel wall).
+//
+// NOT WIRED — known broken (Oblikovati#1476): the OUTSIDE-keep wall meshes the WRONG region, so the result is
+// orientation-inconsistent or wrong-volume and validBooleanSolid rejects it. kernel/ops keeps crossing-cylinder
+// subtract on the bespoke CrossingCylinderCut until #1476 fixes the arrangement winding. Retained as the
+// scaffolding that fix builds on; the brep test only checks its edge-count/face structure, not correctness.
 func CrossingCylinderCutGeneral(target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
 	loops, tgt, tl, ok := crossingCylinderSides(target, tool, rec)
 	if !ok {
@@ -274,12 +278,14 @@ func cutFaces(targetWall []curvedFace, target *topo.Body, toolWall []curvedFace)
 	return faces
 }
 
-// CrossingCylinderJoinGeneral is the exported entry kernel/ops routes crossing-cylinder JOIN through: the
-// GENERAL curved∩curved pipeline (#1403). target ∪ tool is the union of two crossing cylinders (a fat
-// cylinder side-breached by a rod passing right through it): each side keeps the part OUTSIDE the other
-// (the Union keep-table — the fat's holed wall plus the two rod stubs sticking out), and BOTH bodies keep
-// their caps whole. It is the cut's sibling with NO face reversal (a union's walls keep their outward sense)
-// and the tool's caps surviving too. ok=false outside the wired clean-side-breach crossing.
+// CrossingCylinderJoinGeneral builds target ∪ tool through the GENERAL curved∩curved pipeline (#1403): each
+// side keeps the part OUTSIDE the other (the Union keep-table — the fat's holed wall plus the two rod stubs),
+// and BOTH bodies keep their caps whole. The cut's sibling with NO face reversal.
+//
+// NOT WIRED — known broken (Oblikovati#1476): with the imprint weld fixed this now passes validBooleanSolid
+// but meshes the WRONG region (∪ volume 194 vs 383), so adopting it would be worse than the bespoke result.
+// kernel/ops keeps crossing-cylinder JOIN on the bespoke CrossingCylinderJoin until #1476 fixes the OUTSIDE-keep
+// arrangement winding. Retained as scaffolding; the brep test only checks its edge-count/face structure.
 func CrossingCylinderJoinGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
 	loops, sa, sb, ok := crossingCylinderSides(a, b, rec)
 	if !ok {
