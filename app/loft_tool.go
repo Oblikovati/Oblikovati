@@ -14,16 +14,17 @@ import (
 // order — each a sketch region, or a vertex/work point to taper the loft to an apex (a cone or
 // dome) — optionally close the loop, set the end conditions, and OK to blend them into a solid.
 type LoftTool struct {
-	sections     []loftPick
-	rails        []PathHandle // guide curves (kLoftWithRails) — picked sketch paths
-	centerline   *PathHandle  // spine curve (kLoftWithCenterline)
-	mapCurves    []PathHandle // explicit correspondence anchors (MapPointCurves)
-	guideKind    int          // where a path pick goes: 0 rail, 1 centerline, 2 map curve
-	areaMidScale float64      // area-graph: cross-section area scale at mid height (0/1 = off)
-	closed       bool
-	operation    ops.PartFeatureOperation
-	first, last  feature.LoftEnd // end-section conditions (zero value = Free); see SetFirstCondition
-	added        *feature.PartFeature
+	featureEditMode // set ⇒ this panel re-edits a committed loft (see editLoftTool)
+	sections        []loftPick
+	rails           []PathHandle // guide curves (kLoftWithRails) — picked sketch paths
+	centerline      *PathHandle  // spine curve (kLoftWithCenterline)
+	mapCurves       []PathHandle // explicit correspondence anchors (MapPointCurves)
+	guideKind       int          // where a path pick goes: 0 rail, 1 centerline, 2 map curve
+	areaMidScale    float64      // area-graph: cross-section area scale at mid height (0/1 = off)
+	closed          bool
+	operation       ops.PartFeatureOperation
+	first, last     feature.LoftEnd // end-section conditions (zero value = Free); see SetFirstCondition
+	added           *feature.PartFeature
 }
 
 // Loft guide-path kinds: where a picked open path is routed.
@@ -163,8 +164,12 @@ func (t *LoftTool) PickedProfiles() []ProfileHandle {
 func (t *LoftTool) CanCommit() bool { return len(t.sections) >= 2 }
 
 // Commit adds the loft feature to the active part and recomputes; a sick feature keeps
-// the tool open by returning an error.
+// the tool open by returning an error. In edit mode it writes the panel state back into the
+// committed loft instead (commitEdit).
 func (t *LoftTool) Commit(s *Session) error {
+	if t.IsEditing() {
+		return t.commitEdit(s)
+	}
 	part, err := activePart(s)
 	if err != nil {
 		return err
@@ -176,6 +181,54 @@ func (t *LoftTool) Commit(s *Session) error {
 		return errors.New("loft: " + t.added.Health().Reason)
 	}
 	return nil
+}
+
+// commitEdit writes the panel state back into the committed loft's definition — the same inputs the
+// create path passes to AddGuided. Sections, closure, operation, end conditions and the area graph
+// are always rewritten. The guide providers (rails / centerline / map curves) are opaque live
+// closures the panel cannot reverse into re-pickable handles, so they are PRESERVED untouched unless
+// the user re-picked them this edit. Setting the static end conditions clears LiveEnds so the panel
+// values are authoritative (a parametric end-angle linkage is replaced by the explicit edit).
+func (t *LoftTool) commitEdit(s *Session) error {
+	def := t.target.Definition().(*feature.LoftFeature).Definition()
+	def.Sections = t.loftSections()
+	def.Closed, def.Operation = t.closed, t.operation
+	def.First, def.Last, def.LiveEnds = t.first, t.last, nil
+	def.AreaGraph = t.areaStops()
+	t.applyRepickedGuides(def)
+	return commitFeatureEdit(s, t.target)
+}
+
+// applyRepickedGuides overwrites only the guides the user actually re-picked this edit, preserving the
+// committed loft's existing opaque guide providers otherwise. A centerline (spine) is exclusive with
+// rails, matching addLoft.
+func (t *LoftTool) applyRepickedGuides(def *feature.LoftDefinition) {
+	if len(t.rails) > 0 {
+		def.Rails = t.railProviders()
+	}
+	if t.centerline != nil {
+		def.Rails, def.Centerline = nil, t.centerlineProvider()
+	}
+	if len(t.mapCurves) > 0 {
+		def.MapCurves = t.mapCurveProviders()
+	}
+}
+
+// loftSections maps the picked cross-sections to feature.LoftSections — a profile region, a point
+// (apex), or a body face (by key). Shared by addLoft (create) and commitEdit (re-edit).
+func (t *LoftTool) loftSections() []feature.LoftSection {
+	sections := make([]feature.LoftSection, len(t.sections))
+	for i, h := range t.sections {
+		switch {
+		case h.isPoint():
+			sections[i] = feature.LoftSection{Point: h.apex}
+		case h.isFace():
+			sections[i] = feature.LoftSection{FaceKey: h.faceKey}
+		default:
+			sections[i] = feature.LoftSection{Sketch: h.profile.Sketch, ProfileIndex: h.profile.ProfileIndex}
+		}
+	}
+	return sections
 }
 
 // railProviders turns the picked guide-rail paths into live model-space polyline providers
@@ -248,17 +301,7 @@ func (t *LoftTool) Prompt(*Session) string {
 // fs — the shared constructor used by both Commit (the part's engine) and DraftFeature (a
 // scratch engine), so the preview matches the committed result.
 func (t *LoftTool) addLoft(fs *feature.PartFeatures) *feature.PartFeature {
-	sections := make([]feature.LoftSection, len(t.sections))
-	for i, h := range t.sections {
-		switch {
-		case h.isPoint():
-			sections[i] = feature.LoftSection{Point: h.apex}
-		case h.isFace():
-			sections[i] = feature.LoftSection{FaceKey: h.faceKey}
-		default:
-			sections[i] = feature.LoftSection{Sketch: h.profile.Sketch, ProfileIndex: h.profile.ProfileIndex}
-		}
-	}
+	sections := t.loftSections()
 	guides := feature.LoftGuideSet{
 		Rails:     t.railProviders(),
 		MapCurves: t.mapCurveProviders(),
