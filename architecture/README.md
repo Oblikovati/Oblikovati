@@ -68,6 +68,17 @@ The three defining choices, plus the derived ones, are recorded as ADRs:
 | [0015](decisions/ADR-0015-build-ci-and-test-tooling.md) | Build, CI/CD, and test tooling foundation *(tooling)* |
 | [0016](decisions/ADR-0016-shared-library-addins-mcp-bridge.md) | **In-process shared-library add-ins (C ABI) + MCP automation bridge** — amends 0003 |
 | [0017](decisions/ADR-0017-release-pipeline.md) | **Channel-based release pipeline** (nightly + stable; GUI head + CLI) — supersedes 0015's CD |
+| [0018](decisions/ADR-0018-apache-api-contract-module.md) | **Apache-2.0 `api` contract module** extracted from the GPL application module |
+| [0019](decisions/ADR-0019-macos-moltenvk-support.md) | macOS support: MoltenVK runtime fixes + signed universal `.app` |
+| [0020](decisions/ADR-0020-yaml-git-friendly-document-format.md) | Documents are a single git-friendly YAML file (not a binary ZIP package) |
+| [0021](decisions/ADR-0021-ui-theming-semantic-tokens.md) | UI theming via semantic tokens (head applies, core owns state) |
+| [0022](decisions/ADR-0022-materials-appearances.md) | Materials & Appearances (typed assets, project-scoped, PBR) |
+| [0023](decisions/ADR-0023-viewport-display-modes.md) | Viewport Display-Mode Parity (software PBR, real-time HLR, NPR framework) |
+| [0024](decisions/ADR-0024-embedded-material-catalog.md) | Embedded built-in material & appearance catalog (YAML, `go:embed`) |
+| [0025](decisions/ADR-0025-anisotropic-material-properties.md) | Anisotropic material properties (isotropy class + orthotropic elastic group) |
+| [0026](decisions/ADR-0026-environment-lighting-ibl-shadows.md) | Environment Lighting, IBL Reflections & Shadows |
+| [0027](decisions/ADR-0027-curved-face-boolean.md) | Curved-face B-rep boolean (K1b) |
+| [0028](decisions/ADR-0028-embedded-lua-scripting.md) | Embedded Lua scripting runtime (pure-Go, sandboxed, wire-mirrored) |
 | [0029](decisions/ADR-0029-user-config-location.md) | **Unified per-user config location** (`~/.oblikovati`; `%AppData%\oblikovati` on Windows) via `oblikovati.org/userconfig` |
 | [0030](decisions/ADR-0030-tolerant-nurbs-meshing.md) | Tolerant NURBS surface meshing (on-surface interior nodes + shared-edge stitching) |
 | [0031](decisions/ADR-0031-embedded-document-resources.md) | Imported files are embedded in the document as a root `resources` dictionary (UUID-keyed) |
@@ -76,33 +87,42 @@ The three defining choices, plus the derived ones, are recorded as ADRs:
 | [0034](decisions/ADR-0034-per-document-type-file-extensions.md) | Per-document-type file extensions, and a project file |
 | [0035](decisions/ADR-0035-assembly-machining-features.md) | **Assembly machining features**: occurrence-relative references + a serialized feature program |
 | [0036](decisions/ADR-0036-content-agnostic-sketch-host.md) | The sketch environment hosts on a content-agnostic `sketchHost` interface (part or assembly) |
+| [0037](decisions/ADR-0037-command-window.md) | A Command Window is the single command-entry and feedback surface |
+| [0038](decisions/ADR-0038-assembly-render-instancing.md) | Assembly render instancing (one mesh per unique component) |
+| [0039](decisions/ADR-0039-script-console-code-editor.md) | The Script Console code editor is a custom pure-Go core with a thin cgo view |
+| [0040](decisions/ADR-0040-external-geometric-references.md) | External geometric references for externally-authored topology selections |
+| [0041](decisions/ADR-0041-selection-engine.md) | Tools declare their selection; one engine owns filtering, picking and highlight |
+| [0042](decisions/ADR-0042-model-scale-and-relative-tolerances.md) | Model scale & relative tolerances: a kernel resolution centred on the working scale |
 
-> Note: ADRs 0018–0028 exist under `decisions/` but predate the last index refresh; this
-> table is being backfilled separately.
+> ADR namespaces are **per-repo**. These numbers are *this* application's decisions. The
+> separate add-in repos keep their own ADR series — e.g. the CalculiX FEA add-in's ADR-0007
+> (FEA scope) / ADR-0008 (constraint-list refactor) are unrelated to this repo's ADR-0007
+> (async recompute) / ADR-0008 (cgo boundary).
 
 ## The modern stack at a glance
 
 ```
                           ┌──────────────────────────────────────────────┐
-   add-ins (link /api,  ──┤  api/  — the public contract (Apache-2.0):    │  separate module
-   never /source)         │  types · contract · wire · client (ADR-0018)  │
+   add-ins (link api,   ──┤  api  — the public contract (Apache-2.0):     │  separate sibling repo
+   never the GPL module)  │  types · contract · wire · client (ADR-0018)  │
                           └───────────────────────┬──────────────────────┘
                                                    │ C ABI in-proc today (ADR-0016) · gRPC later
  ┌────────────────────────────────────────────────▼─────────────────────────────────┐
- │ app/  — assembled application: wires the runtime mediator, picks build tags        │
- ├──────────────┬───────────────┬───────────────┬──────────────┬─────────────────────┤
- │ ui/ (ImGui)  │ renderer/      │ scene/        │ registry/    │ addins/ (rpc host)  │
- │ shell+panels │ Vulkan 1.3     │ viewport graph│ self-register│ plugin lifecycle    │
- ├──────────────┴───────────────┴───────────────┴──────────────┴─────────────────────┤
- │ runtime/  — the mediator: frame loop, ordered phases, job pool, clock, schedulers  │
+ │ head/  — the cgo Vulkan + ImGui windowed shell (separate submodule, ADR-0008):     │
+ │   head/ui (ribbon, browser, panels) · head/viewport (Vulkan loop) ·                │  cgo
+ │   head/addins (in-proc C-ABI add-in host, ADR-0016)                                │  edge
  ├────────────────────────────────────────────────────────────────────────────────────┤
- │ model/  — documents · componentdef · features · parameters · sketch · identity      │
- │ kernel/ — geom (curves/surfaces/nurbs) · topo (B-rep) · ops (boolean/fillet/tess)    │  PURE GO
+ │ app/  — the session mediator: documents, commands, environments, frame tick        │
+ │ addin/ — host-side JSON method router (addin/router, serves api/wire)              │  cgo-free
+ ├──────────────┬───────────────┬───────────────┬─────────────────────────────────────┤
+ │ renderer/    │ scene/        │ solve/        │ command/ · event/ · persistence/    │
+ │ render backend│ viewport graph│ constraint solver│ undo · event bus · .obk package  │
+ ├──────────────┴───────────────┴───────────────┴─────────────────────────────────────┤
+ │ model/  — documents · compdef · features · parameters · sketch · assembly · identity │
+ │ kernel/ — geom (curves/surfaces/nurbs) · topo (B-rep) · brep · ops (boolean/tess)     │  PURE GO
  │ math/   — vec/mat/quat (float64) · robust predicates                                 │  (no cgo)
- ├────────────────────────────────────────────────────────────────────────────────────┤
- │ platform/ (window,input,fs)  ·  persistence/ (zip+binary)  ·  build/ (tags)          │
  └────────────────────────────────────────────────────────────────────────────────────┘
-   cgo (or purego) confined here ───────────────┘
+   math/kernel/model never import renderer/scene/head — the domain never sees the GPU
 ```
 
 ## Core architecture docs (iteration 1 — the foundations)

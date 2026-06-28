@@ -1,6 +1,6 @@
 # ADR-0042 — Model scale & relative tolerances: a kernel resolution centred on the working scale
 
-**Status:** Proposed (2026-06-22) · **Builds on / refines:**
+**Status:** Accepted — shipped in M35 / M37 (model-relative tolerances threaded through the kernel, PR#1427) · **Builds on / refines:**
 [ADR-0020](ADR-0020-yaml-git-friendly-document-format.md) (the `.obk` document that persists a
 document's units) and the Units-of-Measure work (Oblikovati/Oblikovati#146) — this ADR governs
 *how the kernel's numerical tolerances and working scale relate to the document unit*, so the

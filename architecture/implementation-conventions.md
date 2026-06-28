@@ -14,23 +14,25 @@ sketches → features (in order) are *replayed* to produce geometry. Recompute,
 rollback, identity, and undo all follow from this. Geometry is a cache of the
 last evaluation, never the source of truth.
 
-## Public API contract (/api) ↔ implementation (/source)
+## Public API contract (api module) ↔ implementation (GPL module)
 
-The public API lives in its own Apache-2.0 module, **`oblikovati.org/api`**
-(`/api`); the GPL application (`/source`) implements it (ADR-0018). Every PBI that
-touches the public surface ships **the contract and the implementation together**:
+The public API lives in its own Apache-2.0 module, **`oblikovati.org/api`** (the
+sibling `Oblikovati.API` repo); the GPL application (this repo's module) implements
+it (ADR-0018). Every PBI that touches the public surface ships **the contract and the
+implementation together**:
 
-1. **/api (contract, Apache-2.0):** enums/value types in `api/types` (defined once
-   here; `/source` aliases them with `type X = types.X`), in-proc Go interfaces in
-   `api/contract`, method-name constants + JSON DTOs in `api/wire`, and a typed
-   method group in `api/client`.
-2. **/source (implementation, GPL-2.0):** the behavior in `kernel/model/app/head`,
+1. **api module (contract, Apache-2.0):** enums/value types in `api/types` (defined
+   once here; the GPL module aliases them with `type X = types.X`), in-proc Go
+   interfaces in `api/contract`, method-name constants + JSON DTOs in `api/wire`, and
+   a typed method group in `api/client`.
+2. **GPL module (implementation, GPL-2.0):** the behavior in `kernel/model/app/head`,
    a compile-time assertion that the impl satisfies `api/contract`
    (`var _ contract.X = (*impl.X)(nil)`), and the handler wired into `addin/router`
    keyed on the `api/wire` method constant.
 
 Never re-declare a DTO or method string outside `api/wire`; never call the host from
-an add-in with raw JSON (use `api/client`). `/api` must never import `/source`.
+an add-in with raw JSON (use `api/client`). The `api` module must never import the
+GPL module.
 
 ## The Definition → Add → Feature triangle (every modeling PBI)
 

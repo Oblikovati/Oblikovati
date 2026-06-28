@@ -1,6 +1,6 @@
 # ADR-0026 — Environment Lighting, IBL Reflections & Shadows
 
-**Status:** proposed (2026-06-04) · **Relates to:**
+**Status:** Accepted — shipped in M16 (HDR sky + image-based lighting + shadows) · **Relates to:**
 [ADR-0005](ADR-0005-vulkan13-renderer.md) (Vulkan renderer),
 [ADR-0014](ADR-0014-renderer-testability.md) (pure draw list / oracle hierarchy),
 [ADR-0018](ADR-0018-apache-api-contract-module.md) (API contract split),
