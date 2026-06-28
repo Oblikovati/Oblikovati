@@ -55,21 +55,32 @@ func drawLoftDialog(s *app.Session) {
 	native.SetNextWindowSizeOnce(360, 520)
 	if native.Begin("Loft") {
 		drawFeatureBreadcrumb("Loft", "")
-		if native.BeginTabBar("##loft-tabs") {
-			if native.BeginTabItem("Curves") {
-				drawLoftCurvesTab(l)
-				native.EndTabItem()
-			}
-			if native.BeginTabItem("Conditions") {
-				drawLoftConditionsTab(s, l)
-				native.EndTabItem()
-			}
-			native.EndTabBar()
-		}
+		drawLoftTabs(s, l)
 		native.Separator()
 		drawCommitCancelButtons(s, l.CanCommit())
 	}
 	native.End()
+}
+
+// drawLoftTabs mounts the loft dialog's three tabs in Inventor's order: Curves (the sections and
+// guides), Conditions (the end takeoff conditions) and Transition (the point mapping).
+func drawLoftTabs(s *app.Session, l *app.LoftTool) {
+	if !native.BeginTabBar("##loft-tabs") {
+		return
+	}
+	if native.BeginTabItem("Curves") {
+		drawLoftCurvesTab(l)
+		native.EndTabItem()
+	}
+	if native.BeginTabItem("Conditions") {
+		drawLoftConditionsTab(s, l)
+		native.EndTabItem()
+	}
+	if native.BeginTabItem("Transition") {
+		drawLoftTransitionTab(l)
+		native.EndTabItem()
+	}
+	native.EndTabBar()
 }
 
 func refreshLoftUI(l *app.LoftTool) {
@@ -270,6 +281,30 @@ func drawLoftConditionsTab(s *app.Session, l *app.LoftTool) {
 	native.Separator()
 	propertyFloatRow("Area Mid", "loft-area-mid", "× (1 = off)", &loftUI.areaMid)
 	l.SetAreaMidScale(float64(loftUI.areaMid))
+}
+
+// drawLoftTransitionTab is Inventor's Transition tab: how points on adjacent sections correspond.
+// By default the loft maps sections AUTOMATICALLY to minimise twist. Picking map curves — open
+// sketch paths that carry one anchor point across the sections — overrides that, so a chosen point
+// on one section lines up with a chosen point on the next (a feature stays aligned instead of
+// spiralling). "Pick map curves" arms path picking; "Clear mapping" returns to automatic.
+func drawLoftTransitionTab(l *app.LoftTool) {
+	if l.AutomaticMapping() {
+		native.Text("Automatic mapping: sections are aligned to minimise twist.")
+		native.Text("Pick map curves to align chosen points across the sections.")
+	} else {
+		native.Text(fmt.Sprintf("%d point mapping(s) override the automatic alignment.", l.MapCurveCount()))
+	}
+	native.Separator()
+	if native.Button("Pick map curves") {
+		l.ArmMapCurvePicking()
+	}
+	if !l.AutomaticMapping() {
+		native.SameLine()
+		if native.Button("Clear mapping") {
+			l.ClearMapCurves()
+		}
+	}
 }
 
 // drawLoftEndConditionRows renders one end's condition combo plus, for an angle/

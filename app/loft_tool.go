@@ -409,3 +409,17 @@ func (t *LoftTool) ClearGuides() {
 	t.centerline = nil
 	t.mapCurves = nil
 }
+
+// AutomaticMapping reports whether section correspondence is automatic — no map curves are picked,
+// so the loft aligns sections to minimise twist. The Transition tab toggles between this and an
+// explicit point mapping (#1521).
+func (t *LoftTool) AutomaticMapping() bool { return len(t.mapCurves) == 0 }
+
+// ArmMapCurvePicking routes subsequent viewport path picks to the map-curve point mapping — the
+// Transition tab's "pick map curves" action. Each picked open path carries one anchor point per
+// section, overriding the automatic minimum-twist alignment so chosen points line up across the loft.
+func (t *LoftTool) ArmMapCurvePicking() { t.guideKind = loftGuideMapCurve }
+
+// ClearMapCurves drops the point-mapping picks, returning the loft to automatic section alignment —
+// the Transition tab's reset. Rails and the centerline are left untouched.
+func (t *LoftTool) ClearMapCurves() { t.mapCurves = nil }

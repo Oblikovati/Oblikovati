@@ -5,8 +5,10 @@ package app
 import (
 	"testing"
 
+	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/doc"
+	"oblikovati.org/model/sketch"
 )
 
 // #1521 (loft UI re-flow): the Sections list needs a per-row API — a label and kind to render each
@@ -98,3 +100,36 @@ func loftLabels(l *LoftTool) []string {
 	}
 	return out
 }
+
+// TestLoftTransitionMapping locks the Transition-tab map-curve API: a fresh loft maps automatically
+// (no map curves); arming routes path picks to map curves; clearing returns to automatic (#1521).
+func TestLoftTransitionMapping(t *testing.T) {
+	l := NewLoftTool()
+	if !l.AutomaticMapping() {
+		t.Fatal("a fresh loft should map automatically (no map curves)")
+	}
+	l.ArmMapCurvePicking()
+	if l.GuideKind() != loftGuideMapCurve {
+		t.Errorf("ArmMapCurvePicking routed to kind %d, want map-curve (%d)", l.GuideKind(), loftGuideMapCurve)
+	}
+	// a picked open path becomes a map curve
+	s := NewSession()
+	def := compdef.NewPartComponentDefinition()
+	pd, _ := s.Workspace().Add(doc.Part, "part.obk", true)
+	pd.SetContent(def)
+	ps := def.Sketches().Add(sketchPlaneForMapCurve())
+	a := ps.Points().Add(mapCurveP2(0, 0))
+	b := ps.Points().Add(mapCurveP2(0, 5))
+	ps.Lines().Add(a, b)
+	l.Pick(s, PathHandle{Sketch: ps, PathIndex: 0})
+	if l.AutomaticMapping() || l.MapCurveCount() != 1 {
+		t.Errorf("after picking a map curve: automatic=%v count=%d, want (false, 1)", l.AutomaticMapping(), l.MapCurveCount())
+	}
+	l.ClearMapCurves()
+	if !l.AutomaticMapping() {
+		t.Error("ClearMapCurves should return the loft to automatic mapping")
+	}
+}
+
+func sketchPlaneForMapCurve() sketch.Plane { return sketch.XZPlane() }
+func mapCurveP2(x, y float64) math.Point2  { return math.P2(math.Scalar(x), math.Scalar(y)) }
