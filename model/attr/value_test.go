@@ -49,7 +49,7 @@ func TestValueEqualAndString(t *testing.T) {
 }
 
 func TestValueTypeAndValueStrings(t *testing.T) {
-	vtypes := map[ValueType]string{Boolean: "boolean", Integer: "integer", Double: "double", String: "string", Bytes: "bytes", ValueType(9): "unknown"}
+	vtypes := map[ValueType]string{Boolean: "boolean", Integer: "integer", Double: "double", String: "string", Bytes: "bytes", ValueType(9): "valueType(?)"}
 	for vt, want := range vtypes {
 		if got := vt.String(); got != want {
 			t.Errorf("ValueType(%d).String() = %q, want %q", vt, got, want)
