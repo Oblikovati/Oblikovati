@@ -54,10 +54,12 @@ const loftAroundStepDeg = 15.0
 // section point count.
 const loftMaxAroundSubdiv = 16
 
-// alignSections rotates each section's point order to the cyclic start offset that minimizes the
-// summed squared distance to the previous section's corresponding points. Winding is assumed
-// consistent (sketch profiles are CCW), so it never flips a section — that would invert the
-// surface; it only chooses the start point. Sections must already share a point count.
+// alignSections corresponds each section to the previous one: it first matches winding (reversing a
+// section whose world traversal is opposite the reference — issue #1495), then rotates the section's
+// point order to the cyclic start offset minimizing the summed squared distance to the reference's
+// corresponding points. Reversal is only applied to an oppositely-wound section, so a consistently-
+// wound loft (the common case, and every twisted-but-same-side section such as a Möbius band) is
+// never flipped and its surface is not inverted. Sections must already share a point count.
 func alignSections(sections [][]math.Point3) [][]math.Point3 {
 	if len(sections) < 2 {
 		return sections
@@ -65,7 +67,36 @@ func alignSections(sections [][]math.Point3) [][]math.Point3 {
 	out := make([][]math.Point3, len(sections))
 	out[0] = sections[0]
 	for i := 1; i < len(sections); i++ {
-		out[i] = rotateToBestOffset(out[i-1], sections[i])
+		out[i] = rotateToBestOffset(out[i-1], matchWinding(out[i-1], sections[i]))
+	}
+	return out
+}
+
+// matchWinding reverses cur when its world winding is opposite the reference loop's. Each profile
+// loop is sampled in its sketch's 2D order and mapped through the sketch plane, so a circle drawn
+// CCW becomes world-CCW on a +Z-normal plane but world-CW on a -Z-normal plane. Two such profiles
+// (issue #1495 — a user's two circles on oppositely-facing planes) would otherwise connect rib i of
+// one ring to the antipodal point of the next, crossing every facet into a pinched bow-tie (correct-
+// looking "valid solid" at ~1/3 the volume). Winding is compared by the loops' Newell normals;
+// consistently-wound or degenerate (point/apex, <3 pts) sections are returned unchanged.
+func matchWinding(ref, cur []math.Point3) []math.Point3 {
+	if len(ref) < 3 || len(cur) < 3 {
+		return cur
+	}
+	if float64(boundaryNormal(ref).Dot(boundaryNormal(cur))) < 0 {
+		return reverseLoop(cur)
+	}
+	return cur
+}
+
+// reverseLoop returns the loop traversed the other way, holding index 0 fixed so the subsequent
+// start-offset search begins from a stable anchor.
+func reverseLoop(p []math.Point3) []math.Point3 {
+	n := len(p)
+	out := make([]math.Point3, n)
+	out[0] = p[0]
+	for i := 1; i < n; i++ {
+		out[i] = p[n-i]
 	}
 	return out
 }

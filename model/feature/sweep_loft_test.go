@@ -334,6 +334,37 @@ func TestLoftBetweenSquaresIsFrustum(t *testing.T) {
 	}
 }
 
+// planeAtZFlipped is planeAtZ with the normal reversed (xAxis (0,1,0), yAxis (1,0,0) → normal -Z),
+// so a profile drawn on it is wound opposite a profile on an XY-parallel plane — the issue #1495
+// condition where a user's two circles sat on oppositely-facing sketch planes.
+func planeAtZFlipped(z float64) sketch.Plane {
+	p, _ := sketch.NewPlane(math.P3(0, 0, z), math.V3(0, 1, 0).AsUnit(), math.V3(1, 0, 0).AsUnit())
+	return p
+}
+
+// TestLoftBetweenOppositeNormalPlanesIsFrustum is the #1495 regression at the feature layer: a 4×4
+// square at z=0 (plane normal +Z) lofted to a 2×2 square at z=5 whose sketch plane normal points -Z
+// must still be the correct square frustum (V=140/3), not a winding-crossed bow-tie at ~1/3 the
+// volume. matchWinding reverses the oppositely-wound top section so the ribs connect point-for-point.
+func TestLoftBetweenOppositeNormalPlanesIsFrustum(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	bottom := centeredSquareOn(sketch.XYPlane(), 2)
+	top := centeredSquareOn(planeAtZFlipped(5), 1)
+	pf := NewLoftFeatures(fs).Add([]LoftSection{{Sketch: bottom, ProfileIndex: 0}, {Sketch: top, ProfileIndex: 0}}, false, ops.NewBody)
+	fs.Recompute()
+
+	if !pf.Health().OK() {
+		t.Fatalf("opposite-normal loft went sick: %+v", pf.Health())
+	}
+	body := fs.Result()[0]
+	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
+		t.Fatalf("opposite-normal lofted body is not a valid solid: %+v", r)
+	}
+	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, 140.0/3) > 0.02 {
+		t.Errorf("opposite-normal frustum volume = %g, want ≈46.667 (a bow-tie would be ~1/3)", v)
+	}
+}
+
 func TestSweepAndLoftRoundTrip(t *testing.T) {
 	prof := centeredSquareOn(sketch.XYPlane(), 1)
 	bottom := centeredSquareOn(sketch.XYPlane(), 2)
