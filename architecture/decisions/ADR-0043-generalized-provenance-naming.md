@@ -72,7 +72,7 @@ entities that produced it. The parent set is op-specific but always *original* l
 
 | Operation | Generated entity | Generating parent set |
 |---|---|---|
-| Boolean (planar/curved) | intersection edge | the two crossing faces *(done; curved = Phase 4)* |
+| Boolean (planar/curved) | intersection edge | the two crossing faces *(done; curved = Phases 4 + SSI-edge)* |
 | **Fillet** | cylinder/torus/sphere blend face | the filleted edge (or its vertex, for a corner blend) |
 | **Fillet** | tangent edge | (filleted edge, adjacent original face) |
 | **Chamfer** | bevel face / edges | the chamfered edge + adjacent faces |
@@ -120,7 +120,12 @@ residual naming collision becomes an honest failure, never a wrong-rebind.
   The user's pain point; gated by a cross-edit-stability regression test.
 - **P2 — chamfer.** Same seam, bevel provenance.
 - **P3 — delete-face, CSG/BSP.** Stitch/cut-edge provenance.
-- **P4 — curved boolean.** Bring `curvedbool` onto the shared seam (it shares `assemble_curved`).
+- **P4 — curved boolean.** Bring `curvedbool` onto the shared seam (it shares `assemble_curved`):
+  P4 restored survivor identity on the curved path; the **SSI-edge** follow-up then named the new
+  surface-intersection curves by their bordering face pair in `curvedStitch`
+  (`RelineageByFaceProvenance`), with a geometric rank that disambiguates two intersection branches
+  between one face pair (a bigon) by their curve midpoint. So no curved-boolean result keeps a
+  `curvedbool:e#N` ordinal.
 - **P5 — remaining generators** (ruled, sweep, wire-offset, rim, split, steinmetz, halfspace).
 - **P6 — integrate with F06 tiered binding & F07 encoding**; retire the ordinal fallbacks that are
   no longer reachable.

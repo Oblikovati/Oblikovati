@@ -3,6 +3,8 @@
 package topo
 
 import (
+	stdmath "math"
+	"strings"
 	"testing"
 
 	"oblikovati.org/kernel/geom"
@@ -77,13 +79,59 @@ func TestRelineageByFaceProvenance(t *testing.T) {
 	provB := NewLineage(Tok("g", "b", 0))
 	body.RelineageByFaceProvenance(map[*Face]Lineage{f1: provA, f2: provB}, Tok("x", "x", 0), Tok("x", "seg", 0))
 
-	// bc borders both provenanced faces ⇒ named by both, canonically ordered.
+	// bc borders both provenanced faces, the only edge to do so ⇒ named by both, canonically ordered,
+	// no rank (a unique parent set needs none).
 	if got, want := string(bc.Lineage().Key()), "g:a#0/x:x#0/g:b#0"; got != want {
 		t.Errorf("shared edge bc = %q, want %q", got, want)
 	}
-	// ab borders only f1 ⇒ named by its single parent.
-	if got, want := string(ab.Lineage().Key()), "g:a#0"; got != want {
-		t.Errorf("boundary edge ab = %q, want %q", got, want)
+	// ab and ca BOTH border only f1 ⇒ they share the parent set {provA}; without disambiguation both
+	// would collide on "g:a#0". The geometric rank (ordered by midpoint) keeps the keys distinct.
+	abKey, caKey := string(ab.Lineage().Key()), string(ca.Lineage().Key())
+	if abKey == caKey {
+		t.Errorf("boundary edges ab and ca collide on %q — rank disambiguation missing", abKey)
+	}
+	for _, k := range []string{abKey, caKey} {
+		if !strings.HasPrefix(k, "g:a#0/x:seg#") {
+			t.Errorf("ranked boundary edge = %q, want prefix g:a#0/x:seg#", k)
+		}
+	}
+}
+
+// TestRelineageRanksBigonByCurveMidpoint pins the bigon case (ADR-0043 SSI-edge provenance): two
+// edges that share BOTH the same face pair AND the same endpoints — the two arcs of a bigon, as a cone
+// crossing a cylinder cuts two branches between one face pair — would collide on the bare parent name
+// AND on the endpoint midpoint. Ranking by the CURVE midpoint (edgeRankPoint) gives them distinct,
+// stable keys, ordered by geometry not build order.
+func TestRelineageRanksBigonByCurveMidpoint(t *testing.T) {
+	bld := NewBuilder(false, NewLineage(Tok("f", "body", 0)))
+	a := bld.AddVertex(math.P3(1, 0, 0), NewLineage(Tok("f", "vertex", 0)))
+	b := bld.AddVertex(math.P3(-1, 0, 0), NewLineage(Tok("f", "vertex", 1)))
+	// Two semicircle arcs a→b: e1 bows through (0,+1,0), e2 through (0,-1,0) — same endpoints, distinct
+	// curve midpoints.
+	up, _ := geom.NewArc3d(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 1, 0, stdmath.Pi)
+	dn, _ := geom.NewArc3d(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 1, 0, -stdmath.Pi)
+	e1 := bld.AddEdge(up, a, b, NewLineage(Tok("f", "edge", 0)))
+	e2 := bld.AddEdge(dn, a, b, NewLineage(Tok("f", "edge", 1)))
+	pl, _ := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
+	f1 := bld.AddFace(pl, NewLineage(Tok("f", "face", 0)), OuterLoop(Fwd(e1), Rev(e2)))
+	f2 := bld.AddFace(pl, NewLineage(Tok("f", "face", 1)), OuterLoop(Fwd(e2), Rev(e1)))
+	body := bld.Build()
+
+	provA, provB := NewLineage(Tok("g", "a", 0)), NewLineage(Tok("g", "b", 0))
+	body.RelineageByFaceProvenance(map[*Face]Lineage{f1: provA, f2: provB}, Tok("x", "x", 0), Tok("x", "seg", 0))
+
+	k1, k2 := string(e1.Lineage().Key()), string(e2.Lineage().Key())
+	if k1 == k2 {
+		t.Fatalf("bigon arcs collide on %q — curve-midpoint rank disambiguation missing", k1)
+	}
+	for _, k := range []string{k1, k2} {
+		if !strings.HasPrefix(k, "g:a#0/x:x#0/g:b#0/x:seg#") {
+			t.Errorf("ranked bigon arc = %q, want prefix g:a#0/x:x#0/g:b#0/x:seg#", k)
+		}
+	}
+	// e2 (curve midpoint y=-1) sorts before e1 (y=+1), so e2 is rank 1, e1 rank 2 — geometry, not order.
+	if !strings.HasSuffix(k2, "x:seg#1") || !strings.HasSuffix(k1, "x:seg#2") {
+		t.Errorf("ranks not ordered by curve midpoint: e1=%q e2=%q", k1, k2)
 	}
 }
 

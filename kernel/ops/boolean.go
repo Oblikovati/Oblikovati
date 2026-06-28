@@ -97,9 +97,10 @@ func join(lin topo.Lineage, target, tool *topo.Body, rel relation, rec *diag.Rec
 // (a cylinder, cone, etc.). A nil B-rep result is a (valid) empty body.
 func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.Lineage, rec *diag.Recorder) (*topo.Body, error) {
 	if body, ok := curvedExactBoolean(op, target, tool, rec); ok {
-		// Provenance (ADR-0043): like the planar path, restore the identity of original boundaries the
-		// curved cut passed through whole (the new surface-intersection curves keep their ordinal name
-		// — full SSI-edge provenance is a follow-up). An exact analytic result (M2 #1334/#1335).
+		// Provenance (ADR-0043): the curved stitch already named the new surface-intersection curves by
+		// their generating face pair (curvedStitch → RelineageByFaceProvenance). Here, like the planar
+		// path, restore the identity of original boundaries the curved cut passed through WHOLE — a
+		// survivor keeps its own key, not a face-pair name. An exact analytic result (M2 #1334/#1335).
 		body.InheritOriginalEdges(append(append([]*topo.Edge(nil), target.Edges()...), tool.Edges()...))
 		return body, nil
 	}

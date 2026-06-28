@@ -23,15 +23,30 @@ import (
 func curvedStitch(faces []curvedFace) *topo.Body {
 	bld := topo.NewBuilder(true, topo.NewLineage(topo.Tok("curvedbool", "body", 0)))
 	w := &curveWelder{bld: bld, verts: map[string]*topo.Vertex{}, edges: map[string]*topo.Edge{}}
+	provByFace := map[*topo.Face]topo.Lineage{}
 	for _, f := range faces {
 		specs := w.loopSpecs(f.loops, f.outerless)
+		var built *topo.Face
 		if f.reversed {
-			bld.AddReversedFace(f.surface, f.lineage, specs...)
+			built = bld.AddReversedFace(f.surface, f.lineage, specs...)
 		} else {
-			bld.AddFace(f.surface, f.lineage, specs...)
+			built = bld.AddFace(f.surface, f.lineage, specs...)
+		}
+		if len(f.lineage.Key()) > 0 {
+			provByFace[built] = f.lineage
 		}
 	}
-	return bld.Build()
+	body := bld.Build()
+	// ADR-0043 SSI-edge provenance: the welded edges are minted with build-order ordinals
+	// (curvedbool:e#N) that renumber under any upstream edit. Each result face carries a stable
+	// provenance lineage (an original face's key, or a wall/cap's parent-derived name), so rename the
+	// surface-intersection edges by their bordering face pair — a build-order-independent name. The
+	// caller's InheritOriginalEdges then restores the identity of original boundaries passed through
+	// whole (a survivor must keep its OWN key, not a face-pair name), see booleanGeneral.
+	if len(provByFace) > 0 {
+		body.RelineageByFaceProvenance(provByFace, topo.Tok("curvedbool", "x", 0), topo.Tok("curvedbool", "seg", 0))
+	}
+	return body
 }
 
 // curveWelder dedups vertices (by position) and edges (by endpoints + midpoint) as faces are added.

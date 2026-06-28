@@ -4,7 +4,10 @@ package topo
 
 import (
 	"bytes"
+	stdmath "math"
 	"sort"
+
+	"oblikovati.org/math"
 )
 
 // Provenance naming (ADR-0043). A derived entity — an edge a boolean cuts, a fillet's tangent
@@ -52,36 +55,121 @@ func NameByParents(parents []Lineage, sep, rankSeed LineageToken, rank int) Line
 // or vertex any of whose faces is absent from faceProv keeps its existing (ordinal) name — so a
 // PARTIALLY-provenanced body (e.g. a constant fillet's cylinder + caps provenanced, a variable
 // fillet's ruling strips not yet) stays consistent, the un-provenanced region simply keeping its
-// build-order name. It mutates identity, so call it only during construction, before the body is
+// build-order name.
+//
+// Two derived entities can share the SAME parent set — two surface-intersection curves between the
+// same face pair (a cone crossing a cylinder cuts two branches), or two seam vertices where the same
+// faces meet. Naming both by the bare parent name would collide (one reference key, two entities), so
+// a parent set borne by more than one entity is disambiguated by a transform-invariant geometric
+// order (the entity's midpoint/position) into ranks 1..n — the rank disambiguator NameByParents
+// reserves. Edges and vertices are ranked in SEPARATE groups so a vertex's name never depends on the
+// edges around it. It mutates identity, so call it only during construction, before the body is
 // observed elsewhere. sep/rankSeed parameterize the composed names (see NameByParents).
 func (b *Body) RelineageByFaceProvenance(faceProv map[*Face]Lineage, sep, rankSeed LineageToken) {
+	edges := make([]provTarget, 0, len(b.Edges()))
 	for _, e := range b.Edges() {
-		if name, ok := provNameFromFaces(e.Faces(), faceProv, sep, rankSeed); ok {
-			e.lineage = name
-		}
+		edges = append(edges, provTarget{faces: e.Faces(), at: edgeRankPoint(e), set: func(l Lineage) { e.lineage = l }})
 	}
+	assignProvNames(edges, faceProv, sep, rankSeed)
+
+	verts := make([]provTarget, 0, len(b.Vertices()))
 	for _, v := range b.Vertices() {
-		if name, ok := provNameFromFaces(vertexFaces(v), faceProv, sep, rankSeed); ok {
-			v.lineage = name
+		verts = append(verts, provTarget{faces: vertexFaces(v), at: v.point, set: func(l Lineage) { v.lineage = l }})
+	}
+	assignProvNames(verts, faceProv, sep, rankSeed)
+}
+
+// provTarget is one entity (edge or vertex) to be provenance-named: its bordering faces, a
+// transform-invariant geometric point that orders siblings sharing a parent set, and a setter that
+// stamps the resolved lineage onto the entity.
+type provTarget struct {
+	faces []*Face
+	at    math.Point3
+	set   func(Lineage)
+}
+
+// provGroup collects the targets that resolve to one parent set, so a set borne by several entities
+// can be disambiguated by rank.
+type provGroup struct {
+	parents []Lineage
+	members []provTarget
+}
+
+// assignProvNames names each target by its faces' provenance, disambiguating targets that share the
+// same parent set with a geometric rank (see RelineageByFaceProvenance). A target any of whose faces
+// lacks provenance keeps its existing name.
+func assignProvNames(targets []provTarget, faceProv map[*Face]Lineage, sep, rankSeed LineageToken) {
+	groups := map[string]*provGroup{}
+	var order []string
+	for _, t := range targets {
+		parents, ok := parentLineages(t.faces, faceProv)
+		if !ok {
+			continue
 		}
+		key := string(NameByParents(parents, sep, rankSeed, 0).Key())
+		if groups[key] == nil {
+			groups[key] = &provGroup{parents: parents}
+			order = append(order, key)
+		}
+		groups[key].members = append(groups[key].members, t)
+	}
+	for _, key := range order {
+		nameGroup(groups[key], sep, rankSeed)
 	}
 }
 
-// provNameFromFaces composes a provenance name from faces' provenance lineages, or ok=false when
-// any face has no provenance (so the entity keeps its existing name).
-func provNameFromFaces(faces []*Face, faceProv map[*Face]Lineage, sep, rankSeed LineageToken) (Lineage, bool) {
+// nameGroup stamps a group's members: the bare parent name when one entity bears the set, else the
+// parent name plus a geometric rank (1..n, ordered by the members' points) so the keys stay distinct.
+func nameGroup(g *provGroup, sep, rankSeed LineageToken) {
+	if len(g.members) == 1 {
+		g.members[0].set(NameByParents(g.parents, sep, rankSeed, 0))
+		return
+	}
+	sort.Slice(g.members, func(i, j int) bool { return lessPoint(g.members[i].at, g.members[j].at) })
+	for i, m := range g.members {
+		m.set(NameByParents(g.parents, sep, rankSeed, i+1))
+	}
+}
+
+// parentLineages collects the provenance lineages of an entity's faces, or ok=false when any face has
+// no provenance (so the entity keeps its existing name).
+func parentLineages(faces []*Face, faceProv map[*Face]Lineage) ([]Lineage, bool) {
 	if len(faces) == 0 {
-		return Lineage{}, false
+		return nil, false
 	}
 	parents := make([]Lineage, 0, len(faces))
 	for _, f := range faces {
 		p, ok := faceProv[f]
 		if !ok {
-			return Lineage{}, false
+			return nil, false
 		}
 		parents = append(parents, p)
 	}
-	return NameByParents(parents, sep, rankSeed, 0), true
+	return parents, true
+}
+
+// edgeRankPoint is a transform-invariant point that orders edges sharing a parent set. It samples the
+// edge's CURVE at its mid-parameter, not the endpoint midpoint, so the two arcs of a bigon — two
+// intersection branches between the same face pair that share BOTH endpoints (e.g. a Steinmetz
+// front/back pair, or a closed seam circle whose endpoints coincide) — get DISTINCT points and stable
+// ranks. A non-finite domain (an unbounded line) falls back to the endpoint midpoint.
+func edgeRankPoint(e *Edge) math.Point3 {
+	lo, hi := e.curve.Domain()
+	if stdmath.IsInf(lo, 0) || stdmath.IsInf(hi, 0) {
+		return edgeMidpoint(e)
+	}
+	return e.curve.PointAt((lo + hi) / 2)
+}
+
+// lessPoint is a total order on points (x, then y, then z) for stable sibling ranking.
+func lessPoint(a, b math.Point3) bool {
+	if a.X != b.X {
+		return a.X < b.X
+	}
+	if a.Y != b.Y {
+		return a.Y < b.Y
+	}
+	return a.Z < b.Z
 }
 
 // InheritOriginalEdges restores original edge identity to a derived body (ADR-0043): a result edge
