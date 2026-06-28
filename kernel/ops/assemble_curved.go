@@ -17,10 +17,14 @@ type filletLoop struct {
 }
 
 // filletFace is a result face: its surface (plane, cylinder, …) and boundary loops (outer
-// first).
+// first). parent is the lineage of the input entity that GENERATED this face (ADR-0043): the
+// original face for a transformed face, the filleted edge (with a "cyl" marker) for a blend
+// cylinder. The zero lineage means "no provenance" — that face, and any edge/vertex touching it,
+// keeps its build-order name (see assembleBody / topo.RelineageByFaceProvenance).
 type filletFace struct {
 	surface geom.Surface
 	loops   []filletLoop
+	parent  topo.Lineage
 }
 
 // edgeRec remembers a built shared edge and the direction it was stored in, so a second
@@ -54,14 +58,31 @@ func assembleBody(faces []filletFace, tag string) *topo.Body {
 		tv[i] = bld.AddVertex(p, topo.NewLineage(topo.Tok(tag, "v", i)))
 	}
 	ec := &edgeCatalog{bld: bld, verts: w.points, tv: tv, edges: map[[2]int]edgeRec{}, tag: tag}
+	// Provenance naming (ADR-0043): a face with a parent lineage is named by it; its edges and
+	// vertices are then renamed by their bordering faces' provenance, replacing the build-order
+	// counter that renumbered on an upstream edit. Faces without provenance (e.g. variable-fillet
+	// ruling strips, not yet provenanced) keep the ordinal name, and edges/vertices touching them
+	// stay ordinal too — a partial body remains consistent.
+	provByFace := map[*topo.Face]topo.Lineage{}
 	for fi, f := range faces {
 		specs := make([]topo.LoopSpec, len(f.loops))
 		for li, ring := range rings[fi] {
 			specs[li] = curvedLoopSpec(li == 0, ring, f.loops[li].curves, ec)
 		}
-		bld.AddFace(f.surface, topo.NewLineage(topo.Tok(tag, "f", fi)), specs...)
+		lin := f.parent
+		if len(lin.Key()) == 0 {
+			lin = topo.NewLineage(topo.Tok(tag, "f", fi))
+		}
+		face := bld.AddFace(f.surface, lin, specs...)
+		if len(f.parent.Key()) > 0 {
+			provByFace[face] = f.parent
+		}
 	}
-	return bld.Build()
+	body := bld.Build()
+	if len(provByFace) > 0 {
+		body.RelineageByFaceProvenance(provByFace, topo.Tok("fillet", "x", 0), topo.Tok("fillet", "seg", 0))
+	}
+	return body
 }
 
 // curvedSolid reports whether every undirected edge of the faces is used exactly twice (the
