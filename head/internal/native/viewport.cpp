@@ -1091,6 +1091,23 @@ void obk_viewport_init(void* h, const uint32_t* vert, int vlen, const uint32_t* 
     init_default_env(c, v);
 }
 
+// clear_viewport_depth resets the depth attachment to far (1.0) over the whole render area,
+// mid-pass. It lets the on-top SOLID overlay (client-graphics glyphs, #1489) draw on top of the
+// model yet still depth-test against ITSELF: after this clear, a depth-tested + depth-writing draw
+// self-occludes (a cube reads as a cube) while no model fragment can hide it. Depth aspect only —
+// the offscreen target is VK_FORMAT_D32_SFLOAT, no stencil.
+static void clear_viewport_depth(VkCommandBuffer cmd, int w, int hh) {
+    VkClearAttachment att{};
+    att.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    att.clearValue.depthStencil = {1.0f, 0};
+    VkClearRect rect{};
+    rect.rect.offset = {0, 0};
+    rect.rect.extent = {(uint32_t)w, (uint32_t)hh};
+    rect.baseArrayLayer = 0;
+    rect.layerCount = 1;
+    vkCmdClearAttachments(cmd, 1, &att, 1, &rect);
+}
+
 // obk_viewport_render uploads the geometry (only when geomKey marks it changed — #1422), records
 // the offscreen pass, and submits it (waiting on a fence so the color image is ready to sample
 // this frame). geomKey is the merged-mesh identity from the Go atlas cache; 0 means always upload.
@@ -1101,7 +1118,7 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
                          const float* hidV, int hidVC, const uint32_t* hidIdx, int hidIC,
                          const float* topTriV, int topTriVC, const uint32_t* topTriIdx, int topTriIC,
                          const float* topLineV, int topLineVC, const uint32_t* topLineIdx, int topLineIC,
-                         int triBiasFirst, const float* clip,
+                         int triBiasFirst, int topTriSolidFirst, const float* clip,
                          const float* mats, int matCount, const int32_t* recs, int recCount,
                          uint64_t geomKey) {
     HeadContext* c = (HeadContext*)h;
@@ -1292,10 +1309,24 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
             VkPipeline pipes[6] = {v->occluderPipeline, v->triPipeline, v->linePipeline,
                                    v->hiddenPipeline, v->topTriPipeline, v->topLinePipeline};
             int curStream = -1;
+            bool topSolidCleared = false;
             for (int r = 0; r < recCount; r++) {
                 const int32_t* rec = recs + (size_t)r * kDrawRecInts;
                 int stream = rec[0];
                 if (stream < 0 || stream > 5 || rec[2] <= 0 || rec[5] <= 0) continue;
+                // On-top SOLID tail (stream 4, flag rec[6]==1): the opaque client-graphics glyphs.
+                // Clear depth once so they sit on top of the model, then draw them depth-tested +
+                // lit through the shaded-tri pipeline so each self-occludes as a real solid (#1489).
+                if (stream == kStreamTopTri && rec[6]) {
+                    if (!topSolidCleared) { clear_viewport_depth(cmd, w, hh); topSolidCleared = true; }
+                    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->triPipeline);
+                    pushLit(1.0f);
+                    curStream = -1; // force a rebind for any following stream
+                    vkCmdSetDepthBias(cmd, 0.0f, 0.0f, 0.0f);
+                    vkCmdDrawIndexed(cmd, (uint32_t)rec[2], (uint32_t)rec[5],
+                                     (uint32_t)rec[1], rec[3], (uint32_t)rec[4]);
+                    continue;
+                }
                 if (stream != curStream) {
                     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipes[stream]);
                     pushLit(stream == kStreamTri ? (v->normalDebug ? 2.0f : 1.0f)
@@ -1356,12 +1387,27 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
             vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->hiddenPipeline);
             vkCmdDrawIndexed(cmd, (uint32_t)hidIC, 1, (uint32_t)hidFirst, hidBase, 0);
         }
-        // 5) on-top faces — depth test disabled, so client-graphics overlays draw over the
-        //    model. Drawn flat-lit (the overlay color is authoritative), after everything else.
+        // 5) on-top faces. The stream splits at topTriSolidFirst: the flat head (translucent
+        //    ghosts/highlights, heatmap flood plots) draws with the depth test disabled so it
+        //    burns over the model; the opaque-solid tail (client-graphics glyphs — support cubes,
+        //    load arrows) draws after a depth clear, depth-tested + lit, so each glyph
+        //    self-occludes as a real solid instead of a scatter of faces (#1489).
         if (topTriIC > 0) {
-            pushLit(0.0f);
-            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->topTriPipeline);
-            vkCmdDrawIndexed(cmd, (uint32_t)topTriIC, 1, (uint32_t)topTriFirst, topTriBase, 0);
+            int solidFirst = topTriSolidFirst;
+            if (solidFirst < 0 || solidFirst > topTriIC) solidFirst = topTriIC;
+            if (solidFirst > 0) {
+                pushLit(0.0f);
+                vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->topTriPipeline);
+                vkCmdDrawIndexed(cmd, (uint32_t)solidFirst, 1, (uint32_t)topTriFirst, topTriBase, 0);
+            }
+            if (topTriIC - solidFirst > 0) {
+                clear_viewport_depth(cmd, w, hh);
+                pushLit(1.0f);
+                vkCmdSetDepthBias(cmd, 0.0f, 0.0f, 0.0f);
+                vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->triPipeline);
+                vkCmdDrawIndexed(cmd, (uint32_t)(topTriIC - solidFirst), 1,
+                                 (uint32_t)(topTriFirst + solidFirst), topTriBase, 0);
+            }
         }
         // 6) on-top lines — depth test disabled (burn-through markers/edges).
         if (topLineIC > 0) {

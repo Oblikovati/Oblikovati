@@ -135,6 +135,62 @@ func TestFlattenRoutesOnTopToTopStreams(t *testing.T) {
 	}
 }
 
+// TestFlattenSplitsSolidOnTopToTail reproduces issue #1489: an OPAQUE, normal-bearing on-top
+// triangle (a client-graphics solid glyph — support cube / load arrow) must be held to the TAIL
+// of the on-top triangle stream (at/after TopTriSolidFirst) so the native pass can clear depth and
+// draw it depth-tested + lit, making it self-occlude. The flat on-top overlays — a translucent
+// ghost/highlight and a normal-less flood plot — must stay in the HEAD (before TopTriSolidFirst),
+// drawn flat with the depth test disabled, exactly as before.
+func TestFlattenSplitsSolidOnTopToTail(t *testing.T) {
+	ghost := triItem(0) // translucent on-top overlay (a feature-preview ghost / face highlight)
+	ghost.OnTop, ghost.Opacity = true, 0.5
+	flood := triItem(1) // normal-less heatmap flood plot (opaque, but flat data, not a solid)
+	flood.OnTop, flood.Normals = true, nil
+	glyph := triItem(2) // opaque, normal-bearing solid glyph — the #1489 case
+	glyph.OnTop = true
+
+	m := Flatten(renderer.DrawList{Items: []renderer.DrawItem{ghost, flood, glyph}})
+
+	// All three are on-top triangles, so all nine indices land in the on-top stream.
+	if got := len(m.TopTriIndices); got != 9 {
+		t.Fatalf("TopTriIndices = %d, want 9 (3 items × 3)", got)
+	}
+	// The two flat overlays (ghost, flood) form the head; the solid glyph is the tail.
+	if m.TopTriSolidFirst != 6 {
+		t.Errorf("TopTriSolidFirst = %d, want 6 (the glyph begins after the two flat overlays)", m.TopTriSolidFirst)
+	}
+	// Nothing leaked into the regular (depth-tested-against-model) triangle stream.
+	if m.TriVCount != 0 {
+		t.Errorf("on-top items leaked into the regular tri stream: vcount=%d", m.TriVCount)
+	}
+}
+
+// TestIsSolidOnTopTriangle pins the discriminator that routes a glyph to the self-occluding tail:
+// only an OPAQUE, normal-bearing, on-top TRIANGLE qualifies (#1489).
+func TestIsSolidOnTopTriangle(t *testing.T) {
+	base := triItem(0)
+	base.OnTop = true
+	cases := []struct {
+		name string
+		mut  func(*renderer.DrawItem)
+		want bool
+	}{
+		{"opaque glyph with normals", func(i *renderer.DrawItem) {}, true},
+		{"not on top", func(i *renderer.DrawItem) { i.OnTop = false }, false},
+		{"translucent (Opacity)", func(i *renderer.DrawItem) { i.Opacity = 0.5 }, false},
+		{"translucent (color alpha)", func(i *renderer.DrawItem) { i.Color = [4]float32{1, 0, 0, 0.4} }, false},
+		{"no normals (flood plot)", func(i *renderer.DrawItem) { i.Normals = nil }, false},
+		{"a line, not a triangle", func(i *renderer.DrawItem) { i.Primitive = renderer.Lines }, false},
+	}
+	for _, c := range cases {
+		item := base
+		c.mut(&item)
+		if got := isSolidOnTopTriangle(item); got != c.want {
+			t.Errorf("%s: isSolidOnTopTriangle = %v, want %v", c.name, got, c.want)
+		}
+	}
+}
+
 func TestFlattenLinesTolerateMissingNormals(t *testing.T) {
 	m := Flatten(renderer.DrawList{Items: []renderer.DrawItem{lineItem()}})
 	// Normal slot (floats 3..6) should be zero, not a panic / garbage.

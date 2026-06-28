@@ -19,7 +19,7 @@ void     obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp,
                              const float* hidV, int hidVC, const uint32_t* hidIdx, int hidIC,
                              const float* topTriV, int topTriVC, const uint32_t* topTriIdx, int topTriIC,
                              const float* topLineV, int topLineVC, const uint32_t* topLineIdx, int topLineIC,
-                             int triBiasFirst, const float* clip,
+                             int triBiasFirst, int topTriSolidFirst, const float* clip,
                              const float* mats, int matCount, const int32_t* recs, int recCount,
                              uint64_t geomKey);
 uint64_t obk_viewport_geom_uploads(void* h);
@@ -79,7 +79,7 @@ func (win *Window) RenderViewport(slot, w, h int, mvp []float32, camPos []float3
 	hidVerts []float32, hidVCount int, hidIdx []uint32,
 	topTriVerts []float32, topTriVCount int, topTriIdx []uint32,
 	topLineVerts []float32, topLineVCount int, topLineIdx []uint32,
-	triBiasFirst int, clip []float32,
+	triBiasFirst, topTriSolidFirst int, clip []float32,
 	mats []float32, recs []int32, geomKey uint64,
 ) {
 	C.obk_viewport_render(win.handle, C.int(slot), C.int(w), C.int(h),
@@ -90,7 +90,7 @@ func (win *Window) RenderViewport(slot, w, h int, mvp []float32, camPos []float3
 		floatPtr(hidVerts), C.int(hidVCount), uint32Ptr(hidIdx), C.int(len(hidIdx)),
 		floatPtr(topTriVerts), C.int(topTriVCount), uint32Ptr(topTriIdx), C.int(len(topTriIdx)),
 		floatPtr(topLineVerts), C.int(topLineVCount), uint32Ptr(topLineIdx), C.int(len(topLineIdx)),
-		C.int(triBiasFirst), floatPtr(clip),
+		C.int(triBiasFirst), C.int(topTriSolidFirst), floatPtr(clip),
 		floatPtr(mats), C.int(len(mats)/16), int32Ptr(recs), C.int(len(recs)/recDrawInts),
 		C.uint64_t(geomKey))
 }
