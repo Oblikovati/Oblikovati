@@ -123,7 +123,8 @@ func drawAddInPanelControl(s *app.Session, windowID string, index int, control w
 		native.Separator()
 	case types.PanelTextBox, types.PanelValueEditor, types.PanelComboBox:
 		buf := panelBuffer(windowID+"/"+control.ID, control.Value)
-		if native.InputText(control.Text, buf) {
+		panelFieldLabel(control.Text)
+		if native.InputText("##field", buf) {
 			s.PanelValueChanged(windowID, control.ID, bufString(buf))
 		}
 	case types.PanelCheckBox:
@@ -136,17 +137,31 @@ func drawAddInPanelControl(s *app.Session, windowID string, index int, control w
 	case types.PanelSlider:
 		v, _ := strconv.ParseFloat(control.Value, 64)
 		f := float32(v)
-		if native.SliderFloat(control.Text, &f, float32(control.Min), float32(control.Max)) {
+		panelFieldLabel(control.Text)
+		if native.SliderFloat("##field", &f, float32(control.Min), float32(control.Max)) {
 			s.PanelValueChanged(windowID, control.ID, strconv.FormatFloat(float64(f), 'g', -1, 64))
 		}
 	default: // PanelLabel (and any future kind degrades to its text)
-		native.Text(control.Text)
+		native.TextWrapped(control.Text)
 	}
 }
 
+// panelFieldLabel draws an editable control's caption on its own line above a full-width input,
+// then widens the next item to fill the panel. Add-in labels are long, descriptive captions
+// ("Pressure on loaded faces (MPa)"); ImGui's default label-to-the-RIGHT-of-the-widget layout,
+// with the widget at ~65% of the panel, cropped them against a narrow docked panel's right edge
+// (#1490). Stacking a wrapped label above a full-width input keeps the whole caption readable at
+// any panel width.
+func panelFieldLabel(text string) {
+	native.TextWrapped(text)
+	native.SetNextItemWidth(-1) // fill the panel width; the input's own label is suppressed ("##field")
+}
+
 // drawPanelDropdown renders a single-select dropdown; picking an option pushes it to the add-in.
+// The label is stacked above a full-width combo (#1490), like the other value controls.
 func drawPanelDropdown(s *app.Session, windowID string, control wire.PanelControlSpec) {
-	if !native.BeginCombo(control.Text, control.Value) {
+	panelFieldLabel(control.Text)
+	if !native.BeginCombo("##field", control.Value) {
 		return
 	}
 	for _, opt := range control.Options {

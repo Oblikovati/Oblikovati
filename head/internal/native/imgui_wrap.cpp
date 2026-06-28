@@ -45,6 +45,8 @@ int  obk_ig_begin_closable(const char* name, int* open) {
 }
 void obk_ig_end(void)                        { ImGui::End(); }
 void obk_ig_text(const char* s)              { ImGui::TextUnformatted(s); }
+// "%s" guard: the text is user/add-in supplied and may contain '%' — never pass it as the format.
+void obk_ig_text_wrapped(const char* s)      { ImGui::TextWrapped("%s", s); }
 int  obk_ig_button(const char* label)        { return ImGui::Button(label) ? 1 : 0; }
 void obk_ig_same_line(void)                  { ImGui::SameLine(); }
 void obk_ig_separator(void)                  { ImGui::Separator(); }

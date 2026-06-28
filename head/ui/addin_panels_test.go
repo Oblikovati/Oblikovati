@@ -3,6 +3,8 @@
 package ui
 
 import (
+	"os"
+	"regexp"
 	"testing"
 
 	"oblikovati.org/api/types"
@@ -100,5 +102,42 @@ func TestInWindowAddInPanelRendersEditableControls(t *testing.T) {
 	}
 	if _, ok := panelEditBuffers["form/name"]; !ok {
 		t.Error("text-control buffer was not seeded while rendering the panel")
+	}
+}
+
+// TestAddInPanelValueControlsStackTheirLabel is the #1490 guard: an add-in dockable panel is
+// narrow and its captions are long descriptive sentences ("Pressure on loaded faces (MPa)").
+// Passing the caption straight into an ImGui value widget draws it to the RIGHT of the
+// ~65%-wide control, so it is cropped against the panel edge. The fix stacks the caption on its
+// own line (panelFieldLabel → TextWrapped) above a full-width input, with the widget's own label
+// suppressed ("##field"). This guard fails if a value control regresses to the label-on-the-right
+// form, so the cropping cannot come back.
+func TestAddInPanelValueControlsStackTheirLabel(t *testing.T) {
+	src, err := os.ReadFile("addin_panels.go")
+	if err != nil {
+		t.Fatalf("read addin_panels.go: %v", err)
+	}
+	text := string(src)
+
+	// No value widget may take control.Text as its (right-side) label.
+	banned := map[string]*regexp.Regexp{
+		"InputText":   regexp.MustCompile(`native\.InputText\(\s*control\.Text`),
+		"SliderFloat": regexp.MustCompile(`native\.SliderFloat\(\s*control\.Text`),
+		"BeginCombo":  regexp.MustCompile(`native\.BeginCombo\(\s*control\.Text`),
+	}
+	for widget, re := range banned {
+		if re.MatchString(text) {
+			t.Errorf("addin_panels.go passes control.Text straight into native.%s — the caption draws "+
+				"to the widget's right and crops in a narrow docked panel (#1490). Stack it with "+
+				"panelFieldLabel and pass a suppressed \"##\" label instead.", widget)
+		}
+	}
+
+	// And the stacked-label helper must exist and be used by the value controls.
+	if !regexp.MustCompile(`func panelFieldLabel\(`).MatchString(text) {
+		t.Error("addin_panels.go must define panelFieldLabel (stacks a wrapped caption above a full-width input, #1490)")
+	}
+	if !regexp.MustCompile(`panelFieldLabel\(control\.Text\)`).MatchString(text) {
+		t.Error("addin_panels.go value controls must call panelFieldLabel(control.Text) (#1490)")
 	}
 }
