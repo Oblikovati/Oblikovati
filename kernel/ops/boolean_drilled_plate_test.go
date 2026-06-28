@@ -4,6 +4,7 @@ package ops_test
 
 import (
 	stdmath "math"
+	"strings"
 	"testing"
 
 	"oblikovati.org/kernel/brep"
@@ -104,6 +105,41 @@ func TestCurvedBooleanKeepsTargetEdgeIdentity(t *testing.T) {
 	}
 	if kept == 0 {
 		t.Error("no slab edge kept its identity through the curved cut — all renamed to curvedbool:e#N")
+	}
+}
+
+// TestSecondBoreRimIsProvenanceNamed is ADR-0043 SSI-edge provenance: the second bore of a chained
+// drill welds through the curved stitch (drillThroughCurved → curvedStitch), whose new rim edges used
+// to get build-order ordinals (curvedbool:e#N) that renumber under any upstream edit. They must now be
+// named by their generating face pair — the new cylinder wall crossing a slab cap — a name that does
+// not depend on the weld order. No edge of the finished part may keep a curvedbool:e#N ordinal.
+func TestSecondBoreRimIsProvenanceNamed(t *testing.T) {
+	slab := slabBody(t)
+	s1, err := ops.Boolean(ops.Cut, slab, throughRod(t, -4, 0, 1.5))
+	if err != nil {
+		t.Fatalf("first bore: %v", err)
+	}
+	s2, err := ops.Boolean(ops.Cut, s1, throughRod(t, 4, 0, 1.5))
+	if err != nil {
+		t.Fatalf("second bore: %v", err)
+	}
+	if rr := ops.Validate(s2); !rr.Valid || !rr.Closed || !rr.Manifold || !s2.IsSolid() {
+		t.Fatalf("double-bored plate not a watertight solid: %+v", rr)
+	}
+	pairNamed := 0
+	for _, e := range s2.Edges() {
+		k := string(e.ReferenceKey())
+		if strings.Contains(k, "curvedbool:e#") {
+			t.Errorf("edge kept a build-order ordinal: %q (SSI-edge provenance missing)", k)
+		}
+		// A face-pair name carries the separator between the two parent faces' keys; the second bore's
+		// rim joins its cylinder wall (brep:drillwall) to a slab cap (slab:face).
+		if strings.Contains(k, "/curvedbool:x#0/") && strings.Contains(k, "drillwall") && strings.Contains(k, "slab:face") {
+			pairNamed++
+		}
+	}
+	if pairNamed == 0 {
+		t.Error("no second-bore rim edge got a wall×cap provenance name — SSI-edge provenance did not fire")
 	}
 }
 
