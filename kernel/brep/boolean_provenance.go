@@ -109,13 +109,10 @@ var intersectionSep = topo.Tok("brep", "x", 0)
 // the common one-edge-per-pair case; a second edge sharing the same parent pair (a face crossed
 // twice) gets dup>0, an interim disambiguator the geometric one in F05 (#1155) replaces.
 func intersectionLineage(lo, hi topo.Lineage, dup int) topo.Lineage {
-	toks := append([]topo.LineageToken{}, lo.Tokens()...)
-	toks = append(toks, intersectionSep)
-	toks = append(toks, hi.Tokens()...)
-	if dup > 0 {
-		toks = append(toks, topo.Tok("brep", "seg", dup))
-	}
-	return topo.NewLineage(toks...)
+	// The shared provenance composer (ADR-0043): lo/hi are already canonical (canonicalPair), so
+	// NameByParents's canonical ordering is a no-op here and the bytes are unchanged — lo / brep:x#0
+	// / hi [ / brep:seg#dup].
+	return topo.NameByParents([]topo.Lineage{lo, hi}, intersectionSep, topo.Tok("brep", "seg", 0), dup)
 }
 
 // pairLineDir returns the intersection line's direction for the parent pair (lo, hi), derived
