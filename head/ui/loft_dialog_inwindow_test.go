@@ -29,6 +29,14 @@ func TestInWindowLoftDialogRenders(t *testing.T) {
 	dockLaidOut = false
 	icons = nil
 
+	// With no loft tool active, drawLoftDialog early-returns (its panel is closed) — cover that branch.
+	bare := app.NewSession()
+	if _, err := compdef.AddPart(bare.Workspace(), "bare.opd", true); err == nil {
+		win.BeginFrame()
+		DrawChrome(win, bare)
+		win.EndFrame(0.1, 0.1, 0.12)
+	}
+
 	s := loftThreeSectionSession(t)
 	l := s.ActiveLoft()
 	if l == nil {
@@ -155,13 +163,15 @@ func findLoftSectionRow(frame func()) (float32, float32, bool) {
 }
 
 // clickLoftRemoveButton scans below the sections list for the pixel that removes a section (the Remove
-// or Clear-all button), so drawLoftSectionsListButtons' click branch executes.
+// or Clear-all button, both always rendered), so drawLoftSectionsListButtons' click branch executes.
 func clickLoftRemoveButton(win *native.Window, l *app.LoftTool) {
 	frame := func() { curvesFrame(win, l) }
+	loftUI.selectedSection = 0 // ensure the Remove-section button is shown too
 	frame()
+	frame() // settle the fixed-position layout before clicking
 	want := l.SectionCount()
-	for y := float32(loftIWY + 40); y <= loftIWY+260 && l.SectionCount() == want; y += 4 {
-		for x := float32(loftIWX + 16); x <= loftIWX+220; x += 16 {
+	for y := float32(loftIWY + 30); y <= loftIWY+320 && l.SectionCount() == want; y += 3 {
+		for x := float32(loftIWX + 10); x <= loftIWX+240; x += 10 {
 			native.InjectMousePos(x, y)
 			frame()
 			native.InjectMouseButton(native.MouseLeft, true)
