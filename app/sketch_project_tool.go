@@ -35,6 +35,13 @@ func (t *ProjectGeometryTool) Name() string { return "Project Geometry" }
 // Start is a no-op; the engine installs the filter from AcceptedKinds.
 func (t *ProjectGeometryTool) Start(*Session) {}
 
+// PicksModelReferences routes this tool's in-sketch viewport clicks to the 3D model hit-test
+// (B-rep edges/vertices and datum geometry) instead of the 2D sketch-entity picker. Without it
+// the input router short-circuits every in-sketch click to the sketch's own 2D entities, so the
+// references to project were unreachable from the viewport and the tool silently did nothing
+// (#1496). The browser tree fed picks through SelectBrowserNode, but the 3D view did not.
+func (t *ProjectGeometryTool) PicksModelReferences() bool { return true }
+
 // AcceptedKinds declares project-geometry picks projectable references: B-rep edges and
 // vertices, plus the part's datum geometry (work points, axes and planes — the Origin folder
 // and user work features).
