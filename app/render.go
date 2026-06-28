@@ -3,9 +3,9 @@
 package app
 
 import (
+	"oblikovati.org/clientgraphics"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
-	"oblikovati.org/model/clientgraphics"
 	"oblikovati.org/renderer"
 )
 

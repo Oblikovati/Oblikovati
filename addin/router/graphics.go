@@ -7,7 +7,7 @@ import (
 
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
-	"oblikovati.org/model/clientgraphics"
+	"oblikovati.org/clientgraphics"
 )
 
 // setClientGraphics submits or replaces a named client-graphics group (idempotent by

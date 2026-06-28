@@ -6,8 +6,8 @@ package ui
 
 import (
 	"oblikovati.org/app"
+	"oblikovati.org/clientgraphics"
 	"oblikovati.org/head/internal/native"
-	"oblikovati.org/model/clientgraphics"
 	"oblikovati.org/renderer"
 	"oblikovati.org/scene"
 )

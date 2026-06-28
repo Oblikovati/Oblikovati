@@ -14,7 +14,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
-	"oblikovati.org/model/clientgraphics"
+	"oblikovati.org/clientgraphics"
 )
 
 // TestDecodeImageRGBA writes a small PNG and checks it decodes to tightly-packed RGBA bytes.

@@ -11,8 +11,8 @@ import (
 	_ "image/png"  // register the PNG decoder for image.Decode (the primary overlay format)
 	"os"
 
+	"oblikovati.org/clientgraphics"
 	"oblikovati.org/head/internal/native"
-	"oblikovati.org/model/clientgraphics"
 	"oblikovati.org/renderer"
 	"oblikovati.org/scene"
 )
