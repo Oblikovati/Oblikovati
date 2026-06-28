@@ -6,70 +6,80 @@ suggested layout (§"module layout") to a parametric CAD domain.*
 ## Package layout
 
 ```
-oblikovati/
+oblikovati/            # the GPL-v2 application module (this repo root)
   cmd/
-    oblikovati/        # main: assembles a Runtime (window) — build tag `app`
-    oblikovati-cli/    # headless: batch/translate/thumbnail — build tag `headless`
-  runtime/             # the mediator, frame loop, schedulers, clock, worker pool
-  build/               # compile-time constants: build.Debug, build.Editor, build.Profile
+    oblikovati/        # main: assembles the session + windowed head
+    oblikovati-cli/    # headless: batch/translate/thumbnail, CGO_ENABLED=0
 
+  build/               # compile-time constants: build.Debug, build.Editor, build.Profile
   math/                # vec2/3/4, mat3/4, quat (float64), AABB/OBB,
                        #   ROBUST PREDICATES (exact orient/incircle) — kernel depends on it
   kernel/              # PURE GO geometry/modeling kernel (ADR-0002), cgo-free
-    geom/              #   analytic curves & surfaces, NURBS, evaluators
-    topo/              #   B-rep: Body/Shell/Face/Loop/Edge/Vertex + adjacency + ref-key hooks
-    ops/               #   boolean, fillet/chamfer, sweep/loft, tessellate, heal
-    predicate/         #   exact arithmetic shims used by ops
+    geom/              #   analytic curves & surfaces, NURBS, evaluators, exact-predicate shims
+    topo/              #   B-rep topology: Body/Shell/Face/Loop/Edge/Vertex + adjacency + ref-keys
+    brep/              #   solid builders + curved-boolean/half-space dispatch over topo
+    ops/              #   boolean, fillet/chamfer, sweep/loft, tessellate, mass-props, heal
+    fit/ hlr/ subd/    #   curve/surface fitting, hidden-line removal, subdivision surfaces
+    exchange/          #   STEP/mesh import-export codecs
+    diag/ geomapi/     #   kernel diagnostics channel; the in-proc geometry API facade
 
   model/               # the DOMAIN (cgo-free): "model = evaluated program"
     doc/               #   Document, Workspace (open docs), document refs
     compdef/           #   Part/Assembly component definitions (content containers)
     feature/           #   feature history engine + Definition/Feature pairs (the triangle)
-    sketch/            #   sketch entities, constraints, the Go-native solver
+    sketch/            #   sketch entities, constraints (solver lives in /solve)
     param/             #   parameters, units, expression engine, dependency DAG
     identity/          #   reference keys (topological naming), TypeID registry hooks
     attr/              #   attributes & properties (extensible metadata)
+    assembly/ occurrence/ drawing/ sheetmetal/ material/ style/ … # the rest of the domain
 
+  solve/               # the Go-native constraint solver (Gauss-Newton/Levenberg-Marquardt)
   scene/               # VIEWPORT scene graph: entity + transform hierarchy + dirty flags
-  renderer/            # Vulkan 1.3 backend (cgo/purego edge), passes, caches, draw queue, picking
-    backend/           #   *_vulkan.go ; null/offscreen backend for tests & thumbnails
-  platform/            # window/input/fs/threading/profiler — the cgo (or purego) edge (ADR-0008)
-  ui/                  # ImGui shell (ADR-0004): panels, browser, inspector (reflection), tables
-
-  addin/               # host-side API: JSON method router, op registry, dispatch (serves api/wire)
-  addins/              # out-of-proc add-in host: discovery, lifecycle, supervision, sandbox
-  registry/            # self-registration: features, workspaces, commands, types, translators
-    types/             #   stable TypeID registry (persistence/RPC identity, ADR-0006)
+  renderer/            # render backend abstraction: passes, caches, draw queue, picking
   command/             # command-pattern history (undo/redo), ADR-0006/core-06
   event/               # typed event bus (before/after, veto), core-06
-  persistence/         # document container (zip package) + columnar binary serialization
+  persistence/         # document container (.obk YAML package) + serialization
 
-  internal/...         # non-public helpers
+  addin/               # host-side API: JSON method router (addin/router, serves api/wire), op registry
+  addincat/            # add-in catalogue client (addins.oblikovati.org)
+  app/                 # the session/mediator: orchestrates documents, commands, environments,
+                       #   the frame tick — cgo-free and headless-testable
+  script/              # embedded Lua scripting (ADR-0028)
+
+  head/                # the cgo Vulkan 1.3 + Dear ImGui windowed shell — a separate submodule so
+                       #   the cgo build never touches the headless-tested core (ADR-0008)
+    viewport/          #   the 3D viewport (Vulkan render loop)
+    ui/                #   ImGui shell: ribbon, browser, inspector, panels
+    addins/            #   the in-proc add-in host: discovery, lifecycle, C-ABI load (ADR-0016)
 ```
 
 ### Dependency direction (must stay acyclic)
 
 ```
-math → kernel → model → {scene, api, persistence}
-                         scene → renderer → platform
-                         model → command, event, identity, registry
-                         ui → runtime → (everything, as the mediator)
+math → kernel → model → {scene, api, persistence, solve}
+                         scene → renderer
+                         model → command, event, identity
+                         app → (model, command, event, addin, scene) as the session mediator
+                         head → app + renderer + scene (the cgo windowed shell on top)
 ```
 
-`math/kernel/model` never import `renderer/ui/platform`. The domain does not know
-the GPU exists. This is what keeps the kernel cgo-free and headless-testable.
+`math/kernel/model` never import `renderer`, `scene`, or `head` (the cgo edge). The
+domain does not know the GPU exists. This is what keeps the kernel cgo-free and
+headless-testable. (`model/clientgraphics` is the one place this is currently bent —
+Oblikovati/Oblikovati#1500 relocates it out of the pure domain.)
 
-### The `/api` contract module (separate, Apache-2.0)
+### The `/api` contract module (separate sibling repo, Apache-2.0)
 
-The public API is its own module, **`oblikovati.org/api`** at the repo root
-(`/api`, sibling to `/source`), licensed Apache-2.0 so add-ins — including
-closed-source ones — can build against it ([ADR-0018](../decisions/ADR-0018-apache-api-contract-module.md)).
-It has four packages: `types` (enums/value types — the canonical definitions
-`/source` aliases), `contract` (in-proc Go interfaces `/source` satisfies), `wire`
+The public API is its own module, **`oblikovati.org/api`**, in a sibling repo
+(`../Oblikovati.API`, tied in for local dev by the `go.work` replace), licensed
+Apache-2.0 so add-ins — including closed-source ones — can build against it
+([ADR-0018](../decisions/ADR-0018-apache-api-contract-module.md)).
+It has four packages: `types` (enums/value types — the canonical definitions this
+GPL module aliases), `contract` (in-proc Go interfaces this module satisfies), `wire`
 (method-name constants + JSON DTOs), and `client` (a `Transport` + typed client for
-out-of-runtime add-ins). The dependency flows **only toward** `/api`: `/source`
-requires it (via a `replace` directive, like `/source/head` does), and `/api` never
-imports `/source` (CI-enforced).
+out-of-process add-ins). The dependency flows **only toward** `api`: this module
+requires it (via the `go.work` replace, as `head` does too), and `api` never
+imports this module (CI-enforced).
 
 ## Build-time gating (realtime-3d §14)
 

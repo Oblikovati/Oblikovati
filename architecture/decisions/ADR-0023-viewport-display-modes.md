@@ -1,6 +1,6 @@
 # ADR-0023 — Viewport Display-Mode Parity (software PBR, real-time HLR, NPR framework)
 
-**Status:** proposed (2026-06-04) · **Relates to:**
+**Status:** Accepted — shipped in M23 (Renderer Display-Mode Parity) · **Relates to:**
 [ADR-0005](ADR-0005-vulkan13-renderer.md) (Vulkan renderer),
 [ADR-0012](ADR-0012-exact-hidden-line.md) (exact drawing HLR),
 [ADR-0014](ADR-0014-renderer-testability.md) (pure draw list / oracle hierarchy),
