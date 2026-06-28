@@ -5,54 +5,29 @@ package feature
 import (
 	"fmt"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/occurrence"
 )
 
-// DeriveStyle controls how one source occurrence contributes to a derived assembly's
-// base body — the reference API's per-occurrence derive style. The zero value is
-// DeriveInclude, so an unstyled occurrence is merged in.
-type DeriveStyle int
+// DeriveStyle controls how one source occurrence contributes to a derived assembly's base body — the
+// reference API's per-occurrence derive style. It ALIASES the canonical api/types definition (ADR-0018:
+// the enum and its wire spellings are defined once, in the Apache-2.0 contract); the constants and
+// String() come from there. The zero value is DeriveInclude, so an unstyled occurrence is merged in.
+type DeriveStyle = types.DeriveStyle
 
 const (
-	// DeriveInclude merges the occurrence's bodies into the derived base.
-	DeriveInclude DeriveStyle = iota
-	// DeriveExclude omits the occurrence entirely.
-	DeriveExclude
-	// DeriveSubtract cuts the occurrence's bodies from the merged base.
-	DeriveSubtract
+	DeriveInclude  = types.DeriveInclude  // merges the occurrence's bodies into the derived base
+	DeriveExclude  = types.DeriveExclude  // omits the occurrence entirely
+	DeriveSubtract = types.DeriveSubtract // cuts the occurrence's bodies from the merged base
 )
 
-// String returns the lowercase name of the derive style.
-func (s DeriveStyle) String() string {
-	switch s {
-	case DeriveInclude:
-		return "include"
-	case DeriveExclude:
-		return "exclude"
-	case DeriveSubtract:
-		return "subtract"
-	default:
-		return "unknown"
-	}
-}
-
-// DeriveStyleFromName parses a derive style spelling (the inverse of [DeriveStyle.String]),
-// reporting whether it is a known style. Used to restore a persisted per-occurrence style.
-func DeriveStyleFromName(name string) (DeriveStyle, bool) {
-	switch name {
-	case "include":
-		return DeriveInclude, true
-	case "exclude":
-		return DeriveExclude, true
-	case "subtract":
-		return DeriveSubtract, true
-	default:
-		return DeriveInclude, false
-	}
-}
+// DeriveStyleFromName parses a derive style spelling, reporting whether it is a known style. A thin
+// alias of types.ParseDeriveStyle kept so existing call sites (and the persisted-style restore path)
+// are unchanged.
+func DeriveStyleFromName(name string) (DeriveStyle, bool) { return types.ParseDeriveStyle(name) }
 
 // DeriveSourceLink identifies the source assembly document a derived component pulls from,
 // captured when the derive is created so the link survives a save (#715). Document is the
