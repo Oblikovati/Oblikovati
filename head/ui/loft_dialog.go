@@ -5,6 +5,7 @@
 package ui
 
 import (
+	"fmt"
 	"math"
 
 	"oblikovati.org/app"
@@ -12,15 +13,20 @@ import (
 	"oblikovati.org/model/feature"
 )
 
-// The Loft flow in the head: while the Loft tool runs, a modeless property panel (the
-// reference panel schema) drives the tool — the cross-section and guide chips, the
-// closed-loop / area-graph / end-condition behavior, and the boolean output — then
-// OK/Cancel. The picked sections are outlined by the tool's preview.
+// The Loft flow in the head: while the Loft tool runs, a modeless property panel drives the tool.
+// It is organised as Inventor's Loft dialog is — a Curves tab (the ordered list of cross-sections,
+// the guide curves, closure and output) and a Conditions tab (the start/end takeoff conditions and
+// the area-graph waist) — so the flow reads the way modellers expect (#1521). The picked sections
+// are outlined by the tool's preview.
 var loftUI = struct {
-	open        bool
-	first, last loftEndUI
-	areaMid     float32 // area-graph mid-height area scale (1 = off)
+	open            bool
+	first, last     loftEndUI
+	areaMid         float32 // area-graph mid-height area scale (1 = off)
+	selectedSection int     // the Sections-list row highlighted for removal (-1 = none)
 }{}
+
+// loftSectionPayload tags the drag-and-drop payload that reorders the Sections list.
+const loftSectionPayload = "OBK_LOFT_SECTION_ROW"
 
 // loftGuideLabels are the path-pick routing choices (rails / centerline / map curves).
 var loftGuideLabels = []string{"Rails", "Centerline", "Map curves"}
@@ -46,16 +52,35 @@ func drawLoftDialog(s *app.Session) {
 		return
 	}
 	refreshLoftUI(l)
-	native.SetNextWindowSizeOnce(360, 500)
+	native.SetNextWindowSizeOnce(360, 520)
 	if native.Begin("Loft") {
 		drawFeatureBreadcrumb("Loft", "")
-		drawLoftInputGeometry(l)
-		drawLoftBehavior(s, l)
-		drawLoftOutput(l)
+		drawLoftTabs(s, l)
 		native.Separator()
 		drawCommitCancelButtons(s, l.CanCommit())
 	}
 	native.End()
+}
+
+// drawLoftTabs mounts the loft dialog's three tabs in Inventor's order: Curves (the sections and
+// guides), Conditions (the end takeoff conditions) and Transition (the point mapping).
+func drawLoftTabs(s *app.Session, l *app.LoftTool) {
+	if !native.BeginTabBar("##loft-tabs") {
+		return
+	}
+	if native.BeginTabItem("Curves") {
+		drawLoftCurvesTab(l)
+		native.EndTabItem()
+	}
+	if native.BeginTabItem("Conditions") {
+		drawLoftConditionsTab(s, l)
+		native.EndTabItem()
+	}
+	if native.BeginTabItem("Transition") {
+		drawLoftTransitionTab(l)
+		native.EndTabItem()
+	}
+	native.EndTabBar()
 }
 
 func refreshLoftUI(l *app.LoftTool) {
@@ -68,26 +93,146 @@ func refreshLoftUI(l *app.LoftTool) {
 	if loftUI.areaMid == 0 {
 		loftUI.areaMid = 1
 	}
+	loftUI.selectedSection = -1
 	loftUI.open = true
 }
 
-// drawLoftInputGeometry is the Input Geometry section: the required Sections chip, the
-// optional Guides chip, and the routing combo that says what kind of guide the next
-// open-path pick becomes.
-func drawLoftInputGeometry(l *app.LoftTool) {
-	if !propertySection("Input Geometry") {
+// drawLoftCurvesTab is Inventor's Curves tab: the ordered Sections list, the guide curves, the
+// closed-loop toggle and the boolean output.
+func drawLoftCurvesTab(l *app.LoftTool) {
+	drawLoftSectionsList(l)
+	drawLoftGuides(l)
+	drawLoftCurvesOptions(l)
+}
+
+// drawLoftSectionsList is the heart of the rework: an ordered, selectable, drag-reorderable list of
+// the cross-sections, one row each — replacing the old count-only chip. The order IS the blend order.
+// Rows are added by clicking sections in the viewport; a row is removed from its right-click menu or
+// the Remove button.
+func drawLoftSectionsList(l *app.LoftTool) {
+	if !propertySection("Sections") {
 		return
 	}
-	drawPickChipRow("Sections", "loft-sections", countChipText(l.SectionCount(), "Section", "Select Sections"),
-		l.SectionCount() > 0, "Click regions in order (or a vertex/point for an apex, a face for tangency)", l.ClearSections)
+	if l.SectionCount() == 0 {
+		native.Text("Click cross-sections in order in the viewport:")
+		native.Text("a region, a vertex/work point for an apex, or a face for tangency.")
+		return
+	}
+	if native.BeginChild("##loft-sections", 0, loftSectionsListHeight(l), true) {
+		drawLoftSectionRows(l)
+	}
+	native.EndChild()
+	drawLoftSectionsListButtons(l)
+}
+
+// loftSectionsListHeight sizes the list child to the row count (clamped) so a short loft does not
+// leave a tall empty box and a long one scrolls instead of pushing the rest of the panel off-screen.
+func loftSectionsListHeight(l *app.LoftTool) float32 { return loftListHeight(l.SectionCount()) }
+
+// loftListHeight is the section-list child height for a row count: ~22 px per row plus padding,
+// clamped at 6 visible rows (beyond which the child scrolls). Split out so it is unit-testable.
+func loftListHeight(rows int) float32 {
+	if rows > loftListMaxVisibleRows {
+		rows = loftListMaxVisibleRows
+	}
+	return float32(rows)*loftListRowHeight + loftListPadding
+}
+
+const (
+	loftListRowHeight      = 22
+	loftListPadding        = 8
+	loftListMaxVisibleRows = 6
+)
+
+// drawLoftSectionRows draws one selectable, draggable row per section. Removal is deferred until after
+// the loop so the slice is not mutated mid-iteration.
+func drawLoftSectionRows(l *app.LoftTool) {
+	remove := -1
+	for i := 0; i < l.SectionCount(); i++ {
+		native.PushIDInt(i)
+		if native.Selectable(loftSectionRowText(l, i), loftUI.selectedSection == i) {
+			loftUI.selectedSection = i
+		}
+		reorderLoftSectionRow(l, i)
+		if native.BeginPopupContextItem("##loft-section-menu") {
+			if native.MenuItem("Remove section") {
+				remove = i
+			}
+			native.EndPopup()
+		}
+		native.PopID()
+	}
+	if remove >= 0 {
+		l.RemoveSection(remove)
+		loftUI.selectedSection = -1
+	}
+}
+
+// loftSectionRowText is the row caption: its position (the blend order) and its source label.
+func loftSectionRowText(l *app.LoftTool, i int) string {
+	return fmt.Sprintf("%d.  %s", i+1, l.SectionLabel(i))
+}
+
+// reorderLoftSectionRow wires the last-drawn row as a drag source (carrying its index) and a drop
+// target that moves the dragged section to this position — the same pattern as the selection filter.
+func reorderLoftSectionRow(l *app.LoftTool, i int) {
+	if native.BeginDragDropSource() {
+		native.SetDragDropPayloadInt(loftSectionPayload, i)
+		native.Text(l.SectionLabel(i))
+		native.EndDragDropSource()
+	}
+	if native.BeginDragDropTarget() {
+		if from, ok := native.AcceptDragDropPayloadInt(loftSectionPayload); ok {
+			l.MoveSection(from, i)
+			loftUI.selectedSection = i
+		}
+		native.EndDragDropTarget()
+	}
+}
+
+// drawLoftSectionsListButtons offers the explicit Remove (the selected row) and Clear all affordances
+// beside the list, so removal does not depend on discovering the right-click menu.
+func drawLoftSectionsListButtons(l *app.LoftTool) {
+	if loftUI.selectedSection >= 0 && loftUI.selectedSection < l.SectionCount() {
+		if native.Button("Remove section") {
+			l.RemoveSection(loftUI.selectedSection)
+			loftUI.selectedSection = -1
+		}
+		native.SameLine()
+	}
+	if native.Button("Clear all") {
+		l.ClearSections()
+		loftUI.selectedSection = -1
+	}
+}
+
+// drawLoftGuides is the guide-curve group: the chip showing the active guide kind's picks and the
+// routing combo that says what the next open-path pick becomes (a rail, the centerline, or a map
+// curve). Guides are optional, so an empty chip shows the plain prompt, not the required state.
+func drawLoftGuides(l *app.LoftTool) {
+	if !propertySection("Guides") {
+		return
+	}
 	drawLoftGuidesChip(l)
 	propertyRow("Pick as")
 	native.SetNextItemWidth(propertyFieldWidth)
 	drawLoftGuideKindCombo(l)
 }
 
-// drawLoftGuidesChip shows the active guide kind's pick state. Guides are optional, so
-// an empty chip renders the plain prompt rather than the red required state.
+// drawLoftCurvesOptions is the closure + boolean-output group on the Curves tab.
+func drawLoftCurvesOptions(l *app.LoftTool) {
+	if !propertySection("Options") {
+		return
+	}
+	propertyRow("")
+	closed := l.Closed()
+	if native.Checkbox("Closed loop", &closed) {
+		l.SetClosed(closed)
+	}
+	drawBooleanPropertyRow("loft-boolean", l.Operation(), l.SetOperation)
+}
+
+// drawLoftGuidesChip shows the active guide kind's pick state.
 func drawLoftGuidesChip(l *app.LoftTool) {
 	propertyRow("Guides")
 	text, filled := loftGuideChipState(l)
@@ -121,30 +266,45 @@ func drawLoftGuideKindCombo(l *app.LoftTool) {
 	}
 }
 
-// drawLoftBehavior is the Behavior section: the closed-loop toggle, the area-graph mid
-// scale, and — for an open loft — the start/end section conditions.
-func drawLoftBehavior(s *app.Session, l *app.LoftTool) {
-	if !propertySection("Behavior") {
-		return
-	}
-	propertyRow("")
+// drawLoftConditionsTab is Inventor's Conditions tab: the start/end takeoff conditions (how the
+// surface leaves each end section) and the area-graph waist. A closed loft has no end sections.
+func drawLoftConditionsTab(s *app.Session, l *app.LoftTool) {
 	closed := l.Closed()
-	if native.Checkbox("Closed loop", &closed) {
-		l.SetClosed(closed)
+	if closed {
+		native.Text("A closed loft has no end sections, so it has no end conditions.")
+	} else {
+		drawLoftEndConditionRows(s, "Start", "loft-start", &loftUI.first)
+		drawLoftEndConditionRows(s, "End", "loft-end", &loftUI.last)
+		l.SetFirstCondition(loftUI.first.toEnd())
+		l.SetLastCondition(loftUI.last.toEnd())
 	}
+	native.Separator()
 	propertyFloatRow("Area Mid", "loft-area-mid", "× (1 = off)", &loftUI.areaMid)
 	l.SetAreaMidScale(float64(loftUI.areaMid))
-	drawOpenLoftConditions(s, l, closed)
 }
 
-func drawOpenLoftConditions(s *app.Session, l *app.LoftTool, closed bool) {
-	if closed {
-		return
+// drawLoftTransitionTab is Inventor's Transition tab: how points on adjacent sections correspond.
+// By default the loft maps sections AUTOMATICALLY to minimise twist. Picking map curves — open
+// sketch paths that carry one anchor point across the sections — overrides that, so a chosen point
+// on one section lines up with a chosen point on the next (a feature stays aligned instead of
+// spiralling). "Pick map curves" arms path picking; "Clear mapping" returns to automatic.
+func drawLoftTransitionTab(l *app.LoftTool) {
+	if l.AutomaticMapping() {
+		native.Text("Automatic mapping: sections are aligned to minimise twist.")
+		native.Text("Pick map curves to align chosen points across the sections.")
+	} else {
+		native.Text(fmt.Sprintf("%d point mapping(s) override the automatic alignment.", l.MapCurveCount()))
 	}
-	drawLoftEndConditionRows(s, "Start", "loft-start", &loftUI.first)
-	drawLoftEndConditionRows(s, "End", "loft-end", &loftUI.last)
-	l.SetFirstCondition(loftUI.first.toEnd())
-	l.SetLastCondition(loftUI.last.toEnd())
+	native.Separator()
+	if native.Button("Pick map curves") {
+		l.ArmMapCurvePicking()
+	}
+	if !l.AutomaticMapping() {
+		native.SameLine()
+		if native.Button("Clear mapping") {
+			l.ClearMapCurves()
+		}
+	}
 }
 
 // drawLoftEndConditionRows renders one end's condition combo plus, for an angle/
@@ -179,14 +339,6 @@ func drawLoftEndConditionParams(s *app.Session, id string, u *loftEndUI) {
 	if native.Checkbox("Reversed##"+id, &rev) {
 		u.reversed = rev
 	}
-}
-
-// drawLoftOutput is the Output section: the shared Boolean toggle row.
-func drawLoftOutput(l *app.LoftTool) {
-	if !propertySection("Output") {
-		return
-	}
-	drawBooleanPropertyRow("loft-boolean", l.Operation(), l.SetOperation)
 }
 
 // seedLoftEndUI builds the degree-state editor for an end condition (impact defaults to 1).

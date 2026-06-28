@@ -148,6 +148,76 @@ func (t *LoftTool) LastCondition() feature.LoftEnd      { return t.last }
 // SectionCount returns how many cross-sections (profiles + points) have been picked.
 func (t *LoftTool) SectionCount() int { return len(t.sections) }
 
+// LoftSectionKind names what a picked cross-section is, so the Sections list can show and icon each
+// row (a profile region, an apex point, or a tangent body face) — Inventor's Curves-tab section list.
+type LoftSectionKind int
+
+const (
+	// LoftSectionProfile is a sketch profile region.
+	LoftSectionProfile LoftSectionKind = iota
+	// LoftSectionPoint is an apex point (a vertex or work point the loft tapers to).
+	LoftSectionPoint
+	// LoftSectionFace is an existing body face the loft leaves tangent.
+	LoftSectionFace
+)
+
+// SectionKindAt reports the kind of cross-section i (LoftSectionProfile for an out-of-range index, so
+// the UI degrades gracefully).
+func (t *LoftTool) SectionKindAt(i int) LoftSectionKind {
+	if i < 0 || i >= len(t.sections) {
+		return LoftSectionProfile
+	}
+	switch s := t.sections[i]; {
+	case s.isPoint():
+		return LoftSectionPoint
+	case s.isFace():
+		return LoftSectionFace
+	default:
+		return LoftSectionProfile
+	}
+}
+
+// SectionLabel returns a human label for cross-section i in display order: a profile shows its source
+// sketch name (Inventor lists "Sketch2"), a point shows "Point", a face shows "Face". Empty for an
+// out-of-range index.
+func (t *LoftTool) SectionLabel(i int) string {
+	if i < 0 || i >= len(t.sections) {
+		return ""
+	}
+	switch s := t.sections[i]; {
+	case s.isPoint():
+		return "Point"
+	case s.isFace():
+		return "Face"
+	case s.profile.Sketch != nil:
+		return s.profile.Sketch.Name()
+	default:
+		return "Profile"
+	}
+}
+
+// RemoveSection deletes cross-section i — the Sections list's per-row delete. Out-of-range is a no-op.
+// The remaining sections keep their order, so the blend sequence stays meaningful.
+func (t *LoftTool) RemoveSection(i int) {
+	if i < 0 || i >= len(t.sections) {
+		return
+	}
+	t.sections = append(t.sections[:i], t.sections[i+1:]...)
+}
+
+// MoveSection relocates cross-section from to index to, shifting the rest — the drag-and-drop reorder
+// of the Sections list (the order IS the blend order, so this reshapes the loft). Out-of-range or
+// no-op indices leave the order unchanged. Mirrors SelectionFilterState.Move.
+func (t *LoftTool) MoveSection(from, to int) {
+	n := len(t.sections)
+	if from < 0 || from >= n || to < 0 || to >= n || from == to {
+		return
+	}
+	s := t.sections[from]
+	t.sections = append(t.sections[:from], t.sections[from+1:]...)
+	t.sections = append(t.sections[:to], append([]loftPick{s}, t.sections[to:]...)...)
+}
+
 // PickedProfiles is the unified-tool-highlight accessor: the head outlines every picked PROFILE
 // cross-section (point sections have nothing to outline).
 func (t *LoftTool) PickedProfiles() []ProfileHandle {
@@ -339,3 +409,17 @@ func (t *LoftTool) ClearGuides() {
 	t.centerline = nil
 	t.mapCurves = nil
 }
+
+// AutomaticMapping reports whether section correspondence is automatic — no map curves are picked,
+// so the loft aligns sections to minimise twist. The Transition tab toggles between this and an
+// explicit point mapping (#1521).
+func (t *LoftTool) AutomaticMapping() bool { return len(t.mapCurves) == 0 }
+
+// ArmMapCurvePicking routes subsequent viewport path picks to the map-curve point mapping — the
+// Transition tab's "pick map curves" action. Each picked open path carries one anchor point per
+// section, overriding the automatic minimum-twist alignment so chosen points line up across the loft.
+func (t *LoftTool) ArmMapCurvePicking() { t.guideKind = loftGuideMapCurve }
+
+// ClearMapCurves drops the point-mapping picks, returning the loft to automatic section alignment —
+// the Transition tab's reset. Rails and the centerline are left untouched.
+func (t *LoftTool) ClearMapCurves() { t.mapCurves = nil }
