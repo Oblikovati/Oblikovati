@@ -8,9 +8,9 @@ import (
 	"oblikovati.org/api/types"
 )
 
-// TestNewManagerSeedsBuiltins checks the registry starts with the local built-in styles.
-func TestNewManagerSeedsBuiltins(t *testing.T) {
-	m := NewManager()
+// TestNewRegistrySeedsBuiltins checks the registry starts with the local built-in styles.
+func TestNewRegistrySeedsBuiltins(t *testing.T) {
+	m := NewRegistry()
 	if _, ok := m.ByName("Default"); !ok {
 		t.Error("expected a built-in Default style")
 	}
@@ -21,7 +21,7 @@ func TestNewManagerSeedsBuiltins(t *testing.T) {
 
 // TestSetAddsThenUpdates checks Set adds a new style then updates it in place.
 func TestSetAddsThenUpdates(t *testing.T) {
-	m := NewManager()
+	m := NewRegistry()
 	added, err := m.Set(ColorStyle{Name: "Glass", Opacity: 0.3, Location: types.LocalStyleLocation})
 	if err != nil || !added {
 		t.Fatalf("Set new = (added %v, err %v), want (true, nil)", added, err)
@@ -38,14 +38,14 @@ func TestSetAddsThenUpdates(t *testing.T) {
 
 // TestSetBlankNameErrors rejects an unaddressable style.
 func TestSetBlankNameErrors(t *testing.T) {
-	if _, err := NewManager().Set(ColorStyle{}); err == nil {
+	if _, err := NewRegistry().Set(ColorStyle{}); err == nil {
 		t.Error("a blank style name should error")
 	}
 }
 
 // TestDeleteRemovesOrErrors checks deletion and the missing-name error.
 func TestDeleteRemovesOrErrors(t *testing.T) {
-	m := NewManager()
+	m := NewRegistry()
 	if err := m.Delete("Steel"); err != nil {
 		t.Fatalf("Delete Steel: %v", err)
 	}
@@ -60,7 +60,7 @@ func TestDeleteRemovesOrErrors(t *testing.T) {
 // TestImportMergesLibraryStylesWithoutShadowingLocal checks a library style merges as
 // Library-located, but a same-named local style wins the cascade (is not overwritten).
 func TestImportMergesLibraryStylesWithoutShadowingLocal(t *testing.T) {
-	m := NewManager()
+	m := NewRegistry()
 	added := m.Import(Library{Name: "Metals", Path: "/x/metals.obkstyle", Styles: []ColorStyle{
 		{Name: "Titanium", Opacity: 1},
 		{Name: "Default", Opacity: 0.1}, // collides with the local built-in
