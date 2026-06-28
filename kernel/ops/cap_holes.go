@@ -33,6 +33,7 @@ func CapHoles(body *topo.Body, wallFaceKeys [][]byte) (*topo.Body, error) {
 	if r := Validate(result); !r.Valid || !result.IsSolid() {
 		return nil, fmt.Errorf("cap-holes: result is not a closed solid (openings not coplanar with their faces?) %v", r.Issues)
 	}
+	result.InheritOriginalEdges(body.Edges()) // surviving edges keep their identity (ADR-0043)
 	return result, nil
 }
 
@@ -45,7 +46,7 @@ func cappedLoops(body *topo.Body, removed map[uint64]bool) []ploop {
 		if removed[f.ID()] {
 			continue
 		}
-		pl := ploop{normal: f.Geometry().NormalAt(0, 0)}
+		pl := ploop{normal: f.Geometry().NormalAt(0, 0), lineage: f.Lineage()} // keep the surviving face's identity (ADR-0043)
 		for _, l := range f.Loops() {
 			if !l.IsOuter() && loopBordersRemoved(l, removed) {
 				continue // an opening into the capped hole ⇒ heal flush (drop the inner loop)
