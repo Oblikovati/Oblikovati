@@ -31,14 +31,14 @@ func angleDegRow(s *app.Session, label, id string, degBuf *float32) {
 // appended after the unit label (e.g. " (+out / −in)" for a signed value).
 func lengthCmRowHint(s *app.Session, label, id, hint string, cmBuf *float32) {
 	disp := float32(s.LengthToDisplay(float64(*cmBuf)))
-	if propertyFloatRow(label, id, s.LengthUnitName()+hint, &disp) {
+	if parameterFloatRow(label, id, s.LengthUnitName(), s.LengthPrecision(), hint, &disp) {
 		*cmBuf = float32(s.LengthFromDisplay(float64(disp)))
 	}
 }
 
 func angleDegRowHint(s *app.Session, label, id, hint string, degBuf *float32) {
 	disp := float32(s.AngleDegToDisplay(float64(*degBuf)))
-	if propertyFloatRow(label, id, s.AngleUnitName()+hint, &disp) {
+	if parameterFloatRow(label, id, s.AngleUnitName(), s.AnglePrecision(), hint, &disp) {
 		*degBuf = float32(s.AngleDisplayToDeg(float64(disp)))
 	}
 }

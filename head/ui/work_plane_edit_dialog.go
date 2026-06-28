@@ -65,13 +65,8 @@ func drawWorkPlaneScalars(s *app.Session, n int) {
 		return
 	}
 	for i := 0; i < n && i < len(workPlaneEditUI.values); i++ {
-		propertyRow(s.EditPlaneScalarLabel(i))
-		native.SetNextItemWidth(propertyFieldWidth)
-		native.InputFloat(fmt.Sprintf("##edit-plane-scalar-%d", i), &workPlaneEditUI.values[i])
-		if u := s.EditPlaneScalarUnitName(i); u != "" {
-			native.SameLine()
-			native.Text(u)
-		}
+		parameterFloatRow(s.EditPlaneScalarLabel(i), fmt.Sprintf("edit-plane-scalar-%d", i),
+			s.EditPlaneScalarUnitName(i), -1, "", &workPlaneEditUI.values[i])
 		s.SetEditPlaneScalarValue(i, float64(workPlaneEditUI.values[i])) // keep the plane in sync
 	}
 }

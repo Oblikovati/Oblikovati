@@ -185,9 +185,8 @@ func drawExtrudeDistanceRow(s *app.Session, ext *app.ExtrudeTool) {
 	propertyRow("Distance A")
 	native.BeginDisabled(ext.ExtentType() != feature.DistanceExtent)
 	native.SetNextItemWidth(propertyFieldWidth)
-	native.InputFloat("##extrude-distance", &extrudeUI.distance)
+	native.InputFloatFormat("##extrude-distance", &extrudeUI.distance, parameterDisplayFormat(s.LengthUnitName(), s.LengthPrecision()))
 	s.SetExtrudeDistanceDisplay(float64(extrudeUI.distance))
-	native.SetItemTooltip("Distance A (" + s.LengthUnitName() + ")")
 	native.EndDisabled()
 	native.SameLine()
 	e := extrudeExtentToggles
@@ -211,9 +210,8 @@ func extrudeExtentIndex(ext *app.ExtrudeTool) int {
 func drawExtrudeSecondDistanceRow(s *app.Session) {
 	propertyRow("Distance B")
 	native.SetNextItemWidth(propertyFieldWidth)
-	native.InputFloat("##extrude-second", &extrudeUI.second)
+	native.InputFloatFormat("##extrude-second", &extrudeUI.second, parameterDisplayFormat(s.LengthUnitName(), s.LengthPrecision()))
 	s.SetExtrudeSecondDistanceDisplay(float64(extrudeUI.second))
-	native.SetItemTooltip("Distance B (" + s.LengthUnitName() + ")")
 }
 
 // drawExtrudeOutput is the Output section: the shared Boolean toggle row.
@@ -229,7 +227,7 @@ func drawExtrudeAdvanced(s *app.Session) {
 	if !propertySection("Advanced Properties") {
 		return
 	}
-	propertyFloatRow("Taper A", "extrude-taper", s.AngleUnitName(), &extrudeUI.taper)
+	parameterFloatRow("Taper A", "extrude-taper", s.AngleUnitName(), s.AnglePrecision(), "", &extrudeUI.taper)
 	s.SetExtrudeTaperDisplay(float64(extrudeUI.taper))
 }
 

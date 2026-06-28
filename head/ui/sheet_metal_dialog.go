@@ -188,22 +188,22 @@ func seedStyleBuffers(t *app.SheetMetalStyleTool) {
 
 // drawStyleRows draws the rule's editable rows and writes each back to the tool every frame.
 func drawStyleRows(s *app.Session, t *app.SheetMetalStyleTool) {
-	unit := s.LengthUnitName()
-	propertyFloatRow("Thickness", "sm-style-thickness", unit, &smUI.thickness)
+	unit, prec := s.LengthUnitName(), s.LengthPrecision()
+	parameterFloatRow("Thickness", "sm-style-thickness", unit, prec, "", &smUI.thickness)
 	t.SetThickness(float64(smUI.thickness))
-	propertyFloatRow("Bend Radius", "sm-style-radius", unit, &smUI.bendRadius)
+	parameterFloatRow("Bend Radius", "sm-style-radius", unit, prec, "", &smUI.bendRadius)
 	t.SetBendRadius(float64(smUI.bendRadius))
-	propertyFloatRow("K-Factor", "sm-style-kfactor", "", &smUI.kFactor)
+	parameterFloatRow("K-Factor", "sm-style-kfactor", "", -1, "", &smUI.kFactor)
 	t.SetKFactor(float64(smUI.kFactor))
 	if i := propertyComboRow("Relief Shape", "sm-style-relief", reliefShapeNames, smUI.reliefShape); i >= 0 {
 		smUI.reliefShape = i
 	}
 	t.SetReliefShapeIndex(smUI.reliefShape)
-	propertyFloatRow("Relief Width", "sm-style-relief-w", unit, &smUI.reliefWidth)
+	parameterFloatRow("Relief Width", "sm-style-relief-w", unit, prec, "", &smUI.reliefWidth)
 	t.SetReliefWidth(float64(smUI.reliefWidth))
-	propertyFloatRow("Relief Depth", "sm-style-relief-d", unit, &smUI.reliefDepth)
+	parameterFloatRow("Relief Depth", "sm-style-relief-d", unit, prec, "", &smUI.reliefDepth)
 	t.SetReliefDepth(float64(smUI.reliefDepth))
-	propertyFloatRow("Min Gap", "sm-style-gap", unit, &smUI.ruleGap)
+	parameterFloatRow("Min Gap", "sm-style-gap", unit, prec, "", &smUI.ruleGap)
 	t.SetGap(float64(smUI.ruleGap))
 }
 

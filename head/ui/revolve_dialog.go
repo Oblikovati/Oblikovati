@@ -51,7 +51,7 @@ func drawRevolveDialog(s *app.Session) {
 		}
 		drawFeatureBreadcrumb(title, rv.SourceSketchName())
 		drawRevolveInputGeometry(rv)
-		drawRevolveBehavior(rv)
+		drawRevolveBehavior(s, rv)
 		drawRevolveOutput(rv)
 		native.Separator()
 		drawCommitCancelButtons(s, rv.CanCommit())
@@ -117,18 +117,20 @@ func revolveAxisCombo(rv *app.RevolveTool) {
 
 // drawRevolveBehavior is the Behavior section: the Angle A field (greyed during a full
 // revolution) with the full-revolution toggle beside it.
-func drawRevolveBehavior(rv *app.RevolveTool) {
+func drawRevolveBehavior(s *app.Session, rv *app.RevolveTool) {
 	if !propertySection("Behavior") {
 		return
 	}
 	propertyRow("Angle A")
 	native.BeginDisabled(rv.IsFullRevolution())
 	native.SetNextItemWidth(propertyFieldWidth)
-	native.InputFloat("##revolve-angle", &revolveUI.angleDeg)
+	disp := float32(s.AngleDegToDisplay(float64(revolveUI.angleDeg)))
+	if native.InputFloatFormat("##revolve-angle", &disp, parameterDisplayFormat(s.AngleUnitName(), s.AnglePrecision())) {
+		revolveUI.angleDeg = float32(s.AngleDisplayToDeg(float64(disp)))
+	}
 	if !rv.IsFullRevolution() {
 		rv.SetAngle(float64(revolveUI.angleDeg) * stdmath.Pi / 180)
 	}
-	native.SetItemTooltip("Angle A (deg)")
 	native.EndDisabled()
 	native.SameLine()
 	if drawPropertyToggle("revolve-full", "angle-full", "Full — revolve the whole 360°", rv.IsFullRevolution()) {

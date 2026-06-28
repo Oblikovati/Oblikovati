@@ -61,7 +61,7 @@ func refreshFeatureEditUI(s *app.Session, nParams int) {
 	for i := 0; i < nParams; i++ {
 		featureEditUI.values[i] = float32(s.EditFeatureParamValue(i))
 		featureEditUI.texts[i] = make([]byte, editFieldBufLen)
-		setBuf(featureEditUI.texts[i], strconv.FormatFloat(s.EditFeatureParamValue(i), 'g', -1, 64))
+		setBuf(featureEditUI.texts[i], paramSeedText(s.EditFeatureParamValue(i), s.EditFeatureParamUnitName(i)))
 	}
 	featureEditUI.editing = s.EditingFeatureName()
 }
@@ -137,8 +137,18 @@ func drawEditParamRow(s *app.Session, i int) {
 	} else if native.InputText(fmt.Sprintf("##edit-feature-param-%d", i), featureEditUI.texts[i]) {
 		_ = s.SetEditFeatureParamText(i, bufString(featureEditUI.texts[i]))
 	}
-	if u := s.EditFeatureParamUnitName(i); u != "" {
-		native.SameLine()
-		native.Text(u)
+	// The unit is seeded INTO the field's text ("10 mm", paramSeedText) rather than painted beside
+	// it as a label (#1519): an expression field carries its own dimension, so there is no separate
+	// unit label here. An integer field (a count) has no unit and stays a plain spinner.
+}
+
+// paramSeedText is the initial text for an editable scalar's expression field: the value in the
+// document unit with the unit appended ("10 mm"), so the dimension is part of the editable token. A
+// unitless field (an integer count, or a ratio) is seeded as the bare number.
+func paramSeedText(value float64, unit string) string {
+	t := strconv.FormatFloat(value, 'g', -1, 64)
+	if unit != "" {
+		t += " " + unit
 	}
+	return t
 }

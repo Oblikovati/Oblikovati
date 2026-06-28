@@ -106,10 +106,10 @@ func drawToolChoice(c app.ChoiceParam) {
 
 func drawToolFloatParams(params app.ToolParams) {
 	for _, f := range params.Floats {
-		propertyRow(f.Label)
-		native.SetNextItemWidth(propertyFieldWidth)
 		v := float32(f.Get())
-		if native.InputFloat(toolParamPrefix+f.Label, &v) {
+		// Add-in float params carry no document unit; ParameterInput still owns the row (no bare
+		// InputFloat in a tool dialog — see guard_parameter_input_test).
+		if parameterFloatRow(f.Label, "tool-param-"+f.Label, "", -1, "", &v) {
 			f.Set(float64(v))
 		}
 	}

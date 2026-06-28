@@ -279,7 +279,7 @@ func drawLoftConditionsTab(s *app.Session, l *app.LoftTool) {
 		l.SetLastCondition(loftUI.last.toEnd())
 	}
 	native.Separator()
-	propertyFloatRow("Area Mid", "loft-area-mid", "× (1 = off)", &loftUI.areaMid)
+	parameterFloatRow("Area Mid", "loft-area-mid", "", -1, "× (1 = off)", &loftUI.areaMid)
 	l.SetAreaMidScale(float64(loftUI.areaMid))
 }
 
@@ -333,7 +333,7 @@ func drawLoftEndConditionParams(s *app.Session, id string, u *loftEndUI) {
 	if u.cond == 1 || u.cond == 2 { // Angle / Direction: takeoff angle on a profile section
 		angleDegRow(s, "  Angle", id+"-angle", &u.angleDeg)
 	}
-	propertyFloatRow("  Impact", id+"-impact", "", &u.impact)
+	parameterFloatRow("  Impact", id+"-impact", "", -1, "", &u.impact)
 	propertyRow("")
 	rev := u.reversed
 	if native.Checkbox("Reversed##"+id, &rev) {
