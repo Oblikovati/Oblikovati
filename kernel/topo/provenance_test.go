@@ -107,3 +107,37 @@ func TestRelineageSkipsUnprovenancedFaces(t *testing.T) {
 		t.Errorf("edge renamed despite no face provenance: %q → %q", before, got)
 	}
 }
+
+// TestInheritOriginalEdges pins ADR-0043 P2′: a result edge coincident with an input edge takes
+// that edge's lineage (an unsplit survivor), while a result edge matching no input edge keeps its
+// build-order fallback. Only a 1:1 match inherits.
+func TestInheritOriginalEdges(t *testing.T) {
+	bld := NewBuilder(false, NewLineage(Tok("res", "body", 0)))
+	a := bld.AddVertex(math.P3(0, 0, 0), NewLineage(Tok("res", "v", 0)))
+	b := bld.AddVertex(math.P3(1, 0, 0), NewLineage(Tok("res", "v", 1)))
+	c := bld.AddVertex(math.P3(0, 1, 0), NewLineage(Tok("res", "v", 2)))
+	ab := bld.AddEdge(geom.NewLineSegment(a.Point(), b.Point()), a, b, NewLineage(Tok("brep", "edge", 0)))
+	bc := bld.AddEdge(geom.NewLineSegment(b.Point(), c.Point()), b, c, NewLineage(Tok("brep", "edge", 1)))
+	ca := bld.AddEdge(geom.NewLineSegment(c.Point(), a.Point()), c, a, NewLineage(Tok("brep", "edge", 2)))
+	pl, _ := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
+	bld.AddFace(pl, NewLineage(Tok("res", "face", 0)), OuterLoop(Fwd(ab), Fwd(bc), Fwd(ca)))
+	body := bld.Build()
+
+	// Original edges: one coincident with ab (reversed, to exercise both directions), one far away.
+	ob := NewBuilder(false, NewLineage(Tok("orig", "body", 0)))
+	o1 := ob.AddVertex(math.P3(1, 0, 0), NewLineage(Tok("orig", "v", 0)))
+	o2 := ob.AddVertex(math.P3(0, 0, 0), NewLineage(Tok("orig", "v", 1)))
+	origAB := ob.AddEdge(geom.NewLineSegment(o1.Point(), o2.Point()), o1, o2, NewLineage(Tok("Extrusion1", "bottom-edge", 3)))
+	f1 := ob.AddVertex(math.P3(9, 9, 9), NewLineage(Tok("orig", "v", 2)))
+	f2 := ob.AddVertex(math.P3(9, 9, 8), NewLineage(Tok("orig", "v", 3)))
+	far := ob.AddEdge(geom.NewLineSegment(f1.Point(), f2.Point()), f1, f2, NewLineage(Tok("Extrusion1", "x", 0)))
+
+	body.InheritOriginalEdges([]*Edge{origAB, far})
+
+	if got := string(ab.Lineage().Key()); got != "Extrusion1:bottom-edge#3" {
+		t.Errorf("coincident edge ab = %q, want it to inherit Extrusion1:bottom-edge#3", got)
+	}
+	if got := string(bc.Lineage().Key()); got != "brep:edge#1" {
+		t.Errorf("non-matching edge bc = %q, want it unchanged (brep:edge#1)", got)
+	}
+}

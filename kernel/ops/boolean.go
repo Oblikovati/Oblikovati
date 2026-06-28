@@ -110,6 +110,11 @@ func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.L
 	if body == nil {
 		return topo.MergeBodies(lin, true), nil
 	}
+	// Provenance (ADR-0043): the planar boolean names intersection edges by their crossing faces but
+	// falls surviving ORIGINAL boundaries back to a build-order ordinal (brep:edge#N). Restore those
+	// boundaries' original identity so a reference to an edge the operation passed through whole — a
+	// box edge a chamfer/combine/hole left untouched — survives an upstream edit.
+	body.InheritOriginalEdges(append(append([]*topo.Edge(nil), target.Edges()...), tool.Edges()...))
 	// Guard: the exact planar boolean can still produce an INVALID (non-manifold) result on a
 	// degenerate arrangement — notably a coplanar flush face combined with an oblique partial
 	// penetration (the "V2" oblique-into-corner-with-flush-bottom case), where the coplanar
