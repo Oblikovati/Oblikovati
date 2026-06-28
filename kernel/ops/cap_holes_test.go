@@ -79,6 +79,42 @@ func TestCapHolesExplicitSelection(t *testing.T) {
 	}
 }
 
+// TestCapHolesKeepsSurvivingIdentity is ADR-0043: capping a hole rebuilds the body, but the faces
+// and edges it carries through unchanged keep their ORIGINAL identity rather than fresh ordinals,
+// so a selection on an untouched outer face/edge survives the operation.
+func TestCapHolesKeepsSurvivingIdentity(t *testing.T) {
+	holey := boxWithThroughHole(t)
+	var walls [][]byte
+	var outerSide []byte
+	for _, f := range holey.Faces() {
+		if n := f.Geometry().NormalAt(0, 0); stdmath.Abs(n.Z) < 0.1 && interiorXY(f) {
+			walls = append(walls, f.ReferenceKey())
+		} else if stdmath.Abs(n.Z) < 0.1 {
+			outerSide = f.ReferenceKey() // a fully untouched outer side face
+		}
+	}
+	inEdges := map[string]bool{}
+	for _, e := range holey.Edges() {
+		inEdges[string(e.ReferenceKey())] = true
+	}
+	capped, err := ops.CapHoles(holey, walls)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := capped.FindFaceByKey(outerSide); !ok {
+		t.Error("an untouched outer face lost its identity — the rebuild renamed it")
+	}
+	edgeKept := 0
+	for _, e := range capped.Edges() {
+		if inEdges[string(e.ReferenceKey())] {
+			edgeKept++
+		}
+	}
+	if edgeKept == 0 {
+		t.Error("no surviving edge kept its identity — all renamed to delface:e#N")
+	}
+}
+
 // TestCapHolesByDiameterIgnoresWideOpening leaves the hole when its opening exceeds the max
 // diameter (returns the body unchanged).
 func TestCapHolesByDiameterIgnoresWideOpening(t *testing.T) {
