@@ -47,14 +47,10 @@ func TestInWindowLoftDialogRenders(t *testing.T) {
 		t.Fatalf("seeded section count = %d, want 3", l.SectionCount())
 	}
 
-	// Drive a real drag-reorder + row selection through the docked panel, so the section-row draw
-	// branches — the Selectable click and the drag source/target that call MoveSection — execute.
-	driveLoftSectionReorder(win, s)
-
-	// ImGui renders only the selected tab, so DrawChrome alone hits just Curves. Drive every tab body
-	// directly — Curves with a row selected (the Remove-section affordance), Conditions open and then
-	// closed (the no-end-sections note), and Transition automatic and then with a mapping — so the
-	// whole dialog draw path is covered.
+	// Non-destructive coverage first. ImGui renders only the selected tab, so DrawChrome alone hits just
+	// Curves; drive every tab body directly — Curves with a row selected (the Remove-section affordance),
+	// Conditions open and then closed (the no-end-sections note), and Transition automatic and then with
+	// a mapping — so the whole dialog draw path is covered.
 	loftUI.open = true
 	loftUI.selectedSection = 1
 	loftCoverFrame(win, func() {
@@ -74,13 +70,16 @@ func TestInWindowLoftDialogRenders(t *testing.T) {
 		t.Error("after picking a map curve the loft should not report automatic mapping")
 	}
 
-	// Removing the selected row through the API the dialog button calls keeps the list consistent.
-	l.RemoveSection(1)
-	if l.SectionCount() != 2 {
-		t.Errorf("after RemoveSection, count = %d, want 2", l.SectionCount())
+	// Drive the real, DESTRUCTIVE interactions last: a row selection + drag-reorder, then a Remove/Clear
+	// button click — so the section-row draw branches (Selectable click, drag source/target → MoveSection,
+	// the buttons) actually execute. The section count must end lower than it started.
+	loftUI.selectedSection = 1
+	driveLoftSectionInteractions(win, l)
+	if n := l.SectionCount(); n < 2 || n > 3 {
+		t.Errorf("after the reorder/remove interaction the section count is %d, want 2 or 3", n)
 	}
 
-	// The empty-list state renders its prompt instead of rows.
+	// Finally the empty-list state renders its prompt instead of rows.
 	l.ClearSections()
 	loftCoverFrame(win, func() { drawLoftSectionsList(l) })
 	if l.SectionCount() != 0 {
@@ -88,57 +87,58 @@ func TestInWindowLoftDialogRenders(t *testing.T) {
 	}
 }
 
-// driveLoftSectionReorder finds a Sections-list row in the docked panel and drags it onto the next
-// row, exercising the Selectable-click and drag-drop reorder branches of drawLoftSectionRows /
-// reorderLoftSectionRow. Best-effort: if the row pixel can't be located (ImGui metrics vary), the
-// surrounding render still covers the rest of the draw path.
-func driveLoftSectionReorder(win *native.Window, s *app.Session) {
-	frame := func() {
-		win.BeginFrame()
-		DrawChrome(win, s)
-		win.EndFrame(0.1, 0.1, 0.12)
+// loftInteractWindow is the fixed on-screen rectangle the Curves tab is rendered into for the
+// interaction test, so a row/button pixel is deterministic rather than wherever the dock places it.
+const (
+	loftIWX, loftIWY = 8, 8
+	loftIWW, loftIWH = 380, 520
+)
+
+// curvesFrame renders one frame showing ONLY the Curves tab in a fixed-position window, so injected
+// clicks land on known geometry.
+func curvesFrame(win *native.Window, l *app.LoftTool) {
+	win.BeginFrame()
+	native.SetNextWindowPos(loftIWX, loftIWY)
+	native.SetNextWindowSize(loftIWW, loftIWH)
+	if native.Begin("##loft-interact") {
+		drawLoftCurvesTab(l)
 	}
+	native.End()
+	win.EndFrame(0.1, 0.1, 0.12)
+}
+
+// driveLoftSectionInteractions clicks a Sections-list row (the Selectable branch), drags it onto its
+// neighbour (the drag-drop reorder branches → MoveSection) and clicks the Remove button (the button
+// branch) — all in the fixed-position Curves tab. Best-effort: the surrounding render covers the rest
+// even if a pixel can't be located (ImGui metrics vary).
+func driveLoftSectionInteractions(win *native.Window, l *app.LoftTool) {
+	frame := func() { curvesFrame(win, l) }
 	frame()
 	frame()
 	rx, ry, found := findLoftSectionRow(frame)
 	if !found {
 		return
 	}
-	// Press the row, cross the drag threshold, then hover the next row before releasing so ImGui starts
-	// the drag-drop and the target accepts it (reorderLoftSectionRow's source + target → MoveSection).
 	const rowH = 21
 	native.InjectMousePos(rx, ry)
 	frame()
 	native.InjectMouseButton(native.MouseLeft, true)
 	frame()
-	native.InjectMousePos(rx, ry+rowH*0.5)
+	native.InjectMousePos(rx, ry+rowH*0.6) // exceed the drag threshold → BeginDragDropSource
 	frame()
-	native.InjectMousePos(rx, ry+rowH)
+	native.InjectMousePos(rx, ry+rowH) // hover the next row → its BeginDragDropTarget accepts
 	frame()
-	frame()
-	native.InjectMouseButton(native.MouseLeft, false)
-	frame()
-
-	// Right-click the row to open its context menu (the Remove-section path's BeginPopupContextItem),
-	// then dismiss it by clicking empty space below the list.
-	native.InjectMousePos(rx, ry)
-	frame()
-	native.InjectMouseButton(native.MouseRight, true)
-	frame()
-	native.InjectMouseButton(native.MouseRight, false)
-	frame()
-	native.InjectMousePos(rx, ry+rowH*5)
-	native.InjectMouseButton(native.MouseLeft, true)
 	frame()
 	native.InjectMouseButton(native.MouseLeft, false)
 	frame()
+	clickLoftRemoveButton(win, l) // the Remove-section button (a row is still selected)
 }
 
-// findLoftSectionRow scans the docked property panel for a pixel that selects a Sections-list row
-// (clicking it sets loftUI.selectedSection), returning its position. frame renders one DrawChrome frame.
+// findLoftSectionRow scans the fixed Curves-tab window for the pixel that selects a Sections-list row
+// (clicking it sets loftUI.selectedSection), returning its position.
 func findLoftSectionRow(frame func()) (float32, float32, bool) {
-	for y := float32(150); y <= 320; y += 6 {
-		for x := float32(80); x <= 260; x += 30 {
+	for y := float32(loftIWY + 30); y <= loftIWY+170; y += 4 {
+		for x := float32(loftIWX + 16); x <= loftIWX+220; x += 24 {
 			loftUI.selectedSection = -1
 			native.InjectMousePos(x, y)
 			frame()
@@ -152,6 +152,27 @@ func findLoftSectionRow(frame func()) (float32, float32, bool) {
 		}
 	}
 	return 0, 0, false
+}
+
+// clickLoftRemoveButton scans below the sections list for the pixel that removes a section (the Remove
+// or Clear-all button), so drawLoftSectionsListButtons' click branch executes.
+func clickLoftRemoveButton(win *native.Window, l *app.LoftTool) {
+	frame := func() { curvesFrame(win, l) }
+	frame()
+	want := l.SectionCount()
+	for y := float32(loftIWY + 40); y <= loftIWY+260 && l.SectionCount() == want; y += 4 {
+		for x := float32(loftIWX + 16); x <= loftIWX+220; x += 16 {
+			native.InjectMousePos(x, y)
+			frame()
+			native.InjectMouseButton(native.MouseLeft, true)
+			frame()
+			native.InjectMouseButton(native.MouseLeft, false)
+			frame()
+			if l.SectionCount() < want {
+				return
+			}
+		}
+	}
 }
 
 // loftMapCurveSketch adds an open path to the active part and returns its sketch — a map curve the
