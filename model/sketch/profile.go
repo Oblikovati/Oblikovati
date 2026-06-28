@@ -255,9 +255,16 @@ func (s *Sketch) normalGeometry() []Entity {
 	return out
 }
 
-// groupRegions builds profiles from closed loops by even–odd nesting: a loop
-// contained in an even number of others is an outer boundary; loops one level
-// deeper inside it are its holes.
+// groupRegions builds profiles from closed loops by even–odd nesting: a loop contained in an even
+// number of others is an outer boundary; loops one level deeper inside it are its holes.
+//
+// As an exception, a hole loop that is a single closed PRIMITIVE the user drew — a circle or an
+// ellipse — ALSO bounds its own selectable region (the disk inside it), so a circle inside a
+// rectangle yields BOTH the annulus AND the disk, matching how Inventor lets you select either face.
+// (#1526: lofting "the circle" produced nothing because the disk was silently absorbed as a hole and
+// never offered as a profile.) The exception is deliberately narrow: text-glyph counters and abutting
+// grill cells are not single primitives, so they stay holes only and the glyph/grill region detection
+// (and the grill boolean, which uses ClosedLoops, #863) is unchanged.
 func groupRegions(loops []Loop) []*Profile {
 	depth := make([]int, len(loops))
 	for i := range loops {
@@ -269,12 +276,27 @@ func groupRegions(loops []Loop) []*Profile {
 	}
 	var profiles []*Profile
 	for i, l := range loops {
-		if depth[i]%2 != 0 {
-			continue // a hole; attached to its outer loop below
+		if depth[i]%2 == 0 || isClosedPrimitiveLoop(l) {
+			profiles = append(profiles, &Profile{outer: l, inner: holesOf(i, loops, depth)})
 		}
-		profiles = append(profiles, &Profile{outer: l, inner: holesOf(i, loops, depth)})
 	}
 	return profiles
+}
+
+// isClosedPrimitiveLoop reports whether a loop is a single closed-curve primitive (a circle or a full
+// ellipse). Such a loop unambiguously bounds a region the user can select — the basis for the
+// disk-inside-a-hole exception in groupRegions (#1526). A multi-entity loop (a polygon, a glyph
+// outline, a chain of grill bars) is not a primitive and keeps the plain even–odd hole behaviour.
+func isClosedPrimitiveLoop(l Loop) bool {
+	if len(l.entities) != 1 {
+		return false
+	}
+	switch l.entities[0].Entity.(type) {
+	case *Circle, *Ellipse:
+		return true
+	default:
+		return false
+	}
 }
 
 // holesOf returns the holes of outer (index oi): the loops one nesting level inside it. A

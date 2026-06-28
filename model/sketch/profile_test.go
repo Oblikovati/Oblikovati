@@ -66,24 +66,51 @@ func TestOpenProfileContainsNothing(t *testing.T) {
 	}
 }
 
+// A circle inside a rectangle yields TWO selectable regions, like Inventor: the annulus (the
+// rectangle with the circle as a hole) AND the disk (the circle bounding its own interior). Lofting,
+// extruding or revolving "the circle" picks the disk — before #1526 the disk was absorbed as a hole
+// and never offered, so selecting the circle produced nothing.
 func TestNestedLoopsClassifyInnerAndOuter(t *testing.T) {
 	s := NewSketches().Add(XYPlane())
 	addRectangle(s, 0, 0, 10, 10)                   // outer
-	s.Circles().AddByCenterRadius(math.P2(5, 5), 2) // hole inside it
+	s.Circles().AddByCenterRadius(math.P2(5, 5), 2) // a circle inside it
 	ps := s.Profiles()
-	if ps.Count() != 1 {
-		t.Fatalf("Profiles count = %d, want 1 region with a hole", ps.Count())
+	if ps.Count() != 2 {
+		t.Fatalf("Profiles count = %d, want 2 (the annulus and the disk)", ps.Count())
 	}
-	p := ps.Item(0)
-	if len(p.OuterLoop().Entities()) != 4 {
-		t.Errorf("outer loop entities = %d, want 4 (the rectangle)", len(p.OuterLoop().Entities()))
+	annulus, disk := classifyAnnulusAndDisk(t, ps)
+	if len(annulus.OuterLoop().Entities()) != 4 {
+		t.Errorf("annulus outer loop entities = %d, want 4 (the rectangle)", len(annulus.OuterLoop().Entities()))
 	}
-	if len(p.InnerLoops()) != 1 {
-		t.Fatalf("inner loops = %d, want 1 (the circle)", len(p.InnerLoops()))
+	if len(annulus.InnerLoops()) != 1 || !annulus.InnerLoops()[0].IsClosed() {
+		t.Errorf("annulus should have 1 closed inner loop (the circle); got %d", len(annulus.InnerLoops()))
 	}
-	if !p.InnerLoops()[0].IsClosed() {
-		t.Error("inner loop should be closed")
+	if len(disk.InnerLoops()) != 0 {
+		t.Errorf("the disk has no holes; got %d inner loops", len(disk.InnerLoops()))
 	}
+	if !disk.Contains(math.P2(5, 5)) {
+		t.Error("the disk region should contain the circle's centre")
+	}
+	if annulus.Contains(math.P2(5, 5)) {
+		t.Error("the annulus must NOT contain the circle's centre (that point is its hole)")
+	}
+}
+
+// classifyAnnulusAndDisk splits the two profiles into the one with a hole (the annulus) and the one
+// without (the disk).
+func classifyAnnulusAndDisk(t *testing.T, ps *Profiles) (annulus, disk *Profile) {
+	t.Helper()
+	for i := 0; i < ps.Count(); i++ {
+		if len(ps.Item(i).InnerLoops()) > 0 {
+			annulus = ps.Item(i)
+		} else {
+			disk = ps.Item(i)
+		}
+	}
+	if annulus == nil || disk == nil {
+		t.Fatalf("expected one annulus (with a hole) and one disk (no holes)")
+	}
+	return annulus, disk
 }
 
 func TestMultiRegionProfiles(t *testing.T) {
