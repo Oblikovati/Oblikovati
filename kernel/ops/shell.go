@@ -44,11 +44,17 @@ func shellFacePlane(f *topo.Face, removed map[uint64]bool, t float64) geom.Plane
 func resolveFaceSet(solid *topo.Body, keys [][]byte) (map[uint64]bool, error) {
 	set := make(map[uint64]bool, len(keys))
 	for _, k := range keys {
-		f, ok := solid.FindFaceByKey(k)
-		if !ok {
+		// ADR-0043 resolution guard: a key must bind to exactly one face. >1 is a topological-
+		// naming collision, surfaced as an honest error rather than a silent first-match.
+		match := solid.FacesByKey(k)
+		switch len(match) {
+		case 1:
+			set[match[0].ID()] = true
+		case 0:
 			return nil, fmt.Errorf("face reference lost: %x", k)
+		default:
+			return nil, fmt.Errorf("face reference %x is ambiguous — it matches %d faces (a topological-naming collision)", k, len(match))
 		}
-		set[f.ID()] = true
 	}
 	return set, nil
 }

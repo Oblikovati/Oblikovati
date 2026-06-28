@@ -154,13 +154,33 @@ func applyChamferTools(work *topo.Body, tools []wedgeOp) (*topo.Body, error) {
 func resolveEdges(body *topo.Body, keys [][]byte) ([]*topo.Edge, error) {
 	edges := make([]*topo.Edge, len(keys))
 	for i, k := range keys {
-		edge, ok := body.FindEdgeByKey(k)
-		if !ok {
-			return nil, fmt.Errorf("chamfer: edge reference lost")
+		// ADR-0043 resolution guard: a key must bind to EXACTLY one edge. Zero means the reference
+		// was lost; more than one means a topological-naming collision (two edges minted the same
+		// lineage) — surfaced as an honest error rather than a silent first-match wrong-rebind that
+		// would dress up an unintended edge (the #1536 hazard class).
+		match := body.EdgesByKey(k)
+		switch len(match) {
+		case 1:
+			edges[i] = match[0]
+		case 0:
+			return nil, fmt.Errorf("dress-up: edge reference %q lost (no edge with that lineage on the running body)", keyText(k))
+		default:
+			return nil, fmt.Errorf("dress-up: edge reference %q is ambiguous — it matches %d edges (a topological-naming collision); the selection cannot be resolved safely", keyText(k), len(match))
 		}
-		edges[i] = edge
 	}
 	return edges, nil
+}
+
+// keyText renders a reference key as its readable lineage string (the leading kind byte stripped)
+// for diagnostics, falling back to a hex-free best effort for an empty key.
+func keyText(k []byte) string {
+	if len(k) == 0 {
+		return "<empty>"
+	}
+	if k[0] < 0x20 {
+		return string(k[1:])
+	}
+	return string(k)
 }
 
 // chamferSetbacks resolves a chamfer definition's mode into the two face setbacks (d1 along

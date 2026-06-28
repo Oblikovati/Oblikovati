@@ -154,6 +154,30 @@ func (b *Body) FindEdgeByKey(key []byte) (*Edge, bool) {
 	return nil, false
 }
 
+// EdgesByKey returns EVERY edge whose reference key matches — normally one. More than one means a
+// topological-naming collision (two distinct edges minted the same lineage), the wrong-rebind
+// hazard ADR-0043's resolution guard turns into an honest error instead of a silent first-match.
+func (b *Body) EdgesByKey(key []byte) []*Edge {
+	var out []*Edge
+	for _, e := range b.Edges() {
+		if bytes.Equal(e.ReferenceKey(), key) {
+			out = append(out, e)
+		}
+	}
+	return out
+}
+
+// FacesByKey returns EVERY face whose reference key matches — the face counterpart of [EdgesByKey].
+func (b *Body) FacesByKey(key []byte) []*Face {
+	var out []*Face
+	for _, f := range b.Faces() {
+		if bytes.Equal(f.ReferenceKey(), key) {
+			out = append(out, f)
+		}
+	}
+	return out
+}
+
 // FindVertexByKey re-binds a vertex reference key by lineage — used to resolve a picked
 // B-rep vertex as a work-feature point input after the body is rebuilt.
 func (b *Body) FindVertexByKey(key []byte) (*Vertex, bool) {
