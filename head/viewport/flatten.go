@@ -29,22 +29,29 @@ type Mesh struct {
 	// (Biased items — work-plane/ground-plane fills — are appended after the opaque triangles).
 	// The native pass draws [0,TriBiasFirst) at zero bias and [TriBiasFirst,len) with a small
 	// bias so coplanar reference overlays do not z-fight solid geometry.
-	TriBiasFirst   int
-	OccVerts       []float32
-	OccVCount      int
-	OccIndices     []uint32
-	LineVerts      []float32
-	LineVCount     int
-	LineIndices    []uint32
-	HidVerts       []float32
-	HidVCount      int
-	HidIndices     []uint32
-	TopTriVerts    []float32
-	TopTriVCount   int
-	TopTriIndices  []uint32
-	TopLineVerts   []float32
-	TopLineVCount  int
-	TopLineIndices []uint32
+	TriBiasFirst  int
+	OccVerts      []float32
+	OccVCount     int
+	OccIndices    []uint32
+	LineVerts     []float32
+	LineVCount    int
+	LineIndices   []uint32
+	HidVerts      []float32
+	HidVCount     int
+	HidIndices    []uint32
+	TopTriVerts   []float32
+	TopTriVCount  int
+	TopTriIndices []uint32
+	// TopTriSolidFirst is the index into TopTriIndices at which the OPAQUE SOLID on-top
+	// triangles begin (client-graphics glyphs — fixed-support cubes, load arrows — appended
+	// after the flat/translucent on-top triangles). The native pass draws [0,TopTriSolidFirst)
+	// flat with the depth test disabled (the burn-through overlay), then clears depth and draws
+	// [TopTriSolidFirst,len) depth-tested + lit so each solid self-occludes instead of rendering
+	// as a scatter of arbitrary faces — issue #1489.
+	TopTriSolidFirst int
+	TopLineVerts     []float32
+	TopLineVCount    int
+	TopLineIndices   []uint32
 }
 
 // Flatten splits a draw list into the viewport streams, interleaving each vertex as
@@ -54,8 +61,15 @@ type Mesh struct {
 // Occluder is set, and lines to the hidden stream when Hidden is set.
 func Flatten(list renderer.DrawList) Mesh {
 	var m Mesh
-	var biased []renderer.DrawItem
+	var biased, solidOnTop []renderer.DrawItem
 	for _, item := range list.Items {
+		// Opaque, normal-bearing on-top triangle meshes (client-graphics glyphs) are held to the
+		// tail of the on-top stream so the native pass can draw them depth-tested + lit; the flat
+		// on-top path (translucent ghosts/highlights, normal-less flood plots, lines) is untouched.
+		if isSolidOnTopTriangle(item) {
+			solidOnTop = append(solidOnTop, item)
+			continue
+		}
 		biased = routeItem(&m, item, biased)
 	}
 	// Biased reference overlays go at the tail of the triangle stream so the native pass can draw
@@ -64,7 +78,33 @@ func Flatten(list renderer.DrawList) Mesh {
 	for _, item := range biased {
 		m.TriVCount = appendItem(&m.TriVerts, &m.TriIndices, m.TriVCount, item)
 	}
+	// Solid on-top glyphs go at the tail of the on-top triangle stream (after the flat overlays),
+	// drawn depth-cleared + depth-tested + lit so each reads as a real solid (#1489).
+	m.TopTriSolidFirst = len(m.TopTriIndices)
+	for _, item := range solidOnTop {
+		m.TopTriVCount = appendItem(&m.TopTriVerts, &m.TopTriIndices, m.TopTriVCount, item)
+	}
 	return m
+}
+
+// isSolidOnTopTriangle reports whether item is an OPAQUE, normal-bearing on-top triangle mesh —
+// a client-graphics solid glyph (support cube, load arrow) that must self-occlude to read as a
+// 3D solid AND sit on top of every other overlay (#1489). Translucent on-top overlays
+// (feature-preview ghosts, face highlights) and normal-less flat overlays (heatmap flood plots)
+// deliberately stay on the flat burn-through path: a flood plot is a flat data skin that must NOT
+// be lit and must stay UNDER the glyphs, and depth-writing a translucent overlay changes its look.
+func isSolidOnTopTriangle(item renderer.DrawItem) bool {
+	return item.OnTop && item.Primitive == renderer.Triangles &&
+		len(item.Normals) > 0 && isOpaqueItem(item)
+}
+
+// isOpaqueItem reports whether a draw item is fully opaque: an explicit fractional Opacity
+// (0,1) marks translucency, otherwise the item's broadcast color alpha decides.
+func isOpaqueItem(item renderer.DrawItem) bool {
+	if item.Opacity > 0 && item.Opacity < 1 {
+		return false
+	}
+	return item.Color[3] >= 1
 }
 
 // routeItem appends one draw item to the stream its flags select, returning the (possibly grown)

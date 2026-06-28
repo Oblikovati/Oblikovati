@@ -510,7 +510,7 @@ func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene
 		m.HidVerts, m.HidVCount, m.HidIndices,
 		m.TopTriVerts, m.TopTriVCount, m.TopTriIndices,
 		m.TopLineVerts, m.TopLineVCount, m.TopLineIndices,
-		m.TriBiasFirst, s.ActiveSectionClip(), // section-plane clip (M12-F04)
+		m.TriBiasFirst, m.TopTriSolidFirst, s.ActiveSectionClip(), // section-plane clip (M12-F04); #1489 solid-glyph split
 		mats, recs, geomKey) // instanced draw (ADR-0038); geomKey gates the geometry re-upload (#1422)
 	frameStats.gpuNs = time.Since(tg).Nanoseconds()
 	if tex := win.ViewportTexture(slot); tex != 0 {

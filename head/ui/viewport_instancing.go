@@ -78,8 +78,11 @@ func (b *instanceBuilder) addSource(src *topo.Body, mesh viewport.Mesh) {
 }
 
 // appendStream concatenates one stream of a source mesh into the atlas and emits its record
-// template(s) — the tri stream splits into opaque + depth-biased halves at TriBiasFirst; the rest
-// are one record. Offsets are LOCAL to the stream here; finishAtlas makes them absolute.
+// template(s). Two streams split into a normal head and a flagged tail (rec flag = 1): the
+// shaded-tri stream (1) at TriBiasFirst — opaque [0:split) then depth-biased [split:len); the
+// on-top-tri stream (4) at TopTriSolidFirst — flat [0:split) then opaque-solid [split:len)
+// (#1489). Every other stream is one record. Offsets are LOCAL to the stream; finishAtlas makes
+// them absolute.
 func (b *instanceBuilder) appendStream(st instStream, mesh *viewport.Mesh) {
 	idx := st.idx(mesh)
 	if len(idx) == 0 {
@@ -89,19 +92,30 @@ func (b *instanceBuilder) appendStream(st instStream, mesh *viewport.Mesh) {
 	ibase := int32(len(b.streamIdx[st.id]))
 	b.streamVerts[st.id] = append(b.streamVerts[st.id], st.verts(mesh)...)
 	b.streamIdx[st.id] = append(b.streamIdx[st.id], idx...)
-	if st.id != 1 {
-		b.recs = append(b.recs, [5]int32{st.id, ibase, int32(len(idx)), vbase, 0})
-		return
+	split := streamFlagSplit(st.id, mesh) // local index where the flagged tail begins (len ⇒ no tail)
+	if split < 0 || split > len(idx) {
+		split = len(idx)
 	}
-	bias := mesh.TriBiasFirst // tri: opaque [0:bias) then depth-biased [bias:len) (overlays only)
-	if bias < 0 || bias > len(idx) {
-		bias = len(idx)
+	if split > 0 {
+		b.recs = append(b.recs, [5]int32{st.id, ibase, int32(split), vbase, 0})
 	}
-	if bias > 0 {
-		b.recs = append(b.recs, [5]int32{1, ibase, int32(bias), vbase, 0})
+	if len(idx)-split > 0 {
+		b.recs = append(b.recs, [5]int32{st.id, ibase + int32(split), int32(len(idx) - split), vbase, 1})
 	}
-	if len(idx)-bias > 0 {
-		b.recs = append(b.recs, [5]int32{1, ibase + int32(bias), int32(len(idx) - bias), vbase, 1})
+}
+
+// streamFlagSplit returns the LOCAL index where stream id's flagged tail begins — the
+// depth-biased fills of the shaded-tri stream (1) and the opaque-solid glyphs of the on-top-tri
+// stream (4, #1489). Every other stream has no tail, so its whole length is the head (split ==
+// len of the stream's indices, applied by the caller's clamp).
+func streamFlagSplit(id int32, mesh *viewport.Mesh) int {
+	switch id {
+	case 1:
+		return mesh.TriBiasFirst
+	case 4:
+		return mesh.TopTriSolidFirst
+	default:
+		return int(^uint(0) >> 1) // max int ⇒ caller clamps to len(idx): one head record, no tail
 	}
 }
 

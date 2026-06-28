@@ -105,3 +105,44 @@ func TestFrameAtlasCullsHiddenInstances(t *testing.T) {
 		t.Errorf("atlas still holds both sources' verts = %d, want 6", atlas.mesh.TriVCount)
 	}
 }
+
+// TestOnTopTriStreamSplitsAtSolidFirst pins the #1489 instanced path: the on-top-tri stream (4)
+// emits TWO records around TopTriSolidFirst — a flat HEAD (flag 0: translucent ghosts/heatmaps,
+// drawn depth-disabled) and an opaque-solid TAIL (flag 1: client-graphics glyphs, drawn after a
+// depth clear, depth-tested + lit so they self-occlude). This mirrors the shaded-tri stream's
+// existing opaque/depth-biased split.
+func TestOnTopTriStreamSplitsAtSolidFirst(t *testing.T) {
+	src := &topo.Body{}
+	var b instanceBuilder
+	// 5 on-top-tri indices: 2 flat overlays then 3 solid-glyph (TopTriSolidFirst = 2).
+	mesh := viewport.Mesh{
+		TopTriVerts: make([]float32, 5*16), TopTriVCount: 5,
+		TopTriIndices:    []uint32{0, 1, 2, 3, 4},
+		TopTriSolidFirst: 2,
+	}
+	b.addSource(src, mesh)
+	atlas := b.finishAtlas("k")
+	_, recs := atlas.assemble(map[*topo.Body][]math.Matrix4{src: {math.Identity4()}})
+
+	const streamTopTri = 4 // native kStreamTopTri (see instStreams / viewport.cpp)
+	var head, tail []int32
+	for i := 0; i < len(recs); i += 7 {
+		switch r := recs[i : i+7]; {
+		case r[0] != streamTopTri: // only the on-top-tri stream is exercised here
+			t.Fatalf("unexpected stream %d in records %v", r[0], recs)
+		case r[6] == 0:
+			head = r
+		default:
+			tail = r
+		}
+	}
+	if head == nil || tail == nil {
+		t.Fatalf("want a flat head (flag 0) and a solid tail (flag 1) record, got %v", recs)
+	}
+	if head[2] != 2 { // indexCount of the flat head
+		t.Errorf("head indexCount = %d, want 2 (the flat overlays before TopTriSolidFirst)", head[2])
+	}
+	if tail[1] != 2 || tail[2] != 3 { // firstIndex past the head, then 3 solid indices
+		t.Errorf("solid tail = firstIndex %d count %d, want firstIndex 2 count 3", tail[1], tail[2])
+	}
+}
