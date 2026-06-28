@@ -63,8 +63,8 @@ func TestForwardsDocumentAndCommandEvents(t *testing.T) {
 	if !has(got, "document.created") {
 		t.Errorf("missing document.created in %v", got)
 	}
-	if !has(got, "command.ended") {
-		t.Errorf("missing command.ended in %v", got)
+	if !has(got, wire.EventCommandEnded) {
+		t.Errorf("missing %s (the command-ended wire constant) in %v", wire.EventCommandEnded, got)
 	}
 }
 

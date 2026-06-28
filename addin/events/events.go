@@ -73,7 +73,7 @@ func subscribeSessionUI(bus *event.Bus, sink Sink) []event.Subscription {
 			return relay(sink, wireEvent{Type: wire.EventCommandStarted, Command: e.ID})
 		}),
 		event.Subscribe(bus, event.After, func(_ event.Context, e app.CommandEnded) event.Outcome {
-			return relay(sink, wireEvent{Type: "command.ended", Command: e.ID, Failed: e.Failed})
+			return relay(sink, wireEvent{Type: wire.EventCommandEnded, Command: e.ID, Failed: e.Failed})
 		}),
 		event.Subscribe(bus, event.After, func(_ event.Context, e app.PanelValueChanged) event.Outcome {
 			return relayJSON(sink, wire.PanelValueChangedEvent{
