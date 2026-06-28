@@ -151,6 +151,9 @@ func planarizedFillet(body *topo.Body, edgeKeys [][]byte, feat string) (*topo.Bo
 	if err != nil {
 		return body, edgeKeys
 	}
+	if !anyEdgeNeedsPlanarize(origEdges) {
+		return body, edgeKeys // #1494: every selected edge is straight between planar faces — blend on the analytic body
+	}
 	pb, mapped := planarizeForEdges(body, origEdges, feat)
 	if pb == body {
 		return body, edgeKeys
@@ -233,6 +236,9 @@ func planarizeFilletPicks(body *topo.Body, picks []ops.EdgeFilletRadii, feat str
 	origEdges, err := resolveEdges(body, keys)
 	if err != nil {
 		return body
+	}
+	if !anyEdgeNeedsPlanarize(origEdges) {
+		return body // #1494: every selected edge is straight between planar faces — blend on the analytic body
 	}
 	pb, mapped := planarizeForEdges(body, origEdges, feat)
 	if pb == body {

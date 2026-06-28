@@ -148,6 +148,38 @@ func originalFeature(b *topo.Body, fallback string) string {
 	return toks[0].Feature
 }
 
+// edgeNeedsPlanarize reports whether the rolling-ball FILLET must re-facet the body to process this
+// edge: a curved (non-line) edge, or a straight edge bordering a curved face — the cases the blend
+// cannot resolve on the analytic body and so needs a planar B-rep for. A straight edge between two
+// planar faces never needs it: the kernel blends it directly on the curved body. Faceting the whole
+// body for such an edge is not just wasteful — it shatters an unrelated fillet's cylinder into a
+// triangle cage that the second blend cannot close into a valid solid, the #1494 second-fillet
+// no-op. This gate is fillet-only: chamfer/corner ops cut with the planar boolean (which cannot
+// consume a curved wall), so they must planarize the whole body regardless.
+func edgeNeedsPlanarize(e *topo.Edge) bool {
+	switch e.Geometry().(type) {
+	case geom.LineSegment, geom.Line:
+	default:
+		return true
+	}
+	for _, f := range e.Faces() {
+		if _, planar := f.Geometry().(geom.Plane); !planar {
+			return true
+		}
+	}
+	return false
+}
+
+// anyEdgeNeedsPlanarize reports whether any selected edge requires the body to be planarized first.
+func anyEdgeNeedsPlanarize(edges []*topo.Edge) bool {
+	for _, e := range edges {
+		if edgeNeedsPlanarize(e) {
+			return true
+		}
+	}
+	return false
+}
+
 // planarizeForEdges re-facets a simple cylinder body for an edge op (chamfer/fillet) and maps each
 // selected edge onto the prism's edges that lie along it — a circular rim maps to its faceted segments,
 // a straight edge to its single counterpart. Returns the body and edges unchanged when the body is not
