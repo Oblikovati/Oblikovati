@@ -5,10 +5,12 @@ package app
 import (
 	"testing"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/doc"
+	"oblikovati.org/model/feature"
 	"oblikovati.org/model/sketch"
 )
 
@@ -84,6 +86,144 @@ func TestSweepViaRibbonCommand(t *testing.T) {
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	if def.SurfaceBodies().Count() != 1 {
 		t.Error("ribbon-launched sweep produced no body")
+	}
+}
+
+// sweepDefOf returns the committed sweep's definition for inspecting how the tool wired Inventor's
+// behaviours (orientation, taper, guide rail, scaling) into the model.
+func sweepDefOf(t *testing.T, sw *SweepTool) *feature.SweepDefinition {
+	t.Helper()
+	if sw.AddedFeature() == nil {
+		t.Fatal("sweep has not been committed")
+	}
+	return sw.AddedFeature().Definition().(*feature.SweepFeature).Definition()
+}
+
+// sweepVolume validates the part's single body and returns its volume.
+func sweepVolume(t *testing.T, s *Session) float64 {
+	t.Helper()
+	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
+	if def.SurfaceBodies().Count() != 1 {
+		t.Fatalf("part has %d bodies, want 1", def.SurfaceBodies().Count())
+	}
+	body := def.SurfaceBodies().Item(0)
+	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
+		t.Fatalf("swept body is not a valid solid: %+v", r)
+	}
+	return ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
+}
+
+// TestSweepParallelOrientation checks the Parallel ("Fixed") orientation is wired into the
+// definition and still sweeps a valid solid (a straight path makes it geometrically identical to
+// Follow Path, so the wiring — not the shape — is what this guards).
+func TestSweepParallelOrientation(t *testing.T) {
+	s, profile, path := newPartWithProfileAndPath(t)
+	sw := NewSweepTool()
+	sw.Pick(s, profile)
+	sw.Pick(s, path)
+	sw.SetOrientation(types.ParallelToOriginalProfile)
+	if sw.Orientation() != types.ParallelToOriginalProfile {
+		t.Fatalf("orientation = %v, want Parallel", sw.Orientation())
+	}
+	if err := sw.Commit(s); err != nil {
+		t.Fatalf("commit: %v", err)
+	}
+	if got := sweepDefOf(t, sw).Orientation; got != types.ParallelToOriginalProfile {
+		t.Errorf("definition orientation = %v, want Parallel", got)
+	}
+	if v := sweepVolume(t, s); relErrApp(v, 20) > 0.02 {
+		t.Errorf("parallel sweep volume = %g, want ≈20", v)
+	}
+}
+
+// TestSweepTaperExpandsSection checks a positive taper scales the profile up along the path, so the
+// swept frustum encloses MORE volume than the prismatic sweep (2×2 along length 5 = 20).
+func TestSweepTaperExpandsSection(t *testing.T) {
+	s, profile, path := newPartWithProfileAndPath(t)
+	sw := NewSweepTool()
+	sw.Pick(s, profile)
+	sw.Pick(s, path)
+	sw.SetTaper(0.2) // ≈11.5° draft outward
+	if err := sw.Commit(s); err != nil {
+		t.Fatalf("commit: %v", err)
+	}
+	if sweepDefOf(t, sw).Taper == nil || sweepDefOf(t, sw).Taper() == 0 {
+		t.Fatal("taper was not wired into the definition")
+	}
+	if v := sweepVolume(t, s); v <= 20 {
+		t.Errorf("tapered sweep volume = %g, want > 20 (an outward draft expands the section)", v)
+	}
+}
+
+// railSketchParallelToPath adds a straight rail offset +2 in X from the path (model (2,0,0)→(2,0,5)),
+// staying a constant distance from it — a valid guide rail that steers without scaling.
+func railSketchParallelToPath(def *compdef.PartComponentDefinition) PathHandle {
+	rail := def.Sketches().Add(sketch.XZPlane())
+	a := rail.Points().Add(math.P2(2, 0))
+	b := rail.Points().Add(math.P2(2, 5))
+	rail.Lines().Add(a, b)
+	return PathHandle{Sketch: rail, PathIndex: 0}
+}
+
+// TestSweepGuideRailRoutingAndType checks the armed guide-rail selector routes the next path pick to
+// the rail (not the path), flips the sweep type, and wires the rail + scaling into the definition.
+func TestSweepGuideRailRoutingAndType(t *testing.T) {
+	s, profile, path := newPartWithProfileAndPath(t)
+	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
+	rail := railSketchParallelToPath(def)
+
+	sw := NewSweepTool()
+	sw.Pick(s, profile)
+	sw.Pick(s, path)
+	if sw.SweepType() != types.PathSweepType {
+		t.Fatalf("type before rail = %v, want path", sw.SweepType())
+	}
+	sw.ArmGuideRailPicking()
+	if !sw.GuideRailArmed() {
+		t.Fatal("ArmGuideRailPicking did not arm")
+	}
+	sw.Pick(s, rail) // armed → routes to the rail slot, NOT the path
+	if _, ok := sw.PickedGuideRail(); !ok {
+		t.Fatal("guide rail was not picked while armed")
+	}
+	if sw.GuideRailArmed() {
+		t.Error("arming should clear once the rail is picked")
+	}
+	if got, _ := sw.PickedPath(); got.Sketch == rail.Sketch {
+		t.Error("armed pick leaked into the path slot")
+	}
+	if sw.SweepType() != types.PathAndGuideRailSweepType {
+		t.Errorf("type after rail = %v, want pathAndGuideRail", sw.SweepType())
+	}
+	sw.SetScaling(types.XProfileScaling)
+	if err := sw.Commit(s); err != nil {
+		t.Fatalf("commit: %v", err)
+	}
+	d := sweepDefOf(t, sw)
+	if d.GuideRail == nil {
+		t.Error("guide rail was not wired into the definition")
+	}
+	if d.Scaling != types.XProfileScaling {
+		t.Errorf("definition scaling = %v, want X", d.Scaling)
+	}
+	sweepVolume(t, s) // a constant-offset rail still sweeps a valid solid
+}
+
+// TestSweepClearGuideRailDisarms checks clearing the rail empties the slot and disarms picking.
+func TestSweepClearGuideRail(t *testing.T) {
+	s, profile, path := newPartWithProfileAndPath(t)
+	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
+	sw := NewSweepTool()
+	sw.Pick(s, profile)
+	sw.Pick(s, path)
+	sw.ArmGuideRailPicking()
+	sw.Pick(s, railSketchParallelToPath(def))
+	sw.ClearGuideRail()
+	if _, ok := sw.PickedGuideRail(); ok {
+		t.Error("guide rail still present after ClearGuideRail")
+	}
+	if sw.SweepType() != types.PathSweepType {
+		t.Error("type should fall back to path after clearing the rail")
 	}
 }
 
