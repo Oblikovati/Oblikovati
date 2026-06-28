@@ -107,9 +107,12 @@ func TestObjectVisibilityGatesPickablePlanes(t *testing.T) {
 	if !s.ObjectVisibility().WorkPlanes {
 		t.Fatal("planes should default visible")
 	}
-	before := len(s.PickableWorkPlanes())
-	if before == 0 {
-		t.Fatal("expected origin planes to be pickable")
+	// Origin planes default hidden (issue #1520), so show one before asserting the KIND toggle
+	// gates pickability — otherwise there is nothing pickable to gate.
+	wg, _ := s.ActiveWorkGeometry()
+	wg.WorkPlanes().Item(0).SetVisible(true)
+	if len(s.PickableWorkPlanes()) == 0 {
+		t.Fatal("a shown origin plane should be pickable")
 	}
 	vis := s.ObjectVisibility()
 	vis.WorkPlanes = false

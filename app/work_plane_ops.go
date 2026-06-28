@@ -49,12 +49,15 @@ func (s *Session) ActiveWorkGeometry() (*feature.WorkGeometry, bool) {
 }
 
 // PickableWorkPlanes returns the work planes the viewport hit-test should offer: every
-// origin plane (always pickable as a sketch host — the Origin folder — even though
-// origin planes default to hidden) plus every VISIBLE user-created datum not hidden by the
-// active edit scope (a plane the overlays don't draw must not be clickable either). User
-// planes were previously absent from the picker, so a ribbon-created plane could not be
-// clicked as a new sketch's reference in the 3D view (issue #132); the head feeds this to
-// the RayPicker. Works for an assembly too (its origin planes are sketch hosts as well).
+// VISIBLE datum plane — origin or user-created — not hidden by the active edit scope. A
+// plane the overlays do not draw must not be mouse-clickable; a hidden plane (origin
+// planes default to hidden) is reachable only through its browser node, which feeds the
+// active tool independently of the RayPicker (issue #1520 — clicking the empty viewport
+// background must not snap to an invisible origin plane). This mirrors PickableWorkAxes,
+// which already gates origin and user axes alike on Visible(). User planes were previously
+// absent from the picker, so a ribbon-created plane could not be clicked as a new sketch's
+// reference in the 3D view (issue #132); the head feeds this to the RayPicker. Works for an
+// assembly too (its origin planes are sketch hosts as well, once shown).
 func (s *Session) PickableWorkPlanes() []*feature.WorkPlane {
 	if !s.objectVisibility.WorkPlanes { // hidden kinds are not pickable (M05-F12)
 		return nil
@@ -66,8 +69,7 @@ func (s *Session) PickableWorkPlanes() []*feature.WorkPlane {
 	planes := wg.WorkPlanes()
 	out := make([]*feature.WorkPlane, 0, planes.Count())
 	for i := 0; i < planes.Count(); i++ {
-		wp := planes.Item(i)
-		if wp.IsCoordinateSystemElement() || (wp.Visible() && !s.EditScopeHides(wp.Seq())) {
+		if wp := planes.Item(i); wp.Visible() && !s.EditScopeHides(wp.Seq()) {
 			out = append(out, wp)
 		}
 	}

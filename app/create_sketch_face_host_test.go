@@ -124,6 +124,39 @@ func TestSelectedSketchHostPlaneFromFace(t *testing.T) {
 	}
 }
 
+// emptyPartLookingDown installs the production picker (bodies + PickableWorkPlanes) on an empty
+// part viewed straight down -Z at the origin — the fresh-part setting of issue #1520, where a
+// click on the empty viewport background must not snap to a hidden origin plane.
+func emptyPartLookingDown(t *testing.T) *Session {
+	t.Helper()
+	s, _ := emptyPartSession(t)
+	cam := scene.NewCamera(400, 400)
+	cam.Eye, cam.Target, cam.Up = math.P3(0, 0, 20), math.P3(0, 0, 0), math.V3(0, 1, 0)
+	s.SetCamera(cam)
+	s.SetPicker(NewRayPicker(cam, partBodies(s)).
+		WithPlanes(func() []*feature.WorkPlane { return s.PickableWorkPlanes() }))
+	return s
+}
+
+// TestCreateSketchBackgroundClickIgnoresHiddenOriginPlane is the issue-#1520 regression at the
+// interaction level: with Create 2D Sketch active and every origin plane hidden, clicking the
+// empty viewport background must NOT enter a sketch — a click resolves no invisible plane. Showing
+// the XY plane makes that same click host a sketch on it (the browser node is the only other way in).
+func TestCreateSketchBackgroundClickIgnoresHiddenOriginPlane(t *testing.T) {
+	s := emptyPartLookingDown(t)
+	s.StartTool(NewCreateSketchTool())
+	s.Click(200, 200) // center ray crosses the XY plane, but it is hidden
+	if s.InSketch() || s.ActiveTool() == nil {
+		t.Fatal("clicking the empty background must not start a sketch on a hidden origin plane")
+	}
+	wg, _ := s.ActiveWorkGeometry()
+	wg.WorkPlanes().Item(0).SetVisible(true) // show the XY plane
+	s.Click(200, 200)
+	if !s.InSketch() {
+		t.Fatal("clicking a now-visible origin plane should enter the sketch")
+	}
+}
+
 // sameDir reports whether two vectors point the same or exactly opposite way (a plane's normal
 // sign is orientation-dependent; either matches the host face).
 func sameDir(a, b math.Vector3) bool {
