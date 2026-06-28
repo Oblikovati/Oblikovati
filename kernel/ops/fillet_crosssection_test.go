@@ -18,10 +18,10 @@ func filletCross(t *testing.T, cross ops.FilletCrossSection, rho float64) float6
 		{Key: verticalEdgeKey(t, box), R0: 0.5, R1: 0.5, Cross: cross, Rho: rho},
 	})
 	if err != nil {
-		t.Fatalf("fillet (cross=%d rho=%g): %v", cross, rho, err)
+		t.Fatalf("fillet (cross=%s rho=%g): %v", cross, rho, err)
 	}
 	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
-		t.Fatalf("cross=%d fillet not a valid solid: %+v", cross, r)
+		t.Fatalf("cross=%s fillet not a valid solid: %+v", cross, r)
 	}
 	return ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume
 }
