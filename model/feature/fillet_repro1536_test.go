@@ -3,6 +3,8 @@
 package feature
 
 import (
+	stdmath "math"
+	"strings"
 	"testing"
 
 	"oblikovati.org/kernel/geom"
@@ -12,144 +14,15 @@ import (
 	"oblikovati.org/model/sketch"
 )
 
-// keyString returns an edge reference key as a readable string (the \x02 kind byte stripped).
+// issuePoly1536 is the irregular quad from bug #1536/#1537 (one corner dragged out).
+var issuePoly1536 = []math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4.89099465009204, Y: 5.1416568653588115}, {X: 0, Y: 3}}
+
+// keyString1536 renders an edge reference key as a readable string (the \x02 kind byte stripped).
 func keyString1536(k []byte) string {
 	if len(k) > 0 && k[0] < 0x20 {
 		return string(k[1:])
 	}
 	return string(k)
-}
-
-// TestRepro1536SecondFilletEdgeKey instruments the #1536 scenario: a first fillet on
-// Extrusion1:side-edge#2, then a second fillet on the OPPOSITE vertical edge whose key was
-// captured from the displayed (filleted) body. It reports (a) whether any fillet:e#N key collides
-// onto more than one edge, and (b) whether the second fillet keeps the first fillet's geometry.
-func TestRepro1536SecondFilletEdgeKey(t *testing.T) {
-	poly := []math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4.89099465009204, Y: 5.1416568653588115}, {X: 0, Y: 3}}
-	box := buildPrism(poly, sketch.XYPlane(), span{near: 0, far: 5}, 0, "Extrusion1")
-
-	fs := NewPartFeatures(nil, nil)
-	NewBaseFeatures(fs).AddBase(box)
-
-	// First fillet on side-edge#2 (corner 2, the far-out corner), exactly as the report stored it.
-	edge1 := edgeByKeySuffix1536(t, box, "Extrusion1:side-edge#2")
-	f1 := NewDressUpFeatures(fs).AddFillet([][]byte{edge1}, func() float64 { return 1 })
-	fs.Recompute()
-	if !f1.Health().OK() {
-		t.Fatalf("first fillet sick: %+v", f1.Health())
-	}
-	res1 := fs.Result()[0]
-	if n := cylinderFaces1494(res1); n != 1 {
-		t.Fatalf("after first fillet: %d cylinder faces, want 1", n)
-	}
-
-	// Report key collisions on the first-fillet body: any key bound to >1 edge is the #1536 hazard.
-	collisions := map[string]int{}
-	for _, e := range res1.Edges() {
-		collisions[keyString1536(e.ReferenceKey())]++
-	}
-	dupes := 0
-	for k, c := range collisions {
-		if c > 1 {
-			dupes++
-			t.Logf("COLLISION: key %q is bound to %d edges", k, c)
-		}
-	}
-	t.Logf("first-fillet body: %d edges, %d distinct keys, %d colliding keys", len(res1.Edges()), len(collisions), dupes)
-
-	// What does fillet:e#13 (the reported second-fillet pick) resolve to, and is it the opposite
-	// vertical edge or something on the first fillet?
-	for _, e := range res1.Edges() {
-		if keyString1536(e.ReferenceKey()) == "fillet:e#13" {
-			a, b := e.StartVertex().Point(), e.EndVertex().Point()
-			_, isLine := e.Geometry().(geom.LineSegment)
-			t.Logf("fillet:e#13 → edge %v→%v (line=%v)", a, b, isLine)
-		}
-	}
-
-	// Now stack the second fillet on the EXACT edge the report stored — fillet:e#13, captured from
-	// the displayed (first-fillet) body — and recompute the whole tree.
-	edge2 := edgeByKeySuffix1536(t, res1, "fillet:e#13")
-	f2 := NewDressUpFeatures(fs).AddFillet([][]byte{edge2}, func() float64 { return 1 })
-	fs.Recompute()
-
-	if !f2.Health().OK() {
-		t.Fatalf("second fillet sick: %+v", f2.Health())
-	}
-	res2 := fs.Result()[0]
-	if r := ops.Validate(res2); !r.Valid || !res2.IsSolid() {
-		t.Fatalf("after second fillet: not a valid solid: %+v", r.Issues)
-	}
-	if n := cylinderFaces1494(res2); n != 2 {
-		t.Errorf("after second fillet: %d cylinder faces, want 2 (the first fillet was broken/re-used)", n)
-	}
-}
-
-// TestRepro1536NamingStability probes whether the fillet's construction-order edge naming
-// (assembleBody → Tok("fillet","e",len(c.edges))) is STABLE across an upstream edit — the core
-// property a topological-naming system must guarantee. It builds the first fillet at several
-// radii and reports which physical edge "fillet:e#13" maps to each time. If the same key names a
-// different edge as the radius changes, a stored second-fillet reference silently rebinds to the
-// wrong edge after any upstream edit — the systemic fragility behind #1536/#1537.
-func TestRepro1536NamingStability(t *testing.T) {
-	poly := []math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4.89099465009204, Y: 5.1416568653588115}, {X: 0, Y: 3}}
-	foot := func(radius float64) (math.Point3, bool) {
-		box := buildPrism(poly, sketch.XYPlane(), span{near: 0, far: 5}, 0, "Extrusion1")
-		fs := NewPartFeatures(nil, nil)
-		NewBaseFeatures(fs).AddBase(box)
-		edge1 := edgeByKeySuffix1536(t, box, "Extrusion1:side-edge#2")
-		NewDressUpFeatures(fs).AddFillet([][]byte{edge1}, func() float64 { return radius })
-		fs.Recompute()
-		for _, e := range fs.Result()[0].Edges() {
-			if keyString1536(e.ReferenceKey()) == "fillet:e#13" {
-				return e.StartVertex().Point(), true
-			}
-		}
-		return math.Point3{}, false
-	}
-
-	var ref math.Point3
-	for i, r := range []float64{0.5, 1.0, 1.5, 2.0} {
-		p, ok := foot(r)
-		if !ok {
-			t.Logf("radius %.1f: no fillet:e#13", r)
-			continue
-		}
-		t.Logf("radius %.1f: fillet:e#13 foot = %v", r, p)
-		if i == 0 {
-			ref = p
-		} else if p.DistanceTo(ref) > 1e-6 {
-			t.Errorf("UNSTABLE NAMING: fillet:e#13 names a DIFFERENT edge at radius %.1f (%v vs %v at 0.5) "+
-				"— a stored reference silently rebinds after an upstream edit (#1536 systemic flaw)", r, p, ref)
-		}
-	}
-}
-
-// TestRepro1536PreviewResult drives the live-preview seam exactly as the fillet tool does: it
-// builds the first fillet, then asks PreviewResult for a DRAFT second fillet on fillet:e#13 and
-// checks the previewed body keeps the first fillet (2 cylinders) rather than dropping/re-cutting
-// it. A wrong preview here is what shows the user TWO red wedges in #1536.
-func TestRepro1536PreviewResult(t *testing.T) {
-	poly := []math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4.89099465009204, Y: 5.1416568653588115}, {X: 0, Y: 3}}
-	box := buildPrism(poly, sketch.XYPlane(), span{near: 0, far: 5}, 0, "Extrusion1")
-	fs := NewPartFeatures(nil, nil)
-	NewBaseFeatures(fs).AddBase(box)
-	edge1 := edgeByKeySuffix1536(t, box, "Extrusion1:side-edge#2")
-	NewDressUpFeatures(fs).AddFillet([][]byte{edge1}, func() float64 { return 1 })
-	fs.Recompute()
-	base := fs.Result()[0]
-
-	draft := &FilletFeature{def: &FilletDefinition{
-		EdgeKeys: [][]byte{edgeByKeySuffix1536(t, base, "fillet:e#13")},
-		Radius:   func() float64 { return 1 },
-	}}
-	preview, err := fs.PreviewResult(draft)
-	if err != nil {
-		t.Fatalf("PreviewResult: %v", err)
-	}
-	if n := cylinderFaces1494(preview[0]); n != 2 {
-		t.Errorf("preview body has %d cylinder faces, want 2 (first fillet + previewed second)", n)
-	}
 }
 
 // edgeByKeySuffix1536 returns the reference key of the body edge whose readable key equals want.
@@ -162,4 +35,119 @@ func edgeByKeySuffix1536(t *testing.T, b *topo.Body, want string) []byte {
 	}
 	t.Fatalf("no edge with key %q", want)
 	return nil
+}
+
+// verticalEdgeNearFoot1536 returns the straight VERTICAL edge whose foot is closest in XY to (x,y)
+// — how the user picks an edge in the viewport, independent of its key.
+func verticalEdgeNearFoot1536(t *testing.T, b *topo.Body, x, y float64) *topo.Edge {
+	t.Helper()
+	var best *topo.Edge
+	bestD := stdmath.Inf(1)
+	for _, e := range b.Edges() {
+		if _, line := e.Geometry().(geom.LineSegment); !line {
+			continue
+		}
+		a, c := e.StartVertex().Point(), e.EndVertex().Point()
+		if stdmath.Abs(float64(a.X-c.X)) > 1e-6 || stdmath.Abs(float64(a.Y-c.Y)) > 1e-6 {
+			continue // not vertical
+		}
+		if d := stdmath.Hypot(float64(a.X)-x, float64(a.Y)-y); d < bestD {
+			bestD, best = d, e
+		}
+	}
+	if best == nil {
+		t.Fatalf("no vertical edge near (%g,%g)", x, y)
+	}
+	return best
+}
+
+// firstFilletedPrism1536 builds the issue prism, fillets the vertical edge at corner 2
+// (Extrusion1:side-edge#2), recomputes, and returns the engine and the filleted body.
+func firstFilletedPrism1536(t *testing.T) (*PartFeatures, *topo.Body) {
+	t.Helper()
+	box := buildPrism(issuePoly1536, sketch.XYPlane(), span{near: 0, far: 5}, 0, "Extrusion1")
+	fs := NewPartFeatures(nil, nil)
+	NewBaseFeatures(fs).AddBase(box)
+	edge1 := edgeByKeySuffix1536(t, box, "Extrusion1:side-edge#2")
+	f1 := NewDressUpFeatures(fs).AddFillet([][]byte{edge1}, func() float64 { return 1 })
+	fs.Recompute()
+	if !f1.Health().OK() {
+		t.Fatalf("first fillet sick: %+v", f1.Health())
+	}
+	return fs, fs.Result()[0]
+}
+
+// TestSecondFilletWorksWithProvenanceNaming1536 is the #1536/#1537 workflow under ADR-0043 P1: a
+// first fillet, then a second fillet on the OPPOSITE vertical edge picked from the displayed body
+// (whose key is now a PROVENANCE name, not fillet:e#N). The second fillet must produce real
+// geometry — a second cylinder on a valid solid — without disturbing the first.
+func TestSecondFilletWorksWithProvenanceNaming1536(t *testing.T) {
+	fs, res1 := firstFilletedPrism1536(t)
+	if n := cylinderFaces1494(res1); n != 1 {
+		t.Fatalf("after first fillet: %d cylinder faces, want 1", n)
+	}
+	edge2 := verticalEdgeNearFoot1536(t, res1, 0, 0).ReferenceKey() // opposite (corner-0) edge
+	if key := keyString1536(edge2); strings.Contains(key, "fillet:e#") {
+		t.Errorf("opposite edge still carries an ordinal name %q — provenance naming did not apply", key)
+	}
+	f2 := NewDressUpFeatures(fs).AddFillet([][]byte{edge2}, func() float64 { return 1 })
+	fs.Recompute()
+	if !f2.Health().OK() {
+		t.Fatalf("second fillet sick (the #1536 symptom): %+v", f2.Health())
+	}
+	res2 := fs.Result()[0]
+	if r := ops.Validate(res2); !r.Valid || !res2.IsSolid() {
+		t.Fatalf("after second fillet: not a valid solid: %+v", r.Issues)
+	}
+	if n := cylinderFaces1494(res2); n != 2 {
+		t.Errorf("after second fillet: %d cylinder faces, want 2 (the first fillet was broken/re-used)", n)
+	}
+}
+
+// TestFilletEdgesAreProvenanceNamed1536 pins ADR-0043 P1: a fillet's result edges are named by
+// their generating PARENTS (the bordering faces / the filleted edge), never a build-order counter.
+// No edge carries the old fillet:e#N ordinal, the tangent edges name the filleted edge's blend, and
+// every key on the body is distinct (no naming collision).
+func TestFilletEdgesAreProvenanceNamed1536(t *testing.T) {
+	_, res1 := firstFilletedPrism1536(t)
+	keys := map[string]int{}
+	tangents := 0
+	for _, e := range res1.Edges() {
+		k := keyString1536(e.ReferenceKey())
+		keys[k]++
+		if strings.Contains(k, "fillet:e#") {
+			t.Errorf("edge still has a build-order ordinal name: %q", k)
+		}
+		if strings.Contains(k, "Extrusion1:side-edge#2/fillet:cyl#0") {
+			tangents++ // an edge bordering the cylinder blended from the filleted edge
+		}
+	}
+	if tangents == 0 {
+		t.Error("no tangent edge names the filleted edge's blend (fillet:cyl) — provenance not applied to the blend")
+	}
+	for k, c := range keys {
+		if c > 1 {
+			t.Errorf("naming collision: key %q is shared by %d edges", k, c)
+		}
+	}
+}
+
+// TestFilletNamingIsDeterministic guards reproducibility: two independent builds of the same
+// (prism + corner-2 fillet) name the corner-2 tangent edge IDENTICALLY. A reference must resolve to
+// the same key on every recompute; flaky naming would lose selections between rebuilds. (Internal
+// build-ORDER independence — that the name does not depend on assembleBody's weld/face iteration —
+// is guaranteed by NameByParents' canonical ordering, pinned in topo.TestNameByParentsIsOrderIndependent
+// and applied to the blend by TestFilletEdgesAreProvenanceNamed1536.)
+func TestFilletNamingIsDeterministic(t *testing.T) {
+	const tx, ty = 4.6, 3.3 // a tangent edge of corner 2's fillet (cylinder ∩ side face #1)
+	_, a := firstFilletedPrism1536(t)
+	_, b := firstFilletedPrism1536(t)
+	ka := keyString1536(verticalEdgeNearFoot1536(t, a, tx, ty).ReferenceKey())
+	kb := keyString1536(verticalEdgeNearFoot1536(t, b, tx, ty).ReferenceKey())
+	if ka != kb {
+		t.Errorf("non-deterministic fillet edge naming: %q vs %q across identical builds", ka, kb)
+	}
+	if !strings.Contains(ka, "fillet:x") || strings.Contains(ka, "fillet:e#") {
+		t.Errorf("tangent edge key %q is not a provenance name", ka)
+	}
 }

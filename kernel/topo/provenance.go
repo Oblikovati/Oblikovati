@@ -44,3 +44,57 @@ func NameByParents(parents []Lineage, sep, rankSeed LineageToken, rank int) Line
 	}
 	return Lineage{tokens: toks}
 }
+
+// RelineageByFaceProvenance renames a freshly-built body's EDGES and VERTICES from face provenance
+// (ADR-0043): faceProv maps each result face to the lineage of the input entity that generated it
+// (the faces themselves are already named by their provenance at build time). An edge is renamed by
+// NameByParents over its bordering faces' provenance; a vertex by the faces meeting at it. An edge
+// or vertex any of whose faces is absent from faceProv keeps its existing (ordinal) name — so a
+// PARTIALLY-provenanced body (e.g. a constant fillet's cylinder + caps provenanced, a variable
+// fillet's ruling strips not yet) stays consistent, the un-provenanced region simply keeping its
+// build-order name. It mutates identity, so call it only during construction, before the body is
+// observed elsewhere. sep/rankSeed parameterize the composed names (see NameByParents).
+func (b *Body) RelineageByFaceProvenance(faceProv map[*Face]Lineage, sep, rankSeed LineageToken) {
+	for _, e := range b.Edges() {
+		if name, ok := provNameFromFaces(e.Faces(), faceProv, sep, rankSeed); ok {
+			e.lineage = name
+		}
+	}
+	for _, v := range b.Vertices() {
+		if name, ok := provNameFromFaces(vertexFaces(v), faceProv, sep, rankSeed); ok {
+			v.lineage = name
+		}
+	}
+}
+
+// provNameFromFaces composes a provenance name from faces' provenance lineages, or ok=false when
+// any face has no provenance (so the entity keeps its existing name).
+func provNameFromFaces(faces []*Face, faceProv map[*Face]Lineage, sep, rankSeed LineageToken) (Lineage, bool) {
+	if len(faces) == 0 {
+		return Lineage{}, false
+	}
+	parents := make([]Lineage, 0, len(faces))
+	for _, f := range faces {
+		p, ok := faceProv[f]
+		if !ok {
+			return Lineage{}, false
+		}
+		parents = append(parents, p)
+	}
+	return NameByParents(parents, sep, rankSeed, 0), true
+}
+
+// vertexFaces returns the distinct faces meeting at v, via its incident edges.
+func vertexFaces(v *Vertex) []*Face {
+	seen := map[*Face]bool{}
+	var out []*Face
+	for _, e := range v.edges {
+		for _, f := range e.Faces() {
+			if !seen[f] {
+				seen[f] = true
+				out = append(out, f)
+			}
+		}
+	}
+	return out
+}
