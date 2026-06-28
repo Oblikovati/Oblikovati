@@ -10,11 +10,11 @@ import (
 
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app/options"
+	"oblikovati.org/clientgraphics"
 	"oblikovati.org/command"
 	"oblikovati.org/event"
 	"oblikovati.org/model/bodyapi"
 	"oblikovati.org/model/bom"
-	"oblikovati.org/model/clientgraphics"
 	"oblikovati.org/model/colorscheme"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/display"

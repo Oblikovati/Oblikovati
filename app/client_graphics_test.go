@@ -7,7 +7,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
-	"oblikovati.org/model/clientgraphics"
+	"oblikovati.org/clientgraphics"
 )
 
 // noopTool is a minimal Tool that commits on demand — enough to drive the tool-teardown

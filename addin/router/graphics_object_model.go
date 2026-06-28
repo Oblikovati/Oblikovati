@@ -7,7 +7,7 @@ import (
 
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
-	"oblikovati.org/model/clientgraphics"
+	"oblikovati.org/clientgraphics"
 )
 
 // registerGraphicsObjectModelHandlers wires the retained-mode node mutations and the named

@@ -11,10 +11,10 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/app"
+	"oblikovati.org/clientgraphics"
 	"oblikovati.org/head/internal/native"
 	"oblikovati.org/head/viewport"
 	"oblikovati.org/kernel/topo"
-	"oblikovati.org/model/clientgraphics"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/sketch"
 	"oblikovati.org/renderer"
