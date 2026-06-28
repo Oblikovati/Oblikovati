@@ -38,8 +38,8 @@ counter — fragile by exactly the mechanism M31 fixed for booleans:
 
 These do not all surface as user bugs today (e.g. `fillet:e#13` is stable in #1536 because the
 curved blend's build order happens to be deterministic for that geometry), but each is a latent
-wrong-rebind waiting for an upstream edit that reorders construction — the class behind #1494 /
-#1536 / #1537.
+wrong-rebind waiting for an upstream edit that reorders construction — the fillet-stack class
+(#1494, #1536, #1537).
 
 ## Decision
 
