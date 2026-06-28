@@ -230,10 +230,8 @@ Notes:
 - Sketch **`Modify`** should be: Move, Copy, Rotate, Scale, Stretch, Trim, Extend, Split,
   Offset. We currently also have Mirror (→ Pattern) and Fillet (→ Create) there.
 - Part **`Surface`** panel buttons are Patch, Stitch, Sculpt, Extend, Trim, Rule Fillet —
-  when the M10 surfacing features get UI (PARTDOC-PLAN Phase 5), place them here, not in a
-  new panel.
+  when the surfacing features get UI, place them here, not in a new panel.
 - Part **`Pattern`** panel (Rectangular, Circular, Sketch Driven, Mirror) is where the
-  flagship pattern/mirror UI (PARTDOC-PLAN Phase 3, finding U-01) must land.
+  flagship pattern/mirror UI must land.
 - Out-of-scope environments (SheetMetal/Assembly/Drawing/Presentation) are included for
-  completeness; do not build them until PartDocument is complete (see PARTDOC-PLAN.md at
-  the repo root).
+  completeness; do not build them until PartDocument is complete.
