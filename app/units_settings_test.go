@@ -40,6 +40,37 @@ func TestSetDocumentUnitsAppliesToActivePart(t *testing.T) {
 	}
 }
 
+// TestSessionUnitPrecisionFollowsDocument checks the accessors the head's ParameterInput formats
+// with (#1519): LengthPrecision/AnglePrecision report the active part's display decimals, falling
+// back to the metric defaults when there is no part.
+func TestSessionUnitPrecisionFollowsDocument(t *testing.T) {
+	s := NewSession()
+	def := param.DefaultUnitsOfMeasure()
+	if got := s.LengthPrecision(); got != def.LengthPrecision() {
+		t.Errorf("default length precision = %d, want %d", got, def.LengthPrecision())
+	}
+	if got := s.AnglePrecision(); got != def.AnglePrecision() {
+		t.Errorf("default angle precision = %d, want %d", got, def.AnglePrecision())
+	}
+	if _, err := compdef.AddPart(s.Workspace(), "prec.opd", true); err != nil {
+		t.Fatalf("AddPart: %v", err)
+	}
+	u := s.DocumentUnits().Clone()
+	if err := u.SetLengthPrecision(4); err != nil {
+		t.Fatal(err)
+	}
+	if err := u.SetAnglePrecision(1); err != nil {
+		t.Fatal(err)
+	}
+	s.SetDocumentUnits(u)
+	if got := s.LengthPrecision(); got != 4 {
+		t.Errorf("length precision = %d, want 4", got)
+	}
+	if got := s.AnglePrecision(); got != 1 {
+		t.Errorf("angle precision = %d, want 1", got)
+	}
+}
+
 // TestUnitsSettingsOpenClose drives the dialog's open/close flag.
 func TestUnitsSettingsOpenClose(t *testing.T) {
 	s := NewSession()
