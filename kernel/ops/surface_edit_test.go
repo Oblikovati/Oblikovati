@@ -3,6 +3,7 @@
 package ops
 
 import (
+	"strings"
 	"testing"
 
 	"oblikovati.org/kernel/topo"
@@ -67,6 +68,31 @@ func TestTrimMultiFaceSheet(t *testing.T) {
 	box := trimmed.RangeBox()
 	if !approx(box.Min.X, 1) || !approx(box.Max.X, 4) {
 		t.Errorf("trimmed x-span = [%v,%v], want [1,4]", box.Min.X, box.Max.X)
+	}
+}
+
+// TestSheetEdgesAreProvenanceNamed is ADR-0043: a sheet built by buildSheet (here via OffsetSurface)
+// used to mint its welded edges with a build-order weld counter (feat:edge#N) that renumbers under an
+// upstream edit. They must now be named by their patch provenance — a shared seam by its two patches,
+// a boundary edge by its one patch — so a reference to a sheet edge survives a re-weld.
+func TestSheetEdgesAreProvenanceNamed(t *testing.T) {
+	off, err := OffsetSurface(twoQuadSheet(t), 0.5, "off")
+	if err != nil {
+		t.Fatalf("OffsetSurface: %v", err)
+	}
+	seams := 0
+	for _, e := range off.Edges() {
+		k := string(e.ReferenceKey())
+		if strings.Contains(k, "off:edge#") {
+			t.Errorf("sheet edge kept a weld-counter ordinal: %q (provenance naming missing)", k)
+		}
+		// The one shared seam borders both patches, so it carries the separator between them.
+		if strings.Contains(k, "off:patch#0/off:x#0/off:patch#1") {
+			seams++
+		}
+	}
+	if seams != 1 {
+		t.Errorf("shared seam named by its two patches: got %d such edges, want 1", seams)
 	}
 }
 

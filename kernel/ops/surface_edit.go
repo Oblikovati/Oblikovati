@@ -96,6 +96,7 @@ func buildSheet(patches []sheetPatch, feat string) *topo.Body {
 		edges[k] = e
 		return e
 	}
+	provByFace := map[*topo.Face]topo.Lineage{}
 	for fi, r := range rings {
 		surf, _ := geom.NewPlane(w.points[r[0]], normals[fi])
 		uses := make([]topo.Use, len(r))
@@ -103,9 +104,16 @@ func buildSheet(patches []sheetPatch, feat string) *topo.Body {
 			a, b := r[i], r[(i+1)%len(r)]
 			uses[i] = topo.Use{Edge: edge(a, b), Reversed: a > b}
 		}
-		bld.AddFace(surf, topo.NewLineage(topo.Tok(feat, "patch", fi)), topo.OuterLoop(uses...))
+		lineage := topo.NewLineage(topo.Tok(feat, "patch", fi))
+		provByFace[bld.AddFace(surf, lineage, topo.OuterLoop(uses...))] = lineage
 	}
-	return bld.Build()
+	body := bld.Build()
+	// ADR-0043 provenance: the welded edges above carry a build-order weld counter that renumbers under
+	// an upstream edit. Each patch face has a stable lineage (feat:patch#fi), so name a shared seam by
+	// its two patches and a boundary edge by its one patch (geometrically ranked among that patch's
+	// boundary edges), so a reference to a sheet edge survives a re-weld.
+	body.RelineageByFaceProvenance(provByFace, topo.Tok(feat, "x", 0), topo.Tok(feat, "seg", 0))
+	return body
 }
 
 // sheetWelder merges coincident boundary points onto a shared index list (a fine grid snap).
