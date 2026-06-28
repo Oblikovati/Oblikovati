@@ -79,6 +79,34 @@ func TestDrilledPlateIsExact(t *testing.T) {
 	}
 }
 
+// TestCurvedBooleanKeepsTargetEdgeIdentity is ADR-0043 P4: the exact analytic curved cut keeps the
+// hole's cylinder wall AND lets the target's untouched boundaries keep their identity — a slab edge
+// the drill never reached stays bound to its slab:* key rather than a fresh curvedbool:e#N ordinal,
+// so a selection on it survives the operation.
+func TestCurvedBooleanKeepsTargetEdgeIdentity(t *testing.T) {
+	slab := slabBody(t)
+	in := map[string]bool{}
+	for _, e := range slab.Edges() {
+		in[string(e.ReferenceKey())] = true
+	}
+	res, err := ops.Boolean(ops.Cut, slab, throughRod(t, 0, 0, 1.5))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !hasCylinderFace(res) {
+		t.Fatal("not the analytic curved path (no cylinder face) — test premise invalid")
+	}
+	kept := 0
+	for _, e := range res.Edges() {
+		if in[string(e.ReferenceKey())] {
+			kept++
+		}
+	}
+	if kept == 0 {
+		t.Error("no slab edge kept its identity through the curved cut — all renamed to curvedbool:e#N")
+	}
+}
+
 // TestDrilledPlateClippedDefers: a hole whose circle clips the slab edge is NOT a clean through-hole, so
 // the exact path declines and the general boolean still produces a valid solid (the fallback is intact).
 func TestDrilledPlateClippedDefers(t *testing.T) {
