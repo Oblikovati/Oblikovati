@@ -131,6 +131,28 @@ func (r Resolution) Area() float64 { return epsRel * r.size * r.size }
 // with size³.
 func (r Resolution) Volume() float64 { return volCoef * r.size * r.size * r.size }
 
+// How geom primitives relate to Resolution (ADR-0042, #1504).
+//
+// The geometry primitives in this package — line/plane/curve intersection, point inversion,
+// B-spline/NURBS knot removal and degree reduction, curve stroking, arc-length integration —
+// take a SCALAR `tol float64`, not a Resolution. That is deliberate: they are general,
+// reusable math kernels, and the RIGHT tolerance depends on the caller's purpose, which only
+// the caller knows. A model-coincidence caller (the brep/ops booleans and welders) passes a
+// size-relative length from a Resolution — res.Weld() for a vertex coincidence, res.Plane()
+// for an on-line/on-plane test — so the size-relative tolerance flows all the way down. Other
+// callers pass a tolerance of a DIFFERENT kind entirely: a fitting/approximation bound (knot
+// removal, degree reduction), a relative integration-error target (arc length), or a chord
+// deflection (stroking). Threading a typed Resolution into these primitives would be wrong —
+// it would erase the caller's choice of WHICH tolerance and couple pure math to model scale.
+//
+// What ADR-0042 actually requires of the low layer is that no model-coincidence decision is
+// gated on a cm-anchored ABSOLUTE epsilon. That is enforced directly, not through the type
+// system: TestNoUnjustifiedAbsoluteEpsilons (kernel/ops) scans this package's tolerance hot
+// paths for bare 1e-N length literals; each must be relativised via a Resolution or annotated
+// `// tol:<kind>` (angular / parametric / numeric / area / volume / calibrated) to declare it
+// is not a model length. So the `tol float64` parameters stay, and the guard — not a signature
+// rewrite — is what keeps the bottom of the stack scale-faithful.
+
 // spanCeilingOrders is the usable dynamic range of one model in float64: ~15.95 significant
 // decimal digits, so a feature more than ~10^15 smaller than the model extent is below the
 // representable floor and would be silently merged (ADR-0042 §Phase 2). We use 15 as the
