@@ -8,300 +8,71 @@ import (
 	"oblikovati.org/kernel/topo"
 )
 
-// Exact crossing-cylinder intersection (M2 Phase 2, Oblikovati/Oblikovati#1335). Wires
-// brep.CrossingCylinderIntersect into the boolean: a rod ∩ a fatter cylinder builds straight from the
-// traced imprint loops into a watertight analytic solid (rod band + two fat-wall lens caps), keeping the
-// exact cylinder surfaces instead of triangle-soup CSG. Anything outside the thin-through-fat case (a
-// non-cylinder operand, equal radii, a partial penetration) returns ok=false so booleanGeneral keeps its
-// CSG fallback — no regression.
+// Exact analytic curved-boolean paths for crossing/coaxial cylinder & cone pairs (M2, EPIC #1403).
+// Each path routes a recognised (op, target, tool) pair to a brep builder that constructs the result
+// straight from the traced SSI imprint as a watertight ANALYTIC solid — keeping the exact cylinder/cone
+// surfaces instead of triangle-soup CSG. A pair the builder does not handle (a non-matching op, an
+// out-of-scope configuration, an inside-out or open assembly) returns ok=false so booleanGeneral keeps
+// its planar CSG fallback — no regression.
+//
+// Every path is the SAME two checks around a builder — the op guard and the validBooleanSolid gate —
+// so they are written ONCE in gatedCurved (#1502). The gate is a correctness invariant (an unvalidated
+// boolean must never be adopted); centralising it means a pair added to the table below cannot forget
+// it, the copy-paste hazard this file used to carry as 18 near-identical handlers.
 
-// curvedCrossingIntersect returns the exact intersection of two crossing cylinders, or ok=false to defer.
-// Only Intersect maps here, and only a valid closed manifold result is adopted (an inside-out or open
-// assembly is rejected so the fallback runs instead).
-func curvedCrossingIntersect(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	if op != Intersect {
-		return nil, false
+// ruledBuild builds the exact analytic result for one curved pair. The general SSI pipeline builders
+// (brep.*General) take the imprint recorder; the bespoke analytic constructors (equal-radius Steinmetz,
+// drill-through, coaxial, boss) take none and are adapted with withoutRecorder.
+type ruledBuild func(target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool)
+
+// gatedCurved wraps a builder with the op guard and the single validBooleanSolid gate every curved pair
+// must pass, returning a curvedExactPaths entry. ok=false (defer to the CSG fallback) when the op does
+// not match or the analytic result is not a valid closed manifold solid.
+func gatedCurved(want PartFeatureOperation, build ruledBuild) func(PartFeatureOperation, *topo.Body, *topo.Body, *diag.Recorder) (*topo.Body, bool) {
+	return func(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
+		if op != want {
+			return nil, false
+		}
+		res, ok := build(target, tool, rec)
+		if !ok || !validBooleanSolid(res) {
+			return nil, false
+		}
+		return res, true
 	}
-	// EPIC #1403: route crossing-cylinder intersect through the GENERAL pipeline first (an out-of-scope pair declines to the planar CSG fallback.
-	res, ok := brep.CrossingCylinderIntersectGeneral(target, tool, rec)
-	if !ok || !validBooleanSolid(res) {
-		return nil, false
-	}
-	return res, true
 }
 
-// curvedConeCylinderIntersect returns the exact intersection of a cone crossing a cylinder (the cone band
-// plus two cylinder-wall lens caps), or ok=false to defer. Only Intersect maps here, and only a valid closed
-// manifold result is adopted.
-func curvedConeCylinderIntersect(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	if op != Intersect {
-		return nil, false
-	}
-	// EPIC #1403: route cone∩cylinder through the GENERAL pipeline first an out-of-scope pair declines to the planar CSG fallback.
-	res, ok := brep.ConeCylinderIntersectGeneral(target, tool, rec)
-	if !ok || !validBooleanSolid(res) {
-		return nil, false
-	}
-	return res, true
+// withoutRecorder adapts a bespoke analytic constructor (one that traces no SSI imprint) to ruledBuild.
+func withoutRecorder(build func(target, tool *topo.Body) (*topo.Body, bool)) ruledBuild {
+	return func(target, tool *topo.Body, _ *diag.Recorder) (*topo.Body, bool) { return build(target, tool) }
 }
 
-// curvedConeConeIntersect returns the exact intersection of a cone crossing a fatter cone (the rod-cone band
-// plus two fat-cone lens caps), or ok=false to defer. Only Intersect maps here, and only a valid closed
-// manifold result is adopted.
-func curvedConeConeIntersect(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	if op != Intersect {
-		return nil, false
-	}
-	// EPIC #1403: route cone∩cone through the GENERAL SSI→trim→classify→stitch pipeline . An out-of-scope configuration declines to the planar CSG fallback.
-	res, ok := brep.ConeConeIntersectGeneral(target, tool, rec)
-	if !ok || !validBooleanSolid(res) {
-		return nil, false
-	}
-	return res, true
-}
+// The curved-pair paths, each an (op, builder) gated once by gatedCurved. Names are referenced by
+// curvedExactPaths in boolean.go, which fixes their try-order; the comment on each records the pair it
+// handles. The general SSI→trim→classify→stitch pipeline (#1403/#1476) builds every ruled pair; the
+// equal-radius Steinmetz cases stay on a bespoke constructor (the pinch self-intersects into four lobes
+// the general (u,v) arrangement cannot yet split — see brep.EqualRadiusSteinmetzIntersect).
+var (
+	// Intersect — the band of the thin operand plus the fat operand's two lens caps.
+	curvedCrossingIntersect     = gatedCurved(Intersect, brep.CrossingCylinderIntersectGeneral) // two crossing cylinders
+	curvedSteinmetzIntersect    = gatedCurved(Intersect, withoutRecorder(brep.EqualRadiusSteinmetzIntersect))
+	curvedConeCylinderIntersect = gatedCurved(Intersect, brep.ConeCylinderIntersectGeneral) // cone ∩ cylinder
+	curvedConeConeIntersect     = gatedCurved(Intersect, brep.ConeConeIntersectGeneral)     // cone ∩ fatter cone
+	curvedPartialIntersect      = gatedCurved(Intersect, brep.PartialPenetrationIntersectGeneral)
 
-// curvedSteinmetzIntersect returns the exact intersection of two equal-radius perpendicular cylinders (the
-// Steinmetz bicylinder), or ok=false to defer. Only Intersect maps here, and only a valid closed manifold
-// result is adopted. This is the ONE crossing case kept on its bespoke analytic constructor (the general
-// curved∩curved pipeline, #1403, handles every other ruled pair): the equal-radius pinch makes the imprint
-// self-intersect into four lobes, which the general (u,v) arrangement cannot yet split or weld — see the
-// detailed rationale on brep.EqualRadiusSteinmetzIntersect. The general crossing path declines equal radii
-// (its result fails validBooleanSolid), so it does not race this handler.
-func curvedSteinmetzIntersect(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	if op != Intersect {
-		return nil, false
-	}
-	res, ok := brep.EqualRadiusSteinmetzIntersect(target, tool)
-	if !ok || !validBooleanSolid(res) {
-		return nil, false
-	}
-	return res, true
-}
+	// Cut — drilling the target with the tool (through, blind, or two stubs of tool − target).
+	curvedCylindricalHoleCut = gatedCurved(Cut, withoutRecorder(brep.DrillThroughHole)) // straight cylinder through a planar slab
+	curvedPartialCut         = gatedCurved(Cut, brep.PartialPenetrationCutGeneral)      // blind rod hole
+	curvedSteinmetzCut       = gatedCurved(Cut, withoutRecorder(brep.EqualRadiusSteinmetzCut))
+	curvedConeCylinderCut    = gatedCurved(Cut, brep.ConeCylinderCutGeneral)
+	curvedConeConeCut        = gatedCurved(Cut, brep.ConeConeCutGeneral)
+	curvedCrossingCut        = gatedCurved(Cut, brep.CrossingCylinderCutGeneral)
 
-// curvedPartialIntersect returns the exact intersection of a thin rod ending inside a fatter cylinder (the
-// rod plug), or ok=false to defer. Only Intersect maps here, and only a valid closed manifold result is
-// adopted. This is the partial-penetration case the imprint traces as a single loop (one wall breach).
-func curvedPartialIntersect(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	if op != Intersect {
-		return nil, false
-	}
-	// EPIC #1403: route the partial-penetration plug through the GENERAL pipeline first (#1476 wrapping-band +
-	// the cap generalisation that keeps the rod's interior-ending blind cap); an out-of-scope pair declines to the planar CSG fallback (booleanGeneral).
-	res, ok := brep.PartialPenetrationIntersectGeneral(target, tool, rec)
-	if !ok || !validBooleanSolid(res) {
-		return nil, false
-	}
-	return res, true
-}
-
-// curvedPartialCut returns target − tool when tool is a thin rod ending inside the fatter target (a blind
-// hole), or ok=false to defer. Only Cut maps here, and only a valid closed manifold result is adopted.
-func curvedPartialCut(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	if op != Cut {
-		return nil, false
-	}
-	// EPIC #1403: route the partial-penetration blind hole / stub through the GENERAL pipeline first (#1476);
-	// an out-of-scope pair declines to the planar CSG fallback (booleanGeneral).
-	res, ok := brep.PartialPenetrationCutGeneral(target, tool, rec)
-	if !ok || !validBooleanSolid(res) {
-		return nil, false
-	}
-	return res, true
-}
-
-// curvedPartialJoin returns target ∪ tool for a thin rod ending inside the fatter cylinder (the fat with a
-// single rod stub sticking out the entry side), or ok=false to defer. Only Join maps here, and only a valid
-// closed manifold result is adopted.
-func curvedPartialJoin(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	if op != Join {
-		return nil, false
-	}
-	// EPIC #1403: route the partial-penetration union (fat + entry stub) through the GENERAL pipeline first
-	// (#1476); an out-of-scope pair declines to the planar CSG fallback (booleanGeneral).
-	res, ok := brep.PartialPenetrationJoinGeneral(target, tool, rec)
-	if !ok || !validBooleanSolid(res) {
-		return nil, false
-	}
-	return res, true
-}
-
-// curvedCylindricalHoleCut returns target − tool when the tool is a straight cylinder drilling a clean
-// through-hole in an all-planar target (a drilled plate), or ok=false to defer. The result is an EXACT
-// curved B-rep — the two pierced faces gain a circular hole and a single geom.Cylinder face forms the
-// hole wall — so the most common curved cut no longer degrades to triangle-soup CSG (M2 Phase 3,
-// Oblikovati/Oblikovati#1336, reverse of the #1334 cylinder − box case). Only Cut maps here; a tool that
-// is not a single full cylinder, or a hole that clips a face or does not pass clean through, returns
-// ok=false so the CSG fallback still runs.
-func curvedCylindricalHoleCut(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	if op != Cut {
-		return nil, false
-	}
-	res, ok := brep.DrillThroughHole(target, tool)
-	if !ok || !validBooleanSolid(res) {
-		return nil, false
-	}
-	return res, true
-}
-
-// curvedCoaxialJoin returns target ∪ tool when both are coaxial equal-radius cylinders overlapping or
-// abutting along the axis — one cylinder spanning their merged extent — or ok=false to defer. Their side
-// faces are coincident (the curved analogue of a coplanar overlap), which the CSG fallback faceted; the
-// exact union keeps the analytic cylinder. Only Join maps here, and only a valid closed manifold result is
-// adopted.
-func curvedCoaxialJoin(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	if op != Join {
-		return nil, false
-	}
-	res, ok := brep.CoaxialCylinderUnion(target, tool)
-	if !ok || !validBooleanSolid(res) {
-		return nil, false
-	}
-	return res, true
-}
-
-// curvedCylinderBossJoin returns target ∪ tool when tool is a cylinder seated flush and perpendicular on
-// one planar face of target, protruding outward (a boss / spigot), or ok=false to defer. The boss base
-// disk is coplanar with the seat face — the canonical coplanar overlap the CSG fallback faceted; the exact
-// union keeps the analytic cylinder wall. Only Join maps here, and only a valid closed manifold result is
-// adopted.
-func curvedCylinderBossJoin(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	if op != Join {
-		return nil, false
-	}
-	res, ok := brep.JoinCylindricalBoss(target, tool)
-	if !ok || !validBooleanSolid(res) {
-		return nil, false
-	}
-	return res, true
-}
-
-// curvedConeCylinderCut returns target − tool for a cone crossing a cylinder (drilling the fat cylinder with
-// the cone, or the two cone stubs of cone − fat), or ok=false to defer. Only Cut maps here, and only a valid
-// closed manifold result is adopted.
-func curvedConeCylinderCut(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	if op != Cut {
-		return nil, false
-	}
-	// EPIC #1403: route cone∩cylinder subtract through the GENERAL ruled cut first (#1476 OUTSIDE-keep
-	// emission); an out-of-scope pair declines to the planar CSG fallback (booleanGeneral).
-	res, ok := brep.ConeCylinderCutGeneral(target, tool, rec)
-	if !ok || !validBooleanSolid(res) {
-		return nil, false
-	}
-	return res, true
-}
-
-// curvedConeCylinderJoin returns target ∪ tool for a cone crossing a cylinder (a fat cylinder side-breached
-// by a cone passing through it, leaving a tapered stub each side), or ok=false to defer. Only Join maps here,
-// and only a valid closed manifold result is adopted.
-func curvedConeCylinderJoin(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	if op != Join {
-		return nil, false
-	}
-	// EPIC #1403: route cone∩cylinder JOIN through the GENERAL ruled join first (#1476 OUTSIDE-keep emission);
-	// an out-of-scope pair declines to the planar CSG fallback (booleanGeneral).
-	res, ok := brep.ConeCylinderJoinGeneral(target, tool, rec)
-	if !ok || !validBooleanSolid(res) {
-		return nil, false
-	}
-	return res, true
-}
-
-// curvedConeConeCut returns target − tool for a cone crossing a fatter cone (drilling the fat cone with the
-// rod cone, or the two rod-cone stubs of cone − fat), or ok=false to defer. Only Cut maps here, and only a
-// valid closed manifold result is adopted.
-func curvedConeConeCut(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	if op != Cut {
-		return nil, false
-	}
-	// EPIC #1403: route cone∩cone subtract through the GENERAL ruled cut first (#1476 OUTSIDE-keep emission);
-	// an out-of-scope pair declines to the planar CSG fallback (booleanGeneral).
-	res, ok := brep.ConeConeCutGeneral(target, tool, rec)
-	if !ok || !validBooleanSolid(res) {
-		return nil, false
-	}
-	return res, true
-}
-
-// curvedConeConeJoin returns target ∪ tool for a cone crossing a fatter cone (the fat cone side-breached by a
-// rod cone passing through it, leaving a tapered stub each side), or ok=false to defer. Only Join maps here,
-// and only a valid closed manifold result is adopted.
-func curvedConeConeJoin(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	if op != Join {
-		return nil, false
-	}
-	// EPIC #1403: route cone∩cone JOIN through the GENERAL ruled join first (#1476 OUTSIDE-keep emission);
-	// an out-of-scope pair declines to the planar CSG fallback (booleanGeneral).
-	res, ok := brep.ConeConeJoinGeneral(target, tool, rec)
-	if !ok || !validBooleanSolid(res) {
-		return nil, false
-	}
-	return res, true
-}
-
-// curvedSteinmetzCut returns target − tool for two equal-radius perpendicular cylinders (the target with
-// the tool's saddle bite removed), or ok=false to defer. Only Cut maps here, and only a valid closed
-// manifold result is adopted. Like curvedSteinmetzIntersect, this stays on the bespoke analytic constructor:
-// the equal-radius pinch is the one case the general pipeline (#1403) does not handle — see the rationale on
-// brep.EqualRadiusSteinmetzIntersect.
-func curvedSteinmetzCut(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	if op != Cut {
-		return nil, false
-	}
-	res, ok := brep.EqualRadiusSteinmetzCut(target, tool)
-	if !ok || !validBooleanSolid(res) {
-		return nil, false
-	}
-	return res, true
-}
-
-// curvedCrossingCut returns target − tool for two crossing cylinders (drilling a fat cylinder with a
-// crossing rod, or the two rod stubs of rod − fat), or ok=false to defer. Only Cut maps here, and only a
-// valid closed manifold result is adopted.
-func curvedCrossingCut(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	if op != Cut {
-		return nil, false
-	}
-	// EPIC #1403: route crossing-cylinder subtract through the GENERAL pipeline first (the OUTSIDE-keep
-	// wrapping-band emission, Oblikovati#1476, makes it mesh the right region; the tool tunnel reverses into the
-	// cavity); an out-of-scope pair declines to the CSG fallback (a
-	// breach reaching a cap, a partial penetration), so no OCC case regresses.
-	res, ok := brep.CrossingCylinderCutGeneral(target, tool, rec)
-	if !ok || !validBooleanSolid(res) {
-		return nil, false
-	}
-	return res, true
-}
-
-// curvedSteinmetzJoin returns target ∪ tool for two equal-radius perpendicular cylinders (the union of two
-// crossing cylinders of the same radius), or ok=false to defer. Only Join maps here, and only a valid closed
-// manifold result is adopted. Like curvedSteinmetzIntersect, this stays on the bespoke analytic constructor:
-// the equal-radius pinch is the one case the general pipeline (#1403) does not handle — see the rationale on
-// brep.EqualRadiusSteinmetzIntersect.
-func curvedSteinmetzJoin(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	if op != Join {
-		return nil, false
-	}
-	res, ok := brep.EqualRadiusSteinmetzJoin(target, tool)
-	if !ok || !validBooleanSolid(res) {
-		return nil, false
-	}
-	return res, true
-}
-
-// curvedCrossingJoin returns target ∪ tool for two crossing cylinders (a fat cylinder side-breached by a
-// rod passing through it, leaving a stub each side), or ok=false to defer. Only Join maps here, and only a
-// valid closed manifold result is adopted.
-func curvedCrossingJoin(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	if op != Join {
-		return nil, false
-	}
-	// EPIC #1403: crossing-cylinder JOIN is built by the GENERAL pipeline (the OUTSIDE-keep wrapping-band
-	// emission, Oblikovati#1476, meshes the fat's keyhole-bridged holed wall plus the two split rod stubs); an
-	// out-of-scope pair (a breach reaching a cap, equal radii) declines to the planar CSG fallback (booleanGeneral).
-	res, ok := brep.CrossingCylinderJoinGeneral(target, tool, rec)
-	if !ok || !validBooleanSolid(res) {
-		return nil, false
-	}
-	return res, true
-}
+	// Join — the union, keeping the analytic wall where the operands' faces are coincident or breached.
+	curvedCoaxialJoin      = gatedCurved(Join, withoutRecorder(brep.CoaxialCylinderUnion)) // coaxial equal-radius cylinders
+	curvedCylinderBossJoin = gatedCurved(Join, withoutRecorder(brep.JoinCylindricalBoss))  // cylinder seated flush on a face
+	curvedPartialJoin      = gatedCurved(Join, brep.PartialPenetrationJoinGeneral)         // fat + entry stub
+	curvedConeCylinderJoin = gatedCurved(Join, brep.ConeCylinderJoinGeneral)
+	curvedConeConeJoin     = gatedCurved(Join, brep.ConeConeJoinGeneral)
+	curvedCrossingJoin     = gatedCurved(Join, brep.CrossingCylinderJoinGeneral)
+	curvedSteinmetzJoin    = gatedCurved(Join, withoutRecorder(brep.EqualRadiusSteinmetzJoin))
+)
