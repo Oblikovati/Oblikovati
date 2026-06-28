@@ -37,13 +37,19 @@ func TestActiveWorkGeometryResolvesAssembly(t *testing.T) {
 	}
 }
 
-// TestPickableWorkPlanesIncludesAssemblyOrigin: an assembly's three origin planes are pickable (so
-// they can host a sketch in the assembly), where before they were absent — PickableWorkPlanes was
-// part-gated and returned nil for an assembly.
-func TestPickableWorkPlanesIncludesAssemblyOrigin(t *testing.T) {
+// TestPickableWorkPlanesFollowsVisibilityInAssembly: an assembly's origin planes, like a part's,
+// are hidden by default (issue #1520) and become mouse-pickable only once shown — and the assembly
+// path is no longer part-gated (PickableWorkPlanes returned nil for an assembly before). A hidden
+// origin plane is reachable solely through its browser node, never a viewport click.
+func TestPickableWorkPlanesFollowsVisibilityInAssembly(t *testing.T) {
 	s := activeAssemblySession(t)
-	if got := len(s.PickableWorkPlanes()); got != 3 {
-		t.Errorf("assembly PickableWorkPlanes = %d, want 3 origin planes (XY/XZ/YZ)", got)
+	if got := len(s.PickableWorkPlanes()); got != 0 {
+		t.Fatalf("assembly PickableWorkPlanes (default) = %d, want 0 (origin planes hidden until shown)", got)
+	}
+	wg, _ := s.ActiveWorkGeometry()
+	wg.WorkPlanes().Item(0).SetVisible(true)
+	if got := len(s.PickableWorkPlanes()); got != 1 {
+		t.Errorf("a shown assembly origin plane should be pickable: got %d, want 1", got)
 	}
 }
 

@@ -75,24 +75,43 @@ func TestOffsetWorkPlaneToolWaitsForDistanceThenCreates(t *testing.T) {
 }
 
 // TestPickableWorkPlanesIncludesVisibleUserPlanes is the issue-#132 regression: the viewport
-// picker must offer ribbon-created user planes (not only the origin frame), so a new sketch
-// can be hosted on one by clicking it in the 3D view. A hidden user plane drops out.
+// picker must offer a ribbon-created user plane, so a new sketch can be hosted on one by
+// clicking it in the 3D view. A hidden user plane drops out. Origin planes default hidden
+// (issue #1520), so the visible user plane is the only mouse-pickable plane here.
 func TestPickableWorkPlanesIncludesVisibleUserPlanes(t *testing.T) {
 	s, def := emptyPartSession(t)
-	origin := len(def.OriginPlanes()) // the always-pickable coordinate-system planes
 	wp := def.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 2 })
 
 	got := s.PickableWorkPlanes()
-	if len(got) != origin+1 {
-		t.Fatalf("PickableWorkPlanes = %d, want %d (origin) + 1 user plane", len(got), origin)
-	}
-	if !containsPlane(got, wp) {
-		t.Errorf("PickableWorkPlanes omitted the visible user plane %p", wp)
+	if len(got) != 1 || !containsPlane(got, wp) {
+		t.Fatalf("PickableWorkPlanes = %d planes, want only the visible user plane", len(got))
 	}
 
 	wp.SetVisible(false)
-	if got := s.PickableWorkPlanes(); len(got) != origin || containsPlane(got, wp) {
-		t.Errorf("a hidden user plane must not be pickable: got %d planes (want %d)", len(got), origin)
+	if got := s.PickableWorkPlanes(); len(got) != 0 {
+		t.Errorf("a hidden user plane must not be pickable: got %d planes (want 0)", len(got))
+	}
+}
+
+// TestHiddenOriginPlanesNotMousePickable is the issue-#1520 regression: origin planes default
+// hidden, and a datum the overlays do not draw must not be mouse-clickable — clicking the empty
+// viewport background must not snap to an invisible origin plane (the browser node still selects
+// it, fed to the tool independently of the RayPicker). Showing an origin plane restores its
+// viewport pickability.
+func TestHiddenOriginPlanesNotMousePickable(t *testing.T) {
+	s, def := emptyPartSession(t)
+	for _, wp := range def.OriginPlanes() {
+		if wp.Visible() {
+			t.Fatalf("origin plane %q should default hidden", wp.Name())
+		}
+	}
+	if got := s.PickableWorkPlanes(); len(got) != 0 {
+		t.Fatalf("hidden origin planes must not be mouse-pickable: got %d", len(got))
+	}
+	xy := def.OriginPlanes()[0]
+	xy.SetVisible(true)
+	if got := s.PickableWorkPlanes(); len(got) != 1 || !containsPlane(got, xy) {
+		t.Errorf("a shown origin plane must be mouse-pickable: got %d planes", len(got))
 	}
 }
 
