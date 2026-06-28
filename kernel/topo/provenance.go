@@ -84,6 +84,40 @@ func provNameFromFaces(faces []*Face, faceProv map[*Face]Lineage, sep, rankSeed 
 	return NameByParents(parents, sep, rankSeed, 0), true
 }
 
+// InheritOriginalEdges restores original edge identity to a derived body (ADR-0043): a result edge
+// whose two endpoints coincide with an input edge's endpoints — an untouched boundary the operation
+// passed through WHOLE — takes that input edge's lineage, instead of the build-order fallback a
+// boolean assigns to surviving (non-intersection) edges. Only an input edge matched by EXACTLY ONE
+// result edge (an unsplit survivor) is inherited, so two result edges never claim the same lineage;
+// a split edge's fragments and the intersection edges (which have new endpoints) are left untouched.
+// Coincidence is tested at a tolerance scaled to the body's size. Call during construction.
+func (b *Body) InheritOriginalEdges(originals []*Edge) {
+	tol := float64(b.RangeBox().Diagonal().Length())*1e-9 + 1e-9
+	res := b.Edges()
+	for _, o := range originals {
+		var match *Edge
+		count := 0
+		for _, r := range res {
+			if edgeEndpointsCoincide(r, o, tol) {
+				match, count = r, count+1
+			}
+		}
+		if count == 1 {
+			match.lineage = o.lineage
+		}
+	}
+}
+
+// edgeEndpointsCoincide reports whether r and o have the same endpoint PAIR (in either direction),
+// within tol — the test that r is the same boundary as the original edge o.
+func edgeEndpointsCoincide(r, o *Edge, tol float64) bool {
+	rs, re, os, oe := r.start.point, r.end.point, o.start.point, o.end.point
+	if float64(rs.DistanceTo(os)) <= tol && float64(re.DistanceTo(oe)) <= tol {
+		return true
+	}
+	return float64(rs.DistanceTo(oe)) <= tol && float64(re.DistanceTo(os)) <= tol
+}
+
 // vertexFaces returns the distinct faces meeting at v, via its incident edges.
 func vertexFaces(v *Vertex) []*Face {
 	seen := map[*Face]bool{}
