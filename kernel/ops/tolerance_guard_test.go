@@ -37,9 +37,24 @@ func TestNoUnjustifiedAbsoluteEpsilons(t *testing.T) {
 		// geom: the analytic + numeric surface-intersection classifiers and the SSI tracer.
 		"../geom/intersect_analytic.go",
 		"../geom/intersect2d.go",
+		"../geom/intersect2d_circle.go",
 		"../geom/intersect_surface_trace.go",
 		"../geom/trace_surface_zero.go",
 		"../geom/network_surface.go",
+		// geom: line/plane/line queries, 2D arc containment, and the curve evaluators
+		// (stroking deflection, arc-length integration, point-inversion clustering) + the
+		// B-spline / NURBS knot-removal & degree-reduction fitting tolerances (#1504).
+		"../geom/query.go",
+		"../geom/arc2d.go",
+		"../geom/evaluator_common.go",
+		"../geom/evaluator_curve2.go",
+		"../geom/evaluator_curve3.go",
+		"../geom/evaluator_point2.go",
+		"../geom/evaluator_point3.go",
+		"../geom/bspline_remove.go",
+		"../geom/bspline_reduce.go",
+		"../geom/nurbs_remove.go",
+		"../geom/nurbs_reduce.go",
 		// brep: the curved-boolean weld / imprint / half-space machinery.
 		"../brep/curved_halfspace_general.go",
 		"../brep/curved_halfspace_cylinder.go",

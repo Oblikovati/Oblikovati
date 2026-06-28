@@ -105,7 +105,7 @@ func arcParamAtPoint3(g Arc3d, p math.Point3) (float64, SolutionNature) {
 func inPlaneAngle(center math.Point3, ref, bin math.Vector3, radius float64, p math.Point3) (float64, bool) {
 	d := center.VectorTo(p)
 	x, y := float64(d.Dot(ref)), float64(d.Dot(bin))
-	if stdmath.Hypot(x, y) <= 1e-12*stdmath.Max(1, radius) {
+	if stdmath.Hypot(x, y) <= 1e-12*stdmath.Max(1, radius) { // tol:numeric — point on the axis: angular param undefined (relative to radius)
 		return 0, false
 	}
 	return stdmath.Atan2(y, x), true
@@ -124,7 +124,7 @@ func resolveSweep(rel, sweep float64, distAt func(float64) float64) (float64, So
 	}
 	gapMid := span + (twoPi-span)/2
 	d0, d1 := distAt(0), distAt(1)
-	if stdmath.Abs(rel-gapMid) <= 1e-12 || stdmath.Abs(d0-d1) <= 1e-12*stdmath.Max(1, d0) {
+	if stdmath.Abs(rel-gapMid) <= 1e-12 || stdmath.Abs(d0-d1) <= 1e-12*stdmath.Max(1, d0) { // tol:numeric — antipodal/equal-distance degeneracy guard
 		return closerEnd(d0, d1), DistinctlyManySolutions
 	}
 	return closerEnd(d0, d1), UniqueSolution
@@ -149,7 +149,7 @@ func polylineParamAtPoint3(g Polyline, p math.Point3) (float64, SolutionNature) 
 		local := segmentParamAtPoint3(seg, p)
 		foot := seg.PointAt(local)
 		d := foot.DistanceTo(p)
-		tol := 1e-12 * stdmath.Max(1, best)
+		tol := 1e-12 * stdmath.Max(1, best) // tol:numeric — first-segment acceptance, relative to best distance
 		switch {
 		case d < best-tol:
 			best, bestT, ties, bestFoot = d, (float64(i)+local)/float64(segs), 0, foot
@@ -176,7 +176,7 @@ func genericParamAtPoint3(c Curve3, p math.Point3) (float64, SolutionNature) {
 	for _, d := range ds {
 		best = stdmath.Min(best, d)
 	}
-	tol := 1e-9 * stdmath.Max(1, best)
+	tol := 1e-9 * stdmath.Max(1, best) // tol:numeric — near-minimum clustering, relative to best distance
 	if count := nearCount(ds, best, tol); count > closestSamples/2 {
 		return ts[0], InfinitelyManySolutions
 	}
@@ -249,7 +249,7 @@ func refineClosest3(c Curve3, p math.Point3, t, lo, hi float64) float64 {
 		r := p.VectorTo(c.PointAt(t))
 		g := float64(r.Dot(d1))
 		dg := float64(d1.LengthSquared()) + float64(r.Dot(d2))
-		if dg == 0 || stdmath.Abs(g) < 1e-14 {
+		if dg == 0 || stdmath.Abs(g) < 1e-14 { // tol:numeric — Newton denominator near-zero guard
 			return t
 		}
 		t = clampTo(t-g/dg, lo, hi)

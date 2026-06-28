@@ -10,7 +10,7 @@ import stdmath "math"
 
 const (
 	// lengthRelTol is the relative accuracy target of arc-length integration.
-	lengthRelTol = 1e-10
+	lengthRelTol = 1e-10 // tol:numeric — a RELATIVE integration-error target, not a model length
 	// lengthMaxDepth bounds the adaptive-Simpson recursion.
 	lengthMaxDepth = 24
 	// strokeMaxDepth bounds the chordal-subdivision recursion.

@@ -44,7 +44,7 @@ func segmentParamAtPoint2(g LineSegment2d, p math.Point2) float64 {
 // itself is equidistant from the whole circle.
 func circleParamAtPoint2(g Circle2d, p math.Point2) (float64, SolutionNature) {
 	d := g.Center.VectorTo(p)
-	if float64(d.Length()) <= 1e-12*stdmath.Max(1, g.Radius) {
+	if float64(d.Length()) <= 1e-12*stdmath.Max(1, g.Radius) { // tol:numeric — point AT the circle/arc centre: param undefined (relative to radius)
 		return 0, InfinitelyManySolutions
 	}
 	return wrap2pi(stdmath.Atan2(d.Y, d.X)) / twoPi, UniqueSolution
@@ -53,7 +53,7 @@ func circleParamAtPoint2(g Circle2d, p math.Point2) (float64, SolutionNature) {
 // arcParamAtPoint2 inverts the angle and resolves it against the sweep.
 func arcParamAtPoint2(g Arc2d, p math.Point2) (float64, SolutionNature) {
 	d := g.Center.VectorTo(p)
-	if float64(d.Length()) <= 1e-12*stdmath.Max(1, g.Radius) {
+	if float64(d.Length()) <= 1e-12*stdmath.Max(1, g.Radius) { // tol:numeric — point AT the circle/arc centre: param undefined (relative to radius)
 		return 0, InfinitelyManySolutions
 	}
 	angle := stdmath.Atan2(d.Y, d.X)
@@ -77,7 +77,7 @@ func polylineParamAtPoint2(g Polyline2d, p math.Point2) (float64, SolutionNature
 		// FINITE reference: seeding best with +Inf made 1e-12*best = +Inf, so best-tol was NaN and
 		// the "strictly closer" guard was always false — every point on a polyline resolved to the
 		// start (param 0). Base it on the candidate distance, and always accept the first segment.
-		tol := 1e-12 * stdmath.Max(1, d)
+		tol := 1e-12 * stdmath.Max(1, d) // tol:numeric — first-segment acceptance, relative to candidate distance
 		switch {
 		case stdmath.IsInf(best, 1) || d < best-tol:
 			best, bestT, ties, bestFoot = d, (float64(i)+local)/float64(segs), 0, foot
@@ -103,7 +103,7 @@ func genericParamAtPoint2(c Curve2, p math.Point2) (float64, SolutionNature) {
 	for _, d := range ds {
 		best = stdmath.Min(best, d)
 	}
-	tol := 1e-9 * stdmath.Max(1, best)
+	tol := 1e-9 * stdmath.Max(1, best) // tol:numeric — near-minimum clustering, relative to best distance
 	if count := nearCount(ds, best, tol); count > closestSamples/2 {
 		return ts[0], InfinitelyManySolutions
 	}
@@ -154,7 +154,7 @@ func refineClosest2(c Curve2, p math.Point2, t, lo, hi float64) float64 {
 		r := p.VectorTo(c.PointAt(t))
 		g := float64(r.Dot(d1))
 		dg := float64(d1.LengthSquared()) + float64(r.Dot(d2))
-		if dg == 0 || stdmath.Abs(g) < 1e-14 {
+		if dg == 0 || stdmath.Abs(g) < 1e-14 { // tol:numeric — Newton denominator near-zero guard
 			return t
 		}
 		t = clampTo(t-g/dg, lo, hi)
