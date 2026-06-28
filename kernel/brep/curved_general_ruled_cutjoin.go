@@ -84,7 +84,7 @@ func (o ruledOperand) split(imprint []geom.Curve3, op Op, isB bool, other func(m
 
 // require2Loops gates a cut/join on the imprint being exactly two closed loops — a clean rod-through-fat
 // crossing (entry + exit). Anything else (a tangency, a partial penetration, an open chain) declines so the
-// caller keeps its bespoke fallback (#1403).
+// caller keeps its CSG fallback (#1403).
 func require2Loops(loops []geom.Polyline, ok bool) ([]geom.Polyline, bool) {
 	return loops, ok && len(loops) == 2
 }
@@ -174,80 +174,63 @@ func filterCaps(b *topo.Body, keep func(math.Point3) bool) []curvedFace {
 	return caps
 }
 
-// CrossingCylinderCutGeneral routes crossing-cylinder subtract through the general ruled cut (#1403/#1476):
-// a fat cylinder drilled by a rod (one solid) or a rod sliced by a fat (two stubs). ok=false outside the
-// wired clean-side-breach crossing so kernel/ops keeps its bespoke fallback.
-func CrossingCylinderCutGeneral(target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	loops, ok := require2Loops(crossingCylinderImprint(target, tool, rec))
-	tgt, okT := cylinderOperand(target)
-	tl, okL := cylinderOperand(tool)
-	if !ok || !okT || !okL {
+// ruledPairGeneral is the shared body of the full-crossing ruled cut/join exports below: trace the
+// imprint as two loops (the entry + exit of a clean side breach), resolve both operands to their ruled
+// type, and combine. The three injected functions are all that differ between the pairs — the imprint
+// tracer, the operand resolver, and ruledCutGeneral vs ruledJoinGeneral (#1502, collapsing six
+// near-identical wrappers). ok=false when the imprint is not a clean two-loop crossing or an operand is
+// not the expected ruled surface, so kernel/ops keeps its CSG fallback.
+func ruledPairGeneral(a, b *topo.Body, rec *diag.Recorder,
+	imprint func(*topo.Body, *topo.Body, *diag.Recorder) ([]geom.Polyline, bool),
+	operand func(*topo.Body) (ruledOperand, bool),
+	combine func(target, tool ruledOperand, loops []geom.Polyline) (*topo.Body, bool)) (*topo.Body, bool) {
+	loops, ok := require2Loops(imprint(a, b, rec))
+	oa, okA := operand(a)
+	ob, okB := operand(b)
+	if !ok || !okA || !okB {
 		return nil, false
 	}
-	return ruledCutGeneral(tgt, tl, loops)
+	return combine(oa, ob, loops)
+}
+
+// CrossingCylinderCutGeneral routes crossing-cylinder subtract through the general ruled cut (#1403/#1476):
+// a fat cylinder drilled by a rod (one solid) or a rod sliced by a fat (two stubs). ok=false outside the
+// wired clean-side-breach crossing so kernel/ops keeps its CSG fallback.
+func CrossingCylinderCutGeneral(target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
+	return ruledPairGeneral(target, tool, rec, crossingCylinderImprint, cylinderOperand, ruledCutGeneral)
 }
 
 // CrossingCylinderJoinGeneral routes crossing-cylinder JOIN through the general ruled join (#1403/#1476):
 // a fat cylinder side-breached by a rod, welded into one solid (keyhole holed wall + two stubs + whole caps).
 func CrossingCylinderJoinGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	loops, ok := require2Loops(crossingCylinderImprint(a, b, rec))
-	oa, okA := cylinderOperand(a)
-	ob, okB := cylinderOperand(b)
-	if !ok || !okA || !okB {
-		return nil, false
-	}
-	return ruledJoinGeneral(oa, ob, loops)
+	return ruledPairGeneral(a, b, rec, crossingCylinderImprint, cylinderOperand, ruledJoinGeneral)
 }
 
 // ConeConeCutGeneral routes cone∩cone subtract through the general ruled cut (#1403): a fat frustum drilled by
 // a crossing rod frustum (one solid) or a rod frustum sliced by a fat (two tapered stubs). ok=false outside
 // the wired clean-side-breach frustum crossing.
 func ConeConeCutGeneral(target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	loops, ok := require2Loops(coneConeImprint(target, tool, rec))
-	tgt, okT := coneOperand(target)
-	tl, okL := coneOperand(tool)
-	if !ok || !okT || !okL {
-		return nil, false
-	}
-	return ruledCutGeneral(tgt, tl, loops)
+	return ruledPairGeneral(target, tool, rec, coneConeImprint, coneOperand, ruledCutGeneral)
 }
 
 // ConeConeJoinGeneral routes cone∩cone JOIN through the general ruled join (#1403): a fat frustum side-breached
 // by a crossing rod frustum, welded into one solid (holed fat wall + a tapered stub each side + whole caps).
 func ConeConeJoinGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	loops, ok := require2Loops(coneConeImprint(a, b, rec))
-	oa, okA := coneOperand(a)
-	ob, okB := coneOperand(b)
-	if !ok || !okA || !okB {
-		return nil, false
-	}
-	return ruledJoinGeneral(oa, ob, loops)
+	return ruledPairGeneral(a, b, rec, coneConeImprint, coneOperand, ruledJoinGeneral)
 }
 
 // ConeCylinderCutGeneral routes cone∩cylinder subtract through the general ruled cut (#1403): a fat cylinder
 // drilled by a crossing cone (or vice-versa). The operands resolve by type (ruledOperandOf), so target/tool
 // may be cone-then-cylinder or the reverse. ok=false outside the wired clean-side-breach crossing.
 func ConeCylinderCutGeneral(target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	loops, ok := require2Loops(coneCylinderImprint(target, tool, rec))
-	tgt, okT := ruledOperandOf(target)
-	tl, okL := ruledOperandOf(tool)
-	if !ok || !okT || !okL {
-		return nil, false
-	}
-	return ruledCutGeneral(tgt, tl, loops)
+	return ruledPairGeneral(target, tool, rec, coneCylinderImprint, ruledOperandOf, ruledCutGeneral)
 }
 
 // ConeCylinderJoinGeneral routes cone∩cylinder JOIN through the general ruled join (#1403): a fat cylinder
 // side-breached by a crossing cone (or vice-versa), welded into one solid. ok=false outside the wired
 // clean-side-breach crossing.
 func ConeCylinderJoinGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	loops, ok := require2Loops(coneCylinderImprint(a, b, rec))
-	oa, okA := ruledOperandOf(a)
-	ob, okB := ruledOperandOf(b)
-	if !ok || !okA || !okB {
-		return nil, false
-	}
-	return ruledJoinGeneral(oa, ob, loops)
+	return ruledPairGeneral(a, b, rec, coneCylinderImprint, ruledOperandOf, ruledJoinGeneral)
 }
 
 // partialImprint returns the SINGLE imprint loop of a partial penetration — a thin rod that breaches one wall

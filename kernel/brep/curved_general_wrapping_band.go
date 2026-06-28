@@ -13,11 +13,12 @@ import (
 // that keeps the part of a ruled side OUTSIDE the other solid produces a band that WRAPS the whole azimuth —
 // a tube with no contractible outer loop. The half-space (u,v) emission assumes a contractible outer
 // (loops[0]) with the rest as holes, so it mis-files one of the tube's two ends (a rim) as a "hole" and the
-// mesher carves the wrong region. The two correct shapes the bespoke handlers build are reproduced here:
+// mesher carves the wrong region. The two correct shapes are reproduced here (these are the shapes the
+// removed per-pair bespoke handlers used to build; the general pipeline is now the only path):
 //
 //   - a HOLED tube (the fat wall punched by the rod): two constant-v rims plus contractible imprint holes.
 //     Bridged by a seam ruling into one keyhole outer loop (rim→seam→rim→seam), holes inside — the
-//     seam-cut form periodicBandGrid meshes (the bespoke addFatCapsAndHoledWall shape).
+//     seam-cut form periodicBandGrid meshes (the holed-wall shape).
 //   - a TWO-RIM band (a rod stub poking out): one cap rim + one imprint rim, both full-wrap, no holes —
 //     emitted as a two-closed-loop face the ruled saddle loft (twoClosedRimBandMesh) lofts rim-to-rim.
 //
@@ -89,8 +90,8 @@ func (c ruledUV) keyholeTubeFace(holes []emittedLoop, surface geom.Surface, f cu
 // keyholeOuter bridges the band's two rims into one outer loop at their NATIVE seam (the rim circles' own
 // angle-zero ruling, where both rims are anchored to the same azimuth, so the bridge is a v-ruling on the
 // surface). The loop runs up the bridge, around the top rim (reversed when the source side traverses its top
-// rim opposite its cap), back down the bridge, around the bottom rim — the bespoke addFatCapsAndHoledWall
-// keyhole, but reusing the original rim circles so the outer's rims weld to the caps without re-seaming (#1476).
+// rim opposite its cap), back down the bridge, around the bottom rim — the holed-wall keyhole shape, but
+// reusing the original rim circles so the outer's rims weld to the caps without re-seaming (#1476).
 func (c ruledUV) keyholeOuter() []loopEdge {
 	seamBot := c.band.bottomCirc.PointAt(0)
 	seamTop := c.band.topCirc.PointAt(0)
