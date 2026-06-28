@@ -112,7 +112,7 @@ func filletBody(in Input, edgeKeys [][]byte, radius float64, corner FilletCorner
 	}
 	work, keys := planarizedFillet(body, edgeKeys, feat)
 	picks := make([]ops.EdgeFilletRadii, len(keys))
-	cross := opsCrossSection(prof.cross)
+	cross := prof.cross
 	for i, k := range keys {
 		picks[i] = ops.EdgeFilletRadii{Key: k, R0: radius, R1: radius, Cross: cross, Rho: prof.rho}
 	}
@@ -190,7 +190,7 @@ func filletBodySets(in Input, sets []FilletEdgeSet, corner FilletCornerType, con
 // follow-up).
 func filletPicksOf(sets []FilletEdgeSet, prof blendProfile, feat string) ([]ops.EdgeFilletRadii, error) {
 	var out []ops.EdgeFilletRadii
-	cross := opsCrossSection(prof.cross)
+	cross := prof.cross
 	for _, s := range sets {
 		if !s.variable() {
 			r := callOrZero(s.Radius)

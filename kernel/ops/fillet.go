@@ -6,6 +6,7 @@ import (
 	"fmt"
 	stdmath "math"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -18,20 +19,17 @@ type FilletRadiusPoint struct {
 	T, R float64
 }
 
-// FilletCrossSection is the shape of a fillet's cross-section profile (M36-F08). The default arc is
-// the circular rolling-ball blend (G1 — tangent to both walls); G2 and Conic flow more smoothly for
-// Class-A styling, where the tell-tale circular-arc highlight break is unacceptable.
-type FilletCrossSection int
+// FilletCrossSection is the shape of a fillet's cross-section profile (M36-F08). It ALIASES the
+// canonical api/types definition (ADR-0018): a string enum whose empty/"arc" value is the circular
+// rolling-ball blend (G1 — tangent to both walls), with G2 (curvature-continuous) and Conic
+// (rho-controlled) flowing more smoothly for Class-A styling. The kernel selects its blend builder on
+// this value (see crossSectionChords); IsArc() reports the default so a never-set Cross reads as arc.
+type FilletCrossSection = types.FilletCrossSection
 
 const (
-	// FilletArc is the circular rolling-ball cross-section (G1, the default/zero value).
-	FilletArc FilletCrossSection = iota
-	// FilletG2 is a curvature-continuous cross-section: zero curvature at both tangency lines, so a
-	// blend between flat walls has NO curvature jump where it meets them (a quintic profile).
-	FilletG2
-	// FilletConic is a conic (rho-controlled) cross-section: a rational quadratic whose shoulder
-	// fullness is set by Rho (0<ρ<1; 0.5 = parabola, <0.5 flatter/elliptic, >0.5 fuller/hyperbolic).
-	FilletConic
+	FilletArc   = types.FilletSectionArc   // circular rolling-ball cross-section (G1, the default)
+	FilletG2    = types.FilletSectionG2    // curvature-continuous cross-section (quintic, no curvature jump)
+	FilletConic = types.FilletSectionConic // conic (rho-controlled) cross-section; pair with Rho
 )
 
 // EdgeFilletRadii is one picked edge with its blend radius at each end: R0 at the edge's
@@ -162,7 +160,7 @@ func (p filletPick) varying() bool { return p.r0 != p.r1 || len(p.mids) > 0 }
 // chordPath reports whether the fillet builds via the chord-sampled ruling band rather than the
 // analytic cylinder: a varying radius OR any non-arc (G2/conic) cross-section, since those are swept
 // NURBS profiles, not a cylinder.
-func (p filletPick) chordPath() bool { return p.varying() || p.cross != FilletArc }
+func (p filletPick) chordPath() bool { return p.varying() || !p.cross.IsArc() }
 
 // resolveFilletPicks resolves the edge reference keys against the body, erroring on a lost
 // key or a non-positive radius.

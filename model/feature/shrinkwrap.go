@@ -5,39 +5,34 @@ package feature
 import (
 	"fmt"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
-// ShrinkwrapRemoveStyle selects which source parts a shrinkwrap drops before merging —
-// the reference API's shrinkwrap remove style. Removal makes the result lighter by
-// discarding parts a viewer never sees or that are too small to matter.
-type ShrinkwrapRemoveStyle int
+// ShrinkwrapRemoveStyle selects which source parts a shrinkwrap drops before merging — the reference
+// API's shrinkwrap remove style. It ALIASES the canonical api/types definition (ADR-0018: defined once
+// in the Apache-2.0 contract, same int values 0/1/2 and wire spellings). Removal makes the result
+// lighter by discarding parts a viewer never sees or that are too small to matter.
+type ShrinkwrapRemoveStyle = types.ShrinkwrapRemoveStyle
 
 const (
-	// RemoveNone keeps every part (the full, unsimplified set).
-	RemoveNone ShrinkwrapRemoveStyle = iota
-	// RemoveSmallParts drops parts whose body volume is below MinPartVolume.
-	RemoveSmallParts
-	// RemoveInternalParts drops parts fully enclosed by other parts (never visible
-	// from outside the assembly).
-	RemoveInternalParts
+	RemoveNone          = types.RemoveNone          // keeps every part (the full, unsimplified set)
+	RemoveSmallParts    = types.RemoveSmallParts    // drops parts whose body volume is below MinPartVolume
+	RemoveInternalParts = types.RemoveInternalParts // drops parts fully enclosed by other parts
 )
 
-// ShrinkwrapEnvelopeStyle selects how kept parts are replaced by simpler proxy
-// geometry — the reference API's envelopes-replace style. Envelopes erase internal
-// detail (and, by construction, holes) so the result is a lightweight closed solid.
-type ShrinkwrapEnvelopeStyle int
+// ShrinkwrapEnvelopeStyle selects how kept parts are replaced by simpler proxy geometry — the reference
+// API's envelopes-replace style. It ALIASES the canonical api/types definition (ADR-0018). Envelopes
+// erase internal detail (and, by construction, holes) so the result is a lightweight closed solid.
+type ShrinkwrapEnvelopeStyle = types.ShrinkwrapEnvelopeStyle
 
 const (
-	// EnvelopeNone keeps each kept part's real geometry.
-	EnvelopeNone ShrinkwrapEnvelopeStyle = iota
-	// EnvelopePerPart replaces each kept part with its axis-aligned bounding box.
-	EnvelopePerPart
-	// EnvelopeWhole replaces the entire kept set with one axis-aligned bounding box.
-	EnvelopeWhole
+	EnvelopeNone    = types.EnvelopeNone    // keeps each kept part's real geometry
+	EnvelopePerPart = types.EnvelopePerPart // replaces each kept part with its axis-aligned bounding box
+	EnvelopeWhole   = types.EnvelopeWhole   // replaces the entire kept set with one axis-aligned bounding box
 )
 
 // ShrinkwrapDefinition is the recipe for simplifying a source assembly into a

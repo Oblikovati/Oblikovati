@@ -60,18 +60,6 @@ const (
 	FilletConic = types.FilletSectionConic
 )
 
-// opsCrossSection maps the public cross-section to the kernel's blend selector.
-func opsCrossSection(c FilletCrossSection) ops.FilletCrossSection {
-	switch c {
-	case FilletG2:
-		return ops.FilletG2
-	case FilletConic:
-		return ops.FilletConic
-	default:
-		return ops.FilletArc
-	}
-}
-
 // FilletDefinition rounds selected edges. EdgeKeys+Radius is the original single
 // constant-radius form; EdgeSets (when non-empty) takes precedence and carries any mix of
 // constant and variable sets (#323). CornerType selects how a vertex where two filleted edges

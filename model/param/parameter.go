@@ -23,22 +23,27 @@ const (
 	TableParam     = types.TableParam
 )
 
-// HealthStatus is a parameter's evaluation health (contract: HealthStatusEnum).
-type HealthStatus uint8
+// ParameterHealth is a parameter's evaluation health: a simplified three-value status (current /
+// stale / errored). It is a DISTINCT concept from api/types.HealthStatus (the entity/feature/constraint
+// health, OK/Warning/Sick/Suppressed) — a parameter has no Suppressed state and OutOfDate has no entity
+// equivalent — and it is source-internal: only its Reason text crosses the wire (the wire `health`
+// field), never the enum value, so it is deliberately NOT aliased to the api type (#1501). Named
+// distinctly so the two health vocabularies don't collide.
+type ParameterHealth uint8
 
 const (
 	// Healthy: value is current and valid.
-	Healthy HealthStatus = 0
+	Healthy ParameterHealth = 0
 	// OutOfDate: the expression depends on parameters not yet recomputed.
-	OutOfDate HealthStatus = 1
+	OutOfDate ParameterHealth = 1
 	// Failed: evaluation failed (dimensional mismatch, cycle, undefined ref).
-	Failed HealthStatus = 2
+	Failed ParameterHealth = 2
 )
 
 // Health is a parameter's status plus a human-readable reason when not healthy.
 // Modeling problems are health, never panics (parametric-cad skill §2).
 type Health struct {
-	Status HealthStatus
+	Status ParameterHealth
 	Reason string
 }
 

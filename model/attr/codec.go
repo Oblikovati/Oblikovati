@@ -41,8 +41,16 @@ func encodeSets(buf []byte, ss *AttributeSets) []byte {
 	return buf
 }
 
+// valueTypePersistByte maps a value-type tag to its 1-byte on-disk code, and back. The codes are the
+// original compact 0..4 sequence — NOT the api ValueType's frozen Inventor numbers — so persisted
+// metadata stays byte-identical now that ValueType is an alias of the int32 api enum (#1501). A byte
+// outside this set decodes to an invalid tag the decoder rejects (the old behaviour).
+var valueTypePersistByte = map[ValueType]byte{Boolean: 0, Integer: 1, Double: 2, String: 3, Bytes: 4}
+
+var valueTypeFromPersistByte = map[byte]ValueType{0: Boolean, 1: Integer, 2: Double, 3: String, 4: Bytes}
+
 func encodeValue(buf []byte, v Value) []byte {
-	buf = append(buf, byte(v.typ))
+	buf = append(buf, valueTypePersistByte[v.typ])
 	switch v.typ {
 	case Boolean:
 		var b byte
@@ -133,7 +141,11 @@ func decodeValue(r *bytes.Reader) (Value, error) {
 	if err != nil {
 		return Value{}, fmt.Errorf("attr: truncated value type: %w", err)
 	}
-	return decodeTypedValue(ValueType(t), r)
+	vt, ok := valueTypeFromPersistByte[t]
+	if !ok {
+		return Value{}, fmt.Errorf("attr: unknown value type code %d", t)
+	}
+	return decodeTypedValue(vt, r)
 }
 
 func decodeTypedValue(t ValueType, r *bytes.Reader) (Value, error) {

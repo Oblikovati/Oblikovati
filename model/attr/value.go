@@ -13,39 +13,25 @@ package attr
 import (
 	"fmt"
 	"math"
+
+	"oblikovati.org/api/types"
 )
 
-// ValueType is the type tag of an attribute/property [Value] — the modernized
-// ValueTypeEnum. Values are stable: they are written into the persisted metadata.
-type ValueType uint8
+// ValueType is the type tag of an attribute/property [Value]. It ALIASES the canonical api/types
+// definition (ADR-0018: the value-type tag and its wire spellings are defined once, in the Apache-2.0
+// contract; String()/Parse come from there). The api uses the frozen reference ValueTypeEnum numbers,
+// which never reach the wire (Variant marshals the string spelling); the compact on-disk encoding the
+// attribute codec uses is mapped explicitly in codec.go (valueTypePersistByte), so persisted metadata
+// is unaffected by this aliasing.
+type ValueType = types.ValueType
 
 const (
-	// Boolean is the zero value, but a zero Value still needs an explicit type to
-	// be meaningful; use the constructors.
-	Boolean ValueType = 0
-	Integer ValueType = 1
-	Double  ValueType = 2
-	String  ValueType = 3
-	Bytes   ValueType = 4
+	Boolean = types.BooleanValue   // a boolean tag
+	Integer = types.IntegerValue   // an integer tag
+	Double  = types.DoubleValue    // a floating-point tag
+	String  = types.StringValue    // a string tag
+	Bytes   = types.ByteArrayValue // a byte-array tag
 )
-
-// String returns a stable name for diagnostics.
-func (t ValueType) String() string {
-	switch t {
-	case Boolean:
-		return "boolean"
-	case Integer:
-		return "integer"
-	case Double:
-		return "double"
-	case String:
-		return "string"
-	case Bytes:
-		return "bytes"
-	default:
-		return "unknown"
-	}
-}
 
 // Value is a typed attribute/property value. Exactly one field is meaningful,
 // selected by typ; the typed accessors enforce that, returning ok=false on a type
