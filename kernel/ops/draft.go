@@ -27,7 +27,7 @@ func DraftFaces(solid *topo.Body, faceKeys [][]byte, pull math.Vector3, angle fl
 	if perr != nil {
 		return nil, perr
 	}
-	return rebuildWithPlanes(solid, "draft", func(f *topo.Face) geom.Plane {
+	return rebuildWithPlanes(solid, "draft", true, func(f *topo.Face) geom.Plane {
 		if !sel[f.ID()] {
 			return f.Geometry().(geom.Plane)
 		}

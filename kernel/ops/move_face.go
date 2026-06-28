@@ -18,7 +18,7 @@ func MoveFaces(solid *topo.Body, faceKeys [][]byte, delta math.Vector3) (*topo.B
 	if err != nil {
 		return nil, err
 	}
-	return rebuildWithPlanes(solid, "move-face", func(f *topo.Face) geom.Plane {
+	return rebuildWithPlanes(solid, "move-face", true, func(f *topo.Face) geom.Plane {
 		pl := f.Geometry().(geom.Plane)
 		if !sel[f.ID()] {
 			return pl
@@ -34,7 +34,7 @@ func OffsetFaces(solid *topo.Body, faceKeys [][]byte, dist float64) (*topo.Body,
 	if err != nil {
 		return nil, err
 	}
-	return rebuildWithPlanes(solid, "offset-face", func(f *topo.Face) geom.Plane {
+	return rebuildWithPlanes(solid, "offset-face", true, func(f *topo.Face) geom.Plane {
 		pl := f.Geometry().(geom.Plane)
 		if !sel[f.ID()] {
 			return pl
@@ -53,7 +53,7 @@ func RotateFaces(solid *topo.Body, faceKeys [][]byte, axisPoint math.Point3, axi
 		return nil, err
 	}
 	rot := math.Rotation4(angle, axisDir, axisPoint)
-	return rebuildWithPlanes(solid, "rotate-face", func(f *topo.Face) geom.Plane {
+	return rebuildWithPlanes(solid, "rotate-face", true, func(f *topo.Face) geom.Plane {
 		pl := f.Geometry().(geom.Plane)
 		if !sel[f.ID()] {
 			return pl

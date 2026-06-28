@@ -22,7 +22,7 @@ func Shell(solid *topo.Body, removedKeys [][]byte, t float64) (*topo.Body, error
 	if err != nil {
 		return nil, err
 	}
-	cavity := rebuildWithPlanes(solid, "shell-cavity", func(f *topo.Face) geom.Plane {
+	cavity := rebuildWithPlanes(solid, "shell-cavity", false, func(f *topo.Face) geom.Plane {
 		return shellFacePlane(f, removed, t)
 	})
 	return Boolean(Cut, solid, cavity)

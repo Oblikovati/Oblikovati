@@ -15,7 +15,13 @@ import (
 // planes don't invert the topology (a modest move). It is the shared engine behind the local
 // face operations — shell (offset kept faces inward), move/offset face, draft — which differ
 // only in how planeOf changes the selected faces' planes.
-func rebuildWithPlanes(solid *topo.Body, tag string, planeOf func(*topo.Face) geom.Plane) *topo.Body {
+// keepIdentity (ADR-0043): because the rebuild is a 1:1 clone of the combinatorial structure, a
+// direct-result op (draft, move/offset/rotate-face, replace-face) preserves each face/edge/vertex's
+// ORIGINAL lineage — the geometry moves but identity does not, so a selection on a drafted face
+// survives. A throwaway tool (shell's cavity, fed to the boolean) instead takes fresh ordinal names
+// under tag, so its faces don't share lineages with the target and confuse the boolean's face-pair
+// edge naming.
+func rebuildWithPlanes(solid *topo.Body, tag string, keepIdentity bool, planeOf func(*topo.Face) geom.Plane) *topo.Body {
 	vf := vertexFaceMap(solid)
 	planes := make(map[uint64]geom.Plane, len(solid.Faces()))
 	for _, f := range solid.Faces() {
@@ -25,17 +31,26 @@ func rebuildWithPlanes(solid *topo.Body, tag string, planeOf func(*topo.Face) ge
 	bld := topo.NewBuilder(true, lin)
 	nv := make(map[uint64]*topo.Vertex, len(solid.Vertices()))
 	for i, v := range solid.Vertices() {
-		nv[v.ID()] = bld.AddVertex(vertexAtPlanes(v, vf[v.ID()], planes), topo.NewLineage(topo.Tok(tag, "v", i)))
+		nv[v.ID()] = bld.AddVertex(vertexAtPlanes(v, vf[v.ID()], planes), cloneName(keepIdentity, v.Lineage(), tag, "v", i))
 	}
 	ne := make(map[uint64]*topo.Edge, len(solid.Edges()))
 	for i, e := range solid.Edges() {
 		a, b := nv[e.StartVertex().ID()], nv[e.EndVertex().ID()]
-		ne[e.ID()] = bld.AddEdge(geom.NewLineSegment(a.Point(), b.Point()), a, b, topo.NewLineage(topo.Tok(tag, "e", i)))
+		ne[e.ID()] = bld.AddEdge(geom.NewLineSegment(a.Point(), b.Point()), a, b, cloneName(keepIdentity, e.Lineage(), tag, "e", i))
 	}
 	for i, f := range solid.Faces() {
-		bld.AddFace(planes[f.ID()], topo.NewLineage(topo.Tok(tag, "f", i)), cloneLoops(f, ne)...)
+		bld.AddFace(planes[f.ID()], cloneName(keepIdentity, f.Lineage(), tag, "f", i), cloneLoops(f, ne)...)
 	}
 	return bld.Build()
+}
+
+// cloneName returns orig when a 1:1 rebuild keeps identity, else a fresh build-order ordinal under
+// tag — the per-entity naming choice rebuildWithPlanes makes (ADR-0043).
+func cloneName(keepIdentity bool, orig topo.Lineage, tag, role string, i int) topo.Lineage {
+	if keepIdentity {
+		return orig
+	}
+	return topo.NewLineage(topo.Tok(tag, role, i))
 }
 
 // vertexAtPlanes returns where a vertex lands as the least-squares meeting point of its
