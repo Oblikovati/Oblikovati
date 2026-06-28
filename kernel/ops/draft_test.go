@@ -32,6 +32,31 @@ func TestDraftTapersSideFace(t *testing.T) {
 	}
 }
 
+// TestDraftPreservesFaceIdentity is ADR-0043: drafting moves geometry but preserves every
+// face/edge's identity (a 1:1 rebuild), so a selection on ANY face — the drafted one or an
+// untouched neighbour — survives. Before, the rebuild renamed everything to draft:f#N / draft:e#N.
+func TestDraftPreservesFaceIdentity(t *testing.T) {
+	box := shellBox(2, 2, 2)
+	var side, top []byte
+	for _, f := range box.Faces() {
+		if n := f.Geometry().NormalAt(0, 0); n.X > 0.99 {
+			side = f.ReferenceKey()
+		} else if n.Z > 0.99 {
+			top = f.ReferenceKey()
+		}
+	}
+	res, err := ops.DraftFaces(box, [][]byte{side}, math.V3(0, 0, 1), -stdmath.Atan(0.25))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := res.FindFaceByKey(side); !ok {
+		t.Error("the drafted side face lost its identity")
+	}
+	if _, ok := res.FindFaceByKey(top); !ok {
+		t.Error("the untouched top face lost its identity — the rebuild renamed it")
+	}
+}
+
 // TestDraftLostKeyErrors reports a vanished face key so the feature can go Sick.
 func TestDraftLostKeyErrors(t *testing.T) {
 	box := shellBox(2, 2, 2)

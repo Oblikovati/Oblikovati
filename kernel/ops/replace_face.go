@@ -17,7 +17,7 @@ func ReplaceFaces(solid *topo.Body, faceKeys [][]byte, target geom.Plane) (*topo
 	if err != nil {
 		return nil, err
 	}
-	return rebuildWithPlanes(solid, "replace-face", func(f *topo.Face) geom.Plane {
+	return rebuildWithPlanes(solid, "replace-face", true, func(f *topo.Face) geom.Plane {
 		if sel[f.ID()] {
 			return target
 		}
