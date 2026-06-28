@@ -56,7 +56,7 @@ func drawOffsetPlaneDialog(s *app.Session) {
 // (the offset has no meaning without a plane to measure from).
 func drawOffsetPlaneDistanceRow(s *app.Session, t *app.OffsetWorkPlaneTool) {
 	native.BeginDisabled(!t.BasePicked())
-	parameterFloatRow("Offset", "offset-plane-distance", s.LengthUnitName(), s.LengthPrecision(), "", &offsetPlaneUI.distance)
+	parameterFloatRow(s, "Offset", "offset-plane-distance", paramLength, "", &offsetPlaneUI.distance)
 	native.EndDisabled()
 	if t.BasePicked() {
 		s.SetOffsetDistanceDisplay(float64(offsetPlaneUI.distance)) // keep the tool in sync

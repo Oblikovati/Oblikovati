@@ -136,7 +136,7 @@ func drawFilletMidPointRows(s *app.Session, f *app.FilletTool) {
 // the caller stops iterating the now-stale slice.
 func drawFilletMidPointRow(s *app.Session, f *app.FilletTool, i int, p app.FilletMidPoint) bool {
 	tBuf := float32(p.T)
-	if parameterFloatRow("Position", filletMidID("t", i), "", -1, "(0–1)", &tBuf) {
+	if parameterFloatRow(s, "Position", filletMidID("t", i), paramUnitless, "(0–1)", &tBuf) {
 		f.SetMidPointT(i, float64(tBuf))
 	}
 	native.SameLine()

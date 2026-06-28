@@ -125,7 +125,7 @@ func drawRevolveBehavior(s *app.Session, rv *app.RevolveTool) {
 	native.BeginDisabled(rv.IsFullRevolution())
 	native.SetNextItemWidth(propertyFieldWidth)
 	disp := float32(s.AngleDegToDisplay(float64(revolveUI.angleDeg)))
-	if native.InputFloatFormat("##revolve-angle", &disp, parameterDisplayFormat(s.AngleUnitName(), s.AnglePrecision())) {
+	if parameterField(s, "revolve-angle", s.AngleUnitName(), s.AnglePrecision(), paramAngle, &disp) {
 		revolveUI.angleDeg = float32(s.AngleDisplayToDeg(float64(disp)))
 	}
 	if !rv.IsFullRevolution() {

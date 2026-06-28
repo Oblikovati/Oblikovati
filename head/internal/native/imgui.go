@@ -66,7 +66,6 @@ void obk_ig_end_popup(void);
 void obk_ig_set_scroll_here_y(void);
 void obk_ig_scroll_to_bottom(void);
 int  obk_ig_input_float(const char* label, float* v);
-int  obk_ig_input_float_fmt(const char* label, float* v, const char* format);
 int  obk_ig_input_double(const char* label, double* v);
 int  obk_ig_input_int(const char* label, int* v);
 int  obk_ig_input_text(const char* label, char* buf, int buf_size);
@@ -276,17 +275,6 @@ func InputFloat(label string, v *float32) bool {
 	c, free := cstr(label)
 	defer free()
 	return C.obk_ig_input_float(c, (*C.float)(v)) != 0
-}
-
-// InputFloatFormat is InputFloat whose display/parse format embeds a unit in the field (e.g.
-// "%.3f mm"), so the value and its dimension are one editable token (#1519). ImGui trims the unit
-// decoration when parsing, so the user may type "12" or "12 mm".
-func InputFloatFormat(label string, v *float32, format string) bool {
-	c, free := cstr(label)
-	defer free()
-	f, freeF := cstr(format)
-	defer freeF()
-	return C.obk_ig_input_float_fmt(c, (*C.float)(v), f) != 0
 }
 
 // InputDouble draws a float64 field; returns true (and writes *v) when edited. Used by the

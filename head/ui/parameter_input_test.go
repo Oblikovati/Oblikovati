@@ -11,25 +11,26 @@ import (
 	"testing"
 )
 
-// TestParameterDisplayFormat locks the format ParameterInput feeds ImGui: the value to the document
-// precision with the unit appended IN the field, a bare number when unitless, and a 3-decimal
-// fallback for an out-of-range precision (#1519).
-func TestParameterDisplayFormat(t *testing.T) {
+// TestFormatParamValue locks the canonical text ParameterInput shows when not being edited: the
+// value to the document precision with the unit appended IN the field, a bare number when unitless,
+// and a 3-decimal fallback for an out-of-range precision (#1519).
+func TestFormatParamValue(t *testing.T) {
 	cases := []struct {
-		unit string
-		prec int
-		want string
+		value float64
+		unit  string
+		prec  int
+		want  string
 	}{
-		{"mm", 3, "%.3f mm"},
-		{"deg", 2, "%.2f deg"},
-		{"in", 0, "%.0f in"},
-		{"", 4, "%.4f"},
-		{"mm", -1, "%.3f mm"}, // out of range → default 3
-		{"mm", 99, "%.3f mm"}, // out of range → default 3
+		{10, "mm", 3, "10.000 mm"},
+		{2.5, "deg", 2, "2.50 deg"},
+		{7, "in", 0, "7 in"},
+		{0.5, "", 4, "0.5000"},
+		{10, "mm", -1, "10.000 mm"}, // out of range → default 3
+		{10, "mm", 99, "10.000 mm"}, // out of range → default 3
 	}
 	for _, c := range cases {
-		if got := parameterDisplayFormat(c.unit, c.prec); got != c.want {
-			t.Errorf("parameterDisplayFormat(%q, %d) = %q, want %q", c.unit, c.prec, got, c.want)
+		if got := formatParamValue(c.value, c.unit, c.prec); got != c.want {
+			t.Errorf("formatParamValue(%g, %q, %d) = %q, want %q", c.value, c.unit, c.prec, got, c.want)
 		}
 	}
 }
@@ -60,17 +61,16 @@ var unitTextAllowlist = map[string]bool{
 }
 
 // TestParameterInputIsEnforced is the #1519 guard: a tool that takes a dimensioned value MUST use the
-// ParameterInput component (parameterFloatRow / native.InputFloatFormat), which renders the unit
-// INSIDE the field — never a bare native.InputFloat with the unit painted beside it as a label, and
-// never a unit name dropped as a sibling Text. It scans the head/ui sources so a new dialog cannot
-// silently reintroduce the antipattern; a genuinely-exempt surface must be added to an allowlist
-// above with a justification, which makes the exception a reviewed decision.
+// ParameterInput component (parameterFloatRow / parameterField), which renders the unit INSIDE the
+// field and accepts formulas — never a bare native.InputFloat with the unit painted beside it as a
+// label, and never a unit name dropped as a sibling Text. It scans the head/ui sources so a new
+// dialog cannot silently reintroduce the antipattern; a genuinely-exempt surface must be added to an
+// allowlist above with a justification, which makes the exception a reviewed decision.
 func TestParameterInputIsEnforced(t *testing.T) {
 	entries, err := os.ReadDir(".")
 	if err != nil {
 		t.Fatalf("read head/ui dir: %v", err)
 	}
-	// native\.InputFloat\( does not match native.InputFloatFormat( — the '(' anchors it to the bare call.
 	bareInput := regexp.MustCompile(`native\.InputFloat\(`)
 	unitLabel := regexp.MustCompile(`native\.Text\([^)]*UnitName`)
 	scanned := 0

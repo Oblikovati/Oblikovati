@@ -185,7 +185,7 @@ func drawExtrudeDistanceRow(s *app.Session, ext *app.ExtrudeTool) {
 	propertyRow("Distance A")
 	native.BeginDisabled(ext.ExtentType() != feature.DistanceExtent)
 	native.SetNextItemWidth(propertyFieldWidth)
-	native.InputFloatFormat("##extrude-distance", &extrudeUI.distance, parameterDisplayFormat(s.LengthUnitName(), s.LengthPrecision()))
+	parameterField(s, "extrude-distance", s.LengthUnitName(), s.LengthPrecision(), paramLength, &extrudeUI.distance)
 	s.SetExtrudeDistanceDisplay(float64(extrudeUI.distance))
 	native.EndDisabled()
 	native.SameLine()
@@ -210,7 +210,7 @@ func extrudeExtentIndex(ext *app.ExtrudeTool) int {
 func drawExtrudeSecondDistanceRow(s *app.Session) {
 	propertyRow("Distance B")
 	native.SetNextItemWidth(propertyFieldWidth)
-	native.InputFloatFormat("##extrude-second", &extrudeUI.second, parameterDisplayFormat(s.LengthUnitName(), s.LengthPrecision()))
+	parameterField(s, "extrude-second", s.LengthUnitName(), s.LengthPrecision(), paramLength, &extrudeUI.second)
 	s.SetExtrudeSecondDistanceDisplay(float64(extrudeUI.second))
 }
 
@@ -227,7 +227,7 @@ func drawExtrudeAdvanced(s *app.Session) {
 	if !propertySection("Advanced Properties") {
 		return
 	}
-	parameterFloatRow("Taper A", "extrude-taper", s.AngleUnitName(), s.AnglePrecision(), "", &extrudeUI.taper)
+	parameterFloatRow(s, "Taper A", "extrude-taper", paramAngle, "", &extrudeUI.taper)
 	s.SetExtrudeTaperDisplay(float64(extrudeUI.taper))
 }
 

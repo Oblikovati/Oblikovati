@@ -58,6 +58,36 @@ func (s *Session) setParamText(p feature.EditableParam, text string) error {
 	return nil
 }
 
+// EvalLengthDisplay / EvalAngleDisplay evaluate a parameter field's text — a number, a unit-bearing
+// literal ("10.5 mm"), or a formula referencing the part's parameters ("D0 * 10.5 mm") — to a value
+// in the document's preferred length/angle unit (#1519). ok is false while the text does not yet
+// resolve (mid-typing or a bad reference), so the caller keeps the field's last good value.
+func (s *Session) EvalLengthDisplay(text string) (float64, bool) {
+	return s.evalFieldDisplay(text, param.Length)
+}
+func (s *Session) EvalAngleDisplay(text string) (float64, bool) {
+	return s.evalFieldDisplay(text, param.Angle)
+}
+
+// EvalUnitless evaluates a unitless field's text (a number or a dimensionless formula like "n * 2")
+// to its value; ok is false if the text does not resolve to a dimensionless quantity.
+func (s *Session) EvalUnitless(text string) (float64, bool) {
+	q, err := s.evalParamText(text, param.Unitless)
+	if err != nil {
+		return 0, false
+	}
+	return q.Value, true
+}
+
+// evalFieldDisplay evaluates text to a value in the document's preferred unit for dimension dim.
+func (s *Session) evalFieldDisplay(text string, dim param.Unit) (float64, bool) {
+	q, err := s.evalParamText(text, dim)
+	if err != nil {
+		return 0, false
+	}
+	return s.DocumentUnits().ToPreferred(q), true
+}
+
 // evalParamText resolves text to a database-unit quantity in dimension dim: the
 // active part's parameter evaluator first (names + formulas), then a literal parse.
 func (s *Session) evalParamText(text string, dim param.Unit) (param.Quantity, error) {
