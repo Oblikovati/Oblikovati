@@ -193,9 +193,15 @@ func (s *Session) Pointer(e PointerEvent) {
 	if s.sketchClick(e.X, e.Y) {
 		return
 	}
-	// In the sketch environment clicks pick sketch entities: fed to an active
-	// constraint/dimension tool, or (with no tool) added to the selection.
+	// In the sketch environment clicks normally pick sketch entities: fed to an active
+	// constraint/dimension tool, or (with no tool) added to the selection. The exception is
+	// a tool that projects 3D model references (Project Geometry) — its edges/vertices/datums
+	// live in the 3D hit-test, so its clicks must run the RayPicker even in-sketch (#1496).
 	if s.InSketch() {
+		if s.toolPicksModelReferences() {
+			s.pickModelReferenceInSketch(e)
+			return
+		}
 		s.sketchEntityPointer(e)
 		return
 	}
@@ -212,6 +218,37 @@ func (s *Session) Pointer(e PointerEvent) {
 		return
 	}
 	s.applyPickToSelection(sel, e.Mods)
+}
+
+// modelReferencePicker is an in-sketch tool that picks 3D MODEL references — B-rep edges and
+// vertices, plus datum geometry — through the viewport rather than the active sketch's own 2D
+// entities. Project Geometry is the case: the references it projects into the sketch live in the
+// 3D hit-test, so the input router must run the RayPicker while a sketch is being edited (#1496).
+type modelReferencePicker interface {
+	PicksModelReferences() bool
+}
+
+// toolPicksModelReferences reports whether the active tool wants 3D model-reference picks while
+// in-sketch, so Pointer routes its clicks to the RayPicker instead of the 2D sketch picker.
+func (s *Session) toolPicksModelReferences() bool {
+	if s.tool == nil {
+		return false
+	}
+	mr, ok := s.tool.tool.(modelReferencePicker)
+	return ok && mr.PicksModelReferences()
+}
+
+// pickModelReferenceInSketch runs the 3D hit-test for an in-sketch reference-picking tool and
+// feeds any hit (a B-rep edge/vertex or datum) to the tool, so model geometry becomes projectable
+// from the viewport while editing a sketch (#1496). A miss is ignored — there is no ambient sketch
+// selection to clear, and the tool keeps waiting for a reference.
+func (s *Session) pickModelReferenceInSketch(e PointerEvent) {
+	if s.picker == nil {
+		return
+	}
+	if sel, ok := s.picker.Pick(e.X, e.Y, s.pickFilter()); ok {
+		s.feedPickMods(sel, e.Mods)
+	}
 }
 
 // clearSelectionOnEmptyClick clears the selection when the user clicks empty space with
