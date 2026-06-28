@@ -54,6 +54,39 @@ func TestLoftSectionLabelsAreSourceNames(t *testing.T) {
 	if l.SectionLabel(99) != "" || l.SectionLabel(-1) != "" {
 		t.Error("out-of-range SectionLabel should be empty")
 	}
+	if l.SectionKindAt(99) != LoftSectionProfile || l.SectionKindAt(-1) != LoftSectionProfile {
+		t.Error("out-of-range SectionKindAt should fall back to LoftSectionProfile")
+	}
+}
+
+// TestLoftSectionKindAndLabelForPointAndFace covers the non-profile rows the Curves list draws: an apex
+// point reports LoftSectionPoint/"Point", a tangent body face reports LoftSectionFace/"Face", and a
+// profile pick with no source sketch falls back to the generic "Profile" label (#1521).
+func TestLoftSectionKindAndLabelForPointAndFace(t *testing.T) {
+	l := NewLoftTool()
+	apex := math.P3(0, 0, 8)
+	l.sections = []loftPick{
+		{apex: &apex},               // point/apex section
+		{faceKey: []byte("face-1")}, // tangent body face section
+		{},                          // profile with a nil sketch → generic label
+	}
+	cases := []struct {
+		i     int
+		kind  LoftSectionKind
+		label string
+	}{
+		{0, LoftSectionPoint, "Point"},
+		{1, LoftSectionFace, "Face"},
+		{2, LoftSectionProfile, "Profile"},
+	}
+	for _, c := range cases {
+		if got := l.SectionKindAt(c.i); got != c.kind {
+			t.Errorf("section %d kind = %v, want %v", c.i, got, c.kind)
+		}
+		if got := l.SectionLabel(c.i); got != c.label {
+			t.Errorf("section %d label = %q, want %q", c.i, got, c.label)
+		}
+	}
 }
 
 // TestLoftRemoveSection deletes the middle section and checks the rest keep order.
