@@ -3,6 +3,7 @@
 package ops
 
 import (
+	"strings"
 	"testing"
 
 	"oblikovati.org/kernel/geom"
@@ -61,6 +62,45 @@ func TestStitchClosedSurfacesYieldsSolid(t *testing.T) {
 	}
 	if r := Validate(body); !r.Valid || !r.Closed || !r.Manifold || !r.OrientationOK {
 		t.Errorf("stitched cube validation = %+v, want fully valid", r)
+	}
+}
+
+// TestStitchSeamEdgesAreProvenanceNamed is ADR-0043: a stitched seam edge is named by the two
+// source faces it joins (and the body keeps each source face's identity), not by a synthesized
+// weld-edge ordinal — so a selection on a sewn edge/face survives an upstream edit.
+func TestStitchSeamEdgesAreProvenanceNamed(t *testing.T) {
+	body, err := Stitch(cubeFaces(), 0, false, "stitch")
+	if err != nil {
+		t.Fatalf("Stitch: %v", err)
+	}
+	ks := func(k []byte) string {
+		if len(k) > 0 && k[0] < 0x20 {
+			return string(k[1:])
+		}
+		return string(k)
+	}
+	faceKept, weldOrd, prov := false, 0, 0
+	for _, f := range body.Faces() {
+		if ks(f.ReferenceKey()) == "bottom:face#0" {
+			faceKept = true // a source face kept its identity through the weld
+		}
+	}
+	for _, e := range body.Edges() {
+		switch k := ks(e.ReferenceKey()); {
+		case strings.Contains(k, "weld-edge#"):
+			weldOrd++
+		case strings.Contains(k, "/stitch:x#0/"):
+			prov++ // a seam named by its two joining faces
+		}
+	}
+	if !faceKept {
+		t.Error("a stitched face lost its source identity (bottom:face#0)")
+	}
+	if weldOrd > 0 {
+		t.Errorf("%d edges still carry a synthesized weld-edge ordinal", weldOrd)
+	}
+	if prov == 0 {
+		t.Error("no seam edge is provenance-named (face / stitch:x#0 / face) by its joining faces")
 	}
 }
 
