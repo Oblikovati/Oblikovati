@@ -37,7 +37,7 @@ func drawToolParamsDialog(s *app.Session) {
 	if native.Begin(title) {
 		drawFeatureBreadcrumb(title, "")
 		if propertySection("Behavior") {
-			drawToolFloatParams(params)
+			drawToolFloatParams(s, params)
 			drawToolIntParams(params)
 			drawToolBoolParams(params)
 			drawToolChoiceParams(params)
@@ -104,12 +104,12 @@ func drawToolChoice(c app.ChoiceParam) {
 	native.EndCombo()
 }
 
-func drawToolFloatParams(params app.ToolParams) {
+func drawToolFloatParams(s *app.Session, params app.ToolParams) {
 	for _, f := range params.Floats {
-		propertyRow(f.Label)
-		native.SetNextItemWidth(propertyFieldWidth)
 		v := float32(f.Get())
-		if native.InputFloat(toolParamPrefix+f.Label, &v) {
+		// Add-in float params carry no document unit; ParameterInput still owns the row (no bare
+		// InputFloat in a tool dialog — see TestParameterInputIsEnforced) and accepts formulas.
+		if parameterFloatRow(s, f.Label, "tool-param-"+f.Label, paramUnitless, "", &v) {
 			f.Set(float64(v))
 		}
 	}

@@ -126,7 +126,7 @@ func drawCoilBehavior(s *app.Session, c *app.CoilTool) {
 	}
 	lengthCmRow(s, "Pitch", "coil-pitch", &coilUI.pitch)
 	c.SetPitch(float64(coilUI.pitch))
-	propertyFloatRow("Revolutions", "coil-revolutions", "", &coilUI.revolutions)
+	parameterFloatRow(s, "Revolutions", "coil-revolutions", paramUnitless, "", &coilUI.revolutions)
 	c.SetRevolutions(float64(coilUI.revolutions))
 	drawCoilPitchRows(s, c)
 	drawCoilEnds(s, c)
@@ -148,7 +148,7 @@ func drawCoilPitchRows(s *app.Session, c *app.CoilTool) {
 	for i := range coilUI.rows {
 		id := fmt.Sprintf("coil-row-%d", i)
 		lengthCmRow(s, fmt.Sprintf("Row %d Pitch", i+1), id+"-pitch", &coilUI.rows[i].pitch)
-		propertyFloatRow(fmt.Sprintf("Row %d Rev", i+1), id+"-rev", "", &coilUI.rows[i].revolution)
+		parameterFloatRow(s, fmt.Sprintf("Row %d Rev", i+1), id+"-rev", paramUnitless, "", &coilUI.rows[i].revolution)
 	}
 	if native.Button("Add Row") {
 		last := coilUI.rows[len(coilUI.rows)-1]

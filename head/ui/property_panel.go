@@ -76,18 +76,9 @@ func propertyRow(label string) {
 	native.SetCursorScreenPos(x+propertyLabelWidth, y)
 }
 
-// propertyFloatRow draws one numeric property row — label, input field, unit suffix —
-// returning true on the frame the value changed.
-func propertyFloatRow(label, id, suffix string, v *float32) bool {
-	propertyRow(label)
-	native.SetNextItemWidth(propertyFieldWidth)
-	changed := native.InputFloat("##"+id, v)
-	if suffix != "" {
-		native.SameLine()
-		native.Text(suffix)
-	}
-	return changed
-}
+// A numeric parameter row lives in parameter_input.go (parameterFloatRow): the document unit is
+// rendered INSIDE the field, never as a side label (#1519). There is deliberately no bare
+// "InputFloat + unit label" row here — guard_parameter_input_test enforces that.
 
 // propertyComboRow draws one one-of-N property row — label + dropdown — returning the
 // newly chosen index, or -1 when the selection did not change this frame.

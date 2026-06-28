@@ -217,13 +217,11 @@ func drawHolePointAngleField(s *app.Session, h *app.HoleTool) {
 		return
 	}
 	native.SameLine()
-	native.SetNextItemWidth(60)
+	native.SetNextItemWidth(72)
 	disp := float32(s.AngleDegToDisplay(float64(holeUI.pointAngleDeg)))
-	if native.InputFloat("##hole-pang", &disp) {
+	if parameterField(s, "hole-pang", s.AngleUnitName(), s.AnglePrecision(), paramAngle, &disp) {
 		holeUI.pointAngleDeg = float32(s.AngleDisplayToDeg(float64(disp)))
 	}
-	native.SameLine()
-	native.Text(s.AngleUnitName())
 	h.SetPointAngle(float64(holeUI.pointAngleDeg) * stdmath.Pi / 180)
 }
 

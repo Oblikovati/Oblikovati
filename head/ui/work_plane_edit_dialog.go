@@ -65,14 +65,22 @@ func drawWorkPlaneScalars(s *app.Session, n int) {
 		return
 	}
 	for i := 0; i < n && i < len(workPlaneEditUI.values); i++ {
-		propertyRow(s.EditPlaneScalarLabel(i))
-		native.SetNextItemWidth(propertyFieldWidth)
-		native.InputFloat(fmt.Sprintf("##edit-plane-scalar-%d", i), &workPlaneEditUI.values[i])
-		if u := s.EditPlaneScalarUnitName(i); u != "" {
-			native.SameLine()
-			native.Text(u)
-		}
+		parameterFloatRow(s, s.EditPlaneScalarLabel(i), fmt.Sprintf("edit-plane-scalar-%d", i),
+			planeScalarKind(s, i), "", &workPlaneEditUI.values[i])
 		s.SetEditPlaneScalarValue(i, float64(workPlaneEditUI.values[i])) // keep the plane in sync
+	}
+}
+
+// planeScalarKind maps an edit-plane scalar's unit (offset is a length, angle an angle) to the
+// ParameterInput kind, so the field formats and evaluates it in the right dimension.
+func planeScalarKind(s *app.Session, i int) paramFieldKind {
+	switch s.EditPlaneScalarUnitName(i) {
+	case s.AngleUnitName():
+		return paramAngle
+	case s.LengthUnitName():
+		return paramLength
+	default:
+		return paramUnitless
 	}
 }
 
