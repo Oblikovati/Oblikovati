@@ -127,10 +127,11 @@ func keyRefSlotSingle(label string, kind RefKind, field *[]byte) EditableRefSlot
 	}
 }
 
-// profileRefSlotIndex builds a single-profile slot over a (sketch, index) pair of fields.
-func profileRefSlotIndex(label string, skField **sketch.Sketch, idxField *int) EditableRefSlot {
+// profileRefSlotIndex builds a single-profile slot over a (sketch, index) pair of fields. Every
+// profile slot is labelled "Profile" (the only kind of single-region reference a feature re-picks).
+func profileRefSlotIndex(skField **sketch.Sketch, idxField *int) EditableRefSlot {
 	return EditableRefSlot{
-		Label: label, Kind: RefProfile, Multi: false,
+		Label: "Profile", Kind: RefProfile, Multi: false,
 		Count: func() int {
 			if *skField == nil {
 				return 0
@@ -146,10 +147,11 @@ func profileRefSlotIndex(label string, skField **sketch.Sketch, idxField *int) E
 }
 
 // profileRefSlotIndices builds a single-profile slot over a (sketch, indices) pair, replacing
-// the region set with the one picked region (re-selecting THE profile).
-func profileRefSlotIndices(label string, skField **sketch.Sketch, idxField *[]int) EditableRefSlot {
+// the region set with the one picked region (re-selecting THE profile). Labelled "Profile" like
+// profileRefSlotIndex — the multi-index form serves features that store a profile as a region set.
+func profileRefSlotIndices(skField **sketch.Sketch, idxField *[]int) EditableRefSlot {
 	return EditableRefSlot{
-		Label: label, Kind: RefProfile, Multi: false,
+		Label: "Profile", Kind: RefProfile, Multi: false,
 		Count: func() int {
 			if *skField == nil {
 				return 0
@@ -243,27 +245,27 @@ func (h *HoleFeature) EditableRefs() []EditableRefSlot {
 
 // EditableRefs exposes the extrude's profile.
 func (e *ExtrudeFeature) EditableRefs() []EditableRefSlot {
-	return []EditableRefSlot{profileRefSlotIndices("Profile", &e.def.Sketch, &e.def.ProfileIndices)}
+	return []EditableRefSlot{profileRefSlotIndices(&e.def.Sketch, &e.def.ProfileIndices)}
 }
 
 // EditableRefs exposes the revolve's profile.
 func (r *RevolveFeature) EditableRefs() []EditableRefSlot {
-	return []EditableRefSlot{profileRefSlotIndex("Profile", &r.def.Sketch, &r.def.ProfileIndex)}
+	return []EditableRefSlot{profileRefSlotIndex(&r.def.Sketch, &r.def.ProfileIndex)}
 }
 
 // EditableRefs exposes the coil's profile.
 func (c *CoilFeature) EditableRefs() []EditableRefSlot {
-	return []EditableRefSlot{profileRefSlotIndex("Profile", &c.def.Sketch, &c.def.ProfileIndex)}
+	return []EditableRefSlot{profileRefSlotIndex(&c.def.Sketch, &c.def.ProfileIndex)}
 }
 
 // EditableRefs exposes the rib's open profile.
 func (r *RibFeature) EditableRefs() []EditableRefSlot {
-	return []EditableRefSlot{profileRefSlotIndex("Profile", &r.def.Sketch, &r.def.ProfileIndex)}
+	return []EditableRefSlot{profileRefSlotIndex(&r.def.Sketch, &r.def.ProfileIndex)}
 }
 
 // EditableRefs exposes the emboss profile.
 func (e *EmbossFeature) EditableRefs() []EditableRefSlot {
-	return []EditableRefSlot{profileRefSlotIndices("Profile", &e.def.Sketch, &e.def.ProfileIndices)}
+	return []EditableRefSlot{profileRefSlotIndices(&e.def.Sketch, &e.def.ProfileIndices)}
 }
 
 // EditableRefs exposes the mirror's plane.
@@ -442,6 +444,26 @@ func (l *LipFeature) EditableParams() []EditableParam {
 		scalarParam("Width", param.Length, &l.def.Width),
 		scalarParam("Height", param.Length, &l.def.Height),
 	}
+}
+
+// EditableParams exposes a sweep's twist and taper (draft) angles. Both are always present (a nil
+// closure reads as 0), so a sweep is always editable even before either is set. The sweep PATH and a
+// solid sweep's tool body are live providers/indices, not scalars, so they are not edited here.
+func (s *SweepFeature) EditableParams() []EditableParam {
+	return []EditableParam{
+		scalarParam("Twist", param.Angle, &s.def.Twist),
+		scalarParam("Taper", param.Angle, &s.def.Taper),
+	}
+}
+
+// EditableRefs exposes a profile sweep's section profile for re-selection. A SOLID sweep drags a
+// running body along the path (SolidToolIndex) rather than a profile, so it has no profile slot; its
+// twist/taper remain editable through EditableParams.
+func (s *SweepFeature) EditableRefs() []EditableRefSlot {
+	if s.def.SolidToolIndex != nil {
+		return nil
+	}
+	return []EditableRefSlot{profileRefSlotIndex(&s.def.Sketch, &s.def.ProfileIndex)}
 }
 
 // EditableParams exposes a hole's diameter, depth (blind only), and recess inputs by type.

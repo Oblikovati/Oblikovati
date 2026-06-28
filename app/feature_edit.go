@@ -178,9 +178,17 @@ func (s *Session) BeginEditFeature(h FeatureHandle) {
 	s.beginEditScope(h.Feature.Seq()) // roll back to this feature: hide everything after it
 }
 
-// FeatureIsEditable reports whether a feature exposes editable parameters or references (so the
-// browser shows/enables an Edit entry).
+// FeatureIsEditable reports whether a feature can be edited in place (so the browser shows/enables
+// an Edit entry). A feature is editable two ways, checked uniformly here: it has a registered
+// full-panel editor (its creation tool re-opens — extrude, hole, loft, sweep …, see
+// feature_edit_registry.go), OR it exposes generic editable scalars / re-pickable references (rib,
+// emboss, the patterns, mirror, move). Checking the registry here keeps the Edit gate consistent with
+// what BeginEditFeature can actually open — the bug behind loft/sweep, whose tools existed but whose
+// edit path did not, leaving Edit greyed (#1521).
 func FeatureIsEditable(f *feature.PartFeature) bool {
+	if hasFeatureEditor(f.Kind()) {
+		return true
+	}
 	if ed, ok := f.Definition().(feature.Editable); ok && len(ed.EditableParams()) > 0 {
 		return true
 	}

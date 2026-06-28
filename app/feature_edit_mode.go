@@ -73,42 +73,9 @@ func cancelFeatureEdit(s *Session, f *feature.PartFeature, restore func()) {
 	}
 }
 
-// editToolFor builds the creation tool re-opened over a committed feature, or false for
-// feature kinds the generic editor still serves.
-func editToolFor(s *Session, f *feature.PartFeature) (Tool, bool) {
-	switch d := f.Definition().(type) {
-	case *feature.ExtrudeFeature:
-		return editExtrudeTool(f, d), true
-	case *feature.RevolveFeature:
-		return editRevolveTool(s, f, d), true
-	case *feature.CoilFeature:
-		return editCoilTool(s, f, d), true
-	case *feature.HoleFeature:
-		return editHoleTool(f, d), true
-	}
-	return editDressUpTool(f)
-}
-
-// editDressUpTool seeds the edit panel for the dress-up / local-op features (fillet, face fillet,
-// chamfer, shell, draft); any other kind falls through to the generic editor.
-func editDressUpTool(f *feature.PartFeature) (Tool, bool) {
-	switch d := f.Definition().(type) {
-	case *feature.FilletFeature:
-		return editFilletToolOr(f, d)
-	case *feature.FaceFilletFeature:
-		return editFaceFilletTool(f, d), true
-	case *feature.FullRoundFilletFeature:
-		return editFullRoundFilletTool(f, d), true
-	case *feature.ChamferFeature:
-		return editChamferTool(f, d), true
-	case *feature.ShellFeature:
-		return editShellTool(f, d), true
-	case *feature.FaceDraftFeature:
-		return editDraftTool(f, d), true
-	default:
-		return nil, false
-	}
-}
+// The dispatch from a feature to its full-panel creation tool lives in the feature-editor registry
+// (feature_edit_registry.go), not in a type-switch here — see that file's rationale (#1521). The
+// seeders below (editExtrudeTool, editFilletTool, …) are the per-tool bodies the registry calls.
 
 // editExtrudeTool seeds an ExtrudeTool from a committed extrude: profiles, operation,
 // extent (type, direction, distances, asymmetry) and taper — the full creation surface.
@@ -383,6 +350,64 @@ func editDraftTool(f *feature.PartFeature, d *feature.FaceDraftFeature) *DraftTo
 func snapshotDraftDef(def *feature.FaceDraftDefinition) func() {
 	orig := *def
 	orig.FaceKeys = cloneKeys(def.FaceKeys)
+	return func() { *def = orig }
+}
+
+// editLoftTool seeds a LoftTool from a committed loft: its cross-sections (profiles, apex points, and
+// tangent faces), closure, operation, end conditions and area-graph waist. The guide providers (rails /
+// centerline / map curves) are opaque live closures that cannot be reversed into re-pickable handles,
+// so the panel opens with no guide chips populated; commitEdit preserves the committed guides unless
+// the user re-picks them (see LoftTool.applyRepickedGuides). Live end conditions are read through their
+// provider so the seeded values match what the loft currently evaluates.
+func editLoftTool(f *feature.PartFeature, lf *feature.LoftFeature) *LoftTool {
+	def := lf.Definition()
+	t := NewLoftTool()
+	t.sections = loftPicksFromSections(def.Sections)
+	t.closed, t.operation = def.Closed, def.Operation
+	t.first, t.last = def.First, def.Last
+	if def.LiveEnds != nil {
+		t.first, t.last = def.LiveEnds()
+	}
+	t.areaMidScale = midAreaScale(def.AreaGraph)
+	t.bindEdit(f, snapshotLoftDef(def))
+	return t
+}
+
+// loftPicksFromSections rebuilds the tool's picked cross-sections from a committed loft's sections —
+// the inverse of LoftTool.loftSections.
+func loftPicksFromSections(sections []feature.LoftSection) []loftPick {
+	picks := make([]loftPick, len(sections))
+	for i, s := range sections {
+		switch {
+		case s.IsPoint():
+			picks[i] = loftPick{apex: s.Point}
+		case s.IsFace():
+			picks[i] = loftPick{faceKey: append([]byte(nil), s.FaceKey...)}
+		default:
+			picks[i] = loftPick{profile: ProfileHandle{Sketch: s.Sketch, ProfileIndex: s.ProfileIndex}}
+		}
+	}
+	return picks
+}
+
+// midAreaScale recovers the loft tool's mid-height area scale from a committed area graph (the inverse
+// of LoftTool.areaStops, which emits a single stop at T=0.5); 0 when there is no waist control.
+func midAreaScale(stops []feature.LoftAreaStop) float64 {
+	for _, s := range stops {
+		if s.T == 0.5 {
+			return s.Scale
+		}
+	}
+	return 0
+}
+
+// snapshotLoftDef captures a loft definition for Cancel: the value plus deep copies of the slices the
+// edit replaces (sections, area graph). The guide providers are func values restored by the shallow
+// struct copy — commitEdit replaces whole slices rather than mutating them, so this is sufficient.
+func snapshotLoftDef(def *feature.LoftDefinition) func() {
+	orig := *def
+	orig.Sections = append([]feature.LoftSection(nil), def.Sections...)
+	orig.AreaGraph = append([]feature.LoftAreaStop(nil), def.AreaGraph...)
 	return func() { *def = orig }
 }
 
