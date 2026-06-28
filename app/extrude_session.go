@@ -49,6 +49,12 @@ func (s *Session) AngleUnitName() string {
 	return s.DocumentUnits().PreferredName(param.Angle)
 }
 
+// LengthPrecision / AnglePrecision return the document's display decimal places for length and
+// angle fields, so a unit-aware parameter input formats values to the same precision the rest of
+// the document uses (#1519).
+func (s *Session) LengthPrecision() int { return s.DocumentUnits().LengthPrecision() }
+func (s *Session) AnglePrecision() int  { return s.DocumentUnits().AnglePrecision() }
+
 // ExtrudeSecondDistanceDisplay / SetExtrudeSecondDistanceDisplay read/write the active
 // extrude's asymmetric second-direction depth in the document's length unit.
 func (s *Session) ExtrudeSecondDistanceDisplay() float64 {

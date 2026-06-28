@@ -217,6 +217,10 @@ void obk_ig_scroll_to_bottom(void)           { ImGui::SetScrollHereY(1.0f); }
 // Preference widgets: a float/int field and a checkbox. Each returns 1 when the value
 // changed this frame and writes the new value back through the pointer.
 int  obk_ig_input_float(const char* label, float* v) { return ImGui::InputFloat(label, v) ? 1 : 0; }
+// obk_ig_input_float_fmt is InputFloat with a display/parse format that embeds the unit in the field
+// ("%.3f mm"), so a value and its dimension read and edit as one token (#1519). ImGui trims the unit
+// decoration when parsing, so typing "12" or "12 mm" both commit 12.
+int  obk_ig_input_float_fmt(const char* label, float* v, const char* format) { return ImGui::InputFloat(label, v, 0.0f, 0.0f, format) ? 1 : 0; }
 int  obk_ig_input_double(const char* label, double* v) { return ImGui::InputDouble(label, v) ? 1 : 0; }
 int  obk_ig_input_int(const char* label, int* v)     { return ImGui::InputInt(label, v) ? 1 : 0; }
 int  obk_ig_input_text(const char* label, char* buf, int buf_size) { return ImGui::InputText(label, buf, (size_t)buf_size) ? 1 : 0; }
