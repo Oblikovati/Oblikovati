@@ -17,6 +17,7 @@ int  obk_ig_begin(const char* name);
 int  obk_ig_begin_closable(const char* name, int* open);
 void obk_ig_end(void);
 void obk_ig_text(const char* s);
+void obk_ig_text_wrapped(const char* s);
 int  obk_ig_button(const char* label);
 void obk_ig_same_line(void);
 void obk_ig_separator(void);
@@ -249,6 +250,14 @@ func Text(s string) {
 	c, free := cstr(s)
 	defer free()
 	C.obk_ig_text(c)
+}
+
+// TextWrapped draws text that wraps at the content region's right edge instead of clipping —
+// used for long add-in panel labels in a narrow docked panel (#1490).
+func TextWrapped(s string) {
+	c, free := cstr(s)
+	defer free()
+	C.obk_ig_text_wrapped(c)
 }
 
 // Button draws a button and reports whether it was clicked this frame.
