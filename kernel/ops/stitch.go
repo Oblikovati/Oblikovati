@@ -149,10 +149,21 @@ func (w *weld) build(maintainSurface bool, feat string) *topo.Body {
 	bld := topo.NewBuilder(solid, topo.NewLineage(topo.Tok(feat, "body", 0)))
 	verts := w.buildVertices(bld, feat)
 	edges := w.buildEdges(bld, verts, feat)
+	provByFace := map[*topo.Face]topo.Lineage{}
 	for _, wf := range w.faces {
-		bld.AddFace(wf.surface, wf.lineage, w.faceLoops(wf, edges)...)
+		face := bld.AddFace(wf.surface, wf.lineage, w.faceLoops(wf, edges)...)
+		if len(wf.lineage.Key()) > 0 {
+			provByFace[face] = wf.lineage
+		}
 	}
-	return bld.Build()
+	body := bld.Build()
+	// Provenance (ADR-0043): each surviving face keeps its source surface's identity; a seam edge is
+	// then named by the two faces it joins (and a boundary edge by its one face), replacing the
+	// synthesized weld-edge/-vertex ordinal so a reference survives an upstream edit.
+	if len(provByFace) > 0 {
+		body.RelineageByFaceProvenance(provByFace, topo.Tok(feat, "x", 0), topo.Tok(feat, "seg", 0))
+	}
+	return body
 }
 
 // buildVertices creates one shared vertex per welded cell, in sorted-key order so
