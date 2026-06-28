@@ -119,3 +119,18 @@ func TestEditSlotChipText(t *testing.T) {
 		t.Errorf("filled slot chip = %q, want \"2 Selected\"", got)
 	}
 }
+
+// TestLoftListHeight locks the Sections-list child sizing: empty is just padding, it grows per row,
+// and it clamps at the max visible rows (beyond which the list scrolls) so a many-section loft does
+// not push the rest of the panel off-screen (#1521).
+func TestLoftListHeight(t *testing.T) {
+	if h := loftListHeight(0); h != loftListPadding {
+		t.Errorf("empty list height = %v, want %v (padding only)", h, float32(loftListPadding))
+	}
+	if h := loftListHeight(3); h != 3*loftListRowHeight+loftListPadding {
+		t.Errorf("3-row height = %v, want %v", h, float32(3*loftListRowHeight+loftListPadding))
+	}
+	if h := loftListHeight(50); h != loftListMaxVisibleRows*loftListRowHeight+loftListPadding {
+		t.Errorf("50-row height = %v, want it clamped to %d rows", h, loftListMaxVisibleRows)
+	}
+}
