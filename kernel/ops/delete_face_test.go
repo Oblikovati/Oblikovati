@@ -59,6 +59,43 @@ func TestDeleteFaceHealsChamfer(t *testing.T) {
 	}
 }
 
+// TestDeleteFaceKeepsSurvivingIdentity is ADR-0043 P3: healing a deleted face rebuilds the body,
+// but the faces and edges it carries through unchanged must keep their ORIGINAL identity rather
+// than be renumbered to the rebuild's delface:* ordinals — so a selection on an untouched face or
+// edge survives the operation. Before P3 every result key was a fresh delface ordinal.
+func TestDeleteFaceKeepsSurvivingIdentity(t *testing.T) {
+	chamfered := chamferedBox(t)
+	inFaces, inEdges := map[string]bool{}, map[string]bool{}
+	for _, f := range chamfered.Faces() {
+		inFaces[string(f.ReferenceKey())] = true
+	}
+	for _, e := range chamfered.Edges() {
+		inEdges[string(e.ReferenceKey())] = true
+	}
+
+	healed, err := ops.DeleteFaces(chamfered, [][]byte{chamferFaceKey(t, chamfered)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	faceKept, edgeKept := 0, 0
+	for _, f := range healed.Faces() {
+		if inFaces[string(f.ReferenceKey())] {
+			faceKept++
+		}
+	}
+	for _, e := range healed.Edges() {
+		if inEdges[string(e.ReferenceKey())] {
+			edgeKept++
+		}
+	}
+	if faceKept == 0 {
+		t.Error("no surviving face kept its identity — all renamed to delface:f#N")
+	}
+	if edgeKept == 0 {
+		t.Error("no surviving edge kept its identity — all renamed to delface:e#N")
+	}
+}
+
 // TestDeleteFaceLostKeyErrors reports a vanished face key so the feature can go Sick.
 func TestDeleteFaceLostKeyErrors(t *testing.T) {
 	box := shellBox(2, 2, 2)

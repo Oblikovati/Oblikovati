@@ -29,6 +29,9 @@ func DeleteFaces(solid *topo.Body, faceKeys [][]byte) (*topo.Body, error) {
 	if r := Validate(body); !r.Valid || !body.IsSolid() {
 		return nil, fmt.Errorf("delete-face: heal did not close the body %v", r.Issues)
 	}
+	// Provenance (ADR-0043): a surviving edge the heal carried through unchanged keeps its original
+	// identity rather than the rebuild's build-order name; the new healed edges keep the fallback.
+	body.InheritOriginalEdges(solid.Edges())
 	return body, nil
 }
 
@@ -172,8 +175,9 @@ func lineHitsPlane(p0 math.Point3, dir math.Vector3, c geom.Plane) (float64, boo
 // ploop is a surviving face as 3D point rings (outer first) plus its normal, ready for
 // welding into a body.
 type ploop struct {
-	normal math.Vector3
-	rings  [][]math.Point3
+	normal  math.Vector3
+	rings   [][]math.Point3
+	lineage topo.Lineage // provenance: the surviving original face this loop came from (ADR-0043)
 }
 
 // survivingLoops returns every non-deleted face as a point-ring loop with its vertices
@@ -184,7 +188,7 @@ func survivingLoops(solid *topo.Body, del map[uint64]bool, moved map[uint64]math
 		if del[f.ID()] {
 			continue
 		}
-		pl := ploop{normal: f.Geometry().NormalAt(0, 0)}
+		pl := ploop{normal: f.Geometry().NormalAt(0, 0), lineage: f.Lineage()}
 		for _, l := range f.Loops() {
 			pl.rings = append(pl.rings, healedRing(l, moved))
 		}
@@ -259,7 +263,13 @@ func assembleLoops(verts []math.Point3, faces []ploop, rings [][][]int, edgeUse 
 			specs = append(specs, indexLoop(ri == 0, r, edges))
 		}
 		surf, _ := geom.NewPlane(centroidPts(faces[fi].rings[0]), faces[fi].normal)
-		bld.AddFace(surf, topo.NewLineage(topo.Tok("delface", "f", fi)), specs...)
+		// Provenance (ADR-0043): a surviving face keeps its original identity; fall back to the
+		// build-order name only if a loop arrived without one.
+		lin := faces[fi].lineage
+		if len(lin.Key()) == 0 {
+			lin = topo.NewLineage(topo.Tok("delface", "f", fi))
+		}
+		bld.AddFace(surf, lin, specs...)
 	}
 	return bld.Build()
 }
