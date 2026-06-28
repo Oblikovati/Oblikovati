@@ -151,10 +151,23 @@ func drawEmptySelectorChip(id, text string, required bool) {
 // it reads "Selecting…" while armed), and the clear (×) empties it when clearable.
 // Returns (armClicked, clearClicked).
 func propertyArmableSlotChip(id, text string, filled, armed, clearable bool) (bool, bool) {
+	return armableSlotChip(id, text, filled, armed, clearable, true)
+}
+
+// propertyOptionalArmableSlotChip is propertyArmableSlotChip for an OPTIONAL slot (e.g. a sweep's
+// guide rail): identical arm/clear behaviour, but the empty prompt renders in the normal color
+// rather than the required-red, so it doesn't read as a missing required input.
+func propertyOptionalArmableSlotChip(id, text string, filled, armed, clearable bool) (bool, bool) {
+	return armableSlotChip(id, text, filled, armed, clearable, false)
+}
+
+// armableSlotChip is the shared arm/clear chip: clicking the chip arms viewport picking (it reads
+// "Selecting…" while armed), and the × empties it when clearable. required tints the empty prompt.
+func armableSlotChip(id, text string, filled, armed, clearable, required bool) (bool, bool) {
 	if armed {
 		text = "Selecting…"
 	}
-	armClicked := drawArmableChipButton(id, text, filled, armed)
+	armClicked := drawArmableChipButton(id, text, filled, armed, required)
 	if !clearable {
 		return armClicked, false
 	}
@@ -162,15 +175,15 @@ func propertyArmableSlotChip(id, text string, filled, armed, clearable bool) (bo
 	return armClicked, native.Button("×##" + id + "-clear")
 }
 
-// drawArmableChipButton renders the chip body: accent while armed or filled, the danger
-// prompt while empty (a slot always names required geometry).
-func drawArmableChipButton(id, text string, filled, armed bool) bool {
+// drawArmableChipButton renders the chip body: accent while armed or filled, otherwise the prompt
+// — in the danger color for a required slot, the normal color for an optional one.
+func drawArmableChipButton(id, text string, filled, armed, required bool) bool {
 	if armed || filled {
 		native.PushStyleColor("Button", accentColor)
 		native.PushStyleColor("ButtonHovered", accentColor)
 		native.PushStyleColor("ButtonActive", accentColor)
 		defer native.PopStyleColor(3)
-	} else {
+	} else if required {
 		native.PushStyleColor("Text", dangerColor)
 		defer native.PopStyleColor(1)
 	}
