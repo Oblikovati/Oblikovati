@@ -41,6 +41,28 @@ def freeform_trimmed(o):
     o.cut([(3, solid)], [(3, o.addCylinder(0, 0, -2, 0, 0, 20, 3))])
 
 
+def bulged_duct(o):
+    """A STRONGLY curved B-spline barrel loft (radii 6,13,6 over z=0,9,18) with an axial Ø6 through-bore.
+
+    Unlike the mild freeform_trimmed (radii 9,10,9), the sharp 6→13→6 bulge gives the B_SPLINE_SURFACE
+    side faces high curvature, so the importer + tessellator must carry a large chord error on a real
+    freeform NURBS surface and the trimmed (bored) caps must stay watertight against it. It is the
+    committed default subject of the imported-NURBS duct guards (TestImportedNurbsDuct*), so they run in
+    CI on every machine; the heavy EDF bell-mouth duct — whose self-proximal lip and many interacting
+    trimmed analytic faces are what reproduced the #585 over-enclosure — stays a developer-local
+    OBK_PERF_STEP override, since that emergent failure does not miniaturize into a small fixture.
+    """
+    import math
+
+    def ring2(z, r, n=28):
+        pts = [o.addPoint(r * math.cos(2 * math.pi * i / n), r * math.sin(2 * math.pi * i / n), z) for i in range(n)]
+        pts.append(pts[0])
+        return o.addWire([o.addBSpline(pts)])
+
+    solid = o.addThruSections([ring2(0, 6), ring2(9, 13), ring2(18, 6)], makeSolid=True, makeRuled=False)[0][1]
+    o.cut([(3, solid)], [(3, o.addCylinder(0, 0, -2, 0, 0, 22, 3))])
+
+
 def main():
     gmsh.initialize()
     gmsh.option.setNumber("General.Terminal", 0)
@@ -75,6 +97,7 @@ def main():
     o.addTorus(0, 0, 0, 10, 3, angle=3.14159); emit("partial_torus")
     o.addSphere(0, 0, 0, 8, angle3=1.0); emit("partial_sphere")
     freeform_trimmed(o); emit("freeform_trimmed")
+    bulged_duct(o); emit("bulged_duct")
 
     json.dump(oracle, open(f"{OUT}/oracle.json", "w"), indent=1, sort_keys=True)
     gmsh.finalize()

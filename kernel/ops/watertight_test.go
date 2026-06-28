@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
@@ -69,27 +70,32 @@ func TestCleanCurvedSolidIsWatertight(t *testing.T) {
 	}
 }
 
+// nurbsDuctSubject returns the imported-NURBS bodies the duct guards run against, the reference total
+// volume (OCC getMass), and the allowed fold ceiling. By default it is the committed strongly-curved
+// bulged_duct fixture, so the guard runs in CI on every machine (#1498). Setting OBK_PERF_STEP to the
+// heavy developer-local EDF STEP file overrides it with that model and its EDF reference values.
+func nurbsDuctSubject(t *testing.T) (bodies []*topo.Body, wantVolume float64, foldCeiling int) {
+	if path := os.Getenv("OBK_PERF_STEP"); path != "" {
+		return stepBodies(t, path), edfOCCVolume, edfFoldCeiling
+	}
+	return occBodies(t, "bulged_duct"), bulgedDuctVolume, 0
+}
+
 // TestImportedNurbsDuctWatertight guards the M25 fix that made imported NURBS faces conform to their
 // neighbours: concatLoopPcurve projects each boundary loop's pcurve in ONE continuous march, so a
 // self-proximal NURBS face (the EDF bell-mouth lip) no longer lands edge-starts on the wrong sheet,
 // self-intersect in (u,v) and make the CDT silently drop boundary constraints — which used to crack
-// the duct body (28 free edges) against its cone/cylinder/plane neighbours. Env-gated on the heavy
-// model (not a committed fixture; same OBK_PERF_STEP convention as TestHeavyModelBudget). It also guards
-// the cross-face conformance repair (conformCylConeFaces): a trimmed cyl/cone whose plane ear-clip
-// absorbed a rim-arc point is re-meshed with the metric-(u,v) CDT so it conforms to its neighbour.
-// Per-body free edges across the fixes: pcurve continuity 4/0/4/28/0/0 → conformance repair
-// 4/0/0/0/0/0 (total 4) → the planar-faithful CDT fallback (planarTris) + exact CDT predicates closed
-// body0's plane-side crack to 0/0/0/0/0/0. The plane crack was an earcut hole-bridging defect on the
-// top cap (a complex outer loop + two circular bores); detecting it by area mismatch and re-meshing
-// with the now-cocircular-robust constrainedDelaunay makes it watertight. Assert the model is now FULLY
-// watertight (total 0) — it regresses hard (to 4, 8, then 36) if any of those fixes is lost.
+// the duct body (28 free edges) against its cone/cylinder/plane neighbours. It also guards the
+// cross-face conformance repair (conformCylConeFaces): a trimmed cyl/cone whose plane ear-clip absorbed
+// a rim-arc point is re-meshed with the metric-(u,v) CDT so it conforms to its neighbour. By default
+// this runs against the committed bulged_duct fixture (CI on every run); OBK_PERF_STEP overrides to the
+// heavy EDF model, where per-body free edges across the fixes went 4/0/4/28/0/0 → conformance repair
+// 4/0/0/0/0/0 → planar-faithful CDT (planarTris) + exact CDT predicates → 0/0/0/0/0/0. Assert FULLY
+// watertight (total 0) — it regresses hard if any of those fixes is lost.
 func TestImportedNurbsDuctWatertight(t *testing.T) {
-	path := os.Getenv("OBK_PERF_STEP")
-	if path == "" {
-		t.Skip("set OBK_PERF_STEP=/path/EDF.STEP to run the imported-NURBS watertightness guard")
-	}
+	bodies, _, _ := nurbsDuctSubject(t)
 	total := 0
-	for i, body := range stepBodies(t, path) {
+	for i, body := range bodies {
 		mesh, _ := TessellateBody(body, DefaultQuality())
 		free := freeEdgeCount(mesh)
 		total += free
@@ -110,33 +116,36 @@ const (
 	edfOCCVolume   = 207002.0
 	edfVolumeTol   = 0.01 // 1% — the trim-local metric mesher lands EDF at ≈ -0.4% (was +35.6%)
 	edfFoldCeiling = 0
+	// bulgedDuctVolume is OCC getMass (mm³) for the committed bulged_duct fixture — a strongly curved
+	// B-spline barrel (radii 6→13→6) with an axial bore (test-utilities/step-oracle/generate.py). Our
+	// metric-mesher tessellation lands it at ≈ -0.37%, well inside edfVolumeTol.
+	bulgedDuctVolume = 6060.0844
 )
 
-// TestImportedNurbsDuctVolumeAndFolds guards the #585 fix: EDF's tessellation is not merely watertight
-// (TestImportedNurbsDuctWatertight) but VOLUME-CORRECT and (almost) fold-free. A watertight mesh can
-// still fold over itself and over-enclose — the EDF duct used to be +35.6% over OCC's getMass because
-// its trimmed analytic faces (torus/cylinder/sphere/cone) folded. Routing them through metricPatchMesh
-// (a TRIM-LOCAL metric-scaled (u,v) CDT) collapses the over-enclosure to ≈ -0.4% and the fold count
-// from 139 to the residual ceiling (the remaining folds are the B-spline pcurve path + a few sphere
-// pole facets, tracked separately). Env-gated like the watertightness guard.
+// TestImportedNurbsDuctVolumeAndFolds guards the #585 fix: an imported NURBS duct's tessellation is not
+// merely watertight (TestImportedNurbsDuctWatertight) but VOLUME-CORRECT and fold-free. A watertight
+// mesh can still fold over itself and over-enclose — the EDF duct used to be +35.6% over OCC's getMass
+// because its trimmed faces folded over a plain anisotropic (u,v) CDT. Routing them through
+// metricPatchMesh (a TRIM-LOCAL metric-scaled (u,v) CDT) collapses the over-enclosure and the folds to
+// zero. By default this runs against the committed strongly-curved bulged_duct fixture so the volume +
+// fold-free invariants are checked in CI on every run. OBK_PERF_STEP overrides to the heavy EDF model
+// (the definitive #585 over-enclosure guard, whose emergent failure does not fit a small fixture) and
+// its reference volume.
 func TestImportedNurbsDuctVolumeAndFolds(t *testing.T) {
-	path := os.Getenv("OBK_PERF_STEP")
-	if path == "" {
-		t.Skip("set OBK_PERF_STEP=/path/EDF.STEP to run the imported-NURBS volume/fold guard")
-	}
+	bodies, wantVolume, foldCeiling := nurbsDuctSubject(t)
 	var volume float64
 	folds := 0
-	for _, body := range stepBodies(t, path) {
+	for _, body := range bodies {
 		mesh, _ := TessellateBody(body, DefaultQuality())
 		folds += FoldEdgeCount(mesh)
 		volume += BodyGeometryProperties(body, DefaultQuality()).Volume
 	}
-	if rel := stdmath.Abs(volume-edfOCCVolume) / edfOCCVolume; rel > edfVolumeTol {
-		t.Errorf("EDF total volume %.0f vs OCC %.0f (rel %.4f > %.4f) — an over-enclosure regression",
-			volume, edfOCCVolume, rel, edfVolumeTol)
+	if rel := stdmath.Abs(volume-wantVolume) / wantVolume; rel > edfVolumeTol {
+		t.Errorf("imported duct total volume %.4f vs OCC %.4f (rel %.4f > %.4f) — an over-enclosure regression",
+			volume, wantVolume, rel, edfVolumeTol)
 	}
-	if folds > edfFoldCeiling {
-		t.Errorf("EDF total fold edges = %d, want <= %d (the ceiling may only shrink as the residual "+
-			"B-spline/sphere folds are fixed)", folds, edfFoldCeiling)
+	if folds > foldCeiling {
+		t.Errorf("imported duct total fold edges = %d, want <= %d (the ceiling may only shrink as residual "+
+			"folds are fixed)", folds, foldCeiling)
 	}
 }

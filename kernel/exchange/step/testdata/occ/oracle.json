@@ -7,6 +7,10 @@
   "solids": 1,
   "volume": 1226.1947
  },
+ "bulged_duct": {
+  "solids": 1,
+  "volume": 6060.0844
+ },
  "chamfered_box": {
   "solids": 1,
   "volume": 7850.6667
