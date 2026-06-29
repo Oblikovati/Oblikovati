@@ -281,15 +281,24 @@ func (d *PartComponentDefinition) solveSketches() {
 	}
 }
 
-// solveSketches3D re-solves every 3D sketch so parameter-driven 3D dimensions move the
-// geometry on recompute, mirroring solveSketches for 2D (Oblikovati#1566). The dimension
-// reads bubble into the part's whole-recompute footprint (see Recompute's Track); not being
-// attributable to a feature yet, they land in the wholesale set, so a 3D-dimension edit
-// conservatively rebuilds the whole program — correct (the geometry follows), with precise
-// feature attribution a follow-up that plugs into the same depend.Key seam (ADR-0044).
+// solveSketches3D refreshes each 3D sketch's included reference geometry, then re-solves it,
+// walking the collection in creation order. Refreshing includes BEFORE the solve is what makes
+// a 3D sketch that dimensions against included geometry correct in a single recompute: its
+// sources — a 2D sketch (already solved by solveSketches above) or an earlier 3D sketch
+// (already solved earlier in this loop, creation order) — are current when the dependent
+// sketch solves, so a dependency is computed before its dependents. Parameter-driven 3D
+// dimensions then move geometry on recompute, mirroring solveSketches for 2D (Oblikovati#1566).
+//
+// The dimension reads bubble into the part's whole-recompute footprint (see Recompute's Track);
+// not being attributable to a feature yet, they land in the wholesale set, so a 3D-dimension
+// edit conservatively rebuilds the whole program — correct, with precise feature attribution a
+// follow-up on the depend.Key seam (ADR-0044). Includes sourced from part EDGES are refreshed
+// again post-features in refreshSketchReferences, where the body result exists.
 func (d *PartComponentDefinition) solveSketches3D() {
 	for i := 0; i < d.sketches3D.Count(); i++ {
-		d.sketches3D.Item(i).Solve()
+		sk := d.sketches3D.Item(i)
+		sk.UpdateIncluded()
+		sk.Solve()
 	}
 }
 
