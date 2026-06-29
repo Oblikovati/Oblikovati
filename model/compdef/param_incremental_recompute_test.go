@@ -80,7 +80,7 @@ func TestParameterEditRebuildsOnlyDependentTail(t *testing.T) {
 	if err := def.Parameters().SetExpression(userParamID(t, def, "drive"), "60 mm"); err != nil {
 		t.Fatalf("SetExpression: %v", err)
 	}
-	def.RecomputeAfterParameterEdit()
+	def.RecomputeAfterChange()
 	after := recomputeCounts(def)
 
 	for i := 0; i < n; i++ {
@@ -109,7 +109,7 @@ func TestIndependentParameterEditRebuildsNothing(t *testing.T) {
 	if err := def.Parameters().SetExpression(userParamID(t, def, "unused"), "20 mm"); err != nil {
 		t.Fatalf("SetExpression: %v", err)
 	}
-	def.RecomputeAfterParameterEdit()
+	def.RecomputeAfterChange()
 	after := recomputeCounts(def)
 
 	for i := range before {
@@ -130,7 +130,7 @@ func TestTargetedParameterEditMatchesFullRebuildGeometry(t *testing.T) {
 	if err := edited.Parameters().SetExpression(userParamID(t, edited, "drive"), "60 mm"); err != nil {
 		t.Fatalf("SetExpression: %v", err)
 	}
-	edited.RecomputeAfterParameterEdit()
+	edited.RecomputeAfterChange()
 
 	// ...must match a part built from scratch at 60 mm (a full evaluation).
 	fresh := compdef.NewPartComponentDefinition()

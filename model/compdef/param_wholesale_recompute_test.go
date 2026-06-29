@@ -47,7 +47,7 @@ func TestWorkPlaneOffsetParameterEditRebuildsWholeProgram(t *testing.T) {
 	if err := def.Parameters().SetExpression(userParamID(t, def, "lift"), "50 mm"); err != nil { // 5 cm
 		t.Fatalf("SetExpression: %v", err)
 	}
-	def.RecomputeAfterParameterEdit()
+	def.RecomputeAfterChange()
 
 	// The whole program rebuilds: even feature 0, independent of lift, recomputes (the
 	// conservative fallback for an unmodelled parameter path).

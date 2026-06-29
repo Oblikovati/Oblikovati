@@ -60,7 +60,7 @@ func TestParameterEditViaAppPathRebuildsFeature(t *testing.T) {
 }
 
 // TestParameterEditPathsInvalidateIdentically is the #1413 parity check: the app dialog verb and the
-// import verb (the two app-side parameter-edit seams) both route through RecomputeAfterParameterEdit,
+// import verb (the two app-side parameter-edit seams) both route through RecomputeAfterChange,
 // so each forces a rebuild. Editing the same part the same way through either must re-evaluate the
 // feature — the single shared seam, no divergence.
 func TestParameterEditPathsInvalidateIdentically(t *testing.T) {

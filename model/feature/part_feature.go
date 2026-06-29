@@ -4,8 +4,8 @@ package feature
 
 import (
 	"oblikovati.org/kernel/topo"
+	"oblikovati.org/model/depend"
 	"oblikovati.org/model/health"
-	"oblikovati.org/model/param"
 )
 
 // PartFeature wraps a [Feature] with the engine's per-feature state: identity,
@@ -28,8 +28,9 @@ type PartFeature struct {
 	// evaluation — a sheet-metal thickness, a suppression condition (NOT the
 	// dimensions of a consumed sketch, which are reported via ConsumedSketches). The
 	// engine uses it, with the consumed sketches' footprints, to skip the feature on a
-	// parameter edit that touches none of them (Oblikovati#1414).
-	paramReads []param.ID
+	// parameter edit that touches none of them (Oblikovati#1414). Held as depend.Keys so
+	// the same attribution serves a future non-parameter source (ADR-0044).
+	paramReads []depend.Key
 }
 
 // ID returns the feature's stable handle (unchanged by rename).

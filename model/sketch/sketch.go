@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/math"
+	"oblikovati.org/model/depend"
 	"oblikovati.org/model/health"
 	"oblikovati.org/model/linetype"
 	"oblikovati.org/model/param"
@@ -187,18 +188,39 @@ type Sketch struct {
 	profilesCache *Profiles
 	profilesSig   uint64
 
-	// paramFootprint is the model parameters this sketch's last solve read (its
-	// dimension targets), captured by the part recompute (Oblikovati#1414). A
-	// parameter edit re-solves and rebuilds only the features whose consumed sketch
-	// footprint it touches, instead of the whole program.
-	paramFootprint []param.ID
+	// paramFootprint is the dependency footprint this sketch's last solve read (its
+	// dimension targets), captured by the part recompute as depend.Keys (Oblikovati#1414,
+	// ADR-0044). A parameter edit re-solves and rebuilds only the features whose consumed
+	// sketch footprint it touches, instead of the whole program.
+	paramFootprint []depend.Key
+
+	// hostFootprint, when set, returns the dependency footprint of the sketch's host plane
+	// (a work plane's offset/angle parameter reads). The sketch stays content-agnostic
+	// about WHAT hosts it (ADR-0036): this is an opaque provider the part wires to the work
+	// plane, so a work-plane-offset edit reaches features through the hosted sketch's
+	// footprint instead of forcing a wholesale rebuild (ADR-0044).
+	hostFootprint func() []depend.Key
 }
 
-// SetParameterFootprint records the parameters the sketch's solve read; ParameterFootprint
-// returns them. The part recompute captures the footprint around each solve (param.Track)
-// so the feature engine can dirty only the features a parameter edit actually affects.
-func (s *Sketch) SetParameterFootprint(ids []param.ID) { s.paramFootprint = ids }
-func (s *Sketch) ParameterFootprint() []param.ID       { return s.paramFootprint }
+// SetParameterFootprint records the dependency keys the sketch's solve read; the part
+// recompute captures the footprint around each solve (param.TrackKeys) so the feature
+// engine can dirty only the features a parameter edit actually affects.
+func (s *Sketch) SetParameterFootprint(keys []depend.Key) { s.paramFootprint = keys }
+
+// SetHostFootprint registers an opaque provider of the host plane's dependency footprint
+// (nil to clear). Paired with [Sketch.SetPlaneHost] when the host is a parametric work
+// plane, so the plane's offset parameter is attributed to this sketch (ADR-0044).
+func (s *Sketch) SetHostFootprint(footprint func() []depend.Key) { s.hostFootprint = footprint }
+
+// ParameterFootprint returns the sketch's full dependency footprint: its own solve reads
+// plus, when hosted on a parametric work plane, that plane's footprint. The union is what
+// a consuming feature is attributed against (ADR-0044).
+func (s *Sketch) ParameterFootprint() []depend.Key {
+	if s.hostFootprint == nil {
+		return s.paramFootprint
+	}
+	return append(append([]depend.Key(nil), s.paramFootprint...), s.hostFootprint()...)
+}
 
 // Plane returns the sketch's host plane.
 func (s *Sketch) Plane() Plane { return s.plane }

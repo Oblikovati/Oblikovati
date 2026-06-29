@@ -7,8 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"oblikovati.org/model/depend"
 	"oblikovati.org/model/feature"
-	"oblikovati.org/model/param"
 )
 
 // restoreFeatureTail applies a snapshot that changed only a feature tail — every parameter,
@@ -87,14 +87,14 @@ func sameFeatureData(a, b feature.FeatureData) bool {
 // never shrinks it (the partial recompute did not re-read the kept prefix's parameters, so its
 // freshly-derived set is incomplete; a superset is conservative and safe — it can only force an
 // unnecessary full rebuild on a later parameter edit, never permit a stale one — #1414).
-func (d *PartComponentDefinition) mergeWholesaleParams(prior map[param.ID]bool) {
+func (d *PartComponentDefinition) mergeWholesaleParams(prior map[depend.Key]bool) {
 	if len(prior) == 0 {
 		return
 	}
 	if d.wholesaleParams == nil {
-		d.wholesaleParams = map[param.ID]bool{}
+		d.wholesaleParams = map[depend.Key]bool{}
 	}
-	for id := range prior {
-		d.wholesaleParams[id] = true
+	for k := range prior {
+		d.wholesaleParams[k] = true
 	}
 }

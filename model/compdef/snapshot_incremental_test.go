@@ -148,7 +148,7 @@ func TestParameterSnapshotRestoreFallsBackToFullRebuild(t *testing.T) {
 	if err := def.Parameters().SetExpression(userParamID(t, def, "drive"), "60 mm"); err != nil {
 		t.Fatalf("SetExpression: %v", err)
 	}
-	def.RecomputeAfterParameterEdit()
+	def.RecomputeAfterChange()
 	firstFeatureAt60 := def.Features().Item(0)
 
 	if err := def.RestoreSnapshot(at40); err != nil { // a parameter differs → full reset path
@@ -200,7 +200,7 @@ func TestIncrementalRestoreThenWholesaleParamEditStillFullRebuilds(t *testing.T)
 	if err := def.Parameters().SetExpression(userParamID(t, def, "lift"), "50 mm"); err != nil {
 		t.Fatalf("SetExpression: %v", err)
 	}
-	def.RecomputeAfterParameterEdit()
+	def.RecomputeAfterChange()
 
 	after := recomputeCounts(def)
 	for i := range before {

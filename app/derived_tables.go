@@ -129,7 +129,7 @@ func (s *Session) SetDerivedTableLinked(id int, linked []string) error {
 		return err
 	}
 	s.autoExportSourceParameters(t.SourceDocument(), linked) // Add2 semantics: linking exports the source params
-	target.RecomputeAfterParameterEdit()
+	target.RecomputeAfterChange()
 	s.recordEdit(target, "Edit Derived Parameters")
 	return nil
 }
@@ -144,7 +144,7 @@ func (s *Session) DeleteDerivedParameterTable(id int) error {
 	if err := target.Parameters().DeleteDerivedTable(id); err != nil {
 		return err
 	}
-	target.RecomputeAfterParameterEdit()
+	target.RecomputeAfterChange()
 	s.recordEdit(target, "Delete Derived Parameters")
 	return nil
 }
@@ -193,7 +193,7 @@ func (s *Session) resyncDocumentFrom(d *doc.Document, sourceName string, values 
 		synced = true
 	}
 	if synced {
-		holder.RecomputeAfterParameterEdit()
+		holder.RecomputeAfterChange()
 	}
 	return synced
 }

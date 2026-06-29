@@ -91,7 +91,7 @@ func setParameter(s *app.Session, args json.RawMessage) (json.RawMessage, error)
 	// A parameter edit can change any feature's live inputs (sketch dimensions,
 	// value closures), which the engine does not track as dependencies, so force a
 	// full parametric rebuild — the shared seam every edit path uses (#1413).
-	holder.RecomputeAfterParameterEdit()
+	holder.RecomputeAfterChange()
 	info := paramInfo(holder, p)
 	emitParameterChanged(s, info) // #148 granular parameter-change notification
 	return json.Marshal(info)

@@ -2,6 +2,8 @@
 
 package param
 
+import "oblikovati.org/model/depend"
+
 // This file is the parameter side of incremental recompute (Oblikovati#1414): two
 // small mechanisms that let the feature engine dirty only the features a parameter
 // edit can change, instead of marking the whole program dirty and rebuilding every
@@ -47,6 +49,35 @@ func (ps *Parameters) Track(fn func()) []ID {
 	}
 	return keysOf(sink)
 }
+
+// Key is the recompute-graph identity of a parameter (ADR-0044): a parameter read becomes
+// a depend.Key the engine attributes to the consumers (sketches, features) that read it,
+// so a later edit dirties only those. The conversion lives here, at the param↔depend
+// boundary, so it is defined once.
+func Key(id ID) depend.Key { return depend.Key{Kind: depend.ParameterKey, ID: uint64(id)} }
+
+// keysOfIDs widens a parameter-id slice to dependency keys, preserving nil (an empty
+// change-set must stay empty so the edit seam falls back to a full rebuild).
+func keysOfIDs(ids []ID) []depend.Key {
+	if len(ids) == 0 {
+		return nil
+	}
+	keys := make([]depend.Key, len(ids))
+	for i, id := range ids {
+		keys[i] = Key(id)
+	}
+	return keys
+}
+
+// TrackKeys runs fn while capturing every parameter it read (through [Parameter.ModelValue])
+// and returns them as dependency keys — the footprint the recompute engine stores for the
+// piece of work fn performed (a sketch solve, a feature evaluation, a work-plane recompute).
+func (ps *Parameters) TrackKeys(fn func()) []depend.Key { return keysOfIDs(ps.Track(fn)) }
+
+// DrainChangedKeys returns the parameters an edit re-evaluated since the previous call as
+// dependency keys, and clears the record. The edit seam intersects these against consumer
+// footprints to dirty the minimal tail.
+func (ps *Parameters) DrainChangedKeys() []depend.Key { return keysOfIDs(ps.DrainChanged()) }
 
 // markChanged records that an edit re-evaluated parameter id (called from the graph
 // reflow). The set accumulates until [DrainChanged] reads and clears it.

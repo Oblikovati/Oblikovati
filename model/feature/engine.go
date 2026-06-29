@@ -221,7 +221,7 @@ func (fs *PartFeatures) evaluate(pf *PartFeature, bodies []*topo.Body, sick map[
 		return fs.evaluateBody(pf, bodies, sick)
 	}
 	var out []*topo.Body
-	pf.paramReads = fs.params.Track(func() { out = fs.evaluateBody(pf, bodies, sick) })
+	pf.paramReads = fs.params.TrackKeys(func() { out = fs.evaluateBody(pf, bodies, sick) })
 	return out
 }
 

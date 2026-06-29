@@ -12,8 +12,11 @@ import "oblikovati.org/model/param"
 // definition.
 //
 // The recompute methods are named by intent, not by mechanism: a part may take its
-// incremental parameter-edit fast path (#1414) while an assembly does a full re-solve — each
-// holder picks its own strategy behind the same contract.
+// incremental change fast path (#1414) while an assembly does a full re-solve — each holder
+// picks its own strategy behind the same contract. RecomputeAfterChange is the single
+// generalized invalidation seam (ADR-0044): it takes no change-set (it drains its own change
+// sources) so the same entry serves a parameter edit today and a cross-part adaptive-reference
+// change later, and a wholesale implementation (the assembly's) is a valid point on it.
 //
 // It deliberately carries NO persistence (MarshalSnapshot/RecipeContent): undo recording is a
 // separate concern, composed by the caller (see app's editable-holder seam), so this stays a
@@ -26,7 +29,7 @@ type ParameterHolder interface {
 	// wire/UI parameter surface needs them alongside the table.
 	Units() param.UnitsOfMeasure
 	Recompute()
-	RecomputeAfterParameterEdit()
+	RecomputeAfterChange()
 }
 
 // Both component definitions are parameter holders. A plain interface assertion on a

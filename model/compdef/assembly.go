@@ -260,10 +260,13 @@ func (a *AssemblyComponentDefinition) Properties() *attr.PropertySets { return a
 // a part and an assembly present one recompute method (#766).
 func (a *AssemblyComponentDefinition) Recompute() { a.RecomputeFeatures() }
 
-// RecomputeAfterParameterEdit re-solves the assembly after a parameter edit. An assembly has no
-// incremental parameter-edit fast path (unlike a part, #1414), so this is a full re-solve — the
-// honest implementation of the [ParameterHolder] contract for an assembly (M39-F02, #1558).
-func (a *AssemblyComponentDefinition) RecomputeAfterParameterEdit() { a.RecomputeFeatures() }
+// RecomputeAfterChange re-solves the assembly after a parameter edit (or, later, a cross-part
+// adaptive-reference change). An assembly has no incremental fast path (unlike a part, #1414), so
+// this is a full re-solve. Wholesale is a VALID point on the [ParameterHolder] invalidation
+// contract — "attribute nothing, rebuild everything" — so the seam exists and is exercised now,
+// and the adaptivity milestone narrows it from inside without reshaping the seam (M39-F02 #1558,
+// ADR-0044).
+func (a *AssemblyComponentDefinition) RecomputeAfterChange() { a.RecomputeFeatures() }
 
 // WorkGeometry returns the assembly's origin coordinate frame and user work
 // planes/axes/points, expressed in assembly space — the planes a sketch is authored on.
