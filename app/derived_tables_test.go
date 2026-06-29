@@ -116,6 +116,90 @@ func TestDerivedTableLifecycleOnSession(t *testing.T) {
 	}
 }
 
+// docAssemblyOf unwraps a document's assembly definition.
+func docAssemblyOf(t *testing.T, d *doc.Document) *compdef.AssemblyComponentDefinition {
+	t.Helper()
+	def, ok := d.Content().(*compdef.AssemblyComponentDefinition)
+	if !ok {
+		t.Fatalf("document %q holds no assembly", d.FullDocumentName())
+	}
+	return def
+}
+
+// TestAssemblyDerivesParametersFromPart is the M39-F02 forward direction: an ASSEMBLY (not a
+// part) derives a numeric user parameter from a part document, and a later source edit
+// resyncs into the assembly through the now-generalized seam (#1558). Before F02 the active
+// target and the resync target were both cast to *PartComponentDefinition, so an assembly
+// could neither derive nor receive a resync.
+func TestAssemblyDerivesParametersFromPart(t *testing.T) {
+	s := NewSession()
+	gears, err := s.NewPart()
+	if err != nil {
+		t.Fatalf("NewPart(gears): %v", err)
+	}
+	if err := s.AddNumericUserParameter("module", "2 mm"); err != nil {
+		t.Fatalf("add module: %v", err)
+	}
+	asm, err := s.NewAssembly()
+	if err != nil {
+		t.Fatalf("NewAssembly: %v", err)
+	}
+	if err := s.Workspace().SetActiveDocument(asm); err != nil {
+		t.Fatalf("activate assembly: %v", err)
+	}
+
+	if _, err := s.AddDerivedParameterTable(gears.FullDocumentName(), []string{"module"}); err != nil {
+		t.Fatalf("AddDerivedParameterTable into assembly: %v", err)
+	}
+	p, ok := docAssemblyOf(t, asm).Parameters().ByName("module")
+	if !ok || !approx3(p.Value().Value, 0.2) {
+		t.Fatalf("derived module on assembly = %+v, want 0.2 (2 mm in db units)", p)
+	}
+
+	// Edit the source part; the resync must flow into the deriving assembly.
+	if err := s.Workspace().SetActiveDocument(gears); err != nil {
+		t.Fatalf("activate gears: %v", err)
+	}
+	src, _ := docPartOf(t, gears).Parameters().ByName("module")
+	if err := s.SetParameterEquation(src.ID(), "3 mm"); err != nil {
+		t.Fatalf("edit source module: %v", err)
+	}
+	if !approx3(p.Value().Value, 0.3) {
+		t.Errorf("assembly derived module after source edit = %v, want 0.3 (resync to assembly)", p.Value().Value)
+	}
+}
+
+// TestPartDerivesParametersFromAssembly is the M39-F02 reverse direction: a PART derives from
+// an ASSEMBLY's numeric user parameter. The source-document resolution (LinkableSourceParameters)
+// must treat an assembly as a valid parameter source (#1558).
+func TestPartDerivesParametersFromAssembly(t *testing.T) {
+	s := NewSession()
+	asm, err := s.NewAssembly()
+	if err != nil {
+		t.Fatalf("NewAssembly: %v", err)
+	}
+	// The session parameter-edit verbs are still part-only (F03), so seed the assembly source
+	// parameter directly on its definition.
+	if _, err := docAssemblyOf(t, asm).Parameters().AddUserParameter("spacing", "5 mm"); err != nil {
+		t.Fatalf("seed assembly spacing: %v", err)
+	}
+	hub, err := s.NewPart()
+	if err != nil {
+		t.Fatalf("NewPart(hub): %v", err)
+	}
+	if s.ActiveDocument() != hub {
+		t.Fatalf("hub must be the active document")
+	}
+
+	if _, err := s.AddDerivedParameterTable(asm.FullDocumentName(), []string{"spacing"}); err != nil {
+		t.Fatalf("AddDerivedParameterTable from assembly: %v", err)
+	}
+	p, ok := docPartOf(t, hub).Parameters().ByName("spacing")
+	if !ok || !approx3(p.Value().Value, 0.5) {
+		t.Fatalf("part derived spacing = %+v, want 0.5 (5 mm in db units)", p)
+	}
+}
+
 // approx3 absorbs float noise at three decimals.
 func approx3(got, want float64) bool {
 	const eps = 1e-9

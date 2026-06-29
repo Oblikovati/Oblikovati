@@ -3,6 +3,7 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 
 	"oblikovati.org/model/compdef"
@@ -24,12 +25,12 @@ func (s *Session) LinkableSourceParameters(sourceDocument string) ([]param.Sourc
 	if !ok {
 		return nil, false
 	}
-	def, ok := d.Content().(*compdef.PartComponentDefinition)
+	holder, ok := d.Content().(compdef.ParameterHolder)
 	if !ok {
 		return nil, false
 	}
 	var out []param.SourceParameterValue
-	for _, p := range def.Parameters().All() {
+	for _, p := range holder.Parameters().All() {
 		if p.Kind() == param.UserParam && p.IsNumeric() {
 			out = append(out, param.SourceParameterValue{Name: p.Name(), Value: p.Value()})
 		}
@@ -37,11 +38,34 @@ func (s *Session) LinkableSourceParameters(sourceDocument string) ([]param.Sourc
 	return out, true
 }
 
+// paramEditTarget is the active document's content when it both holds parameters and records
+// undo — a part or an assembly. The derived-table mutations need both faces: [compdef.ParameterHolder]
+// to edit the table and recompute, recipeStore to capture one undo step (M39-F02, #1558).
+type paramEditTarget interface {
+	compdef.ParameterHolder
+	recipeStore
+}
+
+// activeParameterHolder resolves the active document's parameter-editing target, erroring when
+// there is no active document or it holds no parameters (a drawing, say). Both a part and an
+// assembly satisfy paramEditTarget, so derived-table editing is no longer part-only.
+func (s *Session) activeParameterHolder() (paramEditTarget, error) {
+	d := s.ActiveDocument()
+	if d == nil {
+		return nil, errors.New("app: no active document")
+	}
+	target, ok := d.Content().(paramEditTarget)
+	if !ok {
+		return nil, fmt.Errorf("app: active document %q holds no parameters (not a part or assembly)", d.DisplayName())
+	}
+	return target, nil
+}
+
 // AddDerivedParameterTable links parameters from another open document into
-// the active part, recording the document reference so the link survives in
-// the workspace graph. One undo step.
+// the active part or assembly, recording the document reference so the link
+// survives in the workspace graph. One undo step.
 func (s *Session) AddDerivedParameterTable(sourceDocument string, linked []string) (*param.DerivedParameterTable, error) {
-	part, err := activePart(s)
+	target, err := s.activeParameterHolder()
 	if err != nil {
 		return nil, err
 	}
@@ -50,28 +74,28 @@ func (s *Session) AddDerivedParameterTable(sourceDocument string, linked []strin
 	}
 	source, ok := s.LinkableSourceParameters(sourceDocument)
 	if !ok {
-		return nil, fmt.Errorf("app: no open part document named %q to derive from", sourceDocument)
+		return nil, fmt.Errorf("app: no open document named %q to derive parameters from", sourceDocument)
 	}
-	t, err := part.Parameters().AddDerivedTable(sourceDocument, linked, source)
+	t, err := target.Parameters().AddDerivedTable(sourceDocument, linked, source)
 	if err != nil {
 		return nil, err
 	}
 	if _, err := s.ActiveDocument().AddReference(sourceDocument); err != nil {
 		return nil, err
 	}
-	part.Recompute()
-	s.recordEdit(part, "Derive Parameters")
+	target.Recompute()
+	s.recordEdit(target, "Derive Parameters")
 	return t, nil
 }
 
-// SetDerivedTableLinked replaces a table's linked subset on the active part.
-// One undo step.
+// SetDerivedTableLinked replaces a table's linked subset on the active part or
+// assembly. One undo step.
 func (s *Session) SetDerivedTableLinked(id int, linked []string) error {
-	part, err := activePart(s)
+	target, err := s.activeParameterHolder()
 	if err != nil {
 		return err
 	}
-	t, ok := part.Parameters().DerivedTableByID(id)
+	t, ok := target.Parameters().DerivedTableByID(id)
 	if !ok {
 		return fmt.Errorf("app: no derived table with id %d", id)
 	}
@@ -79,26 +103,26 @@ func (s *Session) SetDerivedTableLinked(id int, linked []string) error {
 	if !ok {
 		return fmt.Errorf("app: source document %q is not open; cannot relink", t.SourceDocument())
 	}
-	if err := part.Parameters().SetDerivedTableLinked(id, linked, source); err != nil {
+	if err := target.Parameters().SetDerivedTableLinked(id, linked, source); err != nil {
 		return err
 	}
-	part.RecomputeAfterParameterEdit()
-	s.recordEdit(part, "Edit Derived Parameters")
+	target.RecomputeAfterParameterEdit()
+	s.recordEdit(target, "Edit Derived Parameters")
 	return nil
 }
 
 // DeleteDerivedParameterTable removes a table and its derived parameters from
-// the active part (component-owned tables refuse). One undo step.
+// the active part or assembly (component-owned tables refuse). One undo step.
 func (s *Session) DeleteDerivedParameterTable(id int) error {
-	part, err := activePart(s)
+	target, err := s.activeParameterHolder()
 	if err != nil {
 		return err
 	}
-	if err := part.Parameters().DeleteDerivedTable(id); err != nil {
+	if err := target.Parameters().DeleteDerivedTable(id); err != nil {
 		return err
 	}
-	part.RecomputeAfterParameterEdit()
-	s.recordEdit(part, "Delete Derived Parameters")
+	target.RecomputeAfterParameterEdit()
+	s.recordEdit(target, "Delete Derived Parameters")
 	return nil
 }
 
@@ -133,20 +157,20 @@ func (s *Session) resyncDerivedTables(source *doc.Document, visited map[string]b
 // resyncDocumentFrom refreshes one deriving document's tables that point at
 // sourceName, reporting whether anything was synced (and recomputing if so).
 func (s *Session) resyncDocumentFrom(d *doc.Document, sourceName string, values []param.SourceParameterValue, sourceOK bool) bool {
-	def, isPart := d.Content().(*compdef.PartComponentDefinition)
-	if !isPart {
+	holder, ok := d.Content().(compdef.ParameterHolder)
+	if !ok {
 		return false
 	}
 	synced := false
-	for _, t := range def.Parameters().DerivedTables() {
+	for _, t := range holder.Parameters().DerivedTables() {
 		if t.SourceDocument() != sourceName {
 			continue
 		}
-		_ = def.Parameters().SyncDerivedTable(t.ID(), values, sourceOK)
+		_ = holder.Parameters().SyncDerivedTable(t.ID(), values, sourceOK)
 		synced = true
 	}
 	if synced {
-		def.RecomputeAfterParameterEdit()
+		holder.RecomputeAfterParameterEdit()
 	}
 	return synced
 }
