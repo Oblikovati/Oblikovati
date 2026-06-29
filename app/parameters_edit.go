@@ -8,10 +8,10 @@ import (
 	"oblikovati.org/model/param"
 )
 
-// Edit verbs for the Parameters dialog. Each resolves the active part, mutates its
-// parameter collection, then recomputes the part so a model parameter's edit flows into
-// the features that consume it; a failure surfaces through the session notice (the status
-// bar) rather than a panic, matching the rest of the app.
+// Edit verbs for the Parameters dialog. Each resolves the active parameter holder (a part or
+// an assembly), mutates its parameter collection, then recomputes the holder so a model
+// parameter's edit flows into the features that consume it; a failure surfaces through the
+// session notice (the status bar) rather than a panic, matching the rest of the app.
 
 // AddNumericUserParameter adds a numeric user parameter from an expression.
 func (s *Session) AddNumericUserParameter(name, expression string) error {
@@ -144,27 +144,27 @@ func (s *Session) DeleteParameterGroup(name string) error {
 	return s.editParameters(func(ps *param.Parameters) error { return ps.DeleteGroup(name, true) })
 }
 
-// ImportParameters applies a parameter-set XML document atomically: the part
+// ImportParameters applies a parameter-set XML document atomically: the holder
 // snapshots first, and any invalid entry restores it so a half-applied import
 // never survives (M02-F07, Oblikovati#606). On success it lands as one undo step.
 func (s *Session) ImportParameters(xml string) (added, updated int, err error) {
-	part, err := activePart(s)
+	holder, err := s.activeParameterHolder()
 	if err != nil {
 		return 0, 0, err
 	}
-	snapshot, err := part.MarshalSnapshot()
+	snapshot, err := holder.MarshalSnapshot()
 	if err != nil {
 		return 0, 0, fmt.Errorf("app: snapshot before parameter import: %w", err)
 	}
-	added, updated, err = part.Parameters().ImportXML(xml)
+	added, updated, err = holder.Parameters().ImportXML(xml)
 	if err != nil {
-		if restoreErr := part.RestoreSnapshot(snapshot); restoreErr != nil {
+		if restoreErr := holder.RestoreSnapshot(snapshot); restoreErr != nil {
 			return 0, 0, fmt.Errorf("app: parameter import failed (%w) and the rollback failed too: %v", err, restoreErr)
 		}
 		return 0, 0, err
 	}
-	part.RecomputeAfterParameterEdit()
-	s.recordEdit(part, "Import Parameters")
+	holder.RecomputeAfterParameterEdit()
+	s.recordEdit(holder, "Import Parameters")
 	return added, updated, nil
 }
 
@@ -179,20 +179,21 @@ func (s *Session) editParam(id param.ID, edit func(*param.Parameter) error) erro
 	})
 }
 
-// editParameters runs edit against the active part's parameter collection, records any
-// error as the session notice, recomputes the part on success, and returns the error.
+// editParameters runs edit against the active part's or assembly's parameter collection,
+// records any error as the session notice, recomputes the holder on success, and returns the
+// error.
 func (s *Session) editParameters(edit func(*param.Parameters) error) error {
-	part, err := activePart(s)
+	holder, err := s.activeParameterHolder()
 	if err != nil {
 		s.notice = err.Error()
 		return err
 	}
-	if err := edit(part.Parameters()); err != nil {
+	if err := edit(holder.Parameters()); err != nil {
 		s.notice = err.Error()
 		return err
 	}
 	s.notice = ""
-	part.RecomputeAfterParameterEdit() // mark dirty before recompute, or the edit leaves stale geometry (#1413)
-	s.recordEdit(part, "Edit Parameters")
+	holder.RecomputeAfterParameterEdit() // mark dirty before recompute, or the edit leaves stale geometry (#1413)
+	s.recordEdit(holder, "Edit Parameters")
 	return nil
 }

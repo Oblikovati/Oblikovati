@@ -16,10 +16,10 @@ import (
 
 // paramInfo marshals a model parameter into the wire DTO: its authored expression
 // and its evaluated value formatted in the document's display units.
-func paramInfo(part *compdef.PartComponentDefinition, p *param.Parameter) wire.ParameterInfo {
+func paramInfo(holder compdef.ParameterHolder, p *param.Parameter) wire.ParameterInfo {
 	info := wire.ParameterInfo{
 		Name: p.Name(), Kind: p.Kind().String(),
-		Expression: p.Expression(), Value: part.Units().Format(p.Value()),
+		Expression: p.Expression(), Value: holder.Units().Format(p.Value()),
 	}
 	if h := p.Health(); !h.OK() {
 		info.Health = h.Reason
@@ -27,23 +27,23 @@ func paramInfo(part *compdef.PartComponentDefinition, p *param.Parameter) wire.P
 	return info
 }
 
-// listParameters returns the active part's parameters.
+// listParameters returns the active part's or assembly's parameters.
 func listParameters(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	holder, err := modelaccess.ActiveParameterHolder(s)
 	if err != nil {
 		return nil, err
 	}
-	ps := part.Parameters().All()
+	ps := holder.Parameters().All()
 	out := make([]wire.ParameterInfo, len(ps))
 	for i, p := range ps {
-		out[i] = paramInfo(part, p)
+		out[i] = paramInfo(holder, p)
 	}
 	return json.Marshal(wire.ListParametersResult{Parameters: out})
 }
 
 // getParameter returns one parameter by name.
 func getParameter(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	holder, err := modelaccess.ActiveParameterHolder(s)
 	if err != nil {
 		return nil, err
 	}
@@ -51,48 +51,48 @@ func getParameter(s *app.Session, args json.RawMessage) (json.RawMessage, error)
 	if err := decode(args, &in); err != nil {
 		return nil, err
 	}
-	p, ok := part.Parameters().ByName(in.Name)
+	p, ok := holder.Parameters().ByName(in.Name)
 	if !ok {
 		return nil, errors.New("parameters.get: no parameter named " + in.Name)
 	}
-	return json.Marshal(paramInfo(part, p))
+	return json.Marshal(paramInfo(holder, p))
 }
 
 // addParameter adds a new user parameter from name + expression (e.g. "4 cm").
 func addParameter(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	part, in, err := partAndSetArgs(s, args)
+	holder, in, err := holderAndSetArgs(s, args)
 	if err != nil {
 		return nil, err
 	}
-	p, err := part.Parameters().AddUserParameter(in.Name, in.Expression)
+	p, err := holder.Parameters().AddUserParameter(in.Name, in.Expression)
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(paramInfo(part, p))
+	return json.Marshal(paramInfo(holder, p))
 }
 
 // setParameter changes an existing parameter's expression and recomputes so any
 // driven features update.
 func setParameter(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	part, in, err := partAndSetArgs(s, args)
+	holder, in, err := holderAndSetArgs(s, args)
 	if err != nil {
 		return nil, err
 	}
-	p, ok := part.Parameters().ByName(in.Name)
+	p, ok := holder.Parameters().ByName(in.Name)
 	if !ok {
 		return nil, errors.New("parameters.set: no parameter named " + in.Name)
 	}
 	// Edit through the Parameters graph (not p.SetExpression, which only updates
 	// this parameter): the graph rewires edges and recomputes transitive
 	// dependents, so a dimension like "od/2" follows when od changes.
-	if err := part.Parameters().SetExpression(p.ID(), in.Expression); err != nil {
+	if err := holder.Parameters().SetExpression(p.ID(), in.Expression); err != nil {
 		return nil, err
 	}
 	// A parameter edit can change any feature's live inputs (sketch dimensions,
 	// value closures), which the engine does not track as dependencies, so force a
 	// full parametric rebuild — the shared seam every edit path uses (#1413).
-	part.RecomputeAfterParameterEdit()
-	info := paramInfo(part, p)
+	holder.RecomputeAfterParameterEdit()
+	info := paramInfo(holder, p)
 	emitParameterChanged(s, info) // #148 granular parameter-change notification
 	return json.Marshal(info)
 }
@@ -109,10 +109,10 @@ func emitParameterChanged(s *app.Session, info wire.ParameterInfo) {
 	})
 }
 
-// partAndSetArgs decodes name+expression and resolves the active part, validating
-// both fields are present (shared by add and set).
-func partAndSetArgs(s *app.Session, args json.RawMessage) (*compdef.PartComponentDefinition, wire.ParameterSetArgs, error) {
-	part, err := modelaccess.ActivePart(s)
+// holderAndSetArgs decodes name+expression and resolves the active parameter holder (part or
+// assembly), validating both fields are present (shared by add and set).
+func holderAndSetArgs(s *app.Session, args json.RawMessage) (compdef.ParameterHolder, wire.ParameterSetArgs, error) {
+	holder, err := modelaccess.ActiveParameterHolder(s)
 	if err != nil {
 		return nil, wire.ParameterSetArgs{}, err
 	}
@@ -123,5 +123,5 @@ func partAndSetArgs(s *app.Session, args json.RawMessage) (*compdef.PartComponen
 	if in.Name == "" || in.Expression == "" {
 		return nil, wire.ParameterSetArgs{}, errors.New("parameters: name and expression are required")
 	}
-	return part, in, nil
+	return holder, in, nil
 }

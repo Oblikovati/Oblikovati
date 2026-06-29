@@ -15,41 +15,41 @@ import (
 
 // Custom parameter groups over the wire (M02-F05, Oblikovati#604):
 // parameters.groups.list/add/delete/setDisplayName/addMember/removeMember.
-// Mutations finalize through Session.RecordAddInEdit so they are undoable and
+// Mutations finalize through Session.RecordActiveEdit so they are undoable and
 // broadcast as edit.committed (mutatingMethods).
 
 // parameterGroupInfo marshals one group with its member names in collection order.
-func parameterGroupInfo(part *compdef.PartComponentDefinition, g *param.ParameterGroup) wire.ParameterGroupInfo {
-	ps := part.Parameters()
+func parameterGroupInfo(holder compdef.ParameterHolder, g *param.ParameterGroup) wire.ParameterGroupInfo {
+	ps := holder.Parameters()
 	return wire.ParameterGroupInfo{
 		InternalName: g.InternalName(), DisplayName: g.DisplayName, ClientID: g.ClientID,
 		Members: paramNames(ps, ps.GroupMembers(g.InternalName())),
 	}
 }
 
-// groupByKey resolves one group on the active part, naming the method in the
+// groupByKey resolves one group on the active part or assembly, naming the method in the
 // not-found error.
-func groupByKey(s *app.Session, method, key string) (*compdef.PartComponentDefinition, *param.ParameterGroup, error) {
-	part, err := modelaccess.ActivePart(s)
+func groupByKey(s *app.Session, method, key string) (compdef.ParameterHolder, *param.ParameterGroup, error) {
+	holder, err := modelaccess.ActiveParameterHolder(s)
 	if err != nil {
 		return nil, nil, err
 	}
-	g, ok := part.Parameters().GroupByKey(key)
+	g, ok := holder.Parameters().GroupByKey(key)
 	if !ok {
 		return nil, nil, fmt.Errorf("%s: no parameter group named %q", method, key)
 	}
-	return part, g, nil
+	return holder, g, nil
 }
 
 // listParameterGroups returns the custom groups with their members, in creation order.
 func listParameterGroups(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	holder, err := modelaccess.ActiveParameterHolder(s)
 	if err != nil {
 		return nil, err
 	}
 	var out wire.ListParameterGroupsResult
-	for _, g := range part.Parameters().Groups() {
-		out.Groups = append(out.Groups, parameterGroupInfo(part, g))
+	for _, g := range holder.Parameters().Groups() {
+		out.Groups = append(out.Groups, parameterGroupInfo(holder, g))
 	}
 	return json.Marshal(out)
 }
@@ -60,16 +60,16 @@ func addParameterGroup(s *app.Session, args json.RawMessage) (json.RawMessage, e
 	if err := decode(args, &in); err != nil {
 		return nil, err
 	}
-	part, err := modelaccess.ActivePart(s)
+	holder, err := modelaccess.ActiveParameterHolder(s)
 	if err != nil {
 		return nil, err
 	}
-	g, err := part.Parameters().AddGroup(in.InternalName, in.DisplayName, in.ClientID)
+	g, err := holder.Parameters().AddGroup(in.InternalName, in.DisplayName, in.ClientID)
 	if err != nil {
 		return nil, err
 	}
-	s.RecordAddInEdit(part, "Add Parameter Group")
-	return json.Marshal(parameterGroupInfo(part, g))
+	s.RecordActiveEdit("Add Parameter Group")
+	return json.Marshal(parameterGroupInfo(holder, g))
 }
 
 // deleteParameterGroup removes a group; the deleteParameters flag opts into
@@ -80,17 +80,17 @@ func deleteParameterGroup(s *app.Session, args json.RawMessage) (json.RawMessage
 	if err := decode(args, &in); err != nil {
 		return nil, err
 	}
-	part, _, err := groupByKey(s, "parameters.groups.delete", in.InternalName)
+	holder, _, err := groupByKey(s, "parameters.groups.delete", in.InternalName)
 	if err != nil {
 		return nil, err
 	}
-	if err := part.Parameters().DeleteGroup(in.InternalName, in.DeleteParameters); err != nil {
+	if err := holder.Parameters().DeleteGroup(in.InternalName, in.DeleteParameters); err != nil {
 		return nil, err
 	}
 	if in.DeleteParameters {
-		part.RecomputeAfterParameterEdit()
+		holder.RecomputeAfterParameterEdit()
 	}
-	s.RecordAddInEdit(part, "Delete Parameter Group")
+	s.RecordActiveEdit("Delete Parameter Group")
 	return json.Marshal(struct{}{})
 }
 
@@ -100,7 +100,7 @@ func setParameterGroupDisplayName(s *app.Session, args json.RawMessage) (json.Ra
 	if err := decode(args, &in); err != nil {
 		return nil, err
 	}
-	part, g, err := groupByKey(s, "parameters.groups.setDisplayName", in.InternalName)
+	holder, g, err := groupByKey(s, "parameters.groups.setDisplayName", in.InternalName)
 	if err != nil {
 		return nil, err
 	}
@@ -108,8 +108,8 @@ func setParameterGroupDisplayName(s *app.Session, args json.RawMessage) (json.Ra
 		return nil, fmt.Errorf("parameters.groups.setDisplayName: display name for %q must not be empty", in.InternalName)
 	}
 	g.DisplayName = in.DisplayName
-	s.RecordAddInEdit(part, "Rename Parameter Group")
-	return json.Marshal(parameterGroupInfo(part, g))
+	s.RecordActiveEdit("Rename Parameter Group")
+	return json.Marshal(parameterGroupInfo(holder, g))
 }
 
 // addParameterGroupMember / removeParameterGroupMember manage one membership.
@@ -128,17 +128,17 @@ func editParameterGroupMember(s *app.Session, method string, args json.RawMessag
 	if err := decode(args, &in); err != nil {
 		return nil, err
 	}
-	part, g, err := groupByKey(s, method, in.InternalName)
+	holder, g, err := groupByKey(s, method, in.InternalName)
 	if err != nil {
 		return nil, err
 	}
-	p, ok := part.Parameters().ByName(in.Parameter)
+	p, ok := holder.Parameters().ByName(in.Parameter)
 	if !ok {
 		return nil, fmt.Errorf("%s: no parameter named %q", method, in.Parameter)
 	}
-	if err := edit(part.Parameters(), p.ID(), in.InternalName); err != nil {
+	if err := edit(holder.Parameters(), p.ID(), in.InternalName); err != nil {
 		return nil, err
 	}
-	s.RecordAddInEdit(part, "Edit Parameter Group")
-	return json.Marshal(parameterGroupInfo(part, g))
+	s.RecordActiveEdit("Edit Parameter Group")
+	return json.Marshal(parameterGroupInfo(holder, g))
 }

@@ -40,17 +40,17 @@ type ParameterRow struct {
 	Health     string // reason when not healthy
 }
 
-// ParameterRows returns the active part's parameters split into the Model and User tables
-// (Inventor's two lists), each filtered by the search query (matched across name, equation,
-// and comment). With no active part both slices are empty.
+// ParameterRows returns the active part's or assembly's parameters split into the Model and
+// User tables (Inventor's two lists), each filtered by the search query (matched across name,
+// equation, and comment). With no parameter-holding active document both slices are empty.
 func (s *Session) ParameterRows(filter string) (model, user []ParameterRow) {
-	part, err := activePart(s)
+	holder, err := s.activeParameterHolder()
 	if err != nil {
 		return nil, nil
 	}
 	q := strings.ToLower(strings.TrimSpace(filter))
-	for _, p := range part.Parameters().All() {
-		row := s.parameterRow(part.Parameters(), p)
+	for _, p := range holder.Parameters().All() {
+		row := s.parameterRow(holder.Parameters(), p)
 		if !matchParameter(row, q) {
 			continue
 		}

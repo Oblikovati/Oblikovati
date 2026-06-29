@@ -22,6 +22,9 @@ import "oblikovati.org/model/param"
 //	h, ok := d.Content().(compdef.ParameterHolder) // true for a part OR an assembly
 type ParameterHolder interface {
 	Parameters() *param.Parameters
+	// Units are the holder's display units — a parameter value is formatted in them, so the
+	// wire/UI parameter surface needs them alongside the table.
+	Units() param.UnitsOfMeasure
 	Recompute()
 	RecomputeAfterParameterEdit()
 }

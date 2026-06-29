@@ -17,15 +17,15 @@ import (
 
 // The member-level parameter surface (M02-F08, Oblikovati#607): detail reads,
 // presentation/tolerance/value-list mutations, dependency queries and delete.
-// Mutations finalize through Session.RecordAddInEdit so they are undoable, and
+// Mutations finalize through Session.RecordActiveEdit so they are undoable, and
 // the router broadcasts them as edit.committed (mutatingMethods).
 
 // paramDetail marshals the full member-level view of one parameter.
-func paramDetail(part *compdef.PartComponentDefinition, p *param.Parameter) wire.ParameterDetail {
-	ps := part.Parameters()
+func paramDetail(holder compdef.ParameterHolder, p *param.Parameter) wire.ParameterDetail {
+	ps := holder.Parameters()
 	d := wire.ParameterDetail{
-		ParameterInfo: paramInfo(part, p),
-		Units:         paramUnitName(part, p),
+		ParameterInfo: paramInfo(holder, p),
+		Units:         paramUnitName(holder, p),
 		Comment:       p.Comment, IsKey: p.IsKey, Visible: p.Visible,
 		InUse: ps.InUse(p.ID()), Precision: p.Precision,
 		DisplayFormat: p.DisplayFormat.String(), ExposedAsProperty: p.ExposedAsProperty,
@@ -51,8 +51,8 @@ func paramDetail(part *compdef.PartComponentDefinition, p *param.Parameter) wire
 // paramUnitName names the parameter's unit for the wire: the document's display
 // unit for dimensioned categories, the category name (text/boolean/unitless)
 // otherwise.
-func paramUnitName(part *compdef.PartComponentDefinition, p *param.Parameter) string {
-	if name := part.Units().PreferredName(p.Unit()); name != "" {
+func paramUnitName(holder compdef.ParameterHolder, p *param.Parameter) string {
+	if name := holder.Units().PreferredName(p.Unit()); name != "" {
 		return name
 	}
 	return p.Unit().String()
@@ -78,18 +78,18 @@ func paramNames(ps *param.Parameters, ids []param.ID) []string {
 	return names
 }
 
-// paramByName resolves one parameter on the active part, naming the method in
+// paramByName resolves one parameter on the active part or assembly, naming the method in
 // the not-found error.
-func paramByName(s *app.Session, method, name string) (*compdef.PartComponentDefinition, *param.Parameter, error) {
-	part, err := modelaccess.ActivePart(s)
+func paramByName(s *app.Session, method, name string) (compdef.ParameterHolder, *param.Parameter, error) {
+	holder, err := modelaccess.ActiveParameterHolder(s)
 	if err != nil {
 		return nil, nil, err
 	}
-	p, ok := part.Parameters().ByName(name)
+	p, ok := holder.Parameters().ByName(name)
 	if !ok {
 		return nil, nil, fmt.Errorf("%s: no parameter named %q", method, name)
 	}
-	return part, p, nil
+	return holder, p, nil
 }
 
 // getParameterDetail returns the member-level view of one parameter.
@@ -98,11 +98,11 @@ func getParameterDetail(s *app.Session, args json.RawMessage) (json.RawMessage, 
 	if err := decode(args, &in); err != nil {
 		return nil, err
 	}
-	part, p, err := paramByName(s, "parameters.getDetail", in.Name)
+	holder, p, err := paramByName(s, "parameters.getDetail", in.Name)
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(paramDetail(part, p))
+	return json.Marshal(paramDetail(holder, p))
 }
 
 // updateParameter applies the non-nil presentation/exposure mutations, records
@@ -112,7 +112,7 @@ func updateParameter(s *app.Session, args json.RawMessage) (json.RawMessage, err
 	if err := decode(args, &in); err != nil {
 		return nil, err
 	}
-	part, p, err := paramByName(s, "parameters.update", in.Name)
+	holder, p, err := paramByName(s, "parameters.update", in.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -121,10 +121,10 @@ func updateParameter(s *app.Session, args json.RawMessage) (json.RawMessage, err
 	}
 	// A model-value selection change moves the value features consume.
 	if in.ModelValueType != nil {
-		part.RecomputeAfterParameterEdit()
+		holder.RecomputeAfterParameterEdit()
 	}
-	s.RecordAddInEdit(part, "Edit Parameter")
-	return json.Marshal(paramDetail(part, p))
+	s.RecordActiveEdit("Edit Parameter")
+	return json.Marshal(paramDetail(holder, p))
 }
 
 // applyParameterUpdate copies the non-nil update fields onto the parameter.
@@ -189,20 +189,20 @@ func setParameterTolerance(s *app.Session, args json.RawMessage) (json.RawMessag
 	if err := decode(args, &in); err != nil {
 		return nil, err
 	}
-	part, p, err := paramByName(s, "parameters.setTolerance", in.Name)
+	holder, p, err := paramByName(s, "parameters.setTolerance", in.Name)
 	if err != nil {
 		return nil, err
 	}
-	if err := applyToleranceMode(part, p, in); err != nil {
+	if err := applyToleranceMode(holder, p, in); err != nil {
 		return nil, err
 	}
-	part.RecomputeAfterParameterEdit()
-	s.RecordAddInEdit(part, "Edit Tolerance")
-	return json.Marshal(paramDetail(part, p))
+	holder.RecomputeAfterParameterEdit()
+	s.RecordActiveEdit("Edit Tolerance")
+	return json.Marshal(paramDetail(holder, p))
 }
 
 // applyToleranceMode dispatches one wire tolerance mode onto the model setters.
-func applyToleranceMode(part *compdef.PartComponentDefinition, p *param.Parameter, in wire.ParameterToleranceArgs) error {
+func applyToleranceMode(holder compdef.ParameterHolder, p *param.Parameter, in wire.ParameterToleranceArgs) error {
 	switch in.Mode {
 	case "default":
 		return p.SetToleranceDefault()
@@ -211,25 +211,25 @@ func applyToleranceMode(part *compdef.PartComponentDefinition, p *param.Paramete
 	case "max":
 		return p.SetToleranceMinMax(types.ToleranceMax)
 	case "symmetric":
-		band, err := toleranceOperand(part, p, in.Upper, "upper")
+		band, err := toleranceOperand(holder, p, in.Upper, "upper")
 		if err != nil {
 			return err
 		}
 		return p.SetToleranceSymmetric(band)
 	case "deviation", "limits":
-		return applyToleranceBand(part, p, in)
+		return applyToleranceBand(holder, p, in)
 	default:
 		return fmt.Errorf("parameters.setTolerance: unknown mode %q (want default|deviation|symmetric|limits|min|max)", in.Mode)
 	}
 }
 
 // applyToleranceBand parses both operands and applies a deviation or limits band.
-func applyToleranceBand(part *compdef.PartComponentDefinition, p *param.Parameter, in wire.ParameterToleranceArgs) error {
-	upper, err := toleranceOperand(part, p, in.Upper, "upper")
+func applyToleranceBand(holder compdef.ParameterHolder, p *param.Parameter, in wire.ParameterToleranceArgs) error {
+	upper, err := toleranceOperand(holder, p, in.Upper, "upper")
 	if err != nil {
 		return err
 	}
-	lower, err := toleranceOperand(part, p, in.Lower, "lower")
+	lower, err := toleranceOperand(holder, p, in.Lower, "lower")
 	if err != nil {
 		return err
 	}
@@ -241,11 +241,11 @@ func applyToleranceBand(part *compdef.PartComponentDefinition, p *param.Paramete
 
 // toleranceOperand parses one unit-bearing tolerance expression in the
 // parameter's unit category, returning the database-unit value.
-func toleranceOperand(part *compdef.PartComponentDefinition, p *param.Parameter, expr, field string) (float64, error) {
+func toleranceOperand(holder compdef.ParameterHolder, p *param.Parameter, expr, field string) (float64, error) {
 	if expr == "" {
 		return 0, fmt.Errorf("parameters.setTolerance: %s value is required for this mode", field)
 	}
-	q, err := resolveQuantity(part, expr, p.Unit())
+	q, err := resolveQuantity(holder, expr, p.Unit())
 	if err != nil {
 		return 0, fmt.Errorf("parameters.setTolerance: %s %q: %w", field, expr, err)
 	}
@@ -259,7 +259,7 @@ func setParameterExpressionList(s *app.Session, args json.RawMessage) (json.RawM
 	if err := decode(args, &in); err != nil {
 		return nil, err
 	}
-	part, p, err := paramByName(s, "parameters.setExpressionList", in.Name)
+	holder, p, err := paramByName(s, "parameters.setExpressionList", in.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -268,8 +268,8 @@ func setParameterExpressionList(s *app.Session, args json.RawMessage) (json.RawM
 	} else if err := replaceExpressionList(p, in); err != nil {
 		return nil, err
 	}
-	s.RecordAddInEdit(part, "Edit Value List")
-	return json.Marshal(paramDetail(part, p))
+	s.RecordActiveEdit("Edit Value List")
+	return json.Marshal(paramDetail(holder, p))
 }
 
 // replaceExpressionList sets the choices and the ordering flag.
@@ -290,11 +290,11 @@ func deleteParameter(s *app.Session, args json.RawMessage) (json.RawMessage, err
 	if err := decode(args, &in); err != nil {
 		return nil, err
 	}
-	part, p, err := paramByName(s, "parameters.delete", in.Name)
+	holder, p, err := paramByName(s, "parameters.delete", in.Name)
 	if err != nil {
 		return nil, err
 	}
-	ps := part.Parameters()
+	ps := holder.Parameters()
 	if ps.InUse(p.ID()) {
 		return nil, fmt.Errorf("parameters.delete: %q is in use by [%s]; remove those references first",
 			in.Name, strings.Join(deleteBlockers(ps, p), ", "))
@@ -302,8 +302,8 @@ func deleteParameter(s *app.Session, args json.RawMessage) (json.RawMessage, err
 	if err := ps.Delete(p.ID()); err != nil {
 		return nil, err
 	}
-	part.RecomputeAfterParameterEdit()
-	s.RecordAddInEdit(part, "Delete Parameter")
+	holder.RecomputeAfterParameterEdit()
+	s.RecordActiveEdit("Delete Parameter")
 	return json.Marshal(struct{}{})
 }
 
@@ -331,10 +331,10 @@ func parameterNeighbors(s *app.Session, method string, args json.RawMessage, sid
 	if err := decode(args, &in); err != nil {
 		return nil, err
 	}
-	part, p, err := paramByName(s, method, in.Name)
+	holder, p, err := paramByName(s, method, in.Name)
 	if err != nil {
 		return nil, err
 	}
-	ps := part.Parameters()
+	ps := holder.Parameters()
 	return json.Marshal(wire.ParameterNamesResult{Names: paramNames(ps, side(ps, p.ID()))})
 }
