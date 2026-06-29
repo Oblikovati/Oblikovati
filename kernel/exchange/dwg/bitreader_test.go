@@ -197,6 +197,10 @@ func TestReadMC(t *testing.T) {
 		{"neg-five", []byte{0x45}, -5},
 		{"sixtyfour", []byte{0xC0, 0x00}, 64},
 		{"neg-sixtyfour", []byte{0xC0, 0x40}, -64},
+		// #1549: an object-map location delta from a 70 MB file whose 4th 7-bit
+		// group sets 0x40, forcing a 5th group to carry the (positive) sign. The
+		// old 4-byte cap rejected this as "exceeded 4 bytes".
+		{"five-bytes", []byte{0x86, 0x89, 0xb0, 0xde, 0x00}, 197919878},
 	}
 	for _, c := range cases {
 		var w bitWriter
