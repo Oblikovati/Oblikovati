@@ -63,6 +63,32 @@ func TestPlanar(t *testing.T) {
 	}
 }
 
+// TestPlanarTolueratesOutliers is the #1549 regression: a flat survey map carrying a few
+// off-sheet/misdecoded entities (here 18 coplanar at Z=2, 2 strays at ±1e7) must still be
+// classified planar at the bulk elevation, not flipped onto the 3D path by the outliers.
+func TestPlanarTolueratesOutliers(t *testing.T) {
+	ents := make([]Entity, 0, 20)
+	for i := 0; i < 18; i++ {
+		ents = append(ents, &Line{Start: [3]float64{0, 0, 2}, End: [3]float64{1, 1, 2}})
+	}
+	ents = append(ents, &Point{Position: [3]float64{0, 0, 1e7}}, &Point{Position: [3]float64{0, 0, -1e7}})
+	d := &Drawing{Entities: ents}
+	if z, ok := d.Planar(1e-6); !ok || z != 2 {
+		t.Errorf("mostly-flat drawing with outliers: Planar = (%g, %v), want (2, true)", z, ok)
+	}
+
+	// A genuinely 3D drawing (Z varies across most entities) stays non-planar.
+	d3 := &Drawing{Entities: []Entity{
+		&Point{Position: [3]float64{0, 0, 0}},
+		&Point{Position: [3]float64{0, 0, 10}},
+		&Point{Position: [3]float64{0, 0, 20}},
+		&Point{Position: [3]float64{0, 0, 30}},
+	}}
+	if _, ok := d3.Planar(1e-6); ok {
+		t.Error("genuinely 3D drawing classified planar")
+	}
+}
+
 // TestMetersPerUnit covers a known code, unitless, and an unsupported code.
 func TestMetersPerUnit(t *testing.T) {
 	if m, ok := MetersPerUnit(INSMillimetres); !ok || m != 0.001 {

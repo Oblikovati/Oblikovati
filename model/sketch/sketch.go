@@ -159,6 +159,7 @@ type Sketch struct {
 	pts       []*Point              // every constrainable point (endpoints, centers, standalone) — the solver's variables
 	refPts    []*Point              // fixed reference points (projected anchors): constrainable but not solved
 	cloudPts  []*cloudAnchoredPoint // sketch points anchored on scan points (datum-cloud provenance, #645)
+	ptArena   pointArena            // block allocator backing newPoint (one alloc per block, not per vertex)
 
 	lines         *Lines
 	arcs          *Arcs
@@ -386,8 +387,36 @@ func (s *Sketch) dropFromCollection(e Entity) {
 // newPoint creates a constrainable point at pos and registers it as a solver
 // variable. Curve factories use it for endpoints/centers (not added to Entities).
 func (s *Sketch) newPoint(pos math.Point2) *Point {
-	p := &Point{id: nextID(), X: pos.X, Y: pos.Y}
+	p := s.ptArena.alloc()
+	p.id, p.X, p.Y = nextID(), pos.X, pos.Y
 	s.pts = append(s.pts, p)
+	return p
+}
+
+// pointArenaBlock is how many Points one arena block holds. Large enough that a dense imported
+// polyline (thousands of vertices) costs a handful of allocations, small enough that a sketch
+// with a few points wastes little: 1024 * sizeof(Point) ≈ 24 KB per block.
+const pointArenaBlock = 1024
+
+// pointArena hands out stable *Point from fixed-size blocks, so bulk authoring — importing a
+// drawing's tens of thousands of polyline vertices (#1549) — allocates one block per
+// pointArenaBlock points instead of one heap object per point, cutting the import's allocation
+// count and steady-state GC scan cost. Blocks are never reallocated, so every handed-out
+// pointer stays valid; points removed from a sketch simply leave a stale slot (rare, and freed
+// with the whole sketch). Identity is still by pointer, since each &block[i] is unique.
+type pointArena struct {
+	blocks [][]Point
+	used   int // points taken from the current (last) block
+}
+
+// alloc returns a pointer to the next free, zeroed Point, starting a fresh block when full.
+func (a *pointArena) alloc() *Point {
+	if len(a.blocks) == 0 || a.used == pointArenaBlock {
+		a.blocks = append(a.blocks, make([]Point, pointArenaBlock))
+		a.used = 0
+	}
+	p := &a.blocks[len(a.blocks)-1][a.used]
+	a.used++
 	return p
 }
 

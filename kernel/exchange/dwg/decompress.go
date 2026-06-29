@@ -28,21 +28,36 @@ func decompressR2004(src []byte, maxOut int) ([]byte, error) {
 	if maxOut < 0 {
 		return nil, fmt.Errorf("dwg lz77: negative output ceiling %d", maxOut)
 	}
-	d := &lz77{src: src, dst: make([]byte, maxOut)}
+	dst := make([]byte, maxOut)
+	n, err := decompressR2004Into(dst, src)
+	if err != nil {
+		return nil, err
+	}
+	return dst[:n], nil
+}
+
+// decompressR2004Into expands src into dst and returns the number of bytes written. len(dst)
+// is the output ceiling (the same role maxOut plays in decompressR2004). It lets a caller that
+// decompresses many pages — assembleSection walks every data page of a section — reuse one
+// scratch buffer instead of allocating a fresh maxDecomp-byte window per page, which on a large
+// drawing (piracicaba.dwg, #1549: hundreds of MB of transient page buffers) is the bulk of
+// decode's allocation and GC pressure.
+func decompressR2004Into(dst, src []byte) (int, error) {
+	d := &lz77{src: src, dst: dst}
 	opcode := d.next()
 	if opcode&0xF0 == 0 { // leading literal run
 		d.appendLiterals(d.literalLength(opcode))
 		opcode = d.next()
 	}
-	for d.err == nil && !d.eof && d.out < maxOut && opcode != 0x11 {
+	for d.err == nil && !d.eof && d.out < len(dst) && opcode != 0x11 {
 		compBytes, compOffset, post := d.decodeOpcode(opcode)
 		d.copyBackref(compBytes, compOffset)
 		opcode = d.trailingLiterals(post)
 	}
 	if d.err != nil {
-		return nil, d.err
+		return 0, d.err
 	}
-	return d.dst[:d.out], nil
+	return d.out, nil
 }
 
 // lz77 holds the decompression cursors: the input (src/pos) and the output buffer
