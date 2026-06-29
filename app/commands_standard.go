@@ -97,16 +97,16 @@ func getStartedCommands() []*CommandDefinition {
 }
 
 // manageTabCommands are the Manage tab: the Parameters panel (Inventor's Manage ▸
-// Parameters, needs an active part) and the Scripts panel (the Script Console — our
-// equivalent of Manage ▸ iLogic, ADR-0028).
+// Parameters, shown for a part OR an assembly — both hold parameters) and the Scripts panel
+// (the Script Console — our equivalent of Manage ▸ iLogic, ADR-0028).
 func manageTabCommands() []*CommandDefinition {
 	return []*CommandDefinition{
 		NewCommand("Manage.Parameters", "Parameters", "Parameters", func(s *Session) error {
 			s.OpenParameters()
 			return nil
-		}).WithTab("Manage").WithEnable(hasActivePart).
+		}).WithTab("Manage").WithRibbons(PartRibbon, AssemblyRibbon).WithEnable(hasActiveParameterHolder).
 			WithIcon("parameters").WithButtonStyle(LargeIconButton).
-			WithTooltip("Parameters — add, edit, and organize the model and user parameters that drive the part."),
+			WithTooltip("Parameters — add, edit, and organize the model and user parameters that drive the part or assembly."),
 		scriptConsoleCommand(),
 		deriveAssemblyCommand(),
 		shrinkwrapCommand(),
@@ -144,6 +144,13 @@ func canDeriveAssembly(s *Session) bool {
 // needs one to read and edit).
 func hasActivePart(s *Session) bool {
 	_, err := activePart(s)
+	return err == nil
+}
+
+// hasActiveParameterHolder reports whether the active document holds parameters — a part OR an
+// assembly. The Parameters command uses it so the dialog opens for either (M39-F04, #1560).
+func hasActiveParameterHolder(s *Session) bool {
+	_, err := s.activeParameterHolder()
 	return err == nil
 }
 

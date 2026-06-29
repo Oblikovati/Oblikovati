@@ -51,6 +51,7 @@ func drawParametersBody(s *app.Session) {
 	drawParameterSection(s, "Model Parameters", "##model-params", model)
 	drawParameterSection(s, "User Parameters", "##user-params", user)
 	drawAddParameterRow(s)
+	drawDerivedTablesSection(s) // linked parameters from other documents (M39-F04, #1560)
 	native.Separator()
 	if native.Button("Done") {
 		s.CloseParameters()
@@ -65,6 +66,7 @@ func drawParametersEditors(s *app.Session) {
 	drawValueListEditor(s)
 	drawToleranceEditor(s)
 	drawAddToGroupDialog(s)
+	drawLinkParametersDialog(s) // the Link… source-document picker (M39-F04, #1560)
 }
 
 // drawParameterSection draws one labeled table (Model or User), or a placeholder line when
