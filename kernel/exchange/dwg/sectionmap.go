@@ -127,12 +127,19 @@ func decryptDataPageHeader(data []byte, offset int64) (dataPageHeader, error) {
 // exactly desc.size bytes.
 func assembleSection(data []byte, pageMap map[int32]pageEntry, desc sectionDescriptor) ([]byte, error) {
 	out := make([]byte, desc.size)
+	// One reusable decompression window for the whole section. Each page is expanded into it
+	// and copied straight into out before the next page overwrites it, so a single allocation
+	// replaces one maxDecomp-byte buffer per page (#1549: the dominant decode allocation).
+	var scratch []byte
+	if desc.compressed {
+		scratch = make([]byte, desc.maxDecomp)
+	}
 	for _, ref := range desc.pages {
 		page, ok := pageMap[ref.number]
 		if !ok {
 			return nil, fmt.Errorf("dwg: section %q references missing page %d", desc.name, ref.number)
 		}
-		body, err := readDataPage(data, page.offset, desc.compressed, desc.maxDecomp)
+		body, err := readDataPage(data, page.offset, desc.compressed, scratch)
 		if err != nil {
 			return nil, fmt.Errorf("dwg: section %q page %d: %w", desc.name, ref.number, err)
 		}
@@ -147,10 +154,12 @@ func assembleSection(data []byte, pageMap map[int32]pageEntry, desc sectionDescr
 	return out, nil
 }
 
-// readDataPage decrypts a data page's header at offset and returns its body. When
-// the section is compressed the page is expanded into a maxDecomp-byte window
-// (the result may include tail padding that assembleSection clips).
-func readDataPage(data []byte, offset int64, compressed bool, maxDecomp int) ([]byte, error) {
+// readDataPage decrypts a data page's header at offset and returns its body. When the section
+// is compressed the page is expanded into scratch (whose length is the maxDecomp window) and a
+// scratch sub-slice is returned — the caller must copy it out before the next call reuses
+// scratch. The returned window may include tail padding that assembleSection clips. An
+// uncompressed page returns a sub-slice of data directly (scratch is unused).
+func readDataPage(data []byte, offset int64, compressed bool, scratch []byte) ([]byte, error) {
 	hdr, err := decryptDataPageHeader(data, offset)
 	if err != nil {
 		return nil, err
@@ -164,7 +173,11 @@ func readDataPage(data []byte, offset int64, compressed bool, maxDecomp int) ([]
 	}
 	body := data[bodyStart : bodyStart+int64(hdr.compSize)]
 	if compressed {
-		return decompressR2004(body, maxDecomp)
+		n, derr := decompressR2004Into(scratch, body)
+		if derr != nil {
+			return nil, derr
+		}
+		return scratch[:n], nil
 	}
 	return body, nil
 }
