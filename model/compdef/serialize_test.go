@@ -57,7 +57,10 @@ func reopenThroughStore(t *testing.T, d *doc.Document) *compdef.PartComponentDef
 }
 
 // TestSketch3DSurvivesRoundTrip checks a part's 3D sketches (points, properties, and a
-// geometric constraint) survive the real save→YAML→open path (M22-F01).
+// geometric constraint) survive the real save→YAML→open path (M22-F01). Reopening recomputes
+// the part, which now re-solves 3D sketches (Oblikovati#1566), so the round-tripped coincident
+// constraint is enforced — the two points, authored apart, coincide after reopen. That proves
+// the constraint survives BOTH as data (count) and functionally (it moves geometry on solve).
 func TestSketch3DSurvivesRoundTrip(t *testing.T) {
 	ws := doc.NewWorkspace(nil)
 	d, err := compdef.AddPart(ws, "Part1", true)
@@ -84,11 +87,13 @@ func TestSketch3DSurvivesRoundTrip(t *testing.T) {
 	if got.EntityCount() != 2 {
 		t.Errorf("3D sketch entity count after reopen = %d, want 2", got.EntityCount())
 	}
-	if pts := got.AllPoints3D(); pts[0].Position() != math.P3(1, 2, 3) || pts[1].Position() != math.P3(4, 5, 6) {
-		t.Errorf("3D point positions after reopen = %v", pts)
-	}
 	if got.GeometricConstraints3D().Count() != 1 {
 		t.Errorf("3D constraint count after reopen = %d, want 1", got.GeometricConstraints3D().Count())
+	}
+	// The coincident constraint round-tripped and is enforced on recompute: the two points
+	// (authored apart) now share a location.
+	if pts := got.AllPoints3D(); !pts[0].Position().IsEqualTo(pts[1].Position(), 1e-6) {
+		t.Errorf("3D points after reopen = %v / %v, want coincident (constraint enforced on solve)", pts[0].Position(), pts[1].Position())
 	}
 }
 
