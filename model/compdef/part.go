@@ -112,6 +112,7 @@ func NewPartComponentDefinition() *PartComponentDefinition {
 	d.features.SetWorkingScaleResolver(func() float64 { return d.units.WorkingScale() }) // re-import scales into the doc working unit
 	d.sketches.ShareParameters(params)                                                   // dimension expressions resolve against user params (live + restore)
 	d.sketches3D.ShareParameters(params)                                                 // same for 3D sketches
+	d.work.SetFootprintTracker(params)                                                   // each work plane records its offset parameter, so an offset edit targets its hosted sketch (ADR-0044)
 	return d
 }
 
@@ -191,10 +192,12 @@ func (d *PartComponentDefinition) recomputeGeometry() {
 // recordWholesaleParams stores (total reads − precisely-targetable reads) as the set a
 // change must rebuild the whole program for. The precise set is every sketch's footprint
 // (its own solve plus, for a work-plane-hosted sketch, the plane's offset footprint) plus
-// every feature's direct reads — exactly what MarkDirtyForChange can attribute to a
-// feature. Anything else a recompute read (a 3D-sketch dimension, a host-plane closure not
-// yet attributed) is conservatively wholesale, so no path is ever silently skipped
-// (Oblikovati#1414, ADR-0044).
+// every feature's direct reads — exactly what MarkDirtyForChange can attribute to a feature.
+// Any other read during recompute is conservatively wholesale, so no path is ever silently
+// skipped (Oblikovati#1414, ADR-0044). (3D-sketch dimensions are not in `total` today: 3D
+// sketches are not re-solved during recompute — see solveSketches, 2D only — so their
+// parameters are never read here. When 3D re-solving lands, its reads fall safely into the
+// wholesale set until attributed to consuming features.)
 func (d *PartComponentDefinition) recordWholesaleParams(total []depend.Key) {
 	precise := map[depend.Key]bool{}
 	for i := 0; i < d.sketches.Count(); i++ {
@@ -224,10 +227,11 @@ func (d *PartComponentDefinition) recordWholesaleParams(total []depend.Key) {
 //
 // It invalidates only the affected tail (Oblikovati#1414): the changed keys (and their transitive
 // dependents) come from the parameter graph; if any reaches geometry through a path the engine
-// cannot attribute to a feature (a 3D-sketch dimension — the wholesale set captured last recompute)
-// it falls back to a full rebuild, otherwise it dirties only the features whose consumed-sketch
-// footprint or direct reads the change touched. Editing one fillet's driving parameter on a
-// 1000-feature part then rebuilds that fillet's tail, not all 1000.
+// cannot attribute to a feature (the wholesale set captured last recompute) it falls back to a full
+// rebuild, otherwise it dirties only the features whose consumed-sketch footprint or direct reads
+// the change touched. A work-plane offset is attributed through the hosted sketch's footprint, so
+// editing one fillet's (or one offset's) driving parameter on a 1000-feature part rebuilds that
+// feature's tail, not all 1000.
 func (d *PartComponentDefinition) RecomputeAfterChange() {
 	changed := d.params.DrainChangedKeys()
 	if d.changeNeedsFullRebuild(changed) {

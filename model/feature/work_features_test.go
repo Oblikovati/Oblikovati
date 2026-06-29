@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/math"
+	"oblikovati.org/model/depend"
 	"oblikovati.org/model/param"
 	"oblikovati.org/model/sketch"
 )
@@ -37,6 +38,32 @@ func TestOriginCoordinateFrame(t *testing.T) {
 	x, err := g.axis(OriginXAxis)
 	if err != nil || !x.Direction().AsVector().IsEqualTo(math.V3(1, 0, 0), wtol) {
 		t.Errorf("origin X axis dir = %v err=%v, want +X", x.Direction(), err)
+	}
+}
+
+// With a footprint tracker injected, recomputing an offset work plane must record the
+// parameter its offset closure read, so a sketch hosted on the plane can attribute an offset
+// edit to its features instead of forcing a wholesale rebuild (ADR-0044). A plane with no
+// tracker (or a grounded origin plane) records nothing.
+func TestOffsetWorkPlaneRecordsParameterFootprint(t *testing.T) {
+	ps := param.NewParameters()
+	off, _ := ps.AddUserParameter("gap", "5 cm")
+	g := NewWorkGeometry()
+	g.SetFootprintTracker(ps)
+	wp := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return off.ModelValue() })
+
+	g.Recompute(nil)
+
+	fp := wp.ParameterFootprint()
+	want := depend.Key{Kind: depend.ParameterKey, ID: uint64(off.ID())}
+	if len(fp) != 1 || fp[0] != want {
+		t.Errorf("offset plane footprint = %v, want one ParameterKey for gap", fp)
+	}
+	// The grounded origin planes read no parameter, so their footprints stay empty.
+	for _, origin := range g.OriginPlanes() {
+		if len(origin.ParameterFootprint()) != 0 {
+			t.Errorf("origin plane %q footprint = %v, want empty", origin.Name(), origin.ParameterFootprint())
+		}
 	}
 }
 
