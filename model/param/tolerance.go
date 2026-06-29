@@ -35,27 +35,15 @@ const (
 	DisplayFormatArchitectural = types.DisplayFormatArchitectural
 )
 
-// Tolerance is an engineering tolerance: a flavor plus the deviation band from
-// the nominal value (Upper, Lower, database units). The zero Tolerance means
-// "standard/default tolerance, no explicit band" — [Tolerance.Kind] maps the
-// zero Type onto [types.ToleranceDefault] so existing `t != Tolerance{}`
-// has-explicit-tolerance checks keep working. Which value within the band the
-// model consumes is the parameter's [Parameter.ModelValueType], per the
-// reference API's split between Tolerance.ToleranceType and
-// Parameter.ModelValueType (Oblikovati#607).
-type Tolerance struct {
-	Type  ToleranceType
-	Upper float64
-	Lower float64
-}
-
-// Kind returns the tolerance flavor, mapping the zero value to ToleranceDefault.
-func (t Tolerance) Kind() ToleranceType {
-	if t.Type == 0 {
-		return types.ToleranceDefault
-	}
-	return t.Type
-}
+// Tolerance is an engineering tolerance: a flavor plus the deviation band from the nominal
+// value (Upper, Lower, database units). The canonical definition and [Tolerance.Kind] (which
+// maps the zero Type onto [types.ToleranceDefault] so existing `t != Tolerance{}`
+// has-explicit-tolerance checks keep working) live in the Apache-2.0 contract
+// ([types.Tolerance]); this alias keeps param spellings working and lets the contract's
+// Parameter.Tolerance() return it directly (ADR-0018, M39-F06). Which value within the band the
+// model consumes is the parameter's [Parameter.ModelValueType], per the reference API's split
+// between Tolerance.ToleranceType and Parameter.ModelValueType (Oblikovati#607).
+type Tolerance = types.Tolerance
 
 // SetToleranceDefault reverts the parameter to the standard/default tolerance
 // (no explicit band; the model value follows the nominal).
