@@ -83,9 +83,31 @@ func (s *Session) AddDerivedParameterTable(sourceDocument string, linked []strin
 	if _, err := s.ActiveDocument().AddReference(sourceDocument); err != nil {
 		return nil, err
 	}
+	s.autoExportSourceParameters(sourceDocument, linked) // Add2 semantics: linking exports the source params
 	target.Recompute()
 	s.recordEdit(target, "Derive Parameters")
 	return t, nil
+}
+
+// autoExportSourceParameters marks each linked source parameter as exported on the source
+// document — the reference API's Add2 auto-export-on-link (M39-F05, #1561). A parameter need
+// not be pre-exported to be linked; linking exports it so the source advertises it. The flag
+// lives in the source document's recipe (a benign, reversible marker), so it is not recorded
+// as a separate undo step on the non-active source.
+func (s *Session) autoExportSourceParameters(sourceDocument string, linked []string) {
+	d, ok := s.workspace.ByName(sourceDocument)
+	if !ok {
+		return
+	}
+	holder, ok := d.Content().(compdef.ParameterHolder)
+	if !ok {
+		return
+	}
+	for _, name := range linked {
+		if p, found := holder.Parameters().ByName(name); found {
+			p.ExposedAsProperty = true
+		}
+	}
 }
 
 // SetDerivedTableLinked replaces a table's linked subset on the active part or
@@ -106,6 +128,7 @@ func (s *Session) SetDerivedTableLinked(id int, linked []string) error {
 	if err := target.Parameters().SetDerivedTableLinked(id, linked, source); err != nil {
 		return err
 	}
+	s.autoExportSourceParameters(t.SourceDocument(), linked) // Add2 semantics: linking exports the source params
 	target.RecomputeAfterParameterEdit()
 	s.recordEdit(target, "Edit Derived Parameters")
 	return nil

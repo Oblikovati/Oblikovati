@@ -130,3 +130,22 @@ func TestDerivedValueFollowsSourceOverWire(t *testing.T) {
 		t.Errorf("derived width after source edit = %q, want it at 6 cm", d.Value)
 	}
 }
+
+// TestDerivedTableInfoReferencesAndProvenance checks the wire info carries the per-derived
+// parameter references and the (false, for a user-created table) reference-component
+// provenance (M39-F05, #1561).
+func TestDerivedTableInfoReferencesAndProvenance(t *testing.T) {
+	r, s := derivedWireSession(t)
+	var info wire.DerivedParameterTableInfo
+	call(t, r, s, "parameters.derivedTables.add", `{"sourceDocument":"test.obk","linked":["width"]}`, &info)
+	if len(info.References) != 1 {
+		t.Fatalf("references = %+v, want one", info.References)
+	}
+	ref := info.References[0]
+	if ref.Parameter != "width" || ref.SourceDocument != "test.obk" || ref.SourceParameter != "width" {
+		t.Errorf("reference = %+v, want width linked to test.obk.width", ref)
+	}
+	if info.HasReferenceComponent || info.ReferenceComponent != "" {
+		t.Errorf("a user-created derived table is not component-owned: has=%v comp=%q", info.HasReferenceComponent, info.ReferenceComponent)
+	}
+}

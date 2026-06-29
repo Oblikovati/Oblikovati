@@ -205,3 +205,20 @@ func approx3(got, want float64) bool {
 	const eps = 1e-9
 	return got-want < eps && want-got < eps
 }
+
+// TestLinkAutoExportsSourceParameter checks the Add2 auto-export-on-link behavior (M39-F05,
+// #1561): linking a source parameter that was not exported marks it exported on the source
+// document, so the source advertises it.
+func TestLinkAutoExportsSourceParameter(t *testing.T) {
+	s, gears, _ := derivedSession(t)
+	src, ok := docPartOf(t, gears).Parameters().ByName("module")
+	if !ok || src.ExposedAsProperty {
+		t.Fatalf("precondition: source module should exist and start unexported (ok=%v)", ok)
+	}
+	if _, err := s.AddDerivedParameterTable(gears.FullDocumentName(), []string{"module"}); err != nil {
+		t.Fatalf("AddDerivedParameterTable: %v", err)
+	}
+	if !src.ExposedAsProperty {
+		t.Error("linking should auto-export the source parameter (Add2 semantics)")
+	}
+}

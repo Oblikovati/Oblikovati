@@ -21,7 +21,12 @@ import (
 func derivedTableInfo(s *app.Session, t *param.DerivedParameterTable) wire.DerivedParameterTableInfo {
 	info := wire.DerivedParameterTableInfo{
 		ID: t.ID(), SourceDocument: t.SourceDocument(), Linked: t.Linked(),
-		Health: t.Health().Reason,
+		Health:                t.Health().Reason,
+		References:            derivedReferences(t),
+		HasReferenceComponent: t.OwnedByFeature(),
+	}
+	if t.OwnedByFeature() {
+		info.ReferenceComponent = t.SourceDocument()
 	}
 	if source, ok := s.LinkableSourceParameters(t.SourceDocument()); ok {
 		for _, sv := range source {
@@ -31,6 +36,22 @@ func derivedTableInfo(s *app.Session, t *param.DerivedParameterTable) wire.Deriv
 		info.Health = "source document " + t.SourceDocument() + " is unavailable"
 	}
 	return info
+}
+
+// derivedReferences projects a table's produced derived parameters to their wire references —
+// each derived parameter paired with the source document and parameter it tracks (#1561).
+func derivedReferences(t *param.DerivedParameterTable) []wire.DerivedParameterReference {
+	refs := t.References()
+	if len(refs) == 0 {
+		return nil
+	}
+	out := make([]wire.DerivedParameterReference, len(refs))
+	for i, r := range refs {
+		out[i] = wire.DerivedParameterReference{
+			Parameter: r.DerivedName, SourceDocument: r.SourceDocument, SourceParameter: r.SourceName,
+		}
+	}
+	return out
 }
 
 // listDerivedTables returns the active part's or assembly's tables with live candidates.

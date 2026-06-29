@@ -152,3 +152,39 @@ func TestRestoreDerivedTableReconnectsByName(t *testing.T) {
 		t.Errorf("next table id = %d, want above the restored 7", next.ID())
 	}
 }
+
+// TestDerivedTableReferences checks each produced derived parameter reports its source
+// document and source-parameter name — the reference API's ReferencedEntity (M39-F05, #1561).
+func TestDerivedTableReferences(t *testing.T) {
+	ps := NewParameters()
+	table, err := ps.AddDerivedTable("gears.obk", []string{"module", "teeth"}, gearSource())
+	if err != nil {
+		t.Fatalf("AddDerivedTable: %v", err)
+	}
+	refs := table.References()
+	if len(refs) != 2 {
+		t.Fatalf("references = %d, want 2 (one per produced derived parameter)", len(refs))
+	}
+	for _, r := range refs {
+		if r.SourceDocument != "gears.obk" || r.DerivedName != r.SourceName {
+			t.Errorf("reference = %+v, want gears.obk with matching derived/source name", r)
+		}
+	}
+	if refs[0].DerivedName != "module" || refs[1].DerivedName != "teeth" {
+		t.Errorf("reference order = [%s,%s], want [module,teeth] (link order)", refs[0].DerivedName, refs[1].DerivedName)
+	}
+}
+
+// TestDerivedTableReferencesSkipUnproduced checks a linked-but-not-yet-produced name (one
+// restored awaiting a sync) yields no reference until its derived parameter exists.
+func TestDerivedTableReferencesSkipUnproduced(t *testing.T) {
+	ps := NewParameters()
+	// RestoreDerivedTable records a linked name without producing a parameter (no source yet).
+	if err := ps.RestoreDerivedTable(1, "gears.obk", []string{"module"}, false); err != nil {
+		t.Fatalf("RestoreDerivedTable: %v", err)
+	}
+	table, _ := ps.DerivedTableByID(1)
+	if got := table.References(); len(got) != 0 {
+		t.Errorf("references for an unproduced link = %+v, want none", got)
+	}
+}

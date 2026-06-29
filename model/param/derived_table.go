@@ -54,6 +54,33 @@ func (t *DerivedParameterTable) OwnedByFeature() bool { return t.ownedByFeature 
 // MarkOwnedByFeature hands the table to a derived component (M08-F04).
 func (t *DerivedParameterTable) MarkOwnedByFeature() { t.ownedByFeature = true }
 
+// DerivedReference is one derived parameter's link back to its source — the reference API's
+// DerivedParameter.ReferencedEntity (M39-F05, #1561): the source document and source-parameter
+// name it tracks, plus the local derived parameter's name. The link is by name (a derived
+// parameter carries its source parameter's name), so DerivedName and SourceName match today;
+// the pair is exposed explicitly so a consumer need not assume it.
+type DerivedReference struct {
+	DerivedName    string
+	SourceDocument string
+	SourceName     string
+}
+
+// References returns one entry per produced derived parameter, pairing it with the source
+// parameter it tracks. A name that is linked but not yet produced (awaiting the next sync) is
+// skipped — there is no derived parameter to reference yet.
+func (t *DerivedParameterTable) References() []DerivedReference {
+	out := make([]DerivedReference, 0, len(t.linked))
+	for _, name := range t.linked {
+		if _, produced := t.produced[name]; !produced {
+			continue
+		}
+		out = append(out, DerivedReference{
+			DerivedName: name, SourceDocument: t.sourceDocument, SourceName: name,
+		})
+	}
+	return out
+}
+
 // DerivedTables returns the tables in creation order.
 func (ps *Parameters) DerivedTables() []*DerivedParameterTable {
 	return append([]*DerivedParameterTable(nil), ps.derivedTables...)
