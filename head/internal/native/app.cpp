@@ -326,6 +326,34 @@ void obk_head_set_should_close(void* h, int v) {
     glfwSetWindowShouldClose(c->window, v);
 }
 
+// obk_head_wait_events_timeout sleeps the (main) thread until a window event arrives or
+// `seconds` elapse, processing any pending events before it returns. The loop uses it as the
+// short tick WHILE the UI is animating (a camera tween, an active drag, the few frames after
+// input) so transitions stay smooth without a CPU-bound 60 Hz spin.
+void obk_head_wait_events_timeout(double seconds) {
+    glfwWaitEventsTimeout(seconds);
+}
+
+// obk_head_wait_events blocks the (main) thread INDEFINITELY until a window event arrives or
+// obk_head_post_empty_event is posted, then processes pending events and returns. The loop
+// uses it when the UI is fully idle: with FIFO present the loop's only throttle is the
+// present, which on a software Vulkan rasterizer (a VM's llvmpipe — #1493) rasterizes every
+// frame on the CPU and pegs the cores even when nothing changed. Blocking here drops idle
+// CPU to ~0 until the user acts or a background producer wakes us. Headless/smoke runs
+// (bounded frame counts) must NOT call this, or the loop would hang waiting for an event.
+void obk_head_wait_events(void) {
+    glfwWaitEvents();
+}
+
+// obk_head_post_empty_event wakes a thread blocked in obk_head_wait_events from ANY goroutine
+// (glfwPostEmptyEvent is one of the few thread-safe GLFW calls). A background producer that
+// changes what should be on screen without an OS input event — an add-in submitting model
+// work, a finished update check — posts this so the idle loop renders the change promptly
+// instead of waiting for the user to move the mouse (#1493).
+void obk_head_post_empty_event(void) {
+    glfwPostEmptyEvent();
+}
+
 // obk_head_get_window_state reports the window's current position (virtual-screen
 // coordinates, so the value encodes which monitor it's on), size, and maximized flag, for
 // persisting the placement across sessions.

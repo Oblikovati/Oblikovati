@@ -73,6 +73,7 @@ func run(session *app.Session, maxFrames int) error {
 	gpu, vulkanVersion := win.GPUInfo()      // read once from the live renderer for telemetry
 	reportUsage(session, gpu, vulkanVersion) // anonymous installation telemetry, opt-out (#1182)
 
+	cooldown := animationCooldownFrames // paint a few frames at startup before idling
 	for frame := 0; ; frame++ {
 		if maxFrames > 0 && frame >= maxFrames {
 			break
@@ -80,9 +81,41 @@ func run(session *app.Session, maxFrames int) error {
 		if pumpFrame(win, session, addins, updates) {
 			break
 		}
+		if maxFrames > 0 {
+			continue // bounded smoke runs render flat-out; they must never block on events
+		}
+		cooldown = pace(win, session, cooldown)
 	}
 	return nil
 }
+
+// pace renders on demand (#1493): it sleeps the loop between frames instead of re-rasterizing
+// an unchanging scene at the FIFO present rate, which on a software Vulkan rasterizer (a VM's
+// llvmpipe) draws every frame on the CPU and pegs the cores even when nothing changed. While
+// the UI is animating — an active drag, a camera tween, or the cooldown burst after input — it
+// ticks at animationTickSeconds so transitions stay smooth; once idle it blocks until an OS
+// event or a posted wake (an add-in submitting work, a finished update check). It returns the
+// next cooldown: refilled while animation continues, reset to a fresh burst after each wake so
+// any animation an event triggers plays out, otherwise counted down toward the idle block.
+func pace(win *native.Window, session *app.Session, cooldown int) int {
+	if win.WantsAnimationFrame() || session.WantsContinuousRedraw() {
+		cooldown = animationCooldownFrames
+	}
+	if cooldown > 0 {
+		win.WaitEvents(animationTickSeconds)
+		return cooldown - 1
+	}
+	win.WaitEventsBlocking()       // idle: sleep at ~0% CPU until something happens
+	return animationCooldownFrames // woke from an event — burst a few frames so it can settle
+}
+
+// animationTickSeconds is the redraw cadence while the UI is animating; animationCooldownFrames
+// is how many frames to keep drawing after the last activity so input-triggered transitions
+// (a menu opening, a tooltip appearing) play out before the loop blocks again.
+const (
+	animationTickSeconds    = 1.0 / 60.0
+	animationCooldownFrames = 20
+)
 
 // pumpFrame renders one frame: chrome (+ executing a clicked command), draining add-in
 // calls, and the close prompt. It returns true when the loop should exit — the user closed

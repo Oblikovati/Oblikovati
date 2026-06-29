@@ -530,6 +530,12 @@ int  obk_ig_is_item_toggled_open(void)                 { return ImGui::IsItemTog
 void obk_ig_pop_id(void)                               { ImGui::PopID(); }
 int  obk_ig_is_item_deactivated_after_edit(void)       { return ImGui::IsItemDeactivatedAfterEdit() ? 1 : 0; }
 
+// any_mouse_down feeds the render-on-demand loop's "still animating" test (#1493): a held
+// mouse button means a drag is in progress, so the loop keeps drawing instead of sleeping.
+// (IsAnyItemActive is intentionally NOT exposed: the viewport's input-capturing
+// InvisibleButton reads as active every frame, which would defeat the idle block.)
+int  obk_ig_any_mouse_down(void)                       { return ImGui::IsAnyMouseDown() ? 1 : 0; }
+
 // want_capture_mouse reports whether ImGui consumed the pointer this frame, so the Go
 // loop knows when NOT to forward a click to the 3D viewport (picking).
 int  obk_ig_want_capture_mouse(void)         { return ImGui::GetIO().WantCaptureMouse ? 1 : 0; }
