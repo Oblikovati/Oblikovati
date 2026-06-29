@@ -169,6 +169,7 @@ func (d *PartComponentDefinition) recomputeGeometry() {
 	// dimension's target value, and only a solve moves the profile to match.
 	// Without this, features downstream rebuild on stale, pre-edit geometry.
 	d.solveSketches()
+	d.solveSketches3D()
 	// Two passes around the feature program: the first so features can reference work
 	// axes/planes (e.g. a revolve axis); the second so surface-tangent work planes can
 	// resolve their picked faces against the freshly built body. The first pass sees the
@@ -277,6 +278,18 @@ func (d *PartComponentDefinition) solveSketches() {
 	for i := 0; i < d.sketches.Count(); i++ {
 		sk := d.sketches.Item(i)
 		sk.SetParameterFootprint(d.params.TrackKeys(func() { sk.Solve() }))
+	}
+}
+
+// solveSketches3D re-solves every 3D sketch so parameter-driven 3D dimensions move the
+// geometry on recompute, mirroring solveSketches for 2D (Oblikovati#1566). The dimension
+// reads bubble into the part's whole-recompute footprint (see Recompute's Track); not being
+// attributable to a feature yet, they land in the wholesale set, so a 3D-dimension edit
+// conservatively rebuilds the whole program — correct (the geometry follows), with precise
+// feature attribution a follow-up that plugs into the same depend.Key seam (ADR-0044).
+func (d *PartComponentDefinition) solveSketches3D() {
+	for i := 0; i < d.sketches3D.Count(); i++ {
+		d.sketches3D.Item(i).Solve()
 	}
 }
 
