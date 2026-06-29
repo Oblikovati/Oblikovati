@@ -33,11 +33,11 @@ func parameterSettingsInfo(s *param.CollectionSettings) wire.ParameterSettingsIn
 
 // getParameterSettings returns the document's parameter settings.
 func getParameterSettings(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	holder, err := modelaccess.ActiveParameterHolder(s)
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(parameterSettingsInfo(part.Parameters().Settings()))
+	return json.Marshal(parameterSettingsInfo(holder.Parameters().Settings()))
 }
 
 // setParameterSettings applies the non-nil settings mutations, records one
@@ -47,15 +47,15 @@ func setParameterSettings(s *app.Session, args json.RawMessage) (json.RawMessage
 	if err := decode(args, &in); err != nil {
 		return nil, err
 	}
-	part, err := modelaccess.ActivePart(s)
+	holder, err := modelaccess.ActiveParameterHolder(s)
 	if err != nil {
 		return nil, err
 	}
-	settings := part.Parameters().Settings()
+	settings := holder.Parameters().Settings()
 	if err := applySettingsUpdate(settings, in); err != nil {
 		return nil, err
 	}
-	s.RecordAddInEdit(part, "Edit Parameter Settings")
+	s.RecordActiveEdit("Edit Parameter Settings")
 	return json.Marshal(parameterSettingsInfo(settings))
 }
 
@@ -108,26 +108,26 @@ func sweepParameterModelValues(s *app.Session, args json.RawMessage) (json.RawMe
 	if !ok {
 		return nil, fmt.Errorf("parameters.setAllModelValueType: unknown model value type %q (want nominal|lower|upper|median)", in.ModelValueType)
 	}
-	part, err := modelaccess.ActivePart(s)
+	holder, err := modelaccess.ActiveParameterHolder(s)
 	if err != nil {
 		return nil, err
 	}
-	affected, err := part.Parameters().SetAllModelValueType(m)
+	affected, err := holder.Parameters().SetAllModelValueType(m)
 	if err != nil {
 		return nil, err
 	}
-	part.RecomputeAfterParameterEdit()
-	s.RecordAddInEdit(part, "Sweep Tolerances")
+	holder.RecomputeAfterParameterEdit()
+	s.RecordActiveEdit("Sweep Tolerances")
 	return json.Marshal(wire.ParameterSweepResult{Affected: affected})
 }
 
 // exportParameters renders the user parameters as the exchange XML (read-only).
 func exportParameters(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	holder, err := modelaccess.ActiveParameterHolder(s)
 	if err != nil {
 		return nil, err
 	}
-	xml, err := part.Parameters().ExportXML()
+	xml, err := holder.Parameters().ExportXML()
 	if err != nil {
 		return nil, err
 	}
