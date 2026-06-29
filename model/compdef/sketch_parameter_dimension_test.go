@@ -265,6 +265,43 @@ func TestIncludedCurveFromConstrained2DSketchFollowsParameterInto3D(t *testing.T
 	}
 }
 
+// A 3D sketch that DIMENSIONS one of its points against geometry included from a 2D sketch
+// must be correct after a SINGLE recompute — not converge over several. This requires the 2D
+// source to be solved and its include refreshed into the 3D sketch BEFORE the 3D sketch
+// solves (sketch dependencies computed first, in creation order). The 2D source point moves
+// on its solve, so a stale (pre-solve) include anchor would place the dependent 3D point at
+// the wrong distance; this pins the single-recompute ordering.
+func TestSketch3DDimensionAgainstIncluded2DPointIsCorrectInOneRecompute(t *testing.T) {
+	def := compdef.NewPartComponentDefinition()
+	mustUserParam(t, def, "seg", "5 cm") // drives the 2D source (moves the included point)
+	mustUserParam(t, def, "gap", "7 cm") // drives the 3D dimension against the included anchor
+
+	// 2D source on XY: a line whose endpoint A is pulled to distance "seg" from O, so A moves
+	// well away from its authored position when the sketch solves.
+	src := def.Sketches().Add(sketch.XYPlane())
+	o := src.Points().Add(math.P2(0, 0))
+	a := src.Points().Add(math.P2(1, 0))
+	src.Lines().Add(o, a)
+	if _, err := src.DimensionConstraints().AddDistance(o, a, "seg"); err != nil {
+		t.Fatalf("AddDistance(2D): %v", err)
+	}
+
+	// 3D sketch: include A as a fixed anchor, add a free point B, and dimension B to the
+	// anchor at "gap". B depends on the included anchor, which depends on the 2D solve.
+	sk3 := def.Sketches3D().Add()
+	incA := sk3.IncludePoint3D(sketch.NewSketch2DPointSource(src, a.EntityID()))
+	b := sk3.AddPoint3D(math.P3(0, 0, 0))
+	if _, err := sk3.DimensionConstraints3D().AddDistance(incA.Anchor(), b, "gap"); err != nil {
+		t.Fatalf("AddDistance(3D): %v", err)
+	}
+
+	def.Recompute()
+
+	if d := incA.Anchor().Position().DistanceTo(b.Position()); d < 7-dimTol || d > 7+dimTol {
+		t.Errorf("3D point dimensioned to an included 2D point = %v from the anchor, want 7 (= gap) in one recompute; a stale include anchor during the 3D solve causes this", float64(d))
+	}
+}
+
 // includedCurveLength sums the segment lengths of an included 3D curve's polyline.
 func includedCurveLength(c *sketch.IncludedCurve3D) float64 {
 	pts := c.Points()
