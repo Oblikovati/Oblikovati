@@ -123,6 +123,8 @@ func FormatFromPath(path string) (types.ExchangeFormat, bool) {
 		return types.FormatDWG, true
 	case ".dxf":
 		return types.FormatDXF, true
+	case ".pdf":
+		return types.FormatPDF, true
 	default:
 		return "", false
 	}

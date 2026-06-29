@@ -20,6 +20,7 @@ func (r *Router) registerExchangeHandlers() {
 	r.readOnly(wire.MethodDocumentsExport, exportDocument)
 	r.readOnly(wire.MethodImportDWG, importDWG)
 	r.readOnly(wire.MethodImportDXF, importDXF)
+	r.readOnly(wire.MethodImportPDF, importPDF)
 	r.readOnly(wire.MethodExportDXF, exportDXF)
 }
 
@@ -49,6 +50,21 @@ func importDXF(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 		return nil, fmt.Errorf("import.dxf: %w", err)
 	}
 	return json.Marshal(wire.ImportDXFResult{Is3D: res.Is3D, EntityCount: res.EntityCount, Warnings: res.Warnings})
+}
+
+// importPDF imports a vector .pdf (a CAD drawing plotted to PDF) into the active part: each
+// page's vector paths become a 2D sketch on the named work plane (default: first origin
+// plane). Text and raster images in the page are skipped.
+func importPDF(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	var in wire.ImportPDFArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	res, err := s.ImportPDFOnPlane(in.Path, in.Plane)
+	if err != nil {
+		return nil, fmt.Errorf("import.pdf: %w", err)
+	}
+	return json.Marshal(wire.ImportPDFResult{Is3D: res.Is3D, EntityCount: res.EntityCount, Warnings: res.Warnings})
 }
 
 // exportDXF writes the active 2D sketch to a .dxf file at the requested version.
