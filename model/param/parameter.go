@@ -110,6 +110,17 @@ func (p *Parameter) Bool() bool { return p.IsBoolean() && p.value.Value != 0 }
 // Value returns the evaluated quantity (database units).
 func (p *Parameter) Value() Quantity { return p.value }
 
+// NominalValue returns the evaluated value before the tolerance is applied (database units) —
+// the contract's lean projection of the nominal quantity ([Parameter.ModelValue] applies the
+// tolerance). Unlike ModelValue it records no read footprint: it is an informational accessor
+// for the contract, not a geometry-consumption seam (M39-F06, #1562).
+func (p *Parameter) NominalValue() float64 { return p.value.Value }
+
+// UnitName returns the name of the parameter's unit category (the reference API's
+// Parameter.Units, e.g. "Length", "Angle", "Text") — the lean unit projection for the
+// contract; the rich [Unit] type stays in the host (M39-F06, #1562).
+func (p *Parameter) UnitName() string { return p.value.Unit.String() }
+
 // ModelValue returns the value the model consumes after the tolerance band and
 // the parameter's model-value selection are applied (database units).
 //
@@ -164,6 +175,15 @@ func (p *Parameter) Expression() string { return p.expr.Source() }
 
 // Health returns the current evaluation health.
 func (p *Parameter) Health() Health { return p.health }
+
+// IsHealthy reports whether the parameter evaluated cleanly — the contract's lean health flag
+// (the full status enum is source-internal, #1501; only this flag and the reason cross the
+// boundary). M39-F06, #1562.
+func (p *Parameter) IsHealthy() bool { return p.health.OK() }
+
+// HealthReason returns the human-readable reason when the parameter is not healthy ("" when
+// healthy) — the contract's lean health detail (M39-F06, #1562).
+func (p *Parameter) HealthReason() string { return p.health.Reason }
 
 // Tolerance returns the engineering tolerance.
 func (p *Parameter) Tolerance() Tolerance { return p.tol }
