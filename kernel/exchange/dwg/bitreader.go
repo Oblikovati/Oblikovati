@@ -274,11 +274,14 @@ func (r *BitReader) Read2BD() [2]float64 { return [2]float64{r.ReadBD(), r.ReadB
 func (r *BitReader) Read3BD() [3]float64 { return [3]float64{r.ReadBD(), r.ReadBD(), r.ReadBD()} }
 
 // ReadMC reads a Modular Char: little-endian 7-bit groups, high bit = continue,
-// with the terminating group's 0x40 bit as the sign. Spans at most 4 bytes.
+// with the terminating group's 0x40 bit as the sign. Spans at most 5 bytes: a
+// large positive value whose 4th 7-bit group already uses 0x40 needs a 5th group
+// to carry the sign (e.g. object-map location deltas in big files; see #1549).
+// This matches the reference decoder (libredwg bit_read_MC reads byte[5]).
 func (r *BitReader) ReadMC() int {
 	var result uint
 	var shift uint
-	for i := 0; i < 4; i++ {
+	for i := 0; i < 5; i++ {
 		b := uint(r.ReadRC())
 		if b&0x80 == 0 { // terminating group
 			result |= (b & 0x3f) << shift
@@ -290,7 +293,7 @@ func (r *BitReader) ReadMC() int {
 		result |= (b & 0x7f) << shift
 		shift += 7
 	}
-	r.fail("ReadMC exceeded 4 bytes")
+	r.fail("ReadMC exceeded 5 bytes")
 	return 0
 }
 
