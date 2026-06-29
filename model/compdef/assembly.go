@@ -75,7 +75,8 @@ func NewAssemblyComponentDefinition() *AssemblyComponentDefinition {
 		props:       attr.NewPropertySets(),
 	}
 	occ.SetListener(a.events)
-	a.features.SetBus(a.events.Bus()) // feature-program events ride the assembly's occurrence bus
+	a.features.SetBus(a.events.Bus())    // feature-program events ride the assembly's occurrence bus
+	a.sketches.ShareParameters(a.params) // restored sketches bind dimension expressions before their dims rebuild (#1557)
 	a.constraints = assembly.NewConstraintSet(occ, a.events)
 	a.joints = assembly.NewJointSet(occ, a.events)
 	a.dsJoints = assembly.NewDSJointSet()

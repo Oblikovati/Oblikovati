@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/occurrence"
+	"oblikovati.org/model/param"
 	"oblikovati.org/model/sketch"
 	"oblikovati.org/persistence/yamlcodec"
 )
@@ -21,15 +22,22 @@ import (
 // disk updates every assembly that places it. A part-only assembly graph stays a tree of
 // .obk files referencing each other, exactly as the reference API models it.
 
-// assemblyRecipe is the persisted form of an AssemblyComponentDefinition: display units
-// plus the placed occurrences, in placement order.
+// assemblyRecipe is the persisted form of an AssemblyComponentDefinition: display units,
+// its first-class parameters (assemblies are parameter holders like parts — M39-F01, #1557),
+// and the placed occurrences in placement order. The parameter fields share the part recipe's
+// DTOs and codec (param_recipe.go); they are restored before the assembly sketches so a
+// dimension expression rebinds to its parameter by name.
 type assemblyRecipe struct {
-	Units         map[string]string              `yaml:"units,omitempty"`
-	Occurrences   []occurrenceRecipe             `yaml:"occurrences,omitempty"`
-	Properties    []propertyRecipe               `yaml:"properties,omitempty"` // document iProperties (#156)
-	Sketches      []sketch.SketchData            `yaml:"sketches,omitempty"`   // assembly-space sketches (#785)
-	Features      []assemblyFeatureProgramRecipe `yaml:"features,omitempty"`   // the machining program (#785)
-	EndOfFeatures *int                           `yaml:"endOfFeatures,omitempty"`
+	Units             map[string]string              `yaml:"units,omitempty"`
+	Parameters        []parameterRecipe              `yaml:"parameters,omitempty"`
+	ParameterGroups   []parameterGroupRecipe         `yaml:"parameterGroups,omitempty"`
+	ParameterSettings *parameterSettingsRecipe       `yaml:"parameterSettings,omitempty"`
+	DerivedTables     []derivedTableRecipe           `yaml:"derivedParameterTables,omitempty"`
+	Occurrences       []occurrenceRecipe             `yaml:"occurrences,omitempty"`
+	Properties        []propertyRecipe               `yaml:"properties,omitempty"` // document iProperties (#156)
+	Sketches          []sketch.SketchData            `yaml:"sketches,omitempty"`   // assembly-space sketches (#785)
+	Features          []assemblyFeatureProgramRecipe `yaml:"features,omitempty"`   // the machining program (#785)
+	EndOfFeatures     *int                           `yaml:"endOfFeatures,omitempty"`
 }
 
 // assemblyFeatureProgramRecipe is the persisted form of one program entry: the feature's inputs
@@ -74,11 +82,15 @@ func (a *AssemblyComponentDefinition) buildRecipe() (assemblyRecipe, error) {
 		return assemblyRecipe{}, fmt.Errorf("compdef: marshal assembly sketches: %w", err)
 	}
 	r := assemblyRecipe{
-		Units:       unitsRecipeFor(a.units),
-		Occurrences: a.occurrencesRecipe(),
-		Properties:  propertiesRecipeOf(a.props),
-		Sketches:    sketches,
-		Features:    a.featuresRecipe(),
+		Units:             unitsRecipeFor(a.units),
+		Parameters:        parametersRecipeOf(a.params),
+		ParameterGroups:   parameterGroupsRecipeOf(a.params),
+		ParameterSettings: parameterSettingsRecipeOf(a.params),
+		DerivedTables:     derivedTablesRecipeOf(a.params),
+		Occurrences:       a.occurrencesRecipe(),
+		Properties:        propertiesRecipeOf(a.props),
+		Sketches:          sketches,
+		Features:          a.featuresRecipe(),
 	}
 	if eof := a.features.EndOfFeaturesPosition(); eof != endOfFeaturesAtEnd {
 		r.EndOfFeatures = &eof
@@ -172,11 +184,22 @@ func (a *AssemblyComponentDefinition) applyRecipeStruct(r assemblyRecipe) error 
 		return err
 	}
 	applyPropertiesRecipe(a.props, r.Properties)
+	// Parameters restore before sketches so a sketch dimension's expression rebinds to its
+	// assembly parameter by name (M39-F01, #1557).
+	if err := applyParametersTo(a.params, r.ParameterGroups, r.Parameters); err != nil {
+		return err
+	}
+	if err := applyParameterSettingsTo(a.params, r.ParameterSettings); err != nil {
+		return err
+	}
+	if err := applyDerivedTablesTo(a.params, r.DerivedTables); err != nil {
+		return err
+	}
+	// The sketch collection already shares the parameter DAG (ShareParameters, wired in the
+	// constructor and resetOccurrences), so each restored sketch binds its dimension
+	// expressions against the populated table as it is rebuilt (#1557).
 	if err := a.sketches.ApplyRecipe(r.Sketches); err != nil {
 		return fmt.Errorf("compdef: restore assembly sketches: %w", err)
-	}
-	for i := 0; i < a.sketches.Count(); i++ {
-		a.sketches.Item(i).SetParameters(a.params) // share the param DAG so dimensions resolve
 	}
 	if r.EndOfFeatures != nil {
 		a.features.SetEndOfFeatures(*r.EndOfFeatures)
@@ -194,9 +217,11 @@ func (a *AssemblyComponentDefinition) resetOccurrences() {
 	a.occurrences = occurrence.NewOccurrences()
 	a.occurrences.SetListener(a.events)
 	a.props = attr.NewPropertySets() // a restore re-applies the snapshot's properties onto a clean set (#156)
+	a.params = param.NewParameters() // a snapshot restore is a full replace; re-add params onto a clean table (#1557)
 	a.sketches = sketch.NewSketches()
-	a.features = NewAssemblyFeatures() // the program rebuilds from the snapshot (#785)
-	a.features.SetBus(a.events.Bus())  // re-wire the recompute event bus the fresh program needs
+	a.sketches.ShareParameters(a.params) // re-wire so restored sketches resolve dimension expressions (#1557)
+	a.features = NewAssemblyFeatures()   // the program rebuilds from the snapshot (#785)
+	a.features.SetBus(a.events.Bus())    // re-wire the recompute event bus the fresh program needs
 	a.pendingFeatures = nil
 	a.pending = nil
 }
