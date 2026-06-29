@@ -11,6 +11,7 @@ import (
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/math"
+	"oblikovati.org/model/depend"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/param"
 	"oblikovati.org/model/sketch"
@@ -52,7 +53,7 @@ func createSketch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	if err := decode(raw, &in); err != nil {
 		return nil, err
 	}
-	plane, name, planeHost, err := sketchCreatePlane(host, in)
+	plane, name, wp, err := sketchCreatePlane(host, in)
 	if err != nil {
 		return nil, err
 	}
@@ -63,9 +64,12 @@ func createSketch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	// sketch keeps an isolated param store and "od/2" resolves to 0, collapsing
 	// the geometry.
 	sk.SetParameters(host.Parameters())
-	// On a work plane, track it so the sketch follows when the plane moves.
-	if planeHost != nil {
-		sk.SetPlaneHost(planeHost)
+	// On a work plane, track it so the sketch follows when the plane moves, and fold the
+	// plane's offset parameter into the sketch's footprint so an offset edit targets this
+	// sketch's features instead of forcing a wholesale rebuild (ADR-0044).
+	if wp != nil {
+		sk.SetPlaneHost(func() sketch.Plane { return wp.Plane() })
+		sk.SetHostFootprint(func() []depend.Key { return wp.ParameterFootprint() })
 	}
 	return json.Marshal(wire.CreateSketchResult{SketchIndex: host.Sketches().Count() - 1, Plane: name})
 }
@@ -73,7 +77,7 @@ func createSketch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 // sketchCreatePlane resolves the plane a new sketch starts on: a user work plane (when
 // WorkPlaneIndex is set — the way to sketch on a plane built on a feature-created face) or an
 // origin plane otherwise.
-func sketchCreatePlane(host sketchHost, in wire.CreateSketchArgs) (sketch.Plane, string, func() sketch.Plane, error) {
+func sketchCreatePlane(host sketchHost, in wire.CreateSketchArgs) (sketch.Plane, string, *feature.WorkPlane, error) {
 	if in.WorkPlaneIndex == nil {
 		plane, name, err := parsePlane(in.Plane)
 		return plane, name, nil, err // origin planes are fixed, no host to track
@@ -84,8 +88,9 @@ func sketchCreatePlane(host sketchHost, in wire.CreateSketchArgs) (sketch.Plane,
 		return sketch.Plane{}, "", nil, fmt.Errorf("sketch.create: work plane %d out of range (have %d)", i, planes.Count())
 	}
 	wp := planes.Item(i)
-	// The host re-reads the work plane (recomputed in place) so the sketch tracks it.
-	return wp.Plane(), wp.Name(), func() sketch.Plane { return wp.Plane() }, nil
+	// The caller re-reads the work plane (recomputed in place) so the sketch tracks it, and
+	// reads its footprint so the offset parameter is attributed to the sketch.
+	return wp.Plane(), wp.Name(), wp, nil
 }
 
 // sketchRectangle adds a closed rectangle (one profile) to a sketch, ready to extrude.

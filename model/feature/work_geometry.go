@@ -11,6 +11,7 @@ import (
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
+	"oblikovati.org/model/depend"
 	"oblikovati.org/model/sketch"
 )
 
@@ -59,7 +60,21 @@ type WorkGeometry struct {
 	userSeq []userEntry  // user work features in global creation order (for serialization)
 	bodies  []*topo.Body // the running solid result, so surface-tangent work planes can
 	// resolve a picked B-rep face's reference key to its surface (set each Recompute).
+	tracker FootprintTracker // captures each plane's parameter footprint (set by the part); nil ⇒ no capture
 }
+
+// FootprintTracker captures the dependency keys read while fn runs — satisfied by
+// *param.Parameters (TrackKeys). The part injects it so each work plane records the
+// parameter driving its offset/angle, attributing a work-plane-offset edit to the sketches
+// hosted on that plane instead of forcing a wholesale rebuild (ADR-0044).
+type FootprintTracker interface {
+	TrackKeys(fn func()) []depend.Key
+}
+
+// SetFootprintTracker injects the per-recompute footprint capture (see [FootprintTracker]).
+// With no tracker, plane recompute is unchanged and offset edits fall back to wholesale —
+// safe, just not incremental.
+func (g *WorkGeometry) SetFootprintTracker(t FootprintTracker) { g.tracker = t }
 
 // userEntry records a user work feature's collection and index in global creation
 // order, so serialization replays them in dependency order — a work feature may
@@ -121,8 +136,20 @@ func (g *WorkGeometry) Recompute(bodies []*topo.Body) {
 		g.axes.Item(i).recompute(g)
 	}
 	for i := 0; i < g.planes.Count(); i++ {
-		g.planes.Item(i).recompute(g)
+		g.recomputePlane(g.planes.Item(i))
 	}
+}
+
+// recomputePlane recomputes one plane, capturing the parameters its definition read (its
+// offset/angle) into the plane's footprint when a tracker is set. The capture nests inside
+// the part's whole-recompute tracking, so the union still reaches the wholesale calculation
+// while each plane also gets its own footprint (ADR-0044).
+func (g *WorkGeometry) recomputePlane(p *WorkPlane) {
+	if g.tracker == nil {
+		p.recompute(g)
+		return
+	}
+	p.paramFootprint = g.tracker.TrackKeys(func() { p.recompute(g) })
 }
 
 // seedOrigin creates the grounded origin coordinate-system elements with their

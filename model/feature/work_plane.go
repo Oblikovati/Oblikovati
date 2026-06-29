@@ -4,6 +4,7 @@ package feature
 
 import (
 	"oblikovati.org/math"
+	"oblikovati.org/model/depend"
 	"oblikovati.org/model/health"
 	"oblikovati.org/model/seq"
 	"oblikovati.org/model/sketch"
@@ -104,7 +105,19 @@ type WorkPlane struct {
 	grounded         bool
 	visible          bool
 	seq              uint64 // global creation stamp (0 for the origin frame); see model/seq
+
+	// paramFootprint is the dependency footprint this plane's last recompute read — for an
+	// offset/angle plane, the parameter driving its distance (its offset closure reads it
+	// through ModelValue). The part folds it into the footprint of sketches hosted on this
+	// plane, so a work-plane-offset edit reaches dependent features through the hosted sketch
+	// instead of forcing a wholesale rebuild (ADR-0044). Empty for a grounded origin plane.
+	paramFootprint []depend.Key
 }
+
+// ParameterFootprint returns the dependency keys this plane's last recompute read (its
+// offset/angle parameter). A sketch hosted on the plane unions this into its own footprint
+// via [sketch.Sketch.SetHostFootprint].
+func (w *WorkPlane) ParameterFootprint() []depend.Key { return w.paramFootprint }
 
 // ID/Key/Name identify the datum; Health reports its last recompute state.
 func (w *WorkPlane) ID() ID                { return w.id }
