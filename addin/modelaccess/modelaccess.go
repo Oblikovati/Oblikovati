@@ -31,6 +31,22 @@ func ActivePart(s *app.Session) (*compdef.PartComponentDefinition, error) {
 	return part, nil
 }
 
+// ActiveParameterHolder returns the active document's content as a parameter holder — a part
+// OR an assembly — or an error if there is no active document or it holds no parameters (a
+// drawing, say). The derived-parameter-table wire surface resolves its target through this so
+// it is not part-only (M39-F02, #1558).
+func ActiveParameterHolder(s *app.Session) (compdef.ParameterHolder, error) {
+	d := s.ActiveDocument()
+	if d == nil {
+		return nil, ErrNoActiveDocument
+	}
+	holder, ok := d.Content().(compdef.ParameterHolder)
+	if !ok {
+		return nil, fmt.Errorf("modelaccess: active document %q holds no parameters (not a part or assembly)", d.DisplayName())
+	}
+	return holder, nil
+}
+
 // ActiveAssembly returns the active document's assembly component definition, or an
 // error if there is no active document or it is not an assembly. The assembly-feature
 // and occurrence surfaces resolve their target through this.

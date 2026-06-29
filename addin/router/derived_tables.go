@@ -33,14 +33,14 @@ func derivedTableInfo(s *app.Session, t *param.DerivedParameterTable) wire.Deriv
 	return info
 }
 
-// listDerivedTables returns the active part's tables with live candidates.
+// listDerivedTables returns the active part's or assembly's tables with live candidates.
 func listDerivedTables(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	holder, err := modelaccess.ActiveParameterHolder(s)
 	if err != nil {
 		return nil, err
 	}
 	var out wire.ListDerivedParameterTablesResult
-	for _, t := range part.Parameters().DerivedTables() {
+	for _, t := range holder.Parameters().DerivedTables() {
 		out.Tables = append(out.Tables, derivedTableInfo(s, t))
 	}
 	return json.Marshal(out)
@@ -68,11 +68,11 @@ func setDerivedTableLinked(s *app.Session, args json.RawMessage) (json.RawMessag
 	if err := s.SetDerivedTableLinked(in.ID, in.Linked); err != nil {
 		return nil, err
 	}
-	part, err := modelaccess.ActivePart(s)
+	holder, err := modelaccess.ActiveParameterHolder(s)
 	if err != nil {
 		return nil, err
 	}
-	t, ok := part.Parameters().DerivedTableByID(in.ID)
+	t, ok := holder.Parameters().DerivedTableByID(in.ID)
 	if !ok {
 		return json.Marshal(struct{}{})
 	}
