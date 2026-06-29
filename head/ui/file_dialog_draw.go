@@ -359,71 +359,80 @@ func isDWGPath(path string) bool { return strings.EqualFold(filepath.Ext(path), 
 // isDXFPath reports whether path is a .dxf file (the other sketch-importing branch).
 func isDXFPath(path string) bool { return strings.EqualFold(filepath.Ext(path), ".dxf") }
 
-// isSketchPath reports whether path is a drawing file (.dwg/.dxf) that imports into a sketch.
-func isSketchPath(path string) bool { return isDWGPath(path) || isDXFPath(path) }
+// isPDFPath reports whether path is a .pdf file (a CAD drawing plotted to PDF → a sketch).
+func isPDFPath(path string) bool { return strings.EqualFold(filepath.Ext(path), ".pdf") }
 
-// importDWGFromFile imports a .dwg into the active part on the chosen work plane
-// (2D drawing → a sketch on that plane; 3D drawing → a Sketch3D), reporting the
-// outcome (File ▸ Import of a .dwg).
-func importDWGFromFile(s *app.Session, act fileAction, name string) {
+// isSketchPath reports whether path is a drawing file (.dwg/.dxf/.pdf) that imports into a sketch.
+func isSketchPath(path string) bool { return isDWGPath(path) || isDXFPath(path) || isPDFPath(path) }
+
+// importSketchFromFile imports a drawing file into the active part on the chosen work plane
+// (2D drawing → a sketch on that plane; 3D drawing → a Sketch3D), reporting the outcome.
+// readDrawing performs the format-specific read for the resolved plane and returns whether
+// it landed in 3D and how many entities were added — the shared body for the .dwg/.dxf/.pdf
+// import branches (File ▸ Import).
+func importSketchFromFile(s *app.Session, act fileAction, name string,
+	readDrawing func(app.WorkPlaneChoice) (is3D bool, entities int, err error)) {
 	choices, err := s.DWGPlaneChoices()
 	if err != nil {
 		fileNotice(s, importFailedFmt, err)
 		return
 	}
-	plane := choices[0].Plane
+	choice := choices[0]
 	if act.PlaneIndex >= 0 && act.PlaneIndex < len(choices) {
-		plane = choices[act.PlaneIndex].Plane
+		choice = choices[act.PlaneIndex]
 	}
-	res, err := s.ImportDWGFile(act.Path, plane)
+	is3D, entities, err := readDrawing(choice)
 	if err != nil {
 		fileNotice(s, importFailedFmt, err)
 		return
 	}
 	kind := "2D sketch"
-	if res.Is3D {
+	if is3D {
 		kind = "3D sketch"
 	}
-	fileNotice(s, "Imported %s into a %s (%d entities)", name, kind, res.EntityCount)
+	fileNotice(s, "Imported %s into a %s (%d entities)", name, kind, entities)
 }
 
-// importFromFile routes a File ▸ Import to the right reader by extension: .dwg/.dxf import
-// into a sketch (on the chosen work plane), the mesh/B-rep formats into bodies.
+// importDWGFromFile imports a .dwg into the active part on the chosen work plane.
+func importDWGFromFile(s *app.Session, act fileAction, name string) {
+	importSketchFromFile(s, act, name, func(c app.WorkPlaneChoice) (bool, int, error) {
+		res, err := s.ImportDWGFile(act.Path, c.Plane)
+		return res.Is3D, res.EntityCount, err
+	})
+}
+
+// importDXFFromFile imports a .dxf into the active part on the chosen work plane.
+func importDXFFromFile(s *app.Session, act fileAction, name string) {
+	importSketchFromFile(s, act, name, func(c app.WorkPlaneChoice) (bool, int, error) {
+		res, err := s.ImportDXFFile(act.Path, c.Plane)
+		return res.Is3D, res.EntityCount, err
+	})
+}
+
+// importPDFFromFile imports a vector .pdf (a CAD drawing plotted to PDF) into the active
+// part on the chosen work plane — each page's vector paths become a 2D sketch.
+func importPDFFromFile(s *app.Session, act fileAction, name string) {
+	importSketchFromFile(s, act, name, func(c app.WorkPlaneChoice) (bool, int, error) {
+		res, err := s.ImportPDFFile(act.Path, c.Plane)
+		return res.Is3D, res.EntityCount, err
+	})
+}
+
+// importFromFile routes a File ▸ Import to the right reader by extension: .dwg/.dxf/.pdf
+// import into a sketch (on the chosen work plane), the mesh/B-rep formats into bodies.
 func importFromFile(s *app.Session, act fileAction, name string) {
 	switch {
 	case isDWGPath(act.Path):
 		importDWGFromFile(s, act, name)
 	case isDXFPath(act.Path):
 		importDXFFromFile(s, act, name)
+	case isPDFPath(act.Path):
+		importPDFFromFile(s, act, name)
 	case pointcloud.IsScanFile(act.Path):
 		attachPointCloudFromFile(s, act.Path, name) // a 3D scan (.ply/.xyz/.pts…) → a point cloud (#645)
 	default:
 		importBodyFromFile(s, act.Path, name)
 	}
-}
-
-// importDXFFromFile imports a .dxf into the active part on the chosen work plane (2D drawing
-// → a sketch on that plane; 3D drawing → a Sketch3D), reporting the outcome.
-func importDXFFromFile(s *app.Session, act fileAction, name string) {
-	choices, err := s.DWGPlaneChoices()
-	if err != nil {
-		fileNotice(s, importFailedFmt, err)
-		return
-	}
-	plane := choices[0].Plane
-	if act.PlaneIndex >= 0 && act.PlaneIndex < len(choices) {
-		plane = choices[act.PlaneIndex].Plane
-	}
-	res, err := s.ImportDXFFile(act.Path, plane)
-	if err != nil {
-		fileNotice(s, importFailedFmt, err)
-		return
-	}
-	kind := "2D sketch"
-	if res.Is3D {
-		kind = "3D sketch"
-	}
-	fileNotice(s, "Imported %s into a %s (%d entities)", name, kind, res.EntityCount)
 }
 
 // exportToFile writes the active part to the chosen file: a .dxf exports the active sketch's
