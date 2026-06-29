@@ -5,6 +5,8 @@ package param
 import (
 	"sort"
 	"testing"
+
+	"oblikovati.org/model/depend"
 )
 
 // sortedIDs returns ids sorted, for order-independent comparison.
@@ -60,6 +62,37 @@ func TestNestedTrackBubblesReadsToOuter(t *testing.T) {
 	want := sortedIDs([]ID{a.ID(), b.ID()})
 	if g := sortedIDs(outer); len(g) != 2 || g[0] != want[0] || g[1] != want[1] {
 		t.Errorf("outer Track captured %v, want %v", g, want)
+	}
+}
+
+// TrackKeys / DrainChangedKeys are the dependency-graph projections of Track / DrainChanged:
+// they widen parameter ids to depend.Keys tagged ParameterKey, so the recompute engine stores
+// footprints and change-sets in one kind-agnostic vocabulary (ADR-0044).
+func TestTrackKeysAndDrainChangedKeysTagParameterKind(t *testing.T) {
+	ps := NewParameters()
+	a := mustAdd(t, ps, "a", "10 mm")
+	ps.DrainChanged() // clear construction records
+
+	footprint := ps.TrackKeys(func() { _ = a.ModelValue() })
+	if len(footprint) != 1 || footprint[0] != (depend.Key{Kind: depend.ParameterKey, ID: uint64(a.ID())}) {
+		t.Errorf("TrackKeys = %v, want one ParameterKey for a", footprint)
+	}
+
+	if err := ps.SetExpression(a.ID(), "12 mm"); err != nil {
+		t.Fatalf("SetExpression: %v", err)
+	}
+	changed := ps.DrainChangedKeys()
+	if len(changed) != 1 || changed[0].Kind != depend.ParameterKey || changed[0].ID != uint64(a.ID()) {
+		t.Errorf("DrainChangedKeys = %v, want one ParameterKey for a", changed)
+	}
+}
+
+// An empty capture/drain must widen to nil (not an empty non-nil slice), because the edit seam
+// treats len==0 as "rebuild conservatively"; a stray empty slice must read identically.
+func TestKeysPreserveEmptyAsNil(t *testing.T) {
+	ps := NewParameters()
+	if got := ps.TrackKeys(func() {}); got != nil {
+		t.Errorf("TrackKeys with no reads = %v, want nil", got)
 	}
 }
 

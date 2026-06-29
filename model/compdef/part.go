@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/attr"
+	"oblikovati.org/model/depend"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/identity"
@@ -75,13 +76,13 @@ type PartComponentDefinition struct {
 	// centerlines are the flat pattern's cosmetic centerlines (M13-F06) — annotation lines that
 	// persist with the part.
 	centerlines []sheetmetal.CosmeticCenterline
-	// wholesaleParams are the parameters whose change must rebuild the whole feature program
-	// because they reach geometry through a path the engine does not model per-feature — a
-	// work-plane offset, a 3D-sketch dimension, a sketch's host plane. Captured each Recompute
-	// as (all parameters read during recompute) − (those precisely attributable to a 2D sketch
-	// or a feature's direct reads), so any unmodelled path is conservatively wholesale and a
-	// parameter edit never silently leaves stale geometry (Oblikovati#1414).
-	wholesaleParams map[param.ID]bool
+	// wholesaleParams are the dependency keys whose change must rebuild the whole feature
+	// program because they reach geometry through a path the engine does not model
+	// per-feature — a 3D-sketch dimension, a host-plane closure not yet attributed. Captured
+	// each Recompute as (all keys read during recompute) − (those precisely attributable to a
+	// sketch or a feature's direct reads), so any unmodelled path is conservatively wholesale
+	// and a change never silently leaves stale geometry (Oblikovati#1414, ADR-0044).
+	wholesaleParams map[depend.Key]bool
 }
 
 // NewPartComponentDefinition returns an empty part content object with its feature
@@ -150,7 +151,7 @@ func (d *PartComponentDefinition) Recompute() {
 	// Capture every parameter read during the recompute (total footprint); the difference
 	// against what is precisely attributable to a 2D sketch or a feature's direct reads is
 	// the wholesale set a future parameter edit must rebuild the whole program for (#1414).
-	total := d.params.Track(d.recomputeGeometry)
+	total := d.params.TrackKeys(d.recomputeGeometry)
 	d.recordWholesaleParams(total)
 	// Drop any change records produced before now (parameters added while building
 	// sketches/features, an earlier untargeted recompute) so the NEXT parameter edit sees
@@ -187,64 +188,67 @@ func (d *PartComponentDefinition) recomputeGeometry() {
 	d.refreshSketchReferences()
 }
 
-// recordWholesaleParams stores (total parameter reads − precisely-targetable reads) as the
-// set a parameter edit must rebuild the whole program for. The precise set is every 2D
-// sketch's dimension footprint plus every feature's direct reads — exactly what
-// MarkDirtyForParams can attribute to a feature. Anything else a recompute read (a
-// work-plane offset, a 3D-sketch dimension, a host-plane closure) is conservatively
-// wholesale, so no parameter path is ever silently skipped (Oblikovati#1414).
-func (d *PartComponentDefinition) recordWholesaleParams(total []param.ID) {
-	precise := map[param.ID]bool{}
+// recordWholesaleParams stores (total reads − precisely-targetable reads) as the set a
+// change must rebuild the whole program for. The precise set is every sketch's footprint
+// (its own solve plus, for a work-plane-hosted sketch, the plane's offset footprint) plus
+// every feature's direct reads — exactly what MarkDirtyForChange can attribute to a
+// feature. Anything else a recompute read (a 3D-sketch dimension, a host-plane closure not
+// yet attributed) is conservatively wholesale, so no path is ever silently skipped
+// (Oblikovati#1414, ADR-0044).
+func (d *PartComponentDefinition) recordWholesaleParams(total []depend.Key) {
+	precise := map[depend.Key]bool{}
 	for i := 0; i < d.sketches.Count(); i++ {
-		for _, id := range d.sketches.Item(i).ParameterFootprint() {
-			precise[id] = true
+		for _, k := range d.sketches.Item(i).ParameterFootprint() {
+			precise[k] = true
 		}
 	}
-	for _, id := range d.features.ParameterReads() {
-		precise[id] = true
+	for _, k := range d.features.DependencyReads() {
+		precise[k] = true
 	}
-	d.wholesaleParams = map[param.ID]bool{}
-	for _, id := range total {
-		if !precise[id] {
-			d.wholesaleParams[id] = true
+	d.wholesaleParams = map[depend.Key]bool{}
+	for _, k := range total {
+		if !precise[k] {
+			d.wholesaleParams[k] = true
 		}
 	}
 }
 
-// RecomputeAfterParameterEdit rebuilds the part after a parameter value/equation/bool edit. A
-// parameter edit can change a feature's LIVE inputs — sketch dimensions, sheet-metal thicknesses,
-// work-plane-offset closures — which the feature engine does not see as ordinary feature
-// dependencies, so a plain Recompute would find nothing dirty and hand back the cached, pre-edit
-// bodies (silent stale geometry). This is the single invalidation seam every parameter-edit path
-// shares — the UI verb, XML import, and the wire router — so they cannot diverge (Oblikovati#1413).
+// RecomputeAfterChange rebuilds the part after a parameter value/equation/bool edit (and, in
+// future, a cross-part adaptive-reference change — ADR-0044). Such a change can alter a feature's
+// LIVE inputs — sketch dimensions, sheet-metal thicknesses, work-plane-offset closures — which the
+// feature engine does not see as ordinary feature dependencies, so a plain Recompute would find
+// nothing dirty and hand back the cached, pre-edit bodies (silent stale geometry). This is the
+// single invalidation seam every change path shares — the UI verb, XML import, the wire router — so
+// they cannot diverge (Oblikovati#1413). It takes no change-set argument: it drains its own change
+// sources (the parameter graph today), keeping callers ignorant of attribution.
 //
-// It invalidates only the affected tail (Oblikovati#1414): the edit's changed parameters (and their
-// transitive dependents) come from the parameter graph; if any reaches geometry through a path the
-// engine cannot attribute to a feature (a work-plane offset, a 3D-sketch dimension — the wholesale
-// set captured last recompute) it falls back to a full rebuild, otherwise it dirties only the
-// features whose consumed-sketch dimensions or direct reads the edit touched. Editing one fillet's
-// driving parameter on a 1000-feature part then rebuilds that fillet's tail, not all 1000.
-func (d *PartComponentDefinition) RecomputeAfterParameterEdit() {
-	changed := d.params.DrainChanged()
-	if d.paramEditNeedsFullRebuild(changed) {
+// It invalidates only the affected tail (Oblikovati#1414): the changed keys (and their transitive
+// dependents) come from the parameter graph; if any reaches geometry through a path the engine
+// cannot attribute to a feature (a 3D-sketch dimension — the wholesale set captured last recompute)
+// it falls back to a full rebuild, otherwise it dirties only the features whose consumed-sketch
+// footprint or direct reads the change touched. Editing one fillet's driving parameter on a
+// 1000-feature part then rebuilds that fillet's tail, not all 1000.
+func (d *PartComponentDefinition) RecomputeAfterChange() {
+	changed := d.params.DrainChangedKeys()
+	if d.changeNeedsFullRebuild(changed) {
 		d.features.MarkAllDirty()
 	} else {
-		d.features.MarkDirtyForParams(changed)
+		d.features.MarkDirtyForChange(changed)
 	}
 	d.Recompute()
 }
 
-// paramEditNeedsFullRebuild reports whether a parameter edit must rebuild the whole program
-// rather than a targeted tail: when nothing recorded as changed (an edit path that bypassed the
-// graph, or the first edit after load — rebuild conservatively), or when a changed parameter is in
-// the wholesale set (reaches geometry through an unmodelled path). Otherwise the changed
-// parameters are precisely attributable to features and MarkDirtyForParams handles them.
-func (d *PartComponentDefinition) paramEditNeedsFullRebuild(changed []param.ID) bool {
+// changeNeedsFullRebuild reports whether a change must rebuild the whole program rather than a
+// targeted tail: when nothing recorded as changed (an edit path that bypassed the graph, or the
+// first edit after load — rebuild conservatively), or when a changed key is in the wholesale set
+// (reaches geometry through an unmodelled path). Otherwise the changed keys are precisely
+// attributable to features and MarkDirtyForChange handles them.
+func (d *PartComponentDefinition) changeNeedsFullRebuild(changed []depend.Key) bool {
 	if len(changed) == 0 {
 		return true
 	}
-	for _, id := range changed {
-		if d.wholesaleParams[id] {
+	for _, k := range changed {
+		if d.wholesaleParams[k] {
 			return true
 		}
 	}
@@ -268,7 +272,7 @@ func (d *PartComponentDefinition) refreshSketchPlanes() {
 func (d *PartComponentDefinition) solveSketches() {
 	for i := 0; i < d.sketches.Count(); i++ {
 		sk := d.sketches.Item(i)
-		sk.SetParameterFootprint(d.params.Track(func() { sk.Solve() }))
+		sk.SetParameterFootprint(d.params.TrackKeys(func() { sk.Solve() }))
 	}
 }
 
