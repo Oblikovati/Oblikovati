@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -132,6 +133,42 @@ func TestSubmitAfterClose(t *testing.T) {
 	d.Close() // idempotent
 	if _, err := d.Submit(context.Background(), func() ([]byte, error) { return nil, nil }); !errors.Is(err, ErrClosed) {
 		t.Fatalf("Submit after Close err = %v, want ErrClosed", err)
+	}
+}
+
+// TestWakeupFiresOnEnqueue pins the #1493 wake path: the head's render-on-demand loop sleeps
+// when idle, so a job an add-in submits from another goroutine must rouse the consumer or it
+// would not run until the next OS input event. SetWakeup's callback must fire when (and only
+// when) a job is enqueued — before it drains — so the head can post a window wake.
+func TestWakeupFiresOnEnqueue(t *testing.T) {
+	d := New(4)
+	var woke int32
+	d.SetWakeup(func() { atomic.AddInt32(&woke, 1) })
+
+	if got := atomic.LoadInt32(&woke); got != 0 {
+		t.Fatalf("wakeup fired %d times before any Submit, want 0", got)
+	}
+	go func() { _, _ = d.Submit(context.Background(), func() ([]byte, error) { return nil, nil }) }()
+	waitFor(t, func() bool { return atomic.LoadInt32(&woke) == 1 }, "wakeup fired once on enqueue")
+	d.Drain(0)
+	if got := atomic.LoadInt32(&woke); got != 1 {
+		t.Fatalf("wakeup fired %d times, want exactly 1 (one enqueue)", got)
+	}
+}
+
+// TestWakeupOptional confirms a dispatcher with no wakeup registered still works (the head is
+// the only caller that sets one; tests and the bridge do not).
+func TestWakeupOptional(t *testing.T) {
+	d := New(4)
+	got := make(chan []byte, 1)
+	go func() {
+		out, _ := d.Submit(context.Background(), func() ([]byte, error) { return []byte("ok"), nil })
+		got <- out
+	}()
+	waitFor(t, func() bool { return d.Pending() == 1 }, "job queued without a wakeup")
+	d.Drain(0)
+	if string(<-got) != "ok" {
+		t.Fatal("Submit without a wakeup did not run the job")
 	}
 }
 

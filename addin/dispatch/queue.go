@@ -38,6 +38,7 @@ type Dispatcher struct {
 	queue     chan *request
 	done      chan struct{}
 	closeOnce sync.Once
+	wakeup    func() // optional; see SetWakeup
 }
 
 // New returns a dispatcher whose queue holds up to capacity pending jobs before
@@ -52,6 +53,13 @@ func New(capacity int) *Dispatcher {
 	}
 }
 
+// SetWakeup registers a callback invoked (on the submitting goroutine) immediately after a
+// job is enqueued, so a consumer that is asleep waiting for work can be woken to Drain it.
+// The head sets this to post an empty window event (#1493): the render-on-demand loop blocks
+// when idle, and without a wake an add-in's submitted call would not run until the next OS
+// input event. Set it once before any Submit; fn must be safe to call from any goroutine.
+func (d *Dispatcher) SetWakeup(fn func()) { d.wakeup = fn }
+
 // Submit enqueues job and blocks until Drain runs it (returning its result), ctx is
 // cancelled, or the dispatcher is closed. NOTE: if ctx fires after the job is queued
 // but before it runs, Submit returns ctx.Err() yet the job may still run on a later
@@ -60,6 +68,9 @@ func (d *Dispatcher) Submit(ctx context.Context, job Job) ([]byte, error) {
 	req := &request{job: job, reply: make(chan result, 1)}
 	select {
 	case d.queue <- req:
+		if d.wakeup != nil {
+			d.wakeup() // rouse an idle consumer so this job drains promptly (#1493)
+		}
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case <-d.done:

@@ -21,6 +21,9 @@ int   obk_head_should_close(void* h);
 void  obk_head_set_should_close(void* h, int v);
 void  obk_head_begin_frame(void* h);
 void  obk_head_end_frame(void* h, float r, float g, float b);
+void  obk_head_wait_events_timeout(double seconds);
+void  obk_head_wait_events(void);
+void  obk_head_post_empty_event(void);
 void  obk_head_destroy(void* h);
 void  obk_head_get_window_state(void* h, int* x, int* y, int* w, int* hh, int* maximized);
 void  obk_head_apply_window_state(void* h, int x, int y, int maximized);
@@ -98,6 +101,30 @@ func (w *Window) BeginFrame() { C.obk_head_begin_frame(w.handle) }
 func (w *Window) EndFrame(r, g, b float32) {
 	C.obk_head_end_frame(w.handle, C.float(r), C.float(g), C.float(b))
 }
+
+// WaitEvents blocks until a window event arrives or `seconds` elapse, then returns. The loop
+// uses it as the short tick WHILE the UI is animating (a camera tween, an active drag, the
+// burst of frames after input), so transitions stay smooth without a 60 Hz CPU-bound spin.
+// Input wakes it immediately. Headless/smoke runs must not call it (they'd block per frame).
+func (w *Window) WaitEvents(seconds float64) {
+	C.obk_head_wait_events_timeout(C.double(seconds))
+}
+
+// WaitEventsBlocking blocks indefinitely until a window event arrives or PostEmptyEvent is
+// posted, then returns. The loop uses it when the UI is fully idle: with FIFO present the
+// only throttle is the present, and on a software Vulkan rasterizer (a VM's llvmpipe) every
+// present rasterizes the whole frame on the CPU, so an unchanging scene pegs the cores for
+// nothing (#1493). Blocking here drops idle CPU to ~0 until the user acts or a background
+// producer posts a wake. Headless/smoke runs must not call it (the loop would hang).
+func (w *Window) WaitEventsBlocking() {
+	C.obk_head_wait_events()
+}
+
+// PostEmptyEvent wakes a loop blocked in WaitEventsBlocking from ANY goroutine (it is one of
+// the few thread-safe GLFW calls). A background producer that changes what should be on
+// screen without an OS input event — an add-in submitting model work, a finished update
+// check — posts this so the idle loop renders the change promptly (#1493).
+func PostEmptyEvent() { C.obk_head_post_empty_event() }
 
 // GPUInfo reports the selected Vulkan physical device's name and API version (formatted
 // "major.minor.patch"), for anonymous installation telemetry (#1182). On macOS the device

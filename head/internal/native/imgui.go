@@ -86,6 +86,7 @@ int  obk_ig_invisible_button(const char* id, float w, float h);
 int  obk_ig_begin_overlay_window(const char* name);
 int  obk_ig_is_item_active(void);
 int  obk_ig_is_item_hovered(void);
+int  obk_ig_any_mouse_down(void);
 int  obk_ig_mouse_down(int button);
 int  obk_ig_is_item_clicked(int button);
 void obk_ig_item_rect_min(float* x, float* y);
@@ -920,6 +921,26 @@ func BeginOverlayWindow(name string) bool {
 // pointer is over it this frame.
 func IsItemActive() bool  { return C.obk_ig_is_item_active() != 0 }
 func IsItemHovered() bool { return C.obk_ig_is_item_hovered() != 0 }
+
+// AnyItemActive reports whether ANY widget is mid-interaction (a slider being dragged, a
+// text field being edited). AnyMouseDown reports whether any mouse button is held. The
+// render-on-demand loop keeps drawing while either holds, so an interaction in progress
+// never stalls waiting for the next OS event (#1493).
+func AnyMouseDown() bool { return C.obk_ig_any_mouse_down() != 0 }
+
+// WantsAnimationFrame reports whether the UI is mid-motion this frame, so the render-on-demand
+// loop keeps drawing rather than blocking (#1493): a held mouse button (a drag in progress,
+// even momentarily still) or pointer movement (driving a hover, tooltip, or transition). The
+// loop ORs this with the session's own time-driven states (camera tween, drive playback) and a
+// post-input cooldown burst. NOTE: it deliberately does NOT use IsAnyItemActive — the viewport's
+// input-capturing InvisibleButton reads as active every frame, which would pin the loop on.
+func (w *Window) WantsAnimationFrame() bool {
+	if AnyMouseDown() {
+		return true
+	}
+	dx, dy := MouseDelta()
+	return dx != 0 || dy != 0
+}
 
 // MouseDown reports whether the given mouse button is currently pressed.
 func MouseDown(button int) bool { return C.obk_ig_mouse_down(C.int(button)) != 0 }

@@ -12,6 +12,7 @@ import (
 
 	"oblikovati.org/app"
 	"oblikovati.org/build"
+	"oblikovati.org/head/internal/native"
 	"oblikovati.org/update"
 )
 
@@ -61,6 +62,7 @@ func (p *updatePoller) launch(manual bool) {
 			}
 		}
 		p.outcome.Store(&updateOutcome{res: res, manual: manual})
+		native.PostEmptyEvent() // wake the idle loop so serviceUpdates surfaces the result (#1493)
 	}()
 }
 

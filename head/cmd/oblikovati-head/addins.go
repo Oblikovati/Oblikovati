@@ -20,6 +20,7 @@ import (
 	"oblikovati.org/app"
 	"oblikovati.org/event"
 	"oblikovati.org/head/internal/addinhost"
+	"oblikovati.org/head/internal/native"
 	"oblikovati.org/persistence/addinstate"
 	"oblikovati.org/persistence/dialogmemory"
 	"oblikovati.org/script/bridge"
@@ -57,6 +58,9 @@ type addInHost struct {
 // the frame loop can drain.
 func startAddIns(session *app.Session) *addInHost {
 	d := dispatch.New(64)
+	// Wake the render-on-demand loop (#1493) whenever an add-in submits work, so its model
+	// change is drained and drawn promptly instead of waiting for the next OS input event.
+	d.SetWakeup(native.PostEmptyEvent)
 	rtr := router.New(opregistry.Default())
 	// Route kernel logs into the router's operation trace so a driver can read both the
 	// op-trace and any slog records over the bridge (logs.tail / tail_logs).
