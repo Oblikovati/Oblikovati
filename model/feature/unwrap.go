@@ -19,6 +19,9 @@ import (
 // UnwrapDefinition names the cylindrical face to flatten.
 type UnwrapDefinition struct {
 	FaceKey []byte
+	// FaceAnchors maps FaceKey to its mint-time centroid for the geometric recovery tier
+	// (ADR-0043 P6 / #1579); see FilletDefinition.EdgeAnchors.
+	FaceAnchors map[string]math.Point3
 }
 
 // UnwrapFeature appends the flattened patch of its cylindrical face.
@@ -39,15 +42,15 @@ func (u *UnwrapFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	face, ok := body.FindFaceByKey(u.def.FaceKey)
-	if !ok {
-		return Output{}, fmt.Errorf("unwrap: face reference lost")
+	face, mt, err := bindFace(body, u.def.FaceKey, anchorFor(u.def.FaceKey, u.def.FaceAnchors))
+	if err != nil {
+		return Output{}, fmt.Errorf("unwrap: %w", err)
 	}
 	patch, err := unwrapCylindricalFace(face, featOr(u.featName, "unwrap"))
 	if err != nil {
 		return Output{}, err
 	}
-	return Output{Bodies: append(append([]*topo.Body(nil), in.Bodies...), patch)}, nil
+	return Output{Bodies: append(append([]*topo.Body(nil), in.Bodies...), patch), Heals: faceHeal(u.def.FaceKey, mt)}, nil
 }
 
 // unwrapCylindricalFace unrolls a cylindrical face into a flat rectangle sheet of arc-length ×
@@ -109,9 +112,19 @@ func flatSheet(w, h float64, feat string) *topo.Body {
 	return bld.Build()
 }
 
-// AddUnwrap appends the flattened patch of the cylindrical face referenced by faceKey.
+// AddUnwrap appends the flattened patch of the cylindrical face referenced by faceKey. It captures
+// the face's mint-time anchor against the running body for the geometric recovery tier (ADR-0043
+// P6 / #1579); the recipe restore uses addUnwrap so reopening never recaptures.
 func (c *ModifyFeatures) AddUnwrap(faceKey []byte) *PartFeature {
-	uf := &UnwrapFeature{def: &UnwrapDefinition{FaceKey: faceKey}}
+	def := &UnwrapDefinition{FaceKey: faceKey}
+	def.FaceAnchors = captureFaceAnchors(featuresTipBody(c.engine), [][]byte{faceKey})
+	return c.addUnwrap(def)
+}
+
+// addUnwrap registers an unwrap from a fully-built definition without capturing anchors (the
+// recipe restore path, which carries the persisted anchors of its own).
+func (c *ModifyFeatures) addUnwrap(def *UnwrapDefinition) *PartFeature {
+	uf := &UnwrapFeature{def: def}
 	pf := c.engine.Add(uf)
 	pf.SetName(c.engine.UniqueName("Unwrap"))
 	uf.featName = pf.name

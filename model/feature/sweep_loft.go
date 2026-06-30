@@ -470,7 +470,7 @@ func sectionNormal(s LoftSection) math.UnitVector3 {
 // findFace resolves a face reference key against the running bodies (persistent naming).
 func findFace(bodies []*topo.Body, key []byte) (*topo.Face, bool) {
 	for _, b := range bodies {
-		if f, ok := b.FindFaceByKey(key); ok {
+		if f, ok := FindOrRecoverFace(b, key); ok {
 			return f, true
 		}
 	}

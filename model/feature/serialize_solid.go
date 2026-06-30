@@ -33,9 +33,10 @@ type HoleData struct {
 
 // BossData is a boss's recipe: a raised cylinder on a placement face.
 type BossData struct {
-	Face     string  `yaml:"face"`
-	Diameter float64 `yaml:"diameter"`
-	Height   float64 `yaml:"height"`
+	Face        string           `yaml:"face"`
+	Diameter    float64          `yaml:"diameter"`
+	Height      float64          `yaml:"height"`
+	FaceAnchors []FaceAnchorData `yaml:"faceAnchors,omitempty"`
 }
 
 // CombineData booleans two running bodies (by index) under an operation.
@@ -110,7 +111,13 @@ func restoreBoss(fs *PartFeatures, b *BossData) (*PartFeature, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewBossFeatures(fs).Add(key, constFloat(b.Diameter), constFloat(b.Height)), nil
+	anchors, err := decodeFaceAnchors(b.FaceAnchors)
+	if err != nil {
+		return nil, err
+	}
+	return NewBossFeatures(fs).addBoss(&BossDefinition{
+		PlacementFaceKey: key, Diameter: constFloat(b.Diameter), Height: constFloat(b.Height), FaceAnchors: anchors,
+	}), nil
 }
 
 func restoreCombine(fs *PartFeatures, c *CombineData) (*PartFeature, error) {

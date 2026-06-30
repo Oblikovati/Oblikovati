@@ -230,6 +230,9 @@ type ThreadDefinition struct {
 	Class         string
 	Tapered       bool
 	ModelDiameter types.ModelDiameterFromThread
+	// FaceAnchors maps FaceKey to its mint-time centroid for the geometric recovery tier
+	// (ADR-0043 P6 / #1579); see FilletDefinition.EdgeAnchors.
+	FaceAnchors map[string]math.Point3
 }
 
 // ThreadFeature tags a cylindrical face with a cosmetic thread (Inventor's ThreadFeature): it
@@ -267,9 +270,9 @@ func (t *ThreadFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	face, ok := body.FindFaceByKey(t.def.FaceKey)
-	if !ok {
-		return Output{}, fmt.Errorf("thread: face reference lost")
+	face, mt, err := bindFace(body, t.def.FaceKey, anchorFor(t.def.FaceKey, t.def.FaceAnchors))
+	if err != nil {
+		return Output{}, fmt.Errorf("thread: %w", err)
 	}
 	cyl, ok := face.Geometry().(geom.Cylinder)
 	if !ok {
@@ -279,7 +282,7 @@ func (t *ThreadFeature) Recompute(in Input) (Output, error) {
 	spec.Internal = bodyHasMaterialOutside(body, cyl, (vMin+vMax)/2, (spec.MajorDiameter-spec.MinorDiameter)/2/10)
 	t.spec = &spec
 	if !t.def.Cut {
-		return Output{Bodies: in.Bodies}, nil // cosmetic: solid unchanged
+		return Output{Bodies: in.Bodies, Heals: faceHeal(t.def.FaceKey, mt)}, nil // cosmetic: solid unchanged
 	}
 	// Modeled (cut) thread: retype the cylindrical face to a threaded surface — O(1), no
 	// boolean — so it tessellates and measures as real threaded geometry.
@@ -289,12 +292,14 @@ func (t *ThreadFeature) Recompute(in Input) (Output, error) {
 	}
 	out := make([]*topo.Body, len(in.Bodies))
 	copy(out, in.Bodies)
-	threadedBody, err := ops.ReplaceFaceSurface(body, t.def.FaceKey, threaded)
+	// Target the RESOLVED face's current key, not the stored one: a healed thread bound to a
+	// recovered sibling whose live key differs from t.def.FaceKey (ADR-0043 P6, mirrors edges).
+	threadedBody, err := ops.ReplaceFaceSurface(body, face.ReferenceKey(), threaded)
 	if err != nil {
 		return Output{}, err
 	}
 	out[len(out)-1] = threadedBody // runningBody is the last body
-	return Output{Bodies: out}, nil
+	return Output{Bodies: out, Heals: faceHeal(t.def.FaceKey, mt)}, nil
 }
 
 // resolveFacesThenDefer resolves face keys against the running body and, if all bind, defers
@@ -305,10 +310,10 @@ func resolveFacesThenDefer(in Input, keys [][]byte, kind string) (Output, error)
 	if err != nil {
 		return Output{}, err
 	}
-	for _, k := range keys {
-		if _, ok := body.FindFaceByKey(k); !ok {
-			return Output{}, fmt.Errorf("%s: face reference lost", kind)
-		}
+	// Recover lost-but-ancestral faces so a deferred feature is not falsely Sick; ErrDeferred
+	// already classifies the deferral as a Warning, so the heals need no separate surfacing.
+	if _, _, err := resolveFaces(body, keys, nil); err != nil {
+		return Output{}, fmt.Errorf("%s: %w", kind, err)
 	}
 	return Output{Bodies: in.Bodies}, ErrDeferred
 }
@@ -489,7 +494,19 @@ func (c *DressUpFeatures) AddThread(faceKey []byte, designation string, cut bool
 	return c.AddThreadDef(&ThreadDefinition{FaceKey: faceKey, Designation: designation, Cut: cut})
 }
 
-// AddThreadDef adds a thread from a full definition (class / tapered / model diameter, #325).
+// AddThreadDef adds a thread from a full definition (class / tapered / model diameter, #325). It
+// captures the threaded face's mint-time anchor against the running body for the geometric
+// recovery tier (ADR-0043 P6 / #1579); every authoring path funnels here, while the recipe restore
+// uses addThreadDef so reopening a document never recaptures or rewrites anchors.
 func (c *DressUpFeatures) AddThreadDef(def *ThreadDefinition) *PartFeature {
+	if len(def.FaceAnchors) == 0 {
+		def.FaceAnchors = captureFaceAnchors(c.tipBody(), [][]byte{def.FaceKey})
+	}
+	return c.addThreadDef(def)
+}
+
+// addThreadDef registers a thread from a fully-built definition without capturing anchors (the
+// recipe restore path, which carries the persisted anchors of its own).
+func (c *DressUpFeatures) addThreadDef(def *ThreadDefinition) *PartFeature {
 	return c.engine.Add(&ThreadFeature{def: def})
 }

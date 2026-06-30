@@ -145,7 +145,7 @@ func init() {
 	registerFeatureCodec("boss", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			b := f.(*BossFeature)
-			fd.Boss = &BossData{Face: encodeKey(b.def.PlacementFaceKey), Diameter: evalFloat(b.def.Diameter), Height: evalFloat(b.def.Height)}
+			fd.Boss = &BossData{Face: encodeKey(b.def.PlacementFaceKey), Diameter: evalFloat(b.def.Diameter), Height: evalFloat(b.def.Height), FaceAnchors: encodeFaceAnchors(b.def.FaceAnchors)}
 			return nil
 		},
 		decode: func(rc *restoreContext, fd FeatureData) (*PartFeature, error) {
@@ -156,7 +156,8 @@ func init() {
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			t := f.(*ThreadFeature)
 			fd.Thread = &ThreadData{Face: encodeKey(t.def.FaceKey), Designation: t.def.Designation, Cut: t.def.Cut,
-				Class: t.def.Class, Tapered: t.def.Tapered, ModelDiameter: threadModelDiameterName(t.def.ModelDiameter)}
+				Class: t.def.Class, Tapered: t.def.Tapered, ModelDiameter: threadModelDiameterName(t.def.ModelDiameter),
+				FaceAnchors: encodeFaceAnchors(t.def.FaceAnchors)}
 			return nil
 		},
 		decode: decodeThread,
@@ -240,8 +241,12 @@ func decodeThread(rc *restoreContext, fd FeatureData) (*PartFeature, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewDressUpFeatures(rc.fs).AddThreadDef(&ThreadDefinition{FaceKey: key, Designation: fd.Thread.Designation,
-		Cut: fd.Thread.Cut, Class: fd.Thread.Class, Tapered: fd.Thread.Tapered, ModelDiameter: md}), nil
+	anchors, err := decodeFaceAnchors(fd.Thread.FaceAnchors)
+	if err != nil {
+		return nil, err
+	}
+	return NewDressUpFeatures(rc.fs).addThreadDef(&ThreadDefinition{FaceKey: key, Designation: fd.Thread.Designation,
+		Cut: fd.Thread.Cut, Class: fd.Thread.Class, Tapered: fd.Thread.Tapered, ModelDiameter: md, FaceAnchors: anchors}), nil
 }
 
 // decodeSnapFit rebuilds a cantilever snap-fit from its persisted dimensions.

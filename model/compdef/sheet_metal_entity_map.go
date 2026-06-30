@@ -43,6 +43,9 @@ func (d *PartComponentDefinition) MapFlatToFolded(key []byte) ([]byte, bool, err
 // returns the reference key of dst's face most strongly facing that side — the front↔front,
 // back↔back correspondence. found is false when key is not a face of src.
 func mapFace(src, dst *topo.Body, baseNormal math.Vector3, key []byte) ([]byte, bool) {
+	// Exact/first-match on purpose (NOT FindOrRecoverFace): a flat pattern's front and back faces
+	// deliberately share one reference key, and this map disambiguates them by normal direction
+	// below — so the ADR-0043 P0 collision guard (which refuses a >1-match) does not fit here.
 	face, ok := src.FindFaceByKey(key)
 	if !ok {
 		return nil, false

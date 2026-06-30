@@ -188,7 +188,7 @@ func planeNormals(body *topo.Body, keys [][]byte) []math.Vector3 {
 func facePlanes(body *topo.Body, keys [][]byte) []geom.Plane {
 	var out []geom.Plane
 	for _, k := range keys {
-		if f, ok := body.FindFaceByKey(k); ok {
+		if f, ok := FindOrRecoverFace(body, k); ok {
 			if pl, ok := facePlane(f); ok {
 				out = append(out, pl)
 			}

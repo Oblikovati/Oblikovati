@@ -248,6 +248,9 @@ type BossDefinition struct {
 	PlacementFaceKey []byte
 	Diameter         func() float64
 	Height           func() float64
+	// FaceAnchors maps the placement face key to its mint-time centroid for the geometric
+	// recovery tier (ADR-0043 P6 / #1579); see FilletDefinition.EdgeAnchors.
+	FaceAnchors map[string]math.Point3
 }
 
 // BossFeature adds a cylindrical boss to the running solid.
@@ -268,9 +271,9 @@ func (b *BossFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	face, ok := body.FindFaceByKey(b.def.PlacementFaceKey)
-	if !ok {
-		return Output{}, fmt.Errorf("boss: placement face reference lost")
+	face, mt, err := bindFace(body, b.def.PlacementFaceKey, anchorFor(b.def.PlacementFaceKey, b.def.FaceAnchors))
+	if err != nil {
+		return Output{}, fmt.Errorf("boss: %w", err)
 	}
 	r, h := callOrZero(b.def.Diameter)/2, callOrZero(b.def.Height)
 	if r <= 0 || h <= 0 {
@@ -285,7 +288,7 @@ func (b *BossFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, fmt.Errorf("boss: %w", err)
 	}
-	return Output{Bodies: replaceBody(in.Bodies, body, res)}, nil
+	return Output{Bodies: replaceBody(in.Bodies, body, res), Heals: faceHeal(b.def.PlacementFaceKey, mt)}, nil
 }
 
 // Operation reports that a boss adds material, so a pattern of a boss unions its raised
@@ -367,7 +370,19 @@ func (c *HoleFeatures) addHole(def *HoleDefinition) *PartFeature {
 // Add adds a cylindrical boss on the placement face, naming it (Boss1, Boss2, …) so its
 // generated topology has a stable, distinct lineage.
 func (c *BossFeatures) Add(faceKey []byte, diameter, height func() float64) *PartFeature {
-	bf := &BossFeature{def: &BossDefinition{PlacementFaceKey: faceKey, Diameter: diameter, Height: height}}
+	def := &BossDefinition{PlacementFaceKey: faceKey, Diameter: diameter, Height: height}
+	// Capture the placement face's mint-time anchor against the running body so the geometric
+	// recovery tier survives an upstream edit that renames the face (ADR-0043 P6 / #1579). Every
+	// authoring path funnels here; the recipe restore uses addBoss, which preserves persisted
+	// anchors and never recaptures (no doc-dirty churn on reopen).
+	def.FaceAnchors = captureFaceAnchors(featuresTipBody(c.engine), [][]byte{faceKey})
+	return c.addBoss(def)
+}
+
+// addBoss registers a boss from a fully-built definition without capturing anchors (the recipe
+// restore path, which carries the persisted anchors of its own).
+func (c *BossFeatures) addBoss(def *BossDefinition) *PartFeature {
+	bf := &BossFeature{def: def}
 	pf := c.engine.Add(bf)
 	pf.SetName(c.engine.UniqueName("Boss"))
 	bf.featName = pf.name

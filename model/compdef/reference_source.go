@@ -6,6 +6,7 @@ import (
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
+	"oblikovati.org/model/feature"
 )
 
 // Projecting/including part geometry into a sketch (2D or 3D) and deriving surface curves
@@ -95,11 +96,14 @@ func NewFaceRefSource(part *PartComponentDefinition, ref string) FaceRefSource {
 // SourceID returns the face's reference key.
 func (s FaceRefSource) SourceID() string { return s.ref }
 
-// Surface re-resolves the face by key and returns its surface, or nil when lost.
+// Surface re-resolves the face by key and returns its surface, or nil when lost. It recovers a
+// lone ancestral sibling when the exact face is gone (ADR-0043 P6 / #1579) so an associative
+// surface source survives an upstream edit that renames its face, rather than silently projecting
+// onto nothing. FaceKeyResolves below deliberately does NOT recover — it is the health probe.
 func (s FaceRefSource) Surface() geom.Surface {
 	key := []byte(s.ref)
 	for _, b := range s.bodies() {
-		if face, ok := b.FindFaceByKey(key); ok {
+		if face, ok := feature.FindOrRecoverFace(b, key); ok {
 			return face.Geometry()
 		}
 	}
