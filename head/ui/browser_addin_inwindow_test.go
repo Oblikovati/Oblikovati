@@ -10,6 +10,7 @@ import (
 
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
+	"oblikovati.org/event"
 	"oblikovati.org/head/internal/native"
 )
 
@@ -73,4 +74,80 @@ func TestInWindowCamBrowserPaneScreenshot(t *testing.T) {
 		t.Fatalf("screenshot not written: %v", err)
 	}
 	t.Logf("CAM browser pane screenshot written to %s", out)
+}
+
+// TestInWindowCamPaneNodeContextMenu drives a real right-click on a pane node to open its
+// context menu and clicks the first item, asserting the chosen item reaches the session as a
+// "menu" gesture — the per-node right-click path (drawAddInNodeMenu). Skips without Vulkan.
+func TestInWindowCamPaneNodeContextMenu(t *testing.T) {
+	win := newViewportWindow(t)
+	defer win.Destroy()
+	dockLaidOut = false
+	icons = nil
+
+	s := app.NewSession()
+	if err := s.BrowserPanes().Set(camDemoPane()); err != nil {
+		t.Fatalf("Set pane: %v", err)
+	}
+	icons = newIconCache(win)
+
+	var events []app.BrowserPaneNodeActivated
+	event.Subscribe(s.Events(), event.After, func(_ event.Context, e app.BrowserPaneNodeActivated) event.Outcome {
+		events = append(events, e)
+		return event.Continue()
+	})
+	gotMenu := func() bool {
+		for _, e := range events {
+			if e.Gesture == app.BrowserGestureMenu {
+				return true
+			}
+		}
+		return false
+	}
+
+	frame := func() {
+		win.BeginFrame()
+		native.SetNextWindowPos(0, 0)
+		native.SetNextWindowSize(inWinW, inWinH)
+		if vis, _ := native.BeginClosable("CAM##menu"); vis {
+			browserNodeSeq = 0
+			for _, n := range camDemoPane().Nodes {
+				drawAddInPaneNode(s, "cam", n)
+			}
+		}
+		native.End()
+		win.EndFrame(0.1, 0.1, 0.1)
+	}
+
+	// The "Job" root row sits just under the window title bar: its icon is far left, its label
+	// to the right. Click the icon (covers the icon-click select path).
+	native.InjectMousePos(20, 42)
+	frame()
+	frame()
+	native.InjectMouseButton(native.MouseLeft, true)
+	frame()
+	native.InjectMouseButton(native.MouseLeft, false)
+	frame()
+
+	// Right-click the row to open its context menu, then scan a small region for the first item
+	// (the popup opens at the cursor; exact item pixel varies with ImGui metrics).
+	rx, ry := float32(80), float32(42)
+	native.InjectMousePos(rx, ry)
+	frame()
+	native.InjectMouseButton(native.MouseRight, true)
+	frame()
+	native.InjectMouseButton(native.MouseRight, false)
+	frame()
+	for dy := float32(8); dy <= 40 && !gotMenu(); dy += 6 {
+		native.InjectMousePos(rx+12, ry+dy)
+		frame()
+		native.InjectMouseButton(native.MouseLeft, true)
+		frame()
+		native.InjectMouseButton(native.MouseLeft, false)
+		frame()
+	}
+
+	if !gotMenu() {
+		t.Fatal("right-click context-menu item did not reach the session as a menu gesture")
+	}
 }
