@@ -138,9 +138,9 @@ func (t *ChamferTool) Commit(s *Session) error {
 // both Commit (the part's engine) and DraftFeature (a scratch engine).
 func (t *ChamferTool) addChamfer(dress *feature.DressUpFeatures) *feature.PartFeature {
 	d := t.distance
-	pf := dress.AddChamferConcave(t.selectedEdgeKeys(), func() float64 { return d }, t.flatCorners, t.concaveStrategy)
-	pf.Definition().(*feature.ChamferFeature).Definition().EdgeAnchors = edgeHandleAnchors(t.edges) // P6b
-	return pf
+	// Mint-time anchors are captured by AddChamferConcave against the running body (ADR-0043 P6b),
+	// uniformly with every other authoring path — no per-tool capture needed here.
+	return dress.AddChamferConcave(t.selectedEdgeKeys(), func() float64 { return d }, t.flatCorners, t.concaveStrategy)
 }
 
 // AddedFeature returns the feature created on commit (for inspection/tests).

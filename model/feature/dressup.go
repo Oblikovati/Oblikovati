@@ -336,11 +336,23 @@ func (c *DressUpFeatures) AddFillet(edgeKeys [][]byte, radius func() float64) *P
 // AddFilletCorner rounds the given edges to radius with an explicit shared-corner treatment.
 // Concave edges fill outward (the default); use [AddFilletConcave] to round a recess inward.
 func (c *DressUpFeatures) AddFilletCorner(edgeKeys [][]byte, radius func() float64, corner FilletCornerType) *PartFeature {
-	return c.engine.Add(&FilletFeature{def: &FilletDefinition{EdgeKeys: edgeKeys, Radius: radius, CornerType: corner}})
+	return c.authorEdgeFillet(&FilletDefinition{EdgeKeys: edgeKeys, Radius: radius, CornerType: corner})
 }
 
-// addFillet adds a fillet from a fully-built definition (used by the recipe restore to
-// carry fields the public builders don't take, e.g. geometric edge refs).
+// authorEdgeFillet captures mint-time edge anchors (ADR-0043 P6b) against the running body, then
+// registers an edge-key fillet. Every PUBLIC edge-key fillet builder funnels through it so each
+// authoring path records the geometric-recovery witness; the recipe restore uses addFillet, which
+// preserves the persisted anchors and never recaptures.
+func (c *DressUpFeatures) authorEdgeFillet(def *FilletDefinition) *PartFeature {
+	if len(def.EdgeAnchors) == 0 {
+		def.EdgeAnchors = captureEdgeAnchors(c.tipBody(), def.EdgeKeys)
+	}
+	return c.engine.Add(&FilletFeature{def: def})
+}
+
+// addFillet adds a fillet from a fully-built definition without capturing anchors (used by the
+// recipe restore to carry fields the public builders don't take, e.g. geometric edge refs, and
+// the persisted anchors themselves).
 func (c *DressUpFeatures) addFillet(def *FilletDefinition) *PartFeature {
 	return c.engine.Add(&FilletFeature{def: def})
 }
@@ -348,16 +360,16 @@ func (c *DressUpFeatures) addFillet(def *FilletDefinition) *PartFeature {
 // AddFilletCross rounds the given edges to radius with a chosen cross-section shape (M36-F08): arc
 // (G1, the default), G2 (curvature-continuous), or conic with fullness rho. Shared corners miter.
 func (c *DressUpFeatures) AddFilletCross(edgeKeys [][]byte, radius func() float64, cross FilletCrossSection, rho float64) *PartFeature {
-	return c.engine.Add(&FilletFeature{def: &FilletDefinition{
+	return c.authorEdgeFillet(&FilletDefinition{
 		EdgeKeys: edgeKeys, Radius: radius, CornerType: types.FilletCornerMiter, CrossSection: cross, Rho: rho,
-	}})
+	})
 }
 
 // AddFilletConcave rounds the given edges to radius with an explicit concave-edge strategy: outward
 // fills the inside corner with material (the default), inward rounds a recess into it. Convex edges
 // are unaffected by the strategy. Shared corners miter.
 func (c *DressUpFeatures) AddFilletConcave(edgeKeys [][]byte, radius func() float64, concave types.FilletConcaveStrategy) *PartFeature {
-	return c.engine.Add(&FilletFeature{def: &FilletDefinition{EdgeKeys: edgeKeys, Radius: radius, CornerType: types.FilletCornerMiter, ConcaveStrategy: concave}})
+	return c.authorEdgeFillet(&FilletDefinition{EdgeKeys: edgeKeys, Radius: radius, CornerType: types.FilletCornerMiter, ConcaveStrategy: concave})
 }
 
 // AddFilletSets rounds any mix of constant and variable radius edge sets in one feature
@@ -393,31 +405,43 @@ func (c *DressUpFeatures) AddChamfer(edgeKeys [][]byte, distance func() float64)
 // three-edge corner is blended into a flat triangular face (true) or left pointy (false).
 // Concave edges fill outward (the default); use [AddChamferConcave] to relieve them inward.
 func (c *DressUpFeatures) AddChamferCorners(edgeKeys [][]byte, distance func() float64, flatCorners bool) *PartFeature {
-	return c.addChamfer(&ChamferDefinition{EdgeKeys: edgeKeys, Distance: distance, Type: types.ChamferDistance, FlatCorners: flatCorners})
+	return c.authorChamfer(&ChamferDefinition{EdgeKeys: edgeKeys, Distance: distance, Type: types.ChamferDistance, FlatCorners: flatCorners})
 }
 
 // AddChamferConcave bevels the given edges by distance with an explicit concave-edge strategy:
 // outward fills the inside corner with material (the default), inward cuts a recessed relief
 // groove. Convex edges are unaffected by the strategy. Three-edge corners blend flat.
 func (c *DressUpFeatures) AddChamferConcave(edgeKeys [][]byte, distance func() float64, flatCorners bool, strategy ChamferConcaveStrategy) *PartFeature {
-	return c.addChamfer(&ChamferDefinition{EdgeKeys: edgeKeys, Distance: distance, Type: types.ChamferDistance, FlatCorners: flatCorners, ConcaveStrategy: strategy})
+	return c.authorChamfer(&ChamferDefinition{EdgeKeys: edgeKeys, Distance: distance, Type: types.ChamferDistance, FlatCorners: flatCorners, ConcaveStrategy: strategy})
 }
 
 // AddChamferTwoDistances bevels the given edges with independent setbacks on the two adjacent
 // faces (an asymmetric chamfer, M20-F03). Three-edge corners blend flat by default, like the
 // equal-distance mode.
 func (c *DressUpFeatures) AddChamferTwoDistances(edgeKeys [][]byte, distance, distance2 func() float64) *PartFeature {
-	return c.addChamfer(&ChamferDefinition{EdgeKeys: edgeKeys, Distance: distance, Distance2: distance2, Type: types.ChamferTwoDistances, FlatCorners: true})
+	return c.authorChamfer(&ChamferDefinition{EdgeKeys: edgeKeys, Distance: distance, Distance2: distance2, Type: types.ChamferTwoDistances, FlatCorners: true})
 }
 
 // AddChamferDistanceAngle bevels the given edges by a setback on the first face and the
 // chamfer-face angle (radians), M20-F03. Three-edge corners blend flat by default, like the
 // equal-distance mode.
 func (c *DressUpFeatures) AddChamferDistanceAngle(edgeKeys [][]byte, distance, angle func() float64) *PartFeature {
-	return c.addChamfer(&ChamferDefinition{EdgeKeys: edgeKeys, Distance: distance, Angle: angle, Type: types.ChamferDistanceAndAngle, FlatCorners: true})
+	return c.authorChamfer(&ChamferDefinition{EdgeKeys: edgeKeys, Distance: distance, Angle: angle, Type: types.ChamferDistanceAndAngle, FlatCorners: true})
 }
 
-// addChamfer registers a chamfer feature with the given definition.
+// authorChamfer captures mint-time edge anchors (ADR-0043 P6b) against the running body, then
+// registers the chamfer. Every PUBLIC chamfer builder funnels through it so each authoring path
+// (GUI, wire API, assembly, programmatic) records the geometric-recovery witness; the recipe
+// restore calls addChamfer directly so reopening a document never recaptures or rewrites anchors.
+func (c *DressUpFeatures) authorChamfer(def *ChamferDefinition) *PartFeature {
+	if len(def.EdgeAnchors) == 0 {
+		def.EdgeAnchors = captureEdgeAnchors(c.tipBody(), def.EdgeKeys)
+	}
+	return c.addChamfer(def)
+}
+
+// addChamfer registers a chamfer feature with the given definition (no anchor capture — shared
+// by the recipe restore, which carries persisted anchors of its own).
 func (c *DressUpFeatures) addChamfer(def *ChamferDefinition) *PartFeature {
 	cf := &ChamferFeature{def: def}
 	pf := c.engine.Add(cf)
