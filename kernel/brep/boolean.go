@@ -215,13 +215,17 @@ func selectFaces(faces []planarFace, imprints [][][2]math.Point3, other *topo.Bo
 // degenerate split) and any duplicate cutting set fall back to an ordinal, deferred to F05.
 func nameFragments(fromFace []subFace, parent topo.Lineage, isB bool, prov []imprintSeg) {
 	dups := map[string]int{}
+	// The parent's cut segments (with cutting-face keys precomputed) are shared by every fragment,
+	// so resolve them once here rather than rebuilding lineage keys per fragment per ring vertex
+	// — the #1578 fix for the outrunner's dense-imprint fragment-naming explosion.
+	border := parentBorderSegments(parent, prov)
 	for k := range fromFace {
 		fromFace[k].fromB = isB // operand tag, so the stitch can fuse tangent contacts
 		if len(fromFace) == 1 {
 			fromFace[k].lineage = parent // K1a: a single survivor keeps its key
 			continue
 		}
-		cutting := fragmentCuttingFaces(parent, fromFace[k], prov)
+		cutting := fragmentCuttingFaces(border, fromFace[k])
 		if len(cutting) == 0 {
 			fromFace[k].lineage = splitLineage(parent, k) // no detectable border: ordinal fallback
 			continue

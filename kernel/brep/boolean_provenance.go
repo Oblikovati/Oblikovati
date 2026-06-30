@@ -91,7 +91,7 @@ func edgeParents(p, q math.Point3, prov []imprintSeg) (topo.Lineage, topo.Lineag
 // yields the same (lo, hi) regardless of which face the segment was recorded on — the property
 // that makes an intersection edge's name independent of operand order.
 func canonicalPair(x, y topo.Lineage) (lo, hi topo.Lineage) {
-	if bytes.Compare(x.Key(), y.Key()) <= 0 {
+	if x.KeyString() <= y.KeyString() {
 		return x, y
 	}
 	return y, x
@@ -162,19 +162,45 @@ var (
 	cuttingSep   = topo.Tok("brep", "by", 0)
 )
 
+// borderSeg is an imprint segment recorded ON a given parent face, with its cutting ("other") face
+// lineage key precomputed. Naming every fragment of one parent reuses the same border set, so
+// precomputing the keys once here keeps the per-fragment border walk free of lineage-key rebuilds —
+// the #1578 hot path, where fragmentCuttingFaces rebuilt parent.Key()/owner.Key() on every
+// (ring vertex × imprint segment) and the cost exploded with the outrunner's dense imprint set.
+type borderSeg struct {
+	a, b     math.Point3
+	other    topo.Lineage
+	otherKey string
+}
+
+// parentBorderSegments selects the imprint segments owned by `parent` (genuine cuts of this face)
+// and precomputes each cutting face's key once. Called once per parent face — not once per
+// fragment, and not once per ring vertex — so the redundant key rebuilds that dominated #1578 are
+// hoisted out of the fragment-naming inner loop entirely.
+func parentBorderSegments(parent topo.Lineage, prov []imprintSeg) []borderSeg {
+	parentKey := parent.KeyString()
+	var border []borderSeg
+	for _, s := range prov {
+		if s.owner.KeyString() == parentKey {
+			border = append(border, borderSeg{a: s.a, b: s.b, other: s.other, otherKey: s.other.KeyString()})
+		}
+	}
+	return border
+}
+
 // fragmentCuttingFaces returns the sorted, unique set of OTHER-operand face lineages whose imprint
-// borders the fragment sf of `parent` — the faces that cut this piece out (M31-F04, #1154). Only
-// segments recorded ON the parent (owner == parent) count, so each "other" is a genuine cutting
-// face. The set, not an ordinal index, identifies the piece, so it survives an upstream edit that
-// merely reorders the pieces.
-func fragmentCuttingFaces(parent topo.Lineage, sf subFace, prov []imprintSeg) []topo.Lineage {
+// borders the fragment sf (M31-F04, #1154). `border` is the parent's own cut segments with their
+// cutting-face keys precomputed (see parentBorderSegments), so the inner walk is pure geometry. The
+// set, not an ordinal index, identifies the piece, so it survives an upstream edit that merely
+// reorders the pieces.
+func fragmentCuttingFaces(border []borderSeg, sf subFace) []topo.Lineage {
 	found := map[string]topo.Lineage{}
 	collect := func(ring []math.Point3) {
 		for i := range ring {
 			mid := ring[i].TranslateBy(ring[i].VectorTo(ring[(i+1)%len(ring)]).Scale(0.5))
-			for _, s := range prov {
-				if bytes.Equal(s.owner.Key(), parent.Key()) && pointOnSegment3(mid, s.a, s.b) {
-					found[string(s.other.Key())] = s.other
+			for _, s := range border {
+				if pointOnSegment3(mid, s.a, s.b) {
+					found[s.otherKey] = s.other
 				}
 			}
 		}

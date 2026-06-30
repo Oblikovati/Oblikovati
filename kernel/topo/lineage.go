@@ -60,13 +60,26 @@ func Tok(feature, role string, index int) LineageToken {
 // Lineage is the generative derivation path of an entity — the seed of its
 // reference key. Two entities are "the same" across rebuilds iff their lineages are
 // equal. It is a value type (comparable by its serialized [Lineage.Key]).
+//
+// A lineage is immutable once built (tokens is unexported and never mutated; [Lineage.Tokens]
+// returns a copy), so its serialized key is computed once at construction and memoized in keyStr.
+// The cached string is shared by every value copy and is safe to share because strings are
+// immutable — this removes the redundant per-call key rebuilds that dominated boolean provenance
+// naming on dense imprint sets (#1578).
 type Lineage struct {
 	tokens []LineageToken
+	keyStr string
+}
+
+// newLineage is the single internal constructor: it memoizes the serialized key once so all
+// callers (and every value copy) get an O(1) [Lineage.Key]/[Lineage.KeyString].
+func newLineage(tokens []LineageToken) Lineage {
+	return Lineage{tokens: tokens, keyStr: serializeKey(tokens)}
 }
 
 // NewLineage builds a lineage from ordered tokens (root first).
 func NewLineage(tokens ...LineageToken) Lineage {
-	return Lineage{tokens: tokens}
+	return newLineage(tokens)
 }
 
 // Tokens returns the derivation tokens, root first.
@@ -76,12 +89,12 @@ func (l Lineage) Tokens() []LineageToken {
 	return out
 }
 
-// Key returns the deterministic serialization used for identity comparison. The
-// separators cannot appear in feature/role names by convention (they are ids), so
-// the encoding is unambiguous.
-func (l Lineage) Key() []byte {
+// serializeKey renders the deterministic identity serialization of ordered tokens. The
+// separators cannot appear in feature/role names by convention (they are ids), so the encoding is
+// unambiguous. Called once per lineage at construction; callers read the memoized result.
+func serializeKey(tokens []LineageToken) string {
 	var b strings.Builder
-	for i, t := range l.tokens {
+	for i, t := range tokens {
 		if i > 0 {
 			b.WriteByte('/')
 		}
@@ -91,11 +104,24 @@ func (l Lineage) Key() []byte {
 		b.WriteByte('#')
 		b.WriteString(strconv.Itoa(t.Index))
 	}
-	return []byte(b.String())
+	return b.String()
 }
 
+// KeyString returns the memoized serialization (zero-alloc). Prefer it over [Lineage.Key] in hot
+// paths that only compare or map by the key. A zero-value Lineage (nil tokens, built by a struct
+// literal rather than a constructor) serializes lazily to the empty key.
+func (l Lineage) KeyString() string {
+	if l.keyStr == "" && len(l.tokens) > 0 {
+		return serializeKey(l.tokens) // a literal-built lineage that bypassed the constructor
+	}
+	return l.keyStr
+}
+
+// Key returns the deterministic serialization used for identity comparison, as bytes.
+func (l Lineage) Key() []byte { return []byte(l.KeyString()) }
+
 // String renders the lineage for diagnostics.
-func (l Lineage) String() string { return string(l.Key()) }
+func (l Lineage) String() string { return l.KeyString() }
 
 // idSeq mints session-stable entity ids (not persisted; identity across sessions is
 // the reference key).

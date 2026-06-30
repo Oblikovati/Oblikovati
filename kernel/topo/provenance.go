@@ -3,7 +3,6 @@
 package topo
 
 import (
-	"bytes"
 	stdmath "math"
 	"sort"
 
@@ -33,7 +32,7 @@ import (
 func NameByParents(parents []Lineage, sep, rankSeed LineageToken, rank int) Lineage {
 	ordered := append([]Lineage(nil), parents...)
 	sort.Slice(ordered, func(i, j int) bool {
-		return bytes.Compare(ordered[i].Key(), ordered[j].Key()) < 0
+		return ordered[i].KeyString() < ordered[j].KeyString()
 	})
 	var toks []LineageToken
 	for i, p := range ordered {
@@ -45,7 +44,7 @@ func NameByParents(parents []Lineage, sep, rankSeed LineageToken, rank int) Line
 	if rank > 0 {
 		toks = append(toks, Tok(rankSeed.Feature, rankSeed.Role, rank))
 	}
-	return Lineage{tokens: toks}
+	return newLineage(toks)
 }
 
 // RelineageByFaceProvenance renames a freshly-built body's EDGES and VERTICES from face provenance
