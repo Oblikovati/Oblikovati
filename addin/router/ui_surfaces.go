@@ -17,6 +17,7 @@ func (r *Router) registerUISurfaceHandlers() {
 	r.readOnly(wire.MethodBrowserListPanes, listBrowserPanes)
 	r.readOnly(wire.MethodDockableWindowsSet, setDockableWindow)
 	r.readOnly(wire.MethodDockableWindowsSetVisible, setDockableWindowVisible)
+	r.readOnly(wire.MethodDockableWindowsSetValue, setDockableWindowValue)
 	r.readOnly(wire.MethodDockableWindowsDelete, deleteDockableWindow)
 	r.readOnly(wire.MethodDockableWindowsList, listDockableWindows)
 	r.readOnly(wire.MethodUIListEnvironments, listEnvironments)
@@ -73,6 +74,19 @@ func setDockableWindowVisible(s *app.Session, args json.RawMessage) (json.RawMes
 	if err := s.SetDockableWindowVisible(req.ID, req.Visible); err != nil {
 		return nil, err
 	}
+	return ok()
+}
+
+// setDockableWindowValue drives one editable control of a dockable window to a value, exactly as a
+// user edit would: the host updates the stored control and notifies the owning add-in
+// (wire dockableWindows.setValue). Lets automation/MCP edit add-in panels (e.g. switch the CAM
+// simulator's View dropdown).
+func setDockableWindowValue(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
+	var req wire.SetDockableWindowValueArgs
+	if err := decode(args, &req); err != nil {
+		return nil, err
+	}
+	s.PanelValueChanged(req.WindowId, req.ControlId, req.Value)
 	return ok()
 }
 

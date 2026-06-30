@@ -57,6 +57,22 @@ func TestDockableWindowsOverWire(t *testing.T) {
 	}
 }
 
+// TestDockableWindowSetValueOverWire checks setValue drives an editable control to a new value (as a
+// user edit would), updating the stored window so a re-read reflects it.
+func TestDockableWindowSetValueOverWire(t *testing.T) {
+	r, s := seededSession(t)
+	call(t, r, s, "dockableWindows.set",
+		`{"window":{"id":"sim.panel","title":"Sim","dock":2,"visible":true,"controls":[{"kind":6,"id":"sim_view","value":"Material","options":["Material","Path"]}]}}`, nil)
+
+	call(t, r, s, "dockableWindows.setValue", `{"windowId":"sim.panel","controlId":"sim_view","value":"Path"}`, nil)
+
+	var lst wire.ListDockableWindowsResult
+	call(t, r, s, "dockableWindows.list", "{}", &lst)
+	if len(lst.Windows) != 1 || lst.Windows[0].Controls[0].Value != "Path" {
+		t.Errorf("control value = %+v, want Path after setValue", lst.Windows)
+	}
+}
+
 func TestListEnvironmentsOverWire(t *testing.T) {
 	r, s := seededSession(t)
 	var res wire.ListEnvironmentsResult
