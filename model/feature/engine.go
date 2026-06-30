@@ -347,7 +347,8 @@ func lastSolid(bodies []*topo.Body) *topo.Body {
 }
 
 // classify turns a feature's recompute result into health + the running body state:
-// ErrDeferred → warning (passthrough), other error → sick (poison), nil → healthy.
+// ErrDeferred → warning (passthrough); other error → sick (poison); a healed
+// reference (ADR-0043 P6) → warning with the rebuilt body kept; nil → healthy.
 func (fs *PartFeatures) classify(pf *PartFeature, bodies []*topo.Body, out Output, err error, sick map[ID]bool) []*topo.Body {
 	switch {
 	case errors.Is(err, ErrDeferred):
@@ -357,6 +358,12 @@ func (fs *PartFeatures) classify(pf *PartFeature, bodies []*topo.Body, out Outpu
 		pf.health = health.Sicken(fmt.Sprintf("%s: %v", pf.Kind(), err))
 		sick[pf.id] = true
 		pf.cached = bodies
+	case len(out.Heals) > 0:
+		// The feature rebuilt successfully, but one or more references bound through a
+		// degraded tier instead of an exact match — keep the rebuilt body and flag the
+		// drift so the user can re-pick, rather than reporting a clean recompute.
+		pf.health = health.Health{Status: health.Warning, Reason: healReason(out.Heals)}
+		pf.cached = out.Bodies
 	default:
 		pf.health = health.Healthy
 		pf.cached = out.Bodies

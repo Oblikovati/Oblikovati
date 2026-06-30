@@ -56,7 +56,7 @@ func (f *SheetMetalContourFlangeFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	edges, err := resolveEdges(body, [][]byte{f.def.EdgeKey})
+	edges, heals, err := resolveEdges(body, [][]byte{f.def.EdgeKey})
 	if err != nil {
 		return Output{}, err
 	}
@@ -68,7 +68,7 @@ func (f *SheetMetalContourFlangeFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	return Output{Bodies: bodies}, nil
+	return Output{Bodies: bodies, Heals: heals}, nil
 }
 
 // buildContourFlangeSolid builds the contour-flange solid: the profile band mapped onto the

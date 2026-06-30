@@ -63,7 +63,7 @@ func (f *SheetMetalFlangeFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	edges, err := resolveEdges(body, [][]byte{f.def.EdgeKey})
+	edges, heals, err := resolveEdges(body, [][]byte{f.def.EdgeKey})
 	if err != nil {
 		return Output{}, err
 	}
@@ -77,7 +77,7 @@ func (f *SheetMetalFlangeFeature) Recompute(in Input) (Output, error) {
 		return Output{}, err
 	}
 	f.placement = &placement // record the resolved bend for the flat pattern (M13-F04)
-	return Output{Bodies: bodies}, nil
+	return Output{Bodies: bodies, Heals: heals}, nil
 }
 
 // Placement returns the resolved bend geometry captured by the last successful recompute,

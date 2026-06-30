@@ -35,11 +35,11 @@ func collidingTriBody() (body *topo.Body, dupKey, uniqueKey []byte) {
 func TestResolveEdgesRejectsAmbiguousKey(t *testing.T) {
 	body, dupKey, uniqueKey := collidingTriBody()
 
-	if _, err := resolveEdges(body, [][]byte{uniqueKey}); err != nil {
+	if _, _, err := resolveEdges(body, [][]byte{uniqueKey}); err != nil {
 		t.Fatalf("unique key should resolve, got %v", err)
 	}
 
-	_, err := resolveEdges(body, [][]byte{dupKey})
+	_, _, err := resolveEdges(body, [][]byte{dupKey})
 	if err == nil {
 		t.Fatal("ambiguous key resolved without error — the guard let a naming collision through")
 	}
@@ -48,7 +48,7 @@ func TestResolveEdgesRejectsAmbiguousKey(t *testing.T) {
 	}
 
 	lost := topo.NewLineage(topo.Tok("ghost", "edge", 99))
-	_, err = resolveEdges(body, [][]byte{appendKindByte(lost)})
+	_, _, err = resolveEdges(body, [][]byte{appendKindByte(lost)})
 	if err == nil || !strings.Contains(err.Error(), "lost") {
 		t.Errorf("a missing key should report 'lost', got %v", err)
 	}

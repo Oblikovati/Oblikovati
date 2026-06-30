@@ -77,16 +77,22 @@ func (f *SheetMetalCornerFeature) Recompute(in Input) (Output, error) {
 
 // roundCorners rolls a fillet of the given radius around the corner edges.
 func (f *SheetMetalCornerFeature) roundCorners(in Input, body *topo.Body, radius float64) (Output, error) {
-	res, err := ops.FilletEdges(body, f.def.EdgeKeys, radius)
+	// Heal the keys before the kernel pass (ops.FilletEdges re-resolves by exact key), so a
+	// recovered reference is addressed by its live key and the heal reaches the Output (P6).
+	edges, heals, err := resolveEdges(body, f.def.EdgeKeys)
+	if err != nil {
+		return Output{}, err
+	}
+	res, err := ops.FilletEdges(body, currentKeys(edges), radius)
 	if err != nil {
 		return Output{}, fmt.Errorf("sheet-metal corner round: %w", err)
 	}
-	return Output{Bodies: replaceBody(in.Bodies, body, res)}, nil
+	return Output{Bodies: replaceBody(in.Bodies, body, res), Heals: heals}, nil
 }
 
 // chamferCorners cuts a flat bevel of the given setback across the corner edges.
 func (f *SheetMetalCornerFeature) chamferCorners(in Input, body *topo.Body, setback float64) (Output, error) {
-	edges, err := resolveEdges(body, f.def.EdgeKeys)
+	edges, heals, err := resolveEdges(body, f.def.EdgeKeys)
 	if err != nil {
 		return Output{}, err
 	}
@@ -99,7 +105,7 @@ func (f *SheetMetalCornerFeature) chamferCorners(in Input, body *topo.Body, setb
 	if err != nil {
 		return Output{}, fmt.Errorf("sheet-metal corner chamfer: %w", err)
 	}
-	return Output{Bodies: replaceBody(in.Bodies, body, res)}, nil
+	return Output{Bodies: replaceBody(in.Bodies, body, res), Heals: heals}, nil
 }
 
 // SheetMetalCornerFeatures adds corner features into the engine.

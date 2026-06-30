@@ -4,6 +4,7 @@ package feature
 
 import (
 	"errors"
+	"fmt"
 	"sync/atomic"
 
 	"oblikovati.org/kernel/ops"
@@ -66,9 +67,30 @@ type ToolFeature interface {
 	ToolBody() *topo.Body
 }
 
-// Output is what a feature produces: the new running body state.
+// Output is what a feature produces: the new running body state, plus any reference
+// heals that occurred while resolving its inputs (ADR-0043 P6). Heals ride with the
+// Output — they are part of the recompute result, not an error — and the engine
+// turns a non-empty Heals into health.Warning while keeping the rebuilt body.
 type Output struct {
 	Bodies []*topo.Body
+	Heals  []ReferenceHeal
+}
+
+// ReferenceHeal records that a stored reference key did not match any entity exactly
+// but was recovered by a degraded tier of the topological binder (ADR-0043 P6): the
+// feature still rebuilds on the recovered entity, but the drift is surfaced as a
+// Warning so the user can re-pick if the recovery was not what they meant.
+type ReferenceHeal struct {
+	Key   []byte             // the stored reference key whose exact entity was gone
+	Match identity.MatchType // the tier that recovered it (ancestral or geometric)
+}
+
+// healReason renders one or more reference heals as a single Warning message.
+func healReason(heals []ReferenceHeal) string {
+	if len(heals) == 1 {
+		return fmt.Sprintf("reference %q healed (%s match) — re-pick to confirm", keyText(heals[0].Key), heals[0].Match)
+	}
+	return fmt.Sprintf("%d references healed by degraded binding — re-pick to confirm", len(heals))
 }
 
 // Feature is one recipe in the history. Recompute is pure: it reads the input and

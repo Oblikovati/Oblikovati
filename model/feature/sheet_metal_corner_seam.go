@@ -68,7 +68,7 @@ func (f *SheetMetalCornerSeamFeature) Recompute(in Input) (Output, error) {
 	if len(f.def.EdgeKeys) == 0 {
 		return Output{}, fmt.Errorf("sheet-metal corner seam: no corner edges selected")
 	}
-	edges, err := resolveEdges(body, f.def.EdgeKeys)
+	edges, heals, err := resolveEdges(body, f.def.EdgeKeys)
 	if err != nil {
 		return Output{}, err
 	}
@@ -81,7 +81,7 @@ func (f *SheetMetalCornerSeamFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, fmt.Errorf("sheet-metal corner seam: %w", err)
 	}
-	return Output{Bodies: replaceBody(in.Bodies, body, res)}, nil
+	return Output{Bodies: replaceBody(in.Bodies, body, res), Heals: heals}, nil
 }
 
 // seamCutters builds the gap-relief notch cutter for each corner edge.

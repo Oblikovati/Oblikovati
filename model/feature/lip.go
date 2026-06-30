@@ -45,7 +45,7 @@ func (l *LipFeature) Recompute(in Input) (Output, error) {
 	if w <= 0 || h <= 0 {
 		return Output{}, fmt.Errorf("lip: width %g and height %g must both be > 0", w, h)
 	}
-	edges, err := resolveEdges(body, l.def.EdgeKeys)
+	edges, heals, err := resolveEdges(body, l.def.EdgeKeys)
 	if err != nil {
 		return Output{}, err
 	}
@@ -63,7 +63,7 @@ func (l *LipFeature) Recompute(in Input) (Output, error) {
 			return Output{}, err
 		}
 	}
-	return Output{Bodies: replaceBody(in.Bodies, body, result)}, nil
+	return Output{Bodies: replaceBody(in.Bodies, body, result), Heals: heals}, nil
 }
 
 // lipBead builds the Width×Height bead swept along an edge: a rectangle in the plane
