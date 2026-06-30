@@ -3,7 +3,7 @@
 package topo
 
 import (
-	"bytes"
+	"sync"
 
 	"oblikovati.org/math"
 )
@@ -28,6 +28,38 @@ type Body struct {
 	cachedFaces    []*Face
 	cachedEdges    []*Edge
 	cachedVertices []*Vertex
+
+	// Reference-key indices, memoized lazily on the first lookup of each kind (#1580).
+	// The body is immutable after finalizeDerived — a recompute builds a NEW body, never
+	// mutates this one — so an index is a pure function of the cached entity lists: built
+	// once, never invalidated, and read lock-free like those lists. A body that is never
+	// keyed (most intermediate recompute results) pays nothing; a pre-finalize lookup
+	// falls back to a linear scan rather than memoizing an incomplete index.
+	edgeIndexOnce   sync.Once
+	faceIndexOnce   sync.Once
+	vertexIndexOnce sync.Once
+	edgeIndex       map[string][]*Edge
+	faceIndex       map[string][]*Face
+	vertexIndex     map[string][]*Vertex
+}
+
+// edgeKeyIndex returns the edge reference-key index, building it once. See the index
+// fields on [Body] for why a build-once memo is correct (the body is immutable here).
+func (b *Body) edgeKeyIndex() map[string][]*Edge {
+	b.edgeIndexOnce.Do(func() { b.edgeIndex = buildKeyIndex(b.cachedEdges) })
+	return b.edgeIndex
+}
+
+// faceKeyIndex returns the face reference-key index, building it once.
+func (b *Body) faceKeyIndex() map[string][]*Face {
+	b.faceIndexOnce.Do(func() { b.faceIndex = buildKeyIndex(b.cachedFaces) })
+	return b.faceIndex
+}
+
+// vertexKeyIndex returns the vertex reference-key index, building it once.
+func (b *Body) vertexKeyIndex() map[string][]*Vertex {
+	b.vertexIndexOnce.Do(func() { b.vertexIndex = buildKeyIndex(b.cachedVertices) })
+	return b.vertexIndex
 }
 
 func (b *Body) ID() uint64           { return b.id }
@@ -136,20 +168,16 @@ func (b *Body) RangeBox() math.Box {
 // rebind-after-recompute mechanism, proven against a rebuilt body: a face recreated
 // with the same lineage is re-found even though it is a different object.
 func (b *Body) FindFaceByKey(key []byte) (*Face, bool) {
-	for _, f := range b.Faces() {
-		if bytes.Equal(f.ReferenceKey(), key) {
-			return f, true
-		}
+	if m := b.FacesByKey(key); len(m) > 0 {
+		return m[0], true
 	}
 	return nil, false
 }
 
 // FindEdgeByKey re-binds an edge reference key by lineage.
 func (b *Body) FindEdgeByKey(key []byte) (*Edge, bool) {
-	for _, e := range b.Edges() {
-		if bytes.Equal(e.ReferenceKey(), key) {
-			return e, true
-		}
+	if m := b.EdgesByKey(key); len(m) > 0 {
+		return m[0], true
 	}
 	return nil, false
 }
@@ -157,34 +185,33 @@ func (b *Body) FindEdgeByKey(key []byte) (*Edge, bool) {
 // EdgesByKey returns EVERY edge whose reference key matches — normally one. More than one means a
 // topological-naming collision (two distinct edges minted the same lineage), the wrong-rebind
 // hazard ADR-0043's resolution guard turns into an honest error instead of a silent first-match.
+// The result is a fresh slice the caller may keep or mutate; it never aliases the index.
 func (b *Body) EdgesByKey(key []byte) []*Edge {
-	var out []*Edge
-	for _, e := range b.Edges() {
-		if bytes.Equal(e.ReferenceKey(), key) {
-			out = append(out, e)
-		}
+	if !b.derived {
+		return scanByKey(b.Edges(), key)
 	}
-	return out
+	return append([]*Edge(nil), b.edgeKeyIndex()[string(key)]...)
 }
 
 // FacesByKey returns EVERY face whose reference key matches — the face counterpart of [EdgesByKey].
 func (b *Body) FacesByKey(key []byte) []*Face {
-	var out []*Face
-	for _, f := range b.Faces() {
-		if bytes.Equal(f.ReferenceKey(), key) {
-			out = append(out, f)
-		}
+	if !b.derived {
+		return scanByKey(b.Faces(), key)
 	}
-	return out
+	return append([]*Face(nil), b.faceKeyIndex()[string(key)]...)
 }
 
 // FindVertexByKey re-binds a vertex reference key by lineage — used to resolve a picked
 // B-rep vertex as a work-feature point input after the body is rebuilt.
 func (b *Body) FindVertexByKey(key []byte) (*Vertex, bool) {
-	for _, v := range b.Vertices() {
-		if bytes.Equal(v.ReferenceKey(), key) {
-			return v, true
+	if !b.derived {
+		if v := scanByKey(b.Vertices(), key); len(v) > 0 {
+			return v[0], true
 		}
+		return nil, false
+	}
+	if m := b.vertexKeyIndex()[string(key)]; len(m) > 0 {
+		return m[0], true
 	}
 	return nil, false
 }
