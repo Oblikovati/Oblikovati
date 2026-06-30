@@ -133,11 +133,15 @@ residual naming collision becomes an honest failure, never a wrong-rebind.
     **ancestral** tier through a `model/feature` adapter; a lost reference with a lone surviving
     parent-sibling heals to a Warning instead of going Sick. No format change (the parent is derived
     from the key). The exact-one P0 guard stays authoritative; only a 0/>1 miss escalates.
-  - **P6b** *(done)* — persist the mint-time **anchor** (`EdgeDressData.EdgeAnchors`, captured at
-    selection from the live edge midpoint) and enable the **geometric** tier, so several surviving
-    siblings are disambiguated by nearness (the binder still refuses a tie). The anchor is keyed by
-    reference key (a map), so it tolerates the seeded/picked split and an absent anchor degrades to
-    ancestral-only.
+  - **P6b** *(done)* — persist the mint-time **anchor** (`EdgeDressData.EdgeAnchors`, the live edge
+    midpoint) and enable the **geometric** tier, so several surviving siblings are disambiguated by
+    nearness (the binder still refuses a tie). The anchor is keyed by reference key (a map), so it
+    tolerates the seeded/picked split and an absent anchor degrades to ancestral-only. **Capture is
+    a single creation-path-agnostic seam** (`captureEdgeAnchors`, invoked by the public
+    `DressUpFeatures.Add*` builders against the engine's running body) — not the GUI tool alone, or
+    the tier would be silently unavailable for wire-API / MCP / programmatically authored dress-ups.
+    Recompute stays a pure function (it never writes anchors) and the recipe restore never recaptures,
+    so reopening a document does not rewrite it.
   - **P6c** — retire the now-dead silent-match resolution branches; make `Input.Keys`/`fs.keys` live
     (or remove). The no-parent ordinal fallback and the degraded CSG soup fallback legitimately stay.
 

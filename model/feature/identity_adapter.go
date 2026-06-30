@@ -57,13 +57,10 @@ func (a edgeEntity) EntityKind() identity.EntityKind { return identity.KindEdge 
 func (a edgeEntity) Lineage() identity.Lineage       { return edgeLineage(a.e.ReferenceKey()) }
 
 // Anchor reports the edge midpoint as its representative point — the geometric
-// tie-breaker the binder uses only when several siblings share a parent (P6b).
+// tie-breaker the binder uses only when several siblings share a parent (P6b). It shares
+// edgeMidpoint with the create-time capture so witness and ranking use one definition.
 func (a edgeEntity) Anchor() (math.Point3, bool) {
-	s, e := a.e.StartVertex(), a.e.EndVertex()
-	if s == nil || e == nil {
-		return math.Point3{}, false
-	}
-	return s.Point().Midpoint(e.Point()), true
+	return edgeMidpoint(a.e)
 }
 
 // edgeEntities views every edge of the body as an identity.Entity for the binder.

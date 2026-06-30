@@ -262,7 +262,8 @@ func (t *FilletTool) addFillet(dress *feature.DressUpFeatures) *feature.PartFeat
 	def.ConcaveStrategy = t.concaveStrategy
 	def.CrossSection = t.crossSection
 	def.Rho = t.rho
-	def.EdgeAnchors = edgeHandleAnchors(t.edges) // mint-time anchors for geometric recovery (P6b)
+	// Mint-time anchors are captured by the AddFillet* builder against the running body (ADR-0043
+	// P6b), uniformly with every other authoring path — no per-tool capture needed here.
 	return pf
 }
 
