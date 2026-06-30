@@ -195,6 +195,8 @@ func mixedConstraint(sk *sketch.Sketch, kind types.GeometricConstraintKind, refs
 		return pointCircleConstraint(sk, refs)
 	case types.GeoConstraintTangent:
 		return tangentConstraint(sk, refs)
+	case types.GeoConstraintSymmetry:
+		return symmetryConstraint(sk, refs)
 	case types.GeoConstraintFix:
 		return fixConstraint(sk, refs)
 	default:

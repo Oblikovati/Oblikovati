@@ -138,6 +138,27 @@ func tangentConstraint(sk *sketch.Sketch, refs []uint64) (sketch.Constraint, boo
 	return g.AddCircularTangent(c1, c2), true, nil
 }
 
+// symmetryConstraint makes two points symmetric about a mirror line (point A, point B,
+// mirror line), matching the enumerate mapping (A, B, About) in sketch_enumerate.go.
+func symmetryConstraint(sk *sketch.Sketch, refs []uint64) (sketch.Constraint, bool, error) {
+	if len(refs) != 3 {
+		return nil, true, fmt.Errorf("sketch.addConstraint: symmetry needs 2 point refs + a mirror-line ref, got %d", len(refs))
+	}
+	a, err := pointRef(sk, refs[0])
+	if err != nil {
+		return nil, true, err
+	}
+	b, err := pointRef(sk, refs[1])
+	if err != nil {
+		return nil, true, err
+	}
+	about, err := lineRef(sk, refs[2])
+	if err != nil {
+		return nil, true, err
+	}
+	return sk.GeometricConstraints().AddSymmetry(a, b, about), true, nil
+}
+
 // fixConstraint grounds a single point.
 func fixConstraint(sk *sketch.Sketch, refs []uint64) (sketch.Constraint, bool, error) {
 	if len(refs) != 1 {
