@@ -79,7 +79,7 @@ func (f *SheetMetalCornerFeature) Recompute(in Input) (Output, error) {
 func (f *SheetMetalCornerFeature) roundCorners(in Input, body *topo.Body, radius float64) (Output, error) {
 	// Heal the keys before the kernel pass (ops.FilletEdges re-resolves by exact key), so a
 	// recovered reference is addressed by its live key and the heal reaches the Output (P6).
-	edges, heals, err := resolveEdges(body, f.def.EdgeKeys)
+	edges, heals, err := resolveEdges(body, f.def.EdgeKeys, nil)
 	if err != nil {
 		return Output{}, err
 	}
@@ -92,7 +92,7 @@ func (f *SheetMetalCornerFeature) roundCorners(in Input, body *topo.Body, radius
 
 // chamferCorners cuts a flat bevel of the given setback across the corner edges.
 func (f *SheetMetalCornerFeature) chamferCorners(in Input, body *topo.Body, setback float64) (Output, error) {
-	edges, heals, err := resolveEdges(body, f.def.EdgeKeys)
+	edges, heals, err := resolveEdges(body, f.def.EdgeKeys, nil)
 	if err != nil {
 		return Output{}, err
 	}

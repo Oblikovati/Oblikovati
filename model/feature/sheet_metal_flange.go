@@ -63,7 +63,7 @@ func (f *SheetMetalFlangeFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	edges, heals, err := resolveEdges(body, [][]byte{f.def.EdgeKey})
+	edges, heals, err := resolveEdges(body, [][]byte{f.def.EdgeKey}, nil)
 	if err != nil {
 		return Output{}, err
 	}

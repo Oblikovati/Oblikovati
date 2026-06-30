@@ -68,7 +68,7 @@ func (f *SheetMetalCornerSeamFeature) Recompute(in Input) (Output, error) {
 	if len(f.def.EdgeKeys) == 0 {
 		return Output{}, fmt.Errorf("sheet-metal corner seam: no corner edges selected")
 	}
-	edges, heals, err := resolveEdges(body, f.def.EdgeKeys)
+	edges, heals, err := resolveEdges(body, f.def.EdgeKeys, nil)
 	if err != nil {
 		return Output{}, err
 	}

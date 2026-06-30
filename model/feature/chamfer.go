@@ -36,7 +36,7 @@ const singularDetTol = 1e-12
 // a tetrahedron cut that trims the pointy three-plane intersection into one flat triangular face
 // — the default corner blend. With it clear the three chamfer planes are left to meet at a point.
 // The blend honours per-face setbacks (d1, d2), so it is correct for asymmetric chamfers too.
-func chamferEdges(in Input, keys [][]byte, d1, d2 float64, feat string, flatCorners bool, strategy types.ChamferConcaveStrategy) (Output, error) {
+func chamferEdges(in Input, keys [][]byte, d1, d2 float64, feat string, flatCorners bool, strategy types.ChamferConcaveStrategy, anchors map[string]math.Point3) (Output, error) {
 	body, err := runningBody(in)
 	if err != nil {
 		return Output{}, err
@@ -44,7 +44,7 @@ func chamferEdges(in Input, keys [][]byte, d1, d2 float64, feat string, flatCorn
 	if d1 <= 0 || d2 <= 0 {
 		return Output{}, fmt.Errorf("chamfer: setbacks (%g, %g) must both be > 0", d1, d2)
 	}
-	edges, heals, err := resolveEdges(body, keys)
+	edges, heals, err := resolveEdges(body, keys, anchors)
 	if err != nil {
 		return Output{}, err
 	}
@@ -162,7 +162,7 @@ func applyChamferTools(work *topo.Body, tools []wedgeOp) (*topo.Body, error) {
 // the key's parent lineage — and reported as a heal (the engine turns heals into a
 // Warning, ADR-0043 P6); only a genuinely unrecoverable or ambiguous key is a hard
 // error, so the feature goes Sick honestly rather than dressing up the wrong edge.
-func resolveEdges(body *topo.Body, keys [][]byte) ([]*topo.Edge, []ReferenceHeal, error) {
+func resolveEdges(body *topo.Body, keys [][]byte, anchors map[string]math.Point3) ([]*topo.Edge, []ReferenceHeal, error) {
 	edges := make([]*topo.Edge, len(keys))
 	var heals []ReferenceHeal
 	var ents []identity.Entity // built lazily, only when an exact match misses
@@ -175,7 +175,7 @@ func resolveEdges(body *topo.Body, keys [][]byte) ([]*topo.Edge, []ReferenceHeal
 		if ents == nil {
 			ents = edgeEntities(body)
 		}
-		if e, mt := recoverEdge(k, ents); mt.IsFallback() && e != nil {
+		if e, mt := recoverEdge(k, anchorFor(k, anchors), ents); mt.IsFallback() && e != nil {
 			edges[i] = e
 			heals = append(heals, ReferenceHeal{Key: append([]byte(nil), k...), Match: mt})
 			continue

@@ -138,7 +138,9 @@ func (t *ChamferTool) Commit(s *Session) error {
 // both Commit (the part's engine) and DraftFeature (a scratch engine).
 func (t *ChamferTool) addChamfer(dress *feature.DressUpFeatures) *feature.PartFeature {
 	d := t.distance
-	return dress.AddChamferConcave(t.selectedEdgeKeys(), func() float64 { return d }, t.flatCorners, t.concaveStrategy)
+	pf := dress.AddChamferConcave(t.selectedEdgeKeys(), func() float64 { return d }, t.flatCorners, t.concaveStrategy)
+	pf.Definition().(*feature.ChamferFeature).Definition().EdgeAnchors = edgeHandleAnchors(t.edges) // P6b
+	return pf
 }
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
@@ -176,6 +178,7 @@ func (t *ChamferTool) Cancel(s *Session) {
 func (t *ChamferTool) commitEdit(s *Session) error {
 	def := t.target.Definition().(*feature.ChamferFeature).Definition()
 	def.EdgeKeys = t.selectedEdgeKeys()
+	def.EdgeAnchors = edgeHandleAnchors(t.edges)
 	def.Distance = konst(t.distance)
 	def.FlatCorners = t.flatCorners
 	def.ConcaveStrategy = t.concaveStrategy

@@ -95,7 +95,7 @@ type blendProfile struct {
 	rho   float64
 }
 
-func filletBody(in Input, edgeKeys [][]byte, radius float64, corner FilletCornerType, concave types.FilletConcaveStrategy, prof blendProfile, feat string) (Output, error) {
+func filletBody(in Input, edgeKeys [][]byte, radius float64, corner FilletCornerType, concave types.FilletConcaveStrategy, prof blendProfile, feat string, anchors map[string]math.Point3) (Output, error) {
 	body, err := runningBody(in)
 	if err != nil {
 		return Output{}, err
@@ -104,10 +104,11 @@ func filletBody(in Input, edgeKeys [][]byte, radius float64, corner FilletCorner
 		return Output{}, fmt.Errorf("%s: radius %g must be > 0", feat, radius)
 	}
 	// Resolve once at the top so a lost reference can heal through the tiered binder
-	// (ADR-0043 P6). The downstream kernel ops re-resolve by EXACT key, so feed them the
-	// recovered edges' CURRENT keys — identical to the stored key for an exact match, the
-	// live key of the recovered sibling for a healed one — and carry the heals to the Output.
-	edges, heals, err := resolveEdges(body, edgeKeys)
+	// (ADR-0043 P6; anchors drive its geometric tier). The downstream kernel ops re-resolve by
+	// EXACT key, so feed them the recovered edges' CURRENT keys — identical to the stored key
+	// for an exact match, the live key of the recovered sibling for a healed one — and carry
+	// the heals to the Output.
+	edges, heals, err := resolveEdges(body, edgeKeys, anchors)
 	if err != nil {
 		return Output{}, err
 	}
@@ -145,7 +146,7 @@ func blendFilletEdges(in Input, body *topo.Body, keys0 [][]byte, radius float64,
 // cylinder rim becomes a surface of revolution (#127); the cylinder/cap RIM or ARC a prior fillet
 // leaves becomes a toroidal band / torus + setback caps. ok=false means no analytic case applied.
 func analyticFilletFastPath(in Input, body *topo.Body, edgeKeys [][]byte, radius float64, feat string) (Output, bool, error) {
-	if origEdges, _, e := resolveEdges(body, edgeKeys); e == nil {
+	if origEdges, _, e := resolveEdges(body, edgeKeys, nil); e == nil {
 		if res, ok := analyticCylinderFillet(body, origEdges, radius, feat); ok {
 			return Output{Bodies: replaceBody(in.Bodies, body, res)}, true, nil
 		}
@@ -164,7 +165,7 @@ func analyticFilletFastPath(in Input, body *topo.Body, edgeKeys [][]byte, radius
 // segment so the rolling-ball blend works instead of failing on a degenerate closed edge (#129/#127).
 // A planar body — or an unresolvable key, surfaced later by the kernel — passes through unchanged.
 func planarizedFillet(body *topo.Body, edgeKeys [][]byte, feat string) (*topo.Body, [][]byte) {
-	origEdges, _, err := resolveEdges(body, edgeKeys)
+	origEdges, _, err := resolveEdges(body, edgeKeys, nil)
 	if err != nil {
 		return body, edgeKeys
 	}
@@ -187,7 +188,7 @@ func planarizedFillet(body *topo.Body, edgeKeys [][]byte, feat string) (*topo.Bo
 // A single constant set routes through filletBody to keep the analytic cylinder-rim path.
 func filletBodySets(in Input, sets []FilletEdgeSet, corner FilletCornerType, concave types.FilletConcaveStrategy, prof blendProfile, feat string) (Output, error) {
 	if len(sets) == 1 && !sets[0].variable() {
-		return filletBody(in, sets[0].EdgeKeys, callOrZero(sets[0].Radius), corner, concave, prof, feat)
+		return filletBody(in, sets[0].EdgeKeys, callOrZero(sets[0].Radius), corner, concave, prof, feat, nil)
 	}
 	body, err := runningBody(in)
 	if err != nil {
@@ -220,7 +221,7 @@ func healPickKeys(body *topo.Body, picks []ops.EdgeFilletRadii) ([]ReferenceHeal
 	for i, p := range picks {
 		keys[i] = p.Key
 	}
-	edges, heals, err := resolveEdges(body, keys)
+	edges, heals, err := resolveEdges(body, keys, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -275,7 +276,7 @@ func planarizeFilletPicks(body *topo.Body, picks []ops.EdgeFilletRadii, feat str
 	for i, p := range picks {
 		keys[i] = p.Key
 	}
-	origEdges, _, err := resolveEdges(body, keys)
+	origEdges, _, err := resolveEdges(body, keys, nil)
 	if err != nil {
 		return body
 	}

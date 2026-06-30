@@ -5,12 +5,33 @@ package app
 import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 	"oblikovati.org/model/assembly"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/occurrence"
 	"oblikovati.org/model/sketch"
 )
+
+// edgeHandleAnchors captures each picked edge's midpoint, keyed by its reference key, at
+// SELECTION time (the edge still exists) — the mint-time anchor a dress-up feature persists
+// for the geometric recovery tier (ADR-0043 P6b). The midpoint uses the edge's endpoints, the
+// same representative point the resolver compares siblings by, so a captured anchor and a live
+// sibling's anchor are computed identically. Returns nil when nothing anchorable was picked.
+func edgeHandleAnchors(edges []EdgeHandle) map[string]math.Point3 {
+	anchors := make(map[string]math.Point3, len(edges))
+	for _, h := range edges {
+		s, e := h.Edge.StartVertex(), h.Edge.EndVertex()
+		if s == nil || e == nil {
+			continue
+		}
+		anchors[string(h.Edge.ReferenceKey())] = s.Point().Midpoint(e.Point())
+	}
+	if len(anchors) == 0 {
+		return nil
+	}
+	return anchors
+}
 
 // SelectionKind classifies what is selected — Inventor's selection-filter
 // categories. A [SelectionFilter] restricts which kinds a pick accepts.

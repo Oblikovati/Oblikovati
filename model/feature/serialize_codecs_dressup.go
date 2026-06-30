@@ -20,7 +20,7 @@ func init() {
 				fd.Fillet = &EdgeDressData{Sets: serializeFilletSets(ff.def.EdgeSets), CornerType: int32(ff.def.CornerType), CrossSection: crossSectionWire(ff.def.CrossSection), Rho: ff.def.Rho}
 				return nil
 			}
-			fd.Fillet = &EdgeDressData{Edges: encodeKeys(ff.def.EdgeKeys), Value: evalFloat(ff.def.Radius), CornerType: int32(ff.def.CornerType), CrossSection: crossSectionWire(ff.def.CrossSection), Rho: ff.def.Rho, GeomEdges: encodeGeomEdges(ff.def.GeomEdges)}
+			fd.Fillet = &EdgeDressData{Edges: encodeKeys(ff.def.EdgeKeys), Value: evalFloat(ff.def.Radius), CornerType: int32(ff.def.CornerType), CrossSection: crossSectionWire(ff.def.CrossSection), Rho: ff.def.Rho, GeomEdges: encodeGeomEdges(ff.def.GeomEdges), EdgeAnchors: encodeEdgeAnchors(ff.def.EdgeAnchors)}
 			return nil
 		},
 		decode: decodeFillet,
@@ -32,7 +32,7 @@ func init() {
 			fd.Chamfer = &EdgeDressData{
 				Edges: encodeKeys(cf.def.EdgeKeys), Value: evalFloat(cf.def.Distance), FlatCorners: &flat,
 				ChamferType: int32(cf.def.Type), Value2: evalFloat(cf.def.Distance2), Angle: evalFloat(cf.def.Angle),
-				GeomEdges: encodeGeomEdges(cf.def.GeomEdges),
+				GeomEdges: encodeGeomEdges(cf.def.GeomEdges), EdgeAnchors: encodeEdgeAnchors(cf.def.EdgeAnchors),
 			}
 			return nil
 		},
@@ -132,7 +132,7 @@ func decodeFillet(rc *restoreContext, fd FeatureData) (*PartFeature, error) {
 		return nil, err
 	}
 	return du.addFillet(&FilletDefinition{
-		EdgeKeys: d.keys, GeomEdges: d.geom, Radius: constFloat(d.value), CornerType: corner,
+		EdgeKeys: d.keys, GeomEdges: d.geom, EdgeAnchors: d.anchors, Radius: constFloat(d.value), CornerType: corner,
 		CrossSection: cross, Rho: rho,
 	}), nil
 }
@@ -145,7 +145,7 @@ func decodeChamfer(rc *restoreContext, fd FeatureData) (*PartFeature, error) {
 		return nil, err
 	}
 	def := &ChamferDefinition{
-		EdgeKeys: d.keys, GeomEdges: d.geom, Distance: constFloat(d.value),
+		EdgeKeys: d.keys, GeomEdges: d.geom, EdgeAnchors: d.anchors, Distance: constFloat(d.value),
 		Type: types.ChamferType(fd.Chamfer.ChamferType), FlatCorners: chamferFlatCornersOr(fd.Chamfer.FlatCorners),
 	}
 	switch def.Type {
