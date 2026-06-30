@@ -12,6 +12,7 @@ import (
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
+	"oblikovati.org/model/identity"
 	"oblikovati.org/model/sketch"
 )
 
@@ -43,7 +44,7 @@ func chamferEdges(in Input, keys [][]byte, d1, d2 float64, feat string, flatCorn
 	if d1 <= 0 || d2 <= 0 {
 		return Output{}, fmt.Errorf("chamfer: setbacks (%g, %g) must both be > 0", d1, d2)
 	}
-	edges, err := resolveEdges(body, keys)
+	edges, heals, err := resolveEdges(body, keys)
 	if err != nil {
 		return Output{}, err
 	}
@@ -54,10 +55,15 @@ func chamferEdges(in Input, keys [][]byte, d1, d2 float64, feat string, flatCorn
 		// A rim of a simple analytic cylinder gets a TRUE conical chamfer (one geom.Cone face) by
 		// rebuilding the body as a surface of revolution (#127). Anything else falls through.
 		if res, ok := analyticCylinderChamfer(body, edges, d1, feat); ok {
-			return Output{Bodies: replaceBody(in.Bodies, body, res)}, nil
+			return Output{Bodies: replaceBody(in.Bodies, body, res), Heals: heals}, nil
 		}
 	}
-	return chamferByWedges(in, body, edges, d1, d2, feat, flatCorners, strategy)
+	out, err := chamferByWedges(in, body, edges, d1, d2, feat, flatCorners, strategy)
+	if err != nil {
+		return Output{}, err
+	}
+	out.Heals = heals
+	return out, nil
 }
 
 // allConvex reports whether every edge is a convex dihedral (so the analytic conical fast path,
@@ -149,26 +155,37 @@ func applyChamferTools(work *topo.Body, tools []wedgeOp) (*topo.Body, error) {
 	return result, nil
 }
 
-// resolveEdges binds every edge key against the original body, erroring if a key is lost
-// (so the feature goes sick honestly).
-func resolveEdges(body *topo.Body, keys [][]byte) ([]*topo.Edge, error) {
+// resolveEdges binds every edge key against the running body. A key that matches
+// EXACTLY one edge binds cleanly (the ADR-0043 P0 guard: more than one is a
+// topological-naming collision, never a silent first-match). A key whose exact entity
+// is gone is recovered through the tiered binder — a lone surviving sibling sharing
+// the key's parent lineage — and reported as a heal (the engine turns heals into a
+// Warning, ADR-0043 P6); only a genuinely unrecoverable or ambiguous key is a hard
+// error, so the feature goes Sick honestly rather than dressing up the wrong edge.
+func resolveEdges(body *topo.Body, keys [][]byte) ([]*topo.Edge, []ReferenceHeal, error) {
 	edges := make([]*topo.Edge, len(keys))
+	var heals []ReferenceHeal
+	var ents []identity.Entity // built lazily, only when an exact match misses
 	for i, k := range keys {
-		// ADR-0043 resolution guard: a key must bind to EXACTLY one edge. Zero means the reference
-		// was lost; more than one means a topological-naming collision (two edges minted the same
-		// lineage) — surfaced as an honest error rather than a silent first-match wrong-rebind that
-		// would dress up an unintended edge (the #1536 hazard class).
 		match := body.EdgesByKey(k)
-		switch len(match) {
-		case 1:
+		if len(match) == 1 {
 			edges[i] = match[0]
-		case 0:
-			return nil, fmt.Errorf("dress-up: edge reference %q lost (no edge with that lineage on the running body)", keyText(k))
-		default:
-			return nil, fmt.Errorf("dress-up: edge reference %q is ambiguous — it matches %d edges (a topological-naming collision); the selection cannot be resolved safely", keyText(k), len(match))
+			continue
 		}
+		if ents == nil {
+			ents = edgeEntities(body)
+		}
+		if e, mt := recoverEdge(k, ents); mt.IsFallback() && e != nil {
+			edges[i] = e
+			heals = append(heals, ReferenceHeal{Key: append([]byte(nil), k...), Match: mt})
+			continue
+		}
+		if len(match) > 1 {
+			return nil, nil, fmt.Errorf("dress-up: edge reference %q is ambiguous — it matches %d edges (a topological-naming collision) and no surviving sibling could be recovered", keyText(k), len(match))
+		}
+		return nil, nil, fmt.Errorf("dress-up: edge reference %q lost (no edge with that lineage on the running body, and no surviving sibling to recover it)", keyText(k))
 	}
-	return edges, nil
+	return edges, heals, nil
 }
 
 // keyText renders a reference key as its readable lineage string (the leading kind byte stripped)

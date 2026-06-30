@@ -103,14 +103,31 @@ func filletBody(in Input, edgeKeys [][]byte, radius float64, corner FilletCorner
 	if radius <= 0 {
 		return Output{}, fmt.Errorf("%s: radius %g must be > 0", feat, radius)
 	}
+	// Resolve once at the top so a lost reference can heal through the tiered binder
+	// (ADR-0043 P6). The downstream kernel ops re-resolve by EXACT key, so feed them the
+	// recovered edges' CURRENT keys — identical to the stored key for an exact match, the
+	// live key of the recovered sibling for a healed one — and carry the heals to the Output.
+	edges, heals, err := resolveEdges(body, edgeKeys)
+	if err != nil {
+		return Output{}, err
+	}
+	keys0 := currentKeys(edges)
 	// The analytic fast path builds exact cylinder/torus surfaces (circular arc only); a G2/conic
 	// cross-section must go through the swept ruling band instead.
 	if prof.cross.IsArc() {
-		if out, ok, err := analyticFilletFastPath(in, body, edgeKeys, radius, feat); ok || err != nil {
+		if out, ok, err := analyticFilletFastPath(in, body, keys0, radius, feat); ok || err != nil {
+			out.Heals = heals
 			return out, err
 		}
 	}
-	work, keys := planarizedFillet(body, edgeKeys, feat)
+	return blendFilletEdges(in, body, keys0, radius, corner, concave, prof, feat, heals)
+}
+
+// blendFilletEdges runs the general rolling-ball blend for already-resolved edge keys: it
+// planarizes a curved body where needed (#129), builds the per-edge radius picks, and applies
+// FilletEdgesCorner, carrying any reference heals onto the result (ADR-0043 P6).
+func blendFilletEdges(in Input, body *topo.Body, keys0 [][]byte, radius float64, corner FilletCornerType, concave types.FilletConcaveStrategy, prof blendProfile, feat string, heals []ReferenceHeal) (Output, error) {
+	work, keys := planarizedFillet(body, keys0, feat)
 	picks := make([]ops.EdgeFilletRadii, len(keys))
 	cross := prof.cross
 	for i, k := range keys {
@@ -120,7 +137,7 @@ func filletBody(in Input, edgeKeys [][]byte, radius float64, corner FilletCorner
 	if err != nil {
 		return Output{}, err
 	}
-	return Output{Bodies: replaceBody(in.Bodies, body, result)}, nil
+	return Output{Bodies: replaceBody(in.Bodies, body, result), Heals: heals}, nil
 }
 
 // analyticFilletFastPath rounds a curved fillet target directly on the ANALYTIC body, before the
@@ -128,7 +145,7 @@ func filletBody(in Input, edgeKeys [][]byte, radius float64, corner FilletCorner
 // cylinder rim becomes a surface of revolution (#127); the cylinder/cap RIM or ARC a prior fillet
 // leaves becomes a toroidal band / torus + setback caps. ok=false means no analytic case applied.
 func analyticFilletFastPath(in Input, body *topo.Body, edgeKeys [][]byte, radius float64, feat string) (Output, bool, error) {
-	if origEdges, e := resolveEdges(body, edgeKeys); e == nil {
+	if origEdges, _, e := resolveEdges(body, edgeKeys); e == nil {
 		if res, ok := analyticCylinderFillet(body, origEdges, radius, feat); ok {
 			return Output{Bodies: replaceBody(in.Bodies, body, res)}, true, nil
 		}
@@ -147,7 +164,7 @@ func analyticFilletFastPath(in Input, body *topo.Body, edgeKeys [][]byte, radius
 // segment so the rolling-ball blend works instead of failing on a degenerate closed edge (#129/#127).
 // A planar body — or an unresolvable key, surfaced later by the kernel — passes through unchanged.
 func planarizedFillet(body *topo.Body, edgeKeys [][]byte, feat string) (*topo.Body, [][]byte) {
-	origEdges, err := resolveEdges(body, edgeKeys)
+	origEdges, _, err := resolveEdges(body, edgeKeys)
 	if err != nil {
 		return body, edgeKeys
 	}
@@ -180,12 +197,37 @@ func filletBodySets(in Input, sets []FilletEdgeSet, corner FilletCornerType, con
 	if err != nil {
 		return Output{}, err
 	}
+	// Heal each pick's edge key before the kernel pass: substitute the recovered edge's
+	// current key (exact for a clean match) so FilletEdgesCorner re-resolves it, and carry
+	// the heals to the Output (ADR-0043 P6).
+	heals, err := healPickKeys(body, picks)
+	if err != nil {
+		return Output{}, err
+	}
 	work := planarizeFilletPicks(body, picks, feat)
 	result, err := ops.FilletEdgesCorner(work, picks, cornerStrategy(corner), concaveFill(concave))
 	if err != nil {
 		return Output{}, err
 	}
-	return Output{Bodies: replaceBody(in.Bodies, body, result)}, nil
+	return Output{Bodies: replaceBody(in.Bodies, body, result), Heals: heals}, nil
+}
+
+// healPickKeys resolves every pick's edge key against the body and rewrites it to the
+// resolved edge's CURRENT key (so a healed reference becomes the live sibling's key the
+// kernel can exact-match), returning the heals that occurred. See resolveEdges.
+func healPickKeys(body *topo.Body, picks []ops.EdgeFilletRadii) ([]ReferenceHeal, error) {
+	keys := make([][]byte, len(picks))
+	for i, p := range picks {
+		keys[i] = p.Key
+	}
+	edges, heals, err := resolveEdges(body, keys)
+	if err != nil {
+		return nil, err
+	}
+	for i, e := range edges {
+		picks[i].Key = e.ReferenceKey()
+	}
+	return heals, nil
 }
 
 // filletPicksOf flattens the edge sets into per-edge radius picks, rejecting a variable set
@@ -233,7 +275,7 @@ func planarizeFilletPicks(body *topo.Body, picks []ops.EdgeFilletRadii, feat str
 	for i, p := range picks {
 		keys[i] = p.Key
 	}
-	origEdges, err := resolveEdges(body, keys)
+	origEdges, _, err := resolveEdges(body, keys)
 	if err != nil {
 		return body
 	}
