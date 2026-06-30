@@ -101,7 +101,8 @@ func init() {
 	})
 	registerFeatureCodec("unwrap", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
-			fd.Unwrap = &UnwrapData{Face: encodeKey(f.(*UnwrapFeature).def.FaceKey)}
+			uf := f.(*UnwrapFeature)
+			fd.Unwrap = &UnwrapData{Face: encodeKey(uf.def.FaceKey), FaceAnchors: encodeFaceAnchors(uf.def.FaceAnchors)}
 			return nil
 		},
 		decode: func(rc *restoreContext, fd FeatureData) (*PartFeature, error) {

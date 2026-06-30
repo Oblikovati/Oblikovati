@@ -370,7 +370,19 @@ func (c *HoleFeatures) addHole(def *HoleDefinition) *PartFeature {
 // Add adds a cylindrical boss on the placement face, naming it (Boss1, Boss2, …) so its
 // generated topology has a stable, distinct lineage.
 func (c *BossFeatures) Add(faceKey []byte, diameter, height func() float64) *PartFeature {
-	bf := &BossFeature{def: &BossDefinition{PlacementFaceKey: faceKey, Diameter: diameter, Height: height}}
+	def := &BossDefinition{PlacementFaceKey: faceKey, Diameter: diameter, Height: height}
+	// Capture the placement face's mint-time anchor against the running body so the geometric
+	// recovery tier survives an upstream edit that renames the face (ADR-0043 P6 / #1579). Every
+	// authoring path funnels here; the recipe restore uses addBoss, which preserves persisted
+	// anchors and never recaptures (no doc-dirty churn on reopen).
+	def.FaceAnchors = captureFaceAnchors(featuresTipBody(c.engine), [][]byte{faceKey})
+	return c.addBoss(def)
+}
+
+// addBoss registers a boss from a fully-built definition without capturing anchors (the recipe
+// restore path, which carries the persisted anchors of its own).
+func (c *BossFeatures) addBoss(def *BossDefinition) *PartFeature {
+	bf := &BossFeature{def: def}
 	pf := c.engine.Add(bf)
 	pf.SetName(c.engine.UniqueName("Boss"))
 	bf.featName = pf.name

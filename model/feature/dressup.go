@@ -494,7 +494,19 @@ func (c *DressUpFeatures) AddThread(faceKey []byte, designation string, cut bool
 	return c.AddThreadDef(&ThreadDefinition{FaceKey: faceKey, Designation: designation, Cut: cut})
 }
 
-// AddThreadDef adds a thread from a full definition (class / tapered / model diameter, #325).
+// AddThreadDef adds a thread from a full definition (class / tapered / model diameter, #325). It
+// captures the threaded face's mint-time anchor against the running body for the geometric
+// recovery tier (ADR-0043 P6 / #1579); every authoring path funnels here, while the recipe restore
+// uses addThreadDef so reopening a document never recaptures or rewrites anchors.
 func (c *DressUpFeatures) AddThreadDef(def *ThreadDefinition) *PartFeature {
+	if len(def.FaceAnchors) == 0 {
+		def.FaceAnchors = captureFaceAnchors(c.tipBody(), [][]byte{def.FaceKey})
+	}
+	return c.addThreadDef(def)
+}
+
+// addThreadDef registers a thread from a fully-built definition without capturing anchors (the
+// recipe restore path, which carries the persisted anchors of its own).
+func (c *DressUpFeatures) addThreadDef(def *ThreadDefinition) *PartFeature {
 	return c.engine.Add(&ThreadFeature{def: def})
 }

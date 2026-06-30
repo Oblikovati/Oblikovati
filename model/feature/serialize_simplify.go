@@ -13,7 +13,8 @@ type SimplifyData struct {
 
 // UnwrapData is the serialized form of an UnwrapFeature: the cylindrical face flattened.
 type UnwrapData struct {
-	Face string `yaml:"face"`
+	Face        string           `yaml:"face"`
+	FaceAnchors []FaceAnchorData `yaml:"faceAnchors,omitempty"`
 }
 
 // restoreSimplify rebuilds a SimplifyFeature.
@@ -37,5 +38,9 @@ func restoreUnwrap(fs *PartFeatures, d *UnwrapData) (*PartFeature, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewModifyFeatures(fs).AddUnwrap(key), nil
+	anchors, err := decodeFaceAnchors(d.FaceAnchors)
+	if err != nil {
+		return nil, err
+	}
+	return NewModifyFeatures(fs).addUnwrap(&UnwrapDefinition{FaceKey: key, FaceAnchors: anchors}), nil
 }

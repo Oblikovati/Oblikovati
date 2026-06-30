@@ -66,6 +66,13 @@ type EdgeAnchorData struct {
 	Midpoint []float64 `yaml:"midpoint,flow"`
 }
 
+// FaceAnchorData is the serialized mint-time anchor of one picked face: its reference key (base64)
+// and centroid, used to disambiguate surviving siblings when the exact key is lost (#1579).
+type FaceAnchorData struct {
+	Key      string    `yaml:"key"`
+	Centroid []float64 `yaml:"centroid,flow"`
+}
+
 // GeomEdgeRefData is the serialized form of a geometric edge descriptor: the edge's
 // midpoint and (sign-agnostic) direction in model space. It binds to a running-body edge
 // at recompute via [topo.Body.FindEdgeByGeometry] (ADR-0040).
@@ -236,12 +243,13 @@ type SnapFitData struct {
 // the #325 parity fields: the tolerance class, the tapered (pipe) flag, and which thread
 // diameter the modeled face represents (wire spelling; absent = major).
 type ThreadData struct {
-	Face          string `yaml:"face"`
-	Designation   string `yaml:"designation"`
-	Cut           bool   `yaml:"cut,omitempty"`
-	Class         string `yaml:"class,omitempty"`
-	Tapered       bool   `yaml:"tapered,omitempty"`
-	ModelDiameter string `yaml:"modelDiameter,omitempty"`
+	Face          string           `yaml:"face"`
+	Designation   string           `yaml:"designation"`
+	Cut           bool             `yaml:"cut,omitempty"`
+	Class         string           `yaml:"class,omitempty"`
+	Tapered       bool             `yaml:"tapered,omitempty"`
+	ModelDiameter string           `yaml:"modelDiameter,omitempty"`
+	FaceAnchors   []FaceAnchorData `yaml:"faceAnchors,omitempty"`
 }
 
 // dressInputs is the decoded (keys, value) pair shared by edge/face dress-ups, plus any
@@ -297,6 +305,37 @@ func decodeEdgeAnchors(data []EdgeAnchorData) (map[string]math.Point3, error) {
 			return nil, err
 		}
 		out[string(k)] = decodePoint3(d.Midpoint)
+	}
+	return out, nil
+}
+
+// encodeFaceAnchors / decodeFaceAnchors round-trip the mint-time face-anchor map (#1579), the
+// face counterpart of encodeEdgeAnchors: keys are base64 reference keys, values are centroids.
+// Empty for a feature authored with no captured anchors or restored from a pre-#1579 recipe.
+func encodeFaceAnchors(anchors map[string]math.Point3) []FaceAnchorData {
+	if len(anchors) == 0 {
+		return nil
+	}
+	out := make([]FaceAnchorData, 0, len(anchors))
+	for k, p := range anchors {
+		out = append(out, FaceAnchorData{Key: encodeKey([]byte(k)), Centroid: encodePoint3(p)})
+	}
+	// Deterministic order so the serialized document is stable across runs (maps iterate randomly).
+	sort.Slice(out, func(i, j int) bool { return out[i].Key < out[j].Key })
+	return out
+}
+
+func decodeFaceAnchors(data []FaceAnchorData) (map[string]math.Point3, error) {
+	if len(data) == 0 {
+		return nil, nil
+	}
+	out := make(map[string]math.Point3, len(data))
+	for _, d := range data {
+		k, err := decodeKey(d.Key)
+		if err != nil {
+			return nil, err
+		}
+		out[string(k)] = decodePoint3(d.Centroid)
 	}
 	return out, nil
 }

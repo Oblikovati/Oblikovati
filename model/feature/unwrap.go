@@ -112,9 +112,19 @@ func flatSheet(w, h float64, feat string) *topo.Body {
 	return bld.Build()
 }
 
-// AddUnwrap appends the flattened patch of the cylindrical face referenced by faceKey.
+// AddUnwrap appends the flattened patch of the cylindrical face referenced by faceKey. It captures
+// the face's mint-time anchor against the running body for the geometric recovery tier (ADR-0043
+// P6 / #1579); the recipe restore uses addUnwrap so reopening never recaptures.
 func (c *ModifyFeatures) AddUnwrap(faceKey []byte) *PartFeature {
-	uf := &UnwrapFeature{def: &UnwrapDefinition{FaceKey: faceKey}}
+	def := &UnwrapDefinition{FaceKey: faceKey}
+	def.FaceAnchors = captureFaceAnchors(featuresTipBody(c.engine), [][]byte{faceKey})
+	return c.addUnwrap(def)
+}
+
+// addUnwrap registers an unwrap from a fully-built definition without capturing anchors (the
+// recipe restore path, which carries the persisted anchors of its own).
+func (c *ModifyFeatures) addUnwrap(def *UnwrapDefinition) *PartFeature {
+	uf := &UnwrapFeature{def: def}
 	pf := c.engine.Add(uf)
 	pf.SetName(c.engine.UniqueName("Unwrap"))
 	uf.featName = pf.name
