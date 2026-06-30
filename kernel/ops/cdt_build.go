@@ -445,3 +445,34 @@ func constrainedDelaunayChecked(pts [][2]float64, loops [][]int) ([][3]int, [][2
 	m.constrain(loops)
 	return m.finalizeDomain(pts, loops)
 }
+
+// constrainedTriangulationAll triangulates pts with every loop edge recovered as a hard constraint and
+// returns ALL real (non-super) triangles WITHOUT the inside/outside flood. The covering-space periodic
+// mesher (#1510) needs this: it triangulates three copies of a periodic chart and selects the canonical
+// period itself (by triangle centroid + a material-region test), so the loop-parity flood — which assumes
+// a single simply-bounded domain — cannot do the selection. Constraints still align the triangulation to
+// the rim/mouth edges; the caller decides which triangles are kept.
+func constrainedTriangulationAll(pts [][2]float64, loops [][]int) [][3]int {
+	if len(pts) < 3 {
+		return nil
+	}
+	m := newCDT(pts)
+	for i := 0; i < m.nsup; i++ {
+		m.insert(i)
+	}
+	m.constrain(loops)
+	return m.extractAllNonSuper()
+}
+
+// extractAllNonSuper returns every live triangle that uses no super-triangle vertex, as CCW index
+// triples into pts — the full constrained triangulation of the point set's convex hull, before any
+// domain flood (see constrainedTriangulationAll).
+func (m *cdt) extractAllNonSuper() [][3]int {
+	var out [][3]int
+	for t := range m.tris {
+		if !m.dead[t] && !m.hasSuper(t) {
+			out = append(out, [3]int{m.tris[t].v[0], m.tris[t].v[1], m.tris[t].v[2]})
+		}
+	}
+	return out
+}
