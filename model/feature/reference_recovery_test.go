@@ -52,7 +52,7 @@ func TestResolveEdgesHealsLostReferenceToAncestralSibling(t *testing.T) {
 	body, kept := siblingTriBody(t, 7, false)
 	lost := edgeKeyFor(2) // same parent grp:e#0, a last step the body no longer has
 
-	edges, heals, err := resolveEdges(body, [][]byte{lost})
+	edges, heals, err := resolveEdges(body, [][]byte{lost}, nil)
 	if err != nil {
 		t.Fatalf("a recoverable reference must heal, not error: %v", err)
 	}
@@ -72,12 +72,61 @@ func TestResolveEdgesRefusesAmbiguousSiblingsWithoutAnchor(t *testing.T) {
 	body, _ := siblingTriBody(t, 7, true) // two edges now share parent grp:e#0
 	lost := edgeKeyFor(2)
 
-	_, _, err := resolveEdges(body, [][]byte{lost})
+	_, _, err := resolveEdges(body, [][]byte{lost}, nil)
 	if err == nil {
 		t.Fatal("two same-parent siblings with no anchor must NOT heal — recovery guessed")
 	}
 	if !strings.Contains(err.Error(), "lost") {
 		t.Errorf("error %q should report the reference as lost", err)
+	}
+}
+
+// TestResolveEdgesHealsAmbiguousSiblingsByAnchor is the ADR-0043 P6b geometric tier: when the
+// lost key's parent has several surviving siblings, the mint-time anchor disambiguates by
+// nearness — recovering the sibling the user originally picked instead of staying lost (the P6a
+// outcome). The anchor sits on edge "ab"'s midpoint, so recovery must bind ab, not its peer.
+func TestResolveEdgesHealsAmbiguousSiblingsByAnchor(t *testing.T) {
+	body, ab := siblingTriBody(t, 7, true) // ab + bc both under parent grp:e#0
+	lost := edgeKeyFor(2)
+	anchors := map[string]math.Point3{string(lost): math.P3(0.5, 0, 0)} // ab's endpoint midpoint
+
+	edges, heals, err := resolveEdges(body, [][]byte{lost}, anchors)
+	if err != nil {
+		t.Fatalf("geometric recovery should heal an anchored ambiguous reference: %v", err)
+	}
+	if len(edges) != 1 || edges[0] != ab {
+		t.Fatalf("anchor near ab must bind ab, got %v", edges)
+	}
+	if len(heals) != 1 || heals[0].Match != identity.MatchGeometric {
+		t.Fatalf("expected one geometric heal, got %+v", heals)
+	}
+}
+
+// TestFilletEdgeAnchorsRoundTrip pins that a fillet's mint-time edge anchors survive a recipe
+// round trip (ADR-0043 P6b) — without them, a reopened document could not use the geometric tier.
+func TestFilletEdgeAnchorsRoundTrip(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	key := edgeKeyFor(7)
+	anchors := map[string]math.Point3{string(key): math.P3(1.25, -2.5, 3)}
+	NewDressUpFeatures(fs).addFillet(&FilletDefinition{
+		EdgeKeys: [][]byte{key}, Radius: constFloat(0.5), EdgeAnchors: anchors,
+	})
+
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	fresh := NewPartFeatures(nil, nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	got := fresh.Item(0).Definition().(*FilletFeature).Definition().EdgeAnchors
+	if len(got) != 1 {
+		t.Fatalf("edge anchors after round trip = %v, want one entry", got)
+	}
+	p, ok := got[string(key)]
+	if !ok || !p.IsEqualTo(math.P3(1.25, -2.5, 3), 1e-9) {
+		t.Errorf("anchor after round trip = %v (present=%v), want (1.25,-2.5,3)", p, ok)
 	}
 }
 

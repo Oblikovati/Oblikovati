@@ -88,12 +88,26 @@ func currentKeys(edges []*topo.Edge) [][]byte {
 	return keys
 }
 
-// recoverEdge attempts to recover a lost/ambiguous edge reference through the tiered
-// binder: a lone surviving sibling sharing the key's parent lineage binds ancestrally
-// (anchor nil → ancestral only, the P6a scope). It returns the recovered edge and the
-// match tier, or (nil, MatchNone) when no defensible recovery exists.
-func recoverEdge(refKey []byte, ents []identity.Entity) (*topo.Edge, identity.MatchType) {
-	ent, mt := identity.RecoverLost(identity.KindEdge, parentOfKey(refKey), nil, ents)
+// anchorFor returns the mint-time anchor stored for a reference key, or nil when none was
+// captured (an older recipe, an edit-mode retained key) — in which case recovery falls back
+// to the ancestral tier only.
+func anchorFor(refKey []byte, anchors map[string]math.Point3) *math.Point3 {
+	if anchors == nil {
+		return nil
+	}
+	if p, ok := anchors[string(refKey)]; ok {
+		return &p
+	}
+	return nil
+}
+
+// recoverEdge attempts to recover a lost/ambiguous edge reference through the tiered binder:
+// a lone surviving sibling sharing the key's parent lineage binds ancestrally; with a mint-time
+// anchor, several surviving siblings are disambiguated by nearness (the geometric tier, P6b).
+// It returns the recovered edge and the match tier, or (nil, MatchNone) when no defensible
+// recovery exists.
+func recoverEdge(refKey []byte, anchor *math.Point3, ents []identity.Entity) (*topo.Edge, identity.MatchType) {
+	ent, mt := identity.RecoverLost(identity.KindEdge, parentOfKey(refKey), anchor, ents)
 	if ent == nil {
 		return nil, mt
 	}

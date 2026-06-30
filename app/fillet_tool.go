@@ -262,6 +262,7 @@ func (t *FilletTool) addFillet(dress *feature.DressUpFeatures) *feature.PartFeat
 	def.ConcaveStrategy = t.concaveStrategy
 	def.CrossSection = t.crossSection
 	def.Rho = t.rho
+	def.EdgeAnchors = edgeHandleAnchors(t.edges) // mint-time anchors for geometric recovery (P6b)
 	return pf
 }
 
@@ -277,6 +278,7 @@ func (t *FilletTool) commitEdit(s *Session) error {
 		return commitFeatureEdit(s, t.target)
 	}
 	def.EdgeKeys, def.Radius, def.EdgeSets = t.selectedEdgeKeys(), konst(t.radius), nil
+	def.EdgeAnchors = edgeHandleAnchors(t.edges)
 	return commitFeatureEdit(s, t.target)
 }
 

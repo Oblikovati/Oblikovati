@@ -81,6 +81,12 @@ type FilletDefinition struct {
 	// recompute (see bindGeomEdges) and fold into the edge list; absent for a normal
 	// Oblikovati-authored fillet.
 	GeomEdges []topo.GeometricEdgeRef
+	// EdgeAnchors maps an EdgeKeys entry (raw reference key, as a string) to the edge's
+	// midpoint captured when the user picked it. It feeds the GEOMETRIC recovery tier
+	// (ADR-0043 P6b): when a lost key's parent has several surviving siblings, the anchor
+	// disambiguates by nearness. Absent for an older recipe or an edit-mode retained key —
+	// such a reference degrades to exact/ancestral recovery only.
+	EdgeAnchors map[string]math.Point3
 }
 
 // FilletType reports the definition's discriminator: always an edge fillet for now (the
@@ -107,7 +113,7 @@ func (f *FilletFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	return filletBody(in, keys, callOrZero(f.def.Radius), f.def.CornerType, f.def.ConcaveStrategy, prof, "fillet")
+	return filletBody(in, keys, callOrZero(f.def.Radius), f.def.CornerType, f.def.ConcaveStrategy, prof, "fillet", f.def.EdgeAnchors)
 }
 
 // ChamferType aliases the public chamfer-mode discriminator (ADR-0018).
@@ -132,6 +138,9 @@ type ChamferDefinition struct {
 	FlatCorners     bool
 	ConcaveStrategy ChamferConcaveStrategy  // zero value ⇒ outward (fill the inside corner)
 	GeomEdges       []topo.GeometricEdgeRef // externally-authored edges by geometric descriptor (see FilletDefinition.GeomEdges)
+	// EdgeAnchors maps an EdgeKeys entry to its mint-time midpoint for the geometric recovery
+	// tier (ADR-0043 P6b); see FilletDefinition.EdgeAnchors.
+	EdgeAnchors map[string]math.Point3
 }
 
 // ChamferFeature bevels selected edges (equal-distance, two-distance, or distance-and-angle).
@@ -156,7 +165,7 @@ func (c *ChamferFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	return chamferEdges(in, keys, d1, d2, featOr(c.featName, "chamfer"), c.def.FlatCorners, c.def.ConcaveStrategy)
+	return chamferEdges(in, keys, d1, d2, featOr(c.featName, "chamfer"), c.def.FlatCorners, c.def.ConcaveStrategy, c.def.EdgeAnchors)
 }
 
 // ShellDefinition hollows a body, removing the selected faces, to a wall thickness.

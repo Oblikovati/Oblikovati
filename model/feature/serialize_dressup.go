@@ -5,6 +5,7 @@ package feature
 import (
 	"encoding/base64"
 	"fmt"
+	"sort"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/topo"
@@ -52,6 +53,17 @@ type EdgeDressData struct {
 	// an external author (the NX exporter) uses because it cannot mint Oblikovati lineage
 	// keys. Empty for an Oblikovati-authored dress-up (which uses Edges).
 	GeomEdges []GeomEdgeRefData `yaml:"geomEdges,omitempty"`
+	// EdgeAnchors carry each picked edge's mint-time midpoint (keyed by its reference key) for
+	// the geometric recovery tier (ADR-0043 P6b). Omitted for an older recipe, which then
+	// recovers a lost reference by exact/ancestral binding only.
+	EdgeAnchors []EdgeAnchorData `yaml:"edgeAnchors,omitempty"`
+}
+
+// EdgeAnchorData is the serialized mint-time anchor of one picked edge: its reference key
+// (base64) and midpoint, used to disambiguate surviving siblings when the exact key is lost.
+type EdgeAnchorData struct {
+	Key      string    `yaml:"key"`
+	Midpoint []float64 `yaml:"midpoint,flow"`
 }
 
 // GeomEdgeRefData is the serialized form of a geometric edge descriptor: the edge's
@@ -233,12 +245,14 @@ type ThreadData struct {
 }
 
 // dressInputs is the decoded (keys, value) pair shared by edge/face dress-ups, plus any
-// geometric edge descriptors (externally-authored selections, ADR-0040).
+// geometric edge descriptors (externally-authored selections, ADR-0040) and the mint-time
+// edge anchors for geometric recovery (ADR-0043 P6b).
 type dressInputs struct {
 	keys      [][]byte
 	value     float64
 	geom      []topo.GeometricEdgeRef
 	geomFaces []topo.GeometricFaceRef
+	anchors   map[string]math.Point3
 }
 
 func requireEdgeDress(d *EdgeDressData, kind string) (dressInputs, error) {
@@ -249,7 +263,42 @@ func requireEdgeDress(d *EdgeDressData, kind string) (dressInputs, error) {
 	if err != nil {
 		return dressInputs{}, err
 	}
-	return dressInputs{keys: keys, value: d.Value, geom: decodeGeomEdges(d.GeomEdges)}, nil
+	anchors, err := decodeEdgeAnchors(d.EdgeAnchors)
+	if err != nil {
+		return dressInputs{}, err
+	}
+	return dressInputs{keys: keys, value: d.Value, geom: decodeGeomEdges(d.GeomEdges), anchors: anchors}, nil
+}
+
+// encodeEdgeAnchors / decodeEdgeAnchors round-trip the mint-time edge-anchor map (ADR-0043
+// P6b): keys are base64-encoded reference keys (opaque lineage bytes, like Edges), values are
+// midpoints. Empty for a dress-up authored before P6b or with no captured anchors.
+func encodeEdgeAnchors(anchors map[string]math.Point3) []EdgeAnchorData {
+	if len(anchors) == 0 {
+		return nil
+	}
+	out := make([]EdgeAnchorData, 0, len(anchors))
+	for k, p := range anchors {
+		out = append(out, EdgeAnchorData{Key: encodeKey([]byte(k)), Midpoint: encodePoint3(p)})
+	}
+	// Deterministic order so the serialized document is stable across runs (maps iterate randomly).
+	sort.Slice(out, func(i, j int) bool { return out[i].Key < out[j].Key })
+	return out
+}
+
+func decodeEdgeAnchors(data []EdgeAnchorData) (map[string]math.Point3, error) {
+	if len(data) == 0 {
+		return nil, nil
+	}
+	out := make(map[string]math.Point3, len(data))
+	for _, d := range data {
+		k, err := decodeKey(d.Key)
+		if err != nil {
+			return nil, err
+		}
+		out[string(k)] = decodePoint3(d.Midpoint)
+	}
+	return out, nil
 }
 
 // encodeGeomEdges / decodeGeomEdges convert geometric edge descriptors to and from their

@@ -45,7 +45,7 @@ func (l *LipFeature) Recompute(in Input) (Output, error) {
 	if w <= 0 || h <= 0 {
 		return Output{}, fmt.Errorf("lip: width %g and height %g must both be > 0", w, h)
 	}
-	edges, heals, err := resolveEdges(body, l.def.EdgeKeys)
+	edges, heals, err := resolveEdges(body, l.def.EdgeKeys, nil)
 	if err != nil {
 		return Output{}, err
 	}
