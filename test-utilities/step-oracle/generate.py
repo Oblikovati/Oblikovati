@@ -63,6 +63,28 @@ def bulged_duct(o):
     o.cut([(3, solid)], [(3, o.addCylinder(0, 0, -2, 0, 0, 22, 3))])
 
 
+def cand_radial(o):
+    """The bulged B-spline barrel (6,13,6) with an axial Ø6 bore AND a RADIAL Ø8 bore through the curved
+    wall along the x-axis (Oblikovati#1510).
+
+    The radial bore pierces the B_SPLINE_SURFACE side, so one of its two mouths lands on the closed
+    surface's SEAM (u=0≡1) and straddles it. That seam-straddling trim makes the planar seam-cut (u,v)
+    loop non-simple, which silently dropped boundary constraints and left the wall non-watertight and
+    grossly under-enclosed (volume ~1.4k vs getMass ~5.0k). It is the committed guard for the covering-
+    space periodic B-spline mesher; getMass is the exact oracle the tessellated volume must converge to.
+    """
+    import math
+
+    def ring3(z, r, n=28):
+        pts = [o.addPoint(r * math.cos(2 * math.pi * i / n), r * math.sin(2 * math.pi * i / n), z) for i in range(n)]
+        pts.append(pts[0])
+        return o.addWire([o.addBSpline(pts)])
+
+    solid = o.addThruSections([ring3(0, 6), ring3(9, 13), ring3(18, 6)], makeSolid=True, makeRuled=False)[0][1]
+    o.cut([(3, solid)], [(3, o.addCylinder(0, 0, -2, 0, 0, 22, 3))])      # axial bore (caps)
+    o.cut([(3, solid)], [(3, o.addCylinder(-20, 0, 9, 40, 0, 0, 4))])     # radial bore through the curved wall
+
+
 def main():
     gmsh.initialize()
     gmsh.option.setNumber("General.Terminal", 0)
@@ -98,6 +120,7 @@ def main():
     o.addSphere(0, 0, 0, 8, angle3=1.0); emit("partial_sphere")
     freeform_trimmed(o); emit("freeform_trimmed")
     bulged_duct(o); emit("bulged_duct")
+    cand_radial(o); emit("cand_radial")
 
     json.dump(oracle, open(f"{OUT}/oracle.json", "w"), indent=1, sort_keys=True)
     gmsh.finalize()

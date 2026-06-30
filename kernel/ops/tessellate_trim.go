@@ -90,6 +90,11 @@ func splineFaceMesh(f *topo.Face, s geom.Surface, q Quality) *Mesh {
 	if _, isSpline := s.(geom.BSplineSurface); !isSpline {
 		return nil
 	}
+	// A closed-in-u (periodic) B-spline face whose trim straddles the seam tangles the planar seam-cut
+	// loop; the covering-space periodic CDT un-seams it. It defers (nil,false) for the ordinary open patch.
+	if m, ok := periodicNurbsFaceMesh(f, q); ok {
+		return m
+	}
 	return nurbsPcurveMesh(f, q)
 }
 
