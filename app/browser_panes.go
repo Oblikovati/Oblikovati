@@ -18,9 +18,10 @@ import (
 // pane node; the events relay forwards it as a wire browser.node push event.
 // Gesture is one of the BrowserGesture* constants.
 type BrowserPaneNodeActivated struct {
-	Pane    string
-	Node    string
-	Gesture string
+	Pane     string
+	Node     string
+	Gesture  string
+	MenuItem string // chosen context-menu item id (Gesture BrowserGestureMenu)
 }
 
 // EventID implements event.Event.
@@ -32,6 +33,7 @@ const (
 	BrowserGestureDouble   = "double"
 	BrowserGestureExpand   = "expand"
 	BrowserGestureCollapse = "collapse"
+	BrowserGestureMenu     = "menu"
 )
 
 // AddInBrowserPanes stores the declared panes in creation order.
@@ -97,5 +99,18 @@ func (s *Session) ActivateBrowserPaneNode(pane, node, gesture string) error {
 		return fmt.Errorf("app: unknown browser gesture %q (select/double/expand/collapse)", gesture)
 	}
 	event.Emit(s.bus, event.After, BrowserPaneNodeActivated{Pane: pane, Node: node, Gesture: gesture})
+	return nil
+}
+
+// ActivateBrowserPaneNodeMenu reports that the user chose context-menu item menuItem on an
+// add-in pane node — the head calls it from the node's right-click menu; the owning add-in
+// receives it as a browser.node event with Gesture "menu" and the item id. Unknown panes error.
+func (s *Session) ActivateBrowserPaneNodeMenu(pane, node, menuItem string) error {
+	if _, ok := s.browserPanes.panes[pane]; !ok {
+		return fmt.Errorf("app: no browser pane %q", pane)
+	}
+	event.Emit(s.bus, event.After, BrowserPaneNodeActivated{
+		Pane: pane, Node: node, Gesture: BrowserGestureMenu, MenuItem: menuItem,
+	})
 	return nil
 }

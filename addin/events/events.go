@@ -223,7 +223,7 @@ func subscribeUISurfaces(bus *event.Bus, sink Sink) []event.Subscription {
 	subs := []event.Subscription{
 		event.Subscribe(bus, event.After, func(_ event.Context, e app.BrowserPaneNodeActivated) event.Outcome {
 			return relayJSON(sink, wire.BrowserNodeEvent{
-				Type: wire.EventBrowserNode, Pane: e.Pane, Node: e.Node, Gesture: e.Gesture,
+				Type: wire.EventBrowserNode, Pane: e.Pane, Node: e.Node, Gesture: e.Gesture, MenuItem: e.MenuItem,
 			})
 		}),
 		event.Subscribe(bus, event.After, func(_ event.Context, e app.DockableWindowChanged) event.Outcome {
