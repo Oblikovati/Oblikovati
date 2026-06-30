@@ -113,7 +113,7 @@ func oracleTolerance(name string) float64 {
 		return 0.001 // planar
 	case "sphere", "partial_sphere", "torus", "partial_torus", "filleted_box":
 		return 0.08 // doubly curved / many small blends
-	case "freeform_trimmed", "bulged_duct":
+	case "freeform_trimmed", "bulged_duct", "cand_radial":
 		return 0.03 // B-spline barrel loft + bore: chord error on convex freeform faces
 	default:
 		return 0.05 // singly curved (cylinder, cone, drilled, boss, chamfer)

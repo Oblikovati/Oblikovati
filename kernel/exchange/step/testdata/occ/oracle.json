@@ -19,6 +19,10 @@
   "solids": 1,
   "volume": 1523.6724
  },
+ "cand_radial": {
+  "solids": 1,
+  "volume": 5023.5696
+ },
  "cone_sharp": {
   "solids": 1,
   "volume": 452.3893
