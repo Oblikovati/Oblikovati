@@ -34,7 +34,7 @@ func thicknessParams(t *testing.T) *param.Parameters {
 // builds one valid watertight transition wall.
 func TestLoftedFlangeLoftsTransition(t *testing.T) {
 	planeB, _ := sketch.NewPlane(math.P3(0, 0, 3), math.V3(1, 0, 0).AsUnit(), math.V3(0, 1, 0).AsUnit())
-	fs := NewPartFeatures(thicknessParams(t), nil)
+	fs := NewPartFeatures(thicknessParams(t))
 	pf := NewSheetMetalLoftedFlangeFeatures(fs).Add(&SheetMetalLoftedFlangeDefinition{
 		ProfileA:  lProfileOnPlane(sketch.XYPlane(), 1, 1),
 		ProfileB:  lProfileOnPlane(planeB, 2, 2),
@@ -69,7 +69,7 @@ func TestLoftedFlangeMismatchedProfiles(t *testing.T) {
 	b := twoPt.Points().Add(math.P2(1, 0))
 	twoPt.Lines().Add(a, b)
 
-	fs := NewPartFeatures(thicknessParams(t), nil)
+	fs := NewPartFeatures(thicknessParams(t))
 	pf := NewSheetMetalLoftedFlangeFeatures(fs).Add(&SheetMetalLoftedFlangeDefinition{
 		ProfileA: twoPt, ProfileB: threePt, Operation: ops.NewBody,
 	})
@@ -81,7 +81,7 @@ func TestLoftedFlangeMismatchedProfiles(t *testing.T) {
 
 // TestLoftedFlangeNeedsThickness without a Thickness parameter the feature goes sick.
 func TestLoftedFlangeNeedsThickness(t *testing.T) {
-	fs := NewPartFeatures(param.NewParameters(), nil) // no Thickness
+	fs := NewPartFeatures(param.NewParameters()) // no Thickness
 	pf := NewSheetMetalLoftedFlangeFeatures(fs).Add(&SheetMetalLoftedFlangeDefinition{
 		ProfileA: lProfileOnPlane(sketch.XYPlane(), 1, 1), ProfileB: lProfileOnPlane(sketch.XYPlane(), 1, 1),
 	})
@@ -128,7 +128,7 @@ func TestLoftedFlangeRoundTrip(t *testing.T) {
 	pa := lProfileOnPlane(sketch.XYPlane(), 1, 1)
 	pb := lProfileOnPlane(sketch.XYPlane(), 2, 2)
 	idx := twoSketchIndexer{a: pa, b: pb}
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewSheetMetalLoftedFlangeFeatures(fs).Add(&SheetMetalLoftedFlangeDefinition{ProfileA: pa, ProfileB: pb, Operation: ops.Join})
 
 	data, err := fs.MarshalRecipe(idx)
@@ -142,7 +142,7 @@ func TestLoftedFlangeRoundTrip(t *testing.T) {
 	if d.ProfileA != 0 || d.ProfileB != 1 || d.Operation != int32(ops.Join) {
 		t.Errorf("payload = %+v, want profiles 0/1 / join", d)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, idx, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -153,7 +153,7 @@ func TestLoftedFlangeRoundTrip(t *testing.T) {
 
 // TestLoftedFlangeMissingPayload / unknown sketch restore errors.
 func TestLoftedFlangeMissingPayload(t *testing.T) {
-	if _, err := restoreSheetMetalLoftedFlange(NewPartFeatures(nil, nil), nil, twoSketchIndexer{}); err == nil {
+	if _, err := restoreSheetMetalLoftedFlange(NewPartFeatures(nil), nil, twoSketchIndexer{}); err == nil {
 		t.Error("restoreSheetMetalLoftedFlange(nil) must error")
 	}
 	if _, err := serializeSheetMetalLoftedFlange(&SheetMetalLoftedFlangeDefinition{ProfileA: lProfileOnPlane(sketch.XYPlane(), 1, 1)}, twoSketchIndexer{}); err == nil {

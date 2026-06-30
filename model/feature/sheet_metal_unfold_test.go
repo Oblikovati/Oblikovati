@@ -76,7 +76,7 @@ func TestRefoldFeatureRestores(t *testing.T) {
 // TestUnfoldRefoldRoundTrip an unfold and a refold feature persist their bend transforms and
 // restore (they reference no sketch, so the recipe is self-contained).
 func TestUnfoldRefoldRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	bend := BendTransform{LinePoint: math.P3(0, 0, 0.2), LineDir: math.V3(4, 0, 0), Up: math.V3(0, 0, 1), Out: math.V3(0, 1, 0), Angle: stdmath.Pi / 2, Radius: 0.2, Thickness: 0.1, Neutral: 0.244}
 	NewSheetMetalUnfoldFeatures(fs).Add(&SheetMetalUnfoldDefinition{Bends: []BendTransform{bend}})
 	NewSheetMetalRefoldFeatures(fs).Add(&SheetMetalRefoldDefinition{Bends: []BendTransform{bend}})
@@ -92,7 +92,7 @@ func TestUnfoldRefoldRoundTrip(t *testing.T) {
 		t.Fatalf("refold marshaled = %+v", data[1])
 	}
 
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -107,10 +107,10 @@ func TestUnfoldRefoldRoundTrip(t *testing.T) {
 
 // TestUnfoldRefoldMissingPayload restoring a nil payload errors.
 func TestUnfoldRefoldMissingPayload(t *testing.T) {
-	if _, err := restoreSheetMetalUnfold(NewPartFeatures(nil, nil), nil); err == nil {
+	if _, err := restoreSheetMetalUnfold(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreSheetMetalUnfold(nil) must error")
 	}
-	if _, err := restoreSheetMetalRefold(NewPartFeatures(nil, nil), nil); err == nil {
+	if _, err := restoreSheetMetalRefold(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreSheetMetalRefold(nil) must error")
 	}
 }

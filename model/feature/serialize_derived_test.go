@@ -30,7 +30,7 @@ func roundTripDerive(t *testing.T, pf *PartFeature) (*DerivedAssemblyComponent, 
 	if err != nil {
 		t.Fatalf("serialize derive: %v", err)
 	}
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	restored, err := buildFeature(fs, fd, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("restore derive: %v", err)
@@ -43,7 +43,7 @@ func roundTripDerive(t *testing.T, pf *PartFeature) (*DerivedAssemblyComponent, 
 func TestDerivedAssemblySourceLinkSurvivesRoundTrip(t *testing.T) {
 	src, _, _ := sourceWithTwoBlocks(t)
 	link := DeriveSourceLink{Document: "src.obk", InternalName: "GUID-1", DatabaseRevisionID: "rev-1"}
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewDerivedAssemblyComponents(fs).AddDerived(src, link)
 
 	restored, _ := roundTripDerive(t, pf)
@@ -60,7 +60,7 @@ func TestDerivedAssemblySourceLinkSurvivesRoundTrip(t *testing.T) {
 // — the base body is the single included block (volume 1, not 2).
 func TestDerivedAssemblyStyleSurvivesRoundTrip(t *testing.T) {
 	src, _, b := sourceWithTwoBlocks(t)
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewDerivedAssemblyComponents(fs).AddDerived(src, DeriveSourceLink{DatabaseRevisionID: "rev-1"})
 	pf.Definition().(*DerivedAssemblyComponent).SetStyle(b, DeriveExclude)
 
@@ -81,7 +81,7 @@ func TestDerivedAssemblyStyleSurvivesRoundTrip(t *testing.T) {
 // source revision and clears the out-of-date flag — the model side of deriveUpdate (#751).
 func TestDeriveAcknowledgeSourceClearsOutOfDate(t *testing.T) {
 	src, _, _ := sourceWithTwoBlocks(t)
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewDerivedAssemblyComponents(fs).AddDerived(src, DeriveSourceLink{DatabaseRevisionID: "rev-1"})
 	d := pf.Definition().(*DerivedAssemblyComponent)
 	d.BindSource(src, "rev-2")
@@ -114,7 +114,7 @@ func TestDerivedAssemblyOutOfDateByRevision(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			fs := NewPartFeatures(nil, nil)
+			fs := NewPartFeatures(nil)
 			pf := NewDerivedAssemblyComponents(fs).AddDerived(src, DeriveSourceLink{DatabaseRevisionID: c.linkRev})
 			d := pf.Definition().(*DerivedAssemblyComponent)
 			d.BindSource(src, c.currentRev)

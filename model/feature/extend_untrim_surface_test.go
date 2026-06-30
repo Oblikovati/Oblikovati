@@ -61,14 +61,14 @@ func TestExtendUntrimKinds(t *testing.T) {
 }
 
 func TestExtendSurfaceRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewExtendSurfaceFeatures(fs).Add(geom.VMaxEdge, 2.5, 2)
 	NewUntrimFeatures(fs).Add()
 	data, err := fs.MarshalRecipe(oneSketch{})
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -82,10 +82,10 @@ func TestExtendSurfaceRoundTrip(t *testing.T) {
 }
 
 func TestRestoreExtendUntrimRejectMissingPayload(t *testing.T) {
-	if _, err := restoreExtendSurface(NewPartFeatures(nil, nil), nil); err == nil {
+	if _, err := restoreExtendSurface(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreExtendSurface(nil) should error")
 	}
-	if _, err := restoreUntrim(NewPartFeatures(nil, nil), nil); err == nil {
+	if _, err := restoreUntrim(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreUntrim(nil) should error")
 	}
 }

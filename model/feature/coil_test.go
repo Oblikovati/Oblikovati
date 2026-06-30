@@ -11,7 +11,7 @@ import (
 func TestCoilSweepsValidHelix(t *testing.T) {
 	// A small square offset from the Y axis, swept 3 turns with pitch 2 → a helical
 	// solid that climbs 3·2 = 6 plus the profile's own height (1).
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewCoilFeatures(fs).Add(offsetSquareSketch(4, 1), 0, yAxis(),
 		func() float64 { return 2 }, func() float64 { return 3 }, 0, ops.NewBody)
 	fs.Recompute()
@@ -33,7 +33,7 @@ func TestCoilSweepsValidHelix(t *testing.T) {
 }
 
 func TestCoilRejectsZeroRevolutions(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewCoilFeatures(fs).Add(offsetSquareSketch(4, 1), 0, yAxis(),
 		func() float64 { return 2 }, func() float64 { return 0 }, 0, ops.NewBody)
 	fs.Recompute()
@@ -50,7 +50,7 @@ func TestCoilRoundTrip(t *testing.T) {
 		t.Fatalf("origin Y axis: %v", err)
 	}
 	sk := offsetSquareSketch(4, 1)
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewCoilFeatures(fs).Add(sk, 0, axis,
 		func() float64 { return 2 }, func() float64 { return 3 }, 0.1, ops.Join)
 
@@ -58,7 +58,7 @@ func TestCoilRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{sk}, g); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}

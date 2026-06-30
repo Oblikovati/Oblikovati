@@ -29,7 +29,7 @@ func squareSketch(side float64) *sketch.Sketch {
 func TestExtrudeCreatesValidSolid(t *testing.T) {
 	ps := param.NewParameters()
 	h, _ := ps.AddUserParameter("height", "5 cm")
-	fs := NewPartFeatures(ps, nil)
+	fs := NewPartFeatures(ps)
 	extrudes := NewExtrudeFeatures(fs)
 	pf := extrudes.AddByDistanceExtent(squareSketch(2), 0, ops.NewBody, func() float64 { return h.ModelValue() })
 
@@ -65,7 +65,7 @@ func TestExtrudeCreatesValidSolid(t *testing.T) {
 func TestExtrudeRecomputesOnParameterChange(t *testing.T) {
 	ps := param.NewParameters()
 	h, _ := ps.AddUserParameter("height", "5 cm")
-	fs := NewPartFeatures(ps, nil)
+	fs := NewPartFeatures(ps)
 	extrudes := NewExtrudeFeatures(fs)
 	extrudes.AddByDistanceExtent(squareSketch(2), 0, ops.NewBody, func() float64 { return h.ModelValue() })
 	fs.Recompute()
@@ -92,7 +92,7 @@ func TestExtrudeGoesSickOnOpenProfile(t *testing.T) {
 	s.Lines().Add(a, b)
 	s.Lines().Add(b, c) // open
 
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewExtrudeFeatures(fs).AddByDistanceExtent(s, 0, ops.NewBody, func() float64 { return 5 })
 	fs.Recompute()
 	if pf.Health().Status != health.Sick {
@@ -101,7 +101,7 @@ func TestExtrudeGoesSickOnOpenProfile(t *testing.T) {
 }
 
 func TestUngeneratedFeaturesGoSick(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	sk := squareSketch(1)
 	feats := []*PartFeature{
 		NewRevolveFeatures(fs).Add(sk, 0, nil, nil, ops.Join),
@@ -125,7 +125,7 @@ func TestUngeneratedFeaturesGoSick(t *testing.T) {
 }
 
 func TestExtrudesGetUniqueInventorNames(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	ex := NewExtrudeFeatures(fs)
 	a := ex.AddByDistanceExtent(squareSketch(2), 0, ops.NewBody, func() float64 { return 3 })
 	b := ex.AddByDistanceExtent(squareSketchAt(2, 10), 0, ops.NewBody, func() float64 { return 3 })
@@ -136,7 +136,7 @@ func TestExtrudesGetUniqueInventorNames(t *testing.T) {
 }
 
 func TestExtrudeSetDistanceAndOperationDriveRecompute(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(2), 0, ops.NewBody, func() float64 { return 5 })
 	ext := pf.Definition().(*ExtrudeFeature)
 	fs.Recompute()
@@ -176,7 +176,7 @@ func squareSketchAt(side, dx float64) *sketch.Sketch {
 }
 
 func TestExtrudeJoinDisjointMergesBodies(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	ex := NewExtrudeFeatures(fs)
 	ex.AddByDistanceExtent(squareSketch(2), 0, ops.NewBody, func() float64 { return 3 })
 	ex.AddByDistanceExtent(squareSketchAt(2, 10), 0, ops.Join, func() float64 { return 3 })
@@ -190,7 +190,7 @@ func TestExtrudeJoinDisjointMergesBodies(t *testing.T) {
 }
 
 func TestFeatureDefinitionsAccessible(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	sk := squareSketch(1)
 	ex := NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 1 })
 	if ex.Definition().(*ExtrudeFeature).Definition().Operation != ops.NewBody {

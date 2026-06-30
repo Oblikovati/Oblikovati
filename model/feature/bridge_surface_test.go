@@ -44,13 +44,13 @@ func TestBridgeKind(t *testing.T) {
 }
 
 func TestBridgeSurfaceRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBridgeFeatures(fs).Add(1, 2)
 	data, err := fs.MarshalRecipe(oneSketch{})
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -61,7 +61,7 @@ func TestBridgeSurfaceRoundTrip(t *testing.T) {
 }
 
 func TestRestoreBridgeRejectsMissingPayload(t *testing.T) {
-	if _, err := restoreBridgeSurface(NewPartFeatures(nil, nil), nil); err == nil {
+	if _, err := restoreBridgeSurface(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreBridgeSurface(nil) should error")
 	}
 }

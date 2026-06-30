@@ -10,7 +10,7 @@ import (
 )
 
 func TestExplicitSuppressionPassesBodiesThrough(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	fs.Add(body())
 	mid := fs.Add(body())
 	fs.Add(body())
@@ -31,7 +31,7 @@ func TestExplicitSuppressionPassesBodiesThrough(t *testing.T) {
 func TestConditionalSuppressionTogglesWithExpression(t *testing.T) {
 	ps := param.NewParameters()
 	count, _ := ps.AddUserParameter("count", "1")
-	fs := NewPartFeatures(ps, nil)
+	fs := NewPartFeatures(ps)
 	f := fs.Add(body())
 	// Suppress the feature when count < 2.
 	f.SetSuppressionCondition("count", LessThan, 2)
@@ -52,7 +52,7 @@ func TestConditionalSuppressionTogglesWithExpression(t *testing.T) {
 }
 
 func TestReorderRejectedPastDependency(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	base := fs.Add(body())
 	dependent := fs.Add(body(), base.ID()) // dependent must stay after base
 	fs.Recompute()
@@ -67,7 +67,7 @@ func TestReorderRejectedPastDependency(t *testing.T) {
 }
 
 func TestValidReorderReEvaluates(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	a := fs.Add(body())
 	b := fs.Add(body())
 	c := fs.Add(body())
@@ -86,7 +86,7 @@ func TestValidReorderReEvaluates(t *testing.T) {
 }
 
 func TestEndOfPartExcludesTrailingFeatures(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	fs.Add(body())
 	fs.Add(body())
 	last := fs.Add(body())
@@ -134,7 +134,7 @@ func TestComparisonOperators(t *testing.T) {
 }
 
 func TestFeatureAccessorsAndEdges(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	f := fs.Add(body())
 	if f.Name() != "box" || f.Definition() == nil || f.Suppressed() {
 		t.Error("basic accessors wrong")

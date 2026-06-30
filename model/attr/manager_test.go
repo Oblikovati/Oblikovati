@@ -8,51 +8,21 @@ import (
 	"oblikovati.org/model/identity"
 )
 
-// keyFor mints a reference key for a face with the given lineage, the way a
-// selection would before attaching attributes to it.
-func keyFor(t *testing.T, m *identity.KeyManager, ctx identity.ContextID, lineage string) identity.RefKey {
-	t.Helper()
-	key, err := m.GetReferenceKey(ctx, fakeFace(lineage))
-	if err != nil {
-		t.Fatalf("GetReferenceKey: %v", err)
-	}
-	return key
-}
-
-type fakeFaceEntity string
-
-func (fakeFaceEntity) EntityKind() identity.EntityKind { return identity.KindFace }
-func (e fakeFaceEntity) Lineage() identity.Lineage     { return fakeLineage(e) }
-
-type fakeLineage string
-
-func (l fakeLineage) LineageKey() []byte { return []byte(l) }
-
-func fakeFace(lineage string) identity.Entity { return fakeFaceEntity(lineage) }
-
-type fakeSource struct{ faces []string }
-
-func (s *fakeSource) Entities() []identity.Entity {
-	out := make([]identity.Entity, len(s.faces))
-	for i, l := range s.faces {
-		out[i] = fakeFace(l)
-	}
-	return out
-}
+// keyFor builds the reference key a selection would carry for an entity with the
+// given lineage. It uses the public external-key constructor, so the test needs no
+// KeyManager: two calls for the same lineage produce Equal keys — exactly the
+// property the attribute manager relies on to re-anchor an attribute after recompute.
+func keyFor(lineage string) identity.RefKey { return identity.ExternalKey([]byte(lineage)) }
 
 func TestAttributeOnFaceSurvivesRecomputeAndReload(t *testing.T) {
-	km := identity.NewKeyManager()
-	src := &fakeSource{faces: []string{"cap", "side"}}
-	ctx := km.CreateKeyContext(src)
-	capKey := keyFor(t, km, ctx, "cap")
+	capKey := keyFor("cap")
 
 	mgr := NewAttributeManager()
 	mgr.AttributeSets(capKey).Set("acme").Put("finish", StringValue("anodized"))
 
-	// Recompute: a fresh face object is created, but its lineage is unchanged, so
-	// the key minted now is equal and still finds the attribute.
-	src.faces = []string{"cap", "side"}
-	rebound := keyFor(t, km, ctx, "cap")
+	// Recompute: a fresh face object is created, but its lineage is unchanged, so a
+	// key minted now is Equal and still finds the attribute.
+	rebound := keyFor("cap")
 	ss, ok := mgr.Lookup(rebound)
 	if !ok {
 		t.Fatal("attribute lost across recompute (key did not re-anchor)")
@@ -78,9 +48,7 @@ func TestAttributeOnFaceSurvivesRecomputeAndReload(t *testing.T) {
 }
 
 func TestAddinPrivateDataRoundTrips(t *testing.T) {
-	km := identity.NewKeyManager()
-	ctx := km.CreateKeyContext(&fakeSource{})
-	key := keyFor(t, km, ctx, "vertex-7")
+	key := keyFor("vertex-7")
 
 	mgr := NewAttributeManager()
 	set := mgr.AttributeSets(key).Set("com.acme.addin")
@@ -104,16 +72,12 @@ func TestAddinPrivateDataRoundTrips(t *testing.T) {
 }
 
 func TestFindAttributesQuery(t *testing.T) {
-	km := identity.NewKeyManager()
-	ctx := km.CreateKeyContext(&fakeSource{})
 	mgr := NewAttributeManager()
 	for _, lineage := range []string{"f1", "f2", "f3"} {
-		key := keyFor(t, km, ctx, lineage)
-		mgr.AttributeSets(key).Set("tags").Put("reviewed", BoolValue(true))
+		mgr.AttributeSets(keyFor(lineage)).Set("tags").Put("reviewed", BoolValue(true))
 	}
 	// One extra object with a different set must not match.
-	other := keyFor(t, km, ctx, "f4")
-	mgr.AttributeSets(other).Set("other").Put("reviewed", BoolValue(true))
+	mgr.AttributeSets(keyFor("f4")).Set("other").Put("reviewed", BoolValue(true))
 
 	hits := mgr.FindAttributes("tags", "reviewed")
 	if len(hits) != 3 {
@@ -129,10 +93,8 @@ func TestFindAttributesQuery(t *testing.T) {
 }
 
 func TestManagerRemoveAndCount(t *testing.T) {
-	km := identity.NewKeyManager()
-	ctx := km.CreateKeyContext(&fakeSource{})
 	mgr := NewAttributeManager()
-	key := keyFor(t, km, ctx, "f1")
+	key := keyFor("f1")
 	mgr.AttributeSets(key).Set("s").Put("a", IntValue(1))
 	if mgr.Count() != 1 {
 		t.Fatalf("Count = %d, want 1", mgr.Count())
@@ -146,10 +108,8 @@ func TestManagerRemoveAndCount(t *testing.T) {
 }
 
 func TestDecodeAttributesRejectsTruncated(t *testing.T) {
-	km := identity.NewKeyManager()
-	ctx := km.CreateKeyContext(&fakeSource{})
 	mgr := NewAttributeManager()
-	mgr.AttributeSets(keyFor(t, km, ctx, "f1")).Set("s").Put("a", StringValue("value"))
+	mgr.AttributeSets(keyFor("f1")).Set("s").Put("a", StringValue("value"))
 	blob := mgr.Encode()
 	if _, err := DecodeAttributes(blob[:len(blob)-2]); err == nil {
 		t.Error("DecodeAttributes accepted truncated data")

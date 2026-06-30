@@ -28,7 +28,7 @@ func TestLipRaisesBeadAlongTopEdge(t *testing.T) {
 	}
 	base := 8.0 // box volume
 
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
 	lip := NewDressUpFeatures(fs).AddLip([][]byte{top}, func() float64 { return 0.3 }, func() float64 { return 0.3 }, false)
 	fs.Recompute()
@@ -55,7 +55,7 @@ func TestLipGrooveCutsAlongTopEdge(t *testing.T) {
 			break
 		}
 	}
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
 	g := NewDressUpFeatures(fs).AddLip([][]byte{top}, func() float64 { return 0.3 }, func() float64 { return 0.3 }, true)
 	fs.Recompute()
@@ -74,7 +74,7 @@ func TestLipGrooveCutsAlongTopEdge(t *testing.T) {
 // TestLipRoundTrip checks the lip's size + groove flag survive an .obk round trip.
 func TestLipRoundTrip(t *testing.T) {
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 1 })
 	NewDressUpFeatures(fs).AddLip([][]byte{[]byte("e0")}, func() float64 { return 0.3 }, func() float64 { return 0.5 }, true)
 
@@ -82,7 +82,7 @@ func TestLipRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{sk}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}

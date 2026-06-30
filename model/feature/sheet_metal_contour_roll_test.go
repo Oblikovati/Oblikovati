@@ -35,7 +35,7 @@ func rolledBody(t *testing.T, r, h, angle float64) *topo.Body {
 	if angle > 0 {
 		def.Angle = func() float64 { return angle }
 	}
-	fs := NewPartFeatures(thicknessParams(t), nil)
+	fs := NewPartFeatures(thicknessParams(t))
 	pf := NewSheetMetalContourRollFeatures(fs).Add(def)
 	fs.Recompute()
 	if !pf.Health().OK() {
@@ -74,7 +74,7 @@ func TestContourRollPartialAngle(t *testing.T) {
 // TestContourRollRejectsBadInput an out-of-range axis line, zero angle, and missing thickness
 // each go sick.
 func TestContourRollRejectsBadInput(t *testing.T) {
-	fs := NewPartFeatures(thicknessParams(t), nil)
+	fs := NewPartFeatures(thicknessParams(t))
 	badAxis := NewSheetMetalContourRollFeatures(fs).Add(&SheetMetalContourRollDefinition{
 		Profile: rollProfile(2, 3), AxisLine: 9, Operation: ops.NewBody,
 	})
@@ -83,7 +83,7 @@ func TestContourRollRejectsBadInput(t *testing.T) {
 		t.Error("contour roll with an out-of-range axis line should be sick")
 	}
 
-	noThick := NewPartFeatures(param.NewParameters(), nil)
+	noThick := NewPartFeatures(param.NewParameters())
 	pf := NewSheetMetalContourRollFeatures(noThick).Add(&SheetMetalContourRollDefinition{Profile: rollProfile(2, 3), AxisLine: 0})
 	noThick.Recompute()
 	if pf.Health().OK() {
@@ -104,7 +104,7 @@ func TestContourRollDefinitionAndKind(t *testing.T) {
 // restores, preserving the kind and payload.
 func TestContourRollRoundTrip(t *testing.T) {
 	profile := rollProfile(2, 3)
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewSheetMetalContourRollFeatures(fs).Add(&SheetMetalContourRollDefinition{
 		Profile: profile, AxisLine: 0, Angle: func() float64 { return stdmath.Pi / 2 }, Operation: ops.Join,
 	})
@@ -119,7 +119,7 @@ func TestContourRollRoundTrip(t *testing.T) {
 	if d.Profile != 0 || d.AxisLine != 0 || stdmath.Abs(d.Angle-stdmath.Pi/2) > 1e-9 || d.Operation != int32(ops.Join) {
 		t.Errorf("payload = %+v, want profile 0 / axis 0 / angle π/2 / join", d)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{s: profile}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -130,7 +130,7 @@ func TestContourRollRoundTrip(t *testing.T) {
 
 // TestContourRollMissingPayload / unknown sketch restore errors.
 func TestContourRollMissingPayload(t *testing.T) {
-	if _, err := restoreSheetMetalContourRoll(NewPartFeatures(nil, nil), nil, oneSketch{}); err == nil {
+	if _, err := restoreSheetMetalContourRoll(NewPartFeatures(nil), nil, oneSketch{}); err == nil {
 		t.Error("restoreSheetMetalContourRoll(nil) must error")
 	}
 	if _, err := serializeSheetMetalContourRoll(&SheetMetalContourRollDefinition{Profile: rollProfile(1, 1)}, oneSketch{s: squareSketch(1)}); err == nil {

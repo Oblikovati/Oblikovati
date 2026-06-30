@@ -5,9 +5,8 @@ package identity
 import "testing"
 
 func TestKeyEncodeDecodeRoundTrip(t *testing.T) {
-	m := NewKeyManager()
-	ctx := m.CreateKeyContext(&fakeSource{})
-	key, _ := m.GetReferenceKey(ctx, fakeEntity{kind: KindEdge, lin: "edge#7/from-face#2"})
+	ctx := ContextID(2)
+	key := keyFor(ctx, fakeEntity{kind: KindEdge, lin: "edge#7/from-face#2"})
 
 	back, err := DecodeKey(key.Encode())
 	if err != nil {
@@ -22,9 +21,7 @@ func TestKeyEncodeDecodeRoundTrip(t *testing.T) {
 }
 
 func TestKeyStringRoundTrip(t *testing.T) {
-	m := NewKeyManager()
-	ctx := m.CreateKeyContext(&fakeSource{})
-	key, _ := m.GetReferenceKey(ctx, face("cap"))
+	key := keyFor(1, face("cap"))
 
 	back, err := StringToKey(KeyToString(key))
 	if err != nil {
@@ -80,20 +77,5 @@ func TestEnumStrings(t *testing.T) {
 	}
 	if MatchExact.String() != "exact" || MatchNone.String() != "none" {
 		t.Error("MatchType.String mismatch")
-	}
-}
-
-func TestLoadContextRejectsTruncatedRecord(t *testing.T) {
-	m := NewKeyManager()
-	ctx := m.CreateKeyContext(&fakeSource{entities: []Entity{face("some-lineage")}})
-	blob, err := m.SaveContextToArray(ctx)
-	if err != nil {
-		t.Fatalf("SaveContextToArray: %v", err)
-	}
-	// Lop off the tail so the record header promises more bytes than remain.
-	for _, cut := range []int{len(blob) - 1, 13, 10} {
-		if _, err := NewKeyManager().LoadContextToArray(blob[:cut]); err == nil {
-			t.Errorf("LoadContextToArray accepted blob truncated to %d bytes", cut)
-		}
 	}
 }

@@ -38,13 +38,13 @@ func TestFairKind(t *testing.T) {
 }
 
 func TestFairSurfaceRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewFairFeatures(fs).Add(2, 0.4, 25)
 	data, err := fs.MarshalRecipe(oneSketch{})
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -55,7 +55,7 @@ func TestFairSurfaceRoundTrip(t *testing.T) {
 }
 
 func TestRestoreFairRejectsMissingPayload(t *testing.T) {
-	if _, err := restoreFairSurface(NewPartFeatures(nil, nil), nil); err == nil {
+	if _, err := restoreFairSurface(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreFairSurface(nil) should error")
 	}
 }

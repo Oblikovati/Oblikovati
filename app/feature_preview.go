@@ -148,7 +148,7 @@ func faceKeys(faces []FaceHandle) [][]byte {
 // creates with no duplicated builder. The scratch engine needs no params/keys: Add only stores
 // and names the feature; resolution happens later in PreviewResult against the part's engine.
 func draftFromScratch(build func(*feature.PartFeatures) (*feature.PartFeature, error)) (feature.Feature, bool) {
-	pf, err := build(feature.NewPartFeatures(nil, nil))
+	pf, err := build(feature.NewPartFeatures(nil))
 	if err != nil || pf == nil {
 		return nil, false
 	}

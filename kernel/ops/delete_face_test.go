@@ -23,7 +23,7 @@ func chamferedBox(t *testing.T) *topo.Body {
 			break
 		}
 	}
-	fs := feature.NewPartFeatures(nil, nil)
+	fs := feature.NewPartFeatures(nil)
 	feature.NewBaseFeatures(fs).AddBase(box)
 	feature.NewDressUpFeatures(fs).AddChamfer([][]byte{edge}, func() float64 { return 0.5 })
 	fs.Recompute()

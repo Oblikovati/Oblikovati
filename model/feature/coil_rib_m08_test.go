@@ -27,7 +27,7 @@ func zWorkAxis() *WorkAxis {
 
 func coilRecompute(t *testing.T, def *CoilDefinition) float64 {
 	t.Helper()
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewCoilFeatures(fs).AddDefinition(def)
 	fs.Recompute()
 	if !pf.Health().OK() {
@@ -63,7 +63,7 @@ func TestCoilHeightModes(t *testing.T) {
 // TestCoilShapeSpecValidation: all three (overdetermined) and fewer than two
 // are precise errors.
 func TestCoilShapeSpecValidation(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewCoilFeatures(fs).AddDefinition(&CoilDefinition{
 		Sketch: coilProfileSketch(), Axis: zWorkAxis(),
 		Pitch: angleConst(2), Revolutions: angleConst(3), Height: angleConst(6),
@@ -73,7 +73,7 @@ func TestCoilShapeSpecValidation(t *testing.T) {
 	if pf.Health().Status != health.Sick {
 		t.Error("pitch+revolutions+height (overdetermined) must be sick")
 	}
-	fs2 := NewPartFeatures(nil, nil)
+	fs2 := NewPartFeatures(nil)
 	pf2 := NewCoilFeatures(fs2).AddDefinition(&CoilDefinition{
 		Sketch: coilProfileSketch(), Axis: zWorkAxis(),
 		Pitch: angleConst(2), Operation: ops.NewBody,
@@ -95,11 +95,11 @@ func TestCoilTaperGrowsRadius(t *testing.T) {
 			Taper: tp, Operation: ops.NewBody,
 		}
 	}
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewCoilFeatures(fs).AddDefinition(mk(0))
 	fs.Recompute()
 	plain := fs.Result()[0].RangeBox()
-	fs2 := NewPartFeatures(nil, nil)
+	fs2 := NewPartFeatures(nil)
 	NewCoilFeatures(fs2).AddDefinition(mk(taper))
 	fs2.Recompute()
 	tapered := fs2.Result()[0].RangeBox()
@@ -116,7 +116,7 @@ func TestCoilTaperGrowsRadius(t *testing.T) {
 // TestRibToNextReachesPlate: a rib sketched above a plate with toNext extends
 // exactly down to the plate's top face and joins it.
 func TestRibToNextReachesPlate(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	// Plate: z ∈ [0, 1], spanning xy ∈ [-5, 5].
 	plate := centeredSquareOn(sketch.XYPlane(), 5)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(plate, 0, ops.NewBody, angleConst(1))
@@ -148,7 +148,7 @@ func TestRibToNextReachesPlate(t *testing.T) {
 // TestRibToNextNoMaterialSick: a to-next rib with nothing to land on is sick
 // with a precise message.
 func TestRibToNextNoMaterialSick(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	def := &RibDefinition{
 		Sketch: lineSketchOn(planeAtZ(3)), ProfileIndex: 0,
 		Thickness: angleConst(0.5), ToNext: true, Operation: ops.NewBody,

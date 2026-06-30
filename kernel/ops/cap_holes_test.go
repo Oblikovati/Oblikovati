@@ -21,7 +21,7 @@ func boxWithThroughHole(t *testing.T) *topo.Body {
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	addSketchRect(sk, 0, 0, 4, 4) // outer boundary
 	addSketchRect(sk, 1, 1, 3, 3) // the hole
-	fs := feature.NewPartFeatures(nil, nil)
+	fs := feature.NewPartFeatures(nil)
 	feature.NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 2 })
 	fs.Recompute()
 	holey := fs.Result()[0]

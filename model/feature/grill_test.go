@@ -25,7 +25,7 @@ func grillSketch() *sketch.Sketch {
 // the boundary-minus-ribs area (31), leaving the ribs bridging — a validated solid of vol 69,
 // which is more than the 64 a plain 6×6 window would leave (so the ribs stayed).
 func TestGrillCutsVentLeavingRibs(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	wall := sketch.NewSketches().Add(sketch.XYPlane())
 	addRect(wall, 0, 0, 10, 10)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(wall, 0, ops.NewBody, func() float64 { return 1 })
@@ -49,7 +49,7 @@ func TestGrillCutsVentLeavingRibs(t *testing.T) {
 // the correct vent — boundary 49 minus the bars' union 13.92 = 35.08 removed from a 100 wall,
 // leaving 64.92. Built as boundary − union(bars), robust to the crossings (#863).
 func TestGrillCrossingBarsVolume(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	wall := sketch.NewSketches().Add(sketch.XYPlane())
 	addRect(wall, 0, 0, 10, 10)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(wall, 0, ops.NewBody, func() float64 { return 1 })
@@ -80,7 +80,7 @@ func TestGrillCrossingBarsVolume(t *testing.T) {
 // TestGrillBoundaryOnlyIsAWindow: a boundary with no inner structure cuts a plain window
 // (vol 100 − 36 = 64).
 func TestGrillBoundaryOnlyIsAWindow(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	wall := sketch.NewSketches().Add(sketch.XYPlane())
 	addRect(wall, 0, 0, 10, 10)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(wall, 0, ops.NewBody, func() float64 { return 1 })
@@ -101,7 +101,7 @@ func TestGrillBoundaryOnlyIsAWindow(t *testing.T) {
 
 // TestGrillNoBoundaryRejected: an empty boundary set is an error.
 func TestGrillNoBoundaryRejected(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	wall := sketch.NewSketches().Add(sketch.XYPlane())
 	addRect(wall, 0, 0, 10, 10)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(wall, 0, ops.NewBody, func() float64 { return 1 })
@@ -119,7 +119,7 @@ func TestGrillRoundTrip(t *testing.T) {
 	gSk := grillSketch()
 	idx := sketchList{sks: []*sketch.Sketch{wallSk, gSk}}
 
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(wallSk, 0, ops.NewBody, func() float64 { return 1 })
 	NewGrillFeatures(fs).Add(&GrillDefinition{Sketch: gSk, Boundaries: []int{0}, Draft: 0.1})
 
@@ -127,7 +127,7 @@ func TestGrillRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, idx, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}

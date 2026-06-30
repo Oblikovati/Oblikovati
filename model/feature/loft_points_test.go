@@ -106,7 +106,7 @@ func TestLoftPointValidation(t *testing.T) {
 // loftError returns the health-reason error of building a loft (nil if it stays healthy).
 func loftError(t *testing.T, sections []LoftSection) error {
 	t.Helper()
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewLoftFeatures(fs).Add(sections, false, ops.NewBody)
 	fs.Recompute()
 	if pf.Health().OK() {

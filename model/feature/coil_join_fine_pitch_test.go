@@ -32,7 +32,7 @@ func roundThreadSketch(meanR, wireR float64) *sketch.Sketch {
 // of a real thread (the 3 mm pitch on a Ø6 core was the worst case: ~9600 open edges before).
 func TestCoilJoinFinePitchWatertight(t *testing.T) {
 	for _, pitch := range []float64{0.4, 0.3, 0.25, 0.2} { // cm: 4, 3, 2.5, 2 mm
-		fs := NewPartFeatures(nil, nil)
+		fs := NewPartFeatures(nil)
 		NewExtrudeFeatures(fs).AddByDistanceExtent(coreDiscSketch(0.3), 0, ops.NewBody, func() float64 { return 1.2 })
 		NewCoilFeatures(fs).AddDefinition(&CoilDefinition{
 			Sketch: roundThreadSketch(0.35, 0.1), Axis: zWorkAxis(),

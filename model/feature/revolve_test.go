@@ -15,7 +15,7 @@ import (
 // TestRevolveAboutSketchCenterline spins a profile about the sketch's own centerline (Inventor's
 // common flow), producing the same washer as revolving about an explicit Y work axis.
 func TestRevolveAboutSketchCenterline(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	sk := offsetSquareSketch(2, 2)                                // square x∈[2,4], y∈[0,2]
 	cl := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(0, 2)) // vertical centerline = Y axis
 	cl.SetCenterline(true)
@@ -36,7 +36,7 @@ func TestRevolveAboutSketchCenterline(t *testing.T) {
 
 // A revolve with neither an axis nor a sketch centerline is sick.
 func TestRevolveNoAxisOrCenterlineSick(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewRevolveFeatures(fs).AddAboutCenterline(offsetSquareSketch(2, 2), 0, nil, ops.NewBody)
 	fs.Recompute()
 	if pf.Health().Status != health.Sick {
@@ -67,7 +67,7 @@ func yAxis() *WorkAxis {
 func TestRevolveFullMakesValidWasher(t *testing.T) {
 	// Square x∈[2,4], y∈[0,2] revolved 360° about Y → a washer: inner r=2, outer r=4,
 	// height 2 → volume π(4²−2²)·2 = 24π.
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewRevolveFeatures(fs).Add(offsetSquareSketch(2, 2), 0, yAxis(), nil, ops.NewBody)
 	fs.Recompute()
 
@@ -89,7 +89,7 @@ func TestRevolveFullMakesValidWasher(t *testing.T) {
 
 func TestRevolvePartialIsCappedSolid(t *testing.T) {
 	// A 90° revolve of the same square → a quarter washer, volume 24π/4 = 6π, capped.
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewRevolveFeatures(fs).Add(offsetSquareSketch(2, 2), 0, yAxis(),
 		func() float64 { return stdmath.Pi / 2 }, ops.NewBody)
 	fs.Recompute()
@@ -112,7 +112,7 @@ func TestRevolveOpenProfileGoesSick(t *testing.T) {
 	c0 := s.Points().Add(math.P2(2, 0))
 	c1 := s.Points().Add(math.P2(4, 0))
 	s.Lines().Add(c0, c1) // a single open segment — no closed region
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewRevolveFeatures(fs).Add(s, 0, yAxis(), nil, ops.NewBody)
 	fs.Recompute()
 	if pf.Health().OK() {

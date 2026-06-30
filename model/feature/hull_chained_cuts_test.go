@@ -22,7 +22,7 @@ import (
 // buildClip assembles hull + the requested cuts and returns the resulting body.
 func buildClip(t *testing.T, slot, hole bool) *topo.Body {
 	t.Helper()
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	ex := NewExtrudeFeatures(fs)
 	half := func() float64 { return 0.5 }
 	deep := func() float64 { return 2.0 }

@@ -21,7 +21,7 @@ func rad(deg float64) float64 { return deg * stdmath.Pi / 180 }
 // conditionedLoft builds a loft with explicit end conditions and asserts a single valid solid.
 func conditionedLoft(t *testing.T, sections []LoftSection, closed bool, first, last LoftEnd) *topo.Body {
 	t.Helper()
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewLoftFeatures(fs).AddConditioned(sections, closed, ops.NewBody, first, last)
 	fs.Recompute()
 	if !pf.Health().OK() {

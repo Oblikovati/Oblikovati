@@ -49,7 +49,7 @@ func makeBody() *topo.Body {
 func body() addBody { return addBody{kind: "box", mk: makeBody} }
 
 func TestRecomputeProducesBodies(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	fs.Add(body())
 	fs.Add(body())
 	fs.Recompute()
@@ -64,7 +64,7 @@ func TestRecomputeProducesBodies(t *testing.T) {
 }
 
 func TestUniqueNameNumbersFromOneAndSkipsTaken(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	if got := fs.UniqueName("Extrusion"); got != "Extrusion1" {
 		t.Errorf("first unique name = %q, want Extrusion1", got)
 	}
@@ -83,7 +83,7 @@ func TestUniqueNameNumbersFromOneAndSkipsTaken(t *testing.T) {
 }
 
 func TestPreviewResultIsNonDestructive(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	fs.Add(body())
 	fs.Add(body())
 	fs.Recompute()
@@ -111,7 +111,7 @@ func TestPreviewResultIsNonDestructive(t *testing.T) {
 }
 
 func TestPreviewResultPropagatesCandidateError(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	fs.Add(body())
 	fs.Recompute()
 	if _, err := fs.PreviewResult(failer{}); err == nil {
@@ -123,7 +123,7 @@ func TestPreviewResultPropagatesCandidateError(t *testing.T) {
 }
 
 func TestEditingEarlyFeatureReusesCleanPrefix(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	a := fs.Add(body())
 	b := fs.Add(body())
 	c := fs.Add(body())
@@ -145,7 +145,7 @@ func TestEditingEarlyFeatureReusesCleanPrefix(t *testing.T) {
 }
 
 func TestFailingFeatureGoesSickWithoutAbortingRebuild(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	good := fs.Add(body())
 	bad := fs.Add(failer{})
 	after := fs.Add(body()) // independent of bad → must still evaluate
@@ -163,7 +163,7 @@ func TestFailingFeatureGoesSickWithoutAbortingRebuild(t *testing.T) {
 }
 
 func TestSickFeaturePoisonsDependents(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	bad := fs.Add(failer{})
 	dependent := fs.Add(body(), bad.ID()) // depends on the failing feature
 	fs.Recompute()
@@ -180,7 +180,7 @@ func TestSickFeaturePoisonsDependents(t *testing.T) {
 // must return normally (no panic escaping to crash the app), and an independent later feature
 // still evaluates healthy.
 func TestPanickingFeatureGoesSickWithoutAbortingRebuild(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	good := fs.Add(body())
 	bad := fs.Add(panicker{})
 	after := fs.Add(body()) // independent of bad → must still evaluate
@@ -201,7 +201,7 @@ func TestPanickingFeatureGoesSickWithoutAbortingRebuild(t *testing.T) {
 // carries the offending feature's identity and the recovered panic value (per the CLAUDE.md
 // exception-message rule), so the user can see WHAT failed and WHY.
 func TestPanicSickMessageNamesFeatureAndValue(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	bad := fs.Add(panicker{})
 	fs.Recompute()
 	reason := bad.Health().Reason
@@ -213,7 +213,7 @@ func TestPanicSickMessageNamesFeatureAndValue(t *testing.T) {
 // TestPanickingFeaturePoisonsDependents confirms a panic is treated like any other failure
 // downstream: a feature depending on the panicking one is poisoned sick, not evaluated.
 func TestPanickingFeaturePoisonsDependents(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	bad := fs.Add(panicker{})
 	dependent := fs.Add(body(), bad.ID())
 	fs.Recompute()
@@ -226,7 +226,7 @@ func TestPanickingFeaturePoisonsDependents(t *testing.T) {
 }
 
 func TestLookupAndRename(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	f := fs.Add(body())
 	f.SetName("Extrusion1")
 	id := f.ID()
@@ -243,7 +243,7 @@ func TestLookupAndRename(t *testing.T) {
 }
 
 func TestRemoveFeatureDropsItAndRebuilds(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	a := fs.Add(body())
 	b := fs.Add(body())
 	fs.Recompute()
@@ -266,7 +266,7 @@ func TestRemoveFeatureDropsItAndRebuilds(t *testing.T) {
 }
 
 func TestRemoveFeatureMissingIsNoop(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	fs.Add(body())
 	if fs.Remove(99999) {
 		t.Error("Remove of an absent id reported success")

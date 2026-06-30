@@ -22,7 +22,7 @@ func TestHullFeatureWrapsTwoBodies(t *testing.T) {
 	}
 	b := subd.ToBody(bm, "b")
 
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(a, b)
 	hull := NewHullFeatures(fs).Add()
 	fs.Recompute()

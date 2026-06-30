@@ -18,7 +18,7 @@ import (
 // valid solid.
 func areaGraphCircles(t *testing.T, graph []LoftAreaStop) *topo.Body {
 	t.Helper()
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	secs := []LoftSection{sec(circleOn(sketch.XYPlane(), 2)), sec(circleOn(planeAtZ(4), 2))}
 	pf := NewLoftFeatures(fs).AddGuided(secs, false, ops.NewBody, LoftEnd{}, LoftEnd{}, LoftGuideSet{AreaGraph: graph})
 	fs.Recompute()
@@ -70,7 +70,7 @@ func TestLoftAreaGraphRoundTrip(t *testing.T) {
 	bottom := circleOn(sketch.XYPlane(), 2)
 	top := circleOn(planeAtZ(4), 2)
 	idx := sketchList{sks: []*sketch.Sketch{bottom, top}}
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewLoftFeatures(fs).AddGuided(
 		[]LoftSection{{Sketch: bottom, ProfileIndex: 0}, {Sketch: top, ProfileIndex: 0}},
 		false, ops.NewBody, LoftEnd{}, LoftEnd{}, LoftGuideSet{AreaGraph: []LoftAreaStop{{T: 0.5, Scale: 2}}},
@@ -79,7 +79,7 @@ func TestLoftAreaGraphRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, idx, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}

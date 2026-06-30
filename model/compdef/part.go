@@ -12,7 +12,6 @@ import (
 	"oblikovati.org/model/depend"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/feature"
-	"oblikovati.org/model/identity"
 	"oblikovati.org/model/material"
 	"oblikovati.org/model/param"
 	"oblikovati.org/model/pointcloud"
@@ -33,7 +32,6 @@ type PartComponentDefinition struct {
 	sketches   *sketch.Sketches
 	sketches3D *sketch.Sketches3D
 	features   *feature.PartFeatures
-	keys       *identity.KeyManager
 	work       *feature.WorkGeometry // origin coordinate frame + user work planes/axes/points
 	surfaces   *feature.WorkSurfaces // construction surfaces wrapping the result's sheet bodies (M20-F16)
 	// pointClouds are the part's attached laser-scan / photogrammetry references (M17-F06,
@@ -86,17 +84,15 @@ type PartComponentDefinition struct {
 }
 
 // NewPartComponentDefinition returns an empty part content object with its feature
-// engine wired to the part's parameters and key manager.
+// engine wired to the part's parameters.
 func NewPartComponentDefinition() *PartComponentDefinition {
 	params := param.NewParameters()
-	keys := identity.NewKeyManager()
 	d := &PartComponentDefinition{
 		bodies:      topo.NewSurfaceBodies(),
 		params:      params,
 		sketches:    sketch.NewSketches(),
 		sketches3D:  sketch.NewSketches3D(),
-		features:    feature.NewPartFeatures(params, keys),
-		keys:        keys,
+		features:    feature.NewPartFeatures(params),
 		work:        feature.NewWorkGeometry(),
 		surfaces:    feature.NewWorkSurfaces(),
 		units:       param.DefaultUnitsOfMeasure(),

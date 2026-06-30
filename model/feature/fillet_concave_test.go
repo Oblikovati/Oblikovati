@@ -17,7 +17,7 @@ import (
 func filletConcaved(t *testing.T, r float64, strategy types.FilletConcaveStrategy) *topo.Body {
 	t.Helper()
 	body, edge := lExtrude(t)
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(body)
 	fl := NewDressUpFeatures(fs).AddFilletConcave([][]byte{edge}, func() float64 { return r }, strategy)
 	fs.Recompute()
@@ -55,7 +55,7 @@ func TestFilletConcaveOutwardFills(t *testing.T) {
 // rather than emitting a malformed solid. (A concave edge's valid fillet is the outward fill.)
 func TestFilletConcaveInwardDegenerate(t *testing.T) {
 	body, edge := lExtrude(t)
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(body)
 	fl := NewDressUpFeatures(fs).AddFilletConcave([][]byte{edge}, func() float64 { return 0.6 }, types.FilletConcaveInward)
 	fs.Recompute()

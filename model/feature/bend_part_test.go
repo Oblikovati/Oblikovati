@@ -19,7 +19,7 @@ func bendBarFixture(t *testing.T) (*PartFeatures, *sketch.Sketch, *PartFeature) 
 	t.Helper()
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	sk.Lines().AddByTwoPoints(math.P2(5, 0), math.P2(5, 2)) // bend line along +Y at x=5
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(subd.ToBody(subd.Box(10, 2, 1), "bar"))
 	def := &BendPartDefinition{
 		Sketch: sk, LineIndex: 0, BendType: types.RadiusAndAngleBend,
@@ -69,7 +69,7 @@ func TestBendPartRoundTrip(t *testing.T) {
 	profile := sketch.NewSketches().Add(sketch.XYPlane())
 	bendSk := sketch.NewSketches().Add(sketch.XYPlane())
 	bendSk.Lines().AddByTwoPoints(math.P2(5, 0), math.P2(5, 2))
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(profile, 0, ops.NewBody, func() float64 { return 1 })
 	NewBendPartFeatures(fs).Add(&BendPartDefinition{
 		Sketch: bendSk, LineIndex: 0, BendType: types.RadiusAndAngleBend,
@@ -80,7 +80,7 @@ func TestBendPartRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, idx, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}

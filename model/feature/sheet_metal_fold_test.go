@@ -108,7 +108,7 @@ func TestFoldDefinitionAndKind(t *testing.T) {
 func TestFoldRoundTrip(t *testing.T) {
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(1, 0))
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewSheetMetalFoldFeatures(fs).Add(&SheetMetalFoldDefinition{
 		Sketch: sk, LineIndex: 0,
 		Angle: func() float64 { return stdmath.Pi / 3 }, Radius: func() float64 { return 0.3 },
@@ -125,7 +125,7 @@ func TestFoldRoundTrip(t *testing.T) {
 	if d.Location != int32(EndOfBend) || stdmath.Abs(d.Angle-stdmath.Pi/3) > 1e-9 || d.Radius != 0.3 || !d.Flip {
 		t.Errorf("payload = %+v, want end / angle π/3 / radius 0.3 / flip", d)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{s: sk}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -136,7 +136,7 @@ func TestFoldRoundTrip(t *testing.T) {
 
 // TestFoldMissingPayload restoring a fold record with no payload errors.
 func TestFoldMissingPayload(t *testing.T) {
-	if _, err := restoreSheetMetalFold(NewPartFeatures(nil, nil), nil, oneSketch{}); err == nil {
+	if _, err := restoreSheetMetalFold(NewPartFeatures(nil), nil, oneSketch{}); err == nil {
 		t.Error("restoreSheetMetalFold(nil) must error")
 	}
 }

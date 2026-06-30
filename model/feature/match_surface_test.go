@@ -76,13 +76,13 @@ func TestMatchFeatureKind(t *testing.T) {
 }
 
 func TestMatchFeatureRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewMatchFeatures(fs).Add(2, geom.UMinEdge, geom.UMaxEdge)
 	data, err := fs.MarshalRecipe(oneSketch{})
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -93,7 +93,7 @@ func TestMatchFeatureRoundTrip(t *testing.T) {
 }
 
 func TestRestoreMatchRejectsMissingPayload(t *testing.T) {
-	if _, err := restoreMatch(NewPartFeatures(nil, nil), nil); err == nil {
+	if _, err := restoreMatch(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreMatch(nil) should error")
 	}
 }

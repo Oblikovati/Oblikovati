@@ -18,7 +18,7 @@ import (
 // result is a valid solid with cylindrical fillet faces and less material than the box.
 func TestRuleFilletAllRoundsRoundsWholeBox(t *testing.T) {
 	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 4}, {X: 0, Y: 4}}, sketch.XYPlane(), span{near: 0, far: 4}, 0, "box")
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
 	pf := NewDressUpFeatures(fs).AddRuleFillet(RuleFilletAllRounds, func() float64 { return 0.5 })
 	fs.Recompute()
@@ -45,7 +45,7 @@ func TestRuleFilletAllFilletsFillsConcaveEdge(t *testing.T) {
 	if n := concaveEdgeCount(l); n != 1 {
 		t.Fatalf("L-prism has %d concave edges, want 1", n)
 	}
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(l)
 	pf := NewDressUpFeatures(fs).AddRuleFillet(RuleFilletAllFillets, func() float64 { return 0.5 })
 	fs.Recompute()
@@ -64,7 +64,7 @@ func TestRuleFilletAllFilletsFillsConcaveEdge(t *testing.T) {
 // TestRuleFilletNoMatchNoOp: all-fillets on a plain box (no concave edge) changes nothing.
 func TestRuleFilletNoMatchNoOp(t *testing.T) {
 	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
 	pf := NewDressUpFeatures(fs).AddRuleFillet(RuleFilletAllFillets, func() float64 { return 0.3 })
 	fs.Recompute()

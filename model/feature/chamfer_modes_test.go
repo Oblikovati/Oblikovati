@@ -51,7 +51,7 @@ func cornerSetbacks(body *topo.Body) []float64 {
 // the volume (½·d1·d2·L wedge) and that the two face setbacks are actually d1 and d2 (M20-F03).
 func TestChamferTwoDistancesAsymmetric(t *testing.T) {
 	box, edge := box2(t)
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
 	ch := NewDressUpFeatures(fs).AddChamferTwoDistances([][]byte{edge}, func() float64 { return 0.3 }, func() float64 { return 0.6 })
 	fs.Recompute()
@@ -77,7 +77,7 @@ func TestChamferTwoDistancesAsymmetric(t *testing.T) {
 // d·tanθ, so the removed wedge volume reflects the angle (M20-F03).
 func TestChamferDistanceAngle(t *testing.T) {
 	box, edge := box2(t)
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
 	const d, angle = 0.4, stdmath.Pi / 6 // 30° ⇒ d2 = 0.4·tan30°
 	ch := NewDressUpFeatures(fs).AddChamferDistanceAngle([][]byte{edge}, func() float64 { return d }, func() float64 { return angle })
@@ -101,7 +101,7 @@ func TestChamferDistanceAngle(t *testing.T) {
 // trip (extrude source so the program serializes).
 func TestChamferTwoDistancesRoundTrip(t *testing.T) {
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 1 })
 	NewDressUpFeatures(fs).AddChamferTwoDistances([][]byte{[]byte("e0")}, func() float64 { return 0.3 }, func() float64 { return 0.6 })
 
@@ -109,7 +109,7 @@ func TestChamferTwoDistancesRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{sk}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}

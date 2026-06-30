@@ -40,7 +40,7 @@ func topPlanarFaceKey(t *testing.T, b *topo.Body) []byte {
 // JOIN-union path.
 func loftFromCylinderTop(t *testing.T, faceEnd LoftEnd) *topo.Body {
 	t.Helper()
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(circleOn(sketch.XYPlane(), 2), 0, ops.NewBody, func() float64 { return 3 })
 	fs.Recompute()
 	key := topPlanarFaceKey(t, fs.Result()[0])
@@ -106,7 +106,7 @@ func TestLoftFaceImpactScalesFlare(t *testing.T) {
 func TestLoftFaceSectionRoundTrip(t *testing.T) {
 	top := centeredSquareOn(planeAtZ(6), 1)
 	idx := sketchList{sks: []*sketch.Sketch{top}}
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	key := []byte("face/abc123")
 	NewLoftFeatures(fs).AddConditioned(
 		[]LoftSection{{FaceKey: key}, {Sketch: top, ProfileIndex: 0}},
@@ -116,7 +116,7 @@ func TestLoftFaceSectionRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, idx, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -131,7 +131,7 @@ func TestLoftFaceSectionRoundTrip(t *testing.T) {
 
 // TestLoftFaceLostReference: a face key that no body carries fails cleanly (not a panic).
 func TestLoftFaceLostReference(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewLoftFeatures(fs).AddConditioned(
 		[]LoftSection{{FaceKey: []byte("does-not-exist")}, sec(circleOn(planeAtZ(6), 1))},
 		false, ops.NewBody, LoftEnd{Condition: LoftTangent}, LoftEnd{},

@@ -26,7 +26,7 @@ func bodyZRange(b *topo.Body) (lo, hi float64) {
 // returns the resulting body.
 func extrudeWith(t *testing.T, ext Extent, taper float64) *topo.Body {
 	t.Helper()
-	fs := NewPartFeatures(param.NewParameters(), nil)
+	fs := NewPartFeatures(param.NewParameters())
 	pf := NewExtrudeFeatures(fs).AddExtrude(squareSketch(2), []int{0}, ops.NewBody, ext, taper)
 	fs.Recompute()
 	if !pf.Health().OK() {
@@ -88,7 +88,7 @@ func TestExtrudeToWorkPlane(t *testing.T) {
 
 func TestExtrudeModeRoundTrip(t *testing.T) {
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddExtrude(sk, []int{0}, ops.Cut,
 		Extent{Type: ThroughAllExtent, Direction: SymmetricDir, Distance: func() float64 { return 5 }}, 0.15)
 	data, err := fs.MarshalRecipe(oneSketch{sk})
@@ -99,7 +99,7 @@ func TestExtrudeModeRoundTrip(t *testing.T) {
 	if ed == nil || ed.Extent != "through-all" || ed.Direction != "symmetric" || ed.Taper != 0.15 || ed.Operation != "cut" {
 		t.Fatalf("marshaled extrude = %+v, want through-all/symmetric/cut/taper 0.15", ed)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{sk}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -113,7 +113,7 @@ func TestExtrudeThroughAllSpansExistingMaterial(t *testing.T) {
 	// Through-all measures the existing material's reach along the normal and spans it
 	// (plus a margin). Tested with a new-body operation so it exercises the span without
 	// the kernel's intersecting boolean (overlapping cut/join is phase B).
-	fs := NewPartFeatures(param.NewParameters(), nil)
+	fs := NewPartFeatures(param.NewParameters())
 	ex := NewExtrudeFeatures(fs)
 	ex.AddByDistanceExtent(squareSketch(4), 0, ops.NewBody, func() float64 { return 3 }) // block z0..3
 	tool := ex.AddExtrude(squareSketch(2), []int{0}, ops.NewBody,

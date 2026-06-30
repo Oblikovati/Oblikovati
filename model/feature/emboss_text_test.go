@@ -44,7 +44,7 @@ func TestTextEmbossRaisesMaterial(t *testing.T) {
 // recipe must store a REFERENCE to the text entity (sketch index + entity id) — never baked
 // outline geometry — and round-trip back to a working text emboss.
 func TestTextEmbossStoresReferenceNotGeometry(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	block := squareSketch(10)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(block, 0, ops.NewBody, func() float64 { return 2 })
 	es, tb := textOn(planeAtZ(2), "AB", 2, 1, 1)
@@ -75,7 +75,7 @@ func TestTextEmbossStoresReferenceNotGeometry(t *testing.T) {
 	}
 
 	// Round-trip: restore re-binds to the text entity and recomputes to a valid solid.
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, twoSketches{a: block, b: es}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}

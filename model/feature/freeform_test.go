@@ -10,7 +10,7 @@ import (
 )
 
 func TestFreeformPrimitiveConvertsToBRep(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewFreeformFeatures(fs).AddBox(2, 2, 2, 0)
 	fs.Recompute()
 	if !pf.Health().OK() {
@@ -26,7 +26,7 @@ func TestFreeformPrimitiveConvertsToBRep(t *testing.T) {
 }
 
 func TestFreeformCageEditDeformsBody(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewFreeformFeatures(fs).AddBox(2, 2, 2, 1)
 	fs.Recompute()
 	before := fs.Result()[0].RangeBox()
@@ -42,7 +42,7 @@ func TestFreeformCageEditDeformsBody(t *testing.T) {
 }
 
 func TestFreeformCreaseSharpensCorner(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewFreeformFeatures(fs).AddBox(2, 2, 2, 3)
 	ff := pf.Definition().(*FreeformFeature)
 	// Crease the three edges meeting at corner 0 → it stays a sharp point at (0,0,0).
@@ -56,7 +56,7 @@ func TestFreeformCreaseSharpensCorner(t *testing.T) {
 }
 
 func TestFreeformQuadBallIsRounded(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewFreeformFeatures(fs).AddQuadBall(5, 0)
 	fs.Recompute()
 	if !pf.Health().OK() {
@@ -73,7 +73,7 @@ func TestFreeformQuadBallIsRounded(t *testing.T) {
 }
 
 func TestFreeformEdgeAndVertexHandles(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewFreeformFeatures(fs).AddBox(2, 2, 2, 0)
 	ff := pf.Definition().(*FreeformFeature)
 	b := ff.FreeformBody()
@@ -95,7 +95,7 @@ func TestFreeformEdgeAndVertexHandles(t *testing.T) {
 }
 
 func TestAliasFreeformWrapsImportedCage(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	verts := []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(1, 1, 0), math.P3(0, 1, 0)}
 	pf := NewAliasFreeformFeatures(fs).AddFromCage(verts, [][]int{{0, 1, 2, 3}}, 0)
 	fs.Recompute()

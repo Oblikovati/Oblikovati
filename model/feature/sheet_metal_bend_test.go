@@ -20,7 +20,7 @@ func sheetForBend(t *testing.T, side, mid float64) (*PartFeatures, *sketch.Sketc
 	ps := param.NewParameters()
 	mustParam(t, ps, "Thickness", "2 mm")
 	mustParam(t, ps, "BendRadius", "2 mm")
-	fs := NewPartFeatures(ps, nil)
+	fs := NewPartFeatures(ps)
 	NewSheetMetalFaceFeatures(fs).Add(&SheetMetalFaceDefinition{Sketch: squareSketch(side), ProfileIndex: 0, Operation: ops.NewBody})
 
 	line := sketch.NewSketches().Add(sketch.XYPlane())
@@ -61,7 +61,7 @@ func TestSheetMetalBendUsesRuleRadius(t *testing.T) {
 	// No BendRadius parameter ⇒ radius resolves to 0 ⇒ sick.
 	ps := param.NewParameters()
 	mustParam(t, ps, "Thickness", "2 mm")
-	fs := NewPartFeatures(ps, nil)
+	fs := NewPartFeatures(ps)
 	NewSheetMetalFaceFeatures(fs).Add(&SheetMetalFaceDefinition{Sketch: squareSketch(4), ProfileIndex: 0, Operation: ops.NewBody})
 	line := sketch.NewSketches().Add(sketch.XYPlane())
 	line.Lines().AddByTwoPoints(math.P2(2, 0), math.P2(2, 4))
@@ -86,7 +86,7 @@ func TestSheetMetalBendDefinitionAndKind(t *testing.T) {
 func TestSheetMetalBendRoundTrip(t *testing.T) {
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(1, 0))
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewSheetMetalBendFeatures(fs).Add(&SheetMetalBendDefinition{
 		Sketch: sk, LineIndex: 0,
 		Angle: func() float64 { return stdmath.Pi / 3 }, Radius: func() float64 { return 0.3 }, Flip: true,
@@ -102,7 +102,7 @@ func TestSheetMetalBendRoundTrip(t *testing.T) {
 	if d.Line != 0 || stdmath.Abs(d.Angle-stdmath.Pi/3) > 1e-9 || d.Radius != 0.3 || !d.Flip {
 		t.Errorf("payload = %+v, want line 0 / angle π/3 / radius 0.3 / flip", d)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{s: sk}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -122,7 +122,7 @@ func TestSheetMetalBendSerializeUnknownSketch(t *testing.T) {
 
 // TestSheetMetalBendMissingPayload restoring a bend record with no payload errors.
 func TestSheetMetalBendMissingPayload(t *testing.T) {
-	if _, err := restoreSheetMetalBend(NewPartFeatures(nil, nil), nil, oneSketch{}); err == nil {
+	if _, err := restoreSheetMetalBend(NewPartFeatures(nil), nil, oneSketch{}); err == nil {
 		t.Error("restoreSheetMetalBend(nil) must error")
 	}
 }

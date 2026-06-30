@@ -13,7 +13,7 @@ import (
 // TestGeometricFaceShellBindsAndHollows proves the face path (M8/ADR-0040): a shell whose
 // removed face is given only by a geometric descriptor binds and hollows the body.
 func TestGeometricFaceShellBindsAndHollows(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	box := geomRefBox()
 	NewBaseFeatures(fs).AddBase(box)
 
@@ -37,7 +37,7 @@ func TestGeometricFaceShellBindsAndHollows(t *testing.T) {
 // TestGeometricFaceHoleBindsAndDrills proves a hole placed on a geometrically-described
 // face binds and removes material.
 func TestGeometricFaceHoleBindsAndDrills(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	box := geomRefBox()
 	NewBaseFeatures(fs).AddBase(box)
 
@@ -63,7 +63,7 @@ func TestGeometricFaceHoleBindsAndDrills(t *testing.T) {
 // TestGeometricFaceHoleRecipeRoundTrips checks the single-face geomFace encoding (a hole's
 // placement face) round-trips through serialize → restore.
 func TestGeometricFaceHoleRecipeRoundTrips(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	ref := topo.DescribeFace(geomRefBox().Faces()[0])
 	pf := NewHoleFeatures(fs).addHole(&HoleDefinition{
 		GeomFace: &ref, Diameter: constFloat(0.5), Depth: constFloat(1), Type: DrilledHole,
@@ -77,7 +77,7 @@ func TestGeometricFaceHoleRecipeRoundTrips(t *testing.T) {
 		t.Fatalf("recipe did not carry the hole's geometric placement face: %+v", fd.Hole)
 	}
 
-	dst := NewPartFeatures(nil, nil)
+	dst := NewPartFeatures(nil)
 	rpf, err := buildFeature(dst, fd, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("buildFeature: %v", err)
@@ -94,7 +94,7 @@ func TestGeometricFaceHoleRecipeRoundTrips(t *testing.T) {
 // TestHoleExplicitCenterRoundTrips checks an externally-authored hole's explicit drill point
 // survives serialize → restore (nil center stays nil).
 func TestHoleExplicitCenterRoundTrips(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	ref := topo.DescribeFace(geomRefBox().Faces()[0])
 	center := math.P3(0.2, 0.3, 0.5)
 	pf := NewHoleFeatures(fs).addHole(&HoleDefinition{
@@ -109,7 +109,7 @@ func TestHoleExplicitCenterRoundTrips(t *testing.T) {
 		t.Fatalf("recipe did not carry the hole's explicit center: %+v", fd.Hole)
 	}
 
-	dst := NewPartFeatures(nil, nil)
+	dst := NewPartFeatures(nil)
 	rpf, err := buildFeature(dst, fd, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("buildFeature: %v", err)
@@ -126,7 +126,7 @@ func TestHoleExplicitCenterRoundTrips(t *testing.T) {
 // TestGeometricFaceShellRecipeRoundTrips checks the geomFaces encoding round-trips through
 // serialize → restore.
 func TestGeometricFaceShellRecipeRoundTrips(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	ref := topo.DescribeFace(geomRefBox().Faces()[0])
 	pf := NewDressUpFeatures(fs).addShell(&ShellDefinition{
 		GeomFaces: []topo.GeometricFaceRef{ref},
@@ -141,7 +141,7 @@ func TestGeometricFaceShellRecipeRoundTrips(t *testing.T) {
 		t.Fatalf("recipe did not carry the geometric face ref: %+v", fd.Shell)
 	}
 
-	dst := NewPartFeatures(nil, nil)
+	dst := NewPartFeatures(nil)
 	rpf, err := buildFeature(dst, fd, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("buildFeature: %v", err)

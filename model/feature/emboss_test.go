@@ -28,7 +28,7 @@ func squareOn(plane sketch.Plane, side, dx float64) *sketch.Sketch {
 // embossedBlock builds a 10×10×2 block (vol 200) and returns the engine for an emboss test.
 func embossedBlock(t *testing.T) *PartFeatures {
 	t.Helper()
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(10), 0, ops.NewBody, func() float64 { return 2 })
 	return fs
 }

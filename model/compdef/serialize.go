@@ -12,7 +12,6 @@ import (
 	"oblikovati.org/model/attr"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/feature"
-	"oblikovati.org/model/identity"
 	"oblikovati.org/model/material"
 	"oblikovati.org/model/param"
 	"oblikovati.org/model/sketch"
@@ -219,10 +218,9 @@ func (d *PartComponentDefinition) buildRecipe() (partRecipe, error) {
 // ApplyRecipe's recompute rebuilds it.
 func (d *PartComponentDefinition) resetRecipe() {
 	d.params = param.NewParameters()
-	d.keys = identity.NewKeyManager()
 	d.sketches = sketch.NewSketches()
 	d.sketches3D = sketch.NewSketches3D()
-	d.features = feature.NewPartFeatures(d.params, d.keys)
+	d.features = feature.NewPartFeatures(d.params)
 	d.features.SetResourceStore(d) // re-wire after the engine is recreated; resources survive the reset
 	d.features.SetFontResolver(d)  // re-wire the document font resolver too
 	d.work = feature.NewWorkGeometry()

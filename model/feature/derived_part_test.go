@@ -25,7 +25,7 @@ func TestDerivedPartAppliesReflection(t *testing.T) {
 	src := offsetBlockSource(t)
 	reflect := math.Reflection4(math.P3(0, 0, 0), mustX()) // mirror across the x=0 plane
 
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewDerivedComponents(fs).AddDerived(src, reflect, DeriveSourceLink{})
 	fs.Recompute()
 	if !pf.Health().OK() || len(fs.Result()) != 1 {
@@ -47,14 +47,14 @@ func TestDerivedPartRoundTripAndRebind(t *testing.T) {
 	src := offsetBlockSource(t)
 	reflect := math.Reflection4(math.P3(0, 0, 0), mustX())
 	link := DeriveSourceLink{Document: "src.obk", InternalName: "GUID-1", DatabaseRevisionID: "rev-1"}
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewDerivedComponents(fs).AddDerived(src, reflect, link)
 
 	fd, err := serializeFeature(pf, nil, nil)
 	if err != nil {
 		t.Fatalf("serialize derived part: %v", err)
 	}
-	fs2 := NewPartFeatures(nil, nil)
+	fs2 := NewPartFeatures(nil)
 	restored, err := buildFeature(fs2, fd, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("restore derived part: %v", err)

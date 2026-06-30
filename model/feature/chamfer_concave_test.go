@@ -37,7 +37,7 @@ func lExtrude(t *testing.T) (*topo.Body, []byte) {
 func chamferedConcave(t *testing.T, d float64, strategy types.ChamferConcaveStrategy) *topo.Body {
 	t.Helper()
 	body, edge := lExtrude(t)
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(body)
 	ch := NewDressUpFeatures(fs).AddChamferConcave([][]byte{edge}, func() float64 { return d }, true, strategy)
 	fs.Recompute()
@@ -79,7 +79,7 @@ func TestChamferConcaveInwardRelieves(t *testing.T) {
 func TestChamferConcaveOutwardIsDefault(t *testing.T) {
 	const d = 0.4
 	body, edge := lExtrude(t)
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(body)
 	ch := NewDressUpFeatures(fs).AddChamferCorners([][]byte{edge}, func() float64 { return d }, true)
 	fs.Recompute()

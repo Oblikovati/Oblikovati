@@ -17,7 +17,7 @@ import (
 // returns the engine plus the reference key of its TOP circular rim edge.
 func extrudedCylinderTopRim(t *testing.T, r, h float64) (*PartFeatures, []byte) {
 	t.Helper()
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	sk.Circles().AddByCenterRadius(math.P2(0, 0), r)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return h })
@@ -79,7 +79,7 @@ func TestAnalyticChamferLeavesBoxChamferAlone(t *testing.T) {
 			break
 		}
 	}
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
 	pf := NewDressUpFeatures(fs).AddChamfer([][]byte{edge}, func() float64 { return 0.5 })
 	fs.Recompute()

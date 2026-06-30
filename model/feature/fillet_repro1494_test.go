@@ -91,7 +91,7 @@ func TestSecondFilletSeparateFeature1494(t *testing.T) {
 	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 3}, {X: 0, Y: 3}},
 		sketch.XYPlane(), span{near: 0, far: 5}, 0, "box")
 
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
 
 	// First fillet: the vertical edge at corner (0,0).

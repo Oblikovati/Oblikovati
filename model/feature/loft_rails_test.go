@@ -27,7 +27,7 @@ func railThroughX(midX float64) func() []math.Point3 {
 // solid and returning it.
 func railedCircles(t *testing.T, rails []func() []math.Point3) *topo.Body {
 	t.Helper()
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	secs := []LoftSection{sec(circleOn(sketch.XYPlane(), 2)), sec(circleOn(planeAtZ(4), 2))}
 	pf := NewLoftFeatures(fs).AddRailed(secs, false, ops.NewBody, LoftEnd{}, LoftEnd{}, rails)
 	fs.Recompute()
@@ -85,7 +85,7 @@ func TestLoftRailRoundTrip(t *testing.T) {
 	bottom := circleOn(sketch.XYPlane(), 2)
 	top := circleOn(planeAtZ(4), 2)
 	idx := sketchList{sks: []*sketch.Sketch{bottom, top}}
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewLoftFeatures(fs).AddRailed(
 		[]LoftSection{{Sketch: bottom, ProfileIndex: 0}, {Sketch: top, ProfileIndex: 0}},
 		false, ops.NewBody, LoftEnd{}, LoftEnd{}, []func() []math.Point3{railThroughX(3.5)},
@@ -94,7 +94,7 @@ func TestLoftRailRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, idx, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}

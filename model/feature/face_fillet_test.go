@@ -21,7 +21,7 @@ import (
 func boxAndPlanarFace(t *testing.T) (*PartFeatures, func(axis byte, at float64) []byte) {
 	t.Helper()
 	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
 	find := func(axis byte, at float64) []byte {
 		t.Helper()
@@ -81,7 +81,7 @@ func TestFaceFilletRoundsSharedEdge(t *testing.T) {
 func TestFaceFilletNonAdjacentHealsAndRounds(t *testing.T) {
 	pent := []math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 3}, {X: 3, Y: 4}, {X: 0, Y: 4}}
 	box := buildPrism(pent, sketch.XYPlane(), span{near: 0, far: 4}, 0, "box")
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
 
 	xf := faceKeyByNormal(t, box, math.V3(1, 0, 0))

@@ -13,7 +13,6 @@ import (
 	"oblikovati.org/kernel/exchange/step"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
-	"oblikovati.org/model/identity"
 	"oblikovati.org/model/param"
 )
 
@@ -95,7 +94,7 @@ func TestImportBodiesReadsFile(t *testing.T) {
 // working scale (cm per working unit) and converts it to the millimetre target, falling back to
 // the centimetre default when no resolver is wired.
 func TestWorkingScaleResolverFeedsReimport(t *testing.T) {
-	fs := NewPartFeatures(param.NewParameters(), identity.NewKeyManager())
+	fs := NewPartFeatures(param.NewParameters())
 	if got := fs.workingTargetMM(); got != 0 {
 		t.Errorf("unwired resolver workingTargetMM = %v, want 0 (default applied downstream)", got)
 	}

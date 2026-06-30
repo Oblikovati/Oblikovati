@@ -81,7 +81,7 @@ func TestControlPointEditKind(t *testing.T) {
 }
 
 func TestControlPointEditRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewControlPointEditFeatures(fs).Add([]geom.ControlPointDelta{
 		{U: 1, V: 2, Delta: math.V3(0.1, -0.2, 0.3)},
 		{U: 3, V: 0, Delta: math.V3(0, 0, 0.5)},
@@ -90,7 +90,7 @@ func TestControlPointEditRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -104,7 +104,7 @@ func TestControlPointEditRoundTrip(t *testing.T) {
 }
 
 func TestRestoreControlPointEditRejectsMissingPayload(t *testing.T) {
-	if _, err := restoreControlPointEdit(NewPartFeatures(nil, nil), nil); err == nil {
+	if _, err := restoreControlPointEdit(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreControlPointEdit(nil) should error")
 	}
 }

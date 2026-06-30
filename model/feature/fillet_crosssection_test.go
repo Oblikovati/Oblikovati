@@ -38,13 +38,13 @@ func TestFilletCrossConicFullness(t *testing.T) {
 
 // TestFilletCrossRoundTrip: the cross-section and rho survive a recipe save/restore.
 func TestFilletCrossRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewDressUpFeatures(fs).AddFilletCross([][]byte{[]byte("edge/x")}, angleConst(0.5), FilletConic, 0.65)
 	data, err := fs.MarshalRecipe(oneSketch{})
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}

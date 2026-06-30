@@ -33,7 +33,7 @@ func TestFeatureCodecRegistryComplete(t *testing.T) {
 // means a kind string is unhandled). A missing payload may surface as an error or a nil-deref panic —
 // both prove the codec was reached; only the unhandled-kind sentinel is a failure.
 func TestEveryRegisteredKindIsDecodeReachable(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	for _, k := range registeredFeatureKinds() {
 		assertKindDecodeReachable(t, fs, k)
 	}

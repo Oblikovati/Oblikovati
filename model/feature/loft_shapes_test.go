@@ -53,7 +53,7 @@ func splineBlobOn(plane sketch.Plane, pts [][2]float64) *sketch.Sketch {
 // loftSolid builds a loft of the sections and asserts it is a single valid solid, returning it.
 func loftSolid(t *testing.T, sections []LoftSection, closed bool) *topo.Body {
 	t.Helper()
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewLoftFeatures(fs).Add(sections, closed, ops.NewBody)
 	fs.Recompute()
 	if !pf.Health().OK() {

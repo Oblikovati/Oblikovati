@@ -29,7 +29,7 @@ func boxAndVerticalEdges(t *testing.T) (*PartFeatures, [][]byte) {
 	if len(keys) != 4 {
 		t.Fatalf("found %d vertical edges, want 4", len(keys))
 	}
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
 	return fs, keys
 }

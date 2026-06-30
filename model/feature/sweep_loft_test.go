@@ -18,7 +18,7 @@ import (
 func closedMobiusLoftBody(t *testing.T, n int, radius, width, thick float64,
 	section func(u, twist, radius, width, thick float64) *sketch.Sketch) *topo.Body {
 	t.Helper()
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	sections := make([]LoftSection, n)
 	for i := 0; i < n; i++ {
 		u := 2 * stdmath.Pi * float64(i) / float64(n)
@@ -252,7 +252,7 @@ func TestLoftElongatedRectKeepsVolume(t *testing.T) {
 	// An 8×1 rectangle lofted straight from z=0 to z=5 is a prism: V = area·h = 8·5 = 40.
 	// The arc-length-resample bug skinned a 4.5-area quad → ~22.5; the corner-preserving
 	// resample restores the full cross-section.
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	bottom := centeredRectOn(sketch.XYPlane(), 4, 0.5)
 	top := centeredRectOn(planeAtZ(5), 4, 0.5)
 	pf := NewLoftFeatures(fs).Add([]LoftSection{{Sketch: bottom, ProfileIndex: 0}, {Sketch: top, ProfileIndex: 0}}, false, ops.NewBody)
@@ -291,7 +291,7 @@ func (l sketchList) At(i int) (*sketch.Sketch, bool) {
 
 func TestSweepAlongPathMakesValidSolid(t *testing.T) {
 	// A 2×2 square swept along an L-path (up Z, then over X) → a valid elbow solid.
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	path := sketch.NewPath3D([]*sketch.Point3D{
 		sketch.NewPoint3D(math.P3(0, 0, 0)),
 		sketch.NewPoint3D(math.P3(0, 0, 5)),
@@ -316,7 +316,7 @@ func TestSweepAlongPathMakesValidSolid(t *testing.T) {
 func TestLoftBetweenSquaresIsFrustum(t *testing.T) {
 	// A 4×4 square at z=0 lofted to a 2×2 square at z=5 → a square frustum:
 	// V = h/3·(A1 + A2 + √(A1·A2)) = 5/3·(16 + 4 + 8) = 140/3 ≈ 46.667.
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	bottom := centeredSquareOn(sketch.XYPlane(), 2)
 	top := centeredSquareOn(planeAtZ(5), 1)
 	pf := NewLoftFeatures(fs).Add([]LoftSection{{Sketch: bottom, ProfileIndex: 0}, {Sketch: top, ProfileIndex: 0}}, false, ops.NewBody)
@@ -347,7 +347,7 @@ func planeAtZFlipped(z float64) sketch.Plane {
 // must still be the correct square frustum (V=140/3), not a winding-crossed bow-tie at ~1/3 the
 // volume. matchWinding reverses the oppositely-wound top section so the ribs connect point-for-point.
 func TestLoftBetweenOppositeNormalPlanesIsFrustum(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	bottom := centeredSquareOn(sketch.XYPlane(), 2)
 	top := centeredSquareOn(planeAtZFlipped(5), 1)
 	pf := NewLoftFeatures(fs).Add([]LoftSection{{Sketch: bottom, ProfileIndex: 0}, {Sketch: top, ProfileIndex: 0}}, false, ops.NewBody)
@@ -371,7 +371,7 @@ func TestSweepAndLoftRoundTrip(t *testing.T) {
 	top := centeredSquareOn(planeAtZ(5), 1)
 	idx := sketchList{sks: []*sketch.Sketch{prof, bottom, top}}
 
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	path := sketch.NewPath3D([]*sketch.Point3D{
 		sketch.NewPoint3D(math.P3(0, 0, 0)), sketch.NewPoint3D(math.P3(0, 0, 5)),
 	}, false)
@@ -382,7 +382,7 @@ func TestSweepAndLoftRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, idx, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -404,7 +404,7 @@ func TestLoftConditionsRoundTrip(t *testing.T) {
 	top := centeredSquareOn(planeAtZ(5), 1)
 	idx := sketchList{sks: []*sketch.Sketch{bottom, top}}
 
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	first := LoftEnd{Condition: LoftAngle, Angle: 0.6, Impact: 1.5}
 	last := LoftEnd{Condition: LoftDirection, Angle: 0.3, Impact: 2, Reversed: true}
 	NewLoftFeatures(fs).AddConditioned([]LoftSection{{Sketch: bottom, ProfileIndex: 0}, {Sketch: top, ProfileIndex: 0}}, false, ops.NewBody, first, last)
@@ -413,7 +413,7 @@ func TestLoftConditionsRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, idx, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}

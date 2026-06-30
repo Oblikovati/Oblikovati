@@ -8,13 +8,13 @@
 //
 // A [RefKey] is an opaque, serializable value encoding an entity's GENERATIVE
 // LINEAGE — the derivation path a rebuild reproduces identically — not an address
-// or array index. The [KeyManager] mints keys, binds them back to live entities,
-// persists key contexts, and reports binding loss as health rather than crashing.
+// or array index. A [RefKey] captures that lineage (plus parent/anchor fallback
+// hints); the live model rebinds it through the tiered [RecoverLost] recovery and
+// reports binding loss as health rather than crashing.
 //
-// The kernel's B-rep types (kernel/topo Face/Edge/Vertex) do not exist yet (M07);
-// the architecture mandates designing this mechanism BEFORE features depend on it.
-// So identity defines a small topology SEAM — [Entity], [Lineage], [EntitySource]
-// — that the real topology types implement later. Today it is exercised by fakes.
+// identity defines a small topology SEAM — [Entity], [Lineage] — that the kernel's
+// B-rep types (kernel/topo Face/Edge/Vertex) implement, plus the [RefKey] value and
+// its versioned encoding that persist a reference across save/reopen and recompute.
 package identity
 
 import "oblikovati.org/math"
@@ -137,27 +137,4 @@ type AnchoredEntity interface {
 	// Anchor returns a representative point and true, or the zero point and false
 	// when no stable anchor exists for this entity.
 	Anchor() (math.Point3, bool)
-}
-
-// EntitySource enumerates the entities currently present in a context's topology —
-// the live B-rep of a body/document. After a recompute it returns the freshly
-// rebuilt entities (surviving ones carrying the same lineage), which is exactly
-// what lets a key rebind to the recreated entity.
-type EntitySource interface {
-	Entities() []Entity
-}
-
-// RevisionedSource is an OPTIONAL [EntitySource] capability: a counter that changes
-// whenever the entity set changes. It lets the key manager cache an O(1) lineage
-// index and rebuild it only when the topology actually moved — the scaling path for
-// the 100k-unique / 1M-total-part ambition, where a recompute resolves many
-// references per feature (M31-F08, #1158). A source that does NOT implement it binds
-// correctly via a linear scan, just not in O(1); so adopting the interface is a pure
-// performance opt-in with no behavioural change for sources that skip it.
-type RevisionedSource interface {
-	EntitySource
-	// Revision returns a value that differs from every prior value once the entity
-	// set has changed. It need not be dense or ordered — only "different after a
-	// change" — so a recompute counter or content hash both qualify.
-	Revision() uint64
 }

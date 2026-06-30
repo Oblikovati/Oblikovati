@@ -19,14 +19,14 @@ func TestShrinkwrapSourceLinkAndOptionsRoundTrip(t *testing.T) {
 	}}
 	link := DeriveSourceLink{Document: "asm.obk", InternalName: "GUID-1", DatabaseRevisionID: "rev-1"}
 	def := ShrinkwrapDefinition{RemoveStyle: RemoveSmallParts, MinPartVolume: 0.5, EnvelopeStyle: EnvelopeWhole, PatchHoles: true}
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewShrinkwrapComponents(fs).AddShrinkwrap(src, def, link)
 
 	fd, err := serializeFeature(pf, nil, nil)
 	if err != nil {
 		t.Fatalf("serialize shrinkwrap: %v", err)
 	}
-	fs2 := NewPartFeatures(nil, nil)
+	fs2 := NewPartFeatures(nil)
 	restored, err := buildFeature(fs2, fd, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("restore shrinkwrap: %v", err)

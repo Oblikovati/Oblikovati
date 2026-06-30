@@ -28,7 +28,7 @@ func negXFaceKey(t *testing.T, b *topo.Body) []byte {
 // recompute — so a downstream reference (fillet/dimension/sketch) on the combined solid
 // stays bound across edits.
 func TestCombineFaceKeySurvivesIntoResultAndRecompute(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	exA := NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(4), 0, ops.NewBody, func() float64 { return 5 })
 	fs.Recompute()
 

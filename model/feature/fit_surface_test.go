@@ -51,13 +51,13 @@ func TestFitKind(t *testing.T) {
 }
 
 func TestFitSurfaceRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewFitFeatures(fs).Add(capRegion(8, 10, 3), 3, 5, 5)
 	data, err := fs.MarshalRecipe(oneSketch{})
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -68,7 +68,7 @@ func TestFitSurfaceRoundTrip(t *testing.T) {
 }
 
 func TestRestoreFitRejectsMissingPayload(t *testing.T) {
-	if _, err := restoreFitSurface(NewPartFeatures(nil, nil), nil); err == nil {
+	if _, err := restoreFitSurface(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreFitSurface(nil) should error")
 	}
 }

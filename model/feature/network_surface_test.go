@@ -63,13 +63,13 @@ func TestNetworkKind(t *testing.T) {
 
 func TestNetworkSurfaceRoundTrip(t *testing.T) {
 	u, v := gridPolylines()
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewNetworkFeatures(fs).Add(u, v)
 	data, err := fs.MarshalRecipe(oneSketch{})
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -80,7 +80,7 @@ func TestNetworkSurfaceRoundTrip(t *testing.T) {
 }
 
 func TestRestoreNetworkRejectsMissingPayload(t *testing.T) {
-	if _, err := restoreNetworkSurface(NewPartFeatures(nil, nil), nil); err == nil {
+	if _, err := restoreNetworkSurface(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreNetworkSurface(nil) should error")
 	}
 }

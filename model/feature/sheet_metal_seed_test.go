@@ -21,7 +21,7 @@ func seedSheetMetalSheet(t *testing.T, side float64, extraParams map[string]stri
 	for name, expr := range extraParams {
 		mustParam(t, ps, name, expr)
 	}
-	fs := NewPartFeatures(ps, nil)
+	fs := NewPartFeatures(ps)
 	NewSheetMetalFaceFeatures(fs).Add(&SheetMetalFaceDefinition{Sketch: squareSketch(side), ProfileIndex: 0, Operation: ops.NewBody})
 	fs.Recompute()
 	return fs, topEdgeAlongX(t, fs.Result()[0])

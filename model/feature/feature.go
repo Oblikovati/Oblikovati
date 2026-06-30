@@ -48,7 +48,6 @@ type Ref struct {
 type Input struct {
 	Bodies     []*topo.Body
 	Params     *param.Parameters
-	Keys       *identity.KeyManager
 	SourceTool func(id ID) (tool *topo.Body, op ops.PartFeatureOperation, ok bool)
 }
 

@@ -7,7 +7,7 @@ import (
 )
 
 func TestCosmeticFeaturesPassBodiesThrough(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(prismBody())
 	c := NewCosmeticFeatures(fs)
 	added := []Feature{
@@ -32,7 +32,7 @@ func TestCosmeticFeaturesPassBodiesThrough(t *testing.T) {
 }
 
 func TestCosmeticFeaturesRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	c := NewCosmeticFeatures(fs)
 	c.AddDecal([]byte("face-1"), "logo.png")
 	c.AddReference("ref-A", []byte("src-1"))
@@ -44,7 +44,7 @@ func TestCosmeticFeaturesRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}

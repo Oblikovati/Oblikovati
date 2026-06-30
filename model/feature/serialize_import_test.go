@@ -70,7 +70,7 @@ func TestImportedBodyFeatureRoundTripsViaReImport(t *testing.T) {
 	// The source bytes live in the document resource table, cited by UUID (ADR-0031).
 	const resID = "11111111-2222-3333-4444-555555555555"
 	store := fakeResources{resID: raw}
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	fs.SetResourceStore(store)
 	NewImportedBodies(fs).Add(body, resID, "stl")
 
@@ -87,7 +87,7 @@ func TestImportedBodyFeatureRoundTripsViaReImport(t *testing.T) {
 
 	// Rebuild from the recipe (re-derives the body from the embedded resource, NOT from disk —
 	// the source file path is never consulted) into a fresh engine and recompute.
-	restored := NewPartFeatures(nil, nil)
+	restored := NewPartFeatures(nil)
 	restored.SetResourceStore(store)
 	if err := restored.ApplyRecipe(data, emptySketches{}, NewWorkGeometry()); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)

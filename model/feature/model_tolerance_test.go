@@ -27,7 +27,7 @@ func sampleToleranceDef(faceKey []byte) *ModelToleranceDefinition {
 // TestModelTolerancePassesBodyThrough: the carrier annotates without changing the running body
 // (#866 — metadata feature).
 func TestModelTolerancePassesBodyThrough(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	addRect(sk, 0, 0, 2, 2)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 2 })
@@ -50,14 +50,14 @@ func TestModelTolerancePassesBodyThrough(t *testing.T) {
 // datum labels, geometry keys).
 func TestModelToleranceRoundTrip(t *testing.T) {
 	faceKey := []byte("face-7")
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewToleranceFeatures(fs).AddModelTolerance(sampleToleranceDef(faceKey))
 
 	data, err := fs.MarshalRecipe(oneSketch{})
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -79,7 +79,7 @@ func TestModelToleranceRoundTrip(t *testing.T) {
 // restore (no silent loss).
 func TestModelToleranceUnknownCharacteristicRejected(t *testing.T) {
 	d := &ModelToleranceData{Frames: []ToleranceFrameData{{Geometry: encodeKey([]byte("f0")), Characteristic: "bogus", Value: 1}}}
-	if _, err := restoreModelTolerance(NewPartFeatures(nil, nil), d); err == nil {
+	if _, err := restoreModelTolerance(NewPartFeatures(nil), d); err == nil {
 		t.Error("expected an error for an unknown characteristic spelling")
 	}
 }
