@@ -24,7 +24,7 @@ func ThreadDisplayCurves(fs *PartFeatures) [][]math.Point3 {
 			continue
 		}
 		for _, b := range bodies {
-			f, ok := b.FindFaceByKey(tf.def.FaceKey)
+			f, ok := FindOrRecoverFace(b, tf.def.FaceKey)
 			if !ok {
 				continue
 			}

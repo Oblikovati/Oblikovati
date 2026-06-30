@@ -55,6 +55,17 @@ func edgeMidpoint(e *topo.Edge) (math.Point3, bool) {
 	return s.Point().Midpoint(end.Point()), true
 }
 
+// faceAnchor returns a face's centroid — the representative point the geometric recovery tier
+// ranks siblings against (so capture and ranking, faceEntity.Anchor, use one definition of "the
+// face's anchor"). It reuses topo.DescribeFace so kernel/topo owns the centroid math; ok is false
+// for a degenerate face whose centroid is the zero point with no contributing vertices.
+func faceAnchor(f *topo.Face) (math.Point3, bool) {
+	if f == nil {
+		return math.Point3{}, false
+	}
+	return topo.DescribeFace(f).Centroid, true
+}
+
 // tipBody returns the engine's current running body — the body a freshly-authored dress-up
 // operates on, the one its keys were minted against. It is nil when the part has not been
 // recomputed (a batch build before the first recompute), in which case anchor capture is

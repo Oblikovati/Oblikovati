@@ -34,19 +34,20 @@ func parentOfKey(refKey []byte) []byte {
 	return append([]byte(nil), s[:i]...)
 }
 
-// edgeLineage adapts a kernel edge's reference key to identity.Lineage +
+// keyLineage adapts a kernel reference key (of any entity kind) to identity.Lineage +
 // AncestralLineage. ParentKey derives the parent the same way for every entity (see
-// parentOfKey), which is what makes ancestral sibling matching consistent.
-type edgeLineage []byte // the edge's kernel reference key (kind byte + lineage)
+// parentOfKey), which is what makes ancestral sibling matching consistent — so edges and
+// faces share one adapter rather than two byte-identical copies.
+type keyLineage []byte // a kernel reference key (kind byte + lineage)
 
-func (l edgeLineage) LineageKey() []byte {
+func (l keyLineage) LineageKey() []byte {
 	if len(l) > 0 && l[0] < 0x20 {
 		return append([]byte(nil), l[1:]...)
 	}
 	return append([]byte(nil), l...)
 }
 
-func (l edgeLineage) ParentKey() []byte { return parentOfKey(l) }
+func (l keyLineage) ParentKey() []byte { return parentOfKey(l) }
 
 // edgeEntity adapts a *topo.Edge to identity.Entity (+ AncestralLineage for
 // ancestral recovery, + AnchoredEntity for the geometric tie-break used by P6b). It
@@ -54,7 +55,7 @@ func (l edgeLineage) ParentKey() []byte { return parentOfKey(l) }
 type edgeEntity struct{ e *topo.Edge }
 
 func (a edgeEntity) EntityKind() identity.EntityKind { return identity.KindEdge }
-func (a edgeEntity) Lineage() identity.Lineage       { return edgeLineage(a.e.ReferenceKey()) }
+func (a edgeEntity) Lineage() identity.Lineage       { return keyLineage(a.e.ReferenceKey()) }
 
 // Anchor reports the edge midpoint as its representative point — the geometric
 // tie-breaker the binder uses only when several siblings share a parent (P6b). It shares
@@ -109,4 +110,38 @@ func recoverEdge(refKey []byte, anchor *math.Point3, ents []identity.Entity) (*t
 		return nil, mt
 	}
 	return ent.(edgeEntity).e, mt
+}
+
+// faceEntity adapts a *topo.Face to identity.Entity (+ AncestralLineage via keyLineage, +
+// AnchoredEntity for the geometric tie-break). It is the face counterpart of edgeEntity, carrying
+// the live face so a recovered match can be unwrapped back to it (#1579 / ADR-0043 P6).
+type faceEntity struct{ f *topo.Face }
+
+func (a faceEntity) EntityKind() identity.EntityKind { return identity.KindFace }
+func (a faceEntity) Lineage() identity.Lineage       { return keyLineage(a.f.ReferenceKey()) }
+
+// Anchor reports the face centroid as its representative point — the geometric tie-breaker the
+// binder uses only when several siblings share a parent. It reuses topo.DescribeFace's centroid so
+// witness (captureFaceAnchors) and ranking use one definition of "the face's anchor".
+func (a faceEntity) Anchor() (math.Point3, bool) { return faceAnchor(a.f) }
+
+// faceEntities views every face of the body as an identity.Entity for the binder.
+func faceEntities(body *topo.Body) []identity.Entity {
+	faces := body.Faces()
+	out := make([]identity.Entity, len(faces))
+	for i, f := range faces {
+		out[i] = faceEntity{f}
+	}
+	return out
+}
+
+// recoverFace attempts to recover a lost/ambiguous face reference through the tiered binder — the
+// face counterpart of recoverEdge. It returns the recovered face and the match tier, or
+// (nil, MatchNone) when no defensible recovery exists.
+func recoverFace(refKey []byte, anchor *math.Point3, ents []identity.Entity) (*topo.Face, identity.MatchType) {
+	ent, mt := identity.RecoverLost(identity.KindFace, parentOfKey(refKey), anchor, ents)
+	if ent == nil {
+		return nil, mt
+	}
+	return ent.(faceEntity).f, mt
 }

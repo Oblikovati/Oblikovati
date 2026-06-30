@@ -19,6 +19,9 @@ import (
 // UnwrapDefinition names the cylindrical face to flatten.
 type UnwrapDefinition struct {
 	FaceKey []byte
+	// FaceAnchors maps FaceKey to its mint-time centroid for the geometric recovery tier
+	// (ADR-0043 P6 / #1579); see FilletDefinition.EdgeAnchors.
+	FaceAnchors map[string]math.Point3
 }
 
 // UnwrapFeature appends the flattened patch of its cylindrical face.
@@ -39,15 +42,15 @@ func (u *UnwrapFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	face, ok := body.FindFaceByKey(u.def.FaceKey)
-	if !ok {
-		return Output{}, fmt.Errorf("unwrap: face reference lost")
+	face, mt, err := bindFace(body, u.def.FaceKey, anchorFor(u.def.FaceKey, u.def.FaceAnchors))
+	if err != nil {
+		return Output{}, fmt.Errorf("unwrap: %w", err)
 	}
 	patch, err := unwrapCylindricalFace(face, featOr(u.featName, "unwrap"))
 	if err != nil {
 		return Output{}, err
 	}
-	return Output{Bodies: append(append([]*topo.Body(nil), in.Bodies...), patch)}, nil
+	return Output{Bodies: append(append([]*topo.Body(nil), in.Bodies...), patch), Heals: faceHeal(u.def.FaceKey, mt)}, nil
 }
 
 // unwrapCylindricalFace unrolls a cylindrical face into a flat rectangle sheet of arc-length ×

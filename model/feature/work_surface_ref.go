@@ -94,7 +94,7 @@ func (g *WorkGeometry) surface(ref WorkRef) (geom.Surface, error) {
 		return nil, fmt.Errorf("work geometry: no body yet to resolve face %q", ref)
 	}
 	for _, b := range g.bodies {
-		if f, ok := b.FindFaceByKey(key); ok {
+		if f, ok := FindOrRecoverFace(b, key); ok {
 			return f.Geometry(), nil
 		}
 	}
