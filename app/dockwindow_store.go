@@ -60,6 +60,9 @@ func (s *Session) SetDockableWindow(spec wire.DockableWindowSpec) error {
 	if spec.ID == "" || spec.Title == "" {
 		return fmt.Errorf("app: dockable window needs id and title, got id=%q title=%q", spec.ID, spec.Title)
 	}
+	if err := validateControlTree(spec.ID, spec.Controls, 1); err != nil {
+		return err
+	}
 	prev, existed := s.dockableWindows.windows[spec.ID]
 	if !existed {
 		s.dockableWindows.order = append(s.dockableWindows.order, spec.ID)
@@ -95,12 +98,9 @@ func (s *Session) SetDockableWindowVisible(id string, visible bool) error {
 // (text box, value editor, checkbox, dropdown, combo, slider) is edited.
 func (s *Session) PanelValueChanged(windowID, controlID, value string) {
 	if spec, ok := s.dockableWindows.windows[windowID]; ok {
-		for i := range spec.Controls {
-			if spec.Controls[i].ID == controlID {
-				spec.Controls[i].Value = value
-				s.dockableWindows.windows[windowID] = spec
-				break
-			}
+		// Walk the whole tree: an edited control may be a grid cell several levels deep.
+		if setControlValue(spec.Controls, controlID, value) {
+			s.dockableWindows.windows[windowID] = spec
 		}
 	}
 	event.Emit(s.bus, event.After, PanelValueChanged{WindowID: windowID, ControlID: controlID, Value: value})

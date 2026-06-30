@@ -647,6 +647,7 @@ void obk_ig_get_cursor_pos(float* x, float* y) {
     *y = p.y;
 }
 void obk_ig_set_cursor_pos(float x, float y)  { ImGui::SetCursorPos(ImVec2(x, y)); }
+void obk_ig_dummy(float w, float h)           { ImGui::Dummy(ImVec2(w, h)); }
 
 // image draws a previously-rendered texture (the 3D viewport color image) at the given
 // size; content_region_avail reports the free space in the current window so the

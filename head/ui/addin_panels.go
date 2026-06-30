@@ -64,9 +64,7 @@ func drawAddInPanel(s *app.Session, spec wire.DockableWindowSpec) {
 	applyInitialDock(spec.Dock)
 	visible, open := native.BeginClosable(spec.Title + "###addin-" + spec.ID)
 	if visible {
-		for i, control := range spec.Controls {
-			drawAddInPanelControl(s, spec.ID, i, control)
-		}
+		drawControlList(s, spec.ID, spec.Controls)
 	}
 	native.End()
 	if !open {
@@ -106,12 +104,41 @@ func panelBuffer(key, value string) []byte {
 	return buf
 }
 
+// drawControlList renders a vertical run of controls — a panel body, or a group/tab pane.
+// Each control's index joins the id stack (in drawAddInPanelControl) so nested controls get
+// collision-free ImGui ids from their structural path while keeping their flat logical ID.
+func drawControlList(s *app.Session, windowID string, controls []wire.PanelControlSpec) {
+	for i, control := range controls {
+		drawAddInPanelControl(s, windowID, i, control)
+	}
+}
+
+// drawPanelContainer renders the container kinds (grid/group/tabs, ADR-0019), which recurse
+// into their Children, and reports whether control was one — keeping the leaf dispatch in
+// drawAddInPanelControl simple.
+func drawPanelContainer(s *app.Session, windowID string, control wire.PanelControlSpec) bool {
+	switch control.Kind {
+	case types.PanelGrid:
+		drawGrid(s, windowID, control)
+	case types.PanelGroup:
+		drawGroup(s, windowID, control)
+	case types.PanelTabs:
+		drawTabs(s, windowID, control)
+	default:
+		return false
+	}
+	return true
+}
+
 // drawAddInPanelControl renders one declared control by kind, pushing edits back to the owning
 // add-in via Session.PanelValueChanged. The index joins the id stack so two controls never
-// collide.
+// collide. Container kinds (grid/group/tabs, ADR-0019) recurse into their Children.
 func drawAddInPanelControl(s *app.Session, windowID string, index int, control wire.PanelControlSpec) {
 	native.PushIDInt(index)
 	defer native.PopID()
+	if drawPanelContainer(s, windowID, control) || drawEditableControl(s, windowID, control) {
+		return
+	}
 	switch control.Kind {
 	case types.PanelButton:
 		if native.Button(control.Text) && control.CommandID != "" {
@@ -121,6 +148,21 @@ func drawAddInPanelControl(s *app.Session, windowID string, index int, control w
 		}
 	case types.PanelSeparator:
 		native.Separator()
+	default: // PanelLabel renders its text. A future unknown CONTAINER kind degrades to a
+		// vertical stack of its children rather than vanishing; a leaf degrades to its text.
+		if len(control.Children) > 0 {
+			drawControlList(s, windowID, control.Children)
+		} else {
+			native.TextWrapped(control.Text)
+		}
+	}
+}
+
+// drawEditableControl renders the editable control kinds with the stacked-caption layout
+// (#1490) and reports whether control was one, keeping the leaf dispatch small. Edits push back
+// through Session.PanelValueChanged.
+func drawEditableControl(s *app.Session, windowID string, control wire.PanelControlSpec) bool {
+	switch control.Kind {
 	case types.PanelTextBox, types.PanelValueEditor, types.PanelComboBox:
 		buf := panelBuffer(windowID+"/"+control.ID, control.Value)
 		panelFieldLabel(control.Text)
@@ -135,14 +177,21 @@ func drawAddInPanelControl(s *app.Session, windowID string, index int, control w
 	case types.PanelDropdown:
 		drawPanelDropdown(s, windowID, control)
 	case types.PanelSlider:
-		v, _ := strconv.ParseFloat(control.Value, 64)
-		f := float32(v)
-		panelFieldLabel(control.Text)
-		if native.SliderFloat("##field", &f, float32(control.Min), float32(control.Max)) {
-			s.PanelValueChanged(windowID, control.ID, strconv.FormatFloat(float64(f), 'g', -1, 64))
-		}
-	default: // PanelLabel (and any future kind degrades to its text)
-		native.TextWrapped(control.Text)
+		drawPanelSlider(s, windowID, control)
+	default:
+		return false
+	}
+	return true
+}
+
+// drawPanelSlider renders a bounded numeric slider with its caption stacked above (#1490),
+// pushing the new value to the add-in on change.
+func drawPanelSlider(s *app.Session, windowID string, control wire.PanelControlSpec) {
+	v, _ := strconv.ParseFloat(control.Value, 64)
+	f := float32(v)
+	panelFieldLabel(control.Text)
+	if native.SliderFloat("##field", &f, float32(control.Min), float32(control.Max)) {
+		s.PanelValueChanged(windowID, control.ID, strconv.FormatFloat(float64(f), 'g', -1, 64))
 	}
 }
 

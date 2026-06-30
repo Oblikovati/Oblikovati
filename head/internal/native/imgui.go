@@ -106,6 +106,7 @@ float obk_ig_delta_time(void);
 void obk_ig_mouse_delta(float* dx, float* dy);
 void obk_ig_get_cursor_pos(float* x, float* y);
 void obk_ig_set_cursor_pos(float x, float y);
+void obk_ig_dummy(float w, float h);
 int  obk_ig_begin_ribbon_band(const char* name, float height);
 float obk_ig_scroll_max_x(void);
 float obk_ig_scrollbar_size(void);
@@ -1030,6 +1031,11 @@ func GetCursorPos() (float32, float32) {
 	return float32(x), float32(y)
 }
 func SetCursorPos(x, y float32) { C.obk_ig_set_cursor_pos(C.float(x), C.float(y)) }
+
+// Dummy submits an invisible item of size w×h, reserving layout space. After positioning
+// content by hand with SetCursorPos (e.g. grid cells), a trailing Dummy grows the parent's
+// content bounds so following items flow correctly and ImGui's boundary check is satisfied.
+func Dummy(w, h float32) { C.obk_ig_dummy(C.float(w), C.float(h)) }
 
 // SetNextWindowPos / SetNextWindowSize force the next Begin's window geometry — used by
 // in-window tests to put the viewport panel at a known rect so injected input lands on it.
