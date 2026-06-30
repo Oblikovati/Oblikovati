@@ -128,7 +128,16 @@ residual naming collision becomes an honest failure, never a wrong-rebind.
   `curvedbool:e#N` ordinal.
 - **P5 — remaining generators** (ruled, sweep, wire-offset, rim, split, steinmetz, halfspace).
 - **P6 — integrate with F06 tiered binding & F07 encoding**; retire the ordinal fallbacks that are
-  no longer reachable.
+  no longer reachable. Sub-phased so the serialization change is isolated:
+  - **P6a** — wire the live dress-up edge resolution (`resolveEdges`) to the tiered binder's
+    **ancestral** tier through a `model/feature` adapter; a lost reference with a lone surviving
+    parent-sibling heals to a Warning instead of going Sick. No format change (the parent is derived
+    from the key). The exact-one P0 guard stays authoritative; only a 0/>1 miss escalates.
+  - **P6b** — persist the mint-time **anchor** and enable the **geometric** tier, so several
+    surviving siblings are disambiguated by nearness (the binder still refuses a tie). Isolated
+    serialization change.
+  - **P6c** — retire the now-dead silent-match resolution branches; make `Input.Keys`/`fs.keys` live
+    (or remove). The no-parent ordinal fallback and the degraded CSG soup fallback legitimately stay.
 
 Each phase is one or more PRs; each adds a regression test that mutates an upstream feature and
 asserts the downstream selection still binds to the same physical entity.
