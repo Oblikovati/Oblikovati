@@ -50,6 +50,30 @@ func TestBrowserPaneRejectsMissingIdentity(t *testing.T) {
 	}
 }
 
+// TestActivateBrowserPaneNodeMenuEmitsItem checks a context-menu choice reaches the add-in as a
+// "menu" gesture carrying the chosen item id.
+func TestActivateBrowserPaneNodeMenuEmitsItem(t *testing.T) {
+	s := NewSession()
+	if err := s.BrowserPanes().Set(simPane()); err != nil {
+		t.Fatalf("Set: %v", err)
+	}
+	var got []BrowserPaneNodeActivated
+	event.Subscribe(s.Events(), event.After, func(_ event.Context, e BrowserPaneNodeActivated) event.Outcome {
+		got = append(got, e)
+		return event.Continue()
+	})
+
+	if err := s.ActivateBrowserPaneNodeMenu("sim", "f1", "edit"); err != nil {
+		t.Fatalf("ActivateBrowserPaneNodeMenu: %v", err)
+	}
+	if len(got) != 1 || got[0].Gesture != BrowserGestureMenu || got[0].MenuItem != "edit" {
+		t.Fatalf("events = %+v, want one menu gesture with item edit", got)
+	}
+	if err := s.ActivateBrowserPaneNodeMenu("ghost", "f1", "edit"); err == nil {
+		t.Error("unknown pane should error")
+	}
+}
+
 func TestActivateBrowserPaneNodeEmitsEvent(t *testing.T) {
 	s := NewSession()
 	if err := s.BrowserPanes().Set(simPane()); err != nil {

@@ -83,18 +83,59 @@ func drawAddInPaneNode(s *app.Session, paneID string, n wire.BrowserNodeSpec) {
 	native.PushID("addin-node-" + n.ID)
 	defer native.PopID()
 	if len(n.Children) == 0 {
+		drawAddInNodeIcon(s, paneID, n)
 		if native.Selectable(n.Label, false) {
 			_ = s.ActivateBrowserPaneNode(paneID, n.ID, app.BrowserGestureSelect)
 		}
 		reportDoubleClick(s, paneID, n.ID)
+		drawAddInNodeMenu(s, paneID, n)
 		return
 	}
 	drawAddInPaneBranch(s, paneID, n)
 }
 
+// drawAddInNodeIcon rasterises a node's inline themed glyph (BrowserNodeSpec.IconSVG) beside the
+// label, like a document-tree node icon — clicking it selects the node. Nodes without a glyph
+// draw nothing. The cache key is the node id (its svg also keys the texture, so re-skins update).
+func drawAddInNodeIcon(s *app.Session, paneID string, n wire.BrowserNodeSpec) {
+	if n.IconSVG == "" || icons == nil {
+		return
+	}
+	tex, ok := icons.texture("addin/"+paneID+"/"+n.ID, n.IconSVG, browserIconPx)
+	if !ok {
+		return
+	}
+	if native.ImageButton("##nodeicon", tex, browserIconPx, browserIconPx, identityTint) {
+		_ = s.ActivateBrowserPaneNode(paneID, n.ID, app.BrowserGestureSelect)
+	}
+	native.SameLine()
+	m := native.Metrics()
+	x, y := native.GetCursorScreenPos()
+	native.SetCursorScreenPos(x, y+(browserIconPx+2*m.FramePadY-native.TextLineHeight())/2)
+}
+
+// drawAddInNodeMenu opens the node's right-click context menu (BrowserNodeSpec.Menu); choosing an
+// item reports it to the owning add-in as a "menu" gesture carrying the item id. Nodes with no
+// menu draw nothing.
+func drawAddInNodeMenu(s *app.Session, paneID string, n wire.BrowserNodeSpec) {
+	if len(n.Menu) == 0 {
+		return
+	}
+	if !native.BeginPopupContextItem("##addin-menu-" + n.ID) {
+		return
+	}
+	for _, it := range n.Menu {
+		if native.MenuItemEx(it.Label, "", !it.Disabled) {
+			_ = s.ActivateBrowserPaneNodeMenu(paneID, n.ID, it.ID)
+		}
+	}
+	native.EndPopup()
+}
+
 // drawAddInPaneBranch renders a parent node, reporting expand/collapse and select
 // gestures, and recurses into its children while open.
 func drawAddInPaneBranch(s *app.Session, paneID string, n wire.BrowserNodeSpec) {
+	drawAddInNodeIcon(s, paneID, n) // before SetNextItemOpen, so the open-state targets the TreeNode, not the icon
 	if n.Expanded {
 		native.SetNextItemOpen(true, true)
 	}
@@ -110,6 +151,7 @@ func drawAddInPaneBranch(s *app.Session, paneID string, n wire.BrowserNodeSpec) 
 		_ = s.ActivateBrowserPaneNode(paneID, n.ID, app.BrowserGestureSelect)
 	}
 	reportDoubleClick(s, paneID, n.ID)
+	drawAddInNodeMenu(s, paneID, n)
 	if !open {
 		return
 	}
