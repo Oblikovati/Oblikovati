@@ -38,7 +38,7 @@ func TestDerivedComponentPullsSourceAssociatively(t *testing.T) {
 	source := newFakeBodySource()
 	source.SurfaceBodies().Add(oneBody())
 
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewDerivedComponents(fs).AddDerived(source, math.Identity4(), DeriveSourceLink{})
 	fs.Recompute()
 	if !pf.Health().OK() || len(fs.Result()) != 1 {
@@ -60,7 +60,7 @@ func TestDerivedComponentPullsSourceAssociatively(t *testing.T) {
 }
 
 func TestNonParametricBaseFeatureIsDownstreamEditable(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	base := NewBaseFeatures(fs).AddBase(oneBody())
 	// A downstream derived/extrude feature consumes the base body's running state.
 	source := newFakeBodySource()

@@ -17,7 +17,7 @@ func patchSurface(fs *PartFeatures) {
 }
 
 func TestTrimFeatureKeepsOneSide(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	patchSurface(fs)
 	pf := NewTrimFeatures(fs).AddByPlane(math.P3(2, 0, 0), math.V3(1, 0, 0), true)
 	fs.Recompute()
@@ -31,7 +31,7 @@ func TestTrimFeatureKeepsOneSide(t *testing.T) {
 }
 
 func TestTrimFeatureGoesSickWhenNothingKept(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	patchSurface(fs)
 	pf := NewTrimFeatures(fs).AddByPlane(math.P3(10, 0, 0), math.V3(1, 0, 0), true)
 	fs.Recompute()
@@ -41,7 +41,7 @@ func TestTrimFeatureGoesSickWhenNothingKept(t *testing.T) {
 }
 
 func TestExtendFeatureGrowsSurface(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	patchSurface(fs) // 4×4 patch on z=0
 	fs.Recompute()
 	var key []byte // the bottom boundary edge (both endpoints at y=0)
@@ -65,7 +65,7 @@ func TestExtendFeatureGrowsSurface(t *testing.T) {
 }
 
 func TestExtendFeatureSickOnLostEdge(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	patchSurface(fs)
 	NewExtendFeatures(fs).Add([]byte("ghost"), func() float64 { return 2 })
 	fs.Recompute()
@@ -75,7 +75,7 @@ func TestExtendFeatureSickOnLostEdge(t *testing.T) {
 }
 
 func TestSurfaceOffsetFeatureMovesAlongNormal(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	patchSurface(fs)
 	pf := NewSurfaceOffsetFeatures(fs).AddByDistance(func() float64 { return 3 })
 	fs.Recompute()
@@ -89,7 +89,7 @@ func TestSurfaceOffsetFeatureMovesAlongNormal(t *testing.T) {
 }
 
 func TestMidSurfaceFeatureExtractsThinWall(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	// A 4×4×1 thin plate.
 	NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(4), 0, ops.NewBody, func() float64 { return 1 })
 	pf := NewMidSurfaceFeatures(fs).AddByThickness(2)
@@ -113,7 +113,7 @@ func TestMidSurfaceFeatureExtractsThinWall(t *testing.T) {
 }
 
 func TestMidSurfaceFeatureGoesSickOnNoThinPair(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	// A 1×1×1 cube: all separations are 1, none within a 0.5 threshold.
 	NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(1), 0, ops.NewBody, func() float64 { return 1 })
 	pf := NewMidSurfaceFeatures(fs).AddByThickness(0.5)
@@ -124,7 +124,7 @@ func TestMidSurfaceFeatureGoesSickOnNoThinPair(t *testing.T) {
 }
 
 func TestSurfaceEditGoesSickWithNoTarget(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewTrimFeatures(fs).AddByPlane(math.P3(0, 0, 0), math.V3(1, 0, 0), true)
 	fs.Recompute()
 	if pf.Health().Status != health.Sick {

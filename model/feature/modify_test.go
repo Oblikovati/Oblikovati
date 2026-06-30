@@ -16,7 +16,7 @@ import (
 )
 
 func TestCombineJoinsTwoBodiesForReal(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	// Two disjoint prisms in the running state, then Combine them.
 	NewBaseFeatures(fs).AddBase(buildPrism(squarePoly(0), sketch.XYPlane(), span{near: 0, far: 1}, 0, "a"))
 	NewBaseFeatures(fs).AddBase(buildPrism(squarePoly(10), sketch.XYPlane(), span{near: 0, far: 1}, 0, "b"))
@@ -36,7 +36,7 @@ func TestCombineJoinsTwoBodiesForReal(t *testing.T) {
 }
 
 func TestCombineCutOverlappingForReal(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	// Block A: 2×2×2 at the origin (vol 8). Tool B: 2×2×2 shifted to x∈[1,3]
 	// (overlap 1×2×2 = 4). A − B should leave 4.
 	NewBaseFeatures(fs).AddBase(buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "a"))
@@ -60,7 +60,7 @@ func TestCombineCutOverlappingForReal(t *testing.T) {
 }
 
 func TestCombineRejectsBadIndices(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(prismBody())
 	bad := NewModifyFeatures(fs).AddCombine(0, 5, ops.Join) // tool index out of range
 	fs.Recompute()
@@ -72,7 +72,7 @@ func TestCombineRejectsBadIndices(t *testing.T) {
 func TestDirectEditsResolveThenDefer(t *testing.T) {
 	body := prismBody()
 	face := body.Faces()[0].ReferenceKey()
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(body)
 	mod := NewModifyFeatures(fs)
 	// Only split still defers; the other direct edits are real (see their own tests).
@@ -100,7 +100,7 @@ func TestMoveAndOffsetFaceRealGeometry(t *testing.T) {
 			top = f.ReferenceKey()
 		}
 	}
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
 	mv := NewModifyFeatures(fs).AddMoveFace([][]byte{top}, math.V3(0, 0, 1)) // grow 2×2×2 → 2×2×3
 	fs.Recompute()
@@ -123,7 +123,7 @@ func TestDeleteFaceHealsInModel(t *testing.T) {
 			break
 		}
 	}
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
 	NewDressUpFeatures(fs).AddChamfer([][]byte{edge}, func() float64 { return 0.5 })
 	fs.Recompute()
@@ -155,7 +155,7 @@ func TestReplaceFaceIdentityIsValid(t *testing.T) {
 			top = f.ReferenceKey()
 		}
 	}
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
 	rf := NewModifyFeatures(fs).AddReplaceFace([][]byte{top}, top) // replace top with its own plane
 	fs.Recompute()
@@ -171,7 +171,7 @@ func TestReplaceFaceIdentityIsValid(t *testing.T) {
 // slab solid through the feature engine: 2×3 patch × 0.5 = vol 3, a valid solid.
 func TestThickenSurfaceToSlab(t *testing.T) {
 	patch := patchSurfaceBody(2, 3)
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(patch)
 	th := NewModifyFeatures(fs).AddThicken(0.5)
 	fs.Recompute()
@@ -212,7 +212,7 @@ func squarePoly(dx float64) []math.Point2 {
 }
 
 func TestCombineDefinitionAccessible(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	c := NewModifyFeatures(fs).AddCombine(0, 1, ops.Cut)
 	if c.Definition().(*CombineFeature).Definition().Operation != ops.Cut {
 		t.Error("combine definition not accessible")
@@ -222,7 +222,7 @@ func TestCombineDefinitionAccessible(t *testing.T) {
 // The #331 face-edit extensions: move-face rotate mode and the approximation
 // request, both surviving the recipe codec.
 func TestMoveFaceRotateAndApproximationRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewModifyFeatures(fs).AddMoveFaceRotate([][]byte{[]byte("f1")},
 		math.P3(0, 0, 2), math.V3(0, 1, 0), constFloat(0.15))
 	NewModifyFeatures(fs).AddFaceOffsetApprox([][]byte{[]byte("f2")},
@@ -238,7 +238,7 @@ func TestMoveFaceRotateAndApproximationRoundTrip(t *testing.T) {
 	if data[1].FaceEdit.Approximation != "neverTooThin" {
 		t.Fatalf("serialized approximation = %q", data[1].FaceEdit.Approximation)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -252,7 +252,7 @@ func TestMoveFaceRotateAndApproximationRoundTrip(t *testing.T) {
 
 // TestThickenApproximationRoundTrip: thicken carries its approximation too.
 func TestThickenApproximationRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewModifyFeatures(fs).AddThicken(0.2)
 	pf.Definition().(*ThickenFeature).SetApproximation(types.MeanApproximation)
 	data, err := fs.MarshalRecipe(oneSketch{})
@@ -262,7 +262,7 @@ func TestThickenApproximationRoundTrip(t *testing.T) {
 	if data[0].Thicken.Approximation != "mean" {
 		t.Fatalf("serialized thicken = %+v", data[0].Thicken)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}

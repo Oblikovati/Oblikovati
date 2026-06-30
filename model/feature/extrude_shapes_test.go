@@ -23,7 +23,7 @@ import (
 // returns the resulting solid, failing the test if it goes sick.
 func extrudeProfile(t *testing.T, sk *sketch.Sketch, profileIndex int, height float64) *topo.Body {
 	t.Helper()
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewExtrudeFeatures(fs).AddByDistanceExtent(sk, profileIndex, ops.NewBody, func() float64 { return height })
 	fs.Recompute()
 	if !pf.Health().OK() {
@@ -171,7 +171,7 @@ func TestExtrudeMultipleRegionsMergeIntoOneBody(t *testing.T) {
 	if n := sk.Profiles().Count(); n != 2 {
 		t.Fatalf("sketch has %d regions, want 2", n)
 	}
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewExtrudeFeatures(fs).AddByDistanceExtentProfiles(sk, []int{0, 1}, ops.NewBody, func() float64 { return h })
 	fs.Recompute()
 	if !pf.Health().OK() {
@@ -197,7 +197,7 @@ func TestExtrudeSplitRegionsRebuildWholeShape(t *testing.T) {
 	if n := sk.Profiles().Count(); n != 2 {
 		t.Fatalf("split rectangle has %d regions, want 2", n)
 	}
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtentProfiles(sk, []int{0, 1}, ops.NewBody, func() float64 { return h })
 	fs.Recompute()
 	b := fs.Result()[0]

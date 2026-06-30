@@ -78,13 +78,13 @@ func TestFillKind(t *testing.T) {
 }
 
 func TestFillSurfaceRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewFillFeatures(fs).Add(2)
 	data, err := fs.MarshalRecipe(oneSketch{})
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -95,19 +95,19 @@ func TestFillSurfaceRoundTrip(t *testing.T) {
 }
 
 func TestRestoreFillRejectMissingPayload(t *testing.T) {
-	if _, err := restoreFillSurface(NewPartFeatures(nil, nil), nil); err == nil {
+	if _, err := restoreFillSurface(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreFillSurface(nil) should error")
 	}
 }
 
 func TestFillNSidedRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewFillFeatures(fs).AddSides(1, 5)
 	data, err := fs.MarshalRecipe(oneSketch{})
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}

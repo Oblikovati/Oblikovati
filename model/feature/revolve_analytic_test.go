@@ -17,7 +17,7 @@ import (
 // revolveTubeBody revolves a washer profile (x∈[2,4], y∈[0,2]) 360° about the Y axis into a tube.
 func revolveTubeBody(t *testing.T) *topo.Body {
 	t.Helper()
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	sk := offsetSquareSketch(2, 2)
 	cl := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(0, 2))
 	cl.SetCenterline(true)
@@ -64,7 +64,7 @@ func TestArcProfileRevolveStaysFaceted(t *testing.T) {
 	s.Lines().Add(top, bot)                                                          // flat side on the Y axis
 	s.Arcs().AddByCenterStartEnd(math.P2(0, 0), math.P2(0, -2), math.P2(0, 2), true) // bulge +X through (2,0)
 
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewRevolveFeatures(fs).Add(s, 0, yAxis(), nil, ops.NewBody)
 	fs.Recompute()
 	body := fs.Result()[0]
@@ -87,7 +87,7 @@ func TestArcProfileRevolveStaysFaceted(t *testing.T) {
 // depth and barely cut. normalExtent now measures the range box, so the slab spans the body
 // (Oblikovati/Oblikovati#129).
 func TestAnalyticRevolveTubeBooleanCutsHalf(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	sk := offsetSquareSketch(2, 2)
 	cl := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(0, 2))
 	cl.SetCenterline(true)
@@ -142,7 +142,7 @@ func torusFaceCount(b *topo.Body) int {
 func TestCircleRevolveMakesAnalyticTorus(t *testing.T) {
 	s := sketch.NewSketches().Add(sketch.XYPlane())
 	s.Circles().AddByCenterRadius(math.P2(5, 0), 2) // major 5, minor 2 about the Y axis
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewRevolveFeatures(fs).Add(s, 0, yAxis(), nil, ops.NewBody)
 	fs.Recompute()
 	body := fs.Result()[0]
@@ -167,7 +167,7 @@ func TestNativeRevolveTorusHalfSpaceCutsAreExact(t *testing.T) {
 	torus := func() *topo.Body {
 		s := sketch.NewSketches().Add(sketch.XYPlane())
 		s.Circles().AddByCenterRadius(math.P2(5, 0), 2)
-		fs := NewPartFeatures(nil, nil)
+		fs := NewPartFeatures(nil)
 		NewRevolveFeatures(fs).Add(s, 0, yAxis(), nil, ops.NewBody)
 		fs.Recompute()
 		return fs.Result()[0]
@@ -220,7 +220,7 @@ func TestNativeObliqueRevolveTorusCutsAreExact(t *testing.T) {
 		}
 		s := sketch.NewSketches().Add(pl)
 		s.Circles().AddByCenterRadius(math.P2(5, 0), 2) // 5 ⟂ to the axis → major 5, minor 2
-		fs := NewPartFeatures(nil, nil)
+		fs := NewPartFeatures(nil)
 		NewRevolveFeatures(fs).Add(s, 0, &WorkAxis{origin: math.P3(0, 0, 0), dir: math.V3(0, 0.6, 0.8).AsUnit()}, nil, ops.NewBody)
 		fs.Recompute()
 		return fs.Result()[0]
@@ -261,7 +261,7 @@ func TestNativeObliqueRevolveTorusCutsAreExact(t *testing.T) {
 // faceting the torus first. Complements TestAnalyticRevolveTubeBooleanCutsHalf, where a COMPOSITE washer
 // (two cylinder walls) correctly stays on the faceted planar path.
 func TestRevolvedTorusExtrudeCutStaysAnalytic(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	sk.Circles().AddByCenterRadius(math.P2(5, 0), 2)
 	cl := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(0, 1))

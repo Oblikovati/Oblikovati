@@ -25,7 +25,7 @@ func boxBody() *topo.Body { return subd.ToBody(subd.Box(4, 4, 4), "box") }
 // A solid split by a mid work plane divides the part into two valid solids (each half-volume).
 func TestSplitSolidFeatureDividesBox(t *testing.T) {
 	_, wp := midPlaneAt(2)
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(boxBody())
 	split := NewModifyFeatures(fs).AddSplitSolid(wp, SplitBoth)
 	fs.Recompute()
@@ -47,7 +47,7 @@ func TestSplitSolidFeatureDividesBox(t *testing.T) {
 // Trim Solid (keep one side) leaves a single body — the kept half.
 func TestSplitSolidFeatureTrimsOneSide(t *testing.T) {
 	_, wp := midPlaneAt(2)
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(boxBody())
 	NewModifyFeatures(fs).AddSplitSolid(wp, SplitNegative) // keep below z=2
 	fs.Recompute()
@@ -64,14 +64,14 @@ func TestSplitSolidFeatureTrimsOneSide(t *testing.T) {
 // The split's plane reference and kept side round-trip through the recipe.
 func TestSplitSolidRoundTrip(t *testing.T) {
 	g, wp := midPlaneAt(2)
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewModifyFeatures(fs).AddSplitSolid(wp, SplitPositive)
 
 	data, err := fs.MarshalRecipe(oneSketch{})
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, g); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -86,7 +86,7 @@ func TestSplitSolidRoundTrip(t *testing.T) {
 // two), and the discriminator reports splitFaces.
 func TestSplitFacesImprintsWithoutRemovingMaterial(t *testing.T) {
 	_, wp := midPlaneAt(2)
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(boxBody())
 	split := NewModifyFeatures(fs).AddSplitFaces(wp)
 	fs.Recompute()
@@ -115,14 +115,14 @@ func TestSplitFacesImprintsWithoutRemovingMaterial(t *testing.T) {
 // The faces-only flag round-trips through the recipe.
 func TestSplitFacesRoundTrip(t *testing.T) {
 	g, wp := midPlaneAt(2)
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewModifyFeatures(fs).AddSplitFaces(wp)
 
 	data, err := fs.MarshalRecipe(oneSketch{})
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, g); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}

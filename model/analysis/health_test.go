@@ -25,7 +25,7 @@ func (failingFeature) Recompute(feature.Input) (feature.Output, error) {
 
 // TestModelHealthOf checks the aggregation across a clean, a failing and a suppressed feature.
 func TestModelHealthOf(t *testing.T) {
-	fs := feature.NewPartFeatures(nil, nil)
+	fs := feature.NewPartFeatures(nil)
 	fs.Add(okFeature{})
 	bad := fs.Add(failingFeature{})
 	bad.SetName("Extrusion2")
@@ -54,7 +54,7 @@ func TestModelHealthOf(t *testing.T) {
 
 // TestModelHealthOfAllHealthy checks a clean part reports OK with nothing to repair.
 func TestModelHealthOfAllHealthy(t *testing.T) {
-	fs := feature.NewPartFeatures(nil, nil)
+	fs := feature.NewPartFeatures(nil)
 	fs.Add(okFeature{})
 	fs.Recompute()
 	mh := ModelHealthOf(fs)

@@ -59,7 +59,7 @@ func TestParseSTLWeldsSharedVertices(t *testing.T) {
 
 func TestMeshFeatureExposesSelectableFacets(t *testing.T) {
 	g, _ := ParseSTL(strings.NewReader(tetraSTL))
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewMeshFeatures(fs).Add(g)
 	fs.Recompute()
 	if !pf.Health().OK() {
@@ -83,7 +83,7 @@ func TestMeshFeatureExposesSelectableFacets(t *testing.T) {
 
 func TestMeshFeaturePassesSolidThrough(t *testing.T) {
 	// A mesh is reference geometry: a prior solid survives the mesh feature.
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(2), 0, ops.NewBody, func() float64 { return 3 })
 	g, _ := ParseSTL(strings.NewReader(tetraSTL))
 	NewMeshFeatures(fs).Add(g)
@@ -113,7 +113,7 @@ func TestParseSTLRejectsGarbage(t *testing.T) {
 }
 
 func TestCoreCavitySplitsBlock(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	// A 10×10×10 tooling block.
 	NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(10), 0, ops.NewBody, func() float64 { return 10 })
 	pf := NewCoreCavityFeatures(fs).AddByPartingPlane(PartingZ, 4, 0.02)
@@ -142,7 +142,7 @@ func TestCoreCavitySplitsBlock(t *testing.T) {
 }
 
 func TestCoreCavityGoesSickWhenPartingOutsideBlock(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(10), 0, ops.NewBody, func() float64 { return 10 })
 	pf := NewCoreCavityFeatures(fs).AddByPartingPlane(PartingZ, 20, 0)
 	fs.Recompute()
@@ -152,7 +152,7 @@ func TestCoreCavityGoesSickWhenPartingOutsideBlock(t *testing.T) {
 }
 
 func TestCoreCavityShrinkageRecorded(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewCoreCavityFeatures(fs).AddByPartingPlane(PartingX, 1, 0.025)
 	if d := pf.Definition().(*CoreCavityFeature).Definition(); d.Shrinkage != 0.025 || d.Axis != PartingX {
 		t.Errorf("recipe = %+v, want shrinkage 0.025 on X", d)

@@ -12,7 +12,7 @@
 // destroys and recreates the B-rep, an entity is re-found by matching lineage.
 //
 // Layering note: topo sits below model/, so it does NOT import model/identity. It
-// exposes lineage-derived [Entity.ReferenceKey] bytes; the identity.KeyManager that
-// binds those keys lives in the model layer and is wired where features select
-// topology (M08). topo proves rebind-after-recompute self-contained ([FindByKey]).
+// exposes lineage-derived [Entity.ReferenceKey] bytes; the model layer binds those
+// keys (exact match, then the degraded recovery tiers) where features select
+// topology. topo proves rebind-after-recompute self-contained ([FindByKey]).
 package topo

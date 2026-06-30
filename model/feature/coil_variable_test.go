@@ -13,7 +13,7 @@ import (
 // variableCoil builds a coil over the offset square with the given rail extras.
 func variableCoil(t *testing.T, rows []CoilPitchRow, start, end CoilEndCondition) (*PartFeatures, *PartFeature) {
 	t.Helper()
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewCoilFeatures(fs).Add(offsetSquareSketch(4, 1), 0, yAxis(),
 		func() float64 { return 2 }, func() float64 { return 4 }, 0, ops.NewBody)
 	def := pf.Definition().(*CoilFeature).Definition()
@@ -83,7 +83,7 @@ func TestVariableCoilRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("serializeCoil: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	restored, err := restoreCoil(fresh, data, index, work)
 	if err != nil {
 		t.Fatalf("restoreCoil: %v", err)

@@ -70,7 +70,7 @@ func TestCornerSeamDefinitionAndKind(t *testing.T) {
 
 // TestCornerSeamRoundTrip the recipe (edges + gap + type) marshals and restores.
 func TestCornerSeamRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewSheetMetalCornerSeamFeatures(fs).Add(&SheetMetalCornerSeamDefinition{
 		EdgeKeys: [][]byte{[]byte("k1"), []byte("k2")}, Gap: func() float64 { return 0.3 }, Type: GapSeam,
 	})
@@ -85,7 +85,7 @@ func TestCornerSeamRoundTrip(t *testing.T) {
 	if len(d.Edges) != 2 || d.Gap != 0.3 {
 		t.Errorf("payload = %+v, want 2 edges / gap 0.3", d)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -96,7 +96,7 @@ func TestCornerSeamRoundTrip(t *testing.T) {
 
 // TestCornerSeamMissingPayload restoring a corner-seam record with no payload errors.
 func TestCornerSeamMissingPayload(t *testing.T) {
-	if _, err := restoreSheetMetalCornerSeam(NewPartFeatures(nil, nil), nil); err == nil {
+	if _, err := restoreSheetMetalCornerSeam(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreSheetMetalCornerSeam(nil) must error")
 	}
 }

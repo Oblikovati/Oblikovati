@@ -14,7 +14,7 @@ import (
 // counts) and rebuilds only the tail, so the next Recompute re-evaluates just the tail.
 func TestReplaceFromKeepsPrefixRebuildsTail(t *testing.T) {
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	for i := 0; i < 3; i++ {
 		NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 5 })
 	}
@@ -50,7 +50,7 @@ func TestReplaceFromKeepsPrefixRebuildsTail(t *testing.T) {
 }
 
 func TestReplaceFromRejectsOutOfRangePrefix(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 5 })
 	if err := fs.ReplaceFrom(2, nil, oneSketch{sk}, nil); err == nil {
@@ -65,7 +65,7 @@ func TestReplaceFromRejectsOutOfRangePrefix(t *testing.T) {
 // removes its id bindings (a restore that undid feature additions).
 func TestReplaceFromTruncatesTail(t *testing.T) {
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	for i := 0; i < 3; i++ {
 		NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 5 })
 	}

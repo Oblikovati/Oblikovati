@@ -59,7 +59,7 @@ func TestThreadCosmeticOnCylinder(t *testing.T) {
 		t.Fatalf("SolidCylinder: %v", err)
 	}
 	before := ops.BodyGeometryProperties(cyl, ops.DefaultQuality()).Volume
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(cyl)
 	th := NewDressUpFeatures(fs).AddThread(cylinderFaceKey(t, cyl), "M8x1.25", false)
 	fs.Recompute()
@@ -79,7 +79,7 @@ func TestThreadCosmeticOnCylinder(t *testing.T) {
 // TestThreadSickOnPlanarFace rejects a thread on a non-cylindrical face.
 func TestThreadSickOnPlanarFace(t *testing.T) {
 	box := prismBody() // a unit prism: every face is planar
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
 	th := NewDressUpFeatures(fs).AddThread(box.Faces()[0].ReferenceKey(), "M8x1.25", false)
 	fs.Recompute()
@@ -91,7 +91,7 @@ func TestThreadSickOnPlanarFace(t *testing.T) {
 // TestThreadSickOnBadDesignation rejects an unparseable designation.
 func TestThreadSickOnBadDesignation(t *testing.T) {
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 0.4, 3)
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(cyl)
 	th := NewDressUpFeatures(fs).AddThread(cylinderFaceKey(t, cyl), "garbage", false)
 	fs.Recompute()
@@ -104,7 +104,7 @@ func TestThreadSickOnBadDesignation(t *testing.T) {
 // its cylindrical face (the data the head renders).
 func TestThreadDisplayHelixOnSurface(t *testing.T) {
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 0.4, 1.0)
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(cyl)
 	NewDressUpFeatures(fs).AddThread(cylinderFaceKey(t, cyl), "M8x1.25", false)
 	fs.Recompute()
@@ -133,7 +133,7 @@ func TestThreadDisplayHelixOnSurface(t *testing.T) {
 func TestThreadCutModelsRealThreadFast(t *testing.T) {
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 0.5, 2.0)
 	before := ops.BodyGeometryProperties(cyl, ops.DefaultQuality()).Volume
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(cyl)
 	th := NewDressUpFeatures(fs).AddThread(cylinderFaceKey(t, cyl), "M8x1.25", true)
 

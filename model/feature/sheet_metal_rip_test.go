@@ -17,7 +17,7 @@ func sheetForRip(t *testing.T, a, b math.Point2) (*PartFeatures, *sketch.Sketch)
 	t.Helper()
 	ps := param.NewParameters()
 	mustParam(t, ps, "Thickness", "2 mm")
-	fs := NewPartFeatures(ps, nil)
+	fs := NewPartFeatures(ps)
 	NewSheetMetalFaceFeatures(fs).Add(&SheetMetalFaceDefinition{Sketch: squareSketch(4), ProfileIndex: 0, Operation: ops.NewBody})
 	rip := sketch.NewSketches().Add(sketch.XYPlane())
 	rip.Lines().AddByTwoPoints(a, b)
@@ -62,7 +62,7 @@ func TestRipRejectsBadInput(t *testing.T) {
 
 // TestRipRoundTrip a rip persists its line + gap and restores.
 func TestRipRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	sk.Lines().AddByTwoPoints(math.P2(1, 2), math.P2(3, 2))
 	NewSheetMetalRipFeatures(fs).Add(&SheetMetalRipDefinition{Sketch: sk, LineIndex: 0, Gap: constFloat(0.05)})
@@ -74,7 +74,7 @@ func TestRipRoundTrip(t *testing.T) {
 	if data[0].Kind != "sheet-metal-rip" || data[0].SheetMetalRip == nil || data[0].SheetMetalRip.Gap != 0.05 {
 		t.Fatalf("marshaled = %+v", data[0])
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{sk}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}

@@ -10,14 +10,14 @@ import (
 	"oblikovati.org/math"
 )
 
-// ContextID identifies a key context (a versioned topology snapshot) within a
-// [KeyManager]. It is part of a key's identity and is preserved across save/load.
+// ContextID identifies the topology context a key was minted in. It is part of a
+// key's identity and is preserved across save/load (encoded in the key bytes).
 type ContextID uint64
 
 // RefKey is an opaque, serializable reference to a topological/model entity. It is
 // a value type (no pointers), so it can be stored in a feature definition, a
-// document descriptor, or a persisted stream and rebound later. Callers treat it
-// as opaque; only the [KeyManager] interprets the payload (the entity's lineage).
+// document descriptor, or a persisted stream and rebound later. Callers treat it as
+// opaque; the payload is the entity's lineage, matched by the recovery tiers.
 type RefKey struct {
 	ctx     ContextID
 	kind    EntityKind

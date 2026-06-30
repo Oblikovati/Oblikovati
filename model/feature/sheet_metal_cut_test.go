@@ -65,7 +65,7 @@ func TestSheetMetalCutDefinitionAndKind(t *testing.T) {
 // marshals and restores; a 0 distance restores as nil (through all).
 func TestSheetMetalCutRoundTrip(t *testing.T) {
 	sk := squareSketch(2)
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewSheetMetalCutFeatures(fs).Add(&SheetMetalCutDefinition{
 		Sketch: sk, ProfileIndex: 0, Direction: NegativeDir, Distance: func() float64 { return 0.5 },
 	})
@@ -80,7 +80,7 @@ func TestSheetMetalCutRoundTrip(t *testing.T) {
 	if d.Direction != int32(NegativeDir) || d.Distance != 0.5 {
 		t.Errorf("payload = %+v, want negative / distance 0.5", d)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{s: sk}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -91,7 +91,7 @@ func TestSheetMetalCutRoundTrip(t *testing.T) {
 
 // TestSheetMetalCutMissingPayload / unknown sketch restore errors.
 func TestSheetMetalCutMissingPayload(t *testing.T) {
-	if _, err := restoreSheetMetalCut(NewPartFeatures(nil, nil), nil, oneSketch{}); err == nil {
+	if _, err := restoreSheetMetalCut(NewPartFeatures(nil), nil, oneSketch{}); err == nil {
 		t.Error("restoreSheetMetalCut(nil) must error")
 	}
 	if _, err := serializeSheetMetalCut(&SheetMetalCutDefinition{Sketch: squareSketch(1)}, oneSketch{s: squareSketch(2)}); err == nil {

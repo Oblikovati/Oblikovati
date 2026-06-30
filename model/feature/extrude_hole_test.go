@@ -15,7 +15,7 @@ import (
 // block instead of a frame. The extruded volume must be (outer-inner)·height.
 func TestExtrudeHonorsHole(t *testing.T) {
 	ps := param.NewParameters()
-	fs := NewPartFeatures(ps, nil)
+	fs := NewPartFeatures(ps)
 	const side, hole, height = 4.0, 2.0, 3.0
 	sk := squareWithHoleSketch(side, hole)
 
@@ -50,7 +50,7 @@ func TestExtrudeHonorsHole(t *testing.T) {
 // triangulator (kernel/ops/earcut.go); the volume must now be (plate − 4·hole)·height.
 func TestExtrudeHonorsMultipleHoles(t *testing.T) {
 	ps := param.NewParameters()
-	fs := NewPartFeatures(ps, nil)
+	fs := NewPartFeatures(ps)
 	const w, h, hole, height = 8.0, 6.0, 1.0, 2.0
 	sk := plateWithHolesSketch(w, h, hole, [][2]float64{{2, 1.5}, {6, 1.5}, {2, 4.5}, {6, 4.5}})
 

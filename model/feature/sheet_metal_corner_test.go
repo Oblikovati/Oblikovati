@@ -115,7 +115,7 @@ func TestCornerDefinitionAndKind(t *testing.T) {
 
 // TestCornerRoundTrip the corner recipe (edges + treatment + size) marshals and restores.
 func TestCornerRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewSheetMetalCornerFeatures(fs).Add(&SheetMetalCornerDefinition{
 		EdgeKeys: [][]byte{[]byte("k1"), []byte("k2")}, Treatment: CornerRound, Size: func() float64 { return 0.4 },
 	})
@@ -130,7 +130,7 @@ func TestCornerRoundTrip(t *testing.T) {
 	if len(d.Edges) != 2 || d.Treatment != int32(CornerRound) || d.Size != 0.4 {
 		t.Errorf("payload = %+v, want 2 edges / round / size 0.4", d)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -141,7 +141,7 @@ func TestCornerRoundTrip(t *testing.T) {
 
 // TestCornerMissingPayload restoring a corner record with no payload errors.
 func TestCornerMissingPayload(t *testing.T) {
-	if _, err := restoreSheetMetalCorner(NewPartFeatures(nil, nil), nil); err == nil {
+	if _, err := restoreSheetMetalCorner(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreSheetMetalCorner(nil) must error")
 	}
 }

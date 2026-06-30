@@ -102,7 +102,7 @@ func TestContourFlangeDefinitionAndKind(t *testing.T) {
 // restores, preserving the kind and payload.
 func TestContourFlangeRoundTrip(t *testing.T) {
 	profile := lProfile()
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewSheetMetalContourFlangeFeatures(fs).Add(&SheetMetalContourFlangeDefinition{
 		EdgeKey: []byte("edge"), Profile: profile, Flip: true,
 	})
@@ -117,7 +117,7 @@ func TestContourFlangeRoundTrip(t *testing.T) {
 	if d.Profile != 0 || !d.Flip {
 		t.Errorf("payload = %+v, want profile 0 / flip", d)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{s: profile}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -128,7 +128,7 @@ func TestContourFlangeRoundTrip(t *testing.T) {
 
 // TestContourFlangeMissingPayload / unknown sketch restore errors.
 func TestContourFlangeMissingPayload(t *testing.T) {
-	if _, err := restoreSheetMetalContourFlange(NewPartFeatures(nil, nil), nil, oneSketch{}); err == nil {
+	if _, err := restoreSheetMetalContourFlange(NewPartFeatures(nil), nil, oneSketch{}); err == nil {
 		t.Error("restoreSheetMetalContourFlange(nil) must error")
 	}
 	if _, err := serializeSheetMetalContourFlange(&SheetMetalContourFlangeDefinition{Profile: lProfile()}, oneSketch{s: squareSketch(1)}); err == nil {

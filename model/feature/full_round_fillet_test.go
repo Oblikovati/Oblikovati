@@ -34,7 +34,7 @@ func ribForFullRound(t *testing.T) (fs *PartFeatures, side1, center, side2 [][]b
 			center = [][]byte{f.ReferenceKey()}
 		}
 	}
-	fs = NewPartFeatures(nil, nil)
+	fs = NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
 	return fs, side1, center, side2
 }
@@ -81,7 +81,7 @@ func TestFullRoundRejectsDegenerateSide(t *testing.T) {
 func TestFullRoundConvergingSides(t *testing.T) {
 	trap := []math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 3, Y: 2}, {X: 1, Y: 2}}
 	rib := buildPrism(trap, sketch.XYPlane(), span{near: 0, far: 6}, 0, "rib")
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(rib)
 	orig := ops.BodyGeometryProperties(rib, ops.DefaultQuality()).Volume
 

@@ -26,7 +26,7 @@ func box2x2x2(dx float64, feat string) *topo.Body {
 // TestCombineJoinIntersectingUnionVolume: A∪B of two overlapping 2³ blocks is one valid,
 // manifold solid of the union volume 8 + 8 − 4 = 12.
 func TestCombineJoinIntersectingUnionVolume(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box2x2x2(0, "a"))
 	NewBaseFeatures(fs).AddBase(box2x2x2(1, "b"))
 	join := NewModifyFeatures(fs).AddCombine(0, 1, ops.Join)
@@ -50,7 +50,7 @@ func TestCombineJoinIntersectingUnionVolume(t *testing.T) {
 // TestCombineIntersectOverlapVolume: A∩B of the two overlapping blocks is exactly the 1×2×2
 // overlap, volume 4.
 func TestCombineIntersectOverlapVolume(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box2x2x2(0, "a"))
 	NewBaseFeatures(fs).AddBase(box2x2x2(1, "b"))
 	inter := NewModifyFeatures(fs).AddCombine(0, 1, ops.Intersect)
@@ -78,7 +78,7 @@ func TestCombineCutRoundTrip(t *testing.T) {
 	addRect(skB, 1, 0, 3, 2)
 	idx := sketchList{sks: []*sketch.Sketch{skA, skB}}
 
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(skA, 0, ops.NewBody, func() float64 { return 2 })
 	NewExtrudeFeatures(fs).AddByDistanceExtent(skB, 0, ops.NewBody, func() float64 { return 2 })
 	NewModifyFeatures(fs).AddCombine(0, 1, ops.Cut)
@@ -87,7 +87,7 @@ func TestCombineCutRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, idx, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -104,7 +104,7 @@ func TestCombineCutRoundTrip(t *testing.T) {
 // TestCombineRecomputesOnParameterChange: a Cut whose tool body is driven by an extrude
 // distance re-evaluates when that parameter changes (A−B grows as the tool shrinks).
 func TestCombineRecomputesOnParameterChange(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	// Target A: a fixed 2×2×2 block (vol 8).
 	NewBaseFeatures(fs).AddBase(box2x2x2(0, "a"))
 	// Tool B: a 1×2 footprint at x∈[1,2] extruded up by a mutable height; the overlap with A

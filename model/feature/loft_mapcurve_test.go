@@ -22,7 +22,7 @@ func twoSquares() []LoftSection {
 
 func mappedSquares(t *testing.T, mapCurves []func() []math.Point3) *topo.Body {
 	t.Helper()
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewLoftFeatures(fs).AddGuided(twoSquares(), false, ops.NewBody, LoftEnd{}, LoftEnd{}, LoftGuideSet{MapCurves: mapCurves})
 	fs.Recompute()
 	if !pf.Health().OK() {
@@ -61,7 +61,7 @@ func TestLoftMapCurveRoundTrip(t *testing.T) {
 	bottom := centeredSquareOn(sketch.XYPlane(), 2)
 	top := centeredSquareOn(planeAtZ(4), 2)
 	idx := sketchList{sks: []*sketch.Sketch{bottom, top}}
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	mc := func() []math.Point3 { return []math.Point3{math.P3(2, 2, 0), math.P3(-2, 2, 4)} }
 	NewLoftFeatures(fs).AddGuided(
 		[]LoftSection{{Sketch: bottom, ProfileIndex: 0}, {Sketch: top, ProfileIndex: 0}},
@@ -71,7 +71,7 @@ func TestLoftMapCurveRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, idx, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}

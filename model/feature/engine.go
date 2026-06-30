@@ -11,7 +11,6 @@ import (
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/health"
-	"oblikovati.org/model/identity"
 	"oblikovati.org/model/param"
 	"oblikovati.org/model/seq"
 	"oblikovati.org/model/text"
@@ -28,7 +27,6 @@ type PartFeatures struct {
 	items        []*PartFeature
 	byID         map[ID]*PartFeature
 	params       *param.Parameters
-	keys         *identity.KeyManager
 	eop          int
 	result       []*topo.Body
 	resources    ResourceStore
@@ -81,8 +79,8 @@ func (fs *PartFeatures) FontResolver() text.FontResolver {
 // NewPartFeatures creates an empty feature program. params drives expressions and
 // conditional suppression; keys resolves topology input refs (either may be nil
 // for simple cases).
-func NewPartFeatures(params *param.Parameters, keys *identity.KeyManager) *PartFeatures {
-	return &PartFeatures{byID: map[ID]*PartFeature{}, params: params, keys: keys, eop: eopAll}
+func NewPartFeatures(params *param.Parameters) *PartFeatures {
+	return &PartFeatures{byID: map[ID]*PartFeature{}, params: params, eop: eopAll}
 }
 
 // Add appends a feature (initially dirty) with its dependency feature ids.
@@ -204,7 +202,7 @@ func (fs *PartFeatures) PreviewResult(candidate Feature) ([]*topo.Body, error) {
 		return nil, errors.New("feature: PreviewResult got a nil candidate")
 	}
 	bodies := fs.prefixBodies(fs.effectiveEnd())
-	out, err := candidate.Recompute(Input{Bodies: bodies, Params: fs.params, Keys: fs.keys, SourceTool: fs.sourceTool})
+	out, err := candidate.Recompute(Input{Bodies: bodies, Params: fs.params, SourceTool: fs.sourceTool})
 	if err != nil {
 		return nil, err
 	}
@@ -240,7 +238,7 @@ func (fs *PartFeatures) evaluateBody(pf *PartFeature, bodies []*topo.Body, sick 
 		return bodies
 	}
 	pf.recomputes++
-	out, err := safeRecompute(pf, Input{Bodies: bodies, Params: fs.params, Keys: fs.keys, SourceTool: fs.sourceTool})
+	out, err := safeRecompute(pf, Input{Bodies: bodies, Params: fs.params, SourceTool: fs.sourceTool})
 	return fs.classify(pf, bodies, out, err, sick)
 }
 

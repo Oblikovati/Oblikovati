@@ -58,7 +58,7 @@ func TestCosmeticBendRejectsBadLine(t *testing.T) {
 
 // TestCosmeticBendRoundTrip a cosmetic bend persists its bend line + angle/radius and restores.
 func TestCosmeticBendRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	sk.Lines().AddByTwoPoints(math.P2(2, 0), math.P2(2, 4))
 	NewSheetMetalCosmeticBendFeatures(fs).Add(&SheetMetalCosmeticBendDefinition{
@@ -72,7 +72,7 @@ func TestCosmeticBendRoundTrip(t *testing.T) {
 	if data[0].Kind != "sheet-metal-cosmetic-bend" || data[0].SheetMetalCosmeticBend == nil {
 		t.Fatalf("marshaled = %+v", data[0])
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{sk}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}

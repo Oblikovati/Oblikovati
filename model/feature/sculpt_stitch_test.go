@@ -45,7 +45,7 @@ func unitCubeFaces() []*topo.Body {
 }
 
 func TestStitchFeatureClosesSurfacesIntoSolid(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(unitCubeFaces()...)
 	pf := NewStitchFeatures(fs).Add(0, false)
 	fs.Recompute()
@@ -68,7 +68,7 @@ func TestStitchFeatureClosesSurfacesIntoSolid(t *testing.T) {
 }
 
 func TestStitchFeatureMaintainAsSurface(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(unitCubeFaces()...)
 	pf := NewStitchFeatures(fs).Add(0, true)
 	fs.Recompute()
@@ -81,7 +81,7 @@ func TestStitchFeatureMaintainAsSurface(t *testing.T) {
 }
 
 func TestKnitIsStitchAlias(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(unitCubeFaces()...)
 	pf := NewKnitFeatures(fs).Add(0, false)
 	fs.Recompute()
@@ -94,7 +94,7 @@ func TestKnitIsStitchAlias(t *testing.T) {
 }
 
 func TestSculptFillsBoundedVolume(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(unitCubeFaces()...)
 	pf := NewSculptFeatures(fs).Add(ops.NewBody, 0)
 	fs.Recompute()
@@ -112,7 +112,7 @@ func TestSculptFillsBoundedVolume(t *testing.T) {
 }
 
 func TestSculptGoesSickOnOpenSurfaces(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(unitCubeFaces()[1:]...) // drop one face → open
 	pf := NewSculptFeatures(fs).Add(ops.NewBody, 0)
 	fs.Recompute()

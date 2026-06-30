@@ -17,7 +17,7 @@ import (
 // API-authored dress-up silently degraded to ancestral-only recovery.
 func TestAddChamferCapturesMintTimeAnchors(t *testing.T) {
 	box, edge := box2(t)
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
 	fs.Recompute() // the base is live before the edge is chamfered, as in every real authoring flow
 
@@ -39,7 +39,7 @@ func TestAddChamferCapturesMintTimeAnchors(t *testing.T) {
 // fillet has the geometric-recovery witness just like a GUI-authored one (ADR-0043 P6b).
 func TestAddFilletCapturesMintTimeAnchors(t *testing.T) {
 	box, edge := box2(t)
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
 	fs.Recompute()
 
@@ -61,7 +61,7 @@ func TestAddFilletCapturesMintTimeAnchors(t *testing.T) {
 // never rewrites them. Only the public authoring builders capture.
 func TestRestoreEntryDoesNotCaptureAnchors(t *testing.T) {
 	box, edge := box2(t)
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
 	fs.Recompute() // a live tip body exists — yet the restore entry must still not capture
 
@@ -80,7 +80,7 @@ func TestRestoreEntryDoesNotCaptureAnchors(t *testing.T) {
 // back to the ancestral tier, rather than panicking on a missing body.
 func TestAuthorWithoutRunningBodySkipsCapture(t *testing.T) {
 	_, edge := box2(t)
-	fs := NewPartFeatures(nil, nil) // never recomputed ⇒ Result() empty ⇒ no tip body
+	fs := NewPartFeatures(nil) // never recomputed ⇒ Result() empty ⇒ no tip body
 
 	ch := NewDressUpFeatures(fs).AddChamfer([][]byte{edge}, func() float64 { return 0.3 })
 

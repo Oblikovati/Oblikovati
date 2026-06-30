@@ -105,7 +105,7 @@ func TestResolveEdgesHealsAmbiguousSiblingsByAnchor(t *testing.T) {
 // TestFilletEdgeAnchorsRoundTrip pins that a fillet's mint-time edge anchors survive a recipe
 // round trip (ADR-0043 P6b) — without them, a reopened document could not use the geometric tier.
 func TestFilletEdgeAnchorsRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	key := edgeKeyFor(7)
 	anchors := map[string]math.Point3{string(key): math.P3(1.25, -2.5, 3)}
 	NewDressUpFeatures(fs).addFillet(&FilletDefinition{
@@ -116,7 +116,7 @@ func TestFilletEdgeAnchorsRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -143,7 +143,7 @@ func (f healingFeature) Recompute(in Input) (Output, error) {
 // rebuilt on a recovered reference is a Warning (the body is kept, the drift is surfaced), distinct
 // from both a clean recompute and a Sick lost-reference failure.
 func TestHealedReferenceClassifiesAsWarningNotSick(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	fs.Add(body()) // a base body to operate on
 	pf := fs.Add(healingFeature{heals: []ReferenceHeal{{Key: edgeKeyFor(2), Match: identity.MatchAncestral}}})
 	fs.Recompute()

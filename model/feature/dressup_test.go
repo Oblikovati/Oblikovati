@@ -29,7 +29,7 @@ func TestChamferBevelsEdgeForReal(t *testing.T) {
 	if edge == nil {
 		t.Fatal("no vertical edge found on the box")
 	}
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
 	ch := NewDressUpFeatures(fs).AddChamfer([][]byte{edge}, func() float64 { return 0.5 })
 	fs.Recompute()
@@ -62,7 +62,7 @@ func TestChamferAllFourVerticalEdges(t *testing.T) {
 	if len(verticals) != 4 {
 		t.Fatalf("found %d vertical edges, want 4", len(verticals))
 	}
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
 	ch := NewDressUpFeatures(fs).AddChamfer(verticals, func() float64 { return 0.5 })
 	fs.Recompute()
@@ -130,7 +130,7 @@ func topEdgeKeys(b *topo.Body, ztop float64) [][]byte {
 func rechamferBody(t *testing.T, firstPick func(*topo.Body) [][]byte, d1, d2 float64, secondPick func(*topo.Body) []byte) (after1, after2 *topo.Body) {
 	t.Helper()
 	cube := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "cube")
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(cube)
 	ch1 := NewDressUpFeatures(fs).AddChamfer(firstPick(cube), func() float64 { return d1 })
 	fs.Recompute()
@@ -170,7 +170,7 @@ func chamferedCorner(t *testing.T, flat bool) *topo.Body {
 	if len(keys) != 3 {
 		t.Fatalf("found %d edges at the corner, want 3", len(keys))
 	}
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
 	ch := NewDressUpFeatures(fs).AddChamferCorners(keys, func() float64 { return 0.5 }, flat)
 	fs.Recompute()
@@ -257,7 +257,7 @@ func chamferedCornerAsym(t *testing.T, d1, d2 float64, flat bool) *topo.Body {
 	if len(keys) != 3 {
 		t.Fatalf("found %d edges at the corner, want 3", len(keys))
 	}
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
 	ch := NewDressUpFeatures(fs).addChamfer(&ChamferDefinition{
 		EdgeKeys: keys, Distance: func() float64 { return d1 }, Distance2: func() float64 { return d2 },
@@ -326,7 +326,7 @@ func TestFilletRoundsEdgeForReal(t *testing.T) {
 			break
 		}
 	}
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
 	fillet := NewDressUpFeatures(fs).AddFillet([][]byte{edge}, func() float64 { return 0.5 })
 	fs.Recompute()
@@ -347,7 +347,7 @@ func TestFilletGoesSickOnLostEdge(t *testing.T) {
 	body := prismBody()
 	bogus := []byte("not-an-edge-key")
 
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(body)
 	fillet := NewDressUpFeatures(fs).AddFillet([][]byte{bogus}, func() float64 { return 0.2 })
 	fs.Recompute()
@@ -357,7 +357,7 @@ func TestFilletGoesSickOnLostEdge(t *testing.T) {
 }
 
 func TestDressUpWithNoBodyIsSick(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	fillet := NewDressUpFeatures(fs).AddFillet([][]byte{[]byte("x")}, func() float64 { return 1 })
 	fs.Recompute() // no preceding body
 	if fillet.Health().Status != health.Sick {
@@ -372,7 +372,7 @@ func TestThreadRejectsPlanarFaceAndShellLostFace(t *testing.T) {
 	body := prismBody()
 	face := body.Faces()[0].ReferenceKey()
 
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(body)
 	du := NewDressUpFeatures(fs)
 	th := du.AddThread(face, "M6x1", false)
@@ -402,7 +402,7 @@ func TestDraftTapersFaceForReal(t *testing.T) {
 			side = f.ReferenceKey()
 		}
 	}
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
 	dr := NewDressUpFeatures(fs).AddDraft([][]byte{side}, func() float64 { return -stdmath.Atan(0.25) })
 	fs.Recompute()
@@ -428,7 +428,7 @@ func TestShellHollowsRunningBodyForReal(t *testing.T) {
 			top = f.ReferenceKey()
 		}
 	}
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(body)
 	sh := NewDressUpFeatures(fs).AddShell([][]byte{top}, func() float64 { return 0.5 })
 	fs.Recompute()
@@ -445,7 +445,7 @@ func TestShellHollowsRunningBodyForReal(t *testing.T) {
 }
 
 func TestDressUpDefinitionsAccessible(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	du := NewDressUpFeatures(fs)
 	f := du.AddFillet([][]byte{[]byte("e")}, func() float64 { return 0.2 })
 	if f.Definition().(*FilletFeature).Definition().Radius() != 0.2 {

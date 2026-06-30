@@ -66,7 +66,7 @@ func verticalEdgeNearFoot1536(t *testing.T, b *topo.Body, x, y float64) *topo.Ed
 func firstFilletedPrism1536(t *testing.T) (*PartFeatures, *topo.Body) {
 	t.Helper()
 	box := buildPrism(issuePoly1536, sketch.XYPlane(), span{near: 0, far: 5}, 0, "Extrusion1")
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
 	edge1 := edgeByKeySuffix1536(t, box, "Extrusion1:side-edge#2")
 	f1 := NewDressUpFeatures(fs).AddFillet([][]byte{edge1}, func() float64 { return 1 })

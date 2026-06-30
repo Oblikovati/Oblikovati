@@ -13,7 +13,7 @@ import (
 )
 
 func TestMoveTranslatesRunningBody(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(prismBody()) // unit prism at the origin
 	move := NewModifyFeatures(fs).AddMove(0, math.Translation4(math.V3(5, 0, 0)))
 	fs.Recompute()
@@ -34,7 +34,7 @@ func TestMoveTranslatesRunningBody(t *testing.T) {
 }
 
 func TestMoveRejectsBadIndex(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(prismBody())
 	bad := NewModifyFeatures(fs).AddMove(7, math.Identity4())
 	fs.Recompute()
@@ -44,7 +44,7 @@ func TestMoveRejectsBadIndex(t *testing.T) {
 }
 
 func TestMoveFeatureRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	tx := math.Rotation4(0.5, math.V3(0, 0, 1).AsUnit(), math.P3(0, 0, 0)).Mul(math.Translation4(math.V3(2, -3, 4)))
 	NewModifyFeatures(fs).AddMove(1, tx)
 
@@ -52,7 +52,7 @@ func TestMoveFeatureRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -72,7 +72,7 @@ func TestMoveFeatureRoundTrip(t *testing.T) {
 // +X 5": the rotation maps x∈[0,1] to x∈[-1,0], and the later slide carries it to [4,5],
 // proving the operations compose in list order (M20-F20, #654).
 func TestMoveOpsComposeInOrder(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(prismBody())
 	ops := []MoveOperation{
 		RotateAboutLineOp(math.P3(0, 0, 0), math.V3(0, 0, 1), constFloat(stdmath.Pi/2)),
@@ -96,7 +96,7 @@ func TestMoveOpsComposeInOrder(t *testing.T) {
 // TestMoveOpsRecomputeOnParamChange proves an operation's scalar is re-read live: moving
 // the closure's backing value and recomputing relocates the body to the new distance.
 func TestMoveOpsRecomputeOnParamChange(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(prismBody())
 	dist := 2.0
 	move := NewModifyFeatures(fs).AddMoveOps(0, []MoveOperation{
@@ -119,7 +119,7 @@ func TestMoveOpsRecomputeOnParamChange(t *testing.T) {
 // TestMoveOpsRoundTrip serializes and restores an operation list and checks the operation
 // kinds and the composed transform survive (M20-F20).
 func TestMoveOpsRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	orig := []MoveOperation{
 		RotateAboutLineOp(math.P3(1, 0, 0), math.V3(0, 0, 1), constFloat(0.4)),
 		AlongRayOp(math.V3(0, 1, 0), constFloat(3)),
@@ -131,7 +131,7 @@ func TestMoveOpsRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}

@@ -28,7 +28,7 @@ func minXs(bodies []*topo.Body) []float64 {
 }
 
 func TestRectangularPatternElementCountFromParameters(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	src := fs.Add(body()) // a source feature to pattern
 	nx, ny := 3, 2
 	pat := NewPatternFeatures(fs).AddRectangular([]ID{src.ID()}, func() int { return nx }, func() int { return ny }, noStep, noStep)
@@ -52,7 +52,7 @@ func TestRectangularPatternElementCountFromParameters(t *testing.T) {
 }
 
 func TestRectangularPatternPlacesRealCopies(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	src := NewBaseFeatures(fs).AddBase(prismBody()) // unit cube [0,1]^3
 	NewPatternFeatures(fs).AddRectangular([]ID{src.ID()},
 		func() int { return 3 }, func() int { return 1 }, math.V3(2, 0, 0), noStep)
@@ -73,7 +73,7 @@ func TestRectangularPatternPlacesRealCopies(t *testing.T) {
 }
 
 func TestMirrorReflectsRealCopy(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	src := NewBaseFeatures(fs).AddBase(prismBody()) // [0,1]^3
 	// Mirror across the plane x=0 (normal +X): the copy lands in x∈[-1,0].
 	NewPatternFeatures(fs).AddMirror([]ID{src.ID()}, []byte("yz-plane"), math.P3(0, 0, 0), math.V3(1, 0, 0))
@@ -93,7 +93,7 @@ func TestMirrorReflectsRealCopy(t *testing.T) {
 }
 
 func TestPerElementSuppressionRemovesOnlyThatCopy(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	src := NewBaseFeatures(fs).AddBase(prismBody())
 	pat := NewPatternFeatures(fs).AddRectangular([]ID{src.ID()},
 		func() int { return 3 }, func() int { return 1 }, math.V3(2, 0, 0), noStep)
@@ -114,7 +114,7 @@ func TestPerElementSuppressionRemovesOnlyThatCopy(t *testing.T) {
 }
 
 func TestCircularAndSketchDrivenPlaceCopies(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	src := NewBaseFeatures(fs).AddBase(prismBody())
 	pats := NewPatternFeatures(fs)
 	circ := pats.AddCircular([]ID{src.ID()}, func() int { return 4 }, func() float64 { return 2 * stdmath.Pi },
@@ -129,7 +129,7 @@ func TestCircularAndSketchDrivenPlaceCopies(t *testing.T) {
 		}
 	}
 
-	fs2 := NewPartFeatures(nil, nil)
+	fs2 := NewPartFeatures(nil)
 	src2 := NewBaseFeatures(fs2).AddBase(prismBody())
 	pts := []math.Point3{math.P3(0, 0, 0), math.P3(5, 0, 0), math.P3(0, 5, 0)}
 	sk := NewPatternFeatures(fs2).AddSketchDriven([]ID{src2.ID()}, func() []math.Point3 { return pts })
@@ -143,7 +143,7 @@ func TestCircularAndSketchDrivenPlaceCopies(t *testing.T) {
 // with N holes), not duplicate the whole body into N solids. (Regression for the wheel: a
 // circular pattern of a bolt-hole cut was producing N separate bodies.)
 func TestPatternOfCutKeepsOneBody(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	// A 10x10x5 base box.
 	NewExtrudeFeatures(fs).AddExtrude(squareSketch(10), []int{0}, ops.NewBody,
 		Extent{Type: DistanceExtent, Direction: PositiveDir, Distance: func() float64 { return 5 }}, 0)
@@ -167,7 +167,7 @@ func TestPatternOfCutKeepsOneBody(t *testing.T) {
 // TestPatternOfJoinMergesIntoOneBody: patterning a JOIN feature must union the copies into the
 // running body, not leave them as separate solids.
 func TestPatternOfJoinMergesIntoOneBody(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddExtrude(squareSketch(10), []int{0}, ops.NewBody,
 		Extent{Type: DistanceExtent, Direction: PositiveDir, Distance: func() float64 { return 5 }}, 0)
 	// A small boss joined on top, overlapping the base so the union is one body.
@@ -186,7 +186,7 @@ func TestPatternOfJoinMergesIntoOneBody(t *testing.T) {
 // each occurrence — one body with N bosses, each holed — not fall back to copying the whole part
 // and scattering disconnected solids.
 func TestPatternOfFeatureGroupStaysConnected(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	// A 10x10x5 base box.
 	NewExtrudeFeatures(fs).AddExtrude(squareSketch(10), []int{0}, ops.NewBody,
 		Extent{Type: DistanceExtent, Direction: PositiveDir, Distance: func() float64 { return 5 }}, 0)
@@ -221,7 +221,7 @@ func patIDOf(fs *PartFeatures, f Feature) ID {
 }
 
 func TestPatternDefinitionAccessors(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	src := fs.Add(body())
 	rect := NewPatternFeatures(fs).AddRectangular([]ID{src.ID()}, func() int { return 2 }, func() int { return 3 }, noStep, noStep)
 	if rect.Definition().CountX() != 2 || rect.Definition().CountY() != 3 {

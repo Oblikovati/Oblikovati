@@ -21,7 +21,7 @@ import (
 func directEditBox(t *testing.T, dir math.Vector3) (*PartFeatures, []byte) {
 	t.Helper()
 	box := boxBody()
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
 	for _, f := range box.Faces() {
 		if pl, ok := f.Geometry().(geom.Plane); ok && float64(pl.Normal().Dot(dir)) > 0.9 {
@@ -118,7 +118,7 @@ func TestDirectEditUnknownOperationSick(t *testing.T) {
 }
 
 func TestDirectEditRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewModifyFeatures(fs).AddDirectEdit(&DirectEditDefinition{
 		Operation: types.DirectEditRotateOperation, FaceKeys: [][]byte{[]byte("f")},
 		AxisPoint: math.P3(0, 0, 4), AxisDir: math.V3(0, 1, 0), Angle: constFloat(0.1),
@@ -130,7 +130,7 @@ func TestDirectEditRoundTrip(t *testing.T) {
 	if data[0].DirectEdit == nil || data[0].DirectEdit.Operation != "rotate" {
 		t.Fatalf("serialized = %+v, want a rotate directEdit", data[0].DirectEdit)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}

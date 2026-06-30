@@ -18,7 +18,7 @@ import (
 // body up to tens of thousands of edges and hang).
 func discThenCutPatterned(t *testing.T) *topo.Body {
 	t.Helper()
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	disc := sketch.NewSketches().Add(sketch.XYPlane())
 	disc.Circles().AddByCenterRadius(math.P2(0, 0), 30)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(disc, 0, ops.NewBody, func() float64 { return 10 })

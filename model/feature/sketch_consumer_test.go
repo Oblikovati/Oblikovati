@@ -104,7 +104,7 @@ func TestConsumedSketchesPerFeatureKind(t *testing.T) {
 // feature when it is a SketchConsumer and reports nil for a kind that consumes no sketch
 // (a dress-up), so the browser can call it uniformly on every tree node.
 func TestPartFeatureConsumedSketchesForwards(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	sk := consumerSketch()
 	pf := fs.Add(&ExtrudeFeature{def: &ExtrudeDefinition{Sketch: sk}})
 	if got := pf.ConsumedSketches(); len(got) != 1 || got[0] != sk {

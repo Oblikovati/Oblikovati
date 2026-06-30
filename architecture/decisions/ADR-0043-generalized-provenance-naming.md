@@ -142,8 +142,16 @@ residual naming collision becomes an honest failure, never a wrong-rebind.
     the tier would be silently unavailable for wire-API / MCP / programmatically authored dress-ups.
     Recompute stays a pure function (it never writes anchors) and the recipe restore never recaptures,
     so reopening a document does not rewrite it.
-  - **P6c** — retire the now-dead silent-match resolution branches; make `Input.Keys`/`fs.keys` live
-    (or remove). The no-parent ordinal fallback and the degraded CSG soup fallback legitimately stay.
+  - **P6c** *(done)* — retired the now-dead resolution subsystem. The `*identity.KeyManager` instance
+    was created by compdef, threaded through `NewPartFeatures` into `Input.Keys`, and **never read**
+    (live recovery goes through the `RecoverLost` adapter, which needs no manager). Removed the dead
+    instance plumbing (`Input.Keys`, `fs.keys`, the `NewPartFeatures` key param, compdef's
+    `d.keys`/`NewKeyManager`) and the unreferenced subsystem itself — `KeyManager`
+    (`BindKeyToObject`/contexts/`GetReferenceKey`), the context-snapshot persistence, the F08 O(1)
+    index, and `loss.Resolve`. The live `RefKey` value, its versioned encoding (attribute
+    persistence), and the `fallbackMatch` recovery tiers stay; their tests were rewritten to exercise
+    them directly rather than through the retired manager. The no-parent ordinal fallback and the
+    degraded CSG soup fallback legitimately stay. **This closes the ADR-0043 epic (#1539).**
 
 Each phase is one or more PRs; each adds a regression test that mutates an upstream feature and
 asserts the downstream selection still binds to the same physical entity.

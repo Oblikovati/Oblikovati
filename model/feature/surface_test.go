@@ -59,7 +59,7 @@ func plateWithHolesSketch(w, h, hole float64, centres [][2]float64) *sketch.Sket
 }
 
 func TestBoundaryPatchFillsClosedBoundary(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewBoundaryPatchFeatures(fs).Add(squareSketch(4), 0, PatchTangent)
 	fs.Recompute()
 	if !pf.Health().OK() {
@@ -86,7 +86,7 @@ func TestBoundaryPatchFillsClosedBoundary(t *testing.T) {
 }
 
 func TestBoundaryPatchHonorsConditionPerLoop(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewBoundaryPatchFeatures(fs).Add(squareSketch(2), 0, PatchCurvature)
 	def := pf.Definition().(*BoundaryPatchFeature).Definition()
 	if def.Loops.Count() != 1 {
@@ -98,7 +98,7 @@ func TestBoundaryPatchHonorsConditionPerLoop(t *testing.T) {
 }
 
 func TestBoundaryPatchWithHoleCutsInnerLoop(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewBoundaryPatchFeatures(fs).Add(squareWithHoleSketch(6, 2), 0, PatchFree)
 	fs.Recompute()
 	if !pf.Health().OK() {
@@ -121,7 +121,7 @@ func TestBoundaryPatchGoesSickOnOpenProfile(t *testing.T) {
 	c := s.Points().Add(math.P2(2, 1))
 	s.Lines().Add(a, b)
 	s.Lines().Add(b, c) // open chain
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewBoundaryPatchFeatures(fs).Add(s, 0, PatchFree)
 	fs.Recompute()
 	if pf.Health().Status != health.Sick {
@@ -130,7 +130,7 @@ func TestBoundaryPatchGoesSickOnOpenProfile(t *testing.T) {
 }
 
 func TestRuledSurfaceBuildsBand(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewRuledSurfaceFeatures(fs).AddByDistance(squareSketch(2), 0, RuledNormal, func() float64 { return 3 })
 	fs.Recompute()
 	if !pf.Health().OK() {
@@ -157,7 +157,7 @@ func TestRuledSurfaceBuildsBand(t *testing.T) {
 }
 
 func TestRuledSurfaceTangentDefers(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewRuledSurfaceFeatures(fs).AddByDistance(squareSketch(2), 0, RuledTangent, func() float64 { return 3 })
 	fs.Recompute()
 	// Inputs resolved, geometry deferred (tangent ruling needs adjacent-face data).
@@ -174,7 +174,7 @@ func TestRuledSurfaceGoesSickOnOpenProfile(t *testing.T) {
 	a := s.Points().Add(math.P2(0, 0))
 	b := s.Points().Add(math.P2(1, 0))
 	s.Lines().Add(a, b) // single open segment
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewRuledSurfaceFeatures(fs).AddByDistance(s, 0, RuledNormal, func() float64 { return 3 })
 	fs.Recompute()
 	if pf.Health().Status != health.Sick {
@@ -183,7 +183,7 @@ func TestRuledSurfaceGoesSickOnOpenProfile(t *testing.T) {
 }
 
 func TestRuledSurfaceZeroDistanceErrors(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewRuledSurfaceFeatures(fs).AddByDistance(squareSketch(2), 0, RuledNormal, nil)
 	fs.Recompute()
 	if pf.Health().Status != health.Sick {

@@ -18,7 +18,7 @@ func TestHoleAndBossGenerateRealGeometry(t *testing.T) {
 	// tested on its own body: a boolean rebuilds the topology with new lineage, so a
 	// reference to a pre-cut face does not survive (chaining across a boolean is a follow-up).
 	hb := prismBody()
-	fsHole := NewPartFeatures(nil, nil)
+	fsHole := NewPartFeatures(nil)
 	NewBaseFeatures(fsHole).AddBase(hb)
 	drilled := NewHoleFeatures(fsHole).AddDrilled(hb.Faces()[0].ReferenceKey(), func() float64 { return 0.3 }, func() float64 { return 2 })
 	fsHole.Recompute()
@@ -27,7 +27,7 @@ func TestHoleAndBossGenerateRealGeometry(t *testing.T) {
 	}
 
 	bb := prismBody()
-	fsBoss := NewPartFeatures(nil, nil)
+	fsBoss := NewPartFeatures(nil)
 	NewBaseFeatures(fsBoss).AddBase(bb)
 	boss := NewBossFeatures(fsBoss).Add(bb.Faces()[0].ReferenceKey(), func() float64 { return 0.5 }, func() float64 { return 1 })
 	fsBoss.Recompute()
@@ -35,7 +35,7 @@ func TestHoleAndBossGenerateRealGeometry(t *testing.T) {
 		t.Errorf("boss health = %v, want OK (real stud, #327)", boss.Health())
 	}
 
-	tapped := NewHoleFeatures(NewPartFeatures(nil, nil)).AddTapped([]byte("f"), func() float64 { return 0.2 }, func() float64 { return 0.4 }, "M5x0.8")
+	tapped := NewHoleFeatures(NewPartFeatures(nil)).AddTapped([]byte("f"), func() float64 { return 0.2 }, func() float64 { return 0.4 }, "M5x0.8")
 	if tap := tapped.Definition().(*HoleFeature).Definition().Tap; !tap.Tapped || tap.Designation != "M5x0.8" {
 		t.Errorf("tap info = %+v, want tapped M5x0.8", tap)
 	}
@@ -47,7 +47,7 @@ func TestBossRaisesStudOfExactVolume(t *testing.T) {
 	block := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 4}, {X: 0, Y: 4}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "blk")
 	top := block.Faces()[1].ReferenceKey() // z=2 cap, normal +Z
 
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(block)
 	boss := NewBossFeatures(fs).Add(top, func() float64 { return 1 }, func() float64 { return 1.5 })
 	fs.Recompute()
@@ -69,7 +69,7 @@ func TestBossRaisesStudOfExactVolume(t *testing.T) {
 
 // TestBossLostFaceSick: a boss whose placement face vanished goes Sick.
 func TestBossLostFaceSick(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(prismBody())
 	boss := NewBossFeatures(fs).Add([]byte("gone"), func() float64 { return 1 }, func() float64 { return 1 })
 	fs.Recompute()
@@ -84,7 +84,7 @@ func TestPatternOfBossReplicatesStuds(t *testing.T) {
 	block := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 4}, {X: 0, Y: 4}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "blk")
 	top := block.Faces()[1].ReferenceKey()
 
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(block)
 	boss := NewBossFeatures(fs).Add(top, func() float64 { return 1 }, func() float64 { return 1.5 })
 	// Step 1.2 keeps the copy fully on the block (a step to the rim would leave half the
@@ -109,7 +109,7 @@ func TestHoleDrillsThroughForReal(t *testing.T) {
 	block := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 4}, {X: 0, Y: 4}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "blk")
 	top := block.Faces()[1].ReferenceKey() // end cap (z=2), normal +Z
 
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(block)
 	hole := NewHoleFeatures(fs).AddDrilled(top, func() float64 { return 2 }, func() float64 { return 3 }) // depth 3 > thickness 2 ⇒ through
 	fs.Recompute()
@@ -136,7 +136,7 @@ func TestHoleDrillsAtExplicitCenter(t *testing.T) {
 	block := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 8, Y: 0}, {X: 8, Y: 8}, {X: 0, Y: 8}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "blk")
 	top := block.Faces()[1].ReferenceKey() // z=2 cap, normal +Z
 
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(block)
 	hole := NewHoleFeatures(fs).AddDrilledThrough(top, func() float64 { return 2 })
 	center := math.P3(2, 3, 2)
@@ -174,7 +174,7 @@ func TestHoleThroughAllProducesCylinderWall(t *testing.T) {
 	block := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 4}, {X: 0, Y: 4}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "blk")
 	top := block.Faces()[1].ReferenceKey() // z=2 cap, normal +Z
 
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(block)
 	hole := NewHoleFeatures(fs).AddDrilledThrough(top, func() float64 { return 2 })
 	fs.Recompute()
@@ -207,7 +207,7 @@ func TestBlindHoleProducesCylinderWallAndFlatBottom(t *testing.T) {
 	block := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 4}, {X: 0, Y: 4}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "blk")
 	top := block.Faces()[1].ReferenceKey() // z=2 cap, normal +Z
 
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(block)
 	hole := NewHoleFeatures(fs).AddDrilled(top, func() float64 { return 2 }, func() float64 { return 1 }) // depth 1 < 2 ⇒ blind
 	fs.Recompute()
@@ -240,7 +240,7 @@ func TestCounterboreHoleProducesTwoWallsAndShoulder(t *testing.T) {
 	block := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 8, Y: 0}, {X: 8, Y: 8}, {X: 0, Y: 8}}, sketch.XYPlane(), span{near: 0, far: 4}, 0, "blk")
 	top := block.Faces()[1].ReferenceKey() // z=4 cap, normal +Z
 
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(block)
 	cb := NewHoleFeatures(fs).AddCounterbore(top,
 		func() float64 { return 2 }, func() float64 { return 4 }, // bore Ø2 × full depth
@@ -277,7 +277,7 @@ func TestCountersinkHoleProducesConeWall(t *testing.T) {
 	block := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 10, Y: 0}, {X: 10, Y: 10}, {X: 0, Y: 10}}, sketch.XYPlane(), span{near: 0, far: 6}, 0, "blk")
 	top := block.Faces()[1].ReferenceKey() // z=6 cap, normal +Z
 
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(block)
 	cs := NewHoleFeatures(fs).AddCountersink(top,
 		func() float64 { return 2 }, func() float64 { return 6 }, // bore Ø2 × full depth
@@ -310,7 +310,7 @@ func TestDrilledHoleWithConicalPoint(t *testing.T) {
 	block := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 8, Y: 0}, {X: 8, Y: 8}, {X: 0, Y: 8}}, sketch.XYPlane(), span{near: 0, far: 6}, 0, "blk")
 	top := block.Faces()[1].ReferenceKey() // z=6 cap, normal +Z
 
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(block)
 	hole := NewHoleFeatures(fs).AddDrilled(top, func() float64 { return 2 }, func() float64 { return 3 })
 	hole.Definition().(*HoleFeature).Definition().PointAngle = func() float64 { return 118 * stdmath.Pi / 180 }
@@ -337,7 +337,7 @@ func TestDrilledHoleWithConicalPoint(t *testing.T) {
 }
 
 func TestHoleGoesSickOnLostFace(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(prismBody())
 	hole := NewHoleFeatures(fs).AddDrilled([]byte("ghost-face"), func() float64 { return 0.3 }, func() float64 { return 0.5 })
 	fs.Recompute()
@@ -347,7 +347,7 @@ func TestHoleGoesSickOnLostFace(t *testing.T) {
 }
 
 func TestHoleBossDefinitionAccessors(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	h := NewHoleFeatures(fs).AddDrilled([]byte("f"), func() float64 { return 1 }, func() float64 { return 2 })
 	if h.Definition().(*HoleFeature).Definition().Type != DrilledHole {
 		t.Error("hole definition not accessible")
@@ -373,7 +373,7 @@ func TestPatternOfHoleCutsEachOccurrence(t *testing.T) {
 
 	holeVol := func(t *testing.T, patterned bool) (float64, int) {
 		t.Helper()
-		fs := NewPartFeatures(nil, nil)
+		fs := NewPartFeatures(nil)
 		block := buildPrism(corners, sketch.XYPlane(), span{near: 0, far: 2}, 0, "blk")
 		NewBaseFeatures(fs).AddBase(block)
 		hole := NewHoleFeatures(fs).AddDrilled(block.Faces()[1].ReferenceKey(), func() float64 { return 2 }, func() float64 { return 3 })

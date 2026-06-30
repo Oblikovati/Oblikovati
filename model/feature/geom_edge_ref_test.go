@@ -17,7 +17,7 @@ func geomRefBox() *topo.Body { return subd.ToBody(subd.Box(4, 4, 4), "box") }
 // is given only by a GEOMETRIC descriptor (no Oblikovati lineage key — what the NX exporter
 // can supply) binds to the running body's edge and actually rounds it, reducing volume.
 func TestGeometricEdgeFilletBindsAndRounds(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	box := geomRefBox()
 	NewBaseFeatures(fs).AddBase(box)
 
@@ -45,7 +45,7 @@ func TestGeometricEdgeFilletBindsAndRounds(t *testing.T) {
 // TestGeometricEdgeFilletMissGoesSick confirms a descriptor that binds nothing fails the
 // feature honestly rather than silently dropping the selection.
 func TestGeometricEdgeFilletMissGoesSick(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(geomRefBox())
 	far := topo.GeometricEdgeRef{Midpoint: math.P3(100, 100, 100)}
 	pf := NewDressUpFeatures(fs).addFillet(&FilletDefinition{
@@ -61,7 +61,7 @@ func TestGeometricEdgeFilletMissGoesSick(t *testing.T) {
 // TestGeometricEdgeRefSurvivesRecipeRoundTrip checks the geomEdges encoding round-trips
 // through serialize → restore (the exporter writes this; the reader must restore it).
 func TestGeometricEdgeRefSurvivesRecipeRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	ref := topo.DescribeEdge(geomRefBox().Edges()[0])
 	pf := NewDressUpFeatures(fs).addFillet(&FilletDefinition{
 		GeomEdges: []topo.GeometricEdgeRef{ref},
@@ -76,7 +76,7 @@ func TestGeometricEdgeRefSurvivesRecipeRoundTrip(t *testing.T) {
 		t.Fatalf("recipe did not carry the geometric edge ref: %+v", fd.Fillet)
 	}
 
-	dst := NewPartFeatures(nil, nil)
+	dst := NewPartFeatures(nil)
 	rpf, err := buildFeature(dst, fd, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("buildFeature: %v", err)

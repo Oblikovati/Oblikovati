@@ -100,20 +100,20 @@ func TestRebuildFeatureKind(t *testing.T) {
 }
 
 func TestRestoreRebuildRejectsMissingPayload(t *testing.T) {
-	if _, err := restoreRebuild(NewPartFeatures(nil, nil), nil); err == nil {
+	if _, err := restoreRebuild(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreRebuild(nil) should error on a missing payload")
 	}
 }
 
 func TestRebuildFeatureRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewRebuildFeatures(fs).Add(3, 2, 5, 4)
 
 	data, err := fs.MarshalRecipe(oneSketch{})
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}

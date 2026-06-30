@@ -26,7 +26,7 @@ func sheetMetalParams(t *testing.T, thicknessExpr string) *param.Parameters {
 // prism whose volume is side²·thickness at the rule's gauge.
 func TestSheetMetalFaceCreatesWall(t *testing.T) {
 	ps := sheetMetalParams(t, "2 mm") // 0.2 cm
-	fs := NewPartFeatures(ps, nil)
+	fs := NewPartFeatures(ps)
 	pf := NewSheetMetalFaceFeatures(fs).Add(&SheetMetalFaceDefinition{Sketch: squareSketch(4), ProfileIndex: 0, Operation: ops.NewBody})
 
 	fs.Recompute()
@@ -54,7 +54,7 @@ func TestSheetMetalFaceCreatesWall(t *testing.T) {
 func TestSheetMetalFaceIsParameterBacked(t *testing.T) {
 	ps := sheetMetalParams(t, "1 mm")
 	thickness, _ := ps.ByName("Thickness")
-	fs := NewPartFeatures(ps, nil)
+	fs := NewPartFeatures(ps)
 	NewSheetMetalFaceFeatures(fs).Add(&SheetMetalFaceDefinition{Sketch: squareSketch(4), ProfileIndex: 0, Operation: ops.NewBody})
 
 	fs.Recompute()
@@ -75,7 +75,7 @@ func TestSheetMetalFaceIsParameterBacked(t *testing.T) {
 // TestSheetMetalFaceNeedsThickness a Face without a Thickness parameter goes sick with a
 // clear message rather than building a degenerate wall.
 func TestSheetMetalFaceNeedsThickness(t *testing.T) {
-	fs := NewPartFeatures(param.NewParameters(), nil) // no Thickness parameter
+	fs := NewPartFeatures(param.NewParameters()) // no Thickness parameter
 	pf := NewSheetMetalFaceFeatures(fs).Add(&SheetMetalFaceDefinition{Sketch: squareSketch(4), ProfileIndex: 0, Operation: ops.NewBody})
 	fs.Recompute()
 	if pf.Health().OK() {
@@ -87,7 +87,7 @@ func TestSheetMetalFaceNeedsThickness(t *testing.T) {
 // restores in-package, preserving the kind and payload.
 func TestSheetMetalFaceRoundTrip(t *testing.T) {
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewSheetMetalFaceFeatures(fs).Add(&SheetMetalFaceDefinition{Sketch: sk, ProfileIndex: 0, Direction: NegativeDir, Operation: ops.Join})
 
 	data, err := fs.MarshalRecipe(oneSketch{sk})
@@ -101,7 +101,7 @@ func TestSheetMetalFaceRoundTrip(t *testing.T) {
 		t.Errorf("payload = %+v, want negative/join", data[0].SheetMetalFace)
 	}
 
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{sk}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -112,7 +112,7 @@ func TestSheetMetalFaceRoundTrip(t *testing.T) {
 
 // TestSheetMetalFaceMissingPayload restoring a sheet-metal-face record with no payload errors.
 func TestSheetMetalFaceMissingPayload(t *testing.T) {
-	if _, err := restoreSheetMetalFace(NewPartFeatures(nil, nil), nil, oneSketch{}); err == nil {
+	if _, err := restoreSheetMetalFace(NewPartFeatures(nil), nil, oneSketch{}); err == nil {
 		t.Error("restoreSheetMetalFace(nil) must error")
 	}
 }
@@ -148,7 +148,7 @@ func TestSheetMetalFaceDirections(t *testing.T) {
 	want := 4.0 * 4.0 * 0.2 // side²·thickness
 	for _, dir := range []ExtentDirection{PositiveDir, NegativeDir, SymmetricDir} {
 		ps := sheetMetalParams(t, "2 mm")
-		fs := NewPartFeatures(ps, nil)
+		fs := NewPartFeatures(ps)
 		def := &SheetMetalFaceDefinition{Sketch: squareSketch(4), ProfileIndex: 0, Direction: dir, Operation: ops.NewBody}
 		pf := NewSheetMetalFaceFeatures(fs).Add(def)
 		if pf.Definition() == nil {
@@ -181,7 +181,7 @@ func TestSheetMetalFaceDefinitionAccessor(t *testing.T) {
 // rather than starting a new body.
 func TestSheetMetalFaceSecondaryJoins(t *testing.T) {
 	ps := sheetMetalParams(t, "2 mm")
-	fs := NewPartFeatures(ps, nil)
+	fs := NewPartFeatures(ps)
 	faces := NewSheetMetalFaceFeatures(fs)
 	faces.Add(&SheetMetalFaceDefinition{Sketch: squareSketch(4), ProfileIndex: 0, Operation: ops.NewBody})
 	// A larger coplanar square over the same plane: joining unions the two prisms into one sheet.

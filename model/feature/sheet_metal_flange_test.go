@@ -154,7 +154,7 @@ func TestFlangeRejectsBadDims(t *testing.T) {
 // TestFlangeRoundTrip the flange recipe (edge key + height + angle + radius + flip) marshals
 // and restores, preserving the kind and payload; a 0 angle/radius restores as the defaults.
 func TestFlangeRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewSheetMetalFlangeFeatures(fs).Add(&SheetMetalFlangeDefinition{
 		EdgeKey: []byte("edge-key"),
 		Height:  func() float64 { return 1.5 },
@@ -174,7 +174,7 @@ func TestFlangeRoundTrip(t *testing.T) {
 		t.Errorf("payload = %+v, want height 1.5 / angle π/3 / radius 0.3 / flip", d)
 	}
 
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -185,7 +185,7 @@ func TestFlangeRoundTrip(t *testing.T) {
 
 // TestFlangeMissingPayload restoring a flange record with no payload errors.
 func TestFlangeMissingPayload(t *testing.T) {
-	if _, err := restoreSheetMetalFlange(NewPartFeatures(nil, nil), nil); err == nil {
+	if _, err := restoreSheetMetalFlange(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreSheetMetalFlange(nil) must error")
 	}
 }

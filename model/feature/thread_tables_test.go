@@ -66,7 +66,7 @@ func TestThreadClassesPerSide(t *testing.T) {
 }
 
 func TestThreadDefinitionParityFields(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(prismBody())
 	// A cut tapered thread is rejected with a precise error (conical faces are a follow-up).
 	pf := NewDressUpFeatures(fs).AddThreadDef(&ThreadDefinition{

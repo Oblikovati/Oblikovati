@@ -25,7 +25,7 @@ func (o oneSketch) At(i int) (*sketch.Sketch, bool) {
 
 func TestExtrudeFeatureRoundTrip(t *testing.T) {
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 5 })
 
 	data, err := fs.MarshalRecipe(oneSketch{sk})
@@ -39,7 +39,7 @@ func TestExtrudeFeatureRoundTrip(t *testing.T) {
 		t.Errorf("distance = %v, want 5", data[0].Extrude.Distance)
 	}
 
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{sk}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -56,7 +56,7 @@ func (fakeFeature) Kind() string                    { return "fake" }
 func (fakeFeature) Recompute(Input) (Output, error) { return Output{}, nil }
 
 func TestDressUpFeaturesRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	du := NewDressUpFeatures(fs)
 	du.AddFillet([][]byte{[]byte("edge-a"), []byte("edge-b")}, func() float64 { return 0.5 })
 	du.AddChamfer([][]byte{[]byte("edge-c")}, func() float64 { return 0.3 })
@@ -68,7 +68,7 @@ func TestDressUpFeaturesRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -93,7 +93,7 @@ func TestDressUpFeaturesRoundTrip(t *testing.T) {
 // TestFilletRadiusPointsRoundTrip checks a variable fillet's intermediate radius stops survive a
 // recipe round trip (#695).
 func TestFilletRadiusPointsRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewDressUpFeatures(fs).AddFilletSets([]FilletEdgeSet{{
 		EdgeKeys:     [][]byte{[]byte("edge-v")},
 		StartRadius:  func() float64 { return 0.3 },
@@ -104,7 +104,7 @@ func TestFilletRadiusPointsRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -121,14 +121,14 @@ func TestFilletRadiusPointsRoundTrip(t *testing.T) {
 // TestFaceFilletRoundTrip checks the face-fillet feature's two face sets + radius survive a recipe
 // round trip (#694).
 func TestFaceFilletRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewDressUpFeatures(fs).AddFaceFillet(
 		[][]byte{[]byte("face-a"), []byte("face-b")}, [][]byte{[]byte("face-c")}, func() float64 { return 0.7 })
 	data, err := fs.MarshalRecipe(oneSketch{})
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -146,14 +146,14 @@ func TestFaceFilletRoundTrip(t *testing.T) {
 
 // TestFullRoundRoundTrip checks the full-round fillet's three face sets survive a recipe round trip (#694).
 func TestFullRoundRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewDressUpFeatures(fs).AddFullRoundFillet(
 		[][]byte{[]byte("side-1")}, [][]byte{[]byte("center")}, [][]byte{[]byte("side-2")})
 	data, err := fs.MarshalRecipe(oneSketch{})
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -166,13 +166,13 @@ func TestFullRoundRoundTrip(t *testing.T) {
 
 // TestRuleFilletRoundTrip checks the rule fillet's rule + radius survive a recipe round trip (#486).
 func TestRuleFilletRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewDressUpFeatures(fs).AddRuleFillet(RuleFilletAllFillets, func() float64 { return 1.5 })
 	data, err := fs.MarshalRecipe(oneSketch{})
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -187,13 +187,13 @@ func TestRuleFilletRoundTrip(t *testing.T) {
 
 // TestSnapFitRoundTrip checks the cantilever snap-fit's dimensions survive a recipe round trip (#486).
 func TestSnapFitRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewPlasticFeatures(fs).AddCantileverSnapFit(cf(20), cf(6), cf(2), cf(3), cf(1.5))
 	data, err := fs.MarshalRecipe(oneSketch{})
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -209,7 +209,7 @@ func TestSnapFitRoundTrip(t *testing.T) {
 // default, matching a freshly created chamfer).
 func TestChamferFlatCornersRoundTrip(t *testing.T) {
 	for _, flat := range []bool{true, false} {
-		fs := NewPartFeatures(nil, nil)
+		fs := NewPartFeatures(nil)
 		NewDressUpFeatures(fs).AddChamferCorners([][]byte{[]byte("edge")}, func() float64 { return 0.3 }, flat)
 		data, err := fs.MarshalRecipe(oneSketch{})
 		if err != nil {
@@ -218,7 +218,7 @@ func TestChamferFlatCornersRoundTrip(t *testing.T) {
 		if data[0].Chamfer.FlatCorners == nil || *data[0].Chamfer.FlatCorners != flat {
 			t.Fatalf("serialized FlatCorners = %v, want %v", data[0].Chamfer.FlatCorners, flat)
 		}
-		fresh := NewPartFeatures(nil, nil)
+		fresh := NewPartFeatures(nil)
 		if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 			t.Fatalf("ApplyRecipe(flat=%v): %v", flat, err)
 		}
@@ -228,7 +228,7 @@ func TestChamferFlatCornersRoundTrip(t *testing.T) {
 	}
 
 	// An older recipe without the flag restores as flat (the default).
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	legacy := []FeatureData{{Kind: "chamfer", Chamfer: &EdgeDressData{Edges: []string{}, Value: 0.3}}}
 	if err := fresh.ApplyRecipe(legacy, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe(legacy): %v", err)
@@ -242,7 +242,7 @@ func TestChamferFlatCornersRoundTrip(t *testing.T) {
 // and that an older recipe with no field restores as miter (the zero-value default).
 func TestFilletCornerTypeRoundTrip(t *testing.T) {
 	for _, corner := range []types.FilletCornerType{types.FilletCornerMiter, types.FilletCornerSetback, types.FilletCornerRound} {
-		fs := NewPartFeatures(nil, nil)
+		fs := NewPartFeatures(nil)
 		NewDressUpFeatures(fs).AddFilletCorner([][]byte{[]byte("edge")}, func() float64 { return 0.3 }, corner)
 		data, err := fs.MarshalRecipe(oneSketch{})
 		if err != nil {
@@ -251,7 +251,7 @@ func TestFilletCornerTypeRoundTrip(t *testing.T) {
 		if got := types.FilletCornerType(data[0].Fillet.CornerType); got != corner {
 			t.Fatalf("serialized CornerType = %v, want %v", got, corner)
 		}
-		fresh := NewPartFeatures(nil, nil)
+		fresh := NewPartFeatures(nil)
 		if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 			t.Fatalf("ApplyRecipe(%v): %v", corner, err)
 		}
@@ -260,7 +260,7 @@ func TestFilletCornerTypeRoundTrip(t *testing.T) {
 		}
 	}
 	// An older recipe without the field restores as miter (the zero default).
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	legacy := []FeatureData{{Kind: "fillet", Fillet: &EdgeDressData{Edges: []string{}, Value: 0.3}}}
 	if err := fresh.ApplyRecipe(legacy, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe(legacy): %v", err)
@@ -271,7 +271,7 @@ func TestFilletCornerTypeRoundTrip(t *testing.T) {
 }
 
 func TestSolidFeaturesRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewHoleFeatures(fs).AddTapped([]byte("face-1"), func() float64 { return 6 }, func() float64 { return 10 }, "M6x1")
 	NewBossFeatures(fs).Add([]byte("face-2"), func() float64 { return 8 }, func() float64 { return 4 })
 	NewModifyFeatures(fs).AddCombine(0, 1, ops.Cut)
@@ -280,7 +280,7 @@ func TestSolidFeaturesRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -306,14 +306,14 @@ func TestSolidFeaturesRoundTrip(t *testing.T) {
 }
 
 func TestThroughAllHoleRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewHoleFeatures(fs).AddDrilledThrough([]byte("face-9"), func() float64 { return 3 })
 
 	data, err := fs.MarshalRecipe(oneSketch{})
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -324,7 +324,7 @@ func TestThroughAllHoleRoundTrip(t *testing.T) {
 }
 
 func TestCounterboreHoleRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	cb := NewHoleFeatures(fs).AddCounterbore([]byte("face-3"),
 		func() float64 { return 2 }, func() float64 { return 6 },
 		func() float64 { return 4 }, func() float64 { return 1 })
@@ -334,7 +334,7 @@ func TestCounterboreHoleRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -346,7 +346,7 @@ func TestCounterboreHoleRoundTrip(t *testing.T) {
 }
 
 func TestCountersinkHoleRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewHoleFeatures(fs).AddCountersink([]byte("face-4"),
 		func() float64 { return 2 }, func() float64 { return 5 },
 		func() float64 { return 4 }, func() float64 { return 1.5708 })
@@ -355,7 +355,7 @@ func TestCountersinkHoleRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -367,7 +367,7 @@ func TestCountersinkHoleRoundTrip(t *testing.T) {
 }
 
 func TestDrilledHolePointAngleRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewHoleFeatures(fs).AddDrilled([]byte("face-7"), func() float64 { return 2 }, func() float64 { return 4 })
 	pf.Definition().(*HoleFeature).Definition().PointAngle = func() float64 { return 2.0594 } // ~118°
 
@@ -375,7 +375,7 @@ func TestDrilledHolePointAngleRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -391,14 +391,14 @@ func TestDrilledHolePointAngleRoundTrip(t *testing.T) {
 func TestRibRoundTrip(t *testing.T) {
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(4, 0))
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewRibFeatures(fs).Add(sk, 0, func() float64 { return 1.5 }, func() float64 { return 3 }, ops.Join)
 
 	data, err := fs.MarshalRecipe(oneSketch{s: sk})
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{s: sk}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -411,14 +411,14 @@ func TestRibRoundTrip(t *testing.T) {
 
 func TestEmbossRoundTrip(t *testing.T) {
 	sk := squareSketch(4)
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewEmbossFeatures(fs).Add(sk, []int{0}, func() float64 { return 0.8 }, true, 0.1)
 
 	data, err := fs.MarshalRecipe(oneSketch{s: sk})
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{s: sk}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -433,14 +433,14 @@ func TestEmbossRoundTrip(t *testing.T) {
 // survive a recipe round trip (#486).
 func TestRestRoundTrip(t *testing.T) {
 	sk := squareSketch(4)
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewPlasticFeatures(fs).AddRest(sk, []int{0}, func() float64 { return 1.2 }, true, 0.05)
 
 	data, err := fs.MarshalRecipe(oneSketch{s: sk})
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{s: sk}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -455,14 +455,14 @@ func TestRevolveAboutCenterlineRoundTrip(t *testing.T) {
 	sk := offsetSquareSketch(2, 2)
 	cl := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(0, 2))
 	cl.SetCenterline(true)
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewRevolveFeatures(fs).AddAboutCenterline(sk, 0, func() float64 { return 0 }, ops.NewBody)
 
 	data, err := fs.MarshalRecipe(oneSketch{s: sk})
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{s: sk}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -474,7 +474,7 @@ func TestRevolveAboutCenterlineRoundTrip(t *testing.T) {
 
 func TestPatternFeaturesRebindSourceByIndex(t *testing.T) {
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	src := NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 5 })
 	NewPatternFeatures(fs).AddRectangular([]ID{src.ID()}, func() int { return 3 }, func() int { return 2 }, math.V3(2, 0, 0), math.V3(0, 2, 0))
 	NewPatternFeatures(fs).AddMirror([]ID{src.ID()}, []byte("plane-key"), math.P3(0, 0, 0), math.V3(1, 0, 0))
@@ -483,7 +483,7 @@ func TestPatternFeaturesRebindSourceByIndex(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{sk}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -514,7 +514,7 @@ func TestPatternFeaturesRebindSourceByIndex(t *testing.T) {
 
 func TestSurfaceFeaturesRoundTrip(t *testing.T) {
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBoundaryPatchFeatures(fs).Add(sk, 0, PatchFree)
 	NewRuledSurfaceFeatures(fs).AddByDistance(sk, 0, RuledNormal, func() float64 { return 2 })
 
@@ -522,7 +522,7 @@ func TestSurfaceFeaturesRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{sk}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -541,7 +541,7 @@ func TestSurfaceFeaturesRoundTrip(t *testing.T) {
 }
 
 func TestFaceEditFeaturesRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	m := NewModifyFeatures(fs)
 	m.AddSplit([][]byte{[]byte("f-split")})
 	m.AddMoveFace([][]byte{[]byte("f-move")}, math.V3(1, 2, 3))
@@ -554,7 +554,7 @@ func TestFaceEditFeaturesRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -576,7 +576,7 @@ func TestFaceEditFeaturesRoundTrip(t *testing.T) {
 }
 
 func TestUncodedFeatureErrorsRatherThanDrops(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	fs.Add(fakeFeature{})
 	if _, err := fs.MarshalRecipe(oneSketch{}); err == nil {
 		t.Error("MarshalRecipe silently accepted a feature with no codec; it must error")
@@ -587,7 +587,7 @@ func TestUncodedFeatureErrorsRatherThanDrops(t *testing.T) {
 // modelDiameter) survive the recipe codec, and a legacy thread without them
 // restores with the defaults.
 func TestThreadParityFieldsRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewDressUpFeatures(fs).AddThreadDef(&ThreadDefinition{
 		FaceKey: []byte("face-1"), Designation: "M8x1.25", Cut: false,
 		Class: "6H", Tapered: true, ModelDiameter: types.ThreadTapDrillDiameter,
@@ -599,7 +599,7 @@ func TestThreadParityFieldsRoundTrip(t *testing.T) {
 	if d := data[0].Thread; d.Class != "6H" || !d.Tapered || d.ModelDiameter != "tapDrill" {
 		t.Fatalf("serialized thread = %+v, want class/tapered/modelDiameter carried", d)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -609,7 +609,7 @@ func TestThreadParityFieldsRoundTrip(t *testing.T) {
 	}
 
 	legacy := []FeatureData{{Kind: "thread", Thread: &ThreadData{Face: "ZmFjZQ==", Designation: "M6x1"}}}
-	old := NewPartFeatures(nil, nil)
+	old := NewPartFeatures(nil)
 	if err := old.ApplyRecipe(legacy, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe(legacy): %v", err)
 	}

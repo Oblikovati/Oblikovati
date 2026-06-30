@@ -85,7 +85,7 @@ func TestHemTypeParse(t *testing.T) {
 
 // TestHemRoundTrip the hem recipe (edge + length + type + gap + flip) marshals and restores.
 func TestHemRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewSheetMetalHemFeatures(fs).Add(&SheetMetalHemDefinition{
 		EdgeKey: []byte("edge"),
 		Length:  func() float64 { return 0.6 },
@@ -104,7 +104,7 @@ func TestHemRoundTrip(t *testing.T) {
 	if d.Length != 0.6 || d.Type != int32(OpenHem) || d.Gap != 0.4 || !d.Flip {
 		t.Errorf("payload = %+v, want length 0.6 / open / gap 0.4 / flip", d)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
@@ -124,7 +124,7 @@ func TestHemDefinitionAccessor(t *testing.T) {
 
 // TestHemMissingPayload restoring a hem record with no payload errors.
 func TestHemMissingPayload(t *testing.T) {
-	if _, err := restoreSheetMetalHem(NewPartFeatures(nil, nil), nil); err == nil {
+	if _, err := restoreSheetMetalHem(NewPartFeatures(nil), nil); err == nil {
 		t.Error("restoreSheetMetalHem(nil) must error")
 	}
 }

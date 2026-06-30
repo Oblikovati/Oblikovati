@@ -41,7 +41,7 @@ func TestCircIncrementSpacing(t *testing.T) {
 // TestPatternBoundaryClipsOutsideOccurrences drops the occurrences whose centre falls
 // outside the boundary loop (M20-F18).
 func TestPatternBoundaryClipsOutsideOccurrences(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	src := NewBaseFeatures(fs).AddBase(prismBody()) // unit cube [0,1]^3, centre (0.5,0.5,0.5)
 	rect := NewPatternFeatures(fs).AddRectangular([]ID{src.ID()},
 		func() int { return 3 }, func() int { return 1 }, math.V3(2, 0, 0), math.Vector3{})
@@ -69,7 +69,7 @@ func TestPatternBoundaryClipsOutsideOccurrences(t *testing.T) {
 // round-trip (M20-F18).
 func TestPatternOptionsRoundTrip(t *testing.T) {
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	src := NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 5 })
 	rect := NewPatternFeatures(fs).AddRectangular([]ID{src.ID()},
 		func() int { return 2 }, func() int { return 1 }, math.V3(4, 0, 0), math.Vector3{})
@@ -81,7 +81,7 @@ func TestPatternOptionsRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{sk}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}

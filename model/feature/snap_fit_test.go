@@ -14,7 +14,7 @@ func cf(v float64) func() float64 { return func() float64 { return v } }
 // TestSnapFitBuildsValidHookSolid: a standalone cantilever snap-fit is one valid solid whose volume
 // is the beam plus the catch lip (#486).
 func TestSnapFitBuildsValidHookSolid(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewPlasticFeatures(fs).AddCantileverSnapFit(cf(20), cf(6), cf(2), cf(3), cf(1.5))
 	fs.Recompute()
 
@@ -50,7 +50,7 @@ func TestSnapFitRejectsBadDimensions(t *testing.T) {
 		{"zero thickness", 10, 4, 0, 2, 1},
 		{"catch longer than beam", 5, 4, 2, 6, 1},
 	} {
-		fs := NewPartFeatures(nil, nil)
+		fs := NewPartFeatures(nil)
 		pf := NewPlasticFeatures(fs).AddCantileverSnapFit(cf(c.l), cf(c.w), cf(c.th), cf(c.cl), cf(c.ch))
 		fs.Recompute()
 		if pf.Health().OK() {

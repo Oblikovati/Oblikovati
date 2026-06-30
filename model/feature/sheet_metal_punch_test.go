@@ -33,7 +33,7 @@ func twoHolePunchSketch() *sketch.Sketch {
 func TestPunchStampsEveryProfile(t *testing.T) {
 	ps := param.NewParameters()
 	mustParam(t, ps, "Thickness", "2 mm")
-	fs := NewPartFeatures(ps, nil)
+	fs := NewPartFeatures(ps)
 	NewSheetMetalFaceFeatures(fs).Add(&SheetMetalFaceDefinition{Sketch: squareSketch(4), ProfileIndex: 0, Operation: ops.NewBody})
 	fs.Recompute()
 	full := sheetVolume(fs.Result()[0])
@@ -55,7 +55,7 @@ func TestPunchStampsEveryProfile(t *testing.T) {
 func TestPunchRejectsEmptySketch(t *testing.T) {
 	ps := param.NewParameters()
 	mustParam(t, ps, "Thickness", "2 mm")
-	fs := NewPartFeatures(ps, nil)
+	fs := NewPartFeatures(ps)
 	NewSheetMetalFaceFeatures(fs).Add(&SheetMetalFaceDefinition{Sketch: squareSketch(4), ProfileIndex: 0, Operation: ops.NewBody})
 	empty := sketch.NewSketches().Add(sketch.XYPlane()) // no profiles
 	pf := NewSheetMetalPunchFeatures(fs).Add(&SheetMetalPunchDefinition{Sketch: empty})
@@ -67,7 +67,7 @@ func TestPunchRejectsEmptySketch(t *testing.T) {
 
 // TestPunchRoundTrip a punch persists its sketch + depth and restores.
 func TestPunchRoundTrip(t *testing.T) {
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	sk := twoHolePunchSketch()
 	NewSheetMetalPunchFeatures(fs).Add(&SheetMetalPunchDefinition{Sketch: sk, Depth: constFloat(0.1)})
 
@@ -78,7 +78,7 @@ func TestPunchRoundTrip(t *testing.T) {
 	if data[0].Kind != "sheet-metal-punch" || data[0].SheetMetalPunch == nil || data[0].SheetMetalPunch.Depth != 0.1 {
 		t.Fatalf("marshaled = %+v", data[0])
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{sk}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}

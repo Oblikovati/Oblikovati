@@ -21,7 +21,7 @@ func axisAligned(n math.Vector3) bool {
 // healing back to a sharp box with fewer faces — a validated lighter body (M20-F13 #490).
 func TestSimplifyRemovesChamferLighter(t *testing.T) {
 	box, edge := box2(t)
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
 	NewDressUpFeatures(fs).AddChamfer([][]byte{edge}, func() float64 { return 0.5 })
 	fs.Recompute()
@@ -56,7 +56,7 @@ func TestSimplifyRemovesChamferLighter(t *testing.T) {
 // × height (M20-F13 #490).
 func TestUnwrapFlattensCylinder(t *testing.T) {
 	const r, h = 5.0, 10.0
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	sk.Circles().AddByCenterRadius(math.P2(0, 0), r)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return h })
@@ -97,7 +97,7 @@ func TestUnwrapFlattensCylinder(t *testing.T) {
 // TestSimplifyUnwrapRoundTrip checks both features survive an .obk round trip.
 func TestSimplifyUnwrapRoundTrip(t *testing.T) {
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 1 })
 	NewModifyFeatures(fs).AddSimplify([][]byte{[]byte("f0")}, true)
 	NewModifyFeatures(fs).AddUnwrap([]byte("f1"))
@@ -106,7 +106,7 @@ func TestSimplifyUnwrapRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	fresh := NewPartFeatures(nil, nil)
+	fresh := NewPartFeatures(nil)
 	if err := fresh.ApplyRecipe(data, oneSketch{sk}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}

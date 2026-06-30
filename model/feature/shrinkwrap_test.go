@@ -152,7 +152,7 @@ func holedPlate(t *testing.T) *topo.Body {
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	addRect(sk, 0, 0, 4, 4)
 	addRect(sk, 1, 1, 3, 3)
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 2 })
 	fs.Recompute()
 	return fs.Result()[0]
@@ -195,7 +195,7 @@ func TestShrinkwrapBreakLinkFreezesAndVersionTracks(t *testing.T) {
 	src := &fakeAssemblySource{placed: []PlacedBody{
 		{Body: block, Transform: math.Identity4(), Source: occFor("a:1")},
 	}}
-	fs := NewPartFeatures(nil, nil)
+	fs := NewPartFeatures(nil)
 	pf := NewShrinkwrapComponents(fs).AddShrinkwrap(src, ShrinkwrapDefinition{}, DeriveSourceLink{})
 	fs.Recompute()
 	s := pf.Definition().(*ShrinkwrapComponent)
