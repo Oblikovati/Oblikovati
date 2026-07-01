@@ -106,6 +106,21 @@ func (s *Session) PanelValueChanged(windowID, controlID, value string) {
 	event.Emit(s.bus, event.After, PanelValueChanged{WindowID: windowID, ControlID: controlID, Value: value})
 }
 
+// SetDockableWindowReferences replaces a referenceList control's rows with refs (one row per
+// ref, Label left empty for host derivation) and notifies the owning add-in. The stored
+// DockableWindowSpec is updated so a subsequent read reflects the new state. Mirrors
+// PanelValueChanged. Called by the add-in router for dockableWindows.setReferences.
+func (s *Session) SetDockableWindowReferences(windowID, controlID string, refs []string) {
+	if spec, ok := s.dockableWindows.windows[windowID]; ok {
+		if setControlRefs(spec.Controls, controlID, refs) {
+			s.dockableWindows.windows[windowID] = spec
+		}
+	}
+	event.Emit(s.bus, event.After, PanelReferencesChanged{
+		WindowID: windowID, ControlID: controlID, Refs: refs, Action: "set",
+	})
+}
+
 // DeleteDockableWindow removes a window, emitting a hide first when it was visible
 // (the add-in sees a consistent shown→hidden→gone sequence).
 func (s *Session) DeleteDockableWindow(id string) error {
