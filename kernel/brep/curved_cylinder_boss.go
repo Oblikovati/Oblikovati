@@ -10,14 +10,18 @@ import (
 	"oblikovati.org/math"
 )
 
-// Cylindrical boss union (M2 Phase 3, Oblikovati/Oblikovati#1336 — the coplanar curved+planar overlap
-// case). A cylinder sitting flush on a planar face of a solid (a boss: think a spigot on a plate) shares
-// that face's plane: its base disk is COINCIDENT and counter-oriented with the disk it covers, the
-// canonical coplanar overlap. The general boolean faceted this through CSG. The union is exact — the seat
-// face loses the boss-footprint disk (gains a circular hole), the boss adds one cylinder wall and a top
-// cap — so build it directly through the curvedFace model and keep the analytic surface. The boss is the
-// join analogue of CutCylindricalHole: a hole in the seat face plus an OUTWARD-facing wall (a solid boss,
-// material toward the axis) rather than a reversed one. Anything else (the cylinder not seated flush and
+// Cylindrical boss union — the CURVED-ON-PLANAR boolean KIND (ADR-0045; M2 Phase 3,
+// Oblikovati/Oblikovati#1336). A cylinder sitting flush on a planar face of a solid (a boss: think a spigot
+// on a plate) meets that face in its base circle, a contact that lies STRICTLY INSIDE the seat face, so the
+// result is that single closed conic added as an inner loop — the same shape as the drilled through-hole
+// (CutCylindricalHole), its join analogue. This is a transversal curved∩PLANAR contact, not a ruled∩ruled
+// crossing: the tool cylinder crosses a plane (not another periodic ruled band), and the imprint is one
+// interior circle, so no (u,v) SSI arrangement is involved (ADR-0045 taxonomy). The base disk is additionally
+// COINCIDENT and counter-oriented with the disk it covers — a degenerate-overlap detail absorbed by the seat
+// hole. The general boolean faceted this through CSG; the union is exact — the seat face loses the
+// boss-footprint disk (gains a circular hole), the boss adds one cylinder wall and a top cap — so build it
+// directly through the curvedFace model and keep the analytic surface. The wall faces OUTWARD (a solid boss,
+// material toward the axis) rather than reversed. Anything else (the cylinder not seated flush and
 // perpendicular on a single face, the circle clipping the face) returns ok=false so the caller keeps CSG.
 
 // JoinCylindricalBoss returns target ∪ tool when tool is a cylinder seated flush and perpendicular on one

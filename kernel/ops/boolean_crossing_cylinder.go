@@ -20,9 +20,10 @@ import (
 // boolean must never be adopted); centralising it means a pair added to the table below cannot forget
 // it, the copy-paste hazard this file used to carry as 18 near-identical handlers.
 
-// ruledBuild builds the exact analytic result for one curved pair. The general SSI pipeline builders
-// (brep.*General) take the imprint recorder; the bespoke analytic constructors (equal-radius Steinmetz,
-// drill-through, coaxial, boss) take none and are adapted with withoutRecorder.
+// ruledBuild builds the exact analytic result for one curved pair. The transversal SSI pipeline builders
+// (brep.*General) take the imprint recorder; the curved-on-planar and degenerate-overlap constructors
+// (drill-through, coaxial, boss — ADR-0045) trace no SSI imprint, take none, and are adapted with
+// withoutRecorder.
 type ruledBuild func(target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool)
 
 // gatedCurved wraps a builder with the op guard and the single validBooleanSolid gate every curved pair
@@ -48,11 +49,14 @@ func withoutRecorder(build func(target, tool *topo.Body) (*topo.Body, bool)) rul
 
 // The curved-pair paths, each an (op, builder) gated once by gatedCurved. Names are referenced by
 // curvedExactPaths in boolean.go, which fixes their try-order; the comment on each records the pair it
-// handles. The general SSI→trim→classify→stitch pipeline (#1403/#1476) builds every ruled pair; the
-// equal-radius Steinmetz INTERSECT now rides it too (#1403) — its self-intersecting imprint is split at the
-// analytic pinches into four open arcs so the arrangement never sees the crossing (brep.SteinmetzIntersect-
-// General). The Steinmetz CUT and JOIN keep the bespoke band assembler for now (their kept region is the
-// cylinders' pinched OUTSIDE bands, not lobes; folding those into the general pipeline is tracked follow-up).
+// handles. Most are the TRANSVERSAL-crossing KIND (ADR-0045): the general SSI→trim→classify→stitch pipeline
+// (#1403/#1476) builds every ruled pair, and the whole equal-radius Steinmetz family — intersect, cut AND
+// join — now rides it (#1403), its self-intersecting imprint split at the analytic pinches into four open
+// arcs so the arrangement never sees the crossing (brep.Steinmetz*General). The remaining three are the
+// other two KINDs, which are NOT transversal SSI and correctly do NOT ride the (u,v) arrangement: the drill
+// through-hole and the cylinder boss are CURVED-ON-PLANAR (a tool cylinder crossing a planar face in a
+// strictly-interior circle), and the coaxial union is a DEGENERATE OVERLAP (coincident side surfaces, no SSI
+// curve). See ADR-0045 for why each stays a distinct analytic handler rather than folding into the pipeline.
 var (
 	// Intersect — the band of the thin operand plus the fat operand's two lens caps.
 	curvedCrossingIntersect     = gatedCurved(Intersect, brep.CrossingCylinderIntersectGeneral) // two crossing cylinders
