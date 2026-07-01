@@ -39,6 +39,15 @@ func (c ruledUV) keptBySolid(u, v float64) bool {
 	return keep(c.solidOp, c.solidIsB, c.insideOther(c.point3(u, v)))
 }
 
+// keepsInsideOther reports whether this side keeps the material INSIDE the other solid (a lens/lobe region)
+// rather than OUTSIDE it (a band). It reads the operation's keep table directly — keep-inside iff a point
+// inside the other solid survives but one outside does not. For the pinched Steinmetz case this is what tells
+// the two lobes (intersect, and a cut's reversed tool bite) apart from the two wrapping bands (cut target,
+// join): the lobes must not fire the wrapping-band emission, the bands must (#1403).
+func (c ruledUV) keepsInsideOther() bool {
+	return keep(c.solidOp, c.solidIsB, true) && !keep(c.solidOp, c.solidIsB, false)
+}
+
 // anyKeptVSolid reports whether SOME axial-distance v in the band is kept at azimuth u — the general
 // (solid-membership) analogue of keptV's non-empty test, used by wrapsAllU to pick the band orientation
 // convention. It samples v because solid membership has no closed-form interval like the linear plane case.

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
@@ -37,9 +38,18 @@ func TestSteinmetzIntersectGeneralWatertight(t *testing.T) {
 		if uses := len(e.Uses()); uses != 2 {
 			t.Errorf("edge %v has %d uses, want 2 (a closed manifold — no free/non-manifold edge)", e.Lineage(), uses)
 		}
+		if _, isArc := e.Geometry().(geom.EllipticalArc); !isArc {
+			t.Errorf("edge %v geometry %T is not an elliptical arc", e.Lineage(), e.Geometry())
+		}
 	}
 	if n := len(res.Faces()); n != 4 {
 		t.Errorf("general Steinmetz has %d faces, want 4 (two lobes per cylinder)", n)
+	}
+	if n := len(res.Edges()); n != 4 {
+		t.Errorf("general Steinmetz has %d edges, want 4 (two ellipses, each split at the pinch points)", n)
+	}
+	if n := len(res.Vertices()); n != 2 {
+		t.Errorf("general Steinmetz has %d vertices, want 2 (the pinch points)", n)
 	}
 }
 
@@ -77,5 +87,92 @@ func TestSteinmetzGeneralDeclinesUnequalRadius(t *testing.T) {
 	cz, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	if _, ok := SteinmetzIntersectGeneral(cx, cz, nil); ok {
 		t.Error("general Steinmetz must decline unequal radii (ok=false)")
+	}
+}
+
+// TestSteinmetzGeneralDeclinesNonCrossing pins that equal-radius cylinders whose axes do NOT intersect
+// (offset/skew) are not the Steinmetz case, so the general path declines (steinmetzFrame fails).
+func TestSteinmetzGeneralDeclinesNonCrossing(t *testing.T) {
+	cx, _ := SolidCylinder(math.P3(-6, 0, 5), math.V3(1, 0, 0), 3, 12) // offset in z, axes do not meet
+	cz, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
+	if _, ok := SteinmetzIntersectGeneral(cx, cz, nil); ok {
+		t.Error("non-crossing equal-radius cylinders should decline (ok=false)")
+	}
+}
+
+// steinmetzCylinders returns the canonical radius-3, length-12 perpendicular test pair (axes x and z).
+func steinmetzCylinders() (cx, cz *topo.Body) {
+	cx, _ = SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12)
+	cz, _ = SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
+	return cx, cz
+}
+
+// assertWatertightAnalytic fails unless res is a solid whose every edge is used exactly twice and whose faces
+// are exactly wantCyl cylinders + wantPlane planes — the shared shape of the Steinmetz cut/join checks.
+func assertWatertightAnalytic(t *testing.T, res *topo.Body, wantCyl, wantPlane int) {
+	t.Helper()
+	if !res.IsSolid() {
+		t.Fatalf("result is not a solid: %+v", res)
+	}
+	for _, e := range res.Edges() {
+		if uses := len(e.Uses()); uses != 2 {
+			t.Errorf("edge %v has %d uses, want 2 (a closed manifold)", e.Lineage(), uses)
+		}
+		c := e.Geometry()
+		if d := float64(c.PointAt(0).DistanceTo(e.StartVertex().Point())); d > 1e-6 {
+			t.Errorf("edge curve PointAt(0) is %g from StartVertex (arc parameterised opposite to its vertices)", d)
+		}
+	}
+	cyls, planes := 0, 0
+	for _, f := range res.Faces() {
+		switch f.Geometry().(type) {
+		case geom.Cylinder:
+			cyls++
+		case geom.Plane:
+			planes++
+		default:
+			t.Errorf("face surface %T is not analytic", f.Geometry())
+		}
+	}
+	if cyls != wantCyl || planes != wantPlane {
+		t.Errorf("got %d cylinder + %d planar faces, want %d + %d", cyls, planes, wantCyl, wantPlane)
+	}
+}
+
+// TestSteinmetzCutGeneralWatertight pins that the general cut (target − tool) produces the same watertight
+// six-face bitten solid as the bespoke constructor: two target bands (kept OUTSIDE the tool) + two reversed
+// tool lobes (the saddle bite) + two target caps. The two outside bands come from the wrapping-band emission,
+// which for the pinched Steinmetz saddle must recognise each band wraps the full azimuth (op-aware wrapsAllU).
+func TestSteinmetzCutGeneralWatertight(t *testing.T) {
+	cx, cz := steinmetzCylinders()
+	res, ok := SteinmetzCutGeneral(cx, cz, nil)
+	if !ok {
+		t.Fatal("general Steinmetz cut declined; want a six-face bitten solid")
+	}
+	assertWatertightAnalytic(t, res, 4, 2) // two A bands + two B lobes; two caps
+}
+
+// TestSteinmetzJoinGeneralWatertight pins that the general join (a ∪ b) produces the same watertight
+// eight-face union solid as the bespoke constructor: two outside bands + two caps per cylinder, the two
+// cylinders meeting along the shared intersection ellipses (no lobes, no reversal).
+func TestSteinmetzJoinGeneralWatertight(t *testing.T) {
+	cx, cz := steinmetzCylinders()
+	res, ok := SteinmetzJoinGeneral(cx, cz, nil)
+	if !ok {
+		t.Fatal("general Steinmetz join declined; want an eight-face union solid")
+	}
+	assertWatertightAnalytic(t, res, 4, 4) // two bands per cylinder; two caps per cylinder
+}
+
+// TestSteinmetzCutJoinGeneralDeclineUnequalRadius pins that both general cut and join decline the
+// non-Steinmetz case, so kernel/ops keeps the clean crossing-cylinder pipeline for unequal radii.
+func TestSteinmetzCutJoinGeneralDeclineUnequalRadius(t *testing.T) {
+	cx, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
+	cz, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
+	if _, ok := SteinmetzCutGeneral(cx, cz, nil); ok {
+		t.Error("general Steinmetz cut must decline unequal radii (ok=false)")
+	}
+	if _, ok := SteinmetzJoinGeneral(cx, cz, nil); ok {
+		t.Error("general Steinmetz join must decline unequal radii (ok=false)")
 	}
 }

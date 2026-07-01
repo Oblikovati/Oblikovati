@@ -64,7 +64,7 @@ var (
 	// Cut — drilling the target with the tool (through, blind, or two stubs of tool − target).
 	curvedCylindricalHoleCut = gatedCurved(Cut, withoutRecorder(brep.DrillThroughHole)) // straight cylinder through a planar slab
 	curvedPartialCut         = gatedCurved(Cut, brep.PartialPenetrationCutGeneral)      // blind rod hole
-	curvedSteinmetzCut       = gatedCurved(Cut, withoutRecorder(brep.EqualRadiusSteinmetzCut))
+	curvedSteinmetzCut       = gatedCurved(Cut, brep.SteinmetzCutGeneral)               // equal-R bicylinder bite, general pipeline
 	curvedConeCylinderCut    = gatedCurved(Cut, brep.ConeCylinderCutGeneral)
 	curvedConeConeCut        = gatedCurved(Cut, brep.ConeConeCutGeneral)
 	curvedCrossingCut        = gatedCurved(Cut, brep.CrossingCylinderCutGeneral)
@@ -76,5 +76,5 @@ var (
 	curvedConeCylinderJoin = gatedCurved(Join, brep.ConeCylinderJoinGeneral)
 	curvedConeConeJoin     = gatedCurved(Join, brep.ConeConeJoinGeneral)
 	curvedCrossingJoin     = gatedCurved(Join, brep.CrossingCylinderJoinGeneral)
-	curvedSteinmetzJoin    = gatedCurved(Join, withoutRecorder(brep.EqualRadiusSteinmetzJoin))
+	curvedSteinmetzJoin    = gatedCurved(Join, brep.SteinmetzJoinGeneral) // equal-R bicylinder union, general pipeline
 )
