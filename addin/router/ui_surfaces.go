@@ -18,8 +18,11 @@ func (r *Router) registerUISurfaceHandlers() {
 	r.readOnly(wire.MethodDockableWindowsSet, setDockableWindow)
 	r.readOnly(wire.MethodDockableWindowsSetVisible, setDockableWindowVisible)
 	r.readOnly(wire.MethodDockableWindowsSetValue, setDockableWindowValue)
+	r.readOnly(wire.MethodDockableWindowsSetReferences, setDockableWindowReferences)
 	r.readOnly(wire.MethodDockableWindowsDelete, deleteDockableWindow)
 	r.readOnly(wire.MethodDockableWindowsList, listDockableWindows)
+	r.readOnly(wire.MethodTaskPanelShow, showTaskPanel)
+	r.readOnly(wire.MethodTaskPanelClose, closeTaskPanel)
 	r.readOnly(wire.MethodUIListEnvironments, listEnvironments)
 }
 
@@ -87,6 +90,41 @@ func setDockableWindowValue(s *app.Session, args json.RawMessage) (json.RawMessa
 		return nil, err
 	}
 	s.PanelValueChanged(req.WindowId, req.ControlId, req.Value)
+	return ok()
+}
+
+// setDockableWindowReferences replaces a referenceList control's rows and notifies the owning
+// add-in (wire dockableWindows.setReferences). Refs is the full new set.
+func setDockableWindowReferences(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
+	var req wire.SetDockableWindowReferencesArgs
+	if err := decode(args, &req); err != nil {
+		return nil, err
+	}
+	s.SetDockableWindowReferences(req.WindowId, req.ControlId, req.Refs)
+	return ok()
+}
+
+// showTaskPanel stores a modal task panel for the head to display (wire taskPanel.show).
+func showTaskPanel(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
+	var req wire.ShowTaskPanelArgs
+	if err := decode(args, &req); err != nil {
+		return nil, err
+	}
+	if err := s.ShowTaskPanel(req.Panel); err != nil {
+		return nil, err
+	}
+	return ok()
+}
+
+// closeTaskPanel removes a modal task panel programmatically (wire taskPanel.close).
+func closeTaskPanel(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
+	var req wire.CloseTaskPanelArgs
+	if err := decode(args, &req); err != nil {
+		return nil, err
+	}
+	if err := s.CloseTaskPanel(req.ID); err != nil {
+		return nil, err
+	}
 	return ok()
 }
 

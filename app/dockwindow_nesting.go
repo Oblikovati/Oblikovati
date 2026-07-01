@@ -53,3 +53,29 @@ func setControlValue(controls []wire.PanelControlSpec, id, value string) bool {
 	}
 	return false
 }
+
+// setControlRefs finds a referenceList control by id (recursing containers) and replaces its
+// Rows with one row per ref (Label left empty for host derivation). Returns true when the
+// control was found and updated. Mirrors setControlValue's recursion and mutation discipline.
+func setControlRefs(controls []wire.PanelControlSpec, id string, refs []string) bool {
+	for i := range controls {
+		if controls[i].ID == id {
+			controls[i].Rows = rowsFromRefs(refs)
+			return true
+		}
+		if setControlRefs(controls[i].Children, id, refs) {
+			return true
+		}
+	}
+	return false
+}
+
+// rowsFromRefs converts a string ref slice into wire.PanelReferenceRow entries (Label
+// omitted so the head derives it from the geometry name).
+func rowsFromRefs(refs []string) []wire.PanelReferenceRow {
+	rows := make([]wire.PanelReferenceRow, len(refs))
+	for i, r := range refs {
+		rows[i] = wire.PanelReferenceRow{Ref: r}
+	}
+	return rows
+}

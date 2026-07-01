@@ -80,6 +80,17 @@ func subscribeSessionUI(bus *event.Bus, sink Sink) []event.Subscription {
 				Type: wire.EventPanelValueChanged, WindowId: e.WindowID, ControlId: e.ControlID, Value: e.Value,
 			})
 		}),
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.PanelReferencesChanged) event.Outcome {
+			return relayJSON(sink, wire.PanelReferencesChangedEvent{
+				Type: wire.EventPanelReferencesChanged, WindowId: e.WindowID,
+				ControlId: e.ControlID, Refs: e.Refs, Action: e.Action,
+			})
+		}),
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.TaskPanelClosed) event.Outcome {
+			return relayJSON(sink, wire.TaskPanelClosedEvent{
+				Type: wire.EventTaskPanelClosed, ID: e.ID, Accepted: e.Accepted,
+			})
+		}),
 		event.Subscribe(bus, event.After, func(_ event.Context, e app.SelectionChanged) event.Outcome {
 			return relayJSON(sink, wire.SelectionChangedEvent{Type: wire.EventSelectionChanged, Count: e.Count})
 		}),
@@ -311,7 +322,8 @@ func relayJSON[E wire.BrowserNodeEvent | wire.DockableWindowChangedEvent |
 	wire.AssemblyFeaturesChangedEvent | wire.ConstraintEventPayload |
 	wire.JointEventPayload | wire.ParameterChangedEvent |
 	wire.ModelChangedEvent | wire.PanelValueChangedEvent |
-	wire.FeatureLifecycleEvent | wire.SketchEditEvent](sink Sink, ev E) event.Outcome {
+	wire.FeatureLifecycleEvent | wire.SketchEditEvent |
+	wire.PanelReferencesChangedEvent | wire.TaskPanelClosedEvent](sink Sink, ev E) event.Outcome {
 	if b, err := json.Marshal(ev); err == nil {
 		sink(b)
 	}

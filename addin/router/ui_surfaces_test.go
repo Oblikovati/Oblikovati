@@ -137,3 +137,41 @@ func hasSelectorPanel(res wire.ListRibbonResult) bool {
 	}
 	return false
 }
+
+// TestDockableWindowSetReferencesOverWire checks setReferences drives a referenceList control to a
+// new row set and the stored window reflects it on a subsequent list.
+func TestDockableWindowSetReferencesOverWire(t *testing.T) {
+	r, s := seededSession(t)
+	// kind 12 = types.PanelReferenceList
+	call(t, r, s, "dockableWindows.set",
+		`{"window":{"id":"w","title":"T","dock":2,"visible":true,"controls":[{"kind":12,"id":"faces","text":"Faces"}]}}`, nil)
+
+	call(t, r, s, "dockableWindows.setReferences",
+		`{"windowId":"w","controlId":"faces","refs":["face/a"]}`, nil)
+
+	var lst wire.ListDockableWindowsResult
+	call(t, r, s, "dockableWindows.list", "{}", &lst)
+	if len(lst.Windows) != 1 || len(lst.Windows[0].Controls) != 1 || len(lst.Windows[0].Controls[0].Rows) != 1 {
+		t.Fatalf("after setReferences: windows=%+v, want one window with one control with one row", lst.Windows)
+	}
+	if got := lst.Windows[0].Controls[0].Rows[0].Ref; got != "face/a" {
+		t.Errorf("Rows[0].Ref = %q, want face/a", got)
+	}
+}
+
+// TestTaskPanelShowCloseOverWire checks taskPanel.show stores a modal panel in the session,
+// and taskPanel.close removes it.
+func TestTaskPanelShowCloseOverWire(t *testing.T) {
+	r, s := seededSession(t)
+
+	call(t, r, s, "taskPanel.show",
+		`{"panel":{"id":"fix","title":"Fixed"}}`, nil)
+	if got := s.TaskPanels().List(); len(got) != 1 {
+		t.Fatalf("after show: %d panels, want 1", len(got))
+	}
+
+	call(t, r, s, "taskPanel.close", `{"id":"fix"}`, nil)
+	if got := s.TaskPanels().List(); len(got) != 0 {
+		t.Fatalf("after close: %d panels, want 0", len(got))
+	}
+}
