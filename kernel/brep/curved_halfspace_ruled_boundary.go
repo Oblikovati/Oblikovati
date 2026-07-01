@@ -16,10 +16,12 @@ import (
 // orientLoops uses it to gate the top-rim reversal: a wrapping band's pure top-rim hi loop is reversed,
 // a non-wrapping tongue's mixed loop is not.
 func (c ruledUV) wrapsAllU() bool {
-	if c.pinched {
-		// The Steinmetz lobes touch every azimuth (the kept v-interval collapses to a point at the pinch
-		// azimuths) but are two disconnected lobes, not a band; the recogniser asserts this so the band
-		// convention (and the wrapping-tube emission) never fires for the pinch case (#1403).
+	if c.pinched && c.keepsInsideOther() {
+		// The Steinmetz intersect (and a cut's tool-side bite) keeps the two LOBES, which touch every azimuth
+		// (the kept v-interval collapses to a point at the pinch azimuths) but are two disconnected lobes, NOT
+		// a band — so the band convention and the wrapping-tube emission must never fire. A cut/join keeps the
+		// OUTSIDE instead: two saddle-rimmed bands that GENUINELY wrap the azimuth, so those fall through to the
+		// natural test below and take the wrapping-band emission like every other ruled cut/join (#1403).
 		return false
 	}
 	for i := 0; i < 720; i++ {

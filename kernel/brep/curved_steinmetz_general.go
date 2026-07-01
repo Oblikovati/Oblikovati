@@ -144,3 +144,43 @@ func SteinmetzIntersectGeneral(a, b *topo.Body, _ *diag.Recorder) (*topo.Body, b
 func steinmetzIntersectFaces(_ *topo.Body, wallA []curvedFace, _ *topo.Body, wallB []curvedFace, _, _ func(math.Point3) bool) []curvedFace {
 	return append(append([]curvedFace{}, wallA...), wallB...)
 }
+
+// SteinmetzCutGeneral builds target − tool for two equal-radius perpendicular cylinders through the general
+// pipeline (#1403): the target keeps its two OUTSIDE bands (op=Difference, isB=false) plus its whole caps,
+// and the tool keeps its two lobes inside the target (isB=true), reversed into the saddle cavity as the bite
+// walls. ok=false outside the equal-radius crossing, so kernel/ops keeps the CSG fallback.
+func SteinmetzCutGeneral(target, tool *topo.Body, _ *diag.Recorder) (*topo.Body, bool) {
+	return steinmetzGeneral(target, tool, Difference, steinmetzCutFaces)
+}
+
+// SteinmetzJoinGeneral builds a ∪ b for two equal-radius perpendicular cylinders through the general pipeline
+// (#1403): each cylinder keeps its two OUTSIDE bands (op=Union) plus its whole caps, the two cylinders meeting
+// along the shared intersection ellipses (no lobes, no reversal). ok=false outside the equal-radius crossing.
+func SteinmetzJoinGeneral(a, b *topo.Body, _ *diag.Recorder) (*topo.Body, bool) {
+	return steinmetzGeneral(a, b, Union, steinmetzJoinFaces)
+}
+
+// steinmetzCutFaces assembles the bitten solid's boundary — the mirror of the general ruled cutFaces for the
+// pinched Steinmetz case: the target's two outside bands (kept whole), the target's caps that stay outside the
+// tool, and the tool's two lobes reversed into the cavity (the saddle bite). Both cylinders' caps lie fully
+// outside the other cylinder, so no tool cap is reversed inward (that branch is a no-op for a bicylinder).
+func steinmetzCutFaces(target *topo.Body, targetBands []curvedFace, tool *topo.Body, toolLobes []curvedFace, insideTarget, insideTool func(math.Point3) bool) []curvedFace {
+	faces := make([]curvedFace, 0, len(targetBands)+len(toolLobes)+4)
+	faces = append(faces, targetBands...)
+	faces = append(faces, capsOutside(target, insideTool)...)
+	faces = append(faces, reverseCurvedFaces(toolLobes)...)
+	faces = append(faces, reverseCurvedFaces(capsInside(tool, insideTarget))...)
+	return faces
+}
+
+// steinmetzJoinFaces assembles the union's boundary — the mirror of the general ruled joinFaces for the
+// pinched Steinmetz case: each cylinder's two outside bands plus each cylinder's caps that lie outside the
+// other cylinder (all of them, for a bicylinder). No wall is reversed — a union keeps every wall outward.
+func steinmetzJoinFaces(a *topo.Body, bandsA []curvedFace, b *topo.Body, bandsB []curvedFace, insideA, insideB func(math.Point3) bool) []curvedFace {
+	faces := make([]curvedFace, 0, len(bandsA)+len(bandsB)+4)
+	faces = append(faces, bandsA...)
+	faces = append(faces, capsOutside(a, insideB)...)
+	faces = append(faces, bandsB...)
+	faces = append(faces, capsOutside(b, insideA)...)
+	return faces
+}
