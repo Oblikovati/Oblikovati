@@ -40,13 +40,29 @@ func TestShowTaskPanelRejectsEmptyID(t *testing.T) {
 	if err := s.ShowTaskPanel(wire.TaskPanelSpec{Title: "x"}); err == nil {
 		t.Fatal("expected error for empty id")
 	}
+	// Symmetric: valid ID but empty Title must also be rejected.
+	if err := s.ShowTaskPanel(wire.TaskPanelSpec{ID: "x"}); err == nil {
+		t.Fatal("expected error for empty title")
+	}
 }
 
 func TestCloseTaskPanelIsSilent(t *testing.T) {
 	s := NewSession()
 	_ = s.ShowTaskPanel(wire.TaskPanelSpec{ID: "p", Title: "P"})
+
+	// Subscribe BEFORE calling CloseTaskPanel so any stray event would be caught.
+	// The contract: CloseTaskPanel must NOT emit TaskPanelClosed (only ResolveTaskPanel does).
+	var fired bool
+	event.Subscribe(s.Events(), event.After, func(_ event.Context, _ TaskPanelClosed) event.Outcome {
+		fired = true
+		return event.Continue()
+	})
+
 	if err := s.CloseTaskPanel("p"); err != nil {
 		t.Fatalf("CloseTaskPanel: %v", err)
+	}
+	if fired {
+		t.Fatal("CloseTaskPanel must not emit TaskPanelClosed, but the event fired")
 	}
 	if err := s.CloseTaskPanel("missing"); err == nil {
 		t.Fatal("expected error closing unknown panel")
