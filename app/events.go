@@ -27,8 +27,10 @@ const (
 	tidTriadSegment         event.TypeID = 0x0510 // app/triad.go (M05-F13)
 	tidTriadDrag            event.TypeID = 0x0511 // app/triad.go (M05-F13)
 	tidManipulatorDrag      event.TypeID = 0x0512 // app/manipulators.go (M05-F13)
-	tidPanelValueChanged    event.TypeID = 0x0513 // app/dockwindow_store.go (M05-F03 editable controls)
-	tidCameraChanged        event.TypeID = 0x1601 // app/named_views.go (M16-F03 #404)
+	tidPanelValueChanged        event.TypeID = 0x0513 // app/dockwindow_store.go (M05-F03 editable controls)
+	tidPanelReferencesChanged   event.TypeID = 0x0514 // app/dockwindow_store.go (M05-F03 referenceList)
+	tidTaskPanelClosed          event.TypeID = 0x0515 // app/taskpanel_store.go (M05-F03 task panels)
+	tidCameraChanged            event.TypeID = 0x1601 // app/named_views.go (M16-F03 #404)
 	tidStyleChanged         event.TypeID = 0x1602 // app/style.go (M16-F02 #403/#408)
 )
 
@@ -80,6 +82,28 @@ type PanelValueChanged struct {
 
 // EventID implements event.Event.
 func (PanelValueChanged) EventID() event.TypeID { return tidPanelValueChanged }
+
+// PanelReferencesChanged reports a referenceList control's row set changing (by the user's
+// Add-from-selection / per-row Remove, or by an add-in's dockableWindows.setReferences).
+// Refs is the full new set; Action is "add"/"remove"/"set" for diagnostics.
+type PanelReferencesChanged struct {
+	WindowID  string
+	ControlID string
+	Refs      []string
+	Action    string
+}
+
+// EventID implements event.Event.
+func (PanelReferencesChanged) EventID() event.TypeID { return tidPanelReferencesChanged }
+
+// TaskPanelClosed reports the user accepting (OK) or cancelling a modal add-in task panel.
+type TaskPanelClosed struct {
+	ID       string
+	Accepted bool
+}
+
+// EventID implements event.Event.
+func (TaskPanelClosed) EventID() event.TypeID { return tidTaskPanelClosed }
 
 // CommandEnded fires (After) when a command finishes — OnExecute(After) /
 // OnTerminate. Failed reports whether the command returned an error.
