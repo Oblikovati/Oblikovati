@@ -178,6 +178,8 @@ func drawEditableControl(s *app.Session, windowID string, control wire.PanelCont
 		drawPanelDropdown(s, windowID, control)
 	case types.PanelSlider:
 		drawPanelSlider(s, windowID, control)
+	case types.PanelReferenceList:
+		drawPanelReferenceList(s, windowID, control)
 	default:
 		return false
 	}
@@ -219,4 +221,69 @@ func drawPanelDropdown(s *app.Session, windowID string, control wire.PanelContro
 		}
 	}
 	native.EndCombo()
+}
+
+const (
+	refListRowHeight = 22
+	refListMaxRows   = 6
+)
+
+// drawPanelReferenceList renders a referenceList control: a scrollable list of picked refs with
+// per-row Remove via right-click menu, plus Add-from-selection and Clear buttons. Edits route
+// through the session which emits panel.referencesChanged to the owning add-in.
+func drawPanelReferenceList(s *app.Session, windowID string, control wire.PanelControlSpec) {
+	panelFieldLabel(control.Text)
+	if remove := drawRefRows(control.Rows); remove >= 0 {
+		s.SetDockableWindowReferences(windowID, control.ID, refsWithout(control.Rows, remove))
+	}
+	if native.Button("Add from selection") {
+		s.AddReferencesFromSelection(windowID, control.ID, control.Accepts)
+	}
+	native.SameLine()
+	if native.Button("Clear") {
+		s.SetDockableWindowReferences(windowID, control.ID, []string{})
+	}
+}
+
+// drawRefRows draws the scrollable child region with one Selectable row per ref and a right-click
+// Remove menu item; returns the index to remove, or -1. EndChild is always called per the BeginChild
+// contract (see imgui.go:389).
+func drawRefRows(rows []wire.PanelReferenceRow) int {
+	height := float32(min(len(rows), refListMaxRows)*refListRowHeight + 8)
+	remove := -1
+	if native.BeginChild("##reflist", -1, height, true) {
+		for i, row := range rows {
+			native.PushIDInt(i)
+			native.Selectable(refRowLabel(row), false)
+			if native.BeginPopupContextItem("##refmenu") {
+				if native.MenuItem("Remove") {
+					remove = i
+				}
+				native.EndPopup()
+			}
+			native.PopID()
+		}
+	}
+	native.EndChild()
+	return remove
+}
+
+// refRowLabel returns the display label for a reference row: the add-in-supplied label when
+// present, otherwise the raw ref key (e.g. "face/abc123").
+func refRowLabel(row wire.PanelReferenceRow) string {
+	if row.Label != "" {
+		return row.Label
+	}
+	return row.Ref
+}
+
+// refsWithout returns the Ref strings from rows with the entry at index drop removed.
+func refsWithout(rows []wire.PanelReferenceRow, drop int) []string {
+	refs := make([]string, 0, len(rows))
+	for i, row := range rows {
+		if i != drop {
+			refs = append(refs, row.Ref)
+		}
+	}
+	return refs
 }
