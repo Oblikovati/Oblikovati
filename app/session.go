@@ -88,6 +88,7 @@ type Session struct {
 	clientApps                *ClientApplicationRegistry        // external automation drivers (M05-F01)
 	browserPanes              *AddInBrowserPanes                // add-in browser panes (M05-F03)
 	dockableWindows           *AddInDockableWindows             // add-in dockable windows (M05-F03)
+	taskPanels                *AddInTaskPanels                  // add-in modal task panels (M05-F03)
 	appOptions                options.All                       // typed per-user option groups (M05-F11)
 	optionsStore              options.Store                     // persists appOptions (nil ⇒ in-session only)
 	statusText                string                            // wire-set status-bar message (M05-F09)
@@ -217,6 +218,7 @@ func newSession(store doc.Store) *Session {
 		clientApps:      NewClientApplicationRegistry(),
 		browserPanes:    NewAddInBrowserPanes(),
 		dockableWindows: NewAddInDockableWindows(),
+		taskPanels:      newAddInTaskPanels(),
 		appOptions:      options.Defaults(),
 		messageCenter:   NewMessageCenter(),
 		progress:        NewProgressLedger(),
