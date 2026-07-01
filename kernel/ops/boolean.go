@@ -142,20 +142,25 @@ func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.L
 
 // curvedExactBoolean tries each exact analytic curved-boolean path in turn, returning the first that
 // applies (M2, ADR-0027 §M2). Each keeps the operands' exact analytic surfaces instead of the triangle-soup
-// CSG fallback; one that does not apply returns ok=false so booleanGeneral moves on:
-//   - a curved solid ∩ a convex planar tool (a box) → composed half-space cuts (#1334);
-//   - a curved solid − a convex prism tunnelling through it (cylinder − box) (#1334);
-//   - two crossing cylinders ∩ (rod band + fat-wall lens caps) (#1335);
-//   - a cone crossing a cylinder ∩ (cone band + cylinder-wall lens caps) (#1335);
-//   - a cone crossing a fatter cone ∩/−/∪ (rod-cone band + fat-cone lens caps; drill/stubs/join) (#1335);
-//   - two EQUAL-radius perpendicular cylinders ∩/−/∪ (the Steinmetz bicylinder and its cut/union, fitted as crossing ellipses) (#1335);
-//   - a thin rod ending inside a fatter cylinder ∩/−/∪ (a partial penetration: the plug, a blind hole, a one-sided stub) (#1335);
-//   - drilling a fat cylinder with a crossing rod (fat − rod), and the two rod stubs of rod − fat (#1335);
-//   - joining two crossing cylinders (fat ∪ rod: the fat with a rod stub each side) (#1335);
-//   - drilling/joining a fat cylinder with a crossing CONE (the tapered tunnel/stubs of cone − fat / fat ∪ cone) (#1335);
-//   - drilling a clean through-hole in an all-planar slab with a straight cylinder (a drilled plate: box − cylinder) (#1336);
-//   - the union of two coaxial equal-radius cylinders that overlap/abut → one taller cylinder (a coplanar/tangent overlap) (#1336);
-//   - the union of a cylinder seated flush on a planar face (a boss/spigot) → seat-face hole + outward wall + cap (a coplanar overlap) (#1336).
+// CSG fallback; one that does not apply returns ok=false so booleanGeneral moves on. Every path belongs to
+// one of three boolean KINDs (ADR-0045), distinguished by the DIMENSIONALITY of the operands' contact:
+//
+//	TRANSVERSAL CROSSING (contact = a 1-D curve; the general SSI → (u,v)-arrangement → classify → stitch
+//	pipeline, or a curved solid trimmed by a convex tool's planar half-spaces, #1403/#1476):
+//	  - a curved solid ∩/− a convex planar tool or prism (a box; cylinder − box) → composed half-space cuts (#1334);
+//	  - two crossing cylinders ∩/−/∪ (rod band + fat-wall lens caps) (#1335);
+//	  - a cone crossing a cylinder, and a cone crossing a fatter cone, ∩/−/∪ (#1335);
+//	  - two EQUAL-radius perpendicular cylinders ∩/−/∪ (the Steinmetz bicylinder, imprint split at its pinches) (#1403);
+//	  - a thin rod ending inside a fatter solid ∩/−/∪ (a partial penetration: plug, blind hole, one-sided stub) (#1335).
+//
+//	CURVED-ON-PLANAR (contact = one closed conic STRICTLY INSIDE a planar face, added as an inner loop; no
+//	SSI arrangement — the periodic (u,v) machinery does not apply to a flat bounded face, ADR-0045):
+//	  - drilling a clean through-hole in a slab with a straight cylinder (box − cylinder) (#1336);
+//	  - the union of a cylinder seated flush on a planar face (a boss/spigot) → seat-face hole + wall + cap (#1336).
+//
+//	DEGENERATE OVERLAP (contact = a 2-D region of COINCIDENT surfaces; a simplification, not an SSI handler,
+//	ADR-0045):
+//	  - the union of two coaxial equal-radius cylinders that overlap/abut → one taller cylinder (#1336).
 func curvedExactBoolean(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
 	for _, exact := range curvedExactPaths {
 		if body, ok := exact(op, target, tool, rec); ok {
@@ -176,12 +181,18 @@ func CurvedBoolean(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body
 
 // curvedExactPaths is the ordered list of exact analytic curved-boolean paths curvedExactBoolean tries; each
 // returns ok=false when it does not apply to (op, target, tool). The recorder carries the SSI imprint's
-// closure diagnostics (#1404) up to the boolean's caller; a path that takes no imprint ignores it.
+// closure diagnostics (#1404) up to the boolean's caller; a path that takes no imprint ignores it. The paths
+// are grouped by op (the try-order within an op is load-bearing; do not reorder across a pair that two paths
+// could both accept) and tagged with their boolean KIND (ADR-0045): [T] transversal crossing, [P] curved-on-
+// planar, [D] degenerate overlap.
 var curvedExactPaths = []func(PartFeatureOperation, *topo.Body, *topo.Body, *diag.Recorder) (*topo.Body, bool){
+	// Intersect — all [T] transversal (curved∩convex-planar half-space, then ruled crossings).
 	curvedConvexIntersect, curvedConvexSubtract,
 	curvedCrossingIntersect, curvedSteinmetzIntersect, curvedConeCylinderIntersect, curvedConeConeIntersect,
 	curvedPartialIntersect,
+	// Cut — [P] the drill through-hole (curved-on-planar), the rest [T] transversal.
 	curvedCylindricalHoleCut, curvedFlatSubtract, curvedPartialCut, curvedSteinmetzCut, curvedConeCylinderCut, curvedConeConeCut, curvedCrossingCut,
+	// Join — [D] coaxial (degenerate overlap), [P] boss (curved-on-planar), the rest [T] transversal.
 	curvedCoaxialJoin, curvedCylinderBossJoin, curvedPartialJoin, curvedConeCylinderJoin, curvedConeConeJoin, curvedCrossingJoin, curvedSteinmetzJoin,
 }
 

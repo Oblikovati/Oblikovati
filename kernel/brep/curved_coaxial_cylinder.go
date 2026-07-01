@@ -10,12 +10,15 @@ import (
 	"oblikovati.org/math"
 )
 
-// Coaxial cylinder union (M2 Phase 3, Oblikovati/Oblikovati#1336 — the coplanar/tangent curved-overlap
-// case). Two coaxial same-radius cylinders that overlap or abut along their shared axis have COINCIDENT
-// side surfaces (both lie on the very same geom.Cylinder) and their inner caps fall inside the other body
-// — the curved analogue of a coplanar overlap. The general boolean sends this to triangle-soup CSG, which
-// faceted it (a coaxial-cylinder union came back ~2.5% under volume with zero analytic faces). The union
-// is exactly one taller cylinder spanning the merged axial interval, so build that directly and keep the
+// Coaxial cylinder union — the DEGENERATE-OVERLAP boolean KIND (ADR-0045; M2 Phase 3,
+// Oblikovati/Oblikovati#1336). Two coaxial same-radius cylinders that overlap or abut along their shared
+// axis have COINCIDENT side surfaces (both lie on the very same geom.Cylinder) and their inner caps fall
+// inside the other body. This is NOT a transversal crossing: the two side surfaces do not cross in a curve,
+// they coincide over a 2-D region, so there is no SSI imprint and the (u,v)-arrangement pipeline (which
+// trims a periodic ruled band by a 1-D imprint) does not apply — coaxial is a distinct KIND, a simplification
+// of a coincident overlap, not an SSI handler. The general boolean sends it to triangle-soup CSG, which
+// faceted it (a coaxial-cylinder union came back ~2.5% under volume with zero analytic faces). The union is
+// exactly one taller cylinder spanning the merged axial interval, so build that directly and keep the
 // analytic surface. Anything off the coaxial-same-radius-overlapping case (different radius, skew axis, an
 // axial gap) returns ok=false so the caller keeps its fallback.
 

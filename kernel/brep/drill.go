@@ -11,17 +11,22 @@ import (
 	"oblikovati.org/math"
 )
 
-// CutCylindricalHole drills a clean cylindrical through-hole in a planar-faced slab — the
-// first end-to-end plane∩cylinder boolean (K1b slice 3) and the geometry a "through all"
-// Hole feature needs. The cylinder axis (line through base along axisDir) must enter and
-// exit through two planar faces whose interiors fully contain the hole circle; every other
-// face is parallel to the axis and is copied unchanged. The result is a TRUE curved B-rep:
-// the two pierced faces gain a circular hole, a single cylinder face forms the hole wall
-// (its material side faces the axis, AddReversedFace), and — because copied/pierced faces
-// keep their source lineage — every original face's reference key survives the cut (K1a/K1b).
+// CutCylindricalHole drills a clean cylindrical through-hole in a slab — the geometry a
+// "through all" Hole feature needs. The cylinder axis (line through base along axisDir) must
+// enter and exit through two planar faces whose interiors fully contain the hole circle;
+// every other face is parallel to the axis and is copied unchanged. The result is a TRUE
+// curved B-rep: the two pierced faces gain a circular hole, a single cylinder face forms the
+// hole wall (its material side faces the axis), and — because copied/pierced faces keep their
+// source lineage — every original face's reference key survives the cut (K1a/K1b).
 //
-// Partial holes (the circle clipping a face boundary, or a blind hole) need the general
-// curved arrangement and return an error here — that is a later K1b slice.
+// This is the "curved-on-planar" boolean KIND (ADR-0045): the tool cylinder crosses the slab's
+// PLANAR faces in a circle that lies STRICTLY INSIDE one face, so the contact is a single closed
+// conic added as an inner loop — no (u,v) SSI arrangement is involved. It delegates to the shared
+// curvedStitch drill assembly (drillThroughCurved), the same machinery the multi-hole, blind and
+// counterbore variants use — one drill assembly, not a second bespoke planar welder (#1403).
+//
+// Partial holes (the circle clipping a face boundary, or a blind hole) return an error here — the
+// general boolean's CSG fallback takes those (see DrillThroughHole).
 func CutCylindricalHole(slab *topo.Body, base math.Point3, axisDir math.Vector3, radius float64) (*topo.Body, error) {
 	if radius <= 0 {
 		return nil, fmt.Errorf("brep: drill radius must be positive, got %g", radius)
@@ -30,11 +35,7 @@ func CutCylindricalHole(slab *topo.Body, base math.Point3, axisDir math.Vector3,
 	if ua.LengthSquared() < 0.5 {
 		return nil, fmt.Errorf("brep: drill axis direction is degenerate: %+v", axisDir)
 	}
-	copied, caps, err := classifyDrillFaces(slab, base, ua, radius)
-	if err != nil {
-		return nil, err
-	}
-	return assembleDrilled(copied, caps, ua, radius)
+	return drillThroughCurved(slab, base, ua, radius)
 }
 
 // DrillThroughHole cuts slab − cylinderTool as an EXACT through-hole when cylinderTool is a single
@@ -54,11 +55,8 @@ func DrillThroughHole(slab, cylinderTool *topo.Body) (*topo.Body, bool) {
 		return nil, false // tool is not a single bare cylinder
 	}
 	ua := cyl.AxisDir.AsVector()
-	// All-planar slab → the proven planar assembly; a slab that already has curved faces (a prior bore's
-	// wall) → the curvedFace path, so a drilled plate chains exactly instead of falling to CSG (#1336).
-	if res, err := CutCylindricalHole(slab, base, ua, cyl.Radius); err == nil {
-		return res, true
-	}
+	// One curvedStitch drill path serves both an all-planar slab and one that already carries curved faces
+	// (a prior bore's wall), so a drilled plate chains exactly instead of falling to CSG (#1336/#1403).
 	res, err := drillThroughCurved(slab, base, ua, cyl.Radius)
 	if err != nil {
 		return nil, false // partial / clipped / overlapping / off-axis hole → defer to the general fallback
@@ -66,40 +64,11 @@ func DrillThroughHole(slab, cylinderTool *topo.Body) (*topo.Body, bool) {
 	return res, true
 }
 
-// drillCap is a planar face the hole axis pierces (an entry/exit face), with the pierce
-// point and its parameter along the axis (used to order entry before exit).
+// drillCap is a point where the hole axis pierces an entry/exit face — the centre of the hole circle
+// on that face. The blind/counterbore/countersink assemblers pass their cap centres in entry→exit order
+// to buildHoleEdges to build the hole circles and wall.
 type drillCap struct {
-	face   planarFace
 	center math.Point3
-	param  float64
-}
-
-// classifyDrillFaces splits the slab's planar faces into the two the axis drills through
-// (perpendicular to the axis, interior fully containing the circle) and the rest (copied).
-func classifyDrillFaces(slab *topo.Body, base math.Point3, ua math.Vector3, radius float64) (copied []planarFace, caps []drillCap, err error) {
-	faces, ok := facesOf(slab)
-	if !ok {
-		return nil, nil, ErrNonPlanar
-	}
-	for _, f := range faces {
-		if stdmath.Abs(float64(f.normal.Dot(ua))) < 1-1e-7 {
-			copied = append(copied, f) // a wall the hole runs alongside — unchanged
-			continue
-		}
-		t := pierceParam(base, ua, f.plane)
-		c := base.TranslateBy(ua.Scale(math.Scalar(t)))
-		if !circleInsideFace(c, f, radius) {
-			return nil, nil, fmt.Errorf("brep: hole circle (r=%g at %+v) does not fit inside the pierced face; partial holes need the general boolean", radius, c)
-		}
-		caps = append(caps, drillCap{face: f, center: c, param: t})
-	}
-	if len(caps) != 2 {
-		return nil, nil, fmt.Errorf("brep: a through-hole needs exactly 2 perpendicular pierced faces, found %d", len(caps))
-	}
-	if caps[0].param > caps[1].param {
-		caps[0], caps[1] = caps[1], caps[0]
-	}
-	return copied, caps, nil
 }
 
 // pierceParam returns the parameter t where the axis line (base + t·ua) meets the plane.
@@ -124,41 +93,6 @@ func circleInsideFace(center math.Point3, f planarFace, radius float64) bool {
 		}
 	}
 	return true
-}
-
-// assembleDrilled welds the copied + pierced planar faces, adds a circular hole to each
-// pierced face, and joins them with a single cylinder wall face into a watertight solid.
-func assembleDrilled(copied []planarFace, caps []drillCap, ua math.Vector3, radius float64) (*topo.Body, error) {
-	bld := topo.NewBuilder(true, topo.NewLineage(topo.Tok("brep", "drill", 0)))
-	planar := append(append([]planarFace{}, copied...), caps[0].face, caps[1].face)
-
-	w := newWelder3()
-	rings, edgeUse := weldPlanarFaces(w, planar)
-	tv := make([]*topo.Vertex, len(w.points))
-	for i, p := range w.points {
-		tv[i] = bld.AddVertex(p, topo.NewLineage(topo.Tok("brep", "vertex", i)))
-	}
-	lineEdges := buildEdges(bld, w.points, tv, edgeUse)
-	holeLo, holeHi, seam, cyl, err := buildHoleEdges(bld, caps, ua, radius)
-	if err != nil {
-		return nil, err
-	}
-
-	loEntry, hiEntry := len(planar)-2, len(planar)-1
-	for fi, f := range planar {
-		specs := planarLoopSpecs(rings[fi], lineEdges)
-		switch fi {
-		case loEntry:
-			specs = append(specs, topo.InnerLoop(topo.Fwd(holeLo)))
-		case hiEntry:
-			specs = append(specs, topo.InnerLoop(topo.Fwd(holeHi)))
-		}
-		bld.AddFace(f.plane, f.lineage, specs...) // copied/pierced faces keep their key (K1a)
-	}
-	// The wall's surface normal is outward-radial, so its material side faces the axis.
-	bld.AddReversedFace(cyl, topo.NewLineage(topo.Tok("brep", "wall", 0)),
-		topo.OuterLoop(topo.Rev(holeLo), topo.Fwd(seam), topo.Rev(holeHi), topo.Rev(seam)))
-	return bld.Build(), nil
 }
 
 // weldPlanarFaces welds every face's loops to shared vertex indices and tallies undirected

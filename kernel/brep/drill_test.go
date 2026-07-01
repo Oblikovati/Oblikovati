@@ -78,6 +78,33 @@ func TestDrillPreservesUntouchedFaceKey(t *testing.T) {
 	}
 }
 
+// After the ADR-0045 dedup, CutCylindricalHole delegates to the shared curvedStitch drill path, so it now
+// drills a slab that ALREADY carries a curved face (a prior bore) — the old bespoke planar welder required
+// an all-planar slab and errored here. Drill a second, clearing hole along +X through a once-bored slab and
+// assert an exact analytic solid results (two cylinder walls now, no CSG fallback).
+func TestCutCylindricalHoleThroughAlreadyCurvedSlab(t *testing.T) {
+	bored := drilledSlab(t) // 10×10×4 with a +Z bore at centre → carries a cylinder face
+	got, err := brep.CutCylindricalHole(bored, math.P3(0, 1.5, 2), math.V3(1, 0, 0), 1)
+	if err != nil {
+		t.Fatalf("CutCylindricalHole through a curved-faced slab: %v", err)
+	}
+	if r := ops.Validate(got); !r.Valid || !got.IsSolid() {
+		t.Fatalf("second-bore slab is not a valid solid: %+v", r)
+	}
+	if open := ops.BoundaryEdges(got); len(open) != 0 {
+		t.Fatalf("second-bore slab has %d boundary edges, want 0 (watertight)", len(open))
+	}
+	nCyl := 0
+	for _, f := range got.Faces() {
+		if _, ok := f.Geometry().(geom.Cylinder); ok {
+			nCyl++
+		}
+	}
+	if nCyl != 2 {
+		t.Errorf("cylinder faces = %d, want 2 (both bore walls kept analytic, no CSG)", nCyl)
+	}
+}
+
 // A hole whose circle spills past the face boundary needs the general boolean, not this
 // through-hole specialization — it must error rather than build a broken body.
 func TestDrillRejectsOversizeHole(t *testing.T) {
