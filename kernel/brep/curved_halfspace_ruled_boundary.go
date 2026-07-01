@@ -16,6 +16,12 @@ import (
 // orientLoops uses it to gate the top-rim reversal: a wrapping band's pure top-rim hi loop is reversed,
 // a non-wrapping tongue's mixed loop is not.
 func (c ruledUV) wrapsAllU() bool {
+	if c.pinched {
+		// The Steinmetz lobes touch every azimuth (the kept v-interval collapses to a point at the pinch
+		// azimuths) but are two disconnected lobes, not a band; the recogniser asserts this so the band
+		// convention (and the wrapping-tube emission) never fires for the pinch case (#1403).
+		return false
+	}
 	for i := 0; i < 720; i++ {
 		u := 2 * stdmath.Pi * float64(i) / 720
 		if c.solidMode {

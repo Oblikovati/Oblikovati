@@ -171,7 +171,7 @@ func conicEdgeCurveFor(le loopEdge) geom.Curve3 {
 	case geom.Parabola:
 		return c.Arc(le.t0, le.t1) // a parabola loop edge's params are the cross coordinate t; store the bounded arc
 	case geom.EllipticalArc:
-		return c // the re-anchored elliptical rim/lid of an oblique cone cut tessellates over its sweep
+		return ellipticalSubArc(c, le.t0, le.t1) // restrict/re-anchor to the run's [t0,t1] (the reversed lobe walk)
 	case geom.EllipseFull:
 		return ellipseArcOf(c, le.t0, le.t1) // a section sub-arc of a full ellipse (the (u,v) cone split)
 	case geom.SpiricArc:
@@ -194,6 +194,20 @@ func spiricArcOf(sa geom.SpiricArc, t0, t1 float64) geom.Curve3 {
 	}
 	sa.V0, sa.V1 = v0, v1
 	return sa
+}
+
+// ellipticalSubArc restricts a partial EllipticalArc to its loop sub-range [t0, t1], re-anchored so the
+// stored curve's PointAt(0) is the edge's StartVertex and PointAt(1) its EndVertex (EllipticalArc.PointAt(t)
+// walks StartAngle+t·SweepAngle over t∈[0,1]). A lobe of the equal-radius Steinmetz bicylinder walks its
+// shared arc in the arc's DECREASING-parameter direction (t0=1, t1=0); keeping the arc's original forward
+// parameterisation left PointAt(0) at the FAR pinch, 2R from the edge's StartVertex, so the face's
+// discretised boundary crossed the solid and the (u,v) trim loop self-intersected (#1403). For a run that
+// already spans the whole arc forward (t0=0, t1=1, the oblique cone-cut rim/lid) this returns an identical
+// arc, so those paths are unchanged.
+func ellipticalSubArc(e geom.EllipticalArc, t0, t1 float64) geom.Curve3 {
+	a, _ := geom.NewEllipticalArc(e.Center, e.Normal.AsVector(), e.MajorAxis.AsVector(), e.MajorRadius, e.MinorRadius,
+		e.StartAngle+t0*e.SweepAngle, (t1-t0)*e.SweepAngle)
+	return a
 }
 
 // ellipseArcOf builds the EllipticalArc covering a full ellipse's parameter sub-range [t0, t1]
