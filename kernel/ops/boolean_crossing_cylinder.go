@@ -49,14 +49,16 @@ func withoutRecorder(build func(target, tool *topo.Body) (*topo.Body, bool)) rul
 // The curved-pair paths, each an (op, builder) gated once by gatedCurved. Names are referenced by
 // curvedExactPaths in boolean.go, which fixes their try-order; the comment on each records the pair it
 // handles. The general SSI→trim→classify→stitch pipeline (#1403/#1476) builds every ruled pair; the
-// equal-radius Steinmetz cases stay on a bespoke constructor (the pinch self-intersects into four lobes
-// the general (u,v) arrangement cannot yet split — see brep.EqualRadiusSteinmetzIntersect).
+// equal-radius Steinmetz INTERSECT now rides it too (#1403) — its self-intersecting imprint is split at the
+// analytic pinches into four open arcs so the arrangement never sees the crossing (brep.SteinmetzIntersect-
+// General). The Steinmetz CUT and JOIN keep the bespoke band assembler for now (their kept region is the
+// cylinders' pinched OUTSIDE bands, not lobes; folding those into the general pipeline is tracked follow-up).
 var (
 	// Intersect — the band of the thin operand plus the fat operand's two lens caps.
 	curvedCrossingIntersect     = gatedCurved(Intersect, brep.CrossingCylinderIntersectGeneral) // two crossing cylinders
-	curvedSteinmetzIntersect    = gatedCurved(Intersect, withoutRecorder(brep.EqualRadiusSteinmetzIntersect))
-	curvedConeCylinderIntersect = gatedCurved(Intersect, brep.ConeCylinderIntersectGeneral) // cone ∩ cylinder
-	curvedConeConeIntersect     = gatedCurved(Intersect, brep.ConeConeIntersectGeneral)     // cone ∩ fatter cone
+	curvedSteinmetzIntersect    = gatedCurved(Intersect, brep.SteinmetzIntersectGeneral)        // equal-R bicylinder, general pipeline
+	curvedConeCylinderIntersect = gatedCurved(Intersect, brep.ConeCylinderIntersectGeneral)     // cone ∩ cylinder
+	curvedConeConeIntersect     = gatedCurved(Intersect, brep.ConeConeIntersectGeneral)         // cone ∩ fatter cone
 	curvedPartialIntersect      = gatedCurved(Intersect, brep.PartialPenetrationIntersectGeneral)
 
 	// Cut — drilling the target with the tool (through, blind, or two stubs of tool − target).

@@ -318,6 +318,9 @@ func (c ruledUV) halfSpaceMaterial() materialPredicate {
 // keeps a section arm from grazing it, which would otherwise collapse the (u,v) arrangement (#1405). With
 // no imprint, or one that covers every azimuth, it returns 0 (the default seam).
 func (c ruledUV) chooseSeamU(imprint []geom.Curve3) float64 {
+	if c.hasSeamHint {
+		return c.seamHint // the recogniser pins the seam (the pinched imprint has no clear gap to find)
+	}
 	var us []float64
 	for _, cv := range imprint {
 		for _, s := range c.sampleImprintUV(cv) { // c.seamU is still 0 here, so these are absolute azimuths
@@ -372,26 +375,68 @@ func keptCells(cells []Face2D, material materialPredicate) []Face2D {
 	return kept
 }
 
-// interiorOfCell returns a point inside the cell's outer loop but OUTSIDE every hole, so a cell that
-// contains an island (a dropped region) is classified by its own material, not the island's. The centroid
-// serves when it misses the holes; else a short step from an outer-edge midpoint toward the centroid lands
-// near the boundary, clear of any central hole.
+// interiorOfCell returns the DEEPEST interior point of the cell — the one maximising distance to its outer
+// and hole edges — so the material classification is sampled well clear of the imprint. Any strictly interior
+// point decides the whole cell (the imprint is an arrangement edge, so the interior has one material), but the
+// vertex-average centroid of a CONCAVE cell whose boundary is densely sampled along the imprint (the
+// Steinmetz pinch's two lobes carve deep concavities into the surrounding region) is dragged onto the imprint
+// itself, where the membership test flickers — the deepest-point sampler avoids the boundary entirely
+// (#1403). It is a pole-of-inaccessibility grid search: a coarse scan of the bbox then a local refine.
 func interiorOfCell(cell Face2D) (math.Point2, bool) {
-	if c := centroidOf(cell.Outer); insideCell(c, cell) {
-		return c, true
-	}
-	c := centroidOf(cell.Outer)
-	for i := range cell.Outer {
-		a, b := cell.Outer[i], cell.Outer[(i+1)%len(cell.Outer)]
-		mid := math.P2((float64(a.X)+float64(b.X))/2, (float64(a.Y)+float64(b.Y))/2)
-		for _, f := range []float64{1e-3, 1e-2, 0.1, 0.5} {
-			p := math.P2(lerp(float64(mid.X), float64(c.X), f), lerp(float64(mid.Y), float64(c.Y), f))
-			if insideCell(p, cell) {
-				return p, true
+	best, bestDist := math.Point2{}, -1.0
+	scan := func(lo, hi math.Point2, n int) {
+		for i := 0; i <= n; i++ {
+			for j := 0; j <= n; j++ {
+				p := math.P2(lerp(float64(lo.X), float64(hi.X), float64(i)/float64(n)),
+					lerp(float64(lo.Y), float64(hi.Y), float64(j)/float64(n)))
+				if d := cellEdgeClearance(p, cell); d > bestDist && insideCell(p, cell) {
+					best, bestDist = p, d
+				}
 			}
 		}
 	}
-	return c, false
+	lo, hi := cellBounds(cell)
+	scan(lo, hi, 24)
+	if bestDist < 0 {
+		return centroidOf(cell.Outer), false // no interior sample found (a degenerate sliver cell)
+	}
+	// Refine within one coarse cell of the best to sharpen the deepest point on a thin lobe.
+	step := math.P2((hi.X-lo.X)/24, (hi.Y-lo.Y)/24)
+	scan(math.P2(best.X-step.X, best.Y-step.Y), math.P2(best.X+step.X, best.Y+step.Y), 8)
+	return best, true
+}
+
+// cellEdgeClearance is the distance from p to the nearest edge of the cell (outer loop and every hole) — the
+// objective the interior-point search maximises so the sample sits as far from the imprint as the cell allows.
+func cellEdgeClearance(p math.Point2, cell Face2D) float64 {
+	d := loopClearance(p, cell.Outer)
+	for _, h := range cell.Holes {
+		if dh := loopClearance(p, h); dh < d {
+			d = dh
+		}
+	}
+	return d
+}
+
+// loopClearance is the minimum distance from p to any edge of a closed (u,v) polygon.
+func loopClearance(p math.Point2, poly []math.Point2) float64 {
+	d := stdmath.MaxFloat64
+	for i, n := 0, len(poly); i < n; i++ {
+		if e := perpDistToSeg(p, poly[i], poly[(i+1)%n]); e < d {
+			d = e
+		}
+	}
+	return d
+}
+
+// cellBounds returns the (u,v) bounding box of a cell's outer loop.
+func cellBounds(cell Face2D) (lo, hi math.Point2) {
+	lo, hi = math.P2(stdmath.MaxFloat64, stdmath.MaxFloat64), math.P2(-stdmath.MaxFloat64, -stdmath.MaxFloat64)
+	for _, p := range cell.Outer {
+		lo = math.P2(stdmath.Min(float64(lo.X), float64(p.X)), stdmath.Min(float64(lo.Y), float64(p.Y)))
+		hi = math.P2(stdmath.Max(float64(hi.X), float64(p.X)), stdmath.Max(float64(hi.Y), float64(p.Y)))
+	}
+	return lo, hi
 }
 
 // insideCell reports whether p is inside the cell's outer loop and outside all its holes.
@@ -550,7 +595,9 @@ func chainLoops(edges []dedge) [][]dedge {
 }
 
 // walkLoop follows the boundary from edge i, marking edges used, until it returns to the start vertex (or a
-// full-wrap singleton, or a dead end). out maps each vertex to the edges leaving it.
+// full-wrap singleton, or a dead end). out maps each vertex to the edges leaving it. At a vertex it takes
+// the angular successor (nextByAngle), so a degree-4 self-touch vertex (the Steinmetz pinch) is traced as a
+// turn into the adjacent lobe rather than a straight crossing into the other lobe (#1403).
 func walkLoop(i int, edges []dedge, out map[int][]int, used []bool) []dedge {
 	start := edges[i].from
 	var loop []dedge
@@ -560,7 +607,7 @@ func walkLoop(i int, edges []dedge, out map[int][]int, used []bool) []dedge {
 		if edges[cur].from == edges[cur].to || edges[cur].to == start {
 			break // a full-wrap singleton, or the loop closed back to its start
 		}
-		next := nextUnused(out[edges[cur].to], used)
+		next := nextByAngle(cur, edges, out, used)
 		if next < 0 {
 			break
 		}
@@ -569,14 +616,45 @@ func walkLoop(i int, edges []dedge, out map[int][]int, used []bool) []dedge {
 	return loop
 }
 
-// nextUnused returns the first not-yet-used edge index from a vertex's outgoing list, or -1.
-func nextUnused(candidates []int, used []bool) int {
-	for _, i := range candidates {
-		if !used[i] {
-			return i
+// nextByAngle picks the boundary successor of edge cur at its head vertex: the unused outgoing half-edge
+// first in CLOCKWISE order from the reversed arrival direction (de Berg §2.3, the DCEL face-traversal rule).
+// With kept material on the left of every directed edge (keptBoundaryEdges orients them so), this is the
+// tightest right turn, which hugs the face boundary — so two lobes meeting at one degree-4 vertex trace as
+// two loops instead of crossing through. At a degree-2 vertex there is a single outgoing edge and the rule
+// reduces to nextUnused, so every existing (non-self-touching) arrangement is unchanged. Returns -1 on a
+// dead end (no unused outgoing).
+func nextByAngle(cur int, edges []dedge, out map[int][]int, used []bool) int {
+	arrival := edges[cur]
+	// The reversed arrival ray, pointing from the head vertex back along the edge we came in on.
+	back := arrival.b.VectorTo(arrival.a)
+	best, bestCW := -1, 0.0
+	for _, j := range out[arrival.to] {
+		if used[j] {
+			continue
+		}
+		leaving := edges[j].a.VectorTo(edges[j].b)
+		cw := clockwiseAngle(back, leaving)
+		if best < 0 || cw < bestCW {
+			best, bestCW = j, cw
 		}
 	}
-	return -1
+	return best
+}
+
+// clockwiseAngle returns the angle in [0, 2π) swept CLOCKWISE from vector a to vector b. A near-zero result
+// means b points back along a (the reverse edge we arrived on); the caller never offers that edge, but the
+// ordering is total either way.
+func clockwiseAngle(a, b math.Vector2) float64 {
+	angA := stdmath.Atan2(float64(a.Y), float64(a.X))
+	angB := stdmath.Atan2(float64(b.Y), float64(b.X))
+	cw := angA - angB
+	for cw < 0 {
+		cw += 2 * stdmath.Pi
+	}
+	for cw >= 2*stdmath.Pi {
+		cw -= 2 * stdmath.Pi
+	}
+	return cw
 }
 
 // recoveredEdge is one boundary dedge resolved back to the analytic curve it lies on: its kind, the source

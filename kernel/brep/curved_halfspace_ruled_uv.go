@@ -51,6 +51,22 @@ type ruledUV struct {
 	solidOp     Op
 	solidIsB    bool
 	insideOther func(math.Point3) bool
+
+	// pinched marks the equal-radius Steinmetz case (#1403): the SSI imprint self-intersects at the two
+	// pinch points, so the kept region is two lobes that meet at those points, NOT a simple wrapping band.
+	// The recogniser sets it authoritatively (it knows the imprint is the two crossing ellipses), so
+	// wrapsAllU returns false — the lobes touch every azimuth but never form a band — and the boundary is
+	// grouped into separate lobe faces. Equivalent to a net-Δu winding test on the traced loops, decided a
+	// priori from the recogniser instead of rediscovered.
+	pinched bool
+
+	// seamHint pins the arrangement's artificial azimuth seam (overriding chooseSeamU) when the recogniser
+	// knows the clear placement. The pinched Steinmetz imprint covers every azimuth, so chooseSeamU finds no
+	// gap and would drop the seam near a pinch (shattering the degree-4 vertex); the recogniser sets the hint
+	// to a lobe centre instead — π/2 from both pinches, splitting one lobe harmlessly across a seam the weld
+	// rejoins (#1403).
+	seamHint    float64
+	hasSeamHint bool
 }
 
 // ruledUV satisfies uvSide: a singly-periodic surface whose v is the bounded axial band (#1406).
@@ -69,10 +85,17 @@ func (c ruledUV) vPeriodic() bool { return false }
 func (c ruledUV) multiFace() bool { return c.solidMode }
 
 // assembleSegments samples the imprint and adds the rim+seam frame the arrangement subdivides (uvSide).
+// For the pinched (Steinmetz) case each open arc is unwrapped per-arc (unwrapArcSegs) so an arc that merely
+// TOUCHES the azimuth seam at a pinch endpoint is not fragmented by splitSeamCrossing — without it the
+// wrapping-side lobe's arcs split at the seam and the lobe leaks into the surrounding region (#1403).
 func (c ruledUV) assembleSegments(imprint []geom.Curve3) []uvSeg {
 	var imp []uvSeg
 	for _, cv := range imprint {
-		imp = append(imp, c.sampleImprintUV(cv)...)
+		segs := c.sampleImprintUV(cv)
+		if c.pinched {
+			segs = unwrapArcSegs(segs)
+		}
+		imp = append(imp, segs...)
 	}
 	return c.assembleBandSegments(imp)
 }
