@@ -240,13 +240,19 @@ func newSession(store doc.Store) *Session {
 	s.graphics.SetBodyResolver(s.resolveOverlayMesh) // scratch store (no active document)
 	s.messageCenter.sink = s.routeMessage            // M26 F03: mirror message-center entries to the command line
 	s.initShellSurfaces()
+	s.wireDocumentWatchers()
+	return s
+}
+
+// wireDocumentWatchers starts the session's background document and transaction watchers. Split out
+// of newSession (like seedVisualState) to keep it short — one place for the watch wiring.
+func (s *Session) wireDocumentWatchers() {
 	s.watchDocumentCloses()
 	s.watchDocumentSwitches() // #1105: drop the prior document's selection when a different one is activated
 	s.watchDocumentInterests()
 	s.watchDocumentIdentityCollisions() // open-time identity-GUID clash → reassign + notify
 	s.watchTransactions()               // append-only transaction log for bug reports
 	s.watchDrawingExport()              // Drawing tab Export DXF: write the sheet when its file dialog is answered
-	return s
 }
 
 // seedVisualState seeds the M16 visualization registries (color schemes, color styles, display

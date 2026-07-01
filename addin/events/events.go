@@ -68,28 +68,12 @@ func Subscribe(s *app.Session, sink Sink) []event.Subscription {
 // subscribeSessionUI relays the session bus's command, selection, environment, edit, camera and
 // style change events (M05/M16) to the add-in sink.
 func subscribeSessionUI(bus *event.Bus, sink Sink) []event.Subscription {
-	return []event.Subscription{
+	subs := []event.Subscription{
 		event.Subscribe(bus, event.Before, func(_ event.Context, e app.CommandStarted) event.Outcome {
 			return relay(sink, wireEvent{Type: wire.EventCommandStarted, Command: e.ID})
 		}),
 		event.Subscribe(bus, event.After, func(_ event.Context, e app.CommandEnded) event.Outcome {
 			return relay(sink, wireEvent{Type: wire.EventCommandEnded, Command: e.ID, Failed: e.Failed})
-		}),
-		event.Subscribe(bus, event.After, func(_ event.Context, e app.PanelValueChanged) event.Outcome {
-			return relayJSON(sink, wire.PanelValueChangedEvent{
-				Type: wire.EventPanelValueChanged, WindowId: e.WindowID, ControlId: e.ControlID, Value: e.Value,
-			})
-		}),
-		event.Subscribe(bus, event.After, func(_ event.Context, e app.PanelReferencesChanged) event.Outcome {
-			return relayJSON(sink, wire.PanelReferencesChangedEvent{
-				Type: wire.EventPanelReferencesChanged, WindowId: e.WindowID,
-				ControlId: e.ControlID, Refs: e.Refs, Action: e.Action,
-			})
-		}),
-		event.Subscribe(bus, event.After, func(_ event.Context, e app.TaskPanelClosed) event.Outcome {
-			return relayJSON(sink, wire.TaskPanelClosedEvent{
-				Type: wire.EventTaskPanelClosed, ID: e.ID, Accepted: e.Accepted,
-			})
 		}),
 		event.Subscribe(bus, event.After, func(_ event.Context, e app.SelectionChanged) event.Outcome {
 			return relayJSON(sink, wire.SelectionChangedEvent{Type: wire.EventSelectionChanged, Count: e.Count})
@@ -107,6 +91,30 @@ func subscribeSessionUI(bus *event.Bus, sink Sink) []event.Subscription {
 		// M16-F02 (#403/#408): a color/lighting style was added, edited, or deleted.
 		event.Subscribe(bus, event.After, func(_ event.Context, e app.StyleChanged) event.Outcome {
 			return relay(sink, wireEvent{Type: styleEventType(e.Kind), Name: e.Name})
+		}),
+	}
+	return append(subs, subscribePanelEvents(bus, sink)...)
+}
+
+// subscribePanelEvents relays the dockable/task-panel control events — a control's value edit, a
+// reference-list change, and a modal task-panel close — to the add-in sink (FEM Phase 0a-host).
+func subscribePanelEvents(bus *event.Bus, sink Sink) []event.Subscription {
+	return []event.Subscription{
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.PanelValueChanged) event.Outcome {
+			return relayJSON(sink, wire.PanelValueChangedEvent{
+				Type: wire.EventPanelValueChanged, WindowId: e.WindowID, ControlId: e.ControlID, Value: e.Value,
+			})
+		}),
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.PanelReferencesChanged) event.Outcome {
+			return relayJSON(sink, wire.PanelReferencesChangedEvent{
+				Type: wire.EventPanelReferencesChanged, WindowId: e.WindowID,
+				ControlId: e.ControlID, Refs: e.Refs, Action: e.Action,
+			})
+		}),
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.TaskPanelClosed) event.Outcome {
+			return relayJSON(sink, wire.TaskPanelClosedEvent{
+				Type: wire.EventTaskPanelClosed, ID: e.ID, Accepted: e.Accepted,
+			})
 		}),
 	}
 }
