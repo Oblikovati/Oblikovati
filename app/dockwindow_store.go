@@ -4,6 +4,7 @@ package app
 
 import (
 	"fmt"
+	"slices"
 
 	"oblikovati.org/api/wire"
 	"oblikovati.org/event"
@@ -119,6 +120,43 @@ func (s *Session) SetDockableWindowReferences(windowID, controlID string, refs [
 	event.Emit(s.bus, event.After, PanelReferencesChanged{
 		WindowID: windowID, ControlID: controlID, Refs: refs, Action: "set",
 	})
+}
+
+// AddReferencesFromSelection appends the current viewport selection (filtered by accepts) to a
+// referenceList control's existing rows, de-duplicated, then notifies the add-in. Empty accepts = any.
+func (s *Session) AddReferencesFromSelection(windowID, controlID string, accepts []string) {
+	picked := filterRefsByAccepts(s.selection.References(), accepts)
+	merged := mergeControlRefs(s.dockableWindows.windows[windowID].Controls, controlID, picked)
+	s.SetDockableWindowReferences(windowID, controlID, merged)
+}
+
+// mergeControlRefs returns the control's existing row refs plus the new picks, order-preserving,
+// without duplicates.
+func mergeControlRefs(controls []wire.PanelControlSpec, controlID string, picks []string) []string {
+	out := controlRefs(controls, controlID)
+	for _, p := range picks {
+		if !slices.Contains(out, p) {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+// controlRefs returns the current row refs of the control (recursing containers); nil if absent.
+func controlRefs(controls []wire.PanelControlSpec, controlID string) []string {
+	for i := range controls {
+		if controls[i].ID == controlID {
+			refs := make([]string, len(controls[i].Rows))
+			for j, row := range controls[i].Rows {
+				refs[j] = row.Ref
+			}
+			return refs
+		}
+		if r := controlRefs(controls[i].Children, controlID); r != nil {
+			return r
+		}
+	}
+	return nil
 }
 
 // DeleteDockableWindow removes a window, emitting a hide first when it was visible
