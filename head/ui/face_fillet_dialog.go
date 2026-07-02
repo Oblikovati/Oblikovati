@@ -62,9 +62,9 @@ func drawFaceFilletPanelBody(s *app.Session, f *app.FaceFilletTool) {
 func drawFaceSetRow(label, id string, count int, armed bool, onArm, onClear func()) {
 	propertyRow(label)
 	if armed {
-		native.PushStyleColor("Button", accentColor)
-		native.PushStyleColor("ButtonHovered", accentColor)
-		native.PushStyleColor("ButtonActive", accentColor)
+		native.PushStyleColor("Button", chromeTheme.accentColor)
+		native.PushStyleColor("ButtonHovered", chromeTheme.accentColor)
+		native.PushStyleColor("ButtonActive", chromeTheme.accentColor)
 	}
 	if native.Button(countChipText(count, "Face", "Select Faces") + "##" + id) {
 		onArm()

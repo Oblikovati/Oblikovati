@@ -83,9 +83,9 @@ func drawNavBarButton(s *app.Session, b navBarButton, iconPx int) bool {
 	}
 	on := b.active != nil && b.active(s)
 	if on {
-		native.PushStyleColor("Button", accentColor)
-		native.PushStyleColor("ButtonHovered", accentColor)
-		native.PushStyleColor("ButtonActive", accentColor)
+		native.PushStyleColor("Button", chromeTheme.accentColor)
+		native.PushStyleColor("ButtonHovered", chromeTheme.accentColor)
+		native.PushStyleColor("ButtonActive", chromeTheme.accentColor)
 		defer native.PopStyleColor(3)
 	}
 	if b.enabled != nil && !b.enabled(s) {

@@ -33,7 +33,7 @@ func TestHighlightSelectionRecolorsOnlyTheSelectedBody(t *testing.T) {
 
 	got := highlightSelection(list, app.BodyHandle{Body: b}, nil)
 
-	if got.Items[0].Color != selectionHighlight {
+	if got.Items[0].Color != chromeTheme.selectionHighlight {
 		t.Errorf("selected body item not highlighted: %v", got.Items[0].Color)
 	}
 	if got.Items[1].Color != base {

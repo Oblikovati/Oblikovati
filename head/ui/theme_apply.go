@@ -19,7 +19,13 @@ import (
 // values before the first applyThemeIfChanged and in any headless head test, then
 // overwritten from the active theme whenever it changes (ADR-0021). The overlay files
 // read these vars by name exactly as before.
-var (
+// themePalette is the theme cache the overlay builders and icon cache read each
+// frame: every themed overlay/icon color in ONE object instead of ~16 mutable
+// package arrays (#1617, audit B6). Single writer: applyThemeIfChanged, at the
+// top of DrawChrome — the UI loop owns the palette's lifecycle; nothing else may
+// mutate it. Seeded from the Dark built-in so it holds correct values before the
+// first frame and in any headless head test.
+type themePalette struct {
 	gridMinorColor, gridMajorColor                         [4]float32
 	sketchColor, sketchSelectedColor, sketchCandidateColor [4]float32
 	previewColor                                           [4]float32 // rubber-band preview
@@ -33,9 +39,18 @@ var (
 	accentColor                                            [4]float32      // active/toggled ribbon button
 	dangerColor                                            [4]float32      // required-but-empty selector / error affordances
 	windowClearColor                                       [3]float32      // swapchain (chrome) clear
-)
+}
 
-func init() { refreshThemeColors(theme.DefaultDark()) }
+// chromeTheme is the UI loop's palette instance, constructed once from the Dark
+// default (no init() side effects — #1617).
+var chromeTheme = defaultThemePalette()
+
+// defaultThemePalette seeds a palette from the built-in Dark theme.
+func defaultThemePalette() themePalette {
+	var p themePalette
+	p.refresh(theme.DefaultDark())
+	return p
+}
 
 // appliedThemeRevision / appliedColorSchemeRevision are the library + color-scheme revisions
 // last pushed into Dear ImGui and the color vars, so applyThemeIfChanged is a cheap no-op on
@@ -56,7 +71,7 @@ func applyThemeIfChanged(win *native.Window, s *app.Session) {
 	appliedThemeRevision, appliedColorSchemeRevision = rev, schemeRev
 	active := s.Theme()
 	applyChromeStyle(active)
-	refreshThemeColors(active)
+	chromeTheme.refresh(active)
 	applyColorSchemeColors(s)
 	vp := viewportClear(s)
 	win.SetViewportClear(vp.R, vp.G, vp.B)
@@ -66,66 +81,66 @@ func applyThemeIfChanged(win *native.Window, s *app.Session) {
 // background (M16-F06 #642), so its screen color overrides the theme's viewport-bg token.
 func viewportClear(s *app.Session) theme.Rgba { return s.ActiveColorScheme().Screen.Rgba() }
 
-// applyColorSchemeColors pushes the active scheme's highlight color into the selection-overlay
-// var so a scheme switch repaints selection highlighting along with the background.
+// applyColorSchemeColors pushes the active scheme's highlight color into the palette
+// so a scheme switch repaints selection highlighting along with the background.
 func applyColorSchemeColors(s *app.Session) {
 	h := s.ActiveColorScheme().Highlight.Rgba()
-	selectionHighlight = [4]float32{h.R, h.G, h.B, 1}
+	chromeTheme.selectionHighlight = [4]float32{h.R, h.G, h.B, 1}
 }
 
-// refreshThemeColors copies the active theme's overlay/icon colors into the package vars
+// refresh copies the active theme's overlay/icon colors into the palette
 // the overlay builders read each frame.
-func refreshThemeColors(t contract.Theme) {
+func (p *themePalette) refresh(t contract.Theme) {
 	arr := func(tok types.ThemeToken) [4]float32 { return t.Color(tok).Array() }
-	refreshGridThemeColors(arr)
-	refreshSketchThemeColors(arr)
-	refreshPlaneThemeColors(arr)
-	refreshIconThemeColors(arr)
-	selectionHighlight = arr(types.TokenSelectionHighlight)
-	accentColor = arr(types.TokenChromeAccent)
-	dangerColor = arr(types.TokenChromeDanger)
+	p.gridThemeColors(arr)
+	p.sketchThemeColors(arr)
+	p.planeThemeColors(arr)
+	p.iconThemeColors(arr)
+	p.selectionHighlight = arr(types.TokenSelectionHighlight)
+	p.accentColor = arr(types.TokenChromeAccent)
+	p.dangerColor = arr(types.TokenChromeDanger)
 	c := t.Color(types.TokenChromeWindowBg)
-	windowClearColor = [3]float32{c.R, c.G, c.B}
+	p.windowClearColor = [3]float32{c.R, c.G, c.B}
 }
 
-func refreshGridThemeColors(arr func(types.ThemeToken) [4]float32) {
-	gridMinorColor = arr(types.TokenGridMinor)
-	gridMajorColor = arr(types.TokenGridMajor)
+func (p *themePalette) gridThemeColors(arr func(types.ThemeToken) [4]float32) {
+	p.gridMinorColor = arr(types.TokenGridMinor)
+	p.gridMajorColor = arr(types.TokenGridMajor)
 }
 
-func refreshSketchThemeColors(arr func(types.ThemeToken) [4]float32) {
-	sketchColor = arr(types.TokenSketchGeometry)
-	sketchSelectedColor = arr(types.TokenSketchSelected)
-	sketchCandidateColor = arr(types.TokenSketchCandidate)
-	previewColor = arr(types.TokenSketchPreview)
-	dimensionColor = arr(types.TokenDimensionDriving)
-	dimensionDrivenColor = arr(types.TokenDimensionDriven)
-	snapGlyphColor = arr(types.TokenSnapGlyph)
-	activeViewportBorderColor = arr(types.TokenViewportActiveBorder)
-	pointMarkerColor = sketchColor // placed points match the sketch wireframe
+func (p *themePalette) sketchThemeColors(arr func(types.ThemeToken) [4]float32) {
+	p.sketchColor = arr(types.TokenSketchGeometry)
+	p.sketchSelectedColor = arr(types.TokenSketchSelected)
+	p.sketchCandidateColor = arr(types.TokenSketchCandidate)
+	p.previewColor = arr(types.TokenSketchPreview)
+	p.dimensionColor = arr(types.TokenDimensionDriving)
+	p.dimensionDrivenColor = arr(types.TokenDimensionDriven)
+	p.snapGlyphColor = arr(types.TokenSnapGlyph)
+	p.activeViewportBorderColor = arr(types.TokenViewportActiveBorder)
+	p.pointMarkerColor = p.sketchColor // placed points match the sketch wireframe
 }
 
-func refreshPlaneThemeColors(arr func(types.ThemeToken) [4]float32) {
-	faintPlaneColor = arr(types.TokenPlaneFaint)
-	hoverPlaneColor = arr(types.TokenPlaneHover)
-	selectedPlaneColor = arr(types.TokenPlaneSelected)
-	planeFillColor = arr(types.TokenPlaneFill)
+func (p *themePalette) planeThemeColors(arr func(types.ThemeToken) [4]float32) {
+	p.faintPlaneColor = arr(types.TokenPlaneFaint)
+	p.hoverPlaneColor = arr(types.TokenPlaneHover)
+	p.selectedPlaneColor = arr(types.TokenPlaneSelected)
+	p.planeFillColor = arr(types.TokenPlaneFill)
 }
 
 // refreshIconThemeColors maps the icon.* tokens onto the glyph color roles. The icon
 // cache composes its masks with these on the next texture lookup after a theme change
 // (the revision flush in iconCache.beginFrame).
-func refreshIconThemeColors(arr func(types.ThemeToken) [4]float32) {
-	iconColors[icon.RolePrimary] = arr(types.TokenIconPrimary)
-	iconColors[icon.RoleSecondary] = arr(types.TokenIconSecondary)
-	iconColors[icon.RoleTertiary] = arr(types.TokenIconTertiary)
-	iconColors[icon.RoleBackground] = arr(types.TokenIconBackground)
+func (p *themePalette) iconThemeColors(arr func(types.ThemeToken) [4]float32) {
+	p.iconColors[icon.RolePrimary] = arr(types.TokenIconPrimary)
+	p.iconColors[icon.RoleSecondary] = arr(types.TokenIconSecondary)
+	p.iconColors[icon.RoleTertiary] = arr(types.TokenIconTertiary)
+	p.iconColors[icon.RoleBackground] = arr(types.TokenIconBackground)
 }
 
 // WindowClearColor is the themed background the frame loop clears the swapchain to (the
 // area behind/around the docked panels). The main loop passes it to Window.EndFrame.
 func WindowClearColor() (r, g, b float32) {
-	return windowClearColor[0], windowClearColor[1], windowClearColor[2]
+	return chromeTheme.windowClearColor[0], chromeTheme.windowClearColor[1], chromeTheme.windowClearColor[2]
 }
 
 // chromeBinding maps each chrome token to the Dear ImGui color slots it drives, by name

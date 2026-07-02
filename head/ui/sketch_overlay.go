@@ -194,7 +194,7 @@ func projectedCurveOverlay(sk *sketch.Sketch) []renderer.DrawItem {
 			acc.polyline(plane, pc.Points(), false)
 		}
 	}
-	return appendGrid(nil, acc, sketchColor)
+	return appendGrid(nil, acc, chromeTheme.sketchColor)
 }
 
 func sketchSegmentsFor(sk *sketch.Sketch, selected func(sketch.Entity) bool, candidate sketch.Entity) (*segAccum, *segAccum, *segAccum) {
@@ -239,9 +239,9 @@ func addBlockInstances(pick accumFor, plane sketch.Plane, sk *sketch.Sketch) {
 
 func sketchItems(normal, sel, cand *segAccum) []renderer.DrawItem {
 	var items []renderer.DrawItem
-	items = appendGrid(items, normal, sketchColor)
-	items = appendGrid(items, sel, sketchSelectedColor)
-	items = appendGrid(items, cand, sketchCandidateColor)
+	items = appendGrid(items, normal, chromeTheme.sketchColor)
+	items = appendGrid(items, sel, chromeTheme.sketchSelectedColor)
+	items = appendGrid(items, cand, chromeTheme.sketchCandidateColor)
 	return items
 }
 

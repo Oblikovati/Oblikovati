@@ -34,8 +34,8 @@ func dimensionLines(plane sketch.Plane, views []app.DimensionView) []renderer.Dr
 		}
 	}
 	var items []renderer.DrawItem
-	items = appendGrid(items, driving, dimensionColor)
-	items = appendGrid(items, driven, dimensionDrivenColor)
+	items = appendGrid(items, driving, chromeTheme.dimensionColor)
+	items = appendGrid(items, driven, chromeTheme.dimensionDrivenColor)
 	return items
 }
 

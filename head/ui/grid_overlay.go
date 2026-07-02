@@ -35,8 +35,8 @@ func gridOverlay(plane sketch.Plane, spacing float64, major int) []renderer.Draw
 		vAcc.seg(plane, math.P2(-half, c), math.P2(half, c)) // line of constant v (the X axis at i==0)
 	}
 	var items []renderer.DrawItem
-	items = appendGrid(items, minor, gridMinorColor)
-	items = appendGrid(items, maj, gridMajorColor)
+	items = appendGrid(items, minor, chromeTheme.gridMinorColor)
+	items = appendGrid(items, maj, chromeTheme.gridMajorColor)
 	items = appendGrid(items, xAxis, axisColorX)
 	items = appendGrid(items, yAxis, axisColorY)
 	return items

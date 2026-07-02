@@ -43,7 +43,7 @@ func inferenceGlyphs(s *app.Session, plane sketch.Plane, hWorld float64) (render
 		anchor := glyphAnchor(cur, i, hWorld)
 		glyphSegments(acc, plane, anchor, hWorld, sg.Kind)
 	}
-	return renderer.DrawItem{Primitive: renderer.Lines, Positions: acc.pos, Indices: acc.idx, Color: previewColor}, true
+	return renderer.DrawItem{Primitive: renderer.Lines, Positions: acc.pos, Indices: acc.idx, Color: chromeTheme.previewColor}, true
 }
 
 // glyphAnchor places the i-th glyph in a row beside the cursor.
