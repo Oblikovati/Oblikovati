@@ -2,7 +2,10 @@
 
 package param
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 // mustAdd is a test helper that adds a user parameter and fails on error.
 func mustAdd(t *testing.T, ps *Parameters, name, expr string) *Parameter {
@@ -139,15 +142,38 @@ func TestRenamePreservesEdgesAndRewritesDisplay(t *testing.T) {
 	}
 }
 
-func TestDeleteDriverSickensDependents(t *testing.T) {
+// Deleting an in-use driver is refused with the blockers named — the aggregate
+// invariant every driver (wire, UI) now shares (#1612, audit B1). The old
+// behavior on this path ("dependents go sick") survives only for the owner
+// cascade, checked below.
+func TestDeleteRefusesInUseDriver(t *testing.T) {
 	ps := NewParameters()
 	w, _ := ps.AddUserParameter("width", "10 cm")
 	h, _ := ps.AddUserParameter("height", "2 * width")
-	if err := ps.Delete(w.ID()); err != nil {
-		t.Fatalf("Delete: %v", err)
+	err := ps.Delete(w.ID())
+	if err == nil || !strings.Contains(err.Error(), "height") {
+		t.Fatalf("Delete(in-use) = %v, want a refusal naming the blocker \"height\"", err)
+	}
+	if _, ok := ps.ByID(w.ID()); !ok {
+		t.Error("a refused delete must leave the parameter in place")
+	}
+	if h.Health().Status == Failed {
+		t.Errorf("dependent health after refused delete = %+v, want untouched", h.Health())
+	}
+}
+
+// TestDeleteForOwnerSickensDependents keeps the owner-cascade contract: a
+// dimension tearing down its own model parameter bypasses the guard, and
+// former dependents go sick on the lost reference.
+func TestDeleteForOwnerSickensDependents(t *testing.T) {
+	ps := NewParameters()
+	w, _ := ps.AddModelParameter("d0", "10 cm")
+	h, _ := ps.AddUserParameter("height", "2 * d0")
+	if err := ps.DeleteForOwner(w.ID()); err != nil {
+		t.Fatalf("DeleteForOwner: %v", err)
 	}
 	if h.Health().Status != Failed {
-		t.Errorf("dependent health after driver delete = %+v, want Failed", h.Health())
+		t.Errorf("dependent health after owner delete = %+v, want Failed", h.Health())
 	}
 }
 

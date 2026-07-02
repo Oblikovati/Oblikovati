@@ -165,7 +165,9 @@ func (dc *DimensionConstraints) Delete(d *DimensionConstraint) bool {
 	for i, x := range dc.items {
 		if x == d {
 			dc.items = append(dc.items[:i], dc.items[i+1:]...)
-			_ = dc.params.Delete(d.param.ID())
+			// Owner cascade: the dimension owns this model parameter, so the
+			// in-use guard on Delete does not apply (the owner itself is going).
+			_ = dc.params.DeleteForOwner(d.param.ID())
 			return true
 		}
 	}

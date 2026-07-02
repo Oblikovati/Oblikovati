@@ -2,7 +2,10 @@
 
 package param
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // Parameters is the owning collection for a document's parameters (contract:
 // Parameters / ModelParameters / UserParameters). It assigns stable ids,
@@ -233,14 +236,50 @@ func (ps *Parameters) Rename(id ID, newName string) error {
 	return nil
 }
 
-// Delete removes a parameter from the collection.
+// Delete removes an unused parameter. Deleting an in-use one is refused with
+// the blockers named — the aggregate owns this invariant so every driver (wire
+// router, head UI) gets the same refusal instead of the divergence audited as
+// B1 (#1612): the reference API likewise refuses deleting a referenced
+// parameter. An owner tearing down its own model parameter uses
+// [Parameters.DeleteForOwner].
 func (ps *Parameters) Delete(id ID) error {
+	p, ok := ps.byID[id]
+	if !ok {
+		return fmt.Errorf(errNoParameter, id)
+	}
+	if ps.InUse(id) {
+		return fmt.Errorf("param: cannot delete %q: it is in use by [%s]; remove those references first",
+			p.name, strings.Join(ps.deleteBlockers(p), ", "))
+	}
+	ps.remove(p)
+	return nil
+}
+
+// DeleteForOwner removes a parameter without the in-use guard — for the owner
+// cascade only (a dimension/feature deleting the model parameter it owns as it
+// is itself torn down). Former dependents go sick on the lost reference.
+func (ps *Parameters) DeleteForOwner(id ID) error {
 	p, ok := ps.byID[id]
 	if !ok {
 		return fmt.Errorf(errNoParameter, id)
 	}
 	ps.remove(p)
 	return nil
+}
+
+// deleteBlockers names what keeps a parameter alive: its dependents, or its
+// owning feature dimension for a model parameter.
+func (ps *Parameters) deleteBlockers(p *Parameter) []string {
+	if deps := ps.Dependents(p.id); len(deps) > 0 {
+		names := make([]string, 0, len(deps))
+		for _, id := range deps {
+			if d, ok := ps.byID[id]; ok {
+				names = append(names, d.name)
+			}
+		}
+		return names
+	}
+	return []string{"its feature dimension"}
 }
 
 // remove deletes a parameter from all indices and detaches its edges; former
