@@ -97,3 +97,23 @@ func TestInsideSolidEdgeGrazingDirection(t *testing.T) {
 		t.Errorf("exterior point %v (old ray through a corner) classified inside", outside)
 	}
 }
+
+// TestInsideSolidToleratesInsideOutBody: membership of the closed REGION is orientation-
+// independent, and legacy builders emitted consistently inside-out bodies (loops wound opposite
+// their outward normals — the buildPrism CW-poly class, #1600). The classifier must read the
+// magnitude of the winding sum: a signed threshold writes such a body's entire interior off as
+// outside, which mangles any boolean against it.
+func TestInsideSolidToleratesInsideOutBody(t *testing.T) {
+	verts := []math.Point3{
+		math.P3(0, 0, 0), math.P3(2, 0, 0), math.P3(2, 2, 0), math.P3(0, 2, 0),
+		math.P3(0, 0, 2), math.P3(2, 0, 2), math.P3(2, 2, 2), math.P3(0, 2, 2),
+	}
+	facesIn := [][]int{{0, 1, 2, 3}, {4, 7, 6, 5}, {0, 4, 5, 1}, {3, 2, 6, 7}, {0, 3, 7, 4}, {1, 5, 6, 2}} // all wound inward
+	blk := subd.ToBody(subd.Mesh{Verts: verts, Faces: facesIn}, "insideout")
+	if !insideSolid(blk, math.P3(1, 1, 1)) {
+		t.Error("interior point of an inside-out box classified outside (signed-threshold regression)")
+	}
+	if insideSolid(blk, math.P3(5, 5, 5)) {
+		t.Error("exterior point of an inside-out box classified inside")
+	}
+}

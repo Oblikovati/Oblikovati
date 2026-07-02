@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -47,5 +48,26 @@ func TestBooleanVolumeGuardTwoSided(t *testing.T) {
 		if got := invalidBooleanVolume(c.op, target, tool, c.result); got != c.invalid {
 			t.Errorf("%s: invalidBooleanVolume = %v, want %v", c.name, got, c.invalid)
 		}
+	}
+}
+
+// TestTangentUnionRecordsNudgedGeometry pins #1600's visibility guarantee: a union across a
+// tangent (edge-sharing) contact resolves through the nudged retry — the result carries operand
+// B displaced by the nudge — and that MUST surface as a boolean.nudged-geometry Defect instead of
+// shipping silently. (Retiring the displacement itself needs the downstream re-welds to respect
+// existing topology; tracked on the issue.)
+func TestTangentUnionRecordsNudgedGeometry(t *testing.T) {
+	a := guardBlock(t, math.P3(0, 0, 0), math.P3(2, 2, 2), "a")
+	b := guardBlock(t, math.P3(2, 2, 0), math.P3(4, 4, 2), "b") // shares only the vertical edge x=2,y=2
+	rec := &diag.Recorder{}
+	res, err := BooleanWithDiagnostics(Join, a, b, rec)
+	if err != nil {
+		t.Fatalf("tangent union: %v", err)
+	}
+	if res == nil || !res.IsSolid() {
+		t.Fatal("tangent union did not produce a solid")
+	}
+	if !rec.Has(brep.CodeBooleanNudgedGeometry) {
+		t.Errorf("tangent union shipped without a %q diagnostic; got %v", brep.CodeBooleanNudgedGeometry, rec.Records())
 	}
 }

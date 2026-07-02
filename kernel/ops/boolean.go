@@ -114,7 +114,7 @@ func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.L
 	if !ok {
 		return booleanCSG(op, target, tool, lin, rec)
 	}
-	body, err := brep.Boolean(bop, target, tool)
+	body, err := brep.BooleanDiag(bop, target, tool, rec)
 	if err != nil {
 		return booleanCSG(op, target, tool, lin, rec) // non-planar operand → triangle CSG
 	}
