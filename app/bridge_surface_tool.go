@@ -54,13 +54,30 @@ func (t *BridgeSurfaceTool) CanCommit() bool {
 
 func (t *BridgeSurfaceTool) inRange(i int) bool { return i >= 0 && i < len(bridgeContinuityLabels) }
 
+// addBridgeSurface builds the bridge feature into fs — the shared constructor used by both
+// Commit (the part's engine) and DraftFeature (a scratch engine), so the two cannot drift.
+func (t *BridgeSurfaceTool) addBridgeSurface(fs *feature.PartFeatures) *feature.PartFeature {
+	return feature.NewBridgeFeatures(fs).Add(t.sideA, t.sideB)
+}
+
+// DraftFeature implements [PartFeatureTool] (#1626): the bridge it would commit, built into a
+// scratch engine so the commit gate and preview can evaluate it without touching the part.
+func (t *BridgeSurfaceTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addBridgeSurface(fs), nil
+	})
+}
+
 // Commit bridges the two surfaces and recomputes.
 func (t *BridgeSurfaceTool) Commit(s *Session) error {
 	part, err := activePart(s)
 	if err != nil {
 		return err
 	}
-	t.added = feature.NewBridgeFeatures(part.Features()).Add(t.sideA, t.sideB)
+	t.added = t.addBridgeSurface(part.Features())
 	part.Recompute()
 	s.recordEdit(part, "Bridge Surface")
 	if !t.added.Health().OK() {

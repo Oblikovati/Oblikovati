@@ -239,3 +239,17 @@ func mustEditableSurface(t *testing.T, s *Session) geom.BSplineSurface {
 	}
 	return surf
 }
+
+// TestNurbsPlaneToolDraftFeature pins the #1626 commit-gate seam: no draft at a non-positive
+// size, a non-nil draft once commit-ready.
+func TestNurbsPlaneToolDraftFeature(t *testing.T) {
+	tool := NewNurbsPlaneTool()
+	tool.width = 0
+	if _, ok := tool.DraftFeature(nil); ok {
+		t.Error("DraftFeature must not build at a non-positive width")
+	}
+	tool.width = 10
+	if draft, ok := tool.DraftFeature(nil); !ok || draft == nil {
+		t.Fatalf("DraftFeature = (%v, %v), want a non-nil draft once commit-ready", draft, ok)
+	}
+}

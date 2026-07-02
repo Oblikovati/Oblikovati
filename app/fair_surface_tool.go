@@ -51,13 +51,30 @@ func (t *FairSurfaceTool) Params() ToolParams {
 // CanCommit reports whether the strength and iterations are positive.
 func (t *FairSurfaceTool) CanCommit() bool { return t.strength > 0 && t.iterations > 0 }
 
+// addFairSurface builds the fair feature into fs — the shared constructor used by both Commit
+// (the part's engine) and DraftFeature (a scratch engine), so the two cannot drift.
+func (t *FairSurfaceTool) addFairSurface(fs *feature.PartFeatures) *feature.PartFeature {
+	return feature.NewFairFeatures(fs).Add(t.hold, t.strength, t.iterations)
+}
+
+// DraftFeature implements [PartFeatureTool] (#1626): the fairing it would commit, built into a
+// scratch engine so the commit gate and preview can evaluate it without touching the part.
+func (t *FairSurfaceTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addFairSurface(fs), nil
+	})
+}
+
 // Commit fairs the running surface and recomputes.
 func (t *FairSurfaceTool) Commit(s *Session) error {
 	part, err := activePart(s)
 	if err != nil {
 		return err
 	}
-	t.added = feature.NewFairFeatures(part.Features()).Add(t.hold, t.strength, t.iterations)
+	t.added = t.addFairSurface(part.Features())
 	part.Recompute()
 	s.recordEdit(part, "Fair Surface")
 	if !t.added.Health().OK() {

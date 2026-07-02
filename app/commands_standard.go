@@ -344,37 +344,37 @@ func surfaceFeatureCommands() []*CommandDefinition {
 			WithIcon("surface-extend").WithButtonStyle(LargeIconButton).
 			WithTooltip("Extend — grow a surface outward along a boundary edge."),
 		NewCommand("Surface.RuleFillet", "Rule Fillet", "Surface", func(s *Session) error {
-			s.StartTool(NewRuleFilletTool())
+			s.StartFeatureTool(NewRuleFilletTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("fillet").WithButtonStyle(LargeIconButton).
 			WithTooltip("Rule Fillet — round a whole class of edges (all rounds, all fillets, or all edges) at one radius."),
 		NewCommand("Surface.Ruled", "Ruled Surface", "Surface", func(s *Session) error {
-			s.StartTool(NewRuledSurfaceTool())
+			s.StartFeatureTool(NewRuledSurfaceTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("ruled-surface").WithButtonStyle(LargeIconButton).
 			WithTooltip("Ruled Surface — sweep a closed profile's edges by straight rulings into a band."),
 		NewCommand("Surface.Offset", "Offset Surface", "Surface", func(s *Session) error {
-			s.StartTool(NewSurfaceOffsetTool())
+			s.StartFeatureTool(NewSurfaceOffsetTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("surface-offset").WithButtonStyle(LargeIconButton).
 			WithTooltip("Offset Surface — copy the running surface along its normal by a distance."),
 		NewCommand("Surface.MidSurface", "Mid-Surface", "Surface", func(s *Session) error {
-			s.StartTool(NewMidSurfaceTool())
+			s.StartFeatureTool(NewMidSurfaceTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("mid-surface").WithButtonStyle(LargeIconButton).
 			WithTooltip("Mid-Surface — extract mid-plane patches from the solid's thin walls (for FEA)."),
 		NewCommand("Surface.Rebuild", "Rebuild Surface", "Surface", func(s *Session) error {
-			s.StartTool(NewSurfaceRebuildTool())
+			s.StartFeatureTool(NewSurfaceRebuildTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("rebuild-surface").WithButtonStyle(LargeIconButton).
 			WithTooltip("Rebuild Surface — refit freeform faces to clean Class-A NURBS (fewer, even control points)."),
 		NewCommand("Surface.NurbsPlane", "NURBS Plane", "Surface", func(s *Session) error {
-			s.StartTool(NewNurbsPlaneTool())
+			s.StartFeatureTool(NewNurbsPlaneTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("nurbs-plane").WithButtonStyle(LargeIconButton).
@@ -386,13 +386,13 @@ func surfaceFeatureCommands() []*CommandDefinition {
 			WithIcon("control-point-edit").WithButtonStyle(LargeIconButton).
 			WithTooltip("Edit Control Points — drag a NURBS surface's control net to shape it (region, falloff, symmetry)."),
 		NewCommand("Surface.Match", "Match Surface", "Surface", func(s *Session) error {
-			s.StartTool(NewMatchTool())
+			s.StartFeatureTool(NewMatchTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("match-surface").WithButtonStyle(LargeIconButton).
 			WithTooltip("Match Surface — rebuild the surface against its neighbour to G0/G1/G2/G3 continuity."),
 		NewCommand("Surface.ExtendNurbs", "Extend Surface", "Surface", func(s *Session) error {
-			s.StartTool(NewExtendSurfaceTool())
+			s.StartFeatureTool(NewExtendSurfaceTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("extend-surface").WithButtonStyle(LargeIconButton).
@@ -402,31 +402,31 @@ func surfaceFeatureCommands() []*CommandDefinition {
 			WithIcon("untrim-surface").WithButtonStyle(LargeIconButton).
 			WithTooltip("Untrim — recover a trimmed NURBS face's full underlying surface."),
 		NewCommand("Surface.Fill", "Fill Surface", "Surface", func(s *Session) error {
-			s.StartTool(NewFillSurfaceTool())
+			s.StartFeatureTool(NewFillSurfaceTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("fill-surface").WithButtonStyle(LargeIconButton).
 			WithTooltip("Fill Surface — close a four-sided opening with a single clean NURBS at G0/G1/G2 continuity."),
 		NewCommand("Surface.Bridge", "Bridge Surface", "Surface", func(s *Session) error {
-			s.StartTool(NewBridgeSurfaceTool())
+			s.StartFeatureTool(NewBridgeSurfaceTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("bridge-surface").WithButtonStyle(LargeIconButton).
 			WithTooltip("Bridge Surface — connect two surfaces with a clean NURBS transition at G0/G1/G2 continuity per side."),
 		NewCommand("Surface.Network", "Network Surface", "Surface", func(s *Session) error {
-			s.StartTool(NewNetworkTool())
+			s.StartFeatureTool(NewNetworkTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("network-surface").WithButtonStyle(LargeIconButton).
 			WithTooltip("Network Surface — interpolate a grid of intersecting U and V curves with a single NURBS (Gordon surface)."),
 		NewCommand("Surface.Fair", "Fair Surface", "Surface", func(s *Session) error {
-			s.StartTool(NewFairSurfaceTool())
+			s.StartFeatureTool(NewFairSurfaceTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("fair-surface").WithButtonStyle(LargeIconButton).
 			WithTooltip("Fair Surface — smooth curvature wrinkles out of a surface while holding its boundary continuity (G0/G1/G2)."),
 		NewCommand("Surface.FitToCloud", "Fit Surface", "Surface", func(s *Session) error {
-			s.StartTool(NewFitSurfaceTool())
+			s.StartFeatureTool(NewFitSurfaceTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("fit-surface").WithButtonStyle(LargeIconButton).

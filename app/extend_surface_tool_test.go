@@ -97,3 +97,17 @@ func TestExtendNurbsViaRibbonCommand(t *testing.T) {
 		t.Errorf("Surface.ExtendNurbs started tool %q, want Extend Surface", got)
 	}
 }
+
+// TestExtendSurfaceToolDraftFeature pins the #1626 commit-gate seam: no draft at a non-positive
+// distance, a non-nil draft once commit-ready.
+func TestExtendSurfaceToolDraftFeature(t *testing.T) {
+	tool := NewExtendSurfaceTool()
+	tool.distance = 0
+	if _, ok := tool.DraftFeature(nil); ok {
+		t.Error("DraftFeature must not build at a non-positive distance")
+	}
+	tool.distance = 1
+	if draft, ok := tool.DraftFeature(nil); !ok || draft == nil {
+		t.Fatalf("DraftFeature = (%v, %v), want a non-nil draft once commit-ready", draft, ok)
+	}
+}

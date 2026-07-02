@@ -52,13 +52,30 @@ func (t *NurbsPlaneTool) CanCommit() bool {
 	return t.width > 0 && t.height > 0 && t.uCount >= 4 && t.vCount >= 4
 }
 
+// addNurbsPlane builds the NURBS-plane feature into fs — the shared constructor used by both
+// Commit (the part's engine) and DraftFeature (a scratch engine), so the two cannot drift.
+func (t *NurbsPlaneTool) addNurbsPlane(fs *feature.PartFeatures) *feature.PartFeature {
+	return feature.NewNurbsPlaneFeatures(fs).Add(t.width, t.height, t.uCount, t.vCount)
+}
+
+// DraftFeature implements [PartFeatureTool] (#1626): the plane patch it would commit, built into
+// a scratch engine so the commit gate and preview can evaluate it without touching the part.
+func (t *NurbsPlaneTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addNurbsPlane(fs), nil
+	})
+}
+
 // Commit creates the NURBS plane patch and recomputes.
 func (t *NurbsPlaneTool) Commit(s *Session) error {
 	part, err := activePart(s)
 	if err != nil {
 		return err
 	}
-	t.added = feature.NewNurbsPlaneFeatures(part.Features()).Add(t.width, t.height, t.uCount, t.vCount)
+	t.added = t.addNurbsPlane(part.Features())
 	part.Recompute()
 	s.recordEdit(part, "NURBS Plane")
 	if !t.added.Health().OK() {
