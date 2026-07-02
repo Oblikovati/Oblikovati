@@ -3,6 +3,7 @@
 package app
 
 import (
+	"slices"
 	"testing"
 
 	"oblikovati.org/model/feature"
@@ -16,16 +17,6 @@ func childrenKinds(n BrowserNode) []string {
 		kinds[i] = c.Kind
 	}
 	return kinds
-}
-
-// topLevelKind reports whether the part root has a direct child of the given kind.
-func containsLabel(labels []string, want string) bool {
-	for _, l := range labels {
-		if l == want {
-			return true
-		}
-	}
-	return false
 }
 
 func hasTopLevelKind(root BrowserNode, kind string) bool {
@@ -126,7 +117,7 @@ func TestToggleSketchSharedRoundTripsThroughMenu(t *testing.T) {
 		t.Error("shared sketch should be top level after toggle")
 	}
 	labels := menuLabels(BrowserMenu(s, findNode(t, root, "sketch")))
-	if !containsLabel(labels, "Unshare Sketch") {
+	if !slices.Contains(labels, "Unshare Sketch") {
 		t.Errorf("shared sketch menu = %v, want an Unshare Sketch entry", labels)
 	}
 

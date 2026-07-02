@@ -2,7 +2,10 @@
 
 package param
 
-import "fmt"
+import (
+	"fmt"
+	"slices"
+)
 
 // This file is the parameter dependency graph (F04): the same dirty-propagation
 // machinery the feature engine will reuse (architecture core/04). Edges are
@@ -91,7 +94,7 @@ func (ps *Parameters) rebind(id ID) error {
 // parameter's name but could not bind before it existed.
 func (ps *Parameters) onParameterAdded(p *Parameter) {
 	for _, other := range ps.All() {
-		if other.id != p.id && containsString(other.expr.References(), p.name) {
+		if other.id != p.id && slices.Contains(other.expr.References(), p.name) {
 			_ = ps.rebind(other.id) // a re-add cannot introduce a new cycle here
 		}
 	}
@@ -234,14 +237,4 @@ func keysOf(set idSet) []ID {
 		out = append(out, id)
 	}
 	return out
-}
-
-// containsString reports whether s is in list.
-func containsString(list []string, s string) bool {
-	for _, x := range list {
-		if x == s {
-			return true
-		}
-	}
-	return false
 }

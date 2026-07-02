@@ -5,6 +5,7 @@ package feature
 import (
 	"bytes"
 	"fmt"
+	"slices"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/math"
@@ -96,7 +97,7 @@ func keyRefSlotMulti(label string, kind RefKind, field *[][]byte) EditableRefSlo
 		Count: func() int { return len(*field) },
 		Keys:  func() [][]byte { return *field },
 		Add: func(r PickedRef) {
-			if !containsRefKey(*field, r.Key) {
+			if !slices.ContainsFunc(*field, func(k []byte) bool { return bytes.Equal(k, r.Key) }) {
 				*field = append(*field, r.Key)
 			}
 		},
@@ -196,15 +197,6 @@ func planeRefSlot(label string, origin *math.Point3, normal *math.Vector3, key *
 			}
 		},
 	}
-}
-
-func containsRefKey(ks [][]byte, key []byte) bool {
-	for _, k := range ks {
-		if bytes.Equal(k, key) {
-			return true
-		}
-	}
-	return false
 }
 
 func cloneRefKeys(ks [][]byte) [][]byte {

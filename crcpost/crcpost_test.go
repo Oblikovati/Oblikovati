@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -69,7 +70,7 @@ func TestSendRejectsNon2xxWithBodyContext(t *testing.T) {
 	if err == nil || errors.Is(err, ErrOffline) {
 		t.Fatalf("err = %v, want a non-offline error on 401", err)
 	}
-	if !contains(err.Error(), "invalid authorization token") {
+	if !strings.Contains(err.Error(), "invalid authorization token") {
 		t.Errorf("err missing body context: %v", err)
 	}
 }
@@ -91,13 +92,4 @@ func TestSendBadEndpointErrors(t *testing.T) {
 	if err == nil || errors.Is(err, ErrOffline) {
 		t.Fatalf("err = %v, want a build-request error (not offline)", err)
 	}
-}
-
-func contains(s, sub string) bool {
-	for i := 0; i+len(sub) <= len(s); i++ {
-		if s[i:i+len(sub)] == sub {
-			return true
-		}
-	}
-	return false
 }

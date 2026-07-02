@@ -4,6 +4,7 @@ package assembly
 
 import (
 	"fmt"
+	"slices"
 
 	"oblikovati.org/api/contract"
 )
@@ -157,7 +158,7 @@ func (s *ContactSolver) PartnersOf(occID uint64) []uint64 {
 	seen := map[uint64]bool{}
 	var out []uint64
 	for _, cs := range s.sets {
-		if !contains(cs.members, occID) {
+		if !slices.Contains(cs.members, occID) {
 			continue
 		}
 		for _, m := range cs.members {
@@ -174,17 +175,7 @@ func (s *ContactSolver) PartnersOf(occID uint64) []uint64 {
 // solver keeps from interpenetrating.
 func (s *ContactSolver) Contacts(a, b uint64) bool {
 	for _, cs := range s.sets {
-		if contains(cs.members, a) && contains(cs.members, b) {
-			return true
-		}
-	}
-	return false
-}
-
-// contains reports whether ids holds v.
-func contains(ids []uint64, v uint64) bool {
-	for _, id := range ids {
-		if id == v {
+		if slices.Contains(cs.members, a) && slices.Contains(cs.members, b) {
 			return true
 		}
 	}

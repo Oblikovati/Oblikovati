@@ -4,6 +4,7 @@ package app
 
 import (
 	"fmt"
+	"slices"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/topo"
@@ -34,7 +35,7 @@ func (h *HighlightSet) SetColor(c types.Color) { h.color = c }
 // AddItems appends reference strings, ignoring blanks and duplicates.
 func (h *HighlightSet) AddItems(refs ...string) {
 	for _, r := range refs {
-		if r != "" && !containsRef(h.refs, r) {
+		if r != "" && !slices.Contains(h.refs, r) {
 			h.refs = append(h.refs, r)
 		}
 	}
@@ -164,13 +165,4 @@ func findVertex(bodies []*topo.Body, key []byte) (Selectable, bool) {
 		}
 	}
 	return nil, false
-}
-
-func containsRef(refs []string, r string) bool {
-	for _, x := range refs {
-		if x == r {
-			return true
-		}
-	}
-	return false
 }

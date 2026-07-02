@@ -4,6 +4,7 @@ package param
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 )
 
@@ -63,7 +64,7 @@ func (p *parser) parseBinary(sub func() (node, error), ops ...tokenKind) (node, 
 	if err != nil {
 		return nil, err
 	}
-	for containsKind(ops, p.peek().kind) {
+	for slices.Contains(ops, p.peek().kind) {
 		op := p.advance()
 		rhs, err := sub()
 		if err != nil {
@@ -172,13 +173,4 @@ func (p *parser) parseParen() (node, error) {
 	}
 	p.advance()
 	return inner, nil
-}
-
-func containsKind(kinds []tokenKind, k tokenKind) bool {
-	for _, x := range kinds {
-		if x == k {
-			return true
-		}
-	}
-	return false
 }
