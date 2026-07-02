@@ -214,135 +214,14 @@ func (r *sketchRestorer) restoreConstraints(constraints []ConstraintData) error 
 	return nil
 }
 
+// restoreConstraint decodes through the paired codec registry (#1625) — an
+// unknown kind is a corrupt-recipe error, named honestly.
 func (r *sketchRestorer) restoreConstraint(cd ConstraintData) error {
-	g := r.s.geomCons
-	switch cd.Kind {
-	case "coincident":
-		return r.twoPoints(cd, func(a, b *Point) { g.AddCoincident(a, b) })
-	case "horizontal":
-		return r.twoPoints(cd, func(a, b *Point) { g.AddHorizontal(a, b) })
-	case "vertical":
-		return r.twoPoints(cd, func(a, b *Point) { g.AddVertical(a, b) })
-	case "parallel":
-		return r.twoLines(cd, func(a, b *Line) { g.AddParallel(a, b) })
-	case "perpendicular":
-		return r.twoLines(cd, func(a, b *Line) { g.AddPerpendicular(a, b) })
-	case "collinear":
-		return r.twoLines(cd, func(a, b *Line) { g.AddCollinear(a, b) })
-	case "equalLength":
-		return r.twoLines(cd, func(a, b *Line) { g.AddEqualLength(a, b) })
-	case "concentric":
-		return r.twoCurves(cd, func(a, b CircularCurve) { g.AddConcentric(a, b) })
-	case "equalRadius":
-		return r.twoCurves(cd, func(a, b CircularCurve) { g.AddEqualRadius(a, b) })
-	case "circularTangent":
-		return r.twoCurves(cd, func(a, b CircularCurve) { g.AddCircularTangent(a, b) })
-	case "pointOnLine":
-		return r.pointAndLine(cd, func(p *Point, l *Line) { g.AddPointOnLine(p, l) })
-	case "midpoint":
-		return r.pointAndLine(cd, func(p *Point, l *Line) { g.AddMidpoint(p, l) })
-	case "pointOnCircle":
-		p, err := r.point(cd.Points, 0)
-		if err != nil {
-			return err
-		}
-		c, err := r.curve(cd.Curves, 0)
-		if err != nil {
-			return err
-		}
-		g.AddPointOnCircle(p, c)
-		return nil
-	case "tangent":
-		l, err := r.line(cd.Curves, 0)
-		if err != nil {
-			return err
-		}
-		c, err := r.curve(cd.Curves, 1)
-		if err != nil {
-			return err
-		}
-		g.AddTangent(l, c)
-		return nil
-	case "symmetry":
-		a, err := r.point(cd.Points, 0)
-		if err != nil {
-			return err
-		}
-		b, err := r.point(cd.Points, 1)
-		if err != nil {
-			return err
-		}
-		about, err := r.line(cd.Curves, 0)
-		if err != nil {
-			return err
-		}
-		g.AddSymmetry(a, b, about)
-		return nil
-	case "fix":
-		p, err := r.point(cd.Points, 0)
-		if err != nil {
-			return err
-		}
-		g.AddFix(p)
-		return nil
-	case "smooth":
-		c1, err := r.smooth(cd.Curves, 0)
-		if err != nil {
-			return err
-		}
-		c2, err := r.smooth(cd.Curves, 1)
-		if err != nil {
-			return err
-		}
-		p1, err := r.point(cd.Points, 0)
-		if err != nil {
-			return err
-		}
-		p2, err := r.point(cd.Points, 1)
-		if err != nil {
-			return err
-		}
-		g.AddSmooth(c1, c2, p1, p2)
-		return nil
-	default:
-		return r.restoreExtraConstraint(cd)
-	}
-}
-
-// restoreExtraConstraint rebuilds the M21 constraints (ground/offset/pattern link); split
-// out of restoreConstraint to keep that switch small.
-func (r *sketchRestorer) restoreExtraConstraint(cd ConstraintData) error {
-	g := r.s.geomCons
-	switch cd.Kind {
-	case "ground":
-		pts, err := r.points(cd.Points, len(cd.Points))
-		if err != nil {
-			return err
-		}
-		g.AddGroundPoints(pts...)
-		return nil
-	case "offset":
-		return r.twoLines(cd, func(a, b *Line) { g.AddOffset(a, b, cd.Value) })
-	case "patternLink":
-		return r.twoPoints(cd, func(a, b *Point) { g.AddPatternLink(a, b) })
-	case "textBox":
-		// The anchor record is auto-created with its text box; restoring it
-		// explicitly would duplicate it, so the persisted row is a no-op.
-		return nil
-	case "custom":
-		ents := make([]Entity, 0, len(cd.Curves))
-		for i := range cd.Curves {
-			e, err := r.entity(cd.Curves, i)
-			if err != nil {
-				return err
-			}
-			ents = append(ents, e)
-		}
-		_, err := g.AddCustom(cd.ClientID, cd.Name, ents)
-		return err
-	default:
+	codec, ok := constraintCodecs2D[ConstraintKind(cd.Kind)]
+	if !ok {
 		return fmt.Errorf("unknown constraint kind %q", cd.Kind)
 	}
+	return codec.decode(r, cd)
 }
 
 // restoreSplineExtras rebuilds a spline's fit method and active tangency
@@ -566,11 +445,16 @@ func (r *sketchRestorer) entity(ids []int, i int) (Entity, error) {
 	if err != nil {
 		return nil, err
 	}
-	e, ok := r.entityMap[id]
-	if !ok {
-		return nil, fmt.Errorf("unresolved entity id %d", id)
+	if e, ok := r.entityMap[id]; ok {
+		return e, nil
 	}
-	return e, nil
+	// A *Point is itself an Entity (a custom tag constraint may anchor to a
+	// bare point), but points persist in the Points table, not the entity
+	// rows — fall back there. Surfaced by the #1625 constraintseam live test.
+	if p, ok := r.pointMap[id]; ok {
+		return p, nil
+	}
+	return nil, fmt.Errorf("unresolved entity id %d", id)
 }
 
 func (r *sketchRestorer) line(ids []int, i int) (*Line, error) {

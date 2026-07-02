@@ -117,8 +117,9 @@ func TestSketch3DParameterStore(t *testing.T) {
 // TestSketch3DSerializeErrors covers the missing-codec and unknown-id error paths of the
 // 3D sketch codec.
 func TestSketch3DSerializeErrors(t *testing.T) {
-	// Equal3D has no point-operand codec.
-	if _, err := serializeConstraint3D(NewEqual3D(nil, nil)); err == nil {
+	// CustomConstraint3D is a solver adapter over an opaque residual closure —
+	// deliberately not serializable.
+	if _, err := serializeConstraint3D(NewCustomConstraint3D(func() []float64 { return nil }, nil)); err == nil {
 		t.Error("serializeConstraint3D should error for an unsupported constraint")
 	}
 	// Restoring a constraint that references an unknown point id fails honestly.
@@ -180,7 +181,7 @@ func TestSketch3DNameCollision(t *testing.T) {
 func TestSketch3DRecipeErrorsPropagate(t *testing.T) {
 	src := NewSketches3D()
 	s := src.Add()
-	s.GeometricConstraints3D().add(NewEqual3D(nil, nil)) // no codec ⇒ marshal fails
+	s.GeometricConstraints3D().add(NewCustomConstraint3D(func() []float64 { return nil }, nil)) // no codec ⇒ marshal fails
 	if _, err := src.MarshalRecipe3D(); err == nil {
 		t.Error("MarshalRecipe3D should propagate a constraint-codec error")
 	}

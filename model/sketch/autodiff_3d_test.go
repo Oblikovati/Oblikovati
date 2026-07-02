@@ -21,7 +21,9 @@ func TestConstraint3DPartialsMatchFiniteDifference(t *testing.T) {
 	c := s.AddPoint3D(math.P3(2.2, -1.1, 0.8))
 	l1 := s.AddLine3D(math.P3(0.2, 0.5, 0.1), math.P3(2.6, 1.9, -0.4))
 	l2 := s.AddLine3D(math.P3(-1.1, 0.3, 0.7), math.P3(1.7, 2.8, 1.3))
-	r1, r2 := math.Scalar(2.5), math.Scalar(3.1)
+	zUp, _ := math.NewUnitVector3(0, 0, 1)
+	c1 := s.AddCircle3D(math.P3(0, 0, 0), zUp, 2.5)
+	c2 := s.AddCircle3D(math.P3(5, 0, 0), zUp, 3.1)
 
 	cases := []struct {
 		name string
@@ -30,7 +32,7 @@ func TestConstraint3DPartialsMatchFiniteDifference(t *testing.T) {
 		{"coincident3d", NewCoincident3D(a, b)},
 		{"collinear3d", NewCollinear3D(a, b, c)},
 		{"concentric3d", NewConcentric3D(a, b)},
-		{"equal3d", NewEqual3D(&r1, &r2)},
+		{"equal3d", mustEqual3D(t, c1, c2)},
 		{"parallel3d", NewParallel3D(l1, l2)},
 		{"perpendicular3d", NewPerpendicular3D(l1, l2)},
 		{"midpoint3d", NewMidpoint3D(a, l1)},
@@ -128,4 +130,15 @@ func TestDimension3DPartialsMatchFiniteDifference(t *testing.T) {
 	for _, tc := range cases {
 		assertAnalyticMatchesFD(t, tc.name, tc.c)
 	}
+}
+
+// mustEqual3D builds an Equal3D over two radius-bearing curves, failing the test
+// on a refused operand (#1625).
+func mustEqual3D(t *testing.T, e1, e2 Entity) *Equal3D {
+	t.Helper()
+	eq, err := NewEqual3D(e1, e2)
+	if err != nil {
+		t.Fatalf("NewEqual3D(%T, %T): %v", e1, e2, err)
+	}
+	return eq
 }

@@ -186,109 +186,55 @@ func point2Slice(pts []math.Point2) [][]float64 {
 	return out
 }
 
-// geometricShape returns a geometric constraint's wire kind and the ids of the entities
-// (points/lines/curves) it relates. Split into point- and curve-anchored groups to keep
-// each type switch small.
+// geometricShape returns a geometric constraint's wire kind and the ids of the
+// entities it relates, both self-reported by the constraint's KindedConstraint
+// capability (#1625) — the per-consumer type switches this replaces are the
+// structure that shipped #1574's enumerable-but-not-creatable Symmetry.
 func geometricShape(c sketch.Constraint) (types.GeometricConstraintKind, []uint64) {
-	if k, refs, ok := pointConstraintShape(c); ok {
-		return k, refs
+	kc, ok := c.(sketch.KindedConstraint)
+	if !ok {
+		return types.GeoConstraintUnknown, nil
 	}
-	if k, refs, ok := lineConstraintShape(c); ok {
-		return k, refs
-	}
-	if k, refs, ok := circularConstraintShape(c); ok {
-		return k, refs
-	}
-	if k, refs, ok := extraConstraintShape(c); ok {
-		return k, refs
-	}
-	return types.GeoConstraintUnknown, nil
+	return wireConstraintKind(kc.ConstraintKind()), ids(kc.RelatedEntities()...)
 }
 
-// extraConstraintShape handles the M21 constraints (ground/offset/pattern
-// link) and the M06-F11 tag constraints (text-box anchor, custom).
-func extraConstraintShape(c sketch.Constraint) (types.GeometricConstraintKind, []uint64, bool) {
-	switch v := c.(type) {
-	case *sketch.GroundConstraint:
-		return types.GeoConstraintGround, ids(pointsAsEntities(v.Points())...), true
-	case *sketch.OffsetConstraint:
-		return types.GeoConstraintOffset, ids(v.L1, v.L2), true
-	case *sketch.PatternConstraint:
-		return types.GeoConstraintPattern, ids(v.Seed, v.Member), true
-	case *sketch.TextBoxAnchorConstraint:
-		return types.GeoConstraintTextBox, ids(v.Text), true
-	case *sketch.CustomConstraint:
-		return types.GeoConstraintCustom, ids(v.Entities...), true
-	default:
-		return "", nil, false
+// wireConstraintKind maps the model's persisted constraint vocabulary to the
+// wire enum at the router boundary (the two follow different compatibility
+// contracts: .obk stability vs API SemVer). The wire enum is coarser: a
+// circular tangent enumerates as the wire "tangent".
+func wireConstraintKind(kind sketch.ConstraintKind) types.GeometricConstraintKind {
+	if kind == sketch.CircularTangentKind {
+		return types.GeoConstraintTangent
 	}
+	if wire, ok := wireConstraintKinds[kind]; ok {
+		return wire
+	}
+	return types.GeoConstraintUnknown
 }
 
-// pointsAsEntities adapts a slice of points to the Entity interface for ids().
-func pointsAsEntities(pts []*sketch.Point) []sketch.Entity {
-	out := make([]sketch.Entity, len(pts))
-	for i, p := range pts {
-		out[i] = p
-	}
-	return out
-}
-
-// pointConstraintShape handles the constraints anchored on points (and point↔line).
-func pointConstraintShape(c sketch.Constraint) (types.GeometricConstraintKind, []uint64, bool) {
-	switch v := c.(type) {
-	case *sketch.CoincidentConstraint:
-		return types.GeoConstraintCoincident, ids(v.A, v.B), true
-	case *sketch.PointOnLineConstraint:
-		return types.GeoConstraintPointOnLine, ids(v.P, v.L), true
-	case *sketch.MidpointConstraint:
-		return types.GeoConstraintMidpoint, ids(v.P, v.L), true
-	case *sketch.PointOnCircleConstraint:
-		return types.GeoConstraintPointOnCircle, append(ids(v.P), curveID(v.C)...), true
-	case *sketch.HorizontalConstraint:
-		return types.GeoConstraintHorizontal, ids(v.A, v.B), true
-	case *sketch.VerticalConstraint:
-		return types.GeoConstraintVertical, ids(v.A, v.B), true
-	case *sketch.SymmetryConstraint:
-		return types.GeoConstraintSymmetry, ids(v.A, v.B, v.About), true
-	case *sketch.FixConstraint:
-		return types.GeoConstraintFix, ids(v.P), true
-	default:
-		return "", nil, false
-	}
-}
-
-// lineConstraintShape handles the constraints anchored on straight lines.
-func lineConstraintShape(c sketch.Constraint) (types.GeometricConstraintKind, []uint64, bool) {
-	switch v := c.(type) {
-	case *sketch.ParallelConstraint:
-		return types.GeoConstraintParallel, ids(v.L1, v.L2), true
-	case *sketch.PerpendicularConstraint:
-		return types.GeoConstraintPerpendicular, ids(v.L1, v.L2), true
-	case *sketch.CollinearConstraint:
-		return types.GeoConstraintCollinear, ids(v.L1, v.L2), true
-	case *sketch.EqualLengthConstraint:
-		return types.GeoConstraintEqualLength, ids(v.L1, v.L2), true
-	case *sketch.TangentConstraint:
-		return types.GeoConstraintTangent, append(ids(v.L), curveID(v.C)...), true
-	default:
-		return "", nil, false
-	}
-}
-
-// circularConstraintShape handles the constraints anchored on circular/smooth curves.
-func circularConstraintShape(c sketch.Constraint) (types.GeometricConstraintKind, []uint64, bool) {
-	switch v := c.(type) {
-	case *sketch.ConcentricConstraint:
-		return types.GeoConstraintConcentric, append(curveID(v.C1), curveID(v.C2)...), true
-	case *sketch.EqualRadiusConstraint:
-		return types.GeoConstraintEqualRadius, append(curveID(v.C1), curveID(v.C2)...), true
-	case *sketch.CircularTangentConstraint:
-		return types.GeoConstraintTangent, append(curveID(v.C1), curveID(v.C2)...), true
-	case *sketch.SmoothConstraint:
-		return types.GeoConstraintSmooth, ids(v.C1, v.C2), true
-	default:
-		return "", nil, false
-	}
+// wireConstraintKinds is the 1:1 part of the model→wire kind mapping.
+var wireConstraintKinds = map[sketch.ConstraintKind]types.GeometricConstraintKind{
+	sketch.CoincidentKind:    types.GeoConstraintCoincident,
+	sketch.PointOnLineKind:   types.GeoConstraintPointOnLine,
+	sketch.MidpointKind:      types.GeoConstraintMidpoint,
+	sketch.PointOnCircleKind: types.GeoConstraintPointOnCircle,
+	sketch.HorizontalKind:    types.GeoConstraintHorizontal,
+	sketch.VerticalKind:      types.GeoConstraintVertical,
+	sketch.SymmetryKind:      types.GeoConstraintSymmetry,
+	sketch.FixKind:           types.GeoConstraintFix,
+	sketch.ParallelKind:      types.GeoConstraintParallel,
+	sketch.PerpendicularKind: types.GeoConstraintPerpendicular,
+	sketch.CollinearKind:     types.GeoConstraintCollinear,
+	sketch.EqualLengthKind:   types.GeoConstraintEqualLength,
+	sketch.TangentKind:       types.GeoConstraintTangent,
+	sketch.ConcentricKind:    types.GeoConstraintConcentric,
+	sketch.EqualRadiusKind:   types.GeoConstraintEqualRadius,
+	sketch.SmoothKind:        types.GeoConstraintSmooth,
+	sketch.GroundKind:        types.GeoConstraintGround,
+	sketch.OffsetKind:        types.GeoConstraintOffset,
+	sketch.PatternLinkKind:   types.GeoConstraintPattern,
+	sketch.TextBoxAnchorKind: types.GeoConstraintTextBox,
+	sketch.CustomKind:        types.GeoConstraintCustom,
 }
 
 // dimensionKind maps a model DimKind to its wire kind.
@@ -341,12 +287,4 @@ func ids(es ...sketch.Entity) []uint64 {
 		}
 	}
 	return out
-}
-
-// curveID returns the id of a circular curve (a *Circle or *Arc, both Entity), or nil.
-func curveID(c sketch.CircularCurve) []uint64 {
-	if e, ok := c.(sketch.Entity); ok {
-		return []uint64{uint64(e.EntityID())}
-	}
-	return nil
 }

@@ -132,80 +132,15 @@ func p3coords(p math.Point3) []float64 {
 	return []float64{float64(p.X), float64(p.Y), float64(p.Z)}
 }
 
-// constraint3DKind maps a 3D constraint to its wire kind and the session ids it relates.
+// constraint3DKind maps a 3D constraint to its wire kind and the session ids
+// it relates, both self-reported by the KindedConstraint capability (#1625).
+// The 3D wire enum spells every kind exactly like the model's persisted
+// vocabulary (by construction), so the kind maps by conversion; a constraint
+// without the capability enumerates honestly as unknown.
 func constraint3DKind(c sketch.Constraint) (types.Geometric3DConstraintKind, []uint64) {
-	switch v := c.(type) {
-	case *sketch.Coincident3D:
-		return types.Geo3DCoincident, []uint64{uint64(v.A.EntityID()), uint64(v.B.EntityID())}
-	case *sketch.Collinear3D:
-		return types.Geo3DCollinear, []uint64{uint64(v.A.EntityID()), uint64(v.B.EntityID()), uint64(v.C.EntityID())}
-	case *sketch.Concentric3D:
-		return types.Geo3DConcentric, []uint64{uint64(v.Center1.EntityID()), uint64(v.Center2.EntityID())}
-	case *sketch.Equal3D:
-		return types.Geo3DEqual, nil
-	default:
-		return lineConstraint3DKind(c)
-	}
-}
-
-// lineConstraint3DKind maps the line/point-operand constraints (M22-F05) to their kind.
-func lineConstraint3DKind(c sketch.Constraint) (types.Geometric3DConstraintKind, []uint64) {
-	switch v := c.(type) {
-	case *sketch.Parallel3D:
-		return types.Geo3DParallel, []uint64{uint64(v.L1.EntityID()), uint64(v.L2.EntityID())}
-	case *sketch.Perpendicular3D:
-		return types.Geo3DPerpendicular, []uint64{uint64(v.L1.EntityID()), uint64(v.L2.EntityID())}
-	case *sketch.Midpoint3D:
-		return types.Geo3DMidpoint, []uint64{uint64(v.P.EntityID()), uint64(v.L.EntityID())}
-	case *sketch.Ground3D:
-		return types.Geo3DGround, []uint64{uint64(v.P.EntityID())}
-	case *sketch.ParallelToAxis3D:
-		return axisConstraintKind(v), []uint64{uint64(v.L.EntityID())}
-	case *sketch.ParallelToPlane3D:
-		return planeConstraintKind(v), []uint64{uint64(v.L.EntityID())}
-	default:
-		return curveConstraint3DKind(c)
-	}
-}
-
-// curveConstraint3DKind maps the curve-join constraints (issue #142) to their kind.
-func curveConstraint3DKind(c sketch.Constraint) (types.Geometric3DConstraintKind, []uint64) {
-	switch v := c.(type) {
-	case *sketch.Tangent3D:
-		return types.Geo3DTangent, []uint64{uint64(v.C1.EntityID()), uint64(v.C2.EntityID())}
-	case *sketch.Smooth3D:
-		return types.Geo3DSmooth, []uint64{uint64(v.C1.EntityID()), uint64(v.C2.EntityID())}
-	case *sketch.SplineFitPoints3D:
-		return types.Geo3DSplineFitPoints, []uint64{uint64(v.Spline.EntityID()), uint64(v.P.EntityID())}
-	case *sketch.Helical3D:
-		return types.Geo3DHelical, []uint64{uint64(v.H.EntityID()), uint64(v.C.EntityID())}
-	case *sketch.Bend3D:
-		return types.Geo3DBend, []uint64{uint64(v.Arc.EntityID()), uint64(v.L1.EntityID()), uint64(v.L2.EntityID())}
-	default:
+	kc, ok := c.(sketch.KindedConstraint)
+	if !ok {
 		return types.Geo3DUnknown, nil
 	}
-}
-
-// axisConstraintKind names a parallel-to-axis constraint by which world axis it pins to.
-func axisConstraintKind(c *sketch.ParallelToAxis3D) types.Geometric3DConstraintKind {
-	switch {
-	case c.Axis.X != 0:
-		return types.Geo3DParallelToXAxis
-	case c.Axis.Y != 0:
-		return types.Geo3DParallelToYAxis
-	default:
-		return types.Geo3DParallelToZAxis
-	}
-}
-
-// planeConstraintKind names a parallel-to-plane constraint by its plane normal.
-func planeConstraintKind(c *sketch.ParallelToPlane3D) types.Geometric3DConstraintKind {
-	switch {
-	case c.Normal.Z != 0:
-		return types.Geo3DParallelToXYPlane
-	case c.Normal.Y != 0:
-		return types.Geo3DParallelToXZPlane
-	default:
-		return types.Geo3DParallelToYZPlane
-	}
+	return types.Geometric3DConstraintKind(kc.ConstraintKind()), ids(kc.RelatedEntities()...)
 }

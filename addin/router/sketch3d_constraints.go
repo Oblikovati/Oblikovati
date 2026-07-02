@@ -9,7 +9,6 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
-	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
 
@@ -171,34 +170,21 @@ func bendConstraint3D(sk *sketch.Sketch3D, refs []uint64) (sketch.Constraint, er
 
 // equalConstraint3D forces two radius DOFs equal — the operands are circle (radius) or
 // helix (start radius) entities. Surfaced by the issue-#142 kind-coverage guard:
-// Geo3DEqual was declared and Equal3D implemented, but no router case existed.
+// Geo3DEqual was declared and Equal3D implemented, but no router case existed. The
+// model resolves the radius DOFs itself (#1625) so the constraint keeps its refs.
 func equalConstraint3D(sk *sketch.Sketch3D, refs []uint64) (sketch.Constraint, error) {
 	if len(refs) != 2 {
 		return nil, fmt.Errorf("sketch3d.addConstraint: equal needs 2 circle/helix refs, got %d", len(refs))
 	}
-	a, err := radiusScalar3D(sk, refs[0])
-	if err != nil {
-		return nil, err
-	}
-	b, err := radiusScalar3D(sk, refs[1])
-	if err != nil {
-		return nil, err
-	}
-	return sketch.NewEqual3D(a, b), nil
-}
-
-// radiusScalar3D resolves an entity id to its radius solver DOF through the
-// entity's own RadiusDOF capability (#1624).
-func radiusScalar3D(sk *sketch.Sketch3D, id uint64) (*math.Scalar, error) {
-	e, ok := sk.EntityByID(sketch.ID(id))
+	e1, ok := sk.EntityByID(sketch.ID(refs[0]))
 	if !ok {
-		return nil, fmt.Errorf(errNoSketch3DEntity, id)
+		return nil, fmt.Errorf(errNoSketch3DEntity, refs[0])
 	}
-	rd, ok := e.(interface{ RadiusDOF() *math.Scalar })
+	e2, ok := sk.EntityByID(sketch.ID(refs[1]))
 	if !ok {
-		return nil, fmt.Errorf("sketch3d: entity %d is %T, want a circle or helix (radius DOF)", id, e)
+		return nil, fmt.Errorf(errNoSketch3DEntity, refs[1])
 	}
-	return rd.RadiusDOF(), nil
+	return sketch.NewEqual3D(e1, e2)
 }
 
 // pointConstraint3D builds the point-operand constraints (coincident/collinear/concentric).
