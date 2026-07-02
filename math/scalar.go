@@ -50,15 +50,3 @@ func resolveAngleTolerance(tol Scalar) Scalar {
 func IsNearZero(x, tol Scalar) bool {
 	return approxEqual(x, 0, resolveTolerance(tol))
 }
-
-// clampUnit constrains x to [-1, 1]; used to guard math.Acos against inputs
-// that float64 rounding pushed just outside the valid cosine range.
-func clampUnit(x Scalar) Scalar {
-	if x < -1 {
-		return -1
-	}
-	if x > 1 {
-		return 1
-	}
-	return x
-}

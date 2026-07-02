@@ -10,17 +10,6 @@ func lineRangeError(i, count int) string {
 	return fmt.Sprintf("textbuf: line index %d out of range [0,%d)", i, count)
 }
 
-// clampInt constrains v to [lo, hi].
-func clampInt(v, lo, hi int) int {
-	if v < lo {
-		return lo
-	}
-	if v > hi {
-		return hi
-	}
-	return v
-}
-
 // insertLines returns lines with mid spliced in at index at, without aliasing mid into the
 // destination (the caller may reuse its slice). at is assumed in [0, len(lines)].
 func insertLines(lines [][]rune, at int, mid [][]rune) [][]rune {

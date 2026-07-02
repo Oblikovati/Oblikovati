@@ -120,7 +120,7 @@ func continuityOverlay(rep analysis.ContinuityReport, at func(float64) math.Poin
 // continuitySeverity maps one sample's deviations to [0,1] — the worst of a 0.1mm gap, a 1° normal
 // break, or a 50% curvature jump reads as fully discontinuous.
 func continuitySeverity(s analysis.ContinuitySample) float64 {
-	return clampUnit(max(s.Gap/0.1, s.NormalDeg/1.0, s.CurvPct/50.0))
+	return math.Clamp01(max(s.Gap/0.1, s.NormalDeg/1.0, s.CurvPct/50.0))
 }
 
 // severityColor blends green (0, continuous) to red (1, discontinuous).
@@ -133,6 +133,3 @@ func continuitySummary(rep analysis.ContinuityReport) string {
 	return fmt.Sprintf("Continuity — G0 gap max %.4g (avg %.4g), G1 angle max %.3f° (avg %.3f°), G2 curvature max %.1f%% (avg %.1f%%)",
 		rep.MaxGap, rep.AvgGap, rep.MaxNormalDeg, rep.AvgNormalDeg, rep.MaxCurvPct, rep.AvgCurvPct)
 }
-
-// clampUnit clamps x to [0,1].
-func clampUnit(x float64) float64 { return max(0, min(1, x)) }

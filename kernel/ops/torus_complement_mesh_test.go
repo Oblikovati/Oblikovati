@@ -24,8 +24,8 @@ func TestComplementWindowHelpers(t *testing.T) {
 		t.Errorf("firstAbove(9)=%d, want 4", got)
 	}
 	for _, tc := range []struct{ in, lo, hi, want int }{{-1, 0, 4, 0}, {9, 0, 4, 4}, {2, 0, 4, 2}} {
-		if got := clampIndex(tc.in, tc.lo, tc.hi); got != tc.want {
-			t.Errorf("clampIndex(%d,%d,%d)=%d, want %d", tc.in, tc.lo, tc.hi, got, tc.want)
+		if got := math.Clamp(tc.in, tc.lo, tc.hi); got != tc.want {
+			t.Errorf("math.Clamp(%d,%d,%d)=%d, want %d", tc.in, tc.lo, tc.hi, got, tc.want)
 		}
 	}
 }

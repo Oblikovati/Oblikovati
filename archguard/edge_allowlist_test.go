@@ -38,7 +38,9 @@ var allowedTreeImports = map[string][]string{
 		"update", "userconfig"},
 	"command": {"model"},
 	"event":   {},
-	"script":  {"addin/dispatch", "api", "app"},
+	// script -> math: the console editor clamps cursor/column indices with the shared
+	// math.Clamp instead of re-rolling clampInt locally (G4 #1652).
+	"script": {"addin/dispatch", "api", "app", "math"},
 
 	// Persistence & small leaves.
 	"persistence": {"api", "model", "userconfig"},

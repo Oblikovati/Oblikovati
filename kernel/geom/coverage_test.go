@@ -10,13 +10,13 @@ import (
 )
 
 func TestScalarHelpers(t *testing.T) {
-	if clamp01(-1) != 0 || clamp01(2) != 1 || clamp01(0.5) != 0.5 {
+	if math.Clamp01(-1) != 0 || math.Clamp01(2) != 1 || math.Clamp01(0.5) != 0.5 {
 		t.Error("clamp01")
 	}
-	if clampUnit(2) != 1 || clampUnit(-2) != -1 || clampUnit(0.25) != 0.25 {
+	if math.Clamp(2, -1, 1) != 1 || math.Clamp(-2, -1, 1) != -1 || math.Clamp(0.25, -1, 1) != 0.25 {
 		t.Error("clampUnit")
 	}
-	if clampTo(-1, 0, 1) != 0 || clampTo(2, 0, 1) != 1 || clampTo(0.5, 0, 1) != 0.5 {
+	if math.Clamp(-1, 0, 1) != 0 || math.Clamp(2, 0, 1) != 1 || math.Clamp(0.5, 0, 1) != 0.5 {
 		t.Error("clampTo")
 	}
 }
@@ -126,7 +126,7 @@ func TestIntersectParamHelpers(t *testing.T) {
 	if paramTol(0) != 1e-9 || paramTol(0.1) != 0.1 {
 		t.Error("paramTol")
 	}
-	if clampUnitParam(-0.5) != 0 || clampUnitParam(1.5) != 1 || clampUnitParam(0.5) != 0.5 {
+	if math.Clamp01(-0.5) != 0 || math.Clamp01(1.5) != 1 || math.Clamp01(0.5) != 0.5 {
 		t.Error("clampUnitParam")
 	}
 }

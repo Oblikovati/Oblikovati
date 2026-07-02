@@ -2,7 +2,10 @@
 
 package complete
 
-import "testing"
+import (
+	"slices"
+	"testing"
+)
 
 // methodsFixture is a small but representative slice of the dotted wire-method names the host
 // publishes, exercising multiple groups and a two-level namespace.
@@ -69,7 +72,7 @@ func TestBarePrefixCompletesKeywordsAndBuiltins(t *testing.T) {
 	e := New(methodsFixture)
 	got, ctx := e.Suggest("  pr", 4)
 	names := texts(got)
-	if !contains(names, "print") {
+	if !slices.Contains(names, "print") {
 		t.Errorf("bare 'pr' = %v, want it to include builtin 'print'", names)
 	}
 	if ctx.ReplaceStart != 2 {
@@ -77,7 +80,7 @@ func TestBarePrefixCompletesKeywordsAndBuiltins(t *testing.T) {
 	}
 	// 'lo' should surface the keyword 'local'.
 	got2, _ := e.Suggest("lo", 2)
-	if !contains(texts(got2), "local") {
+	if !slices.Contains(texts(got2), "local") {
 		t.Errorf("bare 'lo' = %v, want keyword 'local'", texts(got2))
 	}
 }
@@ -111,13 +114,4 @@ func equal(a, b []string) bool {
 		}
 	}
 	return true
-}
-
-func contains(xs []string, want string) bool {
-	for _, x := range xs {
-		if x == want {
-			return true
-		}
-	}
-	return false
 }

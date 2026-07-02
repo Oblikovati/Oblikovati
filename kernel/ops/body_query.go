@@ -190,7 +190,7 @@ func raySegmentApproach(origin math.Point3, dir math.Vector3, a, b math.Point3) 
 	denom := aDD*cAA - bDA*bDA
 	s := 0.0
 	if denom > 1e-15 {
-		s = clamp01((bDA*dDW - aDD*eAW) / denom)
+		s = math.Clamp01((bDA*dDW - aDD*eAW) / denom)
 	}
 	onSeg := a.TranslateBy(ab.Scale(math.Scalar(s)))
 	t := float64(origin.VectorTo(onSeg).Dot(dir)) / aDD

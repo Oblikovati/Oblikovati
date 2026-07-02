@@ -3,6 +3,7 @@
 package app
 
 import (
+	"slices"
 	"testing"
 
 	"oblikovati.org/kernel/ops"
@@ -77,7 +78,7 @@ func TestPickRegionCurvedEdgeSampledNotEndpoints(t *testing.T) {
 	}
 
 	hits := p.PickRegion(rect.minX, rect.minY, rect.maxX, rect.maxY, true, edges)
-	if !containsEdge(hits, edge) {
+	if !slices.ContainsFunc(hits, func(h Selectable) bool { eh, ok := h.(EdgeHandle); return ok && eh.Edge == edge }) {
 		t.Fatalf("crossing over a curved rim's mid-span did not select it (got %d hits) — sampling regressed", len(hits))
 	}
 }
@@ -101,20 +102,10 @@ func TestPickRegionCurvedEdgeWindowNeedsWholeSpan(t *testing.T) {
 	// the far side of the rim falls outside it.
 	minX, maxX := midX-12, midX+12
 
-	if got := p.PickRegion(minX, -1e6, maxX, 1e6, true, edges); !containsEdge(got, edge) {
+	if got := p.PickRegion(minX, -1e6, maxX, 1e6, true, edges); !slices.ContainsFunc(got, func(h Selectable) bool { eh, ok := h.(EdgeHandle); return ok && eh.Edge == edge }) {
 		t.Fatalf("crossing over part of the rim should select it, got %d hits", len(got))
 	}
-	if got := p.PickRegion(minX, -1e6, maxX, 1e6, false, edges); containsEdge(got, edge) {
+	if got := p.PickRegion(minX, -1e6, maxX, 1e6, false, edges); slices.ContainsFunc(got, func(h Selectable) bool { eh, ok := h.(EdgeHandle); return ok && eh.Edge == edge }) {
 		t.Error("window over only part of the rim must NOT select it (the rim extends outside the band)")
 	}
-}
-
-// containsEdge reports whether hits include the given edge.
-func containsEdge(hits []Selectable, e *topo.Edge) bool {
-	for _, h := range hits {
-		if eh, ok := h.(EdgeHandle); ok && eh.Edge == e {
-			return true
-		}
-	}
-	return false
 }

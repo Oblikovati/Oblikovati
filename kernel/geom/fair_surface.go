@@ -30,7 +30,7 @@ func FairSurface(s BSplineSurface, holdOrder int, strength float64, iterations i
 		for i := band; i < nu-band; i++ {
 			for j := band; j < nv-band; j++ {
 				avg := neighbourAverage(cur, i, j)
-				next[i][j] = lerpP(cur[i][j], avg, strength)
+				next[i][j] = cur[i][j].Lerp(avg, strength)
 			}
 		}
 		cur = next

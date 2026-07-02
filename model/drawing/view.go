@@ -118,25 +118,11 @@ func (v *DrawingView) BoundsMM() (minX, minY, maxX, maxY float64, ok bool) {
 	maxX, maxY = minX, minY
 	for _, c := range v.curves {
 		for _, p := range [2]math.Point2{c.A, c.B} {
-			minX, minY = minF(minX, float64(p.X)), minF(minY, float64(p.Y))
-			maxX, maxY = maxFl(maxX, float64(p.X)), maxFl(maxY, float64(p.Y))
+			minX, minY = min(minX, float64(p.X)), min(minY, float64(p.Y))
+			maxX, maxY = max(maxX, float64(p.X)), max(maxY, float64(p.Y))
 		}
 	}
 	return minX, minY, maxX, maxY, true
-}
-
-func minF(a, b float64) float64 {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func maxFl(a, b float64) float64 {
-	if a > b {
-		return a
-	}
-	return b
 }
 
 // VisibleHidden counts the view's visible and hidden curves.
@@ -291,22 +277,8 @@ func bodyCenter(body *topo.Body) math.Point3 {
 	lo, hi := verts[0].Point(), verts[0].Point()
 	for _, vt := range verts {
 		p := vt.Point()
-		lo = math.P3(minS(lo.X, p.X), minS(lo.Y, p.Y), minS(lo.Z, p.Z))
-		hi = math.P3(maxS(hi.X, p.X), maxS(hi.Y, p.Y), maxS(hi.Z, p.Z))
+		lo = math.P3(min(lo.X, p.X), min(lo.Y, p.Y), min(lo.Z, p.Z))
+		hi = math.P3(max(hi.X, p.X), max(hi.Y, p.Y), max(hi.Z, p.Z))
 	}
 	return math.P3((lo.X+hi.X)/2, (lo.Y+hi.Y)/2, (lo.Z+hi.Z)/2)
-}
-
-func minS(a, b math.Scalar) math.Scalar {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func maxS(a, b math.Scalar) math.Scalar {
-	if a > b {
-		return a
-	}
-	return b
 }

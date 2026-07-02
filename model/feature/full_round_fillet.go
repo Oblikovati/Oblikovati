@@ -71,7 +71,7 @@ func fullRoundFilletBody(in Input, def *FullRoundFilletDefinition, feat string) 
 
 // parallelSides reports whether the two side faces' planes are parallel (the constant-cylinder case).
 func parallelSides(side1, side2 planarFace) bool {
-	return abs(float64(normalize(side1.Normal()).Dot(normalize(side2.Normal())))) > 0.999
+	return stdmath.Abs(float64(normalize(side1.Normal()).Dot(normalize(side2.Normal())))) > 0.999
 }
 
 // parallelFullRound cuts the constant half-cylinder corner tool between two parallel sides.

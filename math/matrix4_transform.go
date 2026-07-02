@@ -74,7 +74,7 @@ func Reflection4(origin Point3, normal UnitVector3) Matrix4 {
 // rotates π about an arbitrary perpendicular axis, since the axis is otherwise
 // undetermined.
 func RotateBetween(from, to UnitVector3) Matrix4 {
-	d := clampUnit(from.Dot(to))
+	d := Clamp(from.Dot(to), -1, 1)
 	if approxEqual(d, 1, AngleTolerance) {
 		return Identity4()
 	}

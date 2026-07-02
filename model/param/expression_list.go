@@ -4,6 +4,7 @@ package param
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 )
 
@@ -61,21 +62,11 @@ func (p *Parameter) AllowsCustomValue() bool { return p.allowCustom }
 // allowed), routing to the numeric or text setter. It errors when the value is not in the
 // list and custom values are not allowed.
 func (p *Parameter) SelectValue(expr string) error {
-	if p.IsMultiValue() && !p.allowCustom && !contains(p.exprList, expr) {
+	if p.IsMultiValue() && !p.allowCustom && !slices.Contains(p.exprList, expr) {
 		return fmt.Errorf("param: %q is not an allowed value for %q", expr, p.name)
 	}
 	if p.IsText() {
 		return p.SetText(expr)
 	}
 	return p.SetExpression(expr)
-}
-
-// contains reports whether s is in list.
-func contains(list []string, s string) bool {
-	for _, v := range list {
-		if v == s {
-			return true
-		}
-	}
-	return false
 }

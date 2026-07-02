@@ -59,7 +59,7 @@ func (u UnitVector3) Dot(o UnitVector3) Scalar {
 
 // AngleTo returns the unsigned angle in radians between u and o, in [0, π].
 func (u UnitVector3) AngleTo(o UnitVector3) Scalar {
-	return stdmath.Acos(clampUnit(u.Dot(o)))
+	return stdmath.Acos(Clamp(u.Dot(o), -1, 1))
 }
 
 // Cross returns the cross product u×o as a plain [Vector3]; it is unit length

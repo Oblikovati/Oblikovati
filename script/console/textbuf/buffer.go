@@ -7,7 +7,11 @@
 // input events into these operations and reads back the buffer (lua-scripting-plan, ADR-0028).
 package textbuf
 
-import "strings"
+import (
+	"strings"
+
+	"oblikovati.org/math"
+)
 
 // Position addresses a caret location: Line is a 0-based line index and Col is a 0-based
 // rune offset within that line (Col == len(line runes) is the valid end-of-line caret).
@@ -86,7 +90,7 @@ func (b *Buffer) Clamp(p Position) Position {
 		last := len(b.lines) - 1
 		return Position{last, len(b.lines[last])}
 	}
-	return Position{p.Line, clampInt(p.Col, 0, len(b.lines[p.Line]))}
+	return Position{p.Line, math.Clamp(p.Col, 0, len(b.lines[p.Line]))}
 }
 
 // Insert inserts text at p (assumed already valid) and returns the caret Position just past

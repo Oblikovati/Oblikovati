@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"oblikovati.org/math"
+
 	"oblikovati.org/kernel/topo"
 )
 
@@ -95,8 +97,8 @@ func TestContinuitySeverityHelpers(t *testing.T) {
 		in, want float64
 	}{{-1, 0}, {0.4, 0.4}, {2, 1}}
 	for _, c := range cases {
-		if got := clampUnit(c.in); got != c.want {
-			t.Errorf("clampUnit(%g) = %g, want %g", c.in, got, c.want)
+		if got := math.Clamp01(c.in); got != c.want {
+			t.Errorf("math.Clamp01(%g) = %g, want %g", c.in, got, c.want)
 		}
 	}
 	// A mid-severity sample produces a colour between green and red.

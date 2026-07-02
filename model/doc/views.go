@@ -134,18 +134,8 @@ func (vs *DocumentViews) Split() (x, y float32) {
 
 // SetSplit sets the divider positions, clamped to [0.1, 0.9] so no tile collapses.
 func (vs *DocumentViews) SetSplit(x, y float32) {
-	vs.splitX = clampSplit(x)
-	vs.splitY = clampSplit(y)
-}
-
-func clampSplit(v float32) float32 {
-	if v < minSplit {
-		return minSplit
-	}
-	if v > maxSplit {
-		return maxSplit
-	}
-	return v
+	vs.splitX = math.Clamp(x, minSplit, maxSplit)
+	vs.splitY = math.Clamp(y, minSplit, maxSplit)
 }
 
 // Views returns the document's view collection, seeding a single default view on first

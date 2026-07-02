@@ -473,18 +473,11 @@ func closestRaySegParams(dir, e, r math.Vector3, eLen float64) (s, u float64) {
 	}
 	switch u = (bDot*s + f) / eLen; {
 	case u < 0:
-		u, s = 0, clampNonNeg(-c)
+		u, s = 0, max(0, -c)
 	case u > 1:
-		u, s = 1, clampNonNeg(bDot-c)
+		u, s = 1, max(0, bDot-c)
 	}
 	return s, u
-}
-
-func clampNonNeg(x float64) float64 {
-	if x < 0 {
-		return 0
-	}
-	return x
 }
 
 // nearestPlane returns the closest origin work plane whose display square the ray

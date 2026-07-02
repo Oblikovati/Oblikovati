@@ -67,35 +67,21 @@ func meshMetrics(tris []triangle) Metrics {
 		return Metrics{}
 	}
 	var vol, area float64
-	min := omath.P3(omath.Scalar(math.Inf(1)), omath.Scalar(math.Inf(1)), omath.Scalar(math.Inf(1)))
-	max := omath.P3(omath.Scalar(math.Inf(-1)), omath.Scalar(math.Inf(-1)), omath.Scalar(math.Inf(-1)))
+	lo := omath.P3(omath.Scalar(math.Inf(1)), omath.Scalar(math.Inf(1)), omath.Scalar(math.Inf(1)))
+	hi := omath.P3(omath.Scalar(math.Inf(-1)), omath.Scalar(math.Inf(-1)), omath.Scalar(math.Inf(-1)))
 	o := omath.P3(0, 0, 0)
 	for _, t := range tris {
 		vol += float64(o.VectorTo(t.a).Dot(o.VectorTo(t.b).Cross(o.VectorTo(t.c)))) / 6
 		area += float64(t.a.VectorTo(t.b).Cross(t.a.VectorTo(t.c)).Length()) / 2
 		for _, p := range []omath.Point3{t.a, t.b, t.c} {
-			min = omath.P3(minS(min.X, p.X), minS(min.Y, p.Y), minS(min.Z, p.Z))
-			max = omath.P3(maxS(max.X, p.X), maxS(max.Y, p.Y), maxS(max.Z, p.Z))
+			lo = omath.P3(min(lo.X, p.X), min(lo.Y, p.Y), min(lo.Z, p.Z))
+			hi = omath.P3(max(hi.X, p.X), max(hi.Y, p.Y), max(hi.Z, p.Z))
 		}
 	}
 	if vol < 0 {
 		vol = -vol // orientation-agnostic: report enclosed magnitude
 	}
-	return Metrics{Volume: vol, Area: area, Min: min, Max: max, TriCount: len(tris)}
-}
-
-func minS(a, b omath.Scalar) omath.Scalar {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func maxS(a, b omath.Scalar) omath.Scalar {
-	if a > b {
-		return a
-	}
-	return b
+	return Metrics{Volume: vol, Area: area, Min: lo, Max: hi, TriCount: len(tris)}
 }
 
 // loadSTL reads a binary or ASCII STL file into facets. The 80-byte header of a

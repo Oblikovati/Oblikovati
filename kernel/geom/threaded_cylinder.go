@@ -52,7 +52,7 @@ func (t ThreadedCylinder) runout(v float64) float64 {
 	if t.Pitch <= 0 {
 		return 1
 	}
-	return stdmath.Min(clamp01((v-t.VMin)/t.Pitch), clamp01((t.VMax-v)/t.Pitch))
+	return stdmath.Min(math.Clamp01((v-t.VMin)/t.Pitch), math.Clamp01((t.VMax-v)/t.Pitch))
 }
 
 // PointAt returns the threaded surface point at (u = angle, v = axial distance).

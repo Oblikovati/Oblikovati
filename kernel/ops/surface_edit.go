@@ -184,7 +184,7 @@ func clipHalfSpace(poly []math.Point3, origin math.Point3, normal math.Vector3, 
 			out = append(out, cur)
 		}
 		if (ds < 0) != (de < 0) {
-			out = append(out, lerpToPlane(cur, nxt, ds, de))
+			out = append(out, planeCrossing(cur, nxt, ds, de))
 		}
 	}
 	return out
@@ -200,11 +200,10 @@ func keepDistance(p, origin math.Point3, normal math.Vector3, keepPositive bool)
 	return -d
 }
 
-// lerpToPlane returns the point where segment a→b crosses the cutting plane, given
-// the signed keep-distances at each end.
-func lerpToPlane(a, b math.Point3, da, db float64) math.Point3 {
-	t := da / (da - db)
-	return a.TranslateBy(a.VectorTo(b).Scale(t))
+// planeCrossing returns the point where segment a→b crosses the cutting plane,
+// given the signed keep-distances at each end.
+func planeCrossing(a, b math.Point3, da, db float64) math.Point3 {
+	return a.Lerp(b, da/(da-db))
 }
 
 // OffsetSurface offsets a single-face planar surface body by distance along its face

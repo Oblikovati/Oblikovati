@@ -30,7 +30,7 @@ func TestClampDomainReplacesInfiniteBounds(t *testing.T) {
 }
 
 func TestClampBounds(t *testing.T) {
-	if clamp(-1, 0, 1) != 0 || clamp(2, 0, 1) != 1 || clamp(0.5, 0, 1) != 0.5 {
+	if math.Clamp(-1, 0, 1) != 0 || math.Clamp(2, 0, 1) != 1 || math.Clamp(0.5, 0, 1) != 0.5 {
 		t.Fatal("clamp did not bound correctly")
 	}
 }

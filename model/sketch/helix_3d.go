@@ -3,6 +3,8 @@
 package sketch
 
 import (
+	stdmath "math"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
@@ -82,17 +84,9 @@ func (s *Sketch3D) addHelix3DPt(origin *Point3D, axis math.UnitVector3, startRad
 // reference direction). It picks the world axis least aligned with u to stay well-conditioned.
 func perpendicularTo(u math.UnitVector3) math.Vector3 {
 	seed := math.V3(1, 0, 0)
-	if absScalar(u.X()) > 0.9 {
+	if stdmath.Abs(u.X()) > 0.9 {
 		seed = math.V3(0, 1, 0)
 	}
 	perp := seed.Sub(u.AsVector().Scale(seed.Dot(u.AsVector())))
 	return perp
-}
-
-// absScalar returns the absolute value of a scalar.
-func absScalar(s math.Scalar) math.Scalar {
-	if s < 0 {
-		return -s
-	}
-	return s
 }

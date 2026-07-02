@@ -4,6 +4,7 @@ package feature
 
 import (
 	"fmt"
+	stdmath "math"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/geom"
@@ -201,19 +202,11 @@ func facePlanes(body *topo.Body, keys [][]byte) []geom.Plane {
 func onAnyPlane(p geom.Plane, set []geom.Plane) bool {
 	for _, q := range set {
 		if float64(p.Normal().Dot(q.Normal())) > 0.999 &&
-			abs(float64(p.Origin.VectorTo(q.Origin).Dot(q.Normal()))) < 1e-6 {
+			stdmath.Abs(float64(p.Origin.VectorTo(q.Origin).Dot(q.Normal()))) < 1e-6 {
 			return true
 		}
 	}
 	return false
-}
-
-// abs is the float64 absolute value (local to avoid a math import alias clash).
-func abs(x float64) float64 {
-	if x < 0 {
-		return -x
-	}
-	return x
 }
 
 // sharedEdgeKeys returns the reference key of every edge of body whose two adjacent faces lie one in

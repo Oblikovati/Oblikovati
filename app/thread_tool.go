@@ -5,6 +5,8 @@ package app
 import (
 	"errors"
 
+	"oblikovati.org/math"
+
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/model/feature"
@@ -222,18 +224,13 @@ func (t *ThreadTool) DraftFeature(*Session) (feature.Feature, bool) {
 	})
 }
 
-// clampRange keeps an index within [0, n).
+// clampRange keeps an index within [0, n). It stays a wrapper over math.Clamp
+// (#1652) for its empty-list contract: n == 0 yields 0, not -1.
 func clampRange(i, n int) int {
 	if n == 0 {
 		return 0
 	}
-	if i < 0 {
-		return 0
-	}
-	if i >= n {
-		return n - 1
-	}
-	return i
+	return math.Clamp(i, 0, n-1)
 }
 
 // ClearFace empties the picked cylindrical face — the property panel's selector clear

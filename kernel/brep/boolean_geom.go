@@ -141,7 +141,7 @@ func collinearEdgeSpans(o2 math.Point2, d2 math.Vector2, f planarFace) [][2]floa
 			}
 			ta := o2.VectorTo(a).Dot(d2) / lenSq
 			tb := o2.VectorTo(b).Dot(d2) / lenSq
-			out = append(out, [2]float64{minf(ta, tb), maxf(ta, tb)})
+			out = append(out, [2]float64{min(ta, tb), max(ta, tb)})
 		}
 	}
 	return out

@@ -2,7 +2,10 @@
 
 package part21
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 // lexAll drains the lexer into a slice, failing the test on a lex error.
 func lexAll(t *testing.T, src string) []Token {
@@ -99,17 +102,7 @@ func TestLexErrorPositionTracked(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	if got := err.Error(); got == "" || !contains(got, "2:3") {
+	if got := err.Error(); got == "" || !strings.Contains(got, "2:3") {
 		t.Errorf("error %q should cite position 2:3", got)
 	}
-}
-
-// contains is a tiny substring helper (avoids importing strings in the test).
-func contains(s, sub string) bool {
-	for i := 0; i+len(sub) <= len(s); i++ {
-		if s[i:i+len(sub)] == sub {
-			return true
-		}
-	}
-	return false
 }

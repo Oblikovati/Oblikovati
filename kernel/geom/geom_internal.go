@@ -16,18 +16,6 @@ func cosSin(a float64) (cos, sin float64) {
 	return stdmath.Cos(a), stdmath.Sin(a)
 }
 
-// clamp01 constrains t to [0, 1], used to project a line parameter onto a
-// bounded segment.
-func clamp01(t float64) float64 {
-	if t < 0 {
-		return 0
-	}
-	if t > 1 {
-		return 1
-	}
-	return t
-}
-
 // wrapPositive maps an angle delta into the half-open range (0, 2π], used to
 // turn a raw end−start difference into a positive (counter-clockwise) sweep.
 func wrapPositive(delta float64) float64 {
@@ -46,29 +34,6 @@ func wrap2pi(a float64) float64 {
 		d += twoPi
 	}
 	return d
-}
-
-// clampUnit constrains x to [−1, 1] so it is a valid argument to asin/acos after
-// the rounding of a normalized-direction component.
-func clampUnit(x float64) float64 {
-	if x > 1 {
-		return 1
-	}
-	if x < -1 {
-		return -1
-	}
-	return x
-}
-
-// clampTo constrains x to [lo, hi].
-func clampTo(x, lo, hi float64) float64 {
-	if x < lo {
-		return lo
-	}
-	if x > hi {
-		return hi
-	}
-	return x
 }
 
 // signedArea2 returns twice the signed area of triangle (a, b, c). Positive

@@ -78,8 +78,8 @@ func gridSeed(s geom.Surface, p math.Point3, uLo, uHi, vLo, vHi float64) (float6
 func projectStep(s geom.Surface, p math.Point3, u, v, uLo, uHi, vLo, vHi float64) (float64, float64) {
 	du, dv := s.DerivativesAt(u, v)
 	res := s.PointAt(u, v).VectorTo(p)
-	u = clamp(u+projectOnto(res, du), uLo, uHi)
-	v = clamp(v+projectOnto(res, dv), vLo, vHi)
+	u = math.Clamp(u+projectOnto(res, du), uLo, uHi)
+	v = math.Clamp(v+projectOnto(res, dv), vLo, vHi)
 	return u, v
 }
 
@@ -103,14 +103,4 @@ func clampDomain(lo, hi float64) (float64, float64) {
 		hi = window
 	}
 	return lo, hi
-}
-
-func clamp(x, lo, hi float64) float64 {
-	if x < lo {
-		return lo
-	}
-	if x > hi {
-		return hi
-	}
-	return x
 }

@@ -94,7 +94,7 @@ func rimPolarAngle(sph geom.Sphere, outer3D []math.Point3, axis math.Vector3) fl
 	sum := 0.0
 	for _, p := range outer3D {
 		dir := sph.Center.VectorTo(p).Scale(math.Scalar(1 / sph.Radius))
-		sum += stdmath.Acos(clampUnit(float64(dir.Dot(axis))))
+		sum += stdmath.Acos(math.Clamp(float64(dir.Dot(axis)), -1, 1))
 	}
 	return sum / float64(len(outer3D))
 }
@@ -173,15 +173,4 @@ func centroidOf(pts []math.Point3) math.Point3 {
 	}
 	n := float64(len(pts))
 	return math.P3(math.Scalar(x/n), math.Scalar(y/n), math.Scalar(z/n))
-}
-
-// clampUnit clamps x to [−1, 1] so acos of a dot product that floated just past ±1 is finite.
-func clampUnit(x float64) float64 {
-	if x > 1 {
-		return 1
-	}
-	if x < -1 {
-		return -1
-	}
-	return x
 }

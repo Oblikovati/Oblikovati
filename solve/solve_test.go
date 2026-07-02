@@ -9,8 +9,6 @@ import (
 	"oblikovati.org/math"
 )
 
-func abs(v float64) float64 { return stdmath.Abs(v) }
-
 // fixedValue is a residual source pinning a single scalar to a target — the minimal
 // constraint for exercising the shared solver: residual = v − target.
 type fixedValue struct {
@@ -34,7 +32,7 @@ func TestSolveDrivesSingleVariableToTarget(t *testing.T) {
 	if !r.Converged {
 		t.Fatalf("did not converge: %+v", r)
 	}
-	if abs(x-5) > 1e-6 {
+	if stdmath.Abs(x-5) > 1e-6 {
 		t.Errorf("x = %v, want 5", x)
 	}
 	if r.Status != WellConstrained {
@@ -50,7 +48,7 @@ func TestSolveReportsUnderConstrained(t *testing.T) {
 	if !r.Converged {
 		t.Fatalf("did not converge: %+v", r)
 	}
-	if abs((b-a)-2) > 1e-6 {
+	if stdmath.Abs((b-a)-2) > 1e-6 {
 		t.Errorf("b-a = %v, want 2", b-a)
 	}
 	if r.Status != UnderConstrained || r.DOF != 1 {

@@ -29,7 +29,7 @@ func Segment2dIntersection(a, b LineSegment2d, tol float64) (pt math.Point2, s, 
 	if s < -tol || s > 1+tol || t < -tol || t > 1+tol {
 		return math.Point2{}, 0, 0, false
 	}
-	return a.PointAt(clampUnitParam(s)), clampUnitParam(s), clampUnitParam(t), true
+	return a.PointAt(math.Clamp01(s)), math.Clamp01(s), math.Clamp01(t), true
 }
 
 // paramTol resolves a non-positive tolerance to a small default for the [0,1]
@@ -39,16 +39,4 @@ func paramTol(tol float64) float64 {
 		return 1e-9 // tol:parametric — default acceptance widening for segment params s,t in [0,1]
 	}
 	return tol
-}
-
-// clampUnitParam pins a parameter into [0,1] (a crossing reported just outside the
-// range by tol resolves to the nearest endpoint).
-func clampUnitParam(x float64) float64 {
-	if x < 0 {
-		return 0
-	}
-	if x > 1 {
-		return 1
-	}
-	return x
 }

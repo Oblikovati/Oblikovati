@@ -81,17 +81,12 @@ func CoonsFill(c0, c1, d0, d1 BSplineCurve) (BSplineSurface, error) {
 // (i,j), minus the bilinear corner term — the discrete Coons formula.
 func coonsControl(c0, c1, d0, d1 BSplineCurve, i, j int, a, b float64) math.Point3 {
 	nu := len(c0.Ctrl)
-	lc := lerpP(c0.Ctrl[i], c1.Ctrl[i], b)        // (1−b)c0[i] + b·c1[i]
-	ld := lerpP(d0.Ctrl[j], d1.Ctrl[j], a)        // (1−a)d0[j] + a·d1[j]
-	bottom := lerpP(c0.Ctrl[0], c0.Ctrl[nu-1], a) // bilinear corner blend along v=0
-	top := lerpP(c1.Ctrl[0], c1.Ctrl[nu-1], a)    // along v=1
-	corner := lerpP(bottom, top, b)
+	lc := c0.Ctrl[i].Lerp(c1.Ctrl[i], b)        // (1−b)c0[i] + b·c1[i]
+	ld := d0.Ctrl[j].Lerp(d1.Ctrl[j], a)        // (1−a)d0[j] + a·d1[j]
+	bottom := c0.Ctrl[0].Lerp(c0.Ctrl[nu-1], a) // bilinear corner blend along v=0
+	top := c1.Ctrl[0].Lerp(c1.Ctrl[nu-1], a)    // along v=1
+	corner := bottom.Lerp(top, b)
 	return math.P3(lc.X+ld.X-corner.X, lc.Y+ld.Y-corner.Y, lc.Z+ld.Z-corner.Z)
-}
-
-// lerpP returns (1−t)·a + t·b.
-func lerpP(a, b math.Point3, t float64) math.Point3 {
-	return math.P3(a.X+(b.X-a.X)*math.Scalar(t), a.Y+(b.Y-a.Y)*math.Scalar(t), a.Z+(b.Z-a.Z)*math.Scalar(t))
 }
 
 // grevilleAbscissae returns each control point's Greville abscissa (mean of its p covering knots),

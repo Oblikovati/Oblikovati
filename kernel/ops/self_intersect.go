@@ -3,6 +3,8 @@
 package ops
 
 import (
+	stdmath "math"
+
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -184,7 +186,7 @@ func triCoplanar(s [3]float64) bool {
 func intervalOverlap(t1 [3]math.Point3, s1 [3]float64, t2 [3]math.Point3, s2 [3]float64, line math.Vector3) (math.Point3, bool) {
 	a0, a1, pa := crossingInterval(t1, s1, line)
 	b0, b1, _ := crossingInterval(t2, s2, line)
-	lo, hi := maxFloat(a0, b0), minFloat(a1, b1)
+	lo, hi := max(a0, b0), min(a1, b1)
 	if lo+selfIntersectEps >= hi {
 		return math.Point3{}, false
 	}
@@ -239,7 +241,7 @@ func coplanarOverlap(t1, t2 [3]math.Point3, n math.Vector3) (math.Point3, bool) 
 // planeAxes picks two in-plane axes for the dominant-normal projection.
 func planeAxes(n math.Vector3) (math.Vector3, math.Vector3) {
 	ref := math.V3(1, 0, 0)
-	if abs(float64(n.X)) > abs(float64(n.Y)) && abs(float64(n.X)) > abs(float64(n.Z)) {
+	if stdmath.Abs(float64(n.X)) > stdmath.Abs(float64(n.Y)) && stdmath.Abs(float64(n.X)) > stdmath.Abs(float64(n.Z)) {
 		ref = math.V3(0, 1, 0)
 	}
 	u := n.Cross(ref)
@@ -275,7 +277,7 @@ func axisInterval(t [3][2]float64, nx, ny float64) (float64, float64) {
 	lo, hi := 1e308, -1e308
 	for _, p := range t {
 		v := nx*p[0] + ny*p[1]
-		lo, hi = minFloat(lo, v), maxFloat(hi, v)
+		lo, hi = min(lo, v), max(hi, v)
 	}
 	return lo, hi
 }
@@ -283,11 +285,4 @@ func axisInterval(t [3][2]float64, nx, ny float64) (float64, float64) {
 func triangleCenter(t [3]math.Point3) math.Point3 {
 	v := t[0].AsVector().Add(t[1].AsVector()).Add(t[2].AsVector())
 	return v.Scale(math.Scalar(1.0 / 3)).AsPoint()
-}
-
-func abs(v float64) float64 {
-	if v < 0 {
-		return -v
-	}
-	return v
 }

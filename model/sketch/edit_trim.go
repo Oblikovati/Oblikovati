@@ -16,7 +16,7 @@ func (s *Sketch) SplitLine(l *Line, pick math.Point2) ([]Entity, error) {
 	if t <= 1e-9 || t >= 1-1e-9 {
 		return nil, fmt.Errorf("split: point projects to t=%.4g, not strictly inside the line", t)
 	}
-	mid := s.newPoint(lerpLine(l, t))
+	mid := s.newPoint(l.A.Position().Lerp(l.B.Position(), t))
 	second := s.lines.Add(mid, l.B)
 	l.B = mid
 	return []Entity{l, second}, nil
@@ -44,14 +44,14 @@ func (s *Sketch) reshapeTrimmed(l *Line, lo, hi float64) []Entity {
 		s.deleteEntity(l)
 		return nil
 	case lo <= 1e-9: // trim the front: keep [hi, 1]
-		l.A = s.newPoint(lerp(a, b, hi))
+		l.A = s.newPoint(a.Lerp(b, hi))
 		return []Entity{l}
 	case hi >= 1-1e-9: // trim the tail: keep [0, lo]
-		l.B = s.newPoint(lerp(a, b, lo))
+		l.B = s.newPoint(a.Lerp(b, lo))
 		return []Entity{l}
 	default: // interior gap: keep [0, lo] and [hi, 1]
-		tail := s.lines.Add(s.newPoint(lerp(a, b, hi)), s.newPoint(b))
-		l.B = s.newPoint(lerp(a, b, lo))
+		tail := s.lines.Add(s.newPoint(a.Lerp(b, hi)), s.newPoint(b))
+		l.B = s.newPoint(a.Lerp(b, lo))
 		return []Entity{l, tail}
 	}
 }
@@ -91,7 +91,7 @@ func (s *Sketch) nearestExtension(l *Line, atEnd bool) (math.Point2, bool) {
 			}
 		}
 	}
-	return lerpLine(l, bestT), found
+	return l.A.Position().Lerp(l.B.Position(), bestT), found
 }
 
 // pickBeyond reports whether param t lies past the picked end of a [0,1] line.
@@ -137,13 +137,6 @@ func projectParamOnLine(l *Line, pick math.Point2) float64 {
 	}
 	return (float64(pick.X-a.X)*dx + float64(pick.Y-a.Y)*dy) / d2
 }
-
-// lerp returns the point at parameter t along a→b; lerpLine does the same for a line.
-func lerp(a, b math.Point2, t float64) math.Point2 {
-	return math.P2(a.X+math.Scalar(t)*(b.X-a.X), a.Y+math.Scalar(t)*(b.Y-a.Y))
-}
-
-func lerpLine(l *Line, t float64) math.Point2 { return lerp(l.A.Position(), l.B.Position(), t) }
 
 // bracketParam returns the adjacent cut params surrounding t (the picked segment).
 func bracketParam(cuts []float64, t float64) (float64, float64, bool) {
