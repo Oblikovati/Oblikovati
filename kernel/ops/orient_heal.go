@@ -38,14 +38,15 @@ func faceAdjacency(fm []*Mesh) [][]orientLink {
 		face int
 		dir  bool
 	}
+	w := meshSegWelder(fm...)
 	uses := map[segKey][]use{}
 	for fi, m := range fm {
 		for t := 0; t+2 < len(m.Indices); t += 3 {
 			for k := 0; k < 3; k++ {
 				a, b := m.Positions[m.Indices[t+k]], m.Positions[m.Indices[t+(k+1)%3]]
-				key := weldSeg(a, b)
+				key := w.seg(a, b)
 				if len(uses[key]) < 2 {
-					uses[key] = append(uses[key], use{fi, quantLess(a, b)})
+					uses[key] = append(uses[key], use{fi, w.less(a, b)})
 				} else {
 					uses[key] = append(uses[key], use{-1, false}) // mark non-manifold (>2)
 				}
@@ -135,15 +136,4 @@ func meshSignedVolume(m *Mesh, flip bool) float64 {
 		vol += s / 6.0
 	}
 	return vol
-}
-
-// quantLess reports whether a sorts before b in quantized coordinates (the canonical edge direction).
-func quantLess(a, b math.Point3) bool {
-	ka, kb := quantCoord(a), quantCoord(b)
-	for i := 0; i < 3; i++ {
-		if ka[i] != kb[i] {
-			return ka[i] < kb[i]
-		}
-	}
-	return false
 }

@@ -13,7 +13,7 @@ import (
 // revTol is the absolute slope tolerance classifying a meridian edge as axis-parallel
 // (cylinder) or axis-perpendicular (plane). Database units are small (cm), so 1e-7 is well
 // below any real feature size yet above floating noise from the model→(r,z) projection.
-const revTol = 1e-7
+const revTol = 1e-7 // tol:calibrated — TODO(#1603, audit A7): make scale-relative
 
 // SolidOfRevolution builds a closed ANALYTIC B-rep by revolving a meridian a full 360° about
 // the axis line through axisOrigin along axisDir. meridian is the cross-section in the (radius,

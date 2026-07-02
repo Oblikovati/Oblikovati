@@ -150,8 +150,8 @@ func holeUVInBranch(s geom.Surface, hole []math.Point3, umin, umax float64) ([]m
 		return nil, false // a hole that itself wraps the seam
 	}
 	shift := branchShift((lo+hi)/2, umin, umax)
-	if lo+shift < umin-trimBorderTol || hi+shift > umax+trimBorderTol {
-		return nil, false // straddles a seam edge even after shifting
+	if lo+shift < umin-seamAngularTol || hi+shift > umax+seamAngularTol {
+		return nil, false // straddles a seam edge even after shifting (u is radians)
 	}
 	uv := make([]math.Point2, len(hole))
 	for i := range hole {

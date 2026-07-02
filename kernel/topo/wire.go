@@ -5,6 +5,7 @@ package topo
 import (
 	stdmath "math"
 
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
 
@@ -51,7 +52,9 @@ func (w *Wire) IsClosed() bool {
 	}
 	first, _ := useEnds(w.uses[0])
 	_, last := useEnds(w.uses[len(w.uses)-1])
-	return first.Point().IsEqualTo(last.Point(), wirePlanarTol)
+	// The closure tolerance scales with the whole chain's extent — deriving it from the
+	// endpoint pair alone would scale with the very gap being tested.
+	return first.Point().IsEqualTo(last.Point(), wirePlanarTol(w.samplePoints()))
 }
 
 // useEnds returns a use's traversal start and end vertices.
@@ -63,8 +66,11 @@ func useEnds(u Use) (*Vertex, *Vertex) {
 }
 
 // wirePlanarTol is the deviation under which a wire counts as planar (and a
-// chain as closed) — model units (cm).
-const wirePlanarTol = 1e-7
+// chain as closed), scaled to the sampled chain's own extent (#1610,
+// ADR-0042 — the old absolute 1e-7 cm broke µm-scale wires).
+func wirePlanarTol(pts []math.Point3) float64 {
+	return geom.ResolutionForPoints(pts).Plane()
+}
 
 // wireSamplesPerEdge is how densely IsPlanar/PlaneFrame sample each curve.
 const wireSamplesPerEdge = 16
@@ -91,8 +97,9 @@ func (w *Wire) PlaneFrame() (math.Point3, math.Vector3, bool) {
 	if !ok {
 		return math.Point3{}, math.Vector3{}, false
 	}
+	tol := wirePlanarTol(pts)
 	for _, p := range pts {
-		if stdmath.Abs(float64(origin.VectorTo(p).Dot(normal))) > wirePlanarTol {
+		if stdmath.Abs(float64(origin.VectorTo(p).Dot(normal))) > tol {
 			return math.Point3{}, math.Vector3{}, false
 		}
 	}
@@ -113,9 +120,10 @@ func (w *Wire) collinear() bool {
 	} else {
 		dir = dir.Scale(math.Scalar(1 / l))
 	}
+	tol := wirePlanarTol(pts)
 	for _, p := range pts {
 		v := pts[0].VectorTo(p)
-		if float64(v.Cross(dir).Length()) > wirePlanarTol {
+		if float64(v.Cross(dir).Length()) > tol {
 			return false
 		}
 	}
@@ -159,7 +167,7 @@ func newellPlane(pts []math.Point3) (math.Point3, math.Vector3, bool) {
 		c = c.Add(p.AsVector())
 	}
 	l := float64(n.Length())
-	if l == 0 || l < 1e-12*spreadSquared(pts) {
+	if l == 0 || l < 1e-12*spreadSquared(pts) { // tol:numeric (relative to spread², a float-noise degeneracy guard)
 		// Vanishing projected area RELATIVE to the chain's size: the closed
 		// walk encloses nothing. A straight open chain lands here (collinear
 		// handles it); so does a degenerate back-and-forth chain — neither has

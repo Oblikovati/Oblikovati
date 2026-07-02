@@ -22,7 +22,23 @@ import (
 // non-rectangular trim, a seam-crossing periodic loop — falls back to the full-domain grid
 // (a follow-up; needs a constrained triangulation).
 
-const trimBorderTol = 1e-6
+// seamAngularTol snaps periodic parameter samples at the 0/2π seam. It compares RADIANS,
+// so it is scale-free by construction; the metric (non-periodic) grid direction derives
+// its tolerance from its own span instead (gridTol) so µm and metre parts grid
+// identically (#1610 — the old shared 1e-6 was absolute in the metric direction).
+const seamAngularTol = 1e-6 // tol:angular (radians; periodic-seam snap)
+
+// trimGridRelTol is the dimensionless fraction of a grid axis' span within which two
+// parameter samples count as the same grid line.
+const trimGridRelTol = 1e-6 // tol:numeric (dimensionless fraction of the axis span)
+
+// gridTol is the same-grid-line tolerance for one axis' samples: a fixed fraction of the
+// samples' span (zero for a degenerate axis — near() is inclusive, so exact duplicates
+// still collapse).
+func gridTol(xs []float64) float64 {
+	lo, hi := minMax(xs)
+	return trimGridRelTol * (hi - lo)
+}
 
 // tessellateCurvedFace meshes a curved face's trimmed region (see file doc).
 func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
@@ -281,10 +297,12 @@ func windingOpposesNormals(a, b, c math.Point3, na, nb, nc math.Vector3) bool {
 // structured grid is watertight and conforms to the boundary). ok=false otherwise.
 func isoRectangleGrid(loop []math.Point2) (us, vs []float64, ok bool) {
 	uMin, uMax, vMin, vMax := bounds2D(loop)
+	tolU := trimGridRelTol * float64(uMax-uMin)
+	tolV := trimGridRelTol * float64(vMax-vMin)
 	var bottomU, topU, leftV, rightV []float64
 	for _, p := range loop {
-		onB, onT := near(p.Y, vMin), near(p.Y, vMax)
-		onL, onR := near(p.X, uMin), near(p.X, uMax)
+		onB, onT := near(p.Y, vMin, tolV), near(p.Y, vMax, tolV)
+		onL, onR := near(p.X, uMin, tolU), near(p.X, uMax, tolU)
 		if !onB && !onT && !onL && !onR {
 			return nil, nil, false // a vertex off the bbox border — not a rectangle
 		}
@@ -293,9 +311,9 @@ func isoRectangleGrid(loop []math.Point2) (us, vs []float64, ok bool) {
 		appendIf(&leftV, p.Y, onL)
 		appendIf(&rightV, p.Y, onR)
 	}
-	bottomU, topU = sortUnique(bottomU), sortUnique(topU)
-	leftV, rightV = sortUnique(leftV), sortUnique(rightV)
-	if !sameGrid(bottomU, topU) || !sameGrid(leftV, rightV) {
+	bottomU, topU = sortUnique(bottomU, tolU), sortUnique(topU, tolU)
+	leftV, rightV = sortUnique(leftV, tolV), sortUnique(rightV, tolV)
+	if !sameGrid(bottomU, topU, tolU) || !sameGrid(leftV, rightV, tolV) {
 		return nil, nil, false // opposite edges sample differently → would leave T-junctions
 	}
 	return bottomU, leftV, true
@@ -369,9 +387,9 @@ func periodicBandGrid(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Po
 		uu[i], vv[i] = s.ParamAt(p)
 	}
 	if uPer {
-		us, vs = bracketPeriod(uu), sortUnique(vv)
+		us, vs = bracketPeriod(uu), sortUnique(vv, gridTol(vv))
 	} else {
-		us, vs = sortUnique(uu), bracketPeriod(vv)
+		us, vs = sortUnique(uu, gridTol(uu)), bracketPeriod(vv)
 	}
 	if len(us) < 2 || len(vs) < 2 {
 		return nil, nil, false // degenerate (e.g. a cone closing to its apex — one rim circle)
@@ -405,9 +423,9 @@ func doublyPeriodicBandGrid(s geom.Surface, outer3D []math.Point3, holes3D [][]m
 		return nil, nil, false // need exactly one direction wrapping the full period
 	}
 	if uWrap {
-		us, vs = bracketPeriod(uu), sortUnique(vv)
+		us, vs = bracketPeriod(uu), sortUnique(vv, gridTol(vv))
 	} else {
-		us, vs = sortUnique(uu), bracketPeriod(vv)
+		us, vs = sortUnique(uu, gridTol(uu)), bracketPeriod(vv)
 	}
 	if len(us) < 2 || len(vs) < 2 {
 		return nil, nil, false
@@ -421,7 +439,7 @@ func doublyPeriodicBandGrid(s geom.Surface, outer3D []math.Point3, holes3D [][]m
 // so a sub-arc that merely STRADDLES the 0/2π seam (min near 0, max near 2π, but a wide gap in between) is
 // correctly seen as bounded, not full (Oblikovati#1375).
 func spansFullPeriod(g []float64) bool {
-	s := sortUnique(g)
+	s := sortUnique(g, seamAngularTol)
 	if len(s) < 2 {
 		return false
 	}
@@ -494,12 +512,12 @@ func faceIsConeApexCap(f *topo.Face, s geom.Surface) bool {
 func bracketPeriod(g []float64) []float64 {
 	out := make([]float64, 0, len(g)+1)
 	for _, x := range g {
-		if x > 2*stdmath.Pi-trimBorderTol {
+		if x > 2*stdmath.Pi-seamAngularTol {
 			x = 0 // a seam sample read back as ~2π is the 0 column
 		}
 		out = append(out, x)
 	}
-	out = sortUnique(out)
+	out = sortUnique(out, seamAngularTol)
 	return append(out, 2*stdmath.Pi)
 }
 
@@ -563,12 +581,12 @@ func unwrap(a []float64) ([]float64, bool) {
 		out[i] = out[i-1] + d
 		lo, hi = stdmath.Min(lo, out[i]), stdmath.Max(hi, out[i])
 	}
-	return out, hi-lo < 2*stdmath.Pi-1e-6
+	return out, hi-lo < 2*stdmath.Pi-1e-6 // tol:angular (radians)
 }
 
 // isPeriodic reports whether a [0, 2π] parameter domain wraps.
 func isPeriodic(lo, hi float64) bool {
-	return stdmath.Abs(lo) < 1e-9 && stdmath.Abs(hi-2*stdmath.Pi) < 1e-9
+	return stdmath.Abs(lo) < 1e-9 && stdmath.Abs(hi-2*stdmath.Pi) < 1e-9 // tol:angular (radians)
 }
 
 // bounds2D returns the UV bounding box of the points.
@@ -582,7 +600,9 @@ func bounds2D(pts []math.Point2) (uMin, uMax, vMin, vMax float64) {
 	return uMin, uMax, vMin, vMax
 }
 
-func near(a, b float64) bool { return stdmath.Abs(a-b) < trimBorderTol }
+// near reports whether two parameter samples coincide within tol (inclusive, so exact
+// duplicates collapse even on a degenerate zero-span axis).
+func near(a, b, tol float64) bool { return stdmath.Abs(a-b) <= tol }
 
 func appendIf(dst *[]float64, x float64, cond bool) {
 	if cond {
@@ -590,25 +610,25 @@ func appendIf(dst *[]float64, x float64, cond bool) {
 	}
 }
 
-// sortUnique returns the values sorted ascending with near-duplicates collapsed.
-func sortUnique(xs []float64) []float64 {
+// sortUnique returns the values sorted ascending with near-duplicates (within tol) collapsed.
+func sortUnique(xs []float64, tol float64) []float64 {
 	sort.Float64s(xs)
 	out := xs[:0:0]
 	for _, x := range xs {
-		if len(out) == 0 || !near(out[len(out)-1], x) {
+		if len(out) == 0 || !near(out[len(out)-1], x, tol) {
 			out = append(out, x)
 		}
 	}
 	return out
 }
 
-// sameGrid reports whether two sorted grids have the same lines (within tolerance).
-func sameGrid(a, b []float64) bool {
+// sameGrid reports whether two sorted grids have the same lines (within tol).
+func sameGrid(a, b []float64, tol float64) bool {
 	if len(a) != len(b) {
 		return false
 	}
 	for i := range a {
-		if !near(a[i], b[i]) {
+		if !near(a[i], b[i], tol) {
 			return false
 		}
 	}
@@ -665,7 +685,7 @@ func mergeSortedParams(a, b []float64) []float64 {
 	out = append(out, b...)
 	sort.Float64s(out)
 	span := out[len(out)-1] - out[0]
-	eps := span * 1e-9
+	eps := span * 1e-9 // tol:numeric (relative to the parameter span)
 	deduped := out[:1]
 	for _, v := range out[1:] {
 		if v-deduped[len(deduped)-1] > eps {

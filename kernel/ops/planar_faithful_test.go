@@ -64,13 +64,27 @@ func TestPlanarAreaMatches(t *testing.T) {
 	}
 }
 
-// TestPlanarTrisSizeCapKeepsEarcut: above the vertex cap, planarTris must return earcut verbatim
-// (never invoke the expensive CDT), so a pathological large face cannot blow the tessellation budget.
-func TestPlanarTrisSizeCapKeepsEarcut(t *testing.T) {
-	outer := ngon2D(0, 0, 50, maxCDTFallbackVerts+10)
+// TestPlanarCDTLargeFaceAreaExact pins the justification for retiring the 256-vertex CDT
+// budget (#1610): with #1409's corridor-walk segment insertion the CDT re-meshes a
+// 600-boundary-vertex annulus area-exact well inside the per-recompute tessellation
+// budget — so an area-wrong earcut on a big face routes to it instead of shipping.
+func TestPlanarCDTLargeFaceAreaExact(t *testing.T) {
+	outer := ngon2D(0, 0, 50, 400)
+	hole := ngon2D(0, 0, 20, 200)
+	tris := planarCDT(outer, [][]math.Point2{hole})
+	if !planarAreaMatches(tris, outer, [][]math.Point2{hole}) {
+		t.Errorf("large-annulus CDT area mismatch: %d tris cover %g", len(tris),
+			planarTrisArea(tris, outer, [][]math.Point2{hole}))
+	}
+}
+
+// TestPlanarTrisLargeCleanFaceKeepsEarcut: a large but CLEAN face must still take the
+// cheap path — the CDT stays reserved for the genuine area defect.
+func TestPlanarTrisLargeCleanFaceKeepsEarcut(t *testing.T) {
+	outer := ngon2D(0, 0, 50, 400)
 	got := planarTris(outer, nil)
 	want := bestSingleLoopTriangulation(outer)
 	if len(got) != len(want) {
-		t.Errorf("above the cap planarTris returned %d tris, want earcut's %d", len(got), len(want))
+		t.Errorf("clean large face: planarTris returned %d tris, want earcut's %d", len(got), len(want))
 	}
 }

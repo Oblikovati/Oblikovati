@@ -107,17 +107,18 @@ func openingEdgesN(neighbours []*topo.Body) ([]boundaryEdge, error) {
 // orderLoop orders the edges head-to-tail so each one's end meets the next one's start, orienting
 // (reversing) curves as needed. It errors if the edges do not form one closed loop.
 func orderLoop(edges []boundaryEdge) ([]boundaryEdge, error) {
+	tol := boundaryWeldTol(edges)
 	rest := append([]boundaryEdge{}, edges[1:]...)
 	loop := []boundaryEdge{edges[0]}
 	for len(rest) > 0 {
 		tail := loop[len(loop)-1].end()
-		nxt, ok := takeSharing(&rest, tail)
+		nxt, ok := takeSharing(&rest, tail, tol)
 		if !ok {
 			return nil, fmt.Errorf("ops.FillNSided: the %d edges do not form a closed loop", len(edges))
 		}
-		loop = append(loop, orient(nxt, tail))
+		loop = append(loop, orient(nxt, tail, tol))
 	}
-	if !loop[len(loop)-1].end().IsEqualTo(loop[0].start(), 1e-7) {
+	if !loop[len(loop)-1].end().IsEqualTo(loop[0].start(), tol) {
 		return nil, fmt.Errorf("ops.FillNSided: the boundary edges do not close")
 	}
 	return loop, nil

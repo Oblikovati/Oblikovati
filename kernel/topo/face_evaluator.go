@@ -39,7 +39,8 @@ func (e FaceEvaluator) Contains(p math.Point3) bool {
 		return false
 	}
 	n := plane.NormalAt(0, 0)
-	if stdmath.Abs(plane.Origin.VectorTo(p).Dot(n)) > 1e-6 {
+	onPlane := geom.ResolutionForPoints(outerBoundary(e.face)).Plane() // model-relative (#1610)
+	if float64(stdmath.Abs(float64(plane.Origin.VectorTo(p).Dot(n)))) > onPlane {
 		return false // off the plane
 	}
 	if !pointInLoop(p, outerBoundary(e.face), n) {
