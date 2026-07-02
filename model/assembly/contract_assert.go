@@ -37,12 +37,27 @@ var (
 	// Drive (M12-F03).
 	_ contract.DriveSettings = DriveSettings{}
 
+	// The umbrella read surface every relationship kind embeds (#1619): asserted on the
+	// base so a contract-method drift breaks here, not at the first usage-site refactor.
+	_ contract.AssemblyConstraint = (*constraintBase)(nil)
+
 	// Representations (M12-F04).
 	_ contract.DesignViewRepresentation    = (*designViewRep)(nil)
 	_ contract.PositionalRepresentation    = (*positionalRep)(nil)
 	_ contract.LevelOfDetailRepresentation = (*lodRep)(nil)
 	_ contract.ModelState                  = (*modelState)(nil)
 	_ contract.RepresentationsManager      = (*Representations)(nil)
+
+	// Umbrella representation contracts (#1619): each family satisfies the common
+	// Representation surface; the model-state collection satisfies ModelStates.
+	_ contract.Representation = (*designViewRep)(nil)
+	_ contract.Representation = (*positionalRep)(nil)
+	_ contract.Representation = (*lodRep)(nil)
+	_ contract.ModelStates    = modelStateCollection{}
+
+	_ contract.DesignViewRepresentations    = designViewCollection{}
+	_ contract.PositionalRepresentations    = positionalCollection{}
+	_ contract.LevelOfDetailRepresentations = lodCollection{}
 
 	// Contact & interference (M12-F05).
 	_ contract.ContactSet          = (*contactSet)(nil)

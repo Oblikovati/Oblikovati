@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"oblikovati.org/api"
+	"oblikovati.org/api/contract"
 	"oblikovati.org/app"
 )
 
@@ -36,6 +37,10 @@ type LoadedAddIn struct {
 	id   string
 	path string
 }
+
+// A loaded add-in is the host's contract.AddInAutomation implementation (#1619):
+// automation calls from other add-ins fan out through CallAutomation over the C ABI.
+var _ contract.AddInAutomation = (*LoadedAddIn)(nil)
 
 // ID is the add-in's stable id (from ObkAddInId).
 func (a *LoadedAddIn) ID() string { return a.id }
