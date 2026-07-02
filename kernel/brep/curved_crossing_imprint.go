@@ -3,6 +3,8 @@
 package brep
 
 import (
+	stdmath "math"
+
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
@@ -35,6 +37,12 @@ const CodeImprintUnclosedChain diag.Code = "imprint.unclosed-chain"
 // recorded instead of silent.
 const CodeImprintFallbackContour diag.Code = "imprint.fallback-contour"
 
+// CodeImprintNearPinchDeclined marks a crossing-cylinder imprint declined because the radii are
+// near-equal (the near-pinch Steinmetz band): the general rod-band assembly is input-sensitive
+// there, so the boolean takes the deterministic faceted fallback and records the degradation
+// instead of assembling silently wrong analytic topology (#1598; unification tracked by #1403).
+const CodeImprintNearPinchDeclined diag.Code = "imprint.near-pinch-declined"
+
 // imprintTraceLoops traces base∩other over window and keeps the loops that close — the shared trace
 // step of every curved-imprint pair (cylinder∩cylinder, cone∩cylinder, cone∩cone).
 func imprintTraceLoops(base, other geom.Surface, window geom.SurfaceGrid, res geom.Resolution, rec *diag.Recorder) []geom.Polyline {
@@ -61,6 +69,18 @@ func crossingCylinderImprint(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyli
 	ca, baseA, heightA, okA := cylinderSolidParams(facesOfAny(a))
 	cb, _, _, okB := cylinderSolidParams(facesOfAny(b))
 	if !okA || !okB {
+		return nil, false
+	}
+	// Near-equal radii approach the pinched Steinmetz configuration: the intersection
+	// loops hug the tangency line with hairpin turns, and the general rod-band
+	// split/classify downstream is input-sensitive there (face count and volume vary
+	// with sampling — observed at |Δr|/r ≤ 5e-5, #1598). Equal radii take the exact
+	// bespoke Steinmetz constructor; the near-equal band between declines the general
+	// path so the boolean falls back to the recorded, deterministic faceted route
+	// instead of assembling silently wrong analytic topology (#1403 tracks unifying it).
+	if relDr := stdmath.Abs(ca.Radius-cb.Radius) / stdmath.Max(ca.Radius, cb.Radius); relDr > 0 && relDr < 2.5e-4 {
+		rec.Recordf(CodeImprintNearPinchDeclined, diag.Defect,
+			"crossing cylinders with near-equal radii (|Δr|/r = %.2g) decline the general imprint: near-pinch saddle topology, falling back", relDr)
 		return nil, false
 	}
 	res := geom.ResolutionForBox(a.RangeBox().Union(b.RangeBox())) // model-relative loop-closure weld (#1399)

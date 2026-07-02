@@ -37,7 +37,65 @@ const (
 	// tolerance reachable by the NURBS Gauss–Newton projection; 4e-3 keeps a full curve to a few
 	// thousand points while resolving curvature.
 	ssiToleranceFraction = 1e-7 // tol:numeric — dimensionless fraction of the patch 3D extent (model-relative)
-	ssiStepFraction      = 4e-3 // tol:numeric — dimensionless fraction of the patch 3D extent (model-relative)
+	// ssiStepFraction is the INITIAL march step h₀ (the pre-#1598 fixed step, now only a
+	// bootstrap guess): the curvature controller below adapts h from there each accepted
+	// step, and the acceptance gates halve it out of high-curvature trouble at the first
+	// prediction if the seed sits in a tight region.
+	ssiStepFraction = 4e-3 // tol:numeric — dimensionless fraction of the patch 3D extent (model-relative)
+	// Curvature-based step control (#1598, audit A2; Bajaj et al. 1988). The chord of a
+	// step h on a curve of curvature κ sags ≈ κh²/8; bounding the sag by the chordal
+	// budget ε gives h = 2√(2ε/κ). ε is the DOWNSTREAM deflection budget (what the
+	// splitter/tessellator absorbs, ADR-0042 model-relative) — three decades looser than
+	// the on-curve tolerance. h is clamped to [min,max] fractions of the extent: the max
+	// keeps a straight line from crawling, the min (200× the on-curve tol) is what lets
+	// loops far smaller than the old fixed step be traced at all.
+	ssiChordFraction   = 1e-4 // tol:numeric — chordal sag budget ε as a fraction of the extent
+	ssiMinStepFraction = 2e-5 // tol:numeric — h floor (200× on-curve tol; below it corrector jitter dominates)
+	// The h ceiling equals the pre-#1598 fixed step: the controller only ever REFINES
+	// below the historical spacing, never coarsens past it — the curved-boolean
+	// split/stitch consumers are tuned to chords of at most that length, and letting
+	// h grow 5× beyond it silently corrupted near-tangent unions (their long low-κ
+	// flanks coarsened while the loops themselves stayed correct). Raising the ceiling
+	// is a follow-up for when the consumers derive their gates from the polyline
+	// itself rather than the historical step (#1403 pipeline work).
+	ssiMaxStepFraction = ssiStepFraction
+	// Per-step controller limits: grow at most ×1.4 per accepted step (≈√2 — doubles h in
+	// two steps on a straightening curve), halve on rejection; at the h floor allow two
+	// retries before terminating the sweep OPEN (an honest partial curve beats marching
+	// onto the wrong branch).
+	ssiStepGrow           = 1.4
+	ssiRejectRetriesAtMin = 2
+	// Step acceptance gates (the OCCT IntWalk_PWalking StatusDeflection pattern in object
+	// space). A legitimate same-branch step turns by ≈ κh = 2√(2εκ) ≤ ~40° at the h floor,
+	// so 45° is the tightest turn gate that never rejects a legal step — while a
+	// branch-jump at a pinch turns by the full crossing angle or reverses outright. The
+	// corrector displacement on a legal step is ≈ the sag ≈ ε ≪ h, so half a step is a
+	// generous displacement bound that only a jump or a curvature under-estimate trips.
+	ssiTurnGateCos = 0.70710678118654752 // cos 45° — max tangent turn per accepted step
+	// The corrector displacement on a same-branch step is ≈ κh²/2 = 4× the chord sag, so
+	// gating it at 4ε enforces the sag budget DIRECTLY — including on the very first
+	// bootstrap steps, before any curvature estimate exists. The ½h cap stays as the
+	// coarse branch-jump bound. The step law plans with a 0.8 safety factor so a
+	// κ-planned step sits at ≈2.6ε, comfortably inside the gate.
+	ssiDisplacementGate    = 0.5 // max corrector displacement as a fraction of h
+	ssiDisplacementSagGate = 4.0 // max corrector displacement as a multiple of ε
+	ssiStepSafety          = 0.8 // fraction of the exact sag-limited step the law plans
+	// Loop closure requires position AND direction (#1404): within ¾ of the CURRENT step
+	// of the start, with the tangent aligned to the first accepted step's tangent within
+	// 30° — at a pinch the other branch crosses at a steeper angle (90° for equal-radius
+	// Steinmetz) and is rejected, so the march keeps going instead of falsely closing.
+	// The gate opens only after 3 current-steps of accumulated arc length, so a loop
+	// traced at the h floor can still close while the first few steps cannot self-close.
+	ssiCloseTangentCos = 0.86602540378443865 // cos 30° — closure tangent alignment
+	// ssiTangencyBrakeCos opens the near-tangency brake band: once the surface normals
+	// align within ~8° the march is entering a pinch/tangency neighbourhood and the step
+	// caps at half the bootstrap (see accept), regardless of the discrete curvature.
+	ssiTangencyBrakeCos = 0.99 // tol:angular
+	ssiCloseArcSteps    = 3.0  // min accumulated arc length before closing, in current steps
+	// ssiMaxArcExtents caps a sweep by ACCUMULATED ARC LENGTH (in extents): the old
+	// fixed-step count cap alone would let a pathological h-floor march spin thousands of
+	// tiny steps; a real intersection curve on the patch cannot exceed a few extents.
+	ssiMaxArcExtents = 64.0
 	// Step multiples used while marching: a seed within ssiDedupSteps of an existing curve is a
 	// duplicate of it; the loop closes when the march returns within ssiLoopCloseSteps of its start;
 	// a tangency seed may sit up to ssiTangencyGapSteps from the contact (the strict normal test, not
@@ -63,7 +121,10 @@ const (
 type ssiTracer struct {
 	base, other Surface
 	g           SurfaceGrid
-	step, tol   float64
+	step, tol   float64 // step = the BOOTSTRAP h₀; the controller adapts from it (#1598)
+	eps         float64 // chordal sag budget ε (model-relative)
+	hMin, hMax  float64 // adaptive-step clamps
+	arcCap      float64 // max accumulated arc length per sweep
 }
 
 // traceIntersectionCurves returns the intersection curve(s) of base and other as polylines whose every
@@ -75,7 +136,7 @@ func traceIntersectionCurves(base, other Surface, grid SurfaceGrid) [][]math.Poi
 	if g.UMax <= g.UMin || g.VMax <= g.VMin {
 		return nil
 	}
-	tr := ssiTracer{base: base, other: other, g: g, step: ssiStep(base, g), tol: ssiTolerance(base, g)}
+	tr := newSSITracer(base, other, g)
 	var curves [][]math.Point3
 	for _, seed := range ssiSeeds(base, other, g) {
 		if len(curves) >= ssiMaxCurves {
@@ -121,33 +182,197 @@ func (tr ssiTracer) marchCurve(pc math.Point3, nb, no math.Vector3) []math.Point
 }
 
 // marchOneWay steps from start in one direction (forward=along +nb×no, else −) and returns the points
-// reached plus whether it closed back onto start (a loop).
+// reached plus whether it closed back onto start (a loop). Each step is curvature-controlled and
+// gate-checked (#1598): predict h along the tangent, correct onto the curve, then accept only if the
+// corrector stayed near the prediction, made forward progress, and turned the tangent within the
+// same-branch bound — otherwise reject and halve. The step then follows h = 2√(2ε/κ) from the discrete
+// curvature of the last three accepted points, rate-limited so the controller cannot thrash.
 func (tr ssiTracer) marchOneWay(start math.Point3, nb, no math.Vector3, forward bool) ([]math.Point3, bool) {
-	var pts []math.Point3
-	p := start
 	dir, ok := curveTangent(nb, no, forward)
 	if !ok {
-		return pts, false
+		return nil, false
 	}
-	for i := 0; i < ssiMaxStepsPerCurve; i++ {
-		pred := p.TranslateBy(dir.Scale(math.Scalar(tr.step)))
-		pc, nbc, noc, ok := correctToBothSurfaces(tr.base, tr.other, pred, tr.tol)
-		if !ok {
-			return pts, false
+	sw := ssiSweep{tr: tr, p: start, start: start, dir: dir, h: tr.step}
+	for i := 0; i < ssiMaxStepsPerCurve && sw.arc < tr.arcCap; i++ {
+		pc, tc, verdict := sw.attemptStep()
+		switch verdict {
+		case ssiStepRejected:
+			if !sw.halve() {
+				return sw.pts, false // stuck at the h floor: honest open curve (#1598)
+			}
+		case ssiStepExited:
+			return append(sw.pts, pc), false // exited the base window: keep the boundary point
+		case ssiStepClosed:
+			return append(sw.pts, sw.start), true
+		case ssiStepAccepted:
+			sw.accept(pc, tc)
 		}
-		if !inWindow(tr.base, pc, tr.g) {
-			return append(pts, pc), false // exited the base window: keep the boundary point
-		}
-		if i > 2 && start.DistanceTo(pc) < tr.step*ssiLoopCloseSteps {
-			return append(pts, start), true // closed the loop
-		}
-		if moved, err := math.UnitVector3FromVector(p.VectorTo(pc)); err == nil {
-			dir = orient(nbc.Cross(noc), moved.AsVector()) // keep marching in the same heading
-		}
-		pts = append(pts, pc)
-		p = pc
 	}
-	return pts, false
+	return sw.pts, false
+}
+
+// newSSITracer derives the model-relative controller context from the base patch extent.
+func newSSITracer(base, other Surface, g SurfaceGrid) ssiTracer {
+	h0 := ssiStep(base, g)
+	extent := h0 / ssiStepFraction
+	return ssiTracer{
+		base: base, other: other, g: g,
+		step: h0, tol: ssiTolerance(base, g),
+		eps:  ssiChordFraction * extent,
+		hMin: ssiMinStepFraction * extent, hMax: ssiMaxStepFraction * extent,
+		arcCap: ssiMaxArcExtents * extent,
+	}
+}
+
+// ssiStepVerdict classifies one predict-correct attempt.
+type ssiStepVerdict int
+
+const (
+	ssiStepAccepted ssiStepVerdict = iota
+	ssiStepRejected
+	ssiStepExited
+	ssiStepClosed
+)
+
+// ssiSweep is the mutable state of one directional march: current point and heading, adaptive step,
+// accumulated arc length, the last accepted point (for the discrete curvature), and the tangent of the
+// first accepted step (the closure gate's direction reference — the seed's analytic tangent may sit
+// within tolerance of a pinch where nb×no is unreliable).
+type ssiSweep struct {
+	tr           ssiTracer
+	p, start     math.Point3
+	pPrev        math.Point3
+	havePrev     bool
+	dir          math.Vector3
+	startTan     math.Vector3
+	haveStartTan bool
+	h, arc       float64
+	align        float64 // |nb·no| at the last corrected point (tangency proximity)
+	rejectsAtMin int
+	pts          []math.Point3
+}
+
+// attemptStep predicts one step of h along the heading, corrects onto the curve, and runs the
+// acceptance gates in order: corrector convergence, forward progress (a corrector landing behind the
+// heading has jumped branches or folded), corrector displacement, tangent turn, window exit, closure.
+func (sw *ssiSweep) attemptStep() (math.Point3, math.Vector3, ssiStepVerdict) {
+	pred := sw.p.TranslateBy(sw.dir.Scale(math.Scalar(sw.h)))
+	pc, nbc, noc, ok := correctToBothSurfaces(sw.tr.base, sw.tr.other, pred, sw.tr.tol)
+	if !ok {
+		return pc, math.Vector3{}, ssiStepRejected
+	}
+	moved, err := math.UnitVector3FromVector(sw.p.VectorTo(pc))
+	if err != nil || float64(moved.AsVector().Dot(sw.dir)) <= 0 {
+		return pc, math.Vector3{}, ssiStepRejected // no progress, or backtracked
+	}
+	if d := float64(pred.DistanceTo(pc)); d > ssiDisplacementGate*sw.h || d > ssiDisplacementSagGate*sw.tr.eps {
+		return pc, math.Vector3{}, ssiStepRejected // corrector left the prediction / sag over budget
+	}
+	tc := orient(nbc.Cross(noc), moved.AsVector())
+	sw.align = stdmath.Abs(float64(nbc.Dot(noc)))
+	if float64(tc.Dot(sw.dir)) < ssiTurnGateCos {
+		return pc, tc, ssiStepRejected // turned harder than any same-branch step can (#1598)
+	}
+	if !inWindow(sw.tr.base, pc, sw.tr.g) {
+		return pc, tc, ssiStepExited
+	}
+	if sw.closes(pc, tc) {
+		return pc, tc, ssiStepClosed
+	}
+	return pc, tc, ssiStepAccepted
+}
+
+// closes reports whether pc closes the loop: enough arc marched, back within ¾ of the CURRENT step of
+// the start, AND heading the same way as the sweep's first accepted step — position alone falsely
+// closes at a pinch, where the other branch passes through the start point at a crossing angle (#1404).
+func (sw *ssiSweep) closes(pc math.Point3, tc math.Vector3) bool {
+	if !sw.haveStartTan || sw.arc <= ssiCloseArcSteps*sw.h {
+		return false
+	}
+	if float64(sw.start.DistanceTo(pc)) >= sw.h*ssiLoopCloseSteps {
+		return false
+	}
+	return float64(tc.Dot(sw.startTan)) >= ssiCloseTangentCos
+}
+
+// halve rejects the pending step: shrink h toward the floor, and once AT the floor allow a bounded
+// number of retries before the sweep gives up (returning the curve traced so far, open).
+func (sw *ssiSweep) halve() bool {
+	if sw.h > sw.tr.hMin {
+		sw.h = stdmath.Max(sw.h/2, sw.tr.hMin)
+		return true
+	}
+	sw.rejectsAtMin++
+	return sw.rejectsAtMin <= ssiRejectRetriesAtMin
+}
+
+// accept commits pc: record it, advance the heading, and re-plan h from the discrete curvature of the
+// last three accepted points via h = 2√(2ε/κ), rate-limited to [½, ×1.4] per step and clamped to
+// [hMin, hMax]. The one-step lag of the discrete estimate is covered by the acceptance gates.
+func (sw *ssiSweep) accept(pc math.Point3, tc math.Vector3) {
+	sw.rejectsAtMin = 0
+	if !sw.haveStartTan {
+		sw.startTan, sw.haveStartTan = tc, true
+	}
+	sw.arc += float64(sw.p.DistanceTo(pc))
+	hPlan := sw.tr.hMax
+	if kappa := sw.curvatureEstimate(pc, tc); kappa > 0 {
+		hPlan = ssiStepSafety * 2 * stdmath.Sqrt(2*sw.tr.eps/kappa)
+	}
+	// Tangency brake: the ANALYTIC intersection-curve curvature carries a 1/sin²θ pole at
+	// a tangency (θ = angle between the surface normals) that the discrete estimate — the
+	// finite per-branch curvature — cannot see. Approaching a pinch (#1404), cap the step
+	// at half the bootstrap so the delicate neighbourhood is sampled densely and the
+	// pinch crossing is REPRESENTED by vertices, not merely straddled within the sag
+	// budget by one long chord.
+	if sw.align > ssiTangencyBrakeCos {
+		hPlan = stdmath.Min(hPlan, sw.tr.step/2)
+	}
+	sw.h = clampStep(hPlan, sw.h, sw.tr.hMin, sw.tr.hMax)
+	sw.pPrev, sw.havePrev = sw.p, true
+	sw.p, sw.dir = pc, tc
+	sw.pts = append(sw.pts, pc)
+}
+
+// curvatureEstimate is the controller's κ: the larger of the 3-point circumcircle estimate and
+// the tangent turning rate Δθ/Δs over the accepted step. The turn rate is available from the very
+// FIRST step (the circumcircle needs three points), so the bootstrap adapts one step sooner; both
+// saturate near a pinch instead of diverging like the analytic intersection-curve curvature,
+// driving h to the floor there — exactly the wanted slowdown.
+func (sw *ssiSweep) curvatureEstimate(pc math.Point3, tc math.Vector3) float64 {
+	kappa := sw.discreteCurvature(pc)
+	ds := float64(sw.p.DistanceTo(pc))
+	if ds <= 10*sw.tr.tol {
+		return kappa
+	}
+	cosTurn := stdmath.Min(1, stdmath.Max(-1, float64(tc.Dot(sw.dir))))
+	if turn := stdmath.Acos(cosTurn) / ds; turn > kappa {
+		return turn
+	}
+	return kappa
+}
+
+// discreteCurvature is the circumcircle curvature of (pPrev, p, pc) — exact for circles, O(h²)
+// otherwise, always finite (it saturates near a pinch instead of diverging like the analytic
+// intersection-curve curvature, which drives h to the floor there — exactly the wanted slowdown).
+// Spacings below 10·tol are corrector jitter, not geometry: keep the previous plan (return 0).
+func (sw *ssiSweep) discreteCurvature(pc math.Point3) float64 {
+	if !sw.havePrev {
+		return 0
+	}
+	e1, e2 := sw.pPrev.VectorTo(sw.p), sw.p.VectorTo(pc)
+	l1, l2 := float64(e1.Length()), float64(e2.Length())
+	chord := float64(sw.pPrev.DistanceTo(pc))
+	if l1 < 10*sw.tr.tol || l2 < 10*sw.tr.tol || chord == 0 {
+		return 0
+	}
+	return 2 * float64(e1.Cross(e2).Length()) / (l1 * l2 * chord)
+}
+
+// clampStep rate-limits the controller (halve fast, grow ≤×1.4) and clamps to the global bounds.
+func clampStep(plan, current, hMin, hMax float64) float64 {
+	h := stdmath.Min(stdmath.Max(plan, current/2), current*ssiStepGrow)
+	return stdmath.Min(stdmath.Max(h, hMin), hMax)
 }
 
 // curveTangent returns the unit curve tangent nb×no, reversed for the backward sweep; ok is false at a

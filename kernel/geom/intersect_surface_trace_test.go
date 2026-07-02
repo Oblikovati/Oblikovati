@@ -277,3 +277,60 @@ func loopAxisRadius(loop []math.Point3) (mean, worst float64) {
 	}
 	return mean, worst
 }
+
+// TestSSITracesLoopSmallerThanBootstrapStep is acceptance criterion 3 of #1598 (audit A2): a loop whose
+// whole circumference is SMALLER than the bootstrap march step h₀ = 4e-3·extent must still be traced and
+// closed — the curvature controller collapses h toward its floor (200× the on-curve tolerance) instead
+// of stepping clean over the feature. A sphere of radius 0.002 centred on the unit sphere meets it in a
+// circle of circumference ≈ 0.0126 < h₀ ≈ 0.0139.
+func TestSSITracesLoopSmallerThanBootstrapStep(t *testing.T) {
+	big, _ := NewSphere(math.P3(0, 0, 0), 1)
+	centre := big.PointAt(0.31, 0.21) // off the coarse seed lattice, as in the #1400 fixture
+	small, _ := NewSphere(centre, 0.002)
+
+	loops := closedOnly(IntersectSurfaceSurface(big, small, SurfaceGrid{}))
+	if len(loops) != 1 {
+		t.Fatalf("got %d closed loops, want 1 (the sub-step circle must close, #1598)", len(loops))
+	}
+	onSurfacePair(t, loops, big, small, 1e-5)
+	perimeter := polylineLength(loops[0])
+	want := 2 * stdmath.Pi * 0.002 // tiny circle on a unit sphere: radius ≈ the small sphere's
+	if stdmath.Abs(perimeter-want) > 0.15*want {
+		t.Errorf("traced perimeter %g, want ≈ %g (analytic small-circle circumference)", perimeter, want)
+	}
+}
+
+// TestSSIChordalDeviationOnTightCircle is acceptance criterion 4 of #1598: through a high-curvature
+// region (a fillet-radius cylinder crossing a much larger plane) the traced polyline's mid-chord sag
+// against the analytic circle must stay within the chordal budget ε = 1e-4·extent that drives the
+// h = 2√(2ε/κ) step law.
+func TestSSIChordalDeviationOnTightCircle(t *testing.T) {
+	pl, _ := NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
+	cyl, _ := NewCylinder(math.P3(0.37, 0.11, 0), math.V3(0, 0, 1), 0.05)
+	grid := SurfaceGrid{UMin: -5, UMax: 5, VMin: -5, VMax: 5}
+
+	loops := closedOnly(IntersectSurfaceSurface(pl, cyl, grid))
+	if len(loops) != 1 {
+		t.Fatalf("got %d closed loops, want 1 (plane ∩ thin cylinder)", len(loops))
+	}
+	extent := stdmath.Sqrt(200) // 10×10 planar window diagonal
+	eps := ssiChordFraction * extent
+	centre, r := math.P3(0.37, 0.11, 0), 0.05
+	for i := 1; i < len(loops[0]); i++ {
+		a, b := loops[0][i-1], loops[0][i]
+		mid := math.P3((a.X+b.X)/2, (a.Y+b.Y)/2, (a.Z+b.Z)/2)
+		sag := stdmath.Abs(float64(centre.DistanceTo(mid)) - r)
+		if sag > 1.5*eps {
+			t.Fatalf("mid-chord sag %g at segment %d exceeds the chordal budget ε=%g (#1598)", sag, i, eps)
+		}
+	}
+}
+
+// polylineLength sums a polyline's segment lengths.
+func polylineLength(pts []math.Point3) float64 {
+	var l float64
+	for i := 1; i < len(pts); i++ {
+		l += float64(pts[i-1].DistanceTo(pts[i]))
+	}
+	return l
+}
