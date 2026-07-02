@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 	"sort"
 
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
 
@@ -179,7 +180,7 @@ func lessPoint(a, b math.Point3) bool {
 // a split edge's fragments and the intersection edges (which have new endpoints) are left untouched.
 // Coincidence is tested at a tolerance scaled to the body's size. Call during construction.
 func (b *Body) InheritOriginalEdges(originals []*Edge) {
-	tol := float64(b.RangeBox().Diagonal().Length())*1e-9 + 1e-9
+	tol := geom.ResolutionForBox(b.RangeBox()).Weld() // model-relative (#1610; was the same formula hand-rolled)
 	res := b.Edges()
 	for _, o := range originals {
 		var match *Edge

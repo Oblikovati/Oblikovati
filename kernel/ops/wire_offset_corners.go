@@ -18,7 +18,7 @@ import (
 
 // joinOffsetCorners walks consecutive seg pairs (wrapping when closed),
 // trimming crossings and inserting gap closures.
-func joinOffsetCorners(src, offs []wireSeg, d float64, corner WireOffsetCorner, closed bool) ([]wireSeg, error) {
+func joinOffsetCorners(src, offs []wireSeg, d, tol float64, corner WireOffsetCorner, closed bool) ([]wireSeg, error) {
 	inserted := make([][]wireSeg, len(offs)) // closures appended after seg i
 	pairs := len(offs) - 1
 	if closed {
@@ -26,7 +26,7 @@ func joinOffsetCorners(src, offs []wireSeg, d float64, corner WireOffsetCorner, 
 	}
 	for k := 0; k < pairs; k++ {
 		i, j := k, (k+1)%len(offs)
-		fill, err := joinPair(&src[i], &offs[i], &offs[j], d, corner)
+		fill, err := joinPair(&src[i], &offs[i], &offs[j], d, tol, corner)
 		if err != nil {
 			return nil, err
 		}
@@ -34,7 +34,7 @@ func joinOffsetCorners(src, offs []wireSeg, d float64, corner WireOffsetCorner, 
 	}
 	var out []wireSeg
 	for i := range offs {
-		if segLength(&offs[i]) > wireOffsetTol {
+		if segLength(&offs[i]) > tol {
 			out = append(out, offs[i])
 		}
 		out = append(out, inserted[i]...)
@@ -48,11 +48,11 @@ func joinOffsetCorners(src, offs []wireSeg, d float64, corner WireOffsetCorner, 
 // joinPair resolves one corner between prev and next: weld if snug, trim if
 // the offsets cross, close the gap otherwise. The original corner point comes
 // from the source chain (prev's end).
-func joinPair(srcPrev, prev, next *wireSeg, d float64, corner WireOffsetCorner) ([]wireSeg, error) {
+func joinPair(srcPrev, prev, next *wireSeg, d, tol float64, corner WireOffsetCorner) ([]wireSeg, error) {
 	if prev == next {
 		return nil, nil // single-seg closed chain (a full circle) — already joined
 	}
-	if float64(prev.b.DistanceTo(next.a)) <= wireOffsetTol {
+	if float64(prev.b.DistanceTo(next.a)) <= tol {
 		setSegStart(next, prev.b)
 		return nil, nil
 	}
@@ -63,11 +63,11 @@ func joinPair(srcPrev, prev, next *wireSeg, d float64, corner WireOffsetCorner) 
 		}
 		return []wireSeg{bevel(prev.b, next.a)}, nil // numerically parallel: bevel
 	}
-	return closeGap(srcPrev.b, prev, next, d, corner)
+	return closeGap(srcPrev.b, prev, next, d, tol, corner)
 }
 
 // closeGap inserts the closure for a gap corner about original corner P.
-func closeGap(p math.Point2, prev, next *wireSeg, d float64, corner WireOffsetCorner) ([]wireSeg, error) {
+func closeGap(p math.Point2, prev, next *wireSeg, d, tol float64, corner WireOffsetCorner) ([]wireSeg, error) {
 	switch corner {
 	case WireCornerCircular:
 		return []wireSeg{closureArc(p, prev.b, next.a, d)}, nil
@@ -75,24 +75,24 @@ func closeGap(p math.Point2, prev, next *wireSeg, d float64, corner WireOffsetCo
 		if trimAtSupportIntersection(prev, next) {
 			return nil, nil
 		}
-		return closeLinear(prev, next)
+		return closeLinear(prev, next, tol)
 	default:
-		return closeLinear(prev, next)
+		return closeLinear(prev, next, tol)
 	}
 }
 
 // closeLinear extends both sides tangentially to their intersection (a miter);
 // near-parallel tangents bevel straight across.
-func closeLinear(prev, next *wireSeg) ([]wireSeg, error) {
+func closeLinear(prev, next *wireSeg, tol float64) ([]wireSeg, error) {
 	m, ok := rayIntersection(prev.b, prev.endTangent(), next.a, next.startTangent().Negate())
 	if !ok {
 		return []wireSeg{bevel(prev.b, next.a)}, nil
 	}
 	out := make([]wireSeg, 0, 2)
-	if float64(prev.b.DistanceTo(m)) > wireOffsetTol {
+	if float64(prev.b.DistanceTo(m)) > tol {
 		out = append(out, bevel(prev.b, m))
 	}
-	if float64(m.DistanceTo(next.a)) > wireOffsetTol {
+	if float64(m.DistanceTo(next.a)) > tol {
 		out = append(out, bevel(m, next.a))
 	}
 	return out, nil
@@ -121,7 +121,7 @@ func bevel(a, b math.Point2) wireSeg { return wireSeg{kind: wsLine, a: a, b: b} 
 // near-parallel.
 func rayIntersection(p1 math.Point2, d1 math.Vector2, p2 math.Point2, d2 math.Vector2) (math.Point2, bool) {
 	denom := float64(d1.Cross(d2))
-	if stdmath.Abs(denom) < 1e-12 {
+	if stdmath.Abs(denom) < 1e-12 { // tol:numeric (unit-tangent cross determinant, dimensionless)
 		return math.Point2{}, false
 	}
 	w := p1.VectorTo(p2)

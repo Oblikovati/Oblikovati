@@ -231,10 +231,14 @@ func subdivide(eval func(float64) math.Point3, lo, hi, chordTol, angleTol float6
 }
 
 // turnAngle returns the angle (radians) between the chords a→b and b→c — the curve's
-// turning across this span. Zero for a straight run (no over-faceting of lines).
+// turning across this span. Zero for a straight run (no over-faceting of lines). Only an
+// EXACTLY zero chord is directionless — the old `LengthSquared < DefaultTolerance` guard
+// declared every sub-0.3 µm chord degenerate, silently disabling the angular-deflection
+// criterion (the scale-free ≥32-facets-per-circle backstop) on tiny parts, which
+// tessellated a 1 µm bore as a square (#1610).
 func turnAngle(a, b, c math.Point3) float64 {
 	d1, d2 := a.VectorTo(b), b.VectorTo(c)
-	if d1.LengthSquared() < math.DefaultTolerance || d2.LengthSquared() < math.DefaultTolerance {
+	if d1.LengthSquared() == 0 || d2.LengthSquared() == 0 {
 		return 0
 	}
 	cosA := clamp(d1.Dot(d2)/(d1.Length()*d2.Length()), -1, 1)

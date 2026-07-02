@@ -39,14 +39,15 @@ func triangleAdjacency(m *Mesh) [][]orientLink {
 		tri int
 		dir bool
 	}
+	w := meshSegWelder(m)
 	uses := map[segKey][]use{}
 	nt := m.TriangleCount()
 	for ti := 0; ti < nt; ti++ {
 		for k := 0; k < 3; k++ {
 			a, b := triEdge(m, ti, k)
-			key := weldSeg(a, b)
+			key := w.seg(a, b)
 			if len(uses[key]) < 2 {
-				uses[key] = append(uses[key], use{ti, quantLess(a, b)})
+				uses[key] = append(uses[key], use{ti, w.less(a, b)})
 			} else {
 				uses[key] = append(uses[key], use{-1, false}) // mark non-manifold (>2 uses)
 			}

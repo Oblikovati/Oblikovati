@@ -20,11 +20,12 @@ import (
 // does NOT re-mesh planes: re-triangulating a planar multi-hole face cascades new mismatches, so a crack
 // where the PLANE is the absorber is left to a future pass.
 func conformCylConeFaces(faces []*topo.Face, idx map[*topo.Face]int, fm []*Mesh, q Quality) {
-	free := freeSegments(fm)
+	w := meshSegWelder(fm...)
+	free := freeSegments(fm, w)
 	if len(free) == 0 {
 		return // watertight body: nothing to repair (and the hot path skips the weld below)
 	}
-	for j := range facesToFix(faces, idx, fm, free) {
+	for j := range facesToFix(faces, idx, fm, free, w) {
 		if m := conformingMesh(faces[j], q); m != nil {
 			fm[j] = m
 		}
@@ -51,10 +52,10 @@ func conformingMesh(f *topo.Face, q Quality) *Mesh {
 // facesToFix is the set of face indices to re-mesh: every cyl/cone/plane face whose mesh touches a
 // free (unwelded) segment, plus its cyl/cone/plane topo neighbours across the shared edge — the face
 // that ABSORBED the segment (dropped a near-collinear shared-edge point its neighbour kept).
-func facesToFix(faces []*topo.Face, idx map[*topo.Face]int, fm []*Mesh, free map[segKey]bool) map[int]bool {
+func facesToFix(faces []*topo.Face, idx map[*topo.Face]int, fm []*Mesh, free map[segKey]bool, w segWelder) map[int]bool {
 	toFix := map[int]bool{}
 	for i, f := range faces {
-		if !meshTouchesFree(fm[i], free) {
+		if !meshTouchesFree(fm[i], free, w) {
 			continue
 		}
 		if conformable(f.Geometry()) {
@@ -124,7 +125,9 @@ func conformingCylConeMesh(f *topo.Face, q Quality) *Mesh {
 // on screw caps, #1073). It feeds constrainedDelaunay the SAME projected coordinates the plane's
 // neighbours discretize from, so it conforms rather than cascading; and because every one of the
 // plane's OWN boundary segments stays a constraint, re-meshing it cannot crack its other neighbours.
-// nil when the trim has overlapping holes (its own union mesher conforms) or exceeds the CDT budget.
+// nil when the trim has overlapping holes (its own union mesher conforms). The former
+// 256-vertex CDT budget is retired with planarTris' (#1610): #1409's corridor-walk
+// segment insertion removed the quadratic constraint recovery the budget guarded against.
 func conformingPlaneMesh(f *topo.Face, q Quality) *Mesh {
 	normal := f.Geometry().NormalAt(0, 0)
 	flat := planeProjector(normal)
@@ -138,7 +141,7 @@ func conformingPlaneMesh(f *topo.Face, q Quality) *Mesh {
 	for i, h := range holes3D {
 		holes2D[i] = project2D(h, flat)
 	}
-	if holesOverlap(holes2D) || boundaryVertCount(outer2D, holes2D) > maxCDTFallbackVerts {
+	if holesOverlap(holes2D) {
 		return nil
 	}
 	tris := planarCDT(outer2D, holes2D)
@@ -172,12 +175,12 @@ type segKey [6]int64
 
 // freeSegments returns the welded segments that exactly ONE triangle uses across all face meshes — the
 // cross-face cracks (an interior manifold edge is used by two).
-func freeSegments(fm []*Mesh) map[segKey]bool {
+func freeSegments(fm []*Mesh, w segWelder) map[segKey]bool {
 	deg := map[segKey]int{}
 	for _, m := range fm {
 		for t := 0; t+2 < len(m.Indices); t += 3 {
 			for k := 0; k < 3; k++ {
-				deg[weldSeg(m.Positions[m.Indices[t+k]], m.Positions[m.Indices[t+(k+1)%3]])]++
+				deg[w.seg(m.Positions[m.Indices[t+k]], m.Positions[m.Indices[t+(k+1)%3]])]++
 			}
 		}
 	}
@@ -191,10 +194,10 @@ func freeSegments(fm []*Mesh) map[segKey]bool {
 }
 
 // meshTouchesFree reports whether any edge of m is one of the free (unpaired) segments.
-func meshTouchesFree(m *Mesh, free map[segKey]bool) bool {
+func meshTouchesFree(m *Mesh, free map[segKey]bool, w segWelder) bool {
 	for t := 0; t+2 < len(m.Indices); t += 3 {
 		for k := 0; k < 3; k++ {
-			if free[weldSeg(m.Positions[m.Indices[t+k]], m.Positions[m.Indices[t+(k+1)%3]])] {
+			if free[w.seg(m.Positions[m.Indices[t+k]], m.Positions[m.Indices[t+(k+1)%3]])] {
 				return true
 			}
 		}
@@ -202,19 +205,47 @@ func meshTouchesFree(m *Mesh, free map[segKey]bool) bool {
 	return false
 }
 
-func weldSeg(a, b math.Point3) segKey {
-	ka, kb := quantCoord(a), quantCoord(b)
+// segWelder quantizes mesh positions onto a model-relative grid (Resolution.Weld) for
+// edge pairing. Shared boundary points from adjacent faces are BIT-IDENTICAL (shared
+// edge discretization), so any grid pairs them; the grid's only job is to not falsely
+// merge distinct fine-feature vertices — which the old fixed 1e-6 grid did on µm-scale
+// parts, silently masking cracks (#1610, ADR-0042).
+type segWelder struct{ grid float64 }
+
+// meshSegWelder derives the weld grid from the meshes' combined bounding box.
+func meshSegWelder(fm ...*Mesh) segWelder {
+	box := math.EmptyBox()
+	for _, m := range fm {
+		for _, p := range m.Positions {
+			box = box.ExtendPoint(p)
+		}
+	}
+	return segWelder{grid: geom.ResolutionForBox(box).Weld()}
+}
+
+func (w segWelder) seg(a, b math.Point3) segKey {
+	ka, kb := w.coord(a), w.coord(b)
 	if ka[0] > kb[0] || (ka[0] == kb[0] && (ka[1] > kb[1] || (ka[1] == kb[1] && ka[2] > kb[2]))) {
 		ka, kb = kb, ka
 	}
 	return segKey{ka[0], ka[1], ka[2], kb[0], kb[1], kb[2]}
 }
 
-func quantCoord(p math.Point3) [3]int64 {
-	v := math.Point3{}.VectorTo(p)
+func (w segWelder) coord(p math.Point3) [3]int64 {
 	return [3]int64{
-		int64(float64(v.Dot(math.Vector3{X: 1})) * 1e6),
-		int64(float64(v.Dot(math.Vector3{Y: 1})) * 1e6),
-		int64(float64(v.Dot(math.Vector3{Z: 1})) * 1e6),
+		int64(float64(p.X) / w.grid),
+		int64(float64(p.Y) / w.grid),
+		int64(float64(p.Z) / w.grid),
 	}
+}
+
+// less reports whether a sorts before b in quantized coordinates (the canonical edge direction).
+func (w segWelder) less(a, b math.Point3) bool {
+	ka, kb := w.coord(a), w.coord(b)
+	for i := 0; i < 3; i++ {
+		if ka[i] != kb[i] {
+			return ka[i] < kb[i]
+		}
+	}
+	return false
 }

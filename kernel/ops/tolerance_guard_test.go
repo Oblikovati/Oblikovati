@@ -106,8 +106,26 @@ func TestNoUnjustifiedAbsoluteEpsilons(t *testing.T) {
 		"../../model/sketch/arrangement.go",
 		"../../model/sketch/profile.go",
 		"../../model/sketch/path_3d.go",
+		// ops: the CDT / conformance / orientation weld grids and trim-grid gates (#1610).
+		"../ops/conformance_repair.go",
+		"../ops/tessellate_trim.go",
+		"../ops/planar_faithful.go",
+		"../ops/refined_patch.go",
+		"../ops/mesh_orient.go",
+		"../ops/orient_heal.go",
+		"../ops/holed_cylinder_wall.go",
+		"../ops/wire_offset.go",
+		"../ops/wire_offset_corners.go",
+		"../ops/fill_nsided.go",
+		"../ops/fill_opening.go",
+		// topo: evaluator / wire / provenance coincidence gates (#1610).
+		"../topo/evaluators.go",
+		"../topo/face_evaluator.go",
+		"../topo/provenance.go",
+		"../topo/wire.go",
+		// brep: revolution surface classification (revTol — annotated pending #1603).
+		"../brep/revolution.go",
 	}
-	epsilon := regexp.MustCompile(`[^0-9a-zA-Z_.]1(?:\.0)?e-[0-9]+`)
 	var offenders []string
 	for _, rel := range scope {
 		src, err := os.ReadFile(rel)
@@ -116,7 +134,7 @@ func TestNoUnjustifiedAbsoluteEpsilons(t *testing.T) {
 		}
 		for i, line := range strings.Split(string(src), "\n") {
 			code, comment, _ := strings.Cut(line, "//")
-			if !epsilon.MatchString(" " + code) {
+			if !toleranceLiteral(code) {
 				continue
 			}
 			if strings.Contains(comment, "tol:") {
@@ -128,6 +146,54 @@ func TestNoUnjustifiedAbsoluteEpsilons(t *testing.T) {
 	if len(offenders) > 0 {
 		t.Fatalf("unjustified absolute length epsilon(s) in #1399 hot paths — relativise (res.Weld()/"+
 			"res.Plane()) or annotate `// tol:<kind>`:\n%s", strings.Join(offenders, "\n"))
+	}
+}
+
+// epsilonLiteral matches a bare small scientific literal (1e-N).
+var epsilonLiteral = regexp.MustCompile(`[^0-9a-zA-Z_.]1(?:\.0)?e-[0-9]+`)
+
+// reciprocalGrid matches the evasion forms of an absolute tolerance written as its
+// reciprocal (#1610): a quantization multiplier (`* 1e5`, `* 100000.0`) or a division of
+// one by a named tolerance/grid (`1.0/tol`). These carry the same cm-anchored scale
+// assumption as a bare 1e-N and must be relativised or annotated identically.
+var reciprocalGrid = regexp.MustCompile(
+	`\*\s*1(?:\.0)?e\+?[0-9]+|\*\s*10{4,}(?:\.0)?\b|[^0-9a-zA-Z_.]1(?:\.0)?\s*/\s*[A-Za-z_]*(?:eps|tol|grid|Eps|Tol|Grid)`)
+
+// toleranceLiteral reports whether a code line (comment already stripped) carries an
+// absolute-tolerance literal in either direct or reciprocal form.
+func toleranceLiteral(code string) bool {
+	return epsilonLiteral.MatchString(" "+code) || reciprocalGrid.MatchString(" "+code)
+}
+
+// TestToleranceGuardCatchesEvasionForms is the guard-the-guard self-test (#1610): the
+// matcher must catch each known evasion spelling, and must not fire on ordinary
+// arithmetic — otherwise the whitelist gives false confidence.
+func TestToleranceGuardCatchesEvasionForms(t *testing.T) {
+	caught := []string{
+		"k := int64(x * 1e6)",     // the old quantCoord reciprocal grid
+		"const q = x * 1e5",       // the old weldKey reciprocal grid
+		"grid := v * 100000.0",    // spelled-out reciprocal
+		"cells := 1.0 / tol",      // one-over-a-named-tolerance
+		"n := 1 / weldEps",        // one-over-eps identifier
+		"if d < 1e-6 {",           // the classic direct form
+		"tol := span*1e-9 + 1e-9", // absolute floor hiding behind a relative term
+	}
+	for _, line := range caught {
+		if !toleranceLiteral(line) {
+			t.Errorf("evasion form not caught: %q", line)
+		}
+	}
+	clean := []string{
+		"area := w * h",
+		"x := 2 * stdmath.Pi",
+		"s := v.Scale(1 / norm)",
+		"r := 1 / (radius * radius)",
+		"i := n * 100",
+	}
+	for _, line := range clean {
+		if toleranceLiteral(line) {
+			t.Errorf("ordinary arithmetic falsely flagged: %q", line)
+		}
 	}
 }
 

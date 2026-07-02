@@ -5,6 +5,7 @@ package ops
 import (
 	stdmath "math"
 
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
 
@@ -25,18 +26,17 @@ import (
 // thousands of clean faces (a 390-point cap would otherwise route to it on every recompute) and reserves
 // it for the genuine defect.
 
-// maxCDTFallbackVerts caps the boundary size of a face the CDT repair will re-mesh. The CDT's
-// flip-based constraint recovery is worse than O(n²), so a several-hundred-vertex face (e.g. a cap with
-// dozens of bore holes) would blow the per-recompute tessellation budget (~1.2 s for ~650 verts). Above
-// the cap we keep earcut's output — the SAME behaviour as before this fallback existed, so no
-// performance regression; such a face may retain a minor crack, which is acceptable (it is exactly the
-// prior, shipped state). Realistic cracked faces (the EDF duct cap is 94 verts) sit well under the cap.
-const maxCDTFallbackVerts = 256
-
 // planarTris triangulates a planar face's projected boundary. Indices address outer2D[i] for
 // i<len(outer2D), then the holes concatenated after it — the same vertex ordering earcut uses, so
 // callers build one 3D vertex buffer in that order regardless of which triangulator produced the
 // indices.
+//
+// The fallback used to be capped at 256 boundary vertices because the CDT's flip-based
+// constraint recovery was worse than O(n²) (~1.2 s at ~650 verts) — above the cap an
+// area-WRONG earcut shipped silently, the exact defect class the repo's tessellation
+// rule ranks above everything else. #1409's corridor-walk segment insertion removed the
+// quadratic recovery, so the cap is retired (#1610): a mismatched face now always routes
+// to the CDT, whatever its size.
 func planarTris(outer2D []math.Point2, holes2D [][]math.Point2) [][3]int {
 	var tris [][3]int
 	if len(holes2D) == 0 {
@@ -44,18 +44,10 @@ func planarTris(outer2D []math.Point2, holes2D [][]math.Point2) [][3]int {
 	} else {
 		tris = earcut(outer2D, holes2D)
 	}
-	if planarAreaMatches(tris, outer2D, holes2D) || boundaryVertCount(outer2D, holes2D) > maxCDTFallbackVerts {
+	if planarAreaMatches(tris, outer2D, holes2D) {
 		return tris
 	}
 	return planarCDT(outer2D, holes2D)
-}
-
-func boundaryVertCount(outer2D []math.Point2, holes2D [][]math.Point2) int {
-	n := len(outer2D)
-	for _, h := range holes2D {
-		n += len(h)
-	}
-	return n
 }
 
 // planarAreaMatches reports whether tris covers exactly the face area (|outer| − Σ|holes|). A clean
@@ -77,7 +69,11 @@ func planarAreaMatches(tris [][3]int, outer2D []math.Point2, holes2D [][]math.Po
 	for _, t := range tris {
 		got += triArea(verts[t[0]], verts[t[1]], verts[t[2]])
 	}
-	return stdmath.Abs(got-want) <= 1e-6*want+1e-9
+	// Relative area bracket with a model-relative floor: the old absolute 1e-9 floor was
+	// ~10% of a µm-scale face's area, neutering the defect check exactly where cracks
+	// hurt most (#1610).
+	floor := geom.ResolutionForPoints2D(outer2D).Area()
+	return stdmath.Abs(got-want) <= 1e-6*want+floor // tol:numeric (relative area fraction)
 }
 
 func triArea(a, b, c math.Point2) float64 {

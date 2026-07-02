@@ -34,8 +34,22 @@ const (
 	WireCornerExtend
 )
 
-// wireOffsetTol is the coincidence/degeneracy tolerance of the offset (cm).
-const wireOffsetTol = 1e-9
+// wireOffsetTol is the coincidence/degeneracy tolerance of the offset, scaled to the
+// wire's own extent (#1610, ADR-0042 — formerly an absolute 1e-9 cm, which passed
+// degenerate radii on metre-scale wires).
+func wireOffsetTol(w *topo.Wire) float64 {
+	return ResolutionForPoints(wireVertexPoints(w)).Weld()
+}
+
+// wireVertexPoints returns the wire's edge endpoints — the extent proxy its
+// model-relative tolerances derive from.
+func wireVertexPoints(w *topo.Wire) []math.Point3 {
+	var pts []math.Point3
+	for _, u := range w.Uses() {
+		pts = append(pts, u.Edge.StartVertex().Point(), u.Edge.EndVertex().Point())
+	}
+	return pts
+}
 
 // OffsetPlanarWire offsets w by distance in the plane with the given normal,
 // returning a new wire-only body. The wire must lie in that plane.
@@ -53,11 +67,12 @@ func OffsetPlanarWire(w *topo.Wire, normal math.Vector3, distance float64, corne
 	if err != nil {
 		return nil, err
 	}
-	offs, err := offsetSegments(segs, distance)
+	tol := wireOffsetTol(w)
+	offs, err := offsetSegments(segs, distance, tol)
 	if err != nil {
 		return nil, err
 	}
-	joined, err := joinOffsetCorners(segs, offs, distance, corner, w.IsClosed())
+	joined, err := joinOffsetCorners(segs, offs, distance, tol, corner, w.IsClosed())
 	if err != nil {
 		return nil, err
 	}
@@ -103,13 +118,14 @@ func frameAbout(o math.Point3, n math.Vector3) wirePlane {
 // verifyWireInPlane samples the wire and rejects out-of-plane geometry with
 // the offending deviation.
 func verifyWireInPlane(w *topo.Wire, pl wirePlane) error {
+	tol := ResolutionForPoints(wireVertexPoints(w)).Plane() // model-relative (#1610)
 	for _, u := range w.Uses() {
 		c := u.Edge.Geometry()
 		lo, hi := c.Domain()
 		for i := 0; i <= 16; i++ {
 			p := c.PointAt(lo + (hi-lo)*float64(i)/16)
-			if dev := stdmath.Abs(float64(pl.origin.VectorTo(p).Dot(pl.n))); dev > 1e-7 {
-				return fmt.Errorf("ops.OffsetPlanarWire: edge %d leaves the plane by %g (max 1e-7)", u.Edge.ID(), dev)
+			if dev := stdmath.Abs(float64(pl.origin.VectorTo(p).Dot(pl.n))); dev > tol {
+				return fmt.Errorf("ops.OffsetPlanarWire: edge %d leaves the plane by %g (max %g)", u.Edge.ID(), dev, tol)
 			}
 		}
 	}
@@ -258,10 +274,10 @@ func polySegment2D(u topo.Use, pl wirePlane) wireSeg {
 }
 
 // offsetSegments offsets each seg by d to its left (positive d).
-func offsetSegments(segs []wireSeg, d float64) ([]wireSeg, error) {
+func offsetSegments(segs []wireSeg, d, tol float64) ([]wireSeg, error) {
 	out := make([]wireSeg, len(segs))
 	for i := range segs {
-		off, err := offsetSegment(segs[i], d)
+		off, err := offsetSegment(segs[i], d, tol)
 		if err != nil {
 			return nil, fmt.Errorf("ops.OffsetPlanarWire: segment %d: %w", i, err)
 		}
@@ -273,7 +289,7 @@ func offsetSegments(segs []wireSeg, d float64) ([]wireSeg, error) {
 // offsetSegment offsets one seg: a line translates, an arc re-radiuses
 // (CCW: left is toward the center → r-d; CW: away → r+d), a polyline offsets
 // per segment with miter joints.
-func offsetSegment(s wireSeg, d float64) (wireSeg, error) {
+func offsetSegment(s wireSeg, d, tol float64) (wireSeg, error) {
 	switch s.kind {
 	case wsLine:
 		shift := perpLeft(unit2(s.a.VectorTo(s.b))).Scale(math.Scalar(d))
@@ -283,7 +299,7 @@ func offsetSegment(s wireSeg, d float64) (wireSeg, error) {
 		if s.sweep < 0 {
 			r = s.r + d
 		}
-		if r <= wireOffsetTol {
+		if r <= tol {
 			return wireSeg{}, fmt.Errorf("offset %g collapses arc of radius %g", d, s.r)
 		}
 		off := wireSeg{kind: wsArc, center: s.center, r: r, a0: s.a0, sweep: s.sweep}

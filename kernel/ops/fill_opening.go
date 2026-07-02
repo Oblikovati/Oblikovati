@@ -31,6 +31,16 @@ type boundaryEdge struct {
 func (b boundaryEdge) start() math.Point3 { return b.curve.Ctrl[0] }
 func (b boundaryEdge) end() math.Point3   { return b.curve.Ctrl[len(b.curve.Ctrl)-1] }
 
+// boundaryWeldTol is the endpoint-coincidence tolerance for chaining boundary edges,
+// scaled to the boundary's own extent (#1610, ADR-0042 — formerly an absolute 1e-7 cm).
+func boundaryWeldTol(edges []boundaryEdge) float64 {
+	var pts []math.Point3
+	for _, e := range edges {
+		pts = append(pts, e.start(), e.end())
+	}
+	return ResolutionForPoints(pts).Weld()
+}
+
 // FillFourSided fills the opening bounded by four neighbour surface bodies with a single NURBS at the
 // given continuity order (0=G0..2=G2). Each neighbour must be a single surface face (NURBS or planar);
 // its inner edge (nearest the opening centre) bounds the fill. A NURBS neighbour is matched to the
@@ -163,24 +173,25 @@ func curveAsBSpline(c geom.Curve3) geom.BSplineCurve {
 // chainLoop orders the four boundary edges into c0 (v=0), c1 (v=1), d0 (u=0), d1 (u=1) with curves
 // reversed so the corners chain (c0.start=d0.start, c0.end=d1.start, c1.start=d0.end, c1.end=d1.end).
 func chainLoop(edges [4]boundaryEdge) (c0, c1, d0, d1 boundaryEdge, err error) {
+	tol := boundaryWeldTol(edges[:])
 	c0 = edges[0]
 	rest := []boundaryEdge{edges[1], edges[2], edges[3]}
-	d0, ok0 := takeSharing(&rest, c0.start())
-	d1, ok1 := takeSharing(&rest, c0.end())
+	d0, ok0 := takeSharing(&rest, c0.start(), tol)
+	d1, ok1 := takeSharing(&rest, c0.end(), tol)
 	if !ok0 || !ok1 || len(rest) != 1 {
 		return c0, c1, d0, d1, fmt.Errorf("ops.FillFourSided: the four edges do not form a closed loop")
 	}
 	c1 = rest[0]
-	d0 = orient(d0, c0.start()) // d0.start = corner00
-	d1 = orient(d1, c0.end())   // d1.start = corner10
-	c1 = orient(c1, d0.end())   // c1.start = corner01 (= d0.end)
+	d0 = orient(d0, c0.start(), tol) // d0.start = corner00
+	d1 = orient(d1, c0.end(), tol)   // d1.start = corner10
+	c1 = orient(c1, d0.end(), tol)   // c1.start = corner01 (= d0.end)
 	return c0, c1, d0, d1, nil
 }
 
 // takeSharing removes and returns the edge from rest that shares an endpoint with p (within tol).
-func takeSharing(rest *[]boundaryEdge, p math.Point3) (boundaryEdge, bool) {
+func takeSharing(rest *[]boundaryEdge, p math.Point3, tol float64) (boundaryEdge, bool) {
 	for i, e := range *rest {
-		if e.start().IsEqualTo(p, 1e-7) || e.end().IsEqualTo(p, 1e-7) {
+		if e.start().IsEqualTo(p, tol) || e.end().IsEqualTo(p, tol) {
 			*rest = append((*rest)[:i], (*rest)[i+1:]...)
 			return e, true
 		}
@@ -189,8 +200,8 @@ func takeSharing(rest *[]boundaryEdge, p math.Point3) (boundaryEdge, bool) {
 }
 
 // orient returns the edge with its curve reversed if needed so its start equals p.
-func orient(e boundaryEdge, p math.Point3) boundaryEdge {
-	if e.start().IsEqualTo(p, 1e-7) {
+func orient(e boundaryEdge, p math.Point3, tol float64) boundaryEdge {
+	if e.start().IsEqualTo(p, tol) {
 		return e
 	}
 	e.curve = reverseCurve(e.curve)

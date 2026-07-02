@@ -26,14 +26,15 @@ func DefaultCreaseAngle() float64 { return 35 * stdmath.Pi / 180 }
 // vertices, so averaging within a position group blends exactly the facets that meet there.
 func SmoothShadeNormals(m *Mesh, creaseAngle float64) []math.Vector3 {
 	cosThresh := stdmath.Cos(creaseAngle)
+	grid := ResolutionForPoints(m.Positions).Weld()
 	groups := make(map[[3]int64][]int, len(m.Positions))
 	for i, p := range m.Positions {
-		k := weldKey(p)
+		k := weldKey(p, grid)
 		groups[k] = append(groups[k], i)
 	}
 	out := make([]math.Vector3, len(m.Normals))
 	for i := range m.Normals {
-		out[i] = smoothedNormal(m, i, groups[weldKey(m.Positions[i])], cosThresh)
+		out[i] = smoothedNormal(m, i, groups[weldKey(m.Positions[i], grid)], cosThresh)
 	}
 	return out
 }
@@ -64,13 +65,14 @@ func unitOr(v math.Vector3) math.Vector3 {
 	return v.Scale(1 / l)
 }
 
-// weldKey quantizes a position to 1e-5 (database units) so coincident vertices from adjacent
-// faces — which share exact discretized edge points — land in the same group.
-func weldKey(p math.Point3) [3]int64 {
-	const q = 1e5
+// weldKey quantizes a position onto a model-relative grid (Resolution.Weld) so coincident
+// vertices from adjacent faces — which share exact discretized edge points — land in the
+// same group without merging distinct fine-feature vertices on tiny parts (#1610; the old
+// fixed 1e-5 grid was an absolute tolerance in reciprocal disguise).
+func weldKey(p math.Point3, grid float64) [3]int64 {
 	return [3]int64{
-		int64(stdmath.Round(float64(p.X) * q)),
-		int64(stdmath.Round(float64(p.Y) * q)),
-		int64(stdmath.Round(float64(p.Z) * q)),
+		int64(stdmath.Round(float64(p.X) / grid)),
+		int64(stdmath.Round(float64(p.Y) / grid)),
+		int64(stdmath.Round(float64(p.Z) / grid)),
 	}
 }

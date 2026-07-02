@@ -30,7 +30,7 @@ func (e CurveEvaluator) TangentAt(t float64) math.Vector3 { return unit(e.curve.
 
 // CurvatureAt returns κ = |r′×r″| / |r′|³ at t, with r″ by central difference.
 func (e CurveEvaluator) CurvatureAt(t float64) float64 {
-	const h = 1e-5
+	const h = 1e-5 // tol:parametric (central-difference step in curve parameter, not a length)
 	r1 := e.curve.TangentAt(t)
 	r2 := e.curve.TangentAt(t + h).Sub(e.curve.TangentAt(t - h)).Scale(1 / (2 * h))
 	speed := r1.Length()

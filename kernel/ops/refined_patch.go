@@ -56,10 +56,11 @@ func patchIsManifold(m *Mesh, loops [][]int) bool {
 // weldedFreeEdgeCount welds coincident vertices (by [weldKey]) and counts edges not shared by exactly
 // two triangles — the watertightness metric for a single mesh.
 func weldedFreeEdgeCount(m *Mesh) int {
+	grid := ResolutionForPoints(m.Positions).Weld()
 	canon := map[[3]int64]int{}
 	weld := make([]int, len(m.Positions))
 	for i, p := range m.Positions {
-		k := weldKey(p)
+		k := weldKey(p, grid)
 		if c, ok := canon[k]; ok {
 			weld[i] = c
 		} else {
