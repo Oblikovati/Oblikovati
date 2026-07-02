@@ -5,6 +5,7 @@ package assembly
 import (
 	"oblikovati.org/api/contract"
 	"oblikovati.org/math"
+	"oblikovati.org/model/internal/collview"
 )
 
 // Interference analysis (M12-F05, Oblikovati/Oblikovati#362/#368) reports the overlapping
@@ -40,10 +41,7 @@ func (rs InterferenceResults) Count() int { return len(rs.Results) }
 
 // Item returns the i-th interference result, or nil when out of range.
 func (rs InterferenceResults) Item(i int) contract.InterferenceResult {
-	if i < 0 || i >= len(rs.Results) {
-		return nil
-	}
-	return rs.Results[i]
+	return collview.ItemAs(rs.Results, i, func(r InterferenceResult) contract.InterferenceResult { return r })
 }
 
 // TotalVolume is the sum of every pair's overlap volume.

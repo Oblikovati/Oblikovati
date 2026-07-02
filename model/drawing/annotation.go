@@ -12,6 +12,7 @@ import (
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	gmath "oblikovati.org/math"
+	"oblikovati.org/model/internal/collview"
 )
 
 // Drawing annotations (M14-F02 #813): sheet markup that is not a view. A centre-of-gravity
@@ -262,12 +263,7 @@ func (as *DrawingAnnotations) recomputeCoG(a *DrawingAnnotation) {
 // Count, Item, ByName and Remove read/edit the collection.
 func (as *DrawingAnnotations) Count() int { return len(as.items) }
 
-func (as *DrawingAnnotations) Item(i int) *DrawingAnnotation {
-	if i < 0 || i >= len(as.items) {
-		return nil
-	}
-	return as.items[i]
-}
+func (as *DrawingAnnotations) Item(i int) *DrawingAnnotation { return collview.At(as.items, i) }
 
 func (as *DrawingAnnotations) ByName(name string) (*DrawingAnnotation, bool) {
 	for _, a := range as.items {
