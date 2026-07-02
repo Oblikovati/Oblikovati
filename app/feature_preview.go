@@ -60,6 +60,18 @@ var (
 	_ DraftPreviewable = (*SheetMetalLipTool)(nil)
 	_ DraftPreviewable = (*SheetMetalRipTool)(nil)
 	_ DraftPreviewable = (*SheetMetalPunchTool)(nil)
+	_ DraftPreviewable = (*SheetMetalHemTool)(nil)
+	_ DraftPreviewable = (*SheetMetalContourFlangeTool)(nil)
+	_ DraftPreviewable = (*SheetMetalLoftedFlangeTool)(nil)
+	_ DraftPreviewable = (*SheetMetalContourRollTool)(nil)
+	_ DraftPreviewable = (*SheetMetalBendTool)(nil)
+	_ DraftPreviewable = (*SheetMetalFoldTool)(nil)
+	_ DraftPreviewable = (*SheetMetalCornerTool)(nil)
+	_ DraftPreviewable = (*SheetMetalCornerSeamTool)(nil)
+	_ DraftPreviewable = (*SheetMetalCutTool)(nil)
+	_ DraftPreviewable = (*SheetMetalCosmeticBendTool)(nil)
+	_ DraftPreviewable = (*SheetMetalUnfoldTool)(nil)
+	_ DraftPreviewable = (*SheetMetalRefoldTool)(nil)
 )
 
 // previewAddColor / previewRemoveColor are the operation-coded preview tints: a feature that

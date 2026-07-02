@@ -34,6 +34,19 @@ func (t *SheetMetalUnfoldTool) Commit(s *Session) error {
 	return commitSheetMetalFeature(s, part, pf, "Sheet Metal Unfold")
 }
 
+// DraftFeature returns the unattached unfold feature the viewport previews. It builds through
+// the same compdef seam Commit uses (AddUnfoldInto), so ok is false exactly when Commit would
+// refuse — no sheet-metal part, or no bends to flatten (#1626).
+func (t *SheetMetalUnfoldTool) DraftFeature(s *Session) (feature.Feature, bool) {
+	part, err := activeSheetMetalPart(s)
+	if err != nil {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return part.AddUnfoldInto(fs)
+	})
+}
+
 // SheetMetalRefoldTool re-folds the bends an earlier unfold flattened.
 type SheetMetalRefoldTool struct {
 	dialogTool
@@ -58,4 +71,16 @@ func (t *SheetMetalRefoldTool) Commit(s *Session) error {
 	}
 	t.added = pf
 	return commitSheetMetalFeature(s, part, pf, "Sheet Metal Refold")
+}
+
+// DraftFeature returns the unattached refold feature the viewport previews, built through the
+// AddRefoldInto seam Commit shares (#1626).
+func (t *SheetMetalRefoldTool) DraftFeature(s *Session) (feature.Feature, bool) {
+	part, err := activeSheetMetalPart(s)
+	if err != nil {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return part.AddRefoldInto(fs)
+	})
 }

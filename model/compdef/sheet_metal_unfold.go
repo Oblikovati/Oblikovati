@@ -18,21 +18,34 @@ import (
 // part flat for subsequent features. It errors when the part is not sheet metal or has no
 // bends to flatten.
 func (d *PartComponentDefinition) AddUnfold() (*feature.PartFeature, error) {
+	return d.AddUnfoldInto(d.features)
+}
+
+// AddUnfoldInto builds the unfold feature into engine fs — Commit builds into the part's own
+// features (AddUnfold) while the tool preview builds into a scratch engine, so both run the
+// same construction and the commit gate can inspect the exact feature OK creates (#1626).
+func (d *PartComponentDefinition) AddUnfoldInto(fs *feature.PartFeatures) (*feature.PartFeature, error) {
 	bends, err := d.bendTransforms("unfold")
 	if err != nil {
 		return nil, err
 	}
-	return feature.NewSheetMetalUnfoldFeatures(d.features).Add(&feature.SheetMetalUnfoldDefinition{Bends: bends}), nil
+	return feature.NewSheetMetalUnfoldFeatures(fs).Add(&feature.SheetMetalUnfoldDefinition{Bends: bends}), nil
 }
 
 // AddRefold appends a refold feature that re-folds the same bends an earlier unfold flattened,
 // restoring the folded part (and carrying any edits made while flat).
 func (d *PartComponentDefinition) AddRefold() (*feature.PartFeature, error) {
+	return d.AddRefoldInto(d.features)
+}
+
+// AddRefoldInto builds the refold feature into engine fs — the scratch-engine seam the tool
+// preview shares with AddRefold, mirroring AddUnfoldInto (#1626).
+func (d *PartComponentDefinition) AddRefoldInto(fs *feature.PartFeatures) (*feature.PartFeature, error) {
 	bends, err := d.bendTransforms("refold")
 	if err != nil {
 		return nil, err
 	}
-	return feature.NewSheetMetalRefoldFeatures(d.features).Add(&feature.SheetMetalRefoldDefinition{Bends: bends}), nil
+	return feature.NewSheetMetalRefoldFeatures(fs).Add(&feature.SheetMetalRefoldDefinition{Bends: bends}), nil
 }
 
 // bendTransforms bakes one [feature.BendTransform] per recorded edge bend: the bend line, its
