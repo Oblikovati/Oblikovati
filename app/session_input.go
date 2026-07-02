@@ -71,6 +71,13 @@ func (s *Session) OK() error {
 	if !s.tool.tool.CanCommit() {
 		return errors.New("app: active tool is not ready to commit")
 	}
+	// A configuration that would recompute SICK must never enter the design: evaluate the pending
+	// feature speculatively and refuse the commit if it is invalid, so the tree never gains a sick
+	// node (the OK button is likewise disabled while this holds). See commitBlockedReason.
+	if reason := s.commitBlockedReason(); reason != "" {
+		s.notice = reason
+		return errors.New(reason)
+	}
 	toolName := s.tool.tool.Name()
 	if err := s.tool.tool.Commit(s); err != nil {
 		s.notice = err.Error() // surface why (the status bar shows it); keep the tool open
@@ -85,13 +92,19 @@ func (s *Session) OK() error {
 	if s.InSketch() || s.InSketch3D() {
 		s.RecordActiveEdit(toolName)
 	}
+	s.finishToolCommit()
+	return nil
+}
+
+// finishToolCommit tears down the active tool after a successful commit: clear the notice, drop the
+// tool, and retire its transient UI (selection filter, preview graphics, mini-toolbars, gizmos).
+func (s *Session) finishToolCommit() {
 	s.notice = ""
 	s.tool = nil
 	s.restoreSelectionFilter()      // hand selection back to the ambient filter (engine)
 	s.Graphics().ClearInteraction() // a committed command's transient preview vanishes
 	s.dropCommandMiniToolbars()     // command-bound mini-toolbars die with the tool (M05-F07)
 	s.dropCommandGizmos()           // and the command-bound triad/manipulators (M05-F13)
-	return nil
 }
 
 // CancelTool abandons the active tool (Inventor's Escape / Cancel).

@@ -33,7 +33,9 @@ func drawFilletDialog(s *app.Session) {
 	if filletUI.seeded != f {
 		seedFilletUI(f)
 	}
-	native.SetNextWindowSizeOnce(340, 300)
+	// Tall enough that the disabled-OK "why it's sick" line (drawCommitCancelButtons) shows
+	// without scrolling when a radius the geometry can't admit is entered.
+	native.SetNextWindowSizeOnce(340, 348)
 	if native.Begin("Fillet") {
 		drawFilletPanelBody(s, f)
 	}
