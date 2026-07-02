@@ -22,6 +22,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/app"
+	"oblikovati.org/head/cmd/internal/shotscene"
 	"oblikovati.org/head/internal/native"
 	"oblikovati.org/head/ui"
 	"oblikovati.org/kernel/brep"
@@ -149,48 +150,24 @@ func setupOp(s *app.Session, op string) error {
 
 // --- base solids -----------------------------------------------------------------------
 
-// newPart adds and activates an empty part, returning its definition.
-func newPart(s *app.Session, name string) *compdef.PartComponentDefinition {
-	pd, err := compdef.AddPart(s.Workspace(), name, true)
-	if err != nil {
-		panic(err)
-	}
-	_ = s.Workspace().SetActiveDocument(pd)
-	return pd.Content().(*compdef.PartComponentDefinition)
+// newPart adds and activates an empty part (this driver's single document), returning its def.
+func newPart(s *app.Session) *compdef.PartComponentDefinition {
+	return shotscene.NewPart(s, previewDocName)
 }
 
 // mustBaseBox commits a 6×6×6 base cube (the target for join/cut/fillet/chamfer).
-func mustBaseBox(s *app.Session) *compdef.PartComponentDefinition { return buildBaseBox(s) }
-
-func buildBaseBox(s *app.Session) *compdef.PartComponentDefinition {
-	def := newPart(s, previewDocName)
-	sk := addSquare(def, 0, 0, 6)
-	feature.NewExtrudeFeatures(def.Features()).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 6 })
-	def.Recompute()
-	return def
+func mustBaseBox(s *app.Session) *compdef.PartComponentDefinition {
+	return shotscene.BuildBox(s, previewDocName, 6, 6)
 }
 
 // mustBlock commits a 6×6×3 base solid (the target for shell/draft/hole).
 func mustBlock(s *app.Session) *compdef.PartComponentDefinition {
-	def := newPart(s, previewDocName)
-	sk := addSquare(def, 0, 0, 6)
-	feature.NewExtrudeFeatures(def.Features()).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 3 })
-	def.Recompute()
-	return def
+	return shotscene.BuildBox(s, previewDocName, 6, 3)
 }
 
 // addSquare adds a side×side square sketch on the XY plane with its corner at (ox,oy).
 func addSquare(def *compdef.PartComponentDefinition, ox, oy, side float64) *sketch.Sketch {
-	sk := def.Sketches().Add(sketch.XYPlane())
-	c0 := sk.Points().Add(math.P2(ox, oy))
-	c1 := sk.Points().Add(math.P2(ox+side, oy))
-	c2 := sk.Points().Add(math.P2(ox+side, oy+side))
-	c3 := sk.Points().Add(math.P2(ox, oy+side))
-	sk.Lines().Add(c0, c1)
-	sk.Lines().Add(c1, c2)
-	sk.Lines().Add(c2, c3)
-	sk.Lines().Add(c3, c0)
-	return sk
+	return shotscene.AddSquare(def, ox, oy, side)
 }
 
 // offsetSquare adds a side×side square on XY whose lower-left corner is at (x0,0).
@@ -216,7 +193,7 @@ func startPendingExtrude(s *app.Session, def *compdef.PartComponentDefinition, o
 }
 
 func startPendingRevolve(s *app.Session) {
-	def := newPart(s, previewDocName)
+	def := newPart(s)
 	prof := offsetSquare(def, 3, 2) // 2×2 square 3 units off the Y axis → a ring
 	def.Recompute()
 	rv := app.NewRevolveTool()
@@ -227,7 +204,7 @@ func startPendingRevolve(s *app.Session) {
 }
 
 func startPendingSweep(s *app.Session) {
-	def := newPart(s, previewDocName)
+	def := newPart(s)
 	prof := app.ProfileHandle{Sketch: centeredSquare(def, sketch.XYPlane(), 1), ProfileIndex: 0}
 	pathSk := def.Sketches().Add(sketch.XZPlane())
 	a := pathSk.Points().Add(math.P2(0, 0))
@@ -241,7 +218,7 @@ func startPendingSweep(s *app.Session) {
 }
 
 func startPendingLoft(s *app.Session) {
-	def := newPart(s, previewDocName)
+	def := newPart(s)
 	bottom := app.ProfileHandle{Sketch: centeredSquare(def, sketch.XYPlane(), 3), ProfileIndex: 0}
 	top := app.ProfileHandle{Sketch: centeredSquare(def, planeAtZ(6), 1), ProfileIndex: 0}
 	def.Recompute()
@@ -252,7 +229,7 @@ func startPendingLoft(s *app.Session) {
 }
 
 func startPendingCoil(s *app.Session) {
-	def := newPart(s, previewDocName)
+	def := newPart(s)
 	prof := offsetSquare(def, 3, 1) // 1×1 square 3 off the Y axis → a helical spring
 	def.Recompute()
 	c := app.NewCoilTool()
@@ -338,7 +315,7 @@ func startPendingThread(s *app.Session) error {
 	if err != nil {
 		return err
 	}
-	def := newPart(s, previewDocName)
+	def := newPart(s)
 	feature.NewBaseFeatures(def.Features()).AddBase(cyl)
 	def.Recompute()
 	body := def.SurfaceBodies().Item(0)
@@ -404,7 +381,7 @@ func startPendingCoreCavity(s *app.Session, def *compdef.PartComponentDefinition
 
 // startPendingRib thickens an open profile into a rib joined to a base block (tool body → green).
 func startPendingRib(s *app.Session) {
-	def := newPart(s, previewDocName)
+	def := newPart(s)
 	sk := addSquare(def, 0, 0, 6)
 	feature.NewExtrudeFeatures(def.Features()).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 2 })
 	rs := def.Sketches().Add(sketch.XYPlane())
@@ -418,7 +395,7 @@ func startPendingRib(s *app.Session) {
 
 // startPendingThicken thickens a planar surface patch into a solid (surface→solid → green).
 func startPendingThicken(s *app.Session) {
-	def := newPart(s, previewDocName)
+	def := newPart(s)
 	feature.NewBaseFeatures(def.Features()).AddBase(patchSurface(4, 4))
 	def.Recompute()
 	t := app.NewThickenTool()
@@ -462,7 +439,7 @@ func startPendingRest(s *app.Session, def *compdef.PartComponentDefinition) {
 
 // startPendingSnapFit previews a free-standing cantilever snap-fit hook (adds material → green).
 func startPendingSnapFit(s *app.Session) {
-	newPart(s, previewDocName)
+	newPart(s)
 	t := app.NewSnapFitTool()
 	s.StartTool(t)
 	t.SetLength(6)
@@ -501,7 +478,7 @@ func startPendingReplaceFace(s *app.Session, def *compdef.PartComponentDefinitio
 
 // startPendingPatch fills a sketched region with a surface patch (creates surface → green).
 func startPendingPatch(s *app.Session) {
-	def := newPart(s, previewDocName)
+	def := newPart(s)
 	sk := addSquare(def, 0, 0, 4)
 	def.Recompute()
 	t := app.NewPatchTool()
@@ -511,7 +488,7 @@ func startPendingPatch(s *app.Session) {
 
 // startPendingStitch welds two adjacent surface patches (result surface → green).
 func startPendingStitch(s *app.Session) {
-	def := newPart(s, previewDocName)
+	def := newPart(s)
 	addPatchFeature(def, 0, 0, 2, 3)
 	addPatchFeature(def, 2, 0, 4, 3)
 	def.Recompute()
@@ -520,7 +497,7 @@ func startPendingStitch(s *app.Session) {
 
 // startPendingSurfaceTrim trims a surface patch by a work plane (removes area → red).
 func startPendingSurfaceTrim(s *app.Session) {
-	def := newPart(s, previewDocName)
+	def := newPart(s)
 	addPatchFeature(def, 0, 0, 4, 4)
 	wp := def.WorkPlanes().AddByPlaneAndOffset(feature.OriginYZPlane, func() float64 { return 2 })
 	def.Recompute()
@@ -531,7 +508,7 @@ func startPendingSurfaceTrim(s *app.Session) {
 
 // startPendingSculpt closes a 6-face surface shell into a solid (creates volume → green).
 func startPendingSculpt(s *app.Session) {
-	def := newPart(s, previewDocName)
+	def := newPart(s)
 	feature.NewBaseFeatures(def.Features()).AddBase(unitCubeShell()...)
 	def.Recompute()
 	s.StartTool(app.NewSculptTool())
@@ -539,7 +516,7 @@ func startPendingSculpt(s *app.Session) {
 
 // startPendingExtend grows a surface patch beyond its bottom edge (adds area → green).
 func startPendingExtend(s *app.Session) {
-	def := newPart(s, previewDocName)
+	def := newPart(s)
 	addPatchFeature(def, 0, 0, 4, 4)
 	def.Recompute()
 	body := def.SurfaceBodies().Item(0)
