@@ -50,8 +50,8 @@ func (f *RestFeature) Recompute(in Input) (Output, error) {
 	if f.def.Recessed {
 		sp, op = orderedSpan(0, -d), ops.Cut // recess: cut into the part, below the sketch plane
 	}
-	f.tool = buildProfilePrisms(profiles, f.def.Sketch.Plane(), sp, f.def.Taper, featOr(f.featName, "rest"))
-	bodies, err := combine(in.Bodies, f.tool, op)
+	f.tool = buildProfilePrisms(profiles, f.def.Sketch.Plane(), sp, f.def.Taper, featOr(f.featName, "rest"), in.Diag)
+	bodies, err := combine(in, f.tool, op)
 	if err != nil {
 		return Output{}, err
 	}

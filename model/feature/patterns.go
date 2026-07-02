@@ -3,6 +3,7 @@
 package feature
 
 import (
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -139,7 +140,7 @@ func (p *patternBase) replicate(in Input, sources []ID, transforms []math.Matrix
 		if len(tools) == 0 {
 			return Output{Bodies: in.Bodies}, nil
 		}
-		return p.replicateTools(in.Bodies, tools, transforms, feat)
+		return p.replicateTools(in.Bodies, tools, transforms, feat, in.Diag)
 	}
 	copies, err := p.placeCopies(in.Bodies, transforms, feat)
 	if err != nil {
@@ -151,7 +152,7 @@ func (p *patternBase) replicate(in Input, sources []ID, transforms []math.Matrix
 // replicateTools re-applies a group of source tools, transformed by each active occurrence,
 // against the running result (the original sits at occurrence 0 already). Applying the tools in
 // source order at every grid cell keeps a multi-feature group connected (#128).
-func (p *patternBase) replicateTools(bodies []*topo.Body, tools []groupTool, transforms []math.Matrix4, feat string) (Output, error) {
+func (p *patternBase) replicateTools(bodies []*topo.Body, tools []groupTool, transforms []math.Matrix4, feat string, rec *diag.Recorder) (Output, error) {
 	if len(bodies) == 0 {
 		return Output{Bodies: bodies}, nil
 	}
@@ -169,7 +170,7 @@ func (p *patternBase) replicateTools(bodies []*topo.Body, tools []groupTool, tra
 		if p.skip(k) {
 			continue
 		}
-		next, err := applyGroupAt(running[last], tools, transforms[k], feat, k)
+		next, err := applyGroupAt(running[last], tools, transforms[k], feat, k, rec)
 		if err != nil {
 			return Output{}, err
 		}
@@ -180,13 +181,14 @@ func (p *patternBase) replicateTools(bodies []*topo.Body, tools []groupTool, tra
 
 // applyGroupAt booleans every tool of the group at occurrence k against the running body, in
 // source order, transformed into place with a per-tool lineage so reference keys stay distinct.
-func applyGroupAt(running *topo.Body, tools []groupTool, xf math.Matrix4, feat string, k int) (*topo.Body, error) {
+// rec collects the booleans' fallback diagnostics (#1601; nil discards).
+func applyGroupAt(running *topo.Body, tools []groupTool, xf math.Matrix4, feat string, k int, rec *diag.Recorder) (*topo.Body, error) {
 	for bi, t := range tools {
 		tk, err := ops.TransformBody(t.body, xf, copyLineage(feat, k, bi))
 		if err != nil {
 			return nil, err
 		}
-		res, err := ops.Boolean(t.op, running, tk)
+		res, err := ops.BooleanWithDiagnostics(t.op, running, tk, rec)
 		if err != nil {
 			return nil, err
 		}

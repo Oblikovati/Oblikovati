@@ -59,7 +59,7 @@ func (l *LipFeature) Recompute(in Input) (Output, error) {
 		if err != nil {
 			return Output{}, err
 		}
-		if result, err = ops.Boolean(op, result, bead); err != nil {
+		if result, err = ops.BooleanWithDiagnostics(op, result, bead, in.Diag); err != nil {
 			return Output{}, err
 		}
 	}

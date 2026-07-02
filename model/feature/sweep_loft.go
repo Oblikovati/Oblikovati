@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
@@ -140,7 +141,7 @@ func (s *SweepFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	bodies, err := combine(in.Bodies, s.tool, s.def.Operation)
+	bodies, err := combine(in, s.tool, s.def.Operation)
 	if err != nil {
 		return Output{}, err
 	}
@@ -290,12 +291,12 @@ func (l *LoftFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	tool, err := l.skinTool(outers, inners, l.endsWith(normals, surfs), l.resolveGuides())
+	tool, err := l.skinTool(outers, inners, l.endsWith(normals, surfs), l.resolveGuides(), in.Diag)
 	if err != nil {
 		return Output{}, err
 	}
 	l.tool = tool
-	bodies, err := combine(in.Bodies, l.tool, l.def.Operation)
+	bodies, err := combine(in, l.tool, l.def.Operation)
 	if err != nil {
 		return Output{}, err
 	}
@@ -354,7 +355,7 @@ func (l *LoftFeature) resolveGuides() loftGuides {
 // directly-meshed tube (one hole — a pipe), or a multi-hole solid cut from the skin (rare). Guides
 // (rails + centerline) shape the OUTER surface only. The one-hole tube is meshed directly rather
 // than via a bore Cut because a bore whose caps are coplanar with the body's caps leaves it open.
-func (l *LoftFeature) skinTool(outers [][]math.Point3, inners [][][]math.Point3, ends loftEnds, guides loftGuides) (*topo.Body, error) {
+func (l *LoftFeature) skinTool(outers [][]math.Point3, inners [][][]math.Point3, ends loftEnds, guides loftGuides, rec *diag.Recorder) (*topo.Body, error) {
 	feat := featOr(l.featName, "loft")
 	switch numHoles(inners) {
 	case 0:
@@ -362,15 +363,16 @@ func (l *LoftFeature) skinTool(outers [][]math.Point3, inners [][][]math.Point3,
 	case 1:
 		return tubeLoops(outers, holeRing(inners, 0), l.def.Closed, feat, ends, guides)
 	default:
-		return hollowByCut(outers, inners, l.def.Closed, feat, ends, guides)
+		return hollowByCut(outers, inners, l.def.Closed, feat, ends, guides, rec)
 	}
 }
 
 // hollowByCut skins the outer body and cuts each bore out of it — the fallback for lofts with
 // more than one hole, where a multiply-connected end cap can't be a simple annular strip. Each
 // bore is extended past the body's end caps (extendEnds) so the through-cut is not coplanar. Guides
-// shape the outer skin only (the bores skin unguided).
-func hollowByCut(outers [][]math.Point3, inners [][][]math.Point3, closed bool, feat string, ends loftEnds, guides loftGuides) (*topo.Body, error) {
+// shape the outer skin only (the bores skin unguided). rec collects the bore cuts' boolean-fallback
+// diagnostics (#1601; nil discards).
+func hollowByCut(outers [][]math.Point3, inners [][][]math.Point3, closed bool, feat string, ends loftEnds, guides loftGuides, rec *diag.Recorder) (*topo.Body, error) {
 	tool, err := skinLoops(outers, closed, feat, ends, guides)
 	if err != nil {
 		return nil, err
@@ -385,7 +387,7 @@ func hollowByCut(outers [][]math.Point3, inners [][][]math.Point3, closed bool, 
 		if herr != nil {
 			return nil, herr
 		}
-		if tool, err = ops.Boolean(ops.Cut, tool, hole); err != nil {
+		if tool, err = ops.BooleanWithDiagnostics(ops.Cut, tool, hole, rec); err != nil {
 			return nil, err
 		}
 	}

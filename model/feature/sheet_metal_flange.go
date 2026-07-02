@@ -72,7 +72,7 @@ func (f *SheetMetalFlangeFeature) Recompute(in Input) (Output, error) {
 		return Output{}, err
 	}
 	// Union the wall onto the sheet (combine planarizes both before the planar boolean).
-	bodies, err := combine(in.Bodies, wall, ops.Join)
+	bodies, err := combine(in, wall, ops.Join)
 	if err != nil {
 		return Output{}, err
 	}

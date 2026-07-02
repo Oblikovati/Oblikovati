@@ -6,6 +6,7 @@ import (
 	"errors"
 	stdmath "math"
 
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
@@ -84,8 +85,8 @@ func (e *ExtrudeFeature) Recompute(in Input) (Output, error) {
 	if sp.depth() == 0 {
 		return Output{}, errors.New("extrude: the extent has zero depth")
 	}
-	e.tool = e.buildTool(profiles, plane, sp)
-	bodies, err := combine(in.Bodies, e.tool, e.def.Operation)
+	e.tool = e.buildTool(profiles, plane, sp, in.Diag)
+	bodies, err := combine(in, e.tool, e.def.Operation)
 	if err != nil {
 		return Output{}, err
 	}
@@ -95,8 +96,8 @@ func (e *ExtrudeFeature) Recompute(in Input) (Output, error) {
 // buildTool extrudes each selected region into a prism over the span and merges the
 // prisms into one body. The regions are distinct cells of the same sketch, so they never
 // overlap — a shell merge is exactly their union and avoids the intersecting Join.
-func (e *ExtrudeFeature) buildTool(profiles []*sketch.Profile, plane sketch.Plane, sp span) *topo.Body {
-	return buildProfilePrisms(profiles, plane, sp, e.def.Taper, e.featName)
+func (e *ExtrudeFeature) buildTool(profiles []*sketch.Profile, plane sketch.Plane, sp span, rec *diag.Recorder) *topo.Body {
+	return buildProfilePrisms(profiles, plane, sp, e.def.Taper, e.featName, rec)
 }
 
 // outerPolygons returns each profile's outer-loop polygon, the input the span resolver
@@ -166,8 +167,12 @@ func (c *ExtrudeFeatures) AddExtrudeFeature(def *ExtrudeDefinition) *PartFeature
 func NewExtrudeFeature(def *ExtrudeDefinition) *ExtrudeFeature { return &ExtrudeFeature{def: def} }
 
 // combine applies an operation between the running bodies and a new body. Phase A
-// handles the first body / new-body and the non-overlapping boolean cases.
-func combine(running []*topo.Body, body *topo.Body, op ops.PartFeatureOperation) ([]*topo.Body, error) {
+// handles the first body / new-body and the non-overlapping boolean cases. It records on
+// in.Diag every degradation of the exact path — an analytic operand faceted for the planar
+// boolean, and the planar boolean's own triangle-CSG fallback — so the feature carries the
+// quality signal instead of shipping a silently faceted body (#1601).
+func combine(in Input, body *topo.Body, op ops.PartFeatureOperation) ([]*topo.Body, error) {
+	running := in.Bodies
 	if len(running) == 0 || op == ops.NewBody {
 		return append(append([]*topo.Body(nil), running...), body), nil
 	}
@@ -180,16 +185,23 @@ func combine(running []*topo.Body, body *topo.Body, op ops.PartFeatureOperation)
 	// segments (#1472). CurvedBoolean takes (target, tool) in feature order; each kernel path checks its own
 	// operand roles, so the same call serves both directions.
 	if exactlyOneCurvedPrimitive(target, body) {
-		if res, ok := ops.CurvedBoolean(op, target, body); ok {
+		if res, ok := ops.CurvedBooleanWithDiagnostics(op, target, body, in.Diag); ok {
 			return appendCombined(running, res), nil
 		}
 	}
 	// Otherwise re-facet any analytic curved face into a planar B-rep before the planar boolean — it hangs
 	// on a full periodic curved face it cannot consume (#129). A standalone primitive that is never
-	// combined keeps its analytic face for thread/chamfer/fillet.
+	// combined keeps its analytic face for thread/chamfer/fillet. Faceting is PERMANENT — every
+	// downstream feature then operates on facets — so it is recorded as a defect, not done silently
+	// (#1601; the pre-facet here is why the inner boolean's own CSG-fallback diagnostic alone would
+	// miss this path: by the time ops.Boolean runs, the operands already look planar).
+	if hasCurvedFace(target) || hasCurvedFace(body) {
+		in.Diag.Recordf(ops.CodeBooleanAnalyticFaceted, diag.Defect,
+			"%s faceted analytic operand(s) for the planar boolean (no exact curved path applied): the result and all downstream features are polyhedral", op)
+	}
 	target = planarized(target, "combine-target")
 	body = planarized(body, "combine-tool")
-	res, err := ops.Boolean(op, target, body)
+	res, err := ops.BooleanWithDiagnostics(op, target, body, in.Diag)
 	if err != nil {
 		return nil, err
 	}

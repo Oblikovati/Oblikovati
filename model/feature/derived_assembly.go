@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -223,7 +224,9 @@ func (d *DerivedAssemblyComponent) Linked() bool { return d.linked }
 // BreakLink freezes the current derived bodies and severs the source link, so the part
 // keeps the derived geometry without further updates (the reference API's break link).
 func (d *DerivedAssemblyComponent) BreakLink() error {
-	bodies, err := d.derive()
+	// nil recorder: BreakLink is a user action outside a feature recompute, so there is no
+	// Input.Diag to thread (#1601).
+	bodies, err := d.derive(nil)
 	if err != nil {
 		return err
 	}
@@ -235,7 +238,7 @@ func (d *DerivedAssemblyComponent) BreakLink() error {
 // Recompute appends the derived base body (or, after a broken link, the frozen bodies)
 // to the running state.
 func (d *DerivedAssemblyComponent) Recompute(in Input) (Output, error) {
-	return recomputeLinked(in, d.linked, d.frozen, d.derive)
+	return recomputeLinked(in, d.linked, d.frozen, func() ([]*topo.Body, error) { return d.derive(in.Diag) })
 }
 
 // recomputeLinked is the shared associative-or-frozen recompute for the derive-family
@@ -257,8 +260,9 @@ func recomputeLinked(in Input, linked bool, frozen []*topo.Body, build func() ([
 // derive flattens, transforms, and combines the source's placed bodies per style into
 // the derived base bodies (zero bodies when nothing is included, otherwise one). An
 // unbound source — a restored derive whose source has not been resolved yet (or is
-// missing) — yields no bodies, so a recompute before/without binding is safe.
-func (d *DerivedAssemblyComponent) derive() ([]*topo.Body, error) {
+// missing) — yields no bodies, so a recompute before/without binding is safe. rec collects the
+// subtract booleans' fallback diagnostics (#1601; nil discards).
+func (d *DerivedAssemblyComponent) derive(rec *diag.Recorder) ([]*topo.Body, error) {
 	if d.source == nil {
 		return nil, nil
 	}
@@ -278,18 +282,19 @@ func (d *DerivedAssemblyComponent) derive() ([]*topo.Body, error) {
 			joins = append(joins, placed)
 		}
 	}
-	return combineDerived(joins, cuts)
+	return combineDerived(joins, cuts, rec)
 }
 
 // combineDerived merges the included bodies into one base and cuts the subtracted tools
-// from it, yielding zero bodies when nothing is included or the single merged base.
-func combineDerived(joins, cuts []*topo.Body) ([]*topo.Body, error) {
+// from it, yielding zero bodies when nothing is included or the single merged base. rec
+// collects the cuts' boolean-fallback diagnostics (#1601; nil discards).
+func combineDerived(joins, cuts []*topo.Body, rec *diag.Recorder) ([]*topo.Body, error) {
 	if len(joins) == 0 {
 		return nil, nil
 	}
 	base := topo.MergeBodies(topo.NewLineage(topo.Tok("derivedAssembly", "body", 0)), true, joins...)
 	for _, tool := range cuts {
-		cut, err := ops.Boolean(ops.Cut, base, tool)
+		cut, err := ops.BooleanWithDiagnostics(ops.Cut, base, tool, rec)
 		if err != nil {
 			return nil, fmt.Errorf("feature: derive-assembly subtract: %w", err)
 		}

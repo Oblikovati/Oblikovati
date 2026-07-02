@@ -60,7 +60,7 @@ func (f *AssemblyHoleFeature) Recompute(in Input) (Output, error) {
 	if f.diameter <= 0 || f.depth <= 0 {
 		return Output{}, fmt.Errorf("assemblyHole: diameter %g and depth %g must be positive", f.diameter, f.depth)
 	}
-	out, err := applyToolToAll(ops.Cut, in.Bodies, f.tool())
+	out, err := applyToolToAll(ops.Cut, in.Bodies, f.tool(), in.Diag)
 	if err != nil {
 		return Output{}, err
 	}

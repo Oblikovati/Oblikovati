@@ -70,7 +70,7 @@ func (r *RevolveFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	bodies, err := combine(in.Bodies, r.tool, r.def.Operation)
+	bodies, err := combine(in, r.tool, r.def.Operation)
 	if err != nil {
 		return Output{}, err
 	}
@@ -389,7 +389,7 @@ func (c *CoilFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	bodies, err := combine(in.Bodies, c.tool, c.def.Operation)
+	bodies, err := combine(in, c.tool, c.def.Operation)
 	if err != nil {
 		return Output{}, err
 	}
@@ -515,7 +515,7 @@ func (r *RibFeature) Recompute(in Input) (Output, error) {
 	}
 	band := ensureCCW2(thickenPath(pts, t))
 	r.tool = buildPrism(band, r.def.Sketch.Plane(), orderedSpan(0, d), 0, "rib")
-	bodies, err := combine(in.Bodies, r.tool, r.def.Operation)
+	bodies, err := combine(in, r.tool, r.def.Operation)
 	if err != nil {
 		return Output{}, err
 	}

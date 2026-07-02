@@ -101,7 +101,7 @@ func (f *SheetMetalCornerFeature) chamferCorners(in Input, body *topo.Body, setb
 	if err != nil {
 		return Output{}, fmt.Errorf("sheet-metal corner chamfer: %w", err)
 	}
-	res, err := cutAll(work, tools)
+	res, err := cutAll(work, tools, in.Diag)
 	if err != nil {
 		return Output{}, fmt.Errorf("sheet-metal corner chamfer: %w", err)
 	}

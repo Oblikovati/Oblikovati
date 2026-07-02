@@ -53,6 +53,12 @@ func Boolean(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, erro
 // volume-preserving topology error the volume guard misses (Oblikovati#1407).
 const CodeBooleanCSGFallback diag.Code = "boolean.csg-fallback"
 
+// CodeBooleanAnalyticFaceted marks a boolean whose analytic curved operand(s) were re-faceted
+// into a planar B-rep because no exact curved path applied (#1601). Faceting is permanent — the
+// analytic surface is unrecoverable and every downstream feature operates on facets — so the
+// degradation must ride with the feature that caused it, not vanish.
+const CodeBooleanAnalyticFaceted diag.Code = "boolean.analytic-faceted"
+
 // BooleanWithDiagnostics is [Boolean] with a diagnostic [diag.Recorder] (pass nil to discard). Whenever
 // the operation falls back from the exact analytic/planar path to triangle-soup CSG it records a Defect
 // diagnostic naming the operation and operands, so callers and tests can SEE and count the fallback
@@ -179,6 +185,13 @@ func CurvedBoolean(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body
 	return curvedExactBoolean(op, target, tool, nil)
 }
 
+// CurvedBooleanWithDiagnostics is [CurvedBoolean] with a diagnostic recorder (nil to discard):
+// the exact paths record imprint-quality diagnostics (#1404) and their internal fallbacks, so a
+// feature-level caller carries the kernel's quality signal instead of dropping it (#1601).
+func CurvedBooleanWithDiagnostics(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
+	return curvedExactBoolean(op, target, tool, rec)
+}
+
 // curvedExactPaths is the ordered list of exact analytic curved-boolean paths curvedExactBoolean tries; each
 // returns ok=false when it does not apply to (op, target, tool). The recorder carries the SSI imprint's
 // closure diagnostics (#1404) up to the boolean's caller; a path that takes no imprint ignores it. The paths
@@ -215,11 +228,16 @@ func invalidBooleanVolume(op PartFeatureOperation, target, tool, body *topo.Body
 	targetVol := BodyGeometryProperties(target, DefaultQuality()).Volume
 	toolVol := BodyGeometryProperties(tool, DefaultQuality()).Volume
 	bodyVol := BodyGeometryProperties(body, DefaultQuality()).Volume
+	// Two-sided Requicha brackets (#1601): V(A∪B) ∈ [max(V(A),V(B)), V(A)+V(B)] and
+	// V(A∖B) ∈ [V(A)−V(B), V(A)]. The old one-sided checks let a join that fabricated
+	// material or a cut that removed too much ship silently. Intersect keeps only its
+	// upper bound V(A∩B) ≤ min(V(A),V(B)): its Requicha lower bound needs V(A∪B) — a
+	// second boolean, too expensive for a guard — and is trivially ≥ 0 without it.
 	switch op {
 	case Join:
-		return bodyVol+tol < maxFloat(targetVol, toolVol)
+		return bodyVol+tol < maxFloat(targetVol, toolVol) || bodyVol > targetVol+toolVol+tol
 	case Cut:
-		return bodyVol > targetVol+tol
+		return bodyVol > targetVol+tol || bodyVol+tol < targetVol-toolVol
 	case Intersect:
 		return bodyVol > minFloat(targetVol, toolVol)+tol
 	}

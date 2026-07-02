@@ -64,7 +64,7 @@ func (f *SheetMetalContourRollFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, fmt.Errorf("sheet-metal contour roll: %w", err)
 	}
-	bodies, err := combine(in.Bodies, rolled, f.def.Operation)
+	bodies, err := combine(in, rolled, f.def.Operation)
 	if err != nil {
 		return Output{}, err
 	}

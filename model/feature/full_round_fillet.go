@@ -7,6 +7,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
@@ -81,11 +82,11 @@ func parallelFullRound(in Input, body *topo.Body, def *FullRoundFilletDefinition
 	}
 	pc := center.face.RangeBox().Center()
 	l := faceExtentAlong(center.face, pc, fr.axis) + 4*fr.radius // generous overhang so the tool cuts cleanly
-	tool, err := fullRoundCornerTool(pc, fr.up, fr.sideN, fr.axis, fr.radius, l, feat)
+	tool, err := fullRoundCornerTool(pc, fr.up, fr.sideN, fr.axis, fr.radius, l, feat, in.Diag)
 	if err != nil {
 		return Output{}, err
 	}
-	result, err := ops.Boolean(ops.Cut, planarized(body, feat), tool)
+	result, err := ops.BooleanWithDiagnostics(ops.Cut, planarized(body, feat), tool, in.Diag)
 	if err != nil {
 		return Output{}, err
 	}
@@ -119,7 +120,7 @@ func nonParallelFullRound(in Input, body *topo.Body, center, side1, side2 planar
 		if perr != nil {
 			return Output{}, perr
 		}
-		result, err = ops.Boolean(ops.Cut, planarized(result, feat), prism)
+		result, err = ops.BooleanWithDiagnostics(ops.Cut, planarized(result, feat), prism, in.Diag)
 		if err != nil {
 			return Output{}, fmt.Errorf("%s: cutting the corner round: %w", feat, err)
 		}
@@ -278,8 +279,9 @@ func fullRoundFrame(body *topo.Body, def *FullRoundFilletDefinition, center plan
 // fullRoundCornerTool builds the cut tool: a box covering the center-face footprint from the round's
 // base plane up to the center face, MINUS the round cylinder — i.e. the two sharp corners the round
 // shaves off. pc is the center-face centre; up/sideN/axisDir the orthonormal rib frame; r the radius;
-// l the length along the rib.
-func fullRoundCornerTool(pc math.Point3, up, sideN, axisDir math.Vector3, r, l float64, feat string) (*topo.Body, error) {
+// l the length along the rib. rec collects the box-minus-cylinder boolean's fallback
+// diagnostics (#1601; nil discards).
+func fullRoundCornerTool(pc math.Point3, up, sideN, axisDir math.Vector3, r, l float64, feat string, rec *diag.Recorder) (*topo.Body, error) {
 	plane, err := sketch.NewPlane(pc, sideN.AsUnit(), up.AsUnit())
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", feat, err)
@@ -295,7 +297,7 @@ func fullRoundCornerTool(pc math.Point3, up, sideN, axisDir math.Vector3, r, l f
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", feat, err)
 	}
-	corner, err := ops.Boolean(ops.Cut, planarized(box, feat), planarized(cyl, feat))
+	corner, err := ops.BooleanWithDiagnostics(ops.Cut, planarized(box, feat), planarized(cyl, feat), rec)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", feat, err)
 	}

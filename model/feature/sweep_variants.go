@@ -8,6 +8,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -411,12 +412,12 @@ func (s *SweepFeature) recomputeSolidSweep(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	swept, err := sweptToolEnvelope(toolSrc, path, featOr(s.featName, "sweep"))
+	swept, err := sweptToolEnvelope(toolSrc, path, featOr(s.featName, "sweep"), in.Diag)
 	if err != nil {
 		return Output{}, err
 	}
 	s.tool = swept
-	bodies, err := combine(in.Bodies, swept, s.def.Operation)
+	bodies, err := combine(in, swept, s.def.Operation)
 	if err != nil {
 		return Output{}, err
 	}
@@ -435,8 +436,9 @@ func (s *SweepFeature) resolvePathPoints() ([]math.Point3, error) {
 	return path.Points(), nil
 }
 
-// sweptToolEnvelope unions translated tool stamps along the path.
-func sweptToolEnvelope(tool *topo.Body, path []math.Point3, feat string) (*topo.Body, error) {
+// sweptToolEnvelope unions translated tool stamps along the path. rec collects the stamp
+// unions' boolean-fallback diagnostics (#1601; nil discards).
+func sweptToolEnvelope(tool *topo.Body, path []math.Point3, feat string, rec *diag.Recorder) (*topo.Body, error) {
 	samples := stampStations(tool, path)
 	origin := samples[0]
 	swept, err := stampAt(tool, origin, origin, feat, 0)
@@ -448,7 +450,7 @@ func sweptToolEnvelope(tool *topo.Body, path []math.Point3, feat string) (*topo.
 		if err != nil {
 			return nil, err
 		}
-		if swept, err = ops.Boolean(ops.Join, swept, stamp); err != nil {
+		if swept, err = ops.BooleanWithDiagnostics(ops.Join, swept, stamp, rec); err != nil {
 			return nil, fmt.Errorf("sweep: stamp %d union failed: %w", i, err)
 		}
 	}

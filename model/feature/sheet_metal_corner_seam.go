@@ -77,7 +77,7 @@ func (f *SheetMetalCornerSeamFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	res, err := cutAll(work, tools)
+	res, err := cutAll(work, tools, in.Diag)
 	if err != nil {
 		return Output{}, fmt.Errorf("sheet-metal corner seam: %w", err)
 	}

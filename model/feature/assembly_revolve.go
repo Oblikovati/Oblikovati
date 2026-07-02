@@ -52,7 +52,7 @@ func (f *AssemblyRevolveFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	out, err := applyToolToAll(f.op, in.Bodies, tool)
+	out, err := applyToolToAll(f.op, in.Bodies, tool, in.Diag)
 	if err != nil {
 		return Output{}, err
 	}

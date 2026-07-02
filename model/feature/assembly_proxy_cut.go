@@ -5,6 +5,7 @@ package feature
 import (
 	"fmt"
 
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/occurrence"
@@ -64,7 +65,7 @@ func (f *AssemblyProxyCutFeature) Recompute(in Input) (Output, error) {
 	}
 	out := append([]*topo.Body(nil), in.Bodies...)
 	for _, tool := range tools {
-		out, err = applyToolToAll(f.op, out, tool)
+		out, err = applyToolToAll(f.op, out, tool, in.Diag)
 		if err != nil {
 			return Output{}, err
 		}
@@ -92,11 +93,12 @@ func (f *AssemblyProxyCutFeature) resolveTools() ([]*topo.Body, error) {
 	return tools, nil
 }
 
-// applyToolToAll booleans tool against each body, dropping any emptied result.
-func applyToolToAll(op ops.PartFeatureOperation, bodies []*topo.Body, tool *topo.Body) ([]*topo.Body, error) {
+// applyToolToAll booleans tool against each body, dropping any emptied result. rec collects the
+// kernel's boolean-fallback diagnostics (#1601; nil discards).
+func applyToolToAll(op ops.PartFeatureOperation, bodies []*topo.Body, tool *topo.Body, rec *diag.Recorder) ([]*topo.Body, error) {
 	out := make([]*topo.Body, 0, len(bodies))
 	for i, target := range bodies {
-		res, err := ops.Boolean(op, target, tool)
+		res, err := ops.BooleanWithDiagnostics(op, target, tool, rec)
 		if err != nil {
 			return nil, fmt.Errorf("assemblyProxyCut: boolean on body %d: %w", i, err)
 		}

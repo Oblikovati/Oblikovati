@@ -5,6 +5,7 @@ package feature
 import (
 	"fmt"
 
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -68,8 +69,8 @@ func (f *EmbossFeature) Recompute(in Input) (Output, error) {
 	if f.def.Engrave {
 		sp, op = orderedSpan(0, -d), ops.Cut // cut into the part, below the sketch plane
 	}
-	f.tool = buildProfilePrisms(profiles, f.def.Sketch.Plane(), sp, f.def.Taper, featOr(f.featName, "emboss"))
-	bodies, err := combine(in.Bodies, f.tool, op)
+	f.tool = buildProfilePrisms(profiles, f.def.Sketch.Plane(), sp, f.def.Taper, featOr(f.featName, "emboss"), in.Diag)
+	bodies, err := combine(in, f.tool, op)
 	if err != nil {
 		return Output{}, err
 	}
@@ -159,15 +160,16 @@ func resolveClosedProfiles(sk *sketch.Sketch, indices []int, what string) ([]*sk
 }
 
 // buildProfilePrisms extrudes each closed profile to a prism over span sp (with taper), merging
-// several into one tool body — the shared prism builder for extrude/emboss.
-func buildProfilePrisms(profiles []*sketch.Profile, plane sketch.Plane, sp span, taper float64, feat string) *topo.Body {
+// several into one tool body — the shared prism builder for extrude/emboss. rec collects the
+// hole-drilling booleans' fallback diagnostics (#1601; nil discards).
+func buildProfilePrisms(profiles []*sketch.Profile, plane sketch.Plane, sp span, taper float64, feat string, rec *diag.Recorder) *topo.Body {
 	prisms := make([]*topo.Body, len(profiles))
 	for i, p := range profiles {
 		name := feat
 		if len(profiles) > 1 {
 			name = fmt.Sprintf("%s/p%d", feat, i)
 		}
-		prisms[i] = buildPrismWithHoles(p, plane, sp, taper, name)
+		prisms[i] = buildPrismWithHoles(p, plane, sp, taper, name, rec)
 	}
 	if len(prisms) == 1 {
 		return prisms[0]
@@ -179,7 +181,7 @@ func buildProfilePrisms(profiles []*sketch.Profile, plane sketch.Plane, sp span,
 // becomes a solid prism, then each inner loop (a hole) is extruded over a span that
 // overshoots both caps and cut away, yielding a hollow prism (a tube for an annular
 // profile). Without this an annular profile extruded as a solid disk.
-func buildPrismWithHoles(p *sketch.Profile, plane sketch.Plane, sp span, taper float64, feat string) *topo.Body {
+func buildPrismWithHoles(p *sketch.Profile, plane sketch.Plane, sp span, taper float64, feat string, rec *diag.Recorder) *topo.Body {
 	// A full-circle profile with no holes and no taper extrudes to a TRUE cylinder (analytic side
 	// face), so thread/chamfer/fillet on it work (#129). Booleans re-facet it on demand (combine →
 	// planarized). Other shapes fall through to the faceted prism.
@@ -192,7 +194,7 @@ func buildPrismWithHoles(p *sketch.Profile, plane sketch.Plane, sp span, taper f
 	}
 	solid := buildPrism(p.OuterLoop().Polygon(), plane, sp, taper, feat)
 	if inner := p.InnerLoops(); len(inner) > 0 {
-		return drillProfileHoles(solid, inner, plane, sp, taper, feat)
+		return drillProfileHoles(solid, inner, plane, sp, taper, feat, rec)
 	}
 	return solid
 }
@@ -200,7 +202,7 @@ func buildPrismWithHoles(p *sketch.Profile, plane sketch.Plane, sp span, taper f
 // drillProfileHoles cuts each inner loop out of the solid prism, yielding a hollow prism. Each hole
 // tool overshoots both caps by the full depth so the cut is clean; a clockwise hole loop is
 // normalized to CCW so buildPrism makes a valid outward cut tool (not an inverted one).
-func drillProfileHoles(solid *topo.Body, inner []sketch.Loop, plane sketch.Plane, sp span, taper float64, feat string) *topo.Body {
+func drillProfileHoles(solid *topo.Body, inner []sketch.Loop, plane sketch.Plane, sp span, taper float64, feat string, rec *diag.Recorder) *topo.Body {
 	lo, hi := sp.near, sp.far
 	if lo > hi {
 		lo, hi = hi, lo
@@ -213,7 +215,7 @@ func drillProfileHoles(solid *topo.Body, inner []sketch.Loop, plane sketch.Plane
 			poly = reversedPolygon2D(poly)
 		}
 		hole := buildPrism(poly, plane, cut, taper, fmt.Sprintf("%s/hole%d", feat, j))
-		if res, err := ops.Boolean(ops.Cut, solid, hole); err == nil && res != nil {
+		if res, err := ops.BooleanWithDiagnostics(ops.Cut, solid, hole, rec); err == nil && res != nil {
 			solid = res
 		}
 	}

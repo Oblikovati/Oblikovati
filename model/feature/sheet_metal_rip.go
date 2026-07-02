@@ -56,7 +56,7 @@ func (f *SheetMetalRipFeature) Recompute(in Input) (Output, error) {
 		return Output{}, err
 	}
 	tool := buildPrism(ripPolygon(a, b, gap), plane, sp, 0, f.featName)
-	bodies, err := combine(in.Bodies, tool, ops.Cut)
+	bodies, err := combine(in, tool, ops.Cut)
 	if err != nil {
 		return Output{}, err
 	}

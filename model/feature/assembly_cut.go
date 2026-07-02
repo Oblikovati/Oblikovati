@@ -55,7 +55,7 @@ func (f *AssemblyCutFeature) Recompute(in Input) (Output, error) {
 	}
 	out := make([]*topo.Body, 0, len(in.Bodies))
 	for i, target := range in.Bodies {
-		res, err := ops.Boolean(f.op, target, f.tool)
+		res, err := ops.BooleanWithDiagnostics(f.op, target, f.tool, in.Diag)
 		if err != nil {
 			return Output{}, fmt.Errorf("assemblyCut: boolean on body %d: %w", i, err)
 		}

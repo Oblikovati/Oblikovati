@@ -107,6 +107,18 @@ type featureResult struct {
 	Bodies  int    `json:"bodies"`
 	Healthy bool   `json:"healthy"`
 	Reason  string `json:"reason,omitempty"`
+	// Diagnostics are the kernel degradations recorded while the feature rebuilt — a boolean
+	// faceting analytic surfaces, a triangle-CSG fallback (#1601). A feature can be healthy AND
+	// degraded; callers that care about surface quality must check this, not Healthy.
+	Diagnostics []featureDiagnostic `json:"diagnostics,omitempty"`
+}
+
+// featureDiagnostic is one kernel diagnostic on a feature reply: the typed code (searchable,
+// e.g. "boolean.analytic-faceted"), its severity, and the human-readable detail.
+type featureDiagnostic struct {
+	Code     string `json:"code"`
+	Severity string `json:"severity"`
+	Detail   string `json:"detail"`
 }
 
 // lastFeatureResult recomputes and reports the most recently added feature — used by the
@@ -127,8 +139,21 @@ func recomputeResult(part *compdef.PartComponentDefinition, pf *feature.PartFeat
 	h := pf.Health()
 	return json.Marshal(featureResult{
 		Feature: pf.Name(), Kind: pf.Kind(), Bodies: len(part.SurfaceBodies().All()),
-		Healthy: h.OK(), Reason: h.Reason,
+		Healthy: h.OK(), Reason: h.Reason, Diagnostics: featureDiagnostics(pf),
 	})
+}
+
+// featureDiagnostics converts the feature's recorded kernel diagnostics to the reply shape.
+func featureDiagnostics(pf *feature.PartFeature) []featureDiagnostic {
+	recorded := pf.Diagnostics()
+	if len(recorded) == 0 {
+		return nil
+	}
+	out := make([]featureDiagnostic, len(recorded))
+	for i, d := range recorded {
+		out[i] = featureDiagnostic{Code: string(d.Code), Severity: d.Severity.String(), Detail: d.Detail}
+	}
+	return out
 }
 
 // constIntFn wraps a constant as the func() int the pattern builders take for live counts.

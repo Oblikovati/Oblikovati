@@ -5,6 +5,7 @@ package feature
 import (
 	"fmt"
 
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/sketch"
@@ -46,19 +47,20 @@ func (f *AssemblyExtrudeFeature) Operation() ops.PartFeatureOperation { return f
 // body is dropped). A missing/open profile or a non-positive distance is a lost input
 // the engine turns into feature health, not a panic.
 func (f *AssemblyExtrudeFeature) Recompute(in Input) (Output, error) {
-	tool, err := f.buildTool()
+	tool, err := f.buildTool(in.Diag)
 	if err != nil {
 		return Output{}, err
 	}
-	out, err := applyToolToAll(f.op, in.Bodies, tool)
+	out, err := applyToolToAll(f.op, in.Bodies, tool, in.Diag)
 	if err != nil {
 		return Output{}, err
 	}
 	return Output{Bodies: out}, nil
 }
 
-// buildTool extrudes the resolved profile into the assembly-space prism tool.
-func (f *AssemblyExtrudeFeature) buildTool() (*topo.Body, error) {
+// buildTool extrudes the resolved profile into the assembly-space prism tool. rec collects
+// the prism builder's boolean-fallback diagnostics (#1601; nil discards).
+func (f *AssemblyExtrudeFeature) buildTool(rec *diag.Recorder) (*topo.Body, error) {
 	profiles := f.sketch.Profiles()
 	if f.profileIndex < 0 || f.profileIndex >= profiles.Count() {
 		return nil, fmt.Errorf("assemblyExtrude: profile %d out of range (sketch has %d)", f.profileIndex, profiles.Count())
@@ -71,5 +73,5 @@ func (f *AssemblyExtrudeFeature) buildTool() (*topo.Body, error) {
 	if d <= 0 {
 		return nil, fmt.Errorf("assemblyExtrude: distance %g must be positive", d)
 	}
-	return buildPrismWithHoles(p, f.sketch.Plane(), span{near: 0, far: d}, 0, "asmExtrude"), nil
+	return buildPrismWithHoles(p, f.sketch.Plane(), span{near: 0, far: d}, 0, "asmExtrude", rec), nil
 }
