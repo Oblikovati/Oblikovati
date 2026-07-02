@@ -294,55 +294,24 @@ func flattenPoints(pts []math.Point2) []float64 {
 	return out
 }
 
+// serializeConstraint encodes through the paired codec registry, keyed on the
+// constraint's self-reported kind (#1625) — no per-type switch, so an encode
+// half can no longer ship without its decode half.
 func serializeConstraint(c Constraint) (ConstraintData, error) {
-	switch v := c.(type) {
-	case *CoincidentConstraint:
-		return ConstraintData{Kind: "coincident", Points: []int{int(v.A.id), int(v.B.id)}}, nil
-	case *HorizontalConstraint:
-		return ConstraintData{Kind: "horizontal", Points: []int{int(v.A.id), int(v.B.id)}}, nil
-	case *VerticalConstraint:
-		return ConstraintData{Kind: "vertical", Points: []int{int(v.A.id), int(v.B.id)}}, nil
-	case *PointOnLineConstraint:
-		return ConstraintData{Kind: "pointOnLine", Points: []int{int(v.P.id)}, Curves: []int{int(v.L.id)}}, nil
-	case *MidpointConstraint:
-		return ConstraintData{Kind: "midpoint", Points: []int{int(v.P.id)}, Curves: []int{int(v.L.id)}}, nil
-	case *PointOnCircleConstraint:
-		return ConstraintData{Kind: "pointOnCircle", Points: []int{int(v.P.id)}, Curves: []int{int(v.C.EntityID())}}, nil
-	case *ParallelConstraint:
-		return ConstraintData{Kind: "parallel", Curves: []int{int(v.L1.id), int(v.L2.id)}}, nil
-	case *PerpendicularConstraint:
-		return ConstraintData{Kind: "perpendicular", Curves: []int{int(v.L1.id), int(v.L2.id)}}, nil
-	case *CollinearConstraint:
-		return ConstraintData{Kind: "collinear", Curves: []int{int(v.L1.id), int(v.L2.id)}}, nil
-	case *EqualLengthConstraint:
-		return ConstraintData{Kind: "equalLength", Curves: []int{int(v.L1.id), int(v.L2.id)}}, nil
-	case *ConcentricConstraint:
-		return ConstraintData{Kind: "concentric", Curves: []int{int(v.C1.EntityID()), int(v.C2.EntityID())}}, nil
-	case *EqualRadiusConstraint:
-		return ConstraintData{Kind: "equalRadius", Curves: []int{int(v.C1.EntityID()), int(v.C2.EntityID())}}, nil
-	case *CircularTangentConstraint:
-		return ConstraintData{Kind: "circularTangent", Curves: []int{int(v.C1.EntityID()), int(v.C2.EntityID())}}, nil
-	case *TangentConstraint:
-		return ConstraintData{Kind: "tangent", Curves: []int{int(v.L.id), int(v.C.EntityID())}}, nil
-	case *SymmetryConstraint:
-		return ConstraintData{Kind: "symmetry", Points: []int{int(v.A.id), int(v.B.id)}, Curves: []int{int(v.About.id)}}, nil
-	case *FixConstraint:
-		return ConstraintData{Kind: "fix", Points: []int{int(v.P.id)}}, nil
-	case *SmoothConstraint:
-		return ConstraintData{Kind: "smooth", Points: []int{int(v.P1.id), int(v.P2.id)}, Curves: []int{int(v.C1.EntityID()), int(v.C2.EntityID())}}, nil
-	case *GroundConstraint:
-		return ConstraintData{Kind: "ground", Points: pointIDsOf(v.pts)}, nil
-	case *OffsetConstraint:
-		return ConstraintData{Kind: "offset", Curves: []int{int(v.L1.id), int(v.L2.id)}, Value: v.Dist}, nil
-	case *PatternConstraint:
-		return ConstraintData{Kind: "patternLink", Points: []int{int(v.Seed.id), int(v.Member.id)}}, nil
-	case *TextBoxAnchorConstraint:
-		return ConstraintData{Kind: "textBox", Curves: []int{int(v.Text.id)}}, nil
-	case *CustomConstraint:
-		return ConstraintData{Kind: "custom", ClientID: v.ClientID, Name: v.Name, Curves: entityIDsOf(v.Entities)}, nil
-	default:
-		return ConstraintData{}, fmt.Errorf("cannot serialize constraint of type %T (no codec)", c)
+	kc, ok := c.(KindedConstraint)
+	if !ok {
+		return ConstraintData{}, fmt.Errorf("cannot serialize constraint of type %T (no ConstraintKind capability)", c)
 	}
+	codec, ok := constraintCodecs2D[kc.ConstraintKind()]
+	if !ok {
+		return ConstraintData{}, fmt.Errorf("cannot serialize constraint kind %q of type %T (no codec)", kc.ConstraintKind(), c)
+	}
+	cd, err := codec.encode(c)
+	if err != nil {
+		return ConstraintData{}, err
+	}
+	cd.Kind = string(kc.ConstraintKind())
+	return cd, nil
 }
 
 // fitMethodSpelling renders a spline fit method for persistence; the smooth

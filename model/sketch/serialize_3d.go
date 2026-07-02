@@ -283,71 +283,29 @@ func unflattenPoint3s(coords []float64) []math.Point3 {
 	return out
 }
 
-// serializeConstraint3D captures one geometric 3D constraint by its point operands.
+// serializeConstraint3D encodes through the paired 3D codec registry, keyed on
+// the constraint's self-reported kind (#1625) — no per-type switch, so an
+// encode half can no longer ship without its decode half (Equal3D did exactly
+// that: creatable, enumerable, and failing every save at runtime).
 func serializeConstraint3D(c Constraint) (Constraint3DRow, error) {
-	switch v := c.(type) {
-	case *Coincident3D:
-		return Constraint3DRow{Kind: "coincident", Points: []int{int(v.A.id), int(v.B.id)}}, nil
-	case *Collinear3D:
-		return Constraint3DRow{Kind: "collinear", Points: []int{int(v.A.id), int(v.B.id), int(v.C.id)}}, nil
-	case *Concentric3D:
-		return Constraint3DRow{Kind: "concentric", Points: []int{int(v.Center1.id), int(v.Center2.id)}}, nil
-	case *Parallel3D:
-		return Constraint3DRow{Kind: "parallel", Curves: []int{int(v.L1.id), int(v.L2.id)}}, nil
-	case *Perpendicular3D:
-		return Constraint3DRow{Kind: "perpendicular", Curves: []int{int(v.L1.id), int(v.L2.id)}}, nil
-	case *Midpoint3D:
-		return Constraint3DRow{Kind: "midpoint", Points: []int{int(v.P.id)}, Curves: []int{int(v.L.id)}}, nil
-	case *Ground3D:
-		return Constraint3DRow{Kind: "ground", Points: []int{int(v.P.id)}}, nil
-	case *ParallelToAxis3D:
-		return Constraint3DRow{Kind: axisRowKind(v.Axis), Curves: []int{int(v.L.id)}}, nil
-	case *ParallelToPlane3D:
-		return Constraint3DRow{Kind: planeRowKind(v.Normal), Curves: []int{int(v.L.id)}}, nil
-	case *Tangent3D:
-		return Constraint3DRow{Kind: "tangent", Curves: entity3DIDPair(v.C1, v.C2), Points: []int{int(v.P1.id), int(v.P2.id)}}, nil
-	case *Smooth3D:
-		return Constraint3DRow{Kind: "smooth", Curves: entity3DIDPair(v.C1, v.C2), Points: []int{int(v.P1.id), int(v.P2.id)}}, nil
-	case *SplineFitPoints3D:
-		return Constraint3DRow{Kind: "splineFitPoints", Curves: []int{int(v.Spline.id)}, Points: []int{int(v.P.id)}, Index: v.FitIndex}, nil
-	case *Helical3D:
-		return Constraint3DRow{Kind: "helical", Curves: []int{int(v.H.id), int(v.C.id)}}, nil
-	case *Bend3D:
-		return Constraint3DRow{
-			Kind: "bend", Curves: []int{int(v.Arc.id), int(v.L1.id), int(v.L2.id)},
-			Points: []int{int(v.P1.id), int(v.P2.id)}, Radius: v.Radius,
-		}, nil
-	default:
-		return Constraint3DRow{}, fmt.Errorf("cannot serialize 3D constraint of type %T (no codec yet)", c)
+	kc, ok := c.(KindedConstraint)
+	if !ok {
+		return Constraint3DRow{}, fmt.Errorf("cannot serialize 3D constraint of type %T (no ConstraintKind capability)", c)
 	}
+	codec, ok := constraintCodecs3D[kc.ConstraintKind()]
+	if !ok {
+		return Constraint3DRow{}, fmt.Errorf("cannot serialize 3D constraint kind %q of type %T (no codec)", kc.ConstraintKind(), c)
+	}
+	row, err := codec.encode(c)
+	if err != nil {
+		return Constraint3DRow{}, err
+	}
+	row.Kind = string(kc.ConstraintKind())
+	return row, nil
 }
 
 // entity3DIDPair returns two curve entities' ids in order.
 func entity3DIDPair(a, b Entity) []int { return []int{int(a.EntityID()), int(b.EntityID())} }
-
-// axisRowKind names a parallel-to-axis constraint for serialization by its axis vector.
-func axisRowKind(axis math.Vector3) string {
-	switch {
-	case axis.X != 0:
-		return "parallelToXAxis"
-	case axis.Y != 0:
-		return "parallelToYAxis"
-	default:
-		return "parallelToZAxis"
-	}
-}
-
-// planeRowKind names a parallel-to-plane constraint for serialization by its normal.
-func planeRowKind(normal math.Vector3) string {
-	switch {
-	case normal.Z != 0:
-		return "parallelToXYPlane"
-	case normal.Y != 0:
-		return "parallelToXZPlane"
-	default:
-		return "parallelToYZPlane"
-	}
-}
 
 // ApplyRecipe3D rebuilds the collection's 3D sketches from their serialized forms.
 func (c *Sketches3D) ApplyRecipe3D(data []SketchData3D) error {
@@ -532,77 +490,22 @@ func restoreEntity3D(s *Sketch3D, ed Entity3DData, idmap map[int]*Point3D) (Enti
 	return c.decode(s, ed, pts)
 }
 
-// restoreConstraint3D re-adds one geometric 3D constraint, binding its point operands
-// through idmap and its line operands through entmap. The curve-join kinds (tangent/
-// smooth/splineFitPoints/helical, issue #142) dispatch first — their Curves are not
-// necessarily lines, so they resolve against the full entity map.
+// restoreConstraint3D decodes one geometric 3D constraint through the paired
+// codec registry (#1625), binding its point operands through idmap and its
+// curve operands through entmap. An unknown kind is a corrupt-recipe error.
 func restoreConstraint3D(s *Sketch3D, cd Constraint3DRow, idmap map[int]*Point3D, entmap map[int]Entity) error {
+	codec, ok := constraintCodecs3D[ConstraintKind(cd.Kind)]
+	if !ok {
+		return fmt.Errorf("unknown constraint kind %q", cd.Kind)
+	}
 	pts, err := lookupPoints3D(cd.Points, idmap)
 	if err != nil {
 		return fmt.Errorf(errConstraintWrap, cd.Kind, err)
 	}
-	if c, handled, err := curveConstraint3DFromRow(cd, pts, entmap); handled {
-		if err != nil {
-			return fmt.Errorf(errConstraintWrap, cd.Kind, err)
-		}
-		s.geomCons.add(c)
-		return nil
-	}
-	lines, err := lookupLines3D(cd.Curves, entmap)
-	if err != nil {
+	if err := codec.decode(s, cd, pts, entmap); err != nil {
 		return fmt.Errorf(errConstraintWrap, cd.Kind, err)
 	}
-	c, err := constraint3DFromRow(cd.Kind, pts, lines)
-	if err != nil {
-		return err
-	}
-	s.geomCons.add(c)
 	return nil
-}
-
-// curveConstraint3DFromRow rebuilds the curve-join constraint kinds; handled is false
-// for every other kind (which restoreConstraint3D resolves over line operands).
-func curveConstraint3DFromRow(cd Constraint3DRow, pts []*Point3D, entmap map[int]Entity) (Constraint, bool, error) {
-	switch cd.Kind {
-	case "tangent", "smooth":
-		c, err := restoreSmoothJoin3D(cd, pts, entmap)
-		return c, true, err
-	case "splineFitPoints":
-		sp, err := lookupSpline3D(cd.Curves, entmap)
-		if err != nil {
-			return nil, true, err
-		}
-		c, err := NewSplineFitPoints3DAt(sp, pts[0], cd.Index)
-		return c, true, err
-	case "helical":
-		c, err := restoreHelical3D(cd, entmap)
-		return c, true, err
-	case "bend":
-		c, err := restoreBend3D(cd, pts, entmap)
-		return c, true, err
-	default:
-		return nil, false, nil
-	}
-}
-
-// restoreSmoothJoin3D rebuilds a tangent or smooth join from its two curves and their
-// serialized join endpoints.
-func restoreSmoothJoin3D(cd Constraint3DRow, pts []*Point3D, entmap map[int]Entity) (Constraint, error) {
-	if len(cd.Curves) != 2 || len(pts) != 2 {
-		return nil, fmt.Errorf("needs 2 curves + 2 points, got %d/%d", len(cd.Curves), len(pts))
-	}
-	c1, err := lookupSmoothCurve3D(cd.Curves[0], entmap)
-	if err != nil {
-		return nil, err
-	}
-	c2, err := lookupSmoothCurve3D(cd.Curves[1], entmap)
-	if err != nil {
-		return nil, err
-	}
-	if cd.Kind == "tangent" {
-		return NewTangent3D(c1, c2, pts[0], pts[1]), nil
-	}
-	return NewSmooth3D(c1, c2, pts[0], pts[1]), nil
 }
 
 // restoreBend3D rebuilds a bend from its arc + two lines, re-binding the exact saved
@@ -661,49 +564,6 @@ func lookupSpline3D(ids []int, entmap map[int]Entity) (*Spline3D, error) {
 		return nil, fmt.Errorf("entity id %d is %T, want a 3D spline", ids[0], entmap[ids[0]])
 	}
 	return sp, nil
-}
-
-// constraint3DFromRow builds the constraint for a serialized kind from its resolved
-// point and line operands.
-func constraint3DFromRow(kind string, pts []*Point3D, lines []*Line3D) (Constraint, error) {
-	switch kind {
-	case "coincident":
-		return NewCoincident3D(pts[0], pts[1]), nil
-	case "collinear":
-		return NewCollinear3D(pts[0], pts[1], pts[2]), nil
-	case "concentric":
-		return NewConcentric3D(pts[0], pts[1]), nil
-	case "parallel":
-		return NewParallel3D(lines[0], lines[1]), nil
-	case "perpendicular":
-		return NewPerpendicular3D(lines[0], lines[1]), nil
-	case "midpoint":
-		return NewMidpoint3D(pts[0], lines[0]), nil
-	case "ground":
-		return NewGround3D(pts[0]), nil
-	default:
-		return orientationFromRow(kind, lines)
-	}
-}
-
-// orientationFromRow builds the parallel-to-axis/plane constraints from a serialized kind.
-func orientationFromRow(kind string, lines []*Line3D) (Constraint, error) {
-	switch kind {
-	case "parallelToXAxis":
-		return NewParallelToXAxis3D(lines[0]), nil
-	case "parallelToYAxis":
-		return NewParallelToYAxis3D(lines[0]), nil
-	case "parallelToZAxis":
-		return NewParallelToZAxis3D(lines[0]), nil
-	case "parallelToXYPlane":
-		return NewParallelToXYPlane3D(lines[0]), nil
-	case "parallelToXZPlane":
-		return NewParallelToXZPlane3D(lines[0]), nil
-	case "parallelToYZPlane":
-		return NewParallelToYZPlane3D(lines[0]), nil
-	default:
-		return nil, fmt.Errorf("unknown 3D constraint kind %q", kind)
-	}
 }
 
 // restoreConic3D rebuilds a full or partial ellipse from its serialized form.
