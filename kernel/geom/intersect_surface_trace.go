@@ -41,8 +41,12 @@ const (
 	// Step multiples used while marching: a seed within ssiDedupSteps of an existing curve is a
 	// duplicate of it; the loop closes when the march returns within ssiLoopCloseSteps of its start;
 	// a tangency seed may sit up to ssiTangencyGapSteps from the contact (the strict normal test, not
-	// this gate, is the real discriminator).
-	ssiDedupSteps       = 1.5
+	// this gate, is the real discriminator). ssiDedupSteps pairs with the SEGMENT-distance dedup in
+	// nearAnyCurve (#1597): a duplicate seed corrects onto the already-traced curve and sits within
+	// chord sag of its polyline (≤ step²·κ/8, ≪ a step), while a genuinely distinct neighbouring loop
+	// keeps its full 3D separation — so the radius must cover sag, not a whole step, or two
+	// near-tangent circles closer than a step apart collapse into one.
+	ssiDedupSteps       = 0.25
 	ssiLoopCloseSteps   = 0.75
 	ssiTangencyGapSteps = 5.0
 	// ssiDescentGain damps the steepest-descent corrector step taken where the two surface normals are
@@ -273,11 +277,18 @@ func inWindow(base Surface, pc math.Point3, g SurfaceGrid) bool {
 	return u >= g.UMin-mu && u <= g.UMax+mu && v >= g.VMin-mv && v <= g.VMax+mv
 }
 
-// nearAnyCurve reports whether p is within tol of any point of an already-traced curve.
+// nearAnyCurve reports whether p is within tol of an already-traced curve, measured to the polyline
+// SEGMENTS (a single-point tangency marker degenerates to its point). Vertex distance conflated a
+// duplicate seed (on the same curve, within chord sag of its polyline) with a distinct neighbouring
+// loop as soon as the loops sat closer together than the dedup radius — e.g. the two near-tangent
+// circles where a sphere barely clears a cylinder (#1597).
 func nearAnyCurve(curves [][]math.Point3, p math.Point3, tol float64) bool {
 	for _, c := range curves {
-		for _, q := range c {
-			if float64(p.DistanceTo(q)) < tol {
+		if len(c) == 1 && float64(p.DistanceTo(c[0])) < tol {
+			return true
+		}
+		for i := 0; i+1 < len(c); i++ {
+			if DistancePointToSegment(LineSegment{StartPoint: c[i], EndPoint: c[i+1]}, p) < tol {
 				return true
 			}
 		}
@@ -297,14 +308,37 @@ func ssiStep(base Surface, g SurfaceGrid) float64 {
 	return ssiStepFraction * ssiExtent(base, g)
 }
 
-// ssiExtent estimates the base patch's 3D size over the grid window (the diagonal of its corner box),
-// used to scale the tolerance and step.
+// ssiExtentSamples is the per-axis lattice for the extent estimate. Five samples put nodes at the
+// quarter points of a full-period window, so a closed direction contributes the four cardinal points
+// of every circular section — its true girth — to the bounding box (#1597).
+const ssiExtentSamples = 5
+
+// ssiExtent estimates the base patch's 3D size over the grid window — the diagonal of the bounding
+// box of a sampled parameter lattice — used to scale the tolerance and step. The previous
+// corner-to-corner estimate collapsed wherever the window is periodic: on a torus both corners map to
+// the SAME 3D point (measured 1.5e-14 for R=50/r=10, true ≈171), and on a cylinder they differ by the
+// axial height only, missing the girth entirely — which drove step and tolerance toward 0 and pushed
+// every trace onto the marching-squares fallback silently (#1597). OCCT sizes its walking step from
+// surface bounding boxes the same way (IntWalk_PWalking via Bnd_Box/adaptor resolution).
 func ssiExtent(base Surface, g SurfaceGrid) float64 {
-	c00 := base.PointAt(g.UMin, g.VMin)
-	c11 := base.PointAt(g.UMax, g.VMax)
-	d := float64(c00.DistanceTo(c11))
+	d := float64(sampledPatchBox(base, g).Diagonal().Length())
 	if d <= 0 {
 		return 1
 	}
 	return d
+}
+
+// sampledPatchBox is the axis-aligned box of base evaluated on an ssiExtentSamples² lattice over the
+// grid window (corners included).
+func sampledPatchBox(base Surface, g SurfaceGrid) math.Box {
+	n := ssiExtentSamples - 1
+	pts := make([]math.Point3, 0, ssiExtentSamples*ssiExtentSamples)
+	for i := 0; i <= n; i++ {
+		u := g.UMin + (g.UMax-g.UMin)*float64(i)/float64(n)
+		for j := 0; j <= n; j++ {
+			v := g.VMin + (g.VMax-g.VMin)*float64(j)/float64(n)
+			pts = append(pts, base.PointAt(u, v))
+		}
+	}
+	return math.BoxFromPoints(pts...)
 }

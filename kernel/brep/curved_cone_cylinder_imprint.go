@@ -30,7 +30,7 @@ func coneCylinderImprint(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyline, 
 	}
 	window := geom.SurfaceGrid{VMin: vMin, VMax: vMax}
 	res := geom.ResolutionForBox(a.RangeBox().Union(b.RangeBox())) // model-relative loop-closure weld (#1399)
-	loops := closedTraceLoops(geom.IntersectSurfaceSurface(cone, cyl, window), res, rec)
+	loops := imprintTraceLoops(cone, cyl, window, res, rec)
 	if len(loops) == 0 {
 		return nil, false
 	}

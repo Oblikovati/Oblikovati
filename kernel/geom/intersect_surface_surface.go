@@ -19,11 +19,28 @@ import "oblikovati.org/math"
 //	pl, _ := geom.NewPlane(math.P3(0,0,0), math.V3(0,0,1))
 //	loops := geom.IntersectSurfaceSurface(sp, pl, geom.SurfaceGrid{}) // one loop on z=0
 func IntersectSurfaceSurface(base, other Surface, grid SurfaceGrid) [][]math.Point3 {
+	return TraceSurfaceIntersection(base, other, grid).Curves
+}
+
+// SurfaceIntersection carries the intersection curves plus their provenance: ViaFallback reports that
+// the continuation tracer found no curve and the fixed-grid marching-squares contour supplied the
+// result. Fallback curves are contour-quality — sub-grid loops lost, tangencies invisible — so a
+// caller holding a diag recorder must surface that degradation instead of shipping it silently
+// (#1597; vacuously false when there is no intersection at all).
+type SurfaceIntersection struct {
+	Curves      [][]math.Point3
+	ViaFallback bool
+}
+
+// TraceSurfaceIntersection is IntersectSurfaceSurface with provenance, for callers that need to see —
+// not just receive — a degraded fallback result.
+func TraceSurfaceIntersection(base, other Surface, grid SurfaceGrid) SurfaceIntersection {
 	if curves := traceIntersectionCurves(base, other, grid); len(curves) > 0 {
-		return curves
+		return SurfaceIntersection{Curves: curves}
 	}
 	field := func(u, v float64) float64 {
 		return SignedDistanceToSurface(other, base.PointAt(u, v))
 	}
-	return traceZeroOnSurface(base, field, grid)
+	curves := traceZeroOnSurface(base, field, grid)
+	return SurfaceIntersection{Curves: curves, ViaFallback: len(curves) > 0}
 }

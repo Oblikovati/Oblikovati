@@ -144,3 +144,15 @@ func TestTraceHelpersDirect(t *testing.T) {
 		t.Error("straddlesZero wrong")
 	}
 }
+
+// TestTraceSurfaceIntersectionDisjointIsQuiet: no intersection at all is not a fallback result —
+// ViaFallback flags only curves the marching-squares contour supplied (#1597), so a caller recording
+// the degradation does not raise a defect for every disjoint candidate face pair.
+func TestTraceSurfaceIntersectionDisjointIsQuiet(t *testing.T) {
+	sp, _ := NewSphere(math.P3(0, 0, 0), 1)
+	pl, _ := NewPlane(math.P3(0, 0, 10), math.V3(0, 0, 1))
+	tr := TraceSurfaceIntersection(sp, pl, SurfaceGrid{})
+	if len(tr.Curves) != 0 || tr.ViaFallback {
+		t.Errorf("disjoint sphere/plane: curves=%d fallback=%v, want none and false", len(tr.Curves), tr.ViaFallback)
+	}
+}
