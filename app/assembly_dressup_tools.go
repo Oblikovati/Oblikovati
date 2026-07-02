@@ -7,7 +7,6 @@ import (
 	"errors"
 
 	"oblikovati.org/kernel/topo"
-	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 )
 
@@ -69,29 +68,27 @@ func (t *assemblyEdgeSelectTool) Cancel(s *Session) {
 	t.edges = nil
 }
 
-// resolve returns the active assembly and the component-local suffix of each picked edge, erroring
+// resolve returns the component-local suffix of each picked edge, erroring
 // when no assembly is active or nothing was picked.
-func (t *assemblyEdgeSelectTool) resolve(s *Session, op string) (*compdef.AssemblyComponentDefinition, [][]byte, error) {
-	asm, err := activeAssembly(s)
-	if err != nil {
-		return nil, nil, err
+func (t *assemblyEdgeSelectTool) resolve(s *Session, op string) ([][]byte, error) {
+	if _, err := activeAssembly(s); err != nil {
+		return nil, err
 	}
 	if len(t.edges) == 0 {
-		return nil, nil, errors.New(op + ": pick a component edge first")
+		return nil, errors.New(op + ": pick a component edge first")
 	}
 	suffixes := make([][]byte, len(t.edges))
 	for i, e := range t.edges {
 		suffixes[i] = componentEdgeSuffix(e.Edge.ReferenceKey())
 	}
-	return asm, suffixes, nil
+	return suffixes, nil
 }
 
-// finish names the new dress-up feature, recomputes the assembly so the participants re-machine,
-// records the undo step (the feature program now persists, #785), and clears the edge filter.
-func (t *assemblyEdgeSelectTool) finish(s *Session, asm *compdef.AssemblyComponentDefinition, af *compdef.AssemblyFeature) {
-	af.SetName(asm.Features().UniqueName(af.Kind()))
-	asm.RecomputeFeatures()
-	s.recordEdit(asm, af.Kind())
+// finish commits the new dress-up feature through the shared assembly-feature
+// seam (naming lives on the aggregate, recompute + undo on the verb — #1612).
+func (t *assemblyEdgeSelectTool) finish(s *Session, f feature.Feature, label string) error {
+	_, err := s.CommitAssemblyFeature(f, label)
+	return err
 }
 
 // --- Chamfer --------------------------------------------------------------
@@ -111,14 +108,12 @@ func (t *AssemblyChamferTool) Prompt(*Session) string {
 func (t *AssemblyChamferTool) CanCommit() bool { return len(t.edges) > 0 && t.distance > 0 }
 
 func (t *AssemblyChamferTool) Commit(s *Session) error {
-	asm, suffixes, err := t.resolve(s, "chamfer")
+	suffixes, err := t.resolve(s, "chamfer")
 	if err != nil {
 		return err
 	}
 	d := t.distance
-	af := asm.AddFeature(feature.NewAssemblyChamferFeature(suffixes, func() float64 { return d }))
-	t.finish(s, asm, af)
-	return nil
+	return t.finish(s, feature.NewAssemblyChamferFeature(suffixes, func() float64 { return d }), "Chamfer")
 }
 
 func (t *AssemblyChamferTool) Params() ToolParams {
@@ -144,14 +139,12 @@ func (t *AssemblyFilletTool) Prompt(*Session) string {
 func (t *AssemblyFilletTool) CanCommit() bool { return len(t.edges) > 0 && t.radius > 0 }
 
 func (t *AssemblyFilletTool) Commit(s *Session) error {
-	asm, suffixes, err := t.resolve(s, "fillet")
+	suffixes, err := t.resolve(s, "fillet")
 	if err != nil {
 		return err
 	}
 	r := t.radius
-	af := asm.AddFeature(feature.NewAssemblyFilletFeature(suffixes, func() float64 { return r }))
-	t.finish(s, asm, af)
-	return nil
+	return t.finish(s, feature.NewAssemblyFilletFeature(suffixes, func() float64 { return r }), "Fillet")
 }
 
 func (t *AssemblyFilletTool) Params() ToolParams {

@@ -15,14 +15,15 @@ import (
 
 // Custom parameter groups over the wire (M02-F05, Oblikovati#604):
 // parameters.groups.list/add/delete/setDisplayName/addMember/removeMember.
-// Mutations finalize through Session.RecordActiveEdit so they are undoable and
-// broadcast as edit.committed (mutatingMethods).
+// Mutations delegate to the Session verbs the head UI also uses, so both
+// drivers share one seam (#1612, audit B1); undo/replication ride the central
+// MutatingMethod seam.
 
 // parameterGroupInfo marshals one group with its member names in collection order.
 func parameterGroupInfo(holder compdef.ParameterHolder, g *param.ParameterGroup) wire.ParameterGroupInfo {
 	ps := holder.Parameters()
 	return wire.ParameterGroupInfo{
-		InternalName: g.InternalName(), DisplayName: g.DisplayName, ClientID: g.ClientID,
+		InternalName: g.InternalName(), DisplayName: g.DisplayName(), ClientID: g.ClientID,
 		Members: paramNames(ps, ps.GroupMembers(g.InternalName())),
 	}
 }
@@ -60,70 +61,63 @@ func addParameterGroup(s *app.Session, args json.RawMessage) (json.RawMessage, e
 	if err := decode(args, &in); err != nil {
 		return nil, err
 	}
+	g, err := s.AddParameterGroup(in.InternalName, in.DisplayName, in.ClientID)
+	if err != nil {
+		return nil, err
+	}
 	holder, err := modelaccess.ActiveParameterHolder(s)
 	if err != nil {
 		return nil, err
 	}
-	g, err := holder.Parameters().AddGroup(in.InternalName, in.DisplayName, in.ClientID)
-	if err != nil {
-		return nil, err
-	}
-	s.RecordActiveEdit("Add Parameter Group")
 	return json.Marshal(parameterGroupInfo(holder, g))
 }
 
 // deleteParameterGroup removes a group; the deleteParameters flag opts into
-// the cascade that also deletes the member parameters (their dependents then
-// need a recompute, like parameters.delete).
+// the cascade that also deletes the member parameters. The cascade's
+// may-not-sicken-a-survivor refusal comes from the aggregate (#1612).
 func deleteParameterGroup(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
 	var in wire.ParameterGroupDeleteArgs
 	if err := decode(args, &in); err != nil {
 		return nil, err
 	}
-	holder, _, err := groupByKey(s, "parameters.groups.delete", in.InternalName)
-	if err != nil {
+	if err := s.DeleteParameterGroup(in.InternalName, in.DeleteParameters); err != nil {
 		return nil, err
 	}
-	if err := holder.Parameters().DeleteGroup(in.InternalName, in.DeleteParameters); err != nil {
-		return nil, err
-	}
-	if in.DeleteParameters {
-		holder.RecomputeAfterChange()
-	}
-	s.RecordActiveEdit("Delete Parameter Group")
 	return json.Marshal(struct{}{})
 }
 
-// setParameterGroupDisplayName edits the editable half of the group's naming.
+// setParameterGroupDisplayName edits the editable half of the group's naming;
+// the non-empty rule comes from the aggregate, shared with the UI (#1612).
 func setParameterGroupDisplayName(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
 	var in wire.ParameterGroupDisplayNameArgs
 	if err := decode(args, &in); err != nil {
+		return nil, err
+	}
+	if err := s.RenameParameterGroup(in.InternalName, in.DisplayName); err != nil {
 		return nil, err
 	}
 	holder, g, err := groupByKey(s, "parameters.groups.setDisplayName", in.InternalName)
 	if err != nil {
 		return nil, err
 	}
-	if in.DisplayName == "" {
-		return nil, fmt.Errorf("parameters.groups.setDisplayName: display name for %q must not be empty", in.InternalName)
-	}
-	g.DisplayName = in.DisplayName
-	s.RecordActiveEdit("Rename Parameter Group")
 	return json.Marshal(parameterGroupInfo(holder, g))
 }
 
 // addParameterGroupMember / removeParameterGroupMember manage one membership.
+// The group's existence was checked by the caller, so AddParameterToGroup's
+// create-on-first-use (a UI journey) can never trigger on the wire path.
 func addParameterGroupMember(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	return editParameterGroupMember(s, "parameters.groups.addMember", args, (*param.Parameters).AddToGroup)
+	return editParameterGroupMember(s, "parameters.groups.addMember", args, (*app.Session).AddParameterToGroup)
 }
 
 func removeParameterGroupMember(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	return editParameterGroupMember(s, "parameters.groups.removeMember", args, (*param.Parameters).RemoveFromGroup)
+	return editParameterGroupMember(s, "parameters.groups.removeMember", args, (*app.Session).DetachParameterFromGroup)
 }
 
-// editParameterGroupMember resolves the group and the parameter, applies one
-// membership edit, and returns the updated group.
-func editParameterGroupMember(s *app.Session, method string, args json.RawMessage, edit func(*param.Parameters, param.ID, string) error) (json.RawMessage, error) {
+// editParameterGroupMember resolves the group and the parameter (wire-strict:
+// both must exist), applies one membership edit through the shared Session
+// verb, and returns the updated group.
+func editParameterGroupMember(s *app.Session, method string, args json.RawMessage, edit func(*app.Session, param.ID, string) error) (json.RawMessage, error) {
 	var in wire.ParameterGroupMemberArgs
 	if err := decode(args, &in); err != nil {
 		return nil, err
@@ -136,9 +130,8 @@ func editParameterGroupMember(s *app.Session, method string, args json.RawMessag
 	if !ok {
 		return nil, fmt.Errorf("%s: no parameter named %q", method, in.Parameter)
 	}
-	if err := edit(holder.Parameters(), p.ID(), in.InternalName); err != nil {
+	if err := edit(s, p.ID(), in.InternalName); err != nil {
 		return nil, err
 	}
-	s.RecordActiveEdit("Edit Parameter Group")
 	return json.Marshal(parameterGroupInfo(holder, g))
 }

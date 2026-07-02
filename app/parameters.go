@@ -88,7 +88,7 @@ func firstGroupDisplayName(ps *param.Parameters, id param.ID) string {
 		return ""
 	}
 	if g, ok := ps.GroupByKey(keys[0]); ok {
-		return g.DisplayName
+		return g.DisplayName()
 	}
 	return keys[0]
 }

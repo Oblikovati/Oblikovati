@@ -4,6 +4,7 @@ package param
 
 import (
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -16,7 +17,7 @@ func TestGroupRecordLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("AddGroup: %v", err)
 	}
-	if g.InternalName() != "com.example:bracket" || g.DisplayName != "Bracket" || g.ClientID != "com.example" {
+	if g.InternalName() != "com.example:bracket" || g.DisplayName() != "Bracket" || g.ClientID != "com.example" {
 		t.Fatalf("group record = %+v, want key/display/client kept", g)
 	}
 	if _, err := ps.AddGroup("com.example:bracket", "", ""); err == nil {
@@ -27,8 +28,8 @@ func TestGroupRecordLifecycle(t *testing.T) {
 	}
 	// An empty display name defaults to the internal name.
 	plain, _ := ps.AddGroup("Frame", "", "")
-	if plain.DisplayName != "Frame" {
-		t.Errorf("display name = %q, want the internal-name default", plain.DisplayName)
+	if plain.DisplayName() != "Frame" {
+		t.Errorf("display name = %q, want the internal-name default", plain.DisplayName())
 	}
 
 	if err := ps.AddToGroup(a.ID(), "com.example:bracket"); err != nil {
@@ -65,9 +66,11 @@ func TestGroupRecordLifecycle(t *testing.T) {
 func TestGroupDisplayNameEditsKeepKey(t *testing.T) {
 	ps := NewParameters()
 	g, _ := ps.AddGroup("ratios", "Ratios", "")
-	g.DisplayName = "Gear Ratios"
+	if err := g.SetDisplayName("Gear Ratios"); err != nil {
+		t.Fatalf("SetDisplayName: %v", err)
+	}
 	got, ok := ps.GroupByKey("ratios")
-	if !ok || got.DisplayName != "Gear Ratios" {
+	if !ok || got.DisplayName() != "Gear Ratios" {
 		t.Errorf("group after display rename = %+v, want addressable by its key with the new display", got)
 	}
 }
@@ -152,5 +155,81 @@ func TestCopyToUser(t *testing.T) {
 	_ = cp.SetExpression("9 mm")
 	if approxScalar(src.Value().Value, 0.9) {
 		t.Error("editing the copy must not change the source")
+	}
+}
+
+// TestSetDisplayNameRefusesEmpty holds the naming rule on the aggregate so
+// every driver shares it (#1612, audit B1).
+func TestSetDisplayNameRefusesEmpty(t *testing.T) {
+	ps := NewParameters()
+	g, _ := ps.AddGroup("ratios", "Ratios", "")
+	if err := g.SetDisplayName(""); err == nil {
+		t.Fatal("SetDisplayName(\"\") must be refused")
+	}
+	if g.DisplayName() != "Ratios" {
+		t.Errorf("display name after refused rename = %q, want Ratios kept", g.DisplayName())
+	}
+}
+
+// TestDeleteGroupCascadeRefusesSickeningASurvivor: the cascade is refused when
+// a member is still read from outside the doomed set (or is a model parameter,
+// whose owning dimension survives); members that only reference each other
+// cascade fine (#1612, audit B1).
+func TestDeleteGroupCascadeRefusesSickeningASurvivor(t *testing.T) {
+	ps := NewParameters()
+	a, _ := ps.AddUserParameter("a", "1 mm")
+	if _, err := ps.AddUserParameter("outside", "2 * a"); err != nil {
+		t.Fatalf("AddUserParameter(outside): %v", err)
+	}
+	if _, err := ps.AddGroup("doomed", "", ""); err != nil {
+		t.Fatalf("AddGroup: %v", err)
+	}
+	if err := ps.AddToGroup(a.ID(), "doomed"); err != nil {
+		t.Fatalf("AddToGroup: %v", err)
+	}
+	err := ps.DeleteGroup("doomed", true)
+	if err == nil || !strings.Contains(err.Error(), "outside") {
+		t.Fatalf("cascade with an external dependent = %v, want a refusal naming \"outside\"", err)
+	}
+	if _, ok := ps.ByID(a.ID()); !ok {
+		t.Fatal("a refused cascade must leave the members in place")
+	}
+	if _, ok := ps.GroupByKey("doomed"); !ok {
+		t.Fatal("a refused cascade must leave the group in place")
+	}
+}
+
+func TestDeleteGroupCascadeAllowsInternalDependencies(t *testing.T) {
+	ps := NewParameters()
+	a, _ := ps.AddUserParameter("base", "1 mm")
+	b, _ := ps.AddUserParameter("derived", "2 * base")
+	if _, err := ps.AddGroup("doomed", "", ""); err != nil {
+		t.Fatalf("AddGroup: %v", err)
+	}
+	for _, p := range []*Parameter{a, b} {
+		if err := ps.AddToGroup(p.ID(), "doomed"); err != nil {
+			t.Fatalf("AddToGroup: %v", err)
+		}
+	}
+	if err := ps.DeleteGroup("doomed", true); err != nil {
+		t.Fatalf("cascade over an internal dependency: %v", err)
+	}
+	if _, ok := ps.ByID(a.ID()); ok {
+		t.Error("cascade must delete the members")
+	}
+}
+
+func TestDeleteGroupCascadeRefusesModelParameterMember(t *testing.T) {
+	ps := NewParameters()
+	dim, _ := ps.AddModelParameter("d0", "2 mm")
+	if _, err := ps.AddGroup("doomed", "", ""); err != nil {
+		t.Fatalf("AddGroup: %v", err)
+	}
+	if err := ps.AddToGroup(dim.ID(), "doomed"); err != nil {
+		t.Fatalf("AddToGroup: %v", err)
+	}
+	err := ps.DeleteGroup("doomed", true)
+	if err == nil || !strings.Contains(err.Error(), "feature dimension") {
+		t.Fatalf("cascade over a model parameter = %v, want a refusal naming its feature dimension", err)
 	}
 }

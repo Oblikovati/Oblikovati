@@ -240,8 +240,8 @@ func parameterGroupsRecipeOf(params *param.Parameters) []parameterGroupRecipe {
 	var out []parameterGroupRecipe
 	for _, g := range params.Groups() {
 		gr := parameterGroupRecipe{InternalName: g.InternalName(), ClientID: g.ClientID}
-		if g.DisplayName != g.InternalName() {
-			gr.DisplayName = g.DisplayName
+		if g.DisplayName() != g.InternalName() {
+			gr.DisplayName = g.DisplayName()
 		}
 		for _, id := range params.GroupMembers(g.InternalName()) {
 			if p, ok := params.ByID(id); ok {

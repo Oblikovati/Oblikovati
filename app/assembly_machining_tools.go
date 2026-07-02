@@ -72,8 +72,7 @@ func (t *AssemblyRevolveTool) CanCommit() bool {
 }
 
 func (t *AssemblyRevolveTool) Commit(s *Session) error {
-	asm, err := activeAssembly(s)
-	if err != nil {
+	if _, err := activeAssembly(s); err != nil {
 		return err
 	}
 	if t.profile == nil {
@@ -81,11 +80,8 @@ func (t *AssemblyRevolveTool) Commit(s *Session) error {
 	}
 	axis := feature.NewDatumAxis(math.P3(0, 0, 0), signedAxisDir(t.axisIndex))
 	a := t.angle
-	af := asm.AddFeature(feature.NewAssemblyRevolveFeature(t.profile.Sketch, t.profile.ProfileIndex, axis, assemblyExtrudeOps[t.operation], func() float64 { return a }))
-	af.SetName(asm.Features().UniqueName(af.Kind()))
-	asm.RecomputeFeatures()
-	s.recordEdit(asm, "Revolve") // the feature program persists + undoes (#785)
-	return nil
+	_, err := s.CommitAssemblyFeature(feature.NewAssemblyRevolveFeature(t.profile.Sketch, t.profile.ProfileIndex, axis, assemblyExtrudeOps[t.operation], func() float64 { return a }), "Revolve")
+	return err
 }
 
 func (t *AssemblyRevolveTool) Params() ToolParams {
@@ -126,19 +122,15 @@ func (t *AssemblyHoleTool) Prompt(*Session) string {
 func (t *AssemblyHoleTool) CanCommit() bool { return t.diameter > 0 && t.depth > 0 }
 
 func (t *AssemblyHoleTool) Commit(s *Session) error {
-	asm, err := activeAssembly(s)
-	if err != nil {
+	if _, err := activeAssembly(s); err != nil {
 		return err
 	}
 	hole, err := feature.NewAssemblyHoleFeature(math.P3(t.cx, t.cy, t.cz), signedAxisDir(t.axisIndex), t.diameter, t.depth)
 	if err != nil {
 		return err
 	}
-	af := asm.AddFeature(hole)
-	af.SetName(asm.Features().UniqueName(af.Kind()))
-	asm.RecomputeFeatures()
-	s.recordEdit(asm, "Hole") // the feature program persists + undoes (#785)
-	return nil
+	_, cerr := s.CommitAssemblyFeature(hole, "Hole")
+	return cerr
 }
 
 func (t *AssemblyHoleTool) Params() ToolParams {

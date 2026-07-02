@@ -5,6 +5,7 @@ package param
 import (
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 // Custom parameter groups (the reference API's CustomParameterGroups, M02-F05,
@@ -15,16 +16,31 @@ import (
 // touches nothing else, and deleting a parameter detaches it everywhere.
 
 // ParameterGroup is one custom group record. The internal name is fixed at
-// creation; DisplayName and the membership live beside it. ClientID records
-// which add-in created the group (empty for user-created groups).
+// creation; the display name is editable through [ParameterGroup.SetDisplayName]
+// and the membership lives beside it. ClientID records which add-in created the
+// group (empty for user-created groups).
 type ParameterGroup struct {
 	internalName string
-	DisplayName  string
+	displayName  string
 	ClientID     string
 }
 
 // InternalName returns the immutable key the group is addressed by.
 func (g *ParameterGroup) InternalName() string { return g.internalName }
+
+// DisplayName returns the group's editable presentation name.
+func (g *ParameterGroup) DisplayName() string { return g.displayName }
+
+// SetDisplayName edits the presentation name. An empty name is refused here, on
+// the aggregate, so the rule holds for every driver — it used to live only in
+// the wire handler while the UI path skipped it (#1612, audit B1).
+func (g *ParameterGroup) SetDisplayName(name string) error {
+	if name == "" {
+		return fmt.Errorf("param: display name for group %q must not be empty", g.internalName)
+	}
+	g.displayName = name
+	return nil
+}
 
 // Groups returns the custom groups in creation order.
 func (ps *Parameters) Groups() []*ParameterGroup {
@@ -53,19 +69,27 @@ func (ps *Parameters) AddGroup(internalName, displayName, clientID string) (*Par
 	if displayName == "" {
 		displayName = internalName
 	}
-	g := &ParameterGroup{internalName: internalName, DisplayName: displayName, ClientID: clientID}
+	g := &ParameterGroup{internalName: internalName, displayName: displayName, ClientID: clientID}
 	ps.groups = append(ps.groups, g)
 	return g, nil
 }
 
 // DeleteGroup removes a group. deleteParameters opts into the cascade that
 // also deletes the member parameters; without it the members stay, only the
-// group goes.
+// group goes. The cascade may not sicken a survivor: it is refused when a
+// member is still read by a parameter outside the doomed set, or is a model
+// parameter whose owning feature dimension survives (#1612, audit B1 — the
+// same invariant as [Parameters.Delete], stated once for the batch).
 func (ps *Parameters) DeleteGroup(key string, deleteParameters bool) error {
 	if _, ok := ps.GroupByKey(key); !ok {
 		return fmt.Errorf(errNoGroup, key)
 	}
 	members := ps.GroupMembers(key)
+	if deleteParameters {
+		if err := ps.refuseCascadeBlockers(key, members); err != nil {
+			return err
+		}
+	}
 	for _, id := range members {
 		delete(ps.memberships[id], key)
 	}
@@ -74,6 +98,39 @@ func (ps *Parameters) DeleteGroup(key string, deleteParameters bool) error {
 	}
 	ps.dropGroup(key)
 	return nil
+}
+
+// refuseCascadeBlockers rejects a member cascade that would leave a surviving
+// parameter (or a feature dimension) referencing a deleted member.
+func (ps *Parameters) refuseCascadeBlockers(key string, members []ID) error {
+	doomed := map[ID]bool{}
+	for _, id := range members {
+		doomed[id] = true
+	}
+	for _, id := range members {
+		// GroupMembers walks ps.order, so every member is live.
+		p := ps.byID[id]
+		if blockers := ps.survivorBlockers(p, doomed); len(blockers) > 0 {
+			return fmt.Errorf("param: cannot cascade-delete group %q: member %q is in use by [%s]; remove those references first",
+				key, p.name, strings.Join(blockers, ", "))
+		}
+	}
+	return nil
+}
+
+// survivorBlockers names what outside the doomed set still reads p: dependents
+// that are not themselves being deleted, or p's owning feature dimension.
+func (ps *Parameters) survivorBlockers(p *Parameter, doomed map[ID]bool) []string {
+	var names []string
+	for _, dep := range ps.Dependents(p.id) {
+		if d, ok := ps.byID[dep]; ok && !doomed[dep] {
+			names = append(names, d.name)
+		}
+	}
+	if len(names) == 0 && p.kind == ModelParam {
+		names = []string{"its feature dimension"}
+	}
+	return names
 }
 
 // deleteMembers removes the cascade-deleted member parameters (a member may

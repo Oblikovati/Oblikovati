@@ -70,15 +70,12 @@ func assemblyFeaturesAdd(s *app.Session, raw json.RawMessage) (json.RawMessage, 
 	if err != nil {
 		return nil, err
 	}
-	af := asm.AddFeature(cut)
-	af.SetName(asm.Features().UniqueName(af.Kind()))
-	asm.RecomputeFeatures()
-	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)})
+	return commitAssemblyFeatureResult(s, asm, cut, "Add Assembly Feature")
 }
 
 // assemblyFeaturesAddProxyCut adds a feature whose tool is the proxied geometry of the
-// source occurrence, re-resolved each rebuild. The source is excluded from the new
-// feature's default participation — a component does not machine itself.
+// source occurrence, re-resolved each rebuild. The self-machining exclusion (a component
+// does not machine itself) is the aggregate's AddFeature policy (#1612).
 func assemblyFeaturesAddProxyCut(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	asm, err := modelaccess.ActiveAssembly(s)
 	if err != nil {
@@ -96,11 +93,7 @@ func assemblyFeaturesAddProxyCut(s *app.Session, raw json.RawMessage) (json.RawM
 	if !ok {
 		return nil, fmt.Errorf("%s: no occurrence with id %d in the assembly", wire.MethodAssemblyFeaturesAddProxyCut, in.Source)
 	}
-	af := asm.AddFeature(feature.NewAssemblyProxyCutFeature(source, op))
-	af.RemoveParticipant(source)
-	af.SetName(asm.Features().UniqueName(af.Kind()))
-	asm.RecomputeFeatures()
-	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)})
+	return commitAssemblyFeatureResult(s, asm, feature.NewAssemblyProxyCutFeature(source, op), "Add Assembly Feature")
 }
 
 // assemblyFeaturesAddExtrude extrudes a closed sketch profile (authored on an assembly
@@ -126,10 +119,7 @@ func assemblyFeaturesAddExtrude(s *app.Session, raw json.RawMessage) (json.RawMe
 		return nil, fmt.Errorf("%s: distance %g must be positive", wire.MethodAssemblyFeaturesAddExtrude, in.Distance)
 	}
 	distance := in.Distance
-	af := asm.AddFeature(feature.NewAssemblyExtrudeFeature(sk, in.ProfileIndex, op, func() float64 { return distance }))
-	af.SetName(asm.Features().UniqueName(af.Kind()))
-	asm.RecomputeFeatures()
-	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)})
+	return commitAssemblyFeatureResult(s, asm, feature.NewAssemblyExtrudeFeature(sk, in.ProfileIndex, op, func() float64 { return distance }), "Extrude")
 }
 
 // assemblyFeaturesAddRevolve revolves a closed sketch profile (authored on an assembly
@@ -157,10 +147,7 @@ func assemblyFeaturesAddRevolve(s *app.Session, raw json.RawMessage) (json.RawMe
 		return nil, err
 	}
 	angle := in.Angle
-	af := asm.AddFeature(feature.NewAssemblyRevolveFeature(sk, in.ProfileIndex, axis, op, func() float64 { return angle }))
-	af.SetName(asm.Features().UniqueName(af.Kind()))
-	asm.RecomputeFeatures()
-	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)})
+	return commitAssemblyFeatureResult(s, asm, feature.NewAssemblyRevolveFeature(sk, in.ProfileIndex, axis, op, func() float64 { return angle }), "Add Assembly Feature")
 }
 
 // revolveAxisFromArgs builds the assembly-space revolve axis from the request's origin and
@@ -199,10 +186,7 @@ func assemblyFeaturesAddSweep(s *app.Session, raw json.RawMessage) (json.RawMess
 	if err != nil {
 		return nil, err
 	}
-	af := asm.AddFeature(feature.NewAssemblySweepFeature(sk, in.ProfileIndex, op, path))
-	af.SetName(asm.Features().UniqueName(af.Kind()))
-	asm.RecomputeFeatures()
-	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)})
+	return commitAssemblyFeatureResult(s, asm, feature.NewAssemblySweepFeature(sk, in.ProfileIndex, op, path), "Sweep")
 }
 
 // assemblySweepPath converts a wire path polyline to assembly-space points, requiring at
@@ -236,10 +220,7 @@ func assemblyFeaturesAddChamfer(s *app.Session, raw json.RawMessage) (json.RawMe
 		return nil, err
 	}
 	dist := in.Distance
-	af := asm.AddFeature(feature.NewAssemblyChamferFeature(suffixes, func() float64 { return dist }))
-	af.SetName(asm.Features().UniqueName(af.Kind()))
-	asm.RecomputeFeatures()
-	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)})
+	return commitAssemblyFeatureResult(s, asm, feature.NewAssemblyChamferFeature(suffixes, func() float64 { return dist }), "Chamfer")
 }
 
 // assemblyFeaturesAddFillet rounds picked component edges on every participant.
@@ -260,10 +241,7 @@ func assemblyFeaturesAddFillet(s *app.Session, raw json.RawMessage) (json.RawMes
 		return nil, err
 	}
 	r := in.Radius
-	af := asm.AddFeature(feature.NewAssemblyFilletFeature(suffixes, func() float64 { return r }))
-	af.SetName(asm.Features().UniqueName(af.Kind()))
-	asm.RecomputeFeatures()
-	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)})
+	return commitAssemblyFeatureResult(s, asm, feature.NewAssemblyFilletFeature(suffixes, func() float64 { return r }), "Fillet")
 }
 
 // assemblyFeaturesAddMoveFace translates picked component faces on every participant.
@@ -281,10 +259,7 @@ func assemblyFeaturesAddMoveFace(s *app.Session, raw json.RawMessage) (json.RawM
 		return nil, err
 	}
 	delta := math.V3(in.Translation[0], in.Translation[1], in.Translation[2])
-	af := asm.AddFeature(feature.NewAssemblyMoveFaceFeature(suffixes, delta))
-	af.SetName(asm.Features().UniqueName(af.Kind()))
-	asm.RecomputeFeatures()
-	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)})
+	return commitAssemblyFeatureResult(s, asm, feature.NewAssemblyMoveFaceFeature(suffixes, delta), "Move Face")
 }
 
 // assemblyEdgeSuffixes resolves each edge ref to a component-local lineage suffix, after
@@ -383,10 +358,7 @@ func assemblyFeaturesAddHole(s *app.Session, raw json.RawMessage) (json.RawMessa
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", wire.MethodAssemblyFeaturesAddHole, err)
 	}
-	af := asm.AddFeature(hole)
-	af.SetName(asm.Features().UniqueName(af.Kind()))
-	asm.RecomputeFeatures()
-	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)})
+	return commitAssemblyFeatureResult(s, asm, hole, "Hole")
 }
 
 // assemblyFeaturesSetParticipants replaces a feature's participation set.
@@ -407,9 +379,10 @@ func assemblyFeaturesSetParticipants(s *app.Session, raw json.RawMessage) (json.
 	if err != nil {
 		return nil, err
 	}
-	af.SetParticipants(occs)
-	asm.RecomputeFeatures()
-	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)})
+	return commitAssemblyProgramChange(s, "Edit Participants", func(*compdef.AssemblyComponentDefinition) error {
+		af.SetParticipants(occs)
+		return nil
+	}, func() any { return wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)} })
 }
 
 // assemblyFeaturesSetParticipantPaths restricts a feature to specific nested occurrence
@@ -431,9 +404,10 @@ func assemblyFeaturesSetParticipantPaths(s *app.Session, raw json.RawMessage) (j
 	if err != nil {
 		return nil, err
 	}
-	af.SetParticipantPaths(paths)
-	asm.RecomputeFeatures()
-	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)})
+	return commitAssemblyProgramChange(s, "Edit Participants", func(*compdef.AssemblyComponentDefinition) error {
+		af.SetParticipantPaths(paths)
+		return nil
+	}, func() any { return wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)} })
 }
 
 // resolveParticipantPaths validates each instance-name path resolves to an occurrence
@@ -478,9 +452,10 @@ func assemblyFeaturesEdit(s *app.Session, raw json.RawMessage) (json.RawMessage,
 	if err != nil {
 		return nil, err
 	}
-	apply()
-	asm.RecomputeFeatures()
-	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)})
+	return commitAssemblyProgramChange(s, "Edit Assembly Feature", func(*compdef.AssemblyComponentDefinition) error {
+		apply()
+		return nil
+	}, func() any { return wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)} })
 }
 
 // assemblyFeaturesSetSuppressed suppresses or unsuppresses the named features in batch.
@@ -493,13 +468,14 @@ func assemblyFeaturesSetSuppressed(s *app.Session, raw json.RawMessage) (json.Ra
 	if err := decode(raw, &in); err != nil {
 		return nil, err
 	}
-	if in.Suppressed {
-		asm.Features().SuppressFeatures(in.IDs...)
-	} else {
-		asm.Features().UnsuppressFeatures(in.IDs...)
-	}
-	asm.RecomputeFeatures()
-	return json.Marshal(assemblyFeaturesResult(asm))
+	return commitAssemblyProgramChange(s, "Suppress Assembly Feature", func(a *compdef.AssemblyComponentDefinition) error {
+		if in.Suppressed {
+			a.Features().SuppressFeatures(in.IDs...)
+		} else {
+			a.Features().UnsuppressFeatures(in.IDs...)
+		}
+		return nil
+	}, func() any { return assemblyFeaturesResult(asm) })
 }
 
 // assemblyGetEndOfFeatures returns the active assembly's rollback-marker state.
@@ -522,9 +498,29 @@ func assemblySetEndOfFeatures(s *app.Session, raw json.RawMessage) (json.RawMess
 	if err := decode(raw, &in); err != nil {
 		return nil, err
 	}
-	asm.Features().SetEndOfFeatures(in.Position)
-	asm.RecomputeFeatures()
-	return json.Marshal(assemblyFeaturesResult(asm))
+	return commitAssemblyProgramChange(s, "Set End of Features", func(a *compdef.AssemblyComponentDefinition) error {
+		a.Features().SetEndOfFeatures(in.Position)
+		return nil
+	}, func() any { return assemblyFeaturesResult(asm) })
+}
+
+// commitAssemblyFeatureResult finishes an add handler through the shared
+// Session verb and renders the hosted feature (#1612).
+func commitAssemblyFeatureResult(s *app.Session, asm *compdef.AssemblyComponentDefinition, f feature.Feature, label string) (json.RawMessage, error) {
+	af, err := s.CommitAssemblyFeature(f, label)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)})
+}
+
+// commitAssemblyProgramChange finishes an in-place program edit through the
+// shared Session verb and renders the refreshed result (#1612).
+func commitAssemblyProgramChange(s *app.Session, label string, mutate func(*compdef.AssemblyComponentDefinition) error, render func() any) (json.RawMessage, error) {
+	if err := s.CommitAssemblyFeatureChange(label, mutate); err != nil {
+		return nil, err
+	}
+	return json.Marshal(render())
 }
 
 // assemblyCutFromArgs builds the assembly-space box-tool cut feature from the request.
