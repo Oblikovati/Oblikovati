@@ -58,6 +58,26 @@ func (t *FitSurfaceTool) CanCommit() bool {
 	return t.cloud != nil && t.degree >= 1 && t.nu > t.degree && t.nv > t.degree
 }
 
+// addFitSurface builds the fit feature over the cloud's cropped points into fs — the shared
+// constructor used by both Commit (the part's engine) and DraftFeature (a scratch engine), so
+// the two cannot drift.
+func (t *FitSurfaceTool) addFitSurface(fs *feature.PartFeatures, pts []math.Point3) *feature.PartFeature {
+	return feature.NewFitFeatures(fs).Add(pts, t.degree, t.nu, t.nv)
+}
+
+// DraftFeature implements [PartFeatureTool] (#1626): the fitted surface it would commit, built
+// into a scratch engine so the commit gate and preview can evaluate it without touching the
+// part. CanCommit guarantees the cloud is selected before the points are read.
+func (t *FitSurfaceTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	pts := t.cloud.CroppedModelPoints()
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addFitSurface(fs, pts), nil
+	})
+}
+
 // Commit fits the surface to the cloud region, recomputes, and reports the deviation to the scan.
 func (t *FitSurfaceTool) Commit(s *Session) error {
 	part, err := activePart(s)
@@ -68,7 +88,7 @@ func (t *FitSurfaceTool) Commit(s *Session) error {
 		return errors.New("fit surface: select a point cloud region first")
 	}
 	pts := t.cloud.CroppedModelPoints()
-	t.added = feature.NewFitFeatures(part.Features()).Add(pts, t.degree, t.nu, t.nv)
+	t.added = t.addFitSurface(part.Features(), pts)
 	part.Recompute()
 	s.recordEdit(part, "Fit Surface")
 	if !t.added.Health().OK() {

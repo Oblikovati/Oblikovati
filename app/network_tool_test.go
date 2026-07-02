@@ -96,18 +96,37 @@ func TestNetworkToolCommitReportsBadGrid(t *testing.T) {
 	if !tool.CanCommit() {
 		t.Fatal("two each way should be committable")
 	}
-	s.StartTool(tool)
-	// The disjoint squares do not form a grid, so the feature is unhealthy and OK surfaces the error.
+	s.StartFeatureTool(tool)
+	// The disjoint squares do not form a grid, so the draft previews sick and the commit gate
+	// refuses OK — the unhealthy feature never enters the design (#1594, #1626).
 	if err := s.OK(); err == nil {
 		t.Error("committing non-intersecting profiles should report an error")
 	}
-	if tool.AddedFeature() == nil {
-		t.Error("the (unhealthy) feature should still have been created")
+	if tool.AddedFeature() != nil {
+		t.Error("the sick network must be blocked by the commit gate, not committed")
+	}
+	if def.Features().Count() != 0 {
+		t.Errorf("features count = %d, want 0 — a sick node must never persist in the tree", def.Features().Count())
 	}
 }
 
 func TestNetworkToolAcceptsProfiles(t *testing.T) {
 	if k := NewNetworkTool().AcceptedKinds(); len(k) != 1 || k[0] != SelectProfile {
 		t.Errorf("AcceptedKinds = %v, want [SelectProfile]", k)
+	}
+}
+
+// TestNetworkToolDraftFeature pins the #1626 commit-gate seam: no draft below two curves each
+// way, a non-nil draft once the grid picks are complete.
+func TestNetworkToolDraftFeature(t *testing.T) {
+	_, def := partWithSketches(t)
+	tool := NewNetworkTool()
+	if _, ok := tool.DraftFeature(nil); ok {
+		t.Error("DraftFeature must not build before two curves each way are picked")
+	}
+	tool.uProfiles = []ProfileHandle{addSquareProfile(def, 1, 0), addSquareProfile(def, 1, 4)}
+	tool.vProfiles = []ProfileHandle{addSquareProfile(def, 1, 8), addSquareProfile(def, 1, 12)}
+	if draft, ok := tool.DraftFeature(nil); !ok || draft == nil {
+		t.Fatalf("DraftFeature = (%v, %v), want a non-nil draft once commit-ready", draft, ok)
 	}
 }

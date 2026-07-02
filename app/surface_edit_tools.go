@@ -93,6 +93,25 @@ func (t *RuledSurfaceTool) Params() ToolParams {
 // CanCommit reports whether a profile is picked and the distance is positive.
 func (t *RuledSurfaceTool) CanCommit() bool { return t.profile != nil && t.distance > 0 }
 
+// addRuledSurface builds the ruled-surface feature into fs — the shared constructor used by
+// both Commit (the part's engine) and DraftFeature (a scratch engine), so the two cannot drift.
+func (t *RuledSurfaceTool) addRuledSurface(fs *feature.PartFeatures) *feature.PartFeature {
+	d := t.distance
+	return feature.NewRuledSurfaceFeatures(fs).
+		AddByDistance(t.profile.Sketch, t.profile.ProfileIndex, t.kind, func() float64 { return d })
+}
+
+// DraftFeature implements [PartFeatureTool] (#1626): the ruled band it would commit, built into
+// a scratch engine so the commit gate and preview can evaluate it without touching the part.
+func (t *RuledSurfaceTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addRuledSurface(fs), nil
+	})
+}
+
 // Commit rules the picked profile into a band and recomputes. A deferred direction mode
 // (tangent/perpendicular) reads as Warning, which is not an error — only Sick is.
 func (t *RuledSurfaceTool) Commit(s *Session) error {
@@ -100,9 +119,7 @@ func (t *RuledSurfaceTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	d := t.distance
-	t.added = feature.NewRuledSurfaceFeatures(part.Features()).
-		AddByDistance(t.profile.Sketch, t.profile.ProfileIndex, t.kind, func() float64 { return d })
+	t.added = t.addRuledSurface(part.Features())
 	part.Recompute()
 	s.recordEdit(part, "Ruled Surface")
 	if t.added.Health().Status == health.Sick {
@@ -152,14 +169,31 @@ func (t *SurfaceOffsetTool) Params() ToolParams {
 // CanCommit reports whether the offset is non-zero (sign is a valid side choice).
 func (t *SurfaceOffsetTool) CanCommit() bool { return t.distance != 0 }
 
+// addSurfaceOffset builds the surface-offset feature into fs — the shared constructor used by
+// both Commit (the part's engine) and DraftFeature (a scratch engine), so the two cannot drift.
+func (t *SurfaceOffsetTool) addSurfaceOffset(fs *feature.PartFeatures) *feature.PartFeature {
+	d := t.distance
+	return feature.NewSurfaceOffsetFeatures(fs).AddByDistance(func() float64 { return d })
+}
+
+// DraftFeature implements [PartFeatureTool] (#1626): the offset surface it would commit, built
+// into a scratch engine so the commit gate and preview can evaluate it without touching the part.
+func (t *SurfaceOffsetTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addSurfaceOffset(fs), nil
+	})
+}
+
 // Commit offsets the running surface and recomputes.
 func (t *SurfaceOffsetTool) Commit(s *Session) error {
 	part, err := activePart(s)
 	if err != nil {
 		return err
 	}
-	d := t.distance
-	t.added = feature.NewSurfaceOffsetFeatures(part.Features()).AddByDistance(func() float64 { return d })
+	t.added = t.addSurfaceOffset(part.Features())
 	part.Recompute()
 	s.recordEdit(part, "Offset Surface")
 	if !t.added.Health().OK() {
@@ -210,13 +244,30 @@ func (t *MidSurfaceTool) Params() ToolParams {
 // CanCommit reports whether the threshold is positive.
 func (t *MidSurfaceTool) CanCommit() bool { return t.maxThickness > 0 }
 
+// addMidSurface builds the mid-surface feature into fs — the shared constructor used by both
+// Commit (the part's engine) and DraftFeature (a scratch engine), so the two cannot drift.
+func (t *MidSurfaceTool) addMidSurface(fs *feature.PartFeatures) *feature.PartFeature {
+	return feature.NewMidSurfaceFeatures(fs).AddByThickness(t.maxThickness)
+}
+
+// DraftFeature implements [PartFeatureTool] (#1626): the mid-surface it would commit, built into
+// a scratch engine so the commit gate and preview can evaluate it without touching the part.
+func (t *MidSurfaceTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addMidSurface(fs), nil
+	})
+}
+
 // Commit extracts the mid-surfaces from the running solid and recomputes.
 func (t *MidSurfaceTool) Commit(s *Session) error {
 	part, err := activePart(s)
 	if err != nil {
 		return err
 	}
-	t.added = feature.NewMidSurfaceFeatures(part.Features()).AddByThickness(t.maxThickness)
+	t.added = t.addMidSurface(part.Features())
 	part.Recompute()
 	s.recordEdit(part, "Mid-Surface")
 	if !t.added.Health().OK() {

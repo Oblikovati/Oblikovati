@@ -53,13 +53,30 @@ func (t *ExtendSurfaceTool) Params() ToolParams {
 // CanCommit reports whether the extension distance is positive.
 func (t *ExtendSurfaceTool) CanCommit() bool { return t.distance > 0 }
 
+// addExtendSurface builds the extend feature into fs — the shared constructor used by both
+// Commit (the part's engine) and DraftFeature (a scratch engine), so the two cannot drift.
+func (t *ExtendSurfaceTool) addExtendSurface(fs *feature.PartFeatures) *feature.PartFeature {
+	return feature.NewExtendSurfaceFeatures(fs).Add(matchEdgeOptions[t.edge], t.distance, t.continuation+1)
+}
+
+// DraftFeature implements [PartFeatureTool] (#1626): the extension it would commit, built into
+// a scratch engine so the commit gate and preview can evaluate it without touching the part.
+func (t *ExtendSurfaceTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addExtendSurface(fs), nil
+	})
+}
+
 // Commit extends the running surface and recomputes.
 func (t *ExtendSurfaceTool) Commit(s *Session) error {
 	part, err := activePart(s)
 	if err != nil {
 		return err
 	}
-	t.added = feature.NewExtendSurfaceFeatures(part.Features()).Add(matchEdgeOptions[t.edge], t.distance, t.continuation+1)
+	t.added = t.addExtendSurface(part.Features())
 	part.Recompute()
 	s.recordEdit(part, "Extend Surface")
 	if !t.added.Health().OK() {

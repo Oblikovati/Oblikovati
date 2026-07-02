@@ -124,29 +124,16 @@ var allowedPlainStartTools = map[string]struct{}{
 // StartFeatureTool, and delete the entry. Never add to it.
 var gapPlainStartTools = map[string]struct{}{
 	"BossTool":                       {},
-	"BridgeSurfaceTool":              {},
 	"CombineTool":                    {},
 	"DecalTool":                      {},
 	"DirectEditTool":                 {},
-	"ExtendSurfaceTool":              {},
-	"FairSurfaceTool":                {},
 	"FeatureCircPatternTool":         {},
 	"FeatureMirrorTool":              {},
 	"FeatureRectPatternTool":         {},
 	"FeatureSketchDrivenPatternTool": {},
-	"FillSurfaceTool":                {},
-	"FitSurfaceTool":                 {},
 	"HullTool":                       {},
-	"MatchTool":                      {},
-	"MidSurfaceTool":                 {},
 	"MoveBodyTool":                   {},
 	"MoveFaceTool":                   {},
-	"NetworkTool":                    {},
-	"NurbsPlaneTool":                 {},
-	"RuleFilletTool":                 {},
-	"RuledSurfaceTool":               {},
-	"SurfaceOffsetTool":              {},
-	"SurfaceRebuildTool":             {},
 }
 
 // plainStartPatterns match the two ways a commands file feeds a constructor to

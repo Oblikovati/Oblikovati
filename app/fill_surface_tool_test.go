@@ -126,3 +126,17 @@ func TestFillSurfaceViaRibbonCommand(t *testing.T) {
 		_ = tool.AddedFeature() // nil until committed
 	}
 }
+
+// TestFillSurfaceToolDraftFeature pins the #1626 commit-gate seam: no draft below three sides,
+// a non-nil draft once commit-ready.
+func TestFillSurfaceToolDraftFeature(t *testing.T) {
+	tool := NewFillSurfaceTool()
+	tool.sides = 2
+	if _, ok := tool.DraftFeature(nil); ok {
+		t.Error("DraftFeature must not build below three sides")
+	}
+	tool.sides = 4
+	if draft, ok := tool.DraftFeature(nil); !ok || draft == nil {
+		t.Fatalf("DraftFeature = (%v, %v), want a non-nil draft once commit-ready", draft, ok)
+	}
+}

@@ -76,3 +76,17 @@ func TestBridgeSurfaceViaRibbonCommand(t *testing.T) {
 		t.Errorf("Surface.Bridge started tool %q, want Bridge Surface", got)
 	}
 }
+
+// TestBridgeSurfaceToolDraftFeature pins the #1626 commit-gate seam: no draft with an
+// out-of-range continuity, a non-nil draft once commit-ready.
+func TestBridgeSurfaceToolDraftFeature(t *testing.T) {
+	tool := NewBridgeSurfaceTool()
+	tool.SetContinuity(3, 2) // 3 is past G2: out of range
+	if _, ok := tool.DraftFeature(nil); ok {
+		t.Error("DraftFeature must not build with an out-of-range continuity")
+	}
+	tool.SetContinuity(2, 2)
+	if draft, ok := tool.DraftFeature(nil); !ok || draft == nil {
+		t.Fatalf("DraftFeature = (%v, %v), want a non-nil draft once commit-ready", draft, ok)
+	}
+}
