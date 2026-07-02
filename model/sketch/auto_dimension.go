@@ -130,7 +130,7 @@ func miterJoin(s *Sketch, a, b *Line) {
 	if !ok {
 		return
 	}
-	join := s.newPoint(lerpLine(a, t))
+	join := s.newPoint(a.A.Position().Lerp(a.B.Position(), t))
 	a.B = join
 	b.A = join
 }

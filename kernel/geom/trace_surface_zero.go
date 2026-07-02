@@ -148,7 +148,7 @@ func bisectEdge(s Surface, f scalarField, ua, va, fa, ub, vb float64) math.Point
 	lo, hi := 0.0, 1.0
 	for k := 0; k < traceBisectIter; k++ {
 		mid := (lo + hi) / 2
-		um, vm := lerp(ua, ub, mid), lerp(va, vb, mid)
+		um, vm := math.Lerp(ua, ub, mid), math.Lerp(va, vb, mid)
 		fm := f(um, vm)
 		if fm == 0 {
 			return s.PointAt(um, vm)
@@ -160,11 +160,8 @@ func bisectEdge(s Surface, f scalarField, ua, va, fa, ub, vb float64) math.Point
 		}
 	}
 	m := (lo + hi) / 2
-	return s.PointAt(lerp(ua, ub, m), lerp(va, vb, m))
+	return s.PointAt(math.Lerp(ua, ub, m), math.Lerp(va, vb, m))
 }
-
-// lerp linearly interpolates between a and b at t.
-func lerp(a, b, t float64) float64 { return a + (b-a)*t }
 
 // chainSegments3D links marching-squares segments into ordered polylines by matching
 // shared endpoints within tolerance.

@@ -73,11 +73,7 @@ func clipToCircle(a, b gmath.Point2, cx, cy, r float64) (gmath.Point2, gmath.Poi
 	if t0 >= t1 {
 		return a, b, false
 	}
-	return lerp2(a, dx, dy, t0), lerp2(a, dx, dy, t1), true
-}
-
-func lerp2(a gmath.Point2, dx, dy, t float64) gmath.Point2 {
-	return gmath.P2(a.X+gmath.Scalar(dx*t), a.Y+gmath.Scalar(dy*t))
+	return a.Lerp(b, t0), a.Lerp(b, t1), true
 }
 
 // breakBand is a break view's removed band. g0/g1 bound it (g0<g1) along the break axis in the
@@ -148,7 +144,7 @@ func clipHalfAxis(a, b gmath.Point2, axisX bool, limit float64, keepLE bool) (gm
 		return a, b, false
 	}
 	t := (limit - sa) / (sb - sa)
-	cross := lerp2(a, float64(b.X-a.X), float64(b.Y-a.Y), t)
+	cross := a.Lerp(b, t)
 	if ina {
 		return a, cross, true
 	}

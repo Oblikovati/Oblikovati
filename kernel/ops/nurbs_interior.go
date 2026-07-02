@@ -198,18 +198,10 @@ func regionSagitta(s geom.Surface, umin, umax, vmin, vmax float64) float64 {
 	return max
 }
 
-// bilerp bilinearly interpolates the four corners at (fu, fv) ∈ [0,1]².
+// bilerp bilinearly interpolates the four corners at (fu, fv) ∈ [0,1]²:
+// two nested [math.Point3.Lerp] passes (#1654), no bespoke arithmetic.
 func bilerp(c00, c10, c01, c11 math.Point3, fu, fv float64) math.Point3 {
-	x := lerp2(c00.X, c10.X, c01.X, c11.X, fu, fv)
-	y := lerp2(c00.Y, c10.Y, c01.Y, c11.Y, fu, fv)
-	z := lerp2(c00.Z, c10.Z, c01.Z, c11.Z, fu, fv)
-	return math.P3(x, y, z)
-}
-
-func lerp2(a00, a10, a01, a11 math.Scalar, fu, fv float64) math.Scalar {
-	bottom := float64(a00) + (float64(a10)-float64(a00))*fu
-	top := float64(a01) + (float64(a11)-float64(a01))*fu
-	return math.Scalar(bottom + (top-bottom)*fv)
+	return c00.Lerp(c10, fu).Lerp(c01.Lerp(c11, fu), fv)
 }
 
 // clearOfTrim reports whether p is inside the trim AND at least `margin` (in u and v) from the

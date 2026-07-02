@@ -137,7 +137,7 @@ func TestTraceHelpersDirect(t *testing.T) {
 	if finiteOr(stdmath.Inf(1), 7) != 7 || finiteOr(3, 7) != 3 {
 		t.Error("finiteOr should fall back only for infinities")
 	}
-	if lerp(0, 10, 0.25) != 2.5 {
+	if math.Lerp(0, 10, 0.25) != 2.5 {
 		t.Error("lerp wrong")
 	}
 	if straddlesZero(1, 2) || !straddlesZero(-1, 2) || !straddlesZero(2, -1) {

@@ -170,18 +170,13 @@ func (c Camera) Facing(target math.Point3, normal, up math.Vector3) Camera {
 // viewport size — the per-frame step of a camera transition (e.g. entering a sketch).
 func Lerp(a, b Camera, t float64) Camera {
 	return Camera{
-		Eye:    lerpPoint(a.Eye, b.Eye, t),
-		Target: lerpPoint(a.Target, b.Target, t),
+		Eye:    a.Eye.Lerp(b.Eye, t),
+		Target: a.Target.Lerp(b.Target, t),
 		Up:     a.Up.Add(b.Up.Sub(a.Up).Scale(t)),
 		FOV:    b.FOV,
 		Width:  b.Width,
 		Height: b.Height,
 	}
-}
-
-// lerpPoint linearly interpolates two points.
-func lerpPoint(a, b math.Point3, t float64) math.Point3 {
-	return a.TranslateBy(a.VectorTo(b).Scale(t))
 }
 
 // Dolly moves the eye toward (factor<1) or away from (factor>1) the target along the

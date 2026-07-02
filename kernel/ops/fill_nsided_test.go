@@ -31,9 +31,9 @@ func edgeNeighbour(t *testing.T, a, b, center math.Point3, reach float64) *topo.
 		w[i] = []float64{1, 1, 1, 1}
 		for j := 0; j < 4; j++ {
 			s := float64(j) / 3
-			inner := lerp3(a, b, s)
-			outer := lerp3(aOut, bOut, s)
-			ctrl[i][j] = lerp3(inner, outer, float64(i)/3)
+			inner := a.Lerp(b, s)
+			outer := aOut.Lerp(bOut, s)
+			ctrl[i][j] = inner.Lerp(outer, float64(i)/3)
 		}
 	}
 	bez := []float64{0, 0, 0, 0, 1, 1, 1, 1}
@@ -42,10 +42,6 @@ func edgeNeighbour(t *testing.T, a, b, center math.Point3, reach float64) *topo.
 		t.Fatalf("edge neighbour: %v", err)
 	}
 	return surfaceFaceBody(t, srf)
-}
-
-func lerp3(a, b math.Point3, t float64) math.Point3 {
-	return math.P3(a.X+(b.X-a.X)*math.Scalar(t), a.Y+(b.Y-a.Y)*math.Scalar(t), a.Z+(b.Z-a.Z)*math.Scalar(t))
 }
 
 // polygonNeighbours builds one outward edge-neighbour per side of the regular n-gon of radius r,
@@ -117,7 +113,7 @@ func pointToSegment(p, a, b math.Point3) float64 {
 	} else if tt > 1 {
 		tt = 1
 	}
-	return float64(p.DistanceTo(lerp3(a, b, tt)))
+	return float64(p.DistanceTo(a.Lerp(b, tt)))
 }
 
 // fillInterpolatesVertices checks the fill surface passes through every n-gon vertex (the corners

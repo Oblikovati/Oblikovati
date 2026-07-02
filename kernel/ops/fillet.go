@@ -439,8 +439,8 @@ func rationalQuad(p0, p1, p2 math.Point3, w, t float64) math.Point3 {
 func g2Chords(c corner, in cornerInputs, k int) []math.Point3 {
 	s := shoulder(c, in)
 	ctrl := [6]math.Point3{
-		c.ta, lerp3(c.ta, s, 1.0/3), lerp3(c.ta, s, 2.0/3),
-		lerp3(s, c.tb, 1.0/3), lerp3(s, c.tb, 2.0/3), c.tb,
+		c.ta, c.ta.Lerp(s, 1.0/3), c.ta.Lerp(s, 2.0/3),
+		s.Lerp(c.tb, 1.0/3), s.Lerp(c.tb, 2.0/3), c.tb,
 	}
 	out := make([]math.Point3, k+1)
 	for j := 0; j <= k; j++ {
@@ -449,22 +449,13 @@ func g2Chords(c corner, in cornerInputs, k int) []math.Point3 {
 	return out
 }
 
-// lerp3 returns (1−t)·a + t·b.
-func lerp3(a, b math.Point3, t float64) math.Point3 {
-	return math.P3(
-		a.X+(b.X-a.X)*math.Scalar(t),
-		a.Y+(b.Y-a.Y)*math.Scalar(t),
-		a.Z+(b.Z-a.Z)*math.Scalar(t),
-	)
-}
-
 // bezier5 evaluates a quintic Bézier via de Casteljau.
 func bezier5(ctrl [6]math.Point3, t float64) math.Point3 {
 	p := ctrl
 	pts := p[:]
 	for n := 5; n > 0; n-- {
 		for i := 0; i < n; i++ {
-			pts[i] = lerp3(pts[i], pts[i+1], t)
+			pts[i] = pts[i].Lerp(pts[i+1], t)
 		}
 	}
 	return pts[0]

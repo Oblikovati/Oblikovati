@@ -75,7 +75,7 @@ func (c *dashCursor) walkEdge(segs [][2]math.Point2, p, q math.Point2) [][2]math
 			step = left
 		}
 		if c.steps[c.i].down {
-			segs = append(segs, [2]math.Point2{lerp2(p, q, at/total), lerp2(p, q, (at+step)/total)})
+			segs = append(segs, [2]math.Point2{p.Lerp(q, at/total), p.Lerp(q, (at+step)/total)})
 		}
 		at += step
 		c.advance(step)
@@ -90,9 +90,4 @@ func (c *dashCursor) advance(used float64) {
 		c.i = (c.i + 1) % len(c.steps)
 		c.rem = c.steps[c.i].length
 	}
-}
-
-// lerp2 interpolates between two points at parameter t ∈ [0,1].
-func lerp2(p, q math.Point2, t float64) math.Point2 {
-	return math.P2(p.X+(q.X-p.X)*math.Scalar(t), p.Y+(q.Y-p.Y)*math.Scalar(t))
 }
