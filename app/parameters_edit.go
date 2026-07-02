@@ -102,9 +102,11 @@ func (s *Session) CopyParameterToUser(id param.ID) error {
 	})
 }
 
-// DeleteParameter removes a parameter (its dependents go sick on the lost reference).
+// DeleteParameter removes an unused parameter. The in-use refusal (with the
+// blockers named) comes from the aggregate, so this UI path and the wire
+// router share one invariant instead of the divergence audited as B1 (#1612).
 func (s *Session) DeleteParameter(id param.ID) error {
-	return s.editParameters(func(ps *param.Parameters) error { return ps.Delete(id) })
+	return s.editParametersLabeled("Delete Parameter", func(ps *param.Parameters) error { return ps.Delete(id) })
 }
 
 // AddParameterToGroup / RemoveParameterFromGroup manage a parameter's group
@@ -125,23 +127,53 @@ func (s *Session) RemoveParameterFromGroup(id param.ID) error {
 	return s.editParameters(func(ps *param.Parameters) error { return ps.RemoveFromAllGroups(id) })
 }
 
+// AddParameterGroup creates an empty custom group keyed by its immutable
+// internal name, returning it so a wire caller can render the result.
+func (s *Session) AddParameterGroup(internalName, displayName, clientID string) (*param.ParameterGroup, error) {
+	var g *param.ParameterGroup
+	err := s.editGroups("Add Parameter Group", func(ps *param.Parameters) error {
+		var addErr error
+		g, addErr = ps.AddGroup(internalName, displayName, clientID)
+		return addErr
+	})
+	return g, err
+}
+
 // RenameParameterGroup edits a group's display name; the internal name a group
-// is addressed by never changes (M02-F05).
+// is addressed by never changes (M02-F05). The non-empty rule comes from the
+// aggregate's SetDisplayName, shared with the wire path (#1612, audit B1).
 func (s *Session) RenameParameterGroup(key, displayName string) error {
-	return s.editParameters(func(ps *param.Parameters) error {
+	return s.editGroups("Rename Parameter Group", func(ps *param.Parameters) error {
 		g, ok := ps.GroupByKey(key)
 		if !ok {
 			return fmt.Errorf("app: no parameter group named %q", key)
 		}
-		g.DisplayName = displayName
-		return nil
+		return g.SetDisplayName(displayName)
 	})
 }
 
-// DeleteParameterGroup removes a group and its member parameters (the head
-// UI's journey semantics; the wire surface exposes the opt-in cascade).
-func (s *Session) DeleteParameterGroup(name string) error {
-	return s.editParameters(func(ps *param.Parameters) error { return ps.DeleteGroup(name, true) })
+// DeleteParameterGroup removes a group; deleteParameters opts into the member
+// cascade (the head UI's journey passes true, the wire surface exposes the
+// flag). The cascade's may-not-sicken-a-survivor refusal comes from the
+// aggregate. Only the cascade changes geometry, so only it recomputes.
+func (s *Session) DeleteParameterGroup(name string, deleteParameters bool) error {
+	if !deleteParameters {
+		return s.editGroups("Delete Parameter Group", func(ps *param.Parameters) error {
+			return ps.DeleteGroup(name, false)
+		})
+	}
+	return s.editParametersLabeled("Delete Parameter Group", func(ps *param.Parameters) error {
+		return ps.DeleteGroup(name, true)
+	})
+}
+
+// DetachParameterFromGroup removes a parameter from one named group, keeping
+// its other memberships (the wire removeMember semantics; RemoveParameterFromGroup
+// is the UI journey that detaches from every group).
+func (s *Session) DetachParameterFromGroup(id param.ID, key string) error {
+	return s.editGroups("Edit Parameter Group", func(ps *param.Parameters) error {
+		return ps.RemoveFromGroup(id, key)
+	})
 }
 
 // ImportParameters applies a parameter-set XML document atomically: the holder
@@ -183,6 +215,26 @@ func (s *Session) editParam(id param.ID, edit func(*param.Parameter) error) erro
 // records any error as the session notice, recomputes the holder on success, and returns the
 // error.
 func (s *Session) editParameters(edit func(*param.Parameters) error) error {
+	return s.editParametersLabeled("Edit Parameters", edit)
+}
+
+// editParametersLabeled is editParameters with the undo-step label the edit
+// records under — the one mutation seam both the head UI and the wire router
+// finish through (#1612, audit B1).
+func (s *Session) editParametersLabeled(label string, edit func(*param.Parameters) error) error {
+	return s.finishParameterEdit(label, true, edit)
+}
+
+// editGroups applies a group-only edit: membership and naming never affect
+// parameter semantics (see model/param/group.go), so no geometry recompute.
+func (s *Session) editGroups(label string, edit func(*param.Parameters) error) error {
+	return s.finishParameterEdit(label, false, edit)
+}
+
+// finishParameterEdit resolves the active holder, applies edit, surfaces any
+// error as the session notice, then recomputes (when the edit can move
+// geometry) and records one undo step.
+func (s *Session) finishParameterEdit(label string, recompute bool, edit func(*param.Parameters) error) error {
 	holder, err := s.activeParameterHolder()
 	if err != nil {
 		s.notice = err.Error()
@@ -193,7 +245,9 @@ func (s *Session) editParameters(edit func(*param.Parameters) error) error {
 		return err
 	}
 	s.notice = ""
-	holder.RecomputeAfterChange() // mark dirty before recompute, or the edit leaves stale geometry (#1413)
-	s.recordEdit(holder, "Edit Parameters")
+	if recompute {
+		holder.RecomputeAfterChange() // mark dirty before recompute, or the edit leaves stale geometry (#1413)
+	}
+	s.recordEdit(holder, label)
 	return nil
 }

@@ -50,8 +50,7 @@ func (t *AssemblyExtrudeTool) Cancel(*Session) { t.profile = nil }
 func (t *AssemblyExtrudeTool) CanCommit() bool { return t.profile != nil && t.distance > 0 }
 
 func (t *AssemblyExtrudeTool) Commit(s *Session) error {
-	asm, err := activeAssembly(s)
-	if err != nil {
+	if _, err := activeAssembly(s); err != nil {
 		return err
 	}
 	if t.profile == nil {
@@ -59,11 +58,8 @@ func (t *AssemblyExtrudeTool) Commit(s *Session) error {
 	}
 	d := t.distance
 	op := assemblyExtrudeOps[t.operation]
-	af := asm.AddFeature(feature.NewAssemblyExtrudeFeature(t.profile.Sketch, t.profile.ProfileIndex, op, func() float64 { return d }))
-	af.SetName(asm.Features().UniqueName(af.Kind()))
-	asm.RecomputeFeatures()
-	s.recordEdit(asm, "Extrude") // the feature program persists + undoes (#785)
-	return nil
+	_, err := s.CommitAssemblyFeature(feature.NewAssemblyExtrudeFeature(t.profile.Sketch, t.profile.ProfileIndex, op, func() float64 { return d }), "Extrude")
+	return err
 }
 
 func (t *AssemblyExtrudeTool) Params() ToolParams {
