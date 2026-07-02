@@ -7,14 +7,17 @@ feature engine (modeling/01), no new core machinery.*
 
 ## Sheet metal is a part content flavor, not a new document type
 
-A sheet-metal part is a `PartContent` (modeling/01) with a **rule set** attached and
-a **sheet-metal feature registry** active (the "environment" — a registered
-`Workspace`, core/07). It is not a separate document kind; it is the same content
-with extra invariants (constant thickness) and an extra feature family.
+A sheet-metal part is a `PartComponentDefinition` (modeling/01) with a **rule
+set** attached and a **sheet-metal feature registry** active (the "environment" —
+a registered `Workspace`, core/07). It is not a separate document kind; it is the
+same content with extra invariants (constant thickness) and an extra feature
+family. (As built, the rule lives as a nilable `sheetmetal.Rule` field on
+`PartComponentDefinition` itself — `model/compdef/part.go` — rather than the
+wrapper type sketched below.)
 
 ```go
 type SheetMetalContent struct {
-    *compdef.PartContent              // it IS a part (features, params, bodies…)
+    *compdef.PartComponentDefinition  // it IS a part (features, params, bodies…)
     rule    SheetMetalRule            // active style: thickness, bend radius, relief, gap
     unfold  UnfoldMethod              // K-factor | bend table | custom equation
     flat    *FlatPattern             // derived; nil until generated

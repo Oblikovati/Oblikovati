@@ -40,7 +40,7 @@ of a part are N transforms over one cached mesh (core/08) — GPU instancing for
 ## The assembly object model in one diagram
 
 ```
-   AssemblyContent
+   AssemblyComponentDefinition
      ├── occurrences []*Occurrence ───┐
      │      Occurrence {              │  (flyweight — parametric-cad §5)
      │        Definition  ───────────────▶ shared ComponentDefinition (a part/subassembly doc)

@@ -1,8 +1,9 @@
 # Core 05 — Documents, persistence & reference keys
 
 *Modernizes M03 (documents, structured storage, references, reference keys,
-attributes). Two big modernizations: a portable package format replacing OLE
-structured storage, and reference keys as serializable Go values.*
+attributes). Two big modernizations: a git-friendly single-file document format
+replacing OLE structured storage (ADR-0020), and reference keys as serializable
+Go values with tiered recovery (`model/identity`).*
 
 ## Documents & the document/content split
 
@@ -17,7 +18,7 @@ type Document struct {
     typeID    TypeID         // part | assembly | drawing | presentation (stable)
     name      string
     dirty     bool
-    content   compdef.Content// PartContent | AssemblyContent (the modeling data)
+    content   Content        // PartComponentDefinition | AssemblyComponentDefinition (the modeling data)
     refs      *RefGraph      // documents this references / is referenced by
     props     attr.PropertySet
 }
@@ -27,69 +28,99 @@ type Workspace struct {     // replaces COM `Documents` collection + Application
 }
 ```
 
-`Workspace` lives on the runtime mediator (core/00) — no global `Application`.
+The live containers are `compdef.PartComponentDefinition` and
+`compdef.AssemblyComponentDefinition` (`model/compdef`); `doc.Content` is the
+seam that lets `model/doc` hold either without importing the heavy model
+packages. `Workspace` lives on the runtime mediator (core/00) — no global
+`Application`.
 
 ## Persistence — drop OLE structured storage
 
 COM used OLE compound files (`.ipt`). That is a Windows-era, single-writer binary
-storage format. We replace it with a **portable package container** that is
-cross-platform and tool-friendly:
+storage format. We replace it with a **single readable YAML file**
+([ADR-0020](../decisions/ADR-0020-yaml-git-friendly-document-format.md)) that is
+cross-platform, tool-friendly, and diffs line-by-line in git:
 
-```
-part.obk                       # a ZIP package (like .3mf/.docx/.usdz)
- ├── manifest.json             # version, TypeID of root, unit prefs, thumbnail ref
- ├── model/                    # the feature program, parameters, sketches (binary streams)
- │    ├── parameters.bin
- │    ├── features.bin
- │    └── sketches.bin
- ├── identity/keys.bin         # reference-key contexts (see below)
- ├── attributes.bin            # attribute sets / iProperties
- ├── thumbnail.png
- └── cache/                    # OPTIONAL derived data (tessellation), regenerable, may be omitted
+```yaml
+# part.obk — one YAML document (persistence/yamlcodec)
+schemaVersion: 2            # migration gate (persistence.CurrentSchemaVersion)
+documentType: 1             # stable TypeID of the root document kind
+displayName: part
+identity: { ... }           # file identity block (doc GUID, versions)
+references: [ ... ]         # as-saved file-to-file reference records
+model:                      # THE RECIPE — native nested YAML, not a quoted blob
+  parameters: [ ... ]
+  sketches: [ ... ]
+  features: [ ... ]
+resources: { ... }          # embedded imported files, base64, keyed by UUID (ADR-0031)
+data: { ... }               # add-in/attribute scratch sections, base64
 ```
 
 Design choices:
-- **Streams are columnar binary** via registered `Codec[T]`s keyed by stable
-  `TypeID` (core/02). We serialize the **recipe** (parameters + feature definitions
-  + sketches), not the evaluated B-rep — the geometry is a cache that recompute
-  rebuilds (parametric-cad §0: the definition is the truth, geometry is a cache).
-- **Atomic save**: write a temp package, fsync, rename — no half-written files
-  (replaces COM compaction-on-save with a simpler invariant).
-- **The package is inspectable** (it's a zip) — huge for debugging, diffing,
-  and CI, versus an opaque OLE blob.
-- **Migration**: `manifest.json` carries a schema version; an on-load migration
-  pipeline upgrades older packages (replaces COM `OnMigrateDocument`).
+- **We serialize the recipe** (parameters + feature definitions + sketches), not
+  the evaluated B-rep — the geometry is a cache that recompute rebuilds
+  (parametric-cad §0: the definition is the truth, geometry is a cache).
+- **Atomic save**: write a sibling temp file, fsync, rename (`persistence/io.go`)
+  — no half-written files (replaces COM compaction-on-save with a simpler
+  invariant).
+- **The file is inspectable** (it's YAML) — huge for debugging, diffing, and CI,
+  versus an opaque OLE blob. Only `persistence/yamlcodec` touches the YAML
+  library (dependency rule).
+- **Migration**: the top-level `schemaVersion` gates an on-load migration
+  pipeline (`persistence/migration.go`) that upgrades older files step by step
+  (replaces COM `OnMigrateDocument`).
 
 ## Reference keys — the hard problem, as Go values
 
 This is the single most load-bearing mechanism (parametric-cad §7). A reference
 key must re-resolve to "the same" face/edge after recompute destroys and recreates
 the B-rep, and after save/reload. In Go it is a **serializable value**, not a
-pointer:
+pointer — `identity.RefKey` (`model/identity/refkey.go`):
 
 ```go
 package identity
-type RefKey struct {        // opaque to callers; serializable; persisted in identity/keys.bin
-    ctx     ContextID
-    payload []byte          // encodes the GENERATIVE LINEAGE (topo.Lineage, core/03)
+type RefKey struct {        // opaque to callers; a value type — storable in any recipe
+    ctx     ContextID       // topology context the key was minted in
+    kind    EntityKind      // face | edge | vertex | ...
+    payload []byte          // the entity's LineageKey at mint time (topo.Lineage, core/03)
+    parent  ancestryHint    // session-only: parent lineage, for ancestral recovery
+    anchor  anchorHint      // session-only: representative point, for geometric tie-break
 }
-type KeyManager struct{ ... }
-func (m *KeyManager) Key(e topo.Entity) RefKey                     // mint from lineage
-func (m *KeyManager) Resolve(k RefKey) (topo.Entity, bool)         // rebind; bool=false ⇒ LOST
-func (m *KeyManager) NewContext() ContextID                        // versioned snapshot
-func (m *KeyManager) Save(w io.Writer) ; Load(r io.Reader)         // persist contexts
+func (k RefKey) Encode() []byte                    // persistable bytes (round-trip stable)
+func DecodeKey(data []byte) (RefKey, error)
+func RecoverLost(kind EntityKind, parentKey []byte,
+    anchor *math.Point3, ents []Entity) (Entity, MatchType) // the fallback tiers
 ```
 
 The design is driven entirely by the kernel owning topology (ADR-0002): because
 every `topo.Face` carries its `Lineage` ("end cap of feature F"), the key encodes
-that derivation path, and after a rebuild the manager re-finds the entity whose
-lineage matches — **topological naming, not addresses.**
+that derivation path, and after a rebuild the binder re-finds the entity whose
+lineage matches — **topological naming, not addresses.** Keys live *inside* the
+recipe (feature and sketch definitions store the encoded bytes); there is no
+separate key store or stream on disk.
 
-**Binding may fail, and that is normal** (parametric-cad §7): `Resolve` returns
-`false` when the referenced topology genuinely no longer exists. The contract: a
-consumer with a lost key sets its **feature health to sick** and surfaces for
-re-selection — never crashes. This is wired the same everywhere (features,
-dimensions, mates) via core/06's health propagation.
+**Binding degrades through tiers, and losing is normal.** Resolution tries
+**exact → ancestral → geometric** and reports which tier matched via
+`identity.MatchType`:
+
+1. **Exact** — a single entity with the key's kind and lineage exists
+   (`MatchExact`).
+2. **Ancestral** — the exact entity is gone, but exactly one surviving sibling
+   shares the key's parent lineage (`MatchAncestral`, auto-healed, flagged).
+3. **Geometric** — several siblings survive; the one nearest the key's mint-time
+   anchor point wins (`MatchGeometric`, auto-healed, flagged).
+4. **None** — nothing matches (`MatchNone`): the reference is **lost**, a
+   legitimate, non-fatal outcome.
+
+`MatchType.IsFallback()` is the binder's signal to resolve the reference to
+**Warning** health (auto-healed, review advised) instead of fully healthy; a lost
+key sets **feature health to sick** and surfaces for re-selection — never
+crashes. This is wired the same everywhere (features, dimensions, mates) via
+core/06's health propagation. The fallback hints are an in-memory session
+optimisation: they are not serialized, so a key reloaded from disk degrades to
+exact-only binding until re-minted (M31-F06; see `model/identity/binding.go` and
+`recover.go`; ADR-0043 generalizes the lineage/provenance naming the tiers match
+against).
 
 > **Build this early.** The reference-key design is decided *before* the feature
 > engine depends on selecting topology (iteration 2), not after — retrofitting it
@@ -106,6 +137,7 @@ registry, no OLE monikers. Broken references are flagged, never fatal.
 
 Unchanged in concept (parametric-cad §11): typed attribute sets attachable to any
 entity (keyed by `RefKey` so they survive recompute) and document property sets
-(iProperties). In Go: `attr.Set` with typed values, serialized to `attributes.bin`.
-The `NameValueMap`-as-everything COM habit is replaced by **typed option structs**
-in-proc; the only string→value maps left are at the gRPC seam (ADR-0003/0006).
+(iProperties). In Go: `attr.Set` with typed values, serialized into the
+document's attribute block. The `NameValueMap`-as-everything COM habit is
+replaced by **typed option structs** in-proc; the only string→value maps left are
+at the wire seam (ADR-0003/0006).

@@ -32,7 +32,8 @@ override) lives on the **occurrence**. Placing the same part twice creates two
 `Occurrence`s sharing one `Content` — never a copy.
 
 - **`def` is shared content**, reached through the document reference graph (core/05).
-  A part open in its own window and placed in an assembly is *one* `PartContent`.
+  A part open in its own window and placed in an assembly is *one*
+  `PartComponentDefinition`.
 - **Nesting → occurrence path.** A specific instance deep in subassemblies is
   identified not by a pointer but by its **`OccurrencePath`** (the chain of
   occurrences from the top assembly down) — two instances of the same screw differ

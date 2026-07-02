@@ -66,9 +66,10 @@ expression string — resolve via the parameter/expression engine.
 ## Persistent identity (M03)
 
 Topology references (a picked Face/Edge) must survive recompute, which destroys
-and recreates the B-rep. Use **reference keys** (`ReferenceKeyManager`), never
-pointer identity. Binding may fail ("reference lost") → the consumer goes
-`HealthStatusEnum` sick; this is normal, not exceptional.
+and recreates the B-rep. Use **reference keys** (`identity.RefKey`,
+`model/identity/refkey.go`, with tiered exact → ancestral → geometric
+bind/recover), never pointer identity. Binding may fail ("reference lost") → the
+consumer goes `HealthStatusEnum` sick; this is normal, not exceptional.
 
 ## Transactions & events (M04)
 
