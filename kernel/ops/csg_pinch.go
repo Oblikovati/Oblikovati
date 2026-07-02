@@ -2,7 +2,10 @@
 
 package ops
 
-import "oblikovati.org/math"
+import (
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+)
 
 // Pinched-vertex splitting for the CSG cage (#1693).
 //
@@ -54,47 +57,19 @@ func splitVertexFans(verts []math.Point3, faces [][3]int, v int, inc []int) []ma
 // belong to the same fan iff they share an edge THROUGH v (the same opposite endpoint). A clean
 // manifold vertex yields exactly one fan.
 func vertexFans(faces [][3]int, v int, inc []int) [][]int {
-	parent := make(map[int]int, len(inc))
-	var find func(x int) int
-	find = func(x int) int {
-		if parent[x] != x {
-			parent[x] = find(parent[x])
-		}
-		return parent[x]
-	}
-	for _, fi := range inc {
-		parent[fi] = fi
-	}
-	byOther := map[int]int{} // opposite endpoint of a v-incident edge → first face seen
-	for _, fi := range inc {
-		for _, w := range faces[fi] {
-			if w == v {
-				continue
-			}
-			if first, ok := byOther[w]; ok {
-				parent[find(fi)] = find(first)
-			} else {
-				byOther[w] = fi
+	return topo.ComponentGroups(inc, func(join func(a, b int)) {
+		byOther := map[int]int{} // opposite endpoint of a v-incident edge → first face seen
+		for _, fi := range inc {
+			for _, w := range faces[fi] {
+				if w == v {
+					continue
+				}
+				if first, ok := byOther[w]; ok {
+					join(fi, first)
+				} else {
+					byOther[w] = fi
+				}
 			}
 		}
-	}
-	return groupFanComponents(inc, find)
-}
-
-// groupFanComponents collects union-find components in first-seen order.
-func groupFanComponents(inc []int, find func(int) int) [][]int {
-	groups := map[int][]int{}
-	order := []int{}
-	for _, i := range inc {
-		r := find(i)
-		if _, seen := groups[r]; !seen {
-			order = append(order, r)
-		}
-		groups[r] = append(groups[r], i)
-	}
-	fans := make([][]int, 0, len(order))
-	for _, r := range order {
-		fans = append(fans, groups[r])
-	}
-	return fans
+	})
 }

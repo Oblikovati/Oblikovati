@@ -65,44 +65,16 @@ func pinchedEndpoints(bld *topo.Builder, verts []math.Point3, tv []*topo.Vertex,
 // buildFans partitions a vertex's incident edge builds into fans: two builds are one fan iff
 // some face loop uses both (their use groups share a face). A manifold vertex yields one fan.
 func buildFans(builds []edgeBuild, inc []int) [][]int {
-	parent := make(map[int]int, len(inc))
-	var find func(x int) int
-	find = func(x int) int {
-		if parent[x] != x {
-			parent[x] = find(parent[x])
-		}
-		return parent[x]
-	}
-	for _, bi := range inc {
-		parent[bi] = bi
-	}
-	byFace := map[int]int{} // face → first incident build seen using it
-	for _, bi := range inc {
-		for _, u := range builds[bi].group {
-			if first, ok := byFace[u.face]; ok {
-				parent[find(bi)] = find(first)
-			} else {
-				byFace[u.face] = bi
+	return topo.ComponentGroups(inc, func(join func(a, b int)) {
+		byFace := map[int]int{} // face → first incident build seen using it
+		for _, bi := range inc {
+			for _, u := range builds[bi].group {
+				if first, ok := byFace[u.face]; ok {
+					join(bi, first)
+				} else {
+					byFace[u.face] = bi
+				}
 			}
 		}
-	}
-	return groupFans(inc, find)
-}
-
-// groupFans collects union-find components in first-seen order.
-func groupFans(inc []int, find func(int) int) [][]int {
-	groups := map[int][]int{}
-	order := []int{}
-	for _, i := range inc {
-		r := find(i)
-		if _, seen := groups[r]; !seen {
-			order = append(order, r)
-		}
-		groups[r] = append(groups[r], i)
-	}
-	fans := make([][]int, 0, len(order))
-	for _, r := range order {
-		fans = append(fans, groups[r])
-	}
-	return fans
+	})
 }
