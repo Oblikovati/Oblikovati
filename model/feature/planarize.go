@@ -203,6 +203,31 @@ func planarizeForEdges(body *topo.Body, edges []*topo.Edge, feat string) (*topo.
 	return pb, mapped
 }
 
+// planarizeCylinderForEdges re-facets ONLY a simple analytic cylinder (an extrude-circle) into a
+// prism for the FILLET, mapping each selected edge onto the prism's segments — the one curved body a
+// rolling-ball fillet can round after prism-ification (a circular rim, #127/#129). Any OTHER curved
+// body is returned UNCHANGED so the kernel rejects a genuinely-unsupported curved-adjacent edge with
+// a clear message (curvedAdjacentError) instead of ops.Facet shattering the whole body into a
+// triangle cage the blend cannot close — the misleading "not a valid solid" of a fillet-over-fillet
+// on a rounded seam. chamfer/sheet-metal keep planarizeForEdges: they cut with the planar boolean
+// and legitimately need the whole-body facet.
+func planarizeCylinderForEdges(body *topo.Body, edges []*topo.Edge, feat string) (*topo.Body, []*topo.Edge) {
+	prism := planarizeSimpleCylinder(body, feat+"/planar")
+	if prism == nil {
+		return body, edges
+	}
+	var mapped []*topo.Edge
+	for _, pe := range prism.Edges() {
+		for _, orig := range edges {
+			if edgeOnEdge(pe, orig) {
+				mapped = append(mapped, pe)
+				break
+			}
+		}
+	}
+	return prism, mapped
+}
+
 // edgeOnEdge reports whether both endpoints of pe lie on orig's curve — i.e. pe is a faceted segment of
 // orig (or orig itself).
 func edgeOnEdge(pe, orig *topo.Edge) bool {

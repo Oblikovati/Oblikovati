@@ -47,3 +47,35 @@ func curvedFilletError(e *topo.Edge, cyl geom.Cylinder, pl geom.Plane) error {
 	}
 	return fmt.Errorf("fillet: rounding an edge that borders a curved (cylinder) face is not yet supported")
 }
+
+// curvedAdjacentError rejects an edge bordering a curved (non-planar) face that the cylinder+plane
+// classifier does not cover — the miter SEAM between two edge fillets (cylinder∩cylinder), or a
+// torus/sphere neighbour a prior round left. The rolling-ball blend needs two PLANAR walls; these
+// curved∩curved (and curved∩*) contacts are a fillet-over-fillet the general blend does not yet
+// build. Rejecting here with the offending surface named — BEFORE the model layer facets the whole
+// body — replaces the misleading "not a valid solid" the triangle-cage path produced (scenario 07).
+// Returns nil when both faces are planar (the ordinary edge fillet the caller then solves).
+func curvedAdjacentError(e *topo.Edge) error {
+	for _, f := range e.Faces() {
+		if _, planar := f.Geometry().(geom.Plane); !planar {
+			return fmt.Errorf("fillet: cannot round an edge bordering a curved (%s) face — rounding a filleted or otherwise curved edge is not yet supported", surfaceKind(f.Geometry()))
+		}
+	}
+	return nil
+}
+
+// surfaceKind names a surface for an error message (its concrete geometry type), e.g. "cylinder".
+func surfaceKind(s geom.Surface) string {
+	switch s.(type) {
+	case geom.Cylinder:
+		return "cylinder"
+	case geom.Cone:
+		return "cone"
+	case geom.Sphere:
+		return "sphere"
+	case geom.Torus:
+		return "torus"
+	default:
+		return fmt.Sprintf("%T", s)
+	}
+}

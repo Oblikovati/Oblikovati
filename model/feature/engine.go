@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/ops"
@@ -344,6 +345,17 @@ func lastSolid(bodies []*topo.Body) *topo.Body {
 	return bodies[len(bodies)-1]
 }
 
+// sickReason prefixes a feature's failure with its kind for the browser, unless the error already
+// leads with that kind — many kernel ops prefix their own errors with the same word (e.g. a fillet
+// op returns "fillet: …"), which otherwise produced a "fillet: fillet: …" double prefix.
+func sickReason(kind string, err error) string {
+	msg := err.Error()
+	if strings.HasPrefix(msg, kind+":") {
+		return msg
+	}
+	return fmt.Sprintf("%s: %s", kind, msg)
+}
+
 // classify turns a feature's recompute result into health + the running body state:
 // ErrDeferred → warning (passthrough); other error → sick (poison); a healed
 // reference (ADR-0043 P6) → warning with the rebuilt body kept; nil → healthy.
@@ -353,7 +365,7 @@ func (fs *PartFeatures) classify(pf *PartFeature, bodies []*topo.Body, out Outpu
 		pf.health = health.Health{Status: health.Warning, Reason: err.Error()}
 		pf.cached = out.Bodies
 	case err != nil:
-		pf.health = health.Sicken(fmt.Sprintf("%s: %v", pf.Kind(), err))
+		pf.health = health.Sicken(sickReason(pf.Kind(), err))
 		sick[pf.id] = true
 		pf.cached = bodies
 	case len(out.Heals) > 0:
