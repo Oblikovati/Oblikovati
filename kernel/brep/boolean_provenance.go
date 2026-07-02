@@ -46,16 +46,11 @@ func pairImprints(a, b planarFace) (onA, onB [][2]math.Point3) {
 // provenanceOf tags every imprint segment of every crossing face pair with its generating face
 // lineages. Each segment is recorded twice (once per owning face, with owner/other swapped), so
 // an edge that survives on either side resolves to the same unordered pair; edgeParents
-// canonicalizes it. The list is the input F03 names boolean edges from.
+// canonicalizes it. The list is the input F03 names boolean edges from. Since #1607 the pairing
+// is AABB-culled and shared with imprintAll through imprintCandidates; this wrapper keeps the
+// historical contract for callers that only need the tags.
 func provenanceOf(fa, fb []planarFace) []imprintSeg {
-	var prov []imprintSeg
-	for i := range fa {
-		for j := range fb {
-			onA, onB := pairImprints(fa[i], fb[j])
-			prov = appendTagged(prov, onA, fa[i], fb[j])
-			prov = appendTagged(prov, onB, fb[j], fa[i])
-		}
-	}
+	_, _, prov := imprintCandidates(fa, fb, crossingFaceCandidates(fa, fb))
 	return prov
 }
 

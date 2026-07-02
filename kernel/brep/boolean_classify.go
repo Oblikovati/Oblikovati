@@ -23,16 +23,40 @@ const insideSolidWindingThreshold = 2 * stdmath.Pi
 // an edge/vertex or ran near-parallel to a face, so fragments whose sample point sat near a
 // shared boundary — or models with faces near the magic direction — misclassified
 // deterministically. The winding number integrates the WHOLE boundary; it has no direction to
-// graze.
+// graze. Multi-query callers (the boolean's classification pass) should build one [solidProbe]
+// instead of calling this per point.
 func insideSolid(b *topo.Body, p math.Point3) bool {
+	return newSolidProbe(b).inside(p)
+}
+
+// solidProbe caches the per-body inputs insideSolid re-derived on EVERY query — the flattened
+// planar faces and the model-relative on-plane tolerance (facesOf + RangeBox dominated
+// classification time on the #1607 pocket-chain profile). Pure hoisting, no culling: the
+// faces, the tolerance and the summation order are exactly insideSolid's, so every verdict is
+// bit-identical.
+type solidProbe struct {
+	faces   []planarFace
+	onPlane float64
+	planar  bool
+}
+
+// newSolidProbe flattens b once for repeated inside queries.
+func newSolidProbe(b *topo.Body) *solidProbe {
 	faces, ok := facesOf(b)
 	if !ok {
+		return &solidProbe{}
+	}
+	return &solidProbe{faces: faces, onPlane: geom.ResolutionForBox(b.RangeBox()).Plane(), planar: true}
+}
+
+// inside thresholds the generalized winding number of the cached faces at p (see insideSolid).
+func (sp *solidProbe) inside(p math.Point3) bool {
+	if !sp.planar {
 		return false
 	}
-	onPlane := geom.ResolutionForBox(b.RangeBox()).Plane()
 	sum := 0.0
-	for _, f := range faces {
-		sum += faceSolidAngle(f, p, onPlane)
+	for _, f := range sp.faces {
+		sum += faceSolidAngle(f, p, sp.onPlane)
 	}
 	// |sum|: membership of the CLOSED REGION is orientation-independent, and legacy builders can
 	// emit a consistently inside-out body (loops wound opposite their outward normals — the
