@@ -224,6 +224,7 @@ func (t *SweepTool) addSweep(fs *feature.PartFeatures) (*feature.PartFeature, er
 		Sketch:       t.profile.Sketch,
 		ProfileIndex: t.profile.ProfileIndex,
 		Path:         livePathProvider(*t.path),
+		PathSketch:   t.path.Sketch,
 		Twist:        func() float64 { return twist },
 		Taper:        func() float64 { return taper },
 		Operation:    t.operation,
@@ -231,6 +232,7 @@ func (t *SweepTool) addSweep(fs *feature.PartFeatures) (*feature.PartFeature, er
 	}
 	if t.guideRail != nil {
 		def.GuideRail = livePathProvider(*t.guideRail)
+		def.GuideRailSketch = t.guideRail.Sketch
 		def.Scaling = t.scaling
 	}
 	return feature.NewSweepFeatures(fs).AddDefinition(def), nil

@@ -65,11 +65,15 @@ func allUsesPaired(uses map[[2]int][]loopEdgeUse) bool {
 func buildResolvedEdges(bld *topo.Builder, verts []math.Point3, tv []*topo.Vertex, uses map[[2]int][]loopEdgeUse, faces []builtFace, prov []imprintSeg) map[[3]int]*topo.Edge {
 	builds := planEdgeBuilds(verts, uses, faces, prov)
 	rankSamePairEdges(builds, prov)
+	// Pinched vertices (a sub-grid contact patch, or the endpoints of resolved tangent-contact
+	// edges) are cut apart into fan-specific coincident duplicates so the shell stays a true
+	// closed 2-manifold (#1693); a manifold vertex resolves to its shared tv entry.
+	endpoint := pinchedEndpoints(bld, verts, tv, builds)
 	useEdge := make(map[[3]int]*topo.Edge)
 	idx := 0
 	for i := range builds {
 		b := &builds[i]
-		e := bld.AddEdge(geom.NewLineSegment(verts[b.k[0]], verts[b.k[1]]), tv[b.k[0]], tv[b.k[1]], edgeBuildLineage(b, &idx))
+		e := bld.AddEdge(geom.NewLineSegment(verts[b.k[0]], verts[b.k[1]]), endpoint[[2]int{i, b.k[0]}], endpoint[[2]int{i, b.k[1]}], edgeBuildLineage(b, &idx))
 		for _, h := range b.group {
 			useEdge[[3]int{h.face, h.ring, h.pos}] = e
 		}

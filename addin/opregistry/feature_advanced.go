@@ -102,12 +102,19 @@ func sweepDefinitionFromArgs(part *compdef.PartComponentDefinition, in sweepArgs
 	if _, err := pathFromSketch(part, in.PathSketchIndex, in.PathIndex); err != nil {
 		return nil, err
 	}
+	pathSk, err := sketchAt(part, in.PathSketchIndex)
+	if err != nil {
+		return nil, err
+	}
 	def := &feature.SweepDefinition{
 		ProfileIndex: in.ProfileIndex,
 		Path: func() *sketch.Path3D {
 			p, _ := pathFromSketch(part, in.PathSketchIndex, in.PathIndex)
 			return p
 		},
+		// Attribute the live path to its sketch so a parameter driving the rail re-sweeps the
+		// body (#1414 tail invalidation; Oblikovati#1693).
+		PathSketch: pathSk,
 	}
 	if err := sweepScalars(part, in, def); err != nil {
 		return nil, err
@@ -173,6 +180,9 @@ func sweepVariantFields(part *compdef.PartComponentDefinition, in sweepArgs, def
 		def.GuideRail = func() *sketch.Path3D {
 			p, _ := pathFromSketch(part, in.RailSketchIndex, in.RailIndex)
 			return p
+		}
+		if railSk, err := sketchAt(part, in.RailSketchIndex); err == nil {
+			def.GuideRailSketch = railSk // rail-driving parameters re-sweep too (#1693)
 		}
 		return sweepScaling(in, def)
 	case "pathAndGuideSurface":

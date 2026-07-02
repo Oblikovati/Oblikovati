@@ -403,3 +403,35 @@ func TestPatternOfHoleCutsEachOccurrence(t *testing.T) {
 		t.Errorf("patterned hole removed %g extra (%.2f bores), want ~2 bores (one body, three holes)", extra, extra/bore)
 	}
 }
+
+// TestHoleFlushBlindDepthBreaksThrough pins the flush-bottom promotion (Oblikovati#1693): a
+// BLIND hole whose depth equals the part thickness has a zero-thickness membrane for a floor —
+// it IS a through hole. The exact blind drill rightly rejects the out-of-part bottom, and the
+// rejection used to fall to the faceted prism cut, silently costing the bore its analytic
+// cylinder wall (the tapped-hole thread had nothing to attach to). The cut must route through
+// the through-hole drill and keep the TRUE cylinder wall.
+func TestHoleFlushBlindDepthBreaksThrough(t *testing.T) {
+	block := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 4}, {X: 0, Y: 4}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "blk")
+	top := block.Faces()[1].ReferenceKey() // z=2 cap, normal +Z
+
+	fs := NewPartFeatures(nil)
+	NewBaseFeatures(fs).AddBase(block)
+	hole := NewHoleFeatures(fs).AddDrilled(top, func() float64 { return 2 }, func() float64 { return 2 }) // depth == thickness
+	fs.Recompute()
+	if !hole.Health().OK() {
+		t.Fatalf("flush blind hole sick: %+v", hole.Health())
+	}
+	res := fs.Result()
+	if r := ops.Validate(res[0]); !r.Valid || !res[0].IsSolid() {
+		t.Fatalf("flush-drilled body not a valid solid: %+v", r)
+	}
+	cylFaces := 0
+	for _, f := range res[0].Faces() {
+		if _, ok := f.Geometry().(geom.Cylinder); ok {
+			cylFaces++
+		}
+	}
+	if cylFaces != 1 {
+		t.Errorf("flush blind hole has %d cylinder faces, want 1 (analytic bore, not a faceted prism)", cylFaces)
+	}
+}
