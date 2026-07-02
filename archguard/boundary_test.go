@@ -19,9 +19,10 @@ import (
 //   - API PURITY: the Apache-2.0 api module must not depend on the GPL source. The license split (ADR-0018)
 //     depends on the dependency flowing only one way (source -> api).
 //
-// The fourth invariant — an add-in's shipped (non-test) code must not import the GPL source — is enforced
-// per add-in repo (each add-in is its own module; MCPBridge legitimately requires source for _test.go
-// drivers), so it belongs in each add-in's CI, not here.
+// The fourth invariant — an add-in's shipped (non-test) code must not import the GPL source — IS
+// enforced per add-in repo (each add-in is its own module; MCPBridge legitimately requires source for
+// _test.go drivers): every Oblikovati.AddIns.* repo carries gplpurity/gplpurity_test.go, a go-list
+// guard over its non-test import graph, running in its ordinary CI test sweep (#1614, audit B3).
 
 // presentationPrefixes are the import paths the domain must never reach.
 var presentationPrefixes = []string{
