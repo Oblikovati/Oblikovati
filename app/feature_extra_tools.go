@@ -125,6 +125,18 @@ func (t *HullTool) Prompt(*Session) string {
 // CanCommit is always true — the running solids are the input.
 func (t *HullTool) CanCommit() bool { return true }
 
+// DraftFeature implements [PartFeatureTool] (#1626): the hull it would commit,
+// built into a scratch engine so the commit gate and preview can evaluate it
+// without touching the part.
+func (t *HullTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return feature.NewHullFeatures(fs).Add(), nil
+	})
+}
+
 // Commit hulls the running solids and recomputes.
 func (t *HullTool) Commit(s *Session) error {
 	part, err := activePart(s)

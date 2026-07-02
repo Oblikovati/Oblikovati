@@ -25,6 +25,24 @@ func (s *Session) SetPicker(p Picker) {
 	}
 }
 
+// PartFeatureTool is what a tool that commits a part feature IS: a Tool that can
+// always build the draft of the feature it would commit, so the sick-config commit
+// gate (commitBlockedReason, #1594) has a draft to inspect BY CONSTRUCTION and can
+// never be skipped by omission (#1626, audit I3 — the #1521 bypass shape). Mirrors
+// router.MutatingMethod (#1426): the capability is a property of the type, not of a
+// hand-maintained list.
+type PartFeatureTool interface {
+	Tool
+	DraftPreviewable
+}
+
+// StartFeatureTool activates a part-feature tool. Every activation site of a tool
+// that commits a part feature must use this entry point — the compiler then
+// guarantees the commit gate has a draft to inspect (#1626). Sketch, work-feature,
+// assembly and navigation tools keep the plain StartTool, deliberately outside the
+// gate; the activation-seam guard test pins which constructors may do so.
+func (s *Session) StartFeatureTool(t PartFeatureTool) { s.StartTool(t) }
+
 // StartTool activates an interactive tool, cancelling any tool already running.
 func (s *Session) StartTool(t Tool) {
 	if s.tool != nil {
