@@ -71,7 +71,13 @@ func trianglesToBody(tris []tri, feat string) *topo.Body {
 		return nil
 	}
 	verts, faces = removeTJunctions(verts, faces, res.Plane())
-	return cageToBody(verts, dropDegenerate(faces), feat)
+	faces = dropDegenerate(faces)
+	// A sub-resolution tangency (a face designed exactly on another body's wall) welds into a
+	// PINCHED vertex — two fans on one vertex, χ off by one per pinch, invisible to the edge
+	// checks. Cut such vertices apart into coincident duplicates so the cage is a true closed
+	// 2-manifold; the shells then touch at a point instead of sharing an inadmissible vertex (#1693).
+	verts = splitPinchedVertices(verts, faces)
+	return cageToBody(verts, faces, feat)
 }
 
 // dedupTriangles cancels coincident triangles produced where coplanar faces of the two
