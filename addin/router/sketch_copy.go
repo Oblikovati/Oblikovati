@@ -5,6 +5,7 @@ package router
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 
 	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire"
@@ -37,7 +38,13 @@ func sketchCopyTo(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	if err != nil {
 		return nil, err
 	}
-	created := target.CopyEntitiesWithConstraints(source, ents, offset)
+	created, warnings := target.CopyEntitiesWithConstraints(source, ents, offset)
+	// Constraint kinds that cannot travel with a copy (#1637) are logged rather than
+	// dropped silently; surfacing them in CopySketchResult needs a wire DTO field
+	// (api bump), tracked as the #1637 follow-up.
+	for _, w := range warnings {
+		slog.Warn("sketch.copyTo constraint skipped", "warning", w)
+	}
 	ids := make([]uint64, len(created))
 	for i, e := range created {
 		ids[i] = uint64(e.EntityID())

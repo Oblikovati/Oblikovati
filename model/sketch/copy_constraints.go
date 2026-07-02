@@ -9,7 +9,9 @@ import "oblikovati.org/math"
 // constraints and dimensions whose operands are *entirely* within the copied set, dropping
 // any that reference geometry left behind. CopyEntitiesWithConstraints adds that carry-over
 // on top of the geometry clone: every operand is remapped through the source→clone maps, and
-// a relation with any external operand is silently dropped.
+// a relation with any external operand is silently dropped. A kind that cannot travel at all
+// (a documented skip in copy_constraints_registry.go) is reported as a warning instead of
+// vanishing (#1637).
 
 // cloneMap resolves a source operand (a point or an entity) to its clone. Points are keyed
 // separately from entities because a constraint references the shared *Point inside a line or
@@ -60,86 +62,68 @@ func (m *cloneMap) ellipse(e *Ellipse) (*Ellipse, bool) {
 	return ne, ok
 }
 
+func (m *cloneMap) smoothCurve(c SmoothCurve) (SmoothCurve, bool) {
+	e, ok := m.entities[c]
+	if !ok {
+		return nil, false
+	}
+	nc, ok := e.(SmoothCurve)
+	return nc, ok
+}
+
 // CopyEntitiesWithConstraints clones a selection from source into this sketch (translated by
 // v) and carries over every geometric constraint and dimension whose operands lie entirely
 // within the copied set, remapping operands to the clones and dropping any relation with an
 // external operand (Inventor CopyEntitiesTo with constraint carry-over, #1083). A copied
 // driving dimension mints a fresh parameter in this sketch (DimensionConstraints.nextName),
-// so names never collide with the source's. Returns the created entity clones.
+// so names never collide with the source's. Returns the created entity clones plus one
+// warning per constraint that could not be copied *by kind* (a documented skip, #1637) —
+// silent drops are reserved for relations referencing geometry left behind.
 //
-// Example: target.CopyEntitiesWithConstraints(source, source.Entities(), math.V2(50, 0))
-// duplicates the whole source sketch 50 units to the right, fully constrained.
-func (target *Sketch) CopyEntitiesWithConstraints(source *Sketch, ents []Entity, v math.Vector2) []Entity {
+// Example: clones, warns := target.CopyEntitiesWithConstraints(source, source.Entities(),
+// math.V2(50, 0)) duplicates the whole source sketch 50 units to the right, fully
+// constrained, reporting any constraint that cannot travel.
+func (target *Sketch) CopyEntitiesWithConstraints(source *Sketch, ents []Entity, v math.Vector2) ([]Entity, []string) {
 	clones, pmap, emap := target.cloneEntitiesFull(ents, translation(v))
 	m := &cloneMap{points: pmap, entities: emap}
+	requested := requestedEntitySet(ents)
+	var warnings []string
 	for _, c := range source.geomCons.All() {
-		target.geomCons.carryFrom(c, m)
+		if _, skip := target.geomCons.carryFrom(c, m); skip != "" && allOperandsRequested(c, requested) {
+			warnings = append(warnings, skip)
+		}
 	}
 	for _, d := range source.dimCons.All() {
 		target.carryDimension(d, m)
 	}
-	return clones
+	return clones, warnings
 }
 
-// carryFrom re-creates one source geometric constraint on this (target) collection via the
-// clone map, returning whether it was carried. It is dropped when any operand lies outside
-// the copied set or the kind is not a carryable 2D constraint. The dispatch is split into the
-// point-anchored and line/curve-anchored kinds to keep each switch within the complexity bound.
-func (g *GeometricConstraints) carryFrom(c Constraint, m *cloneMap) bool {
-	if carried, matched := carryPointConstraint(g, c, m); matched {
-		return carried
+// requestedEntitySet indexes the entities the caller asked to copy, so a documented
+// skip can be reported only when its operands were actually part of the request.
+func requestedEntitySet(ents []Entity) map[Entity]bool {
+	out := make(map[Entity]bool, len(ents))
+	for _, e := range ents {
+		out[e] = true
 	}
-	return carryLineCurveConstraint(g, c, m)
+	return out
 }
 
-// carryPointConstraint handles the geometric constraints whose operands are points (some with a
-// line or curve anchor). matched reports whether c was one of these kinds, so carryFrom can fall
-// through to the line/curve kinds; carried reports whether it was actually re-created.
-func carryPointConstraint(g *GeometricConstraints, c Constraint, m *cloneMap) (carried, matched bool) {
-	switch v := c.(type) {
-	case *CoincidentConstraint:
-		return carryPoints(m, v.A, v.B, g.AddCoincident), true
-	case *HorizontalConstraint:
-		return carryPoints(m, v.A, v.B, g.AddHorizontal), true
-	case *VerticalConstraint:
-		return carryPoints(m, v.A, v.B, g.AddVertical), true
-	case *MidpointConstraint:
-		return carryPointLine(m, v.P, v.L, g.AddMidpoint), true
-	case *PointOnLineConstraint:
-		return carryPointLine(m, v.P, v.L, g.AddPointOnLine), true
-	case *PointOnCircleConstraint:
-		return carryPointCurve(m, v.P, v.C, g.AddPointOnCircle), true
-	case *SymmetryConstraint:
-		return carrySymmetry(m, v, g), true
-	case *FixConstraint:
-		return carryFix(m, v.P, g), true
+// allOperandsRequested reports whether every entity the constraint relates was part of
+// the requested copy. A skip about geometry left behind would be noise — it follows the
+// same silent rule as the external-operand drop (#1083); only a skip whose operands the
+// user did copy becomes a warning (#1637).
+func allOperandsRequested(c Constraint, requested map[Entity]bool) bool {
+	kc, ok := c.(KindedConstraint)
+	if !ok {
+		return true // no operand info: always surface the (programming-error) skip
 	}
-	return false, false
-}
-
-// carryLineCurveConstraint handles the geometric constraints whose operands are whole lines or
-// circular curves, returning whether the constraint was carried (false for any other kind).
-func carryLineCurveConstraint(g *GeometricConstraints, c Constraint, m *cloneMap) bool {
-	switch v := c.(type) {
-	case *ParallelConstraint:
-		return carryLines(m, v.L1, v.L2, g.AddParallel)
-	case *PerpendicularConstraint:
-		return carryLines(m, v.L1, v.L2, g.AddPerpendicular)
-	case *CollinearConstraint:
-		return carryLines(m, v.L1, v.L2, g.AddCollinear)
-	case *EqualLengthConstraint:
-		return carryLines(m, v.L1, v.L2, g.AddEqualLength)
-	case *ConcentricConstraint:
-		return carryCurves(m, v.C1, v.C2, g.AddConcentric)
-	case *EqualRadiusConstraint:
-		return carryCurves(m, v.C1, v.C2, g.AddEqualRadius)
-	case *CircularTangentConstraint:
-		return carryCurves(m, v.C1, v.C2, g.AddCircularTangent)
-	case *TangentConstraint:
-		return carryLineCurve(m, v.L, v.C, g.AddTangent)
-	default:
-		return false
+	for _, e := range kc.RelatedEntities() {
+		if !requested[e] {
+			return false
+		}
 	}
+	return true
 }
 
 // The carry* helpers remap a fixed operand shape and invoke the matching factory iff every

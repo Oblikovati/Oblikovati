@@ -21,7 +21,7 @@ func TestCopyCarriesInternalConstraintAndDimension(t *testing.T) {
 	}
 
 	dst := NewSketches().Add(XYPlane())
-	clones := dst.CopyEntitiesWithConstraints(src, []Entity{l}, math.V2(0, 50))
+	clones, _ := dst.CopyEntitiesWithConstraints(src, []Entity{l}, math.V2(0, 50))
 	if len(clones) != 1 {
 		t.Fatalf("clones = %d, want 1", len(clones))
 	}
@@ -123,6 +123,22 @@ func TestCopyCarriesEveryConstraintAndDimensionKind(t *testing.T) {
 	g.AddSymmetry(pa, pb, l3)
 	g.AddFix(pa)
 
+	// The six kinds the pre-#1637 switch silently dropped (TextBoxAnchor is the
+	// documented skip, exercised in TestCopyWarnsOnTextBoxAnchorConstraint).
+	sp1 := src.Splines().AddByPoints([]math.Point2{math.P2(20, 0), math.P2(21, 1), math.P2(22, 0)}, false)
+	sp2 := src.Splines().AddByPoints([]math.Point2{math.P2(22, 0), math.P2(23, -1), math.P2(24, 0)}, false)
+	j1, j2, ok := NearestSmoothJoin(sp1, sp2)
+	if !ok {
+		t.Fatal("no smooth join between the two splines")
+	}
+	g.AddSmooth(sp1, sp2, j1, j2)
+	g.AddGround(l2)
+	g.AddOffset(l1, l2, 1)
+	g.AddPatternLink(pa, pb)
+	if _, err := g.AddCustom("test-addin", "tag", []Entity{l1}); err != nil {
+		t.Fatalf("source custom constraint: %v", err)
+	}
+
 	// add spreads a (dimension, error) factory result, failing fast on a build error.
 	add := func(_ *DimensionConstraint, err error) {
 		t.Helper()
@@ -143,7 +159,10 @@ func TestCopyCarriesEveryConstraintAndDimensionKind(t *testing.T) {
 	wantC, wantD := g.Count(), dc.Count()
 
 	dst := NewSketches().Add(XYPlane())
-	dst.CopyEntitiesWithConstraints(src, src.Entities(), math.V2(100, 0))
+	_, warns := dst.CopyEntitiesWithConstraints(src, src.Entities(), math.V2(100, 0))
+	if len(warns) != 0 {
+		t.Errorf("copy warnings = %q, want none (every kind here is carryable)", warns)
+	}
 	if got := dst.GeometricConstraints().Count(); got != wantC {
 		t.Errorf("carried geometric constraints = %d, want %d (every kind)", got, wantC)
 	}
