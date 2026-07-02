@@ -263,72 +263,26 @@ func serializePlane(p Plane) PlaneData {
 	}
 }
 
+// serializeEntity dispatches an entity to its registered codec by its Kind and
+// stamps the kind onto the row, so an encode closure fills only its payload.
+// A kind that never registered a codec pair cannot have been created (its
+// factory lives beside its registration), so the misses here guard programming
+// errors, not user documents (#1624).
 func serializeEntity(e Entity) (EntityData, error) {
-	switch v := e.(type) {
-	case *Line:
-		return EntityData{ID: int(v.id), Kind: "line", Points: []int{int(v.A.id), int(v.B.id)}, Construction: v.construction, Centerline: v.centerline}, nil
-	case *Circle:
-		return EntityData{ID: int(v.id), Kind: "circle", Points: []int{int(v.Center.id)}, Radius: float64(v.Radius), Construction: v.construction}, nil
-	case *Arc:
-		return EntityData{ID: int(v.id), Kind: "arc", Points: []int{int(v.Center.id), int(v.Start.id), int(v.End.id)}, CCW: v.CounterClockwise, Construction: v.construction}, nil
-	case *Ellipse:
-		return EntityData{ID: int(v.id), Kind: "ellipse", Points: []int{int(v.Center.id)}, MajorAxis: []float64{float64(v.MajorAxis.X), float64(v.MajorAxis.Y)}, MajorRadius: float64(v.MajorRadius), MinorRadius: float64(v.MinorRadius), Construction: v.construction}, nil
-	case *EllipticalArc:
-		return EntityData{ID: int(v.id), Kind: "ellipticalArc", Points: []int{int(v.Center.id)}, MajorAxis: []float64{float64(v.MajorAxis.X), float64(v.MajorAxis.Y)}, MajorRadius: float64(v.MajorRadius), MinorRadius: float64(v.MinorRadius), StartAngle: float64(v.StartAngle), EndAngle: float64(v.EndAngle), Construction: v.construction}, nil
-	case *Spline:
-		return EntityData{
-			ID: int(v.id), Kind: "spline", Points: pointIDsOf(v.Points), Closed: v.Closed, Fit: v.fit,
-			FitMethod: fitMethodSpelling(v.FitMethod), Handles: serializeSplineHandles(v),
-			Construction: v.construction,
-		}, nil
-	case *BlockInstance:
-		return EntityData{
-			ID: int(v.id), Kind: "blockInstance", Block: v.def.name, Transform: matrixCells(v.transform),
-		}, nil
-	case *SketchImage:
-		return EntityData{
-			ID: int(v.id), Kind: "image", ImageRef: v.Ref,
-			Anchor:   []float64{float64(v.Anchor.X), float64(v.Anchor.Y)},
-			Size:     []float64{float64(v.Width), float64(v.Height)},
-			Rotation: float64(v.Rotation), Opacity: v.Opacity,
-		}, nil
-	case *ProjectedPoint:
-		kind, id := v.SourceDescriptor()
-		return EntityData{
-			ID: int(v.anchor.id), Kind: "projectedPoint", Points: []int{int(v.anchor.id)},
-			Anchor: []float64{float64(v.anchor.X), float64(v.anchor.Y)}, Source: id, SourceKind: kind,
-		}, nil
-	case *ProjectedCurve:
-		kind, id := v.SourceDescriptor()
-		return EntityData{ID: int(v.id), Kind: "projectedCurve", Coords: flattenPoints(v.points), Source: id, SourceKind: kind}, nil
-	case *FillRegion:
-		return EntityData{ID: int(v.id), Kind: "fillRegion", Seed: []float64{float64(v.Seed.X), float64(v.Seed.Y)}, Style: v.Style}, nil
-	case *TextBox:
-		return EntityData{
-			ID: int(v.id), Kind: "text", Text: v.Text,
-			Anchor:     []float64{float64(v.Anchor.X), float64(v.Anchor.Y)},
-			TextHeight: float64(v.Height), Rotation: float64(v.Rotation),
-			Justify: int(v.Justify), VJustify: int(v.VJustify),
-			FontFamily: v.Family, FontResource: v.FontResource, FontSize: float64(v.FontSize),
-		}, nil
-	default:
-		return serializeDerivedCurve(e)
+	ke, ok := e.(kindedEntity)
+	if !ok {
+		return EntityData{}, fmt.Errorf("cannot serialize entity of type %T: it has no Kind (register it in a serialize_codecs_*.go)", e)
 	}
-}
-
-// serializeDerivedCurve handles the M21 derived curves (equation/fixed/offset spline);
-// split out of serializeEntity to keep that switch small.
-func serializeDerivedCurve(e Entity) (EntityData, error) {
-	switch v := e.(type) {
-	case *EquationCurve:
-		return EntityData{ID: int(v.id), Kind: "equationCurve", XExpr: v.XExpr, YExpr: v.YExpr, T0: v.T0, T1: v.T1}, nil
-	case *FixedSpline:
-		return EntityData{ID: int(v.id), Kind: "fixedSpline", Coords: flattenPoints(v.Pts)}, nil
-	case *OffsetSpline:
-		return EntityData{ID: int(v.id), Kind: "offsetSpline", ParentID: int(v.Parent.id), OffsetDist: v.Dist}, nil
-	default:
-		return EntityData{}, fmt.Errorf("cannot serialize entity of type %T (no codec)", e)
+	c, ok := entityCodecs2D[ke.Kind()]
+	if !ok {
+		return EntityData{}, fmt.Errorf("cannot serialize entity of type %T: kind %q has no 2D codec", e, ke.Kind())
 	}
+	ed, err := c.encode(e)
+	if err != nil {
+		return EntityData{}, err
+	}
+	ed.Kind = string(ke.Kind())
+	return ed, nil
 }
 
 // flattenPoints flattens points to a [x,y,x,y,…] slice.
