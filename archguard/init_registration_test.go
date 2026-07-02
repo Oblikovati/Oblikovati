@@ -84,7 +84,8 @@ func initRegistrationSources(t *testing.T) []string {
 			return rerr
 		}
 		if initRegistrationPattern.Match(src) {
-			offenders = append(offenders, strings.TrimPrefix(path, "../"))
+			// ToSlash so the allowlist's forward-slash keys match on Windows too.
+			offenders = append(offenders, strings.TrimPrefix(filepath.ToSlash(path), "../"))
 		}
 		return nil
 	})
