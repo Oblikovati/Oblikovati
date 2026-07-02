@@ -12,8 +12,10 @@ func decodeCosmetic(rc *restoreContext, fd FeatureData) (*PartFeature, error) {
 	return restoreCosmetic(rc.fs, fd)
 }
 
-func init() {
-	registerFeatureCodec("decal", featureCodec{
+// registerCosmeticCodecs contributes this family's codecs to the default set (#1617);
+// formerly an init() registration.
+func (r featureCodecSet) registerCosmeticCodecs() {
+	r.register("decal", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			d := f.(*DecalFeature)
 			fd.Decal = &DecalData{Face: encodeKey(d.def.FaceKey), Image: d.def.Image}
@@ -21,7 +23,7 @@ func init() {
 		},
 		decode: decodeCosmetic,
 	})
-	registerFeatureCodec("reference", featureCodec{
+	r.register("reference", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			r := f.(*ReferenceFeature)
 			fd.Reference = &ReferenceData{Label: r.def.Label, Source: encodeKey(r.def.SourceKey)}
@@ -29,7 +31,7 @@ func init() {
 		},
 		decode: decodeCosmetic,
 	})
-	registerFeatureCodec("client", featureCodec{
+	r.register("client", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			c := f.(*ClientFeature)
 			fd.Client = &ClientData{AddIn: c.def.AddInID, Attributes: c.def.Attributes}
@@ -37,7 +39,7 @@ func init() {
 		},
 		decode: decodeCosmetic,
 	})
-	registerFeatureCodec("mark", featureCodec{
+	r.register("mark", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			m := f.(*MarkFeature)
 			fd.Mark = &MarkData{Faces: encodeKeys(m.def.FaceKeys), Text: m.def.Text}
@@ -45,7 +47,7 @@ func init() {
 		},
 		decode: decodeCosmetic,
 	})
-	registerFeatureCodec("finish", featureCodec{
+	r.register("finish", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			fn := f.(*FinishFeature)
 			fd.Finish = &FinishData{Faces: encodeKeys(fn.def.FaceKeys), Spec: fn.def.Spec}
@@ -53,7 +55,7 @@ func init() {
 		},
 		decode: decodeCosmetic,
 	})
-	registerFeatureCodec("derivedAssembly", featureCodec{
+	r.register("derivedAssembly", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			fd.DerivedAssembly = serializeDerivedAssembly(f.(*DerivedAssemblyComponent))
 			return nil
@@ -62,7 +64,7 @@ func init() {
 			return restoreDerivedAssembly(rc.fs, fd.DerivedAssembly)
 		},
 	})
-	registerFeatureCodec("derived", featureCodec{
+	r.register("derived", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			fd.DerivedPart = serializeDerivedPart(f.(*DerivedPartComponent))
 			return nil
@@ -71,7 +73,7 @@ func init() {
 			return restoreDerivedPart(rc.fs, fd.DerivedPart)
 		},
 	})
-	registerFeatureCodec("shrinkwrap", featureCodec{
+	r.register("shrinkwrap", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			fd.Shrinkwrap = serializeShrinkwrap(f.(*ShrinkwrapComponent))
 			return nil
@@ -80,7 +82,7 @@ func init() {
 			return restoreShrinkwrap(rc.fs, fd.Shrinkwrap)
 		},
 	})
-	registerFeatureCodec(kindBendPart, featureCodec{
+	r.register(kindBendPart, featureCodec{
 		encode: func(fd *FeatureData, f Feature, sk SketchIndexer, _ map[ID]int) error {
 			bd, err := serializeBend(f.(*BendPartFeature).def, sk)
 			fd.Bend = bd

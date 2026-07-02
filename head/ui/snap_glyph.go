@@ -26,7 +26,7 @@ const (
 	triBaseDrop      = 0.5       // sin(30°)
 )
 
-// snapGlyphColor (the cursor snap marker) and pointMarkerColor (placed sketch points,
+// chromeTheme.snapGlyphColor (the cursor snap marker) and chromeTheme.pointMarkerColor (placed sketch points,
 // matching the sketch wireframe) are theme-driven and declared in theme_apply.go.
 
 // snapGlyph builds the snap marker at the snapped point: a square for an endpoint, a
@@ -47,7 +47,7 @@ func snapGlyph(plane sketch.Plane, r app.SnapResult, hWorld float64) (renderer.D
 	default:
 		return renderer.DrawItem{}, false
 	}
-	return lineItem(acc, snapGlyphColor), true
+	return lineItem(acc, chromeTheme.snapGlyphColor), true
 }
 
 // pointsOverlay draws Inventor's target glyph (a circle with a centred crosshair) at every
@@ -72,7 +72,7 @@ func pointsOverlay(plane sketch.Plane, sk *sketch.Sketch, hWorld float64) (rende
 	if len(acc.pos) == 0 {
 		return renderer.DrawItem{}, false
 	}
-	return lineItem(acc, pointMarkerColor), true
+	return lineItem(acc, chromeTheme.pointMarkerColor), true
 }
 
 // targetMarker adds the sketch-point glyph at c: a small circle with a centred crosshair

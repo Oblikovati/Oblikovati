@@ -22,7 +22,7 @@ func highlightSelection(list renderer.DrawList, sel app.Selectable, partBodies [
 	if len(ids) == 0 {
 		return list
 	}
-	return recolorByObjectID(list, ids, selectionHighlight)
+	return recolorByObjectID(list, ids, chromeTheme.selectionHighlight)
 }
 
 // bodyHighlightIDs returns the set of body ObjectIDs to highlight for a selection: the

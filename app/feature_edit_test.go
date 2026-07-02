@@ -122,7 +122,7 @@ func TestFeatureEditAPIsAreNoOpsWhenNotEditing(t *testing.T) {
 func TestFeatureEditIsEditableReflectsCapability(t *testing.T) {
 	s, h := extrudedFeatureSession(t)
 	_ = s
-	if !FeatureIsEditable(h.Feature) {
+	if !s.FeatureIsEditable(h.Feature) {
 		t.Error("an extrude should be editable")
 	}
 }

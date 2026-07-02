@@ -52,20 +52,20 @@ type scopeFilter func(seq uint64) bool
 
 func axisColor(axis, selected *feature.WorkAxis) [4]float32 {
 	if axis == selected {
-		return selectedPlaneColor
+		return chromeTheme.selectedPlaneColor
 	}
-	return faintPlaneColor
+	return chromeTheme.faintPlaneColor
 }
 
 // planeColor chooses a plane border's draw color: selected wins, then hovered, then faint.
 func planeColor(wp, selected, hovered *feature.WorkPlane) [4]float32 {
 	switch wp {
 	case selected:
-		return selectedPlaneColor
+		return chromeTheme.selectedPlaneColor
 	case hovered:
-		return hoverPlaneColor
+		return chromeTheme.hoverPlaneColor
 	default:
-		return faintPlaneColor
+		return chromeTheme.faintPlaneColor
 	}
 }
 
@@ -94,8 +94,8 @@ func planeFill(wp *feature.WorkPlane) renderer.DrawItem {
 		Positions: pos,
 		Normals:   []math.Vector3{n, n, n, n},
 		Indices:   []int{0, 1, 2, 0, 2, 3},
-		Color:     planeFillColor,
-		Opacity:   planeFillColor[3],
+		Color:     chromeTheme.planeFillColor,
+		Opacity:   chromeTheme.planeFillColor[3],
 		Biased:    true, // a reference overlay: depth-bias it so a coplanar body face wins (no z-fight)
 	}
 }

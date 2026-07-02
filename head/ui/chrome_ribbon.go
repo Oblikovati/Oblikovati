@@ -307,9 +307,9 @@ func drawVariantDropdown(btn app.RibbonButton) string {
 // icon never hides the command.
 func drawButtonControl(btn app.RibbonButton) bool {
 	if btn.Active { // a toggled-on stateful control renders in the accent color
-		native.PushStyleColor("Button", accentColor)
-		native.PushStyleColor("ButtonHovered", accentColor)
-		native.PushStyleColor("ButtonActive", accentColor)
+		native.PushStyleColor("Button", chromeTheme.accentColor)
+		native.PushStyleColor("ButtonHovered", chromeTheme.accentColor)
+		native.PushStyleColor("ButtonActive", chromeTheme.accentColor)
 		defer native.PopStyleColor(3)
 	}
 	if px, ok := iconSizeFor(btn.Command.ButtonStyle()); ok {

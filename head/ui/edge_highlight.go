@@ -31,7 +31,7 @@ func selectedEdgeOverlay(s *app.Session) []renderer.DrawItem {
 	if len(acc.pos) == 0 {
 		return nil
 	}
-	return []renderer.DrawItem{lineItem(acc, selectionHighlight)}
+	return []renderer.DrawItem{lineItem(acc, chromeTheme.selectionHighlight)}
 }
 
 // highlightedEdges returns a lone selected edge (outside any tool) to highlight. An active

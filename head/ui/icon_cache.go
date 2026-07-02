@@ -31,7 +31,7 @@ var icons *iconCache
 
 // iconCache turns embedded SVG glyphs into themed ImGui textures in two stages: each
 // glyph is rasterized ONCE into theme-independent per-role coverage masks, and the
-// masks are composed with the active theme's icon colors (iconColors, theme_apply.go)
+// masks are composed with the active theme's icon colors (chromeTheme.iconColors, theme_apply.go)
 // into the uploaded texture. A theme change only re-composes and re-uploads — lazily,
 // per icon actually drawn — which is what makes the appearance editor's live preview
 // affordable. Replaced textures are retired for a few frames before destruction.
@@ -109,7 +109,7 @@ func (c *iconCache) compose(k iconKey) uint64 {
 	if masks == nil {
 		return 0
 	}
-	img := masks.Compose(iconColors)
+	img := masks.Compose(chromeTheme.iconColors)
 	return c.win.CreateTexture(img.Pix, k.px, k.px)
 }
 

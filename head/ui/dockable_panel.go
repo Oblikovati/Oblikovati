@@ -36,21 +36,24 @@ type dockablePanel struct {
 	after     func(*app.Session)
 }
 
-// dockablePanels is the ordered registry of built-in dockable windows. Order is the View-menu
-// order. Registered once at init by registerDockablePanel from each panel's file.
-var dockablePanels []dockablePanel
+// dockablePanels is the ordered registry of built-in dockable windows, in
+// View-menu order — the package default, constructed explicitly from the
+// builtinDockablePanels table instead of init()-time self-registration
+// (#1617, audit B6).
+var dockablePanels = defaultDockablePanels()
 
-// registerDockablePanel adds a built-in dockable window to the registry. Call it from a panel
-// file's init so the panel is self-describing and the View menu / render loop pick it up with no
-// central edit (the self-registration pattern). Panics on a duplicate title since the title is the
+// defaultDockablePanels validates and returns the built-in dockable-window
+// set; a duplicate title panics at construction since the title is the
 // window id and must be unique.
-func registerDockablePanel(p dockablePanel) {
-	for _, e := range dockablePanels {
-		if e.title == p.title {
+func defaultDockablePanels() []dockablePanel {
+	seen := map[string]bool{}
+	for _, p := range builtinDockablePanels {
+		if seen[p.title] {
 			panic("duplicate dockable panel title: " + p.title)
 		}
+		seen[p.title] = true
 	}
-	dockablePanels = append(dockablePanels, p)
+	return builtinDockablePanels
 }
 
 // drawDockablePanels renders every registered built-in dockable window through the shared path,
@@ -106,14 +109,6 @@ func panelMenuLabel(p *dockablePanel) string {
 		return p.menuLabel
 	}
 	return p.title
-}
-
-// init registers the built-in dockable windows once (so the duplicate-title guard runs). The set
-// itself is the data-driven builtinDockablePanels table below.
-func init() {
-	for _, p := range builtinDockablePanels {
-		registerDockablePanel(p)
-	}
 }
 
 // builtinDockablePanels is the ordered table of built-in dockable windows, in View-menu order.

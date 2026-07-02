@@ -292,7 +292,7 @@ func renderActiveTile(win *native.Window, s *app.Session, i int, cam scene.Camer
 // the user can tell which view is focused (drawn after the image, so it sits on top).
 func drawActiveTileBorder(x, y, w, h float32) {
 	const thickness = 2
-	c := activeViewportBorderColor // themed (types.TokenViewportActiveBorder)
+	c := chromeTheme.activeViewportBorderColor // themed (types.TokenViewportActiveBorder)
 	x0, y0, x1, y1 := x+1, y+1, x+w-1, y+h-1
 	native.DrawLine(x0, y0, x1, y0, c, thickness)
 	native.DrawLine(x1, y0, x1, y1, c, thickness)
@@ -705,7 +705,7 @@ func toolPreview(s *app.Session) (renderer.DrawItem, bool) {
 	}
 	acc := &segAccum{}
 	acc.polyline(s.ActiveSketch().Plane(), pts, closed)
-	return renderer.DrawItem{Primitive: renderer.Lines, Positions: acc.pos, Indices: acc.idx, Color: previewColor}, true
+	return renderer.DrawItem{Primitive: renderer.Lines, Positions: acc.pos, Indices: acc.idx, Color: chromeTheme.previewColor}, true
 }
 
 const (

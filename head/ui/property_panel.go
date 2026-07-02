@@ -118,9 +118,9 @@ func propertySelectorChip(id, text string, filled, required bool) bool {
 		drawEmptySelectorChip(id, text, required)
 		return false
 	}
-	native.PushStyleColor("Button", accentColor)
-	native.PushStyleColor("ButtonHovered", accentColor)
-	native.PushStyleColor("ButtonActive", accentColor)
+	native.PushStyleColor("Button", chromeTheme.accentColor)
+	native.PushStyleColor("ButtonHovered", chromeTheme.accentColor)
+	native.PushStyleColor("ButtonActive", chromeTheme.accentColor)
 	native.Button(text + "##" + id)
 	native.PopStyleColor(3)
 	native.SameLine()
@@ -131,7 +131,7 @@ func propertySelectorChip(id, text string, filled, required bool) bool {
 // signals state (picking happens in the viewport, so clicking it has no action).
 func drawEmptySelectorChip(id, text string, required bool) {
 	if required {
-		native.PushStyleColor("Text", dangerColor)
+		native.PushStyleColor("Text", chromeTheme.dangerColor)
 		defer native.PopStyleColor(1)
 	}
 	native.Button(text + "##" + id)
@@ -170,12 +170,12 @@ func armableSlotChip(id, text string, filled, armed, clearable, required bool) (
 // — in the danger color for a required slot, the normal color for an optional one.
 func drawArmableChipButton(id, text string, filled, armed, required bool) bool {
 	if armed || filled {
-		native.PushStyleColor("Button", accentColor)
-		native.PushStyleColor("ButtonHovered", accentColor)
-		native.PushStyleColor("ButtonActive", accentColor)
+		native.PushStyleColor("Button", chromeTheme.accentColor)
+		native.PushStyleColor("ButtonHovered", chromeTheme.accentColor)
+		native.PushStyleColor("ButtonActive", chromeTheme.accentColor)
 		defer native.PopStyleColor(3)
 	} else if required {
-		native.PushStyleColor("Text", dangerColor)
+		native.PushStyleColor("Text", chromeTheme.dangerColor)
 		defer native.PopStyleColor(1)
 	}
 	return native.Button(text + "##" + id)
@@ -202,9 +202,9 @@ func propertyIconToggles(id string, keys, tips []string, active int) int {
 // when selected, with the option tooltip on hover.
 func drawPropertyToggle(group, key, tip string, selected bool) bool {
 	if selected {
-		native.PushStyleColor("Button", accentColor)
-		native.PushStyleColor("ButtonHovered", accentColor)
-		native.PushStyleColor("ButtonActive", accentColor)
+		native.PushStyleColor("Button", chromeTheme.accentColor)
+		native.PushStyleColor("ButtonHovered", chromeTheme.accentColor)
+		native.PushStyleColor("ButtonActive", chromeTheme.accentColor)
 		defer native.PopStyleColor(3)
 	}
 	clicked := drawPropertyToggleControl(group, key, tip)

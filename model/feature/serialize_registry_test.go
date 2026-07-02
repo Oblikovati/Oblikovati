@@ -71,14 +71,14 @@ func TestRegisterFeatureCodecRejectsHalfCodec(t *testing.T) {
 		{"empty kind", "", good},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			assertPanics(t, func() { registerFeatureCodec(tc.kind, tc.c) })
+			assertPanics(t, func() { featureCodecs.register(tc.kind, tc.c) })
 		})
 	}
 
 	// A duplicate registration (two codecs claiming one kind) must also panic — pick an already-registered
 	// kind so the second registration collides.
 	t.Run("duplicate", func(t *testing.T) {
-		assertPanics(t, func() { registerFeatureCodec("extrude", good) })
+		assertPanics(t, func() { featureCodecs.register("extrude", good) })
 	})
 }
 
@@ -92,3 +92,34 @@ func assertPanics(t *testing.T, fn func()) {
 	}()
 	fn()
 }
+
+// TestSerializeConsultsInjectedCodecSet pins the B6 injection seam (#1617): the
+// marshal/unmarshal helpers consult exactly the set they are handed — a minimal
+// one-codec set serializes its kind and honestly rejects every other, proving
+// nothing falls back to a package global.
+func TestSerializeConsultsInjectedCodecSet(t *testing.T) {
+	minimal := featureCodecSet{}
+	minimal.register("test.minimal", featureCodec{
+		encode: func(fd *FeatureData, _ Feature, _ SketchIndexer, _ map[ID]int) error {
+			fd.Name = "via-injected-codec"
+			return nil
+		},
+		decode: func(*restoreContext, FeatureData) (*PartFeature, error) { return nil, nil },
+	})
+	pf := &PartFeature{feature: minimalKindFeature{}}
+	fd, err := serializeFeatureWith(minimal, pf, nil, nil)
+	if err != nil || fd.Name != "via-injected-codec" {
+		t.Fatalf("injected encode = (%+v, %v), want the minimal codec's output", fd, err)
+	}
+	if _, err := serializeFeatureWith(minimal, &PartFeature{feature: fakeFeature{}}, nil, nil); err == nil {
+		t.Error("a kind outside the injected set serialized — a global fallback exists")
+	}
+	if _, err := buildFeatureWith(minimal, nil, FeatureData{Kind: "extrude"}, nil, nil, nil); err == nil {
+		t.Error("extrude decoded through a set that does not contain it — a global fallback exists")
+	}
+}
+
+// minimalKindFeature carries the kind the minimal injected codec registers.
+type minimalKindFeature struct{ fakeFeature }
+
+func (minimalKindFeature) Kind() string { return "test.minimal" }

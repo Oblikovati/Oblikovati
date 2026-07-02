@@ -6,8 +6,10 @@ package feature
 // rebuild/match/extend/untrim/fair/fit surface edits). Encode and decode are paired so they cannot
 // drift (#1416); the closures call the serializeX/restoreX helpers in this family's serialize_*.go files.
 
-func init() {
-	registerFeatureCodec("boundary-patch", featureCodec{
+// registerSurfaceCodecs contributes this family's codecs to the default set (#1617);
+// formerly an init() registration.
+func (r featureCodecSet) registerSurfaceCodecs() {
+	r.register("boundary-patch", featureCodec{
 		encode: func(fd *FeatureData, f Feature, sk SketchIndexer, _ map[ID]int) error {
 			bp, err := serializeBoundaryPatch(f.(*BoundaryPatchFeature).def, sk)
 			fd.BoundaryPatch = bp
@@ -17,7 +19,7 @@ func init() {
 			return restoreBoundaryPatch(rc.fs, fd.BoundaryPatch, rc.sk)
 		},
 	})
-	registerFeatureCodec("ruled-surface", featureCodec{
+	r.register("ruled-surface", featureCodec{
 		encode: func(fd *FeatureData, f Feature, sk SketchIndexer, _ map[ID]int) error {
 			rs, err := serializeRuledSurface(f.(*RuledSurfaceFeature).def, sk)
 			fd.RuledSurface = rs
@@ -27,7 +29,7 @@ func init() {
 			return restoreRuledSurface(rc.fs, fd.RuledSurface, rc.sk)
 		},
 	})
-	registerFeatureCodec("rebuild-surface", featureCodec{
+	r.register("rebuild-surface", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			fd.Rebuild = serializeRebuild(f.(*RebuildFeature).def)
 			return nil
@@ -36,7 +38,7 @@ func init() {
 			return restoreRebuild(rc.fs, fd.Rebuild)
 		},
 	})
-	registerFeatureCodec("control-point-edit", featureCodec{
+	r.register("control-point-edit", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			fd.ControlPointEdit = serializeControlPointEdit(f.(*ControlPointEditFeature).def)
 			return nil
@@ -45,7 +47,7 @@ func init() {
 			return restoreControlPointEdit(rc.fs, fd.ControlPointEdit)
 		},
 	})
-	registerFeatureCodec("nurbs-plane", featureCodec{
+	r.register("nurbs-plane", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			fd.NurbsPlane = serializeNurbsPlane(f.(*NurbsPlaneFeature).def)
 			return nil
@@ -54,7 +56,7 @@ func init() {
 			return restoreNurbsPlane(rc.fs, fd.NurbsPlane)
 		},
 	})
-	registerFeatureCodec("match-surface", featureCodec{
+	r.register("match-surface", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			fd.Match = serializeMatch(f.(*MatchFeature).def)
 			return nil
@@ -63,7 +65,7 @@ func init() {
 			return restoreMatch(rc.fs, fd.Match)
 		},
 	})
-	registerFeatureCodec("extend-surface", featureCodec{
+	r.register("extend-surface", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			fd.ExtendSurface = serializeExtendSurface(f.(*ExtendSurfaceFeature).def)
 			return nil
@@ -72,7 +74,7 @@ func init() {
 			return restoreExtendSurface(rc.fs, fd.ExtendSurface)
 		},
 	})
-	registerFeatureCodec("untrim-surface", featureCodec{
+	r.register("untrim-surface", featureCodec{
 		encode: func(fd *FeatureData, _ Feature, _ SketchIndexer, _ map[ID]int) error {
 			fd.Untrim = &UntrimData{}
 			return nil
@@ -81,7 +83,7 @@ func init() {
 			return restoreUntrim(rc.fs, fd.Untrim)
 		},
 	})
-	registerFeatureCodec("fill-surface", featureCodec{
+	r.register("fill-surface", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			fd.FillSurface = serializeFillSurface(f.(*FillFeature).def)
 			return nil
@@ -90,7 +92,7 @@ func init() {
 			return restoreFillSurface(rc.fs, fd.FillSurface)
 		},
 	})
-	registerFeatureCodec("bridge-surface", featureCodec{
+	r.register("bridge-surface", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			fd.BridgeSurface = serializeBridgeSurface(f.(*BridgeFeature).def)
 			return nil
@@ -99,7 +101,7 @@ func init() {
 			return restoreBridgeSurface(rc.fs, fd.BridgeSurface)
 		},
 	})
-	registerFeatureCodec("network-surface", featureCodec{
+	r.register("network-surface", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			fd.NetworkSurface = serializeNetworkSurface(f.(*NetworkFeature).def)
 			return nil
@@ -108,7 +110,7 @@ func init() {
 			return restoreNetworkSurface(rc.fs, fd.NetworkSurface)
 		},
 	})
-	registerFeatureCodec("fair-surface", featureCodec{
+	r.register("fair-surface", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			fd.FairSurface = serializeFairSurface(f.(*FairFeature).def)
 			return nil
@@ -117,7 +119,7 @@ func init() {
 			return restoreFairSurface(rc.fs, fd.FairSurface)
 		},
 	})
-	registerFeatureCodec("fit-surface", featureCodec{
+	r.register("fit-surface", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			fd.FitSurface = serializeFitSurface(f.(*FitFeature).def)
 			return nil

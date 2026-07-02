@@ -23,14 +23,14 @@ func revolveCenterlineHighlight(s *app.Session) []renderer.DrawItem {
 	if pts, plane, ok := rv.CenterlineOutline(); ok {
 		acc := &segAccum{}
 		acc.polyline(plane, pts, false)
-		items = appendGrid(items, acc, sketchSelectedColor)
+		items = appendGrid(items, acc, chromeTheme.sketchSelectedColor)
 	}
 	if native.IsItemHovered() {
 		x, y := viewportCursor()
 		if pts, plane, ok := s.HoveredCenterlineOutline(x, y); ok {
 			acc := &segAccum{}
 			acc.polyline(plane, pts, false)
-			items = appendGrid(items, acc, sketchCandidateColor)
+			items = appendGrid(items, acc, chromeTheme.sketchCandidateColor)
 		}
 	}
 	return items

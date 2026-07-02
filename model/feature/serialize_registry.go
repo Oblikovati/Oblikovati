@@ -31,23 +31,44 @@ type restoreContext struct {
 	work     *WorkGeometry
 }
 
-// featureCodecs maps a feature kind to its codec. Populated by the serialize_codecs_*.go init()s; read
-// by serializeFeature/buildFeature. Read-only after init, so no synchronization is needed.
-var featureCodecs = map[string]featureCodec{}
+// featureCodecSet maps feature kinds to their codecs — the value serializeFeature/buildFeature
+// consult, and the seam a test can inject a minimal set through (#1617, audit B6).
+type featureCodecSet map[string]featureCodec
 
-// registerFeatureCodec records one kind's codec, panicking on a duplicate or an incomplete pair — a
-// programming error caught at startup, not a silent overwrite. Called from family init()s.
-func registerFeatureCodec(kind string, c featureCodec) {
+// featureCodecs is the package default: every production codec, constructed in ONE
+// visible order by defaultFeatureCodecs. This is the package's composition site —
+// there are no init() registrations (#1617), so what serializes is decided by
+// explicit construction, not import linkage.
+var featureCodecs = defaultFeatureCodecs()
+
+// defaultFeatureCodecs assembles the full production codec set, one register call
+// per feature family (the former serialize_codecs_*.go init() bodies, now named
+// and explicitly ordered).
+func defaultFeatureCodecs() featureCodecSet {
+	r := featureCodecSet{}
+	r.registerSolidCodecs()
+	r.registerDressUpCodecs()
+	r.registerPatternCodecs()
+	r.registerFaceEditCodecs()
+	r.registerSurfaceCodecs()
+	r.registerSheetMetalCodecs()
+	r.registerCosmeticCodecs()
+	return r
+}
+
+// register records one kind's codec, panicking on a duplicate or an incomplete pair — a
+// programming error caught at construction, not a silent overwrite.
+func (r featureCodecSet) register(kind string, c featureCodec) {
 	if kind == "" {
-		panic("feature: registerFeatureCodec with empty kind")
+		panic("feature: register with empty kind")
 	}
 	if c.encode == nil || c.decode == nil {
 		panic(fmt.Sprintf("feature: codec for kind %q must have both encode and decode", kind))
 	}
-	if _, dup := featureCodecs[kind]; dup {
+	if _, dup := r[kind]; dup {
 		panic(fmt.Sprintf("feature: duplicate serialization codec for kind %q", kind))
 	}
-	featureCodecs[kind] = c
+	r[kind] = c
 }
 
 // registeredFeatureKinds returns the kinds with a codec, for the enumerating round-trip test.

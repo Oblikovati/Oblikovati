@@ -77,22 +77,22 @@ func TestBrowserMenuByKind(t *testing.T) {
 	s, _ := extrudedBoxPart(t)
 	root := BuildBrowser(s)
 
-	if labels := menuLabels(BrowserMenu(findNode(t, root, "sketch"))); !equalStrings(labels, []string{"Edit Sketch", "Share Sketch", "Visibility", "Delete"}) {
+	if labels := menuLabels(BrowserMenu(s, findNode(t, root, "sketch"))); !equalStrings(labels, []string{"Edit Sketch", "Share Sketch", "Visibility", "Delete"}) {
 		t.Errorf("sketch menu = %v", labels)
 	}
-	if labels := menuLabels(BrowserMenu(findNode(t, root, "feature"))); !equalStrings(labels, []string{"Edit", "Suppress", "Delete"}) {
+	if labels := menuLabels(BrowserMenu(s, findNode(t, root, "feature"))); !equalStrings(labels, []string{"Edit", "Suppress", "Delete"}) {
 		t.Errorf("feature menu = %v", labels)
 	}
-	if labels := menuLabels(BrowserMenu(findNode(t, root, "workplane"))); !equalStrings(labels, []string{"New Sketch", "Visibility"}) {
+	if labels := menuLabels(BrowserMenu(s, findNode(t, root, "workplane"))); !equalStrings(labels, []string{"New Sketch", "Visibility"}) {
 		t.Errorf("workplane menu = %v", labels)
 	}
-	if labels := menuLabels(BrowserMenu(findNode(t, root, "workaxis"))); !equalStrings(labels, []string{"Visibility"}) {
+	if labels := menuLabels(BrowserMenu(s, findNode(t, root, "workaxis"))); !equalStrings(labels, []string{"Visibility"}) {
 		t.Errorf("workaxis menu = %v", labels)
 	}
-	if labels := menuLabels(BrowserMenu(findNode(t, root, "body"))); !equalStrings(labels, []string{"Visibility"}) {
+	if labels := menuLabels(BrowserMenu(s, findNode(t, root, "body"))); !equalStrings(labels, []string{"Visibility"}) {
 		t.Errorf("body menu = %v", labels)
 	}
-	if m := BrowserMenu(findNode(t, root, "parameters")); m != nil {
+	if m := BrowserMenu(s, findNode(t, root, "parameters")); m != nil {
 		t.Errorf("parameters folder should have no menu, got %v", menuLabels(m))
 	}
 }
@@ -102,7 +102,7 @@ func TestBrowserMenuWorkAxisVisibilityToggles(t *testing.T) {
 	node := findNode(t, BuildBrowser(s), "workaxis")
 	axis := node.Select.(WorkAxisHandle).Axis
 	before := axis.Visible()
-	if err := menuItem(t, BrowserMenu(node), "Visibility").Invoke(s); err != nil {
+	if err := menuItem(t, BrowserMenu(s, node), "Visibility").Invoke(s); err != nil {
 		t.Fatalf("Visibility: %v", err)
 	}
 	if axis.Visible() == before {
@@ -117,7 +117,7 @@ func TestBrowserMenuBodyVisibilityToggles(t *testing.T) {
 	if !s.BodyVisible(body) {
 		t.Fatal("body should start visible")
 	}
-	if err := menuItem(t, BrowserMenu(node), "Visibility").Invoke(s); err != nil {
+	if err := menuItem(t, BrowserMenu(s, node), "Visibility").Invoke(s); err != nil {
 		t.Fatalf("Visibility: %v", err)
 	}
 	if s.BodyVisible(body) || len(s.VisibleBodies()) != 0 {
@@ -128,7 +128,7 @@ func TestBrowserMenuBodyVisibilityToggles(t *testing.T) {
 func TestBrowserMenuDeleteSketchRemovesIt(t *testing.T) {
 	s, def := extrudedBoxPart(t)
 	node := findNode(t, BuildBrowser(s), "sketch")
-	del := menuItem(t, BrowserMenu(node), "Delete")
+	del := menuItem(t, BrowserMenu(s, node), "Delete")
 	if err := del.Invoke(s); err != nil {
 		t.Fatalf("Delete sketch: %v", err)
 	}
@@ -140,7 +140,7 @@ func TestBrowserMenuDeleteSketchRemovesIt(t *testing.T) {
 func TestBrowserMenuDeleteFeatureRemovesAndRecomputes(t *testing.T) {
 	s, def := extrudedBoxPart(t)
 	node := findNode(t, BuildBrowser(s), "feature")
-	del := menuItem(t, BrowserMenu(node), "Delete")
+	del := menuItem(t, BrowserMenu(s, node), "Delete")
 	if err := del.Invoke(s); err != nil {
 		t.Fatalf("Delete feature: %v", err)
 	}
@@ -155,20 +155,20 @@ func TestBrowserMenuDeleteFeatureRemovesAndRecomputes(t *testing.T) {
 func TestBrowserMenuSuppressTogglesLabel(t *testing.T) {
 	s, _ := extrudedBoxPart(t)
 	node := findNode(t, BuildBrowser(s), "feature")
-	if err := menuItem(t, BrowserMenu(node), "Suppress").Invoke(s); err != nil {
+	if err := menuItem(t, BrowserMenu(s, node), "Suppress").Invoke(s); err != nil {
 		t.Fatalf("Suppress: %v", err)
 	}
 	// Rebuild: the same feature node should now offer Unsuppress.
 	node = findNode(t, BuildBrowser(s), "feature")
-	if _, ok := findMenuItem(BrowserMenu(node), "Unsuppress"); !ok {
-		t.Errorf("after Suppress, menu = %v, want an Unsuppress entry", menuLabels(BrowserMenu(node)))
+	if _, ok := findMenuItem(BrowserMenu(s, node), "Unsuppress"); !ok {
+		t.Errorf("after Suppress, menu = %v, want an Unsuppress entry", menuLabels(BrowserMenu(s, node)))
 	}
 }
 
 func TestBrowserMenuEditSketchEntersIt(t *testing.T) {
 	s, def := extrudedBoxPart(t)
 	node := findNode(t, BuildBrowser(s), "sketch")
-	if err := menuItem(t, BrowserMenu(node), "Edit Sketch").Invoke(s); err != nil {
+	if err := menuItem(t, BrowserMenu(s, node), "Edit Sketch").Invoke(s); err != nil {
 		t.Fatalf("Edit Sketch: %v", err)
 	}
 	if s.ActiveSketch() != def.Sketches().Item(0) {

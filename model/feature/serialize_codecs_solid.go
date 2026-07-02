@@ -8,8 +8,10 @@ import "fmt"
 // per-face/whole-body modifiers). Each pairs the kind's encode and decode so they cannot drift (#1416);
 // the closures call the serializeX/restoreX helpers that live in this family's serialize_*.go files.
 
-func init() {
-	registerFeatureCodec("extrude", featureCodec{
+// registerSolidCodecs contributes this family's codecs to the default set (#1617);
+// formerly an init() registration.
+func (r featureCodecSet) registerSolidCodecs() {
+	r.register("extrude", featureCodec{
 		encode: func(fd *FeatureData, f Feature, sk SketchIndexer, _ map[ID]int) error {
 			ed, err := serializeExtrude(f.(*ExtrudeFeature).def, sk)
 			fd.Extrude = ed
@@ -19,7 +21,7 @@ func init() {
 			return requireExtrude(rc.fs, fd.Extrude, rc.sk, rc.work)
 		},
 	})
-	registerFeatureCodec("revolve", featureCodec{
+	r.register("revolve", featureCodec{
 		encode: func(fd *FeatureData, f Feature, sk SketchIndexer, _ map[ID]int) error {
 			rv, err := serializeRevolve(f.(*RevolveFeature).def, sk)
 			fd.Revolve = rv
@@ -29,7 +31,7 @@ func init() {
 			return restoreRevolve(rc.fs, fd.Revolve, rc.sk, rc.work)
 		},
 	})
-	registerFeatureCodec("coil", featureCodec{
+	r.register("coil", featureCodec{
 		encode: func(fd *FeatureData, f Feature, sk SketchIndexer, _ map[ID]int) error {
 			cd, err := serializeCoil(f.(*CoilFeature).def, sk)
 			fd.Coil = cd
@@ -39,7 +41,7 @@ func init() {
 			return restoreCoil(rc.fs, fd.Coil, rc.sk, rc.work)
 		},
 	})
-	registerFeatureCodec("sweep", featureCodec{
+	r.register("sweep", featureCodec{
 		encode: func(fd *FeatureData, f Feature, sk SketchIndexer, _ map[ID]int) error {
 			sw, err := serializeSweep(f.(*SweepFeature).def, sk)
 			fd.Sweep = sw
@@ -49,7 +51,7 @@ func init() {
 			return restoreSweep(rc.fs, fd.Sweep, rc.sk)
 		},
 	})
-	registerFeatureCodec("loft", featureCodec{
+	r.register("loft", featureCodec{
 		encode: func(fd *FeatureData, f Feature, sk SketchIndexer, _ map[ID]int) error {
 			lo, err := serializeLoft(f.(*LoftFeature).def, sk)
 			fd.Loft = lo
@@ -59,7 +61,7 @@ func init() {
 			return restoreLoft(rc.fs, fd.Loft, rc.sk)
 		},
 	})
-	registerFeatureCodec("rib", featureCodec{
+	r.register("rib", featureCodec{
 		encode: func(fd *FeatureData, f Feature, sk SketchIndexer, _ map[ID]int) error {
 			rd, err := serializeRib(f.(*RibFeature).def, sk)
 			fd.Rib = rd
@@ -69,7 +71,7 @@ func init() {
 			return restoreRib(rc.fs, fd.Rib, rc.sk)
 		},
 	})
-	registerFeatureCodec("emboss", featureCodec{
+	r.register("emboss", featureCodec{
 		encode: func(fd *FeatureData, f Feature, sk SketchIndexer, _ map[ID]int) error {
 			ed, err := serializeEmboss(f.(*EmbossFeature).def, sk)
 			fd.Emboss = ed
@@ -79,7 +81,7 @@ func init() {
 			return restoreEmboss(rc.fs, fd.Emboss, rc.sk)
 		},
 	})
-	registerFeatureCodec("rest", featureCodec{
+	r.register("rest", featureCodec{
 		encode: func(fd *FeatureData, f Feature, sk SketchIndexer, _ map[ID]int) error {
 			rd, err := serializeRest(f.(*RestFeature).def, sk)
 			fd.Rest = rd
@@ -89,7 +91,7 @@ func init() {
 			return restoreRest(rc.fs, fd.Rest, rc.sk)
 		},
 	})
-	registerFeatureCodec("grill", featureCodec{
+	r.register("grill", featureCodec{
 		encode: func(fd *FeatureData, f Feature, sk SketchIndexer, _ map[ID]int) error {
 			gd, err := serializeGrill(f.(*GrillFeature).def, sk)
 			fd.Grill = gd
@@ -99,7 +101,7 @@ func init() {
 			return restoreGrill(rc.fs, fd.Grill, rc.sk)
 		},
 	})
-	registerFeatureCodec("combine", featureCodec{
+	r.register("combine", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			cf := f.(*CombineFeature)
 			op, err := operationName(cf.def.Operation)
@@ -113,7 +115,7 @@ func init() {
 			return restoreCombine(rc.fs, fd.Combine)
 		},
 	})
-	registerFeatureCodec("splitSolid", featureCodec{
+	r.register("splitSolid", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			sd, err := serializeSplitSolid(f.(*SplitSolidFeature).def)
 			fd.SplitSolid = sd
@@ -123,7 +125,7 @@ func init() {
 			return restoreSplitSolid(rc.fs, fd.SplitSolid, rc.work)
 		},
 	})
-	registerFeatureCodec("delete-body", featureCodec{
+	r.register("delete-body", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			fd.DeleteBody = serializeDeleteBody(f.(*DeleteBodyFeature).def)
 			return nil
@@ -132,7 +134,7 @@ func init() {
 			return restoreDeleteBody(rc.fs, fd.DeleteBody)
 		},
 	})
-	registerFeatureCodec("hole", featureCodec{
+	r.register("hole", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			h, err := serializeHole(f.(*HoleFeature).def)
 			fd.Hole = h
@@ -142,7 +144,7 @@ func init() {
 			return restoreHole(rc.fs, fd.Hole)
 		},
 	})
-	registerFeatureCodec("boss", featureCodec{
+	r.register("boss", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			b := f.(*BossFeature)
 			fd.Boss = &BossData{Face: encodeKey(b.def.PlacementFaceKey), Diameter: evalFloat(b.def.Diameter), Height: evalFloat(b.def.Height), FaceAnchors: encodeFaceAnchors(b.def.FaceAnchors)}
@@ -152,7 +154,7 @@ func init() {
 			return restoreBoss(rc.fs, fd.Boss)
 		},
 	})
-	registerFeatureCodec("thread", featureCodec{
+	r.register("thread", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			t := f.(*ThreadFeature)
 			fd.Thread = &ThreadData{Face: encodeKey(t.def.FaceKey), Designation: t.def.Designation, Cut: t.def.Cut,
@@ -162,7 +164,7 @@ func init() {
 		},
 		decode: decodeThread,
 	})
-	registerFeatureCodec("snap-fit", featureCodec{
+	r.register("snap-fit", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			d := f.(*SnapFitFeature).def
 			fd.SnapFit = &SnapFitData{
@@ -173,7 +175,7 @@ func init() {
 		},
 		decode: decodeSnapFit,
 	})
-	registerFeatureCodec("thicken", featureCodec{
+	r.register("thicken", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			t := f.(*ThickenFeature)
 			fd.Thicken = &ThickenData{Value: t.Thickness(), Approximation: approximationName(t.Approximation())}
@@ -181,7 +183,7 @@ func init() {
 		},
 		decode: decodeThicken,
 	})
-	registerFeatureCodec("move", featureCodec{
+	r.register("move", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			fd.Move = serializeMove(f.(*MoveFeature).def)
 			return nil
@@ -190,7 +192,7 @@ func init() {
 			return restoreMove(rc.fs, fd.Move)
 		},
 	})
-	registerFeatureCodec("directEdit", featureCodec{
+	r.register("directEdit", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			fd.DirectEdit = serializeDirectEdit(f.(*DirectEditFeature).def)
 			return nil
@@ -199,7 +201,7 @@ func init() {
 			return restoreDirectEdit(rc.fs, fd.DirectEdit)
 		},
 	})
-	registerFeatureCodec("importedBody", featureCodec{
+	r.register("importedBody", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			fd.Import = serializeImportedBody(f.(*ImportedBodyFeature))
 			return nil
@@ -208,7 +210,7 @@ func init() {
 			return restoreImportedBody(rc.fs, fd.Import)
 		},
 	})
-	registerFeatureCodec("mesh-solid", featureCodec{
+	r.register("mesh-solid", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			fd.MeshSolid = serializeMeshSolid(f.(*MeshSolidFeature).geom)
 			return nil
@@ -217,7 +219,7 @@ func init() {
 			return restoreMeshSolid(rc.fs, fd.MeshSolid)
 		},
 	})
-	registerFeatureCodec("modelTolerance", featureCodec{
+	r.register("modelTolerance", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			fd.ModelTolerance = serializeModelTolerance(f.(*ModelToleranceFeature).def)
 			return nil

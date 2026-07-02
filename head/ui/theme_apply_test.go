@@ -30,17 +30,17 @@ func TestChromeBindingSlotsUnique(t *testing.T) {
 // the active theme, not frozen at their seeded Dark values: switching to Light must change
 // the sketch-geometry color.
 func TestRefreshThemeColorsReadsActiveTheme(t *testing.T) {
-	refreshThemeColors(theme.DefaultDark())
-	dark := sketchColor
-	refreshThemeColors(theme.DefaultLight())
-	if sketchColor == dark {
-		t.Errorf("sketchColor unchanged after switching Dark->Light (%v); not reading the theme", sketchColor)
+	chromeTheme.refresh(theme.DefaultDark())
+	dark := chromeTheme.sketchColor
+	chromeTheme.refresh(theme.DefaultLight())
+	if chromeTheme.sketchColor == dark {
+		t.Errorf("chromeTheme.sketchColor unchanged after switching Dark->Light (%v); not reading the theme", chromeTheme.sketchColor)
 	}
-	// pointMarkerColor must track sketchColor (placed points match the wireframe).
-	if pointMarkerColor != sketchColor {
-		t.Errorf("pointMarkerColor %v != sketchColor %v", pointMarkerColor, sketchColor)
+	// chromeTheme.pointMarkerColor must track chromeTheme.sketchColor (placed points match the wireframe).
+	if chromeTheme.pointMarkerColor != chromeTheme.sketchColor {
+		t.Errorf("chromeTheme.pointMarkerColor %v != chromeTheme.sketchColor %v", chromeTheme.pointMarkerColor, chromeTheme.sketchColor)
 	}
-	refreshThemeColors(theme.DefaultDark()) // restore the package default for other tests
+	chromeTheme.refresh(theme.DefaultDark()) // restore the package default for other tests
 }
 
 // TestInputTextCursorBoundToText guards the light-mode caret fix: ImGui 1.92 draws the

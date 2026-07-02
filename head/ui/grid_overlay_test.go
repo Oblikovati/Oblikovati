@@ -64,10 +64,10 @@ func TestGridOverlayOriginAxisColors(t *testing.T) {
 // TestGridOverlayKeepsMinorAndMajor: the axis split does not drop the minor/major groups.
 func TestGridOverlayKeepsMinorAndMajor(t *testing.T) {
 	items := gridOverlay(xyPlane(t), 1.0, 5)
-	if _, ok := itemWithColor(items, gridMinorColor); !ok {
+	if _, ok := itemWithColor(items, chromeTheme.gridMinorColor); !ok {
 		t.Errorf("no minor grid item; colors=%v", colorsOf(items))
 	}
-	if _, ok := itemWithColor(items, gridMajorColor); !ok {
+	if _, ok := itemWithColor(items, chromeTheme.gridMajorColor); !ok {
 		t.Errorf("no major grid item; colors=%v", colorsOf(items))
 	}
 }

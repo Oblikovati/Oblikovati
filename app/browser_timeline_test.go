@@ -125,7 +125,7 @@ func TestToggleSketchSharedRoundTripsThroughMenu(t *testing.T) {
 	if !hasTopLevelKind(root, "sketch") {
 		t.Error("shared sketch should be top level after toggle")
 	}
-	labels := menuLabels(BrowserMenu(findNode(t, root, "sketch")))
+	labels := menuLabels(BrowserMenu(s, findNode(t, root, "sketch")))
 	if !containsLabel(labels, "Unshare Sketch") {
 		t.Errorf("shared sketch menu = %v, want an Unshare Sketch entry", labels)
 	}

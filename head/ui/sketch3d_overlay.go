@@ -130,8 +130,8 @@ func sketch3DLiveOverlay(s *app.Session, h float64) []renderer.DrawItem {
 	}
 	highlightPickedSketch3D(s, sel, h)
 	var items []renderer.DrawItem
-	items = appendGrid(items, normal, sketchColor)
-	items = appendGrid(items, sel, sketchSelectedColor)
+	items = appendGrid(items, normal, chromeTheme.sketchColor)
+	items = appendGrid(items, sel, chromeTheme.sketchSelectedColor)
 	return items
 }
 
@@ -176,7 +176,7 @@ func buildSketch3DCurves(s *app.Session) (curves []renderer.DrawItem, points []m
 		}
 		points = accumSketch3DCurves(sk, acc, points)
 	}
-	return appendGrid(nil, acc, sketchColor), points
+	return appendGrid(nil, acc, chromeTheme.sketchColor), points
 }
 
 // buildSketch3DCurvesOnly is buildSketch3DCurves discarding the points — the un-keyed bounds

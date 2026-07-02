@@ -348,7 +348,7 @@ func TestWorkPlaneBrowserVisibilityMenuToggles(t *testing.T) {
 	s, _ := emptyPartSession(t)
 	node := originFolder(BuildBrowser(s)).Children[0] // XY plane node
 	wp := node.Select.(WorkPlaneHandle).Plane
-	menu := BrowserMenu(node)
+	menu := BrowserMenu(s, node)
 	var vis BrowserMenuItem
 	for _, m := range menu {
 		if m.Label == "Visibility" {

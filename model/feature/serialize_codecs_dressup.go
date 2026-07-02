@@ -12,8 +12,10 @@ import (
 // simplify/unwrap clean-ups). Edge/face inputs persist as reference keys that re-bind to the
 // regenerated topology on the next recompute. Encode and decode are paired so they cannot drift (#1416).
 
-func init() {
-	registerFeatureCodec("fillet", featureCodec{
+// registerDressUpCodecs contributes this family's codecs to the default set (#1617);
+// formerly an init() registration.
+func (r featureCodecSet) registerDressUpCodecs() {
+	r.register("fillet", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			ff := f.(*FilletFeature)
 			if len(ff.def.EdgeSets) > 0 {
@@ -25,7 +27,7 @@ func init() {
 		},
 		decode: decodeFillet,
 	})
-	registerFeatureCodec("chamfer", featureCodec{
+	r.register("chamfer", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			cf := f.(*ChamferFeature)
 			flat := cf.def.FlatCorners
@@ -38,7 +40,7 @@ func init() {
 		},
 		decode: decodeChamfer,
 	})
-	registerFeatureCodec("face-fillet", featureCodec{
+	r.register("face-fillet", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			ff := f.(*FaceFilletFeature)
 			fd.FaceFillet = &FaceFilletData{FacesA: encodeKeys(ff.def.FaceKeysA), FacesB: encodeKeys(ff.def.FaceKeysB), Value: evalFloat(ff.def.Radius)}
@@ -46,7 +48,7 @@ func init() {
 		},
 		decode: decodeFaceFillet,
 	})
-	registerFeatureCodec("full-round-fillet", featureCodec{
+	r.register("full-round-fillet", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			fr := f.(*FullRoundFilletFeature)
 			fd.FullRound = &FullRoundData{Side1: encodeKeys(fr.def.Side1Keys), Center: encodeKeys(fr.def.CenterKeys), Side2: encodeKeys(fr.def.Side2Keys)}
@@ -54,7 +56,7 @@ func init() {
 		},
 		decode: decodeFullRound,
 	})
-	registerFeatureCodec("rule-fillet", featureCodec{
+	r.register("rule-fillet", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			rf := f.(*RuleFilletFeature)
 			fd.RuleFillet = &RuleFilletData{Rule: rf.def.Rule.String(), Value: evalFloat(rf.def.Radius)}
@@ -62,7 +64,7 @@ func init() {
 		},
 		decode: decodeRuleFillet,
 	})
-	registerFeatureCodec("shell", featureCodec{
+	r.register("shell", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			sf := f.(*ShellFeature)
 			fd.Shell = &FaceDressData{Faces: encodeKeys(sf.def.RemovedFaceKeys), Value: evalFloat(sf.def.Thickness), GeomFaces: encodeGeomFaces(sf.def.GeomFaces)}
@@ -70,7 +72,7 @@ func init() {
 		},
 		decode: decodeShell,
 	})
-	registerFeatureCodec("draft", featureCodec{
+	r.register("draft", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			df := f.(*FaceDraftFeature)
 			p := df.def.PullDir
@@ -79,7 +81,7 @@ func init() {
 		},
 		decode: decodeDraft,
 	})
-	registerFeatureCodec("lip", featureCodec{
+	r.register("lip", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			lf := f.(*LipFeature)
 			fd.Lip = &LipData{Edges: encodeKeys(lf.def.EdgeKeys), Width: evalFloat(lf.def.Width), Height: evalFloat(lf.def.Height), Groove: lf.def.Groove}
@@ -89,7 +91,7 @@ func init() {
 			return restoreLip(rc.fs, fd.Lip)
 		},
 	})
-	registerFeatureCodec("simplify", featureCodec{
+	r.register("simplify", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			sf := f.(*SimplifyFeature)
 			fd.Simplify = &SimplifyData{RemoveFaces: encodeKeys(sf.def.RemoveFaceKeys), FillVoids: sf.def.FillVoids}
@@ -99,7 +101,7 @@ func init() {
 			return restoreSimplify(rc.fs, fd.Simplify)
 		},
 	})
-	registerFeatureCodec("unwrap", featureCodec{
+	r.register("unwrap", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			uf := f.(*UnwrapFeature)
 			fd.Unwrap = &UnwrapData{Face: encodeKey(uf.def.FaceKey), FaceAnchors: encodeFaceAnchors(uf.def.FaceAnchors)}

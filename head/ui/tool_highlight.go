@@ -85,7 +85,7 @@ func toolHoverHighlight(s *app.Session) []renderer.DrawItem {
 	if !ok {
 		return nil
 	}
-	return drawSelectable(sel, sketchCandidateColor)
+	return drawSelectable(sel, chromeTheme.sketchCandidateColor)
 }
 
 // faceFill returns a translucent, always-on-top tint of a face's tessellation — the visible part
@@ -113,7 +113,7 @@ const faceFillOpacity = 0.5
 func toolSelectedHighlight(s *app.Session) []renderer.DrawItem {
 	var items []renderer.DrawItem
 	for _, sel := range s.ToolPicks() {
-		items = append(items, drawSelectable(sel, selectionHighlight)...)
+		items = append(items, drawSelectable(sel, chromeTheme.selectionHighlight)...)
 	}
 	return items
 }

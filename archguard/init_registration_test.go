@@ -27,20 +27,11 @@ var initRegistrationPattern = regexp.MustCompile(`func init\(\) \{[^}]*[rR]egist
 // migrate the registry to an explicit default-set constructor and delete the
 // entry. Never add to it.
 var pendingInitRegistrations = map[string]struct{}{
-	"model/feature/serialize_codecs_cosmetic.go":      {}, // feature codecs → defaultFeatureCodecs()
-	"model/feature/serialize_codecs_dressup.go":       {},
-	"model/feature/serialize_codecs_faceedit.go":      {},
-	"model/feature/serialize_codecs_pattern.go":       {},
-	"model/feature/serialize_codecs_sheetmetal.go":    {},
-	"model/feature/serialize_codecs_solid.go":         {},
-	"model/feature/serialize_codecs_surface.go":       {},
 	"model/sketch/serialize_codecs_3d.go":             {}, // sketch entity/constraint codecs (#1624/#1625) → follow-up
 	"model/sketch/serialize_codecs_curves.go":         {},
 	"model/sketch/serialize_codecs_extras.go":         {},
 	"model/sketch/serialize_codecs_constraints.go":    {},
 	"model/sketch/serialize_codecs_constraints_3d.go": {},
-	"app/feature_edit_registry.go":                    {}, // feature editors → Session default
-	"head/ui/dockable_panel.go":                       {}, // dockable-panel registry → UI-loop object
 }
 
 func TestNoInitTimeRegistrations(t *testing.T) {

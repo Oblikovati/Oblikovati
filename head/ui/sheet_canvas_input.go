@@ -97,7 +97,7 @@ func drawViewCtxMenu(s *app.Session) {
 		return
 	}
 	node := app.BrowserNode{Kind: "drawingView", Select: canvasCtx.handle}
-	for _, item := range app.BrowserMenu(node) {
+	for _, item := range app.BrowserMenu(s, node) {
 		if native.MenuItem(item.Label) && item.Invoke != nil {
 			_ = item.Invoke(s)
 		}
