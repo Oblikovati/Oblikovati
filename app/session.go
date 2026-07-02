@@ -216,20 +216,11 @@ func newSession(store doc.Store) *Session {
 		camera:         scene.NewCamera(800, 600),
 		hiddenBodyKeys: map[string]bool{}, hiddenBodyKeysByDoc: map[doc.ID]map[string]bool{},
 		graphics: clientgraphics.NewStore(), graphicsByDoc: map[doc.ID]*clientgraphics.Store{},
-		featureEditors:  defaultFeatureEditors(),
-		addins:          NewAddInManager(),
-		clientApps:      NewClientApplicationRegistry(),
-		browserPanes:    NewAddInBrowserPanes(),
-		dockableWindows: NewAddInDockableWindows(),
-		taskPanels:      newAddInTaskPanels(),
-		appOptions:      options.Defaults(),
-		messageCenter:   NewMessageCenter(),
-		progress:        NewProgressLedger(),
-		balloonTips:     NewBalloonTipCenter(),
-		prompts:         NewPromptCenter(),
-		miniToolbars:    NewMiniToolbarRack(),
-		manipulators:    NewManipulatorBoard(),
-		visualStyle:     renderer.ShadedWithEdges,
+		featureEditors: defaultFeatureEditors(),
+		addins:         NewAddInManager(),
+		clientApps:     NewClientApplicationRegistry(),
+		appOptions:     options.Defaults(),
+		visualStyle:    renderer.ShadedWithEdges,
 		// Three Point is the out-of-the-box rig for every visual style: a studio
 		// key/fill/back setup reads far better than the legacy single headlight now
 		// that the whole rig lights every shaded mode (ADR-0026 §8).
@@ -239,12 +230,28 @@ func newSession(store doc.Store) *Session {
 		hudEnabled:         true, // dynamic-input HUD on by default, like Inventor (#790)
 		chamferConcaveOut:  true, // concave edges fill the inside corner by default (outward)
 	}
+	s.initSurfaceCenters()
 	s.seedVisualState()
 	s.graphics.SetBodyResolver(s.resolveOverlayMesh) // scratch store (no active document)
 	s.messageCenter.sink = s.routeMessage            // M26 F03: mirror message-center entries to the command line
 	s.initShellSurfaces()
 	s.wireDocumentWatchers()
 	return s
+}
+
+// initSurfaceCenters wires the session's UI surface managers (add-in panes,
+// message/progress/prompt centers, mini-toolbars, manipulators) — split from
+// newSession to keep the composition root readable.
+func (s *Session) initSurfaceCenters() {
+	s.browserPanes = NewAddInBrowserPanes()
+	s.dockableWindows = NewAddInDockableWindows()
+	s.taskPanels = newAddInTaskPanels()
+	s.messageCenter = NewMessageCenter()
+	s.progress = NewProgressLedger()
+	s.balloonTips = NewBalloonTipCenter()
+	s.prompts = NewPromptCenter()
+	s.miniToolbars = NewMiniToolbarRack()
+	s.manipulators = NewManipulatorBoard()
 }
 
 // wireDocumentWatchers starts the session's background document and transaction watchers. Split out
