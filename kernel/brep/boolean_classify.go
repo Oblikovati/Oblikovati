@@ -5,39 +5,58 @@ package brep
 import (
 	stdmath "math"
 
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
-// insideSolid reports whether p is inside the solid b, by casting a skewed ray from p and
-// counting crossings of b's planar faces (odd ⇒ inside). The direction is off-axis to
-// avoid grazing a face plane or hitting an edge/vertex.
+// insideSolidWindingThreshold is the generalized-winding-number cutoff for "inside", in raw
+// steradians: the winding number w = Σ/4π is ~1 strictly inside an outward-oriented closed
+// boundary and ~0 strictly outside, so thresholding the sum at 2π (w = 0.5) is the maximally
+// robust split — a fragment sample point near a shared edge perturbs the sum by ≪2π, where the
+// retired single-ray parity count flipped outright (#1599).
+const insideSolidWindingThreshold = 2 * stdmath.Pi
+
+// insideSolid reports whether p is inside the solid b, by thresholding the generalized winding
+// number of b's planar faces at p (Jacobson, Kavan & Sorkine, SIGGRAPH 2013). It replaces a
+// parity count along one fixed skewed ray (#1599): parity had no reselection when the ray grazed
+// an edge/vertex or ran near-parallel to a face, so fragments whose sample point sat near a
+// shared boundary — or models with faces near the magic direction — misclassified
+// deterministically. The winding number integrates the WHOLE boundary; it has no direction to
+// graze.
 func insideSolid(b *topo.Body, p math.Point3) bool {
 	faces, ok := facesOf(b)
 	if !ok {
 		return false
 	}
-	dir := math.V3(0.5773, 0.5774, 0.5775)
-	crossings := 0
+	onPlane := geom.ResolutionForBox(b.RangeBox()).Plane()
+	sum := 0.0
 	for _, f := range faces {
-		if rayHitsFace(p, dir, f) {
-			crossings++
-		}
+		sum += faceSolidAngle(f, p, onPlane)
 	}
-	return crossings%2 == 1
+	return sum > insideSolidWindingThreshold
 }
 
-// rayHitsFace reports whether the ray p+t·dir (t>0) passes through the face's polygon.
-func rayHitsFace(p math.Point3, dir math.Vector3, f planarFace) bool {
-	n := f.normal
-	den := dir.Dot(n)
-	if stdmath.Abs(den) < parallelDenomTol {
-		return false // ray parallel to the face plane
+// faceSolidAngle sums the signed solid angle every loop of the planar face subtends at p, fanning
+// each ring from its first vertex. A fan is winding-exact for any simple ring, convex or not (the
+// folded triangles of a reflex fan cancel by sign), and a hole ring — wound opposite the outer —
+// subtracts its own contribution.
+//
+// A p ON the face's plane (within onPlaneTol) contributes exactly 0: a flat polygon subtends no
+// solid angle at any coplanar exterior point, and evaluating the fan there instead trips the
+// atan2 formula's sign-of-zero degeneracy (num = ±0 with den < 0 fabricates a spurious ±2π —
+// the beltb regression, where the operands share their top/bottom planes). The coplanar-INTERIOR
+// point — genuinely on the solid's boundary — never reaches this classifier: classifySubFace
+// resolves it through the coplanarCover/ON-ON table first.
+func faceSolidAngle(f planarFace, p math.Point3, onPlaneTol float64) float64 {
+	if stdmath.Abs(float64(f.normal.Dot(f.plane.Origin.VectorTo(p)))) < onPlaneTol {
+		return 0
 	}
-	t := f.plane.Origin.VectorTo(p).Dot(n) / -den // n·(p+t dir) = n·origin ⇒ t = n·(origin−p)/(n·dir)
-	if t <= 1e-9 {                                // tol:numeric — ray hit parameter near-zero guard (dir not unit)
-		return false
+	sum := 0.0
+	for _, ring := range f.loops {
+		for i := 1; i+1 < len(ring); i++ {
+			sum += geom.SignedSolidAngle(p, ring[0], ring[i], ring[i+1])
+		}
 	}
-	hit := p.TranslateBy(dir.Scale(t))
-	return pointInFace2D(to2D(f.plane, hit), f)
+	return sum
 }

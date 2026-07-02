@@ -110,26 +110,6 @@ func TestReverseSubFaceFlipsNormalAndRings(t *testing.T) {
 	}
 }
 
-func TestRayHitsFaceBranches(t *testing.T) {
-	faces, ok := facesOf(oneFaceBody(t, false)) // a z=0 triangle (normal +Z)
-	if !ok || len(faces) != 1 {
-		t.Fatalf("facesOf(triangle) = %v, %v", len(faces), ok)
-	}
-	f := faces[0]
-	// Hit: from below the plane, shooting +Z through an interior point.
-	if !rayHitsFace(math.P3(0.2, 0.2, -1), math.V3(0, 0, 1), f) {
-		t.Error("ray through the interior should hit")
-	}
-	// Parallel: a ray in the plane never hits.
-	if rayHitsFace(math.P3(0.2, 0.2, 1), math.V3(1, 0, 0), f) {
-		t.Error("a ray parallel to the face should miss")
-	}
-	// Behind: the face is behind the ray origin along +Z.
-	if rayHitsFace(math.P3(0.2, 0.2, 1), math.V3(0, 0, 1), f) {
-		t.Error("a face behind the ray should miss")
-	}
-}
-
 func TestInsideSolidRejectsNonPlanar(t *testing.T) {
 	if insideSolid(oneFaceBody(t, true), math.P3(0, 0, 0)) {
 		t.Error("insideSolid of a non-planar body should be false")
