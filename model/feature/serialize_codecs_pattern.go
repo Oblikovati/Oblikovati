@@ -6,8 +6,10 @@ package feature
 // records the earlier features it replicates as program indices (resolved through idx on encode and the
 // restored slice on decode). Encode and decode are paired so they cannot drift (#1416).
 
-func init() {
-	registerFeatureCodec("rectangular-pattern", featureCodec{
+// registerPatternCodecs contributes this family's codecs to the default set (#1617);
+// formerly an init() registration.
+func (r featureCodecSet) registerPatternCodecs() {
+	r.register("rectangular-pattern", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, idx map[ID]int) error {
 			p := f.(*RectangularPatternFeature)
 			src, err := sourceIndices(p.def.SourceFeatures, idx)
@@ -25,7 +27,7 @@ func init() {
 			return restoreRectPattern(rc.fs, fd.RectPattern, rc.restored)
 		},
 	})
-	registerFeatureCodec("circular-pattern", featureCodec{
+	r.register("circular-pattern", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, idx map[ID]int) error {
 			p := f.(*CircularPatternFeature)
 			src, err := sourceIndices(p.def.SourceFeatures, idx)
@@ -43,7 +45,7 @@ func init() {
 			return restoreCircPattern(rc.fs, fd.CircPattern, rc.restored)
 		},
 	})
-	registerFeatureCodec("sketch-driven-pattern", featureCodec{
+	r.register("sketch-driven-pattern", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, idx map[ID]int) error {
 			p := f.(*SketchDrivenPatternFeature)
 			src, err := sourceIndices(p.def.SourceFeatures, idx)
@@ -57,7 +59,7 @@ func init() {
 			return restoreSketchPattern(rc.fs, fd.SketchPattern, rc.restored)
 		},
 	})
-	registerFeatureCodec("mirror", featureCodec{
+	r.register("mirror", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, idx map[ID]int) error {
 			p := f.(*MirrorFeature)
 			src, err := sourceIndices(p.def.SourceFeatures, idx)

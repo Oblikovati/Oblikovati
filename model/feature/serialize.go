@@ -142,7 +142,13 @@ func (fs *PartFeatures) indexByID() map[ID]int {
 // serializeFeature projects one feature into its FeatureData via the kind's registered codec (see
 // serialize_registry.go). A kind without a codec errors rather than dropping the feature silently.
 func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (FeatureData, error) {
-	c, ok := featureCodecs[pf.Kind()]
+	return serializeFeatureWith(featureCodecs, pf, sk, idx)
+}
+
+// serializeFeatureWith consults exactly the codec set it is handed — the injection
+// seam proving nothing falls back to a global (#1617, audit B6).
+func serializeFeatureWith(codecs featureCodecSet, pf *PartFeature, sk SketchIndexer, idx map[ID]int) (FeatureData, error) {
+	c, ok := codecs[pf.Kind()]
 	if !ok {
 		return FeatureData{}, fmt.Errorf("no serialization codec for feature kind %q", pf.Kind())
 	}
@@ -176,7 +182,12 @@ func (fs *PartFeatures) ApplyRecipe(data []FeatureData, sk SketchIndexer, work *
 // FindEdgeByKey/FindFaceByKey); patterns resolve their source features from restored (the features
 // built so far).
 func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored []*PartFeature, work *WorkGeometry) (*PartFeature, error) {
-	c, ok := featureCodecs[fd.Kind]
+	return buildFeatureWith(featureCodecs, fs, fd, sk, restored, work)
+}
+
+// buildFeatureWith is the decode half of the injection seam (#1617).
+func buildFeatureWith(codecs featureCodecSet, fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored []*PartFeature, work *WorkGeometry) (*PartFeature, error) {
+	c, ok := codecs[fd.Kind]
 	if !ok {
 		return nil, fmt.Errorf("no restore codec for feature kind %q", fd.Kind)
 	}

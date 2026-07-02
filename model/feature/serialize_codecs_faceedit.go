@@ -12,15 +12,17 @@ func decodeFaceEdit(rc *restoreContext, fd FeatureData) (*PartFeature, error) {
 	return restoreFaceEdit(rc.fs, fd.Kind, fd.FaceEdit)
 }
 
-func init() {
-	registerFeatureCodec("move-face", featureCodec{
+// registerFaceEditCodecs contributes this family's codecs to the default set (#1617);
+// formerly an init() registration.
+func (r featureCodecSet) registerFaceEditCodecs() {
+	r.register("move-face", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			fd.FaceEdit = serializeMoveFace(f.(*MoveFaceFeature))
 			return nil
 		},
 		decode: decodeFaceEdit,
 	})
-	registerFeatureCodec("face-offset", featureCodec{
+	r.register("face-offset", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			fo := f.(*FaceOffsetFeature)
 			fd.FaceEdit = &FaceEditData{Faces: encodeKeys(fo.FaceKeys()), Distance: fo.Distance(),
@@ -29,7 +31,7 @@ func init() {
 		},
 		decode: decodeFaceEdit,
 	})
-	registerFeatureCodec("replace-face", featureCodec{
+	r.register("replace-face", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			rf := f.(*ReplaceFaceFeature)
 			fd.FaceEdit = &FaceEditData{Faces: encodeKeys(rf.FaceKeys()), Target: encodeKey(rf.TargetKey())}
@@ -40,7 +42,7 @@ func init() {
 	// split and delete-face carry only their face keys, via the generic faceEditor interface (any
 	// feature exposing FaceKeys() that is not one of the explicit kinds above).
 	for _, kind := range []string{"split", "delete-face"} {
-		registerFeatureCodec(kind, featureCodec{
+		r.register(kind, featureCodec{
 			encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 				fd.FaceEdit = &FaceEditData{Faces: encodeKeys(f.(faceEditor).FaceKeys())}
 				return nil
