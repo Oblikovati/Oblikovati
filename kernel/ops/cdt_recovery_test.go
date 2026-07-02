@@ -157,22 +157,13 @@ func TestHoledCylinderWallNonRecoverySurfacedAndWatertight(t *testing.T) {
 		}
 	}
 
-	var info, defect int
+	// Premise updated by #1604: the seam constraint used to be structurally unrecoverable (the hole
+	// corners' axial stations lie exactly ON the seam), surfacing one benign Info diagnostic. The
+	// segment-through-vertex split now recovers the seam piecewise, so a healthy wall must carry NO
+	// constraint-leak diagnostic at any severity — and certainly no Defect.
 	for _, d := range mesh.Diagnostics {
-		if d.Code != CodeCDTConstraintLeak {
-			continue
+		if d.Code == CodeCDTConstraintLeak {
+			t.Errorf("holed wall raised %s (%v: %s); the split-at-vertex recovery must realize the seam", d.Code, d.Severity, d.Detail)
 		}
-		switch d.Severity {
-		case diag.Info:
-			info++
-		case diag.Defect:
-			defect++
-		}
-	}
-	if info != 1 {
-		t.Errorf("seam non-recovery must surface exactly one Info %s, got %d", CodeCDTConstraintLeak, info)
-	}
-	if defect != 0 {
-		t.Errorf("the watertight holed wall must not raise a leak Defect, got %d", defect)
 	}
 }

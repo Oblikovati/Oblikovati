@@ -6,14 +6,12 @@ package ops
 // contains the point, delete the connected star of such triangles, and fan the cavity boundary to the
 // new point. Skips a point coinciding with an existing vertex (no strictly-bad triangle).
 //
-// Seeding the cavity depends on whether constraints are present. With NONE (the dense unconstrained
-// insertion — every interior Steiner node of a hole-free patch, the case the O(N²) scan choked on), the
-// mesh stays Delaunay and fold-free, so the O(√N) adjacency WALK to the triangle containing p gives a
-// valid seed — the #1408 near-linear win. After constraints are recovered, the recovery flips can leave
-// the mesh momentarily FOLDED, where the triangle that geometrically contains p is the wrong topological
-// region (its connected bad-component is disjoint from p's true cavity); there the exact circumcircle
-// scan picks the correct seed. That post-constraint set is the smaller refined-path interior, so keeping
-// the robust scan for it costs little.
+// The cavity is always seeded by the O(√N) adjacency WALK to the triangle containing p (#1408).
+// Constraint recovery once left the mesh momentarily FOLDED — where the geometric walk lands in the
+// wrong topological region — which forced an exact O(T) circumcircle scan per post-constraint
+// insertion; recovery now legalizes its corridor (#1604), so the mesh is a true CDT between
+// insertions and the walk is valid in both phases. collectCavity keeps the cavity star-shaped by
+// never growing across a constrained edge.
 func (m *cdt) insert(ip int) {
 	p := m.pts[ip]
 	seed := m.locateSeed(p)
@@ -23,14 +21,12 @@ func (m *cdt) insert(ip int) {
 	m.fanCavity(ip, m.collectCavity(seed, p))
 }
 
-// locateSeed returns a circumcircle-bad triangle to seed the Bowyer–Watson cavity, or -1 when p
-// coincides with an existing vertex. It walks the adjacency from the last insertion while the mesh is
-// unconstrained (and so fold-free); once constraints exist it falls back to the exact scan, which is
-// robust to the folds constraint recovery can introduce (#1408).
+// locateSeed returns the circumcircle-bad triangle containing p to seed the Bowyer–Watson cavity, or
+// -1 when p coincides with an existing vertex. The walk is valid with or without constraints because
+// post-recovery legalization keeps the mesh a true CDT (#1604); a point strictly inside (or on an
+// open edge of) its containing triangle is strictly inside that triangle's circumdisk, so
+// inCircle ≤ 0 exactly characterizes a vertex-coincident duplicate.
 func (m *cdt) locateSeed(p [2]float64) int {
-	if len(m.con) > 0 {
-		return m.firstBad(p)
-	}
 	loc := m.locate(p)
 	t := m.tris[loc]
 	if inCircle(m.pts[t.v[0]], m.pts[t.v[1]], m.pts[t.v[2]], p) <= 0 {
@@ -128,7 +124,7 @@ func (m *cdt) collectCavity(seed int, p [2]float64) cavity {
 			// boundary is constrained must not engulf triangles on the far side of a wire and erase it
 			// (OCCT's BRepMesh protects frontier edges the same way). con is empty while the boundary
 			// itself is being inserted, so existing callers are unaffected.
-			if a, b := m.tris[t].v[(i+1)%3], m.tris[t].v[(i+2)%3]; m.con[conKey(a, b)] {
+			if a, b := m.tris[t].v[(i+1)%3], m.tris[t].v[(i+2)%3]; m.con[conKey(a, b)] > 0 {
 				continue
 			}
 			if inCircle(m.pts[m.tris[ne].v[0]], m.pts[m.tris[ne].v[1]], m.pts[m.tris[ne].v[2]], p) > 0 {
@@ -246,9 +242,12 @@ func (m *cdt) rebuildFlip(t, s, c, pp, d, q, nPD, nCP, nDQ, nQC int) {
 	m.relinkOpposite(nCP, c, pp, t)
 	m.relinkOpposite(nDQ, d, q, s)
 	m.relinkOpposite(nQC, q, c, s)
-	m.flipSteps++ // recovery flips only (flip is called nowhere else) — instrumented for #1409
+	m.flipSteps++ // recovery + legalization flips (flip is called nowhere else) — instrumented for #1409
 	m.touch(t)    // both reused triangles changed their vertex sets; refresh the incidence hint
 	m.touch(s)
+	// Queue the new diagonal for post-recovery legalization (#1604). During legalization itself the
+	// entry is redundant (a fresh Lawson diagonal is locally Delaunay) and pops in O(1).
+	m.pendingLegal = append(m.pendingLegal, [2]int{c, d})
 }
 
 // representatives maps each input point index to the inserted vertex that carries its coordinates:
@@ -291,13 +290,18 @@ func (m *cdt) flipOneCrossing(a, b int) bool {
 	return false
 }
 
-// segmentsCross reports whether open segments p1p2 and p3p4 properly intersect.
+// segmentsCross reports whether open segments p1p2 and p3p4 PROPERLY intersect: each segment's
+// endpoints strictly straddle the other's line. An endpoint lying exactly ON the other segment
+// (orient2d == 0) is a touch, not a crossing — the old `(d > 0) != (d > 0)` form lumped the exact
+// zero in with the negative side, so recoverByFlips "resolved" a segment-through-vertex constraint
+// by flipping an edge that merely touched it, wrecking the corridor without ever recovering the
+// segment (#1604; the split-at-vertex path handles that degeneracy instead).
 func segmentsCross(p1, p2, p3, p4 [2]float64) bool {
 	d1 := orient2d(p3, p4, p1)
 	d2 := orient2d(p3, p4, p2)
 	d3 := orient2d(p1, p2, p3)
 	d4 := orient2d(p1, p2, p4)
-	return ((d1 > 0) != (d2 > 0)) && ((d3 > 0) != (d4 > 0))
+	return d1*d2 < 0 && d3*d4 < 0
 }
 
 // extractDomain 2-colours the triangulation inside/outside by flooding adjacency from the
@@ -351,7 +355,7 @@ func (m *cdt) floodStep(t int, inside, visited []bool, queue []int) []int {
 		}
 		a, b := m.tris[t].v[(i+1)%3], m.tris[t].v[(i+2)%3]
 		visited[s] = true
-		inside[s] = inside[t] != m.con[conKey(a, b)]
+		inside[s] = inside[t] != (m.con[conKey(a, b)]%2 == 1) // odd wall multiplicity toggles; a doubled (pinched) wall cancels
 		queue = append(queue, s)
 	}
 	return queue
