@@ -43,7 +43,7 @@ func TestInWindowCropBoxRenders(t *testing.T) {
 	icons = nil
 
 	s := framedSession()
-	pc, err := s.AttachPointCloud("Wide", wideGridScan(t))
+	pc, _, err := s.AttachPointCloud("Wide", wideGridScan(t))
 	if err != nil {
 		t.Fatalf("attach scan: %v", err)
 	}

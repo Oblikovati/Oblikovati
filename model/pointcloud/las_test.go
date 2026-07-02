@@ -20,7 +20,7 @@ func TestLASReaderExtensions(t *testing.T) {
 }
 
 func TestReadScanDispatchesLASError(t *testing.T) {
-	_, err := ReadScan("survey.las", []byte("this is not a LAS file"), exchange.TranslationOptions{})
+	_, _, err := ReadScan("survey.las", []byte("this is not a LAS file"), exchange.TranslationOptions{})
 	if err == nil {
 		t.Fatal("want a decode error for non-LAS bytes routed to the las reader")
 	}

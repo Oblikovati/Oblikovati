@@ -4,44 +4,34 @@ package app
 
 import (
 	"fmt"
-	"os"
 
-	"oblikovati.org/kernel/exchange"
-	"oblikovati.org/model/doc"
+	"oblikovati.org/model/exchange"
 	"oblikovati.org/model/pointcloud"
 )
 
 // Point-cloud import (M17-F06, #645): the shared attach path used by both the Insert ▸ Import
-// Point Cloud command (via the head's file dialog) and the pointClouds.attach wire method, so the
-// read → embed → decode → attach sequence lives in one place.
+// Point Cloud command (via the head's file dialog) and the pointClouds.attach wire method. The
+// read → embed → decode → attach sequence lives in the model/exchange dispatch vertical
+// (exchange.ImportPointCloud, #1646) so scan imports share the standard exchange seam.
 
 // AttachPointCloud reads the scan file at fullFileName, embeds its bytes in the active part's
-// resource table (ADR-0031), decodes its points, and attaches the cloud under name (a unique name
-// is minted when name is empty). Errors when there is no active part, the file is unreadable, or
-// the scan format has no reader.
-func (s *Session) AttachPointCloud(name, fullFileName string) (*pointcloud.PointCloud, error) {
+// resource table (ADR-0031), decodes its points into the document working unit (#1636), and
+// attaches the cloud under name (a unique name is minted when name is empty). Warnings report
+// skipped malformed records (#1646). Errors when there is no active part, the file is
+// unreadable, or the scan format has no reader.
+func (s *Session) AttachPointCloud(name, fullFileName string) (*pointcloud.PointCloud, []string, error) {
 	part, err := activePart(s)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if fullFileName == "" {
-		return nil, fmt.Errorf("app: AttachPointCloud needs a file name")
+		return nil, nil, fmt.Errorf("app: AttachPointCloud needs a file name")
 	}
-	data, err := os.ReadFile(fullFileName)
+	pc, res, err := exchange.ImportPointCloud(part, name, fullFileName)
 	if err != nil {
-		return nil, fmt.Errorf("app: read scan %q: %w", fullFileName, err)
+		return nil, nil, err
 	}
-	// Scale the scan's file unit into the document's working unit — the same TranslationOptions
-	// seam every other importer threads (#1636).
-	points, err := pointcloud.ReadScan(fullFileName, data, exchange.TranslationOptions{TargetUnitMM: part.WorkingUnitMM()})
-	if err != nil {
-		return nil, err
-	}
-	if name == "" {
-		name = part.PointClouds().UniqueName("Cloud")
-	}
-	rid := part.AddResource(doc.Resource{Type: "PointCloudScan", Encoding: doc.EncodingUTF8, Value: data, Origin: fullFileName})
-	return part.PointClouds().Add(name, fullFileName, rid, points)
+	return pc, res.Warnings, nil
 }
 
 // RequestImportPointCloud flags that the user asked to import a scan; the head opens its file

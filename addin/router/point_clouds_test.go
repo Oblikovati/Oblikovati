@@ -270,7 +270,7 @@ func TestPointCloudNearestPoint(t *testing.T) {
 // so the datum follows without any separate recompute call (#645).
 func TestSetTransformAutoRecomputesDatums(t *testing.T) {
 	r, s := emptyPartSession(t)
-	path := writeScan(t, "0 0 5\n2 0 5\n0 2 5\n2 2 5\n")
+	path := writeScan(t, "0 0 50\n20 0 50\n0 20 50\n20 20 50\n")
 	call(t, r, s, "pointClouds.attach", mustJSON(t, wire.AttachPointCloudArgs{Name: "Scan", FullFileName: path}), &wire.PointCloudInfo{})
 
 	var fit wire.FitPointCloudPlaneResult

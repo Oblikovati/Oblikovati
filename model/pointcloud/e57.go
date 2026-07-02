@@ -23,10 +23,13 @@ func (e57Reader) Extensions() []string { return []string{".e57"} }
 func (e57Reader) FileUnitMM() float64 { return 1000 }
 
 // Read decodes the E57's scan points into cloud-local points (intensity/colour are ignored).
-func (e57Reader) Read(data []byte) ([]math.Point3, error) {
+// E57 points live in a checksummed bit-packed container, so a fault is structural: no
+// per-record warnings.
+func (e57Reader) Read(data []byte) ([]math.Point3, []string, error) {
 	doc, err := e57fmt.Parse(data)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return doc.Vertices()
+	pts, err := doc.Vertices()
+	return pts, nil, err
 }

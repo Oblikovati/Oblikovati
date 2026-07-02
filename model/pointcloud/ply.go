@@ -23,10 +23,12 @@ func (plyReader) Extensions() []string { return []string{".ply"} }
 func (plyReader) FileUnitMM() float64 { return 1 }
 
 // Read decodes the PLY's vertex positions into cloud-local points (faces are ignored).
-func (plyReader) Read(data []byte) ([]math.Point3, error) {
+// The vertex list layout comes from the header, so a fault is structural: no per-record warnings.
+func (plyReader) Read(data []byte) ([]math.Point3, []string, error) {
 	doc, err := plyfmt.Parse(data)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return doc.Vertices()
+	pts, err := doc.Vertices()
+	return pts, nil, err
 }

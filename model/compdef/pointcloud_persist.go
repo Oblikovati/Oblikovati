@@ -46,7 +46,9 @@ func (d *PartComponentDefinition) scanPoints(rec doc.PointCloudRecord) []math.Po
 	if !ok {
 		return nil
 	}
-	points, err := pointcloud.ReadScan(rec.Source, res.Value, exchange.TranslationOptions{TargetUnitMM: d.WorkingUnitMM()})
+	// Restore is non-interactive, so per-record warnings are not surfaced here; the attach path
+	// already reported them (#1646).
+	points, _, err := pointcloud.ReadScan(rec.Source, res.Value, exchange.TranslationOptions{TargetUnitMM: d.WorkingUnitMM()})
 	if err != nil {
 		return nil
 	}

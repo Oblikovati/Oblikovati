@@ -76,7 +76,7 @@ func TestReadScanScalesLASIntoWorkingUnits(t *testing.T) {
 		{"cm document", cmDoc, 200},
 		{"inch document", inchDoc, 2000 / 25.4},
 	} {
-		pts, err := ReadScan("survey.las", data, tc.opts)
+		pts, _, err := ReadScan("survey.las", data, tc.opts)
 		if err != nil || len(pts) != 2 {
 			t.Fatalf("%s: ReadScan = %d points, err %v", tc.name, len(pts), err)
 		}
@@ -89,7 +89,7 @@ func TestReadScanScalesLASIntoWorkingUnits(t *testing.T) {
 // TestReadScanUnitlessMillimetreConvention pins the declared fallback for unitless scan formats:
 // like STL/OBJ meshes, an ASCII XYZ is read as millimetres, so 10 units become 1 cm.
 func TestReadScanUnitlessMillimetreConvention(t *testing.T) {
-	pts, err := ReadScan("scan.xyz", []byte("10 20 30\n"), cmDoc)
+	pts, _, err := ReadScan("scan.xyz", []byte("10 20 30\n"), cmDoc)
 	if err != nil || len(pts) != 1 {
 		t.Fatalf("ReadScan = %d points, err %v", len(pts), err)
 	}
@@ -110,7 +110,7 @@ func TestPLYCloudMatchesMeshScale(t *testing.T) {
 		t.Fatalf("meshio.ImportBody: %v", err)
 	}
 	ply := "ply\nformat ascii 1.0\nelement vertex 3\nproperty float x\nproperty float y\nproperty float z\nend_header\n0 0 0\n40 0 0\n0 40 0\n"
-	pts, err := ReadScan("scan.ply", []byte(ply), cmDoc)
+	pts, _, err := ReadScan("scan.ply", []byte(ply), cmDoc)
 	if err != nil || len(pts) != 3 {
 		t.Fatalf("ReadScan(.ply) = %d points, err %v", len(pts), err)
 	}

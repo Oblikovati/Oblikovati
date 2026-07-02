@@ -30,6 +30,9 @@ func Import(part *compdef.PartComponentDefinition, path string, format types.Exc
 	if format.IsSketch() {
 		return ImportResult{}, fmt.Errorf("import %q: %s is a sketch format and imports into a sketch on a chosen work plane; use ImportDWGFile/ImportDXFFile", path, format)
 	}
+	if format.IsPointCloud() {
+		return ImportResult{}, fmt.Errorf("import %q: %s is a scan format and attaches a point cloud, not bodies; use ImportPointCloud (pointClouds.attach)", path, format)
+	}
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return ImportResult{}, fmt.Errorf("import: read %q: %w", path, err)
@@ -108,7 +111,10 @@ func workingUnitMM(part *compdef.PartComponentDefinition) float64 {
 
 // FormatFromPath infers the exchange format from a file's extension (case-insensitive), so the
 // File ▸ Import/Export menu can route by what the user typed. The bool is false for an unknown
-// extension.
+// extension. The point-cloud scan formats resolve here too (#1646): a .ply ALWAYS resolves to
+// FormatPLY — a point-cloud format, never a mesh (the documented rule, see api/types FormatPLY) —
+// and the ASCII scan family (.xyz/.pts/.asc/.txt) stays unrouted until api/types grows a
+// constant for it (it is dispatched by pointcloud.IsScanFile instead).
 func FormatFromPath(path string) (types.ExchangeFormat, bool) {
 	switch strings.ToLower(filepath.Ext(path)) {
 	case ".stl":
@@ -125,6 +131,12 @@ func FormatFromPath(path string) (types.ExchangeFormat, bool) {
 		return types.FormatDXF, true
 	case ".pdf":
 		return types.FormatPDF, true
+	case ".ply":
+		return types.FormatPLY, true
+	case ".e57":
+		return types.FormatE57, true
+	case ".las":
+		return types.FormatLAS, true
 	default:
 		return "", false
 	}
