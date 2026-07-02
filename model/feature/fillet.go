@@ -134,7 +134,7 @@ func blendFilletEdges(in Input, body *topo.Body, keys0 [][]byte, radius float64,
 	for i, k := range keys {
 		picks[i] = ops.EdgeFilletRadii{Key: k, R0: radius, R1: radius, Cross: cross, Rho: prof.rho}
 	}
-	result, err := ops.FilletEdgesCorner(work, picks, cornerStrategy(corner), concaveFill(concave))
+	result, err := ops.FilletEdgesCornerDiag(work, picks, cornerStrategy(corner), concaveFill(concave), in.Diag)
 	if err != nil {
 		return Output{}, err
 	}
@@ -206,7 +206,7 @@ func filletBodySets(in Input, sets []FilletEdgeSet, corner FilletCornerType, con
 		return Output{}, err
 	}
 	work := planarizeFilletPicks(body, picks, feat)
-	result, err := ops.FilletEdgesCorner(work, picks, cornerStrategy(corner), concaveFill(concave))
+	result, err := ops.FilletEdgesCornerDiag(work, picks, cornerStrategy(corner), concaveFill(concave), in.Diag)
 	if err != nil {
 		return Output{}, err
 	}
