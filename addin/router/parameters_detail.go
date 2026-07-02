@@ -5,7 +5,6 @@ package router
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
@@ -283,37 +282,22 @@ func replaceExpressionList(p *param.Parameter, in wire.ParameterExpressionListAr
 	return nil
 }
 
-// deleteParameter removes an unused parameter; an in-use one is rejected with
-// the offending dependents so the caller can resolve them first.
+// deleteParameter removes an unused parameter through the shared Session verb;
+// the in-use refusal (with the blockers named) comes from the aggregate, so
+// this wire path and the head UI enforce one invariant (#1612, audit B1).
 func deleteParameter(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
 	var in wire.ParameterNameArgs
 	if err := decode(args, &in); err != nil {
 		return nil, err
 	}
-	holder, p, err := paramByName(s, "parameters.delete", in.Name)
+	_, p, err := paramByName(s, "parameters.delete", in.Name)
 	if err != nil {
 		return nil, err
 	}
-	ps := holder.Parameters()
-	if ps.InUse(p.ID()) {
-		return nil, fmt.Errorf("parameters.delete: %q is in use by [%s]; remove those references first",
-			in.Name, strings.Join(deleteBlockers(ps, p), ", "))
-	}
-	if err := ps.Delete(p.ID()); err != nil {
+	if err := s.DeleteParameter(p.ID()); err != nil {
 		return nil, err
 	}
-	holder.RecomputeAfterChange()
-	s.RecordActiveEdit("Delete Parameter")
 	return json.Marshal(struct{}{})
-}
-
-// deleteBlockers names what keeps a parameter alive: its dependents, or its
-// owning feature dimension for model parameters.
-func deleteBlockers(ps *param.Parameters, p *param.Parameter) []string {
-	if names := paramNames(ps, ps.Dependents(p.ID())); len(names) > 0 {
-		return names
-	}
-	return []string{"its feature dimension"}
 }
 
 // parameterDrivenBy / parameterDependents answer the dependency queries.
