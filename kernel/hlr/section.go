@@ -23,7 +23,7 @@ import (
 // (KindCut, always visible) and hatch lines (KindHatch) filling the cut cross-section.
 func ProjectSection(body *topo.Body, view View, q ops.Quality) []Segment {
 	mesh, _ := ops.TessellateBody(body, q)
-	bias := maxf(2*q.ChordTolerance, 0.005*meshDiagonal(mesh)) + 1e-9
+	bias := max(2*q.ChordTolerance, 0.005*meshDiagonal(mesh)) + 1e-9
 	keep := clipMeshToHalfSpace(mesh, view) // occlusion tests against the retained half only
 	segs := sectionEdges(body, view, keep, q, bias)
 	loops, cut := sectionOutline(body, view, q)

@@ -204,7 +204,7 @@ func sewStampResiduals(w *weld) {
 		s0 := curve.PointAt(domainLo(curve))
 		s1 := curve.PointAt(domainHi(curve))
 		d0, d1 := alignSnapDeltas(e, s0, s1)
-		residual := maxFloat(float64(d0.Length()), float64(d1.Length()))
+		residual := max(float64(d0.Length()), float64(d1.Length()))
 		if residual <= w.tol {
 			continue
 		}
@@ -284,7 +284,7 @@ func nearestGap(e *topo.Edge, all []*topo.Edge) float64 {
 		}
 		for _, p := range []math.Point3{e.StartVertex().Point(), e.EndVertex().Point()} {
 			for _, q := range []math.Point3{o.StartVertex().Point(), o.EndVertex().Point()} {
-				best = minFloat(best, float64(p.DistanceTo(q)))
+				best = min(best, float64(p.DistanceTo(q)))
 			}
 		}
 	}

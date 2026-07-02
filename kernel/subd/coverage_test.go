@@ -44,8 +44,8 @@ func TestSubdivideOpenMeshKeepsBoundaryMidpoints(t *testing.T) {
 }
 
 func TestClamp01Bounds(t *testing.T) {
-	if clamp01(-0.5) != 0 || clamp01(1.5) != 1 || clamp01(0.25) != 0.25 {
-		t.Fatalf("clamp01 = %v/%v/%v, want 0/1/0.25", clamp01(-0.5), clamp01(1.5), clamp01(0.25))
+	if gmath.Clamp01(-0.5) != 0 || gmath.Clamp01(1.5) != 1 || gmath.Clamp01(0.25) != 0.25 {
+		t.Fatalf("clamp01 = %v/%v/%v, want 0/1/0.25", gmath.Clamp01(-0.5), gmath.Clamp01(1.5), gmath.Clamp01(0.25))
 	}
 }
 

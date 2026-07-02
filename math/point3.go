@@ -50,3 +50,11 @@ func (p Point3) IsEqualTo(o Point3, tol Scalar) bool {
 func (p Point3) Midpoint(o Point3) Point3 {
 	return Point3{(p.X + o.X) / 2, (p.Y + o.Y) / 2, (p.Z + o.Z) / 2}
 }
+
+// Lerp interpolates this point toward q at t, one [Lerp] per coordinate — the
+// single evaluation order of #1654 (exact at t=0 and t=1).
+//
+//	quarter := a.Lerp(b, 0.25)
+func (p Point3) Lerp(q Point3, t Scalar) Point3 {
+	return P3(Lerp(p.X, q.X, t), Lerp(p.Y, q.Y, t), Lerp(p.Z, q.Z, t))
+}

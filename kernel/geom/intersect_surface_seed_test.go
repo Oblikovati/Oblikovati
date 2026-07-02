@@ -93,7 +93,7 @@ func TestSSISeederBoundIsConservative(t *testing.T) {
 	res := 1 << ssiSeedMaxDepth
 	a, b := c.at(0, 0), c.at(res, res) // opposite corners of one coarse cell
 	su, sv := float64(res)*c.du, float64(res)*c.dv
-	bound := ssiSeedSafety * (maxOf4(a.tu, b.tu, a.tu, b.tu)*su + maxOf4(a.tv, b.tv, a.tv, b.tv)*sv)
+	bound := ssiSeedSafety * (max(a.tu, b.tu, a.tu, b.tu)*su + max(a.tv, b.tv, a.tv, b.tv)*sv)
 	if change := stdmath.Abs(a.f - b.f); bound < change {
 		t.Errorf("variation bound %g below the actual field change %g — prune could drop a crossing", bound, change)
 	}

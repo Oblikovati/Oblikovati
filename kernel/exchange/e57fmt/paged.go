@@ -32,7 +32,7 @@ func (p *pagedFile) readLogical(phys uint64, n uint64) ([]byte, uint64, error) {
 	for uint64(len(out)) < n {
 		pageStart := (pos / p.pageSize) * p.pageSize
 		payloadEnd := pageStart + p.payloadPerPage()
-		take := minU64(payloadEnd-pos, n-uint64(len(out)))
+		take := min(payloadEnd-pos, n-uint64(len(out)))
 		if pos+take > uint64(len(p.data)) {
 			return nil, 0, fmt.Errorf("e57fmt: truncated reading %d logical bytes at physical %d (file is %d bytes)", n, phys, len(p.data))
 		}
@@ -43,11 +43,4 @@ func (p *pagedFile) readLogical(phys uint64, n uint64) ([]byte, uint64, error) {
 		}
 	}
 	return out, pos, nil
-}
-
-func minU64(a, b uint64) uint64 {
-	if a < b {
-		return a
-	}
-	return b
 }

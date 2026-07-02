@@ -4,6 +4,9 @@ package app
 
 import (
 	"fmt"
+	stdmath "math"
+
+	"oblikovati.org/math"
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/model/analysis"
@@ -141,28 +144,11 @@ func deviationColor(d, tol, absMax float64) [4]float32 {
 	}
 	f := float32(0.3)
 	if absMax > tol {
-		over := (absAbs(d) - tol) / (absMax - tol)
-		f = 0.3 + 0.7*float32(clamp01dev(over))
+		over := (stdmath.Abs(d) - tol) / (absMax - tol)
+		f = 0.3 + 0.7*float32(math.Clamp01(over))
 	}
 	if d > 0 {
 		return [4]float32{f, 1 - f, 0.1, 1} // over: toward red
 	}
 	return [4]float32{0.1, 1 - f, f, 1} // under: toward blue
-}
-
-func absAbs(x float64) float64 {
-	if x < 0 {
-		return -x
-	}
-	return x
-}
-
-func clamp01dev(x float64) float64 {
-	if x < 0 {
-		return 0
-	}
-	if x > 1 {
-		return 1
-	}
-	return x
 }

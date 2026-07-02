@@ -2,6 +2,8 @@
 
 package complete
 
+import "oblikovati.org/math"
+
 // parseChain walks left from the caret at rune column col over a dotted identifier chain and
 // returns it left-to-right together with the column where the trailing (partial) segment began
 // — the span a chosen candidate replaces. The trailing segment is the prefix being typed and
@@ -11,7 +13,7 @@ package complete
 //	col at end      -> chain {"oblikovati","sketch","rect"}, start at the 'r'
 //	col after a '.' -> chain {"oblikovati","sketch",""},     start at the caret
 func parseChain(line []rune, col int) (chain []string, replaceStart int) {
-	col = clampInt(col, 0, len(line))
+	col = math.Clamp(col, 0, len(line))
 	j := scanIdentLeft(line, col)
 	chain = []string{string(line[j:col])}
 	replaceStart = j
@@ -48,15 +50,4 @@ func isIdentPart(r rune) bool {
 	default:
 		return r == '_'
 	}
-}
-
-// clampInt constrains v to [lo, hi].
-func clampInt(v, lo, hi int) int {
-	if v < lo {
-		return lo
-	}
-	if v > hi {
-		return hi
-	}
-	return v
 }

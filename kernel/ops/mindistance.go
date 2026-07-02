@@ -38,13 +38,13 @@ func segmentParams(a, e, f, c, b float64) (s, t float64) {
 		return 0, 0
 	}
 	if a <= eps { // segment 1 degenerates to a point
-		return 0, clamp01(f / e)
+		return 0, math.Clamp01(f / e)
 	}
 	if e <= eps { // segment 2 degenerates to a point
-		return clamp01(-c / a), 0
+		return math.Clamp01(-c / a), 0
 	}
 	if denom := a*e - b*b; denom > eps {
-		s = clamp01((b*f - c*e) / denom)
+		s = math.Clamp01((b*f - c*e) / denom)
 	}
 	return reclampSForT(s, (b*s+f)/e, a, b, c)
 }
@@ -52,10 +52,10 @@ func segmentParams(a, e, f, c, b float64) (s, t float64) {
 // reclampSForT re-derives s after clamping t back into [0,1] (the unclamped t left the segment).
 func reclampSForT(s, t, a, b, c float64) (float64, float64) {
 	if t < 0 {
-		return clamp01(-c / a), 0
+		return math.Clamp01(-c / a), 0
 	}
 	if t > 1 {
-		return clamp01((b - c) / a), 1
+		return math.Clamp01((b - c) / a), 1
 	}
 	return s, t
 }

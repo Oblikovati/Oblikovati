@@ -38,10 +38,10 @@ func newSegmentCullGrid(segments [][2]math.Point2) *segmentCullGrid {
 	boxes := make([][4]float64, len(segments))
 	for i, s := range segments {
 		boxes[i] = [4]float64{
-			minf(float64(s[0].X), float64(s[1].X)) - segCullPad,
-			minf(float64(s[0].Y), float64(s[1].Y)) - segCullPad,
-			maxf(float64(s[0].X), float64(s[1].X)) + segCullPad,
-			maxf(float64(s[0].Y), float64(s[1].Y)) + segCullPad,
+			min(float64(s[0].X), float64(s[1].X)) - segCullPad,
+			min(float64(s[0].Y), float64(s[1].Y)) - segCullPad,
+			max(float64(s[0].X), float64(s[1].X)) + segCullPad,
+			max(float64(s[0].Y), float64(s[1].Y)) + segCullPad,
 		}
 	}
 	g := &segmentCullGrid{cell: cullCellEdge(boxes), boxes: boxes, cells: map[[2]int32][]int32{}}
@@ -146,10 +146,10 @@ func vertexCellEdge(pts []math.Point2) float64 {
 	lo := [2]float64{stdmath.Inf(1), stdmath.Inf(1)}
 	hi := [2]float64{stdmath.Inf(-1), stdmath.Inf(-1)}
 	for _, p := range pts {
-		lo[0], lo[1] = minf(lo[0], float64(p.X)), minf(lo[1], float64(p.Y))
-		hi[0], hi[1] = maxf(hi[0], float64(p.X)), maxf(hi[1], float64(p.Y))
+		lo[0], lo[1] = min(lo[0], float64(p.X)), min(lo[1], float64(p.Y))
+		hi[0], hi[1] = max(hi[0], float64(p.X)), max(hi[1], float64(p.Y))
 	}
-	if cell := maxf(hi[0]-lo[0], hi[1]-lo[1]) / stdmath.Sqrt(float64(len(pts))); cell > 0 {
+	if cell := max(hi[0]-lo[0], hi[1]-lo[1]) / stdmath.Sqrt(float64(len(pts))); cell > 0 {
 		return cell
 	}
 	return 1

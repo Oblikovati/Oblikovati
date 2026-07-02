@@ -62,7 +62,7 @@ func (s SpiricArc) uOfV(v float64) float64 {
 	cv, sv := cosSin(v)
 	denom := s.M * (s.Torus.MajorRadius + s.Torus.MinorRadius*cv)
 	w := (s.K - s.C*s.Torus.MinorRadius*sv) / denom
-	return s.Phi + s.Branch*stdmath.Acos(clampUnit(w))
+	return s.Phi + s.Branch*stdmath.Acos(math.Clamp(w, -1, 1))
 }
 
 // UAt returns the azimuth u on this branch at tube angle v — the spiric section's single-valued u(v).

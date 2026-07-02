@@ -3,6 +3,7 @@
 package hlr
 
 import (
+	stdmath "math"
 	"testing"
 
 	"oblikovati.org/kernel/ops"
@@ -49,7 +50,7 @@ func TestSectionBoxCutsHatchesAndClips(t *testing.T) {
 	// outside it would mean the removed near half leaked into the projection.
 	for _, s := range segs {
 		for _, p := range [2]math.Point2{s.A, s.B} {
-			if abs(float64(p.X)) > 1.001 || abs(float64(p.Y)) > 1.001 {
+			if stdmath.Abs(float64(p.X)) > 1.001 || stdmath.Abs(float64(p.Y)) > 1.001 {
 				t.Fatalf("segment point %v outside the cross-section — near half not clipped", p)
 			}
 		}
@@ -67,11 +68,4 @@ func TestSectionEdgesAllVisible(t *testing.T) {
 			t.Errorf("retained-half edge %v→%v hidden, want visible in a cut-away", s.A, s.B)
 		}
 	}
-}
-
-func abs(x float64) float64 {
-	if x < 0 {
-		return -x
-	}
-	return x
 }

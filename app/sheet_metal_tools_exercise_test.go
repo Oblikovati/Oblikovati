@@ -3,6 +3,7 @@
 package app
 
 import (
+	stdmath "math"
 	"testing"
 
 	gmath "oblikovati.org/math"
@@ -37,18 +38,11 @@ func lineSketch(part *compdef.PartComponentDefinition, a, b gmath.Point2) Sketch
 func verticalEdge(s *Session, part *compdef.PartComponentDefinition) (EdgeHandle, bool) {
 	for _, e := range part.Features().Result()[0].Edges() {
 		a, b := e.StartVertex().Point(), e.EndVertex().Point()
-		if abs(a.X-b.X) < 1e-6 && abs(a.Y-b.Y) < 1e-6 && abs(a.Z-b.Z) > 1e-6 {
+		if stdmath.Abs(a.X-b.X) < 1e-6 && stdmath.Abs(a.Y-b.Y) < 1e-6 && stdmath.Abs(a.Z-b.Z) > 1e-6 {
 			return EdgeHandle{Edge: e}, true
 		}
 	}
 	return EdgeHandle{}, false
-}
-
-func abs(v float64) float64 {
-	if v < 0 {
-		return -v
-	}
-	return v
 }
 
 // wantDraftReady asserts a commit-ready tool builds a non-nil draft — the contract the

@@ -18,24 +18,11 @@ func boundsOf(cs [][][2]float64) (minX, maxX, minY, maxY float64) {
 				first = false
 				continue
 			}
-			minX, maxX = min2(minX, p[0]), max2(maxX, p[0])
-			minY, maxY = min2(minY, p[1]), max2(maxY, p[1])
+			minX, maxX = min(minX, p[0]), max(maxX, p[0])
+			minY, maxY = min(minY, p[1]), max(maxY, p[1])
 		}
 	}
 	return
-}
-
-func min2(a, b float64) float64 {
-	if a < b {
-		return a
-	}
-	return b
-}
-func max2(a, b float64) float64 {
-	if a > b {
-		return a
-	}
-	return b
 }
 
 // floatPairs flattens contours to [][2]float64 for assertions.

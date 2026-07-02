@@ -112,7 +112,7 @@ func TestDimension3DRefsAndDrive(t *testing.T) {
 		t.Errorf("after Drive(7) + solve, |a-b| = %v, want 7", a.Position().DistanceTo(b.Position()))
 	}
 	// Acos clamp guards rounding past ±1 (degenerate zero-length line ⇒ angle 0).
-	if clampUnit3D(1.0000001) != 1 || clampUnit3D(-1.0000001) != -1 || clampUnit3D(0.5) != 0.5 {
+	if gmath.Clamp(1.0000001, -1, 1) != 1 || gmath.Clamp(-1.0000001, -1, 1) != -1 || gmath.Clamp(0.5, -1, 1) != 0.5 {
 		t.Error("clampUnit3D must pin out-of-range cosines into [-1,1]")
 	}
 	zero := s.AddLine3D(gmath.P3(0, 0, 0), gmath.P3(0, 0, 0))

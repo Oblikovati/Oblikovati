@@ -2,7 +2,10 @@
 
 package sheetmetal
 
-import "sort"
+import (
+	stdmath "math"
+	"sort"
+)
 
 // BendTable is a measured bend-allowance table: rows of (angle, radius, thickness →
 // allowance) captured from shop tests for a material. Lookups select the rows whose radius
@@ -52,7 +55,7 @@ func (t *BendTable) BendAllowance(angle, radius, thickness float64) (float64, bo
 func (t *BendTable) rowsMatching(radius, thickness float64) []BendTableRow {
 	var out []BendTableRow
 	for _, r := range t.rows {
-		if abs(r.Radius-radius) <= matchTol && abs(r.Thickness-thickness) <= matchTol {
+		if stdmath.Abs(r.Radius-radius) <= matchTol && stdmath.Abs(r.Thickness-thickness) <= matchTol {
 			out = append(out, r)
 		}
 	}
@@ -82,11 +85,4 @@ func interpolateByAngle(rows []BendTableRow, angle float64) float64 {
 		}
 	}
 	return last.Allowance
-}
-
-func abs(x float64) float64 {
-	if x < 0 {
-		return -x
-	}
-	return x
 }

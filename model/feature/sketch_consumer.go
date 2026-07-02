@@ -2,7 +2,11 @@
 
 package feature
 
-import "oblikovati.org/model/sketch"
+import (
+	"slices"
+
+	"oblikovati.org/model/sketch"
+)
 
 // SketchConsumer is implemented by feature definitions that consume one or more sketches
 // as profile/path/centerline input. The model browser uses it to nest a consumed sketch
@@ -36,20 +40,11 @@ func nonNilSketches(sks ...*sketch.Sketch) []*sketch.Sketch {
 		if sk == nil {
 			continue
 		}
-		if !containsSketch(out, sk) {
+		if !slices.Contains(out, sk) {
 			out = append(out, sk)
 		}
 	}
 	return out
-}
-
-func containsSketch(in []*sketch.Sketch, want *sketch.Sketch) bool {
-	for _, sk := range in {
-		if sk == want {
-			return true
-		}
-	}
-	return false
 }
 
 // Compile-time proof that every sketch-consuming feature reports its sketches, so the

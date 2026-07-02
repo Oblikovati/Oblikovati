@@ -50,7 +50,7 @@ func (m *Mesh) SetCrease(a, b int, sharpness float64) {
 		delete(m.Creases, k)
 		return
 	}
-	m.Creases[k] = clamp01(sharpness)
+	m.Creases[k] = math.Clamp01(sharpness)
 }
 
 // Clone returns a deep copy of the cage so edits do not alias a recomputed body.

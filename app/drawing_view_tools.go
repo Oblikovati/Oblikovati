@@ -423,13 +423,6 @@ func (t *DetailViewTool) Params() ToolParams {
 	}
 }
 
-func maxf64(a, b float64) float64 {
-	if a > b {
-		return a
-	}
-	return b
-}
-
 // breakOrientations is the orientation choice for the Break View tool (index → orientation).
 var breakOrientations = []struct {
 	label  string
@@ -552,7 +545,7 @@ func viewCentreRegionMM(s *Session, parent string) (cx, cy, r float64, ok bool) 
 	if !has {
 		return 0, 0, 0, false
 	}
-	return (minX + maxX) / 2, (minY + maxY) / 2, 0.4 * maxf64(maxX-minX, maxY-minY), true
+	return (minX + maxX) / 2, (minY + maxY) / 2, 0.4 * max(maxX-minX, maxY-minY), true
 }
 
 // SliceViewTool cuts a zero-thickness slice through a base view's horizontal/vertical centreline.

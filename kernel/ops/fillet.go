@@ -7,6 +7,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -101,7 +102,22 @@ const (
 // FilletEdgesCorner is FilletEdgesVarying with an explicit 2-edge corner strategy. Lone curved
 // (rim/arc) picks ignore it (they have no shared corner). CornerRound augments the selection with the
 // sharp third edge of each 2-edge corner so the corner resolves as a watertight 3-edge sphere blend.
+// CodeFilletFacetedBlend marks a fillet whose blend shipped as the C0 polyhedral strip fallback
+// — a G2-quintic cross-section, or a variable blend terminated by a miter/blend corner — so
+// "advertised smooth, shipped faceted" is a counted degradation, never silent (#1606, audit A10).
+const CodeFilletFacetedBlend diag.Code = "fillet.faceted-blend"
+
+// FilletEdgesCornerDiag is FilletEdgesCorner with a diagnostic recorder (nil to discard): any
+// pick whose blend falls back to the faceted strip records CodeFilletFacetedBlend.
+func FilletEdgesCornerDiag(body *topo.Body, picks []EdgeFilletRadii, corner CornerStrategy, concave ConcaveFill, rec *diag.Recorder) (*topo.Body, error) {
+	return filletEdgesCornerRec(body, picks, corner, concave, rec)
+}
+
 func FilletEdgesCorner(body *topo.Body, picks []EdgeFilletRadii, corner CornerStrategy, concave ConcaveFill) (*topo.Body, error) {
+	return filletEdgesCornerRec(body, picks, corner, concave, nil)
+}
+
+func filletEdgesCornerRec(body *topo.Body, picks []EdgeFilletRadii, corner CornerStrategy, concave ConcaveFill, rec *diag.Recorder) (*topo.Body, error) {
 	if rim := loneRimPick(body, picks); rim != nil {
 		return FilletCylinderRim(body, rim.Key, rim.R0) // a circular cylinder/cap rim → toroidal band
 	}
@@ -118,13 +134,13 @@ func FilletEdgesCorner(body *topo.Body, picks []EdgeFilletRadii, corner CornerSt
 	case CornerSetback:
 		edges = setbackThirdEdges(edges) // taper the third edge (r→0 run-out) → smooth set-back sphere
 	}
-	return filletResolvedEdges(body, edges, concave)
+	return filletResolvedEdges(body, edges, concave, rec)
 }
 
 // filletResolvedEdges solves the corners and edge fillets of an already-resolved pick list and
 // assembles the validated result body. Round/setback corners have already been reduced to 3-edge
 // sphere blends by augmenting the third edge, so the corner solver only ever sees miters and blends.
-func filletResolvedEdges(body *topo.Body, edges []filletPick, concave ConcaveFill) (*topo.Body, error) {
+func filletResolvedEdges(body *topo.Body, edges []filletPick, concave ConcaveFill, rec *diag.Recorder) (*topo.Body, error) {
 	blends, miters, err := computeCorners(edges)
 	if err != nil {
 		return nil, err
@@ -134,6 +150,10 @@ func filletResolvedEdges(body *topo.Body, edges []filletPick, concave ConcaveFil
 		ef, err := computeEdgeFillet(body, p, blends, miters, concave)
 		if err != nil {
 			return nil, err
+		}
+		if ef.varying && !ef.exact {
+			rec.Recordf(CodeFilletFacetedBlend, diag.Defect,
+				"fillet blend on edge %d shipped as the C0 faceted strip (G2-quintic section or miter/blend-terminated variable end)", p.edge.ID())
 		}
 		fils = append(fils, ef)
 	}
@@ -193,6 +213,8 @@ type corner struct {
 	cen     math.Point3 // cylinder centre at this end (sphere centre when blended)
 	ta, tb  math.Point3
 	mid     math.Point3
+	sh      math.Point3   // exact blends (#1606): the shoulder (tangent-intersection) control point
+	crossW  float64       // exact CONIC cross-section only: the shoulder weight the end trim must carry
 	chords  []math.Point3 // variable fillet only: the end arc as chord samples ta…tb
 	endFace *topo.Face    // the flat end cap to arc (nil at a blend or miter corner)
 	vertex  *topo.Vertex
@@ -220,6 +242,10 @@ type edgeFillet struct {
 	edge    *topo.Edge
 	varying bool
 	flip    bool // concave fillet: the cylinder face's outward sense is inverted (surface faces the centre)
+	// exact marks a varying/conic blend emitted as the EXACT rational ruled surface (#1606,
+	// audit A10) instead of the C0 polyhedral strip; secW is the sections' shoulder weight.
+	exact bool
+	secW  float64
 }
 
 // computeEdgeFillet solves the rolling-ball geometry for one convex straight edge, using a
@@ -284,9 +310,19 @@ func solvedEdgeFillet(e *topo.Edge, p filletPick, in cornerInputs, blends map[ui
 		return edgeFillet{}, err
 	}
 	if p.chordPath() {
-		sampleCornerChords(&c0, &c1, in, p.cross, p.rho)
 		mids := midProfiles(e, in, p.mids, cornerChordCount(in), p.cross, p.rho)
-		return edgeFillet{a: in.a, b: in.b, c0: c0, c1: c1, mids: mids, edge: e, varying: true, flip: in.flip}, nil
+		ef := edgeFillet{a: in.a, b: in.b, c0: c0, c1: c1, mids: mids, edge: e, varying: true, flip: in.flip}
+		if w, ok := exactSectionWeight(p, in); ok && plainEnds(c0, c1) {
+			// The blend is exactly a rational ruled surface between conic sections (#1606):
+			// no chord sampling — corners keep their true arcs (or carry the conic weight for
+			// the end trims) and the faces are emitted analytic. G2-quintic cross-sections and
+			// miter/blend-terminated ends keep the strip fallback, now diagnostic-flagged.
+			ef.exact, ef.secW = true, w
+			setBlendShoulders(&ef, in, p)
+			return ef, nil
+		}
+		sampleCornerChords(&ef.c0, &ef.c1, in, p.cross, p.rho)
+		return ef, nil
 	}
 	cyl, err := geom.NewCylinder(c0.cen, in.axis, p.r0)
 	if err != nil {
@@ -357,6 +393,7 @@ func midProfiles(e *topo.Edge, in cornerInputs, mids []FilletRadiusPoint, k int,
 		p := p0.TranslateBy(span.Scale(m.T))
 		cen := p.TranslateBy(in.offDir.Scale(m.R))
 		c := corner{a: in.a, b: in.b, cen: cen, ta: cen.TranslateBy(in.nA.Scale(m.R)), tb: cen.TranslateBy(in.nB.Scale(m.R))}
+		c.mid = cen.TranslateBy(slerpVec(in.nA, in.nB, 0.5).Scale(m.R))
 		c.chords = crossSectionChords(c, in, k, cross, rho)
 		out = append(out, c)
 	}
@@ -404,6 +441,49 @@ func shoulder(c corner, in cornerInputs) math.Point3 {
 	return c.cen.TranslateBy(in.nA.Add(in.nB).Scale(r / (1 + cdot)))
 }
 
+// exactSectionWeight returns the shoulder weight of the pick's cross-section when it is a
+// rational quadratic — an ARC (w = cos of the half wedge, since cos(wedge) = nA·nB) or a rho
+// CONIC (w = rho/(1−rho)) — and ok=false for the G2 quintic, which is not (#1606).
+func exactSectionWeight(p filletPick, in cornerInputs) (float64, bool) {
+	switch {
+	case p.cross.IsArc():
+		return stdmath.Sqrt((1 + in.nA.Dot(in.nB)) / 2), true // tol-free: dihedral wedge < π keeps this > 0
+	case p.cross == FilletConic:
+		rho := p.rho
+		if rho <= 0 || rho >= 1 {
+			rho = 0.5
+		}
+		return rho / (1 - rho), true
+	default:
+		return 0, false
+	}
+}
+
+// plainEnds reports whether both corners terminate against plain end faces or run-outs — the
+// configurations the exact ruled blend covers; miter seams and corner-sphere blends keep the
+// chord strips (their shared boundaries are chord polylines).
+func plainEnds(c0, c1 corner) bool {
+	return !c0.miter && !c0.blend && !c1.miter && !c1.blend
+}
+
+// setBlendShoulders stamps every profile's shoulder control point (and, for a conic
+// cross-section, the weight its end trim must carry) on the exact blend's corners.
+func setBlendShoulders(ef *edgeFillet, in cornerInputs, p filletPick) {
+	conicW := 0.0
+	if p.cross == FilletConic {
+		conicW = ef.secW
+	}
+	stamp := func(c *corner) {
+		c.sh = shoulder(*c, in)
+		c.crossW = conicW
+	}
+	stamp(&ef.c0)
+	stamp(&ef.c1)
+	for i := range ef.mids {
+		stamp(&ef.mids[i])
+	}
+}
+
 // conicChords samples a rho-controlled conic cross-section (rational quadratic Bézier ta–S–tb) into
 // k+1 points. The shoulder weight w follows the projective discriminant rho = w/(1+w): rho=0.5 ⇒ w=1
 // (parabola), rho<0.5 flatter, rho>0.5 fuller. rho≤0 or ≥1 falls back to the parabola.
@@ -439,8 +519,8 @@ func rationalQuad(p0, p1, p2 math.Point3, w, t float64) math.Point3 {
 func g2Chords(c corner, in cornerInputs, k int) []math.Point3 {
 	s := shoulder(c, in)
 	ctrl := [6]math.Point3{
-		c.ta, lerp3(c.ta, s, 1.0/3), lerp3(c.ta, s, 2.0/3),
-		lerp3(s, c.tb, 1.0/3), lerp3(s, c.tb, 2.0/3), c.tb,
+		c.ta, c.ta.Lerp(s, 1.0/3), c.ta.Lerp(s, 2.0/3),
+		s.Lerp(c.tb, 1.0/3), s.Lerp(c.tb, 2.0/3), c.tb,
 	}
 	out := make([]math.Point3, k+1)
 	for j := 0; j <= k; j++ {
@@ -449,22 +529,13 @@ func g2Chords(c corner, in cornerInputs, k int) []math.Point3 {
 	return out
 }
 
-// lerp3 returns (1−t)·a + t·b.
-func lerp3(a, b math.Point3, t float64) math.Point3 {
-	return math.P3(
-		a.X+(b.X-a.X)*math.Scalar(t),
-		a.Y+(b.Y-a.Y)*math.Scalar(t),
-		a.Z+(b.Z-a.Z)*math.Scalar(t),
-	)
-}
-
 // bezier5 evaluates a quintic Bézier via de Casteljau.
 func bezier5(ctrl [6]math.Point3, t float64) math.Point3 {
 	p := ctrl
 	pts := p[:]
 	for n := 5; n > 0; n-- {
 		for i := 0; i < n; i++ {
-			pts[i] = lerp3(pts[i], pts[i+1], t)
+			pts[i] = pts[i].Lerp(pts[i+1], t)
 		}
 	}
 	return pts[0]

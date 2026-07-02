@@ -119,11 +119,13 @@ func scaleContour(c []pt, penX, scale float64) []math.Point2 {
 // pt is a design-unit point during flattening.
 type pt struct{ X, Y float64 }
 
-func f26(v fixed.Int26_6) float64        { return float64(v) / 64 }
-func ptOf(p fixed.Point26_6) pt          { return pt{f26(p.X), f26(p.Y)} }
-func lerp(a, b pt, t float64) pt         { return pt{a.X + (b.X-a.X)*t, a.Y + (b.Y-a.Y)*t} }
-func quad(a, c, b pt, t float64) pt      { return lerp(lerp(a, c, t), lerp(c, b, t), t) }
-func cube(a, c1, c2, b pt, t float64) pt { return lerp(quad(a, c1, c2, t), quad(c1, c2, b, t), t) }
+func f26(v fixed.Int26_6) float64 { return float64(v) / 64 }
+func ptOf(p fixed.Point26_6) pt   { return pt{f26(p.X), f26(p.Y)} }
+
+// lerp blends two design-unit points through the kernel-wide math.Lerp (#1654).
+func (a pt) lerp(b pt, t float64) pt     { return pt{math.Lerp(a.X, b.X, t), math.Lerp(a.Y, b.Y, t)} }
+func quad(a, c, b pt, t float64) pt      { return a.lerp(c, t).lerp(c.lerp(b, t), t) }
+func cube(a, c1, c2, b pt, t float64) pt { return quad(a, c1, c2, t).lerp(quad(c1, c2, b, t), t) }
 
 // flattenSegments turns a glyph's sfnt segments into closed polygon contours (design units),
 // flattening quadratic/cubic curves and dropping each contour's closing duplicate point.

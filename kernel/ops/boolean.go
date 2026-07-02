@@ -235,27 +235,13 @@ func invalidBooleanVolume(op PartFeatureOperation, target, tool, body *topo.Body
 	// second boolean, too expensive for a guard — and is trivially ≥ 0 without it.
 	switch op {
 	case Join:
-		return bodyVol+tol < maxFloat(targetVol, toolVol) || bodyVol > targetVol+toolVol+tol
+		return bodyVol+tol < max(targetVol, toolVol) || bodyVol > targetVol+toolVol+tol
 	case Cut:
 		return bodyVol > targetVol+tol || bodyVol+tol < targetVol-toolVol
 	case Intersect:
-		return bodyVol > minFloat(targetVol, toolVol)+tol
+		return bodyVol > min(targetVol, toolVol)+tol
 	}
 	return false
-}
-
-func minFloat(a, b float64) float64 {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func maxFloat(a, b float64) float64 {
-	if a > b {
-		return a
-	}
-	return b
 }
 
 // csgFallbackFaceLimit bounds the operand size for the invalid-result CSG fallback (see

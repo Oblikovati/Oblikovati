@@ -189,27 +189,13 @@ func intersectIntervals(a, b [][2]float64) [][2]float64 {
 	var out [][2]float64
 	for _, x := range a {
 		for _, y := range b {
-			lo, hi := maxf(x[0], y[0]), minf(x[1], y[1])
+			lo, hi := max(x[0], y[0]), min(x[1], y[1])
 			if hi > lo {
 				out = append(out, [2]float64{lo, hi})
 			}
 		}
 	}
 	return out
-}
-
-func maxf(a, b float64) float64 {
-	if a > b {
-		return a
-	}
-	return b
-}
-
-func minf(a, b float64) float64 {
-	if a < b {
-		return a
-	}
-	return b
 }
 
 // selectFaces splits each face by its imprints and keeps the material sub-faces this

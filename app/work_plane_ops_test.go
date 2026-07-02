@@ -3,6 +3,7 @@
 package app
 
 import (
+	"slices"
 	"testing"
 
 	"oblikovati.org/api/types"
@@ -83,7 +84,7 @@ func TestPickableWorkPlanesIncludesVisibleUserPlanes(t *testing.T) {
 	wp := def.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 2 })
 
 	got := s.PickableWorkPlanes()
-	if len(got) != 1 || !containsPlane(got, wp) {
+	if len(got) != 1 || !slices.Contains(got, wp) {
 		t.Fatalf("PickableWorkPlanes = %d planes, want only the visible user plane", len(got))
 	}
 
@@ -110,7 +111,7 @@ func TestHiddenOriginPlanesNotMousePickable(t *testing.T) {
 	}
 	xy := def.OriginPlanes()[0]
 	xy.SetVisible(true)
-	if got := s.PickableWorkPlanes(); len(got) != 1 || !containsPlane(got, xy) {
+	if got := s.PickableWorkPlanes(); len(got) != 1 || !slices.Contains(got, xy) {
 		t.Errorf("a shown origin plane must be mouse-pickable: got %d planes", len(got))
 	}
 }
@@ -124,22 +125,13 @@ func TestPickableWorkPlanesHonorsEditScope(t *testing.T) {
 	def.Recompute()
 
 	s.BeginEditFeature(FeatureHandle{Feature: f1})
-	if containsPlane(s.PickableWorkPlanes(), wp) {
+	if slices.Contains(s.PickableWorkPlanes(), wp) {
 		t.Error("a plane hidden by the edit scope must not be pickable")
 	}
 	s.CancelTool()
-	if !containsPlane(s.PickableWorkPlanes(), wp) {
+	if !slices.Contains(s.PickableWorkPlanes(), wp) {
 		t.Error("the plane must be pickable again after the edit closes")
 	}
-}
-
-func containsPlane(planes []*feature.WorkPlane, want *feature.WorkPlane) bool {
-	for _, p := range planes {
-		if p == want {
-			return true
-		}
-	}
-	return false
 }
 
 func TestOffsetWorkPlaneToolNotCommittableWithoutBase(t *testing.T) {

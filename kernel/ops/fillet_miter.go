@@ -93,7 +93,7 @@ func sampleMiterSeam(v math.Point3, r float64, nS math.Vector3, a1, a2 miterArm)
 	if stdmath.Abs(denom) < 1e-9 {
 		return nil, fmt.Errorf("fillet: degenerate miter (edge axis lies in the seam plane)")
 	}
-	w := stdmath.Acos(clamp(nS.Dot(a1.nF), -1, 1)) // rolling-ball wedge spanned on arm 1
+	w := stdmath.Acos(math.Clamp(nS.Dot(a1.nF), -1, 1)) // rolling-ball wedge spanned on arm 1
 	k := int(stdmath.Ceil(w / (2 * stdmath.Pi / filletChordsPerTurn)))
 	if k < 4 {
 		k = 4
@@ -111,7 +111,7 @@ func sampleMiterSeam(v math.Point3, r float64, nS math.Vector3, a1, a2 miterArm)
 // slerpVec interpolates the unit direction from a to b along the shorter great-circle arc at
 // parameter s∈[0,1] (the exact rolling-ball contact direction between two face normals).
 func slerpVec(a, b math.Vector3, s float64) math.Vector3 {
-	w := stdmath.Acos(clamp(a.Dot(b), -1, 1))
+	w := stdmath.Acos(math.Clamp(a.Dot(b), -1, 1))
 	if w < 1e-9 {
 		return a
 	}

@@ -504,7 +504,7 @@ func sectionTangents(sections [][]math.Point3, closed bool, ends loftEnds, wrapS
 		if closed {
 			return ((i % m) + m) % m
 		}
-		return clampInt(i, 0, m-1)
+		return math.Clamp(i, 0, m-1)
 	}
 	// Across the closed seam (between section m-1 and 0) the correspondence is offset by the
 	// monodromy wrapShift, so a periodic neighbour's matching point is reindexed by it. Without this
@@ -1108,14 +1108,4 @@ func shiftLoop(loop []math.Point3, dir math.Vector3, d float64) []math.Point3 {
 		out[i] = p.TranslateBy(delta)
 	}
 	return out
-}
-
-func clampInt(v, lo, hi int) int {
-	if v < lo {
-		return lo
-	}
-	if v > hi {
-		return hi
-	}
-	return v
 }

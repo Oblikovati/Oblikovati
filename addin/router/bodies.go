@@ -5,6 +5,7 @@ package router
 import (
 	"encoding/json"
 	"fmt"
+	stdmath "math"
 
 	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
@@ -189,17 +190,10 @@ func shellInfo(i int, sh *topo.Shell, q ops.Quality) wire.FaceShellInfo {
 	return wire.FaceShellInfo{
 		Index: i, Closed: sh.IsClosed(), Void: sh.IsClosed() && vol < 0,
 		Faces: len(sh.Faces()), Edges: len(sh.Edges()),
-		Volume:   absFloat(vol),
+		Volume:   stdmath.Abs(vol),
 		RangeBox: boxSpan(box),
 		Key:      string(sh.ReferenceKey()), TransientKey: sh.ID(),
 	}
-}
-
-func absFloat(v float64) float64 {
-	if v < 0 {
-		return -v
-	}
-	return v
 }
 
 func boxSpan(b math.Box) []float64 {

@@ -97,11 +97,11 @@ func constantSpeedParam2(c Curve2, from, length float64) (float64, bool) {
 	case Line2d:
 		return from + length, true
 	case LineSegment2d:
-		return clamp01(from + length/g.Length()), true
+		return math.Clamp01(from + length/g.Length()), true
 	case Circle2d:
 		return from + length/g.Circumference(), true
 	case Arc2d:
-		return clamp01(from + length/g.Length()), true
+		return math.Clamp01(from + length/g.Length()), true
 	default:
 		return 0, false
 	}
@@ -158,7 +158,7 @@ func chordDeviation2(a, b, p math.Point2) float64 {
 	if den == 0 {
 		return a.DistanceTo(p)
 	}
-	t := clamp01(float64(a.VectorTo(p).Dot(chord)) / den)
+	t := math.Clamp01(float64(a.VectorTo(p).Dot(chord)) / den)
 	return a.TranslateBy(chord.Scale(t)).DistanceTo(p)
 }
 

@@ -3,6 +3,7 @@
 package sketch
 
 import (
+	"slices"
 	"testing"
 
 	"oblikovati.org/math"
@@ -121,21 +122,12 @@ func TestProjectedAnchorIsPickable(t *testing.T) {
 	free := s.Points().Add(math.P2(0, 0))
 
 	pts := s.AllPoints()
-	if !containsPoint(pts, pp.Anchor()) {
+	if !slices.Contains(pts, pp.Anchor()) {
 		t.Error("AllPoints must include the projected anchor so it can be picked/snapped")
 	}
-	if !containsPoint(pts, free) {
+	if !slices.Contains(pts, free) {
 		t.Error("AllPoints must still include free points")
 	}
-}
-
-func containsPoint(pts []*Point, p *Point) bool {
-	for _, q := range pts {
-		if q == p {
-			return true
-		}
-	}
-	return false
 }
 
 // TestProjectedLostReferenceFreezes checks UpdateProjections breaks the link and freezes

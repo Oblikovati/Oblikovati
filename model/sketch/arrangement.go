@@ -156,8 +156,8 @@ func gridCuts(segs []taggedSeg, cuts [][]cut) {
 	cell := stdmath.Max(stdmath.Max(maxX-minX, maxY-minY)/float64(dim), 1e-9) // tol:numeric — degenerate spatial-grid cell floor
 	cols := int((maxX-minX)/cell) + 1
 	rows := int((maxY-minY)/cell) + 1
-	col := func(x float64) int { return clampInt(int((x-minX)/cell), cols) }
-	row := func(y float64) int { return clampInt(int((y-minY)/cell), rows) }
+	col := func(x float64) int { return math.Clamp(int((x-minX)/cell), 0, cols-1) }
+	row := func(y float64) int { return math.Clamp(int((y-minY)/cell), 0, rows-1) }
 	bins := binSegments(segs, col, row, cols, rows)
 	testBinnedPairs(segs, bins, cuts)
 }
@@ -217,16 +217,6 @@ func testBinnedPairs(segs []taggedSeg, bins [][]int32, cuts [][]cut) {
 			}
 		}
 	}
-}
-
-func clampInt(c, n int) int {
-	if c < 0 {
-		return 0
-	}
-	if c >= n {
-		return n - 1
-	}
-	return c
 }
 
 // splitPoints returns a segment's points in order: its start, the interior crossing

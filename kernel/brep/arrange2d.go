@@ -125,10 +125,10 @@ func vertexOnEdgeInterior(pts []math.Point2, a, b int, verts *vertexCullGrid) in
 		return -1
 	}
 	best := -1
-	x0 := minf(float64(pa.X), float64(pb.X)) - tjCullPad
-	y0 := minf(float64(pa.Y), float64(pb.Y)) - tjCullPad
-	x1 := maxf(float64(pa.X), float64(pb.X)) + tjCullPad
-	y1 := maxf(float64(pa.Y), float64(pb.Y)) + tjCullPad
+	x0 := min(float64(pa.X), float64(pb.X)) - tjCullPad
+	y0 := min(float64(pa.Y), float64(pb.Y)) - tjCullPad
+	x1 := max(float64(pa.X), float64(pb.X)) + tjCullPad
+	y1 := max(float64(pa.Y), float64(pb.Y)) + tjCullPad
 	verts.eachInBox(x0, y0, x1, y1, func(c int) {
 		if c == a || c == b || (best >= 0 && c >= best) {
 			return

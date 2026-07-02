@@ -57,8 +57,9 @@ func TestFilletSetsMixedConstantRadii(t *testing.T) {
 	}
 }
 
-// TestFilletVariableSetThroughEngine rounds one vertical edge 0.3→0.6 through
-// the feature engine — the exact chord-geometry volume (planar strips).
+// TestFilletVariableSetThroughEngine rounds one vertical edge 0.3→0.6 through the feature
+// engine — the smooth-blend volume, since the variable blend is the exact rational ruled
+// surface (#1606; the pre-A10 planar strips followed the chord integral instead).
 func TestFilletVariableSetThroughEngine(t *testing.T) {
 	fs, keys := boxAndVerticalEdges(t)
 	pf := NewDressUpFeatures(fs).AddFilletSets([]FilletEdgeSet{
@@ -69,11 +70,10 @@ func TestFilletVariableSetThroughEngine(t *testing.T) {
 		t.Fatalf("variable fillet sick: %+v", pf.Health())
 	}
 	res := fs.Result()[0]
-	const k = 8 // chords across the 90° wedge at the holeFacets density
-	c := 1 - float64(k)/2*stdmath.Sin(stdmath.Pi/2/float64(k))
-	want := 8 - c*2*(0.3*0.3+0.3*0.6+0.6*0.6)/3
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-9 {
-		t.Errorf("variable fillet volume = %g, want %g", got, want)
+	removed := (1 - stdmath.Pi/4) * 2 * (0.3*0.3 + 0.3*0.6 + 0.6*0.6) / 3
+	want := 8 - removed
+	if got := ops.BodyGeometryProperties(res, fineFilletQuality()).Volume; stdmath.Abs(got-want) > 0.03*removed {
+		t.Errorf("variable fillet volume = %g, want %g (smooth blend, 3%%-of-notch band)", got, want)
 	}
 	if pf.Definition().(*FilletFeature).Definition().FilletType() != 61697 {
 		t.Error("fillet type discriminator != edge fillet")
@@ -82,7 +82,7 @@ func TestFilletVariableSetThroughEngine(t *testing.T) {
 
 // TestFilletRadiusPointsThroughEngine rounds one vertical edge with an intermediate
 // radius stop (0.3 → 0.7 at T=0.5 → 0.4) through the feature engine — the per-segment
-// chord-geometry volume (#695).
+// smooth-blend volume (#695, exact spans since #1606).
 func TestFilletRadiusPointsThroughEngine(t *testing.T) {
 	fs, keys := boxAndVerticalEdges(t)
 	pf := NewDressUpFeatures(fs).AddFilletSets([]FilletEdgeSet{{
@@ -99,13 +99,18 @@ func TestFilletRadiusPointsThroughEngine(t *testing.T) {
 	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("radius-points fillet not a valid solid: %+v", r)
 	}
-	const k = 8 // chords across the 90° wedge at the holeFacets density
-	c := 1 - float64(k)/2*stdmath.Sin(stdmath.Pi/2/float64(k))
 	seg := func(ra, rb float64) float64 { return 1.0 * (ra*ra + ra*rb + rb*rb) / 3 }
-	want := 8 - c*(seg(0.3, 0.7)+seg(0.7, 0.4))
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-9 {
-		t.Errorf("radius-points fillet volume = %g, want %g", got, want)
+	removed := (1 - stdmath.Pi/4) * (seg(0.3, 0.7) + seg(0.7, 0.4))
+	want := 8 - removed
+	if got := ops.BodyGeometryProperties(res, fineFilletQuality()).Volume; stdmath.Abs(got-want) > 0.03*removed {
+		t.Errorf("radius-points fillet volume = %g, want %g (smooth blend, 3%%-of-notch band)", got, want)
 	}
+}
+
+// fineFilletQuality is the tight tessellation the smooth-blend volume brackets measure at (the
+// exact blend converges to the smooth integral as the chord tolerance tightens, #1606).
+func fineFilletQuality() ops.Quality {
+	return ops.Quality{ChordTolerance: 0.002, AngleTolerance: 2 * stdmath.Pi / 180}
 }
 
 // TestFilletVariableSetNeedsOneEdge: a variable set over two edges is a

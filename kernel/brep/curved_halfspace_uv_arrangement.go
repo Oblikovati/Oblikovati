@@ -387,8 +387,8 @@ func interiorOfCell(cell Face2D) (math.Point2, bool) {
 	scan := func(lo, hi math.Point2, n int) {
 		for i := 0; i <= n; i++ {
 			for j := 0; j <= n; j++ {
-				p := math.P2(lerp(float64(lo.X), float64(hi.X), float64(i)/float64(n)),
-					lerp(float64(lo.Y), float64(hi.Y), float64(j)/float64(n)))
+				p := math.P2(math.Lerp(float64(lo.X), float64(hi.X), float64(i)/float64(n)),
+					math.Lerp(float64(lo.Y), float64(hi.Y), float64(j)/float64(n)))
 				if d := cellEdgeClearance(p, cell); d > bestDist && insideCell(p, cell) {
 					best, bestDist = p, d
 				}
@@ -467,7 +467,7 @@ func interiorPointOf(poly []math.Point2) (math.Point2, bool) {
 		a, b := poly[i], poly[(i+1)%len(poly)]
 		mid := math.P2((float64(a.X)+float64(b.X))/2, (float64(a.Y)+float64(b.Y))/2)
 		for _, f := range []float64{1e-3, 1e-2, 0.1, 0.5} {
-			p := math.P2(lerp(float64(mid.X), float64(c.X), f), lerp(float64(mid.Y), float64(c.Y), f))
+			p := math.P2(math.Lerp(float64(mid.X), float64(c.X), f), math.Lerp(float64(mid.Y), float64(c.Y), f))
 			if pointInPolygon2D(p, poly) {
 				return p, true
 			}
@@ -485,9 +485,6 @@ func centroidOf(poly []math.Point2) math.Point2 {
 	n := float64(len(poly))
 	return math.P2(sx/n, sy/n)
 }
-
-// lerp linearly interpolates from a to b by fraction f.
-func lerp(a, b, f float64) float64 { return a + f*(b-a) }
 
 // seamWeld grid (matches the arrangement welder, arrTol/tjTol family) used to identify (u,v) boundary
 // vertices, with the azimuth seam folded: u=2π is the SAME ruling as u=0, so both weld to one vertex.
@@ -686,8 +683,8 @@ func recoverEdge(d dedge, segs []uvSeg) (recoveredEdge, bool) {
 	s := segs[best]
 	re := recoveredEdge{kind: s.kind, curve: s.curve, a: d.a, b: d.b}
 	if s.kind == segImprint {
-		re.tA = lerp(s.tA, s.tB, projFraction(d.a, s.a, s.b))
-		re.tB = lerp(s.tA, s.tB, projFraction(d.b, s.a, s.b))
+		re.tA = math.Lerp(s.tA, s.tB, projFraction(d.a, s.a, s.b))
+		re.tB = math.Lerp(s.tA, s.tB, projFraction(d.b, s.a, s.b))
 	}
 	return re, true
 }
@@ -699,7 +696,7 @@ func perpDistToSeg(p, a, b math.Point2) float64 {
 	if l2 < arrTol*arrTol {
 		return float64(p.DistanceTo(a))
 	}
-	t := clamp01(float64(a.VectorTo(p).Dot(ab)) / l2)
+	t := math.Clamp01(float64(a.VectorTo(p).Dot(ab)) / l2)
 	return float64(p.DistanceTo(a.TranslateBy(ab.Scale(math.Scalar(t)))))
 }
 
@@ -710,18 +707,7 @@ func projFraction(p, a, b math.Point2) float64 {
 	if l2 < arrTol*arrTol {
 		return 0
 	}
-	return clamp01(float64(a.VectorTo(p).Dot(ab)) / l2)
-}
-
-// clamp01 clamps t to [0,1].
-func clamp01(t float64) float64 {
-	if t < 0 {
-		return 0
-	}
-	if t > 1 {
-		return 1
-	}
-	return t
+	return math.Clamp01(float64(a.VectorTo(p).Dot(ab)) / l2)
 }
 
 // emitLoopEdges re-emits a (u,v) boundary loop as a chain of exact analytic loopEdges: recover each dedge's

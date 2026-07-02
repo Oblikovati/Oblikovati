@@ -74,7 +74,7 @@ func segmentParamAtPoint3(g LineSegment, p math.Point3) float64 {
 	if den == 0 {
 		return 0
 	}
-	return clamp01(float64(g.StartPoint.VectorTo(p).Dot(chord)) / den)
+	return math.Clamp01(float64(g.StartPoint.VectorTo(p).Dot(chord)) / den)
 }
 
 // circleParamAtPoint3 inverts the circle angle of p's in-plane direction; a
@@ -252,7 +252,7 @@ func refineClosest3(c Curve3, p math.Point3, t, lo, hi float64) float64 {
 		if dg == 0 || stdmath.Abs(g) < 1e-14 { // tol:numeric — Newton denominator near-zero guard
 			return t
 		}
-		t = clampTo(t-g/dg, lo, hi)
+		t = math.Clamp(t-g/dg, lo, hi)
 	}
 	return t
 }
