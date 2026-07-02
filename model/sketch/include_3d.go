@@ -71,6 +71,11 @@ type IncludedCurve3D struct {
 	linked bool
 }
 
+// IsConstruction reports that an included curve is reference/construction
+// geometry — always, regardless of the embedded flag (the rule used to live in
+// the router's enumerate switch; #1624 moved it onto the entity).
+func (c *IncludedCurve3D) IsConstruction() bool { return true }
+
 // Points returns the cached model-space polyline.
 func (c *IncludedCurve3D) Points() []math.Point3 {
 	out := make([]math.Point3, len(c.points))

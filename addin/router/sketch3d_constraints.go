@@ -187,20 +187,18 @@ func equalConstraint3D(sk *sketch.Sketch3D, refs []uint64) (sketch.Constraint, e
 	return sketch.NewEqual3D(a, b), nil
 }
 
-// radiusScalar3D resolves an entity id to its radius solver DOF.
+// radiusScalar3D resolves an entity id to its radius solver DOF through the
+// entity's own RadiusDOF capability (#1624).
 func radiusScalar3D(sk *sketch.Sketch3D, id uint64) (*math.Scalar, error) {
 	e, ok := sk.EntityByID(sketch.ID(id))
 	if !ok {
 		return nil, fmt.Errorf(errNoSketch3DEntity, id)
 	}
-	switch v := e.(type) {
-	case *sketch.Circle3D:
-		return &v.Radius, nil
-	case *sketch.HelicalCurve3D:
-		return &v.StartRadius, nil
-	default:
+	rd, ok := e.(interface{ RadiusDOF() *math.Scalar })
+	if !ok {
 		return nil, fmt.Errorf("sketch3d: entity %d is %T, want a circle or helix (radius DOF)", id, e)
 	}
+	return rd.RadiusDOF(), nil
 }
 
 // pointConstraint3D builds the point-operand constraints (coincident/collinear/concentric).

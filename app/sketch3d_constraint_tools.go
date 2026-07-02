@@ -94,12 +94,7 @@ func readySmooth3D(ents []sketch.Entity) bool {
 }
 
 func acceptHelixOrCircle3D(e sketch.Entity) bool {
-	switch e.(type) {
-	case *sketch.HelicalCurve3D, *sketch.Circle3D:
-		return true
-	default:
-		return false
-	}
+	return entityKindIs(e, sketch.HelicalKind, sketch.CircleKind)
 }
 
 func readyHelical3D(ents []sketch.Entity) bool {
@@ -108,14 +103,8 @@ func readyHelical3D(ents []sketch.Entity) bool {
 }
 
 func acceptSplineOrPoint3D(e sketch.Entity) bool {
-	switch v := e.(type) {
-	case *sketch.Spline3D:
-		return v.IsFitType()
-	case *sketch.Point3D:
-		return true
-	default:
-		return false
-	}
+	// A fit spline's kind is SplineKind; control-point splines don't qualify.
+	return entityKindIs(e, sketch.SplineKind, sketch.PointKind)
 }
 
 func readySplineFit3D(ents []sketch.Entity) bool {
@@ -206,15 +195,11 @@ func helixAndCircleOf(ents []sketch.Entity) (*sketch.HelicalCurve3D, *sketch.Cir
 	var h *sketch.HelicalCurve3D
 	var c *sketch.Circle3D
 	for _, e := range ents {
-		switch v := e.(type) {
-		case *sketch.HelicalCurve3D:
-			if h == nil {
-				h = v
-			}
-		case *sketch.Circle3D:
-			if c == nil {
-				c = v
-			}
+		if v, ok := e.(*sketch.HelicalCurve3D); ok && h == nil {
+			h = v
+		}
+		if v, ok := e.(*sketch.Circle3D); ok && c == nil {
+			c = v
 		}
 	}
 	return h, c
@@ -225,16 +210,27 @@ func splineAndPointOf(ents []sketch.Entity) (*sketch.Spline3D, *sketch.Point3D) 
 	var sp *sketch.Spline3D
 	var p *sketch.Point3D
 	for _, e := range ents {
-		switch v := e.(type) {
-		case *sketch.Spline3D:
-			if sp == nil && v.IsFitType() {
-				sp = v
-			}
-		case *sketch.Point3D:
-			if p == nil {
-				p = v
-			}
+		if v, ok := e.(*sketch.Spline3D); ok && sp == nil && v.IsFitType() {
+			sp = v
+		}
+		if v, ok := e.(*sketch.Point3D); ok && p == nil {
+			p = v
 		}
 	}
 	return sp, p
+}
+
+// entityKindIs reports whether the entity names one of the given kinds — the
+// capability-based accept check the pick predicates share (#1624).
+func entityKindIs(e sketch.Entity, kinds ...sketch.EntityKind) bool {
+	ke, ok := e.(interface{ Kind() sketch.EntityKind })
+	if !ok {
+		return false
+	}
+	for _, k := range kinds {
+		if ke.Kind() == k {
+			return true
+		}
+	}
+	return false
 }

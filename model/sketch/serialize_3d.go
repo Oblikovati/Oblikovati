@@ -232,66 +232,23 @@ func planeNameFromNormal(n math.Vector3) string {
 	}
 }
 
-// serializeEntity3D captures one 3D curve entity by its kind, defining point ids, and
-// kind-specific shape (radius/axis/sweep).
+// serializeEntity3D dispatches a 3D entity to its registered codec by its Kind
+// and stamps the kind onto the row, mirroring serializeEntity (#1624).
 func serializeEntity3D(e Entity) (Entity3DData, error) {
-	switch v := e.(type) {
-	case *Line3D:
-		return Entity3DData{ID: int(v.id), Kind: "line", Points: []int{int(v.A.id), int(v.B.id)}, Construction: v.construction}, nil
-	case *Circle3D:
-		return Entity3DData{
-			ID: int(v.id), Kind: "circle", Points: []int{int(v.Center.id)},
-			Radius: float64(v.Radius), Axis: axisTriple(v.Axis), Construction: v.construction,
-		}, nil
-	case *Arc3D:
-		return Entity3DData{
-			ID: int(v.id), Kind: "arc", Points: []int{int(v.Center.id), int(v.Start.id), int(v.End.id)},
-			CCW: v.CounterClockwise, Construction: v.construction,
-		}, nil
-	case *HelicalCurve3D:
-		ed := Entity3DData{
-			ID: int(v.id), Kind: "helical", Points: []int{int(v.Origin.id)},
-			Radius: float64(v.StartRadius), Axis: axisTriple(v.Axis),
-			Pitch: v.AxialPerTurn, Turns: v.Turns, RadialPerTurn: v.RadialPerTurn,
-			Clockwise: v.Clockwise, Construction: v.construction,
-		}
-		serializeHelixDefinition(&ed, v)
-		return ed, nil
-	case *Ellipse3D:
-		return Entity3DData{
-			ID: int(v.id), Kind: "ellipse", Points: []int{int(v.Center.id)},
-			Axis: axisTriple(v.Normal), MajorAxis: axisTriple(v.MajorAxis),
-			Radius: float64(v.MajorRadius), MinorRadius: float64(v.MinorRadius), Construction: v.construction,
-		}, nil
-	case *EllipticalArc3D:
-		return Entity3DData{
-			ID: int(v.id), Kind: "ellipticalArc", Points: []int{int(v.Center.id)},
-			Axis: axisTriple(v.Normal), MajorAxis: axisTriple(v.MajorAxis),
-			Radius: float64(v.MajorRadius), MinorRadius: float64(v.MinorRadius),
-			StartAngle: v.StartAngle, SweepAngle: v.SweepAngle, Construction: v.construction,
-		}, nil
-	case *Spline3D:
-		kind := "spline"
-		if !v.fit {
-			kind = "controlPointSpline"
-		}
-		return Entity3DData{
-			ID: int(v.id), Kind: kind, Points: point3DIDs(v.Points),
-			Closed: v.Closed, Handles: serializeSplineHandles3D(v), Construction: v.construction,
-		}, nil
-	case *FixedSpline3D:
-		return Entity3DData{
-			ID: int(v.id), Kind: "fixedSpline", Coords: flattenPoint3s(v.Pts),
-			Closed: v.Closed, Construction: v.construction,
-		}, nil
-	case *EquationCurve3D:
-		return Entity3DData{
-			ID: int(v.id), Kind: "equationCurve", XExpr: v.XExpr, YExpr: v.YExpr, ZExpr: v.ZExpr,
-			T0: v.T0, T1: v.T1, Construction: v.construction,
-		}, nil
-	default:
-		return Entity3DData{}, fmt.Errorf("cannot serialize 3D entity of type %T (no codec)", e)
+	ke, ok := e.(kindedEntity)
+	if !ok {
+		return Entity3DData{}, fmt.Errorf("cannot serialize 3D entity of type %T: it has no Kind (register it in serialize_codecs_3d.go)", e)
 	}
+	c, ok := entityCodecs3D[ke.Kind()]
+	if !ok {
+		return Entity3DData{}, fmt.Errorf("cannot serialize 3D entity of type %T: kind %q has no 3D codec", e, ke.Kind())
+	}
+	ed, err := c.encode(e)
+	if err != nil {
+		return Entity3DData{}, err
+	}
+	ed.Kind = string(ke.Kind())
+	return ed, nil
 }
 
 // axisTriple flattens a unit axis to a serializable triple.
@@ -561,68 +518,18 @@ func lookupCircle3D(ids []int, entmap map[int]Entity) (*Circle3D, error) {
 	return c, nil
 }
 
-// restoreEntity3D re-creates one 3D curve entity over its already-restored points,
-// returning it so constraints can re-bind to it by its saved id.
+// restoreEntity3D re-creates one 3D curve entity over its already-restored points
+// through its kind's registered codec — the pair its encode came from (#1624).
 func restoreEntity3D(s *Sketch3D, ed Entity3DData, idmap map[int]*Point3D) (Entity, error) {
 	pts, err := lookupPoints3D(ed.Points, idmap)
 	if err != nil {
 		return nil, fmt.Errorf("%s entity: %w", ed.Kind, err)
 	}
-	switch ed.Kind {
-	case "line":
-		l := s.addLine3DPts(pts[0], pts[1])
-		l.SetConstruction(ed.Construction)
-		return l, nil
-	case "circle":
-		axis, aerr := unitFromTriple(ed.Axis)
-		if aerr != nil {
-			return nil, fmt.Errorf("circle entity: axis %v: %w", ed.Axis, aerr)
-		}
-		c := s.addCircle3DPts(pts[0], axis, ed.Radius)
-		c.SetConstruction(ed.Construction)
-		return c, nil
-	case "arc":
-		a := s.addArc3DPts(pts[0], pts[1], pts[2], ed.CCW)
-		a.SetConstruction(ed.Construction)
-		return a, nil
-	case "helical":
-		axis, aerr := unitFromTriple(ed.Axis)
-		if aerr != nil {
-			return nil, fmt.Errorf("helical entity: axis %v: %w", ed.Axis, aerr)
-		}
-		h := s.addHelix3DPt(pts[0], axis, ed.Radius, ed.Pitch, ed.RadialPerTurn, ed.Turns, ed.Clockwise)
-		h.SetConstruction(ed.Construction)
-		if err := restoreHelixDefinition(h, ed); err != nil {
-			return nil, err
-		}
-		return h, nil
-	case "ellipse", "ellipticalArc":
-		return restoreConic3D(s, ed, pts[0])
-	case "spline", "controlPointSpline":
-		sp := s.addSpline3DPts(pts, ed.Closed, ed.Kind == "spline")
-		sp.SetConstruction(ed.Construction)
-		for _, hd := range ed.Handles {
-			h, err := s.ActivateSplineHandle3D(sp, hd.FitIndex)
-			if err != nil {
-				return nil, err
-			}
-			h.End.SetPosition(math.P3(math.Scalar(hd.End[0]), math.Scalar(hd.End[1]), math.Scalar(hd.End[2])))
-		}
-		return sp, nil
-	case "fixedSpline":
-		sp := s.AddFixedSpline3D(unflattenPoint3s(ed.Coords), ed.Closed)
-		sp.SetConstruction(ed.Construction)
-		return sp, nil
-	case "equationCurve":
-		e, eerr := s.AddEquationCurve3D(ed.XExpr, ed.YExpr, ed.ZExpr, ed.T0, ed.T1)
-		if eerr != nil {
-			return nil, fmt.Errorf("equationCurve entity: %w", eerr)
-		}
-		e.SetConstruction(ed.Construction)
-		return e, nil
-	default:
+	c, ok := entityCodecs3D[EntityKind(ed.Kind)]
+	if !ok {
 		return nil, fmt.Errorf("unknown 3D entity kind %q", ed.Kind)
 	}
+	return c.decode(s, ed, pts)
 }
 
 // restoreConstraint3D re-adds one geometric 3D constraint, binding its point operands

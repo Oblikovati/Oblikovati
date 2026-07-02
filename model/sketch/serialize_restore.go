@@ -65,36 +65,6 @@ func (r *sketchRestorer) restoreCloudAnchors(anchors []CloudAnchorData) error {
 	return nil
 }
 
-// restoreDerivedCurve rebuilds the M21 derived curves (equation/fixed/offset spline);
-// split out of restoreEntity to keep that switch small. The offset spline's parent must
-// already be restored (entities are restored in order).
-func (r *sketchRestorer) restoreDerivedCurve(ed EntityData) (Entity, error) {
-	switch ed.Kind {
-	case "equationCurve":
-		return r.s.eqCurves.Add(ed.XExpr, ed.YExpr, ed.T0, ed.T1)
-	case "blockInstance":
-		def, ok := r.blockDefs.ByName(ed.Block)
-		if !ok {
-			return nil, fmt.Errorf("block instance references unknown definition %q", ed.Block)
-		}
-		t, err := matrixFromCells(ed.Transform)
-		if err != nil {
-			return nil, err
-		}
-		return r.s.Blocks().Insert(def, t), nil
-	case "fixedSpline":
-		return r.s.fixedSpl.Add(unflattenPoints(ed.Coords)), nil
-	case "offsetSpline":
-		parent, ok := r.entityMap[ed.ParentID].(*Spline)
-		if !ok {
-			return nil, fmt.Errorf("offsetSpline parent %d is not a spline", ed.ParentID)
-		}
-		return r.s.offSpl.Add(parent, ed.OffsetDist), nil
-	default:
-		return nil, fmt.Errorf("unknown entity kind %q", ed.Kind)
-	}
-}
-
 // unflattenPoints rebuilds points from a [x,y,x,y,…] slice (odd tails are ignored).
 func unflattenPoints(coords []float64) []math.Point2 {
 	out := make([]math.Point2, 0, len(coords)/2)
@@ -201,85 +171,16 @@ func (r *sketchRestorer) restoreEntities(entities []EntityData) error {
 	return nil
 }
 
+// restoreEntity rebuilds one entity through its kind's registered codec — the
+// same pairing its serializeEntity encode came from, so the two can never
+// drift (#1624). An unknown kind is a hard error: a recipe never restores
+// partially.
 func (r *sketchRestorer) restoreEntity(ed EntityData) (Entity, error) {
-	switch ed.Kind {
-	case "line":
-		p, err := r.points(ed.Points, 2)
-		if err != nil {
-			return nil, err
-		}
-		return r.s.lines.Add(p[0], p[1]), nil
-	case "circle":
-		p, err := r.points(ed.Points, 1)
-		if err != nil {
-			return nil, err
-		}
-		return r.s.circles.Add(p[0], math.Scalar(ed.Radius)), nil
-	case "arc":
-		p, err := r.points(ed.Points, 3)
-		if err != nil {
-			return nil, err
-		}
-		return r.s.arcs.Add(p[0], p[1], p[2], ed.CCW), nil
-	case "ellipse":
-		p, err := r.points(ed.Points, 1)
-		if err != nil {
-			return nil, err
-		}
-		if len(ed.MajorAxis) != 2 {
-			return nil, fmt.Errorf("ellipse needs a 2-component majorAxis, got %d", len(ed.MajorAxis))
-		}
-		axis := math.V2(ed.MajorAxis[0], ed.MajorAxis[1])
-		return r.s.ellipses.AddWithCenter(p[0], axis, math.Scalar(ed.MajorRadius), math.Scalar(ed.MinorRadius)), nil
-	case "ellipticalArc":
-		p, err := r.points(ed.Points, 1)
-		if err != nil {
-			return nil, err
-		}
-		if len(ed.MajorAxis) != 2 {
-			return nil, fmt.Errorf("ellipticalArc needs a 2-component majorAxis, got %d", len(ed.MajorAxis))
-		}
-		axis := math.V2(ed.MajorAxis[0], ed.MajorAxis[1])
-		return r.s.ellArcs.AddWithCenter(p[0], axis, math.Scalar(ed.MajorRadius), math.Scalar(ed.MinorRadius), math.Scalar(ed.StartAngle), math.Scalar(ed.EndAngle)), nil
-	case "spline":
-		p, err := r.points(ed.Points, len(ed.Points))
-		if err != nil {
-			return nil, err
-		}
-		sp := r.s.splines.AddWithPoints(p, ed.Closed, ed.Fit)
-		if err := restoreSplineExtras(r.s, sp, ed); err != nil {
-			return nil, err
-		}
-		return sp, nil
-	case "image":
-		if len(ed.Anchor) != 2 || len(ed.Size) != 2 {
-			return nil, fmt.Errorf("image needs a 2-component anchor and size")
-		}
-		anchor := math.P2(math.Scalar(ed.Anchor[0]), math.Scalar(ed.Anchor[1]))
-		return r.s.images.Add(ed.ImageRef, anchor, math.Scalar(ed.Size[0]), math.Scalar(ed.Size[1]), math.Scalar(ed.Rotation), ed.Opacity), nil
-	case "fillRegion":
-		if len(ed.Seed) != 2 {
-			return nil, fmt.Errorf("fillRegion needs a 2-component seed")
-		}
-		return r.s.fills.Add(math.P2(math.Scalar(ed.Seed[0]), math.Scalar(ed.Seed[1])), ed.Style), nil
-	case "text":
-		if len(ed.Anchor) != 2 {
-			return nil, fmt.Errorf("text needs a 2-component anchor")
-		}
-		anchor := math.P2(math.Scalar(ed.Anchor[0]), math.Scalar(ed.Anchor[1]))
-		tb := r.s.texts.AddStyled(anchor, ed.Text, math.Scalar(ed.TextHeight), math.Scalar(ed.Rotation),
-			TextHJustify(ed.Justify), TextVJustify(ed.VJustify), ed.FontFamily, math.Scalar(ed.FontSize))
-		tb.FontResource = ed.FontResource
-		return tb, nil
-	case "projectedPoint":
-		return r.restoreProjectedPoint(ed)
-	case "projectedCurve":
-		c := r.s.RestoreProjectedCurve(ID(ed.ID), unflattenPoints(ed.Coords), ed.SourceKind, ed.Source)
-		r.note(ed.ID)
-		return c, nil
-	default:
-		return r.restoreDerivedCurve(ed)
+	c, ok := entityCodecs2D[EntityKind(ed.Kind)]
+	if !ok {
+		return nil, fmt.Errorf("unknown entity kind %q", ed.Kind)
 	}
+	return c.decode(r, ed)
 }
 
 // restoreProjectedPoint rebuilds a frozen projected point and registers its anchor in the point

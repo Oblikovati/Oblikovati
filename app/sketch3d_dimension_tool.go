@@ -22,14 +22,11 @@ func newDimension3DTool() *ConstraintTool {
 	}
 }
 
-// acceptDimensionable3D admits the 3D entity kinds a dimension can size.
+// acceptDimensionable3D admits the 3D entity kinds a dimension can size
+// (a spline of either fit flavor qualifies).
 func acceptDimensionable3D(e sketch.Entity) bool {
-	switch e.(type) {
-	case *sketch.Point3D, *sketch.Line3D, *sketch.Circle3D, *sketch.Spline3D:
-		return true
-	default:
-		return false
-	}
+	return entityKindIs(e, sketch.PointKind, sketch.LineKind, sketch.CircleKind,
+		sketch.SplineKind, sketch.ControlPointSplineKind)
 }
 
 // readyDimension3D is satisfied by a spline, a circle, a line, or two points — the
@@ -89,14 +86,16 @@ func sampledLength3D(sp *sketch.Spline3D) float64 {
 // dimensionPicks3D splits the picks into the kinds the dimension chooser weighs.
 func dimensionPicks3D(ents []sketch.Entity) (splines []*sketch.Spline3D, circles []*sketch.Circle3D, lines []*sketch.Line3D, points []*sketch.Point3D) {
 	for _, e := range ents {
-		switch v := e.(type) {
-		case *sketch.Spline3D:
+		if v, ok := e.(*sketch.Spline3D); ok {
 			splines = append(splines, v)
-		case *sketch.Circle3D:
+		}
+		if v, ok := e.(*sketch.Circle3D); ok {
 			circles = append(circles, v)
-		case *sketch.Line3D:
+		}
+		if v, ok := e.(*sketch.Line3D); ok {
 			lines = append(lines, v)
-		case *sketch.Point3D:
+		}
+		if v, ok := e.(*sketch.Point3D); ok {
 			points = append(points, v)
 		}
 	}
