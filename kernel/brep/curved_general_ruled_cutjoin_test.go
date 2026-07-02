@@ -186,3 +186,35 @@ func TestPartialPairDecline(t *testing.T) {
 		t.Error("a full crossing should decline from the partial join path")
 	}
 }
+
+// TestCurvedBooleanWatertightAcrossScales is the #1602 scale sweep: the same curved booleans run at
+// 1 cm–200 cm extents must all stitch watertight. The seam points fed to the stitch carry SSI noise
+// proportional to the extent, so a weld grid that does not scale with the model (the retired
+// absolute 1e-6) lets seams tear as parts grow.
+func TestCurvedBooleanWatertightAcrossScales(t *testing.T) {
+	for _, s := range []float64{1, 10, 50, 200} {
+		fat, _ := SolidCylinder(math.P3(0, 0, -1.2*s), math.V3(0, 0, 1), 0.6*s, 2.4*s)
+		rod, _ := SolidCylinder(math.P3(-1.2*s, 0, 0), math.V3(1, 0, 0), 0.3*s, 2.4*s)
+		if res, ok := CrossingCylinderCutGeneral(fat, rod, nil); ok {
+			assertWatertight(t, res)
+		} else {
+			t.Errorf("scale %g: crossing-cylinder cut declined", s)
+		}
+
+		fatC, _ := SolidCylinderCone(math.P3(0, 0, -1.2*s), math.P3(0, 0, 1.2*s), 0.4*s, 0.8*s, "fat")
+		rodC, _ := SolidCylinderCone(math.P3(-1.2*s, 0, 0), math.P3(1.2*s, 0, 0), 0.16*s, 0.3*s, "rod")
+		if res, ok := ConeConeCutGeneral(fatC, rodC, nil); ok {
+			assertWatertight(t, res)
+		} else {
+			t.Errorf("scale %g: cone-cone cut declined", s)
+		}
+
+		a, _ := SolidCylinder(math.P3(-1.2*s, 0, 0), math.V3(1, 0, 0), 0.6*s, 2.4*s)
+		b, _ := SolidCylinder(math.P3(0, 0, -1.2*s), math.V3(0, 0, 1), 0.6*s, 2.4*s)
+		if res, ok := SteinmetzCutGeneral(a, b, nil); ok {
+			assertWatertight(t, res)
+		} else {
+			t.Errorf("scale %g: Steinmetz cut declined", s)
+		}
+	}
+}
