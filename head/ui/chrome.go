@@ -2,19 +2,8 @@
 
 // SPDX-License-Identifier: GPL-2.0-only
 
-// Package ui composes the Inventor-style chrome — menu bar, ribbon, model browser,
-// and the viewport panel — from the live application Session each frame. There is no
-// retained widget tree: every frame reads app.BuildRibbon / app.BuildBrowser and the
-// current tool/selection, and Dear ImGui draws that (ADR-0004/0009). All layout lives
-// here in Go; the native package only exposes ImGui verbs.
-//
-// The chrome is split by region across sibling files in this package:
-//   - chrome.go         — DrawChrome orchestration, keyboard, shared part accessors
-//   - chrome_menubar.go — the top menu bar and New Part
-//   - chrome_ribbon.go  — the ribbon (tabs, panels, command buttons)
-//   - chrome_doctabs.go — the document tab strip and active-document follow
-//   - chrome_viewport.go— the Vulkan viewport panel, picking and overlays
-//   - chrome_statusbar.go — the status bar
+// (The package comment was promoted to doc.go — #1669, M40 audit D12.)
+
 package ui
 
 import (

@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-// Package brep implements the planar-faced B-rep boolean (M20·F01, the Option-A kernel):
-// imprint face–face intersections, split faces along them via a 2D planar arrangement,
-// classify the sub-faces against the other solid, and stitch the kept faces into a clean,
-// low-face-count, chainable B-rep. This file is the keystone 2D arrangement: it subdivides
-// a set of undirected segments into the bounded faces they enclose (with holes), which the
+// This file is the keystone 2D arrangement of the planar boolean (the package
+// comment lives in doc.go — #1669, M40 audit D12): it subdivides a set of
+// undirected segments into the bounded faces they enclose (with holes), which the
 // 3D boolean uses to split each planar face by its imprint segments.
+
 package brep
 
 import (
