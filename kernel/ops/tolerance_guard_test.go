@@ -109,6 +109,7 @@ func TestNoUnjustifiedAbsoluteEpsilons(t *testing.T) {
 		// ops: the CDT / conformance / orientation weld grids and trim-grid gates (#1610).
 		"../ops/conformance_repair.go",
 		"../ops/tessellate_trim.go",
+		"../ops/patch_acceptance.go",
 		"../ops/planar_faithful.go",
 		"../ops/refined_patch.go",
 		"../ops/mesh_orient.go",

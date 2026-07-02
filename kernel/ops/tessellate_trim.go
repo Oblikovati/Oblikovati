@@ -182,6 +182,11 @@ func boundaryPatchMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.P
 	} else {
 		tris = earClip(outer2D)
 	}
+	// Ear clipping is only guaranteed on a simple polygon; a degenerate/self-touching trim makes it
+	// break early (a hole) or emit count-complete but OVERLAPPING triangles — the coverage gate
+	// detects both in the projection plane and retriangulates through the CDT, whose
+	// split-at-vertex recovery handles the self-touching case exactly (#1605; recovery tier = #1604).
+	tris, accepted := patchCoverageGate(outer2D, holes2D, tris)
 	// The ear-clip output is consistently oriented in the projection plane; patchMeshFrom keeps that
 	// winding and flips the whole patch once if it faces inward overall. Winding each triangle to its
 	// own vertex normals instead flips slivers inconsistently — the back-facing hole walls in Normal-Debug.
@@ -192,6 +197,7 @@ func boundaryPatchMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.P
 	}
 	m := patchMeshFrom(pos, nrm, tris)
 	repairFolds(m, 8) // a curved cap's boundary triangulation can crease; flip the folding diagonals (#585)
+	diagnosePatchCoverage(m, accepted)
 	return m
 }
 
