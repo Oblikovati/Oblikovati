@@ -72,7 +72,9 @@ func (e *ExtrudeFeature) ConsumedSketches() []*sketch.Sketch { return nonNilSket
 func (f *EmbossFeature) ConsumedSketches() []*sketch.Sketch  { return nonNilSketches(f.def.Sketch) }
 func (c *CoilFeature) ConsumedSketches() []*sketch.Sketch    { return nonNilSketches(c.def.Sketch) }
 func (r *RibFeature) ConsumedSketches() []*sketch.Sketch     { return nonNilSketches(r.def.Sketch) }
-func (s *SweepFeature) ConsumedSketches() []*sketch.Sketch   { return nonNilSketches(s.def.Sketch) }
+func (s *SweepFeature) ConsumedSketches() []*sketch.Sketch {
+	return nonNilSketches(s.def.Sketch, s.def.PathSketch, s.def.GuideRailSketch)
+}
 
 func (r *RevolveFeature) ConsumedSketches() []*sketch.Sketch {
 	return nonNilSketches(r.def.Sketch, r.def.AxisCenterlineSketch)

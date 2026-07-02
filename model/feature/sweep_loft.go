@@ -88,8 +88,16 @@ type SweepDefinition struct {
 	Taper         func() float64                // draft angle (radians) along the path
 	TwistStations []SweepTwistStation           // pathAndSectionTwists rows (override Twist)
 	GuideRail     func() *sketch.Path3D         // pathAndGuideRail steering/scaling rail
-	Scaling       types.SweepProfileScaling     // rail scaling mode (0 ⇒ xy)
-	GuideFaceKey  []byte                        // pathAndGuideSurface face (running bodies)
+	// PathSketch / GuideRailSketch name the sketches the live Path / GuideRail providers read,
+	// so the #1414 tail invalidation (and the browser's chronological nesting) can attribute a
+	// parameter that drives the rail to this feature — the providers alone are opaque closures,
+	// and without the attribution a rail-driving parameter edit re-solved the sketch but never
+	// re-swept the body (silent stale geometry, Oblikovati#1693: the resized tubing kept its
+	// old length). nil for a deserialized point-snapshot path (which nothing can re-drive).
+	PathSketch      *sketch.Sketch
+	GuideRailSketch *sketch.Sketch
+	Scaling         types.SweepProfileScaling // rail scaling mode (0 ⇒ xy)
+	GuideFaceKey    []byte                    // pathAndGuideSurface face (running bodies)
 	// SolidToolIndex sweeps the running body at this index along the path
 	// instead of a profile (the reference SolidSweepDefinition).
 	SolidToolIndex *int
