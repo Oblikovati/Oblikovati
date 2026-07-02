@@ -1,8 +1,14 @@
 # Implementation log (historical)
 
-> Migrated verbatim (trademark-scrubbed) from `implementation-plan/PROGRESS.md` when
-> roadmap tracking moved to GitHub milestones/issues. Frozen as a historical record —
-> current status lives on the issue tracker.
+> **⚠ Historical snapshot — do not treat anything below as current.** Migrated
+> verbatim (trademark-scrubbed) from `implementation-plan/PROGRESS.md` when
+> roadmap tracking moved to GitHub milestones/issues, and frozen at that
+> migration. Paths predate the repo-root migration (`/source/...` maps to the
+> repository root today), milestone framing and statuses are as-of-migration
+> only, and none of the "next priority" notes are live. Current work is tracked
+> on the [GitHub issue tracker](https://github.com/Oblikovati/Oblikovati/issues)
+> (milestones + issues) — the body below is preserved unedited as a record
+> (#1668, M40 audit D11).
 
 Live tracker for building Oblikovati against [the roadmap](https://github.com/Oblikovati/Oblikovati/milestones). Updated as
 each PBI lands. Status legend: ⬜ not started · 🟦 in progress · ✅ done (green in CI).

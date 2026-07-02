@@ -28,7 +28,7 @@ mirroring) idioms to the modernized Go architecture. Use it when porting any of 
 | `SurfaceBody`/`Face`/`Edge` (COM topo) | `topo.Body`/`Face`/`Edge` with `Lineage` | core/03 |
 | `FaceEvaluator.GetNormal(...)` | `srf.NormalAt(u,v)` method | core/03 |
 | `ref byte[] ReferenceKey` | `identity.RefKey` (serializable value) | [core/05](../core/05-documents-persistence-identity.md) |
-| `ReferenceKeyManager.BindKeyToObject` | `KeyManager.Resolve(k) (Entity, ok)` — `ok=false` ⇒ lost | core/05, parametric-cad §7 |
+| `ReferenceKeyManager.BindKeyToObject` | `identity.RefKey` tiered bind/recover: exact lineage match, else `identity.RecoverLost` (ancestral → geometric); `MatchNone` ⇒ lost (`model/identity/refkey.go`) | core/05, parametric-cad §7 |
 
 ## Parameters
 

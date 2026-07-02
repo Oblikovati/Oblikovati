@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-// Package exchange owns the kernel-side seam for foreign-format (STEP, IGES, …)
-// import/export. It declares the interfaces a concrete translator satisfies so the
-// rest of the kernel/model depends on the abstraction, not on a parser. The STEP
-// implementation lives under exchange/step and is wired in by the model layer (the
-// contract/wire/CLI surface is PBI-D, deferred). See ADR-0018 and the M17 plan.
+// (The package comment was promoted to doc.go — #1669, M40 audit D12.)
+
 package exchange
 
 import "oblikovati.org/kernel/topo"

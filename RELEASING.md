@@ -95,5 +95,5 @@ via `VERSION=… make build`.
   [macOS signing](#macos-signing--notarization)); otherwise the macOS release is skipped.
 - Linux/Windows **arm64 head** is deferred (no standard arm CI runner); the CLI ships
   for arm64 on all OSes.
-- `source/.goreleaser.yaml` is superseded by this pipeline (kept only for local
-  `goreleaser --snapshot`).
+- `.goreleaser.yaml` (repo root) is superseded by this pipeline (kept only for
+  local `goreleaser --snapshot`).

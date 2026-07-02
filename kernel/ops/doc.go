@@ -9,8 +9,10 @@
 // validation/healing, and boolean combination. Booleans cover the non-overlapping
 // topological cases (disjoint / one-contains-the-other) plus general intersecting
 // solids: planar-faceted operands go through the exact planar B-rep boolean
-// (kernel/brep), and operands with a curved face fall back to a triangle-soup BSP
-// CSG (see booleanCSG). Exact booleans on curved/NURBS solids — analytic face-face
-// intersection rather than the faceted CSG approximation — remain future work,
-// behind the same API.
+// (kernel/brep), and curved operands go through the EXACT analytic curved-boolean
+// paths (curvedExactBoolean: surface–surface intersection → (u,v) arrangement →
+// classify → stitch, plus analytic specials — ADR-0027; kind taxonomy in
+// ADR-0045). Triangle-soup BSP CSG (booleanCSG) survives only as the residual
+// fallback when no exact path applies, and taking it is recorded as a tracked
+// Defect diagnostic (CodeBooleanCSGFallback), never a silent degradation.
 package ops

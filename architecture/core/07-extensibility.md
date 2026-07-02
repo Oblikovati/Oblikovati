@@ -78,7 +78,7 @@ Add-ins manage the ribbon through the same contract (no special path):
   defaulted.
 
 `RibbonKey` and `Environment` are defined once in `api/types` (Apache-2.0) and aliased
-in `/source`, like every other public enum (ADR-0018).
+in the GPL application module, like every other public enum (ADR-0018).
 
 ## Out-of-process add-ins (third-party) — gRPC
 
@@ -87,8 +87,8 @@ in `/source`, like every other public enum (ADR-0018).
 > **in-process** as a C-shared library (`.so`/`.dll`) loaded over a small **C ABI**,
 > exposing the API to LLM clients over **MCP**. The boundary carries an in-process
 > **JSON method contract** (`commands.*`, `documents.*`, `parameters.*`, `model.*`,
-> `sketch.*`, `features.*`) implemented by `source/addin/router`; the cgo loader +
-> host-call shim live in `source/head/internal/addinhost`. That contract is
+> `sketch.*`, `features.*`) implemented by `addin/router`; the cgo loader +
+> host-call shim live in `head/internal/addinhost`. That contract is
 > transport-agnostic, so the gRPC services below remain the planned *future*
 > transport behind the same surface (deferred, not abandoned). The rest of this
 > section describes that target gRPC design.
@@ -96,7 +96,7 @@ in `/source`, like every other public enum (ADR-0018).
 > Since [ADR-0018](../decisions/ADR-0018-apache-api-contract-module.md) the contract
 > is typed and Apache-2.0: the method names + DTOs live in `api/wire` and add-ins
 > call through `api/client` (a `Transport` the C-ABI `ObkHostCall` backs), so a
-> closed-source add-in links only `/api`, never the GPL `/source`.
+> closed-source add-in links only the API module, never the GPL application.
 
 Third-party add-ins are **separate processes** speaking the `api/` gRPC contract
 (ADR-0003) — the modern successor to the COM type library and the

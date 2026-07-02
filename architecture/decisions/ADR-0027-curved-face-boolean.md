@@ -1,6 +1,9 @@
 # ADR-0027 — Curved-face B-rep boolean (K1b)
 
-**Status:** accepted, in progress (slice 1 landed 2026-06-04)
+**Status:** accepted, implemented (slice 1 landed 2026-06-04; the curved-boolean
+EPIC closed 2026-07-01 with
+[ADR-0045](ADR-0045-curved-boolean-kind-taxonomy.md), the closing kind
+taxonomy — see it for the as-shipped coverage)
 **Context:** REPORT.md §6 (G-09), DEFERRALS.md, PARTDOC-PLAN.md Phase 4.
 
 ## Problem

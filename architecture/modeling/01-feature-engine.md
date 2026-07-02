@@ -8,16 +8,19 @@ Implements ADR-0010. The heart of the modeler — "model = evaluated program"
 
 ```go
 package compdef
-type PartContent struct {
+type PartComponentDefinition struct {
     features  []feature.Feature   // THE ordered program (history)
     eop       int                 // end-of-part / rollback marker (index)
     params    *param.Graph        // the variable layer (core/04)
     sketches  Collection[*sketch.Sketch]
     bodies    []*topo.Body        // CACHE: result of the last evaluation
-    keys      *identity.KeyManager// reference-key contexts (core/05)
     version   uint64              // ModelGeometryVersion (bumps every edit)
 }
 ```
+
+(Reference identity needs no field here: keys are `identity.RefKey` values stored
+inside the feature/sketch definitions, rebound against each entity's `Lineage`
+after recompute — core/05.)
 
 `bodies` is a *cache* of evaluating `features[:eop]`, never the source of truth
 (parametric-cad §0). The truth is the feature list + parameters + sketches — that is
