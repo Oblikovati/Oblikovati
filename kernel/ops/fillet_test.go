@@ -393,6 +393,59 @@ func TestFilletCurvedAdjacentReported(t *testing.T) {
 	}
 }
 
+// TestFilletOnCurvedSeamRejectsClearly guards the fillet-over-fillet case the cylinder+plane
+// classifier does NOT cover: the miter SEAM between two adjacent edge fillets is bounded by two
+// CYLINDER faces (not a plane), so rounding it is not yet supported. It must be rejected with a
+// message that names the curved neighbour — not the generic "both faces must be planar", which
+// reads like a caller bug rather than an unsupported operation (the live scenario-07 defect).
+func TestFilletOnCurvedSeamRejectsClearly(t *testing.T) {
+	box := shellBox(4, 3, 2)
+	// The two top edges meeting at corner (4,3,2): along X at y=3, and along Y at x=4.
+	var top [][]byte
+	for _, e := range box.Edges() {
+		a, c := e.StartVertex().Point(), e.EndVertex().Point()
+		if a.Z != 2 || c.Z != 2 {
+			continue
+		}
+		if (a.Y == 3 && c.Y == 3) || (a.X == 4 && c.X == 4) {
+			top = append(top, e.ReferenceKey())
+		}
+	}
+	if len(top) != 2 {
+		t.Fatalf("expected 2 adjacent top edges, got %d", len(top))
+	}
+	f1, err := ops.FilletEdges(box, top, 0.5) // miter: two cylinders meeting at a seam
+	if err != nil {
+		t.Fatalf("first two-edge fillet: %v", err)
+	}
+	seam := cylinderCylinderEdge(t, f1)
+	_, err = ops.FilletEdges(f1, [][]byte{seam.ReferenceKey()}, 0.2)
+	if err == nil {
+		t.Fatal("filleting a cylinder∩cylinder seam edge should be rejected, got nil")
+	}
+	if !strings.Contains(err.Error(), "curved") {
+		t.Errorf("error should name the curved neighbour, got: %v", err)
+	}
+}
+
+// cylinderCylinderEdge returns an edge of b bounded by two cylinder faces (a miter fillet seam).
+func cylinderCylinderEdge(t *testing.T, b *topo.Body) *topo.Edge {
+	t.Helper()
+	for _, e := range b.Edges() {
+		fs := e.Faces()
+		if len(fs) != 2 {
+			continue
+		}
+		_, c0 := fs[0].Geometry().(geom.Cylinder)
+		_, c1 := fs[1].Geometry().(geom.Cylinder)
+		if c0 && c1 {
+			return e
+		}
+	}
+	t.Fatal("no cylinder∩cylinder seam edge")
+	return nil
+}
+
 // TestFilletEdgesRoutesArc drives the public FilletEdges with the sharp ARC cap a prior vertical-edge
 // fillet leaves: it routes to the torus + setback end-cap arc fillet, producing a valid watertight
 // solid with one torus face and two planar setback end-caps, with the arc material removed.

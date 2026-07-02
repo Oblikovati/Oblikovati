@@ -230,6 +230,9 @@ func computeEdgeFillet(body *topo.Body, p filletPick, blends map[uint64]*cornerB
 	if cyl, pl, ok := cylinderPlaneEdge(e); ok {
 		return edgeFillet{}, curvedFilletError(e, cyl, pl) // fillet of a fillet — Phase A: classify & report
 	}
+	if err := curvedAdjacentError(e); err != nil {
+		return edgeFillet{}, err // any other curved neighbour (cyl∩cyl miter seam, torus, sphere)
+	}
 	a, b, nA, nB, err := edgePlanarFaces(e)
 	if err != nil {
 		return edgeFillet{}, err
