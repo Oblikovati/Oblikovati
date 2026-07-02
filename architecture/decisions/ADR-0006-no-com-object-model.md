@@ -11,6 +11,8 @@
 > and `/source` implements them. The stable-`TypeID`-for-persistence decision here is
 > unchanged.
 
+<!-- -->
+
 > **Editor's note (2026-07, #1661 / M40 audit D4).** Paths in this ADR predate the
 > repo-root migration: the GPL application module written here as `/source` now
 > lives directly at the repository root (`kernel/`, `model/`, `app/`, `head/`, …),

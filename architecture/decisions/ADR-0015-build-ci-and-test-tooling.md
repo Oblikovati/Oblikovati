@@ -11,6 +11,8 @@
 > and [`RELEASING.md`](../../RELEASING.md)). The `make`/lint/test/CI parts of this
 > ADR are unchanged.
 
+<!-- -->
+
 > **Editor's note (2026-07, #1661 / M40 audit D4).** Paths in this ADR predate the
 > repo-root migration: the GPL application module written here as `/source` (CI
 > working-directory `source`) now lives directly at the repository root

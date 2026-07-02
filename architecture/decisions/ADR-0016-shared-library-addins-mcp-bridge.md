@@ -11,6 +11,8 @@ first add-in).
 > supplies — but the bridge and the host no longer re-declare DTOs; they share
 > `/api`. A closed-source add-in links only `/api`, never the GPL `/source`.
 
+<!-- -->
+
 > **Editor's note (2026-07, #1661 / M40 audit D4).** Paths in this ADR predate the
 > repo-root migration: the GPL application module written here as `/source` now
 > lives directly at the repository root (`kernel/`, `model/`, `app/`, `head/`, …),
