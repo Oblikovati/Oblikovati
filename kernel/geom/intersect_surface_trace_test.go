@@ -220,3 +220,60 @@ func TestSSIAgreesWithAnalyticOnSpherePlane(t *testing.T) {
 		}
 	}
 }
+
+// TestSSIExtentClosedSurfaceSampledBox: the extent estimate must survive closed/periodic parameter
+// windows (#1597). The old corner-to-corner estimate mapped both corners of a torus domain to the SAME
+// 3D point (extent ~1e-14 for R=50/r=10), and measured a cylinder window by its axial height alone —
+// collapsing step and tolerance until every trace silently fell back to marching squares. The sampled
+// lattice keeps each closed direction's girth in the bounding box.
+func TestSSIExtentClosedSurfaceSampledBox(t *testing.T) {
+	torus, _ := NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 50, 10)
+	if ext := ssiExtent(torus, resolveGrid(torus, SurfaceGrid{})); ext < 120 || ext > 180 {
+		t.Errorf("torus R=50/r=10 extent %g, want the sampled-box diagonal ≈170.9 (corner estimate was ~1e-14)", ext)
+	}
+	squat, _ := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 50)
+	if ext := ssiExtent(squat, resolveGrid(squat, SurfaceGrid{VMin: 0, VMax: 1})); ext < 100 {
+		t.Errorf("squat cylinder R=50/h=1 extent %g, want ≥ its girth 100 (corner estimate was the height, 1)", ext)
+	}
+}
+
+// TestSSITorusPlaneTwoCircles: a torus R=50/r=10 cut by its equatorial plane must yield the two
+// analytic circles r=40 and r=60 VIA THE TRACER — the #1597 regression: with the collapsed extent
+// every seed failed to march and the (coarser) marching-squares fallback silently supplied the curves.
+func TestSSITorusPlaneTwoCircles(t *testing.T) {
+	torus, _ := NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 50, 10)
+	pl, _ := NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
+	tr := TraceSurfaceIntersection(torus, pl, SurfaceGrid{})
+	if tr.ViaFallback {
+		t.Fatal("torus∩plane curves came from the marching-squares fallback, want the continuation tracer")
+	}
+	loops := closedOnly(tr.Curves)
+	if len(loops) != 2 {
+		t.Fatalf("got %d closed loops, want the 2 analytic equator circles r=40 and r=60", len(loops))
+	}
+	var radii []float64
+	for i, loop := range loops {
+		r, err := loopAxisRadius(loop)
+		if err > 1e-3 {
+			t.Errorf("loop %d wobbles %.2e off a constant axis radius, want an exact circle", i, err)
+		}
+		radii = append(radii, r)
+	}
+	lo, hi := stdmath.Min(radii[0], radii[1]), stdmath.Max(radii[0], radii[1])
+	if stdmath.Abs(lo-40) > 1e-3 || stdmath.Abs(hi-60) > 1e-3 {
+		t.Errorf("loop radii [%g, %g], want the analytic [40, 60]", lo, hi)
+	}
+}
+
+// loopAxisRadius returns the mean distance of the loop's points from the z axis and the largest
+// deviation of any point from that mean (0 for an exact axis-centred circle).
+func loopAxisRadius(loop []math.Point3) (mean, worst float64) {
+	for _, p := range loop {
+		mean += stdmath.Hypot(float64(p.X), float64(p.Y))
+	}
+	mean /= float64(len(loop))
+	for _, p := range loop {
+		worst = stdmath.Max(worst, stdmath.Abs(stdmath.Hypot(float64(p.X), float64(p.Y))-mean))
+	}
+	return mean, worst
+}

@@ -29,6 +29,29 @@ import (
 // imprint degraded (and the boolean will fall back) rather than discover it later downstream.
 const CodeImprintUnclosedChain diag.Code = "imprint.unclosed-chain"
 
+// CodeImprintFallbackContour marks an imprint whose SSI curves came from the fixed-grid
+// marching-squares fallback, not the continuation tracer (#1597). Fallback loops are contour-quality
+// (sub-grid features lost, tangencies invisible), so the imprint proceeds but the degradation is
+// recorded instead of silent.
+const CodeImprintFallbackContour diag.Code = "imprint.fallback-contour"
+
+// imprintTraceLoops traces base∩other over window and keeps the loops that close — the shared trace
+// step of every curved-imprint pair (cylinder∩cylinder, cone∩cylinder, cone∩cone).
+func imprintTraceLoops(base, other geom.Surface, window geom.SurfaceGrid, res geom.Resolution, rec *diag.Recorder) []geom.Polyline {
+	return keepImprintLoops(geom.TraceSurfaceIntersection(base, other, window), res, rec)
+}
+
+// keepImprintLoops keeps the closed loops of a trace result, recording the fallback-contour
+// diagnostic when the curves came from marching squares rather than the tracer (#1597). Split from
+// imprintTraceLoops so the recording branch is unit-testable without forcing a live fallback.
+func keepImprintLoops(tr geom.SurfaceIntersection, res geom.Resolution, rec *diag.Recorder) []geom.Polyline {
+	if tr.ViaFallback {
+		rec.Recordf(CodeImprintFallbackContour, diag.Defect,
+			"SSI tracer found no curve; %d contour(s) supplied by the marching-squares fallback", len(tr.Curves))
+	}
+	return closedTraceLoops(tr.Curves, res, rec)
+}
+
 // crossingCylinderImprint returns the intersection loops of two bare cylinder bodies as closed polylines,
 // or ok=false when either body is not a bare cylinder or no closed loop is traced. The trace window spans
 // the first body's axial extent (the cylinders cross within it), and the periodic angular direction is
@@ -41,7 +64,7 @@ func crossingCylinderImprint(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyli
 		return nil, false
 	}
 	res := geom.ResolutionForBox(a.RangeBox().Union(b.RangeBox())) // model-relative loop-closure weld (#1399)
-	loops := closedTraceLoops(geom.IntersectSurfaceSurface(ca, cb, cylinderTraceWindow(ca, baseA, heightA)), res, rec)
+	loops := imprintTraceLoops(ca, cb, cylinderTraceWindow(ca, baseA, heightA), res, rec)
 	if len(loops) == 0 {
 		return nil, false
 	}

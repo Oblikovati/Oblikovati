@@ -141,3 +141,46 @@ func TestCrossingCylinderImprintDisjointHasNoLoops(t *testing.T) {
 		t.Error("disjoint cylinders should trace no imprint loop (ok=false)")
 	}
 }
+
+// TestCrossingCylinderImprintSquatFat: squat proportions (R ≫ h) used to size the SSI march from the
+// axial height alone — the corner-to-corner extent estimate maps the periodic angular corners to the
+// same generator line (#1597) — starving the trace of step and tolerance. The rod's entry and exit
+// through the squat fat wall must still give two clean closed loops, with no recorded degradation.
+func TestCrossingCylinderImprintSquatFat(t *testing.T) {
+	fat, _ := SolidCylinder(math.P3(0, 0, -2), math.V3(0, 0, 1), 50, 4)     // squat: R=50, h=4
+	rod, _ := SolidCylinder(math.P3(-60, 0, 0), math.V3(1, 0, 0), 1.5, 120) // axis x, through both walls
+	rec := &diag.Recorder{}
+	loops, ok := crossingCylinderImprint(fat, rod, rec)
+	if !ok || len(loops) != 2 {
+		t.Fatalf("squat-fat imprint: ok=%v loops=%d, want 2 closed loops", ok, len(loops))
+	}
+	if rec.Count(diag.Defect) != 0 {
+		t.Errorf("squat-fat imprint recorded %d defects, want 0; got %v", rec.Count(diag.Defect), rec.Records())
+	}
+	ca, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 50)
+	cb, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), 1.5)
+	for i, lp := range loops {
+		if !samePoint(lp.PointAt(0), lp.PointAt(1), geom.ResolutionForSize(1)) {
+			t.Errorf("loop %d is not closed: %v vs %v", i, lp.PointAt(0), lp.PointAt(1))
+		}
+		if err := onBothCylinders(lp, ca, cb); err > 1e-4 {
+			t.Errorf("loop %d sits %.2e off a cylinder surface, want it on both", i, err)
+		}
+	}
+}
+
+// TestKeepImprintLoopsRecordsFallbackContour: curves whose provenance is the marching-squares fallback
+// must raise CodeImprintFallbackContour — the imprint proceeds on contour-quality loops, but the
+// degradation is recorded instead of silent (#1597).
+func TestKeepImprintLoopsRecordsFallbackContour(t *testing.T) {
+	res := geom.ResolutionForSize(10)
+	square := []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(1, 1, 0), math.P3(0, 1, 0), math.P3(0, 0, 0)}
+	rec := &diag.Recorder{}
+	loops := keepImprintLoops(geom.SurfaceIntersection{Curves: [][]math.Point3{square}, ViaFallback: true}, res, rec)
+	if len(loops) != 1 {
+		t.Fatalf("got %d loops, want 1 (fallback curves are kept, only flagged)", len(loops))
+	}
+	if !rec.Has(CodeImprintFallbackContour) {
+		t.Errorf("fallback-supplied curves recorded no %q diagnostic; got %v", CodeImprintFallbackContour, rec.Records())
+	}
+}
