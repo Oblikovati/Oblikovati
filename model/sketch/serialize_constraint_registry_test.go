@@ -145,13 +145,16 @@ func populateEvery2DConstraintKind(s *Sketch) {
 	g.AddGroundPoints(l2.A, l2.B)
 	g.AddOffset(l1, l2, 1)
 	g.AddPatternLink(l1.A, l2.A)
-	mustAddCustom(g, l1)
+	// Anchor the tag to a line AND a bare point: points persist in the Points
+	// table, so the restore fallback for point-anchored tags is exercised too
+	// (surfaced by the #1625 constraintseam live test).
+	mustAddCustom(g, l1, l1.A)
 }
 
 // mustAddCustom adds a tag constraint; the factory only errors on an empty
 // client id, which this call never passes.
-func mustAddCustom(g *GeometricConstraints, e Entity) {
-	if _, err := g.AddCustom("test.client", "tag", []Entity{e}); err != nil {
+func mustAddCustom(g *GeometricConstraints, ents ...Entity) {
+	if _, err := g.AddCustom("test.client", "tag", ents); err != nil {
 		panic(err)
 	}
 }

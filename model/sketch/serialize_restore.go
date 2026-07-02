@@ -445,11 +445,16 @@ func (r *sketchRestorer) entity(ids []int, i int) (Entity, error) {
 	if err != nil {
 		return nil, err
 	}
-	e, ok := r.entityMap[id]
-	if !ok {
-		return nil, fmt.Errorf("unresolved entity id %d", id)
+	if e, ok := r.entityMap[id]; ok {
+		return e, nil
 	}
-	return e, nil
+	// A *Point is itself an Entity (a custom tag constraint may anchor to a
+	// bare point), but points persist in the Points table, not the entity
+	// rows — fall back there. Surfaced by the #1625 constraintseam live test.
+	if p, ok := r.pointMap[id]; ok {
+		return p, nil
+	}
+	return nil, fmt.Errorf("unresolved entity id %d", id)
 }
 
 func (r *sketchRestorer) line(ids []int, i int) (*Line, error) {
