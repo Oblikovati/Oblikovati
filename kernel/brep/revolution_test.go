@@ -150,6 +150,96 @@ func TestRevolutionFilletedCylinder(t *testing.T) {
 	}
 }
 
+// TestRevolutionSubMicronTaperIsCone pins audit A7 (#1603): a meridian wall with a REAL slope of
+// 1e-8 rad (Δr = 1e-8 over 1 cm — under the old absolute revTol of 1e-7) must classify as an
+// analytic geom.Cone, not silently flatten to a cylinder. Surface type is load-bearing identity
+// downstream (recognizer, fillet eligibility, STEP), so a sub-µm taper the user modeled must
+// survive classification.
+func TestRevolutionSubMicronTaperIsCone(t *testing.T) {
+	// Wall kept thick (3 cm) so default-quality faceting error on the two walls cancels inside the
+	// 3% band — a 0.5 cm-thin ring measures ~4.5% high at DefaultQuality (bore vs outer inscription
+	// imbalance), a pre-existing tessellation-resolution effect unrelated to classification.
+	const rIn, rOut, h, taper = 10.0, 13.0, 1.0, 1e-8 // inner wall slope = taper/h = 1e-8 rad
+	mer := []math.Point2{math.P2(rIn, 0), math.P2(rOut, 0), math.P2(rOut, h), math.P2(rIn+taper, h)}
+	body, err := brep.SolidOfRevolution(math.P3(0, 0, 0), math.V3(0, 0, 1), mer, "taper")
+	if err != nil || body == nil {
+		t.Fatalf("SolidOfRevolution(taper) = %v, %v; want a body", body, err)
+	}
+	got := revVolume(t, body)
+	want := stdmath.Pi * (rOut*rOut - rIn*rIn) * h // taper's volume contribution is ~1e-7 — negligible
+	if rel := stdmath.Abs(got-want) / want; rel > 0.03 {
+		t.Errorf("tapered tube volume = %.4f, want ≈%.4f (rel %.4f > 3%% band)", got, want, rel)
+	}
+	if c, k := coneFaceCount(body), cylFaceCount(body); c != 1 || k != 1 {
+		t.Errorf("tapered tube has %d cone + %d cylinder faces, want 1 cone (inner taper) + 1 cylinder (outer)", c, k)
+	}
+}
+
+// TestRevolutionLargeRadiusCylinderStaysCylinder pins audit A7's other direction (#1603): a true
+// axis-parallel wall at radial coordinate 1e4 carries upstream model→(r,z) projection noise far
+// above the old absolute 1e-7 (here 3e-7 ≈ 3e-11 relative), yet its SLOPE is 3e-11 — a cylinder
+// beyond doubt. The old absolute compare promoted it to a cone; classification must read the
+// dimensionless slope instead.
+func TestRevolutionLargeRadiusCylinderStaysCylinder(t *testing.T) {
+	const rIn, rOut, h, noise = 1e4, 1.05e4, 1e4, 3e-7
+	mer := []math.Point2{math.P2(rIn, 0), math.P2(rOut, 0), math.P2(rOut, h), math.P2(rIn+noise, h)}
+	body, err := brep.SolidOfRevolution(math.P3(0, 0, 0), math.V3(0, 0, 1), mer, "bigtube")
+	if err != nil || body == nil {
+		t.Fatalf("SolidOfRevolution(bigtube) = %v, %v; want a body", body, err)
+	}
+	got := revVolume(t, body)
+	want := stdmath.Pi * (rOut*rOut - rIn*rIn) * h
+	if rel := stdmath.Abs(got-want) / want; rel > 0.03 {
+		t.Errorf("large tube volume = %.4g, want ≈%.4g (rel %.4f > 3%% band)", got, want, rel)
+	}
+	if c, k := coneFaceCount(body), cylFaceCount(body); c != 0 || k != 2 {
+		t.Errorf("large tube has %d cone + %d cylinder faces, want 0 cones + 2 cylinders (bore + outer)", c, k)
+	}
+}
+
+// TestRevolutionTaperClassIsScaleInvariant pins audit A7's core demand (#1603): the SAME
+// normalized taper (slope 1e-6 rad) must classify identically — as a cone — at 1e-3×, 1× and
+// 1e3× model scale. The old absolute revTol flipped the 1e-3× copy to a cylinder (Δr = 1e-9
+// < 1e-7) while the 1× and 1e3× copies stayed cones.
+func TestRevolutionTaperClassIsScaleInvariant(t *testing.T) {
+	const slope = 1e-6
+	for _, scale := range []float64{1e-3, 1, 1e3} {
+		rIn, rOut, h := 10*scale, 10.5*scale, 1*scale
+		mer := []math.Point2{
+			math.P2(rIn, 0), math.P2(rOut, 0), math.P2(rOut, h), math.P2(rIn+slope*h, h),
+		}
+		body, err := brep.SolidOfRevolution(math.P3(0, 0, 0), math.V3(0, 0, 1), mer, "sweep")
+		if err != nil || body == nil {
+			t.Fatalf("scale %g: SolidOfRevolution = %v, %v; want a body", scale, body, err)
+		}
+		if c, k := coneFaceCount(body), cylFaceCount(body); c != 1 || k != 1 {
+			t.Errorf("scale %g: %d cone + %d cylinder faces, want 1 + 1 (classification must not depend on scale)",
+				scale, c, k)
+		}
+	}
+}
+
+// TestRevolutionAxisWeldIsScaleRelative pins the on-axis vertex test's move to a meridian-relative
+// tolerance (#1603): on a 1e4-extent part, an inner radius of 1e-4 (1e-8 of the model — far below
+// the on-line classification resolution) is coincident with the axis, so the revolve must produce
+// a SOLID cylinder (3 faces), not an annulus with a sub-resolution sliver bore.
+func TestRevolutionAxisWeldIsScaleRelative(t *testing.T) {
+	const rBore, r, h = 1e-4, 1e4, 1e4
+	mer := []math.Point2{math.P2(rBore, 0), math.P2(r, 0), math.P2(r, h), math.P2(rBore, h)}
+	body, err := brep.SolidOfRevolution(math.P3(0, 0, 0), math.V3(0, 0, 1), mer, "weld")
+	if err != nil || body == nil {
+		t.Fatalf("SolidOfRevolution(weld) = %v, %v; want a body", body, err)
+	}
+	got := revVolume(t, body)
+	want := stdmath.Pi * r * r * h
+	if rel := stdmath.Abs(got-want) / want; rel > 0.03 {
+		t.Errorf("welded-bore volume = %.4g, want ≈%.4g (rel %.4f > 3%% band)", got, want, rel)
+	}
+	if n := len(body.Faces()); n != 3 {
+		t.Errorf("welded-bore solid has %d faces, want 3 (wall + 2 disc caps; sub-resolution bore welds to axis)", n)
+	}
+}
+
 func torusFaceCount(b *topo.Body) int {
 	return surfFaceCount(b, func(g geom.Surface) bool { _, ok := g.(geom.Torus); return ok })
 }
