@@ -56,13 +56,30 @@ func (t *FillSurfaceTool) CanCommit() bool {
 	return t.continuity >= 0 && t.continuity < len(fillContinuityLabels) && t.sides >= 3
 }
 
+// addFillSurface builds the fill feature into fs — the shared constructor used by both Commit
+// (the part's engine) and DraftFeature (a scratch engine), so the two cannot drift.
+func (t *FillSurfaceTool) addFillSurface(fs *feature.PartFeatures) *feature.PartFeature {
+	return feature.NewFillFeatures(fs).AddSides(t.continuity, t.sides)
+}
+
+// DraftFeature implements [PartFeatureTool] (#1626): the fill it would commit, built into a
+// scratch engine so the commit gate and preview can evaluate it without touching the part.
+func (t *FillSurfaceTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addFillSurface(fs), nil
+	})
+}
+
 // Commit fills the opening and recomputes.
 func (t *FillSurfaceTool) Commit(s *Session) error {
 	part, err := activePart(s)
 	if err != nil {
 		return err
 	}
-	t.added = feature.NewFillFeatures(part.Features()).AddSides(t.continuity, t.sides)
+	t.added = t.addFillSurface(part.Features())
 	part.Recompute()
 	s.recordEdit(part, "Fill Surface")
 	if !t.added.Health().OK() {

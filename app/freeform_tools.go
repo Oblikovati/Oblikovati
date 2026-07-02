@@ -29,6 +29,15 @@ func freeformCommit(s *Session, label string, add func(*feature.FreeformFeatures
 	return added, nil
 }
 
+// freeformDraft builds the primitive through add into a scratch engine — the shared back half
+// of the three freeform DraftFeature implementations (#1626), mirroring freeformCommit so the
+// commit gate and preview evaluate the exact feature OK would place.
+func freeformDraft(add func(*feature.FreeformFeatures) *feature.PartFeature) (feature.Feature, bool) {
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return add(feature.NewFreeformFeatures(fs)), nil
+	})
+}
+
 // levelParam is the shared subdivision-level descriptor of the freeform tools.
 func levelParam(get func() int, set func(int)) IntParam {
 	return IntParam{Label: "Level", Get: get, Set: set}
@@ -70,13 +79,26 @@ func (t *FreeformBoxTool) Params() ToolParams {
 // CanCommit reports whether every size is positive (level clamps at 0 in the model).
 func (t *FreeformBoxTool) CanCommit() bool { return t.sx > 0 && t.sy > 0 && t.sz > 0 }
 
+// addBoxCage runs the box construction against ff — shared by Commit (the part's engine) and
+// DraftFeature (a scratch engine) so the committed and previewed features cannot drift (#1626).
+func (t *FreeformBoxTool) addBoxCage(ff *feature.FreeformFeatures) *feature.PartFeature {
+	return ff.AddBox(t.sx, t.sy, t.sz, t.level)
+}
+
 // Commit places the box cage and recomputes.
 func (t *FreeformBoxTool) Commit(s *Session) error {
-	added, err := freeformCommit(s, "Freeform Box", func(ff *feature.FreeformFeatures) *feature.PartFeature {
-		return ff.AddBox(t.sx, t.sy, t.sz, t.level)
-	})
+	added, err := freeformCommit(s, "Freeform Box", t.addBoxCage)
 	t.added = added
 	return err
+}
+
+// DraftFeature implements [PartFeatureTool] (#1626): the box cage it would commit, built into a
+// scratch engine so the commit gate and preview can evaluate it without touching the part.
+func (t *FreeformBoxTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return freeformDraft(t.addBoxCage)
 }
 
 // Cancel implements [Tool] (nothing to restore).
@@ -119,13 +141,26 @@ func (t *FreeformPlaneTool) Params() ToolParams {
 // CanCommit reports whether both sizes are positive.
 func (t *FreeformPlaneTool) CanCommit() bool { return t.sx > 0 && t.sy > 0 }
 
+// addPlaneCage runs the plane construction against ff — shared by Commit and DraftFeature so
+// the committed and previewed features cannot drift (#1626).
+func (t *FreeformPlaneTool) addPlaneCage(ff *feature.FreeformFeatures) *feature.PartFeature {
+	return ff.AddPlane(t.sx, t.sy, t.level)
+}
+
 // Commit places the plane cage and recomputes.
 func (t *FreeformPlaneTool) Commit(s *Session) error {
-	added, err := freeformCommit(s, "Freeform Plane", func(ff *feature.FreeformFeatures) *feature.PartFeature {
-		return ff.AddPlane(t.sx, t.sy, t.level)
-	})
+	added, err := freeformCommit(s, "Freeform Plane", t.addPlaneCage)
 	t.added = added
 	return err
+}
+
+// DraftFeature implements [PartFeatureTool] (#1626): the plane cage it would commit, built into
+// a scratch engine so the commit gate and preview can evaluate it without touching the part.
+func (t *FreeformPlaneTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return freeformDraft(t.addPlaneCage)
 }
 
 // Cancel implements [Tool] (nothing to restore).
@@ -171,13 +206,26 @@ func (t *FreeformQuadBallTool) Params() ToolParams {
 // CanCommit reports whether the radius is positive.
 func (t *FreeformQuadBallTool) CanCommit() bool { return t.radius > 0 }
 
+// addQuadBallCage runs the quad-ball construction against ff — shared by Commit and
+// DraftFeature so the committed and previewed features cannot drift (#1626).
+func (t *FreeformQuadBallTool) addQuadBallCage(ff *feature.FreeformFeatures) *feature.PartFeature {
+	return ff.AddQuadBall(t.radius, t.level)
+}
+
 // Commit places the quad-ball cage and recomputes.
 func (t *FreeformQuadBallTool) Commit(s *Session) error {
-	added, err := freeformCommit(s, "Freeform Quad Ball", func(ff *feature.FreeformFeatures) *feature.PartFeature {
-		return ff.AddQuadBall(t.radius, t.level)
-	})
+	added, err := freeformCommit(s, "Freeform Quad Ball", t.addQuadBallCage)
 	t.added = added
 	return err
+}
+
+// DraftFeature implements [PartFeatureTool] (#1626): the quad-ball cage it would commit, built
+// into a scratch engine so the commit gate and preview can evaluate it without touching the part.
+func (t *FreeformQuadBallTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return freeformDraft(t.addQuadBallCage)
 }
 
 // Cancel implements [Tool] (nothing to restore).

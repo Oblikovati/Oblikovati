@@ -119,7 +119,7 @@ func manageTabCommands() []*CommandDefinition {
 // tool, which reads the source/options from the generic dialog.
 func deriveAssemblyCommand() *CommandDefinition {
 	return NewCommand("Manage.Derive", "Derive Assembly", "Simplify", func(s *Session) error {
-		s.StartTool(NewDeriveAssemblyTool())
+		s.StartFeatureTool(NewDeriveAssemblyTool())
 		return nil
 	}).WithTab("Manage").WithEnable(canDeriveAssembly).
 		WithIcon("derive").WithButtonStyle(LargeIconButton).
@@ -128,7 +128,7 @@ func deriveAssemblyCommand() *CommandDefinition {
 
 func shrinkwrapCommand() *CommandDefinition {
 	return NewCommand("Manage.Shrinkwrap", "Shrinkwrap", "Simplify", func(s *Session) error {
-		s.StartTool(NewShrinkwrapTool())
+		s.StartFeatureTool(NewShrinkwrapTool())
 		return nil
 	}).WithTab("Manage").WithEnable(canDeriveAssembly).
 		WithIcon("shrinkwrap").WithButtonStyle(LargeIconButton).
@@ -278,7 +278,7 @@ func pointCloudCommands() []*CommandDefinition {
 func moldFeatureCommands() []*CommandDefinition {
 	return []*CommandDefinition{
 		NewCommand("Mold.CoreCavity", "Core/Cavity", "Mold", func(s *Session) error {
-			s.StartTool(NewCoreCavityTool())
+			s.StartFeatureTool(NewCoreCavityTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("core-cavity").WithButtonStyle(LargeIconButton).
@@ -291,17 +291,17 @@ func moldFeatureCommands() []*CommandDefinition {
 func freeformFeatureCommands() []*CommandDefinition {
 	prims := []struct {
 		id, name, icon, tip string
-		start               func() Tool
+		start               func() PartFeatureTool // typed thunks: the compiler holds every primitive to the commit gate (#1626)
 	}{
-		{"Freeform.Box", "Box", "freeform-box", "Freeform Box — place a sub-D box cage and smooth it by subdivision level.", func() Tool { return NewFreeformBoxTool() }},
-		{"Freeform.Plane", "Plane", "freeform-plane", "Freeform Plane — place an open sub-D plane cage (a surface body).", func() Tool { return NewFreeformPlaneTool() }},
-		{"Freeform.QuadBall", "Quad Ball", "freeform-quadball", "Freeform Quad Ball — place a closed sphere-like sub-D cage.", func() Tool { return NewFreeformQuadBallTool() }},
+		{"Freeform.Box", "Box", "freeform-box", "Freeform Box — place a sub-D box cage and smooth it by subdivision level.", func() PartFeatureTool { return NewFreeformBoxTool() }},
+		{"Freeform.Plane", "Plane", "freeform-plane", "Freeform Plane — place an open sub-D plane cage (a surface body).", func() PartFeatureTool { return NewFreeformPlaneTool() }},
+		{"Freeform.QuadBall", "Quad Ball", "freeform-quadball", "Freeform Quad Ball — place a closed sphere-like sub-D cage.", func() PartFeatureTool { return NewFreeformQuadBallTool() }},
 	}
 	cmds := make([]*CommandDefinition, len(prims))
 	for i, d := range prims {
 		start := d.start
 		cmds[i] = NewCommand(d.id, d.name, "Freeform", func(s *Session) error {
-			s.StartTool(start())
+			s.StartFeatureTool(start())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).WithTooltip(d.tip).
 			WithIcon(d.icon).WithButtonStyle(SmallIconButton)
@@ -314,67 +314,67 @@ func freeformFeatureCommands() []*CommandDefinition {
 func surfaceFeatureCommands() []*CommandDefinition {
 	return []*CommandDefinition{
 		NewCommand("Surface.Patch", "Patch", "Surface", func(s *Session) error {
-			s.StartTool(NewPatchTool())
+			s.StartFeatureTool(NewPatchTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("patch").WithButtonStyle(LargeIconButton).
 			WithTooltip("Patch — fill a closed sketch boundary with a surface."),
 		NewCommand("Surface.Trim", "Trim", "Surface", func(s *Session) error {
-			s.StartTool(NewSurfaceTrimTool())
+			s.StartFeatureTool(NewSurfaceTrimTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("surface-trim").WithButtonStyle(LargeIconButton).
 			WithTooltip("Trim — cut a surface with a work plane and keep one side."),
 		NewCommand("Surface.Stitch", "Stitch", "Surface", func(s *Session) error {
-			s.StartTool(NewStitchTool())
+			s.StartFeatureTool(NewStitchTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("stitch").WithButtonStyle(LargeIconButton).
 			WithTooltip("Stitch — weld surface bodies into one quilt (a closed quilt becomes a solid)."),
 		NewCommand("Surface.Sculpt", "Sculpt", "Surface", func(s *Session) error {
-			s.StartTool(NewSculptTool())
+			s.StartFeatureTool(NewSculptTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("sculpt").WithButtonStyle(LargeIconButton).
 			WithTooltip("Sculpt — fill the volume bounded by surfaces into a solid."),
 		NewCommand("Surface.Extend", "Extend", "Surface", func(s *Session) error {
-			s.StartTool(NewExtendTool())
+			s.StartFeatureTool(NewExtendTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("surface-extend").WithButtonStyle(LargeIconButton).
 			WithTooltip("Extend — grow a surface outward along a boundary edge."),
 		NewCommand("Surface.RuleFillet", "Rule Fillet", "Surface", func(s *Session) error {
-			s.StartTool(NewRuleFilletTool())
+			s.StartFeatureTool(NewRuleFilletTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("fillet").WithButtonStyle(LargeIconButton).
 			WithTooltip("Rule Fillet — round a whole class of edges (all rounds, all fillets, or all edges) at one radius."),
 		NewCommand("Surface.Ruled", "Ruled Surface", "Surface", func(s *Session) error {
-			s.StartTool(NewRuledSurfaceTool())
+			s.StartFeatureTool(NewRuledSurfaceTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("ruled-surface").WithButtonStyle(LargeIconButton).
 			WithTooltip("Ruled Surface — sweep a closed profile's edges by straight rulings into a band."),
 		NewCommand("Surface.Offset", "Offset Surface", "Surface", func(s *Session) error {
-			s.StartTool(NewSurfaceOffsetTool())
+			s.StartFeatureTool(NewSurfaceOffsetTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("surface-offset").WithButtonStyle(LargeIconButton).
 			WithTooltip("Offset Surface — copy the running surface along its normal by a distance."),
 		NewCommand("Surface.MidSurface", "Mid-Surface", "Surface", func(s *Session) error {
-			s.StartTool(NewMidSurfaceTool())
+			s.StartFeatureTool(NewMidSurfaceTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("mid-surface").WithButtonStyle(LargeIconButton).
 			WithTooltip("Mid-Surface — extract mid-plane patches from the solid's thin walls (for FEA)."),
 		NewCommand("Surface.Rebuild", "Rebuild Surface", "Surface", func(s *Session) error {
-			s.StartTool(NewSurfaceRebuildTool())
+			s.StartFeatureTool(NewSurfaceRebuildTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("rebuild-surface").WithButtonStyle(LargeIconButton).
 			WithTooltip("Rebuild Surface — refit freeform faces to clean Class-A NURBS (fewer, even control points)."),
 		NewCommand("Surface.NurbsPlane", "NURBS Plane", "Surface", func(s *Session) error {
-			s.StartTool(NewNurbsPlaneTool())
+			s.StartFeatureTool(NewNurbsPlaneTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("nurbs-plane").WithButtonStyle(LargeIconButton).
@@ -386,13 +386,13 @@ func surfaceFeatureCommands() []*CommandDefinition {
 			WithIcon("control-point-edit").WithButtonStyle(LargeIconButton).
 			WithTooltip("Edit Control Points — drag a NURBS surface's control net to shape it (region, falloff, symmetry)."),
 		NewCommand("Surface.Match", "Match Surface", "Surface", func(s *Session) error {
-			s.StartTool(NewMatchTool())
+			s.StartFeatureTool(NewMatchTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("match-surface").WithButtonStyle(LargeIconButton).
 			WithTooltip("Match Surface — rebuild the surface against its neighbour to G0/G1/G2/G3 continuity."),
 		NewCommand("Surface.ExtendNurbs", "Extend Surface", "Surface", func(s *Session) error {
-			s.StartTool(NewExtendSurfaceTool())
+			s.StartFeatureTool(NewExtendSurfaceTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("extend-surface").WithButtonStyle(LargeIconButton).
@@ -402,31 +402,31 @@ func surfaceFeatureCommands() []*CommandDefinition {
 			WithIcon("untrim-surface").WithButtonStyle(LargeIconButton).
 			WithTooltip("Untrim — recover a trimmed NURBS face's full underlying surface."),
 		NewCommand("Surface.Fill", "Fill Surface", "Surface", func(s *Session) error {
-			s.StartTool(NewFillSurfaceTool())
+			s.StartFeatureTool(NewFillSurfaceTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("fill-surface").WithButtonStyle(LargeIconButton).
 			WithTooltip("Fill Surface — close a four-sided opening with a single clean NURBS at G0/G1/G2 continuity."),
 		NewCommand("Surface.Bridge", "Bridge Surface", "Surface", func(s *Session) error {
-			s.StartTool(NewBridgeSurfaceTool())
+			s.StartFeatureTool(NewBridgeSurfaceTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("bridge-surface").WithButtonStyle(LargeIconButton).
 			WithTooltip("Bridge Surface — connect two surfaces with a clean NURBS transition at G0/G1/G2 continuity per side."),
 		NewCommand("Surface.Network", "Network Surface", "Surface", func(s *Session) error {
-			s.StartTool(NewNetworkTool())
+			s.StartFeatureTool(NewNetworkTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("network-surface").WithButtonStyle(LargeIconButton).
 			WithTooltip("Network Surface — interpolate a grid of intersecting U and V curves with a single NURBS (Gordon surface)."),
 		NewCommand("Surface.Fair", "Fair Surface", "Surface", func(s *Session) error {
-			s.StartTool(NewFairSurfaceTool())
+			s.StartFeatureTool(NewFairSurfaceTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("fair-surface").WithButtonStyle(LargeIconButton).
 			WithTooltip("Fair Surface — smooth curvature wrinkles out of a surface while holding its boundary continuity (G0/G1/G2)."),
 		NewCommand("Surface.FitToCloud", "Fit Surface", "Surface", func(s *Session) error {
-			s.StartTool(NewFitSurfaceTool())
+			s.StartFeatureTool(NewFitSurfaceTool())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("fit-surface").WithButtonStyle(LargeIconButton).
@@ -438,20 +438,22 @@ func surfaceFeatureCommands() []*CommandDefinition {
 // as real placed copies (canonical ribbon: Rectangular, Circular, Sketch Driven, Mirror).
 // Each starts an interactive tool fed the source features.
 func patternFeatureCommands() []*CommandDefinition {
+	// func() PartFeatureTool (not func() Tool) so every pattern tool is compile-checked
+	// against the commit gate's DraftFeature requirement (#1626).
 	pats := []struct {
 		id, name, icon, tip string
-		start               func() Tool
+		start               func() PartFeatureTool
 	}{
-		{"Modify.RectangularPattern", "Rectangular", "rectangular-pattern", "Rectangular Pattern — select features, set counts and spacing.", func() Tool { return NewFeatureRectPatternTool() }},
-		{"Modify.CircularPattern", "Circular", "circular-pattern", "Circular Pattern — select features, set count and angle.", func() Tool { return NewFeatureCircPatternTool() }},
-		{"Modify.Mirror", "Mirror", "mirror", "Mirror — select features, set the mirror-plane normal.", func() Tool { return NewFeatureMirrorTool() }},
-		{"Modify.SketchDrivenPattern", "Sketch Driven", "sketch-driven-pattern", "Sketch-Driven Pattern — select features, then the sketch whose points place the copies.", func() Tool { return NewFeatureSketchDrivenPatternTool() }},
+		{"Modify.RectangularPattern", "Rectangular", "rectangular-pattern", "Rectangular Pattern — select features, set counts and spacing.", func() PartFeatureTool { return NewFeatureRectPatternTool() }},
+		{"Modify.CircularPattern", "Circular", "circular-pattern", "Circular Pattern — select features, set count and angle.", func() PartFeatureTool { return NewFeatureCircPatternTool() }},
+		{"Modify.Mirror", "Mirror", "mirror", "Mirror — select features, set the mirror-plane normal.", func() PartFeatureTool { return NewFeatureMirrorTool() }},
+		{"Modify.SketchDrivenPattern", "Sketch Driven", "sketch-driven-pattern", "Sketch-Driven Pattern — select features, then the sketch whose points place the copies.", func() PartFeatureTool { return NewFeatureSketchDrivenPatternTool() }},
 	}
 	cmds := make([]*CommandDefinition, len(pats))
 	for i, p := range pats {
 		start := p.start
 		cmds[i] = NewCommand(p.id, p.name, "Pattern", func(s *Session) error {
-			s.StartTool(start())
+			s.StartFeatureTool(start())
 			return nil
 		}).WithTab(tabCreateModify).WithEnable(hasActivePart).WithTooltip(p.tip).
 			WithIcon(p.icon).WithButtonStyle(SmallIconButton)
@@ -554,22 +556,24 @@ func modifyFeatureCommands() []*CommandDefinition {
 // Combine (boolean of two bodies), Move Face (direct edit), Move (relocate a body). They
 // were model-complete (M09/M20) but had no ribbon tool.
 func directEditCommands() []*CommandDefinition {
+	// func() PartFeatureTool (not func() Tool) so every modify tool is compile-checked
+	// against the commit gate's DraftFeature requirement (#1626).
 	defs := []struct {
 		id, name, icon, tip string
-		start               func() Tool
+		start               func() PartFeatureTool
 	}{
-		{"Modify.Combine", "Combine", "combine", "Combine — boolean two bodies (Join/Cut/Intersect).", func() Tool { return NewCombineTool() }},
-		{"Modify.Split", "Split", "split", "Split — divide the part by a work plane into two bodies, or trim one side away.", func() Tool { return NewSplitTool() }},
-		{"Modify.MoveFace", "Move Face", "move-face", "Move Face — translate picked faces, retopologizing the solid.", func() Tool { return NewMoveFaceTool() }},
-		{"Modify.MoveBodies", "Move Bodies", "move-bodies", "Move Bodies — relocate a body by a vector.", func() Tool { return NewMoveBodyTool() }},
-		{"Modify.DirectEdit", "Direct Edit", "direct-edit", "Direct Edit — move, push/pull, rotate, delete or scale picked geometry (#332).", func() Tool { return NewDirectEditTool() }},
-		{"Modify.Hull", "Hull", "hull", "Hull — wrap the part's solids into one convex solid.", func() Tool { return NewHullTool() }},
+		{"Modify.Combine", "Combine", "combine", "Combine — boolean two bodies (Join/Cut/Intersect).", func() PartFeatureTool { return NewCombineTool() }},
+		{"Modify.Split", "Split", "split", "Split — divide the part by a work plane into two bodies, or trim one side away.", func() PartFeatureTool { return NewSplitTool() }},
+		{"Modify.MoveFace", "Move Face", "move-face", "Move Face — translate picked faces, retopologizing the solid.", func() PartFeatureTool { return NewMoveFaceTool() }},
+		{"Modify.MoveBodies", "Move Bodies", "move-bodies", "Move Bodies — relocate a body by a vector.", func() PartFeatureTool { return NewMoveBodyTool() }},
+		{"Modify.DirectEdit", "Direct Edit", "direct-edit", "Direct Edit — move, push/pull, rotate, delete or scale picked geometry (#332).", func() PartFeatureTool { return NewDirectEditTool() }},
+		{"Modify.Hull", "Hull", "hull", "Hull — wrap the part's solids into one convex solid.", func() PartFeatureTool { return NewHullTool() }},
 	}
 	cmds := make([]*CommandDefinition, len(defs))
 	for i, d := range defs {
 		start := d.start
 		cmds[i] = NewCommand(d.id, d.name, "Modify", func(s *Session) error {
-			s.StartTool(start())
+			s.StartFeatureTool(start())
 			return nil
 		}).WithTab(tabCreateModify).WithEnable(hasActivePart).WithTooltip(d.tip).
 			WithIcon(d.icon).WithButtonStyle(SmallIconButton)
@@ -581,7 +585,7 @@ func directEditCommands() []*CommandDefinition {
 func surfaceSolidCommands() []*CommandDefinition {
 	return []*CommandDefinition{
 		NewCommand("Modify.Thicken", "Thicken", "Modify", func(s *Session) error {
-			s.StartTool(NewThickenTool())
+			s.StartFeatureTool(NewThickenTool())
 			return nil
 		}).WithTab(tabCreateModify).WithEnable(notInSketch).
 			WithIcon("thicken").WithButtonStyle(LargeIconButton).
@@ -593,32 +597,32 @@ func surfaceSolidCommands() []*CommandDefinition {
 func cutFeatureCommands() []*CommandDefinition {
 	return []*CommandDefinition{
 		NewCommand("Modify.Hole", "Hole", "Modify", func(s *Session) error {
-			s.StartTool(NewHoleTool())
+			s.StartFeatureTool(NewHoleTool())
 			return nil
 		}).WithTab(tabCreateModify).WithAlias("H").WithEnable(notInSketch).
 			WithIcon("hole").WithButtonStyle(LargeIconButton).
 			WithTooltip("Hole — drill a cylindrical hole into a planar face of the solid."),
 		NewCommand("Modify.Boss", "Boss", "Modify", func(s *Session) error {
-			s.StartTool(NewBossTool())
+			s.StartFeatureTool(NewBossTool())
 			return nil
 		}).WithTab(tabCreateModify).WithEnable(notInSketch).
 			WithIcon("boss").WithButtonStyle(LargeIconButton).
 			WithTooltip("Boss — raise a cylindrical stud on a planar face (the join-side mirror of Hole)."),
 		NewCommand("Modify.Lip", "Lip", "Modify", func(s *Session) error {
-			s.StartTool(NewLipTool())
+			s.StartFeatureTool(NewLipTool())
 			return nil
 		}).WithTab(tabCreateModify).WithEnable(notInSketch).
 			WithIcon("lip").WithButtonStyle(LargeIconButton).
 			WithTooltip("Lip — run a raised lip (or recessed groove) bead along picked edges of the part."),
 		NewCommand("Modify.Chamfer", "Chamfer", "Modify", func(s *Session) error {
-			s.StartTool(NewChamferTool())
+			s.StartFeatureTool(NewChamferTool())
 			return nil
 		}).WithTab(tabCreateModify).WithEnable(notInSketch).
 			WithIcon("chamfer").WithButtonStyle(LargeIconButton).
 			WithTooltip("Chamfer — bevel selected edges by a setback distance."),
 		filletCommand(),
 		NewCommand("Modify.Thread", "Thread", "Modify", func(s *Session) error {
-			s.StartTool(NewThreadTool())
+			s.StartFeatureTool(NewThreadTool())
 			return nil
 		}).WithTab(tabCreateModify).WithEnable(notInSketch).
 			WithIcon("thread").WithButtonStyle(LargeIconButton).
@@ -632,19 +636,19 @@ func cutFeatureCommands() []*CommandDefinition {
 // RegisterStandardCommands registers the variant for id dispatch by walking primary.Variants().
 func filletCommand() *CommandDefinition {
 	faceFillet := NewCommand("Modify.FaceFillet", "Face Fillet", "Modify", func(s *Session) error {
-		s.StartTool(NewFaceFilletTool())
+		s.StartFeatureTool(NewFaceFilletTool())
 		return nil
 	}).WithTab(tabCreateModify).WithEnable(notInSketch).
 		WithIcon("fillet").WithButtonStyle(LargeIconButton).
 		WithTooltip("Face Fillet — round the edges shared between two sets of faces.")
 	fullRound := NewCommand("Modify.FullRoundFillet", "Full Round Fillet", "Modify", func(s *Session) error {
-		s.StartTool(NewFullRoundFilletTool())
+		s.StartFeatureTool(NewFullRoundFilletTool())
 		return nil
 	}).WithTab(tabCreateModify).WithEnable(notInSketch).
 		WithIcon("fillet").WithButtonStyle(LargeIconButton).
 		WithTooltip("Full Round Fillet — replace a face between two parallel sides with a half-round.")
 	return NewCommand("Modify.Fillet", "Fillet", "Modify", func(s *Session) error {
-		s.StartTool(NewFilletTool())
+		s.StartFeatureTool(NewFilletTool())
 		return nil
 	}).WithTab(tabCreateModify).WithAlias("F").WithEnable(notInSketch).
 		WithIcon("fillet").WithButtonStyle(LargeIconButton).
@@ -662,19 +666,19 @@ func localFaceCommands() []*CommandDefinition {
 func faceMetricCommands() []*CommandDefinition {
 	return []*CommandDefinition{
 		NewCommand("Modify.Shell", "Shell", "Modify", func(s *Session) error {
-			s.StartTool(NewShellTool())
+			s.StartFeatureTool(NewShellTool())
 			return nil
 		}).WithTab(tabCreateModify).WithEnable(notInSketch).
 			WithIcon("shell").WithButtonStyle(LargeIconButton).
 			WithTooltip("Shell — hollow the solid to a wall thickness, removing the selected faces."),
 		NewCommand("Modify.FaceOffset", "Offset Face", "Modify", func(s *Session) error {
-			s.StartTool(NewFaceOffsetTool())
+			s.StartFeatureTool(NewFaceOffsetTool())
 			return nil
 		}).WithTab(tabCreateModify).WithEnable(notInSketch).
 			WithIcon("face-offset").WithButtonStyle(LargeIconButton).
 			WithTooltip("Offset Face — move selected faces along their normal, retrimming neighbours."),
 		NewCommand("Modify.Draft", "Draft", "Modify", func(s *Session) error {
-			s.StartTool(NewDraftTool())
+			s.StartFeatureTool(NewDraftTool())
 			return nil
 		}).WithTab(tabCreateModify).WithEnable(notInSketch).
 			WithIcon("draft").WithButtonStyle(LargeIconButton).
@@ -686,13 +690,13 @@ func faceMetricCommands() []*CommandDefinition {
 func faceTopologyCommands() []*CommandDefinition {
 	return []*CommandDefinition{
 		NewCommand("Modify.DeleteFace", "Delete Face", "Modify", func(s *Session) error {
-			s.StartTool(NewDeleteFaceTool())
+			s.StartFeatureTool(NewDeleteFaceTool())
 			return nil
 		}).WithTab(tabCreateModify).WithEnable(notInSketch).
 			WithIcon("delete-face").WithButtonStyle(LargeIconButton).
 			WithTooltip("Delete Face — remove selected faces and heal the openings."),
 		NewCommand("Modify.ReplaceFace", "Replace Face", "Modify", func(s *Session) error {
-			s.StartTool(NewReplaceFaceTool())
+			s.StartFeatureTool(NewReplaceFaceTool())
 			return nil
 		}).WithTab(tabCreateModify).WithEnable(notInSketch).
 			WithIcon("replace-face").WithButtonStyle(LargeIconButton).
@@ -711,13 +715,13 @@ func solidFeatureCommands() []*CommandDefinition {
 func profileSolidCommands() []*CommandDefinition {
 	return []*CommandDefinition{
 		NewCommand("Create.Extrude", "Extrude", "Create", func(s *Session) error {
-			s.StartTool(NewExtrudeTool())
+			s.StartFeatureTool(NewExtrudeTool())
 			return nil
 		}).WithTab(tabCreateModify).WithAlias("E").WithEnable(notInSketch).
 			WithIcon("extrude").WithButtonStyle(LargeIconButton).
 			WithTooltip("Extrude — add depth to a sketch profile to create or modify a solid."),
 		NewCommand("Create.Revolve", "Revolve", "Create", func(s *Session) error {
-			s.StartTool(NewRevolveTool())
+			s.StartFeatureTool(NewRevolveTool())
 			return nil
 		}).WithTab(tabCreateModify).WithAlias("R").WithEnable(notInSketch).
 			WithIcon("revolve").WithButtonStyle(LargeIconButton).
@@ -729,55 +733,55 @@ func profileSolidCommands() []*CommandDefinition {
 func sweptSolidCommands() []*CommandDefinition {
 	return []*CommandDefinition{
 		NewCommand("Create.Sweep", "Sweep", "Create", func(s *Session) error {
-			s.StartTool(NewSweepTool())
+			s.StartFeatureTool(NewSweepTool())
 			return nil
 		}).WithTab(tabCreateModify).WithEnable(notInSketch).
 			WithIcon("sweep").WithButtonStyle(LargeIconButton).
 			WithTooltip("Sweep — run a sketch profile along a path to create or modify a solid."),
 		NewCommand("Create.Loft", "Loft", "Create", func(s *Session) error {
-			s.StartTool(NewLoftTool())
+			s.StartFeatureTool(NewLoftTool())
 			return nil
 		}).WithTab(tabCreateModify).WithEnable(notInSketch).
 			WithIcon("loft").WithButtonStyle(LargeIconButton).
 			WithTooltip("Loft — blend two or more sketch sections into a solid."),
 		NewCommand("Create.Coil", "Coil", "Create", func(s *Session) error {
-			s.StartTool(NewCoilTool())
+			s.StartFeatureTool(NewCoilTool())
 			return nil
 		}).WithTab(tabCreateModify).WithEnable(notInSketch).
 			WithIcon("coil").WithButtonStyle(LargeIconButton).
 			WithTooltip("Coil — sweep a sketch profile along a helix to create or modify a solid."),
 		NewCommand("Create.Rib", "Rib", "Create", func(s *Session) error {
-			s.StartTool(NewRibTool())
+			s.StartFeatureTool(NewRibTool())
 			return nil
 		}).WithTab(tabCreateModify).WithEnable(notInSketch).
 			WithIcon("rib").WithButtonStyle(LargeIconButton).
 			WithTooltip("Rib — thicken an open sketch profile into a reinforcing wall joined to the part."),
 		NewCommand("Create.Emboss", "Emboss", "Create", func(s *Session) error {
-			s.StartTool(NewEmbossTool())
+			s.StartFeatureTool(NewEmbossTool())
 			return nil
 		}).WithTab(tabCreateModify).WithEnable(notInSketch).
 			WithIcon("emboss").WithButtonStyle(LargeIconButton).
 			WithTooltip("Emboss — raise or engrave a closed sketch profile on the part."),
 		NewCommand("Create.Grill", "Grill", "Create", func(s *Session) error {
-			s.StartTool(NewGrillTool())
+			s.StartFeatureTool(NewGrillTool())
 			return nil
 		}).WithTab(tabCreateModify).WithEnable(notInSketch).
 			WithIcon("grill").WithButtonStyle(LargeIconButton).
 			WithTooltip("Grill — cut a ventilation grill: a vent bridged by the boundary profile's rib/spar/island structure."),
 		NewCommand("Create.Rest", "Rest", "Create", func(s *Session) error {
-			s.StartTool(NewRestTool())
+			s.StartFeatureTool(NewRestTool())
 			return nil
 		}).WithTab(tabCreateModify).WithEnable(notInSketch).
 			WithIcon("rest").WithButtonStyle(LargeIconButton).
 			WithTooltip("Rest — raise a pad (or recess a pocket) over a closed sketch region on the part."),
 		NewCommand("Create.SnapFit", "Snap Fit", "Create", func(s *Session) error {
-			s.StartTool(NewSnapFitTool())
+			s.StartFeatureTool(NewSnapFitTool())
 			return nil
 		}).WithTab(tabCreateModify).WithEnable(hasActivePart).
 			WithIcon("snap-fit").WithButtonStyle(LargeIconButton).
 			WithTooltip("Snap Fit — add a cantilever snap-fit hook sized by its beam and catch dimensions."),
 		NewCommand("Create.Decal", "Decal", "Create", func(s *Session) error {
-			s.StartTool(NewDecalTool())
+			s.StartFeatureTool(NewDecalTool())
 			return nil
 		}).WithTab(tabCreateModify).WithEnable(hasActivePart).
 			WithIcon("decal").WithButtonStyle(LargeIconButton).

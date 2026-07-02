@@ -84,15 +84,32 @@ func (t *BossTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	d, h := t.diameter, t.height
-	t.added = feature.NewBossFeatures(part.Features()).
-		Add(t.face.Face.ReferenceKey(), func() float64 { return d }, func() float64 { return h })
+	t.added = t.addBoss(feature.NewBossFeatures(part.Features()))
 	part.Recompute()
 	s.recordEdit(part, "Boss")
 	if !t.added.Health().OK() {
 		return errors.New("boss: " + t.added.Health().Reason)
 	}
 	return nil
+}
+
+// addBoss builds the stud into bosses — the shared constructor used by both Commit
+// (the part's engine) and DraftFeature (a scratch engine), so the two cannot drift.
+func (t *BossTool) addBoss(bosses *feature.BossFeatures) *feature.PartFeature {
+	d, h := t.diameter, t.height
+	return bosses.Add(t.face.Face.ReferenceKey(), func() float64 { return d }, func() float64 { return h })
+}
+
+// DraftFeature implements [PartFeatureTool] (#1626): the boss it would commit, built
+// into a scratch engine so the commit gate and preview can evaluate it without touching
+// the part.
+func (t *BossTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addBoss(feature.NewBossFeatures(fs)), nil
+	})
 }
 
 // Cancel restores the default selection filter.
@@ -124,6 +141,18 @@ func (t *HullTool) Prompt(*Session) string {
 
 // CanCommit is always true — the running solids are the input.
 func (t *HullTool) CanCommit() bool { return true }
+
+// DraftFeature implements [PartFeatureTool] (#1626): the hull it would commit,
+// built into a scratch engine so the commit gate and preview can evaluate it
+// without touching the part.
+func (t *HullTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return feature.NewHullFeatures(fs).Add(), nil
+	})
+}
 
 // Commit hulls the running solids and recomputes.
 func (t *HullTool) Commit(s *Session) error {
@@ -197,9 +226,25 @@ func (t *FeatureSketchDrivenPatternTool) Commit(s *Session) error {
 	if t.sketch == nil {
 		return errors.New("sketch-driven pattern: select the driving sketch")
 	}
+	t.addSketchDriven(pats)
+	return t.finishPattern(s, lastPartFeature(s), "Sketch-Driven Pattern")
+}
+
+// addSketchDriven builds the pattern into pats — the shared constructor used by both
+// Commit (the part's engine) and DraftFeature (a scratch engine), so the two cannot drift.
+func (t *FeatureSketchDrivenPatternTool) addSketchDriven(pats *feature.PatternFeatures) {
 	sk := t.sketch
 	pats.AddSketchDriven(t.sources, func() []math.Point3 { return sketchWorldPoints(sk) })
-	return t.finishPattern(s, lastPartFeature(s), "Sketch-Driven Pattern")
+}
+
+// DraftFeature implements [PartFeatureTool] (#1626): the sketch-driven pattern it would
+// commit, built into a scratch engine so the commit gate and preview can evaluate it
+// without touching the part.
+func (t *FeatureSketchDrivenPatternTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftPattern(t.addSketchDriven)
 }
 
 // sketchWorldPoints maps a sketch's points to model space through its plane.
@@ -319,13 +364,31 @@ func (t *DirectEditTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	t.added = feature.NewModifyFeatures(part.Features()).AddDirectEdit(t.definition())
+	t.added = t.addDirectEdit(feature.NewModifyFeatures(part.Features()))
 	part.Recompute()
 	s.recordEdit(part, "Direct Edit")
 	if !t.added.Health().OK() {
 		return errors.New("direct edit: " + t.added.Health().Reason)
 	}
 	return nil
+}
+
+// addDirectEdit builds the direct edit into mods — the shared constructor used by both
+// Commit (the part's engine) and DraftFeature (a scratch engine), so the two cannot drift.
+func (t *DirectEditTool) addDirectEdit(mods *feature.ModifyFeatures) *feature.PartFeature {
+	return mods.AddDirectEdit(t.definition())
+}
+
+// DraftFeature implements [PartFeatureTool] (#1626): the direct edit it would commit,
+// built into a scratch engine so the commit gate and preview can evaluate it without
+// touching the part.
+func (t *DirectEditTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addDirectEdit(feature.NewModifyFeatures(fs)), nil
+	})
 }
 
 // definition assembles the recipe for the selected operation from the tool inputs.

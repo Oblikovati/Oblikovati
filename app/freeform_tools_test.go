@@ -59,6 +59,23 @@ func TestFreeformQuadBallToolMakesASolid(t *testing.T) {
 	}
 }
 
+// TestFreeformToolsDraftFeature: each freeform tool drafts the primitive it would commit for
+// the commit gate (#1626) once its sizes are valid, and refuses with a non-positive size.
+func TestFreeformToolsDraftFeature(t *testing.T) {
+	s, _ := emptyPartSession(t)
+	box := NewFreeformBoxTool()
+	box.sx = 0
+	if _, ok := box.DraftFeature(s); ok {
+		t.Error("box with a zero size should not draft")
+	}
+	box.sx = 4
+	for _, tool := range []PartFeatureTool{box, NewFreeformPlaneTool(), NewFreeformQuadBallTool()} {
+		if draft, ok := tool.DraftFeature(s); !ok || draft == nil {
+			t.Errorf("%s: commit-ready tool should draft its feature", tool.Name())
+		}
+	}
+}
+
 // TestFreeformToolsViaRibbonCommands asserts each Freeform panel command starts its tool.
 func TestFreeformToolsViaRibbonCommands(t *testing.T) {
 	s, _ := emptyPartSession(t)

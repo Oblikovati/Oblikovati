@@ -79,6 +79,50 @@ func TestMoveBodyTool(t *testing.T) {
 	}
 }
 
+// TestModifyToolsDraftFeature asserts Move Face, Combine and Move Bodies build the draft
+// the commit gate inspects (#1626): no draft before the tool is commit-ready, a non-nil
+// draft once it is. Combine and Move resolve their body operands from the session at
+// draft time, exactly as Commit does.
+func TestModifyToolsDraftFeature(t *testing.T) {
+	s, def, src := extrudedPart(t)
+	pat := NewFeatureRectPatternTool() // default 2×1 → a second body for Combine
+	s.StartTool(pat)
+	s.feedPick(src)
+	if err := s.OK(); err != nil {
+		t.Fatalf("pattern setup OK: %v", err)
+	}
+
+	moveFace := NewMoveFaceTool()
+	moveFace.Pick(s, FaceHandle{Face: topFaceOf(t, def.SurfaceBodies().Item(0)), Body: def.SurfaceBodies().Item(0)})
+	if _, ok := moveFace.DraftFeature(s); ok {
+		t.Error("move face: draft ready with a zero move vector")
+	}
+	moveFace.dz = 2
+	if draft, ok := moveFace.DraftFeature(s); !ok || draft == nil {
+		t.Errorf("move face: no draft once commit-ready (ok=%v)", ok)
+	}
+
+	combine := NewCombineTool()
+	combine.Pick(s, BodyHandle{Body: def.SurfaceBodies().Item(0)})
+	if _, ok := combine.DraftFeature(s); ok {
+		t.Error("combine: draft ready with one body picked")
+	}
+	combine.Pick(s, BodyHandle{Body: def.SurfaceBodies().Item(1)})
+	if draft, ok := combine.DraftFeature(s); !ok || draft == nil {
+		t.Errorf("combine: no draft once commit-ready (ok=%v)", ok)
+	}
+
+	moveBody := NewMoveBodyTool()
+	moveBody.Pick(s, BodyHandle{Body: def.SurfaceBodies().Item(0)})
+	if _, ok := moveBody.DraftFeature(s); ok {
+		t.Error("move bodies: draft ready with a zero move vector")
+	}
+	moveBody.dx = 10
+	if draft, ok := moveBody.DraftFeature(s); !ok || draft == nil {
+		t.Errorf("move bodies: no draft once commit-ready (ok=%v)", ok)
+	}
+}
+
 func TestDirectEditCommandsRegistered(t *testing.T) {
 	s := NewSession()
 	if err := RegisterStandardCommands(s); err != nil {

@@ -89,3 +89,17 @@ func TestRuleFilletViaRibbonCommand(t *testing.T) {
 		t.Fatal("Rule Fillet command did not start the rule fillet tool")
 	}
 }
+
+// TestRuleFilletToolDraftFeature pins the #1626 commit-gate seam: no draft while the radius is
+// invalid, and a non-nil draft — the same rule fillet Commit builds — once commit-ready.
+func TestRuleFilletToolDraftFeature(t *testing.T) {
+	tl := NewRuleFilletTool()
+	tl.radiusMM = 0 // force below the gate (SetRadiusMM rejects non-positive values)
+	if _, ok := tl.DraftFeature(nil); ok {
+		t.Error("DraftFeature must not build while the radius is non-positive")
+	}
+	tl.SetRadiusMM(2)
+	if draft, ok := tl.DraftFeature(nil); !ok || draft == nil {
+		t.Fatalf("DraftFeature = (%v, %v), want a non-nil draft once commit-ready", draft, ok)
+	}
+}

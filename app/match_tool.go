@@ -59,6 +59,24 @@ func (t *MatchTool) Params() ToolParams {
 // target body surfaces as a feature-health error on commit.
 func (t *MatchTool) CanCommit() bool { return true }
 
+// addMatch builds the match feature into fs — the shared constructor used by both Commit
+// (the part's engine) and DraftFeature (a scratch engine), so the two cannot drift.
+func (t *MatchTool) addMatch(fs *feature.PartFeatures) *feature.PartFeature {
+	return feature.NewMatchFeatures(fs).Add(t.order, matchEdgeOptions[t.sourceEdge], matchEdgeOptions[t.targetEdge])
+}
+
+// DraftFeature implements [PartFeatureTool] (#1626): the match it would commit, built into a
+// scratch engine so the commit gate and preview can evaluate it without touching the part —
+// notably, a missing target body now blocks OK instead of erroring after the commit.
+func (t *MatchTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addMatch(fs), nil
+	})
+}
+
 // Commit adds the match feature, recomputes, and reports the achieved continuity.
 func (t *MatchTool) Commit(s *Session) error {
 	part, err := activePart(s)
@@ -66,7 +84,7 @@ func (t *MatchTool) Commit(s *Session) error {
 		return err
 	}
 	se, te := matchEdgeOptions[t.sourceEdge], matchEdgeOptions[t.targetEdge]
-	t.added = feature.NewMatchFeatures(part.Features()).Add(t.order, se, te)
+	t.added = t.addMatch(part.Features())
 	part.Recompute()
 	s.recordEdit(part, "Match Surface")
 	if !t.added.Health().OK() {

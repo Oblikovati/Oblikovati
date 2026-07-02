@@ -168,3 +168,17 @@ func TestSurfaceRebuildViaRibbonCommand(t *testing.T) {
 		t.Errorf("Surface.Rebuild started tool %q, want Rebuild Surface", got)
 	}
 }
+
+// TestSurfaceRebuildToolDraftFeature pins the #1626 commit-gate seam: no draft while a control
+// count cannot carry its degree, a non-nil draft once the targets are valid.
+func TestSurfaceRebuildToolDraftFeature(t *testing.T) {
+	tool := NewSurfaceRebuildTool()
+	tool.uCount = 2 // below uDegree+1: not commit-ready
+	if _, ok := tool.DraftFeature(nil); ok {
+		t.Error("DraftFeature must not build while a count is below degree+1")
+	}
+	tool.uCount = 4
+	if draft, ok := tool.DraftFeature(nil); !ok || draft == nil {
+		t.Fatalf("DraftFeature = (%v, %v), want a non-nil draft once commit-ready", draft, ok)
+	}
+}

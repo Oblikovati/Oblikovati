@@ -96,3 +96,18 @@ func TestFitViaRibbonCommand(t *testing.T) {
 		t.Errorf("Surface.FitToCloud started %q, want Fit Surface", got)
 	}
 }
+
+// TestFitSurfaceToolDraftFeature pins the #1626 commit-gate seam: no draft before a cloud is
+// selected, a non-nil draft over the cloud's cropped points once commit-ready.
+func TestFitSurfaceToolDraftFeature(t *testing.T) {
+	s, def := emptyPartSession(t)
+	tool := NewFitSurfaceTool()
+	if _, ok := tool.DraftFeature(s); ok {
+		t.Error("DraftFeature must not build before a cloud is selected")
+	}
+	attachCapCloud(t, s, def)
+	tool.Start(s) // capture the selected cloud, as activation does
+	if draft, ok := tool.DraftFeature(s); !ok || draft == nil {
+		t.Fatalf("DraftFeature = (%v, %v), want a non-nil draft once a cloud is selected", draft, ok)
+	}
+}

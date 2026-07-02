@@ -52,13 +52,30 @@ func (t *SurfaceRebuildTool) CanCommit() bool {
 	return t.uDegree >= 1 && t.vDegree >= 1 && t.uCount >= t.uDegree+1 && t.vCount >= t.vDegree+1
 }
 
+// addRebuild builds the rebuild feature into fs — the shared constructor used by both Commit
+// (the part's engine) and DraftFeature (a scratch engine), so the two cannot drift.
+func (t *SurfaceRebuildTool) addRebuild(fs *feature.PartFeatures) *feature.PartFeature {
+	return feature.NewRebuildFeatures(fs).Add(t.uDegree, t.vDegree, t.uCount, t.vCount)
+}
+
+// DraftFeature implements [PartFeatureTool] (#1626): the rebuild it would commit, built into a
+// scratch engine so the commit gate and preview can evaluate it without touching the part.
+func (t *SurfaceRebuildTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addRebuild(fs), nil
+	})
+}
+
 // Commit rebuilds the running surface and recomputes, then reports the achieved deviation.
 func (t *SurfaceRebuildTool) Commit(s *Session) error {
 	part, err := activePart(s)
 	if err != nil {
 		return err
 	}
-	t.added = feature.NewRebuildFeatures(part.Features()).Add(t.uDegree, t.vDegree, t.uCount, t.vCount)
+	t.added = t.addRebuild(part.Features())
 	part.Recompute()
 	s.recordEdit(part, "Rebuild Surface")
 	if !t.added.Health().OK() {

@@ -115,3 +115,37 @@ func TestSurfaceEditToolsViaRibbonCommands(t *testing.T) {
 		s.CancelTool()
 	}
 }
+
+// TestSurfaceEditToolsDraftFeature pins the #1626 commit-gate seam for the three M10 surface
+// tools: no draft below each tool's gate, a non-nil draft once commit-ready.
+func TestSurfaceEditToolsDraftFeature(t *testing.T) {
+	_, _, region := partWithSquareRegion(t)
+	ruled := NewRuledSurfaceTool()
+	if _, ok := ruled.DraftFeature(nil); ok {
+		t.Error("ruled: no draft before a profile is picked")
+	}
+	ruled.Pick(nil, region)
+	if draft, ok := ruled.DraftFeature(nil); !ok || draft == nil {
+		t.Error("ruled: want a non-nil draft once a profile is picked")
+	}
+
+	offset := NewSurfaceOffsetTool()
+	offset.SetDistance(0)
+	if _, ok := offset.DraftFeature(nil); ok {
+		t.Error("offset: no draft at zero distance")
+	}
+	offset.SetDistance(1.5)
+	if draft, ok := offset.DraftFeature(nil); !ok || draft == nil {
+		t.Error("offset: want a non-nil draft at a non-zero distance")
+	}
+
+	mid := NewMidSurfaceTool()
+	mid.SetMaxThickness(0)
+	if _, ok := mid.DraftFeature(nil); ok {
+		t.Error("mid: no draft at a non-positive threshold")
+	}
+	mid.SetMaxThickness(3)
+	if draft, ok := mid.DraftFeature(nil); !ok || draft == nil {
+		t.Error("mid: want a non-nil draft at a positive threshold")
+	}
+}

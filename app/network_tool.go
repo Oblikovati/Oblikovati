@@ -80,13 +80,32 @@ func (t *NetworkTool) Params() ToolParams {
 // CanCommit reports whether there are at least two curves each way.
 func (t *NetworkTool) CanCommit() bool { return len(t.uProfiles) >= 2 && len(t.vProfiles) >= 2 }
 
+// addNetworkSurface bakes the picked profiles and builds the network feature into fs — the
+// shared constructor used by both Commit (the part's engine) and DraftFeature (a scratch
+// engine), so the two cannot drift.
+func (t *NetworkTool) addNetworkSurface(fs *feature.PartFeatures) *feature.PartFeature {
+	return feature.NewNetworkFeatures(fs).Add(bakeProfiles(t.uProfiles), bakeProfiles(t.vProfiles))
+}
+
+// DraftFeature implements [PartFeatureTool] (#1626): the network surface it would commit, built
+// into a scratch engine so the commit gate and preview can evaluate it without touching the
+// part — a non-intersecting curve grid now blocks OK instead of erroring after the commit.
+func (t *NetworkTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addNetworkSurface(fs), nil
+	})
+}
+
 // Commit bakes the picked profiles to polylines and builds the network surface.
 func (t *NetworkTool) Commit(s *Session) error {
 	part, err := activePart(s)
 	if err != nil {
 		return err
 	}
-	t.added = feature.NewNetworkFeatures(part.Features()).Add(bakeProfiles(t.uProfiles), bakeProfiles(t.vProfiles))
+	t.added = t.addNetworkSurface(part.Features())
 	part.Recompute()
 	s.recordEdit(part, "Network Surface")
 	if !t.added.Health().OK() {

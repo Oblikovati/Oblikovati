@@ -49,11 +49,26 @@ func (t *SheetMetalHemTool) Commit(s *Session) error {
 	if !t.CanCommit() {
 		return errors.New("sheet-metal hem: pick an edge and set a positive length")
 	}
+	t.added = t.addHem(part.Features())
+	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Hem")
+}
+
+// addHem builds the sheet-metal hem feature into engine fs — shared by Commit and preview.
+func (t *SheetMetalHemTool) addHem(fs *feature.PartFeatures) *feature.PartFeature {
 	length := t.length
-	t.added = feature.NewSheetMetalHemFeatures(part.Features()).Add(&feature.SheetMetalHemDefinition{
+	return feature.NewSheetMetalHemFeatures(fs).Add(&feature.SheetMetalHemDefinition{
 		EdgeKey: t.edge.Edge.ReferenceKey(), Length: func() float64 { return length }, Type: feature.ClosedHem,
 	})
-	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Hem")
+}
+
+// DraftFeature returns the unattached sheet-metal hem feature the viewport previews (#1626).
+func (t *SheetMetalHemTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addHem(fs), nil
+	})
 }
 
 // SheetMetalContourFlangeTool sweeps an open sketch profile along a straight edge.
@@ -101,10 +116,25 @@ func (t *SheetMetalContourFlangeTool) Commit(s *Session) error {
 	if !t.CanCommit() {
 		return errors.New("sheet-metal contour flange: pick an edge and an open sketch profile")
 	}
-	t.added = feature.NewSheetMetalContourFlangeFeatures(part.Features()).Add(&feature.SheetMetalContourFlangeDefinition{
+	t.added = t.addContourFlange(part.Features())
+	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Contour Flange")
+}
+
+// addContourFlange builds the contour-flange feature into engine fs — shared by Commit and preview.
+func (t *SheetMetalContourFlangeTool) addContourFlange(fs *feature.PartFeatures) *feature.PartFeature {
+	return feature.NewSheetMetalContourFlangeFeatures(fs).Add(&feature.SheetMetalContourFlangeDefinition{
 		EdgeKey: t.edge.Edge.ReferenceKey(), Profile: t.profile.Sketch,
 	})
-	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Contour Flange")
+}
+
+// DraftFeature returns the unattached contour-flange feature the viewport previews (#1626).
+func (t *SheetMetalContourFlangeTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addContourFlange(fs), nil
+	})
 }
 
 // SheetMetalLoftedFlangeTool lofts a wall between two sketch profiles.
@@ -146,10 +176,25 @@ func (t *SheetMetalLoftedFlangeTool) Commit(s *Session) error {
 	if !t.CanCommit() {
 		return errors.New("sheet-metal lofted flange: pick two sketch profiles")
 	}
-	t.added = feature.NewSheetMetalLoftedFlangeFeatures(part.Features()).Add(&feature.SheetMetalLoftedFlangeDefinition{
+	t.added = t.addLoftedFlange(part.Features())
+	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Lofted Flange")
+}
+
+// addLoftedFlange builds the lofted-flange feature into engine fs — shared by Commit and preview.
+func (t *SheetMetalLoftedFlangeTool) addLoftedFlange(fs *feature.PartFeatures) *feature.PartFeature {
+	return feature.NewSheetMetalLoftedFlangeFeatures(fs).Add(&feature.SheetMetalLoftedFlangeDefinition{
 		ProfileA: t.profiles[0].Sketch, ProfileB: t.profiles[1].Sketch, Operation: ops.Join,
 	})
-	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Lofted Flange")
+}
+
+// DraftFeature returns the unattached lofted-flange feature the viewport previews (#1626).
+func (t *SheetMetalLoftedFlangeTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addLoftedFlange(fs), nil
+	})
 }
 
 // SheetMetalContourRollTool revolves an open profile about an axis line in the same sketch.
@@ -201,13 +246,32 @@ func (t *SheetMetalContourRollTool) Commit(s *Session) error {
 	if !t.CanCommit() {
 		return errors.New("sheet-metal contour roll: pick an open profile, an axis line, and set an angle")
 	}
+	added, err := t.addContourRoll(part.Features())
+	if err != nil {
+		return err
+	}
+	t.added = added
+	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Contour Roll")
+}
+
+// addContourRoll builds the contour-roll feature into engine fs — shared by Commit and preview.
+func (t *SheetMetalContourRollTool) addContourRoll(fs *feature.PartFeatures) (*feature.PartFeature, error) {
 	_, axisIndex, ok := lineHandleInSketch(t.profile.Sketch, t.axis.Entity)
 	if !ok {
-		return errors.New("sheet-metal contour roll: the axis line must belong to the profile sketch")
+		return nil, errors.New("sheet-metal contour roll: the axis line must belong to the profile sketch")
 	}
 	angle := t.angle
-	t.added = feature.NewSheetMetalContourRollFeatures(part.Features()).Add(&feature.SheetMetalContourRollDefinition{
+	return feature.NewSheetMetalContourRollFeatures(fs).Add(&feature.SheetMetalContourRollDefinition{
 		Profile: t.profile.Sketch, AxisLine: axisIndex, Angle: func() float64 { return angle }, Operation: ops.Join,
+	}), nil
+}
+
+// DraftFeature returns the unattached contour-roll feature the viewport previews (#1626).
+func (t *SheetMetalContourRollTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addContourRoll(fs)
 	})
-	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Contour Roll")
 }

@@ -33,6 +33,18 @@ func (t *deriveSourceTool) source() *doc.Document {
 	return t.sources[t.selected]
 }
 
+// assemblySource returns the chosen source document with its assembly body content — false when
+// no source is chosen or (defensively) the chosen document is not an assembly. The gate both
+// DraftFeature implementations share (#1626); it subsumes CanCommit.
+func (t *deriveSourceTool) assemblySource() (*doc.Document, feature.AssemblyBodySource, bool) {
+	d := t.source()
+	if d == nil {
+		return nil, nil, false
+	}
+	src, ok := d.Content().(feature.AssemblyBodySource)
+	return d, src, ok
+}
+
 // sourceChoice is the source-assembly chooser param (the open assemblies by display name).
 func (t *deriveSourceTool) sourceChoice() ChoiceParam {
 	names := make([]string, len(t.sources))
@@ -61,6 +73,19 @@ func (t *DeriveAssemblyTool) Commit(s *Session) error {
 	return err
 }
 
+// DraftFeature implements [PartFeatureTool] (#1626): the derived-assembly feature it would
+// commit, built into a scratch engine by the same addDerivedFeature Session.DeriveAssembly uses,
+// so the commit gate and preview can evaluate it without touching the part.
+func (t *DeriveAssemblyTool) DraftFeature(*Session) (feature.Feature, bool) {
+	source, src, ok := t.assemblySource()
+	if !ok {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return addDerivedFeature(fs, src, source), nil
+	})
+}
+
 func (t *DeriveAssemblyTool) Params() ToolParams {
 	return ToolParams{Choices: []ChoiceParam{t.sourceChoice()}}
 }
@@ -87,14 +112,32 @@ func (t *ShrinkwrapTool) Prompt(*Session) string {
 func (t *ShrinkwrapTool) CanCommit() bool { return t.source() != nil }
 
 func (t *ShrinkwrapTool) Commit(s *Session) error {
-	def := feature.ShrinkwrapDefinition{
+	_, err := s.ShrinkwrapAssembly(t.source(), t.shrinkwrapDefinition())
+	return err
+}
+
+// shrinkwrapDefinition materializes the dialog options as the feature definition — shared by
+// Commit and DraftFeature so the committed and previewed simplification cannot drift (#1626).
+func (t *ShrinkwrapTool) shrinkwrapDefinition() feature.ShrinkwrapDefinition {
+	return feature.ShrinkwrapDefinition{
 		RemoveStyle:   feature.ShrinkwrapRemoveStyle(t.removeStyle),
 		MinPartVolume: t.minPartVolume,
 		EnvelopeStyle: feature.ShrinkwrapEnvelopeStyle(t.envelopeStyle),
 		PatchHoles:    t.patchHoles,
 	}
-	_, err := s.ShrinkwrapAssembly(t.source(), def)
-	return err
+}
+
+// DraftFeature implements [PartFeatureTool] (#1626): the shrinkwrap feature it would commit,
+// built into a scratch engine by the same addShrinkwrapFeature Session.ShrinkwrapAssembly uses,
+// so the commit gate and preview can evaluate it without touching the part.
+func (t *ShrinkwrapTool) DraftFeature(*Session) (feature.Feature, bool) {
+	source, src, ok := t.assemblySource()
+	if !ok {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return addShrinkwrapFeature(fs, src, t.shrinkwrapDefinition(), source), nil
+	})
 }
 
 func (t *ShrinkwrapTool) Params() ToolParams {

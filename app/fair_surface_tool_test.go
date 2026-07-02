@@ -67,3 +67,17 @@ func TestFairViaRibbonCommand(t *testing.T) {
 		t.Errorf("Surface.Fair started tool %q, want Fair Surface", got)
 	}
 }
+
+// TestFairSurfaceToolDraftFeature pins the #1626 commit-gate seam: no draft at zero strength,
+// a non-nil draft once commit-ready.
+func TestFairSurfaceToolDraftFeature(t *testing.T) {
+	tool := NewFairSurfaceTool()
+	tool.strength = 0
+	if _, ok := tool.DraftFeature(nil); ok {
+		t.Error("DraftFeature must not build at a non-positive strength")
+	}
+	tool.strength = 0.5
+	if draft, ok := tool.DraftFeature(nil); !ok || draft == nil {
+		t.Fatalf("DraftFeature = (%v, %v), want a non-nil draft once commit-ready", draft, ok)
+	}
+}

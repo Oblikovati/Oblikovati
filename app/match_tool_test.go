@@ -165,3 +165,12 @@ func TestMatchViaRibbonCommand(t *testing.T) {
 		t.Errorf("Surface.Match started tool %q, want Match Surface", got)
 	}
 }
+
+// TestMatchToolDraftFeature pins the #1626 commit-gate seam: the match tool is always
+// commit-ready (its choices are always valid), so the draft is always available — a missing
+// target body is caught by the gate's preview, not by the draft.
+func TestMatchToolDraftFeature(t *testing.T) {
+	if draft, ok := NewMatchTool().DraftFeature(nil); !ok || draft == nil {
+		t.Fatalf("DraftFeature = (%v, %v), want a non-nil draft from the defaults", draft, ok)
+	}
+}
