@@ -5,8 +5,8 @@ typed convenience tables); Phase 3 in progress — MCP `scripts.run` shipped
 (Oblikovati.API #27 + Oblikovati #85 + AddIns #20), events + persistence outstanding.
 All merged to `develop` 2026-06-07. See [§11 Phased rollout](#11-phased-rollout) for the
 per-phase status.
-**Scope:** Integral, first-party Lua scripting in the GPL-v2 application (`/source`,
-i.e. this `oblikovati` module). **Not** an add-in.
+**Scope:** Integral, first-party Lua scripting in the GPL-v2 application (this
+`oblikovati` module, at the repo root). **Not** an add-in.
 **Companion ADR:** [ADR-0028 — Embedded Lua scripting runtime](decisions/ADR-0028-embedded-lua-scripting.md)
 **Builds on:** ADR-0013 (embedded scripting drives the public API), ADR-0016
 (in-process dispatch / session goroutine), ADR-0018 (Apache-2.0 `api/wire` is the
@@ -57,7 +57,7 @@ sandbox/quota guarantees would have to be re-proven for the cgo path.
 
 ---
 
-## 3. Package layout (in `/source`, GPL-v2)
+## 3. Package layout (at the repo root, GPL-v2)
 
 A new top-level package tree `script/` (sibling to `addin/`, `app/`, `command/`):
 
@@ -312,12 +312,13 @@ names), `api/client` (`Caller`, and the typed groups for Phase-2 sugar).
 
 - **Phase 1 & 2: none.** Lua rides the existing `api/wire` surface via the generic
   bridge. No new method-name constants, DTOs, or `api/contract` interfaces. All new
-  code is GPL-v2 in `/source` under `script/`.
+  code is GPL-v2 in this module under `script/`.
 - **Phase 3 (only if MCP `script.run` is wanted):** add `MethodScriptRun` + DTOs in
   `api/wire` and a `client.Scripts()` group in `api/client` (Apache-2.0) *first*, then
-  the router handler in `/source`. This is the standard two-part flow.
+  the router handler in this module (`addin/router`). This is the standard
+  two-part flow.
 
-Every new exported `.go` file in `/source` carries `SPDX-License-Identifier:
+Every new exported `.go` file in this module carries `SPDX-License-Identifier:
 GPL-2.0-only` (run `scripts/add-spdx-headers.py`).
 
 ---
