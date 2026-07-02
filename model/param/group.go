@@ -108,10 +108,8 @@ func (ps *Parameters) refuseCascadeBlockers(key string, members []ID) error {
 		doomed[id] = true
 	}
 	for _, id := range members {
-		p, ok := ps.byID[id]
-		if !ok {
-			continue
-		}
+		// GroupMembers walks ps.order, so every member is live.
+		p := ps.byID[id]
 		if blockers := ps.survivorBlockers(p, doomed); len(blockers) > 0 {
 			return fmt.Errorf("param: cannot cascade-delete group %q: member %q is in use by [%s]; remove those references first",
 				key, p.name, strings.Join(blockers, ", "))

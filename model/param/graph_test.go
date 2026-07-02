@@ -198,3 +198,17 @@ func TestInUseFollowsDependentsAndModelKind(t *testing.T) {
 		t.Error("a model parameter is in use by construction")
 	}
 }
+
+// TestDeleteRefusesOwnedModelParameter: with no dependents, a model parameter's
+// blocker is its owning feature dimension; DeleteForOwner errors on unknown ids.
+func TestDeleteRefusesOwnedModelParameter(t *testing.T) {
+	ps := NewParameters()
+	dim, _ := ps.AddModelParameter("d0", "2 mm")
+	err := ps.Delete(dim.ID())
+	if err == nil || !strings.Contains(err.Error(), "feature dimension") {
+		t.Fatalf("Delete(model param) = %v, want a refusal naming its feature dimension", err)
+	}
+	if err := ps.DeleteForOwner(dim.ID() + 999); err == nil {
+		t.Error("DeleteForOwner(unknown id) must error")
+	}
+}
