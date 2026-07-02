@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/persistence"
 )
@@ -90,7 +91,7 @@ func editSketch(t *testing.T, part *compdef.PartComponentDefinition, a, b math.P
 // openPartDoc reopens a saved document from disk in a fresh workspace, returning doc + def.
 func openPartDoc(t *testing.T, store *persistence.PackageStore, path string) (*doc.Document, *compdef.PartComponentDefinition) {
 	t.Helper()
-	d, err := doc.NewWorkspace(store).Open(path, true)
+	d, err := doc.NewWorkspace(store, contentset.Default()).Open(path, true)
 	if err != nil {
 		t.Fatalf("Open %q: %v", path, err)
 	}

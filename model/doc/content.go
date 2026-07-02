@@ -31,20 +31,15 @@ type RecipeContent interface {
 	ApplyRecipe(model []byte) error
 }
 
-// contentFactories holds the constructor for each document kind's REAL content,
-// registered by the owning package's init (e.g. model/compdef). It is the seam that
-// lets [Restore] rebuild live content — with its recipe machinery — without doc
-// importing the heavy model packages (which would cycle). Writes happen at init
-// (single-threaded); reads happen later.
-var contentFactories = map[DocumentType]func() Content{}
-
-// RegisterContentFactory installs the constructor for a kind's real content. Call it
-// from an init() in the package that owns the content type, so any binary that imports
-// that package gets live content on open. Without a registered factory, [newContent]
-// falls back to the identity-only stub.
-func RegisterContentFactory(t DocumentType, factory func() Content) {
-	contentFactories[t] = factory
-}
+// ContentFactories maps each document kind to the constructor of its REAL content.
+// It is the port that lets [Restore] rebuild live content — with its recipe
+// machinery — without doc importing the heavy model packages (which would cycle).
+// The set is assembled at the composition root (model/contentset.Default, passed to
+// [NewWorkspace]) instead of by init()-time registration, so which kinds open live
+// is decided by explicit construction, not by a binary's import list (#1617, audit
+// B6 — forgetting a blank import used to silently open documents as stubs).
+// Without a factory for a kind, [newContent] falls back to the identity-only stub.
+type ContentFactories map[DocumentType]func() Content
 
 // PartComponentDefinition is the stub for a part's modeling content: sketches,
 // features and the resulting B-rep body (M07). Modernizes COM

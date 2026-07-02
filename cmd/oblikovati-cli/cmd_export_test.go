@@ -11,6 +11,7 @@ import (
 	"oblikovati.org/kernel/ops"
 	gmath "oblikovati.org/math"
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/sketch"
@@ -22,7 +23,7 @@ import (
 func saveCLIPart(t *testing.T, dir, name string, build func(*compdef.PartComponentDefinition)) string {
 	t.Helper()
 	opd := filepath.Join(dir, name)
-	ws := doc.NewWorkspace(persistence.NewPackageStore())
+	ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
 	d, err := compdef.AddPart(ws, opd, true)
 	if err != nil {
 		t.Fatalf("AddPart: %v", err)

@@ -21,8 +21,9 @@ type Store interface {
 	// NEW file: the implementation mints it a fresh identity ([CopyIdentity]).
 	SaveCopy(d *Document, targetFullFileName string, meta CopyMetadata) error
 	// Load reads the document at the given full document name and returns it open
-	// (content paged in). It returns an error if nothing is stored there.
-	Load(fullDocumentName string) (*Document, error)
+	// (content paged in), building live content through factories (#1617). It
+	// returns an error if nothing is stored there.
+	Load(fullDocumentName string, factories ContentFactories) (*Document, error)
 	// Exists reports whether a document is stored at the given full document name.
 	Exists(fullDocumentName string) bool
 }
@@ -37,12 +38,12 @@ type CopyMetadata struct {
 }
 
 // newContent builds the content object for a document kind. It prefers a real content
-// factory registered by the owning package (e.g. model/compdef via
-// [RegisterContentFactory]) so Load reconstructs live, recipe-bearing content; absent a
+// factory from the injected set (assembled at the composition root — see
+// [ContentFactories]) so Load reconstructs live, recipe-bearing content; absent a
 // factory it returns the identity-only stub. Save/Load and the create-from-template
 // path use it so a kind always pairs with matching content.
-func newContent(t DocumentType) (Content, error) {
-	if factory, ok := contentFactories[t]; ok {
+func newContent(t DocumentType, factories ContentFactories) (Content, error) {
+	if factory, ok := factories[t]; ok {
 		return factory(), nil
 	}
 	switch t {
@@ -60,11 +61,12 @@ func newContent(t DocumentType) (Content, error) {
 }
 
 // Restore reconstructs an open document from its persisted identity. A [Store]
-// implementation calls it after reading a package manifest; the session ID is
-// freshly minted because ids are not persisted (core/02). The kind must be a real
-// document type — Unknown and out-of-range values are rejected.
-func Restore(t DocumentType, fullDocumentName, displayName string) (*Document, error) {
-	content, err := newContent(t)
+// implementation calls it after reading a package manifest, forwarding the content
+// factories its Load was handed (#1617); the session ID is freshly minted because
+// ids are not persisted (core/02). The kind must be a real document type — Unknown
+// and out-of-range values are rejected.
+func Restore(t DocumentType, fullDocumentName, displayName string, factories ContentFactories) (*Document, error) {
+	content, err := newContent(t, factories)
 	if err != nil {
 		return nil, err
 	}

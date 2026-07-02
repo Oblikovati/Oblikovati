@@ -6,12 +6,13 @@ import (
 	"errors"
 	"testing"
 
+	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
 )
 
 func newPart(t *testing.T) *doc.Document {
 	t.Helper()
-	ws := doc.NewWorkspace(nil)
+	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, err := ws.Add(doc.Part, "p.obk", true)
 	if err != nil {
 		t.Fatalf("Add: %v", err)

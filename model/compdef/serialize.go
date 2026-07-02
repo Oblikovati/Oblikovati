@@ -18,12 +18,10 @@ import (
 	"oblikovati.org/persistence/yamlcodec"
 )
 
-// init registers the real part content with the document layer so opening a part
-// document reconstructs a live PartComponentDefinition (with its recipe machinery),
-// not the identity-only stub (see doc.RegisterContentFactory).
-func init() {
-	doc.RegisterContentFactory(doc.Part, func() doc.Content { return NewPartComponentDefinition() })
-}
+// The real part content reaches the document layer through the composition root
+// (model/contentset.Default → doc.NewWorkspace), not init()-time registration
+// (#1617): opening a part document reconstructs a live PartComponentDefinition
+// because the workspace was CONSTRUCTED with that factory.
 
 // var assertion: a part definition is recipe-bearing content (doc.RecipeContent), so
 // the store persists and restores its model on save/open.

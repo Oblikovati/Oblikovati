@@ -94,14 +94,11 @@ var (
 	_ doc.ReferenceResolver = (*AssemblyComponentDefinition)(nil)
 )
 
-// init registers the real assembly content with the document layer so opening or
-// creating an assembly document yields a live AssemblyComponentDefinition, not the
-// identity-only stub (see doc.RegisterContentFactory). Its recipe (assembly_serialize.go)
-// restores the occurrence structure; the component documents those occurrences instance
-// are resolved through the reference graph after the assembly is registered (#715).
-func init() {
-	doc.RegisterContentFactory(doc.Assembly, func() doc.Content { return NewAssemblyComponentDefinition() })
-}
+// The real assembly content reaches the document layer through the composition
+// root (model/contentset.Default → doc.NewWorkspace, #1617). Its recipe
+// (assembly_serialize.go) restores the occurrence structure; the component
+// documents those occurrences instance are resolved through the reference graph
+// after the assembly is registered (#715).
 
 // AddAssembly creates a new assembly document in ws with a realized assembly
 // component definition installed (not the bare doc-package placeholder), makes it

@@ -9,6 +9,7 @@ import (
 	"io"
 	"strings"
 
+	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/persistence"
 )
@@ -21,7 +22,7 @@ func cmdOpen(args []string, out io.Writer) error {
 		return fmt.Errorf("open: expected <path>, got %d arg(s)", len(args))
 	}
 	path := args[0]
-	ws := doc.NewWorkspace(persistence.NewPackageStore())
+	ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
 	d, err := ws.Open(path, true)
 	if err != nil {
 		return fmt.Errorf("open: %w", err)

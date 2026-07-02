@@ -6,6 +6,7 @@ import (
 	"io"
 	"testing"
 
+	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/persistence"
 )
@@ -13,7 +14,7 @@ import (
 // TestCreateDocumentWrapsAddFailure covers the "new: %w" wraps: re-adding a document at a path
 // already taken fails, and createDocument wraps that error for both the part and non-part paths.
 func TestCreateDocumentWrapsAddFailure(t *testing.T) {
-	ws := doc.NewWorkspace(persistence.NewPackageStore())
+	ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
 	part, _ := doc.ParseDocumentType("part")
 	asm, _ := doc.ParseDocumentType("assembly")
 

@@ -13,7 +13,7 @@ import (
 // case, M04-F05); the After phase reports the outcome to observers.
 func TestFileResolutionSuppliesSubstitutePath(t *testing.T) {
 	store := newFakeStore()
-	ws := NewWorkspace(store)
+	ws := NewWorkspace(store, nil)
 	moved, _ := ws.Add(Part, "/new/home/bracket.obk", true)
 	if err := ws.Save(moved); err != nil {
 		t.Fatalf("Save: %v", err)
@@ -49,7 +49,7 @@ func TestFileResolutionSuppliesSubstitutePath(t *testing.T) {
 // TestFileResolutionUnansweredStillFails: with no handler (or no answer) the
 // open fails with the original error and the After event reports no substitute.
 func TestFileResolutionUnansweredStillFails(t *testing.T) {
-	ws := NewWorkspace(newFakeStore())
+	ws := NewWorkspace(newFakeStore(), nil)
 	var observed []FileResolution
 	event.Subscribe(ws.Events(), event.After, func(_ event.Context, e FileResolution) event.Outcome {
 		observed = append(observed, e)
@@ -79,7 +79,7 @@ func TestFileResolutionFirstAnswerSticks(t *testing.T) {
 // open/save announces; re-marking an already dirty document is silent.
 func TestFileDirtyFiresOnCleanToDirtyTransition(t *testing.T) {
 	store := newFakeStore()
-	ws := NewWorkspace(store)
+	ws := NewWorkspace(store, nil)
 	d, err := ws.Add(Part, "Part1", true)
 	if err != nil {
 		t.Fatalf("Add: %v", err)

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/model/attr"
+	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/identity"
 )
@@ -17,7 +18,7 @@ func TestAttributesRoundTripThroughPackage(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "tagged.obk")
 	store := NewPackageStore()
-	ws := doc.NewWorkspace(store)
+	ws := doc.NewWorkspace(store, contentset.Default())
 	d, err := ws.Add(doc.Part, path, true)
 	if err != nil {
 		t.Fatalf("Add: %v", err)
@@ -28,7 +29,7 @@ func TestAttributesRoundTripThroughPackage(t *testing.T) {
 		t.Fatalf("Save: %v", err)
 	}
 
-	reopened, err := doc.NewWorkspace(store).Open(path, true)
+	reopened, err := doc.NewWorkspace(store, contentset.Default()).Open(path, true)
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}
@@ -57,7 +58,7 @@ func TestUnannotatedDocumentWritesNoAttributes(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "plain.obk")
 	store := NewPackageStore()
-	ws := doc.NewWorkspace(store)
+	ws := doc.NewWorkspace(store, contentset.Default())
 	d, err := ws.Add(doc.Part, path, true)
 	if err != nil {
 		t.Fatalf("Add: %v", err)
@@ -65,7 +66,7 @@ func TestUnannotatedDocumentWritesNoAttributes(t *testing.T) {
 	if err := ws.Save(d); err != nil {
 		t.Fatalf("Save: %v", err)
 	}
-	reopened, err := doc.NewWorkspace(store).Open(path, true)
+	reopened, err := doc.NewWorkspace(store, contentset.Default()).Open(path, true)
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}

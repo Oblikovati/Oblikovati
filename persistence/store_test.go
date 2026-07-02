@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
 )
 
@@ -14,7 +15,7 @@ func TestWorkspaceRoundTripsThroughPackageStore(t *testing.T) {
 	path := filepath.Join(dir, "bracket.obk")
 	store := NewPackageStore()
 
-	ws := doc.NewWorkspace(store)
+	ws := doc.NewWorkspace(store, contentset.Default())
 	d, err := ws.Add(doc.Part, path, true)
 	if err != nil {
 		t.Fatalf("Add: %v", err)
@@ -28,7 +29,7 @@ func TestWorkspaceRoundTripsThroughPackageStore(t *testing.T) {
 	}
 
 	// Reopen in a fresh workspace to force the on-disk load path.
-	reopened, err := doc.NewWorkspace(store).Open(path, true)
+	reopened, err := doc.NewWorkspace(store, contentset.Default()).Open(path, true)
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}
@@ -50,7 +51,7 @@ func TestBodyNameSurvivesStoreRoundTrip(t *testing.T) {
 	path := filepath.Join(dir, "case.obk")
 	store := NewPackageStore()
 
-	ws := doc.NewWorkspace(store)
+	ws := doc.NewWorkspace(store, contentset.Default())
 	d, err := ws.Add(doc.Part, path, true)
 	if err != nil {
 		t.Fatalf("Add: %v", err)
@@ -60,7 +61,7 @@ func TestBodyNameSurvivesStoreRoundTrip(t *testing.T) {
 		t.Fatalf("Save: %v", err)
 	}
 
-	reopened, err := doc.NewWorkspace(store).Open(path, true)
+	reopened, err := doc.NewWorkspace(store, contentset.Default()).Open(path, true)
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}
@@ -92,7 +93,7 @@ func TestDerivedDisplayNameFollowsSaveAs(t *testing.T) {
 	src := filepath.Join(dir, "original.obk")
 	dst := filepath.Join(dir, "renamed.obk")
 
-	ws := doc.NewWorkspace(store)
+	ws := doc.NewWorkspace(store, contentset.Default())
 	d, err := ws.Add(doc.Part, src, true) // derived name "original", no override
 	if err != nil {
 		t.Fatalf("Add: %v", err)
@@ -101,7 +102,7 @@ func TestDerivedDisplayNameFollowsSaveAs(t *testing.T) {
 		t.Fatalf("Save: %v", err)
 	}
 
-	editing := doc.NewWorkspace(store)
+	editing := doc.NewWorkspace(store, contentset.Default())
 	reopened, err := editing.Open(src, true)
 	if err != nil {
 		t.Fatalf("Open: %v", err)
@@ -110,7 +111,7 @@ func TestDerivedDisplayNameFollowsSaveAs(t *testing.T) {
 		t.Fatalf("SaveAs: %v", err)
 	}
 
-	final, err := doc.NewWorkspace(store).Open(dst, true)
+	final, err := doc.NewWorkspace(store, contentset.Default()).Open(dst, true)
 	if err != nil {
 		t.Fatalf("Open renamed: %v", err)
 	}
@@ -125,7 +126,7 @@ func TestPackageStoreLoadRejectsNonPackage(t *testing.T) {
 	if err := WriteDataToFile(bogus, "client.bin", []byte("no manifest here")); err != nil {
 		t.Fatalf("seed bogus package: %v", err)
 	}
-	if _, err := NewPackageStore().Load(bogus); err == nil {
+	if _, err := NewPackageStore().Load(bogus, nil); err == nil {
 		t.Error("Load accepted a package with no manifest as a document")
 	}
 }

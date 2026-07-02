@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 
 	"oblikovati.org/model/benchgen"
+	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/perf/benchprof"
 	"oblikovati.org/persistence"
@@ -52,7 +53,7 @@ func generateAssembly(profile benchgen.Profile, outDir string, save bool, out io
 	if err != nil {
 		return err
 	}
-	ws := doc.NewWorkspace(persistence.NewPackageStore())
+	ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
 	root, stats, err := benchgen.Generate(ws, outDir, profile)
 	if err != nil {
 		return err

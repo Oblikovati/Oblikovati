@@ -18,7 +18,7 @@ func TestDrawingSurvivesStoreRoundTrip(t *testing.T) {
 	store := persistence.NewPackageStore()
 	path := filepath.Join(t.TempDir(), "drawing.odd")
 
-	saveWS := doc.NewWorkspace(store)
+	saveWS := doc.NewWorkspace(store, testContentFactories())
 	d, err := saveWS.Add(doc.Drawing, path, true)
 	if err != nil {
 		t.Fatalf("Add(Drawing): %v", err)
@@ -35,7 +35,7 @@ func TestDrawingSurvivesStoreRoundTrip(t *testing.T) {
 		t.Fatalf("Save: %v", err)
 	}
 
-	reopened, err := doc.NewWorkspace(store).Open(path, true)
+	reopened, err := doc.NewWorkspace(store, testContentFactories()).Open(path, true)
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}

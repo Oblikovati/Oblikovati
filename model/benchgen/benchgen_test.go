@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/persistence"
 )
@@ -27,7 +28,7 @@ func tinyProfile() Profile {
 }
 
 func newMemWorkspace() *doc.Workspace {
-	return doc.NewWorkspace(persistence.NewPackageStore())
+	return doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
 }
 
 func TestGenerateRealizesTierCounts(t *testing.T) {

@@ -26,12 +26,12 @@ func (f *fakeDocStore) SaveCopy(d *doc.Document, target string, _ doc.CopyMetada
 	return nil
 }
 
-func (f *fakeDocStore) Load(name string) (*doc.Document, error) {
+func (f *fakeDocStore) Load(name string, factories doc.ContentFactories) (*doc.Document, error) {
 	t, ok := f.saved[name]
 	if !ok {
 		return nil, errors.New("fakeDocStore: nothing at " + name)
 	}
-	return doc.Restore(t, name, "")
+	return doc.Restore(t, name, "", factories)
 }
 
 func (f *fakeDocStore) Exists(name string) bool { _, ok := f.saved[name]; return ok }

@@ -12,7 +12,7 @@ import (
 // in the same tree — the canonical descriptor fixture.
 func referencingWorkspace(t *testing.T) (*Workspace, *Document, *Document) {
 	t.Helper()
-	ws := NewWorkspace(newFakeStore())
+	ws := NewWorkspace(newFakeStore(), nil)
 	part, _ := ws.Add(Part, "/asm/parts/pin.obk", true)
 	if err := ws.Save(part); err != nil {
 		t.Fatalf("Save part: %v", err)

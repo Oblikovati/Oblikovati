@@ -38,7 +38,7 @@ func TestVetoErrorMessage(t *testing.T) {
 
 func TestLifecycleFiresBeforeAndAfterEvents(t *testing.T) {
 	store := newFakeStore()
-	ws := NewWorkspace(store)
+	ws := NewWorkspace(store, nil)
 	var log []string
 	event.Subscribe(ws.Events(), event.After, func(_ event.Context, e DocumentCreated) event.Outcome {
 		log = append(log, "created:"+e.Document.DisplayName())
@@ -64,7 +64,7 @@ func TestLifecycleFiresBeforeAndAfterEvents(t *testing.T) {
 }
 
 func TestCloseCanBeVetoed(t *testing.T) {
-	ws := NewWorkspace(newFakeStore())
+	ws := NewWorkspace(newFakeStore(), nil)
 	d, _ := ws.Add(Part, "p.obk", true)
 
 	sub := event.Subscribe(ws.Events(), event.Before, func(_ event.Context, e DocumentClose) event.Outcome {
@@ -97,7 +97,7 @@ func TestCloseCanBeVetoed(t *testing.T) {
 
 func TestSaveAndOpenCanBeVetoed(t *testing.T) {
 	store := newFakeStore()
-	ws := NewWorkspace(store)
+	ws := NewWorkspace(store, nil)
 	d, _ := ws.Add(Part, "p.obk", true)
 
 	saveSub := event.Subscribe(ws.Events(), event.Before, func(_ event.Context, _ DocumentSave) event.Outcome {
@@ -121,7 +121,7 @@ func TestSaveAndOpenCanBeVetoed(t *testing.T) {
 }
 
 func TestQuitVetoAndClose(t *testing.T) {
-	ws := NewWorkspace(newFakeStore())
+	ws := NewWorkspace(newFakeStore(), nil)
 	_, _ = ws.Add(Part, "a.obk", true)
 	_, _ = ws.Add(Part, "b.obk", true)
 
@@ -148,7 +148,7 @@ func TestQuitVetoAndClose(t *testing.T) {
 }
 
 func TestDocumentActivateEventOnSetActive(t *testing.T) {
-	ws := NewWorkspace(newFakeStore())
+	ws := NewWorkspace(newFakeStore(), nil)
 	a, _ := ws.Add(Part, "a.obk", true)
 	_, _ = ws.Add(Part, "b.obk", true)
 	activated := ""

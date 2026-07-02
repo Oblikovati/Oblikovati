@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
 )
 
@@ -19,7 +20,7 @@ func TestFileIdentityRoundTripsThroughPackage(t *testing.T) {
 	path := filepath.Join(dir, "bracket.obk")
 	store := NewPackageStore()
 
-	ws := doc.NewWorkspace(store)
+	ws := doc.NewWorkspace(store, contentset.Default())
 	d, err := ws.Add(doc.Part, path, true)
 	if err != nil {
 		t.Fatalf("Add: %v", err)
@@ -37,7 +38,7 @@ func TestFileIdentityRoundTripsThroughPackage(t *testing.T) {
 		t.Errorf("the .obk must carry the identity block; got:\n%s", raw)
 	}
 
-	ws2 := doc.NewWorkspace(store)
+	ws2 := doc.NewWorkspace(store, contentset.Default())
 	reopened, err := ws2.Open(path, true)
 	if err != nil {
 		t.Fatalf("Open: %v", err)
@@ -60,7 +61,7 @@ func TestFileIdentityRoundTripsThroughPackage(t *testing.T) {
 func TestFileReferencesRoundTripThroughPackage(t *testing.T) {
 	dir := t.TempDir()
 	store := NewPackageStore()
-	ws := doc.NewWorkspace(store)
+	ws := doc.NewWorkspace(store, contentset.Default())
 	part, err := ws.Add(doc.Part, filepath.Join(dir, "pin.obk"), true)
 	if err != nil {
 		t.Fatalf("Add part: %v", err)
@@ -79,7 +80,7 @@ func TestFileReferencesRoundTripThroughPackage(t *testing.T) {
 		t.Fatalf("Save owner: %v", err)
 	}
 
-	reopened, err := doc.NewWorkspace(store).Open(owner.FullFileName(), true)
+	reopened, err := doc.NewWorkspace(store, contentset.Default()).Open(owner.FullFileName(), true)
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}
@@ -103,7 +104,7 @@ func TestFileReferencesRoundTripThroughPackage(t *testing.T) {
 func TestResaveWithoutLiveEdgesKeepsReferenceRecords(t *testing.T) {
 	dir := t.TempDir()
 	store := NewPackageStore()
-	ws := doc.NewWorkspace(store)
+	ws := doc.NewWorkspace(store, contentset.Default())
 	part, _ := ws.Add(doc.Part, filepath.Join(dir, "pin.obk"), true)
 	if err := ws.Save(part); err != nil {
 		t.Fatalf("Save part: %v", err)
@@ -116,7 +117,7 @@ func TestResaveWithoutLiveEdgesKeepsReferenceRecords(t *testing.T) {
 		t.Fatalf("Save owner: %v", err)
 	}
 
-	ws2 := doc.NewWorkspace(store)
+	ws2 := doc.NewWorkspace(store, contentset.Default())
 	reopened, err := ws2.Open(owner.FullFileName(), true)
 	if err != nil {
 		t.Fatalf("Open: %v", err)

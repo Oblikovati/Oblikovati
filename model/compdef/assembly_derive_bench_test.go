@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/model/benchgen"
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/persistence"
 )
@@ -17,7 +18,7 @@ import (
 // top-level subtrees across workers (~1.8× faster wall time at 30k). allocs/op is the
 // GC-pressure signal the trim targets.
 func BenchmarkCollectPlacedBodies(b *testing.B) {
-	ws := doc.NewWorkspace(persistence.NewPackageStore())
+	ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
 	root, stats, err := benchgen.Generate(ws, "bench", benchgen.Auto30k())
 	if err != nil {
 		b.Fatal(err)

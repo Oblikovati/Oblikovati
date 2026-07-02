@@ -10,6 +10,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/exchange"
 	"oblikovati.org/persistence"
@@ -39,7 +40,7 @@ func cmdExport(args []string, out io.Writer) error {
 // openCLIPart opens an .opd and returns its part component definition, erroring if the document
 // is missing or is not a part.
 func openCLIPart(src string) (*compdef.PartComponentDefinition, error) {
-	d, err := doc.NewWorkspace(persistence.NewPackageStore()).Open(src, true)
+	d, err := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default()).Open(src, true)
 	if err != nil {
 		return nil, fmt.Errorf("open %q: %w", src, err)
 	}

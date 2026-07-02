@@ -5,7 +5,7 @@ package doc
 import "testing"
 
 func TestTypedViewHelpers(t *testing.T) {
-	ws := NewWorkspace(newFakeStore())
+	ws := NewWorkspace(newFakeStore(), nil)
 	part, _ := ws.Add(Part, "p.obk", true)
 	asm, _ := ws.Add(Assembly, "a.obk", true)
 	dwg, _ := ws.Add(Drawing, "d.obk", true)
@@ -39,7 +39,7 @@ func TestCompactedIsFalse(t *testing.T) {
 }
 
 func TestNilStoreErrorsOnSaveAndOpen(t *testing.T) {
-	ws := NewWorkspace(nil)
+	ws := NewWorkspace(nil, nil)
 	d, _ := ws.Add(Part, "p.obk", true)
 	if err := ws.Save(d); err == nil {
 		t.Error("Save with nil store did not error")
@@ -54,14 +54,14 @@ func TestNilStoreErrorsOnSaveAndOpen(t *testing.T) {
 }
 
 func TestOpenMissingDocumentErrors(t *testing.T) {
-	ws := NewWorkspace(newFakeStore())
+	ws := NewWorkspace(newFakeStore(), nil)
 	if _, err := ws.Open("/nowhere.obk", true); err == nil {
 		t.Error("Open of an unstored document did not error")
 	}
 }
 
 func TestByIDAndSetActiveErrors(t *testing.T) {
-	ws := NewWorkspace(newFakeStore())
+	ws := NewWorkspace(newFakeStore(), nil)
 	d, _ := ws.Add(Part, "p.obk", true)
 	if got, ok := ws.ByID(d.ID()); !ok || got != d {
 		t.Error("ByID did not return the document")
@@ -76,7 +76,7 @@ func TestByIDAndSetActiveErrors(t *testing.T) {
 }
 
 func TestSaveAsRejectsCollision(t *testing.T) {
-	ws := NewWorkspace(newFakeStore())
+	ws := NewWorkspace(newFakeStore(), nil)
 	a, _ := ws.Add(Part, "a.obk", true)
 	_, _ = ws.Add(Part, "b.obk", true)
 	if err := ws.SaveAs(a, "b.obk"); err == nil {
@@ -89,10 +89,10 @@ func TestSaveAsRejectsCollision(t *testing.T) {
 }
 
 func TestNewContentRejectsUnknown(t *testing.T) {
-	if _, err := newContent(Unknown); err == nil {
-		t.Error("newContent(Unknown) did not error")
+	if _, err := newContent(Unknown, nil); err == nil {
+		t.Error("newContent(Unknown, nil) did not error")
 	}
-	if _, err := Restore(DocumentType(42), "x.obk", "x"); err == nil {
+	if _, err := Restore(DocumentType(42), "x.obk", "x", nil); err == nil {
 		t.Error("Restore with bad type did not error")
 	}
 }

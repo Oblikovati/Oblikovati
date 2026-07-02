@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/occurrence"
 	"oblikovati.org/persistence"
@@ -19,7 +20,7 @@ import (
 func assemblyWorkspace(t *testing.T) (*persistence.PackageStore, *doc.Workspace, string) {
 	t.Helper()
 	store := persistence.NewPackageStore()
-	return store, doc.NewWorkspace(store), t.TempDir()
+	return store, doc.NewWorkspace(store, contentset.Default()), t.TempDir()
 }
 
 // newAssembly adds and returns an assembly document and its definition at name in dir.
@@ -85,7 +86,7 @@ func reopenAssembly(t *testing.T, store *persistence.PackageStore, ws *doc.Works
 // reference-resolution path) and returns its assembly definition.
 func openAssembly(t *testing.T, store *persistence.PackageStore, name string) *compdef.AssemblyComponentDefinition {
 	t.Helper()
-	reopened, err := doc.NewWorkspace(store).Open(name, true)
+	reopened, err := doc.NewWorkspace(store, contentset.Default()).Open(name, true)
 	if err != nil {
 		t.Fatalf("Open assembly %q: %v", name, err)
 	}

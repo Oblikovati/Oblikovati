@@ -5,7 +5,7 @@ package doc
 import "testing"
 
 func TestAssemblyReportsPartsAndPartReportsAssembly(t *testing.T) {
-	ws := NewWorkspace(newFakeStore())
+	ws := NewWorkspace(newFakeStore(), nil)
 	asm, _ := ws.Add(Assembly, "top.iam.obk", true)
 	p1, _ := ws.Add(Part, "a.obk", true)
 	p2, _ := ws.Add(Part, "b.obk", true)
@@ -31,7 +31,7 @@ func TestAssemblyReportsPartsAndPartReportsAssembly(t *testing.T) {
 }
 
 func TestBrokenReferenceFlaggedNotFatal(t *testing.T) {
-	ws := NewWorkspace(newFakeStore())
+	ws := NewWorkspace(newFakeStore(), nil)
 	asm, _ := ws.Add(Assembly, "top.obk", true)
 	present, _ := ws.Add(Part, "here.obk", true)
 	_, _ = asm.AddReference("here.obk")
@@ -47,7 +47,7 @@ func TestBrokenReferenceFlaggedNotFatal(t *testing.T) {
 }
 
 func TestAllReferencedIsTransitive(t *testing.T) {
-	ws := NewWorkspace(newFakeStore())
+	ws := NewWorkspace(newFakeStore(), nil)
 	top, _ := ws.Add(Assembly, "top.obk", true)
 	sub, _ := ws.Add(Assembly, "sub.obk", true)
 	leaf, _ := ws.Add(Part, "leaf.obk", true)
@@ -62,7 +62,7 @@ func TestAllReferencedIsTransitive(t *testing.T) {
 
 func TestReferencedDocumentLazyLoadsFromStore(t *testing.T) {
 	store := newFakeStore()
-	ws := NewWorkspace(store)
+	ws := NewWorkspace(store, nil)
 	part, _ := ws.Add(Part, "part.obk", true)
 	_ = ws.Save(part)
 	_ = ws.Close(part, true) // gone from the collection, still on disk
@@ -86,7 +86,7 @@ func TestReferencedDocumentLazyLoadsFromStore(t *testing.T) {
 }
 
 func TestRemoveReference(t *testing.T) {
-	ws := NewWorkspace(newFakeStore())
+	ws := NewWorkspace(newFakeStore(), nil)
 	asm, _ := ws.Add(Assembly, "top.obk", true)
 	part, _ := ws.Add(Part, "p.obk", true)
 	_, _ = asm.AddReference("p.obk")
@@ -109,7 +109,7 @@ func TestRemoveReference(t *testing.T) {
 }
 
 func TestUnreferencedCloseKeepsReferencedPart(t *testing.T) {
-	ws := NewWorkspace(newFakeStore())
+	ws := NewWorkspace(newFakeStore(), nil)
 	top, _ := ws.Add(Assembly, "top.obk", true)
 	_, _ = ws.Add(Part, "p.obk", true)
 	_, _ = top.AddReference("p.obk")
@@ -140,7 +140,7 @@ func TestStandaloneDocumentHasNoGraph(t *testing.T) {
 }
 
 func TestDocumentReferencesListsDescriptors(t *testing.T) {
-	ws := NewWorkspace(newFakeStore())
+	ws := NewWorkspace(newFakeStore(), nil)
 	if ws.References() == nil {
 		t.Fatal("Workspace.References() is nil")
 	}
@@ -158,7 +158,7 @@ func TestDocumentReferencesListsDescriptors(t *testing.T) {
 }
 
 func TestDescriptorReferenceKey(t *testing.T) {
-	ws := NewWorkspace(newFakeStore())
+	ws := NewWorkspace(newFakeStore(), nil)
 	asm, _ := ws.Add(Assembly, "top.obk", true)
 	desc, _ := asm.AddReference("p.obk")
 	if desc.ReferenceKey() != nil {

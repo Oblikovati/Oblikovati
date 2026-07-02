@@ -13,12 +13,9 @@ import (
 	"oblikovati.org/persistence/yamlcodec"
 )
 
-// init registers the real drawing content with the document layer so opening a .odd
-// reconstructs live sheets (with the recipe machinery), not the identity-only stub
-// (see doc.RegisterContentFactory).
-func init() {
-	doc.RegisterContentFactory(doc.Drawing, func() doc.Content { return NewContent() })
-}
+// The real drawing content reaches the document layer through the composition
+// root (model/contentset.Default → doc.NewWorkspace), not init()-time
+// registration (#1617).
 
 // var assertion: a drawing's content is recipe-bearing (doc.RecipeContent), so the
 // store persists and restores its sheets on save/open.

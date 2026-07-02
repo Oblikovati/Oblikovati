@@ -23,9 +23,11 @@ type fakeMarshalStore struct{ yaml string }
 
 func (fakeMarshalStore) Save(*doc.Document) error                               { return nil }
 func (fakeMarshalStore) SaveCopy(*doc.Document, string, doc.CopyMetadata) error { return nil }
-func (fakeMarshalStore) Load(string) (*doc.Document, error)                     { return nil, errors.New("no store") }
-func (fakeMarshalStore) Exists(string) bool                                     { return false }
-func (f fakeMarshalStore) MarshalDocument(*doc.Document) ([]byte, error)        { return []byte(f.yaml), nil }
+func (fakeMarshalStore) Load(string, doc.ContentFactories) (*doc.Document, error) {
+	return nil, errors.New("no store")
+}
+func (fakeMarshalStore) Exists(string) bool                              { return false }
+func (f fakeMarshalStore) MarshalDocument(*doc.Document) ([]byte, error) { return []byte(f.yaml), nil }
 
 // fakeBugSubmitter records the payload it is handed instead of POSTing it, so the
 // capture→submit flow can be driven without a network.

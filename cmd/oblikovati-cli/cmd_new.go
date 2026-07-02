@@ -12,6 +12,7 @@ import (
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/sketch"
@@ -38,7 +39,7 @@ func cmdNew(args []string, out io.Writer) error {
 		return fmt.Errorf(errNew, err)
 	}
 	path := withDocExt(operands[1], t)
-	ws := doc.NewWorkspace(persistence.NewPackageStore())
+	ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
 	d, err := createDocument(ws, t, path, *seed, out)
 	if err != nil {
 		return err

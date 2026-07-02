@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/exchange"
 	"oblikovati.org/persistence"
@@ -28,7 +29,7 @@ func cmdImport(args []string, out io.Writer) error {
 	if err != nil {
 		return fmt.Errorf("import: %w", err)
 	}
-	ws := doc.NewWorkspace(persistence.NewPackageStore())
+	ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
 	d, err := compdef.AddPart(ws, dst, true)
 	if err != nil {
 		return fmt.Errorf("import: %w", err)

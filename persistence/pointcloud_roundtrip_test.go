@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/pointcloud"
 )
@@ -19,7 +20,7 @@ func TestPointCloudSurvivesStoreRoundTrip(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "scan.obk")
 	store := NewPackageStore()
 
-	ws := doc.NewWorkspace(store)
+	ws := doc.NewWorkspace(store, contentset.Default())
 	d, err := compdef.AddPart(ws, path, true)
 	if err != nil {
 		t.Fatalf("AddPart: %v", err)
@@ -47,7 +48,7 @@ func TestPointCloudSurvivesStoreRoundTrip(t *testing.T) {
 		t.Fatalf("Save: %v", err)
 	}
 
-	reopened, err := doc.NewWorkspace(store).Open(path, true)
+	reopened, err := doc.NewWorkspace(store, contentset.Default()).Open(path, true)
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}

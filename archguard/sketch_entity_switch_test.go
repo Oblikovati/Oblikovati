@@ -68,7 +68,9 @@ func goSourcesMatching(t *testing.T, pattern *regexp.Regexp) []string {
 			return rerr
 		}
 		if pattern.Match(src) {
-			offenders = append(offenders, strings.TrimPrefix(path, "../"))
+			// ToSlash so reported paths (and any caller matching on them) are
+			// separator-stable on Windows.
+			offenders = append(offenders, strings.TrimPrefix(filepath.ToSlash(path), "../"))
 		}
 		return nil
 	})

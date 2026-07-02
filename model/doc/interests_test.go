@@ -11,7 +11,7 @@ import (
 // TestInterestRegistryRules: identity is (ClientID, Name); re-adding updates
 // in place; HasInterest matches either id or name; removal reports existence.
 func TestInterestRegistryRules(t *testing.T) {
-	ws := NewWorkspace(newFakeStore())
+	ws := NewWorkspace(newFakeStore(), nil)
 	d, _ := ws.Add(Part, "bracket.obk", true)
 	d.ClearDirty()
 

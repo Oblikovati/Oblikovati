@@ -35,13 +35,13 @@ func (s *fakeStore) SaveCopy(d *Document, target string, meta CopyMetadata) erro
 	return nil
 }
 
-func (s *fakeStore) Load(fullDocumentName string) (*Document, error) {
+func (s *fakeStore) Load(fullDocumentName string, factories ContentFactories) (*Document, error) {
 	rec, ok := s.saved[fullDocumentName]
 	if !ok {
 		return nil, errNotStored{fullDocumentName}
 	}
 	s.loads++
-	d, err := Restore(rec.docType, fullDocumentName, rec.displayName)
+	d, err := Restore(rec.docType, fullDocumentName, rec.displayName, factories)
 	if err == nil && rec.internalName != "" {
 		d.SetFileIdentity(FileIdentity{InternalName: rec.internalName})
 	}
@@ -58,7 +58,7 @@ type errNotStored struct{ name string }
 func (e errNotStored) Error() string { return "no document stored at " + e.name }
 
 func TestAddCreatesFromTemplateAndAppears(t *testing.T) {
-	ws := NewWorkspace(newFakeStore())
+	ws := NewWorkspace(newFakeStore(), nil)
 
 	d, err := ws.Add(Part, "/proj/bracket.obk", true)
 	if err != nil {
@@ -82,7 +82,7 @@ func TestAddCreatesFromTemplateAndAppears(t *testing.T) {
 }
 
 func TestVisibleVsHiddenOpen(t *testing.T) {
-	ws := NewWorkspace(newFakeStore())
+	ws := NewWorkspace(newFakeStore(), nil)
 	vis, _ := ws.Add(Part, "shown.obk", true)
 	hid, _ := ws.Add(Assembly, "hidden.obk", false)
 
@@ -99,7 +99,7 @@ func TestVisibleVsHiddenOpen(t *testing.T) {
 
 func TestDeferContentOpensStubWithoutLoad(t *testing.T) {
 	store := newFakeStore()
-	ws := NewWorkspace(store)
+	ws := NewWorkspace(store, nil)
 
 	stub, err := ws.OpenWithOptions("/lib/screw.obk", OpenOptions{DeferContent: true})
 	if err != nil {
@@ -118,7 +118,7 @@ func TestDeferContentOpensStubWithoutLoad(t *testing.T) {
 
 func TestSavedDocumentReopensIdentically(t *testing.T) {
 	store := newFakeStore()
-	ws := NewWorkspace(store)
+	ws := NewWorkspace(store, nil)
 	d, _ := ws.Add(Assembly, "/proj/top.obk", true)
 	d.SetDisplayName("Top Assembly")
 	if err := ws.Save(d); err != nil {
@@ -129,7 +129,7 @@ func TestSavedDocumentReopensIdentically(t *testing.T) {
 	}
 
 	// A fresh workspace forces the load path (not the already-open shortcut).
-	reopened, err := NewWorkspace(store).Open("/proj/top.obk", true)
+	reopened, err := NewWorkspace(store, nil).Open("/proj/top.obk", true)
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}
@@ -146,7 +146,7 @@ func TestSavedDocumentReopensIdentically(t *testing.T) {
 
 func TestSaveAsRenamesAndPersists(t *testing.T) {
 	store := newFakeStore()
-	ws := NewWorkspace(store)
+	ws := NewWorkspace(store, nil)
 	d, _ := ws.Add(Part, "draft.obk", true)
 
 	if err := ws.SaveAs(d, "final.obk"); err != nil {
@@ -168,7 +168,7 @@ func TestSaveAsRenamesAndPersists(t *testing.T) {
 
 func TestOpenAlreadyOpenReturnsSameInstance(t *testing.T) {
 	store := newFakeStore()
-	ws := NewWorkspace(store)
+	ws := NewWorkspace(store, nil)
 	d, _ := ws.Add(Part, "p.obk", true)
 	_ = ws.Save(d)
 
@@ -186,7 +186,7 @@ func TestOpenAlreadyOpenReturnsSameInstance(t *testing.T) {
 
 func TestCloseSavesDirtyUnlessSkipped(t *testing.T) {
 	store := newFakeStore()
-	ws := NewWorkspace(store)
+	ws := NewWorkspace(store, nil)
 	d, _ := ws.Add(Part, "p.obk", true) // dirty
 
 	if err := ws.Close(d, false); err != nil { // should save on the way out
@@ -210,7 +210,7 @@ func TestCloseSavesDirtyUnlessSkipped(t *testing.T) {
 
 func TestCloseAllUnreferencedKeepsReferenced(t *testing.T) {
 	store := newFakeStore()
-	ws := NewWorkspace(store)
+	ws := NewWorkspace(store, nil)
 	top, _ := ws.Add(Assembly, "top.obk", true)
 	part, _ := ws.Add(Part, "part.obk", true)
 	part.acquireRef() // pretend top references part (graph lands in F04)
@@ -239,7 +239,7 @@ func TestCloseAllUnreferencedKeepsReferenced(t *testing.T) {
 }
 
 func TestActiveDocumentReassignedOnClose(t *testing.T) {
-	ws := NewWorkspace(newFakeStore())
+	ws := NewWorkspace(newFakeStore(), nil)
 	a, _ := ws.Add(Part, "a.obk", true)
 	b, _ := ws.Add(Part, "b.obk", true)
 	if ws.ActiveDocument() != b {
@@ -259,7 +259,7 @@ func TestActiveDocumentReassignedOnClose(t *testing.T) {
 }
 
 func TestAddRejectsDuplicateNameAndBadType(t *testing.T) {
-	ws := NewWorkspace(newFakeStore())
+	ws := NewWorkspace(newFakeStore(), nil)
 	if _, err := ws.Add(Part, "dup.obk", true); err != nil {
 		t.Fatalf("first Add: %v", err)
 	}
@@ -276,7 +276,7 @@ func TestAddRejectsDuplicateNameAndBadType(t *testing.T) {
 // stealing the active document, so placing a part never switches the tab away from the
 // assembly.
 func TestBackgroundOpenKeepsActiveAndHidden(t *testing.T) {
-	ws := NewWorkspace(newFakeStore())
+	ws := NewWorkspace(newFakeStore(), nil)
 	asm, _ := ws.Add(Assembly, "asm.obk", true)
 	part, _ := ws.Add(Part, "part.obk", true) // stage in the store
 	if err := ws.Save(part); err != nil {
@@ -307,7 +307,7 @@ func TestBackgroundOpenKeepsActiveAndHidden(t *testing.T) {
 // TestBackgroundOpenOfOpenDocPreservesIt checks that re-placing a part the user already has
 // open in a tab does not hide it or steal focus.
 func TestBackgroundOpenOfOpenDocPreservesIt(t *testing.T) {
-	ws := NewWorkspace(newFakeStore())
+	ws := NewWorkspace(newFakeStore(), nil)
 	asm, _ := ws.Add(Assembly, "asm.obk", true)
 	part, _ := ws.Add(Part, "part.obk", true) // user has it open, visible, active
 	if _, err := ws.OpenWithOptions("part.obk", OpenOptions{Visible: false, Background: true}); err != nil {
