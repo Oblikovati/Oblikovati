@@ -44,6 +44,16 @@ func (t *featureSelectTool) patternFeatures(s *Session, op string) (*feature.Pat
 	return feature.NewPatternFeatures(part.Features()), nil
 }
 
+// draftPattern builds a pattern tool's feature into a scratch engine for the commit gate
+// and preview (#1626). add runs the tool's exact commit-time construction; the Pattern
+// Add* methods return the raw feature, so the wrapper is read back off the engine.
+func draftPattern(add func(*feature.PatternFeatures)) (feature.Feature, bool) {
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		add(feature.NewPatternFeatures(fs))
+		return lastEngineFeature(fs), nil
+	})
+}
+
 // finishPattern recomputes the part, records the edit and reports a sick pattern.
 func (t *featureSelectTool) finishPattern(s *Session, added *feature.PartFeature, label string) error {
 	part, _ := activePart(s)
@@ -83,10 +93,26 @@ func (t *FeatureRectPatternTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
+	t.addRectangular(pats)
+	return t.finishPattern(s, lastPartFeature(s), "Rectangular Pattern")
+}
+
+// addRectangular builds the grid pattern into pats — the shared constructor used by both
+// Commit (the part's engine) and DraftFeature (a scratch engine), so the two cannot drift.
+func (t *FeatureRectPatternTool) addRectangular(pats *feature.PatternFeatures) {
 	cx, cy := t.countX, t.countY
 	pats.AddRectangular(t.sources, func() int { return cx }, func() int { return cy },
 		math.V3(math.Scalar(t.spacingX), 0, 0), math.V3(0, math.Scalar(t.spacingY), 0))
-	return t.finishPattern(s, lastPartFeature(s), "Rectangular Pattern")
+}
+
+// DraftFeature implements [PartFeatureTool] (#1626): the rectangular pattern it would
+// commit, built into a scratch engine so the commit gate and preview can evaluate it
+// without touching the part.
+func (t *FeatureRectPatternTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftPattern(t.addRectangular)
 }
 
 func (t *FeatureRectPatternTool) Params() ToolParams {
@@ -126,11 +152,27 @@ func (t *FeatureCircPatternTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
+	t.addCircular(pats)
+	return t.finishPattern(s, lastPartFeature(s), "Circular Pattern")
+}
+
+// addCircular builds the circular pattern into pats — the shared constructor used by both
+// Commit (the part's engine) and DraftFeature (a scratch engine), so the two cannot drift.
+func (t *FeatureCircPatternTool) addCircular(pats *feature.PatternFeatures) {
 	n := t.count
 	a := t.totalAngle
 	pats.AddCircular(t.sources, func() int { return n }, func() float64 { return a },
 		math.P3(0, 0, 0), math.V3(0, 0, 1))
-	return t.finishPattern(s, lastPartFeature(s), "Circular Pattern")
+}
+
+// DraftFeature implements [PartFeatureTool] (#1626): the circular pattern it would
+// commit, built into a scratch engine so the commit gate and preview can evaluate it
+// without touching the part.
+func (t *FeatureCircPatternTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftPattern(t.addCircular)
 }
 
 func (t *FeatureCircPatternTool) Params() ToolParams {
@@ -172,8 +214,24 @@ func (t *FeatureMirrorTool) Commit(s *Session) error {
 	if len(t.sources) == 0 {
 		return errors.New("mirror: select a feature to mirror first")
 	}
-	feature.NewPatternFeatures(part.Features()).AddMirror(t.sources, nil, math.P3(0, 0, 0), t.normal)
+	t.addMirror(feature.NewPatternFeatures(part.Features()))
 	return t.finishPattern(s, lastPartFeature(s), "Mirror")
+}
+
+// addMirror builds the mirror into pats — the shared constructor used by both Commit
+// (the part's engine) and DraftFeature (a scratch engine), so the two cannot drift.
+func (t *FeatureMirrorTool) addMirror(pats *feature.PatternFeatures) {
+	pats.AddMirror(t.sources, nil, math.P3(0, 0, 0), t.normal)
+}
+
+// DraftFeature implements [PartFeatureTool] (#1626): the mirror it would commit, built
+// into a scratch engine so the commit gate and preview can evaluate it without touching
+// the part.
+func (t *FeatureMirrorTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftPattern(t.addMirror)
 }
 
 func (t *FeatureMirrorTool) Params() ToolParams {
@@ -191,7 +249,12 @@ func lastPartFeature(s *Session) *feature.PartFeature {
 	if err != nil {
 		return nil
 	}
-	fs := part.Features()
+	return lastEngineFeature(part.Features())
+}
+
+// lastEngineFeature returns the newest feature in fs — the one an Add* method just
+// appended when it returns the raw feature instead of its PartFeature wrapper.
+func lastEngineFeature(fs *feature.PartFeatures) *feature.PartFeature {
 	if fs.Count() == 0 {
 		return nil
 	}

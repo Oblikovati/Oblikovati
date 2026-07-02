@@ -81,6 +81,25 @@ func TestFeaturePatternNeedsSource(t *testing.T) {
 	}
 }
 
+// TestPatternToolsDraftFeature asserts each pattern/mirror tool builds the draft the
+// commit gate inspects (#1626): no draft before a source feature is picked, a non-nil
+// draft once the tool is commit-ready.
+func TestPatternToolsDraftFeature(t *testing.T) {
+	s, _, src := extrudedPart(t)
+	tools := []PartFeatureTool{
+		NewFeatureRectPatternTool(), NewFeatureCircPatternTool(), NewFeatureMirrorTool(),
+	}
+	for _, tool := range tools {
+		if _, ok := tool.DraftFeature(s); ok {
+			t.Errorf("%s: draft ready with no source picked", tool.Name())
+		}
+		tool.Pick(s, src)
+		if draft, ok := tool.DraftFeature(s); !ok || draft == nil {
+			t.Errorf("%s: no draft once commit-ready (ok=%v, draft=%v)", tool.Name(), ok, draft)
+		}
+	}
+}
+
 func TestPatternFeatureCommandsRegistered(t *testing.T) {
 	s := NewSession()
 	if err := RegisterStandardCommands(s); err != nil {

@@ -133,6 +133,49 @@ func TestSketchDrivenPatternToolEndToEnd(t *testing.T) {
 	}
 }
 
+// TestExtraToolsDraftFeature asserts Boss, Direct Edit, Hull and the Sketch-Driven
+// Pattern build the draft the commit gate inspects (#1626): no draft before the tool is
+// commit-ready, a non-nil draft once it is.
+func TestExtraToolsDraftFeature(t *testing.T) {
+	s, block := newPartWithBlock(t, 6)
+	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
+	top := FaceHandle{Face: topFaceOf(t, block), Body: block}
+
+	boss := NewBossTool()
+	if _, ok := boss.DraftFeature(s); ok {
+		t.Error("boss: draft ready with no face picked")
+	}
+	boss.Pick(s, top)
+	if draft, ok := boss.DraftFeature(s); !ok || draft == nil {
+		t.Errorf("boss: no draft once commit-ready (ok=%v)", ok)
+	}
+
+	edit := NewDirectEditTool()
+	if _, ok := edit.DraftFeature(s); ok {
+		t.Error("direct edit: draft ready with no face picked")
+	}
+	edit.Pick(s, top)
+	if draft, ok := edit.DraftFeature(s); !ok || draft == nil {
+		t.Errorf("direct edit: no draft once commit-ready (ok=%v)", ok)
+	}
+
+	if draft, ok := NewHullTool().DraftFeature(s); !ok || draft == nil {
+		t.Errorf("hull: no draft (input-free, always ready; ok=%v)", ok)
+	}
+
+	pattern := NewFeatureSketchDrivenPatternTool()
+	pattern.Pick(s, FeatureHandle{Feature: def.Features().Item(0)})
+	if _, ok := pattern.DraftFeature(s); ok {
+		t.Error("sketch-driven pattern: draft ready with no driving sketch")
+	}
+	driver := def.Sketches().Add(sketch.XYPlane())
+	driver.Points().Add(math.P2(1.5, 1.5))
+	pattern.Pick(s, SketchHandle{Sketch: driver})
+	if draft, ok := pattern.DraftFeature(s); !ok || draft == nil {
+		t.Errorf("sketch-driven pattern: no draft once commit-ready (ok=%v)", ok)
+	}
+}
+
 // TestFeatureExtraToolsViaRibbonCommands asserts each new command starts its tool.
 func TestFeatureExtraToolsViaRibbonCommands(t *testing.T) {
 	s, _ := newPartWithBlock(t, 6)

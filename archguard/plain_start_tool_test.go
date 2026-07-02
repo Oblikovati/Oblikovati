@@ -110,7 +110,6 @@ var allowedPlainStartTools = map[string]struct{}{
 	"SliceViewTool":            {},
 	"Spline3DTool":             {},
 	"SplineTool":               {},
-	"SplitTool":                {},
 	"SurfaceCurve3DTool":       {},
 	"SurfaceDeviationTool":     {},
 	"SurfaceTextureTool":       {},
@@ -122,19 +121,7 @@ var allowedPlainStartTools = map[string]struct{}{
 // implement DraftFeature — each one is an OPEN commit-gate bypass. This list is
 // SHRINK-ONLY: implement DraftFeature, switch the activation site to
 // StartFeatureTool, and delete the entry. Never add to it.
-var gapPlainStartTools = map[string]struct{}{
-	"BossTool":                       {},
-	"CombineTool":                    {},
-	"DecalTool":                      {},
-	"DirectEditTool":                 {},
-	"FeatureCircPatternTool":         {},
-	"FeatureMirrorTool":              {},
-	"FeatureRectPatternTool":         {},
-	"FeatureSketchDrivenPatternTool": {},
-	"HullTool":                       {},
-	"MoveBodyTool":                   {},
-	"MoveFaceTool":                   {},
-}
+var gapPlainStartTools = map[string]struct{}{}
 
 // plainStartPatterns match the two ways a commands file feeds a constructor to
 // the plain StartTool: directly, or through a func() Tool flyout-table thunk.

@@ -438,20 +438,22 @@ func surfaceFeatureCommands() []*CommandDefinition {
 // as real placed copies (canonical ribbon: Rectangular, Circular, Sketch Driven, Mirror).
 // Each starts an interactive tool fed the source features.
 func patternFeatureCommands() []*CommandDefinition {
+	// func() PartFeatureTool (not func() Tool) so every pattern tool is compile-checked
+	// against the commit gate's DraftFeature requirement (#1626).
 	pats := []struct {
 		id, name, icon, tip string
-		start               func() Tool
+		start               func() PartFeatureTool
 	}{
-		{"Modify.RectangularPattern", "Rectangular", "rectangular-pattern", "Rectangular Pattern — select features, set counts and spacing.", func() Tool { return NewFeatureRectPatternTool() }},
-		{"Modify.CircularPattern", "Circular", "circular-pattern", "Circular Pattern — select features, set count and angle.", func() Tool { return NewFeatureCircPatternTool() }},
-		{"Modify.Mirror", "Mirror", "mirror", "Mirror — select features, set the mirror-plane normal.", func() Tool { return NewFeatureMirrorTool() }},
-		{"Modify.SketchDrivenPattern", "Sketch Driven", "sketch-driven-pattern", "Sketch-Driven Pattern — select features, then the sketch whose points place the copies.", func() Tool { return NewFeatureSketchDrivenPatternTool() }},
+		{"Modify.RectangularPattern", "Rectangular", "rectangular-pattern", "Rectangular Pattern — select features, set counts and spacing.", func() PartFeatureTool { return NewFeatureRectPatternTool() }},
+		{"Modify.CircularPattern", "Circular", "circular-pattern", "Circular Pattern — select features, set count and angle.", func() PartFeatureTool { return NewFeatureCircPatternTool() }},
+		{"Modify.Mirror", "Mirror", "mirror", "Mirror — select features, set the mirror-plane normal.", func() PartFeatureTool { return NewFeatureMirrorTool() }},
+		{"Modify.SketchDrivenPattern", "Sketch Driven", "sketch-driven-pattern", "Sketch-Driven Pattern — select features, then the sketch whose points place the copies.", func() PartFeatureTool { return NewFeatureSketchDrivenPatternTool() }},
 	}
 	cmds := make([]*CommandDefinition, len(pats))
 	for i, p := range pats {
 		start := p.start
 		cmds[i] = NewCommand(p.id, p.name, "Pattern", func(s *Session) error {
-			s.StartTool(start())
+			s.StartFeatureTool(start())
 			return nil
 		}).WithTab(tabCreateModify).WithEnable(hasActivePart).WithTooltip(p.tip).
 			WithIcon(p.icon).WithButtonStyle(SmallIconButton)
@@ -554,22 +556,24 @@ func modifyFeatureCommands() []*CommandDefinition {
 // Combine (boolean of two bodies), Move Face (direct edit), Move (relocate a body). They
 // were model-complete (M09/M20) but had no ribbon tool.
 func directEditCommands() []*CommandDefinition {
+	// func() PartFeatureTool (not func() Tool) so every modify tool is compile-checked
+	// against the commit gate's DraftFeature requirement (#1626).
 	defs := []struct {
 		id, name, icon, tip string
-		start               func() Tool
+		start               func() PartFeatureTool
 	}{
-		{"Modify.Combine", "Combine", "combine", "Combine — boolean two bodies (Join/Cut/Intersect).", func() Tool { return NewCombineTool() }},
-		{"Modify.Split", "Split", "split", "Split — divide the part by a work plane into two bodies, or trim one side away.", func() Tool { return NewSplitTool() }},
-		{"Modify.MoveFace", "Move Face", "move-face", "Move Face — translate picked faces, retopologizing the solid.", func() Tool { return NewMoveFaceTool() }},
-		{"Modify.MoveBodies", "Move Bodies", "move-bodies", "Move Bodies — relocate a body by a vector.", func() Tool { return NewMoveBodyTool() }},
-		{"Modify.DirectEdit", "Direct Edit", "direct-edit", "Direct Edit — move, push/pull, rotate, delete or scale picked geometry (#332).", func() Tool { return NewDirectEditTool() }},
-		{"Modify.Hull", "Hull", "hull", "Hull — wrap the part's solids into one convex solid.", func() Tool { return NewHullTool() }},
+		{"Modify.Combine", "Combine", "combine", "Combine — boolean two bodies (Join/Cut/Intersect).", func() PartFeatureTool { return NewCombineTool() }},
+		{"Modify.Split", "Split", "split", "Split — divide the part by a work plane into two bodies, or trim one side away.", func() PartFeatureTool { return NewSplitTool() }},
+		{"Modify.MoveFace", "Move Face", "move-face", "Move Face — translate picked faces, retopologizing the solid.", func() PartFeatureTool { return NewMoveFaceTool() }},
+		{"Modify.MoveBodies", "Move Bodies", "move-bodies", "Move Bodies — relocate a body by a vector.", func() PartFeatureTool { return NewMoveBodyTool() }},
+		{"Modify.DirectEdit", "Direct Edit", "direct-edit", "Direct Edit — move, push/pull, rotate, delete or scale picked geometry (#332).", func() PartFeatureTool { return NewDirectEditTool() }},
+		{"Modify.Hull", "Hull", "hull", "Hull — wrap the part's solids into one convex solid.", func() PartFeatureTool { return NewHullTool() }},
 	}
 	cmds := make([]*CommandDefinition, len(defs))
 	for i, d := range defs {
 		start := d.start
 		cmds[i] = NewCommand(d.id, d.name, "Modify", func(s *Session) error {
-			s.StartTool(start())
+			s.StartFeatureTool(start())
 			return nil
 		}).WithTab(tabCreateModify).WithEnable(hasActivePart).WithTooltip(d.tip).
 			WithIcon(d.icon).WithButtonStyle(SmallIconButton)
@@ -599,7 +603,7 @@ func cutFeatureCommands() []*CommandDefinition {
 			WithIcon("hole").WithButtonStyle(LargeIconButton).
 			WithTooltip("Hole — drill a cylindrical hole into a planar face of the solid."),
 		NewCommand("Modify.Boss", "Boss", "Modify", func(s *Session) error {
-			s.StartTool(NewBossTool())
+			s.StartFeatureTool(NewBossTool())
 			return nil
 		}).WithTab(tabCreateModify).WithEnable(notInSketch).
 			WithIcon("boss").WithButtonStyle(LargeIconButton).
@@ -777,7 +781,7 @@ func sweptSolidCommands() []*CommandDefinition {
 			WithIcon("snap-fit").WithButtonStyle(LargeIconButton).
 			WithTooltip("Snap Fit — add a cantilever snap-fit hook sized by its beam and catch dimensions."),
 		NewCommand("Create.Decal", "Decal", "Create", func(s *Session) error {
-			s.StartTool(NewDecalTool())
+			s.StartFeatureTool(NewDecalTool())
 			return nil
 		}).WithTab(tabCreateModify).WithEnable(hasActivePart).
 			WithIcon("decal").WithButtonStyle(LargeIconButton).

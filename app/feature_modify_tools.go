@@ -76,17 +76,35 @@ func (t *MoveFaceTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	keys := make([][]byte, len(t.faces))
-	for i, f := range t.faces {
-		keys[i] = f.Face.ReferenceKey()
-	}
-	t.added = feature.NewModifyFeatures(part.Features()).AddMoveFace(keys, math.V3(math.Scalar(t.dx), math.Scalar(t.dy), math.Scalar(t.dz)))
+	t.added = t.addMoveFace(feature.NewModifyFeatures(part.Features()))
 	part.Recompute()
 	s.recordEdit(part, "Move Face")
 	if !t.added.Health().OK() {
 		return errors.New("move face: " + t.added.Health().Reason)
 	}
 	return nil
+}
+
+// addMoveFace builds the move-face edit into mods — the shared constructor used by both
+// Commit (the part's engine) and DraftFeature (a scratch engine), so the two cannot drift.
+func (t *MoveFaceTool) addMoveFace(mods *feature.ModifyFeatures) *feature.PartFeature {
+	keys := make([][]byte, len(t.faces))
+	for i, f := range t.faces {
+		keys[i] = f.Face.ReferenceKey()
+	}
+	return mods.AddMoveFace(keys, math.V3(math.Scalar(t.dx), math.Scalar(t.dy), math.Scalar(t.dz)))
+}
+
+// DraftFeature implements [PartFeatureTool] (#1626): the move-face edit it would commit,
+// built into a scratch engine so the commit gate and preview can evaluate it without
+// touching the part.
+func (t *MoveFaceTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addMoveFace(feature.NewModifyFeatures(fs)), nil
+	})
 }
 
 func (t *MoveFaceTool) Params() ToolParams {
@@ -130,21 +148,56 @@ func (t *CombineTool) Prompt(*Session) string {
 func (t *CombineTool) CanCommit() bool { return len(t.bodies) >= 2 }
 
 func (t *CombineTool) Commit(s *Session) error {
-	part, err := activePart(s)
+	ti, tj, err := t.combineOperands(s)
 	if err != nil {
 		return err
 	}
-	ti, tj := bodyIndexOf(part, t.bodies[0]), bodyIndexOf(part, t.bodies[1])
-	if ti < 0 || tj < 0 {
-		return errors.New("combine: a picked body is not in the active part")
-	}
-	t.added = feature.NewModifyFeatures(part.Features()).AddCombine(ti, tj, t.op)
+	part, _ := activePart(s) // combineOperands already vetted the part
+	t.added = t.addCombine(feature.NewModifyFeatures(part.Features()), ti, tj)
 	part.Recompute()
 	s.recordEdit(part, "Combine")
 	if !t.added.Health().OK() {
 		return errors.New("combine: " + t.added.Health().Reason)
 	}
 	return nil
+}
+
+// combineOperands resolves the two picked bodies to indices in the active part's running
+// body list — Commit and DraftFeature (#1626) resolve identically, so the gate inspects
+// exactly what OK would build.
+func (t *CombineTool) combineOperands(s *Session) (int, int, error) {
+	part, err := activePart(s)
+	if err != nil {
+		return 0, 0, err
+	}
+	ti, tj := bodyIndexOf(part, t.bodies[0]), bodyIndexOf(part, t.bodies[1])
+	if ti < 0 || tj < 0 {
+		return 0, 0, errors.New("combine: a picked body is not in the active part")
+	}
+	return ti, tj, nil
+}
+
+// addCombine builds the boolean into mods — the shared constructor used by both Commit
+// (the part's engine) and DraftFeature (a scratch engine), so the two cannot drift.
+func (t *CombineTool) addCombine(mods *feature.ModifyFeatures, target, tool int) *feature.PartFeature {
+	return mods.AddCombine(target, tool, t.op)
+}
+
+// DraftFeature implements [PartFeatureTool] (#1626): the boolean it would commit, built
+// into a scratch engine so the commit gate and preview can evaluate it without touching
+// the part. The body operands resolve against the session at draft time, exactly as
+// Commit does; unresolved operands mean the draft is not ready.
+func (t *CombineTool) DraftFeature(s *Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	ti, tj, err := t.combineOperands(s)
+	if err != nil {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addCombine(feature.NewModifyFeatures(fs), ti, tj), nil
+	})
 }
 
 // SetOperation chooses Join (0), Cut (1) or Intersect (2).
@@ -194,22 +247,57 @@ func (t *MoveBodyTool) CanCommit() bool {
 }
 
 func (t *MoveBodyTool) Commit(s *Session) error {
-	part, err := activePart(s)
+	idx, err := t.movedBodyIndex(s)
 	if err != nil {
 		return err
 	}
-	idx := bodyIndexOf(part, t.bodies[0])
-	if idx < 0 {
-		return errors.New("move: the picked body is not in the active part")
-	}
-	xf := math.Translation4(math.V3(math.Scalar(t.dx), math.Scalar(t.dy), math.Scalar(t.dz)))
-	t.added = feature.NewModifyFeatures(part.Features()).AddMove(idx, xf)
+	part, _ := activePart(s) // movedBodyIndex already vetted the part
+	t.added = t.addMove(feature.NewModifyFeatures(part.Features()), idx)
 	part.Recompute()
 	s.recordEdit(part, "Move Bodies")
 	if !t.added.Health().OK() {
 		return errors.New("move: " + t.added.Health().Reason)
 	}
 	return nil
+}
+
+// movedBodyIndex resolves the picked body to its index in the active part's running body
+// list — Commit and DraftFeature (#1626) resolve identically, so the gate inspects
+// exactly what OK would build.
+func (t *MoveBodyTool) movedBodyIndex(s *Session) (int, error) {
+	part, err := activePart(s)
+	if err != nil {
+		return -1, err
+	}
+	idx := bodyIndexOf(part, t.bodies[0])
+	if idx < 0 {
+		return -1, errors.New("move: the picked body is not in the active part")
+	}
+	return idx, nil
+}
+
+// addMove builds the body move into mods — the shared constructor used by both Commit
+// (the part's engine) and DraftFeature (a scratch engine), so the two cannot drift.
+func (t *MoveBodyTool) addMove(mods *feature.ModifyFeatures, bodyIndex int) *feature.PartFeature {
+	xf := math.Translation4(math.V3(math.Scalar(t.dx), math.Scalar(t.dy), math.Scalar(t.dz)))
+	return mods.AddMove(bodyIndex, xf)
+}
+
+// DraftFeature implements [PartFeatureTool] (#1626): the body move it would commit,
+// built into a scratch engine so the commit gate and preview can evaluate it without
+// touching the part. The body operand resolves against the session at draft time,
+// exactly as Commit does; an unresolved operand means the draft is not ready.
+func (t *MoveBodyTool) DraftFeature(s *Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	idx, err := t.movedBodyIndex(s)
+	if err != nil {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addMove(feature.NewModifyFeatures(fs), idx), nil
+	})
 }
 
 func (t *MoveBodyTool) Params() ToolParams {

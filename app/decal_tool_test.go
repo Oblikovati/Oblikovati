@@ -35,6 +35,22 @@ func TestDecalToolEndToEnd(t *testing.T) {
 	}
 }
 
+// TestDecalToolDraftFeature asserts the decal tool builds the draft the commit gate
+// inspects (#1626): no draft until both the face and the image are set, a non-nil draft
+// once commit-ready (a decal is cosmetic, so the draft previews trivially healthy).
+func TestDecalToolDraftFeature(t *testing.T) {
+	s, block := newPartWithBlock(t, 4)
+	tool := NewDecalTool()
+	tool.Pick(s, FaceHandle{Face: topFaceOf(t, block), Body: block})
+	if _, ok := tool.DraftFeature(s); ok {
+		t.Error("decal: draft ready with no image set")
+	}
+	tool.SetImage("logo.png")
+	if draft, ok := tool.DraftFeature(s); !ok || draft == nil {
+		t.Errorf("decal: no draft once commit-ready (ok=%v)", ok)
+	}
+}
+
 func TestDecalViaRibbonCommand(t *testing.T) {
 	s, block := newPartWithBlock(t, 4)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: topFaceOf(t, block), Body: block}})
