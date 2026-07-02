@@ -87,8 +87,11 @@ func skipNonModuleDirs(path, name string) error {
 	if strings.HasSuffix(filepath.ToSlash(path), "model/sketch") {
 		return filepath.SkipDir
 	}
+	if strings.HasPrefix(name, ".") && name != "." && name != ".." { // .git AND .claude agent worktrees
+		return filepath.SkipDir
+	}
 	switch name {
-	case ".git", "experiments", "test-utilities", "architecture", "testdata", "node_modules":
+	case "experiments", "test-utilities", "architecture", "testdata", "node_modules":
 		return filepath.SkipDir
 	}
 	return nil

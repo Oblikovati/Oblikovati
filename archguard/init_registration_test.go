@@ -61,8 +61,12 @@ func initRegistrationSources(t *testing.T) []string {
 			return err
 		}
 		if info.IsDir() {
+			// Dot-directories cover .git AND .claude (agent worktrees carry full repo copies).
+			if strings.HasPrefix(info.Name(), ".") && info.Name() != ".." && info.Name() != "." {
+				return filepath.SkipDir
+			}
 			switch info.Name() {
-			case ".git", "experiments", "test-utilities", "architecture", "testdata", "node_modules":
+			case "experiments", "test-utilities", "architecture", "testdata", "node_modules":
 				return filepath.SkipDir
 			}
 			return nil

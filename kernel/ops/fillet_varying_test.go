@@ -9,18 +9,17 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
 )
 
-// The variable-radius fillet (M09-F01 PBI-099, #323): the blend is a generalized
-// cone built as exactly planar trapezoids between rulings, so the result's
-// tessellated volume is closed-form in the chord count.
+// The variable-radius fillet (M09-F01 PBI-099, #323; exact since #1606): the blend is the
+// EXACT rational ruled surface between the end cross-sections — an oblique circular cone for a
+// linear taper — so the removed volume follows the smooth-blend integral, and the only error in
+// the measured value is the tessellator's chordal deviation on the curved faces.
 
-// varyingNotchFactor is the cross-section fraction of r² a chorded 90° fillet
-// removes: the square corner r² minus the K-chord fan (K·r²/2·sin(π/2/K)),
-// with K = filletChordsPerTurn/4 chords over the quarter turn.
-func varyingNotchFactor(k int) float64 {
-	return 1 - float64(k)/2*stdmath.Sin(stdmath.Pi/2/float64(k))
-}
+// smoothNotchFactor is the cross-section fraction of r² a smooth 90° fillet removes: the square
+// corner r² minus the quarter disc.
+func smoothNotchFactor() float64 { return 1 - stdmath.Pi/4 }
 
 // TestFilletVaryingRadiusVolume rounds one vertical edge of a 2×2×2 box from
 // r=0.3 at one end to r=0.6 at the other. The removed volume is the exact
@@ -36,15 +35,33 @@ func TestFilletVaryingRadiusVolume(t *testing.T) {
 	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("variable-filleted box not a valid solid: %+v", r)
 	}
-	if n := hasCylinderFaces(res); n != 0 {
-		t.Errorf("variable fillet produced %d cylinder faces, want 0 (planar ruling strips)", n)
+	if n := blendSurfaceFaces(res); n != 1 {
+		t.Errorf("variable fillet produced %d rational blend faces, want 1 (the exact oblique cone, #1606)", n)
 	}
-	const k = 8 // ceil((π/2) / (2π/32)) chords across the 90° wedge
-	removed := varyingNotchFactor(k) * 2 * (0.3*0.3 + 0.3*0.6 + 0.6*0.6) / 3
+	removed := smoothNotchFactor() * 2 * (0.3*0.3 + 0.3*0.6 + 0.6*0.6) / 3
 	want := 8 - removed
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-9 {
-		t.Errorf("variable fillet volume = %g, want %g (exact chord geometry)", got, want)
+	// Measure at fine quality: the exact blend CONVERGES to the smooth integral as the chord
+	// tolerance tightens — the discriminating property the old C0 strips could never satisfy
+	// (they converge to the chord integral regardless of tessellation).
+	if got := ops.BodyGeometryProperties(res, fineQuality()).Volume; stdmath.Abs(got-want) > 0.03*removed {
+		t.Errorf("variable fillet volume = %g, want %g (smooth-blend integral, 3%%-of-notch band)", got, want)
 	}
+}
+
+// fineQuality is the tight tessellation the smooth-volume assertions measure at.
+func fineQuality() ops.Quality {
+	return ops.Quality{ChordTolerance: 0.002, AngleTolerance: 2 * stdmath.Pi / 180}
+}
+
+// blendSurfaceFaces counts the body's rational blend faces (the exact variable-fillet surface).
+func blendSurfaceFaces(b *topo.Body) int {
+	n := 0
+	for _, f := range b.Faces() {
+		if _, ok := f.Geometry().(geom.BSplineSurface); ok {
+			n++
+		}
+	}
+	return n
 }
 
 // TestFilletIntermediateRadiiVolume rounds one vertical edge of a 2×2×2 box with a
@@ -64,15 +81,14 @@ func TestFilletIntermediateRadiiVolume(t *testing.T) {
 	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("intermediate-radii box not a valid solid: %+v", r)
 	}
-	if n := hasCylinderFaces(res); n != 0 {
-		t.Errorf("intermediate-radii fillet produced %d cylinder faces, want 0 (planar strips)", n)
+	if n := blendSurfaceFaces(res); n != 2 {
+		t.Errorf("intermediate-radii fillet produced %d rational blend faces, want 2 (one exact span per radius segment, #1606)", n)
 	}
-	const k = 8 // ceil((π/2) / (2π/32)) chords across the 90° wedge
 	seg := func(ra, rb, length float64) float64 { return length * (ra*ra + ra*rb + rb*rb) / 3 }
-	removed := varyingNotchFactor(k) * (seg(0.3, 0.7, 1.0) + seg(0.7, 0.4, 1.0))
+	removed := smoothNotchFactor() * (seg(0.3, 0.7, 1.0) + seg(0.7, 0.4, 1.0))
 	want := 8 - removed
-	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-9 {
-		t.Errorf("intermediate-radii fillet volume = %g, want %g (exact chord geometry)", got, want)
+	if got := ops.BodyGeometryProperties(res, fineQuality()).Volume; stdmath.Abs(got-want) > 0.03*removed {
+		t.Errorf("intermediate-radii fillet volume = %g, want %g (smooth-blend integral, 3%%-of-notch band)", got, want)
 	}
 }
 
@@ -131,24 +147,38 @@ func TestFilletVaryingAtSharedCornerRejected(t *testing.T) {
 	}
 }
 
-// TestFilletVaryingStripsAreTrulyPlanar: every blend face's vertices lie on its
-// reported plane (the exactness claim the volume test builds on).
-func TestFilletVaryingStripsAreTrulyPlanar(t *testing.T) {
+// TestFilletVaryingBlendIsExactAndG1 (premise inverted by #1606, audit A10): the variable
+// blend used to ship as C0 planar strips with ~11° creases; it is now the EXACT rational ruled
+// surface. Assert every boundary vertex lies exactly on the blend surface and the surface is
+// G1 across its interior (machine-precision normal continuity — it is one analytic patch).
+func TestFilletVaryingBlendIsExactAndG1(t *testing.T) {
 	box := shellBox(2, 2, 2)
 	pick := ops.EdgeFilletRadii{Key: verticalEdgeKey(t, box), R0: 0.2, R1: 0.7}
 	res, err := ops.FilletEdgesVarying(box, []ops.EdgeFilletRadii{pick})
 	if err != nil {
 		t.Fatal(err)
 	}
+	blends := 0
 	for _, f := range res.Faces() {
-		pl, ok := f.Geometry().(geom.Plane)
+		surf, ok := f.Geometry().(geom.BSplineSurface)
 		if !ok {
-			t.Fatalf("non-planar face %T in a variable fillet result", f.Geometry())
+			continue
 		}
+		blends++
 		for _, v := range f.Vertices() {
-			if d := stdmath.Abs(float64(pl.Origin.VectorTo(v.Point()).Dot(pl.Normal()))); d > 1e-9 {
-				t.Fatalf("face vertex %.12g off its plane by %g", v.Point(), d)
+			u, vv := surf.ParamAt(v.Point())
+			if d := float64(surf.PointAt(u, vv).DistanceTo(v.Point())); d > 1e-9 {
+				t.Fatalf("blend boundary vertex %.12g off the exact surface by %g", v.Point(), d)
 			}
 		}
+		for i := 1; i < 8; i++ {
+			u := float64(i) / 8
+			if dot := surf.NormalAt(u-1e-9, 0.5).Dot(surf.NormalAt(u+1e-9, 0.5)); dot < 1-1e-9 {
+				t.Fatalf("blend normal creases at u=%g: cos=%.12f (the old strips creased every ~11°)", u, dot)
+			}
+		}
+	}
+	if blends != 1 {
+		t.Fatalf("variable fillet has %d rational blend faces, want 1", blends)
 	}
 }

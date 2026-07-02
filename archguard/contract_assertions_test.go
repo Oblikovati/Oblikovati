@@ -163,8 +163,11 @@ func assertedContractNames(t *testing.T) map[string]bool {
 
 // skipNonSourceDir prunes trees that never hold shipped host code.
 func skipNonSourceDir(name string) error {
+	if strings.HasPrefix(name, ".") && name != "." && name != ".." { // .git AND .claude agent worktrees
+		return filepath.SkipDir
+	}
 	switch name {
-	case ".git", "experiments", "test-utilities", "node_modules":
+	case "experiments", "test-utilities", "node_modules":
 		return filepath.SkipDir
 	}
 	return nil

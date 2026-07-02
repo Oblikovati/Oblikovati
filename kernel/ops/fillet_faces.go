@@ -19,11 +19,14 @@ func filletResultFaces(body *topo.Body, fils []edgeFillet, blends map[uint64]*co
 		out = append(out, transformFace(f, abSubst[f], endCorner[f], edgeInserts[f]))
 	}
 	for _, ef := range fils {
-		if ef.varying {
+		switch {
+		case ef.varying && ef.exact:
+			out = append(out, ruledBlendFaces(ef)...)
+		case ef.varying:
 			out = append(out, rulingStripFaces(ef)...)
-			continue
+		default:
+			out = append(out, cylinderFace(ef))
 		}
-		out = append(out, cylinderFace(ef))
 	}
 	for _, cb := range blends {
 		out = append(out, spherePatchFace(cb))
@@ -208,8 +211,7 @@ func orientedInserts(pts []math.Point3, reversed bool) []math.Point3 {
 // constant fillet, or the chord fan (shared with the ruling strips) for a variable one.
 func addCornerRound(fl *filletLoop, c corner, tIn, tOut math.Point3) {
 	if len(c.chords) == 0 {
-		arc, _ := geom.Arc3dByThreePoints(tIn, c.mid, tOut)
-		fl.add(tIn, arc)
+		fl.add(tIn, cornerSectionCurve(c, tIn, tOut))
 		fl.add(tOut, nil)
 		return
 	}
@@ -447,4 +449,101 @@ func arcMidpoints(loop filletLoop) []math.Point3 {
 		}
 	}
 	return mids
+}
+
+// cornerSectionCurve is the exact cross-section trim tIn→tOut at a corner: the circular arc for
+// an arc profile, or the rational conic (shoulder weight crossW) for a conic profile — the same
+// geometry as the blend surface's end isoline, so the seam welds curve-for-curve (#1606).
+func cornerSectionCurve(c corner, tIn, tOut math.Point3) geom.Curve3 {
+	if c.crossW > 0 {
+		if conic, err := geom.NewConicSectionCurve(tIn, c.sh, tOut, c.crossW); err == nil {
+			return conic
+		}
+	}
+	arc, _ := geom.Arc3dByThreePoints(tIn, c.mid, tOut)
+	return arc
+}
+
+// ruledBlendFaces emits a variable (or conic) fillet's blend as EXACT rational ruled faces —
+// one degree (2,1) NURBS span between each pair of adjacent cross-section profiles — instead of
+// the C0 chord strips (#1606, audit A10). Each span's boundary reuses the profiles' exact
+// section curves and the straight tangent rulings, so adjacent faces and end caps weld exactly.
+func ruledBlendFaces(ef edgeFillet) []filletFace {
+	profiles := append([]corner{ef.c0}, ef.mids...)
+	profiles = append(profiles, ef.c1)
+	out := make([]filletFace, 0, len(profiles)-1)
+	for i := 0; i+1 < len(profiles); i++ {
+		out = append(out, ruledBlendSpan(ef, profiles[i], profiles[i+1], i))
+	}
+	return out
+}
+
+// ruledBlendSpan builds one exact blend span between profiles a and b, falling back to the
+// planar strip for the span only if the surface constructor rejects it (degenerate frame).
+func ruledBlendSpan(ef edgeFillet, a, b corner, i int) filletFace {
+	surf, err := geom.NewRuledSectionBlend(
+		[3]math.Point3{a.ta, a.sh, a.tb}, [3]math.Point3{b.ta, b.sh, b.tb}, ef.secW)
+	if err != nil {
+		return planarFaceFromRing([]math.Point3{a.ta, b.ta, b.tb, a.tb}, a.cen.Midpoint(b.cen))
+	}
+	segs := blendSpanSegs(a, b)
+	if blendSegsFlipped(surf, a, b) != ef.flip {
+		segs = reverseEndSegs(segs)
+	}
+	ff := filletFace{surface: surf, loops: []filletLoop{loopFromSegs(segs)}, parent: blendSpanProvenance(ef.edge, i)}
+	return ff
+}
+
+// blendSpanSegs is the span's boundary chain: A-tangent ruling, profile section at b, B-tangent
+// ruling back, profile section at a reversed. A run-out profile contributes no section (its
+// three points coincide at the apex), so the chain closes through the apex vertex.
+func blendSpanSegs(a, b corner) []endSeg {
+	segs := []endSeg{{from: a.ta, to: b.ta}}
+	if !b.runout {
+		segs = append(segs, endSeg{from: b.ta, to: b.tb, curve: cornerSectionCurve(b, b.ta, b.tb), mid: b.mid, arc: true})
+	}
+	segs = append(segs, endSeg{from: b.tb, to: a.tb})
+	if !a.runout {
+		segs = append(segs, endSeg{from: a.tb, to: a.ta, curve: cornerSectionCurve(a, a.tb, a.ta), mid: a.mid, arc: true})
+	}
+	return segs
+}
+
+// blendSegsFlipped reports whether the natural loop winding (as emitted by blendSpanSegs) runs
+// against the blend's OUTWARD normal — the winding probe cylinderSegsFlipped performs for the
+// constant blend, evaluated on the exact surface: outward is the surface normal at the span
+// centre oriented away from the rolling-ball centre line, and the loop's winding is its Newell
+// normal over the boundary corners (the wedge spans < π, so both signs are robust).
+func blendSegsFlipped(surf geom.BSplineSurface, a, b corner) bool {
+	n := surf.NormalAt(0.5, 0.5)
+	if a.cen.Midpoint(b.cen).VectorTo(surf.PointAt(0.5, 0.5)).Dot(n) < 0 {
+		n = n.Scale(-1) // outward: away from the ball centre line
+	}
+	ring := []math.Point3{a.ta, b.ta}
+	if !b.runout {
+		ring = append(ring, b.mid, b.tb)
+	}
+	ring = append(ring, a.tb)
+	if !a.runout {
+		ring = append(ring, a.mid)
+	}
+	return newellNormal(ring).Dot(n) < 0
+}
+
+// newellNormal is the Newell winding normal of a 3D point ring.
+func newellNormal(ring []math.Point3) math.Vector3 {
+	var nx, ny, nz float64
+	for i := range ring {
+		c, d := ring[i], ring[(i+1)%len(ring)]
+		nx += float64((c.Y - d.Y) * (c.Z + d.Z))
+		ny += float64((c.Z - d.Z) * (c.X + d.X))
+		nz += float64((c.X - d.X) * (c.Y + d.Y))
+	}
+	return math.V3(math.Scalar(nx), math.Scalar(ny), math.Scalar(nz))
+}
+
+// blendSpanProvenance names an exact blend span by its generating edge and span ordinal
+// (ADR-0043), mirroring filletEdgeProvenance.
+func blendSpanProvenance(e *topo.Edge, i int) topo.Lineage {
+	return topo.NewLineage(append(e.Lineage().Tokens(), topo.Tok("fillet", "blend", i))...)
 }
