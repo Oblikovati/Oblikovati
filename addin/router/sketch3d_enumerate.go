@@ -67,125 +67,59 @@ func enumerateDimensions3D(s *app.Session, raw json.RawMessage) (json.RawMessage
 	return json.Marshal(wire.ListDimensions3DResult{Dimensions: out})
 }
 
-// entity3DInfo renders one 3D entity as its wire summary (kind, defining points in
-// model cm, radius for circular kinds, construction flag).
+// entity3DInfo renders one 3D entity as its wire summary through the
+// ShapedEntity3D capability: the model names its own kind, shape points, and
+// radius; this adapter only translates vocabularies (#1624, audit I1).
 func entity3DInfo(index int, e sketch.Entity) wire.Sketch3DEntityInfo {
 	info := wire.Sketch3DEntityInfo{Index: index, ID: uint64(e.EntityID()), Kind: string(types.Sketch3DEntityUnknown)}
-	if p, ok := e.(*sketch.Point3D); ok {
-		info.Kind = string(types.Sketch3DEntityPoint)
-		info.Points = [][]float64{p3coords(p.Position())}
+	se, ok := e.(sketch.ShapedEntity3D)
+	if !ok {
 		return info
 	}
-	if h, ok := e.(*sketch.SplineHandle3D); ok {
-		info.Kind = string(types.Sketch3DEntitySplineHandle)
-		info.Points = [][]float64{p3coords(h.Anchor.Position()), p3coords(h.End.Position())}
-		return info
-	}
-	if fillSegmentCurve3DInfo(&info, e) {
-		return info
-	}
-	fillRoundCurve3DInfo(&info, e)
-	if info.Kind == string(types.Sketch3DEntityUnknown) {
-		fillDerivedCurve3DInfo(&info, e)
-	}
+	info.Kind = string(wireSketch3DEntityKind(se.Kind()))
+	info.Points = point3sCoords(se.ShapePoints3D())
+	info.Radius = entityRadius(e)
+	info.Construction = isConstruction(e)
 	return info
 }
 
-// fillDerivedCurve3DInfo renders the surface-derived curves (F11) and included reference
-// geometry (F08) by kind; their geometry is recompute-derived, so only identity is shown.
-func fillDerivedCurve3DInfo(info *wire.Sketch3DEntityInfo, e sketch.Entity) {
-	switch v := e.(type) {
-	case *sketch.IntersectionCurve3D:
-		info.Kind, info.Construction = string(types.Sketch3DEntityIntersection), v.IsConstruction()
-	case *sketch.SilhouetteCurve3D:
-		info.Kind, info.Construction = string(types.Sketch3DEntitySilhouette), v.IsConstruction()
-	case *sketch.ProjectToSurfaceCurve3D:
-		info.Kind, info.Construction = string(types.Sketch3DEntityProjectToSurface), v.IsConstruction()
-	case *sketch.OnFaceCurve3D:
-		info.Kind, info.Construction = string(types.Sketch3DEntityOnFace), v.IsConstruction()
-	case *sketch.OffsetCurve3:
-		info.Kind, info.Construction = string(types.Sketch3DEntityOffset), v.IsConstruction()
-	case *sketch.IncludedPoint3D:
-		info.Kind, info.Construction = string(types.Sketch3DEntityIncludedPoint), true
-		info.Points = [][]float64{p3coords(v.Position())}
-	case *sketch.IncludedCurve3D:
-		info.Kind, info.Construction = string(types.Sketch3DEntityIncludedCurve), true
-		info.Points = point3sCoords(v.Points())
-	}
+// wireSketch3DEntityKinds maps the model's entity-kind vocabulary onto the 3D
+// wire enum; kinds without a wire spelling enumerate as unknown.
+var wireSketch3DEntityKinds = map[sketch.EntityKind]types.Sketch3DEntityKind{
+	sketch.PointKind:                 types.Sketch3DEntityPoint,
+	sketch.LineKind:                  types.Sketch3DEntityLine,
+	sketch.CircleKind:                types.Sketch3DEntityCircle,
+	sketch.ArcKind:                   types.Sketch3DEntityArc,
+	sketch.EllipseKind:               types.Sketch3DEntityEllipse,
+	sketch.EllipticalArcKind:         types.Sketch3DEntityEllipticalArc,
+	sketch.SplineKind:                types.Sketch3DEntitySpline,
+	sketch.ControlPointSplineKind:    types.Sketch3DEntityControlPointSpline,
+	sketch.SplineHandleKind:          types.Sketch3DEntitySplineHandle,
+	sketch.FixedSplineKind:           types.Sketch3DEntityFixedSpline,
+	sketch.EquationCurveKind:         types.Sketch3DEntityEquationCurve,
+	sketch.HelicalKind:               types.Sketch3DEntityHelical,
+	sketch.IntersectionCurveKind:     types.Sketch3DEntityIntersection,
+	sketch.SilhouetteCurveKind:       types.Sketch3DEntitySilhouette,
+	sketch.ProjectToSurfaceCurveKind: types.Sketch3DEntityProjectToSurface,
+	sketch.OnFaceCurveKind:           types.Sketch3DEntityOnFace,
+	sketch.OffsetCurveKind:           types.Sketch3DEntityOffset,
+	sketch.IncludedPointKind:         types.Sketch3DEntityIncludedPoint,
+	sketch.IncludedCurveKind:         types.Sketch3DEntityIncludedCurve,
 }
 
-// fillSegmentCurve3DInfo renders the straight/poly curve families (line/arc) and the
-// plain circle into info, reporting whether it matched.
-func fillSegmentCurve3DInfo(info *wire.Sketch3DEntityInfo, e sketch.Entity) bool {
-	switch v := e.(type) {
-	case *sketch.Line3D:
-		info.Kind = string(types.Sketch3DEntityLine)
-		info.Points = [][]float64{p3coords(v.A.Position()), p3coords(v.B.Position())}
-		info.Construction = v.IsConstruction()
-	case *sketch.Circle3D:
-		info.Kind = string(types.Sketch3DEntityCircle)
-		info.Points = [][]float64{p3coords(v.Center.Position())}
-		info.Radius = float64(v.Radius)
-		info.Construction = v.IsConstruction()
-	case *sketch.Arc3D:
-		info.Kind = string(types.Sketch3DEntityArc)
-		info.Points = [][]float64{p3coords(v.Center.Position()), p3coords(v.Start.Position()), p3coords(v.End.Position())}
-		info.Radius = float64(v.Radius())
-		info.Construction = v.IsConstruction()
-	default:
-		return false
+func wireSketch3DEntityKind(k sketch.EntityKind) types.Sketch3DEntityKind {
+	if w, ok := wireSketch3DEntityKinds[k]; ok {
+		return w
 	}
-	return true
+	return types.Sketch3DEntityUnknown
 }
 
-// fillRoundCurve3DInfo renders the helix and conic families (centered, radius-bearing).
-func fillRoundCurve3DInfo(info *wire.Sketch3DEntityInfo, e sketch.Entity) {
-	switch v := e.(type) {
-	case *sketch.HelicalCurve3D:
-		info.Kind = string(types.Sketch3DEntityHelical)
-		info.Points = [][]float64{p3coords(v.Origin.Position())}
-		info.Radius = float64(v.StartRadius)
-		info.Construction = v.IsConstruction()
-	case *sketch.Ellipse3D:
-		info.Kind = string(types.Sketch3DEntityEllipse)
-		info.Points = [][]float64{p3coords(v.Center.Position())}
-		info.Radius = float64(v.MajorRadius)
-		info.Construction = v.IsConstruction()
-	case *sketch.EllipticalArc3D:
-		info.Kind = string(types.Sketch3DEntityEllipticalArc)
-		info.Points = [][]float64{p3coords(v.Center.Position())}
-		info.Radius = float64(v.MajorRadius)
-		info.Construction = v.IsConstruction()
-	default:
-		fillSplineCurve3DInfo(info, e)
-	}
-}
-
-// fillSplineCurve3DInfo renders the spline family (interpolation/control/fixed spline +
-// equation curve) into info.
-func fillSplineCurve3DInfo(info *wire.Sketch3DEntityInfo, e sketch.Entity) {
-	switch v := e.(type) {
-	case *sketch.Spline3D:
-		if v.IsFitType() {
-			info.Kind = string(types.Sketch3DEntitySpline)
-		} else {
-			info.Kind = string(types.Sketch3DEntityControlPointSpline)
-		}
-		info.Points = point3sCoords(v.Sample())
-		info.Construction = v.IsConstruction()
-	case *sketch.FixedSpline3D:
-		info.Kind = string(types.Sketch3DEntityFixedSpline)
-		info.Points = point3sCoords(v.Sample())
-		info.Construction = v.IsConstruction()
-	case *sketch.EquationCurve3D:
-		info.Kind = string(types.Sketch3DEntityEquationCurve)
-		info.Points = point3sCoords(v.Sample(16))
-		info.Construction = v.IsConstruction()
-	}
-}
-
-// point3sCoords flattens a polyline to [[x,y,z],…] for enumeration.
+// point3sCoords flattens a polyline to [[x,y,z],…] for enumeration (nil in,
+// nil out — shapeless kinds keep omitting the field).
 func point3sCoords(pts []math.Point3) [][]float64 {
+	if len(pts) == 0 {
+		return nil
+	}
 	out := make([][]float64, len(pts))
 	for i, p := range pts {
 		out[i] = p3coords(p)

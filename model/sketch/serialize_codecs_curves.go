@@ -92,7 +92,15 @@ func init() {
 				math.Scalar(ed.StartAngle), math.Scalar(ed.EndAngle)), nil
 		},
 	})
-	registerEntityCodec(SplineKind, entityCodec{
+	registerSpline2DCodecs()
+}
+
+// registerSpline2DCodecs pairs the two 2D spline spellings on one shared codec:
+// the kind mirrors the fit flag (Spline.Kind), and decode reads the persisted
+// Fit field, so a legacy "spline"+fit:false row and a "controlPointSpline" row
+// restore identically.
+func registerSpline2DCodecs() {
+	splineCodec := entityCodec{
 		encode: func(e Entity) (EntityData, error) {
 			v := e.(*Spline)
 			return EntityData{
@@ -112,7 +120,9 @@ func init() {
 			}
 			return sp, nil
 		},
-	})
+	}
+	registerEntityCodec(SplineKind, splineCodec)
+	registerEntityCodec(ControlPointSplineKind, splineCodec)
 }
 
 // conicOperands resolves an ellipse/ellipticalArc's center point and major-axis

@@ -22,7 +22,8 @@ import (
 // instance — all in this package, all enforced together.
 var (
 	persistedEntityVocabulary2D = []EntityKind{
-		LineKind, CircleKind, ArcKind, EllipseKind, EllipticalArcKind, SplineKind,
+		LineKind, CircleKind, ArcKind, EllipseKind, EllipticalArcKind,
+		SplineKind, ControlPointSplineKind,
 		BlockInstanceKind, ImageKind, TextKind, FillRegionKind,
 		ProjectedPointKind, ProjectedCurveKind,
 		EquationCurveKind, FixedSplineKind, OffsetSplineKind,
@@ -137,6 +138,7 @@ func populateEvery2DKind(t *testing.T, sc *Sketches, s *Sketch) {
 	s.Ellipses().Add(math.P2(2, 2), math.V2(1, 0), 3, 1)
 	s.ellArcs.AddWithCenter(s.newPoint(math.P2(-2, 2)), math.V2(0, 1), 2, 1, 0.2, 1.4)
 	sp := s.Splines().AddByPoints([]math.Point2{math.P2(0, 0), math.P2(1, 1), math.P2(2, 0)}, false)
+	s.Splines().AddByControlPoints([]math.Point2{math.P2(0, -1), math.P2(1, -2), math.P2(2, -1)}, false)
 	s.OffsetSplines().Add(sp, 0.5)
 	if _, err := s.EquationCurves().Add("cos(t)", "sin(t)", 0, 1); err != nil {
 		t.Fatalf("EquationCurves.Add: %v", err)

@@ -104,38 +104,53 @@ func dimensionInfo(index int, d *sketch.DimensionConstraint) wire.DimensionInfo 
 	return info
 }
 
-// entityShape returns an entity's wire kind, defining points ([x,y] each), and radius.
-// Split into geometric curves and annotative entities to keep each switch small.
+// entityShape returns an entity's wire kind, defining points ([x,y] each), and
+// radius, through the ShapedEntity capability — the model names its own kind
+// and shape, so this adapter only translates vocabularies (#1624, audit I1).
 func entityShape(e sketch.Entity) (types.SketchEntityKind, [][]float64, float64) {
-	switch v := e.(type) {
-	case *sketch.Point:
-		return types.SketchEntityPoint, [][]float64{pt(v)}, 0
-	case *sketch.Line:
-		return types.SketchEntityLine, [][]float64{pt(v.A), pt(v.B)}, 0
-	case *sketch.Circle:
-		return types.SketchEntityCircle, [][]float64{pt(v.Center)}, float64(v.Radius)
-	case *sketch.Arc:
-		return types.SketchEntityArc, [][]float64{pt(v.Center), pt(v.Start), pt(v.End)}, float64(v.Radius())
-	case *sketch.Ellipse:
-		return types.SketchEntityEllipse, [][]float64{pt(v.Center)}, 0
-	case *sketch.EllipticalArc:
-		return types.SketchEntityEllipticalArc, [][]float64{pt(v.Center)}, 0
-	case *sketch.Spline:
-		return splineKind(v), splinePts(v), 0
-	case *sketch.SplineHandle:
-		return types.SketchEntitySplineHandle, [][]float64{pt(v.Anchor), pt(v.End)}, 0
-	default:
-		return annotationShape(e)
+	se, ok := e.(sketch.ShapedEntity)
+	if !ok {
+		return types.SketchEntityUnknown, nil, 0
 	}
+	return wireSketchEntityKind(se.Kind()), point2Slice(se.ShapePoints()), entityRadius(e)
 }
 
-// splineKind reports a spline's wire kind: a fit (interpolating) spline is "spline", a
-// control-point (approximating) spline is "controlPointSpline" (#150).
-func splineKind(s *sketch.Spline) types.SketchEntityKind {
-	if s.IsFitType() {
-		return types.SketchEntitySpline
+// wireSketchEntityKinds maps the model's entity-kind vocabulary onto the wire
+// enum. Kinds without a wire spelling (block instances) enumerate as unknown,
+// as they always have.
+var wireSketchEntityKinds = map[sketch.EntityKind]types.SketchEntityKind{
+	sketch.PointKind:              types.SketchEntityPoint,
+	sketch.LineKind:               types.SketchEntityLine,
+	sketch.CircleKind:             types.SketchEntityCircle,
+	sketch.ArcKind:                types.SketchEntityArc,
+	sketch.EllipseKind:            types.SketchEntityEllipse,
+	sketch.EllipticalArcKind:      types.SketchEntityEllipticalArc,
+	sketch.SplineKind:             types.SketchEntitySpline,
+	sketch.ControlPointSplineKind: types.SketchEntityControlPointSpline,
+	sketch.SplineHandleKind:       types.SketchEntitySplineHandle,
+	sketch.ImageKind:              types.SketchEntityImage,
+	sketch.FillRegionKind:         types.SketchEntityFillRegion,
+	sketch.TextKind:               types.SketchEntityText,
+	sketch.EquationCurveKind:      types.SketchEntityEquationCurve,
+	sketch.FixedSplineKind:        types.SketchEntityFixedSpline,
+	sketch.OffsetSplineKind:       types.SketchEntityOffsetSpline,
+	sketch.ProjectedPointKind:     types.SketchEntityProjectedPoint,
+	sketch.ProjectedCurveKind:     types.SketchEntityProjectedCurve,
+}
+
+func wireSketchEntityKind(k sketch.EntityKind) types.SketchEntityKind {
+	if w, ok := wireSketchEntityKinds[k]; ok {
+		return w
 	}
-	return types.SketchEntityControlPointSpline
+	return types.SketchEntityUnknown
+}
+
+// entityRadius reports the optional radius capability (0 for radius-free kinds).
+func entityRadius(e sketch.Entity) float64 {
+	if r, ok := e.(sketch.RadiusedEntity); ok {
+		return r.ShapeRadius()
+	}
+	return 0
 }
 
 // splineFitSpelling reports a fit spline's fit-method wire spelling (the
@@ -158,32 +173,12 @@ func constraintDeletable(c sketch.Constraint) bool {
 	return !ok || nd.Deletable()
 }
 
-// annotationShape handles the non-curve (image/fill/text) entities.
-func annotationShape(e sketch.Entity) (types.SketchEntityKind, [][]float64, float64) {
-	switch v := e.(type) {
-	case *sketch.SketchImage:
-		return types.SketchEntityImage, [][]float64{{float64(v.Anchor.X), float64(v.Anchor.Y)}}, 0
-	case *sketch.FillRegion:
-		return types.SketchEntityFillRegion, [][]float64{{float64(v.Seed.X), float64(v.Seed.Y)}}, 0
-	case *sketch.TextBox:
-		return types.SketchEntityText, [][]float64{{float64(v.Anchor.X), float64(v.Anchor.Y)}}, 0
-	case *sketch.EquationCurve:
-		return types.SketchEntityEquationCurve, nil, 0
-	case *sketch.FixedSpline:
-		return types.SketchEntityFixedSpline, point2Slice(v.Pts), 0
-	case *sketch.OffsetSpline:
-		return types.SketchEntityOffsetSpline, nil, 0
-	case *sketch.ProjectedPoint:
-		return types.SketchEntityProjectedPoint, [][]float64{{float64(v.Position().X), float64(v.Position().Y)}}, 0
-	case *sketch.ProjectedCurve:
-		return types.SketchEntityProjectedCurve, point2Slice(v.Points()), 0
-	default:
-		return types.SketchEntityUnknown, nil, 0
-	}
-}
-
-// point2Slice renders model points as [x,y] pairs for the wire DTOs.
+// point2Slice renders model points as [x,y] pairs for the wire DTOs (nil in,
+// nil out — shapeless kinds keep omitting the field).
 func point2Slice(pts []math.Point2) [][]float64 {
+	if len(pts) == 0 {
+		return nil
+	}
 	out := make([][]float64, len(pts))
 	for i, p := range pts {
 		out[i] = []float64{float64(p.X), float64(p.Y)}
@@ -354,16 +349,4 @@ func curveID(c sketch.CircularCurve) []uint64 {
 		return []uint64{uint64(e.EntityID())}
 	}
 	return nil
-}
-
-// pt renders a sketch point as [x,y].
-func pt(p *sketch.Point) []float64 { return []float64{float64(p.X), float64(p.Y)} }
-
-// splinePts renders a spline's defining points.
-func splinePts(s *sketch.Spline) [][]float64 {
-	out := make([][]float64, len(s.Points))
-	for i, p := range s.Points {
-		out[i] = pt(p)
-	}
-	return out
 }
