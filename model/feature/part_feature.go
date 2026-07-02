@@ -3,6 +3,7 @@
 package feature
 
 import (
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/depend"
 	"oblikovati.org/model/health"
@@ -22,7 +23,8 @@ type PartFeature struct {
 	dirty      bool
 	recomputes int
 	cached     []*topo.Body
-	seq        uint64 // global creation stamp; see model/seq
+	diags      []diag.Diagnostic // kernel diagnostics from the last evaluation (#1601)
+	seq        uint64            // global creation stamp; see model/seq
 
 	// paramReads is the model parameters this feature read DIRECTLY during its last
 	// evaluation — a sheet-metal thickness, a suppression condition (NOT the
@@ -46,6 +48,11 @@ func (f *PartFeature) SetName(n string) { f.name = n }
 
 // Kind returns the wrapped feature's type name.
 func (f *PartFeature) Kind() string { return f.feature.Kind() }
+
+// Diagnostics returns the kernel diagnostics recorded during this feature's last evaluation —
+// degradations that did not sicken it (a boolean faceting analytic surfaces, a CSG fallback) but
+// that users and add-ins must be able to SEE rather than discover downstream (#1601).
+func (f *PartFeature) Diagnostics() []diag.Diagnostic { return f.diags }
 
 // Definition returns the wrapped feature recipe.
 func (f *PartFeature) Definition() Feature { return f.feature }

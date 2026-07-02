@@ -57,8 +57,8 @@ func (f *SheetMetalFaceFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	body := buildProfilePrisms(profiles, f.def.Sketch.Plane(), faceSpan(t, f.def.Direction), 0, f.featName)
-	bodies, err := combine(in.Bodies, body, f.def.Operation)
+	body := buildProfilePrisms(profiles, f.def.Sketch.Plane(), faceSpan(t, f.def.Direction), 0, f.featName, in.Diag)
+	bodies, err := combine(in, body, f.def.Operation)
 	if err != nil {
 		return Output{}, err
 	}

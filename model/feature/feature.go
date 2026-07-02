@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"sync/atomic"
 
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/identity"
@@ -49,6 +50,12 @@ type Input struct {
 	Bodies     []*topo.Body
 	Params     *param.Parameters
 	SourceTool func(id ID) (tool *topo.Body, op ops.PartFeatureOperation, ok bool)
+	// Diag collects the kernel diagnostics raised while the feature rebuilds — the facet/CSG
+	// fallback defects a boolean records when it abandons the analytic path (#1601). The engine
+	// installs a fresh recorder per evaluation and stores what it collected on the PartFeature;
+	// a nil recorder is a valid sink (diag.Recorder is nil-safe), so preview paths that do not
+	// consume diagnostics pass nothing.
+	Diag *diag.Recorder
 }
 
 // OperationalFeature is a feature that applies a boolean operation against the running

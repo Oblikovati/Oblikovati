@@ -8,6 +8,7 @@ import (
 	"sort"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
@@ -101,7 +102,7 @@ func chamferByWedges(in Input, body *topo.Body, edges []*topo.Edge, d1, d2 float
 			tools = append(tools, wedgeOp{body: t, op: ops.Cut})
 		}
 	}
-	result, err := applyChamferTools(work, tools)
+	result, err := applyChamferTools(work, tools, in.Diag)
 	if err != nil {
 		return Output{}, err
 	}
@@ -143,10 +144,11 @@ func concaveOp(strategy types.ChamferConcaveStrategy) ops.PartFeatureOperation {
 }
 
 // applyChamferTools applies each wedge to work in turn (Cut or Join), returning the body.
-func applyChamferTools(work *topo.Body, tools []wedgeOp) (*topo.Body, error) {
+// rec collects the booleans' fallback diagnostics (#1601; nil discards).
+func applyChamferTools(work *topo.Body, tools []wedgeOp, rec *diag.Recorder) (*topo.Body, error) {
 	result := work
 	for _, t := range tools {
-		r, err := ops.Boolean(t.op, result, t.body)
+		r, err := ops.BooleanWithDiagnostics(t.op, result, t.body, rec)
 		if err != nil {
 			return nil, err
 		}
@@ -235,11 +237,12 @@ func chamferWedges(edges []*topo.Edge, d1, d2 float64, feat string) ([]*topo.Bod
 }
 
 // cutAll subtracts each tool from work in turn, returning the carved body. Shared with the
-// sheet-metal corner reliefs, which only ever cut.
-func cutAll(work *topo.Body, tools []*topo.Body) (*topo.Body, error) {
+// sheet-metal corner reliefs, which only ever cut. rec collects the cuts' boolean-fallback
+// diagnostics (#1601; nil discards).
+func cutAll(work *topo.Body, tools []*topo.Body, rec *diag.Recorder) (*topo.Body, error) {
 	result := work
 	for _, tool := range tools {
-		r, err := ops.Boolean(ops.Cut, result, tool)
+		r, err := ops.BooleanWithDiagnostics(ops.Cut, result, tool, rec)
 		if err != nil {
 			return nil, err
 		}

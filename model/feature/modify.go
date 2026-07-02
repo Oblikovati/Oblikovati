@@ -39,7 +39,7 @@ func (c *CombineFeature) Recompute(in Input) (Output, error) {
 	if !validIndex(ti, in.Bodies) || !validIndex(oi, in.Bodies) || ti == oi {
 		return Output{}, fmt.Errorf("combine: invalid body indices %d,%d (have %d)", ti, oi, len(in.Bodies))
 	}
-	res, err := ops.Boolean(c.def.Operation, in.Bodies[ti], in.Bodies[oi])
+	res, err := ops.BooleanWithDiagnostics(c.def.Operation, in.Bodies[ti], in.Bodies[oi], in.Diag)
 	if err != nil {
 		return Output{}, err
 	}

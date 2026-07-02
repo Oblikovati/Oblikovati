@@ -67,7 +67,7 @@ func snapFitBody(in Input, def *SnapFitDefinition, feat string) (Output, error) 
 		{X: 0, Y: t},
 	}
 	hook := buildPrism(profile, sketch.XZPlane(), span{near: 0, far: w}, 0, feat)
-	bodies, err := combine(in.Bodies, hook, ops.Join)
+	bodies, err := combine(in, hook, ops.Join)
 	if err != nil {
 		return Output{}, err
 	}

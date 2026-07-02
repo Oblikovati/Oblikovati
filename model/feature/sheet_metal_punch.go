@@ -57,8 +57,8 @@ func (f *SheetMetalPunchFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	tool := buildProfilePrisms(profiles, plane, sp, 0, f.featName)
-	bodies, err := combine(in.Bodies, tool, ops.Cut)
+	tool := buildProfilePrisms(profiles, plane, sp, 0, f.featName, in.Diag)
+	bodies, err := combine(in, tool, ops.Cut)
 	if err != nil {
 		return Output{}, err
 	}

@@ -82,7 +82,9 @@ func BuildFlatPattern(baseSketch *sketch.Sketch, baseProfile int, thickness floa
 	}
 	plane := baseSketch.Plane()
 	sp := span{near: 0, far: thickness}
-	body := buildProfilePrisms(profiles, plane, sp, 0, "FlatPattern")
+	// nil recorder: BuildFlatPattern is a standalone builder (called from compdef, outside a
+	// feature recompute), so there is no Input.Diag to thread (#1601).
+	body := buildProfilePrisms(profiles, plane, sp, 0, "FlatPattern", nil)
 	centroid := polygonCentroid(profiles[0].OuterLoop().Polygon())
 	fp := &FlatPattern{Thickness: thickness}
 	for _, tab := range tabs {
@@ -105,7 +107,7 @@ func appendTab(body *topo.Body, plane sketch.Plane, sp span, tab FlatTab, baseCe
 	offset := tabOutward(tab.A, tab.B, baseCentroid).Scale(tab.Length)
 	poly := []math.Point2{tab.A, tab.B, tab.B.TranslateBy(offset), tab.A.TranslateBy(offset)}
 	plate := buildPrism(poly, plane, sp, 0, "FlatPattern")
-	merged, err := combine([]*topo.Body{body}, plate, ops.Join)
+	merged, err := combine(Input{Bodies: []*topo.Body{body}}, plate, ops.Join) // all-planar plates: nil Diag is a valid sink
 	if err != nil {
 		return nil, err
 	}

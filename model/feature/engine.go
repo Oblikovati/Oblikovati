@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
@@ -239,7 +240,9 @@ func (fs *PartFeatures) evaluateBody(pf *PartFeature, bodies []*topo.Body, sick 
 		return bodies
 	}
 	pf.recomputes++
-	out, err := safeRecompute(pf, Input{Bodies: bodies, Params: fs.params, SourceTool: fs.sourceTool})
+	rec := &diag.Recorder{}
+	out, err := safeRecompute(pf, Input{Bodies: bodies, Params: fs.params, SourceTool: fs.sourceTool, Diag: rec})
+	pf.diags = rec.Records()
 	return fs.classify(pf, bodies, out, err, sick)
 }
 
@@ -302,7 +305,10 @@ func operationOf(f Feature) ops.PartFeatureOperation {
 
 // sourceDelta returns the material a feature contributed: for a cut, before−after (the
 // removed chunk, the tool clipped to the body); for join/intersect, after−before (the added
-// chunk). NewBody, an absent state, or a feature that contributed nothing (a deferred feature,
+// chunk). Its booleans are internal DIFFING of already-built state, not a user operation on
+// the model, so they deliberately run without a diagnostics recorder (#1601): a facet
+// fallback here degrades only the replicated tool a pattern derives, and the pattern's own
+// boolean records against the pattern feature. NewBody, an absent state, or a feature that contributed nothing (a deferred feature,
 // before == after → an empty difference) yields no delta, so the caller adds nothing for that
 // source rather than copying the whole body.
 func sourceDelta(before, after *topo.Body, op ops.PartFeatureOperation) (*topo.Body, error) {

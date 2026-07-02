@@ -71,7 +71,7 @@ func (f *SheetMetalHemFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	bodies, err := combine(in.Bodies, wall, ops.Join)
+	bodies, err := combine(in, wall, ops.Join)
 	if err != nil {
 		return Output{}, err
 	}

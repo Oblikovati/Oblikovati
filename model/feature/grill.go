@@ -5,6 +5,7 @@ package feature
 import (
 	"fmt"
 
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -61,8 +62,8 @@ func (g *GrillFeature) Recompute(in Input) (Output, error) {
 	plane := g.def.Sketch.Plane()
 	sp := throughSpan(in.Bodies, plane)
 	loops := g.def.Sketch.ClosedLoops()
-	cutTool := ventTool(boundaries, loops, plane, sp, g.def.Draft, featOr(g.featName, "grill"))
-	bodies, err := combine(in.Bodies, cutTool, ops.Cut)
+	cutTool := ventTool(boundaries, loops, plane, sp, g.def.Draft, featOr(g.featName, "grill"), in.Diag)
+	bodies, err := combine(in, cutTool, ops.Cut)
 	if err != nil {
 		return Output{}, fmt.Errorf("grill: %w", err)
 	}
@@ -70,8 +71,9 @@ func (g *GrillFeature) Recompute(in Input) (Output, error) {
 }
 
 // ventTool builds the merged cut tool: for each boundary, a solid prism of its outer loop drilled
-// by every closed loop (bar) lying inside it, giving boundary − union(bars).
-func ventTool(boundaries []*sketch.Profile, loops []sketch.Loop, plane sketch.Plane, sp span, draft float64, feat string) *topo.Body {
+// by every closed loop (bar) lying inside it, giving boundary − union(bars). rec collects the
+// bar-drilling booleans' fallback diagnostics (#1601; nil discards).
+func ventTool(boundaries []*sketch.Profile, loops []sketch.Loop, plane sketch.Plane, sp span, draft float64, feat string, rec *diag.Recorder) *topo.Body {
 	tools := make([]*topo.Body, 0, len(boundaries))
 	for i, b := range boundaries {
 		name := feat
@@ -81,7 +83,7 @@ func ventTool(boundaries []*sketch.Profile, loops []sketch.Loop, plane sketch.Pl
 		outer := b.OuterLoop().Polygon()
 		solid := buildPrism(outer, plane, sp, draft, name)
 		if bars := loopsInside(loops, outer); len(bars) > 0 {
-			solid = drillProfileHoles(solid, bars, plane, sp, draft, name)
+			solid = drillProfileHoles(solid, bars, plane, sp, draft, name, rec)
 		}
 		tools = append(tools, solid)
 	}
