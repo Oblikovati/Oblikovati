@@ -29,7 +29,7 @@ func (t *DeleteFaceTool) Start(*Session) {}
 func (t *DeleteFaceTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
 
 // Picks reports the picked faces for the unified highlight.
-func (t *DeleteFaceTool) Picks() []Selectable { return faceSelectables(t.faces) }
+func (t *DeleteFaceTool) Picks() []Selectable { return selectables(t.faces) }
 
 // Pick appends the clicked face (ignoring a duplicate).
 func (t *DeleteFaceTool) Pick(_ *Session, sel Selectable) {

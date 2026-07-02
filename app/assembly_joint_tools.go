@@ -40,7 +40,7 @@ func (t *AssemblyJointTool) Start(*Session) {}
 func (t *AssemblyJointTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
 
 // Picks reports the picked component faces for the unified highlight.
-func (t *AssemblyJointTool) Picks() []Selectable { return faceSelectables(t.faces) }
+func (t *AssemblyJointTool) Picks() []Selectable { return selectables(t.faces) }
 
 // Pick appends a picked face until the joint has its two origins.
 func (t *AssemblyJointTool) Pick(_ *Session, sel Selectable) {

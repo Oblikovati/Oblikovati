@@ -32,7 +32,7 @@ func (t *RestTool) Start(*Session) {}
 func (t *RestTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectProfile} }
 
 // Picks reports the picked regions for the unified highlight.
-func (t *RestTool) Picks() []Selectable { return profileSelectables(t.profiles) }
+func (t *RestTool) Picks() []Selectable { return selectables(t.profiles) }
 
 // Pick captures a single clicked region (replacing any previous selection).
 func (t *RestTool) Pick(_ *Session, sel Selectable) {

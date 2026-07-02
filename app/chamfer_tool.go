@@ -42,7 +42,7 @@ func (t *ChamferTool) Start(s *Session) {
 func (t *ChamferTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectEdge} }
 
 // Picks reports the picked edges for the unified highlight.
-func (t *ChamferTool) Picks() []Selectable { return edgeSelectables(t.Edges()) }
+func (t *ChamferTool) Picks() []Selectable { return selectables(t.Edges()) }
 
 // SetFlatCorners/FlatCorners choose whether a vertex where three picked edges meet is
 // blended into a flat triangular face (true) or left pointy (false).
