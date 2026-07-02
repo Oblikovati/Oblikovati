@@ -64,10 +64,30 @@ func (t *DecalTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	t.added = feature.NewCosmeticFeatures(part.Features()).AddDecal(t.face.Face.ReferenceKey(), t.image)
+	t.added = t.addDecal(feature.NewCosmeticFeatures(part.Features()))
 	part.Recompute()
 	s.recordEdit(part, "Decal")
 	return nil
+}
+
+// addDecal builds the decal into cosmetics — the shared constructor used by both Commit
+// (the part's engine) and DraftFeature (a scratch engine), so the two cannot drift.
+func (t *DecalTool) addDecal(cosmetics *feature.CosmeticFeatures) *feature.DecalFeature {
+	return cosmetics.AddDecal(t.face.Face.ReferenceKey(), t.image)
+}
+
+// DraftFeature implements [PartFeatureTool] (#1626): the decal it would commit, built
+// into a scratch engine so the commit gate and preview can evaluate it without touching
+// the part. A decal is cosmetic and previews trivially healthy — the point is the
+// activation seam: the tool conforms and can never silently skip the gate.
+func (t *DecalTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		t.addDecal(feature.NewCosmeticFeatures(fs))
+		return lastEngineFeature(fs), nil
+	})
 }
 
 // Cancel is a no-op; the engine restores the ambient filter.
