@@ -32,10 +32,15 @@ type cdtTri struct {
 type cdt struct {
 	pts  [][2]float64
 	tris []cdtTri
-	dead []bool          // tris[t] was deleted by an insertion
-	con  map[[2]int]bool // constrained undirected edges (sorted vertex pair)
-	nsup int             // index of the first super-triangle vertex (points >= nsup are super)
-	last int             // a recently-live triangle, the seed hint for the next point-location walk (#1408)
+	dead []bool // tris[t] was deleted by an insertion
+	// con maps a constrained undirected edge (sorted vertex pair) to its MULTIPLICITY: how many
+	// loop passes constrained it. Degenerate trims can run a hole boundary EXACTLY along a stretch
+	// of the outer boundary (the unrolled holed wall does this at its seam), making one mesh edge a
+	// DOUBLE wall — the domain flood must toggle inside/outside once per wall (odd/even parity), and
+	// a plain set under-toggled there, silently mislabeling everything beyond the pinch (#1604).
+	con  map[[2]int]int
+	nsup int // index of the first super-triangle vertex (points >= nsup are super)
+	last int // a recently-live triangle, the seed hint for the next point-location walk (#1408)
 	// unrecovered collects the constraint endpoint pairs whose edge the flip recovery never realized
 	// (the flip cap hit, or a non-convex crossing stalled). Such a constraint is NOT recorded in con —
 	// a phantom con entry has no mesh edge for floodInside to toggle at, so the domain boundary leaks
@@ -51,10 +56,15 @@ type cdt struct {
 	// built once before recovery (buildIncident) and kept current by touch() on every addTri/flip. nil
 	// before recovery, so insertion (which runs first) pays nothing; a stale entry is detected and rescanned.
 	incident []int
-	// flipSteps counts Lawson flips performed over this triangulation's life (recovery only — flip is
-	// called nowhere else), read by tests to assert constraint recovery flips O(crossings) edges, not the
-	// O(T²) whole-mesh rescan-per-flip the corridor walk replaced (#1409).
+	// flipSteps counts Lawson flips performed over this triangulation's life (constraint recovery and
+	// the post-recovery legalization it queues — flip is called nowhere else), read by tests to assert
+	// constraint recovery flips O(crossings) edges, not the O(T²) whole-mesh rescan-per-flip the
+	// corridor walk replaced (#1409).
 	flipSteps int
+	// pendingLegal queues the diagonal created by each flip for in-circle legalization once the
+	// current segment's recovery completes (#1604): recovery alone leaves the corridor non-Delaunay,
+	// which both degrades triangle quality and invalidates the walk-based point location.
+	pendingLegal [][2]int
 }
 
 func conKey(a, b int) [2]int {
@@ -101,7 +111,7 @@ func newCDT(pts [][2]float64) *cdt {
 	all := append([][2]float64(nil), pts...)
 	all = append(all,
 		[2]float64{cx - 20*d, cy - d}, [2]float64{cx + 20*d, cy - d}, [2]float64{cx, cy + 20*d})
-	m := &cdt{pts: all, con: map[[2]int]bool{}, nsup: nsup}
+	m := &cdt{pts: all, con: map[[2]int]int{}, nsup: nsup}
 	m.tris = []cdtTri{{v: [3]int{nsup, nsup + 1, nsup + 2}, n: [3]int{-1, -1, -1}}}
 	m.dead = []bool{false}
 	return m

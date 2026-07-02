@@ -2,6 +2,11 @@
 
 package ops
 
+import (
+	"cmp"
+	"slices"
+)
+
 // Constraint (boundary segment) recovery by corridor-walk flips (#1409).
 //
 // Forcing a loop edge (a,b) into the triangulation means flipping the existing edges that the segment
@@ -35,10 +40,77 @@ func (m *cdt) insertConstraint(a, b int) {
 		return
 	}
 	if m.recoverSegment(a, b) {
-		m.con[conKey(a, b)] = true
+		m.con[conKey(a, b)]++
+		m.legalizePending() // #1604: restore the Delaunay property around the recovered corridor
 		return
 	}
+	m.legalizePending() // a failed recovery's flips are real corridor work: leave them Delaunay too
+	if m.splitConstraintAtVertices(a, b) {
+		return // recovered piecewise; each sub-segment reported its own status
+	}
 	m.unrecovered = append(m.unrecovered, [2]int{a, b})
+}
+
+// splitConstraintAtVertices handles the segment-through-vertex degeneracy (#1604): a constraint
+// whose open interior passes EXACTLY through mesh vertices (the exact orient2d says so) can never
+// be recovered as one edge — flips cannot remove a vertex from the segment's path. The standard
+// resolution (Shewchuk's Triangle; Anglada 1997) splits the constraint at those vertices and
+// recovers each sub-segment, which walls off the same geometric boundary for the domain flood.
+// The unrolled periodic wall hits this on its seam: the hole corners' axial stations reappear as
+// exact on-seam samples, and the whole seam used to be dropped as unrecoverable — the silent
+// domain leak behind the #1410 fallback. Returns false when no on-segment vertex exists (a
+// genuine non-recovery the caller records).
+func (m *cdt) splitConstraintAtVertices(a, b int) bool {
+	on := m.verticesOnSegment(a, b)
+	if len(on) == 0 {
+		return false
+	}
+	prev := a
+	for _, v := range on {
+		m.insertConstraint(prev, v)
+		prev = v
+	}
+	m.insertConstraint(prev, b)
+	return true
+}
+
+// verticesOnSegment returns the real vertices lying exactly on the open segment (a,b), ordered
+// from a to b. Endpoint-coincident duplicates split nothing and are excluded; sub-segments
+// between consecutive on-vertices contain no further on-vertices by construction, so the split
+// recursion terminates after one level.
+func (m *cdt) verticesOnSegment(a, b int) []int {
+	pa, pb := m.pts[a], m.pts[b]
+	var on []int
+	for v := 0; v < m.nsup; v++ {
+		p := m.pts[v]
+		if v == a || v == b || p == pa || p == pb {
+			continue
+		}
+		if orient2d(pa, pb, p) != 0 || !inSegmentBox(pa, pb, p) {
+			continue
+		}
+		on = append(on, v)
+	}
+	slices.SortFunc(on, func(u, w int) int {
+		du := sqDist(pa, m.pts[u])
+		dw := sqDist(pa, m.pts[w])
+		return cmp.Compare(du, dw)
+	})
+	return on
+}
+
+// inSegmentBox reports whether collinear point p lies within segment (pa,pb)'s bounding box —
+// with exact collinearity established, this is the open-segment containment test.
+func inSegmentBox(pa, pb, p [2]float64) bool {
+	return p[0] >= min(pa[0], pb[0]) && p[0] <= max(pa[0], pb[0]) &&
+		p[1] >= min(pa[1], pb[1]) && p[1] <= max(pa[1], pb[1])
+}
+
+// sqDist is the squared distance between two points (a monotone along-segment order for
+// collinear points).
+func sqDist(a, b [2]float64) float64 {
+	dx, dy := b[0]-a[0], b[1]-a[1]
+	return dx*dx + dy*dy
 }
 
 // recoverSegment ensures edge (a,b) exists, returning whether it does afterwards. It walks the
