@@ -116,59 +116,6 @@ func triangularSolve(a [][]float64, y []float64, cols int) []float64 {
 	return x
 }
 
-// matrixRank returns the numerical rank of an m×n matrix via Gauss–Jordan
-// elimination, counting pivots whose magnitude exceeds tol.
-func matrixRank(src [][]float64, tol float64) int {
-	rows := len(src)
-	if rows == 0 || len(src[0]) == 0 {
-		return 0
-	}
-	cols := len(src[0])
-	a := make([][]float64, rows)
-	for i := range a {
-		a[i] = append([]float64(nil), src[i]...)
-	}
-	rank, pivotRow := 0, 0
-	for col := 0; col < cols && pivotRow < rows; col++ {
-		if !pivotAt(a, pivotRow, col, tol) {
-			continue
-		}
-		clearColumn(a, pivotRow, col, cols)
-		pivotRow++
-		rank++
-	}
-	return rank
-}
-
-// pivotAt finds the largest-magnitude entry in col at or below pivotRow and swaps
-// it up; it reports whether a usable pivot (> tol) was found.
-func pivotAt(a [][]float64, pivotRow, col int, tol float64) bool {
-	sel := pivotRow
-	for r := pivotRow + 1; r < len(a); r++ {
-		if stdmath.Abs(a[r][col]) > stdmath.Abs(a[sel][col]) {
-			sel = r
-		}
-	}
-	if stdmath.Abs(a[sel][col]) < tol {
-		return false
-	}
-	a[pivotRow], a[sel] = a[sel], a[pivotRow]
-	return true
-}
-
-// clearColumn eliminates col from every other row using the pivot row.
-func clearColumn(a [][]float64, pivotRow, col, cols int) {
-	for r := 0; r < len(a); r++ {
-		if r == pivotRow {
-			continue
-		}
-		f := a[r][col] / a[pivotRow][col]
-		for c := col; c < cols; c++ {
-			a[r][c] -= f * a[pivotRow][c]
-		}
-	}
-}
-
 // infNorm returns the maximum absolute component of v.
 func infNorm(v []float64) float64 {
 	max := 0.0
@@ -178,4 +125,93 @@ func infNorm(v []float64) float64 {
 		}
 	}
 	return max
+}
+
+// pivotedQRRank is the rank of src by column-pivoted Householder QR with a threshold RELATIVE
+// to the largest pivot (Golub & Van Loan §5.4.2; audit A13 #1609): at step k the remaining
+// column of largest norm is swapped in, one Householder reflection zeroes it below the
+// diagonal, and the factorization stops when the pivot falls under relTol times the first
+// (largest) pivot — scale-invariant where the retired Gauss–Jordan absolute threshold dropped
+// rank on large-coordinate sketches.
+// rankRelTol is the CPQR pivot threshold RELATIVE to the largest pivot: rows are unit-
+// normalized upstream, so 1e-9 marks a pivot ~9 decades below the leading one as numerically
+// dependent — scale-free by construction.
+const rankRelTol = 1e-9 // tol:numeric — relative rank-revealing threshold
+
+func pivotedQRRank(src [][]float64) int {
+	rows := len(src)
+	if rows == 0 || len(src[0]) == 0 {
+		return 0
+	}
+	cols := len(src[0])
+	a := make([][]float64, rows)
+	for i := range a {
+		a[i] = append([]float64(nil), src[i]...)
+	}
+	rank, first := 0, 0.0
+	for k := 0; k < min(rows, cols); k++ {
+		swapLargestColumn(a, k)
+		v, pivot, ok := householderVector(a, k, rows)
+		if !ok {
+			break
+		}
+		if k == 0 {
+			first = stdmath.Abs(pivot)
+		}
+		if stdmath.Abs(pivot) < rankRelTol*first {
+			break
+		}
+		applyHouseholder(a, v, k, rows, cols)
+		rank++
+	}
+	return rank
+}
+
+// swapLargestColumn swaps the trailing column of largest sub-column norm (rows k..end) into
+// position k — the column pivoting that makes the QR factorization rank-revealing.
+func swapLargestColumn(a [][]float64, k int) {
+	cols := len(a[0])
+	best, bestNorm := k, subColumnNorm(a, k, k)
+	for c := k + 1; c < cols; c++ {
+		if n := subColumnNorm(a, c, k); n > bestNorm {
+			best, bestNorm = c, n
+		}
+	}
+	if best == k {
+		return
+	}
+	for r := range a {
+		a[r][k], a[r][best] = a[r][best], a[r][k]
+	}
+}
+
+// subColumnNorm is the Euclidean norm of column c from row k down.
+func subColumnNorm(a [][]float64, c, k int) float64 {
+	s := 0.0
+	for r := k; r < len(a); r++ {
+		s += a[r][c] * a[r][c]
+	}
+	return stdmath.Sqrt(s)
+}
+
+// applyHouseholder applies the reflection for Householder vector v (from householderVector at
+// step k) to the trailing columns of a.
+func applyHouseholder(a [][]float64, v []float64, k, rows, cols int) {
+	vTv := 0.0
+	for i := k; i < rows; i++ {
+		vTv += v[i] * v[i]
+	}
+	if vTv == 0 {
+		return
+	}
+	for c := k; c < cols; c++ {
+		dot := 0.0
+		for i := k; i < rows; i++ {
+			dot += v[i] * a[i][c]
+		}
+		f := 2 * dot / vTv
+		for i := k; i < rows; i++ {
+			a[i][c] -= f * v[i]
+		}
+	}
 }
