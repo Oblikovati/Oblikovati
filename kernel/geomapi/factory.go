@@ -18,6 +18,15 @@ type Factory struct{}
 
 var _ contract.TransientGeometry = Factory{}
 
+// The umbrella curve/surface contracts are satisfied by the shared adapter
+// bases every concrete adapter embeds (#1619, ADR-0018: implicit satisfaction
+// at usage sites is not enforcement — the assertion is the tripwire).
+var (
+	_ contract.Curve   = curve3{}
+	_ contract.Curve2d = curve2{}
+	_ contract.Surface = surface{}
+)
+
 // New returns the transient-geometry factory.
 func New() Factory { return Factory{} }
 
