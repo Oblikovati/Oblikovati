@@ -38,8 +38,14 @@ func (s *Session) DeriveAssembly(source *doc.Document) (*feature.PartFeature, er
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewDerivedAssemblyComponents(part.Features()).AddDerived(src, deriveSourceLinkOf(source))
-	return s.commitDerive(part, pf, source, "Derive Assembly"), nil
+	return s.commitDerive(part, addDerivedFeature(part.Features(), src, source), source, "Derive Assembly"), nil
+}
+
+// addDerivedFeature runs the derive construction against engine — shared by Session.DeriveAssembly
+// (the part's engine) and DeriveAssemblyTool.DraftFeature (a scratch engine) so the committed and
+// previewed features cannot drift (#1626).
+func addDerivedFeature(engine *feature.PartFeatures, src feature.AssemblyBodySource, source *doc.Document) *feature.PartFeature {
+	return feature.NewDerivedAssemblyComponents(engine).AddDerived(src, deriveSourceLinkOf(source))
 }
 
 // ShrinkwrapAssembly derives the source assembly into the active part as a simplified, lightweight
@@ -49,8 +55,13 @@ func (s *Session) ShrinkwrapAssembly(source *doc.Document, def feature.Shrinkwra
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewShrinkwrapComponents(part.Features()).AddShrinkwrap(src, def, deriveSourceLinkOf(source))
-	return s.commitDerive(part, pf, source, "Shrinkwrap"), nil
+	return s.commitDerive(part, addShrinkwrapFeature(part.Features(), src, def, source), source, "Shrinkwrap"), nil
+}
+
+// addShrinkwrapFeature is addDerivedFeature's shrinkwrap sibling — the one construction shared
+// by Session.ShrinkwrapAssembly and ShrinkwrapTool.DraftFeature (#1626).
+func addShrinkwrapFeature(engine *feature.PartFeatures, src feature.AssemblyBodySource, def feature.ShrinkwrapDefinition, source *doc.Document) *feature.PartFeature {
+	return feature.NewShrinkwrapComponents(engine).AddShrinkwrap(src, def, deriveSourceLinkOf(source))
 }
 
 // deriveTarget resolves the active part and validates source is an assembly body source.

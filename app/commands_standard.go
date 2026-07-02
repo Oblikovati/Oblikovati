@@ -119,7 +119,7 @@ func manageTabCommands() []*CommandDefinition {
 // tool, which reads the source/options from the generic dialog.
 func deriveAssemblyCommand() *CommandDefinition {
 	return NewCommand("Manage.Derive", "Derive Assembly", "Simplify", func(s *Session) error {
-		s.StartTool(NewDeriveAssemblyTool())
+		s.StartFeatureTool(NewDeriveAssemblyTool())
 		return nil
 	}).WithTab("Manage").WithEnable(canDeriveAssembly).
 		WithIcon("derive").WithButtonStyle(LargeIconButton).
@@ -128,7 +128,7 @@ func deriveAssemblyCommand() *CommandDefinition {
 
 func shrinkwrapCommand() *CommandDefinition {
 	return NewCommand("Manage.Shrinkwrap", "Shrinkwrap", "Simplify", func(s *Session) error {
-		s.StartTool(NewShrinkwrapTool())
+		s.StartFeatureTool(NewShrinkwrapTool())
 		return nil
 	}).WithTab("Manage").WithEnable(canDeriveAssembly).
 		WithIcon("shrinkwrap").WithButtonStyle(LargeIconButton).
@@ -291,17 +291,17 @@ func moldFeatureCommands() []*CommandDefinition {
 func freeformFeatureCommands() []*CommandDefinition {
 	prims := []struct {
 		id, name, icon, tip string
-		start               func() Tool
+		start               func() PartFeatureTool // typed thunks: the compiler holds every primitive to the commit gate (#1626)
 	}{
-		{"Freeform.Box", "Box", "freeform-box", "Freeform Box — place a sub-D box cage and smooth it by subdivision level.", func() Tool { return NewFreeformBoxTool() }},
-		{"Freeform.Plane", "Plane", "freeform-plane", "Freeform Plane — place an open sub-D plane cage (a surface body).", func() Tool { return NewFreeformPlaneTool() }},
-		{"Freeform.QuadBall", "Quad Ball", "freeform-quadball", "Freeform Quad Ball — place a closed sphere-like sub-D cage.", func() Tool { return NewFreeformQuadBallTool() }},
+		{"Freeform.Box", "Box", "freeform-box", "Freeform Box — place a sub-D box cage and smooth it by subdivision level.", func() PartFeatureTool { return NewFreeformBoxTool() }},
+		{"Freeform.Plane", "Plane", "freeform-plane", "Freeform Plane — place an open sub-D plane cage (a surface body).", func() PartFeatureTool { return NewFreeformPlaneTool() }},
+		{"Freeform.QuadBall", "Quad Ball", "freeform-quadball", "Freeform Quad Ball — place a closed sphere-like sub-D cage.", func() PartFeatureTool { return NewFreeformQuadBallTool() }},
 	}
 	cmds := make([]*CommandDefinition, len(prims))
 	for i, d := range prims {
 		start := d.start
 		cmds[i] = NewCommand(d.id, d.name, "Freeform", func(s *Session) error {
-			s.StartTool(start())
+			s.StartFeatureTool(start())
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).WithTooltip(d.tip).
 			WithIcon(d.icon).WithButtonStyle(SmallIconButton)
