@@ -68,17 +68,9 @@ func (t *SketchTrimTool) Commit(s *Session) error {
 	if !t.has {
 		return errors.New("trim: no curve picked")
 	}
-	var err error
-	switch e := t.ent.(type) {
-	case *sketch.Line:
-		_, err = sk.TrimLine(e, t.point)
-	case *sketch.Circle:
-		_, err = sk.TrimCircle(e, t.point)
-	case *sketch.Arc:
-		_, err = sk.TrimArc(e, t.point)
-	default:
-		err = fmt.Errorf("trim: unsupported target %T", t.ent)
-	}
+	// The line/circle/arc dispatch lives on the model (sketch.TrimCurveAt,
+	// #1624) — one seam shared with the wire router's trim op.
+	_, err := sk.TrimCurveAt(t.ent, t.point)
 	return err
 }
 

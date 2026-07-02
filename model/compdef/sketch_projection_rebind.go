@@ -17,32 +17,19 @@ func (d *PartComponentDefinition) rebindSketchProjections() {
 	for i := 0; i < d.sketches.Count(); i++ {
 		sk := d.sketches.Item(i)
 		for _, e := range sk.Entities() {
-			d.rebindProjection(e, sk.Plane())
+			// Each projected entity re-attaches itself through the resolver
+			// below — no per-kind dispatch here (#1624, audit I1).
+			sketch.RebindProjection(e, d, sk.Plane())
 		}
 	}
 }
 
-// rebindProjection re-attaches one projected entity's live source from its persisted descriptor;
-// an unknown/empty kind leaves the entity frozen.
-func (d *PartComponentDefinition) rebindProjection(e sketch.Entity, plane sketch.Plane) {
-	switch v := e.(type) {
-	case *sketch.ProjectedPoint:
-		if kind, id := v.SourceDescriptor(); kind != "" {
-			if src, ok := d.pointRefSource(kind, id); ok {
-				v.Rebind(src)
-			}
-		}
-	case *sketch.ProjectedCurve:
-		if kind, id := v.SourceDescriptor(); kind != "" {
-			if src, ok := d.curveRefSource(kind, id, plane); ok {
-				v.Rebind(src)
-			}
-		}
-	}
-}
+// The part definition is the projection-source resolver: it owns the
+// vertices/edges/work geometry the persisted descriptors point at.
+var _ sketch.ProjectionSourceResolver = (*PartComponentDefinition)(nil)
 
-// pointRefSource rebuilds a point projection source from its descriptor.
-func (d *PartComponentDefinition) pointRefSource(kind, id string) (sketch.PointSource, bool) {
+// PointProjectionSource rebuilds a point projection source from its descriptor.
+func (d *PartComponentDefinition) PointProjectionSource(kind, id string) (sketch.PointSource, bool) {
 	switch kind {
 	case "vertex":
 		return NewVertexRefSource(d, id), true
@@ -53,9 +40,9 @@ func (d *PartComponentDefinition) pointRefSource(kind, id string) (sketch.PointS
 	}
 }
 
-// curveRefSource rebuilds a curve projection source from its descriptor; a work-plane projection
-// also needs the target sketch plane it intersects.
-func (d *PartComponentDefinition) curveRefSource(kind, id string, plane sketch.Plane) (sketch.CurveSource, bool) {
+// CurveProjectionSource rebuilds a curve projection source from its descriptor; a work-plane
+// projection also needs the target sketch plane it intersects.
+func (d *PartComponentDefinition) CurveProjectionSource(kind, id string, plane sketch.Plane) (sketch.CurveSource, bool) {
 	switch kind {
 	case "edge":
 		return NewEdgeRefSource(d, id), true

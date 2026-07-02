@@ -57,10 +57,7 @@ func filterCircles(ents []sketch.Entity) []*sketch.Circle {
 func circularCurvesFrom(ents []sketch.Entity) []sketch.CircularCurve {
 	var out []sketch.CircularCurve
 	for _, e := range ents {
-		switch c := e.(type) {
-		case *sketch.Circle:
-			out = append(out, c)
-		case *sketch.Arc:
+		if c, ok := e.(sketch.CircularCurve); ok {
 			out = append(out, c)
 		}
 	}

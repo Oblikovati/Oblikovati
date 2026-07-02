@@ -34,26 +34,26 @@ func TestProjectionSourceKindTags(t *testing.T) {
 // reject an unknown one (the frozen fallback).
 func TestProjectionSourceBuilders(t *testing.T) {
 	d := NewPartComponentDefinition()
-	if _, ok := d.pointRefSource("vertex", "k"); !ok {
+	if _, ok := d.PointProjectionSource("vertex", "k"); !ok {
 		t.Error("vertex point source should build")
 	}
-	if _, ok := d.pointRefSource("workPoint", string(feature.OriginCenter)); !ok {
+	if _, ok := d.PointProjectionSource("workPoint", string(feature.OriginCenter)); !ok {
 		t.Error("workPoint source should build")
 	}
-	if _, ok := d.pointRefSource("mystery", "k"); ok {
+	if _, ok := d.PointProjectionSource("mystery", "k"); ok {
 		t.Error("unknown point kind must not build")
 	}
 	plane := sketch.XYPlane()
-	if _, ok := d.curveRefSource("edge", "k", plane); !ok {
+	if _, ok := d.CurveProjectionSource("edge", "k", plane); !ok {
 		t.Error("edge curve source should build")
 	}
-	if _, ok := d.curveRefSource("workAxis", string(feature.OriginXAxis), plane); !ok {
+	if _, ok := d.CurveProjectionSource("workAxis", string(feature.OriginXAxis), plane); !ok {
 		t.Error("workAxis source should build")
 	}
-	if _, ok := d.curveRefSource("workPlane", string(feature.OriginXZPlane), plane); !ok {
+	if _, ok := d.CurveProjectionSource("workPlane", string(feature.OriginXZPlane), plane); !ok {
 		t.Error("workPlane source should build")
 	}
-	if _, ok := d.curveRefSource("mystery", "k", plane); ok {
+	if _, ok := d.CurveProjectionSource("mystery", "k", plane); ok {
 		t.Error("unknown curve kind must not build")
 	}
 }

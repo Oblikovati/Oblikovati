@@ -73,18 +73,10 @@ func curveEditOp(sk *sketch.Sketch, ents []sketch.Entity, in wire.TransformSketc
 	if err != nil {
 		return nil, err
 	}
-	// Trim accepts any curve target (line/circle/arc); split/extend act on lines.
+	// Trim accepts any trimmable curve target; split/extend act on lines. The
+	// line/circle/arc dispatch lives on the model (sketch.TrimCurveAt, #1624).
 	if in.Op == "trim" {
-		switch e := ents[0].(type) {
-		case *sketch.Line:
-			return sk.TrimLine(e, pick)
-		case *sketch.Circle:
-			return sk.TrimCircle(e, pick)
-		case *sketch.Arc:
-			return sk.TrimArc(e, pick)
-		default:
-			return nil, fmt.Errorf("sketch.transform: trim unsupported target %T", ents[0])
-		}
+		return sk.TrimCurveAt(ents[0], pick)
 	}
 	l, ok := ents[0].(*sketch.Line)
 	if !ok {
