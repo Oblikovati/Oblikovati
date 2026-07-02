@@ -11,6 +11,7 @@ import (
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/sketch"
@@ -21,7 +22,7 @@ import (
 // fillet keyed on a real edge. Returns the document and its definition.
 func richPart(t *testing.T) (*doc.Document, *compdef.PartComponentDefinition) {
 	t.Helper()
-	ws := doc.NewWorkspace(nil)
+	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, err := compdef.AddPart(ws, "Part1", true)
 	if err != nil {
 		t.Fatalf("AddPart: %v", err)
@@ -119,7 +120,7 @@ func TestPartSnapshotRestoreReplacesOtherPart(t *testing.T) {
 	}
 
 	// A second, differently-populated part.
-	ws := doc.NewWorkspace(nil)
+	ws := doc.NewWorkspace(nil, contentset.Default())
 	d2, _ := compdef.AddPart(ws, "Part2", true)
 	dst := d2.Content().(*compdef.PartComponentDefinition)
 	dst.Sketches().Add(sketch.XYPlane())
@@ -142,7 +143,7 @@ func TestPartSnapshotRestoreReplacesOtherPart(t *testing.T) {
 // TestEmptyPartSnapshotRoundTrips: an empty part snapshots and restores without error, staying
 // empty — the baseline a document's undo stream captures the moment it opens.
 func TestEmptyPartSnapshotRoundTrips(t *testing.T) {
-	ws := doc.NewWorkspace(nil)
+	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Empty", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
 	snap, err := def.MarshalSnapshot()
@@ -161,7 +162,7 @@ func TestEmptyPartSnapshotRoundTrips(t *testing.T) {
 // byte-stable across a full round-trip — there is no float drift to mask, so restoring then
 // re-marshalling must reproduce the exact snapshot. Pins that the codec itself loses nothing.
 func TestParamsOnlySnapshotByteStable(t *testing.T) {
-	ws := doc.NewWorkspace(nil)
+	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Params", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
 	_, _ = def.Parameters().AddUserParameter("a", "10 mm")
@@ -184,7 +185,7 @@ func TestParamsOnlySnapshotByteStable(t *testing.T) {
 // the part is untouched) and structurally-valid JSON carrying bad content (an unparseable
 // parameter expression or an unknown unit). Covers the restore-error paths for part + assembly.
 func TestRestoreSnapshotRejectsBadSnapshots(t *testing.T) {
-	ws := doc.NewWorkspace(nil)
+	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, _ := compdef.AddPart(ws, "Part1", true)
 	def := d.Content().(*compdef.PartComponentDefinition)
 	def.Sketches().Add(sketch.XYPlane())
@@ -293,7 +294,7 @@ func BenchmarkPartMarshalRecipe(b *testing.B) {
 // richPartB is richPart for a benchmark (testing.B has no *testing.T).
 func richPartB(b *testing.B) (*doc.Document, *compdef.PartComponentDefinition) {
 	b.Helper()
-	ws := doc.NewWorkspace(nil)
+	ws := doc.NewWorkspace(nil, contentset.Default())
 	d, err := compdef.AddPart(ws, "Part1", true)
 	if err != nil {
 		b.Fatalf("AddPart: %v", err)

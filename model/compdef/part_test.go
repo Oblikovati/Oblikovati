@@ -35,7 +35,7 @@ func TestPartDocumentExposesBodiesAndBoundingBox(t *testing.T) {
 	def.SurfaceBodies().Add(bodyWithCorner(4, 3, 2))
 
 	// Wire the real content onto a part document (M03) and retrieve it back.
-	ws := doc.NewWorkspace(nil)
+	ws := doc.NewWorkspace(nil, testContentFactories())
 	pd, _ := ws.Add(doc.Part, "bracket.obk", true)
 	pd.SetContent(def)
 

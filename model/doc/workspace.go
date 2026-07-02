@@ -26,14 +26,18 @@ type Workspace struct {
 	graph         *RefGraph            // shared document reference graph (M03-F04)
 	bus           *event.Bus           // application/document/modeling events (M04-F04)
 	externalFiles ExternalFileProbe    // foreign-file access for attachments (M03-F08)
+	factories     ContentFactories     // real-content constructors, injected at the composition root (#1617)
 	active        *Document
 }
 
-// NewWorkspace creates an empty workspace backed by store. A nil store is allowed
-// for purely in-memory sessions; Save/Open then return an error.
-func NewWorkspace(store Store) *Workspace {
+// NewWorkspace creates an empty workspace backed by store, building document
+// content through factories (the composition root passes model/contentset.Default;
+// nil yields identity-only stubs — #1617). A nil store is allowed for purely
+// in-memory sessions; Save/Open then return an error.
+func NewWorkspace(store Store, factories ContentFactories) *Workspace {
 	ws := &Workspace{
 		store:         store,
+		factories:     factories,
 		byID:          map[ID]*Document{},
 		byName:        map[string]*Document{},
 		byGUID:        map[string]*Document{},
@@ -78,7 +82,7 @@ func (ws *Workspace) Add(t DocumentType, fullDocumentName string, visible bool) 
 	if _, taken := ws.byName[fullDocumentName]; taken {
 		return nil, fmt.Errorf("doc: a document named %q is already open", fullDocumentName)
 	}
-	content, err := newContent(t)
+	content, err := newContent(t, ws.factories)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +161,7 @@ func (ws *Workspace) loadNew(fullDocumentName string, opts OpenOptions) (*Docume
 // load (a moved or renamed reference, M04-F05). The After phase reports the
 // outcome to passive observers whether or not anything resolved it.
 func (ws *Workspace) loadResolving(fullDocumentName string) (*Document, error) {
-	d, err := ws.store.Load(fullDocumentName)
+	d, err := ws.store.Load(fullDocumentName, ws.factories)
 	if err == nil {
 		return d, nil
 	}
@@ -165,7 +169,7 @@ func (ws *Workspace) loadResolving(fullDocumentName string) (*Document, error) {
 	event.Emit(ws.bus, event.Before, resolution)
 	defer event.Emit(ws.bus, event.After, resolution)
 	if substitute := resolution.Resolved(); substitute != "" {
-		if d, retryErr := ws.store.Load(substitute); retryErr == nil {
+		if d, retryErr := ws.store.Load(substitute, ws.factories); retryErr == nil {
 			return d, nil
 		}
 	}

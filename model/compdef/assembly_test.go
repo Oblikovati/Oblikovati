@@ -51,7 +51,7 @@ func TestAssemblyRangeBoxUnionsOccurrencesAndVersionTracks(t *testing.T) {
 }
 
 func TestAddAssemblyInstallsAssemblyContentAndActivates(t *testing.T) {
-	ws := doc.NewWorkspace(nil)
+	ws := doc.NewWorkspace(nil, testContentFactories())
 	d, err := AddAssembly(ws, "frame.oad", true)
 	if err != nil {
 		t.Fatalf("AddAssembly: %v", err)
@@ -68,7 +68,7 @@ func TestAddAssemblyInstallsAssemblyContentAndActivates(t *testing.T) {
 // plain ws.Add(Assembly) (the path documents.create and the CLI use) yields the real
 // content, not the identity-only doc stub.
 func TestAssemblyFactoryRegisteredForWorkspaceAdd(t *testing.T) {
-	ws := doc.NewWorkspace(nil)
+	ws := doc.NewWorkspace(nil, testContentFactories())
 	d, err := ws.Add(doc.Assembly, "sub.oad", true)
 	if err != nil {
 		t.Fatalf("ws.Add(assembly): %v", err)
@@ -82,7 +82,7 @@ func TestAssemblyFactoryRegisteredForWorkspaceAdd(t *testing.T) {
 // document level: two placements of one part document share its definition (the
 // flyweight), so editing the part would update both.
 func TestPlaceComponentSharesDefinitionAcrossPlacements(t *testing.T) {
-	ws := doc.NewWorkspace(nil)
+	ws := doc.NewWorkspace(nil, testContentFactories())
 	partDoc, err := AddPart(ws, "pin.opd", true)
 	if err != nil {
 		t.Fatalf("AddPart: %v", err)
@@ -105,7 +105,7 @@ func TestPlaceComponentSharesDefinitionAcrossPlacements(t *testing.T) {
 }
 
 func TestPlaceComponentRejectsNonComponentDocument(t *testing.T) {
-	ws := doc.NewWorkspace(nil)
+	ws := doc.NewWorkspace(nil, testContentFactories())
 	drawingDoc, err := ws.Add(doc.Drawing, "sheet.odd", true) // drawing content has no range box
 	if err != nil {
 		t.Fatalf("ws.Add(drawing): %v", err)
@@ -118,7 +118,7 @@ func TestPlaceComponentRejectsNonComponentDocument(t *testing.T) {
 // TestNestedAssemblyResolvableByPath is the PBI-119 acceptance with real definitions:
 // a sub-assembly placed in a parent assembly has its nested part addressable by path.
 func TestNestedAssemblyResolvableByPath(t *testing.T) {
-	ws := doc.NewWorkspace(nil)
+	ws := doc.NewWorkspace(nil, testContentFactories())
 	pinDoc, err := AddPart(ws, "pin.opd", true)
 	if err != nil {
 		t.Fatalf("AddPart: %v", err)

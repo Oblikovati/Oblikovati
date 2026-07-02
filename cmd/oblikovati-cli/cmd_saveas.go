@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 
+	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/persistence"
 )
@@ -18,7 +19,7 @@ func cmdSaveAs(args []string, out io.Writer) error {
 	if len(args) != 2 {
 		return fmt.Errorf("save-as: expected <src> <dst>, got %d arg(s)", len(args))
 	}
-	ws := doc.NewWorkspace(persistence.NewPackageStore())
+	ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
 	d, err := ws.Open(args[0], true)
 	if err != nil {
 		return fmt.Errorf("save-as: open %q: %w", args[0], err)

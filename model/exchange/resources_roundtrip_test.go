@@ -10,6 +10,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/persistence"
 )
@@ -24,7 +25,7 @@ func TestImportedDocumentReopensWithoutSourceFile(t *testing.T) {
 	obkPath := filepath.Join(dir, "part.obk")
 
 	store := persistence.NewPackageStore()
-	d, err := doc.NewWorkspace(store).Add(doc.Part, obkPath, true)
+	d, err := doc.NewWorkspace(store, contentset.Default()).Add(doc.Part, obkPath, true)
 	if err != nil {
 		t.Fatalf("Add: %v", err)
 	}
@@ -46,7 +47,7 @@ func TestImportedDocumentReopensWithoutSourceFile(t *testing.T) {
 		}
 	}
 
-	if err := doc.NewWorkspace(store).Save(d); err != nil {
+	if err := doc.NewWorkspace(store, contentset.Default()).Save(d); err != nil {
 		t.Fatalf("Save: %v", err)
 	}
 	// The whole point: the source file is gone, yet the document still rebuilds.
@@ -54,7 +55,7 @@ func TestImportedDocumentReopensWithoutSourceFile(t *testing.T) {
 		t.Fatalf("remove source: %v", err)
 	}
 
-	reopened, err := doc.NewWorkspace(store).Open(obkPath, true)
+	reopened, err := doc.NewWorkspace(store, contentset.Default()).Open(obkPath, true)
 	if err != nil {
 		t.Fatalf("Open (source deleted): %v", err)
 	}

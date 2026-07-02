@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/persistence"
@@ -33,7 +34,7 @@ func deriveSourceIntoPart(t *testing.T, ws *doc.Workspace, dir, name string, sou
 // reference-resolution path) and returns its part definition.
 func openPart(t *testing.T, store *persistence.PackageStore, name string) *compdef.PartComponentDefinition {
 	t.Helper()
-	reopened, err := doc.NewWorkspace(store).Open(name, true)
+	reopened, err := doc.NewWorkspace(store, contentset.Default()).Open(name, true)
 	if err != nil {
 		t.Fatalf("Open part %q: %v", name, err)
 	}

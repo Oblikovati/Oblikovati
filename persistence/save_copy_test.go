@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
 )
 
@@ -16,7 +17,7 @@ import (
 func TestSaveCopyMintsAFreshFile(t *testing.T) {
 	dir := t.TempDir()
 	store := NewPackageStore()
-	ws := doc.NewWorkspace(store)
+	ws := doc.NewWorkspace(store, contentset.Default())
 	src, err := ws.Add(doc.Part, filepath.Join(dir, "bracket.obk"), true)
 	if err != nil {
 		t.Fatalf("Add: %v", err)
@@ -34,7 +35,7 @@ func TestSaveCopyMintsAFreshFile(t *testing.T) {
 		t.Error("the source must keep its binding and dirty state")
 	}
 
-	copyDoc, err := doc.NewWorkspace(store).Open(target, true)
+	copyDoc, err := doc.NewWorkspace(store, contentset.Default()).Open(target, true)
 	if err != nil {
 		t.Fatalf("Open copy: %v", err)
 	}
@@ -61,7 +62,7 @@ func TestSaveRetainsOldVersions(t *testing.T) {
 	dir := t.TempDir()
 	store := NewPackageStore()
 	store.SetOldVersionsToKeep(2)
-	ws := doc.NewWorkspace(store)
+	ws := doc.NewWorkspace(store, contentset.Default())
 	d, err := ws.Add(doc.Part, filepath.Join(dir, "bracket.obk"), true)
 	if err != nil {
 		t.Fatalf("Add: %v", err)

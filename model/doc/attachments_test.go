@@ -46,7 +46,7 @@ func (f *fakeExternalFiles) ReadFile(name string) ([]byte, error) {
 // filesystem holding loads.csv.
 func attachmentFixture(t *testing.T) (*Document, *fakeExternalFiles, time.Time) {
 	t.Helper()
-	ws := NewWorkspace(newFakeStore())
+	ws := NewWorkspace(newFakeStore(), nil)
 	ext := newFakeExternalFiles()
 	ws.SetExternalFileProbe(ext)
 	attached := time.Date(2026, 6, 1, 12, 0, 0, 0, time.UTC)

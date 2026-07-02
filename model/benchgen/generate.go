@@ -30,7 +30,7 @@ type Stats struct {
 // sub-assembly is a registered document placed by file reference, so the result both
 // drives the in-memory benchmarks and saves to a loadable .obk set. Example:
 //
-//	ws := doc.NewWorkspace(persistence.NewPackageStore())
+//	ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
 //	root, stats, err := benchgen.Generate(ws, "car30k", benchgen.Auto30k())
 func Generate(ws *doc.Workspace, dirPrefix string, p Profile) (*doc.Document, Stats, error) {
 	b, err := newBuilder(ws, dirPrefix, p)

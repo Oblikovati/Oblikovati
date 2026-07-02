@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/persistence"
 )
@@ -42,7 +43,7 @@ func TestAssemblyReopensAfterTreeMove(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(src, "parts"), 0o755); err != nil {
 		t.Fatalf("mkdir parts: %v", err)
 	}
-	ws := doc.NewWorkspace(store)
+	ws := doc.NewWorkspace(store, contentset.Default())
 	widget := savePartDoc(t, ws, filepath.Join(src, "parts"), "widget.obk")
 	asm, asmDef := newAssembly(t, ws, src, "asm.obk")
 	placeFromFile(t, asm, widget, asmDef, "widget:1", math.Identity4())

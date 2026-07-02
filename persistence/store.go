@@ -115,7 +115,7 @@ func (s *PackageStore) buildPackage(d *doc.Document, displayName, subType string
 
 // Load opens the package at fullDocumentName, migrates it, and reconstructs the
 // document from its manifest.
-func (s *PackageStore) Load(fullDocumentName string) (*doc.Document, error) {
+func (s *PackageStore) Load(fullDocumentName string, factories doc.ContentFactories) (*doc.Document, error) {
 	pkg, err := OpenPackage(fullDocumentName)
 	if err != nil {
 		return nil, err
@@ -124,7 +124,7 @@ func (s *PackageStore) Load(fullDocumentName string) (*doc.Document, error) {
 	if err != nil {
 		return nil, fmt.Errorf(errLoad, fullDocumentName, err)
 	}
-	d, err := doc.Restore(doc.DocumentType(manifest.DocumentType), fullDocumentName, manifest.DisplayName)
+	d, err := doc.Restore(doc.DocumentType(manifest.DocumentType), fullDocumentName, manifest.DisplayName, factories)
 	if err != nil {
 		return nil, err
 	}

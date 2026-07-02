@@ -7,7 +7,7 @@ import "testing"
 // TestFileIdentityMintedAtCreation: every document file gets a unique GUID and
 // the creating software version from the moment it exists (M03-F07, #159).
 func TestFileIdentityMintedAtCreation(t *testing.T) {
-	ws := NewWorkspace(newFakeStore())
+	ws := NewWorkspace(newFakeStore(), nil)
 	a, _ := ws.Add(Part, "a.obk", true)
 	b, _ := ws.Add(Part, "b.obk", true)
 	idA, idB := a.FileIdentity(), b.FileIdentity()
@@ -25,7 +25,7 @@ func TestFileIdentityMintedAtCreation(t *testing.T) {
 // TestSaveBumpsIdentity: a save advances the counter and re-mints the content
 // revision; the database revision re-mints only when the recipe changed.
 func TestSaveBumpsIdentity(t *testing.T) {
-	ws := NewWorkspace(newFakeStore())
+	ws := NewWorkspace(newFakeStore(), nil)
 	d, _ := ws.Add(Part, "a.obk", true)
 	if err := ws.Save(d); err != nil {
 		t.Fatalf("Save: %v", err)
@@ -53,7 +53,7 @@ func TestSaveBumpsIdentity(t *testing.T) {
 // TestFailedSaveRollsIdentityBack: identity must never drift ahead of the
 // bytes on disk.
 func TestFailedSaveRollsIdentityBack(t *testing.T) {
-	ws := NewWorkspace(&failingStore{})
+	ws := NewWorkspace(&failingStore{}, nil)
 	d, _ := ws.Add(Part, "a.obk", true)
 	before := d.FileIdentity()
 	if err := ws.Save(d); err == nil {
@@ -71,7 +71,7 @@ func (s *failingStore) Save(*Document) error { return errNotStored{"write failed
 func (s *failingStore) SaveCopy(*Document, string, CopyMetadata) error {
 	return errNotStored{"write failed"}
 }
-func (s *failingStore) Load(name string) (*Document, error) {
+func (s *failingStore) Load(name string, factories ContentFactories) (*Document, error) {
 	return nil, errNotStored{name}
 }
 func (s *failingStore) Exists(string) bool { return false }

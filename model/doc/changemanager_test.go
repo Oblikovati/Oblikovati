@@ -21,7 +21,7 @@ func (p *recordingProcessor) ProcessChange(e ModelChanged) error {
 }
 
 func TestRegisteredProcessorInvokedOnModelChange(t *testing.T) {
-	ws := NewWorkspace(newFakeStore())
+	ws := NewWorkspace(newFakeStore(), nil)
 	cm := NewChangeManager(ws.Events())
 	defer cm.Close()
 	proc := &recordingProcessor{name: "bom"}
@@ -49,7 +49,7 @@ func TestRegisteredProcessorInvokedOnModelChange(t *testing.T) {
 }
 
 func TestProcessControlEnableDisable(t *testing.T) {
-	ws := NewWorkspace(newFakeStore())
+	ws := NewWorkspace(newFakeStore(), nil)
 	cm := NewChangeManager(ws.Events())
 	proc := &recordingProcessor{name: "p"}
 	reg := cm.Register(proc)
@@ -83,7 +83,7 @@ func TestProcessControlEnableDisable(t *testing.T) {
 }
 
 func TestModelChangeCanBeVetoed(t *testing.T) {
-	ws := NewWorkspace(newFakeStore())
+	ws := NewWorkspace(newFakeStore(), nil)
 	cm := NewChangeManager(ws.Events())
 	proc := &recordingProcessor{name: "p"}
 	cm.Register(proc)

@@ -17,7 +17,7 @@ func TestOpenWithCollidingIdentityReassigns(t *testing.T) {
 	store := newFakeStore()
 	store.saved["original.opd"] = storedDoc{docType: Part, displayName: "original", internalName: sharedGUID}
 	store.saved["clone.opd"] = storedDoc{docType: Part, displayName: "clone", internalName: sharedGUID}
-	ws := NewWorkspace(store)
+	ws := NewWorkspace(store, nil)
 
 	var reassigned *DocumentIdentityReassigned
 	event.Subscribe(ws.Events(), event.After, func(_ event.Context, e DocumentIdentityReassigned) event.Outcome {
@@ -65,7 +65,7 @@ func TestClosingFreesIdentityForReopen(t *testing.T) {
 	const guid = "22222222-2222-4222-8222-222222222222"
 	store := newFakeStore()
 	store.saved["a.opd"] = storedDoc{docType: Part, displayName: "a", internalName: guid}
-	ws := NewWorkspace(store)
+	ws := NewWorkspace(store, nil)
 
 	d, err := ws.Open("a.opd", true)
 	if err != nil {

@@ -10,6 +10,7 @@ import (
 
 	"oblikovati.org/model/benchgen"
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/persistence"
 )
@@ -30,7 +31,7 @@ func cliTinyProfile() benchgen.Profile {
 
 func TestGenerateAssemblyWritesAndReopens(t *testing.T) {
 	prefix := filepath.Join(t.TempDir(), "tinycar")
-	build := doc.NewWorkspace(persistence.NewPackageStore())
+	build := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
 	root, _, err := benchgen.Generate(build, prefix, cliTinyProfile())
 	if err != nil {
 		t.Fatalf("Generate: %v", err)
@@ -43,7 +44,7 @@ func TestGenerateAssemblyWritesAndReopens(t *testing.T) {
 	// does — resolving the assembly's references to its part/sub-assembly files and
 	// recomputing geometry, proving the fixture is loadable (not just generated).
 	rootPath := root.FullFileName()
-	ws := doc.NewWorkspace(persistence.NewPackageStore())
+	ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
 	reopened, err := ws.Open(rootPath, false)
 	if err != nil {
 		t.Fatalf("reopen %q: %v", rootPath, err)

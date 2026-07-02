@@ -17,6 +17,7 @@ import (
 	"oblikovati.org/model/bom"
 	"oblikovati.org/model/colorscheme"
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/display"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/facetstore"
@@ -206,7 +207,7 @@ func NewSessionWithStore(store doc.Store) *Session { return newSession(store) }
 func newSession(store doc.Store) *Session {
 	s := &Session{
 		store:     store,
-		workspace: doc.NewWorkspace(store),
+		workspace: doc.NewWorkspace(store, contentset.Default()),
 		commands:  NewCommandManager(),
 		histories: map[doc.ID]*docHistory{}, txAudit: map[doc.ID]*command.SnapshotLog{},
 		bus:       event.NewBus(),

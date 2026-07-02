@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/identity"
 	"oblikovati.org/model/sketch"
@@ -76,7 +77,7 @@ func TestSketchKeySurvivesRealFileRoundTrip(t *testing.T) {
 	}
 
 	// Reopen from disk in a fresh workspace to force the on-disk load path.
-	reopenedDoc, err := doc.NewWorkspace(store).Open(path, true)
+	reopenedDoc, err := doc.NewWorkspace(store, contentset.Default()).Open(path, true)
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}

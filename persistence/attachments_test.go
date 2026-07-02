@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
 )
 
@@ -43,7 +44,7 @@ func TestAttachmentsRoundTripThroughPackage(t *testing.T) {
 		mod:   time.Date(2026, 6, 1, 12, 0, 0, 0, time.UTC),
 	}
 
-	ws := doc.NewWorkspace(store)
+	ws := doc.NewWorkspace(store, contentset.Default())
 	ws.SetExternalFileProbe(ext)
 	d, err := ws.Add(doc.Part, path, true)
 	if err != nil {
@@ -59,7 +60,7 @@ func TestAttachmentsRoundTripThroughPackage(t *testing.T) {
 		t.Fatalf("Save: %v", err)
 	}
 
-	ws2 := doc.NewWorkspace(store)
+	ws2 := doc.NewWorkspace(store, contentset.Default())
 	ws2.SetExternalFileProbe(ext)
 	reopened, err := ws2.Open(path, true)
 	if err != nil {
@@ -88,7 +89,7 @@ func TestInterestsRoundTripThroughPackage(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "bracket.obk")
 	store := NewPackageStore()
-	ws := doc.NewWorkspace(store)
+	ws := doc.NewWorkspace(store, contentset.Default())
 	d, err := ws.Add(doc.Part, path, true)
 	if err != nil {
 		t.Fatalf("Add: %v", err)
@@ -102,7 +103,7 @@ func TestInterestsRoundTripThroughPackage(t *testing.T) {
 		t.Fatalf("Save: %v", err)
 	}
 
-	reopened, err := doc.NewWorkspace(store).Open(path, true)
+	reopened, err := doc.NewWorkspace(store, contentset.Default()).Open(path, true)
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}
