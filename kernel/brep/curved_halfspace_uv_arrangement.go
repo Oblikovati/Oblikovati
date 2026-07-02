@@ -1068,8 +1068,11 @@ func isClosedCurve(curve geom.Curve3) bool {
 	case *geom.Polyline:
 		// An SSI imprint loop is a closed polyline (first point ≈ last). Recognising it as closed makes
 		// emitImprintRun re-emit the WHOLE loop [lo,hi] from PointAt(0), so both operand sides emit the same
-		// shared edge and the welder fuses them (#1403).
-		return roundKey(c.PointAt(0)) == roundKey(c.PointAt(1))
+		// shared edge and the welder fuses them (#1403). The gap gauge is the loop's own stitch
+		// resolution — a distance test, not grid-cell equality, so a genuinely closed loop cannot be
+		// misread as open by cell straddling (#1602).
+		gap := float64(c.PointAt(0).DistanceTo(c.PointAt(1)))
+		return gap <= geom.ResolutionForPoints(c.Vertices).Stitch()
 	}
 	return false
 }

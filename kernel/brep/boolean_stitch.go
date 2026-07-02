@@ -25,7 +25,7 @@ func stitch(faces []subFace, prov []imprintSeg) (*topo.Body, math.Vector3, error
 	if len(faces) == 0 {
 		return nil, math.Vector3{}, nil
 	}
-	w := newWelder3()
+	w := newWelder3(planarStitchGrid)
 	// Pass 1: weld every face's loops to vertex indices (collect the full vertex set).
 	out := make([]builtFace, len(faces))
 	for i, sf := range faces {
@@ -41,7 +41,7 @@ func stitch(faces []subFace, prov []imprintSeg) (*topo.Body, math.Vector3, error
 	// shared edges subdivide identically (eliminates cross-face T-junctions).
 	for fi := range out {
 		for ri := range out[fi].rings {
-			out[fi].rings[ri] = splitRingTJunctions(out[fi].rings[ri], w.points)
+			out[fi].rings[ri] = splitRingTJunctions(out[fi].rings[ri], w)
 		}
 	}
 	reorientFaces(out, w.points)
@@ -73,13 +73,13 @@ func awayFromContacts(uses map[[2]int][]loopEdgeUse, faces []builtFace) math.Vec
 // splitRingTJunctions inserts, into each edge of the ring, any other vertex that lies in
 // its interior (sorted along the edge) — so a vertex that is a corner of a neighbour face
 // also subdivides this face's coincident edge.
-func splitRingTJunctions(ring []int, verts []math.Point3) []int {
+func splitRingTJunctions(ring []int, w *welder3) []int {
 	n := len(ring)
 	out := make([]int, 0, n)
 	for i := 0; i < n; i++ {
 		a, b := ring[i], ring[(i+1)%n]
 		out = append(out, a)
-		mids := verticesOnSegment(a, b, ring, verts)
+		mids := verticesOnSegment(a, b, ring, w)
 		out = append(out, mids...)
 	}
 	return out
@@ -93,14 +93,14 @@ type segHit struct {
 
 // verticesOnSegment returns the vertices (excluding the ring's own) lying strictly on the
 // segment a→b, ordered by parameter along it.
-func verticesOnSegment(a, b int, ring []int, verts []math.Point3) []int {
-	pa := verts[a]
-	ab := pa.VectorTo(verts[b])
+func verticesOnSegment(a, b int, ring []int, w *welder3) []int {
+	pa := w.points[a]
+	ab := pa.VectorTo(w.points[b])
 	lenSq := ab.LengthSquared()
 	if lenSq == 0 {
 		return nil
 	}
-	hits := collectSegHits(pa, ab, lenSq, ringSet(ring), verts)
+	hits := collectSegHits(pa, ab, lenSq, ringSet(ring), w)
 	sort.Slice(hits, func(i, j int) bool { return hits[i].t < hits[j].t })
 	out := make([]int, len(hits))
 	for i, h := range hits {
@@ -118,18 +118,19 @@ func ringSet(ring []int) map[int]bool {
 	return s
 }
 
-// collectSegHits gathers the off-ring vertices that lie strictly interior to segment pa+ab.
-func collectSegHits(pa math.Point3, ab math.Vector3, lenSq float64, onRing map[int]bool, verts []math.Point3) []segHit {
+// collectSegHits gathers the off-ring vertices that lie strictly interior to segment pa+ab
+// (within the welder's own weld grid, the same coincidence scale the vertices merged on).
+func collectSegHits(pa math.Point3, ab math.Vector3, lenSq float64, onRing map[int]bool, w *welder3) []segHit {
 	var hits []segHit
-	for c := range verts {
+	for c := range w.points {
 		if onRing[c] {
 			continue
 		}
-		t := pa.VectorTo(verts[c]).Dot(ab) / lenSq
+		t := pa.VectorTo(w.points[c]).Dot(ab) / lenSq
 		if t <= 1e-7 || t >= 1-1e-7 { // tol:parametric — edge parameter t in [0,1]
 			continue
 		}
-		if pa.TranslateBy(ab.Scale(t)).DistanceTo(verts[c]) < 1e-6 { // tol:calibrated — planar stitch weld (see arrange2d arrTol)
+		if float64(pa.TranslateBy(ab.Scale(t)).DistanceTo(w.points[c])) < w.grid {
 			hits = append(hits, segHit{t, c})
 		}
 	}
@@ -227,31 +228,42 @@ func buildEdges(bld *topo.Builder, verts []math.Point3, tv []*topo.Vertex, edgeU
 	return edges
 }
 
-// weldGrid is the coincidence tolerance for merging stitched vertices (cm). Points within it
-// are the same vertex.
-const weldGrid = 1e-6 // tol:calibrated — planar stitch weld grid (see arrange2d arrTol)
+// planarStitchGrid is the weld grid of the PLANAR boolean family (stitch, split-ring signatures,
+// T-junction hits, drill assembly) and stays deliberately ABSOLUTE, unlike the SSI-fed curved
+// stitch (which scales with the model, geom.Resolution.Stitch, #1602). The planar path's producers
+// bound their noise absolutely, not proportionally to part size: exact plane–plane arithmetic
+// errs by ~1e-16·|coordinate| (2e-14 even at 2 m), and triangle-soup CSG facets legitimately carry
+// slivers just above 1e-6 that a coarser, size-scaled grid would collapse into degenerate rings —
+// TestNopCapScrewCSG catches exactly that over-merge. See also the arrange2d arrTol calibration
+// note; nudgeEps in boolean.go is calibrated 10× above this grid so a tangency clearance survives
+// the re-weld.
+const planarStitchGrid = 1e-6 // tol:calibrated — planar stitch weld grid (see arrange2d arrTol)
 
-// welder3 merges coincident 3D points onto a shared index list.
+// welder3 merges 3D points within its weld grid onto a shared index list. The grid is
+// model-relative (geom.Resolution.Stitch of the geometry being welded, ADR-0042): the retired
+// absolute 1e-6 grid was calibrated for ~1 cm parts and left independently computed copies of the
+// same seam point unmerged as soon as their producer noise (1e-7 of the extent) outgrew it (#1602).
 type welder3 struct {
+	grid   float64
 	index  map[[3]int64]int
 	points []math.Point3
 }
 
-func newWelder3() *welder3 { return &welder3{index: map[[3]int64]int{}} }
+func newWelder3(grid float64) *welder3 { return &welder3{grid: grid, index: map[[3]int64]int{}} }
 
 // add returns the index of the welded vertex for p, merging it with any existing vertex within
-// weldGrid. The point is hashed to a grid cell, but the 26 neighbouring cells are also searched:
+// the weld grid. The point is hashed to a grid cell, but the 26 neighbouring cells are also searched:
 // two coincident points either side of a cell boundary hash to different cells, so a cell-exact
 // lookup would leave them unmerged — the failure that shredded dense self-proximate geometry
 // (a fine-pitch coil-join) into unpaired, coincident open edges (#879).
 func (w *welder3) add(p math.Point3) int {
-	cx := int64(stdmath.Round(p.X / weldGrid))
-	cy := int64(stdmath.Round(p.Y / weldGrid))
-	cz := int64(stdmath.Round(p.Z / weldGrid))
+	cx := int64(stdmath.Round(p.X / w.grid))
+	cy := int64(stdmath.Round(p.Y / w.grid))
+	cz := int64(stdmath.Round(p.Z / w.grid))
 	for dx := int64(-1); dx <= 1; dx++ {
 		for dy := int64(-1); dy <= 1; dy++ {
 			for dz := int64(-1); dz <= 1; dz++ {
-				if i, ok := w.index[[3]int64{cx + dx, cy + dy, cz + dz}]; ok && w.points[i].DistanceTo(p) <= weldGrid {
+				if i, ok := w.index[[3]int64{cx + dx, cy + dy, cz + dz}]; ok && w.points[i].DistanceTo(p) <= w.grid {
 					return i
 				}
 			}

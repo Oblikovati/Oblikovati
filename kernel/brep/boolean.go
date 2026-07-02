@@ -67,10 +67,12 @@ func booleanOnce(op Op, fa, fb []planarFace, a, b *topo.Body) (*topo.Body, math.
 }
 
 // nudgeEps is the magnitude (cm) of the clearance opened at a tangent contact: above the weld
-// grid (1e-6) so it survives, far below any modelled feature so it is geometrically
-// irrelevant. A line tangency carries no material, so replacing it with a ~0.1 µm gap loses
-// nothing and — unlike the exact tangent — leaves no coincident edge for a re-weld to collapse.
-const nudgeEps = 1e-5 // tol:calibrated — imprint nudge tied to the planar weld grid (see arrange2d arrTol)
+// grid (planarStitchGrid, 1e-6) so it survives, far below any modelled feature so it is
+// geometrically irrelevant. A line tangency carries no material, so replacing it with a ~0.1 µm
+// gap loses nothing and — unlike the exact tangent — leaves no coincident edge for a re-weld to
+// collapse. Calibrated with — and only meaningful relative to — the absolute planar weld grid:
+// the two must move together (#1602).
+const nudgeEps = 10 * planarStitchGrid // tol:calibrated — imprint nudge tied to the planar weld grid
 
 // retryNudged re-runs the boolean with operand B nudged a hair along `away` (out of the
 // tangent contact) so the degenerate touch becomes a clean clearance. It keeps the nudged

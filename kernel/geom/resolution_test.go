@@ -120,3 +120,18 @@ func TestSpanCeilingDiagnostic(t *testing.T) {
 		t.Errorf("zero feature size should not warn, got %q", w)
 	}
 }
+
+// TestStitchCoversSSIProducerNoise encodes the seam-stitch producer/consumer contract (#1602): the
+// stitch weld grid must stay coarser than the SSI tracer's on-curve acceptance tolerance
+// (ssiToleranceFraction of the trace extent) with margin for the two-sided ~2× noise, at every
+// model scale — otherwise two independently computed copies of one seam point fail to merge and
+// the curved boolean's seam tears open.
+func TestStitchCoversSSIProducerNoise(t *testing.T) {
+	for _, size := range []float64{1, 10, 50, 200, 1000, 1e6} {
+		stitch := ResolutionForSize(size).Stitch()
+		noise := 2 * ssiToleranceFraction * size
+		if stitch < 2*noise {
+			t.Errorf("size %g: stitch grid %g < 2× two-sided SSI noise %g — seams can tear", size, stitch, noise)
+		}
+	}
+}

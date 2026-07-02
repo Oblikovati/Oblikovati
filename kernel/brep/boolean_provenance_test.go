@@ -3,6 +3,8 @@
 package brep
 
 import (
+	"fmt"
+	stdmath "math"
 	"testing"
 
 	"oblikovati.org/kernel/subd"
@@ -96,11 +98,17 @@ func TestImprintAllMatchesProvenanceSegments(t *testing.T) {
 	}
 }
 
-// segKey is an endpoint-order-independent key for a 3D segment, rounded to the weld grid.
+// segKey is an endpoint-order-independent key for a 3D segment, rounded to a fixed test grid
+// (the compared segments come from the same computation, so exact-cell rounding is safe here).
 func segKey(a, b math.Point3) string {
-	ka, kb := roundKey(a), roundKey(b)
+	ka, kb := testPointKey(a), testPointKey(b)
 	if ka <= kb {
 		return ka + "|" + kb
 	}
 	return kb + "|" + ka
+}
+
+func testPointKey(p math.Point3) string {
+	const grid = 1e-6
+	return fmt.Sprintf("%d,%d,%d", int64(stdmath.Round(p.X/grid)), int64(stdmath.Round(p.Y/grid)), int64(stdmath.Round(p.Z/grid)))
 }

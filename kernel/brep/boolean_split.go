@@ -3,7 +3,6 @@
 package brep
 
 import (
-	stdmath "math"
 	"sort"
 	"strconv"
 	"strings"
@@ -44,9 +43,10 @@ func splitFace(f planarFace, imprints [][2]math.Point3) []subFace {
 // face the surface should be.
 func mergeFilledHoles(faces []subFace) []subFace {
 	drop := make([]bool, len(faces))
+	pw := newWelder3(planarStitchGrid)
 	for i := range faces {
 		for h := 0; h < len(faces[i].holes); {
-			if j := fillerOf(faces, faces[i].holes[h], drop, i); j >= 0 {
+			if j := fillerOf(faces, faces[i].holes[h], drop, i, pw); j >= 0 {
 				drop[j] = true
 				faces[i].holes = append(faces[i].holes[:h], faces[i].holes[h+1:]...)
 				continue
@@ -65,36 +65,35 @@ func mergeFilledHoles(faces []subFace) []subFace {
 
 // fillerOf returns the index of a not-yet-dropped face (other than self) whose outer loop is
 // the same ring as hole, or −1. A face filling a hole is identified by loop coincidence.
-func fillerOf(faces []subFace, hole []math.Point3, drop []bool, self int) int {
-	want := ringSignature(hole)
+func fillerOf(faces []subFace, hole []math.Point3, drop []bool, self int, pw *welder3) int {
+	want := ringSignature(hole, pw)
 	for j := range faces {
 		if j == self || drop[j] || len(faces[j].holes) > 0 {
 			continue
 		}
-		if ringSignature(faces[j].outer) == want {
+		if ringSignature(faces[j].outer, pw) == want {
 			return j
 		}
 	}
 	return -1
 }
 
-// ringSignature is an order/winding-independent key for a 3D loop: its vertices rounded to the
-// stitch weld grid and concatenated in sorted order, so the same ring compares equal however
-// it is traversed.
-func ringSignature(ring []math.Point3) string {
-	keys := make([]string, len(ring))
+// ringSignature is an order/winding-independent key for a 3D loop: its vertices canonicalised
+// through the shared point welder and concatenated in sorted order, so the same ring compares
+// equal however it is traversed. Welding — not exact-cell rounding — makes the signature immune
+// to two copies of one vertex straddling a grid-cell boundary, and the welder's model-relative
+// grid keeps the comparison faithful across part scales (#1602).
+func ringSignature(ring []math.Point3, pw *welder3) string {
+	keys := make([]int, len(ring))
 	for i, p := range ring {
-		keys[i] = roundKey(p)
+		keys[i] = pw.add(p)
 	}
-	sort.Strings(keys)
-	return strings.Join(keys, "|")
-}
-
-func roundKey(p math.Point3) string {
-	const grid = 1e-6 // tol:calibrated — planar split weld grid (see arrange2d arrTol)
-	return strconv.FormatInt(int64(stdmath.Round(p.X/grid)), 36) + "," +
-		strconv.FormatInt(int64(stdmath.Round(p.Y/grid)), 36) + "," +
-		strconv.FormatInt(int64(stdmath.Round(p.Z/grid)), 36)
+	sort.Ints(keys)
+	parts := make([]string, len(keys))
+	for i, k := range keys {
+		parts[i] = strconv.Itoa(k)
+	}
+	return strings.Join(parts, "|")
 }
 
 // faceBoundarySegments returns a face's loop edges as 2D segments in its plane.

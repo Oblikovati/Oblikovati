@@ -81,3 +81,43 @@ func TestEdgeCurveForFullCircleStaysCircle(t *testing.T) {
 		t.Errorf("full-circle edge curve is %T, want geom.Circle", edgeCurveFor(le))
 	}
 }
+
+// TestCurvedStitchWeldsProducerNoiseAtScale is the mechanism regression for #1602: on a ~2 m part
+// the SSI tracer accepts an on-curve point anywhere within 1e-7·extent ≈ 2.8e-5 cm, so two
+// independently computed copies of one seam point can sit ~28× apart the retired absolute 1e-6
+// weld grid — and failed to merge, tearing the seam. The curved stitch grid now scales with the
+// stitched geometry (geom.Resolution.Stitch), so the copies weld to one vertex.
+func TestCurvedStitchWeldsProducerNoiseAtScale(t *testing.T) {
+	const extent = 280.0
+	w := newWelder3(geom.ResolutionForSize(extent).Stitch())
+	p := math.P3(100, 57.3, -42.1)
+	noisy := p.TranslateBy(math.V3(1.6e-5, -1.6e-5, 1.6e-5)) // |Δ| ≈ 2.8e-5 = the SSI acceptance at this extent
+	if w.add(p) != w.add(noisy) {
+		t.Errorf("two SSI-noise copies of one seam point (%g apart) welded to distinct vertices on a %g cm part",
+			float64(p.DistanceTo(noisy)), extent)
+	}
+	far := p.TranslateBy(math.V3(0.1, 0, 0)) // a genuinely distinct vertex stays distinct
+	if w.add(far) == w.add(p) {
+		t.Error("a point 0.1 cm away merged with the seam point; the stitch grid is too coarse")
+	}
+}
+
+// TestClosedPolylineRecognitionAtScale: a traced SSI loop on a large part whose closure gap is
+// producer noise (not zero) must still be recognised as closed by the (u,v) arrangement — the old
+// exact-cell key equality misread it as open once the gap outgrew the absolute grid, so both
+// operand sides emitted different edge runs and the seam tore (#1602).
+func TestClosedPolylineRecognitionAtScale(t *testing.T) {
+	pts := []math.Point3{math.P3(100, 0, 0), math.P3(0, 100, 0), math.P3(-100, 0, 0), math.P3(0, -100, 0), math.P3(100, 2.8e-5, 0)}
+	pl, err := geom.NewPolyline(pts)
+	if err != nil {
+		t.Fatalf("NewPolyline: %v", err)
+	}
+	if !isClosedCurve(&pl) {
+		t.Error("a loop closed to within SSI producer noise on a 200 cm part was misread as open")
+	}
+	open := []math.Point3{math.P3(100, 0, 0), math.P3(0, 100, 0), math.P3(-100, 0, 0), math.P3(0, -100, 0), math.P3(100, 1, 0)}
+	plOpen, _ := geom.NewPolyline(open)
+	if isClosedCurve(&plOpen) {
+		t.Error("a chain with a 1 cm endpoint gap was misread as closed")
+	}
+}

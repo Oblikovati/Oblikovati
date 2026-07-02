@@ -19,10 +19,14 @@ import (
 // tessellates over the arc, not the whole circle (TessellateEdge walks the curve's whole Domain).
 
 // curvedStitch welds curvedFaces into a body, sharing welded vertices and edges. Each face keeps its
-// surface, sense (reversed) and lineage; loops[0] is the outer loop, the rest holes.
+// surface, sense (reversed) and lineage; loops[0] is the outer loop, the rest holes. The weld grid is
+// the faces' own stitch resolution (ADR-0042, #1602): the seam points fed in carry SSI-tracer noise
+// proportional to the operands' extent, so an absolute grid tears seams on parts it was never
+// calibrated for.
 func curvedStitch(faces []curvedFace) *topo.Body {
 	bld := topo.NewBuilder(true, topo.NewLineage(topo.Tok("curvedbool", "body", 0)))
-	w := &curveWelder{bld: bld, verts: map[string]*topo.Vertex{}, edges: map[string]*topo.Edge{}}
+	pw := newWelder3(geom.ResolutionForBox(curvedFaceBox(faces)).Stitch())
+	w := &curveWelder{bld: bld, pw: pw, verts: map[int]*topo.Vertex{}, edges: map[[3]int]*topo.Edge{}}
 	provByFace := map[*topo.Face]topo.Lineage{}
 	for _, f := range faces {
 		specs := w.loopSpecs(f.loops, f.outerless)
@@ -50,12 +54,30 @@ func curvedStitch(faces []curvedFace) *topo.Body {
 }
 
 // curveWelder dedups vertices (by position) and edges (by endpoints + midpoint) as faces are added.
+// Positions canonicalise through a shared point welder (grid + 26-neighbour distance search), so two
+// independently computed copies of one seam point weld even when they straddle a grid-cell boundary —
+// the failure mode of the retired exact-cell string keys (#1602).
 type curveWelder struct {
 	bld   *topo.Builder
-	verts map[string]*topo.Vertex
-	edges map[string]*topo.Edge
+	pw    *welder3
+	verts map[int]*topo.Vertex
+	edges map[[3]int]*topo.Edge
 	nv    int
 	ne    int
+}
+
+// curvedFaceBox bounds the loop-edge endpoints of the faces being stitched — the geometry whose
+// Resolution sets the stitch weld grid (#1602).
+func curvedFaceBox(faces []curvedFace) math.Box {
+	box := math.EmptyBox()
+	for _, f := range faces {
+		for _, loop := range f.loops {
+			for _, le := range loop.edges {
+				box = box.ExtendPoint(le.start()).ExtendPoint(le.end())
+			}
+		}
+	}
+	return box
 }
 
 // loopSpecs turns a face's curved loops into builder loop specs (outer first, the rest holes). When
@@ -78,9 +100,9 @@ func (w *curveWelder) loopSpecs(loops []curvedLoop, outerless bool) []topo.LoopS
 	return specs
 }
 
-// vertex welds a point to a shared topo vertex by rounded position.
+// vertex welds a point to a shared topo vertex by canonical welded position.
 func (w *curveWelder) vertex(p math.Point3) *topo.Vertex {
-	key := roundKey(p)
+	key := w.pw.add(p)
 	if v, ok := w.verts[key]; ok {
 		return v
 	}
@@ -96,13 +118,13 @@ func (w *curveWelder) vertex(p math.Point3) *topo.Vertex {
 func (w *curveWelder) edge(le loopEdge) (*topo.Edge, bool) {
 	a, b := le.start(), le.end()
 	mid := le.curve.PointAt((le.t0 + le.t1) / 2)
-	closed := roundKey(a) == roundKey(b)
-	key := edgeKey(a, b, mid)
+	closed := w.pw.add(a) == w.pw.add(b)
+	key := w.edgeKey(a, b, mid)
 	if e, ok := w.edges[key]; ok {
 		if closed {
 			return e, le.t1 < le.t0
 		}
-		return e, roundKey(e.StartVertex().Point()) != roundKey(a)
+		return e, w.pw.add(e.StartVertex().Point()) != w.pw.add(a)
 	}
 	return w.newEdge(le, a, b, key, closed)
 }
@@ -111,14 +133,14 @@ func (w *curveWelder) edge(le loopEdge) (*topo.Edge, bool) {
 // uses it forward, except a reversed-sweep closed circle). An OPEN spiric branch is stored in its native
 // direction (V0<V1, see spiricArcOf) and anchored to the curve's own endpoints, so the reversed flag — not a
 // flipped curve — orients it; the direction-sensitive spiric mesher then meshes the same patch either way.
-func (w *curveWelder) newEdge(le loopEdge, a, b math.Point3, key string, closed bool) (*topo.Edge, bool) {
+func (w *curveWelder) newEdge(le loopEdge, a, b math.Point3, key [3]int, closed bool) (*topo.Edge, bool) {
 	curve := edgeCurveFor(le)
 	if sa, ok := curve.(geom.SpiricArc); ok && !closed {
 		ca, cb := sa.PointAt(0), sa.PointAt(1)
 		e := w.bld.AddEdge(curve, w.vertex(ca), w.vertex(cb), topo.NewLineage(topo.Tok("curvedbool", "e", w.ne)))
 		w.ne++
 		w.edges[key] = e
-		return e, roundKey(ca) != roundKey(a) // reversed when this loop starts at the arc's far end
+		return e, w.pw.add(ca) != w.pw.add(a) // reversed when this loop starts at the arc's far end
 	}
 	va, vb := w.vertex(a), w.vertex(b)
 	e := w.bld.AddEdge(curve, va, vb, topo.NewLineage(topo.Tok("curvedbool", "e", w.ne)))
@@ -130,14 +152,14 @@ func (w *curveWelder) newEdge(le loopEdge, a, b math.Point3, key string, closed 
 	return e, false
 }
 
-// edgeKey is the canonical weld key for an edge: its two endpoints (sorted, so direction does not
-// matter) plus its midpoint (so two curves joining the same endpoints stay distinct).
-func edgeKey(a, b, mid math.Point3) string {
-	ka, kb := roundKey(a), roundKey(b)
+// edgeKey is the canonical weld key for an edge: its two welded endpoints (sorted, so direction
+// does not matter) plus its welded midpoint (so two curves joining the same endpoints stay distinct).
+func (w *curveWelder) edgeKey(a, b, mid math.Point3) [3]int {
+	ka, kb := w.pw.add(a), w.pw.add(b)
 	if ka > kb {
 		ka, kb = kb, ka
 	}
-	return ka + "|" + kb + "|" + roundKey(mid)
+	return [3]int{ka, kb, w.pw.add(mid)}
 }
 
 // edgeCurveFor returns the curve to store on the topo edge so its WHOLE domain is exactly the loop

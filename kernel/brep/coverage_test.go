@@ -150,7 +150,7 @@ func TestFaceLineIntervalsPerpendicularLine(t *testing.T) {
 }
 
 func TestWelder3RingDedupesAndCloses(t *testing.T) {
-	w := newWelder3()
+	w := newWelder3(1e-6)
 	// A loop with a repeated consecutive vertex and a closing duplicate.
 	loop := []math.Point3{math.P3(0, 0, 0), math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0, 1, 0), math.P3(0, 0, 0)}
 	r := w.ring(loop)
@@ -172,14 +172,17 @@ func TestInteriorPoint2D(t *testing.T) {
 }
 
 func TestVerticesOnSegment(t *testing.T) {
-	verts := []math.Point3{math.P3(0, 0, 0), math.P3(2, 0, 0), math.P3(1, 0, 0)}
+	w := newWelder3(1e-6)
+	for _, p := range []math.Point3{math.P3(0, 0, 0), math.P3(2, 0, 0), math.P3(1, 0, 0)} {
+		w.add(p)
+	}
 	// Vertex 2 (1,0,0), which is off the ring, lies on segment 0→1.
-	got := verticesOnSegment(0, 1, []int{0, 1}, verts)
+	got := verticesOnSegment(0, 1, []int{0, 1}, w)
 	if len(got) != 1 || got[0] != 2 {
 		t.Fatalf("verticesOnSegment = %v, want [2]", got)
 	}
 	// A zero-length segment yields nothing.
-	if verticesOnSegment(0, 0, []int{0, 1}, verts) != nil {
+	if verticesOnSegment(0, 0, []int{0, 1}, w) != nil {
 		t.Error("zero-length segment should have no interior vertices")
 	}
 }

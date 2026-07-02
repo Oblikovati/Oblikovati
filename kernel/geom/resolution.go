@@ -44,6 +44,13 @@ const (
 	weldCoef  = 1      // vertex / arrangement weld (epsRel × size: the convex-hull precedent)
 	planeCoef = 100    // coplanar / on-plane / on-line classification
 	sewCoef   = 100000 // default sew gap (deliberately generous, ≈1e-4 cm @ 1cm)
+	// stitchCoef is the boolean seam-stitch weld. It must be COARSER than the noise of the SSI
+	// producer feeding the stitch: the tracer accepts an on-curve point anywhere within 1e-7 of the
+	// trace extent (ssiToleranceFraction), so the same seam point computed from the two operand
+	// sides can differ by ~2e-7·size — a finer weld leaves the two copies unmerged and the seam
+	// tears open (#1602). 1000 × epsRel = 1e-6·size reproduces the proven absolute 1e-6 stitch grid
+	// at the historical ~1 cm part scale and scales with the model.
+	stitchCoef = 1000
 )
 
 // volCoef is the relative volume tolerance for boolean result classification. Volume
@@ -121,6 +128,11 @@ func (r Resolution) Plane() float64 { return planeCoef * epsRel * r.size }
 
 // Sew is the default gap a Sew with tolerance 0 closes — deliberately generous.
 func (r Resolution) Sew() float64 { return sewCoef * epsRel * r.size }
+
+// Stitch is the boolean seam-stitch weld: how close two independently computed copies of the same
+// seam point may sit and still merge into one vertex. Deliberately coarser than Weld — stitched
+// points carry SSI-tracer noise (1e-7 of the trace extent), not float noise; see stitchCoef (#1602).
+func (r Resolution) Stitch() float64 { return stitchCoef * epsRel * r.size }
 
 // Area is the relative area / cross-product tolerance for degenerate-triangle and
 // turn-direction tests in the planar arrangement: areas scale with size², so this keeps

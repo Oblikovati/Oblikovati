@@ -106,7 +106,7 @@ func blindBore(copied []planarFace, entry planarFace, base, bottom math.Point3, 
 	bld := topo.NewBuilder(true, topo.NewLineage(topo.Tok("brep", "drill", 0)))
 	planar := append(append([]planarFace{}, copied...), entry)
 
-	w := newWelder3()
+	w := newWelder3(planarStitchGrid)
 	rings, edgeUse := weldPlanarFaces(w, planar)
 	tv := make([]*topo.Vertex, len(w.points))
 	for i, p := range w.points {
