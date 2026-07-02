@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/diag"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -233,6 +234,15 @@ func (h *HoleFeature) facetedCounterbore(body *topo.Body, center math.Point3, in
 // depth would exit), it falls back to the faceted boolean — a through-cut when `through`, the
 // requested depth otherwise.
 func (h *HoleFeature) cutCylinder(body *topo.Body, center math.Point3, into math.UnitVector3, r, depth float64, through bool, rec *diag.Recorder) (*topo.Body, error) {
+	// A blind hole whose bottom reaches (or passes) the part's far extent along the axis IS a
+	// through hole: the flush-bottom "blind" cut would leave a zero-thickness membrane for a
+	// floor, which the exact blind drill rightly rejects — and the rejection used to fall to the
+	// faceted prism cut, silently costing the bore its analytic cylinder wall (the tapped-hole
+	// thread had nothing to attach to, Oblikovati#1693). Promote it to the through cut, matching
+	// drill break-through behavior.
+	if !through && depth >= throughDepth(body, center, into)-cutterOverhang-geom.ResolutionForBox(body.RangeBox()).Plane() {
+		through = true
+	}
 	if through {
 		if res, err := brep.CutCylindricalHole(body, center, into.AsVector(), r); err == nil {
 			return res, nil
