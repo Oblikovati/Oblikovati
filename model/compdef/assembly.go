@@ -242,10 +242,18 @@ func (a *AssemblyComponentDefinition) DriveJoint(jointID uint64, settings assemb
 
 // AddFeature appends an assembly machining feature wrapping f, defaulting its
 // participation to every component currently present (the reference API's behavior:
-// components added later do not participate unless added to the feature). It returns
-// the hosted feature so the caller can adjust participation or suppression.
+// components added later do not participate unless added to the feature). The
+// aggregate owns the attach policy so no driver can miss it (#1612, audit B1):
+// the feature is named uniquely by kind (a load path overrides with the
+// persisted name), and a proxy cut never machines its own source component. It
+// returns the hosted feature so the caller can adjust participation or suppression.
 func (a *AssemblyComponentDefinition) AddFeature(f feature.Feature) *AssemblyFeature {
-	return a.features.Add(f, distinctSources(a.PlacedBodies()))
+	af := a.features.Add(f, distinctSources(a.PlacedBodies()))
+	af.SetName(a.features.UniqueName(af.Kind()))
+	if pc, ok := f.(*feature.AssemblyProxyCutFeature); ok {
+		af.RemoveParticipant(pc.Source())
+	}
+	return af
 }
 
 // Parameters returns the assembly's parameter DAG (shared with its sketches so

@@ -226,7 +226,7 @@ func TestParameterFieldsSurviveRoundTrip(t *testing.T) {
 		t.Errorf("multi-value not restored: %v custom=%v", rl.ExpressionList(), rl.AllowsCustomValue())
 	}
 	rg, ok := r.GroupByKey("com.example:frame")
-	if !ok || rg.DisplayName != "Frame" || rg.ClientID != "com.example" {
+	if !ok || rg.DisplayName() != "Frame" || rg.ClientID != "com.example" {
 		t.Errorf("group record = %+v, want key/display/client restored", rg)
 	}
 	if got := r.GroupsOf(rl.ID()); len(got) != 1 || got[0] != "com.example:frame" {

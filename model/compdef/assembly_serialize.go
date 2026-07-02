@@ -262,14 +262,11 @@ func (a *AssemblyComponentDefinition) restoreFeatures() error {
 		if err != nil {
 			return fmt.Errorf("compdef: restore assembly feature: %w", err)
 		}
+		// AddFeature owns the attach policy (unique naming, proxy-cut source
+		// exclusion — #1612); the persisted name then overrides the default.
 		af := a.AddFeature(f)
 		af.SetName(fr.Name)
 		af.SetSuppressed(fr.Suppressed)
-		// A proxy-cut never machines its own source component (the router excludes it on add),
-		// so drop the source from the participants AddFeature snapshotted.
-		if pc, ok := f.(*feature.AssemblyProxyCutFeature); ok {
-			af.RemoveParticipant(pc.Source())
-		}
 	}
 	a.RecomputeFeatures()
 	return nil

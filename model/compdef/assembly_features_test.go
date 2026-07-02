@@ -244,3 +244,22 @@ func TestAssemblyFeaturesLookupsAndRemove(t *testing.T) {
 		t.Error("removed feature still resolves by id")
 	}
 }
+
+// TestAddFeatureOwnsAttachPolicy: the aggregate names a new feature uniquely by
+// kind and excludes a proxy cut's source from participation — policy that used
+// to be duplicated across the router, the UI tools, and the load path (#1612).
+func TestAddFeatureOwnsAttachPolicy(t *testing.T) {
+	asm, occs := assemblyOfUnitBoxes(t, 0, 5)
+	first := asm.AddFeature(feature.NewAssemblyCutFeature(topHalfCutter(t), ops.Cut))
+	second := asm.AddFeature(feature.NewAssemblyCutFeature(topHalfCutter(t), ops.Cut))
+	if first.Name() == "" || first.Name() == second.Name() {
+		t.Errorf("default names = %q / %q, want unique non-empty names by kind", first.Name(), second.Name())
+	}
+
+	pc := asm.AddFeature(feature.NewAssemblyProxyCutFeature(occs[1], ops.Cut))
+	for _, o := range pc.Participants() {
+		if o == occs[1] {
+			t.Error("a proxy cut's source must be excluded from its default participation")
+		}
+	}
+}
