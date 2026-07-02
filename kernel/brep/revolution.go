@@ -10,10 +10,16 @@ import (
 	"oblikovati.org/math"
 )
 
-// revTol is the absolute slope tolerance classifying a meridian edge as axis-parallel
-// (cylinder) or axis-perpendicular (plane). Database units are small (cm), so 1e-7 is well
-// below any real feature size yet above floating noise from the model→(r,z) projection.
-const revTol = 1e-7 // tol:calibrated — TODO(#1603, audit A7): make scale-relative
+// revSlopeTol is the DIMENSIONLESS meridian slope threshold classifying an edge as axis-parallel
+// (cylinder: |Δr| ≤ revSlopeTol·|Δz|) or axis-perpendicular (plane: |Δz| ≤ revSlopeTol·|Δr|).
+// Surface type is a question about the edge's DIRECTION — an angle — so the threshold is an
+// angular tolerance, scale-free by construction (#1603, audit A7). 1e-9 matches geom's epsRel
+// relative-precision precedent: it sits a decade below the smallest taper classification must
+// preserve (1e-8 rad) and ~2 decades above the slope noise of a double-precision model→(r,z)
+// projection on proportionate geometry (ε·r/L ≈ 1e-13 at r/L ~ 1e3). OCCT can run its analogous
+// cone-vs-cylinder recognition at Precision::Angular()=1e-12 only because it reads exact curve
+// directions; we difference meridian endpoints, so Δr carries cancellation noise ~ε·r.
+const revSlopeTol = 1e-9 // tol:angular
 
 // SolidOfRevolution builds a closed ANALYTIC B-rep by revolving a meridian a full 360° about
 // the axis line through axisOrigin along axisDir. meridian is the cross-section in the (radius,
@@ -105,9 +111,10 @@ type revNode struct {
 // an arc; on-axis line edges skipped).
 func buildRevolution(axisOrigin math.Point3, a, ref math.UnitVector3, verts []RevolveVertex, feat string) *topo.Body {
 	bld := topo.NewBuilder(true, revLin(feat, "body", 0))
+	res := revolveResolution(verts)
 	nodes := make([]revNode, len(verts))
 	for i, vrt := range verts {
-		nodes[i] = makeRevNode(bld, axisOrigin, a, ref, float64(vrt.P.X), float64(vrt.P.Y), feat, i)
+		nodes[i] = makeRevNode(bld, axisOrigin, a, ref, float64(vrt.P.X), float64(vrt.P.Y), res.Plane(), feat, i)
 	}
 	for i := range verts {
 		j := (i + 1) % len(verts)
@@ -115,16 +122,30 @@ func buildRevolution(axisOrigin math.Point3, a, ref math.UnitVector3, verts []Re
 			addRevolutionTorus(bld, nodes[i], nodes[j], *verts[j].ArcCenter, axisOrigin, a, ref, feat, i)
 			continue
 		}
-		addRevolutionFace(bld, nodes[i], nodes[j], a, ref, feat, i)
+		addRevolutionFace(bld, nodes[i], nodes[j], a, ref, res.Weld(), feat, i)
 	}
 	return bld.Build()
 }
 
+// revolveResolution derives the meridian's own model-relative coincidence scale (ADR-0042): the
+// LENGTH tolerances the build needs — the on-axis vertex weld and the degenerate-edge guard — flow
+// from the meridian's extent instead of a cm-anchored absolute constant (#1603, audit A7).
+func revolveResolution(verts []RevolveVertex) geom.Resolution {
+	pts := make([]math.Point2, len(verts))
+	for i, v := range verts {
+		pts[i] = v.P
+	}
+	return geom.ResolutionForPoints2D(pts)
+}
+
 // makeRevNode builds the circle (and seam vertex) for one meridian vertex, or just an apex vertex
-// when the vertex lies on the axis (r≈0).
-func makeRevNode(bld *topo.Builder, axisOrigin math.Point3, a, ref math.UnitVector3, r, z float64, feat string, i int) revNode {
+// when the vertex lies on the axis. axisTol is the meridian-relative on-line classification
+// tolerance (res.Plane()): a radius below it is coincident with the axis at this model's
+// resolution, so the node welds to an apex/disk-centre vertex (r stored as exactly 0 — downstream
+// on-axis tests read circle == nil).
+func makeRevNode(bld *topo.Builder, axisOrigin math.Point3, a, ref math.UnitVector3, r, z, axisTol float64, feat string, i int) revNode {
 	center := axisOrigin.TranslateBy(a.AsVector().Scale(math.Scalar(z)))
-	if r <= revTol {
+	if r <= axisTol {
 		return revNode{center: center, r: 0, v: bld.AddVertex(center, revLin(feat, "apex", i))}
 	}
 	c := geom.Circle{Center: center, Normal: a, RefDir: ref, Radius: r}
@@ -132,17 +153,50 @@ func makeRevNode(bld *topo.Builder, axisOrigin math.Point3, a, ref math.UnitVect
 	return revNode{center: center, r: r, circle: bld.AddEdge(c, v, v, revLin(feat, "circle", i)), v: v}
 }
 
+// revEdgeClass is the surface type a straight meridian edge revolves to.
+type revEdgeClass int
+
+const (
+	revEdgeOnAxis   revEdgeClass = iota // both endpoints on the axis: traces no surface
+	revEdgeCylinder                     // axis-parallel (or a sub-resolution noise edge)
+	revEdgePlane                        // axis-perpendicular: disk / annulus
+	revEdgeCone                         // oblique: cone frustum
+)
+
+// classifyRevolveEdge dispatches a straight meridian edge on its DIRECTION: the dimensionless
+// slope ratio against revSlopeTol decides cylinder vs plane vs cone, so the classification is
+// invariant under uniform model scaling (#1603, audit A7). weld (res.Weld()) guards the one
+// length-scale degeneracy: an edge shorter than the meridian's coincidence resolution is float
+// noise, kept as a (degenerate) cylinder — the old behavior — rather than extrapolating a cone
+// apex at r/Δr ≈ 1/noise away.
+func classifyRevolveEdge(ni, nj revNode, a math.UnitVector3, weld float64) revEdgeClass {
+	if ni.circle == nil && nj.circle == nil {
+		return revEdgeOnAxis
+	}
+	dr := stdmath.Abs(ni.r - nj.r)
+	dz := stdmath.Abs(axialGap(ni, nj, a))
+	switch {
+	case stdmath.Hypot(dr, dz) <= weld:
+		return revEdgeCylinder
+	case dr <= revSlopeTol*dz:
+		return revEdgeCylinder
+	case dz <= revSlopeTol*dr:
+		return revEdgePlane
+	default:
+		return revEdgeCone
+	}
+}
+
 // addRevolutionFace adds the surface-of-revolution face for one meridian edge: a cylinder (axis-
 // parallel), a planar disk/annulus (axis-perpendicular), or a cone frustum (oblique). An edge that
 // lies on the axis traces no surface and is skipped.
-func addRevolutionFace(bld *topo.Builder, ni, nj revNode, a, ref math.UnitVector3, feat string, i int) {
-	if ni.r <= revTol && nj.r <= revTol {
+func addRevolutionFace(bld *topo.Builder, ni, nj revNode, a, ref math.UnitVector3, weld float64, feat string, i int) {
+	switch classifyRevolveEdge(ni, nj, a, weld) {
+	case revEdgeOnAxis:
 		return // edge on the axis: no face
-	}
-	switch {
-	case stdmath.Abs(ni.r-nj.r) <= revTol:
+	case revEdgeCylinder:
 		addRevolutionCylinder(bld, ni, nj, a, ref, feat, i)
-	case stdmath.Abs(axialGap(ni, nj, a)) <= revTol:
+	case revEdgePlane:
 		addRevolutionPlane(bld, ni, nj, a, feat, i)
 	default:
 		addRevolutionCone(bld, ni, nj, a, ref, feat, i)
@@ -179,7 +233,7 @@ func addRevolutionCylinder(bld *topo.Builder, ni, nj revNode, a, ref math.UnitVe
 func addRevolutionCone(bld *topo.Builder, ni, nj revNode, a, ref math.UnitVector3, feat string, i int) {
 	apex := coneApex(ni, nj)
 	base := ni
-	if ni.r <= revTol {
+	if ni.circle == nil {
 		base = nj
 	}
 	axisDir := apex.VectorTo(base.center) // along the axis, apex → base (increasing radius)
@@ -244,12 +298,13 @@ func arcMidpoint(axisOrigin math.Point3, a, ref math.UnitVector3, c math.Point2,
 }
 
 // coneApex returns the point where the meridian edge's slant line meets the axis (r=0). An endpoint
-// already on the axis IS the apex; otherwise it is the linear extrapolation to zero radius.
+// already on the axis (circle == nil, r stored as exactly 0) IS the apex; otherwise it is the
+// linear extrapolation to zero radius.
 func coneApex(ni, nj revNode) math.Point3 {
-	if ni.r <= revTol {
+	if ni.circle == nil {
 		return ni.v.Point()
 	}
-	if nj.r <= revTol {
+	if nj.circle == nil {
 		return nj.v.Point()
 	}
 	t := ni.r / (ni.r - nj.r) // r(t)=ni.r+t(nj.r-ni.r)=0
@@ -299,7 +354,7 @@ func planeLoops(outer, inner revNode, down bool) []topo.LoopSpec {
 		outerUse, innerUse = topo.Rev, topo.Fwd
 	}
 	loops := []topo.LoopSpec{topo.OuterLoop(outerUse(outer.circle))}
-	if inner.r > revTol {
+	if inner.circle != nil {
 		loops = append(loops, topo.InnerLoop(innerUse(inner.circle)))
 	}
 	return loops

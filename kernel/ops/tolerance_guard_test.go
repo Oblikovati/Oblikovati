@@ -123,7 +123,8 @@ func TestNoUnjustifiedAbsoluteEpsilons(t *testing.T) {
 		"../topo/face_evaluator.go",
 		"../topo/provenance.go",
 		"../topo/wire.go",
-		// brep: revolution surface classification (revTol — annotated pending #1603).
+		// brep: revolution surface classification (#1603: dimensionless slope ratio + meridian-
+		// relative axis weld; the only literal left is the annotated angular revSlopeTol).
 		"../brep/revolution.go",
 	}
 	var offenders []string
