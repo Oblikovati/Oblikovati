@@ -60,7 +60,7 @@ func TestFilletEditSeedsVariableState(t *testing.T) {
 		t.Fatalf("OK: %v", err)
 	}
 
-	tool, ok := editToolFor(s, f.AddedFeature())
+	tool, ok := s.editToolFor(f.AddedFeature())
 	if !ok {
 		t.Fatal("a single-set fillet must re-open in the fillet panel")
 	}

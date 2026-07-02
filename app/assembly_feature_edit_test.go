@@ -140,7 +140,7 @@ func TestAssemblyFeatureMenuAndDelete(t *testing.T) {
 	af := asm.Features().Item(0)
 	node := findBrowserNode(BuildBrowser(s), "assemblyFeature", af.Name())
 
-	if labels := strings.Join(menuLabels(BrowserMenu(*node)), "|"); labels != "Edit|Suppress|Delete" {
+	if labels := strings.Join(menuLabels(BrowserMenu(s, *node)), "|"); labels != "Edit|Suppress|Delete" {
 		t.Errorf("feature menu = %q, want Edit|Suppress|Delete", labels)
 	}
 	trackFromHere(s)

@@ -32,7 +32,6 @@ var pendingInitRegistrations = map[string]struct{}{
 	"model/sketch/serialize_codecs_extras.go":         {},
 	"model/sketch/serialize_codecs_constraints.go":    {},
 	"model/sketch/serialize_codecs_constraints_3d.go": {},
-	"app/feature_edit_registry.go":                    {}, // feature editors → Session default
 	"head/ui/dockable_panel.go":                       {}, // dockable-panel registry → UI-loop object
 }
 

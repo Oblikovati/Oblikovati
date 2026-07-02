@@ -29,36 +29,46 @@ import (
 // falls back to the generic editor.
 type featureEditor func(s *Session, f *feature.PartFeature) (Tool, bool)
 
-// featureEditors maps a feature kind to its full-panel editor. Populated by registerFeatureEditor in
-// this package's init()s; read by editToolFor. Read-only after init, so no synchronization is needed.
-var featureEditors = map[string]featureEditor{}
+// featureEditorSet maps feature kinds to their full-panel editors — the value the
+// Session's edit flow consults, injectable in tests (#1617, audit B6).
+type featureEditorSet map[string]featureEditor
+
+// defaultFeatureEditors assembles the full production editor set in one visible
+// order — the composition site newSession wires into the Session (#1617); there
+// are no init() registrations.
+func defaultFeatureEditors() featureEditorSet {
+	r := featureEditorSet{}
+	r.registerSolidFeatureEditors()
+	r.registerDressUpFeatureEditors()
+	return r
+}
 
 // registerFeatureEditor records one kind's full-panel editor, panicking on an empty kind, a nil
 // editor, or a duplicate — a programming error caught at startup, not a silent overwrite.
-func registerFeatureEditor(kind string, e featureEditor) {
+func (r featureEditorSet) register(kind string, e featureEditor) {
 	if kind == "" {
-		panic("app: registerFeatureEditor with empty kind")
+		panic("app: feature-editor register with empty kind")
 	}
 	if e == nil {
 		panic(fmt.Sprintf("app: nil feature editor for kind %q", kind))
 	}
-	if _, dup := featureEditors[kind]; dup {
+	if _, dup := r[kind]; dup {
 		panic(fmt.Sprintf("app: duplicate feature editor for kind %q", kind))
 	}
-	featureEditors[kind] = e
+	r[kind] = e
 }
 
-// hasFeatureEditor reports whether a kind has a registered full-panel editor (so the browser can
-// enable Edit without constructing the tool).
-func hasFeatureEditor(kind string) bool {
-	_, ok := featureEditors[kind]
+// hasFeatureEditor reports whether a kind has a full-panel editor in the session's
+// injected set (so the browser can enable Edit without constructing the tool).
+func (s *Session) hasFeatureEditor(kind string) bool {
+	_, ok := s.featureEditors[kind]
 	return ok
 }
 
 // editToolFor builds the full-panel creation tool re-opened over a committed feature, or false for
 // kinds the generic parameter/reference editor serves (or which are not editable at all).
-func editToolFor(s *Session, f *feature.PartFeature) (Tool, bool) {
-	e, ok := featureEditors[f.Kind()]
+func (s *Session) editToolFor(f *feature.PartFeature) (Tool, bool) {
+	e, ok := s.featureEditors[f.Kind()]
 	if !ok {
 		return nil, false
 	}
@@ -73,20 +83,20 @@ func editToolFor(s *Session, f *feature.PartFeature) (Tool, bool) {
 // Each closure type-asserts the concrete feature and calls the family's seeder; a mismatched kind→type
 // registration would fail that assertion in the enforcement test, so the map cannot silently bind the
 // wrong tool.
-func registerSolidFeatureEditors() {
-	registerFeatureEditor("extrude", func(_ *Session, f *feature.PartFeature) (Tool, bool) {
+func (r featureEditorSet) registerSolidFeatureEditors() {
+	r.register("extrude", func(_ *Session, f *feature.PartFeature) (Tool, bool) {
 		return editExtrudeTool(f, f.Definition().(*feature.ExtrudeFeature)), true
 	})
-	registerFeatureEditor("revolve", func(s *Session, f *feature.PartFeature) (Tool, bool) {
+	r.register("revolve", func(s *Session, f *feature.PartFeature) (Tool, bool) {
 		return editRevolveTool(s, f, f.Definition().(*feature.RevolveFeature)), true
 	})
-	registerFeatureEditor("coil", func(s *Session, f *feature.PartFeature) (Tool, bool) {
+	r.register("coil", func(s *Session, f *feature.PartFeature) (Tool, bool) {
 		return editCoilTool(s, f, f.Definition().(*feature.CoilFeature)), true
 	})
-	registerFeatureEditor("hole", func(_ *Session, f *feature.PartFeature) (Tool, bool) {
+	r.register("hole", func(_ *Session, f *feature.PartFeature) (Tool, bool) {
 		return editHoleTool(f, f.Definition().(*feature.HoleFeature)), true
 	})
-	registerFeatureEditor("loft", func(_ *Session, f *feature.PartFeature) (Tool, bool) {
+	r.register("loft", func(_ *Session, f *feature.PartFeature) (Tool, bool) {
 		return editLoftTool(f, f.Definition().(*feature.LoftFeature)), true
 	})
 }
@@ -94,28 +104,23 @@ func registerSolidFeatureEditors() {
 // registerDressUpFeatureEditors wires the dress-up / local-operation features (fillet, face fillet,
 // full-round fillet, chamfer, shell, draft) to their creation panels. The fillet panel declines a
 // multi-set fillet (returns false), routing it to the generic editor.
-func registerDressUpFeatureEditors() {
-	registerFeatureEditor("fillet", func(_ *Session, f *feature.PartFeature) (Tool, bool) {
+func (r featureEditorSet) registerDressUpFeatureEditors() {
+	r.register("fillet", func(_ *Session, f *feature.PartFeature) (Tool, bool) {
 		return editFilletToolOr(f, f.Definition().(*feature.FilletFeature))
 	})
-	registerFeatureEditor("face-fillet", func(_ *Session, f *feature.PartFeature) (Tool, bool) {
+	r.register("face-fillet", func(_ *Session, f *feature.PartFeature) (Tool, bool) {
 		return editFaceFilletTool(f, f.Definition().(*feature.FaceFilletFeature)), true
 	})
-	registerFeatureEditor("full-round-fillet", func(_ *Session, f *feature.PartFeature) (Tool, bool) {
+	r.register("full-round-fillet", func(_ *Session, f *feature.PartFeature) (Tool, bool) {
 		return editFullRoundFilletTool(f, f.Definition().(*feature.FullRoundFilletFeature)), true
 	})
-	registerFeatureEditor("chamfer", func(_ *Session, f *feature.PartFeature) (Tool, bool) {
+	r.register("chamfer", func(_ *Session, f *feature.PartFeature) (Tool, bool) {
 		return editChamferTool(f, f.Definition().(*feature.ChamferFeature)), true
 	})
-	registerFeatureEditor("shell", func(_ *Session, f *feature.PartFeature) (Tool, bool) {
+	r.register("shell", func(_ *Session, f *feature.PartFeature) (Tool, bool) {
 		return editShellTool(f, f.Definition().(*feature.ShellFeature)), true
 	})
-	registerFeatureEditor("draft", func(_ *Session, f *feature.PartFeature) (Tool, bool) {
+	r.register("draft", func(_ *Session, f *feature.PartFeature) (Tool, bool) {
 		return editDraftTool(f, f.Definition().(*feature.FaceDraftFeature)), true
 	})
-}
-
-func init() {
-	registerSolidFeatureEditors()
-	registerDressUpFeatureEditors()
 }

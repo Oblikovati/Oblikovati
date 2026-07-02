@@ -140,7 +140,7 @@ func runnableMenuItem(item wire.ContextMenuItemSpec) BrowserMenuItem {
 // BrowserMenuFor returns a node's context menu: the built-in entries plus any
 // add-in injections for its kind (M05-F12). The head renders this, not BrowserMenu.
 func BrowserMenuFor(s *Session, n BrowserNode) []BrowserMenuItem {
-	return append(BrowserMenu(n), s.injectedMenuItems(n.Kind)...)
+	return append(BrowserMenu(s, n), s.injectedMenuItems(n.Kind)...)
 }
 
 // SearchCommands finds registered commands whose id, display name, or alias

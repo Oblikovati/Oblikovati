@@ -40,8 +40,9 @@ var primarySolidFeatures = []struct {
 // neither a registered full-panel editor nor a generic editable surface is not editable in the browser
 // — the exact loft/sweep defect. A new solid feature added without an edit path fails here.
 func TestPrimarySolidFeaturesAreEditable(t *testing.T) {
+	editors := defaultFeatureEditors()
 	for _, f := range primarySolidFeatures {
-		if hasFeatureEditor(f.kind) || implementsEditableContract(f.proto) {
+		if _, hasEditor := editors[f.kind]; hasEditor || implementsEditableContract(f.proto) {
 			continue
 		}
 		t.Errorf("primary solid feature %q is not editable: no registered full-panel editor and its "+
@@ -63,9 +64,9 @@ func implementsEditableContract(f feature.Feature) bool {
 // overwriting — the same discipline the serialization codec registry enforces (#1416).
 func TestRegisterFeatureEditorRejectsBadRegistration(t *testing.T) {
 	ok := func(_ *Session, _ *feature.PartFeature) (Tool, bool) { return nil, false }
-	assertPanicsApp(t, "empty kind", func() { registerFeatureEditor("", ok) })
-	assertPanicsApp(t, "nil editor", func() { registerFeatureEditor("test.nil-editor", nil) })
-	assertPanicsApp(t, "duplicate", func() { registerFeatureEditor("loft", ok) }) // loft is already registered
+	assertPanicsApp(t, "empty kind", func() { featureEditorSet{}.register("", ok) })
+	assertPanicsApp(t, "nil editor", func() { featureEditorSet{}.register("test.nil-editor", nil) })
+	assertPanicsApp(t, "duplicate", func() { defaultFeatureEditors().register("loft", ok) }) // loft is already registered
 }
 
 // assertPanicsApp fails unless fn panics.
@@ -99,7 +100,7 @@ func loftedFeatureSession(t *testing.T) (*Session, FeatureHandle) {
 // committed loft re-opens the Loft tool in edit mode, seeded with its sections — not the generic editor.
 func TestBeginEditFeatureReopensLoftPanel(t *testing.T) {
 	s, h := loftedFeatureSession(t)
-	if !FeatureIsEditable(h.Feature) {
+	if !s.FeatureIsEditable(h.Feature) {
 		t.Fatal("a committed loft must report as editable (#1521)")
 	}
 	s.BeginEditFeature(h)
@@ -174,7 +175,7 @@ func sweptFeatureSession(t *testing.T) (*Session, FeatureHandle) {
 // has no full-panel re-pick, so the generic scalar/reference editor is the honest fit.
 func TestSweepIsEditableViaGenericEditor(t *testing.T) {
 	s, h := sweptFeatureSession(t)
-	if !FeatureIsEditable(h.Feature) {
+	if !s.FeatureIsEditable(h.Feature) {
 		t.Fatal("a committed sweep must report as editable (#1521)")
 	}
 	s.BeginEditFeature(h)
@@ -226,5 +227,25 @@ func setGenericEditParam(s *Session, label string, value float64) {
 			s.SetEditFeatureParamValue(i, value)
 			return
 		}
+	}
+}
+
+// TestSessionConsultsInjectedEditorSet pins the B6 seam (#1617): the edit flow
+// consults the editor set the Session carries — a session given a minimal
+// one-entry set edits through it and nothing falls back to a package global.
+func TestSessionConsultsInjectedEditorSet(t *testing.T) {
+	s := NewSession()
+	marker := &FilletTool{}
+	s.featureEditors = featureEditorSet{}
+	s.featureEditors.register("test.injected", func(*Session, *feature.PartFeature) (Tool, bool) {
+		return marker, true
+	})
+	if !s.hasFeatureEditor("test.injected") {
+		t.Error("the injected editor kind is not visible through the session")
+	}
+	// extrude has an editor in the DEFAULT set; a session with a minimal set must
+	// not see it — if it does, a package-global fallback still exists.
+	if s.hasFeatureEditor("extrude") {
+		t.Error("a kind outside the injected set is visible — a global fallback exists")
 	}
 }

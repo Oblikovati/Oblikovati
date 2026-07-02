@@ -19,8 +19,8 @@ type BrowserMenuItem struct {
 // BrowserMenu returns the context-menu entries for a node, keyed on its Kind. Folder and
 // other non-actionable nodes return nil (no menu). The entries close over the node's
 // concrete handle, so a wrong handle/kind pairing safely yields no menu.
-func BrowserMenu(n BrowserNode) []BrowserMenuItem {
-	if items := partNodeMenu(n); items != nil {
+func BrowserMenu(s *Session, n BrowserNode) []BrowserMenuItem {
+	if items := partNodeMenu(s, n); items != nil {
 		return items
 	}
 	if items := assemblyNodeMenu(n); items != nil {
@@ -50,12 +50,12 @@ func drawingViewMenu(sel Selectable) []BrowserMenuItem {
 }
 
 // partNodeMenu returns the menu for a part-document node kind, or nil.
-func partNodeMenu(n BrowserNode) []BrowserMenuItem {
+func partNodeMenu(s *Session, n BrowserNode) []BrowserMenuItem {
 	switch n.Kind {
 	case "sketch":
 		return sketchMenu(n.Select)
 	case "feature":
-		return featureMenu(n.Select)
+		return featureMenu(s, n.Select)
 	case "workplane":
 		return workPlaneMenu(n.Select)
 	case "workaxis":
@@ -231,7 +231,7 @@ func sketchMenu(sel Selectable) []BrowserMenuItem {
 // featureMenu offers Edit (opens the parameter editor, like double-click), a
 // Suppress/Unsuppress toggle (label reflects current state), and Delete. Edit is greyed for a
 // feature with no editable parameters (e.g. a mirror, which has only geometric references).
-func featureMenu(sel Selectable) []BrowserMenuItem {
+func featureMenu(s *Session, sel Selectable) []BrowserMenuItem {
 	h, ok := sel.(FeatureHandle)
 	if !ok {
 		return nil
@@ -241,7 +241,7 @@ func featureMenu(sel Selectable) []BrowserMenuItem {
 		suppressLabel = "Unsuppress"
 	}
 	items := []BrowserMenuItem{
-		{Label: "Edit", Enabled: FeatureIsEditable(h.Feature), Invoke: func(s *Session) error { s.BeginEditFeature(h); return nil }},
+		{Label: "Edit", Enabled: s.FeatureIsEditable(h.Feature), Invoke: func(s *Session) error { s.BeginEditFeature(h); return nil }},
 		{Label: suppressLabel, Enabled: true, Invoke: func(s *Session) error { return s.ToggleFeatureSuppressed(h.Feature) }},
 		{Label: "Delete", Enabled: true, Invoke: func(s *Session) error { return s.DeleteFeature(h.Feature) }},
 	}

@@ -113,7 +113,7 @@ func TestDerivedFeatureMenuHasUpdateAndBreakLink(t *testing.T) {
 	if err != nil {
 		t.Fatalf("DeriveAssembly: %v", err)
 	}
-	labels := menuLabels(BrowserMenu(BrowserNode{Kind: "feature", Select: FeatureHandle{Feature: f}}))
+	labels := menuLabels(BrowserMenu(s, BrowserNode{Kind: "feature", Select: FeatureHandle{Feature: f}}))
 	joined := strings.Join(labels, "|")
 	if !strings.Contains(joined, "Update") || !strings.Contains(joined, "Break Link") {
 		t.Errorf("derive feature menu = %q, want Update + Break Link", joined)

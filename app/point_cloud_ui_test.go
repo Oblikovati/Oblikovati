@@ -54,7 +54,7 @@ func TestPointCloudMenuVisibilityAndDelete(t *testing.T) {
 	pc, _ := def.PointClouds().Add("C", "c.xyz", rid, nil)
 	node := BrowserNode{Kind: "pointCloud", Select: PointCloudHandle{Clouds: def.PointClouds(), Cloud: pc}}
 
-	menu := BrowserMenu(node)
+	menu := BrowserMenu(s, node)
 	if len(menu) != 2 || menu[0].Label != "Visibility" || menu[1].Label != "Delete" {
 		t.Fatalf("menu = %+v, want Visibility + Delete", menu)
 	}
@@ -109,7 +109,7 @@ func TestBrowserNestsCropsWithMenu(t *testing.T) {
 		t.Fatalf("cloud node children = %+v, want one Crop1", cloudNode)
 	}
 
-	menu := BrowserMenu(cloudNode.Children[0])
+	menu := BrowserMenu(s, cloudNode.Children[0])
 	if len(menu) != 2 || menu[0].Label != "Deactivate" {
 		t.Fatalf("crop menu = %+v, want Deactivate + Delete", menu)
 	}
@@ -122,7 +122,7 @@ func TestBrowserNestsCropsWithMenu(t *testing.T) {
 	if cloudNode.Children[0].Label != "Crop1  (inactive)" {
 		t.Errorf("inactive crop label = %q, want the (inactive) tag", cloudNode.Children[0].Label)
 	}
-	if BrowserMenu(cloudNode.Children[0])[0].Label != "Activate" {
+	if BrowserMenu(s, cloudNode.Children[0])[0].Label != "Activate" {
 		t.Error("an inactive crop's menu should offer Activate")
 	}
 	_ = menu[1].Invoke(s)

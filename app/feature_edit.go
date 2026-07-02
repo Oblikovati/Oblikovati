@@ -163,7 +163,7 @@ func (t *FeatureEditTool) recompute(s *Session) {
 // available (editToolFor). Other editable features open the generic parameter/
 // reference editor; a feature with neither is a no-op.
 func (s *Session) BeginEditFeature(h FeatureHandle) {
-	tool, ok := editToolFor(s, h.Feature)
+	tool, ok := s.editToolFor(h.Feature)
 	if !ok {
 		t := newFeatureEditTool(h.Feature)
 		if !t.editable() {
@@ -185,8 +185,8 @@ func (s *Session) BeginEditFeature(h FeatureHandle) {
 // emboss, the patterns, mirror, move). Checking the registry here keeps the Edit gate consistent with
 // what BeginEditFeature can actually open — the bug behind loft/sweep, whose tools existed but whose
 // edit path did not, leaving Edit greyed (#1521).
-func FeatureIsEditable(f *feature.PartFeature) bool {
-	if hasFeatureEditor(f.Kind()) {
+func (s *Session) FeatureIsEditable(f *feature.PartFeature) bool {
+	if s.hasFeatureEditor(f.Kind()) {
 		return true
 	}
 	if ed, ok := f.Definition().(feature.Editable); ok && len(ed.EditableParams()) > 0 {

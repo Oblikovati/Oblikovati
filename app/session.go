@@ -54,6 +54,7 @@ type Session struct {
 	selection                 *Selection
 	highlightSets             *HighlightSets // named, colored emphasis groups for add-ins (#157)
 	tool                      *ToolInstance
+	featureEditors            featureEditorSet // full-panel editors, assembled at the composition root (#1617)
 	picker                    Picker
 	regionPicker              RegionPicker          // resolves a box-select rectangle (nil ⇒ box-select disabled)
 	boxSelect                 BoxSelection          // the in-progress rubber-band rectangle, if any
@@ -215,6 +216,7 @@ func newSession(store doc.Store) *Session {
 		camera:         scene.NewCamera(800, 600),
 		hiddenBodyKeys: map[string]bool{}, hiddenBodyKeysByDoc: map[doc.ID]map[string]bool{},
 		graphics: clientgraphics.NewStore(), graphicsByDoc: map[doc.ID]*clientgraphics.Store{},
+		featureEditors:  defaultFeatureEditors(),
 		addins:          NewAddInManager(),
 		clientApps:      NewClientApplicationRegistry(),
 		browserPanes:    NewAddInBrowserPanes(),

@@ -417,7 +417,7 @@ func TestDrawingViewBrowserNodesAndMenu(t *testing.T) {
 	if viewNode.Kind != "drawingView" {
 		t.Fatalf("view node kind = %q, want drawingView", viewNode.Kind)
 	}
-	menu := BrowserMenu(viewNode)
+	menu := BrowserMenu(s, viewNode)
 	if len(menu) != 2 || menu[0].Label != "Edit" || menu[1].Label != "Delete" {
 		t.Errorf("view menu = %+v, want [Edit Delete]", menu)
 	}
