@@ -117,11 +117,10 @@ var allowedPlainStartTools = map[string]struct{}{
 	"ThreePointRectangleTool":  {},
 }
 
-// gapPlainStartTools are part-feature tools that predate #1626 and do not yet
-// implement DraftFeature — each one is an OPEN commit-gate bypass. This list is
-// SHRINK-ONLY: implement DraftFeature, switch the activation site to
-// StartFeatureTool, and delete the entry. Never add to it.
-var gapPlainStartTools = map[string]struct{}{}
+// The 41 pre-#1626 part-feature tools that once reached the plain StartTool
+// without DraftFeature (each an open commit-gate bypass) have all been
+// converted — do NOT reintroduce a bypass list; a new part-feature tool
+// implements DraftFeature and activates via StartFeatureTool, full stop.
 
 // plainStartPatterns match the two ways a commands file feeds a constructor to
 // the plain StartTool: directly, or through a func() Tool flyout-table thunk.
@@ -133,15 +132,8 @@ var plainStartPatterns = []*regexp.Regexp{
 func TestPlainStartToolReservedForNonFeatureTools(t *testing.T) {
 	started := plainStartedToolConstructors(t)
 	for name := range started {
-		_, allowed := allowedPlainStartTools[name]
-		_, gap := gapPlainStartTools[name]
-		if !allowed && !gap {
+		if _, allowed := allowedPlainStartTools[name]; !allowed {
 			t.Errorf("New%s reaches the plain StartTool — a part-feature tool must implement DraftFeature and activate via StartFeatureTool so the commit gate cannot be skipped (#1626); a non-feature tool must be classified in allowedPlainStartTools", name)
-		}
-	}
-	for name := range gapPlainStartTools {
-		if _, ok := started[name]; !ok {
-			t.Errorf("gapPlainStartTools entry %q is stale — the tool no longer reaches the plain StartTool; delete the entry (shrink-only, #1626)", name)
 		}
 	}
 	for name := range allowedPlainStartTools {

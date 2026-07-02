@@ -17,10 +17,15 @@ import (
 
 // commitBlockedReason reports why the active tool's pending feature cannot be committed: a
 // non-empty reason when evaluating its draft against the current model yields a sick recompute.
-// It is empty when there is no tool, the tool builds no draft (non-DraftPreviewable, e.g. sketch
-// tools — unconstrained here), the draft is not ready (CanCommit already gates that), the context
-// is not a part, or the draft previews healthy. A DEFERRED result is a warning, not sick, so it
-// does not block.
+// It is empty when there is no tool, the tool builds no draft, the draft is not ready (CanCommit
+// already gates that), the context is not a part, or the draft previews healthy. A DEFERRED
+// result is a warning, not sick, so it does not block.
+//
+// The non-DraftPreviewable early-out is NOT a gate bypass (#1626): every part-feature tool IS
+// DraftPreviewable by construction — its activation goes through StartFeatureTool, whose
+// PartFeatureTool parameter the compiler checks, and the archguard activation-seam test pins
+// which constructors may use the plain StartTool (sketch, drawing, assembly and analysis tools,
+// deliberately outside this part-scoped gate).
 func (s *Session) commitBlockedReason() string {
 	if s.tool == nil {
 		return ""

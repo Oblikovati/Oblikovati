@@ -27,52 +27,11 @@ type DraftPreviewable interface {
 	DraftFeature(s *Session) (feature.Feature, bool)
 }
 
-// Every part-feature tool drives the live preview through DraftPreviewable; these assertions
-// pin the wiring so a tool that loses its DraftFeature method fails to compile.
-var (
-	_ DraftPreviewable = (*ExtrudeTool)(nil)
-	_ DraftPreviewable = (*RevolveTool)(nil)
-	_ DraftPreviewable = (*SweepTool)(nil)
-	_ DraftPreviewable = (*LoftTool)(nil)
-	_ DraftPreviewable = (*CoilTool)(nil)
-	_ DraftPreviewable = (*HoleTool)(nil)
-	_ DraftPreviewable = (*FilletTool)(nil)
-	_ DraftPreviewable = (*ChamferTool)(nil)
-	_ DraftPreviewable = (*ShellTool)(nil)
-	_ DraftPreviewable = (*DraftTool)(nil)
-	_ DraftPreviewable = (*ThreadTool)(nil)
-	_ DraftPreviewable = (*RibTool)(nil)
-	_ DraftPreviewable = (*EmbossTool)(nil)
-	_ DraftPreviewable = (*ThickenTool)(nil)
-	_ DraftPreviewable = (*SplitTool)(nil)
-	_ DraftPreviewable = (*GrillTool)(nil)
-	_ DraftPreviewable = (*CoreCavityTool)(nil)
-	_ DraftPreviewable = (*FaceOffsetTool)(nil)
-	_ DraftPreviewable = (*ReplaceFaceTool)(nil)
-	_ DraftPreviewable = (*DeleteFaceTool)(nil)
-	_ DraftPreviewable = (*PatchTool)(nil)
-	_ DraftPreviewable = (*StitchTool)(nil)
-	_ DraftPreviewable = (*SurfaceTrimTool)(nil)
-	_ DraftPreviewable = (*SculptTool)(nil)
-	_ DraftPreviewable = (*ExtendTool)(nil)
-	_ DraftPreviewable = (*SheetMetalFaceTool)(nil)
-	_ DraftPreviewable = (*SheetMetalFlangeTool)(nil)
-	_ DraftPreviewable = (*SheetMetalLipTool)(nil)
-	_ DraftPreviewable = (*SheetMetalRipTool)(nil)
-	_ DraftPreviewable = (*SheetMetalPunchTool)(nil)
-	_ DraftPreviewable = (*SheetMetalHemTool)(nil)
-	_ DraftPreviewable = (*SheetMetalContourFlangeTool)(nil)
-	_ DraftPreviewable = (*SheetMetalLoftedFlangeTool)(nil)
-	_ DraftPreviewable = (*SheetMetalContourRollTool)(nil)
-	_ DraftPreviewable = (*SheetMetalBendTool)(nil)
-	_ DraftPreviewable = (*SheetMetalFoldTool)(nil)
-	_ DraftPreviewable = (*SheetMetalCornerTool)(nil)
-	_ DraftPreviewable = (*SheetMetalCornerSeamTool)(nil)
-	_ DraftPreviewable = (*SheetMetalCutTool)(nil)
-	_ DraftPreviewable = (*SheetMetalCosmeticBendTool)(nil)
-	_ DraftPreviewable = (*SheetMetalUnfoldTool)(nil)
-	_ DraftPreviewable = (*SheetMetalRefoldTool)(nil)
-)
+// Every part-feature tool drives the live preview and the sick-config commit gate
+// through DraftPreviewable. The per-type assertion list that used to pin this is
+// gone (#1626): every activation site now goes through Session.StartFeatureTool,
+// whose PartFeatureTool parameter makes a tool that loses its DraftFeature method
+// fail to compile at its command registration — the interface subsumes the list.
 
 // previewAddColor / previewRemoveColor are the operation-coded preview tints: a feature that
 // adds volume previews green, one that removes volume previews red. previewOpacity keeps the
