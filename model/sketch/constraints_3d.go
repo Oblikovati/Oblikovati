@@ -3,6 +3,8 @@
 package sketch
 
 import (
+	"fmt"
+
 	"oblikovati.org/math"
 	"oblikovati.org/solve/ad"
 )
@@ -106,15 +108,38 @@ func (c *Concentric3D) Variables() []*math.Scalar {
 	return []*math.Scalar{&c.Center1.X, &c.Center1.Y, &c.Center1.Z, &c.Center2.X, &c.Center2.Y, &c.Center2.Z}
 }
 
-// Equal3D forces two scalar DOFs (e.g. radii or distances) to be equal.
+// Equal3D forces the radius DOFs of two radius-bearing curves to be equal. It
+// keeps the operand entities, not just their scalar DOFs: without them the
+// constraint could not name its refs over the API nor serialize at all — an
+// Equal3D save failed at runtime until #1625 (the #1416 drift class).
 type Equal3D struct {
 	constraintBase
-	A, B *math.Scalar
+	E1, E2 Entity
+	A, B   *math.Scalar
 }
 
-// NewEqual3D constrains two scalar DOFs to be equal.
-func NewEqual3D(a, b *math.Scalar) *Equal3D {
-	return &Equal3D{constraintBase: newConstraint(), A: a, B: b}
+// NewEqual3D constrains the radius DOFs of two radius-bearing curves (a circle
+// or a helix) to be equal, rejecting entities without a radius DOF.
+func NewEqual3D(e1, e2 Entity) (*Equal3D, error) {
+	a, err := radiusDOFOf(e1)
+	if err != nil {
+		return nil, err
+	}
+	b, err := radiusDOFOf(e2)
+	if err != nil {
+		return nil, err
+	}
+	return &Equal3D{constraintBase: newConstraint(), E1: e1, E2: e2, A: a, B: b}, nil
+}
+
+// radiusDOFOf resolves an entity's radius solver DOF through its RadiusDOF
+// capability (#1624).
+func radiusDOFOf(e Entity) (*math.Scalar, error) {
+	rd, ok := e.(interface{ RadiusDOF() *math.Scalar })
+	if !ok {
+		return nil, fmt.Errorf("sketch: equal needs radius-bearing curves (circle/helix), got %T", e)
+	}
+	return rd.RadiusDOF(), nil
 }
 
 // residualAD: v = [A, B]; the two scalar DOFs must be equal.

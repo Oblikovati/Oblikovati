@@ -15,8 +15,8 @@ func TestSketch3DRefHelpersRejectMissingEntity(t *testing.T) {
 	sk := sketch.NewSketches3D().Add()
 	const bad = uint64(999)
 
-	if _, err := radiusScalar3D(sk, bad); err == nil {
-		t.Error("radiusScalar3D(missing) should error")
+	if _, err := equalConstraint3D(sk, []uint64{bad, bad}); err == nil {
+		t.Error("equalConstraint3D(missing) should error")
 	}
 	if _, err := pointRef3D(sk, bad); err == nil {
 		t.Error("pointRef3D(missing) should error")

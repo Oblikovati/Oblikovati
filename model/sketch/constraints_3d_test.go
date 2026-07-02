@@ -46,15 +46,21 @@ func TestConstraints3DResiduals(t *testing.T) {
 		t.Error("concentric3D not satisfied for equal centers")
 	}
 
-	// Equal scalar DOFs.
-	r1, r2 := math.Scalar(4), math.Scalar(4)
-	eq := NewEqual3D(&r1, &r2)
+	// Equal radius DOFs, resolved from the operand curves (#1625).
+	s3 := NewSketches3D().Add()
+	zUp, _ := math.NewUnitVector3(0, 0, 1)
+	circA := s3.AddCircle3D(math.P3(0, 0, 0), zUp, 4)
+	circB := s3.AddCircle3D(math.P3(9, 0, 0), zUp, 4)
+	eq := mustEqual3D(t, circA, circB)
 	if !satisfied(eq) {
-		t.Error("equal3D not satisfied for equal scalars")
+		t.Error("equal3D not satisfied for equal radii")
 	}
-	r2 = 5
+	circB.Radius = 5
 	if satisfied(eq) {
-		t.Error("equal3D satisfied after changing one scalar")
+		t.Error("equal3D satisfied after changing one radius")
+	}
+	if _, err := NewEqual3D(s3.AddPoint3D(math.P3(0, 0, 0)), circA); err == nil {
+		t.Error("NewEqual3D should refuse a non-radius-bearing operand")
 	}
 }
 
