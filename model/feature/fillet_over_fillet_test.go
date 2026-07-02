@@ -90,3 +90,23 @@ func TestFilletOverFilletSeamGivesHonestReason(t *testing.T) {
 		t.Errorf("Sick reason should not double the feature-kind prefix: %q", reason)
 	}
 }
+
+// TestPlanarizeCylinderForEdgesPrismifiesSimpleCylinder covers the one curved body the fillet's
+// planarise DOES re-facet: a simple extrude-circle cylinder becomes a prism and its rim maps onto
+// the prism's faceted segments (the #127/#129 path). Any other curved body is left analytic (the
+// pass-through path is exercised by TestFilletOverFilletSeamGivesHonestReason).
+func TestPlanarizeCylinderForEdgesPrismifiesSimpleCylinder(t *testing.T) {
+	fs, rim := extrudedCylinderTopRim(t, 2, 5)
+	body := fs.Result()[0]
+	edges, _, err := resolveEdges(body, [][]byte{rim}, nil)
+	if err != nil {
+		t.Fatalf("resolve rim: %v", err)
+	}
+	pb, mapped := planarizeCylinderForEdges(body, edges, "fillet")
+	if pb == body {
+		t.Fatal("a simple cylinder must be prism-ified for the rim fillet, got the body unchanged")
+	}
+	if len(mapped) == 0 {
+		t.Fatal("the rim edge must map onto the prism's faceted segments")
+	}
+}
