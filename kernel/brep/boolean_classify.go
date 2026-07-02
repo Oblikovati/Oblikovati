@@ -34,7 +34,12 @@ func insideSolid(b *topo.Body, p math.Point3) bool {
 	for _, f := range faces {
 		sum += faceSolidAngle(f, p, onPlane)
 	}
-	return sum > insideSolidWindingThreshold
+	// |sum|: membership of the CLOSED REGION is orientation-independent, and legacy builders can
+	// emit a consistently inside-out body (loops wound opposite their outward normals — the
+	// buildPrism CW-poly class found while fixing #1600). The magnitude reads ~4π inside such a
+	// body either way; a signed threshold would write its entire interior off as outside, which
+	// the (orientation-blind) parity ray never did.
+	return stdmath.Abs(sum) > insideSolidWindingThreshold
 }
 
 // faceSolidAngle sums the signed solid angle every loop of the planar face subtends at p, fanning

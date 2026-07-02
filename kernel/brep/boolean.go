@@ -5,6 +5,7 @@ package brep
 import (
 	"errors"
 
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -39,9 +40,15 @@ type subFace struct {
 // segments, splits each face along them (the 2D arrangement), classifies the sub-faces
 // against the other solid, keeps the ones the operation calls for (reversing B's where
 // needed), and stitches them into a watertight solid. Unlike the triangle-soup CSG this
-// produces a low-face-count result and is sound under chaining. Coplanar (shared-plane)
-// faces are a follow-up — operands that don't share a face plane work today.
+// produces a low-face-count result and is sound under chaining.
 func Boolean(op Op, a, b *topo.Body) (*topo.Body, error) {
+	return BooleanDiag(op, a, b, nil)
+}
+
+// BooleanDiag is [Boolean] with a diagnostic recorder (nil to discard): the tangency-retry
+// last resort records a Defect when it ships, so the displaced-geometry escape hatch is
+// observable instead of silent (#1600).
+func BooleanDiag(op Op, a, b *topo.Body, rec *diag.Recorder) (*topo.Body, error) {
 	fa, oka := facesOf(a)
 	fb, okb := facesOf(b)
 	if !oka || !okb {
@@ -51,7 +58,13 @@ func Boolean(op Op, a, b *topo.Body) (*topo.Body, error) {
 	if err != nil || away.LengthSquared() == 0 {
 		return res, err
 	}
-	return retryNudged(op, fa, fb, a, res, away)
+	// A tangent/grazing contact was hit. The nudged rerun stays the resolution for a GENUINE
+	// tangency — downstream re-welds (facet, fillet) collapse an exactly-coincident seam back
+	// into a non-manifold contact, so the topologically resolved exact result cannot ship yet
+	// (TestTangentContactUnionStaysManifold pins that contract) — but it is no longer silent:
+	// shipping it records a Defect (#1600). Retiring the displaced coordinates entirely needs
+	// the downstream re-welds to respect existing topology; tracked on the issue.
+	return retryNudged(op, fa, fb, a, res, away, rec)
 }
 
 // booleanOnce runs one pass: imprint, split, classify, keep, stitch. The vector is a non-zero
@@ -74,11 +87,19 @@ func booleanOnce(op Op, fa, fb []planarFace, a, b *topo.Body) (*topo.Body, math.
 // the two must move together (#1602).
 const nudgeEps = 10 * planarStitchGrid // tol:calibrated — imprint nudge tied to the planar weld grid
 
+// CodeBooleanNudgedGeometry marks a boolean that shipped the displaced-geometry tangency
+// retry: the topological resolution of a tangent contact failed to close, so the result
+// contains operand B translated by nudgeEps (#1600). A tracked defect — the displaced
+// coordinates poison flush mating, coplanar detection, and exports downstream — kept only as
+// the last resort until the topological path covers every configuration.
+const CodeBooleanNudgedGeometry diag.Code = "boolean.nudged-geometry"
+
 // retryNudged re-runs the boolean with operand B nudged a hair along `away` (out of the
-// tangent contact) so the degenerate touch becomes a clean clearance. It keeps the nudged
-// result only when it is a proper solid, so a nudge that would disconnect the part falls back
-// to the original (topologically resolved) result.
-func retryNudged(op Op, fa, fb []planarFace, a, original *topo.Body, away math.Vector3) (*topo.Body, error) {
+// tangent contact) so the degenerate touch becomes a clean clearance. It is the LAST RESORT
+// behind the topological resolution (#1600): it runs only when the un-nudged result is not a
+// proper solid, and shipping it records a Defect because the output carries the displaced
+// coordinates. A nudge that fails too falls back to the original result.
+func retryNudged(op Op, fa, fb []planarFace, a, original *topo.Body, away math.Vector3, rec *diag.Recorder) (*topo.Body, error) {
 	fbp := translateFaces(fb, away.Scale(nudgeEps))
 	bp, _, err := stitch(planarToSubFaces(fbp), nil) // materialising nudged B: no intersections to name
 	if err != nil || bp == nil {
@@ -88,6 +109,9 @@ func retryNudged(op Op, fa, fb []planarFace, a, original *topo.Body, away math.V
 	if err != nil || res == nil || !res.IsSolid() {
 		return original, nil
 	}
+	rec.Recordf(CodeBooleanNudgedGeometry, diag.Defect,
+		"tangent contact did not resolve topologically: shipping operand B displaced by %g along (%g, %g, %g)",
+		nudgeEps, float64(away.X), float64(away.Y), float64(away.Z))
 	return res, nil
 }
 

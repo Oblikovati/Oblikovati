@@ -223,6 +223,15 @@ func appendCombined(running []*topo.Body, res *topo.Body) []*topo.Body {
 // draft outward (positive) or inward (negative); the far cap stays perpendicular to the
 // normal, and each side stays a planar trapezoid.
 func buildPrism(poly []math.Point2, plane sketch.Plane, sp span, taper float64, feat string) *topo.Body {
+	// Normalise the cross-section to CCW: a CW input (a chamfer wedge whose edge frame happens to
+	// wind that way) previously produced a topologically INSIDE-OUT prism — outward face normals
+	// with loops traversed clockwise about them — which the orientation-faithful winding
+	// classifier (#1599) reads as an empty solid and the boolean then mangles (#1600). One
+	// canonical winding makes every downstream orientation decision (caps, sides, taper offset)
+	// consistent by construction.
+	if outwardSign(poly) < 0 {
+		poly = reversePoly(poly)
+	}
 	n := len(poly)
 	normal := plane.Normal().AsVector()
 	topPoly := taperedLoop(poly, sp.depth(), taper)
@@ -239,6 +248,15 @@ func buildPrism(poly []math.Point2, plane sketch.Plane, sp span, taper float64, 
 	addCaps(bld, bottom, top, be, te, normal, feat)
 	addSides(bld, bottom, top, be, te, ve, outwardSign(poly), feat)
 	return bld.Build()
+}
+
+// reversePoly returns the polygon with its winding reversed.
+func reversePoly(poly []math.Point2) []math.Point2 {
+	out := make([]math.Point2, len(poly))
+	for i, p := range poly {
+		out[len(poly)-1-i] = p
+	}
+	return out
 }
 
 // taperedLoop returns the far-loop polygon: poly unchanged when taper is 0, else each
