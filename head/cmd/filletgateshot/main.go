@@ -14,19 +14,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	stdmath "math"
 	"os"
 
 	"oblikovati.org/app"
+	"oblikovati.org/head/cmd/internal/shotscene"
 	"oblikovati.org/head/internal/native"
 	"oblikovati.org/head/ui"
-	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
-	"oblikovati.org/math"
-	"oblikovati.org/model/compdef"
-	"oblikovati.org/model/feature"
-	"oblikovati.org/model/sketch"
-	"oblikovati.org/scene"
 )
 
 const gateDocName = "filletgateshot.opd"
@@ -47,10 +41,10 @@ func run(out string, frames int) error {
 	if err := app.RegisterStandardCommands(s); err != nil {
 		return err
 	}
-	def := buildBaseBox(s)
+	def := shotscene.BuildBox(s, gateDocName, 6, 6)
 	body := def.SurfaceBodies().Item(0)
-	edge := verticalEdge(body.Edges())
-	aimCameraAtEdge(s, body, edge)
+	edge := shotscene.VerticalEdge(body.Edges())
+	shotscene.AimCameraAtEdge(s, body, edge)
 
 	win, err := native.CreateWindow(1280, 800, "filletgateshot")
 	if err != nil {
@@ -86,72 +80,4 @@ func capture(win *native.Window, s *app.Session, edge *topo.Edge, radius float64
 		win.EndFrame(ui.WindowClearColor())
 	}
 	return win.SaveWindowPNG(path)
-}
-
-func buildBaseBox(s *app.Session) *compdef.PartComponentDefinition {
-	pd, err := compdef.AddPart(s.Workspace(), gateDocName, true)
-	if err != nil {
-		panic(err)
-	}
-	_ = s.Workspace().SetActiveDocument(pd)
-	def := pd.Content().(*compdef.PartComponentDefinition)
-	sk := addSquare(def, 0, 0, 6)
-	feature.NewExtrudeFeatures(def.Features()).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 6 })
-	def.Recompute()
-	return def
-}
-
-func addSquare(def *compdef.PartComponentDefinition, ox, oy, side float64) *sketch.Sketch {
-	sk := def.Sketches().Add(sketch.XYPlane())
-	c0 := sk.Points().Add(math.P2(ox, oy))
-	c1 := sk.Points().Add(math.P2(ox+side, oy))
-	c2 := sk.Points().Add(math.P2(ox+side, oy+side))
-	c3 := sk.Points().Add(math.P2(ox, oy+side))
-	sk.Lines().Add(c0, c1)
-	sk.Lines().Add(c1, c2)
-	sk.Lines().Add(c2, c3)
-	sk.Lines().Add(c3, c0)
-	return sk
-}
-
-// aimCameraAtEdge frames the body from outside the given edge so the filleted corner faces us.
-func aimCameraAtEdge(s *app.Session, body *topo.Body, e *topo.Edge) {
-	pts := ops.TessellateEdge(e, ops.DefaultQuality())
-	mid := pts[len(pts)/2]
-	rb := body.RangeBox()
-	cx, cy := (rb.Min.X+rb.Max.X)/2, (rb.Min.Y+rb.Max.Y)/2
-	ox, oy := mid.X-cx, mid.Y-cy
-	n := stdmath.Hypot(ox, oy)
-	if n == 0 {
-		n = 1
-	}
-	dist := (rb.Max.X - rb.Min.X) * 2.4
-	cam := scene.NewCamera(1280, 800)
-	cam.Target = mid
-	cam.Eye = math.P3(mid.X+ox/n*dist, mid.Y+oy/n*dist, mid.Z+dist*0.5)
-	cam.Up = math.V3(0, 0, 1)
-	s.SetCamera(cam)
-}
-
-// verticalEdge returns the first edge running mostly along Z (a box's vertical corner).
-func verticalEdge(edges []*topo.Edge) *topo.Edge {
-	for _, e := range edges {
-		pts := ops.TessellateEdge(e, ops.DefaultQuality())
-		if len(pts) < 2 {
-			continue
-		}
-		a, b := pts[0], pts[len(pts)-1]
-		dz := abs(a.Z - b.Z)
-		if dz > abs(a.X-b.X) && dz > abs(a.Y-b.Y) {
-			return e
-		}
-	}
-	return edges[0]
-}
-
-func abs(x float64) float64 {
-	if x < 0 {
-		return -x
-	}
-	return x
 }

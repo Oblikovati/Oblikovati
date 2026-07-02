@@ -19,7 +19,7 @@ func previewSession(t *testing.T, op string) *app.Session {
 	if err := app.RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)
 	}
-	startPendingExtrude(s, buildBaseBox(s), op)
+	startPendingExtrude(s, mustBaseBox(s), op)
 	return s
 }
 
