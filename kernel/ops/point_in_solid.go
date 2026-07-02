@@ -5,6 +5,7 @@ package ops
 import (
 	stdmath "math"
 
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
 
@@ -31,21 +32,10 @@ func windingNumber(mesh *Mesh, p math.Point3) float64 {
 	return sum / (4 * stdmath.Pi)
 }
 
-// signedSolidAngle returns the signed solid angle (steradians) that triangle (a,b,c) subtends at p,
-// via the Van Oosterom–Strackee atan2 formula (IEEE Trans. Biomed. Eng. 1983) — numerically stable
-// across the full sphere, including the back hemisphere where a naive arccos loses sign/precision.
-// The sign follows the triangle's winding (right-hand rule), so the sum over an outward mesh is +4π
-// inside and 0 outside. A degenerate triangle, or p coincident with a corner, contributes 0.
+// signedSolidAngle is geom.SignedSolidAngle (the Van Oosterom–Strackee formula), shared with the
+// planar-boolean fragment classifier since #1599.
 func signedSolidAngle(p, a, b, c math.Point3) float64 {
-	va, vb, vc := p.VectorTo(a), p.VectorTo(b), p.VectorTo(c)
-	la, lb, lc := va.Length(), vb.Length(), vc.Length()
-	if la == 0 || lb == 0 || lc == 0 {
-		return 0
-	}
-	num := float64(va.Dot(vb.Cross(vc)))
-	den := float64(la*lb*lc) + float64(va.Dot(vb))*float64(lc) +
-		float64(vb.Dot(vc))*float64(la) + float64(vc.Dot(va))*float64(lb)
-	return 2 * stdmath.Atan2(num, den)
+	return geom.SignedSolidAngle(p, a, b, c)
 }
 
 // pointInMesh reports whether p lies inside the solid bounded by an outward-oriented mesh, by
