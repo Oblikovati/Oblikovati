@@ -204,57 +204,14 @@ func smoothCurvesFrom(ents []sketch.Entity) []sketch.SmoothCurve {
 	return out
 }
 
-// hasSpline reports whether any of the curves is a spline. Smooth (G2) needs a curve
-// with adjustable curvature, so — like Inventor — the tool requires at least one spline.
-func hasSpline(curves []sketch.SmoothCurve) bool {
-	for _, c := range curves {
-		if _, ok := c.(*sketch.Spline); ok {
-			return true
-		}
-	}
-	return false
-}
-
-// curveEndpoints returns a smooth curve's two endpoints (nil for a degenerate spline).
-func curveEndpoints(c sketch.SmoothCurve) (*sketch.Point, *sketch.Point) {
-	switch t := c.(type) {
-	case *sketch.Line:
-		return t.A, t.B
-	case *sketch.Arc:
-		return t.Start, t.End
-	case *sketch.Spline:
-		if len(t.Points) >= 2 {
-			return t.Points[0], t.Points[len(t.Points)-1]
-		}
-	}
-	return nil, nil
-}
-
-// nearestEndpointPair returns the closest endpoint of c1 to an endpoint of c2 — the join
-// the Smooth constraint should make continuous.
-func nearestEndpointPair(c1, c2 sketch.SmoothCurve) (*sketch.Point, *sketch.Point, bool) {
-	a1, b1 := curveEndpoints(c1)
-	a2, b2 := curveEndpoints(c2)
-	if a1 == nil || a2 == nil {
-		return nil, nil, false
-	}
-	best1, best2, bestD := a1, a2, stdmath.Inf(1)
-	for _, p := range []*sketch.Point{a1, b1} {
-		for _, q := range []*sketch.Point{a2, b2} {
-			if d := p.Position().DistanceTo(q.Position()); d < bestD {
-				best1, best2, bestD = p, q, d
-			}
-		}
-	}
-	return best1, best2, true
-}
-
 // applySmooth joins two curves with a smooth (G2, curvature-continuous) constraint at
-// their nearest endpoints — Inventor's Smooth, which needs at least one spline.
+// their nearest endpoints — Inventor's Smooth, which needs at least one spline. The
+// endpoint/spline policy lives with the constraint (sketch.NearestSmoothJoin) so the
+// wire router creates the identical join (#1643).
 func applySmooth(s *Session, ents []sketch.Entity) error {
 	curves := smoothCurvesFrom(ents)
-	if len(curves) >= 2 && hasSpline(curves) {
-		if p1, p2, ok := nearestEndpointPair(curves[0], curves[1]); ok {
+	if len(curves) >= 2 && sketch.HasSplineCurve(curves) {
+		if p1, p2, ok := sketch.NearestSmoothJoin(curves[0], curves[1]); ok {
 			s.geom().AddSmooth(curves[0], curves[1], p1, p2)
 			return s.afterConstraint()
 		}

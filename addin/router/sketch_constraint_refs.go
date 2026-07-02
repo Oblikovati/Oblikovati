@@ -159,6 +159,45 @@ func symmetryConstraint(sk *sketch.Sketch, refs []uint64) (sketch.Constraint, bo
 	return sk.GeometricConstraints().AddSymmetry(a, b, about), true, nil
 }
 
+// smoothConstraintFromRefs joins two smooth-capable curves (line/arc/spline, at least
+// one spline) with a G2 constraint at their nearest endpoints — the same join policy as
+// the app tool (sketch.NearestSmoothJoin). Closed the enum-vs-wire drift of #1643: the
+// kind was enumerable and persistable but not wire-creatable.
+func smoothConstraintFromRefs(sk *sketch.Sketch, refs []uint64) (sketch.Constraint, bool, error) {
+	if len(refs) != 2 {
+		return nil, true, fmt.Errorf("sketch.addConstraint: smooth needs 2 curve refs, got %d", len(refs))
+	}
+	c1, err := smoothCurveRef(sk, refs[0])
+	if err != nil {
+		return nil, true, err
+	}
+	c2, err := smoothCurveRef(sk, refs[1])
+	if err != nil {
+		return nil, true, err
+	}
+	if !sketch.HasSplineCurve([]sketch.SmoothCurve{c1, c2}) {
+		return nil, true, fmt.Errorf("sketch.addConstraint: smooth needs at least one spline, got %T and %T", c1, c2)
+	}
+	p1, p2, ok := sketch.NearestSmoothJoin(c1, c2)
+	if !ok {
+		return nil, true, fmt.Errorf("sketch.addConstraint: smooth refs %v have no usable endpoints (degenerate curve)", refs)
+	}
+	return sk.GeometricConstraints().AddSmooth(c1, c2, p1, p2), true, nil
+}
+
+// smoothCurveRef resolves one entity ref to a smooth-capable curve (line/arc/spline).
+func smoothCurveRef(sk *sketch.Sketch, ref uint64) (sketch.SmoothCurve, error) {
+	e, ok := sk.EntityByID(sketch.ID(ref))
+	if !ok {
+		return nil, fmt.Errorf("sketch.addConstraint: no entity with id %d", ref)
+	}
+	c, ok := e.(sketch.SmoothCurve)
+	if !ok {
+		return nil, fmt.Errorf("sketch.addConstraint: entity %d (%T) is not a smooth-capable curve (line/arc/spline)", ref, e)
+	}
+	return c, nil
+}
+
 // fixConstraint grounds a single point.
 func fixConstraint(sk *sketch.Sketch, refs []uint64) (sketch.Constraint, bool, error) {
 	if len(refs) != 1 {

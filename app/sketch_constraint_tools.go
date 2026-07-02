@@ -192,7 +192,7 @@ func acceptSmoothable(e sketch.Entity) bool {
 // readySmooth needs two smoothable curves, at least one of them a spline.
 func readySmooth(ents []sketch.Entity) bool {
 	curves := smoothCurvesFrom(ents)
-	return len(curves) >= 2 && hasSpline(curves)
+	return len(curves) >= 2 && sketch.HasSplineCurve(curves)
 }
 
 func readyDimension(ents []sketch.Entity) bool {

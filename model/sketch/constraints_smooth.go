@@ -52,6 +52,54 @@ func (g *GeometricConstraints) AddSmooth(c1, c2 SmoothCurve, p1, p2 *Point) *Smo
 	return c
 }
 
+// SmoothCurveEndpoints returns a smooth curve's two endpoints (nil for a degenerate
+// spline). The join-selection helpers below live with the constraint so every creation
+// surface (app tool, wire router) picks the same join (#1643).
+func SmoothCurveEndpoints(c SmoothCurve) (*Point, *Point) {
+	switch t := c.(type) {
+	case *Line:
+		return t.A, t.B
+	case *Arc:
+		return t.Start, t.End
+	case *Spline:
+		if len(t.Points) >= 2 {
+			return t.Points[0], t.Points[len(t.Points)-1]
+		}
+	}
+	return nil, nil
+}
+
+// NearestSmoothJoin returns the closest endpoint of c1 to an endpoint of c2 — the join
+// the Smooth constraint should make continuous.
+func NearestSmoothJoin(c1, c2 SmoothCurve) (*Point, *Point, bool) {
+	a1, b1 := SmoothCurveEndpoints(c1)
+	a2, b2 := SmoothCurveEndpoints(c2)
+	if a1 == nil || a2 == nil {
+		return nil, nil, false
+	}
+	best1, best2, bestD := a1, a2, stdmath.Inf(1)
+	for _, p := range []*Point{a1, b1} {
+		for _, q := range []*Point{a2, b2} {
+			if d := p.Position().DistanceTo(q.Position()); d < bestD {
+				best1, best2, bestD = p, q, d
+			}
+		}
+	}
+	return best1, best2, true
+}
+
+// HasSplineCurve reports whether any of the curves is a spline. Smooth (G2) needs a
+// curve with adjustable end curvature, so — like the reference tool — creation surfaces
+// require at least one spline.
+func HasSplineCurve(curves []SmoothCurve) bool {
+	for _, c := range curves {
+		if _, ok := c.(*Spline); ok {
+			return true
+		}
+	}
+	return false
+}
+
 // residualAD mirrors the float residual over duals: G0 join coincidence (2), G1 tangent
 // collinearity (1), G2 curvature-vector match (2). The frames carry their own exact
 // derivatives, so the spline circumcircle curvature differentiates by construction.
