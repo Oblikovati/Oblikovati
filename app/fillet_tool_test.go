@@ -127,6 +127,43 @@ func TestFilletUnbuildableSurfacesNotice(t *testing.T) {
 	}
 }
 
+// TestSickConfigIsNotCommitted is the rule "no mutable operation commits a sick configuration":
+// a fillet whose radius overruns the block previews sick, so CommitBlockedReason names the cause,
+// s.OK() refuses, and — crucially — NO feature is appended to the design (the sick node must not
+// persist in the tree). Fixing the radius then commits cleanly, adding exactly one feature.
+func TestSickConfigIsNotCommitted(t *testing.T) {
+	s, block := newPartWithBlock(t, 2)
+	f := NewFilletTool()
+	s.StartTool(f)
+	f.Pick(s, verticalEdgeOf(t, block))
+	f.SetRadius(10) // impossible: the rolling ball overruns the 2×2×2 block
+
+	before := activePartDef(t, s).Features().Count()
+	if s.CommitBlockedReason() == "" {
+		t.Fatal("a sick fillet config should report a commit-blocked reason")
+	}
+	if err := s.OK(); err == nil {
+		t.Fatal("OK on a sick config should be refused")
+	}
+	if after := activePartDef(t, s).Features().Count(); after != before {
+		t.Errorf("a sick config must not append a feature: count %d → %d", before, after)
+	}
+	if s.ActiveTool() == nil {
+		t.Fatal("tool should stay open after a refused commit")
+	}
+
+	f.SetRadius(0.5) // now valid
+	if r := s.CommitBlockedReason(); r != "" {
+		t.Fatalf("a valid config must not be blocked, got %q", r)
+	}
+	if err := s.OK(); err != nil {
+		t.Fatalf("OK on a valid config: %v", err)
+	}
+	if after := activePartDef(t, s).Features().Count(); after != before+1 {
+		t.Errorf("a valid commit should append exactly one feature: count %d → %d", before, after)
+	}
+}
+
 // TestFilletToolNeedsEdge checks the tool is not committable until an edge is picked.
 func TestFilletToolNeedsEdge(t *testing.T) {
 	s, block := newPartWithBlock(t, 2)
