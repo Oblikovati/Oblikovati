@@ -123,6 +123,9 @@ func TestSheetMetalToolFlow(t *testing.T) {
 	if !unfold.CanCommit() {
 		t.Fatal("Unfold should be ready to commit")
 	}
+	// The flange recorded a bend, so the unfold draft must be buildable for the commit
+	// gate before OK runs (#1626).
+	wantDraftReady(t, s, unfold)
 	if err := unfold.Commit(s); err != nil {
 		t.Fatalf("Unfold: %v", err)
 	}
@@ -131,6 +134,7 @@ func TestSheetMetalToolFlow(t *testing.T) {
 	}
 
 	refold := NewSheetMetalRefoldTool()
+	wantDraftReady(t, s, refold)
 	if err := refold.Commit(s); err != nil {
 		t.Fatalf("Refold: %v", err)
 	}

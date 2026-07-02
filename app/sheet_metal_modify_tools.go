@@ -5,6 +5,7 @@ package app
 import (
 	"errors"
 
+	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 )
 
@@ -44,12 +45,35 @@ func (t *SheetMetalBendTool) Commit(s *Session) error {
 	if t.line == nil {
 		return errors.New("sheet-metal bend: pick a sketch line crossing the sheet")
 	}
+	added, err := t.addBend(part, part.Features())
+	if err != nil {
+		return err
+	}
+	t.added = added
+	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Bend")
+}
+
+// addBend builds the sheet-metal bend feature into engine fs — shared by Commit and preview.
+func (t *SheetMetalBendTool) addBend(part *compdef.PartComponentDefinition, fs *feature.PartFeatures) (*feature.PartFeature, error) {
 	sk, idx, ok := lineHandleInPart(part, t.line.Entity)
 	if !ok {
-		return errors.New("sheet-metal bend: the pick is not a sketch line")
+		return nil, errors.New("sheet-metal bend: the pick is not a sketch line")
 	}
-	t.added = feature.NewSheetMetalBendFeatures(part.Features()).Add(&feature.SheetMetalBendDefinition{Sketch: sk, LineIndex: idx})
-	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Bend")
+	return feature.NewSheetMetalBendFeatures(fs).Add(&feature.SheetMetalBendDefinition{Sketch: sk, LineIndex: idx}), nil
+}
+
+// DraftFeature returns the unattached sheet-metal bend feature the viewport previews (#1626).
+func (t *SheetMetalBendTool) DraftFeature(s *Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	part, err := activeSheetMetalPart(s)
+	if err != nil {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addBend(part, fs)
+	})
 }
 
 // SheetMetalFoldTool folds the sheet along a picked sketch line, hinged at its centerline.
@@ -85,14 +109,37 @@ func (t *SheetMetalFoldTool) Commit(s *Session) error {
 	if t.line == nil {
 		return errors.New("sheet-metal fold: pick a sketch line crossing the sheet")
 	}
+	added, err := t.addFold(part, part.Features())
+	if err != nil {
+		return err
+	}
+	t.added = added
+	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Fold")
+}
+
+// addFold builds the sheet-metal fold feature into engine fs — shared by Commit and preview.
+func (t *SheetMetalFoldTool) addFold(part *compdef.PartComponentDefinition, fs *feature.PartFeatures) (*feature.PartFeature, error) {
 	sk, idx, ok := lineHandleInPart(part, t.line.Entity)
 	if !ok {
-		return errors.New("sheet-metal fold: the pick is not a sketch line")
+		return nil, errors.New("sheet-metal fold: the pick is not a sketch line")
 	}
-	t.added = feature.NewSheetMetalFoldFeatures(part.Features()).Add(&feature.SheetMetalFoldDefinition{
+	return feature.NewSheetMetalFoldFeatures(fs).Add(&feature.SheetMetalFoldDefinition{
 		Sketch: sk, LineIndex: idx, Location: feature.CenterlineOfBend,
+	}), nil
+}
+
+// DraftFeature returns the unattached sheet-metal fold feature the viewport previews (#1626).
+func (t *SheetMetalFoldTool) DraftFeature(s *Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	part, err := activeSheetMetalPart(s)
+	if err != nil {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addFold(part, fs)
 	})
-	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Fold")
 }
 
 // SheetMetalCornerTool applies a corner treatment (chamfer) at the picked corner edges.
@@ -132,11 +179,26 @@ func (t *SheetMetalCornerTool) Commit(s *Session) error {
 	if !t.CanCommit() {
 		return errors.New("sheet-metal corner: pick a corner edge and set a positive size")
 	}
+	t.added = t.addCorner(part.Features())
+	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Corner")
+}
+
+// addCorner builds the corner-treatment feature into engine fs — shared by Commit and preview.
+func (t *SheetMetalCornerTool) addCorner(fs *feature.PartFeatures) *feature.PartFeature {
 	size := t.size
-	t.added = feature.NewSheetMetalCornerFeatures(part.Features()).Add(&feature.SheetMetalCornerDefinition{
+	return feature.NewSheetMetalCornerFeatures(fs).Add(&feature.SheetMetalCornerDefinition{
 		EdgeKeys: edgeHandleKeys(t.edges), Treatment: feature.CornerChamfer, Size: func() float64 { return size },
 	})
-	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Corner")
+}
+
+// DraftFeature returns the unattached corner-treatment feature the viewport previews (#1626).
+func (t *SheetMetalCornerTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addCorner(fs), nil
+	})
 }
 
 // SheetMetalCornerSeamTool opens a gap seam where two flanges meet at a corner.
@@ -180,11 +242,26 @@ func (t *SheetMetalCornerSeamTool) Commit(s *Session) error {
 	if !t.CanCommit() {
 		return errors.New("sheet-metal corner seam: pick the seam edges and set a positive gap")
 	}
+	t.added = t.addCornerSeam(part.Features())
+	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Corner Seam")
+}
+
+// addCornerSeam builds the corner-seam feature into engine fs — shared by Commit and preview.
+func (t *SheetMetalCornerSeamTool) addCornerSeam(fs *feature.PartFeatures) *feature.PartFeature {
 	gap := t.gap
-	t.added = feature.NewSheetMetalCornerSeamFeatures(part.Features()).Add(&feature.SheetMetalCornerSeamDefinition{
+	return feature.NewSheetMetalCornerSeamFeatures(fs).Add(&feature.SheetMetalCornerSeamDefinition{
 		EdgeKeys: edgeHandleKeys(t.edges), Gap: func() float64 { return gap }, Type: feature.GapSeam,
 	})
-	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Corner Seam")
+}
+
+// DraftFeature returns the unattached corner-seam feature the viewport previews (#1626).
+func (t *SheetMetalCornerSeamTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addCornerSeam(fs), nil
+	})
 }
 
 // SheetMetalCutTool removes a picked sketch profile through the sheet (through all).
@@ -221,10 +298,25 @@ func (t *SheetMetalCutTool) Commit(s *Session) error {
 	if t.profile == nil {
 		return errors.New("sheet-metal cut: pick a closed sketch profile")
 	}
-	t.added = feature.NewSheetMetalCutFeatures(part.Features()).Add(&feature.SheetMetalCutDefinition{
+	t.added = t.addCut(part.Features())
+	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Cut")
+}
+
+// addCut builds the sheet-metal cut feature into engine fs — shared by Commit and preview.
+func (t *SheetMetalCutTool) addCut(fs *feature.PartFeatures) *feature.PartFeature {
+	return feature.NewSheetMetalCutFeatures(fs).Add(&feature.SheetMetalCutDefinition{
 		Sketch: t.profile.Sketch, ProfileIndex: t.profile.ProfileIndex,
 	})
-	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Cut")
+}
+
+// DraftFeature returns the unattached sheet-metal cut feature the viewport previews (#1626).
+func (t *SheetMetalCutTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addCut(fs), nil
+	})
 }
 
 // edgeHandleKeys collects the reference keys of picked edges.

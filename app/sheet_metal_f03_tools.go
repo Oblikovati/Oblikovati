@@ -251,13 +251,36 @@ func (t *SheetMetalCosmeticBendTool) Commit(s *Session) error {
 	if !t.CanCommit() {
 		return errors.New("sheet-metal cosmetic bend: pick a sketch line and set a positive angle")
 	}
+	added, err := t.addCosmeticBend(part, part.Features())
+	if err != nil {
+		return err
+	}
+	t.added = added
+	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Cosmetic Bend")
+}
+
+// addCosmeticBend builds the cosmetic-bend feature into engine fs — shared by Commit and preview.
+func (t *SheetMetalCosmeticBendTool) addCosmeticBend(part *compdef.PartComponentDefinition, fs *feature.PartFeatures) (*feature.PartFeature, error) {
 	sk, idx, ok := lineHandleInPart(part, t.line.Entity)
 	if !ok {
-		return errors.New("sheet-metal cosmetic bend: the pick is not a sketch line")
+		return nil, errors.New("sheet-metal cosmetic bend: the pick is not a sketch line")
 	}
 	angle := t.angle
-	t.added = feature.NewSheetMetalCosmeticBendFeatures(part.Features()).Add(&feature.SheetMetalCosmeticBendDefinition{
+	return feature.NewSheetMetalCosmeticBendFeatures(fs).Add(&feature.SheetMetalCosmeticBendDefinition{
 		Sketch: sk, LineIndex: idx, Angle: func() float64 { return angle },
+	}), nil
+}
+
+// DraftFeature returns the unattached cosmetic-bend feature the viewport previews (#1626).
+func (t *SheetMetalCosmeticBendTool) DraftFeature(s *Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	part, err := activeSheetMetalPart(s)
+	if err != nil {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addCosmeticBend(part, fs)
 	})
-	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Cosmetic Bend")
 }

@@ -51,6 +51,16 @@ func abs(v float64) float64 {
 	return v
 }
 
+// wantDraftReady asserts a commit-ready tool builds a non-nil draft — the contract the
+// sick-config commit gate relies on to never be skipped by omission (#1626, audit I3).
+func wantDraftReady(t *testing.T, s *Session, tool DraftPreviewable) {
+	t.Helper()
+	draft, ok := tool.DraftFeature(s)
+	if !ok || draft == nil {
+		t.Fatalf("commit-ready tool built no draft (ok=%v, draft=%v)", ok, draft)
+	}
+}
+
 // TestSheetMetalEdgeTools the edge-driven tools (Hem, Corner, Corner Seam) pick an edge, set
 // their dimension, and commit on a base sheet.
 func TestSheetMetalEdgeTools(t *testing.T) {
@@ -64,6 +74,7 @@ func TestSheetMetalEdgeTools(t *testing.T) {
 		if !hem.CanCommit() || hem.Name() == "" {
 			t.Fatal("hem not ready")
 		}
+		wantDraftReady(t, s, hem)
 		if err := hem.Commit(s); err != nil {
 			t.Fatalf("hem: %v", err)
 		}
@@ -85,6 +96,7 @@ func TestSheetMetalEdgeTools(t *testing.T) {
 		if !corner.CanCommit() || corner.Name() == "" {
 			t.Fatal("corner not ready")
 		}
+		wantDraftReady(t, s, corner)
 		_ = corner.Commit(s) // a chamfer on a base corner may be sick; the path is exercised
 		_ = corner.AddedFeature()
 	})
@@ -102,6 +114,7 @@ func TestSheetMetalEdgeTools(t *testing.T) {
 		if !seam.CanCommit() || seam.Name() == "" {
 			t.Fatal("corner seam not ready")
 		}
+		wantDraftReady(t, s, seam)
 		_ = seam.Commit(s)
 		_ = seam.AddedFeature()
 	})
@@ -118,6 +131,7 @@ func TestSheetMetalSketchTools(t *testing.T) {
 		if !bend.CanCommit() || bend.Name() == "" {
 			t.Fatal("bend not ready")
 		}
+		wantDraftReady(t, s, bend)
 		if err := bend.Commit(s); err != nil {
 			t.Fatalf("bend: %v", err)
 		}
@@ -133,6 +147,7 @@ func TestSheetMetalSketchTools(t *testing.T) {
 		if !fold.CanCommit() || fold.Name() == "" {
 			t.Fatal("fold not ready")
 		}
+		wantDraftReady(t, s, fold)
 		if err := fold.Commit(s); err != nil {
 			t.Fatalf("fold: %v", err)
 		}
@@ -155,6 +170,7 @@ func TestSheetMetalSketchTools(t *testing.T) {
 		if !cut.CanCommit() || cut.Name() == "" {
 			t.Fatal("cut not ready")
 		}
+		wantDraftReady(t, s, cut)
 		if err := cut.Commit(s); err != nil {
 			t.Fatalf("cut: %v", err)
 		}
@@ -233,6 +249,7 @@ func TestSheetMetalF03Tools(t *testing.T) {
 		if !cb.CanCommit() || cb.Name() == "" {
 			t.Fatal("cosmetic bend not ready")
 		}
+		wantDraftReady(t, s, cb)
 		if err := cb.Commit(s); err != nil {
 			t.Fatalf("cosmetic bend: %v", err)
 		}
@@ -255,6 +272,7 @@ func TestSheetMetalProfileFlangeTools(t *testing.T) {
 	if !contour.CanCommit() || contour.Name() == "" {
 		t.Fatal("contour flange not ready after edge+profile picks")
 	}
+	wantDraftReady(t, s, contour)
 	_ = contour.Commit(s)
 	_ = contour.AddedFeature()
 
@@ -265,6 +283,7 @@ func TestSheetMetalProfileFlangeTools(t *testing.T) {
 	if !lofted.CanCommit() || lofted.Name() == "" {
 		t.Fatal("lofted flange not ready after two profile picks")
 	}
+	wantDraftReady(t, s, lofted)
 	_ = lofted.Commit(s)
 	_ = lofted.AddedFeature()
 
@@ -281,6 +300,7 @@ func TestSheetMetalProfileFlangeTools(t *testing.T) {
 	if !roll.CanCommit() || roll.Name() == "" {
 		t.Fatal("contour roll not ready after profile+axis picks")
 	}
+	wantDraftReady(t, s, roll)
 	_ = roll.Commit(s)
 	_ = roll.AddedFeature()
 }
