@@ -2,7 +2,11 @@
 
 package pointcloud
 
-import "testing"
+import (
+	"testing"
+
+	"oblikovati.org/kernel/exchange"
+)
 
 // The LAS decode itself is covered in kernel/exchange/lasfmt; here we cover the model-layer
 // reader's wiring: its extension, that ReadScan dispatches .las to it, and that malformed bytes
@@ -16,7 +20,7 @@ func TestLASReaderExtensions(t *testing.T) {
 }
 
 func TestReadScanDispatchesLASError(t *testing.T) {
-	_, err := ReadScan("survey.las", []byte("this is not a LAS file"))
+	_, err := ReadScan("survey.las", []byte("this is not a LAS file"), exchange.TranslationOptions{})
 	if err == nil {
 		t.Fatal("want a decode error for non-LAS bytes routed to the las reader")
 	}

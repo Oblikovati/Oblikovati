@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"math"
+	"oblikovati.org/kernel/exchange"
 	"testing"
 )
 
@@ -17,7 +18,7 @@ func TestPLYASCII(t *testing.T) {
 		"element face 1\nproperty list uchar int vertex_indices\n" +
 		"end_header\n" +
 		"1 2 3 255\n4 5 6 128\n3 0 1 2\n"
-	pts, err := ReadScan("m.ply", []byte(src))
+	pts, err := ReadScan("m.ply", []byte(src), exchange.TranslationOptions{})
 	if err != nil {
 		t.Fatalf("Read ascii PLY: %v", err)
 	}
@@ -44,7 +45,7 @@ func TestPLYBinaryLittleEndian(t *testing.T) {
 		"element vertex 2\nproperty float x\nproperty float y\nproperty float z\nproperty uchar flag\n"+
 		"end_header\n"), body.Bytes()...)
 
-	pts, err := ReadScan("m.ply", src)
+	pts, err := ReadScan("m.ply", src, exchange.TranslationOptions{})
 	if err != nil {
 		t.Fatalf("Read binary PLY: %v", err)
 	}
@@ -62,7 +63,7 @@ func TestPLYBinaryDoublePrecision(t *testing.T) {
 	src := append([]byte("ply\nformat binary_little_endian 1.0\n"+
 		"element vertex 1\nproperty double x\nproperty double y\nproperty double z\n"+
 		"end_header\n"), body.Bytes()...)
-	pts, err := ReadScan("m.ply", src)
+	pts, err := ReadScan("m.ply", src, exchange.TranslationOptions{})
 	if err != nil || len(pts) != 1 || pts[0].Y != 2.5 {
 		t.Fatalf("double PLY = %+v, err %v; want (1.5,2.5,3.5)", pts, err)
 	}

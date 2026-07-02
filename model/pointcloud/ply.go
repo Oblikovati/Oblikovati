@@ -18,6 +18,10 @@ func NewPLYReader() PointReader { return plyReader{} }
 
 func (plyReader) Extensions() []string { return []string{".ply"} }
 
+// FileUnitMM: PLY carries no unit, so it follows the same declared millimetre convention as the
+// unitless mesh formats (STL/OBJ) — the .ply mesh/cloud symmetry test pins this (#1636).
+func (plyReader) FileUnitMM() float64 { return 1 }
+
 // Read decodes the PLY's vertex positions into cloud-local points (faces are ignored).
 func (plyReader) Read(data []byte) ([]math.Point3, error) {
 	doc, err := plyfmt.Parse(data)

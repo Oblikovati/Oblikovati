@@ -18,6 +18,10 @@ func NewE57Reader() PointReader { return e57Reader{} }
 
 func (e57Reader) Extensions() []string { return []string{".e57"} }
 
+// FileUnitMM: E57 cartesian coordinates are metres by the ASTM E2807 spec, so one file unit is
+// 1000 mm (#1636).
+func (e57Reader) FileUnitMM() float64 { return 1000 }
+
 // Read decodes the E57's scan points into cloud-local points (intensity/colour are ignored).
 func (e57Reader) Read(data []byte) ([]math.Point3, error) {
 	doc, err := e57fmt.Parse(data)

@@ -13,7 +13,9 @@ import (
 	"oblikovati.org/model/feature"
 )
 
-// writeScan writes a small ASCII scan file and returns its path.
+// writeScan writes a small ASCII scan file and returns its path. Coordinates are in file
+// MILLIMETRES (the unitless-scan convention, #1636); the default document is centimetres, so a
+// "10" in the fixture lands at 1.0 in database units.
 func writeScan(t *testing.T, body string) string {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "scan.xyz")
@@ -27,7 +29,7 @@ func writeScan(t *testing.T, body string) string {
 // with the cloud's point count and default state surfaced (M17-F06, #645).
 func TestPointCloudAttachListGetDelete(t *testing.T) {
 	r, s := emptyPartSession(t)
-	path := writeScan(t, "0 0 0\n1 0 0\n2 0 0\n3 0 0\n")
+	path := writeScan(t, "0 0 0\n10 0 0\n20 0 0\n30 0 0\n")
 
 	var attached wire.PointCloudInfo
 	call(t, r, s, "pointClouds.attach", mustJSON(t, wire.AttachPointCloudArgs{FullFileName: path}), &attached)
@@ -98,7 +100,7 @@ func TestPointCloudPlacementAndBudget(t *testing.T) {
 // list it, and delete it — all over the wire (#645).
 func TestPointCloudCropLifecycle(t *testing.T) {
 	r, s := emptyPartSession(t)
-	path := writeScan(t, "0 0 0\n1 0 0\n2 0 0\n3 0 0\n4 0 0\n5 0 0\n")
+	path := writeScan(t, "0 0 0\n10 0 0\n20 0 0\n30 0 0\n40 0 0\n50 0 0\n")
 	var info wire.PointCloudInfo
 	call(t, r, s, "pointClouds.attach", mustJSON(t, wire.AttachPointCloudArgs{Name: "Scan", FullFileName: path}), &info)
 	if info.DisplayedPointCount != 6 {
@@ -224,7 +226,7 @@ func TestPointCloudAttachErrors(t *testing.T) {
 // reports the new plane's name, origin (centroid), and unit normal (#645).
 func TestPointCloudFitPlane(t *testing.T) {
 	r, s := emptyPartSession(t)
-	path := writeScan(t, "0 0 5\n2 0 5\n0 2 5\n2 2 5\n1 3 5\n-1 1 5\n")
+	path := writeScan(t, "0 0 50\n20 0 50\n0 20 50\n20 20 50\n10 30 50\n-10 10 50\n")
 	var info wire.PointCloudInfo
 	call(t, r, s, "pointClouds.attach", mustJSON(t, wire.AttachPointCloudArgs{Name: "Scan", FullFileName: path}), &info)
 
@@ -248,7 +250,7 @@ func TestPointCloudFitPlane(t *testing.T) {
 // reports the distance; an unknown cloud errors (#645).
 func TestPointCloudNearestPoint(t *testing.T) {
 	r, s := emptyPartSession(t)
-	path := writeScan(t, "0 0 0\n2 0 0\n0 2 0\n")
+	path := writeScan(t, "0 0 0\n20 0 0\n0 20 0\n")
 	call(t, r, s, "pointClouds.attach", mustJSON(t, wire.AttachPointCloudArgs{Name: "Scan", FullFileName: path}), &wire.PointCloudInfo{})
 
 	var res wire.NearestPointResult

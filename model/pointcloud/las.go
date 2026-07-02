@@ -18,6 +18,10 @@ func NewLASReader() PointReader { return lasReader{} }
 
 func (lasReader) Extensions() []string { return []string{".las"} }
 
+// FileUnitMM: LAS real coordinates (stored integers × header scale + offset, applied by lasfmt)
+// are metres by ASPRS convention, so one file unit is 1000 mm (#1636).
+func (lasReader) FileUnitMM() float64 { return 1000 }
+
 // Read decodes the LAS point records into cloud-local points (intensity/returns are ignored).
 func (lasReader) Read(data []byte) ([]math.Point3, error) {
 	doc, err := lasfmt.Parse(data)

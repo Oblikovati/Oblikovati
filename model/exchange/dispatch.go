@@ -99,11 +99,11 @@ func exportUnits(part *compdef.PartComponentDefinition) exchange.TranslationOpti
 }
 
 // workingUnitMM is the millimetre size of one of the part's stored (working) length units —
-// the database-unit size the translators scale against (ADR-0042 Phase 2). It is the working
-// scale (centimetres per working unit) times the centimetre's millimetre size, so a cm
-// document (working scale 1) yields the historical 10 mm and is unchanged.
+// the database-unit size the translators scale against (ADR-0042 Phase 2). The computation
+// lives on the part (WorkingUnitMM) so the point-cloud attach and persistence paths share it
+// (#1636); a cm document (working scale 1) yields the historical 10 mm and is unchanged.
 func workingUnitMM(part *compdef.PartComponentDefinition) float64 {
-	return part.Units().WorkingScale() * exchange.DBUnitMM
+	return part.WorkingUnitMM()
 }
 
 // FormatFromPath infers the exchange format from a file's extension (case-insensitive), so the

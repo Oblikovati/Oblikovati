@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/pointcloud"
 )
@@ -30,7 +31,9 @@ func (s *Session) AttachPointCloud(name, fullFileName string) (*pointcloud.Point
 	if err != nil {
 		return nil, fmt.Errorf("app: read scan %q: %w", fullFileName, err)
 	}
-	points, err := pointcloud.ReadScan(fullFileName, data)
+	// Scale the scan's file unit into the document's working unit — the same TranslationOptions
+	// seam every other importer threads (#1636).
+	points, err := pointcloud.ReadScan(fullFileName, data, exchange.TranslationOptions{TargetUnitMM: part.WorkingUnitMM()})
 	if err != nil {
 		return nil, err
 	}

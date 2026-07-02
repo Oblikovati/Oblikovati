@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 
+	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/math"
 )
 
@@ -23,17 +24,41 @@ import (
 var registeredReaders = []PointReader{NewASCIIReader(), NewPLYReader(), NewE57Reader(), NewLASReader()}
 
 // ReadScan decodes a scan file's bytes into cloud-local points, choosing the reader by the
-// filename's extension. It errors when no registered reader handles the extension, naming it.
-func ReadScan(filename string, data []byte) ([]math.Point3, error) {
+// filename's extension and scaling the file's unit into the document's working (database) unit —
+// the same TranslationOptions seam the mesh importers use, so a metric LAS/E57 survey lands at
+// true physical size in a cm or inch document (#1636). It errors when no registered reader
+// handles the extension, naming it.
+//
+// Example:
+//
+//	pts, err := pointcloud.ReadScan("survey.las", data, exchange.TranslationOptions{TargetUnitMM: 10})
+func ReadScan(filename string, data []byte, opts exchange.TranslationOptions) ([]math.Point3, error) {
 	ext := strings.ToLower(filepath.Ext(filename))
 	for _, r := range registeredReaders {
 		for _, e := range r.Extensions() {
 			if e == ext {
-				return r.Read(data)
+				return readScaled(r, data, opts)
 			}
 		}
 	}
 	return nil, fmt.Errorf("pointcloud: no reader for scan extension %q (file %q)", ext, filename)
+}
+
+// readScaled decodes with r and applies the single file→database unit factor to every point —
+// the one shared scaling seam for all registered readers (#1636), mirroring meshio's scaleRaw.
+func readScaled(r PointReader, data []byte, opts exchange.TranslationOptions) ([]math.Point3, error) {
+	points, err := r.Read(data)
+	if err != nil {
+		return nil, err
+	}
+	f := math.Scalar(opts.ImportScale(r.FileUnitMM()))
+	if f == 1 {
+		return points, nil
+	}
+	for i, p := range points {
+		points[i] = math.P3(p.X*f, p.Y*f, p.Z*f)
+	}
+	return points, nil
 }
 
 // IsScanFile reports whether a path's extension is a 3D-scan point-cloud format handled by a
@@ -70,19 +95,27 @@ type PointReader interface {
 	// Extensions returns the lowercase file extensions (with leading dot) this reader handles.
 	Extensions() []string
 	// Read parses scan bytes into cloud-local points, erroring with the offending input.
+	// Coordinates are returned in the FILE's unit; ReadScan applies the unit scale.
 	Read(data []byte) ([]math.Point3, error)
+	// FileUnitMM is the millimetre size of the format's length unit: E57 is metres by the ASTM
+	// E2807 spec, LAS metres by ASPRS convention, and the unitless formats (ASCII XYZ/PTS, PLY)
+	// follow the same declared millimetre convention as unitless meshes (STL/OBJ) (#1636).
+	FileUnitMM() float64
 }
 
 // asciiReader parses the open ASCII point formats — XYZ and PTS — where each non-empty,
 // non-comment line is "x y z" optionally followed by intensity / r g b columns (ignored for
-// now). A lone leading integer (a PTS point-count header) is skipped. Coordinates are read in
-// the file's own units; the owning PointCloud's UnitsFactor/scale maps them to model space.
+// now). A lone leading integer (a PTS point-count header) is skipped. The formats carry no unit,
+// so they follow the millimetre convention (FileUnitMM = 1), like unitless meshes (#1636).
 type asciiReader struct{}
 
 // NewASCIIReader returns the clean-room reader for .xyz/.pts/.asc/.txt scan files.
 func NewASCIIReader() PointReader { return asciiReader{} }
 
 func (asciiReader) Extensions() []string { return []string{".xyz", ".pts", ".asc", ".txt"} }
+
+// FileUnitMM: ASCII scan formats are unitless — the declared millimetre convention applies.
+func (asciiReader) FileUnitMM() float64 { return 1 }
 
 // Read parses each coordinate line into a point. A line with fewer than three numeric fields
 // that is the FIRST data line is treated as a PTS count header and skipped; any other malformed
