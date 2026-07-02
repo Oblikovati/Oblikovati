@@ -7,6 +7,12 @@
 [ADR-0022](ADR-0022-materials-appearances.md) (PBR appearance data). Drives milestone
 **M23**.
 
+> **Editor's note (2026-07, #1661 / M40 audit D4).** Paths in this ADR predate the
+> repo-root migration: the GPL application module written here as `/source` now
+> lives directly at the repository root (`kernel/`, `model/`, `app/`, `head/`, …),
+> and the Apache-2.0 `/api` module is the sibling `Oblikovati.API` repository.
+> The record below is preserved as written.
+
 ## Context
 
 The viewport renders only **three** of Autodesk Inventor's display modes — `Shaded`,
