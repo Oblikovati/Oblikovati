@@ -176,8 +176,10 @@ func adaptiveStep(s geom.Surface, umin, umax, vmin, vmax float64, q Quality) (st
 	return clampStep(uExt*frac, uExt), clampStep(vExt*frac, vExt)
 }
 
+// clampStep stays a wrapper over math.Clamp (#1652): it owns the derived
+// per-axis bounds [ext/maxInteriorCells, ext/minInteriorCells], not new arithmetic.
 func clampStep(step, ext float64) float64 {
-	return stdmath.Max(ext/maxInteriorCells, stdmath.Min(step, ext/minInteriorCells))
+	return math.Clamp(step, ext/maxInteriorCells, ext/minInteriorCells)
 }
 
 // regionSagitta estimates how far the surface bulges from the flat bilinear quad spanning the (u,v)

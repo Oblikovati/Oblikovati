@@ -2,6 +2,8 @@
 
 package textbuf
 
+import "oblikovati.org/math"
+
 // Selection is a caret with an anchor. When Anchor == Caret it is a bare caret (no
 // highlighted range); otherwise it spans [Anchor, Caret) in either direction. The editor holds
 // one Selection; shift-movement moves Caret and leaves Anchor, plain movement collapses both.
@@ -53,7 +55,7 @@ func (b *Buffer) Up(p Position, goalCol int) Position {
 	if p.Line == 0 {
 		return Position{0, 0}
 	}
-	return Position{p.Line - 1, clampInt(goalCol, 0, b.LineLen(p.Line-1))}
+	return Position{p.Line - 1, math.Clamp(goalCol, 0, b.LineLen(p.Line-1))}
 }
 
 // Down moves the caret one line down, keeping goalCol clamped to the target line. At the
@@ -63,7 +65,7 @@ func (b *Buffer) Down(p Position, goalCol int) Position {
 		last := b.LineCount() - 1
 		return Position{last, b.LineLen(last)}
 	}
-	return Position{p.Line + 1, clampInt(goalCol, 0, b.LineLen(p.Line+1))}
+	return Position{p.Line + 1, math.Clamp(goalCol, 0, b.LineLen(p.Line+1))}
 }
 
 // LineEnd returns the end-of-line caret for p's line.

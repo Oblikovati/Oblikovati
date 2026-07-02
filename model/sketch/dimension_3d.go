@@ -244,19 +244,7 @@ func angleBetweenLines3D(l1, l2 *Line3D) float64 {
 		return 0
 	}
 	cos := float64(d1.Dot(d2)) / (n1 * n2)
-	return stdmath.Acos(clampUnit3D(cos))
-}
-
-// clampUnit3D pins x into [-1, 1] so it is a valid argument to Acos after rounding error.
-func clampUnit3D(x float64) float64 {
-	switch {
-	case x > 1:
-		return 1
-	case x < -1:
-		return -1
-	default:
-		return x
-	}
+	return stdmath.Acos(math.Clamp(cos, -1, 1))
 }
 
 func (dc *DimensionConstraints3D) nextName() string {

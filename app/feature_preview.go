@@ -413,14 +413,14 @@ func sigEqual(a, b faceSig) bool {
 		return false
 	}
 	if a.kind == 0 {
-		return a.centroid.IsEqualTo(b.centroid, 1e-4) && absVal(a.area-b.area) <= 1e-3*maxVal(a.area, b.area)+1e-9
+		return a.centroid.IsEqualTo(b.centroid, 1e-4) && stdmath.Abs(a.area-b.area) <= 1e-3*max(a.area, b.area)+1e-9
 	}
-	return a.dir.IsEqualTo(b.dir, 1e-4) && a.anchor.IsEqualTo(b.anchor, 1e-4) && absVal(a.r1-b.r1) <= 1e-4 && absVal(a.r2-b.r2) <= 1e-4
+	return a.dir.IsEqualTo(b.dir, 1e-4) && a.anchor.IsEqualTo(b.anchor, 1e-4) && stdmath.Abs(a.r1-b.r1) <= 1e-4 && stdmath.Abs(a.r2-b.r2) <= 1e-4
 }
 
 // signNorm flips v so its dominant component is positive (a surface and its reverse share a sig).
 func signNorm(v math.Vector3) math.Vector3 {
-	ax, ay, az := absVal(v.X), absVal(v.Y), absVal(v.Z)
+	ax, ay, az := stdmath.Abs(v.X), stdmath.Abs(v.Y), stdmath.Abs(v.Z)
 	if (ax >= ay && ax >= az && v.X < 0) || (ay > ax && ay >= az && v.Y < 0) || (az > ax && az > ay && v.Z < 0) {
 		return v.Scale(-1)
 	}
@@ -453,19 +453,6 @@ func faceAreaCentroid(f *topo.Face) (math.Point3, float64) {
 		return math.P3(0, 0, 0), 0
 	}
 	return math.P3(cx/area, cy/area, cz/area), area
-}
-
-func absVal(x float64) float64 {
-	if x < 0 {
-		return -x
-	}
-	return x
-}
-func maxVal(a, b float64) float64 {
-	if a > b {
-		return a
-	}
-	return b
 }
 
 // previewBodyFill wraps a body mesh as a translucent, on-top triangle item — drawn ignoring

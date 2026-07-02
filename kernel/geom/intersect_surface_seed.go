@@ -131,10 +131,10 @@ func (c *ssiSeedField) seeds(leaf float64) []math.Point3 {
 // rule is the correctness (a thin loop's cell is never pruned and is split until seen).
 func (c *ssiSeedField) refine(i0, j0, i1, j1 int, leaf float64, sink *ssiSeedSink) {
 	s00, s10, s01, s11 := c.at(i0, j0), c.at(i1, j0), c.at(i0, j1), c.at(i1, j1)
-	minAbs := minOf4(stdmath.Abs(s00.f), stdmath.Abs(s10.f), stdmath.Abs(s01.f), stdmath.Abs(s11.f))
+	minAbs := min(stdmath.Abs(s00.f), stdmath.Abs(s10.f), stdmath.Abs(s01.f), stdmath.Abs(s11.f))
 	su, sv := float64(i1-i0)*c.du, float64(j1-j0)*c.dv
-	tu := maxOf4(s00.tu, s10.tu, s01.tu, s11.tu)
-	tv := maxOf4(s00.tv, s10.tv, s01.tv, s11.tv)
+	tu := max(s00.tu, s10.tu, s01.tu, s11.tu)
+	tv := max(s00.tv, s10.tv, s01.tv, s11.tv)
 	variation := ssiSeedSafety * (tu*su + tv*sv) // upper bound on |Δf| across the cell (|∇f| ≤ 1)
 	if minAbs > variation {
 		return // every interior point keeps a corner's sign: no crossing here
@@ -205,14 +205,4 @@ func (c *ssiSeedField) minCorner(i0, j0, i1, j1 int, s00, s10, s01, s11 ssiSampl
 		}
 	}
 	return c.point(bi, bj)
-}
-
-// minOf4 returns the smallest of four values.
-func minOf4(a, b, c, d float64) float64 {
-	return stdmath.Min(stdmath.Min(a, b), stdmath.Min(c, d))
-}
-
-// maxOf4 returns the largest of four values.
-func maxOf4(a, b, c, d float64) float64 {
-	return stdmath.Max(stdmath.Max(a, b), stdmath.Max(c, d))
 }

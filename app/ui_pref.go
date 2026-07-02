@@ -2,6 +2,8 @@
 
 package app
 
+import "oblikovati.org/math"
+
 // User-facing UI scale surface (#1232 follow-up: icons/text too small on high-resolution
 // monitors). The session owns the persisted FontScale/IconScale preferences; the head reads
 // them live each frame (font scale → ImGui style.FontScaleMain, icon scale → icon rasterization
@@ -27,7 +29,7 @@ func (s *Session) UIFontScale() float64 {
 // SetUIFontScale clamps v to [minUIScale, maxUIFontScale] and persists it to the user's
 // options file. Out-of-range and non-positive inputs are clamped, never rejected.
 func (s *Session) SetUIFontScale(v float64) error {
-	s.appOptions.UI.FontScale = clampScale(v, minUIScale, maxUIFontScale)
+	s.appOptions.UI.FontScale = math.Clamp(v, minUIScale, maxUIFontScale)
 	return s.saveOptions()
 }
 
@@ -39,7 +41,7 @@ func (s *Session) UIIconScale() float64 {
 
 // SetUIIconScale clamps v to [minUIScale, maxUIIconScale] and persists it.
 func (s *Session) SetUIIconScale(v float64) error {
-	s.appOptions.UI.IconScale = clampScale(v, minUIScale, maxUIIconScale)
+	s.appOptions.UI.IconScale = math.Clamp(v, minUIScale, maxUIIconScale)
 	return s.saveOptions()
 }
 
@@ -48,18 +50,6 @@ func (s *Session) SetUIIconScale(v float64) error {
 func scaleOrDefault(v float64) float64 {
 	if v <= 0 {
 		return 1
-	}
-	return v
-}
-
-// clampScale confines v to [lo, hi], treating a non-positive v as the low bound rather than
-// snapping it to 1.0 — an explicit setter call honors the user's intent up to the safe minimum.
-func clampScale(v, lo, hi float64) float64 {
-	if v < lo {
-		return lo
-	}
-	if v > hi {
-		return hi
 	}
 	return v
 }

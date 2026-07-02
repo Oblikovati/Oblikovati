@@ -87,7 +87,7 @@ func (m Mesh) edgePoint(k [2]int, faces []int, fp []math.Point3) math.Point3 {
 		return mid
 	}
 	smooth := average([]math.Point3{a, b, fp[faces[0]], fp[faces[1]]})
-	return lerpP(smooth, mid, clamp01(m.sharpness(k[0], k[1])))
+	return lerpP(smooth, mid, math.Clamp01(m.sharpness(k[0], k[1])))
 }
 
 // vertexPoints repositions every original vertex per its incidence and creasing.
@@ -194,15 +194,4 @@ func other(e [2]int, v int) int {
 
 func lerpP(a, b math.Point3, t float64) math.Point3 {
 	return math.P3(a.X+(b.X-a.X)*t, a.Y+(b.Y-a.Y)*t, a.Z+(b.Z-a.Z)*t)
-}
-
-func clamp01(x float64) float64 {
-	switch {
-	case x < 0:
-		return 0
-	case x > 1:
-		return 1
-	default:
-		return x
-	}
 }

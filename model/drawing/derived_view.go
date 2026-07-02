@@ -69,7 +69,7 @@ func clipToCircle(a, b gmath.Point2, cx, cy, r float64) (gmath.Point2, gmath.Poi
 		return a, b, cc < 0
 	}
 	sq := math.Sqrt(disc)
-	t0, t1 := maxf2((-bb-sq)/(2*aa), 0), minf2((-bb+sq)/(2*aa), 1)
+	t0, t1 := max((-bb-sq)/(2*aa), 0), min((-bb+sq)/(2*aa), 1)
 	if t0 >= t1 {
 		return a, b, false
 	}
@@ -78,20 +78,6 @@ func clipToCircle(a, b gmath.Point2, cx, cy, r float64) (gmath.Point2, gmath.Poi
 
 func lerp2(a gmath.Point2, dx, dy, t float64) gmath.Point2 {
 	return gmath.P2(a.X+gmath.Scalar(dx*t), a.Y+gmath.Scalar(dy*t))
-}
-
-func maxf2(a, b float64) float64 {
-	if a > b {
-		return a
-	}
-	return b
-}
-
-func minf2(a, b float64) float64 {
-	if a < b {
-		return a
-	}
-	return b
 }
 
 // breakBand is a break view's removed band. g0/g1 bound it (g0<g1) along the break axis in the
@@ -190,7 +176,7 @@ func perpBounds(segs []hlr.Segment, axisX bool) (lo, hi float64) {
 	for _, s := range segs {
 		for _, p := range [2]gmath.Point2{s.A, s.B} {
 			c := axisCoord(p, !axisX)
-			lo, hi = minf2(lo, c), maxf2(hi, c)
+			lo, hi = min(lo, c), max(hi, c)
 		}
 	}
 	return lo, hi

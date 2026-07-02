@@ -241,18 +241,8 @@ func turnAngle(a, b, c math.Point3) float64 {
 	if d1.LengthSquared() == 0 || d2.LengthSquared() == 0 {
 		return 0
 	}
-	cosA := clamp(d1.Dot(d2)/(d1.Length()*d2.Length()), -1, 1)
+	cosA := math.Clamp(d1.Dot(d2)/(d1.Length()*d2.Length()), -1, 1)
 	return stdmath.Acos(cosA)
-}
-
-func clamp(x, lo, hi float64) float64 {
-	if x < lo {
-		return lo
-	}
-	if x > hi {
-		return hi
-	}
-	return x
 }
 
 // pointToSegment returns the distance from p to segment [a, b].
@@ -262,18 +252,8 @@ func pointToSegment(p, a, b math.Point3) float64 {
 	if denom < math.DefaultTolerance {
 		return p.DistanceTo(a)
 	}
-	t := clamp01(a.VectorTo(p).Dot(ab) / denom)
+	t := math.Clamp01(a.VectorTo(p).Dot(ab) / denom)
 	return p.DistanceTo(a.TranslateBy(ab.Scale(t)))
-}
-
-func clamp01(x float64) float64 {
-	if x < 0 {
-		return 0
-	}
-	if x > 1 {
-		return 1
-	}
-	return x
 }
 
 // clampSpan replaces infinite domain bounds with a finite window.

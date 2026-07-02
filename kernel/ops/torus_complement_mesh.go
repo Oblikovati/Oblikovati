@@ -57,10 +57,10 @@ func centroidUV(loop []math.Point2) (uc, vc float64) {
 // then meshes the whole window (up to the full chart minus the oval), which stays well-conditioned.
 func ovalWindow(us, vs []float64, ovalUV []math.Point2) (i0, i1, j0, j1 int) {
 	uMin, uMax, vMin, vMax := loopUVBounds(ovalUV)
-	i0 = clampIndex(lastBelow(us, uMin)-1, 0, len(us)-2)
-	i1 = clampIndex(firstAbove(us, uMax)+1, i0+1, len(us)-1)
-	j0 = clampIndex(lastBelow(vs, vMin)-1, 0, len(vs)-2)
-	j1 = clampIndex(firstAbove(vs, vMax)+1, j0+1, len(vs)-1)
+	i0 = math.Clamp(lastBelow(us, uMin)-1, 0, len(us)-2)
+	i1 = math.Clamp(firstAbove(us, uMax)+1, i0+1, len(us)-1)
+	j0 = math.Clamp(lastBelow(vs, vMin)-1, 0, len(vs)-2)
+	j1 = math.Clamp(firstAbove(vs, vMax)+1, j0+1, len(vs)-1)
 	return i0, i1, j0, j1
 }
 
@@ -125,15 +125,4 @@ func firstAbove(xs []float64, x float64) int {
 		}
 	}
 	return len(xs) - 1
-}
-
-// clampIndex folds i into [lo, hi].
-func clampIndex(i, lo, hi int) int {
-	if i < lo {
-		return lo
-	}
-	if i > hi {
-		return hi
-	}
-	return i
 }

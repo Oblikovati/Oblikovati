@@ -71,13 +71,6 @@ func TestParseR2004ContainerCorpus(t *testing.T) {
 	}
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 // TestLogicalSectionOnR2000Rejected guards the version branch: asking a flat R2000
 // file for a named logical section is a programming error and must be reported.
 func TestLogicalSectionOnR2000Rejected(t *testing.T) {

@@ -116,7 +116,7 @@ type screenRect struct{ minX, minY, maxX, maxY float64 }
 
 // orderedRect builds a normalized rectangle from two opposite corners.
 func orderedRect(x0, y0, x1, y1 float64) screenRect {
-	return screenRect{minF(x0, x1), minF(y0, y1), maxF(x0, x1), maxF(y0, y1)}
+	return screenRect{min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1)}
 }
 
 // contains reports whether r fully encloses inner (window-select test).
@@ -166,22 +166,8 @@ func (p *RayPicker) projectPointsRect(pts []math.Point3) (screenRect, bool) {
 			first = false
 			continue
 		}
-		r.minX, r.minY = minF(r.minX, sx), minF(r.minY, sy)
-		r.maxX, r.maxY = maxF(r.maxX, sx), maxF(r.maxY, sy)
+		r.minX, r.minY = min(r.minX, sx), min(r.minY, sy)
+		r.maxX, r.maxY = max(r.maxX, sx), max(r.maxY, sy)
 	}
 	return r, !first
-}
-
-func minF(a, b float64) float64 {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func maxF(a, b float64) float64 {
-	if a > b {
-		return a
-	}
-	return b
 }

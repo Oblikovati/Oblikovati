@@ -36,8 +36,8 @@ func TestPickSketchRegionWindowEnclosesEntities(t *testing.T) {
 	ax, ay := proj(math.P2(-1, 0))
 	bx, by := proj(math.P2(1, 0))
 	pad := 6.0
-	x0, y0 := minF(ax, bx)-pad, minF(ay, by)-pad
-	x1, y1 := maxF(ax, bx)+pad, maxF(ay, by)+pad
+	x0, y0 := min(ax, bx)-pad, min(ay, by)-pad
+	x1, y1 := max(ax, bx)+pad, max(ay, by)+pad
 
 	hits := s.pickSketchRegion(x0, y0, x1, y1, false) // window
 	if len(hits) != 1 {
@@ -84,11 +84,11 @@ func TestBoxSelectStateMachineInSketch(t *testing.T) {
 	ax, ay := proj(math.P2(-1, 0))
 	bx, by := proj(math.P2(1, 0))
 
-	s.BeginBoxSelect(minF(ax, bx)-6, minF(ay, by)-6) // editing a sketch, so this is allowed
+	s.BeginBoxSelect(min(ax, bx)-6, min(ay, by)-6) // editing a sketch, so this is allowed
 	if !s.BoxSelectActive() {
 		t.Fatal("BeginBoxSelect should start a box in the sketch editor (no RegionPicker needed)")
 	}
-	s.UpdateBoxSelect(maxF(ax, bx)+6, maxF(ay, by)+6) // L→R window enclosing the line
+	s.UpdateBoxSelect(max(ax, bx)+6, max(ay, by)+6) // L→R window enclosing the line
 	if n := s.CommitBoxSelect(0); n != 1 {
 		t.Fatalf("commit should select the enclosed line, got %d hits", n)
 	}

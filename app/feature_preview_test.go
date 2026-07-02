@@ -3,6 +3,7 @@
 package app
 
 import (
+	stdmath "math"
 	"testing"
 
 	"oblikovati.org/kernel/ops"
@@ -222,11 +223,11 @@ func TestFaceSigHelpers(t *testing.T) {
 	if !a.IsEqualTo(b, 1e-9) {
 		t.Errorf("axisFoot not invariant along axis: %v vs %v", a, b)
 	}
-	if got := maxVal(2, 5); got != 5 {
-		t.Errorf("maxVal(2,5) = %g, want 5", got)
+	if got := max(2.0, 5.0); got != 5 {
+		t.Errorf("max(2,5) = %g, want 5", got)
 	}
-	if got := absVal(-3); got != 3 {
-		t.Errorf("absVal(-3) = %g, want 3", got)
+	if got := stdmath.Abs(-3); got != 3 {
+		t.Errorf("stdmath.Abs(-3) = %g, want 3", got)
 	}
 
 	// Two freeform sigs (kind 0) with equal area+centroid match; differing area does not.

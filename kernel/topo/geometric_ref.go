@@ -2,7 +2,11 @@
 
 package topo
 
-import "oblikovati.org/math"
+import (
+	stdmath "math"
+
+	"oblikovati.org/math"
+)
 
 // SPIKE (M8, NX exporter): resolving a face/edge selection from a SERIALIZED geometric
 // descriptor rather than an Oblikovati lineage key. The exact-lineage binder
@@ -80,7 +84,7 @@ func (b *Body) FindEdgeByGeometry(ref GeometricEdgeRef, tol math.Scalar) (*Edge,
 		if d > tol {
 			continue
 		}
-		if want.LengthSquared() > 0 && absScalar(edgeDirection(e).Dot(want)) < normalAlignMin {
+		if want.LengthSquared() > 0 && stdmath.Abs(edgeDirection(e).Dot(want)) < normalAlignMin {
 			continue
 		}
 		best, bestD, second, secondD = rankEdge(e, d, best, bestD, second, secondD)
@@ -177,11 +181,4 @@ func unitOrZero(v math.Vector3) math.Vector3 {
 		return math.Vector3{}
 	}
 	return v.Scale(1 / v.Length())
-}
-
-func absScalar(s math.Scalar) math.Scalar {
-	if s < 0 {
-		return -s
-	}
-	return s
 }

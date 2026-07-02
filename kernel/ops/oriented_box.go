@@ -99,7 +99,7 @@ func boxFlushWithFace(f *topo.Face, pts []math.Point3) (OrientedBox, bool) {
 		d := p.AsVector()
 		proj[i] = math.P2(d.Dot(u), d.Dot(v))
 		h := float64(d.Dot(w))
-		wLo, wHi = minFloat(wLo, h), maxFloat(wHi, h)
+		wLo, wHi = min(wLo, h), max(wHi, h)
 	}
 	rect, ok := minAreaRectangle(proj)
 	if !ok {
@@ -170,8 +170,8 @@ func rectAlong(hull []math.Point2, dir math.Vector2) rect2 {
 	yLo, yHi := stdmath.Inf(1), stdmath.Inf(-1)
 	for _, p := range hull {
 		x, y := float64(p.AsVector().Dot(dir)), float64(p.AsVector().Dot(perp))
-		xLo, xHi = minFloat(xLo, x), maxFloat(xHi, x)
-		yLo, yHi = minFloat(yLo, y), maxFloat(yHi, y)
+		xLo, xHi = min(xLo, x), max(xHi, x)
+		yLo, yHi = min(yLo, y), max(yHi, y)
 	}
 	corner := dir.Scale(math.Scalar(xLo)).Add(perp.Scale(math.Scalar(yLo))).AsPoint()
 	return rect2{

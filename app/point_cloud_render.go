@@ -154,23 +154,9 @@ func projectBoxToScreen(box math.Box, cam scene.Camera) (screenBox, bool) {
 			fully = false
 		}
 		if ok {
-			r.minX, r.minY = minOf(r.minX, x), minOf(r.minY, y)
-			r.maxX, r.maxY = maxOf(r.maxX, x), maxOf(r.maxY, y)
+			r.minX, r.minY = min(r.minX, x), min(r.minY, y)
+			r.maxX, r.maxY = max(r.maxX, x), max(r.maxY, y)
 		}
 	}
 	return r, fully
-}
-
-func minOf(a, b float64) float64 {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func maxOf(a, b float64) float64 {
-	if a > b {
-		return a
-	}
-	return b
 }

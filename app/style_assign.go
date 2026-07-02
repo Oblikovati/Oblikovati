@@ -5,6 +5,8 @@ package app
 import (
 	"fmt"
 
+	"oblikovati.org/math"
+
 	"oblikovati.org/model/style"
 	"oblikovati.org/renderer"
 )
@@ -53,19 +55,8 @@ func styleSurface(cs style.ColorStyle) renderer.Surface {
 	return renderer.Surface{
 		Albedo:    cs.Diffuse.Rgba().Array(),
 		Metallic:  0,
-		Roughness: clamp01(1 - cs.Shininess),
+		Roughness: float32(math.Clamp01(1 - cs.Shininess)),
 		Emissive:  [3]float32{em.R, em.G, em.B},
-		Opacity:   clamp01(cs.Opacity),
+		Opacity:   float32(math.Clamp01(cs.Opacity)),
 	}
-}
-
-// clamp01 clamps v to [0,1].
-func clamp01(v float64) float32 {
-	if v < 0 {
-		return 0
-	}
-	if v > 1 {
-		return 1
-	}
-	return float32(v)
 }

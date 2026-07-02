@@ -53,7 +53,7 @@ func (u UnitVector2) Dot(o UnitVector2) Scalar {
 
 // AngleTo returns the unsigned angle in radians between u and o, in [0, π].
 func (u UnitVector2) AngleTo(o UnitVector2) Scalar {
-	return stdmath.Acos(clampUnit(u.Dot(o)))
+	return stdmath.Acos(Clamp(u.Dot(o), -1, 1))
 }
 
 // IsEqualTo reports whether u and o are componentwise equal within tol. Pass

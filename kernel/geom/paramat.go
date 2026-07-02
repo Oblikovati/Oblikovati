@@ -40,7 +40,7 @@ func (c Cone) ParamAt(q math.Point3) (u, v float64) {
 // closest point on the sphere (the radial direction from the center to q).
 func (s Sphere) ParamAt(q math.Point3) (u, v float64) {
 	d := unitOrZero(s.Center.VectorTo(q))
-	return wrap2pi(stdmath.Atan2(d.Y, d.X)), stdmath.Asin(clampUnit(d.Z))
+	return wrap2pi(stdmath.Atan2(d.Y, d.X)), stdmath.Asin(math.Clamp(d.Z, -1, 1))
 }
 
 // ParamAt returns the around-axis angle u and around-tube angle v, both in [0, 2π).

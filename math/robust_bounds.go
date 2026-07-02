@@ -53,7 +53,7 @@ func RobustPointBox(pts []Point3) Box {
 // (a true stray) is excluded. ok is false when there is no spread to bound.
 func robustWindow(pts []Point3) (lo, hi Point3, ok bool) {
 	xs, ys, zs := axisValues(pts)
-	margin := robustExtentMargin * maxFloat(coreSize(xs), maxFloat(coreSize(ys), coreSize(zs)))
+	margin := robustExtentMargin * max(coreSize(xs), max(coreSize(ys), coreSize(zs)))
 	if margin <= 0 {
 		return Point3{}, Point3{}, false
 	}
@@ -83,12 +83,4 @@ func axisValues(pts []Point3) (xs, ys, zs []float64) {
 // characteristic size on that axis, immune to the extreme tails a stray occupies.
 func coreSize(v []float64) float64 {
 	return Percentile(v, 0.99) - Percentile(v, 0.01)
-}
-
-// maxFloat returns the larger of two float64s.
-func maxFloat(a, b float64) float64 {
-	if a > b {
-		return a
-	}
-	return b
 }

@@ -35,7 +35,7 @@ func ClosestPointOnSegment(s LineSegment, p math.Point3) math.Point3 {
 	if len2 == 0 {
 		return s.StartPoint
 	}
-	return s.PointAt(clamp01(s.StartPoint.VectorTo(p).Dot(d) / len2))
+	return s.PointAt(math.Clamp01(s.StartPoint.VectorTo(p).Dot(d) / len2))
 }
 
 // DistancePointToSegment returns the distance from p to the nearest point of

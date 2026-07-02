@@ -699,7 +699,7 @@ func perpDistToSeg(p, a, b math.Point2) float64 {
 	if l2 < arrTol*arrTol {
 		return float64(p.DistanceTo(a))
 	}
-	t := clamp01(float64(a.VectorTo(p).Dot(ab)) / l2)
+	t := math.Clamp01(float64(a.VectorTo(p).Dot(ab)) / l2)
 	return float64(p.DistanceTo(a.TranslateBy(ab.Scale(math.Scalar(t)))))
 }
 
@@ -710,18 +710,7 @@ func projFraction(p, a, b math.Point2) float64 {
 	if l2 < arrTol*arrTol {
 		return 0
 	}
-	return clamp01(float64(a.VectorTo(p).Dot(ab)) / l2)
-}
-
-// clamp01 clamps t to [0,1].
-func clamp01(t float64) float64 {
-	if t < 0 {
-		return 0
-	}
-	if t > 1 {
-		return 1
-	}
-	return t
+	return math.Clamp01(float64(a.VectorTo(p).Dot(ab)) / l2)
 }
 
 // emitLoopEdges re-emits a (u,v) boundary loop as a chain of exact analytic loopEdges: recover each dedge's

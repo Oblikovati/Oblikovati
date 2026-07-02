@@ -73,7 +73,7 @@ func Project(body *topo.Body, view View, q ops.Quality) []Segment {
 	// edge-on adjacent face, which a midpoint ray can graze. Scaling it to the model size
 	// (0.5% of the bounding diagonal) makes the classification platform-stable — a grazing
 	// face sits within the bias band and is ignored, while a real occluder is far beyond it.
-	bias := maxf(2*q.ChordTolerance, 0.005*meshDiagonal(mesh)) + 1e-9
+	bias := max(2*q.ChordTolerance, 0.005*meshDiagonal(mesh)) + 1e-9
 	var segs []Segment
 	for _, e := range body.Edges() {
 		poly := ops.TessellateEdge(e, q)
@@ -135,31 +135,10 @@ func meshDiagonal(m *ops.Mesh) float64 {
 	}
 	lo, hi := m.Positions[0], m.Positions[0]
 	for _, p := range m.Positions {
-		lo = math.P3(minS(lo.X, p.X), minS(lo.Y, p.Y), minS(lo.Z, p.Z))
-		hi = math.P3(maxS(hi.X, p.X), maxS(hi.Y, p.Y), maxS(hi.Z, p.Z))
+		lo = math.P3(min(lo.X, p.X), min(lo.Y, p.Y), min(lo.Z, p.Z))
+		hi = math.P3(max(hi.X, p.X), max(hi.Y, p.Y), max(hi.Z, p.Z))
 	}
 	return float64(lo.VectorTo(hi).Length())
-}
-
-func minS(a, b math.Scalar) math.Scalar {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func maxS(a, b math.Scalar) math.Scalar {
-	if a > b {
-		return a
-	}
-	return b
-}
-
-func maxf(a, b float64) float64 {
-	if a > b {
-		return a
-	}
-	return b
 }
 
 func unit(v math.Vector3) math.Vector3 {

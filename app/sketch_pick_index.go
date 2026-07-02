@@ -105,20 +105,10 @@ func buildPickIndex(sk *sketch.Sketch, count int) *sketchPickIndex {
 }
 
 func (idx *sketchPickIndex) col(x float64) int {
-	return clampCell(int((x-idx.originX)/idx.cell), idx.cols)
+	return math.Clamp(int((x-idx.originX)/idx.cell), 0, idx.cols-1)
 }
 func (idx *sketchPickIndex) row(y float64) int {
-	return clampCell(int((y-idx.originY)/idx.cell), idx.rows)
-}
-
-func clampCell(c, n int) int {
-	if c < 0 {
-		return 0
-	}
-	if c >= n {
-		return n - 1
-	}
-	return c
+	return math.Clamp(int((y-idx.originY)/idx.cell), 0, idx.rows-1)
 }
 
 // forCandidates calls visit for each segment that could be within tol of the ray:

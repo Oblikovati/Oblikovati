@@ -74,7 +74,7 @@ func (v Vector3) AngleTo(o Vector3) Scalar {
 		return 0
 	}
 	// clampUnit guards against |cos| slightly exceeding 1 from rounding.
-	return stdmath.Acos(clampUnit(v.Dot(o) / denom))
+	return stdmath.Acos(Clamp(v.Dot(o)/denom, -1, 1))
 }
 
 // IsEqualTo reports whether v and o are componentwise equal within tol. Pass
