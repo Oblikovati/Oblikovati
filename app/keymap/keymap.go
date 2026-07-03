@@ -9,11 +9,7 @@
 package keymap
 
 import (
-	"fmt"
-	"os"
-	"path/filepath"
-
-	"oblikovati.org/persistence/yamlcodec"
+	"oblikovati.org/persistence/filestore"
 	"oblikovati.org/userconfig"
 )
 
@@ -55,59 +51,48 @@ type Store interface {
 	Save(Customization) error
 }
 
-// FileStore persists the customization to one YAML file in the user config directory.
-type FileStore struct{ path string }
+// FileStore persists the customization to one YAML file in the user config directory
+// (the shared filestore core, #1651).
+type FileStore struct {
+	file *filestore.FileStore[Customization]
+}
 
 // DefaultPath is the per-user keymap file: ~/.oblikovati/keymap.yaml on Linux/macOS.
 func DefaultPath() (string, error) { return userconfig.File("keymap.yaml") }
 
 // NewFileStore returns a store backed by the file at path.
-func NewFileStore(path string) *FileStore { return &FileStore{path: path} }
+func NewFileStore(path string) *FileStore {
+	return &FileStore{file: filestore.New[Customization](path)}
+}
 
 // Load reads the stored customization; a missing file (fresh install) is the empty
 // overlay, so a clean install runs entirely on derived defaults.
 func (s *FileStore) Load() (Customization, error) {
-	c := Defaults()
-	raw, err := os.ReadFile(s.path)
-	if os.IsNotExist(err) {
-		return c, nil
-	}
+	c, _, err := s.file.Load()
 	if err != nil {
-		return c, fmt.Errorf("keymap: read %q: %w", s.path, err)
-	}
-	if err := yamlcodec.Unmarshal(raw, &c); err != nil {
-		return Defaults(), fmt.Errorf("keymap: parse %q: %w", s.path, err)
+		return Defaults(), err
 	}
 	return c, nil
 }
 
 // Save writes the customization, creating the config directory on first use.
-func (s *FileStore) Save(c Customization) error {
-	data, err := yamlcodec.Marshal(c)
-	if err != nil {
-		return fmt.Errorf("keymap: marshal: %w", err)
-	}
-	if err := os.MkdirAll(filepath.Dir(s.path), 0o755); err != nil {
-		return fmt.Errorf("keymap: create config dir for %q: %w", s.path, err)
-	}
-	return os.WriteFile(s.path, data, 0o644)
-}
+func (s *FileStore) Save(c Customization) error { return s.file.Save(c) }
 
-// MemStore is an in-memory Store for tests.
+// MemStore is an in-memory Store for tests, over the shared filestore fake (#1651).
+// It keeps keymap's two local behaviors: Load's (Customization, error) shape and
+// cloning on Save so callers' maps are never aliased (TestMemStoreSavesACopy).
 type MemStore struct {
-	stored Customization
-	Saved  int // number of Save calls, for assertions
+	filestore.MemStore[Customization]
 }
 
 // NewMemStore returns an empty in-memory store.
 func NewMemStore() *MemStore { return &MemStore{} }
 
 // Load returns the last saved customization (empty if none).
-func (s *MemStore) Load() (Customization, error) { return s.stored, nil }
+func (s *MemStore) Load() (Customization, error) {
+	c, _, err := s.MemStore.Load()
+	return c, err
+}
 
 // Save records a copy of the customization and counts the call.
-func (s *MemStore) Save(c Customization) error {
-	s.stored = c.Clone()
-	s.Saved++
-	return nil
-}
+func (s *MemStore) Save(c Customization) error { return s.MemStore.Save(c.Clone()) }

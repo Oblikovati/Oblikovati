@@ -32,7 +32,7 @@ func (t *ShellTool) Start(*Session) {}
 func (t *ShellTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
 
 // Picks reports the picked faces for the unified highlight.
-func (t *ShellTool) Picks() []Selectable { return faceSelectables(t.faces) }
+func (t *ShellTool) Picks() []Selectable { return selectables(t.faces) }
 
 // Pick appends the clicked face (ignoring one already chosen, so a double-click does not
 // duplicate it).

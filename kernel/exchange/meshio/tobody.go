@@ -21,12 +21,18 @@ import (
 //
 //	body, warns := meshio.SolidOrSurface(raw, "import:stl#0", meshio.DefaultWeldTolerance)
 func SolidOrSurface(raw RawMesh, feat string, weldTol float64) (*topo.Body, []string, error) {
-	cage := Weld(raw, weldTol)
+	cage, dropped := Weld(raw, weldTol)
 	if len(cage.Faces) == 0 {
 		return nil, nil, fmt.Errorf("mesh import: no non-degenerate triangles in %d-triangle soup", raw.TriangleCount())
 	}
+	var warns []string
+	if dropped > 0 {
+		// Dropped triangles are discarded geometry — surface them like the DWG decoder's
+		// per-entity warnings instead of thinning the mesh silently (#1638).
+		warns = append(warns, fmt.Sprintf("%d of %d triangles were degenerate after welding and were dropped", dropped, raw.TriangleCount()))
+	}
 	body := orientedBody(cage, feat)
-	return body, validateWarnings(body), nil
+	return body, append(warns, validateWarnings(body)...), nil
 }
 
 // orientedBody builds the body and rebuilds it face-reversed if it came out inside-out

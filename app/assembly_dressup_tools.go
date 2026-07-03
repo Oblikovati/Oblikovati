@@ -45,7 +45,7 @@ func (t *assemblyEdgeSelectTool) Start(*Session) {}
 func (t *assemblyEdgeSelectTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectEdge} }
 
 // Picks reports the picked component edges for the unified highlight.
-func (t *assemblyEdgeSelectTool) Picks() []Selectable { return edgeSelectables(t.edges) }
+func (t *assemblyEdgeSelectTool) Picks() []Selectable { return selectables(t.edges) }
 
 // Pick appends a picked edge (ignoring a repeat, so a double-click does not duplicate it).
 func (t *assemblyEdgeSelectTool) Pick(_ *Session, sel Selectable) {

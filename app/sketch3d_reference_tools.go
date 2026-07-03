@@ -36,7 +36,7 @@ func (t *IncludeGeometry3DTool) AcceptedKinds() []SelectionKind {
 
 // Picks reports the picked edges and vertices for the unified highlight.
 func (t *IncludeGeometry3DTool) Picks() []Selectable {
-	return append(edgeSelectables(t.edges), vertexSelectables(t.vertices)...)
+	return append(selectables(t.edges), selectables(t.vertices)...)
 }
 
 // Pick records a clicked edge or vertex (ignoring other kinds).
@@ -104,7 +104,7 @@ func (t *SurfaceCurve3DTool) Start(*Session) {}
 func (t *SurfaceCurve3DTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
 
 // Picks reports the picked faces for the unified highlight.
-func (t *SurfaceCurve3DTool) Picks() []Selectable { return faceSelectables(t.faces) }
+func (t *SurfaceCurve3DTool) Picks() []Selectable { return selectables(t.faces) }
 
 // Pick records a clicked face.
 func (t *SurfaceCurve3DTool) Pick(_ *Session, sel Selectable) {

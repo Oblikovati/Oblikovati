@@ -2,68 +2,39 @@
 
 package assembly
 
-import "oblikovati.org/api/contract"
+import (
+	"oblikovati.org/api/contract"
+	"oblikovati.org/model/internal/collview"
+)
 
 // Representations satisfies contract.RepresentationsManager (M12-F04): the in-proc read
 // surface an add-in uses to enumerate the three families and the model states. The collections
-// are thin views over the live slices; every mutation travels over api/wire.
+// are thin views over the live slices — one-line collview constructions since #1655, so the
+// out-of-range nil guard lives in one tested place; every mutation travels over api/wire.
 
 // DesignViews returns the design-view representation collection.
 func (r *Representations) DesignViews() contract.DesignViewRepresentations {
-	return designViewCollection{r.design}
+	return collview.Over(r.design, asDesignView)
 }
 
 // Positionals returns the positional representation collection.
 func (r *Representations) Positionals() contract.PositionalRepresentations {
-	return positionalCollection{r.pos}
+	return collview.Over(r.pos, asPositional)
 }
 
 // LevelsOfDetail returns the level-of-detail representation collection.
 func (r *Representations) LevelsOfDetail() contract.LevelOfDetailRepresentations {
-	return lodCollection{r.lod}
+	return collview.Over(r.lod, asLevelOfDetail)
 }
 
 // ModelStates returns the model-state collection.
 func (r *Representations) ModelStates() contract.ModelStates {
-	return modelStateCollection{r.models}
+	return collview.Over(r.models, asModelState)
 }
 
-type designViewCollection struct{ items []*designViewRep }
-
-func (c designViewCollection) Count() int { return len(c.items) }
-func (c designViewCollection) Item(i int) contract.DesignViewRepresentation {
-	if i < 0 || i >= len(c.items) {
-		return nil
-	}
-	return c.items[i]
-}
-
-type positionalCollection struct{ items []*positionalRep }
-
-func (c positionalCollection) Count() int { return len(c.items) }
-func (c positionalCollection) Item(i int) contract.PositionalRepresentation {
-	if i < 0 || i >= len(c.items) {
-		return nil
-	}
-	return c.items[i]
-}
-
-type lodCollection struct{ items []*lodRep }
-
-func (c lodCollection) Count() int { return len(c.items) }
-func (c lodCollection) Item(i int) contract.LevelOfDetailRepresentation {
-	if i < 0 || i >= len(c.items) {
-		return nil
-	}
-	return c.items[i]
-}
-
-type modelStateCollection struct{ items []*modelState }
-
-func (c modelStateCollection) Count() int { return len(c.items) }
-func (c modelStateCollection) Item(i int) contract.ModelState {
-	if i < 0 || i >= len(c.items) {
-		return nil
-	}
-	return c.items[i]
-}
+// The Elem→Iface widenings collview.Over needs (Go does not implicitly convert
+// []*designViewRep to []contract.DesignViewRepresentation).
+func asDesignView(v *designViewRep) contract.DesignViewRepresentation { return v }
+func asPositional(v *positionalRep) contract.PositionalRepresentation { return v }
+func asLevelOfDetail(v *lodRep) contract.LevelOfDetailRepresentation  { return v }
+func asModelState(v *modelState) contract.ModelState                  { return v }

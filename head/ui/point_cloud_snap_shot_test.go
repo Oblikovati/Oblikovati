@@ -42,7 +42,7 @@ func TestInWindowSnapWorkPointRenders(t *testing.T) {
 	icons = nil
 
 	s := framedSession()
-	pc, err := s.AttachPointCloud("Grid", gridScan(t))
+	pc, _, err := s.AttachPointCloud("Grid", gridScan(t))
 	if err != nil {
 		t.Fatalf("attach scan: %v", err)
 	}

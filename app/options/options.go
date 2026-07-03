@@ -8,12 +8,8 @@
 package options
 
 import (
-	"fmt"
-	"os"
-	"path/filepath"
-
 	"oblikovati.org/api/types"
-	"oblikovati.org/persistence/yamlcodec"
+	"oblikovati.org/persistence/filestore"
 	"oblikovati.org/userconfig"
 )
 
@@ -110,8 +106,9 @@ type Store interface {
 	Save(All) error
 }
 
-// FileStore persists the options to one YAML file in the user config directory.
-type FileStore struct{ path string }
+// FileStore persists the options to one YAML file in the user config directory
+// (the shared filestore core, #1651).
+type FileStore struct{ file *filestore.FileStore[All] }
 
 // DefaultPath is the per-user options file: ~/.oblikovati/options.yaml on
 // Linux/macOS (the shared userconfig directory elsewhere).
@@ -120,33 +117,20 @@ func DefaultPath() (string, error) {
 }
 
 // NewFileStore returns a store backed by the file at path.
-func NewFileStore(path string) *FileStore { return &FileStore{path: path} }
+func NewFileStore(path string) *FileStore {
+	return &FileStore{file: filestore.New[All](path)}
+}
 
-// Load reads the stored options over the defaults: a missing file (fresh install)
-// or an absent key keeps its default, so adding an option never breaks old files.
+// Load reads the stored options over the defaults (filestore.LoadInto): a missing
+// file (fresh install) or an absent key keeps its default, so adding an option
+// never breaks old files.
 func (s *FileStore) Load() (All, error) {
 	all := Defaults()
-	raw, err := os.ReadFile(s.path)
-	if os.IsNotExist(err) {
-		return all, nil
-	}
-	if err != nil {
-		return all, fmt.Errorf("options: read %q: %w", s.path, err)
-	}
-	if err := yamlcodec.Unmarshal(raw, &all); err != nil {
-		return Defaults(), fmt.Errorf("options: parse %q: %w", s.path, err)
+	if _, err := s.file.LoadInto(&all); err != nil {
+		return Defaults(), err
 	}
 	return all, nil
 }
 
 // Save writes the options, creating the config directory on first use.
-func (s *FileStore) Save(all All) error {
-	data, err := yamlcodec.Marshal(all)
-	if err != nil {
-		return fmt.Errorf("options: marshal: %w", err)
-	}
-	if err := os.MkdirAll(filepath.Dir(s.path), 0o755); err != nil {
-		return fmt.Errorf("options: create config dir for %q: %w", s.path, err)
-	}
-	return os.WriteFile(s.path, data, 0o644)
-}
+func (s *FileStore) Save(all All) error { return s.file.Save(all) }

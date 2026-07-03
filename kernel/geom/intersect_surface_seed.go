@@ -26,9 +26,15 @@ const (
 	// zero, and never sampled where it is not.
 	ssiSeedCoarse   = 8
 	ssiSeedMaxDepth = 7
-	// ssiSeedSafety inflates the tangent-magnitude variation bound so the prune stays conservative when
-	// corner sampling underestimates a larger interior tangent. With it no zero is pruned in practice;
-	// a rigorous bound would use the NURBS control-net derivative hodograph (deferred).
+	// ssiSeedCoarseMax caps the knot-span-aware coarse subdivision (#1608) so a pathological
+	// import with thousands of tiny spans cannot allocate an unbounded coarse lattice; beyond
+	// it the adaptive quadtree still resolves finer features per cell.
+	ssiSeedCoarseMax = 96
+	// ssiSeedSafety inflates the SAMPLED corner-tangent bound in the fallback path only — for a surface
+	// type with no rigorous hodograph bound (a rational NURBS, an unknown Surface). The primary path now
+	// uses a certified boxTangentBounder (tangent_bound.go, #1608), so this guess is no longer on the
+	// critical path; when it is used the field records a decline (ssiSeedField.declined) rather than
+	// silently trusting a guess (issue #1608 point 5).
 	ssiSeedSafety = 2.0
 )
 
@@ -37,11 +43,14 @@ const (
 // computed once. evals counts the (expensive, projection-bearing) field evaluations actually performed —
 // the metric the adaptive seeder drives down versus the fixed grid.
 type ssiSeedField struct {
-	base, other Surface
-	u0, v0      float64 // lattice origin (UMin, VMin)
-	du, dv      float64 // finest lattice spacing (one max-depth cell)
-	cache       map[[2]int]ssiSample
-	evals       int
+	base, other      Surface
+	bounder          boxTangentBounder // certified per-cell tangent bound; nil ⇒ sampled fallback (#1608)
+	declined         bool              // set when a cell fell back to the sampled 2.0 bound (issue #1608 pt5)
+	u0, v0           float64           // lattice origin (UMin, VMin)
+	du, dv           float64           // finest lattice spacing (one max-depth cell)
+	coarseU, coarseV int               // knot-span-aware initial subdivisions per axis (#1608)
+	cache            map[[2]int]ssiSample
+	evals            int
 }
 
 // ssiSample is one lattice node: the signed-distance field f and the base surface tangent magnitudes
@@ -76,14 +85,35 @@ func (c *ssiSeedField) point(i, j int) math.Point3 {
 // newSSISeedField builds the cached dyadic-lattice field over the base parameter window. The finest
 // lattice is ssiSeedCoarse·2^ssiSeedMaxDepth nodes per axis; the quadtree samples it adaptively.
 func newSSISeedField(base, other Surface, g SurfaceGrid) *ssiSeedField {
-	nodes := float64(ssiSeedCoarse << ssiSeedMaxDepth)
+	bounder, _ := base.(boxTangentBounder)
+	coarseU, coarseV := ssiCoarseCounts(base)
+	res := float64(int(1) << ssiSeedMaxDepth)
 	return &ssiSeedField{
-		base: base, other: other,
+		base: base, other: other, bounder: bounder,
 		u0: g.UMin, v0: g.VMin,
-		du:    (g.UMax - g.UMin) / nodes,
-		dv:    (g.VMax - g.VMin) / nodes,
+		du:      (g.UMax - g.UMin) / (float64(coarseU) * res),
+		dv:      (g.VMax - g.VMin) / (float64(coarseV) * res),
+		coarseU: coarseU, coarseV: coarseV,
 		cache: map[[2]int]ssiSample{},
 	}
+}
+
+// ssiCoarseCounts returns the initial quadtree subdivision per axis: ≈one cell per knot span
+// (clamped to [ssiSeedCoarse, ssiSeedCoarseMax]) for a B-spline base, else the fixed
+// ssiSeedCoarse. A span-sized coarse cell is the fix for the aliasing that dropped whole
+// intersection loops on high-span imports (#1608).
+func ssiCoarseCounts(base Surface) (int, int) {
+	counter, ok := base.(ssiSpanCounter)
+	if !ok {
+		return ssiSeedCoarse, ssiSeedCoarse
+	}
+	uSpans, vSpans := counter.knotSpanCounts()
+	return clampInt(uSpans, ssiSeedCoarse, ssiSeedCoarseMax), clampInt(vSpans, ssiSeedCoarse, ssiSeedCoarseMax)
+}
+
+// clampInt returns v clamped to [lo, hi].
+func clampInt(v, lo, hi int) int {
+	return max(lo, min(v, hi))
 }
 
 // ssiSeedSink collects seeds in two tiers so transversal crossings are returned BEFORE interior minima.
@@ -114,8 +144,8 @@ func ssiSeeds(base, other Surface, g SurfaceGrid) []math.Point3 {
 func (c *ssiSeedField) seeds(leaf float64) []math.Point3 {
 	res := 1 << ssiSeedMaxDepth
 	sink := &ssiSeedSink{}
-	for ci := 0; ci < ssiSeedCoarse; ci++ {
-		for cj := 0; cj < ssiSeedCoarse; cj++ {
+	for ci := 0; ci < c.coarseU; ci++ {
+		for cj := 0; cj < c.coarseV; cj++ {
 			c.refine(ci*res, cj*res, (ci+1)*res, (cj+1)*res, leaf, sink)
 		}
 	}
@@ -133,12 +163,14 @@ func (c *ssiSeedField) refine(i0, j0, i1, j1 int, leaf float64, sink *ssiSeedSin
 	s00, s10, s01, s11 := c.at(i0, j0), c.at(i1, j0), c.at(i0, j1), c.at(i1, j1)
 	minAbs := min(stdmath.Abs(s00.f), stdmath.Abs(s10.f), stdmath.Abs(s01.f), stdmath.Abs(s11.f))
 	su, sv := float64(i1-i0)*c.du, float64(j1-j0)*c.dv
-	tu := max(s00.tu, s10.tu, s01.tu, s11.tu)
-	tv := max(s00.tv, s10.tv, s01.tv, s11.tv)
-	variation := ssiSeedSafety * (tu*su + tv*sv) // upper bound on |Δf| across the cell (|∇f| ≤ 1)
+	tu, tv := c.cellTangentBound(i0, i1, j0, j1, s00, s10, s01, s11)
+	variation := tu*su + tv*sv // certified upper bound on |Δf| across the cell (|∇f| ≤ 1)
 	if minAbs > variation {
 		return // every interior point keeps a corner's sign: no crossing here
 	}
+	// A clean two-edge crossing resolves to one curve — safe now that the coarse cells are
+	// knot-span-sized (ssiCoarseCounts, #1608), so several parallel crossings can no longer
+	// alias to one pattern the way they did under the retired fixed 8×8 coarse grid.
 	if variation <= leaf || i1-i0 <= 1 || j1-j0 <= 1 || ssiCrossings(s00, s10, s01, s11) == 2 {
 		c.emitLeaf(i0, j0, i1, j1, s00, s10, s01, s11, sink)
 		return
@@ -148,6 +180,23 @@ func (c *ssiSeedField) refine(i0, j0, i1, j1 int, leaf float64, sink *ssiSeedSin
 	c.refine(im, j0, i1, jm, leaf, sink)
 	c.refine(i0, jm, im, j1, leaf, sink)
 	c.refine(im, jm, i1, j1, leaf, sink)
+}
+
+// cellTangentBound returns rigorous upper bounds on |S_u|,|S_v| over the cell: the certified
+// hodograph / closed-form bounder when the base surface offers one, else the sampled corner
+// tangents inflated by ssiSeedSafety — a guess, so the field records the decline (#1608 pt5).
+func (c *ssiSeedField) cellTangentBound(i0, i1, j0, j1 int, s00, s10, s01, s11 ssiSample) (float64, float64) {
+	if c.bounder != nil {
+		u0, u1 := c.u0+float64(i0)*c.du, c.u0+float64(i1)*c.du
+		v0, v1 := c.v0+float64(j0)*c.dv, c.v0+float64(j1)*c.dv
+		if tu, tv, ok := c.bounder.tangentBoundOverBox(u0, u1, v0, v1); ok {
+			return tu, tv
+		}
+	}
+	c.declined = true
+	tu := max(s00.tu, s10.tu, s01.tu, s11.tu)
+	tv := max(s00.tv, s10.tv, s01.tv, s11.tv)
+	return ssiSeedSafety * tu, ssiSeedSafety * tv
 }
 
 // ssiCrossings counts how many of the cell's four edges change sign — 2 for a simple transversal curve
