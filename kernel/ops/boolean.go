@@ -238,7 +238,7 @@ var curvedExactPaths = []func(PartFeatureOperation, *topo.Body, *topo.Body, *dia
 	curvedCrossingIntersect, curvedSteinmetzIntersect, curvedConeCylinderIntersect, curvedConeConeIntersect,
 	curvedPartialIntersect,
 	// Cut — [P] the drill through-hole (curved-on-planar), the rest [T] transversal.
-	curvedCylindricalHoleCut, curvedFlatSubtract, curvedPartialCut, curvedSteinmetzCut, curvedConeCylinderCut, curvedConeConeCut, curvedCapCrossCut, curvedRimCrossCut, curvedCrossingCut,
+	curvedCylindricalHoleCut, curvedFlatSubtract, curvedPartialCut, curvedSteinmetzCut, curvedConeCylinderCut, curvedConeConeCut, curvedCapCrossCut, curvedRimCrossCut, curvedTwoCapCrossCut, curvedCrossingCut,
 	// Join — [D] coaxial (degenerate overlap), [P] boss (curved-on-planar), the rest [T] transversal.
 	curvedCoaxialJoin, curvedCylinderBossJoin, curvedPartialJoin, curvedConeCylinderJoin, curvedConeConeJoin, curvedCrossingJoin, curvedSteinmetzJoin,
 }
