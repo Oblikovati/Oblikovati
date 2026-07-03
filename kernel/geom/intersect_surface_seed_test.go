@@ -96,9 +96,15 @@ func TestSSIRippleFindsEveryCrossing(t *testing.T) {
 	if len(loops) != want {
 		t.Fatalf("traced %d intersection curves, want the analytic count %d — a crossing was silently dropped", len(loops), want)
 	}
+	// Every traced point must lie on BOTH surfaces: on the plane (z=0) AND — via the knot-span-aware
+	// point inversion (Piece 1) — back on the high-span ripple within the model-relative tolerance.
+	res := surfaceNetResolution(ripple)
 	for _, p := range allPoints(t, loops) {
 		if stdmath.Abs(float64(p.Z)) > 1e-4 { // tol:numeric — on-plane check vs the trace tolerance, not a weld
 			t.Errorf("traced point %v is off the z=0 plane", p)
+		}
+		if _, _, d := ProjectPointToSurface(ripple, p); d > res.Sew() {
+			t.Errorf("traced point %v inverts %g off the ripple (> %g) — seeding recovered the wrong foot", p, d, res.Sew())
 		}
 	}
 }
