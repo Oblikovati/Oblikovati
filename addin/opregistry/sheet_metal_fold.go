@@ -6,23 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/sketch"
 )
-
-// sheetMetalFoldArgs is the argument shape for the "sheetMetalFold" operation: the sketch
-// fold line (sketch + line index), the optional bend angle/radius, the bend location
-// (start|centerline|end), and a flip. Thickness comes from the rule.
-type sheetMetalFoldArgs struct {
-	SketchIndex int    `json:"sketchIndex"`
-	LineIndex   int    `json:"lineIndex"`
-	Angle       string `json:"angle,omitempty"`
-	Radius      string `json:"radius,omitempty"`
-	Location    string `json:"location,omitempty"`
-	Flip        bool   `json:"flip,omitempty"`
-}
 
 const sheetMetalFoldSchema = `{
   "type": "object",
@@ -41,7 +30,7 @@ const sheetMetalFoldSchema = `{
 // along a sketch line at the active rule's bend radius, positioning the bend by location.
 func sheetMetalFoldDescriptor() *OperationDescriptor {
 	return &OperationDescriptor{
-		Name:    "sheetMetalFold",
+		Name:    featureargs.KindSheetMetalFold,
 		Summary: "Fold a sheet-metal face along a sketch line, placing the bend at the start, centerline, or end of the line.",
 		Schema:  json.RawMessage(sheetMetalFoldSchema),
 		Apply:   applySheetMetalFold,
@@ -53,7 +42,7 @@ func applySheetMetalFold(s *app.Session, raw json.RawMessage) (json.RawMessage, 
 	if err != nil {
 		return nil, err
 	}
-	var in sheetMetalFoldArgs
+	var in featureargs.SheetMetalFold
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, fmt.Errorf("sheetMetalFold: invalid args: %w", err)
 	}
@@ -70,7 +59,7 @@ func applySheetMetalFold(s *app.Session, raw json.RawMessage) (json.RawMessage, 
 
 // foldDef resolves the fold args into a definition: the sketch + line, the bend location, and
 // the optional angle/radius closures.
-func foldDef(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in sheetMetalFoldArgs) (*feature.SheetMetalFoldDefinition, error) {
+func foldDef(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in featureargs.SheetMetalFold) (*feature.SheetMetalFoldDefinition, error) {
 	loc, ok := feature.ParseBendLocation(in.Location)
 	if !ok {
 		return nil, fmt.Errorf("sheetMetalFold: unknown location %q (want centerline, start or end)", in.Location)

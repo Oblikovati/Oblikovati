@@ -6,17 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/model/feature"
 )
-
-// sheetMetalCornerArgs is the argument shape for the "sheetMetalCorner" operation: the corner
-// edges (through-thickness edge reference keys), the treatment (chamfer|round), and its size.
-type sheetMetalCornerArgs struct {
-	Edges     []string `json:"edges"`
-	Treatment string   `json:"treatment"`
-	Size      string   `json:"size"`
-}
 
 const sheetMetalCornerSchema = `{
   "type": "object",
@@ -32,7 +25,7 @@ const sheetMetalCornerSchema = `{
 // round one or more sheet-metal corners.
 func sheetMetalCornerDescriptor() *OperationDescriptor {
 	return &OperationDescriptor{
-		Name:    "sheetMetalCorner",
+		Name:    featureargs.KindSheetMetalCorner,
 		Summary: "Chamfer or round one or more corners of a sheet-metal face (the through-thickness corner edges).",
 		Schema:  json.RawMessage(sheetMetalCornerSchema),
 		Apply:   applySheetMetalCorner,
@@ -44,7 +37,7 @@ func applySheetMetalCorner(s *app.Session, raw json.RawMessage) (json.RawMessage
 	if err != nil {
 		return nil, err
 	}
-	var in sheetMetalCornerArgs
+	var in featureargs.SheetMetalCorner
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, fmt.Errorf("sheetMetalCorner: invalid args: %w", err)
 	}

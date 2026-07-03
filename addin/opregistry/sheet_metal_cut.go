@@ -6,20 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/model/feature"
 )
-
-// sheetMetalCutArgs is the argument shape for the "sheetMetalCut" operation: the profile to
-// remove, the cut side, an optional depth (omitted ⇒ through all), and the (reserved)
-// across-bend flag.
-type sheetMetalCutArgs struct {
-	SketchIndex  int    `json:"sketchIndex"`
-	ProfileIndex int    `json:"profileIndex"`
-	Direction    string `json:"direction,omitempty"`
-	Distance     string `json:"distance,omitempty"`
-	AcrossBend   bool   `json:"acrossBend,omitempty"`
-}
 
 const sheetMetalCutSchema = `{
   "type": "object",
@@ -37,7 +27,7 @@ const sheetMetalCutSchema = `{
 // profile from a sheet-metal part.
 func sheetMetalCutDescriptor() *OperationDescriptor {
 	return &OperationDescriptor{
-		Name:    "sheetMetalCut",
+		Name:    featureargs.KindSheetMetalCut,
 		Summary: "Cut a closed sketch profile through a sheet-metal part (through all by default, or to a depth).",
 		Schema:  json.RawMessage(sheetMetalCutSchema),
 		Apply:   applySheetMetalCut,
@@ -49,7 +39,7 @@ func applySheetMetalCut(s *app.Session, raw json.RawMessage) (json.RawMessage, e
 	if err != nil {
 		return nil, err
 	}
-	var in sheetMetalCutArgs
+	var in featureargs.SheetMetalCut
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, fmt.Errorf("sheetMetalCut: invalid args: %w", err)
 	}

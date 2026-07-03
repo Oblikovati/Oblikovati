@@ -6,19 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/model/feature"
 )
-
-// sheetMetalFaceArgs is the argument shape for the "sheetMetalFace" operation. Thickness is
-// intentionally absent: a Face is thickened by the active rule, so it carries no per-feature
-// thickness (edit the rule to change gauge).
-type sheetMetalFaceArgs struct {
-	SketchIndex  int    `json:"sketchIndex"`
-	ProfileIndex int    `json:"profileIndex"`
-	Operation    string `json:"operation"`           // new (base wall) | join (secondary wall); default new
-	Direction    string `json:"direction,omitempty"` // positive|negative|symmetric material side; default positive
-}
 
 const sheetMetalFaceSchema = `{
   "type": "object",
@@ -35,7 +26,7 @@ const sheetMetalFaceSchema = `{
 // closed sketch profile into a sheet-metal wall at the active rule's gauge.
 func sheetMetalFaceDescriptor() *OperationDescriptor {
 	return &OperationDescriptor{
-		Name:    "sheetMetalFace",
+		Name:    featureargs.KindSheetMetalFace,
 		Summary: "Thicken a closed sketch profile into a sheet-metal wall (the base/secondary Face) at the active rule's thickness.",
 		Schema:  json.RawMessage(sheetMetalFaceSchema),
 		Apply:   applySheetMetalFace,
@@ -47,7 +38,7 @@ func applySheetMetalFace(s *app.Session, raw json.RawMessage) (json.RawMessage, 
 	if err != nil {
 		return nil, err
 	}
-	var in sheetMetalFaceArgs
+	var in featureargs.SheetMetalFace
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, fmt.Errorf("sheetMetalFace: invalid args: %w", err)
 	}

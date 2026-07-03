@@ -6,19 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/model/feature"
 )
-
-// sheetMetalCosmeticBendArgs is the argument shape for the "sheetMetalCosmeticBend" operation:
-// the sketch bend line (sketch + line index) and the optional bend angle/radius. It marks a
-// fold for manufacturing without deforming the model.
-type sheetMetalCosmeticBendArgs struct {
-	SketchIndex int    `json:"sketchIndex"`
-	LineIndex   int    `json:"lineIndex"`
-	Angle       string `json:"angle,omitempty"`
-	Radius      string `json:"radius,omitempty"`
-}
 
 const sheetMetalCosmeticBendSchema = `{
   "type": "object",
@@ -35,7 +26,7 @@ const sheetMetalCosmeticBendSchema = `{
 // annotate a fold line for manufacturing without folding the geometry.
 func sheetMetalCosmeticBendDescriptor() *OperationDescriptor {
 	return &OperationDescriptor{
-		Name:    "sheetMetalCosmeticBend",
+		Name:    featureargs.KindSheetMetalCosmeticBend,
 		Summary: "Mark a cosmetic bend line on a sheet-metal part — it joins the bend table without deforming the model.",
 		Schema:  json.RawMessage(sheetMetalCosmeticBendSchema),
 		Apply:   applySheetMetalCosmeticBend,
@@ -47,7 +38,7 @@ func applySheetMetalCosmeticBend(s *app.Session, raw json.RawMessage) (json.RawM
 	if err != nil {
 		return nil, err
 	}
-	var in sheetMetalCosmeticBendArgs
+	var in featureargs.SheetMetalCosmeticBend
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, fmt.Errorf("sheetMetalCosmeticBend: invalid args: %w", err)
 	}

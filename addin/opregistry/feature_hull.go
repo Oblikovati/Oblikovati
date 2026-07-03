@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 
 	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/model/feature"
 )
@@ -22,7 +23,7 @@ const hullSchema = `{
 
 func hullDescriptor() *OperationDescriptor {
 	return &OperationDescriptor{
-		Name:    "hull",
+		Name:    featureargs.KindHull,
 		Summary: "Convex hull of the part's running solids into one body (OpenSCAD hull()).",
 		Schema:  json.RawMessage(hullSchema),
 		Apply:   applyHull,

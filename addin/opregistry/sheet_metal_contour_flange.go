@@ -6,18 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/model/feature"
 )
-
-// sheetMetalContourFlangeArgs is the argument shape for the "sheetMetalContourFlange"
-// operation: the edge to sweep along, the open-profile sketch index, and a flip. Thickness
-// comes from the rule.
-type sheetMetalContourFlangeArgs struct {
-	Edge          string `json:"edge"`
-	ProfileSketch int    `json:"profileSketch"`
-	Flip          bool   `json:"flip,omitempty"`
-}
 
 const sheetMetalContourFlangeSchema = `{
   "type": "object",
@@ -33,7 +25,7 @@ const sheetMetalContourFlangeSchema = `{
 // sweep an open profile along a sheet edge into a contour flange.
 func sheetMetalContourFlangeDescriptor() *OperationDescriptor {
 	return &OperationDescriptor{
-		Name:    "sheetMetalContourFlange",
+		Name:    featureargs.KindSheetMetalContourFlange,
 		Summary: "Sweep an open sketch profile (the wall cross-section) along a sheet-metal edge into a contour flange, at the rule's thickness.",
 		Schema:  json.RawMessage(sheetMetalContourFlangeSchema),
 		Apply:   applySheetMetalContourFlange,
@@ -45,7 +37,7 @@ func applySheetMetalContourFlange(s *app.Session, raw json.RawMessage) (json.Raw
 	if err != nil {
 		return nil, err
 	}
-	var in sheetMetalContourFlangeArgs
+	var in featureargs.SheetMetalContourFlange
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, fmt.Errorf("sheetMetalContourFlange: invalid args: %w", err)
 	}

@@ -6,17 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/model/feature"
 )
-
-// sheetMetalLoftedFlangeArgs is the argument shape for the "sheetMetalLoftedFlange" operation:
-// the two open-profile sketch indices and the boolean operation. Thickness comes from the rule.
-type sheetMetalLoftedFlangeArgs struct {
-	ProfileA  int    `json:"profileA"`
-	ProfileB  int    `json:"profileB"`
-	Operation string `json:"operation"` // new (default) | join
-}
 
 const sheetMetalLoftedFlangeSchema = `{
   "type": "object",
@@ -32,7 +25,7 @@ const sheetMetalLoftedFlangeSchema = `{
 // loft a constant-thickness wall between two open profiles.
 func sheetMetalLoftedFlangeDescriptor() *OperationDescriptor {
 	return &OperationDescriptor{
-		Name:    "sheetMetalLoftedFlange",
+		Name:    featureargs.KindSheetMetalLoftedFlange,
 		Summary: "Loft a constant-thickness sheet-metal wall between two open profiles (a transition piece), at the rule's thickness.",
 		Schema:  json.RawMessage(sheetMetalLoftedFlangeSchema),
 		Apply:   applySheetMetalLoftedFlange,
@@ -44,7 +37,7 @@ func applySheetMetalLoftedFlange(s *app.Session, raw json.RawMessage) (json.RawM
 	if err != nil {
 		return nil, err
 	}
-	var in sheetMetalLoftedFlangeArgs
+	var in featureargs.SheetMetalLoftedFlange
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, fmt.Errorf("sheetMetalLoftedFlange: invalid args: %w", err)
 	}

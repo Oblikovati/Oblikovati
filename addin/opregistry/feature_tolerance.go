@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
@@ -16,23 +17,6 @@ import (
 // Model GD&T tolerance carrier (M20-F13 #866): a metadata feature that annotates model
 // geometry with feature-control frames and datum labels. It changes no geometry — it carries
 // records that survive recompute and the .obk round trip.
-
-type toleranceFrameArgs struct {
-	Geometry       string   `json:"geometry"`
-	Characteristic string   `json:"characteristic"`
-	Value          string   `json:"value"`
-	Datums         []string `json:"datums"`
-}
-
-type datumLabelArgs struct {
-	Geometry string `json:"geometry"`
-	Label    string `json:"label"`
-}
-
-type modelToleranceArgs struct {
-	Frames []toleranceFrameArgs `json:"frames"`
-	Datums []datumLabelArgs     `json:"datums"`
-}
 
 const modelToleranceSchema = `{
   "type": "object",
@@ -67,7 +51,7 @@ const modelToleranceSchema = `{
 }`
 
 func modelToleranceDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "modelTolerance", Summary: "Annotate model geometry with GD&T feature-control frames and datums (no geometry change).", Schema: json.RawMessage(modelToleranceSchema), Apply: applyModelTolerance}
+	return &OperationDescriptor{Name: featureargs.KindModelTolerance, Summary: "Annotate model geometry with GD&T feature-control frames and datums (no geometry change).", Schema: json.RawMessage(modelToleranceSchema), Apply: applyModelTolerance}
 }
 
 func applyModelTolerance(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -75,7 +59,7 @@ func applyModelTolerance(s *app.Session, raw json.RawMessage) (json.RawMessage, 
 	if err != nil {
 		return nil, err
 	}
-	var in modelToleranceArgs
+	var in featureargs.ModelTolerance
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
@@ -91,7 +75,7 @@ func applyModelTolerance(s *app.Session, raw json.RawMessage) (json.RawMessage, 
 
 // toleranceDefFromArgs decodes the GD&T records, resolving characteristic spellings and value
 // expressions; an unknown characteristic is a precise error.
-func toleranceDefFromArgs(part *compdef.PartComponentDefinition, in modelToleranceArgs) (*feature.ModelToleranceDefinition, error) {
+func toleranceDefFromArgs(part *compdef.PartComponentDefinition, in featureargs.ModelTolerance) (*feature.ModelToleranceDefinition, error) {
 	def := &feature.ModelToleranceDefinition{}
 	for i, fr := range in.Frames {
 		ch, ok := types.ParseGeometricCharacteristic(fr.Characteristic)

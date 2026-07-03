@@ -6,22 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/sketch"
 )
-
-// sheetMetalBendArgs is the argument shape for the "sheetMetalBend" operation: the sketch bend
-// line (sketch + line index), the optional bend angle/radius (radius defaults to the rule's
-// bend radius, angle to 90°), and a flip. Thickness comes from the rule.
-type sheetMetalBendArgs struct {
-	SketchIndex int    `json:"sketchIndex"`
-	LineIndex   int    `json:"lineIndex"`
-	Angle       string `json:"angle,omitempty"`
-	Radius      string `json:"radius,omitempty"`
-	Flip        bool   `json:"flip,omitempty"`
-}
 
 const sheetMetalBendSchema = `{
   "type": "object",
@@ -39,7 +29,7 @@ const sheetMetalBendSchema = `{
 // sheet along a sketch line at the active rule's bend radius.
 func sheetMetalBendDescriptor() *OperationDescriptor {
 	return &OperationDescriptor{
-		Name:    "sheetMetalBend",
+		Name:    featureargs.KindSheetMetalBend,
 		Summary: "Fold a flat sheet-metal wall along a sketch line over a bend, at the active rule's thickness and bend radius.",
 		Schema:  json.RawMessage(sheetMetalBendSchema),
 		Apply:   applySheetMetalBend,
@@ -51,7 +41,7 @@ func applySheetMetalBend(s *app.Session, raw json.RawMessage) (json.RawMessage, 
 	if err != nil {
 		return nil, err
 	}
-	var in sheetMetalBendArgs
+	var in featureargs.SheetMetalBend
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, fmt.Errorf("sheetMetalBend: invalid args: %w", err)
 	}
@@ -68,7 +58,7 @@ func applySheetMetalBend(s *app.Session, raw json.RawMessage) (json.RawMessage, 
 
 // bendDef resolves the bend args into a definition: the sketch + line, and the optional
 // angle/radius closures (omitted ⇒ nil, so the feature uses its defaults).
-func bendDef(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in sheetMetalBendArgs) (*feature.SheetMetalBendDefinition, error) {
+func bendDef(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in featureargs.SheetMetalBend) (*feature.SheetMetalBendDefinition, error) {
 	angle, radius, err := optionalBendDims(part, in.Angle, in.Radius, "sheetMetalBend")
 	if err != nil {
 		return nil, err

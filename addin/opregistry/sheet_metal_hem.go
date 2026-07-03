@@ -6,20 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 )
-
-// sheetMetalHemArgs is the argument shape for the "sheetMetalHem" operation: the edge to hem,
-// the hem length, the type (closed|open), and an open hem's gap. Thickness comes from the rule.
-type sheetMetalHemArgs struct {
-	Edge   string `json:"edge"`
-	Length string `json:"length"`
-	Type   string `json:"type,omitempty"` // closed (default) | open
-	Gap    string `json:"gap,omitempty"`  // open-hem loop gap
-	Flip   bool   `json:"flip,omitempty"`
-}
 
 const sheetMetalHemSchema = `{
   "type": "object",
@@ -37,7 +28,7 @@ const sheetMetalHemSchema = `{
 // back on itself.
 func sheetMetalHemDescriptor() *OperationDescriptor {
 	return &OperationDescriptor{
-		Name:    "sheetMetalHem",
+		Name:    featureargs.KindSheetMetalHem,
 		Summary: "Fold a sheet-metal edge back on itself (a hem): closed (tight) or open (a rounded loop of the given gap).",
 		Schema:  json.RawMessage(sheetMetalHemSchema),
 		Apply:   applySheetMetalHem,
@@ -49,7 +40,7 @@ func applySheetMetalHem(s *app.Session, raw json.RawMessage) (json.RawMessage, e
 	if err != nil {
 		return nil, err
 	}
-	var in sheetMetalHemArgs
+	var in featureargs.SheetMetalHem
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, fmt.Errorf("sheetMetalHem: invalid args: %w", err)
 	}
@@ -65,7 +56,7 @@ func applySheetMetalHem(s *app.Session, raw json.RawMessage) (json.RawMessage, e
 
 // hemDef resolves the hem args into a definition: the edge, the length closure, the type, and
 // the optional open-hem gap.
-func hemDef(part *compdef.PartComponentDefinition, in sheetMetalHemArgs) (*feature.SheetMetalHemDefinition, error) {
+func hemDef(part *compdef.PartComponentDefinition, in featureargs.SheetMetalHem) (*feature.SheetMetalHemDefinition, error) {
 	hemType, ok := feature.ParseHemType(in.Type)
 	if !ok {
 		return nil, fmt.Errorf("sheetMetalHem: unknown type %q (want closed or open)", in.Type)
