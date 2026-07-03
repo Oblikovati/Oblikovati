@@ -19,15 +19,22 @@ import (
 // span is ever skipped. This mirrors OCCT's Extrema_GenExtPS (samples per knot interval)
 // and the Greville-abscissa density Piegl & Tiller recommend for span-aware sampling.
 
+// seedMinSamples floors the per-direction seed count so a LOW-span surface (a single Bézier
+// patch) is still sampled as densely as the retired fixed grid; a high-span surface exceeds
+// it naturally at one sample per span. This is the issue's "grid = max(16, spans+1)" (#1608).
+const seedMinSamples = 16
+
 // knotSpanSeedParams returns point-inversion seed parameters over a knot vector's clamped
-// domain, placing degree+1 samples inside every distinct knot span. A surface with S
-// spans is thus seeded S·(degree+1)+1 times in that direction — dense where it can bend,
-// never skipping a span the way the retired fixed 16×16 / 24 grid did (#1608).
+// domain, placing at least one sample inside every distinct knot span so no span is skipped,
+// and enough per span that the total reaches seedMinSamples on a low-span surface. A surface
+// with S spans is seeded ≈max(16, S)+1 times — the issue's span-aware grid (#1608), Θ(S) not
+// the retired fixed grid, so the cost matches the old 16/24 grid on ordinary surfaces.
 func knotSpanSeedParams(knots []float64, degree int) []float64 {
 	breaks := domainBreakpoints(knots, degree)
-	per := degree + 1
+	spans := len(breaks) - 1
+	per := (seedMinSamples + spans - 1) / spans // ceil(min/spans): ≥1, larger only when spans<16
 	out := []float64{breaks[0]}
-	for i := 0; i+1 < len(breaks); i++ {
+	for i := 0; i < spans; i++ {
 		a, b := breaks[i], breaks[i+1]
 		for k := 1; k <= per; k++ {
 			out = append(out, a+(b-a)*float64(k)/float64(per))
@@ -63,6 +70,21 @@ func nearestSeed(s Surface, q math.Point3, us, vs []float64) (float64, float64) 
 		}
 	}
 	return bu, bv
+}
+
+// ssiSpanCounter reports a surface's distinct-knot-span counts so the SSI seeder can start its
+// quadtree at ≈one coarse cell per span (OCCT Extrema_GenExtPS samples per knot interval, #1608).
+// The retired fixed 8×8 coarse grid put several knot spans in one cell on a high-span surface, so
+// many parallel intersection curves aliased to a single two-edge crossing and all but one were
+// silently dropped. A span-sized coarse cell holds at most a few crossings, so the transversal
+// shortcut is sound again without forcing the whole domain to refine. No knot structure ⇒ (0,0).
+type ssiSpanCounter interface {
+	knotSpanCounts() (uSpans, vSpans int)
+}
+
+// knotSpanCounts returns the number of distinct knot spans in each parameter direction.
+func (s BSplineSurface) knotSpanCounts() (int, int) {
+	return len(domainBreakpoints(s.UKnots, s.UDegree)) - 1, len(domainBreakpoints(s.VKnots, s.VDegree)) - 1
 }
 
 // minSeedSpacing returns the smallest positive gap between consecutive sorted seed params
