@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"strings"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -23,12 +23,6 @@ import (
 
 // --- boundary patch --------------------------------------------------------
 
-type patchArgs struct {
-	SketchIndex  int    `json:"sketchIndex"`
-	ProfileIndex int    `json:"profileIndex"`
-	Condition    string `json:"condition,omitempty"`
-}
-
 const boundaryPatchSchema = `{
   "type": "object",
   "properties": {
@@ -40,16 +34,12 @@ const boundaryPatchSchema = `{
 }`
 
 func boundaryPatchDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "boundaryPatch", Summary: "Fill a closed sketch loop with a surface patch.", Schema: json.RawMessage(boundaryPatchSchema), Apply: applyBoundaryPatch}
+	return &OperationDescriptor{Name: featureargs.KindBoundaryPatch, Summary: "Fill a closed sketch loop with a surface patch.", Schema: json.RawMessage(boundaryPatchSchema), Apply: applyBoundaryPatch}
 }
 
 func applyBoundaryPatch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.BoundaryPatch](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in patchArgs
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	sk, err := sketchAt(part, in.SketchIndex)
@@ -66,13 +56,6 @@ func applyBoundaryPatch(s *app.Session, raw json.RawMessage) (json.RawMessage, e
 
 // --- ruled surface ---------------------------------------------------------
 
-type ruledArgs struct {
-	SketchIndex  int    `json:"sketchIndex"`
-	ProfileIndex int    `json:"profileIndex"`
-	Type         string `json:"type,omitempty"`
-	Distance     string `json:"distance"`
-}
-
 const ruledSchema = `{
   "type": "object",
   "properties": {
@@ -85,16 +68,12 @@ const ruledSchema = `{
 }`
 
 func ruledSurfaceDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "ruledSurface", Summary: "Sweep straight rulings off a profile into a surface.", Schema: json.RawMessage(ruledSchema), Apply: applyRuledSurface}
+	return &OperationDescriptor{Name: featureargs.KindRuledSurface, Summary: "Sweep straight rulings off a profile into a surface.", Schema: json.RawMessage(ruledSchema), Apply: applyRuledSurface}
 }
 
 func applyRuledSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.RuledSurface](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in ruledArgs
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	sk, err := sketchAt(part, in.SketchIndex)
@@ -121,15 +100,6 @@ func ruledType(name string) feature.RuledSurfaceType {
 }
 
 // --- surface offset / extend / midSurface / stitch / sculpt ----------------
-
-type surfaceDistArgs struct {
-	Distance          string `json:"distance,omitempty"`
-	EdgeRef           string `json:"edgeRef,omitempty"`
-	MaxThickness      string `json:"maxThickness,omitempty"`
-	Tolerance         string `json:"tolerance,omitempty"`
-	MaintainAsSurface bool   `json:"maintainAsSurface,omitempty"`
-	Operation         string `json:"operation,omitempty"`
-}
 
 const surfaceOffsetSchema = `{
   "type": "object",
@@ -169,30 +139,23 @@ const sculptSchema = `{
 }`
 
 func surfaceOffsetDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "surfaceOffset", Summary: "Offset the part's surface bodies by a distance.", Schema: json.RawMessage(surfaceOffsetSchema), Apply: applySurfaceOffset}
+	return &OperationDescriptor{Name: featureargs.KindSurfaceOffset, Summary: "Offset the part's surface bodies by a distance.", Schema: json.RawMessage(surfaceOffsetSchema), Apply: applySurfaceOffset}
 }
 
 func extendDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "extend", Summary: "Extend a surface body past a picked edge.", Schema: json.RawMessage(extendSchema), Apply: applyExtend}
+	return &OperationDescriptor{Name: featureargs.KindExtend, Summary: "Extend a surface body past a picked edge.", Schema: json.RawMessage(extendSchema), Apply: applyExtend}
 }
 
 func midSurfaceDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "midSurface", Summary: "Build the mid-surface between thin-wall face pairs.", Schema: json.RawMessage(midSurfaceSchema), Apply: applyMidSurface}
+	return &OperationDescriptor{Name: featureargs.KindMidSurface, Summary: "Build the mid-surface between thin-wall face pairs.", Schema: json.RawMessage(midSurfaceSchema), Apply: applyMidSurface}
 }
 
 func stitchDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "stitch", Summary: "Stitch surface bodies into a quilt (or solid).", Schema: json.RawMessage(stitchSchema), Apply: applyStitch}
+	return &OperationDescriptor{Name: featureargs.KindStitch, Summary: "Stitch surface bodies into a quilt (or solid).", Schema: json.RawMessage(stitchSchema), Apply: applyStitch}
 }
 
 func sculptDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "sculpt", Summary: "Combine surfaces and solids into a sculpted body.", Schema: json.RawMessage(sculptSchema), Apply: applySculpt}
-}
-
-// fillSurfaceArgs is the M36-F07/N-sided boundary-fill op: the continuity to the neighbour surfaces
-// and the number of bounding sides (omitted/0 or 4 = four-sided; 3, 5, 6… = N-sided, #1300).
-type fillSurfaceArgs struct {
-	Continuity string `json:"continuity,omitempty"`
-	Sides      int    `json:"sides,omitempty"`
+	return &OperationDescriptor{Name: featureargs.KindSculpt, Summary: "Combine surfaces and solids into a sculpted body.", Schema: json.RawMessage(sculptSchema), Apply: applySculpt}
 }
 
 const fillSurfaceSchema = `{
@@ -204,16 +167,12 @@ const fillSurfaceSchema = `{
 }`
 
 func fillSurfaceDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "fillSurface", Summary: "Close an N-sided opening bounded by the last N surface bodies with a single NURBS (G0/G1/G2).", Schema: json.RawMessage(fillSurfaceSchema), Apply: applyFillSurface}
+	return &OperationDescriptor{Name: featureargs.KindFillSurface, Summary: "Close an N-sided opening bounded by the last N surface bodies with a single NURBS (G0/G1/G2).", Schema: json.RawMessage(fillSurfaceSchema), Apply: applyFillSurface}
 }
 
 func applyFillSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.FillSurface](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in fillSurfaceArgs
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	cont, ok := types.ParseSurfaceContinuity(in.Continuity, types.ContinuityG2)
@@ -228,12 +187,6 @@ func applyFillSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, err
 	return recomputeResult(part, pf)
 }
 
-// bridgeSurfaceArgs is the M36-F09 bridge op: the continuity to each of the two neighbour surfaces.
-type bridgeSurfaceArgs struct {
-	ContinuityA string `json:"continuityA,omitempty"`
-	ContinuityB string `json:"continuityB,omitempty"`
-}
-
 const bridgeSurfaceSchema = `{
   "type": "object",
   "properties": {
@@ -243,16 +196,12 @@ const bridgeSurfaceSchema = `{
 }`
 
 func bridgeSurfaceDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "bridgeSurface", Summary: "Connect the last two surface bodies with a clean NURBS transition (G0/G1/G2 per side).", Schema: json.RawMessage(bridgeSurfaceSchema), Apply: applyBridgeSurface}
+	return &OperationDescriptor{Name: featureargs.KindBridgeSurface, Summary: "Connect the last two surface bodies with a clean NURBS transition (G0/G1/G2 per side).", Schema: json.RawMessage(bridgeSurfaceSchema), Apply: applyBridgeSurface}
 }
 
 func applyBridgeSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.BridgeSurface](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in bridgeSurfaceArgs
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	ca, ok := types.ParseSurfaceContinuity(in.ContinuityA, types.ContinuityG2)
@@ -267,13 +216,6 @@ func applyBridgeSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, e
 	return recomputeResult(part, pf)
 }
 
-// networkSurfaceArgs is the M36-F10 network op: the U- and V-direction curve polylines (each curve a
-// list of [x,y,z] points in model space; the bake the tool/script does from picked sketch curves).
-type networkSurfaceArgs struct {
-	UCurves [][][]float64 `json:"uCurves"`
-	VCurves [][][]float64 `json:"vCurves"`
-}
-
 const networkSurfaceSchema = `{
   "type": "object",
   "properties": {
@@ -284,27 +226,16 @@ const networkSurfaceSchema = `{
 }`
 
 func networkSurfaceDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "networkSurface", Summary: "Interpolate a grid of intersecting U/V curves with a single NURBS (Gordon network surface).", Schema: json.RawMessage(networkSurfaceSchema), Apply: applyNetworkSurface}
+	return &OperationDescriptor{Name: featureargs.KindNetworkSurface, Summary: "Interpolate a grid of intersecting U/V curves with a single NURBS (Gordon network surface).", Schema: json.RawMessage(networkSurfaceSchema), Apply: applyNetworkSurface}
 }
 
 func applyNetworkSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.NetworkSurface](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in networkSurfaceArgs
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	pf := feature.NewNetworkFeatures(part.Features()).Add(networkPolylines(in.UCurves), networkPolylines(in.VCurves))
 	return recomputeResult(part, pf)
-}
-
-// fairSurfaceArgs is the M36-F04 fairing op: held boundary continuity + relaxation strength/iters.
-type fairSurfaceArgs struct {
-	Continuity string  `json:"continuity,omitempty"`
-	Strength   float64 `json:"strength,omitempty"`
-	Iterations int     `json:"iterations,omitempty"`
 }
 
 const fairSurfaceSchema = `{
@@ -317,16 +248,12 @@ const fairSurfaceSchema = `{
 }`
 
 func fairSurfaceDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "fairSurface", Summary: "Smooth curvature wrinkles out of the running surface, holding its boundary continuity (G0/G1/G2).", Schema: json.RawMessage(fairSurfaceSchema), Apply: applyFairSurface}
+	return &OperationDescriptor{Name: featureargs.KindFairSurface, Summary: "Smooth curvature wrinkles out of the running surface, holding its boundary continuity (G0/G1/G2).", Schema: json.RawMessage(fairSurfaceSchema), Apply: applyFairSurface}
 }
 
 func applyFairSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.FairSurface](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in fairSurfaceArgs
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	cont, ok := types.ParseSurfaceContinuity(in.Continuity, types.ContinuityG2)
@@ -344,14 +271,6 @@ func applyFairSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, err
 	return recomputeResult(part, pf)
 }
 
-// fitSurfaceArgs is the M36-F15 fit op: fit a clean NURBS to a named cloud's cropped region.
-type fitSurfaceArgs struct {
-	Cloud  string `json:"cloud"`
-	Degree int    `json:"degree,omitempty"`
-	NU     int    `json:"nu,omitempty"`
-	NV     int    `json:"nv,omitempty"`
-}
-
 const fitSurfaceSchema = `{
   "type": "object",
   "required": ["cloud"],
@@ -364,16 +283,12 @@ const fitSurfaceSchema = `{
 }`
 
 func fitSurfaceDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "fitSurface", Summary: "Fit a clean Class-A NURBS surface to a scanned point-cloud region (degree + U/V spans).", Schema: json.RawMessage(fitSurfaceSchema), Apply: applyFitSurface}
+	return &OperationDescriptor{Name: featureargs.KindFitSurface, Summary: "Fit a clean Class-A NURBS surface to a scanned point-cloud region (degree + U/V spans).", Schema: json.RawMessage(fitSurfaceSchema), Apply: applyFitSurface}
 }
 
 func applyFitSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.FitSurface](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in fitSurfaceArgs
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	pc, ok := part.PointClouds().ByName(in.Cloud)
@@ -386,7 +301,7 @@ func applyFitSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 }
 
 // fitSurfaceDefaults fills the bicubic 6×6 defaults for any unset fit parameter.
-func fitSurfaceDefaults(in fitSurfaceArgs) (degree, nu, nv int) {
+func fitSurfaceDefaults(in featureargs.FitSurface) (degree, nu, nv int) {
 	degree, nu, nv = in.Degree, in.NU, in.NV
 	if degree <= 0 {
 		degree = feature.DefaultFitDegree
@@ -415,7 +330,7 @@ func networkPolylines(curves [][][]float64) [][]math.Point3 {
 }
 
 func applySurfaceOffset(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, in, err := decodeSurface(s, raw)
+	part, in, err := decodeFeatureArgs[featureargs.SurfaceOffset](s, raw)
 	if err != nil {
 		return nil, err
 	}
@@ -428,7 +343,7 @@ func applySurfaceOffset(s *app.Session, raw json.RawMessage) (json.RawMessage, e
 }
 
 func applyExtend(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, in, err := decodeSurface(s, raw)
+	part, in, err := decodeFeatureArgs[featureargs.Extend](s, raw)
 	if err != nil {
 		return nil, err
 	}
@@ -444,7 +359,7 @@ func applyExtend(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 }
 
 func applyMidSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, in, err := decodeSurface(s, raw)
+	part, in, err := decodeFeatureArgs[featureargs.MidSurface](s, raw)
 	if err != nil {
 		return nil, err
 	}
@@ -457,7 +372,7 @@ func applyMidSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 }
 
 func applyStitch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, in, err := decodeSurface(s, raw)
+	part, in, err := decodeFeatureArgs[featureargs.Stitch](s, raw)
 	if err != nil {
 		return nil, err
 	}
@@ -470,7 +385,7 @@ func applyStitch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 }
 
 func applySculpt(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, in, err := decodeSurface(s, raw)
+	part, in, err := decodeFeatureArgs[featureargs.Sculpt](s, raw)
 	if err != nil {
 		return nil, err
 	}
@@ -484,18 +399,6 @@ func applySculpt(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	}
 	pf := feature.NewSculptFeatures(part.Features()).Add(op, tol)
 	return recomputeResult(part, pf)
-}
-
-// decodeSurface is the shared front of the surface operations (active part + decoded args).
-func decodeSurface(s *app.Session, raw json.RawMessage) (part *compdef.PartComponentDefinition, in surfaceDistArgs, err error) {
-	p, perr := modelaccess.ActivePart(s)
-	if perr != nil {
-		return nil, surfaceDistArgs{}, perr
-	}
-	if jerr := json.Unmarshal(raw, &in); jerr != nil {
-		return nil, surfaceDistArgs{}, jerr
-	}
-	return p, in, nil
 }
 
 // toleranceValue parses a stitch/sculpt tolerance ("" ⇒ 0.1 mm = 0.01 cm).
