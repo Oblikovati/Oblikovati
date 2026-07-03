@@ -31,7 +31,7 @@ func (t *GrillTool) Start(*Session) {}
 func (t *GrillTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectProfile} }
 
 // Picks reports the picked boundaries for the unified highlight.
-func (t *GrillTool) Picks() []Selectable { return profileSelectables(t.profiles) }
+func (t *GrillTool) Picks() []Selectable { return selectables(t.profiles) }
 
 // Pick captures a single clicked region (replacing any previous selection).
 func (t *GrillTool) Pick(_ *Session, sel Selectable) {

@@ -76,14 +76,14 @@ func TestAttachPointCloudAndRequest(t *testing.T) {
 	if err := os.WriteFile(path, []byte("0 0 0\n1 1 1\n"), 0o600); err != nil {
 		t.Fatalf("write: %v", err)
 	}
-	pc, err := s.AttachPointCloud("Scan", path)
+	pc, _, err := s.AttachPointCloud("Scan", path)
 	if err != nil || pc.TotalPointCount() != 2 {
 		t.Fatalf("AttachPointCloud = %v pts, err %v", pc, err)
 	}
 	if def.PointClouds().Count() != 1 {
 		t.Errorf("active part has %d clouds, want 1", def.PointClouds().Count())
 	}
-	if _, err := s.AttachPointCloud("X", "/no/such/file.xyz"); err == nil {
+	if _, _, err := s.AttachPointCloud("X", "/no/such/file.xyz"); err == nil {
 		t.Error("AttachPointCloud of a missing file should fail")
 	}
 
@@ -155,7 +155,7 @@ func TestPointCloudEdgeCasesWithoutPart(t *testing.T) {
 	if len(s.PointCloudItems(s.Camera(), 0.5)) != 0 {
 		t.Error("no active part should yield no point-cloud items")
 	}
-	if _, err := s.AttachPointCloud("X", "/tmp/whatever.xyz"); err == nil {
+	if _, _, err := s.AttachPointCloud("X", "/tmp/whatever.xyz"); err == nil {
 		t.Error("AttachPointCloud with no active part should fail")
 	}
 	if pointCloudMenu(BodyHandle{}) != nil {
@@ -183,17 +183,17 @@ func TestAttachPointCloudEmptyName(t *testing.T) {
 	s, _ := emptyPartSession(t)
 	path := filepath.Join(t.TempDir(), "s.xyz")
 	_ = os.WriteFile(path, []byte("0 0 0\n"), 0o600)
-	pc, err := s.AttachPointCloud("", path)
+	pc, _, err := s.AttachPointCloud("", path)
 	if err != nil || pc.Name() != "Cloud1" {
 		t.Errorf("AttachPointCloud(empty name) = %v, err %v; want Cloud1", pc, err)
 	}
 
-	if _, err := s.AttachPointCloud("X", ""); err == nil {
+	if _, _, err := s.AttachPointCloud("X", ""); err == nil {
 		t.Error("AttachPointCloud with an empty file name should fail")
 	}
 	bad := filepath.Join(t.TempDir(), "scan.las") // exists but no reader for .las
 	_ = os.WriteFile(bad, []byte("binary"), 0o600)
-	if _, err := s.AttachPointCloud("Y", bad); err == nil {
+	if _, _, err := s.AttachPointCloud("Y", bad); err == nil {
 		t.Error("AttachPointCloud of an unsupported scan format should fail")
 	}
 }

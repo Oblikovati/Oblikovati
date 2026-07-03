@@ -45,37 +45,14 @@ func appendPick[T Selectable](picks []Selectable, p *T) []Selectable {
 	return append(picks, *p)
 }
 
-// faceSelectables / edgeSelectables / profileSelectables widen a tool's typed pick slice to
-// []Selectable for its Picks() implementation, so the engine highlights them uniformly without
-// each tool writing a loop.
-func faceSelectables(fs []FaceHandle) []Selectable {
-	out := make([]Selectable, len(fs))
-	for i, f := range fs {
-		out[i] = f
-	}
-	return out
-}
-
-func edgeSelectables(es []EdgeHandle) []Selectable {
-	out := make([]Selectable, len(es))
-	for i, e := range es {
-		out[i] = e
-	}
-	return out
-}
-
-func profileSelectables(ps []ProfileHandle) []Selectable {
-	out := make([]Selectable, len(ps))
-	for i, p := range ps {
-		out[i] = p
-	}
-	return out
-}
-
-func vertexSelectables(vs []VertexHandle) []Selectable {
-	out := make([]Selectable, len(vs))
-	for i, v := range vs {
-		out[i] = v
+// selectables widens a tool's typed pick slice (faces/edges/profiles/vertices) to
+// []Selectable for its Picks() implementation, so the engine highlights them uniformly
+// without each tool writing a loop (the canonical "Go has no covariant slices" widening;
+// replaced the four per-handle-type copies, #1657).
+func selectables[T Selectable](xs []T) []Selectable {
+	out := make([]Selectable, len(xs))
+	for i, x := range xs {
+		out[i] = x
 	}
 	return out
 }

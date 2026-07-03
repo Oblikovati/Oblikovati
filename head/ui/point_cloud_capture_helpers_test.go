@@ -28,7 +28,7 @@ func newShotWindow(t *testing.T) *native.Window {
 // shared setup for the provenance / move / auto-recompute shot tests.
 func attachSheetWithFitPlane(t *testing.T, s *app.Session) (*pointcloud.PointCloud, *feature.WorkPlane) {
 	t.Helper()
-	pc, err := s.AttachPointCloud("Sheet", tiltedSheetScan(t))
+	pc, _, err := s.AttachPointCloud("Sheet", tiltedSheetScan(t))
 	if err != nil {
 		t.Fatalf("attach scan: %v", err)
 	}

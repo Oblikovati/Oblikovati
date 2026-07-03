@@ -37,7 +37,7 @@ func (t *NetworkTool) AcceptedKinds() []SelectionKind { return []SelectionKind{S
 
 // Picks reports all picked profiles for the unified highlight.
 func (t *NetworkTool) Picks() []Selectable {
-	return profileSelectables(append(append([]ProfileHandle{}, t.uProfiles...), t.vProfiles...))
+	return selectables(append(append([]ProfileHandle{}, t.uProfiles...), t.vProfiles...))
 }
 
 // Pick adds the clicked profile to the current (U or V) direction set, ignoring duplicates.

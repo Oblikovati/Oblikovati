@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/exchange/drawing"
 	gmath "oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -30,6 +31,30 @@ type drawingImport struct {
 	is3D        bool
 	entityCount int
 	warnings    []string
+}
+
+// importSketchFormat is the one entry every drawing-format import goes through (#1631,
+// audit I8): it looks up the format's registered [DrawingDecoder] (format_routes.go),
+// decodes the bytes into one drawing per model/page, and places each on the part via
+// importDrawing. The format wrappers (ImportDWG/ImportDXF/ImportPDF) are one-line
+// delegations, so adding a drawing format is a decoder registration, not a new entry shape.
+func importSketchFormat(part *compdef.PartComponentDefinition, format types.ExchangeFormat, data []byte, plane sketch.Plane) (SketchImportResult, error) {
+	dec, ok := drawingDecoderFor(format)
+	if !ok {
+		return SketchImportResult{}, fmt.Errorf("import %s: no drawing decoder registered (want dwg|dxf|pdf)", format)
+	}
+	drawings, warns, err := dec.Decode(data)
+	if err != nil {
+		return SketchImportResult{}, fmt.Errorf("import %s: %w", format, err)
+	}
+	res := SketchImportResult{Warnings: warns}
+	for _, dr := range drawings {
+		imp := importDrawing(part, dr, plane)
+		res.EntityCount += imp.entityCount
+		res.Is3D = res.Is3D || imp.is3D
+		res.Warnings = append(res.Warnings, imp.warnings...)
+	}
+	return res, nil
 }
 
 // importDrawing scales a decoded drawing into the part's database unit and adds it as a 2D

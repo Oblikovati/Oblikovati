@@ -11,12 +11,8 @@
 package viewstate
 
 import (
-	"fmt"
-	"os"
-	"path/filepath"
-
+	"oblikovati.org/persistence/filestore"
 	"oblikovati.org/userconfig"
-	"oblikovati.org/yamlcodec"
 )
 
 // ViewFrame is one view's persisted camera: a name and a look-at frame (eye, target, up in
@@ -70,8 +66,9 @@ type file struct {
 	Documents map[string]ViewState `yaml:"documents"`
 }
 
-// FileStore persists view state to one YAML file under the user config directory.
-type FileStore struct{ path string }
+// FileStore persists view state to one YAML file under the user config directory
+// (the shared filestore core, #1651).
+type FileStore struct{ file *filestore.FileStore[file] }
 
 // DefaultPath is the per-user view-state file in the shared config dir (userconfig):
 // ~/.oblikovati/view-state.yaml on Linux/macOS, %AppData%\oblikovati\view-state.yaml on Windows.
@@ -80,24 +77,17 @@ func DefaultPath() (string, error) {
 }
 
 // NewFileStore returns a store backed by the file at path.
-func NewFileStore(path string) *FileStore { return &FileStore{path: path} }
+func NewFileStore(path string) *FileStore {
+	return &FileStore{file: filestore.New[file](path)}
+}
 
 func (s *FileStore) read() (file, error) {
 	f := file{Documents: map[string]ViewState{}}
-	raw, err := os.ReadFile(s.path)
-	if os.IsNotExist(err) {
-		return f, nil
-	}
-	if err != nil {
-		return f, fmt.Errorf("viewstate: read %q: %w", s.path, err)
-	}
-	if err := yamlcodec.Unmarshal(raw, &f); err != nil {
-		return f, fmt.Errorf("viewstate: parse %q: %w", s.path, err)
-	}
+	_, err := s.file.LoadInto(&f)
 	if f.Documents == nil {
 		f.Documents = map[string]ViewState{}
 	}
-	return f, nil
+	return f, err
 }
 
 // Load returns the view state stored for docKey, or ok=false if there is none.
@@ -118,30 +108,11 @@ func (s *FileStore) Save(docKey string, st ViewState) error {
 		return err
 	}
 	f.Documents[docKey] = st
-	raw, err := yamlcodec.Marshal(f)
-	if err != nil {
-		return fmt.Errorf("viewstate: marshal: %w", err)
-	}
-	if err := os.MkdirAll(filepath.Dir(s.path), 0o755); err != nil {
-		return fmt.Errorf("viewstate: create config dir: %w", err)
-	}
-	return os.WriteFile(s.path, raw, 0o644)
+	return s.file.Save(f)
 }
 
-// MemStore is an in-memory Store for tests.
-type MemStore struct{ m map[string]ViewState }
+// MemStore is the shared keyed in-memory Store for tests (#1651).
+type MemStore = filestore.KeyedMemStore[ViewState]
 
 // NewMemStore returns an empty in-memory store.
-func NewMemStore() *MemStore { return &MemStore{m: map[string]ViewState{}} }
-
-// Load implements Store.
-func (s *MemStore) Load(docKey string) (ViewState, bool, error) {
-	st, ok := s.m[docKey]
-	return st, ok, nil
-}
-
-// Save implements Store.
-func (s *MemStore) Save(docKey string, st ViewState) error {
-	s.m[docKey] = st
-	return nil
-}
+func NewMemStore() *MemStore { return filestore.NewKeyedMemStore[ViewState]() }

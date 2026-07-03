@@ -33,7 +33,7 @@ func (t *LipTool) Start(*Session) {}
 func (t *LipTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectEdge} }
 
 // Picks reports the picked edges for the unified highlight.
-func (t *LipTool) Picks() []Selectable { return edgeSelectables(t.Edges()) }
+func (t *LipTool) Picks() []Selectable { return selectables(t.Edges()) }
 
 // Pick appends the clicked edge (ignoring one already chosen, so a double-click does not
 // duplicate it).

@@ -45,7 +45,7 @@ func (t *MoveFaceTool) Start(*Session) {}
 func (t *MoveFaceTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
 
 // Picks reports the picked faces for the unified highlight.
-func (t *MoveFaceTool) Picks() []Selectable { return faceSelectables(t.faces) }
+func (t *MoveFaceTool) Picks() []Selectable { return selectables(t.faces) }
 
 func (t *MoveFaceTool) Pick(_ *Session, sel Selectable) {
 	if f, ok := sel.(FaceHandle); ok {

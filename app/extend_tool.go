@@ -30,7 +30,7 @@ func (t *ExtendTool) Start(*Session) {}
 func (t *ExtendTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectEdge} }
 
 // Picks reports the picked edges for the unified highlight.
-func (t *ExtendTool) Picks() []Selectable { return edgeSelectables(t.Edges()) }
+func (t *ExtendTool) Picks() []Selectable { return selectables(t.Edges()) }
 
 // Pick captures the boundary edge to extend.
 func (t *ExtendTool) Pick(_ *Session, sel Selectable) {

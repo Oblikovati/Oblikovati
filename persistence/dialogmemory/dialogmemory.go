@@ -7,12 +7,8 @@
 package dialogmemory
 
 import (
-	"fmt"
-	"os"
-	"path/filepath"
-
+	"oblikovati.org/persistence/filestore"
 	"oblikovati.org/userconfig"
-	"oblikovati.org/yamlcodec"
 )
 
 // Memory is the remembered choices: suppressed balloon-tip ids and prompt answers
@@ -28,8 +24,8 @@ type Store interface {
 	Save(Memory) error
 }
 
-// FileStore persists the memory to a YAML file.
-type FileStore struct{ path string }
+// FileStore persists the memory to a YAML file (the shared filestore core, #1651).
+type FileStore struct{ file *filestore.FileStore[Memory] }
 
 // DefaultPath is the per-user file: ~/.oblikovati/dialog-memory.yaml on Linux/macOS.
 func DefaultPath() (string, error) {
@@ -37,32 +33,15 @@ func DefaultPath() (string, error) {
 }
 
 // NewFileStore returns a store backed by the file at path.
-func NewFileStore(path string) *FileStore { return &FileStore{path: path} }
+func NewFileStore(path string) *FileStore {
+	return &FileStore{file: filestore.New[Memory](path)}
+}
 
 // Load reads the remembered choices; a missing file is an empty memory.
 func (s *FileStore) Load() (Memory, error) {
-	raw, err := os.ReadFile(s.path)
-	if os.IsNotExist(err) {
-		return Memory{}, nil
-	}
-	if err != nil {
-		return Memory{}, fmt.Errorf("dialogmemory: read %q: %w", s.path, err)
-	}
-	var m Memory
-	if err := yamlcodec.Unmarshal(raw, &m); err != nil {
-		return Memory{}, fmt.Errorf("dialogmemory: parse %q: %w", s.path, err)
-	}
-	return m, nil
+	m, _, err := s.file.Load()
+	return m, err
 }
 
 // Save writes the remembered choices, creating the config directory on first use.
-func (s *FileStore) Save(m Memory) error {
-	data, err := yamlcodec.Marshal(m)
-	if err != nil {
-		return fmt.Errorf("dialogmemory: marshal: %w", err)
-	}
-	if err := os.MkdirAll(filepath.Dir(s.path), 0o755); err != nil {
-		return fmt.Errorf("dialogmemory: create config dir for %q: %w", s.path, err)
-	}
-	return os.WriteFile(s.path, data, 0o644)
-}
+func (s *FileStore) Save(m Memory) error { return s.file.Save(m) }

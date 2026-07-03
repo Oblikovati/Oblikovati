@@ -36,7 +36,7 @@ func (t *FullRoundFilletTool) Start(*Session) {}
 func (t *FullRoundFilletTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
 
 // Picks reports every picked face for the unified highlight.
-func (t *FullRoundFilletTool) Picks() []Selectable { return faceSelectables(t.Faces()) }
+func (t *FullRoundFilletTool) Picks() []Selectable { return selectables(t.Faces()) }
 
 // Pick appends the clicked face to the active set, ignoring a face already in any set.
 func (t *FullRoundFilletTool) Pick(_ *Session, sel Selectable) {

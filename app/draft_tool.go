@@ -36,7 +36,7 @@ func (t *DraftTool) Start(*Session) {}
 func (t *DraftTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
 
 // Picks reports the picked faces for the unified highlight.
-func (t *DraftTool) Picks() []Selectable { return faceSelectables(t.faces) }
+func (t *DraftTool) Picks() []Selectable { return selectables(t.faces) }
 
 // Pick appends the clicked face (ignoring a duplicate).
 func (t *DraftTool) Pick(_ *Session, sel Selectable) {
