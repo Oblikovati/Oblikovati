@@ -73,6 +73,28 @@ func (b *Body) IsSolid() bool { return b.solid }
 // Shells returns the body's shells.
 func (b *Body) Shells() []*Shell { return append([]*Shell(nil), b.shells...) }
 
+// EulerCharacteristic returns the surface χ = V − E + 2F − L (the Euler–Poincaré form, correct
+// across B-rep seams and holed faces). Shared by the validator and the boolean's tangent-result
+// gate so both read χ the same way (#1600).
+func (b *Body) EulerCharacteristic() int {
+	loops := 0
+	for _, f := range b.Faces() {
+		loops += len(f.Loops())
+	}
+	return len(b.Vertices()) - len(b.Edges()) + 2*len(b.Faces()) - loops
+}
+
+// EulerAdmissible reports whether a CLOSED solid's χ is topologically possible: even and at most
+// 2 per shell (χ = Σ over shells of 2 − 2·genusₛ, genus ≥ 0). A non-solid body is unconstrained
+// and reports true. An odd or too-large χ is a pinch defect the per-edge manifold checks miss.
+func (b *Body) EulerAdmissible() bool {
+	if !b.solid {
+		return true
+	}
+	chi := b.EulerCharacteristic()
+	return chi%2 == 0 && chi <= 2*len(b.shells)
+}
+
 // Faces returns every face in the body, across all shells. The result is a fresh slice the
 // caller may keep; once the body is finalized it is a copy of the cached list.
 func (b *Body) Faces() []*Face {
