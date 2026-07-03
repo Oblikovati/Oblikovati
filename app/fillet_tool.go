@@ -198,19 +198,27 @@ func (t *FilletTool) variableSets(keys [][]byte) []feature.FilletEdgeSet {
 	return sets
 }
 
-// Commit rounds the picked edges on the active part and recomputes; a sick feature (a
-// non-convex edge or a radius that overruns the geometry) keeps the tool open via an error.
+// Commit finishes the tool: an in-place edit writes back through the session, a fresh
+// fillet goes through the host-driven create path (CommitFeature).
 func (t *FilletTool) Commit(s *Session) error {
 	if t.IsEditing() {
 		return t.commitEdit(s)
 	}
-	part, err := activePart(s)
+	return t.CommitFeature(s) // create path drives the slim host (I12, #1635)
+}
+
+// CommitFeature rounds the picked edges on the active part through the ToolHost seam, so
+// the create-commit no longer depends on the whole *Session (satisfies hostedTool, #1635).
+// A sick feature (a non-convex edge or a radius that overruns the geometry) keeps the tool
+// open via an error.
+func (t *FilletTool) CommitFeature(h ToolHost) error {
+	part, err := h.ActivePart()
 	if err != nil {
 		return err
 	}
 	t.added = t.addFillet(feature.NewDressUpFeatures(part.Features()))
 	part.Recompute()
-	s.recordEdit(part, "Fillet")
+	h.recordEdit(part, "Fillet")
 	if !t.added.Health().OK() {
 		return errors.New("fillet: " + t.added.Health().Reason)
 	}

@@ -6,8 +6,10 @@ import (
 	"strconv"
 	"strings"
 
+	"oblikovati.org/api/contract"
 	"oblikovati.org/app"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/model/doc"
 	"oblikovati.org/renderer"
 	"oblikovati.org/scene"
 )
@@ -81,9 +83,26 @@ func bodyGeometryKey(s *app.Session) string {
 	return b.String()
 }
 
+// activeDocumentSource is the slim session surface a viewport helper needs to reach the
+// active document (audit I5, the arrowSession pattern). *app.Session satisfies it.
+type activeDocumentSource interface {
+	ActiveDocument() *doc.Document
+}
+
+var _ activeDocumentSource = (*app.Session)(nil)
+
+// edgeColorSource is the active document plus its per-document display settings — the slim
+// surface displayEdgeColor consumes.
+type edgeColorSource interface {
+	activeDocumentSource
+	DocumentDisplaySettings(id doc.ID) contract.DisplaySettings
+}
+
+var _ edgeColorSource = (*app.Session)(nil)
+
 // displayEdgeColor is the active document's display-settings edge color as an rgba float array,
 // falling back to the renderer's default when there is no active document (M16-F07 #643).
-func displayEdgeColor(s *app.Session) [4]float32 {
+func displayEdgeColor(s edgeColorSource) [4]float32 {
 	if s.ActiveDocument() == nil {
 		return renderer.DefaultEdgeColor()
 	}
@@ -97,7 +116,7 @@ type modelGeometryVersioned interface{ ModelGeometryVersion() string }
 
 // activeModelGeometryVersion returns the active document's geometry version, or false when no
 // renderable model (part or assembly) is active — in which case there is nothing to cache.
-func activeModelGeometryVersion(s *app.Session) (string, bool) {
+func activeModelGeometryVersion(s activeDocumentSource) (string, bool) {
 	d := s.ActiveDocument()
 	if d == nil {
 		return "", false

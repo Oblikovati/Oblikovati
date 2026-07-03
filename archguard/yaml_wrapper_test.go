@@ -18,7 +18,7 @@ import (
 // package — the test then names it.
 var yamlDirectImportAllowlist = map[string]string{
 	// The wrapper itself — the one legitimate home of the yaml.v3 dependency.
-	"oblikovati.org/persistence/yamlcodec": "the owned wrapper (ADR-0020)",
+	"oblikovati.org/yamlcodec": "the owned wrapper (ADR-0020)",
 	// release/version.go parses version.yaml. Routing it through yamlcodec would add a
 	// release -> persistence edge (persistence pulls in model/api), coupling a zero-dep
 	// version leaf to the document layer. Exempt until B4 (#1615) relocates yamlcodec to a

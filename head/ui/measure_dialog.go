@@ -9,11 +9,26 @@ import (
 	"oblikovati.org/head/internal/native"
 )
 
-// drawMeasureDialog shows the Measure readout panel while the tool is active: the running
+// measureHost is the slim session surface the Measure readout panel consumes (audit I5,
+// the arrowSession pattern): the running Measure tool plus the shared commit/cancel
+// controls — not the whole session. *app.Session satisfies it implicitly, so drawMeasure
+// is unit-testable against a small fake host.
+type measureHost interface {
+	ActiveMeasure() *app.MeasureTool
+	commitCancelHost
+}
+
+var _ measureHost = (*app.Session)(nil)
+
+// drawMeasureDialog is the registry-facing adapter; the panel itself consumes only
+// measureHost.
+func drawMeasureDialog(s *app.Session) { drawMeasure(s) }
+
+// drawMeasure shows the Measure readout panel while the tool is active: the running
 // measurement for the picked faces/edges/vertices. Picking happens in the viewport (see the tool's
 // prompt in the command window); the panel echoes the result and offers Close.
-func drawMeasureDialog(s *app.Session) {
-	m := s.ActiveMeasure()
+func drawMeasure(h measureHost) {
+	m := h.ActiveMeasure()
 	if m == nil {
 		return
 	}
@@ -29,7 +44,7 @@ func drawMeasureDialog(s *app.Session) {
 			native.Text(readout)
 		}
 		native.Separator()
-		drawCommitCancelButtons(s, m.CanCommit())
+		drawCommitCancelButtons(h, m.CanCommit())
 	}
 	native.End()
 }

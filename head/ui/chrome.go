@@ -89,43 +89,20 @@ func drawViewportIfPresent(win *native.Window, s *app.Session) {
 	}
 }
 
+// drawChromeDialogs draws the tool property panels. The per-tool feature dialogs
+// (extrude, revolve, chamfer, sheet-metal, surface edits, …) self-register from their own
+// files and are drawn by drawRegisteredToolDialogs — no hand-maintained roll-call, so a new
+// tool minus its dialog fails the completeness check, not a live session (audit I4). The
+// remaining entries are non-feature popups/editors that are not keyed on a single tool.
 func drawChromeDialogs(s *app.Session) {
 	drawDimensionPopup(s)
-	drawToolParamsDialog(s) // generic dialog for parameterized sketch tools
+	drawToolParamsDialog(s) // generic panel for any ParameterizedTool (the default path)
 	drawSketch3DSettings(s) // 3D-sketch settings while editing one
-	drawSolidFeatureDialogs(s)
-	drawSurfaceFeatureDialogs(s)
+	drawRegisteredToolDialogs(s)
 	drawOffsetPlaneDialog(s)
 	drawFeatureEditDialog(s)
 	drawWorkPlaneEditDialog(s)
 	drawPlaceComponentDialog(s) // Assemble ▸ Place: arms the component file picker (#763)
-}
-
-func drawSolidFeatureDialogs(s *app.Session) {
-	drawExtrudeDialog(s)
-	drawRevolveDialog(s)
-	drawCoilDialog(s)
-	drawLoftDialog(s)
-	drawSweepDialog(s)
-	drawHoleDialog(s)
-	drawChamferDialog(s)
-	drawThreadDialog(s)
-	drawFilletDialog(s)
-	drawFaceFilletDialog(s)
-	drawFullRoundFilletDialog(s)
-	drawShellDialog(s)
-	drawSplitDialog(s)
-	drawGripSnapDialog(s)
-	drawMeasureDialog(s)
-	drawSheetMetalDialogs(s)
-}
-
-func drawSurfaceFeatureDialogs(s *app.Session) {
-	drawFaceOffsetDialog(s)
-	drawDraftDialog(s)
-	drawDeleteFaceDialog(s)
-	drawReplaceFaceDialog(s)
-	drawThickenDialog(s)
 }
 
 func drawChromeWindows(s *app.Session) {
