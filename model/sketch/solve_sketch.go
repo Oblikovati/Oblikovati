@@ -5,6 +5,7 @@ package sketch
 import (
 	"oblikovati.org/math"
 	"oblikovati.org/model/health"
+	"oblikovati.org/solve"
 )
 
 // variables returns the full DOF universe of the planar sketch: every point's X,Y
@@ -52,6 +53,21 @@ func (s *Sketch) ConflictingConstraints() []Constraint {
 	}
 	out := make([]Constraint, 0, len(r.Conflicts))
 	for _, i := range r.Conflicts {
+		out = append(out, cons[i])
+	}
+	return out
+}
+
+// RedundantConstraints returns the constraints whose removal restores full rank on an
+// over-constrained sketch — solvespace-style leave-one-out identification (audit A13, #1609):
+// where ConflictingConstraints names UNSATISFIABLE dimensions on a failed solve, this names
+// the linearly DEPENDENT ones behind an "over-constrained" verdict, so the UI can point at a
+// specific constraint to remove. nil when the sketch is not redundant.
+func (s *Sketch) RedundantConstraints() []Constraint {
+	cons := s.Constraints()
+	idx := solve.RedundantSources(residualSources(cons), s.variables())
+	out := make([]Constraint, 0, len(idx))
+	for _, i := range idx {
 		out = append(out, cons[i])
 	}
 	return out

@@ -2,7 +2,11 @@
 
 package geom
 
-import "oblikovati.org/math"
+import (
+	stdmath "math"
+
+	"oblikovati.org/math"
+)
 
 // Public knot removal on the rational B-spline types. Removal is approximate and so
 // reports how many of the requested removals were actually applied within tol; it is
@@ -21,7 +25,7 @@ func (c BSplineCurve) RemoveKnot(u float64, num int, tol float64) (BSplineCurve,
 	if err != nil {
 		return BSplineCurve{}, 0, err
 	}
-	newU, newPw, removed := removeKnotHomog(c.Degree, c.Knots, curveToHomog(c.Ctrl, c.Weights), u, r, s, eff, tol)
+	newU, newPw, removed := removeKnotHomog(c.Degree, c.Knots, curveToHomog(c.Ctrl, c.Weights), u, r, s, eff, rationalRemovalTol(tol, ctrlNorms3(c.Ctrl), c.Weights))
 	if removed == 0 {
 		return c, 0, nil
 	}
@@ -36,7 +40,7 @@ func (c BSplineCurve2d) RemoveKnot(u float64, num int, tol float64) (BSplineCurv
 	if err != nil {
 		return BSplineCurve2d{}, 0, err
 	}
-	newU, newPw, removed := removeKnotHomog(c.Degree, c.Knots, curve2dToHomog(c.Ctrl, c.Weights), u, r, s, eff, tol)
+	newU, newPw, removed := removeKnotHomog(c.Degree, c.Knots, curve2dToHomog(c.Ctrl, c.Weights), u, r, s, eff, rationalRemovalTol(tol, ctrlNorms2(c.Ctrl), c.Weights))
 	if removed == 0 {
 		return c, 0, nil
 	}
@@ -125,4 +129,42 @@ func rowToHomog(s BSplineSurface, i int) []hpoint4 {
 		row[j] = hpoint4FromCurve(s.Ctrl[i][j], s.Weights[i][j])
 	}
 	return row
+}
+
+// rationalRemovalTol converts a GEOMETRIC (3D) knot-removal tolerance into the homogeneous
+// 4-space threshold that bounds it (Piegl & Tiller eq. 5.30): a homogeneous control move of d
+// displaces the rational curve by at most d·(1+maxᵢ|Pᵢ|)/minᵢwᵢ, so the homogeneous test uses
+// tol·min(w)/(1+max|P|). For a non-rational curve near the origin this reduces to ≈tol, and for
+// heavy weights it prevents the silent over-removal the raw 4-space distance allowed (audit
+// A15, #1611).
+func rationalRemovalTol(tol float64, maxNorm float64, weights []float64) float64 {
+	minW := weights[0]
+	for _, w := range weights {
+		if w < minW {
+			minW = w
+		}
+	}
+	return tol * minW / (1 + maxNorm)
+}
+
+// ctrlNorms3 is the largest control-point distance from the origin.
+func ctrlNorms3(ctrl []math.Point3) float64 {
+	m := 0.0
+	for _, p := range ctrl {
+		if d := stdmath.Sqrt(float64(p.X*p.X + p.Y*p.Y + p.Z*p.Z)); d > m {
+			m = d
+		}
+	}
+	return m
+}
+
+// ctrlNorms2 is the 2D analogue of ctrlNorms3.
+func ctrlNorms2(ctrl []math.Point2) float64 {
+	m := 0.0
+	for _, p := range ctrl {
+		if d := stdmath.Sqrt(float64(p.X*p.X + p.Y*p.Y)); d > m {
+			m = d
+		}
+	}
+	return m
 }
