@@ -62,12 +62,13 @@ const (
 	surfaceNearMaxIter   = 24
 )
 
-// ParamAt projects q onto the NURBS surface numerically: a coarse grid seed then the shared
-// damped Gauss–Newton point inversion (Piegl & Tiller §6.1), with an early convergence exit.
+// ParamAt projects q onto the NURBS surface numerically: a knot-span-aware seed
+// (knotSpanSeedParams — one basin per span, #1608) then the shared damped Gauss–Newton
+// point inversion (Piegl & Tiller §6.1), with an early convergence exit.
 func (s BSplineSurface) ParamAt(q math.Point3) (u, v float64) {
-	uLo, uHi := s.UDomain()
-	vLo, vHi := s.VDomain()
-	u, v = surfaceGridSeed(s, q, uLo, uHi, vLo, vHi)
+	us := knotSpanSeedParams(s.UKnots, s.UDegree)
+	vs := knotSpanSeedParams(s.VKnots, s.VDegree)
+	u, v = nearestSeed(s, q, us, vs)
 	u, v, _ = refineSurfaceParam(s, q, u, v, surfaceInvertMaxIter)
 	return u, v
 }
@@ -83,21 +84,4 @@ func (s BSplineSurface) ParamNear(q math.Point3, u0, v0 float64) (u, v float64) 
 	u, v = clampToSurface(s, u0, v0)
 	u, v, _ = refineSurfaceParam(s, q, u, v, surfaceNearMaxIter)
 	return u, v
-}
-
-// surfaceGridSeed returns the sampled (u, v) over a coarse grid whose point is
-// nearest q — the starting guess for the Gauss–Newton refinement.
-func surfaceGridSeed(s Surface, q math.Point3, uLo, uHi, vLo, vHi float64) (float64, float64) {
-	const n = 16
-	bu, bv, bd := uLo, vLo, stdmath.Inf(1)
-	for i := 0; i <= n; i++ {
-		u := uLo + (uHi-uLo)*float64(i)/n
-		for j := 0; j <= n; j++ {
-			v := vLo + (vHi-vLo)*float64(j)/n
-			if d := s.PointAt(u, v).DistanceSquaredTo(q); d < bd {
-				bu, bv, bd = u, v, d
-			}
-		}
-	}
-	return bu, bv
 }
