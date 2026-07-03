@@ -3,7 +3,6 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"oblikovati.org/api/types"
@@ -17,10 +16,10 @@ import (
 
 // registerDrawingSketchHandlers wires the drawingSketches.* methods.
 func (r *Router) registerDrawingSketchHandlers() {
-	r.readOnly(wire.MethodDrawingSketchesList, drawingSketchesList)
-	r.mutating(wire.MethodDrawingSketchesAdd, "Create Sketch", drawingSketchesAdd)
-	r.mutating(wire.MethodDrawingSketchesAddEntity, "Add Sketch Geometry", drawingSketchesAddEntity)
-	r.mutating(wire.MethodDrawingSketchesAddHatch, "Add Hatch", drawingSketchesAddHatch)
+	r.readOnly(wire.MethodDrawingSketchesList, ctxQuery(activeSheetSketches, drawingSketchesList))
+	r.mutating(wire.MethodDrawingSketchesAdd, "Create Sketch", typedCtx(activeSheetSketches, drawingSketchesAdd))
+	r.mutating(wire.MethodDrawingSketchesAddEntity, "Add Sketch Geometry", typedCtx(activeSheetSketches, drawingSketchesAddEntity))
+	r.mutating(wire.MethodDrawingSketchesAddHatch, "Add Hatch", typedCtx(activeSheetSketches, drawingSketchesAddHatch))
 }
 
 // activeSheetSketches returns the active drawing's active-sheet sketch collection.
@@ -36,76 +35,48 @@ func activeSheetSketches(s *app.Session) (*drawing.DrawingSketches, error) {
 	return sheet.Sketches(), nil
 }
 
-func drawingSketchesList(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	ss, err := activeSheetSketches(s)
-	if err != nil {
-		return nil, err
-	}
+func drawingSketchesList(_ *app.Session, ss *drawing.DrawingSketches) (wire.ListDrawingSketchesResult, error) {
 	out := wire.ListDrawingSketchesResult{}
 	for i := 0; i < ss.Count(); i++ {
 		out.Sketches = append(out.Sketches, drawingSketchInfo(ss.Item(i)))
 	}
-	return json.Marshal(out)
+	return out, nil
 }
 
-func drawingSketchesAdd(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	ss, err := activeSheetSketches(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddDrawingSketchArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingSketchesAdd(s *app.Session, ss *drawing.DrawingSketches, in wire.AddDrawingSketchArgs) (wire.DrawingSketchResult, error) {
 	sk := ss.Add(in.Name)
 	s.ActiveDocument().MarkDirty()
-	return json.Marshal(wire.DrawingSketchResult{Sketch: drawingSketchInfo(sk)})
+	return wire.DrawingSketchResult{Sketch: drawingSketchInfo(sk)}, nil
 }
 
-func drawingSketchesAddEntity(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	ss, err := activeSheetSketches(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddDrawingSketchEntityArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingSketchesAddEntity(s *app.Session, ss *drawing.DrawingSketches, in wire.AddDrawingSketchEntityArgs) (wire.DrawingSketchResult, error) {
 	kind, ok := types.ParseDrawingSketchEntityKind(in.Kind)
 	if !ok {
-		return nil, fmt.Errorf("drawing: unknown sketch entity kind %q (want line|circle|rectangle)", in.Kind)
+		return wire.DrawingSketchResult{}, fmt.Errorf("drawing: unknown sketch entity kind %q (want line|circle|rectangle)", in.Kind)
 	}
 	sk, err := ss.AddEntity(in.SketchName, kind, in.Points, in.Radius)
 	if err != nil {
-		return nil, err
+		return wire.DrawingSketchResult{}, err
 	}
 	s.ActiveDocument().MarkDirty()
-	return json.Marshal(wire.DrawingSketchResult{Sketch: drawingSketchInfo(sk)})
+	return wire.DrawingSketchResult{Sketch: drawingSketchInfo(sk)}, nil
 }
 
-func drawingSketchesAddHatch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	ss, err := activeSheetSketches(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddHatchRegionArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingSketchesAddHatch(s *app.Session, ss *drawing.DrawingSketches, in wire.AddHatchRegionArgs) (wire.DrawingSketchResult, error) {
 	pattern := types.HatchGeneral
 	if in.Pattern != "" {
 		p, ok := types.ParseHatchPattern(in.Pattern)
 		if !ok {
-			return nil, fmt.Errorf("drawing: unknown hatch pattern %q (want general|cross|ansi31)", in.Pattern)
+			return wire.DrawingSketchResult{}, fmt.Errorf("drawing: unknown hatch pattern %q (want general|cross|ansi31)", in.Pattern)
 		}
 		pattern = p
 	}
 	sk, err := ss.AddHatchRegion(in.SketchName, in.XMM, in.YMM, in.WidthMM, in.HeightMM, pattern, in.ScaleMM)
 	if err != nil {
-		return nil, err
+		return wire.DrawingSketchResult{}, err
 	}
 	s.ActiveDocument().MarkDirty()
-	return json.Marshal(wire.DrawingSketchResult{Sketch: drawingSketchInfo(sk)})
+	return wire.DrawingSketchResult{Sketch: drawingSketchInfo(sk)}, nil
 }
 
 // drawingSketchInfo flattens a drawing sketch into its wire DTO.

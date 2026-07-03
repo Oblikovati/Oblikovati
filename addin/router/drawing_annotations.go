@@ -3,7 +3,6 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"oblikovati.org/api/types"
@@ -17,23 +16,23 @@ import (
 
 // registerDrawingAnnotationHandlers wires the drawingAnnotations.* methods.
 func (r *Router) registerDrawingAnnotationHandlers() {
-	r.readOnly(wire.MethodDrawingAnnotationsList, drawingAnnotationsList)
-	r.mutating(wire.MethodDrawingAnnotationsAddCoG, "Add Annotation", drawingAnnotationsAddCoG)
-	r.mutating(wire.MethodDrawingAnnotationsAddRevisionCloud, "Add Annotation", drawingAnnotationsAddRevisionCloud)
-	r.mutating(wire.MethodDrawingAnnotationsAddCenterMarks, "Add Annotation", drawingAnnotationsAddCenterMarks)
-	r.mutating(wire.MethodDrawingAnnotationsAddCenterlines, "Add Annotation", drawingAnnotationsAddCenterlines)
-	r.mutating(wire.MethodDrawingAnnotationsAddFCF, "Add Annotation", drawingAnnotationsAddFCF)
-	r.mutating(wire.MethodDrawingAnnotationsAddDatum, "Add Annotation", drawingAnnotationsAddDatum)
-	r.mutating(wire.MethodDrawingAnnotationsAddSurfaceText, "Add Annotation", drawingAnnotationsAddSurfaceText)
-	r.mutating(wire.MethodDrawingAnnotationsAddPartsList, "Add Annotation", drawingAnnotationsAddPartsList)
-	r.mutating(wire.MethodDrawingAnnotationsAddBalloon, "Add Annotation", drawingAnnotationsAddBalloon)
-	r.mutating(wire.MethodDrawingAnnotationsAddHoleTable, "Add Annotation", drawingAnnotationsAddHoleTable)
-	r.mutating(wire.MethodDrawingAnnotationsAddRevTable, "Add Annotation", drawingAnnotationsAddRevisionTable)
-	r.mutating(wire.MethodDrawingAnnotationsAddRevTag, "Add Annotation", drawingAnnotationsAddRevisionTag)
-	r.mutating(wire.MethodDrawingAnnotationsAddNote, "Add Annotation", drawingAnnotationsAddNote)
-	r.mutating(wire.MethodDrawingAnnotationsAddCustomTable, "Add Annotation", drawingAnnotationsAddCustomTable)
-	r.mutating(wire.MethodDrawingAnnotationsAddHoleNotes, "Add Annotation", drawingAnnotationsAddHoleNotes)
-	r.mutating(wire.MethodDrawingAnnotationsDelete, "Delete Annotation", drawingAnnotationsDelete)
+	r.readOnly(wire.MethodDrawingAnnotationsList, ctxQuery(activeSheetAnnotations, drawingAnnotationsList))
+	r.mutating(wire.MethodDrawingAnnotationsAddCoG, "Add Annotation", typedCtx(activeSheetAnnotations, drawingAnnotationsAddCoG))
+	r.mutating(wire.MethodDrawingAnnotationsAddRevisionCloud, "Add Annotation", typedCtx(activeSheetAnnotations, drawingAnnotationsAddRevisionCloud))
+	r.mutating(wire.MethodDrawingAnnotationsAddCenterMarks, "Add Annotation", typedCtx(activeSheetAnnotations, drawingAnnotationsAddCenterMarks))
+	r.mutating(wire.MethodDrawingAnnotationsAddCenterlines, "Add Annotation", typedCtx(activeSheetAnnotations, drawingAnnotationsAddCenterlines))
+	r.mutating(wire.MethodDrawingAnnotationsAddFCF, "Add Annotation", typedCtx(activeSheetAnnotations, drawingAnnotationsAddFCF))
+	r.mutating(wire.MethodDrawingAnnotationsAddDatum, "Add Annotation", typedCtx(activeSheetAnnotations, drawingAnnotationsAddDatum))
+	r.mutating(wire.MethodDrawingAnnotationsAddSurfaceText, "Add Annotation", typedCtx(activeSheetAnnotations, drawingAnnotationsAddSurfaceText))
+	r.mutating(wire.MethodDrawingAnnotationsAddPartsList, "Add Annotation", typedCtx(activeSheetAnnotations, drawingAnnotationsAddPartsList))
+	r.mutating(wire.MethodDrawingAnnotationsAddBalloon, "Add Annotation", typedCtx(activeSheetAnnotations, drawingAnnotationsAddBalloon))
+	r.mutating(wire.MethodDrawingAnnotationsAddHoleTable, "Add Annotation", typedCtx(activeSheetAnnotations, drawingAnnotationsAddHoleTable))
+	r.mutating(wire.MethodDrawingAnnotationsAddRevTable, "Add Annotation", typedCtx(activeSheetAnnotations, drawingAnnotationsAddRevisionTable))
+	r.mutating(wire.MethodDrawingAnnotationsAddRevTag, "Add Annotation", typedCtx(activeSheetAnnotations, drawingAnnotationsAddRevisionTag))
+	r.mutating(wire.MethodDrawingAnnotationsAddNote, "Add Annotation", typedCtx(activeSheetAnnotations, drawingAnnotationsAddNote))
+	r.mutating(wire.MethodDrawingAnnotationsAddCustomTable, "Add Annotation", typedCtx(activeSheetAnnotations, drawingAnnotationsAddCustomTable))
+	r.mutating(wire.MethodDrawingAnnotationsAddHoleNotes, "Add Annotation", typedCtx(activeSheetAnnotations, drawingAnnotationsAddHoleNotes))
+	r.mutating(wire.MethodDrawingAnnotationsDelete, "Delete Annotation", typedCtx(activeSheetAnnotations, drawingAnnotationsDelete))
 }
 
 // activeSheetAnnotations returns the active drawing's active-sheet annotation collection.
@@ -49,319 +48,189 @@ func activeSheetAnnotations(s *app.Session) (*drawing.DrawingAnnotations, error)
 	return sheet.Annotations(), nil
 }
 
-func drawingAnnotationsList(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	an, err := activeSheetAnnotations(s)
-	if err != nil {
-		return nil, err
-	}
+func drawingAnnotationsList(_ *app.Session, an *drawing.DrawingAnnotations) (wire.ListDrawingAnnotationsResult, error) {
+	return listAnnotationsResult(an), nil
+}
+
+// listAnnotationsResult flattens a sheet's annotation collection into its wire result (shared by
+// the list and delete handlers). Kept as append-to-nil so an empty collection marshals to null.
+func listAnnotationsResult(an *drawing.DrawingAnnotations) wire.ListDrawingAnnotationsResult {
 	out := wire.ListDrawingAnnotationsResult{}
 	for i := 0; i < an.Count(); i++ {
 		out.Annotations = append(out.Annotations, drawingAnnotationInfo(an.Item(i)))
 	}
-	return json.Marshal(out)
+	return out
 }
 
-func drawingAnnotationsAddCoG(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	an, err := activeSheetAnnotations(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddCoGMarkerArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingAnnotationsAddCoG(s *app.Session, an *drawing.DrawingAnnotations, in wire.AddCoGMarkerArgs) (wire.AnnotationResult, error) {
 	a, err := an.AddCoGMarker(in.Name, in.ViewName)
 	if err != nil {
-		return nil, err
+		return wire.AnnotationResult{}, err
 	}
 	s.ActiveDocument().MarkDirty()
-	return json.Marshal(wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)})
+	return wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)}, nil
 }
 
-func drawingAnnotationsAddRevisionCloud(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	an, err := activeSheetAnnotations(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddRevisionCloudArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingAnnotationsAddRevisionCloud(s *app.Session, an *drawing.DrawingAnnotations, in wire.AddRevisionCloudArgs) (wire.AnnotationResult, error) {
 	a, err := an.AddRevisionCloud(in.Name, in.XMM, in.YMM, in.WidthMM, in.HeightMM, in.Tag)
 	if err != nil {
-		return nil, err
+		return wire.AnnotationResult{}, err
 	}
 	s.ActiveDocument().MarkDirty()
-	return json.Marshal(wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)})
+	return wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)}, nil
 }
 
-func drawingAnnotationsAddCenterMarks(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	an, err := activeSheetAnnotations(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddCenterMarksArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingAnnotationsAddCenterMarks(s *app.Session, an *drawing.DrawingAnnotations, in wire.AddCenterMarksArgs) (wire.CenterMarksResult, error) {
 	marks, err := an.AddCenterMarks(in.ViewName)
 	if err != nil {
-		return nil, err
+		return wire.CenterMarksResult{}, err
 	}
 	s.ActiveDocument().MarkDirty()
 	out := wire.CenterMarksResult{}
 	for _, m := range marks {
 		out.Annotations = append(out.Annotations, drawingAnnotationInfo(m))
 	}
-	return json.Marshal(out)
+	return out, nil
 }
 
-func drawingAnnotationsAddCenterlines(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	an, err := activeSheetAnnotations(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddCenterlinesArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingAnnotationsAddCenterlines(s *app.Session, an *drawing.DrawingAnnotations, in wire.AddCenterlinesArgs) (wire.AnnotationResult, error) {
 	a, err := an.AddCenterlines(in.Name, in.ViewName)
 	if err != nil {
-		return nil, err
+		return wire.AnnotationResult{}, err
 	}
 	s.ActiveDocument().MarkDirty()
-	return json.Marshal(wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)})
+	return wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)}, nil
 }
 
-func drawingAnnotationsAddFCF(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	an, err := activeSheetAnnotations(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddFeatureControlFrameArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingAnnotationsAddFCF(s *app.Session, an *drawing.DrawingAnnotations, in wire.AddFeatureControlFrameArgs) (wire.AnnotationResult, error) {
 	characteristic, ok := types.ParseGeometricCharacteristic(in.Characteristic)
 	if !ok {
-		return nil, fmt.Errorf("drawing: unknown geometric characteristic %q", in.Characteristic)
+		return wire.AnnotationResult{}, fmt.Errorf("drawing: unknown geometric characteristic %q", in.Characteristic)
 	}
 	a, err := an.AddFeatureControlFrame(in.Name, in.XMM, in.YMM, characteristic, in.Tolerance, in.Datums)
 	if err != nil {
-		return nil, err
+		return wire.AnnotationResult{}, err
 	}
 	s.ActiveDocument().MarkDirty()
-	return json.Marshal(wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)})
+	return wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)}, nil
 }
 
-func drawingAnnotationsAddDatum(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	an, err := activeSheetAnnotations(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddDatumFeatureArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingAnnotationsAddDatum(s *app.Session, an *drawing.DrawingAnnotations, in wire.AddDatumFeatureArgs) (wire.AnnotationResult, error) {
 	a, err := an.AddDatumFeature(in.Name, in.XMM, in.YMM, in.Letter)
 	if err != nil {
-		return nil, err
+		return wire.AnnotationResult{}, err
 	}
 	s.ActiveDocument().MarkDirty()
-	return json.Marshal(wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)})
+	return wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)}, nil
 }
 
-func drawingAnnotationsAddSurfaceText(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	an, err := activeSheetAnnotations(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddSurfaceTextureArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingAnnotationsAddSurfaceText(s *app.Session, an *drawing.DrawingAnnotations, in wire.AddSurfaceTextureArgs) (wire.AnnotationResult, error) {
 	variant := types.MaterialRemovalAny
 	if in.MaterialRemoval != "" {
 		v, ok := types.ParseMaterialRemoval(in.MaterialRemoval)
 		if !ok {
-			return nil, fmt.Errorf("drawing: unknown material-removal variant %q (want any|required|prohibited)", in.MaterialRemoval)
+			return wire.AnnotationResult{}, fmt.Errorf("drawing: unknown material-removal variant %q (want any|required|prohibited)", in.MaterialRemoval)
 		}
 		variant = v
 	}
 	a, err := an.AddSurfaceTexture(in.Name, in.XMM, in.YMM, in.Roughness, variant)
 	if err != nil {
-		return nil, err
+		return wire.AnnotationResult{}, err
 	}
 	s.ActiveDocument().MarkDirty()
-	return json.Marshal(wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)})
+	return wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)}, nil
 }
 
-func drawingAnnotationsAddPartsList(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	an, err := activeSheetAnnotations(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddPartsListArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingAnnotationsAddPartsList(s *app.Session, an *drawing.DrawingAnnotations, in wire.AddPartsListArgs) (wire.AnnotationResult, error) {
 	a, err := an.AddPartsList(in.Name, in.XMM, in.YMM)
 	if err != nil {
-		return nil, err
+		return wire.AnnotationResult{}, err
 	}
 	s.ActiveDocument().MarkDirty()
-	return json.Marshal(wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)})
+	return wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)}, nil
 }
 
-func drawingAnnotationsAddBalloon(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	an, err := activeSheetAnnotations(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddBalloonArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingAnnotationsAddBalloon(s *app.Session, an *drawing.DrawingAnnotations, in wire.AddBalloonArgs) (wire.AnnotationResult, error) {
 	a, err := an.AddBalloon(in.Name, in.XMM, in.YMM, in.Item, in.LeaderXMM, in.LeaderYMM)
 	if err != nil {
-		return nil, err
+		return wire.AnnotationResult{}, err
 	}
 	s.ActiveDocument().MarkDirty()
-	return json.Marshal(wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)})
+	return wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)}, nil
 }
 
-func drawingAnnotationsAddHoleTable(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	an, err := activeSheetAnnotations(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddHoleTableArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingAnnotationsAddHoleTable(s *app.Session, an *drawing.DrawingAnnotations, in wire.AddHoleTableArgs) (wire.AnnotationResult, error) {
 	a, err := an.AddHoleTable(in.Name, in.ViewName, in.XMM, in.YMM)
 	if err != nil {
-		return nil, err
+		return wire.AnnotationResult{}, err
 	}
 	s.ActiveDocument().MarkDirty()
-	return json.Marshal(wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)})
+	return wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)}, nil
 }
 
-func drawingAnnotationsAddRevisionTable(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	an, err := activeSheetAnnotations(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddRevisionTableArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingAnnotationsAddRevisionTable(s *app.Session, an *drawing.DrawingAnnotations, in wire.AddRevisionTableArgs) (wire.AnnotationResult, error) {
 	rows := make([]drawing.RevisionRow, len(in.Rows))
 	for i, r := range in.Rows {
 		rows[i] = drawing.RevisionRow{Revision: r.Revision, Date: r.Date, Description: r.Description}
 	}
 	a, err := an.AddRevisionTable(in.Name, in.XMM, in.YMM, rows)
 	if err != nil {
-		return nil, err
+		return wire.AnnotationResult{}, err
 	}
 	s.ActiveDocument().MarkDirty()
-	return json.Marshal(wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)})
+	return wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)}, nil
 }
 
-func drawingAnnotationsAddRevisionTag(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	an, err := activeSheetAnnotations(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddRevisionTagArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingAnnotationsAddRevisionTag(s *app.Session, an *drawing.DrawingAnnotations, in wire.AddRevisionTagArgs) (wire.AnnotationResult, error) {
 	a, err := an.AddRevisionTag(in.Name, in.XMM, in.YMM, in.Revision)
 	if err != nil {
-		return nil, err
+		return wire.AnnotationResult{}, err
 	}
 	s.ActiveDocument().MarkDirty()
-	return json.Marshal(wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)})
+	return wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)}, nil
 }
 
-func drawingAnnotationsAddNote(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	an, err := activeSheetAnnotations(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddDrawingNoteArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingAnnotationsAddNote(s *app.Session, an *drawing.DrawingAnnotations, in wire.AddDrawingNoteArgs) (wire.AnnotationResult, error) {
 	a, err := an.AddNote(in.Name, in.XMM, in.YMM, in.Text, in.LeaderXMM, in.LeaderYMM)
 	if err != nil {
-		return nil, err
+		return wire.AnnotationResult{}, err
 	}
 	s.ActiveDocument().MarkDirty()
-	return json.Marshal(wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)})
+	return wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)}, nil
 }
 
-func drawingAnnotationsAddCustomTable(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	an, err := activeSheetAnnotations(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddCustomTableArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingAnnotationsAddCustomTable(s *app.Session, an *drawing.DrawingAnnotations, in wire.AddCustomTableArgs) (wire.AnnotationResult, error) {
 	a, err := an.AddCustomTable(in.Name, in.XMM, in.YMM, in.Headers, in.Rows)
 	if err != nil {
-		return nil, err
+		return wire.AnnotationResult{}, err
 	}
 	s.ActiveDocument().MarkDirty()
-	return json.Marshal(wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)})
+	return wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)}, nil
 }
 
-func drawingAnnotationsAddHoleNotes(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	an, err := activeSheetAnnotations(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddHoleNotesArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingAnnotationsAddHoleNotes(s *app.Session, an *drawing.DrawingAnnotations, in wire.AddHoleNotesArgs) (wire.AnnotationResult, error) {
 	quantity := types.HoleNotePerHole
 	if in.Quantity != "" {
 		q, ok := types.ParseHoleNoteQuantity(in.Quantity)
 		if !ok {
-			return nil, fmt.Errorf("drawing: unknown hole-note quantity %q (want perHole|combined)", in.Quantity)
+			return wire.AnnotationResult{}, fmt.Errorf("drawing: unknown hole-note quantity %q (want perHole|combined)", in.Quantity)
 		}
 		quantity = q
 	}
 	a, err := an.AddHoleNotes(in.Name, in.ViewName, quantity, in.Format)
 	if err != nil {
-		return nil, err
+		return wire.AnnotationResult{}, err
 	}
 	s.ActiveDocument().MarkDirty()
-	return json.Marshal(wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)})
+	return wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)}, nil
 }
 
-func drawingAnnotationsDelete(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	an, err := activeSheetAnnotations(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.DeleteAnnotationArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingAnnotationsDelete(s *app.Session, an *drawing.DrawingAnnotations, in wire.DeleteAnnotationArgs) (wire.ListDrawingAnnotationsResult, error) {
 	if err := an.Remove(in.Name); err != nil {
-		return nil, err
+		return wire.ListDrawingAnnotationsResult{}, err
 	}
 	s.ActiveDocument().MarkDirty()
-	out := wire.ListDrawingAnnotationsResult{}
-	for i := 0; i < an.Count(); i++ {
-		out.Annotations = append(out.Annotations, drawingAnnotationInfo(an.Item(i)))
-	}
-	return json.Marshal(out)
+	return listAnnotationsResult(an), nil
 }
 
 // drawingAnnotationInfo flattens an annotation into its wire DTO.
