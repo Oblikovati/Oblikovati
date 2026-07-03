@@ -51,12 +51,15 @@ func Arrange(segments [][2]math.Point2) []Face2D {
 
 // planarize splits every segment at its intersections with the others and welds the
 // resulting points, returning the welded points and the elementary (crossing-free)
-// undirected edges as index pairs.
+// undirected edges as index pairs. Pair candidacy comes from a uniform grid hash over the
+// segments' padded AABBs (#1607), retiring the O(S²) all-pairs scan; the narrow phase and
+// its ordering are unchanged, so the arrangement is identical.
 func planarize(segments [][2]math.Point2) ([]math.Point2, [][2]int) {
 	weld := newWelder()
 	edges := map[[2]int]bool{}
+	cull := newSegmentCullGrid(segments)
 	for i, seg := range segments {
-		for _, e := range splitOne(seg, segments, i, weld) {
+		for _, e := range splitOne(seg, segments, cull.candidates(i), weld) {
 			if e[0] != e[1] {
 				edges[canonEdge(e[0], e[1])] = true
 			}
@@ -91,10 +94,13 @@ const tjTol = 1e-7 // tol:calibrated — matches the welder grid; see arrTol
 // but the host edge is left whole, so the chain dangles and the face never partitions. This
 // pass welds such chains shut, the crux of robust planar arrangement under faceted-curve cuts.
 func splitTJunctions(pts []math.Point2, edges map[[2]int]bool) {
+	// The welded point set is fixed here (only edges split), so one grid hash over it culls
+	// every vertex-on-edge scan below (#1607).
+	verts := newVertexCullGrid(pts)
 	for changed := true; changed; {
 		changed = false
 		for e := range edges {
-			c := vertexOnEdgeInterior(pts, e[0], e[1])
+			c := vertexOnEdgeInterior(pts, e[0], e[1], verts)
 			if c < 0 {
 				continue
 			}
@@ -108,8 +114,10 @@ func splitTJunctions(pts []math.Point2, edges map[[2]int]bool) {
 
 // vertexOnEdgeInterior returns a vertex index lying strictly inside segment a→b (within
 // [tjTol] of it, parameter away from both ends), or −1 if none. The lowest such index is
-// returned for determinism.
-func vertexOnEdgeInterior(pts []math.Point2, a, b int) int {
+// returned for determinism. Candidates come from the vertex grid hash over the edge's padded
+// box (#1607) — every qualifying vertex lies within tjTol of the edge, so none can escape it —
+// with the qualification arithmetic unchanged from the retired full scan.
+func vertexOnEdgeInterior(pts []math.Point2, a, b int, verts *vertexCullGrid) int {
 	pa, pb := pts[a], pts[b]
 	ab := pa.VectorTo(pb)
 	lenSq := ab.LengthSquared()
@@ -117,37 +125,40 @@ func vertexOnEdgeInterior(pts []math.Point2, a, b int) int {
 		return -1
 	}
 	best := -1
-	for c := range pts {
-		if c == a || c == b {
-			continue
+	x0 := min(float64(pa.X), float64(pb.X)) - tjCullPad
+	y0 := min(float64(pa.Y), float64(pb.Y)) - tjCullPad
+	x1 := max(float64(pa.X), float64(pb.X)) + tjCullPad
+	y1 := max(float64(pa.Y), float64(pb.Y)) + tjCullPad
+	verts.eachInBox(x0, y0, x1, y1, func(c int) {
+		if c == a || c == b || (best >= 0 && c >= best) {
+			return
 		}
 		t := pa.VectorTo(pts[c]).Dot(ab) / lenSq
 		if t <= tjTol || t >= 1-tjTol {
-			continue
+			return
 		}
 		if pa.TranslateBy(ab.Scale(t)).DistanceTo(pts[c]) > tjTol {
-			continue
+			return
 		}
-		if best < 0 || c < best {
-			best = c
-		}
-	}
+		best = c
+	})
 	return best
 }
 
-// splitOne returns segment i's elementary edges: the chain of welded vertex indices along
-// it, split at every interior intersection with another segment.
-func splitOne(seg [2]math.Point2, all [][2]math.Point2, i int, weld *welder) [][2]int {
+// splitOne returns a segment's elementary edges: the chain of welded vertex indices along
+// it, split at every interior intersection with another segment. `cand` is the segment's
+// grid-culled candidate list (ascending, self excluded, #1607): a superset of every j the
+// narrow phase can accept, in the retired brute scan's order — the cut list feeds an
+// unstable sort, so insertion order must not drift.
+func splitOne(seg [2]math.Point2, all [][2]math.Point2, cand []int, weld *welder) [][2]int {
 	si := geom.NewLineSegment2d(seg[0], seg[1])
 	type cut struct {
 		t float64
 		p math.Point2
 	}
 	cuts := []cut{{0, seg[0]}, {1, seg[1]}}
-	for j, other := range all {
-		if j == i {
-			continue
-		}
+	for _, j := range cand {
+		other := all[j]
 		if p, s, _, ok := geom.Segment2dIntersection(si, geom.NewLineSegment2d(other[0], other[1]), arrTol); ok && s > arrTol && s < 1-arrTol {
 			cuts = append(cuts, cut{s, p})
 		}

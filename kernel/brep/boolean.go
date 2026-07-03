@@ -71,11 +71,15 @@ func BooleanDiag(op Op, a, b *topo.Body, rec *diag.Recorder) (*topo.Body, error)
 // "away" direction when the pass hit a tangent/grazing contact (operand B nudged along it
 // opens a clean clearance), else the zero vector.
 func booleanOnce(op Op, fa, fb []planarFace, a, b *topo.Body) (*topo.Body, math.Vector3, error) {
-	impA, impB := imprintAll(fa, fb)
-	prov := provenanceOf(fa, fb)
+	// One AABB-culled candidate set feeds imprint, provenance AND the coplanar-cover scans —
+	// the retired brute version recomputed the O(Fa·Fb) pairing 2–3× per pass — and each
+	// operand is flattened ONCE into a solidProbe for every ray-cast classification, instead
+	// of per query point (#1607).
+	pairs := crossingFaceCandidates(fa, fb)
+	impA, impB, prov := imprintCandidates(fa, fb, pairs)
 	var kept []subFace
-	kept = append(kept, selectFaces(fa, impA, b, fb, op, false, prov)...)
-	kept = append(kept, selectFaces(fb, impB, a, fa, op, true, prov)...)
+	kept = append(kept, selectFaces(fa, impA, newSolidProbe(b), fb, pairs.bForA, op, false, prov)...)
+	kept = append(kept, selectFaces(fb, impB, newSolidProbe(a), fa, pairs.aForB, op, true, prov)...)
 	return stitch(kept, prov)
 }
 
@@ -155,17 +159,11 @@ func planarToSubFaces(faces []planarFace) []subFace {
 // and a float-wobbled near-copy of a boundary edge destabilizes the 2D arrangement. The
 // flush-cut case (#137) hits this constantly — a tool wall whose bottom edge lies exactly in
 // the target's bottom plane imprints that plane with a near-duplicate of the coplanar cap
-// edge, and imprints ITSELF with its own bottom edge.
+// edge, and imprints ITSELF with its own bottom edge. Since #1607 the pairing is AABB-culled
+// and shared with provenanceOf through imprintCandidates; this wrapper keeps the historical
+// contract for callers that only need the geometry.
 func imprintAll(fa, fb []planarFace) (impA, impB [][][2]math.Point3) {
-	impA = make([][][2]math.Point3, len(fa))
-	impB = make([][][2]math.Point3, len(fb))
-	for i := range fa {
-		for j := range fb {
-			onA, onB := pairImprints(fa[i], fb[j])
-			impA[i] = append(impA[i], onA...)
-			impB[j] = append(impB[j], onB...)
-		}
-	}
+	impA, impB, _ = imprintCandidates(fa, fb, crossingFaceCandidates(fa, fb))
 	return impA, impB
 }
 
@@ -202,13 +200,15 @@ func intersectIntervals(a, b [][2]float64) [][2]float64 {
 
 // selectFaces splits each face by its imprints and keeps the material sub-faces this
 // operation wants, classifying each via [classifySubFace]. `others` is the other solid's
-// face list (for the coplanar overlap test); `other` is the body itself (for the ray cast).
-func selectFaces(faces []planarFace, imprints [][][2]math.Point3, other *topo.Body, others []planarFace, op Op, isB bool, prov []imprintSeg) []subFace {
+// face list (for the coplanar overlap test), culled per face to its box-overlap candidates
+// `otherCand` (#1607); `other` is the body's cached probe (for the winding-number cast).
+func selectFaces(faces []planarFace, imprints [][][2]math.Point3, other *solidProbe, others []planarFace, otherCand [][]int, op Op, isB bool, prov []imprintSeg) []subFace {
 	var kept []subFace
 	for i, f := range faces {
+		near := facesAt(others, otherCand[i])
 		var fromFace []subFace
 		for _, sf := range splitFace(f, imprints[i]) {
-			if out, ok := classifySubFace(sf, f, other, others, op, isB); ok {
+			if out, ok := classifySubFace(sf, f, other, near, op, isB); ok {
 				fromFace = append(fromFace, out)
 			}
 		}
@@ -256,13 +256,13 @@ func splitLineage(parent topo.Lineage, k int) topo.Lineage {
 
 // classifySubFace decides whether a sub-face survives. A fragment coplanar with a face of
 // the other solid follows the ON/ON table ([coplanarKeep]); otherwise it is kept by the
-// inside/outside table ([keep]) from a ray cast, with B's difference faces reversed to form
-// the cut walls.
-func classifySubFace(sf subFace, f planarFace, other *topo.Body, others []planarFace, op Op, isB bool) (subFace, bool) {
+// inside/outside table ([keep]) from a winding-number cast against the other solid's cached
+// probe, with B's difference faces reversed to form the cut walls.
+func classifySubFace(sf subFace, f planarFace, other *solidProbe, others []planarFace, op Op, isB bool) (subFace, bool) {
 	if covered, sameNormal := coplanarCover(f, sf.point, others); covered {
 		return sf, coplanarKeep(op, isB, sameNormal)
 	}
-	if !keep(op, isB, insideSolid(other, sf.point)) {
+	if !keep(op, isB, other.inside(sf.point)) {
 		return sf, false
 	}
 	if op == Difference && isB {
