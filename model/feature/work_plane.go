@@ -21,11 +21,24 @@ import (
 const defaultOriginPlaneSize = 5.0
 
 // planeDefinition computes a work plane from its references. Concrete kinds capture the
-// references + parameters; eval resolves the references through the work resolver.
+// references + parameters; eval resolves the references through the work resolver. The
+// redefine half (redefineSlots/editableScalars/snapshotState) lives on the same interface so
+// create and redefine share one dispatch: a kind that can be created but not re-edited is a
+// compile error, not a greyed Edit entry (#1634, audit I11; implementations in
+// work_plane_redefine.go).
 type planeDefinition interface {
 	kindName() string
 	refs() []WorkRef
 	eval(r workResolver) (sketch.Plane, error)
+	// redefineSlots returns the definition's re-pickable reference inputs in display order
+	// (each wired through w.slot so a rebind is validated); nil when it has none.
+	redefineSlots(w *WorkPlane) []WorkRefSlot
+	// editableScalars returns the definition's editable scalar inputs (offset distance,
+	// swing angle); nil when it has none.
+	editableScalars() []EditableParam
+	// snapshotState captures the definition's current inputs and returns the closure that
+	// restores them (an edit's Cancel); a no-op for the grounded kinds.
+	snapshotState() func()
 }
 
 // fixedPlaneDef is a grounded plane (an origin plane): fixed geometry, no references.
