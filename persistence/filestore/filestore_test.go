@@ -5,6 +5,7 @@ package filestore
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -52,7 +53,11 @@ func TestFileStoreCorruptYAMLNamesThePath(t *testing.T) {
 	if err == nil || found {
 		t.Fatalf("Load(corrupt): found=%v err=%v, want an error", found, err)
 	}
-	if !strings.Contains(err.Error(), path) {
+	// The store names the path with %q, which escapes the backslashes in a Windows path,
+	// so the raw path is not a byte-for-byte substring there; compare against the same
+	// quoted form (minus its surrounding quotes) so the assertion holds cross-platform.
+	quoted := strconv.Quote(path)
+	if !strings.Contains(err.Error(), quoted[1:len(quoted)-1]) {
 		t.Errorf("corrupt-file error %q does not name the offending path %q", err, path)
 	}
 }
