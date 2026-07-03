@@ -13,13 +13,13 @@ import (
 // the external client-application registry (M05-F01: #245, #251, #252).
 func (r *Router) registerAddInHandlers() {
 	r.readOnly(wire.MethodAddInsList, listAddIns)
-	r.readOnly(wire.MethodAddInsGet, getAddIn)
-	r.readOnly(wire.MethodAddInsActivate, activateAddIn)
-	r.readOnly(wire.MethodAddInsDeactivate, deactivateAddIn)
-	r.readOnly(wire.MethodAddInsSetLoadBehavior, setAddInLoadBehavior)
-	r.readOnly(wire.MethodAddInsCallAutomation, callAddInAutomation)
-	r.readOnly(wire.MethodClientAppsRegister, registerClientApp)
-	r.readOnly(wire.MethodClientAppsUnregister, unregisterClientApp)
+	r.readOnly(wire.MethodAddInsGet, typed(getAddIn))
+	r.readOnly(wire.MethodAddInsActivate, typed(activateAddIn))
+	r.readOnly(wire.MethodAddInsDeactivate, typed(deactivateAddIn))
+	r.readOnly(wire.MethodAddInsSetLoadBehavior, typed(setAddInLoadBehavior))
+	r.readOnly(wire.MethodAddInsCallAutomation, typed(callAddInAutomation))
+	r.readOnly(wire.MethodClientAppsRegister, typed(registerClientApp))
+	r.readOnly(wire.MethodClientAppsUnregister, typed(unregisterClientApp))
 	r.readOnly(wire.MethodClientAppsList, listClientApps)
 }
 
@@ -40,94 +40,66 @@ func listAddIns(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
 }
 
 // getAddIn returns one registry entry by id (wire.MethodAddInsGet).
-func getAddIn(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var ref wire.AddInRefArgs
-	if err := decode(args, &ref); err != nil {
-		return nil, err
-	}
-	info, err := s.AddIns().Describe(ref.ID)
+func getAddIn(s *app.Session, in wire.AddInRefArgs) (wire.AddInInfo, error) {
+	info, err := s.AddIns().Describe(in.ID)
 	if err != nil {
-		return nil, err
+		return wire.AddInInfo{}, err
 	}
-	return json.Marshal(info)
+	return info, nil
 }
 
 // activateAddIn runs the add-in's activation (wire.MethodAddInsActivate).
-func activateAddIn(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var ref wire.AddInRefArgs
-	if err := decode(args, &ref); err != nil {
-		return nil, err
+func activateAddIn(s *app.Session, in wire.AddInRefArgs) (wire.OKResult, error) {
+	if err := s.AddIns().Activate(s, in.ID); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.AddIns().Activate(s, ref.ID); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
 // deactivateAddIn runs the add-in's shutdown (wire.MethodAddInsDeactivate).
-func deactivateAddIn(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var ref wire.AddInRefArgs
-	if err := decode(args, &ref); err != nil {
-		return nil, err
+func deactivateAddIn(s *app.Session, in wire.AddInRefArgs) (wire.OKResult, error) {
+	if err := s.AddIns().Deactivate(s, in.ID); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.AddIns().Deactivate(s, ref.ID); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
 // setAddInLoadBehavior persists when the host activates the add-in on startup
 // (wire.MethodAddInsSetLoadBehavior).
-func setAddInLoadBehavior(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.SetAddInLoadBehaviorArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func setAddInLoadBehavior(s *app.Session, in wire.SetAddInLoadBehaviorArgs) (wire.OKResult, error) {
+	if err := s.AddIns().SetLoadBehavior(in.ID, in.LoadBehavior); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.AddIns().SetLoadBehavior(req.ID, req.LoadBehavior); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
 // callAddInAutomation routes a call to another add-in's automation surface
 // (wire.MethodAddInsCallAutomation).
-func callAddInAutomation(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.CallAddInAutomationArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
-	}
-	out, err := s.AddIns().CallAutomation(req.ID, req.Method, req.Args)
+func callAddInAutomation(s *app.Session, in wire.CallAddInAutomationArgs) (wire.CallAddInAutomationResult, error) {
+	out, err := s.AddIns().CallAutomation(in.ID, in.Method, in.Args)
 	if err != nil {
-		return nil, err
+		return wire.CallAddInAutomationResult{}, err
 	}
-	return json.Marshal(wire.CallAddInAutomationResult{Result: out})
+	return wire.CallAddInAutomationResult{Result: out}, nil
 }
 
 // registerClientApp announces an external client application
 // (wire.MethodClientAppsRegister).
-func registerClientApp(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.RegisterClientApplicationArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
-	}
-	id, err := s.ClientApps().Register(req.Name)
+func registerClientApp(s *app.Session, in wire.RegisterClientApplicationArgs) (wire.RegisterClientApplicationResult, error) {
+	id, err := s.ClientApps().Register(in.Name)
 	if err != nil {
-		return nil, err
+		return wire.RegisterClientApplicationResult{}, err
 	}
-	return json.Marshal(wire.RegisterClientApplicationResult{ID: id})
+	return wire.RegisterClientApplicationResult{ID: id}, nil
 }
 
 // unregisterClientApp removes an external client application
 // (wire.MethodClientAppsUnregister).
-func unregisterClientApp(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.UnregisterClientApplicationArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func unregisterClientApp(s *app.Session, in wire.UnregisterClientApplicationArgs) (wire.OKResult, error) {
+	if err := s.ClientApps().Unregister(in.ID); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.ClientApps().Unregister(req.ID); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
 // listClientApps returns the registered external clients (wire.MethodClientAppsList).
