@@ -157,7 +157,7 @@ func (t *SheetMetalLoftedFlangeTool) AcceptedKinds() []SelectionKind {
 }
 
 // Picks reports the picked regions for the unified highlight.
-func (t *SheetMetalLoftedFlangeTool) Picks() []Selectable { return profileSelectables(t.profiles) }
+func (t *SheetMetalLoftedFlangeTool) Picks() []Selectable { return selectables(t.profiles) }
 func (t *SheetMetalLoftedFlangeTool) Pick(_ *Session, sel Selectable) {
 	if p, ok := sel.(ProfileHandle); ok && len(t.profiles) < 2 {
 		t.profiles = append(t.profiles, p)

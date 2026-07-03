@@ -32,7 +32,7 @@ func TestInWindowSketchPointProvenanceFollowsCloud(t *testing.T) {
 
 	s := framedSession()
 	path, peak := flatScanNearXY(t) // reuses the grid+peak scan from the sketch-point shot test
-	pc, err := s.AttachPointCloud("Flat", path)
+	pc, _, err := s.AttachPointCloud("Flat", path)
 	if err != nil {
 		t.Fatalf("attach scan: %v", err)
 	}

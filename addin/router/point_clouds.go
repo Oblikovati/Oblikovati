@@ -46,7 +46,9 @@ func attachPointCloud(s *app.Session, raw json.RawMessage) (json.RawMessage, err
 	if err := decode(raw, &in); err != nil {
 		return nil, err
 	}
-	pc, err := s.AttachPointCloud(in.Name, in.FullFileName)
+	// Per-record decode warnings (#1646) are not yet surfaced over the wire: PointCloudInfo has
+	// no warnings slot (an api/wire DTO addition in the Apache-2.0 sibling repo).
+	pc, _, err := s.AttachPointCloud(in.Name, in.FullFileName)
 	if err != nil {
 		return nil, fmt.Errorf("pointClouds.attach: %w", err)
 	}

@@ -35,7 +35,7 @@ func (t *FaceFilletTool) Start(*Session) {}
 func (t *FaceFilletTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
 
 // Picks reports every picked face for the unified highlight.
-func (t *FaceFilletTool) Picks() []Selectable { return faceSelectables(t.Faces()) }
+func (t *FaceFilletTool) Picks() []Selectable { return selectables(t.Faces()) }
 
 // Pick appends the clicked face to the active set, ignoring a face already in either set.
 func (t *FaceFilletTool) Pick(_ *Session, sel Selectable) {

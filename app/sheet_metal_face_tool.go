@@ -31,7 +31,7 @@ func (t *SheetMetalFaceTool) Start(*Session) {}
 func (t *SheetMetalFaceTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectProfile} }
 
 // Picks reports the picked regions for the unified highlight.
-func (t *SheetMetalFaceTool) Picks() []Selectable { return profileSelectables(t.profiles) }
+func (t *SheetMetalFaceTool) Picks() []Selectable { return selectables(t.profiles) }
 
 // Pick captures the clicked profile (a single region; a re-pick replaces it).
 func (t *SheetMetalFaceTool) Pick(_ *Session, sel Selectable) {

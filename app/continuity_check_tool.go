@@ -39,7 +39,7 @@ func (t *ContinuityCheckTool) Start(*Session) {}
 func (t *ContinuityCheckTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectEdge} }
 
 // Picks reports the picked edge for the unified highlight.
-func (t *ContinuityCheckTool) Picks() []Selectable { return edgeSelectables(t.Edges()) }
+func (t *ContinuityCheckTool) Picks() []Selectable { return selectables(t.Edges()) }
 
 // Edges returns the picked edge (one or none).
 func (t *ContinuityCheckTool) Edges() []EdgeHandle {

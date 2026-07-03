@@ -44,7 +44,7 @@ func (t *AssemblyConstraintTool) Start(*Session) {}
 func (t *AssemblyConstraintTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
 
 // Picks reports the picked component faces for the unified highlight.
-func (t *AssemblyConstraintTool) Picks() []Selectable { return faceSelectables(t.faces) }
+func (t *AssemblyConstraintTool) Picks() []Selectable { return selectables(t.faces) }
 
 // Pick appends a picked face until the constraint has all the inputs it needs.
 func (t *AssemblyConstraintTool) Pick(_ *Session, sel Selectable) {

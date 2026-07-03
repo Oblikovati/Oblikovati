@@ -41,7 +41,7 @@ func (t *BossTool) Start(*Session) {}
 func (t *BossTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
 
 // Picks reports the placement face for the unified highlight.
-func (t *BossTool) Picks() []Selectable { return faceSelectables(t.Faces()) }
+func (t *BossTool) Picks() []Selectable { return selectables(t.Faces()) }
 
 // Pick captures the planar face the stud grows from.
 func (t *BossTool) Pick(_ *Session, sel Selectable) {
@@ -298,7 +298,7 @@ func (t *DirectEditTool) Start(*Session) {}
 func (t *DirectEditTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
 
 // Picks reports the picked faces for the unified highlight.
-func (t *DirectEditTool) Picks() []Selectable { return faceSelectables(t.faces) }
+func (t *DirectEditTool) Picks() []Selectable { return selectables(t.faces) }
 
 // Pick collects the faces the operation acts on.
 func (t *DirectEditTool) Pick(_ *Session, sel Selectable) {

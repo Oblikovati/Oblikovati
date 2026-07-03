@@ -51,7 +51,7 @@ func (t *ProjectGeometryTool) AcceptedKinds() []SelectionKind {
 
 // Picks reports every picked reference for the unified highlight.
 func (t *ProjectGeometryTool) Picks() []Selectable {
-	picks := append(edgeSelectables(t.edges), vertexSelectables(t.vertices)...)
+	picks := append(selectables(t.edges), selectables(t.vertices)...)
 	for _, h := range t.workPoints {
 		picks = append(picks, h)
 	}

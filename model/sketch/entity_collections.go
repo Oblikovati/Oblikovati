@@ -8,10 +8,31 @@ import "oblikovati.org/math"
 // creates the entity (minting its shared points), registers it with the sketch, and
 // returns it. They mirror COM's Lines/Arcs/… Add overloads.
 
+// entityList is the shared storage core the typed factory collections embed, so each
+// collection carries only its Add* factories (#1656). Item is deliberately UNGUARDED
+// (panics out of range) — these are internal collections indexed by trusted callers;
+// the nil-guarded shape belongs to the contract-facing views (G7, #1655).
+type entityList[T comparable] struct{ items []T }
+
+func (l *entityList[T]) Count() int   { return len(l.items) }
+func (l *entityList[T]) Item(i int) T { return l.items[i] }
+func (l *entityList[T]) append(x T)   { l.items = append(l.items, x) }
+func (l *entityList[T]) remove(x T)   { l.items = removeItem(l.items, x) }
+
+// removeItem drops the first occurrence of x from xs (used by the collections' remove).
+func removeItem[T comparable](xs []T, x T) []T {
+	for i, v := range xs {
+		if v == x {
+			return append(xs[:i], xs[i+1:]...)
+		}
+	}
+	return xs
+}
+
 // Lines creates and tracks line segments.
 type Lines struct {
-	s     *Sketch
-	items []*Line
+	s *Sketch
+	entityList[*Line]
 }
 
 // AddByTwoPoints creates a line between two new endpoints at the given positions.
@@ -24,14 +45,9 @@ func (c *Lines) AddByTwoPoints(a, b math.Point2) *Line {
 func (c *Lines) Add(a, b *Point) *Line {
 	l := &Line{entityBase: newEntity(), A: a, B: b}
 	c.s.add(l)
-	c.items = append(c.items, l)
+	c.append(l)
 	return l
 }
-
-// Count returns the number of lines; Item returns the i-th.
-func (c *Lines) Count() int       { return len(c.items) }
-func (c *Lines) Item(i int) *Line { return c.items[i] }
-func (c *Lines) remove(l *Line)   { c.items = removeItem(c.items, l) }
 
 // Centerlines returns the sketch's centerline lines (axes for revolve/mirror/symmetry).
 func (s *Sketch) Centerlines() []*Line {
@@ -44,20 +60,10 @@ func (s *Sketch) Centerlines() []*Line {
 	return out
 }
 
-// removeItem drops the first occurrence of x from xs (used by the collections' remove).
-func removeItem[T comparable](xs []T, x T) []T {
-	for i, v := range xs {
-		if v == x {
-			return append(xs[:i], xs[i+1:]...)
-		}
-	}
-	return xs
-}
-
 // Circles creates and tracks circles.
 type Circles struct {
-	s     *Sketch
-	items []*Circle
+	s *Sketch
+	entityList[*Circle]
 }
 
 // AddByCenterRadius creates a circle from a new center point and a radius.
@@ -71,19 +77,14 @@ func (c *Circles) AddByCenterRadius(center math.Point2, radius math.Scalar) *Cir
 func (c *Circles) Add(center *Point, radius math.Scalar) *Circle {
 	circ := &Circle{entityBase: newEntity(), Center: center, Radius: radius}
 	c.s.add(circ)
-	c.items = append(c.items, circ)
+	c.append(circ)
 	return circ
 }
 
-// Count returns the number of circles; Item returns the i-th.
-func (c *Circles) Count() int         { return len(c.items) }
-func (c *Circles) Item(i int) *Circle { return c.items[i] }
-func (c *Circles) remove(x *Circle)   { c.items = removeItem(c.items, x) }
-
 // Arcs creates and tracks arcs.
 type Arcs struct {
-	s     *Sketch
-	items []*Arc
+	s *Sketch
+	entityList[*Arc]
 }
 
 // AddByCenterStartEnd creates an arc from a center and two endpoints.
@@ -103,19 +104,14 @@ func (c *Arcs) Add(center, start, end *Point, ccw bool) *Arc {
 	}
 	a.circularity = newArcCircularity(a) // keep End on the circle (#1419)
 	c.s.add(a)
-	c.items = append(c.items, a)
+	c.append(a)
 	return a
 }
 
-// Count returns the number of arcs; Item returns the i-th.
-func (c *Arcs) Count() int      { return len(c.items) }
-func (c *Arcs) Item(i int) *Arc { return c.items[i] }
-func (c *Arcs) remove(a *Arc)   { c.items = removeItem(c.items, a) }
-
 // Ellipses creates and tracks ellipses.
 type Ellipses struct {
-	s     *Sketch
-	items []*Ellipse
+	s *Sketch
+	entityList[*Ellipse]
 }
 
 // Add creates an ellipse from a center, major-axis direction, and the two radii.
@@ -133,20 +129,14 @@ func (c *Ellipses) AddWithCenter(center *Point, majorAxis math.Vector2, majorR, 
 		MinorRadius: minorR,
 	}
 	c.s.add(e)
-	c.items = append(c.items, e)
+	c.append(e)
 	return e
 }
 
-// Count returns the number of ellipses; Item returns the i-th.
-func (c *Ellipses) remove(x *Ellipse) { c.items = removeItem(c.items, x) }
-
-func (c *Ellipses) Count() int          { return len(c.items) }
-func (c *Ellipses) Item(i int) *Ellipse { return c.items[i] }
-
 // EllipticalArcs creates and tracks elliptical arcs.
 type EllipticalArcs struct {
-	s     *Sketch
-	items []*EllipticalArc
+	s *Sketch
+	entityList[*EllipticalArc]
 }
 
 // Add creates an elliptical arc from a center, major-axis direction, the two radii, and
@@ -167,20 +157,14 @@ func (c *EllipticalArcs) AddWithCenter(center *Point, majorAxis math.Vector2, ma
 		EndAngle:    end,
 	}
 	c.s.add(e)
-	c.items = append(c.items, e)
+	c.append(e)
 	return e
 }
 
-// Count returns the number of elliptical arcs; Item returns the i-th.
-func (c *EllipticalArcs) remove(x *EllipticalArc) { c.items = removeItem(c.items, x) }
-
-func (c *EllipticalArcs) Count() int                { return len(c.items) }
-func (c *EllipticalArcs) Item(i int) *EllipticalArc { return c.items[i] }
-
 // Splines creates and tracks splines.
 type Splines struct {
-	s     *Sketch
-	items []*Spline
+	s *Sketch
+	entityList[*Spline]
 }
 
 // AddByPoints creates a fit-point spline through the given positions.
@@ -206,20 +190,14 @@ func (c *Splines) add(pts []math.Point2, closed, fit bool) *Spline {
 func (c *Splines) AddWithPoints(points []*Point, closed, fit bool) *Spline {
 	sp := &Spline{entityBase: newEntity(), Points: points, Closed: closed, fit: fit}
 	c.s.add(sp)
-	c.items = append(c.items, sp)
+	c.append(sp)
 	return sp
 }
 
-// Count returns the number of splines; Item returns the i-th.
-func (c *Splines) remove(x *Spline) { c.items = removeItem(c.items, x) }
-
-func (c *Splines) Count() int         { return len(c.items) }
-func (c *Splines) Item(i int) *Spline { return c.items[i] }
-
 // Points creates and tracks standalone sketch points.
 type Points struct {
-	s     *Sketch
-	items []*Point
+	s *Sketch
+	entityList[*Point]
 }
 
 // Add creates a standalone point at pos. Unlike curve endpoints, it appears in the
@@ -227,12 +205,6 @@ type Points struct {
 func (c *Points) Add(pos math.Point2) *Point {
 	p := c.s.newPoint(pos)
 	c.s.add(p)
-	c.items = append(c.items, p)
+	c.append(p)
 	return p
 }
-
-// Count returns the number of standalone points; Item returns the i-th.
-func (c *Points) remove(x *Point) { c.items = removeItem(c.items, x) }
-
-func (c *Points) Count() int        { return len(c.items) }
-func (c *Points) Item(i int) *Point { return c.items[i] }
