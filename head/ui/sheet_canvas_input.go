@@ -63,7 +63,10 @@ func handlePlacement(s *app.Session, pt app.DrawingPlacementTool, face rect, hov
 		pt.SetPlacement(cx, cy)
 	}
 	drawPreviewAt(face, pt.PreviewCurves(s), cx, cy)
-	if hovered && native.IsItemClicked(native.MouseLeft) {
+	// The sheet-canvas commit is a click gesture, not an OK button, but it honors the same sick-config
+	// gate as drawCommitCancelButtons: a click on a blocked config is ignored rather than silently
+	// no-op'd inside s.OK() (M40 audit S7, #1642).
+	if hovered && native.IsItemClicked(native.MouseLeft) && s.CommitBlockedReason() == "" {
 		_ = s.OK() // commit the tool's view at the tracked placement
 	}
 }

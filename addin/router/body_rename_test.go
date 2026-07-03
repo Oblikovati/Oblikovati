@@ -32,6 +32,30 @@ func TestBodyRenameSetsAndReverts(t *testing.T) {
 	}
 }
 
+// TestBodyRenameUndoable pins the S6 acceptance (#1641): a body rename over the wire is a real undo
+// step — the metadata rides the recipe snapshot — so Undo clears it and Redo restores it.
+func TestBodyRenameUndoable(t *testing.T) {
+	r, s := boxBodySession(t)
+	call(t, r, s, "body.rename", `{"bodyIndex":0,"name":"Housing"}`, &wire.BodyInfoResult{})
+
+	if err := s.Undo(); err != nil {
+		t.Fatalf("undo: %v", err)
+	}
+	var list wire.BodyListResult
+	call(t, r, s, "body.list", `{}`, &list)
+	if list.Bodies[0].Name != "Solid1" {
+		t.Errorf("undo should revert the rename, got %q want the Solid1 default", list.Bodies[0].Name)
+	}
+
+	if err := s.Redo(); err != nil {
+		t.Fatalf("redo: %v", err)
+	}
+	call(t, r, s, "body.list", `{}`, &list)
+	if list.Bodies[0].Name != "Housing" {
+		t.Errorf("redo should restore the rename, got %q want Housing", list.Bodies[0].Name)
+	}
+}
+
 // TestBodyRenameSurvivesRecompute: a stored body name is keyed by the persistent reference key,
 // so it survives a part recompute (the key is stable across rebuilds).
 func TestBodyRenameSurvivesRecompute(t *testing.T) {

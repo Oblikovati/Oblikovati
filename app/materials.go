@@ -90,7 +90,7 @@ func (s *Session) partSurfaceLookup(part *compdef.PartComponentDefinition) rende
 	look := material.MergedLookup{Embedded: part.Assets(), Catalog: s.Materials()}
 	assign := part.Assignments()
 	return func(b *topo.Body) renderer.Surface {
-		if name, ok := s.bodyColorStyles[string(b.ReferenceKey())]; ok {
+		if name, ok := s.BodyColorStyle(string(b.ReferenceKey())); ok {
 			if cs, found := s.styles.ByName(name); found {
 				return styleSurface(cs)
 			}

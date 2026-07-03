@@ -66,15 +66,11 @@ func refreshFeatureEditUI(s *app.Session, nParams int) {
 	featureEditUI.editing = s.EditingFeatureName()
 }
 
+// drawFeatureEditButtons routes the edit dialog's OK/Cancel through the shared commit row so the
+// sick-config gate disables OK and shows the amber reason exactly as creation dialogs do (S7,
+// #1642). It reseeds the field cache on either commit or cancel (a sick OK keeps the dialog open).
 func drawFeatureEditButtons(s *app.Session) {
-	if native.Button("OK") {
-		if err := s.OK(); err == nil { // a sick result keeps the dialog open
-			featureEditUI.editing = ""
-		}
-	}
-	native.SameLine()
-	if native.Button("Cancel") {
-		s.CancelTool()
+	if out := drawCommitCancelButtons(s, true); out.OKCommitted || out.Cancelled {
 		featureEditUI.editing = ""
 	}
 }

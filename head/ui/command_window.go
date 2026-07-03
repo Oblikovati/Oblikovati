@@ -117,15 +117,9 @@ func drawCommandControls(s *app.Session, sb app.StatusBar) {
 		return
 	}
 	if sb.ToolActive {
-		native.BeginDisabled(!sb.CanCommit)
-		if native.Button("OK") {
-			_ = s.OK() // a failed commit keeps the tool open (Inventor behavior)
-		}
-		native.EndDisabled()
-		native.SameLine()
-		if native.Button("Cancel") {
-			s.CancelTool()
-		}
+		// Route through the shared commit row so a sick-but-ready config disables OK and shows the
+		// amber reason here too, matching every creation dialog (M40 audit S7, #1642).
+		drawCommitCancelButtons(s, sb.CanCommit)
 		native.SameLine()
 	}
 	native.Text(selectionText(sb.SelectionCount))

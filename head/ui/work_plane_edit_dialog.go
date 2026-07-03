@@ -102,15 +102,10 @@ func drawWorkPlaneRefSlots(s *app.Session, n int) {
 	}
 }
 
+// drawWorkPlaneEditButtons routes the work-plane edit OK/Cancel through the shared commit row (S7,
+// #1642), like the feature edit dialog, so the sick-config gate owns every tool-commit button.
 func drawWorkPlaneEditButtons(s *app.Session) {
-	if native.Button("OK") {
-		if err := s.OK(); err == nil { // a sick result keeps the dialog open
-			workPlaneEditUI.editing = ""
-		}
-	}
-	native.SameLine()
-	if native.Button("Cancel") {
-		s.CancelTool()
+	if out := drawCommitCancelButtons(s, true); out.OKCommitted || out.Cancelled {
 		workPlaneEditUI.editing = ""
 	}
 }

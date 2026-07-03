@@ -30,11 +30,16 @@ func (s *Session) DisplaySettings(id doc.ID) display.Settings {
 	return display.DefaultSettings()
 }
 
-// SetDisplaySettings stores a document's per-document display settings (Document 0 ⇒ active).
+// SetDisplaySettings stores a document's per-document display settings (Document 0 ⇒ active) and
+// records it as an undo step when it targets the active document (S6 #1641).
 func (s *Session) SetDisplaySettings(id doc.ID, set display.Settings) {
-	if d := s.documentForDisplay(id); d != nil {
-		d.SetDisplaySettings(set)
+	d := s.documentForDisplay(id)
+	if d == nil {
+		return
 	}
+	s.beginMetadataEdit(d)
+	d.SetDisplaySettings(set)
+	s.recordMetadataEdit(d, "Display Settings")
 }
 
 // OpenDisplaySettings opens the Display Settings dialog (M16-F07 #643).

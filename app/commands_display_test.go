@@ -2,7 +2,22 @@
 
 package app
 
-import "testing"
+import (
+	"testing"
+
+	"oblikovati.org/model/display"
+	"oblikovati.org/model/doc"
+)
+
+// TestSetDisplaySettingsUnknownDocumentIsNoOp covers the guard branch: targeting a document id that
+// no open document owns is a safe no-op (documentForDisplay returns nil).
+func TestSetDisplaySettingsUnknownDocumentIsNoOp(t *testing.T) {
+	s := NewSession()
+	s.SetDisplaySettings(doc.ID(999999), display.DefaultSettings()) // no such document → returns early
+	if s.DisplaySettings(doc.ID(999999)).BackgroundType != display.DefaultSettings().BackgroundType {
+		t.Error("an unknown document id should fall back to default display settings")
+	}
+}
 
 // TestDisplaySettingsCommandOpensPanel checks the View-tab Display Settings button is present
 // and its command opens the dialog.
