@@ -13,8 +13,8 @@ import (
 	"path/filepath"
 
 	"oblikovati.org/api/types"
-	"oblikovati.org/persistence/yamlcodec"
 	"oblikovati.org/userconfig"
+	"oblikovati.org/yamlcodec"
 )
 
 // behaviorsFile is the on-disk document: add-in id → stable behavior name

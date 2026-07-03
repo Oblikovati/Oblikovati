@@ -13,8 +13,8 @@ import (
 	"path/filepath"
 
 	"oblikovati.org/api/types"
-	"oblikovati.org/persistence/yamlcodec"
 	"oblikovati.org/userconfig"
+	"oblikovati.org/yamlcodec"
 )
 
 // General is application-level behavior: what opens at launch (read by the head's

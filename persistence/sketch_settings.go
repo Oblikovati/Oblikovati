@@ -4,7 +4,7 @@ package persistence
 
 import (
 	"oblikovati.org/api/types"
-	"oblikovati.org/persistence/yamlcodec"
+	"oblikovati.org/yamlcodec"
 )
 
 // toCodecSketchSettings converts the per-document sketch settings into their on-disk record (#147)

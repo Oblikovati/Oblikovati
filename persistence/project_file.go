@@ -10,7 +10,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/model/doc"
-	"oblikovati.org/persistence/yamlcodec"
+	"oblikovati.org/yamlcodec"
 )
 
 // Design-project file (.opj) read/write — the basic, forward-looking handling for

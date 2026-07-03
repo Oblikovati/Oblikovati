@@ -11,8 +11,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"oblikovati.org/persistence/yamlcodec"
 	"oblikovati.org/userconfig"
+	"oblikovati.org/yamlcodec"
 )
 
 // Memory is the remembered choices: suppressed balloon-tip ids and prompt answers

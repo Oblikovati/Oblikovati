@@ -12,9 +12,9 @@ import (
 // The edge allowlist (#1623, audit B12): every import between first-party package trees
 // must be declared here, so a new dependency edge is an explicit architecture decision
 // (a row in this table, reviewed) instead of a convenient import nobody notices. The
-// table is seeded from the INTENDED architecture — the two edges the 2026-07 audit found
-// inverted are marked TODO with the issue that owns removing them, so the debt stays
-// visible where it is enforced.
+// table is seeded from the INTENDED architecture — the remaining edge the 2026-07 audit found
+// inverted is marked TODO with the issue that owns removing it, so the debt stays visible where
+// it is enforced (the model->persistence inversion was removed by B4 #1615).
 //
 // Granularity: one row per top-level tree (addin/* split per subpackage — the router's
 // allowances must not leak to the other add-in infrastructure). Direct imports are
@@ -25,17 +25,17 @@ import (
 var allowedTreeImports = map[string][]string{
 	// Domain (ADR-0014: pure, headless, cgo-free; also held by TestDomainPackagesAreGpuFree).
 	"kernel": {"api", "build", "math"},
-	"model": {"api", "build", "event", "kernel", "math", "solve",
-		// TODO(B4 #1615): INVERSION — the domain must not depend on the persistence
-		// layer; yamlcodec moves to a neutral leaf package, then this entry goes.
-		"persistence"},
+	// model -> yamlcodec: the domain serializes recipes/materials through the neutral YAML
+	// leaf (yamlcodec wraps yaml.v3 and imports nothing first-party), NOT the persistence
+	// layer — the B4 (#1615) inversion is gone. Held transitively by TestModelDoesNotImportPersistence.
+	"model": {"api", "build", "event", "kernel", "math", "solve", "yamlcodec"},
 	"math":  {},
 	"solve": {"math"},
 
 	// Application & orchestration.
 	"app": {"addincat", "api", "build", "clientgraphics", "command", "event", "kernel",
 		"math", "model", "osfont", "persistence", "renderer", "report", "scene", "theme",
-		"update", "userconfig"},
+		"update", "userconfig", "yamlcodec"},
 	"command": {"model"},
 	"event":   {},
 	// script -> math: the console editor clamps cursor/column indices with the shared
@@ -43,17 +43,20 @@ var allowedTreeImports = map[string][]string{
 	"script": {"addin/dispatch", "api", "app", "math"},
 
 	// Persistence & small leaves.
-	"persistence": {"api", "model", "userconfig"},
+	"persistence": {"api", "model", "userconfig", "yamlcodec"},
 	"userconfig":  {},
-	"build":       {},
-	"crcpost":     {},
-	"perf":        {},
-	"release":     {},
-	"report":      {"crcpost"},
-	"theme":       {"api", "persistence", "userconfig"},
-	"update":      {},
-	"usagestats":  {"crcpost", "persistence"},
-	"addincat":    {"persistence"},
+	// yamlcodec is the neutral YAML leaf (ADR-0020): it wraps gopkg.in/yaml.v3 and imports
+	// nothing first-party, so both the domain and persistence may depend on it (B4 #1615).
+	"yamlcodec":  {},
+	"build":      {},
+	"crcpost":    {},
+	"perf":       {},
+	"release":    {},
+	"report":     {"crcpost"},
+	"theme":      {"api", "persistence", "userconfig", "yamlcodec"},
+	"update":     {},
+	"usagestats": {"crcpost", "persistence"},
+	"addincat":   {"persistence"},
 	// osfont adapts host-installed fonts to the pure text model (model/text); the
 	// dependency points at the domain, never the reverse (ADR-0031).
 	"osfont": {"model"},

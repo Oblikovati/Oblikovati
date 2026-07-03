@@ -8,7 +8,7 @@ import (
 	"io/fs"
 	"sort"
 
-	"oblikovati.org/persistence/yamlcodec"
+	"oblikovati.org/yamlcodec"
 )
 
 // catalogFiles holds the shipped, read-only material catalog: one YAML file per category

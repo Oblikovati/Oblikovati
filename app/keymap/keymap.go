@@ -13,8 +13,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"oblikovati.org/persistence/yamlcodec"
 	"oblikovati.org/userconfig"
+	"oblikovati.org/yamlcodec"
 )
 
 // Customization is the user's binding overlay: only entries that differ from the
