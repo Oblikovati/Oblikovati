@@ -191,16 +191,10 @@ func combine(in Input, body *topo.Body, op ops.PartFeatureOperation) ([]*topo.Bo
 	}
 	// Otherwise re-facet any analytic curved face into a planar B-rep before the planar boolean — it hangs
 	// on a full periodic curved face it cannot consume (#129). A standalone primitive that is never
-	// combined keeps its analytic face for thread/chamfer/fillet. Faceting is PERMANENT — every
-	// downstream feature then operates on facets — so it is recorded as a defect, not done silently
-	// (#1601; the pre-facet here is why the inner boolean's own CSG-fallback diagnostic alone would
-	// miss this path: by the time ops.Boolean runs, the operands already look planar).
-	if hasCurvedFace(target) || hasCurvedFace(body) {
-		in.Diag.Recordf(ops.CodeBooleanAnalyticFaceted, diag.Defect,
-			"%s faceted analytic operand(s) for the planar boolean (no exact curved path applied): the result and all downstream features are polyhedral", op)
-	}
-	target = planarized(target, "combine-target")
-	body = planarized(body, "combine-tool")
+	// combined keeps its analytic face for thread/chamfer/fillet. Faceting is PERMANENT, so planarizedDiag
+	// records it as a defect rather than degrading silently (#1601, audit A5).
+	target = planarizedDiag(target, "combine-target", in.Diag)
+	body = planarizedDiag(body, "combine-tool", in.Diag)
 	res, err := ops.BooleanWithDiagnostics(op, target, body, in.Diag)
 	if err != nil {
 		return nil, err
