@@ -163,6 +163,18 @@ func subscribeModeling(bus *event.Bus, sink Sink) []event.Subscription {
 				Type: sketchEditEventType(e.Entered), Document: uint64(e.Document), Sketch: e.Sketch, Name: e.Name,
 			})
 		}),
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.ObjectRenamed) event.Outcome {
+			return relayJSON(sink, wire.ObjectRenamedEvent{
+				Type: wire.EventObjectRenamed, Document: uint64(e.Document), Kind: e.Kind,
+				Key: e.Key, OldName: e.OldName, NewName: e.NewName,
+			})
+		}),
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.PropertyChanged) event.Outcome {
+			return relayJSON(sink, wire.PropertyChangedEvent{
+				Type: wire.EventPropertyChanged, Document: uint64(e.Document), Kind: e.Kind,
+				Key: e.Key, Property: e.Property, OldValue: e.OldValue, NewValue: e.NewValue,
+			})
+		}),
 	}
 }
 
@@ -331,6 +343,7 @@ func relayJSON[E wire.BrowserNodeEvent | wire.DockableWindowChangedEvent |
 	wire.JointEventPayload | wire.ParameterChangedEvent |
 	wire.ModelChangedEvent | wire.PanelValueChangedEvent |
 	wire.FeatureLifecycleEvent | wire.SketchEditEvent |
+	wire.ObjectRenamedEvent | wire.PropertyChangedEvent |
 	wire.PanelReferencesChangedEvent | wire.TaskPanelClosedEvent](sink Sink, ev E) event.Outcome {
 	if b, err := json.Marshal(ev); err == nil {
 		sink(b)
