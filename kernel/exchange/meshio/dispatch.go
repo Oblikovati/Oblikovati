@@ -42,19 +42,32 @@ func ImportBody(format types.ExchangeFormat, data []byte, feat string, weldTol f
 	if err != nil {
 		return nil, nil, err
 	}
-	scaleRaw(&raw, opts.ImportScale(importFileUnitMM(format, data)))
-	return SolidOrSurface(raw, feat, weldTol)
+	fileUnitMM, unitWarns := importFileUnitMM(format, data)
+	scaleRaw(&raw, opts.ImportScale(fileUnitMM))
+	body, warns, err := SolidOrSurface(raw, feat, weldTol)
+	if err != nil {
+		return nil, nil, err
+	}
+	return body, append(unitWarns, warns...), nil
 }
 
-// importFileUnitMM is the millimetre size of the file's length unit on import:
-// STL/OBJ are unitless (millimetre convention); 3MF declares its unit, read here.
-func importFileUnitMM(format types.ExchangeFormat, data []byte) float64 {
-	if format == types.Format3MF {
-		if mm, ok := mmPer3MFUnit[read3MFUnit(data)]; ok {
-			return mm
-		}
+// importFileUnitMM is the millimetre size of the file's length unit on import, plus any
+// warning about how it was resolved: STL/OBJ are unitless (millimetre convention); 3MF
+// declares its unit, read here. An unrecognised (non-empty) 3MF unit spelling falls back to
+// millimetre WITH a warning so the user is not silently handed a wrong-scale mesh (#1638); an
+// absent unit is the 3MF spec default (millimetre) and warns nothing.
+func importFileUnitMM(format types.ExchangeFormat, data []byte) (float64, []string) {
+	if format != types.Format3MF {
+		return 1, nil // STL/OBJ are unitless — millimetre convention
 	}
-	return 1 // mm
+	unit := read3MFUnit(data)
+	if mm, ok := mmPer3MFUnit[unit]; ok {
+		return mm, nil
+	}
+	if unit == "" {
+		return 1, nil // absent unit → 3MF spec default is millimetre
+	}
+	return 1, []string{fmt.Sprintf("3MF declares unknown unit %q; imported as millimetres", unit)}
 }
 
 // ExportBody tessellates a body at the given resolution and encodes it in the given

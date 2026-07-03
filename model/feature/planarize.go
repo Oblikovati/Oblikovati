@@ -3,6 +3,7 @@
 package feature
 
 import (
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
@@ -67,6 +68,22 @@ func planarized(b *topo.Body, feat string) *topo.Body {
 		}
 	}
 	return b
+}
+
+// planarizedDiag is [planarized] that makes the analytic→facet degradation OBSERVABLE (#1601, audit
+// A5). Turning a body that carries an analytic curved face into a planar B-rep is PERMANENT — the
+// analytic surface is unrecoverable and every downstream feature (fillet, chamfer, thread, export)
+// then operates on facets — so it must ride on the feature as a Defect, never happen silently. Every
+// feature that facets an operand before a planar boolean (combine, patterns, full-round/face fillet)
+// routes through here, so no path can facet an analytic surface without a CodeBooleanAnalyticFaceted
+// diagnostic — the inner boolean's own CSG-fallback code cannot catch it, since by the time the
+// boolean runs the operand already looks planar. rec is nil-safe.
+func planarizedDiag(b *topo.Body, feat string, rec *diag.Recorder) *topo.Body {
+	if b != nil && hasCurvedFace(b) {
+		rec.Recordf(ops.CodeBooleanAnalyticFaceted, diag.Defect,
+			"%s faceted an analytic operand for the planar path: the result and every downstream feature is polyhedral", feat)
+	}
+	return planarized(b, feat)
 }
 
 // planarizeSimpleCylinder rebuilds a body that is exactly one analytic cylinder (1 geom.Cylinder side

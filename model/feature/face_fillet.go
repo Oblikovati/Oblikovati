@@ -76,7 +76,7 @@ func nonAdjacentFaceFilletBody(in Input, body *topo.Body, faceKeysA, faceKeysB [
 		return Output{}, fmt.Errorf("%s: the two face sets are not separated by a fillable gap "+
 			"(parallel or disjoint faces are not supported)", feat)
 	}
-	healed, err := ops.DeleteFaces(planarized(body, feat), gap)
+	healed, err := ops.DeleteFaces(planarizedDiag(body, feat, in.Diag), gap)
 	if err != nil {
 		return Output{}, fmt.Errorf("%s: healing the gap between the faces: %w", feat, err)
 	}
