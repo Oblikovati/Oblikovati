@@ -32,7 +32,7 @@ func SegmentCurve2dIntersection(seg LineSegment2d, c Curve2) []math.Point2 {
 		return float64(dir.Cross(seg.StartPoint.VectorTo(p)))
 	}
 	var out []math.Point2
-	for _, p := range curveSignedCrossings(c, side) {
+	for _, p := range curve2dLineCrossings(c, side) {
 		if t := projectOnSegment(seg, p); t >= 0 && t <= 1 {
 			out = append(out, p)
 		}
@@ -45,6 +45,16 @@ func SegmentCurve2dIntersection(seg LineSegment2d, c Curve2) []math.Point2 {
 func LineCurve2dIntersection(l Line2d, c Curve2) []math.Point2 {
 	side := func(p math.Point2) float64 {
 		return float64(l.Dir.AsVector().Cross(l.Origin.VectorTo(p)))
+	}
+	return curve2dLineCrossings(c, side)
+}
+
+// curve2dLineCrossings finds where the affine field side (a line/segment signed distance) meets c. A
+// B-spline routes through certified Bézier clipping so even-multiplicity tangential contacts are found
+// (#1608); every other curve type keeps the sign-change bracketing (its analytic pairs are exact).
+func curve2dLineCrossings(c Curve2, side func(math.Point2) float64) []math.Point2 {
+	if bs, ok := c.(BSplineCurve2d); ok {
+		return lineBSpline2dIntersection(side, bs)
 	}
 	return curveSignedCrossings(c, side)
 }
