@@ -32,7 +32,7 @@ func (Reader) ImportSolids(data []byte, opts exchange.TranslationOptions) ([]*to
 		return nil, nil, err
 	}
 	mmPerUnit, warns := unitScale(f.Graph)
-	bodies, bw, err := importAllBreps(f.Graph, opts.ImportScale(mmPerUnit))
+	bodies, bw, err := importAllBreps(f.Graph, opts.ImportScale(mmPerUnit), opts)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -51,11 +51,16 @@ func unitScale(g *part21.EntityGraph) (float64, []string) {
 	return scale, nil
 }
 
-// importAllBreps imports every solid and surface B-rep in the graph.
-func importAllBreps(g *part21.EntityGraph, scale float64) ([]*topo.Body, []string, error) {
+// importAllBreps imports every solid and surface B-rep in the graph, reporting one progress tick
+// per body and honouring a cancel between bodies (#1647).
+func importAllBreps(g *part21.EntityGraph, scale float64, opts exchange.TranslationOptions) ([]*topo.Body, []string, error) {
 	var bodies []*topo.Body
 	var warns []string
-	for _, shellID := range solidShellRefs(g) {
+	shells := solidShellRefs(g)
+	for i, shellID := range shells {
+		if err := opts.Report("solids", i, len(shells)); err != nil {
+			return nil, nil, err
+		}
 		body, w, err := topomap.SolidFromShell(g, shellID, true, scale, importFeature(shellID))
 		if err != nil {
 			return nil, nil, err

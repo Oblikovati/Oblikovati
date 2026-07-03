@@ -5,6 +5,7 @@ package pdf
 import (
 	"fmt"
 
+	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/exchange/drawing"
 )
 
@@ -32,6 +33,14 @@ func Decode(data []byte) (*drawing.Drawing, []string, error) {
 // xref-stream/object-stream PDF, or a structure with no pages); a page that decodes to no
 // geometry yields an empty drawing rather than an error.
 func DecodePages(data []byte) ([]*drawing.Drawing, []string, error) {
+	return DecodePagesWithProgress(data, exchange.TranslationOptions{})
+}
+
+// DecodePagesWithProgress is [DecodePages] threaded through the shared progress/cancel seam
+// (#1647): opts reports one tick per page and aborts the import when its ProgressFunc returns
+// cancel (the returned error wraps [exchange.ErrCancelled]). DecodePages is this call with a zero
+// options value.
+func DecodePagesWithProgress(data []byte, opts exchange.TranslationOptions) ([]*drawing.Drawing, []string, error) {
 	doc, err := newDocument(data)
 	if err != nil {
 		return nil, nil, err
@@ -43,6 +52,9 @@ func DecodePages(data []byte) ([]*drawing.Drawing, []string, error) {
 	drawings := make([]*drawing.Drawing, 0, len(pages))
 	var warns []string
 	for i, pg := range pages {
+		if perr := opts.Report("pages", i, len(pages)); perr != nil {
+			return drawings, warns, perr
+		}
 		ents, pageWarns := interpretPage(doc, pg)
 		warns = append(warns, prefixPageWarnings(i+1, pageWarns)...)
 		drawings = append(drawings, &drawing.Drawing{Units: drawing.INSMillimetres, Entities: ents})

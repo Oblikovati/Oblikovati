@@ -63,6 +63,21 @@ func readScaled(r PointReader, data []byte, opts exchange.TranslationOptions) ([
 	return points, warns, nil
 }
 
+// ReadScanWithProgress decodes a scan reporting progress and honouring cancel through the shared
+// options seam (#1647). It brackets the decode with a before/after tick so a first-call cancel
+// aborts before parsing potentially millions of records, and reports the final record count. The
+// no-progress [ReadScan] is the same call with a zero options value.
+func ReadScanWithProgress(filename string, data []byte, opts exchange.TranslationOptions) ([]math.Point3, error) {
+	if err := opts.Report("points", 0, 0); err != nil {
+		return nil, err
+	}
+	points, err := ReadScan(filename, data)
+	if err != nil {
+		return nil, err
+	}
+	return points, opts.Report("points", len(points), len(points))
+}
+
 // IsScanFile reports whether a path's extension is a 3D-scan point-cloud format handled by a
 // registered reader (.xyz/.pts/.asc/.txt/.ply/.e57/.las). The import flow routes such files to the
 // point-cloud attach path — the appropriate home for scan data — rather than the body/sketch
