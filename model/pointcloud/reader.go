@@ -49,8 +49,14 @@ func ReadScan(filename string, data []byte, opts exchange.TranslationOptions) ([
 // readScaled decodes with r and applies the single file→database unit factor to every point —
 // the one shared scaling seam for all registered readers (#1636), mirroring meshio's scaleRaw.
 func readScaled(r PointReader, data []byte, opts exchange.TranslationOptions) ([]math.Point3, []string, error) {
+	if err := opts.Report("points", 0, 0); err != nil { // #1647: honour a first-call cancel before decode
+		return nil, nil, err
+	}
 	points, warns, err := r.Read(data)
 	if err != nil {
+		return nil, nil, err
+	}
+	if err := opts.Report("points", len(points), len(points)); err != nil { // #1647: report the record count
 		return nil, nil, err
 	}
 	f := math.Scalar(opts.ImportScale(r.FileUnitMM()))
@@ -61,21 +67,6 @@ func readScaled(r PointReader, data []byte, opts exchange.TranslationOptions) ([
 		points[i] = math.P3(p.X*f, p.Y*f, p.Z*f)
 	}
 	return points, warns, nil
-}
-
-// ReadScanWithProgress decodes a scan reporting progress and honouring cancel through the shared
-// options seam (#1647). It brackets the decode with a before/after tick so a first-call cancel
-// aborts before parsing potentially millions of records, and reports the final record count. The
-// no-progress [ReadScan] is the same call with a zero options value.
-func ReadScanWithProgress(filename string, data []byte, opts exchange.TranslationOptions) ([]math.Point3, error) {
-	if err := opts.Report("points", 0, 0); err != nil {
-		return nil, err
-	}
-	points, err := ReadScan(filename, data)
-	if err != nil {
-		return nil, err
-	}
-	return points, opts.Report("points", len(points), len(points))
 }
 
 // IsScanFile reports whether a path's extension is a 3D-scan point-cloud format handled by a

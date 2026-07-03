@@ -46,7 +46,7 @@ func TestAttachPointCloudFarFromOriginFitsCamera(t *testing.T) {
 	s, _ := newPartWithSquare(t, 2)
 	path := writeScan(t, "100000 100000 100000\n100010 100000 100000\n100000 100010 100000\n")
 
-	if _, err := s.AttachPointCloud("FarScan", path); err != nil {
+	if _, _, err := s.AttachPointCloud("FarScan", path); err != nil {
 		t.Fatalf("AttachPointCloud: %v", err)
 	}
 	if !s.TakeFitViewRequest() {
@@ -77,7 +77,7 @@ func TestAttachEmptyScanDoesNotFit(t *testing.T) {
 	s, _ := newPartWithSquare(t, 2)
 	path := writeScan(t, "# only a comment, no points\n")
 
-	if _, err := s.AttachPointCloud("EmptyScan", path); err != nil {
+	if _, _, err := s.AttachPointCloud("EmptyScan", path); err != nil {
 		t.Fatalf("AttachPointCloud: %v", err)
 	}
 	if s.TakeFitViewRequest() {
