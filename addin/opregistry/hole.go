@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
@@ -16,18 +17,6 @@ import (
 // The hole operation — a subtractive drilled hole on a picked face, referenced by key
 // (get_reference_keys). With a depth it is a blind drilled hole; without one it drills through
 // all. Counterbore/countersink/tapped variants follow the same shape (HoleFeatures.Add*).
-
-type holeArgs struct {
-	FaceRef         string `json:"faceRef"`
-	Type            string `json:"type,omitempty"` // drilled (default) | counterbore | countersink | tapped
-	Diameter        string `json:"diameter"`
-	Depth           string `json:"depth,omitempty"` // omit (drilled) ⇒ through-all
-	CounterDiameter string `json:"counterDiameter,omitempty"`
-	CounterDepth    string `json:"counterDepth,omitempty"`
-	SinkDiameter    string `json:"sinkDiameter,omitempty"`
-	IncludedAngle   string `json:"includedAngle,omitempty"`
-	Designation     string `json:"designation,omitempty"`
-}
 
 const holeSchema = `{
   "type": "object",
@@ -46,7 +35,7 @@ const holeSchema = `{
 }`
 
 func holeDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "hole", Summary: "Drill a hole into a picked face: drilled (blind/through), counterbore, countersink, or tapped.", Schema: json.RawMessage(holeSchema), Apply: applyHole}
+	return &OperationDescriptor{Name: featureargs.KindHole, Summary: "Drill a hole into a picked face: drilled (blind/through), counterbore, countersink, or tapped.", Schema: json.RawMessage(holeSchema), Apply: applyHole}
 }
 
 func applyHole(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -54,7 +43,7 @@ func applyHole(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	var in holeArgs
+	var in featureargs.Hole
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
@@ -75,7 +64,7 @@ func applyHole(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 // buildHole dispatches on the hole type, resolving the extra dimensions each variant needs.
 //
 //nolint:funlen // one-case-per-hole-type dispatch switch (drilled/counterbore/countersink/tapped); length is the dispatch, like the serialize codecs.
-func buildHole(part *compdef.PartComponentDefinition, in holeArgs, dia func() float64) (*feature.PartFeature, error) {
+func buildHole(part *compdef.PartComponentDefinition, in featureargs.Hole, dia func() float64) (*feature.PartFeature, error) {
 	holes := feature.NewHoleFeatures(part.Features())
 	key := []byte(in.FaceRef)
 	switch in.Type {

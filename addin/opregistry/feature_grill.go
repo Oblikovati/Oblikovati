@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/model/feature"
 )
@@ -14,12 +15,6 @@ import (
 // Grill ventilation feature (M20-F10 #863): cut a vent through a thin wall, leaving the
 // boundary profile's inner-loop structure (ribs/spars/islands) bridging it. The structure is
 // drawn as holes of the boundary profile in the sketch.
-
-type grillArgs struct {
-	SketchIndex int     `json:"sketchIndex"`
-	Boundaries  []int   `json:"boundaries"`
-	Draft       float64 `json:"draft"`
-}
 
 const grillSchema = `{
   "type": "object",
@@ -32,7 +27,7 @@ const grillSchema = `{
 }`
 
 func grillDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "grill", Summary: "Cut a ventilation grill: a vent bridged by the boundary profile's rib/spar/island structure.", Schema: json.RawMessage(grillSchema), Apply: applyGrill}
+	return &OperationDescriptor{Name: featureargs.KindGrill, Summary: "Cut a ventilation grill: a vent bridged by the boundary profile's rib/spar/island structure.", Schema: json.RawMessage(grillSchema), Apply: applyGrill}
 }
 
 func applyGrill(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -40,7 +35,7 @@ func applyGrill(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	var in grillArgs
+	var in featureargs.Grill
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}

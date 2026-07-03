@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -20,15 +21,6 @@ import (
 // and follows the extrude descriptor shape, so add_feature can drive the whole additive set.
 
 // --- revolve ---------------------------------------------------------------
-
-type revolveArgs struct {
-	SketchIndex  int    `json:"sketchIndex"`
-	ProfileIndex int    `json:"profileIndex"`
-	AxisRef      string `json:"axisRef,omitempty"`
-	Angle        string `json:"angle"`
-	Angle2       string `json:"angle2,omitempty"` // second-direction sweep (#313)
-	Operation    string `json:"operation,omitempty"`
-}
 
 const revolveSchema = `{
   "type": "object",
@@ -44,7 +36,7 @@ const revolveSchema = `{
 }`
 
 func revolveDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "revolve", Summary: "Revolve a closed sketch profile about an axis into a solid.", Schema: json.RawMessage(revolveSchema), Apply: applyRevolve}
+	return &OperationDescriptor{Name: featureargs.KindRevolve, Summary: "Revolve a closed sketch profile about an axis into a solid.", Schema: json.RawMessage(revolveSchema), Apply: applyRevolve}
 }
 
 func applyRevolve(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -52,7 +44,7 @@ func applyRevolve(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	if err != nil {
 		return nil, err
 	}
-	var in revolveArgs
+	var in featureargs.Revolve
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
@@ -86,15 +78,6 @@ func applyRevolve(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 
 // --- rib -------------------------------------------------------------------
 
-type ribArgs struct {
-	SketchIndex  int    `json:"sketchIndex"`
-	ProfileIndex int    `json:"profileIndex"`
-	Thickness    string `json:"thickness"`
-	Depth        string `json:"depth,omitempty"`
-	ToNext       bool   `json:"toNext,omitempty"` // extend to the existing material (#316)
-	Operation    string `json:"operation,omitempty"`
-}
-
 const ribSchema = `{
   "type": "object",
   "properties": {
@@ -109,7 +92,7 @@ const ribSchema = `{
 }`
 
 func ribDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "rib", Summary: "Thicken an open sketch profile into a support rib.", Schema: json.RawMessage(ribSchema), Apply: applyRib}
+	return &OperationDescriptor{Name: featureargs.KindRib, Summary: "Thicken an open sketch profile into a support rib.", Schema: json.RawMessage(ribSchema), Apply: applyRib}
 }
 
 func applyRib(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -117,7 +100,7 @@ func applyRib(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	var in ribArgs
+	var in featureargs.Rib
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
@@ -151,15 +134,6 @@ func applyRib(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 
 // --- emboss ----------------------------------------------------------------
 
-type embossArgs struct {
-	SketchIndex    int    `json:"sketchIndex"`
-	ProfileIndices []int  `json:"profileIndices,omitempty"`
-	ProfileIndex   int    `json:"profileIndex"`
-	TextEntity     uint64 `json:"textEntity,omitempty"`
-	Depth          string `json:"depth"`
-	Engrave        bool   `json:"engrave,omitempty"`
-}
-
 const embossSchema = `{
   "type": "object",
   "properties": {
@@ -174,7 +148,7 @@ const embossSchema = `{
 }`
 
 func embossDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "emboss", Summary: "Raise or engrave a sketch profile on a face.", Schema: json.RawMessage(embossSchema), Apply: applyEmboss}
+	return &OperationDescriptor{Name: featureargs.KindEmboss, Summary: "Raise or engrave a sketch profile on a face.", Schema: json.RawMessage(embossSchema), Apply: applyEmboss}
 }
 
 func applyEmboss(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -182,7 +156,7 @@ func applyEmboss(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	var in embossArgs
+	var in featureargs.Emboss
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
@@ -203,7 +177,7 @@ func applyEmboss(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 
 // buildEmboss adds either a by-reference text emboss (when textEntity is set) or a
 // profile-region emboss, so a text emboss never bakes glyph geometry into the document.
-func buildEmboss(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in embossArgs, depth func() float64) (*feature.PartFeature, error) {
+func buildEmboss(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in featureargs.Emboss, depth func() float64) (*feature.PartFeature, error) {
 	embs := feature.NewEmbossFeatures(part.Features())
 	if in.TextEntity != 0 {
 		e, ok := sk.EntityByID(sketch.ID(in.TextEntity))
@@ -225,17 +199,6 @@ func buildEmboss(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in em
 
 // --- coil ------------------------------------------------------------------
 
-type coilArgs struct {
-	SketchIndex  int    `json:"sketchIndex"`
-	ProfileIndex int    `json:"profileIndex"`
-	AxisRef      string `json:"axisRef,omitempty"`
-	Pitch        string `json:"pitch,omitempty"`
-	Revolutions  string `json:"revolutions,omitempty"`
-	Height       string `json:"height,omitempty"` // two-of-three shape spec (#316)
-	Taper        string `json:"taper,omitempty"`
-	Operation    string `json:"operation,omitempty"`
-}
-
 const coilSchema = `{
   "type": "object",
   "properties": {
@@ -252,7 +215,7 @@ const coilSchema = `{
 }`
 
 func coilDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "coil", Summary: "Sweep a profile along a helix into a spring/thread.", Schema: json.RawMessage(coilSchema), Apply: applyCoil}
+	return &OperationDescriptor{Name: featureargs.KindCoil, Summary: "Sweep a profile along a helix into a spring/thread.", Schema: json.RawMessage(coilSchema), Apply: applyCoil}
 }
 
 func applyCoil(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -260,7 +223,7 @@ func applyCoil(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	var in coilArgs
+	var in featureargs.Coil
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
@@ -313,7 +276,7 @@ func coilAxis(part *compdef.PartComponentDefinition, ref string) (*feature.WorkA
 // coilShapeArgs resolves the two-of-three coil shape spec (#316): pitch and
 // height are unit-bearing lengths, revolutions a plain number; absent fields
 // stay nil (the model validates the combination).
-func coilShapeArgs(part *compdef.PartComponentDefinition, in coilArgs) (pitch, revs, height func() float64, err error) {
+func coilShapeArgs(part *compdef.PartComponentDefinition, in featureargs.Coil) (pitch, revs, height func() float64, err error) {
 	if in.Pitch != "" {
 		if pitch, err = lengthClosure(part, in.Pitch, "coil: pitch"); err != nil {
 			return nil, nil, nil, err
