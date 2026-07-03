@@ -5,6 +5,7 @@ package app
 import (
 	"testing"
 
+	"oblikovati.org/math"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/sketch"
 )
@@ -79,5 +80,134 @@ func TestFeatureActivateOpensEditor(t *testing.T) {
 	tool := s.ActiveTool()
 	if tool == nil || tool.Name() != "Extrude" {
 		t.Errorf("activating the extrude feature should re-open its Extrude tool, got %v", tool)
+	}
+}
+
+// TestSketchHandleRenameCapability: a 2D sketch handle reports itself renameable and renames
+// through the NodeRenameable capability (#1630), covering the SketchHandle Renameable/Rename seam.
+func TestSketchHandleRenameCapability(t *testing.T) {
+	s, def := emptyPartSession(t)
+	sk := def.Sketches().Add(sketch.XYPlane())
+	h := SketchHandle{Sketch: sk}
+	if !h.Renameable() {
+		t.Error("a 2D sketch node should be renameable")
+	}
+	if err := h.Rename(s, "Profile"); err != nil {
+		t.Fatalf("Rename: %v", err)
+	}
+	if sk.Name() != "Profile" {
+		t.Errorf("sketch name = %q, want Profile", sk.Name())
+	}
+}
+
+// TestSketch3DHandleRenameCapability: a 3D sketch handle reports itself renameable and renames
+// through the NodeRenameable capability (#1630), covering the Sketch3DHandle Renameable/Rename seam.
+func TestSketch3DHandleRenameCapability(t *testing.T) {
+	s, def := emptyPartSession(t)
+	s3 := def.Sketches3D().Add()
+	h := Sketch3DHandle{Sketch3D: s3}
+	if !h.Renameable() {
+		t.Error("a 3D sketch node should be renameable")
+	}
+	if err := h.Rename(s, "Wire Path"); err != nil {
+		t.Fatalf("Rename: %v", err)
+	}
+	if s3.Name() != "Wire Path" {
+		t.Errorf("3D sketch name = %q, want Wire Path", s3.Name())
+	}
+}
+
+// TestWorkPlaneNodeName: the WorkPlaneHandle reports its plane's current name via NodeName,
+// covering the NodeName seam the browser label path uses (#1630).
+func TestWorkPlaneNodeName(t *testing.T) {
+	_, def := emptyPartSession(t)
+	wp := def.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 2 })
+	def.Recompute()
+	if got := (WorkPlaneHandle{Plane: wp}).NodeName(); got != wp.Name() {
+		t.Errorf("work plane NodeName = %q, want %q", got, wp.Name())
+	}
+}
+
+// userWorkAxis returns a fresh user work axis on an empty part (a two-plane intersection), the
+// fixture the work-axis capability tests drive.
+func userWorkAxis(t *testing.T) (*Session, *feature.WorkAxis) {
+	t.Helper()
+	s, def := emptyPartSession(t)
+	axis := def.WorkAxes().AddByPlaneIntersection(feature.OriginXYPlane, feature.OriginYZPlane)
+	def.Recompute()
+	return s, axis
+}
+
+// TestWorkAxisRenameCapability: a user work axis self-describes its name, reports itself
+// renameable, and renames through the capability (#1630).
+func TestWorkAxisRenameCapability(t *testing.T) {
+	s, axis := userWorkAxis(t)
+	h := WorkAxisHandle{Axis: axis}
+	if h.NodeName() != axis.Name() {
+		t.Errorf("NodeName = %q, want %q", h.NodeName(), axis.Name())
+	}
+	if !h.Renameable() {
+		t.Error("a user work axis should be renameable")
+	}
+	if err := h.Rename(s, "Spin Axis"); err != nil {
+		t.Fatalf("Rename: %v", err)
+	}
+	if axis.Name() != "Spin Axis" {
+		t.Errorf("axis name = %q, want Spin Axis", axis.Name())
+	}
+}
+
+// TestOriginWorkAxisNotRenameable: a grounded origin coordinate-system axis reports itself not
+// renameable through the capability (its name is fixed, #1264/#1630).
+func TestOriginWorkAxisNotRenameable(t *testing.T) {
+	_, def := emptyPartSession(t)
+	xAxis, ok := def.WorkGeometry().AxisByRef(feature.OriginXAxis)
+	if !ok {
+		t.Fatal("origin X axis not found")
+	}
+	if (WorkAxisHandle{Axis: xAxis}).Renameable() {
+		t.Error("an origin coordinate-system axis must not be renameable")
+	}
+}
+
+// userWorkPoint returns a fresh user work point on an empty part, the fixture the work-point
+// capability tests drive.
+func userWorkPoint(t *testing.T) (*Session, *feature.WorkPoint) {
+	t.Helper()
+	s, def := emptyPartSession(t)
+	point := def.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(1, 2, 3) })
+	def.Recompute()
+	return s, point
+}
+
+// TestWorkPointRenameCapability: a user work point self-describes its name, reports itself
+// renameable, and renames through the capability (#1630).
+func TestWorkPointRenameCapability(t *testing.T) {
+	s, point := userWorkPoint(t)
+	h := WorkPointHandle{Point: point}
+	if h.NodeName() != point.Name() {
+		t.Errorf("NodeName = %q, want %q", h.NodeName(), point.Name())
+	}
+	if !h.Renameable() {
+		t.Error("a user work point should be renameable")
+	}
+	if err := h.Rename(s, "Pivot"); err != nil {
+		t.Fatalf("Rename: %v", err)
+	}
+	if point.Name() != "Pivot" {
+		t.Errorf("point name = %q, want Pivot", point.Name())
+	}
+}
+
+// TestOriginWorkPointNotRenameable: the grounded origin centre point reports itself not
+// renameable through the capability (its name is fixed, #1264/#1630).
+func TestOriginWorkPointNotRenameable(t *testing.T) {
+	_, def := emptyPartSession(t)
+	center, ok := def.WorkGeometry().WorkPointByRef(feature.OriginCenter)
+	if !ok {
+		t.Fatal("origin centre point not found")
+	}
+	if (WorkPointHandle{Point: center}).Renameable() {
+		t.Error("the origin centre point must not be renameable")
 	}
 }

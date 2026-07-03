@@ -5,6 +5,7 @@ package app
 import (
 	"errors"
 	"reflect"
+	"strings"
 	"testing"
 
 	"oblikovati.org/model/compdef"
@@ -89,13 +90,33 @@ func TestChamferCommitFeatureUsesHost(t *testing.T) {
 }
 
 // TestCommitFeaturePropagatesHostError proves the host is the sole source of the active
-// part: a host that errors makes the commit error without touching a session.
+// part: for every converted tool, a host that errors makes the commit error without touching
+// a session (the return-err branch each CommitFeature shares, #1635).
 func TestCommitFeaturePropagatesHostError(t *testing.T) {
 	sentinel := errors.New("fake host: no active part")
 	host := &fakeToolHost{partErr: sentinel}
+	tools := []hostedTool{NewFilletTool(), NewChamferTool(), NewExtrudeTool()}
+	for _, tool := range tools {
+		if err := tool.CommitFeature(host); err != sentinel {
+			t.Errorf("%T.CommitFeature error = %v, want the host's active-part error", tool, err)
+		}
+	}
+	if host.recordedAs != "" {
+		t.Errorf("a host-error commit recorded edit %q, want none", host.recordedAs)
+	}
+}
+
+// TestFilletCommitFeatureSickReturnsError: driving CommitFeature directly (the host seam bypasses
+// the preview sick-config gate) with a radius that overruns the block builds a sick feature, so
+// the commit returns the health reason to keep the tool open (#1635).
+func TestFilletCommitFeatureSickReturnsError(t *testing.T) {
+	host, part := hostFromBlock(t, 2)
 	tool := NewFilletTool()
-	if err := tool.CommitFeature(host); err != sentinel {
-		t.Fatalf("CommitFeature error = %v, want the host's active-part error", err)
+	tool.Pick(nil, verticalEdgeOf(t, part.SurfaceBodies().Item(0)))
+	tool.SetRadius(10) // the rolling ball overruns the 2×2×2 block ⇒ sick
+	err := tool.CommitFeature(host)
+	if err == nil || !strings.HasPrefix(err.Error(), "fillet: ") {
+		t.Fatalf("sick fillet CommitFeature err = %v, want a \"fillet: \" health reason", err)
 	}
 }
 
