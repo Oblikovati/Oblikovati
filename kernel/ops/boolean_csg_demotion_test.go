@@ -100,6 +100,7 @@ func curvedExactCases() []curvedExactCase {
 		{"cap-crossing cylinder − (exits top cap)", ops.Cut, capCrossingCutBodies},
 		{"rim-crossing cylinder − (exit ellipse crosses top rim)", ops.Cut, rimCrossingCutBodies},
 		{"two-cap-exit cylinder − (steep tool exits both caps)", ops.Cut, twoCapCrossingCutBodies},
+		{"cone-cap-crossing − (oblique cone tool exits top cap)", ops.Cut, coneCapCrossingCutBodies},
 		{"equal-radius Steinmetz ∩", ops.Intersect, func(t *testing.T) (*topo.Body, *topo.Body) {
 			return demoCyl(t, math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12), demoCyl(t, math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 		}},
@@ -345,6 +346,18 @@ func twoCapCrossingCutBodies(t *testing.T) (*topo.Body, *topo.Body) {
 	ux, uz := stdmath.Sin(th), stdmath.Cos(th)
 	return demoCyl(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 10),
 		demoCyl(t, math.P3(-2.416, 0, -2.518), math.V3(math.Scalar(ux), 0, math.Scalar(uz)), 0.7, 16)
+}
+
+// coneCapCrossingCutBodies is the cone-tool cap-crossing fixture (#1724): the r=3 h=10 target and an oblique
+// FRUSTUM tool (rBase 0.9 → rTop 0.6) whose 45° slender wall enters the target wall once and EXITS the top
+// cap through an ellipse strictly inside the rim — the cone analogue of slice 1 (ConeCapCrossingCutGeneral).
+// The frustum is long enough that its wall also grazes the target's INFINITE surface past the cap; the
+// recognizer drops that phantom loop (wallEntryLoops) and keeps the single real wall-entry hole.
+func coneCapCrossingCutBodies(t *testing.T) (*topo.Body, *topo.Body) {
+	s := 1 / stdmath.Sqrt2
+	top := math.P3(math.Scalar(-6.5+16*s), 0, math.Scalar(2+16*s))
+	return demoCyl(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 10),
+		demoCone(t, math.P3(-6.5, 0, 2), top, 0.9, 0.6)
 }
 
 func demoCyl(t *testing.T, base math.Point3, axis math.Vector3, r, h float64) *topo.Body {
