@@ -73,17 +73,19 @@ func rowNormalized(j [][]float64) [][]float64 {
 	return out
 }
 
-// augmentedLM builds the Levenberg–Marquardt least-squares system [J; √λ·I]·δ = [−r; 0],
+// augmentedLM builds the Levenberg–Marquardt least-squares system [J; √λ·D]·δ = [−r; 0]
+// with D = the Marquardt scaling diagonal (per-variable column norms, audit A13 #1609) —
 // whose QR solution is the damped Gauss–Newton step WITHOUT forming the normal equations
-// JᵀJ — so the condition number of an already-delicate J is not squared (#1420). The √λ·I
+// whose QR solution is the damped Gauss–Newton step WITHOUT forming the normal equations
+// JᵀJ — so the condition number of an already-delicate J is not squared (#1420). The √λ·D
 // block is the trust-region damping that keeps the augmented matrix full column rank near
-// singularities. The step uses the RAW Jacobian (not row-weighted): weighting by 1/‖Jᵢ‖
+// singularities, scaled so ill-scaled variables damp proportionally. The step uses the RAW Jacobian (not row-weighted): weighting by 1/‖Jᵢ‖
 // would down-weight a stiff constraint — e.g. a curvature (G2) residual — exactly where it
 // needs the most attention, stalling the solve. Nondimensionalisation is applied to the
 // convergence test, rank and conflict report instead (the observable, scale-sensitive
 // parts), not to the step direction.
-func augmentedLM(j [][]float64, r []float64, lambda float64, n int) ([][]float64, []float64) {
-	m := len(j)
+func augmentedLM(j [][]float64, r []float64, lambda float64, diag []float64) ([][]float64, []float64) {
+	m, n := len(j), len(diag)
 	sqrtL := stdmath.Sqrt(lambda)
 	aug := make([][]float64, m+n)
 	rhs := make([]float64, m+n)
@@ -93,7 +95,7 @@ func augmentedLM(j [][]float64, r []float64, lambda float64, n int) ([][]float64
 	}
 	for d := 0; d < n; d++ {
 		row := make([]float64, n)
-		row[d] = sqrtL
+		row[d] = sqrtL * diag[d] // Marquardt scaling: damping proportional to the column norm (#1609)
 		aug[m+d] = row
 	}
 	return aug, rhs
