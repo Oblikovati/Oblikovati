@@ -3,8 +3,6 @@
 package router
 
 import (
-	"encoding/json"
-
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 )
@@ -12,34 +10,26 @@ import (
 // registerDocumentSettingsHandlers wires the per-document settings methods (#147). Starts with the
 // Sketch tab — the constraint-inference defaults the sketch tools read.
 func (r *Router) registerDocumentSettingsHandlers() {
-	r.readOnly(wire.MethodDocumentGetSketchSettings, getDocumentSketchSettings)
-	r.readOnly(wire.MethodDocumentSetSketchSettings, setDocumentSketchSettings)
+	r.readOnly(wire.MethodDocumentGetSketchSettings, typed(getDocumentSketchSettings))
+	r.readOnly(wire.MethodDocumentSetSketchSettings, typed(setDocumentSketchSettings))
 }
 
 // getDocumentSketchSettings returns a document's persisted sketch settings
 // (wire.MethodDocumentGetSketchSettings).
-func getDocumentSketchSettings(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.GetSketchSettingsArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
-	}
+func getDocumentSketchSettings(s *app.Session, a wire.GetSketchSettingsArgs) (wire.SketchSettingsResult, error) {
 	set, err := s.DocumentSketchSettings(a.Document)
 	if err != nil {
-		return nil, err
+		return wire.SketchSettingsResult{}, err
 	}
-	return json.Marshal(wire.SketchSettingsResult{Settings: set})
+	return wire.SketchSettingsResult{Settings: set}, nil
 }
 
 // setDocumentSketchSettings stores a document's sketch settings and returns the stored value
 // (wire.MethodDocumentSetSketchSettings).
-func setDocumentSketchSettings(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.SetSketchSettingsArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
-	}
+func setDocumentSketchSettings(s *app.Session, a wire.SetSketchSettingsArgs) (wire.SketchSettingsResult, error) {
 	set, err := s.SetDocumentSketchSettings(a.Document, a.Settings)
 	if err != nil {
-		return nil, err
+		return wire.SketchSettingsResult{}, err
 	}
-	return json.Marshal(wire.SketchSettingsResult{Settings: set})
+	return wire.SketchSettingsResult{Settings: set}, nil
 }

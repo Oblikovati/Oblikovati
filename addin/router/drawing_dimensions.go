@@ -3,7 +3,6 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"oblikovati.org/api/types"
@@ -17,15 +16,15 @@ import (
 
 // registerDrawingDimensionHandlers wires the drawingDimensions.* methods.
 func (r *Router) registerDrawingDimensionHandlers() {
-	r.readOnly(wire.MethodDrawingDimensionsList, drawingDimensionsList)
-	r.mutating(wire.MethodDrawingDimensionsAddLinear, "Add Dimension", drawingDimensionsAddLinear)
-	r.mutating(wire.MethodDrawingDimensionsAddRadial, "Add Dimension", drawingDimensionsAddRadial)
-	r.mutating(wire.MethodDrawingDimensionsAddAngular, "Add Dimension", drawingDimensionsAddAngular)
-	r.mutating(wire.MethodDrawingDimensionsAddBaseline, "Add Dimension", drawingDimensionsAddBaseline)
-	r.mutating(wire.MethodDrawingDimensionsAddChain, "Add Dimension", drawingDimensionsAddChain)
-	r.mutating(wire.MethodDrawingDimensionsAddOrdinate, "Add Dimension", drawingDimensionsAddOrdinate)
-	r.mutating(wire.MethodDrawingDimensionsAddArcLength, "Add Dimension", drawingDimensionsAddArcLength)
-	r.mutating(wire.MethodDrawingDimensionsDelete, "Delete Dimension", drawingDimensionsDelete)
+	r.readOnly(wire.MethodDrawingDimensionsList, ctxQuery(activeSheetDimensions, drawingDimensionsList))
+	r.mutating(wire.MethodDrawingDimensionsAddLinear, "Add Dimension", typedCtx(activeSheetDimensions, drawingDimensionsAddLinear))
+	r.mutating(wire.MethodDrawingDimensionsAddRadial, "Add Dimension", typedCtx(activeSheetDimensions, drawingDimensionsAddRadial))
+	r.mutating(wire.MethodDrawingDimensionsAddAngular, "Add Dimension", typedCtx(activeSheetDimensions, drawingDimensionsAddAngular))
+	r.mutating(wire.MethodDrawingDimensionsAddBaseline, "Add Dimension", typedCtx(activeSheetDimensions, drawingDimensionSet((*drawing.DrawingDimensions).AddBaselineSet)))
+	r.mutating(wire.MethodDrawingDimensionsAddChain, "Add Dimension", typedCtx(activeSheetDimensions, drawingDimensionSet((*drawing.DrawingDimensions).AddChainSet)))
+	r.mutating(wire.MethodDrawingDimensionsAddOrdinate, "Add Dimension", typedCtx(activeSheetDimensions, drawingDimensionsAddOrdinate))
+	r.mutating(wire.MethodDrawingDimensionsAddArcLength, "Add Dimension", typedCtx(activeSheetDimensions, drawingDimensionsAddArcLength))
+	r.mutating(wire.MethodDrawingDimensionsDelete, "Delete Dimension", typedCtx(activeSheetDimensions, drawingDimensionsDelete))
 }
 
 // activeSheetDimensions returns the active drawing's active-sheet dimension collection.
@@ -41,158 +40,100 @@ func activeSheetDimensions(s *app.Session) (*drawing.DrawingDimensions, error) {
 	return sheet.Dimensions(), nil
 }
 
-func drawingDimensionsList(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	ds, err := activeSheetDimensions(s)
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(listDimensions(ds))
+func drawingDimensionsList(_ *app.Session, ds *drawing.DrawingDimensions) (wire.ListDrawingDimensionsResult, error) {
+	return listDimensions(ds), nil
 }
 
-func drawingDimensionsAddLinear(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	ds, err := activeSheetDimensions(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddLinearDimensionArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingDimensionsAddLinear(s *app.Session, ds *drawing.DrawingDimensions, in wire.AddLinearDimensionArgs) (wire.DimensionResult, error) {
 	dimType := types.AlignedDimension
 	if in.Type != "" {
 		t, ok := types.ParseDrawingDimensionType(in.Type)
 		if !ok {
-			return nil, fmt.Errorf("drawing: unknown dimension type %q (want aligned|horizontal|vertical)", in.Type)
+			return wire.DimensionResult{}, fmt.Errorf("drawing: unknown dimension type %q (want aligned|horizontal|vertical)", in.Type)
 		}
 		dimType = t
 	}
 	d, err := ds.AddLinear(in.Name, in.ViewName, dimType, in.X1, in.Y1, in.X2, in.Y2, in.OffsetMM)
 	if err != nil {
-		return nil, err
+		return wire.DimensionResult{}, err
 	}
 	s.ActiveDocument().MarkDirty()
-	return json.Marshal(wire.DimensionResult{Dimension: drawingDimensionInfo(d)})
+	return wire.DimensionResult{Dimension: drawingDimensionInfo(d)}, nil
 }
 
-func drawingDimensionsAddRadial(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	ds, err := activeSheetDimensions(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddRadialDimensionArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingDimensionsAddRadial(s *app.Session, ds *drawing.DrawingDimensions, in wire.AddRadialDimensionArgs) (wire.DimensionResult, error) {
 	dimType := types.RadiusDimension
 	if in.Type != "" {
 		t, ok := types.ParseDrawingDimensionType(in.Type)
 		if !ok || (t != types.RadiusDimension && t != types.DiameterDimension) {
-			return nil, fmt.Errorf("drawing: radial dimension type %q must be radius|diameter", in.Type)
+			return wire.DimensionResult{}, fmt.Errorf("drawing: radial dimension type %q must be radius|diameter", in.Type)
 		}
 		dimType = t
 	}
 	d, err := ds.AddRadial(in.Name, in.ViewName, dimType, in.PickXMM, in.PickYMM)
 	if err != nil {
-		return nil, err
+		return wire.DimensionResult{}, err
 	}
 	s.ActiveDocument().MarkDirty()
-	return json.Marshal(wire.DimensionResult{Dimension: drawingDimensionInfo(d)})
+	return wire.DimensionResult{Dimension: drawingDimensionInfo(d)}, nil
 }
 
-func drawingDimensionsAddAngular(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	ds, err := activeSheetDimensions(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddAngularDimensionArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingDimensionsAddAngular(s *app.Session, ds *drawing.DrawingDimensions, in wire.AddAngularDimensionArgs) (wire.DimensionResult, error) {
 	d, err := ds.AddAngular(in.Name, in.ViewName, in.X1, in.Y1, in.X2, in.Y2)
 	if err != nil {
-		return nil, err
+		return wire.DimensionResult{}, err
 	}
 	s.ActiveDocument().MarkDirty()
-	return json.Marshal(wire.DimensionResult{Dimension: drawingDimensionInfo(d)})
+	return wire.DimensionResult{Dimension: drawingDimensionInfo(d)}, nil
 }
 
-func drawingDimensionsAddBaseline(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	return drawingDimensionSet(s, raw, (*drawing.DrawingDimensions).AddBaselineSet)
-}
-
-func drawingDimensionsAddChain(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	return drawingDimensionSet(s, raw, (*drawing.DrawingDimensions).AddChainSet)
-}
-
-// drawingDimensionSet decodes an AddDimensionSetArgs and runs add (AddBaselineSet/AddChainSet),
-// returning the created dimensions.
-func drawingDimensionSet(s *app.Session, raw json.RawMessage,
+// drawingDimensionSet builds a typed handler that runs add (AddBaselineSet/AddChainSet) over a
+// decoded AddDimensionSetArgs, returning the created dimensions.
+func drawingDimensionSet(
 	add func(*drawing.DrawingDimensions, string, types.DrawingDimensionType, [][2]float64) ([]*drawing.DrawingDimension, error),
-) (json.RawMessage, error) {
-	ds, err := activeSheetDimensions(s)
-	if err != nil {
-		return nil, err
+) func(*app.Session, *drawing.DrawingDimensions, wire.AddDimensionSetArgs) (wire.DimensionSetResult, error) {
+	return func(s *app.Session, ds *drawing.DrawingDimensions, in wire.AddDimensionSetArgs) (wire.DimensionSetResult, error) {
+		dimType, pts, err := parseDimensionSetArgs(in)
+		if err != nil {
+			return wire.DimensionSetResult{}, err
+		}
+		dims, err := add(ds, in.ViewName, dimType, pts)
+		if err != nil {
+			return wire.DimensionSetResult{}, err
+		}
+		s.ActiveDocument().MarkDirty()
+		out := wire.DimensionSetResult{}
+		for _, d := range dims {
+			out.Dimensions = append(out.Dimensions, drawingDimensionInfo(d))
+		}
+		return out, nil
 	}
-	var in wire.AddDimensionSetArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	dimType, pts, err := parseDimensionSetArgs(in)
-	if err != nil {
-		return nil, err
-	}
-	dims, err := add(ds, in.ViewName, dimType, pts)
-	if err != nil {
-		return nil, err
-	}
-	s.ActiveDocument().MarkDirty()
-	out := wire.DimensionSetResult{}
-	for _, d := range dims {
-		out.Dimensions = append(out.Dimensions, drawingDimensionInfo(d))
-	}
-	return json.Marshal(out)
 }
 
-func drawingDimensionsAddArcLength(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	ds, err := activeSheetDimensions(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddArcLengthDimensionArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingDimensionsAddArcLength(s *app.Session, ds *drawing.DrawingDimensions, in wire.AddArcLengthDimensionArgs) (wire.DimensionResult, error) {
 	d, err := ds.AddArcLength(in.Name, in.ViewName, in.PickXMM, in.PickYMM)
 	if err != nil {
-		return nil, err
+		return wire.DimensionResult{}, err
 	}
 	s.ActiveDocument().MarkDirty()
-	return json.Marshal(wire.DimensionResult{Dimension: drawingDimensionInfo(d)})
+	return wire.DimensionResult{Dimension: drawingDimensionInfo(d)}, nil
 }
 
-func drawingDimensionsAddOrdinate(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	ds, err := activeSheetDimensions(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddOrdinateDimensionsArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingDimensionsAddOrdinate(s *app.Session, ds *drawing.DrawingDimensions, in wire.AddOrdinateDimensionsArgs) (wire.DimensionSetResult, error) {
 	datum, pts, err := parseOrdinateArgs(in)
 	if err != nil {
-		return nil, err
+		return wire.DimensionSetResult{}, err
 	}
 	dims, err := ds.AddOrdinateSet(in.ViewName, in.Axis != "vertical", datum, pts)
 	if err != nil {
-		return nil, err
+		return wire.DimensionSetResult{}, err
 	}
 	s.ActiveDocument().MarkDirty()
 	out := wire.DimensionSetResult{}
 	for _, d := range dims {
 		out.Dimensions = append(out.Dimensions, drawingDimensionInfo(d))
 	}
-	return json.Marshal(out)
+	return out, nil
 }
 
 // parseOrdinateArgs resolves an ordinate request's datum and measured points (each [x,y] sheet mm).
@@ -234,20 +175,12 @@ func parseDimensionSetArgs(in wire.AddDimensionSetArgs) (types.DrawingDimensionT
 	return dimType, pts, nil
 }
 
-func drawingDimensionsDelete(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	ds, err := activeSheetDimensions(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.DeleteDimensionArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingDimensionsDelete(s *app.Session, ds *drawing.DrawingDimensions, in wire.DeleteDimensionArgs) (wire.ListDrawingDimensionsResult, error) {
 	if err := ds.Remove(in.Name); err != nil {
-		return nil, err
+		return wire.ListDrawingDimensionsResult{}, err
 	}
 	s.ActiveDocument().MarkDirty()
-	return json.Marshal(listDimensions(ds))
+	return listDimensions(ds), nil
 }
 
 // listDimensions flattens a sheet's dimension collection into its wire result.

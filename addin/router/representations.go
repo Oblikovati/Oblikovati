@@ -29,83 +29,72 @@ func (r *Router) registerRepresentationHandlers() {
 }
 
 func (r *Router) registerDesignRepHandlers() {
-	r.mutating(wire.MethodDesignRepsCapture, "Capture Design View", designRepsCapture)
-	r.readOnly(wire.MethodDesignRepsActivate, designRepsActivate)
-	r.readOnly(wire.MethodDesignRepsList, designRepsList)
-	r.mutating(wire.MethodDesignRepsDelete, "Delete Design View", designRepsDelete)
+	r.mutating(wire.MethodDesignRepsCapture, "Capture Design View", typedAssembly(designRepsCapture))
+	r.readOnly(wire.MethodDesignRepsActivate, typedAssembly(designRepsActivate))
+	r.readOnly(wire.MethodDesignRepsList, assemblyQuery(designRepsList))
+	r.mutating(wire.MethodDesignRepsDelete, "Delete Design View", typedAssembly(designRepsDelete))
 	r.mutating(wire.MethodDesignRepsSetVisibility, "Edit Design View", designRepsSetVisibility)
 	r.mutating(wire.MethodDesignRepsSetAppearance, "Edit Design View", designRepsSetAppearance)
 	r.mutating(wire.MethodDesignRepsAddSection, "Add Section View", designRepsAddSection)
 }
 
 func (r *Router) registerPositionalRepHandlers() {
-	r.mutating(wire.MethodPositionalRepsCapture, "Capture Positional Rep", positionalRepsCapture)
-	r.readOnly(wire.MethodPositionalRepsActivate, positionalRepsActivate)
-	r.readOnly(wire.MethodPositionalRepsList, positionalRepsList)
-	r.mutating(wire.MethodPositionalRepsDelete, "Delete Positional Rep", positionalRepsDelete)
+	r.mutating(wire.MethodPositionalRepsCapture, "Capture Positional Rep", typedAssembly(positionalRepsCapture))
+	r.readOnly(wire.MethodPositionalRepsActivate, typedAssembly(positionalRepsActivate))
+	r.readOnly(wire.MethodPositionalRepsList, assemblyQuery(positionalRepsList))
+	r.mutating(wire.MethodPositionalRepsDelete, "Delete Positional Rep", typedAssembly(positionalRepsDelete))
 	r.mutating(wire.MethodPositionalRepsSetOverride, "Edit Positional Rep", positionalRepsSetOverride)
 	r.mutating(wire.MethodPositionalRepsSetFlexible, "Edit Positional Rep", positionalRepsSetFlexible)
 }
 
 func (r *Router) registerLODRepHandlers() {
-	r.mutating(wire.MethodLODRepsCapture, "Capture LOD Rep", lodRepsCapture)
-	r.readOnly(wire.MethodLODRepsActivate, lodRepsActivate)
-	r.readOnly(wire.MethodLODRepsList, lodRepsList)
-	r.mutating(wire.MethodLODRepsDelete, "Delete LOD Rep", lodRepsDelete)
+	r.mutating(wire.MethodLODRepsCapture, "Capture LOD Rep", typedAssembly(lodRepsCapture))
+	r.readOnly(wire.MethodLODRepsActivate, typedAssembly(lodRepsActivate))
+	r.readOnly(wire.MethodLODRepsList, assemblyQuery(lodRepsList))
+	r.mutating(wire.MethodLODRepsDelete, "Delete LOD Rep", typedAssembly(lodRepsDelete))
 	r.mutating(wire.MethodLODRepsSetSuppressed, "Edit LOD Rep", lodRepsSetSuppressed)
 }
 
 func (r *Router) registerModelStateHandlers() {
-	r.mutating(wire.MethodModelStatesCreate, "Create Model State", modelStatesCreate)
-	r.readOnly(wire.MethodModelStatesActivate, modelStatesActivate)
-	r.readOnly(wire.MethodModelStatesList, modelStatesList)
-	r.mutating(wire.MethodModelStatesDelete, "Delete Model State", modelStatesDelete)
+	r.mutating(wire.MethodModelStatesCreate, "Create Model State", typedAssembly(modelStatesCreate))
+	r.readOnly(wire.MethodModelStatesActivate, typedAssembly(modelStatesActivate))
+	r.readOnly(wire.MethodModelStatesList, assemblyQuery(modelStatesList))
+	r.mutating(wire.MethodModelStatesDelete, "Delete Model State", typedAssembly(modelStatesDelete))
 }
 
 // --- design-view ---
 
-func designRepsCapture(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, in, err := repAssemblyAndName(s, raw)
-	if err != nil {
-		return nil, err
-	}
+func designRepsCapture(s *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.CaptureRepArgs) (wire.DesignViewResult, error) {
 	d := asm.Representations().CaptureDesignView(in.Name, capturedCamera(s))
 	event.Emit(s.Events(), event.After, app.RepresentationCaptured{Kind: "design", Name: d.Name()})
-	return json.Marshal(wire.DesignViewResult{Representation: designViewInfo(d)})
+	return wire.DesignViewResult{Representation: designViewInfo(d)}, nil
 }
 
-func designRepsActivate(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, id, err := repAssemblyAndID(s, raw)
+func designRepsActivate(s *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.RepRef) (wire.DesignViewResult, error) {
+	d, err := asm.Representations().ActivateDesignView(in.ID)
 	if err != nil {
-		return nil, err
-	}
-	d, err := asm.Representations().ActivateDesignView(id)
-	if err != nil {
-		return nil, err
+		return wire.DesignViewResult{}, err
 	}
 	event.Emit(s.Events(), event.After, app.RepresentationActivated{Kind: "design", Name: d.Name()})
-	return json.Marshal(wire.DesignViewResult{Representation: designViewInfo(d)})
+	return wire.DesignViewResult{Representation: designViewInfo(d)}, nil
 }
 
-func designRepsList(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
+func designRepsList(_ *app.Session, asm *compdef.AssemblyComponentDefinition) (wire.DesignViewsResult, error) {
+	return designViewsListResult(asm), nil
+}
+
+// designViewsListResult renders the active assembly's design-view representations.
+func designViewsListResult(asm *compdef.AssemblyComponentDefinition) wire.DesignViewsResult {
 	out := make([]wire.DesignViewInfo, 0)
 	for _, d := range asm.Representations().AllDesignViews() {
 		out = append(out, designViewInfo(d))
 	}
-	return json.Marshal(wire.DesignViewsResult{Representations: out})
+	return wire.DesignViewsResult{Representations: out}
 }
 
-func designRepsDelete(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, id, err := repAssemblyAndID(s, raw)
-	if err != nil {
-		return nil, err
-	}
-	asm.Representations().DeleteDesignView(id)
-	return designRepsList(s, nil)
+func designRepsDelete(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.RepRef) (wire.DesignViewsResult, error) {
+	asm.Representations().DeleteDesignView(in.ID)
+	return designViewsListResult(asm), nil
 }
 
 func designRepsSetVisibility(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -163,48 +152,37 @@ func designRepsAddSection(s *app.Session, raw json.RawMessage) (json.RawMessage,
 
 // --- positional ---
 
-func positionalRepsCapture(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, in, err := repAssemblyAndName(s, raw)
-	if err != nil {
-		return nil, err
-	}
+func positionalRepsCapture(s *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.CaptureRepArgs) (wire.PositionalResult, error) {
 	p := asm.Representations().CapturePositional(in.Name)
 	event.Emit(s.Events(), event.After, app.RepresentationCaptured{Kind: "positional", Name: p.Name()})
-	return json.Marshal(wire.PositionalResult{Representation: positionalInfo(p)})
+	return wire.PositionalResult{Representation: positionalInfo(p)}, nil
 }
 
-func positionalRepsActivate(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, id, err := repAssemblyAndID(s, raw)
+func positionalRepsActivate(s *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.RepRef) (wire.PositionalResult, error) {
+	p, err := asm.Representations().ActivatePositional(in.ID)
 	if err != nil {
-		return nil, err
-	}
-	p, err := asm.Representations().ActivatePositional(id)
-	if err != nil {
-		return nil, err
+		return wire.PositionalResult{}, err
 	}
 	event.Emit(s.Events(), event.After, app.RepresentationActivated{Kind: "positional", Name: p.Name()})
-	return json.Marshal(wire.PositionalResult{Representation: positionalInfo(p)})
+	return wire.PositionalResult{Representation: positionalInfo(p)}, nil
 }
 
-func positionalRepsList(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
+func positionalRepsList(_ *app.Session, asm *compdef.AssemblyComponentDefinition) (wire.PositionalsResult, error) {
+	return positionalsListResult(asm), nil
+}
+
+// positionalsListResult renders the active assembly's positional representations.
+func positionalsListResult(asm *compdef.AssemblyComponentDefinition) wire.PositionalsResult {
 	out := make([]wire.PositionalInfo, 0)
 	for _, p := range asm.Representations().AllPositionals() {
 		out = append(out, positionalInfo(p))
 	}
-	return json.Marshal(wire.PositionalsResult{Representations: out})
+	return wire.PositionalsResult{Representations: out}
 }
 
-func positionalRepsDelete(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, id, err := repAssemblyAndID(s, raw)
-	if err != nil {
-		return nil, err
-	}
-	asm.Representations().DeletePositional(id)
-	return positionalRepsList(s, nil)
+func positionalRepsDelete(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.RepRef) (wire.PositionalsResult, error) {
+	asm.Representations().DeletePositional(in.ID)
+	return positionalsListResult(asm), nil
 }
 
 func positionalRepsSetOverride(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -243,48 +221,37 @@ func positionalRepsSetFlexible(s *app.Session, raw json.RawMessage) (json.RawMes
 
 // --- level-of-detail ---
 
-func lodRepsCapture(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, in, err := repAssemblyAndName(s, raw)
-	if err != nil {
-		return nil, err
-	}
+func lodRepsCapture(s *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.CaptureRepArgs) (wire.LODResult, error) {
 	l := asm.Representations().CaptureLOD(in.Name)
 	event.Emit(s.Events(), event.After, app.RepresentationCaptured{Kind: "lod", Name: l.Name()})
-	return json.Marshal(wire.LODResult{Representation: lodInfo(l)})
+	return wire.LODResult{Representation: lodInfo(l)}, nil
 }
 
-func lodRepsActivate(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, id, err := repAssemblyAndID(s, raw)
+func lodRepsActivate(s *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.RepRef) (wire.LODResult, error) {
+	l, err := asm.Representations().ActivateLOD(in.ID)
 	if err != nil {
-		return nil, err
-	}
-	l, err := asm.Representations().ActivateLOD(id)
-	if err != nil {
-		return nil, err
+		return wire.LODResult{}, err
 	}
 	event.Emit(s.Events(), event.After, app.RepresentationActivated{Kind: "lod", Name: l.Name()})
-	return json.Marshal(wire.LODResult{Representation: lodInfo(l)})
+	return wire.LODResult{Representation: lodInfo(l)}, nil
 }
 
-func lodRepsList(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
+func lodRepsList(_ *app.Session, asm *compdef.AssemblyComponentDefinition) (wire.LODsResult, error) {
+	return lodsListResult(asm), nil
+}
+
+// lodsListResult renders the active assembly's level-of-detail representations.
+func lodsListResult(asm *compdef.AssemblyComponentDefinition) wire.LODsResult {
 	out := make([]wire.LODInfo, 0)
 	for _, l := range asm.Representations().AllLODs() {
 		out = append(out, lodInfo(l))
 	}
-	return json.Marshal(wire.LODsResult{Representations: out})
+	return wire.LODsResult{Representations: out}
 }
 
-func lodRepsDelete(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, id, err := repAssemblyAndID(s, raw)
-	if err != nil {
-		return nil, err
-	}
-	asm.Representations().DeleteLOD(id)
-	return lodRepsList(s, nil)
+func lodRepsDelete(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.RepRef) (wire.LODsResult, error) {
+	asm.Representations().DeleteLOD(in.ID)
+	return lodsListResult(asm), nil
 }
 
 func lodRepsSetSuppressed(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -308,78 +275,39 @@ func lodRepsSetSuppressed(s *app.Session, raw json.RawMessage) (json.RawMessage,
 
 // --- model states ---
 
-func modelStatesCreate(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.CreateModelStateArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func modelStatesCreate(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.CreateModelStateArgs) (wire.ModelStateResult, error) {
 	m := asm.Representations().CreateModelState(in.Name, in.DesignView, in.Positional, in.LevelOfDetail)
-	return json.Marshal(wire.ModelStateResult{ModelState: modelStateInfo(m)})
+	return wire.ModelStateResult{ModelState: modelStateInfo(m)}, nil
 }
 
-func modelStatesActivate(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, id, err := repAssemblyAndID(s, raw)
+func modelStatesActivate(s *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.RepRef) (wire.ModelStateResult, error) {
+	m, err := asm.Representations().ActivateModelState(in.ID)
 	if err != nil {
-		return nil, err
-	}
-	m, err := asm.Representations().ActivateModelState(id)
-	if err != nil {
-		return nil, err
+		return wire.ModelStateResult{}, err
 	}
 	event.Emit(s.Events(), event.After, app.ModelStateActivated{Name: m.Name()})
-	return json.Marshal(wire.ModelStateResult{ModelState: modelStateInfo(m)})
+	return wire.ModelStateResult{ModelState: modelStateInfo(m)}, nil
 }
 
-func modelStatesList(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
+func modelStatesList(_ *app.Session, asm *compdef.AssemblyComponentDefinition) (wire.ModelStatesResult, error) {
+	return modelStatesListResult(asm), nil
+}
+
+// modelStatesListResult renders the active assembly's model states.
+func modelStatesListResult(asm *compdef.AssemblyComponentDefinition) wire.ModelStatesResult {
 	out := make([]wire.ModelStateInfo, 0)
 	for _, m := range asm.Representations().AllModelStates() {
 		out = append(out, modelStateInfo(m))
 	}
-	return json.Marshal(wire.ModelStatesResult{ModelStates: out})
+	return wire.ModelStatesResult{ModelStates: out}
 }
 
-func modelStatesDelete(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, id, err := repAssemblyAndID(s, raw)
-	if err != nil {
-		return nil, err
-	}
-	asm.Representations().DeleteModelState(id)
-	return modelStatesList(s, nil)
+func modelStatesDelete(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.RepRef) (wire.ModelStatesResult, error) {
+	asm.Representations().DeleteModelState(in.ID)
+	return modelStatesListResult(asm), nil
 }
 
 // --- shared helpers ---
-
-// repAssemblyAndName resolves the active assembly and decodes a capture's name argument.
-func repAssemblyAndName(s *app.Session, raw json.RawMessage) (*compdef.AssemblyComponentDefinition, wire.CaptureRepArgs, error) {
-	var in wire.CaptureRepArgs
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, in, err
-	}
-	err = decode(raw, &in)
-	return asm, in, err
-}
-
-// repAssemblyAndID resolves the active assembly and decodes a RepRef id argument.
-func repAssemblyAndID(s *app.Session, raw json.RawMessage) (*compdef.AssemblyComponentDefinition, uint64, error) {
-	var in wire.RepRef
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, 0, err
-	}
-	if err := decode(raw, &in); err != nil {
-		return nil, 0, err
-	}
-	return asm, in.ID, nil
-}
 
 // capturedCamera snapshots the session's current camera for a design-view capture.
 func capturedCamera(s *app.Session) *assembly.CapturedCamera {

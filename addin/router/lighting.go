@@ -12,22 +12,18 @@ import (
 )
 
 // getLightingStyle returns the active lighting style's global controls
-// (wire.MethodLightingGetStyle).
+// (wire.MethodLightingGetStyle). No args and no active-model context, so it stays a raw handler.
 func getLightingStyle(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	return marshalLightingStyle(s)
+	return json.Marshal(lightingStyleView(s))
 }
 
 // setLightingStyle activates a lighting style by name and echoes it, erroring on an unknown
 // name (wire.MethodLightingSetStyle).
-func setLightingStyle(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.SetLightingStyleArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
+func setLightingStyle(s *app.Session, in wire.SetLightingStyleArgs) (wire.LightingStyleView, error) {
+	if err := s.SetLightingStyle(in.Name); err != nil {
+		return wire.LightingStyleView{}, err
 	}
-	if err := s.SetLightingStyle(a.Name); err != nil {
-		return nil, err
-	}
-	return marshalLightingStyle(s)
+	return lightingStyleView(s), nil
 }
 
 // listLightingStyles enumerates every lighting style in gallery order, flagging the active one
@@ -54,28 +50,20 @@ func listLights(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
 
 // addLight adds a light of the requested emission shape and returns it
 // (wire.MethodLightingAddLight).
-func addLight(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.AddLightArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
-	}
-	l, err := s.AddLight(a.DefinitionType)
+func addLight(s *app.Session, in wire.AddLightArgs) (wire.LightInfo, error) {
+	l, err := s.AddLight(in.DefinitionType)
 	if err != nil {
-		return nil, err
+		return wire.LightInfo{}, err
 	}
-	return json.Marshal(lightInfo(len(s.Lights())-1, l))
+	return lightInfo(len(s.Lights())-1, l), nil
 }
 
 // setLight replaces the light at the given index and returns it (wire.MethodLightingSetLight).
-func setLight(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.SetLightArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
+func setLight(s *app.Session, in wire.SetLightArgs) (wire.LightInfo, error) {
+	if err := s.SetLight(in.Index, appLight(in.Light)); err != nil {
+		return wire.LightInfo{}, err
 	}
-	if err := s.SetLight(a.Index, appLight(a.Light)); err != nil {
-		return nil, err
-	}
-	return json.Marshal(lightInfo(a.Index, s.Lights()[a.Index]))
+	return lightInfo(in.Index, s.Lights()[in.Index]), nil
 }
 
 // getShadows returns the viewport's shadow settings (wire.MethodViewGetShadows).
@@ -84,13 +72,9 @@ func getShadows(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
 }
 
 // setShadows applies the viewport's shadow settings and echoes them (wire.MethodViewSetShadows).
-func setShadows(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.ShadowSettings
-	if err := decode(args, &a); err != nil {
-		return nil, err
-	}
-	s.SetShadowSettings(shadowRigFromWire(a))
-	return json.Marshal(shadowSettings(s.ShadowSettings()))
+func setShadows(s *app.Session, in wire.ShadowSettings) (wire.ShadowSettings, error) {
+	s.SetShadowSettings(shadowRigFromWire(in))
+	return shadowSettings(s.ShadowSettings()), nil
 }
 
 // getEnvironment returns the active environment (wire.MethodEnvironmentGet).
@@ -100,21 +84,17 @@ func getEnvironment(s *app.Session, _ json.RawMessage) (json.RawMessage, error) 
 
 // setEnvironment activates a built-in preset with display parameters, erroring on an unknown
 // preset name (wire.MethodEnvironmentSet).
-func setEnvironment(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.SetEnvironmentArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
-	}
-	if _, ok := app.EnvironmentPresetByName(a.Preset); !ok {
-		return nil, fmt.Errorf("router: unknown environment preset %q", a.Preset)
+func setEnvironment(s *app.Session, in wire.SetEnvironmentArgs) (wire.EnvironmentView, error) {
+	if _, ok := app.EnvironmentPresetByName(in.Preset); !ok {
+		return wire.EnvironmentView{}, fmt.Errorf("router: unknown environment preset %q", in.Preset)
 	}
 	s.SetEnvironment(app.EnvironmentState{
-		Preset:    a.Preset,
-		Rotation:  float32(a.Rotation),
-		Intensity: float32(a.Intensity),
-		ShowImage: a.ShowImage,
+		Preset:    in.Preset,
+		Rotation:  float32(in.Rotation),
+		Intensity: float32(in.Intensity),
+		ShowImage: in.ShowImage,
 	})
-	return json.Marshal(environmentView(s.Environment()))
+	return environmentView(s.Environment()), nil
 }
 
 // listEnvironmentPresets enumerates the built-in environments, flagging the active one
@@ -131,28 +111,24 @@ func listEnvironmentPresets(s *app.Session, _ json.RawMessage) (json.RawMessage,
 }
 
 // loadEnvironmentImage sets a user HDR file as the environment (wire.MethodEnvironmentLoadImage).
-func loadEnvironmentImage(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.LoadEnvironmentImageArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
-	}
-	if a.FilePath == "" {
-		return nil, fmt.Errorf("router: environment.loadImage requires a non-empty filePath")
+func loadEnvironmentImage(s *app.Session, in wire.LoadEnvironmentImageArgs) (wire.EnvironmentView, error) {
+	if in.FilePath == "" {
+		return wire.EnvironmentView{}, fmt.Errorf("router: environment.loadImage requires a non-empty filePath")
 	}
 	env := s.Environment()
-	env.FilePath = a.FilePath
+	env.FilePath = in.FilePath
 	env.ShowImage = true
 	if env.Intensity == 0 {
 		env.Intensity = 1
 	}
 	s.SetEnvironment(env)
-	return json.Marshal(environmentView(s.Environment()))
+	return environmentView(s.Environment()), nil
 }
 
-// marshalLightingStyle encodes the active style's controls as the shared LightingStyleView.
-func marshalLightingStyle(s *app.Session) (json.RawMessage, error) {
+// lightingStyleView builds the active style's controls as the shared LightingStyleView.
+func lightingStyleView(s *app.Session) wire.LightingStyleView {
 	style := app.LightingStyleOf(s.LightingStyleName(), s.SceneLighting())
-	return json.Marshal(wire.LightingStyleView{
+	return wire.LightingStyleView{
 		Name:           style.Name(),
 		StyleType:      style.StyleType(),
 		Ambience:       style.Ambience(),
@@ -163,7 +139,7 @@ func marshalLightingStyle(s *app.Session) (json.RawMessage, error) {
 		ShadowDensity:  style.ShadowDensity(),
 		ShadowSoftness: style.ShadowSoftness(),
 		ShadowDir:      style.ShadowDirection(),
-	})
+	}
 }
 
 // lightInfo converts an app light value at index into the wire DTO.

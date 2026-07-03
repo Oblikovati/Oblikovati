@@ -3,12 +3,12 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
+	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/identity"
 	"oblikovati.org/model/sketch"
 )
@@ -22,9 +22,9 @@ import (
 // registerSketchReferenceKeyHandlers wires the sketch.referenceKey / sketch.resolveReference
 // / sketch3d.referenceKey methods.
 func (r *Router) registerSketchReferenceKeyHandlers() {
-	r.readOnly(wire.MethodSketchReferenceKey, sketchReferenceKey)
-	r.readOnly(wire.MethodSketchResolveReference, sketchResolveReference)
-	r.readOnly(wire.MethodSketch3DReferenceKey, sketch3DReferenceKey)
+	r.readOnly(wire.MethodSketchReferenceKey, typedPart(sketchReferenceKey))
+	r.readOnly(wire.MethodSketchResolveReference, typedPart(sketchResolveReference))
+	r.readOnly(wire.MethodSketch3DReferenceKey, typedPart(sketch3DReferenceKey))
 }
 
 // activeDocumentGUID returns the active document's stable GUID — the namespace every sketch
@@ -56,58 +56,50 @@ type sketchCollection[T keyedSketch] interface {
 }
 
 // sketchReferenceKey returns the persistent reference key of the addressed 2D sketch.
-func sketchReferenceKey(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	sk, _, err := resolveSketch(s, raw)
+func sketchReferenceKey(s *app.Session, part *compdef.PartComponentDefinition, in wire.SketchArgs) (wire.SketchReferenceKeyResult, error) {
+	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.SketchReferenceKeyResult{}, err
 	}
 	return sketchKeyResult(s, sk)
 }
 
 // sketch3DReferenceKey returns the persistent reference key of the addressed 3D sketch.
-func sketch3DReferenceKey(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	sk, _, err := resolveSketch3D(s, raw)
+func sketch3DReferenceKey(s *app.Session, part *compdef.PartComponentDefinition, in wire.Sketch3DArgs) (wire.SketchReferenceKeyResult, error) {
+	sk, err := sketch3DAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.SketchReferenceKeyResult{}, err
 	}
 	return sketchKeyResult(s, sk)
 }
 
-// sketchKeyResult derives a sketch's own reference key (against the active document's GUID)
-// and marshals it — shared by the 2D and 3D referenceKey handlers.
-func sketchKeyResult(s *app.Session, sk keyedSketch) (json.RawMessage, error) {
+// sketchKeyResult derives a sketch's own reference key (against the active document's GUID) —
+// shared by the 2D and 3D referenceKey handlers.
+func sketchKeyResult(s *app.Session, sk keyedSketch) (wire.SketchReferenceKeyResult, error) {
 	guid, err := activeDocumentGUID(s)
 	if err != nil {
-		return nil, err
+		return wire.SketchReferenceKeyResult{}, err
 	}
 	key, err := identity.SketchKey(guid, uint64(sk.ID()))
 	if err != nil {
-		return nil, err
+		return wire.SketchReferenceKeyResult{}, err
 	}
-	return json.Marshal(wire.SketchReferenceKeyResult{ReferenceKey: key})
+	return wire.SketchReferenceKeyResult{ReferenceKey: key}, nil
 }
 
 // sketchResolveReference rebinds a stored sketch/entity key (2D or 3D) to its current
 // location, or reports found=false when nothing in the active part matches it (the referent
 // was deleted). 2D sketches are scanned first, then 3D.
-func sketchResolveReference(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.ResolveSketchReferenceArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
+func sketchResolveReference(s *app.Session, part *compdef.PartComponentDefinition, in wire.ResolveSketchReferenceArgs) (wire.ResolveSketchReferenceResult, error) {
 	guid, err := activeDocumentGUID(s)
 	if err != nil {
-		return nil, err
+		return wire.ResolveSketchReferenceResult{}, err
 	}
 	res := matchReference(part.Sketches(), guid, in.ReferenceKey, "sketch", "sketchEntity")
 	if !res.Found {
 		res = matchReference(part.Sketches3D(), guid, in.ReferenceKey, "sketch3d", "sketch3dEntity")
 	}
-	return json.Marshal(res)
+	return res, nil
 }
 
 // matchReference scans a 2D or 3D sketch collection for the sketch or entity whose derived

@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
@@ -32,12 +31,8 @@ func bossDescriptor() *OperationDescriptor {
 }
 
 func applyBoss(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.Boss](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in featureargs.Boss
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	if in.FaceRef == "" {
@@ -73,12 +68,8 @@ func threadDescriptor() *OperationDescriptor {
 }
 
 func applyThread(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.Thread](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in featureargs.Thread
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	if in.FaceRef == "" || in.Designation == "" {

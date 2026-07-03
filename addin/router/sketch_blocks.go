@@ -3,14 +3,13 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 	stdmath "math"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/sketch"
 )
 
@@ -19,30 +18,22 @@ import (
 // entities placed with insertion point / rotation / uniform scale.
 
 // createBlockDefinition serves wire.MethodSketchBlockDefinitionCreate.
-func createBlockDefinition(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.CreateBlockDefinitionArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
+func createBlockDefinition(_ *app.Session, part *compdef.PartComponentDefinition, in wire.CreateBlockDefinitionArgs) (wire.SketchBlockDefinitionInfo, error) {
 	reg := part.SketchBlocks()
-	def, err := definitionFromArgs(s, reg, in)
+	def, err := definitionFromArgs(part, reg, in)
 	if err != nil {
-		return nil, err
+		return wire.SketchBlockDefinitionInfo{}, err
 	}
-	return json.Marshal(blockDefinitionInfo(indexOfDefinition(reg, def), def))
+	return blockDefinitionInfo(indexOfDefinition(reg, def), def), nil
 }
 
 // definitionFromArgs creates an empty definition, or — given a source
 // selection — moves it into a new definition (create-from-selection).
-func definitionFromArgs(s *app.Session, reg *sketch.BlockDefinitions, in wire.CreateBlockDefinitionArgs) (*sketch.BlockDefinition, error) {
+func definitionFromArgs(part *compdef.PartComponentDefinition, reg *sketch.BlockDefinitions, in wire.CreateBlockDefinitionArgs) (*sketch.BlockDefinition, error) {
 	if len(in.EntityRefs) == 0 {
 		return reg.Define(in.Name)
 	}
-	sk, err := activeSketchAt(s, in.SourceSketchIndex)
+	sk, err := sketchAtIndex(part, in.SourceSketchIndex)
 	if err != nil {
 		return nil, err
 	}
@@ -59,77 +50,52 @@ func definitionFromArgs(s *app.Session, reg *sketch.BlockDefinitions, in wire.Cr
 }
 
 // listBlockDefinitions serves wire.MethodSketchBlockDefinitionList.
-func listBlockDefinitions(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	reg := part.SketchBlocks()
-	out := make([]wire.SketchBlockDefinitionInfo, reg.Count())
-	for i := 0; i < reg.Count(); i++ {
-		out[i] = blockDefinitionInfo(i, reg.Item(i))
-	}
-	return json.Marshal(wire.ListBlockDefinitionsResult{Definitions: out})
+func listBlockDefinitions(_ *app.Session, part *compdef.PartComponentDefinition) (wire.ListBlockDefinitionsResult, error) {
+	return wire.ListBlockDefinitionsResult{Definitions: projectAll(part.SketchBlocks(), blockDefinitionInfo)}, nil
 }
 
 // deleteBlockDefinition serves wire.MethodSketchBlockDefinitionDelete.
-func deleteBlockDefinition(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.DeleteBlockDefinitionArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
+func deleteBlockDefinition(_ *app.Session, part *compdef.PartComponentDefinition, in wire.DeleteBlockDefinitionArgs) (wire.OKResult, error) {
 	if err := part.SketchBlocks().Delete(in.Name); err != nil {
-		return nil, err
+		return wire.OKResult{}, err
 	}
-	return json.Marshal(wire.OKResult{OK: true})
+	return wire.OKResult{OK: true}, nil
 }
 
 // addBlockInstance serves wire.MethodSketchAddBlockInstance.
-func addBlockInstance(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.AddSketchBlockArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
+func addBlockInstance(_ *app.Session, part *compdef.PartComponentDefinition, in wire.AddSketchBlockArgs) (wire.AddSketchBlockResult, error) {
 	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.AddSketchBlockResult{}, err
 	}
 	def, ok := part.SketchBlocks().ByName(in.Definition)
 	if !ok {
-		return nil, fmt.Errorf("block definition %q does not exist", in.Definition)
+		return wire.AddSketchBlockResult{}, fmt.Errorf("block definition %q does not exist", in.Definition)
 	}
 	if len(in.Position) != 2 {
-		return nil, fmt.Errorf("a block placement needs position [x, y], got %d components", len(in.Position))
+		return wire.AddSketchBlockResult{}, fmt.Errorf("a block placement needs position [x, y], got %d components", len(in.Position))
 	}
 	rotation, err := angleArg(part, "rotationAngle", in.RotationAngle)
 	if err != nil {
-		return nil, err
+		return wire.AddSketchBlockResult{}, err
 	}
 	pos := math.P2(math.Scalar(in.Position[0]), math.Scalar(in.Position[1]))
 	inst := sk.Blocks().Insert(def, sketch.PlacementTransform(pos, rotation, in.Scale))
-	return json.Marshal(wire.AddSketchBlockResult{EntityID: uint64(inst.EntityID())})
+	return wire.AddSketchBlockResult{EntityID: uint64(inst.EntityID())}, nil
 }
 
 // listBlockInstances serves wire.MethodSketchListBlockInstances.
-func listBlockInstances(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	sk, _, err := resolveSketch(s, raw)
+func listBlockInstances(_ *app.Session, part *compdef.PartComponentDefinition, in wire.SketchArgs) (wire.ListBlockInstancesResult, error) {
+	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.ListBlockInstancesResult{}, err
 	}
 	blocks := sk.Blocks()
 	out := make([]wire.SketchBlockInfo, blocks.InstanceCount())
 	for i := range out {
 		out[i] = blockInstanceInfo(i, blocks.Item(i))
 	}
-	return json.Marshal(wire.ListBlockInstancesResult{Instances: out})
+	return wire.ListBlockInstancesResult{Instances: out}, nil
 }
 
 // blockDefinitionInfo renders a definition as its wire summary.

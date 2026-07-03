@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
@@ -41,12 +40,8 @@ func directEditDescriptor() *OperationDescriptor {
 }
 
 func applyDirectEdit(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.DirectEdit](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in featureargs.DirectEdit
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	op, ok := types.ParseDirectEditOperationType(in.Operation)

@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
@@ -55,12 +54,8 @@ func modelToleranceDescriptor() *OperationDescriptor {
 }
 
 func applyModelTolerance(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.ModelTolerance](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in featureargs.ModelTolerance
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	if len(in.Frames) == 0 && len(in.Datums) == 0 {

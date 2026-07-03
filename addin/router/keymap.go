@@ -15,12 +15,12 @@ import (
 // #831): list the catalog, rebind a shortcut, set an alias, reset one/all, import/export.
 func (r *Router) registerKeymapHandlers() {
 	r.readOnly(wire.MethodKeymapList, listKeymap)
-	r.readOnly(wire.MethodKeymapSetChord, setKeymapChord)
-	r.readOnly(wire.MethodKeymapSetAlias, setKeymapAlias)
-	r.readOnly(wire.MethodKeymapReset, resetKeymapBinding)
+	r.readOnly(wire.MethodKeymapSetChord, typed(setKeymapChord))
+	r.readOnly(wire.MethodKeymapSetAlias, typed(setKeymapAlias))
+	r.readOnly(wire.MethodKeymapReset, typed(resetKeymapBinding))
 	r.readOnly(wire.MethodKeymapResetAll, resetKeymapAll)
 	r.readOnly(wire.MethodKeymapExport, exportKeymap)
-	r.readOnly(wire.MethodKeymapImport, importKeymap)
+	r.readOnly(wire.MethodKeymapImport, typed(importKeymap))
 }
 
 // listKeymap returns the full binding catalog (wire keymap.list).
@@ -38,43 +38,31 @@ func listKeymap(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
 }
 
 // setKeymapChord rebinds one action's shortcut (wire keymap.setChord).
-func setKeymapChord(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.SetChordArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
-	}
-	chord, err := types.ParseChord(req.Chord)
+func setKeymapChord(s *app.Session, in wire.SetChordArgs) (wire.OKResult, error) {
+	chord, err := types.ParseChord(in.Chord)
 	if err != nil {
-		return nil, err
+		return wire.OKResult{}, err
 	}
-	if err := s.Bindings().SetChord(req.ActionID, chord); err != nil {
-		return nil, err
+	if err := s.Bindings().SetChord(in.ActionID, chord); err != nil {
+		return wire.OKResult{}, err
 	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
 // setKeymapAlias sets one action's typed alias (wire keymap.setAlias).
-func setKeymapAlias(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.SetAliasArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func setKeymapAlias(s *app.Session, in wire.SetAliasArgs) (wire.OKResult, error) {
+	if err := s.Bindings().SetAlias(in.ActionID, in.Alias); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.Bindings().SetAlias(req.ActionID, req.Alias); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
 // resetKeymapBinding restores one action to its defaults (wire keymap.reset).
-func resetKeymapBinding(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.ResetBindingArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func resetKeymapBinding(s *app.Session, in wire.ResetBindingArgs) (wire.OKResult, error) {
+	if err := s.Bindings().Reset(in.ActionID); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.Bindings().Reset(req.ActionID); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
 // resetKeymapAll discards every customization (wire keymap.resetAll).
@@ -92,13 +80,9 @@ func exportKeymap(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
 }
 
 // importKeymap replaces the customization with the imported delta (wire keymap.import).
-func importKeymap(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.KeymapExport
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func importKeymap(s *app.Session, in wire.KeymapExport) (wire.OKResult, error) {
+	if err := s.Bindings().Import(keymap.Customization{Chords: in.Chords, Aliases: in.Aliases}); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.Bindings().Import(keymap.Customization{Chords: req.Chords, Aliases: req.Aliases}); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }

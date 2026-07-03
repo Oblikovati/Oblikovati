@@ -3,12 +3,12 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
+	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/linetype"
 	"oblikovati.org/model/sketch"
 )
@@ -19,24 +19,20 @@ import (
 // persisted with the document, so the .lin file is only read here.
 
 // setSketchCustomLineType handles sketch.setCustomLineType.
-func setSketchCustomLineType(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.SetSketchCustomLineTypeArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	sk, _, err := resolveSketch(s, raw)
+func setSketchCustomLineType(_ *app.Session, part *compdef.PartComponentDefinition, in wire.SetSketchCustomLineTypeArgs) (wire.SketchCustomLineTypeResult, error) {
+	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.SketchCustomLineTypeResult{}, err
 	}
 	if err := guardLineTypeReplace(sk, in); err != nil {
-		return nil, err
+		return wire.SketchCustomLineTypeResult{}, err
 	}
 	def, err := loadLineTypeDefinition(in.FullFileName, in.LineTypeName)
 	if err != nil {
-		return nil, err
+		return wire.SketchCustomLineTypeResult{}, err
 	}
 	sk.SetCustomLineType(def, in.FullFileName)
-	return customLineTypeResult(sk)
+	return customLineTypeResult(sk), nil
 }
 
 // guardLineTypeReplace enforces the replaceExisting contract: re-loading a name that
@@ -70,21 +66,21 @@ func loadLineTypeDefinition(file, name string) (linetype.Definition, error) {
 }
 
 // getSketchCustomLineType handles sketch.getCustomLineType.
-func getSketchCustomLineType(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	sk, _, err := resolveSketch(s, raw)
+func getSketchCustomLineType(_ *app.Session, part *compdef.PartComponentDefinition, in wire.SketchArgs) (wire.SketchCustomLineTypeResult, error) {
+	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.SketchCustomLineTypeResult{}, err
 	}
-	return customLineTypeResult(sk)
+	return customLineTypeResult(sk), nil
 }
 
-// customLineTypeResult marshals the sketch's loaded definition (or loaded=false).
-func customLineTypeResult(sk *sketch.Sketch) (json.RawMessage, error) {
+// customLineTypeResult renders the sketch's loaded definition (or loaded=false).
+func customLineTypeResult(sk *sketch.Sketch) wire.SketchCustomLineTypeResult {
 	d, file, ok := sk.CustomLineType()
 	if !ok {
-		return json.Marshal(wire.SketchCustomLineTypeResult{})
+		return wire.SketchCustomLineTypeResult{}
 	}
-	return json.Marshal(wire.SketchCustomLineTypeResult{
+	return wire.SketchCustomLineTypeResult{
 		Loaded: true, LineTypeName: d.Name, FullFileName: file, Pattern: d.Pattern,
-	})
+	}
 }

@@ -12,135 +12,95 @@ import (
 // registerMessagingHandlers wires the status / progress / balloon / prompt /
 // message-center methods (M05-F09, #616).
 func (r *Router) registerMessagingHandlers() {
-	r.readOnly(wire.MethodStatusSetText, setStatusText)
+	r.readOnly(wire.MethodStatusSetText, typed(setStatusText))
 	r.readOnly(wire.MethodStatusGetText, getStatusText)
-	r.readOnly(wire.MethodProgressBegin, beginProgress)
-	r.readOnly(wire.MethodProgressUpdate, updateProgress)
-	r.readOnly(wire.MethodProgressEnd, endProgress)
-	r.readOnly(wire.MethodBalloonTipRegister, registerBalloonTip)
-	r.readOnly(wire.MethodBalloonTipShow, showBalloonTip)
-	r.readOnly(wire.MethodPromptsShow, showPrompt)
-	r.readOnly(wire.MethodErrorsAddMessage, addErrorMessage)
-	r.readOnly(wire.MethodErrorsBeginSection, beginMessageSection)
-	r.readOnly(wire.MethodErrorsEndSection, endMessageSection)
+	r.readOnly(wire.MethodProgressBegin, typed(beginProgress))
+	r.readOnly(wire.MethodProgressUpdate, typed(updateProgress))
+	r.readOnly(wire.MethodProgressEnd, typed(endProgress))
+	r.readOnly(wire.MethodBalloonTipRegister, typed(registerBalloonTip))
+	r.readOnly(wire.MethodBalloonTipShow, typed(showBalloonTip))
+	r.readOnly(wire.MethodPromptsShow, typed(showPrompt))
+	r.readOnly(wire.MethodErrorsAddMessage, typed(addErrorMessage))
+	r.readOnly(wire.MethodErrorsBeginSection, typed(beginMessageSection))
+	r.readOnly(wire.MethodErrorsEndSection, typed(endMessageSection))
 	r.readOnly(wire.MethodErrorsList, listErrors)
 	r.readOnly(wire.MethodErrorsClear, clearErrors)
 	r.readOnly(wire.MethodErrorsShow, showErrors)
 }
 
-func setStatusText(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.SetStatusTextArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
-	}
-	s.SetStatusText(req.Text)
-	return ok()
+func setStatusText(s *app.Session, in wire.SetStatusTextArgs) (wire.OKResult, error) {
+	s.SetStatusText(in.Text)
+	return wire.OKResult{OK: true}, nil
 }
 
 func getStatusText(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
 	return json.Marshal(wire.StatusTextResult{Text: s.StatusText()})
 }
 
-func beginProgress(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.BeginProgressArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
-	}
-	id, err := s.Progress().Begin(req.Steps, req.Message)
+func beginProgress(s *app.Session, in wire.BeginProgressArgs) (wire.BeginProgressResult, error) {
+	id, err := s.Progress().Begin(in.Steps, in.Message)
 	if err != nil {
-		return nil, err
+		return wire.BeginProgressResult{}, err
 	}
-	return json.Marshal(wire.BeginProgressResult{ID: id})
+	return wire.BeginProgressResult{ID: id}, nil
 }
 
-func updateProgress(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.UpdateProgressArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
-	}
-	cancelled, err := s.Progress().Update(req.ID, req.Step, req.Message)
+func updateProgress(s *app.Session, in wire.UpdateProgressArgs) (wire.UpdateProgressResult, error) {
+	cancelled, err := s.Progress().Update(in.ID, in.Step, in.Message)
 	if err != nil {
-		return nil, err
+		return wire.UpdateProgressResult{}, err
 	}
-	return json.Marshal(wire.UpdateProgressResult{OK: true, Cancelled: cancelled})
+	return wire.UpdateProgressResult{OK: true, Cancelled: cancelled}, nil
 }
 
-func endProgress(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.EndProgressArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func endProgress(s *app.Session, in wire.EndProgressArgs) (wire.OKResult, error) {
+	if err := s.Progress().End(in.ID); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.Progress().End(req.ID); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
-func registerBalloonTip(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.RegisterBalloonTipArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
-	}
-	spec := app.BalloonTipSpec{ID: req.ID, Title: req.Title, Text: req.Text, Icon: req.Icon}
+func registerBalloonTip(s *app.Session, in wire.RegisterBalloonTipArgs) (wire.OKResult, error) {
+	spec := app.BalloonTipSpec{ID: in.ID, Title: in.Title, Text: in.Text, Icon: in.Icon}
 	if err := s.BalloonTips().Register(spec); err != nil {
-		return nil, err
+		return wire.OKResult{}, err
 	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
-func showBalloonTip(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.ShowBalloonTipArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
-	}
-	shown, err := s.ShowBalloonTip(req.ID)
+func showBalloonTip(s *app.Session, in wire.ShowBalloonTipArgs) (wire.ShowBalloonTipResult, error) {
+	shown, err := s.ShowBalloonTip(in.ID)
 	if err != nil {
-		return nil, err
+		return wire.ShowBalloonTipResult{}, err
 	}
-	return json.Marshal(wire.ShowBalloonTipResult{Shown: shown})
+	return wire.ShowBalloonTipResult{Shown: shown}, nil
 }
 
-func showPrompt(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.ShowPromptArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
-	}
+func showPrompt(s *app.Session, in wire.ShowPromptArgs) (wire.ShowPromptResult, error) {
 	resolved, answer, err := s.ShowPrompt(app.PromptSpec{
-		ID: req.ID, Message: req.Message, Buttons: req.Buttons,
-		Default: req.Default, Restriction: req.Restriction,
+		ID: in.ID, Message: in.Message, Buttons: in.Buttons,
+		Default: in.Default, Restriction: in.Restriction,
 	})
 	if err != nil {
-		return nil, err
+		return wire.ShowPromptResult{}, err
 	}
-	return json.Marshal(wire.ShowPromptResult{Resolved: resolved, Answer: answer})
+	return wire.ShowPromptResult{Resolved: resolved, Answer: answer}, nil
 }
 
-func addErrorMessage(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.AddErrorMessageArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
-	}
-	s.Messages().AddMessage(req.Text, req.Severity)
-	return ok()
+func addErrorMessage(s *app.Session, in wire.AddErrorMessageArgs) (wire.OKResult, error) {
+	s.Messages().AddMessage(in.Text, in.Severity)
+	return wire.OKResult{OK: true}, nil
 }
 
-func beginMessageSection(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.BeginMessageSectionArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
-	}
-	return json.Marshal(wire.BeginMessageSectionResult{Section: s.Messages().BeginSection(req.Title)})
+func beginMessageSection(s *app.Session, in wire.BeginMessageSectionArgs) (wire.BeginMessageSectionResult, error) {
+	return wire.BeginMessageSectionResult{Section: s.Messages().BeginSection(in.Title)}, nil
 }
 
-func endMessageSection(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.EndMessageSectionArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func endMessageSection(s *app.Session, in wire.EndMessageSectionArgs) (wire.OKResult, error) {
+	if err := s.Messages().EndSection(in.Section); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.Messages().EndSection(req.Section); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
 func listErrors(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {

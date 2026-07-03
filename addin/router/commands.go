@@ -36,21 +36,17 @@ func listCommands(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
 // / Inventor's ButtonDefinition). The command runs no host logic — clicking it fires a
 // command.ended event the add-in handles in its Notify entry point — so the host stays
 // agnostic to the add-in's action. It errors on a missing id/displayName or a duplicate id.
-func createCommand(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.CreateCommandArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func createCommand(s *app.Session, in wire.CreateCommandArgs) (wire.OKResult, error) {
 	if in.ID == "" || in.DisplayName == "" {
-		return nil, fmt.Errorf("commands.create: id and displayName are required, got id=%q displayName=%q", in.ID, in.DisplayName)
+		return wire.OKResult{}, fmt.Errorf("commands.create: id and displayName are required, got id=%q displayName=%q", in.ID, in.DisplayName)
 	}
 	if in.Ribbon != "" && !in.Ribbon.Valid() {
-		return nil, fmt.Errorf("commands.create: unknown ribbon %q (one of ZeroDoc/Part/Assembly/Drawing/Presentation/iFeatures/UnknownDocument)", in.Ribbon)
+		return wire.OKResult{}, fmt.Errorf("commands.create: unknown ribbon %q (one of ZeroDoc/Part/Assembly/Drawing/Presentation/iFeatures/UnknownDocument)", in.Ribbon)
 	}
 	// Cap the inline glyph so a stray payload cannot bloat the ribbon; a real 24×24 icon is well
 	// under this. The head rasterizes it through the same theming as a bundled glyph.
 	if len(in.IconSVG) > maxInlineIconSVGBytes {
-		return nil, fmt.Errorf("commands.create: iconSvg is %d bytes, over the %d-byte limit", len(in.IconSVG), maxInlineIconSVGBytes)
+		return wire.OKResult{}, fmt.Errorf("commands.create: iconSvg is %d bytes, over the %d-byte limit", len(in.IconSVG), maxInlineIconSVGBytes)
 	}
 	cmd := app.NewCommand(in.ID, in.DisplayName, in.Category, func(*app.Session) error { return nil }).
 		WithTab(in.Tab).WithEnvironment(in.Environment).WithAlias(in.Alias).WithTooltip(in.Tooltip).
@@ -65,24 +61,20 @@ func createCommand(s *app.Session, args json.RawMessage) (json.RawMessage, error
 		cmd.WithPopupItems(in.Items...)
 	}
 	if err := s.Commands().Add(cmd); err != nil {
-		return nil, err
+		return wire.OKResult{}, err
 	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
 // setCommandState updates one of an add-in's commands' live ribbon state: its active
 // (highlighted/accent) flag and an optional relabel (wire.MethodCommandsSetState).
-func setCommandState(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.SetCommandStateArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func setCommandState(s *app.Session, in wire.SetCommandStateArgs) (wire.OKResult, error) {
 	if in.ID == "" {
-		return nil, errors.New("commands.setState: id is required")
+		return wire.OKResult{}, errors.New("commands.setState: id is required")
 	}
 	cmd, found := s.Commands().ByID(in.ID)
 	if !found {
-		return nil, fmt.Errorf("commands.setState: unknown command %q", in.ID)
+		return wire.OKResult{}, fmt.Errorf("commands.setState: unknown command %q", in.ID)
 	}
 	cmd.SetActiveState(in.Active)
 	if in.Enabled != nil {
@@ -91,21 +83,17 @@ func setCommandState(s *app.Session, args json.RawMessage) (json.RawMessage, err
 	if in.DisplayName != "" {
 		cmd.SetDisplayName(in.DisplayName)
 	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
 // executeCommand runs the command with the given id (the same path a ribbon click
 // takes), surfacing a disabled/unknown command as an error.
-func executeCommand(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.ExecuteCommandArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func executeCommand(s *app.Session, in wire.ExecuteCommandArgs) (wire.OKResult, error) {
 	if in.ID == "" {
-		return nil, errors.New("commands.execute: id is required")
+		return wire.OKResult{}, errors.New("commands.execute: id is required")
 	}
 	if err := s.Execute(in.ID); err != nil {
-		return nil, err
+		return wire.OKResult{}, err
 	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }

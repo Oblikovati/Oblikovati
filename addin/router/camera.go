@@ -3,7 +3,6 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 	stdmath "math"
 
@@ -15,46 +14,38 @@ import (
 
 // getCamera returns a document's active-view camera as a look-at frame (Document 0 ⇒ the
 // active document) — wire.MethodViewGetCamera.
-func getCamera(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.GetCameraArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
-	}
+func getCamera(s *app.Session, a wire.GetCameraArgs) (wire.CameraView, error) {
 	cam, err := s.ViewCamera(a.Document)
 	if err != nil {
-		return nil, err
+		return wire.CameraView{}, err
 	}
-	return json.Marshal(cameraView(cam))
+	return cameraView(cam), nil
 }
 
 // setCamera moves a document's active-view camera to the requested look-at frame, keeping
 // the viewport size, and echoes the result (Document 0 ⇒ active document) —
 // wire.MethodViewSetCamera. It rejects a non-finite or degenerate frame so a bad presenter
 // packet can never corrupt the view.
-func setCamera(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.SetCameraArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
-	}
+func setCamera(s *app.Session, a wire.SetCameraArgs) (wire.CameraView, error) {
 	if err := validateCameraArgs(a); err != nil {
-		return nil, err
+		return wire.CameraView{}, err
 	}
 	cam, err := s.ViewCamera(a.Document) // preserve Width/Height; override the look-at frame
 	if err != nil {
-		return nil, err
+		return wire.CameraView{}, err
 	}
 	cam.Eye = math.P3(a.Eye.X, a.Eye.Y, a.Eye.Z)
 	cam.Target = math.P3(a.Target.X, a.Target.Y, a.Target.Z)
 	cam.Up = math.V3(a.Up.X, a.Up.Y, a.Up.Z)
 	cam.FOV = a.FOV
 	if err := s.SetViewCamera(a.Document, cam); err != nil {
-		return nil, err
+		return wire.CameraView{}, err
 	}
 	out, err := s.ViewCamera(a.Document)
 	if err != nil {
-		return nil, err
+		return wire.CameraView{}, err
 	}
-	return json.Marshal(cameraView(out))
+	return cameraView(out), nil
 }
 
 // cameraView projects an app camera frame onto the wire look-at DTO.

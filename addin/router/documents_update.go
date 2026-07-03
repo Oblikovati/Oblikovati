@@ -3,10 +3,8 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
@@ -20,45 +18,33 @@ import (
 // features; with acceptErrorsAndContinue=false a sick feature instead fails the call.
 
 // documentsUpdate recomputes the active part's out-of-date features.
-func documentsUpdate(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	return recomputeActivePart(s, raw, false)
+func documentsUpdate(_ *app.Session, part *compdef.PartComponentDefinition, in wire.UpdateDocumentArgs) (wire.UpdateDocumentResult, error) {
+	return recomputeActivePart(part, in, false)
 }
 
 // documentsRebuild recomputes the active part's entire feature program (all features dirtied).
-func documentsRebuild(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	return recomputeActivePart(s, raw, true)
+func documentsRebuild(_ *app.Session, part *compdef.PartComponentDefinition, in wire.UpdateDocumentArgs) (wire.UpdateDocumentResult, error) {
+	return recomputeActivePart(part, in, true)
 }
 
 // recomputeActivePart runs the engine (optionally dirtying everything first), then reports the
 // resulting sick features — failing the call when any is sick and acceptErrorsAndContinue is off.
-func recomputeActivePart(s *app.Session, raw json.RawMessage, rebuild bool) (json.RawMessage, error) {
-	var in wire.UpdateDocumentArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
+func recomputeActivePart(part *compdef.PartComponentDefinition, in wire.UpdateDocumentArgs, rebuild bool) (wire.UpdateDocumentResult, error) {
 	if rebuild {
 		part.Features().MarkAllDirty()
 	}
 	part.Recompute()
 	errs := sickFeatures(part)
 	if len(errs) > 0 && !in.AcceptErrorsAndContinue {
-		return nil, fmt.Errorf("documents.update: %d feature(s) are sick after recompute: %s "+
+		return wire.UpdateDocumentResult{}, fmt.Errorf("documents.update: %d feature(s) are sick after recompute: %s "+
 			"(pass acceptErrorsAndContinue to report them instead)", len(errs), errs[0].Name)
 	}
-	return json.Marshal(wire.UpdateDocumentResult{RequiresUpdate: part.Features().RequiresUpdate(), Errors: errs})
+	return wire.UpdateDocumentResult{RequiresUpdate: part.Features().RequiresUpdate(), Errors: errs}, nil
 }
 
 // documentsRequiresUpdate reports whether the active part has out-of-date features.
-func documentsRequiresUpdate(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(wire.RequiresUpdateResult{RequiresUpdate: part.Features().RequiresUpdate()})
+func documentsRequiresUpdate(_ *app.Session, part *compdef.PartComponentDefinition) (wire.RequiresUpdateResult, error) {
+	return wire.RequiresUpdateResult{RequiresUpdate: part.Features().RequiresUpdate()}, nil
 }
 
 // sickFeatures collects the features that ended up sick after a recompute, in history order.

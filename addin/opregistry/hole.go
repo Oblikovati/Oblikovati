@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
@@ -39,12 +38,8 @@ func holeDescriptor() *OperationDescriptor {
 }
 
 func applyHole(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.Hole](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in featureargs.Hole
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	if in.FaceRef == "" {

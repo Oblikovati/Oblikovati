@@ -11,43 +11,31 @@ import (
 
 // registerMiniToolbarHandlers wires the in-canvas mini-toolbar methods (M05-F07, #614).
 func (r *Router) registerMiniToolbarHandlers() {
-	r.readOnly(wire.MethodMiniToolbarSet, setMiniToolbar)
-	r.readOnly(wire.MethodMiniToolbarUpdate, updateMiniToolbar)
-	r.readOnly(wire.MethodMiniToolbarRemove, removeMiniToolbar)
+	r.readOnly(wire.MethodMiniToolbarSet, typed(setMiniToolbar))
+	r.readOnly(wire.MethodMiniToolbarUpdate, typed(updateMiniToolbar))
+	r.readOnly(wire.MethodMiniToolbarRemove, typed(removeMiniToolbar))
 	r.readOnly(wire.MethodMiniToolbarList, listMiniToolbars)
 }
 
-func setMiniToolbar(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.SetMiniToolbarArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func setMiniToolbar(s *app.Session, in wire.SetMiniToolbarArgs) (wire.OKResult, error) {
+	if err := s.SetMiniToolbar(in.Toolbar); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.SetMiniToolbar(req.Toolbar); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
-func updateMiniToolbar(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.UpdateMiniToolbarArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func updateMiniToolbar(s *app.Session, in wire.UpdateMiniToolbarArgs) (wire.OKResult, error) {
+	if err := s.UpdateMiniToolbarControls(in.ID, in.Controls); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.UpdateMiniToolbarControls(req.ID, req.Controls); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
-func removeMiniToolbar(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.RemoveMiniToolbarArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func removeMiniToolbar(s *app.Session, in wire.RemoveMiniToolbarArgs) (wire.OKResult, error) {
+	if err := s.RemoveMiniToolbar(in.ID); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.RemoveMiniToolbar(req.ID); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
 func listMiniToolbars(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {

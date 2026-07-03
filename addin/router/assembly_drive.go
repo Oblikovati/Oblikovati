@@ -3,13 +3,11 @@
 package router
 
 import (
-	"encoding/json"
-
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/model/assembly"
+	"oblikovati.org/model/compdef"
 )
 
 // The assembly drive surface (M12-F03, #366): sweep a joint's driven variable through a range
@@ -20,25 +18,17 @@ import (
 
 // registerAssemblyDriveHandlers wires the assemblyDrive.* methods.
 func (r *Router) registerAssemblyDriveHandlers() {
-	r.readOnly(wire.MethodAssemblyDrivePreview, assemblyDrivePreview)
+	r.readOnly(wire.MethodAssemblyDrivePreview, typedAssembly(assemblyDrivePreview))
 }
 
 // assemblyDrivePreview drives the requested joint through the given settings and returns the
 // resulting frames.
-func assemblyDrivePreview(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.DriveJointArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func assemblyDrivePreview(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.DriveJointArgs) (wire.DriveResult, error) {
 	res, err := asm.DriveJoint(in.Joint, driveSettingsFromWire(in.Settings))
 	if err != nil {
-		return nil, err
+		return wire.DriveResult{}, err
 	}
-	return json.Marshal(driveResultToWire(res))
+	return driveResultToWire(res), nil
 }
 
 // driveSettingsFromWire builds the engine's drive settings from the wire DTO.

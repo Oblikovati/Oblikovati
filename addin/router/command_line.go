@@ -3,8 +3,6 @@
 package router
 
 import (
-	"encoding/json"
-
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 )
@@ -14,11 +12,7 @@ import (
 // and whether more input is awaited. A command-line error (e.g. an unknown command) is
 // returned in the result's Error field, not as a transport error, so callers — add-ins and
 // MCP tools — see it inline exactly as the UI does.
-func submitCommandLine(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.SubmitCommandLineArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func submitCommandLine(s *app.Session, in wire.SubmitCommandLineArgs) (wire.CommandLineResult, error) {
 	cl := s.CommandLine()
 	before := cl.Scrollback().Len()
 	submitErr := cl.Submit(s, in.Line)
@@ -30,7 +24,7 @@ func submitCommandLine(s *app.Session, args json.RawMessage) (json.RawMessage, e
 	if submitErr != nil {
 		res.Error = submitErr.Error()
 	}
-	return json.Marshal(res)
+	return res, nil
 }
 
 // newScrollbackText returns the text of the scrollback lines appended since index before.

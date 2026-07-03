@@ -3,13 +3,13 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"oblikovati.org/api/contract"
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
+	"oblikovati.org/model/drawing"
 )
 
 // The drawing drafting-standard surface (M14-F01 PBI-138, #385): read the active drawing's
@@ -18,47 +18,31 @@ import (
 
 // registerDrawingStyleHandlers wires the drawingStyles.* methods.
 func (r *Router) registerDrawingStyleHandlers() {
-	r.readOnly(wire.MethodDrawingStylesListStandards, drawingStylesListStandards)
-	r.readOnly(wire.MethodDrawingStylesGetActiveStyle, drawingStylesGetActiveStyle)
-	r.mutating(wire.MethodDrawingStylesSetStandard, "Set Drawing Standard", drawingStylesSetStandard)
+	r.readOnly(wire.MethodDrawingStylesListStandards, ctxQuery(activeDrawing, drawingStylesListStandards))
+	r.readOnly(wire.MethodDrawingStylesGetActiveStyle, ctxQuery(activeDrawing, drawingStylesGetActiveStyle))
+	r.mutating(wire.MethodDrawingStylesSetStandard, "Set Drawing Standard", typedCtx(activeDrawing, drawingStylesSetStandard))
 }
 
-func drawingStylesListStandards(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	c, err := activeDrawing(s)
-	if err != nil {
-		return nil, err
-	}
+func drawingStylesListStandards(_ *app.Session, c *drawing.Content) (wire.ListStandardsResult, error) {
 	out := wire.ListStandardsResult{Active: c.Styles().ActiveStandard().String()}
 	for _, std := range c.Styles().Standards() {
 		out.Standards = append(out.Standards, std.String())
 	}
-	return json.Marshal(out)
+	return out, nil
 }
 
-func drawingStylesGetActiveStyle(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	c, err := activeDrawing(s)
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(wire.StandardStyleResult{Style: standardStyleInfo(c.Styles().ActiveStyle())})
+func drawingStylesGetActiveStyle(_ *app.Session, c *drawing.Content) (wire.StandardStyleResult, error) {
+	return wire.StandardStyleResult{Style: standardStyleInfo(c.Styles().ActiveStyle())}, nil
 }
 
-func drawingStylesSetStandard(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	c, err := activeDrawing(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.SetStandardArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingStylesSetStandard(s *app.Session, c *drawing.Content, in wire.SetStandardArgs) (wire.StandardStyleResult, error) {
 	std, ok := types.ParseDraftingStandard(in.Standard)
 	if !ok {
-		return nil, fmt.Errorf("drawing: unknown drafting standard %q", in.Standard)
+		return wire.StandardStyleResult{}, fmt.Errorf("drawing: unknown drafting standard %q", in.Standard)
 	}
 	c.Styles().SetActiveStandard(std)
 	s.ActiveDocument().MarkDirty()
-	return json.Marshal(wire.StandardStyleResult{Style: standardStyleInfo(c.Styles().ActiveStyle())})
+	return wire.StandardStyleResult{Style: standardStyleInfo(c.Styles().ActiveStyle())}, nil
 }
 
 // standardStyleInfo flattens a standard's style preset into its wire DTO.

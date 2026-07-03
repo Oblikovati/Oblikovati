@@ -3,7 +3,6 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"oblikovati.org/api/wire"
@@ -64,70 +63,54 @@ func openFile(s *app.Session, fullFileName string) (*doc.File, error) {
 }
 
 // getFile returns one open file's identity (wire files.get).
-func getFile(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.GetFileArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func getFile(s *app.Session, in wire.GetFileArgs) (wire.FileInfo, error) {
 	f, err := openFile(s, in.FullFileName)
 	if err != nil {
-		return nil, err
+		return wire.FileInfo{}, err
 	}
-	return json.Marshal(fileInfo(f))
+	return fileInfo(f), nil
 }
 
 // listFileReferences returns a file's persisted reference records (wire
 // files.listReferences).
-func listFileReferences(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.GetFileArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func listFileReferences(s *app.Session, in wire.GetFileArgs) (wire.ListFileReferencesResult, error) {
 	f, err := openFile(s, in.FullFileName)
 	if err != nil {
-		return nil, err
+		return wire.ListFileReferencesResult{}, err
 	}
 	refs := f.References()
 	out := make([]wire.FileReferenceInfo, len(refs))
 	for i, r := range refs {
 		out[i] = fileReferenceInfo(r)
 	}
-	return json.Marshal(wire.ListFileReferencesResult{References: out})
+	return wire.ListFileReferencesResult{References: out}, nil
 }
 
 // replaceFileReference re-points one reference record at a new target (wire
 // files.replaceReference) and returns the updated record.
-func replaceFileReference(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.ReplaceFileReferenceArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func replaceFileReference(s *app.Session, in wire.ReplaceFileReferenceArgs) (wire.FileReferenceInfo, error) {
 	f, err := openFile(s, in.FullFileName)
 	if err != nil {
-		return nil, err
+		return wire.FileReferenceInfo{}, err
 	}
 	for _, r := range f.References() {
 		if r.FullFileName() != in.RequestedName {
 			continue
 		}
 		if err := r.ReplaceReference(in.NewFileName); err != nil {
-			return nil, err
+			return wire.FileReferenceInfo{}, err
 		}
-		return json.Marshal(fileReferenceInfo(r))
+		return fileReferenceInfo(r), nil
 	}
-	return nil, fmt.Errorf("router: file %q holds no reference named %q", in.FullFileName, in.RequestedName)
+	return wire.FileReferenceInfo{}, fmt.Errorf("router: file %q holds no reference named %q", in.FullFileName, in.RequestedName)
 }
 
 // listDocumentFileReferences returns the document-side reference views (wire
 // documents.listFileReferences).
-func listDocumentFileReferences(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.ListDocumentFileReferencesArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func listDocumentFileReferences(s *app.Session, in wire.ListDocumentFileReferencesArgs) (wire.ListDocumentFileReferencesResult, error) {
 	d, err := documentByID(s, in.Document)
 	if err != nil {
-		return nil, err
+		return wire.ListDocumentFileReferencesResult{}, err
 	}
 	refs := d.FileReferences()
 	out := make([]wire.DocumentFileReferenceInfo, len(refs))
@@ -138,5 +121,5 @@ func listDocumentFileReferences(s *app.Session, args json.RawMessage) (json.RawM
 			DifferentDocument: r.DifferentDocument(),
 		}
 	}
-	return json.Marshal(wire.ListDocumentFileReferencesResult{References: out})
+	return wire.ListDocumentFileReferencesResult{References: out}, nil
 }

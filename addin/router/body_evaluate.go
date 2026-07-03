@@ -3,40 +3,36 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
 )
 
 // bodyFaceEvaluate serves wire.MethodBodyFaceEvaluate: a batched surface evaluation of one
 // face addressed by reference key. It is the out-of-process projection of the kernel surface
 // evaluator (kernel/topo) — a caller sampling a face densely (surface-following toolpaths,
 // point projection) gets all points back in one reply instead of one call per point.
-func bodyFaceEvaluate(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.FaceEvaluateArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	b, err := resolveBody(s, in.BodyIndex)
+func bodyFaceEvaluate(_ *app.Session, part *compdef.PartComponentDefinition, in wire.FaceEvaluateArgs) (wire.FaceEvaluateResult, error) {
+	b, err := bodyAt(part, in.BodyIndex)
 	if err != nil {
-		return nil, err
+		return wire.FaceEvaluateResult{}, err
 	}
 	f, ok := b.FindFaceByKey([]byte(in.FaceKey))
 	if !ok {
-		return nil, fmt.Errorf("no face with key %q on body %d", in.FaceKey, in.BodyIndex)
+		return wire.FaceEvaluateResult{}, fmt.Errorf("no face with key %q on body %d", in.FaceKey, in.BodyIndex)
 	}
 	eval := topo.NewFaceEvaluator(f).SurfaceEvaluator
 	out, err := evaluateFaceSurface(eval, in.Mode, in.Inputs)
 	if err != nil {
-		return nil, err
+		return wire.FaceEvaluateResult{}, err
 	}
 	uLo, uHi, vLo, vHi := eval.ParamRange()
 	out.ParamRange = []float64{uLo, vLo, uHi, vHi}
-	return json.Marshal(out)
+	return out, nil
 }
 
 // evaluateFaceSurface runs the requested batched query over the inputs, filling only the

@@ -3,14 +3,12 @@
 package router
 
 import (
-	"encoding/json"
-
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
 )
 
 // referenceKeys surfaces the active part's topology (faces/edges/vertices) with their
@@ -18,16 +16,12 @@ import (
 // add-in obtains a key to feed back into the key consumers (include, surface curves,
 // project geometry, attributes). Each entry carries a representative point so the caller
 // can recognise which face/edge/vertex it is.
-func referenceKeys(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
+func referenceKeys(_ *app.Session, part *compdef.PartComponentDefinition) (wire.ReferenceKeysResult, error) {
 	var out wire.ReferenceKeysResult
 	for _, b := range part.SurfaceBodies().All() {
 		out.Bodies = append(out.Bodies, bodyTopology(b))
 	}
-	return json.Marshal(out)
+	return out, nil
 }
 
 // bodyTopology collects one body's faces/edges/vertices as reference keys + representative

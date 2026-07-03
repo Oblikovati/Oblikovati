@@ -5,7 +5,6 @@ package opregistry
 import (
 	"encoding/json"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/model/feature"
@@ -57,12 +56,8 @@ func restDescriptor() *OperationDescriptor {
 }
 
 func applyRest(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.Rest](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in featureargs.Rest
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	sk, err := sketchAt(part, in.SketchIndex)
@@ -82,12 +77,8 @@ func applyRest(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 }
 
 func applySnapFit(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.SnapFit](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in featureargs.SnapFit
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	var l, w, t, cl, ch func() float64

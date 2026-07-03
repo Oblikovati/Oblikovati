@@ -8,6 +8,7 @@ import (
 	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
+	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/param"
 )
 
@@ -55,29 +56,21 @@ func derivedReferences(t *param.DerivedParameterTable) []wire.DerivedParameterRe
 }
 
 // listDerivedTables returns the active part's or assembly's tables with live candidates.
-func listDerivedTables(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	holder, err := modelaccess.ActiveParameterHolder(s)
-	if err != nil {
-		return nil, err
-	}
+func listDerivedTables(s *app.Session, holder compdef.ParameterHolder) (wire.ListDerivedParameterTablesResult, error) {
 	var out wire.ListDerivedParameterTablesResult
 	for _, t := range holder.Parameters().DerivedTables() {
 		out.Tables = append(out.Tables, derivedTableInfo(s, t))
 	}
-	return json.Marshal(out)
+	return out, nil
 }
 
 // addDerivedTable links parameters from another open document into this one.
-func addDerivedTable(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.DerivedParameterTableAddArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func addDerivedTable(s *app.Session, in wire.DerivedParameterTableAddArgs) (wire.DerivedParameterTableInfo, error) {
 	t, err := s.AddDerivedParameterTable(in.SourceDocument, in.Linked)
 	if err != nil {
-		return nil, err
+		return wire.DerivedParameterTableInfo{}, err
 	}
-	return json.Marshal(derivedTableInfo(s, t))
+	return derivedTableInfo(s, t), nil
 }
 
 // setDerivedTableLinked replaces a table's linked subset.
@@ -101,13 +94,9 @@ func setDerivedTableLinked(s *app.Session, args json.RawMessage) (json.RawMessag
 }
 
 // deleteDerivedTable removes a table and its derived parameters.
-func deleteDerivedTable(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.DerivedParameterTableDeleteArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func deleteDerivedTable(s *app.Session, in wire.DerivedParameterTableDeleteArgs) (struct{}, error) {
 	if err := s.DeleteDerivedParameterTable(in.ID); err != nil {
-		return nil, err
+		return struct{}{}, err
 	}
-	return json.Marshal(struct{}{})
+	return struct{}{}, nil
 }

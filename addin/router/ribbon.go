@@ -98,25 +98,17 @@ func listEnvironments(s *app.Session, _ json.RawMessage) (json.RawMessage, error
 }
 
 // registerEnvironment declares an add-in environment (wire ui.registerEnvironment).
-func registerEnvironment(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.RegisterEnvironmentArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func registerEnvironment(s *app.Session, in wire.RegisterEnvironmentArgs) (wire.OKResult, error) {
+	if err := s.RegisterEnvironment(in.Environment, in.Name); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.RegisterEnvironment(req.Environment, req.Name); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
 // activateEnvironment enters/leaves an add-in environment (wire ui.activateEnvironment).
-func activateEnvironment(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.ActivateEnvironmentArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func activateEnvironment(s *app.Session, in wire.ActivateEnvironmentArgs) (wire.OKResult, error) {
+	if err := s.ActivateEnvironment(in.Environment); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.ActivateEnvironment(req.Environment); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }

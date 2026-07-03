@@ -3,7 +3,6 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"oblikovati.org/api/types"
@@ -19,39 +18,31 @@ import (
 
 // registerDrawingHandlers wires the drawing.* methods.
 func (r *Router) registerDrawingHandlers() {
-	r.readOnly(wire.MethodDrawingListSheets, drawingListSheets)
-	r.mutating(wire.MethodDrawingAddSheet, "Add Sheet", drawingAddSheet)
-	r.mutating(wire.MethodDrawingRemoveSheet, "Delete Sheet", drawingRemoveSheet)
-	r.readOnly(wire.MethodDrawingSetActiveSheet, drawingSetActiveSheet)
-	r.mutating(wire.MethodDrawingSetModelReference, "Set Model Reference", drawingSetModelReference)
-	r.readOnly(wire.MethodDrawingTitleBlockFields, drawingTitleBlockFields)
-	r.readOnly(wire.MethodDrawingExportDXF, drawingExportDXF)
+	r.readOnly(wire.MethodDrawingListSheets, ctxQuery(activeDrawing, drawingListSheets))
+	r.mutating(wire.MethodDrawingAddSheet, "Add Sheet", typedCtx(activeDrawing, drawingAddSheet))
+	r.mutating(wire.MethodDrawingRemoveSheet, "Delete Sheet", typedCtx(activeDrawing, drawingRemoveSheet))
+	r.readOnly(wire.MethodDrawingSetActiveSheet, typedCtx(activeDrawing, drawingSetActiveSheet))
+	r.mutating(wire.MethodDrawingSetModelReference, "Set Model Reference", typedCtx(activeDrawing, drawingSetModelReference))
+	r.readOnly(wire.MethodDrawingTitleBlockFields, typedCtx(activeDrawing, drawingTitleBlockFields))
+	r.readOnly(wire.MethodDrawingExportDXF, typedCtx(activeDrawing, drawingExportDXF))
 }
 
 // drawingExportDXF writes the active sheet (its views' visible/hidden edges, border and title
 // block) to a DXF file. Views are re-projected first so the export reflects the current model.
-func drawingExportDXF(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	c, err := activeDrawing(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.ExportDrawingDXFArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingExportDXF(_ *app.Session, c *drawing.Content, in wire.ExportDrawingDXFArgs) (wire.ExportDrawingDXFResult, error) {
 	if in.Path == "" {
-		return nil, fmt.Errorf("drawing: export path is required")
+		return wire.ExportDrawingDXFResult{}, fmt.Errorf("drawing: export path is required")
 	}
 	c.RecomputeViews()
 	sheet := c.Sheets().Active()
 	if sheet == nil {
-		return nil, fmt.Errorf("drawing: no active sheet to export")
+		return wire.ExportDrawingDXFResult{}, fmt.Errorf("drawing: no active sheet to export")
 	}
 	n, err := exchange.ExportDrawingDXFFile(sheet, in.Path, exchange.DefaultDrawingExportLayers(), types.DXFVersion(in.Version).Normalized())
 	if err != nil {
-		return nil, err
+		return wire.ExportDrawingDXFResult{}, err
 	}
-	return json.Marshal(wire.ExportDrawingDXFResult{Path: in.Path, Entities: n})
+	return wire.ExportDrawingDXFResult{Path: in.Path, Entities: n}, nil
 }
 
 // activeDrawing returns the active document's drawing content with its title-block
@@ -61,94 +52,50 @@ func activeDrawing(s *app.Session) (*drawing.Content, error) {
 	return app.ActiveDrawing(s)
 }
 
-func drawingListSheets(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	c, err := activeDrawing(s)
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(listSheetsResult(c))
+func drawingListSheets(_ *app.Session, c *drawing.Content) (wire.ListSheetsResult, error) {
+	return listSheetsResult(c), nil
 }
 
-func drawingAddSheet(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	c, err := activeDrawing(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddSheetArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingAddSheet(s *app.Session, c *drawing.Content, in wire.AddSheetArgs) (wire.SheetResult, error) {
 	spec, err := sheetSpecOf(in)
 	if err != nil {
-		return nil, err
+		return wire.SheetResult{}, err
 	}
 	sh, err := c.Sheets().Add(spec)
 	if err != nil {
-		return nil, err
+		return wire.SheetResult{}, err
 	}
 	s.ActiveDocument().MarkDirty()
-	return json.Marshal(wire.SheetResult{Sheet: sheetInfo(c, sh)})
+	return wire.SheetResult{Sheet: sheetInfo(c, sh)}, nil
 }
 
-func drawingRemoveSheet(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	c, err := activeDrawing(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.RemoveSheetArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingRemoveSheet(s *app.Session, c *drawing.Content, in wire.RemoveSheetArgs) (wire.ListSheetsResult, error) {
 	if err := c.Sheets().Remove(in.Name); err != nil {
-		return nil, err
+		return wire.ListSheetsResult{}, err
 	}
 	s.ActiveDocument().MarkDirty()
-	return json.Marshal(listSheetsResult(c))
+	return listSheetsResult(c), nil
 }
 
-func drawingSetActiveSheet(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	c, err := activeDrawing(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.SetActiveSheetArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingSetActiveSheet(_ *app.Session, c *drawing.Content, in wire.SetActiveSheetArgs) (wire.SheetResult, error) {
 	if err := c.Sheets().SetActive(in.Name); err != nil {
-		return nil, err
+		return wire.SheetResult{}, err
 	}
-	return json.Marshal(wire.SheetResult{Sheet: sheetInfo(c, c.Sheets().Active())})
+	return wire.SheetResult{Sheet: sheetInfo(c, c.Sheets().Active())}, nil
 }
 
-func drawingSetModelReference(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	c, err := activeDrawing(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.SetModelReferenceArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingSetModelReference(s *app.Session, c *drawing.Content, in wire.SetModelReferenceArgs) (wire.SetModelReferenceResult, error) {
 	c.SetModelReference(in.FullDocumentName)
 	s.ActiveDocument().MarkDirty()
-	return json.Marshal(wire.SetModelReferenceResult{ModelReference: c.ModelReference()})
+	return wire.SetModelReferenceResult{ModelReference: c.ModelReference()}, nil
 }
 
-func drawingTitleBlockFields(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	c, err := activeDrawing(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.TitleBlockFieldsArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func drawingTitleBlockFields(_ *app.Session, c *drawing.Content, in wire.TitleBlockFieldsArgs) (wire.TitleBlockFieldsResult, error) {
 	sh, err := sheetByNameOrActive(c, in.Sheet)
 	if err != nil {
-		return nil, err
+		return wire.TitleBlockFieldsResult{}, err
 	}
-	return json.Marshal(titleBlockFieldsResult(sh))
+	return titleBlockFieldsResult(sh), nil
 }
 
 // sheetByNameOrActive returns the named sheet, or the active sheet when name is empty.

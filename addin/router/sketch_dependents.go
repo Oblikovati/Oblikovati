@@ -3,11 +3,9 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
@@ -47,16 +45,12 @@ func sketchDependentRefs(part *compdef.PartComponentDefinition, sk *sketch.Sketc
 }
 
 // sketchDependents lists the features that consume the addressed sketch (#154).
-func sketchDependents(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	sk, _, err := resolveSketch(s, raw)
+func sketchDependents(_ *app.Session, part *compdef.PartComponentDefinition, in wire.SketchArgs) (wire.SketchDependentsResult, error) {
+	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.SketchDependentsResult{}, err
 	}
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(wire.SketchDependentsResult{Dependents: sketchDependentRefs(part, sk)})
+	return wire.SketchDependentsResult{Dependents: sketchDependentRefs(part, sk)}, nil
 }
 
 // dependentNames joins the dependent feature names for a delete-guard error message.

@@ -14,8 +14,8 @@ import (
 func (r *Router) registerWindowHandlers() {
 	r.readOnly(wire.MethodWindowsListFrames, listViewFrames)
 	r.readOnly(wire.MethodWindowsListTabs, listViewTabs)
-	r.readOnly(wire.MethodWindowsActivateTab, activateViewTab)
-	r.readOnly(wire.MethodWindowsCloseTab, closeViewTab)
+	r.readOnly(wire.MethodWindowsActivateTab, typed(activateViewTab))
+	r.readOnly(wire.MethodWindowsCloseTab, typed(closeViewTab))
 }
 
 // listViewFrames reports the host's top-level frames — exactly one on the
@@ -42,36 +42,28 @@ func listViewTabs(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
 }
 
 // activateViewTab brings a document tab to the front (wire windows.activateTab).
-func activateViewTab(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.ActivateViewTabArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
-	}
+func activateViewTab(s *app.Session, in wire.ActivateViewTabArgs) (wire.OKResult, error) {
 	for _, d := range s.Workspace().Documents() {
-		if uint64(d.ID()) == req.Document {
+		if uint64(d.ID()) == in.Document {
 			if err := s.Workspace().SetActiveDocument(d); err != nil {
-				return nil, err
+				return wire.OKResult{}, err
 			}
-			return ok()
+			return wire.OKResult{OK: true}, nil
 		}
 	}
-	return nil, fmt.Errorf("no open document with id %d", req.Document)
+	return wire.OKResult{}, fmt.Errorf("no open document with id %d", in.Document)
 }
 
 // closeViewTab closes a document tab with documents.close's save-first/force
 // semantics (wire windows.closeTab).
-func closeViewTab(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.CloseViewTabArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
-	}
+func closeViewTab(s *app.Session, in wire.CloseViewTabArgs) (wire.OKResult, error) {
 	for _, d := range s.Workspace().Documents() {
-		if uint64(d.ID()) == req.Document {
-			if err := s.Workspace().Close(d, req.Force); err != nil {
-				return nil, err
+		if uint64(d.ID()) == in.Document {
+			if err := s.Workspace().Close(d, in.Force); err != nil {
+				return wire.OKResult{}, err
 			}
-			return ok()
+			return wire.OKResult{OK: true}, nil
 		}
 	}
-	return nil, fmt.Errorf("no open document with id %d", req.Document)
+	return wire.OKResult{}, fmt.Errorf("no open document with id %d", in.Document)
 }

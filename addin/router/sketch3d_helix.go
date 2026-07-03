@@ -3,10 +3,8 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
@@ -20,29 +18,25 @@ import (
 // same rows/ends at creation.
 
 // sketch3DEditHelix serves wire.MethodSketch3DEditHelix.
-func sketch3DEditHelix(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.EditHelixArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	part, sk, err := activePartSketch3D(s, in.SketchIndex)
+func sketch3DEditHelix(_ *app.Session, part *compdef.PartComponentDefinition, in wire.EditHelixArgs) (wire.HelixDefinitionView, error) {
+	sk, err := sketch3DAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.HelixDefinitionView{}, err
 	}
 	h, err := helixByID(sk, in.Entity)
 	if err != nil {
-		return nil, err
+		return wire.HelixDefinitionView{}, err
 	}
 	if err := applyHelixShapeEdit(part, h, in); err != nil {
-		return nil, err
+		return wire.HelixDefinitionView{}, err
 	}
 	if err := applyHelixEndEdit(part, h, in.Start, in.End); err != nil {
-		return nil, err
+		return wire.HelixDefinitionView{}, err
 	}
 	if _, err := h.Curve(); err != nil {
-		return nil, fmt.Errorf("sketch3d.editHelix: the edited definition does not regenerate: %w", err)
+		return wire.HelixDefinitionView{}, fmt.Errorf("sketch3d.editHelix: the edited definition does not regenerate: %w", err)
 	}
-	return json.Marshal(helixDefinitionView(h))
+	return helixDefinitionView(h), nil
 }
 
 // applyHelixShapeEdit applies the constant fields or the variable rows; an
@@ -193,17 +187,4 @@ func helixByID(sk *sketch.Sketch3D, id uint64) (*sketch.HelicalCurve3D, error) {
 		return nil, fmt.Errorf("entity %d is %T, want a helical curve", id, e)
 	}
 	return h, nil
-}
-
-// activePartSketch3D resolves the active part and its 3D sketch at index.
-func activePartSketch3D(s *app.Session, index int) (*compdef.PartComponentDefinition, *sketch.Sketch3D, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, nil, err
-	}
-	sk, err := sketch3DAtIndex(part, index)
-	if err != nil {
-		return nil, nil, err
-	}
-	return part, sk, nil
 }

@@ -3,10 +3,8 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
@@ -21,47 +19,31 @@ import (
 
 // registerAssemblyBOMHandlers wires the assembly.bom* methods.
 func (r *Router) registerAssemblyBOMHandlers() {
-	r.readOnly(wire.MethodAssemblyBOMView, assemblyBOMView)
-	r.readOnly(wire.MethodAssemblyBOMExport, assemblyBOMExport)
+	r.readOnly(wire.MethodAssemblyBOMView, typedAssembly(assemblyBOMView))
+	r.readOnly(wire.MethodAssemblyBOMExport, typedAssembly(assemblyBOMExport))
 }
 
 // assemblyBOMView returns the requested BOM view of the active assembly.
-func assemblyBOMView(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.BOMViewArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func assemblyBOMView(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.BOMViewArgs) (wire.BOMViewResult, error) {
 	view, err := bomViewByKind(asm, in.View)
 	if err != nil {
-		return nil, err
+		return wire.BOMViewResult{}, err
 	}
-	return json.Marshal(wire.BOMViewResult{View: in.View, Rows: bomRowInfos(view.Rows)})
+	return wire.BOMViewResult{View: in.View, Rows: bomRowInfos(view.Rows)}, nil
 }
 
 // assemblyBOMExport renders a BOM view of the active assembly to CSV with the standard
 // columns plus one per requested component property.
-func assemblyBOMExport(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.BOMExportArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func assemblyBOMExport(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.BOMExportArgs) (wire.BOMExportResult, error) {
 	view, err := bomViewByKind(asm, in.View)
 	if err != nil {
-		return nil, err
+		return wire.BOMExportResult{}, err
 	}
 	csv, err := bom.ExportCSV(view, exportColumns(in.Columns))
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", wire.MethodAssemblyBOMExport, err)
+		return wire.BOMExportResult{}, fmt.Errorf("%s: %w", wire.MethodAssemblyBOMExport, err)
 	}
-	return json.Marshal(wire.BOMExportResult{CSV: csv})
+	return wire.BOMExportResult{CSV: csv}, nil
 }
 
 // bomViewByKind builds the active assembly's BOM and selects the requested view.

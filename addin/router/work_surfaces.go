@@ -3,10 +3,8 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
@@ -19,78 +17,45 @@ import (
 // no create method (it mirrors how datum surfaces appear in the reference API).
 
 // listWorkSurfaces serves wire.MethodWorkSurfacesList.
-func listWorkSurfaces(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	col := part.WorkSurfaces()
-	out := make([]wire.WorkSurfaceInfo, col.Count())
-	for i := 0; i < col.Count(); i++ {
-		out[i] = workSurfaceInfo(i, col.Item(i))
-	}
-	return json.Marshal(wire.ListWorkSurfacesResult{Surfaces: out})
+func listWorkSurfaces(_ *app.Session, part *compdef.PartComponentDefinition) (wire.ListWorkSurfacesResult, error) {
+	return wire.ListWorkSurfacesResult{Surfaces: projectAll(part.WorkSurfaces(), workSurfaceInfo)}, nil
 }
 
 // getWorkSurface serves wire.MethodWorkSurfacesGet.
-func getWorkSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.WorkSurfaceRefArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
+func getWorkSurface(_ *app.Session, part *compdef.PartComponentDefinition, in wire.WorkSurfaceRefArgs) (wire.WorkSurfaceDetailResult, error) {
 	w := part.WorkSurfaces().Item(in.Index)
 	if w == nil {
-		return nil, noSuchWorkSurface(part, in.Index)
+		return wire.WorkSurfaceDetailResult{}, noSuchWorkSurface(part, in.Index)
 	}
-	return json.Marshal(wire.WorkSurfaceDetailResult{Surface: workSurfaceInfo(in.Index, w)})
+	return wire.WorkSurfaceDetailResult{Surface: workSurfaceInfo(in.Index, w)}, nil
 }
 
 // setWorkSurfaceVisible serves wire.MethodWorkSurfacesSetVisible.
-func setWorkSurfaceVisible(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.SetWorkSurfaceVisibleArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
+func setWorkSurfaceVisible(_ *app.Session, part *compdef.PartComponentDefinition, in wire.SetWorkSurfaceVisibleArgs) (wire.WorkSurfaceDetailResult, error) {
 	w := part.WorkSurfaces().Item(in.Index)
 	if w == nil {
-		return nil, noSuchWorkSurface(part, in.Index)
+		return wire.WorkSurfaceDetailResult{}, noSuchWorkSurface(part, in.Index)
 	}
 	w.SetVisible(in.Visible)
 	part.MarkChanged() // bump the version so the viewport re-renders the surface's new state
-	return json.Marshal(wire.WorkSurfaceDetailResult{Surface: workSurfaceInfo(in.Index, w)})
+	return wire.WorkSurfaceDetailResult{Surface: workSurfaceInfo(in.Index, w)}, nil
 }
 
 // renameWorkSurface serves wire.MethodWorkSurfacesRename.
-func renameWorkSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.RenameWorkSurfaceArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
+func renameWorkSurface(_ *app.Session, part *compdef.PartComponentDefinition, in wire.RenameWorkSurfaceArgs) (wire.WorkSurfaceDetailResult, error) {
 	col := part.WorkSurfaces()
 	w := col.Item(in.Index)
 	if w == nil {
-		return nil, noSuchWorkSurface(part, in.Index)
+		return wire.WorkSurfaceDetailResult{}, noSuchWorkSurface(part, in.Index)
 	}
 	if col.HasName(in.Name, in.Index) {
-		return nil, fmt.Errorf("workSurfaces.rename: name %q is already used by another surface", in.Name)
+		return wire.WorkSurfaceDetailResult{}, fmt.Errorf("workSurfaces.rename: name %q is already used by another surface", in.Name)
 	}
 	if err := w.SetName(in.Name); err != nil {
-		return nil, fmt.Errorf("workSurfaces.rename: %w", err)
+		return wire.WorkSurfaceDetailResult{}, fmt.Errorf("workSurfaces.rename: %w", err)
 	}
 	part.MarkChanged()
-	return json.Marshal(wire.WorkSurfaceDetailResult{Surface: workSurfaceInfo(in.Index, w)})
+	return wire.WorkSurfaceDetailResult{Surface: workSurfaceInfo(in.Index, w)}, nil
 }
 
 // noSuchWorkSurface is the shared "index out of range" error, naming the bound.

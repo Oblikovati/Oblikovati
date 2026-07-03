@@ -11,48 +11,36 @@ import (
 
 // registerDialogHandlers wires the host-dialog methods (M05-F08, #615).
 func (r *Router) registerDialogHandlers() {
-	r.readOnly(wire.MethodDialogsShowFileDialog, showFileDialog)
-	r.readOnly(wire.MethodDialogsShowWebDialog, showWebDialog)
-	r.readOnly(wire.MethodDialogsCloseWebDialog, closeWebDialog)
+	r.readOnly(wire.MethodDialogsShowFileDialog, typed(showFileDialog))
+	r.readOnly(wire.MethodDialogsShowWebDialog, typed(showWebDialog))
+	r.readOnly(wire.MethodDialogsCloseWebDialog, typed(closeWebDialog))
 	r.readOnly(wire.MethodDialogsListWebViews, listWebViews)
 }
 
 // showFileDialog queues a file-dialog ask; the choice arrives as dialog.fileChosen.
-func showFileDialog(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.ShowFileDialogArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
-	}
+func showFileDialog(s *app.Session, in wire.ShowFileDialogArgs) (wire.OKResult, error) {
 	err := s.RequestFileDialog(app.FileDialogRequest{
-		ID: req.ID, Title: req.Title, Save: req.Save, Filter: req.Filter,
-		FilterIndex: req.FilterIndex, InitialDir: req.InitialDir, MultiSelect: req.MultiSelect,
+		ID: in.ID, Title: in.Title, Save: in.Save, Filter: in.Filter,
+		FilterIndex: in.FilterIndex, InitialDir: in.InitialDir, MultiSelect: in.MultiSelect,
 	})
 	if err != nil {
-		return nil, err
+		return wire.OKResult{}, err
 	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
-func showWebDialog(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.ShowWebDialogArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func showWebDialog(s *app.Session, in wire.ShowWebDialogArgs) (wire.OKResult, error) {
+	if err := s.ShowWebDialog(in.Dialog); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.ShowWebDialog(req.Dialog); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
-func closeWebDialog(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.CloseWebDialogArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func closeWebDialog(s *app.Session, in wire.CloseWebDialogArgs) (wire.OKResult, error) {
+	if err := s.CloseWebDialog(in.ID); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.CloseWebDialog(req.ID); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
 func listWebViews(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {

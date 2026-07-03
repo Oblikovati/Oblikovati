@@ -16,9 +16,9 @@ import (
 // settings methods (M16-F07, #643).
 func (r *Router) registerDisplayHandlers() {
 	r.readOnly(wire.MethodDisplayGetOptions, getDisplayOptions)
-	r.readOnly(wire.MethodDisplaySetOptions, setDisplayOptions)
-	r.readOnly(wire.MethodDocumentGetDisplaySettings, getDisplaySettings)
-	r.readOnly(wire.MethodDocumentSetDisplaySettings, setDisplaySettings)
+	r.readOnly(wire.MethodDisplaySetOptions, typed(setDisplayOptions))
+	r.readOnly(wire.MethodDocumentGetDisplaySettings, typed(getDisplaySettings))
+	r.readOnly(wire.MethodDocumentSetDisplaySettings, typed(setDisplaySettings))
 }
 
 // getDisplayOptions returns the application-level display options (wire.MethodDisplayGetOptions).
@@ -27,42 +27,30 @@ func getDisplayOptions(s *app.Session, _ json.RawMessage) (json.RawMessage, erro
 }
 
 // setDisplayOptions applies the application-level display options (wire.MethodDisplaySetOptions).
-func setDisplayOptions(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var v wire.DisplayModeOptionsView
-	if err := decode(args, &v); err != nil {
-		return nil, err
-	}
-	s.SetDisplayOptions(displayModeOptionsOf(v))
-	return json.Marshal(displayModeOptionsView(s.DisplayOptionsData()))
+func setDisplayOptions(s *app.Session, in wire.DisplayModeOptionsView) (wire.DisplayModeOptionsView, error) {
+	s.SetDisplayOptions(displayModeOptionsOf(in))
+	return displayModeOptionsView(s.DisplayOptionsData()), nil
 }
 
 // getDisplaySettings returns a document's per-document display settings
 // (wire.MethodDocumentGetDisplaySettings).
-func getDisplaySettings(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.GetDisplaySettingsArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
-	}
-	id, err := docIDFromString(a.Document)
+func getDisplaySettings(s *app.Session, in wire.GetDisplaySettingsArgs) (wire.DisplaySettingsView, error) {
+	id, err := docIDFromString(in.Document)
 	if err != nil {
-		return nil, err
+		return wire.DisplaySettingsView{}, err
 	}
-	return json.Marshal(displaySettingsView(s.DisplaySettings(id)))
+	return displaySettingsView(s.DisplaySettings(id)), nil
 }
 
 // setDisplaySettings applies a document's per-document display settings
 // (wire.MethodDocumentSetDisplaySettings).
-func setDisplaySettings(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.SetDisplaySettingsArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
-	}
-	id, err := docIDFromString(a.Document)
+func setDisplaySettings(s *app.Session, in wire.SetDisplaySettingsArgs) (wire.DisplaySettingsView, error) {
+	id, err := docIDFromString(in.Document)
 	if err != nil {
-		return nil, err
+		return wire.DisplaySettingsView{}, err
 	}
-	s.SetDisplaySettings(id, displaySettingsOf(a.Settings))
-	return json.Marshal(displaySettingsView(s.DisplaySettings(id)))
+	s.SetDisplaySettings(id, displaySettingsOf(in.Settings))
+	return displaySettingsView(s.DisplaySettings(id)), nil
 }
 
 // displayModeOptionsView / displayModeOptionsOf map between the app display options and their wire DTO.

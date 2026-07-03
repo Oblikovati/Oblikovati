@@ -3,20 +3,19 @@
 package router
 
 import (
-	"encoding/json"
-
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/sketch"
 )
 
 // enumerateEntities3D lists a 3D sketch's geometry (kind, construction, points, radius).
-func enumerateEntities3D(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	sk, _, err := resolveSketch3D(s, raw)
+func enumerateEntities3D(s *app.Session, part *compdef.PartComponentDefinition, in wire.Sketch3DArgs) (wire.EnumerateEntities3DResult, error) {
+	sk, err := sketch3DAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.EnumerateEntities3DResult{}, err
 	}
 	ents := sk.Entities()
 	moveable := sk.MoveableClassifier()
@@ -28,14 +27,14 @@ func enumerateEntities3D(s *app.Session, raw json.RawMessage) (json.RawMessage, 
 		info.MoveableStatus = moveable.Of(e).String()
 		out = append(out, info)
 	}
-	return json.Marshal(wire.EnumerateEntities3DResult{Entities: out})
+	return wire.EnumerateEntities3DResult{Entities: out}, nil
 }
 
 // enumerateConstraints3D lists a 3D sketch's geometric constraints.
-func enumerateConstraints3D(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	sk, _, err := resolveSketch3D(s, raw)
+func enumerateConstraints3D(_ *app.Session, part *compdef.PartComponentDefinition, in wire.Sketch3DArgs) (wire.ListConstraints3DResult, error) {
+	sk, err := sketch3DAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.ListConstraints3DResult{}, err
 	}
 	cons := sk.GeometricConstraints3D().All()
 	out := make([]wire.Constraint3DInfo, 0, len(cons))
@@ -43,14 +42,14 @@ func enumerateConstraints3D(s *app.Session, raw json.RawMessage) (json.RawMessag
 		kind, ids := constraint3DKind(c)
 		out = append(out, wire.Constraint3DInfo{Index: i, Kind: string(kind), Entities: ids})
 	}
-	return json.Marshal(wire.ListConstraints3DResult{Constraints: out})
+	return wire.ListConstraints3DResult{Constraints: out}, nil
 }
 
 // enumerateDimensions3D lists a 3D sketch's dimensional constraints.
-func enumerateDimensions3D(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	sk, _, err := resolveSketch3D(s, raw)
+func enumerateDimensions3D(_ *app.Session, part *compdef.PartComponentDefinition, in wire.Sketch3DArgs) (wire.ListDimensions3DResult, error) {
+	sk, err := sketch3DAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.ListDimensions3DResult{}, err
 	}
 	dims := sk.DimensionConstraints3D().All()
 	out := make([]wire.Dimension3DInfo, 0, len(dims))
@@ -64,7 +63,7 @@ func enumerateDimensions3D(s *app.Session, raw json.RawMessage) (json.RawMessage
 			Driven:     d.Driven(),
 		})
 	}
-	return json.Marshal(wire.ListDimensions3DResult{Dimensions: out})
+	return wire.ListDimensions3DResult{Dimensions: out}, nil
 }
 
 // entity3DInfo renders one 3D entity as its wire summary through the

@@ -3,10 +3,8 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
@@ -17,22 +15,14 @@ import (
 )
 
 // offsetSketchEntity offsets a single line/circle/arc by a unit-bearing distance.
-func offsetSketchEntity(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.OffsetSketchArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func offsetSketchEntity(_ *app.Session, part *compdef.PartComponentDefinition, in wire.OffsetSketchArgs) (wire.OffsetSketchResult, error) {
 	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.OffsetSketchResult{}, err
 	}
 	d, err := resolveQuantity(part, in.Distance, param.Length)
 	if err != nil {
-		return nil, fmt.Errorf("sketch.offset: distance %q: %w", in.Distance, err)
+		return wire.OffsetSketchResult{}, fmt.Errorf("sketch.offset: distance %q: %w", in.Distance, err)
 	}
 	if in.ProfileIndex != nil {
 		return offsetProfileRegion(sk, *in.ProfileIndex, d.Value, in.ArcSegments)
@@ -45,47 +35,47 @@ func offsetSketchEntity(s *app.Session, raw json.RawMessage) (json.RawMessage, e
 
 // offsetProfileRegion offsets a profile's whole closed boundary (OpenSCAD offset(r)) — convex
 // corners rounded — and returns the created lines of the new loop.
-func offsetProfileRegion(sk *sketch.Sketch, profIdx int, d float64, arcSegs int) (json.RawMessage, error) {
+func offsetProfileRegion(sk *sketch.Sketch, profIdx int, d float64, arcSegs int) (wire.OffsetSketchResult, error) {
 	profs := sk.Profiles()
 	if profIdx < 0 || profIdx >= profs.Count() {
-		return nil, fmt.Errorf("sketch.offset: profile %d not found (sketch has %d)", profIdx, profs.Count())
+		return wire.OffsetSketchResult{}, fmt.Errorf("sketch.offset: profile %d not found (sketch has %d)", profIdx, profs.Count())
 	}
 	poly := profs.Item(profIdx).OuterLoop().Polygon()
 	if len(poly) < 3 {
-		return nil, fmt.Errorf("sketch.offset: profile %d is not a closed region", profIdx)
+		return wire.OffsetSketchResult{}, fmt.Errorf("sketch.offset: profile %d is not a closed region", profIdx)
 	}
 	ents := sk.OffsetClosedLoop(poly, d, arcSegs)
 	if len(ents) == 0 {
-		return nil, fmt.Errorf("sketch.offset: region offset collapsed (distance %.4g too negative?)", d)
+		return wire.OffsetSketchResult{}, fmt.Errorf("sketch.offset: region offset collapsed (distance %.4g too negative?)", d)
 	}
 	created := make([]uint64, len(ents))
 	for i, e := range ents {
 		created[i] = uint64(e.EntityID())
 	}
-	return json.Marshal(wire.OffsetSketchResult{EntityID: created[0], Kind: "line", Created: created})
+	return wire.OffsetSketchResult{EntityID: created[0], Kind: "line", Created: created}, nil
 }
 
 // offsetSingle offsets one referenced line/circle/arc.
-func offsetSingle(sk *sketch.Sketch, id uint64, d math.Scalar) (json.RawMessage, error) {
+func offsetSingle(sk *sketch.Sketch, id uint64, d math.Scalar) (wire.OffsetSketchResult, error) {
 	e, ok := sk.EntityByID(sketch.ID(id))
 	if !ok {
-		return nil, fmt.Errorf("sketch.offset: no entity with id %d", id)
+		return wire.OffsetSketchResult{}, fmt.Errorf("sketch.offset: no entity with id %d", id)
 	}
 	off, err := sk.OffsetEntity(e, d)
 	if err != nil {
-		return nil, err
+		return wire.OffsetSketchResult{}, err
 	}
 	kind, _, _ := entityShape(off)
-	return json.Marshal(wire.OffsetSketchResult{EntityID: uint64(off.EntityID()), Kind: string(kind), Created: []uint64{uint64(off.EntityID())}})
+	return wire.OffsetSketchResult{EntityID: uint64(off.EntityID()), Kind: string(kind), Created: []uint64{uint64(off.EntityID())}}, nil
 }
 
 // offsetChain offsets a connected chain of referenced lines, mitring the joins.
-func offsetChain(sk *sketch.Sketch, refs []uint64, d math.Scalar) (json.RawMessage, error) {
+func offsetChain(sk *sketch.Sketch, refs []uint64, d math.Scalar) (wire.OffsetSketchResult, error) {
 	lines := make([]*sketch.Line, len(refs))
 	for i, id := range refs {
 		l, err := lineRef(sk, id)
 		if err != nil {
-			return nil, err
+			return wire.OffsetSketchResult{}, err
 		}
 		lines[i] = l
 	}
@@ -94,132 +84,100 @@ func offsetChain(sk *sketch.Sketch, refs []uint64, d math.Scalar) (json.RawMessa
 	for i, l := range off {
 		created[i] = uint64(l.EntityID())
 	}
-	return json.Marshal(wire.OffsetSketchResult{EntityID: created[0], Kind: "line", Created: created})
+	return wire.OffsetSketchResult{EntityID: created[0], Kind: "line", Created: created}, nil
 }
 
 // autoDimensionSketch fully constrains the sketch and reports the added count + DOF.
-func autoDimensionSketch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	sk, _, err := resolveSketch(s, raw)
+func autoDimensionSketch(_ *app.Session, part *compdef.PartComponentDefinition, in wire.SketchArgs) (wire.AutoDimensionResult, error) {
+	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.AutoDimensionResult{}, err
 	}
 	added := sk.AutoDimension()
-	return json.Marshal(wire.AutoDimensionResult{Added: added, DOF: sk.DegreesOfFreedom()})
+	return wire.AutoDimensionResult{Added: added, DOF: sk.DegreesOfFreedom()}, nil
 }
 
 // addSketchImage places a raster image on the sketch plane.
-func addSketchImage(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddSketchImageArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func addSketchImage(_ *app.Session, part *compdef.PartComponentDefinition, in wire.AddSketchImageArgs) (wire.AddSketchImageResult, error) {
 	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.AddSketchImageResult{}, err
 	}
 	anchor, err := point2Of(in.Anchor, "anchor")
 	if err != nil {
-		return nil, err
+		return wire.AddSketchImageResult{}, err
 	}
 	w, h, rot, err := imageMetrics(part, in)
 	if err != nil {
-		return nil, err
+		return wire.AddSketchImageResult{}, err
 	}
 	img := sk.Images().Add(in.Ref, anchor, w, h, rot, in.Opacity)
-	return json.Marshal(wire.AddSketchImageResult{EntityID: uint64(img.EntityID())})
+	return wire.AddSketchImageResult{EntityID: uint64(img.EntityID())}, nil
 }
 
 // addFillRegion fills the closed region containing the seed point.
-func addFillRegion(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.AddFillRegionArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	sk, err := activeSketchAt(s, in.SketchIndex)
+func addFillRegion(_ *app.Session, part *compdef.PartComponentDefinition, in wire.AddFillRegionArgs) (wire.AddEntityIDResult, error) {
+	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.AddEntityIDResult{}, err
 	}
 	seed, err := point2Of(in.Seed, "seed")
 	if err != nil {
-		return nil, err
+		return wire.AddEntityIDResult{}, err
 	}
 	f := sk.FillRegions().Add(seed, in.Style)
-	return json.Marshal(wire.AddEntityIDResult{EntityID: uint64(f.EntityID())})
+	return wire.AddEntityIDResult{EntityID: uint64(f.EntityID())}, nil
 }
 
 // addText places a single sketch TEXT entity at an anchor. The entity keeps its content +
 // font and DERIVES its glyph outlines on demand, so it is embossable/extrudable BY REFERENCE
 // — nothing is baked into the sketch (the previous host-side font-path path that emitted raw
 // polylines is gone; the bug it caused was that an emboss then stored baked geometry).
-func addText(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddTextArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func addText(_ *app.Session, part *compdef.PartComponentDefinition, in wire.AddTextArgs) (wire.AddEntityIDResult, error) {
 	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.AddEntityIDResult{}, err
 	}
 	anchor, err := point2Of(in.Anchor, "anchor")
 	if err != nil {
-		return nil, err
+		return wire.AddEntityIDResult{}, err
 	}
 	h, rot, size, err := textMetrics(part, in)
 	if err != nil {
-		return nil, err
+		return wire.AddEntityIDResult{}, err
 	}
 	tb := sk.TextBoxes().AddStyled(anchor, in.Text, h, rot, parseJustify(in.Justify), parseVJustify(in.VJustify), in.Font, size)
-	return json.Marshal(wire.AddEntityIDResult{EntityID: uint64(tb.EntityID())})
+	return wire.AddEntityIDResult{EntityID: uint64(tb.EntityID())}, nil
 }
 
 // getText reads back a sketch text entity's style.
-func getText(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.GetTextArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	sk, err := activeSketchAt(s, in.SketchIndex)
+func getText(_ *app.Session, part *compdef.PartComponentDefinition, in wire.GetTextArgs) (wire.SketchTextResult, error) {
+	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.SketchTextResult{}, err
 	}
 	tb, err := textBoxRef(sk, in.EntityID)
 	if err != nil {
-		return nil, err
+		return wire.SketchTextResult{}, err
 	}
-	return json.Marshal(wire.SketchTextResult{EntityID: in.EntityID, Style: styleOf(tb)})
+	return wire.SketchTextResult{EntityID: in.EntityID, Style: styleOf(tb)}, nil
 }
 
 // editText applies a partial edit to an existing sketch text entity and returns its style.
 // Editing re-derives the text's geometry, so any emboss referencing it recomputes.
-func editText(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.EditTextArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func editText(_ *app.Session, part *compdef.PartComponentDefinition, in wire.EditTextArgs) (wire.SketchTextResult, error) {
 	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.SketchTextResult{}, err
 	}
 	tb, err := textBoxRef(sk, in.EntityID)
 	if err != nil {
-		return nil, err
+		return wire.SketchTextResult{}, err
 	}
 	if err := applyTextEdit(part, tb, in); err != nil {
-		return nil, err
+		return wire.SketchTextResult{}, err
 	}
-	return json.Marshal(wire.SketchTextResult{EntityID: in.EntityID, Style: styleOf(tb)})
+	return wire.SketchTextResult{EntityID: in.EntityID, Style: styleOf(tb)}, nil
 }
 
 // applyTextEdit mutates the text box's set fields (a partial edit), parsing unit-bearing

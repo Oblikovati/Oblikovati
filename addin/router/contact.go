@@ -3,13 +3,11 @@
 package router
 
 import (
-	"encoding/json"
-
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/model/assembly"
+	"oblikovati.org/model/compdef"
 )
 
 // The assembly contact & interference surface (M12-F05, #362/#368): manage contact sets
@@ -18,115 +16,77 @@ import (
 
 // registerContactHandlers wires the contactSets.*/contactSolver.*/interference.* methods.
 func (r *Router) registerContactHandlers() {
-	r.mutating(wire.MethodContactSetsCreate, "Create Contact Set", contactSetsCreate)
-	r.readOnly(wire.MethodContactSetsList, contactSetsList)
-	r.mutating(wire.MethodContactSetsDelete, "Delete Contact Set", contactSetsDelete)
-	r.mutating(wire.MethodContactSetsAddMember, "Edit Contact Set", contactSetsAddMember)
-	r.mutating(wire.MethodContactSetsRemoveMember, "Edit Contact Set", contactSetsRemoveMember)
-	r.readOnly(wire.MethodContactSolverSetEnabled, contactSolverSetEnabled)
-	r.readOnly(wire.MethodContactSolverStatus, contactSolverStatus)
-	r.readOnly(wire.MethodInterferenceAnalyze, interferenceAnalyze)
+	r.mutating(wire.MethodContactSetsCreate, "Create Contact Set", typedAssembly(contactSetsCreate))
+	r.readOnly(wire.MethodContactSetsList, assemblyQuery(contactSetsList))
+	r.mutating(wire.MethodContactSetsDelete, "Delete Contact Set", typedAssembly(contactSetsDelete))
+	r.mutating(wire.MethodContactSetsAddMember, "Edit Contact Set", typedAssembly(contactSetsAddMember))
+	r.mutating(wire.MethodContactSetsRemoveMember, "Edit Contact Set", typedAssembly(contactSetsRemoveMember))
+	r.readOnly(wire.MethodContactSolverSetEnabled, typedAssembly(contactSolverSetEnabled))
+	r.readOnly(wire.MethodContactSolverStatus, assemblyQuery(contactSolverStatus))
+	r.readOnly(wire.MethodInterferenceAnalyze, typedAssembly(interferenceAnalyze))
 }
 
-func contactSetsCreate(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.CreateContactSetArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func contactSetsCreate(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.CreateContactSetArgs) (wire.ContactSetResult, error) {
 	cs := asm.ContactSolver().Create(in.Name)
-	return json.Marshal(wire.ContactSetResult{ContactSet: contactSetInfo(cs)})
+	return wire.ContactSetResult{ContactSet: contactSetInfo(cs)}, nil
 }
 
-func contactSetsList(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
+func contactSetsList(_ *app.Session, asm *compdef.AssemblyComponentDefinition) (wire.ContactSetsResult, error) {
+	return contactSetsListResult(asm), nil
+}
+
+// contactSetsListResult renders the active assembly's contact sets.
+func contactSetsListResult(asm *compdef.AssemblyComponentDefinition) wire.ContactSetsResult {
 	out := make([]wire.ContactSetInfo, 0)
 	for _, cs := range asm.ContactSolver().All() {
 		out = append(out, contactSetInfo(cs))
 	}
-	return json.Marshal(wire.ContactSetsResult{ContactSets: out})
+	return wire.ContactSetsResult{ContactSets: out}
 }
 
-func contactSetsDelete(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.ContactSetRef
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func contactSetsDelete(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.ContactSetRef) (wire.ContactSetsResult, error) {
 	asm.ContactSolver().Delete(in.ID)
-	return contactSetsList(s, nil)
+	return contactSetsListResult(asm), nil
 }
 
-func contactSetsAddMember(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	return contactMember(s, raw, (*assembly.ContactSolver).AddMember)
+func contactSetsAddMember(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.ContactMemberArgs) (wire.ContactSetResult, error) {
+	return contactMember(asm, in, (*assembly.ContactSolver).AddMember)
 }
 
-func contactSetsRemoveMember(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	return contactMember(s, raw, (*assembly.ContactSolver).RemoveMember)
+func contactSetsRemoveMember(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.ContactMemberArgs) (wire.ContactSetResult, error) {
+	return contactMember(asm, in, (*assembly.ContactSolver).RemoveMember)
 }
 
 // contactMember adds or removes a member via mutate and returns the updated set.
-func contactMember(s *app.Session, raw json.RawMessage, mutate func(*assembly.ContactSolver, uint64, uint64) error) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.ContactMemberArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func contactMember(asm *compdef.AssemblyComponentDefinition, in wire.ContactMemberArgs, mutate func(*assembly.ContactSolver, uint64, uint64) error) (wire.ContactSetResult, error) {
 	if err := mutate(asm.ContactSolver(), in.Set, in.Occurrence); err != nil {
-		return nil, err
+		return wire.ContactSetResult{}, err
 	}
-	return json.Marshal(wire.ContactSetResult{ContactSet: contactSetInfo(asm.ContactSolver().ByID(in.Set))})
+	return wire.ContactSetResult{ContactSet: contactSetInfo(asm.ContactSolver().ByID(in.Set))}, nil
 }
 
-func contactSolverSetEnabled(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.ContactSolverEnableArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func contactSolverSetEnabled(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.ContactSolverEnableArgs) (wire.ContactSolverResult, error) {
 	asm.ContactSolver().SetEnabled(in.Enabled)
-	return contactSolverStatus(s, nil)
+	return contactSolverStatusResult(asm), nil
 }
 
-func contactSolverStatus(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
+func contactSolverStatus(_ *app.Session, asm *compdef.AssemblyComponentDefinition) (wire.ContactSolverResult, error) {
+	return contactSolverStatusResult(asm), nil
+}
+
+// contactSolverStatusResult renders the contact solver's enabled/set-count status.
+func contactSolverStatusResult(asm *compdef.AssemblyComponentDefinition) wire.ContactSolverResult {
 	sv := asm.ContactSolver()
-	return json.Marshal(wire.ContactSolverResult{Solver: wire.ContactSolverInfo{Enabled: sv.Enabled(), SetCount: sv.SetCount()}})
+	return wire.ContactSolverResult{Solver: wire.ContactSolverInfo{Enabled: sv.Enabled(), SetCount: sv.SetCount()}}
 }
 
-func interferenceAnalyze(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AnalyzeInterferenceArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func interferenceAnalyze(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.AnalyzeInterferenceArgs) (wire.InterferenceResultsResult, error) {
 	res := asm.AnalyzeInterference(in.Occurrences)
 	out := make([]wire.InterferenceResultInfo, 0, len(res.Results))
 	for _, r := range res.Results {
 		out = append(out, interferenceResultInfo(r))
 	}
-	return json.Marshal(wire.InterferenceResultsResult{Results: out, TotalVolume: res.Total})
+	return wire.InterferenceResultsResult{Results: out, TotalVolume: res.Total}, nil
 }
 
 // contactSetInfo encodes a contact set.

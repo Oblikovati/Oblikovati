@@ -3,10 +3,8 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/math"
@@ -15,28 +13,20 @@ import (
 )
 
 // transformSketch applies an edit operation (move/rotate/copy/mirror) to a selection.
-func transformSketch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.TransformSketchArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func transformSketch(_ *app.Session, part *compdef.PartComponentDefinition, in wire.TransformSketchArgs) (wire.TransformSketchResult, error) {
 	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.TransformSketchResult{}, err
 	}
 	ents, err := entityRefs(sk, in.Entities)
 	if err != nil {
-		return nil, err
+		return wire.TransformSketchResult{}, err
 	}
 	created, err := applyTransform(part, sk, ents, in)
 	if err != nil {
-		return nil, err
+		return wire.TransformSketchResult{}, err
 	}
-	return json.Marshal(wire.TransformSketchResult{Created: entityIDs(created)})
+	return wire.TransformSketchResult{Created: entityIDs(created)}, nil
 }
 
 // applyTransform dispatches the edit operation, returning any created entities.

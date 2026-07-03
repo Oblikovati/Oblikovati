@@ -11,44 +11,32 @@ import (
 
 // registerHelpHandlers wires the help-routing and language methods (M05-F14, #621).
 func (r *Router) registerHelpHandlers() {
-	r.readOnly(wire.MethodHelpRegisterContext, registerHelpContext)
-	r.readOnly(wire.MethodHelpDisplay, displayHelp)
-	r.readOnly(wire.MethodHelpPath, helpPath)
+	r.readOnly(wire.MethodHelpRegisterContext, typed(registerHelpContext))
+	r.readOnly(wire.MethodHelpDisplay, typed(displayHelp))
+	r.readOnly(wire.MethodHelpPath, typed(helpPath))
 	r.readOnly(wire.MethodLanguageInfo, languageInfo)
 }
 
-func registerHelpContext(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.RegisterHelpContextArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func registerHelpContext(s *app.Session, in wire.RegisterHelpContextArgs) (wire.OKResult, error) {
+	if err := s.RegisterHelpContext(in.Source, in.Base); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.RegisterHelpContext(req.Source, req.Base); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
-func displayHelp(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.DisplayHelpArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func displayHelp(s *app.Session, in wire.DisplayHelpArgs) (wire.OKResult, error) {
+	if err := s.DisplayHelpTopic(in.Source, in.Topic); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.DisplayHelpTopic(req.Source, req.Topic); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
-func helpPath(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.DisplayHelpArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
-	}
-	base, err := s.HelpPath(req.Source)
+func helpPath(s *app.Session, in wire.DisplayHelpArgs) (wire.HelpPathResult, error) {
+	base, err := s.HelpPath(in.Source)
 	if err != nil {
-		return nil, err
+		return wire.HelpPathResult{}, err
 	}
-	return json.Marshal(wire.HelpPathResult{Source: req.Source, Base: base})
+	return wire.HelpPathResult{Source: in.Source, Base: base}, nil
 }
 
 func languageInfo(_ *app.Session, _ json.RawMessage) (json.RawMessage, error) {

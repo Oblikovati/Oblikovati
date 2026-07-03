@@ -3,7 +3,6 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"oblikovati.org/addin/modelaccess"
@@ -52,17 +51,11 @@ func activeWorkHost(s *app.Session) (workHost, error) {
 
 // listWorkPlanes enumerates the active model's datum planes (origin frame first, then
 // user planes) with their current geometry and health.
-func listWorkPlanes(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	host, err := activeWorkHost(s)
-	if err != nil {
-		return nil, err
-	}
-	planes := host.WorkPlanes()
-	out := make([]wire.WorkPlaneInfo, planes.Count())
-	for i := 0; i < planes.Count(); i++ {
-		out[i] = workPlaneInfo(host, planes.Item(i), i)
-	}
-	return json.Marshal(wire.ListWorkPlanesResult{Planes: out})
+func listWorkPlanes(_ *app.Session, host workHost) (wire.ListWorkPlanesResult, error) {
+	planes := projectAll(host.WorkPlanes(), func(i int, wp *feature.WorkPlane) wire.WorkPlaneInfo {
+		return workPlaneInfo(host, wp, i)
+	})
+	return wire.ListWorkPlanesResult{Planes: planes}, nil
 }
 
 // workPlaneInfo renders one plane as the wire DTO, including the editable inputs a redefine
@@ -120,30 +113,22 @@ func workPlaneSlots(wp *feature.WorkPlane) []wire.WorkPlaneRefSlot {
 // edits (offset/angle, parsed in the document's units) and reference re-picks, then recomputes
 // and returns the plane's refreshed info. It fails on a bad index, an origin plane, or an
 // out-of-range scalar/slot; an unsatisfiable result is reported healthy=false, not an error.
-func redefineWorkPlane(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	host, err := activeWorkHost(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.RedefineWorkPlaneArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func redefineWorkPlane(_ *app.Session, host workHost, in wire.RedefineWorkPlaneArgs) (wire.RedefineWorkPlaneResult, error) {
 	wp, err := userWorkPlane(host, in.Index)
 	if err != nil {
-		return nil, err
+		return wire.RedefineWorkPlaneResult{}, err
 	}
 	restore := wp.SnapshotDefinition() // an error mid-batch must not leave earlier edits applied
 	if err := applyScalarEdits(host, wp, in.Scalars); err != nil {
 		restore()
-		return nil, err
+		return wire.RedefineWorkPlaneResult{}, err
 	}
 	if err := applyRepicks(wp, in.Repick); err != nil {
 		restore()
-		return nil, err
+		return wire.RedefineWorkPlaneResult{}, err
 	}
 	host.Recompute()
-	return json.Marshal(wire.RedefineWorkPlaneResult{Plane: workPlaneInfo(host, wp, in.Index)})
+	return wire.RedefineWorkPlaneResult{Plane: workPlaneInfo(host, wp, in.Index)}, nil
 }
 
 // userWorkPlane resolves a redefine index to a user (non-origin) work plane.
@@ -195,52 +180,36 @@ func applyRepicks(wp *feature.WorkPlane, repicks []wire.SlotRepick) error {
 // createWorkPlanes adds a datum plane of the requested kind to the active model and
 // recomputes. An unsatisfiable definition still creates the plane (reported healthy=false)
 // — the call only fails on bad arguments (unknown kind, wrong reference count, …).
-func createWorkPlanes(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	host, err := activeWorkHost(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.CreateWorkPlaneArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func createWorkPlanes(_ *app.Session, host workHost, in wire.CreateWorkPlaneArgs) (wire.CreateWorkPlaneResult, error) {
 	wp, err := buildWorkPlane(host, in)
 	if err != nil {
-		return nil, err
+		return wire.CreateWorkPlaneResult{}, err
 	}
 	host.Recompute()
-	return json.Marshal(wire.CreateWorkPlaneResult{
+	return wire.CreateWorkPlaneResult{
 		Index:   host.WorkPlanes().Count() - 1,
 		Ref:     string(wp.Key()),
 		Name:    wp.Name(),
 		Healthy: wp.Health().OK(),
-	})
+	}, nil
 }
 
 // createWorkPoint adds a datum point fixed at the requested position to the active model and
 // recomputes, returning its index and reference (usable as a point input to a work plane or a
 // redefine re-pick).
-func createWorkPoint(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	host, err := activeWorkHost(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.CreateWorkPointArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func createWorkPoint(_ *app.Session, host workHost, in wire.CreateWorkPointArgs) (wire.CreateWorkPointResult, error) {
 	at, err := parseCoords(in.At, "workPoints.create: at")
 	if err != nil {
-		return nil, err
+		return wire.CreateWorkPointResult{}, err
 	}
 	p := math.P3(at[0], at[1], at[2])
 	wp := host.WorkPoints().AddByPosition(func() math.Point3 { return p })
 	host.Recompute()
-	return json.Marshal(wire.CreateWorkPointResult{
+	return wire.CreateWorkPointResult{
 		Index: host.WorkPoints().Count() - 1,
 		Ref:   string(wp.Key()),
 		Name:  wp.Name(),
-	})
+	}, nil
 }
 
 // refPlaneCtor builds a work plane from exactly its references (no scalar parameters);

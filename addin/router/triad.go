@@ -11,35 +11,27 @@ import (
 
 // registerTriadHandlers wires the gizmo methods (M05-F13, #620).
 func (r *Router) registerTriadHandlers() {
-	r.readOnly(wire.MethodTriadShow, showTriad)
-	r.readOnly(wire.MethodTriadUpdate, updateTriad)
+	r.readOnly(wire.MethodTriadShow, typed(showTriad))
+	r.readOnly(wire.MethodTriadUpdate, typed(updateTriad))
 	r.readOnly(wire.MethodTriadHide, hideTriad)
 	r.readOnly(wire.MethodTriadGet, getTriad)
-	r.readOnly(wire.MethodManipulatorsSet, setManipulators)
-	r.readOnly(wire.MethodManipulatorsRemove, removeManipulators)
+	r.readOnly(wire.MethodManipulatorsSet, typed(setManipulators))
+	r.readOnly(wire.MethodManipulatorsRemove, typed(removeManipulators))
 }
 
-func showTriad(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.ShowTriadArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func showTriad(s *app.Session, in wire.ShowTriadArgs) (wire.OKResult, error) {
+	in.Triad.Visible = true
+	if err := s.ShowTriad(in.Triad); err != nil {
+		return wire.OKResult{}, err
 	}
-	req.Triad.Visible = true
-	if err := s.ShowTriad(req.Triad); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
-func updateTriad(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.ShowTriadArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func updateTriad(s *app.Session, in wire.ShowTriadArgs) (wire.OKResult, error) {
+	if err := s.ShowTriad(in.Triad); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.ShowTriad(req.Triad); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
 func hideTriad(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
@@ -51,24 +43,16 @@ func getTriad(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
 	return json.Marshal(s.TriadSpec())
 }
 
-func setManipulators(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.SetManipulatorsArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func setManipulators(s *app.Session, in wire.SetManipulatorsArgs) (wire.OKResult, error) {
+	if err := s.SetManipulators(in.ID, in.Handles, in.Command); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.SetManipulators(req.ID, req.Handles, req.Command); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
-func removeManipulators(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.RemoveManipulatorsArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func removeManipulators(s *app.Session, in wire.RemoveManipulatorsArgs) (wire.OKResult, error) {
+	if err := s.RemoveManipulators(in.ID); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.RemoveManipulators(req.ID); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }

@@ -30,6 +30,8 @@ func materialInfo(m *material.Material) wire.MaterialInfo {
 	}
 }
 
+// listAppearances reads no args and no active-model context (the appearance library is
+// session-scoped), so it stays a raw handler.
 func listAppearances(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
 	apprs := s.Materials().Appearances()
 	out := make([]wire.AppearanceInfo, len(apprs))
@@ -39,6 +41,7 @@ func listAppearances(s *app.Session, _ json.RawMessage) (json.RawMessage, error)
 	return json.Marshal(wire.ListAppearancesResult{Appearances: out})
 }
 
+// listMaterials reads no args and no active-model context, so it stays a raw handler.
 func listMaterials(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
 	mats := s.Materials().Materials()
 	out := make([]wire.MaterialInfo, len(mats))
@@ -48,66 +51,46 @@ func listMaterials(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
 	return json.Marshal(wire.ListMaterialsResult{Materials: out})
 }
 
-func getAppearance(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.AssetRefArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func getAppearance(s *app.Session, in wire.AssetRefArgs) (wire.AppearanceInfo, error) {
 	a, ok := s.Materials().Appearance(in.ID)
 	if !ok {
-		return nil, fmt.Errorf("appearances.get: unknown appearance %q", in.ID)
+		return wire.AppearanceInfo{}, fmt.Errorf("appearances.get: unknown appearance %q", in.ID)
 	}
-	return json.Marshal(appearanceInfo(a))
+	return appearanceInfo(a), nil
 }
 
-func getMaterial(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.AssetRefArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func getMaterial(s *app.Session, in wire.AssetRefArgs) (wire.MaterialInfo, error) {
 	m, ok := s.Materials().Material(in.ID)
 	if !ok {
-		return nil, fmt.Errorf("materials.get: unknown material %q", in.ID)
+		return wire.MaterialInfo{}, fmt.Errorf("materials.get: unknown material %q", in.ID)
 	}
-	return json.Marshal(materialInfo(m))
+	return materialInfo(m), nil
 }
 
-func createAppearance(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.DuplicateAssetArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func createAppearance(s *app.Session, in wire.DuplicateAssetArgs) (wire.AppearanceInfo, error) {
 	a, err := s.DuplicateAppearance(in.BaseID, in.Name)
 	if err != nil {
-		return nil, err
+		return wire.AppearanceInfo{}, err
 	}
-	return json.Marshal(appearanceInfo(a))
+	return appearanceInfo(a), nil
 }
 
-func createMaterial(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.DuplicateAssetArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func createMaterial(s *app.Session, in wire.DuplicateAssetArgs) (wire.MaterialInfo, error) {
 	m, err := s.DuplicateMaterial(in.BaseID, in.Name)
 	if err != nil {
-		return nil, err
+		return wire.MaterialInfo{}, err
 	}
-	return json.Marshal(materialInfo(m))
+	return materialInfo(m), nil
 }
 
-func updateAppearance(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.AppearanceInfo
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func updateAppearance(s *app.Session, in wire.AppearanceInfo) (wire.AppearanceInfo, error) {
 	albedo, err := material.ParseColor(in.Albedo)
 	if err != nil {
-		return nil, fmt.Errorf("appearances.update: albedo: %w", err)
+		return wire.AppearanceInfo{}, fmt.Errorf("appearances.update: albedo: %w", err)
 	}
 	emissive, err := material.ParseColor(in.Emissive)
 	if err != nil {
-		return nil, fmt.Errorf("appearances.update: emissive: %w", err)
+		return wire.AppearanceInfo{}, fmt.Errorf("appearances.update: emissive: %w", err)
 	}
 	s.UpdateAppearance(in.ID, material.AppearanceSpec{
 		DisplayName: in.DisplayName, Albedo: albedo, Metallic: in.Metallic,
@@ -115,16 +98,12 @@ func updateAppearance(s *app.Session, args json.RawMessage) (json.RawMessage, er
 	})
 	a, ok := s.Materials().Appearance(in.ID)
 	if !ok {
-		return nil, fmt.Errorf("appearances.update: unknown appearance %q", in.ID)
+		return wire.AppearanceInfo{}, fmt.Errorf("appearances.update: unknown appearance %q", in.ID)
 	}
-	return json.Marshal(appearanceInfo(a))
+	return appearanceInfo(a), nil
 }
 
-func updateMaterial(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.MaterialInfo
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func updateMaterial(s *app.Session, in wire.MaterialInfo) (wire.MaterialInfo, error) {
 	s.UpdateMaterial(in.ID, material.MaterialSpec{
 		DisplayName: in.DisplayName, Density: in.Density, Mechanical: in.Mechanical,
 		Thermal: in.Thermal, Electrical: in.Electrical, Magnetic: in.Magnetic,
@@ -133,33 +112,27 @@ func updateMaterial(s *app.Session, args json.RawMessage) (json.RawMessage, erro
 	})
 	m, ok := s.Materials().Material(in.ID)
 	if !ok {
-		return nil, fmt.Errorf("materials.update: unknown material %q", in.ID)
+		return wire.MaterialInfo{}, fmt.Errorf("materials.update: unknown material %q", in.ID)
 	}
-	return json.Marshal(materialInfo(m))
+	return materialInfo(m), nil
 }
 
-func assignMaterial(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.AssignMaterialArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func assignMaterial(s *app.Session, in wire.AssignMaterialArgs) (wire.OKResult, error) {
 	if err := s.AssignMaterial(in.BodyKey, in.MaterialID); err != nil {
-		return nil, err
+		return wire.OKResult{}, err
 	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
-func assignAppearance(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.AssignAppearanceArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func assignAppearance(s *app.Session, in wire.AssignAppearanceArgs) (wire.OKResult, error) {
 	if err := s.AssignAppearance(in.Scope, in.Key, in.AppearanceID); err != nil {
-		return nil, err
+		return wire.OKResult{}, err
 	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
+// physicalProperties reads no args; it resolves the active part's aggregate physical properties or
+// reports there is none, so it stays a raw handler.
 func physicalProperties(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
 	props, ok := s.PhysicalProperties()
 	if !ok {

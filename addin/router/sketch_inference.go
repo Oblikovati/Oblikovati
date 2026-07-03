@@ -23,22 +23,18 @@ func getInferenceOptions(s *app.Session, _ json.RawMessage) (json.RawMessage, er
 
 // setInferenceOptions serves wire.MethodSketchSetInferenceOptions. An empty
 // priority keeps the current value; unknown spellings are rejected.
-func setInferenceOptions(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.InferenceOptionsView
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func setInferenceOptions(s *app.Session, in wire.InferenceOptionsView) (wire.InferenceOptionsView, error) {
 	opts := s.SketchInferenceOptions()
 	opts.InferEnabled, opts.ConstrainEnabled = in.InferEnabled, in.ConstrainEnabled
 	if in.Priority != "" {
 		priority, ok := types.ParseConstraintInferencePriority(in.Priority)
 		if !ok {
-			return nil, fmt.Errorf("unknown inference priority %q (want parallelPerpendicular|horizontalVertical|none)", in.Priority)
+			return wire.InferenceOptionsView{}, fmt.Errorf("unknown inference priority %q (want parallelPerpendicular|horizontalVertical|none)", in.Priority)
 		}
 		opts.Priority = priority
 	}
 	s.SetSketchInferenceOptions(opts)
-	return json.Marshal(inferenceOptionsView(opts))
+	return inferenceOptionsView(opts), nil
 }
 
 // inferenceOptionsView renders the model options as their wire view.
