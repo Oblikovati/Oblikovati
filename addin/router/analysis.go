@@ -3,34 +3,29 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/analysis"
+	"oblikovati.org/model/compdef"
 )
 
 // Analysis (M18-F01 #423): engineering analysis on the active part — mass properties.
 
 // registerAnalysisHandlers wires the analysis.* methods.
 func (r *Router) registerAnalysisHandlers() {
-	r.readOnly(wire.MethodAnalysisMassProperties, analysisMassProperties)
-	r.readOnly(wire.MethodAnalysisMeasure, analysisMeasure)
-	r.readOnly(wire.MethodAnalysisModelHealth, analysisModelHealth)
+	r.readOnly(wire.MethodAnalysisMassProperties, typedPart(analysisMassProperties))
+	r.readOnly(wire.MethodAnalysisMeasure, typedPart(analysisMeasure))
+	r.readOnly(wire.MethodAnalysisModelHealth, partQuery(analysisModelHealth))
 }
 
-func analysisModelHealth(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
+func analysisModelHealth(_ *app.Session, part *compdef.PartComponentDefinition) (wire.ModelHealthResult, error) {
 	mh := analysis.ModelHealthOf(part.Features())
-	return json.Marshal(modelHealthResult(mh))
+	return modelHealthResult(mh), nil
 }
 
 // modelHealthResult flattens the aggregated health into the wire DTO, carrying each status as its
@@ -43,28 +38,20 @@ func modelHealthResult(mh analysis.ModelHealth) wire.ModelHealthResult {
 	return out
 }
 
-func analysisMeasure(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.MeasureArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func analysisMeasure(_ *app.Session, part *compdef.PartComponentDefinition, in wire.MeasureArgs) (wire.MeasureResult, error) {
 	mt, ok := types.ParseMeasureType(in.Type)
 	if !ok {
-		return nil, fmt.Errorf("analysis.measure: unknown measure type %q (want length|area|distance|minDistance|angle)", in.Type)
+		return wire.MeasureResult{}, fmt.Errorf("analysis.measure: unknown measure type %q (want length|area|distance|minDistance|angle)", in.Type)
 	}
 	bodies := part.SurfaceBodies().All()
 	if in.BodyIndex < 0 || in.BodyIndex >= len(bodies) {
-		return nil, fmt.Errorf("analysis.measure: body index %d out of range [0,%d)", in.BodyIndex, len(bodies))
+		return wire.MeasureResult{}, fmt.Errorf("analysis.measure: body index %d out of range [0,%d)", in.BodyIndex, len(bodies))
 	}
 	value, unit, err := measureEntity(bodies[in.BodyIndex], mt, in.KeyA, in.KeyB, in.KeyC)
 	if err != nil {
-		return nil, err
+		return wire.MeasureResult{}, err
 	}
-	return json.Marshal(wire.MeasureResult{Type: mt.String(), Value: value, Unit: unit})
+	return wire.MeasureResult{Type: mt.String(), Value: value, Unit: unit}, nil
 }
 
 // measureEntity resolves the entity (or pair) by reference key and computes the requested quantity.
@@ -179,20 +166,12 @@ func decodeKey(s string) []byte {
 	return []byte(s)
 }
 
-func analysisMassProperties(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.MassPropertiesArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func analysisMassProperties(s *app.Session, part *compdef.PartComponentDefinition, in wire.MassPropertiesArgs) (wire.MassPropertiesResult, error) {
 	accuracy := types.MassPropertiesMedium
 	if in.Accuracy != "" {
 		a, ok := types.ParseMassPropertiesAccuracy(in.Accuracy)
 		if !ok {
-			return nil, fmt.Errorf("analysis.massProperties: unknown accuracy %q (want low|medium|high)", in.Accuracy)
+			return wire.MassPropertiesResult{}, fmt.Errorf("analysis.massProperties: unknown accuracy %q (want low|medium|high)", in.Accuracy)
 		}
 		accuracy = a
 	}
@@ -203,7 +182,7 @@ func analysisMassProperties(s *app.Session, raw json.RawMessage) (json.RawMessag
 		}
 	}
 	mp := analysis.MassPropertiesOf(part.SurfaceBodies().All(), density, accuracy)
-	return json.Marshal(massPropertiesResult(mp))
+	return massPropertiesResult(mp), nil
 }
 
 // massPropertiesResult flattens the model mass properties into the wire DTO.

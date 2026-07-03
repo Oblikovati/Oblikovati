@@ -3,10 +3,8 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
@@ -21,190 +19,125 @@ import (
 
 // registerPointCloudHandlers wires the pointClouds.* methods.
 func (r *Router) registerPointCloudHandlers() {
-	r.readOnly(wire.MethodPointCloudsAttach, attachPointCloud)
-	r.readOnly(wire.MethodPointCloudsList, listPointClouds)
-	r.readOnly(wire.MethodPointCloudsGet, getPointCloud)
-	r.mutating(wire.MethodPointCloudsDelete, "Delete Point Cloud", deletePointCloud)
-	r.readOnly(wire.MethodPointCloudsSetVisible, setPointCloudVisible)
-	r.mutating(wire.MethodPointCloudsSetTransform, "Move Point Cloud", setPointCloudTransform)
-	r.mutating(wire.MethodPointCloudsSetScale, "Scale Point Cloud", setPointCloudScale)
-	r.readOnly(wire.MethodPointCloudsSetDensity, setPointCloudDensity)
-	r.readOnly(wire.MethodPointCloudsToModelSpace, pointCloudToModelSpace)
-	r.readOnly(wire.MethodPointCloudsFromModelSpace, pointCloudFromModelSpace)
-	r.mutating(wire.MethodPointCloudsAddCrop, "Crop Point Cloud", addPointCloudCrop)
-	r.readOnly(wire.MethodPointCloudsListCrops, listPointCloudCrops)
-	r.mutating(wire.MethodPointCloudsDeleteCrop, "Crop Point Cloud", deletePointCloudCrop)
-	r.readOnly(wire.MethodPointCloudsSetCropActive, setPointCloudCropActive)
-	r.readOnly(wire.MethodPointCloudsFitPlane, fitPointCloudPlane)
-	r.readOnly(wire.MethodPointCloudsNearestPoint, nearestPointCloudPoint)
+	r.readOnly(wire.MethodPointCloudsAttach, typed(attachPointCloud))
+	r.readOnly(wire.MethodPointCloudsList, partQuery(listPointClouds))
+	r.readOnly(wire.MethodPointCloudsGet, typedPart(getPointCloud))
+	r.mutating(wire.MethodPointCloudsDelete, "Delete Point Cloud", typedPart(deletePointCloud))
+	r.readOnly(wire.MethodPointCloudsSetVisible, typedPart(setPointCloudVisible))
+	r.mutating(wire.MethodPointCloudsSetTransform, "Move Point Cloud", typedPart(setPointCloudTransform))
+	r.mutating(wire.MethodPointCloudsSetScale, "Scale Point Cloud", typedPart(setPointCloudScale))
+	r.readOnly(wire.MethodPointCloudsSetDensity, typedPart(setPointCloudDensity))
+	r.readOnly(wire.MethodPointCloudsToModelSpace, typedPart(pointCloudToModelSpace))
+	r.readOnly(wire.MethodPointCloudsFromModelSpace, typedPart(pointCloudFromModelSpace))
+	r.mutating(wire.MethodPointCloudsAddCrop, "Crop Point Cloud", typedPart(addPointCloudCrop))
+	r.readOnly(wire.MethodPointCloudsListCrops, typedPart(listPointCloudCrops))
+	r.mutating(wire.MethodPointCloudsDeleteCrop, "Crop Point Cloud", typedPart(deletePointCloudCrop))
+	r.readOnly(wire.MethodPointCloudsSetCropActive, typedPart(setPointCloudCropActive))
+	r.readOnly(wire.MethodPointCloudsFitPlane, typed(fitPointCloudPlane))
+	r.readOnly(wire.MethodPointCloudsNearestPoint, typedPart(nearestPointCloudPoint))
 }
 
 // attachPointCloud reads the scan file, embeds its bytes as a resource, decodes its points, and
 // attaches the cloud to the active part under a unique name.
-func attachPointCloud(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.AttachPointCloudArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func attachPointCloud(s *app.Session, in wire.AttachPointCloudArgs) (wire.PointCloudInfo, error) {
 	// Per-record decode warnings (#1646) are not yet surfaced over the wire: PointCloudInfo has
 	// no warnings slot (an api/wire DTO addition in the Apache-2.0 sibling repo).
 	pc, _, err := s.AttachPointCloud(in.Name, in.FullFileName)
 	if err != nil {
-		return nil, fmt.Errorf("pointClouds.attach: %w", err)
+		return wire.PointCloudInfo{}, fmt.Errorf("pointClouds.attach: %w", err)
 	}
-	return json.Marshal(pointCloudInfo(pc))
+	return pointCloudInfo(pc), nil
 }
 
 // listPointClouds enumerates the active part's clouds.
-func listPointClouds(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	clouds := part.PointClouds()
-	out := make([]wire.PointCloudInfo, 0, clouds.Count())
-	for i := 0; i < clouds.Count(); i++ {
-		out = append(out, pointCloudInfo(clouds.Item(i)))
-	}
-	return json.Marshal(wire.ListPointCloudsResult{PointClouds: out})
+func listPointClouds(_ *app.Session, part *compdef.PartComponentDefinition) (wire.ListPointCloudsResult, error) {
+	clouds := projectAll(part.PointClouds(), func(_ int, pc *pointcloud.PointCloud) wire.PointCloudInfo {
+		return pointCloudInfo(pc)
+	})
+	return wire.ListPointCloudsResult{PointClouds: clouds}, nil
 }
 
 // getPointCloud returns one named cloud's state.
-func getPointCloud(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	pc, _, err := resolvePointCloud(s, raw, wire.MethodPointCloudsGet)
+func getPointCloud(_ *app.Session, part *compdef.PartComponentDefinition, in wire.PointCloudNameArgs) (wire.PointCloudInfo, error) {
+	pc, err := cloudByName(part, in.Name, wire.MethodPointCloudsGet)
 	if err != nil {
-		return nil, err
+		return wire.PointCloudInfo{}, err
 	}
-	return json.Marshal(pointCloudInfo(pc))
+	return pointCloudInfo(pc), nil
 }
 
 // deletePointCloud removes a named cloud from the active part.
-func deletePointCloud(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.PointCloudNameArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
+func deletePointCloud(_ *app.Session, part *compdef.PartComponentDefinition, in wire.PointCloudNameArgs) (wire.DeletePointCloudResult, error) {
 	deleted := part.PointClouds().Remove(in.Name)
-	return json.Marshal(wire.DeletePointCloudResult{Name: in.Name, Deleted: deleted})
+	return wire.DeletePointCloudResult{Name: in.Name, Deleted: deleted}, nil
 }
 
 // setPointCloudVisible shows or hides a named cloud.
-func setPointCloudVisible(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.SetPointCloudVisibleArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	pc, err := namedCloud(s, in.Name, wire.MethodPointCloudsSetVisible)
+func setPointCloudVisible(_ *app.Session, part *compdef.PartComponentDefinition, in wire.SetPointCloudVisibleArgs) (wire.PointCloudInfo, error) {
+	pc, err := cloudByName(part, in.Name, wire.MethodPointCloudsSetVisible)
 	if err != nil {
-		return nil, err
+		return wire.PointCloudInfo{}, err
 	}
 	pc.SetVisible(in.Visible)
-	return json.Marshal(pointCloudInfo(pc))
+	return pointCloudInfo(pc), nil
 }
 
 // setPointCloudTransform sets a named cloud's placement.
-func setPointCloudTransform(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.SetPointCloudTransformArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	pc, err := namedCloud(s, in.Name, wire.MethodPointCloudsSetTransform)
+func setPointCloudTransform(s *app.Session, part *compdef.PartComponentDefinition, in wire.SetPointCloudTransformArgs) (wire.PointCloudInfo, error) {
+	pc, err := cloudByName(part, in.Name, wire.MethodPointCloudsSetTransform)
 	if err != nil {
-		return nil, err
+		return wire.PointCloudInfo{}, err
 	}
 	pc.SetTransform(math.Matrix4FromCells(in.Transform.Cells))
 	s.RecomputeAfterPointCloudMove() // datums built on the cloud follow it (#645)
-	return json.Marshal(pointCloudInfo(pc))
+	return pointCloudInfo(pc), nil
 }
 
 // setPointCloudScale sets a named cloud's uniform scale, rejecting a non-positive factor.
-func setPointCloudScale(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.SetPointCloudScaleArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	pc, err := namedCloud(s, in.Name, wire.MethodPointCloudsSetScale)
+func setPointCloudScale(s *app.Session, part *compdef.PartComponentDefinition, in wire.SetPointCloudScaleArgs) (wire.PointCloudInfo, error) {
+	pc, err := cloudByName(part, in.Name, wire.MethodPointCloudsSetScale)
 	if err != nil {
-		return nil, err
+		return wire.PointCloudInfo{}, err
 	}
 	if !pc.SetScale(in.Scale) {
-		return nil, fmt.Errorf("pointClouds.setScale: scale must be positive, got %v", in.Scale)
+		return wire.PointCloudInfo{}, fmt.Errorf("pointClouds.setScale: scale must be positive, got %v", in.Scale)
 	}
 	s.RecomputeAfterPointCloudMove() // datums built on the cloud follow it (#645)
-	return json.Marshal(pointCloudInfo(pc))
+	return pointCloudInfo(pc), nil
 }
 
 // setPointCloudDensity sets a named cloud's display budget.
-func setPointCloudDensity(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.SetPointCloudDensityArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	pc, err := namedCloud(s, in.Name, wire.MethodPointCloudsSetDensity)
+func setPointCloudDensity(_ *app.Session, part *compdef.PartComponentDefinition, in wire.SetPointCloudDensityArgs) (wire.PointCloudInfo, error) {
+	pc, err := cloudByName(part, in.Name, wire.MethodPointCloudsSetDensity)
 	if err != nil {
-		return nil, err
+		return wire.PointCloudInfo{}, err
 	}
 	pc.SetMaximumPointCount(in.MaximumPointCount)
-	return json.Marshal(pointCloudInfo(pc))
+	return pointCloudInfo(pc), nil
 }
 
 // pointCloudToModelSpace maps a cloud-local point into model space.
-func pointCloudToModelSpace(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	in, pc, err := pointCloudSpaceRequest(s, raw, wire.MethodPointCloudsToModelSpace)
+func pointCloudToModelSpace(_ *app.Session, part *compdef.PartComponentDefinition, in wire.PointCloudSpaceArgs) (wire.PointCloudSpaceResult, error) {
+	pc, err := cloudByName(part, in.Name, wire.MethodPointCloudsToModelSpace)
 	if err != nil {
-		return nil, err
+		return wire.PointCloudSpaceResult{}, err
 	}
 	m := pc.ToModelSpace(point3Of(in.Point))
-	return json.Marshal(wire.PointCloudSpaceResult{Point: pointOf(m), OK: true})
+	return wire.PointCloudSpaceResult{Point: pointOf(m), OK: true}, nil
 }
 
 // pointCloudFromModelSpace maps a model-space point into a cloud's local space.
-func pointCloudFromModelSpace(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	in, pc, err := pointCloudSpaceRequest(s, raw, wire.MethodPointCloudsFromModelSpace)
+func pointCloudFromModelSpace(_ *app.Session, part *compdef.PartComponentDefinition, in wire.PointCloudSpaceArgs) (wire.PointCloudSpaceResult, error) {
+	pc, err := cloudByName(part, in.Name, wire.MethodPointCloudsFromModelSpace)
 	if err != nil {
-		return nil, err
+		return wire.PointCloudSpaceResult{}, err
 	}
 	p, ok := pc.FromModelSpace(point3Of(in.Point))
-	return json.Marshal(wire.PointCloudSpaceResult{Point: pointOf(p), OK: ok})
+	return wire.PointCloudSpaceResult{Point: pointOf(p), OK: ok}, nil
 }
 
-// pointCloudSpaceRequest decodes a space-conversion request and resolves its cloud.
-func pointCloudSpaceRequest(s *app.Session, raw json.RawMessage, method string) (wire.PointCloudSpaceArgs, *pointcloud.PointCloud, error) {
-	var in wire.PointCloudSpaceArgs
-	if err := decode(raw, &in); err != nil {
-		return in, nil, err
-	}
-	pc, err := namedCloud(s, in.Name, method)
-	return in, pc, err
-}
-
-// resolvePointCloud decodes a name-only request and resolves its cloud on the active part.
-func resolvePointCloud(s *app.Session, raw json.RawMessage, method string) (*pointcloud.PointCloud, *compdef.PartComponentDefinition, error) {
-	var in wire.PointCloudNameArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, nil, err
-	}
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, nil, err
-	}
-	pc, ok := part.PointClouds().ByName(in.Name)
-	if !ok {
-		return nil, nil, fmt.Errorf("%s: no point cloud named %q", method, in.Name)
-	}
-	return pc, part, nil
-}
-
-// namedCloud resolves a cloud by name on the active part.
-func namedCloud(s *app.Session, name, method string) (*pointcloud.PointCloud, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
+// cloudByName resolves a cloud by name on the part, naming the method on a miss.
+func cloudByName(part *compdef.PartComponentDefinition, name, method string) (*pointcloud.PointCloud, error) {
 	pc, ok := part.PointClouds().ByName(name)
 	if !ok {
 		return nil, fmt.Errorf("%s: no point cloud named %q", method, name)
@@ -227,105 +160,79 @@ func pointCloudInfo(pc *pointcloud.PointCloud) wire.PointCloudInfo {
 }
 
 // addPointCloudCrop adds an active crop over the requested box on a named cloud.
-func addPointCloudCrop(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.AddPointCloudCropArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	pc, err := namedCloud(s, in.Cloud, wire.MethodPointCloudsAddCrop)
+func addPointCloudCrop(_ *app.Session, part *compdef.PartComponentDefinition, in wire.AddPointCloudCropArgs) (wire.PointCloudCropInfo, error) {
+	pc, err := cloudByName(part, in.Cloud, wire.MethodPointCloudsAddCrop)
 	if err != nil {
-		return nil, err
+		return wire.PointCloudCropInfo{}, err
 	}
 	crop := pc.AddCrop(math.NewBox(point3Of(in.Min), point3Of(in.Max)))
-	return json.Marshal(cropInfo(in.Cloud, crop))
+	return cropInfo(in.Cloud, crop), nil
 }
 
 // fitPointCloudPlane fits a least-squares work plane to the named cloud's displayed points and
 // returns the created work plane's name with the fitted origin (centroid) and unit normal.
-func fitPointCloudPlane(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.FitPointCloudPlaneArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func fitPointCloudPlane(s *app.Session, in wire.FitPointCloudPlaneArgs) (wire.FitPointCloudPlaneResult, error) {
 	wp, plane, err := s.CreatePointCloudPlane(in.Cloud)
 	if err != nil {
-		return nil, err
+		return wire.FitPointCloudPlaneResult{}, err
 	}
 	n := plane.Normal()
-	return json.Marshal(wire.FitPointCloudPlaneResult{
+	return wire.FitPointCloudPlaneResult{
 		WorkPlane: wp.Name(),
 		Origin:    pointOf(plane.Origin),
 		Normal:    pointOf(math.P3(n.X, n.Y, n.Z)),
-	})
+	}, nil
 }
 
 // nearestPointCloudPoint snaps the query point onto the named cloud, returning its nearest scan
 // point in model space and the distance to it.
-func nearestPointCloudPoint(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.NearestPointArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	pc, err := namedCloud(s, in.Cloud, wire.MethodPointCloudsNearestPoint)
+func nearestPointCloudPoint(_ *app.Session, part *compdef.PartComponentDefinition, in wire.NearestPointArgs) (wire.NearestPointResult, error) {
+	pc, err := cloudByName(part, in.Cloud, wire.MethodPointCloudsNearestPoint)
 	if err != nil {
-		return nil, err
+		return wire.NearestPointResult{}, err
 	}
 	query := point3Of(in.Point)
 	nearest, found := pc.NearestModelPoint(query)
-	return json.Marshal(wire.NearestPointResult{
+	return wire.NearestPointResult{
 		Point:    pointOf(nearest),
 		Distance: float64(query.DistanceTo(nearest)),
 		Found:    found,
-	})
+	}, nil
 }
 
 // listPointCloudCrops enumerates a named cloud's crops.
-func listPointCloudCrops(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.ListPointCloudCropsArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	pc, err := namedCloud(s, in.Cloud, wire.MethodPointCloudsListCrops)
+func listPointCloudCrops(_ *app.Session, part *compdef.PartComponentDefinition, in wire.ListPointCloudCropsArgs) (wire.ListPointCloudCropsResult, error) {
+	pc, err := cloudByName(part, in.Cloud, wire.MethodPointCloudsListCrops)
 	if err != nil {
-		return nil, err
+		return wire.ListPointCloudCropsResult{}, err
 	}
-	crops := pc.Crops()
-	out := make([]wire.PointCloudCropInfo, 0, crops.Count())
-	for i := 0; i < crops.Count(); i++ {
-		out = append(out, cropInfo(in.Cloud, crops.Item(i)))
-	}
-	return json.Marshal(wire.ListPointCloudCropsResult{Crops: out})
+	crops := projectAll(pc.Crops(), func(_ int, c *pointcloud.PointCloudCrop) wire.PointCloudCropInfo {
+		return cropInfo(in.Cloud, c)
+	})
+	return wire.ListPointCloudCropsResult{Crops: crops}, nil
 }
 
 // deletePointCloudCrop removes a named crop from a cloud.
-func deletePointCloudCrop(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.PointCloudCropArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	pc, err := namedCloud(s, in.Cloud, wire.MethodPointCloudsDeleteCrop)
+func deletePointCloudCrop(_ *app.Session, part *compdef.PartComponentDefinition, in wire.PointCloudCropArgs) (wire.DeletePointCloudCropResult, error) {
+	pc, err := cloudByName(part, in.Cloud, wire.MethodPointCloudsDeleteCrop)
 	if err != nil {
-		return nil, err
+		return wire.DeletePointCloudCropResult{}, err
 	}
-	return json.Marshal(wire.DeletePointCloudCropResult{Crop: in.Crop, Deleted: pc.Crops().Remove(in.Crop)})
+	return wire.DeletePointCloudCropResult{Crop: in.Crop, Deleted: pc.Crops().Remove(in.Crop)}, nil
 }
 
 // setPointCloudCropActive toggles whether a named crop limits display.
-func setPointCloudCropActive(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.SetPointCloudCropActiveArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	pc, err := namedCloud(s, in.Cloud, wire.MethodPointCloudsSetCropActive)
+func setPointCloudCropActive(_ *app.Session, part *compdef.PartComponentDefinition, in wire.SetPointCloudCropActiveArgs) (wire.PointCloudCropInfo, error) {
+	pc, err := cloudByName(part, in.Cloud, wire.MethodPointCloudsSetCropActive)
 	if err != nil {
-		return nil, err
+		return wire.PointCloudCropInfo{}, err
 	}
 	crop, ok := pc.Crops().ByName(in.Crop)
 	if !ok {
-		return nil, fmt.Errorf("pointClouds.setCropActive: cloud %q has no crop %q", in.Cloud, in.Crop)
+		return wire.PointCloudCropInfo{}, fmt.Errorf("pointClouds.setCropActive: cloud %q has no crop %q", in.Cloud, in.Crop)
 	}
 	crop.SetActive(in.Active)
-	return json.Marshal(cropInfo(in.Cloud, crop))
+	return cropInfo(in.Cloud, crop), nil
 }
 
 // cropInfo maps a crop to its wire shape under the owning cloud's name.

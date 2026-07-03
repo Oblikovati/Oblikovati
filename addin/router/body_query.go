@@ -3,7 +3,6 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"oblikovati.org/api/types"
@@ -13,34 +12,31 @@ import (
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/analysis"
+	"oblikovati.org/model/compdef"
 )
 
 // Body point/ray/validity queries over the wire (M07-F07, #630).
 
 // bodyLocateUsingPoint serves wire.MethodBodyLocateUsingPoint.
-func bodyLocateUsingPoint(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.LocateUsingPointArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	b, err := resolveBody(s, in.BodyIndex)
+func bodyLocateUsingPoint(_ *app.Session, part *compdef.PartComponentDefinition, in wire.LocateUsingPointArgs) (wire.LocateUsingPointResult, error) {
+	b, err := bodyAt(part, in.BodyIndex)
 	if err != nil {
-		return nil, err
+		return wire.LocateUsingPointResult{}, err
 	}
 	p, err := xyzPoint(in.Point, "point")
 	if err != nil {
-		return nil, err
+		return wire.LocateUsingPointResult{}, err
 	}
 	kind, err := entityKindFilter(in.EntityKind)
 	if err != nil {
-		return nil, err
+		return wire.LocateUsingPointResult{}, err
 	}
 	hit, found := ops.LocateUsingPoint(b, kind, p, in.ProximityTolerance, ops.DefaultQuality())
 	out := wire.LocateUsingPointResult{Found: found}
 	if found {
 		out.Entity = locatedInfo(hit)
 	}
-	return json.Marshal(out)
+	return out, nil
 }
 
 // entityKindFilter maps the wire spelling (empty = any).
@@ -80,43 +76,35 @@ func locatedKeys(hit ops.LocatedEntity) (string, uint64) {
 }
 
 // bodyFindUsingRay serves wire.MethodBodyFindUsingRay.
-func bodyFindUsingRay(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.FindUsingRayArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	b, err := resolveBody(s, in.BodyIndex)
+func bodyFindUsingRay(_ *app.Session, part *compdef.PartComponentDefinition, in wire.FindUsingRayArgs) (wire.FindUsingRayResult, error) {
+	b, err := bodyAt(part, in.BodyIndex)
 	if err != nil {
-		return nil, err
+		return wire.FindUsingRayResult{}, err
 	}
 	origin, err := xyzPoint(in.Origin, "origin")
 	if err != nil {
-		return nil, err
+		return wire.FindUsingRayResult{}, err
 	}
 	dir, err := xyz(in.Direction, "direction")
 	if err != nil {
-		return nil, err
+		return wire.FindUsingRayResult{}, err
 	}
 	var out wire.FindUsingRayResult
 	for _, hit := range ops.FindUsingRay(b, origin, dir, in.Radius, ops.DefaultQuality(), in.FindFirstOnly) {
 		out.Hits = append(out.Hits, locatedInfo(hit))
 	}
-	return json.Marshal(out)
+	return out, nil
 }
 
 // bodyIsPointInside serves wire.MethodBodyIsPointInside.
-func bodyIsPointInside(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.IsPointInsideArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	b, err := resolveBody(s, in.BodyIndex)
+func bodyIsPointInside(_ *app.Session, part *compdef.PartComponentDefinition, in wire.IsPointInsideArgs) (wire.IsPointInsideResult, error) {
+	b, err := bodyAt(part, in.BodyIndex)
 	if err != nil {
-		return nil, err
+		return wire.IsPointInsideResult{}, err
 	}
 	p, err := xyzPoint(in.Point, "point")
 	if err != nil {
-		return nil, err
+		return wire.IsPointInsideResult{}, err
 	}
 	onTol := in.OnTolerance
 	if onTol <= 0 {
@@ -124,9 +112,9 @@ func bodyIsPointInside(s *app.Session, raw json.RawMessage) (json.RawMessage, er
 	}
 	verdict, err := pointContainmentOf(b, in.ShellIndex, p, onTol)
 	if err != nil {
-		return nil, err
+		return wire.IsPointInsideResult{}, err
 	}
-	return json.Marshal(wire.IsPointInsideResult{Containment: containmentSpelling(verdict)})
+	return wire.IsPointInsideResult{Containment: containmentSpelling(verdict)}, nil
 }
 
 func pointContainmentOf(b *topo.Body, shellIndex *int, p math.Point3, onTol float64) (ops.PointContainment, error) {
@@ -155,24 +143,20 @@ func containmentSpelling(c ops.PointContainment) string {
 // bodyMinimumDistance serves wire.MethodBodyMinimumDistance: the closest approach between the body
 // and a transient probe polyline (a CAM travel path), optionally widened by the tool radius. The
 // out-of-process projection of MeasureTools.GetMinimumDistance for a transient operand (#630).
-func bodyMinimumDistance(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.MinimumDistanceArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	b, err := resolveBody(s, in.BodyIndex)
+func bodyMinimumDistance(_ *app.Session, part *compdef.PartComponentDefinition, in wire.MinimumDistanceArgs) (wire.MinimumDistanceResult, error) {
+	b, err := bodyAt(part, in.BodyIndex)
 	if err != nil {
-		return nil, err
+		return wire.MinimumDistanceResult{}, err
 	}
 	probe, err := probePolyline(in.Points)
 	if err != nil {
-		return nil, err
+		return wire.MinimumDistanceResult{}, err
 	}
 	dist := analysis.MinDistanceProbeToBody(probe, b, ops.DefaultQuality()) - in.Radius
 	if dist < 0 {
 		dist = 0
 	}
-	return json.Marshal(wire.MinimumDistanceResult{Distance: dist})
+	return wire.MinimumDistanceResult{Distance: dist}, nil
 }
 
 // probePolyline decodes a flat [x,y,z, ...] list (database units) into points; it requires a
@@ -189,18 +173,14 @@ func probePolyline(flat []float64) ([]math.Point3, error) {
 }
 
 // bodyConvexityEdges serves wire.MethodBodyConvexityEdges.
-func bodyConvexityEdges(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.ConvexityEdgesArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	b, err := resolveBody(s, in.BodyIndex)
+func bodyConvexityEdges(_ *app.Session, part *compdef.PartComponentDefinition, in wire.ConvexityEdgesArgs) (wire.ConvexityEdgesResult, error) {
+	b, err := bodyAt(part, in.BodyIndex)
 	if err != nil {
-		return nil, err
+		return wire.ConvexityEdgesResult{}, err
 	}
 	class, err := convexityClass(in.Collection)
 	if err != nil {
-		return nil, err
+		return wire.ConvexityEdgesResult{}, err
 	}
 	var out wire.ConvexityEdgesResult
 	for _, e := range ops.BodyEdgeConvexity(b)[class] {
@@ -209,7 +189,7 @@ func bodyConvexityEdges(s *app.Session, raw json.RawMessage) (json.RawMessage, e
 			Point: topoRefPoint(e.RangeBox().Center()),
 		})
 	}
-	return json.Marshal(out)
+	return out, nil
 }
 
 func convexityClass(spelling string) (ops.EdgeConvexity, error) {
@@ -230,14 +210,10 @@ func convexityClass(spelling string) (ops.EdgeConvexity, error) {
 }
 
 // bodyValidate serves wire.MethodBodyValidate.
-func bodyValidate(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.ValidateBodyArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	b, err := resolveBody(s, in.BodyIndex)
+func bodyValidate(_ *app.Session, part *compdef.PartComponentDefinition, in wire.ValidateBodyArgs) (wire.ValidateBodyResult, error) {
+	b, err := bodyAt(part, in.BodyIndex)
 	if err != nil {
-		return nil, err
+		return wire.ValidateBodyResult{}, err
 	}
 	level := ops.CheckTopology
 	if in.CheckLevel >= int(ops.CheckGeometry) {
@@ -250,18 +226,14 @@ func bodyValidate(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 			Kind: p.Kind.String(), Key: string(p.ReferenceKey), TransientKey: p.ID, Issue: p.Issue,
 		})
 	}
-	return json.Marshal(out)
+	return out, nil
 }
 
 // bodyRangeBox serves wire.MethodBodyRangeBox.
-func bodyRangeBox(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.BodyRangeBoxArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	b, err := resolveBody(s, in.BodyIndex)
+func bodyRangeBox(_ *app.Session, part *compdef.PartComponentDefinition, in wire.BodyRangeBoxArgs) (wire.BodyRangeBoxResult, error) {
+	b, err := bodyAt(part, in.BodyIndex)
 	if err != nil {
-		return nil, err
+		return wire.BodyRangeBoxResult{}, err
 	}
 	if in.Oriented {
 		return orientedRangeBoxReply(b)
@@ -270,42 +242,38 @@ func bodyRangeBox(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	if in.Precise {
 		box = ops.PreciseRangeBox(b, ops.DefaultQuality())
 	}
-	return json.Marshal(wire.BodyRangeBoxResult{
+	return wire.BodyRangeBoxResult{
 		Min: []float64{float64(box.Min.X), float64(box.Min.Y), float64(box.Min.Z)},
 		Max: []float64{float64(box.Max.X), float64(box.Max.Y), float64(box.Max.Z)},
-	})
+	}, nil
 }
 
-func orientedRangeBoxReply(b *topo.Body) (json.RawMessage, error) {
+func orientedRangeBoxReply(b *topo.Body) (wire.BodyRangeBoxResult, error) {
 	obb, err := ops.OrientedMinimumRangeBox(b)
 	if err != nil {
-		return nil, err
+		return wire.BodyRangeBoxResult{}, err
 	}
 	vec := func(v math.Vector3) []float64 { return []float64{float64(v.X), float64(v.Y), float64(v.Z)} }
 	corner, edges := obb.MinCorner(), obb.EdgeVectors()
-	return json.Marshal(wire.BodyRangeBoxResult{
+	return wire.BodyRangeBoxResult{
 		Corner:       []float64{float64(corner.X), float64(corner.Y), float64(corner.Z)},
 		DirectionOne: vec(edges[0]), DirectionTwo: vec(edges[1]), DirectionThree: vec(edges[2]),
-	})
+	}, nil
 }
 
 // bodyBindTransientKey serves wire.MethodBodyBindTransientKey.
-func bodyBindTransientKey(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.BindTransientKeyArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	b, err := resolveBody(s, in.BodyIndex)
+func bodyBindTransientKey(_ *app.Session, part *compdef.PartComponentDefinition, in wire.BindTransientKeyArgs) (wire.BindTransientKeyResult, error) {
+	b, err := bodyAt(part, in.BodyIndex)
 	if err != nil {
-		return nil, err
+		return wire.BindTransientKeyResult{}, err
 	}
 	ref, ok := b.BindTransientKey(in.TransientKey)
 	if !ok {
-		return json.Marshal(wire.BindTransientKeyResult{Found: false})
+		return wire.BindTransientKeyResult{Found: false}, nil
 	}
-	return json.Marshal(wire.BindTransientKeyResult{
+	return wire.BindTransientKeyResult{
 		Found: true, Kind: ref.Kind.String(), Key: string(transientRefReferenceKey(ref)),
-	})
+	}, nil
 }
 
 func transientRefReferenceKey(ref topo.TransientRef) []byte {
