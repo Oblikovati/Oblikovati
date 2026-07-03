@@ -3,12 +3,10 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"strings"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/math"
@@ -27,93 +25,69 @@ import (
 
 // registerAssemblyReplicationHandlers wires the assembly.* replication methods.
 func (r *Router) registerAssemblyReplicationHandlers() {
-	r.mutating(wire.MethodAssemblyPatternCreate, "Pattern Components", assemblyPatternCreate)
-	r.mutating(wire.MethodAssemblyMirror, "Mirror Components", assemblyMirror)
-	r.mutating(wire.MethodAssemblyMirrorIntoPart, "Mirror", assemblyMirrorIntoPart)
-	r.mutating(wire.MethodAssemblyCopy, "Copy Component", assemblyCopy)
-	r.mutating(wire.MethodAssemblySubstitute, "Substitute Component", assemblySubstitute)
+	r.mutating(wire.MethodAssemblyPatternCreate, "Pattern Components", typedAssembly(assemblyPatternCreate))
+	r.mutating(wire.MethodAssemblyMirror, "Mirror Components", typedAssembly(assemblyMirror))
+	r.mutating(wire.MethodAssemblyMirrorIntoPart, "Mirror", typedAssembly(assemblyMirrorIntoPart))
+	r.mutating(wire.MethodAssemblyCopy, "Copy Component", typedAssembly(assemblyCopy))
+	r.mutating(wire.MethodAssemblySubstitute, "Substitute Component", typedAssembly(assemblySubstitute))
 }
 
 // assemblyPatternCreate replicates the seed occurrence across an arrangement, adding one
 // occurrence per generated element beyond the seed.
-func assemblyPatternCreate(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.CreatePatternArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func assemblyPatternCreate(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.CreatePatternArgs) (wire.NewOccurrencesResult, error) {
 	seed, err := occurrenceByID(asm, in.Seed, wire.MethodAssemblyPatternCreate)
 	if err != nil {
-		return nil, err
+		return wire.NewOccurrencesResult{}, err
 	}
 	arr, err := arrangementFromArgs(in)
 	if err != nil {
-		return nil, err
+		return wire.NewOccurrencesResult{}, err
 	}
 	pat := occurrence.NewOccurrencePattern(seed.Definition(), seed.Transform(), arr)
-	return newOccurrencesReply(occurrence.PatternComponents(asm.Occurrences(), seed, pat))
+	return newOccurrencesReply(occurrence.PatternComponents(asm.Occurrences(), seed, pat)), nil
 }
 
 // assemblyMirror adds a mirror of each source occurrence across the plane (origin, normal).
-func assemblyMirror(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.MirrorComponentsArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func assemblyMirror(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.MirrorComponentsArgs) (wire.NewOccurrencesResult, error) {
 	sources, err := occurrencesByID(asm, in.Sources, wire.MethodAssemblyMirror)
 	if err != nil {
-		return nil, err
+		return wire.NewOccurrencesResult{}, err
 	}
 	normal, err := math.NewUnitVector3(in.Normal[0], in.Normal[1], in.Normal[2])
 	if err != nil {
-		return nil, fmt.Errorf("%s: normal %v is not a direction: %w", wire.MethodAssemblyMirror, in.Normal, err)
+		return wire.NewOccurrencesResult{}, fmt.Errorf("%s: normal %v is not a direction: %w", wire.MethodAssemblyMirror, in.Normal, err)
 	}
 	origin := math.P3(in.Origin[0], in.Origin[1], in.Origin[2])
-	return newOccurrencesReply(occurrence.MirrorComponents(asm.Occurrences(), sources, origin, normal))
+	return newOccurrencesReply(occurrence.MirrorComponents(asm.Occurrences(), sources, origin, normal)), nil
 }
 
 // assemblyMirrorIntoPart mirrors each source occurrence into a NEW opposite-hand part
 // document and places that as the mirrored occurrence (#717) — the document-producing
 // counterpart of assemblyMirror.
-func assemblyMirrorIntoPart(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
+func assemblyMirrorIntoPart(s *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.MirrorIntoPartArgs) (wire.NewOccurrencesResult, error) {
+	sources, reflect, err := parseMirrorIntoPart(asm, in)
 	if err != nil {
-		return nil, err
-	}
-	sources, reflect, err := parseMirrorIntoPart(asm, raw)
-	if err != nil {
-		return nil, err
+		return wire.NewOccurrencesResult{}, err
 	}
 	asmDoc := s.ActiveDocument()
 	created := make([]*occurrence.Occurrence, 0, len(sources))
 	for _, src := range sources {
 		occ, err := mirrorOccurrenceIntoPart(s, asm, asmDoc, src, reflect)
 		if err != nil {
-			return nil, err
+			return wire.NewOccurrencesResult{}, err
 		}
 		created = append(created, occ)
 	}
 	// AddPart activated each new mirror part; leave the assembly active, as assemblyMirror does.
 	if err := s.Workspace().SetActiveDocument(asmDoc); err != nil {
-		return nil, err
+		return wire.NewOccurrencesResult{}, err
 	}
-	return newOccurrencesReply(created)
+	return newOccurrencesReply(created), nil
 }
 
 // parseMirrorIntoPart resolves the source occurrences and the mirror-plane reflection from
 // the request.
-func parseMirrorIntoPart(asm *compdef.AssemblyComponentDefinition, raw json.RawMessage) ([]*occurrence.Occurrence, math.Matrix4, error) {
-	var in wire.MirrorIntoPartArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, math.Matrix4{}, err
-	}
+func parseMirrorIntoPart(asm *compdef.AssemblyComponentDefinition, in wire.MirrorIntoPartArgs) ([]*occurrence.Occurrence, math.Matrix4, error) {
 	sources, err := occurrencesByID(asm, in.Sources, wire.MethodAssemblyMirrorIntoPart)
 	if err != nil {
 		return nil, math.Matrix4{}, err
@@ -184,43 +158,27 @@ func mirrorPartName(sourceName string) string {
 }
 
 // assemblyCopy adds an independent copy of each source occurrence.
-func assemblyCopy(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.CopyComponentsArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func assemblyCopy(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.CopyComponentsArgs) (wire.NewOccurrencesResult, error) {
 	sources, err := occurrencesByID(asm, in.Sources, wire.MethodAssemblyCopy)
 	if err != nil {
-		return nil, err
+		return wire.NewOccurrencesResult{}, err
 	}
-	return newOccurrencesReply(occurrence.CopyComponents(asm.Occurrences(), sources))
+	return newOccurrencesReply(occurrence.CopyComponents(asm.Occurrences(), sources)), nil
 }
 
 // assemblySubstitute suppresses the source occurrences and adds one occurrence instancing
 // the simplified component held by an open document.
-func assemblySubstitute(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.SubstituteComponentsArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func assemblySubstitute(s *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.SubstituteComponentsArgs) (wire.OccurrenceResult, error) {
 	sources, err := occurrencesByID(asm, in.Sources, wire.MethodAssemblySubstitute)
 	if err != nil {
-		return nil, err
+		return wire.OccurrenceResult{}, err
 	}
 	def, err := placeableDefinition(s, in.Document, wire.MethodAssemblySubstitute)
 	if err != nil {
-		return nil, err
+		return wire.OccurrenceResult{}, err
 	}
 	sub := occurrence.Substitute(asm.Occurrences(), sources, in.Name, def, matrixFromWire(in.Transform))
-	return occurrenceReply(sub)
+	return occurrenceReply(sub), nil
 }
 
 // arrangementFromArgs builds the pattern arrangement from the request's kind + parameters.
@@ -267,11 +225,11 @@ func rectangularArrangement(in wire.CreatePatternArgs) (occurrence.Arrangement, 
 	}, nil
 }
 
-// newOccurrencesReply marshals the occurrences an additive replication op created.
-func newOccurrencesReply(created []*occurrence.Occurrence) (json.RawMessage, error) {
+// newOccurrencesReply builds the result DTO for the occurrences an additive replication op created.
+func newOccurrencesReply(created []*occurrence.Occurrence) wire.NewOccurrencesResult {
 	out := make([]wire.OccurrenceInfo, len(created))
 	for i, o := range created {
 		out[i] = occurrenceInfo(o)
 	}
-	return json.Marshal(wire.NewOccurrencesResult{Created: out})
+	return wire.NewOccurrencesResult{Created: out}
 }
