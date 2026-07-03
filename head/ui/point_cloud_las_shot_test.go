@@ -62,7 +62,7 @@ func TestInWindowSyntheticLASRenders(t *testing.T) {
 	icons = nil
 
 	s := framedSession()
-	pc, err := s.AttachPointCloud("Cube LAS", path)
+	pc, _, err := s.AttachPointCloud("Cube LAS", path)
 	if err != nil {
 		t.Fatalf("attach synthetic LAS: %v", err)
 	}

@@ -161,11 +161,11 @@ func (p *patternBase) replicateTools(bodies []*topo.Body, tools []groupTool, tra
 	// a full periodic cylinder face, so a circular pattern of a Ø-hole cut used to blow up into
 	// tens of thousands of edges (#129). A faceted tool is left unchanged.
 	for i := range tools {
-		tools[i].body = planarized(tools[i].body, feat)
+		tools[i].body = planarizedDiag(tools[i].body, feat, rec)
 	}
 	running := append([]*topo.Body(nil), bodies...)
 	last := len(running) - 1
-	running[last] = planarized(running[last], feat) // ditto for a curved running target
+	running[last] = planarizedDiag(running[last], feat, rec) // ditto for a curved running target
 	for k := 1; k < len(transforms); k++ {
 		if p.skip(k) {
 			continue

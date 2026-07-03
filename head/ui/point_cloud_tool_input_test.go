@@ -25,7 +25,7 @@ func armCloudSession(t *testing.T) (*app.Session, *compdef.PartComponentDefiniti
 	if err := os.WriteFile(path, []byte("0 0 0\n1 0 0\n0 1 0\n1 1 0\n"), 0o644); err != nil {
 		t.Fatalf("write scan: %v", err)
 	}
-	pc, err := s.AttachPointCloud("Scan", path)
+	pc, _, err := s.AttachPointCloud("Scan", path)
 	if err != nil {
 		t.Fatalf("attach: %v", err)
 	}

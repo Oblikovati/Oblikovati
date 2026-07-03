@@ -31,7 +31,7 @@ func (t *EmbossTool) Start(*Session) {}
 func (t *EmbossTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectProfile} }
 
 // Picks reports the picked regions for the unified highlight.
-func (t *EmbossTool) Picks() []Selectable { return profileSelectables(t.profiles) }
+func (t *EmbossTool) Picks() []Selectable { return selectables(t.profiles) }
 
 // Pick captures a single clicked region (replacing any previous selection).
 func (t *EmbossTool) Pick(_ *Session, sel Selectable) {

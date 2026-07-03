@@ -8,13 +8,9 @@
 package addinstate
 
 import (
-	"fmt"
-	"os"
-	"path/filepath"
-
 	"oblikovati.org/api/types"
+	"oblikovati.org/persistence/filestore"
 	"oblikovati.org/userconfig"
-	"oblikovati.org/yamlcodec"
 )
 
 // behaviorsFile is the on-disk document: add-in id → stable behavior name
@@ -23,9 +19,11 @@ type behaviorsFile struct {
 	Behaviors map[string]string `yaml:"behaviors"`
 }
 
-// FileStore persists the behaviors to a YAML file; it satisfies
-// app.AddInBehaviorStore.
-type FileStore struct{ path string }
+// FileStore persists the behaviors to a YAML file (the shared filestore core,
+// #1651); it satisfies app.AddInBehaviorStore.
+type FileStore struct {
+	file *filestore.FileStore[behaviorsFile]
+}
 
 // DefaultPath is the per-user behaviors file in the shared config dir:
 // ~/.oblikovati/addin-behaviors.yaml on Linux/macOS.
@@ -34,22 +32,17 @@ func DefaultPath() (string, error) {
 }
 
 // NewFileStore returns a store backed by the file at path.
-func NewFileStore(path string) *FileStore { return &FileStore{path: path} }
+func NewFileStore(path string) *FileStore {
+	return &FileStore{file: filestore.New[behaviorsFile](path)}
+}
 
 // Load reads the stored behaviors; a missing file is an empty map (fresh install).
 // An unknown behavior name is skipped rather than guessed, so a hand-edited typo
 // falls back to the default instead of disabling an add-in.
 func (s *FileStore) Load() (map[string]types.AddInLoadBehavior, error) {
-	raw, err := os.ReadFile(s.path)
-	if os.IsNotExist(err) {
-		return map[string]types.AddInLoadBehavior{}, nil
-	}
+	f, _, err := s.file.Load()
 	if err != nil {
-		return nil, fmt.Errorf("addinstate: read %q: %w", s.path, err)
-	}
-	var f behaviorsFile
-	if err := yamlcodec.Unmarshal(raw, &f); err != nil {
-		return nil, fmt.Errorf("addinstate: parse %q: %w", s.path, err)
+		return nil, err
 	}
 	out := map[string]types.AddInLoadBehavior{}
 	for id, name := range f.Behaviors {
@@ -66,12 +59,5 @@ func (s *FileStore) Save(m map[string]types.AddInLoadBehavior) error {
 	for id, b := range m {
 		f.Behaviors[id] = b.String()
 	}
-	data, err := yamlcodec.Marshal(f)
-	if err != nil {
-		return fmt.Errorf("addinstate: marshal behaviors: %w", err)
-	}
-	if err := os.MkdirAll(filepath.Dir(s.path), 0o755); err != nil {
-		return fmt.Errorf("addinstate: create config dir for %q: %w", s.path, err)
-	}
-	return os.WriteFile(s.path, data, 0o644)
+	return s.file.Save(f)
 }

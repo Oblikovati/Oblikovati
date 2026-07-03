@@ -49,7 +49,7 @@ func TestInWindowProvenancePlaneFollowsCloud(t *testing.T) {
 	icons = nil
 
 	s := framedSession()
-	pc, err := s.AttachPointCloud("Sheet", tiltedSheetScan(t))
+	pc, _, err := s.AttachPointCloud("Sheet", tiltedSheetScan(t))
 	if err != nil {
 		t.Fatalf("attach scan: %v", err)
 	}

@@ -3,6 +3,7 @@
 package compdef
 
 import (
+	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/math"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/pointcloud"
@@ -38,13 +39,16 @@ func (d *PartComponentDefinition) SetPointCloudRecords(records []doc.PointCloudR
 }
 
 // scanPoints re-decodes a record's points from the embedded resource bytes, or nil when the
-// resource is missing or undecodable.
+// resource is missing or undecodable. The scan re-scales into the document's CURRENT working
+// unit (the same options the attach path used), so restored clouds match the attach scale (#1636).
 func (d *PartComponentDefinition) scanPoints(rec doc.PointCloudRecord) []math.Point3 {
 	res, ok := d.resources[rec.ResourceID]
 	if !ok {
 		return nil
 	}
-	points, err := pointcloud.ReadScan(rec.Source, res.Value)
+	// Restore is non-interactive, so per-record warnings are not surfaced here; the attach path
+	// already reported them (#1646).
+	points, _, err := pointcloud.ReadScan(rec.Source, res.Value, exchange.TranslationOptions{TargetUnitMM: d.WorkingUnitMM()})
 	if err != nil {
 		return nil
 	}

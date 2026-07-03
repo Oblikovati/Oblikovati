@@ -40,7 +40,7 @@ func TestInWindowFitPlaneRenders(t *testing.T) {
 	icons = nil
 
 	s := framedSession()
-	pc, err := s.AttachPointCloud("Sheet", tiltedPlanarScan(t))
+	pc, _, err := s.AttachPointCloud("Sheet", tiltedPlanarScan(t))
 	if err != nil {
 		t.Fatalf("attach scan: %v", err)
 	}

@@ -336,8 +336,14 @@ func placeMeshFromFile(s *app.Session, path, name string) {
 // attachPointCloudFromFile attaches an ASCII scan as a referenced point cloud (3D Model ▸ Import
 // Point Cloud, #645).
 func attachPointCloudFromFile(s *app.Session, path, name string) {
-	if _, err := s.AttachPointCloud("", path); err != nil {
+	_, warns, err := s.AttachPointCloud("", path)
+	if err != nil {
 		fileNotice(s, "Import Point Cloud failed: %v", err)
+		return
+	}
+	if len(warns) > 0 {
+		// Per-record decode warnings (#1646): surface the count and the first offender.
+		fileNotice(s, "Attached point cloud %s (%d records skipped: %s)", name, len(warns), warns[0])
 		return
 	}
 	fileNotice(s, "Attached point cloud %s", name)

@@ -101,10 +101,8 @@ func TestParamAtConvergesAndStopsEarly(t *testing.T) {
 	if r := perpCosine(s, q, u, v); r > 1e-7 {
 		t.Errorf("ParamAt foot not perpendicular: residual %g", r)
 	}
-	// Re-run the refinement from ParamAt's grid seed to observe the iteration count.
-	uLo, uHi := s.UDomain()
-	vLo, vHi := s.VDomain()
-	su, sv := surfaceGridSeed(s, q, uLo, uHi, vLo, vHi)
+	// Re-run the refinement from ParamAt's knot-span seed to observe the iteration count.
+	su, sv := nearestSeed(s, q, knotSpanSeedParams(s.UKnots, s.UDegree), knotSpanSeedParams(s.VKnots, s.VDegree))
 	_, _, iters := refineSurfaceParam(s, q, su, sv, surfaceInvertMaxIter)
 	if iters >= surfaceInvertMaxIter {
 		t.Errorf("ParamAt refinement ran the full %d iterations — early exit not working", surfaceInvertMaxIter)

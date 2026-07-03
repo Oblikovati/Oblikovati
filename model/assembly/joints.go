@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/api/contract"
 	"oblikovati.org/api/types"
+	"oblikovati.org/model/internal/collview"
 	"oblikovati.org/model/occurrence"
 )
 
@@ -83,10 +84,7 @@ func (s *JointSet) Count() int { return len(s.items) }
 
 // Item returns the joint at index i (0-based), or nil when out of range.
 func (s *JointSet) Item(i int) contract.AssemblyJoint {
-	if i < 0 || i >= len(s.items) {
-		return nil
-	}
-	return s.items[i]
+	return collview.ItemAs(s.items, i, asContractJoint)
 }
 
 // All returns the joints in creation order.
@@ -215,11 +213,12 @@ func (e *OccurrenceJoints) Count() int { return len(e.items) }
 
 // Item returns the i-th joint referencing the occurrence, or nil when out of range.
 func (e *OccurrenceJoints) Item(i int) contract.AssemblyJoint {
-	if i < 0 || i >= len(e.items) {
-		return nil
-	}
-	return e.items[i]
+	return collview.ItemAs(e.items, i, asContractJoint)
 }
+
+// asContractJoint widens the engine's Joint to the public contract for the shared
+// collview guard (#1655).
+func asContractJoint(j Joint) contract.AssemblyJoint { return j }
 
 // jointNames maps each kind to its display prefix.
 var jointNames = map[types.AssemblyJointType]string{
