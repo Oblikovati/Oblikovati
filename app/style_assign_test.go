@@ -100,6 +100,23 @@ func TestBodyColorStyleEmitsEvent(t *testing.T) {
 	}
 }
 
+// TestColorStyleNoActiveDocument covers the guard branches: with no document open, reads report "no
+// style" and a clear is a safe no-op that surfaces errNoActiveDocument rather than panicking.
+func TestColorStyleNoActiveDocument(t *testing.T) {
+	s := NewSession() // no documents open → ActiveDocument() is nil
+	if _, ok := s.BodyColorStyle("k"); ok {
+		t.Error("BodyColorStyle with no active document should report no assignment")
+	}
+	s.ClearBodyColorStyle("k") // exercises setBodyColorStyle's no-active-document early return
+}
+
+// TestBodyColorStyleChangedEventID pins the event's stable type id.
+func TestBodyColorStyleChangedEventID(t *testing.T) {
+	if got := (BodyColorStyleChanged{}).EventID(); got != tidBodyColorStyleChanged {
+		t.Errorf("EventID = %v, want tidBodyColorStyleChanged", got)
+	}
+}
+
 // TestStyleSurfaceUsesDiffuseAlbedo checks the style→surface conversion drives albedo from the
 // diffuse color and roughness from shininess.
 func TestStyleSurfaceUsesDiffuseAlbedo(t *testing.T) {

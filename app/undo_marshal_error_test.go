@@ -21,6 +21,7 @@ var errMarshalBoom = errors.New("snapshot marshal boom")
 // the marshal-error tests inject instead of a real component definition (no inline stub, per house rules).
 type fakeRecipeStore struct {
 	marshalErr error
+	restoreErr error
 	restored   []byte
 }
 
@@ -32,6 +33,9 @@ func (f *fakeRecipeStore) MarshalSnapshot() ([]byte, error) {
 }
 
 func (f *fakeRecipeStore) RestoreSnapshot(b []byte) error {
+	if f.restoreErr != nil {
+		return f.restoreErr
+	}
 	f.restored = b
 	return nil
 }

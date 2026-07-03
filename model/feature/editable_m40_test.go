@@ -100,6 +100,21 @@ func TestGrillEditableRefs(t *testing.T) {
 	}
 }
 
+// TestLoftSectionSlotCountReflectsClearedSketch covers the slot's Count closure reporting 0 once its
+// section's sketch is cleared out from under it (a bound → unbound profile), and 1 while bound.
+func TestLoftSectionSlotCountReflectsClearedSketch(t *testing.T) {
+	sk := sketch.NewSketches().Add(sketch.XYPlane())
+	sec := LoftSection{Sketch: sk, ProfileIndex: 0}
+	slot := loftSectionSlot(1, &sec)
+	if slot.Count() != 1 {
+		t.Fatalf("Count with a bound sketch = %d, want 1", slot.Count())
+	}
+	sec.Sketch = nil
+	if slot.Count() != 0 {
+		t.Errorf("Count after the sketch is cleared = %d, want 0", slot.Count())
+	}
+}
+
 func paramSlotLabels(slots []EditableRefSlot) []string {
 	out := make([]string, len(slots))
 	for i, s := range slots {
