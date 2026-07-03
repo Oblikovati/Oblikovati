@@ -6,8 +6,9 @@ import (
 	"bytes"
 	"encoding/binary"
 	"math"
-	"oblikovati.org/kernel/exchange"
 	"testing"
+
+	"oblikovati.org/kernel/exchange"
 )
 
 // TestPLYASCII: an ASCII PLY's vertex positions decode, ignoring extra per-vertex columns and the

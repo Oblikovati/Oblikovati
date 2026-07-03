@@ -3,8 +3,9 @@
 package pointcloud
 
 import (
-	"oblikovati.org/kernel/exchange"
 	"testing"
+
+	"oblikovati.org/kernel/exchange"
 
 	"oblikovati.org/math"
 )

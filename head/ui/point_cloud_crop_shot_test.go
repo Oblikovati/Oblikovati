@@ -49,10 +49,14 @@ func TestInWindowCropBoxRenders(t *testing.T) {
 	}
 	frameCameraOn(s, pc.RangeBox())
 
-	// Box the central model region [-6,6]² by projecting its corners to viewport pixels with the
-	// same projection the crop tool uses, so the clicks reliably enclose the inner points.
-	sx0, sy0, ok0 := renderer.Project(s.Camera(), 0.1, 5000, math.P3(-6, -6, 0))
-	sx1, sy1, ok1 := renderer.Project(s.Camera(), 0.1, 5000, math.P3(6, 6, 0))
+	// Box the central half of the cloud's actual extent by projecting those corners to viewport
+	// pixels with the same projection the crop tool uses, so the clicks reliably enclose the inner
+	// points. The extent is read from the attached cloud's RangeBox rather than the raw file
+	// coordinates because import rescales the cloud to the document's working unit (#1636) — a
+	// hard-coded world box would no longer straddle the (now smaller) cloud.
+	rb := pc.RangeBox()
+	sx0, sy0, ok0 := renderer.Project(s.Camera(), 0.1, 5000, math.P3(rb.Min.X/2, rb.Min.Y/2, 0))
+	sx1, sy1, ok1 := renderer.Project(s.Camera(), 0.1, 5000, math.P3(rb.Max.X/2, rb.Max.Y/2, 0))
 	if !ok0 || !ok1 {
 		t.Fatal("central corners must project on-screen")
 	}
