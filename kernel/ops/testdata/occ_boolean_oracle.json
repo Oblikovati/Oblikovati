@@ -47,5 +47,6 @@
   "torus ∩ box (oblique figure-eight)": 151.898735,
   "torus − box (oblique figure-eight)": 242.8854496,
   "torus − box (axis-∥ near-pinch large oval)": 280.2555295,
-  "cap-crossing cylinder − (exits top cap)": 266.6720995
+  "cap-crossing cylinder − (exits top cap)": 266.6720995,
+  "rim-crossing cylinder − (exit ellipse crosses top rim)": 263.6617744
 }

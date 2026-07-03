@@ -98,6 +98,7 @@ func curvedExactCases() []curvedExactCase {
 		{"crossing cylinders − (drill)", ops.Cut, crossingCylinders},
 		{"crossing cylinders ∪", ops.Join, crossingCylinders},
 		{"cap-crossing cylinder − (exits top cap)", ops.Cut, capCrossingCutBodies},
+		{"rim-crossing cylinder − (exit ellipse crosses top rim)", ops.Cut, rimCrossingCutBodies},
 		{"equal-radius Steinmetz ∩", ops.Intersect, func(t *testing.T) (*topo.Body, *topo.Body) {
 			return demoCyl(t, math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12), demoCyl(t, math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 		}},
@@ -323,6 +324,16 @@ func capCrossingCutBodies(t *testing.T) (*topo.Body, *topo.Body) {
 	s := 1 / stdmath.Sqrt2
 	return demoCyl(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 10),
 		demoCyl(t, math.P3(-6.5, 0, 2), math.V3(math.Scalar(s), 0, math.Scalar(s)), 0.9, 16)
+}
+
+// rimCrossingCutBodies is the slice-2 rim-crossing fixture (#1724): the same r=3 h=10 target and oblique
+// r=0.9 tool as slice 1, but at base -5.6 so the 45° tool's exit ellipse CROSSES the top rim — the tool
+// exits partly through the cap and partly through the wall (a top-rim notch), the case RimCrossingCutGeneral
+// handles. Shared by the exactness, OCC-volume, and full-moment certification guards.
+func rimCrossingCutBodies(t *testing.T) (*topo.Body, *topo.Body) {
+	s := 1 / stdmath.Sqrt2
+	return demoCyl(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 10),
+		demoCyl(t, math.P3(-5.6, 0, 2), math.V3(math.Scalar(s), 0, math.Scalar(s)), 0.9, 16)
 }
 
 func demoCyl(t *testing.T, base math.Point3, axis math.Vector3, r, h float64) *topo.Body {
