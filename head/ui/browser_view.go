@@ -343,31 +343,17 @@ func drawSelectableNode(s *app.Session, n app.BrowserNode) {
 	}
 }
 
-// openEditOnDoubleClick opens the edit mode for the double-clicked node (Inventor's
-// edit-on-double-click), dispatching by node type: a feature opens its parameter editor, a
-// sketch re-enters the sketch environment, and a user work plane opens its redefine tool.
-// A node with nothing to edit (the origin frame, a non-editable feature) does nothing.
+// openEditOnDoubleClick runs the double-clicked node's activation (Inventor's edit-on-double
+// -click) through the NodeActivatable capability: a feature opens its parameter editor, a sketch
+// re-enters the sketch environment, an occurrence opens the placed component, a representation /
+// model state activates, a drawing view edits its settings. head/ui invokes the capability rather
+// than switching on concrete handle types (#1630); a node with nothing to activate does nothing.
 func openEditOnDoubleClick(s *app.Session, n app.BrowserNode) {
 	if !native.IsItemHovered() || !native.IsMouseDoubleClicked(native.MouseLeft) {
 		return
 	}
-	switch h := n.Select.(type) {
-	case app.FeatureHandle:
-		s.BeginEditFeature(h)
-	case app.AssemblyFeatureHandle:
-		s.BeginEditAssemblyFeature(h) // edit a committed assembly machining feature (#766)
-	case app.SketchHandle:
-		s.BeginEditSketch(h)
-	case app.WorkPlaneHandle:
-		s.BeginEditWorkPlane(h)
-	case app.OccurrenceHandle:
-		_ = s.OpenOccurrenceDocument(h.Occurrence) // open the placed component in a tab (#764)
-	case app.RepresentationHandle:
-		_ = s.ActivateRepresentation(h) // double-click activates a representation (M12-F04)
-	case app.ModelStateHandle:
-		_ = s.ActivateModelState(h) // double-click switches the model state (M12-F04)
-	case app.DrawingViewHandle:
-		s.BeginEditDrawingView(h) // double-click a drawing view edits its settings (M14-F02)
+	if a, ok := n.Select.(app.NodeActivatable); ok {
+		a.Activate(s)
 	}
 }
 

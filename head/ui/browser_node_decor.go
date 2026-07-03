@@ -96,61 +96,29 @@ func applyRename(s *app.Session, n app.BrowserNode) {
 	browserRename.target = nil
 }
 
-// renameNode dispatches the rename to the session method for the node's handle type.
+// renameNode dispatches the rename to the node's handle through the NodeRenameable capability,
+// so head/ui needs no per-handle-type switch (#1630). A node that is not renameable does nothing.
 func renameNode(s *app.Session, n app.BrowserNode, name string) error {
-	switch h := n.Select.(type) {
-	case app.FeatureHandle:
-		return s.RenameFeature(h.Feature, name)
-	case app.SketchHandle:
-		return s.RenameSketch(h.Sketch, name)
-	case app.Sketch3DHandle:
-		return s.RenameSketch3D(h.Sketch3D, name)
-	case app.WorkPlaneHandle:
-		return s.RenameWorkPlane(h.Plane, name)
-	case app.WorkAxisHandle:
-		return s.RenameWorkAxis(h.Axis, name)
-	case app.WorkPointHandle:
-		return s.RenameWorkPoint(h.Point, name)
-	default:
-		return nil
+	if r, ok := n.Select.(app.NodeRenameable); ok {
+		return r.Rename(s, name)
 	}
+	return nil
 }
 
-// nodeName returns the editable name for a node — its handle's current name, falling back to the
-// label (the label may carry a status badge, so prefer the raw name).
+// nodeName returns the editable name for a node — its handle's current name via the
+// NodeRenameable capability, falling back to the label (the label may carry a status badge, so
+// prefer the raw name) for a node that carries no editable name.
 func nodeName(n app.BrowserNode) string {
-	switch h := n.Select.(type) {
-	case app.FeatureHandle:
-		return h.Feature.Name()
-	case app.SketchHandle:
-		return h.Sketch.Name()
-	case app.Sketch3DHandle:
-		return h.Sketch3D.Name()
-	case app.WorkPlaneHandle:
-		return h.Plane.Name()
-	case app.WorkAxisHandle:
-		return h.Axis.Name()
-	case app.WorkPointHandle:
-		return h.Point.Name()
-	default:
-		return n.Label
+	if r, ok := n.Select.(app.NodeRenameable); ok {
+		return r.NodeName()
 	}
+	return n.Label
 }
 
-// isRenameableNode reports whether n is a node the in-place rename targets: a feature, a 2D/3D
-// sketch, or a user work plane/axis/point. The grounded origin coordinate-system datums (the
-// Origin folder) are excluded — their names are fixed (#1264).
+// isRenameableNode reports whether the in-place rename targets n — the node's handle both
+// implements NodeRenameable and reports itself renameable (grounded origin datums report false,
+// their names being fixed, #1264). The capability answers instead of a per-type switch (#1630).
 func isRenameableNode(n app.BrowserNode) bool {
-	switch h := n.Select.(type) {
-	case app.FeatureHandle, app.SketchHandle, app.Sketch3DHandle:
-		return true
-	case app.WorkPlaneHandle:
-		return !h.Plane.IsCoordinateSystemElement()
-	case app.WorkAxisHandle:
-		return !h.Axis.IsCoordinateSystemElement()
-	case app.WorkPointHandle:
-		return !h.Point.IsCoordinateSystemElement()
-	default:
-		return false
-	}
+	r, ok := n.Select.(app.NodeRenameable)
+	return ok && r.Renameable()
 }
