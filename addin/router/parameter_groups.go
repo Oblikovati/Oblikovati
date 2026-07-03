@@ -3,7 +3,6 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"oblikovati.org/addin/modelaccess"
@@ -43,95 +42,75 @@ func groupByKey(s *app.Session, method, key string) (compdef.ParameterHolder, *p
 }
 
 // listParameterGroups returns the custom groups with their members, in creation order.
-func listParameterGroups(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	holder, err := modelaccess.ActiveParameterHolder(s)
-	if err != nil {
-		return nil, err
-	}
+func listParameterGroups(_ *app.Session, holder compdef.ParameterHolder) (wire.ListParameterGroupsResult, error) {
 	var out wire.ListParameterGroupsResult
 	for _, g := range holder.Parameters().Groups() {
 		out.Groups = append(out.Groups, parameterGroupInfo(holder, g))
 	}
-	return json.Marshal(out)
+	return out, nil
 }
 
 // addParameterGroup creates an empty group keyed by its immutable internal name.
-func addParameterGroup(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.ParameterGroupAddArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func addParameterGroup(s *app.Session, in wire.ParameterGroupAddArgs) (wire.ParameterGroupInfo, error) {
 	g, err := s.AddParameterGroup(in.InternalName, in.DisplayName, in.ClientID)
 	if err != nil {
-		return nil, err
+		return wire.ParameterGroupInfo{}, err
 	}
 	holder, err := modelaccess.ActiveParameterHolder(s)
 	if err != nil {
-		return nil, err
+		return wire.ParameterGroupInfo{}, err
 	}
-	return json.Marshal(parameterGroupInfo(holder, g))
+	return parameterGroupInfo(holder, g), nil
 }
 
 // deleteParameterGroup removes a group; the deleteParameters flag opts into
 // the cascade that also deletes the member parameters. The cascade's
 // may-not-sicken-a-survivor refusal comes from the aggregate (#1612).
-func deleteParameterGroup(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.ParameterGroupDeleteArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func deleteParameterGroup(s *app.Session, in wire.ParameterGroupDeleteArgs) (struct{}, error) {
 	if err := s.DeleteParameterGroup(in.InternalName, in.DeleteParameters); err != nil {
-		return nil, err
+		return struct{}{}, err
 	}
-	return json.Marshal(struct{}{})
+	return struct{}{}, nil
 }
 
 // setParameterGroupDisplayName edits the editable half of the group's naming;
 // the non-empty rule comes from the aggregate, shared with the UI (#1612).
-func setParameterGroupDisplayName(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.ParameterGroupDisplayNameArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func setParameterGroupDisplayName(s *app.Session, in wire.ParameterGroupDisplayNameArgs) (wire.ParameterGroupInfo, error) {
 	if err := s.RenameParameterGroup(in.InternalName, in.DisplayName); err != nil {
-		return nil, err
+		return wire.ParameterGroupInfo{}, err
 	}
 	holder, g, err := groupByKey(s, wire.MethodParametersGroupsSetDisplayName, in.InternalName)
 	if err != nil {
-		return nil, err
+		return wire.ParameterGroupInfo{}, err
 	}
-	return json.Marshal(parameterGroupInfo(holder, g))
+	return parameterGroupInfo(holder, g), nil
 }
 
 // addParameterGroupMember / removeParameterGroupMember manage one membership.
 // The group's existence was checked by the caller, so AddParameterToGroup's
 // create-on-first-use (a UI journey) can never trigger on the wire path.
-func addParameterGroupMember(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	return editParameterGroupMember(s, wire.MethodParametersGroupsAddMember, args, (*app.Session).AddParameterToGroup)
+func addParameterGroupMember(s *app.Session, in wire.ParameterGroupMemberArgs) (wire.ParameterGroupInfo, error) {
+	return editParameterGroupMember(s, wire.MethodParametersGroupsAddMember, in, (*app.Session).AddParameterToGroup)
 }
 
-func removeParameterGroupMember(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	return editParameterGroupMember(s, wire.MethodParametersGroupsRemoveMember, args, (*app.Session).DetachParameterFromGroup)
+func removeParameterGroupMember(s *app.Session, in wire.ParameterGroupMemberArgs) (wire.ParameterGroupInfo, error) {
+	return editParameterGroupMember(s, wire.MethodParametersGroupsRemoveMember, in, (*app.Session).DetachParameterFromGroup)
 }
 
 // editParameterGroupMember resolves the group and the parameter (wire-strict:
 // both must exist), applies one membership edit through the shared Session
 // verb, and returns the updated group.
-func editParameterGroupMember(s *app.Session, method string, args json.RawMessage, edit func(*app.Session, param.ID, string) error) (json.RawMessage, error) {
-	var in wire.ParameterGroupMemberArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func editParameterGroupMember(s *app.Session, method string, in wire.ParameterGroupMemberArgs, edit func(*app.Session, param.ID, string) error) (wire.ParameterGroupInfo, error) {
 	holder, g, err := groupByKey(s, method, in.InternalName)
 	if err != nil {
-		return nil, err
+		return wire.ParameterGroupInfo{}, err
 	}
 	p, ok := holder.Parameters().ByName(in.Parameter)
 	if !ok {
-		return nil, fmt.Errorf("%s: no parameter named %q", method, in.Parameter)
+		return wire.ParameterGroupInfo{}, fmt.Errorf("%s: no parameter named %q", method, in.Parameter)
 	}
 	if err := edit(s, p.ID(), in.InternalName); err != nil {
-		return nil, err
+		return wire.ParameterGroupInfo{}, err
 	}
-	return json.Marshal(parameterGroupInfo(holder, g))
+	return parameterGroupInfo(holder, g), nil
 }

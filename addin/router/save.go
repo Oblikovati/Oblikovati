@@ -3,7 +3,6 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"oblikovati.org/api/contract"
@@ -19,19 +18,15 @@ import (
 // openDocument loads (or returns) the document at a full document name (wire
 // documents.open). DeferContent registers a reference stub without paging
 // content in.
-func openDocument(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.OpenDocumentArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func openDocument(s *app.Session, in wire.OpenDocumentArgs) (wire.DocumentInfo, error) {
 	if in.FullDocumentName == "" {
-		return nil, fmt.Errorf("router: documents.open needs a fullDocumentName")
+		return wire.DocumentInfo{}, fmt.Errorf("router: documents.open needs a fullDocumentName")
 	}
 	d, err := openDocumentWithOptions(s, in)
 	if err != nil {
-		return nil, err
+		return wire.DocumentInfo{}, err
 	}
-	return json.Marshal(docInfo(d, s.Workspace().ActiveDocument()))
+	return docInfo(d, s.Workspace().ActiveDocument()), nil
 }
 
 // openDocumentWithOptions picks the session's full open flow (history, view
@@ -50,80 +45,64 @@ func openDocumentWithOptions(s *app.Session, in wire.OpenDocumentArgs) (*doc.Doc
 }
 
 // saveDocument writes a document at its current binding (wire documents.save).
-func saveDocument(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.SaveDocumentArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func saveDocument(s *app.Session, in wire.SaveDocumentArgs) (wire.SaveDocumentResult, error) {
 	d, err := documentByID(s, in.Document)
 	if err != nil {
-		return nil, err
+		return wire.SaveDocumentResult{}, err
 	}
 	if err := s.SaveDocument(d); err != nil {
-		return nil, err
+		return wire.SaveDocumentResult{}, err
 	}
-	return json.Marshal(wire.SaveDocumentResult{FullDocumentName: d.FullDocumentName()})
+	return wire.SaveDocumentResult{FullDocumentName: d.FullDocumentName()}, nil
 }
 
 // saveDocumentAs writes a document under a new identity (wire documents.saveAs).
-func saveDocumentAs(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.SaveDocumentAsArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func saveDocumentAs(s *app.Session, in wire.SaveDocumentAsArgs) (wire.SaveDocumentResult, error) {
 	d, err := documentByID(s, in.Document)
 	if err != nil {
-		return nil, err
+		return wire.SaveDocumentResult{}, err
 	}
 	if err := s.SaveDocumentAs(d, in.NewFullDocumentName); err != nil {
-		return nil, err
+		return wire.SaveDocumentResult{}, err
 	}
-	return json.Marshal(wire.SaveDocumentResult{FullDocumentName: d.FullDocumentName()})
+	return wire.SaveDocumentResult{FullDocumentName: d.FullDocumentName()}, nil
 }
 
 // saveDocumentCopyAs writes a copy without retargeting (wire
 // documents.saveCopyAs).
-func saveDocumentCopyAs(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.SaveCopyAsArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func saveDocumentCopyAs(s *app.Session, in wire.SaveCopyAsArgs) (wire.SaveDocumentResult, error) {
 	d, err := documentByID(s, in.Document)
 	if err != nil {
-		return nil, err
+		return wire.SaveDocumentResult{}, err
 	}
 	meta := doc.CopyMetadata{}
 	if in.Metadata != nil {
 		meta = doc.CopyMetadata{DisplayName: in.Metadata.DisplayName, SubType: doc.SubTypeID(in.Metadata.SubType)}
 	}
 	if err := s.SaveDocumentCopyAs(d, in.TargetFileName, meta); err != nil {
-		return nil, err
+		return wire.SaveDocumentResult{}, err
 	}
-	return json.Marshal(wire.SaveDocumentResult{FullDocumentName: in.TargetFileName})
+	return wire.SaveDocumentResult{FullDocumentName: in.TargetFileName}, nil
 }
 
 // batchSave queues every item and executes one operation with per-file
 // outcomes (wire documents.batchSave).
-func batchSave(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.BatchSaveArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func batchSave(s *app.Session, in wire.BatchSaveArgs) (wire.BatchSaveResult, error) {
 	queue := s.NewBatchSave()
 	for _, item := range in.Items {
 		d, err := documentByID(s, item.Document)
 		if err != nil {
-			return nil, err
+			return wire.BatchSaveResult{}, err
 		}
 		if err := queue.AddFileToSave(d, item.TargetFileName); err != nil {
-			return nil, err
+			return wire.BatchSaveResult{}, err
 		}
 	}
 	outcomes, err := executeBatch(queue, in.Operation)
 	if err != nil {
-		return nil, err
+		return wire.BatchSaveResult{}, err
 	}
-	return json.Marshal(batchResult(in.Items, outcomes))
+	return batchResult(in.Items, outcomes), nil
 }
 
 // executeBatch dispatches the named operation.

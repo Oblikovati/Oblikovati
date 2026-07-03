@@ -35,15 +35,11 @@ func transactionState(s *app.Session, _ json.RawMessage) (json.RawMessage, error
 
 // beginTransaction opens a bounded transaction so a batch of edits coalesces into one
 // undo step (wire.MethodTransactionBegin).
-func beginTransaction(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.TransactionBeginArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
-	}
+func beginTransaction(s *app.Session, a wire.TransactionBeginArgs) (wire.OKResult, error) {
 	if err := s.BeginTransaction(a.Label); err != nil {
-		return nil, err
+		return wire.OKResult{}, err
 	}
-	return json.Marshal(wire.OKResult{OK: true})
+	return wire.OKResult{OK: true}, nil
 }
 
 // endTransaction closes the innermost open transaction and returns the resulting state
@@ -68,31 +64,23 @@ func abortTransaction(s *app.Session, _ json.RawMessage) (json.RawMessage, error
 // transactionHistory reads one open document's whole undo stream for a history browser
 // (wire.MethodTransactionHistory) — a read-only query that does not activate the document, so
 // several documents' timelines can be shown side by side.
-func transactionHistory(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.TransactionHistoryArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
-	}
+func transactionHistory(s *app.Session, a wire.TransactionHistoryArgs) (wire.TransactionHistory, error) {
 	id, err := historyTargetDoc(s, a.Document)
 	if err != nil {
-		return nil, err
+		return wire.TransactionHistory{}, err
 	}
 	return marshalHistory(s, id)
 }
 
 // jumpTransaction moves one document's undo cursor to an absolute position
 // (wire.MethodTransactionJumpTo) and returns its resulting timeline.
-func jumpTransaction(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.TransactionJumpToArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
-	}
+func jumpTransaction(s *app.Session, a wire.TransactionJumpToArgs) (wire.TransactionHistory, error) {
 	id, err := historyTargetDoc(s, a.Document)
 	if err != nil {
-		return nil, err
+		return wire.TransactionHistory{}, err
 	}
 	if err := s.JumpDocumentTo(id, a.Position); err != nil {
-		return nil, err
+		return wire.TransactionHistory{}, err
 	}
 	return marshalHistory(s, id)
 }
@@ -112,10 +100,10 @@ func historyTargetDoc(s *app.Session, id uint64) (doc.ID, error) {
 
 // marshalHistory renders one document's timeline into the wire DTO. A save checkpoint at depth
 // k flags the entry at index k-1 (the step after which the document was written to disk).
-func marshalHistory(s *app.Session, id doc.ID) (json.RawMessage, error) {
+func marshalHistory(s *app.Session, id doc.ID) (wire.TransactionHistory, error) {
 	tl, ok := s.DocumentHistoryView(id)
 	if !ok {
-		return nil, fmt.Errorf("transaction.history: document %d is not an open model document", uint64(id))
+		return wire.TransactionHistory{}, fmt.Errorf("transaction.history: document %d is not an open model document", uint64(id))
 	}
 	saved := make(map[int]bool, len(tl.SavedDepths))
 	for _, d := range tl.SavedDepths {
@@ -125,12 +113,12 @@ func marshalHistory(s *app.Session, id doc.ID) (json.RawMessage, error) {
 	for i, label := range tl.Labels {
 		entries[i] = wire.TransactionHistoryEntry{Label: label, Saved: saved[i+1]}
 	}
-	return json.Marshal(wire.TransactionHistory{
+	return wire.TransactionHistory{
 		Document: uint64(id),
 		Name:     tl.Name,
 		Position: tl.Position,
 		Entries:  entries,
-	})
+	}, nil
 }
 
 // marshalUndoState renders the active document's cursor state into the wire DTO.

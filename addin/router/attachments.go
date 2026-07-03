@@ -3,7 +3,6 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -29,52 +28,40 @@ func attachmentInfo(a *doc.FileAttachment) wire.AttachmentInfo {
 
 // listAttachments returns a document's attachment records (wire
 // documents.listAttachments).
-func listAttachments(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.ListAttachmentsArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func listAttachments(s *app.Session, in wire.ListAttachmentsArgs) (wire.ListAttachmentsResult, error) {
 	d, err := documentByID(s, in.Document)
 	if err != nil {
-		return nil, err
+		return wire.ListAttachmentsResult{}, err
 	}
 	all := d.Attachments().All()
 	out := make([]wire.AttachmentInfo, len(all))
 	for i, a := range all {
 		out[i] = attachmentInfo(a)
 	}
-	return json.Marshal(wire.ListAttachmentsResult{Attachments: out})
+	return wire.ListAttachmentsResult{Attachments: out}, nil
 }
 
 // addAttachment attaches an external file (wire documents.addAttachment).
-func addAttachment(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.AddAttachmentArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func addAttachment(s *app.Session, in wire.AddAttachmentArgs) (wire.AttachmentInfo, error) {
 	d, err := documentByID(s, in.Document)
 	if err != nil {
-		return nil, err
+		return wire.AttachmentInfo{}, err
 	}
 	if _, err := d.Attachments().Add(in.Name, in.Kind, in.FullFileName); err != nil {
-		return nil, err
+		return wire.AttachmentInfo{}, err
 	}
-	return json.Marshal(attachmentInfo(d.Attachments().Record(in.Name)))
+	return attachmentInfo(d.Attachments().Record(in.Name)), nil
 }
 
 // removeAttachment deletes a named attachment record (wire
 // documents.removeAttachment).
-func removeAttachment(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.RemoveAttachmentArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func removeAttachment(s *app.Session, in wire.RemoveAttachmentArgs) (wire.OKResult, error) {
 	d, err := documentByID(s, in.Document)
 	if err != nil {
-		return nil, err
+		return wire.OKResult{}, err
 	}
 	if !d.Attachments().Remove(in.Name) {
-		return nil, fmt.Errorf("router: document %d has no attachment named %q", in.Document, in.Name)
+		return wire.OKResult{}, fmt.Errorf("router: document %d has no attachment named %q", in.Document, in.Name)
 	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
