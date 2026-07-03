@@ -15,7 +15,7 @@ import (
 	"oblikovati.org/model/material"
 	"oblikovati.org/model/param"
 	"oblikovati.org/model/sketch"
-	"oblikovati.org/persistence/yamlcodec"
+	"oblikovati.org/yamlcodec"
 )
 
 // The real part content reaches the document layer through the composition root

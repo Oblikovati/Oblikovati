@@ -8,8 +8,8 @@ import (
 	"sort"
 	"strings"
 
-	"oblikovati.org/persistence/yamlcodec"
 	"oblikovati.org/userconfig"
+	"oblikovati.org/yamlcodec"
 )
 
 // FileSystem is the thin filesystem seam the [Store] depends on, so theme IO is testable

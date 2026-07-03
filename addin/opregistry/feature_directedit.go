@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -17,19 +18,6 @@ import (
 
 // The consolidated direct-edit operation (M09-F04 PBI-108, #332): one descriptor
 // discriminated by the frozen DirectEditOperationType spellings.
-
-type directEditArgs struct {
-	Operation   string    `json:"operation"`
-	FaceRefs    []string  `json:"faceRefs,omitempty"`
-	Translation []float64 `json:"translation,omitempty"`
-	Direction   []float64 `json:"direction,omitempty"`
-	Distance    string    `json:"distance,omitempty"`
-	AxisPoint   []float64 `json:"axisPoint,omitempty"`
-	AxisDir     []float64 `json:"axisDir,omitempty"`
-	Angle       string    `json:"angle,omitempty"`
-	Scale       float64   `json:"scale,omitempty"`
-	Base        []float64 `json:"base,omitempty"`
-}
 
 const directEditSchema = `{
   "type": "object",
@@ -49,7 +37,7 @@ const directEditSchema = `{
 }`
 
 func directEditDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "directEdit", Summary: "Direct edit: move/size/rotate/delete picked faces, or scale the body uniformly.", Schema: json.RawMessage(directEditSchema), Apply: applyDirectEdit}
+	return &OperationDescriptor{Name: featureargs.KindDirectEdit, Summary: "Direct edit: move/size/rotate/delete picked faces, or scale the body uniformly.", Schema: json.RawMessage(directEditSchema), Apply: applyDirectEdit}
 }
 
 func applyDirectEdit(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -57,7 +45,7 @@ func applyDirectEdit(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 	if err != nil {
 		return nil, err
 	}
-	var in directEditArgs
+	var in featureargs.DirectEdit
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
@@ -74,7 +62,7 @@ func applyDirectEdit(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 
 // directEditDefinition builds the definition for the operation, validating the
 // fields it needs.
-func directEditDefinition(part *compdef.PartComponentDefinition, op types.DirectEditOperationType, in directEditArgs) (*feature.DirectEditDefinition, error) {
+func directEditDefinition(part *compdef.PartComponentDefinition, op types.DirectEditOperationType, in featureargs.DirectEdit) (*feature.DirectEditDefinition, error) {
 	def := &feature.DirectEditDefinition{Operation: op, FaceKeys: refKeys(in.FaceRefs)}
 	if op != types.DirectEditScaleOperation && len(in.FaceRefs) == 0 {
 		return nil, errors.New("directEdit: faceRefs is empty")
@@ -100,7 +88,7 @@ func directEditDefinition(part *compdef.PartComponentDefinition, op types.Direct
 	return def, nil
 }
 
-func directEditSize(part *compdef.PartComponentDefinition, def *feature.DirectEditDefinition, in directEditArgs) (*feature.DirectEditDefinition, error) {
+func directEditSize(part *compdef.PartComponentDefinition, def *feature.DirectEditDefinition, in featureargs.DirectEdit) (*feature.DirectEditDefinition, error) {
 	dir, err := vec3(in.Direction, "directEdit: direction")
 	if err != nil {
 		return nil, err
@@ -113,7 +101,7 @@ func directEditSize(part *compdef.PartComponentDefinition, def *feature.DirectEd
 	return def, nil
 }
 
-func directEditRotate(part *compdef.PartComponentDefinition, def *feature.DirectEditDefinition, in directEditArgs) (*feature.DirectEditDefinition, error) {
+func directEditRotate(part *compdef.PartComponentDefinition, def *feature.DirectEditDefinition, in featureargs.DirectEdit) (*feature.DirectEditDefinition, error) {
 	p, err := point3(in.AxisPoint, "directEdit: axisPoint")
 	if err != nil {
 		return nil, err

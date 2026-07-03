@@ -13,7 +13,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"oblikovati.org/persistence/yamlcodec"
+	"oblikovati.org/yamlcodec"
 )
 
 // FileStore persists one YAML document of type T at a fixed path, e.g.

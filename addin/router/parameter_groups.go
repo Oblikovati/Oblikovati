@@ -96,7 +96,7 @@ func setParameterGroupDisplayName(s *app.Session, args json.RawMessage) (json.Ra
 	if err := s.RenameParameterGroup(in.InternalName, in.DisplayName); err != nil {
 		return nil, err
 	}
-	holder, g, err := groupByKey(s, "parameters.groups.setDisplayName", in.InternalName)
+	holder, g, err := groupByKey(s, wire.MethodParametersGroupsSetDisplayName, in.InternalName)
 	if err != nil {
 		return nil, err
 	}
@@ -107,11 +107,11 @@ func setParameterGroupDisplayName(s *app.Session, args json.RawMessage) (json.Ra
 // The group's existence was checked by the caller, so AddParameterToGroup's
 // create-on-first-use (a UI journey) can never trigger on the wire path.
 func addParameterGroupMember(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	return editParameterGroupMember(s, "parameters.groups.addMember", args, (*app.Session).AddParameterToGroup)
+	return editParameterGroupMember(s, wire.MethodParametersGroupsAddMember, args, (*app.Session).AddParameterToGroup)
 }
 
 func removeParameterGroupMember(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	return editParameterGroupMember(s, "parameters.groups.removeMember", args, (*app.Session).DetachParameterFromGroup)
+	return editParameterGroupMember(s, wire.MethodParametersGroupsRemoveMember, args, (*app.Session).DetachParameterFromGroup)
 }
 
 // editParameterGroupMember resolves the group and the parameter (wire-strict:

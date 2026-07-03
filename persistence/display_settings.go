@@ -5,7 +5,7 @@ package persistence
 import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/model/display"
-	"oblikovati.org/persistence/yamlcodec"
+	"oblikovati.org/yamlcodec"
 )
 
 // toCodecColor / fromCodecColor convert a color value object to and from its on-disk record.
