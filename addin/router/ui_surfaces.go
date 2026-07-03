@@ -12,42 +12,34 @@ import (
 // registerUISurfaceHandlers wires the add-in UI surfaces of M05-F03: browser panes
 // (#256), dockable windows and the environment listing (#247).
 func (r *Router) registerUISurfaceHandlers() {
-	r.readOnly(wire.MethodBrowserSetPane, setBrowserPane)
-	r.readOnly(wire.MethodBrowserDeletePane, deleteBrowserPane)
+	r.readOnly(wire.MethodBrowserSetPane, typed(setBrowserPane))
+	r.readOnly(wire.MethodBrowserDeletePane, typed(deleteBrowserPane))
 	r.readOnly(wire.MethodBrowserListPanes, listBrowserPanes)
-	r.readOnly(wire.MethodDockableWindowsSet, setDockableWindow)
-	r.readOnly(wire.MethodDockableWindowsSetVisible, setDockableWindowVisible)
-	r.readOnly(wire.MethodDockableWindowsSetValue, setDockableWindowValue)
-	r.readOnly(wire.MethodDockableWindowsSetReferences, setDockableWindowReferences)
-	r.readOnly(wire.MethodDockableWindowsDelete, deleteDockableWindow)
+	r.readOnly(wire.MethodDockableWindowsSet, typed(setDockableWindow))
+	r.readOnly(wire.MethodDockableWindowsSetVisible, typed(setDockableWindowVisible))
+	r.readOnly(wire.MethodDockableWindowsSetValue, typed(setDockableWindowValue))
+	r.readOnly(wire.MethodDockableWindowsSetReferences, typed(setDockableWindowReferences))
+	r.readOnly(wire.MethodDockableWindowsDelete, typed(deleteDockableWindow))
 	r.readOnly(wire.MethodDockableWindowsList, listDockableWindows)
-	r.readOnly(wire.MethodTaskPanelShow, showTaskPanel)
-	r.readOnly(wire.MethodTaskPanelClose, closeTaskPanel)
+	r.readOnly(wire.MethodTaskPanelShow, typed(showTaskPanel))
+	r.readOnly(wire.MethodTaskPanelClose, typed(closeTaskPanel))
 	r.readOnly(wire.MethodUIListEnvironments, listEnvironments)
 }
 
 // setBrowserPane creates or replaces an add-in browser pane (wire browser.setPane).
-func setBrowserPane(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.SetBrowserPaneArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func setBrowserPane(s *app.Session, in wire.SetBrowserPaneArgs) (wire.OKResult, error) {
+	if err := s.BrowserPanes().Set(in.Pane); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.BrowserPanes().Set(req.Pane); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
 // deleteBrowserPane removes an add-in browser pane (wire browser.deletePane).
-func deleteBrowserPane(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.DeleteBrowserPaneArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func deleteBrowserPane(s *app.Session, in wire.DeleteBrowserPaneArgs) (wire.OKResult, error) {
+	if err := s.BrowserPanes().Delete(in.ID); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.BrowserPanes().Delete(req.ID); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
 // listBrowserPanes returns the add-in panes in creation order (wire browser.listPanes).
@@ -57,87 +49,59 @@ func listBrowserPanes(s *app.Session, _ json.RawMessage) (json.RawMessage, error
 
 // setDockableWindow creates or replaces an add-in dockable window
 // (wire dockableWindows.set).
-func setDockableWindow(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.SetDockableWindowArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func setDockableWindow(s *app.Session, in wire.SetDockableWindowArgs) (wire.OKResult, error) {
+	if err := s.SetDockableWindow(in.Window); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.SetDockableWindow(req.Window); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
 // setDockableWindowVisible shows/hides an add-in window (wire dockableWindows.setVisible).
-func setDockableWindowVisible(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.SetDockableWindowVisibleArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func setDockableWindowVisible(s *app.Session, in wire.SetDockableWindowVisibleArgs) (wire.OKResult, error) {
+	if err := s.SetDockableWindowVisible(in.ID, in.Visible); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.SetDockableWindowVisible(req.ID, req.Visible); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
 // setDockableWindowValue drives one editable control of a dockable window to a value, exactly as a
 // user edit would: the host updates the stored control and notifies the owning add-in
 // (wire dockableWindows.setValue). Lets automation/MCP edit add-in panels (e.g. switch the CAM
 // simulator's View dropdown).
-func setDockableWindowValue(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.SetDockableWindowValueArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
-	}
-	s.PanelValueChanged(req.WindowId, req.ControlId, req.Value)
-	return ok()
+func setDockableWindowValue(s *app.Session, in wire.SetDockableWindowValueArgs) (wire.OKResult, error) {
+	s.PanelValueChanged(in.WindowId, in.ControlId, in.Value)
+	return wire.OKResult{OK: true}, nil
 }
 
 // setDockableWindowReferences replaces a referenceList control's rows and notifies the owning
 // add-in (wire dockableWindows.setReferences). Refs is the full new set.
-func setDockableWindowReferences(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.SetDockableWindowReferencesArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
-	}
-	s.SetDockableWindowReferences(req.WindowId, req.ControlId, req.Refs)
-	return ok()
+func setDockableWindowReferences(s *app.Session, in wire.SetDockableWindowReferencesArgs) (wire.OKResult, error) {
+	s.SetDockableWindowReferences(in.WindowId, in.ControlId, in.Refs)
+	return wire.OKResult{OK: true}, nil
 }
 
 // showTaskPanel stores a modal task panel for the head to display (wire taskPanel.show).
-func showTaskPanel(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.ShowTaskPanelArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func showTaskPanel(s *app.Session, in wire.ShowTaskPanelArgs) (wire.OKResult, error) {
+	if err := s.ShowTaskPanel(in.Panel); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.ShowTaskPanel(req.Panel); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
 // closeTaskPanel removes a modal task panel programmatically (wire taskPanel.close).
-func closeTaskPanel(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.CloseTaskPanelArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func closeTaskPanel(s *app.Session, in wire.CloseTaskPanelArgs) (wire.OKResult, error) {
+	if err := s.CloseTaskPanel(in.ID); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.CloseTaskPanel(req.ID); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
 // deleteDockableWindow removes an add-in window (wire dockableWindows.delete).
-func deleteDockableWindow(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.DeleteDockableWindowArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func deleteDockableWindow(s *app.Session, in wire.DeleteDockableWindowArgs) (wire.OKResult, error) {
+	if err := s.DeleteDockableWindow(in.ID); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.DeleteDockableWindow(req.ID); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
 // listDockableWindows returns the add-in windows in creation order

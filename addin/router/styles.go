@@ -14,11 +14,11 @@ import (
 // registerStyleHandlers wires the color-style + style-library methods (M16-F02, #403/#408).
 func (r *Router) registerStyleHandlers() {
 	r.readOnly(wire.MethodStylesList, listColorStyles)
-	r.readOnly(wire.MethodStylesGet, getColorStyle)
-	r.readOnly(wire.MethodStylesSet, setColorStyle)
-	r.readOnly(wire.MethodStylesDelete, deleteColorStyle)
+	r.readOnly(wire.MethodStylesGet, typed(getColorStyle))
+	r.readOnly(wire.MethodStylesSet, typed(setColorStyle))
+	r.readOnly(wire.MethodStylesDelete, typed(deleteColorStyle))
 	r.readOnly(wire.MethodStylesListLibraries, listStyleLibraries)
-	r.readOnly(wire.MethodStylesImportLibrary, importStyleLibrary)
+	r.readOnly(wire.MethodStylesImportLibrary, typed(importStyleLibrary))
 }
 
 // listColorStyles returns every color style in the document (wire.MethodStylesList).
@@ -32,65 +32,55 @@ func listColorStyles(s *app.Session, _ json.RawMessage) (json.RawMessage, error)
 }
 
 // getColorStyle returns one color style by name (wire.MethodStylesGet).
-func getColorStyle(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.GetStyleArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
-	}
-	cs, ok := s.ColorStyle(a.Name)
+func getColorStyle(s *app.Session, in wire.GetStyleArgs) (wire.ColorStyleView, error) {
+	cs, ok := s.ColorStyle(in.Name)
 	if !ok {
-		return nil, fmt.Errorf("getColorStyle: no color style named %q", a.Name)
+		return wire.ColorStyleView{}, fmt.Errorf("getColorStyle: no color style named %q", in.Name)
 	}
-	return json.Marshal(colorStyleView(cs))
+	return colorStyleView(cs), nil
 }
 
 // setColorStyle creates or updates a color style and echoes it (wire.MethodStylesSet).
-func setColorStyle(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var v wire.ColorStyleView
-	if err := decode(args, &v); err != nil {
-		return nil, err
+func setColorStyle(s *app.Session, in wire.ColorStyleView) (wire.ColorStyleView, error) {
+	if err := s.SetColorStyle(colorStyleOf(in)); err != nil {
+		return wire.ColorStyleView{}, err
 	}
-	if err := s.SetColorStyle(colorStyleOf(v)); err != nil {
-		return nil, err
-	}
-	cs, _ := s.ColorStyle(v.Name)
-	return json.Marshal(colorStyleView(cs))
+	cs, _ := s.ColorStyle(in.Name)
+	return colorStyleView(cs), nil
 }
 
 // deleteColorStyle removes a color style by name (wire.MethodStylesDelete).
-func deleteColorStyle(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.GetStyleArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
+func deleteColorStyle(s *app.Session, in wire.GetStyleArgs) (wire.OKResult, error) {
+	if err := s.DeleteColorStyle(in.Name); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.DeleteColorStyle(a.Name); err != nil {
-		return nil, err
-	}
-	return json.Marshal(wire.OKResult{OK: true})
+	return wire.OKResult{OK: true}, nil
 }
 
 // listStyleLibraries returns the loaded style libraries in cascade order
 // (wire.MethodStylesListLibraries).
 func listStyleLibraries(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
+	return json.Marshal(styleLibrariesResult(s))
+}
+
+// styleLibrariesResult snapshots the loaded style libraries in cascade order, shared by the
+// list handler and importStyleLibrary (which echoes the updated cascade).
+func styleLibrariesResult(s *app.Session) wire.StyleLibrariesResult {
 	libs := s.StyleLibraries()
 	out := make([]wire.StyleLibraryInfo, len(libs))
 	for i, l := range libs {
 		out[i] = wire.StyleLibraryInfo{Name: l.Name, Path: l.Path, Order: l.Order}
 	}
-	return json.Marshal(wire.StyleLibrariesResult{Libraries: out})
+	return wire.StyleLibrariesResult{Libraries: out}
 }
 
 // importStyleLibrary loads a style-library file into the cascade and returns the updated list
 // (wire.MethodStylesImportLibrary).
-func importStyleLibrary(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.ImportStyleLibraryArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
+func importStyleLibrary(s *app.Session, in wire.ImportStyleLibraryArgs) (wire.StyleLibrariesResult, error) {
+	if err := s.StyleManager().ImportLibrary(in.Path); err != nil {
+		return wire.StyleLibrariesResult{}, err
 	}
-	if err := s.StyleManager().ImportLibrary(a.Path); err != nil {
-		return nil, err
-	}
-	return listStyleLibraries(s, nil)
+	return styleLibrariesResult(s), nil
 }
 
 // colorStyleView projects one model color style into its wire shape.

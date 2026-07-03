@@ -15,24 +15,20 @@ import (
 // registerNamedViewHandlers wires named-view capture/restore and the standard-orientation jump
 // (M16-F03, #404/#409).
 func (r *Router) registerNamedViewHandlers() {
-	r.readOnly(wire.MethodViewsCaptureNamed, captureNamedView)
+	r.readOnly(wire.MethodViewsCaptureNamed, typed(captureNamedView))
 	r.readOnly(wire.MethodViewsListNamed, listNamedViews)
-	r.readOnly(wire.MethodViewsRestoreNamed, restoreNamedView)
-	r.readOnly(wire.MethodViewsDeleteNamed, deleteNamedView)
-	r.readOnly(wire.MethodViewSetOrientation, setViewOrientation)
+	r.readOnly(wire.MethodViewsRestoreNamed, typed(restoreNamedView))
+	r.readOnly(wire.MethodViewsDeleteNamed, typed(deleteNamedView))
+	r.readOnly(wire.MethodViewSetOrientation, typed(setViewOrientation))
 }
 
 // captureNamedView saves the active view's camera under a name (wire.MethodViewsCaptureNamed).
-func captureNamedView(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.CaptureNamedViewArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
-	}
-	nv, err := s.CaptureNamedView(a.Name)
+func captureNamedView(s *app.Session, in wire.CaptureNamedViewArgs) (wire.NamedViewInfo, error) {
+	nv, err := s.CaptureNamedView(in.Name)
 	if err != nil {
-		return nil, err
+		return wire.NamedViewInfo{}, err
 	}
-	return json.Marshal(namedViewInfo(nv))
+	return namedViewInfo(nv), nil
 }
 
 // listNamedViews enumerates the active document's saved named views (wire.MethodViewsListNamed).
@@ -47,43 +43,31 @@ func listNamedViews(s *app.Session, _ json.RawMessage) (json.RawMessage, error) 
 
 // restoreNamedView applies a saved named view's camera to the active view, returning the
 // resulting frame (wire.MethodViewsRestoreNamed).
-func restoreNamedView(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.NamedViewRefArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
+func restoreNamedView(s *app.Session, in wire.NamedViewRefArgs) (wire.CameraView, error) {
+	if err := s.RestoreNamedView(in.Name); err != nil {
+		return wire.CameraView{}, err
 	}
-	if err := s.RestoreNamedView(a.Name); err != nil {
-		return nil, err
-	}
-	return json.Marshal(cameraView(s.CameraFrame()))
+	return cameraView(s.CameraFrame()), nil
 }
 
 // deleteNamedView removes a saved named view (wire.MethodViewsDeleteNamed).
-func deleteNamedView(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.NamedViewRefArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
+func deleteNamedView(s *app.Session, in wire.NamedViewRefArgs) (wire.OKResult, error) {
+	if err := s.DeleteNamedView(in.Name); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.DeleteNamedView(a.Name); err != nil {
-		return nil, err
-	}
-	return json.Marshal(wire.OKResult{OK: true})
+	return wire.OKResult{OK: true}, nil
 }
 
 // setViewOrientation jumps the active view to a standard orientation, returning the resulting
 // camera (wire.MethodViewSetOrientation).
-func setViewOrientation(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.SetOrientationArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
+func setViewOrientation(s *app.Session, in wire.SetOrientationArgs) (wire.CameraView, error) {
+	if !in.Orientation.IsValid() {
+		return wire.CameraView{}, fmt.Errorf("setViewOrientation: %d is not a defined ViewOrientationTypeEnum", int32(in.Orientation))
 	}
-	if !a.Orientation.IsValid() {
-		return nil, fmt.Errorf("setViewOrientation: %d is not a defined ViewOrientationTypeEnum", int32(a.Orientation))
+	if err := s.SetViewOrientation(in.Orientation, in.Fit); err != nil {
+		return wire.CameraView{}, err
 	}
-	if err := s.SetViewOrientation(a.Orientation, a.Fit); err != nil {
-		return nil, err
-	}
-	return json.Marshal(cameraView(s.CameraFrame()))
+	return cameraView(s.CameraFrame()), nil
 }
 
 // namedViewInfo projects a saved named view into its wire shape.

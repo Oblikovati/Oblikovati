@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
@@ -19,7 +18,7 @@ import (
 // sketch text entity's font (embedding the chosen face into the document) — ADR-0031.
 func (r *Router) registerFontHandlers() {
 	r.readOnly(wire.MethodFontsList, listFonts)
-	r.mutating(wire.MethodSketchSetTextFont, "Edit Text", setTextFont)
+	r.mutating(wire.MethodSketchSetTextFont, "Edit Text", typedPart(setTextFont))
 }
 
 // listFonts returns every face the picker can offer: the application's bundled faces (source
@@ -38,32 +37,24 @@ func listFonts(_ *app.Session, _ json.RawMessage) (json.RawMessage, error) {
 
 // setTextFont embeds the chosen font into the active document and points the sketch text entity
 // at it (by resource UUID), so the text/emboss is self-contained on reopen (ADR-0031).
-func setTextFont(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.SetTextFontArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func setTextFont(_ *app.Session, part *compdef.PartComponentDefinition, in wire.SetTextFontArgs) (wire.SetTextFontResult, error) {
 	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.SetTextFontResult{}, err
 	}
 	tb, err := textBoxRef(sk, in.EntityID)
 	if err != nil {
-		return nil, err
+		return wire.SetTextFontResult{}, err
 	}
 	resource, family, err := embedTextFont(part, in)
 	if err != nil {
-		return nil, err
+		return wire.SetTextFontResult{}, err
 	}
 	tb.FontResource = resource
 	if family != "" {
 		tb.Family = family
 	}
-	return json.Marshal(wire.SetTextFontResult{Resource: resource, Family: tb.Family})
+	return wire.SetTextFontResult{Resource: resource, Family: tb.Family}, nil
 }
 
 // embedTextFont turns the request into a document font resource: a host file's bytes (Path) or a

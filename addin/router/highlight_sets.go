@@ -17,72 +17,56 @@ import (
 
 // registerHighlightSetHandlers wires the model.highlightSets.* methods.
 func (r *Router) registerHighlightSetHandlers() {
-	r.readOnly(wire.MethodModelHighlightSetCreate, createHighlightSet)
-	r.readOnly(wire.MethodModelHighlightSetDelete, deleteHighlightSet)
-	r.readOnly(wire.MethodModelHighlightSetAddItems, addHighlightItems)
-	r.readOnly(wire.MethodModelHighlightSetSetColor, setHighlightSetColor)
+	r.readOnly(wire.MethodModelHighlightSetCreate, typed(createHighlightSet))
+	r.readOnly(wire.MethodModelHighlightSetDelete, typed(deleteHighlightSet))
+	r.readOnly(wire.MethodModelHighlightSetAddItems, typed(addHighlightItems))
+	r.readOnly(wire.MethodModelHighlightSetSetColor, typed(setHighlightSetColor))
 	r.readOnly(wire.MethodModelHighlightSetList, listHighlightSets)
 }
 
 // createHighlightSet adds a named, colored emphasis group.
-func createHighlightSet(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.CreateHighlightSetArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func createHighlightSet(s *app.Session, in wire.CreateHighlightSetArgs) (wire.HighlightSetInfo, error) {
 	color, err := parseHexColor(in.Color)
 	if err != nil {
-		return nil, fmt.Errorf("model.highlightSets.create: %w", err)
+		return wire.HighlightSetInfo{}, fmt.Errorf("model.highlightSets.create: %w", err)
 	}
 	h, err := s.HighlightSets().Create(in.Name, color)
 	if err != nil {
-		return nil, fmt.Errorf("model.highlightSets.create: %w", err)
+		return wire.HighlightSetInfo{}, fmt.Errorf("model.highlightSets.create: %w", err)
 	}
-	return json.Marshal(highlightSetInfo(h))
+	return highlightSetInfo(h), nil
 }
 
 // addHighlightItems adds references to a named set.
-func addHighlightItems(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.HighlightSetItemsArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func addHighlightItems(s *app.Session, in wire.HighlightSetItemsArgs) (wire.HighlightSetInfo, error) {
 	h, ok := s.HighlightSets().ByName(in.Name)
 	if !ok {
-		return nil, fmt.Errorf("model.highlightSets.addItems: no highlight set %q", in.Name)
+		return wire.HighlightSetInfo{}, fmt.Errorf("model.highlightSets.addItems: no highlight set %q", in.Name)
 	}
 	h.AddItems(in.Refs...)
-	return json.Marshal(highlightSetInfo(h))
+	return highlightSetInfo(h), nil
 }
 
 // setHighlightSetColor re-colours a named set.
-func setHighlightSetColor(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.SetHighlightSetColorArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func setHighlightSetColor(s *app.Session, in wire.SetHighlightSetColorArgs) (wire.HighlightSetInfo, error) {
 	h, ok := s.HighlightSets().ByName(in.Name)
 	if !ok {
-		return nil, fmt.Errorf("model.highlightSets.setColor: no highlight set %q", in.Name)
+		return wire.HighlightSetInfo{}, fmt.Errorf("model.highlightSets.setColor: no highlight set %q", in.Name)
 	}
 	color, err := parseHexColor(in.Color)
 	if err != nil {
-		return nil, fmt.Errorf("model.highlightSets.setColor: %w", err)
+		return wire.HighlightSetInfo{}, fmt.Errorf("model.highlightSets.setColor: %w", err)
 	}
 	h.SetColor(color)
-	return json.Marshal(highlightSetInfo(h))
+	return highlightSetInfo(h), nil
 }
 
 // deleteHighlightSet removes a named set.
-func deleteHighlightSet(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.HighlightSetRefArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func deleteHighlightSet(s *app.Session, in wire.HighlightSetRefArgs) (wire.OKResult, error) {
 	if !s.HighlightSets().Delete(in.Name) {
-		return nil, fmt.Errorf("model.highlightSets.delete: no highlight set %q", in.Name)
+		return wire.OKResult{}, fmt.Errorf("model.highlightSets.delete: no highlight set %q", in.Name)
 	}
-	return json.Marshal(wire.OKResult{OK: true})
+	return wire.OKResult{OK: true}, nil
 }
 
 // listHighlightSets lists the session's highlight sets.

@@ -14,8 +14,8 @@ import (
 // registerOptionHandlers wires the typed application-option groups (M05-F11, #618).
 func (r *Router) registerOptionHandlers() {
 	r.readOnly(wire.MethodOptionsListGroups, listOptionGroups)
-	r.readOnly(wire.MethodOptionsGetGroup, getOptionGroup)
-	r.readOnly(wire.MethodOptionsSetGroup, setOptionGroup)
+	r.readOnly(wire.MethodOptionsGetGroup, typed(getOptionGroup))
+	r.readOnly(wire.MethodOptionsSetGroup, typed(setOptionGroup))
 }
 
 // optionGroupNames is the stable group order of options.listGroups.
@@ -30,16 +30,8 @@ func listOptionGroups(_ *app.Session, _ json.RawMessage) (json.RawMessage, error
 }
 
 // getOptionGroup returns one group's current values (wire options.getGroup).
-func getOptionGroup(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.GetOptionGroupArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
-	}
-	view, err := optionGroupView(s, req.Group)
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(view)
+func getOptionGroup(s *app.Session, in wire.GetOptionGroupArgs) (wire.OptionGroupView, error) {
+	return optionGroupView(s, in.Group)
 }
 
 // optionGroupView assembles the union view for one group. The display group proxies
@@ -86,15 +78,11 @@ func displayOptionsView(s *app.Session) *wire.DisplayOptionsView {
 
 // setOptionGroup writes one group (wire options.setGroup): the request names the
 // group and carries exactly that group's payload.
-func setOptionGroup(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.OptionGroupView
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func setOptionGroup(s *app.Session, in wire.OptionGroupView) (wire.OKResult, error) {
+	if err := applyOptionGroup(s, in); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := applyOptionGroup(s, req); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
 // applyOptionGroup dispatches one group write to the session.

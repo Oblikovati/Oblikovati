@@ -12,23 +12,19 @@ import (
 // registerUIShellHandlers wires the M05-F12 shell methods: command search,
 // marking menus, context-menu injection, and object visibility (#619).
 func (r *Router) registerUIShellHandlers() {
-	r.readOnly(wire.MethodUISearch, searchCommands)
-	r.readOnly(wire.MethodUIGetMarkingMenu, getMarkingMenu)
-	r.readOnly(wire.MethodUISetMarkingMenu, setMarkingMenu)
-	r.readOnly(wire.MethodUISetContextMenu, setContextMenu)
+	r.readOnly(wire.MethodUISearch, typed(searchCommands))
+	r.readOnly(wire.MethodUIGetMarkingMenu, typed(getMarkingMenu))
+	r.readOnly(wire.MethodUISetMarkingMenu, typed(setMarkingMenu))
+	r.readOnly(wire.MethodUISetContextMenu, typed(setContextMenu))
 	r.readOnly(wire.MethodUIGetObjectVisibility, getObjectVisibility)
-	r.readOnly(wire.MethodUISetObjectVisibility, setObjectVisibility)
-	r.readOnly(wire.MethodUIRegisterEnvironment, registerEnvironment)
-	r.readOnly(wire.MethodUIActivateEnvironment, activateEnvironment)
+	r.readOnly(wire.MethodUISetObjectVisibility, typed(setObjectVisibility))
+	r.readOnly(wire.MethodUIRegisterEnvironment, typed(registerEnvironment))
+	r.readOnly(wire.MethodUIActivateEnvironment, typed(activateEnvironment))
 }
 
 // searchCommands finds registered commands matching the query (wire ui.search).
-func searchCommands(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.SearchCommandsArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
-	}
-	hits := s.SearchCommands(req.Query)
+func searchCommands(s *app.Session, in wire.SearchCommandsArgs) (wire.SearchCommandsResult, error) {
+	hits := s.SearchCommands(in.Query)
 	out := make([]wire.CommandInfo, len(hits))
 	for i, c := range hits {
 		out[i] = wire.CommandInfo{
@@ -37,48 +33,32 @@ func searchCommands(s *app.Session, args json.RawMessage) (json.RawMessage, erro
 			ButtonStyle: c.ButtonStyle(), Enabled: c.IsEnabled(s),
 		}
 	}
-	return json.Marshal(wire.SearchCommandsResult{Commands: out})
+	return wire.SearchCommandsResult{Commands: out}, nil
 }
 
-func getMarkingMenu(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.GetMarkingMenuArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
-	}
-	return json.Marshal(s.MarkingMenu(req.Environment))
+func getMarkingMenu(s *app.Session, in wire.GetMarkingMenuArgs) (wire.MarkingMenuView, error) {
+	return s.MarkingMenu(in.Environment), nil
 }
 
-func setMarkingMenu(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.SetMarkingMenuArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func setMarkingMenu(s *app.Session, in wire.SetMarkingMenuArgs) (wire.OKResult, error) {
+	if err := s.SetMarkingMenu(in.Menu); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.SetMarkingMenu(req.Menu); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
-func setContextMenu(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.SetContextMenuArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
+func setContextMenu(s *app.Session, in wire.SetContextMenuArgs) (wire.OKResult, error) {
+	if err := s.SetContextMenuItems(in.AddIn, in.Kind, in.Items); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.SetContextMenuItems(req.AddIn, req.Kind, req.Items); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
 func getObjectVisibility(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
 	return json.Marshal(s.ObjectVisibility())
 }
 
-func setObjectVisibility(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var req wire.SetObjectVisibilityArgs
-	if err := decode(args, &req); err != nil {
-		return nil, err
-	}
-	s.SetObjectVisibility(req.Visibility)
-	return ok()
+func setObjectVisibility(s *app.Session, in wire.SetObjectVisibilityArgs) (wire.OKResult, error) {
+	s.SetObjectVisibility(in.Visibility)
+	return wire.OKResult{OK: true}, nil
 }
