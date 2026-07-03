@@ -6,12 +6,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/exchange"
-	"oblikovati.org/kernel/exchange/meshio"
-	"oblikovati.org/kernel/exchange/step"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/param"
@@ -64,20 +61,14 @@ func Export(part *compdef.PartComponentDefinition, path string, format types.Exc
 	if len(bodies) == 0 {
 		return ExportResult{}, fmt.Errorf("export %q: part has no bodies", path)
 	}
-	var (
-		data  []byte
-		tris  int
-		warns []string
-		err   error
-	)
-	switch {
-	case format.IsMesh():
-		data, tris, err = meshio.ExportBodies(format, bodies, res, exportUnits(part))
-	case format == types.FormatSTEP:
-		data, warns, err = step.Writer{}.ExportSolids(bodies, exportUnits(part))
-	default:
+	// Registry lookup instead of a format switch: the export capability registers with the
+	// format's extensions in format_routes.go, so menu recognition and dispatch cannot
+	// drift (#1631, audit I8).
+	route, ok := formatRoutes.byFormat[format]
+	if !ok || route.exportBodies == nil {
 		return ExportResult{}, fmt.Errorf("export: unsupported format %q (want stl|obj|3mf|step)", format)
 	}
+	data, tris, warns, err := route.exportBodies(bodies, res, exportUnits(part))
 	if err != nil {
 		return ExportResult{}, fmt.Errorf("export %q: %w", path, err)
 	}
@@ -108,24 +99,8 @@ func workingUnitMM(part *compdef.PartComponentDefinition) float64 {
 
 // FormatFromPath infers the exchange format from a file's extension (case-insensitive), so the
 // File ▸ Import/Export menu can route by what the user typed. The bool is false for an unknown
-// extension.
+// extension. It is a lookup over the same registry the dispatchers use (format_routes.go), so
+// an extension this recognizes always has a routed format behind it (#1631, audit I8).
 func FormatFromPath(path string) (types.ExchangeFormat, bool) {
-	switch strings.ToLower(filepath.Ext(path)) {
-	case ".stl":
-		return types.FormatSTL, true
-	case ".obj":
-		return types.FormatOBJ, true
-	case ".3mf":
-		return types.Format3MF, true
-	case ".step", ".stp":
-		return types.FormatSTEP, true
-	case ".dwg":
-		return types.FormatDWG, true
-	case ".dxf":
-		return types.FormatDXF, true
-	case ".pdf":
-		return types.FormatPDF, true
-	default:
-		return "", false
-	}
+	return formatForExtension(filepath.Ext(path))
 }
