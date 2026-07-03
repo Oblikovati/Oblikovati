@@ -9,18 +9,13 @@ import (
 
 	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/model/feature"
 )
 
 // Two more face-referenced features: a boss (a cylindrical stud raised from a face) and a
 // cosmetic thread applied to a cylindrical face. Both take a single faceRef reference key.
-
-type bossArgs struct {
-	FaceRef  string `json:"faceRef"`
-	Diameter string `json:"diameter"`
-	Height   string `json:"height"`
-}
 
 const bossSchema = `{
   "type": "object",
@@ -33,7 +28,7 @@ const bossSchema = `{
 }`
 
 func bossDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "boss", Summary: "Raise a cylindrical boss from a face.", Schema: json.RawMessage(bossSchema), Apply: applyBoss}
+	return &OperationDescriptor{Name: featureargs.KindBoss, Summary: "Raise a cylindrical boss from a face.", Schema: json.RawMessage(bossSchema), Apply: applyBoss}
 }
 
 func applyBoss(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -41,7 +36,7 @@ func applyBoss(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	var in bossArgs
+	var in featureargs.Boss
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
@@ -60,15 +55,6 @@ func applyBoss(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	return recomputeResult(part, pf)
 }
 
-type threadArgs struct {
-	FaceRef       string `json:"faceRef"`
-	Designation   string `json:"designation"`
-	Cut           bool   `json:"cut,omitempty"`
-	Class         string `json:"class,omitempty"`
-	Tapered       bool   `json:"tapered,omitempty"`
-	ModelDiameter string `json:"modelDiameter,omitempty"`
-}
-
 const threadSchema = `{
   "type": "object",
   "properties": {
@@ -83,7 +69,7 @@ const threadSchema = `{
 }`
 
 func threadDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "thread", Summary: "Thread a cylindrical face — cosmetic (display) or a real modeled cut (cut:true).", Schema: json.RawMessage(threadSchema), Apply: applyThread}
+	return &OperationDescriptor{Name: featureargs.KindThread, Summary: "Thread a cylindrical face — cosmetic (display) or a real modeled cut (cut:true).", Schema: json.RawMessage(threadSchema), Apply: applyThread}
 }
 
 func applyThread(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -91,7 +77,7 @@ func applyThread(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	var in threadArgs
+	var in featureargs.Thread
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}

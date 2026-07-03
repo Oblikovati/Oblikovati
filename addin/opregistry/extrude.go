@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/model/compdef"
@@ -16,19 +17,6 @@ import (
 	"oblikovati.org/model/param"
 	"oblikovati.org/model/sketch"
 )
-
-// extrudeArgs is the argument shape for the "extrude" operation (mirrors the schema).
-type extrudeArgs struct {
-	SketchIndex    int    `json:"sketchIndex"`
-	ProfileIndex   int    `json:"profileIndex"`
-	Distance       string `json:"distance"`                 // e.g. "50 mm", "5 cm"
-	Operation      string `json:"operation"`                // join|cut|intersect|new (default new)
-	Extent         string `json:"extent,omitempty"`         // distance|through-all|to-next|to-face (default distance)
-	Direction      string `json:"direction,omitempty"`      // positive|negative|symmetric (default positive)
-	SecondDistance string `json:"secondDistance,omitempty"` // asymmetric two-direction depth
-	Taper          string `json:"taper,omitempty"`          // draft angle, e.g. "3 deg"
-	ToFace         string `json:"toFace,omitempty"`         // to-face target: a planar face key, "plane/N", or "origin/plane/xy"
-}
 
 const extrudeSchema = `{
   "type": "object",
@@ -51,7 +39,7 @@ const extrudeSchema = `{
 // the same shape (PBI: revolve, hole, fillet…).
 func extrudeDescriptor() *OperationDescriptor {
 	return &OperationDescriptor{
-		Name:    "extrude",
+		Name:    featureargs.KindExtrude,
 		Summary: "Extrude a closed sketch profile into a solid prism.",
 		Schema:  json.RawMessage(extrudeSchema),
 		Apply:   applyExtrude,
@@ -77,8 +65,8 @@ func applyExtrude(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 // resolveExtrude decodes and validates the extrude args against the part: the target
 // sketch, the boolean operation, the full extent (type/direction/distances), and the
 // taper, in database units.
-func resolveExtrude(part *compdef.PartComponentDefinition, raw json.RawMessage) (extrudeArgs, *sketch.Sketch, feature.Extent, ops.PartFeatureOperation, float64, error) {
-	var in extrudeArgs
+func resolveExtrude(part *compdef.PartComponentDefinition, raw json.RawMessage) (featureargs.Extrude, *sketch.Sketch, feature.Extent, ops.PartFeatureOperation, float64, error) {
+	var in featureargs.Extrude
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return in, nil, feature.Extent{}, 0, 0, fmt.Errorf("extrude: invalid args: %w", err)
 	}
@@ -103,7 +91,7 @@ func resolveExtrude(part *compdef.PartComponentDefinition, raw json.RawMessage) 
 
 // buildExtent assembles the model extent from the request: the extent type and direction, plus
 // the distance(s) for the distance extent or the termination plane for the to-face extent.
-func buildExtent(part *compdef.PartComponentDefinition, in extrudeArgs) (feature.Extent, error) {
+func buildExtent(part *compdef.PartComponentDefinition, in featureargs.Extrude) (feature.Extent, error) {
 	etype, err := parseExtentType(in.Extent)
 	if err != nil {
 		return feature.Extent{}, err
@@ -134,7 +122,7 @@ func withToFaceTarget(part *compdef.PartComponentDefinition, ext feature.Extent,
 }
 
 // withDistance fills the distance extent's primary (and optional asymmetric) depth.
-func withDistance(part *compdef.PartComponentDefinition, ext feature.Extent, in extrudeArgs) (feature.Extent, error) {
+func withDistance(part *compdef.PartComponentDefinition, ext feature.Extent, in featureargs.Extrude) (feature.Extent, error) {
 	dist, err := lengthClosure(part, in.Distance, "extrude: distance")
 	if err != nil {
 		return feature.Extent{}, err

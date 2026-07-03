@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire"
 	"oblikovati.org/event"
 	"oblikovati.org/model/exchange"
 )
@@ -17,8 +18,11 @@ import (
 // (drawing.exportDXF) and this GUI path share ExportActiveDrawingDXF, so both behave
 // identically.
 
-// drawingDXFDialogID keys the Export DXF file-dialog request and its answer event.
-const drawingDXFDialogID = "drawing.exportDXF"
+// drawingDXFDialogID keys the Export DXF file-dialog request and its answer event. It mirrors
+// the wire method name by design — the GUI and headless (wire.MethodDrawingExportDXF) paths
+// share ExportActiveDrawingDXF — so it references the constant rather than re-declaring the
+// string (a rename must not leave a stale copy; #1618).
+const drawingDXFDialogID = wire.MethodDrawingExportDXF
 
 // ExportActiveDrawingDXF re-projects the active drawing's views (so the export reflects the
 // current model) and writes the active sheet — its visible/hidden view edges, border and

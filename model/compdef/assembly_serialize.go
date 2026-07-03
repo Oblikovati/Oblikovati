@@ -12,7 +12,7 @@ import (
 	"oblikovati.org/model/occurrence"
 	"oblikovati.org/model/param"
 	"oblikovati.org/model/sketch"
-	"oblikovati.org/persistence/yamlcodec"
+	"oblikovati.org/yamlcodec"
 )
 
 // Assembly persistence (#715): the assembly recipe records its display units and its

@@ -11,7 +11,6 @@ import (
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/math"
-	"oblikovati.org/scene"
 )
 
 // getCamera returns a document's active-view camera as a look-at frame (Document 0 ⇒ the
@@ -58,8 +57,8 @@ func setCamera(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
 	return json.Marshal(cameraView(out))
 }
 
-// cameraView projects a scene.Camera onto the wire look-at DTO.
-func cameraView(c scene.Camera) wire.CameraView {
+// cameraView projects an app camera frame onto the wire look-at DTO.
+func cameraView(c app.CameraFrame) wire.CameraView {
 	return wire.CameraView{
 		Eye:    types.Point{X: c.Eye.X, Y: c.Eye.Y, Z: c.Eye.Z},
 		Target: types.Point{X: c.Target.X, Y: c.Target.Y, Z: c.Target.Z},

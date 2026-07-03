@@ -9,7 +9,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/model/doc"
-	"oblikovati.org/persistence/yamlcodec"
+	"oblikovati.org/yamlcodec"
 )
 
 // PackageStore is the [doc.Store] backed by .obk packages on disk. Injected into a

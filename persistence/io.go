@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"oblikovati.org/persistence/yamlcodec"
+	"oblikovati.org/yamlcodec"
 )
 
 // OpenPackage reads the YAML document at path into memory and runs the migration

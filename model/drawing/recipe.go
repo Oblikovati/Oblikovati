@@ -10,7 +10,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/model/doc"
-	"oblikovati.org/persistence/yamlcodec"
+	"oblikovati.org/yamlcodec"
 )
 
 // The real drawing content reaches the document layer through the composition

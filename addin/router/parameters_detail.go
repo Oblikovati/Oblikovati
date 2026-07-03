@@ -97,7 +97,7 @@ func getParameterDetail(s *app.Session, args json.RawMessage) (json.RawMessage, 
 	if err := decode(args, &in); err != nil {
 		return nil, err
 	}
-	holder, p, err := paramByName(s, "parameters.getDetail", in.Name)
+	holder, p, err := paramByName(s, wire.MethodParametersGetDetail, in.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func updateParameter(s *app.Session, args json.RawMessage) (json.RawMessage, err
 	if err := decode(args, &in); err != nil {
 		return nil, err
 	}
-	holder, p, err := paramByName(s, "parameters.update", in.Name)
+	holder, p, err := paramByName(s, wire.MethodParametersUpdate, in.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +188,7 @@ func setParameterTolerance(s *app.Session, args json.RawMessage) (json.RawMessag
 	if err := decode(args, &in); err != nil {
 		return nil, err
 	}
-	holder, p, err := paramByName(s, "parameters.setTolerance", in.Name)
+	holder, p, err := paramByName(s, wire.MethodParametersSetTolerance, in.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -258,7 +258,7 @@ func setParameterExpressionList(s *app.Session, args json.RawMessage) (json.RawM
 	if err := decode(args, &in); err != nil {
 		return nil, err
 	}
-	holder, p, err := paramByName(s, "parameters.setExpressionList", in.Name)
+	holder, p, err := paramByName(s, wire.MethodParametersSetExpressionList, in.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -290,7 +290,7 @@ func deleteParameter(s *app.Session, args json.RawMessage) (json.RawMessage, err
 	if err := decode(args, &in); err != nil {
 		return nil, err
 	}
-	_, p, err := paramByName(s, "parameters.delete", in.Name)
+	_, p, err := paramByName(s, wire.MethodParametersDelete, in.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -302,11 +302,11 @@ func deleteParameter(s *app.Session, args json.RawMessage) (json.RawMessage, err
 
 // parameterDrivenBy / parameterDependents answer the dependency queries.
 func parameterDrivenBy(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	return parameterNeighbors(s, "parameters.drivenBy", args, (*param.Parameters).DrivenBy)
+	return parameterNeighbors(s, wire.MethodParametersDrivenBy, args, (*param.Parameters).DrivenBy)
 }
 
 func parameterDependents(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	return parameterNeighbors(s, "parameters.dependents", args, (*param.Parameters).Dependents)
+	return parameterNeighbors(s, wire.MethodParametersDependents, args, (*param.Parameters).Dependents)
 }
 
 // parameterNeighbors resolves one side of the dependency graph to names.

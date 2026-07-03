@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 	"sort"
 
+	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -29,7 +30,14 @@ func booleanInputQuality() Quality {
 // faceted before ops.Boolean (Oblikovati/Oblikovati#129); this is the general fallback for bodies
 // the feature layer's analytic-cylinder re-faceter doesn't special-case. Returns nil when empty.
 func Facet(b *topo.Body, feat string) *topo.Body {
-	return trianglesToBody(bodyTriangles(b), feat)
+	cage := trianglesToBody(bodyTriangles(b), feat)
+	if cage == nil {
+		return nil
+	}
+	// A one-face-per-triangle cage is combinatorially valid but shreds every flat region into a
+	// diagonal-laced fan; unifying coplanar faces restores each flat region to the single face it
+	// is, so a downstream fillet/boolean does not choke on spurious diagonals (Oblikovati#1693).
+	return brep.UnifyCoplanarFaces(cage, feat)
 }
 
 // bodyTriangles returns a body's tessellation as CSG triangles, each oriented

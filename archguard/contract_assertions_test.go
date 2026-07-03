@@ -167,7 +167,7 @@ func skipNonSourceDir(name string) error {
 		return filepath.SkipDir
 	}
 	switch name {
-	case "experiments", "test-utilities", "node_modules":
+	case "experiments", "test-utilities", "node_modules", "testdata":
 		return filepath.SkipDir
 	}
 	return nil

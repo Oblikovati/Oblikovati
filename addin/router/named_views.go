@@ -55,7 +55,7 @@ func restoreNamedView(s *app.Session, args json.RawMessage) (json.RawMessage, er
 	if err := s.RestoreNamedView(a.Name); err != nil {
 		return nil, err
 	}
-	return json.Marshal(cameraView(s.Camera()))
+	return json.Marshal(cameraView(s.CameraFrame()))
 }
 
 // deleteNamedView removes a saved named view (wire.MethodViewsDeleteNamed).
@@ -83,7 +83,7 @@ func setViewOrientation(s *app.Session, args json.RawMessage) (json.RawMessage, 
 	if err := s.SetViewOrientation(a.Orientation, a.Fit); err != nil {
 		return nil, err
 	}
-	return json.Marshal(cameraView(s.Camera()))
+	return json.Marshal(cameraView(s.CameraFrame()))
 }
 
 // namedViewInfo projects a saved named view into its wire shape.

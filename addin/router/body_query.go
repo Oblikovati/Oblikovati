@@ -282,9 +282,10 @@ func orientedRangeBoxReply(b *topo.Body) (json.RawMessage, error) {
 		return nil, err
 	}
 	vec := func(v math.Vector3) []float64 { return []float64{float64(v.X), float64(v.Y), float64(v.Z)} }
+	corner, edges := obb.MinCorner(), obb.EdgeVectors()
 	return json.Marshal(wire.BodyRangeBoxResult{
-		Corner:       []float64{float64(obb.Corner.X), float64(obb.Corner.Y), float64(obb.Corner.Z)},
-		DirectionOne: vec(obb.DirectionOne), DirectionTwo: vec(obb.DirectionTwo), DirectionThree: vec(obb.DirectionThree),
+		Corner:       []float64{float64(corner.X), float64(corner.Y), float64(corner.Z)},
+		DirectionOne: vec(edges[0]), DirectionTwo: vec(edges[1]), DirectionThree: vec(edges[2]),
 	})
 }
 
