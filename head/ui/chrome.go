@@ -129,11 +129,19 @@ func drawChromeWindows(s *app.Session) {
 	serviceFitViewRequest(s)
 }
 
+// fitViewSession is the two-method slice serviceFitViewRequest consumes (audit I5, the
+// arrowSession pattern): the one-shot fit-view intent and the camera fit. *app.Session
+// satisfies it implicitly, so the head does not hand the whole session to the fit widget.
+type fitViewSession interface {
+	TakeFitViewRequest() bool
+	FitView()
+}
+
 // serviceFitViewRequest fits the camera once after an import that added visible geometry (#1645).
 // The core raises the intent (Session.RequestFitView) rather than driving the camera, so a
 // headless/CLI import is unaffected; the head consumes the one-shot here and calls FitView, which
 // frames the UNION of all visible geometry (a small import into a large model is not yanked away).
-func serviceFitViewRequest(s *app.Session) {
+func serviceFitViewRequest(s fitViewSession) {
 	if s.TakeFitViewRequest() {
 		s.FitView()
 	}
