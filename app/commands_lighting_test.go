@@ -2,11 +2,7 @@
 
 package app
 
-import (
-	"testing"
-
-	"oblikovati.org/renderer"
-)
+import "testing"
 
 // TestLightingStyleCommandsSetRig checks the View-tab Lighting Style options activate the rig
 // on the session, end to end through the ribbon command.
@@ -34,7 +30,7 @@ func TestEnvironmentCommandsSetEnvironment(t *testing.T) {
 	if err := s.Execute("View.Environment.Studio"); err != nil {
 		t.Fatalf("execute Environment.Studio: %v", err)
 	}
-	if e := s.Environment(); e.Preset != renderer.EnvStudio || !e.ShowImage {
+	if e := s.Environment(); e.Preset != "Studio" || !e.ShowImage {
 		t.Errorf("environment = %+v, want Studio shown", e)
 	}
 	if err := s.Execute("View.Environment.None"); err != nil {

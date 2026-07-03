@@ -424,26 +424,28 @@ func (s *Session) AddView(docID uint64, name string, copyActiveCamera bool) (int
 }
 
 // ViewCamera returns a document's active-view camera (id 0 = active document), sized to
-// the current viewport.
-func (s *Session) ViewCamera(docID uint64) (scene.Camera, error) {
+// the current viewport, as an app [CameraFrame] (audit B10, #1621: the router speaks the
+// app value type, not scene.Camera).
+func (s *Session) ViewCamera(docID uint64) (CameraFrame, error) {
 	d, err := s.DocumentByID(docID)
 	if err != nil {
-		return scene.Camera{}, err
+		return CameraFrame{}, err
 	}
 	v := d.Views().Active()
 	c := s.camera // carry the transient viewport pixel size
 	c.Eye, c.Target, c.Up, c.FOV = v.Eye, v.Target, v.Up, v.FOV
-	return c, nil
+	return cameraFrameValue(c), nil
 }
 
-// SetViewCamera applies c to a document's active view (id 0 = active document). When the
+// SetViewCamera applies frame to a document's active view (id 0 = active document). When the
 // addressed document is the active one this routes through SetCamera (picker + cache
 // sync); otherwise it writes the off-screen document's view frame directly.
-func (s *Session) SetViewCamera(docID uint64, c scene.Camera) error {
+func (s *Session) SetViewCamera(docID uint64, frame CameraFrame) error {
 	d, err := s.DocumentByID(docID)
 	if err != nil {
 		return err
 	}
+	c := renderCamera(frame)
 	if d == s.ActiveDocument() {
 		s.SetCamera(c)
 		return nil

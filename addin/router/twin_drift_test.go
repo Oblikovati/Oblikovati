@@ -87,7 +87,7 @@ func assertDriveResultCarried(t *testing.T, src assembly.DriveResult, got wire.D
 		t.Fatalf("drive frame fields dropped: %+v", f)
 	}
 	p := f.Placements[0]
-	if p.Occurrence != 7 || p.Transform.Cells != [16]float64(cells) {
+	if p.Occurrence != 7 || p.Transform.Cells != cells {
 		t.Errorf("placement dropped: occurrence=%d transform=%v", p.Occurrence, p.Transform.Cells)
 	}
 }

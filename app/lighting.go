@@ -57,17 +57,18 @@ func lightingStyleByName(name string) (renderer.LightingStyleID, bool) {
 	return renderer.LightingDefault, false
 }
 
-// Environment returns the active image-based-lighting environment.
-func (s *Session) Environment() renderer.Environment { return s.lighting.Environment }
+// Environment returns the active image-based-lighting environment as an app value
+// (audit B10, #1621: the router speaks [Environment], not the renderer's type).
+func (s *Session) Environment() EnvironmentState { return environmentValue(s.lighting.Environment) }
 
 // SetEnvironment sets the active environment (preset or loaded file) on the live rig.
-func (s *Session) SetEnvironment(e renderer.Environment) { s.lighting.Environment = e }
+func (s *Session) SetEnvironment(e EnvironmentState) { s.lighting.Environment = renderEnvironment(e) }
 
-// ShadowSettings returns the active shadow settings.
-func (s *Session) ShadowSettings() renderer.ShadowSettings { return s.lighting.Shadows }
+// ShadowSettings returns the active shadow settings as an app [ShadowRig].
+func (s *Session) ShadowSettings() ShadowRig { return shadowRigValue(s.lighting.Shadows) }
 
 // SetShadowSettings sets the active shadow settings on the live rig.
-func (s *Session) SetShadowSettings(sh renderer.ShadowSettings) { s.lighting.Shadows = sh }
+func (s *Session) SetShadowSettings(sh ShadowRig) { s.lighting.Shadows = renderShadowRig(sh) }
 
 // Exposure/Brightness/Ambience read the active rig's global tone controls; the Set* forms edit
 // them in place (the Lighting settings panel's sliders).
@@ -99,37 +100,43 @@ func (s *Session) TakeLoadEnvironmentRequest() bool {
 // LoadEnvironmentFile sets a user HDR file as the active environment (shown as the background).
 // It is what the head calls when the load-HDR file dialog is confirmed.
 func (s *Session) LoadEnvironmentFile(path string) {
-	s.SetEnvironment(renderer.Environment{FilePath: path, Intensity: 1, ShowImage: true})
+	s.SetEnvironment(EnvironmentState{FilePath: path, Intensity: 1, ShowImage: true})
 }
 
-// Lights returns the live rig's lights.
-func (s *Session) Lights() []renderer.SceneLight { return s.lighting.Lights }
+// Lights returns the live rig's lights as app [Light] values.
+func (s *Session) Lights() []Light {
+	out := make([]Light, len(s.lighting.Lights))
+	for i, l := range s.lighting.Lights {
+		out[i] = lightValue(l)
+	}
+	return out
+}
 
-// AddLight appends a new light of the given kind with neutral defaults (white, intensity 1,
-// on), returning it; it is a no-op past [renderer.MaxSceneLights] (returning the last light).
-func (s *Session) AddLight(kind renderer.LightKind) (renderer.SceneLight, error) {
+// AddLight appends a new light of the given public definition kind with neutral defaults
+// (white, intensity 1, on), returning it; it errors past [renderer.MaxSceneLights].
+func (s *Session) AddLight(def LightDefinitionTypeEnum) (Light, error) {
 	if len(s.lighting.Lights) >= renderer.MaxSceneLights {
-		return renderer.SceneLight{}, fmt.Errorf("app: cannot add light, at the %d-light maximum",
+		return Light{}, fmt.Errorf("app: cannot add light, at the %d-light maximum",
 			renderer.MaxSceneLights)
 	}
 	l := renderer.SceneLight{
-		Kind:      kind,
+		Kind:      LightKindForDefinition(def),
 		Direction: [3]float32{0, 0, 1},
 		Color:     [3]float32{1, 1, 1},
 		Intensity: 1,
 		On:        true,
 	}
 	s.lighting.Lights = append(s.lighting.Lights, l)
-	return l, nil
+	return lightValue(l), nil
 }
 
 // SetLight replaces the light at index, erroring on an out-of-range index (so a bad request is
 // rejected rather than panicking).
-func (s *Session) SetLight(index int, l renderer.SceneLight) error {
+func (s *Session) SetLight(index int, l Light) error {
 	if index < 0 || index >= len(s.lighting.Lights) {
 		return fmt.Errorf("app: light index %d out of range [0,%d)", index, len(s.lighting.Lights))
 	}
-	s.lighting.Lights[index] = l
+	s.lighting.Lights[index] = renderLight(l)
 	return nil
 }
 
@@ -168,9 +175,9 @@ func EnvironmentPresetByName(name string) (renderer.EnvironmentPreset, bool) {
 	return renderer.EnvNone, false
 }
 
-// GroundShadowForSettings maps the renderer's ground-shadow flags back onto the public
+// GroundShadowForSettings maps a [ShadowRig]'s ground-shadow flags onto the public
 // GroundShadowEnum (None / Ground / X-Ray).
-func GroundShadowForSettings(sh renderer.ShadowSettings) GroundShadowEnum {
+func GroundShadowForSettings(sh ShadowRig) GroundShadowEnum {
 	switch {
 	case !sh.GroundShadows:
 		return types.NoGroundShadow
@@ -181,8 +188,8 @@ func GroundShadowForSettings(sh renderer.ShadowSettings) GroundShadowEnum {
 	}
 }
 
-// ApplyGroundShadow sets the renderer's ground-shadow flags from the public GroundShadowEnum.
-func ApplyGroundShadow(sh *renderer.ShadowSettings, g GroundShadowEnum) {
+// ApplyGroundShadow sets a [ShadowRig]'s ground-shadow flags from the public GroundShadowEnum.
+func ApplyGroundShadow(sh *ShadowRig, g GroundShadowEnum) {
 	sh.GroundShadows = g != types.NoGroundShadow
 	sh.GroundXRay = g == types.XRayGroundShadow
 }

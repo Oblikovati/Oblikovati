@@ -9,7 +9,6 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
-	"oblikovati.org/renderer"
 )
 
 // getLightingStyle returns the active lighting style's global controls
@@ -35,7 +34,7 @@ func setLightingStyle(s *app.Session, args json.RawMessage) (json.RawMessage, er
 // (wire.MethodLightingListStyles).
 func listLightingStyles(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
 	active := s.LightingStyleName()
-	gallery := renderer.LightingStyleGallery()
+	gallery := app.LightingStyleGallery()
 	out := make([]wire.LightingStyleInfo, len(gallery))
 	for i, opt := range gallery {
 		out[i] = wire.LightingStyleInfo{Name: opt.Name, Active: opt.Name == active}
@@ -60,7 +59,7 @@ func addLight(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
 	if err := decode(args, &a); err != nil {
 		return nil, err
 	}
-	l, err := s.AddLight(app.LightKindForDefinition(a.DefinitionType))
+	l, err := s.AddLight(a.DefinitionType)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +72,7 @@ func setLight(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
 	if err := decode(args, &a); err != nil {
 		return nil, err
 	}
-	if err := s.SetLight(a.Index, sceneLight(a.Light)); err != nil {
+	if err := s.SetLight(a.Index, appLight(a.Light)); err != nil {
 		return nil, err
 	}
 	return json.Marshal(lightInfo(a.Index, s.Lights()[a.Index]))
@@ -90,7 +89,7 @@ func setShadows(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
 	if err := decode(args, &a); err != nil {
 		return nil, err
 	}
-	s.SetShadowSettings(rendererShadows(a))
+	s.SetShadowSettings(shadowRigFromWire(a))
 	return json.Marshal(shadowSettings(s.ShadowSettings()))
 }
 
@@ -106,12 +105,11 @@ func setEnvironment(s *app.Session, args json.RawMessage) (json.RawMessage, erro
 	if err := decode(args, &a); err != nil {
 		return nil, err
 	}
-	preset, ok := app.EnvironmentPresetByName(a.Preset)
-	if !ok {
+	if _, ok := app.EnvironmentPresetByName(a.Preset); !ok {
 		return nil, fmt.Errorf("router: unknown environment preset %q", a.Preset)
 	}
-	s.SetEnvironment(renderer.Environment{
-		Preset:    preset,
+	s.SetEnvironment(app.EnvironmentState{
+		Preset:    a.Preset,
 		Rotation:  float32(a.Rotation),
 		Intensity: float32(a.Intensity),
 		ShowImage: a.ShowImage,
@@ -123,10 +121,10 @@ func setEnvironment(s *app.Session, args json.RawMessage) (json.RawMessage, erro
 // (wire.MethodEnvironmentListPresets).
 func listEnvironmentPresets(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
 	active := s.Environment()
-	gallery := renderer.EnvironmentGallery()
+	gallery := app.EnvironmentGallery()
 	out := make([]wire.EnvironmentPresetInfo, len(gallery))
 	for i, opt := range gallery {
-		isActive := active.FilePath == "" && active.Preset == opt.Preset
+		isActive := active.FilePath == "" && active.Preset == opt.Name
 		out[i] = wire.EnvironmentPresetInfo{Name: opt.Name, Active: isActive}
 	}
 	return json.Marshal(wire.EnvironmentPresetListResult{Presets: out})
@@ -168,12 +166,12 @@ func marshalLightingStyle(s *app.Session) (json.RawMessage, error) {
 	})
 }
 
-// lightInfo converts a renderer light at index into the wire DTO.
-func lightInfo(index int, l renderer.SceneLight) wire.LightInfo {
+// lightInfo converts an app light value at index into the wire DTO.
+func lightInfo(index int, l app.Light) wire.LightInfo {
 	return wire.LightInfo{
 		Index:               index,
 		LightType:           types.ModelSpaceLight,
-		LightDefinitionType: app.DefinitionForLightKind(l.Kind),
+		LightDefinitionType: l.Definition,
 		On:                  l.On,
 		Color:               types.Rgba{R: l.Color[0], G: l.Color[1], B: l.Color[2], A: 1},
 		Intensity:           float64(l.Intensity),
@@ -185,10 +183,10 @@ func lightInfo(index int, l renderer.SceneLight) wire.LightInfo {
 	}
 }
 
-// sceneLight converts a wire light DTO into a renderer light.
-func sceneLight(in wire.LightInfo) renderer.SceneLight {
-	return renderer.SceneLight{
-		Kind:        app.LightKindForDefinition(in.LightDefinitionType),
+// appLight converts a wire light DTO into the app light value.
+func appLight(in wire.LightInfo) app.Light {
+	return app.Light{
+		Definition:  in.LightDefinitionType,
 		Direction:   [3]float32{float32(in.Direction.X), float32(in.Direction.Y), float32(in.Direction.Z)},
 		Position:    [3]float32{float32(in.Position.X), float32(in.Position.Y), float32(in.Position.Z)},
 		Color:       [3]float32{in.Color.R, in.Color.G, in.Color.B},
@@ -200,9 +198,9 @@ func sceneLight(in wire.LightInfo) renderer.SceneLight {
 	}
 }
 
-// shadowSettings converts renderer shadow flags into the wire DTO (folding the ground flags
-// into the public GroundShadowEnum).
-func shadowSettings(sh renderer.ShadowSettings) wire.ShadowSettings {
+// shadowSettings converts an app shadow rig into the wire DTO (folding the ground flags into
+// the public GroundShadowEnum).
+func shadowSettings(sh app.ShadowRig) wire.ShadowSettings {
 	return wire.ShadowSettings{
 		GroundShadow:   app.GroundShadowForSettings(sh),
 		ObjectShadows:  sh.ObjectShadows,
@@ -212,9 +210,9 @@ func shadowSettings(sh renderer.ShadowSettings) wire.ShadowSettings {
 	}
 }
 
-// rendererShadows converts a wire shadow DTO into renderer flags.
-func rendererShadows(in wire.ShadowSettings) renderer.ShadowSettings {
-	sh := renderer.ShadowSettings{
+// shadowRigFromWire converts a wire shadow DTO into the app shadow rig.
+func shadowRigFromWire(in wire.ShadowSettings) app.ShadowRig {
+	sh := app.ShadowRig{
 		ObjectShadows:  in.ObjectShadows,
 		AmbientShadows: in.AmbientShadows,
 		Density:        float32(in.Density),
@@ -224,11 +222,11 @@ func rendererShadows(in wire.ShadowSettings) renderer.ShadowSettings {
 	return sh
 }
 
-// environmentView converts a renderer environment into the wire DTO.
-func environmentView(e renderer.Environment) wire.EnvironmentView {
+// environmentView converts an app environment into the wire DTO.
+func environmentView(e app.EnvironmentState) wire.EnvironmentView {
 	preset := ""
 	if e.FilePath == "" {
-		preset = e.Preset.String()
+		preset = e.Preset
 	}
 	return wire.EnvironmentView{
 		Preset:    preset,

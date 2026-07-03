@@ -67,10 +67,11 @@ func TestSessionViewManagement(t *testing.T) {
 	if err := s.SetViewCamera(0, cam); err != nil {
 		t.Errorf("SetViewCamera: %v", err)
 	}
-	if _, ok := s.ViewCameraAt(0); !ok {
+	camAt, ok := s.ViewCameraAt(0) // scene.Camera (the tiled-viewport accessor the head uses)
+	if !ok {
 		t.Error("ViewCameraAt(0) should resolve the first open document's camera")
 	}
-	s.SetViewCameraAt(0, cam)
+	s.SetViewCameraAt(0, camAt)
 
 	if err := s.NewView(); err != nil {
 		t.Errorf("NewView: %v", err)
