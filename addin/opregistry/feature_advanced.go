@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"strings"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
@@ -52,12 +51,8 @@ func sweepDescriptor() *OperationDescriptor {
 }
 
 func applySweep(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.Sweep](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in featureargs.Sweep
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	def, err := sweepDefinitionFromArgs(part, in)
@@ -255,12 +250,8 @@ func moveBodyDescriptor() *OperationDescriptor {
 }
 
 func applyMoveBody(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.MoveBody](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in featureargs.MoveBody
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	mods := feature.NewModifyFeatures(part.Features())
@@ -370,12 +361,8 @@ func bendPartDescriptor() *OperationDescriptor {
 }
 
 func applyBendPart(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.BendPart](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in featureargs.BendPart
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	def, err := bendDefinition(part, in)
@@ -434,12 +421,8 @@ func replaceFaceDescriptor() *OperationDescriptor {
 }
 
 func applyReplaceFace(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.ReplaceFace](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in featureargs.ReplaceFace
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	if len(in.FaceRefs) == 0 || in.TargetRef == "" {
@@ -466,12 +449,8 @@ func coreCavityDescriptor() *OperationDescriptor {
 }
 
 func applyCoreCavity(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.CoreCavity](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in featureargs.CoreCavity
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	pos, err := lengthClosure(part, in.Position, "coreCavity: position")
@@ -510,12 +489,8 @@ func splitSolidDescriptor() *OperationDescriptor {
 }
 
 func applySplitSolid(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.SplitSolid](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in featureargs.SplitSolid
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	planes := part.WorkPlanes()
@@ -581,12 +556,8 @@ func sketchDrivenDescriptor() *OperationDescriptor {
 }
 
 func applySketchDriven(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.PatternSketchDriven](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in featureargs.PatternSketchDriven
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	ids, err := featureIDsByName(part, in.SourceFeatures)
