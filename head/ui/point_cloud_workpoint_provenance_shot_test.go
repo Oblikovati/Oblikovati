@@ -45,7 +45,7 @@ func TestInWindowWorkPointProvenanceFollowsCloud(t *testing.T) {
 
 	s := framedSession()
 	path, peak := flatScanWithPeak(t)
-	pc, err := s.AttachPointCloud("Peak", path)
+	pc, _, err := s.AttachPointCloud("Peak", path)
 	if err != nil {
 		t.Fatalf("attach scan: %v", err)
 	}

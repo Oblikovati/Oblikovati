@@ -51,6 +51,8 @@ func defaultFeatureCodecs() featureCodecSet {
 	r.registerPatternCodecs()
 	r.registerFaceEditCodecs()
 	r.registerSurfaceCodecs()
+	r.registerSurfaceEditCodecs()
+	r.registerDirectModelCodecs()
 	r.registerSheetMetalCodecs()
 	r.registerCosmeticCodecs()
 	return r

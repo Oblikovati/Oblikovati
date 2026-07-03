@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/hlr"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
+	"oblikovati.org/model/internal/collview"
 )
 
 // bodyLookup resolves the drawing's referenced model to its B-rep body for projection. It is
@@ -523,12 +524,7 @@ func (v *DrawingView) refreshParentRegion(parent *DrawingView) {
 // Count, Item and ByName read the collection.
 func (vs *DrawingViews) Count() int { return len(vs.items) }
 
-func (vs *DrawingViews) Item(i int) *DrawingView {
-	if i < 0 || i >= len(vs.items) {
-		return nil
-	}
-	return vs.items[i]
-}
+func (vs *DrawingViews) Item(i int) *DrawingView { return collview.At(vs.items, i) }
 
 func (vs *DrawingViews) ByName(name string) (*DrawingView, bool) {
 	for _, v := range vs.items {

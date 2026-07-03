@@ -86,7 +86,7 @@ func parallelFullRound(in Input, body *topo.Body, def *FullRoundFilletDefinition
 	if err != nil {
 		return Output{}, err
 	}
-	result, err := ops.BooleanWithDiagnostics(ops.Cut, planarized(body, feat), tool, in.Diag)
+	result, err := ops.BooleanWithDiagnostics(ops.Cut, planarizedDiag(body, feat, in.Diag), tool, in.Diag)
 	if err != nil {
 		return Output{}, err
 	}
@@ -120,7 +120,7 @@ func nonParallelFullRound(in Input, body *topo.Body, center, side1, side2 planar
 		if perr != nil {
 			return Output{}, perr
 		}
-		result, err = ops.BooleanWithDiagnostics(ops.Cut, planarized(result, feat), prism, in.Diag)
+		result, err = ops.BooleanWithDiagnostics(ops.Cut, planarizedDiag(result, feat, in.Diag), prism, in.Diag)
 		if err != nil {
 			return Output{}, fmt.Errorf("%s: cutting the corner round: %w", feat, err)
 		}
@@ -297,7 +297,7 @@ func fullRoundCornerTool(pc math.Point3, up, sideN, axisDir math.Vector3, r, l f
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", feat, err)
 	}
-	corner, err := ops.BooleanWithDiagnostics(ops.Cut, planarized(box, feat), planarized(cyl, feat), rec)
+	corner, err := ops.BooleanWithDiagnostics(ops.Cut, planarizedDiag(box, feat, rec), planarizedDiag(cyl, feat, rec), rec)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", feat, err)
 	}

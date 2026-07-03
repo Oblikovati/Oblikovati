@@ -31,7 +31,7 @@ func (t *FaceOffsetTool) Start(*Session) {}
 func (t *FaceOffsetTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
 
 // Picks reports the picked faces for the unified highlight.
-func (t *FaceOffsetTool) Picks() []Selectable { return faceSelectables(t.faces) }
+func (t *FaceOffsetTool) Picks() []Selectable { return selectables(t.faces) }
 
 // Pick appends the clicked face (ignoring a duplicate).
 func (t *FaceOffsetTool) Pick(_ *Session, sel Selectable) {

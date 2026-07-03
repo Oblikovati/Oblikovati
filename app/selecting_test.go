@@ -109,3 +109,22 @@ func TestToolPicksReportsViaPickingContract(t *testing.T) {
 		t.Fatalf("ToolPicks[0] = %T, want EdgeHandle", got[0])
 	}
 }
+
+// TestSelectablesWidensTypedPicks pins the shared widening helper (#1657): order and
+// element identity preserved, and an empty typed slice widens to an empty non-nil slice
+// (matching the make-based behavior of the four per-type helpers it replaced).
+func TestSelectablesWidensTypedPicks(t *testing.T) {
+	edges := []EdgeHandle{{}, {}}
+	got := selectables(edges)
+	if len(got) != 2 {
+		t.Fatalf("selectables = %d elements, want 2", len(got))
+	}
+	for i := range got {
+		if got[i] != Selectable(edges[i]) {
+			t.Errorf("selectables[%d] = %#v, want the widened edge %#v", i, got[i], edges[i])
+		}
+	}
+	if empty := selectables([]FaceHandle{}); empty == nil || len(empty) != 0 {
+		t.Errorf("selectables(empty) = %#v, want empty non-nil slice", empty)
+	}
+}

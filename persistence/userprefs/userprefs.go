@@ -8,11 +8,7 @@
 package userprefs
 
 import (
-	"fmt"
-	"os"
-	"path/filepath"
-
-	"oblikovati.org/persistence/yamlcodec"
+	"oblikovati.org/persistence/filestore"
 	"oblikovati.org/userconfig"
 )
 
@@ -41,8 +37,9 @@ type Store interface {
 	Save(Prefs) error
 }
 
-// FileStore persists the preferences to a YAML file under the user config directory.
-type FileStore struct{ path string }
+// FileStore persists the preferences to a YAML file under the user config directory
+// (the shared filestore core, #1651).
+type FileStore struct{ file *filestore.FileStore[Prefs] }
 
 // DefaultPath is the per-user preferences file in the shared config dir (userconfig). Named
 // distinctly from the theme store's preferences.yaml (which holds the selected theme) to
@@ -53,51 +50,19 @@ func DefaultPath() (string, error) {
 }
 
 // NewFileStore returns a store backed by the file at path.
-func NewFileStore(path string) *FileStore { return &FileStore{path: path} }
+func NewFileStore(path string) *FileStore {
+	return &FileStore{file: filestore.New[Prefs](path)}
+}
 
 // Load reads the preferences; ok is false when there is no (or an unreadable) file, in
 // which case the caller keeps the zero-value defaults.
-func (s *FileStore) Load() (Prefs, bool, error) {
-	raw, err := os.ReadFile(s.path)
-	if os.IsNotExist(err) {
-		return Prefs{}, false, nil
-	}
-	if err != nil {
-		return Prefs{}, false, fmt.Errorf("userprefs: read %q: %w", s.path, err)
-	}
-	var p Prefs
-	if err := yamlcodec.Unmarshal(raw, &p); err != nil {
-		return Prefs{}, false, fmt.Errorf("userprefs: parse %q: %w", s.path, err)
-	}
-	return p, true, nil
-}
+func (s *FileStore) Load() (Prefs, bool, error) { return s.file.Load() }
 
 // Save writes the preferences, creating the config directory as needed.
-func (s *FileStore) Save(p Prefs) error {
-	raw, err := yamlcodec.Marshal(p)
-	if err != nil {
-		return fmt.Errorf("userprefs: marshal: %w", err)
-	}
-	if err := os.MkdirAll(filepath.Dir(s.path), 0o755); err != nil {
-		return fmt.Errorf("userprefs: create config dir: %w", err)
-	}
-	return os.WriteFile(s.path, raw, 0o644)
-}
+func (s *FileStore) Save(p Prefs) error { return s.file.Save(p) }
 
-// MemStore is an in-memory Store for tests.
-type MemStore struct {
-	prefs Prefs
-	saved bool
-}
+// MemStore is the shared in-memory Store for tests (#1651).
+type MemStore = filestore.MemStore[Prefs]
 
 // NewMemStore returns an empty in-memory store.
-func NewMemStore() *MemStore { return &MemStore{} }
-
-// Load implements Store.
-func (s *MemStore) Load() (Prefs, bool, error) { return s.prefs, s.saved, nil }
-
-// Save implements Store.
-func (s *MemStore) Save(p Prefs) error {
-	s.prefs, s.saved = p, true
-	return nil
-}
+func NewMemStore() *MemStore { return filestore.NewMemStore[Prefs]() }

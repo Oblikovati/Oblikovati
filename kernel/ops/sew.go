@@ -68,19 +68,72 @@ type boundaryClusters struct {
 // boundarySnap clusters the open edges' endpoints: endpoints within tol of each
 // other meld into one cluster whose centroid becomes the sewn position.
 func boundarySnap(open []*topo.Edge, tol float64) *boundaryClusters {
-	pts := boundaryEndpoints(open)
+	return endpointClusterSnap(boundaryEndpoints(open), tol)
+}
+
+// endpointClusterSnap unions endpoints within tol of each other and returns their cluster
+// centroids. The spatial hash is built FIRST and candidacy flows through it — the retired
+// O(m²) pre-pass compared every endpoint pair before the grid existed (#1607). Cells have
+// edge tol, so any pair within tol sits in the same or an adjacent cell (its 3×3×3
+// neighbourhood): the union set is exactly the brute scan's, the union-find components are
+// therefore identical, and clusterCentroids accumulates members in index order regardless of
+// union order — so the sewn positions are bit-identical.
+func endpointClusterSnap(pts []math.Point3, tol float64) *boundaryClusters {
 	cluster := make([]int, len(pts))
 	for i := range cluster {
 		cluster[i] = i
 	}
+	cells := endpointCells(pts, tol)
 	for i := range pts {
-		for j := i + 1; j < len(pts); j++ {
-			if float64(pts[i].DistanceTo(pts[j])) <= tol {
-				union(cluster, i, j)
+		unionNearbyEndpoints(cells, pts, i, tol, cluster)
+	}
+	return clusterCentroids(pts, cluster)
+}
+
+// endpointCells hashes each endpoint into its tol-edge cube cell (Ericson §7.1 spatial
+// hashing; the sparse map holds only occupied cells).
+func endpointCells(pts []math.Point3, tol float64) map[[3]int64][]int32 {
+	cells := make(map[[3]int64][]int32, len(pts))
+	for i, p := range pts {
+		c := endpointCell(p, tol)
+		cells[c] = append(cells[c], int32(i))
+	}
+	return cells
+}
+
+func endpointCell(p math.Point3, tol float64) [3]int64 {
+	return [3]int64{
+		int64(stdmath.Floor(float64(p.X) / tol)),
+		int64(stdmath.Floor(float64(p.Y) / tol)),
+		int64(stdmath.Floor(float64(p.Z) / tol)),
+	}
+}
+
+// unionNearbyEndpoints unions endpoint i with every within-tol endpoint j > i found in the
+// 27 neighbouring cells (j < i pairs were already unioned when j was the query — the same
+// each-pair-once discipline as the retired i<j double loop).
+func unionNearbyEndpoints(cells map[[3]int64][]int32, pts []math.Point3, i int, tol float64, cluster []int) {
+	c := endpointCell(pts[i], tol)
+	for _, d := range sewCellNeighborhood {
+		for _, j := range cells[[3]int64{c[0] + d[0], c[1] + d[1], c[2] + d[2]}] {
+			if int(j) > i && float64(pts[i].DistanceTo(pts[int(j)])) <= tol {
+				union(cluster, i, int(j))
 			}
 		}
 	}
-	return clusterCentroids(pts, cluster)
+}
+
+// sewCellNeighborhood is the 3×3×3 cell-offset stencil around an endpoint's own cell.
+var sewCellNeighborhood = cubeNeighborhood()
+
+func cubeNeighborhood() [][3]int64 {
+	out := make([][3]int64, 0, 27)
+	for dx := int64(-1); dx <= 1; dx++ {
+		for dy := int64(-1); dy <= 1; dy++ {
+			out = append(out, [3]int64{dx, dy, -1}, [3]int64{dx, dy, 0}, [3]int64{dx, dy, 1})
+		}
+	}
+	return out
 }
 
 // boundaryEndpoints collects each open edge's two endpoint positions.

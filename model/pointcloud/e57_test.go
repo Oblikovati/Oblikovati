@@ -2,7 +2,11 @@
 
 package pointcloud
 
-import "testing"
+import (
+	"testing"
+
+	"oblikovati.org/kernel/exchange"
+)
 
 // The E57 decode itself is covered in kernel/exchange/e57fmt; here we cover the model-layer
 // reader's wiring: its extension, that ReadScan dispatches .e57 to it, and that malformed bytes
@@ -17,7 +21,7 @@ func TestE57ReaderExtensions(t *testing.T) {
 
 func TestReadScanDispatchesE57Error(t *testing.T) {
 	// A registered .e57 reader must be reached (not the "no reader" error) and reject non-E57 bytes.
-	_, err := ReadScan("scan.e57", []byte("this is not an E57 file"))
+	_, _, err := ReadScan("scan.e57", []byte("this is not an E57 file"), exchange.TranslationOptions{})
 	if err == nil {
 		t.Fatal("want a decode error for non-E57 bytes routed to the e57 reader")
 	}

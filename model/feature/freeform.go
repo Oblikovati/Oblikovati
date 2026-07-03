@@ -178,7 +178,13 @@ func NewAliasFreeformFeatures(engine *PartFeatures) *AliasFreeformFeatures {
 // AddFromCage wraps an imported sub-D cage (vertices + polygon faces) as an editable
 // free-form feature.
 func (c *AliasFreeformFeatures) AddFromCage(verts []math.Point3, faces [][]int, level int) *PartFeature {
-	cage := subd.Mesh{Verts: verts, Faces: faces}
+	return c.add(subd.Mesh{Verts: verts, Faces: faces}, level)
+}
+
+// add registers an imported Alias free-form feature over the given cage, preserving the
+// cage's creases and subdivision level — the seam the serialization restore path uses so a
+// round-trip keeps sharp edges (AddFromCage's caller passes a crease-free cage).
+func (c *AliasFreeformFeatures) add(cage subd.Mesh, level int) *PartFeature {
 	af := &AliasFreeformFeature{FreeformFeature{body: &FreeformBody{cage: cage.Clone(), level: level}, featName: "AliasFreeform"}}
 	pf := c.engine.Add(af)
 	af.featName = pf.name

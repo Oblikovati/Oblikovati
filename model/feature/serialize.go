@@ -69,19 +69,33 @@ type FeatureData struct {
 	FairSurface      *FairSurfaceData      `yaml:"fairSurface,omitempty"`
 	FitSurface       *FitSurfaceData       `yaml:"fitSurface,omitempty"`
 	FaceEdit         *FaceEditData         `yaml:"faceEdit,omitempty"`
-	Thicken          *ThickenData          `yaml:"thicken,omitempty"`
-	Revolve          *RevolveData          `yaml:"revolve,omitempty"`
-	Coil             *CoilData             `yaml:"coil,omitempty"`
-	Sweep            *SweepData            `yaml:"sweep,omitempty"`
-	Loft             *LoftData             `yaml:"loft,omitempty"`
-	Move             *MoveData             `yaml:"move,omitempty"`
-	Bend             *BendData             `yaml:"bend,omitempty"`
-	Decal            *DecalData            `yaml:"decal,omitempty"`
-	Reference        *ReferenceData        `yaml:"reference,omitempty"`
-	Client           *ClientData           `yaml:"client,omitempty"`
-	Mark             *MarkData             `yaml:"mark,omitempty"`
-	Finish           *FinishData           `yaml:"finish,omitempty"`
-	Import           *ImportData           `yaml:"import,omitempty"`
+
+	// Surface-editing and direct-geometry families (M10-F01..F04). These kinds were creatable but
+	// carried no codec, so a part containing one refused to marshal until #1617.
+	Trim          *TrimData          `yaml:"trim,omitempty"`
+	Extend        *ExtendData        `yaml:"extend,omitempty"`
+	SurfaceOffset *SurfaceOffsetData `yaml:"surfaceOffset,omitempty"`
+	MidSurface    *MidSurfaceData    `yaml:"midSurface,omitempty"`
+	Stitch        *StitchData        `yaml:"stitch,omitempty"`
+	Sculpt        *SculptData        `yaml:"sculpt,omitempty"`
+	Mesh          *MeshData          `yaml:"mesh,omitempty"`
+	Freeform      *FreeformData      `yaml:"freeform,omitempty"`
+	Hull          *HullData          `yaml:"hull,omitempty"`
+	CoreCavity    *CoreCavityData    `yaml:"coreCavity,omitempty"`
+
+	Thicken   *ThickenData   `yaml:"thicken,omitempty"`
+	Revolve   *RevolveData   `yaml:"revolve,omitempty"`
+	Coil      *CoilData      `yaml:"coil,omitempty"`
+	Sweep     *SweepData     `yaml:"sweep,omitempty"`
+	Loft      *LoftData      `yaml:"loft,omitempty"`
+	Move      *MoveData      `yaml:"move,omitempty"`
+	Bend      *BendData      `yaml:"bend,omitempty"`
+	Decal     *DecalData     `yaml:"decal,omitempty"`
+	Reference *ReferenceData `yaml:"reference,omitempty"`
+	Client    *ClientData    `yaml:"client,omitempty"`
+	Mark      *MarkData      `yaml:"mark,omitempty"`
+	Finish    *FinishData    `yaml:"finish,omitempty"`
+	Import    *ImportData    `yaml:"import,omitempty"`
 
 	DerivedAssembly *DerivedAssemblyData `yaml:"derivedAssembly,omitempty"`
 	DerivedPart     *DerivedPartData     `yaml:"derivedPart,omitempty"`

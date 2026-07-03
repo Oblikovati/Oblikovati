@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/kernel/topo"
+	"oblikovati.org/model/internal/collview"
 )
 
 // WorkSurface construction surfaces (M20-F16, #654… see #650). A surface-output feature
@@ -54,14 +55,9 @@ type WorkSurfaces struct {
 func NewWorkSurfaces() *WorkSurfaces { return &WorkSurfaces{} }
 
 // Count / All / Item read the collection. Item returns nil for an out-of-range index.
-func (c *WorkSurfaces) Count() int          { return len(c.items) }
-func (c *WorkSurfaces) All() []*WorkSurface { return c.items }
-func (c *WorkSurfaces) Item(i int) *WorkSurface {
-	if i < 0 || i >= len(c.items) {
-		return nil
-	}
-	return c.items[i]
-}
+func (c *WorkSurfaces) Count() int              { return len(c.items) }
+func (c *WorkSurfaces) All() []*WorkSurface     { return c.items }
+func (c *WorkSurfaces) Item(i int) *WorkSurface { return collview.At(c.items, i) }
 
 // Sync reconciles the collection with the part's current result bodies: the surface
 // (non-solid) bodies, in result order, become the work surfaces. A surviving position

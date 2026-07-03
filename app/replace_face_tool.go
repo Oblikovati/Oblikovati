@@ -32,7 +32,7 @@ func (t *ReplaceFaceTool) AcceptedKinds() []SelectionKind { return []SelectionKi
 
 // Picks reports the faces to replace plus the target face for the unified highlight.
 func (t *ReplaceFaceTool) Picks() []Selectable {
-	return appendPick(faceSelectables(t.faces), t.target)
+	return appendPick(selectables(t.faces), t.target)
 }
 
 // Pick routes a click to the target slot when in target mode, else appends a face to replace.

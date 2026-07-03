@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/api/contract"
 	"oblikovati.org/api/types"
+	"oblikovati.org/model/internal/collview"
 )
 
 // The DS-joint surface (M12-F02): the degrees-of-freedom / imposed-motion view of a joint
@@ -54,10 +55,7 @@ func (j *dsJoint) DOFCount() int { return len(j.dofs) }
 
 // DOF returns the i-th degree of freedom, or nil when out of range.
 func (j *dsJoint) DOF(i int) contract.DSDegreesOfFreedom {
-	if i < 0 || i >= len(j.dofs) {
-		return nil
-	}
-	return j.dofs[i]
+	return collview.ItemAs(j.dofs, i, func(d *dsDOF) contract.DSDegreesOfFreedom { return d })
 }
 
 // FreeDegreesOfFreedom returns the count of DOF that are not locked — the joint's effective
@@ -127,10 +125,7 @@ func (s *DSJointSet) Count() int { return len(s.items) }
 
 // Item returns the DS joint at index i, or nil when out of range.
 func (s *DSJointSet) Item(i int) contract.DSJoint {
-	if i < 0 || i >= len(s.items) {
-		return nil
-	}
-	return s.items[i]
+	return collview.ItemAs(s.items, i, func(j *dsJoint) contract.DSJoint { return j })
 }
 
 // All returns the DS joints in creation order.

@@ -46,7 +46,7 @@ func TestInWindowSketchPointFromScanRenders(t *testing.T) {
 
 	s := framedSession()
 	path, peak := flatScanNearXY(t)
-	pc, err := s.AttachPointCloud("Flat", path)
+	pc, _, err := s.AttachPointCloud("Flat", path)
 	if err != nil {
 		t.Fatalf("attach scan: %v", err)
 	}

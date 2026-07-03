@@ -119,7 +119,7 @@ func (t *FilletTool) Start(*Session) {}
 func (t *FilletTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectEdge} }
 
 // Picks reports the picked edges for the unified highlight.
-func (t *FilletTool) Picks() []Selectable { return edgeSelectables(t.Edges()) }
+func (t *FilletTool) Picks() []Selectable { return selectables(t.Edges()) }
 
 // Pick appends the clicked edge (ignoring one already chosen).
 func (t *FilletTool) Pick(_ *Session, sel Selectable) {
