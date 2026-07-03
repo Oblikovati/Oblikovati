@@ -5,6 +5,7 @@ package opregistry
 import (
 	"encoding/json"
 
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 )
 
@@ -17,7 +18,7 @@ const sheetMetalNoArgsSchema = `{"type": "object", "properties": {}}`
 // sheetMetalUnfoldDescriptor is the self-describing "sheetMetalUnfold" operation.
 func sheetMetalUnfoldDescriptor() *OperationDescriptor {
 	return &OperationDescriptor{
-		Name:    "sheetMetalUnfold",
+		Name:    featureargs.KindSheetMetalUnfold,
 		Summary: "Flatten every bend of the active sheet-metal part (develop it flat) so a following cut works in developed space.",
 		Schema:  json.RawMessage(sheetMetalNoArgsSchema),
 		Apply:   applySheetMetalUnfold,
@@ -27,7 +28,7 @@ func sheetMetalUnfoldDescriptor() *OperationDescriptor {
 // sheetMetalRefoldDescriptor is the self-describing "sheetMetalRefold" operation.
 func sheetMetalRefoldDescriptor() *OperationDescriptor {
 	return &OperationDescriptor{
-		Name:    "sheetMetalRefold",
+		Name:    featureargs.KindSheetMetalRefold,
 		Summary: "Re-fold the bends an earlier unfold flattened, restoring the folded part and carrying any edits made while flat.",
 		Schema:  json.RawMessage(sheetMetalNoArgsSchema),
 		Apply:   applySheetMetalRefold,

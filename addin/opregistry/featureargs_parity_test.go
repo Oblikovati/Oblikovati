@@ -17,75 +17,12 @@ import (
 // cannot drift — the round-trip is guaranteed by type identity (the featureargs package's
 // own marshal round-trip test proves each type is JSON-symmetric).
 
-// dynamicKinds are the registered kinds NOT yet promoted to featureargs — the composite,
-// multi-kind, args-less, and mechanical-remainder cases tracked by #1709. Shrink-only:
-// promoting a kind here fails the guard until its entry is removed. A truly dynamic
-// add-in-registered op would also live here (with its own justification).
-var dynamicKinds = map[string]string{
-	"bendPart":                "#1709: mechanical promotion pending",
-	"boundaryPatch":           "#1709: mechanical promotion pending",
-	"bridgeSurface":           "#1709: mechanical promotion pending",
-	"chamfer":                 "#1709: composite kind — nested helper structs to promote too",
-	"combine":                 "#1709: mechanical promotion pending",
-	"coreCavity":              "#1709: mechanical promotion pending",
-	"deleteFace":              "#1709: mechanical promotion pending",
-	"draft":                   "#1709: mechanical promotion pending",
-	"extend":                  "#1709: mechanical promotion pending",
-	"faceOffset":              "#1709: mechanical promotion pending",
-	"fairSurface":             "#1709: mechanical promotion pending",
-	"fillSurface":             "#1709: mechanical promotion pending",
-	"fillet":                  "#1709: composite kind — nested helper structs to promote too",
-	"fitSurface":              "#1709: mechanical promotion pending",
-	"freeformBox":             "#1709: one struct serves several kinds",
-	"freeformPlane":           "#1709: one struct serves several kinds",
-	"freeformQuadBall":        "#1709: one struct serves several kinds",
-	"fullRoundFillet":         "#1709: composite kind — nested helper structs to promote too",
-	"hull":                    "#1709: args-less kind",
-	"lip":                     "#1709: mechanical promotion pending",
-	"loft":                    "#1709: composite kind — nested helper structs to promote too",
-	"midSurface":              "#1709: mechanical promotion pending",
-	"mirror":                  "#1709: mechanical promotion pending",
-	"modelTolerance":          "#1709: composite kind — nested helper structs to promote too",
-	"moveBody":                "#1709: composite kind — nested helper structs to promote too",
-	"moveFace":                "#1709: mechanical promotion pending",
-	"networkSurface":          "#1709: mechanical promotion pending",
-	"patternCircular":         "#1709: composite kind — nested helper structs to promote too",
-	"patternRectangular":      "#1709: composite kind — nested helper structs to promote too",
-	"patternSketchDriven":     "#1709: composite kind — nested helper structs to promote too",
-	"replaceFace":             "#1709: mechanical promotion pending",
-	"rest":                    "#1709: mechanical promotion pending",
-	"ruleFillet":              "#1709: composite kind — nested helper structs to promote too",
-	"ruledSurface":            "#1709: mechanical promotion pending",
-	"sculpt":                  "#1709: mechanical promotion pending",
-	"sheetMetalBend":          "#1709: mechanical promotion pending",
-	"sheetMetalContourFlange": "#1709: mechanical promotion pending",
-	"sheetMetalContourRoll":   "#1709: mechanical promotion pending",
-	"sheetMetalCorner":        "#1709: mechanical promotion pending",
-	"sheetMetalCornerSeam":    "#1709: mechanical promotion pending",
-	"sheetMetalCosmeticBend":  "#1709: mechanical promotion pending",
-	"sheetMetalCut":           "#1709: mechanical promotion pending",
-	"sheetMetalFace":          "#1709: mechanical promotion pending",
-	"sheetMetalFlange":        "#1709: mechanical promotion pending",
-	"sheetMetalFold":          "#1709: mechanical promotion pending",
-	"sheetMetalHem":           "#1709: mechanical promotion pending",
-	"sheetMetalLip":           "#1709: mechanical promotion pending",
-	"sheetMetalLoftedFlange":  "#1709: mechanical promotion pending",
-	"sheetMetalPunch":         "#1709: mechanical promotion pending",
-	"sheetMetalRefold":        "#1709: mechanical promotion pending",
-	"sheetMetalRip":           "#1709: mechanical promotion pending",
-	"sheetMetalUnfold":        "#1709: mechanical promotion pending",
-	"shell":                   "#1709: mechanical promotion pending",
-	"simplify":                "#1709: mechanical promotion pending",
-	"snapFit":                 "#1709: mechanical promotion pending",
-	"split":                   "#1709: mechanical promotion pending",
-	"splitSolid":              "#1709: mechanical promotion pending",
-	"stitch":                  "#1709: mechanical promotion pending",
-	"surfaceOffset":           "#1709: mechanical promotion pending",
-	"sweep":                   "#1709: composite kind — nested helper structs to promote too",
-	"thicken":                 "#1709: mechanical promotion pending",
-	"trim":                    "#1709: mechanical promotion pending",
-	"unwrap":                  "#1709: mechanical promotion pending",
-}
+// dynamicKinds are the registered kinds NOT promoted to featureargs — the exception list the
+// parity guard tolerates. #1709 promoted the remaining 63 kinds (composite, multi-kind, args-less,
+// and mechanical-remainder) to typed featureargs structs, so this is now EMPTY: every registered
+// feature kind has a typed argument struct. A truly dynamic add-in-registered op with no compile-
+// time contract would be the only reason to add an entry back here (with its own justification).
+var dynamicKinds = map[string]string{}
 
 func TestEveryRegisteredKindHasWireArgsOrIsAllowlisted(t *testing.T) {
 	promoted := map[string]bool{}

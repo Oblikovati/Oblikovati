@@ -5,23 +5,14 @@ package opregistry
 import (
 	"encoding/json"
 
-	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
-	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 )
 
 // The freeform (T-spline) primitive features: a box, a plane, and a quadball, each a
 // subdivision cage that becomes editable freeform geometry. They take only dimensions and a
 // subdivision level — no sketch or body — so they are the simplest add_feature kinds to drive.
-
-type freeformArgs struct {
-	SizeX  string `json:"sizeX,omitempty"`
-	SizeY  string `json:"sizeY,omitempty"`
-	SizeZ  string `json:"sizeZ,omitempty"`
-	Radius string `json:"radius,omitempty"`
-	Level  int    `json:"level,omitempty"`
-}
 
 const freeformBoxSchema = `{
   "type": "object",
@@ -54,19 +45,19 @@ const freeformQuadBallSchema = `{
 }`
 
 func freeformBoxDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "freeformBox", Summary: "Create a freeform (T-spline) box primitive.", Schema: json.RawMessage(freeformBoxSchema), Apply: applyFreeformBox}
+	return &OperationDescriptor{Name: featureargs.KindFreeformBox, Summary: "Create a freeform (T-spline) box primitive.", Schema: json.RawMessage(freeformBoxSchema), Apply: applyFreeformBox}
 }
 
 func freeformPlaneDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "freeformPlane", Summary: "Create a freeform (T-spline) plane primitive.", Schema: json.RawMessage(freeformPlaneSchema), Apply: applyFreeformPlane}
+	return &OperationDescriptor{Name: featureargs.KindFreeformPlane, Summary: "Create a freeform (T-spline) plane primitive.", Schema: json.RawMessage(freeformPlaneSchema), Apply: applyFreeformPlane}
 }
 
 func freeformQuadBallDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "freeformQuadBall", Summary: "Create a freeform (T-spline) quadball (sphere) primitive.", Schema: json.RawMessage(freeformQuadBallSchema), Apply: applyFreeformQuadBall}
+	return &OperationDescriptor{Name: featureargs.KindFreeformQuadBall, Summary: "Create a freeform (T-spline) quadball (sphere) primitive.", Schema: json.RawMessage(freeformQuadBallSchema), Apply: applyFreeformQuadBall}
 }
 
 func applyFreeformBox(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, in, err := decodeFreeform(s, raw)
+	part, in, err := decodeFeatureArgs[featureargs.FreeformBox](s, raw)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +78,7 @@ func applyFreeformBox(s *app.Session, raw json.RawMessage) (json.RawMessage, err
 }
 
 func applyFreeformPlane(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, in, err := decodeFreeform(s, raw)
+	part, in, err := decodeFeatureArgs[featureargs.FreeformPlane](s, raw)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +95,7 @@ func applyFreeformPlane(s *app.Session, raw json.RawMessage) (json.RawMessage, e
 }
 
 func applyFreeformQuadBall(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, in, err := decodeFreeform(s, raw)
+	part, in, err := decodeFeatureArgs[featureargs.FreeformQuadBall](s, raw)
 	if err != nil {
 		return nil, err
 	}
@@ -114,18 +105,6 @@ func applyFreeformQuadBall(s *app.Session, raw json.RawMessage) (json.RawMessage
 	}
 	pf := feature.NewFreeformFeatures(part.Features()).AddQuadBall(r, freeformLevel(in.Level))
 	return recomputeResult(part, pf)
-}
-
-func decodeFreeform(s *app.Session, raw json.RawMessage) (*compdef.PartComponentDefinition, freeformArgs, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, freeformArgs{}, err
-	}
-	var in freeformArgs
-	if err := json.Unmarshal(raw, &in); err != nil {
-		return nil, freeformArgs{}, err
-	}
-	return part, in, nil
 }
 
 func freeformLevel(level int) int {

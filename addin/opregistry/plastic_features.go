@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 
 	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/model/feature"
 )
@@ -27,20 +28,11 @@ const snapFitSchema = `{
 
 func snapFitDescriptor() *OperationDescriptor {
 	return &OperationDescriptor{
-		Name:    "snapFit",
+		Name:    featureargs.KindSnapFit,
 		Summary: "Add a cantilever snap-fit hook (a beam with a catch lip) to the part.",
 		Schema:  json.RawMessage(snapFitSchema),
 		Apply:   applySnapFit,
 	}
-}
-
-// snapFitArgs is the snap-fit op's wire shape: the beam and catch dimensions as length strings.
-type snapFitArgs struct {
-	Length      string `json:"length"`
-	Width       string `json:"width"`
-	Thickness   string `json:"thickness"`
-	CatchLength string `json:"catchLength"`
-	CatchHeight string `json:"catchHeight"`
 }
 
 const restSchema = `{
@@ -57,20 +49,11 @@ const restSchema = `{
 
 func restDescriptor() *OperationDescriptor {
 	return &OperationDescriptor{
-		Name:    "rest",
+		Name:    featureargs.KindRest,
 		Summary: "Add a raised or recessed rest pad bounded by a closed sketch profile.",
 		Schema:  json.RawMessage(restSchema),
 		Apply:   applyRest,
 	}
-}
-
-// restArgs is the rest op's wire shape: a sketch profile + depth, raised or recessed.
-type restArgs struct {
-	SketchIndex    int    `json:"sketchIndex"`
-	ProfileIndices []int  `json:"profileIndices,omitempty"`
-	ProfileIndex   int    `json:"profileIndex"`
-	Depth          string `json:"depth"`
-	Recessed       bool   `json:"recessed,omitempty"`
 }
 
 func applyRest(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -78,7 +61,7 @@ func applyRest(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	var in restArgs
+	var in featureargs.Rest
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
@@ -103,7 +86,7 @@ func applySnapFit(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	if err != nil {
 		return nil, err
 	}
-	var in snapFitArgs
+	var in featureargs.SnapFit
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}

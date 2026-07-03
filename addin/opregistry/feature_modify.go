@@ -7,8 +7,8 @@ import (
 	"errors"
 	"fmt"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
@@ -19,12 +19,6 @@ import (
 // indices (model.tree body order); face inputs are reference keys (get_reference_keys).
 
 // --- combine ---------------------------------------------------------------
-
-type combineArgs struct {
-	TargetIndex int    `json:"targetIndex"`
-	ToolIndex   int    `json:"toolIndex"`
-	Operation   string `json:"operation"`
-}
 
 const combineSchema = `{
   "type": "object",
@@ -37,16 +31,12 @@ const combineSchema = `{
 }`
 
 func combineDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "combine", Summary: "Boolean two solid bodies (join/cut/intersect).", Schema: json.RawMessage(combineSchema), Apply: applyCombine}
+	return &OperationDescriptor{Name: featureargs.KindCombine, Summary: "Boolean two solid bodies (join/cut/intersect).", Schema: json.RawMessage(combineSchema), Apply: applyCombine}
 }
 
 func applyCombine(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.Combine](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in combineArgs
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	op, err := parseOperation(in.Operation)
@@ -59,11 +49,6 @@ func applyCombine(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 
 // --- thicken ---------------------------------------------------------------
 
-type thickenArgs struct {
-	Thickness     string `json:"thickness"`
-	Approximation string `json:"approximation,omitempty"`
-}
-
 const thickenSchema = `{
   "type": "object",
   "properties": {
@@ -74,16 +59,12 @@ const thickenSchema = `{
 }`
 
 func thickenDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "thicken", Summary: "Thicken a surface body into a solid.", Schema: json.RawMessage(thickenSchema), Apply: applyThicken}
+	return &OperationDescriptor{Name: featureargs.KindThicken, Summary: "Thicken a surface body into a solid.", Schema: json.RawMessage(thickenSchema), Apply: applyThicken}
 }
 
 func applyThicken(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.Thicken](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in thickenArgs
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	th, err := lengthClosure(part, in.Thickness, "thicken: thickness")
@@ -113,12 +94,6 @@ func approximationArg(s, op string) (types.FeatureApproximationType, error) {
 
 // --- trim ------------------------------------------------------------------
 
-type trimArgs struct {
-	Origin       []float64 `json:"origin"`
-	Normal       []float64 `json:"normal"`
-	KeepPositive bool      `json:"keepPositive,omitempty"`
-}
-
 const trimSchema = `{
   "type": "object",
   "properties": {
@@ -130,16 +105,12 @@ const trimSchema = `{
 }`
 
 func trimDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "trim", Summary: "Trim the body with a cutting plane, keeping one half.", Schema: json.RawMessage(trimSchema), Apply: applyTrim}
+	return &OperationDescriptor{Name: featureargs.KindTrim, Summary: "Trim the body with a cutting plane, keeping one half.", Schema: json.RawMessage(trimSchema), Apply: applyTrim}
 }
 
 func applyTrim(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.Trim](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in trimArgs
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	origin, err := point3(in.Origin, "trim: origin")
@@ -155,16 +126,6 @@ func applyTrim(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 }
 
 // --- face direct edits (move / offset / delete / split) --------------------
-
-type faceEditArgs struct {
-	FaceRefs      []string  `json:"faceRefs"`
-	Translation   []float64 `json:"translation,omitempty"`   // moveFace translate
-	AxisPoint     []float64 `json:"axisPoint,omitempty"`     // moveFace rotate (#331)
-	AxisDir       []float64 `json:"axisDir,omitempty"`       // moveFace rotate
-	Angle         string    `json:"angle,omitempty"`         // moveFace rotate
-	Distance      string    `json:"distance,omitempty"`      // faceOffset
-	Approximation string    `json:"approximation,omitempty"` // faceOffset (#331)
-}
 
 const moveFaceSchema = `{
   "type": "object",
@@ -201,25 +162,28 @@ const splitFaceSchema = `{
 }`
 
 func moveFaceDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "moveFace", Summary: "Move picked faces by a vector (direct edit).", Schema: json.RawMessage(moveFaceSchema), Apply: applyMoveFace}
+	return &OperationDescriptor{Name: featureargs.KindMoveFace, Summary: "Move picked faces by a vector (direct edit).", Schema: json.RawMessage(moveFaceSchema), Apply: applyMoveFace}
 }
 
 func faceOffsetDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "faceOffset", Summary: "Offset picked faces by a distance (direct edit).", Schema: json.RawMessage(faceOffsetSchema), Apply: applyFaceOffset}
+	return &OperationDescriptor{Name: featureargs.KindFaceOffset, Summary: "Offset picked faces by a distance (direct edit).", Schema: json.RawMessage(faceOffsetSchema), Apply: applyFaceOffset}
 }
 
 func deleteFaceDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "deleteFace", Summary: "Delete picked faces, healing the body (direct edit).", Schema: json.RawMessage(deleteFaceSchema), Apply: applyDeleteFace}
+	return &OperationDescriptor{Name: featureargs.KindDeleteFace, Summary: "Delete picked faces, healing the body (direct edit).", Schema: json.RawMessage(deleteFaceSchema), Apply: applyDeleteFace}
 }
 
 func splitFaceDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "split", Summary: "Split picked faces along their intersections (direct edit).", Schema: json.RawMessage(splitFaceSchema), Apply: applySplitFace}
+	return &OperationDescriptor{Name: featureargs.KindSplit, Summary: "Split picked faces along their intersections (direct edit).", Schema: json.RawMessage(splitFaceSchema), Apply: applySplitFace}
 }
 
 func applyMoveFace(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, in, err := decodeFaceEdit(s, raw, "moveFace")
+	part, in, err := decodeFeatureArgs[featureargs.MoveFace](s, raw)
 	if err != nil {
 		return nil, err
+	}
+	if len(in.FaceRefs) == 0 {
+		return nil, errors.New("moveFace: faceRefs is empty")
 	}
 	if in.Angle != "" || len(in.AxisDir) > 0 {
 		return applyMoveFaceRotate(part, in)
@@ -233,7 +197,7 @@ func applyMoveFace(s *app.Session, raw json.RawMessage) (json.RawMessage, error)
 }
 
 // applyMoveFaceRotate is the rotate arm (#331): axisPoint + axisDir + angle.
-func applyMoveFaceRotate(part *compdef.PartComponentDefinition, in faceEditArgs) (json.RawMessage, error) {
+func applyMoveFaceRotate(part *compdef.PartComponentDefinition, in featureargs.MoveFace) (json.RawMessage, error) {
 	p, err := point3(in.AxisPoint, "moveFace: axisPoint")
 	if err != nil {
 		return nil, err
@@ -251,9 +215,12 @@ func applyMoveFaceRotate(part *compdef.PartComponentDefinition, in faceEditArgs)
 }
 
 func applyFaceOffset(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, in, err := decodeFaceEdit(s, raw, "faceOffset")
+	part, in, err := decodeFeatureArgs[featureargs.FaceOffset](s, raw)
 	if err != nil {
 		return nil, err
+	}
+	if len(in.FaceRefs) == 0 {
+		return nil, errors.New("faceOffset: faceRefs is empty")
 	}
 	d, err := lengthClosure(part, in.Distance, "faceOffset: distance")
 	if err != nil {
@@ -268,46 +235,30 @@ func applyFaceOffset(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 }
 
 func applyDeleteFace(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, in, err := decodeFaceEdit(s, raw, "deleteFace")
+	part, in, err := decodeFeatureArgs[featureargs.DeleteFace](s, raw)
 	if err != nil {
 		return nil, err
+	}
+	if len(in.FaceRefs) == 0 {
+		return nil, errors.New("deleteFace: faceRefs is empty")
 	}
 	pf := feature.NewModifyFeatures(part.Features()).AddDeleteFace(refKeys(in.FaceRefs))
 	return recomputeResult(part, pf)
 }
 
 func applySplitFace(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, in, err := decodeFaceEdit(s, raw, "split")
+	part, in, err := decodeFeatureArgs[featureargs.Split](s, raw)
 	if err != nil {
 		return nil, err
+	}
+	if len(in.FaceRefs) == 0 {
+		return nil, errors.New("split: faceRefs is empty")
 	}
 	pf := feature.NewModifyFeatures(part.Features()).AddSplit(refKeys(in.FaceRefs))
 	return recomputeResult(part, pf)
 }
 
-// decodeFaceEdit is the shared front of the face direct-edit operations: active part + decoded
-// args with a non-empty faceRefs.
-func decodeFaceEdit(s *app.Session, raw json.RawMessage, op string) (*compdef.PartComponentDefinition, faceEditArgs, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, faceEditArgs{}, err
-	}
-	var in faceEditArgs
-	if err := json.Unmarshal(raw, &in); err != nil {
-		return nil, faceEditArgs{}, err
-	}
-	if len(in.FaceRefs) == 0 {
-		return nil, faceEditArgs{}, errors.New(op + ": faceRefs is empty")
-	}
-	return part, in, nil
-}
-
 // --- simplify & unwrap (M20-F13) -------------------------------------------
-
-type simplifyArgs struct {
-	FaceRefs  []string `json:"faceRefs,omitempty"`
-	FillVoids bool     `json:"fillVoids,omitempty"`
-}
 
 const simplifySchema = `{
   "type": "object",
@@ -318,16 +269,12 @@ const simplifySchema = `{
 }`
 
 func simplifyDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "simplify", Summary: "Reduce a model: remove and heal selected faces and/or fill internal voids.", Schema: json.RawMessage(simplifySchema), Apply: applySimplify}
+	return &OperationDescriptor{Name: featureargs.KindSimplify, Summary: "Reduce a model: remove and heal selected faces and/or fill internal voids.", Schema: json.RawMessage(simplifySchema), Apply: applySimplify}
 }
 
 func applySimplify(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.Simplify](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in simplifyArgs
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	if len(in.FaceRefs) == 0 && !in.FillVoids {
@@ -335,10 +282,6 @@ func applySimplify(s *app.Session, raw json.RawMessage) (json.RawMessage, error)
 	}
 	pf := feature.NewModifyFeatures(part.Features()).AddSimplify(refKeys(in.FaceRefs), in.FillVoids)
 	return recomputeResult(part, pf)
-}
-
-type unwrapArgs struct {
-	FaceRef string `json:"faceRef"`
 }
 
 const unwrapSchema = `{
@@ -350,16 +293,12 @@ const unwrapSchema = `{
 }`
 
 func unwrapDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "unwrap", Summary: "Flatten a cylindrical face into a flat sheet patch (circumference × height).", Schema: json.RawMessage(unwrapSchema), Apply: applyUnwrap}
+	return &OperationDescriptor{Name: featureargs.KindUnwrap, Summary: "Flatten a cylindrical face into a flat sheet patch (circumference × height).", Schema: json.RawMessage(unwrapSchema), Apply: applyUnwrap}
 }
 
 func applyUnwrap(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.Unwrap](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in unwrapArgs
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	if in.FaceRef == "" {

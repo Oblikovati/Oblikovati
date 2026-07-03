@@ -6,22 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 )
-
-// sheetMetalLipArgs is the argument shape for the "sheetMetalLip" operation: the edge to build
-// on, the flange height, the return-wall length, the optional bend angle/radius, and a flip.
-// (Distinct from the solid-modeling "lip" bead — this is the sheet-metal stiffening edge return.)
-type sheetMetalLipArgs struct {
-	Edge         string `json:"edge"`
-	Height       string `json:"height"`
-	ReturnLength string `json:"returnLength,omitempty"`
-	Angle        string `json:"angle,omitempty"`
-	Radius       string `json:"radius,omitempty"`
-	Flip         bool   `json:"flip,omitempty"`
-}
 
 const sheetMetalLipSchema = `{
   "type": "object",
@@ -40,7 +29,7 @@ const sheetMetalLipSchema = `{
 // lip (a short flange curled 180° back on itself) onto a sheet edge.
 func sheetMetalLipDescriptor() *OperationDescriptor {
 	return &OperationDescriptor{
-		Name:    "sheetMetalLip",
+		Name:    featureargs.KindSheetMetalLip,
 		Summary: "Fold a stiffening lip (a short flange curled 180° back on itself) onto a straight sheet-metal edge.",
 		Schema:  json.RawMessage(sheetMetalLipSchema),
 		Apply:   applySheetMetalLip,
@@ -55,7 +44,7 @@ func applySheetMetalLip(s *app.Session, raw json.RawMessage) (json.RawMessage, e
 	if err != nil {
 		return nil, err
 	}
-	var in sheetMetalLipArgs
+	var in featureargs.SheetMetalLip
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, fmt.Errorf("sheetMetalLip: invalid args: %w", err)
 	}
@@ -68,7 +57,7 @@ func applySheetMetalLip(s *app.Session, raw json.RawMessage) (json.RawMessage, e
 
 // lipDef resolves the lip args into a definition: the edge + parameter-backed height/return and
 // the optional angle/radius closures (omitted ⇒ nil, so the feature uses its defaults).
-func lipDef(part *compdef.PartComponentDefinition, in sheetMetalLipArgs) (*feature.SheetMetalLipDefinition, error) {
+func lipDef(part *compdef.PartComponentDefinition, in featureargs.SheetMetalLip) (*feature.SheetMetalLipDefinition, error) {
 	if in.Edge == "" {
 		return nil, fmt.Errorf("sheetMetalLip: edge is required")
 	}

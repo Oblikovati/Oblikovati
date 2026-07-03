@@ -6,21 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 )
-
-// sheetMetalFlangeArgs is the argument shape for the "sheetMetalFlange" operation: the edge
-// to flange from, the flange height, and the optional bend angle/radius (radius defaults to
-// the rule's bend radius). Thickness comes from the active rule.
-type sheetMetalFlangeArgs struct {
-	Edge   string `json:"edge"`
-	Height string `json:"height"`
-	Angle  string `json:"angle,omitempty"`  // default 90 deg
-	Radius string `json:"radius,omitempty"` // default: rule bend radius
-	Flip   bool   `json:"flip,omitempty"`
-}
 
 const sheetMetalFlangeSchema = `{
   "type": "object",
@@ -38,7 +28,7 @@ const sheetMetalFlangeSchema = `{
 // onto a sheet edge over a bend at the active rule's gauge.
 func sheetMetalFlangeDescriptor() *OperationDescriptor {
 	return &OperationDescriptor{
-		Name:    "sheetMetalFlange",
+		Name:    featureargs.KindSheetMetalFlange,
 		Summary: "Fold a wall (flange) onto a straight sheet-metal edge over a cylindrical bend, at the active rule's thickness and bend radius.",
 		Schema:  json.RawMessage(sheetMetalFlangeSchema),
 		Apply:   applySheetMetalFlange,
@@ -50,7 +40,7 @@ func applySheetMetalFlange(s *app.Session, raw json.RawMessage) (json.RawMessage
 	if err != nil {
 		return nil, err
 	}
-	var in sheetMetalFlangeArgs
+	var in featureargs.SheetMetalFlange
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, fmt.Errorf("sheetMetalFlange: invalid args: %w", err)
 	}
@@ -67,7 +57,7 @@ func applySheetMetalFlange(s *app.Session, raw json.RawMessage) (json.RawMessage
 
 // flangeDef resolves the flange args into a definition: the edge key, the height closure, and
 // the optional angle/radius closures (omitted ⇒ nil, so the feature uses its defaults).
-func flangeDef(part *compdef.PartComponentDefinition, in sheetMetalFlangeArgs) (*feature.SheetMetalFlangeDefinition, error) {
+func flangeDef(part *compdef.PartComponentDefinition, in featureargs.SheetMetalFlange) (*feature.SheetMetalFlangeDefinition, error) {
 	height, err := lengthClosure(part, in.Height, "sheetMetalFlange: height")
 	if err != nil {
 		return nil, err

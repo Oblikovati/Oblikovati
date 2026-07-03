@@ -6,17 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/model/feature"
 )
-
-// sheetMetalRipArgs is the argument shape for the "sheetMetalRip" operation: the sketch line to
-// rip along and the gap width the slit opens.
-type sheetMetalRipArgs struct {
-	SketchIndex int    `json:"sketchIndex"`
-	LineIndex   int    `json:"lineIndex"`
-	Gap         string `json:"gap,omitempty"`
-}
 
 const sheetMetalRipSchema = `{
   "type": "object",
@@ -32,7 +25,7 @@ const sheetMetalRipSchema = `{
 // along a sketch line so a closed or folded sheet can be developed flat.
 func sheetMetalRipDescriptor() *OperationDescriptor {
 	return &OperationDescriptor{
-		Name:    "sheetMetalRip",
+		Name:    featureargs.KindSheetMetalRip,
 		Summary: "Rip a sheet-metal part along a sketch line — a narrow through-thickness slit that opens a seam for unfolding.",
 		Schema:  json.RawMessage(sheetMetalRipSchema),
 		Apply:   applySheetMetalRip,
@@ -47,7 +40,7 @@ func applySheetMetalRip(s *app.Session, raw json.RawMessage) (json.RawMessage, e
 	if err != nil {
 		return nil, err
 	}
-	var in sheetMetalRipArgs
+	var in featureargs.SheetMetalRip
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, fmt.Errorf("sheetMetalRip: invalid args: %w", err)
 	}

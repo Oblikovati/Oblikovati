@@ -297,51 +297,6 @@ func coilShapeArgs(part *compdef.PartComponentDefinition, in featureargs.Coil) (
 
 // --- loft ------------------------------------------------------------------
 
-type loftSectionRef struct {
-	SketchIndex  int       `json:"sketchIndex"`
-	ProfileIndex int       `json:"profileIndex"`
-	Point        []float64 `json:"point,omitempty"`   // [x,y] on the sketch plane → an apex (point) section
-	FaceRef      string    `json:"faceRef,omitempty"` // a body-face reference key → a face section (Tangent/Smooth)
-}
-
-// loftEndArgs is a loft end-section condition: how the surface leaves the first (or arrives at
-// the last) section. "angle"/"direction" tilt the takeoff at angle to the section's sketch
-// plane, weighted by impact, and curve a two-section loft; the default "free" is ruled.
-type loftEndArgs struct {
-	Condition string  `json:"condition,omitempty"`
-	Angle     string  `json:"angle,omitempty"`
-	Impact    float64 `json:"impact,omitempty"`
-	Reversed  bool    `json:"reversed,omitempty"`
-}
-
-// loftRailRef identifies a loft guide polyline (a rail, centerline, or map curve): either an open
-// path in a sketch, or an explicit model-space [x,y,z] point list (Points, which overrides the
-// path — handy for map-curve anchors that lie off any single sketch plane).
-type loftRailRef struct {
-	PathSketchIndex int         `json:"pathSketchIndex"`
-	PathIndex       int         `json:"pathIndex"`
-	Points          [][]float64 `json:"points,omitempty"`
-}
-
-type loftArgs struct {
-	Sections   []loftSectionRef  `json:"sections"`
-	Closed     bool              `json:"closed,omitempty"`
-	Operation  string            `json:"operation,omitempty"`
-	First      *loftEndArgs      `json:"first,omitempty"`
-	Last       *loftEndArgs      `json:"last,omitempty"`
-	Rails      []loftRailRef     `json:"rails,omitempty"`
-	Centerline *loftRailRef      `json:"centerline,omitempty"`
-	AreaGraph  []loftAreaStopArg `json:"areaGraph,omitempty"`
-	MapCurves  []loftRailRef     `json:"mapCurves,omitempty"`
-}
-
-// loftAreaStopArg is one area-graph control point: at fraction t (0..1 along the loft) the
-// cross-section area is scaled by scale.
-type loftAreaStopArg struct {
-	T     float64 `json:"t"`
-	Scale float64 `json:"scale"`
-}
-
 const loftSchema = `{
   "type": "object",
   "properties": {
@@ -359,7 +314,7 @@ const loftSchema = `{
 }`
 
 func loftDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "loft", Summary: "Blend two or more profiles into a solid (loft).", Schema: json.RawMessage(loftSchema), Apply: applyLoft}
+	return &OperationDescriptor{Name: featureargs.KindLoft, Summary: "Blend two or more profiles into a solid (loft).", Schema: json.RawMessage(loftSchema), Apply: applyLoft}
 }
 
 func applyLoft(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -367,7 +322,7 @@ func applyLoft(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	var in loftArgs
+	var in featureargs.Loft
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
@@ -422,7 +377,7 @@ func applyLoft(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 }
 
 // areaStops converts the area-graph args into model area stops.
-func areaStops(args []loftAreaStopArg) []feature.LoftAreaStop {
+func areaStops(args []featureargs.LoftAreaStop) []feature.LoftAreaStop {
 	if len(args) == 0 {
 		return nil
 	}
@@ -435,7 +390,7 @@ func areaStops(args []loftAreaStopArg) []feature.LoftAreaStop {
 
 // loftCenterlineProvider validates the centerline path up front (nil when absent) and returns a
 // live polyline provider, like the rails.
-func loftCenterlineProvider(part *compdef.PartComponentDefinition, ref *loftRailRef) (func() []math.Point3, error) {
+func loftCenterlineProvider(part *compdef.PartComponentDefinition, ref *featureargs.LoftRail) (func() []math.Point3, error) {
 	if ref == nil {
 		return nil, nil
 	}
@@ -448,7 +403,7 @@ func loftCenterlineProvider(part *compdef.PartComponentDefinition, ref *loftRail
 
 // loftGuideProvider turns one guide ref into a live polyline provider: explicit Points when given,
 // otherwise the sketch path (validated up front).
-func loftGuideProvider(part *compdef.PartComponentDefinition, r loftRailRef, what string) (func() []math.Point3, error) {
+func loftGuideProvider(part *compdef.PartComponentDefinition, r featureargs.LoftRail, what string) (func() []math.Point3, error) {
 	if len(r.Points) > 0 {
 		pts := make([]math.Point3, 0, len(r.Points))
 		for _, p := range r.Points {
@@ -472,7 +427,7 @@ func loftGuideProvider(part *compdef.PartComponentDefinition, r loftRailRef, wha
 }
 
 // loftRailProviders returns a live polyline provider per ref (paths or explicit points).
-func loftRailProviders(part *compdef.PartComponentDefinition, refs []loftRailRef) ([]func() []math.Point3, error) {
+func loftRailProviders(part *compdef.PartComponentDefinition, refs []featureargs.LoftRail) ([]func() []math.Point3, error) {
 	var rails []func() []math.Point3
 	for _, rr := range refs {
 		prov, err := loftGuideProvider(part, rr, "loft rail")
@@ -487,7 +442,7 @@ func loftRailProviders(part *compdef.PartComponentDefinition, refs []loftRailRef
 // loftEndProvider turns an end-condition arg into a live LoftEnd provider (re-read each recompute
 // so a parameter-driven angle reshapes the loft). A nil/free condition yields a Free end; the
 // face/point conditions are not yet supported and are rejected with the offending value.
-func loftEndProvider(part *compdef.PartComponentDefinition, a *loftEndArgs, which string) (func() feature.LoftEnd, error) {
+func loftEndProvider(part *compdef.PartComponentDefinition, a *featureargs.LoftEnd, which string) (func() feature.LoftEnd, error) {
 	if a == nil || feature.LoftCondition(a.Condition).IsFree() {
 		return func() feature.LoftEnd { return feature.LoftEnd{} }, nil
 	}

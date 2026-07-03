@@ -10,6 +10,7 @@ import (
 
 	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -22,32 +23,6 @@ import (
 // a work plane, and a sketch-driven pattern.
 
 // --- sweep -----------------------------------------------------------------
-
-type sweepArgs struct {
-	SketchIndex     int    `json:"sketchIndex"`
-	ProfileIndex    int    `json:"profileIndex"`
-	PathSketchIndex int    `json:"pathSketchIndex"`
-	PathIndex       int    `json:"pathIndex"`
-	Twist           string `json:"twist,omitempty"`
-	Operation       string `json:"operation,omitempty"`
-	// The definition union (M08 PBI-094, #314), discriminated by the frozen
-	// api/types sweep spellings:
-	DefinitionType  string              `json:"definitionType,omitempty"` // path (default) | pathAndGuideRail | pathAndGuideSurface | pathAndSectionTwists | solid
-	Orientation     string              `json:"orientation,omitempty"`    // normalToPath (default) | parallelToOriginalProfile | alignToVector
-	AlignVector     []float64           `json:"alignVector,omitempty"`
-	Taper           string              `json:"taper,omitempty"`
-	TwistStations   []sweepTwistStation `json:"twistStations,omitempty"`
-	RailSketchIndex int                 `json:"railSketchIndex,omitempty"`
-	RailIndex       int                 `json:"railIndex,omitempty"`
-	Scaling         string              `json:"scaling,omitempty"` // xy (default) | x | none
-	GuideFaceKey    string              `json:"guideFaceKey,omitempty"`
-	ToolBodyIndex   *int                `json:"toolBodyIndex,omitempty"`
-}
-
-type sweepTwistStation struct {
-	T     float64 `json:"t"`
-	Angle string  `json:"angle"`
-}
 
 const sweepSchema = `{
   "type": "object",
@@ -73,7 +48,7 @@ const sweepSchema = `{
 }`
 
 func sweepDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "sweep", Summary: "Sweep a profile along an open path (rail) into a solid.", Schema: json.RawMessage(sweepSchema), Apply: applySweep}
+	return &OperationDescriptor{Name: featureargs.KindSweep, Summary: "Sweep a profile along an open path (rail) into a solid.", Schema: json.RawMessage(sweepSchema), Apply: applySweep}
 }
 
 func applySweep(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -81,7 +56,7 @@ func applySweep(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	var in sweepArgs
+	var in featureargs.Sweep
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
@@ -95,7 +70,7 @@ func applySweep(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 
 // sweepDefinitionFromArgs builds the union definition from the wire args,
 // validating the discriminator's required fields.
-func sweepDefinitionFromArgs(part *compdef.PartComponentDefinition, in sweepArgs) (*feature.SweepDefinition, error) {
+func sweepDefinitionFromArgs(part *compdef.PartComponentDefinition, in featureargs.Sweep) (*feature.SweepDefinition, error) {
 	// Validate the path once up front, then hand the feature a live provider that
 	// re-derives it from the path sketch each recompute, so a parameter driving the
 	// rail reshapes the sweep (a snapshot would freeze it at apply time).
@@ -124,7 +99,7 @@ func sweepDefinitionFromArgs(part *compdef.PartComponentDefinition, in sweepArgs
 
 // sweepScalars resolves the profile sketch, twist, taper, orientation and
 // operation (the fields every profile variant shares).
-func sweepScalars(part *compdef.PartComponentDefinition, in sweepArgs, def *feature.SweepDefinition) error {
+func sweepScalars(part *compdef.PartComponentDefinition, in featureargs.Sweep, def *feature.SweepDefinition) error {
 	if in.DefinitionType != "solid" {
 		sk, err := sketchAt(part, in.SketchIndex)
 		if err != nil {
@@ -150,7 +125,7 @@ func sweepScalars(part *compdef.PartComponentDefinition, in sweepArgs, def *feat
 	return sweepOrientation(in, def)
 }
 
-func sweepOrientation(in sweepArgs, def *feature.SweepDefinition) error {
+func sweepOrientation(in featureargs.Sweep, def *feature.SweepDefinition) error {
 	if in.Orientation == "" {
 		return nil
 	}
@@ -169,7 +144,7 @@ func sweepOrientation(in sweepArgs, def *feature.SweepDefinition) error {
 }
 
 // sweepVariantFields applies the discriminated union variant.
-func sweepVariantFields(part *compdef.PartComponentDefinition, in sweepArgs, def *feature.SweepDefinition) error {
+func sweepVariantFields(part *compdef.PartComponentDefinition, in featureargs.Sweep, def *feature.SweepDefinition) error {
 	switch in.DefinitionType {
 	case "", "path":
 		return nil
@@ -204,7 +179,7 @@ func sweepVariantFields(part *compdef.PartComponentDefinition, in sweepArgs, def
 	}
 }
 
-func sweepScaling(in sweepArgs, def *feature.SweepDefinition) error {
+func sweepScaling(in featureargs.Sweep, def *feature.SweepDefinition) error {
 	if in.Scaling == "" {
 		return nil
 	}
@@ -216,7 +191,7 @@ func sweepScaling(in sweepArgs, def *feature.SweepDefinition) error {
 	return nil
 }
 
-func sweepStations(part *compdef.PartComponentDefinition, in sweepArgs, def *feature.SweepDefinition) error {
+func sweepStations(part *compdef.PartComponentDefinition, in featureargs.Sweep, def *feature.SweepDefinition) error {
 	if len(in.TwistStations) < 2 {
 		return fmt.Errorf("sweep: pathAndSectionTwists needs 2+ twistStations, got %d", len(in.TwistStations))
 	}
@@ -256,27 +231,6 @@ func pathFromSketch(part *compdef.PartComponentDefinition, sketchIndex, pathInde
 
 // --- move body -------------------------------------------------------------
 
-type moveBodyArgs struct {
-	BodyIndex   int         `json:"bodyIndex"`
-	Translation []float64   `json:"translation,omitempty"`
-	Operations  []moveOpArg `json:"operations,omitempty"`
-}
-
-// moveOpArg is one entry of an ordered move operation list (M20-F20). Each is a typed,
-// independently parametric step (free-drag / along-ray / rotate-about-line); the fields a
-// given type reads are noted in the schema. The scalars are unit-bearing expressions so
-// they join the parameter graph.
-type moveOpArg struct {
-	Type  string    `json:"type"`
-	X     string    `json:"x,omitempty"`
-	Y     string    `json:"y,omitempty"`
-	Z     string    `json:"z,omitempty"`
-	Dir   []float64 `json:"dir,omitempty"`
-	Dist  string    `json:"dist,omitempty"`
-	Point []float64 `json:"point,omitempty"`
-	Angle string    `json:"angle,omitempty"`
-}
-
 const moveBodySchema = `{
   "type": "object",
   "properties": {
@@ -297,7 +251,7 @@ const moveBodySchema = `{
 }`
 
 func moveBodyDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "moveBody", Summary: "Move a solid body by a translation or an ordered list of parametric operations (free-drag / along-ray / rotate-about-line).", Schema: json.RawMessage(moveBodySchema), Apply: applyMoveBody}
+	return &OperationDescriptor{Name: featureargs.KindMoveBody, Summary: "Move a solid body by a translation or an ordered list of parametric operations (free-drag / along-ray / rotate-about-line).", Schema: json.RawMessage(moveBodySchema), Apply: applyMoveBody}
 }
 
 func applyMoveBody(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -305,7 +259,7 @@ func applyMoveBody(s *app.Session, raw json.RawMessage) (json.RawMessage, error)
 	if err != nil {
 		return nil, err
 	}
-	var in moveBodyArgs
+	var in featureargs.MoveBody
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
@@ -325,7 +279,7 @@ func applyMoveBody(s *app.Session, raw json.RawMessage) (json.RawMessage, error)
 }
 
 // buildMoveOps resolves each operation arg into a parametric model move operation.
-func buildMoveOps(part *compdef.PartComponentDefinition, args []moveOpArg) ([]feature.MoveOperation, error) {
+func buildMoveOps(part *compdef.PartComponentDefinition, args []featureargs.MoveBodyOp) ([]feature.MoveOperation, error) {
 	ops := make([]feature.MoveOperation, len(args))
 	for i, a := range args {
 		op, err := buildMoveOp(part, a)
@@ -338,7 +292,7 @@ func buildMoveOps(part *compdef.PartComponentDefinition, args []moveOpArg) ([]fe
 }
 
 // buildMoveOp dispatches on the operation type.
-func buildMoveOp(part *compdef.PartComponentDefinition, a moveOpArg) (feature.MoveOperation, error) {
+func buildMoveOp(part *compdef.PartComponentDefinition, a featureargs.MoveBodyOp) (feature.MoveOperation, error) {
 	switch types.MoveOperationType(a.Type) {
 	case types.MoveFreeDrag:
 		return buildFreeDragOp(part, a)
@@ -351,7 +305,7 @@ func buildMoveOp(part *compdef.PartComponentDefinition, a moveOpArg) (feature.Mo
 	}
 }
 
-func buildFreeDragOp(part *compdef.PartComponentDefinition, a moveOpArg) (feature.MoveOperation, error) {
+func buildFreeDragOp(part *compdef.PartComponentDefinition, a featureargs.MoveBodyOp) (feature.MoveOperation, error) {
 	x, err := optionalLengthClosure(part, a.X, "moveBody freeDrag x")
 	if err != nil {
 		return feature.MoveOperation{}, err
@@ -367,7 +321,7 @@ func buildFreeDragOp(part *compdef.PartComponentDefinition, a moveOpArg) (featur
 	return feature.FreeDragOp(x, y, z), nil
 }
 
-func buildAlongRayOp(part *compdef.PartComponentDefinition, a moveOpArg) (feature.MoveOperation, error) {
+func buildAlongRayOp(part *compdef.PartComponentDefinition, a featureargs.MoveBodyOp) (feature.MoveOperation, error) {
 	dir, err := vec3(a.Dir, "moveBody alongRay dir")
 	if err != nil {
 		return feature.MoveOperation{}, err
@@ -379,7 +333,7 @@ func buildAlongRayOp(part *compdef.PartComponentDefinition, a moveOpArg) (featur
 	return feature.AlongRayOp(dir, dist), nil
 }
 
-func buildRotateAboutLineOp(part *compdef.PartComponentDefinition, a moveOpArg) (feature.MoveOperation, error) {
+func buildRotateAboutLineOp(part *compdef.PartComponentDefinition, a featureargs.MoveBodyOp) (feature.MoveOperation, error) {
 	dir, err := vec3(a.Dir, "moveBody rotateAboutLine dir")
 	if err != nil {
 		return feature.MoveOperation{}, err
@@ -397,16 +351,6 @@ func buildRotateAboutLineOp(part *compdef.PartComponentDefinition, a moveOpArg) 
 
 // --- bend part -------------------------------------------------------------
 
-type bendPartArgs struct {
-	SketchIndex int    `json:"sketchIndex"`
-	LineIndex   int    `json:"lineIndex,omitempty"`
-	BendType    string `json:"bendType,omitempty"`
-	Radius      string `json:"radius,omitempty"`
-	Angle       string `json:"angle,omitempty"`
-	ArcLength   string `json:"arcLength,omitempty"`
-	Flip        bool   `json:"flip,omitempty"`
-}
-
 const bendPartSchema = `{
   "type": "object",
   "properties": {
@@ -422,7 +366,7 @@ const bendPartSchema = `{
 }`
 
 func bendPartDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "bendPart", Summary: "Bend a solid body around a sketch bend line (radius/angle/arc-length controlled).", Schema: json.RawMessage(bendPartSchema), Apply: applyBendPart}
+	return &OperationDescriptor{Name: featureargs.KindBendPart, Summary: "Bend a solid body around a sketch bend line (radius/angle/arc-length controlled).", Schema: json.RawMessage(bendPartSchema), Apply: applyBendPart}
 }
 
 func applyBendPart(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -430,7 +374,7 @@ func applyBendPart(s *app.Session, raw json.RawMessage) (json.RawMessage, error)
 	if err != nil {
 		return nil, err
 	}
-	var in bendPartArgs
+	var in featureargs.BendPart
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
@@ -443,7 +387,7 @@ func applyBendPart(s *app.Session, raw json.RawMessage) (json.RawMessage, error)
 
 // bendDefinition resolves the bend args (sketch, bend type, parametric scalars) into a model
 // bend definition.
-func bendDefinition(part *compdef.PartComponentDefinition, in bendPartArgs) (*feature.BendPartDefinition, error) {
+func bendDefinition(part *compdef.PartComponentDefinition, in featureargs.BendPart) (*feature.BendPartDefinition, error) {
 	sk, err := sketchAt(part, in.SketchIndex)
 	if err != nil {
 		return nil, err
@@ -476,11 +420,6 @@ func bendDefinition(part *compdef.PartComponentDefinition, in bendPartArgs) (*fe
 
 // --- replace face ----------------------------------------------------------
 
-type replaceFaceArgs struct {
-	FaceRefs  []string `json:"faceRefs"`
-	TargetRef string   `json:"targetRef"`
-}
-
 const replaceFaceSchema = `{
   "type": "object",
   "properties": {
@@ -491,7 +430,7 @@ const replaceFaceSchema = `{
 }`
 
 func replaceFaceDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "replaceFace", Summary: "Replace picked faces with another face's surface (direct edit).", Schema: json.RawMessage(replaceFaceSchema), Apply: applyReplaceFace}
+	return &OperationDescriptor{Name: featureargs.KindReplaceFace, Summary: "Replace picked faces with another face's surface (direct edit).", Schema: json.RawMessage(replaceFaceSchema), Apply: applyReplaceFace}
 }
 
 func applyReplaceFace(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -499,7 +438,7 @@ func applyReplaceFace(s *app.Session, raw json.RawMessage) (json.RawMessage, err
 	if err != nil {
 		return nil, err
 	}
-	var in replaceFaceArgs
+	var in featureargs.ReplaceFace
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
@@ -512,12 +451,6 @@ func applyReplaceFace(s *app.Session, raw json.RawMessage) (json.RawMessage, err
 
 // --- core/cavity -----------------------------------------------------------
 
-type coreCavityArgs struct {
-	Axis      string  `json:"axis,omitempty"`
-	Position  string  `json:"position"`
-	Shrinkage float64 `json:"shrinkage,omitempty"`
-}
-
 const coreCavitySchema = `{
   "type": "object",
   "properties": {
@@ -529,7 +462,7 @@ const coreCavitySchema = `{
 }`
 
 func coreCavityDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "coreCavity", Summary: "Split the body at a parting plane into core and cavity tooling.", Schema: json.RawMessage(coreCavitySchema), Apply: applyCoreCavity}
+	return &OperationDescriptor{Name: featureargs.KindCoreCavity, Summary: "Split the body at a parting plane into core and cavity tooling.", Schema: json.RawMessage(coreCavitySchema), Apply: applyCoreCavity}
 }
 
 func applyCoreCavity(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -537,7 +470,7 @@ func applyCoreCavity(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 	if err != nil {
 		return nil, err
 	}
-	var in coreCavityArgs
+	var in featureargs.CoreCavity
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
@@ -562,12 +495,6 @@ func partingAxis(name string) feature.PartingAxis {
 
 // --- split solid -----------------------------------------------------------
 
-type splitSolidArgs struct {
-	WorkPlaneIndex int    `json:"workPlaneIndex"`
-	Keep           string `json:"keep,omitempty"`
-	Type           string `json:"type,omitempty"` // frozen types.SplitType spelling (#330)
-}
-
 const splitSolidSchema = `{
   "type": "object",
   "properties": {
@@ -579,7 +506,7 @@ const splitSolidSchema = `{
 }`
 
 func splitSolidDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "splitSolid", Summary: "Split the solid along a work plane: trim one side, split into bodies, or split faces only.", Schema: json.RawMessage(splitSolidSchema), Apply: applySplitSolid}
+	return &OperationDescriptor{Name: featureargs.KindSplitSolid, Summary: "Split the solid along a work plane: trim one side, split into bodies, or split faces only.", Schema: json.RawMessage(splitSolidSchema), Apply: applySplitSolid}
 }
 
 func applySplitSolid(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -587,7 +514,7 @@ func applySplitSolid(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 	if err != nil {
 		return nil, err
 	}
-	var in splitSolidArgs
+	var in featureargs.SplitSolid
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
@@ -604,7 +531,7 @@ func applySplitSolid(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 
 // addSplitOfType dispatches on the frozen split-type spelling; absent keeps the original
 // keep-driven behavior (both sides by default).
-func addSplitOfType(part *compdef.PartComponentDefinition, wp *feature.WorkPlane, in splitSolidArgs) (*feature.PartFeature, error) {
+func addSplitOfType(part *compdef.PartComponentDefinition, wp *feature.WorkPlane, in featureargs.SplitSolid) (*feature.PartFeature, error) {
 	mods := feature.NewModifyFeatures(part.Features())
 	if in.Type == "" {
 		return mods.AddSplitSolid(wp, splitSide(in.Keep)), nil
@@ -640,11 +567,6 @@ func splitSide(name string) feature.SplitSide {
 
 // --- sketch-driven pattern -------------------------------------------------
 
-type sketchDrivenArgs struct {
-	SourceFeatures []string    `json:"sourceFeatures"`
-	Points         [][]float64 `json:"points"`
-}
-
 const sketchDrivenSchema = `{
   "type": "object",
   "properties": {
@@ -655,7 +577,7 @@ const sketchDrivenSchema = `{
 }`
 
 func sketchDrivenDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "patternSketchDriven", Summary: "Replicate features at a set of points (sketch-driven pattern).", Schema: json.RawMessage(sketchDrivenSchema), Apply: applySketchDriven}
+	return &OperationDescriptor{Name: featureargs.KindPatternSketchDriven, Summary: "Replicate features at a set of points (sketch-driven pattern).", Schema: json.RawMessage(sketchDrivenSchema), Apply: applySketchDriven}
 }
 
 func applySketchDriven(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -663,7 +585,7 @@ func applySketchDriven(s *app.Session, raw json.RawMessage) (json.RawMessage, er
 	if err != nil {
 		return nil, err
 	}
-	var in sketchDrivenArgs
+	var in featureargs.PatternSketchDriven
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}

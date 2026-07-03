@@ -6,19 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/model/feature"
 )
-
-// sheetMetalContourRollArgs is the argument shape for the "sheetMetalContourRoll" operation:
-// the open-profile sketch index, the axis line index in that sketch, the optional sweep angle,
-// and the boolean operation. Thickness comes from the rule.
-type sheetMetalContourRollArgs struct {
-	ProfileSketch int    `json:"profileSketch"`
-	AxisLine      int    `json:"axisLine"`
-	Angle         string `json:"angle,omitempty"`
-	Operation     string `json:"operation"` // new (default) | join
-}
 
 const sheetMetalContourRollSchema = `{
   "type": "object",
@@ -35,7 +26,7 @@ const sheetMetalContourRollSchema = `{
 // revolve an open profile around an axis into a rolled shell.
 func sheetMetalContourRollDescriptor() *OperationDescriptor {
 	return &OperationDescriptor{
-		Name:    "sheetMetalContourRoll",
+		Name:    featureargs.KindSheetMetalContourRoll,
 		Summary: "Revolve an open sketch profile around an axis line into a rolled sheet-metal shell (a tube/cone), at the rule's thickness.",
 		Schema:  json.RawMessage(sheetMetalContourRollSchema),
 		Apply:   applySheetMetalContourRoll,
@@ -47,7 +38,7 @@ func applySheetMetalContourRoll(s *app.Session, raw json.RawMessage) (json.RawMe
 	if err != nil {
 		return nil, err
 	}
-	var in sheetMetalContourRollArgs
+	var in featureargs.SheetMetalContourRoll
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, fmt.Errorf("sheetMetalContourRoll: invalid args: %w", err)
 	}

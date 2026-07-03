@@ -6,18 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/model/feature"
 )
-
-// sheetMetalCornerSeamArgs is the argument shape for the "sheetMetalCornerSeam" operation: the
-// corner edges (the shared through-thickness edges where flanges meet), the gap, and the seam
-// type.
-type sheetMetalCornerSeamArgs struct {
-	Edges []string `json:"edges"`
-	Gap   string   `json:"gap"`
-	Type  string   `json:"type,omitempty"` // gap (default)
-}
 
 const sheetMetalCornerSeamSchema = `{
   "type": "object",
@@ -33,7 +25,7 @@ const sheetMetalCornerSeamSchema = `{
 // relieve the corner where two flanges meet with a gap.
 func sheetMetalCornerSeamDescriptor() *OperationDescriptor {
 	return &OperationDescriptor{
-		Name:    "sheetMetalCornerSeam",
+		Name:    featureargs.KindSheetMetalCornerSeam,
 		Summary: "Relieve the corner where two sheet-metal flanges meet with a gap seam (a square notch of the given gap along the shared corner edges).",
 		Schema:  json.RawMessage(sheetMetalCornerSeamSchema),
 		Apply:   applySheetMetalCornerSeam,
@@ -45,7 +37,7 @@ func applySheetMetalCornerSeam(s *app.Session, raw json.RawMessage) (json.RawMes
 	if err != nil {
 		return nil, err
 	}
-	var in sheetMetalCornerSeamArgs
+	var in featureargs.SheetMetalCornerSeam
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, fmt.Errorf("sheetMetalCornerSeam: invalid args: %w", err)
 	}
