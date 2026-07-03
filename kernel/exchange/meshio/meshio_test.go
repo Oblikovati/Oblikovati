@@ -40,7 +40,7 @@ func cubeSoup(s float64) RawMesh {
 
 func TestWeldCollapsesCoincidentVertices(t *testing.T) {
 	raw := cubeSoup(1) // 12 triangles × 3 = 36 repeated vertices
-	cage := Weld(raw, DefaultWeldTolerance)
+	cage, _ := Weld(raw, DefaultWeldTolerance)
 	if len(cage.Verts) != 8 {
 		t.Errorf("welded vertices = %d, want 8 (a cube has 8 corners)", len(cage.Verts))
 	}

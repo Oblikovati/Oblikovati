@@ -18,25 +18,28 @@ const DefaultWeldTolerance = 1e-6
 // subd.Mesh whose faces (triangles) reference the shared vertices — the form
 // subd.ToBody welds into a B-rep. A watertight soup welds into a cage whose every edge
 // is shared by two faces (⇒ a solid body); an open soup keeps boundary edges (⇒ a
-// surface body). Degenerate triangles (two welded corners coincide) are dropped.
+// surface body). Degenerate triangles (two welded corners coincide) are dropped;
+// dropped reports how many, so the importer warns instead of thinning the mesh
+// silently (#1638).
 //
 // Example:
 //
-//	cage := meshio.Weld(raw, meshio.DefaultWeldTolerance)
+//	cage, dropped := meshio.Weld(raw, meshio.DefaultWeldTolerance)
 //	body := subd.ToBody(cage, "import:stl#0")
-func Weld(raw RawMesh, tol float64) subd.Mesh {
+func Weld(raw RawMesh, tol float64) (cage subd.Mesh, dropped int) {
 	if tol <= 0 {
 		tol = DefaultWeldTolerance
 	}
-	cage := subd.Mesh{}
 	index := map[[3]int64]int{}
 	for _, tri := range raw.Tris {
 		face := weldFace(raw, tri, tol, &cage, index)
-		if face != nil {
-			cage.Faces = append(cage.Faces, face)
+		if face == nil {
+			dropped++
+			continue
 		}
+		cage.Faces = append(cage.Faces, face)
 	}
-	return cage
+	return cage, dropped
 }
 
 // weldFace welds a triangle's three corners into cage, returning its shared-vertex loop
