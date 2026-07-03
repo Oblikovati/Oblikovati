@@ -47,6 +47,11 @@ func (a *Arc) definingPoints() []*Point           { return []*Point{a.Center, a.
 func (e *Ellipse) definingPoints() []*Point       { return []*Point{e.Center} }
 func (e *EllipticalArc) definingPoints() []*Point { return []*Point{e.Center} }
 
+// A spline is dragged by all its interpolation/control points, so a spline drag translates
+// the whole curve rigidly — closing the silent hole where a spline drag pinned nothing
+// (#1633, audit I10). The coverage table in capability_coverage_test.go now records this.
+func (s *Spline) definingPoints() []*Point { return s.Points }
+
 // DefiningPoints returns the entity's constrainable points — the handles a drag pins. Dragging a
 // single point pins just it; dragging a whole curve pins all its points so it translates rigidly
 // (the solver then re-satisfies the constraints touching them). Entities without points (text,
