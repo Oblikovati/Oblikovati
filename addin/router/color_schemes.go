@@ -14,7 +14,7 @@ import (
 func (r *Router) registerColorSchemeHandlers() {
 	r.readOnly(wire.MethodColorSchemesList, listColorSchemes)
 	r.readOnly(wire.MethodColorSchemesGetActive, getActiveColorScheme)
-	r.readOnly(wire.MethodColorSchemesSetActive, setActiveColorScheme)
+	r.readOnly(wire.MethodColorSchemesSetActive, typed(setActiveColorScheme))
 }
 
 // listColorSchemes returns every application color scheme, flagging the active one
@@ -37,16 +37,12 @@ func getActiveColorScheme(s *app.Session, _ json.RawMessage) (json.RawMessage, e
 
 // setActiveColorScheme activates a scheme by name and echoes it, erroring on an unknown name
 // (wire.MethodColorSchemesSetActive).
-func setActiveColorScheme(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.SetColorSchemeArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
-	}
-	if err := s.SetColorScheme(a.Name); err != nil {
-		return nil, err
+func setActiveColorScheme(s *app.Session, in wire.SetColorSchemeArgs) (wire.ColorSchemeView, error) {
+	if err := s.SetColorScheme(in.Name); err != nil {
+		return wire.ColorSchemeView{}, err
 	}
 	schemes := s.ColorSchemes()
-	return json.Marshal(colorSchemeView(schemes, schemes.Active(), schemes.Active().Name()))
+	return colorSchemeView(schemes, schemes.Active(), schemes.Active().Name()), nil
 }
 
 // colorSchemeView projects one contract scheme into its wire shape, carrying the registry's
