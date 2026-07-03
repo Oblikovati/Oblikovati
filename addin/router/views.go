@@ -3,8 +3,6 @@
 package router
 
 import (
-	"encoding/json"
-
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
@@ -13,111 +11,83 @@ import (
 
 // listViews enumerates a document's views with their cameras, the active index, and the
 // tiling layout (Document 0 ⇒ active) — wire.MethodViewsList.
-func listViews(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.ListViewsArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
-	}
+func listViews(s *app.Session, a wire.ListViewsArgs) (wire.ListViewsResult, error) {
 	d, err := s.DocumentByID(a.Document)
 	if err != nil {
-		return nil, err
+		return wire.ListViewsResult{}, err
 	}
-	return json.Marshal(listViewsResult(d, s.DisplayMode()))
+	return listViewsResult(d, s.DisplayMode()), nil
 }
 
 // addView creates a new view of a document and makes it active, returning it
 // (wire.MethodViewsAdd).
-func addView(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.AddViewArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
-	}
+func addView(s *app.Session, a wire.AddViewArgs) (wire.ViewInfo, error) {
 	i, err := s.AddView(a.Document, a.Name, a.CopyActiveCamera)
 	if err != nil {
-		return nil, err
+		return wire.ViewInfo{}, err
 	}
 	d, err := s.DocumentByID(a.Document)
 	if err != nil {
-		return nil, err
+		return wire.ViewInfo{}, err
 	}
-	return json.Marshal(viewInfo(i, d.Views().All()[i], i == d.Views().ActiveIndex(), s.DisplayMode()))
+	return viewInfo(i, d.Views().All()[i], i == d.Views().ActiveIndex(), s.DisplayMode()), nil
 }
 
 // activateView makes the indexed view active, returning the updated collection
 // (wire.MethodViewsActivate).
-func activateView(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.ActivateViewArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
-	}
+func activateView(s *app.Session, a wire.ActivateViewArgs) (wire.ListViewsResult, error) {
 	d, err := s.DocumentByID(a.Document)
 	if err != nil {
-		return nil, err
+		return wire.ListViewsResult{}, err
 	}
 	if err := d.Views().Activate(a.Index); err != nil {
-		return nil, err
+		return wire.ListViewsResult{}, err
 	}
-	return json.Marshal(listViewsResult(d, s.DisplayMode()))
+	return listViewsResult(d, s.DisplayMode()), nil
 }
 
 // closeView removes the indexed view (refused for the last view), returning the updated
 // collection (wire.MethodViewsClose).
-func closeView(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.CloseViewArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
-	}
+func closeView(s *app.Session, a wire.CloseViewArgs) (wire.ListViewsResult, error) {
 	d, err := s.DocumentByID(a.Document)
 	if err != nil {
-		return nil, err
+		return wire.ListViewsResult{}, err
 	}
 	if err := d.Views().Close(a.Index); err != nil {
-		return nil, err
+		return wire.ListViewsResult{}, err
 	}
-	return json.Marshal(listViewsResult(d, s.DisplayMode()))
+	return listViewsResult(d, s.DisplayMode()), nil
 }
 
 // renameView sets the indexed view's name, returning it (wire.MethodViewsRename).
-func renameView(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.RenameViewArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
-	}
+func renameView(s *app.Session, a wire.RenameViewArgs) (wire.ViewInfo, error) {
 	d, err := s.DocumentByID(a.Document)
 	if err != nil {
-		return nil, err
+		return wire.ViewInfo{}, err
 	}
 	if err := d.Views().Rename(a.Index, a.Name); err != nil {
-		return nil, err
+		return wire.ViewInfo{}, err
 	}
-	return json.Marshal(viewInfo(a.Index, d.Views().All()[a.Index], a.Index == d.Views().ActiveIndex(), s.DisplayMode()))
+	return viewInfo(a.Index, d.Views().All()[a.Index], a.Index == d.Views().ActiveIndex(), s.DisplayMode()), nil
 }
 
 // getLayout returns a document's tiling layout (wire.MethodViewsGetLayout).
-func getLayout(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.ListViewsArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
-	}
+func getLayout(s *app.Session, a wire.ListViewsArgs) (wire.LayoutResult, error) {
 	d, err := s.DocumentByID(a.Document)
 	if err != nil {
-		return nil, err
+		return wire.LayoutResult{}, err
 	}
-	return json.Marshal(wire.LayoutResult{Document: a.Document, Layout: d.Views().Layout()})
+	return wire.LayoutResult{Document: a.Document, Layout: d.Views().Layout()}, nil
 }
 
 // setLayout chooses how a document's views are tiled (wire.MethodViewsSetLayout).
-func setLayout(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.SetLayoutArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
-	}
+func setLayout(s *app.Session, a wire.SetLayoutArgs) (wire.LayoutResult, error) {
 	d, err := s.DocumentByID(a.Document)
 	if err != nil {
-		return nil, err
+		return wire.LayoutResult{}, err
 	}
 	d.Views().SetLayout(a.Layout)
-	return json.Marshal(wire.LayoutResult{Document: a.Document, Layout: d.Views().Layout()})
+	return wire.LayoutResult{Document: a.Document, Layout: d.Views().Layout()}, nil
 }
 
 // listViewsResult renders a document's whole view collection into the wire DTO. The display
