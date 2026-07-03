@@ -63,3 +63,40 @@ func TestSetFeatureSuppressedEmitsPropertyChanged(t *testing.T) {
 		t.Errorf("an idempotent suppress fired a spurious property.changed (fired=%d)", fired)
 	}
 }
+
+// TestMetadataEventIDsAreStable pins the wire-facing event type ids: an add-in relay routes on them,
+// so a silent change would misroute every metadata event. They live in the 0x08xx modeling block.
+func TestMetadataEventIDsAreStable(t *testing.T) {
+	if got := (ObjectRenamed{}).EventID(); got != tidObjectRenamed {
+		t.Errorf("ObjectRenamed.EventID() = %#x, want %#x", got, tidObjectRenamed)
+	}
+	if got := (PropertyChanged{}).EventID(); got != tidPropertyChanged {
+		t.Errorf("PropertyChanged.EventID() = %#x, want %#x", got, tidPropertyChanged)
+	}
+	if tidObjectRenamed == tidPropertyChanged {
+		t.Errorf("the two metadata events share type id %#x; they must be distinct to route", tidObjectRenamed)
+	}
+}
+
+// TestEmitObjectRenamedKeysToZeroWithoutActiveDocument checks the no-document branch of activeDocID:
+// a session with nothing open still emits (keyed to the zero doc id) rather than panicking, so an
+// early rename before any document is open is observable, not a crash.
+func TestEmitObjectRenamedKeysToZeroWithoutActiveDocument(t *testing.T) {
+	s := NewSession()
+	if s.ActiveDocument() != nil {
+		t.Fatalf("a fresh session must have no active document")
+	}
+	var got ObjectRenamed
+	fired := 0
+	event.Subscribe(s.Events(), event.After, func(_ event.Context, e ObjectRenamed) event.Outcome {
+		got, fired = e, fired+1
+		return event.Continue()
+	})
+	s.emitObjectRenamed(types.ObjectKindBody, "b1", "Old", "New")
+	if fired != 1 {
+		t.Fatalf("object.renamed fired %d times, want exactly 1", fired)
+	}
+	if got.Document != 0 {
+		t.Errorf("event document id = %d, want 0 (no active document)", got.Document)
+	}
+}
