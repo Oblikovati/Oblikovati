@@ -68,13 +68,15 @@ func (v Vector3) AsPoint() Point3 {
 
 // AngleTo returns the unsigned angle in radians between v and o, in [0, π].
 // Returns 0 when either vector is zero-length (no defined direction).
+// Computed in the Kahan form atan2(|v×o|, v·o), which is fully accurate near 0 and π —
+// the retired acos(dot) form had a ~1e-8 rad noise floor there (√ε amplification at the
+// clamped ±1 ends), noisier than the 1e-9 tolerances its consumers compare against
+// (audit A15, #1611).
 func (v Vector3) AngleTo(o Vector3) Scalar {
-	denom := v.Length() * o.Length()
-	if denom == 0 {
+	if v.Length() == 0 || o.Length() == 0 {
 		return 0
 	}
-	// clampUnit guards against |cos| slightly exceeding 1 from rounding.
-	return stdmath.Acos(Clamp(v.Dot(o)/denom, -1, 1))
+	return Scalar(stdmath.Atan2(float64(v.Cross(o).Length()), float64(v.Dot(o))))
 }
 
 // IsEqualTo reports whether v and o are componentwise equal within tol. Pass

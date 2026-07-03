@@ -166,29 +166,78 @@ func converged(r []float64, j [][]float64, scale, relTol float64) bool {
 }
 
 // dampedStep performs one damped Gauss–Newton update from the precomputed Jacobian j,
-// adjusting lambda. The step solves the nondimensionalised LM system [Jₛ; √λ·I]·δ = [−rₛ; 0]
-// by Householder QR — no normal-equations JᵀJ, so the condition number is not squared
-// (#1420). It accepts the step only if it reduces the weighted residual norm, otherwise it
-// raises the damping and retries. Returns the new residual vector and whether it improved.
+// adjusting lambda by the Moré/Nielsen gain-ratio schedule (audit A13, #1609). The step solves
+// the Marquardt-scaled LM system [Jₛ; √λ·D]·δ = [−rₛ; 0] by Householder QR — D = diag of the
+// column norms, so damping is invariant to per-variable scaling (an ill-scaled sketch mixing
+// 1e-2 and 1e3 dimensions no longer stalls) — and accepts on any residual decrease: λ shrinks
+// by the gain-ratio factor max(1/3, 1−(2ρ−1)³) on accept and grows by a doubling ν on reject
+// (Madsen/Nielsen/Tingleff 2004), terminating when λ overflows the trust budget instead of the
+// old fixed ×10/8-try cap that declared solvable systems falsely stuck.
 func dampedStep(res []Residual, vars []*math.Scalar, j [][]float64, r []float64, lambda *float64) ([]float64, bool) {
 	current := sumSquares(r)
-	n := len(vars)
-	for try := 0; try < 8; try++ {
-		aug, rhs := augmentedLM(j, r, *lambda, n)
-		delta, ok := leastSquares(aug, rhs)
-		if ok {
+	d := columnNorms(j, len(vars))
+	nu := 2.0
+	for *lambda < lambdaMax {
+		aug, rhs := augmentedLM(j, r, *lambda, d)
+		if delta, ok := leastSquares(aug, rhs); ok {
 			snapshot := readVars(vars)
 			applyDelta(vars, delta)
 			trial := evalResiduals(res)
-			if sumSquares(trial) < current {
-				*lambda = stdmath.Max(*lambda/10, 1e-12) // tol:numeric — LM damping floor
+			if next := sumSquares(trial); next < current {
+				*lambda *= gainRatioShrink(current, next, delta, j, r)
+				*lambda = stdmath.Max(*lambda, 1e-12) // tol:numeric — LM damping floor
 				return trial, true
 			}
 			writeVars(vars, snapshot)
 		}
-		*lambda *= 10
+		*lambda *= nu
+		nu *= 2
 	}
 	return r, false
+}
+
+// lambdaMax is the damping magnitude at which LM gives up: the step is then ~1e15 times
+// shorter than Gauss–Newton, indistinguishable from no progress in float64.
+const lambdaMax = 1e15 // tol:numeric — LM trust-budget ceiling
+
+// gainRatioShrink is the Moré/Nielsen accept-side damping factor max(1/3, 1−(2ρ−1)³), where
+// the gain ratio ρ compares the achieved decrease against the linear model's prediction
+// L(0)−L(δ) = δᵀ(λ·D²·δ − Jᵀr) (Madsen/Nielsen/Tingleff eq. 2.21, with Marquardt scaling).
+func gainRatioShrink(current, next float64, delta []float64, j [][]float64, r []float64) float64 {
+	predicted := predictedDecrease(delta, j, r)
+	if predicted <= 0 {
+		return 1.0 / 3
+	}
+	rho := (current - next) / predicted
+	f := 1 - (2*rho-1)*(2*rho-1)*(2*rho-1)
+	return stdmath.Max(1.0/3, f)
+}
+
+// predictedDecrease is the linear-model decrease ‖r‖² − ‖r + J·δ‖² for step δ.
+func predictedDecrease(delta []float64, j [][]float64, r []float64) float64 {
+	after := 0.0
+	for i := range j {
+		ri := r[i]
+		for c, dc := range delta {
+			ri += j[i][c] * dc
+		}
+		after += ri * ri
+	}
+	return sumSquares(r) - after
+}
+
+// columnNorms returns the Marquardt scaling diagonal: each variable's Jacobian column norm,
+// floored at 1 so a variable no constraint currently touches still receives bounded damping.
+func columnNorms(j [][]float64, n int) []float64 {
+	d := make([]float64, n)
+	for c := 0; c < n; c++ {
+		s := 0.0
+		for i := range j {
+			s += j[i][c] * j[i][c]
+		}
+		d[c] = stdmath.Max(stdmath.Sqrt(s), 1)
+	}
+	return d
 }
 
 // conflictingSources returns the residual sources still unsatisfied at a failed solve —
@@ -239,7 +288,7 @@ func AnalyzeDOF(res []Residual, vars []*math.Scalar) DOFAnalysis {
 // never spuriously dropped, giving scale-invariant DOF classification (#1420).
 func analyzeJacobian(j [][]float64, n int) DOFAnalysis {
 	m := len(j)
-	rank := matrixRank(rowNormalized(j), 1e-7) // tol:numeric — relative rank tolerance (rows are unit-norm)
+	rank := pivotedQRRank(rowNormalized(j)) // relative rank-revealing CPQR (see rankRelTol)
 	a := DOFAnalysis{Variables: n, Equations: m, Rank: rank, DOF: n - rank, Redundant: m - rank}
 	switch {
 	case a.Redundant > 0:
@@ -313,11 +362,13 @@ func scatterRow(partials []float64, dvars []*math.Scalar, col map[*math.Scalar]i
 	return row
 }
 
-// finiteDiffJacobian builds the Jacobian by central differences (h=1e-7) — the fallback
-// for residual sources that cannot supply analytic partials. It perturbs the live
-// variables and restores them, so it must not be used on the interactive analysis path.
+// finiteDiffJacobian builds the Jacobian by central differences with a per-variable RELATIVE
+// step h = ∛ε·max(1, |x|) (Nocedal & Wright §8.1; cube root for central differences) — the
+// fallback for residual sources that cannot supply analytic partials. The retired absolute
+// h=1e-7 made partials vanish into round-off at large coordinates (a sketch translated to 1e5
+// lost rank for no geometric reason, audit A13 #1609). It perturbs the live variables and
+// restores them, so it must not be used on the interactive analysis path.
 func finiteDiffJacobian(res []Residual, vars []*math.Scalar) [][]float64 {
-	const h = 1e-7 // tol:numeric — finite-difference Jacobian step (analytic path is #1417)
 	m := len(evalResiduals(res))
 	j := make([][]float64, m)
 	for i := range j {
@@ -325,17 +376,22 @@ func finiteDiffJacobian(res []Residual, vars []*math.Scalar) [][]float64 {
 	}
 	for col, v := range vars {
 		orig := *v
+		h := math.Scalar(fdStep * stdmath.Max(1, stdmath.Abs(float64(orig))))
 		*v = orig + h
 		rp := evalResiduals(res)
 		*v = orig - h
 		rm := evalResiduals(res)
 		*v = orig
 		for i := 0; i < m; i++ {
-			j[i][col] = (rp[i] - rm[i]) / (2 * h)
+			j[i][col] = (rp[i] - rm[i]) / float64(2*h)
 		}
 	}
 	return j
 }
+
+// fdStep is the relative central-difference step coefficient ∛ε ≈ 6e-6: optimal for the
+// O(h²) truncation vs ε/h round-off tradeoff of central differences (Nocedal & Wright).
+const fdStep = 6.06e-6 // tol:numeric — cube root of float64 machine epsilon
 
 func readVars(vars []*math.Scalar) []float64 {
 	out := make([]float64, len(vars))
@@ -355,4 +411,31 @@ func applyDelta(vars []*math.Scalar, delta []float64) {
 	for i, v := range vars {
 		*v += delta[i]
 	}
+}
+
+// RedundantSources identifies WHICH residual sources are removable to fix an over-constrained
+// system by solvespace's leave-one-out search (System::FindWhichToRemoveToFixJacobian; audit
+// A13 #1609): a source is removable when dropping its rows leaves the rank unchanged — its
+// equations were linearly dependent on the rest — so removing it restores DOF bookkeeping
+// without freeing the sketch. Returns source indices in input order; empty when the system is
+// not redundant. O(sources × rank cost), invoked on demand (a diagnosis, not the solve path).
+//
+//	for _, i := range solve.RedundantSources(residuals, vars) { flag(residuals[i]) }
+func RedundantSources(res []Residual, vars []*math.Scalar) []int {
+	j := Jacobian(res, vars)
+	full := analyzeJacobian(j, len(vars))
+	if full.Redundant == 0 {
+		return nil
+	}
+	var out []int
+	row := 0
+	for i, src := range res {
+		k := len(src.Residuals())
+		rest := append(append([][]float64(nil), j[:row]...), j[row+k:]...)
+		if pivotedQRRank(rowNormalized(rest)) == full.Rank {
+			out = append(out, i)
+		}
+		row += k
+	}
+	return out
 }
