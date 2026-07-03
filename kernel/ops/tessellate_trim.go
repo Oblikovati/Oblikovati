@@ -97,6 +97,9 @@ func specialCurvedMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, hole
 	if m, isBand := spiricBandMesh(f, s, q); isBand {
 		return m, true // a torus cut through the hole: a tube-wrapping band between two spiric ovals (#1375)
 	}
+	if m, isBand := twoRimHoledBandMesh(s, outer3D, holes3D, q); isBand {
+		return m, true // a two-rim band (a notched rim + an intact rim) carrying lens holes: bridge the seam, unroll
+	}
 	return nil, false
 }
 
