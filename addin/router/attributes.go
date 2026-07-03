@@ -3,7 +3,6 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 	"sort"
 
@@ -22,12 +21,12 @@ import (
 
 // registerAttributeHandlers wires the attributes.* methods.
 func (r *Router) registerAttributeHandlers() {
-	r.mutating(wire.MethodAttributesSet, "Set Attribute", setAttribute)
-	r.readOnly(wire.MethodAttributesGet, getAttribute)
-	r.readOnly(wire.MethodAttributesList, listAttributes)
-	r.readOnly(wire.MethodAttributesListSets, listAttributeSets)
-	r.mutating(wire.MethodAttributesDelete, "Delete Attribute", deleteAttribute)
-	r.readOnly(wire.MethodAttributesFind, findByAttribute)
+	r.mutating(wire.MethodAttributesSet, "Set Attribute", typed(setAttribute))
+	r.readOnly(wire.MethodAttributesGet, typed(getAttribute))
+	r.readOnly(wire.MethodAttributesList, typed(listAttributes))
+	r.readOnly(wire.MethodAttributesListSets, typed(listAttributeSets))
+	r.mutating(wire.MethodAttributesDelete, "Delete Attribute", typed(deleteAttribute))
+	r.readOnly(wire.MethodAttributesFind, typed(findByAttribute))
 }
 
 // targetKey resolves a wire target string to the reference key that anchors its attributes: the
@@ -60,117 +59,93 @@ func targetAttributeSets(s *app.Session, id uint64, target, method string) (*att
 }
 
 // setAttribute creates or replaces the named attribute in the set with the typed value.
-func setAttribute(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.SetAttributeArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func setAttribute(s *app.Session, in wire.SetAttributeArgs) (wire.AttributeResult, error) {
 	if in.Set == "" || in.Name == "" {
-		return nil, fmt.Errorf("%s: a set and a name are required", wire.MethodAttributesSet)
+		return wire.AttributeResult{}, fmt.Errorf("%s: a set and a name are required", wire.MethodAttributesSet)
 	}
 	ss, err := targetAttributeSets(s, in.Document, in.Target, wire.MethodAttributesSet)
 	if err != nil {
-		return nil, err
+		return wire.AttributeResult{}, err
 	}
 	a := ss.Set(in.Set).Put(in.Name, valueFromVariant(in.Value))
-	return json.Marshal(wire.AttributeResult{Attribute: attributeInfo(in.Set, in.Target, a), Found: true})
+	return wire.AttributeResult{Attribute: attributeInfo(in.Set, in.Target, a), Found: true}, nil
 }
 
 // getAttribute reads one attribute by set and name; Found is false when it is absent.
-func getAttribute(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.GetAttributeArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func getAttribute(s *app.Session, in wire.GetAttributeArgs) (wire.AttributeResult, error) {
 	ss, err := targetAttributeSets(s, in.Document, in.Target, wire.MethodAttributesGet)
 	if err != nil {
-		return nil, err
+		return wire.AttributeResult{}, err
 	}
 	set, ok := ss.Lookup(in.Set)
 	if !ok {
-		return json.Marshal(notFoundAttribute(in.Set, in.Name, in.Target))
+		return notFoundAttribute(in.Set, in.Name, in.Target), nil
 	}
 	a, ok := set.Attribute(in.Name)
 	if !ok {
-		return json.Marshal(notFoundAttribute(in.Set, in.Name, in.Target))
+		return notFoundAttribute(in.Set, in.Name, in.Target), nil
 	}
-	return json.Marshal(wire.AttributeResult{Attribute: attributeInfo(in.Set, in.Target, a), Found: true})
+	return wire.AttributeResult{Attribute: attributeInfo(in.Set, in.Target, a), Found: true}, nil
 }
 
 // listAttributes returns every attribute on the document, or only those in Set when it is set.
-func listAttributes(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.ListAttributesArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func listAttributes(s *app.Session, in wire.ListAttributesArgs) (wire.ListAttributesResult, error) {
 	if in.AllTargets {
 		d, err := documentByID(s, in.Document)
 		if err != nil {
-			return nil, fmt.Errorf("%s: %w", wire.MethodAttributesList, err)
+			return wire.ListAttributesResult{}, fmt.Errorf("%s: %w", wire.MethodAttributesList, err)
 		}
 		var infos []wire.AttributeInfo
 		for _, anchor := range d.Attributes().Anchors() {
 			infos = appendSetInfos(infos, anchor.Sets, in.Set, targetString(anchor.Key))
 		}
-		return json.Marshal(wire.ListAttributesResult{Attributes: infos})
+		return wire.ListAttributesResult{Attributes: infos}, nil
 	}
 	ss, err := targetAttributeSets(s, in.Document, in.Target, wire.MethodAttributesList)
 	if err != nil {
-		return nil, err
+		return wire.ListAttributesResult{}, err
 	}
-	return json.Marshal(wire.ListAttributesResult{Attributes: appendSetInfos(nil, ss, in.Set, in.Target)})
+	return wire.ListAttributesResult{Attributes: appendSetInfos(nil, ss, in.Set, in.Target)}, nil
 }
 
 // listAttributeSets returns the document's attribute set names, sorted.
-func listAttributeSets(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.ListAttributeSetsArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func listAttributeSets(s *app.Session, in wire.ListAttributeSetsArgs) (wire.ListAttributeSetsResult, error) {
 	ss, err := targetAttributeSets(s, in.Document, "", wire.MethodAttributesListSets)
 	if err != nil {
-		return nil, err
+		return wire.ListAttributeSetsResult{}, err
 	}
 	names := ss.Names()
 	sort.Strings(names)
-	return json.Marshal(wire.ListAttributeSetsResult{Sets: names})
+	return wire.ListAttributeSetsResult{Sets: names}, nil
 }
 
 // deleteAttribute removes the named attribute, or the whole set when Name is empty, reporting how
 // many attributes were removed.
-func deleteAttribute(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.DeleteAttributeArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func deleteAttribute(s *app.Session, in wire.DeleteAttributeArgs) (wire.DeleteAttributeResult, error) {
 	ss, err := targetAttributeSets(s, in.Document, in.Target, wire.MethodAttributesDelete)
 	if err != nil {
-		return nil, err
+		return wire.DeleteAttributeResult{}, err
 	}
 	set, ok := ss.Lookup(in.Set)
 	if !ok {
-		return json.Marshal(wire.DeleteAttributeResult{Removed: 0})
+		return wire.DeleteAttributeResult{Removed: 0}, nil
 	}
 	if in.Name == "" {
 		removed := set.Count()
 		ss.Remove(in.Set)
-		return json.Marshal(wire.DeleteAttributeResult{Removed: removed})
+		return wire.DeleteAttributeResult{Removed: removed}, nil
 	}
 	removed := 0
 	if set.Remove(in.Name) {
 		removed = 1
 	}
-	return json.Marshal(wire.DeleteAttributeResult{Removed: removed})
+	return wire.DeleteAttributeResult{Removed: removed}, nil
 }
 
 // findByAttribute locates the open documents carrying an attribute in Set (optionally by Name).
-func findByAttribute(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.FindByAttributeArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func findByAttribute(s *app.Session, in wire.FindByAttributeArgs) (wire.FindByAttributeResult, error) {
 	if in.Set == "" {
-		return nil, fmt.Errorf("%s: a set is required", wire.MethodAttributesFind)
+		return wire.FindByAttributeResult{}, fmt.Errorf("%s: a set is required", wire.MethodAttributesFind)
 	}
 	var matches []wire.AttributeMatch
 	for _, d := range s.Workspace().Documents() {
@@ -181,7 +156,7 @@ func findByAttribute(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 			})
 		}
 	}
-	return json.Marshal(wire.FindByAttributeResult{Matches: matches})
+	return wire.FindByAttributeResult{Matches: matches}, nil
 }
 
 // appendSetInfos appends one anchor's attributes (filtered to setFilter when non-empty), each
