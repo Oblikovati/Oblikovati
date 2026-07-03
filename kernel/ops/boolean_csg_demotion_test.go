@@ -99,6 +99,7 @@ func curvedExactCases() []curvedExactCase {
 		{"crossing cylinders ∪", ops.Join, crossingCylinders},
 		{"cap-crossing cylinder − (exits top cap)", ops.Cut, capCrossingCutBodies},
 		{"rim-crossing cylinder − (exit ellipse crosses top rim)", ops.Cut, rimCrossingCutBodies},
+		{"two-cap-exit cylinder − (steep tool exits both caps)", ops.Cut, twoCapCrossingCutBodies},
 		{"equal-radius Steinmetz ∩", ops.Intersect, func(t *testing.T) (*topo.Body, *topo.Body) {
 			return demoCyl(t, math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12), demoCyl(t, math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 		}},
@@ -334,6 +335,16 @@ func rimCrossingCutBodies(t *testing.T) (*topo.Body, *topo.Body) {
 	s := 1 / stdmath.Sqrt2
 	return demoCyl(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 10),
 		demoCyl(t, math.P3(-5.6, 0, 2), math.V3(math.Scalar(s), 0, math.Scalar(s)), 0.9, 16)
+}
+
+// twoCapCrossingCutBodies is the two-cap-exit fixture (#1724): the r=3 h=10 target and a steeper oblique
+// r=0.7 tool (20 deg from +z) positioned to enter one cap and exit the OTHER, staying inside the wall the
+// whole way (an angled through-hole) — TwoCapCrossingCutGeneral's case (wall intact, both caps holed).
+func twoCapCrossingCutBodies(t *testing.T) (*topo.Body, *topo.Body) {
+	th := 20.0 * stdmath.Pi / 180
+	ux, uz := stdmath.Sin(th), stdmath.Cos(th)
+	return demoCyl(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 10),
+		demoCyl(t, math.P3(-2.416, 0, -2.518), math.V3(math.Scalar(ux), 0, math.Scalar(uz)), 0.7, 16)
 }
 
 func demoCyl(t *testing.T, base math.Point3, axis math.Vector3, r, h float64) *topo.Body {
