@@ -26,52 +26,44 @@ func (r *Router) registerAssemblyDeriveHandlers() {
 	r.mutating(wire.MethodAssemblyDeriveCreate, "Derive Component", assemblyDeriveCreate)
 	r.mutating(wire.MethodAssemblyShrinkwrapCreate, "Shrinkwrap", assemblyShrinkwrapCreate)
 	r.mutating(wire.MethodAssemblyDeriveBreakLink, "Break Link", assemblyDeriveBreakLink)
-	r.readOnly(wire.MethodAssemblyDeriveStatus, assemblyDeriveStatus)
-	r.readOnly(wire.MethodAssemblyDeriveUpdate, assemblyDeriveUpdate)
+	r.readOnly(wire.MethodAssemblyDeriveStatus, typedPart(assemblyDeriveStatus))
+	r.readOnly(wire.MethodAssemblyDeriveUpdate, typedPart(assemblyDeriveUpdate))
 }
 
 // assemblyDeriveStatus reports the drive state of a derive-family feature: whether it is
 // out of date relative to its source, and the source's saved vs current revision (#751).
-func assemblyDeriveStatus(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	_, derive, err := resolveDeriveStatusFeature(s, raw, wire.MethodAssemblyDeriveStatus)
+func assemblyDeriveStatus(s *app.Session, part *compdef.PartComponentDefinition, in wire.DeriveStatusArgs) (wire.DeriveStatusResult, error) {
+	derive, err := deriveStatusFeatureByID(part, in.ID, wire.MethodAssemblyDeriveStatus)
 	if err != nil {
-		return nil, err
+		return wire.DeriveStatusResult{}, err
 	}
-	return json.Marshal(deriveStatusResult(s, derive))
+	return deriveStatusResult(s, derive), nil
 }
 
 // assemblyDeriveUpdate re-syncs a derive to its source's current revision, clearing its
 // out-of-date state, and recomputes the part (#751).
-func assemblyDeriveUpdate(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, derive, err := resolveDeriveStatusFeature(s, raw, wire.MethodAssemblyDeriveUpdate)
+func assemblyDeriveUpdate(s *app.Session, part *compdef.PartComponentDefinition, in wire.DeriveStatusArgs) (wire.DeriveStatusResult, error) {
+	derive, err := deriveStatusFeatureByID(part, in.ID, wire.MethodAssemblyDeriveUpdate)
 	if err != nil {
-		return nil, err
+		return wire.DeriveStatusResult{}, err
 	}
 	derive.AcknowledgeSource(currentSourceRevision(s, derive.SourceLink().Document))
 	part.Recompute()
-	return json.Marshal(deriveStatusResult(s, derive))
+	return deriveStatusResult(s, derive), nil
 }
 
-// resolveDeriveStatusFeature resolves the active part and the derive-family feature
-// addressed by the DeriveStatusArgs id, erroring when the feature is not a derive.
-func resolveDeriveStatusFeature(s *app.Session, raw json.RawMessage, method string) (*compdef.PartComponentDefinition, feature.DeriveStatus, error) {
-	part, err := modelaccess.ActivePart(s)
+// deriveStatusFeatureByID resolves the derive-family feature addressed by id in the part's
+// program, erroring when the feature is not a derive.
+func deriveStatusFeatureByID(part *compdef.PartComponentDefinition, id uint64, method string) (feature.DeriveStatus, error) {
+	pf, _, err := partFeatureByID(part, id, method)
 	if err != nil {
-		return nil, nil, err
-	}
-	var in wire.DeriveStatusArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, nil, err
-	}
-	pf, _, err := partFeatureByID(part, in.ID, method)
-	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	derive, ok := pf.Definition().(feature.DeriveStatus)
 	if !ok {
-		return nil, nil, fmt.Errorf("%s: feature %d is a %s, not a derived/shrinkwrap component", method, in.ID, pf.Kind())
+		return nil, fmt.Errorf("%s: feature %d is a %s, not a derived/shrinkwrap component", method, id, pf.Kind())
 	}
-	return part, derive, nil
+	return derive, nil
 }
 
 // deriveStatusResult renders a derive's drive state, resolving the source's current

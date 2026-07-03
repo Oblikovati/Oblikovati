@@ -3,11 +3,9 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 	stdmath "math"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
@@ -29,46 +27,34 @@ import (
 // registerAssemblyFeatureHandlers wires the assemblyFeatures.* and assembly end-of-
 // features methods.
 func (r *Router) registerAssemblyFeatureHandlers() {
-	r.readOnly(wire.MethodAssemblyFeaturesList, assemblyFeaturesList)
-	r.mutating(wire.MethodAssemblyFeaturesAdd, "Add Assembly Feature", assemblyFeaturesAdd)
-	r.mutating(wire.MethodAssemblyFeaturesAddProxyCut, "Add Assembly Feature", assemblyFeaturesAddProxyCut)
-	r.mutating(wire.MethodAssemblyFeaturesAddHole, "Hole", assemblyFeaturesAddHole)
-	r.mutating(wire.MethodAssemblyFeaturesAddExtrude, "Extrude", assemblyFeaturesAddExtrude)
-	r.mutating(wire.MethodAssemblyFeaturesAddRevolve, "Add Assembly Feature", assemblyFeaturesAddRevolve)
-	r.mutating(wire.MethodAssemblyFeaturesAddChamfer, "Chamfer", assemblyFeaturesAddChamfer)
-	r.mutating(wire.MethodAssemblyFeaturesAddFillet, "Fillet", assemblyFeaturesAddFillet)
-	r.mutating(wire.MethodAssemblyFeaturesAddMoveFace, "Move Face", assemblyFeaturesAddMoveFace)
-	r.mutating(wire.MethodAssemblyFeaturesAddSweep, "Sweep", assemblyFeaturesAddSweep)
-	r.mutating(wire.MethodAssemblyFeaturesEdit, "Edit Assembly Feature", assemblyFeaturesEdit)
-	r.mutating(wire.MethodAssemblyFeaturesSetParticipants, "Edit Participants", assemblyFeaturesSetParticipants)
-	r.mutating(wire.MethodAssemblyFeaturesSetParticipantPaths, "Edit Participants", assemblyFeaturesSetParticipantPaths)
-	r.mutating(wire.MethodAssemblyFeaturesSetSuppressed, "Suppress Assembly Feature", assemblyFeaturesSetSuppressed)
-	r.readOnly(wire.MethodAssemblyGetEndOfFeatures, assemblyGetEndOfFeatures)
-	r.mutating(wire.MethodAssemblySetEndOfFeatures, "Set End of Features", assemblySetEndOfFeatures)
+	r.readOnly(wire.MethodAssemblyFeaturesList, assemblyQuery(assemblyFeaturesList))
+	r.mutating(wire.MethodAssemblyFeaturesAdd, "Add Assembly Feature", typedAssembly(assemblyFeaturesAdd))
+	r.mutating(wire.MethodAssemblyFeaturesAddProxyCut, "Add Assembly Feature", typedAssembly(assemblyFeaturesAddProxyCut))
+	r.mutating(wire.MethodAssemblyFeaturesAddHole, "Hole", typedAssembly(assemblyFeaturesAddHole))
+	r.mutating(wire.MethodAssemblyFeaturesAddExtrude, "Extrude", typedAssembly(assemblyFeaturesAddExtrude))
+	r.mutating(wire.MethodAssemblyFeaturesAddRevolve, "Add Assembly Feature", typedAssembly(assemblyFeaturesAddRevolve))
+	r.mutating(wire.MethodAssemblyFeaturesAddChamfer, "Chamfer", typedAssembly(assemblyFeaturesAddChamfer))
+	r.mutating(wire.MethodAssemblyFeaturesAddFillet, "Fillet", typedAssembly(assemblyFeaturesAddFillet))
+	r.mutating(wire.MethodAssemblyFeaturesAddMoveFace, "Move Face", typedAssembly(assemblyFeaturesAddMoveFace))
+	r.mutating(wire.MethodAssemblyFeaturesAddSweep, "Sweep", typedAssembly(assemblyFeaturesAddSweep))
+	r.mutating(wire.MethodAssemblyFeaturesEdit, "Edit Assembly Feature", typedAssembly(assemblyFeaturesEdit))
+	r.mutating(wire.MethodAssemblyFeaturesSetParticipants, "Edit Participants", typedAssembly(assemblyFeaturesSetParticipants))
+	r.mutating(wire.MethodAssemblyFeaturesSetParticipantPaths, "Edit Participants", typedAssembly(assemblyFeaturesSetParticipantPaths))
+	r.mutating(wire.MethodAssemblyFeaturesSetSuppressed, "Suppress Assembly Feature", typedAssembly(assemblyFeaturesSetSuppressed))
+	r.readOnly(wire.MethodAssemblyGetEndOfFeatures, assemblyQuery(assemblyGetEndOfFeatures))
+	r.mutating(wire.MethodAssemblySetEndOfFeatures, "Set End of Features", typedAssembly(assemblySetEndOfFeatures))
 }
 
 // assemblyFeaturesList returns the active assembly's feature program and marker state.
-func assemblyFeaturesList(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(assemblyFeaturesResult(asm))
+func assemblyFeaturesList(_ *app.Session, asm *compdef.AssemblyComponentDefinition) (wire.AssemblyFeaturesResult, error) {
+	return assemblyFeaturesResult(asm), nil
 }
 
 // assemblyFeaturesAdd adds a box-tool cut feature and returns its refreshed info.
-func assemblyFeaturesAdd(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddAssemblyFeatureArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func assemblyFeaturesAdd(s *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.AddAssemblyFeatureArgs) (wire.AssemblyFeatureResult, error) {
 	cut, err := assemblyCutFromArgs(in)
 	if err != nil {
-		return nil, err
+		return wire.AssemblyFeatureResult{}, err
 	}
 	return commitAssemblyFeatureResult(s, asm, cut, "Add Assembly Feature")
 }
@@ -76,47 +62,31 @@ func assemblyFeaturesAdd(s *app.Session, raw json.RawMessage) (json.RawMessage, 
 // assemblyFeaturesAddProxyCut adds a feature whose tool is the proxied geometry of the
 // source occurrence, re-resolved each rebuild. The self-machining exclusion (a component
 // does not machine itself) is the aggregate's AddFeature policy (#1612).
-func assemblyFeaturesAddProxyCut(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddProxyCutFeatureArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func assemblyFeaturesAddProxyCut(s *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.AddProxyCutFeatureArgs) (wire.AssemblyFeatureResult, error) {
 	op, err := cutOperation(in.Operation)
 	if err != nil {
-		return nil, err
+		return wire.AssemblyFeatureResult{}, err
 	}
 	source, ok := asm.Occurrences().ByID(in.Source)
 	if !ok {
-		return nil, fmt.Errorf("%s: no occurrence with id %d in the assembly", wire.MethodAssemblyFeaturesAddProxyCut, in.Source)
+		return wire.AssemblyFeatureResult{}, fmt.Errorf("%s: no occurrence with id %d in the assembly", wire.MethodAssemblyFeaturesAddProxyCut, in.Source)
 	}
 	return commitAssemblyFeatureResult(s, asm, feature.NewAssemblyProxyCutFeature(source, op), "Add Assembly Feature")
 }
 
 // assemblyFeaturesAddExtrude extrudes a closed sketch profile (authored on an assembly
 // work plane) into the participants — a profiled pocket or boss.
-func assemblyFeaturesAddExtrude(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddAssemblyExtrudeArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func assemblyFeaturesAddExtrude(s *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.AddAssemblyExtrudeArgs) (wire.AssemblyFeatureResult, error) {
 	op, err := cutOperation(in.Operation)
 	if err != nil {
-		return nil, err
+		return wire.AssemblyFeatureResult{}, err
 	}
 	sk, err := sketchAtIndex(asm, in.SketchIndex)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", wire.MethodAssemblyFeaturesAddExtrude, err)
+		return wire.AssemblyFeatureResult{}, fmt.Errorf("%s: %w", wire.MethodAssemblyFeaturesAddExtrude, err)
 	}
 	if in.Distance <= 0 {
-		return nil, fmt.Errorf("%s: distance %g must be positive", wire.MethodAssemblyFeaturesAddExtrude, in.Distance)
+		return wire.AssemblyFeatureResult{}, fmt.Errorf("%s: distance %g must be positive", wire.MethodAssemblyFeaturesAddExtrude, in.Distance)
 	}
 	distance := in.Distance
 	return commitAssemblyFeatureResult(s, asm, feature.NewAssemblyExtrudeFeature(sk, in.ProfileIndex, op, func() float64 { return distance }), "Extrude")
@@ -125,26 +95,18 @@ func assemblyFeaturesAddExtrude(s *app.Session, raw json.RawMessage) (json.RawMe
 // assemblyFeaturesAddRevolve revolves a closed sketch profile (authored on an assembly
 // work plane) about the axis line (origin + direction in assembly space) into the
 // participants — a turned groove or boss.
-func assemblyFeaturesAddRevolve(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddAssemblyRevolveArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func assemblyFeaturesAddRevolve(s *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.AddAssemblyRevolveArgs) (wire.AssemblyFeatureResult, error) {
 	op, err := cutOperation(in.Operation)
 	if err != nil {
-		return nil, err
+		return wire.AssemblyFeatureResult{}, err
 	}
 	sk, err := sketchAtIndex(asm, in.SketchIndex)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", wire.MethodAssemblyFeaturesAddRevolve, err)
+		return wire.AssemblyFeatureResult{}, fmt.Errorf("%s: %w", wire.MethodAssemblyFeaturesAddRevolve, err)
 	}
 	axis, err := revolveAxisFromArgs(in)
 	if err != nil {
-		return nil, err
+		return wire.AssemblyFeatureResult{}, err
 	}
 	angle := in.Angle
 	return commitAssemblyFeatureResult(s, asm, feature.NewAssemblyRevolveFeature(sk, in.ProfileIndex, axis, op, func() float64 { return angle }), "Add Assembly Feature")
@@ -165,26 +127,18 @@ func revolveAxisFromArgs(in wire.AddAssemblyRevolveArgs) (*feature.WorkAxis, err
 
 // assemblyFeaturesAddSweep sweeps an assembly sketch profile along an explicit polyline path
 // into the participants — a swept channel or rib.
-func assemblyFeaturesAddSweep(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddAssemblySweepArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func assemblyFeaturesAddSweep(s *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.AddAssemblySweepArgs) (wire.AssemblyFeatureResult, error) {
 	op, err := cutOperation(in.Operation)
 	if err != nil {
-		return nil, err
+		return wire.AssemblyFeatureResult{}, err
 	}
 	sk, err := sketchAtIndex(asm, in.SketchIndex)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", wire.MethodAssemblyFeaturesAddSweep, err)
+		return wire.AssemblyFeatureResult{}, fmt.Errorf("%s: %w", wire.MethodAssemblyFeaturesAddSweep, err)
 	}
 	path, err := assemblySweepPath(in.Path, wire.MethodAssemblyFeaturesAddSweep)
 	if err != nil {
-		return nil, err
+		return wire.AssemblyFeatureResult{}, err
 	}
 	// Twist is edit-only (assemblyFeatures.edit), so creation starts untwisted (nil ⇒ 0), #1648.
 	return commitAssemblyFeatureResult(s, asm, feature.NewAssemblySweepFeature(sk, in.ProfileIndex, op, path, nil), "Sweep")
@@ -204,60 +158,36 @@ func assemblySweepPath(points [][3]float64, method string) ([]math.Point3, error
 }
 
 // assemblyFeaturesAddChamfer chamfers picked component edges on every participant.
-func assemblyFeaturesAddChamfer(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddAssemblyChamferArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func assemblyFeaturesAddChamfer(s *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.AddAssemblyChamferArgs) (wire.AssemblyFeatureResult, error) {
 	if in.Distance <= 0 {
-		return nil, fmt.Errorf("%s: distance %g must be positive", wire.MethodAssemblyFeaturesAddChamfer, in.Distance)
+		return wire.AssemblyFeatureResult{}, fmt.Errorf("%s: distance %g must be positive", wire.MethodAssemblyFeaturesAddChamfer, in.Distance)
 	}
 	suffixes, err := assemblyEdgeSuffixes(asm, in.Edges, wire.MethodAssemblyFeaturesAddChamfer)
 	if err != nil {
-		return nil, err
+		return wire.AssemblyFeatureResult{}, err
 	}
 	dist := in.Distance
 	return commitAssemblyFeatureResult(s, asm, feature.NewAssemblyChamferFeature(suffixes, func() float64 { return dist }), "Chamfer")
 }
 
 // assemblyFeaturesAddFillet rounds picked component edges on every participant.
-func assemblyFeaturesAddFillet(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddAssemblyFilletArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func assemblyFeaturesAddFillet(s *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.AddAssemblyFilletArgs) (wire.AssemblyFeatureResult, error) {
 	if in.Radius <= 0 {
-		return nil, fmt.Errorf("%s: radius %g must be positive", wire.MethodAssemblyFeaturesAddFillet, in.Radius)
+		return wire.AssemblyFeatureResult{}, fmt.Errorf("%s: radius %g must be positive", wire.MethodAssemblyFeaturesAddFillet, in.Radius)
 	}
 	suffixes, err := assemblyEdgeSuffixes(asm, in.Edges, wire.MethodAssemblyFeaturesAddFillet)
 	if err != nil {
-		return nil, err
+		return wire.AssemblyFeatureResult{}, err
 	}
 	r := in.Radius
 	return commitAssemblyFeatureResult(s, asm, feature.NewAssemblyFilletFeature(suffixes, func() float64 { return r }), "Fillet")
 }
 
 // assemblyFeaturesAddMoveFace translates picked component faces on every participant.
-func assemblyFeaturesAddMoveFace(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddAssemblyMoveFaceArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func assemblyFeaturesAddMoveFace(s *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.AddAssemblyMoveFaceArgs) (wire.AssemblyFeatureResult, error) {
 	suffixes, err := assemblyFaceSuffixes(asm, in.Faces, wire.MethodAssemblyFeaturesAddMoveFace)
 	if err != nil {
-		return nil, err
+		return wire.AssemblyFeatureResult{}, err
 	}
 	delta := math.V3(in.Translation[0], in.Translation[1], in.Translation[2])
 	return commitAssemblyFeatureResult(s, asm, feature.NewAssemblyMoveFaceFeature(suffixes, delta), "Move Face")
@@ -342,73 +272,53 @@ func faceOnComponent(bodies []*topo.Body, key []byte) bool {
 }
 
 // assemblyFeaturesAddHole drills a parametric hole through the participants.
-func assemblyFeaturesAddHole(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddAssemblyHoleArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func assemblyFeaturesAddHole(s *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.AddAssemblyHoleArgs) (wire.AssemblyFeatureResult, error) {
 	axis, err := math.NewUnitVector3(in.Axis[0], in.Axis[1], in.Axis[2])
 	if err != nil {
-		return nil, fmt.Errorf("%s: axis %v is not a direction: %w", wire.MethodAssemblyFeaturesAddHole, in.Axis, err)
+		return wire.AssemblyFeatureResult{}, fmt.Errorf("%s: axis %v is not a direction: %w", wire.MethodAssemblyFeaturesAddHole, in.Axis, err)
 	}
 	hole, err := feature.NewAssemblyHoleFeature(math.P3(in.Center[0], in.Center[1], in.Center[2]), axis, in.Diameter, in.Depth)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", wire.MethodAssemblyFeaturesAddHole, err)
+		return wire.AssemblyFeatureResult{}, fmt.Errorf("%s: %w", wire.MethodAssemblyFeaturesAddHole, err)
 	}
 	return commitAssemblyFeatureResult(s, asm, hole, "Hole")
 }
 
 // assemblyFeaturesSetParticipants replaces a feature's participation set.
-func assemblyFeaturesSetParticipants(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.SetAssemblyParticipantsArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func assemblyFeaturesSetParticipants(s *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.SetAssemblyParticipantsArgs) (wire.AssemblyFeatureResult, error) {
 	af, err := assemblyFeatureByID(asm, in.ID, wire.MethodAssemblyFeaturesSetParticipants)
 	if err != nil {
-		return nil, err
+		return wire.AssemblyFeatureResult{}, err
 	}
 	occs, err := occurrencesByID(asm, in.Participants, wire.MethodAssemblyFeaturesSetParticipants)
 	if err != nil {
-		return nil, err
+		return wire.AssemblyFeatureResult{}, err
 	}
 	return commitAssemblyProgramChange(s, "Edit Participants", func(*compdef.AssemblyComponentDefinition) error {
 		af.SetParticipants(occs)
 		return nil
-	}, func() any { return wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)} })
+	}, func() wire.AssemblyFeatureResult {
+		return wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)}
+	})
 }
 
 // assemblyFeaturesSetParticipantPaths restricts a feature to specific nested occurrence
 // paths (or clears the restriction when none are given).
-func assemblyFeaturesSetParticipantPaths(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.SetAssemblyParticipantPathsArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func assemblyFeaturesSetParticipantPaths(s *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.SetAssemblyParticipantPathsArgs) (wire.AssemblyFeatureResult, error) {
 	af, err := assemblyFeatureByID(asm, in.ID, wire.MethodAssemblyFeaturesSetParticipantPaths)
 	if err != nil {
-		return nil, err
+		return wire.AssemblyFeatureResult{}, err
 	}
 	paths, err := resolveParticipantPaths(asm, in.Paths, wire.MethodAssemblyFeaturesSetParticipantPaths)
 	if err != nil {
-		return nil, err
+		return wire.AssemblyFeatureResult{}, err
 	}
 	return commitAssemblyProgramChange(s, "Edit Participants", func(*compdef.AssemblyComponentDefinition) error {
 		af.SetParticipantPaths(paths)
 		return nil
-	}, func() any { return wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)} })
+	}, func() wire.AssemblyFeatureResult {
+		return wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)}
+	})
 }
 
 // resolveParticipantPaths validates each instance-name path resolves to an occurrence
@@ -432,43 +342,29 @@ func resolveParticipantPaths(asm *compdef.AssemblyComponentDefinition, paths [][
 // assemblyFeaturesEdit sets editable scalars of an assembly feature in place — the
 // assembly-context Edit Feature (#725), mirroring the part features.edit. The batch is
 // validated before any value is applied, then the feature program recomputes once.
-func assemblyFeaturesEdit(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.EditAssemblyFeatureArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func assemblyFeaturesEdit(s *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.EditAssemblyFeatureArgs) (wire.AssemblyFeatureResult, error) {
 	af, err := assemblyFeatureByID(asm, in.ID, wire.MethodAssemblyFeaturesEdit)
 	if err != nil {
-		return nil, err
+		return wire.AssemblyFeatureResult{}, err
 	}
 	ed, ok := af.Definition().(feature.Editable)
 	if !ok {
-		return nil, fmt.Errorf("%s: feature %d (%s) has no editable scalars", wire.MethodAssemblyFeaturesEdit, af.ID(), af.Kind())
+		return wire.AssemblyFeatureResult{}, fmt.Errorf("%s: feature %d (%s) has no editable scalars", wire.MethodAssemblyFeaturesEdit, af.ID(), af.Kind())
 	}
 	apply, err := planScalarEdits(asm.Units(), ed, in.Scalars, wire.MethodAssemblyFeaturesEdit)
 	if err != nil {
-		return nil, err
+		return wire.AssemblyFeatureResult{}, err
 	}
 	return commitAssemblyProgramChange(s, "Edit Assembly Feature", func(*compdef.AssemblyComponentDefinition) error {
 		apply()
 		return nil
-	}, func() any { return wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)} })
+	}, func() wire.AssemblyFeatureResult {
+		return wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)}
+	})
 }
 
 // assemblyFeaturesSetSuppressed suppresses or unsuppresses the named features in batch.
-func assemblyFeaturesSetSuppressed(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.SetAssemblyFeaturesSuppressedArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func assemblyFeaturesSetSuppressed(s *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.SetAssemblyFeaturesSuppressedArgs) (wire.AssemblyFeaturesResult, error) {
 	return commitAssemblyProgramChange(s, "Suppress Assembly Feature", func(a *compdef.AssemblyComponentDefinition) error {
 		if in.Suppressed {
 			a.Features().SuppressFeatures(in.IDs...)
@@ -476,52 +372,42 @@ func assemblyFeaturesSetSuppressed(s *app.Session, raw json.RawMessage) (json.Ra
 			a.Features().UnsuppressFeatures(in.IDs...)
 		}
 		return nil
-	}, func() any { return assemblyFeaturesResult(asm) })
+	}, func() wire.AssemblyFeaturesResult { return assemblyFeaturesResult(asm) })
 }
 
 // assemblyGetEndOfFeatures returns the active assembly's rollback-marker state.
-func assemblyGetEndOfFeatures(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
+func assemblyGetEndOfFeatures(_ *app.Session, asm *compdef.AssemblyComponentDefinition) (wire.EndOfFeaturesResult, error) {
 	feats := asm.Features()
-	return json.Marshal(wire.EndOfFeaturesResult{Position: feats.EndOfFeaturesPosition(), RolledBack: feats.IsRolledBack()})
+	return wire.EndOfFeaturesResult{Position: feats.EndOfFeaturesPosition(), RolledBack: feats.IsRolledBack()}, nil
 }
 
 // assemblySetEndOfFeatures moves the rollback marker and returns the refreshed program.
-func assemblySetEndOfFeatures(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.SetEndOfFeaturesArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func assemblySetEndOfFeatures(s *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.SetEndOfFeaturesArgs) (wire.AssemblyFeaturesResult, error) {
 	return commitAssemblyProgramChange(s, "Set End of Features", func(a *compdef.AssemblyComponentDefinition) error {
 		a.Features().SetEndOfFeatures(in.Position)
 		return nil
-	}, func() any { return assemblyFeaturesResult(asm) })
+	}, func() wire.AssemblyFeaturesResult { return assemblyFeaturesResult(asm) })
 }
 
 // commitAssemblyFeatureResult finishes an add handler through the shared
 // Session verb and renders the hosted feature (#1612).
-func commitAssemblyFeatureResult(s *app.Session, asm *compdef.AssemblyComponentDefinition, f feature.Feature, label string) (json.RawMessage, error) {
+func commitAssemblyFeatureResult(s *app.Session, asm *compdef.AssemblyComponentDefinition, f feature.Feature, label string) (wire.AssemblyFeatureResult, error) {
 	af, err := s.CommitAssemblyFeature(f, label)
 	if err != nil {
-		return nil, err
+		return wire.AssemblyFeatureResult{}, err
 	}
-	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)})
+	return wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)}, nil
 }
 
-// commitAssemblyProgramChange finishes an in-place program edit through the
-// shared Session verb and renders the refreshed result (#1612).
-func commitAssemblyProgramChange(s *app.Session, label string, mutate func(*compdef.AssemblyComponentDefinition) error, render func() any) (json.RawMessage, error) {
+// commitAssemblyProgramChange finishes an in-place program edit through the shared Session verb
+// and renders the refreshed result (#1612). It is generic over the render's result type so each
+// program-edit handler returns its own typed DTO (the feature detail or the whole program).
+func commitAssemblyProgramChange[R any](s *app.Session, label string, mutate func(*compdef.AssemblyComponentDefinition) error, render func() R) (R, error) {
 	if err := s.CommitAssemblyFeatureChange(label, mutate); err != nil {
-		return nil, err
+		var zero R
+		return zero, err
 	}
-	return json.Marshal(render())
+	return render(), nil
 }
 
 // assemblyCutFromArgs builds the assembly-space box-tool cut feature from the request.
@@ -581,12 +467,10 @@ func occurrencesByID(asm *compdef.AssemblyComponentDefinition, ids []uint64, met
 // assemblyFeaturesResult renders the whole program plus the rollback-marker state.
 func assemblyFeaturesResult(asm *compdef.AssemblyComponentDefinition) wire.AssemblyFeaturesResult {
 	feats := asm.Features()
-	out := make([]wire.AssemblyFeatureInfo, feats.Count())
-	for i := 0; i < feats.Count(); i++ {
-		out[i] = assemblyFeatureInfo(asm, feats.Item(i))
-	}
 	return wire.AssemblyFeaturesResult{
-		Features:      out,
+		Features: projectAll(feats, func(_ int, af *compdef.AssemblyFeature) wire.AssemblyFeatureInfo {
+			return assemblyFeatureInfo(asm, af)
+		}),
 		EndOfFeatures: feats.EndOfFeaturesPosition(),
 		RolledBack:    feats.IsRolledBack(),
 	}
