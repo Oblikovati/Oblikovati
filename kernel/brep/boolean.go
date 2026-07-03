@@ -45,9 +45,14 @@ func Boolean(op Op, a, b *topo.Body) (*topo.Body, error) {
 	return BooleanDiag(op, a, b, nil)
 }
 
-// BooleanDiag is [Boolean] with a diagnostic recorder (nil to discard): the tangency-retry
-// last resort records a Defect when it ships, so the displaced-geometry escape hatch is
-// observable instead of silent (#1600).
+// BooleanDiag is [Boolean] with a diagnostic recorder (nil to discard). A tangent/grazing contact
+// (a >2-edge-use configuration) is resolved EXACTLY by the stitch first (resolveEdgeUses azimuth-
+// pairs the coincident dihedrals; pinchedEndpoints splits their shared endpoints), and that exact,
+// UNDISPLACED result is SHIPPED whenever it is a valid closed 2-manifold — the common flush/box
+// tangency (#1600). Only when the exact result stays pinched (an Euler-inadmissible χ the planar
+// pinch resolution does not yet split — a faceted-cylinder line-tangency) does it fall back to the
+// geometry-moving nudge as a recorded LAST RESORT (issue option 1); that fallback is a tracked
+// Defect, never silent. The exact path never perturbs output coordinates (SoS discipline).
 func BooleanDiag(op Op, a, b *topo.Body, rec *diag.Recorder) (*topo.Body, error) {
 	fa, oka := facesOf(a)
 	fb, okb := facesOf(b)
@@ -58,13 +63,30 @@ func BooleanDiag(op Op, a, b *topo.Body, rec *diag.Recorder) (*topo.Body, error)
 	if err != nil || away.LengthSquared() == 0 {
 		return res, err
 	}
-	// A tangent/grazing contact was hit. The nudged rerun stays the resolution for a GENUINE
-	// tangency — downstream re-welds (facet, fillet) collapse an exactly-coincident seam back
-	// into a non-manifold contact, so the topologically resolved exact result cannot ship yet
-	// (TestTangentContactUnionStaysManifold pins that contract) — but it is no longer silent:
-	// shipping it records a Defect (#1600). Retiring the displaced coordinates entirely needs
-	// the downstream re-welds to respect existing topology; tracked on the issue.
+	if exactTangentIsValid(res) {
+		rec.Recordf(CodeBooleanTangentContact, diag.Info,
+			"tangent/grazing contact resolved exactly (no displacement) near axis (%g, %g, %g)",
+			float64(away.X), float64(away.Y), float64(away.Z))
+		return res, nil
+	}
 	return retryNudged(op, fa, fb, a, res, away, rec)
+}
+
+// exactTangentIsValid reports whether the exactly-resolved tangent result is a closed 2-manifold
+// fit to ship: a solid whose every edge is shared by exactly two faces and whose χ is Euler-
+// admissible. When it is NOT — a genuine line-tangency whose endpoints stay pinched (χ odd), which
+// the planar pinch resolution does not yet split — the caller falls back to the recorded nudge so
+// the operation never ships an invalid body nor silently degrades to triangle-soup CSG (#1600).
+func exactTangentIsValid(b *topo.Body) bool {
+	if b == nil || !b.IsSolid() {
+		return false
+	}
+	for _, e := range b.Edges() {
+		if len(e.Faces()) != 2 {
+			return false
+		}
+	}
+	return b.EulerAdmissible()
 }
 
 // booleanOnce runs one pass: imprint, split, classify, keep, stitch. The vector is a non-zero
@@ -83,26 +105,32 @@ func booleanOnce(op Op, fa, fb []planarFace, a, b *topo.Body) (*topo.Body, math.
 	return stitch(kept, prov)
 }
 
-// nudgeEps is the magnitude (cm) of the clearance opened at a tangent contact: above the weld
-// grid (planarStitchGrid, 1e-6) so it survives, far below any modelled feature so it is
-// geometrically irrelevant. A line tangency carries no material, so replacing it with a ~0.1 µm
-// gap loses nothing and — unlike the exact tangent — leaves no coincident edge for a re-weld to
-// collapse. Calibrated with — and only meaningful relative to — the absolute planar weld grid:
-// the two must move together (#1602).
+// CodeBooleanTangentContact marks a boolean whose operands met at a tangent/grazing contact — a
+// coincident line where more than two faces meet — and that shipped the EXACT, undisplaced result
+// (the stitch split the coincident dihedrals by radial order and pinch-split their shared
+// endpoints). An informational note, not a defect: no coordinate moved (#1600, A5).
+const CodeBooleanTangentContact diag.Code = "boolean.tangent-contact"
+
+// nudgeEps is the magnitude (cm) of the clearance opened at a tangent contact the exact path could
+// not resolve to a valid solid: above the weld grid (planarStitchGrid, 1e-6) so it survives, far
+// below any modelled feature so it is geometrically irrelevant. A line tangency carries no
+// material, so replacing it with a ~0.1 µm gap loses nothing and leaves no pinched seam. Calibrated
+// with — and only meaningful relative to — the absolute planar weld grid: the two move together
+// (#1602).
 const nudgeEps = 10 * planarStitchGrid // tol:calibrated — imprint nudge tied to the planar weld grid
 
-// CodeBooleanNudgedGeometry marks a boolean that shipped the displaced-geometry tangency
-// retry: the topological resolution of a tangent contact failed to close, so the result
-// contains operand B translated by nudgeEps (#1600). A tracked defect — the displaced
-// coordinates poison flush mating, coplanar detection, and exports downstream — kept only as
-// the last resort until the topological path covers every configuration.
+// CodeBooleanNudgedGeometry marks a boolean that shipped the displaced-geometry tangency retry: the
+// EXACT topological resolution of a tangent contact stayed pinched (Euler-inadmissible), so the
+// result contains operand B translated by nudgeEps (#1600). A tracked Defect — the displaced
+// coordinates poison flush mating, coplanar detection and exports downstream — kept only as the
+// last resort for the residual configurations the exact planar pinch resolution does not yet split.
 const CodeBooleanNudgedGeometry diag.Code = "boolean.nudged-geometry"
 
-// retryNudged re-runs the boolean with operand B nudged a hair along `away` (out of the
-// tangent contact) so the degenerate touch becomes a clean clearance. It is the LAST RESORT
-// behind the topological resolution (#1600): it runs only when the un-nudged result is not a
-// proper solid, and shipping it records a Defect because the output carries the displaced
-// coordinates. A nudge that fails too falls back to the original result.
+// retryNudged re-runs the boolean with operand B nudged a hair along `away` (out of the tangent
+// contact) so the degenerate touch becomes a clean clearance. It is the LAST RESORT behind the
+// exact resolution (#1600): it runs only when the un-nudged result is not a valid solid, and
+// shipping it records a Defect because the output carries the displaced coordinates. A nudge that
+// fails too falls back to the original exact result.
 func retryNudged(op Op, fa, fb []planarFace, a, original *topo.Body, away math.Vector3, rec *diag.Recorder) (*topo.Body, error) {
 	fbp := translateFaces(fb, away.Scale(nudgeEps))
 	bp, _, err := stitch(planarToSubFaces(fbp), nil) // materialising nudged B: no intersections to name
@@ -114,7 +142,7 @@ func retryNudged(op Op, fa, fb []planarFace, a, original *topo.Body, away math.V
 		return original, nil
 	}
 	rec.Recordf(CodeBooleanNudgedGeometry, diag.Defect,
-		"tangent contact did not resolve topologically: shipping operand B displaced by %g along (%g, %g, %g)",
+		"tangent contact did not resolve to a valid solid exactly: shipping operand B displaced by %g along (%g, %g, %g)",
 		nudgeEps, float64(away.X), float64(away.Y), float64(away.Z))
 	return res, nil
 }
@@ -138,8 +166,8 @@ func translateFaces(faces []planarFace, d math.Vector3) []planarFace {
 	return out
 }
 
-// planarToSubFaces adapts whole planar faces to sub-faces (outer ring first, the rest holes)
-// so stitch can rebuild a body from them — used to materialise the nudged operand B.
+// planarToSubFaces adapts whole planar faces to sub-faces (outer ring first, the rest holes) so
+// stitch can rebuild a body from them — used to materialise the nudged operand B.
 func planarToSubFaces(faces []planarFace) []subFace {
 	out := make([]subFace, 0, len(faces))
 	for _, f := range faces {

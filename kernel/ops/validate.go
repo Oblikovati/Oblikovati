@@ -60,11 +60,7 @@ func Validate(b *topo.Body) ValidationReport {
 // orientable 2-manifold) and at most 2 per shell (χ = Σ over shells of 2−2·genus, so each contributes
 // ≤ 2). A violation is a topology defect the per-edge tests can miss, recorded as an issue.
 func (r *ValidationReport) checkEuler(b *topo.Body) {
-	loops := 0
-	for _, f := range b.Faces() {
-		loops += len(f.Loops())
-	}
-	r.EulerCharacteristic = len(b.Vertices()) - len(b.Edges()) + 2*len(b.Faces()) - loops
+	r.EulerCharacteristic = b.EulerCharacteristic()
 	if !b.IsSolid() || !r.Closed {
 		return // χ = 2−2g only constrains a closed orientable solid; an open sheet is unconstrained
 	}

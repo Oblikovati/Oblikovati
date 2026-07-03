@@ -11,9 +11,16 @@ import (
 // filletLoop is one boundary loop of a face as a ring of points with the curve along each
 // segment: curves[i] runs pts[i]→pts[(i+1)%n], or nil for a straight line. (Used to build
 // curved-faced results like fillets, where some edges are arcs.)
+// srcV[i]/srcE[i] carry the SOURCE topo identity of pts[i] and of the segment leaving it (0 =
+// op-generated): they preserve the boolean's tangent-contact topology across the re-weld. srcV
+// keeps pinch-split coincident VERTICES distinct; srcE keeps two coincident EDGES that share the
+// same endpoints distinct (the flush/box tangency where 4 faces meet on one line), so neither
+// collapses back into a non-manifold pinch (#1600, method C).
 type filletLoop struct {
 	pts    []math.Point3
 	curves []geom.Curve3
+	srcV   []uint64
+	srcE   []uint64
 }
 
 // filletFace is a result face: its surface (plane, cylinder, …) and boundary loops (outer
@@ -49,15 +56,16 @@ func assembleBody(faces []filletFace, tag string) *topo.Body {
 	rings := make([][][]int, len(faces))
 	for i, f := range faces {
 		for _, l := range f.loops {
-			rings[i] = append(rings[i], w.weldRing(l.pts))
+			rings[i] = append(rings[i], w.weldRingID(l.pts, l.srcV)) // identity-preserving weld (#1600)
 		}
 	}
-	bld := topo.NewBuilder(curvedSolid(faces, rings, w.points), topo.NewLineage(topo.Tok(tag, "body", 0)))
+	classes := pairEdgeClasses(faces, rings)
+	bld := topo.NewBuilder(curvedSolid(faces, rings, classes), topo.NewLineage(topo.Tok(tag, "body", 0)))
 	tv := make([]*topo.Vertex, len(w.points))
 	for i, p := range w.points {
 		tv[i] = bld.AddVertex(p, topo.NewLineage(topo.Tok(tag, "v", i)))
 	}
-	ec := &edgeCatalog{bld: bld, verts: w.points, tv: tv, edges: map[[2]int]edgeRec{}, tag: tag}
+	ec := &edgeCatalog{bld: bld, verts: w.points, tv: tv, edges: map[seamEdgeKey]edgeRec{}, classes: classes, tag: tag}
 	provByFace := addCurvedFaces(bld, faces, rings, ec, tag)
 	body := bld.Build()
 	// Provenance naming (ADR-0043): once the faces are named by their parents, the edges and
@@ -78,7 +86,7 @@ func addCurvedFaces(bld *topo.Builder, faces []filletFace, rings [][][]int, ec *
 	for fi, f := range faces {
 		specs := make([]topo.LoopSpec, len(f.loops))
 		for li, ring := range rings[fi] {
-			specs[li] = curvedLoopSpec(li == 0, ring, f.loops[li].curves, ec)
+			specs[li] = curvedLoopSpec(li == 0, ring, f.loops[li].curves, f.loops[li].srcE, ec)
 		}
 		lin := f.parent
 		if len(lin.Key()) == 0 {
@@ -92,14 +100,18 @@ func addCurvedFaces(bld *topo.Builder, faces []filletFace, rings [][][]int, ec *
 	return provByFace
 }
 
-// curvedSolid reports whether every undirected edge of the faces is used exactly twice (the
-// combinatorial test for a closed solid), computed before assembly to set the builder mode.
-func curvedSolid(faces []filletFace, rings [][][]int, _ []math.Point3) bool {
-	use := map[[2]int]int{}
+// curvedSolid reports whether every reconstructed edge is used exactly twice (the combinatorial
+// test for a closed solid), computed before assembly to set the builder mode. Edges are keyed by
+// their identity CLASS (a coincident tangent seam splits into two edges), matching what the edge
+// catalog builds — so a manifold tangency counts as two twice-used edges, not one four-used one.
+func curvedSolid(faces []filletFace, rings [][][]int, classes map[[2]int]int) bool {
+	use := map[seamEdgeKey]int{}
 	for fi := range faces {
-		for _, ring := range rings[fi] {
+		for li, ring := range rings[fi] {
+			ids := faces[fi].loops[li].srcE
 			for k := 0; k < len(ring); k++ {
-				use[canon2(ring[k], ring[(k+1)%len(ring)])]++
+				a, b := ring[k], ring[(k+1)%len(ring)]
+				use[seamEdgeKey{canon2(a, b), edgeClassOf(a, b, srcIDAt(ids, k), classes)}]++
 			}
 		}
 	}
@@ -111,20 +123,71 @@ func curvedSolid(faces []filletFace, rings [][][]int, _ []math.Point3) bool {
 	return true
 }
 
-// edgeCatalog creates one shared topo edge per undirected vertex pair on demand, reusing it
-// (reversed) for the second face.
-type edgeCatalog struct {
-	bld   *topo.Builder
-	verts []math.Point3
-	tv    []*topo.Vertex
-	edges map[[2]int]edgeRec
-	tag   string
+// pairEdgeClasses counts the distinct non-zero source-edge ids used along each welded vertex-pair.
+// A pair carrying two or more is a coincident tangent seam (two input edges on one line sharing
+// their endpoints) whose uses must stay on separate edges through the weld; one or zero is a plain
+// shared or op-generated edge that welds to a single edge as before (#1600).
+func pairEdgeClasses(faces []filletFace, rings [][][]int) map[[2]int]int {
+	seen := map[[2]int]map[uint64]bool{}
+	for fi := range faces {
+		for li, ring := range rings[fi] {
+			ids := faces[fi].loops[li].srcE
+			for k := 0; k < len(ring); k++ {
+				id := srcIDAt(ids, k)
+				if id == 0 {
+					continue
+				}
+				pair := canon2(ring[k], ring[(k+1)%len(ring)])
+				if seen[pair] == nil {
+					seen[pair] = map[uint64]bool{}
+				}
+				seen[pair][id] = true
+			}
+		}
+	}
+	out := make(map[[2]int]int, len(seen))
+	for p, ids := range seen {
+		out[p] = len(ids)
+	}
+	return out
 }
 
-// use returns the loop use for the directed segment a→b with the given curve (nil ⇒ a line),
-// creating the shared edge the first time in its a→b direction.
-func (c *edgeCatalog) use(a, b int, curve geom.Curve3) topo.Use {
-	key := canon2(a, b)
+// edgeClassOf returns the identity class of the segment a→b: its own source-edge id when the pair
+// is a coincident tangent seam (>=2 distinct source edges meet on it), else 0 so ordinary uses of
+// the pair all weld to one edge. It is the single keying rule shared by the catalog and the solid
+// test (#1600).
+func edgeClassOf(a, b int, srcE uint64, classes map[[2]int]int) uint64 {
+	if srcE == 0 || classes[canon2(a, b)] < 2 {
+		return 0
+	}
+	return srcE
+}
+
+// seamEdgeKey identifies a reconstructed edge by its welded vertex pair AND its identity class: a
+// coincident tangent seam (two source edges on one line, same endpoints) resolves to two keys that
+// share a pair but differ in class, so it stays two manifold edges instead of one 4-face edge.
+type seamEdgeKey struct {
+	pair  [2]int
+	class uint64
+}
+
+// edgeCatalog creates one shared topo edge per (welded vertex pair, identity class) on demand,
+// reusing it (reversed) for the second face. classes marks which pairs are coincident tangent
+// seams that must split by source-edge id (#1600).
+type edgeCatalog struct {
+	bld     *topo.Builder
+	verts   []math.Point3
+	tv      []*topo.Vertex
+	edges   map[seamEdgeKey]edgeRec
+	classes map[[2]int]int
+	tag     string
+}
+
+// use returns the loop use for the directed segment a→b with the given curve (nil ⇒ a line) and
+// source-edge id, creating the shared edge for its identity class the first time in its a→b
+// direction. Two coincident seam edges (distinct ids at a >=2-id pair) get distinct edges.
+func (c *edgeCatalog) use(a, b int, curve geom.Curve3, srcE uint64) topo.Use {
+	key := seamEdgeKey{canon2(a, b), edgeClassOf(a, b, srcE, c.classes)}
 	if rec, ok := c.edges[key]; ok {
 		return topo.Use{Edge: rec.edge, Reversed: rec.from != a}
 	}
@@ -136,11 +199,12 @@ func (c *edgeCatalog) use(a, b int, curve geom.Curve3) topo.Use {
 	return topo.Use{Edge: e, Reversed: false}
 }
 
-// curvedLoopSpec builds a face loop from a ring of welded indices and the per-segment curves.
-func curvedLoopSpec(outer bool, ring []int, curves []geom.Curve3, ec *edgeCatalog) topo.LoopSpec {
+// curvedLoopSpec builds a face loop from a ring of welded indices, the per-segment curves and the
+// per-segment source-edge ids (for tangent-seam identity, #1600).
+func curvedLoopSpec(outer bool, ring []int, curves []geom.Curve3, srcE []uint64, ec *edgeCatalog) topo.LoopSpec {
 	uses := make([]topo.Use, len(ring))
 	for k := range ring {
-		uses[k] = ec.use(ring[k], ring[(k+1)%len(ring)], curveAt(curves, k))
+		uses[k] = ec.use(ring[k], ring[(k+1)%len(ring)], curveAt(curves, k), srcIDAt(srcE, k))
 	}
 	if outer {
 		return topo.OuterLoop(uses...)
