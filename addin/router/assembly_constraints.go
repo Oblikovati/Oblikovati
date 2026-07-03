@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/model/assembly"
+	"oblikovati.org/model/compdef"
 )
 
 // The assembly constraint surface (M12-F01, #358/#363): add the relationships that
@@ -20,7 +21,7 @@ import (
 
 // registerAssemblyConstraintHandlers wires the assemblyConstraints.* methods.
 func (r *Router) registerAssemblyConstraintHandlers() {
-	r.readOnly(wire.MethodAssemblyConstraintsList, assemblyConstraintsList)
+	r.readOnly(wire.MethodAssemblyConstraintsList, assemblyQuery(assemblyConstraintsList))
 	r.mutating(wire.MethodAssemblyConstraintsAddMate, "Add Constraint", assemblyAddMate)
 	r.mutating(wire.MethodAssemblyConstraintsAddFlush, "Add Constraint", assemblyAddFlush)
 	r.mutating(wire.MethodAssemblyConstraintsAddAngle, "Add Constraint", assemblyAddAngle)
@@ -33,24 +34,25 @@ func (r *Router) registerAssemblyConstraintHandlers() {
 	r.mutating(wire.MethodAssemblyConstraintsAddTranslateTranslate, "Add Constraint", assemblyAddTranslateTranslate)
 	r.mutating(wire.MethodAssemblyConstraintsAddTransitional, "Add Constraint", assemblyAddTransitional)
 	r.mutating(wire.MethodAssemblyConstraintsAddCustom, "Add Constraint", assemblyAddCustom)
-	r.mutating(wire.MethodAssemblyConstraintsDelete, "Delete Constraint", assemblyConstraintDelete)
-	r.mutating(wire.MethodAssemblyConstraintsSetLimits, "Edit Constraint", assemblyConstraintSetLimits)
-	r.mutating(wire.MethodAssemblyConstraintsSolve, "", assemblyConstraintsSolve)
-	r.readOnly(wire.MethodAssemblyConstraintsHealth, assemblyConstraintsHealth)
+	r.mutating(wire.MethodAssemblyConstraintsDelete, "Delete Constraint", typedAssembly(assemblyConstraintDelete))
+	r.mutating(wire.MethodAssemblyConstraintsSetLimits, "Edit Constraint", typedAssembly(assemblyConstraintSetLimits))
+	r.mutating(wire.MethodAssemblyConstraintsSolve, "", assemblyQuery(assemblyConstraintsSolve))
+	r.readOnly(wire.MethodAssemblyConstraintsHealth, assemblyQuery(assemblyConstraintsHealth))
 }
 
 // assemblyConstraintsList returns the active assembly's constraint set.
-func assemblyConstraintsList(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
+func assemblyConstraintsList(_ *app.Session, asm *compdef.AssemblyComponentDefinition) (wire.ConstraintsResult, error) {
+	return constraintsListResult(asm), nil
+}
+
+// constraintsListResult renders the active assembly's constraint set.
+func constraintsListResult(asm *compdef.AssemblyComponentDefinition) wire.ConstraintsResult {
 	set := asm.Constraints()
 	out := make([]wire.AssemblyConstraintInfo, 0, set.Count())
 	for _, c := range set.All() {
 		out = append(out, constraintInfo(c))
 	}
-	return json.Marshal(wire.ConstraintsResult{Constraints: out})
+	return wire.ConstraintsResult{Constraints: out}
 }
 
 func assemblyAddMate(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -172,54 +174,30 @@ func assemblyAddCustom(s *app.Session, raw json.RawMessage) (json.RawMessage, er
 }
 
 // assemblyConstraintDelete removes a constraint, re-solves, and returns the remaining set.
-func assemblyConstraintDelete(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.DeleteAssemblyConstraintArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func assemblyConstraintDelete(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.DeleteAssemblyConstraintArgs) (wire.ConstraintsResult, error) {
 	if !asm.Constraints().Delete(in.ID) {
-		return nil, fmt.Errorf("%s: no constraint with id %d", wire.MethodAssemblyConstraintsDelete, in.ID)
+		return wire.ConstraintsResult{}, fmt.Errorf("%s: no constraint with id %d", wire.MethodAssemblyConstraintsDelete, in.ID)
 	}
 	asm.SolveConstraints()
-	return assemblyConstraintsList(s, nil)
+	return constraintsListResult(asm), nil
 }
 
 // assemblyConstraintSetLimits sets a constraint's driven-value bounds and returns its info.
-func assemblyConstraintSetLimits(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.SetConstraintLimitsArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func assemblyConstraintSetLimits(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.SetConstraintLimitsArgs) (wire.ConstraintResult, error) {
 	l := in.Limits
 	lim := assembly.NewLimits(l.Min, l.HasMin, l.Max, l.HasMax, l.Resting, l.HasResting)
 	if err := asm.Constraints().SetLimits(in.ID, lim); err != nil {
-		return nil, err
+		return wire.ConstraintResult{}, err
 	}
-	return json.Marshal(wire.ConstraintResult{Constraint: constraintInfo(asm.Constraints().ByID(in.ID))})
+	return wire.ConstraintResult{Constraint: constraintInfo(asm.Constraints().ByID(in.ID))}, nil
 }
 
 // assemblyConstraintsSolve re-solves the assembly and returns its health/DOF report.
-func assemblyConstraintsSolve(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(healthResult(asm.SolveConstraints()))
+func assemblyConstraintsSolve(_ *app.Session, asm *compdef.AssemblyComponentDefinition) (wire.AssemblyHealthResult, error) {
+	return healthResult(asm.SolveConstraints()), nil
 }
 
 // assemblyConstraintsHealth reports the current health/DOF without re-solving.
-func assemblyConstraintsHealth(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(healthResult(asm.Constraints().Health()))
+func assemblyConstraintsHealth(_ *app.Session, asm *compdef.AssemblyComponentDefinition) (wire.AssemblyHealthResult, error) {
+	return healthResult(asm.Constraints().Health()), nil
 }

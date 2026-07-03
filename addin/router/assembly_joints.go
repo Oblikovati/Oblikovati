@@ -22,34 +22,35 @@ import (
 
 // registerAssemblyJointHandlers wires the assemblyJoints.* and dsJoints.* methods.
 func (r *Router) registerAssemblyJointHandlers() {
-	r.readOnly(wire.MethodAssemblyJointsList, assemblyJointsList)
+	r.readOnly(wire.MethodAssemblyJointsList, assemblyQuery(assemblyJointsList))
 	r.mutating(wire.MethodAssemblyJointsAddRigid, "Add Joint", jointAdder((*assembly.JointSet).AddRigid))
 	r.mutating(wire.MethodAssemblyJointsAddRotational, "Add Joint", jointAdder((*assembly.JointSet).AddRotational))
 	r.mutating(wire.MethodAssemblyJointsAddSlider, "Add Joint", jointAdder((*assembly.JointSet).AddSlider))
 	r.mutating(wire.MethodAssemblyJointsAddCylindrical, "Add Joint", jointAdder((*assembly.JointSet).AddCylindrical))
 	r.mutating(wire.MethodAssemblyJointsAddPlanar, "Add Joint", jointAdder((*assembly.JointSet).AddPlanar))
 	r.mutating(wire.MethodAssemblyJointsAddBall, "Add Joint", jointAdder((*assembly.JointSet).AddBall))
-	r.mutating(wire.MethodAssemblyJointsDelete, "Delete Joint", assemblyJointDelete)
-	r.mutating(wire.MethodAssemblyJointsSetLimits, "Edit Joint", assemblyJointSetLimits)
-	r.mutating(wire.MethodAssemblyJointsSetFlip, "Edit Joint", assemblyJointSetFlip)
-	r.readOnly(wire.MethodDSJointsList, dsJointsList)
+	r.mutating(wire.MethodAssemblyJointsDelete, "Delete Joint", typedAssembly(assemblyJointDelete))
+	r.mutating(wire.MethodAssemblyJointsSetLimits, "Edit Joint", typedAssembly(assemblyJointSetLimits))
+	r.mutating(wire.MethodAssemblyJointsSetFlip, "Edit Joint", typedAssembly(assemblyJointSetFlip))
+	r.readOnly(wire.MethodDSJointsList, assemblyQuery(dsJointsList))
 	r.mutating(wire.MethodDSJointsAdd, "Add Joint", dsJointAdd)
-	r.mutating(wire.MethodDSJointsSetImposedMotion, "Edit Joint Motion", dsJointSetImposedMotion)
-	r.mutating(wire.MethodDSJointsDelete, "Delete Joint", dsJointDelete)
+	r.mutating(wire.MethodDSJointsSetImposedMotion, "Edit Joint Motion", typedAssembly(dsJointSetImposedMotion))
+	r.mutating(wire.MethodDSJointsDelete, "Delete Joint", typedAssembly(dsJointDelete))
 }
 
 // assemblyJointsList returns the active assembly's joint set.
-func assemblyJointsList(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
+func assemblyJointsList(_ *app.Session, asm *compdef.AssemblyComponentDefinition) (wire.AssemblyJointsResult, error) {
+	return jointsListResult(asm), nil
+}
+
+// jointsListResult renders the active assembly's joint set.
+func jointsListResult(asm *compdef.AssemblyComponentDefinition) wire.AssemblyJointsResult {
 	set := asm.Joints()
 	out := make([]wire.JointInfo, 0, set.Count())
 	for _, j := range set.All() {
 		out = append(out, jointInfo(j))
 	}
-	return json.Marshal(wire.AssemblyJointsResult{Joints: out})
+	return wire.AssemblyJointsResult{Joints: out}
 }
 
 // jointAdder builds a handler that resolves the two joint origins and adds a joint via add.
@@ -81,74 +82,51 @@ func jointAdder(add func(*assembly.JointSet, assembly.Ref, assembly.Ref) assembl
 }
 
 // assemblyJointDelete removes a joint, re-solves, and returns the remaining set.
-func assemblyJointDelete(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.DeleteJointArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func assemblyJointDelete(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.DeleteJointArgs) (wire.AssemblyJointsResult, error) {
 	if !asm.Joints().Delete(in.ID) {
-		return nil, fmt.Errorf("%s: no joint with id %d", wire.MethodAssemblyJointsDelete, in.ID)
+		return wire.AssemblyJointsResult{}, fmt.Errorf("%s: no joint with id %d", wire.MethodAssemblyJointsDelete, in.ID)
 	}
 	asm.SolveConstraints()
-	return assemblyJointsList(s, nil)
+	return jointsListResult(asm), nil
 }
 
 // assemblyJointSetLimits sets a joint's linear/angular bounds and returns its info.
-func assemblyJointSetLimits(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.SetJointLimitsArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func assemblyJointSetLimits(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.SetJointLimitsArgs) (wire.AssemblyJointResult, error) {
 	l := in.Limits
 	lim := assembly.NewJointLimits(l.LinearMin, l.HasLinearMin, l.LinearMax, l.HasLinearMax, l.AngularMin, l.HasAngularMin, l.AngularMax, l.HasAngularMax)
 	if err := asm.Joints().SetLimits(in.ID, lim); err != nil {
-		return nil, err
+		return wire.AssemblyJointResult{}, err
 	}
-	return jointResult(asm, in.ID)
+	return jointResult(asm, in.ID), nil
 }
 
 // assemblyJointSetFlip sets a joint's flip sense and returns its info.
-func assemblyJointSetFlip(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.SetJointFlipArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func assemblyJointSetFlip(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.SetJointFlipArgs) (wire.AssemblyJointResult, error) {
 	if err := asm.Joints().SetFlip(in.ID, in.Flip); err != nil {
-		return nil, err
+		return wire.AssemblyJointResult{}, err
 	}
 	asm.SolveConstraints()
-	return jointResult(asm, in.ID)
+	return jointResult(asm, in.ID), nil
 }
 
-// jointResult marshals the joint with the given id from the active assembly.
-func jointResult(asm *compdef.AssemblyComponentDefinition, id uint64) (json.RawMessage, error) {
-	return json.Marshal(wire.AssemblyJointResult{Joint: jointInfo(asm.Joints().ByID(id))})
+// jointResult renders the joint with the given id from the active assembly.
+func jointResult(asm *compdef.AssemblyComponentDefinition, id uint64) wire.AssemblyJointResult {
+	return wire.AssemblyJointResult{Joint: jointInfo(asm.Joints().ByID(id))}
 }
 
 // dsJointsList returns the active assembly's DS-joint set.
-func dsJointsList(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
+func dsJointsList(_ *app.Session, asm *compdef.AssemblyComponentDefinition) (wire.DSJointsResult, error) {
+	return dsJointsListResult(asm), nil
+}
+
+// dsJointsListResult renders the active assembly's DS-joint set.
+func dsJointsListResult(asm *compdef.AssemblyComponentDefinition) wire.DSJointsResult {
 	set := asm.DSJoints()
 	out := make([]wire.DSJointInfo, 0, set.Count())
 	for _, j := range set.All() {
 		out = append(out, dsJointInfo(j))
 	}
-	return json.Marshal(wire.DSJointsResult{Joints: out})
+	return wire.DSJointsResult{Joints: out}
 }
 
 // dsJointAdd adds a DS joint of the requested kind between two origins.
@@ -174,35 +152,19 @@ func dsJointAdd(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 }
 
 // dsJointSetImposedMotion sets a DS joint DOF's imposed motion and value.
-func dsJointSetImposedMotion(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.SetImposedMotionArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func dsJointSetImposedMotion(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.SetImposedMotionArgs) (wire.DSJointResult, error) {
 	if err := asm.DSJoints().SetImposedMotion(in.ID, in.DOFIndex, imposedMotion(in.ImposedMotion), in.Value); err != nil {
-		return nil, err
+		return wire.DSJointResult{}, err
 	}
-	return json.Marshal(wire.DSJointResult{Joint: dsJointInfo(asm.DSJoints().ByID(in.ID))})
+	return wire.DSJointResult{Joint: dsJointInfo(asm.DSJoints().ByID(in.ID))}, nil
 }
 
 // dsJointDelete removes a DS joint and returns the remaining set.
-func dsJointDelete(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	asm, err := modelaccess.ActiveAssembly(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.DeleteDSJointArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func dsJointDelete(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.DeleteDSJointArgs) (wire.DSJointsResult, error) {
 	if !asm.DSJoints().Delete(in.ID) {
-		return nil, fmt.Errorf("%s: no DS joint with id %d", wire.MethodDSJointsDelete, in.ID)
+		return wire.DSJointsResult{}, fmt.Errorf("%s: no DS joint with id %d", wire.MethodDSJointsDelete, in.ID)
 	}
-	return dsJointsList(s, nil)
+	return dsJointsListResult(asm), nil
 }
 
 // dsJointType maps a wire kind string to the DS joint enum.
