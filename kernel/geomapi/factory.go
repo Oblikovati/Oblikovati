@@ -18,6 +18,15 @@ type Factory struct{}
 
 var _ contract.TransientGeometry = Factory{}
 
+// The 2D/3D curve-construction families TransientGeometry embeds (I9, api v0.104.1).
+// Factory satisfies each as part of the union; asserting them explicitly lets a caller
+// depend on just the 2D or 3D constructors and keeps the #1619 guard honest.
+var (
+	_ contract.TransientCurves3d = Factory{}
+	_ contract.TransientCurves2d = Factory{}
+	_ contract.TransientSurfaces = Factory{}
+)
+
 // The umbrella curve/surface contracts are satisfied by the shared adapter
 // bases every concrete adapter embeds (#1619, ADR-0018: implicit satisfaction
 // at usage sites is not enforcement — the assertion is the tripwire).

@@ -15,6 +15,20 @@ import (
 // fix in the field, just not yet buildable.
 var commitBlockedColor = [4]float32{0.95, 0.55, 0.25, 1}
 
+// commitCancelHost is the slim session surface the OK/Cancel button row consumes: the
+// commit-gate reason, the commit, and the cancel — nothing else. Every registered tool
+// dialog draws through this widget, so naming exactly what it touches (audit I5, the
+// arrowSession pattern) segregates the whole dialog subsystem from the rest of the
+// session and lets the button row be tested against a small fake host. *app.Session
+// satisfies it implicitly.
+type commitCancelHost interface {
+	CommitBlockedReason() string
+	OK() error
+	CancelTool()
+}
+
+var _ commitCancelHost = (*app.Session)(nil)
+
 // commitCancelOutcome reports which button of a commit row fired this frame: OKCommitted is true
 // only when OK was clicked AND the commit succeeded (a sick/failed commit keeps the panel open),
 // Cancelled when Cancel was clicked. A dialog with per-panel teardown (clearing its edit state)
@@ -25,11 +39,12 @@ type commitCancelOutcome struct {
 }
 
 // drawCommitCancelButtons draws a feature panel's OK/Cancel row — the SINGLE owner of the tool-commit
-// row so the sick-config gate stays in one place (M40 audit S7, #1642). OK is disabled both when the
-// tool lacks its basic inputs (canCommit) AND when the pending configuration would recompute SICK
-// (CommitBlockedReason) — the rule that no sick feature may be committed to the design. When blocked
-// for the latter reason, a short amber line explains why, since a disabled button shows no tooltip.
-func drawCommitCancelButtons(s *app.Session, canCommit bool) commitCancelOutcome {
+// row so the sick-config gate stays in one place (M40 audit S7, #1642). It draws through the slim
+// commitCancelHost seam (audit I5). OK is disabled both when the tool lacks its basic inputs
+// (canCommit) AND when the pending configuration would recompute SICK (CommitBlockedReason) — the
+// rule that no sick feature may be committed to the design. When blocked for the latter reason, a
+// short amber line explains why, since a disabled button shows no tooltip.
+func drawCommitCancelButtons(s commitCancelHost, canCommit bool) commitCancelOutcome {
 	blocked := ""
 	if canCommit {
 		blocked = s.CommitBlockedReason() // only meaningful once the required inputs are present

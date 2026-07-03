@@ -10,24 +10,43 @@ import (
 	"oblikovati.org/math"
 )
 
-// CurveToStep emits the STEP curve for a kernel edge curve and returns its id plus
-// the EDGE_CURVE.same_sense flag relating the STEP curve's natural direction to the
-// kernel edge's start→end direction. A LINE/CIRCLE is always emitted same_sense
-// agreeing with start→end, except an Arc3d swept clockwise emits same_sense=.F.
-// (the CIRCLE's natural direction is CCW about its normal).
-func (e *Emitter) CurveToStep(c geom.Curve3) (id int, sameSense bool, err error) {
-	switch v := c.(type) {
-	case geom.LineSegment:
+// stepCurveWriter emits a STEP curve for one analytic curve kind, returning its id and the
+// EDGE_CURVE.same_sense flag (the STEP curve's natural direction vs the edge's start→end).
+type stepCurveWriter func(e *Emitter, c geom.Curve3) (int, bool, error)
+
+// stepCurveWriters is the table-driven routing from curve kind to STEP emitter (audit I6);
+// coverage is a map-keys check against geom.CurveKinds (TestStepCurveWriterCoverage).
+var stepCurveWriters = map[geom.CurveKind]stepCurveWriter{
+	geom.CurveLineSegment: func(e *Emitter, c geom.Curve3) (int, bool, error) {
+		v := c.(geom.LineSegment)
 		return e.lineToStep(v.StartPoint, v.StartPoint.VectorTo(v.EndPoint)), true, nil
-	case geom.Line:
+	},
+	geom.CurveLine: func(e *Emitter, c geom.Curve3) (int, bool, error) {
+		v := c.(geom.Line)
 		return e.lineToStep(v.Origin, v.Dir.AsVector()), true, nil
-	case geom.Circle:
+	},
+	geom.CurveCircle: func(e *Emitter, c geom.Curve3) (int, bool, error) {
+		v := c.(geom.Circle)
 		return e.circleToStep(v.Center, v.Normal.AsVector(), v.RefDir.AsVector(), v.Radius), true, nil
-	case geom.Arc3d:
-		return e.arcToStep(v)
-	default:
-		return 0, false, fmt.Errorf("geommap: cannot export curve type %T to STEP", c)
+	},
+	geom.CurveArc: func(e *Emitter, c geom.Curve3) (int, bool, error) { return e.arcToStep(c.(geom.Arc3d)) },
+}
+
+// CurveToStep emits the STEP curve for a kernel edge curve and returns its id plus the
+// EDGE_CURVE.same_sense flag. A LINE/CIRCLE is always emitted same_sense agreeing with
+// start→end, except an Arc3d swept clockwise emits same_sense=.F. (the CIRCLE's natural
+// direction is CCW about its normal). A curve kind without a writer errors, naming the kind
+// and consumer.
+func (e *Emitter) CurveToStep(c geom.Curve3) (id int, sameSense bool, err error) {
+	kc, ok := c.(geom.KindedCurve)
+	if !ok {
+		return 0, false, fmt.Errorf("geommap.CurveToStep: curve type %T is not a geom.KindedCurve", c)
 	}
+	write, ok := stepCurveWriters[kc.Kind()]
+	if !ok {
+		return 0, false, fmt.Errorf("geommap.CurveToStep: no STEP writer for curve kind %v (%T) — analytic export is table-driven; add a writer or fall back to a polyline", kc.Kind(), c)
+	}
+	return write(e, c)
 }
 
 // lineToStep emits LINE(point, VECTOR(direction, 1.0)).

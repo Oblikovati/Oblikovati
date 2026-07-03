@@ -11,24 +11,34 @@ import (
 	"oblikovati.org/math"
 )
 
-// SurfaceToStep emits a STEP surface entity for s, returning its id. The analytic
-// surfaces map exactly; an unhandled surface type errors (the caller may then fall
-// back to a tessellated face — deferred to PBI-E).
+// stepSurfaceWriter emits a STEP entity for one analytic surface kind, returning its id.
+type stepSurfaceWriter func(e *Emitter, s geom.Surface) (int, error)
+
+// stepSurfaceWriters is the table-driven routing from surface kind to STEP emitter (audit
+// I6): coverage is a map-keys check against geom.SurfaceKinds (TestStepSurfaceWriterCoverage),
+// not a switch audit, so a new geom kind that lacks a writer AND is not declared unsupported
+// fails CI instead of falling into a silent default.
+var stepSurfaceWriters = map[geom.SurfaceKind]stepSurfaceWriter{
+	geom.SurfacePlane:    func(e *Emitter, s geom.Surface) (int, error) { return e.planeToStep(s.(geom.Plane)), nil },
+	geom.SurfaceCylinder: func(e *Emitter, s geom.Surface) (int, error) { return e.cylinderToStep(s.(geom.Cylinder)), nil },
+	geom.SurfaceCone:     func(e *Emitter, s geom.Surface) (int, error) { return e.coneToStep(s.(geom.Cone)), nil },
+	geom.SurfaceSphere:   func(e *Emitter, s geom.Surface) (int, error) { return e.sphereToStep(s.(geom.Sphere)), nil },
+	geom.SurfaceTorus:    func(e *Emitter, s geom.Surface) (int, error) { return e.torusToStep(s.(geom.Torus)), nil },
+}
+
+// SurfaceToStep emits a STEP surface entity for s, returning its id. The analytic surfaces
+// with a STEP entity map exactly; a surface kind without a writer errors, naming the kind
+// and consumer (the caller may then fall back to a tessellated face — deferred to PBI-E).
 func (e *Emitter) SurfaceToStep(s geom.Surface) (int, error) {
-	switch v := s.(type) {
-	case geom.Plane:
-		return e.planeToStep(v), nil
-	case geom.Cylinder:
-		return e.cylinderToStep(v), nil
-	case geom.Cone:
-		return e.coneToStep(v), nil
-	case geom.Sphere:
-		return e.sphereToStep(v), nil
-	case geom.Torus:
-		return e.torusToStep(v), nil
-	default:
-		return 0, fmt.Errorf("geommap: cannot export surface type %T to STEP", s)
+	ks, ok := s.(geom.KindedSurface)
+	if !ok {
+		return 0, fmt.Errorf("geommap.SurfaceToStep: surface type %T is not a geom.KindedSurface", s)
 	}
+	write, ok := stepSurfaceWriters[ks.Kind()]
+	if !ok {
+		return 0, fmt.Errorf("geommap.SurfaceToStep: no STEP writer for surface kind %v (%T) — analytic export is table-driven; add a writer or fall back to tessellation", ks.Kind(), s)
+	}
+	return write(e, s)
 }
 
 // planeToStep emits PLANE with a placement at the plane origin, Z=normal, X=UAxis.
