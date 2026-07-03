@@ -3,11 +3,9 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
@@ -15,134 +13,105 @@ import (
 )
 
 // createSketch3D adds an empty 3D sketch to the active part and returns its index.
-func createSketch3D(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.CreateSketch3DArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func createSketch3D(_ *app.Session, part *compdef.PartComponentDefinition, in wire.CreateSketch3DArgs) (wire.CreateSketch3DResult, error) {
 	if in.Name != "" {
 		part.Sketches3D().AddNamed(in.Name)
 	} else {
 		part.Sketches3D().Add()
 	}
-	return json.Marshal(wire.CreateSketch3DResult{SketchIndex: part.Sketches3D().Count() - 1})
+	return wire.CreateSketch3DResult{SketchIndex: part.Sketches3D().Count() - 1}, nil
 }
 
 // listSketches3D enumerates the active part's 3D sketches with identity and solve state.
-func listSketches3D(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	sketches := part.Sketches3D()
-	out := make([]wire.Sketch3DInfo, sketches.Count())
-	for i := 0; i < sketches.Count(); i++ {
-		out[i] = sketch3DInfo(i, sketches.Item(i))
-	}
-	return json.Marshal(wire.ListSketches3DResult{Sketches: out})
+func listSketches3D(_ *app.Session, part *compdef.PartComponentDefinition) (wire.ListSketches3DResult, error) {
+	return wire.ListSketches3DResult{Sketches: projectAll(part.Sketches3D(), sketch3DInfo)}, nil
 }
 
 // getSketch3D returns one 3D sketch's info by index.
-func getSketch3D(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	sk, idx, err := resolveSketch3D(s, raw)
+func getSketch3D(_ *app.Session, part *compdef.PartComponentDefinition, in wire.Sketch3DArgs) (wire.Sketch3DInfo, error) {
+	sk, err := sketch3DAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.Sketch3DInfo{}, err
 	}
-	return json.Marshal(sketch3DInfo(idx, sk))
+	return sketch3DInfo(in.SketchIndex, sk), nil
 }
 
 // editSketch3D enters edit mode; exitEditSketch3D leaves it.
-func editSketch3D(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	return setSketch3DEdit(s, raw, true)
+func editSketch3D(_ *app.Session, part *compdef.PartComponentDefinition, in wire.Sketch3DArgs) (wire.EditSketch3DResult, error) {
+	return setSketch3DEdit(part, in, true)
 }
 
-func exitEditSketch3D(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	return setSketch3DEdit(s, raw, false)
+func exitEditSketch3D(_ *app.Session, part *compdef.PartComponentDefinition, in wire.Sketch3DArgs) (wire.EditSketch3DResult, error) {
+	return setSketch3DEdit(part, in, false)
 }
 
-func setSketch3DEdit(s *app.Session, raw json.RawMessage, edit bool) (json.RawMessage, error) {
-	sk, idx, err := resolveSketch3D(s, raw)
+func setSketch3DEdit(part *compdef.PartComponentDefinition, in wire.Sketch3DArgs, edit bool) (wire.EditSketch3DResult, error) {
+	sk, err := sketch3DAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.EditSketch3DResult{}, err
 	}
 	if edit {
 		sk.Edit()
 	} else {
 		sk.ExitEdit()
 	}
-	return json.Marshal(wire.EditSketch3DResult{SketchIndex: idx, Editing: sk.IsEditing()})
+	return wire.EditSketch3DResult{SketchIndex: in.SketchIndex, Editing: sk.IsEditing()}, nil
 }
 
 // solveSketch3D resolves the sketch and reports DOF/status/convergence/health.
-func solveSketch3D(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	sk, idx, err := resolveSketch3D(s, raw)
+func solveSketch3D(_ *app.Session, part *compdef.PartComponentDefinition, in wire.Sketch3DArgs) (wire.SolveSketch3DResult, error) {
+	sk, err := sketch3DAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.SolveSketch3DResult{}, err
 	}
 	res := sk.Solve()
-	return json.Marshal(wire.SolveSketch3DResult{
-		SketchIndex: idx,
+	return wire.SolveSketch3DResult{
+		SketchIndex: in.SketchIndex,
 		DOF:         res.DOF,
 		Status:      solveStatus(res.Status),
 		Converged:   res.Converged,
 		Healthy:     sk.Health().OK(),
-	})
+	}, nil
 }
 
 // constraintStatus3D reports the sketch's DOF analysis without moving geometry.
-func constraintStatus3D(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	sk, _, err := resolveSketch3D(s, raw)
+func constraintStatus3D(_ *app.Session, part *compdef.PartComponentDefinition, in wire.Sketch3DArgs) (wire.ConstraintStatusResult, error) {
+	sk, err := sketch3DAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.ConstraintStatusResult{}, err
 	}
 	a := sk.AnalyzeConstraints()
-	return json.Marshal(wire.ConstraintStatusResult{
+	return wire.ConstraintStatusResult{
 		Status:    dofStatus(a.DOF, a.Redundant),
 		DOF:       a.DOF,
 		Variables: a.Variables,
 		Equations: a.Equations,
 		Redundant: a.Redundant,
-	})
+	}, nil
 }
 
 // deleteSketch3D removes a 3D sketch (only valid when no feature consumes it).
-func deleteSketch3D(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	sk, _, err := resolveSketch3D(s, raw)
+func deleteSketch3D(_ *app.Session, part *compdef.PartComponentDefinition, in wire.Sketch3DArgs) (wire.OKResult, error) {
+	sk, err := sketch3DAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
-	}
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
+		return wire.OKResult{}, err
 	}
 	if !part.Sketches3D().Remove(sk.ID()) {
-		return nil, fmt.Errorf("sketch3d.delete: sketch %d could not be removed", sk.ID())
+		return wire.OKResult{}, fmt.Errorf("sketch3d.delete: sketch %d could not be removed", sk.ID())
 	}
-	return json.Marshal(wire.OKResult{OK: true})
+	return wire.OKResult{OK: true}, nil
 }
 
 // setSketch3DProperty edits one display/solve property and echoes the updated info.
-func setSketch3DProperty(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.SetSketch3DPropertyArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func setSketch3DProperty(_ *app.Session, part *compdef.PartComponentDefinition, in wire.SetSketch3DPropertyArgs) (wire.Sketch3DInfo, error) {
 	sk, err := sketch3DAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.Sketch3DInfo{}, err
 	}
 	if err := applySketch3DProperty(sk, in.Property, in.Value); err != nil {
-		return nil, err
+		return wire.Sketch3DInfo{}, err
 	}
-	return json.Marshal(sketch3DInfo(in.SketchIndex, sk))
+	return sketch3DInfo(in.SketchIndex, sk), nil
 }
 
 // applySketch3DProperty sets one named property from its string value.
@@ -209,30 +178,4 @@ func sketch3DAtIndex(part *compdef.PartComponentDefinition, i int) (*sketch.Sket
 		return nil, fmt.Errorf("3D sketch index %d out of range (part has %d 3D sketches)", i, part.Sketches3D().Count())
 	}
 	return part.Sketches3D().Item(i), nil
-}
-
-// activeSketch3DAt returns the active part's 3D sketch at the given index.
-func activeSketch3DAt(s *app.Session, index int) (*sketch.Sketch3D, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	return sketch3DAtIndex(part, index)
-}
-
-// resolveSketch3D decodes a Sketch3DArgs and returns the active part's 3D sketch at that index.
-func resolveSketch3D(s *app.Session, raw json.RawMessage) (*sketch.Sketch3D, int, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, 0, err
-	}
-	var in wire.Sketch3DArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, 0, err
-	}
-	sk, err := sketch3DAtIndex(part, in.SketchIndex)
-	if err != nil {
-		return nil, 0, err
-	}
-	return sk, in.SketchIndex, nil
 }

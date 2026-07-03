@@ -3,12 +3,12 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
+	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/sketch"
 )
 
@@ -16,55 +16,47 @@ import (
 // set of a closed profile, computed in model/sketch/region_properties.go.
 
 // sketchRegionProperties serves wire.MethodSketchRegionProperties.
-func sketchRegionProperties(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.RegionPropertiesArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	sk, _, err := resolveSketch(s, raw) // RegionPropertiesArgs carries sketchIndex
+func sketchRegionProperties(_ *app.Session, part *compdef.PartComponentDefinition, in wire.RegionPropertiesArgs) (wire.RegionPropertiesResult, error) {
+	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.RegionPropertiesResult{}, err
 	}
 	acc, err := regionAccuracy(in.Accuracy)
 	if err != nil {
-		return nil, err
+		return wire.RegionPropertiesResult{}, err
 	}
 	profiles := sk.Profiles()
 	if in.ProfileIndex < 0 || in.ProfileIndex >= profiles.Count() {
-		return nil, fmt.Errorf("profile index %d out of range (sketch has %d profiles)",
+		return wire.RegionPropertiesResult{}, fmt.Errorf("profile index %d out of range (sketch has %d profiles)",
 			in.ProfileIndex, profiles.Count())
 	}
 	props, err := profiles.Item(in.ProfileIndex).RegionProperties(acc)
 	if err != nil {
-		return nil, err
+		return wire.RegionPropertiesResult{}, err
 	}
-	return json.Marshal(regionPropertiesResult(props))
+	return regionPropertiesResult(props), nil
 }
 
 // sketch3DRegionProperties serves wire.MethodSketch3DRegionProperties.
-func sketch3DRegionProperties(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.RegionPropertiesArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	sk, _, err := resolveSketch3D(s, raw) // RegionPropertiesArgs carries sketchIndex
+func sketch3DRegionProperties(_ *app.Session, part *compdef.PartComponentDefinition, in wire.RegionPropertiesArgs) (wire.RegionPropertiesResult, error) {
+	sk, err := sketch3DAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.RegionPropertiesResult{}, err
 	}
 	acc, err := regionAccuracy(in.Accuracy)
 	if err != nil {
-		return nil, err
+		return wire.RegionPropertiesResult{}, err
 	}
 	profiles := sk.Profiles3D()
 	if in.ProfileIndex < 0 || in.ProfileIndex >= len(profiles) {
-		return nil, fmt.Errorf("profile index %d out of range (3D sketch has %d profiles)",
+		return wire.RegionPropertiesResult{}, fmt.Errorf("profile index %d out of range (3D sketch has %d profiles)",
 			in.ProfileIndex, len(profiles))
 	}
 	props, err := profiles[in.ProfileIndex].RegionProperties(acc)
 	if err != nil {
-		return nil, err
+		return wire.RegionPropertiesResult{}, err
 	}
-	return json.Marshal(regionPropertiesResult(props))
+	return regionPropertiesResult(props), nil
 }
 
 // regionAccuracy parses the requested accuracy; empty means the documented

@@ -3,9 +3,6 @@
 package router
 
 import (
-	"encoding/json"
-
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
@@ -15,21 +12,13 @@ import (
 // includeSketch3D links referenced part edges/vertices into a 3D sketch as associative
 // reference geometry (re-derived through recompute via their source keys), reusing the
 // edge/vertex source adapters of the 2D project-geometry path.
-func includeSketch3D(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.IncludeSketch3DArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func includeSketch3D(_ *app.Session, part *compdef.PartComponentDefinition, in wire.IncludeSketch3DArgs) (wire.IncludeSketch3DResult, error) {
 	sk, err := sketch3DAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.IncludeSketch3DResult{}, err
 	}
 	created, healthy := includeRefs3D(part, sk, in.Refs)
-	return json.Marshal(wire.IncludeSketch3DResult{Created: created, Healthy: healthy})
+	return wire.IncludeSketch3DResult{Created: created, Healthy: healthy}, nil
 }
 
 // includeRefs3D resolves each reference to a part edge/vertex and includes it; an

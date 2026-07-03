@@ -3,56 +3,48 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
+	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/sketch"
 )
 
 // addConstraint applies a geometric constraint of the requested kind to the referenced
 // geometry and reports the sketch's resulting DOF.
-func addConstraint(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.AddConstraintArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	sk, err := activeSketchAt(s, in.SketchIndex)
+func addConstraint(_ *app.Session, part *compdef.PartComponentDefinition, in wire.AddConstraintArgs) (wire.AddConstraintResult, error) {
+	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.AddConstraintResult{}, err
 	}
 	if types.GeometricConstraintKind(in.Kind) == types.GeoConstraintCustom {
 		if err := addCustomConstraint(sk, in); err != nil {
-			return nil, err
+			return wire.AddConstraintResult{}, err
 		}
 	} else if _, err := buildGeometricConstraint(sk, types.GeometricConstraintKind(in.Kind), in.Entities); err != nil {
-		return nil, err
+		return wire.AddConstraintResult{}, err
 	}
 	g := sk.GeometricConstraints()
-	return json.Marshal(wire.AddConstraintResult{Index: g.Count() - 1, Kind: in.Kind, DOF: sk.DegreesOfFreedom()})
+	return wire.AddConstraintResult{Index: g.Count() - 1, Kind: in.Kind, DOF: sk.DegreesOfFreedom()}, nil
 }
 
 // deleteConstraint removes a geometric constraint by index.
-func deleteConstraint(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.DeleteConstraintArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	sk, err := activeSketchAt(s, in.SketchIndex)
+func deleteConstraint(_ *app.Session, part *compdef.PartComponentDefinition, in wire.DeleteConstraintArgs) (wire.OKResult, error) {
+	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.OKResult{}, err
 	}
 	g := sk.GeometricConstraints()
 	if in.ConstraintIndex < 0 || in.ConstraintIndex >= g.Count() {
-		return nil, fmt.Errorf("sketch.deleteConstraint: index %d out of range (%d constraints)", in.ConstraintIndex, g.Count())
+		return wire.OKResult{}, fmt.Errorf("sketch.deleteConstraint: index %d out of range (%d constraints)", in.ConstraintIndex, g.Count())
 	}
 	// System-owned records (the text-box anchor) refuse deletion (M06-F11).
 	if err := g.DeleteAllowed(g.Item(in.ConstraintIndex)); err != nil {
-		return nil, err
+		return wire.OKResult{}, err
 	}
-	return json.Marshal(wire.OKResult{OK: true})
+	return wire.OKResult{OK: true}, nil
 }
 
 // addCustomConstraint applies the add-in tag constraint: arbitrary entity

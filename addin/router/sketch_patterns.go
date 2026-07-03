@@ -3,10 +3,8 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/math"
@@ -15,28 +13,20 @@ import (
 )
 
 // addSketchPattern duplicates a selection in a rectangular grid or circular array.
-func addSketchPattern(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddSketchPatternArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func addSketchPattern(_ *app.Session, part *compdef.PartComponentDefinition, in wire.AddSketchPatternArgs) (wire.AddSketchPatternResult, error) {
 	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.AddSketchPatternResult{}, err
 	}
 	ents, err := entityRefs(sk, in.Entities)
 	if err != nil {
-		return nil, err
+		return wire.AddSketchPatternResult{}, err
 	}
 	created, err := buildPattern(part, sk, ents, in)
 	if err != nil {
-		return nil, err
+		return wire.AddSketchPatternResult{}, err
 	}
-	return json.Marshal(wire.AddSketchPatternResult{Created: entityIDs(created)})
+	return wire.AddSketchPatternResult{Created: entityIDs(created)}, nil
 }
 
 // buildPattern dispatches the pattern kind to its model builder.

@@ -3,11 +3,9 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 	"math"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
@@ -15,85 +13,75 @@ import (
 )
 
 // listSketches enumerates the active part's sketches with their identity and solve state.
-func listSketches(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	sketches := part.Sketches()
-	out := make([]wire.SketchInfo, sketches.Count())
-	for i := 0; i < sketches.Count(); i++ {
-		out[i] = sketchInfo(part, i, sketches.Item(i))
-	}
-	return json.Marshal(wire.ListSketchesResult{Sketches: out})
+func listSketches(_ *app.Session, part *compdef.PartComponentDefinition) (wire.ListSketchesResult, error) {
+	out := projectAll(part.Sketches(), func(i int, sk *sketch.Sketch) wire.SketchInfo {
+		return sketchInfo(part, i, sk)
+	})
+	return wire.ListSketchesResult{Sketches: out}, nil
 }
 
 // getSketch returns one sketch's info by index.
-func getSketch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	sk, idx, err := resolveSketch(s, raw)
+func getSketch(_ *app.Session, part *compdef.PartComponentDefinition, in wire.SketchArgs) (wire.SketchInfo, error) {
+	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.SketchInfo{}, err
 	}
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(sketchInfo(part, idx, sk))
+	return sketchInfo(part, in.SketchIndex, sk), nil
 }
 
 // editSketch enters edit mode; exitEditSketch leaves it.
-func editSketch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	return setSketchEdit(s, raw, true)
+func editSketch(_ *app.Session, part *compdef.PartComponentDefinition, in wire.SketchArgs) (wire.EditSketchResult, error) {
+	return setSketchEdit(part, in, true)
 }
 
-func exitEditSketch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	return setSketchEdit(s, raw, false)
+func exitEditSketch(_ *app.Session, part *compdef.PartComponentDefinition, in wire.SketchArgs) (wire.EditSketchResult, error) {
+	return setSketchEdit(part, in, false)
 }
 
 // setSketchEdit toggles a sketch's edit mode and echoes the resulting state.
-func setSketchEdit(s *app.Session, raw json.RawMessage, edit bool) (json.RawMessage, error) {
-	sk, idx, err := resolveSketch(s, raw)
+func setSketchEdit(part *compdef.PartComponentDefinition, in wire.SketchArgs, edit bool) (wire.EditSketchResult, error) {
+	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.EditSketchResult{}, err
 	}
 	if edit {
 		sk.Edit()
 	} else {
 		sk.ExitEdit()
 	}
-	return json.Marshal(wire.EditSketchResult{SketchIndex: idx, Editing: sk.IsEditing()})
+	return wire.EditSketchResult{SketchIndex: in.SketchIndex, Editing: sk.IsEditing()}, nil
 }
 
 // solveSketch resolves the sketch and reports DOF/status/convergence/health.
-func solveSketch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	sk, idx, err := resolveSketch(s, raw)
+func solveSketch(_ *app.Session, part *compdef.PartComponentDefinition, in wire.SketchArgs) (wire.SolveSketchResult, error) {
+	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.SolveSketchResult{}, err
 	}
 	res := sk.Solve()
-	return json.Marshal(wire.SolveSketchResult{
-		SketchIndex: idx,
+	return wire.SolveSketchResult{
+		SketchIndex: in.SketchIndex,
 		DOF:         res.DOF,
 		Status:      solveStatus(res.Status),
 		Converged:   res.Converged,
 		Healthy:     sk.Health().OK(),
-	})
+	}, nil
 }
 
 // constraintStatus reports the sketch's DOF analysis without moving geometry.
-func constraintStatus(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	sk, _, err := resolveSketch(s, raw)
+func constraintStatus(_ *app.Session, part *compdef.PartComponentDefinition, in wire.SketchArgs) (wire.ConstraintStatusResult, error) {
+	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.ConstraintStatusResult{}, err
 	}
 	a := sk.AnalyzeConstraints()
-	return json.Marshal(wire.ConstraintStatusResult{
+	return wire.ConstraintStatusResult{
 		Status:    dofStatus(a.DOF, a.Redundant),
 		DOF:       a.DOF,
 		Variables: a.Variables,
 		Equations: a.Equations,
 		Redundant: a.Redundant,
-	})
+	}, nil
 }
 
 // dofStatus maps a DOF count + redundancy to the wire constraint-status string.
@@ -109,22 +97,18 @@ func dofStatus(dof, redundant int) string {
 }
 
 // deleteSketch removes a sketch (only valid when no feature consumes it).
-func deleteSketch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	sk, _, err := resolveSketch(s, raw)
+func deleteSketch(_ *app.Session, part *compdef.PartComponentDefinition, in wire.SketchArgs) (wire.OKResult, error) {
+	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
-	}
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
+		return wire.OKResult{}, err
 	}
 	if err := rejectIfConsumed(part, sk); err != nil {
-		return nil, err
+		return wire.OKResult{}, err
 	}
 	if !part.Sketches().Remove(sk.ID()) {
-		return nil, fmt.Errorf("sketch.delete: sketch %d could not be removed", sk.ID())
+		return wire.OKResult{}, fmt.Errorf("sketch.delete: sketch %d could not be removed", sk.ID())
 	}
-	return json.Marshal(wire.OKResult{OK: true})
+	return wire.OKResult{OK: true}, nil
 }
 
 // sketchInfo renders a sketch as its wire summary (DOF computed without moving geometry),
@@ -149,32 +133,6 @@ func sketchInfo(part *compdef.PartComponentDefinition, index int, sk *sketch.Ske
 		info.Consumed, info.OwnedBy = true, cons[0].Name()
 	}
 	return info
-}
-
-// activeSketchAt returns the active part's sketch at the given index.
-func activeSketchAt(s *app.Session, index int) (*sketch.Sketch, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	return sketchAtIndex(part, index)
-}
-
-// resolveSketch decodes a SketchArgs and returns the active part's sketch at that index.
-func resolveSketch(s *app.Session, raw json.RawMessage) (*sketch.Sketch, int, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, 0, err
-	}
-	var in wire.SketchArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, 0, err
-	}
-	sk, err := sketchAtIndex(part, in.SketchIndex)
-	if err != nil {
-		return nil, 0, err
-	}
-	return sk, in.SketchIndex, nil
 }
 
 // solveStatus maps the solver status to the wire string.

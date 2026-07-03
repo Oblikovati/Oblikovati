@@ -3,10 +3,8 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/math"
@@ -16,50 +14,42 @@ import (
 )
 
 // transformSketch3D applies a move/copy/rotate/delete edit to a 3D-sketch selection.
-func transformSketch3D(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.Transform3DArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func transformSketch3D(_ *app.Session, part *compdef.PartComponentDefinition, in wire.Transform3DArgs) (wire.Transform3DResult, error) {
 	sk, err := sketch3DAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.Transform3DResult{}, err
 	}
 	ents, err := resolveEntities3D(sk, in.Entities)
 	if err != nil {
-		return nil, err
+		return wire.Transform3DResult{}, err
 	}
 	return applyTransform3D(part, sk, ents, in)
 }
 
 // applyTransform3D dispatches the requested edit op and returns the result.
-func applyTransform3D(part *compdef.PartComponentDefinition, sk *sketch.Sketch3D, ents []sketch.Entity, in wire.Transform3DArgs) (json.RawMessage, error) {
+func applyTransform3D(part *compdef.PartComponentDefinition, sk *sketch.Sketch3D, ents []sketch.Entity, in wire.Transform3DArgs) (wire.Transform3DResult, error) {
 	switch in.Op {
 	case "move", "copy":
 		return moveOrCopy3D(sk, ents, in)
 	case "rotate":
 		if err := rotate3D(part, sk, ents, in); err != nil {
-			return nil, err
+			return wire.Transform3DResult{}, err
 		}
 	case "delete":
 		for _, e := range ents {
 			sk.DeleteEntity3D(e)
 		}
 	default:
-		return nil, fmt.Errorf("sketch3d.transform: unknown op %q (want move|copy|rotate|delete)", in.Op)
+		return wire.Transform3DResult{}, fmt.Errorf("sketch3d.transform: unknown op %q (want move|copy|rotate|delete)", in.Op)
 	}
 	return transform3DResult(sk, nil)
 }
 
 // moveOrCopy3D applies a translation (move) or a translated duplication (copy).
-func moveOrCopy3D(sk *sketch.Sketch3D, ents []sketch.Entity, in wire.Transform3DArgs) (json.RawMessage, error) {
+func moveOrCopy3D(sk *sketch.Sketch3D, ents []sketch.Entity, in wire.Transform3DArgs) (wire.Transform3DResult, error) {
 	v, err := vector3Arg(in.Vector)
 	if err != nil {
-		return nil, err
+		return wire.Transform3DResult{}, err
 	}
 	if in.Op == "copy" {
 		return transform3DResult(sk, sk.CopyEntities3D(ents, v))
@@ -86,13 +76,13 @@ func rotate3D(part *compdef.PartComponentDefinition, sk *sketch.Sketch3D, ents [
 	return nil
 }
 
-// transform3DResult marshals the created ids (copy) and the resulting entity count.
-func transform3DResult(sk *sketch.Sketch3D, created []sketch.Entity) (json.RawMessage, error) {
+// transform3DResult reports the created ids (copy) and the resulting entity count.
+func transform3DResult(sk *sketch.Sketch3D, created []sketch.Entity) (wire.Transform3DResult, error) {
 	ids := make([]uint64, len(created))
 	for i, e := range created {
 		ids[i] = uint64(e.EntityID())
 	}
-	return json.Marshal(wire.Transform3DResult{Created: ids, EntityCount: sk.EntityCount()})
+	return wire.Transform3DResult{Created: ids, EntityCount: sk.EntityCount()}, nil
 }
 
 // resolveEntities3D resolves a list of entity ids to entities.

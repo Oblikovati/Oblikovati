@@ -3,10 +3,8 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
@@ -18,25 +16,17 @@ import (
 
 // addSketchEntity creates a sketch entity of the requested kind/variant and returns its
 // id and defining-point ids.
-func addSketchEntity(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddSketchEntityArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func addSketchEntity(s *app.Session, part *compdef.PartComponentDefinition, in wire.AddSketchEntityArgs) (wire.AddSketchEntityResult, error) {
 	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.AddSketchEntityResult{}, err
 	}
 	if isCompositeKind(in.Kind) {
 		return addCompositeEntity(part, sk, in)
 	}
 	ent, pointIDs, err := buildSketchEntity(part, sk, in)
 	if err != nil {
-		return nil, err
+		return wire.AddSketchEntityResult{}, err
 	}
 	applyConstruction(ent, in.Construction)
 	out := wire.AddSketchEntityResult{
@@ -44,7 +34,7 @@ func addSketchEntity(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 	}
 	// Inference runs on commit and reports what it applied (M06-F10, #625).
 	applyEntityInference(s, sk, ent, &out)
-	return json.Marshal(out)
+	return out, nil
 }
 
 // isCompositeKind reports whether a kind builds several entities at once.
@@ -59,10 +49,10 @@ func isCompositeKind(kind string) bool {
 
 // addCompositeEntity builds a multi-entity composite (rectangle/polygon/slot), applies
 // the construction flag to every created entity, and returns all their ids.
-func addCompositeEntity(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in wire.AddSketchEntityArgs) (json.RawMessage, error) {
+func addCompositeEntity(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in wire.AddSketchEntityArgs) (wire.AddSketchEntityResult, error) {
 	ents, center, err := buildComposite(part, sk, in)
 	if err != nil {
-		return nil, err
+		return wire.AddSketchEntityResult{}, err
 	}
 	ids := make([]uint64, len(ents))
 	for i, e := range ents {
@@ -75,9 +65,9 @@ func addCompositeEntity(part *compdef.PartComponentDefinition, sk *sketch.Sketch
 	if center != nil {
 		points = append(points, uint64(center.EntityID()))
 	}
-	return json.Marshal(wire.AddSketchEntityResult{
+	return wire.AddSketchEntityResult{
 		EntityID: ids[0], Kind: in.Kind, EntityIDs: ids, PointIDs: points,
-	})
+	}, nil
 }
 
 // pointBearer is the subset of line-like entities that expose their two defining

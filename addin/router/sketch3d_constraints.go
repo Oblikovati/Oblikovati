@@ -3,33 +3,29 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
+	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/sketch"
 )
 
 // addSketch3DConstraint is the discriminated 3D geometric-constraint constructor.
-func addSketch3DConstraint(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.AddSketch3DConstraintArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	sk, err := activeSketch3DAt(s, in.SketchIndex)
+func addSketch3DConstraint(_ *app.Session, part *compdef.PartComponentDefinition, in wire.AddSketch3DConstraintArgs) (wire.AddSketch3DConstraintResult, error) {
+	sk, err := sketch3DAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.AddSketch3DConstraintResult{}, err
 	}
 	c, err := buildSketch3DConstraint(sk, types.Geometric3DConstraintKind(in.Kind), in.Entities)
 	if err != nil {
-		return nil, err
+		return wire.AddSketch3DConstraintResult{}, err
 	}
 	sk.GeometricConstraints3D().Add(c)
-	return json.Marshal(wire.AddSketch3DConstraintResult{
+	return wire.AddSketch3DConstraintResult{
 		Index: sk.GeometricConstraints3D().Count() - 1, Kind: in.Kind, DOF: sk.DegreesOfFreedom(),
-	})
+	}, nil
 }
 
 // buildSketch3DConstraint resolves the operands and applies the matching constraint factory.
@@ -273,21 +269,17 @@ func orientationConstraint3D(sk *sketch.Sketch3D, kind types.Geometric3DConstrai
 }
 
 // deleteSketch3DConstraint removes a geometric constraint by index.
-func deleteSketch3DConstraint(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.DeleteSketch3DConstraintArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	sk, err := activeSketch3DAt(s, in.SketchIndex)
+func deleteSketch3DConstraint(_ *app.Session, part *compdef.PartComponentDefinition, in wire.DeleteSketch3DConstraintArgs) (wire.OKResult, error) {
+	sk, err := sketch3DAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.OKResult{}, err
 	}
 	g := sk.GeometricConstraints3D()
 	if in.ConstraintIndex < 0 || in.ConstraintIndex >= g.Count() {
-		return nil, fmt.Errorf("sketch3d.deleteConstraint: index %d out of range (%d constraints)", in.ConstraintIndex, g.Count())
+		return wire.OKResult{}, fmt.Errorf("sketch3d.deleteConstraint: index %d out of range (%d constraints)", in.ConstraintIndex, g.Count())
 	}
 	g.Delete(g.Item(in.ConstraintIndex))
-	return json.Marshal(wire.OKResult{OK: true})
+	return wire.OKResult{OK: true}, nil
 }
 
 // points3D resolves exactly n point refs.
