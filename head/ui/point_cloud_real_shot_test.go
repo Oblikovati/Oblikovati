@@ -33,7 +33,7 @@ func TestInWindowRealScanRenders(t *testing.T) {
 	icons = nil
 
 	s := framedSession()
-	pc, err := s.AttachPointCloud("Capstan", realScanPath)
+	pc, _, err := s.AttachPointCloud("Capstan", realScanPath)
 	if err != nil {
 		t.Fatalf("attach real scan: %v", err)
 	}
@@ -65,7 +65,7 @@ func TestInWindowRealE57Renders(t *testing.T) {
 	icons = nil
 
 	s := framedSession()
-	pc, err := s.AttachPointCloud("Capstan E57", realE57Path)
+	pc, _, err := s.AttachPointCloud("Capstan E57", realE57Path)
 	if err != nil {
 		t.Fatalf("attach real E57 scan: %v", err)
 	}

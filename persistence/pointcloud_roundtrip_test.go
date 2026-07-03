@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/contentset"
@@ -29,7 +30,7 @@ func TestPointCloudSurvivesStoreRoundTrip(t *testing.T) {
 
 	scan := []byte("0 0 0\n1 2 3\n4 5 6\n")
 	rid := def.AddResource(doc.Resource{Type: "PointCloudScan", Encoding: doc.EncodingUTF8, Value: scan, Origin: "room.xyz"})
-	points, err := pointcloud.ReadScan("room.xyz", scan)
+	points, _, err := pointcloud.ReadScan("room.xyz", scan, exchange.TranslationOptions{TargetUnitMM: def.WorkingUnitMM()})
 	if err != nil {
 		t.Fatalf("decode scan: %v", err)
 	}

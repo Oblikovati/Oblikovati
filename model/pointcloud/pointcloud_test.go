@@ -4,6 +4,7 @@ package pointcloud
 
 import (
 	"math"
+	"strings"
 	"testing"
 
 	omath "oblikovati.org/math"
@@ -13,7 +14,7 @@ import (
 // comment, and extra-column lines, and skips a leading PTS count header.
 func TestASCIIReaderParsesXYZAndSkipsNoise(t *testing.T) {
 	src := "3\n# a comment\n\n1 2 3\n4.5 6 7 128 255 0 0\n// trailing comment\n-1 -2 -3\n"
-	pts, err := NewASCIIReader().Read([]byte(src))
+	pts, _, err := NewASCIIReader().Read([]byte(src))
 	if err != nil {
 		t.Fatalf("Read: %v", err)
 	}
@@ -25,11 +26,19 @@ func TestASCIIReaderParsesXYZAndSkipsNoise(t *testing.T) {
 	}
 }
 
-// TestASCIIReaderRejectsMalformedLine: a non-coordinate line that is not a leading count header
-// errors, citing the line.
-func TestASCIIReaderRejectsMalformedLine(t *testing.T) {
-	if _, err := NewASCIIReader().Read([]byte("1 2 3\nx y z\n")); err == nil {
-		t.Error("expected an error on a non-numeric coordinate line")
+// TestASCIIReaderWarnsOnMalformedLine: a non-coordinate line that is not a leading count header
+// is skipped with a warning citing the line — the DWG decoder's warn-and-continue policy
+// (#1646) — while a scan where NOTHING decodes still errors, naming the bad record.
+func TestASCIIReaderWarnsOnMalformedLine(t *testing.T) {
+	pts, warns, err := NewASCIIReader().Read([]byte("1 2 3\nx y z\n"))
+	if err != nil || len(pts) != 1 {
+		t.Fatalf("Read = %d points, err %v; want the good point kept", len(pts), err)
+	}
+	if len(warns) != 1 || !strings.Contains(warns[0], "line 2") || !strings.Contains(warns[0], "x y z") {
+		t.Errorf("warns = %v, want one naming line 2 and its content", warns)
+	}
+	if _, _, err := NewASCIIReader().Read([]byte("x y z\n")); err == nil {
+		t.Error("a scan with zero decodable points should error")
 	}
 }
 

@@ -5,6 +5,8 @@ package pointcloud
 import (
 	"testing"
 
+	"oblikovati.org/kernel/exchange"
+
 	"oblikovati.org/math"
 )
 
@@ -104,11 +106,11 @@ func TestFromModelSpaceDegenerate(t *testing.T) {
 
 // TestReadScanDispatch: ReadScan routes by extension and errors on an unknown one.
 func TestReadScanDispatch(t *testing.T) {
-	pts, err := ReadScan("room.PTS", []byte("1 2 3\n"))
+	pts, _, err := ReadScan("room.PTS", []byte("1 2 3\n"), exchange.TranslationOptions{})
 	if err != nil || len(pts) != 1 {
 		t.Fatalf("ReadScan(.PTS) = %v points, err %v", len(pts), err)
 	}
-	if _, err := ReadScan("room.bin", []byte("binary")); err == nil {
+	if _, _, err := ReadScan("room.bin", []byte("binary"), exchange.TranslationOptions{}); err == nil {
 		t.Error("ReadScan of an unregistered extension should fail")
 	}
 }

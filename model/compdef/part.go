@@ -5,6 +5,7 @@ package compdef
 import (
 	"strconv"
 
+	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -329,6 +330,13 @@ func (d *PartComponentDefinition) Units() param.UnitsOfMeasure { return d.units 
 // (ADR-0042 Phase 2). The assembly placement walker reads it to convert a component placed
 // into an assembly of a different working unit (1.0 ⇒ the centimetre default).
 func (d *PartComponentDefinition) WorkingScale() float64 { return d.units.WorkingScale() }
+
+// WorkingUnitMM is the millimetre size of one stored (working) length unit — the database-unit
+// size the exchange translators scale imported files against (ADR-0042 Phase 2, #1636): the
+// working scale (centimetres per working unit) times the centimetre's 10 mm.
+func (d *PartComponentDefinition) WorkingUnitMM() float64 {
+	return d.units.WorkingScale() * exchange.DBUnitMM
+}
 
 // SetLengthUnit sets the document's preferred length unit (e.g. "mm", "in"). On a still-empty
 // document it also centres the working scale on that unit (ADR-0042 Phase 2) so coordinates
