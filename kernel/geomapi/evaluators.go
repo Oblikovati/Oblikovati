@@ -121,6 +121,16 @@ type surfaceEvaluator struct {
 
 var _ contract.SurfaceEvaluator = surfaceEvaluator{}
 
+// The capability families SurfaceEvaluator embeds (I9, api v0.104.1). surfaceEvaluator
+// satisfies each as part of the union; the explicit assertions let a caller depend on
+// the narrowest slice (extents-only, differential-only, …) and satisfy the #1619 guard.
+var (
+	_ contract.SurfaceExtents      = surfaceEvaluator{}
+	_ contract.SurfaceDifferential = surfaceEvaluator{}
+	_ contract.SurfaceProjection   = surfaceEvaluator{}
+	_ contract.SurfaceIso          = surfaceEvaluator{}
+)
+
 // Evaluator returns the member-level query surface of this surface.
 func (s surface) Evaluator() contract.SurfaceEvaluator { return surfaceEvaluator{s: s.inner} }
 
