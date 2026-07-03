@@ -9,8 +9,8 @@ import (
 	"oblikovati.org/app/options"
 	"oblikovati.org/build"
 	"oblikovati.org/model/doc"
-	"oblikovati.org/persistence/yamlcodec"
 	"oblikovati.org/report"
+	"oblikovati.org/yamlcodec"
 )
 
 // CollectDiagnostics gathers everything a triager needs to reproduce a bug — the user's

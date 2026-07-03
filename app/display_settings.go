@@ -20,6 +20,16 @@ type settingsView struct{ set display.Settings }
 
 var _ contract.DisplaySettings = settingsView{}
 
+// The capability families DisplaySettings embeds (I9, api v0.104.1). settingsView
+// satisfies each as part of the union; asserting the window-mode and ground-shadow
+// slices explicitly lets a caller depend on just one and keeps the #1619 guard honest.
+var (
+	_ contract.BackgroundDisplaySettings = settingsView{}
+	_ contract.EdgeDisplaySettings       = settingsView{}
+	_ contract.WindowDisplaySettings     = settingsView{}
+	_ contract.GroundShadowSettings      = settingsView{}
+)
+
 func (v settingsView) BackgroundType() types.BackgroundTypeEnum { return v.set.BackgroundType }
 func (v settingsView) EdgeColor() types.Color                   { return v.set.EdgeColor }
 func (v settingsView) DepthDimming() bool                       { return v.set.DepthDimming }
