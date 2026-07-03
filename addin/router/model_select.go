@@ -20,56 +20,46 @@ import (
 
 // registerSelectionMutationHandlers wires the model.select/deselect/clearSelection methods.
 func (r *Router) registerSelectionMutationHandlers() {
-	r.readOnly(wire.MethodModelSelect, modelSelect)
-	r.readOnly(wire.MethodModelDeselect, modelDeselect)
+	r.readOnly(wire.MethodModelSelect, typedCtx(selectionBodies(wire.MethodModelSelect), modelSelect))
+	r.readOnly(wire.MethodModelDeselect, typedCtx(selectionBodies(wire.MethodModelDeselect), modelDeselect))
 	r.readOnly(wire.MethodModelClearSelection, modelClearSelection)
 }
 
+// selectionBodies is the active-part-bodies resolver the select/deselect handlers run before
+// decode; it binds the wire method so the "no active part" error keeps its method prefix (#1649).
+func selectionBodies(method string) func(*app.Session) ([]*topo.Body, error) {
+	return func(s *app.Session) ([]*topo.Body, error) { return activeBodies(s, method) }
+}
+
 // modelSelect selects the referenced entities, replacing the selection unless Mode is "add".
-func modelSelect(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.SelectArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	bodies, err := activeBodies(s, wire.MethodModelSelect)
-	if err != nil {
-		return nil, err
-	}
+func modelSelect(s *app.Session, bodies []*topo.Body, in wire.SelectArgs) (wire.SelectionResult, error) {
 	if in.Mode != "add" {
 		s.Selection().Clear()
 	}
 	for _, ref := range in.Refs {
 		sel, ok := resolveSelectionRef(bodies, ref)
 		if !ok {
-			return nil, fmt.Errorf("%s: cannot resolve reference %q (not a face/vertex of the active part)", wire.MethodModelSelect, ref)
+			return wire.SelectionResult{}, fmt.Errorf("%s: cannot resolve reference %q (not a face/vertex of the active part)", wire.MethodModelSelect, ref)
 		}
 		s.Selection().Add(sel)
 	}
-	return announceSelection(s)
+	return announceSelection(s), nil
 }
 
 // modelDeselect removes the referenced entities from the selection (unknown refs are ignored).
-func modelDeselect(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.DeselectArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	bodies, err := activeBodies(s, wire.MethodModelDeselect)
-	if err != nil {
-		return nil, err
-	}
+func modelDeselect(s *app.Session, bodies []*topo.Body, in wire.DeselectArgs) (wire.SelectionResult, error) {
 	for _, ref := range in.Refs {
 		if sel, ok := resolveSelectionRef(bodies, ref); ok {
 			s.Selection().Remove(sel)
 		}
 	}
-	return announceSelection(s)
+	return announceSelection(s), nil
 }
 
 // modelClearSelection clears the whole selection.
 func modelClearSelection(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
 	s.Selection().Clear()
-	return announceSelection(s)
+	return json.Marshal(announceSelection(s))
 }
 
 // activeBodies returns the active part's surface bodies, erroring when there is no active part.
@@ -95,9 +85,9 @@ func resolveSelectionRef(bodies []*topo.Body, ref string) (app.Selectable, bool)
 
 // announceSelection emits the selection-changed event (relayed to add-ins, #148) and returns the
 // new selection summary — the same shape model.selection reports.
-func announceSelection(s *app.Session) (json.RawMessage, error) {
+func announceSelection(s *app.Session) wire.SelectionResult {
 	event.Emit(s.Events(), event.After, app.SelectionChanged{Count: s.Selection().Count()})
-	return json.Marshal(currentSelection(s))
+	return currentSelection(s)
 }
 
 // currentSelection builds the selection summary DTO from the session selection.
