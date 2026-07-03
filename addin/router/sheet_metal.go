@@ -3,7 +3,6 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"oblikovati.org/addin/modelaccess"
@@ -25,11 +24,11 @@ import (
 
 // registerSheetMetalHandlers wires the sheetMetal.* methods.
 func (r *Router) registerSheetMetalHandlers() {
-	r.readOnly(wire.MethodSheetMetalGetStyle, sheetMetalGetStyle)
-	r.mutating(wire.MethodSheetMetalSetStyle, "Edit Sheet Metal Style", sheetMetalSetStyle)
-	r.readOnly(wire.MethodSheetMetalBendAllowance, sheetMetalBendAllowance)
-	r.readOnly(wire.MethodSheetMetalBends, sheetMetalBends)
-	r.mutating(wire.MethodSheetMetalUnfold, "Create Flat Pattern", sheetMetalUnfold)
+	r.readOnly(wire.MethodSheetMetalGetStyle, ctxQuery(resolveSheetMetalPart, sheetMetalGetStyle))
+	r.mutating(wire.MethodSheetMetalSetStyle, "Edit Sheet Metal Style", typedCtx(resolveSheetMetalPart, sheetMetalSetStyle))
+	r.readOnly(wire.MethodSheetMetalBendAllowance, typedCtx(resolveSheetMetalPart, sheetMetalBendAllowance))
+	r.readOnly(wire.MethodSheetMetalBends, ctxQuery(resolveSheetMetalPart, sheetMetalBends))
+	r.mutating(wire.MethodSheetMetalUnfold, "Create Flat Pattern", ctxQuery(resolveSheetMetalPart, sheetMetalUnfold))
 }
 
 // activeSheetMetal returns the active part and its rule, or an error if the active document
@@ -46,32 +45,37 @@ func activeSheetMetal(s *app.Session) (*compdef.PartComponentDefinition, *sheetm
 	return part, rule, nil
 }
 
-func sheetMetalGetStyle(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	part, rule, err := activeSheetMetal(s)
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(wire.SheetMetalStyleResult{Style: styleInfo(part, rule)})
+// sheetMetalPart bundles the active sheet-metal part with its rule — the context the
+// sheetMetal.* and flatPattern.* adapters resolve before decoding, wrapping activeSheetMetal
+// as a typedCtx/ctxQuery resolver (#1649).
+type sheetMetalPart struct {
+	part *compdef.PartComponentDefinition
+	rule *sheetmetal.Rule
 }
 
-func sheetMetalSetStyle(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+// resolveSheetMetalPart adapts activeSheetMetal to the (Ctx, error) shape typedCtx/ctxQuery expect.
+func resolveSheetMetalPart(s *app.Session) (sheetMetalPart, error) {
 	part, rule, err := activeSheetMetal(s)
 	if err != nil {
-		return nil, err
+		return sheetMetalPart{}, err
 	}
-	var in wire.SetSheetMetalStyleArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	if err := applyStyleEdits(part, rule, in); err != nil {
-		return nil, err
+	return sheetMetalPart{part: part, rule: rule}, nil
+}
+
+func sheetMetalGetStyle(_ *app.Session, ctx sheetMetalPart) (wire.SheetMetalStyleResult, error) {
+	return wire.SheetMetalStyleResult{Style: styleInfo(ctx.part, ctx.rule)}, nil
+}
+
+func sheetMetalSetStyle(_ *app.Session, ctx sheetMetalPart, in wire.SetSheetMetalStyleArgs) (wire.SheetMetalStyleResult, error) {
+	if err := applyStyleEdits(ctx.part, ctx.rule, in); err != nil {
+		return wire.SheetMetalStyleResult{}, err
 	}
 	// A rule edit (e.g. thickness) changes the inputs every wall/bend reads live, but those
 	// reads are not tracked feature dependencies — invalidate the whole program so the sheet
 	// rebuilds at the new gauge (the same full-rebuild a parameter edit triggers).
-	part.Features().MarkAllDirty()
-	part.Recompute()
-	return json.Marshal(wire.SheetMetalStyleResult{Style: styleInfo(part, rule)})
+	ctx.part.Features().MarkAllDirty()
+	ctx.part.Recompute()
+	return wire.SheetMetalStyleResult{Style: styleInfo(ctx.part, ctx.rule)}, nil
 }
 
 // applyStyleEdits mutates the rule (and its backing parameters) per the non-empty fields of
@@ -147,39 +151,27 @@ func applyUnfoldEdits(rule *sheetmetal.Rule, in wire.SetSheetMetalStyleArgs) err
 	return nil
 }
 
-func sheetMetalBendAllowance(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, rule, err := activeSheetMetal(s)
+func sheetMetalBendAllowance(_ *app.Session, ctx sheetMetalPart, in wire.BendAllowanceArgs) (wire.BendAllowanceResult, error) {
+	angle, err := resolveQuantity(ctx.part, in.Angle, param.Angle)
 	if err != nil {
-		return nil, err
-	}
-	var in wire.BendAllowanceArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	angle, err := resolveQuantity(part, in.Angle, param.Angle)
-	if err != nil {
-		return nil, fmt.Errorf("sheetMetal bendAllowance angle %q: %w", in.Angle, err)
+		return wire.BendAllowanceResult{}, fmt.Errorf("sheetMetal bendAllowance angle %q: %w", in.Angle, err)
 	}
 	radius := 0.0
 	if in.Radius != "" {
-		r, err := resolveQuantity(part, in.Radius, param.Length)
+		r, err := resolveQuantity(ctx.part, in.Radius, param.Length)
 		if err != nil {
-			return nil, fmt.Errorf("sheetMetal bendAllowance radius %q: %w", in.Radius, err)
+			return wire.BendAllowanceResult{}, fmt.Errorf("sheetMetal bendAllowance radius %q: %w", in.Radius, err)
 		}
 		radius = r.Value
 	}
-	return json.Marshal(wire.BendAllowanceResult{
-		BendAllowance: rule.BendAllowance(angle.Value, radius),
-		BendDeduction: rule.BendDeduction(angle.Value, radius),
-	})
+	return wire.BendAllowanceResult{
+		BendAllowance: ctx.rule.BendAllowance(angle.Value, radius),
+		BendDeduction: ctx.rule.BendDeduction(angle.Value, radius),
+	}, nil
 }
 
-func sheetMetalBends(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	part, _, err := activeSheetMetal(s)
-	if err != nil {
-		return nil, err
-	}
-	bends := part.Bends()
+func sheetMetalBends(_ *app.Session, ctx sheetMetalPart) (wire.BendsResult, error) {
+	bends := ctx.part.Bends()
 	out := wire.BendsResult{Bends: make([]wire.BendInfo, 0, len(bends))}
 	for _, b := range bends {
 		out.Bends = append(out.Bends, wire.BendInfo{
@@ -192,22 +184,18 @@ func sheetMetalBends(s *app.Session, _ json.RawMessage) (json.RawMessage, error)
 		})
 		out.TotalAllowance += b.Allowance
 	}
-	return json.Marshal(out)
+	return out, nil
 }
 
 // degPerRad converts a bend's stored angle (radians) to the degrees the wire reports.
 const degPerRad = 180.0 / 3.141592653589793
 
-func sheetMetalUnfold(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	part, _, err := activeSheetMetal(s)
+func sheetMetalUnfold(_ *app.Session, ctx sheetMetalPart) (wire.UnfoldResult, error) {
+	flat, err := ctx.part.Unfold()
 	if err != nil {
-		return nil, err
+		return wire.UnfoldResult{}, err
 	}
-	flat, err := part.Unfold()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(wire.UnfoldResult{Flat: flatInfo(flat)})
+	return wire.UnfoldResult{Flat: flatInfo(flat)}, nil
 }
 
 // flatInfo renders a developed flat pattern as wire: its extents, gauge, developed footprint
