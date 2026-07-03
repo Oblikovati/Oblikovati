@@ -149,6 +149,17 @@ func drawChromeWindows(s *app.Session) {
 	drawSelectOtherWidget(s) // Select Other cycle control over stacked geometry (#910)
 	serviceFileModalRequests(s)
 	serviceWindowOpenRequests(s)
+	serviceFitViewRequest(s)
+}
+
+// serviceFitViewRequest fits the camera once after an import that added visible geometry (#1645).
+// The core raises the intent (Session.RequestFitView) rather than driving the camera, so a
+// headless/CLI import is unaffected; the head consumes the one-shot here and calls FitView, which
+// frames the UNION of all visible geometry (a small import into a large model is not yanked away).
+func serviceFitViewRequest(s *app.Session) {
+	if s.TakeFitViewRequest() {
+		s.FitView()
+	}
 }
 
 // serviceWindowOpenRequests opens head-only windows that a ribbon command asked for from the
