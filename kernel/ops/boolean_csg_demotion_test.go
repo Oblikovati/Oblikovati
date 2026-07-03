@@ -97,6 +97,7 @@ func curvedExactCases() []curvedExactCase {
 		{"crossing cylinders ∩", ops.Intersect, crossingCylinders},
 		{"crossing cylinders − (drill)", ops.Cut, crossingCylinders},
 		{"crossing cylinders ∪", ops.Join, crossingCylinders},
+		{"cap-crossing cylinder − (exits top cap)", ops.Cut, capCrossingCutBodies},
 		{"equal-radius Steinmetz ∩", ops.Intersect, func(t *testing.T) (*topo.Body, *topo.Body) {
 			return demoCyl(t, math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12), demoCyl(t, math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 		}},
@@ -312,6 +313,16 @@ func coneFlatBox(t *testing.T) (*topo.Body, *topo.Body) {
 // crossingCylinders is the shared thin-through-fat pair used by the three crossing-cylinder cases.
 func crossingCylinders(t *testing.T) (*topo.Body, *topo.Body) {
 	return demoCyl(t, math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12), demoCyl(t, math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
+}
+
+// capCrossingCutBodies is the slice-1 cap-crossing fixture (#1724): an r=3 h=10 target cylinder and an
+// oblique r=0.9 tool whose 45° axis enters the curved wall once and EXITS the top cap through an ellipse
+// strictly inside the rim — the interior-exit case CapCrossingCutGeneral handles. Shared by the exactness,
+// OCC-volume, and full-moment certification guards. The same numbers back experiments/occ-boolean-oracle.
+func capCrossingCutBodies(t *testing.T) (*topo.Body, *topo.Body) {
+	s := 1 / stdmath.Sqrt2
+	return demoCyl(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 10),
+		demoCyl(t, math.P3(-6.5, 0, 2), math.V3(math.Scalar(s), 0, math.Scalar(s)), 0.9, 16)
 }
 
 func demoCyl(t *testing.T, base math.Point3, axis math.Vector3, r, h float64) *topo.Body {

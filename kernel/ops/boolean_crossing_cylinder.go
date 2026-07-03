@@ -72,6 +72,7 @@ var (
 	curvedConeCylinderCut    = gatedCurved(Cut, brep.ConeCylinderCutGeneral)
 	curvedConeConeCut        = gatedCurved(Cut, brep.ConeConeCutGeneral)
 	curvedCrossingCut        = gatedCurved(Cut, brep.CrossingCylinderCutGeneral)
+	curvedCapCrossCut        = gatedCurved(Cut, brep.CapCrossingCutGeneral) // oblique tool exits one cap (#1724)
 
 	// Join — the union, keeping the analytic wall where the operands' faces are coincident or breached.
 	curvedCoaxialJoin      = gatedCurved(Join, withoutRecorder(brep.CoaxialCylinderUnion)) // coaxial equal-radius cylinders
