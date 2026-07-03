@@ -197,22 +197,28 @@ func (t *ExtrudeTool) CanCommit() bool {
 	return true
 }
 
-// Commit adds the extrude feature to the active part and recomputes; a sick feature
-// (e.g. an open profile) keeps the tool open by returning an error. All picked regions
-// must lie on one sketch (a single extrude consumes one sketch's regions); picks on
-// other sketches are ignored.
+// Commit finishes the tool: an in-place edit writes back through the session, a fresh
+// extrude goes through the host-driven create path (CommitFeature).
 func (t *ExtrudeTool) Commit(s *Session) error {
 	if t.IsEditing() {
 		return t.commitEdit(s)
 	}
-	part, err := activePart(s)
+	return t.CommitFeature(s) // create path drives the slim host (I12, #1635)
+}
+
+// CommitFeature adds the extrude feature to the active part through the ToolHost seam,
+// so the create-commit no longer depends on the whole *Session (satisfies hostedTool,
+// #1635). A sick feature (e.g. an open profile) keeps the tool open via an error. All
+// picked regions must lie on one sketch; picks on other sketches are ignored.
+func (t *ExtrudeTool) CommitFeature(h ToolHost) error {
+	part, err := h.ActivePart()
 	if err != nil {
 		return err
 	}
 	def, _ := t.draftDefinition() // CanCommit (checked by the dialog) guarantees ok
 	t.added = feature.NewExtrudeFeatures(part.Features()).AddExtrudeFeature(def)
 	part.Recompute()
-	s.recordEdit(part, "Extrude")
+	h.recordEdit(part, "Extrude")
 	if !t.added.Health().OK() {
 		return errors.New("extrude: " + t.added.Health().Reason)
 	}
