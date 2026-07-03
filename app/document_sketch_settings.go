@@ -31,12 +31,21 @@ func (s *Session) DocumentSketchSettings(id uint64) (types.SketchSettings, error
 
 // SetDocumentSketchSettings stores the sketch settings on the document with the given session id
 // (0 ⇒ the active document) and returns the stored value, or an error when no such document is open.
+// A change to the active document is recorded as an undo step so it rides the metadata snapshot like
+// body names (S6 #1641).
 func (s *Session) SetDocumentSketchSettings(id uint64, settings types.SketchSettings) (types.SketchSettings, error) {
 	d, err := s.documentForSettings(id)
 	if err != nil {
 		return types.SketchSettings{}, err
 	}
+	active := s.ActiveDocument()
+	if id == 0 && active != nil {
+		s.beginMetadataEdit(active)
+	}
 	d.SetSketchSettings(settings)
+	if id == 0 && active != nil {
+		s.recordMetadataEdit(active, "Sketch Settings")
+	}
 	return d.SketchSettings(), nil
 }
 

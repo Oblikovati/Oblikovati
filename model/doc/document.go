@@ -55,6 +55,7 @@ type Document struct {
 	attributes       *attr.AttributeManager // add-in attribute sets (#155); lazily seeded
 	sketchSettings   *types.SketchSettings  // per-document sketch-authoring defaults (#147), nil ⇒ defaults
 	bodyNames        map[string]string      // per-body display names, keyed by body reference key (#1078); nil/absent ⇒ the "Solid{N}" default
+	bodyColorStyles  map[string]string      // per-body color-style names, keyed by body reference key (M16-F02 #403/#408, S5 #1640); nil/absent ⇒ the body's own appearance
 }
 
 // newDocument builds a base document. open reflects whether content is paged in;
@@ -226,6 +227,10 @@ func (d *Document) RestoreDisplaySettings(set display.Settings) {
 	d.displaySettings = &cp
 }
 
+// ClearDisplaySettings reverts the document to "no explicit display settings" (defaults) WITHOUT
+// dirtying — the undo-restore path when a snapshot predates the first SetDisplaySettings (#1641).
+func (d *Document) ClearDisplaySettings() { d.displaySettings = nil }
+
 // SketchSettings returns the document's per-document sketch-authoring defaults — the constraint-
 // inference toggles the sketch tools read (#147) — falling back to [types.DefaultSketchSettings]
 // when none have been set on this document.
@@ -254,6 +259,10 @@ func (d *Document) RestoreSketchSettings(set types.SketchSettings) {
 	cp := set
 	d.sketchSettings = &cp
 }
+
+// ClearSketchSettings reverts the document to "no explicit sketch settings" (defaults) WITHOUT
+// dirtying — the undo-restore path when a snapshot predates the first SetSketchSettings (#1641).
+func (d *Document) ClearSketchSettings() { d.sketchSettings = nil }
 
 // BodyName returns the stored display name for the body with the given reference key, and whether
 // one is set. Bodies without a stored name fall back to the index-derived "Solid{N}" default at
@@ -300,6 +309,55 @@ func (d *Document) RestoreBodyNames(names map[string]string) {
 	d.bodyNames = make(map[string]string, len(names))
 	for k, v := range names {
 		d.bodyNames[k] = v
+	}
+}
+
+// BodyColorStyle returns the color-style name assigned to a body (by its reference key) and whether
+// one is set. Bodies without an assignment render in their own appearance (M16-F02 #403/#408). Color
+// styles are document data on the same reference keys as body names, so they round-trip in the .obk
+// and ride the undo snapshot exactly like body names (S5 #1640).
+func (d *Document) BodyColorStyle(key string) (string, bool) {
+	name, ok := d.bodyColorStyles[key]
+	return name, ok
+}
+
+// SetBodyColorStyle stores (or, with an empty name, clears) the color-style name for one body, keyed
+// by its reference key, and marks the document dirty since color styles round-trip in the .obk (#1640).
+func (d *Document) SetBodyColorStyle(key, styleName string) {
+	if styleName == "" {
+		delete(d.bodyColorStyles, key)
+	} else {
+		if d.bodyColorStyles == nil {
+			d.bodyColorStyles = map[string]string{}
+		}
+		d.bodyColorStyles[key] = styleName
+	}
+	d.MarkDirty()
+}
+
+// BodyColorStyles returns a copy of the per-body color-style map (reference key → style name), for
+// the persistence save path; nil when no body has a color style.
+func (d *Document) BodyColorStyles() map[string]string {
+	if len(d.bodyColorStyles) == 0 {
+		return nil
+	}
+	out := make(map[string]string, len(d.bodyColorStyles))
+	for k, v := range d.bodyColorStyles {
+		out[k] = v
+	}
+	return out
+}
+
+// RestoreBodyColorStyles installs the per-body color-style map WITHOUT marking the document dirty —
+// the load path and the undo-restore path, where the in-memory state already matches the target.
+func (d *Document) RestoreBodyColorStyles(styles map[string]string) {
+	if len(styles) == 0 {
+		d.bodyColorStyles = nil
+		return
+	}
+	d.bodyColorStyles = make(map[string]string, len(styles))
+	for k, v := range styles {
+		d.bodyColorStyles[k] = v
 	}
 }
 

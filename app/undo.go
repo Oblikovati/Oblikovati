@@ -200,7 +200,7 @@ func (dh *docHistory) savedDepthsWithin(max int) []int {
 // marshal error (content that is not a recipe store is a silent no-op) so the caller can
 // surface it; on failure the existing snapshot is left untouched (see resyncContent, #1425).
 func (dh *docHistory) resync(d *doc.Document) error {
-	c, ok := d.Content().(recipeStore)
+	c, ok := metaStoreFor(d) // the baseline carries document metadata too (S6 #1641)
 	if !ok {
 		return nil
 	}
@@ -263,7 +263,9 @@ func (s *Session) recordEdit(content recipeStore, label string) {
 		// undo step at EndTransaction. snapshot is intentionally left untouched.
 		return
 	}
-	s.commitRecipeDelta(d, dh, content, label)
+	// Fold the active document's metadata into this snapshot so a rename/recolor/settings change
+	// is one atomic undo step with the recipe — never a recipe/metadata hybrid (S6 #1641).
+	s.commitRecipeDelta(d, dh, documentMetaStore{inner: content, doc: d}, label)
 }
 
 // commitRecipeDelta records the part's recipe delta as one undo event and
@@ -465,7 +467,7 @@ func (s *Session) EndTransaction() error {
 	}
 	label := dh.groupLabel
 	dh.groupLabel = ""
-	content, ok := d.Content().(recipeStore)
+	content, ok := metaStoreFor(d) // coalesced group carries metadata too (S6 #1641)
 	if !ok {
 		return nil
 	}
@@ -489,7 +491,7 @@ func (s *Session) AbortTransaction() error {
 	}
 	label := dh.groupLabel
 	dh.groupDepth, dh.groupLabel = 0, ""
-	if content, ok := d.Content().(recipeStore); ok {
+	if content, ok := metaStoreFor(d); ok { // restore recipe + metadata to the pre-group state (S6 #1641)
 		if err := content.RestoreSnapshot(dh.snapshot); err != nil {
 			return err
 		}
