@@ -39,6 +39,12 @@ func splitPinchedVertices(verts []math.Point3, faces [][3]int) []math.Point3 {
 // edges and moves every fan beyond the first onto a fresh duplicate vertex.
 func splitVertexFans(verts []math.Point3, faces [][3]int, v int, inc []int) []math.Point3 {
 	fans := vertexFans(faces, v, inc)
+	// An ORPHAN vertex (a coordinate in verts referenced by no triangle — CSG clipping can leave one)
+	// has no incident fans, and a clean manifold vertex has exactly one; neither needs splitting. Guard
+	// the fans[1:] slice so an orphan does not panic the last-resort CSG fallback (#1693 regression).
+	if len(fans) < 2 {
+		return verts
+	}
 	for _, fan := range fans[1:] {
 		nv := len(verts)
 		verts = append(verts, verts[v])

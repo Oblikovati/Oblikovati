@@ -48,3 +48,22 @@ func TestCSGCageSplitsPinchedVertex(t *testing.T) {
 		t.Errorf("body has %d vertices, want 8 (7 welded + one coincident duplicate at the contact)", nv)
 	}
 }
+
+// TestSplitPinchedVerticesToleratesOrphanVertex pins the fix for a panic in the last-resort CSG fallback:
+// dropDegenerate/dedupTriangles inside trianglesToBody can strip the last triangle referencing a welded
+// vertex, orphaning that coordinate in verts. splitPinchedVertices then builds an empty incident-face list
+// for it, so vertexFans returns no fans and the fans[1:] slice paniced ("slice bounds out of range [1:0]").
+// A chained curved cut (a second Cut on an already-cut, partial-rim body) declines to CSG and hit exactly
+// this — the fallback must decline gracefully, never crash (#1693).
+func TestSplitPinchedVerticesToleratesOrphanVertex(t *testing.T) {
+	// One triangle (verts 0,1,2) plus an ORPHAN vertex at index 3 that no face references.
+	verts := []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0, 1, 0), math.P3(5, 5, 5)}
+	faces := [][3]int{{0, 1, 2}}
+	got := splitPinchedVertices(verts, faces) // must not panic on the orphan's empty fan list
+	if len(got) != 4 {
+		t.Errorf("orphan-vertex split changed vertex count to %d; want 4 (no split — the orphan and the clean triangle both need none)", len(got))
+	}
+	if faces[0] != [3]int{0, 1, 2} {
+		t.Errorf("clean triangle was rewritten to %v; want [0 1 2]", faces[0])
+	}
+}
