@@ -45,11 +45,11 @@ func TestAddLightClampsToMax(t *testing.T) {
 	s := NewSession()
 	// Default starts with one light; fill to the max, then expect an error.
 	for len(s.Lights()) < renderer.MaxSceneLights {
-		if _, err := s.AddLight(renderer.PointLight); err != nil {
+		if _, err := s.AddLight(types.PointLight); err != nil {
 			t.Fatalf("AddLight before max: %v", err)
 		}
 	}
-	if _, err := s.AddLight(renderer.PointLight); err == nil {
+	if _, err := s.AddLight(types.PointLight); err == nil {
 		t.Errorf("AddLight past max (%d) should error", renderer.MaxSceneLights)
 	}
 }
@@ -57,7 +57,7 @@ func TestAddLightClampsToMax(t *testing.T) {
 // TestSetLightRejectsOutOfRange checks SetLight validates the index instead of panicking.
 func TestSetLightRejectsOutOfRange(t *testing.T) {
 	s := NewSession()
-	if err := s.SetLight(99, renderer.SceneLight{}); err == nil {
+	if err := s.SetLight(99, Light{}); err == nil {
 		t.Error("SetLight(99) should error on an out-of-range index")
 	}
 }
@@ -66,14 +66,14 @@ func TestSetLightRejectsOutOfRange(t *testing.T) {
 // (including the X-ray distinction) at the app layer.
 func TestGroundShadowMappingRoundTrips(t *testing.T) {
 	for _, g := range types.AllGroundShadows() {
-		var sh renderer.ShadowSettings
+		var sh ShadowRig
 		ApplyGroundShadow(&sh, g)
 		if got := GroundShadowForSettings(sh); got != g {
 			t.Errorf("ground shadow %v round-tripped to %v", g, got)
 		}
 	}
 	// Sanity: None clears the flag; X-ray sets both.
-	var sh renderer.ShadowSettings
+	var sh ShadowRig
 	ApplyGroundShadow(&sh, types.XRayGroundShadow)
 	if !sh.GroundShadows || !sh.GroundXRay {
 		t.Errorf("X-ray should set GroundShadows and GroundXRay, got %+v", sh)
@@ -94,7 +94,7 @@ func TestLightKindDefinitionBijection(t *testing.T) {
 // environment (IBL + sky background) — the default skymap (ADR-0026 §8).
 func TestNewSessionDefaultsToSkyEnvironment(t *testing.T) {
 	env := NewSession().Environment()
-	if env.Preset != renderer.EnvSky || !env.ShowImage || env.Intensity != 1 {
+	if env.Preset != "Sky" || !env.ShowImage || env.Intensity != 1 {
 		t.Errorf("default environment = %+v, want EnvSky shown at intensity 1", env)
 	}
 }
@@ -107,13 +107,13 @@ func TestSetLightingStyleKeepsEnvironment(t *testing.T) {
 	if err := s.SetLightingStyle("Sun"); err != nil {
 		t.Fatalf("SetLightingStyle(Sun): %v", err)
 	}
-	if got := s.Environment().Preset; got != renderer.EnvSky {
+	if got := s.Environment().Preset; got != "Sky" {
 		t.Errorf("environment after Sun = %v, want the Sky default kept", got)
 	}
 	if err := s.SetLightingStyle("Outdoors"); err != nil {
 		t.Fatalf("SetLightingStyle(Outdoors): %v", err)
 	}
-	if got := s.Environment().Preset; got != renderer.EnvOutdoors {
+	if got := s.Environment().Preset; got != "Outdoors" {
 		t.Errorf("environment after Outdoors = %v, want the style's own EnvOutdoors", got)
 	}
 }

@@ -72,11 +72,12 @@ var allowedTreeImports = map[string][]string{
 	"addin/events":      {"api", "app", "event", "math", "model"},
 	"addin/modelaccess": {"app", "model"},
 	"addin/opregistry":  {"addin/modelaccess", "api", "app", "kernel", "math", "model"},
+	// B10 (#1621, RESOLVED): the router no longer reaches renderer/scene — lighting/
+	// environment/camera state crosses the wall as app-owned value types
+	// (app.Light/ShadowRig/EnvironmentState/CameraFrame), so renderer and scene are
+	// deliberately ABSENT here; re-adding either import fails this test.
 	"addin/router": {"addin/modelaccess", "addin/opregistry", "addin/trace", "api", "app",
-		"clientgraphics", "event", "kernel", "math", "model", "osfont", "script",
-		// TODO(B10 #1621): the router reaches renderer/scene internals for lighting/
-		// environment state; app-owned value types replace these, then both entries go.
-		"renderer", "scene"},
+		"clientgraphics", "event", "kernel", "math", "model", "osfont", "script"},
 	"addin/trace": {"api"},
 
 	// Composition roots may reach anything below them.

@@ -17,28 +17,20 @@ import (
 // with a hull face (always true for polyhedra, per O'Rourke); curved bodies
 // are sampled at edge density, so the box is sample-accurate.
 
-// OrientedBox is a corner with three mutually perpendicular edge vectors —
-// the reference OrientedBox shape.
-type OrientedBox struct {
-	Corner                       math.Point3
-	DirectionOne                 math.Vector3
-	DirectionTwo, DirectionThree math.Vector3
-}
-
-// Volume returns the box volume.
-func (b OrientedBox) Volume() float64 {
-	return float64(b.DirectionOne.Length()) * float64(b.DirectionTwo.Length()) * float64(b.DirectionThree.Length())
-}
+// The oriented box value type is the ONE in-module [math.OrientedBox] (audit B9, #1620:
+// this file used to declare a second OrientedBox — corner + three edge vectors — a plain
+// duplicate; it now builds the result in that corner+edges form and hands it to
+// math.NewOrientedBoxFromEdges, so there is a single oriented-box type).
 
 // OrientedMinimumRangeBox computes the minimal oriented box over the body's
 // sampled geometry (vertices + 32 samples per curved edge).
 //
 // Example: obb := ops.OrientedMinimumRangeBox(body)
-func OrientedMinimumRangeBox(b *topo.Body) (OrientedBox, error) {
+func OrientedMinimumRangeBox(b *topo.Body) (math.OrientedBox, error) {
 	pts := bodySamplePoints(b)
 	hull, err := ConvexHull(pts, "obb")
 	if err != nil {
-		return OrientedBox{}, err
+		return math.OrientedBox{}, err
 	}
 	// Only hull vertices matter for extents — they dominate every interior
 	// sample, and there are far fewer of them than raw edge samples.
@@ -46,7 +38,7 @@ func OrientedMinimumRangeBox(b *topo.Body) (OrientedBox, error) {
 	for _, v := range hull.Vertices() {
 		hullPts = append(hullPts, v.Point())
 	}
-	best, bestVol := OrientedBox{}, stdmath.Inf(1)
+	best, bestVol := math.OrientedBox{}, stdmath.Inf(1)
 	for _, f := range hull.Faces() {
 		box, ok := boxFlushWithFace(f, hullPts)
 		if ok && box.Volume() < bestVol {
@@ -84,11 +76,11 @@ func bodySamplePoints(b *topo.Body) []math.Point3 {
 
 // boxFlushWithFace builds the best box whose base plane is flush with the hull
 // face: axis w = face normal, in-plane axes from 2D rotating calipers.
-func boxFlushWithFace(f *topo.Face, pts []math.Point3) (OrientedBox, bool) {
+func boxFlushWithFace(f *topo.Face, pts []math.Point3) (math.OrientedBox, bool) {
 	w := f.Geometry().NormalAt(0, 0)
 	l := float64(w.Length())
 	if l == 0 {
-		return OrientedBox{}, false
+		return math.OrientedBox{}, false
 	}
 	w = w.Scale(math.Scalar(1 / l))
 	u := perpUnit(w)
@@ -103,7 +95,7 @@ func boxFlushWithFace(f *topo.Face, pts []math.Point3) (OrientedBox, bool) {
 	}
 	rect, ok := minAreaRectangle(proj)
 	if !ok {
-		return OrientedBox{}, false
+		return math.OrientedBox{}, false
 	}
 	return liftRectangle(rect, u, v, w, wLo, wHi), true
 }
@@ -124,9 +116,10 @@ type rect2 struct {
 	e1, e2 math.Vector2
 }
 
-// liftRectangle assembles the 3D box from the in-plane rectangle and the
-// normal extent.
-func liftRectangle(r rect2, u, v, w math.Vector3, wLo, wHi float64) OrientedBox {
+// liftRectangle assembles the 3D box from the in-plane rectangle and the normal extent,
+// as a corner and three orthogonal edge vectors handed to [math.NewOrientedBoxFromEdges]
+// (the single oriented-box value type).
+func liftRectangle(r rect2, u, v, w math.Vector3, wLo, wHi float64) math.OrientedBox {
 	corner := math.P3(0, 0, 0).
 		TranslateBy(u.Scale(r.corner.X)).
 		TranslateBy(v.Scale(r.corner.Y)).
@@ -134,11 +127,7 @@ func liftRectangle(r rect2, u, v, w math.Vector3, wLo, wHi float64) OrientedBox 
 	lift := func(e math.Vector2) math.Vector3 {
 		return u.Scale(e.X).Add(v.Scale(e.Y))
 	}
-	return OrientedBox{
-		Corner:       corner,
-		DirectionOne: lift(r.e1), DirectionTwo: lift(r.e2),
-		DirectionThree: w.Scale(math.Scalar(wHi - wLo)),
-	}
+	return math.NewOrientedBoxFromEdges(corner, lift(r.e1), lift(r.e2), w.Scale(math.Scalar(wHi-wLo)))
 }
 
 // minAreaRectangle runs rotating calipers over the 2D convex hull: the minimum

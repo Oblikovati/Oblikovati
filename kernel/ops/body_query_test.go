@@ -104,10 +104,11 @@ func TestOrientedMinimumRangeBoxRotatedBox(t *testing.T) {
 	if v := obb.Volume(); stdmath.Abs(v-8) > 1e-6 {
 		t.Errorf("rotated-box OBB volume = %g, want 8 (tight)", v)
 	}
+	edges := obb.EdgeVectors()
 	dims := []float64{
-		float64(obb.DirectionOne.Length()),
-		float64(obb.DirectionTwo.Length()),
-		float64(obb.DirectionThree.Length()),
+		float64(edges[0].Length()),
+		float64(edges[1].Length()),
+		float64(edges[2].Length()),
 	}
 	for _, d := range dims {
 		if stdmath.Abs(d-2) > 1e-6 {

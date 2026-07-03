@@ -6,7 +6,20 @@ import stdmath "math"
 
 // OrientedBox is a box with an arbitrary orientation in 3D (contract:
 // OrientedBox): the region within HalfExtents of Center along three orthonormal
-// Axes. Unlike a [Box] it can be tight around rotated geometry.
+// Axes. Unlike a [Box] it can be tight around rotated geometry. This is the ONE
+// in-module oriented-box value type — kernel/ops.OrientedMinimumRangeBox returns
+// it, and the router serializes it via [OrientedBox.MinCorner]/[OrientedBox.EdgeVectors]
+// (audit B9, #1620: the former kernel/ops.OrientedBox corner+edge-vectors twin was
+// collapsed into this center+axes form).
+//
+// Deliberate math↔types duality (audit B9, #1620): the same concept is defined a
+// second time as types.OrientedBox in the Apache-2.0 api module, in the reference
+// corner+axes+extents form. This is NOT accidental duplication — the dependency
+// direction (ADR-0018) forbids the api module from importing this GPL math package
+// and forbids this package from taking on the api's serialization concerns, so
+// each side owns its own value type. The two are kept in lockstep by hand; a field
+// added to one MUST be mirrored on the other. Cross-reference: keep this in sync
+// with types.OrientedBox in Oblikovati.API/types/geom_box.go.
 type OrientedBox struct {
 	Center      Point3
 	Axes        [3]UnitVector3
@@ -53,4 +66,31 @@ func (b OrientedBox) Corners() [8]Point3 {
 func (b OrientedBox) ToAABB() Box {
 	corners := b.Corners()
 	return BoxFromPoints(corners[:]...)
+}
+
+// Volume returns the box volume — the product of the three full edge lengths
+// (each axis's full extent is twice its half-extent).
+func (b OrientedBox) Volume() Scalar {
+	return 8 * b.HalfExtents[0] * b.HalfExtents[1] * b.HalfExtents[2]
+}
+
+// MinCorner returns the corner at the negative end of every axis — the origin of
+// the reference corner+edge-vectors form (the inverse of [NewOrientedBoxFromEdges]).
+func (b OrientedBox) MinCorner() Point3 {
+	c := b.Center
+	for i := 0; i < 3; i++ {
+		c = c.TranslateBy(b.Axes[i].AsVector().Scale(-b.HalfExtents[i]))
+	}
+	return c
+}
+
+// EdgeVectors returns the three full-length edge vectors spanning from [MinCorner]
+// (each axis scaled by its full extent) — the corner+edges form the reference
+// OrientedBox and the wire DTO use.
+func (b OrientedBox) EdgeVectors() [3]Vector3 {
+	var e [3]Vector3
+	for i := 0; i < 3; i++ {
+		e[i] = b.Axes[i].AsVector().Scale(2 * b.HalfExtents[i])
+	}
+	return e
 }

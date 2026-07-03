@@ -499,8 +499,8 @@ func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene
 	mvp := renderer.ViewProjection(cam, viewportNear, viewportFarPlane(s, cam, mn, mx, hasGeom))
 	eye := frameEye(cam) // reused scratch; RenderViewport copies it into the push constant synchronously (#1423)
 	win.SetViewportLighting(viewport.PackLighting(s.SceneLighting()))
-	applyEnvironment(win, s.Environment())
-	applySkybox(win, s.Environment(), mvp)
+	applyEnvironment(win, app.RenderEnvironment(s.Environment())) // app value -> renderer at the wall (B10 #1621)
+	applySkybox(win, app.RenderEnvironment(s.Environment()), mvp)
 	applyShadow(win, s, mn, mx, hasGeom)
 	tg := frameClock()
 	win.RenderViewport(slot, pw, ph, mvp[:], eye,

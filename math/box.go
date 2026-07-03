@@ -8,6 +8,16 @@ import stdmath "math"
 // region between Min and Max. It is the range-query primitive used throughout
 // the model. The empty box (see [EmptyBox]) has Min > Max so that extending it
 // with the first point yields a degenerate box at that point.
+//
+// Deliberate math↔types duality (audit B9, #1620): the same shape is defined a
+// second time as types.Box in the Apache-2.0 api module. This is NOT accidental
+// duplication — it is forced by the dependency direction (ADR-0018): the api
+// module must never import this GPL module, and this kernel-facing math package
+// must not depend on the api's serialization concerns (json tags, the wire
+// Point). So each side owns a Box in its own value type (math.Point3 here,
+// types.Point there). The two are kept in lockstep by hand; a field added to one
+// MUST be mirrored on the other. Cross-reference: keep this in sync with
+// types.Box in Oblikovati.API/types/geom_box.go.
 type Box struct {
 	Min, Max Point3
 }
