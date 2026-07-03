@@ -13,7 +13,7 @@ import "testing"
 // registry must hold the full feature surface (a registration silently dropped would shrink this).
 func TestFeatureCodecRegistryComplete(t *testing.T) {
 	kinds := registeredFeatureKinds()
-	const wantAtLeast = 78 // the audited feature-kind count (#1416); grows as kinds are added
+	const wantAtLeast = 88 // the audited feature-kind count (#1416/#1617); grows as kinds are added
 	if len(kinds) < wantAtLeast {
 		t.Fatalf("registry has %d feature codecs, want at least %d — a registration was dropped", len(kinds), wantAtLeast)
 	}
