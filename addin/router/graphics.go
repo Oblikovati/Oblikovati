@@ -12,19 +12,15 @@ import (
 
 // setClientGraphics submits or replaces a named client-graphics group (idempotent by
 // clientId) and echoes its node/primitive counts (wire.MethodClientGraphicsSet).
-func setClientGraphics(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.SetClientGraphicsArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
-	}
-	g, err := clientgraphics.DecodeGroup(a)
+func setClientGraphics(s *app.Session, in wire.SetClientGraphicsArgs) (wire.SetClientGraphicsResult, error) {
+	g, err := clientgraphics.DecodeGroup(in)
 	if err != nil {
-		return nil, err
+		return wire.SetClientGraphicsResult{}, err
 	}
 	s.Graphics().Set(g)
-	return json.Marshal(wire.SetClientGraphicsResult{
+	return wire.SetClientGraphicsResult{
 		ClientId: g.Name(), NodeCount: g.NodeCount(), PrimitiveCount: g.PrimitiveCount(),
-	})
+	}, nil
 }
 
 // listClientGraphics enumerates the live graphics groups across all lanes, sorted by
@@ -42,41 +38,29 @@ func listClientGraphics(s *app.Session, _ json.RawMessage) (json.RawMessage, err
 }
 
 // deleteClientGraphics removes a named group (wire.MethodClientGraphicsDelete).
-func deleteClientGraphics(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.DeleteClientGraphicsArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
-	}
-	s.Graphics().Delete(a.ClientId)
-	return ok()
+func deleteClientGraphics(s *app.Session, in wire.DeleteClientGraphicsArgs) (wire.OKResult, error) {
+	s.Graphics().Delete(in.ClientId)
+	return wire.OKResult{OK: true}, nil
 }
 
 // setClientGraphicsVisible toggles a group's visibility without resubmitting its geometry
 // (wire.MethodClientGraphicsSetVisible).
-func setClientGraphicsVisible(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.SetClientGraphicsVisibleArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
+func setClientGraphicsVisible(s *app.Session, in wire.SetClientGraphicsVisibleArgs) (wire.OKResult, error) {
+	if err := s.Graphics().SetVisible(in.ClientId, in.Visible); err != nil {
+		return wire.OKResult{}, err
 	}
-	if err := s.Graphics().SetVisible(a.ClientId, a.Visible); err != nil {
-		return nil, err
-	}
-	return ok()
+	return wire.OKResult{OK: true}, nil
 }
 
 // updateInteractionGraphics replaces a transient interaction lane's nodes — the
 // rubber-band/manipulator update path (wire.MethodInteractionGraphicsUpdate).
-func updateInteractionGraphics(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var a wire.UpdateInteractionGraphicsArgs
-	if err := decode(args, &a); err != nil {
-		return nil, err
-	}
-	g, err := clientgraphics.DecodeGroup(wire.SetClientGraphicsArgs{ClientId: interactionClientID(a.Lane), Lane: a.Lane, Nodes: a.Nodes})
+func updateInteractionGraphics(s *app.Session, in wire.UpdateInteractionGraphicsArgs) (wire.OKResult, error) {
+	g, err := clientgraphics.DecodeGroup(wire.SetClientGraphicsArgs{ClientId: interactionClientID(in.Lane), Lane: in.Lane, Nodes: in.Nodes})
 	if err != nil {
-		return nil, err
+		return wire.OKResult{}, err
 	}
-	s.Graphics().ReplaceLane(clientgraphics.Lane(a.Lane), []clientgraphics.Group{g})
-	return ok()
+	s.Graphics().ReplaceLane(clientgraphics.Lane(in.Lane), []clientgraphics.Group{g})
+	return wire.OKResult{OK: true}, nil
 }
 
 // clearInteractionGraphics drops every transient interaction lane — what a command calls

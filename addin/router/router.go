@@ -418,10 +418,10 @@ func (r *Router) registerSketchAuthoringHandlers() {
 // (list/execute/create commands and enumerate the active ribbon, RibbonUI core/07).
 func (r *Router) registerCommandHandlers() {
 	r.readOnly(wire.MethodCommandsList, listCommands)
-	r.readOnly(wire.MethodCommandsExecute, executeCommand)
-	r.readOnly(wire.MethodCommandsCreate, createCommand)
-	r.readOnly(wire.MethodCommandsSetState, setCommandState)
-	r.readOnly(wire.MethodCommandLineSubmit, submitCommandLine)
+	r.readOnly(wire.MethodCommandsExecute, typed(executeCommand))
+	r.readOnly(wire.MethodCommandsCreate, typed(createCommand))
+	r.readOnly(wire.MethodCommandsSetState, typed(setCommandState))
+	r.readOnly(wire.MethodCommandLineSubmit, typed(submitCommandLine))
 	r.readOnly(wire.MethodRibbonList, ribbonList)
 }
 
@@ -490,27 +490,27 @@ func (r *Router) registerMaterialHandlers() {
 // (M16/F03 PBI-155, ADR-0026).
 func (r *Router) registerLightingHandlers() {
 	r.readOnly(wire.MethodLightingGetStyle, getLightingStyle)
-	r.readOnly(wire.MethodLightingSetStyle, setLightingStyle)
+	r.readOnly(wire.MethodLightingSetStyle, typed(setLightingStyle))
 	r.readOnly(wire.MethodLightingListStyles, listLightingStyles)
 	r.readOnly(wire.MethodLightingListLights, listLights)
-	r.readOnly(wire.MethodLightingAddLight, addLight)
-	r.readOnly(wire.MethodLightingSetLight, setLight)
+	r.readOnly(wire.MethodLightingAddLight, typed(addLight))
+	r.readOnly(wire.MethodLightingSetLight, typed(setLight))
 	r.readOnly(wire.MethodViewGetShadows, getShadows)
-	r.readOnly(wire.MethodViewSetShadows, setShadows)
+	r.readOnly(wire.MethodViewSetShadows, typed(setShadows))
 	r.readOnly(wire.MethodEnvironmentGet, getEnvironment)
-	r.readOnly(wire.MethodEnvironmentSet, setEnvironment)
+	r.readOnly(wire.MethodEnvironmentSet, typed(setEnvironment))
 	r.readOnly(wire.MethodEnvironmentListPresets, listEnvironmentPresets)
-	r.readOnly(wire.MethodEnvironmentLoadImage, loadEnvironmentImage)
+	r.readOnly(wire.MethodEnvironmentLoadImage, typed(loadEnvironmentImage))
 }
 
 // registerGraphicsHandlers wires the client/interaction graphics methods — the add-in
 // overlay surface for drawing meshes, heatmaps, lines, markers and labels (M05-F05).
 func (r *Router) registerGraphicsHandlers() {
-	r.readOnly(wire.MethodClientGraphicsSet, setClientGraphics)
+	r.readOnly(wire.MethodClientGraphicsSet, typed(setClientGraphics))
 	r.readOnly(wire.MethodClientGraphicsList, listClientGraphics)
-	r.readOnly(wire.MethodClientGraphicsDelete, deleteClientGraphics)
-	r.readOnly(wire.MethodClientGraphicsSetVisible, setClientGraphicsVisible)
-	r.readOnly(wire.MethodInteractionGraphicsUpdate, updateInteractionGraphics)
+	r.readOnly(wire.MethodClientGraphicsDelete, typed(deleteClientGraphics))
+	r.readOnly(wire.MethodClientGraphicsSetVisible, typed(setClientGraphicsVisible))
+	r.readOnly(wire.MethodInteractionGraphicsUpdate, typed(updateInteractionGraphics))
 	r.readOnly(wire.MethodInteractionGraphicsClear, clearInteractionGraphics)
 	r.registerGraphicsObjectModelHandlers()
 }
