@@ -7,8 +7,8 @@ import (
 	"errors"
 	"fmt"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
@@ -18,41 +18,6 @@ import (
 // Each acts on an existing body's edges or faces, referenced by key (get_reference_keys), and
 // follows the extrude descriptor shape: a JSON schema + an Apply that builds the feature and
 // recomputes. They are how an MCP driver exercises the subtractive kernel end to end.
-
-// edgeDressArgs is the shared shape of the edge-referencing operations (fillet, chamfer).
-// EdgeSets is fillet-only: the edge-set form (#323), taking precedence over the flat
-// edgeRefs+radius pair.
-type edgeDressArgs struct {
-	EdgeRefs        []string        `json:"edgeRefs"`
-	Radius          string          `json:"radius,omitempty"`          // fillet
-	Distance        string          `json:"distance,omitempty"`        // chamfer
-	EdgeSets        []filletSetArgs `json:"edgeSets,omitempty"`        // fillet
-	FaceRefsA       []string        `json:"faceRefsA,omitempty"`       // fillet face-fillet: first face set (#694)
-	FaceRefsB       []string        `json:"faceRefsB,omitempty"`       // fillet face-fillet: second face set
-	CornerType      string          `json:"cornerType,omitempty"`      // fillet shared-corner treatment (default miter)
-	CrossSection    string          `json:"crossSection,omitempty"`    // fillet blend cross-section (default arc; #1284)
-	Rho             float64         `json:"rho,omitempty"`             // fillet conic fullness (0<ρ<1, 0.5=parabola)
-	ChamferType     string          `json:"chamferType,omitempty"`     // chamfer mode (default distance)
-	Distance2       string          `json:"distance2,omitempty"`       // chamfer twoDistances
-	Angle           string          `json:"angle,omitempty"`           // chamfer distanceAndAngle
-	ConcaveStrategy string          `json:"concaveStrategy,omitempty"` // chamfer concave-edge handling (default outward)
-}
-
-// filletSetArgs is one fillet edge set over the wire: constant (radius) or variable
-// (startRadius+endRadius over exactly one edge, plus optional intermediate radiusPoints, #695).
-type filletSetArgs struct {
-	EdgeRefs     []string             `json:"edgeRefs"`
-	Radius       string               `json:"radius,omitempty"`
-	StartRadius  string               `json:"startRadius,omitempty"`
-	EndRadius    string               `json:"endRadius,omitempty"`
-	RadiusPoints []filletRadiusPtArgs `json:"radiusPoints,omitempty"`
-}
-
-// filletRadiusPtArgs is one intermediate radius stop on a variable fillet edge over the wire (#695).
-type filletRadiusPtArgs struct {
-	T      float64 `json:"t"`
-	Radius string  `json:"radius"`
-}
 
 const filletSchema = `{
   "type": "object",
@@ -92,11 +57,11 @@ const chamferSchema = `{
 }`
 
 func filletDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "fillet", Summary: "Round picked edges of a body by a radius.", Schema: json.RawMessage(filletSchema), Apply: applyFillet}
+	return &OperationDescriptor{Name: featureargs.KindFillet, Summary: "Round picked edges of a body by a radius.", Schema: json.RawMessage(filletSchema), Apply: applyFillet}
 }
 
 func chamferDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "chamfer", Summary: "Bevel picked edges of a body by a setback distance.", Schema: json.RawMessage(chamferSchema), Apply: applyChamfer}
+	return &OperationDescriptor{Name: featureargs.KindChamfer, Summary: "Bevel picked edges of a body by a setback distance.", Schema: json.RawMessage(chamferSchema), Apply: applyChamfer}
 }
 
 const ruleFilletSchema = `{
@@ -109,22 +74,12 @@ const ruleFilletSchema = `{
 }`
 
 func ruleFilletDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "ruleFillet", Summary: "Round a whole class of a body's edges (all rounds / all fillets) in one feature.", Schema: json.RawMessage(ruleFilletSchema), Apply: applyRuleFillet}
-}
-
-// ruleFilletArgs is the rule-fillet op's wire shape: a dihedral rule + a radius.
-type ruleFilletArgs struct {
-	Rule   string `json:"rule"`
-	Radius string `json:"radius"`
+	return &OperationDescriptor{Name: featureargs.KindRuleFillet, Summary: "Round a whole class of a body's edges (all rounds / all fillets) in one feature.", Schema: json.RawMessage(ruleFilletSchema), Apply: applyRuleFillet}
 }
 
 func applyRuleFillet(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.RuleFillet](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in ruleFilletArgs
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	rule := feature.RuleFilletAllRounds
@@ -144,12 +99,8 @@ func applyRuleFillet(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 }
 
 func applyFillet(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.Fillet](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in edgeDressArgs
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	corner, cs, prof, err := filletControls(in)
@@ -173,7 +124,7 @@ type blendProfileArgs struct {
 
 // filletControls parses the fillet op's shared controls: the corner treatment, concave strategy, and
 // blend cross-section/rho (each defaulting when absent, erroring on an unknown spelling).
-func filletControls(in edgeDressArgs) (types.FilletCornerType, types.FilletConcaveStrategy, blendProfileArgs, error) {
+func filletControls(in featureargs.Fillet) (types.FilletCornerType, types.FilletConcaveStrategy, blendProfileArgs, error) {
 	corner, err := filletCornerOf(in.CornerType)
 	if err != nil {
 		return 0, 0, blendProfileArgs{}, err
@@ -210,27 +161,16 @@ const fullRoundSchema = `{
 
 func fullRoundDescriptor() *OperationDescriptor {
 	return &OperationDescriptor{
-		Name:    "fullRoundFillet",
+		Name:    featureargs.KindFullRoundFillet,
 		Summary: "Replace a center face with a full round (half-cylinder) tangent to two parallel side faces.",
 		Schema:  json.RawMessage(fullRoundSchema),
 		Apply:   applyFullRound,
 	}
 }
 
-// fullRoundArgs is the full-round op's wire shape: the two side faces and the center face to round.
-type fullRoundArgs struct {
-	Side1Ref  string `json:"side1Ref"`
-	CenterRef string `json:"centerRef"`
-	Side2Ref  string `json:"side2Ref"`
-}
-
 func applyFullRound(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.FullRoundFillet](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in fullRoundArgs
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	if in.Side1Ref == "" || in.CenterRef == "" || in.Side2Ref == "" {
@@ -243,7 +183,7 @@ func applyFullRound(s *app.Session, raw json.RawMessage) (json.RawMessage, error
 
 // applyFaceFillet rounds the edges shared between two face sets (#694, adjacent-faces case): both
 // faceRefsA and faceRefsB plus a radius are required.
-func applyFaceFillet(part *compdef.PartComponentDefinition, in edgeDressArgs) (json.RawMessage, error) {
+func applyFaceFillet(part *compdef.PartComponentDefinition, in featureargs.Fillet) (json.RawMessage, error) {
 	if len(in.FaceRefsA) == 0 || len(in.FaceRefsB) == 0 {
 		return nil, errors.New("face fillet: both faceRefsA and faceRefsB are required")
 	}
@@ -257,7 +197,7 @@ func applyFaceFillet(part *compdef.PartComponentDefinition, in edgeDressArgs) (j
 
 // applyFilletFlat builds the flat (edgeRefs + single radius) fillet with the chosen corner
 // treatment and concave-edge strategy.
-func applyFilletFlat(part *compdef.PartComponentDefinition, in edgeDressArgs, corner types.FilletCornerType, cs types.FilletConcaveStrategy, prof blendProfileArgs) (json.RawMessage, error) {
+func applyFilletFlat(part *compdef.PartComponentDefinition, in featureargs.Fillet, corner types.FilletCornerType, cs types.FilletConcaveStrategy, prof blendProfileArgs) (json.RawMessage, error) {
 	if len(in.EdgeRefs) == 0 {
 		return nil, errors.New("fillet: edgeRefs is empty (give edgeRefs+radius or edgeSets)")
 	}
@@ -272,7 +212,7 @@ func applyFilletFlat(part *compdef.PartComponentDefinition, in edgeDressArgs, co
 
 // applyFilletSets decodes the edge-set form and adds the fillet with the chosen corner treatment,
 // concave-edge strategy, and blend cross-section.
-func applyFilletSets(part *compdef.PartComponentDefinition, args []filletSetArgs, corner types.FilletCornerType, cs types.FilletConcaveStrategy, prof blendProfileArgs) (json.RawMessage, error) {
+func applyFilletSets(part *compdef.PartComponentDefinition, args []featureargs.FilletEdgeSet, corner types.FilletCornerType, cs types.FilletConcaveStrategy, prof blendProfileArgs) (json.RawMessage, error) {
 	sets, err := filletSetsFromArgs(part, args)
 	if err != nil {
 		return nil, err
@@ -317,7 +257,7 @@ func filletCornerOf(spelling string) (types.FilletCornerType, error) {
 
 // filletSetsFromArgs decodes the edge-set form: each set is constant (radius) or variable
 // (startRadius+endRadius); giving both or neither is a precise error.
-func filletSetsFromArgs(part *compdef.PartComponentDefinition, args []filletSetArgs) ([]feature.FilletEdgeSet, error) {
+func filletSetsFromArgs(part *compdef.PartComponentDefinition, args []featureargs.FilletEdgeSet) ([]feature.FilletEdgeSet, error) {
 	out := make([]feature.FilletEdgeSet, len(args))
 	for i, a := range args {
 		if len(a.EdgeRefs) == 0 {
@@ -334,7 +274,7 @@ func filletSetsFromArgs(part *compdef.PartComponentDefinition, args []filletSetA
 }
 
 // filletSetRadii resolves one set's radius closures from its constant or variable spelling.
-func filletSetRadii(part *compdef.PartComponentDefinition, a filletSetArgs, i int) (feature.FilletEdgeSet, error) {
+func filletSetRadii(part *compdef.PartComponentDefinition, a featureargs.FilletEdgeSet, i int) (feature.FilletEdgeSet, error) {
 	hasConst, hasVar := a.Radius != "", a.StartRadius != "" || a.EndRadius != ""
 	if hasConst == hasVar {
 		return feature.FilletEdgeSet{}, fmt.Errorf("fillet: edgeSets[%d] needs radius OR startRadius+endRadius (got radius=%q start=%q end=%q)", i, a.Radius, a.StartRadius, a.EndRadius)
@@ -356,7 +296,7 @@ func filletSetRadii(part *compdef.PartComponentDefinition, a filletSetArgs, i in
 }
 
 // filletRadiusPoints resolves a variable set's intermediate radius stops' closures (#695).
-func filletRadiusPoints(part *compdef.PartComponentDefinition, pts []filletRadiusPtArgs) ([]feature.FilletRadiusPoint, error) {
+func filletRadiusPoints(part *compdef.PartComponentDefinition, pts []featureargs.FilletRadiusPoint) ([]feature.FilletRadiusPoint, error) {
 	if len(pts) == 0 {
 		return nil, nil
 	}
@@ -372,12 +312,8 @@ func filletRadiusPoints(part *compdef.PartComponentDefinition, pts []filletRadiu
 }
 
 func applyChamfer(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.Chamfer](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in edgeDressArgs
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	if len(in.EdgeRefs) == 0 {
@@ -392,7 +328,7 @@ func applyChamfer(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 
 // buildChamfer resolves the chamfer mode, setbacks, and concave-edge strategy from the args and
 // adds the feature (not yet recomputed).
-func buildChamfer(part *compdef.PartComponentDefinition, in edgeDressArgs) (*feature.PartFeature, error) {
+func buildChamfer(part *compdef.PartComponentDefinition, in featureargs.Chamfer) (*feature.PartFeature, error) {
 	d, err := lengthClosure(part, in.Distance, "chamfer: distance")
 	if err != nil {
 		return nil, err
@@ -439,7 +375,7 @@ func chamferConcaveStrategyOf(spelling string) (types.ChamferConcaveStrategy, er
 
 // applyChamferMode places the chamfer feature for the resolved mode, resolving the second
 // input (distance2 or angle) for the asymmetric modes.
-func applyChamferMode(part *compdef.PartComponentDefinition, keys [][]byte, d func() float64, ct types.ChamferType, in edgeDressArgs) (*feature.PartFeature, error) {
+func applyChamferMode(part *compdef.PartComponentDefinition, keys [][]byte, d func() float64, ct types.ChamferType, in featureargs.Chamfer) (*feature.PartFeature, error) {
 	du := feature.NewDressUpFeatures(part.Features())
 	switch ct {
 	case types.ChamferTwoDistances:
@@ -457,13 +393,6 @@ func applyChamferMode(part *compdef.PartComponentDefinition, keys [][]byte, d fu
 	default:
 		return du.AddChamfer(keys, d), nil
 	}
-}
-
-// faceDressArgs is the shared shape of the face-referencing operations (shell, draft).
-type faceDressArgs struct {
-	FaceRefs  []string `json:"faceRefs"`
-	Thickness string   `json:"thickness,omitempty"` // shell
-	Angle     string   `json:"angle,omitempty"`     // draft
 }
 
 const shellSchema = `{
@@ -485,20 +414,16 @@ const draftSchema = `{
 }`
 
 func shellDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "shell", Summary: "Hollow a body to a wall thickness, removing the picked faces.", Schema: json.RawMessage(shellSchema), Apply: applyShell}
+	return &OperationDescriptor{Name: featureargs.KindShell, Summary: "Hollow a body to a wall thickness, removing the picked faces.", Schema: json.RawMessage(shellSchema), Apply: applyShell}
 }
 
 func draftDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "draft", Summary: "Taper picked faces by a draft angle.", Schema: json.RawMessage(draftSchema), Apply: applyDraft}
+	return &OperationDescriptor{Name: featureargs.KindDraft, Summary: "Taper picked faces by a draft angle.", Schema: json.RawMessage(draftSchema), Apply: applyDraft}
 }
 
 func applyShell(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.Shell](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in faceDressArgs
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	if len(in.FaceRefs) == 0 {
@@ -513,12 +438,8 @@ func applyShell(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 }
 
 func applyDraft(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.Draft](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in faceDressArgs
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	if len(in.FaceRefs) == 0 {
@@ -534,13 +455,6 @@ func applyDraft(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 
 // --- lip / groove (M20-F10) ------------------------------------------------
 
-type lipArgs struct {
-	EdgeRefs []string `json:"edgeRefs"`
-	Width    string   `json:"width"`
-	Height   string   `json:"height"`
-	Groove   bool     `json:"groove,omitempty"`
-}
-
 const lipSchema = `{
   "type": "object",
   "properties": {
@@ -553,16 +467,12 @@ const lipSchema = `{
 }`
 
 func lipDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "lip", Summary: "Run a raised lip (or recessed groove) bead along picked edges.", Schema: json.RawMessage(lipSchema), Apply: applyLip}
+	return &OperationDescriptor{Name: featureargs.KindLip, Summary: "Run a raised lip (or recessed groove) bead along picked edges.", Schema: json.RawMessage(lipSchema), Apply: applyLip}
 }
 
 func applyLip(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.Lip](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in lipArgs
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	if len(in.EdgeRefs) == 0 {

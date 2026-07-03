@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"strings"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -19,38 +19,6 @@ import (
 // The pattern features replicate one or more existing features (referenced by name, as shown
 // in model.tree) — rectangular grid, circular array, and mirror. The source features are
 // resolved to their ids; the layout is given numerically (counts, steps, axis, plane normal).
-
-type patternArgs struct {
-	SourceFeatures    []string     `json:"sourceFeatures"`
-	CountX            int          `json:"countX,omitempty"`
-	CountY            int          `json:"countY,omitempty"`
-	CountXExpr        string       `json:"countXExpr,omitempty"`
-	CountYExpr        string       `json:"countYExpr,omitempty"`
-	StepX             []float64    `json:"stepX,omitempty"`
-	StepY             []float64    `json:"stepY,omitempty"`
-	Count             int          `json:"count,omitempty"`
-	CountExpr         string       `json:"countExpr,omitempty"`
-	Angle             string       `json:"angle,omitempty"`
-	AxisPoint         []float64    `json:"axisPoint,omitempty"`
-	AxisDir           []float64    `json:"axisDir,omitempty"`
-	Normal            []float64    `json:"normal,omitempty"`
-	Origin            []float64    `json:"origin,omitempty"`
-	SpacingType       string       `json:"spacingType,omitempty"`
-	ComputeType       string       `json:"computeType,omitempty"`
-	Orientation       string       `json:"orientation,omitempty"`
-	PositioningMethod string       `json:"positioningMethod,omitempty"`
-	Boundary          *boundaryArg `json:"boundary,omitempty"`
-}
-
-// boundaryArg is the optional pattern-clipping boundary (M20-F18): a closed loop of 3D
-// points (cm) projected into the plane through planeOrigin with planeNormal; an occurrence
-// is dropped when its centre falls outside the loop.
-type boundaryArg struct {
-	PlaneOrigin []float64   `json:"planeOrigin,omitempty"`
-	PlaneNormal []float64   `json:"planeNormal"`
-	Polygon     [][]float64 `json:"polygon"`
-	Inclusion   string      `json:"inclusion,omitempty"`
-}
 
 const rectPatternSchema = `{
   "type": "object",
@@ -110,55 +78,35 @@ const mirrorSchema = `{
 }`
 
 func rectPatternDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "patternRectangular", Summary: "Replicate features on a rectangular grid.", Schema: json.RawMessage(rectPatternSchema), Apply: applyRectPattern}
+	return &OperationDescriptor{Name: featureargs.KindPatternRectangular, Summary: "Replicate features on a rectangular grid.", Schema: json.RawMessage(rectPatternSchema), Apply: applyRectPattern}
 }
 
 func circPatternDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "patternCircular", Summary: "Replicate features in a circular array about an axis.", Schema: json.RawMessage(circPatternSchema), Apply: applyCircPattern}
+	return &OperationDescriptor{Name: featureargs.KindPatternCircular, Summary: "Replicate features in a circular array about an axis.", Schema: json.RawMessage(circPatternSchema), Apply: applyCircPattern}
 }
 
 func mirrorDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "mirror", Summary: "Mirror features across a plane.", Schema: json.RawMessage(mirrorSchema), Apply: applyMirror}
-}
-
-// decodePattern resolves the active part, decoded args, and the source-feature ids common to
-// every pattern operation.
-func decodePattern(s *app.Session, raw json.RawMessage) (*compdef.PartComponentDefinition, patternArgs, []feature.ID, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, patternArgs{}, nil, err
-	}
-	var in patternArgs
-	if err := json.Unmarshal(raw, &in); err != nil {
-		return nil, patternArgs{}, nil, err
-	}
-	ids, err := featureIDsByName(part, in.SourceFeatures)
-	if err != nil {
-		return nil, patternArgs{}, nil, err
-	}
-	return part, in, ids, nil
+	return &OperationDescriptor{Name: featureargs.KindMirror, Summary: "Mirror features across a plane.", Schema: json.RawMessage(mirrorSchema), Apply: applyMirror}
 }
 
 func applyRectPattern(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, in, ids, err := decodePattern(s, raw)
+	part, in, err := decodeFeatureArgs[featureargs.PatternRectangular](s, raw)
 	if err != nil {
 		return nil, err
 	}
-	stepX, err := vec3(in.StepX, "patternRectangular: stepX")
+	ids, err := featureIDsByName(part, in.SourceFeatures)
 	if err != nil {
 		return nil, err
 	}
-	stepY := math.Vector3{}
-	if len(in.StepY) == 3 {
-		if stepY, err = vec3(in.StepY, "patternRectangular: stepY"); err != nil {
-			return nil, err
-		}
+	stepX, stepY, err := rectSteps(in)
+	if err != nil {
+		return nil, err
 	}
 	countX, countY, err := rectCounts(part, in)
 	if err != nil {
 		return nil, err
 	}
-	opts, err := patternOptions(in)
+	opts, err := patternOptions(in.PatternPlacement)
 	if err != nil {
 		return nil, err
 	}
@@ -167,9 +115,22 @@ func applyRectPattern(s *app.Session, raw json.RawMessage) (json.RawMessage, err
 	return lastFeatureResult(part)
 }
 
+// rectSteps resolves the grid's two spacing vectors: stepX is required, stepY optional (a 1-D row
+// pattern leaves it zero).
+func rectSteps(in featureargs.PatternRectangular) (stepX, stepY math.Vector3, err error) {
+	stepX, err = vec3(in.StepX, "patternRectangular: stepX")
+	if err != nil {
+		return stepX, stepY, err
+	}
+	if len(in.StepY) == 3 {
+		stepY, err = vec3(in.StepY, "patternRectangular: stepY")
+	}
+	return stepX, stepY, err
+}
+
 // rectCounts resolves the two grid counts as live closures, preferring the parameter-expression
 // forms (countXExpr/countYExpr) over the numeric counts (#189).
-func rectCounts(part *compdef.PartComponentDefinition, in patternArgs) (countX, countY func() int, err error) {
+func rectCounts(part *compdef.PartComponentDefinition, in featureargs.PatternRectangular) (countX, countY func() int, err error) {
 	countX, err = countClosure(part, in.CountXExpr, "patternRectangular: countXExpr", defaultInt(in.CountX, 2))
 	if err != nil {
 		return nil, nil, err
@@ -182,7 +143,11 @@ func rectCounts(part *compdef.PartComponentDefinition, in patternArgs) (countX, 
 }
 
 func applyCircPattern(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, in, ids, err := decodePattern(s, raw)
+	part, in, err := decodeFeatureArgs[featureargs.PatternCircular](s, raw)
+	if err != nil {
+		return nil, err
+	}
+	ids, err := featureIDsByName(part, in.SourceFeatures)
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +159,7 @@ func applyCircPattern(s *app.Session, raw json.RawMessage) (json.RawMessage, err
 	if err != nil {
 		return nil, err
 	}
-	opts, err := patternOptions(in)
+	opts, err := patternOptions(in.PatternPlacement)
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +170,7 @@ func applyCircPattern(s *app.Session, raw json.RawMessage) (json.RawMessage, err
 
 // patternOptions resolves the M20-F18 option fields (spacing/compute/orientation/
 // positioning + boundary) from the request, defaulting to the legacy zero value.
-func patternOptions(in patternArgs) (feature.PatternOptions, error) {
+func patternOptions(in featureargs.PatternPlacement) (feature.PatternOptions, error) {
 	o, err := patternEnumOptions(in)
 	if err != nil {
 		return o, err
@@ -217,7 +182,7 @@ func patternOptions(in patternArgs) (feature.PatternOptions, error) {
 }
 
 // patternEnumOptions parses the four enum option fields, rejecting a non-empty unknown.
-func patternEnumOptions(in patternArgs) (feature.PatternOptions, error) {
+func patternEnumOptions(in featureargs.PatternPlacement) (feature.PatternOptions, error) {
 	var o feature.PatternOptions
 	var ok bool
 	if in.SpacingType != "" {
@@ -244,7 +209,7 @@ func patternEnumOptions(in patternArgs) (feature.PatternOptions, error) {
 }
 
 // buildPatternBoundary turns the boundary request into a model clipping boundary.
-func buildPatternBoundary(b *boundaryArg) (*feature.PatternBoundary, error) {
+func buildPatternBoundary(b *featureargs.PatternBoundary) (*feature.PatternBoundary, error) {
 	if len(b.PlaneNormal) != 3 {
 		return nil, errors.New("pattern boundary: planeNormal needs 3 components [x,y,z]")
 	}
@@ -269,7 +234,11 @@ func buildPatternBoundary(b *boundaryArg) (*feature.PatternBoundary, error) {
 }
 
 func applyMirror(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, in, ids, err := decodePattern(s, raw)
+	part, in, err := decodeFeatureArgs[featureargs.Mirror](s, raw)
+	if err != nil {
+		return nil, err
+	}
+	ids, err := featureIDsByName(part, in.SourceFeatures)
 	if err != nil {
 		return nil, err
 	}
