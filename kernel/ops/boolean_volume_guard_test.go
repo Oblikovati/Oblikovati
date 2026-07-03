@@ -51,12 +51,13 @@ func TestBooleanVolumeGuardTwoSided(t *testing.T) {
 	}
 }
 
-// TestTangentUnionRecordsNudgedGeometry pins #1600's visibility guarantee: a union across a
-// tangent (edge-sharing) contact resolves through the nudged retry — the result carries operand
-// B displaced by the nudge — and that MUST surface as a boolean.nudged-geometry Defect instead of
-// shipping silently. (Retiring the displacement itself needs the downstream re-welds to respect
-// existing topology; tracked on the issue.)
-func TestTangentUnionRecordsNudgedGeometry(t *testing.T) {
+// TestTangentUnionShipsExactCoordinates is #1600's headline guarantee (A4): an edge-tangent union
+// (two boxes sharing only the vertical edge x=2,y=2) is resolved EXACTLY — the coincident dihedrals
+// split by radial order — and shipped with ZERO displacement. Every output vertex is bit-identical
+// to an operand vertex (distance 0 to float ulps, NOT within the retired 1e-5 nudge), the emitted
+// diagnostic is the informational tangent-contact note (never the nudged-geometry Defect), and the
+// result is an Euler-valid solid. Regression against the old geometry-moving retry.
+func TestTangentUnionShipsExactCoordinates(t *testing.T) {
 	a := guardBlock(t, math.P3(0, 0, 0), math.P3(2, 2, 2), "a")
 	b := guardBlock(t, math.P3(2, 2, 0), math.P3(4, 4, 2), "b") // shares only the vertical edge x=2,y=2
 	rec := &diag.Recorder{}
@@ -67,7 +68,33 @@ func TestTangentUnionRecordsNudgedGeometry(t *testing.T) {
 	if res == nil || !res.IsSolid() {
 		t.Fatal("tangent union did not produce a solid")
 	}
-	if !rec.Has(brep.CodeBooleanNudgedGeometry) {
-		t.Errorf("tangent union shipped without a %q diagnostic; got %v", brep.CodeBooleanNudgedGeometry, rec.Records())
+	if rec.Has(brep.CodeBooleanNudgedGeometry) {
+		t.Errorf("tangent union shipped displaced geometry (nudged) instead of the exact result; recs=%v", rec.Records())
+	}
+	if !rec.Has(brep.CodeBooleanTangentContact) {
+		t.Errorf("tangent union did not record the exact tangent-contact diagnostic; got %v", rec.Records())
+	}
+	assertVerticesExactlyOnOperands(t, res, a, b)
+	if r := Validate(res); !r.Valid {
+		t.Fatalf("exact tangent union is not a valid solid: %v", r.Issues)
+	}
+}
+
+// assertVerticesExactlyOnOperands fails if any vertex of the result is not bit-identical to a
+// vertex of one of the operands — the "distance 0 within float ulps, not within 1e-5" contract of
+// #1600. A pure edge-tangent union creates no new intersection vertices, so every result vertex
+// must coincide EXACTLY with an operand vertex; a 1e-5 nudge would move all of operand B's.
+func assertVerticesExactlyOnOperands(t *testing.T, res, a, b *topo.Body) {
+	t.Helper()
+	exact := map[math.Point3]bool{}
+	for _, src := range []*topo.Body{a, b} {
+		for _, v := range src.Vertices() {
+			exact[v.Point()] = true
+		}
+	}
+	for _, v := range res.Vertices() {
+		if !exact[v.Point()] {
+			t.Fatalf("result vertex %v is not bit-identical to any operand vertex (displaced geometry)", v.Point())
+		}
 	}
 }

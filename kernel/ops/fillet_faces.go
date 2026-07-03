@@ -170,9 +170,11 @@ func transformLoop(f *topo.Face, l *topo.Loop, subs map[uint64]math.Point3, ends
 			tOut := c.tOf(otherFace(u.Edge(), f))
 			addCornerRound(&fl, c, tIn, tOut)
 		case subs != nil && hasSubst(subs, v):
-			fl.add(subs[v.ID()], nil)
+			fl.add(subs[v.ID()], nil) // pulled-back to a tangent point: a new position, weld by coordinate
 		default:
-			fl.add(v.Point(), nil)
+			// unchanged survivor: carry its vertex id AND the edge leaving it, so a coincident
+			// tangent seam (two edges on one line sharing endpoints) stays two edges (#1600).
+			fl.addID(v.Point(), nil, v.ID(), u.Edge().ID())
 		}
 		addEdgeInserts(&fl, inserts, u)
 	}
@@ -239,10 +241,20 @@ func hasSubst(subs map[uint64]math.Point3, v *topo.Vertex) bool {
 	return ok
 }
 
-// add appends a point and the curve of the segment leaving it (nil ⇒ straight).
+// add appends an op-generated point (no carried identity) and the curve of the segment leaving it
+// (nil ⇒ straight).
 func (l *filletLoop) add(p math.Point3, curve geom.Curve3) {
+	l.addID(p, curve, 0, 0)
+}
+
+// addID appends a point carrying its source topo-vertex id and the source topo-edge id of the
+// segment leaving it (0 = op-generated), so the re-weld preserves the boolean's tangent-contact
+// vertex AND edge identity (#1600).
+func (l *filletLoop) addID(p math.Point3, curve geom.Curve3, srcV, srcE uint64) {
 	l.pts = append(l.pts, p)
 	l.curves = append(l.curves, curve)
+	l.srcV = append(l.srcV, srcV)
+	l.srcE = append(l.srcE, srcE)
 }
 
 // useFromVertex returns the from-vertex of an edge use (honouring reversal).

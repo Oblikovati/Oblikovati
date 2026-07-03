@@ -332,24 +332,59 @@ func dropRepeats(r []int) []int {
 
 // pointWelder merges coincident 3D points onto a shared index list, snapping to a
 // model-relative weld grid (ADR-0042) the caller derives from the points' size.
+// byID carries each point's SOURCE topological vertex identity through the weld: two points
+// with the same non-zero id are the SAME vertex, while two DISTINCT non-zero ids are kept apart
+// even when they quantize to one cell — so a boolean's pinch-split coincident vertices (a
+// kissing tangency) survive a re-weld instead of collapsing back into a non-manifold pinch
+// (#1600). Identity-less points (id 0, e.g. op-generated tangent points) weld by coordinate.
 type pointWelder struct {
 	index  map[[3]int64]int
+	byID   map[uint64]int
 	points []math.Point3
 	grid   float64
 }
 
 func newPointWelder(grid float64) *pointWelder {
-	return &pointWelder{index: map[[3]int64]int{}, grid: grid}
+	return &pointWelder{index: map[[3]int64]int{}, byID: map[uint64]int{}, grid: grid}
+}
+
+// pointCell quantizes p to the weld grid cell used to detect coordinate coincidence.
+func pointCell(p math.Point3, grid float64) [3]int64 {
+	return [3]int64{quantize(p.X, grid), quantize(p.Y, grid), quantize(p.Z, grid)}
 }
 
 func (w *pointWelder) add(p math.Point3) int {
-	k := [3]int64{quantize(p.X, w.grid), quantize(p.Y, w.grid), quantize(p.Z, w.grid)}
+	k := pointCell(p, w.grid)
 	if i, ok := w.index[k]; ok {
 		return i
 	}
-	w.index[k] = len(w.points)
+	return w.appendPoint(p, k)
+}
+
+// appendPoint stores p as a fresh vertex, claiming its cell for coordinate welds only if empty
+// (so a later id-0 point at a pinch coordinate welds to the FIRST fan there, not the newest).
+func (w *pointWelder) appendPoint(p math.Point3, k [3]int64) int {
+	i := len(w.points)
 	w.points = append(w.points, p)
-	return len(w.points) - 1
+	if _, ok := w.index[k]; !ok {
+		w.index[k] = i
+	}
+	return i
+}
+
+// addID welds p under its carried source-vertex identity: a non-zero id resolves to the one
+// vertex that id was first seen at (distinct ids never merge, preserving a pinch split); id 0
+// falls back to coordinate welding. See the type comment (#1600).
+func (w *pointWelder) addID(p math.Point3, id uint64) int {
+	if id == 0 {
+		return w.add(p)
+	}
+	if i, ok := w.byID[id]; ok {
+		return i
+	}
+	i := w.appendPoint(p, pointCell(p, w.grid))
+	w.byID[id] = i
+	return i
 }
 
 func (w *pointWelder) weldRing(r []math.Point3) []int {
@@ -358,6 +393,24 @@ func (w *pointWelder) weldRing(r []math.Point3) []int {
 		out[i] = w.add(p)
 	}
 	return out
+}
+
+// weldRingID welds a ring carrying a parallel source-vertex id per point (ids may be shorter than
+// pts, in which case the missing tail is treated as op-generated, id 0).
+func (w *pointWelder) weldRingID(pts []math.Point3, ids []uint64) []int {
+	out := make([]int, len(pts))
+	for i, p := range pts {
+		out[i] = w.addID(p, srcIDAt(ids, i))
+	}
+	return out
+}
+
+// srcIDAt returns ids[i] or 0 when the point has no carried identity.
+func srcIDAt(ids []uint64, i int) uint64 {
+	if i < len(ids) {
+		return ids[i]
+	}
+	return 0
 }
 
 // centroidPts averages a point set (a point on the face for its plane origin).
