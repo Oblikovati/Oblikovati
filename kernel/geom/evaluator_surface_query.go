@@ -250,13 +250,24 @@ func ellipticNature(major, minor float64) SolutionNature {
 // surfaceSeed is one refined closest-point candidate in parameter space.
 type surfaceSeed struct{ u, v float64 }
 
-// bsplineParamAtPoint searches a coarse grid for near-minimal cells, refines
-// each with the seeded projector, and clusters the winners.
+// bsplineParamAtPoint seeds a knot-span-aware lattice (one basin per span, #1608),
+// refines the near-minimal cells with the seeded projector, and clusters the winners so
+// a point equidistant from several feet is reported as DistinctlyManySolutions.
 func bsplineParamAtPoint(g BSplineSurface, p math.Point3) (float64, float64, SolutionNature) {
-	const grid = 24
-	uLo, uHi := g.UDomain()
-	vLo, vHi := g.VDomain()
-	us, vs, ds, best := surfaceGridDistances(g, p, uLo, uHi, vLo, vHi, grid)
+	uSeeds := knotSpanSeedParams(g.UKnots, g.UDegree)
+	vSeeds := knotSpanSeedParams(g.VKnots, g.VDegree)
+	us, vs, ds, best := seedLatticeDistances(g, p, uSeeds, vSeeds)
+	uW, vW := minSeedSpacing(uSeeds), minSeedSpacing(vSeeds)
+	bestU, bestV, clusters := refineSeedClusters(g, p, us, vs, ds, best, uW, vW)
+	if len(clusters) > 1 {
+		return bestU, bestV, DistinctlyManySolutions
+	}
+	return bestU, bestV, UniqueSolution
+}
+
+// refineSeedClusters polishes every seed within tol of the best coarse distance and
+// returns the closest foot plus the distinct feet it clustered into (uW, vW: merge radii).
+func refineSeedClusters(g BSplineSurface, p math.Point3, us, vs, ds []float64, best, uW, vW float64) (float64, float64, []surfaceSeed) {
 	tol := 1e-9 * stdmath.Max(1, best)
 	var clusters []surfaceSeed
 	bestU, bestV, refinedBest := us[0], vs[0], stdmath.Inf(1)
@@ -269,23 +280,19 @@ func bsplineParamAtPoint(g BSplineSurface, p math.Point3) (float64, float64, Sol
 		if rd < refinedBest-tol {
 			refinedBest, bestU, bestV, clusters = rd, ru, rv, clusters[:0]
 		}
-		if rd <= refinedBest+tol && !inSeedCluster(clusters, ru, rv, (uHi-uLo)/grid, (vHi-vLo)/grid) {
+		if rd <= refinedBest+tol && !inSeedCluster(clusters, ru, rv, uW, vW) {
 			clusters = append(clusters, surfaceSeed{ru, rv})
 		}
 	}
-	if len(clusters) > 1 {
-		return bestU, bestV, DistinctlyManySolutions
-	}
-	return bestU, bestV, UniqueSolution
+	return bestU, bestV, clusters
 }
 
-// surfaceGridDistances samples the distance field on a uniform parameter grid.
-func surfaceGridDistances(s Surface, p math.Point3, uLo, uHi, vLo, vHi float64, grid int) (us, vs, ds []float64, best float64) {
+// seedLatticeDistances evaluates the distance field on the uSeeds×vSeeds knot-span lattice,
+// returning the flattened (u, v, d) samples and the minimum distance found.
+func seedLatticeDistances(s Surface, p math.Point3, uSeeds, vSeeds []float64) (us, vs, ds []float64, best float64) {
 	best = stdmath.Inf(1)
-	for i := 0; i <= grid; i++ {
-		for j := 0; j <= grid; j++ {
-			u := uLo + (uHi-uLo)*float64(i)/float64(grid)
-			v := vLo + (vHi-vLo)*float64(j)/float64(grid)
+	for _, u := range uSeeds {
+		for _, v := range vSeeds {
 			d := s.PointAt(u, v).DistanceTo(p)
 			us, vs, ds = append(us, u), append(vs, v), append(ds, d)
 			best = stdmath.Min(best, d)
