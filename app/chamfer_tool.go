@@ -115,19 +115,26 @@ func (t *ChamferTool) selectedEdgeKeys() [][]byte {
 // CanCommit reports whether at least one edge is selected and the distance is positive.
 func (t *ChamferTool) CanCommit() bool { return t.EdgeCount() > 0 && t.distance > 0 }
 
-// Commit bevels the picked edges on the active part and recomputes; a sick feature keeps
-// the tool open by returning an error.
+// Commit finishes the tool: an in-place edit writes back through the session, a fresh
+// chamfer goes through the host-driven create path (CommitFeature).
 func (t *ChamferTool) Commit(s *Session) error {
 	if t.IsEditing() {
 		return t.commitEdit(s)
 	}
-	part, err := activePart(s)
+	return t.CommitFeature(s) // create path drives the slim host (I12, #1635)
+}
+
+// CommitFeature bevels the picked edges on the active part through the ToolHost seam, so
+// the create-commit no longer depends on the whole *Session (satisfies hostedTool, #1635).
+// A sick feature (a distance that overruns the geometry) keeps the tool open via an error.
+func (t *ChamferTool) CommitFeature(h ToolHost) error {
+	part, err := h.ActivePart()
 	if err != nil {
 		return err
 	}
 	t.added = t.addChamfer(feature.NewDressUpFeatures(part.Features()))
 	part.Recompute()
-	s.recordEdit(part, "Chamfer")
+	h.recordEdit(part, "Chamfer")
 	if !t.added.Health().OK() {
 		return errors.New("chamfer: " + t.added.Health().Reason)
 	}
