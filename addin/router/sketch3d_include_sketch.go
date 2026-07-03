@@ -3,11 +3,9 @@
 package router
 
 import (
-	"encoding/json"
-
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
+	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/sketch"
 )
 
@@ -15,25 +13,17 @@ import (
 // id) into a 3D sketch as associative reference geometry, lifted through the 2D sketch's
 // host plane. It reuses the model-side sketch2D source adapters, which re-resolve their
 // entity on every read so the include tracks edits to the source sketch through recompute.
-func includeSketch2DInto3D(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.IncludeSketch2DArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func includeSketch2DInto3D(_ *app.Session, part *compdef.PartComponentDefinition, in wire.IncludeSketch2DArgs) (wire.IncludeSketch3DResult, error) {
 	target, err := sketch3DAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.IncludeSketch3DResult{}, err
 	}
 	source, err := sketchAtIndex(part, in.SourceSketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.IncludeSketch3DResult{}, err
 	}
 	created, healthy := includeSketch2DEntities(target, source, in.EntityIDs)
-	return json.Marshal(wire.IncludeSketch3DResult{Created: created, Healthy: healthy})
+	return wire.IncludeSketch3DResult{Created: created, Healthy: healthy}, nil
 }
 
 // includeSketch2DEntities includes each source 2D entity into the target 3D sketch — a

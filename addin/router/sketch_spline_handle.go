@@ -3,12 +3,12 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/sketch"
 )
 
@@ -17,31 +17,27 @@ import (
 // deactivate the handle on one fit point.
 
 // setSplineHandle serves wire.MethodSketchSetSplineHandle.
-func setSplineHandle(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.SetSplineHandleArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	sk, err := activeSketchAt(s, in.SketchIndex)
+func setSplineHandle(_ *app.Session, part *compdef.PartComponentDefinition, in wire.SetSplineHandleArgs) (wire.SplineHandleInfo, error) {
+	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.SplineHandleInfo{}, err
 	}
 	sp, err := splineByID(sk, in.Spline)
 	if err != nil {
-		return nil, err
+		return wire.SplineHandleInfo{}, err
 	}
 	if !in.Active {
 		sk.SplineHandles().Deactivate(sp, in.FitPointIndex)
-		return json.Marshal(wire.SplineHandleInfo{})
+		return wire.SplineHandleInfo{}, nil
 	}
 	h, err := sk.SplineHandles().Activate(sp, in.FitPointIndex)
 	if err != nil {
-		return nil, err
+		return wire.SplineHandleInfo{}, err
 	}
 	if err := applyHandleEdit(h, in); err != nil {
-		return nil, err
+		return wire.SplineHandleInfo{}, err
 	}
-	return json.Marshal(splineHandleInfo(h))
+	return splineHandleInfo(h), nil
 }
 
 // applyHandleEdit applies the optional tangent/weight edit to a 2D handle.
@@ -85,31 +81,27 @@ func splineByID(sk *sketch.Sketch, id uint64) (*sketch.Spline, error) {
 }
 
 // setSplineHandle3D serves wire.MethodSketch3DSetSplineHandle.
-func setSplineHandle3D(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.SetSplineHandleArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	sk, _, err := resolveSketch3D(s, raw)
+func setSplineHandle3D(_ *app.Session, part *compdef.PartComponentDefinition, in wire.SetSplineHandleArgs) (wire.SplineHandleInfo, error) {
+	sk, err := sketch3DAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.SplineHandleInfo{}, err
 	}
 	sp, err := spline3DByID(sk, in.Spline)
 	if err != nil {
-		return nil, err
+		return wire.SplineHandleInfo{}, err
 	}
 	if !in.Active {
 		sk.DeactivateSplineHandle3D(sp, in.FitPointIndex)
-		return json.Marshal(wire.SplineHandleInfo{})
+		return wire.SplineHandleInfo{}, nil
 	}
 	h, err := sk.ActivateSplineHandle3D(sp, in.FitPointIndex)
 	if err != nil {
-		return nil, err
+		return wire.SplineHandleInfo{}, err
 	}
 	if err := applyHandleEdit3D(h, in); err != nil {
-		return nil, err
+		return wire.SplineHandleInfo{}, err
 	}
-	return json.Marshal(splineHandle3DInfo(h))
+	return splineHandle3DInfo(h), nil
 }
 
 // applyHandleEdit3D applies the optional tangent/weight edit to a 3D handle.

@@ -3,10 +3,8 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
@@ -17,45 +15,33 @@ import (
 
 // addDimension adds a dimensional constraint of the requested kind and reports the
 // backing parameter, the measured value, and the sketch's resulting DOF.
-func addDimension(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.AddDimensionArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	sk, err := activeSketchAt(s, in.SketchIndex)
+func addDimension(_ *app.Session, part *compdef.PartComponentDefinition, in wire.AddDimensionArgs) (wire.AddDimensionResult, error) {
+	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.AddDimensionResult{}, err
 	}
 	dim, err := buildDimension(sk, types.DimensionConstraintKind(in.Kind), in.Entities, in.Expression, in.FarSide)
 	if err != nil {
-		return nil, err
+		return wire.AddDimensionResult{}, err
 	}
 	dc := sk.DimensionConstraints()
-	return json.Marshal(wire.AddDimensionResult{
+	return wire.AddDimensionResult{
 		Index: dc.Count() - 1, Kind: in.Kind, Parameter: dim.Parameter().Name(),
 		Value: dim.Measured(), DOF: sk.DegreesOfFreedom(),
-	})
+	}, nil
 }
 
 // driveDimension edits a dimension: its value (expression), driven flag, and/or limits.
-func driveDimension(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.DriveDimensionArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func driveDimension(_ *app.Session, part *compdef.PartComponentDefinition, in wire.DriveDimensionArgs) (wire.OKResult, error) {
 	dim, err := dimensionAt(part, in.SketchIndex, in.DimensionIndex)
 	if err != nil {
-		return nil, err
+		return wire.OKResult{}, err
 	}
 	return applyDimensionEdit(part, dim, in)
 }
 
 // applyDimensionEdit applies the optional value/driven/limits edits to a dimension.
-func applyDimensionEdit(part *compdef.PartComponentDefinition, dim *sketch.DimensionConstraint, in wire.DriveDimensionArgs) (json.RawMessage, error) {
+func applyDimensionEdit(part *compdef.PartComponentDefinition, dim *sketch.DimensionConstraint, in wire.DriveDimensionArgs) (wire.OKResult, error) {
 	if in.SetLimits {
 		dim.SetLimits(in.Min, in.Max)
 	}
@@ -65,13 +51,13 @@ func applyDimensionEdit(part *compdef.PartComponentDefinition, dim *sketch.Dimen
 	if in.Expression != "" {
 		v, err := resolveQuantity(part, in.Expression, dimensionUnit(dim.Kind()))
 		if err != nil {
-			return nil, fmt.Errorf("sketch.driveDimension: value %q: %w", in.Expression, err)
+			return wire.OKResult{}, fmt.Errorf("sketch.driveDimension: value %q: %w", in.Expression, err)
 		}
 		if err := dim.Drive(v.Value); err != nil {
-			return nil, fmt.Errorf("sketch.driveDimension: %w", err)
+			return wire.OKResult{}, fmt.Errorf("sketch.driveDimension: %w", err)
 		}
 	}
-	return json.Marshal(wire.OKResult{OK: true})
+	return wire.OKResult{OK: true}, nil
 }
 
 // buildDimension resolves references and applies the matching model dimension factory.

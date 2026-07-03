@@ -3,21 +3,20 @@
 package router
 
 import (
-	"encoding/json"
-
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/identity"
 	"oblikovati.org/model/sketch"
 )
 
 // enumerateEntities lists a sketch's geometry: kind, construction flag, points, radius.
-func enumerateEntities(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	sk, _, err := resolveSketch(s, raw)
+func enumerateEntities(s *app.Session, part *compdef.PartComponentDefinition, in wire.SketchArgs) (wire.EnumerateEntitiesResult, error) {
+	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.EnumerateEntitiesResult{}, err
 	}
 	ents := sk.Entities()
 	moveable := sk.MoveableClassifier()
@@ -37,7 +36,7 @@ func enumerateEntities(s *app.Session, raw json.RawMessage) (json.RawMessage, er
 			FitMethod:      splineFitSpelling(e),
 		}
 	}
-	return json.Marshal(wire.EnumerateEntitiesResult{Entities: out})
+	return wire.EnumerateEntitiesResult{Entities: out}, nil
 }
 
 // entityReferenceKey derives an entity's persistent reference key (#153); empty when the
@@ -54,10 +53,10 @@ func entityReferenceKey(guid string, e sketch.Entity) string {
 }
 
 // enumerateConstraints lists a sketch's geometric constraints (kind + related entity ids).
-func enumerateConstraints(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	sk, _, err := resolveSketch(s, raw)
+func enumerateConstraints(_ *app.Session, part *compdef.PartComponentDefinition, in wire.SketchArgs) (wire.ListConstraintsResult, error) {
+	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.ListConstraintsResult{}, err
 	}
 	cons := sk.GeometricConstraints()
 	out := make([]wire.ConstraintInfo, cons.Count())
@@ -72,21 +71,16 @@ func enumerateConstraints(s *app.Session, raw json.RawMessage) (json.RawMessage,
 			out[i].ClientID, out[i].Name = custom.ClientID, custom.Name
 		}
 	}
-	return json.Marshal(wire.ListConstraintsResult{Constraints: out})
+	return wire.ListConstraintsResult{Constraints: out}, nil
 }
 
 // enumerateDimensions lists a sketch's dimensional constraints.
-func enumerateDimensions(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	sk, _, err := resolveSketch(s, raw)
+func enumerateDimensions(_ *app.Session, part *compdef.PartComponentDefinition, in wire.SketchArgs) (wire.ListDimensionsResult, error) {
+	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.ListDimensionsResult{}, err
 	}
-	dims := sk.DimensionConstraints()
-	out := make([]wire.DimensionInfo, dims.Count())
-	for i := 0; i < dims.Count(); i++ {
-		out[i] = dimensionInfo(i, dims.Item(i))
-	}
-	return json.Marshal(wire.ListDimensionsResult{Dimensions: out})
+	return wire.ListDimensionsResult{Dimensions: projectAll(sk.DimensionConstraints(), dimensionInfo)}, nil
 }
 
 // dimensionInfo renders one dimensional constraint as its wire summary.

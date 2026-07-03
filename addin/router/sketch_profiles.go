@@ -3,18 +3,17 @@
 package router
 
 import (
-	"encoding/json"
-
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
+	"oblikovati.org/model/compdef"
 )
 
 // sketchProfiles enumerates the closed regions (profiles) a sketch yields, with their
 // area and hole count — the seam between the sketcher and the features that consume them.
-func sketchProfiles(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	sk, _, err := resolveSketch(s, raw)
+func sketchProfiles(_ *app.Session, part *compdef.PartComponentDefinition, in wire.SketchArgs) (wire.ListProfilesResult, error) {
+	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.ListProfilesResult{}, err
 	}
 	profiles := sk.Profiles()
 	out := make([]wire.ProfileInfo, profiles.Count())
@@ -27,5 +26,5 @@ func sketchProfiles(s *app.Session, raw json.RawMessage) (json.RawMessage, error
 			Holes:  len(p.InnerLoops()),
 		}
 	}
-	return json.Marshal(wire.ListProfilesResult{Profiles: out})
+	return wire.ListProfilesResult{Profiles: out}, nil
 }

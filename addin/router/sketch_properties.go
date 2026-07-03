@@ -3,11 +3,9 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
@@ -17,23 +15,15 @@ import (
 
 // setSketchProperty updates one scalar sketch property (name/visible/color/lineType/
 // lineWeight/deferUpdates) and returns the updated sketch info.
-func setSketchProperty(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.SetSketchPropertyArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func setSketchProperty(_ *app.Session, part *compdef.PartComponentDefinition, in wire.SetSketchPropertyArgs) (wire.SketchInfo, error) {
 	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.SketchInfo{}, err
 	}
 	if err := applySketchProperty(part, sk, in.Property, in.Value); err != nil {
-		return nil, err
+		return wire.SketchInfo{}, err
 	}
-	return json.Marshal(sketchInfo(part, in.SketchIndex, sk))
+	return sketchInfo(part, in.SketchIndex, sk), nil
 }
 
 // applySketchProperty applies one property=value to the sketch, parsing typed values.

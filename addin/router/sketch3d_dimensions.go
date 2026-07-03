@@ -3,10 +3,8 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
@@ -17,23 +15,19 @@ import (
 )
 
 // addSketch3DDimension is the discriminated 3D dimensional-constraint constructor.
-func addSketch3DDimension(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.AddSketch3DDimensionArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	sk, err := activeSketch3DAt(s, in.SketchIndex)
+func addSketch3DDimension(_ *app.Session, part *compdef.PartComponentDefinition, in wire.AddSketch3DDimensionArgs) (wire.AddSketch3DDimensionResult, error) {
+	sk, err := sketch3DAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.AddSketch3DDimensionResult{}, err
 	}
 	dim, err := buildSketch3DDimension(sk, types.Dimension3DConstraintKind(in.Kind), in)
 	if err != nil {
-		return nil, err
+		return wire.AddSketch3DDimensionResult{}, err
 	}
-	return json.Marshal(wire.AddSketch3DDimensionResult{
+	return wire.AddSketch3DDimensionResult{
 		Index: sk.DimensionConstraints3D().Count() - 1, Kind: in.Kind,
 		Parameter: dim.Parameter().Name(), Value: dim.Measured(), DOF: sk.DegreesOfFreedom(),
-	})
+	}, nil
 }
 
 // buildSketch3DDimension resolves operands and applies the matching dimension factory.
@@ -152,27 +146,19 @@ func circle3DRef(sk *sketch.Sketch3D, refs []uint64) (*sketch.Circle3D, error) {
 }
 
 // driveSketch3DDimension edits a 3D dimension's value and/or driving state.
-func driveSketch3DDimension(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.DriveSketch3DDimensionArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
+func driveSketch3DDimension(_ *app.Session, part *compdef.PartComponentDefinition, in wire.DriveSketch3DDimensionArgs) (wire.OKResult, error) {
 	sk, err := sketch3DAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.OKResult{}, err
 	}
 	dc := sk.DimensionConstraints3D()
 	if in.DimensionIndex < 0 || in.DimensionIndex >= dc.Count() {
-		return nil, fmt.Errorf("sketch3d.driveDimension: index %d out of range (%d dimensions)", in.DimensionIndex, dc.Count())
+		return wire.OKResult{}, fmt.Errorf("sketch3d.driveDimension: index %d out of range (%d dimensions)", in.DimensionIndex, dc.Count())
 	}
 	if err := applySketch3DDimensionEdit(part, dc.Item(in.DimensionIndex), in); err != nil {
-		return nil, err
+		return wire.OKResult{}, err
 	}
-	return json.Marshal(wire.OKResult{OK: true})
+	return wire.OKResult{OK: true}, nil
 }
 
 // applySketch3DDimensionEdit applies the driven toggle and/or value to a 3D dimension.

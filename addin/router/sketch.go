@@ -3,7 +3,6 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -44,18 +43,10 @@ type sketchHost interface {
 
 // createSketch adds a sketch on an origin or work plane of the active sketch host (part
 // or assembly) and returns its index (for sketch.rectangle / features.add).
-func createSketch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	host, err := activeSketchHost(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.CreateSketchArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func createSketch(_ *app.Session, host sketchHost, in wire.CreateSketchArgs) (wire.CreateSketchResult, error) {
 	plane, name, wp, err := sketchCreatePlane(host, in)
 	if err != nil {
-		return nil, err
+		return wire.CreateSketchResult{}, err
 	}
 	sk := host.Sketches().Add(plane)
 	// Share the host's parameter DAG so dimension expressions can reference user
@@ -71,7 +62,7 @@ func createSketch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 		sk.SetPlaneHost(func() sketch.Plane { return wp.Plane() })
 		sk.SetHostFootprint(func() []depend.Key { return wp.ParameterFootprint() })
 	}
-	return json.Marshal(wire.CreateSketchResult{SketchIndex: host.Sketches().Count() - 1, Plane: name})
+	return wire.CreateSketchResult{SketchIndex: host.Sketches().Count() - 1, Plane: name}, nil
 }
 
 // sketchCreatePlane resolves the plane a new sketch starts on: a user work plane (when
@@ -94,29 +85,21 @@ func sketchCreatePlane(host sketchHost, in wire.CreateSketchArgs) (sketch.Plane,
 }
 
 // sketchRectangle adds a closed rectangle (one profile) to a sketch, ready to extrude.
-func sketchRectangle(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	host, err := activeSketchHost(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.SketchRectangleArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func sketchRectangle(_ *app.Session, host sketchHost, in wire.SketchRectangleArgs) (wire.SketchRectangleResult, error) {
 	sk, err := sketchAtIndex(host, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.SketchRectangleResult{}, err
 	}
 	w, err := resolveQuantity(host, in.Width, param.Length)
 	if err != nil {
-		return nil, fmt.Errorf("sketch.rectangle: width %q: %w", in.Width, err)
+		return wire.SketchRectangleResult{}, fmt.Errorf("sketch.rectangle: width %q: %w", in.Width, err)
 	}
 	h, err := resolveQuantity(host, in.Height, param.Length)
 	if err != nil {
-		return nil, fmt.Errorf("sketch.rectangle: height %q: %w", in.Height, err)
+		return wire.SketchRectangleResult{}, fmt.Errorf("sketch.rectangle: height %q: %w", in.Height, err)
 	}
 	addRectangle(sk, w.Value, h.Value)
-	return json.Marshal(wire.SketchRectangleResult{SketchIndex: in.SketchIndex, Profiles: sk.Profiles().Count()})
+	return wire.SketchRectangleResult{SketchIndex: in.SketchIndex, Profiles: sk.Profiles().Count()}, nil
 }
 
 // addRectangle draws a closed w×h rectangle at the sketch origin (one profile).

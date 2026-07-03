@@ -3,14 +3,13 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 	"log/slog"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/sketch"
 )
 
@@ -21,22 +20,18 @@ import (
 // copied set, dropping any that reference geometry left behind (Inventor CopyEntitiesTo).
 
 // sketchCopyTo copies geometry from one 2D sketch into another.
-func sketchCopyTo(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.CopySketchArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	source, target, err := resolveCopySketches(s, in)
+func sketchCopyTo(_ *app.Session, part *compdef.PartComponentDefinition, in wire.CopySketchArgs) (wire.CopySketchResult, error) {
+	source, target, err := resolveCopySketches(part, in)
 	if err != nil {
-		return nil, err
+		return wire.CopySketchResult{}, err
 	}
 	ents, err := copySourceEntities(source, in.EntityIDs)
 	if err != nil {
-		return nil, err
+		return wire.CopySketchResult{}, err
 	}
 	offset, err := copyOffset(in.Position)
 	if err != nil {
-		return nil, err
+		return wire.CopySketchResult{}, err
 	}
 	created, warnings := target.CopyEntitiesWithConstraints(source, ents, offset)
 	// Constraint kinds that cannot travel with a copy (#1637) are logged rather than
@@ -49,15 +44,11 @@ func sketchCopyTo(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	for i, e := range created {
 		ids[i] = uint64(e.EntityID())
 	}
-	return json.Marshal(wire.CopySketchResult{Created: ids, Count: len(ids)})
+	return wire.CopySketchResult{Created: ids, Count: len(ids)}, nil
 }
 
 // resolveCopySketches resolves and validates the distinct source and target sketches.
-func resolveCopySketches(s *app.Session, in wire.CopySketchArgs) (*sketch.Sketch, *sketch.Sketch, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, nil, err
-	}
+func resolveCopySketches(part *compdef.PartComponentDefinition, in wire.CopySketchArgs) (*sketch.Sketch, *sketch.Sketch, error) {
 	source, err := sketchAtIndex(part, in.SourceIndex)
 	if err != nil {
 		return nil, nil, fmt.Errorf("sketch.copyTo: source: %w", err)

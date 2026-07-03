@@ -3,9 +3,6 @@
 package router
 
 import (
-	"encoding/json"
-
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
@@ -15,21 +12,13 @@ import (
 
 // projectGeometry projects the referenced part edges/vertices onto the sketch plane as
 // associative reference entities (re-derived through recompute via their source keys).
-func projectGeometry(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.ProjectGeometryArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func projectGeometry(_ *app.Session, part *compdef.PartComponentDefinition, in wire.ProjectGeometryArgs) (wire.ProjectGeometryResult, error) {
 	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
-		return nil, err
+		return wire.ProjectGeometryResult{}, err
 	}
 	created, healthy := projectRefs(part, sk, in.Refs)
-	return json.Marshal(wire.ProjectGeometryResult{Created: created, Healthy: healthy})
+	return wire.ProjectGeometryResult{Created: created, Healthy: healthy}, nil
 }
 
 // projectRefs resolves each reference to a part edge/vertex and projects it; an
