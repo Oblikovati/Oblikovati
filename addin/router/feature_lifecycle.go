@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
@@ -54,62 +53,42 @@ func featureScalars(part *compdef.PartComponentDefinition, f *feature.PartFeatur
 	return editableScalars(part.Units(), f.Definition())
 }
 
-// featureDetailReply marshals the refreshed-feature response shared by the
-// get/edit/rename/setSuppressed/reorder handlers.
+// featureDetailReply marshals the refreshed-feature response shared by the raw
+// assembly-derive / freeform edit handlers (which still return json.RawMessage).
 func featureDetailReply(part *compdef.PartComponentDefinition, f *feature.PartFeature, index int) (json.RawMessage, error) {
-	return json.Marshal(wire.FeatureDetailResult{Feature: featureDetail(part, f, index)})
+	return json.Marshal(featureDetailResult(part, f, index))
+}
+
+// featureDetailResult renders the refreshed-feature response shared by the typed
+// get/edit/rename/setSuppressed/reorder handlers.
+func featureDetailResult(part *compdef.PartComponentDefinition, f *feature.PartFeature, index int) wire.FeatureDetailResult {
+	return wire.FeatureDetailResult{Feature: featureDetail(part, f, index)}
 }
 
 // getFeature returns one feature's state and editable scalars by id.
-func getFeature(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, f, idx, err := resolveFeatureArgs(s, raw, wire.MethodFeaturesGet)
+func getFeature(_ *app.Session, part *compdef.PartComponentDefinition, in wire.FeatureRefArgs) (wire.FeatureDetailResult, error) {
+	f, idx, err := partFeatureByID(part, in.ID, wire.MethodFeaturesGet)
 	if err != nil {
-		return nil, err
+		return wire.FeatureDetailResult{}, err
 	}
-	return featureDetailReply(part, f, idx)
-}
-
-// resolveFeatureArgs decodes a FeatureRefArgs request and resolves its feature —
-// the shared front half of the get/delete handlers.
-func resolveFeatureArgs(s *app.Session, raw json.RawMessage, method string) (*compdef.PartComponentDefinition, *feature.PartFeature, int, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, nil, 0, err
-	}
-	var in wire.FeatureRefArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, nil, 0, err
-	}
-	f, idx, err := partFeatureByID(part, in.ID, method)
-	if err != nil {
-		return nil, nil, 0, err
-	}
-	return part, f, idx, nil
+	return featureDetailResult(part, f, idx), nil
 }
 
 // editFeature sets editable scalars of a placed feature in place. Every edit is
 // validated before any is applied — a bad value mid-batch must not leave the
 // definition half-edited — then the part recomputes once via CommitFeatureEdit.
-func editFeature(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.EditFeatureArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func editFeature(s *app.Session, part *compdef.PartComponentDefinition, in wire.EditFeatureArgs) (wire.FeatureDetailResult, error) {
 	f, idx, err := partFeatureByID(part, in.ID, wire.MethodFeaturesEdit)
 	if err != nil {
-		return nil, err
+		return wire.FeatureDetailResult{}, err
 	}
 	if err := planAndApplyFeatureEdits(part, f, in); err != nil {
-		return nil, err
+		return wire.FeatureDetailResult{}, err
 	}
 	if err := s.CommitFeatureEdit(f); err != nil { // emits feature.edited (#1085)
-		return nil, err
+		return wire.FeatureDetailResult{}, err
 	}
-	return featureDetailReply(part, f, idx)
+	return featureDetailResult(part, f, idx), nil
 }
 
 // planAndApplyFeatureEdits validates the WHOLE batch — scalars and reference re-picks — before
@@ -149,81 +128,57 @@ func parseScalarEdits(part *compdef.PartComponentDefinition, f *feature.PartFeat
 }
 
 // deleteFeature removes a feature from the history and recomputes.
-func deleteFeature(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	_, f, _, err := resolveFeatureArgs(s, raw, wire.MethodFeaturesDelete)
+func deleteFeature(s *app.Session, part *compdef.PartComponentDefinition, in wire.FeatureRefArgs) (wire.DeleteFeatureResult, error) {
+	f, _, err := partFeatureByID(part, in.ID, wire.MethodFeaturesDelete)
 	if err != nil {
-		return nil, err
+		return wire.DeleteFeatureResult{}, err
 	}
 	id := uint64(f.ID())
 	if err := s.DeleteFeature(f); err != nil { // emits feature.deleted (#1085)
-		return nil, err
+		return wire.DeleteFeatureResult{}, err
 	}
-	return json.Marshal(wire.DeleteFeatureResult{ID: id, Deleted: true})
+	return wire.DeleteFeatureResult{ID: id, Deleted: true}, nil
 }
 
 // renameFeature sets a feature's display name (the id stays stable).
-func renameFeature(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.RenameFeatureArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func renameFeature(s *app.Session, part *compdef.PartComponentDefinition, in wire.RenameFeatureArgs) (wire.FeatureDetailResult, error) {
 	f, idx, err := partFeatureByID(part, in.ID, wire.MethodFeaturesRename)
 	if err != nil {
-		return nil, err
+		return wire.FeatureDetailResult{}, err
 	}
 	if err := s.RenameFeature(f, in.Name); err != nil {
-		return nil, err
+		return wire.FeatureDetailResult{}, err
 	}
-	return featureDetailReply(part, f, idx)
+	return featureDetailResult(part, f, idx), nil
 }
 
 // setFeatureSuppressed sets explicit suppression (idempotent) and recomputes.
-func setFeatureSuppressed(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.SetFeatureSuppressedArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func setFeatureSuppressed(s *app.Session, part *compdef.PartComponentDefinition, in wire.SetFeatureSuppressedArgs) (wire.FeatureDetailResult, error) {
 	f, idx, err := partFeatureByID(part, in.ID, wire.MethodFeaturesSetSuppressed)
 	if err != nil {
-		return nil, err
+		return wire.FeatureDetailResult{}, err
 	}
 	if err := s.SetFeatureSuppressed(f, in.Suppressed); err != nil {
-		return nil, err
+		return wire.FeatureDetailResult{}, err
 	}
-	return featureDetailReply(part, f, idx)
+	return featureDetailResult(part, f, idx), nil
 }
 
 // reorderFeature moves a feature to a new history index and recomputes. The detail
 // is re-resolved after the move so the reply carries the feature's new index.
-func reorderFeature(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.ReorderFeatureArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func reorderFeature(s *app.Session, part *compdef.PartComponentDefinition, in wire.ReorderFeatureArgs) (wire.FeatureDetailResult, error) {
 	f, _, err := partFeatureByID(part, in.ID, wire.MethodFeaturesReorder)
 	if err != nil {
-		return nil, err
+		return wire.FeatureDetailResult{}, err
 	}
 	if err := s.ReorderFeature(f, in.NewIndex); err != nil {
-		return nil, err
+		return wire.FeatureDetailResult{}, err
 	}
 	_, idx, err := partFeatureByID(part, in.ID, wire.MethodFeaturesReorder)
 	if err != nil {
-		return nil, err
+		return wire.FeatureDetailResult{}, err
 	}
-	return featureDetailReply(part, f, idx)
+	return featureDetailResult(part, f, idx), nil
 }
 
 // registerFeatureHandlers wires the features.* methods: creation (list/add, backed by
@@ -231,10 +186,10 @@ func reorderFeature(s *app.Session, raw json.RawMessage) (json.RawMessage, error
 func (r *Router) registerFeatureHandlers() {
 	r.readOnly(wire.MethodFeaturesList, r.listFeatureKinds)
 	r.mutating(wire.MethodFeaturesAdd, "Add Feature", r.addFeature)
-	r.readOnly(wire.MethodFeaturesGet, getFeature)
-	r.mutating(wire.MethodFeaturesEdit, "Edit Feature", editFeature)
-	r.mutating(wire.MethodFeaturesDelete, "Delete Feature", deleteFeature)
-	r.mutating(wire.MethodFeaturesRename, "Rename Feature", renameFeature)
-	r.mutating(wire.MethodFeaturesSetSuppressed, "Suppress Feature", setFeatureSuppressed)
-	r.mutating(wire.MethodFeaturesReorder, "Reorder Features", reorderFeature)
+	r.readOnly(wire.MethodFeaturesGet, typedPart(getFeature))
+	r.mutating(wire.MethodFeaturesEdit, "Edit Feature", typedPart(editFeature))
+	r.mutating(wire.MethodFeaturesDelete, "Delete Feature", typedPart(deleteFeature))
+	r.mutating(wire.MethodFeaturesRename, "Rename Feature", typedPart(renameFeature))
+	r.mutating(wire.MethodFeaturesSetSuppressed, "Suppress Feature", typedPart(setFeatureSuppressed))
+	r.mutating(wire.MethodFeaturesReorder, "Reorder Features", typedPart(reorderFeature))
 }

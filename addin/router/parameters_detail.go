@@ -3,7 +3,6 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"oblikovati.org/addin/modelaccess"
@@ -92,38 +91,30 @@ func paramByName(s *app.Session, method, name string) (compdef.ParameterHolder, 
 }
 
 // getParameterDetail returns the member-level view of one parameter.
-func getParameterDetail(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.ParameterNameArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func getParameterDetail(s *app.Session, in wire.ParameterNameArgs) (wire.ParameterDetail, error) {
 	holder, p, err := paramByName(s, wire.MethodParametersGetDetail, in.Name)
 	if err != nil {
-		return nil, err
+		return wire.ParameterDetail{}, err
 	}
-	return json.Marshal(paramDetail(holder, p))
+	return paramDetail(holder, p), nil
 }
 
 // updateParameter applies the non-nil presentation/exposure mutations, records
 // one undo step, and returns the updated detail.
-func updateParameter(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.ParameterUpdateArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func updateParameter(s *app.Session, in wire.ParameterUpdateArgs) (wire.ParameterDetail, error) {
 	holder, p, err := paramByName(s, wire.MethodParametersUpdate, in.Name)
 	if err != nil {
-		return nil, err
+		return wire.ParameterDetail{}, err
 	}
 	if err := applyParameterUpdate(p, in); err != nil {
-		return nil, err
+		return wire.ParameterDetail{}, err
 	}
 	// A model-value selection change moves the value features consume.
 	if in.ModelValueType != nil {
 		holder.RecomputeAfterChange()
 	}
 	s.RecordActiveEdit("Edit Parameter")
-	return json.Marshal(paramDetail(holder, p))
+	return paramDetail(holder, p), nil
 }
 
 // applyParameterUpdate copies the non-nil update fields onto the parameter.
@@ -183,21 +174,17 @@ func applyCustomPropertyUpdate(p *param.Parameter, in *wire.CustomPropertyFormat
 
 // setParameterTolerance applies one tolerance mode, recomputes (the model value
 // may move), records one undo step, and returns the updated detail.
-func setParameterTolerance(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.ParameterToleranceArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func setParameterTolerance(s *app.Session, in wire.ParameterToleranceArgs) (wire.ParameterDetail, error) {
 	holder, p, err := paramByName(s, wire.MethodParametersSetTolerance, in.Name)
 	if err != nil {
-		return nil, err
+		return wire.ParameterDetail{}, err
 	}
 	if err := applyToleranceMode(holder, p, in); err != nil {
-		return nil, err
+		return wire.ParameterDetail{}, err
 	}
 	holder.RecomputeAfterChange()
 	s.RecordActiveEdit("Edit Tolerance")
-	return json.Marshal(paramDetail(holder, p))
+	return paramDetail(holder, p), nil
 }
 
 // applyToleranceMode dispatches one wire tolerance mode onto the model setters.
@@ -253,22 +240,18 @@ func toleranceOperand(holder compdef.ParameterHolder, p *param.Parameter, expr, 
 
 // setParameterExpressionList replaces the multi-value choices (empty clears),
 // records one undo step, and returns the updated detail.
-func setParameterExpressionList(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.ParameterExpressionListArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func setParameterExpressionList(s *app.Session, in wire.ParameterExpressionListArgs) (wire.ParameterDetail, error) {
 	holder, p, err := paramByName(s, wire.MethodParametersSetExpressionList, in.Name)
 	if err != nil {
-		return nil, err
+		return wire.ParameterDetail{}, err
 	}
 	if len(in.Expressions) == 0 {
 		p.ClearExpressionList()
 	} else if err := replaceExpressionList(p, in); err != nil {
-		return nil, err
+		return wire.ParameterDetail{}, err
 	}
 	s.RecordActiveEdit("Edit Value List")
-	return json.Marshal(paramDetail(holder, p))
+	return paramDetail(holder, p), nil
 }
 
 // replaceExpressionList sets the choices and the ordering flag.
@@ -285,40 +268,32 @@ func replaceExpressionList(p *param.Parameter, in wire.ParameterExpressionListAr
 // deleteParameter removes an unused parameter through the shared Session verb;
 // the in-use refusal (with the blockers named) comes from the aggregate, so
 // this wire path and the head UI enforce one invariant (#1612, audit B1).
-func deleteParameter(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	var in wire.ParameterNameArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func deleteParameter(s *app.Session, in wire.ParameterNameArgs) (struct{}, error) {
 	_, p, err := paramByName(s, wire.MethodParametersDelete, in.Name)
 	if err != nil {
-		return nil, err
+		return struct{}{}, err
 	}
 	if err := s.DeleteParameter(p.ID()); err != nil {
-		return nil, err
+		return struct{}{}, err
 	}
-	return json.Marshal(struct{}{})
+	return struct{}{}, nil
 }
 
 // parameterDrivenBy / parameterDependents answer the dependency queries.
-func parameterDrivenBy(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	return parameterNeighbors(s, wire.MethodParametersDrivenBy, args, (*param.Parameters).DrivenBy)
+func parameterDrivenBy(s *app.Session, in wire.ParameterNameArgs) (wire.ParameterNamesResult, error) {
+	return parameterNeighbors(s, wire.MethodParametersDrivenBy, in, (*param.Parameters).DrivenBy)
 }
 
-func parameterDependents(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
-	return parameterNeighbors(s, wire.MethodParametersDependents, args, (*param.Parameters).Dependents)
+func parameterDependents(s *app.Session, in wire.ParameterNameArgs) (wire.ParameterNamesResult, error) {
+	return parameterNeighbors(s, wire.MethodParametersDependents, in, (*param.Parameters).Dependents)
 }
 
 // parameterNeighbors resolves one side of the dependency graph to names.
-func parameterNeighbors(s *app.Session, method string, args json.RawMessage, side func(*param.Parameters, param.ID) []param.ID) (json.RawMessage, error) {
-	var in wire.ParameterNameArgs
-	if err := decode(args, &in); err != nil {
-		return nil, err
-	}
+func parameterNeighbors(s *app.Session, method string, in wire.ParameterNameArgs, side func(*param.Parameters, param.ID) []param.ID) (wire.ParameterNamesResult, error) {
 	holder, p, err := paramByName(s, method, in.Name)
 	if err != nil {
-		return nil, err
+		return wire.ParameterNamesResult{}, err
 	}
 	ps := holder.Parameters()
-	return json.Marshal(wire.ParameterNamesResult{Names: paramNames(ps, side(ps, p.ID()))})
+	return wire.ParameterNamesResult{Names: paramNames(ps, side(ps, p.ID()))}, nil
 }

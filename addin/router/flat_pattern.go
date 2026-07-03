@@ -4,7 +4,6 @@ package router
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 
 	"oblikovati.org/api/types"
@@ -25,57 +24,37 @@ import (
 
 // registerFlatPatternHandlers wires the flatPattern.* methods.
 func (r *Router) registerFlatPatternHandlers() {
-	r.readOnly(wire.MethodFlatPatternListOrientations, flatPatternListOrientations)
-	r.mutating(wire.MethodFlatPatternAddOrientation, "Edit Flat Pattern", flatPatternAddOrientation)
-	r.readOnly(wire.MethodFlatPatternActivateOrientation, flatPatternActivateOrientation)
-	r.mutating(wire.MethodFlatPatternDeleteOrientation, "Edit Flat Pattern", flatPatternDeleteOrientation)
-	r.readOnly(wire.MethodFlatPatternEdgesOfType, flatPatternEdgesOfType)
-	r.readOnly(wire.MethodFlatPatternFaces, flatPatternFaces)
-	r.readOnly(wire.MethodFlatPatternMapEntity, flatPatternMapEntity)
-	r.readOnly(wire.MethodFlatPatternListPlates, flatPatternListPlates)
-	r.readOnly(wire.MethodFlatPatternGetSettings, flatPatternGetSettings)
-	r.mutating(wire.MethodFlatPatternSetSettings, "Edit Flat Pattern Settings", flatPatternSetSettings)
-	r.readOnly(wire.MethodFlatPatternListBendOrder, flatPatternListBendOrder)
-	r.mutating(wire.MethodFlatPatternSetBendOrder, "Edit Flat Pattern", flatPatternSetBendOrder)
-	r.mutating(wire.MethodFlatPatternAddCenterline, "Edit Flat Pattern", flatPatternAddCenterline)
-	r.readOnly(wire.MethodFlatPatternListCenterlines, flatPatternListCenterlines)
-	r.mutating(wire.MethodFlatPatternDeleteCenterline, "Edit Flat Pattern", flatPatternDeleteCenterline)
+	r.readOnly(wire.MethodFlatPatternListOrientations, ctxQuery(resolveSheetMetalPart, flatPatternListOrientations))
+	r.mutating(wire.MethodFlatPatternAddOrientation, "Edit Flat Pattern", typedCtx(resolveSheetMetalPart, flatPatternAddOrientation))
+	r.readOnly(wire.MethodFlatPatternActivateOrientation, typedCtx(resolveSheetMetalPart, flatPatternActivateOrientation))
+	r.mutating(wire.MethodFlatPatternDeleteOrientation, "Edit Flat Pattern", typedCtx(resolveSheetMetalPart, flatPatternDeleteOrientation))
+	r.readOnly(wire.MethodFlatPatternEdgesOfType, typedCtx(resolveSheetMetalPart, flatPatternEdgesOfType))
+	r.readOnly(wire.MethodFlatPatternFaces, ctxQuery(resolveSheetMetalPart, flatPatternFaces))
+	r.readOnly(wire.MethodFlatPatternMapEntity, typedCtx(resolveSheetMetalPart, flatPatternMapEntity))
+	r.readOnly(wire.MethodFlatPatternListPlates, ctxQuery(resolveSheetMetalPart, flatPatternListPlates))
+	r.readOnly(wire.MethodFlatPatternGetSettings, ctxQuery(resolveSheetMetalPart, flatPatternGetSettings))
+	r.mutating(wire.MethodFlatPatternSetSettings, "Edit Flat Pattern Settings", typedCtx(resolveSheetMetalPart, flatPatternSetSettings))
+	r.readOnly(wire.MethodFlatPatternListBendOrder, ctxQuery(resolveSheetMetalPart, flatPatternListBendOrder))
+	r.mutating(wire.MethodFlatPatternSetBendOrder, "Edit Flat Pattern", typedCtx(resolveSheetMetalPart, flatPatternSetBendOrder))
+	r.mutating(wire.MethodFlatPatternAddCenterline, "Edit Flat Pattern", typedCtx(resolveSheetMetalPart, flatPatternAddCenterline))
+	r.readOnly(wire.MethodFlatPatternListCenterlines, ctxQuery(resolveSheetMetalPart, flatPatternListCenterlines))
+	r.mutating(wire.MethodFlatPatternDeleteCenterline, "Edit Flat Pattern", typedCtx(resolveSheetMetalPart, flatPatternDeleteCenterline))
 }
 
-func flatPatternAddCenterline(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, _, err := activeSheetMetal(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.AddCenterlineArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	part.AddCosmeticCenterline(gmath.P2(in.Start.X, in.Start.Y), gmath.P2(in.End.X, in.End.Y))
-	return json.Marshal(centerlinesResult(part))
+func flatPatternAddCenterline(_ *app.Session, ctx sheetMetalPart, in wire.AddCenterlineArgs) (wire.CenterlinesResult, error) {
+	ctx.part.AddCosmeticCenterline(gmath.P2(in.Start.X, in.Start.Y), gmath.P2(in.End.X, in.End.Y))
+	return centerlinesResult(ctx.part), nil
 }
 
-func flatPatternListCenterlines(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	part, _, err := activeSheetMetal(s)
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(centerlinesResult(part))
+func flatPatternListCenterlines(_ *app.Session, ctx sheetMetalPart) (wire.CenterlinesResult, error) {
+	return centerlinesResult(ctx.part), nil
 }
 
-func flatPatternDeleteCenterline(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, _, err := activeSheetMetal(s)
-	if err != nil {
-		return nil, err
+func flatPatternDeleteCenterline(_ *app.Session, ctx sheetMetalPart, in wire.DeleteCenterlineArgs) (wire.CenterlinesResult, error) {
+	if err := ctx.part.DeleteCosmeticCenterline(in.Index); err != nil {
+		return wire.CenterlinesResult{}, err
 	}
-	var in wire.DeleteCenterlineArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	if err := part.DeleteCosmeticCenterline(in.Index); err != nil {
-		return nil, err
-	}
-	return json.Marshal(centerlinesResult(part))
+	return centerlinesResult(ctx.part), nil
 }
 
 // centerlinesResult renders the part's cosmetic centerlines as wire.
@@ -88,27 +67,15 @@ func centerlinesResult(part *compdef.PartComponentDefinition) wire.CenterlinesRe
 	return out
 }
 
-func flatPatternListBendOrder(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	part, _, err := activeSheetMetal(s)
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(bendOrderResult(part))
+func flatPatternListBendOrder(_ *app.Session, ctx sheetMetalPart) (wire.BendOrderResult, error) {
+	return bendOrderResult(ctx.part), nil
 }
 
-func flatPatternSetBendOrder(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, _, err := activeSheetMetal(s)
-	if err != nil {
-		return nil, err
+func flatPatternSetBendOrder(_ *app.Session, ctx sheetMetalPart, in wire.SetBendOrderArgs) (wire.BendOrderResult, error) {
+	if err := ctx.part.SetBendOrder(in.Order); err != nil {
+		return wire.BendOrderResult{}, err
 	}
-	var in wire.SetBendOrderArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	if err := part.SetBendOrder(in.Order); err != nil {
-		return nil, err
-	}
-	return json.Marshal(bendOrderResult(part))
+	return bendOrderResult(ctx.part), nil
 }
 
 // bendOrderResult renders the part's bends in their press-brake sequence (1-based order).
@@ -123,87 +90,55 @@ func bendOrderResult(part *compdef.PartComponentDefinition) wire.BendOrderResult
 	return out
 }
 
-func flatPatternListPlates(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	part, _, err := activeSheetMetal(s)
+func flatPatternListPlates(_ *app.Session, ctx sheetMetalPart) (wire.PlatesResult, error) {
+	plates, err := ctx.part.FlatPlates()
 	if err != nil {
-		return nil, err
-	}
-	plates, err := part.FlatPlates()
-	if err != nil {
-		return nil, err
+		return wire.PlatesResult{}, err
 	}
 	out := wire.PlatesResult{Plates: make([]wire.PlateInfo, len(plates))}
 	for i, p := range plates {
 		out.Plates[i] = wire.PlateInfo{Index: i, Length: p.Length, Width: p.Width, Area: p.Area}
 	}
-	return json.Marshal(out)
+	return out, nil
 }
 
-func flatPatternGetSettings(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	part, _, err := activeSheetMetal(s)
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(wire.SettingsResult{Settings: wire.FlatPatternSettings{DeferUpdate: part.FlatSettings().DeferUpdate}})
+func flatPatternGetSettings(_ *app.Session, ctx sheetMetalPart) (wire.SettingsResult, error) {
+	return wire.SettingsResult{Settings: wire.FlatPatternSettings{DeferUpdate: ctx.part.FlatSettings().DeferUpdate}}, nil
 }
 
-func flatPatternSetSettings(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, _, err := activeSheetMetal(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.SetSettingsArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	part.SetFlatDeferUpdate(in.DeferUpdate)
-	return json.Marshal(wire.SettingsResult{Settings: wire.FlatPatternSettings{DeferUpdate: part.FlatSettings().DeferUpdate}})
+func flatPatternSetSettings(_ *app.Session, ctx sheetMetalPart, in wire.SetSettingsArgs) (wire.SettingsResult, error) {
+	ctx.part.SetFlatDeferUpdate(in.DeferUpdate)
+	return wire.SettingsResult{Settings: wire.FlatPatternSettings{DeferUpdate: ctx.part.FlatSettings().DeferUpdate}}, nil
 }
 
-func flatPatternMapEntity(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, _, err := activeSheetMetal(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.MapEntityArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	mapper := part.MapFlatToFolded
+func flatPatternMapEntity(_ *app.Session, ctx sheetMetalPart, in wire.MapEntityArgs) (wire.MapEntityResult, error) {
+	mapper := ctx.part.MapFlatToFolded
 	if in.ToFlat {
-		mapper = part.MapFoldedToFlat
+		mapper = ctx.part.MapFoldedToFlat
 	}
 	// Keys are the raw topology reference keys model.referenceKeys reports, so a caller can
 	// feed one straight back in.
 	mapped, found, err := mapper([]byte(in.Key))
 	if err != nil {
-		return nil, err
+		return wire.MapEntityResult{}, err
 	}
 	out := wire.MapEntityResult{Found: found}
 	if found {
 		out.Key, out.Kind = string(mapped), "face"
 	}
-	return json.Marshal(out)
+	return out, nil
 }
 
-func flatPatternEdgesOfType(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, _, err := activeSheetMetal(s)
-	if err != nil {
-		return nil, err
-	}
-	var in wire.EdgesOfTypeArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func flatPatternEdgesOfType(_ *app.Session, ctx sheetMetalPart, in wire.EdgesOfTypeArgs) (wire.EdgesResult, error) {
 	filter, err := edgeTypeFilter(in.Type)
 	if err != nil {
-		return nil, err
+		return wire.EdgesResult{}, err
 	}
-	flat, err := part.Unfold()
+	flat, err := ctx.part.Unfold()
 	if err != nil {
-		return nil, err
+		return wire.EdgesResult{}, err
 	}
-	return json.Marshal(wire.EdgesResult{Edges: classifiedEdges(flat.Bends, filter)})
+	return wire.EdgesResult{Edges: classifiedEdges(flat.Bends, filter)}, nil
 }
 
 // classifiedEdges turns the flat's fold lines into classified wire edges (bend-up unless the
@@ -237,14 +172,10 @@ func edgeTypeFilter(s string) (*types.FlatPatternEdgeType, error) {
 	return &et, nil
 }
 
-func flatPatternFaces(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	part, _, err := activeSheetMetal(s)
+func flatPatternFaces(_ *app.Session, ctx sheetMetalPart) (wire.FacesResult, error) {
+	flat, err := ctx.part.Unfold()
 	if err != nil {
-		return nil, err
-	}
-	flat, err := part.Unfold()
-	if err != nil {
-		return nil, err
+		return wire.FacesResult{}, err
 	}
 	// The flat is a constant-thickness plate: its front (top) and back (bottom) faces share
 	// the developed footprint area (the body volume over the gauge).
@@ -252,72 +183,44 @@ func flatPatternFaces(s *app.Session, _ json.RawMessage) (json.RawMessage, error
 	if flat.Thickness > 0 {
 		area = ops.BodyGeometryProperties(flat.Body, ops.Quality{ChordTolerance: 1e-3}).Volume / flat.Thickness
 	}
-	return json.Marshal(wire.FacesResult{Faces: []wire.FlatFaceInfo{
+	return wire.FacesResult{Faces: []wire.FlatFaceInfo{
 		{Type: types.FrontFlatPatternFace.String(), Area: area},
 		{Type: types.BackFlatPatternFace.String(), Area: area},
-	}})
+	}}, nil
 }
 
-func flatPatternListOrientations(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	part, _, err := activeSheetMetal(s)
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(orientationsResult(part))
+func flatPatternListOrientations(_ *app.Session, ctx sheetMetalPart) (wire.OrientationsResult, error) {
+	return orientationsResult(ctx.part), nil
 }
 
-func flatPatternAddOrientation(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, _, err := activeSheetMetal(s)
+func flatPatternAddOrientation(_ *app.Session, ctx sheetMetalPart, in wire.AddOrientationArgs) (wire.OrientationResult, error) {
+	or, err := orientationFromArgs(ctx.part, in)
 	if err != nil {
-		return nil, err
+		return wire.OrientationResult{}, err
 	}
-	var in wire.AddOrientationArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	or, err := orientationFromArgs(part, in)
-	if err != nil {
-		return nil, err
-	}
-	if err := part.FlatOrientations().Add(or); err != nil {
-		return nil, err
+	if err := ctx.part.FlatOrientations().Add(or); err != nil {
+		return wire.OrientationResult{}, err
 	}
 	if in.Activate {
-		if err := part.FlatOrientations().Activate(or.Name); err != nil {
-			return nil, err
+		if err := ctx.part.FlatOrientations().Activate(or.Name); err != nil {
+			return wire.OrientationResult{}, err
 		}
 	}
-	return json.Marshal(wire.OrientationResult{Orientation: orientationInfo(part, or)})
+	return wire.OrientationResult{Orientation: orientationInfo(ctx.part, or)}, nil
 }
 
-func flatPatternActivateOrientation(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, _, err := activeSheetMetal(s)
-	if err != nil {
-		return nil, err
+func flatPatternActivateOrientation(_ *app.Session, ctx sheetMetalPart, in wire.ActivateOrientationArgs) (wire.OrientationResult, error) {
+	if err := ctx.part.FlatOrientations().Activate(in.Name); err != nil {
+		return wire.OrientationResult{}, err
 	}
-	var in wire.ActivateOrientationArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	if err := part.FlatOrientations().Activate(in.Name); err != nil {
-		return nil, err
-	}
-	return json.Marshal(wire.OrientationResult{Orientation: orientationInfo(part, part.FlatOrientations().Active())})
+	return wire.OrientationResult{Orientation: orientationInfo(ctx.part, ctx.part.FlatOrientations().Active())}, nil
 }
 
-func flatPatternDeleteOrientation(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, _, err := activeSheetMetal(s)
-	if err != nil {
-		return nil, err
+func flatPatternDeleteOrientation(_ *app.Session, ctx sheetMetalPart, in wire.DeleteOrientationArgs) (wire.OrientationsResult, error) {
+	if err := ctx.part.FlatOrientations().Delete(in.Name); err != nil {
+		return wire.OrientationsResult{}, err
 	}
-	var in wire.DeleteOrientationArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	if err := part.FlatOrientations().Delete(in.Name); err != nil {
-		return nil, err
-	}
-	return json.Marshal(orientationsResult(part))
+	return orientationsResult(ctx.part), nil
 }
 
 // orientationFromArgs builds an orientation from the wire args: alignment type (default

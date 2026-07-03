@@ -3,7 +3,6 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"oblikovati.org/api/types"
@@ -26,9 +25,9 @@ type propertyHolder interface {
 
 // registerDocumentPropertyHandlers wires the documents.*Property* methods.
 func (r *Router) registerDocumentPropertyHandlers() {
-	r.readOnly(wire.MethodDocumentsListProperties, listDocumentProperties)
-	r.readOnly(wire.MethodDocumentsGetProperty, getDocumentProperty)
-	r.mutating(wire.MethodDocumentsSetProperty, "Set Property", setDocumentProperty)
+	r.readOnly(wire.MethodDocumentsListProperties, typed(listDocumentProperties))
+	r.readOnly(wire.MethodDocumentsGetProperty, typed(getDocumentProperty))
+	r.mutating(wire.MethodDocumentsSetProperty, "Set Property", typed(setDocumentProperty))
 }
 
 // documentProperties resolves the open document addressed by id to its property sets, erroring
@@ -46,14 +45,10 @@ func documentProperties(s *app.Session, id uint64, method string) (*attr.Propert
 }
 
 // listDocumentProperties returns every property across the document's sets.
-func listDocumentProperties(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.ListPropertiesArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func listDocumentProperties(s *app.Session, in wire.ListPropertiesArgs) (wire.ListPropertiesResult, error) {
 	ps, err := documentProperties(s, in.Document, wire.MethodDocumentsListProperties)
 	if err != nil {
-		return nil, err
+		return wire.ListPropertiesResult{}, err
 	}
 	var infos []wire.PropertyInfo
 	for _, set := range ps.Sets() {
@@ -61,45 +56,37 @@ func listDocumentProperties(s *app.Session, raw json.RawMessage) (json.RawMessag
 			infos = append(infos, propertyInfo(set.Name(), p))
 		}
 	}
-	return json.Marshal(wire.ListPropertiesResult{Properties: infos})
+	return wire.ListPropertiesResult{Properties: infos}, nil
 }
 
 // getDocumentProperty returns one property addressed by its set and name.
-func getDocumentProperty(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.GetPropertyArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func getDocumentProperty(s *app.Session, in wire.GetPropertyArgs) (wire.PropertyResult, error) {
 	ps, err := documentProperties(s, in.Document, wire.MethodDocumentsGetProperty)
 	if err != nil {
-		return nil, err
+		return wire.PropertyResult{}, err
 	}
 	set, ok := ps.Lookup(in.Set)
 	if !ok {
-		return nil, fmt.Errorf("%s: no property set %q", wire.MethodDocumentsGetProperty, in.Set)
+		return wire.PropertyResult{}, fmt.Errorf("%s: no property set %q", wire.MethodDocumentsGetProperty, in.Set)
 	}
 	p, ok := set.Property(in.Name)
 	if !ok {
-		return nil, fmt.Errorf("%s: no property %q in set %q", wire.MethodDocumentsGetProperty, in.Name, in.Set)
+		return wire.PropertyResult{}, fmt.Errorf("%s: no property %q in set %q", wire.MethodDocumentsGetProperty, in.Name, in.Set)
 	}
-	return json.Marshal(wire.PropertyResult{Property: propertyInfo(in.Set, p)})
+	return wire.PropertyResult{Property: propertyInfo(in.Set, p)}, nil
 }
 
 // setDocumentProperty creates or replaces a property's value (creating a custom set on demand).
-func setDocumentProperty(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.SetPropertyArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+func setDocumentProperty(s *app.Session, in wire.SetPropertyArgs) (wire.PropertyResult, error) {
 	ps, err := documentProperties(s, in.Document, wire.MethodDocumentsSetProperty)
 	if err != nil {
-		return nil, err
+		return wire.PropertyResult{}, err
 	}
 	if in.Name == "" {
-		return nil, fmt.Errorf("%s: a property name is required", wire.MethodDocumentsSetProperty)
+		return wire.PropertyResult{}, fmt.Errorf("%s: a property name is required", wire.MethodDocumentsSetProperty)
 	}
 	p := ps.Set(in.Set).Put(in.Name, valueFromVariant(in.Value))
-	return json.Marshal(wire.PropertyResult{Property: propertyInfo(in.Set, p)})
+	return wire.PropertyResult{Property: propertyInfo(in.Set, p)}, nil
 }
 
 // propertyInfo renders a model property in set as a wire DTO.

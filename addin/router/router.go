@@ -228,17 +228,17 @@ func (r *Router) registerStandardHandlers() {
 // registerFileHandlers wires the file surface (M03-F07, #608): identity, the
 // persisted file-to-file reference records, and reference repair.
 func (r *Router) registerFileHandlers() {
-	r.readOnly(wire.MethodFilesGet, getFile)
-	r.readOnly(wire.MethodFilesListReferences, listFileReferences)
-	r.mutating(wire.MethodFilesReplaceReference, "Replace Reference", replaceFileReference)
-	r.readOnly(wire.MethodDocumentsListFileReferences, listDocumentFileReferences)
-	r.readOnly(wire.MethodDocumentsListAttachments, listAttachments)
-	r.mutating(wire.MethodDocumentsAddAttachment, "", addAttachment)
-	r.mutating(wire.MethodDocumentsRemoveAttachment, "", removeAttachment)
-	r.readOnly(wire.MethodDocumentsListInterests, listDocumentInterests)
-	r.mutating(wire.MethodDocumentsAddInterest, "", addDocumentInterest)
-	r.mutating(wire.MethodDocumentsRemoveInterest, "", removeDocumentInterest)
-	r.readOnly(wire.MethodDocumentsHasInterest, hasDocumentInterest)
+	r.readOnly(wire.MethodFilesGet, typed(getFile))
+	r.readOnly(wire.MethodFilesListReferences, typed(listFileReferences))
+	r.mutating(wire.MethodFilesReplaceReference, "Replace Reference", typed(replaceFileReference))
+	r.readOnly(wire.MethodDocumentsListFileReferences, typed(listDocumentFileReferences))
+	r.readOnly(wire.MethodDocumentsListAttachments, typed(listAttachments))
+	r.mutating(wire.MethodDocumentsAddAttachment, "", typed(addAttachment))
+	r.mutating(wire.MethodDocumentsRemoveAttachment, "", typed(removeAttachment))
+	r.readOnly(wire.MethodDocumentsListInterests, typed(listDocumentInterests))
+	r.mutating(wire.MethodDocumentsAddInterest, "", typed(addDocumentInterest))
+	r.mutating(wire.MethodDocumentsRemoveInterest, "", typed(removeDocumentInterest))
+	r.readOnly(wire.MethodDocumentsHasInterest, typed(hasDocumentInterest))
 
 	// Document units of measure + unit/expression service (#146).
 	r.readOnly(wire.MethodDocumentsGetUnits, ctxQuery(activeUnitsDocument, getDocumentUnits))
@@ -255,11 +255,11 @@ func (r *Router) registerFileHandlers() {
 	r.readOnly(wire.MethodUnitsGetLocaleCorrectedExpression, typed(unitsGetLocaleCorrectedExpression))
 	r.readOnly(wire.MethodUnitsGetDrivingParameters, typed(unitsGetDrivingParameters))
 
-	r.mutating(wire.MethodDocumentsOpen, "", openDocument)
-	r.readOnly(wire.MethodDocumentsSave, saveDocument)
-	r.readOnly(wire.MethodDocumentsSaveAs, saveDocumentAs)
-	r.readOnly(wire.MethodDocumentsSaveCopyAs, saveDocumentCopyAs)
-	r.readOnly(wire.MethodDocumentsBatchSave, batchSave)
+	r.mutating(wire.MethodDocumentsOpen, "", typed(openDocument))
+	r.readOnly(wire.MethodDocumentsSave, typed(saveDocument))
+	r.readOnly(wire.MethodDocumentsSaveAs, typed(saveDocumentAs))
+	r.readOnly(wire.MethodDocumentsSaveCopyAs, typed(saveDocumentCopyAs))
+	r.readOnly(wire.MethodDocumentsBatchSave, typed(batchSave))
 }
 
 // registerTransactionHandlers wires the undo/redo control methods — navigate and query
@@ -269,24 +269,24 @@ func (r *Router) registerTransactionHandlers() {
 	r.mutating(wire.MethodTransactionUndo, "", undoTransaction)
 	r.mutating(wire.MethodTransactionRedo, "", redoTransaction)
 	r.readOnly(wire.MethodTransactionState, transactionState)
-	r.readOnly(wire.MethodTransactionBegin, beginTransaction)
+	r.readOnly(wire.MethodTransactionBegin, typed(beginTransaction))
 	r.mutating(wire.MethodTransactionEnd, "", endTransaction)
 	r.mutating(wire.MethodTransactionAbort, "", abortTransaction)
-	r.readOnly(wire.MethodTransactionHistory, transactionHistory)
-	r.mutating(wire.MethodTransactionJumpTo, "", jumpTransaction)
+	r.readOnly(wire.MethodTransactionHistory, typed(transactionHistory))
+	r.mutating(wire.MethodTransactionJumpTo, "", typed(jumpTransaction))
 }
 
 // registerParameterDetailHandlers wires the member-level parameter surface —
 // detail reads, presentation/tolerance/value-list mutations, dependency queries
 // and delete (M02-F08, Oblikovati#607).
 func (r *Router) registerParameterDetailHandlers() {
-	r.readOnly(wire.MethodParametersGetDetail, getParameterDetail)
-	r.mutating(wire.MethodParametersUpdate, labelEditParameters, updateParameter)
-	r.mutating(wire.MethodParametersSetTolerance, labelEditParameters, setParameterTolerance)
-	r.mutating(wire.MethodParametersSetExpressionList, labelEditParameters, setParameterExpressionList)
-	r.mutating(wire.MethodParametersDelete, "Delete Parameter", deleteParameter)
-	r.readOnly(wire.MethodParametersDrivenBy, parameterDrivenBy)
-	r.readOnly(wire.MethodParametersDependents, parameterDependents)
+	r.readOnly(wire.MethodParametersGetDetail, typed(getParameterDetail))
+	r.mutating(wire.MethodParametersUpdate, labelEditParameters, typed(updateParameter))
+	r.mutating(wire.MethodParametersSetTolerance, labelEditParameters, typed(setParameterTolerance))
+	r.mutating(wire.MethodParametersSetExpressionList, labelEditParameters, typed(setParameterExpressionList))
+	r.mutating(wire.MethodParametersDelete, "Delete Parameter", typed(deleteParameter))
+	r.readOnly(wire.MethodParametersDrivenBy, typed(parameterDrivenBy))
+	r.readOnly(wire.MethodParametersDependents, typed(parameterDependents))
 	r.registerParameterGroupHandlers()
 	r.registerParameterSettingsHandlers()
 	r.registerDerivedTableHandlers()
@@ -295,31 +295,31 @@ func (r *Router) registerParameterDetailHandlers() {
 // registerParameterGroupHandlers wires the custom parameter groups (M02-F05,
 // Oblikovati#604).
 func (r *Router) registerParameterGroupHandlers() {
-	r.readOnly(wire.MethodParametersGroupsList, listParameterGroups)
-	r.mutating(wire.MethodParametersGroupsAdd, labelEditParameterGroups, addParameterGroup)
-	r.mutating(wire.MethodParametersGroupsDelete, labelEditParameterGroups, deleteParameterGroup)
-	r.mutating(wire.MethodParametersGroupsSetDisplayName, labelEditParameterGroups, setParameterGroupDisplayName)
-	r.mutating(wire.MethodParametersGroupsAddMember, labelEditParameterGroups, addParameterGroupMember)
-	r.mutating(wire.MethodParametersGroupsRemoveMember, labelEditParameterGroups, removeParameterGroupMember)
+	r.readOnly(wire.MethodParametersGroupsList, holderQuery(listParameterGroups))
+	r.mutating(wire.MethodParametersGroupsAdd, labelEditParameterGroups, typed(addParameterGroup))
+	r.mutating(wire.MethodParametersGroupsDelete, labelEditParameterGroups, typed(deleteParameterGroup))
+	r.mutating(wire.MethodParametersGroupsSetDisplayName, labelEditParameterGroups, typed(setParameterGroupDisplayName))
+	r.mutating(wire.MethodParametersGroupsAddMember, labelEditParameterGroups, typed(addParameterGroupMember))
+	r.mutating(wire.MethodParametersGroupsRemoveMember, labelEditParameterGroups, typed(removeParameterGroupMember))
 }
 
 // registerParameterSettingsHandlers wires the document-level parameter
 // settings, the tolerance sweep, and the XML exchange (M02-F07, Oblikovati#606).
 func (r *Router) registerParameterSettingsHandlers() {
-	r.readOnly(wire.MethodParametersGetSettings, getParameterSettings)
-	r.mutating(wire.MethodParametersSetSettings, "Edit Parameter Settings", setParameterSettings)
-	r.mutating(wire.MethodParametersSetAllModelValueType, labelEditParameters, sweepParameterModelValues)
-	r.readOnly(wire.MethodParametersExport, exportParameters)
-	r.mutating(wire.MethodParametersImport, "Import Parameters", importParameters)
+	r.readOnly(wire.MethodParametersGetSettings, holderQuery(getParameterSettings))
+	r.mutating(wire.MethodParametersSetSettings, "Edit Parameter Settings", typedHolder(setParameterSettings))
+	r.mutating(wire.MethodParametersSetAllModelValueType, labelEditParameters, typed(sweepParameterModelValues))
+	r.readOnly(wire.MethodParametersExport, holderQuery(exportParameters))
+	r.mutating(wire.MethodParametersImport, "Import Parameters", typed(importParameters))
 }
 
 // registerDerivedTableHandlers wires the derived parameter tables (M02-F06,
 // Oblikovati#605).
 func (r *Router) registerDerivedTableHandlers() {
-	r.readOnly(wire.MethodParametersDerivedTablesList, listDerivedTables)
-	r.mutating(wire.MethodParametersDerivedTablesAdd, labelEditDerivedParameters, addDerivedTable)
+	r.readOnly(wire.MethodParametersDerivedTablesList, holderQuery(listDerivedTables))
+	r.mutating(wire.MethodParametersDerivedTablesAdd, labelEditDerivedParameters, typed(addDerivedTable))
 	r.mutating(wire.MethodParametersDerivedTablesSetLinked, labelEditDerivedParameters, setDerivedTableLinked)
-	r.mutating(wire.MethodParametersDerivedTablesDelete, labelEditDerivedParameters, deleteDerivedTable)
+	r.mutating(wire.MethodParametersDerivedTablesDelete, labelEditDerivedParameters, typed(deleteDerivedTable))
 }
 
 // registerSketchHandlers wires the 2D-sketch methods: the spine + enumeration here, and
