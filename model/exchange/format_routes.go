@@ -88,6 +88,13 @@ func defaultFormatRoutes() *formatRouteSet {
 	s.registerDrawing(dwgDrawingDecoder{})
 	s.registerDrawing(dxfDrawingDecoder{})
 	s.registerDrawing(pdfDrawingDecoder{})
+	// Point-cloud scan formats (#1646): they carry an extension and format identity so
+	// FormatFromPath routes them, but no decoder/exporter capability — a scan is attached
+	// through the point-cloud path (pointcloud.IsScanFile), not decoded to a drawing or
+	// written from bodies. A .ply is ALWAYS a point cloud here, never a mesh.
+	s.register(formatRoute{format: types.FormatPLY, extensions: []string{".ply"}})
+	s.register(formatRoute{format: types.FormatE57, extensions: []string{".e57"}})
+	s.register(formatRoute{format: types.FormatLAS, extensions: []string{".las"}})
 	return s
 }
 

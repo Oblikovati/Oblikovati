@@ -27,6 +27,9 @@ func Import(part *compdef.PartComponentDefinition, path string, format types.Exc
 	if format.IsSketch() {
 		return ImportResult{}, fmt.Errorf("import %q: %s is a sketch format and imports into a sketch on a chosen work plane; use ImportDWGFile/ImportDXFFile", path, format)
 	}
+	if format.IsPointCloud() {
+		return ImportResult{}, fmt.Errorf("import %q: %s is a scan format and attaches a point cloud, not bodies; use ImportPointCloud (pointClouds.attach)", path, format)
+	}
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return ImportResult{}, fmt.Errorf("import: read %q: %w", path, err)
@@ -90,17 +93,20 @@ func exportUnits(part *compdef.PartComponentDefinition) exchange.TranslationOpti
 }
 
 // workingUnitMM is the millimetre size of one of the part's stored (working) length units —
-// the database-unit size the translators scale against (ADR-0042 Phase 2). It is the working
-// scale (centimetres per working unit) times the centimetre's millimetre size, so a cm
-// document (working scale 1) yields the historical 10 mm and is unchanged.
+// the database-unit size the translators scale against (ADR-0042 Phase 2). The computation
+// lives on the part (WorkingUnitMM) so the point-cloud attach and persistence paths share it
+// (#1636); a cm document (working scale 1) yields the historical 10 mm and is unchanged.
 func workingUnitMM(part *compdef.PartComponentDefinition) float64 {
-	return part.Units().WorkingScale() * exchange.DBUnitMM
+	return part.WorkingUnitMM()
 }
 
 // FormatFromPath infers the exchange format from a file's extension (case-insensitive), so the
 // File ▸ Import/Export menu can route by what the user typed. The bool is false for an unknown
 // extension. It is a lookup over the same registry the dispatchers use (format_routes.go), so
-// an extension this recognizes always has a routed format behind it (#1631, audit I8).
+// an extension this recognizes always has a routed format behind it (#1631, audit I8). The
+// point-cloud scan formats resolve here too (#1646): a .ply ALWAYS resolves to FormatPLY — a
+// point-cloud format, never a mesh (the documented rule, see api/types FormatPLY) — and the
+// ASCII scan family (.xyz/.pts/.asc/.txt) stays unrouted (dispatched by pointcloud.IsScanFile).
 func FormatFromPath(path string) (types.ExchangeFormat, bool) {
 	return formatForExtension(filepath.Ext(path))
 }

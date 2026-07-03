@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/api/contract"
 	"oblikovati.org/api/types"
+	"oblikovati.org/model/internal/collview"
 )
 
 // propertyLookup resolves a referenced model's iProperty for a title block (set, name
@@ -157,12 +158,7 @@ func (s *Sheets) nextName() string {
 func (s *Sheets) Count() int { return len(s.items) }
 
 // Item returns the sheet at index i, or nil if out of range.
-func (s *Sheets) Item(i int) *Sheet {
-	if i < 0 || i >= len(s.items) {
-		return nil
-	}
-	return s.items[i]
-}
+func (s *Sheets) Item(i int) *Sheet { return collview.At(s.items, i) }
 
 // ByName returns the named sheet and whether it exists.
 func (s *Sheets) ByName(name string) (*Sheet, bool) {
