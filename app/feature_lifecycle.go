@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 )
@@ -46,8 +47,10 @@ func (s *Session) RenameFeature(f *feature.PartFeature, name string) error {
 	if other, ok := part.Features().ByName(name); ok && other != f {
 		return fmt.Errorf("app: RenameFeature: name %q is already used by another feature", name)
 	}
+	old := f.Name()
 	f.SetName(name)
 	s.recordEdit(part, "Rename Feature")
+	s.emitObjectRenamed(types.ObjectKindFeature, featureMetaKey(f), old, name) // #1644
 	return nil
 }
 
@@ -65,6 +68,8 @@ func (s *Session) SetFeatureSuppressed(f *feature.PartFeature, suppressed bool) 
 	f.SetSuppressed(suppressed)
 	part.Recompute()
 	s.recordEdit(part, suppressLabel(suppressed))
+	// #1644: the previous state is the negation, since we only reach here on an actual change.
+	s.emitPropertyChanged(types.ObjectKindFeature, featureMetaKey(f), "suppressed", boolProperty(!suppressed), boolProperty(suppressed))
 	return nil
 }
 
