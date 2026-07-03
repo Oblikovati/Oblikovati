@@ -57,6 +57,7 @@ type AssemblyFeatureData struct {
 	Diameter     float64      `yaml:"diameter,omitempty"`     // hole
 	Depth        float64      `yaml:"depth,omitempty"`        // hole
 	Path         [][3]float64 `yaml:"path,omitempty"`         // sweep
+	Twist        float64      `yaml:"twist,omitempty"`        // sweep total twist angle (rad)
 	ToolMin      [3]float64   `yaml:"toolMin,omitempty"`      // box-cut tool corners
 	ToolMax      [3]float64   `yaml:"toolMax,omitempty"`      // box-cut tool corners
 	SourceName   string       `yaml:"sourceName,omitempty"`   // proxy-cut source occurrence name
@@ -91,7 +92,7 @@ func RestoreAssemblyFeature(d AssemblyFeatureData, sketches []*sketch.Sketch, oc
 		if err != nil {
 			return nil, err
 		}
-		return NewAssemblySweepFeature(sk, d.ProfileIndex, ops.PartFeatureOperation(d.Operation), pointsFrom(d.Path)), nil
+		return NewAssemblySweepFeature(sk, d.ProfileIndex, ops.PartFeatureOperation(d.Operation), pointsFrom(d.Path), constScalar(d.Twist)), nil
 	case kindAssemblyHole:
 		axis, err := math.NewUnitVector3(d.Axis[0], d.Axis[1], d.Axis[2])
 		if err != nil {
@@ -186,7 +187,7 @@ func (f *AssemblyRevolveFeature) MarshalAssembly(sketchIndex func(*sketch.Sketch
 }
 
 func (f *AssemblySweepFeature) MarshalAssembly(sketchIndex func(*sketch.Sketch) int) AssemblyFeatureData {
-	return AssemblyFeatureData{Kind: kindAssemblySweep, SketchIndex: sketchIndex(f.sketch), ProfileIndex: f.profileIndex, Operation: int(f.op), Path: pathTo(f.path)}
+	return AssemblyFeatureData{Kind: kindAssemblySweep, SketchIndex: sketchIndex(f.sketch), ProfileIndex: f.profileIndex, Operation: int(f.op), Path: pathTo(f.path), Twist: callOrZero(f.twist)}
 }
 
 func (f *AssemblyHoleFeature) MarshalAssembly(func(*sketch.Sketch) int) AssemblyFeatureData {

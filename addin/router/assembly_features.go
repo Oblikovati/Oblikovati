@@ -186,7 +186,8 @@ func assemblyFeaturesAddSweep(s *app.Session, raw json.RawMessage) (json.RawMess
 	if err != nil {
 		return nil, err
 	}
-	return commitAssemblyFeatureResult(s, asm, feature.NewAssemblySweepFeature(sk, in.ProfileIndex, op, path), "Sweep")
+	// Twist is edit-only (assemblyFeatures.edit), so creation starts untwisted (nil ⇒ 0), #1648.
+	return commitAssemblyFeatureResult(s, asm, feature.NewAssemblySweepFeature(sk, in.ProfileIndex, op, path, nil), "Sweep")
 }
 
 // assemblySweepPath converts a wire path polyline to assembly-space points, requiring at

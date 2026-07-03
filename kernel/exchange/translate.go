@@ -4,7 +4,30 @@
 
 package exchange
 
-import "oblikovati.org/kernel/topo"
+import (
+	"errors"
+	"fmt"
+
+	"oblikovati.org/kernel/topo"
+)
+
+// ProgressFunc receives incremental progress from a long-running translation so the UI can show a
+// bar and offer cancel (S13, #1647). stage names the current phase ("entities", "triangles",
+// "points", …); done/total report items processed of the total known for that stage (total is 0
+// when the count is not known up front). Returning true asks the importer to cancel PROMPTLY — the
+// import then returns an error wrapping [ErrCancelled] naming the stage reached. A nil ProgressFunc
+// is a no-op, so the zero [TranslationOptions] reports nothing and never cancels.
+//
+// Example (a recording sink that never cancels):
+//
+//	opts := TranslationOptions{Progress: func(stage string, done, total int) bool {
+//		log.Printf("%s %d/%d", stage, done, total); return false
+//	}}
+type ProgressFunc func(stage string, done, total int) (cancel bool)
+
+// ErrCancelled is the sentinel an importer's returned error wraps when its [ProgressFunc] asked to
+// stop; callers test it with errors.Is to distinguish a user cancel from a genuine decode failure.
+var ErrCancelled = errors.New("exchange: import cancelled")
 
 // TranslationOptions tunes a translation independent of the concrete format. The
 // zero value is valid: a millimeter target, default chord tolerance, no warnings
@@ -25,6 +48,24 @@ type TranslationOptions struct {
 	FileUnit string
 	// ChordTolerance bounds curve/surface faceting used by validation/mass props.
 	ChordTolerance float64
+	// Progress, when non-nil, receives incremental progress and can cancel a long import (S13,
+	// #1647). It is the ONE shared reporting seam every importer threads through this struct, so
+	// the head can drive a progress bar regardless of format. Nil ⇒ no reporting, no cancel.
+	Progress ProgressFunc
+}
+
+// Report invokes o.Progress (nil-safe) with one stage tick and returns a stage-naming error
+// wrapping [ErrCancelled] when the callback asks to cancel, so an importer loop can thread it as
+// `if err := opts.Report("entities", i, n); err != nil { return err }`. A nil Progress is a no-op
+// returning nil, keeping importers unchanged when no sink is wired.
+func (o TranslationOptions) Report(stage string, done, total int) error {
+	if o.Progress == nil {
+		return nil
+	}
+	if o.Progress(stage, done, total) {
+		return fmt.Errorf("%w at stage %q (%d/%d)", ErrCancelled, stage, done, total)
+	}
+	return nil
 }
 
 // DBUnitMM is the database-unit size in millimetres the model works in: the

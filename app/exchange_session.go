@@ -27,6 +27,9 @@ func (s *Session) ImportFile(path string) (exchange.ImportResult, error) {
 		return res, err
 	}
 	s.recordEdit(part, "Import")
+	if res.BodyCount > 0 { // #1645: fit only when the import actually added visible bodies
+		s.RequestFitView()
+	}
 	return res, nil
 }
 

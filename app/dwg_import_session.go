@@ -60,6 +60,9 @@ func (s *Session) ImportDWGFile(path string, plane sketch.Plane) (exchange.DWGIm
 		return res, err
 	}
 	s.recordEdit(part, fmt.Sprintf("Import DWG (%d entities)", res.EntityCount))
+	if res.EntityCount > 0 { // #1645: frame the imported drawing (often far from origin, PR#1150)
+		s.RequestFitView()
+	}
 	return res, nil
 }
 

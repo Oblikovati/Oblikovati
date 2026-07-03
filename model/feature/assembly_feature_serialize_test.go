@@ -47,7 +47,7 @@ func TestAssemblyFeatureDataRoundTrip(t *testing.T) {
 	cases := map[string]Feature{
 		"extrude":  NewAssemblyExtrudeFeature(sk[0], 1, ops.Cut, func() float64 { return 2.5 }),
 		"revolve":  NewAssemblyRevolveFeature(sk[0], 0, NewDatumAxis(math.P3(0, 0, 0), yaw), ops.Join, func() float64 { return 1.5 }),
-		"sweep":    NewAssemblySweepFeature(sk[0], 0, ops.Cut, []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0)}),
+		"sweep":    NewAssemblySweepFeature(sk[0], 0, ops.Cut, []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0)}, func() float64 { return 0.4 }),
 		"hole":     hole,
 		"chamfer":  NewAssemblyChamferFeature([][]byte{[]byte("e0")}, func() float64 { return 0.2 }),
 		"fillet":   NewAssemblyFilletFeature([][]byte{[]byte("e1")}, func() float64 { return 0.3 }),

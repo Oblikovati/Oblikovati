@@ -31,6 +31,9 @@ func (s *Session) AttachPointCloud(name, fullFileName string) (*pointcloud.Point
 	if err != nil {
 		return nil, nil, err
 	}
+	if pc != nil && !pc.RangeBox().IsEmpty() { // #1645: fit only when the scan added visible points
+		s.RequestFitView()
+	}
 	return pc, res.Warnings, nil
 }
 

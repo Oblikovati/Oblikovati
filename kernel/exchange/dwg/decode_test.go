@@ -2,7 +2,11 @@
 
 package dwg
 
-import "testing"
+import (
+	"testing"
+
+	"oblikovati.org/kernel/exchange"
+)
 
 // TestDecodeCorpus exercises the public entry point on the whole corpus: every
 // file decodes without a fatal error, yields a populated entity set, and produces
@@ -40,7 +44,7 @@ func TestDecodeClassifiesEverySpace(t *testing.T) {
 	omb, _ := h.ObjectMapBytes(data)
 	refs, _ := parseObjectMap(omb)
 	c := &collector{data: od, version: h.Version, blockEntities: map[uint64][]Entity{}, blockInserts: map[uint64][]*Insert{}}
-	c.collect(refs)
+	_, _ = c.collect(refs, exchange.TranslationOptions{})
 
 	blockCurves := 0
 	for _, es := range c.blockEntities {

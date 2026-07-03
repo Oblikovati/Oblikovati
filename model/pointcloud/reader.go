@@ -49,8 +49,14 @@ func ReadScan(filename string, data []byte, opts exchange.TranslationOptions) ([
 // readScaled decodes with r and applies the single file→database unit factor to every point —
 // the one shared scaling seam for all registered readers (#1636), mirroring meshio's scaleRaw.
 func readScaled(r PointReader, data []byte, opts exchange.TranslationOptions) ([]math.Point3, []string, error) {
+	if err := opts.Report("points", 0, 0); err != nil { // #1647: honour a first-call cancel before decode
+		return nil, nil, err
+	}
 	points, warns, err := r.Read(data)
 	if err != nil {
+		return nil, nil, err
+	}
+	if err := opts.Report("points", len(points), len(points)); err != nil { // #1647: report the record count
 		return nil, nil, err
 	}
 	f := math.Scalar(opts.ImportScale(r.FileUnitMM()))

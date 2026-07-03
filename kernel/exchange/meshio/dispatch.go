@@ -42,6 +42,11 @@ func ImportBody(format types.ExchangeFormat, data []byte, feat string, weldTol f
 	if err != nil {
 		return nil, nil, err
 	}
+	// One progress tick per decoded mesh, keyed on triangle count, checked BEFORE the expensive
+	// weld so a cancel aborts promptly (#1647).
+	if err := opts.Report("triangles", len(raw.Tris), len(raw.Tris)); err != nil {
+		return nil, nil, err
+	}
 	fileUnitMM, unitWarns := importFileUnitMM(format, data)
 	scaleRaw(&raw, opts.ImportScale(fileUnitMM))
 	body, warns, err := SolidOrSurface(raw, feat, weldTol)

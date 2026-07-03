@@ -38,6 +38,7 @@ func (s *Session) ImportMeshFile(path string) (*feature.PartFeature, error) {
 	if !pf.Health().OK() {
 		return pf, errors.New("mesh: " + pf.Health().Reason)
 	}
+	s.RequestFitView() // #1645: a placed mesh is visible geometry; fit it into view
 	return pf, nil
 }
 

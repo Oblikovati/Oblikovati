@@ -32,6 +32,9 @@ func (s *Session) ImportDXFFile(path string, plane sketch.Plane) (exchange.Sketc
 		return res, err
 	}
 	s.recordEdit(part, fmt.Sprintf("Import DXF (%d entities)", res.EntityCount))
+	if res.EntityCount > 0 { // #1645: frame the imported drawing
+		s.RequestFitView()
+	}
 	return res, nil
 }
 

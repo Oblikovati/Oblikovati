@@ -2,18 +2,25 @@
 
 package dxf
 
-import "oblikovati.org/kernel/exchange/drawing"
+import (
+	"oblikovati.org/kernel/exchange"
+	"oblikovati.org/kernel/exchange/drawing"
+)
 
 // decodeModelEntities walks an ENTITIES section, returning the directly-drawn model-space
 // geometry and the model-space INSERTs separately (the caller expands the INSERTs against the
 // block set). Paper-space entities (code 67 = 1) are skipped, matching the DWG importer which
 // brings in model space only. A type with no decoder is skipped; a decode error is collected
 // as a warning so the rest of the drawing survives.
-func decodeModelEntities(pairs []pair, bs *blockSet) ([]drawing.Entity, []*drawing.Insert, []string) {
+func decodeModelEntities(pairs []pair, bs *blockSet, opts exchange.TranslationOptions) ([]drawing.Entity, []*drawing.Insert, []string, error) {
 	var geometry []drawing.Entity
 	var inserts []*drawing.Insert
 	var warns []string
-	for _, g := range splitEntities(pairs) {
+	groups := splitEntities(pairs)
+	for i, g := range groups {
+		if err := opts.Report("entities", i, len(groups)); err != nil {
+			return geometry, inserts, warns, err
+		}
 		m := indexByCode(g.body)
 		if isPaperSpace(m) {
 			continue
@@ -31,7 +38,7 @@ func decodeModelEntities(pairs []pair, bs *blockSet) ([]drawing.Entity, []*drawi
 			geometry = append(geometry, e)
 		}
 	}
-	return geometry, inserts, warns
+	return geometry, inserts, warns, nil
 }
 
 // isPaperSpace reports whether an entity is in paper space (code 67 = 1).

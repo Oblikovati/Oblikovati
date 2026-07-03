@@ -3,6 +3,7 @@
 package dxf
 
 import (
+	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/exchange/drawing"
 )
 
@@ -16,6 +17,13 @@ import (
 //	dr, warns, err := dxf.Decode(bytes)
 //	for _, e := range dr.Entities { /* convert to sketch geometry */ }
 func Decode(data []byte) (*drawing.Drawing, []string, error) {
+	return DecodeWithProgress(data, exchange.TranslationOptions{})
+}
+
+// DecodeWithProgress is [Decode] threaded through the shared progress/cancel seam (#1647): opts
+// reports one tick per entity group and aborts the import when its ProgressFunc returns cancel
+// (the returned error wraps [exchange.ErrCancelled]). Decode is this call with a zero options value.
+func DecodeWithProgress(data []byte, opts exchange.TranslationOptions) (*drawing.Drawing, []string, error) {
 	pairs, err := scanPairs(data)
 	if err != nil {
 		return nil, nil, err
@@ -31,7 +39,10 @@ func Decode(data []byte) (*drawing.Drawing, []string, error) {
 		bs = decodeBlocks(blk)
 	}
 	if ents, ok := sections["ENTITIES"]; ok {
-		geometry, inserts, w := decodeModelEntities(ents, bs)
+		geometry, inserts, w, derr := decodeModelEntities(ents, bs, opts)
+		if derr != nil {
+			return nil, w, derr
+		}
 		warns = w
 		dr.Entities = expandModel(geometry, inserts, bs)
 	}

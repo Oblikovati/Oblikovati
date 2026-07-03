@@ -5,6 +5,7 @@ package dwg
 import (
 	"fmt"
 
+	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/exchange/drawing"
 )
 
@@ -22,6 +23,13 @@ import (
 //	dr, warns, err := dwg.Decode(bytes)
 //	for _, e := range dr.Entities { /* convert to sketch geometry */ }
 func Decode(data []byte) (*Drawing, []string, error) {
+	return DecodeWithProgress(data, exchange.TranslationOptions{})
+}
+
+// DecodeWithProgress is [Decode] threaded through the shared progress/cancel seam (#1647): opts
+// reports one tick per object and aborts the import when its ProgressFunc returns cancel (the
+// returned error wraps [exchange.ErrCancelled]). Decode is this call with a zero options value.
+func DecodeWithProgress(data []byte, opts exchange.TranslationOptions) (*Drawing, []string, error) {
 	h, err := ParseFileHeader(data)
 	if err != nil {
 		return nil, nil, err
@@ -39,18 +47,28 @@ func Decode(data []byte) (*Drawing, []string, error) {
 		return nil, nil, err
 	}
 	c := &collector{data: od, version: h.Version, blockEntities: map[uint64][]Entity{}, blockInserts: map[uint64][]*Insert{}}
-	warns := c.collect(refs)
-	dr := &Drawing{Entities: c.resolve()}
-	// The unit code drives the unit conversion at import; a header that fails to parse is
-	// non-fatal (the drawing is left unitless and the importer falls back to document units).
-	if sec, herr := h.HeaderSection(data); herr == nil {
-		if hv, perr := ParseHeaderVars(sec, h.Version); perr == nil {
-			dr.Units = hv.INSUNITS
-		} else {
-			warns = append(warns, perr.Error())
-		}
+	warns, err := c.collect(refs, opts)
+	if err != nil {
+		return nil, warns, err
 	}
-	return dr, warns, nil
+	dr := &Drawing{Entities: c.resolve()}
+	return dr, applyHeaderUnits(dr, h, data, warns), nil
+}
+
+// applyHeaderUnits reads the drawing's INSUNITS from the header section onto dr; a header that fails
+// to parse is non-fatal (the drawing is left unitless and the importer falls back to document
+// units), the parse error appended as a warning.
+func applyHeaderUnits(dr *Drawing, h *FileHeader, data []byte, warns []string) []string {
+	sec, herr := h.HeaderSection(data)
+	if herr != nil {
+		return warns
+	}
+	hv, perr := ParseHeaderVars(sec, h.Version)
+	if perr != nil {
+		return append(warns, perr.Error())
+	}
+	dr.Units = hv.INSUNITS
+	return warns
 }
 
 // collector accumulates a drawing's geometry during the object pass, classifying each
@@ -75,33 +93,42 @@ type collector struct {
 // collect walks every referenced object, decoding the geometry and INSERT records and
 // sorting them into model space vs block definitions. Per-object failures are collected
 // as warnings rather than aborting the drawing.
-func (c *collector) collect(refs []ObjectRef) []string {
+func (c *collector) collect(refs []ObjectRef, opts exchange.TranslationOptions) ([]string, error) {
 	var warns []string
-	for _, ref := range refs {
-		hdr, err := decodeObjectHeader(c.data, ref, c.version)
-		if err != nil {
-			continue
+	for i, ref := range refs {
+		if err := opts.Report("entities", i, len(refs)); err != nil {
+			return warns, err // #1647: honour a cancel between objects
 		}
-		isInsert := hdr.Type == TypeInsert
-		if !isInsert && !hdr.Type.IsSketchGeometry() {
-			continue
-		}
-		cur, err := seekEntity(&c.geomReader, c.data, ref, c.version)
-		if err != nil {
-			warns = append(warns, err.Error())
-			continue
-		}
-		if cur.common.entmode == entmodePaperSpace {
-			if hdr.Type.IsSketchGeometry() {
-				c.paperCurves++
-			}
-			continue // paper-space layout geometry is not imported into the model sketch
-		}
-		if w := c.addObject(&cur, hdr); w != "" {
-			warns = append(warns, w)
-		}
+		warns = append(warns, c.classifyRef(ref)...)
 	}
-	return warns
+	return warns, nil
+}
+
+// classifyRef decodes one referenced object and files it under model space or its owning block,
+// returning any per-object warnings (a bad object is skipped, not fatal). Paper-space geometry is
+// dropped (counted for accounting); a type with no geometry decoder is ignored.
+func (c *collector) classifyRef(ref ObjectRef) []string {
+	hdr, err := decodeObjectHeader(c.data, ref, c.version)
+	if err != nil {
+		return nil
+	}
+	if hdr.Type != TypeInsert && !hdr.Type.IsSketchGeometry() {
+		return nil
+	}
+	cur, err := seekEntity(&c.geomReader, c.data, ref, c.version)
+	if err != nil {
+		return []string{err.Error()}
+	}
+	if cur.common.entmode == entmodePaperSpace {
+		if hdr.Type.IsSketchGeometry() {
+			c.paperCurves++
+		}
+		return nil
+	}
+	if w := c.addObject(&cur, hdr); w != "" {
+		return []string{w}
+	}
+	return nil
 }
 
 // addObject decodes one classified object (INSERT or curve) and files it under model

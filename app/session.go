@@ -151,6 +151,7 @@ type Session struct {
 	loadEnvRequested          bool                            // a "Load HDR…" was requested; the head opens the file dialog
 	meshImportRequested       bool                            // a "Place Mesh…" was requested; the head opens the file dialog (#700)
 	pointCloudRequested       bool                            // an "Import Point Cloud…" was requested; the head opens the file dialog (#645)
+	fitViewRequested          bool                            // an import added visible geometry; the head fits the camera once (#1645)
 	scriptConsoleOpen         bool                            // the Manage ▸ Scripts ▸ Script Console panel is open
 	addInCatalogueRequested   bool                            // a Get Started ▸ AddIn Catalogue was requested; the head opens the catalogue window
 	preferencesRequested      bool                            // a Get Started ▸ Preferences was requested; the head opens the Preferences window

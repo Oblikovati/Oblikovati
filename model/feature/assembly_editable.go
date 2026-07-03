@@ -14,6 +14,7 @@ import "oblikovati.org/model/param"
 var (
 	_ Editable = (*AssemblyExtrudeFeature)(nil)
 	_ Editable = (*AssemblyRevolveFeature)(nil)
+	_ Editable = (*AssemblySweepFeature)(nil)
 )
 
 // EditableParams exposes the assembly extrude's depth.
@@ -24,4 +25,12 @@ func (f *AssemblyExtrudeFeature) EditableParams() []EditableParam {
 // EditableParams exposes the assembly revolve's sweep angle.
 func (f *AssemblyRevolveFeature) EditableParams() []EditableParam {
 	return []EditableParam{scalarParam("Angle", param.Angle, &f.angle)}
+}
+
+// EditableParams exposes the assembly sweep's total twist angle — the sibling of the extrude's
+// Distance and the revolve's Angle, closing the #1648 gap so a placed assembly sweep edits in
+// place (double-click / assemblyFeatures.edit) instead of forcing delete-and-recreate. The profile
+// and explicit path are geometric inputs, not scalars, so they are not edited through this surface.
+func (f *AssemblySweepFeature) EditableParams() []EditableParam {
+	return []EditableParam{scalarParam("Twist", param.Angle, &f.twist)}
 }
