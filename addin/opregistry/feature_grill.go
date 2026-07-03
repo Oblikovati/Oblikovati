@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/model/feature"
@@ -31,12 +30,8 @@ func grillDescriptor() *OperationDescriptor {
 }
 
 func applyGrill(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.Grill](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in featureargs.Grill
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	if len(in.Boundaries) == 0 {

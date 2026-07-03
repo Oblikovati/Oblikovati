@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/model/feature"
@@ -31,12 +30,8 @@ func meshDescriptor() *OperationDescriptor {
 }
 
 func applyMesh(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.Mesh](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in featureargs.Mesh
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	f, err := os.Open(in.Path)

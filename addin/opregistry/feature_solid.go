@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/math"
@@ -40,12 +39,8 @@ func revolveDescriptor() *OperationDescriptor {
 }
 
 func applyRevolve(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.Revolve](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in featureargs.Revolve
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	sk, err := sketchAt(part, in.SketchIndex)
@@ -96,12 +91,8 @@ func ribDescriptor() *OperationDescriptor {
 }
 
 func applyRib(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.Rib](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in featureargs.Rib
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	sk, err := sketchAt(part, in.SketchIndex)
@@ -152,12 +143,8 @@ func embossDescriptor() *OperationDescriptor {
 }
 
 func applyEmboss(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.Emboss](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in featureargs.Emboss
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	sk, err := sketchAt(part, in.SketchIndex)
@@ -219,12 +206,8 @@ func coilDescriptor() *OperationDescriptor {
 }
 
 func applyCoil(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.Coil](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in featureargs.Coil
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	sk, err := sketchAt(part, in.SketchIndex)
@@ -318,12 +301,8 @@ func loftDescriptor() *OperationDescriptor {
 }
 
 func applyLoft(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, in, err := decodeFeatureArgs[featureargs.Loft](s, raw)
 	if err != nil {
-		return nil, err
-	}
-	var in featureargs.Loft
-	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
 	if len(in.Sections) < 2 {
