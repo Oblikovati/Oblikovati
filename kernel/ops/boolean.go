@@ -102,12 +102,7 @@ func join(lin topo.Lineage, target, tool *topo.Body, rel relation, rec *diag.Rec
 // triangle-soup BSP CSG only when an operand has a non-planar face the B-rep path can't take
 // (a cylinder, cone, etc.). A nil B-rep result is a (valid) empty body.
 func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.Lineage, rec *diag.Recorder) (*topo.Body, error) {
-	if body, ok := curvedExactBoolean(op, target, tool, rec); ok {
-		// Provenance (ADR-0043): the curved stitch already named the new surface-intersection curves by
-		// their generating face pair (curvedStitch → RelineageByFaceProvenance). Here, like the planar
-		// path, restore the identity of original boundaries the curved cut passed through WHOLE — a
-		// survivor keeps its own key, not a face-pair name. An exact analytic result (M2 #1334/#1335).
-		body.InheritOriginalEdges(append(append([]*topo.Edge(nil), target.Edges()...), tool.Edges()...))
+	if body, ok := curvedExactGuarded(op, target, tool, rec); ok {
 		return body, nil
 	}
 	bop, ok := toBrepOp(op)
@@ -176,6 +171,45 @@ func curvedExactBoolean(op PartFeatureOperation, target, tool *topo.Body, rec *d
 	return nil, false
 }
 
+// CodeBooleanAnalyticVolumeReject marks a curved analytic boolean whose result fell OUTSIDE the
+// Requicha two-sided volume bracket (#1601): the recognizer produced a valid body of materially
+// wrong volume (kept the wrong lobe, removed too much), so it is rejected and the operation falls
+// back to the guarded planar/CSG path instead of shipping the wrong analytic solid. A tracked
+// defect — before this, the analytic short-circuit bypassed the volume guard the planar path gets.
+const CodeBooleanAnalyticVolumeReject diag.Code = "boolean.analytic-volume-reject"
+
+// curvedVolumeGuardFraction is the curved analytic volume bracket's tolerance as a fraction of the
+// larger operand's volume. DefaultQuality curved-body tessellation UNDER-measures volume by ~0.6%
+// (a cylinder) up to a bounded few percent (higher-curvature cones/spheres); 10% dominates the sum
+// of the operand and result deficits by >10×, so a CORRECT analytic result is never false-rejected
+// (which would silently degrade a good analytic boolean to CSG), while a gross mis-recognition
+// (wrong lobe ≈ ±30–100% of volume) is caught. Scale-relative (∝ size³), so ADR-0042-compliant.
+// A var, not a const, only so a test can tighten it to drive the reject-and-fallback path on a
+// known-good operand pair; production never rewrites it.
+var curvedVolumeGuardFraction = 0.10 // tol:calibrated — curved analytic volume bracket margin
+
+// curvedExactGuarded returns an exact analytic curved boolean only when a path applies AND its
+// result lands inside the Requicha two-sided volume bracket (#1601). The analytic short-circuit
+// otherwise BYPASSES the volume guard the planar path gets, so a recognizer that mis-classifies to
+// a valid body of materially wrong volume would ship silently. When the bracket rejects, this
+// records a Defect and declines (ok=false) so booleanGeneral falls through to the guarded
+// planar/CSG path. On acceptance it restores original-edge identity (ADR-0043) like the planar path.
+func curvedExactGuarded(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
+	body, ok := curvedExactBoolean(op, target, tool, rec)
+	if !ok {
+		return nil, false
+	}
+	tv, wv, bv := boolVolumes(target, tool, body)
+	if volumeOutOfBracket(op, tv, wv, bv, curvedVolumeGuardFraction*max(tv, wv)) {
+		rec.Recordf(CodeBooleanAnalyticVolumeReject, diag.Defect,
+			"curved %s analytic result volume %g outside the Requicha bracket (V(A)=%g V(B)=%g): falling back to the guarded path",
+			op, bv, tv, wv)
+		return nil, false
+	}
+	body.InheritOriginalEdges(append(append([]*topo.Edge(nil), target.Edges()...), tool.Edges()...))
+	return body, true
+}
+
 // CurvedBoolean attempts the exact analytic curved boolean and reports whether it applied. It is SAFE to
 // call on any operands — each path declines (ok=false) when it does not handle (op, target, tool), and none
 // hangs (unlike the planar B-rep boolean, which loops on a full periodic curved face). The model layer uses
@@ -223,16 +257,29 @@ func validBooleanSolid(body *topo.Body) bool {
 
 func invalidBooleanVolume(op PartFeatureOperation, target, tool, body *topo.Body) bool {
 	// Model-relative volume tolerance (ADR-0042): scales with the operands' size³ so
-	// the result-volume sanity check is faithful at any scale, not just ~cm parts.
-	tol := ResolutionForBodies(target, tool).Volume()
-	targetVol := BodyGeometryProperties(target, DefaultQuality()).Volume
-	toolVol := BodyGeometryProperties(tool, DefaultQuality()).Volume
-	bodyVol := BodyGeometryProperties(body, DefaultQuality()).Volume
-	// Two-sided Requicha brackets (#1601): V(A∪B) ∈ [max(V(A),V(B)), V(A)+V(B)] and
-	// V(A∖B) ∈ [V(A)−V(B), V(A)]. The old one-sided checks let a join that fabricated
-	// material or a cut that removed too much ship silently. Intersect keeps only its
-	// upper bound V(A∩B) ≤ min(V(A),V(B)): its Requicha lower bound needs V(A∪B) — a
-	// second boolean, too expensive for a guard — and is trivially ≥ 0 without it.
+	// the result-volume sanity check is faithful at any scale, not just ~cm parts. The
+	// planar path's arithmetic is exact-plane, so a tight resolution-cube tol is right.
+	tv, wv, bv := boolVolumes(target, tool, body)
+	return volumeOutOfBracket(op, tv, wv, bv, ResolutionForBodies(target, tool).Volume())
+}
+
+// boolVolumes measures the target, tool and result volumes at one shared quality — the same
+// quality for all three so their tessellation deficits partly cancel in the bracket comparison.
+func boolVolumes(target, tool, body *topo.Body) (targetVol, toolVol, bodyVol float64) {
+	q := DefaultQuality()
+	return BodyGeometryProperties(target, q).Volume,
+		BodyGeometryProperties(tool, q).Volume,
+		BodyGeometryProperties(body, q).Volume
+}
+
+// volumeOutOfBracket reports whether a result volume falls outside the Requicha two-sided
+// bracket for op with tolerance tol (#1601): V(A∪B) ∈ [max(V(A),V(B)), V(A)+V(B)] and
+// V(A∖B) ∈ [V(A)−V(B), V(A)]. The old one-sided checks let a join that fabricated material or a
+// cut that removed too much ship silently. Intersect keeps only its upper bound V(A∩B) ≤
+// min(V(A),V(B)): its Requicha lower bound needs V(A∪B) — a second boolean, too expensive for a
+// guard — and is trivially ≥ 0 without it. Shared by the planar guard (a tight model-relative
+// tol) and the curved analytic guard (a deficit-dominating relative tol, curvedExactGuarded).
+func volumeOutOfBracket(op PartFeatureOperation, targetVol, toolVol, bodyVol, tol float64) bool {
 	switch op {
 	case Join:
 		return bodyVol+tol < max(targetVol, toolVol) || bodyVol > targetVol+toolVol+tol
