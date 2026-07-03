@@ -43,7 +43,7 @@ func (t *GripSnapTool) Start(*Session) {}
 func (t *GripSnapTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
 
 // Picks reports the picked faces for the unified highlight.
-func (t *GripSnapTool) Picks() []Selectable { return faceSelectables(t.faces) }
+func (t *GripSnapTool) Picks() []Selectable { return selectables(t.faces) }
 
 // Pick appends a face until both the moving and the target geometry are chosen.
 func (t *GripSnapTool) Pick(_ *Session, sel Selectable) {

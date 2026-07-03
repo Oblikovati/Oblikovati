@@ -159,7 +159,7 @@ func (t *SheetMetalCornerTool) Start(*Session) {}
 func (t *SheetMetalCornerTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectEdge} }
 
 // Picks reports the picked edges for the unified highlight.
-func (t *SheetMetalCornerTool) Picks() []Selectable { return edgeSelectables(t.edges) }
+func (t *SheetMetalCornerTool) Picks() []Selectable { return selectables(t.edges) }
 func (t *SheetMetalCornerTool) Pick(_ *Session, sel Selectable) {
 	if e, ok := sel.(EdgeHandle); ok {
 		t.edges = append(t.edges, e)
@@ -222,7 +222,7 @@ func (t *SheetMetalCornerSeamTool) AcceptedKinds() []SelectionKind {
 }
 
 // Picks reports the picked edges for the unified highlight.
-func (t *SheetMetalCornerSeamTool) Picks() []Selectable { return edgeSelectables(t.edges) }
+func (t *SheetMetalCornerSeamTool) Picks() []Selectable { return selectables(t.edges) }
 func (t *SheetMetalCornerSeamTool) Pick(_ *Session, sel Selectable) {
 	if e, ok := sel.(EdgeHandle); ok {
 		t.edges = append(t.edges, e)

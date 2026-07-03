@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/api/contract"
 	"oblikovati.org/api/types"
+	"oblikovati.org/model/internal/collview"
 	"oblikovati.org/model/occurrence"
 )
 
@@ -37,10 +38,7 @@ func (s *ConstraintSet) Count() int { return len(s.items) }
 
 // Item returns the constraint at index i (0-based), or nil when out of range.
 func (s *ConstraintSet) Item(i int) contract.AssemblyConstraint {
-	if i < 0 || i >= len(s.items) {
-		return nil
-	}
-	return s.items[i]
+	return collview.ItemAs(s.items, i, asContractConstraint)
 }
 
 // All returns the constraints in creation order.
@@ -136,8 +134,9 @@ func (e *OccurrenceConstraints) Count() int { return len(e.items) }
 
 // Item returns the i-th constraint referencing the occurrence, or nil when out of range.
 func (e *OccurrenceConstraints) Item(i int) contract.AssemblyConstraint {
-	if i < 0 || i >= len(e.items) {
-		return nil
-	}
-	return e.items[i]
+	return collview.ItemAs(e.items, i, asContractConstraint)
 }
+
+// asContractConstraint widens the engine's Constraint to the public contract for the
+// shared collview guard (#1655).
+func asContractConstraint(c Constraint) contract.AssemblyConstraint { return c }

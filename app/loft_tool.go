@@ -62,7 +62,7 @@ func (t *LoftTool) AcceptedKinds() []SelectionKind {
 
 // Picks reports the picked profile cross-sections for the unified highlight (point/face sections
 // have nothing to outline, matching the prior PickedProfiles-based highlight).
-func (t *LoftTool) Picks() []Selectable { return profileSelectables(t.PickedProfiles()) }
+func (t *LoftTool) Picks() []Selectable { return selectables(t.PickedProfiles()) }
 
 // Pick routes the clicked entity: a profile/point/face is the next cross-section (a profile
 // already in the list is ignored so a double-click doesn't duplicate it); an open path is a

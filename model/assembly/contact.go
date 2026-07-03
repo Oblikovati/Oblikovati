@@ -7,6 +7,7 @@ import (
 	"slices"
 
 	"oblikovati.org/api/contract"
+	"oblikovati.org/model/internal/collview"
 )
 
 // Contact (M12-F05, Oblikovati/Oblikovati#362/#368): a contact set is a named group of
@@ -146,10 +147,7 @@ func (s *ContactSolver) Delete(id uint64) bool {
 // Count / Item give the contract.ContactSets read surface.
 func (s *ContactSolver) Count() int { return len(s.sets) }
 func (s *ContactSolver) Item(i int) contract.ContactSet {
-	if i < 0 || i >= len(s.sets) {
-		return nil
-	}
-	return s.sets[i]
+	return collview.ItemAs(s.sets, i, func(cs *contactSet) contract.ContactSet { return cs })
 }
 
 // PartnersOf returns the occurrences that share a contact set with occID — the components its

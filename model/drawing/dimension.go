@@ -13,6 +13,7 @@ import (
 	"oblikovati.org/kernel/hlr"
 	"oblikovati.org/kernel/topo"
 	gmath "oblikovati.org/math"
+	"oblikovati.org/model/internal/collview"
 )
 
 // Drawing dimensions (M14-F03 PBI-141, #388): a linear dimension annotates the distance between
@@ -820,12 +821,7 @@ func dimensionAxis(t types.DrawingDimensionType, s1, s2 gmath.Point2) (ax, ay fl
 // Count, Item, ByName and Remove read/edit the collection.
 func (ds *DrawingDimensions) Count() int { return len(ds.items) }
 
-func (ds *DrawingDimensions) Item(i int) *DrawingDimension {
-	if i < 0 || i >= len(ds.items) {
-		return nil
-	}
-	return ds.items[i]
-}
+func (ds *DrawingDimensions) Item(i int) *DrawingDimension { return collview.At(ds.items, i) }
 
 func (ds *DrawingDimensions) ByName(name string) (*DrawingDimension, bool) {
 	for _, d := range ds.items {

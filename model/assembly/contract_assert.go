@@ -2,7 +2,10 @@
 
 package assembly
 
-import "oblikovati.org/api/contract"
+import (
+	"oblikovati.org/api/contract"
+	"oblikovati.org/model/internal/collview"
+)
 
 // Compile-time assertions that the constraint engine satisfies the public Apache-2.0
 // contract (ADR-0018): the read surfaces an in-proc consumer binds against.
@@ -53,11 +56,11 @@ var (
 	_ contract.Representation = (*designViewRep)(nil)
 	_ contract.Representation = (*positionalRep)(nil)
 	_ contract.Representation = (*lodRep)(nil)
-	_ contract.ModelStates    = modelStateCollection{}
+	_ contract.ModelStates    = collview.Indexed[*modelState, contract.ModelState]{}
 
-	_ contract.DesignViewRepresentations    = designViewCollection{}
-	_ contract.PositionalRepresentations    = positionalCollection{}
-	_ contract.LevelOfDetailRepresentations = lodCollection{}
+	_ contract.DesignViewRepresentations    = collview.Indexed[*designViewRep, contract.DesignViewRepresentation]{}
+	_ contract.PositionalRepresentations    = collview.Indexed[*positionalRep, contract.PositionalRepresentation]{}
+	_ contract.LevelOfDetailRepresentations = collview.Indexed[*lodRep, contract.LevelOfDetailRepresentation]{}
 
 	// Contact & interference (M12-F05).
 	_ contract.ContactSet          = (*contactSet)(nil)
