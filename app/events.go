@@ -32,6 +32,7 @@ const (
 	tidTaskPanelClosed        event.TypeID = 0x0515 // app/taskpanel_store.go (M05-F03 task panels)
 	tidCameraChanged          event.TypeID = 0x1601 // app/named_views.go (M16-F03 #404)
 	tidStyleChanged           event.TypeID = 0x1602 // app/style.go (M16-F02 #403/#408)
+	tidBodyColorStyleChanged  event.TypeID = 0x1603 // app/style_assign.go (M16-F02 #403/#408, S5 #1640)
 )
 
 // CameraChanged fires (After) when the active view's camera moves — a named-view restore or a

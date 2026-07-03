@@ -62,6 +62,9 @@ type Document struct {
 	// BodyNames are the per-body display names keyed by body reference key (#1078), absent for a
 	// document where no body was renamed.
 	BodyNames map[string]string `yaml:"bodyNames,omitempty"`
+	// BodyColorStyles are the per-body color-style names keyed by body reference key (M16-F02
+	// #403/#408, S5 #1640), absent for a document where no body was colored.
+	BodyColorStyles map[string]string `yaml:"bodyColorStyles,omitempty"`
 }
 
 // SketchSettingsRecord is the on-disk per-document sketch settings (#147): the constraint-inference
@@ -200,6 +203,7 @@ type onDisk struct {
 	DisplaySettings *DisplaySettingsRecord `yaml:"displaySettings,omitempty"`
 	SketchSettings  *SketchSettingsRecord  `yaml:"sketchSettings,omitempty"`
 	BodyNames       map[string]string      `yaml:"bodyNames,omitempty"`
+	BodyColorStyles map[string]string      `yaml:"bodyColorStyles,omitempty"`
 	Resources       yaml.Node              `yaml:"resources,omitempty"`
 	Model           yaml.Node              `yaml:"model,omitempty"`
 	Data            map[string]string      `yaml:"data,omitempty"`
@@ -222,6 +226,7 @@ func MarshalDocument(d Document) ([]byte, error) {
 		DisplaySettings: d.DisplaySettings,
 		SketchSettings:  d.SketchSettings,
 		BodyNames:       d.BodyNames,
+		BodyColorStyles: d.BodyColorStyles,
 	}
 	if err := embedNativeNodes(&od, d); err != nil {
 		return nil, err
@@ -302,6 +307,7 @@ func documentHeader(od onDisk) Document {
 		DisplaySettings: od.DisplaySettings,
 		SketchSettings:  od.SketchSettings,
 		BodyNames:       od.BodyNames,
+		BodyColorStyles: od.BodyColorStyles,
 	}
 }
 

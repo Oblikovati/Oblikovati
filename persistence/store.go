@@ -162,6 +162,9 @@ func storeDocumentSettings(pkg *Package, d *doc.Document) {
 	if names := d.BodyNames(); names != nil {
 		pkg.SetBodyNames(names)
 	}
+	if styles := d.BodyColorStyles(); styles != nil {
+		pkg.SetBodyColorStyles(styles)
+	}
 }
 
 // restoreDocumentSettings applies a package's per-document settings onto the document for the load
@@ -175,6 +178,9 @@ func restoreDocumentSettings(d *doc.Document, pkg *Package) {
 	}
 	if names := pkg.BodyNames(); names != nil {
 		d.RestoreBodyNames(names)
+	}
+	if styles := pkg.BodyColorStyles(); styles != nil {
+		d.RestoreBodyColorStyles(styles)
 	}
 }
 

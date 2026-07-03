@@ -137,7 +137,6 @@ type Session struct {
 	colorSchemes              *colorscheme.Registry           // application color schemes — viewport bg + highlight/select palette (M16-F06 #642)
 	colorSchemeRev            uint64                          // bumped on scheme/background change; the head re-applies the viewport colors (live preview)
 	styles                    *style.Registry                 // document color styles + style-library cascade (M16-F02 #403/#408)
-	bodyColorStyles           map[string]string               // body reference key → assigned color-style name (M16-F02 #403/#408)
 	displayOptions            display.Options                 // app-level display options that parameterize the display modes (M16-F07 #643)
 	chamferFlatCorners        bool                            // default three-edge-corner treatment for new chamfers
 	chamferConcaveOut         bool                            // default concave-edge strategy for new chamfers (true ⇒ outward fill)
@@ -273,7 +272,6 @@ func (s *Session) seedVisualState() {
 	s.lighting.Environment = renderer.DefaultEnvironment()
 	s.colorSchemes = colorscheme.NewRegistry()
 	s.styles = style.NewRegistry()
-	s.bodyColorStyles = map[string]string{}
 	s.displayOptions = display.DefaultOptions()
 }
 

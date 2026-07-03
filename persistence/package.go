@@ -38,6 +38,7 @@ type Package struct {
 	display     *yamlcodec.DisplaySettingsRecord // per-document display settings (M16-F07 #643)
 	sketch      *yamlcodec.SketchSettingsRecord  // per-document sketch settings (#147)
 	bodyNames   map[string]string                // per-body display names by reference key (#1078)
+	bodyStyles  map[string]string                // per-body color-style names by reference key (M16-F02 #403/#408, S5 #1640)
 	pointClouds []yamlcodec.PointCloudRecord     // attached scan records (M17-F06, #645)
 }
 
@@ -81,6 +82,12 @@ func (p *Package) SetBodyNames(names map[string]string) { p.bodyNames = names }
 
 // BodyNames returns the per-body display-name map (nil when no body was renamed).
 func (p *Package) BodyNames() map[string]string { return p.bodyNames }
+
+// SetBodyColorStyles stores the per-body color-style map, keyed by body reference key (#1640).
+func (p *Package) SetBodyColorStyles(styles map[string]string) { p.bodyStyles = styles }
+
+// BodyColorStyles returns the per-body color-style map (nil when no body was colored).
+func (p *Package) BodyColorStyles() map[string]string { return p.bodyStyles }
 
 // SetPointClouds stores the attached-scan records (M17-F06, #645).
 func (p *Package) SetPointClouds(records []yamlcodec.PointCloudRecord) { p.pointClouds = records }

@@ -73,6 +73,36 @@ func TestBodyNameSurvivesStoreRoundTrip(t *testing.T) {
 	}
 }
 
+// TestBodyColorStyleSurvivesStoreRoundTrip exercises the store/restore hooks for color styles (S5
+// #1640): a colored body reopens with its stored color-style name, and restore does not dirty the
+// reopened document — the exact lifecycle body names already had, on the same reference keys.
+func TestBodyColorStyleSurvivesStoreRoundTrip(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "colored.obk")
+	store := NewPackageStore()
+
+	ws := doc.NewWorkspace(store, contentset.Default())
+	d, err := ws.Add(doc.Part, path, true)
+	if err != nil {
+		t.Fatalf("Add: %v", err)
+	}
+	d.SetBodyColorStyle("body-ref-key", "Brass")
+	if err := ws.Save(d); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+
+	reopened, err := doc.NewWorkspace(store, contentset.Default()).Open(path, true)
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	if name, ok := reopened.BodyColorStyle("body-ref-key"); !ok || name != "Brass" {
+		t.Errorf("reopened body color style = (%q, %v), want (Brass, true)", name, ok)
+	}
+	if reopened.Dirty() {
+		t.Error("reopened document should be clean (RestoreBodyColorStyles must not dirty it)")
+	}
+}
+
 func TestPackageStoreExists(t *testing.T) {
 	dir := t.TempDir()
 	store := NewPackageStore()

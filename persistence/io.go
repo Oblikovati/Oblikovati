@@ -59,6 +59,7 @@ func (p *Package) marshal() ([]byte, error) {
 		DisplaySettings: p.display,
 		SketchSettings:  p.sketch,
 		BodyNames:       p.bodyNames,
+		BodyColorStyles: p.bodyStyles,
 		Model:           p.model,
 		Data:            p.streams,
 		Resources:       p.resources,
@@ -80,6 +81,16 @@ func decode(raw []byte) (*Package, error) {
 			DisplayName:   doc.DisplayName,
 		}
 	}
+	copyDocumentSections(p, doc)
+	for name, data := range doc.Data {
+		p.WriteStream(name, data)
+	}
+	return p, nil
+}
+
+// copyDocumentSections copies the decoded document's model/metadata sections onto the package (the
+// non-manifest, non-stream fields), split out of decode to keep it under the statement budget.
+func copyDocumentSections(p *Package, doc yamlcodec.Document) {
 	p.model = doc.Model
 	p.resources = doc.Resources
 	p.identity = doc.Identity
@@ -91,10 +102,7 @@ func decode(raw []byte) (*Package, error) {
 	p.display = doc.DisplaySettings
 	p.sketch = doc.SketchSettings
 	p.bodyNames = doc.BodyNames
-	for name, data := range doc.Data {
-		p.WriteStream(name, data)
-	}
-	return p, nil
+	p.bodyStyles = doc.BodyColorStyles
 }
 
 // atomicWriteFile writes data to path via a sibling temp file and a rename, so the
