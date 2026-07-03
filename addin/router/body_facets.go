@@ -3,7 +3,6 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"oblikovati.org/api/wire"
@@ -11,41 +10,34 @@ import (
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
 )
 
 // Facet/stroke calculation and retrieval over the wire (M07-F03 remainder,
 // #293), backed by the session's tolerance-keyed facet store.
 
 // bodyCalculateFacets serves wire.MethodBodyCalculateFacets.
-func bodyCalculateFacets(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.CalculateFacetsArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	b, err := resolveBody(s, in.BodyIndex)
+func bodyCalculateFacets(s *app.Session, part *compdef.PartComponentDefinition, in wire.CalculateFacetsArgs) (wire.FacetSetResult, error) {
+	b, err := bodyAt(part, in.BodyIndex)
 	if err != nil {
-		return nil, err
+		return wire.FacetSetResult{}, err
 	}
 	fs := s.FacetStore().CalculateFacets(b, in.Tolerance)
-	return json.Marshal(facetSetReply(fs, in.IncludeTextureMap))
+	return facetSetReply(fs, in.IncludeTextureMap), nil
 }
 
 // bodyExistingFacets serves wire.MethodBodyExistingFacets — retrieval only.
-func bodyExistingFacets(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.CalculateFacetsArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	b, err := resolveBody(s, in.BodyIndex)
+func bodyExistingFacets(s *app.Session, part *compdef.PartComponentDefinition, in wire.CalculateFacetsArgs) (wire.FacetSetResult, error) {
+	b, err := bodyAt(part, in.BodyIndex)
 	if err != nil {
-		return nil, err
+		return wire.FacetSetResult{}, err
 	}
 	fs, ok := s.FacetStore().ExistingFacets(b, in.Tolerance)
 	if !ok {
-		return nil, fmt.Errorf("no facet set exists at tolerance %g (calculate it first; cached: %v)",
+		return wire.FacetSetResult{}, fmt.Errorf("no facet set exists at tolerance %g (calculate it first; cached: %v)",
 			in.Tolerance, s.FacetStore().FacetTolerances(b))
 	}
-	return json.Marshal(facetSetReply(fs, in.IncludeTextureMap))
+	return facetSetReply(fs, in.IncludeTextureMap), nil
 }
 
 func facetSetReply(fs *ops.BodyFacets, withUV bool) wire.FacetSetResult {
@@ -73,56 +65,44 @@ func meshArrays(m *ops.Mesh) ([]float64, []float64) {
 }
 
 // bodyFacetTolerances serves wire.MethodBodyFacetTolerances.
-func bodyFacetTolerances(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	return toleranceReply(s, raw, func(b *topo.Body) []float64 { return s.FacetStore().FacetTolerances(b) })
+func bodyFacetTolerances(s *app.Session, part *compdef.PartComponentDefinition, in wire.BodyIndexArgs) (wire.FacetTolerancesResult, error) {
+	return toleranceReply(part, in.BodyIndex, func(b *topo.Body) []float64 { return s.FacetStore().FacetTolerances(b) })
 }
 
 // bodyStrokeTolerances serves wire.MethodBodyStrokeTolerances.
-func bodyStrokeTolerances(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	return toleranceReply(s, raw, func(b *topo.Body) []float64 { return s.FacetStore().StrokeTolerances(b) })
+func bodyStrokeTolerances(s *app.Session, part *compdef.PartComponentDefinition, in wire.BodyIndexArgs) (wire.FacetTolerancesResult, error) {
+	return toleranceReply(part, in.BodyIndex, func(b *topo.Body) []float64 { return s.FacetStore().StrokeTolerances(b) })
 }
 
-func toleranceReply(s *app.Session, raw json.RawMessage, list func(*topo.Body) []float64) (json.RawMessage, error) {
-	var in wire.BodyIndexArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	b, err := resolveBody(s, in.BodyIndex)
+func toleranceReply(part *compdef.PartComponentDefinition, index int, list func(*topo.Body) []float64) (wire.FacetTolerancesResult, error) {
+	b, err := bodyAt(part, index)
 	if err != nil {
-		return nil, err
+		return wire.FacetTolerancesResult{}, err
 	}
-	return json.Marshal(wire.FacetTolerancesResult{Tolerances: list(b)})
+	return wire.FacetTolerancesResult{Tolerances: list(b)}, nil
 }
 
 // bodyCalculateStrokes serves wire.MethodBodyCalculateStrokes.
-func bodyCalculateStrokes(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.CalculateStrokesArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	b, err := resolveBody(s, in.BodyIndex)
+func bodyCalculateStrokes(s *app.Session, part *compdef.PartComponentDefinition, in wire.CalculateStrokesArgs) (wire.StrokeSetResult, error) {
+	b, err := bodyAt(part, in.BodyIndex)
 	if err != nil {
-		return nil, err
+		return wire.StrokeSetResult{}, err
 	}
-	return json.Marshal(strokeSetReply(s.FacetStore().CalculateStrokes(b, in.Tolerance).Polylines))
+	return strokeSetReply(s.FacetStore().CalculateStrokes(b, in.Tolerance).Polylines), nil
 }
 
 // bodyExistingStrokes serves wire.MethodBodyExistingStrokes — retrieval only.
-func bodyExistingStrokes(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.CalculateStrokesArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	b, err := resolveBody(s, in.BodyIndex)
+func bodyExistingStrokes(s *app.Session, part *compdef.PartComponentDefinition, in wire.CalculateStrokesArgs) (wire.StrokeSetResult, error) {
+	b, err := bodyAt(part, in.BodyIndex)
 	if err != nil {
-		return nil, err
+		return wire.StrokeSetResult{}, err
 	}
 	ss, ok := s.FacetStore().ExistingStrokes(b, in.Tolerance)
 	if !ok {
-		return nil, fmt.Errorf("no stroke set exists at tolerance %g (calculate it first; cached: %v)",
+		return wire.StrokeSetResult{}, fmt.Errorf("no stroke set exists at tolerance %g (calculate it first; cached: %v)",
 			in.Tolerance, s.FacetStore().StrokeTolerances(b))
 	}
-	return json.Marshal(strokeSetReply(ss.Polylines))
+	return strokeSetReply(ss.Polylines), nil
 }
 
 func strokeSetReply(polylines [][]math.Point3) wire.StrokeSetResult {
@@ -138,45 +118,41 @@ func strokeSetReply(polylines [][]math.Point3) wire.StrokeSetResult {
 }
 
 // faceCalculateFacets serves wire.MethodFaceCalculateFacets.
-func faceCalculateFacets(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	b, f, tol, err := resolveFaceArgs(s, raw)
+func faceCalculateFacets(s *app.Session, part *compdef.PartComponentDefinition, in wire.FaceFacetsArgs) (wire.FacetSetResult, error) {
+	b, f, err := resolveFace(part, in)
 	if err != nil {
-		return nil, err
+		return wire.FacetSetResult{}, err
 	}
-	mesh, ok := s.FacetStore().FaceFacets(b, f, tol)
+	mesh, ok := s.FacetStore().FaceFacets(b, f, in.Tolerance)
 	if !ok {
-		return nil, fmt.Errorf("face not found in the body's facet set")
+		return wire.FacetSetResult{}, fmt.Errorf("face not found in the body's facet set")
 	}
 	out := wire.FacetSetResult{
 		VertexCount: len(mesh.Positions), FacetCount: len(mesh.Indices) / 3,
 		VertexIndices: mesh.Indices, IndexCountPerFace: []int{len(mesh.Indices)},
 	}
 	out.VertexCoordinates, out.NormalVectors = meshArrays(mesh)
-	return json.Marshal(out)
+	return out, nil
 }
 
 // faceCalculateStrokes serves wire.MethodFaceCalculateStrokes.
-func faceCalculateStrokes(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	_, f, tol, err := resolveFaceArgs(s, raw)
+func faceCalculateStrokes(s *app.Session, part *compdef.PartComponentDefinition, in wire.FaceFacetsArgs) (wire.StrokeSetResult, error) {
+	_, f, err := resolveFace(part, in)
 	if err != nil {
-		return nil, err
+		return wire.StrokeSetResult{}, err
 	}
-	return json.Marshal(strokeSetReply(s.FacetStore().FaceStrokes(f, tol)))
+	return strokeSetReply(s.FacetStore().FaceStrokes(f, in.Tolerance)), nil
 }
 
-// resolveFaceArgs decodes the face-addressed facet args.
-func resolveFaceArgs(s *app.Session, raw json.RawMessage) (*topo.Body, *topo.Face, float64, error) {
-	var in wire.FaceFacetsArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, nil, 0, err
-	}
-	b, err := resolveBody(s, in.BodyIndex)
+// resolveFace resolves the face-addressed args to their body and face on the active part.
+func resolveFace(part *compdef.PartComponentDefinition, in wire.FaceFacetsArgs) (*topo.Body, *topo.Face, error) {
+	b, err := bodyAt(part, in.BodyIndex)
 	if err != nil {
-		return nil, nil, 0, err
+		return nil, nil, err
 	}
 	f, ok := b.FindFaceByKey([]byte(in.FaceKey))
 	if !ok {
-		return nil, nil, 0, fmt.Errorf("no face with key %q on body %d", in.FaceKey, in.BodyIndex)
+		return nil, nil, fmt.Errorf("no face with key %q on body %d", in.FaceKey, in.BodyIndex)
 	}
-	return b, f, in.Tolerance, nil
+	return b, f, nil
 }

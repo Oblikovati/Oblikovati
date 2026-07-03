@@ -3,7 +3,6 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 	stdmath "math"
 
@@ -21,12 +20,19 @@ import (
 // Body, shell and wire enumeration over the wire (M07-F06, #629), plus the
 // planar wire offset. Bodies are addressed by index in the active part.
 
-// resolveBody returns the active part's body at the given index.
+// resolveBody returns the active part's body at the given index. It is the session-based
+// entry (used by the transient-body/wire-offset paths that resolve the active part inline);
+// the typedPart handlers resolve the part via the adapter and call bodyAt directly.
 func resolveBody(s *app.Session, index int) (*topo.Body, error) {
 	part, err := modelaccess.ActivePart(s)
 	if err != nil {
 		return nil, err
 	}
+	return bodyAt(part, index)
+}
+
+// bodyAt returns the part's surface body at index, naming the bound on overflow.
+func bodyAt(part *compdef.PartComponentDefinition, index int) (*topo.Body, error) {
 	all := part.SurfaceBodies().All()
 	if index < 0 || index >= len(all) {
 		return nil, fmt.Errorf("body index %d out of range (part has %d bodies)", index, len(all))
@@ -35,22 +41,18 @@ func resolveBody(s *app.Session, index int) (*topo.Body, error) {
 }
 
 // bodyList serves wire.MethodBodyList.
-func bodyList(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	return bodyListResult(s, part)
+func bodyList(s *app.Session, part *compdef.PartComponentDefinition) (wire.BodyListResult, error) {
+	return bodyListResult(s, part), nil
 }
 
-// bodyListResult marshals the active part's current body list (shared by body.list and the
+// bodyListResult builds the active part's current body list (shared by body.list and the
 // mutating body.delete, which returns the refreshed list).
-func bodyListResult(s *app.Session, part *compdef.PartComponentDefinition) (json.RawMessage, error) {
+func bodyListResult(s *app.Session, part *compdef.PartComponentDefinition) wire.BodyListResult {
 	var out wire.BodyListResult
 	for i, b := range part.SurfaceBodies().All() {
 		out.Bodies = append(out.Bodies, bodyInfo(s, i, b))
 	}
-	return json.Marshal(out)
+	return out
 }
 
 // bodyInfo builds a body's wire summary: its display name, visibility (#158), persistent
@@ -81,40 +83,32 @@ func bodyDisplayName(s *app.Session, index int, key string) string {
 // bodyRename serves wire.MethodBodyRename: store (or, with an empty name, clear) the display name
 // of one body of the active part, keyed by its reference key so it survives recompute and
 // round-trips in the .obk (#1078).
-func bodyRename(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.BodyRenameArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	b, err := resolveBody(s, in.BodyIndex)
+func bodyRename(s *app.Session, part *compdef.PartComponentDefinition, in wire.BodyRenameArgs) (wire.BodyInfoResult, error) {
+	b, err := bodyAt(part, in.BodyIndex)
 	if err != nil {
-		return nil, err
+		return wire.BodyInfoResult{}, err
 	}
 	d := s.ActiveDocument()
 	if d == nil {
-		return nil, fmt.Errorf("body.rename: no active document")
+		return wire.BodyInfoResult{}, fmt.Errorf("body.rename: no active document")
 	}
 	d.SetBodyName(string(b.ReferenceKey()), in.Name)
-	return json.Marshal(wire.BodyInfoResult{Body: bodyInfo(s, in.BodyIndex, b)})
+	return wire.BodyInfoResult{Body: bodyInfo(s, in.BodyIndex, b)}, nil
 }
 
 // bodyPhysicalProperties serves wire.MethodBodyPhysicalProperties: the geometry and mass
 // properties of one body — the per-body counterpart of analysis.massProperties, which sums all
 // bodies (#1078).
-func bodyPhysicalProperties(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.BodyPhysicalPropertiesArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	b, err := resolveBody(s, in.BodyIndex)
+func bodyPhysicalProperties(s *app.Session, part *compdef.PartComponentDefinition, in wire.BodyPhysicalPropertiesArgs) (wire.MassPropertiesResult, error) {
+	b, err := bodyAt(part, in.BodyIndex)
 	if err != nil {
-		return nil, err
+		return wire.MassPropertiesResult{}, err
 	}
 	accuracy := types.MassPropertiesMedium
 	if in.Accuracy != "" {
 		a, ok := types.ParseMassPropertiesAccuracy(in.Accuracy)
 		if !ok {
-			return nil, fmt.Errorf("body.physicalProperties: unknown accuracy %q (want low|medium|high)", in.Accuracy)
+			return wire.MassPropertiesResult{}, fmt.Errorf("body.physicalProperties: unknown accuracy %q (want low|medium|high)", in.Accuracy)
 		}
 		accuracy = a
 	}
@@ -125,63 +119,47 @@ func bodyPhysicalProperties(s *app.Session, raw json.RawMessage) (json.RawMessag
 		}
 	}
 	mp := analysis.MassPropertiesOf([]*topo.Body{b}, density, accuracy)
-	return json.Marshal(massPropertiesResult(mp))
+	return massPropertiesResult(mp), nil
 }
 
 // bodySetVisible shows or hides one body of the active part (#158); the renderer reads the flag.
-func bodySetVisible(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.BodySetVisibleArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	b, err := resolveBody(s, in.BodyIndex)
+func bodySetVisible(s *app.Session, part *compdef.PartComponentDefinition, in wire.BodySetVisibleArgs) (wire.BodyInfoResult, error) {
+	b, err := bodyAt(part, in.BodyIndex)
 	if err != nil {
-		return nil, err
+		return wire.BodyInfoResult{}, err
 	}
 	s.SetBodyVisible(b, in.Visible)
-	return json.Marshal(wire.BodyInfoResult{Body: bodyInfo(s, in.BodyIndex, b)})
+	return wire.BodyInfoResult{Body: bodyInfo(s, in.BodyIndex, b)}, nil
 }
 
 // bodyDelete serves wire.MethodBodyDelete: append a delete-body feature that removes the body at
 // BodyIndex (anchored to its reference key so it survives recompute), then return the refreshed
 // body list (#1078).
-func bodyDelete(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.BodyIndexArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	part, err := modelaccess.ActivePart(s)
+func bodyDelete(s *app.Session, part *compdef.PartComponentDefinition, in wire.BodyIndexArgs) (wire.BodyListResult, error) {
+	b, err := bodyAt(part, in.BodyIndex)
 	if err != nil {
-		return nil, err
+		return wire.BodyListResult{}, err
 	}
-	all := part.SurfaceBodies().All()
-	if in.BodyIndex < 0 || in.BodyIndex >= len(all) {
-		return nil, fmt.Errorf("body index %d out of range (part has %d bodies)", in.BodyIndex, len(all))
-	}
-	pf := part.Features().AddDeleteBody(all[in.BodyIndex].ReferenceKey())
+	pf := part.Features().AddDeleteBody(b.ReferenceKey())
 	part.Recompute()
 	if !pf.Health().OK() {
-		return nil, fmt.Errorf("body.delete: %s", pf.Health().Reason)
+		return wire.BodyListResult{}, fmt.Errorf("body.delete: %s", pf.Health().Reason)
 	}
-	return bodyListResult(s, part)
+	return bodyListResult(s, part), nil
 }
 
 // bodyShells serves wire.MethodBodyShells.
-func bodyShells(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.BodyIndexArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	b, err := resolveBody(s, in.BodyIndex)
+func bodyShells(_ *app.Session, part *compdef.PartComponentDefinition, in wire.BodyIndexArgs) (wire.BodyShellsResult, error) {
+	b, err := bodyAt(part, in.BodyIndex)
 	if err != nil {
-		return nil, err
+		return wire.BodyShellsResult{}, err
 	}
 	q := ops.DefaultQuality()
 	var out wire.BodyShellsResult
 	for i, sh := range b.Shells() {
 		out.Shells = append(out.Shells, shellInfo(i, sh, q))
 	}
-	return json.Marshal(out)
+	return out, nil
 }
 
 func shellInfo(i int, sh *topo.Shell, q ops.Quality) wire.FaceShellInfo {
@@ -204,14 +182,10 @@ func boxSpan(b math.Box) []float64 {
 }
 
 // bodyWires serves wire.MethodBodyWires.
-func bodyWires(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.BodyIndexArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
-	b, err := resolveBody(s, in.BodyIndex)
+func bodyWires(_ *app.Session, part *compdef.PartComponentDefinition, in wire.BodyIndexArgs) (wire.BodyWiresResult, error) {
+	b, err := bodyAt(part, in.BodyIndex)
 	if err != nil {
-		return nil, err
+		return wire.BodyWiresResult{}, err
 	}
 	var out wire.BodyWiresResult
 	for i, w := range b.Wires() {
@@ -220,34 +194,31 @@ func bodyWires(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 			Key: string(w.ReferenceKey()), TransientKey: w.ID(),
 		})
 	}
-	return json.Marshal(out)
+	return out, nil
 }
 
 // wireOffsetPlanar serves wire.MethodWireOffsetPlanar: the offset result is
-// registered as a transient body and returned sampled.
-func wireOffsetPlanar(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	var in wire.OffsetPlanarWireArgs
-	if err := decode(raw, &in); err != nil {
-		return nil, err
-	}
+// registered as a transient body and returned sampled. The source wire lives on a document
+// body OR a transient body (Handle > 0), so this resolves no active-part context up front.
+func wireOffsetPlanar(s *app.Session, in wire.OffsetPlanarWireArgs) (wire.OffsetPlanarWireResult, error) {
 	w, err := resolveWireRef(s, in)
 	if err != nil {
-		return nil, err
+		return wire.OffsetPlanarWireResult{}, err
 	}
 	normal, err := xyz(in.Normal, "normal")
 	if err != nil {
-		return nil, err
+		return wire.OffsetPlanarWireResult{}, err
 	}
 	corner, err := offsetCorner(in.CornerClosure)
 	if err != nil {
-		return nil, err
+		return wire.OffsetPlanarWireResult{}, err
 	}
 	res, err := ops.OffsetPlanarWire(w, normal, in.Distance, corner)
 	if err != nil {
-		return nil, err
+		return wire.OffsetPlanarWireResult{}, err
 	}
 	tb := s.TransientBodies().Adopt(res)
-	return json.Marshal(wire.OffsetPlanarWireResult{Handle: tb.Handle(), Wires: wirePolylines(res)})
+	return wire.OffsetPlanarWireResult{Handle: tb.Handle(), Wires: wirePolylines(res)}, nil
 }
 
 // resolveWireRef finds the wire on a document body (BodyIndex) or a transient
