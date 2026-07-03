@@ -6,11 +6,10 @@ import (
 	"fmt"
 	"runtime"
 
-	"gopkg.in/yaml.v3"
-
 	"oblikovati.org/app/options"
 	"oblikovati.org/build"
 	"oblikovati.org/model/doc"
+	"oblikovati.org/persistence/yamlcodec"
 	"oblikovati.org/report"
 )
 
@@ -130,7 +129,7 @@ func documentYAML(m documentMarshaler, d *doc.Document) string {
 // marshalOptions renders the user's typed options as YAML for the report (the same shape
 // they are persisted in), so a triager sees exactly the preferences in effect.
 func marshalOptions(all options.All) string {
-	b, err := yaml.Marshal(all)
+	b, err := yamlcodec.Marshal(all)
 	if err != nil {
 		return fmt.Sprintf("(failed to render options: %v)", err)
 	}

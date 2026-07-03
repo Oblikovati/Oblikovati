@@ -52,3 +52,45 @@ func TestOrientedBoxToAABB(t *testing.T) {
 		t.Errorf("AABB min Z = %v, want -1", aabb.Min.Z)
 	}
 }
+
+// Volume is the product of the three full edge lengths (2×half-extent each).
+func TestOrientedBoxVolume(t *testing.T) {
+	b := NewOrientedBox(P3(1, 2, 3),
+		mustUnit3(t, 1, 0, 0), mustUnit3(t, 0, 1, 0), mustUnit3(t, 0, 0, 1),
+		[3]Scalar{2, 1.5, 0.5})
+	if v := b.Volume(); !approxEqual(v, 4*3*1, 1e-12) { // (2·2)(2·1.5)(2·0.5)
+		t.Errorf("volume = %v, want 12", v)
+	}
+}
+
+// NewOrientedBoxFromEdges round-trips against MinCorner/EdgeVectors: a corner and three
+// orthogonal edge vectors reconstruct exactly (the collapse seam, audit B9 #1620).
+func TestOrientedBoxFromEdgesRoundTrip(t *testing.T) {
+	corner := P3(1, -2, 0.5)
+	e0, e1, e2 := V3(3, 0, 0), V3(0, 2, 0), V3(0, 0, 4)
+	b := NewOrientedBoxFromEdges(corner, e0, e1, e2)
+	got := b.MinCorner()
+	if !approxEqual(got.X, corner.X, 1e-9) || !approxEqual(got.Y, corner.Y, 1e-9) || !approxEqual(got.Z, corner.Z, 1e-9) {
+		t.Errorf("MinCorner = %v, want %v", got, corner)
+	}
+	edges := b.EdgeVectors()
+	for i, want := range [3]Vector3{e0, e1, e2} {
+		if !approxEqual(float64(edges[i].Length()), float64(want.Length()), 1e-9) {
+			t.Errorf("edge[%d] length = %v, want %v", i, edges[i].Length(), want.Length())
+		}
+	}
+}
+
+// A degenerate edge (zero length) still yields an orthonormal frame — no non-unit axis, no
+// panic — so a flat/segment box stays representable.
+func TestOrientedBoxFromEdgesDegenerate(t *testing.T) {
+	b := NewOrientedBoxFromEdges(P3(0, 0, 0), V3(2, 0, 0), V3(0, 0, 0), V3(0, 0, 2))
+	if b.HalfExtents[1] != 0 {
+		t.Errorf("degenerate axis half-extent = %v, want 0", b.HalfExtents[1])
+	}
+	for i, ax := range b.Axes {
+		if !approxEqual(float64(ax.AsVector().Length()), 1, 1e-12) {
+			t.Errorf("axis[%d] is not unit-length: %v", i, ax.AsVector().Length())
+		}
+	}
+}

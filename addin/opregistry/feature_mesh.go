@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/model/feature"
 )
@@ -15,11 +16,6 @@ import (
 // Mesh reference geometry (M10-F04 PBI-115, #700): an ASCII STL placed as a MeshFeature —
 // selectable facet topology that passes the running solid through. Distinct from
 // documents.import, which converts a mesh file into B-rep bodies.
-
-type meshArgs struct {
-	Path  string `json:"path"`
-	Solid bool   `json:"solid"`
-}
 
 const meshSchema = `{
   "type": "object",
@@ -31,7 +27,7 @@ const meshSchema = `{
 }`
 
 func meshDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "mesh", Summary: "Place an ASCII STL as mesh reference geometry.", Schema: json.RawMessage(meshSchema), Apply: applyMesh}
+	return &OperationDescriptor{Name: featureargs.KindMesh, Summary: "Place an ASCII STL as mesh reference geometry.", Schema: json.RawMessage(meshSchema), Apply: applyMesh}
 }
 
 func applyMesh(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -39,7 +35,7 @@ func applyMesh(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	var in meshArgs
+	var in featureargs.Mesh
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}

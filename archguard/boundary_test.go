@@ -51,6 +51,24 @@ func TestDomainPackagesAreGpuFree(t *testing.T) {
 	}
 }
 
+// TestModelDoesNotImportPersistence fails if any package under ./model/... TRANSITIVELY imports the
+// persistence layer. The dependency rule is one-way — persistence depends on the domain, never the
+// reverse — but the domain was reaching "up" to persistence/yamlcodec (a thin yaml.v3 wrapper, not a
+// persistence policy). B4 (#1615) relocated that wrapper to the neutral top-level yamlcodec/ leaf; this
+// guard keeps the inversion from returning. Red-verify by re-adding a persistence import to a model file.
+func TestModelDoesNotImportPersistence(t *testing.T) {
+	for _, dep := range listDeps(t, "..", "./model/...") {
+		if dep == persistencePkg || strings.HasPrefix(dep, persistencePkg+"/") {
+			t.Errorf("a model package depends on %q — model/ must not import the persistence layer "+
+				"(persistence depends on the domain, never the reverse). Route shared serialization "+
+				"through the neutral yamlcodec/ leaf instead (#1615, ADR-0020).", dep)
+		}
+	}
+}
+
+// persistencePkg is the import path of the persistence layer the domain must never reach.
+const persistencePkg = "oblikovati.org/persistence"
+
 // listDeps returns the deduped transitive dependency import paths of the given package patterns, as
 // reported by `go list -deps` run in dir (the module root for those patterns).
 func listDeps(t *testing.T, dir string, patterns ...string) []string {

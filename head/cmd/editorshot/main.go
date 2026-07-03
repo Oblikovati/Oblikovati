@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"os"
 
+	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
 	"oblikovati.org/head/ui"
@@ -45,9 +46,11 @@ type stubCaller struct{}
 func (stubCaller) Call(method string, req []byte) ([]byte, error) { return []byte(`{}`), nil }
 
 // apiMethods is a representative slice of the dotted wire-method names, so the (later)
-// autocomplete popup has a tree to walk in captures.
+// autocomplete popup has a tree to walk in captures. The real methods reference their wire
+// constant rather than a bare literal (#1618); "sketch.circle" has no constant yet (it is an
+// illustrative placeholder for the tree), so it stays a literal.
 func apiMethods() []string {
-	return []string{"documents.create", "documents.activate", "sketch.rectangle", "sketch.circle"}
+	return []string{wire.MethodDocumentsCreate, wire.MethodDocumentsActivate, wire.MethodSketchRectangle, "sketch.circle"}
 }
 
 // brokenSource has a deliberate syntax error (an `if` with no `then`) so the diagnostics capture
