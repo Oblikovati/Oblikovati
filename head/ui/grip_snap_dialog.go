@@ -9,12 +9,25 @@ import (
 	"oblikovati.org/head/internal/native"
 )
 
-// drawGripSnapDialog shows the Grip Snap Move-Options panel while the tool is active: the Constraint
+// gripSnapHost is the slim session surface the Grip Snap panel consumes (audit I5, the
+// arrowSession pattern): the running Grip Snap tool plus the shared commit/cancel
+// controls. *app.Session satisfies it implicitly.
+type gripSnapHost interface {
+	ActiveGripSnap() *app.GripSnapTool
+	commitCancelHost
+}
+
+var _ gripSnapHost = (*app.Session)(nil)
+
+// drawGripSnapDialog is the registry-facing adapter; the panel itself consumes gripSnapHost.
+func drawGripSnapDialog(s *app.Session) { drawGripSnap(s) }
+
+// drawGripSnap shows the Grip Snap Move-Options panel while the tool is active: the Constraint
 // override (Auto/Mate/Flush/Insert/Tangent) that the snap will create, and a HUD line reporting the
 // constraint inferred on the last snap. The two face picks happen in the viewport (see the tool's
 // prompt in the command window).
-func drawGripSnapDialog(s *app.Session) {
-	g := s.ActiveGripSnap()
+func drawGripSnap(h gripSnapHost) {
+	g := h.ActiveGripSnap()
 	if g == nil {
 		return
 	}
@@ -31,7 +44,7 @@ func drawGripSnapDialog(s *app.Session) {
 			}
 		}
 		native.Separator()
-		drawCommitCancelButtons(s, g.CanCommit())
+		drawCommitCancelButtons(h, g.CanCommit())
 	}
 	native.End()
 }
