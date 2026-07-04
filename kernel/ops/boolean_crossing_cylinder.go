@@ -66,17 +66,18 @@ var (
 	curvedPartialIntersect      = gatedCurved(Intersect, brep.PartialPenetrationIntersectGeneral)
 
 	// Cut — drilling the target with the tool (through, blind, or two stubs of tool − target).
-	curvedCylindricalHoleCut = gatedCurved(Cut, withoutRecorder(brep.DrillThroughHole)) // straight cylinder through a planar slab
-	curvedPartialCut         = gatedCurved(Cut, brep.PartialPenetrationCutGeneral)      // blind rod hole
-	curvedSteinmetzCut       = gatedCurved(Cut, brep.SteinmetzCutGeneral)               // equal-R bicylinder bite, general pipeline
-	curvedConeCylinderCut    = gatedCurved(Cut, brep.ConeCylinderCutGeneral)
-	curvedConeConeCut        = gatedCurved(Cut, brep.ConeConeCutGeneral)
-	curvedCrossingCut        = gatedCurved(Cut, brep.CrossingCylinderCutGeneral)
-	curvedCapCrossCut        = gatedCurved(Cut, brep.CapCrossingCutGeneral)     // oblique tool exits one cap, ellipse inside rim (#1724)
-	curvedRimCrossCut        = gatedCurved(Cut, brep.RimCrossingCutGeneral)     // oblique tool exits one cap, ellipse crosses rim (#1724 slice 2)
-	curvedTwoCapCrossCut     = gatedCurved(Cut, brep.TwoCapCrossingCutGeneral)  // steep tool exits BOTH caps, wall intact (#1724)
-	curvedConeCapCrossCut    = gatedCurved(Cut, brep.ConeCapCrossingCutGeneral) // oblique CONE tool exits one cap, ellipse inside rim (#1724)
-	curvedPartialRimCut      = gatedCurved(Cut, brep.PartialRimCutGeneral)      // second cut on an already-notched cylinder side, disjoint from the notch (#1732)
+	curvedCylindricalHoleCut  = gatedCurved(Cut, withoutRecorder(brep.DrillThroughHole)) // straight cylinder through a planar slab
+	curvedPartialCut          = gatedCurved(Cut, brep.PartialPenetrationCutGeneral)      // blind rod hole
+	curvedSteinmetzCut        = gatedCurved(Cut, brep.SteinmetzCutGeneral)               // equal-R bicylinder bite, general pipeline
+	curvedConeCylinderCut     = gatedCurved(Cut, brep.ConeCylinderCutGeneral)
+	curvedConeConeCut         = gatedCurved(Cut, brep.ConeConeCutGeneral)
+	curvedCrossingCut         = gatedCurved(Cut, brep.CrossingCylinderCutGeneral)
+	curvedCapCrossCut         = gatedCurved(Cut, brep.CapCrossingCutGeneral)      // oblique tool exits one cap, ellipse inside rim (#1724)
+	curvedRimCrossCut         = gatedCurved(Cut, brep.RimCrossingCutGeneral)      // oblique tool exits one cap, ellipse crosses rim (#1724 slice 2)
+	curvedTwoCapCrossCut      = gatedCurved(Cut, brep.TwoCapCrossingCutGeneral)   // steep tool exits BOTH caps, wall intact (#1724)
+	curvedConeCapCrossCut     = gatedCurved(Cut, brep.ConeCapCrossingCutGeneral)  // oblique CONE tool exits one cap, ellipse inside rim (#1724)
+	curvedPartialRimCut       = gatedCurved(Cut, brep.PartialRimCutGeneral)       // second cut on an already-notched cylinder side, disjoint from the notch (#1732)
+	curvedPartialRimCornerCut = gatedCurved(Cut, brep.PartialRimCornerCutGeneral) // second cut whose imprint CROSSES the notch — the coupled corner-junction (#1738, ADR-0048)
 
 	// Join — the union, keeping the analytic wall where the operands' faces are coincident or breached.
 	curvedCoaxialJoin      = gatedCurved(Join, withoutRecorder(brep.CoaxialCylinderUnion)) // coaxial equal-radius cylinders
