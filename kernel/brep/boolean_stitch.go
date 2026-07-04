@@ -147,13 +147,13 @@ type builtFace struct {
 	lineage topo.Lineage
 }
 
-// assemble builds the topo body from welded vertices and per-face loop rings. Each directed
-// loop edge (a "use") is resolved to a shared topo edge: the common case is two uses per
-// undirected vertex pair (one shared edge). Where coincident geometry leaves a pair used by
-// MORE than twice — a tangent/grazing contact between the two operands, which would be a
-// non-manifold edge if collapsed onto one edge — the uses are split into manifold pairs by
-// radial order around the edge (resolveEdgeUses), so each resulting edge is used exactly
-// twice. This keeps a tangent union a valid manifold solid (M20-F01).
+// assemble builds the topo body from welded vertices and per-face loop rings. The Weiler
+// radial-edge sew (radialSew) resolves every directed loop edge to a shared topo edge: the common
+// case is two uses per undirected vertex pair (one shared edge). Where coincident geometry leaves a
+// pair used by MORE than twice — a tangent/grazing contact between the two operands — the uses are
+// split into manifold edge-groups by radial order around the edge, and pinched vertices are cut into
+// per-disk coincident duplicates, so a tangent union stays a valid manifold solid (M20-F01, #1726).
+// mintEntities then names and builds the resulting topo edges (ADR-0043 provenance).
 func assemble(verts []math.Point3, faces []builtFace, prov []imprintSeg) (*topo.Body, math.Vector3) {
 	uses := collectEdgeUses(faces)
 	bld := topo.NewBuilder(allUsesPaired(uses), topo.NewLineage(topo.Tok("brep", "body", 0)))
@@ -162,7 +162,7 @@ func assemble(verts []math.Point3, faces []builtFace, prov []imprintSeg) (*topo.
 	for i, p := range verts {
 		tv[i] = bld.AddVertex(p, vlin[i])
 	}
-	useEdge := buildResolvedEdges(bld, verts, tv, uses, faces, prov)
+	useEdge := mintEntities(bld, verts, tv, radialSew(verts, faces, uses), prov)
 	for fi, f := range faces {
 		specs := make([]topo.LoopSpec, len(f.rings))
 		for ri, r := range f.rings {
