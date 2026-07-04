@@ -161,20 +161,21 @@ func resolveEdgeUses(pair [2]int, uses []loopEdgeUse, verts []math.Point3, faces
 	return pairTangentDihedrals(uses)
 }
 
-// pairTangentDihedrals walks the azimuth-sorted uses and pairs each unpaired half-edge with
-// the nearest following (cyclically) one of opposite traversal direction — so each group is a
-// pair of faces meeting at a real dihedral (used once each way), manifold and closed. A
-// cross-operand partner (one operand's face meeting the other's) is preferred over a
-// same-operand one at equal reach: fusing the operands' surfaces into one continuous shell
-// avoids a zero-width crack between two coincident edges that a downstream re-weld would merge.
+// pairTangentDihedrals walks the azimuth-sorted uses and pairs each unpaired half-edge with the
+// nearest following (cyclically) one of opposite traversal direction — the two boundaries of the
+// filled dihedral wedge between them, so each group is a manifold dihedral (used once each way).
+// Where the operands meet coplanar (a flush overlap) the cross-operand partner is FUSED so the
+// continued surface leaves no coincident-edge crack for a re-weld to collapse; where they only kiss
+// along a line (a non-coplanar bowtie tangency) the same-operand real dihedral wins, so the two
+// solids stay two coincident shells rather than a χ-odd pinch (ADR-0047, #1726).
 func pairTangentDihedrals(uses []loopEdgeUse) [][]loopEdgeUse {
 	used := make([]bool, len(uses))
 	groups := make([][]loopEdgeUse, 0, len(uses)/2)
 	for i := range uses {
-		if used[i] {
-			continue
+		if used[i] || !uses[i].reversed {
+			continue // pair FROM each enter boundary; an exit is claimed as some enter's partner
 		}
-		if j := pickPartner(uses, used, i); j >= 0 {
+		if j := nextFilledBoundary(uses, used, i); j >= 0 {
 			groups = append(groups, []loopEdgeUse{uses[i], uses[j]})
 			used[i], used[j] = true, true
 		}
@@ -190,24 +191,19 @@ func pairTangentDihedrals(uses []loopEdgeUse) [][]loopEdgeUse {
 	return groups
 }
 
-// pickPartner returns the index of the half-edge to pair with use i: the nearest following
-// (cyclic) one of opposite traversal direction, preferring a cross-operand partner so the two
-// solids fuse. Returns -1 if none remain (an odd, unpairable count).
-func pickPartner(uses []loopEdgeUse, used []bool, i int) int {
-	fallback := -1
+// nextFilledBoundary returns the nearest following (cyclic) unused half-edge that closes the filled
+// dihedral wedge opened by the ENTER boundary i — the next EXIT (a non-reversed use) in +azimuth
+// order. The two boundaries of one filled wedge become one manifold edge. Returns -1 if none remain
+// (an odd, unpairable over-use the caller rejects as non-solid).
+func nextFilledBoundary(uses []loopEdgeUse, used []bool, i int) int {
 	for d := 1; d < len(uses); d++ {
 		j := (i + d) % len(uses)
-		if used[j] || uses[j].reversed == uses[i].reversed {
+		if used[j] || uses[j].reversed {
 			continue
 		}
-		if uses[j].fromB != uses[i].fromB {
-			return j // cross-operand: fuse the surfaces
-		}
-		if fallback < 0 {
-			fallback = j
-		}
+		return j
 	}
-	return fallback
+	return -1
 }
 
 // edgeAzimuth is the angle, about the edge axis, of a half-edge's face-interior direction —
