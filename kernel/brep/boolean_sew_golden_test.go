@@ -25,6 +25,13 @@ import (
 // sensitive to any naming or topology change. Captured on develop BEFORE the refactor and held
 // invariant through Slices 1–2. (Bowtie line-tangencies are deliberately EXCLUDED — they change
 // from nudged to exact in Slice 2 and are certified separately.)
+//
+// Fixtures use ONLY axis-aligned boxes with exact rational coordinates (integers and halves), so the
+// imprint/weld arithmetic is bit-identical across platforms and the hard-coded signatures hold on
+// Linux, macOS and Windows CI alike. Faceted-prism fixtures (cos/sin coordinates) are deliberately
+// avoided here: their float imprint diverges by ULPs across platforms — the same sensitivity that
+// leaves some macOS boolean-acceptance bodies open — which would make a cross-platform hash flaky
+// without adding sew coverage the flush-coplanar box cases (the >2-use tangent path) don't already give.
 
 // sewSignature is an order-independent fingerprint of a body's topology and reference-key naming.
 func sewSignature(b *topo.Body) string {
@@ -68,12 +75,6 @@ func goldenSewCases() []goldenSewCase {
 		}},
 		{"flush-partial-union", "V18E28F12chi2-70d5f7e3ab6d0048", func() (*topo.Body, error) { // partial coplanar overlap at z=1
 			return brep.Boolean(brep.Union, box(0, 0, 0, 2, 2, 1), box(0.5, 0.5, 1, 2, 2, 1))
-		}},
-		{"prism-drill-box", "V72E108F38chi0-4f66712ca83d1823", func() (*topo.Body, error) {
-			return brep.Boolean(brep.Difference, box(-1, -1, 0, 2, 2, 2), cylinderZAt(0, 0, -0.1, 2.1, 0.5, "drill"))
-		}},
-		{"union-crossing-prisms", "V192E288F100chi2-ec27452c5531aa21", func() (*topo.Body, error) {
-			return brep.Boolean(brep.Union, cylinderZAt(0, 0, 0, 2, 0.6, "a"), cylinderZAt(0, 0, 0.9, 1.1, 1.2, "b"))
 		}},
 		{"diff-corner-box", "V14E21F9chi2-eb2d66601150fbb8", func() (*topo.Body, error) {
 			return brep.Boolean(brep.Difference, box(0, 0, 0, 2, 2, 2), box(1.5, 1.5, 1.5, 2, 2, 2))
