@@ -226,12 +226,18 @@ func (c ruledUV) bandFrameSegments() []uvSeg {
 // segment (seam-split so none spans the azimuth discontinuity) plus the rim+seam frame that closes the
 // parameter rectangle. Degenerate segments (both endpoints welded by the seam split) are dropped.
 func (c ruledUV) assembleBandSegments(imprint []uvSeg) []uvSeg {
+	return append(c.clipImprintToBand(imprint), c.bandFrameSegments()...)
+}
+
+// clipImprintToBand seam-splits every imprint segment so none spans the azimuth discontinuity, clips each to
+// the band's axial range (a tilted cut's ellipse can rise past the rim — sampling that out-of-band part would
+// inject a spurious arc; clipping lands the imprint exactly on the rim where it crosses), and drops segments
+// welded to zero length. Extracted from assembleBandSegments so the already-cut side (cutCylinderUV) reuses
+// the identical imprint clip while supplying its own prior-boundary frame instead of a top rim (#1732).
+func (c ruledUV) clipImprintToBand(imprint []uvSeg) []uvSeg {
 	out := make([]uvSeg, 0, len(imprint)+4)
 	for _, s := range imprint {
 		for _, split := range splitSeamCrossing(s) {
-			// Clip each imprint segment to the band's axial range: a section can leave [vMin,vMax] (a tilted
-			// cut's ellipse rises past the rim), and sampling that out-of-band part would inject a spurious
-			// arc; clipping lands the imprint exactly on the rim where it crosses, the real rim split.
 			for _, clipped := range c.clipSegToVBand(split) {
 				if clipped.a.DistanceTo(clipped.b) > arrTol {
 					out = append(out, clipped)
@@ -239,7 +245,7 @@ func (c ruledUV) assembleBandSegments(imprint []uvSeg) []uvSeg {
 			}
 		}
 	}
-	return append(out, c.bandFrameSegments()...)
+	return out
 }
 
 // clipSegToVBand clips a (u,v) imprint segment to the axial band [vMin,vMax], returning the in-band part or
