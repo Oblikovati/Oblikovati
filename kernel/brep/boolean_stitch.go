@@ -17,13 +17,11 @@ import (
 // Result faces carry their source face's lineage (K1a), so a face surviving the boolean
 // keeps its reference key; edges/vertices still get fresh lineage (edge-key survival is a
 // follow-up, as edges are routinely split by the operation).
-// The second result is a non-zero "away" direction when a tangent/grazing contact was
-// resolved (an edge used by more than two faces): operand B nudged along it separates from the
-// contact, so a re-run yields a non-degenerate, re-weld-safe result. It is the zero vector when
-// the result is already clean.
-func stitch(faces []subFace, prov []imprintSeg) (*topo.Body, math.Vector3, error) {
+// The second result is true when a tangent/grazing contact was resolved (an edge used by more than
+// two faces), so the caller can note whether that contact shipped as a valid manifold.
+func stitch(faces []subFace, prov []imprintSeg) (*topo.Body, bool, error) {
 	if len(faces) == 0 {
-		return nil, math.Vector3{}, nil
+		return nil, false, nil
 	}
 	w := newWelder3(planarStitchGrid)
 	// Pass 1: weld every face's loops to vertex indices (collect the full vertex set).
@@ -45,29 +43,20 @@ func stitch(faces []subFace, prov []imprintSeg) (*topo.Body, math.Vector3, error
 		}
 	}
 	reorientFaces(out, w.points)
-	body, away := assemble(w.points, out, prov)
-	return body, away, nil
+	body, tangent := assemble(w.points, out, prov)
+	return body, tangent, nil
 }
 
-// awayFromContacts sums the unit normals of operand-B faces at each over-used (tangent) edge —
-// each points from B into A at the contact — so its negation is the direction to nudge B to
-// open a clean clearance. The zero vector means no tangent contact was found.
-func awayFromContacts(uses map[[2]int][]loopEdgeUse, faces []builtFace) math.Vector3 {
-	var into math.Vector3
+// hasTangentContact reports whether any vertex pair is used by more than two face half-edges — a
+// tangent/grazing contact between the operands the radial-edge sew resolved into manifold
+// edge-groups. The caller notes whether that contact shipped as a valid manifold.
+func hasTangentContact(uses map[[2]int][]loopEdgeUse) bool {
 	for _, u := range uses {
-		if len(u) <= 2 {
-			continue
-		}
-		for _, h := range u {
-			if h.fromB {
-				into = into.Add(faces[h.face].normal)
-			}
+		if len(u) > 2 {
+			return true
 		}
 	}
-	if into.LengthSquared() < 1e-18 { // tol:numeric — degenerate-direction guard (squared length)
-		return math.Vector3{}
-	}
-	return into.AsUnit().AsVector().Scale(-1)
+	return false
 }
 
 // splitRingTJunctions inserts, into each edge of the ring, any other vertex that lies in
@@ -154,7 +143,7 @@ type builtFace struct {
 // split into manifold edge-groups by radial order around the edge, and pinched vertices are cut into
 // per-disk coincident duplicates, so a tangent union stays a valid manifold solid (M20-F01, #1726).
 // mintEntities then names and builds the resulting topo edges (ADR-0043 provenance).
-func assemble(verts []math.Point3, faces []builtFace, prov []imprintSeg) (*topo.Body, math.Vector3) {
+func assemble(verts []math.Point3, faces []builtFace, prov []imprintSeg) (*topo.Body, bool) {
 	uses := collectEdgeUses(faces)
 	bld := topo.NewBuilder(allUsesPaired(uses), topo.NewLineage(topo.Tok("brep", "body", 0)))
 	tv := make([]*topo.Vertex, len(verts))
@@ -170,7 +159,7 @@ func assemble(verts []math.Point3, faces []builtFace, prov []imprintSeg) (*topo.
 		}
 		bld.AddFace(f.surf, faceLineage(f, fi), specs...)
 	}
-	return bld.Build(), awayFromContacts(uses, faces)
+	return bld.Build(), hasTangentContact(uses)
 }
 
 // faceLineage uses the source face's carried lineage when present (K1a reference-key
@@ -234,9 +223,7 @@ func buildEdges(bld *topo.Builder, verts []math.Point3, tv []*topo.Vertex, edgeU
 // bound their noise absolutely, not proportionally to part size: exact plane–plane arithmetic
 // errs by ~1e-16·|coordinate| (2e-14 even at 2 m), and triangle-soup CSG facets legitimately carry
 // slivers just above 1e-6 that a coarser, size-scaled grid would collapse into degenerate rings —
-// TestNopCapScrewCSG catches exactly that over-merge. See also the arrange2d arrTol calibration
-// note; nudgeEps in boolean.go is calibrated 10× above this grid so a tangency clearance survives
-// the re-weld.
+// TestNopCapScrewCSG catches exactly that over-merge. See also the arrange2d arrTol calibration note.
 const planarStitchGrid = 1e-6 // tol:calibrated — planar stitch weld grid (see arrange2d arrTol)
 
 // welder3 merges 3D points within its weld grid onto a shared index list. The grid is

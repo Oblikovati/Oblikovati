@@ -68,8 +68,8 @@ func TestTangentUnionShipsExactCoordinates(t *testing.T) {
 	if res == nil || !res.IsSolid() {
 		t.Fatal("tangent union did not produce a solid")
 	}
-	if rec.Has(brep.CodeBooleanNudgedGeometry) {
-		t.Errorf("tangent union shipped displaced geometry (nudged) instead of the exact result; recs=%v", rec.Records())
+	if rec.Has(brep.CodeBooleanTangentUnresolved) {
+		t.Errorf("tangent union declined to CSG instead of shipping the exact manifold; recs=%v", rec.Records())
 	}
 	if !rec.Has(brep.CodeBooleanTangentContact) {
 		t.Errorf("tangent union did not record the exact tangent-contact diagnostic; got %v", rec.Records())

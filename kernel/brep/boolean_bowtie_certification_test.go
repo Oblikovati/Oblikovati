@@ -20,15 +20,31 @@ import (
 // valid shell — never the nudge. The volume oracle is analytic (a zero-measure contact carries no
 // volume, so a pure union is exactly additive) — no external kernel needed.
 
-// assertNoNudge fails if the recorder took the displaced-geometry fallback; a certified exact
-// contact must record only the informational tangent-contact note.
-func assertNoNudge(t *testing.T, rec *diag.Recorder, label string) {
+// assertExactContact fails unless the contact resolved to a valid manifold with zero displacement:
+// the recorder must carry the informational tangent-contact note and never the unresolved Defect
+// (which would mean the sew declined to CSG).
+func assertExactContact(t *testing.T, rec *diag.Recorder, label string) {
 	t.Helper()
-	if rec.Has(brep.CodeBooleanNudgedGeometry) {
-		t.Fatalf("%s: shipped displaced (nudged) geometry instead of the exact result; recs=%v", label, rec.Records())
+	if rec.Has(brep.CodeBooleanTangentUnresolved) {
+		t.Fatalf("%s: tangent contact did not resolve to a valid manifold (declined to CSG); recs=%v", label, rec.Records())
 	}
 	if !rec.Has(brep.CodeBooleanTangentContact) {
 		t.Fatalf("%s: did not record the exact tangent-contact diagnostic; got %v", label, rec.Records())
+	}
+}
+
+// assertUniqueEdgeKeys fails if two edges share an ADR-0043 reference key. The radial-edge sew mints
+// coincident duplicate edges at a contact; this pins that they still name distinctly (each borders a
+// distinct face pair), so downstream feature references keyed on brep:edge#N stay unambiguous.
+func assertUniqueEdgeKeys(t *testing.T, res *topo.Body, label string) {
+	t.Helper()
+	seen := map[string]bool{}
+	for _, e := range res.Edges() {
+		k := string(e.ReferenceKey())
+		if seen[k] {
+			t.Fatalf("%s: duplicate edge reference key %x — coincident contact edges collided", label, k)
+		}
+		seen[k] = true
 	}
 }
 
@@ -71,8 +87,9 @@ func TestBowtiePureLineKissShipsTwoShellsExact(t *testing.T) {
 	if got := vol(u); absF(got-2.0) > 1e-12 {
 		t.Errorf("volume = %.15g, want 2.0 exactly (zero-measure contact is additive)", got)
 	}
-	assertNoNudge(t, rec, "pure line-kiss")
+	assertExactContact(t, rec, "pure line-kiss")
 	assertVertsOnOperandCorners(t, u, a, b)
+	assertUniqueEdgeKeys(t, u, "pure line-kiss")
 }
 
 // TestBowtieBridgedCornerStaysManifoldExact certifies a bowtie that is NOT a disconnection: two
@@ -91,7 +108,7 @@ func TestBowtieBridgedCornerStaysManifoldExact(t *testing.T) {
 	if r := ops.Validate(body); !r.Valid {
 		t.Fatalf("bridged-corner union invalid: χ=%d issues=%v", r.EulerCharacteristic, r.Issues)
 	}
-	assertNoNudge(t, rec, "bridged-corner")
+	assertExactContact(t, rec, "bridged-corner")
 }
 
 // TestBowtieBossLugShipsExact is the exact #1726 residual: the faceted-cylinder boss whose
@@ -116,7 +133,7 @@ func TestBowtieBossLugShipsExact(t *testing.T) {
 	if r := ops.Validate(got); !r.Valid {
 		t.Fatalf("boss-lug union invalid: χ=%d issues=%v", r.EulerCharacteristic, r.Issues)
 	}
-	assertNoNudge(t, rec, "boss-lug")
+	assertExactContact(t, rec, "boss-lug")
 
 	inter, err := brep.Boolean(brep.Intersection, body, lug)
 	if err != nil {
@@ -127,6 +144,7 @@ func TestBowtieBossLugShipsExact(t *testing.T) {
 		t.Errorf("boss-lug volume = %.12g, inclusion-exclusion = %.12g, diff %.2e (material created/lost)",
 			vol(got), want, diff)
 	}
+	assertUniqueEdgeKeys(t, got, "boss-lug")
 }
 
 func absF(x float64) float64 {
