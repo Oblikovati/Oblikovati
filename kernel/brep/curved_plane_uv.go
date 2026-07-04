@@ -208,6 +208,27 @@ func sortedEdgeCrossings(crossings []planeCrossing, loop, edge int) []planeCross
 	return on
 }
 
+// capMaterial builds the material predicate for the exposed overhang UNDERSIDE of a boss straddling the seat
+// edge: keep a cell inside the tool (the boss footprint) AND outside the seat polygon — the mirror of
+// planeMaterial, run on the SAME base-plane arrangement so the two share the imprint arc exactly (#1591).
+func capMaterial(c *planeUV) func() materialPredicate {
+	return func() materialPredicate {
+		return func(uv math.Point2) bool {
+			return c.inTool(to3D(c.plane, uv)) && !pointInUVLoops(uv, c.seatUV)
+		}
+	}
+}
+
+// planeCrossingsOf returns the exact seat-boundary crossings of one imprint conic (the assembler shares them
+// with the wall base split and the T-junction resolution so every face meets on the same points).
+func (c *planeUV) planeCrossingsOf(cv geom.Curve3) []planeCrossing {
+	pc, ok := toPlaneConic(cv, c.plane)
+	if !ok {
+		return nil
+	}
+	return c.conicCrossings(cv, pc)
+}
+
 // pointInUVLoops reports whether q is inside a face given as (u,v) loops (outer first, then holes): inside the
 // outer loop and outside every hole — the even-odd containment the planar boolean uses (pointInPolygon2D).
 func pointInUVLoops(q math.Point2, loops [][]math.Point2) bool {
