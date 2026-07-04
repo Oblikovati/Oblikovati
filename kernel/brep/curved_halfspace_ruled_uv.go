@@ -79,6 +79,10 @@ func (c *ruledUV) placeSeams(imprint []geom.Curve3) { c.seamU = c.chooseSeamU(im
 // vPeriodic reports that a ruled side's v (axial distance) does NOT wrap — only u does (uvSide).
 func (c ruledUV) vPeriodic() bool { return false }
 
+// uPeriodic reports that a ruled side's u (azimuth) DOES wrap (u=0≡2π), so the boundary welder folds the
+// seam (uvSide). cutCylinderUV inherits this through embedding (#1591).
+func (c ruledUV) uPeriodic() bool { return true }
+
 // multiFace reports whether the kept region may be disconnected (uvSide): only the general curved∩curved
 // cut (solidMode) can leave several faces (the two lens caps a rod punches in a fat cone); a plane half-space
 // always leaves one connected region (#1403).

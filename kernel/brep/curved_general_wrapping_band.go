@@ -34,7 +34,7 @@ func (c ruledUV) wrappingSolidFaces(kept []Face2D, segs []uvSeg, surface geom.Su
 		return nil, false
 	}
 	var faces []curvedFace
-	for _, comp := range keptComponents(kept, c.vPeriodic()) {
+	for _, comp := range keptComponents(kept, c.uPeriodic(), c.vPeriodic()) {
 		face, ok := c.bandFace(comp, segs, surface, f)
 		if !ok {
 			return nil, false
@@ -48,7 +48,7 @@ func (c ruledUV) wrappingSolidFaces(kept []Face2D, segs []uvSeg, surface geom.Su
 // band's two full-wrap ends and its contractible holes, then assembled as a keyhole (holed tube) or a
 // two-closed-loop band (a clean stub) — the two shapes the curved mesher renders correctly (#1476).
 func (c ruledUV) bandFace(comp []Face2D, segs []uvSeg, surface geom.Surface, f curvedFace) (curvedFace, bool) {
-	loops := dropArtificialLoops(&c, chainLoops(keptBoundaryEdges(comp, c.vPeriodic())), segs)
+	loops := dropArtificialLoops(&c, chainLoops(keptBoundaryEdges(comp, c.uPeriodic(), c.vPeriodic())), segs)
 	emitted, ok := emitKeptLoops(&c, loops, segs)
 	if !ok {
 		return curvedFace{}, false
@@ -152,8 +152,8 @@ func (c ruledUV) loopWrapsU(e emittedLoop) bool {
 // two disjoint stubs a rod leaves either side of the fat become separate faces (#1476). Two cells are in the
 // same band iff they share an edge; the seam fold makes cells on either side of the azimuth seam adjacent, so
 // a band wrapping the seam stays one component.
-func keptComponents(kept []Face2D, vPeriodic bool) [][]Face2D {
-	w := newSeamWelder(vPeriodic)
+func keptComponents(kept []Face2D, uPeriodic, vPeriodic bool) [][]Face2D {
+	w := newSeamWelder(uPeriodic, vPeriodic)
 	uf := newBandUF(len(kept))
 	edgeCell := map[[2]int]int{}
 	for ci, cell := range kept {

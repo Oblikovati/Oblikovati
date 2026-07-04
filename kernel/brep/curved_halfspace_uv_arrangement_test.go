@@ -223,7 +223,7 @@ func TestKeptBoundaryWrappingBandTwoLoops(t *testing.T) {
 	c := cylinderRuledUV(3, -5, 5)
 	c.s = 1 // g(u,v)=v -> keep v<0
 	cells := arrangeBand(c.assembleBandSegments(c.horizontalCutImprint(t, 0)))
-	loops := chainLoops(keptBoundaryEdges(keptCells(cells, c.halfSpaceMaterial()), false))
+	loops := chainLoops(keptBoundaryEdges(keptCells(cells, c.halfSpaceMaterial()), true, false))
 	if len(loops) != 2 {
 		t.Fatalf("wrapping band: %d boundary loops, want 2 (rim + section)", len(loops))
 	}
@@ -257,7 +257,7 @@ func TestKeptBoundaryTongueSingleLoop(t *testing.T) {
 	if len(kept) != 1 {
 		t.Fatalf("tongue: %d kept cells, want 1", len(kept))
 	}
-	if loops := chainLoops(keptBoundaryEdges(kept, false)); len(loops) != 1 {
+	if loops := chainLoops(keptBoundaryEdges(kept, true, false)); len(loops) != 1 {
 		t.Fatalf("tongue: %d boundary loops, want 1", len(loops))
 	}
 }
@@ -406,7 +406,7 @@ func TestEmitLoopEdgesStructurallyValid(t *testing.T) {
 	c := cylinderRuledUV(3, -5, 5)
 	c.s = 1 // g(u,v)=v -> keep v<0
 	segs := c.assembleBandSegments(c.horizontalCutImprint(t, 0))
-	loops := chainLoops(keptBoundaryEdges(keptCells(arrangeBand(segs), c.halfSpaceMaterial()), false))
+	loops := chainLoops(keptBoundaryEdges(keptCells(arrangeBand(segs), c.halfSpaceMaterial()), true, false))
 	if len(loops) != 2 {
 		t.Fatalf("want 2 boundary loops, got %d", len(loops))
 	}

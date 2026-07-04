@@ -33,6 +33,10 @@ type uvSide interface {
 	// vPeriodic reports whether v wraps (a torus): the boundary welder then folds the v-seam too, and an
 	// all-seam (artificial-frame) boundary loop is dropped — a closed surface has no real boundary there.
 	vPeriodic() bool
+	// uPeriodic reports whether u wraps (every ruled/torus side: u is an azimuth, u=0≡2π). A bounded plane
+	// (planeUV) is NOT periodic in u — u is a real world distance — so the boundary welder must NOT fold u≈2π
+	// onto u=0, which would weld a genuine face vertex to the origin ruling (#1591).
+	uPeriodic() bool
 	// emitRun re-emits one run of recovered boundary edges (all on one analytic curve) as a single loopEdge.
 	emitRun(run []recoveredEdge) (loopEdge, bool)
 	// wrapsAllU reports whether the kept region is non-empty at every azimuth (gates the rim-orientation flip).
@@ -76,7 +80,7 @@ func trimByImprint(c uvSide, f curvedFace, surface geom.Surface, imprint []geom.
 	if faces, ok := c.wrappingSolidFaces(kept, segs, surface, f); ok {
 		return faces, nil, nil
 	}
-	loops := dropArtificialLoops(c, chainLoops(keptBoundaryEdges(kept, c.vPeriodic())), segs)
+	loops := dropArtificialLoops(c, chainLoops(keptBoundaryEdges(kept, c.uPeriodic(), c.vPeriodic())), segs)
 	var faces []curvedFace
 	var lid []loopEdge
 	// A curved∩curved cut can leave the kept region DISCONNECTED (the two lens caps a rod punches in a fat

@@ -59,6 +59,9 @@ func (c *torusUV) placeSeams(imprint []geom.Curve3) {
 // are dropped (uvSide).
 func (c torusUV) vPeriodic() bool { return true }
 
+// uPeriodic reports that a torus's azimuth u wraps (u=0≡2π), so the welder folds the u-seam (uvSide, #1591).
+func (c torusUV) uPeriodic() bool { return true }
+
 // wrapsAllU is unused by the torus orientation (it classifies loops by winding, not a wrap flag), so it
 // reports false (uvSide).
 func (c torusUV) wrapsAllU() bool { return false }
