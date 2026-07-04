@@ -27,10 +27,27 @@ import (
 // welds. ok=false unless the face is a developable side carrying both a full-circle rim and an open
 // (notched) rim edge — so a plain two-circle band (which already bypasses toUVLoops) is untouched.
 func notchedRimBandMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
-	if !isDevelopableSide(s) || !hasFullCircleAndNotchedRim(f) {
-		return nil, false
+	if !isDevelopableSide(s) || faceHasLensHole(f, s, q) || !hasFullCircleAndNotchedRim(f) {
+		return nil, false // a band carrying a genuine (non-wrapping) lens hole is twoRimHoledBandMesh's job:
+		// the saddle loft pools ALL open edges into one rim, so it would fold the lens into the base rim (#1591).
 	}
 	return saddleBandLoftMesh(f, s, q)
+}
+
+// faceHasLensHole reports whether the face carries a genuine LENS hole — an interior loop that does NOT wrap
+// the full period. A non-outer loop that DOES wrap (a second full-wrap rim faceHoleBoundaries mis-demoted to a
+// "hole") is still a valid two-rim-band rim the saddle loft meshes, so it must NOT disqualify the face; only a
+// true lens (a drilled tunnel's entry, spanning a small arc) does, since the pure two-rim loft can't carry it.
+func faceHasLensHole(f *topo.Face, s geom.Surface, q Quality) bool {
+	for _, l := range f.Loops() {
+		if l.IsOuter() {
+			continue
+		}
+		if !holeWrapsPeriod(s, loopBoundary(l, q)) {
+			return true
+		}
+	}
+	return false
 }
 
 // twoClosedRimBandMesh meshes a developable side (cylinder/cone) bounded by exactly TWO closed full-wrap
@@ -73,25 +90,27 @@ func hasTwoClosedRimsNoOpen(f *topo.Face) bool {
 	return closed == 2
 }
 
-// hasFullCircleAndNotchedRim reports whether the face has BOTH a full-period closed-circle rim edge and
-// at least one open (non-closed) rim edge — the notched-band signature. Seam edges (used twice within
-// the face) are excluded, as they bridge the rims and belong to neither.
+// hasFullCircleAndNotchedRim reports whether the face has BOTH a full-period closed rim edge and at least
+// one open (non-closed) rim edge — the notched-band signature. Seam edges (used twice within the face) are
+// excluded, as they bridge the rims and belong to neither. Closure (start==end vertex), not curve type,
+// identifies the full-wrap rim — consistent with hasTwoClosedRimsNoOpen: on a developable side a closed rim
+// necessarily wraps the whole period. The old geom.Circle-only gate mis-declined #1591's split-base boss
+// wall, whose top rim is stored as a full-turn geom.Arc3d (anchored at the seam angle), not a geom.Circle,
+// so the wall fell through to a full-periodic grid that ignores the shared arc discretization → a crack.
 func hasFullCircleAndNotchedRim(f *topo.Face) bool {
 	seam := seamEdgesOf(f)
-	fullCircle, notched := false, false
+	closedRim, notched := false, false
 	for _, e := range f.Edges() {
 		if seam[e] {
 			continue
 		}
 		if e.StartVertex() == e.EndVertex() {
-			if _, isCircle := e.Geometry().(geom.Circle); isCircle {
-				fullCircle = true
-			}
+			closedRim = true
 		} else {
 			notched = true
 		}
 	}
-	return fullCircle && notched
+	return closedRim && notched
 }
 
 // saddleBandLoftMesh meshes a singly-periodic ruled band (a trimmed cylinder/cone side) bounded by two
