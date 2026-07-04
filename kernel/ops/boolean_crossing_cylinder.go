@@ -76,6 +76,7 @@ var (
 	curvedRimCrossCut        = gatedCurved(Cut, brep.RimCrossingCutGeneral)     // oblique tool exits one cap, ellipse crosses rim (#1724 slice 2)
 	curvedTwoCapCrossCut     = gatedCurved(Cut, brep.TwoCapCrossingCutGeneral)  // steep tool exits BOTH caps, wall intact (#1724)
 	curvedConeCapCrossCut    = gatedCurved(Cut, brep.ConeCapCrossingCutGeneral) // oblique CONE tool exits one cap, ellipse inside rim (#1724)
+	curvedPartialRimCut      = gatedCurved(Cut, brep.PartialRimCutGeneral)      // second cut on an already-notched cylinder side, disjoint from the notch (#1732)
 
 	// Join — the union, keeping the analytic wall where the operands' faces are coincident or breached.
 	curvedCoaxialJoin      = gatedCurved(Join, withoutRecorder(brep.CoaxialCylinderUnion)) // coaxial equal-radius cylinders
