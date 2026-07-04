@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/diag"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -45,6 +46,34 @@ func assertUniqueEdgeKeys(t *testing.T, res *topo.Body, label string) {
 			t.Fatalf("%s: duplicate edge reference key %x — coincident contact edges collided", label, k)
 		}
 		seen[k] = true
+	}
+}
+
+// assertVertsSatisfyOperandSurfaces fails unless every result vertex lies on at least one operand
+// face's plane to a tight tolerance — the #1726 acceptance guarantee that output coordinates satisfy
+// the operand surface equations exactly (the nudge displaced operand B by 0.1 µm; 1e-9 cm catches
+// that decisively while tolerating only float noise). Proves the sew moved nothing.
+func assertVertsSatisfyOperandSurfaces(t *testing.T, res *topo.Body, tol float64, operands ...*topo.Body) {
+	t.Helper()
+	var planes []geom.Plane
+	for _, o := range operands {
+		for _, f := range o.Faces() {
+			if pl, ok := f.Geometry().(geom.Plane); ok {
+				planes = append(planes, pl)
+			}
+		}
+	}
+	for _, v := range res.Vertices() {
+		p := v.Point()
+		best := 1e300
+		for _, pl := range planes {
+			if d := absF(float64(pl.Origin.VectorTo(p).Dot(pl.Normal()))); d < best {
+				best = d
+			}
+		}
+		if best > tol {
+			t.Fatalf("result vertex %v lies %.2e off every operand face plane (> %.0e) — displaced geometry", p, best, tol)
+		}
 	}
 }
 
@@ -145,6 +174,7 @@ func TestBowtieBossLugShipsExact(t *testing.T) {
 			vol(got), want, diff)
 	}
 	assertUniqueEdgeKeys(t, got, "boss-lug")
+	assertVertsSatisfyOperandSurfaces(t, got, 1e-9, body, lug)
 }
 
 func absF(x float64) float64 {
