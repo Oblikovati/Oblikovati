@@ -142,13 +142,10 @@ func sortedPairKeys(uses map[[2]int][]loopEdgeUse) [][2]int {
 }
 
 // resolveEdgeUses partitions a vertex pair's uses into manifold groups of two. The common case
-// (two uses) is one shared edge. A pair used more is a tangent/grazing contact where the two
-// operands' surfaces touch along this edge: collapsing all uses onto one edge would make it
-// non-manifold (>2 faces). The half-edges are sorted by the azimuth of their face-interior
-// direction about the edge axis, then paired (pairTangentDihedrals) so each group is one
-// manifold dihedral — and, where it can, FUSING the operands (an A face with a B face) so the
-// joined surface is continuous and leaves no coincident-edge crack for a later re-weld (a
-// fillet/shell) to collapse back to non-manifold.
+// (two uses) is one shared edge. A pair used more is a tangent/grazing contact where surfaces touch
+// along this edge: collapsing all uses onto one edge would make it non-manifold (>2 faces). The
+// half-edges are sorted by the azimuth of their face-interior direction about the edge axis, then
+// paired by filled wedge (pairTangentDihedrals) so each group is one manifold dihedral.
 func resolveEdgeUses(pair [2]int, uses []loopEdgeUse, verts []math.Point3, faces []builtFace) [][]loopEdgeUse {
 	if len(uses) <= 2 {
 		return [][]loopEdgeUse{uses}
@@ -161,13 +158,14 @@ func resolveEdgeUses(pair [2]int, uses []loopEdgeUse, verts []math.Point3, faces
 	return pairTangentDihedrals(uses)
 }
 
-// pairTangentDihedrals walks the azimuth-sorted uses and pairs each unpaired half-edge with the
-// nearest following (cyclically) one of opposite traversal direction — the two boundaries of the
-// filled dihedral wedge between them, so each group is a manifold dihedral (used once each way).
-// Where the operands meet coplanar (a flush overlap) the cross-operand partner is FUSED so the
-// continued surface leaves no coincident-edge crack for a re-weld to collapse; where they only kiss
-// along a line (a non-coplanar bowtie tangency) the same-operand real dihedral wins, so the two
-// solids stay two coincident shells rather than a χ-odd pinch (ADR-0047, #1726).
+// pairTangentDihedrals pairs the azimuth-sorted uses by filled dihedral wedge. The loop orientation
+// already encodes the material side: a REVERSED use is the ENTER boundary of a filled wedge (the
+// wedge lies on its +azimuth side) and a non-reversed use is an EXIT. Walking from each enter
+// boundary to the next exit pairs the two boundaries of one filled wedge into a manifold dihedral —
+// operand-agnostic. Both outcomes fall out of this single rule: a coplanar flush overlap fuses the
+// two operands' continued surfaces (leaving no coincident-edge crack a re-weld would collapse),
+// while a non-coplanar bowtie kiss pairs each operand's own dihedral, so the solids stay two
+// coincident shells rather than a χ-odd pinch (ADR-0047, #1726).
 func pairTangentDihedrals(uses []loopEdgeUse) [][]loopEdgeUse {
 	used := make([]bool, len(uses))
 	groups := make([][]loopEdgeUse, 0, len(uses)/2)
