@@ -35,6 +35,10 @@ type ruledOperand struct {
 	// (isB marks this operand as the boolean's B). It builds the same ruledUV the split and the cap-clearance
 	// check consume, so the cone/cylinder distinction lives only here.
 	newUV func(op Op, isB bool, other func(math.Point3) bool) ruledUV
+	// splitCut, when non-nil, overrides split for an ALREADY-CUT side (the partial-rim second cut, #1732): it
+	// builds a cutCylinderUV that composes the surviving prior boundary as constraint edges and runs the
+	// disjoint gate, declining any config outside the disjoint sub-family. nil for a bare side.
+	splitCut func(imprint []geom.Curve3, op Op, isB bool, other func(math.Point3) bool) ([]curvedFace, bool)
 }
 
 // cylinderOperand resolves a bare cylinder body into a ruledOperand, or ok=false when it has no cylinder side
@@ -78,6 +82,9 @@ func ruledOperandOf(b *topo.Body) (ruledOperand, bool) {
 // returns the kept curved faces (ok=false when the split fails or keeps nothing). The cone/cylinder UV frame
 // is built by newUV; the predicate binds the seam-shifted receiver via ruledSolidMaterial (#1403).
 func (o ruledOperand) split(imprint []geom.Curve3, op Op, isB bool, other func(math.Point3) bool) ([]curvedFace, bool) {
+	if o.splitCut != nil {
+		return o.splitCut(imprint, op, isB, other)
+	}
 	c := o.newUV(op, isB, other)
 	return keptOrNone(trimByImprint(&c, o.face, o.surface, imprint, ruledSolidMaterial(&c)))
 }
