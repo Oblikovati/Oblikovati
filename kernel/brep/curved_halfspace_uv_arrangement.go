@@ -696,7 +696,10 @@ func recoverEdge(d dedge, segs []uvSeg) (recoveredEdge, bool) {
 	}
 	s := segs[best]
 	re := recoveredEdge{kind: s.kind, curve: s.curve, a: d.a, b: d.b}
-	if s.kind == segImprint {
+	// An imprint arc AND a non-periodic face-polygon edge (planeUV, #1591) both re-emit through emitImprintRun,
+	// which needs the curve parameters at the dedge endpoints; a rim recomputes its own span in emitRimRun, so
+	// it is left out. Interpolate the parameter from the matched segment's tagged endpoints.
+	if s.kind == segImprint || s.kind == segPolygon {
 		re.tA = math.Lerp(s.tA, s.tB, projFraction(d.a, s.a, s.b))
 		re.tB = math.Lerp(s.tA, s.tB, projFraction(d.b, s.a, s.b))
 	}
