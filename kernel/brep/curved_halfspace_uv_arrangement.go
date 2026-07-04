@@ -43,14 +43,19 @@ func (c ruledUV) paramOf(p math.Point3) math.Point2 {
 }
 
 // segKind tags what a (u,v) segment re-emits to when it bounds a kept cell: an imprint sub-arc (the cut),
-// a band rim (constant v, a circle arc), or the azimuth SEAM ruling (u=0≡2π — an ARTIFICIAL edge that
-// closes the parameter rectangle for the arrangement and dissolves wherever the kept region wraps it).
+// a band rim (constant v, a circle arc), the azimuth SEAM ruling (u=0≡2π — an ARTIFICIAL edge that
+// closes the parameter rectangle for the arrangement and dissolves wherever the kept region wraps it), or a
+// non-periodic face-POLYGON boundary edge (a bounded plane's real analytic frame — see planeUV, #1591).
 type segKind int
 
 const (
 	segImprint segKind = iota
 	segRim
 	segSeam
+	// segPolygon frames a non-periodic planar face by its boundary edges instead of rim circles + a seam.
+	// Unlike segRim (constant v ⇒ equal-v means same run) each polygon edge is a distinct analytic curve, so
+	// sameRun compares curve identity like segImprint — two polygon edges at the same v must NOT merge (#1591).
+	segPolygon
 )
 
 // uvSeg is one sampled segment of an imprint curve in the side's (u,v) band, tagged with the analytic
@@ -503,18 +508,21 @@ const seamWeldGrid = 1e-7
 type seamWelder struct {
 	index     map[[2]int64]int
 	points    []math.Point2
+	uPeriodic bool
 	vPeriodic bool
 }
 
-func newSeamWelder(vPeriodic bool) *seamWelder {
-	return &seamWelder{index: map[[2]int64]int{}, vPeriodic: vPeriodic}
+func newSeamWelder(uPeriodic, vPeriodic bool) *seamWelder {
+	return &seamWelder{index: map[[2]int64]int{}, uPeriodic: uPeriodic, vPeriodic: vPeriodic}
 }
 
 // add returns the welded index of p, normalising u=2π to u=0 (and, on a v-periodic surface, v=2π to v=0)
-// first so a seam vertex on either side of the parameter rectangle maps to one ruling/tube vertex.
+// first so a seam vertex on either side of the parameter rectangle maps to one ruling/tube vertex. On a
+// NON-periodic side (a bounded plane, planeUV) u is a real world distance, not an azimuth: folding u≈2π
+// would silently weld a genuine face vertex onto u=0, so the u-fold is gated on uPeriodic (#1591).
 func (w *seamWelder) add(p math.Point2) int {
 	u, v := float64(p.X), float64(p.Y)
-	if stdmath.Abs(u-2*stdmath.Pi) < seamWeldGrid {
+	if w.uPeriodic && stdmath.Abs(u-2*stdmath.Pi) < seamWeldGrid {
 		u = 0
 	}
 	if w.vPeriodic && stdmath.Abs(v-2*stdmath.Pi) < seamWeldGrid {
@@ -543,8 +551,8 @@ type dedge struct {
 // wrapping region traverses on both sides) appears as a reverse-twin pair and cancels, leaving exactly the
 // edges between kept material and dropped material (or the band rims). This is the cross-seam merge and the
 // shared-edge dissolve in one pass (#1405).
-func keptBoundaryEdges(kept []Face2D, vPeriodic bool) []dedge {
-	w := newSeamWelder(vPeriodic)
+func keptBoundaryEdges(kept []Face2D, uPeriodic, vPeriodic bool) []dedge {
+	w := newSeamWelder(uPeriodic, vPeriodic)
 	var all []dedge
 	add := func(poly []math.Point2) {
 		for i, n := 0, len(poly); i < n; i++ {
@@ -1076,7 +1084,9 @@ func sameRun(a, b recoveredEdge) bool {
 		return false
 	}
 	switch a.kind {
-	case segImprint:
+	case segImprint, segPolygon:
+		// A polygon edge, like an imprint arc, is a distinct analytic curve; equal v does NOT imply same run
+		// (that is only true for a constant-v rim), so identity is the run test (#1591).
 		return a.curve == b.curve
 	case segRim:
 		return stdmath.Abs(float64(a.a.Y)-float64(b.a.Y)) < 1e-6

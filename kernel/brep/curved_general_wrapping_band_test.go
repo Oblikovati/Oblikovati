@@ -15,7 +15,7 @@ func TestKeptComponentsSplitsDisjointBands(t *testing.T) {
 		return Face2D{Outer: []math.Point2{math.P2(x, 0), math.P2(x+1, 0), math.P2(x+1, 1), math.P2(x, 1)}}
 	}
 	left, mid, far := cellAt(0), cellAt(1), cellAt(10) // left & mid share the edge x=1; far is disjoint
-	comps := keptComponents([]Face2D{left, mid, far}, false)
+	comps := keptComponents([]Face2D{left, mid, far}, true, false)
 	if len(comps) != 2 {
 		t.Fatalf("keptComponents = %d bands, want 2 (left+mid joined, far separate)", len(comps))
 	}
