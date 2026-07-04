@@ -14,11 +14,11 @@ import (
 // overlap) — e.g. a faceted boss whose rim grazes a flat mounting-lug wall, which is exactly
 // what the 28BYJ-48 geared stepper's data-sheet dimensions produce (boss radius == offset −
 // lug_w/2) — the naive weld leaves an edge bordered by FOUR faces (two from each operand), a
-// non-manifold pinch. The boolean detects the tangent and re-runs with operand B nudged a hair
-// out of the contact (retryNudged), turning the degenerate touch into a ~0.1 µm clearance — so
-// the result is a valid solid AND, crucially, carries no coincident edge that a downstream
-// re-weld would collapse: each case must still be a valid solid after a top-rim fillet.
-// Clearance and overlap (the non-degenerate neighbours) must stay clean too.
+// non-manifold pinch. The Weiler radial-edge sew resolves it EXACTLY (no displacement): the
+// coincident dihedrals are paired by filled wedge and the shared contact vertices are cut into
+// per-shell coincident duplicates, so the result is a valid solid AND carries the distinct edge
+// identities a downstream re-weld needs — each case must still be a valid solid after a top-rim
+// fillet. Clearance and overlap (the non-degenerate neighbours) must stay clean too (ADR-0047).
 func TestTangentContactUnionStaysManifold(t *testing.T) {
 	for _, tc := range []struct {
 		name    string
