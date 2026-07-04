@@ -1,10 +1,11 @@
 # ADR-0048 — Corner-junction analytic via a coupled (u,v) overlay
 
-**Status:** Proposed (2026-07-04). · **Follow-on EPIC** from the closed
-[Oblikovati#1724](https://github.com/Oblikovati/Oblikovati/issues/1724) /
+**Status:** Accepted (2026-07-04) — built and OCCT-certified under
+[Oblikovati#1738](https://github.com/Oblikovati/Oblikovati/issues/1738). · **Follow-on EPIC** from the
+closed [Oblikovati#1724](https://github.com/Oblikovati/Oblikovati/issues/1724) /
 [Oblikovati#1732](https://github.com/Oblikovati/Oblikovati/issues/1732), whose acceptance
 deliberately scoped the corner-junction to an **observable CSG decline**; this ADR records the
-design for the analytic result and is tracked by a new EPIC (TBD). · **Builds on**
+design for the analytic result, delivered by [Oblikovati#1738](https://github.com/Oblikovati/Oblikovati/issues/1738). · **Builds on**
 [ADR-0045](ADR-0045-curved-boolean-kind-taxonomy.md) (the T/P/D KIND taxonomy),
 [ADR-0046](ADR-0046-curved-boolean-cap-crossing.md) (the cap-crossing arrangement + the
 OCCT-certification protocol it defines), [ADR-0043](ADR-0043-generalized-provenance-naming.md)
@@ -152,6 +153,18 @@ quotienting the radius out of the compared quantity.
      ADR-0046 protocol) via a two-cut oracle, and every still-declining config (tangency, imprint
      through a prior corner vertex, removed bottom circle) keeps its observable decline with a
      regression fixture.
+- **Delivered (#1738).** All five DoD items met. `kernel/brep/curved_corner_junction.go` +
+  `curved_corner_junction_build.go` implement the seam; wired into the `Cut` cascade as
+  `curvedPartialRimCornerCut`, engaged only where the disjoint gate declines (golden byte-identical,
+  all ten fixtures). **One implementation correction the build confirmed:** the "planar implicit
+  quadratic" of the pre-split section is *shorthand* — the imprint chord is skew to the ellipse plane, so
+  there is no genuine planar quadratic. The crossing is the exact **triple point** where target cylinder ∩
+  tool surface ∩ notch plane meet, found as a cancellation-free 1-D root of the tool's implicit along the
+  prior conic (Method C makes **both** arms exact, not only the prior). Likewise the metric-normalized
+  angle needs **no** explicit `R` weighting in code: a cylinder is developable, so the 3D tangent-plane
+  angle already *is* the angle in `I = diag(R², 1)` — verified scale-invariant across `R = 1` vs
+  `R = 1000`. Certified vs `occ.cut(occ.cut(cyl, notch), rod)`: 5 faces, volume 239.93 (rel < 0.6%),
+  area (rel < 0.4%), centroid (< 0.05), plus a 60³ membership audit vs `((target ∖ notch) ∖ rod)`.
 
 ## Rejected alternatives
 
