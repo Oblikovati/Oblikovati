@@ -26,12 +26,17 @@ import (
 // invariant through Slices 1–2. (Bowtie line-tangencies are deliberately EXCLUDED — they change
 // from nudged to exact in Slice 2 and are certified separately.)
 //
+// Scope: this golden guards the COMMON-path sew and its ADR-0043 naming through the extraction
+// refactor (the vertex-disk partition, edge-group minting, parent-pair/rank keys) — the machinery
+// every boolean runs. The >2-use TANGENT/filled-wedge path is guarded behaviorally, and to exact
+// values, by boolean_bowtie_certification_test.go, not here (a hard-coded hash over a tangent result
+// would ride on the azimuth sort's atan2, an avoidable cross-platform liability).
+//
 // Fixtures use ONLY axis-aligned boxes with exact rational coordinates (integers and halves), so the
 // imprint/weld arithmetic is bit-identical across platforms and the hard-coded signatures hold on
 // Linux, macOS and Windows CI alike. Faceted-prism fixtures (cos/sin coordinates) are deliberately
-// avoided here: their float imprint diverges by ULPs across platforms — the same sensitivity that
-// leaves some macOS boolean-acceptance bodies open — which would make a cross-platform hash flaky
-// without adding sew coverage the flush-coplanar box cases (the >2-use tangent path) don't already give.
+// avoided: their float imprint diverges by ULPs across platforms — the same sensitivity that leaves
+// some macOS boolean-acceptance bodies open — which would make a cross-platform hash flaky.
 
 // sewSignature is an order-independent fingerprint of a body's topology and reference-key naming.
 func sewSignature(b *topo.Body) string {
