@@ -3,6 +3,8 @@
 package brep
 
 import (
+	"sort"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
@@ -18,6 +20,16 @@ type planeUV struct {
 	seatUV [][]math.Point2        // seat face boundary in (u,v), outer loop first (even-odd containment)
 	seat3D [][]math.Point3        // the same loops in 3D, so each polygon edge re-emits as its exact segment
 	inTool func(math.Point3) bool // reports whether a 3D point is inside the tool solid (removed for a drill)
+	res    geom.Resolution        // model-relative tolerance for the exact conic∩edge crossings
+}
+
+// planeCrossing is one exact conic∩polygon-edge crossing: the shared point at = conic.PointAt(tConic), used
+// as a vertex by BOTH the conic sample and the split polygon edge so the seat/cap/wall arcs weld exactly.
+type planeCrossing struct {
+	loop, edge int
+	sEdge      float64     // edge parameter, to order splits along one edge
+	tConic     float64     // conic parameter (the weld currency)
+	at         math.Point3 // the shared crossing point = conic.PointAt(tConic)
 }
 
 // planeUV satisfies uvSide: a non-periodic, polygon-framed plane (#1591).
@@ -71,42 +83,90 @@ func (c *planeUV) orientLoops(loops []emittedLoop, _ bool) ([]curvedLoop, []loop
 	return faceLoops, lid, false
 }
 
-// assembleSegments samples the imprint conic(s) into the tagged (u,v) segment set and appends the face
-// polygon as the non-periodic frame (uvSide). The arrangement subdivides both, splitting each at their exact
-// crossings; keptCells then classifies cells by the material predicate.
+// assembleSegments samples the imprint conic(s) and the face-polygon frame into the tagged (u,v) segment
+// set (uvSide), INJECTING the exact conic∩edge crossings as shared vertices of both. Without the injection
+// the arrangement would place the crossing on the sampled chord — off the true conic by the sagitta — so the
+// re-emitted arc would miss the polygon edge and the tool wall's split base, leaving a free edge (#1591).
 func (c *planeUV) assembleSegments(imprint []geom.Curve3) []uvSeg {
+	var crossings []planeCrossing
 	out := make([]uvSeg, 0, len(imprint)*imprintSampleCount+len(c.seat3D)*4)
 	for _, cv := range imprint {
-		out = append(out, c.sampleConicUV(cv)...)
+		pc, ok := toPlaneConic(cv, c.plane)
+		if !ok {
+			continue
+		}
+		cr := c.conicCrossings(cv, pc)
+		crossings = append(crossings, cr...)
+		out = append(out, c.sampleConicUV(cv, cr)...)
 	}
-	return append(out, c.frameSegments()...)
+	return append(out, c.frameSegments(crossings)...)
+}
+
+// conicCrossings returns every exact crossing of one conic with the seat polygon: the closed-form conic
+// parameter and the shared 3D point conic.PointAt(t), which both the conic sample and the split polygon edge
+// terminate on so they weld byte-identically.
+func (c *planeUV) conicCrossings(cv geom.Curve3, pc planeConic) []planeCrossing {
+	var out []planeCrossing
+	for li, ring := range c.seatUV {
+		for i, n := 0, len(ring); i < n; i++ {
+			hits, _ := conicEdgeHits(pc, ring[i], ring[(i+1)%n], c.res)
+			for _, h := range hits {
+				tc, ok := conicParamAt(cv, to3D(c.plane, h.p))
+				if !ok {
+					continue
+				}
+				out = append(out, planeCrossing{loop: li, edge: i, sEdge: h.sEdge, tConic: tc, at: cv.PointAt(tc)})
+			}
+		}
+	}
+	return out
 }
 
 // sampleConicUV samples one imprint conic into (u,v) segments carrying the source curve + its parameters, so
-// a boundary run along it re-emits as the exact analytic arc (not the sampled chord).
-func (c *planeUV) sampleConicUV(cv geom.Curve3) []uvSeg {
+// a boundary run re-emits as the exact analytic arc. Each crossing parameter is inserted as a sample boundary
+// so a vertex lands EXACTLY on the crossing (conic.PointAt(tConic)) — the shared weld point.
+func (c *planeUV) sampleConicUV(cv geom.Curve3, crossings []planeCrossing) []uvSeg {
 	lo, hi := cv.Domain()
-	segs := make([]uvSeg, 0, imprintSampleCount)
-	prevP, prevT := to2D(c.plane, cv.PointAt(lo)), lo
-	for i := 1; i <= imprintSampleCount; i++ {
-		t := lo + (hi-lo)*float64(i)/imprintSampleCount
-		p := to2D(c.plane, cv.PointAt(t))
-		segs = append(segs, uvSeg{a: prevP, b: p, curve: cv, tA: prevT, tB: t, kind: segImprint})
-		prevP, prevT = p, t
+	params := make([]float64, 0, imprintSampleCount+len(crossings)+1)
+	for i := 0; i <= imprintSampleCount; i++ {
+		params = append(params, lo+(hi-lo)*float64(i)/imprintSampleCount)
+	}
+	for _, cr := range crossings {
+		params = append(params, cr.tConic)
+	}
+	params = sortedUniqueParams(params)
+	segs := make([]uvSeg, 0, len(params))
+	for i := 1; i < len(params); i++ {
+		a, b := to2D(c.plane, cv.PointAt(params[i-1])), to2D(c.plane, cv.PointAt(params[i]))
+		segs = append(segs, uvSeg{a: a, b: b, curve: cv, tA: params[i-1], tB: params[i], kind: segImprint})
 	}
 	return segs
 }
 
-// frameSegments emits the seat face boundary as segPolygon edges — the plane's non-periodic frame. Each edge
-// carries its own straight segment as the source curve so a kept boundary run re-emits it exactly.
-func (c *planeUV) frameSegments() []uvSeg {
+// frameSegments emits the seat polygon as segPolygon edges, each SPLIT at its conic crossings so the sub-edge
+// ends exactly on the shared crossing point (a straight segment to that point, kinked by less than a weld).
+func (c *planeUV) frameSegments(crossings []planeCrossing) []uvSeg {
 	var out []uvSeg
-	for _, ring := range c.seat3D {
+	for li, ring := range c.seat3D {
 		for i, n := 0, len(ring); i < n; i++ {
-			a3, b3 := ring[i], ring[(i+1)%n]
-			seg := geom.NewLineSegment(a3, b3)
-			out = append(out, uvSeg{a: to2D(c.plane, a3), b: to2D(c.plane, b3), curve: seg, tA: 0, tB: 1, kind: segPolygon})
+			out = append(out, c.splitEdge(li, i, ring[i], ring[(i+1)%n], crossings)...)
 		}
+	}
+	return out
+}
+
+// splitEdge breaks one polygon edge at its crossings (ordered along the edge), emitting a straight segPolygon
+// sub-edge between consecutive vertices — the corners and the shared crossing points conic.PointAt(tConic).
+func (c *planeUV) splitEdge(loop, edge int, a3, b3 math.Point3, crossings []planeCrossing) []uvSeg {
+	verts := []math.Point3{a3}
+	for _, cr := range sortedEdgeCrossings(crossings, loop, edge) {
+		verts = append(verts, cr.at)
+	}
+	verts = append(verts, b3)
+	out := make([]uvSeg, 0, len(verts)-1)
+	for i := 1; i < len(verts); i++ {
+		seg := geom.NewLineSegment(verts[i-1], verts[i])
+		out = append(out, uvSeg{a: to2D(c.plane, verts[i-1]), b: to2D(c.plane, verts[i]), curve: seg, tA: 0, tB: 1, kind: segPolygon})
 	}
 	return out
 }
@@ -120,6 +180,32 @@ func planeMaterial(c *planeUV) func() materialPredicate {
 			return pointInUVLoops(uv, c.seatUV) && !c.inTool(to3D(c.plane, uv))
 		}
 	}
+}
+
+// sortedUniqueParams sorts the parameter list and drops near-duplicates (an injected crossing that coincides
+// with a uniform sample), so no zero-length sample segment is emitted.
+func sortedUniqueParams(params []float64) []float64 {
+	sort.Float64s(params)
+	out := params[:0:0]
+	for i, p := range params {
+		if i == 0 || p-out[len(out)-1] > 1e-12 {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+// sortedEdgeCrossings returns the crossings on one polygon edge ordered by their edge parameter, so the edge
+// splits into consecutive sub-segments in geometric order.
+func sortedEdgeCrossings(crossings []planeCrossing, loop, edge int) []planeCrossing {
+	var on []planeCrossing
+	for _, cr := range crossings {
+		if cr.loop == loop && cr.edge == edge {
+			on = append(on, cr)
+		}
+	}
+	sort.Slice(on, func(i, j int) bool { return on[i].sEdge < on[j].sEdge })
+	return on
 }
 
 // pointInUVLoops reports whether q is inside a face given as (u,v) loops (outer first, then holes): inside the

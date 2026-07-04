@@ -65,6 +65,7 @@ func TestPlaneUVTrimsSquareBittenByCircle(t *testing.T) {
 		plane:  pl,
 		seatUV: seatUV,
 		seat3D: ring3,
+		res:    geom.ResolutionForSize(6),
 		inTool: func(p math.Point3) bool { // inside the vertical drill cylinder through (3,0)
 			return stdmath.Hypot(float64(p.X)-3, float64(p.Y)) < 2-1e-9
 		},
@@ -80,6 +81,41 @@ func TestPlaneUVTrimsSquareBittenByCircle(t *testing.T) {
 	want := 36 - 2*stdmath.Pi
 	if e := stdmath.Abs(got-want) / want; e > 0.01 {
 		t.Errorf("trimmed seat area %.5f, want %.5f (36−2π); rel %.4f", got, want, e)
+	}
+}
+
+// TestPlaneUVInjectsExactCrossings is the watertightness linchpin (#1591, ADR-0049 D-d): a crossing that
+// falls BETWEEN conic samples (circle centred at (2,0) crosses the seat edge x=3 at y=±√3, a non-sample
+// parameter) must still re-emit the seat arc terminating EXACTLY on the edge — within a weld, not the
+// ~1e-4 sagitta a sampled crossing leaves. Without the exact-crossing injection the arc misses the edge and
+// the tool wall's split base cannot weld.
+func TestPlaneUVInjectsExactCrossings(t *testing.T) {
+	pl, seat, ring3 := squareSeat(t, 3)
+	circ, _ := geom.NewCircle(math.P3(2, 0, 0), math.V3(0, 0, 1), 2) // crosses x=3 at y=±√3, between samples
+	seatUV := seatLoopsUV(pl, ring3)
+	c := &planeUV{plane: pl, seatUV: seatUV, seat3D: ring3, res: geom.ResolutionForSize(6),
+		inTool: func(p math.Point3) bool { return stdmath.Hypot(float64(p.X)-2, float64(p.Y)) < 2-1e-9 }}
+	faces, _, err := trimByImprint(c, seat, pl, []geom.Curve3{circ}, planeMaterial(c))
+	if err != nil {
+		t.Fatal(err)
+	}
+	weld := geom.ResolutionForSize(6).Weld()
+	found := 0
+	for _, loop := range faces[0].loops {
+		for _, e := range loop.edges {
+			if _, ok := e.curve.(geom.Circle); !ok {
+				continue
+			}
+			for _, p := range []math.Point3{e.start(), e.end()} {
+				found++
+				if dx := stdmath.Abs(float64(p.X) - 3); dx > weld {
+					t.Errorf("seat conic arc endpoint x=%.10f is %.2e off the seat edge x=3 (weld=%.1e) — no exact-crossing injection", float64(p.X), dx, weld)
+				}
+			}
+		}
+	}
+	if found == 0 {
+		t.Fatal("no conic arc edge found on the trimmed seat")
 	}
 }
 
