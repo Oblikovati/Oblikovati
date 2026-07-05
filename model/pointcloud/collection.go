@@ -43,15 +43,29 @@ func (c *PointClouds) ByName(name string) (*PointCloud, bool) {
 // Add attaches a cloud built from decoded cloud-local points under a unique name, erroring on a
 // duplicate name. source/resourceID record the scan's origin path and its embedded-bytes id.
 func (c *PointClouds) Add(name, source, resourceID string, points []math.Point3) (*PointCloud, error) {
+	return c.AddWithSamples(name, source, resourceID, pointSamples(points))
+}
+
+// AddWithSamples attaches a cloud built from decoded scan samples under a unique name, erroring
+// on a duplicate name. source/resourceID record the scan's origin path and its embedded-bytes id.
+func (c *PointClouds) AddWithSamples(name, source, resourceID string, samples []PointSample) (*PointCloud, error) {
 	if name == "" {
 		return nil, fmt.Errorf("pointcloud: a cloud needs a non-empty name")
 	}
 	if _, exists := c.ByName(name); exists {
 		return nil, fmt.Errorf("pointcloud: a cloud named %q already exists", name)
 	}
-	pc := New(name, source, resourceID, points)
+	pc := NewWithSamples(name, source, resourceID, samples)
 	c.items = append(c.items, pc)
 	return pc, nil
+}
+
+func pointSamples(points []math.Point3) []PointSample {
+	samples := make([]PointSample, len(points))
+	for i, p := range points {
+		samples[i] = PointSample{Point: p}
+	}
+	return samples
 }
 
 // Append re-attaches an already-built cloud (used by persistence restore, which reconstructs the

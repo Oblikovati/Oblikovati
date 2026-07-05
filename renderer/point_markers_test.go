@@ -28,6 +28,30 @@ func TestPointMarkersBuildsCrosses(t *testing.T) {
 	}
 }
 
+// TestPointMarkersColoredRepeatsPerPointColors checks the helper repeats each per-point color
+// across the six vertices that make up the marker cross.
+func TestPointMarkersColoredRepeatsPerPointColors(t *testing.T) {
+	pts := []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0)}
+	cols := [][4]float32{{1, 0, 0, 1}, {0, 1, 0, 1}}
+	item := PointMarkersColored(pts, 2, cols, 7)
+	if item == nil {
+		t.Fatal("PointMarkersColored returned nil for non-empty points")
+	}
+	if len(item.Colors) != 12 {
+		t.Fatalf("color count = %d, want 12", len(item.Colors))
+	}
+	for i := 0; i < 6; i++ {
+		if item.Colors[i] != cols[0] {
+			t.Fatalf("first point color %d = %v, want %v", i, item.Colors[i], cols[0])
+		}
+	}
+	for i := 6; i < 12; i++ {
+		if item.Colors[i] != cols[1] {
+			t.Fatalf("second point color %d = %v, want %v", i, item.Colors[i], cols[1])
+		}
+	}
+}
+
 // TestPointMarkersEmptyAndDegenerate: no points or a non-positive size yields no item.
 func TestPointMarkersEmptyAndDegenerate(t *testing.T) {
 	if PointMarkers(nil, 2, PointCloudColor, 0) != nil {

@@ -5,6 +5,7 @@ package app
 import (
 	"testing"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/math"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/sketch"
@@ -49,6 +50,18 @@ func TestPointCloudRibbonButtonsWiredAndEnable(t *testing.T) {
 		}
 	}
 
+	modeTab, ok := BuildRibbon(s).Tab(tabSurfacesMesh)
+	if !ok {
+		t.Fatal("ribbon has no Surfaces & Mesh tab")
+	}
+	modePanel, ok := modeTab.Panel("Display Mode")
+	if !ok || modePanel.Selector == nil {
+		t.Fatal("Point Cloud panel is missing the Display Mode selector")
+	}
+	if got := len(modePanel.Selector.Options); got != len(types.AllPointCloudDisplayModes()) {
+		t.Fatalf("Display Mode selector has %d options, want %d", got, len(types.AllPointCloudDisplayModes()))
+	}
+
 	// Context-sensitive buttons start disabled (nothing selected) except Import (just needs a part).
 	mustEnabled(t, s, "Import Point Cloud", true)
 	mustEnabled(t, s, "Fit Work Plane", false)
@@ -82,6 +95,12 @@ func TestPointCloudRibbonButtonsWiredAndEnable(t *testing.T) {
 	}
 	if err := s.Execute("PointCloud.CropBox"); err != nil { // starts the crop tool
 		t.Errorf("Execute(PointCloud.CropBox): %v", err)
+	}
+	if err := s.Execute("PointCloud.DisplayMode.RGB"); err != nil {
+		t.Errorf("Execute(PointCloud.DisplayMode.RGB): %v", err)
+	}
+	if pc.DisplayMode() != types.PointCloudDisplayModeRGB {
+		t.Errorf("display mode = %q, want rgb", pc.DisplayMode())
 	}
 }
 

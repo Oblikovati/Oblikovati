@@ -16,17 +16,26 @@ import (
 func TestFrustumClipDropsOffScreen(t *testing.T) {
 	s, _ := emptyPartSession(t) // camera at (0,0,10) looking down at the XY plane, 200×200
 	cam := s.Camera()
-	if got := frustumClip([]math.Point3{math.P3(0, 0, 0)}, cam); len(got) != 1 {
+	if got := frustumClip(samplesAt(math.P3(0, 0, 0)), cam); len(got) != 1 {
 		t.Errorf("on-screen point clipped away: %d, want 1", len(got))
 	}
-	if got := frustumClip([]math.Point3{math.P3(1e6, 0, 0)}, cam); len(got) != 0 {
+	if got := frustumClip(samplesAt(math.P3(1e6, 0, 0)), cam); len(got) != 0 {
 		t.Errorf("off-screen point kept: %d, want 0", len(got))
 	}
 }
 
+// samplesAt wraps model-space points as PointSamples for the sample-based LOD/clip helpers.
+func samplesAt(pts ...math.Point3) []pointcloud.PointSample {
+	out := make([]pointcloud.PointSample, len(pts))
+	for i, p := range pts {
+		out[i] = pointcloud.PointSample{Point: p}
+	}
+	return out
+}
+
 // TestLODThinByScreenArea: a small on-screen footprint thins the set; a large one keeps it all.
 func TestLODThinByScreenArea(t *testing.T) {
-	pts := make([]math.Point3, 1000)
+	pts := make([]pointcloud.PointSample, 1000)
 	thin := lodThin(pts, screenBox{minX: 0, minY: 0, maxX: 10, maxY: 10}) // 100 px² × 0.5 → ~50
 	if len(thin) < 40 || len(thin) > 60 {
 		t.Errorf("LOD thinned to %d, want ~50 for a 10×10 footprint", len(thin))
@@ -47,11 +56,11 @@ func TestVisibleDisplayPointsClips(t *testing.T) {
 	if err != nil {
 		t.Fatalf("attach: %v", err)
 	}
-	if got := visibleDisplayPoints(pc, cam); len(got) != 3 {
+	if got := visibleDisplaySamples(pc, cam); len(got) != 3 {
 		t.Errorf("on-screen visible = %d, want 3", len(got))
 	}
 	pc.SetTransform(farX(1e6)) // shove the cloud far off-screen
-	if got := visibleDisplayPoints(pc, cam); len(got) != 0 {
+	if got := visibleDisplaySamples(pc, cam); len(got) != 0 {
 		t.Errorf("off-screen visible = %d, want 0 (clipped)", len(got))
 	}
 }
@@ -84,7 +93,7 @@ func BenchmarkVisibleDisplayPoints(b *testing.B) {
 	_ = pc.DisplayedPoints() // warm the display cache
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = visibleDisplayPoints(pc, cam)
+		_ = visibleDisplaySamples(pc, cam)
 	}
 }
 
@@ -98,7 +107,7 @@ func BenchmarkVisibleDisplayPointsBudgeted(b *testing.B) {
 	_ = pc.DisplayedPoints()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = visibleDisplayPoints(pc, cam)
+		_ = visibleDisplaySamples(pc, cam)
 	}
 }
 
@@ -111,6 +120,6 @@ func BenchmarkVisibleDisplayPointsFullyVisible(b *testing.B) {
 	_ = pc.DisplayedPoints()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = visibleDisplayPoints(pc, cam)
+		_ = visibleDisplaySamples(pc, cam)
 	}
 }

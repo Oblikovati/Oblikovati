@@ -3,6 +3,7 @@
 package app
 
 import (
+	"oblikovati.org/api/types"
 	"oblikovati.org/math"
 	"oblikovati.org/model/pointcloud"
 	"oblikovati.org/renderer"
@@ -77,7 +78,17 @@ func cloudDrawItem(pc *pointcloud.PointCloud, cam scene.Camera, markerSize float
 	if !pc.Visible() {
 		return nil
 	}
-	return renderer.PointMarkers(visibleDisplayPoints(pc, cam), markerSize, renderer.PointCloudColor, 0)
+	samples := visibleDisplaySamples(pc, cam)
+	if len(samples) == 0 {
+		return nil
+	}
+	points := make([]math.Point3, len(samples))
+	colors := make([][4]float32, len(samples))
+	for i, s := range samples {
+		points[i] = s.Point
+		colors[i] = displaySampleColor(pc, s)
+	}
+	return renderer.PointMarkersColored(points, markerSize, colors, 0)
 }
 
 // pointCloudLODDensity is the most markers drawn per square pixel the cloud covers on screen — the
@@ -95,11 +106,11 @@ const (
 // screenBox is a viewport-pixel rectangle.
 type screenBox struct{ minX, minY, maxX, maxY float64 }
 
-// visibleDisplayPoints returns the points to actually draw for a cloud: its cached displayed set,
+// visibleDisplaySamples returns the samples to actually draw for a cloud: its cached displayed set,
 // thinned to the screen-coverage LOD, then clipped to the frustum when the cloud is not fully on
 // screen (when it is, every displayed point is visible, so the per-point clip is skipped).
-func visibleDisplayPoints(pc *pointcloud.PointCloud, cam scene.Camera) []math.Point3 {
-	pts := pc.DisplayedPoints()
+func visibleDisplaySamples(pc *pointcloud.PointCloud, cam scene.Camera) []pointcloud.PointSample {
+	pts := pc.DisplayedSamples()
 	screen, fullyOnScreen := projectBoxToScreen(pc.RangeBox(), cam)
 	pts = lodThin(pts, screen)
 	if fullyOnScreen {
@@ -110,14 +121,14 @@ func visibleDisplayPoints(pc *pointcloud.PointCloud, cam scene.Camera) []math.Po
 
 // lodThin strides pts down so it draws no more than pointCloudLODDensity markers per pixel of the
 // cloud's on-screen area — fewer points when the cloud is small on screen, the full set when large.
-func lodThin(pts []math.Point3, screen screenBox) []math.Point3 {
+func lodThin(pts []pointcloud.PointSample, screen screenBox) []pointcloud.PointSample {
 	area := (screen.maxX - screen.minX) * (screen.maxY - screen.minY)
 	budget := int(area * pointCloudLODDensity)
 	if budget <= 0 || budget >= len(pts) {
 		return pts
 	}
 	stride := len(pts) / budget
-	out := make([]math.Point3, 0, budget)
+	out := make([]pointcloud.PointSample, 0, budget)
 	for i := 0; i < len(pts); i += stride {
 		out = append(out, pts[i])
 	}
@@ -126,17 +137,77 @@ func lodThin(pts []math.Point3, screen screenBox) []math.Point3 {
 
 // frustumClip keeps only the points whose projection lands within the viewport (plus a small
 // margin), dropping the off-screen ones so they cost no marker geometry.
-func frustumClip(pts []math.Point3, cam scene.Camera) []math.Point3 {
+func frustumClip(pts []pointcloud.PointSample, cam scene.Camera) []pointcloud.PointSample {
 	const margin = 8.0
 	w, h := float64(cam.Width)+margin, float64(cam.Height)+margin
 	pr := renderer.NewProjector(cam, pointCloudNear, pointCloudFar) // build the matrix once, not per point
 	out := pts[:0:0]                                                // a fresh backing array; never alias the cached slice
-	for _, p := range pts {
-		if x, y, ok := pr.Project(p); ok && x >= -margin && x <= w && y >= -margin && y <= h {
-			out = append(out, p)
+	for _, s := range pts {
+		if x, y, ok := pr.Project(s.Point); ok && x >= -margin && x <= w && y >= -margin && y <= h {
+			out = append(out, s)
 		}
 	}
 	return out
+}
+
+func displaySampleColor(pc *pointcloud.PointCloud, s pointcloud.PointSample) [4]float32 {
+	switch pc.DisplayMode() {
+	case types.PointCloudDisplayModeRGB:
+		if s.HasRGB {
+			return rgbMarkerColor(s.RGB)
+		}
+	case types.PointCloudDisplayModeIntensity:
+		if s.HasIntensity {
+			if c, ok := intensityMarkerColor(pc, s.Intensity); ok {
+				return c
+			}
+		}
+	default:
+	}
+	return renderer.PointCloudColor
+}
+
+func rgbMarkerColor(rgb [3]float32) [4]float32 {
+	m := rgb[0]
+	if rgb[1] > m {
+		m = rgb[1]
+	}
+	if rgb[2] > m {
+		m = rgb[2]
+	}
+	if m <= 1 {
+		return [4]float32{clamp01(rgb[0]), clamp01(rgb[1]), clamp01(rgb[2]), 1}
+	}
+	scale := float32(255)
+	if m > 255 {
+		scale = 65535
+	}
+	return [4]float32{clamp01(rgb[0] / scale), clamp01(rgb[1] / scale), clamp01(rgb[2] / scale), 1}
+}
+
+func intensityMarkerColor(pc *pointcloud.PointCloud, intensity float64) ([4]float32, bool) {
+	min, max, ok := pc.IntensityRange()
+	if !ok || max <= min {
+		return [4]float32{}, false
+	}
+	t := float32((intensity - min) / (max - min))
+	if t < 0 {
+		t = 0
+	}
+	if t > 1 {
+		t = 1
+	}
+	return [4]float32{t, t, t, 1}, true
+}
+
+func clamp01(v float32) float32 {
+	if v < 0 {
+		return 0
+	}
+	if v > 1 {
+		return 1
+	}
+	return v
 }
 
 // projectBoxToScreen projects a model-space box's eight corners to their screen bounding rectangle

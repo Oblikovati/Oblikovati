@@ -27,6 +27,7 @@ func (r *Router) registerPointCloudHandlers() {
 	r.mutating(wire.MethodPointCloudsSetTransform, "Move Point Cloud", typedPart(setPointCloudTransform))
 	r.mutating(wire.MethodPointCloudsSetScale, "Scale Point Cloud", typedPart(setPointCloudScale))
 	r.readOnly(wire.MethodPointCloudsSetDensity, typedPart(setPointCloudDensity))
+	r.mutating(wire.MethodPointCloudsSetDisplayMode, "Point Cloud Display Mode", typedPart(setPointCloudDisplayMode))
 	r.readOnly(wire.MethodPointCloudsToModelSpace, typedPart(pointCloudToModelSpace))
 	r.readOnly(wire.MethodPointCloudsFromModelSpace, typedPart(pointCloudFromModelSpace))
 	r.mutating(wire.MethodPointCloudsAddCrop, "Crop Point Cloud", typedPart(addPointCloudCrop))
@@ -116,6 +117,18 @@ func setPointCloudDensity(_ *app.Session, part *compdef.PartComponentDefinition,
 	return pointCloudInfo(pc), nil
 }
 
+// setPointCloudDisplayMode sets a named cloud's rendering mode.
+func setPointCloudDisplayMode(_ *app.Session, part *compdef.PartComponentDefinition, in wire.SetPointCloudDisplayModeArgs) (wire.PointCloudInfo, error) {
+	pc, err := cloudByName(part, in.Name, wire.MethodPointCloudsSetDisplayMode)
+	if err != nil {
+		return wire.PointCloudInfo{}, err
+	}
+	if !pc.SetDisplayMode(in.DisplayMode) {
+		return wire.PointCloudInfo{}, fmt.Errorf("pointClouds.setDisplayMode: invalid mode %q; expected one of %v", in.DisplayMode, types.AllPointCloudDisplayModes())
+	}
+	return pointCloudInfo(pc), nil
+}
+
 // pointCloudToModelSpace maps a cloud-local point into model space.
 func pointCloudToModelSpace(_ *app.Session, part *compdef.PartComponentDefinition, in wire.PointCloudSpaceArgs) (wire.PointCloudSpaceResult, error) {
 	pc, err := cloudByName(part, in.Name, wire.MethodPointCloudsToModelSpace)
@@ -151,6 +164,7 @@ func pointCloudInfo(pc *pointcloud.PointCloud) wire.PointCloudInfo {
 		Name:                pc.Name(),
 		Source:              pc.SourceFullFileName(),
 		Visible:             pc.Visible(),
+		DisplayMode:         pc.DisplayMode(),
 		Scale:               pc.Scale(),
 		Transform:           types.Matrix{Cells: pc.Transform().Cells()},
 		TotalPointCount:     pc.TotalPointCount(),

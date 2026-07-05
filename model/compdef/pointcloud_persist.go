@@ -3,6 +3,9 @@
 package compdef
 
 import (
+	"strings"
+
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/math"
 	"oblikovati.org/model/doc"
@@ -41,38 +44,42 @@ func (d *PartComponentDefinition) SetPointCloudRecords(records []doc.PointCloudR
 // scanPoints re-decodes a record's points from the embedded resource bytes, or nil when the
 // resource is missing or undecodable. The scan re-scales into the document's CURRENT working
 // unit (the same options the attach path used), so restored clouds match the attach scale (#1636).
-func (d *PartComponentDefinition) scanPoints(rec doc.PointCloudRecord) []math.Point3 {
+func (d *PartComponentDefinition) scanPoints(rec doc.PointCloudRecord) []pointcloud.PointSample {
 	res, ok := d.resources[rec.ResourceID]
 	if !ok {
 		return nil
 	}
 	// Restore is non-interactive, so per-record warnings are not surfaced here; the attach path
 	// already reported them (#1646).
-	points, _, err := pointcloud.ReadScan(rec.Source, res.Value, exchange.TranslationOptions{TargetUnitMM: d.WorkingUnitMM()})
+	samples, _, err := pointcloud.ReadScanSamples(rec.Source, res.Value, exchange.TranslationOptions{TargetUnitMM: d.WorkingUnitMM()})
 	if err != nil {
 		return nil
 	}
-	return points
+	return samples
 }
 
 // recordOfCloud captures a cloud's metadata + placement + crops (its points stay in the resource
 // table).
 func recordOfCloud(pc *pointcloud.PointCloud) doc.PointCloudRecord {
 	return doc.PointCloudRecord{
-		Name:       pc.Name(),
-		Source:     pc.SourceFullFileName(),
-		ResourceID: pc.ResourceID(),
-		Visible:    pc.Visible(),
-		Scale:      pc.Scale(),
-		Transform:  cellsToFloats(pc.Transform().Cells()),
-		MaxPoints:  pc.MaximumPointCount(),
-		Crops:      cropRecords(pc.Crops()),
+		Name:        pc.Name(),
+		Source:      pc.SourceFullFileName(),
+		ResourceID:  pc.ResourceID(),
+		Visible:     pc.Visible(),
+		DisplayMode: pc.DisplayMode().String(),
+		Scale:       pc.Scale(),
+		Transform:   cellsToFloats(pc.Transform().Cells()),
+		MaxPoints:   pc.MaximumPointCount(),
+		Crops:       cropRecords(pc.Crops()),
 	}
 }
 
 // cloudFromRecord rebuilds a cloud from its record and freshly decoded points, restoring its crops.
-func cloudFromRecord(rec doc.PointCloudRecord, points []math.Point3) *pointcloud.PointCloud {
-	pc := pointcloud.New(rec.Name, rec.Source, rec.ResourceID, points)
+func cloudFromRecord(rec doc.PointCloudRecord, samples []pointcloud.PointSample) *pointcloud.PointCloud {
+	pc := pointcloud.NewWithSamples(rec.Name, rec.Source, rec.ResourceID, samples)
+	if mode := strings.ToLower(strings.TrimSpace(rec.DisplayMode)); mode != "" {
+		_ = pc.SetDisplayMode(types.PointCloudDisplayMode(mode))
+	}
 	pc.SetVisible(rec.Visible)
 	pc.SetScale(rec.Scale) // rejected for a corrupt non-positive value, leaving the default 1
 	pc.SetTransform(math.Matrix4FromCells(floatsToCells(rec.Transform)))

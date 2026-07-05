@@ -241,7 +241,7 @@ func meshFeatureCommands() []*CommandDefinition {
 // photogrammetry file as a referenced display object (M17-F06, #645). Like Place Mesh, the
 // command arms the head's file dialog; the attach itself is Session.AttachPointCloud.
 func pointCloudCommands() []*CommandDefinition {
-	return []*CommandDefinition{
+	cmds := []*CommandDefinition{
 		NewCommand("PointCloud.Import", "Import Point Cloud", "Point Cloud", func(s *Session) error {
 			s.RequestImportPointCloud()
 			return nil
@@ -271,6 +271,25 @@ func pointCloudCommands() []*CommandDefinition {
 			WithIcon("point-cloud-move").WithButtonStyle(SmallIconButton).
 			WithTooltip("Move — drag the selected cloud in the viewport; datums built on it follow as it moves."),
 	}
+	return append(cmds, pointCloudDisplayModeCommands()...)
+}
+
+// pointCloudDisplayModeCommands are the Point Cloud panel's display-mode selector: the selected
+// cloud's rendering palette, exposed as a dropdown adjacent to the other point-cloud tools.
+func pointCloudDisplayModeCommands() []*CommandDefinition {
+	cmds := make([]*CommandDefinition, 0, len(types.AllPointCloudDisplayModes()))
+	for _, mode := range types.AllPointCloudDisplayModes() {
+		mode := mode
+		cmds = append(cmds, NewCommand("PointCloud.DisplayMode."+mode.String(), mode.String(), "Display Mode", func(s *Session) error {
+			return s.SetSelectedPointCloudDisplayMode(mode)
+		}).WithTab(tabSurfacesMesh).WithKind(ComboControl).WithEnable(canSetSelectedPointCloudDisplayMode).
+			WithTooltip("Display Mode — "+mode.String()+" rendering for the selected cloud.").
+			WithActive(func(s *Session) bool {
+				pc, ok := s.SelectedPointCloud()
+				return ok && pc.DisplayMode() == mode
+			}))
+	}
+	return cmds
 }
 
 // moldFeatureCommands are the Surfaces & Mesh tab's Mold panel: the core/cavity tooling split

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/fit"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/model/feature"
@@ -63,4 +64,23 @@ func (s *Session) FitSelectedCloudPlane() (*feature.WorkPlane, error) {
 func canFitPointCloudPlane(s *Session) bool {
 	_, ok := s.SelectedPointCloud()
 	return ok && !s.InSketch()
+}
+
+// SetSelectedPointCloudDisplayMode changes the selected cloud's display mode, if a cloud is
+// currently selected.
+func (s *Session) SetSelectedPointCloudDisplayMode(mode types.PointCloudDisplayMode) error {
+	pc, ok := s.SelectedPointCloud()
+	if !ok {
+		return errors.New("app: select a point cloud to change its display mode")
+	}
+	if !pc.SetDisplayMode(mode) {
+		return fmt.Errorf("app: invalid point cloud display mode %q", mode)
+	}
+	return nil
+}
+
+// canSetSelectedPointCloudDisplayMode enables the ribbon dropdown only when a cloud is selected.
+func canSetSelectedPointCloudDisplayMode(s *Session) bool {
+	_, ok := s.SelectedPointCloud()
+	return ok
 }
