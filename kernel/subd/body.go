@@ -14,12 +14,16 @@ import (
 // edge used by two faces — becomes a solid; an open cage a surface body. Faces are
 // approximated as planar in phase A; the exact bicubic limit surface is a NURBS phase.
 func ToBody(m Mesh, feat string) *topo.Body {
-	bld := topo.NewBuilder(m.isClosed(), topo.NewLineage(topo.Tok(feat, "body", 0)))
+	// edgeFaces is O(edges) to build; compute the adjacency once and share it between the
+	// closed-cage test and the shared-edge build rather than rebuilding it per call — the
+	// second-largest allocation source on a dense mesh import (#1765).
+	ef := m.edgeFaces()
+	bld := topo.NewBuilder(cageClosed(ef), topo.NewLineage(topo.Tok(feat, "body", 0)))
 	verts := make([]*topo.Vertex, len(m.Verts))
 	for i, p := range m.Verts {
 		verts[i] = bld.AddVertex(p, topo.NewLineage(topo.Tok(feat, "vertex", i)))
 	}
-	edges := buildBodyEdges(m, bld, verts, feat)
+	edges := buildBodyEdges(m, ef, bld, verts, feat)
 	for fi, f := range m.Faces {
 		bld.AddFace(facePlane(m, f), topo.NewLineage(topo.Tok(feat, "face", fi)), faceLoop(f, edges))
 	}
@@ -28,8 +32,8 @@ func ToBody(m Mesh, feat string) *topo.Body {
 
 // buildBodyEdges creates one shared topo edge per undirected cage edge (sorted-key
 // order for stable lineage).
-func buildBodyEdges(m Mesh, bld *topo.Builder, verts []*topo.Vertex, feat string) map[[2]int]*topo.Edge {
-	keys := sortedEdgeKeys(m.edgeFaces())
+func buildBodyEdges(m Mesh, ef map[[2]int][]int, bld *topo.Builder, verts []*topo.Vertex, feat string) map[[2]int]*topo.Edge {
+	keys := sortedEdgeKeys(ef)
 	edges := make(map[[2]int]*topo.Edge, len(keys))
 	for i, k := range keys {
 		seg := geom.NewLineSegment(m.Verts[k[0]], m.Verts[k[1]])
@@ -49,12 +53,14 @@ func faceLoop(f []int, edges map[[2]int]*topo.Edge) topo.LoopSpec {
 	return topo.OuterLoop(uses...)
 }
 
-// isClosed reports whether every cage edge is shared by exactly two faces.
-func (m Mesh) isClosed() bool {
-	if len(m.Faces) == 0 {
+// cageClosed reports whether every cage edge is shared by exactly two faces (a watertight
+// solid), from a precomputed edge→faces adjacency so ToBody builds it only once (#1765).
+// An empty cage (no edges) is not closed.
+func cageClosed(ef map[[2]int][]int) bool {
+	if len(ef) == 0 {
 		return false
 	}
-	for _, fs := range m.edgeFaces() {
+	for _, fs := range ef {
 		if len(fs) != 2 {
 			return false
 		}
