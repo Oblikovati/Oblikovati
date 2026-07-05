@@ -90,6 +90,9 @@ func drawCommandWindowBody(s *app.Session) {
 	if s.TakeCommandInputFocus() {
 		commandFocusNext = true // ESC/cancel asked to return focus to the input (M26)
 	}
+	if seed, ok := s.TakeCommandTypeSeed(); ok {
+		seedCommandInput(seed) // a bare key press begins a command line (#1751 S2)
+	}
 	cl := s.CommandLine()
 	sb := app.BuildStatus(s)
 	comps := refreshCompletions(s, cl)
@@ -98,6 +101,17 @@ func drawCommandWindowBody(s *app.Session) {
 	drawCommandControls(s, sb)
 	drawCommandCompletions(comps)
 	drawCommandInputLine(s, cl, comps)
+}
+
+// seedCommandInput appends the character a bare key press handed off (#1751 S2) to the input
+// buffer and focuses it, so pressing a letter with the viewport focused starts a command line
+// with that letter already typed. Appending (not replacing) preserves any text the user had
+// already entered. Focus is requested only on the frame a key was actually pressed, so this
+// never becomes a per-frame focus sink that would steal viewport hover (see handleKeyboard).
+// Pure (no Session) so it is unit-testable and stays off the head↔Session coupling ratchet.
+func seedCommandInput(seed string) {
+	setBuf(commandInputBuf, bufString(commandInputBuf)+seed)
+	commandFocusNext = true
 }
 
 // controlsHeight reserves a row for the tool controls when any is live (a running tool, a live
