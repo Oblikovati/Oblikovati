@@ -5,6 +5,7 @@ package app
 import (
 	"fmt"
 	"strings"
+	"unicode"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/app/cmdline"
@@ -145,12 +146,18 @@ func dispatchDelete(s *Session) error { return s.DeleteSelectedSketchEntities() 
 // dispatchSave saves the active document (Ctrl+S / the "SAVE" command word, M26 F05).
 func dispatchSave(s *Session) error { return s.SaveActiveDocument() }
 
-// isBareLetterChord reports whether c is a single printable character with no modifier. Such
-// chords are reserved (M26): single-letter shortcuts must carry Shift or Control, so they are
-// never a default and the keybinding editor rejects them. Multi-character keys (Escape, F5)
-// and modified chords (Ctrl+S) are unaffected.
-func isBareLetterChord(c types.KeyChord) bool {
-	return !c.IsZero() && len([]rune(c.Key)) == 1 && !c.Ctrl && !c.Alt && !c.Shift
+// isReservedBareChord reports whether c is a bare (unmodified) ALPHANUMERIC key — a single letter
+// a–z or digit 0–9. These are reserved (M26 / #1751): pressing one with the viewport focused begins
+// typing a command in the command window (the user means to type a command, not fire a shortcut), so
+// an alphanumeric key may become a shortcut only when carried by Ctrl/Alt/Shift. It is therefore never
+// a default and the keybinding editor rejects it as a user binding. Non-alphanumeric single keys —
+// F1–F12, Tab, Delete, Insert, Escape, Enter, symbols — are NOT reserved and may be bound bare.
+func isReservedBareChord(c types.KeyChord) bool {
+	if c.IsZero() || c.Ctrl || c.Alt || c.Shift {
+		return false
+	}
+	r := []rune(c.Key)
+	return len(r) == 1 && (unicode.IsLetter(r[0]) || unicode.IsDigit(r[0]))
 }
 
 // mustChord parses a constant chord literal from the built-in table, panicking on a
@@ -226,7 +233,7 @@ func commandDefaultChord(c *CommandDefinition) types.KeyChord {
 		return dc
 	}
 	dc, _ := types.ParseChord(c.Alias())
-	if isBareLetterChord(dc) {
+	if isReservedBareChord(dc) {
 		return types.KeyChord{}
 	}
 	return dc
@@ -337,8 +344,8 @@ func (b *Bindings) SetChord(actionID string, c types.KeyChord) error {
 	if _, ok := b.findBindable(actionID); !ok {
 		return fmt.Errorf("app: unknown action %q for SetChord; expected a command or built-in action id", actionID)
 	}
-	if isBareLetterChord(c) {
-		return fmt.Errorf("app: single-letter shortcut %q must use Shift or Control (M26)", c.String())
+	if isReservedBareChord(c) {
+		return fmt.Errorf("app: alphanumeric shortcut %q must use Shift, Ctrl or Alt (a bare letter/digit types into the command window) (M26/#1751)", c.String())
 	}
 	if !c.IsZero() {
 		if owner, ok := b.ResolveChord(c); ok && owner != actionID {
