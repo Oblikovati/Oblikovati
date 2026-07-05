@@ -290,6 +290,52 @@ func TestDispatchCancelDismissesSteeringWheel(t *testing.T) {
 	}
 }
 
+// TestReservedBareChordPolicy pins the #1751 keybinding policy at the predicate: bare alphanumeric
+// keys (a–z, 0–9) are reserved — pressing one types into the command window, so it may only be a
+// shortcut with Ctrl/Alt/Shift — while F-keys, Tab, Delete, Insert and other named/special keys, and
+// any modified chord, are NOT reserved and may be bound bare.
+func TestReservedBareChordPolicy(t *testing.T) {
+	parse := func(s string) types.KeyChord {
+		c, err := types.ParseChord(s)
+		if err != nil {
+			t.Fatalf("ParseChord(%q): %v", s, err)
+		}
+		return c
+	}
+	for _, s := range []string{"A", "L", "Z", "0", "5", "9"} {
+		if !isReservedBareChord(parse(s)) {
+			t.Errorf("%q should be reserved (bare alphanumeric)", s)
+		}
+	}
+	for _, s := range []string{"F1", "F12", "Tab", "Delete", "Insert", "Escape", "Enter", "Ctrl+L", "Shift+A", "Alt+5"} {
+		if isReservedBareChord(parse(s)) {
+			t.Errorf("%q should NOT be reserved (special key or modified chord)", s)
+		}
+	}
+}
+
+// TestSetChordEnforcesReservedPolicy pins the editor-facing half: SetChord refuses a bare letter or
+// digit, but accepts a bare special key (F8) and a modified alphanumeric (Alt+L) — #1751.
+func TestSetChordEnforcesReservedPolicy(t *testing.T) {
+	s := NewSession()
+	if err := s.Commands().Add(NewCommand("Test.Thing", "Thing", "Test", func(*Session) error { return nil })); err != nil {
+		t.Fatalf("add command: %v", err)
+	}
+	parse := func(str string) types.KeyChord { c, _ := types.ParseChord(str); return c }
+	if err := s.Bindings().SetChord("Test.Thing", parse("L")); err == nil {
+		t.Error("SetChord must reject a bare letter L")
+	}
+	if err := s.Bindings().SetChord("Test.Thing", parse("5")); err == nil {
+		t.Error("SetChord must reject a bare digit 5")
+	}
+	if err := s.Bindings().SetChord("Test.Thing", parse("F8")); err != nil {
+		t.Errorf("SetChord must accept a bare special key F8: %v", err)
+	}
+	if err := s.Bindings().SetChord("Test.Thing", parse("Alt+L")); err != nil {
+		t.Errorf("SetChord must accept a modified alphanumeric Alt+L: %v", err)
+	}
+}
+
 func TestPressKeyRunsCommandViaDefaultChord(t *testing.T) {
 	s := NewSession()
 	ran := false
