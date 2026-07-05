@@ -68,6 +68,39 @@ func TestResolveRefOnBodiesBothForms(t *testing.T) {
 	}
 }
 
+// TestBodySelectionRefRoundTrips: a whole-body pick reports a non-empty body/<key> reference in
+// Selection.References() (was "" — #1492), and that reference resolves back to the SAME body's
+// BodyHandle through ResolveRefOnBodies, so an add-in can read and re-select a directly-picked body.
+func TestBodySelectionRefRoundTrips(t *testing.T) {
+	_, def := boxBodySession(t)
+	bodies := def.SurfaceBodies().All()
+	if len(bodies) == 0 {
+		t.Fatal("no bodies after recompute")
+	}
+	b := bodies[0]
+
+	sel := NewSelection()
+	if !sel.Add(BodyHandle{Body: b}) {
+		t.Fatal("adding a BodyHandle to the selection failed")
+	}
+	ref := sel.References()[0]
+	if ref == "" {
+		t.Fatal("a selected body still reports an empty reference (#1492 regression)")
+	}
+	if want := string(feature.BodyRef(b.ReferenceKey())); ref != want {
+		t.Errorf("body ref = %q, want %q", ref, want)
+	}
+
+	resolved, ok := ResolveRefOnBodies(bodies, ref)
+	if !ok {
+		t.Fatalf("body ref %q did not resolve", ref)
+	}
+	h, isBody := resolved.(BodyHandle)
+	if !isBody || h.Body != b {
+		t.Errorf("resolved to %#v, want the original BodyHandle", resolved)
+	}
+}
+
 // TestSessionResolveReference covers the session entry point, its no-part guard, and the lazily
 // created highlight-set registry.
 func TestSessionResolveReference(t *testing.T) {
