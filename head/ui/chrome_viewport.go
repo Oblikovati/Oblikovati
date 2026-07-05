@@ -432,7 +432,8 @@ func frameMeshAndInstances(s *app.Session, cam scene.Camera, list renderer.DrawL
 		decorate := func(l renderer.DrawList) renderer.DrawList {
 			return highlightSelection(l, s.Selection().First(), sources)
 		}
-		if m, mats, recs, key, ok := buildInstancedFrame(groups, culled, overlay, cam, s.SurfaceLookup(), s.VisualStyle(), decorate, instancedSourceKey(s)); ok {
+		placedMesh, placedMeshKey, _ := cachedPlacedMesh(s) // retained placed-mesh lane (#1773)
+		if m, mats, recs, key, ok := buildInstancedFrame(groups, culled, overlay, placedMesh, placedMeshKey, cam, s.SurfaceLookup(), s.VisualStyle(), decorate, instancedSourceKey(s)); ok {
 			return m, mats, recs, geomUploadKey(key)
 		}
 	}
