@@ -79,17 +79,21 @@ func dispatchHomeView(s *Session) error {
 	return nil
 }
 
-// dispatchUndo runs undo only when no interactive tool is mid-operation — undo is
-// forbidden while a transaction is in progress, so the keystroke is a no-op otherwise.
+// dispatchUndo runs undo unless a bounded transaction (an open recipe group) is mid-record —
+// undoing then would corrupt the unit being written. A merely-armed interactive tool is NOT
+// such a transaction: in continuous drawing each segment auto-commits, so between clicks no
+// group is open and Ctrl+Z rewinds the last committed segment with the tool still running —
+// Inventor's behavior. The old `s.tool != nil` guard was far broader than its own comment
+// ("transaction in progress") and silently no-op'd undo for the entire sketch session (#1750).
 func dispatchUndo(s *Session) error {
-	if s.tool != nil {
+	if s.InTransaction() {
 		return nil
 	}
 	return s.Undo()
 }
 
 func dispatchRedo(s *Session) error {
-	if s.tool != nil {
+	if s.InTransaction() {
 		return nil
 	}
 	return s.Redo()
