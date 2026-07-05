@@ -57,9 +57,9 @@ func partialDrillCaps(faces []curvedFace, base math.Point3, ua math.Vector3, hei
 	tol := geom.ResolutionForSize(height).Plane()
 	var found []scallopCap
 	for i, f := range faces {
-		pl, isPlane := f.surface.(geom.Plane)
-		if !isPlane || stdmath.Abs(float64(unit(pl.Normal()).Dot(ua))) < 1-1e-7 {
-			continue // not perpendicular to the drill axis
+		pl, ok := planarCapPerpTo(f, ua)
+		if !ok {
+			continue
 		}
 		t := pierceParam(base, ua, pl)
 		if t < -tol || t > height+tol {
@@ -67,12 +67,10 @@ func partialDrillCaps(faces []curvedFace, base math.Point3, ua math.Vector3, hei
 		}
 		center := base.TranslateBy(ua.Scale(math.Scalar(t)))
 		circ, err := geom.NewCircle(center, ua, radius)
-		if err != nil {
+		if err != nil || !circleClipsCap(center, radius, f, pl) {
 			continue
 		}
-		if pierced, clean := circleVsCap(center, radius, f, pl); pierced && !clean {
-			found = append(found, scallopCap{idx: i, circle: circ, plane: pl, face: f})
-		}
+		found = append(found, scallopCap{idx: i, circle: circ, plane: pl, face: f})
 	}
 	if len(found) != 2 {
 		return [2]scallopCap{}, false

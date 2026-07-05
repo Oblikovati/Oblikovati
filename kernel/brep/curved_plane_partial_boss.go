@@ -45,8 +45,8 @@ func JoinPartialBoss(target, tool *topo.Body) (*topo.Body, bool) {
 // the seated (near) and protruding (far) cap centres, or ok=false.
 func partialBossSeat(faces []curvedFace, c0, c1 math.Point3, ua math.Vector3, radius float64) (idx int, near, far math.Point3, ok bool) {
 	for i, f := range faces {
-		pl, isPlane := f.surface.(geom.Plane)
-		if !isPlane || stdmath.Abs(float64(unit(pl.Normal()).Dot(ua))) < 1-1e-7 {
+		pl, ok := planarCapPerpTo(f, ua)
+		if !ok {
 			continue
 		}
 		nOut := faceOutwardNormal(f, pl)
@@ -56,7 +56,7 @@ func partialBossSeat(faces []curvedFace, c0, c1 math.Point3, ua math.Vector3, ra
 			if stdmath.Abs(pointPlaneDistance(n, pl)) > flushTol || float64(n.VectorTo(fr).Dot(nOut)) <= 0 {
 				continue
 			}
-			if pierced, clean := circleVsCap(n, radius, f, pl); pierced && !clean {
+			if circleClipsCap(n, radius, f, pl) {
 				return i, n, fr, true
 			}
 		}
