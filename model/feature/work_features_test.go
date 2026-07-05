@@ -181,6 +181,31 @@ func TestWorkPlaneVisibilityDefaultsAndToggles(t *testing.T) {
 	}
 }
 
+// TestShownForHostPickRevealsOnlyGroundedOrigins pins the #1752 rule the app-side picker and the
+// viewport overlay share: a hidden grounded origin plane is shown ONLY while a datum host is being
+// picked, a visible plane is always shown, and a hidden USER plane is never revealed — the reveal is
+// scoped to the origin frame so Create Sketch does not un-hide planes the user chose to hide.
+func TestShownForHostPickRevealsOnlyGroundedOrigins(t *testing.T) {
+	g := NewWorkGeometry()
+	origin := g.WorkPlanes().Item(0) // grounded, hidden by default
+	if origin.ShownForHostPick(false) {
+		t.Error("a hidden origin plane must not show without a host pick (#1520 guard)")
+	}
+	if !origin.ShownForHostPick(true) {
+		t.Error("a hidden origin plane must show while revealing for a host pick (#1752)")
+	}
+
+	user := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 1 })
+	user.SetVisible(false) // the user hid it
+	if user.ShownForHostPick(true) {
+		t.Error("a hidden USER plane must not be revealed — the reveal is scoped to the grounded origin frame")
+	}
+	user.SetVisible(true)
+	if !user.ShownForHostPick(false) {
+		t.Error("a visible plane is always shown regardless of the host-pick reveal")
+	}
+}
+
 func TestUserCoordinateSystem(t *testing.T) {
 	ucs := NewUserCoordinateSystems().AddByPlane(offsetXY(5))
 	ucs.SetName("Frame")

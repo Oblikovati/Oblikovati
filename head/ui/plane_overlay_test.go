@@ -44,10 +44,33 @@ func TestAssemblyOriginDatumsDrawWhenShown(t *testing.T) {
 	showAllDatums(wg)
 	noHide := func(uint64) bool { return false }
 
-	if got := len(planesOverlay(wg.WorkPlanes(), nil, nil, noHide)); got == 0 {
+	if got := len(planesOverlay(wg.WorkPlanes(), nil, nil, noHide, false)); got == 0 {
 		t.Error("planesOverlay drew nothing for an assembly's visible origin planes")
 	}
 	if got := len(axesOverlay(wg.WorkAxes(), nil, noHide)); got == 0 {
 		t.Error("axesOverlay drew nothing for an assembly's visible origin axes")
+	}
+}
+
+// TestPlanesOverlayRevealsHiddenOriginFrame: with reveal on (Create 2D Sketch picking its host), the
+// overlay draws the default-hidden grounded origin planes so the user can see the plane they click —
+// the head half of #1752, matching app.PickableWorkPlanes. With reveal off they stay undrawn.
+func TestPlanesOverlayRevealsHiddenOriginFrame(t *testing.T) {
+	s := app.NewSession()
+	if _, err := compdef.AddPart(s.Workspace(), "part.opd", true); err != nil { // origin planes default hidden
+		t.Fatalf("AddPart: %v", err)
+	}
+	wg, ok := s.ActiveWorkGeometry()
+	if !ok {
+		t.Fatal("ActiveWorkGeometry returned false for an active part")
+	}
+	noHide := func(uint64) bool { return false }
+
+	if got := len(planesOverlay(wg.WorkPlanes(), nil, nil, noHide, false)); got != 0 {
+		t.Errorf("with reveal off, hidden origin planes must not draw; got %d draw items", got)
+	}
+	// 3 grounded origin planes × (fill + border) = 6 draw items when revealed.
+	if got := len(planesOverlay(wg.WorkPlanes(), nil, nil, noHide, true)); got != 6 {
+		t.Errorf("with reveal on, the 3 origin planes should draw (6 items: fill+border each); got %d", got)
 	}
 }

@@ -572,7 +572,7 @@ func modelOverlays(s *app.Session, cam scene.Camera, hovered *feature.WorkPlane,
 	hidden := s.EditScopeHides          // hide datums created after the node being edited (issue #132)
 	vis := s.ObjectVisibility()         // View ▸ Object visibility (M05-F12): hidden kinds neither draw nor pick
 	if hasWG && vis.WorkPlanes {
-		list.Items = append(list.Items, planesOverlay(wg.WorkPlanes(), s.SelectedWorkPlane(), hovered, hidden)...)
+		list.Items = append(list.Items, planesOverlay(wg.WorkPlanes(), s.SelectedWorkPlane(), hovered, hidden, s.RevealSketchHostDatums())...)
 	}
 	if hasWG && vis.WorkAxes {
 		list.Items = append(list.Items, axesOverlay(wg.WorkAxes(), selectedWorkAxis(s), hidden)...)

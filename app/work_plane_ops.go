@@ -66,14 +66,33 @@ func (s *Session) PickableWorkPlanes() []*feature.WorkPlane {
 	if !ok {
 		return nil
 	}
+	reveal := s.RevealSketchHostDatums() // Create Sketch temporarily reveals the hidden origin frame (#1752)
 	planes := wg.WorkPlanes()
 	out := make([]*feature.WorkPlane, 0, planes.Count())
 	for i := 0; i < planes.Count(); i++ {
-		if wp := planes.Item(i); wp.Visible() && !s.EditScopeHides(wp.Seq()) {
+		wp := planes.Item(i)
+		if wp.ShownForHostPick(reveal) && !s.EditScopeHides(wp.Seq()) {
 			out = append(out, wp)
 		}
 	}
 	return out
+}
+
+// datumHostPicker is a tool that selects a datum plane as its host, so the normally-hidden
+// origin frame should be revealed (drawn + pickable) for its duration. Deriving the reveal from
+// the active tool keeps it stateless — no flag to reset on commit/cancel that could desync (#1752).
+type datumHostPicker interface {
+	RevealsDatumHosts() bool
+}
+
+// RevealSketchHostDatums reports whether the active tool wants the hidden origin datum planes
+// revealed for picking — true while Create 2D Sketch is choosing its host, false otherwise.
+func (s *Session) RevealSketchHostDatums() bool {
+	if s.tool == nil {
+		return false
+	}
+	r, ok := s.tool.tool.(datumHostPicker)
+	return ok && r.RevealsDatumHosts()
 }
 
 // PickableWorkAxes returns the datum axes (origin X/Y/Z and user) the viewport hit-test should

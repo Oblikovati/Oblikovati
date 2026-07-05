@@ -169,6 +169,15 @@ func (w *WorkPlane) Grounded() bool                  { return w.grounded }
 func (w *WorkPlane) Visible() bool     { return w.visible }
 func (w *WorkPlane) SetVisible(v bool) { w.visible = v }
 
+// ShownForHostPick reports whether the plane should be drawn AND pickable given whether a datum-host
+// pick (Create 2D Sketch) is revealing the origin frame: any visible plane, plus the grounded origin
+// planes while revealing — they default hidden, so a brand-new part would otherwise offer nothing to
+// click. The viewport overlay and the app-side picker share this one rule so a plane the user can SEE
+// during host selection is always one they can CLICK, and vice versa (#1752).
+func (w *WorkPlane) ShownForHostPick(revealing bool) bool {
+	return w.visible || (revealing && w.grounded)
+}
+
 // recompute re-derives the plane from its definition, going sick on failure (e.g.
 // degenerate three points) rather than producing garbage.
 func (w *WorkPlane) recompute(r workResolver) {

@@ -29,6 +29,11 @@ func (t *CreateSketchTool) Name() string { return "Create 2D Sketch" }
 // Start is a no-op; the engine installs the filter from AcceptedKinds.
 func (t *CreateSketchTool) Start(*Session) {}
 
+// RevealsDatumHosts marks this as a datum-host pick so the host reveals the normally-hidden
+// origin planes (XY/XZ/YZ) — otherwise a brand-new part offers nothing to click in the viewport
+// and the only route to the first sketch is the browser Origin folder (#1752).
+func (t *CreateSketchTool) RevealsDatumHosts() bool { return true }
+
 // AcceptedKinds declares the valid sketch hosts: work planes and planar faces. Declaring the
 // face here (not just the plane) is what lets a face in front win over the origin plane behind it.
 func (t *CreateSketchTool) AcceptedKinds() []SelectionKind {
