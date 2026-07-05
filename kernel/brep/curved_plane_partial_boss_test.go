@@ -20,15 +20,25 @@ func TestJoinPartialBossStraddlesEdge(t *testing.T) {
 	if !ok {
 		t.Fatal("partial boss union declined; want plate + straddling boss")
 	}
-	freeEdges := 0
+	freeEdges, inconsistent := 0, 0
 	for _, e := range res.Edges() {
-		if len(e.Uses()) != 2 {
+		uses := e.Uses()
+		if len(uses) != 2 {
 			freeEdges++
+			continue
+		}
+		if uses[0].Reversed() == uses[1].Reversed() { // both traverse the edge the same way → not orientable
+			inconsistent++
 		}
 	}
-	t.Logf("faces=%d edges=%d freeEdges=%d solid=%v shells=%d", len(res.Faces()), len(res.Edges()), freeEdges, res.IsSolid(), len(res.Shells()))
+	t.Logf("faces=%d edges=%d freeEdges=%d inconsistent=%d solid=%v shells=%d", len(res.Faces()), len(res.Edges()), freeEdges, inconsistent, res.IsSolid(), len(res.Shells()))
 	if freeEdges != 0 {
 		t.Errorf("partial boss has %d free edges (want 0 — a watertight manifold)", freeEdges)
+	}
+	// Orientation consistency: every shared edge's two face-uses must run opposite ways, or the analytic
+	// manifold gate (validBooleanSolid) rejects the body and ops.Boolean silently falls back to CSG (#1591).
+	if inconsistent != 0 {
+		t.Errorf("partial boss has %d inconsistently-oriented edges (want 0 — an orientable manifold)", inconsistent)
 	}
 }
 

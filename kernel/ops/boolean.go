@@ -239,8 +239,8 @@ var curvedExactPaths = []func(PartFeatureOperation, *topo.Body, *topo.Body, *dia
 	curvedPartialIntersect,
 	// Cut — [P] the drill through-hole (curved-on-planar), the rest [T] transversal.
 	curvedCylindricalHoleCut, curvedFlatSubtract, curvedPartialCut, curvedSteinmetzCut, curvedConeCylinderCut, curvedConeConeCut, curvedCapCrossCut, curvedRimCrossCut, curvedTwoCapCrossCut, curvedConeCapCrossCut, curvedPartialRimCut, curvedPartialRimCornerCut, curvedCrossingCut,
-	// Join — [D] coaxial (degenerate overlap), [P] boss (curved-on-planar), the rest [T] transversal.
-	curvedCoaxialJoin, curvedCylinderBossJoin, curvedPartialJoin, curvedConeCylinderJoin, curvedConeConeJoin, curvedCrossingJoin, curvedSteinmetzJoin,
+	// Join — [D] coaxial (degenerate overlap), [P] boss interior then straddling (curved-on-planar), the rest [T] transversal.
+	curvedCoaxialJoin, curvedCylinderBossJoin, curvedPartialBossJoin, curvedPartialJoin, curvedConeCylinderJoin, curvedConeConeJoin, curvedCrossingJoin, curvedSteinmetzJoin,
 }
 
 func shouldFallbackBoolean(op PartFeatureOperation, target, tool, body *topo.Body) bool {

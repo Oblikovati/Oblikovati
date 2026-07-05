@@ -114,7 +114,24 @@ func trimSeatAndCap(c *planeUV, seatFace curvedFace, pl geom.Plane, nearCirc geo
 	if err != nil || len(cap) == 0 {
 		return nil, nil, false
 	}
-	return seat, cap, true
+	return seat, reverseCapLoops(cap), true
+}
+
+// reverseCapLoops flips each overhang-cap face's loop winding. trimByImprint's orientLoops winds every kept
+// loop for the seat plane's NATURAL (+normal) sense regardless of the input face's reversed flag; the cap
+// faces the OPPOSITE way (its reversed=true normal points down, away from the boss), so its loops must be
+// reversed to wind CCW about that normal — otherwise its shared edges run the same way as the wall's and the
+// plate side's, an inconsistent orientation the manifold gate rejects (#1591).
+func reverseCapLoops(faces []curvedFace) []curvedFace {
+	out := make([]curvedFace, len(faces))
+	for i, f := range faces {
+		loops := make([]curvedLoop, len(f.loops))
+		for j, lp := range f.loops {
+			loops[j] = reverseCurvedLoop(lp)
+		}
+		out[i] = curvedFace{surface: f.surface, reversed: f.reversed, loops: loops, lineage: f.lineage, outerless: f.outerless}
+	}
+	return out
 }
 
 // bossSeamAngle returns the smaller of the two crossing parameters — the conic t where the wall seam and the
