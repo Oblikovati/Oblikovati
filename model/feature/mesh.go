@@ -3,11 +3,10 @@
 package feature
 
 import (
-	"bufio"
 	"fmt"
 	"io"
-	"strconv"
 
+	"oblikovati.org/kernel/exchange/meshio"
 	"oblikovati.org/math"
 
 	stdmath "math"
@@ -25,58 +24,49 @@ type MeshGeometry struct {
 	Facets   [][]int
 }
 
-// ParseSTL reads an ASCII STL stream into a MeshGeometry, welding coincident vertices
-// (on a tolerance grid) so facets share vertices/edges. It errors on malformed input,
-// naming the offending token. Binary STL is a separate decoder (not yet wired).
+// ParseSTL reads an STL stream (ASCII or binary, auto-detected) into a MeshGeometry,
+// welding coincident vertices (on a tolerance grid) so facets share vertices/edges. It
+// errors on malformed input and on an STL carrying no facets.
+//
+//	g, err := ParseSTL(f) // f is an ASCII or binary .stl
 func ParseSTL(r io.Reader) (*MeshGeometry, error) {
-	sc := bufio.NewScanner(r)
-	sc.Split(bufio.ScanWords)
-	g := &MeshGeometry{}
-	if err := scanFacets(sc, g); err != nil {
-		return nil, err
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return nil, fmt.Errorf("STL: read: %w", err)
 	}
-	if len(g.Facets) == 0 {
+	return DecodeSTLMesh(data)
+}
+
+// DecodeSTLMesh decodes STL bytes (ASCII or binary) into welded reference-mesh geometry.
+// It delegates the format decode to the kernel mesh reader (meshio.DecodeSTL) — the single
+// owner of STL parsing — so a binary STL (e.g. a dense scan or visualization mesh) imports
+// as a lightweight MeshFeature here, distinct from File ▸ Import which promotes a mesh to a
+// full B-rep body (#1764). The two share one decoder; only the target representation differs.
+func DecodeSTLMesh(data []byte) (*MeshGeometry, error) {
+	raw, err := meshio.DecodeSTL(data)
+	if err != nil {
+		return nil, fmt.Errorf("STL: %w", err)
+	}
+	return meshGeometryFromRaw(raw)
+}
+
+// meshGeometryFromRaw welds a decoded triangle soup into shared-vertex reference geometry:
+// each RawMesh triangle becomes a facet whose three corners are welded (1e-6 grid) so
+// coincident vertices are shared. An empty soup is a malformed/empty STL, reported as such.
+func meshGeometryFromRaw(raw meshio.RawMesh) (*MeshGeometry, error) {
+	if len(raw.Tris) == 0 {
 		return nil, fmt.Errorf("STL: no facets parsed")
 	}
+	g := &MeshGeometry{Facets: make([][]int, 0, len(raw.Tris))}
+	index := make(map[[3]int64]int, len(raw.Tris))
+	for _, tri := range raw.Tris {
+		g.Facets = append(g.Facets, []int{
+			weldVertex(g, index, raw.Verts[tri[0]]),
+			weldVertex(g, index, raw.Verts[tri[1]]),
+			weldVertex(g, index, raw.Verts[tri[2]]),
+		})
+	}
 	return g, nil
-}
-
-// scanFacets consumes the token stream, welding each facet's vertices into g.
-func scanFacets(sc *bufio.Scanner, g *MeshGeometry) error {
-	index := map[[3]int64]int{}
-	var facet []int
-	for sc.Scan() {
-		switch sc.Text() {
-		case "vertex":
-			p, err := readPoint(sc)
-			if err != nil {
-				return err
-			}
-			facet = append(facet, weldVertex(g, index, p))
-		case "endfacet":
-			if len(facet) >= 3 {
-				g.Facets = append(g.Facets, facet)
-			}
-			facet = nil
-		}
-	}
-	return sc.Err()
-}
-
-// readPoint reads three whitespace-separated floats following a "vertex" token.
-func readPoint(sc *bufio.Scanner) (math.Point3, error) {
-	var c [3]float64
-	for i := 0; i < 3; i++ {
-		if !sc.Scan() {
-			return math.Point3{}, fmt.Errorf("STL: vertex truncated at coord %d", i)
-		}
-		v, err := strconv.ParseFloat(sc.Text(), 64)
-		if err != nil {
-			return math.Point3{}, fmt.Errorf("STL: bad coordinate %q: %w", sc.Text(), err)
-		}
-		c[i] = v
-	}
-	return math.P3(c[0], c[1], c[2]), nil
 }
 
 // weldVertex returns the index of p in g, reusing a coincident vertex (1e-6 grid).

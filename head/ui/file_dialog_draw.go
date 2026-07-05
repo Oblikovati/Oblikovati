@@ -333,7 +333,7 @@ func saveActiveDocumentAs(s *app.Session, path, name string) {
 	queueSaveThumbnail(s, path)
 }
 
-// placeMeshFromFile imports an ASCII STL as mesh reference geometry (Mesh ▸ Place Mesh).
+// placeMeshFromFile imports an STL (ASCII or binary, #1764) as mesh reference geometry (Mesh ▸ Place Mesh).
 func placeMeshFromFile(s *app.Session, path, name string) {
 	if _, err := s.ImportMeshFile(path); err != nil {
 		fileNotice(s, "Place Mesh failed: %v", err)
