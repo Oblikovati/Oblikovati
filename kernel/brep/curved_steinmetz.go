@@ -26,28 +26,59 @@ import (
 // β=±α. The two intersection ellipses therefore lie in the planes β=α and β=−α; they meet only where
 // α=β=0, i.e. at the PINCH points O±R·n, where the two surfaces are tangent.
 
+// steinmetzSnapCeiling is the radius gap |Δr| below which two near-equal perpendicular crossing cylinders
+// snap to a common radius and take the exact bicylinder constructor (#1780). It is the model-relative stitch
+// weld (1e-6·size), the SSI producer's OWN noise floor: below it the two-loop neck the general rod-band path
+// would otherwise build has closest-approach √(2R·Δr) that is itself unresolvable, so representing the
+// near-pinch as the exact pinch is honest, not a loss — the only error is each wall displaced by ≤|Δr|/2,
+// well under the weld. ABOVE it the neck is macroscopic, genuine two-loop geometry that must NOT snap (that
+// residual band stays with the deterministic faceted route; unifying it analytically is #1780 Direction 2).
+// It is deliberately the same value both steinmetzFrame (accept) and crossingCylinderImprint (decline) read,
+// so the two paths meet at exactly one radius gap with neither a hole nor an overlap between them.
+func steinmetzSnapCeiling(res geom.Resolution) float64 { return res.Stitch() }
+
+// steinmetzSnapRadius returns the common radius two crossing cylinders snap to and whether they are close
+// enough to snap (|Δr| ≤ steinmetzSnapCeiling). The common radius is the MEAN, which minimises the maximum
+// wall displacement to |Δr|/2 (min/max would move one wall by the full |Δr|); the snap is symmetric because
+// both operands are rebuilt at the common radius, so no operation-aware bias is needed — crossing cylinders
+// meet transversally, never near-tangentially, so a sub-noise radius nudge cannot open a sliver (#1780).
+// Δr is formed directly as ra−rb, never via ra²−rb², which would square the floating-point cancellation.
+func steinmetzSnapRadius(ra, rb float64, res geom.Resolution) (radius float64, ok bool) {
+	if stdmath.Abs(ra-rb) > steinmetzSnapCeiling(res) {
+		return 0, false
+	}
+	return (ra + rb) / 2, true
+}
+
 // steinmetzFrame resolves two bodies into the Steinmetz frame: the axis crossing point O, the two unit axis
-// directions, and the shared radius R. ok=false unless both are bare cylinders of equal radius whose axes
-// are perpendicular, cross, and whose finite extents each reach at least R either side of O (so the
-// bicylinder is not clipped by a cap).
+// directions, and the common radius R the bicylinder is built at. ok=false unless both are bare cylinders
+// whose radii are within steinmetzSnapCeiling (equal, or near-equal and snapped to their mean — #1780) and
+// whose axes are perpendicular, cross, and whose finite extents each reach at least R either side of O (so
+// the bicylinder is not clipped by a cap).
 func steinmetzFrame(a, b *topo.Body) (o math.Point3, dirA, dirB math.Vector3, r float64, ok bool) {
 	ca, baseA, hA, okA := cylinderSolidParams(facesOfAny(a))
 	cb, baseB, hB, okB := cylinderSolidParams(facesOfAny(b))
-	if !okA || !okB || !nearEqual(ca.Radius, cb.Radius) {
+	if !okA || !okB {
+		return math.Point3{}, math.Vector3{}, math.Vector3{}, 0, false
+	}
+	// Axis-intersection coincidence and the radius-snap ceiling are both model-relative (#1399/#1780),
+	// from the two operands' combined extent.
+	res := geom.ResolutionForBox(a.RangeBox().Union(b.RangeBox()))
+	rc, snap := steinmetzSnapRadius(ca.Radius, cb.Radius, res)
+	if !snap {
 		return math.Point3{}, math.Vector3{}, math.Vector3{}, 0, false
 	}
 	dirA, dirB = ca.AxisDir.AsVector(), cb.AxisDir.AsVector()
-	if !math.IsNearZero(dirA.Dot(dirB), 1e-7) { // tol:angular — perpendicular-axes dot of unit vectors
+	if !math.IsNearZero(dirA.Dot(dirB), 1e-7) { // tol:angular — perpendicular gate, kept isolated from the radius snap (#1780)
 		return math.Point3{}, math.Vector3{}, math.Vector3{}, 0, false
 	}
 	lineA, _ := geom.NewLine(ca.Origin, dirA)
 	lineB, _ := geom.NewLine(cb.Origin, dirB)
-	// Axis-intersection coincidence is model-relative (#1399), from the two operands' extent.
-	o, ok = geom.LineLineIntersection(lineA, lineB, geom.ResolutionForBox(a.RangeBox().Union(b.RangeBox())).Plane())
+	o, ok = geom.LineLineIntersection(lineA, lineB, res.Plane())
 	if !ok || !axisReachesR(ca, baseA, hA, o) || !axisReachesR(cb, baseB, hB, o) {
 		return math.Point3{}, math.Vector3{}, math.Vector3{}, 0, false
 	}
-	return o, dirA, dirB, ca.Radius, true
+	return o, dirA, dirB, rc, true
 }
 
 // axisReachesR reports whether the cylinder's finite extent reaches at least its radius either side of O

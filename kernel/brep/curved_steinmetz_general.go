@@ -122,6 +122,13 @@ func steinmetzGeneral(a, b *topo.Body, op Op,
 	if !okA || !okB || !okMA || !okMB {
 		return nil, false
 	}
+	// Route the common (snapped) radius into BOTH wall surfaces so they are built self-consistent with the
+	// r-radius imprint arcs (#1780). trimByImprint emits each kept lobe/band face ON this geom.Cylinder, so
+	// equal walls and equal arcs weld exactly at the two shared pinches; patching only the arcs would leave a
+	// |Δr|-scale gap between an arc and the wall it bounds. For exactly-equal radii r is unchanged and this is
+	// a no-op. Membership (insideA/insideB) keeps the true radii — it classifies cell-interior points O(R)
+	// from any wall, where a ≤|Δr|/2 boundary shift cannot flip a cell.
+	cylA.Radius, cylB.Radius = r, r
 	arcs := steinmetzImprintArcs(o, dirA, dirB, r)
 	pinch := o.TranslateBy(dirA.Cross(dirB).Scale(math.Scalar(r))) // P+ = O + R·n, a shared pinch point
 	wallA, okWA := steinmetzSideSplit(fA, cylA, bandA, arcs, pinch, op, false, insideB)

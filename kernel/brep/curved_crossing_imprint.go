@@ -37,10 +37,12 @@ const CodeImprintUnclosedChain diag.Code = "imprint.unclosed-chain"
 // recorded instead of silent.
 const CodeImprintFallbackContour diag.Code = "imprint.fallback-contour"
 
-// CodeImprintNearPinchDeclined marks a crossing-cylinder imprint declined because the radii are
-// near-equal (the near-pinch Steinmetz band): the general rod-band assembly is input-sensitive
-// there, so the boolean takes the deterministic faceted fallback and records the degradation
-// instead of assembling silently wrong analytic topology (#1598; unification tracked by #1403).
+// CodeImprintNearPinchDeclined marks a crossing-cylinder imprint declined in the near-pinch RESIDUAL band —
+// radii unequal by more than the snap ceiling but by less than 2.5e-4·r: the two intersection loops have a
+// resolvable but narrow neck √(2R·Δr), where the general rod-band split/classify is input-sensitive (#1598),
+// so the boolean takes the deterministic faceted fallback and records the degradation instead of assembling
+// silently wrong analytic topology. Radii closer than the snap ceiling do NOT record this — they snap to the
+// exact Steinmetz constructor (#1780); folding this residual band onto the analytic path is #1780 Direction 2.
 const CodeImprintNearPinchDeclined diag.Code = "imprint.near-pinch-declined"
 
 // imprintTraceLoops traces base∩other over window and keeps the loops that close — the shared trace
@@ -71,19 +73,26 @@ func crossingCylinderImprint(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyli
 	if !okA || !okB {
 		return nil, false
 	}
-	// Near-equal radii approach the pinched Steinmetz configuration: the intersection
-	// loops hug the tangency line with hairpin turns, and the general rod-band
-	// split/classify downstream is input-sensitive there (face count and volume vary
-	// with sampling — observed at |Δr|/r ≤ 5e-5, #1598). Equal radii take the exact
-	// bespoke Steinmetz constructor; the near-equal band between declines the general
-	// path so the boolean falls back to the recorded, deterministic faceted route
-	// instead of assembling silently wrong analytic topology (#1403 tracks unifying it).
-	if relDr := stdmath.Abs(ca.Radius-cb.Radius) / stdmath.Max(ca.Radius, cb.Radius); relDr > 0 && relDr < 2.5e-4 {
-		rec.Recordf(CodeImprintNearPinchDeclined, diag.Defect,
-			"crossing cylinders with near-equal radii (|Δr|/r = %.2g) decline the general imprint: near-pinch saddle topology, falling back", relDr)
-		return nil, false
-	}
 	res := geom.ResolutionForBox(a.RangeBox().Union(b.RangeBox())) // model-relative loop-closure weld (#1399)
+	// Unequal radii near the pinched Steinmetz configuration split into two bands by the neck √(2R·Δr):
+	//   |Δr| ≤ snap ceiling  → the neck is below the SSI producer noise floor; the exact Steinmetz
+	//     constructor snaps the radii to their mean and builds the pinched bicylinder (#1780). Decline the
+	//     rod-band path SILENTLY so dispatch falls through to it — there is no degradation to record.
+	//   snap ceiling < |Δr| < 2.5e-4·r  → a resolvable but narrow neck where the general rod-band
+	//     split/classify is input-sensitive (face count and volume vary with sampling, #1598): record the
+	//     degradation and fall back to the deterministic faceted route (unifying this band is #1780 Direction 2).
+	// Exactly-equal radii (|Δr| = 0) are the Steinmetz pinch itself and trace through (both ellipse loops).
+	if ca.Radius != cb.Radius {
+		dr := stdmath.Abs(ca.Radius - cb.Radius)
+		if dr <= steinmetzSnapCeiling(res) {
+			return nil, false
+		}
+		if relDr := dr / stdmath.Max(ca.Radius, cb.Radius); relDr < 2.5e-4 {
+			rec.Recordf(CodeImprintNearPinchDeclined, diag.Defect,
+				"crossing cylinders with near-equal radii (|Δr|/r = %.2g) decline the general imprint: near-pinch saddle topology, falling back", relDr)
+			return nil, false
+		}
+	}
 	loops := imprintTraceLoops(ca, cb, cylinderTraceWindow(ca, baseA, heightA), res, rec)
 	if len(loops) == 0 {
 		return nil, false

@@ -169,6 +169,40 @@ func TestCrossingCylinderImprintSquatFat(t *testing.T) {
 	}
 }
 
+// TestCrossingCylinderImprintSnapBandSilent: radii closer than the snap ceiling decline the rod-band imprint
+// (so dispatch falls through to the exact Steinmetz constructor, which snaps them — #1780) WITHOUT recording a
+// degradation. The snap is honest, not a fallback, so it must raise no near-pinch defect.
+func TestCrossingCylinderImprintSnapBandSilent(t *testing.T) {
+	a, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12)
+	base, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
+	ceil := geom.ResolutionForBox(a.RangeBox().Union(base.RangeBox())).Stitch()
+	b, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3+0.5*ceil, 12)
+	rec := &diag.Recorder{}
+	if _, ok := crossingCylinderImprint(a, b, rec); ok {
+		t.Fatal("snap-band radii must decline the rod-band imprint (Steinmetz snaps instead)")
+	}
+	if rec.Count(diag.Defect) != 0 || rec.Has(CodeImprintNearPinchDeclined) {
+		t.Errorf("snap-band decline must be SILENT (no degradation to record); got %v", rec.Records())
+	}
+}
+
+// TestCrossingCylinderImprintResidualBandRecords: radii ABOVE the snap ceiling but inside the near-pinch band
+// decline AND record exactly one CodeImprintNearPinchDeclined defect — the genuine, non-silent fallback the
+// residual band still takes until #1780 Direction 2 folds it onto the analytic path.
+func TestCrossingCylinderImprintResidualBandRecords(t *testing.T) {
+	a, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12)
+	base, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
+	ceil := geom.ResolutionForBox(a.RangeBox().Union(base.RangeBox())).Stitch()
+	b, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3+4*ceil, 12)
+	rec := &diag.Recorder{}
+	if _, ok := crossingCylinderImprint(a, b, rec); ok {
+		t.Fatal("residual-band radii must decline the rod-band imprint")
+	}
+	if !rec.Has(CodeImprintNearPinchDeclined) || rec.Count(diag.Defect) != 1 {
+		t.Errorf("residual-band decline must record exactly one near-pinch defect; got %v", rec.Records())
+	}
+}
+
 // TestKeepImprintLoopsRecordsFallbackContour: curves whose provenance is the marching-squares fallback
 // must raise CodeImprintFallbackContour — the imprint proceeds on contour-quality loops, but the
 // degradation is recorded instead of silent (#1597).
