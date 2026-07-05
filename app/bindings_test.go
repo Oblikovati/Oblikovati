@@ -309,7 +309,12 @@ func TestPressKeyRebindTakesEffect(t *testing.T) {
 	}
 }
 
-func TestDispatchUndoGuardedWhileToolActive(t *testing.T) {
+// TestDispatchUndoFiresWhileToolArmed pins the corrected #1750 semantics at the Dispatch layer:
+// undo is NOT blocked merely because an interactive tool is armed — only a genuinely open
+// bounded transaction blocks it (see TestKeyboardUndoBlockedDuringOpenTransaction). Before #1750
+// the guard was `s.tool != nil`, so an armed tool silently killed undo and this test asserted that
+// no-op; it now guards against regressing back to the over-broad guard.
+func TestDispatchUndoFiresWhileToolArmed(t *testing.T) {
 	s, profile := newPartWithSquare(t, 2)
 	trackFromHere(s)
 	s.SetPicker(stubPicker{sel: profile})
@@ -324,19 +329,17 @@ func TestDispatchUndoGuardedWhileToolActive(t *testing.T) {
 		t.Fatal("precondition: the extrude should be undoable")
 	}
 
-	s.StartTool(bindingStubTool{}) // a tool is now active
+	s.StartTool(bindingStubTool{}) // a tool is now armed, but no bounded transaction is open
+	if s.InTransaction() {
+		t.Fatal("precondition: a merely-armed tool opens no bounded transaction")
+	}
 	if err := s.Bindings().Dispatch(ActionUndo, s); err != nil {
 		t.Fatalf("Dispatch undo: %v", err)
 	}
-	if !s.CanUndo() {
-		t.Error("undo must be a no-op while a tool is active (guard preserved)")
-	}
-
-	s.CancelTool()
-	if err := s.Bindings().Dispatch(ActionUndo, s); err != nil {
-		t.Fatalf("Dispatch undo after cancel: %v", err)
-	}
 	if s.CanUndo() {
-		t.Error("with no tool, undo should consume the extrude transaction")
+		t.Error("undo must fire while a tool is armed (no open transaction) — #1750")
+	}
+	if !s.CanRedo() {
+		t.Error("the undone extrude should be redoable")
 	}
 }
