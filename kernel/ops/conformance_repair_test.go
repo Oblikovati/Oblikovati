@@ -54,6 +54,56 @@ func TestConformingPlaneMeshKeepsNearCollinearPoint(t *testing.T) {
 	}
 }
 
+// TestIsBareTriangleFace pins the #1766 predicate: a straight-edged planar triangle is bare, while a
+// 5-point boundary (an absorber's shape, whose near-collinear point must be re-meshed) is NOT — so the
+// conformance-repair skip can never fire on a face that could crack a neighbour.
+func TestIsBareTriangleFace(t *testing.T) {
+	tri := planarFaceFromLoop(t, []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0, 1, 0)})
+	if !isBareTriangleFace(tri) {
+		t.Error("a straight-edged planar triangle should be a bare triangle")
+	}
+	pent := planarFaceFromLoop(t, []math.Point3{
+		math.P3(0, 0, 0), math.P3(2, 0, 0), math.P3(2, 2, 0), math.P3(1, 2.0001, 0), math.P3(0, 2, 0),
+	})
+	if isBareTriangleFace(pent) {
+		t.Error("a 5-point (absorber) boundary must not be classified as a bare triangle")
+	}
+	for _, f := range tetra(1, math.V3(0, 0, 0)).Faces() {
+		if !isBareTriangleFace(f) {
+			t.Error("every tetra face is a straight-edged planar triangle")
+		}
+	}
+	if !allBareTriangleFaces(tetra(1, math.V3(0, 0, 0)).Faces()) {
+		t.Error("a tetra is a pure bare-triangle soup")
+	}
+}
+
+// TestConformingMeshIsNoOpOnBareTriangle: re-meshing a triangle reproduces the same triangle, so
+// conformingPlaneMesh returns nil (keep existing) — the skip that drops the per-face CDT (#1766).
+func TestConformingMeshIsNoOpOnBareTriangle(t *testing.T) {
+	tri := planarFaceFromLoop(t, []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0, 1, 0)})
+	if m := conformingPlaneMesh(tri, DefaultQuality()); m != nil {
+		t.Errorf("conformingPlaneMesh should skip a bare triangle (return nil), got %d tris", m.TriangleCount())
+	}
+}
+
+// TestBareTriangleSoupTessellatesWatertight proves the body-level conformance skip is a genuine no-op
+// on a closed triangle soup: the tetra still tessellates watertight (zero free edges), one triangle per
+// face — i.e. skipping the repair pass did not reintroduce a crack (#1766).
+func TestBareTriangleSoupTessellatesWatertight(t *testing.T) {
+	body := tetra(1, math.V3(0, 0, 0))
+	if !allBareTriangleFaces(body.Faces()) {
+		t.Fatal("tetra should be a bare-triangle soup (the skip path)")
+	}
+	mesh, _ := TessellateBody(body, DefaultQuality())
+	if got := weldedFreeEdgeCount(mesh); got != 0 {
+		t.Errorf("tessellated tetra has %d free edges, want 0 (watertight)", got)
+	}
+	if mesh.TriangleCount() != 4 {
+		t.Errorf("tetra tessellated to %d triangles, want 4 (one per face)", mesh.TriangleCount())
+	}
+}
+
 // planarFaceFromLoop builds a single planar (z=0) face from a CCW 3D point loop, each side a line
 // edge — the fixture for the plane-conformance tests.
 func planarFaceFromLoop(t *testing.T, loop []math.Point3) *topo.Face {
