@@ -41,6 +41,13 @@ type Body struct {
 	edgeIndex       map[string][]*Edge
 	faceIndex       map[string][]*Face
 	vertexIndex     map[string][]*Vertex
+
+	// rangeBox memoizes the axis-aligned bound, built once for the same immutability reason as the
+	// key indices above (#1771). RangeBox is a render hot path — instancedBounds and per-frame
+	// frustum culling call it every frame — but a static body's bound never changes, so the O(edges)
+	// sweep runs once, not once per orbit frame (~87% of frame time before this).
+	rangeBoxOnce sync.Once
+	rangeBox     math.Box
 }
 
 // edgeKeyIndex returns the edge reference-key index, building it once. See the index
@@ -177,6 +184,19 @@ func deriveVerticesFrom(edges []*Edge) []*Vertex {
 // cones and arcs are bounded by their true silhouette rather than collapsing to
 // their seam vertices (see extendBoxByEdges).
 func (b *Body) RangeBox() math.Box {
+	// Before finalize the body is still changing, so compute live and do not memoize an incomplete
+	// bound — the same pre-finalize rule the key indices follow. After finalize the body is immutable,
+	// so the O(vertices+edges) sweep runs once and every subsequent (per-frame) call is a cache read.
+	if !b.derived {
+		return b.computeRangeBox()
+	}
+	b.rangeBoxOnce.Do(func() { b.rangeBox = b.computeRangeBox() })
+	return b.rangeBox
+}
+
+// computeRangeBox is the raw axis-aligned bound over the body's vertices, edges and boundaryless
+// faces — the sweep RangeBox memoizes once the body is finalized (#1771).
+func (b *Body) computeRangeBox() math.Box {
 	box := math.EmptyBox()
 	for _, v := range b.Vertices() {
 		box = box.ExtendPoint(v.point)
