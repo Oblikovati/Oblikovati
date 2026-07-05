@@ -44,6 +44,7 @@ func isBinarySTL(data []byte) bool {
 func decodeBinarySTL(data []byte) (RawMesh, error) {
 	count := binary.LittleEndian.Uint32(data[80:84])
 	var m RawMesh
+	m.Reserve(int(count)) // header gives the exact size; fill without reallocation (#1765)
 	off := 84
 	for i := uint32(0); i < count; i++ {
 		off += 12 // skip the per-facet normal
