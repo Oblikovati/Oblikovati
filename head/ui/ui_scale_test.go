@@ -33,6 +33,26 @@ func TestScaledIconPx(t *testing.T) {
 	}
 }
 
+// TestScaleDim covers the font-scale dialog-dimension math without a window: a 0 axis (ImGui's
+// auto-size) is preserved, a positive dimension multiplies by the live UI font scale, and a
+// non-positive scale falls back to the base so a window can never collapse (#1753).
+func TestScaleDim(t *testing.T) {
+	defer func() { uiFontScale = 1.0 }() // package global; restore for other tests
+
+	uiFontScale = 1.5
+	if got := scaleDim(200); got != 300 {
+		t.Errorf("scaleDim(200) at 1.5x = %v, want 300", got)
+	}
+	if got := scaleDim(0); got != 0 {
+		t.Errorf("scaleDim(0) = %v, want 0 (auto-size axis preserved)", got)
+	}
+
+	uiFontScale = 0 // guard: a non-positive scale must fall back to the base dimension
+	if got := scaleDim(200); got != 200 {
+		t.Errorf("scaleDim(200) at 0 scale = %v, want 200 (fallback)", got)
+	}
+}
+
 // TestInWindowApplyUIScale drives applyUIScale in a real frame and asserts it copies the session's
 // persisted icon scale into the live uiIconScale the draw sites read. The font scale goes straight
 // to ImGui (style.FontScaleMain) and is exercised here for its draw path.

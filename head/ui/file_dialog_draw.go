@@ -34,7 +34,7 @@ func drawFileDialog(s *app.Session) {
 	wasAddIn := fileModal.mode == dialogAddIn
 	request := fileModal.request
 	var act fileAction
-	native.SetNextWindowSizeOnce(760, 520)
+	dialogSizeOnce(760, 520)
 	if native.Begin(fileModal.title()) {
 		drawExplorerHeader()
 		act = drawExplorerTable()
@@ -91,13 +91,22 @@ func drawRootChooser() {
 	native.EndCombo()
 }
 
-// drawExplorerTable renders the current directory rows and returns a double-click action.
+// fileFooterReserve is the height (in px) held below the file table for the footer drawn after it:
+// the file-name field, the optional export-resolution / import-plane row, and the Export/Cancel
+// button row — six frame-heights covers the tallest variant. FrameHeight already includes the live
+// font scale, so the reserve grows with the text (#1753).
+func fileFooterReserve() float32 { return native.FrameHeight() * 6 }
+
+// drawExplorerTable renders the current directory rows and returns a double-click action. The table
+// FILLS the window's remaining height minus a reserved footer (fileFooterReserve) instead of a fixed
+// 280 px, so the target field and the Export/Cancel row are always visible — they no longer fall off
+// the bottom of an undersized window, which was the reported clip (#1753). The row list scrolls.
 func drawExplorerTable() fileAction {
 	native.SeparatorText("Files")
 	if fileModal.errorText != "" {
 		native.Text(fileModal.errorText)
 	}
-	if !native.BeginTable("##file-browser", 4, 0, 280) {
+	if !native.BeginTable("##file-browser", 4, 0, -fileFooterReserve()) {
 		return fileAction{}
 	}
 	drawExplorerTableHeader()
