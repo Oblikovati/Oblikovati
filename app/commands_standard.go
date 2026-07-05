@@ -878,7 +878,7 @@ func viewNavigateCommands() []*CommandDefinition {
 			return nil
 		}).WithTab("View").WithIcon("steering-wheel").WithButtonStyle(LargeIconButton).WithEnable(hasActivePart).
 			WithActive(func(s *Session) bool { return s.SteeringWheelActive() }).
-			WithTooltip("SteeringWheels — a radial menu of navigation tools that follows the cursor."),
+			WithTooltip("SteeringWheels — a radial menu of navigation tools summoned at the cursor; click a wedge to run it, Esc to dismiss."),
 	}
 }
 
