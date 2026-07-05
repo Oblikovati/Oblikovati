@@ -123,6 +123,7 @@ type Session struct {
 	cmdLine                   *CommandLine                                     // Command Window REPL engine (M26)
 	commandWindowHidden       bool                                             // Command Window docked panel hidden? (M26; inverted so zero ⇒ visible)
 	commandFocusWanted        bool                                             // a cancel/ESC asked to refocus the command input (M26; head clears it)
+	commandTypeSeed           string                                           // char to seed the command input with when a bare key begins typing (#1751 S2; head clears it)
 	grid                      *GridSettings
 	themes                    *theme.Library
 	themeStore                *theme.Store

@@ -407,6 +407,13 @@ struct ObkInject {
     float wheel;
     bool shift;
     int fkey; // a held hold-to-navigate function key (0 none, else 2/3/4) (#911)
+    // A plain letter key a–z, for keyboard tests (#1751 S2). hasLetter gates it (0 == 'a'
+    // would otherwise inject spuriously); charPending emits the input character exactly once
+    // on the press, so a focused InputText receives the letter as a real keystroke would.
+    bool hasLetter;
+    int  letter; // 0..25 (a..z)
+    bool letterDown;
+    bool charPending;
 };
 static ObkInject g_inject = {};
 
@@ -416,6 +423,13 @@ void obk_inject_mouse_button(int b, int down) { if (b >= 0 && b < 5) { g_inject.
 void obk_inject_mouse_wheel(float w)         { g_inject.active = true; g_inject.wheel = w; }
 void obk_inject_key_shift(int down)          { g_inject.active = true; g_inject.shift = down != 0; }
 void obk_inject_fkey(int n, int down)        { g_inject.active = true; g_inject.fkey = down ? n : 0; }
+void obk_inject_letter(int letter, int down) {
+    g_inject.active = true;
+    g_inject.hasLetter = (letter >= 0 && letter < 26);
+    g_inject.letter = letter;
+    g_inject.letterDown = down != 0;
+    if (down != 0) g_inject.charPending = true; // one character per press
+}
 }
 
 static void obk_apply_inject() {
@@ -431,6 +445,13 @@ static void obk_apply_inject() {
     io.AddKeyEvent(ImGuiKey_F2, g_inject.fkey == 2);
     io.AddKeyEvent(ImGuiKey_F3, g_inject.fkey == 3);
     io.AddKeyEvent(ImGuiKey_F4, g_inject.fkey == 4);
+    if (g_inject.hasLetter) {
+        io.AddKeyEvent((ImGuiKey)(ImGuiKey_A + g_inject.letter), g_inject.letterDown);
+        if (g_inject.letterDown && g_inject.charPending) {
+            io.AddInputCharacter((unsigned int)('a' + g_inject.letter));
+            g_inject.charPending = false;
+        }
+    }
 }
 
 // obk_ig_dockspace_over_main hosts a full-window dockspace (called every frame, after

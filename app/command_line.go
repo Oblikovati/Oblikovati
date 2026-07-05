@@ -46,6 +46,24 @@ func (s *Session) TakeCommandInputFocus() bool {
 	return want
 }
 
+// BeginCommandTyping hands keyboard focus to the Command Window and seeds it with the character
+// the user just pressed, so a bare alphanumeric key with the viewport focused starts a command
+// line rather than being swallowed as a (nonexistent) shortcut (#1751 S2). The user reserved
+// bare a–z/0–9 for exactly this: pressing one means "I want to type a command". The head reads
+// the seed once via TakeCommandTypeSeed, paired with the focus request above.
+func (s *Session) BeginCommandTyping(seed string) {
+	s.commandFocusWanted = true
+	s.commandTypeSeed = seed
+}
+
+// TakeCommandTypeSeed returns any pending character to seed the command input with and clears it,
+// so the head appends it exactly once. Empty when no bare-key typing was begun this frame.
+func (s *Session) TakeCommandTypeSeed() (string, bool) {
+	seed := s.commandTypeSeed
+	s.commandTypeSeed = ""
+	return seed, seed != ""
+}
+
 // Prompt returns the question or step the input line is waiting on: a pending command-line
 // question (M26 F03) first, then the active tool's current step prompt, else "".
 func (cl *CommandLine) Prompt(s *Session) string {
