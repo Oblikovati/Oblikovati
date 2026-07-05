@@ -22,6 +22,23 @@ type RawMesh struct {
 // TriangleCount returns the number of triangles in the soup.
 func (m RawMesh) TriangleCount() int { return len(m.Tris) }
 
+// Reserve grows capacity for an expected additional triangle count so a decoder that knows
+// its size up front (binary STL's header count, a 3MF mesh's triangle list) fills the soup
+// without the repeated slice reallocation that dominates allocation churn on a dense import
+// (#1765). STL/3MF store three unshared vertices per triangle, so this reserves 3× the
+// triangles in Verts. It only ever grows capacity; a non-positive count is a no-op.
+func (m *RawMesh) Reserve(triangles int) {
+	if triangles <= 0 {
+		return
+	}
+	if need := len(m.Verts) + triangles*3; cap(m.Verts) < need {
+		m.Verts = append(make([]math.Point3, 0, need), m.Verts...)
+	}
+	if need := len(m.Tris) + triangles; cap(m.Tris) < need {
+		m.Tris = append(make([][3]int, 0, need), m.Tris...)
+	}
+}
+
 // AddTriangle appends a triangle from three explicit positions, growing Verts. Used by
 // decoders (STL/3MF) that carry positions per triangle rather than an index table.
 func (m *RawMesh) AddTriangle(a, b, c math.Point3) {
