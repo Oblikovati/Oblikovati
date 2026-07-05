@@ -10,13 +10,13 @@ import (
 )
 
 func TestIsClosedEmptyAndOpen(t *testing.T) {
-	if (Mesh{}).isClosed() {
+	if cageClosed((Mesh{}).edgeFaces()) {
 		t.Error("empty mesh should not be closed")
 	}
-	if Plane(1, 1).isClosed() {
+	if cageClosed(Plane(1, 1).edgeFaces()) {
 		t.Error("a single-face plane has boundary edges; should not be closed")
 	}
-	if !Box(1, 1, 1).isClosed() {
+	if !cageClosed(Box(1, 1, 1).edgeFaces()) {
 		t.Error("a box should be closed")
 	}
 }
