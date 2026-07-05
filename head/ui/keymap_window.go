@@ -38,7 +38,7 @@ func drawKeymapEditor(s *app.Session) {
 	if keymapUI.chord == nil {
 		dropKeymapBuffers()
 	}
-	native.SetNextWindowSizeOnce(720, 560)
+	dialogSizeOnce(720, 560)
 	visible, open := native.BeginClosable("Customize Keyboard")
 	if visible {
 		drawKeymapBody(s)

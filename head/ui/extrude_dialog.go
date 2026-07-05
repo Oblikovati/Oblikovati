@@ -39,7 +39,7 @@ func drawExtrudeDialog(s *app.Session) {
 		seedExtrudeFields(s)
 		extrudeUI.seeded = ext
 	}
-	native.SetNextWindowSizeOnce(340, 430)
+	dialogSizeOnce(340, 430)
 	if native.Begin("Extrusion") {
 		drawExtrudeHeader(ext)
 		drawExtrudeInputGeometry(ext)

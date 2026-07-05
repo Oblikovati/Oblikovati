@@ -25,7 +25,7 @@ func drawReportBugDialog(s *app.Session) {
 	if !reportBugUI.open {
 		return
 	}
-	native.SetNextWindowSizeOnce(520, 360)
+	dialogSizeOnce(520, 360)
 	if native.Begin("Report Bug") {
 		native.Text("Describe what you were doing and what went wrong.")
 		native.Text("Your settings, open files, platform, recent actions, and two")

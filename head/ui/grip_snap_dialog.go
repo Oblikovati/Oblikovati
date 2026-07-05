@@ -31,7 +31,7 @@ func drawGripSnap(h gripSnapHost) {
 	if g == nil {
 		return
 	}
-	native.SetNextWindowSizeOnce(320, 180)
+	dialogSizeOnce(320, 180)
 	if native.Begin("Grip Snap") {
 		drawFeatureBreadcrumb("Grip Snap", "")
 		if propertySection("Move Options") {

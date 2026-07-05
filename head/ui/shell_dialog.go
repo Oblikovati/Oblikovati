@@ -29,7 +29,7 @@ func drawShellDialog(s *app.Session) {
 		shellUI.thickness = float32(sh.Thickness())
 		shellUI.seeded = sh
 	}
-	native.SetNextWindowSizeOnce(340, 230)
+	dialogSizeOnce(340, 230)
 	if native.Begin("Shell") {
 		title := "Shell"
 		if name := sh.EditingName(); name != "" {

@@ -28,7 +28,7 @@ func drawThickenDialog(s *app.Session) {
 		thickenUI.thickness = float32(th.Thickness())
 		thickenUI.open = true
 	}
-	native.SetNextWindowSizeOnce(340, 170)
+	dialogSizeOnce(340, 170)
 	if native.Begin("Thicken") {
 		drawFeatureBreadcrumb("Thicken", "")
 		if propertySection("Behavior") {
