@@ -29,7 +29,7 @@ const (
 	dialogImport                        // File ▸ Import (STL/OBJ/3MF/STEP → imported body)
 	dialogExport                        // File ▸ Export (part bodies → STL/OBJ/3MF/STEP)
 	dialogAddIn                         // an add-in's dialogs.showFileDialog request (M05-F08)
-	dialogMeshRef                       // Mesh ▸ Place Mesh (ASCII STL → mesh reference geometry, #700)
+	dialogMeshRef                       // Mesh ▸ Place Mesh (STL, ASCII or binary → mesh reference geometry, #700, #1764)
 	dialogPlaceComponent                // Assemble ▸ Place: choose the component document to instance (#763)
 	dialogExportBOM                     // Assemble ▸ Bill of Materials ▸ Export CSV (#768)
 	dialogPointCloud                    // 3D Model ▸ Import Point Cloud (ASCII scan → referenced cloud, #645)

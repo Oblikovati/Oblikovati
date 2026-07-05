@@ -10,12 +10,14 @@ import (
 	"oblikovati.org/model/feature"
 )
 
-// Mesh reference geometry placement (M10-F04 PBI-115, #700): an ASCII STL becomes a
-// MeshFeature — selectable facet topology that passes the running solid through, distinct
-// from File ▸ Import which converts meshes into bodies (ImportedBodyFeature).
+// Mesh reference geometry placement (M10-F04 PBI-115, #700): an STL (ASCII or binary)
+// becomes a MeshFeature — selectable facet topology that passes the running solid through,
+// distinct from File ▸ Import which converts meshes into bodies (ImportedBodyFeature).
+// Binary STL is read here too so a dense scan/visualization mesh imports lightweight
+// instead of being forced through B-rep promotion (#1764).
 
-// ImportMeshFile parses an ASCII STL at path and places it as a mesh reference feature
-// on the active part.
+// ImportMeshFile parses an STL (ASCII or binary) at path and places it as a mesh reference
+// feature on the active part.
 //
 //	pf, err := s.ImportMeshFile("scan.stl")
 func (s *Session) ImportMeshFile(path string) (*feature.PartFeature, error) {
