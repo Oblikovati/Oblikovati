@@ -289,6 +289,7 @@ func installPicker(s *app.Session) {
 			return activeSketches(s)
 		}).
 		WithSketches3D(func() []*sketch.Sketch3D { return activeSketches3D(s) }).
+		WithMeshes(func() []*feature.MeshFeature { return s.PickableMeshes() }). // placed-mesh facets pick (#1776)
 		WithPointClouds(func() []*pointcloud.PointCloud { return s.PickablePointClouds() }).
 		WithOccurrenceLookup(s.OccurrenceOfBody).
 		WithRayBodies(s.RayPickBodies)

@@ -588,6 +588,7 @@ func modelOverlays(s *app.Session, cam scene.Camera, hovered *feature.WorkPlane,
 		list.Items = append(list.Items, sketch3DOverlays(s, pointMarkerPixels*cam.WorldPerPixel())...)
 	}
 	list.Items = append(list.Items, selectedEdgeOverlay(s)...)
+	list.Items = append(list.Items, selectedMeshFacetOverlay(s)...) // picked placed-mesh facet (#1776)
 	list.Items = append(list.Items, threadOverlay(s)...)
 	list.Items = append(list.Items, toolHoverHighlight(s)...)
 	list.Items = append(list.Items, toolSelectedHighlight(s)...)
