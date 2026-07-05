@@ -20,6 +20,11 @@ import (
 // does NOT re-mesh planes: re-triangulating a planar multi-hole face cascades new mismatches, so a crack
 // where the PLANE is the absorber is left to a future pass.
 func conformCylConeFaces(faces []*topo.Face, idx map[*topo.Face]int, fm []*Mesh, q Quality) {
+	if allBareTriangleFaces(faces) {
+		return // a pure faceted triangle soup (e.g. an imported STL body) has no near-collinear
+		// boundary point any mesher could drop, so no face can crack — skip the O(edges) free-segment
+		// scan and per-face re-mesh that would each be a no-op (#1766).
+	}
 	w := meshSegWelder(fm...)
 	free := freeSegments(fm, w)
 	if len(free) == 0 {
@@ -88,6 +93,52 @@ func conformable(s geom.Surface) bool {
 	return false
 }
 
+// allBareTriangleFaces reports whether every face is a straight-edged planar triangle with no hole
+// loop — a pure faceted triangle soup (e.g. an imported STL body). Such a body has no near-collinear
+// boundary point any mesher could drop, so the conformance-repair pass can never change it and the
+// caller skips it. Topology + curve/surface kind only, no discretization (#1766).
+func allBareTriangleFaces(faces []*topo.Face) bool {
+	if len(faces) == 0 {
+		return false
+	}
+	for _, f := range faces {
+		if !isBareTriangleFace(f) {
+			return false
+		}
+	}
+	return true
+}
+
+// isBareTriangleFace reports whether f is a planar face bounded by exactly three straight (line) edges
+// and no hole loops, so its discretized boundary is exactly its three corners: a straight edge with no
+// healing snap samples to two points (subdivide stops immediately on a zero-curvature run), and three
+// such edges close to three points. A snapped edge is excluded — it can discretize to a polyline.
+func isBareTriangleFace(f *topo.Face) bool {
+	if _, planar := f.Geometry().(geom.Plane); !planar {
+		return false
+	}
+	loops := f.Loops()
+	if len(loops) != 1 || !loops[0].IsOuter() {
+		return false
+	}
+	uses := loops[0].EdgeUses()
+	if len(uses) != 3 {
+		return false
+	}
+	for _, u := range uses {
+		e := u.Edge()
+		if e.SnappedCurve() != nil {
+			return false
+		}
+		switch e.Geometry().(type) {
+		case geom.Line, geom.LineSegment: // straight: samples to its two endpoints
+		default:
+			return false
+		}
+	}
+	return true
+}
+
 // conformingCylConeMesh re-meshes a non-rectangular cyl/cone trim with a boundary-only metric-(u,v)
 // constrained Delaunay, the conforming alternative to the plane ear-clip. nil if not applicable (the
 // trim is a full periodic band / apex cap / iso-rectangle handled watertight by other meshers, or its
@@ -136,6 +187,10 @@ func conformingPlaneMesh(f *topo.Face, q Quality) *Mesh {
 		return nil
 	}
 	holes3D := faceHoleBoundaries(f, q)
+	if len(outer3D) == 3 && len(holes3D) == 0 {
+		return nil // an already-triangular boundary: planarCDT of three points reproduces the same
+		// single triangle the initial mesher built, so re-meshing is a no-op — keep it (#1766).
+	}
 	outer2D := project2D(outer3D, flat)
 	holes2D := make([][]math.Point2, len(holes3D))
 	for i, h := range holes3D {
