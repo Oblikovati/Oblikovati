@@ -599,7 +599,7 @@ func cutFeatureCommands() []*CommandDefinition {
 		NewCommand("Modify.Hole", "Hole", "Modify", func(s *Session) error {
 			s.StartFeatureTool(NewHoleTool())
 			return nil
-		}).WithTab(tabCreateModify).WithAlias("H").WithEnable(notInSketch).
+		}).WithTab(tabCreateModify).WithAlias("H").WithDefaultChord("Shift+H").WithEnable(notInSketch).
 			WithIcon("hole").WithButtonStyle(LargeIconButton).
 			WithTooltip("Hole — drill a cylindrical hole into a planar face of the solid."),
 		NewCommand("Modify.Boss", "Boss", "Modify", func(s *Session) error {
@@ -650,7 +650,7 @@ func filletCommand() *CommandDefinition {
 	return NewCommand("Modify.Fillet", "Fillet", "Modify", func(s *Session) error {
 		s.StartFeatureTool(NewFilletTool())
 		return nil
-	}).WithTab(tabCreateModify).WithAlias("F").WithEnable(notInSketch).
+	}).WithTab(tabCreateModify).WithAlias("F").WithDefaultChord("Shift+F").WithEnable(notInSketch).
 		WithIcon("fillet").WithButtonStyle(LargeIconButton).
 		WithTooltip("Fillet — round selected convex edges with a rolling-ball radius.").
 		WithVariants(faceFillet, fullRound)
@@ -717,13 +717,13 @@ func profileSolidCommands() []*CommandDefinition {
 		NewCommand("Create.Extrude", "Extrude", "Create", func(s *Session) error {
 			s.StartFeatureTool(NewExtrudeTool())
 			return nil
-		}).WithTab(tabCreateModify).WithAlias("E").WithEnable(notInSketch).
+		}).WithTab(tabCreateModify).WithAlias("E").WithDefaultChord("Shift+E").WithEnable(notInSketch).
 			WithIcon("extrude").WithButtonStyle(LargeIconButton).
 			WithTooltip("Extrude — add depth to a sketch profile to create or modify a solid."),
 		NewCommand("Create.Revolve", "Revolve", "Create", func(s *Session) error {
 			s.StartFeatureTool(NewRevolveTool())
 			return nil
-		}).WithTab(tabCreateModify).WithAlias("R").WithEnable(notInSketch).
+		}).WithTab(tabCreateModify).WithAlias("R").WithDefaultChord("Shift+R").WithEnable(notInSketch).
 			WithIcon("revolve").WithButtonStyle(LargeIconButton).
 			WithTooltip("Revolve — spin a sketch profile about an axis to create or modify a solid."),
 	}

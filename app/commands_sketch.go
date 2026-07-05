@@ -23,7 +23,7 @@ func sketchTabCommands() []*CommandDefinition {
 	cmds = append(cmds, NewCommand("Sketch.Dimension", "Dimension", "Constrain", func(s *Session) error {
 		s.StartTool(newDimensionTool())
 		return nil
-	}).WithTab("Sketch").WithEnvironment(SketchEnvironment).WithAlias("D").WithEnable(inSketch).
+	}).WithTab("Sketch").WithEnvironment(SketchEnvironment).WithAlias("D").WithDefaultChord("Shift+D").WithEnable(inSketch).
 		WithIcon("dimension").WithButtonStyle(SmallIconButton).
 		WithTooltip("Dimension — then pick points/a line/a circle/two lines to dimension."))
 	cmds = append(cmds, NewCommand("Sketch.AutoDimension", "Auto Dimension", "Constrain", func(s *Session) error {
@@ -73,6 +73,9 @@ func sketchTabCommands() []*CommandDefinition {
 // captioned buttons; the rest stack as small labeled rows.
 type sketchToolEntry struct {
 	id, name, alias, tip string
+	// chord is a shipped default keyboard shortcut ("Shift+L" for Line, …). Bare a–z/0–9 are
+	// reserved for command-window typing (#1751), so a headline tool's shortcut carries Shift.
+	chord string
 	// icon overrides the lowercased-name asset key for multi-word names
 	// (asset filenames are kebab-case).
 	icon     string
@@ -106,6 +109,9 @@ func buildToolCommands(panel string, entries []sketchToolEntry) []*CommandDefini
 		}
 		cmd := newToolCommand(panel, e).WithAlias(e.alias).
 			WithIcon(key).WithButtonStyle(style)
+		if e.chord != "" {
+			cmd.WithDefaultChord(e.chord) // shipped Shift+mnemonic shortcut (#1751 S3)
+		}
 		if len(e.variants) > 0 {
 			variants := make([]*CommandDefinition, len(e.variants))
 			for j, v := range e.variants {
@@ -148,15 +154,15 @@ func sketchPatternCommands() []*CommandDefinition {
 // which the reference UI places in Create, not Modify).
 func createCommands() []*CommandDefinition {
 	return buildToolCommands("Create", []sketchToolEntry{
-		{id: "Sketch.Line", name: "Line", alias: "L", large: true, tip: "Line — draw a line between two points.", start: func() Tool { return NewLineTool() }},
+		{id: "Sketch.Line", name: "Line", alias: "L", chord: "Shift+L", large: true, tip: "Line — draw a line between two points.", start: func() Tool { return NewLineTool() }},
 		{id: "Sketch.Rectangle", name: "Rectangle", alias: "REC", large: true, tip: "Rectangle — draw a two-corner rectangle.", start: func() Tool { return NewRectangleTool() }, variants: []sketchToolEntry{
 			{id: "Sketch.Rectangle.ThreePoint", name: "Three Point Rectangle", tip: "Three Point Rectangle — base edge then width.", start: func() Tool { return NewThreePointRectangleTool() }},
 			{id: "Sketch.Rectangle.Center", name: "Two Point Center Rectangle", tip: "Two Point Center Rectangle — center then a corner.", start: func() Tool { return NewCenterRectangleTool() }},
 		}},
-		{id: "Sketch.Circle", name: "Circle", alias: "C", large: true, tip: "Circle — draw a circle from its center and radius.", start: func() Tool { return NewCircleTool() }, variants: []sketchToolEntry{
+		{id: "Sketch.Circle", name: "Circle", alias: "C", chord: "Shift+C", large: true, tip: "Circle — draw a circle from its center and radius.", start: func() Tool { return NewCircleTool() }, variants: []sketchToolEntry{
 			{id: "Sketch.Circle.ThreePoint", name: "Three Point Circle", tip: "Three Point Circle — the circle through three points.", start: func() Tool { return NewThreePointCircleTool() }},
 		}},
-		{id: "Sketch.Arc", name: "Arc", alias: "A", large: true, tip: "Arc — draw a three-point arc.", start: func() Tool { return NewArcTool() }, variants: []sketchToolEntry{
+		{id: "Sketch.Arc", name: "Arc", alias: "A", chord: "Shift+A", large: true, tip: "Arc — draw a three-point arc.", start: func() Tool { return NewArcTool() }, variants: []sketchToolEntry{
 			{id: "Sketch.Arc.CenterPoint", name: "Center Point Arc", tip: "Center Point Arc — center, start, then end.", start: func() Tool { return NewCenterPointArcTool() }},
 		}},
 		{id: "Sketch.Slot", name: "Slot", tip: "Slot — click two centre points for a straight slot.", start: func() Tool { return NewSketchSlotTool(1) }, variants: []sketchToolEntry{

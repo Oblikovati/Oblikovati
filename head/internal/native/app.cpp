@@ -441,6 +441,10 @@ static void obk_apply_inject() {
     if (g_inject.posSet) io.AddMousePosEvent(g_inject.mx, g_inject.my);
     for (int b = 0; b < 5; b++) io.AddMouseButtonEvent(b, g_inject.down[b]);
     if (g_inject.wheel != 0.0f) { io.AddMouseWheelEvent(0.0f, g_inject.wheel); g_inject.wheel = 0.0f; }
+    // Drive io.KeyShift through the PHYSICAL key: ImGui derives the modifier flag from
+    // Left/Right Shift down-state, so a bare AddKeyEvent(ImGuiMod_Shift,…) alone does not make
+    // GetIO().KeyShift (what obk_ig_key_shift reads) true. Needed for chord tests, e.g. Shift+L.
+    io.AddKeyEvent(ImGuiKey_LeftShift, g_inject.shift);
     io.AddKeyEvent(ImGuiMod_Shift, g_inject.shift);
     io.AddKeyEvent(ImGuiKey_F2, g_inject.fkey == 2);
     io.AddKeyEvent(ImGuiKey_F3, g_inject.fkey == 3);
