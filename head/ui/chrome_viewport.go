@@ -439,7 +439,11 @@ func frameMeshAndInstances(s *app.Session, cam scene.Camera, list renderer.DrawL
 	}
 	// Legacy flatten: a fresh world-space mesh with no stable atlas key, so geomKey 0 ⇒ the native
 	// renderer always re-uploads it (correct, just unoptimised — the instanced path is the hot one).
+	// Placed mesh references have no instanced source, so add them to the world list here too so they
+	// still show in mesh-color debug mode (#1775). Flatten routes the opaque tris correctly. This
+	// re-flattens the mesh per frame, acceptable in this debug/fallback path (not the hot instanced one).
 	list.Items = append(list.Items, ground...)
+	list.Items = append(list.Items, s.MeshDrawItems()...)
 	return viewport.Flatten(list), nil, nil, 0
 }
 
