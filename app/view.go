@@ -5,6 +5,7 @@ package app
 import (
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
+	"oblikovati.org/model/feature"
 	"oblikovati.org/model/sketch"
 )
 
@@ -107,16 +108,42 @@ func (s *Session) lookAtPlane(target math.Point3, normal, up math.Vector3) {
 	s.animateCameraTo(s.Camera().Facing(target, normal, up), sketchViewTweenSeconds)
 }
 
-// modelBounds is the union of the active part's body bounding boxes, its visible sketch geometry
-// AND its visible point clouds, so Fit/Home frame a sketch-only part — e.g. a DWG/DXF import that
-// produces a 2D sketch or a Sketch3D with no solid body (issue #1146) — or a scan-only part whose
-// only visible geometry is an attached point cloud (#1645). Empty when there is nothing visible.
+// modelBounds is the union of the active part's body bounding boxes, its visible sketch geometry,
+// its visible point clouds AND its placed mesh references, so Fit/Home frame a sketch-only part —
+// e.g. a DWG/DXF import that produces a 2D sketch or a Sketch3D with no solid body (issue #1146) —
+// a scan-only part whose only visible geometry is an attached point cloud (#1645), or a part whose
+// only geometry is a placed reference mesh (#1773). Empty when there is nothing visible.
 func (s *Session) modelBounds() math.Box {
 	box := math.EmptyBox()
 	for _, b := range s.sceneBodies() {
 		box = box.Union(b.RangeBox())
 	}
-	return s.unionCloudBounds(s.unionSketchBounds(box))
+	return s.unionMeshBounds(s.unionCloudBounds(s.unionSketchBounds(box)))
+}
+
+// unionMeshBounds widens box by the model-space extent of the active part's visible placed mesh
+// references, so a reference mesh placed into an otherwise empty part is framed by Fit/Home (#1773).
+// A suppressed mesh contributes nothing.
+func (s *Session) unionMeshBounds(box math.Box) math.Box {
+	part, err := activePart(s)
+	if err != nil {
+		return box
+	}
+	feats := part.Features()
+	for i := 0; i < feats.Count(); i++ {
+		pf := feats.Item(i)
+		if pf.Suppressed() {
+			continue
+		}
+		mf, ok := pf.Definition().(*feature.MeshFeature)
+		if !ok {
+			continue
+		}
+		for _, v := range mf.Geometry().Vertices {
+			box = box.ExtendPoint(v)
+		}
+	}
+	return box
 }
 
 // unionCloudBounds widens box by the model-space extent of the active part's visible point clouds,

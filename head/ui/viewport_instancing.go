@@ -246,14 +246,15 @@ func sortRecsInto(out *[][7]int32, recs [][7]int32) [][7]int32 {
 // (M34-F1b) — while the matrices/records are assembled each frame from the frustum-culled instances
 // (culledGroups, M34-F1). ok is false when there is nothing to draw, so the caller falls back to
 // the legacy single-mesh path.
-func buildInstancedFrame(allGroups, culledGroups []app.InstanceGroup, overlay renderer.DrawList, cam scene.Camera,
+func buildInstancedFrame(allGroups, culledGroups []app.InstanceGroup, overlay renderer.DrawList,
+	placedMesh viewport.Mesh, placedMeshKey string, cam scene.Camera,
 	lookup renderer.SurfaceLookup, style renderer.VisualStyle,
 	decorate func(renderer.DrawList) renderer.DrawList, sourceKey string,
 ) (viewport.Mesh, []float32, []int32, string, bool) {
-	if len(allGroups) == 0 && len(overlay.Items) == 0 {
+	if len(allGroups) == 0 && len(overlay.Items) == 0 && placedMeshKey == "" {
 		return viewport.Mesh{}, nil, nil, "", false
 	}
-	atlas := cachedFrameAtlas(allGroups, overlay, cam, lookup, style, decorate, sourceKey)
+	atlas := cachedFrameAtlas(allGroups, overlay, placedMesh, placedMeshKey, cam, lookup, style, decorate, sourceKey)
 	// Reuse the visible-instances map across frames (single-threaded render loop) — clear keeps the
 	// buckets, so a static orbit re-maps the culled set without allocating a fresh map (#1423).
 	visible := visibleScratch
@@ -295,12 +296,16 @@ var visibleScratch = map[*topo.Body][]math.Matrix4{}
 // source signature (sourceKey, which bumps on any geometry/style/selection/placement change) or the
 // overlay content changes. The overlay is flattened every frame (it is small) so its hash can key
 // the cache; on a hit the expensive per-source concatenation is skipped entirely.
-func cachedFrameAtlas(allGroups []app.InstanceGroup, overlay renderer.DrawList, cam scene.Camera,
+func cachedFrameAtlas(allGroups []app.InstanceGroup, overlay renderer.DrawList,
+	placedMesh viewport.Mesh, placedMeshKey string, cam scene.Camera,
 	lookup renderer.SurfaceLookup, style renderer.VisualStyle,
 	decorate func(renderer.DrawList) renderer.DrawList, sourceKey string,
 ) frameAtlas {
 	overlayMesh := viewport.Flatten(overlay)
-	key := sourceKey + "|ov:" + strconv.FormatUint(overlayHash(overlayMesh), 16)
+	// The placed mesh keys the cache by its cheap set SIGNATURE, not a content hash: it is retained
+	// (flattened once by cachedPlacedMesh), so it must never be re-hashed per frame like the small
+	// overlay (#1773). The atlas rebuilds only when a mesh is placed/removed/suppressed.
+	key := sourceKey + "|ov:" + strconv.FormatUint(overlayHash(overlayMesh), 16) + "|pm:" + placedMeshKey
 	if frameAtlasCache.key == key && key != "" {
 		return frameAtlasCache
 	}
@@ -309,6 +314,9 @@ func cachedFrameAtlas(allGroups []app.InstanceGroup, overlay renderer.DrawList, 
 		// The per-source tessellate+flatten is cached by sourceMeshCache; addSource only concatenates
 		// the cached streams into the atlas, which is itself retained across frames by this cache.
 		b.addSource(g.Source, cachedSourceMesh(g.Source, cam, lookup, style, decorate, sourceKey))
+	}
+	if placedMeshKey != "" {
+		b.addSource(nil, placedMesh) // placed mesh: world-space, one identity instance (like the overlay)
 	}
 	if len(overlay.Items) > 0 {
 		b.addSource(nil, overlayMesh) // the overlay region: one identity instance in assemble
