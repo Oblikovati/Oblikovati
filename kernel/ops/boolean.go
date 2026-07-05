@@ -237,8 +237,8 @@ var curvedExactPaths = []func(PartFeatureOperation, *topo.Body, *topo.Body, *dia
 	curvedConvexIntersect, curvedConvexSubtract,
 	curvedCrossingIntersect, curvedSteinmetzIntersect, curvedConeCylinderIntersect, curvedConeConeIntersect,
 	curvedPartialIntersect,
-	// Cut — [P] the drill through-hole (curved-on-planar), the rest [T] transversal.
-	curvedCylindricalHoleCut, curvedFlatSubtract, curvedPartialCut, curvedSteinmetzCut, curvedConeCylinderCut, curvedConeConeCut, curvedCapCrossCut, curvedRimCrossCut, curvedTwoCapCrossCut, curvedConeCapCrossCut, curvedPartialRimCut, curvedPartialRimCornerCut, curvedCrossingCut,
+	// Cut — [P] the drill through-hole and the edge scallop (curved-on-planar), the rest [T] transversal.
+	curvedCylindricalHoleCut, curvedEdgeScallopCut, curvedFlatSubtract, curvedPartialCut, curvedSteinmetzCut, curvedConeCylinderCut, curvedConeConeCut, curvedCapCrossCut, curvedRimCrossCut, curvedTwoCapCrossCut, curvedConeCapCrossCut, curvedPartialRimCut, curvedPartialRimCornerCut, curvedCrossingCut,
 	// Join — [D] coaxial (degenerate overlap), [P] boss interior then straddling (curved-on-planar), the rest [T] transversal.
 	curvedCoaxialJoin, curvedCylinderBossJoin, curvedPartialBossJoin, curvedPartialJoin, curvedConeCylinderJoin, curvedConeConeJoin, curvedCrossingJoin, curvedSteinmetzJoin,
 }
