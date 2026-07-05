@@ -16,14 +16,17 @@ import (
 // selected plane's border is highlighted; the plane under the cursor uses the hover color. Shown
 // outside the sketch environment. Takes the plane collection (not a part) so it serves a part or an
 // assembly — both expose WorkPlanes() through their work geometry.
-func planesOverlay(planes *feature.WorkPlanes, selected, hovered *feature.WorkPlane, hidden scopeFilter) []renderer.DrawItem {
+// The reveal flag mirrors [app.Session.RevealSketchHostDatums]: while Create 2D Sketch is picking
+// its host, the grounded origin planes are drawn even though they default to hidden, so the user
+// can see the plane they are about to click (#1752). The picker gates on the same predicate.
+func planesOverlay(planes *feature.WorkPlanes, selected, hovered *feature.WorkPlane, hidden scopeFilter, reveal bool) []renderer.DrawItem {
 	if planes == nil {
 		return nil
 	}
 	var items []renderer.DrawItem
 	for i := 0; i < planes.Count(); i++ {
 		wp := planes.Item(i)
-		if !wp.Visible() || hidden(wp.Seq()) {
+		if hidden(wp.Seq()) || !wp.ShownForHostPick(reveal) { // shared rule with the app-side picker (#1752)
 			continue
 		}
 		items = append(items, planeFill(wp), planeBorder(wp, planeColor(wp, selected, hovered)))

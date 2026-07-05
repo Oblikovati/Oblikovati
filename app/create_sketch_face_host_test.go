@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/scene"
 )
@@ -138,23 +139,57 @@ func emptyPartLookingDown(t *testing.T) *Session {
 	return s
 }
 
-// TestCreateSketchBackgroundClickIgnoresHiddenOriginPlane is the issue-#1520 regression at the
-// interaction level: with Create 2D Sketch active and every origin plane hidden, clicking the
-// empty viewport background must NOT enter a sketch — a click resolves no invisible plane. Showing
-// the XY plane makes that same click host a sketch on it (the browser node is the only other way in).
-func TestCreateSketchBackgroundClickIgnoresHiddenOriginPlane(t *testing.T) {
+// TestCreateSketchRevealsHiddenOriginPlaneForPicking is the issue-#1591/#1752 fix at the interaction
+// level: starting Create 2D Sketch on a brand-new part temporarily REVEALS the origin planes, so a
+// click where the (default-hidden) XY plane lies enters the sketch directly — no manual "show plane"
+// step, no detour through the browser Origin folder. This completes the #1520 UX: that fix stopped a
+// background click from snapping to an INVISIBLE plane; here the plane is drawn and pickable while the
+// host is being chosen, so the click is intentional (see TestPickableWorkPlanesRevealScoping for the
+// scoping that keeps #1520's guard outside Create-Sketch).
+func TestCreateSketchRevealsHiddenOriginPlaneForPicking(t *testing.T) {
 	s := emptyPartLookingDown(t)
 	s.StartTool(NewCreateSketchTool())
-	s.Click(200, 200) // center ray crosses the XY plane, but it is hidden
-	if s.InSketch() || s.ActiveTool() == nil {
-		t.Fatal("clicking the empty background must not start a sketch on a hidden origin plane")
-	}
-	wg, _ := s.ActiveWorkGeometry()
-	wg.WorkPlanes().Item(0).SetVisible(true) // show the XY plane
-	s.Click(200, 200)
+	s.Click(200, 200) // center ray crosses the XY origin plane, revealed for the host pick (#1752)
 	if !s.InSketch() {
-		t.Fatal("clicking a now-visible origin plane should enter the sketch")
+		t.Fatal("Create Sketch must reveal the hidden origin planes so a click on one enters the sketch")
 	}
+}
+
+// TestPickableWorkPlanesRevealScoping pins the reveal's shape (#1752): the origin frame is pickable
+// ONLY while a datum-host tool (Create 2D Sketch) is active, and the reveal is scoped to the grounded
+// origin planes — a user plane the user hid stays hidden. Outside Create-Sketch the origins are back
+// to unpickable, which is exactly the #1520 guard.
+func TestPickableWorkPlanesRevealScoping(t *testing.T) {
+	s, def := emptyPartSession(t)
+	hideUserPlane(t, s, def) // add a user plane and hide it — it must never be revealed by Create Sketch
+
+	if got := len(s.PickableWorkPlanes()); got != 0 { // #1520: no host pick ⇒ hidden origins unpickable
+		t.Fatalf("with no datum-host tool, hidden origin planes must not be pickable; got %d", got)
+	}
+
+	s.StartTool(NewCreateSketchTool())
+	if got := len(s.PickableWorkPlanes()); got != 3 { // the 3 grounded origins revealed; hidden user plane NOT
+		t.Fatalf("Create Sketch should reveal exactly the 3 origin planes; got %d", got)
+	}
+
+	s.CancelTool()
+	if got := len(s.PickableWorkPlanes()); got != 0 {
+		t.Errorf("after the tool ends, origin planes must return to unpickable; got %d", got)
+	}
+}
+
+// hideUserPlane creates one offset user plane on the part and toggles it hidden, so a test can assert
+// the Create-Sketch reveal touches only the grounded origin frame, never a user-hidden plane.
+func hideUserPlane(t *testing.T, s *Session, def *compdef.PartComponentDefinition) {
+	t.Helper()
+	tool := NewOffsetWorkPlaneTool()
+	s.StartTool(tool)
+	tool.Pick(s, WorkPlaneHandle{Plane: def.OriginPlanes()[0]}) // base: XY plane
+	s.SetOffsetDistanceDisplay(25)
+	if err := s.OK(); err != nil {
+		t.Fatalf("create user plane: %v", err)
+	}
+	tool.AddedPlane().SetVisible(false) // user hides it (addUser makes it visible by default)
 }
 
 // sameDir reports whether two vectors point the same or exactly opposite way (a plane's normal

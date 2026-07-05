@@ -90,6 +90,46 @@ func TestInWindowCreateSketchHoversFaceHighlight(t *testing.T) {
 	}
 }
 
+// TestInWindowCreateSketchRevealsOriginPlane is the live confirmation for #1752: on a brand-new part
+// (no body), starting Create 2D Sketch reveals the default-hidden origin frame, so the XY plane both
+// draws in the viewport AND resolves under the cursor through the production picker — clicking it opens
+// the sketch. Before the fix the viewport was empty and the only way into the first sketch was the
+// browser Origin folder. Saves a PNG for eyeball confirmation. Skips cleanly without display/Vulkan.
+func TestInWindowCreateSketchRevealsOriginPlane(t *testing.T) {
+	win := newViewportWindow(t)
+	defer win.Destroy()
+	dockLaidOut = false
+	icons = nil
+
+	s := framedSession() // part; camera looks down −Z at the origin; origin planes default hidden
+	s.SetPicker(app.NewRayPicker(s.Camera(), func() []*topo.Body { return nil }).
+		WithPlanes(func() []*feature.WorkPlane { return s.PickableWorkPlanes() }))
+	s.StartTool(app.NewCreateSketchTool())
+
+	cx, cy := float32(inWinW/2), float32(inWinH/2)
+	for i := 0; i < 10; i++ { // settle layout + hover so the reveal overlay renders into the frame
+		native.InjectMousePos(cx, cy)
+		viewportFrame(win, s)
+	}
+
+	ox, oy := native.ItemRectMin()
+	sel, ok := s.PickAt(float64(cx-ox), float64(cy-oy), s.Selection().Filter())
+	if _, isPlane := sel.(app.WorkPlaneHandle); !ok || !isPlane {
+		t.Fatalf("Create Sketch over the revealed origin frame resolved to %T (ok=%v); want a WorkPlaneHandle", sel, ok)
+	}
+	if err := win.SaveWindowPNG(filepath.Join(outDir(), "create-sketch-origin-reveal.png")); err != nil {
+		t.Logf("SaveWindowPNG: %v", err)
+	}
+
+	native.InjectMouseButton(native.MouseLeft, true) // click the revealed plane → the sketch opens on it
+	viewportFrame(win, s)
+	native.InjectMouseButton(native.MouseLeft, false)
+	viewportFrame(win, s)
+	if !s.InSketch() {
+		t.Error("clicking the revealed origin plane should enter the sketch")
+	}
+}
+
 // TestInWindowToolFaceHighlightGeneralizes proves the unified face highlight is not bespoke to
 // Create Sketch: a DIFFERENT face-picking tool (Shell, which declares AcceptedKinds = {Face}) lights
 // the hovered face through the same engine path, with no Shell-specific head code (ADR-0041).
