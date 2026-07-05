@@ -1,9 +1,14 @@
 # ADR-0049 — Partial curved-on-planar boolean via a `planeUV` operand
 
-**Status:** Proposed (2026-07-04) — design for
+**Status:** Accepted (2026-07-05) — implemented for
 [Oblikovati#1591](https://github.com/Oblikovati/Oblikovati/issues/1591), the partial
 curved-on-planar contact deliberately deferred as a new feature by
-[ADR-0045](ADR-0045-curved-boolean-kind-taxonomy.md) §Consequences. · **Builds on**
+[ADR-0045](ADR-0045-curved-boolean-kind-taxonomy.md) §Consequences. Shipped across five
+independently-green slices (see below): 0/A/B (PR#1741/#1742/#1743/#1745/#1746), A′ (PR#1747),
+C (PR#1748), D (this). Both the partial drill (`CutEdgeScallop`) and the straddling boss
+(`JoinPartialBoss`) are dispatched from `ops.Boolean` and certified watertight, orientable and
+volume-exact vs the closed-form mass, with the live render crack-free (`head/cmd/scallopshot`). ·
+**Builds on**
 [ADR-0045](ADR-0045-curved-boolean-kind-taxonomy.md) (the T/P/D KIND taxonomy — this adds the
 partial case under the curved-on-planar `[P]` KIND), [ADR-0046](ADR-0046-curved-boolean-cap-crossing.md)
 (the shared `(u,v)` arrangement + OCCT-certification protocol), [ADR-0048](ADR-0048-corner-junction-coupled-overlay.md)
@@ -168,19 +173,22 @@ func conicEdgeHits(C planeConic, a, b math.Point2, res geom.Resolution) (hits []
 func planeUVContactOK(C planeConic, f planarFace, res geom.Resolution) bool
 ```
 
-Vertical slices, each independently shippable and green, gate = **volume-vs-OCC `getMass`
-(ADR-0042 relative) · `freeEdgeCount==0` · `Validate.Valid && Closed && Manifold`**:
+Vertical slices, each independently shippable and green, gate = **volume-vs-analytic/OCC `getMass`
+(ADR-0042 relative) · `freeEdgeCount==0` · `Validate.Valid && Closed && Manifold`**. All shipped:
 
-- **Slice 0 (prep):** the two additive core touches (`segPolygon` + `uPeriodic`). Gate: **all existing
-  brep/ops boolean goldens byte-identical** (flags default to current behavior). De-risks the core edit
-  alone, no feature yet.
-- **Slice A:** partial hole clipping one face edge — `planeUV` + frame + `DrillPartialHole`, off the
-  `pierced && !clean` branch. OCC oracle `box − cylinder`; interior golden still byte-identical.
-- **Slice B:** straddling/overhanging boss — `JoinPartialBoss`, reusing `planeUV` unchanged; only the
-  material closure + wall/cap assembler differ. OCC oracle `plate ∪ cylinder`.
-- **Slice C:** pin the interior drill/boss/counterbore output byte-identical (characterization golden),
-  document D-b in-code, optionally DRY the shared `interior|partial|CSG` gate. Coverage >80%,
-  duplication <3%.
-- **Slice D:** this ADR → Accepted; extend ADR-0045's taxonomy table with a "curved-on-planar
-  (partial)" row; live MCP visual test (plate + edge-clipping hole and a straddling boss; screenshot;
-  confirm crack-free tessellation, `freeEdgeCount==0`).
+- **Slice 0 (prep) — DONE (PR#1741):** the two additive core touches (`segPolygon` + `uPeriodic`).
+  Gate met: existing brep/ops boolean goldens byte-identical. De-risked the core edit alone.
+- **Slice A / operand — DONE (PR#1742/#1743):** the `planeUV` `uvSide` operand + exact conic∩polygon
+  crossing numerics + injection.
+- **Slice A′ — DONE (PR#1747):** partial through-hole clipping one face edge — `CutEdgeScallop`
+  (both caps trimmed, side face split, an iso-`(u,v)`-rectangle wall). Certified vs the closed-form
+  removed mass; interior `DrillThroughHole` unchanged.
+- **Slice B — DONE (PR#1745/#1746):** straddling/overhanging boss — `JoinPartialBoss` reusing
+  `planeUV`; the mesher's rim routing fixed (closure not curve-type) and the assembler wired into the
+  dispatch with a consistent-orientation fix. Certified `plate ∪ cylinder = 200 + 12π`.
+- **Slice C — DONE (PR#1748):** DRY the shared `planarCapPerpTo`/`circleClipsCap` contact gate and
+  pin the keep-interior characterization (a strictly-interior drill/boss declines the partial path and
+  stays on its analytic fast-path).
+- **Slice D — DONE (this):** this ADR → Accepted; ADR-0045's taxonomy table gains the partial
+  curved-on-planar case; live capture `head/cmd/scallopshot` renders the edge scallop **crack-free**
+  (the live equivalent of the headless `freeEdgeCount==0` tessellation gate).
