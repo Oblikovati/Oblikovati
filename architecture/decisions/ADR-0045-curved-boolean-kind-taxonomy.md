@@ -61,7 +61,8 @@ arrangement. The taxonomy is the deliverable, not a forced merge into one functi
 | KIND | Contact | SSI defined? | Handler | Examples |
 | --- | --- | --- | --- | --- |
 | **Transversal crossing** | 1-D curve, surfaces cross | yes | the general SSI → (u,v)-arrangement → classify → stitch pipeline (+ curved∩convex-planar half-space cuts) | crossing cyl, cone∩cone, cone∩cyl, partial penetration, Steinmetz |
-| **Curved-on-planar** | one closed conic **strictly inside** a planar face, added as an inner loop | degenerate (no band to subdivide) | build the pierced face + wall + cap and `curvedStitch` | drill through-hole, cylinder boss |
+| **Curved-on-planar (interior)** | one closed conic **strictly inside** a planar face, added as an inner loop | degenerate (no band to subdivide) | build the pierced face + wall + cap and `curvedStitch` | drill through-hole, cylinder boss |
+| **Curved-on-planar (partial)** | the imprint conic **CLIPS** the planar face boundary (pierced but not clean) | degenerate | trim the pierced face(s) through a bounded non-periodic `planeUV` `(u,v)` arrangement + assemble the partial wall/cap (ADR-0049) | edge scallop (partial drill), straddling boss |
 | **Degenerate overlap** | 2-D region of **coincident** surfaces | no | simplify to the merged analytic solid | coaxial cylinder union |
 
 Concretely:
@@ -87,11 +88,12 @@ Concretely:
   code; the load-bearing invariant stated once — *the `(u,v)` arrangement is for transversal
   crossings of periodic surfaces, nothing else*; and EPIC #1403 concluded on its real intent (kill
   the O(n²) bespoke explosion + no silent CSG), both already met.
-- **Costs:** drill and boss stay outside the `(u,v)` pipeline, so **partial** curved-on-planar
-  contacts (a hole clipping a face edge, a boss straddling two faces) still fall to CSG rather than
-  producing an exact analytic result. Extending analytic coverage there is a *new feature* (a
-  genuine `planeUV` arrangement or a planar-face imprint trimmer), tracked separately — not a
-  refactor of these handlers.
+- **Costs:** the interior drill and boss stay outside the transversal `(u,v)` pipeline (they are a
+  distinct KIND, not SSI). The **partial** curved-on-planar contacts (a hole clipping a face edge, a
+  boss straddling an edge) were the one gap this taxonomy left to CSG; that gap is now **closed** by
+  [ADR-0049](ADR-0049-partial-curved-on-planar-planeuv.md), which added them as their own row above
+  via a bounded non-periodic `planeUV` `(u,v)` arrangement — a *new feature* built on this taxonomy,
+  not a refactor of the interior handlers.
 - **Dispatch order is unchanged** (the try-order within an op is load-bearing); the KIND tags are
   annotations, so this decision carries **zero behavioral risk** and is validated by the existing
   brep/ops/model boolean regression suites staying green.
