@@ -28,7 +28,7 @@ func drawFaceOffsetDialog(s *app.Session) {
 		faceOffsetUI.distance = float32(o.Distance())
 		faceOffsetUI.open = true
 	}
-	native.SetNextWindowSizeOnce(340, 230)
+	dialogSizeOnce(340, 230)
 	if native.Begin("Offset Face") {
 		drawFeatureBreadcrumb("Offset Face", "")
 		if propertySection("Input Geometry") {

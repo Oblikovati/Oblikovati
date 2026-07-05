@@ -78,3 +78,10 @@ func dialogFit(w, h float32) (float32, float32) {
 // window, so the window and its content grow together yet never overflow — the OK/Cancel row no longer
 // falls off the bottom at a raised font scale (#1753).
 func dialogSizeOnce(w, h float32) { native.SetNextWindowSizeOnce(dialogFit(w, h)) }
+
+// dialogSize forces a dialog's size EVERY frame, scaled by the UI font scale and clamped to the host
+// window — the counterpart to dialogSizeOnce for the few dialogs that pin their size each frame rather
+// than only on first open (the Parameters value-list/tolerance/group/link editors). Same clip fix as
+// dialogSizeOnce (#1759), just without the one-shot latch, so those dialogs keep re-asserting their
+// size while staying scaled and on-screen.
+func dialogSize(w, h float32) { native.SetNextWindowSize(dialogFit(w, h)) }

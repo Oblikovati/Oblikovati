@@ -33,7 +33,7 @@ func drawToolParamsDialog(s *app.Session) {
 		toolText.open = false
 		return
 	}
-	native.SetNextWindowSizeOnce(320, 280)
+	dialogSizeOnce(320, 280)
 	if native.Begin(title) {
 		drawFeatureBreadcrumb(title, "")
 		if propertySection("Behavior") {

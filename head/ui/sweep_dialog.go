@@ -42,7 +42,7 @@ func drawSweepDialog(s *app.Session) {
 		sweepUI.taperDeg = float32(sw.Taper() * 180 / stdmath.Pi)
 		sweepUI.open = true
 	}
-	native.SetNextWindowSizeOnce(340, 420)
+	dialogSizeOnce(340, 420)
 	if native.Begin("Sweep") {
 		drawFeatureBreadcrumb("Sweep", sw.SourceSketchName())
 		drawSweepInputGeometry(sw)

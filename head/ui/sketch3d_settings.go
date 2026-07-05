@@ -20,7 +20,7 @@ func drawSketch3DSettings(s *app.Session) {
 	if sk == nil {
 		return
 	}
-	native.SetNextWindowSizeOnce(300, 190)
+	dialogSizeOnce(300, 190)
 	if native.Begin("3D Sketch Settings") {
 		drawFeatureBreadcrumb("3D Sketch", sk.Name())
 		if propertySection("Behavior") {

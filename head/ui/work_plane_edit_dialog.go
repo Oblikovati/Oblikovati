@@ -36,7 +36,7 @@ func drawWorkPlaneEditDialog(s *app.Session) {
 	nScalars := s.EditPlaneScalarCount()
 	nRefs := s.EditPlaneRefSlotCount()
 	refreshWorkPlaneEditUI(s, nScalars)
-	native.SetNextWindowSizeOnce(340, float32(150+nScalars*28+nRefs*28))
+	dialogSizeOnce(340, float32(150+nScalars*28+nRefs*28))
 	if native.Begin("Edit Work Plane") {
 		drawFeatureBreadcrumb(s.EditPlaneName(), "")
 		drawWorkPlaneRefSlots(s, nRefs)

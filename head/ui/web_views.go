@@ -25,7 +25,7 @@ func drawWebViews(s *app.Session) {
 			continue
 		}
 		applyInitialDock(view.Dock)
-		native.SetNextWindowSizeOnce(420, 180)
+		dialogSizeOnce(420, 180)
 		shown, open := native.BeginClosable(view.Title + "###webview-" + view.ID)
 		if shown {
 			native.Text(view.URL)

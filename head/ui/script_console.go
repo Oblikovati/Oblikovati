@@ -121,7 +121,7 @@ func drawScriptConsole(s *app.Session) {
 	if !s.ScriptConsoleOpen() {
 		return
 	}
-	native.SetNextWindowSizeOnce(640, 560)
+	dialogSizeOnce(640, 560)
 	visible, open := native.BeginClosable("Script Console")
 	if visible {
 		drawScriptConsoleBody()

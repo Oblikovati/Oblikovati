@@ -34,7 +34,7 @@ func drawHoleDialog(s *app.Session) {
 		return
 	}
 	refreshHoleUI(h)
-	native.SetNextWindowSizeOnce(360, 460)
+	dialogSizeOnce(360, 460)
 	if native.Begin("Hole") {
 		title := "Hole"
 		if name := h.EditingName(); name != "" {

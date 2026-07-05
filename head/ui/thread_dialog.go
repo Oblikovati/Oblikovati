@@ -21,7 +21,7 @@ func drawThreadDialog(s *app.Session) {
 	if t == nil {
 		return
 	}
-	native.SetNextWindowSizeOnce(360, 360)
+	dialogSizeOnce(360, 360)
 	if native.Begin("Thread") {
 		drawFeatureBreadcrumb("Thread", "")
 		drawThreadInputGeometry(t)

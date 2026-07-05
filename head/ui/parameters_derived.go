@@ -97,7 +97,7 @@ func drawLinkParametersDialog(s *app.Session) {
 		return
 	}
 	candidates := s.LinkableSourceDocuments()
-	native.SetNextWindowSize(360, 320)
+	dialogSize(360, 320)
 	if native.Begin("Link Parameters") {
 		if len(candidates) == 0 {
 			native.Text("No other open document offers parameters to link.")

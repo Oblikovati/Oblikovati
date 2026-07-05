@@ -37,7 +37,7 @@ func drawValueListEditor(s *app.Session) {
 	if parametersUI.listFor == 0 {
 		return
 	}
-	native.SetNextWindowSize(320, 220)
+	dialogSize(320, 220)
 	if native.Begin("Value List Editor") {
 		native.Text("One value per line (or comma-separated):")
 		native.InputText("##value-list", parametersUI.listText[:])
@@ -85,7 +85,7 @@ func drawToleranceEditor(s *app.Session) {
 	if parametersUI.tolFor == 0 {
 		return
 	}
-	native.SetNextWindowSize(300, 200)
+	dialogSize(300, 200)
 	if native.Begin("Tolerance") {
 		native.InputFloat("Upper", &parametersUI.tolUpper)
 		native.InputFloat("Lower", &parametersUI.tolLower)
@@ -134,7 +134,7 @@ func drawAddToGroupDialog(s *app.Session) {
 	if parametersUI.groupFor == 0 {
 		return
 	}
-	native.SetNextWindowSize(300, 140)
+	dialogSize(300, 140)
 	if native.Begin("Add to Group") {
 		native.Text("Group name:")
 		native.InputText("##group-name", parametersUI.groupName[:])

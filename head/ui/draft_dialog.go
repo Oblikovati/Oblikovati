@@ -29,7 +29,7 @@ func drawDraftDialog(s *app.Session) {
 		draftUI.angle = float32(d.AngleDegrees())
 		draftUI.seeded = d
 	}
-	native.SetNextWindowSizeOnce(340, 230)
+	dialogSizeOnce(340, 230)
 	if native.Begin("Draft") {
 		title := "Draft"
 		if name := d.EditingName(); name != "" {

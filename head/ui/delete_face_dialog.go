@@ -22,7 +22,7 @@ func drawDeleteFaceDialog(s *app.Session) {
 		return
 	}
 	deleteFaceUI.open = true
-	native.SetNextWindowSizeOnce(340, 190)
+	dialogSizeOnce(340, 190)
 	if native.Begin("Delete Face") {
 		drawFeatureBreadcrumb("Delete Face", "")
 		if propertySection("Input Geometry") {

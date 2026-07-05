@@ -32,7 +32,7 @@ func drawMeasure(h measureHost) {
 	if m == nil {
 		return
 	}
-	native.SetNextWindowSizeOnce(360, 150)
+	dialogSizeOnce(360, 150)
 	if native.Begin("Measure") {
 		drawFeatureBreadcrumb("Measure", "")
 		if propertySection("Measurement") {

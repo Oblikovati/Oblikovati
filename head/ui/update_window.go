@@ -19,7 +19,7 @@ func drawUpdateWindow(s *app.Session) {
 	if res == nil {
 		return
 	}
-	native.SetNextWindowSizeOnce(420, 200)
+	dialogSizeOnce(420, 200)
 	if native.Begin("Software Update") {
 		drawUpdateBody(s, res)
 	}

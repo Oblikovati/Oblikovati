@@ -25,7 +25,7 @@ func drawFullRoundFilletDialog(s *app.Session) {
 		return
 	}
 	fullRoundUI.seeded = f
-	native.SetNextWindowSizeOnce(340, 230)
+	dialogSizeOnce(340, 230)
 	if native.Begin("Full Round Fillet") {
 		drawFullRoundPanelBody(s, f)
 	}

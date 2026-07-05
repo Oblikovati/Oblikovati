@@ -41,7 +41,7 @@ func drawFeatureEditDialog(s *app.Session) {
 	nParams := s.EditFeatureParamCount()
 	nRefs := s.EditFeatureRefSlotCount()
 	refreshFeatureEditUI(s, nParams)
-	native.SetNextWindowSizeOnce(340, float32(150+nParams*28+nRefs*28))
+	dialogSizeOnce(340, float32(150+nParams*28+nRefs*28))
 	if native.Begin("Edit Feature") {
 		drawFeatureBreadcrumb(s.EditingFeatureName(), "")
 		drawEditRefSlots(s, nRefs)
