@@ -81,7 +81,8 @@ var (
 
 	// Join — the union, keeping the analytic wall where the operands' faces are coincident or breached.
 	curvedCoaxialJoin      = gatedCurved(Join, withoutRecorder(brep.CoaxialCylinderUnion)) // coaxial equal-radius cylinders
-	curvedCylinderBossJoin = gatedCurved(Join, withoutRecorder(brep.JoinCylindricalBoss))  // cylinder seated flush on a face
+	curvedCylinderBossJoin = gatedCurved(Join, withoutRecorder(brep.JoinCylindricalBoss))  // cylinder seated flush on a face, base strictly interior
+	curvedPartialBossJoin  = gatedCurved(Join, withoutRecorder(brep.JoinPartialBoss))      // cylinder boss whose base circle straddles the seat edge (#1591)
 	curvedPartialJoin      = gatedCurved(Join, brep.PartialPenetrationJoinGeneral)         // fat + entry stub
 	curvedConeCylinderJoin = gatedCurved(Join, brep.ConeCylinderJoinGeneral)
 	curvedConeConeJoin     = gatedCurved(Join, brep.ConeConeJoinGeneral)

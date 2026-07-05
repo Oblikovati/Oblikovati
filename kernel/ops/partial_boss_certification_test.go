@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -74,5 +75,40 @@ func TestPartialBossTessellationIsWatertight(t *testing.T) {
 	mesh, _ := TessellateBody(res, DefaultQuality())
 	if free := cornerMeshFreeEdges(mesh); free != 0 {
 		t.Errorf("straddling boss tessellation has %d free edges (want 0) — a visible crack at the clipped seat", free)
+	}
+}
+
+// TestPartialBossJoinsViaAnalyticDispatch is the reachability gate: ops.Boolean(Join) must ROUTE the
+// straddling boss to the analytic planeUV assembler (curvedPartialBossJoin), not fall through to the planar
+// CSG triangle-soup. CSG returns a watertight body of the right volume too, so volume alone can't tell them
+// apart — the analytic result is distinguished by KEEPING the boss's cylinder wall as one analytic face (a
+// handful of faces), where CSG shatters it into ~200 planar facets and loses the exact surface.
+func TestPartialBossJoinsViaAnalyticDispatch(t *testing.T) {
+	plate, _ := brep.SolidBlock(math.P3(-5, -5, 0), math.P3(5, 5, 2), "plate")
+	boss, _ := brep.SolidCylinder(math.P3(4, 0, 2), math.V3(0, 0, 1), 2, 3)
+	res, err := Boolean(Join, plate, boss)
+	if err != nil {
+		t.Fatalf("Boolean(Join): %v", err)
+	}
+	if n := len(res.Faces()); n > 20 {
+		t.Errorf("union has %d faces; want the analytic assembler (~9), not CSG triangle-soup", n)
+	}
+	hasCyl := false
+	for _, f := range res.Faces() {
+		if _, ok := f.Geometry().(geom.Cylinder); ok {
+			hasCyl = true
+			break
+		}
+	}
+	if !hasCyl {
+		t.Error("union kept no analytic cylinder face — the boss wall was not preserved (CSG fallback)")
+	}
+	mesh, _ := TessellateBody(res, DefaultQuality())
+	if free := cornerMeshFreeEdges(mesh); free != 0 {
+		t.Errorf("dispatched union tessellation has %d free edges (want 0)", free)
+	}
+	want := 200 + 12*stdmath.Pi
+	if got := BodyGeometryProperties(res, DefaultQuality()).Volume; stdmath.Abs(got-want)/want > 0.01 {
+		t.Errorf("dispatched union volume %.4f vs analytic %.4f (200+12π); rel %.4f > 0.01", got, want, stdmath.Abs(got-want)/want)
 	}
 }
