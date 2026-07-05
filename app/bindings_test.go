@@ -274,6 +274,22 @@ func TestDispatchCancelClearsToolThenSelection(t *testing.T) {
 	}
 }
 
+// TestDispatchCancelDismissesSteeringWheel: Esc dismisses the SteeringWheels menu, the pinned wheel's
+// escape hatch so a user can back out without clicking a wedge (#1754).
+func TestDispatchCancelDismissesSteeringWheel(t *testing.T) {
+	s := NewSession()
+	s.ToggleSteeringWheel()
+	if !s.SteeringWheelActive() {
+		t.Fatal("precondition: the SteeringWheels menu should be active")
+	}
+	if err := dispatchCancel(s); err != nil {
+		t.Fatalf("dispatchCancel: %v", err)
+	}
+	if s.SteeringWheelActive() {
+		t.Error("Esc should dismiss the SteeringWheels menu")
+	}
+}
+
 func TestPressKeyRunsCommandViaDefaultChord(t *testing.T) {
 	s := NewSession()
 	ran := false

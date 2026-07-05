@@ -100,14 +100,18 @@ func dispatchRedo(s *Session) error {
 }
 
 // dispatchCancel is ESC, the universal cancel (M26): it stops any pending command-line
-// question, closes any feature/tool creation or editing window (the active tool), and with
-// nothing in progress clears the selection. It always asks the head to return keyboard focus
-// to the command-window input so the next command can be typed immediately.
+// question, dismisses the SteeringWheels menu, closes any feature/tool creation or editing window
+// (the active tool), and with nothing in progress clears the selection. It always asks the head to
+// return keyboard focus to the command-window input so the next command can be typed immediately.
 func dispatchCancel(s *Session) error {
 	s.RequestCommandInputFocus()
 	cancelled := false
 	if _, ok := s.Prompts().Pending(); ok {
 		s.Prompts().CancelPending()
+		cancelled = true
+	}
+	if s.SteeringWheelActive() {
+		s.DisarmSteeringWheel() // the pinned wheel's escape hatch — dismiss without picking a wedge (#1754)
 		cancelled = true
 	}
 	if s.tool != nil {
