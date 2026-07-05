@@ -66,7 +66,8 @@ var (
 	curvedPartialIntersect      = gatedCurved(Intersect, brep.PartialPenetrationIntersectGeneral)
 
 	// Cut — drilling the target with the tool (through, blind, or two stubs of tool − target).
-	curvedCylindricalHoleCut  = gatedCurved(Cut, withoutRecorder(brep.DrillThroughHole)) // straight cylinder through a planar slab
+	curvedCylindricalHoleCut  = gatedCurved(Cut, withoutRecorder(brep.DrillThroughHole)) // straight cylinder through a planar slab, hole strictly interior
+	curvedEdgeScallopCut      = gatedCurved(Cut, withoutRecorder(brep.CutEdgeScallop))   // straight cylinder through a slab, circle CLIPS one edge (#1591)
 	curvedPartialCut          = gatedCurved(Cut, brep.PartialPenetrationCutGeneral)      // blind rod hole
 	curvedSteinmetzCut        = gatedCurved(Cut, brep.SteinmetzCutGeneral)               // equal-R bicylinder bite, general pipeline
 	curvedConeCylinderCut     = gatedCurved(Cut, brep.ConeCylinderCutGeneral)
