@@ -58,6 +58,7 @@ const (
 	SelectDrawingView
 	SelectPointCloud
 	SelectPointCloudPoint
+	SelectMeshFace // a facet of a placed mesh reference (#1776)
 )
 
 // Selectable is anything the selection set can hold. Concrete handles wrap the
