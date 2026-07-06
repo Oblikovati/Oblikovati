@@ -47,6 +47,25 @@ func TestCommitPendingDimensionDrivesGeometry(t *testing.T) {
 	}
 }
 
+// TestCommitBareNumberUsesDocumentUnit is the regression for the "×10 dimension" bug: a bare
+// number typed into the value box means the document's display unit (7 → 7 mm), not the raw
+// database unit (which would drive 7 cm = 70 mm). The default document is millimetres (#1783).
+func TestCommitBareNumberUsesDocumentUnit(t *testing.T) {
+	s, sk := sketchSession(t)
+	a := sk.Points().Add(math.P2(0, 0))
+	b := sk.Points().Add(math.P2(3, 0)) // 3 cm apart
+	s.StartTool(newDimensionTool())
+	s.feedPick(SketchEntityHandle{Entity: a})
+	s.feedPick(SketchEntityHandle{Entity: b})
+	if err := s.CommitPendingDimension("7"); err != nil { // bare "7" → 7 mm, not 7 cm
+		t.Fatalf("CommitPendingDimension(\"7\"): %v", err)
+	}
+	// 7 mm = 0.7 cm: the solver drives the points to 0.7 db-units apart, NOT 7.
+	if d := a.Position().DistanceTo(b.Position()); d < 0.699 || d > 0.701 {
+		t.Errorf("bare \"7\" drove the points %.4f cm apart, want ~0.7 (7 mm); ~7 means the ×10 bug", d)
+	}
+}
+
 func TestCommitInvalidExpressionKeepsPending(t *testing.T) {
 	s, sk := sketchSession(t)
 	placeDistanceDim(t, s, sk, math.P2(0, 0), math.P2(3, 0))
