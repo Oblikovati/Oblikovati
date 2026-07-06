@@ -79,28 +79,19 @@ func decodePLYVertexSamples(doc *plyfmt.Document, vtx plyfmt.Element) ([]PointSa
 }
 
 func plyVertexIndices(vtx plyfmt.Element) (xi, yi, zi int, intensityIdx int, rgbIdx [3]int, err error) {
-	xi, yi, zi = -1, -1, -1
-	intensityIdx = -1
+	xi, yi, zi, intensityIdx = -1, -1, -1, -1
 	rgbIdx = [3]int{-1, -1, -1}
+	// A name→index-slot table keeps the property scan a flat map lookup rather than a wide switch.
+	slot := map[string]*int{
+		"x": &xi, "y": &yi, "z": &zi, "intensity": &intensityIdx,
+		"red": &rgbIdx[0], "green": &rgbIdx[1], "blue": &rgbIdx[2],
+	}
 	for i, p := range vtx.Props {
 		if p.Scalar == "" {
 			return 0, 0, 0, 0, [3]int{}, fmt.Errorf("plyfmt: vertex has a list property %q before its positions", p.Name)
 		}
-		switch p.Name {
-		case "x":
-			xi = i
-		case "y":
-			yi = i
-		case "z":
-			zi = i
-		case "intensity":
-			intensityIdx = i
-		case "red":
-			rgbIdx[0] = i
-		case "green":
-			rgbIdx[1] = i
-		case "blue":
-			rgbIdx[2] = i
+		if dst, ok := slot[p.Name]; ok {
+			*dst = i
 		}
 	}
 	if xi < 0 || yi < 0 || zi < 0 {
@@ -131,27 +122,14 @@ func decodePLYAsciiSamples(body []byte, vtx plyfmt.Element, xi, yi, zi, intensit
 }
 
 func plyAsciiSample(f []string, props []plyfmt.Property, xi, yi, zi, intensityIdx int, rgbIdx [3]int) (PointSample, bool) {
-	maxIdx := xi
-	if yi > maxIdx {
-		maxIdx = yi
-	}
-	if zi > maxIdx {
-		maxIdx = zi
-	}
-	if len(f) <= maxIdx {
+	if len(f) <= plyMaxIndex(xi, yi, zi) {
 		return PointSample{}, false
 	}
-	s := PointSample{}
-	var ok bool
-	if s.Point.X, ok = scalarFieldValue(f, props[xi].Scalar, xi); !ok {
+	pt, ok := plyAsciiPoint(f, props, xi, yi, zi)
+	if !ok {
 		return PointSample{}, false
 	}
-	if s.Point.Y, ok = scalarFieldValue(f, props[yi].Scalar, yi); !ok {
-		return PointSample{}, false
-	}
-	if s.Point.Z, ok = scalarFieldValue(f, props[zi].Scalar, zi); !ok {
-		return PointSample{}, false
-	}
+	s := PointSample{Point: pt}
 	if intensityIdx >= 0 {
 		if v, ok := scalarFieldValue(f, props[intensityIdx].Scalar, intensityIdx); ok {
 			s.HasIntensity = true
@@ -165,6 +143,36 @@ func plyAsciiSample(f []string, props []plyfmt.Property, xi, yi, zi, intensityId
 		}
 	}
 	return s, true
+}
+
+// plyMaxIndex returns the largest of the three position column indices — the minimum field count an
+// ascii vertex line must have to carry x, y and z.
+func plyMaxIndex(xi, yi, zi int) int {
+	m := xi
+	if yi > m {
+		m = yi
+	}
+	if zi > m {
+		m = zi
+	}
+	return m
+}
+
+// plyAsciiPoint parses the x/y/z columns of one ascii vertex line, reporting false if any is missing
+// or malformed.
+func plyAsciiPoint(f []string, props []plyfmt.Property, xi, yi, zi int) (math.Point3, bool) {
+	var pt math.Point3
+	var ok bool
+	if pt.X, ok = scalarFieldValue(f, props[xi].Scalar, xi); !ok {
+		return math.Point3{}, false
+	}
+	if pt.Y, ok = scalarFieldValue(f, props[yi].Scalar, yi); !ok {
+		return math.Point3{}, false
+	}
+	if pt.Z, ok = scalarFieldValue(f, props[zi].Scalar, zi); !ok {
+		return math.Point3{}, false
+	}
+	return pt, true
 }
 
 func plyAsciiRGB(f []string, props []plyfmt.Property, rgbIdx [3]int) ([3]float32, bool) {
@@ -197,10 +205,7 @@ func scalarFieldValue(fields []string, typ string, idx int) (float64, bool) {
 
 func decodePLYBinarySamples(body []byte, format string, vtx plyfmt.Element, xi, yi, zi, intensityIdx int, rgbIdx [3]int) ([]PointSample, error) {
 	offsets, sizes, stride := plyLayout(vtx)
-	var order binary.ByteOrder = binary.LittleEndian
-	if format == "binary_big_endian" {
-		order = binary.BigEndian
-	}
+	order := plyByteOrder(format)
 	out := make([]PointSample, 0, vtx.Count)
 	for i := 0; i < vtx.Count; i++ {
 		base := i * stride
@@ -208,28 +213,36 @@ func decodePLYBinarySamples(body []byte, format string, vtx plyfmt.Element, xi, 
 			return nil, fmt.Errorf("plyfmt: truncated at vertex %d of %d", i, vtx.Count)
 		}
 		rec := body[base : base+stride]
-		s := PointSample{
-			Point: math.P3(
-				math.Scalar(plyScalarValue(rec[offsets[xi]:], vtx.Props[xi].Scalar, sizes[xi], order)),
-				math.Scalar(plyScalarValue(rec[offsets[yi]:], vtx.Props[yi].Scalar, sizes[yi], order)),
-				math.Scalar(plyScalarValue(rec[offsets[zi]:], vtx.Props[zi].Scalar, sizes[zi], order)),
-			),
-		}
-		if intensityIdx >= 0 {
-			s.HasIntensity = true
-			s.Intensity = plyScalarValue(rec[offsets[intensityIdx]:], vtx.Props[intensityIdx].Scalar, sizes[intensityIdx], order)
-		}
-		if rgbIdx[0] >= 0 && rgbIdx[1] >= 0 && rgbIdx[2] >= 0 {
-			s.HasRGB = true
-			s.RGB = [3]float32{
-				float32(plyScalarValue(rec[offsets[rgbIdx[0]]:], vtx.Props[rgbIdx[0]].Scalar, sizes[rgbIdx[0]], order)),
-				float32(plyScalarValue(rec[offsets[rgbIdx[1]]:], vtx.Props[rgbIdx[1]].Scalar, sizes[rgbIdx[1]], order)),
-				float32(plyScalarValue(rec[offsets[rgbIdx[2]]:], vtx.Props[rgbIdx[2]].Scalar, sizes[rgbIdx[2]], order)),
-			}
-		}
-		out = append(out, s)
+		out = append(out, plyBinarySample(rec, vtx, offsets, sizes, order, xi, yi, zi, intensityIdx, rgbIdx))
 	}
 	return out, nil
+}
+
+// plyByteOrder maps the PLY header's binary format string to its byte order.
+func plyByteOrder(format string) binary.ByteOrder {
+	if format == "binary_big_endian" {
+		return binary.BigEndian
+	}
+	return binary.LittleEndian
+}
+
+// plyBinarySample decodes one fixed-layout binary vertex record into a sample, reading position and
+// any intensity / RGB channels at their prototype offsets. A single val closure removes the repeated
+// offset/size/order threading each channel would otherwise carry.
+func plyBinarySample(rec []byte, vtx plyfmt.Element, offsets, sizes []int, order binary.ByteOrder, xi, yi, zi, intensityIdx int, rgbIdx [3]int) PointSample {
+	val := func(idx int) float64 {
+		return plyScalarValue(rec[offsets[idx]:], vtx.Props[idx].Scalar, sizes[idx], order)
+	}
+	s := PointSample{Point: math.P3(math.Scalar(val(xi)), math.Scalar(val(yi)), math.Scalar(val(zi)))}
+	if intensityIdx >= 0 {
+		s.HasIntensity = true
+		s.Intensity = val(intensityIdx)
+	}
+	if rgbIdx[0] >= 0 && rgbIdx[1] >= 0 && rgbIdx[2] >= 0 {
+		s.HasRGB = true
+		s.RGB = [3]float32{float32(val(rgbIdx[0])), float32(val(rgbIdx[1])), float32(val(rgbIdx[2]))}
+	}
+	return s
 }
 
 func plyLayout(e plyfmt.Element) (offsets, sizes []int, stride int) {

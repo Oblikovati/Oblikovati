@@ -228,7 +228,7 @@ func pointCloudIntensityRampControls(s *Session) *RibbonColorRamp {
 	}
 	low, high := s.PointCloudIntensityRamp()
 	return &RibbonColorRamp{
-		Histogram: s.cachedIntensityHistogram(pc, pointCloudIntensityHistogramBins),
+		Histogram: s.cachedIntensityHistogram(pc),
 		Low: RibbonColorControl{
 			ID:      "PointCloud.IntensityLow",
 			Label:   "Low",
@@ -268,7 +268,8 @@ type intensityHistogramMemo struct {
 // cloud's displayed set changes. The binning loop is O(N) over DisplayedSamples() and the ribbon
 // rebuilds this every frame the intensity ramp shows, so a 24M-point scan would otherwise re-bin
 // every frame; the memo makes an unchanged set cost O(1) (#645).
-func (s *Session) cachedIntensityHistogram(pc *pointcloud.PointCloud, bins int) []float32 {
+func (s *Session) cachedIntensityHistogram(pc *pointcloud.PointCloud) []float32 {
+	const bins = pointCloudIntensityHistogramBins
 	samples := pc.DisplayedSamples()
 	key, ok := intensityHistogramKeyFor(pc, samples, bins)
 	if !ok {

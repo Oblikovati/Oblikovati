@@ -29,6 +29,31 @@ const maxBitPackedBits = 56
 // multi-hundred-MB scans. A constant field (an Integer/ScaledInteger whose declared min==max carries
 // no packed bytes) is materialised as recordCount copies of its constant value rather than decoded.
 func (d *Document) decodeFields(indices []int) (map[int][]float64, error) {
+	out, variable := d.partitionConstantFields(indices)
+	if len(variable) == 0 {
+		return out, nil
+	}
+	pos, err := d.firstDataPacketOffset()
+	if err != nil {
+		return nil, err
+	}
+	ref := variable[0]
+	for uint64(len(out[ref])) < d.points.recordCount {
+		vals, next, err := d.readPacketFields(pos, variable)
+		if err != nil {
+			return nil, err
+		}
+		remaining := d.points.recordCount - uint64(len(out[ref]))
+		appendPacketColumns(out, vals, variable, remaining)
+		pos = next
+	}
+	return out, nil
+}
+
+// partitionConstantFields splits indices into columns already materialised (constant fields carry no
+// packed bytes, so they are filled with their single value up front) and the still-to-decode variable
+// field indices, seeding each variable column with recordCount capacity.
+func (d *Document) partitionConstantFields(indices []int) (map[int][]float64, []int) {
 	out := make(map[int][]float64, len(indices))
 	variable := make([]int, 0, len(indices))
 	for _, i := range indices {
@@ -39,60 +64,77 @@ func (d *Document) decodeFields(indices []int) (map[int][]float64, error) {
 		variable = append(variable, i)
 		out[i] = make([]float64, 0, d.points.recordCount)
 	}
-	if len(variable) == 0 {
-		return out, nil
-	}
+	return out, variable
+}
+
+// firstDataPacketOffset reads and validates the CompressedVector section header and returns the
+// physical offset of its first data packet.
+func (d *Document) firstDataPacketOffset() (uint64, error) {
 	hdr, _, err := d.paged.readLogical(d.points.fileOffset, cvSectionHeaderSize)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	if hdr[0] != cvSectionType {
-		return nil, fmt.Errorf("e57fmt: points section id is %d, want %d (CompressedVector)", hdr[0], cvSectionType)
+		return 0, fmt.Errorf("e57fmt: points section id is %d, want %d (CompressedVector)", hdr[0], cvSectionType)
 	}
-	pos := binary.LittleEndian.Uint64(hdr[16:]) // dataPhysicalOffset of the first data packet
-	ref := variable[0]
-	for uint64(len(out[ref])) < d.points.recordCount {
-		vals, next, err := d.readPacketFields(pos, variable)
-		if err != nil {
-			return nil, err
+	return binary.LittleEndian.Uint64(hdr[16:]), nil // dataPhysicalOffset of the first data packet
+}
+
+// appendPacketColumns appends each variable field's freshly-decoded packet values onto its output
+// column, capping the packet at remaining so the final packet never overshoots recordCount.
+func appendPacketColumns(out, vals map[int][]float64, variable []int, remaining uint64) {
+	for _, i := range variable {
+		v := vals[i]
+		if uint64(len(v)) > remaining {
+			v = v[:remaining]
 		}
-		remaining := d.points.recordCount - uint64(len(out[ref]))
-		for _, i := range variable {
-			v := vals[i]
-			if uint64(len(v)) > remaining {
-				v = v[:remaining]
-			}
-			out[i] = append(out[i], v...)
-		}
-		pos = next
+		out[i] = append(out[i], v...)
 	}
-	return out, nil
 }
 
 // readPacketFields reads the data packet at physical offset pos and decodes the bytestreams of the
-// requested fields, returning their values and the offset just past the packet. Each field in a
-// packet encodes the same record count; a bit-packed field's trailing byte padding can yield one
-// extra value, so every column is truncated to the shortest so the columns stay row-aligned.
+// requested fields, returning their values and the offset just past the packet.
 func (d *Document) readPacketFields(pos uint64, indices []int) (map[int][]float64, uint64, error) {
+	body, bsCount, next, err := d.readDataPacketBody(pos)
+	if err != nil {
+		return nil, 0, err
+	}
+	vals, err := d.decodePacketColumns(body, bsCount, indices)
+	if err != nil {
+		return nil, 0, err
+	}
+	return vals, next, nil
+}
+
+// readDataPacketBody reads and validates the data packet at pos, returning its bytestream body, the
+// bytestream count, and the physical offset just past the packet.
+func (d *Document) readDataPacketBody(pos uint64) (body []byte, bsCount int, next uint64, err error) {
 	head, afterHead, err := d.paged.readLogical(pos, 6)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, 0, err
 	}
 	if head[0] != dataPacketType {
-		return nil, 0, fmt.Errorf("e57fmt: expected a data packet (type %d) at %d, got type %d", dataPacketType, pos, head[0])
+		return nil, 0, 0, fmt.Errorf("e57fmt: expected a data packet (type %d) at %d, got type %d", dataPacketType, pos, head[0])
 	}
 	packetLen := uint64(binary.LittleEndian.Uint16(head[2:])) + 1
-	bsCount := int(binary.LittleEndian.Uint16(head[4:]))
-	body, next, err := d.paged.readLogical(afterHead, packetLen-6)
+	bsCount = int(binary.LittleEndian.Uint16(head[4:]))
+	body, next, err = d.paged.readLogical(afterHead, packetLen-6)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, 0, err
 	}
+	return body, bsCount, next, nil
+}
+
+// decodePacketColumns decodes each requested field's bytestream from the packet body. Each field in a
+// packet encodes the same record count, but a bit-packed field's trailing byte padding can yield one
+// extra value, so every column is truncated to the shortest to stay row-aligned.
+func (d *Document) decodePacketColumns(body []byte, bsCount int, indices []int) (map[int][]float64, error) {
 	vals := make(map[int][]float64, len(indices))
 	rows := -1
 	for _, fi := range indices {
 		buf, err := bytestream(body, bsCount, fi)
 		if err != nil {
-			return nil, 0, err
+			return nil, err
 		}
 		v := decodeBytestream(buf, d.points.fields[fi])
 		vals[fi] = v
@@ -103,7 +145,7 @@ func (d *Document) readPacketFields(pos uint64, indices []int) (map[int][]float6
 	for fi := range vals {
 		vals[fi] = vals[fi][:rows]
 	}
-	return vals, next, nil
+	return vals, nil
 }
 
 // bytestream slices the requested field's buffer out of a data packet body, which begins with one

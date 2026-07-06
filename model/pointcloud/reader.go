@@ -211,40 +211,61 @@ func parseSample(text string) (PointSample, bool) {
 	if len(f) < 3 {
 		return PointSample{}, false
 	}
+	pt, ok := parseXYZ(f)
+	if !ok {
+		return PointSample{}, false
+	}
+	s := PointSample{Point: pt}
+	if !applySampleChannels(&s, f) {
+		return PointSample{}, false
+	}
+	return s, true
+}
+
+// parseXYZ parses the first three whitespace fields as the point's position.
+func parseXYZ(f []string) (math.Point3, bool) {
 	x, ex := strconv.ParseFloat(f[0], 64)
 	y, ey := strconv.ParseFloat(f[1], 64)
 	z, ez := strconv.ParseFloat(f[2], 64)
 	if ex != nil || ey != nil || ez != nil {
-		return PointSample{}, false
+		return math.Point3{}, false
 	}
-	s := PointSample{Point: math.P3(math.Scalar(x), math.Scalar(y), math.Scalar(z))}
+	return math.P3(math.Scalar(x), math.Scalar(y), math.Scalar(z)), true
+}
+
+// applySampleChannels reads the optional intensity / RGB columns from the supported ASCII layouts:
+// 3 = xyz only, 4 = +intensity, 6 = +rgb, 7 = +intensity+rgb. Any other count above 3 is an
+// unsupported layout and rejects the line.
+func applySampleChannels(s *PointSample, f []string) bool {
 	switch len(f) {
+	case 3: // xyz only
 	case 4:
-		if v, err := strconv.ParseFloat(f[3], 64); err == nil {
-			s.HasIntensity = true
-			s.Intensity = v
-		}
+		setSampleIntensity(s, f[3])
 	case 6:
-		if rgb, ok := parseRGBFields(f[3:6]); ok {
-			s.HasRGB = true
-			s.RGB = rgb
-		}
+		setSampleRGB(s, f[3:6])
 	case 7:
-		if v, err := strconv.ParseFloat(f[3], 64); err == nil {
-			s.HasIntensity = true
-			s.Intensity = v
-		}
-		if rgb, ok := parseRGBFields(f[4:7]); ok {
-			s.HasRGB = true
-			s.RGB = rgb
-		}
+		setSampleIntensity(s, f[3])
+		setSampleRGB(s, f[4:7])
 	default:
-		if len(f) > 3 {
-			// Extra columns are tolerated only when they match the supported layouts.
-			return PointSample{}, false
-		}
+		return false
 	}
-	return s, true
+	return true
+}
+
+// setSampleIntensity sets the intensity channel from an ASCII field, leaving it unset if unparsable.
+func setSampleIntensity(s *PointSample, field string) {
+	if v, err := strconv.ParseFloat(field, 64); err == nil {
+		s.HasIntensity = true
+		s.Intensity = v
+	}
+}
+
+// setSampleRGB sets the RGB channel from three ASCII fields, leaving it unset if any is unparsable.
+func setSampleRGB(s *PointSample, fields []string) {
+	if rgb, ok := parseRGBFields(fields); ok {
+		s.HasRGB = true
+		s.RGB = rgb
+	}
 }
 
 func parseRGBFields(fields []string) ([3]float32, bool) {

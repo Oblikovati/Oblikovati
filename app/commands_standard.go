@@ -279,7 +279,6 @@ func pointCloudCommands() []*CommandDefinition {
 func pointCloudDisplayModeCommands() []*CommandDefinition {
 	cmds := make([]*CommandDefinition, 0, len(types.AllPointCloudDisplayModes()))
 	for _, mode := range types.AllPointCloudDisplayModes() {
-		mode := mode
 		cmds = append(cmds, NewCommand("PointCloud.DisplayMode."+mode.String(), mode.String(), panelPointCloudDisplay, func(s *Session) error {
 			return s.SetTargetPointCloudDisplayMode(mode)
 		}).WithTab(tabSurfacesMesh).WithKind(ComboControl).WithEnable(canSetTargetPointCloudDisplayMode).

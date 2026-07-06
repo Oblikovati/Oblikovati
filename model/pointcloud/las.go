@@ -81,7 +81,7 @@ func decodeLASSample(rec []byte, h lasfmt.Header) PointSample {
 		s.HasIntensity = true
 		s.Intensity = float64(binary.LittleEndian.Uint16(rec[12:14]))
 	}
-	if rgbOffset, ok := lasRGBOffset(h.PointFormat); ok && int(rgbOffset)+6 <= len(rec) {
+	if rgbOffset, ok := lasRGBOffset(h.PointFormat); ok && rgbOffset+6 <= len(rec) {
 		s.HasRGB = true
 		s.RGB = [3]float32{
 			float32(binary.LittleEndian.Uint16(rec[rgbOffset : rgbOffset+2])),

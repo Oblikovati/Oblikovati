@@ -172,13 +172,13 @@ func TestCachedIntensityHistogramMemoized(t *testing.T) {
 	if err != nil {
 		t.Fatalf("attach: %v", err)
 	}
-	first := s.cachedIntensityHistogram(pc, pointCloudIntensityHistogramBins)
-	again := s.cachedIntensityHistogram(pc, pointCloudIntensityHistogramBins)
+	first := s.cachedIntensityHistogram(pc)
+	again := s.cachedIntensityHistogram(pc)
 	if len(first) == 0 || &first[0] != &again[0] {
 		t.Fatal("unchanged displayed set should return the memoized histogram, not recompute")
 	}
 	pc.SetMaximumPointCount(2) // rebuilds the displayed set → new backing array → memo miss
-	rebuilt := s.cachedIntensityHistogram(pc, pointCloudIntensityHistogramBins)
+	rebuilt := s.cachedIntensityHistogram(pc)
 	if len(rebuilt) == 0 || &rebuilt[0] == &first[0] {
 		t.Fatal("changing the display budget should invalidate the histogram memo")
 	}

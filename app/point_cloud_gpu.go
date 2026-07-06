@@ -5,6 +5,7 @@ package app
 import (
 	"encoding/binary"
 	"hash/fnv"
+	"io"
 	stdmath "math"
 
 	"oblikovati.org/math"
@@ -47,30 +48,44 @@ func (s *Session) PointCloudGPUVertices() ([]float32, int) {
 		return nil, 0
 	}
 	clouds := part.PointClouds()
+	low, high := s.PointCloudIntensityRamp()
 	var verts []float32
 	count := 0
-	low, high := s.PointCloudIntensityRamp()
 	for i := 0; i < clouds.Count(); i++ {
 		pc := clouds.Item(i)
-		if !pc.Visible() {
-			continue
-		}
-		samples := capForRender(pc, pc.DisplayedSamples())
-		samples = densityFilteredSamples(pc, samples, s.PointCloudRenderDensity())
+		samples := s.cloudRenderSamples(pc)
 		if len(samples) == 0 {
 			continue
 		}
-		if verts == nil {
-			verts = make([]float32, 0, len(samples)*pointCloudGPUStride)
-		}
-		for _, sm := range samples {
-			c := displaySampleColor(pc, sm, low, high)
-			verts = append(verts, float32(sm.Point.X), float32(sm.Point.Y), float32(sm.Point.Z),
-				c[0], c[1], c[2], c[3])
-			count++
-		}
+		verts = appendCloudVertices(verts, pc, samples, low, high)
+		count += len(samples)
 	}
 	return verts, count
+}
+
+// cloudRenderSamples returns the samples a cloud contributes to the GPU buffer: its displayed set,
+// capped for VRAM (unbudgeted clouds) then thinned to the session render density. Nil for a hidden or
+// empty cloud, so the caller skips it.
+func (s *Session) cloudRenderSamples(pc *pointcloud.PointCloud) []pointcloud.PointSample {
+	if !pc.Visible() {
+		return nil
+	}
+	samples := capForRender(pc, pc.DisplayedSamples())
+	return densityFilteredSamples(pc, samples, s.PointCloudRenderDensity())
+}
+
+// appendCloudVertices appends one cloud's interleaved [pos.xyz, rgba] vertices (model space) to dst,
+// colouring each sample by the cloud's display mode and the session intensity ramp.
+func appendCloudVertices(dst []float32, pc *pointcloud.PointCloud, samples []pointcloud.PointSample, low, high [4]float32) []float32 {
+	if dst == nil {
+		dst = make([]float32, 0, len(samples)*pointCloudGPUStride)
+	}
+	for _, sm := range samples {
+		c := displaySampleColor(pc, sm, low, high)
+		dst = append(dst, float32(sm.Point.X), float32(sm.Point.Y), float32(sm.Point.Z),
+			c[0], c[1], c[2], c[3])
+	}
+	return dst
 }
 
 // capForRender strides an unbudgeted cloud's samples down to pointCloudRenderCap; a cloud with an
@@ -154,16 +169,11 @@ func strideForCap(samples []pointcloud.PointSample, max int) []pointcloud.PointS
 // the renderer to mean "always upload", so an empty scene returns the FNV offset basis (non-zero).
 func (s *Session) PointCloudDisplayKey() uint64 {
 	h := fnv.New64a()
-	var buf [8]byte
-	putF := func(f float64) { binary.LittleEndian.PutUint64(buf[:], stdmath.Float64bits(f)); _, _ = h.Write(buf[:]) }
-	putF(float64(s.PointCloudRenderDensity()))
+	put := floatWriter(h)
+	put(float64(s.PointCloudRenderDensity()))
 	low, high := s.PointCloudIntensityRamp()
-	for _, c := range low {
-		putF(float64(c))
-	}
-	for _, c := range high {
-		putF(float64(c))
-	}
+	writeFloat32s(put, low[:])
+	writeFloat32s(put, high[:])
 	part, err := activePart(s)
 	if err != nil {
 		return h.Sum64()
@@ -171,45 +181,65 @@ func (s *Session) PointCloudDisplayKey() uint64 {
 	clouds := part.PointClouds()
 	for i := 0; i < clouds.Count(); i++ {
 		pc := clouds.Item(i)
-		if !pc.Visible() {
-			continue
+		if pc.Visible() {
+			hashCloudDisplay(h, pc)
 		}
-		hashCloudDisplay(h, pc)
 	}
 	return h.Sum64()
+}
+
+// floatWriter returns a closure that folds a float64 into h as little-endian IEEE-754 bytes — the
+// shared, run-stable encoding the display-key hashes use.
+func floatWriter(h io.Writer) func(float64) {
+	var buf [8]byte
+	return func(f float64) {
+		binary.LittleEndian.PutUint64(buf[:], stdmath.Float64bits(f))
+		_, _ = h.Write(buf[:])
+	}
+}
+
+// writeFloat32s folds each float32 into the key via put (widened to float64).
+func writeFloat32s(put func(float64), cs []float32) {
+	for _, c := range cs {
+		put(float64(c))
+	}
 }
 
 // hashCloudDisplay folds one visible cloud's display-determining inputs into h. resourceID keeps two
 // distinct scans from colliding; the rest mirror pointcloud.displaySignature (placement/scale/budget/
 // crops) plus the color inputs (display mode, intensity range) the GPU vertices bake in.
-func hashCloudDisplay(h interface{ Write([]byte) (int, error) }, pc *pointcloud.PointCloud) {
-	var buf [8]byte
-	putF := func(f float64) { binary.LittleEndian.PutUint64(buf[:], stdmath.Float64bits(f)); _, _ = h.Write(buf[:]) }
+func hashCloudDisplay(h io.Writer, pc *pointcloud.PointCloud) {
+	put := floatWriter(h)
 	putStr := func(str string) { _, _ = h.Write([]byte(str)); _, _ = h.Write([]byte{0}) }
 
 	putStr(pc.ResourceID())
 	putStr(string(pc.DisplayMode()))
 	for _, c := range pc.Transform().Cells() {
-		putF(float64(c))
+		put(float64(c))
 	}
-	putF(pc.Scale())
-	putF(float64(pc.MaximumPointCount()))
+	put(pc.Scale())
+	put(float64(pc.MaximumPointCount()))
 	if lo, hi, ok := pc.IntensityRange(); ok {
-		putF(lo)
-		putF(hi)
+		put(lo)
+		put(hi)
 	}
-	crops := pc.Crops()
+	hashActiveCropBoxes(put, pc.Crops())
+}
+
+// hashActiveCropBoxes folds each active crop's model-space box corners into the key via put, so a
+// change to which region is cropped invalidates the retained GPU buffer.
+func hashActiveCropBoxes(put func(float64), crops *pointcloud.PointCloudCrops) {
 	for i := 0; i < crops.Count(); i++ {
 		c := crops.Item(i)
 		if !c.Active() {
 			continue
 		}
 		b := c.Box()
-		putF(float64(b.Min.X))
-		putF(float64(b.Min.Y))
-		putF(float64(b.Min.Z))
-		putF(float64(b.Max.X))
-		putF(float64(b.Max.Y))
-		putF(float64(b.Max.Z))
+		put(float64(b.Min.X))
+		put(float64(b.Min.Y))
+		put(float64(b.Min.Z))
+		put(float64(b.Max.X))
+		put(float64(b.Max.Y))
+		put(float64(b.Max.Z))
 	}
 }
