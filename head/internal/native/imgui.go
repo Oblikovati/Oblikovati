@@ -179,6 +179,7 @@ void obk_inject_mouse_button(int b, int down);
 void obk_inject_mouse_wheel(float w);
 void obk_inject_key_shift(int down);
 void obk_inject_fkey(int n, int down);
+void obk_inject_letter(int letter, int down);
 */
 import "C"
 
@@ -1186,6 +1187,11 @@ func InjectKeyShift(down bool)                { C.obk_inject_key_shift(cBool(dow
 
 // InjectFKey holds (down) or releases the hold-to-navigate function key F(n), n in 2..4 (#911).
 func InjectFKey(n int, down bool) { C.obk_inject_fkey(C.int(n), cBool(down)) }
+
+// InjectLetter presses (down) or releases a plain letter key a–z (index 0=a … 25=z) for in-window
+// keyboard tests, injecting the key event (so PressedKeys sees it) and, on press, the matching
+// input character (so a focused InputText receives it) — a faithful letter keystroke (#1751 S2).
+func InjectLetter(index int, down bool) { C.obk_inject_letter(C.int(index), cBool(down)) }
 
 // cBool converts a Go bool to the 0/1 C.int the wrappers expect.
 func cBool(b bool) C.int {

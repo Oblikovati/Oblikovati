@@ -58,6 +58,7 @@ const (
 	SelectDrawingView
 	SelectPointCloud
 	SelectPointCloudPoint
+	SelectMeshFace // a facet of a placed mesh reference (#1776)
 )
 
 // Selectable is anything the selection set can hold. Concrete handles wrap the
@@ -312,9 +313,10 @@ func (s *Selection) First() Selectable {
 }
 
 // References returns, parallel to Items, the work-feature reference for each selected
-// entity — a datum plane/axis/point key, or a face/vertex reference — the string an
-// automation client passes to a work-plane constructor. Entities with no such reference
-// (a body, a sketch entity) yield an empty string, so the slice stays index-aligned.
+// entity — a datum plane/axis/point key, or a face/vertex/body reference — the string an
+// automation client passes to a work-plane constructor or a body-scoped operation. Entities
+// with no such reference (a sketch entity) yield an empty string, so the slice stays
+// index-aligned. A whole-body pick reports a body/<key> reference (#1492).
 func (s *Selection) References() []string {
 	refs := make([]string, len(s.items))
 	for i, it := range s.items {
@@ -336,6 +338,8 @@ func selectionRef(it Selectable) feature.WorkRef {
 		return feature.FaceRef(h.Face.ReferenceKey())
 	case VertexHandle:
 		return feature.VertexRef(h.Vertex.ReferenceKey())
+	case BodyHandle:
+		return feature.BodyRef(h.Body.ReferenceKey())
 	default:
 		return ""
 	}

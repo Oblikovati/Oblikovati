@@ -46,7 +46,7 @@ func drawCoilDialog(s *app.Session) {
 		return
 	}
 	refreshCoilUI(c)
-	native.SetNextWindowSizeOnce(340, 340)
+	dialogSizeOnce(340, 340)
 	if native.Begin("Coil") {
 		title := "Coil"
 		if name := c.EditingName(); name != "" {

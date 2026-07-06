@@ -5,6 +5,7 @@ package app
 import (
 	"errors"
 
+	"oblikovati.org/model/param"
 	"oblikovati.org/model/sketch"
 )
 
@@ -40,7 +41,11 @@ func (s *Session) CommitPendingDimension(expression string) error {
 	if s.pendingDim == nil {
 		return errors.New("app: no dimension is being edited")
 	}
-	if err := s.pendingDim.Parameter().SetExpression(expression); err != nil {
+	// A bare number typed here means the document's display unit (7 → 7 mm), not the raw
+	// database unit — qualify before the raw setter, or every unitless value inflates 10× (#1783).
+	p := s.pendingDim.Parameter()
+	qualified := p.QualifyAuthored(expression, dimensionCategory(s.pendingDim.Kind()), s.DocumentUnits())
+	if err := p.SetExpression(qualified); err != nil {
 		return err
 	}
 	s.pendingDim = nil
@@ -54,3 +59,15 @@ func (s *Session) CommitPendingDimension(expression string) error {
 // CancelPendingDimension dismisses the edit box, keeping the dimension at its current
 // (measured) value — Inventor accepts the placed dimension when you cancel the edit.
 func (s *Session) CancelPendingDimension() { s.pendingDim = nil }
+
+// dimensionCategory is the unit category a dimension kind's value is authored in — Angle for the
+// angular dimensions, Length for every distance/radius/arc-length kind — so a bare number is
+// qualified with the right document display unit (#1783).
+func dimensionCategory(k sketch.DimKind) param.Unit {
+	switch k {
+	case sketch.AngleDim, sketch.ThreePointAngleDim:
+		return param.Angle
+	default:
+		return param.Length
+	}
+}

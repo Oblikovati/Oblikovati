@@ -29,6 +29,8 @@ type RayPicker struct {
 	axes         func() []*feature.WorkAxis
 	sketches     func() []*sketch.Sketch
 	sketches3D   func() []*sketch.Sketch3D
+	meshes       func() []*feature.MeshFeature                   // placed mesh references whose facets pick (#1776)
+	meshIndex    map[*feature.MeshGeometry]*meshRayEntry         // per-mesh ray BVH, built once (immutable geometry)
 	pointClouds  func() []*pointcloud.PointCloud                 // attached scans whose points snap (#645)
 	occurrenceOf func(*topo.Body) (*occurrence.Occurrence, bool) // maps an assembly body hit to its component (#769)
 	priorityRank func(SelectionKind) int                         // user pick-priority ranking for ambiguous hits (#1222); nil ⇒ default order
@@ -107,6 +109,13 @@ func (p *RayPicker) WithSketches(sketches func() []*sketch.Sketch) *RayPicker {
 // (issue #142).
 func (p *RayPicker) WithSketches3D(sketches3D func() []*sketch.Sketch3D) *RayPicker {
 	p.sketches3D = sketches3D
+	return p
+}
+
+// WithMeshes adds a provider of the part's visible placed mesh references, so a click can select a
+// mesh by hitting one of its facets (#1776). Ray-testing uses a cached per-mesh BVH.
+func (p *RayPicker) WithMeshes(meshes func() []*feature.MeshFeature) *RayPicker {
+	p.meshes = meshes
 	return p
 }
 
@@ -197,7 +206,51 @@ func (p *RayPicker) Pick(x, y float64, filter *SelectionFilter) (Selectable, boo
 	if sel, t, ok := p.nearestSketch3DEntity(origin, dir, filter); ok {
 		cands = append(cands, pickCandidate{t, sel})
 	}
+	if sel, t, ok := p.nearestMeshFacet(origin, dir, filter); ok {
+		cands = append(cands, pickCandidate{t, sel})
+	}
 	return p.nearestCandidate(cands)
+}
+
+// meshRayEntry caches a placed mesh's ray BVH and its triangle→facet map. A mesh geometry is
+// immutable, so the index is built once per geometry and reused across picks.
+type meshRayEntry struct {
+	index   *ops.MeshRayIndex
+	facetOf []int
+}
+
+// nearestMeshFacet returns the placed-mesh facet the ray hits nearest, or ok=false. The per-mesh BVH
+// keeps this cheap enough to run on hover every frame even for a dense scan (#1776).
+func (p *RayPicker) nearestMeshFacet(origin math.Point3, dir math.Vector3, filter *SelectionFilter) (Selectable, float64, bool) {
+	if p.meshes == nil || !filter.Accepts(SelectMeshFace) {
+		return nil, stdmath.Inf(1), false
+	}
+	var hit Selectable
+	best := stdmath.Inf(1)
+	for _, mf := range p.meshes() {
+		e := p.meshRayEntry(mf.Geometry())
+		if e.index == nil {
+			continue
+		}
+		if tri, t, ok := e.index.Nearest(origin, dir); ok && t < best {
+			best, hit = t, MeshFaceHandle{Mesh: mf, Facet: e.facetOf[tri]}
+		}
+	}
+	return hit, best, hit != nil
+}
+
+// meshRayEntry returns g's cached ray index, building it on first use.
+func (p *RayPicker) meshRayEntry(g *feature.MeshGeometry) *meshRayEntry {
+	if p.meshIndex == nil {
+		p.meshIndex = map[*feature.MeshGeometry]*meshRayEntry{}
+	}
+	if e, ok := p.meshIndex[g]; ok {
+		return e
+	}
+	tris, facetOf := meshTriangles(g)
+	e := &meshRayEntry{index: ops.NewMeshRayIndex(g.Vertices, tris), facetOf: facetOf}
+	p.meshIndex[g] = e
+	return e
 }
 
 // nearestSketch3DEntity returns the 3D-sketch entity (curve or standalone point) the

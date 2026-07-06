@@ -34,7 +34,7 @@ func drawFileDialog(s *app.Session) {
 	wasAddIn := fileModal.mode == dialogAddIn
 	request := fileModal.request
 	var act fileAction
-	setFileDialogWindowSize()
+	dialogSizeOnce(760, 520)
 	if native.Begin(fileModal.title()) {
 		drawExplorerHeader()
 		act = drawExplorerTable()
@@ -44,16 +44,6 @@ func drawFileDialog(s *app.Session) {
 	native.End()
 	applyFileAction(s, act)
 	resolveAddInDialog(s, wasAddIn, request, act)
-}
-
-func setFileDialogWindowSize() {
-	viewportW, viewportH := native.MainViewportSize()
-	w, h := fileDialogInitialSize(viewportW, viewportH)
-	if fileDialogNeedsForcedSize(viewportW, viewportH) {
-		native.SetNextWindowSize(w, h)
-		return
-	}
-	native.SetNextWindowSizeOnce(w, h)
 }
 
 // resolveAddInDialog answers the add-in's ask: a confirmed path resolves it; the
@@ -103,13 +93,22 @@ func drawRootChooser() {
 	native.EndCombo()
 }
 
-// drawExplorerTable renders the current directory rows and returns a double-click action.
+// fileFooterReserve is the height (in px) held below the file table for the footer drawn after it:
+// the file-name field, the optional export-resolution / import-plane row, and the Export/Cancel
+// button row — six frame-heights covers the tallest variant. FrameHeight already includes the live
+// font scale, so the reserve grows with the text (#1753).
+func fileFooterReserve() float32 { return native.FrameHeight() * 6 }
+
+// drawExplorerTable renders the current directory rows and returns a double-click action. The table
+// FILLS the window's remaining height minus a reserved footer (fileFooterReserve) instead of a fixed
+// 280 px, so the target field and the Export/Cancel row are always visible — they no longer fall off
+// the bottom of an undersized window, which was the reported clip (#1753). The row list scrolls.
 func drawExplorerTable() fileAction {
 	native.SeparatorText("Files")
 	if fileModal.errorText != "" {
 		native.Text(fileModal.errorText)
 	}
-	if !native.BeginTable("##file-browser", 4, 0, explorerTableHeight()) {
+	if !native.BeginTable("##file-browser", 4, 0, -fileFooterReserve()) {
 		return fileAction{}
 	}
 	drawExplorerTableHeader()
@@ -209,25 +208,6 @@ func drawExplorerTarget(s *app.Session) {
 	if fileModal.mode == dialogImport && isSketchImportTarget() {
 		drawImportPlane(s)
 	}
-}
-
-func explorerTableHeight() float32 {
-	_, availH := native.ContentRegionAvail()
-	reservedH := explorerFooterHeight()
-	tableH := availH - reservedH
-	if tableH < 120 {
-		return 120
-	}
-	return tableH
-}
-
-func explorerFooterHeight() float32 {
-	metrics := native.Metrics()
-	rows := float32(4) // filter hint, path field, action row, and breathing room.
-	if fileModal.mode == dialogExport || (fileModal.mode == dialogImport && isSketchImportTarget()) {
-		rows++
-	}
-	return rows*native.FrameHeight() + rows*metrics.ItemSpacingY
 }
 
 // isSketchImportTarget reports whether the import target is a drawing file (.dwg/.dxf) — the
@@ -357,7 +337,7 @@ func saveActiveDocumentAs(s *app.Session, path, name string) {
 	queueSaveThumbnail(s, path)
 }
 
-// placeMeshFromFile imports an ASCII STL as mesh reference geometry (Mesh ▸ Place Mesh).
+// placeMeshFromFile imports an STL (ASCII or binary, #1764) as mesh reference geometry (Mesh ▸ Place Mesh).
 func placeMeshFromFile(s *app.Session, path, name string) {
 	if _, err := s.ImportMeshFile(path); err != nil {
 		fileNotice(s, "Place Mesh failed: %v", err)

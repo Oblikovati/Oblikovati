@@ -48,5 +48,5 @@ export VERSION="$version"
 	--icon-file "$icon" \
 	--output appimage )
 
-mv "$work"/*.AppImage "$out/oblikovati-head-$version-linux-amd64.AppImage"
-echo "built $out/oblikovati-head-$version-linux-amd64.AppImage"
+mv "$work"/*.AppImage "$out/oblikovati-$version-linux-amd64.AppImage"
+echo "built $out/oblikovati-$version-linux-amd64.AppImage"

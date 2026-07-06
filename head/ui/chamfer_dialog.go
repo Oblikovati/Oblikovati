@@ -33,7 +33,7 @@ func drawChamferDialog(s *app.Session) {
 		chamferUI.concaveIndex = c.ConcaveStrategyIndex()
 		chamferUI.seeded = c
 	}
-	native.SetNextWindowSizeOnce(340, 250)
+	dialogSizeOnce(340, 250)
 	if native.Begin("Chamfer") {
 		title := "Chamfer"
 		if name := c.EditingName(); name != "" {

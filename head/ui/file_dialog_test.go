@@ -160,27 +160,6 @@ func TestFileDialogPointCloudModeUsesRegisteredScanExtensions(t *testing.T) {
 	}
 }
 
-func TestFileDialogInitialSizeFitsViewport(t *testing.T) {
-	w, h := fileDialogInitialSize(1920, 1080)
-	if w != fileDialogDefaultW || h != fileDialogDefaultH {
-		t.Fatalf("large viewport size = %.0fx%.0f, want %.0fx%.0f", w, h, fileDialogDefaultW, fileDialogDefaultH)
-	}
-	if fileDialogNeedsForcedSize(1920, 1080) {
-		t.Fatal("large viewport should use first-use sizing")
-	}
-
-	vw, vh := float32(640), float32(480)
-	w, h = fileDialogInitialSize(vw, vh)
-	maxW := vw - 2*fileDialogViewportMargin
-	maxH := vh - 2*fileDialogViewportMargin
-	if w != maxW || h != maxH {
-		t.Fatalf("small viewport size = %.0fx%.0f, want clamped %.0fx%.0f", w, h, maxW, maxH)
-	}
-	if !fileDialogNeedsForcedSize(vw, vh) {
-		t.Fatal("small viewport should force clamped sizing")
-	}
-}
-
 // TestFileDialogExportDXFVersion covers a confirmed Export carrying the selected DXF version.
 func TestFileDialogExportDXFVersion(t *testing.T) {
 	var d fileDialog

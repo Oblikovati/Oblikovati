@@ -52,7 +52,7 @@ func drawLoftDialog(s *app.Session) {
 		return
 	}
 	refreshLoftUI(l)
-	native.SetNextWindowSizeOnce(360, 520)
+	dialogSizeOnce(360, 520)
 	if native.Begin("Loft") {
 		drawFeatureBreadcrumb("Loft", "")
 		drawLoftTabs(s, l)

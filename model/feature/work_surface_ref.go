@@ -108,6 +108,24 @@ func FaceRefKey(ref WorkRef) ([]byte, bool) { return decodeRefKey(string(ref), f
 // VertexRefKey decodes a vertex WorkRef back to its reference key, reporting ok=false otherwise.
 func VertexRefKey(ref WorkRef) ([]byte, bool) { return decodeRefKey(string(ref), vertexRefPrefix) }
 
+// bodyRefPrefix folds a whole-body reference key into a WorkRef so a directly-picked body,
+// like a face or vertex, round-trips through model.selection / model.select (#1492). It shares
+// the "<kind>/<url-base64(key)>" encoding of the face/vertex forms; the body key is the same
+// recompute-stable key surfaced as BodyInfo.Key (api v0.92.1).
+const bodyRefPrefix = "body/"
+
+// BodyRef encodes a B-rep body's reference key (topo.Body.ReferenceKey) as a WorkRef, so a
+// selected body reports a non-empty, resolvable reference in a SelectionResult (#1492).
+//
+//	ref := BodyRef(body.ReferenceKey())
+func BodyRef(key []byte) WorkRef {
+	return WorkRef(bodyRefPrefix + base64.RawURLEncoding.EncodeToString(key))
+}
+
+// BodyRefKey decodes a body WorkRef back to its reference key, reporting ok=false for a ref that
+// is not a body reference (selection resolution round-trips a picked body this way, #1492).
+func BodyRefKey(ref WorkRef) ([]byte, bool) { return decodeRefKey(string(ref), bodyRefPrefix) }
+
 // decodeRefKey strips prefix and base64-decodes the key, reporting ok=false on a prefix mismatch
 // or a malformed payload.
 func decodeRefKey(s, prefix string) ([]byte, bool) {

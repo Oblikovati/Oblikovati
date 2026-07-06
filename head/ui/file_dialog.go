@@ -30,7 +30,7 @@ const (
 	dialogImport                        // File ▸ Import (STL/OBJ/3MF/STEP → imported body)
 	dialogExport                        // File ▸ Export (part bodies → STL/OBJ/3MF/STEP)
 	dialogAddIn                         // an add-in's dialogs.showFileDialog request (M05-F08)
-	dialogMeshRef                       // Mesh ▸ Place Mesh (ASCII STL → mesh reference geometry, #700)
+	dialogMeshRef                       // Mesh ▸ Place Mesh (STL, ASCII or binary → mesh reference geometry, #700, #1764)
 	dialogPlaceComponent                // Assemble ▸ Place: choose the component document to instance (#763)
 	dialogExportBOM                     // Assemble ▸ Bill of Materials ▸ Export CSV (#768)
 	dialogPointCloud                    // 3D Model ▸ Import Point Cloud (scan file → referenced cloud, #645)
@@ -42,12 +42,6 @@ const (
 const pathBufferLen = 1024
 
 const fileSearchBufferLen = 128
-
-const (
-	fileDialogDefaultW       = float32(760)
-	fileDialogDefaultH       = float32(520)
-	fileDialogViewportMargin = float32(16)
-)
 
 // fileEntry is one row in the dialog's cross-platform directory browser.
 type fileEntry struct {
@@ -432,20 +426,4 @@ func containsString(values []string, needle string) bool {
 func copyText(dst []byte, text string) {
 	clearBuf(dst)
 	copy(dst, text)
-}
-
-func fileDialogInitialSize(viewportW, viewportH float32) (float32, float32) {
-	w, h := fileDialogDefaultW, fileDialogDefaultH
-	if maxW := viewportW - 2*fileDialogViewportMargin; maxW > 0 && w > maxW {
-		w = maxW
-	}
-	if maxH := viewportH - 2*fileDialogViewportMargin; maxH > 0 && h > maxH {
-		h = maxH
-	}
-	return w, h
-}
-
-func fileDialogNeedsForcedSize(viewportW, viewportH float32) bool {
-	w, h := fileDialogInitialSize(viewportW, viewportH)
-	return w < fileDialogDefaultW || h < fileDialogDefaultH
 }

@@ -46,7 +46,9 @@ sign "$app"
 codesign --verify --deep --strict --verbose=2 "$app"
 
 # Notarize the zipped bundle and wait for Apple's verdict (non-zero exit fails the job).
-zip="$out/Oblikovati-$version-macos-universal.zip"
+# The zipped asset is lowercase `oblikovati-` for parity with the Linux/Windows/CLI
+# release names; the bundle inside stays `Oblikovati.app` (its display name).
+zip="$out/oblikovati-$version-macos-universal.zip"
 ditto -c -k --keepParent "$app" "$zip"
 xcrun notarytool submit "$zip" \
 	--apple-id "$AC_APPLE_ID" --password "$AC_PASSWORD" --team-id "$AC_TEAM_ID" --wait

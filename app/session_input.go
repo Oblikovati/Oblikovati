@@ -4,6 +4,7 @@ package app
 
 import (
 	"errors"
+	"strings"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/event"
@@ -338,14 +339,25 @@ func normalizeKey(key string) string {
 //
 // M26 F05: a modifier chord (Ctrl/Alt, e.g. Ctrl+S, Ctrl+Z) runs through the Command Window
 // — its canonical word is echoed and then it dispatches — so a chord reads like a typed
-// command ("Ctrl+S" shows "SAVE" and saves). Plain keys still dispatch directly (this is the
-// no-text-field-focused path; in the running app a plain letter is typed into the focused
-// command line instead, filling it to await Enter).
+// command ("Ctrl+S" shows "SAVE" and saves).
+//
+// #1751 S2: a bare alphanumeric key with no text field focused hands focus to the Command Window
+// seeded with that character (see commandTypingSeed) — pressing a letter means "type a command",
+// not fire a shortcut. Bare special keys (F1–F12, Delete, …) still resolve and dispatch directly.
 func (s *Session) PressKey(e KeyEvent) error {
 	if s.CommandInputActive() {
 		return s.routeKeyToCommandInput(e)
 	}
 	chord := keyEventToChord(e)
+	// A bare alphanumeric key with no text field focused means the user wants to type a command:
+	// hand focus to the Command Window and seed the character, so the keystroke begins a command
+	// line instead of firing a (deliberately nonexistent) bare-letter shortcut (#1751 S2). The
+	// reserved-key policy lives in isReservedBareChord — special keys (F1–F12, Delete, …) fall
+	// through to the binding engine below and may be bound bare.
+	if seed, ok := commandTypingSeed(chord); ok {
+		s.BeginCommandTyping(seed)
+		return nil
+	}
 	actionID, ok := s.Bindings().ResolveChord(chord)
 	if !ok {
 		return nil
@@ -354,4 +366,15 @@ func (s *Session) PressKey(e KeyEvent) error {
 		return s.CommandLine().RunChord(s, actionID)
 	}
 	return s.Bindings().Dispatch(actionID, s)
+}
+
+// commandTypingSeed reports whether a chord should begin typing into the Command Window rather
+// than resolve as a shortcut — a bare alphanumeric key (see isReservedBareChord) — and returns
+// the character to seed the input with, lower-cased for a natural typed feel (the command
+// vocabulary matches case-insensitively, so "l" and "L" resolve alike).
+func commandTypingSeed(c types.KeyChord) (string, bool) {
+	if !isReservedBareChord(c) {
+		return "", false
+	}
+	return strings.ToLower(c.Key), true
 }

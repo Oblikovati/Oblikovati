@@ -45,6 +45,7 @@ func (s *Session) SetParameterName(id param.ID, name string) error {
 // SetParameterEquation sets a parameter's equation: an expression for numeric parameters
 // (a list choice when multi-value), or the literal for text parameters.
 func (s *Session) SetParameterEquation(id param.ID, equation string) error {
+	units := s.DocumentUnits()
 	return s.editParam(id, func(p *param.Parameter) error {
 		if p.IsMultiValue() {
 			return p.SelectValue(equation)
@@ -52,7 +53,9 @@ func (s *Session) SetParameterEquation(id param.ID, equation string) error {
 		if p.IsText() {
 			return p.SetText(equation)
 		}
-		return p.SetExpression(equation)
+		// A bare number means the parameter's own display unit (7 → 7 mm for a Length
+		// parameter), never the raw database unit — qualify before the raw setter (#1783).
+		return p.SetExpression(p.QualifyAuthored(equation, p.Unit(), units))
 	})
 }
 

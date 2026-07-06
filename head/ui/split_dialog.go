@@ -36,7 +36,7 @@ func drawSplitDialog(s *app.Session) {
 	if t == nil {
 		return
 	}
-	native.SetNextWindowSizeOnce(340, 230)
+	dialogSizeOnce(340, 230)
 	if native.Begin("Split") {
 		drawFeatureBreadcrumb("Split", "")
 		if propertySection("Input Geometry") {

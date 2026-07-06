@@ -43,7 +43,7 @@ func drawRevolveDialog(s *app.Session) {
 		revolveUI.centerline = rv.UseCenterline()
 		revolveUI.seeded = rv
 	}
-	native.SetNextWindowSizeOnce(340, 360)
+	dialogSizeOnce(340, 360)
 	if native.Begin("Revolve") {
 		title := "Revolve"
 		if name := rv.EditingName(); name != "" {

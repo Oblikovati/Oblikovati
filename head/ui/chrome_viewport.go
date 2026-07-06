@@ -432,13 +432,18 @@ func frameMeshAndInstances(s *app.Session, cam scene.Camera, list renderer.DrawL
 		decorate := func(l renderer.DrawList) renderer.DrawList {
 			return highlightSelection(l, s.Selection().First(), sources)
 		}
-		if m, mats, recs, key, ok := buildInstancedFrame(groups, culled, overlay, cam, s.SurfaceLookup(), s.VisualStyle(), decorate, instancedSourceKey(s)); ok {
+		placedMesh, placedMeshKey, _ := cachedPlacedMesh(s) // retained placed-mesh lane (#1773)
+		if m, mats, recs, key, ok := buildInstancedFrame(groups, culled, overlay, placedMesh, placedMeshKey, cam, s.SurfaceLookup(), s.VisualStyle(), decorate, instancedSourceKey(s)); ok {
 			return m, mats, recs, geomUploadKey(key)
 		}
 	}
 	// Legacy flatten: a fresh world-space mesh with no stable atlas key, so geomKey 0 ⇒ the native
 	// renderer always re-uploads it (correct, just unoptimised — the instanced path is the hot one).
+	// Placed mesh references have no instanced source, so add them to the world list here too so they
+	// still show in mesh-color debug mode (#1775). Flatten routes the opaque tris correctly. This
+	// re-flattens the mesh per frame, acceptable in this debug/fallback path (not the hot instanced one).
 	list.Items = append(list.Items, ground...)
+	list.Items = append(list.Items, s.MeshDrawItems()...)
 	return viewport.Flatten(list), nil, nil, 0
 }
 
@@ -584,6 +589,7 @@ func modelOverlays(s *app.Session, cam scene.Camera, hovered *feature.WorkPlane,
 		list.Items = append(list.Items, sketch3DOverlays(s, pointMarkerPixels*cam.WorldPerPixel())...)
 	}
 	list.Items = append(list.Items, selectedEdgeOverlay(s)...)
+	list.Items = append(list.Items, selectedMeshFacetOverlay(s)...) // picked placed-mesh facet (#1776)
 	list.Items = append(list.Items, threadOverlay(s)...)
 	list.Items = append(list.Items, toolHoverHighlight(s)...)
 	list.Items = append(list.Items, toolSelectedHighlight(s)...)

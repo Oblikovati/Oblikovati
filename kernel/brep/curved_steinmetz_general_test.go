@@ -3,6 +3,7 @@
 package brep
 
 import (
+	stdmath "math"
 	"testing"
 
 	"oblikovati.org/kernel/geom"
@@ -87,6 +88,59 @@ func TestSteinmetzGeneralDeclinesUnequalRadius(t *testing.T) {
 	cz, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	if _, ok := SteinmetzIntersectGeneral(cx, cz, nil); ok {
 		t.Error("general Steinmetz must decline unequal radii (ok=false)")
+	}
+}
+
+// nearEqualSteinmetz builds the canonical perpendicular pair with the z-axis cylinder's radius offset by dr
+// from the x-axis cylinder's radius 3 — the near-pinch band the snap targets (#1780).
+func nearEqualSteinmetz(dr float64) (cx, cz *topo.Body) {
+	cx, _ = SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12)
+	cz, _ = SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3+dr, 12)
+	return cx, cz
+}
+
+// TestSteinmetzIntersectGeneralNearEqualSnaps pins the #1780 snap: cylinders whose radii differ by less than
+// the model-relative ceiling build the SAME watertight four-face bicylinder as the exactly-equal case, and —
+// the load-bearing check — EVERY wall face carries the snapped MEAN radius, not either operand's true radius.
+// If the snap routed only into the imprint arcs and left the walls at their true radii, the two z-cylinder
+// lobes would report 3+dr and this fails: it is the regression guard for the holistic-routing pitfall.
+func TestSteinmetzIntersectGeneralNearEqualSnaps(t *testing.T) {
+	cx, cz := nearEqualSteinmetz(0)
+	ceil := geom.ResolutionForBox(cx.RangeBox().Union(cz.RangeBox())).Stitch()
+	dr := 0.5 * ceil // strictly within the snap ceiling
+	cx, cz = nearEqualSteinmetz(dr)
+
+	body, ok := SteinmetzIntersectGeneral(cx, cz, nil)
+	if !ok {
+		t.Fatalf("near-equal (|Δr|=%.3g ≤ ceiling %.3g) must snap and build the bicylinder", dr, ceil)
+	}
+	if !body.IsSolid() || len(body.Faces()) != 4 || len(body.Edges()) != 4 || len(body.Vertices()) != 2 {
+		t.Fatalf("snapped topology F/E/V = %d/%d/%d, want 4/4/2 (identical to the equal case)",
+			len(body.Faces()), len(body.Edges()), len(body.Vertices()))
+	}
+	wantR := 3 + dr/2 // the mean; both walls AND arcs must be rebuilt here
+	for _, f := range body.Faces() {
+		cyl, isCyl := f.Geometry().(geom.Cylinder)
+		if !isCyl {
+			t.Errorf("face %T is not a cylinder", f.Geometry())
+			continue
+		}
+		if d := stdmath.Abs(cyl.Radius - wantR); d > 1e-12 {
+			t.Errorf("wall radius %.12f, want the mean %.12f — a wall left at a true radius means only the arcs snapped", cyl.Radius, wantR)
+		}
+	}
+}
+
+// TestSteinmetzGeneralDeclinesResidualBand pins that a radius gap ABOVE the snap ceiling (but still inside the
+// near-pinch band, |Δr| < 2.5e-4·r) is NOT snapped: the neck √(2R·Δr) is resolvable two-loop geometry, so the
+// general Steinmetz path declines and the boolean keeps the deterministic faceted route (#1780 Direction 2).
+func TestSteinmetzGeneralDeclinesResidualBand(t *testing.T) {
+	cx, cz := nearEqualSteinmetz(0)
+	ceil := geom.ResolutionForBox(cx.RangeBox().Union(cz.RangeBox())).Stitch()
+	dr := 4 * ceil // above the ceiling, still ≪ 2.5e-4·3
+	cx, cz = nearEqualSteinmetz(dr)
+	if _, ok := SteinmetzIntersectGeneral(cx, cz, nil); ok {
+		t.Errorf("residual band (|Δr|=%.3g > ceiling %.3g) must decline the snap (ok=false)", dr, ceil)
 	}
 }
 

@@ -3,6 +3,7 @@
 package app
 
 import (
+	"bytes"
 	"fmt"
 	"slices"
 
@@ -128,6 +129,11 @@ func ResolveRefOnBodies(bodies []*topo.Body, ref string) (Selectable, bool) {
 			return sel, true
 		}
 	}
+	if key, ok := feature.BodyRefKey(feature.WorkRef(ref)); ok {
+		if sel, found := findBody(bodies, key); found {
+			return sel, true
+		}
+	}
 	// Raw reference-key form (model.referenceKeys): try face, edge, then vertex.
 	raw := []byte(ref)
 	if sel, found := findFace(bodies, raw); found {
@@ -162,6 +168,18 @@ func findVertex(bodies []*topo.Body, key []byte) (Selectable, bool) {
 	for _, b := range bodies {
 		if v, ok := b.FindVertexByKey(key); ok {
 			return VertexHandle{Vertex: v}, true
+		}
+	}
+	return nil, false
+}
+
+// findBody binds a whole-body reference key to its BodyHandle (#1492). A body is matched by its
+// own ReferenceKey rather than a FindByKey lookup — the key names the body itself, not a
+// sub-entity — so a picked body round-trips through model.select.
+func findBody(bodies []*topo.Body, key []byte) (Selectable, bool) {
+	for _, b := range bodies {
+		if bytes.Equal(b.ReferenceKey(), key) {
+			return BodyHandle{Body: b}, true
 		}
 	}
 	return nil, false

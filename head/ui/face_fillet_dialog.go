@@ -29,7 +29,7 @@ func drawFaceFilletDialog(s *app.Session) {
 		faceFilletUI.radius = float32(f.Radius())
 		faceFilletUI.seeded = f
 	}
-	native.SetNextWindowSizeOnce(340, 240)
+	dialogSizeOnce(340, 240)
 	if native.Begin("Face Fillet") {
 		drawFaceFilletPanelBody(s, f)
 	}

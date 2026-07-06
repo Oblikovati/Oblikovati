@@ -22,7 +22,7 @@ func drawReplaceFaceDialog(s *app.Session) {
 		return
 	}
 	replaceFaceUI.open = true
-	native.SetNextWindowSizeOnce(340, 230)
+	dialogSizeOnce(340, 230)
 	if native.Begin("Replace Face") {
 		drawFeatureBreadcrumb("Replace Face", "")
 		if propertySection("Input Geometry") {

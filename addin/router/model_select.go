@@ -39,7 +39,7 @@ func modelSelect(s *app.Session, bodies []*topo.Body, in wire.SelectArgs) (wire.
 	for _, ref := range in.Refs {
 		sel, ok := resolveSelectionRef(bodies, ref)
 		if !ok {
-			return wire.SelectionResult{}, fmt.Errorf("%s: cannot resolve reference %q (not a face/vertex of the active part)", wire.MethodModelSelect, ref)
+			return wire.SelectionResult{}, fmt.Errorf("%s: cannot resolve reference %q (not a face/vertex/body of the active part)", wire.MethodModelSelect, ref)
 		}
 		s.Selection().Add(sel)
 	}
@@ -76,9 +76,10 @@ func activeBodies(s *app.Session, method string) ([]*topo.Body, error) {
 	return bodies, nil
 }
 
-// resolveSelectionRef resolves a face/vertex reference string to a selectable handle on the bodies.
-// Edges/work-features are not round-trippable through model.selection yet (it reports no ref for
-// them), so they are not resolved here.
+// resolveSelectionRef resolves a face/vertex/body reference string to a selectable handle on the
+// bodies (a whole-body pick round-trips via body/<key>, #1492). Edges/work-features are not
+// round-trippable through model.selection yet (it reports no ref for them), so they are not
+// resolved here.
 func resolveSelectionRef(bodies []*topo.Body, ref string) (app.Selectable, bool) {
 	return app.ResolveRefOnBodies(bodies, ref)
 }

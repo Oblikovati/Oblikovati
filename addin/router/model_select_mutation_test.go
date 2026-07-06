@@ -57,6 +57,36 @@ func TestModelSelectVertexByReference(t *testing.T) {
 	}
 }
 
+// boxBodyRef returns the box's whole-body selection reference (the body/<key> form, #1492).
+func boxBodyRef(t *testing.T, s *app.Session) string {
+	t.Helper()
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		t.Fatalf("active part: %v", err)
+	}
+	return string(feature.BodyRef(part.SurfaceBodies().Item(0).ReferenceKey()))
+}
+
+// TestModelSelectBodyByReference drives the #1492 round trip over the wire: selecting a whole body
+// by its body/<key> reference resolves, and model.selection reports that SAME non-empty ref back
+// (was "" before #1492) so an add-in can read which body was picked.
+func TestModelSelectBodyByReference(t *testing.T) {
+	r, s, _, _ := boxFaceRefs(t)
+	bodyRef := boxBodyRef(t, s)
+
+	var sel wire.SelectionResult
+	call(t, r, s, "model.select", mustJSON(t, wire.SelectArgs{Refs: []string{bodyRef}}), &sel)
+	if sel.Count != 1 {
+		t.Fatalf("select body = %+v, want 1", sel)
+	}
+	if len(sel.Refs) != 1 || sel.Refs[0] != bodyRef {
+		t.Errorf("body selection reported refs %v, want [%q]", sel.Refs, bodyRef)
+	}
+	if int(app.SelectBody) != sel.Kinds[0] {
+		t.Errorf("body selection kind = %d, want %d (SelectBody)", sel.Kinds[0], app.SelectBody)
+	}
+}
+
 // TestModelSelectNoActivePartFails: the mutation methods reject when there is no active part.
 func TestModelSelectNoActivePartFails(t *testing.T) {
 	r := New(opregistry.Default())

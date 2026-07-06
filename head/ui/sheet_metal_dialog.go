@@ -217,7 +217,7 @@ func seedSheetMetal(tool any, seed func()) {
 // sheetMetalPanel draws the common Sheet Metal property-panel frame: a breadcrumb, an optional
 // pick chip, an optional behavior section, and OK/Cancel.
 func sheetMetalPanel(s *app.Session, title, pickLabel, pickID, hint string, pickCount int, clear func(), canCommit bool, body func()) {
-	native.SetNextWindowSizeOnce(340, 220)
+	dialogSizeOnce(340, 220)
 	if native.Begin(title) {
 		drawFeatureBreadcrumb(title, "")
 		if pickLabel != "" && propertySection("Input Geometry") {

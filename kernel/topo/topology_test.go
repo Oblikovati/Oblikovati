@@ -151,6 +151,21 @@ func TestRangeBoxes(t *testing.T) {
 	}
 }
 
+// TestBodyRangeBoxMemoized pins #1771: a finalized body's RangeBox equals the raw sweep (the memo is
+// correct) and is stable across calls — the render hot path reads a cached bound rather than
+// re-iterating every vertex/edge each frame.
+func TestBodyRangeBoxMemoized(t *testing.T) {
+	body := buildTetra()
+	want := body.computeRangeBox()
+	got := body.RangeBox()
+	if got.Min != want.Min || got.Max != want.Max {
+		t.Errorf("memoized RangeBox %v..%v != live sweep %v..%v", got.Min, got.Max, want.Min, want.Max)
+	}
+	if again := body.RangeBox(); again.Min != got.Min || again.Max != got.Max {
+		t.Errorf("RangeBox not stable across calls: %v..%v then %v..%v", got.Min, got.Max, again.Min, again.Max)
+	}
+}
+
 func TestSurfaceBodiesCollection(t *testing.T) {
 	c := NewSurfaceBodies()
 	b1 := c.Add(buildTetra())

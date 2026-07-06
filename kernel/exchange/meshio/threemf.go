@@ -108,6 +108,11 @@ func readModelPart(data []byte) ([]byte, error) {
 // soupFromModel flattens every object's mesh into one triangle soup, validating indices.
 func soupFromModel(model threeMFModel) (RawMesh, error) {
 	var m RawMesh
+	total := 0
+	for _, obj := range model.Resources.Objects {
+		total += len(obj.Mesh.Triangles)
+	}
+	m.Reserve(total) // sum every object's triangle list; fill without reallocation (#1765)
 	for oi, obj := range model.Resources.Objects {
 		verts := make([]math.Point3, len(obj.Mesh.Vertices))
 		for i, v := range obj.Mesh.Vertices {

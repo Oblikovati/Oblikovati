@@ -195,6 +195,12 @@ func (p *Parameter) SetTolerance(t Tolerance) { p.tol = t }
 // SetExpression replaces the expression and re-evaluates if it is constant. A
 // reference-bearing expression is left OutOfDate for the graph to recompute. It
 // errors for read-only kinds and for malformed source.
+//
+// This is the RAW setter: it takes src verbatim, so a bare number is Unitless and a
+// Length/Angle parameter consumes it as the database unit. USER-typed input must first go
+// through [Parameter.QualifyAuthored] (see authored_expression.go), which expresses a bare
+// number in the document's display unit; raw SetExpression is only for deserialised or
+// already-unit-bearing source.
 func (p *Parameter) SetExpression(src string) error {
 	if !p.kind.Editable() {
 		return fmt.Errorf(errReadOnly, p.kind, p.name)

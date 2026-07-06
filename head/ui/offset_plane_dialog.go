@@ -36,7 +36,7 @@ func drawOffsetPlaneDialog(s *app.Session) {
 		}
 		offsetPlaneUI.open = true
 	}
-	native.SetNextWindowSizeOnce(340, 210)
+	dialogSizeOnce(340, 210)
 	if native.Begin("Offset Plane") {
 		drawFeatureBreadcrumb("Offset Plane", "")
 		if propertySection("Input Geometry") {

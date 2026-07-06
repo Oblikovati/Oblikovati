@@ -66,10 +66,14 @@ func setParameter(s *app.Session, holder compdef.ParameterHolder, in wire.Parame
 	if !ok {
 		return wire.ParameterInfo{}, errors.New("parameters.set: no parameter named " + in.Name)
 	}
+	// A bare number means the parameter's own display unit (7 → 7 mm for a Length parameter),
+	// not the raw database unit — qualify before setting, matching the dimension/feature paths
+	// and the head, so the wire and UI resolve typed values identically (#1783).
+	expr := p.QualifyAuthored(in.Expression, p.Unit(), holder.Units())
 	// Edit through the Parameters graph (not p.SetExpression, which only updates
 	// this parameter): the graph rewires edges and recomputes transitive
 	// dependents, so a dimension like "od/2" follows when od changes.
-	if err := holder.Parameters().SetExpression(p.ID(), in.Expression); err != nil {
+	if err := holder.Parameters().SetExpression(p.ID(), expr); err != nil {
 		return wire.ParameterInfo{}, err
 	}
 	// A parameter edit can change any feature's live inputs (sketch dimensions,

@@ -33,7 +33,7 @@ func drawAddInCatalogueWindow(s *app.Session) {
 	if !addInCatalogueUI.open {
 		return
 	}
-	native.SetNextWindowSizeOnce(640, 480)
+	dialogSizeOnce(640, 480)
 	if native.Begin("Add-In Catalogue") {
 		drawCatalogueHeader(s)
 		drawCatalogueTabs(s)
