@@ -15,6 +15,7 @@ import (
 
 	"oblikovati.org/app"
 	"oblikovati.org/model/doc"
+	"oblikovati.org/model/pointcloud"
 )
 
 // fileDialogMode is which file operation the path modal will perform on confirm. The
@@ -32,7 +33,7 @@ const (
 	dialogMeshRef                       // Mesh ▸ Place Mesh (ASCII STL → mesh reference geometry, #700)
 	dialogPlaceComponent                // Assemble ▸ Place: choose the component document to instance (#763)
 	dialogExportBOM                     // Assemble ▸ Bill of Materials ▸ Export CSV (#768)
-	dialogPointCloud                    // 3D Model ▸ Import Point Cloud (ASCII scan → referenced cloud, #645)
+	dialogPointCloud                    // 3D Model ▸ Import Point Cloud (scan file → referenced cloud, #645)
 )
 
 // pathBufferLen bounds the path the user can type. ImGui edits the buffer in place,
@@ -41,6 +42,12 @@ const (
 const pathBufferLen = 1024
 
 const fileSearchBufferLen = 128
+
+const (
+	fileDialogDefaultW       = float32(760)
+	fileDialogDefaultH       = float32(520)
+	fileDialogViewportMargin = float32(16)
+)
 
 // fileEntry is one row in the dialog's cross-platform directory browser.
 type fileEntry struct {
@@ -129,7 +136,6 @@ var staticDialogTitles = map[fileDialogMode]string{
 	dialogSaveAs:         "Save As",
 	dialogLoadHDR:        "Load HDR",
 	dialogMeshRef:        "Place Mesh (.stl)",
-	dialogPointCloud:     "Import Point Cloud (.xyz/.pts)",
 	dialogPlaceComponent: "Place Component",
 	dialogImport:         "Import (.stl/.obj/.3mf/.step/.dwg/.dxf/.pdf · scans .ply/.e57/.las/.xyz/.pts)",
 	dialogExport:         "Export (.stl/.obj/.3mf/.step/.dxf)",
@@ -140,6 +146,9 @@ var staticDialogTitles = map[fileDialogMode]string{
 func (d *fileDialog) title() string {
 	if d.mode == dialogAddIn {
 		return d.addInTitle()
+	}
+	if d.mode == dialogPointCloud {
+		return "Import Point Cloud (" + strings.Join(pointcloud.ScanExtensions(), "/") + ")"
 	}
 	if t, ok := staticDialogTitles[d.mode]; ok {
 		return t
@@ -283,7 +292,7 @@ func (d *fileDialog) allowedExts() []string {
 	case dialogMeshRef:
 		return []string{".stl"}
 	case dialogPointCloud:
-		return []string{".xyz", ".pts", ".asc", ".txt"}
+		return pointcloud.ScanExtensions()
 	case dialogImport:
 		// DWG/DXF/PDF import into a sketch, scan formats (.ply/.e57/.las/.xyz/.pts/.asc) into a
 		// point cloud, the rest into bodies.
@@ -423,4 +432,20 @@ func containsString(values []string, needle string) bool {
 func copyText(dst []byte, text string) {
 	clearBuf(dst)
 	copy(dst, text)
+}
+
+func fileDialogInitialSize(viewportW, viewportH float32) (float32, float32) {
+	w, h := fileDialogDefaultW, fileDialogDefaultH
+	if maxW := viewportW - 2*fileDialogViewportMargin; maxW > 0 && w > maxW {
+		w = maxW
+	}
+	if maxH := viewportH - 2*fileDialogViewportMargin; maxH > 0 && h > maxH {
+		h = maxH
+	}
+	return w, h
+}
+
+func fileDialogNeedsForcedSize(viewportW, viewportH float32) bool {
+	w, h := fileDialogInitialSize(viewportW, viewportH)
+	return w < fileDialogDefaultW || h < fileDialogDefaultH
 }

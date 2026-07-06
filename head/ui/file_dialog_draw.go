@@ -34,7 +34,7 @@ func drawFileDialog(s *app.Session) {
 	wasAddIn := fileModal.mode == dialogAddIn
 	request := fileModal.request
 	var act fileAction
-	native.SetNextWindowSizeOnce(760, 520)
+	setFileDialogWindowSize()
 	if native.Begin(fileModal.title()) {
 		drawExplorerHeader()
 		act = drawExplorerTable()
@@ -44,6 +44,16 @@ func drawFileDialog(s *app.Session) {
 	native.End()
 	applyFileAction(s, act)
 	resolveAddInDialog(s, wasAddIn, request, act)
+}
+
+func setFileDialogWindowSize() {
+	viewportW, viewportH := native.MainViewportSize()
+	w, h := fileDialogInitialSize(viewportW, viewportH)
+	if fileDialogNeedsForcedSize(viewportW, viewportH) {
+		native.SetNextWindowSize(w, h)
+		return
+	}
+	native.SetNextWindowSizeOnce(w, h)
 }
 
 // resolveAddInDialog answers the add-in's ask: a confirmed path resolves it; the
@@ -61,7 +71,7 @@ func resolveAddInDialog(s *app.Session, wasAddIn bool, request app.FileDialogReq
 
 // drawExplorerHeader renders navigation, root selection, and search controls.
 func drawExplorerHeader() {
-	native.Text("Folder: " + fileModal.cwd)
+	native.TextWrapped("Folder: " + fileModal.cwd)
 	if native.Button("Up") {
 		fileModal.goParent()
 	}
@@ -74,8 +84,10 @@ func drawExplorerHeader() {
 		fileModal.refresh()
 	}
 	drawRootChooser()
+	native.Text("Search")
+	native.SameLine()
 	native.SetNextItemWidth(-1)
-	native.InputText("Search##file-search", fileModal.search[:])
+	native.InputText("##file-search", fileModal.search[:])
 }
 
 // drawRootChooser lets Windows users jump between drive roots and Unix users jump home/root.
@@ -97,7 +109,7 @@ func drawExplorerTable() fileAction {
 	if fileModal.errorText != "" {
 		native.Text(fileModal.errorText)
 	}
-	if !native.BeginTable("##file-browser", 4, 0, 280) {
+	if !native.BeginTable("##file-browser", 4, 0, explorerTableHeight()) {
 		return fileAction{}
 	}
 	drawExplorerTableHeader()
@@ -181,10 +193,12 @@ func entryModified(entry fileEntry) string {
 // drawExplorerTarget renders the final path field and mode-specific controls.
 func drawExplorerTarget(s *app.Session) {
 	if hint := fileModal.filterHint(); hint != "" {
-		native.Text("Files: " + hint)
+		native.TextWrapped("Files: " + hint)
 	}
+	native.Text("File name or path")
+	native.SameLine()
 	native.SetNextItemWidth(-1)
-	native.InputText("File name or path##file-path", fileModal.path[:])
+	native.InputText("##file-path", fileModal.path[:])
 	if fileModal.mode == dialogExport {
 		if isDXFTarget() {
 			drawExportDXFVersion()
@@ -195,6 +209,25 @@ func drawExplorerTarget(s *app.Session) {
 	if fileModal.mode == dialogImport && isSketchImportTarget() {
 		drawImportPlane(s)
 	}
+}
+
+func explorerTableHeight() float32 {
+	_, availH := native.ContentRegionAvail()
+	reservedH := explorerFooterHeight()
+	tableH := availH - reservedH
+	if tableH < 120 {
+		return 120
+	}
+	return tableH
+}
+
+func explorerFooterHeight() float32 {
+	metrics := native.Metrics()
+	rows := float32(4) // filter hint, path field, action row, and breathing room.
+	if fileModal.mode == dialogExport || (fileModal.mode == dialogImport && isSketchImportTarget()) {
+		rows++
+	}
+	return rows*native.FrameHeight() + rows*metrics.ItemSpacingY
 }
 
 // isSketchImportTarget reports whether the import target is a drawing file (.dwg/.dxf) — the
@@ -333,8 +366,8 @@ func placeMeshFromFile(s *app.Session, path, name string) {
 	fileNotice(s, "Placed mesh %s", name)
 }
 
-// attachPointCloudFromFile attaches an ASCII scan as a referenced point cloud (3D Model ▸ Import
-// Point Cloud, #645).
+// attachPointCloudFromFile attaches a scan as a referenced point cloud (3D Model ▸ Import Point
+// Cloud, #645).
 func attachPointCloudFromFile(s *app.Session, path, name string) {
 	_, warns, err := s.AttachPointCloud("", path)
 	if err != nil {

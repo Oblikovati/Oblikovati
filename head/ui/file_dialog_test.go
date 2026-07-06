@@ -6,7 +6,10 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
+
+	"oblikovati.org/model/pointcloud"
 )
 
 // typePath simulates the user typing into the modal's in-place buffer — what
@@ -124,6 +127,57 @@ func TestFileDialogImportExportModes(t *testing.T) {
 	want := filepath.Join(initialExplorerDir(), "out.stl")
 	if act.Kind != dialogExport || act.Path != want || act.Resolution != "high" {
 		t.Errorf("export confirm = %+v, want {dialogExport, %q, high}", act, want)
+	}
+}
+
+func TestFileDialogPointCloudModeUsesRegisteredScanExtensions(t *testing.T) {
+	dir := t.TempDir()
+	for _, name := range []string{"scan.e57", "survey.las", "mesh.ply", "points.xyz", "body.stl"} {
+		writeDialogFile(t, filepath.Join(dir, name))
+	}
+
+	var d fileDialog
+	d.openFor(dialogPointCloud)
+	d.openDir(dir)
+	if !slices.Equal(d.allowedExts(), pointcloud.ScanExtensions()) {
+		t.Fatalf("point-cloud exts = %v, want registered scan exts %v", d.allowedExts(), pointcloud.ScanExtensions())
+	}
+	if title := d.title(); !strings.Contains(title, ".e57") || !strings.Contains(title, ".las") || !strings.Contains(title, ".ply") {
+		t.Fatalf("point-cloud title = %q, want registered binary scan extensions", title)
+	}
+
+	var names []string
+	for _, entry := range d.visibleEntries() {
+		names = append(names, entry.Name)
+	}
+	for _, want := range []string{"scan.e57", "survey.las", "mesh.ply", "points.xyz"} {
+		if !containsString(names, want) {
+			t.Fatalf("visible point-cloud entries = %v, want %q included", names, want)
+		}
+	}
+	if containsString(names, "body.stl") {
+		t.Fatalf("visible point-cloud entries = %v, want body.stl filtered out", names)
+	}
+}
+
+func TestFileDialogInitialSizeFitsViewport(t *testing.T) {
+	w, h := fileDialogInitialSize(1920, 1080)
+	if w != fileDialogDefaultW || h != fileDialogDefaultH {
+		t.Fatalf("large viewport size = %.0fx%.0f, want %.0fx%.0f", w, h, fileDialogDefaultW, fileDialogDefaultH)
+	}
+	if fileDialogNeedsForcedSize(1920, 1080) {
+		t.Fatal("large viewport should use first-use sizing")
+	}
+
+	vw, vh := float32(640), float32(480)
+	w, h = fileDialogInitialSize(vw, vh)
+	maxW := vw - 2*fileDialogViewportMargin
+	maxH := vh - 2*fileDialogViewportMargin
+	if w != maxW || h != maxH {
+		t.Fatalf("small viewport size = %.0fx%.0f, want clamped %.0fx%.0f", w, h, maxW, maxH)
+	}
+	if !fileDialogNeedsForcedSize(vw, vh) {
+		t.Fatal("small viewport should force clamped sizing")
 	}
 }
 
