@@ -155,6 +155,24 @@ func TestPointCloudDisplayKeyChangesOnDisplayMode(t *testing.T) {
 	}
 }
 
+// TestPointCloudDisplayKeyChangesOnActiveCrop covers the active-crop path of the display key: an
+// active crop limits the displayed set, so the retained GPU buffer must be re-uploaded; deactivating
+// it must change the key back (#645).
+func TestPointCloudDisplayKeyChangesOnActiveCrop(t *testing.T) {
+	s := attachTestCloud(t)
+	pc := s.PickablePointClouds()[0]
+	before := s.PointCloudDisplayKey()
+	crop := pc.AddCrop(math.NewBox(math.P3(-0.5, -0.5, -0.5), math.P3(0.5, 0.5, 0.5)))
+	active := s.PointCloudDisplayKey()
+	if active == before {
+		t.Fatal("key unchanged after adding an active crop")
+	}
+	crop.SetActive(false)
+	if after := s.PointCloudDisplayKey(); after == active {
+		t.Error("key unchanged after deactivating the crop")
+	}
+}
+
 // TestPointCloudRenderDensityDefaultAndClamp pins the session-level viewport density knob: it
 // starts at full density and clamps UI/API input to the valid percentage range.
 func TestPointCloudRenderDensityDefaultAndClamp(t *testing.T) {
