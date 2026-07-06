@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 // Package e57fmt is a clean-room reader for the ASTM E2807 (E57) 3D-imaging format, scoped to what
-// a point-cloud import needs: the cartesian XYZ positions of the first scan. E57 stores its
-// structure in an XML descriptor and its points in a bit-packed CompressedVector, both inside a
-// checksummed-page container; this package de-pages the container, parses the descriptor, and
-// decodes the points' cartesianX/Y/Z channels (ScaledInteger, Integer, or Float). It does not
-// decode intensity, colour, spherical coordinates, images, or multiple scans — those channels are
-// simply skipped (#645).
+// a point-cloud import needs: the cartesian XYZ positions of the first scan plus its colour and
+// intensity channels. E57 stores its structure in an XML descriptor and its points in a bit-packed
+// CompressedVector, both inside a checksummed-page container; this package de-pages the container,
+// parses the descriptor, and decodes the points' cartesianX/Y/Z, colourRed/Green/Blue, and
+// intensity channels (ScaledInteger, Integer, or Float) in a single pass — see Scan. It does not
+// decode spherical coordinates, images, or multiple scans — those are skipped (#645).
 package e57fmt
 
 import (
@@ -41,26 +41,15 @@ func Parse(data []byte) (*Document, error) {
 	return &Document{header: header, paged: paged, points: points}, nil
 }
 
-// Vertices decodes the scan's cartesian XYZ positions. It errors if the prototype lacks the three
-// cartesian channels (e.g. a spherical-only scan), naming the channels it did find.
+// Vertices decodes the scan's cartesian XYZ positions, discarding any colour/intensity. It errors if
+// the prototype lacks the three cartesian channels (e.g. a spherical-only scan), naming the channels
+// it did find. Callers that need colour or intensity should use Scan.
 func (d *Document) Vertices() ([]omath.Point3, error) {
-	xi, yi, zi, err := d.cartesianIndices()
+	data, err := d.Scan()
 	if err != nil {
 		return nil, err
 	}
-	xs, err := d.decodeFieldValues(xi)
-	if err != nil {
-		return nil, err
-	}
-	ys, err := d.decodeFieldValues(yi)
-	if err != nil {
-		return nil, err
-	}
-	zs, err := d.decodeFieldValues(zi)
-	if err != nil {
-		return nil, err
-	}
-	return zipPoints(xs, ys, zs), nil
+	return data.Points, nil
 }
 
 // cartesianIndices returns the prototype positions of cartesianX/Y/Z.

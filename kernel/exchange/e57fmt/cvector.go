@@ -22,10 +22,26 @@ const dataPacketType = 1
 // accumulator; every E57 cartesian scan field fits well under it (32 bits).
 const maxBitPackedBits = 56
 
-// decodeFieldValues reads one field's records out of each data packet of the points
-// CompressedVector and returns one float64 per record (already scaled). It walks only the
-// requested field's bytestream per packet, so unrelated channels (intensity, colour) are skipped.
-func (d *Document) decodeFieldValues(fieldIndex int) ([]float64, error) {
+// decodeFields reads the requested prototype fields out of the points CompressedVector in a single
+// pass over its data packets, returning one already-scaled float64 column per field keyed by field
+// index (each column has recordCount values). Decoding every wanted channel (XYZ plus colour and
+// intensity, #645) in one walk avoids re-reading the whole section once per field, which matters on
+// multi-hundred-MB scans. A constant field (an Integer/ScaledInteger whose declared min==max carries
+// no packed bytes) is materialised as recordCount copies of its constant value rather than decoded.
+func (d *Document) decodeFields(indices []int) (map[int][]float64, error) {
+	out := make(map[int][]float64, len(indices))
+	variable := make([]int, 0, len(indices))
+	for _, i := range indices {
+		if isConstantField(d.points.fields[i]) {
+			out[i] = constantColumn(d.points.fields[i], d.points.recordCount)
+			continue
+		}
+		variable = append(variable, i)
+		out[i] = make([]float64, 0, d.points.recordCount)
+	}
+	if len(variable) == 0 {
+		return out, nil
+	}
 	hdr, _, err := d.paged.readLogical(d.points.fileOffset, cvSectionHeaderSize)
 	if err != nil {
 		return nil, err
@@ -34,25 +50,30 @@ func (d *Document) decodeFieldValues(fieldIndex int) ([]float64, error) {
 		return nil, fmt.Errorf("e57fmt: points section id is %d, want %d (CompressedVector)", hdr[0], cvSectionType)
 	}
 	pos := binary.LittleEndian.Uint64(hdr[16:]) // dataPhysicalOffset of the first data packet
-	out := make([]float64, 0, d.points.recordCount)
-	for uint64(len(out)) < d.points.recordCount {
-		vals, next, err := d.readPacketField(pos, fieldIndex)
+	ref := variable[0]
+	for uint64(len(out[ref])) < d.points.recordCount {
+		vals, next, err := d.readPacketFields(pos, variable)
 		if err != nil {
 			return nil, err
 		}
-		remaining := d.points.recordCount - uint64(len(out))
-		if uint64(len(vals)) > remaining {
-			vals = vals[:remaining]
+		remaining := d.points.recordCount - uint64(len(out[ref]))
+		for _, i := range variable {
+			v := vals[i]
+			if uint64(len(v)) > remaining {
+				v = v[:remaining]
+			}
+			out[i] = append(out[i], v...)
 		}
-		out = append(out, vals...)
 		pos = next
 	}
 	return out, nil
 }
 
-// readPacketField reads the data packet at physical offset pos and decodes the bytestream of the
-// requested field, returning its values and the offset just past the packet.
-func (d *Document) readPacketField(pos uint64, fieldIndex int) ([]float64, uint64, error) {
+// readPacketFields reads the data packet at physical offset pos and decodes the bytestreams of the
+// requested fields, returning their values and the offset just past the packet. Each field in a
+// packet encodes the same record count; a bit-packed field's trailing byte padding can yield one
+// extra value, so every column is truncated to the shortest so the columns stay row-aligned.
+func (d *Document) readPacketFields(pos uint64, indices []int) (map[int][]float64, uint64, error) {
 	head, afterHead, err := d.paged.readLogical(pos, 6)
 	if err != nil {
 		return nil, 0, err
@@ -66,11 +87,22 @@ func (d *Document) readPacketField(pos uint64, fieldIndex int) ([]float64, uint6
 	if err != nil {
 		return nil, 0, err
 	}
-	buf, err := bytestream(body, bsCount, fieldIndex)
-	if err != nil {
-		return nil, 0, err
+	vals := make(map[int][]float64, len(indices))
+	rows := -1
+	for _, fi := range indices {
+		buf, err := bytestream(body, bsCount, fi)
+		if err != nil {
+			return nil, 0, err
+		}
+		v := decodeBytestream(buf, d.points.fields[fi])
+		vals[fi] = v
+		if rows < 0 || len(v) < rows {
+			rows = len(v)
+		}
 	}
-	vals := decodeBytestream(buf, d.points.fields[fieldIndex])
+	for fi := range vals {
+		vals[fi] = vals[fi][:rows]
+	}
 	return vals, next, nil
 }
 
@@ -96,6 +128,24 @@ func bytestream(body []byte, bsCount, fieldIndex int) ([]byte, error) {
 		return nil, fmt.Errorf("e57fmt: bytestream %d [%d:%d] exceeds packet body %d", fieldIndex, start, start+length, len(body))
 	}
 	return body[start : start+length], nil
+}
+
+// isConstantField reports whether a bit-packed field carries no bytes because its declared range is
+// empty (min==max). Such a field is stored implicitly as its single value; a Float field is always
+// materialised in the stream, so it is never constant here.
+func isConstantField(f protoField) bool {
+	return f.kind != kindFloat && f.max <= f.min
+}
+
+// constantColumn materialises a constant (empty-range) field as n copies of its value, applying the
+// same value = min*scale + offset rule the bit-packed decoder uses.
+func constantColumn(f protoField, n uint64) []float64 {
+	v := float64(f.min)*f.scale + f.offset
+	out := make([]float64, n)
+	for i := range out {
+		out[i] = v
+	}
+	return out
 }
 
 // decodeBytestream turns one field's packet buffer into scaled float64 values per its kind.
