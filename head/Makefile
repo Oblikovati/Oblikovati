@@ -1,8 +1,12 @@
 # The head is a separate cgo module (Vulkan + GLFW + vendored Dear ImGui). It needs a
-# C/C++ toolchain, the Vulkan loader/headers, GLFW, and a Go >= 1.24 toolchain. The
-# pinned GOTOOLCHAIN avoids re-resolving over the network on every invocation.
+# C/C++ toolchain, the Vulkan loader/headers, GLFW, and the Go toolchain named by the
+# workspace go.work (currently go 1.26.4). GOTOOLCHAIN=local pins the build to the
+# installed toolchain instead of re-resolving/downloading one over the network: the dev
+# machine's Go already satisfies the go.work floor, and a hard version pin (e.g. go1.24.0)
+# is both stale against go.work and would trigger a network fetch when the installed build
+# is a custom variant (e.g. go1.26.4-X).
 export CGO_ENABLED := 1
-export GOTOOLCHAIN := go1.24.0
+export GOTOOLCHAIN := local
 
 HOST_NATIVE_LIB_DIR := /run/host/usr/lib/x86_64-linux-gnu
 HOST_PKG_CONFIG_DIR := $(HOST_NATIVE_LIB_DIR)/pkgconfig
@@ -34,6 +38,8 @@ shaders:
 	cd internal/native/shaders && \
 		glslangValidator -V mesh.vert -o mesh.vert.spv && \
 		glslangValidator -V mesh.frag -o mesh.frag.spv && \
+		glslangValidator -V point.vert -o point.vert.spv && \
+		glslangValidator -V point.frag -o point.frag.spv && \
 		glslangValidator -V skybox.vert -o skybox.vert.spv && \
 		glslangValidator -V skybox.frag -o skybox.frag.spv
 

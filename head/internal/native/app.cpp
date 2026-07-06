@@ -226,6 +226,18 @@ void frame_present(HeadContext* c) {
     wd->SemaphoreIndex = (wd->SemaphoreIndex + 1) % wd->SemaphoreCount;
 }
 
+void sync_swapchain_extent(HeadContext* c) {
+    int w = 0, h = 0;
+    glfwGetFramebufferSize(c->window, &w, &h);
+    if (w <= 0 || h <= 0) return;
+    ImGui_ImplVulkanH_Window* wd = &c->window_data;
+    if (wd->Width == w && wd->Height == h) return;
+    // Wayland can change the framebuffer extent for content-scale changes before
+    // present reports OUT_OF_DATE; keep ImGui's scaled draw data and the swapchain
+    // framebuffer in the same coordinate space.
+    c->swapChainRebuild = true;
+}
+
 } // namespace
 
 extern "C" {
@@ -492,6 +504,7 @@ extern "C" void obk_ig_set_next_window_dock(unsigned int nodeId) {
 void obk_head_begin_frame(void* h) {
     HeadContext* c = (HeadContext*)h;
     glfwPollEvents();
+    sync_swapchain_extent(c);
     if (c->swapChainRebuild) {
         int w = 0, hh = 0;
         glfwGetFramebufferSize(c->window, &w, &hh);
