@@ -160,7 +160,7 @@ jobs:
           # with the user's GPU driver). ldd lists the mingw deps.
           for dll in $(ldd oblikovati-head.exe | grep -i mingw64 | awk '{print $3}'); do cp "$dll" .; done
           cp /mingw64/bin/glfw3.dll . 2>/dev/null || true
-          zip -j "oblikovati-head-${VER}-windows-amd64.zip" oblikovati-head.exe ./*.dll
+          zip -j "oblikovati-${VER}-windows-amd64.zip" oblikovati-head.exe ./*.dll
       - uses: actions/upload-artifact@v6
         with:
           name: head-windows
