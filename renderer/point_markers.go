@@ -10,9 +10,8 @@ import "oblikovati.org/math"
 // space) points and a marker size; this headless builder turns them into one draw item, so the
 // geometry-as-data stays unit-testable. A native point primitive is a later performance pass.
 
-// PointCloudColor is the default marker color: a bright cyan that reads clearly against both
-// light and dark viewport backgrounds.
-var PointCloudColor = [4]float32{0.25, 0.85, 1.0, 1}
+// PointCloudColor is the default marker color: a neutral host-defined grey for uncolored points.
+var PointCloudColor = [4]float32{0.72, 0.72, 0.72, 1}
 
 // PointMarkers builds a Lines draw item rendering each point as a 3-axis cross of the given world
 // size, in color, tagged with objectID. Returns nil when there are no points or size <= 0.

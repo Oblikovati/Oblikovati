@@ -155,17 +155,19 @@ type AttachmentRecord struct {
 }
 
 // PointCloudRecord is one attached scan's metadata (M17-F06, #645): its name, source path, the
-// id of the resource holding its bytes, visibility, scale, the 16 cloud→model transform cells,
-// and the display point budget. The points themselves live once in the resource table.
+// id of the resource holding its bytes, visibility, display mode, scale, the 16 cloud→model
+// transform cells, and the display point budget. The points themselves live once in the resource
+// table.
 type PointCloudRecord struct {
-	Name       string                 `yaml:"name"`
-	Source     string                 `yaml:"source,omitempty"`
-	ResourceID string                 `yaml:"resourceId,omitempty"`
-	Visible    bool                   `yaml:"visible"`
-	Scale      float64                `yaml:"scale"`
-	Transform  [16]float64            `yaml:"transform,flow"`
-	MaxPoints  int                    `yaml:"maxPoints,omitempty"`
-	Crops      []PointCloudCropRecord `yaml:"crops,omitempty"`
+	Name        string                 `yaml:"name"`
+	Source      string                 `yaml:"source,omitempty"`
+	ResourceID  string                 `yaml:"resourceId,omitempty"`
+	Visible     bool                   `yaml:"visible"`
+	DisplayMode string                 `yaml:"displayMode,omitempty"`
+	Scale       float64                `yaml:"scale"`
+	Transform   [16]float64            `yaml:"transform,flow"`
+	MaxPoints   int                    `yaml:"maxPoints,omitempty"`
+	Crops       []PointCloudCropRecord `yaml:"crops,omitempty"`
 }
 
 // PointCloudCropRecord is one crop volume (#645): a name, the active flag, and the model-space box

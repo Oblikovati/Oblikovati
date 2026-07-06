@@ -68,6 +68,8 @@ func TestSurfacesMeshTabPanelOrder(t *testing.T) {
 	if !ok {
 		t.Fatal("Part ribbon has no Surfaces & Mesh tab")
 	}
+	// Point Cloud Display's controls are folded into the single Point Cloud panel, so it is no
+	// longer a standalone panel (the consolidated point-cloud grid).
 	want := []string{"Sketch", "Surface", "Freeform", "Mesh", "Point Cloud", "Mold"}
 	if len(tab.Panels) != len(want) {
 		t.Fatalf("Surfaces & Mesh has %d panels, want %d", len(tab.Panels), len(want))

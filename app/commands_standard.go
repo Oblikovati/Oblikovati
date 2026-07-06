@@ -242,30 +242,30 @@ func meshFeatureCommands() []*CommandDefinition {
 // command arms the head's file dialog; the attach itself is Session.AttachPointCloud.
 func pointCloudCommands() []*CommandDefinition {
 	cmds := []*CommandDefinition{
-		NewCommand("PointCloud.Import", "Import Point Cloud", "Point Cloud", func(s *Session) error {
+		NewCommand("PointCloud.Import", "Import Point Cloud", PanelPointCloud, func(s *Session) error {
 			s.RequestImportPointCloud()
 			return nil
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
-			WithIcon("point-cloud-import").WithButtonStyle(LargeIconButton).
+			WithIcon("point-cloud-import").WithButtonStyle(SmallIconButton).
 			WithTooltip("Import Point Cloud — attach an ASCII scan (.xyz/.pts) as referenced display data."),
-		NewCommand("PointCloud.FitPlane", "Fit Work Plane", "Point Cloud", func(s *Session) error {
+		NewCommand("PointCloud.FitPlane", "Fit Work Plane", PanelPointCloud, func(s *Session) error {
 			_, err := s.FitSelectedCloudPlane()
 			return err
 		}).WithTab(tabSurfacesMesh).WithEnable(canFitPointCloudPlane).
 			WithIcon("point-cloud-fit-plane").WithButtonStyle(SmallIconButton).
 			WithTooltip("Fit Work Plane — least-squares plane through the selected cloud's displayed points (crop first to fit a region)."),
-		NewCommand("PointCloud.WorkPoint", "Work Point", "Point Cloud", func(s *Session) error {
+		NewCommand("PointCloud.WorkPoint", "Work Point", PanelPointCloud, func(s *Session) error {
 			_, err := s.CreateWorkPointAtSelectedCloudPoint()
 			return err
 		}).WithTab(tabSurfacesMesh).WithEnable(canWorkPointAtCloudPoint).
 			WithIcon("point-cloud-work-point").WithButtonStyle(SmallIconButton).
 			WithTooltip("Work Point — place a datum point on the selected scan point (snap to a cloud point first)."),
-		NewCommand("PointCloud.CropBox", "Crop Box", "Point Cloud", func(s *Session) error {
+		NewCommand("PointCloud.CropBox", "Crop Box", PanelPointCloud, func(s *Session) error {
 			return s.StartCropSelectedCloud()
 		}).WithTab(tabSurfacesMesh).WithEnable(canCropSelectedCloud).
 			WithIcon("point-cloud-crop").WithButtonStyle(SmallIconButton).
 			WithTooltip("Crop Box — box a region of the selected cloud in the viewport to crop its display to those points."),
-		NewCommand("PointCloud.Move", "Move", "Point Cloud", func(s *Session) error {
+		NewCommand("PointCloud.Move", "Move", PanelPointCloud, func(s *Session) error {
 			return s.StartMoveSelectedCloud()
 		}).WithTab(tabSurfacesMesh).WithEnable(canMoveSelectedCloud).
 			WithIcon("point-cloud-move").WithButtonStyle(SmallIconButton).
@@ -280,12 +280,12 @@ func pointCloudDisplayModeCommands() []*CommandDefinition {
 	cmds := make([]*CommandDefinition, 0, len(types.AllPointCloudDisplayModes()))
 	for _, mode := range types.AllPointCloudDisplayModes() {
 		mode := mode
-		cmds = append(cmds, NewCommand("PointCloud.DisplayMode."+mode.String(), mode.String(), "Display Mode", func(s *Session) error {
-			return s.SetSelectedPointCloudDisplayMode(mode)
-		}).WithTab(tabSurfacesMesh).WithKind(ComboControl).WithEnable(canSetSelectedPointCloudDisplayMode).
-			WithTooltip("Display Mode — "+mode.String()+" rendering for the selected cloud.").
+		cmds = append(cmds, NewCommand("PointCloud.DisplayMode."+mode.String(), mode.String(), panelPointCloudDisplay, func(s *Session) error {
+			return s.SetTargetPointCloudDisplayMode(mode)
+		}).WithTab(tabSurfacesMesh).WithKind(ComboControl).WithEnable(canSetTargetPointCloudDisplayMode).
+			WithTooltip("Point Cloud Display — "+mode.String()+" rendering for the selected cloud.").
 			WithActive(func(s *Session) bool {
-				pc, ok := s.SelectedPointCloud()
+				pc, ok := s.targetPointCloud()
 				return ok && pc.DisplayMode() == mode
 			}))
 	}

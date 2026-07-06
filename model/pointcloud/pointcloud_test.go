@@ -71,8 +71,8 @@ func TestNewCloudDefaults(t *testing.T) {
 	if !pc.Visible() || pc.Scale() != 1 || pc.MaximumPointCount() != 0 {
 		t.Errorf("defaults = visible %v scale %v max %d, want true/1/0", pc.Visible(), pc.Scale(), pc.MaximumPointCount())
 	}
-	if pc.DisplayMode() != types.PointCloudDisplayModeDefault {
-		t.Errorf("display mode = %q, want default", pc.DisplayMode())
+	if pc.DisplayMode() != types.PointCloudDisplayModeRGB {
+		t.Errorf("display mode = %q, want rgb", pc.DisplayMode())
 	}
 	if pc.SourceFullFileName() != "/s/room.xyz" || pc.ResourceID() != "uuid-1" {
 		t.Errorf("source/resource = %q/%q", pc.SourceFullFileName(), pc.ResourceID())

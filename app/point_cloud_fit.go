@@ -49,6 +49,20 @@ func (s *Session) SelectedPointCloud() (*pointcloud.PointCloud, bool) {
 	return nil, false
 }
 
+// targetPointCloud resolves which cloud the Point Cloud panel's display controls (point size,
+// density, display mode, intensity ramp) act on. When the active part holds exactly one scan that
+// cloud is always the target, so a lone scan needs no manual selection; with several attached the
+// user must select one, falling back to the browser selection (or none). Viewport tools (Move /
+// Crop / Fit) keep using SelectedPointCloud — they act on an explicitly chosen cloud (#645).
+func (s *Session) targetPointCloud() (*pointcloud.PointCloud, bool) {
+	if part, err := activePart(s); err == nil {
+		if clouds := part.PointClouds(); clouds.Count() == 1 {
+			return clouds.Item(0), true
+		}
+	}
+	return s.SelectedPointCloud()
+}
+
 // FitSelectedCloudPlane fits a work plane to the browser-selected cloud — the Point Cloud panel's
 // Fit Work Plane command. It errors when no cloud is selected.
 func (s *Session) FitSelectedCloudPlane() (*feature.WorkPlane, error) {
@@ -66,10 +80,11 @@ func canFitPointCloudPlane(s *Session) bool {
 	return ok && !s.InSketch()
 }
 
-// SetSelectedPointCloudDisplayMode changes the selected cloud's display mode, if a cloud is
-// currently selected.
-func (s *Session) SetSelectedPointCloudDisplayMode(mode types.PointCloudDisplayMode) error {
-	pc, ok := s.SelectedPointCloud()
+// SetTargetPointCloudDisplayMode changes the target cloud's display mode. The target is the sole
+// attached scan when there is only one, else the selected cloud (see targetPointCloud); it errors
+// when several scans are attached and none is selected.
+func (s *Session) SetTargetPointCloudDisplayMode(mode types.PointCloudDisplayMode) error {
+	pc, ok := s.targetPointCloud()
 	if !ok {
 		return errors.New("app: select a point cloud to change its display mode")
 	}
@@ -79,8 +94,9 @@ func (s *Session) SetSelectedPointCloudDisplayMode(mode types.PointCloudDisplayM
 	return nil
 }
 
-// canSetSelectedPointCloudDisplayMode enables the ribbon dropdown only when a cloud is selected.
-func canSetSelectedPointCloudDisplayMode(s *Session) bool {
-	_, ok := s.SelectedPointCloud()
+// canSetTargetPointCloudDisplayMode enables the ribbon dropdown when a target cloud resolves — a
+// lone attached scan, or the selected one when several are attached.
+func canSetTargetPointCloudDisplayMode(s *Session) bool {
+	_, ok := s.targetPointCloud()
 	return ok
 }

@@ -357,7 +357,7 @@ func toCodecPointClouds(in []doc.PointCloudRecord) []yamlcodec.PointCloudRecord 
 	for i, r := range in {
 		out[i] = yamlcodec.PointCloudRecord{
 			Name: r.Name, Source: r.Source, ResourceID: r.ResourceID,
-			Visible: r.Visible, Scale: r.Scale, Transform: r.Transform, MaxPoints: r.MaxPoints,
+			Visible: r.Visible, DisplayMode: r.DisplayMode, Scale: r.Scale, Transform: r.Transform, MaxPoints: r.MaxPoints,
 			Crops: toCodecCrops(r.Crops),
 		}
 	}
@@ -372,7 +372,7 @@ func fromCodecPointClouds(in []yamlcodec.PointCloudRecord) []doc.PointCloudRecor
 	for i, r := range in {
 		out[i] = doc.PointCloudRecord{
 			Name: r.Name, Source: r.Source, ResourceID: r.ResourceID,
-			Visible: r.Visible, Scale: r.Scale, Transform: r.Transform, MaxPoints: r.MaxPoints,
+			Visible: r.Visible, DisplayMode: r.DisplayMode, Scale: r.Scale, Transform: r.Transform, MaxPoints: r.MaxPoints,
 			Crops: fromCodecCrops(r.Crops),
 		}
 	}

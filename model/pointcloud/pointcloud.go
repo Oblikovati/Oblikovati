@@ -63,7 +63,7 @@ func (pc *PointCloud) AddCrop(box math.Box) *PointCloudCrop {
 }
 
 // New creates a cloud from decoded cloud-local points. It starts visible, unscaled (factor 1),
-// identity-placed, with no display cap and the default cyan display mode. source/resourceID
+// identity-placed, with no display cap and RGB display mode. source/resourceID
 // record where the scan came from and where its bytes are embedded.
 //
 // Example: pc := pointcloud.New("scan", "/scans/room.xyz", "uuid", pts)
@@ -85,7 +85,7 @@ func newFromSamples(name, source, resourceID string, samples []PointSample) *Poi
 	pc := &PointCloud{
 		name:        name,
 		visible:     true,
-		displayMode: types.PointCloudDisplayModeDefault,
+		displayMode: types.PointCloudDisplayModeRGB,
 		transform:   math.Identity4(),
 		scale:       1,
 		samples:     samples,

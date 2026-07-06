@@ -357,6 +357,11 @@ int  obk_ig_color_edit4(const char* label, float* rgba) {
     return ImGui::ColorEdit4(label, rgba) ? 1 : 0;
 }
 
+int  obk_ig_color_swatch3(const char* label, float* rgba) {
+    rgba[3] = 1.0f;
+    return ImGui::ColorEdit3(label, rgba, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel) ? 1 : 0;
+}
+
 // Window-draw-list primitives: free-form 2D shapes painted over the current window's
 // content (e.g. the viewport's axis-orientation gizmo). Coordinates are screen-space
 // pixels; colors are 0..1 RGBA packed to IM_COL32. Drawing happens within the current

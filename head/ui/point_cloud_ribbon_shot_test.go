@@ -8,19 +8,22 @@ import (
 	"path/filepath"
 	"testing"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/doc"
+	"oblikovati.org/model/pointcloud"
 )
 
-// pointCloudRibbonPanel extracts the 3D Model ▸ Point Cloud panel from the built ribbon.
+// pointCloudRibbonPanel extracts the Surfaces & Mesh ▸ Point Cloud panel — the single consolidated
+// panel holding both the tool buttons and the folded-in display controls.
 func pointCloudRibbonPanel(t *testing.T, s *app.Session) app.RibbonPanel {
 	t.Helper()
 	tab, ok := app.BuildRibbon(s).Tab("Surfaces & Mesh")
 	if !ok {
-		t.Fatal("no 3D Model tab")
+		t.Fatal("no Surfaces & Mesh tab")
 	}
 	panel, ok := tab.Panel("Point Cloud")
 	if !ok {
@@ -29,10 +32,10 @@ func pointCloudRibbonPanel(t *testing.T, s *app.Session) app.RibbonPanel {
 	return panel
 }
 
-// TestInWindowPointCloudPanelButtons renders the Point Cloud ribbon panel on its own (the full 3D
-// Model tab is far wider than the captured window) with a cloud selected, and captures it — the
-// visual confirmation that its buttons (Import / Fit Work Plane / Work Point / Crop Box) render
-// with icons and are enabled, hence clickable (#645).
+// TestInWindowPointCloudPanelButtons renders the consolidated Point Cloud ribbon panel on its own
+// (the full Surfaces & Mesh tab is far wider than the captured window) with an intensity cloud
+// selected, and captures it — the visual confirmation that the tool buttons, the size/display-mode/
+// density controls, and the intensity ramp all fit in one grid panel (#645).
 func TestInWindowPointCloudPanelButtons(t *testing.T) {
 	win := newViewportWindow(t)
 	defer win.Destroy()
@@ -49,16 +52,24 @@ func TestInWindowPointCloudPanelButtons(t *testing.T) {
 	}
 	def := pd.Content().(*compdef.PartComponentDefinition)
 	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("x")})
-	pc, _ := def.PointClouds().Add("Scan", "s.xyz", rid, []math.Point3{math.P3(0, 0, 5), math.P3(2, 0, 5), math.P3(0, 2, 5)})
+	pc, _ := def.PointClouds().AddWithSamples("Scan", "s.xyz", rid, []pointcloud.PointSample{
+		{Point: math.P3(0, 0, 5), HasIntensity: true, Intensity: 0},
+		{Point: math.P3(2, 0, 5), HasIntensity: true, Intensity: 50},
+		{Point: math.P3(0, 2, 5), HasIntensity: true, Intensity: 100},
+	})
+	pc.SetDisplayMode(types.PointCloudDisplayModeIntensity)
 	s.Select(app.PointCloudHandle{Clouds: def.PointClouds(), Cloud: pc}) // enable Fit Work Plane / Crop Box
 
 	for i := 0; i < 4; i++ {
 		win.BeginFrame()
 		DrawChrome(win, s) // binds the icon cache and draws the chrome
 		native.SetNextWindowPos(40, 80)
-		native.SetNextWindowSize(380, 150)
-		if native.Begin("3D Model > Point Cloud") {
-			drawPanel(pointCloudRibbonPanel(t, s), 200)
+		native.SetNextWindowSize(460, 210)
+		if native.Begin("Surfaces & Mesh > Point Cloud") {
+			m := native.Metrics()
+			_, gridTop := native.GetCursorScreenPos()
+			labelY := gridTop + ribbonGridHeight(m) + m.ItemSpacingY
+			drawPanel(s, pointCloudRibbonPanel(t, s), labelY)
 		}
 		native.End()
 		win.EndFrame(0.12, 0.12, 0.14)

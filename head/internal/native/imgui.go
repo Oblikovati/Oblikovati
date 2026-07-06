@@ -150,6 +150,7 @@ void obk_ig_set_style_color(const char* name, float r, float g, float b, float a
 void obk_ig_push_style_color(const char* name, float r, float g, float b, float a);
 void obk_ig_pop_style_color(int n);
 int  obk_ig_color_edit4(const char* label, float* rgba);
+int  obk_ig_color_swatch3(const char* label, float* rgba);
 void obk_ig_draw_line(float x1, float y1, float x2, float y2, float r, float g, float b, float a, float thickness);
 void obk_ig_draw_triangle_filled(float x1, float y1, float x2, float y2, float x3, float y3, float r, float g, float b, float a);
 void obk_ig_draw_quad_filled(float x0, float y0, float x1, float y1, float x2, float y2, float x3, float y3, float r, float g, float b, float a);
@@ -460,6 +461,16 @@ func ColorEdit4(label string, c *[4]float32) bool {
 	cl, free := cstr(label)
 	defer free()
 	return C.obk_ig_color_edit4(cl, (*C.float)(unsafe.Pointer(&c[0]))) != 0
+}
+
+// ColorSwatch draws a compact RGB swatch that opens a color picker. It edits RGB and forces alpha
+// to opaque so callers cannot accidentally hide geometry through a color control.
+func ColorSwatch(label string, c *[4]float32) bool {
+	cl, free := cstr(label)
+	defer free()
+	changed := C.obk_ig_color_swatch3(cl, (*C.float)(unsafe.Pointer(&c[0]))) != 0
+	c[3] = 1
+	return changed
 }
 
 // DrawLine draws a screen-space line in the current window's draw list (color is 0..1

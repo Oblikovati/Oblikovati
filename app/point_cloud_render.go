@@ -25,8 +25,9 @@ func (s *Session) PointCloudItems(cam scene.Camera, markerSize float64) []render
 	}
 	clouds := part.PointClouds()
 	var items []renderer.DrawItem
+	low, high := s.PointCloudIntensityRamp()
 	for i := 0; i < clouds.Count(); i++ {
-		if item := cloudDrawItem(clouds.Item(i), cam, markerSize); item != nil {
+		if item := cloudDrawItem(clouds.Item(i), cam, markerSize, s.PointCloudRenderDensity(), low, high); item != nil {
 			items = append(items, *item)
 		}
 	}
@@ -74,11 +75,12 @@ func (s *Session) SelectedCloudPointHighlight(markerSize float64) (renderer.Draw
 // displayed points (cached, model space) are thinned by screen coverage (LOD) and clipped to the
 // camera frustum before the markers are built, so a large or partly-off-screen scan only spends
 // marker geometry on what is actually on screen.
-func cloudDrawItem(pc *pointcloud.PointCloud, cam scene.Camera, markerSize float64) *renderer.DrawItem {
+func cloudDrawItem(pc *pointcloud.PointCloud, cam scene.Camera, markerSize float64, density float32, low, high [4]float32) *renderer.DrawItem {
 	if !pc.Visible() {
 		return nil
 	}
 	samples := visibleDisplaySamples(pc, cam)
+	samples = densityFilteredSamples(pc, samples, density)
 	if len(samples) == 0 {
 		return nil
 	}
@@ -86,7 +88,7 @@ func cloudDrawItem(pc *pointcloud.PointCloud, cam scene.Camera, markerSize float
 	colors := make([][4]float32, len(samples))
 	for i, s := range samples {
 		points[i] = s.Point
-		colors[i] = displaySampleColor(pc, s)
+		colors[i] = displaySampleColor(pc, s, low, high)
 	}
 	return renderer.PointMarkersColored(points, markerSize, colors, 0)
 }
@@ -150,7 +152,7 @@ func frustumClip(pts []pointcloud.PointSample, cam scene.Camera) []pointcloud.Po
 	return out
 }
 
-func displaySampleColor(pc *pointcloud.PointCloud, s pointcloud.PointSample) [4]float32 {
+func displaySampleColor(pc *pointcloud.PointCloud, s pointcloud.PointSample, low, high [4]float32) [4]float32 {
 	switch pc.DisplayMode() {
 	case types.PointCloudDisplayModeRGB:
 		if s.HasRGB {
@@ -158,7 +160,7 @@ func displaySampleColor(pc *pointcloud.PointCloud, s pointcloud.PointSample) [4]
 		}
 	case types.PointCloudDisplayModeIntensity:
 		if s.HasIntensity {
-			if c, ok := intensityMarkerColor(pc, s.Intensity); ok {
+			if c, ok := intensityMarkerColor(pc, s.Intensity, low, high); ok {
 				return c
 			}
 		}
@@ -185,7 +187,7 @@ func rgbMarkerColor(rgb [3]float32) [4]float32 {
 	return [4]float32{clamp01(rgb[0] / scale), clamp01(rgb[1] / scale), clamp01(rgb[2] / scale), 1}
 }
 
-func intensityMarkerColor(pc *pointcloud.PointCloud, intensity float64) ([4]float32, bool) {
+func intensityMarkerColor(pc *pointcloud.PointCloud, intensity float64, low, high [4]float32) ([4]float32, bool) {
 	min, max, ok := pc.IntensityRange()
 	if !ok || max <= min {
 		return [4]float32{}, false
@@ -197,7 +199,12 @@ func intensityMarkerColor(pc *pointcloud.PointCloud, intensity float64) ([4]floa
 	if t > 1 {
 		t = 1
 	}
-	return [4]float32{t, t, t, 1}, true
+	return [4]float32{
+		lerpFloat32(low[0], high[0], t),
+		lerpFloat32(low[1], high[1], t),
+		lerpFloat32(low[2], high[2], t),
+		1,
+	}, true
 }
 
 func clamp01(v float32) float32 {
@@ -208,6 +215,10 @@ func clamp01(v float32) float32 {
 		return 1
 	}
 	return v
+}
+
+func lerpFloat32(a, b, t float32) float32 {
+	return a + (b-a)*t
 }
 
 // projectBoxToScreen projects a model-space box's eight corners to their screen bounding rectangle

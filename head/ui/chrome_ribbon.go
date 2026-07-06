@@ -27,7 +27,7 @@ func drawRibbon(s *app.Session) string {
 	if bandOpen && native.BeginTabBar("##ribbon-tabs") {
 		for _, tab := range app.BuildRibbon(s).Tabs {
 			if native.BeginTabItemSelected(tab.Name, tab.Name == force) {
-				if id := drawTabPanels(tab.Panels); id != "" {
+				if id := drawTabPanels(s, tab.Panels); id != "" {
 					activated = id
 				}
 				native.EndTabItem()
@@ -52,11 +52,23 @@ var ribbonScrollbarShown bool
 // column starts (the classic ribbon stacks its small buttons three deep).
 const ribbonMaxRows = 3
 
+const ribbonControlRows = 4
+
 // ribbonGridHeight is the height of the band's button-grid area: the tallest column
 // shape, ribbonMaxRows rows of small icon buttons.
 func ribbonGridHeight(m native.StyleMetrics) float32 {
-	row := float32(scaledIconPx(smallIconPx)) + 2*m.FramePadY
-	return ribbonMaxRows*row + (ribbonMaxRows-1)*m.ItemSpacingY
+	buttonRow := float32(scaledIconPx(smallIconPx)) + 2*m.FramePadY
+	buttonGrid := ribbonRowsHeight(ribbonMaxRows, buttonRow, m.ItemSpacingY)
+	controlRow := maxF32(native.FrameHeight(), intensityChartHeight)
+	controlGrid := ribbonRowsHeight(ribbonControlRows, controlRow, m.ItemSpacingY)
+	return maxF32(buttonGrid, controlGrid)
+}
+
+func ribbonRowsHeight(rows int, row, spacing float32) float32 {
+	if rows <= 0 {
+		return 0
+	}
+	return float32(rows)*row + float32(rows-1)*spacing
 }
 
 // ribbonBandHeight is the fixed height of the ribbon band: the tab strip, the button
@@ -76,7 +88,7 @@ func ribbonBandHeight() float32 {
 // (button columns + name strip) separated by a full-height vertical divider. Every
 // panel pins its name at the same band-bottom Y (labelY), which both matches the
 // reference ribbon's footer strip and makes the dividers span the full band.
-func drawTabPanels(panels []app.RibbonPanel) string {
+func drawTabPanels(s pointCloudControlHost, panels []app.RibbonPanel) string {
 	m := native.Metrics()
 	_, gridTop := native.GetCursorScreenPos()
 	labelY := gridTop + ribbonGridHeight(m) + m.ItemSpacingY
@@ -87,7 +99,7 @@ func drawTabPanels(panels []app.RibbonPanel) string {
 			native.SeparatorVertical()
 			native.SameLine()
 		}
-		if id := drawPanel(panel, labelY); id != "" {
+		if id := drawPanel(s, panel, labelY); id != "" {
 			activated = id
 		}
 	}
@@ -145,7 +157,10 @@ func packPanelColumns(buttons []app.RibbonButton) [][]app.RibbonButton {
 // columns with the panel name centered beneath in the band's footer strip — so the
 // whole panel is one narrow, horizontally-placeable unit. Returns the id of a clicked
 // command, or "".
-func drawPanel(panel app.RibbonPanel, labelY float32) string {
+func drawPanel(s pointCloudControlHost, panel app.RibbonPanel, labelY float32) string {
+	if panel.Name == app.PanelPointCloud {
+		return drawPointCloudPanel(s, panel, labelY)
+	}
 	if panel.Selector != nil {
 		return drawSelectorPanel(panel, labelY)
 	}
@@ -153,6 +168,130 @@ func drawPanel(panel app.RibbonPanel, labelY float32) string {
 	activated := drawPanelColumns(packPanelColumns(panel.Buttons))
 	drawPanelName(panel.Name, labelY)
 	native.EndGroup()
+	return activated
+}
+
+const (
+	pointCloudSliderWidth = 82
+	pointCloudComboWidth  = 124
+)
+
+// pointCloudControlHost is the session surface the ribbon's point-cloud controls mutate — the only
+// session coupling in the whole panel-drawing path (audit I5, the arrowSession pattern). The
+// density/size sliders and the intensity-ramp swatches write straight to session state on drag, so
+// the drawing functions take this ≤6-method seam instead of the whole *app.Session and are testable
+// against a small fake host.
+type pointCloudControlHost interface {
+	SetPointCloudRenderDensity(float32)
+	SetPointCloudPointSize(float32)
+	SetPointCloudIntensityRamp(low, high [4]float32)
+}
+
+var _ pointCloudControlHost = (*app.Session)(nil)
+
+// drawPointCloudPanel renders the consolidated Point Cloud panel as one compact 3-column grid:
+// Import (a small labeled-icon button, matching Move/Crop) heads the first column over the stacked
+// "Size" and "Density" sliders, Move / Work Point sit over the display-mode selector in column two,
+// and Crop / Fit Work Plane fill column three. Shrinking Import to a small icon lifts the sliders
+// and the intensity ramp clear of the panel-name footer. The intensity ramp spans the full width
+// beneath, but only when the target cloud is in Intensity mode (the app leaves IntensityRamp nil
+// otherwise). Returns the id of a clicked tool or a chosen display mode, or "".
+func drawPointCloudPanel(s pointCloudControlHost, panel app.RibbonPanel, labelY float32) string {
+	var activated string
+	pick := func(id string) {
+		if got := drawPointCloudButton(panel, id); got != "" {
+			activated = got
+		}
+	}
+	native.BeginGroup()
+
+	// The columns and ramp sit in one inner group so drawPanelName measures the full grid width
+	// (ItemRectMin/Max span the whole block) and centers the panel name under it — without this
+	// the last item measured would be column 3 alone and the label would sit off to the right.
+	native.BeginGroup()
+
+	native.BeginGroup() // column 1: Import over the stacked point-size ("Size") and Density sliders
+	pick("PointCloud.Import")
+	drawPointCloudSlider(s, "Size", panel.PointSizeSlider)
+	drawPointCloudSlider(s, "Density", panel.Slider)
+	native.EndGroup()
+
+	native.SameLine()
+	native.BeginGroup() // column 2: Move / Work Point over the display-mode selector
+	pick("PointCloud.Move")
+	pick("PointCloud.WorkPoint")
+	if got := drawPointCloudSelector(panel); got != "" {
+		activated = got
+	}
+	native.EndGroup()
+
+	native.SameLine()
+	native.BeginGroup() // column 3: Crop / Fit Work Plane
+	pick("PointCloud.CropBox")
+	pick("PointCloud.FitPlane")
+	native.EndGroup()
+
+	if panel.IntensityRamp != nil {
+		drawIntensityRampControls(s, panel.IntensityRamp)
+	}
+	native.EndGroup() // close the measurable content block
+
+	drawPanelName(panel.Name, labelY)
+	native.EndGroup()
+	return activated
+}
+
+// drawPointCloudButton draws the one panel button with the given command id in place, so the grid
+// can seat each tool in its designated cell rather than the generic column-packing order. Returns
+// the command id if clicked, else "".
+func drawPointCloudButton(panel app.RibbonPanel, id string) string {
+	for _, btn := range panel.Buttons {
+		if btn.Command.ID() == id {
+			return drawRibbonButton(btn)
+		}
+	}
+	return ""
+}
+
+// drawPointCloudSlider draws a captioned display slider inline (bar then label) so the whole
+// control stays one grid row, the caption trailing the bar to the right. The caption greys with the
+// bar when the slider is disabled (no target cloud). A nil slider (session exposes none this frame)
+// draws nothing.
+func drawPointCloudSlider(s pointCloudControlHost, label string, slider *app.RibbonSlider) {
+	if slider == nil {
+		return
+	}
+	native.BeginDisabled(slider.Disabled)
+	defer native.EndDisabled()
+	drawRibbonSlider(s, slider, pointCloudSliderWidth)
+	native.SameLine()
+	native.Text(label)
+}
+
+// drawPointCloudSelector draws the display-mode combo (RGB / Intensity / …) for the grid,
+// returning the chosen mode's command id, or "" when nothing changed or no selector exists.
+func drawPointCloudSelector(panel app.RibbonPanel) string {
+	sel := panel.Selector
+	if sel == nil {
+		return ""
+	}
+	preview := ""
+	if sel.SelectedIndex >= 0 && sel.SelectedIndex < len(sel.Options) {
+		preview = sel.Options[sel.SelectedIndex].Label
+	}
+	var activated string
+	native.SetNextItemWidth(pointCloudComboWidth)
+	if native.BeginCombo("##PointCloudDisplayMode", preview) {
+		for i, opt := range sel.Options {
+			if native.Selectable(opt.Label, i == sel.SelectedIndex) {
+				activated = opt.CommandID
+			}
+			if opt.Tooltip != "" {
+				native.SetItemTooltip(opt.Tooltip)
+			}
+		}
+		native.EndCombo()
+	}
 	return activated
 }
 
@@ -223,6 +362,104 @@ func drawSelectorPanel(panel app.RibbonPanel, labelY float32) string {
 	drawPanelName(panel.Name, labelY)
 	native.EndGroup()
 	return activated
+}
+
+func drawRibbonSlider(s pointCloudControlHost, slider *app.RibbonSlider, width float32) {
+	native.BeginDisabled(slider.Disabled)
+	defer native.EndDisabled()
+	value := slider.Value
+	native.SetNextItemWidth(width)
+	var changed bool
+	if slider.Percent {
+		changed = native.SliderPercent("##"+slider.ID, &value, slider.Min, slider.Max)
+	} else {
+		changed = native.SliderFloat("##"+slider.ID, &value, slider.Min, slider.Max)
+	}
+	if changed {
+		applyRibbonSlider(s, slider.ID, value)
+	}
+	if slider.Tooltip != "" {
+		native.SetItemTooltip(slider.Tooltip)
+	}
+}
+
+func applyRibbonSlider(s pointCloudControlHost, id string, value float32) {
+	switch id {
+	case "PointCloud.RenderDensity":
+		s.SetPointCloudRenderDensity(value)
+	case "PointCloud.PointSize":
+		s.SetPointCloudPointSize(value)
+	}
+}
+
+func drawIntensityRampControls(s pointCloudControlHost, ramp *app.RibbonColorRamp) {
+	low, high := ramp.Low.Value, ramp.High.Value
+	if native.ColorSwatch("##"+ramp.Low.ID, &low) {
+		s.SetPointCloudIntensityRamp(low, high)
+	}
+	if ramp.Low.Tooltip != "" {
+		native.SetItemTooltip(ramp.Low.Tooltip)
+	}
+	native.SameLine()
+	drawIntensityHistogramChart(ramp.Histogram, low, high, intensityChartWidth, intensityChartHeight)
+	native.SameLine()
+	if native.ColorSwatch("##"+ramp.High.ID, &high) {
+		s.SetPointCloudIntensityRamp(low, high)
+	}
+	if ramp.High.Tooltip != "" {
+		native.SetItemTooltip(ramp.High.Tooltip)
+	}
+}
+
+const (
+	intensityChartWidth  = 92
+	intensityChartHeight = 24
+)
+
+func drawIntensityHistogramChart(hist []float32, low, high [4]float32, width, height float32) {
+	x, y := native.GetCursorScreenPos()
+	bottom := y + height
+	native.DrawRectFilled(x, y, x+width, bottom, [4]float32{0.08, 0.08, 0.08, 0.35})
+	if len(hist) > 0 {
+		drawIntensityHistogramArea(hist, low, high, x, y, width, height)
+	}
+	native.DrawLine(x, bottom-1, x+width, bottom-1, [4]float32{0.95, 0.95, 0.95, 0.55}, 1)
+	native.Dummy(width, height)
+}
+
+func drawIntensityHistogramArea(hist []float32, low, high [4]float32, x, y, width, height float32) {
+	if len(hist) == 1 {
+		top := y + height*(1-clampChart01(hist[0]))
+		native.DrawRectFilled(x, top, x+width, y+height, low)
+		return
+	}
+	for i := 0; i < len(hist)-1; i++ {
+		x0 := x + width*float32(i)/float32(len(hist)-1)
+		x1 := x + width*float32(i+1)/float32(len(hist)-1)
+		y0 := y + height*(1-clampChart01(hist[i]))
+		y1 := y + height*(1-clampChart01(hist[i+1]))
+		c := lerpChartColor(low, high, float32(i)/float32(len(hist)-1))
+		native.DrawQuadFilled(x0, y+height, x1, y+height, x1, y1, x0, y0, c)
+	}
+}
+
+func clampChart01(v float32) float32 {
+	if v < 0 {
+		return 0
+	}
+	if v > 1 {
+		return 1
+	}
+	return v
+}
+
+func lerpChartColor(a, b [4]float32, t float32) [4]float32 {
+	return [4]float32{
+		a[0] + (b[0]-a[0])*t,
+		a[1] + (b[1]-a[1])*t,
+		a[2] + (b[2]-a[2])*t,
+		0.8,
+	}
 }
 
 // drawRibbonButton renders one command in its configured style (text, small, large, or

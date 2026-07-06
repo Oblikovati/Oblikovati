@@ -103,8 +103,8 @@ func TestPointCloudDisplayModeOverWire(t *testing.T) {
 	path := writeScan(t, "0 0 0\n1 1 1\n")
 	var info wire.PointCloudInfo
 	call(t, r, s, "pointClouds.attach", mustJSON(t, wire.AttachPointCloudArgs{Name: "Scan", FullFileName: path}), &info)
-	if info.DisplayMode != types.PointCloudDisplayModeDefault {
-		t.Fatalf("default display mode = %q, want default", info.DisplayMode)
+	if info.DisplayMode != types.PointCloudDisplayModeRGB {
+		t.Fatalf("default display mode = %q, want rgb", info.DisplayMode)
 	}
 
 	call(t, r, s, "pointClouds.setDisplayMode", mustJSON(t, wire.SetPointCloudDisplayModeArgs{Name: "Scan", DisplayMode: types.PointCloudDisplayModeRGB}), &info)
