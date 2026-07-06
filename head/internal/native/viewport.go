@@ -8,7 +8,10 @@ package native
 #include <stdint.h>
 
 void     obk_viewport_init(void* h, const uint32_t* vert, int vlen, const uint32_t* frag, int flen,
+                           const uint32_t* pointVert, int pointVLen, const uint32_t* pointFrag, int pointFLen,
                            const uint32_t* skyVert, int skyVLen, const uint32_t* skyFrag, int skyFLen);
+void     obk_viewport_upload_points(void* h, const float* verts, int count, uint64_t key, float sizePx);
+uint64_t obk_viewport_point_uploads(void* h);
 void     obk_viewport_set_skybox(void* h, const float* invVP, int show);
 void     obk_viewport_set_shadow(void* h, const float* lightVP, int enabled, float density,
                                  float softness, int castOnDirect, int occludeAmbient);
@@ -45,8 +48,27 @@ func (w *Window) InitViewport() {
 	C.obk_viewport_init(w.handle,
 		(*C.uint32_t)(unsafe.Pointer(&meshVertSPV[0])), C.int(len(meshVertSPV)),
 		(*C.uint32_t)(unsafe.Pointer(&meshFragSPV[0])), C.int(len(meshFragSPV)),
+		(*C.uint32_t)(unsafe.Pointer(&pointVertSPV[0])), C.int(len(pointVertSPV)),
+		(*C.uint32_t)(unsafe.Pointer(&pointFragSPV[0])), C.int(len(pointFragSPV)),
 		(*C.uint32_t)(unsafe.Pointer(&skyboxVertSPV[0])), C.int(len(skyboxVertSPV)),
 		(*C.uint32_t)(unsafe.Pointer(&skyboxFragSPV[0])), C.int(len(skyboxFragSPV)))
+}
+
+// UploadPoints hands the retained point-cloud stream to the renderer: count vertices of 7 floats
+// each ([pos.xyz, rgba], model space) plus the on-screen point size in pixels. key is a camera-
+// independent content identity — when it matches what is already resident the native side skips the
+// transfer, so the head may call this every frame while orbiting a loaded scan at no cost (#645).
+// A count of 0 (verts may be nil) clears the cloud. The buffer redraws from VRAM each RenderViewport.
+func (w *Window) UploadPoints(verts []float32, count int, key uint64, sizePx float32) {
+	C.obk_viewport_upload_points(w.handle, floatPtr(verts), C.int(count),
+		C.uint64_t(key), C.float(sizePx))
+}
+
+// ViewportPointUploads returns how many times the point-cloud buffer was actually re-uploaded — 0
+// before init, constant while a static scan is orbited. Exposed for the retained-buffer regression
+// test (the #645 analogue of ViewportGeomUploads / #1422).
+func (w *Window) ViewportPointUploads() uint64 {
+	return uint64(C.obk_viewport_point_uploads(w.handle))
 }
 
 // SetViewportSkybox enables drawing the HDR environment as the viewport background, passing the

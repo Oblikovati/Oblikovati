@@ -502,6 +502,7 @@ func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene
 	applyEnvironment(win, app.RenderEnvironment(s.Environment())) // app value -> renderer at the wall (B10 #1621)
 	applySkybox(win, app.RenderEnvironment(s.Environment()), mvp)
 	applyShadow(win, s, mn, mx, hasGeom)
+	uploadPointClouds(win, s) // retained GL-points buffer, skipped on orbit (#645)
 	tg := frameClock()
 	win.RenderViewport(slot, pw, ph, mvp[:], eye,
 		m.TriVerts, m.TriVCount, m.TriIndices,
@@ -595,19 +596,20 @@ func modelOverlays(s *app.Session, cam scene.Camera, hovered *feature.WorkPlane,
 	return list
 }
 
-// pointCloudOverlay builds the active part's visible point-cloud marker batches, plus a highlight
-// for a snapped/selected scan point, sized in screen space so each cross stays a fixed pixel size
-// at any zoom (like sketch point markers, #645).
+// pointCloudOverlay builds only the highlight cross for a snapped/selected scan point (#645). The
+// cloud's points themselves are no longer overlay markers — they render through the retained native
+// GL-points buffer (uploadPointClouds / renderer point pipeline), so a large scan neither rebuilds
+// marker geometry every frame nor rides (and invalidates) the whole-model geometry-upload cache.
+// Only the single selected point stays a screen-sized cross, drawn on top so the snap reads clearly.
 func pointCloudOverlay(s *app.Session, cam scene.Camera) []renderer.DrawItem {
-	items := s.PointCloudItems(cam, pointCloudMarkerPixels*cam.WorldPerPixel())
-	if hi, ok := s.SelectedCloudPointHighlight(pointCloudMarkerPixels * cam.WorldPerPixel()); ok {
-		items = append(items, hi)
+	if hi, ok := s.SelectedCloudPointHighlight(pointCloudHighlightPixels * cam.WorldPerPixel()); ok {
+		return []renderer.DrawItem{hi}
 	}
-	return items
+	return nil
 }
 
-// pointCloudMarkerPixels is the on-screen half-extent of a point-cloud cross marker.
-const pointCloudMarkerPixels = 3.0
+// pointCloudHighlightPixels is the on-screen half-extent of the selected scan-point highlight cross.
+const pointCloudHighlightPixels = 3.0
 
 // gizmoOverlays appends the triad and manipulator-handle geometry (M05-F13).
 func gizmoOverlays(s *app.Session, cam scene.Camera, list renderer.DrawList) renderer.DrawList {
