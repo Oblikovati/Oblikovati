@@ -3,18 +3,15 @@
 package pointcloud
 
 import (
-	"encoding/binary"
-	"fmt"
-
 	"oblikovati.org/kernel/exchange/lasfmt"
 	"oblikovati.org/math"
 )
 
 // LAS point reader (M17-F06, #645): the ASPRS LAS format is the standard interchange for LiDAR
-// point data (airborne and terrestrial surveys). A point cloud needs only the XYZ positions, so
-// this reader delegates the header/record parsing to the shared kernel/exchange/lasfmt package and
-// takes its vertices plus the common intensity/RGB channels. The compressed LAZ variant is not
-// handled here.
+// point data (airborne and terrestrial surveys). All the header/record/VLR parsing lives in the
+// shared kernel/exchange/lasfmt package (#1788); this reader maps its decoded XYZ plus the common
+// intensity/RGB channels onto cloud-local samples and owns the LAS unit policy. The compressed LAZ
+// variant is not handled.
 type lasReader struct{}
 
 // NewLASReader returns the reader for ASPRS .las scan files.
@@ -62,14 +59,18 @@ func lasUnitMM(crsMetres float64, crsDeclared bool, scale [3]float64) float64 {
 	return scanUnitMM(lasMillimetreScan(scale))
 }
 
-// ReadSamples decodes the LAS point records into cloud-local samples.
+// ReadSamples decodes the LAS point records into cloud-local samples, carrying the intensity and RGB
+// channels the record format declares (raw values; the model normalises colour per-cloud, #1787).
 func (lasReader) ReadSamples(data []byte) ([]PointSample, []string, error) {
 	doc, err := lasfmt.Parse(data)
 	if err != nil {
 		return nil, nil, err
 	}
-	samples, err := decodeLASSamples(doc)
-	return samples, nil, err
+	scan, err := doc.Scan()
+	if err != nil {
+		return nil, nil, err
+	}
+	return samplesFromChannels(scan.Points, scan.RGB, scan.Intensity), nil, nil
 }
 
 // Read returns point-only coordinates for callers that do not need channels.
@@ -78,65 +79,5 @@ func (r lasReader) Read(data []byte) ([]math.Point3, []string, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	out := make([]math.Point3, len(samples))
-	for i, s := range samples {
-		out[i] = s.Point
-	}
-	return out, warns, nil
-}
-
-func decodeLASSamples(doc *lasfmt.Document) ([]PointSample, error) {
-	h := doc.Header()
-	if h.RecordLength < 12 {
-		return nil, fmt.Errorf("lasfmt: point record length %d is too small to hold an XYZ triple", h.RecordLength)
-	}
-	start := uint64(h.PointDataOffset)
-	end := start + h.PointCount*uint64(h.RecordLength)
-	if end > uint64(len(doc.Raw())) {
-		return nil, fmt.Errorf("lasfmt: %d records of %d bytes from offset %d exceed the %d-byte file", h.PointCount, h.RecordLength, start, len(doc.Raw()))
-	}
-	out := make([]PointSample, 0, h.PointCount)
-	recLen := uint64(h.RecordLength)
-	for i := uint64(0); i < h.PointCount; i++ {
-		base := start + i*recLen
-		rec := doc.Raw()[base : base+recLen]
-		out = append(out, decodeLASSample(rec, h))
-	}
-	return out, nil
-}
-
-func decodeLASSample(rec []byte, h lasfmt.Header) PointSample {
-	s := PointSample{
-		Point: math.P3(
-			math.Scalar(float64(int32(binary.LittleEndian.Uint32(rec[0:])))*h.Scale[0]+h.Offset[0]),
-			math.Scalar(float64(int32(binary.LittleEndian.Uint32(rec[4:])))*h.Scale[1]+h.Offset[1]),
-			math.Scalar(float64(int32(binary.LittleEndian.Uint32(rec[8:])))*h.Scale[2]+h.Offset[2]),
-		),
-	}
-	if len(rec) >= 14 {
-		s.HasIntensity = true
-		s.Intensity = float64(binary.LittleEndian.Uint16(rec[12:14]))
-	}
-	if rgbOffset, ok := lasRGBOffset(h.PointFormat); ok && rgbOffset+6 <= len(rec) {
-		s.HasRGB = true
-		s.RGB = [3]float32{
-			float32(binary.LittleEndian.Uint16(rec[rgbOffset : rgbOffset+2])),
-			float32(binary.LittleEndian.Uint16(rec[rgbOffset+2 : rgbOffset+4])),
-			float32(binary.LittleEndian.Uint16(rec[rgbOffset+4 : rgbOffset+6])),
-		}
-	}
-	return s
-}
-
-func lasRGBOffset(format uint8) (int, bool) {
-	switch format {
-	case 2:
-		return 20, true
-	case 3, 5:
-		return 28, true
-	case 7, 8, 10:
-		return 30, true
-	default:
-		return 0, false
-	}
+	return pointsOf(samples), warns, nil
 }

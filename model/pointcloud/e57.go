@@ -51,20 +51,7 @@ func (e57Reader) ReadSamples(data []byte) ([]PointSample, []string, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	samples := make([]PointSample, len(scan.Points))
-	for i, p := range scan.Points {
-		s := PointSample{Point: p}
-		if scan.HasRGB() {
-			s.HasRGB = true
-			s.RGB = scan.RGB[i]
-		}
-		if scan.HasIntensity() {
-			s.HasIntensity = true
-			s.Intensity = scan.Intensity[i]
-		}
-		samples[i] = s
-	}
-	return samples, nil, nil
+	return samplesFromChannels(scan.Points, scan.RGB, scan.Intensity), nil, nil
 }
 
 // Read returns point-only coordinates for callers that do not need channels.
@@ -73,9 +60,5 @@ func (r e57Reader) Read(data []byte) ([]math.Point3, []string, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	out := make([]math.Point3, len(samples))
-	for i, s := range samples {
-		out[i] = s.Point
-	}
-	return out, warns, nil
+	return pointsOf(samples), warns, nil
 }

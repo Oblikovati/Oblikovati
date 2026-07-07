@@ -254,6 +254,36 @@ func TestDisplayedSamplesPreserveChannels(t *testing.T) {
 	}
 }
 
+// TestSamplesFromChannels: the shared column→sample seam marks a channel present for every point
+// when its column is non-nil and absent when nil, mapping values 1:1 with the positions (#1788).
+func TestSamplesFromChannels(t *testing.T) {
+	pts := []omath.Point3{omath.P3(1, 2, 3), omath.P3(4, 5, 6)}
+	rgb := [][3]float32{{9, 8, 7}, {1, 2, 3}}
+	got := samplesFromChannels(pts, rgb, nil) // colour present, intensity absent
+	if len(got) != 2 {
+		t.Fatalf("got %d samples, want 2", len(got))
+	}
+	if !got[0].HasRGB || got[0].RGB != [3]float32{9, 8, 7} || got[0].HasIntensity {
+		t.Errorf("sample 0 = %+v, want rgb 9/8/7 and no intensity", got[0])
+	}
+	if got[1].Point != omath.P3(4, 5, 6) || got[1].HasIntensity {
+		t.Errorf("sample 1 = %+v, want point (4,5,6) and no intensity", got[1])
+	}
+	withI := samplesFromChannels(pts, nil, []float64{11, 22})
+	if withI[1].HasRGB || !withI[1].HasIntensity || withI[1].Intensity != 22 {
+		t.Errorf("intensity-only sample = %+v, want intensity 22 and no rgb", withI[1])
+	}
+}
+
+// TestPointsOf projects samples onto their positions for the point-only Read path.
+func TestPointsOf(t *testing.T) {
+	samples := []PointSample{{Point: omath.P3(1, 2, 3)}, {Point: omath.P3(4, 5, 6)}}
+	pts := pointsOf(samples)
+	if len(pts) != 2 || pts[0] != omath.P3(1, 2, 3) || pts[1] != omath.P3(4, 5, 6) {
+		t.Errorf("pointsOf = %+v, want (1,2,3),(4,5,6)", pts)
+	}
+}
+
 // TestReadScanSamplesPreservesPLYAndLASChannels covers the richer scan readers end-to-end.
 func TestReadScanSamplesPreservesPLYAndLASChannels(t *testing.T) {
 	ply := "ply\nformat ascii 1.0\n" +

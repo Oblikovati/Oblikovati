@@ -183,6 +183,101 @@ func TestVerticesRecordTooSmall(t *testing.T) {
 	}
 }
 
+// format3LAS builds a one-record LAS 1.2 file in point data record format 3 (XYZ + intensity + RGB),
+// exercising the channel decode Scan adds (#1788).
+func format3LAS(xyz [3]int32, intensity uint16, rgb [3]uint16) []byte {
+	data := make([]byte, 227+34)
+	copy(data, signature)
+	data[24], data[25] = 1, 2
+	binary.LittleEndian.PutUint16(data[94:], 227)
+	binary.LittleEndian.PutUint32(data[96:], 227)
+	data[104] = 3 // point data record format 3
+	binary.LittleEndian.PutUint16(data[105:], 34)
+	binary.LittleEndian.PutUint32(data[legacyPointCountOffset:], 1)
+	putVec3(data, 131, [3]float64{1, 1, 1})
+	rec := data[227:]
+	binary.LittleEndian.PutUint32(rec[0:], uint32(xyz[0]))
+	binary.LittleEndian.PutUint32(rec[4:], uint32(xyz[1]))
+	binary.LittleEndian.PutUint32(rec[8:], uint32(xyz[2]))
+	binary.LittleEndian.PutUint16(rec[12:], intensity)
+	binary.LittleEndian.PutUint16(rec[28:], rgb[0])
+	binary.LittleEndian.PutUint16(rec[30:], rgb[1])
+	binary.LittleEndian.PutUint16(rec[32:], rgb[2])
+	return data
+}
+
+// TestScanDecodesIntensityAndRGB: a format-3 record's intensity (offset 12) and RGB (offset 28)
+// decode into 1:1 columns alongside the positions.
+func TestScanDecodesIntensityAndRGB(t *testing.T) {
+	doc, err := Parse(format3LAS([3]int32{10, 20, 30}, 77, [3]uint16{9, 8, 7}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s, err := doc.Scan()
+	if err != nil {
+		t.Fatalf("Scan: %v", err)
+	}
+	if len(s.Points) != 1 || !s.HasIntensity() || !s.HasRGB() {
+		t.Fatalf("scan = %+v, want 1 point with intensity+rgb", s)
+	}
+	if s.Intensity[0] != 77 || s.RGB[0] != [3]float32{9, 8, 7} || float64(s.Points[0].X) != 10 {
+		t.Errorf("scan row = pt %+v int %v rgb %v, want x=10 int=77 rgb=9/8/7", s.Points[0], s.Intensity[0], s.RGB[0])
+	}
+}
+
+// TestScanFormat0Channels: a format-0 record carries no colour (nil RGB column) but its 20-byte
+// stride reaches the standard intensity field, so an intensity column is present.
+func TestScanFormat0Channels(t *testing.T) {
+	doc, err := Parse(lasBuilder{points: [][3]int32{{1, 2, 3}}, scale: [3]float64{1, 1, 1}}.bytes())
+	if err != nil {
+		t.Fatal(err)
+	}
+	s, err := doc.Scan()
+	if err != nil {
+		t.Fatalf("Scan: %v", err)
+	}
+	if s.HasRGB() {
+		t.Error("format 0 has no RGB, want nil colour column")
+	}
+	if !s.HasIntensity() {
+		t.Error("format 0's 20-byte record holds the intensity field, want an intensity column")
+	}
+}
+
+// TestScanRecordTooShortForIntensity: a 12-byte stride holds only the XYZ triple, so neither an
+// intensity nor a colour column is produced (but the positions decode).
+func TestScanRecordTooShortForIntensity(t *testing.T) {
+	doc, err := Parse(lasBuilder{points: [][3]int32{{1, 2, 3}}, scale: [3]float64{1, 1, 1}, recordLength: 12}.bytes())
+	if err != nil {
+		t.Fatal(err)
+	}
+	s, err := doc.Scan()
+	if err != nil {
+		t.Fatalf("Scan: %v", err)
+	}
+	if s.HasIntensity() || s.HasRGB() {
+		t.Errorf("a 12-byte record has no channels, got int=%v rgb=%v", s.Intensity, s.RGB)
+	}
+}
+
+// TestRGBRecordOffset maps each colour point format to its red-channel offset and rejects the
+// colourless formats.
+func TestRGBRecordOffset(t *testing.T) {
+	cases := map[uint8]struct {
+		off int
+		ok  bool
+	}{
+		0: {0, false}, 1: {0, false},
+		2: {20, true}, 3: {28, true}, 5: {28, true},
+		7: {30, true}, 8: {30, true}, 10: {30, true},
+	}
+	for format, want := range cases {
+		if off, ok := rgbRecordOffset(format); off != want.off || ok != want.ok {
+			t.Errorf("rgbRecordOffset(%d) = %d, %v; want %d, %v", format, off, ok, want.off, want.ok)
+		}
+	}
+}
+
 // --- CRS / unit VLR tests (#1789) ---
 
 func lasWithVLR(vlr []byte) *Document {

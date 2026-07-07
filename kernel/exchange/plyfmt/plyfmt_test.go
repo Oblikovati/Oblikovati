@@ -113,6 +113,71 @@ func TestParseErrors(t *testing.T) {
 	}
 }
 
+// TestScanASCIIChannels: an ascii vertex carrying intensity and RGB decodes into 1:1 columns with
+// the raw property values preserved, and the positions still decode.
+func TestScanASCIIChannels(t *testing.T) {
+	src := "ply\nformat ascii 1.0\n" +
+		"element vertex 2\nproperty float x\nproperty float y\nproperty float z\n" +
+		"property ushort intensity\nproperty uchar red\nproperty uchar green\nproperty uchar blue\n" +
+		"end_header\n1 2 3 77 9 8 7\n4 5 6 12 1 2 3\n"
+	d, err := Parse([]byte(src))
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	s, err := d.Scan()
+	if err != nil {
+		t.Fatalf("Scan: %v", err)
+	}
+	if len(s.Points) != 2 || !s.HasIntensity() || !s.HasRGB() {
+		t.Fatalf("scan = %+v, want 2 points with intensity+rgb", s)
+	}
+	if s.Points[1].X != 4 || s.Intensity[0] != 77 || s.RGB[0] != [3]float32{9, 8, 7} {
+		t.Errorf("row 0 = pt %+v int %v rgb %v, want x=1 int=77 rgb=9/8/7", s.Points[0], s.Intensity[0], s.RGB[0])
+	}
+	if s.Intensity[1] != 12 || s.RGB[1] != [3]float32{1, 2, 3} {
+		t.Errorf("row 1 = int %v rgb %v, want 12 and 1/2/3", s.Intensity[1], s.RGB[1])
+	}
+}
+
+// TestScanBinaryChannels: a binary vertex with a uint16 intensity and uchar RGB decodes its channels
+// at their record offsets, striding correctly past the float positions.
+func TestScanBinaryChannels(t *testing.T) {
+	var b bytes.Buffer
+	for _, c := range []float32{1, 2, 3} {
+		_ = binary.Write(&b, binary.LittleEndian, c)
+	}
+	_ = binary.Write(&b, binary.LittleEndian, uint16(77))
+	b.Write([]byte{9, 8, 7})
+	src := append([]byte("ply\nformat binary_little_endian 1.0\n"+
+		"element vertex 1\nproperty float x\nproperty float y\nproperty float z\n"+
+		"property ushort intensity\nproperty uchar red\nproperty uchar green\nproperty uchar blue\n"+
+		"end_header\n"), b.Bytes()...)
+	d, err := Parse(src)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	s, err := d.Scan()
+	if err != nil || len(s.Points) != 1 {
+		t.Fatalf("Scan = %+v, err %v", s, err)
+	}
+	if s.Intensity[0] != 77 || s.RGB[0] != [3]float32{9, 8, 7} || s.Points[0].Z != 3 {
+		t.Errorf("scan row = pt %+v int %v rgb %v, want z=3 int=77 rgb=9/8/7", s.Points[0], s.Intensity[0], s.RGB[0])
+	}
+}
+
+// TestScanNoChannels: a positions-only vertex yields nil colour and intensity columns.
+func TestScanNoChannels(t *testing.T) {
+	src := "ply\nformat ascii 1.0\nelement vertex 1\nproperty float x\nproperty float y\nproperty float z\nend_header\n1 2 3\n"
+	d, _ := Parse([]byte(src))
+	s, err := d.Scan()
+	if err != nil {
+		t.Fatalf("Scan: %v", err)
+	}
+	if s.HasRGB() || s.HasIntensity() {
+		t.Errorf("positions-only scan should have nil channel columns, got rgb=%v int=%v", s.RGB, s.Intensity)
+	}
+}
+
 func le16(v uint16) []byte { b := make([]byte, 2); binary.LittleEndian.PutUint16(b, v); return b }
 func le32(v uint32) []byte { b := make([]byte, 4); binary.LittleEndian.PutUint32(b, v); return b }
 func le64(v uint64) []byte { b := make([]byte, 8); binary.LittleEndian.PutUint64(b, v); return b }
