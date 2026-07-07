@@ -366,10 +366,24 @@ func resolveHoleFace(body *topo.Body, def *HoleDefinition) (*topo.Face, bool) {
 		return body.FindFaceByKey(def.PlacementFaceKey)
 	}
 	if def.GeomFace != nil {
-		return body.FindFaceByGeometry(*def.GeomFace, geomEdgeBindTol)
+		// Prefer the precise centroid+normal match. When it is lost — e.g. an exporter that
+		// mis-computes the face centroid, or a centroid shifted by later history — fall back to
+		// binding by the drill CENTRE, which lies on the placement face and is history-stable.
+		if f, ok := body.FindFaceByGeometry(*def.GeomFace, geomEdgeBindTol); ok {
+			return f, true
+		}
+		if def.Center != nil {
+			return body.FindPlanarFaceThrough(*def.Center, def.GeomFace.Normal, holeFaceThroughTol)
+		}
+		return nil, false
 	}
 	return nil, false
 }
+
+// holeFaceThroughTol is how far the drill centre may sit off a candidate placement face's plane
+// (perpendicular) and still bind it. The centre lies on the face by construction, so this only
+// absorbs round-trip/recompute noise; the match is otherwise pinned by the outward normal.
+const holeFaceThroughTol = math.Scalar(1e-2)
 
 func (c *HoleFeatures) addHole(def *HoleDefinition) *PartFeature {
 	hf := &HoleFeature{def: def}

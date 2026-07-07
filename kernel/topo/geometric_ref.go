@@ -73,6 +73,40 @@ func (b *Body) FindFaceByGeometry(ref GeometricFaceRef, tol math.Scalar) (*Face,
 	return decide(best, bestD, second, secondD)
 }
 
+// FindPlanarFaceThrough returns the face whose plane passes through point p (within tol,
+// measured perpendicular to the face) and whose outward normal aligns with want; when several
+// qualify it takes the one whose centroid is nearest p. It binds an externally-authored placement
+// face — e.g. a hole's — by the drill CENTRE, a point that lies on the face, rather than by the
+// face centroid. A centroid is not stable across feature history (later chamfers/holes shift the
+// vertex average, and an exporter reading the final body cannot reproduce the running-body value),
+// whereas the drill centre and the face plane are.
+func (b *Body) FindPlanarFaceThrough(p math.Point3, want math.Vector3, tol math.Scalar) (*Face, bool) {
+	wn := unitOrZero(want)
+	var best *Face
+	var candidates int
+	bestD := stdmath.Inf(1)
+	for _, f := range b.Faces() {
+		c := faceCentroid(f)
+		n := faceOutwardNormal(f, c)
+		if wn.LengthSquared() > 0 && n.Dot(wn) < normalAlignMin {
+			continue
+		}
+		if stdmath.Abs(c.VectorTo(p).Dot(n)) > tol { // perpendicular distance from p to the face plane
+			continue
+		}
+		candidates++
+		if d := p.DistanceTo(c); d < bestD {
+			best, bestD = f, d
+		}
+	}
+	// Bind only when the placement face is unambiguous; two faces reaching p on aligned planes is
+	// an indefensible tie, so leave the hole unbound rather than drill the wrong one.
+	if candidates != 1 {
+		return nil, false
+	}
+	return best, true
+}
+
 // FindEdgeByGeometry returns the edge whose midpoint is within tol of the descriptor and
 // whose direction is parallel to it (either sense), when unambiguous.
 func (b *Body) FindEdgeByGeometry(ref GeometricEdgeRef, tol math.Scalar) (*Edge, bool) {
