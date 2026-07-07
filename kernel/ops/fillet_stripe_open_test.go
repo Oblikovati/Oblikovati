@@ -4,6 +4,7 @@ package ops_test
 
 import (
 	"math"
+	"strings"
 	"testing"
 
 	"oblikovati.org/kernel/geom"
@@ -97,6 +98,28 @@ func notchCentroidOffset(r float64) float64 {
 	// square centroid at r/2, area r²; quarter-disc centroid at 4r/3π from the corner, area πr²/4.
 	num := r*r*(r/2) - (math.Pi/4)*r*r*(4*r/(3*math.Pi))
 	return num / (r * r * (1 - math.Pi/4))
+}
+
+// TestFilletStripeUnbuildableIsLocalized is the ADR-0050 P6 partial-result contract: a radius that
+// cannot seat on the tangent chain (here r=0.5 equals the vertical-fillet radius, so the rolling-ball
+// centre curve collapses on the arc segments) fails with a localized, actionable error naming the faulty
+// segment and guide point — not a panic, not a silently wrong body. Mirrors OCCT ChFiDS_ErrorStatus.
+func TestFilletStripeUnbuildableIsLocalized(t *testing.T) {
+	filleted := boxWithRoundedVerticals(t, 4, 0.5)
+	top := topPerimeterKeys(t, filleted)
+
+	res, err := ops.FilletEdges(filleted, top, 0.5) // r == arc radius ⇒ no rolling-ball fit on the arcs
+	if err == nil {
+		t.Fatal("expected a localized partial-result error for the unbuildable radius, got a body")
+	}
+	if res != nil {
+		t.Errorf("unbuildable stripe must return no body, got %d faces", len(res.Faces()))
+	}
+	for _, want := range []string{"chain segment", "near ("} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error %q should localize the failure (contain %q)", err.Error(), want)
+		}
+	}
 }
 
 // boxWithRoundedVerticals builds a box of the given side with its four vertical edges filleted at vr.

@@ -212,11 +212,14 @@ func solveTangentStripe(body *topo.Body, edges []*topo.Edge, closed bool, r floa
 }
 
 // marchSegments runs the blend engine over the spine and maps each returned segment onto the shared
-// face / wall roles, filling st.segs. It errors on a partial-result status (OCCT's contract).
+// face / wall roles, filling st.segs. On a partial-result status it localizes the failure to the segment
+// the marcher stopped on and the guide point there (OCCT's per-SurfData ChFiDS_ErrorStatus contract),
+// so the caller can name the faulty entity rather than fail globally.
 func (st *tangentStripe) marchSegments(sp *blend.Spine, m *blend.Marcher, r float64) error {
 	run := m.March(sp, blend.ConstRadiusFillet{R: r})
 	if run.Status != blend.StatusOk {
-		return fmt.Errorf("fillet: blend marcher failed on the tangent chain: %v", run.Status)
+		return fmt.Errorf("fillet: blend %v at chain segment %d (near %s) — radius %g exceeds the local bound there",
+			run.Status, len(run.Segments), spineFailPoint(sp, len(run.Segments)), r)
 	}
 	for _, bs := range run.Segments {
 		seg, err := stripeSegOf(bs, st.shared)
@@ -226,6 +229,17 @@ func (st *tangentStripe) marchSegments(sp *blend.Spine, m *blend.Marcher, r floa
 		st.segs = append(st.segs, seg)
 	}
 	return nil
+}
+
+// spineFailPoint describes the guide location of the segment the marcher stopped on, for a localized
+// error message. It clamps to the last edge when the failure is at the run's very end.
+func spineFailPoint(sp *blend.Spine, seg int) string {
+	if seg >= sp.NbEdges() {
+		seg = sp.NbEdges() - 1
+	}
+	first, last := sp.EdgeSpineRange(seg)
+	p := sp.PointAt((first + last) / 2)
+	return fmt.Sprintf("(%.3f, %.3f, %.3f)", p.X, p.Y, p.Z)
 }
 
 // reseatSurfaces re-anchors each blend surface's angular reference so its EXPOSED patch sits in the
