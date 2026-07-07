@@ -434,6 +434,58 @@ func TestVerticesErrorsWithoutCartesian(t *testing.T) {
 	}
 }
 
+// TestCartesianIntegerResolution covers the #1789 signal: cartesian XYZ stored at integer
+// resolution (unit-scale ScaledInteger, or plain Integer) is flagged, while a sub-unit scale, a
+// Float, or a missing channel is not — those keep the ASTM E2807 metre unit.
+func TestCartesianIntegerResolution(t *testing.T) {
+	xyz := func(kind fieldKind, scale float64) []protoField {
+		return []protoField{
+			{name: "cartesianX", kind: kind, scale: scale},
+			{name: "cartesianY", kind: kind, scale: scale},
+			{name: "cartesianZ", kind: kind, scale: scale},
+		}
+	}
+	cases := []struct {
+		name   string
+		fields []protoField
+		want   bool
+	}{
+		{"scaled-integer unit scale", xyz(kindScaledInteger, 1), true},
+		{"plain integer", xyz(kindInteger, 1), true},
+		{"scaled-integer sub-unit scale", xyz(kindScaledInteger, 0.001), false},
+		{"float", xyz(kindFloat, 1), false},
+		{"missing cartesianZ", []protoField{
+			{name: "cartesianX", kind: kindScaledInteger, scale: 1},
+			{name: "cartesianY", kind: kindScaledInteger, scale: 1},
+		}, false},
+		{"one float among integers", []protoField{
+			{name: "cartesianX", kind: kindScaledInteger, scale: 1},
+			{name: "cartesianY", kind: kindFloat},
+			{name: "cartesianZ", kind: kindScaledInteger, scale: 1},
+		}, false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			doc := &Document{points: pointsSection{fields: c.fields}}
+			if got := doc.CartesianIntegerResolution(); got != c.want {
+				t.Errorf("CartesianIntegerResolution() = %v, want %v", got, c.want)
+			}
+		})
+	}
+}
+
+// TestCartesianIntegerResolutionFromBytes confirms the flag survives a real parse: the builder's
+// default cartesian is a unit-scale ScaledInteger, the exact non-conformant pattern of #1789.
+func TestCartesianIntegerResolutionFromBytes(t *testing.T) {
+	doc, err := Parse(e57Builder{points: samplePoints(4), perPacket: 16}.bytes())
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if !doc.CartesianIntegerResolution() {
+		t.Error("a unit-scale ScaledInteger cartesian scan should report integer resolution")
+	}
+}
+
 func TestBitReaderLSBFirst(t *testing.T) {
 	r := bitReader{buf: []byte{0b1010_0011}} // low bits first: 3-bit reads → 011, 100, 01(0 pad)
 	if v := r.read(3); v != 0b011 {

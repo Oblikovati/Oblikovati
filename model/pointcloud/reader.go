@@ -73,7 +73,7 @@ func readScaled(r PointReader, data []byte, opts exchange.TranslationOptions) ([
 	if err := opts.Report("points", len(samples), len(samples)); err != nil { // #1647: report the record count
 		return nil, nil, err
 	}
-	f := math.Scalar(opts.ImportScale(r.FileUnitMM()))
+	f := math.Scalar(opts.ImportScale(fileUnitMM(r, data)))
 	if f == 1 {
 		return samples, warns, nil
 	}
@@ -82,6 +82,25 @@ func readScaled(r PointReader, data []byte, opts exchange.TranslationOptions) ([
 		samples[i] = s
 	}
 	return samples, warns, nil
+}
+
+// perFileUnitReader is an optional PointReader that derives the file's length unit from the decoded
+// content, overriding the static FileUnitMM. It exists for formats whose spec unit is unreliable in
+// the wild — an E57 that stores millimetre coordinates in the metre-typed cartesian field
+// (#1789). A reader that does not implement it keeps its static FileUnitMM.
+type perFileUnitReader interface {
+	fileUnitMM(data []byte) (mm float64, ok bool)
+}
+
+// fileUnitMM resolves the file→millimetre unit for r's data: a reader that inspects the content
+// (perFileUnitReader) wins when it can decide, else the reader's static FileUnitMM stands.
+func fileUnitMM(r PointReader, data []byte) float64 {
+	if pf, ok := r.(perFileUnitReader); ok {
+		if mm, ok := pf.fileUnitMM(data); ok {
+			return mm
+		}
+	}
+	return r.FileUnitMM()
 }
 
 // IsScanFile reports whether a path's extension is a 3D-scan point-cloud format handled by a

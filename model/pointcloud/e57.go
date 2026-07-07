@@ -20,8 +20,34 @@ func NewE57Reader() PointReader { return e57Reader{} }
 func (e57Reader) Extensions() []string { return []string{".e57"} }
 
 // FileUnitMM: E57 cartesian coordinates are metres by the ASTM E2807 spec, so one file unit is
-// 1000 mm (#1636).
+// 1000 mm (#1636). This is the static default; fileUnitMM overrides it per file when the scan's
+// encoding shows it is really in millimetres (#1789).
 func (e57Reader) FileUnitMM() float64 { return 1000 }
+
+// e57UnitMM maps the cartesian-resolution fact to the file's length unit in millimetres:
+// integer-resolution coordinates are millimetres (#1789), otherwise the ASTM E2807 metre.
+func e57UnitMM(integerResolution bool) float64 {
+	if integerResolution {
+		return 1 // millimetres
+	}
+	return 1000 // metres (spec default)
+}
+
+// fileUnitMM overrides the metre default for a common class of non-conformant scans: an E57 whose
+// cartesian channels are integer-resolution (see e57fmt.CartesianIntegerResolution) cannot truly be
+// metres — no scanner captures at 1-metre resolution — so its raw integers are millimetres, the
+// unit its writer used. Reading them as metres imports the cloud 1000× oversized and kilometres
+// from the origin, where it renders invisibly (#1789); the millimetre reading matches the identical
+// geometry re-exported as PLY. Conformant files (float coordinates, or a sub-metre ScaledInteger
+// scale) keep the metre unit. ok is false only when the header cannot be parsed, leaving the static
+// FileUnitMM in force (the decode then fails in ReadSamples with the real error).
+func (e57Reader) fileUnitMM(data []byte) (mm float64, ok bool) {
+	doc, err := e57fmt.Parse(data)
+	if err != nil {
+		return 0, false
+	}
+	return e57UnitMM(doc.CartesianIntegerResolution()), true
+}
 
 // ReadSamples decodes the E57's scan points into cloud-local samples, carrying colour (normalised
 // 0..1 by e57fmt) and raw intensity through when the scan declares those channels.
