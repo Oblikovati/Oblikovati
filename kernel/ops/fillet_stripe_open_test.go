@@ -3,60 +3,135 @@
 package ops_test
 
 import (
-	"strings"
+	"math"
 	"testing"
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
-	"oblikovati.org/math"
+	"oblikovati.org/kernel/topo"
+	gmath "oblikovati.org/math"
 )
 
-// TestFilletOpenCurvedTangentChainErrors is the ADR-0050 P6 partial-result contract: filleting an
-// OPEN tangent chain that crosses a curved face (a straight-arc-straight sub-selection of the top
-// rim) is not yet buildable — its setback end-caps are future work. It must fail with an ACTIONABLE
-// message (select the whole loop, or one edge at a time), not the misleading "miter corner's outer
-// face must be planar" the per-edge path emitted, and not a silently wrong body.
-func TestFilletOpenCurvedTangentChainErrors(t *testing.T) {
-	box := csgBox(math.P3(0, 0, 0), 4, 4, 4)
+// countPlanes counts a body's planar faces.
+func countPlanes(b *topo.Body) int {
+	n := 0
+	for _, f := range b.Faces() {
+		if _, ok := f.Geometry().(geom.Plane); ok {
+			n++
+		}
+	}
+	return n
+}
+
+// TestFilletOpenCurvedTangentStripe is the ADR-0050 P6 open-run acceptance: filleting a CONTIGUOUS OPEN
+// sub-run of a curved tangent chain (a straight–arc–straight stretch of the top rim of a box whose
+// vertical edges are already rounded) rounds the run as one stripe and closes each end with a flat
+// setback cap (OCCT's free-end ChFi3d_CoupeParPlan). The result is a valid closed manifold solid with
+// two new planar cap faces, and the removed volume matches the exact rolling-ball notch integral (the
+// ground truth OCCT approximates) — verifying the caps orient the tube outward, not inside-out.
+func TestFilletOpenCurvedTangentStripe(t *testing.T) {
+	filleted := boxWithRoundedVerticals(t, 4, 0.5)
+	before := ops.BodyGeometryProperties(filleted, ops.DefaultQuality()).Volume
+	planesBefore := countPlanes(filleted)
+
+	seed := firstStraightTopEdge(t, filleted)
+	chain, _, err := ops.TangentEdgeChain(filleted, seed, ops.DefaultTangentChainAngle)
+	if err != nil {
+		t.Fatal(err)
+	}
+	open := chain[:3] // straight, arc, straight — a contiguous open sub-run of the closed loop
+	const r = 0.25
+
+	res, err := ops.FilletEdges(filleted, open, r)
+	if err != nil {
+		t.Fatalf("open curved tangent-stripe fillet failed: %v", err)
+	}
+	rep := ops.Validate(res)
+	if !rep.Valid || !res.IsSolid() || !rep.Manifold || !rep.Closed || !rep.OrientationOK {
+		t.Fatalf("open-stripe result invalid: valid=%v solid=%v manifold=%v closed=%v orient=%v issues=%v",
+			rep.Valid, res.IsSolid(), rep.Manifold, rep.Closed, rep.OrientationOK, rep.Issues)
+	}
+	if rep.EulerCharacteristic != 2 {
+		t.Errorf("Euler characteristic = %d, want 2 (genus-0 solid)", rep.EulerCharacteristic)
+	}
+	// Two flat run-out caps: the open run adds exactly two new planar faces over the closed body.
+	if got := countPlanes(res) - planesBefore; got != 2 {
+		t.Errorf("new planar faces = %d, want 2 (one flat setback cap per open end)", got)
+	}
+	// One torus over the single arc segment, two cylinders over the two straight segments (plus the four
+	// pre-existing vertical-edge cylinders).
+	if tori := countTorus(res); tori != 1 {
+		t.Errorf("torus faces = %d, want 1 (the single arc segment)", tori)
+	}
+	after := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	removed := before - after
+	want := openStripeRemovedVolume(r)
+	// Cross-check against OCCT: BRepFilletAPI_MakeFillet removes 0.198382 over the WHOLE 15.14-long
+	// tangent loop (it propagates); the same per-unit cross-section over just this 6.79-long run scales
+	// to ≈0.089, matching both `want` (the exact analytic) and our tessellated 0.0919 to a few percent.
+	if math.Abs(removed-want) > 0.1*want {
+		t.Errorf("removed volume = %g, want ≈%g (rolling-ball notch over straight–arc–straight)", removed, want)
+	}
+}
+
+// openStripeRemovedVolume is the EXACT material a radius-r rolling-ball fillet removes over the
+// straight–arc–straight run of the top rim (box side 4, vertical fillets 0.5). Each 90° convex edge
+// removes the notch area r²(1−π/4) per unit length; the straight tops are length (4−2·0.5)=3 each, and
+// the arc is a quarter turn of radius R=0.5 whose swept volume follows Pappus about the corner axis.
+// This is the ground truth OCCT's BRepFilletAPI_MakeFillet converges to.
+func openStripeRemovedVolume(r float64) float64 {
+	const R, side, vfil = 0.5, 4.0, 0.5
+	notch := r * r * (1 - math.Pi/4)
+	straightLen := side - 2*vfil // 3
+	straight := 2 * notch * straightLen
+	// Pappus: the notch centroid rides at radius R − cx from the corner axis, where cx is the notch's
+	// own centroid offset from the rim; swept through a quarter turn (π/2).
+	cx := notchCentroidOffset(r)
+	arc := notch * (math.Pi / 2) * (R - cx)
+	return straight + arc
+}
+
+// notchCentroidOffset is the inward distance from the convex edge to the centroid of the corner notch
+// (the r×r square minus its quarter disc), = r·(2/3)/(4−π) along each leg by symmetry.
+func notchCentroidOffset(r float64) float64 {
+	// square centroid at r/2, area r²; quarter-disc centroid at 4r/3π from the corner, area πr²/4.
+	num := r*r*(r/2) - (math.Pi/4)*r*r*(4*r/(3*math.Pi))
+	return num / (r * r * (1 - math.Pi/4))
+}
+
+// boxWithRoundedVerticals builds a box of the given side with its four vertical edges filleted at vr.
+func boxWithRoundedVerticals(t *testing.T, side, vr float64) *topo.Body {
+	t.Helper()
+	box := csgBox(gmath.P3(0, 0, 0), side, side, side)
 	var verts [][]byte
 	for _, e := range box.Edges() {
 		if a, c := e.StartVertex().Point(), e.EndVertex().Point(); a.X == c.X && a.Y == c.Y {
 			verts = append(verts, e.ReferenceKey())
 		}
 	}
-	filleted, err := ops.FilletEdges(box, verts, 0.5)
+	filleted, err := ops.FilletEdges(box, verts, vr)
 	if err != nil {
 		t.Fatalf("vertical fillet setup: %v", err)
 	}
-	var seed []byte
+	return filleted
+}
+
+// firstStraightTopEdge returns a top-rim straight edge (a line, not an arc) to seed the tangent chain.
+func firstStraightTopEdge(t *testing.T, b *topo.Body) []byte {
+	t.Helper()
 	maxZ := 0.0
-	for _, v := range filleted.Vertices() {
+	for _, v := range b.Vertices() {
 		if v.Point().Z > maxZ {
 			maxZ = v.Point().Z
 		}
 	}
-	for _, e := range filleted.Edges() {
+	for _, e := range b.Edges() {
 		if e.StartVertex().Point().Z >= maxZ-1e-9 && e.EndVertex().Point().Z >= maxZ-1e-9 {
 			if _, isArc := e.Geometry().(geom.Arc3d); !isArc {
-				seed = e.ReferenceKey()
-				break
+				return e.ReferenceKey()
 			}
 		}
 	}
-	chain, _, err := ops.TangentEdgeChain(filleted, seed, ops.DefaultTangentChainAngle)
-	if err != nil {
-		t.Fatal(err)
-	}
-	open := chain[:3] // straight, arc, straight — an open sub-run of the closed loop
-
-	_, err = ops.FilletEdges(filleted, open, 0.25)
-	if err == nil {
-		t.Fatal("open curved tangent chain must fail (end-caps unimplemented), got a body")
-	}
-	if strings.Contains(err.Error(), "miter") {
-		t.Errorf("open-chain error should be actionable, not the miter message: %v", err)
-	}
-	if !strings.Contains(err.Error(), "OPEN tangent chain") {
-		t.Errorf("expected an actionable open-chain message, got: %v", err)
-	}
+	t.Fatal("no straight top-rim edge found")
+	return nil
 }

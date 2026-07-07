@@ -36,20 +36,33 @@ type stripeSeg struct {
 type tangentStripe struct {
 	shared   *topo.Face
 	r        float64
+	closed   bool           // a closed loop (no terminals) vs an open run (two flat setback caps)
 	edges    []*topo.Edge   // the chain edges, ordered; edges[i] is segment i's guide
 	segs     []stripeSeg    // one per chain edge
 	apex     []math.Point3  // apex[j] = tube apex of the section circle at junction j (entry of seg j)
-	junction []*topo.Vertex // junction[j] = the original top vertex where segs[j-1] meets segs[j]
-	down     []*topo.Edge   // down[j] = the vertical smooth edge below junction[j], split at depth r
+	junction []*topo.Vertex // junction[j] = the original top vertex where segs[j-1] meets segs[j]; nil at an open terminal
+	down     []*topo.Edge   // down[j] = the vertical smooth edge below junction[j], split at depth r; nil at a terminal
+	term     [2]stripeTerm  // (open only) the two run-out terminals: [0]=entry of seg 0, [1]=exit of the last seg
 }
 
-// curvedTangentChain reports whether the picks are exactly a constant-radius tangent chain at least
-// one of whose edges borders a curved (cylinder) face, returning the ordered edges, the radius, and
-// whether the chain closes a loop. ok=false leaves the selection to the existing paths (an all-planar
-// chain, a non-uniform radius, or a set that is not one whole tangent run) — so nothing there
-// regresses. The caller routes a CLOSED chain to the stripe assembler and an OPEN one to an honest
-// partial-result error (its setback end-caps are future work).
-func curvedTangentChain(body *topo.Body, picks []EdgeFilletRadii) (edges []*topo.Edge, r float64, wholeClosed, ok bool) {
+// stripeTerm is one run-out end of an OPEN stripe — the tube's flat setback cap. The cap is the quarter
+// disk bounded by the end section arc (topA→apex→wallA) and the two lines back to the surviving corner
+// vertex; it lies in the section plane ⊥ the spine, so it never intrudes on the neighbouring geometry.
+// Mirrors OCCT's free-end ChFi3d_CoupeParPlan planar cut and our own arc-fillet setback end-cap.
+type stripeTerm struct {
+	vertex      *topo.Vertex // the original corner vertex the tube ends at (survives; the cap's apex-of-triangle)
+	apex        math.Point3  // the section arc's exposed midpoint
+	topA, wallA math.Point3  // the section feet on the shared face and the wall
+	seg         int          // the segment this terminal ends
+}
+
+// curvedTangentChain reports whether the picks are a constant-radius tangent chain at least one of
+// whose edges borders a curved (cylinder) face, returning the ordered edges, the radius, and whether
+// the run closes a loop (closed=true) or is a single contiguous open sub-run (closed=false). ok=false
+// leaves the selection to the existing paths (an all-planar chain, a non-uniform radius, or a gapped /
+// scattered subset) — so nothing there regresses. The caller routes both a closed loop and a
+// contiguous open run to the stripe assembler; the open run terminates in flat setback caps.
+func curvedTangentChain(body *topo.Body, picks []EdgeFilletRadii) (edges []*topo.Edge, r float64, closed, ok bool) {
 	if len(picks) < 2 || !uniformConstRadius(picks) {
 		return nil, 0, false, false
 	}
@@ -57,16 +70,76 @@ func curvedTangentChain(body *topo.Body, picks []EdgeFilletRadii) (edges []*topo
 	if err != nil || !picksWithinChain(picks, maxKeys) || !anyCurvedAdjacent(body, picks) {
 		return nil, 0, false, false
 	}
-	// The whole closed loop is exactly buildable as a stripe; a proper subset or an open run is not
-	// (its setback end-caps are future work) — the caller turns that into an honest error.
-	if isClosed && len(picks) == len(maxKeys) && sameKeySet(maxKeys, picks) {
-		es := make([]*topo.Edge, len(maxKeys))
-		for i, k := range maxKeys {
-			es[i], _ = body.FindEdgeByKey(k)
-		}
-		return es, picks[0].R0, true, true
+	edges, closed, ok = orderPicksOnChain(body, picks, maxKeys, isClosed)
+	if !ok {
+		return nil, 0, false, false
 	}
-	return nil, picks[0].R0, false, true
+	return edges, picks[0].R0, closed, true
+}
+
+// orderPicksOnChain orders the picked edges along the maximal tangent chain and reports whether they
+// are the whole closed loop (closed=true) or a single CONTIGUOUS open run (closed=false). maxKeys is
+// already chain-ordered (consecutive keys share a vertex), so a valid selection is either every key
+// (closed loop) or one unbroken stretch of them; a gapped or scattered subset returns ok=false.
+func orderPicksOnChain(body *topo.Body, picks []EdgeFilletRadii, maxKeys [][]byte, isClosed bool) (edges []*topo.Edge, closed, ok bool) {
+	if isClosed && len(picks) == len(maxKeys) {
+		return edgesForKeys(body, maxKeys), true, true
+	}
+	picked := make(map[string]bool, len(picks))
+	for _, p := range picks {
+		picked[string(p.Key)] = true
+	}
+	run, runOk := contiguousRun(maxKeys, picked, isClosed)
+	if !runOk {
+		return nil, false, false
+	}
+	return edgesForKeys(body, run), false, true
+}
+
+// contiguousRun returns the picked keys as one unbroken stretch of the chain order, or ok=false when
+// the picks break into more than one run. On a closed chain the single run may wrap the seam (a
+// prefix + suffix that are adjacent through the loop closure); on an open chain no wrap is allowed.
+func contiguousRun(maxKeys [][]byte, picked map[string]bool, isClosed bool) ([][]byte, bool) {
+	var idx []int
+	for i, k := range maxKeys {
+		if picked[string(k)] {
+			idx = append(idx, i)
+		}
+	}
+	if len(idx) == 0 {
+		return nil, false
+	}
+	gapAt, gaps := 0, 0
+	for i := 1; i < len(idx); i++ {
+		if idx[i] != idx[i-1]+1 {
+			gaps, gapAt = gaps+1, i
+		}
+	}
+	if gaps == 0 {
+		return keysAtIndices(maxKeys, idx), true // one linear stretch
+	}
+	if gaps == 1 && isClosed {
+		return keysAtIndices(maxKeys, append(idx[gapAt:], idx[:gapAt]...)), true // wraps the seam
+	}
+	return nil, false
+}
+
+// keysAtIndices gathers maxKeys at the given (chain-ordered) positions.
+func keysAtIndices(maxKeys [][]byte, idx []int) [][]byte {
+	out := make([][]byte, len(idx))
+	for i, j := range idx {
+		out[i] = maxKeys[j]
+	}
+	return out
+}
+
+// edgesForKeys resolves chain keys to their edges in body order.
+func edgesForKeys(body *topo.Body, keys [][]byte) []*topo.Edge {
+	es := make([]*topo.Edge, len(keys))
+	for i, k := range keys {
+		es[i], _ = body.FindEdgeByKey(k)
+	}
+	return es
 }
 
 // picksWithinChain reports whether every pick key lies on the maximal tangent chain — i.e. the picks
@@ -109,29 +182,11 @@ func uniformConstRadius(picks []EdgeFilletRadii) bool {
 	return true
 }
 
-// sameKeySet reports whether the ordered chain keys and the pick set are the same edges (the user
-// selected exactly the tangent loop, not a subset or superset of it).
-func sameKeySet(keys [][]byte, picks []EdgeFilletRadii) bool {
-	seen := make(map[string]bool, len(keys))
-	for _, k := range keys {
-		seen[string(k)] = true
-	}
-	for _, p := range picks {
-		if !seen[string(p.Key)] {
-			return false
-		}
-	}
-	return len(keys) == len(picks)
-}
-
-// solveTangentStripe drives the blend engine over the chain and assembles the per-segment contacts +
-// the junction section apices. It handles the closed, single-shared-face case (the #1797 acceptance);
-// it errors clearly on the cases it does not yet cover (open chain, no common face) rather than
-// producing a wrong body — OCCT's localized partial-result contract.
+// solveTangentStripe drives the blend engine over the chain and assembles the per-segment contacts,
+// the interior junction section apices, and (for an open run) the two flat setback terminals. It errors
+// clearly on the cases it does not cover (no common face) rather than producing a wrong body — OCCT's
+// localized partial-result contract.
 func solveTangentStripe(body *topo.Body, edges []*topo.Edge, closed bool, r float64) (*tangentStripe, error) {
-	if !closed {
-		return nil, fmt.Errorf("fillet: open tangent chains are not yet supported (a closed loop or a single edge is)")
-	}
 	shared := commonFaceOfAll(edges)
 	if shared == nil {
 		return nil, fmt.Errorf("fillet: tangent-chain segments do not share a common face (general stripes are future work)")
@@ -142,7 +197,7 @@ func solveTangentStripe(body *topo.Body, edges []*topo.Edge, closed bool, r floa
 	}
 	m := &blend.Marcher{Inside: func(p math.Point3) bool { return PointInsideBody(body, p) },
 		Res: geom.ResolutionForBox(body.RangeBox())}
-	st := &tangentStripe{shared: shared, r: r, edges: edges}
+	st := &tangentStripe{shared: shared, r: r, closed: closed, edges: edges}
 	if err := st.marchSegments(sp, m, r); err != nil {
 		return nil, err
 	}
@@ -208,14 +263,22 @@ func reseatBlendSurface(surf geom.Surface, apex, entryWall math.Point3) geom.Sur
 	return surf
 }
 
-// solveJunctions records, per junction, the original top vertex two consecutive chain edges share and
-// the single vertical smooth edge descending from it — the edge the stripe splits at depth r (its
-// upper part is consumed by the blend, its lower part survives as the shortened walls' side).
+// solveJunctions records, per INTERIOR junction, the original top vertex two consecutive chain edges
+// share and the single vertical smooth edge descending from it — the edge the stripe splits at depth r
+// (its upper part consumed by the blend, its lower part surviving). A closed loop has n such junctions
+// (the wrap included); an open run has n−1 (its two ends are terminals, resolved separately).
 func (st *tangentStripe) solveJunctions() error {
 	n := len(st.edges)
 	st.junction = make([]*topo.Vertex, n)
 	st.down = make([]*topo.Edge, n)
-	for j := 0; j < n; j++ {
+	first := 0
+	if !st.closed {
+		if err := st.solveTerminalVertices(); err != nil {
+			return err
+		}
+		first = 1 // seg 0's entry is a terminal, not a junction
+	}
+	for j := first; j < n; j++ {
 		prev := st.edges[(j-1+n)%n]
 		v := sharedVertex(prev, st.edges[j])
 		if v == nil {
@@ -228,6 +291,28 @@ func (st *tangentStripe) solveJunctions() error {
 		st.junction[j], st.down[j] = v, d
 	}
 	return nil
+}
+
+// solveTerminalVertices sets the surviving corner vertex at each end of an open run: the guide edge's
+// endpoint NOT shared with its inner neighbour (the run-out corner the flat cap folds back to).
+func (st *tangentStripe) solveTerminalVertices() error {
+	n := len(st.edges)
+	v0 := freeEndVertex(st.edges[0], st.edges[1])
+	vn := freeEndVertex(st.edges[n-1], st.edges[n-2])
+	if v0 == nil || vn == nil {
+		return fmt.Errorf("fillet: open stripe terminal has no free end vertex")
+	}
+	st.term[0].vertex, st.term[1].vertex = v0, vn
+	return nil
+}
+
+// freeEndVertex returns e's vertex that is NOT the one it shares with neighbour nb — the run-out end.
+func freeEndVertex(e, nb *topo.Edge) *topo.Vertex {
+	shared := sharedVertex(e, nb)
+	if e.StartVertex() != shared {
+		return e.StartVertex()
+	}
+	return e.EndVertex()
 }
 
 // sharedVertex returns the vertex shared by two edges, or nil when they meet at none.
@@ -274,20 +359,48 @@ func stripeSegOf(bs blend.BlendSegment, shared *topo.Face) (stripeSeg, error) {
 	return stripeSeg{}, fmt.Errorf("fillet: a stripe segment does not border the shared face")
 }
 
-// solveApices computes each junction's tube apex — the exposed midpoint of the section circle the two
-// consecutive blend faces share — via the engine's ball centre + section at the junction guide point.
+// solveApices computes each segment ENTRY's tube apex — the exposed midpoint of the section circle two
+// consecutive blend faces share — via the engine's ball centre + section at the entry guide point. For
+// an open run it then resolves the two run-out terminals (the entry of seg 0 and the exit of the last).
 func (st *tangentStripe) solveApices(sp *blend.Spine, m *blend.Marcher, r float64) error {
 	n := len(st.segs)
 	st.apex = make([]math.Point3, n)
 	for j := 0; j < n; j++ {
-		first, _ := sp.EdgeSpineRange(j) // entry of segment j = junction j
-		sharedS, wallS := st.shared.Geometry(), st.segs[j].wall.Geometry()
-		c, ok := m.BallCentre(sp.PointAt(first), sharedS, wallS, r)
+		a, ok := st.entryApex(sp, m, r, j)
 		if !ok {
 			return fmt.Errorf("fillet: no section at stripe junction %d", j)
 		}
-		st.apex[j] = exposedApex(c, st.segs[j].topA, st.segs[j].wallA, r)
+		st.apex[j] = a
 	}
+	if st.closed {
+		return nil
+	}
+	return st.solveTerminalApices(sp, m, r)
+}
+
+// entryApex is the exposed section apex at segment j's entry (the spine's first abscissa on edge j).
+func (st *tangentStripe) entryApex(sp *blend.Spine, m *blend.Marcher, r float64, j int) (math.Point3, bool) {
+	first, _ := sp.EdgeSpineRange(j)
+	c, ok := m.BallCentre(sp.PointAt(first), st.shared.Geometry(), st.segs[j].wall.Geometry(), r)
+	if !ok {
+		return math.Point3{}, false
+	}
+	return exposedApex(c, st.segs[j].topA, st.segs[j].wallA, r), true
+}
+
+// solveTerminalApices fills the two open-run terminals' cap geometry: terminal 0 reuses seg 0's entry
+// section; terminal 1 is seg (n−1)'s EXIT section (spine's last abscissa there). The surviving vertices
+// are set later in solveTerminalVertices.
+func (st *tangentStripe) solveTerminalApices(sp *blend.Spine, m *blend.Marcher, r float64) error {
+	n := len(st.segs)
+	st.term[0].apex, st.term[0].topA, st.term[0].wallA, st.term[0].seg = st.apex[0], st.segs[0].topA, st.segs[0].wallA, 0
+	_, last := sp.EdgeSpineRange(n - 1)
+	c, ok := m.BallCentre(sp.PointAt(last), st.shared.Geometry(), st.segs[n-1].wall.Geometry(), r)
+	if !ok {
+		return fmt.Errorf("fillet: no section at the open stripe's end terminal")
+	}
+	st.term[1] = stripeTerm{apex: exposedApex(c, st.segs[n-1].topB, st.segs[n-1].wallB, r),
+		topA: st.segs[n-1].topB, wallA: st.segs[n-1].wallB, seg: n - 1}
 	return nil
 }
 

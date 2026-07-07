@@ -65,9 +65,11 @@ func TestFilletTangentStripeTopPerimeter(t *testing.T) {
 		t.Errorf("cylinder faces = %d, want 8 (4 vertical + 4 straight blends)", cyls)
 	}
 	after := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
-	if removed := before - after; removed < 0.15 || removed > 0.26 {
-		// ≈ filletNotch(0.25)·perimeter(≈15.1) with a curvature correction on the four arcs.
-		t.Errorf("removed volume = %g, want ≈0.20 (a thin fillet tube around the top rim)", removed)
+	if removed := before - after; removed < 0.18 || removed > 0.22 {
+		// OCCT BRepFilletAPI_MakeFillet oracle removes 0.198382 for this exact fixture; we read 0.2027
+		// — a ~2% tessellation overshoot on the curved blend faces at DefaultQuality (verified against a
+		// locally-built OCCT TKFillet). The tolerance brackets that agreement.
+		t.Errorf("removed volume = %g, want ≈0.198 (OCCT oracle for the top-rim stripe)", removed)
 	}
 }
 
