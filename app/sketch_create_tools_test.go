@@ -30,6 +30,31 @@ func TestSketchChamferTool(t *testing.T) {
 	}
 }
 
+// TestSketchChamferToolInSketchClickRoutes is the #1799 regression for chamfer: it drives
+// the REAL in-sketch pick route (Session.Click → sketchEntityPointer). Before the fix the
+// tool did not satisfy SketchEntityTool, so in-sketch clicks were silently dropped.
+func TestSketchChamferToolInSketchClickRoutes(t *testing.T) {
+	s, sk := sketchSession(t)
+	corner := sk.Points().Add(gmath.P2(0, 0)) // origin ↔ pixel (100,100)
+	farA, _ := screenToSketch(s, 170, 100)
+	farB, _ := screenToSketch(s, 100, 170)
+	sk.Lines().Add(corner, sk.Points().Add(farA))
+	sk.Lines().Add(corner, sk.Points().Add(farB))
+	before := sk.Lines().Count()
+
+	tool := NewSketchChamferTool(1)
+	s.StartTool(tool)
+	s.Click(135, 100)
+	s.Click(100, 135) // second pick auto-commits
+
+	if s.ActiveTool() != nil {
+		t.Fatal("chamfer tool still active — in-sketch clicks did not reach it (#1799)")
+	}
+	if sk.Lines().Count() != before+1 {
+		t.Fatalf("lines after in-sketch chamfer = %d, want %d (clicks were dropped)", sk.Lines().Count(), before+1)
+	}
+}
+
 // Slot draws a straight slot from two centre clicks (two lines + two arc caps).
 func TestSketchSlotTool(t *testing.T) {
 	s, sk := sketchSession(t)

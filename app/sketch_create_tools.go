@@ -31,10 +31,17 @@ func NewSketchChamferTool(distance float64) *SketchChamferTool {
 
 func (t *SketchChamferTool) Name() string                  { return "Chamfer" }
 func (t *SketchChamferTool) Pick(_ *Session, s Selectable) { t.take(s) }
-func (t *SketchChamferTool) CanCommit() bool               { return t.ready() }
-func (t *SketchChamferTool) AutoCommitOnPick() bool        { return true }
-func (t *SketchChamferTool) Cancel(*Session)               { t.reset() }
-func (t *SketchChamferTool) Prompt(*Session) string        { return "Pick two lines to chamfer." }
+
+// Accepts highlights the lines a chamfer can bevel (the hover-candidate cue).
+func (t *SketchChamferTool) Accepts(e sketch.Entity) bool { return entityKindIs(e, sketch.LineKind) }
+
+// Chamfer must satisfy SketchEntityTool so in-sketch clicks reach it (#1799).
+var _ SketchEntityTool = (*SketchChamferTool)(nil)
+
+func (t *SketchChamferTool) CanCommit() bool        { return t.ready() }
+func (t *SketchChamferTool) AutoCommitOnPick() bool { return true }
+func (t *SketchChamferTool) Cancel(*Session)        { t.reset() }
+func (t *SketchChamferTool) Prompt(*Session) string { return "Pick two lines to chamfer." }
 
 // SetDistance sets the chamfer setback.
 func (t *SketchChamferTool) SetDistance(d float64) { t.distance = math.Scalar(d) }

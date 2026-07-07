@@ -17,15 +17,45 @@ type pickCollector struct {
 	want  int
 }
 
+// take is the 3D-viewport pick route (Tool.Pick); PickSnap is the in-sketch route. Both
+// funnel through takeEntity so the two entry points share the dedup / capacity rule.
 func (c *pickCollector) take(sel Selectable) {
-	if h, ok := sel.(SketchEntityHandle); ok && len(c.picks) < c.want {
-		c.picks = append(c.picks, h.Entity)
+	if h, ok := sel.(SketchEntityHandle); ok {
+		c.takeEntity(h.Entity)
 	}
+}
+
+// PickSnap implements the entity-pick half of [SketchEntityTool]: inside a 2D sketch,
+// Session.sketchEntityPointer delivers every entity click HERE, not through Pick. A modify
+// tool that had only Pick therefore had its in-sketch clicks silently dropped, so Fillet/
+// Chamfer/Offset/Mirror did nothing (#1799). The snap carries nothing a corner blend,
+// offset, or mirror needs.
+func (c *pickCollector) PickSnap(ent sketch.Entity, _ SnapResult) { c.takeEntity(ent) }
+
+// takeEntity records one entity pick, ignoring a nil, a repeat of an already-picked entity
+// (a corner needs two DISTINCT lines), and any pick past `want`.
+func (c *pickCollector) takeEntity(ent sketch.Entity) {
+	if ent == nil || len(c.picks) >= c.want {
+		return
+	}
+	for _, p := range c.picks {
+		if p == ent {
+			return
+		}
+	}
+	c.picks = append(c.picks, ent)
 }
 
 func (c *pickCollector) ready() bool             { return len(c.picks) == c.want }
 func (c *pickCollector) reset()                  { c.picks = nil }
 func (c *pickCollector) Picked() []sketch.Entity { return c.picks }
+
+// The modify tools must satisfy SketchEntityTool so in-sketch clicks route to them (#1799).
+var (
+	_ SketchEntityTool = (*SketchFilletTool)(nil)
+	_ SketchEntityTool = (*SketchOffsetTool)(nil)
+	_ SketchEntityTool = (*SketchMirrorTool)(nil)
+)
 
 // SketchFilletTool rounds the corner between two picked lines with a tangent arc.
 type SketchFilletTool struct {
@@ -41,10 +71,13 @@ func NewSketchFilletTool(radius float64) *SketchFilletTool {
 
 func (t *SketchFilletTool) Name() string                  { return "Sketch Fillet" }
 func (t *SketchFilletTool) Pick(_ *Session, s Selectable) { t.take(s) }
-func (t *SketchFilletTool) CanCommit() bool               { return t.ready() }
-func (t *SketchFilletTool) AutoCommitOnPick() bool        { return true }
-func (t *SketchFilletTool) Cancel(*Session)               { t.reset() }
-func (t *SketchFilletTool) Prompt(*Session) string        { return "Pick two lines to fillet." }
+
+// Accepts highlights the lines a fillet can blend (the hover-candidate cue).
+func (t *SketchFilletTool) Accepts(e sketch.Entity) bool { return entityKindIs(e, sketch.LineKind) }
+func (t *SketchFilletTool) CanCommit() bool              { return t.ready() }
+func (t *SketchFilletTool) AutoCommitOnPick() bool       { return true }
+func (t *SketchFilletTool) Cancel(*Session)              { t.reset() }
+func (t *SketchFilletTool) Prompt(*Session) string       { return "Pick two lines to fillet." }
 
 // SetRadius sets the fillet radius.
 func (t *SketchFilletTool) SetRadius(r float64) { t.radius = math.Scalar(r) }
@@ -82,10 +115,16 @@ func NewSketchOffsetTool(distance float64) *SketchOffsetTool {
 
 func (t *SketchOffsetTool) Name() string                  { return "Offset" }
 func (t *SketchOffsetTool) Pick(_ *Session, s Selectable) { t.take(s) }
-func (t *SketchOffsetTool) CanCommit() bool               { return t.ready() }
-func (t *SketchOffsetTool) AutoCommitOnPick() bool        { return true }
-func (t *SketchOffsetTool) Cancel(*Session)               { t.reset() }
-func (t *SketchOffsetTool) Prompt(*Session) string        { return "Pick a curve to offset." }
+
+// Accepts highlights the curves OffsetEntity handles: line, circle, arc. Uses the entity's
+// Kind() capability via entityKindIs, not a type switch, per the sketch-entity seam (#1624).
+func (t *SketchOffsetTool) Accepts(e sketch.Entity) bool {
+	return entityKindIs(e, sketch.LineKind, sketch.CircleKind, sketch.ArcKind)
+}
+func (t *SketchOffsetTool) CanCommit() bool        { return t.ready() }
+func (t *SketchOffsetTool) AutoCommitOnPick() bool { return true }
+func (t *SketchOffsetTool) Cancel(*Session)        { t.reset() }
+func (t *SketchOffsetTool) Prompt(*Session) string { return "Pick a curve to offset." }
 
 // SetDistance sets the offset distance.
 func (t *SketchOffsetTool) SetDistance(d float64) { t.distance = math.Scalar(d) }
@@ -118,10 +157,14 @@ func NewSketchMirrorTool() *SketchMirrorTool {
 
 func (t *SketchMirrorTool) Name() string                  { return "Mirror" }
 func (t *SketchMirrorTool) Pick(_ *Session, s Selectable) { t.take(s) }
-func (t *SketchMirrorTool) CanCommit() bool               { return t.ready() }
-func (t *SketchMirrorTool) AutoCommitOnPick() bool        { return true }
-func (t *SketchMirrorTool) Cancel(*Session)               { t.reset() }
-func (t *SketchMirrorTool) Prompt(*Session) string        { return "Pick geometry, then a mirror line." }
+
+// Accepts highlights any geometry as a mirror candidate — the first pick is the geometry
+// to copy, the second the mirror line (Commit validates the second is a line).
+func (t *SketchMirrorTool) Accepts(e sketch.Entity) bool { return e != nil }
+func (t *SketchMirrorTool) CanCommit() bool              { return t.ready() }
+func (t *SketchMirrorTool) AutoCommitOnPick() bool       { return true }
+func (t *SketchMirrorTool) Cancel(*Session)              { t.reset() }
+func (t *SketchMirrorTool) Prompt(*Session) string       { return "Pick geometry, then a mirror line." }
 
 // Commit mirrors the first picked entity across the second picked line.
 func (t *SketchMirrorTool) Commit(s *Session) error {
