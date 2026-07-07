@@ -27,6 +27,11 @@ func DraftFaces(solid *topo.Body, faceKeys [][]byte, pull math.Vector3, angle fl
 	if perr != nil {
 		return nil, perr
 	}
+	// #1802: the plane-only rebuild panics on a curved face left by a prior fillet/chamfer.
+	// Fail loudly (feature goes Sick) until the Phase-7 curved-draft modifier lands (#1809).
+	if err := requirePlanarBody(solid, "draft"); err != nil {
+		return nil, err
+	}
 	return rebuildWithPlanes(solid, "draft", true, func(f *topo.Face) geom.Plane {
 		if !sel[f.ID()] {
 			return f.Geometry().(geom.Plane)
