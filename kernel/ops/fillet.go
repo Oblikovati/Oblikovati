@@ -124,6 +124,11 @@ func filletEdgesCornerRec(body *topo.Body, picks []EdgeFilletRadii, corner Corne
 	if arc := loneArcPick(body, picks); arc != nil {
 		return FilletCylinderArc(body, arc.Key, arc.R0) // a cylinder/cap arc → torus + setback end-caps
 	}
+	if chain, r, closed, ok := curvedTangentChain(body, picks); ok {
+		// A closed mixed tangent loop (#1797) rounds as one continuous stripe; a contiguous open run
+		// (ADR-0050 P6) rounds the same way but terminates in a flat setback cap at each end.
+		return filletTangentStripe(body, chain, closed, r)
+	}
 	edges, err := resolveFilletPicks(body, picks)
 	if err != nil {
 		return nil, err
@@ -141,6 +146,9 @@ func filletEdgesCornerRec(body *topo.Body, picks []EdgeFilletRadii, corner Corne
 // assembles the validated result body. Round/setback corners have already been reduced to 3-edge
 // sphere blends by augmenting the third edge, so the corner solver only ever sees miters and blends.
 func filletResolvedEdges(body *topo.Body, edges []filletPick, concave ConcaveFill, rec *diag.Recorder) (*topo.Body, error) {
+	if err := validateFilletRadii(edges); err != nil {
+		return nil, err // #1800: reject an over-large radius before it self-intersects
+	}
 	blends, miters, err := computeCorners(edges)
 	if err != nil {
 		return nil, err

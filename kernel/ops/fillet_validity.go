@@ -1,0 +1,156 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package ops
+
+import (
+	"fmt"
+	stdmath "math"
+
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+)
+
+// filletFitEps guards the two direction-cosine degeneracies of the recession formula: near-flat
+// faces (1−c→0, the edge is barely a crease) and razor edges (1+c→0, anti-parallel faces). These
+// are absolute because c=nA·nB is a dimensionless cosine, not a length (ADR-0050 P2 / #1800).
+const filletFitEps = 1e-9
+
+// validateFilletRadii rejects picks whose radius exceeds the geometric maximum the local planar
+// geometry admits — the closed-form planar specialization of OCCT's seed-section solvability
+// (ChFiDS_StartsolFailure): past r_max the rolling-ball tangent band overruns the finite face and
+// the fillet self-intersects, which the topological Validate cannot catch (#1800). Only edges
+// between two planar faces are bounded here; curved-neighbour edges get their r_max from the
+// marcher's seed solve in Phase 4. Radii are unchanged — this fails honestly, it does not clamp.
+func validateFilletRadii(picks []filletPick) error {
+	for _, p := range picks {
+		a, b, nA, nB, err := edgePlanarFaces(p.edge)
+		if err != nil {
+			continue // non-planar edge: not on the analytic planar path
+		}
+		rMax, bindingFace, bindingW, ok := maxFilletRadius(p, a, b, nA, nB, picks)
+		if !ok {
+			continue // degenerate dihedral: leave to the assembly's own validity gate
+		}
+		if r := p.maxRadius(); r > rMax*(1+1e-6) {
+			phi := stdmath.Acos(-clampUnit(float64(nA.Dot(nB)))) * 180 / stdmath.Pi
+			return fmt.Errorf(
+				"fillet: radius %g exceeds geometric maximum %g on edge %d (available in-face width %g on face %d, dihedral %.1f°); reduce the radius or use a smaller value",
+				r, rMax, p.edge.ID(), bindingW, bindingFace, phi)
+		}
+	}
+	return nil
+}
+
+// maxFilletRadius returns the largest constant radius that fits between the two planar faces of
+// pick p, r_max = cot(α/2)·min(W_A,W_B), with W the available in-face width toward the nearest
+// competing boundary (reduced by any co-filleted neighbour's own band). ok=false on a degenerate
+// dihedral (near-flat or razor faces). Mirrors the derivation in ADR-0050 Phase 2.
+func maxFilletRadius(p filletPick, a, b *topo.Face, nA, nB math.Vector3, all []filletPick) (rMax float64, bindingFace uint64, bindingW float64, ok bool) {
+	c := float64(nA.Dot(nB))
+	if 1-c < filletFitEps || 1+c < filletFitEps {
+		return 0, 0, 0, false
+	}
+	offDir := nA.Add(nB).Scale(math.Scalar(-1 / (1 + c)))
+	k := stdmath.Sqrt((1 + c) / (1 - c)) // cot(α/2): r_max = k · W
+	wA := availableWidth(p.edge, a, nA, offDir, all)
+	wB := availableWidth(p.edge, b, nB, offDir, all)
+	if wA <= wB {
+		return k * wA, a.ID(), wA, true
+	}
+	return k * wB, b.ID(), wB, true
+}
+
+// availableWidth is the smallest in-face clearance from edge e into face F perpendicular to e,
+// found by casting rays from samples along e toward the tangent-recession direction and taking
+// the nearest boundary hit. When the nearest boundary is itself a filleted edge, its own band is
+// subtracted so the two bands do not collide (constraint (b) of the ADR-0050 P2 derivation).
+func availableWidth(e *topo.Edge, f *topo.Face, nF, offDir math.Vector3, all []filletPick) float64 {
+	mF := offDir.Add(nF) // = tangent-recession direction, already in F's plane (offDir·nF = −1)
+	if l := float64(mF.Length()); l > 0 {
+		mF = mF.Scale(math.Scalar(1 / l))
+	}
+	yAxis := nF.Cross(mF) // in-plane, ⟂ to the ray
+	best := stdmath.Inf(1)
+	for _, p := range edgeSamples(e, 5) {
+		for _, g := range f.Edges() {
+			if g == e {
+				continue
+			}
+			s, hit := rayClearance(p, mF, yAxis, g.StartVertex().Point(), g.EndVertex().Point())
+			if hit {
+				best = stdmath.Min(best, s-neighbourBand(g, all))
+			}
+		}
+	}
+	return stdmath.Max(best, 0)
+}
+
+// rayClearance returns the distance s>0 at which the in-plane ray from origin O along xAxis
+// crosses segment [Q0,Q1] (coordinates taken in the (xAxis,yAxis) plane basis), or ok=false when
+// the segment does not straddle the ray on the forward side.
+func rayClearance(origin math.Point3, xAxis, yAxis math.Vector3, q0, q1 math.Point3) (float64, bool) {
+	y0 := float64(origin.VectorTo(q0).Dot(yAxis))
+	y1 := float64(origin.VectorTo(q1).Dot(yAxis))
+	if (y0 > 0) == (y1 > 0) {
+		return 0, false // both endpoints on the same side ⇒ no crossing of the y=0 ray line
+	}
+	u := y0 / (y0 - y1) // parameter along the segment where y=0
+	x0 := float64(origin.VectorTo(q0).Dot(xAxis))
+	x1 := float64(origin.VectorTo(q1).Dot(xAxis))
+	x := x0 + u*(x1-x0)
+	if x <= 0 {
+		return 0, false // crossing is behind the ray origin
+	}
+	return x, true
+}
+
+// neighbourBand is the in-face recession of edge g's own fillet when g is one of the picks, else
+// 0 — how far g's band eats into the shared face, subtracted from the clearance.
+func neighbourBand(g *topo.Edge, all []filletPick) float64 {
+	for _, p := range all {
+		if p.edge != g {
+			continue
+		}
+		_, _, nA, nB, err := edgePlanarFaces(g)
+		if err != nil {
+			return 0
+		}
+		c := float64(nA.Dot(nB))
+		if 1+c < filletFitEps {
+			return 0
+		}
+		return p.maxRadius() * stdmath.Sqrt((1-c)/(1+c)) // d(r) = r·√((1−c)/(1+c))
+	}
+	return 0
+}
+
+// edgeSamples returns n points spread evenly along a straight edge (planar-face edges are lines).
+func edgeSamples(e *topo.Edge, n int) []math.Point3 {
+	s, t := e.StartVertex().Point(), e.EndVertex().Point()
+	pts := make([]math.Point3, n)
+	for i := 0; i < n; i++ {
+		pts[i] = s.TranslateBy(s.VectorTo(t).Scale(math.Scalar(float64(i) / float64(n-1))))
+	}
+	return pts
+}
+
+// maxRadius is the largest radius applied along a pick (both ends plus any intermediate stops) —
+// the recession is deepest there, so the fit bound is checked against it.
+func (p filletPick) maxRadius() float64 {
+	m := stdmath.Max(p.r0, p.r1)
+	for _, rp := range p.mids {
+		m = stdmath.Max(m, rp.R)
+	}
+	return m
+}
+
+// clampUnit constrains x to [-1,1] so Acos of a rounded dot product never yields NaN.
+func clampUnit(x float64) float64 {
+	if x < -1 {
+		return -1
+	}
+	if x > 1 {
+		return 1
+	}
+	return x
+}

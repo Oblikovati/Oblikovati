@@ -19,20 +19,18 @@ import (
 // material toward the far end); a POSITIVE angle leans it outward (adds material). See the
 // convention pinned by TestDraftTapersSideFace, which drafts inward with a negative angle.
 func DraftFaces(solid *topo.Body, faceKeys [][]byte, pull math.Vector3, angle float64) (*topo.Body, error) {
-	sel, err := resolveFaceSet(solid, faceKeys)
-	if err != nil {
-		return nil, err
-	}
 	p, perr := math.UnitVector3FromVector(pull)
 	if perr != nil {
 		return nil, perr
 	}
-	return rebuildWithPlanes(solid, "draft", true, func(f *topo.Face) geom.Plane {
-		if !sel[f.ID()] {
-			return f.Geometry().(geom.Plane)
-		}
-		return draftedPlane(f, p, angle)
-	}), nil
+	// #1802 (ADR-0050 P7): the modifier-visitor tilts the drafted planar faces and re-intersects the
+	// neighbours — so a body carrying curved faces from a prior fillet drafts into a valid tapered
+	// solid (its fillet edges re-trimmed to arcs) instead of panicking in the plane-only rebuild.
+	mod, err := newDraftMod(solid, faceKeys, p, angle)
+	if err != nil {
+		return nil, err
+	}
+	return modifyBody(solid, mod, "draft"), nil
 }
 
 // draftedPlane returns a face's plane rotated by angle about its hinge (pull × normal),
