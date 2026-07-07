@@ -11,7 +11,6 @@ package lasfmt
 
 import (
 	"encoding/binary"
-	"fmt"
 
 	omath "oblikovati.org/math"
 )
@@ -66,24 +65,14 @@ func (d *Document) CoordinateUnitMetres() (float64, bool) {
 	return coordinateUnitMetres(d.data, d.header)
 }
 
-// Vertices decodes every point record's XYZ into real coordinates. It errors if the record stride
-// cannot hold an XYZ triple or the records run past the end of the file.
+// Vertices decodes every point record's XYZ into real coordinates. It is the position-only
+// projection of Scan for callers (the mesh importer) that do not need colour or intensity.
 func (d *Document) Vertices() ([]omath.Point3, error) {
-	h := d.header
-	if h.recordLength < 12 {
-		return nil, fmt.Errorf("lasfmt: point record length %d is too small to hold an XYZ triple", h.recordLength)
+	scan, err := d.Scan()
+	if err != nil {
+		return nil, err
 	}
-	start := uint64(h.pointDataOffset)
-	end := start + h.pointCount*uint64(h.recordLength)
-	if end > uint64(len(d.data)) {
-		return nil, fmt.Errorf("lasfmt: %d records of %d bytes from offset %d exceed the %d-byte file", h.pointCount, h.recordLength, start, len(d.data))
-	}
-	out := make([]omath.Point3, 0, h.pointCount)
-	for i := uint64(0); i < h.pointCount; i++ {
-		rec := d.data[start+i*uint64(h.recordLength):]
-		out = append(out, d.point(rec))
-	}
-	return out, nil
+	return scan.Points, nil
 }
 
 // point reads the leading X/Y/Z int32 of one record and applies the header scale and offset.

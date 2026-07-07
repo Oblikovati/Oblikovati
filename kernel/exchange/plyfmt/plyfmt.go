@@ -99,20 +99,14 @@ func (d *Document) byteOrder() binary.ByteOrder {
 	return binary.LittleEndian
 }
 
-// Vertices reads the vertex element's x/y/z positions.
+// Vertices reads the vertex element's x/y/z positions. It is the position-only projection of Scan
+// for callers (the mesh importer) that do not need colour or intensity.
 func (d *Document) Vertices() ([]omath.Point3, error) {
-	vtx, ok := d.element("vertex")
-	if !ok || vtx.Count == 0 {
-		return nil, fmt.Errorf("plyfmt: PLY has no vertex element")
-	}
-	xi, yi, zi, err := xyzIndices(vtx)
+	scan, err := d.Scan()
 	if err != nil {
 		return nil, err
 	}
-	if d.Format == "ascii" {
-		return d.asciiVertices(vtx, xi, yi, zi)
-	}
-	return d.binaryVertices(vtx, xi, yi, zi)
+	return scan.Points, nil
 }
 
 // Faces reads the face element's vertex-index lists (variable length); nil when there is no face
@@ -126,64 +120,6 @@ func (d *Document) Faces() ([][]int, error) {
 		return d.asciiFaces(face)
 	}
 	return d.binaryFaces(face)
-}
-
-// xyzIndices returns the property indices of x, y, z in an element, erroring if absent or behind a
-// list property the fixed-size stride cannot pass.
-func xyzIndices(e Element) (int, int, int, error) {
-	idx := map[string]int{}
-	for i, p := range e.Props {
-		if p.Scalar == "" {
-			return 0, 0, 0, fmt.Errorf("plyfmt: vertex has a list property %q before its positions", p.Name)
-		}
-		idx[p.Name] = i
-	}
-	xi, okx := idx["x"]
-	yi, oky := idx["y"]
-	zi, okz := idx["z"]
-	if !okx || !oky || !okz {
-		return 0, 0, 0, fmt.Errorf("plyfmt: vertex has no x/y/z properties")
-	}
-	return xi, yi, zi, nil
-}
-
-func (d *Document) asciiVertices(vtx Element, xi, yi, zi int) ([]omath.Point3, error) {
-	out := make([]omath.Point3, 0, vtx.Count)
-	sc := bufio.NewScanner(bytes.NewReader(d.body))
-	sc.Buffer(make([]byte, 0, 64*1024), 1<<20)
-	for sc.Scan() && len(out) < vtx.Count {
-		f := strings.Fields(sc.Text())
-		if len(f) <= zi {
-			continue
-		}
-		x, ex := strconv.ParseFloat(f[xi], 64)
-		y, ey := strconv.ParseFloat(f[yi], 64)
-		z, ez := strconv.ParseFloat(f[zi], 64)
-		if ex != nil || ey != nil || ez != nil {
-			return nil, fmt.Errorf("plyfmt: ascii vertex %d is not numeric: %q", len(out), sc.Text())
-		}
-		out = append(out, omath.P3(omath.Scalar(x), omath.Scalar(y), omath.Scalar(z)))
-	}
-	return out, nil
-}
-
-func (d *Document) binaryVertices(vtx Element, xi, yi, zi int) ([]omath.Point3, error) {
-	offsets, sizes, stride := layout(vtx)
-	order := d.byteOrder()
-	out := make([]omath.Point3, 0, vtx.Count)
-	for i := 0; i < vtx.Count; i++ {
-		base := i * stride
-		if base+stride > len(d.body) {
-			return nil, fmt.Errorf("plyfmt: truncated at vertex %d of %d", i, vtx.Count)
-		}
-		rec := d.body[base : base+stride]
-		out = append(out, omath.P3(
-			omath.Scalar(scalarValue(rec[offsets[xi]:], vtx.Props[xi].Scalar, sizes[xi], order)),
-			omath.Scalar(scalarValue(rec[offsets[yi]:], vtx.Props[yi].Scalar, sizes[yi], order)),
-			omath.Scalar(scalarValue(rec[offsets[zi]:], vtx.Props[zi].Scalar, sizes[zi], order)),
-		))
-	}
-	return out, nil
 }
 
 // asciiFaces reads the face lines after the vertex lines: "N i0 i1 … i(N-1)".

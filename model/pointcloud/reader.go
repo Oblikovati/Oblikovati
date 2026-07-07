@@ -84,6 +84,37 @@ func readScaled(r PointReader, data []byte, opts exchange.TranslationOptions) ([
 	return samples, warns, nil
 }
 
+// samplesFromChannels zips a format reader's decoded columns — positions plus optional RGB and
+// intensity aligned 1:1 with the points — into cloud-local samples. It is the single seam where the
+// E57/PLY/LAS readers turn their kernel format package's ScanData into PointSamples, so the
+// column→sample mapping lives in one place instead of each reader re-parsing bytes (#1788). A nil rgb
+// or intensity column marks that channel absent for every point; a present column is 1:1 with points.
+func samplesFromChannels(points []math.Point3, rgb [][3]float32, intensity []float64) []PointSample {
+	out := make([]PointSample, len(points))
+	for i, p := range points {
+		s := PointSample{Point: p}
+		if i < len(rgb) {
+			s.HasRGB = true
+			s.RGB = rgb[i]
+		}
+		if i < len(intensity) {
+			s.HasIntensity = true
+			s.Intensity = intensity[i]
+		}
+		out[i] = s
+	}
+	return out
+}
+
+// pointsOf projects samples onto their positions for the point-only Read path shared by every reader.
+func pointsOf(samples []PointSample) []math.Point3 {
+	out := make([]math.Point3, len(samples))
+	for i, s := range samples {
+		out[i] = s.Point
+	}
+	return out
+}
+
 // perFileUnitReader is an optional PointReader that derives the file's length unit from the decoded
 // content, overriding the static FileUnitMM. It exists for formats whose spec unit is unreliable in
 // the wild — an E57 that stores millimetre coordinates in the metre-typed cartesian field
@@ -205,11 +236,7 @@ func (r asciiReader) Read(data []byte) ([]math.Point3, []string, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	out := make([]math.Point3, len(samples))
-	for i, s := range samples {
-		out[i] = s.Point
-	}
-	return out, warns, nil
+	return pointsOf(samples), warns, nil
 }
 
 // scanLine parses one line into samples, returning a warning for a skipped malformed record (""
