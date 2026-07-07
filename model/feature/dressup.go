@@ -194,10 +194,12 @@ func (s *ShellFeature) Recompute(in Input) (Output, error) {
 	return shellBody(in, keys, callOrZero(s.def.Thickness), featOr(s.featName, "shell"))
 }
 
-// FaceDraftDefinition tapers selected faces by an angle about a pull direction.
+// FaceDraftDefinition tapers selected faces by an angle about a pull direction. Neutral, when set, is
+// the fixed parting plane each face pivots on (#1801); nil ⇒ the implicit lowest-vertex hinge.
 type FaceDraftDefinition struct {
 	FaceKeys  [][]byte
 	PullDir   math.Vector3
+	Neutral   *geom.Plane
 	Angle     func() float64
 	GeomFaces []topo.GeometricFaceRef // externally-authored drafted faces by geometric descriptor (ADR-0040)
 }
@@ -214,7 +216,7 @@ func (d *FaceDraftFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	return draftBody(in, keys, d.def.PullDir, callOrZero(d.def.Angle), "draft")
+	return draftBody(in, keys, d.def.PullDir, d.def.Neutral, callOrZero(d.def.Angle), "draft")
 }
 
 // ThreadDefinition applies thread data to a cylindrical face. Cut=false is a cosmetic thread
@@ -469,9 +471,15 @@ func (c *DressUpFeatures) AddDraft(faceKeys [][]byte, angle func() float64) *Par
 	return c.AddDraftPull(faceKeys, math.V3(0, 0, 1), angle)
 }
 
-// AddDraftPull tapers the given faces by angle about an explicit pull direction.
+// AddDraftPull tapers the given faces by angle about an explicit pull direction (implicit hinge).
 func (c *DressUpFeatures) AddDraftPull(faceKeys [][]byte, pull math.Vector3, angle func() float64) *PartFeature {
-	return c.engine.Add(&FaceDraftFeature{def: &FaceDraftDefinition{FaceKeys: faceKeys, PullDir: pull, Angle: angle}})
+	return c.AddDraftPullNeutral(faceKeys, pull, nil, angle)
+}
+
+// AddDraftPullNeutral tapers the given faces by angle about an explicit pull direction, pivoting each
+// face on the fixed neutral (parting) plane when one is given (#1801); nil ⇒ the implicit hinge.
+func (c *DressUpFeatures) AddDraftPullNeutral(faceKeys [][]byte, pull math.Vector3, neutral *geom.Plane, angle func() float64) *PartFeature {
+	return c.engine.Add(&FaceDraftFeature{def: &FaceDraftDefinition{FaceKeys: faceKeys, PullDir: pull, Neutral: neutral, Angle: angle}})
 }
 
 // addShell / addFaceDraft add a face dress-up from a fully-built definition (used by the

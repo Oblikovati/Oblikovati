@@ -8,6 +8,7 @@ import (
 	"sort"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -19,6 +20,29 @@ func draftPull(p []float64) math.Vector3 {
 		return math.V3(0, 0, 1)
 	}
 	return math.V3(p[0], p[1], p[2])
+}
+
+// draftNeutral reads a serialized draft neutral (parting) plane from its origin and normal, or nil when
+// absent/degenerate — the implicit lowest-vertex hinge (#1801).
+func draftNeutral(origin, normal []float64) *geom.Plane {
+	if len(origin) != 3 || len(normal) != 3 {
+		return nil
+	}
+	pl, err := geom.NewPlane(math.P3(origin[0], origin[1], origin[2]), math.V3(normal[0], normal[1], normal[2]))
+	if err != nil {
+		return nil
+	}
+	return &pl
+}
+
+// neutralData serializes a draft neutral plane to (origin, normal) float triples, or (nil, nil) when
+// no neutral plane is set.
+func neutralData(pl *geom.Plane) (origin, normal []float64) {
+	if pl == nil {
+		return nil, nil
+	}
+	n := pl.Normal()
+	return []float64{pl.Origin.X, pl.Origin.Y, pl.Origin.Z}, []float64{float64(n.X), float64(n.Y), float64(n.Z)}
 }
 
 // This file holds the YAML codecs for the dress-up family (fillet/chamfer/shell/draft/
@@ -193,9 +217,11 @@ func restoreRadiusPoints(pts []FilletRadiusPointData) []FilletRadiusPoint {
 // FaceDressData is a face-based dress-up (shell thickness / draft angle): the picked
 // faces as reference keys plus the scalar value, and (draft only) the pull direction.
 type FaceDressData struct {
-	Faces []string  `yaml:"faces"`
-	Value float64   `yaml:"value"`
-	Pull  []float64 `yaml:"pull,omitempty"` // draft pull direction (dx,dy,dz); absent ⇒ +Z
+	Faces         []string  `yaml:"faces"`
+	Value         float64   `yaml:"value"`
+	Pull          []float64 `yaml:"pull,omitempty"`          // draft pull direction (dx,dy,dz); absent ⇒ +Z
+	NeutralOrigin []float64 `yaml:"neutralOrigin,omitempty"` // draft neutral (parting) plane origin (x,y,z); absent ⇒ implicit hinge
+	NeutralNormal []float64 `yaml:"neutralNormal,omitempty"` // draft neutral plane normal (nx,ny,nz)
 	// GeomFaces are faces selected by a serialized GEOMETRIC descriptor (ADR-0040), the
 	// path the NX exporter uses since it cannot mint Oblikovati lineage keys. Empty for an
 	// Oblikovati-authored dress-up (which uses Faces).

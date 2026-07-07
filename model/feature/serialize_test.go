@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -87,6 +88,36 @@ func TestDressUpFeaturesRoundTrip(t *testing.T) {
 	thread := fresh.Item(4).Definition().(*ThreadFeature).Definition()
 	if string(thread.FaceKey) != "face-c" || thread.Designation != "M6x1" {
 		t.Errorf("thread = key %q designation %q, want face-c M6x1", thread.FaceKey, thread.Designation)
+	}
+}
+
+// TestDraftPullNeutralRoundTrip checks a draft's explicit pull direction and neutral (parting) plane
+// survive a recipe round trip (#1801).
+func TestDraftPullNeutralRoundTrip(t *testing.T) {
+	fs := NewPartFeatures(nil)
+	neutral, _ := geom.NewPlane(math.P3(0, 0, 3), math.V3(0, 0, 1))
+	NewDressUpFeatures(fs).AddDraftPullNeutral([][]byte{[]byte("face-x")}, math.V3(1, 0, 0), &neutral, func() float64 { return 0.1 })
+
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	fresh := NewPartFeatures(nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	def := fresh.Item(0).Definition().(*FaceDraftFeature).Definition()
+	if def.PullDir != (math.V3(1, 0, 0)) {
+		t.Errorf("pull dir = %v, want (1,0,0)", def.PullDir)
+	}
+	if def.Neutral == nil {
+		t.Fatal("neutral plane lost in round trip")
+	}
+	if d := geom.SignedDistanceToPlane(*def.Neutral, math.P3(0, 0, 3)); d > 1e-9 || d < -1e-9 {
+		t.Errorf("neutral plane origin moved: (0,0,3) is %g off it", d)
+	}
+	if n := def.Neutral.Normal(); n.Z < 0.999 {
+		t.Errorf("neutral normal = %v, want +Z", n)
 	}
 }
 
