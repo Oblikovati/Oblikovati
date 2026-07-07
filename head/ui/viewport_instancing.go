@@ -432,6 +432,26 @@ func cachedSourceMesh(src *topo.Body, cam scene.Camera, lookup renderer.SurfaceL
 // instancedBounds is the world-space bounding box of every instance, computed from each source's
 // range box transformed by its occurrence matrices — O(instances) and NO tessellation, so a 10k-copy
 // assembly frames its shadow/ground without building a world-body mesh. ok is false when empty.
+// cloudBounder is the one-method slice pointCloudFarBounds consumes (audit I5, the arrowSession
+// pattern): the visible point-cloud extent. *app.Session satisfies it implicitly, so the far-plane
+// helper does not take the whole session.
+type cloudBounder interface {
+	PointCloudBounds() math.Box
+}
+
+// pointCloudFarBounds returns the active part's visible point-cloud extent as float32 corners, so
+// viewportFarPlane can extend the far clip to enclose it. Point clouds are a separate retained-buffer
+// draw (uploadPointClouds); the instanced/overlay frameBounds never see them, so a large or distant
+// scan would otherwise fall beyond the fixed far plane and render as nothing (#1789).
+func pointCloudFarBounds(s cloudBounder) (mn, mx [3]float32, ok bool) {
+	box := s.PointCloudBounds()
+	if box.IsEmpty() {
+		return mn, mx, false
+	}
+	return [3]float32{float32(box.Min.X), float32(box.Min.Y), float32(box.Min.Z)},
+		[3]float32{float32(box.Max.X), float32(box.Max.Y), float32(box.Max.Z)}, true
+}
+
 func instancedBounds(groups []app.InstanceGroup) (min, max [3]float32, ok bool) {
 	min = [3]float32{stdmath.MaxFloat32, stdmath.MaxFloat32, stdmath.MaxFloat32}
 	max = [3]float32{-stdmath.MaxFloat32, -stdmath.MaxFloat32, -stdmath.MaxFloat32}
