@@ -56,6 +56,16 @@ func (d *Document) Header() Header {
 // Raw returns the original file bytes so callers can decode record extensions beyond XYZ.
 func (d *Document) Raw() []byte { return d.data }
 
+// CoordinateUnitMetres returns the size in metres of the file's horizontal coordinate unit as
+// declared by its CRS VLRs (WKT record 2112, or the GeoTIFF GeoKeys), and whether one was found —
+// 1.0 for metre, 0.3048 for the international foot, 0.30480060960121924 for the US survey foot, etc.
+// A point-cloud import uses it to place a scan at true scale instead of assuming metres; ok is false
+// when the file declares no linear CRS (a geographic degrees CRS, or no projection VLR at all), and
+// the caller falls back to its own unit policy (Oblikovati/Oblikovati#1789).
+func (d *Document) CoordinateUnitMetres() (float64, bool) {
+	return coordinateUnitMetres(d.data, d.header)
+}
+
 // Vertices decodes every point record's XYZ into real coordinates. It errors if the record stride
 // cannot hold an XYZ triple or the records run past the end of the file.
 func (d *Document) Vertices() ([]omath.Point3, error) {
