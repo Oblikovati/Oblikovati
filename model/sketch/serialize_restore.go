@@ -474,18 +474,6 @@ func (r *sketchRestorer) line(ids []int, i int) (*Line, error) {
 	return l, nil
 }
 
-func (r *sketchRestorer) circle(ids []int, i int) (*Circle, error) {
-	e, err := r.entity(ids, i)
-	if err != nil {
-		return nil, err
-	}
-	c, ok := e.(*Circle)
-	if !ok {
-		return nil, fmt.Errorf("entity %d is %T, want a circle", ids[i], e)
-	}
-	return c, nil
-}
-
 func (r *sketchRestorer) arc(ids []int, i int) (*Arc, error) {
 	e, err := r.entity(ids, i)
 	if err != nil {
