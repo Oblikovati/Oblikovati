@@ -100,6 +100,50 @@ func notchCentroidOffset(r float64) float64 {
 	return num / (r * r * (1 - math.Pi/4))
 }
 
+// TestFilletSingleVerticalOpenChain fillets a genuinely OPEN maximal tangent chain: a box with ONE
+// vertical edge rounded (r=0.5) has a top rim whose tangent run is straight–arc–straight, terminating at
+// two sharp 90° corners (not a closed loop). Filleting it (r=0.25) builds the open stripe with a flat
+// setback cap at each sharp-corner run-out. The removed volume is checked against a locally-built OCCT
+// BRepFilletAPI_MakeFillet oracle (0.103246) — confirming our flat cap matches OCCT's intersection-at-end
+// for a right-angle terminal, to tessellation tolerance.
+func TestFilletSingleVerticalOpenChain(t *testing.T) {
+	box := csgBox(gmath.P3(0, 0, 0), 4, 4, 4)
+	var one [][]byte
+	for _, e := range box.Edges() {
+		if a, c := e.StartVertex().Point(), e.EndVertex().Point(); a.X == c.X && a.Y == c.Y {
+			one = append(one, e.ReferenceKey())
+			break
+		}
+	}
+	f, err := ops.FilletEdges(box, one, 0.5)
+	if err != nil {
+		t.Fatalf("single vertical fillet: %v", err)
+	}
+	before := ops.BodyGeometryProperties(f, ops.DefaultQuality()).Volume
+
+	chain, closed, err := ops.TangentEdgeChain(f, firstStraightTopEdge(t, f), ops.DefaultTangentChainAngle)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if closed || len(chain) != 3 {
+		t.Fatalf("expected an OPEN 3-edge (straight–arc–straight) chain, got closed=%v len=%d", closed, len(chain))
+	}
+	res, err := ops.FilletEdges(f, chain, 0.25)
+	if err != nil {
+		t.Fatalf("open sas-chain fillet failed: %v", err)
+	}
+	rep := ops.Validate(res)
+	if !rep.Valid || !res.IsSolid() || rep.EulerCharacteristic != 2 {
+		t.Fatalf("open sas result invalid: valid=%v solid=%v chi=%d issues=%v",
+			rep.Valid, res.IsSolid(), rep.EulerCharacteristic, rep.Issues)
+	}
+	after := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	const occt = 0.103246
+	if removed := before - after; math.Abs(removed-occt) > 0.05*occt {
+		t.Errorf("removed volume = %g, want ≈%g (OCCT oracle)", removed, occt)
+	}
+}
+
 // TestFilletStripeUnbuildableIsLocalized is the ADR-0050 P6 partial-result contract: a radius that
 // cannot seat on the tangent chain (here r=0.5 equals the vertical-fillet radius, so the rolling-ball
 // centre curve collapses on the arc segments) fails with a localized, actionable error naming the faulty
