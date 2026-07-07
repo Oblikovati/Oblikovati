@@ -134,3 +134,29 @@ func TestGeometricFaceRefAmbiguousTieIsLost(t *testing.T) {
 		t.Error("an equidistant tie between two aligned faces must not bind either")
 	}
 }
+
+// TestFindPlanarFaceThroughBindsByCentre binds a placement face by a point lying on it (a hole's
+// drill centre), even off the centroid, and refuses a point off every face plane — the resolution
+// the hole binder falls back to when a centroid descriptor is lost.
+func TestFindPlanarFaceThroughBindsByCentre(t *testing.T) {
+	a := box(math.P3(0, 0, 0), 2, 2, 2)
+	var top *topo.Face
+	for _, f := range a.Faces() {
+		if topo.DescribeFace(f).Normal.Z > 0.9 {
+			top = f
+			break
+		}
+	}
+	if top == nil {
+		t.Fatal("setup: no +Z face on the box")
+	}
+	ref := topo.DescribeFace(top)
+
+	got, ok := a.FindPlanarFaceThrough(ref.Centroid, ref.Normal, spikeTol)
+	if !ok || got != top {
+		t.Fatalf("centre-on-plane did not bind the top face (ok=%v, same=%v)", ok, got == top)
+	}
+	if _, ok := a.FindPlanarFaceThrough(ref.Centroid.TranslateBy(math.Vector3{Z: 100}), ref.Normal, spikeTol); ok {
+		t.Error("a point far off the face plane must not bind")
+	}
+}
