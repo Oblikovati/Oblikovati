@@ -12,14 +12,15 @@ package doc
 // resource holding its bytes. Transform is the 16 cells of the cloud→model placement matrix in
 // row-major order.
 type PointCloudRecord struct {
-	Name       string
-	Source     string
-	ResourceID string
-	Visible    bool
-	Scale      float64
-	Transform  [16]float64
-	MaxPoints  int
-	Crops      []PointCloudCropRecord
+	Name        string
+	Source      string
+	ResourceID  string
+	Visible     bool
+	DisplayMode string
+	Scale       float64
+	Transform   [16]float64
+	MaxPoints   int
+	Crops       []PointCloudCropRecord
 }
 
 // PointCloudCropRecord is the serialisable form of one crop volume (#645): its name, whether it

@@ -15,6 +15,9 @@ namespace {
 bool ok(VkResult r) { return r == VK_SUCCESS; }
 // vec3 pos + vec3 normal + vec4 color + metallic + roughness + vec3 emissive + mode.
 constexpr uint32_t kVertexFloats = 16;
+// Point-cloud vertex: vec3 pos + vec4 rgba (#645). Compact and separate from the 16-float mesh
+// vertex — points carry no normal/PBR/instance data, so the retained buffer stays small.
+constexpr uint32_t kPointFloats = 7;
 
 // Instanced draw records (ADR-0038). Each record is kDrawRecInts int32s describing one
 // (source-mesh stream × instance set) draw: {stream, firstIndex, indexCount, vertexOffset,
@@ -109,8 +112,11 @@ struct Viewport {
     VkPipeline      topTriPipeline = VK_NULL_HANDLE;   // on-top faces (depth test disabled, PBI-067)
     VkPipeline      topLinePipeline = VK_NULL_HANDLE;  // on-top lines (depth test disabled, PBI-067)
     VkPipeline      skyboxPipeline = VK_NULL_HANDLE;   // HDR environment background (no depth)
+    VkPipeline      pointPipeline = VK_NULL_HANDLE;    // point clouds: GL points, depth-tested (#645)
     VkShaderModule  vertModule = VK_NULL_HANDLE;
     VkShaderModule  fragModule = VK_NULL_HANDLE;
+    VkShaderModule  pointVertModule = VK_NULL_HANDLE;
+    VkShaderModule  pointFragModule = VK_NULL_HANDLE;
     VkShaderModule  skyVertModule = VK_NULL_HANDLE;
     VkShaderModule  skyFragModule = VK_NULL_HANDLE;
     VkSampler       sampler = VK_NULL_HANDLE;
@@ -173,6 +179,18 @@ struct Viewport {
     // legacy flatten path, or a freshly recreated target), which always re-uploads (the #1218 guard).
     uint64_t        geomKey = 0;
     uint64_t        geomUploads = 0; // count of actual vbuf/ibuf re-uploads, for the #1422 test instrument
+
+    // Retained point-cloud buffer (#645). Scan points upload ONCE (obk_viewport_upload_points) into
+    // this persistent VRAM buffer and redraw every frame with the frame MVP — the CloudCompare-style
+    // static-buffer path. pointKey is the camera-independent content identity resident in pointBuf;
+    // when an upload carries the same key the transfer is skipped, so orbiting a loaded scan touches
+    // no PCIe bandwidth (mirrors the geomKey skip, #1422). Points never ride the overlay atlas, so a
+    // scan no longer forces the whole-model geometry re-upload the marker batch used to.
+    GpuBuffer       pointBuf;        // interleaved [pos.xyz, rgba] (kPointFloats), HOST_VISIBLE|COHERENT
+    uint64_t        pointKey = 0;    // content resident in pointBuf; 0 = none, forces the next upload
+    int             pointCount = 0;  // points currently resident (0 ⇒ nothing drawn)
+    float           pointSizePx = 3.0f; // on-screen point size in framebuffer pixels
+    uint64_t        pointUploads = 0;   // actual point re-uploads, for the retained-buffer test instrument
 
     // Background the 3D pass clears to (themed; ADR-0021). Defaults reproduce the
     // pre-theming look so an un-themed build is unchanged.
@@ -367,6 +385,100 @@ VkPipeline create_pipeline(HeadContext* c, Viewport* v, VkPrimitiveTopology topo
     VkPipelineDynamicStateCreateInfo dynState{};
     dynState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynState.dynamicStateCount = 3;
+    dynState.pDynamicStates = dyn;
+
+    VkGraphicsPipelineCreateInfo ci{};
+    ci.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    ci.stageCount = 2;
+    ci.pStages = stages;
+    ci.pVertexInputState = &vi;
+    ci.pInputAssemblyState = &ia;
+    ci.pViewportState = &vp;
+    ci.pRasterizationState = &rs;
+    ci.pMultisampleState = &ms;
+    ci.pDepthStencilState = &ds;
+    ci.pColorBlendState = &cb;
+    ci.pDynamicState = &dynState;
+    ci.layout = v->layout;
+    ci.renderPass = v->renderPass;
+    VkPipeline p = VK_NULL_HANDLE;
+    vkCreateGraphicsPipelines(c->device, VK_NULL_HANDLE, 1, &ci, nullptr, &p);
+    return p;
+}
+
+// create_point_pipeline builds the point-cloud pipeline (#645): POINT_LIST topology with its own
+// compact vertex input (binding 0 = kPointFloats interleave [pos.xyz, rgba]; no instance binding).
+// It shares the mesh pipeline layout (same push range + descriptor set) but uses the point shaders,
+// which set gl_PointSize from the push-constant. Depth test + write are on, so points integrate with
+// the model (occlude and are occluded); no depth-bias dynamic state (points don't z-fight faces).
+VkPipeline create_point_pipeline(HeadContext* c, Viewport* v) {
+    VkPipelineShaderStageCreateInfo stages[2]{};
+    stages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+    stages[0].module = v->pointVertModule;
+    stages[0].pName = "main";
+    stages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    stages[1].module = v->pointFragModule;
+    stages[1].pName = "main";
+
+    VkVertexInputBindingDescription bind{0, kPointFloats * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription attrs[2] = {
+        {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0},                 // pos.xyz
+        {1, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 3 * sizeof(float)}, // rgba
+    };
+    VkPipelineVertexInputStateCreateInfo vi{};
+    vi.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vi.vertexBindingDescriptionCount = 1;
+    vi.pVertexBindingDescriptions = &bind;
+    vi.vertexAttributeDescriptionCount = 2;
+    vi.pVertexAttributeDescriptions = attrs;
+
+    VkPipelineInputAssemblyStateCreateInfo ia{};
+    ia.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    ia.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+
+    VkPipelineViewportStateCreateInfo vp{};
+    vp.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    vp.viewportCount = 1;
+    vp.scissorCount = 1;
+
+    VkPipelineRasterizationStateCreateInfo rs{};
+    rs.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rs.polygonMode = VK_POLYGON_MODE_FILL;
+    rs.cullMode = VK_CULL_MODE_NONE;
+    rs.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    rs.lineWidth = 1.0f;
+
+    VkPipelineMultisampleStateCreateInfo ms{};
+    ms.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    ms.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+    VkPipelineDepthStencilStateCreateInfo ds{};
+    ds.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    ds.depthTestEnable = VK_TRUE;
+    ds.depthWriteEnable = VK_TRUE;
+    ds.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+
+    VkPipelineColorBlendAttachmentState cba{};
+    cba.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                         VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    cba.blendEnable = VK_TRUE; // opaque points (alpha 1) pass through; leaves room for translucent coloring
+    cba.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    cba.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    cba.colorBlendOp = VK_BLEND_OP_ADD;
+    cba.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    cba.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+    cba.alphaBlendOp = VK_BLEND_OP_ADD;
+    VkPipelineColorBlendStateCreateInfo cb{};
+    cb.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    cb.attachmentCount = 1;
+    cb.pAttachments = &cba;
+
+    VkDynamicState dyn[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+    VkPipelineDynamicStateCreateInfo dynState{};
+    dynState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynState.dynamicStateCount = 2;
     dynState.pDynamicStates = dyn;
 
     VkGraphicsPipelineCreateInfo ci{};
@@ -1005,6 +1117,7 @@ void create_shadow_resources(HeadContext* c, Viewport* v) {
 extern "C" {
 
 void obk_viewport_init(void* h, const uint32_t* vert, int vlen, const uint32_t* frag, int flen,
+                       const uint32_t* pointVert, int pointVLen, const uint32_t* pointFrag, int pointFLen,
                        const uint32_t* skyVert, int skyVLen, const uint32_t* skyFrag,
                        int skyFLen) {
     HeadContext* c = (HeadContext*)h;
@@ -1013,6 +1126,8 @@ void obk_viewport_init(void* h, const uint32_t* vert, int vlen, const uint32_t* 
     v->colorFormat = c->window_data.SurfaceFormat.format;
     v->vertModule = make_module(c->device, vert, vlen);
     v->fragModule = make_module(c->device, frag, flen);
+    v->pointVertModule = make_module(c->device, pointVert, pointVLen);
+    v->pointFragModule = make_module(c->device, pointFrag, pointFLen);
     v->skyVertModule = make_module(c->device, skyVert, skyVLen);
     v->skyFragModule = make_module(c->device, skyFrag, skyFLen);
 
@@ -1049,6 +1164,7 @@ void obk_viewport_init(void* h, const uint32_t* vert, int vlen, const uint32_t* 
     v->topLinePipeline = create_pipeline(c, v, VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
                                          VK_POLYGON_MODE_FILL, VK_TRUE, VK_COMPARE_OP_ALWAYS, VK_FALSE);
     v->skyboxPipeline = create_skybox_pipeline(c, v);
+    v->pointPipeline = create_point_pipeline(c, v); // point clouds (#645)
     create_shadow_resources(c, v);
 
     VkSamplerCreateInfo si{};
@@ -1418,6 +1534,23 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
         } // end legacy (non-instanced) draws
     }
 
+    // Point clouds (#645): the retained per-point buffer, drawn as native GL points with the frame
+    // MVP — one vertex per scan point, depth-tested so they occlude and are occluded by the model.
+    // Outside the haveGeometry gate so a scan-only scene still renders; the viewport/scissor and the
+    // scene descriptor set were bound above. This is a pure VRAM redraw: no upload happens here (the
+    // buffer was filled by obk_viewport_upload_points and is skipped on orbit).
+    if (v->pointCount > 0 && v->pointBuf.buffer != VK_NULL_HANDLE) {
+        PushConstants pp{};
+        std::memcpy(pp.mvp, mvp, sizeof(pp.mvp));
+        pp.clip[0] = v->pointSizePx; // point.vert reads gl_PointSize from clip.x
+        vkCmdPushConstants(cmd, v->layout,
+            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(pp), &pp);
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->pointPipeline);
+        VkDeviceSize off = 0;
+        vkCmdBindVertexBuffers(cmd, 0, 1, &v->pointBuf.buffer, &off);
+        vkCmdDraw(cmd, (uint32_t)v->pointCount, 1, 0, 0);
+    }
+
     vkCmdEndRenderPass(cmd);
     vkEndCommandBuffer(cmd);
 
@@ -1740,6 +1873,41 @@ uint64_t obk_viewport_geom_uploads(void* h) {
     return c->viewport->geomUploads;
 }
 
+// obk_viewport_upload_points uploads the retained point-cloud stream (#645): count vertices of
+// kPointFloats each ([pos.xyz, rgba], model space), and the on-screen point size in pixels. The
+// transfer is SKIPPED when key matches what is already resident (key != 0), so the head can call
+// this every frame while orbiting a loaded scan and pay nothing — the buffer redraws from VRAM in
+// obk_viewport_render. key == 0 always uploads; count == 0 clears the cloud (nothing drawn). The
+// head passes a camera-independent content key (placement/scale/budget/mode/color), so a re-upload
+// happens only on a real change to the displayed set.
+void obk_viewport_upload_points(void* h, const float* verts, int count, uint64_t key, float sizePx) {
+    HeadContext* c = (HeadContext*)h;
+    Viewport* v = c ? c->viewport : nullptr;
+    if (!v) return;
+    v->pointSizePx = sizePx; // cheap; kept current even when the buffer transfer is skipped
+    const bool resident = key != 0 && key == v->pointKey && v->pointBuf.buffer != VK_NULL_HANDLE;
+    if (resident) return;
+    // pointBuf is shared across the in-flight ring; a (rare) re-upload drains the ring first so no
+    // previous frame reads it mid-transfer (mirrors the vbuf re-upload guard, #1421). The fences are
+    // signalled here — obk_viewport_frame_begin already waited this slot — so this does not stall.
+    vkWaitForFences(c->device, kFramesInFlight, v->frameFence, VK_TRUE, UINT64_MAX);
+    v->pointCount = count > 0 ? count : 0;
+    if (v->pointCount > 0 && verts) {
+        upload_geom(c, &v->pointBuf, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                    verts, (size_t)v->pointCount * kPointFloats * sizeof(float));
+    }
+    v->pointKey = key;
+    v->pointUploads++;
+}
+
+// obk_viewport_point_uploads mirrors obk_viewport_geom_uploads for the point buffer: the count of
+// actual re-uploads, so a test can assert a loaded scan re-uploads zero times across an orbit.
+uint64_t obk_viewport_point_uploads(void* h) {
+    HeadContext* c = (HeadContext*)h;
+    if (!c || !c->viewport) return 0;
+    return c->viewport->pointUploads;
+}
+
 void obk_viewport_destroy(HeadContext* c) {
     Viewport* v = c->viewport;
     if (!v) return;
@@ -1761,9 +1929,9 @@ void obk_viewport_destroy(HeadContext* c) {
     // Free the geometry buffers before vkDestroyDevice so no VkDeviceMemory leaks past device
     // teardown (VUID-vkDestroyDevice-device-05137, surfaced by object-lifetime validation on a real
     // GPU — lavapipe did not flag it).
-    GpuBuffer* geom[] = {&v->vbuf, &v->ibuf};
+    GpuBuffer* geom[] = {&v->vbuf, &v->ibuf, &v->pointBuf};
     for (GpuBuffer* b : geom) {
-        if (b->mapped) vkUnmapMemory(c->device, b->memory); // persistent map (#1422)
+        if (b->mapped) vkUnmapMemory(c->device, b->memory); // persistent map (#1422, #645)
         if (b->buffer) vkDestroyBuffer(c->device, b->buffer, nullptr);
         if (b->memory) vkFreeMemory(c->device, b->memory, nullptr);
     }
@@ -1791,10 +1959,13 @@ void obk_viewport_destroy(HeadContext* c) {
     vkDestroyPipeline(c->device, v->topTriPipeline, nullptr);
     vkDestroyPipeline(c->device, v->topLinePipeline, nullptr);
     vkDestroyPipeline(c->device, v->skyboxPipeline, nullptr);
+    vkDestroyPipeline(c->device, v->pointPipeline, nullptr);
     vkDestroyPipelineLayout(c->device, v->layout, nullptr);
     vkDestroyRenderPass(c->device, v->renderPass, nullptr);
     vkDestroyShaderModule(c->device, v->vertModule, nullptr);
     vkDestroyShaderModule(c->device, v->fragModule, nullptr);
+    vkDestroyShaderModule(c->device, v->pointVertModule, nullptr);
+    vkDestroyShaderModule(c->device, v->pointFragModule, nullptr);
     vkDestroyShaderModule(c->device, v->skyVertModule, nullptr);
     vkDestroyShaderModule(c->device, v->skyFragModule, nullptr);
     delete v;

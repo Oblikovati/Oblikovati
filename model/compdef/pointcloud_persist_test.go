@@ -5,6 +5,7 @@ package compdef
 import (
 	"testing"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/math"
 	"oblikovati.org/model/doc"
 )
@@ -19,12 +20,13 @@ func TestPointCloudRecordRoundTrip(t *testing.T) {
 		t.Fatalf("Add: %v", err)
 	}
 	pc.SetVisible(false)
+	pc.SetDisplayMode(types.PointCloudDisplayModeRGB)
 	pc.SetScale(3)
 	pc.SetMaximumPointCount(1)
 
 	records := def.PointCloudRecords()
-	if len(records) != 1 || records[0].Name != "Scan" || records[0].Scale != 3 {
-		t.Fatalf("records = %+v, want one Scan at scale 3", records)
+	if len(records) != 1 || records[0].Name != "Scan" || records[0].Scale != 3 || records[0].DisplayMode != "RGB" {
+		t.Fatalf("records = %+v, want one Scan at scale 3 in RGB mode", records)
 	}
 
 	target := NewPartComponentDefinition()
@@ -37,6 +39,9 @@ func TestPointCloudRecordRoundTrip(t *testing.T) {
 	}
 	if got.Visible() || got.Scale() != 3 || got.MaximumPointCount() != 1 {
 		t.Errorf("restored = visible %v scale %v max %d, want false/3/1", got.Visible(), got.Scale(), got.MaximumPointCount())
+	}
+	if got.DisplayMode() != types.PointCloudDisplayModeRGB {
+		t.Errorf("restored display mode = %q, want rgb", got.DisplayMode())
 	}
 	if got.TotalPointCount() != 2 { // re-decoded from the resource
 		t.Errorf("restored points = %d, want 2 (re-decoded)", got.TotalPointCount())

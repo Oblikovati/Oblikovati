@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -39,6 +40,7 @@ func TestPointCloudSurvivesStoreRoundTrip(t *testing.T) {
 		t.Fatalf("attach: %v", err)
 	}
 	pc.SetVisible(false)
+	pc.SetDisplayMode(types.PointCloudDisplayModeIntensity)
 	pc.SetScale(2.5)
 	pc.SetMaximumPointCount(2)
 	pc.SetTransform(translation4(10, 0, 0))
@@ -60,6 +62,9 @@ func TestPointCloudSurvivesStoreRoundTrip(t *testing.T) {
 	}
 	if got.Visible() || got.Scale() != 2.5 || got.MaximumPointCount() != 2 {
 		t.Errorf("reopened cloud = visible %v scale %v max %d, want false/2.5/2", got.Visible(), got.Scale(), got.MaximumPointCount())
+	}
+	if got.DisplayMode() != types.PointCloudDisplayModeIntensity {
+		t.Errorf("reopened display mode = %q, want intensity", got.DisplayMode())
 	}
 	if got.TotalPointCount() != 3 {
 		t.Errorf("reopened total points = %d, want 3 (re-decoded from the embedded resource)", got.TotalPointCount())

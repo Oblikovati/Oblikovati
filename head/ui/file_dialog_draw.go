@@ -61,7 +61,7 @@ func resolveAddInDialog(s *app.Session, wasAddIn bool, request app.FileDialogReq
 
 // drawExplorerHeader renders navigation, root selection, and search controls.
 func drawExplorerHeader() {
-	native.Text("Folder: " + fileModal.cwd)
+	native.TextWrapped("Folder: " + fileModal.cwd)
 	if native.Button("Up") {
 		fileModal.goParent()
 	}
@@ -74,8 +74,10 @@ func drawExplorerHeader() {
 		fileModal.refresh()
 	}
 	drawRootChooser()
+	native.Text("Search")
+	native.SameLine()
 	native.SetNextItemWidth(-1)
-	native.InputText("Search##file-search", fileModal.search[:])
+	native.InputText("##file-search", fileModal.search[:])
 }
 
 // drawRootChooser lets Windows users jump between drive roots and Unix users jump home/root.
@@ -190,10 +192,12 @@ func entryModified(entry fileEntry) string {
 // drawExplorerTarget renders the final path field and mode-specific controls.
 func drawExplorerTarget(s *app.Session) {
 	if hint := fileModal.filterHint(); hint != "" {
-		native.Text("Files: " + hint)
+		native.TextWrapped("Files: " + hint)
 	}
+	native.Text("File name or path")
+	native.SameLine()
 	native.SetNextItemWidth(-1)
-	native.InputText("File name or path##file-path", fileModal.path[:])
+	native.InputText("##file-path", fileModal.path[:])
 	if fileModal.mode == dialogExport {
 		if isDXFTarget() {
 			drawExportDXFVersion()
@@ -342,8 +346,8 @@ func placeMeshFromFile(s *app.Session, path, name string) {
 	fileNotice(s, "Placed mesh %s", name)
 }
 
-// attachPointCloudFromFile attaches an ASCII scan as a referenced point cloud (3D Model ▸ Import
-// Point Cloud, #645).
+// attachPointCloudFromFile attaches a scan as a referenced point cloud (3D Model ▸ Import Point
+// Cloud, #645).
 func attachPointCloudFromFile(s *app.Session, path, name string) {
 	_, warns, err := s.AttachPointCloud("", path)
 	if err != nil {

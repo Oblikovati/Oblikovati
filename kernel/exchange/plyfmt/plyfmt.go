@@ -80,6 +80,9 @@ func (d *Document) appendProperty(f []string) {
 	e.Props = append(e.Props, Property{Name: f[len(f)-1], Scalar: f[1]})
 }
 
+// Body returns the bytes after end_header, ready for vertex/face decoding.
+func (d *Document) Body() []byte { return d.body }
+
 func (d *Document) element(name string) (Element, bool) {
 	for _, e := range d.Elements {
 		if e.Name == name {

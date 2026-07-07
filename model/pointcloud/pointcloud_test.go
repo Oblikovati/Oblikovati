@@ -3,10 +3,13 @@
 package pointcloud
 
 import (
+	"encoding/binary"
 	"math"
 	"strings"
 	"testing"
 
+	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/exchange"
 	omath "oblikovati.org/math"
 )
 
@@ -23,6 +26,46 @@ func TestASCIIReaderParsesXYZAndSkipsNoise(t *testing.T) {
 	}
 	if pts[0] != omath.P3(1, 2, 3) || pts[1] != omath.P3(4.5, 6, 7) || pts[2] != omath.P3(-1, -2, -3) {
 		t.Errorf("points = %+v, want (1,2,3),(4.5,6,7),(-1,-2,-3)", pts)
+	}
+}
+
+// TestASCIIReaderParsesChannels checks the new sample parser preserves intensity and RGB columns.
+func TestASCIIReaderParsesChannels(t *testing.T) {
+	samples, _, err := NewASCIIReader().ReadSamples([]byte("1 2 3 7\n4 5 6 255 128 0\n7 8 9 42 10 20 30\n"))
+	if err != nil {
+		t.Fatalf("ReadSamples: %v", err)
+	}
+	if len(samples) != 3 {
+		t.Fatalf("samples = %d, want 3", len(samples))
+	}
+	if !samples[0].HasIntensity || samples[0].Intensity != 7 {
+		t.Errorf("first sample intensity = %+v, want 7", samples[0])
+	}
+	if !samples[1].HasRGB || samples[1].RGB != [3]float32{255, 128, 0} {
+		t.Errorf("second sample rgb = %+v, want [255 128 0]", samples[1])
+	}
+	if !samples[2].HasIntensity || !samples[2].HasRGB || samples[2].Intensity != 42 || samples[2].RGB != [3]float32{10, 20, 30} {
+		t.Errorf("third sample = %+v, want intensity+rgb", samples[2])
+	}
+}
+
+// TestASCIIReaderKeepsUnrecognizedColumnCounts guards the regression where the channel switch began
+// rejecting any line whose column count was not exactly 3/4/6/7: a 5-column (xyz + classification +
+// return) and a 9-column (xyz + rgb + normals) scan imported before #645 by reading the first three
+// fields, and must keep importing as xyz-only rather than decoding to zero points.
+func TestASCIIReaderKeepsUnrecognizedColumnCounts(t *testing.T) {
+	samples, _, err := NewASCIIReader().ReadSamples([]byte("1 2 3 5 1\n4 5 6 255 128 0 0.1 0.2 0.9\n"))
+	if err != nil {
+		t.Fatalf("ReadSamples: %v", err)
+	}
+	if len(samples) != 2 {
+		t.Fatalf("samples = %d, want 2 (5-col and 9-col lines both kept)", len(samples))
+	}
+	if samples[0].Point != omath.P3(1, 2, 3) || samples[0].HasIntensity || samples[0].HasRGB {
+		t.Errorf("5-column sample = %+v, want xyz-only (1,2,3)", samples[0])
+	}
+	if samples[1].Point != omath.P3(4, 5, 6) || samples[1].HasRGB {
+		t.Errorf("9-column sample = %+v, want xyz-only (4,5,6)", samples[1])
 	}
 }
 
@@ -47,6 +90,9 @@ func TestNewCloudDefaults(t *testing.T) {
 	pc := New("scan", "/s/room.xyz", "uuid-1", []omath.Point3{omath.P3(0, 0, 0)})
 	if !pc.Visible() || pc.Scale() != 1 || pc.MaximumPointCount() != 0 {
 		t.Errorf("defaults = visible %v scale %v max %d, want true/1/0", pc.Visible(), pc.Scale(), pc.MaximumPointCount())
+	}
+	if pc.DisplayMode() != types.PointCloudDisplayModeRGB {
+		t.Errorf("display mode = %q, want rgb", pc.DisplayMode())
 	}
 	if pc.SourceFullFileName() != "/s/room.xyz" || pc.ResourceID() != "uuid-1" {
 		t.Errorf("source/resource = %q/%q", pc.SourceFullFileName(), pc.ResourceID())
@@ -171,4 +217,103 @@ func TestDisplayCacheInvalidates(t *testing.T) {
 	if got := len(pc.DisplayedPoints()); got != 1 {
 		t.Errorf("after crop, displayed = %d, want 1 (only the cropped point)", got)
 	}
+}
+
+// TestDisplayModeSelectsAndRejectsInvalid values checks the setter accepts the defined modes and
+// rejects unknown input.
+func TestDisplayModeSelectsAndRejectsInvalid(t *testing.T) {
+	pc := New("s", "", "", nil)
+	if !pc.SetDisplayMode(types.PointCloudDisplayModeRGB) {
+		t.Fatal("SetDisplayMode(RGB) rejected a valid mode")
+	}
+	if pc.DisplayMode() != types.PointCloudDisplayModeRGB {
+		t.Errorf("display mode = %q, want rgb", pc.DisplayMode())
+	}
+	if pc.SetDisplayMode(types.PointCloudDisplayMode("bogus")) {
+		t.Fatal("SetDisplayMode accepted an invalid mode")
+	}
+}
+
+// TestDisplayedSamplesPreserveChannels checks the cached display path keeps sample metadata
+// aligned with the transformed points.
+func TestDisplayedSamplesPreserveChannels(t *testing.T) {
+	samples := []PointSample{
+		{Point: omath.P3(0, 0, 0), HasRGB: true, RGB: [3]float32{1, 2, 3}},
+		{Point: omath.P3(1, 0, 0), HasIntensity: true, Intensity: 9},
+	}
+	pc := NewWithSamples("s", "", "", samples)
+	got := pc.DisplayedSamples()
+	if len(got) != 2 {
+		t.Fatalf("displayed samples = %d, want 2", len(got))
+	}
+	if !got[0].HasRGB || got[0].RGB != samples[0].RGB {
+		t.Errorf("rgb sample changed: %+v", got[0])
+	}
+	if !got[1].HasIntensity || got[1].Intensity != 9 {
+		t.Errorf("intensity sample changed: %+v", got[1])
+	}
+}
+
+// TestReadScanSamplesPreservesPLYAndLASChannels covers the richer scan readers end-to-end.
+func TestReadScanSamplesPreservesPLYAndLASChannels(t *testing.T) {
+	ply := "ply\nformat ascii 1.0\n" +
+		"element vertex 1\nproperty float x\nproperty float y\nproperty float z\n" +
+		"property ushort intensity\nproperty uchar red\nproperty uchar green\nproperty uchar blue\n" +
+		"end_header\n1 2 3 77 9 8 7\n"
+	samples, _, err := ReadScanSamples("scan.ply", []byte(ply), exchange.TranslationOptions{})
+	if err != nil {
+		t.Fatalf("PLY ReadScanSamples: %v", err)
+	}
+	if len(samples) != 1 || !samples[0].HasIntensity || !samples[0].HasRGB {
+		t.Fatalf("PLY samples = %+v, want intensity+rgb", samples)
+	}
+	if samples[0].Intensity != 77 || samples[0].RGB != [3]float32{9, 8, 7} {
+		t.Errorf("PLY sample = %+v, want intensity 77 and rgb 9/8/7", samples[0])
+	}
+
+	las := syntheticLASFormat3([3]int32{1, 2, 3}, 77, [3]uint16{9, 8, 7})
+	samples, _, err = ReadScanSamples("scan.las", las, exchange.TranslationOptions{})
+	if err != nil {
+		t.Fatalf("LAS ReadScanSamples: %v", err)
+	}
+	if len(samples) != 1 || !samples[0].HasIntensity || !samples[0].HasRGB {
+		t.Fatalf("LAS samples = %+v, want intensity+rgb", samples)
+	}
+	if samples[0].Intensity != 77 || samples[0].RGB != [3]float32{9, 8, 7} {
+		t.Errorf("LAS sample = %+v, want intensity 77 and rgb 9/8/7", samples[0])
+	}
+}
+
+func syntheticLASFormat3(xyz [3]int32, intensity uint16, rgb [3]uint16) []byte {
+	data := make([]byte, 227+34)
+	copy(data[:4], []byte("LASF"))
+	data[24], data[25] = 1, 2
+	binary.LittleEndian.PutUint32(data[96:], 227)
+	data[104] = 3
+	binary.LittleEndian.PutUint16(data[105:], 34)
+	binary.LittleEndian.PutUint32(data[107:], 1)
+	putFloat64LE(data[131:], 1)
+	putFloat64LE(data[139:], 1)
+	putFloat64LE(data[147:], 1)
+	putFloat64LE(data[155:], 0)
+	putFloat64LE(data[163:], 0)
+	putFloat64LE(data[171:], 0)
+	copy(data[227:], lasFormat3Record(xyz, intensity, rgb))
+	return data
+}
+
+func lasFormat3Record(xyz [3]int32, intensity uint16, rgb [3]uint16) []byte {
+	rec := make([]byte, 34)
+	binary.LittleEndian.PutUint32(rec[0:], uint32(xyz[0]))
+	binary.LittleEndian.PutUint32(rec[4:], uint32(xyz[1]))
+	binary.LittleEndian.PutUint32(rec[8:], uint32(xyz[2]))
+	binary.LittleEndian.PutUint16(rec[12:], intensity)
+	binary.LittleEndian.PutUint16(rec[28:], rgb[0])
+	binary.LittleEndian.PutUint16(rec[30:], rgb[1])
+	binary.LittleEndian.PutUint16(rec[32:], rgb[2])
+	return rec
+}
+
+func putFloat64LE(b []byte, v float64) {
+	binary.LittleEndian.PutUint64(b, math.Float64bits(v))
 }

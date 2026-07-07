@@ -100,12 +100,20 @@ bool create_device(HeadContext* c) {
     // macro, which is gated behind VK_ENABLE_BETA_EXTENSIONS.
     if (device_has_ext(c->physical, "VK_KHR_portability_subset"))
         dev_ext.push_back("VK_KHR_portability_subset");
+    // Enable largePoints so the point-cloud pipeline can size gl_PointSize > 1px (#645). Without it
+    // the spec pins pointSizeRange to [1,1] and every scan point clamps to a single pixel; we only
+    // request it when the device advertises it, so a device that lacks it just renders 1px points.
+    VkPhysicalDeviceFeatures avail{};
+    vkGetPhysicalDeviceFeatures(c->physical, &avail);
+    VkPhysicalDeviceFeatures feats{};
+    feats.largePoints = avail.largePoints;
     VkDeviceCreateInfo ci{};
     ci.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     ci.queueCreateInfoCount = 1;
     ci.pQueueCreateInfos = &q;
     ci.enabledExtensionCount = (uint32_t)dev_ext.size();
     ci.ppEnabledExtensionNames = dev_ext.data();
+    ci.pEnabledFeatures = &feats;
     if (!ok(vkCreateDevice(c->physical, &ci, c->allocator, &c->device))) return false;
     vkGetDeviceQueue(c->device, c->queueFamily, 0, &c->queue);
     return true;
@@ -216,6 +224,18 @@ void frame_present(HeadContext* c) {
     VkResult err = vkQueuePresentKHR(c->queue, &info);
     if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR) c->swapChainRebuild = true;
     wd->SemaphoreIndex = (wd->SemaphoreIndex + 1) % wd->SemaphoreCount;
+}
+
+void sync_swapchain_extent(HeadContext* c) {
+    int w = 0, h = 0;
+    glfwGetFramebufferSize(c->window, &w, &h);
+    if (w <= 0 || h <= 0) return;
+    ImGui_ImplVulkanH_Window* wd = &c->window_data;
+    if (wd->Width == w && wd->Height == h) return;
+    // Wayland can change the framebuffer extent for content-scale changes before
+    // present reports OUT_OF_DATE; keep ImGui's scaled draw data and the swapchain
+    // framebuffer in the same coordinate space.
+    c->swapChainRebuild = true;
 }
 
 } // namespace
@@ -509,6 +529,7 @@ extern "C" void obk_ig_set_next_window_dock(unsigned int nodeId) {
 void obk_head_begin_frame(void* h) {
     HeadContext* c = (HeadContext*)h;
     glfwPollEvents();
+    sync_swapchain_extent(c);
     if (c->swapChainRebuild) {
         int w = 0, hh = 0;
         glfwGetFramebufferSize(c->window, &w, &hh);

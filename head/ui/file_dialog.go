@@ -15,6 +15,7 @@ import (
 
 	"oblikovati.org/app"
 	"oblikovati.org/model/doc"
+	"oblikovati.org/model/pointcloud"
 )
 
 // fileDialogMode is which file operation the path modal will perform on confirm. The
@@ -32,7 +33,7 @@ const (
 	dialogMeshRef                       // Mesh ▸ Place Mesh (STL, ASCII or binary → mesh reference geometry, #700, #1764)
 	dialogPlaceComponent                // Assemble ▸ Place: choose the component document to instance (#763)
 	dialogExportBOM                     // Assemble ▸ Bill of Materials ▸ Export CSV (#768)
-	dialogPointCloud                    // 3D Model ▸ Import Point Cloud (ASCII scan → referenced cloud, #645)
+	dialogPointCloud                    // 3D Model ▸ Import Point Cloud (scan file → referenced cloud, #645)
 )
 
 // pathBufferLen bounds the path the user can type. ImGui edits the buffer in place,
@@ -129,7 +130,6 @@ var staticDialogTitles = map[fileDialogMode]string{
 	dialogSaveAs:         "Save As",
 	dialogLoadHDR:        "Load HDR",
 	dialogMeshRef:        "Place Mesh (.stl)",
-	dialogPointCloud:     "Import Point Cloud (.xyz/.pts)",
 	dialogPlaceComponent: "Place Component",
 	dialogImport:         "Import (.stl/.obj/.3mf/.step/.dwg/.dxf/.pdf · scans .ply/.e57/.las/.xyz/.pts)",
 	dialogExport:         "Export (.stl/.obj/.3mf/.step/.dxf)",
@@ -140,6 +140,9 @@ var staticDialogTitles = map[fileDialogMode]string{
 func (d *fileDialog) title() string {
 	if d.mode == dialogAddIn {
 		return d.addInTitle()
+	}
+	if d.mode == dialogPointCloud {
+		return "Import Point Cloud (" + strings.Join(pointcloud.ScanExtensions(), "/") + ")"
 	}
 	if t, ok := staticDialogTitles[d.mode]; ok {
 		return t
@@ -283,7 +286,7 @@ func (d *fileDialog) allowedExts() []string {
 	case dialogMeshRef:
 		return []string{".stl"}
 	case dialogPointCloud:
-		return []string{".xyz", ".pts", ".asc", ".txt"}
+		return pointcloud.ScanExtensions()
 	case dialogImport:
 		// DWG/DXF/PDF import into a sketch, scan formats (.ply/.e57/.las/.xyz/.pts/.asc) into a
 		// point cloud, the rest into bodies.

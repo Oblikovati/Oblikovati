@@ -39,7 +39,7 @@ func ImportPointCloud(part *compdef.PartComponentDefinition, name, path string) 
 	if err != nil {
 		return nil, PointCloudImportResult{}, fmt.Errorf("import scan: read %q: %w", path, err)
 	}
-	points, warns, err := pointcloud.ReadScan(path, data, exchange.TranslationOptions{TargetUnitMM: workingUnitMM(part)})
+	samples, warns, err := pointcloud.ReadScanSamples(path, data, exchange.TranslationOptions{TargetUnitMM: workingUnitMM(part)})
 	if err != nil {
 		return nil, PointCloudImportResult{}, err
 	}
@@ -47,9 +47,9 @@ func ImportPointCloud(part *compdef.PartComponentDefinition, name, path string) 
 		name = part.PointClouds().UniqueName("Cloud")
 	}
 	rid := part.AddResource(doc.Resource{Type: "PointCloudScan", Encoding: doc.EncodingUTF8, Value: data, Origin: path})
-	pc, err := part.PointClouds().Add(name, path, rid, points)
+	pc, err := part.PointClouds().AddWithSamples(name, path, rid, samples)
 	if err != nil {
 		return nil, PointCloudImportResult{}, err
 	}
-	return pc, PointCloudImportResult{PointCount: len(points), Warnings: warns}, nil
+	return pc, PointCloudImportResult{PointCount: len(samples), Warnings: warns}, nil
 }

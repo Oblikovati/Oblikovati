@@ -77,17 +77,17 @@ func parseClient(dir string) ([]clientMethod, error) {
 // clientMethodOf extracts the wire constant, summary and args type from one client method,
 // reporting false when the function does not call the transport.
 func clientMethodOf(fn *ast.FuncDecl) (clientMethod, bool) {
-	call := findTransportCall(fn.Body)
-	if call == nil || len(call.Args) < 1 {
+	call, wireArg := findTransportCall(fn.Body)
+	if call == nil || len(call.Args) <= wireArg {
 		return clientMethod{}, false
 	}
-	wireConst := selectorName(call.Args[0])
+	wireConst := selectorName(call.Args[wireArg])
 	if wireConst == "" {
 		return clientMethod{}, false
 	}
 	cm := clientMethod{wireConst: wireConst, summary: mcpSummary(fn.Doc)}
-	if len(call.Args) >= 2 {
-		cm.argsType = argsTypeName(call.Args[1], fn.Type.Params, localWireTypes(fn.Body))
+	if argsIdx := wireArg + 1; len(call.Args) > argsIdx {
+		cm.argsType = argsTypeName(call.Args[argsIdx], fn.Type.Params, localWireTypes(fn.Body))
 	}
 	return cm, true
 }
@@ -154,8 +154,14 @@ func wireTypeOfExpr(e ast.Expr) string {
 
 // findTransportCall returns the first `<recv>.call(...)` invocation in a body, which is how
 // every client method reaches the wire transport.
-func findTransportCall(body *ast.BlockStmt) *ast.CallExpr {
+// findTransportCall locates the call that dispatches a wire method in a client method body and the
+// argument index holding the wire.Method constant. It handles both the legacy method form
+// `receiver.call(wire.Method, args, &r)` (wire const at arg 0) and the generic helper form
+// `call[Resp](c, wire.Method, args)` introduced by the G2 refactor (Oblikovati.API #1650), whose
+// first argument is the *Client receiver, so the wire const is at arg 1.
+func findTransportCall(body *ast.BlockStmt) (*ast.CallExpr, int) {
 	var found *ast.CallExpr
+	wireArg := 0
 	ast.Inspect(body, func(n ast.Node) bool {
 		if found != nil {
 			return false
@@ -165,12 +171,31 @@ func findTransportCall(body *ast.BlockStmt) *ast.CallExpr {
 			return true
 		}
 		if sel, ok := ce.Fun.(*ast.SelectorExpr); ok && sel.Sel.Name == "call" {
-			found = ce
+			found, wireArg = ce, 0
+			return false
+		}
+		if isGenericCallHelper(ce.Fun) {
+			found, wireArg = ce, 1
 			return false
 		}
 		return true
 	})
-	return found
+	return found, wireArg
+}
+
+// isGenericCallHelper reports whether fun is the generic package-level call[...] helper — an Ident
+// "call" instantiated with one (IndexExpr) or more (IndexListExpr) type arguments.
+func isGenericCallHelper(fun ast.Expr) bool {
+	switch e := fun.(type) {
+	case *ast.IndexExpr:
+		id, ok := e.X.(*ast.Ident)
+		return ok && id.Name == "call"
+	case *ast.IndexListExpr:
+		id, ok := e.X.(*ast.Ident)
+		return ok && id.Name == "call"
+	default:
+		return false
+	}
 }
 
 // mcpSummary returns the text of the `mcp:summary …` doc line, or "".

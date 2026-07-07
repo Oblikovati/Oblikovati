@@ -129,51 +129,56 @@ type Session struct {
 	themeStore                *theme.Store
 	materials                 *material.Library
 	materialStore             *material.Store
-	recentDocuments           []string                        // recently opened/saved paths, most recent first (M04-F05)
-	fileMetadata              map[doc.ID][]FileMetadataValue  // last save's PopulateFileMetadata harvest (M04-F05)
-	notice                    string                          // last user-facing notice (e.g. a failed-commit reason)
-	visualStyle               renderer.VisualStyle            // how the scene is drawn (View tab's Visual Style)
-	lightingStyle             renderer.LightingStyleID        // active lighting preset (View tab's Lighting Style)
-	lighting                  renderer.SceneLighting          // the live lighting rig (resolved from the style, then edited)
-	colorSchemes              *colorscheme.Registry           // application color schemes — viewport bg + highlight/select palette (M16-F06 #642)
-	colorSchemeRev            uint64                          // bumped on scheme/background change; the head re-applies the viewport colors (live preview)
-	styles                    *style.Registry                 // document color styles + style-library cascade (M16-F02 #403/#408)
-	displayOptions            display.Options                 // app-level display options that parameterize the display modes (M16-F07 #643)
-	chamferFlatCorners        bool                            // default three-edge-corner treatment for new chamfers
-	chamferConcaveOut         bool                            // default concave-edge strategy for new chamfers (true ⇒ outward fill)
-	paramsDialogOpen          bool                            // the Manage ▸ Parameters dialog is open
-	keymapEditorOpen          bool                            // the Tools ▸ Customize Keyboard panel is open (M05-F17)
-	lightingPanelOpen         bool                            // the View ▸ Lighting settings panel is open
-	namedViewsPanelOpen       bool                            // the View ▸ Named Views panel is open (M16-F03 #404)
-	colorStylesPanelOpen      bool                            // the Color Styles panel is open (M16-F02 #403/#408)
-	displaySettingsOpen       bool                            // the Display Settings dialog is open (M16-F07 #643)
-	unitsSettingsOpen         bool                            // the Document Settings ▸ Units dialog is open (#146)
-	historyBrowserOpen        bool                            // the Edit ▸ History Browser window is open
-	loadEnvRequested          bool                            // a "Load HDR…" was requested; the head opens the file dialog
-	meshImportRequested       bool                            // a "Place Mesh…" was requested; the head opens the file dialog (#700)
-	pointCloudRequested       bool                            // an "Import Point Cloud…" was requested; the head opens the file dialog (#645)
-	fitViewRequested          bool                            // an import added visible geometry; the head fits the camera once (#1645)
-	scriptConsoleOpen         bool                            // the Manage ▸ Scripts ▸ Script Console panel is open
-	addInCatalogueRequested   bool                            // a Get Started ▸ AddIn Catalogue was requested; the head opens the catalogue window
-	preferencesRequested      bool                            // a Get Started ▸ Preferences was requested; the head opens the Preferences window
-	capturePath               string                          // a requested viewport PNG capture path; the head writes it after render
-	captureWindowPath         string                          // a requested whole-window PNG capture path; the head writes it after the frame composites
-	normalDebug               bool                            // viewport normal-debug render (front green / back red); head reads each frame
-	meshColors                bool                            // viewport mesh-debug-colors render (each face/triangle a distinct color)
-	meshColorsPerTri          bool                            // when meshColors: color per TRIANGLE (else per B-rep face)
-	editScope                 editScope                       // while editing a node, hide everything created after it (issue #132)
-	asmBodies                 assemblyBodyCache               // memoized world-space assembly bodies + their occurrences (#769)
-	pickIndex                 *assemblyPickIndex              // BVH over placement AABBs for sub-linear ray picking (M34-F5)
-	bomPanelOpen              bool                            // the Assemble ▸ Bill of Materials panel is open (#768)
-	bomViewKind               bom.ViewKind                    // the BOM panel's selected view (structured / parts-only)
-	updateCheckRequested      bool                            // Help ▸ Check for Updates was clicked; the head runs the (network) check
-	pendingUpdate             *update.Result                  // last update-check outcome to show in the update window; nil = closed
-	txEvents                  []sessionTxEvent                // append-only transaction log since app open (for bug reports)
-	txAudit                   map[doc.ID]*command.SnapshotLog // per-document delta log the audit's recipes are reconstructed from (#1424)
-	bugReport                 bugReportState                  // in-progress Help ▸ Report Bug capture+submit, if any
-	bugOutcome                atomic.Pointer[bugResult]       // submit goroutine → frame loop handoff (session never touched off-thread)
-	bugSubmitter              bugSubmitter                    // injectable reporting endpoint (DI; lazily defaults to real HTTP)
-	addInCat                  addInCatalogue                  // Add-In Catalogue browse/install state (#1164)
+	recentDocuments           []string                          // recently opened/saved paths, most recent first (M04-F05)
+	fileMetadata              map[doc.ID][]FileMetadataValue    // last save's PopulateFileMetadata harvest (M04-F05)
+	notice                    string                            // last user-facing notice (e.g. a failed-commit reason)
+	visualStyle               renderer.VisualStyle              // how the scene is drawn (View tab's Visual Style)
+	lightingStyle             renderer.LightingStyleID          // active lighting preset (View tab's Lighting Style)
+	lighting                  renderer.SceneLighting            // the live lighting rig (resolved from the style, then edited)
+	colorSchemes              *colorscheme.Registry             // application color schemes — viewport bg + highlight/select palette (M16-F06 #642)
+	colorSchemeRev            uint64                            // bumped on scheme/background change; the head re-applies the viewport colors (live preview)
+	styles                    *style.Registry                   // document color styles + style-library cascade (M16-F02 #403/#408)
+	displayOptions            display.Options                   // app-level display options that parameterize the display modes (M16-F07 #643)
+	chamferFlatCorners        bool                              // default three-edge-corner treatment for new chamfers
+	chamferConcaveOut         bool                              // default concave-edge strategy for new chamfers (true ⇒ outward fill)
+	paramsDialogOpen          bool                              // the Manage ▸ Parameters dialog is open
+	keymapEditorOpen          bool                              // the Tools ▸ Customize Keyboard panel is open (M05-F17)
+	lightingPanelOpen         bool                              // the View ▸ Lighting settings panel is open
+	namedViewsPanelOpen       bool                              // the View ▸ Named Views panel is open (M16-F03 #404)
+	colorStylesPanelOpen      bool                              // the Color Styles panel is open (M16-F02 #403/#408)
+	displaySettingsOpen       bool                              // the Display Settings dialog is open (M16-F07 #643)
+	unitsSettingsOpen         bool                              // the Document Settings ▸ Units dialog is open (#146)
+	historyBrowserOpen        bool                              // the Edit ▸ History Browser window is open
+	loadEnvRequested          bool                              // a "Load HDR…" was requested; the head opens the file dialog
+	meshImportRequested       bool                              // a "Place Mesh…" was requested; the head opens the file dialog (#700)
+	pointCloudRequested       bool                              // an "Import Point Cloud…" was requested; the head opens the file dialog (#645)
+	pointCloudRenderDensity   float32                           // session viewport density percent for point clouds (100 = all points)
+	pointCloudPointSize       float32                           // session viewport point size for point clouds, in native point pixels
+	pointCloudIntensityLow    [4]float32                        // global low-end color for intensity-mode point clouds
+	pointCloudIntensityHigh   [4]float32                        // global high-end color for intensity-mode point clouds
+	pcIntensityHistograms     map[string]intensityHistogramMemo // ribbon intensity histograms memoized per cloud ResourceID (#645 perf); keyed by string, not *PointCloud, so a deleted cloud's samples are not pinned alive
+	fitViewRequested          bool                              // an import added visible geometry; the head fits the camera once (#1645)
+	scriptConsoleOpen         bool                              // the Manage ▸ Scripts ▸ Script Console panel is open
+	addInCatalogueRequested   bool                              // a Get Started ▸ AddIn Catalogue was requested; the head opens the catalogue window
+	preferencesRequested      bool                              // a Get Started ▸ Preferences was requested; the head opens the Preferences window
+	capturePath               string                            // a requested viewport PNG capture path; the head writes it after render
+	captureWindowPath         string                            // a requested whole-window PNG capture path; the head writes it after the frame composites
+	normalDebug               bool                              // viewport normal-debug render (front green / back red); head reads each frame
+	meshColors                bool                              // viewport mesh-debug-colors render (each face/triangle a distinct color)
+	meshColorsPerTri          bool                              // when meshColors: color per TRIANGLE (else per B-rep face)
+	editScope                 editScope                         // while editing a node, hide everything created after it (issue #132)
+	asmBodies                 assemblyBodyCache                 // memoized world-space assembly bodies + their occurrences (#769)
+	pickIndex                 *assemblyPickIndex                // BVH over placement AABBs for sub-linear ray picking (M34-F5)
+	bomPanelOpen              bool                              // the Assemble ▸ Bill of Materials panel is open (#768)
+	bomViewKind               bom.ViewKind                      // the BOM panel's selected view (structured / parts-only)
+	updateCheckRequested      bool                              // Help ▸ Check for Updates was clicked; the head runs the (network) check
+	pendingUpdate             *update.Result                    // last update-check outcome to show in the update window; nil = closed
+	txEvents                  []sessionTxEvent                  // append-only transaction log since app open (for bug reports)
+	txAudit                   map[doc.ID]*command.SnapshotLog   // per-document delta log the audit's recipes are reconstructed from (#1424)
+	bugReport                 bugReportState                    // in-progress Help ▸ Report Bug capture+submit, if any
+	bugOutcome                atomic.Pointer[bugResult]         // submit goroutine → frame loop handoff (session never touched off-thread)
+	bugSubmitter              bugSubmitter                      // injectable reporting endpoint (DI; lazily defaults to real HTTP)
+	addInCat                  addInCatalogue                    // Add-In Catalogue browse/install state (#1164)
 }
 
 // Notice returns the last user-facing notice (a failed commit's reason), or "" — shown in
@@ -225,11 +230,15 @@ func newSession(store doc.Store) *Session {
 		// Three Point is the out-of-the-box rig for every visual style: a studio
 		// key/fill/back setup reads far better than the legacy single headlight now
 		// that the whole rig lights every shaded mode (ADR-0026 §8).
-		lightingStyle:      renderer.LightingThreePoint,
-		lighting:           renderer.SceneLightingFor(renderer.LightingThreePoint),
-		chamferFlatCorners: true, // match Inventor's default flat three-edge-corner blend
-		hudEnabled:         true, // dynamic-input HUD on by default, like Inventor (#790)
-		chamferConcaveOut:  true, // concave edges fill the inside corner by default (outward)
+		lightingStyle:           renderer.LightingThreePoint,
+		lighting:                renderer.SceneLightingFor(renderer.LightingThreePoint),
+		chamferFlatCorners:      true, // match Inventor's default flat three-edge-corner blend
+		hudEnabled:              true, // dynamic-input HUD on by default, like Inventor (#790)
+		chamferConcaveOut:       true, // concave edges fill the inside corner by default (outward)
+		pointCloudRenderDensity: 100,
+		pointCloudPointSize:     1,
+		pointCloudIntensityLow:  [4]float32{1, 0, 0, 1},
+		pointCloudIntensityHigh: [4]float32{1, 1, 0, 1},
 	}
 	s.initSurfaceCenters()
 	s.seedVisualState()
@@ -373,6 +382,54 @@ func (s *Session) Workspace() *doc.Workspace { return s.workspace }
 func (s *Session) Commands() *CommandManager { return s.commands }
 func (s *Session) Events() *event.Bus        { return s.bus }
 func (s *Session) Selection() *Selection     { return s.selection }
+
+// PointCloudRenderDensity returns the viewport render density for attached scan points, as a
+// percentage where 100 renders every eligible point and 0 renders none.
+func (s *Session) PointCloudRenderDensity() float32 { return s.pointCloudRenderDensity }
+
+// SetPointCloudRenderDensity sets the viewport render density for attached scan points. Values
+// outside 0..100 are clamped because UI drags and future API callers share this setter.
+func (s *Session) SetPointCloudRenderDensity(percent float32) {
+	if percent < 0 {
+		percent = 0
+	}
+	if percent > 100 {
+		percent = 100
+	}
+	s.pointCloudRenderDensity = percent
+}
+
+// PointCloudPointSize returns the native point size used for attached scan points.
+func (s *Session) PointCloudPointSize() float32 { return s.pointCloudPointSize }
+
+// SetPointCloudPointSize sets the native point size used for attached scan points. Values outside
+// 1..10 are clamped because UI drags and future API callers share this setter.
+func (s *Session) SetPointCloudPointSize(size float32) {
+	if size < 1 {
+		size = 1
+	}
+	if size > 10 {
+		size = 10
+	}
+	s.pointCloudPointSize = size
+}
+
+// PointCloudIntensityRamp returns the session-wide low/high colors used for intensity-mode point
+// clouds. The ramp is viewport state, not persisted point-cloud metadata.
+func (s *Session) PointCloudIntensityRamp() (low, high [4]float32) {
+	return s.pointCloudIntensityLow, s.pointCloudIntensityHigh
+}
+
+// SetPointCloudIntensityRamp sets the session-wide intensity ramp. Alpha is forced opaque because
+// point-cloud display modes select color, not point visibility.
+func (s *Session) SetPointCloudIntensityRamp(low, high [4]float32) {
+	s.pointCloudIntensityLow = normalizedPointCloudRampColor(low)
+	s.pointCloudIntensityHigh = normalizedPointCloudRampColor(high)
+}
+
+func normalizedPointCloudRampColor(c [4]float32) [4]float32 {
+	return [4]float32{clamp01(c[0]), clamp01(c[1]), clamp01(c[2]), 1}
+}
 
 // SelectionFilterState returns the user-editable no-tool ambient selection filter and priority
 // order (the Selection Filter & Priority window, #1222). Mutating it re-pushes the priority

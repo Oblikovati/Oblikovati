@@ -22,6 +22,16 @@ type Document struct {
 	data   []byte
 }
 
+// Header is the public LAS record metadata a point-cloud reader needs to decode channels.
+type Header struct {
+	PointDataOffset uint32
+	PointFormat     uint8
+	RecordLength    uint16
+	PointCount      uint64
+	Scale           [3]float64
+	Offset          [3]float64
+}
+
 // Parse reads and validates the LAS public header. It does not decode the points — call Vertices.
 func Parse(data []byte) (*Document, error) {
 	header, err := parseHeader(data)
@@ -30,6 +40,21 @@ func Parse(data []byte) (*Document, error) {
 	}
 	return &Document{header: header, data: data}, nil
 }
+
+// Header returns the parsed public header fields.
+func (d *Document) Header() Header {
+	return Header{
+		PointDataOffset: d.header.pointDataOffset,
+		PointFormat:     d.header.pointFormat,
+		RecordLength:    d.header.recordLength,
+		PointCount:      d.header.pointCount,
+		Scale:           d.header.scale,
+		Offset:          d.header.offset,
+	}
+}
+
+// Raw returns the original file bytes so callers can decode record extensions beyond XYZ.
+func (d *Document) Raw() []byte { return d.data }
 
 // Vertices decodes every point record's XYZ into real coordinates. It errors if the record stride
 // cannot hold an XYZ triple or the records run past the end of the file.

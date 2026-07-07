@@ -35,6 +35,20 @@ var registeredReaders = []PointReader{NewASCIIReader(), NewPLYReader(), NewE57Re
 //
 //	pts, warns, err := pointcloud.ReadScan("survey.las", data, exchange.TranslationOptions{TargetUnitMM: 10})
 func ReadScan(filename string, data []byte, opts exchange.TranslationOptions) ([]math.Point3, []string, error) {
+	samples, warns, err := ReadScanSamples(filename, data, opts)
+	if err != nil {
+		return nil, nil, err
+	}
+	points := make([]math.Point3, len(samples))
+	for i, s := range samples {
+		points[i] = s.Point
+	}
+	return points, warns, nil
+}
+
+// ReadScanSamples decodes a scan file into cloud-local samples, preserving any RGB or intensity
+// channels the reader exposes.
+func ReadScanSamples(filename string, data []byte, opts exchange.TranslationOptions) ([]PointSample, []string, error) {
 	ext := strings.ToLower(filepath.Ext(filename))
 	for _, r := range registeredReaders {
 		for _, e := range r.Extensions() {
@@ -48,25 +62,26 @@ func ReadScan(filename string, data []byte, opts exchange.TranslationOptions) ([
 
 // readScaled decodes with r and applies the single file→database unit factor to every point —
 // the one shared scaling seam for all registered readers (#1636), mirroring meshio's scaleRaw.
-func readScaled(r PointReader, data []byte, opts exchange.TranslationOptions) ([]math.Point3, []string, error) {
+func readScaled(r PointReader, data []byte, opts exchange.TranslationOptions) ([]PointSample, []string, error) {
 	if err := opts.Report("points", 0, 0); err != nil { // #1647: honour a first-call cancel before decode
 		return nil, nil, err
 	}
-	points, warns, err := r.Read(data)
+	samples, warns, err := r.ReadSamples(data)
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := opts.Report("points", len(points), len(points)); err != nil { // #1647: report the record count
+	if err := opts.Report("points", len(samples), len(samples)); err != nil { // #1647: report the record count
 		return nil, nil, err
 	}
 	f := math.Scalar(opts.ImportScale(r.FileUnitMM()))
 	if f == 1 {
-		return points, warns, nil
+		return samples, warns, nil
 	}
-	for i, p := range points {
-		points[i] = math.P3(p.X*f, p.Y*f, p.Z*f)
+	for i, s := range samples {
+		s.Point = math.P3(s.Point.X*f, s.Point.Y*f, s.Point.Z*f)
+		samples[i] = s
 	}
-	return points, warns, nil
+	return samples, warns, nil
 }
 
 // IsScanFile reports whether a path's extension is a 3D-scan point-cloud format handled by a
@@ -102,10 +117,12 @@ func ScanExtensions() []string {
 type PointReader interface {
 	// Extensions returns the lowercase file extensions (with leading dot) this reader handles.
 	Extensions() []string
-	// Read parses scan bytes into cloud-local points, erroring with the offending input on a
+	// Read parses scan bytes into point-only coordinates for legacy callers.
+	Read(data []byte) ([]math.Point3, []string, error)
+	// ReadSamples parses scan bytes into cloud-local samples, erroring with the offending input on a
 	// structural failure and warning per skipped record (#1646). Coordinates are returned in
 	// the FILE's unit; ReadScan applies the unit scale.
-	Read(data []byte) ([]math.Point3, []string, error)
+	ReadSamples(data []byte) ([]PointSample, []string, error)
 	// FileUnitMM is the millimetre size of the format's length unit: E57 is metres by the ASTM
 	// E2807 spec, LAS metres by ASPRS convention, and the unitless formats (ASCII XYZ/PTS, PLY)
 	// follow the same declared millimetre convention as unitless meshes (STL/OBJ) (#1636).
@@ -126,45 +143,58 @@ func (asciiReader) Extensions() []string { return []string{".xyz", ".pts", ".asc
 // FileUnitMM: ASCII scan formats are unitless — the declared millimetre convention applies.
 func (asciiReader) FileUnitMM() float64 { return 1 }
 
-// Read parses each coordinate line into a point. A line with fewer than three numeric fields
+// Read parses each coordinate line into a sample. A line with fewer than three numeric fields
 // that is the FIRST data line is treated as a PTS count header and skipped. Any other malformed
 // line is SKIPPED with a warning citing the line number and content — the DWG decoder's
 // warn-and-continue policy (#1646), so one bad record never sinks a million good points; a scan
 // where nothing decodes errors instead.
-func (asciiReader) Read(data []byte) ([]math.Point3, []string, error) {
-	var points []math.Point3
+func (asciiReader) ReadSamples(data []byte) ([]PointSample, []string, error) {
+	var samples []PointSample
 	var warns []string
 	sc := bufio.NewScanner(bytes.NewReader(data))
 	sc.Buffer(make([]byte, 0, 64*1024), 8*1024*1024) // tolerate long lines
 	line := 0
 	for sc.Scan() {
 		line++
-		if w := scanLine(sc.Text(), line, &points, len(warns)); w != "" {
+		if w := scanLine(sc.Text(), line, &samples, len(warns)); w != "" {
 			warns = append(warns, w)
 		}
 	}
 	if err := sc.Err(); err != nil {
 		return nil, nil, fmt.Errorf("pointcloud: reading scan: %w", err)
 	}
-	if len(points) == 0 && len(warns) > 0 {
+	if len(samples) == 0 && len(warns) > 0 {
 		return nil, nil, fmt.Errorf("pointcloud: no decodable points; %s", warns[0])
 	}
-	return points, warns, nil
+	return samples, warns, nil
 }
 
-// scanLine parses one line into points, returning a warning for a skipped malformed record (""
+// Read returns point-only coordinates for callers that do not need channels.
+func (r asciiReader) Read(data []byte) ([]math.Point3, []string, error) {
+	samples, warns, err := r.ReadSamples(data)
+	if err != nil {
+		return nil, nil, err
+	}
+	out := make([]math.Point3, len(samples))
+	for i, s := range samples {
+		out[i] = s.Point
+	}
+	return out, warns, nil
+}
+
+// scanLine parses one line into samples, returning a warning for a skipped malformed record (""
 // when the line is fine). warnCount distinguishes a leading PTS count header (only valid before
 // any point or warning) from a malformed record.
-func scanLine(raw string, line int, points *[]math.Point3, warnCount int) string {
+func scanLine(raw string, line int, samples *[]PointSample, warnCount int) string {
 	text := strings.TrimSpace(raw)
 	if skippableLine(text) {
 		return ""
 	}
-	if p, ok := parseXYZ(text); ok {
-		*points = append(*points, p)
+	if s, ok := parseSample(text); ok {
+		*samples = append(*samples, s)
 		return ""
 	}
-	if len(*points) == 0 && warnCount == 0 && isCountHeader(text) {
+	if len(*samples) == 0 && warnCount == 0 && isCountHeader(text) {
 		return "" // a PTS file's leading point-count line
 	}
 	return fmt.Sprintf("pointcloud: skipped line %d, not \"x y z\": %q", line, text)
@@ -175,13 +205,23 @@ func skippableLine(text string) bool {
 	return text == "" || strings.HasPrefix(text, "#") || strings.HasPrefix(text, "//")
 }
 
-// parseXYZ reads the first three whitespace-separated fields as x, y, z, ignoring any trailing
-// columns (intensity/colour). ok is false when the line lacks three parseable floats.
-func parseXYZ(text string) (math.Point3, bool) {
+// parseSample reads a line into a sample, preserving any intensity or RGB columns.
+func parseSample(text string) (PointSample, bool) {
 	f := strings.Fields(text)
 	if len(f) < 3 {
-		return math.Point3{}, false
+		return PointSample{}, false
 	}
+	pt, ok := parseXYZ(f)
+	if !ok {
+		return PointSample{}, false
+	}
+	s := PointSample{Point: pt}
+	applySampleChannels(&s, f)
+	return s, true
+}
+
+// parseXYZ parses the first three whitespace fields as the point's position.
+func parseXYZ(f []string) (math.Point3, bool) {
 	x, ex := strconv.ParseFloat(f[0], 64)
 	y, ey := strconv.ParseFloat(f[1], 64)
 	z, ez := strconv.ParseFloat(f[2], 64)
@@ -189,6 +229,50 @@ func parseXYZ(text string) (math.Point3, bool) {
 		return math.Point3{}, false
 	}
 	return math.P3(math.Scalar(x), math.Scalar(y), math.Scalar(z)), true
+}
+
+// applySampleChannels reads the optional intensity / RGB columns from the recognised ASCII layouts:
+// 3 = xyz only, 4 = +intensity, 6 = +rgb, 7 = +intensity+rgb. Any other column count keeps just the
+// xyz already parsed and ignores the extra columns — a 5-column (e.g. classification/return) or a
+// 9-column (xyz+rgb+normals) scan imported before #645 and must keep importing (regression guard).
+func applySampleChannels(s *PointSample, f []string) {
+	switch len(f) {
+	case 4:
+		setSampleIntensity(s, f[3])
+	case 6:
+		setSampleRGB(s, f[3:6])
+	case 7:
+		setSampleIntensity(s, f[3])
+		setSampleRGB(s, f[4:7])
+	}
+}
+
+// setSampleIntensity sets the intensity channel from an ASCII field, leaving it unset if unparsable.
+func setSampleIntensity(s *PointSample, field string) {
+	if v, err := strconv.ParseFloat(field, 64); err == nil {
+		s.HasIntensity = true
+		s.Intensity = v
+	}
+}
+
+// setSampleRGB sets the RGB channel from three ASCII fields, leaving it unset if any is unparsable.
+func setSampleRGB(s *PointSample, fields []string) {
+	if rgb, ok := parseRGBFields(fields); ok {
+		s.HasRGB = true
+		s.RGB = rgb
+	}
+}
+
+func parseRGBFields(fields []string) ([3]float32, bool) {
+	var rgb [3]float32
+	for i := 0; i < 3; i++ {
+		v, err := strconv.ParseFloat(fields[i], 64)
+		if err != nil {
+			return [3]float32{}, false
+		}
+		rgb[i] = float32(v)
+	}
+	return rgb, true
 }
 
 // isCountHeader reports whether a line is a single non-negative integer (a PTS count header).

@@ -96,6 +96,27 @@ func TestPointCloudPlacementAndBudget(t *testing.T) {
 	}
 }
 
+// TestPointCloudDisplayModeOverWire checks the host exposes the display mode and lets the wire
+// mutate it on the selected cloud.
+func TestPointCloudDisplayModeOverWire(t *testing.T) {
+	r, s := emptyPartSession(t)
+	path := writeScan(t, "0 0 0\n1 1 1\n")
+	var info wire.PointCloudInfo
+	call(t, r, s, "pointClouds.attach", mustJSON(t, wire.AttachPointCloudArgs{Name: "Scan", FullFileName: path}), &info)
+	if info.DisplayMode != types.PointCloudDisplayModeRGB {
+		t.Fatalf("default display mode = %q, want rgb", info.DisplayMode)
+	}
+
+	call(t, r, s, "pointClouds.setDisplayMode", mustJSON(t, wire.SetPointCloudDisplayModeArgs{Name: "Scan", DisplayMode: types.PointCloudDisplayModeRGB}), &info)
+	if info.DisplayMode != types.PointCloudDisplayModeRGB {
+		t.Fatalf("display mode = %q, want rgb", info.DisplayMode)
+	}
+	call(t, r, s, "pointClouds.get", `{"name":"Scan"}`, &info)
+	if info.DisplayMode != types.PointCloudDisplayModeRGB {
+		t.Fatalf("get display mode = %q, want rgb", info.DisplayMode)
+	}
+}
+
 // TestPointCloudCropLifecycle: add a crop, see it limit the displayed count, toggle it off and on,
 // list it, and delete it — all over the wire (#645).
 func TestPointCloudCropLifecycle(t *testing.T) {

@@ -16,6 +16,15 @@ var meshVertSPV []byte
 //go:embed shaders/mesh.frag.spv
 var meshFragSPV []byte
 
+// Point-cloud pipeline SPIR-V (#645): one GPU vertex per scan point (POINT_LIST), replacing the
+// per-frame 3-axis-cross line expansion.
+//
+//go:embed shaders/point.vert.spv
+var pointVertSPV []byte
+
+//go:embed shaders/point.frag.spv
+var pointFragSPV []byte
+
 //go:embed shaders/skybox.vert.spv
 var skyboxVertSPV []byte
 
