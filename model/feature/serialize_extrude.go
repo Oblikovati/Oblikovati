@@ -2,7 +2,13 @@
 
 package feature
 
-import "fmt"
+import (
+	"fmt"
+	stdmath "math"
+
+	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
+)
 
 // ExtrudeData is an extrude's recipe: which sketch region(s), the boolean operation, and
 // the full extent (type, direction, distances, taper, and any work-plane targets). The
@@ -20,6 +26,11 @@ type ExtrudeData struct {
 	Taper     float64 `yaml:"taper,omitempty"`
 	ToPlane   string  `yaml:"toPlane,omitempty"`   // WorkRef of the to-face / from-to end / distance-from-face target
 	FromPlane string  `yaml:"fromPlane,omitempty"` // WorkRef of the from-to start
+	// ProfilePoints selects the extruded region(s) by an interior seed point (sketch 2-D cm),
+	// one per region, instead of by index. An external author (e.g. the Inventor exporter) cannot
+	// predict the reader's DCEL region ordering, so it names regions by containment. When present
+	// it wins over Profiles/Profile; absent, the index-based selection is used unchanged.
+	ProfilePoints [][]float64 `yaml:"profilePoints,omitempty"`
 }
 
 // extrudeProfiles returns the region indices a payload selects, accepting both the
@@ -94,7 +105,41 @@ func restoreExtrude(fs *PartFeatures, ed *ExtrudeData, sk SketchIndexer, work *W
 	if err != nil {
 		return nil, err
 	}
-	return NewExtrudeFeatures(fs).AddExtrude(skt, ed.extrudeProfiles(), op, extent, ed.Taper), nil
+	profiles := resolveSeeds(skt, ed.ProfilePoints, ed.extrudeProfiles())
+	return NewExtrudeFeatures(fs).AddExtrude(skt, profiles, op, extent, ed.Taper), nil
+}
+
+// resolveSeeds maps each interior seed point to the smallest closed region that contains it,
+// falling back to the explicit index list when no seeds are given or none resolve. Region
+// ordering is a DCEL-walk artifact (regions.go), so an author that knows only the region
+// geometry must select by containment, not index. It never returns empty (an empty selection
+// would extrude the whole body).
+func resolveSeeds(skt *sketch.Sketch, seeds [][]float64, fallback []int) []int {
+	if len(seeds) == 0 {
+		return fallback
+	}
+	profs := skt.Profiles()
+	var idx []int
+	for _, s := range seeds {
+		if len(s) != 2 {
+			continue
+		}
+		q := math.P2(s[0], s[1])
+		best, bestArea := -1, stdmath.Inf(1)
+		for i := 0; i < profs.Count(); i++ {
+			p := profs.Item(i)
+			if p.IsClosed() && p.Contains(q) && p.Area() < bestArea {
+				best, bestArea = i, p.Area()
+			}
+		}
+		if best >= 0 {
+			idx = append(idx, best)
+		}
+	}
+	if len(idx) == 0 {
+		return fallback
+	}
+	return idx
 }
 
 // restoreExtent rebuilds the extent from its recipe, resolving any work-plane targets.
