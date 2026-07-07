@@ -258,3 +258,110 @@ func TestCoordinateUnitMetresNoCRS(t *testing.T) {
 		t.Error("a LAS with no CRS VLR must not declare a coordinate unit")
 	}
 }
+
+// TestCoordinateUnitMetresGeoKeyUserDefined: a user-defined linear unit (32767) reads its metre size
+// from the ProjLinearUnitSizeGeoKey entry in the GeoDoubleParams VLR.
+func TestCoordinateUnitMetresGeoKeyUserDefined(t *testing.T) {
+	dir := make([]byte, 24)                   // 4-uint16 header + two keys
+	binary.LittleEndian.PutUint16(dir[0:], 1) // KeyDirectoryVersion
+	binary.LittleEndian.PutUint16(dir[6:], 2) // NumberOfKeys
+	binary.LittleEndian.PutUint16(dir[8:], projLinearUnitsGeoKey)
+	binary.LittleEndian.PutUint16(dir[14:], geoKeyUserDefined) // tagLoc 0, value inline = user-defined
+	binary.LittleEndian.PutUint16(dir[16:], projLinearSizeGeoKey)
+	binary.LittleEndian.PutUint16(dir[18:], geoDoubleRecordID) // size lives in GeoDoubleParams
+	binary.LittleEndian.PutUint16(dir[22:], 0)                 // at index 0
+	doubles := make([]byte, 8)
+	binary.LittleEndian.PutUint64(doubles, math.Float64bits(0.5)) // 0.5 m per unit
+
+	doc, err := Parse(lasBuilder{points: [][3]int32{{1, 1, 1}}, scale: [3]float64{1, 1, 1},
+		vlrs: [][]byte{crsVLR(geoKeyDirRecordID, dir), crsVLR(geoDoubleRecordID, doubles)}}.bytes())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, ok := doc.CoordinateUnitMetres(); !ok || got != 0.5 {
+		t.Errorf("user-defined unit = %v, %v; want 0.5, true", got, ok)
+	}
+}
+
+// TestCoordinateUnitMetresDeclines covers the malformed / non-linear inputs that must fall back to
+// the caller's policy rather than guess a unit.
+func TestCoordinateUnitMetresDeclines(t *testing.T) {
+	// A GeoKey whose linear-units key is stored out-of-line (tagLoc != 0) is malformed.
+	badLoc := geoKeyDir(projLinearUnitsGeoKey, geoDoubleRecordID, 0)
+	if _, ok := lasWithVLR(crsVLR(geoKeyDirRecordID, badLoc)).CoordinateUnitMetres(); ok {
+		t.Error("an out-of-line linear-units key must decline")
+	}
+	// A GeoKey directory that carries no linear-units key at all declines.
+	other := geoKeyDir(4099 /* VerticalUnitsGeoKey */, 0, 9001)
+	if _, ok := lasWithVLR(crsVLR(geoKeyDirRecordID, other)).CoordinateUnitMetres(); ok {
+		t.Error("a directory without ProjLinearUnitsGeoKey must decline")
+	}
+	// A VLR whose declared length runs past the file: the walk stops, no unit.
+	v := crsVLR(wktRecordID, []byte("PROJCS"))
+	binary.LittleEndian.PutUint16(v[20:], 9999) // lie about the payload length
+	if _, ok := lasWithVLR(v).CoordinateUnitMetres(); ok {
+		t.Error("a truncated VLR must decline")
+	}
+}
+
+// TestUnitFactorAfterName exercises the WKT unit-value parser's success and every reject branch.
+func TestUnitFactorAfterName(t *testing.T) {
+	if f, ok := unitFactorAfterName(`"metre",0.5]`); !ok || f != 0.5 {
+		t.Errorf("valid = %v, %v; want 0.5, true", f, ok)
+	}
+	if f, ok := unitFactorAfterName(`"metre",2`); !ok || f != 2 { // no trailing bracket (stop < 0)
+		t.Errorf("unterminated factor = %v, %v; want 2, true", f, ok)
+	}
+	for _, bad := range []string{`no quote`, `"unterminated`, `"m"]`, `"m",notanumber]`, `"m",-1]`} {
+		if _, ok := unitFactorAfterName(bad); ok {
+			t.Errorf("%q must decline", bad)
+		}
+	}
+}
+
+// TestGeoDoubleAtBounds: an out-of-range index or a non-positive size declines.
+func TestGeoDoubleAtBounds(t *testing.T) {
+	if _, ok := geoDoubleAt(nil, 0); ok {
+		t.Error("empty doubles must decline")
+	}
+	neg := make([]byte, 8)
+	binary.LittleEndian.PutUint64(neg, math.Float64bits(-1))
+	if _, ok := geoDoubleAt(neg, 0); ok {
+		t.Error("non-positive size must decline")
+	}
+}
+
+// TestCoordinateUnitMetresWalkEdges covers the VLR-walk edges: a leading non-CRS record is skipped,
+// a VLR count larger than the file stops the walk after the real records, and a GeoKey directory
+// claiming more keys than it holds stops at the truncation.
+func TestCoordinateUnitMetresWalkEdges(t *testing.T) {
+	metreWKT := append([]byte(`PROJCS["x",UNIT["metre",1]]`), 0)
+
+	other := make([]byte, vlrHeaderSize+4)
+	copy(other[2:18], "OTHER_PRODUCER")
+	binary.LittleEndian.PutUint16(other[20:], 4)
+	doc, err := Parse(lasBuilder{points: [][3]int32{{1, 1, 1}}, scale: [3]float64{1, 1, 1},
+		vlrs: [][]byte{other, crsVLR(wktRecordID, metreWKT)}}.bytes())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, ok := doc.CoordinateUnitMetres(); !ok || got != 1.0 {
+		t.Errorf("leading non-CRS VLR: got %v, %v; want 1, true", got, ok)
+	}
+
+	raw := lasBuilder{points: [][3]int32{{1, 1, 1}}, scale: [3]float64{1, 1, 1},
+		vlrs: [][]byte{crsVLR(wktRecordID, metreWKT)}}.bytes()
+	binary.LittleEndian.PutUint32(raw[100:], 5) // claim 5 VLRs; only 1 present
+	if doc, err = Parse(raw); err != nil {
+		t.Fatal(err)
+	}
+	if got, ok := doc.CoordinateUnitMetres(); !ok || got != 1.0 {
+		t.Errorf("VLR count past end: got %v, %v; want 1, true (first read, rest skipped)", got, ok)
+	}
+
+	short := geoKeyDir(projLinearUnitsGeoKey, 0, 9001)
+	binary.LittleEndian.PutUint16(short[6:], 5) // claim 5 keys; only 1 present
+	if got, ok := lasWithVLR(crsVLR(geoKeyDirRecordID, short)).CoordinateUnitMetres(); !ok || got != 1.0 {
+		t.Errorf("truncated geokey dir: got %v, %v; want 1, true", got, ok)
+	}
+}
