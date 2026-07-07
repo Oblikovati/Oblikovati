@@ -55,3 +55,19 @@ func TestResolveSeedsFallsBack(t *testing.T) {
 		t.Errorf("unmatched seed: want fallback [5], got %v", got)
 	}
 }
+
+func TestResolveSeedSingleRegion(t *testing.T) {
+	sk := splitRectSketch()
+	// a seed in the large region resolves to whichever index holds area 6
+	got := resolveSeed(sk, []float64{2.5, 1}, 0)
+	if a := sk.Profiles().Item(got).Area(); stdmath.Abs(a-6) > 1e-6 {
+		t.Errorf("seed (2.5,1) resolved to a region of area %v, want the area-6 region", a)
+	}
+	// no seed / unmatched seed -> the fallback index
+	if got := resolveSeed(sk, nil, 3); got != 3 {
+		t.Errorf("no seed: want fallback 3, got %d", got)
+	}
+	if got := resolveSeed(sk, []float64{99, 99}, 5); got != 5 {
+		t.Errorf("unmatched seed: want fallback 5, got %d", got)
+	}
+}

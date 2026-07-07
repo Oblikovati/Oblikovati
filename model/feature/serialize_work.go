@@ -317,6 +317,10 @@ type RevolveData struct {
 	Angle      float64 `yaml:"angle,omitempty"`      // 0 ⇒ full revolution
 	Angle2     float64 `yaml:"angle2,omitempty"`     // second-direction sweep (#313)
 	Operation  string  `yaml:"operation"`
+	// ProfilePoint selects the revolved region by an interior seed point (sketch 2-D cm) rather
+	// than by index, since an external author cannot predict the reader's region ordering. When
+	// present it wins over Profile; absent, the index is used unchanged.
+	ProfilePoint []float64 `yaml:"profilePoint,omitempty"`
 }
 
 func serializeRevolve(def *RevolveDefinition, sk SketchIndexer) (*RevolveData, error) {
@@ -365,6 +369,7 @@ func restoreRevolve(fs *PartFeatures, d *RevolveData, sk SketchIndexer, work *Wo
 		return nil, err
 	}
 	angle := d.Angle
+	profile := resolveSeed(skt, d.ProfilePoint, d.Profile)
 	if d.AxisSketch > 0 { // a specific centerline (1-based index)
 		axisSk, ok := sk.At(d.AxisSketch - 1)
 		if !ok {
@@ -373,11 +378,11 @@ func restoreRevolve(fs *PartFeatures, d *RevolveData, sk SketchIndexer, work *Wo
 		if d.AxisLine < 0 || d.AxisLine >= axisSk.Lines().Count() {
 			return nil, fmt.Errorf("revolve axis centerline references line %d out of range", d.AxisLine)
 		}
-		pf := NewRevolveFeatures(fs).AddAboutCenterlineLine(skt, d.Profile, axisSk, axisSk.Lines().Item(d.AxisLine), func() float64 { return angle }, op)
+		pf := NewRevolveFeatures(fs).AddAboutCenterlineLine(skt, profile, axisSk, axisSk.Lines().Item(d.AxisLine), func() float64 { return angle }, op)
 		return restoreSecondAngle(pf, d.Angle2), nil
 	}
 	if d.Axis == "" { // revolve about the profile sketch's own (single) centerline
-		pf := NewRevolveFeatures(fs).AddAboutCenterline(skt, d.Profile, func() float64 { return angle }, op)
+		pf := NewRevolveFeatures(fs).AddAboutCenterline(skt, profile, func() float64 { return angle }, op)
 		return restoreSecondAngle(pf, d.Angle2), nil
 	}
 	if work == nil {
@@ -389,10 +394,10 @@ func restoreRevolve(fs *PartFeatures, d *RevolveData, sk SketchIndexer, work *Wo
 	}
 	if d.Angle2 > 0 {
 		angle2 := d.Angle2
-		return NewRevolveFeatures(fs).AddTwoDirectional(skt, d.Profile, axis,
+		return NewRevolveFeatures(fs).AddTwoDirectional(skt, profile, axis,
 			func() float64 { return angle }, func() float64 { return angle2 }, op), nil
 	}
-	return NewRevolveFeatures(fs).Add(skt, d.Profile, axis, func() float64 { return angle }, op), nil
+	return NewRevolveFeatures(fs).Add(skt, profile, axis, func() float64 { return angle }, op), nil
 }
 
 // restoreSecondAngle re-applies a persisted second-direction sweep onto a

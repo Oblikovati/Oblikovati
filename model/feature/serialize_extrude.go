@@ -142,6 +142,15 @@ func resolveSeeds(skt *sketch.Sketch, seeds [][]float64, fallback []int) []int {
 	return idx
 }
 
+// resolveSeed maps a single interior seed point to the region that contains it, falling back to
+// the given index when the seed is absent or unresolved. The single-region form used by revolve.
+func resolveSeed(skt *sketch.Sketch, seed []float64, fallback int) int {
+	if idx := resolveSeeds(skt, [][]float64{seed}, []int{fallback}); len(idx) > 0 {
+		return idx[0]
+	}
+	return fallback
+}
+
 // restoreExtent rebuilds the extent from its recipe, resolving any work-plane targets.
 func restoreExtent(ed *ExtrudeData, work *WorkGeometry) (Extent, error) {
 	ext := Extent{Type: parseExtentName(ed.Extent), Direction: parseDirectionName(ed.Direction)}
