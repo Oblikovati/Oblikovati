@@ -41,11 +41,12 @@ func TestASCIIReaderParsesChannels(t *testing.T) {
 	if !samples[0].HasIntensity || samples[0].Intensity != 7 {
 		t.Errorf("first sample intensity = %+v, want 7", samples[0])
 	}
-	if !samples[1].HasRGB || samples[1].RGB != [3]float32{255, 128, 0} {
-		t.Errorf("second sample rgb = %+v, want [255 128 0]", samples[1])
+	// ASCII colour is normalised to 0..1 from the 0..255 convention at decode (#1787).
+	if !samples[1].HasRGB || samples[1].RGB != rgb255(255, 128, 0) {
+		t.Errorf("second sample rgb = %+v, want 255,128,0 /255", samples[1])
 	}
-	if !samples[2].HasIntensity || !samples[2].HasRGB || samples[2].Intensity != 42 || samples[2].RGB != [3]float32{10, 20, 30} {
-		t.Errorf("third sample = %+v, want intensity+rgb", samples[2])
+	if !samples[2].HasIntensity || !samples[2].HasRGB || samples[2].Intensity != 42 || samples[2].RGB != rgb255(10, 20, 30) {
+		t.Errorf("third sample = %+v, want intensity 42 and 10,20,30 /255", samples[2])
 	}
 }
 
@@ -297,8 +298,9 @@ func TestReadScanSamplesPreservesPLYAndLASChannels(t *testing.T) {
 	if len(samples) != 1 || !samples[0].HasIntensity || !samples[0].HasRGB {
 		t.Fatalf("PLY samples = %+v, want intensity+rgb", samples)
 	}
-	if samples[0].Intensity != 77 || samples[0].RGB != [3]float32{9, 8, 7} {
-		t.Errorf("PLY sample = %+v, want intensity 77 and rgb 9/8/7", samples[0])
+	// PLY uchar colour normalises /255, LAS 16-bit colour normalises /65535 (#1787).
+	if samples[0].Intensity != 77 || samples[0].RGB != rgb255(9, 8, 7) {
+		t.Errorf("PLY sample = %+v, want intensity 77 and rgb 9,8,7 /255", samples[0])
 	}
 
 	las := syntheticLASFormat3([3]int32{1, 2, 3}, 77, [3]uint16{9, 8, 7})
@@ -309,9 +311,16 @@ func TestReadScanSamplesPreservesPLYAndLASChannels(t *testing.T) {
 	if len(samples) != 1 || !samples[0].HasIntensity || !samples[0].HasRGB {
 		t.Fatalf("LAS samples = %+v, want intensity+rgb", samples)
 	}
-	if samples[0].Intensity != 77 || samples[0].RGB != [3]float32{9, 8, 7} {
-		t.Errorf("LAS sample = %+v, want intensity 77 and rgb 9/8/7", samples[0])
+	wantLAS := [3]float32{float32(9) / 65535, float32(8) / 65535, float32(7) / 65535}
+	if samples[0].Intensity != 77 || samples[0].RGB != wantLAS {
+		t.Errorf("LAS sample = %+v, want intensity 77 and rgb 9,8,7 /65535", samples[0])
 	}
+}
+
+// rgb255 is the expected 0..1 normalisation of an 8-bit colour triple (the same float32 /255 the
+// ASCII and PLY-uchar decoders apply, so the comparison is bit-exact).
+func rgb255(r, g, b float32) [3]float32 {
+	return [3]float32{r / 255, g / 255, b / 255}
 }
 
 func syntheticLASFormat3(xyz [3]int32, intensity uint16, rgb [3]uint16) []byte {

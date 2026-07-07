@@ -220,8 +220,10 @@ func TestScanDecodesIntensityAndRGB(t *testing.T) {
 	if len(s.Points) != 1 || !s.HasIntensity() || !s.HasRGB() {
 		t.Fatalf("scan = %+v, want 1 point with intensity+rgb", s)
 	}
-	if s.Intensity[0] != 77 || s.RGB[0] != [3]float32{9, 8, 7} || float64(s.Points[0].X) != 10 {
-		t.Errorf("scan row = pt %+v int %v rgb %v, want x=10 int=77 rgb=9/8/7", s.Points[0], s.Intensity[0], s.RGB[0])
+	// LAS colour is 16-bit, normalised to 0..1 by /65535 at decode (#1787); intensity stays raw.
+	wantRGB := [3]float32{float32(9) / 65535, float32(8) / 65535, float32(7) / 65535}
+	if s.Intensity[0] != 77 || s.RGB[0] != wantRGB || float64(s.Points[0].X) != 10 {
+		t.Errorf("scan row = pt %+v int %v rgb %v, want x=10 int=77 rgb=9,8,7 /65535", s.Points[0], s.Intensity[0], s.RGB[0])
 	}
 }
 

@@ -312,6 +312,10 @@ func setSampleIntensity(s *PointSample, field string) {
 	}
 }
 
+// asciiColorMax is the ASCII scan colour convention's channel maximum; RGB is normalised to 0..1 by
+// it at decode so the renderer never guesses the bit depth per point (#1787).
+const asciiColorMax = 255
+
 // setSampleRGB sets the RGB channel from three ASCII fields, leaving it unset if any is unparsable.
 func setSampleRGB(s *PointSample, fields []string) {
 	if rgb, ok := parseRGBFields(fields); ok {
@@ -320,6 +324,8 @@ func setSampleRGB(s *PointSample, fields []string) {
 	}
 }
 
+// parseRGBFields parses three ASCII colour columns, normalising each to 0..1 from the 0..255 scan
+// convention (#1787). Returns false if any field is not numeric.
 func parseRGBFields(fields []string) ([3]float32, bool) {
 	var rgb [3]float32
 	for i := 0; i < 3; i++ {
@@ -327,7 +333,7 @@ func parseRGBFields(fields []string) ([3]float32, bool) {
 		if err != nil {
 			return [3]float32{}, false
 		}
-		rgb[i] = float32(v)
+		rgb[i] = float32(v) / asciiColorMax
 	}
 	return rgb, true
 }
