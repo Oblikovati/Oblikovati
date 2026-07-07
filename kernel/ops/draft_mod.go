@@ -28,7 +28,7 @@ type draftMod struct {
 // tilted face to the meeting point of its adjacent (new) surfaces, and re-intersect every edge that
 // touches a relocated vertex. Errors if a selected face is not planar (curved-face draft is future
 // work — the plane-only tilt does not yet apply to a cylinder/cone selected face).
-func newDraftMod(solid *topo.Body, faceKeys [][]byte, pull math.UnitVector3, angle float64) (*draftMod, error) {
+func newDraftMod(solid *topo.Body, faceKeys [][]byte, pull math.UnitVector3, neutral *geom.Plane, angle float64) (*draftMod, error) {
 	sel, err := resolveFaceSet(solid, faceKeys)
 	if err != nil {
 		return nil, err
@@ -38,7 +38,7 @@ func newDraftMod(solid *topo.Body, faceKeys [][]byte, pull math.UnitVector3, ang
 		faceSurf: map[uint64]geom.Surface{}, newSurf: map[uint64]geom.Surface{},
 		newPoint: map[uint64]math.Point3{}, newCurve: map[uint64]geom.Curve3{},
 	}
-	if err := d.tiltSelectedFaces(solid, pull, angle); err != nil {
+	if err := d.tiltSelectedFaces(solid, pull, neutral, angle); err != nil {
 		return nil, err
 	}
 	moved := d.relocateVertices(solid)
@@ -50,7 +50,7 @@ func newDraftMod(solid *topo.Body, faceKeys [][]byte, pull math.UnitVector3, ang
 
 // tiltSelectedFaces rotates each selected planar face about its hinge and records both the tilted
 // surface (newSurf) and every face's effective surface (faceSurf) for the re-intersection.
-func (d *draftMod) tiltSelectedFaces(solid *topo.Body, pull math.UnitVector3, angle float64) error {
+func (d *draftMod) tiltSelectedFaces(solid *topo.Body, pull math.UnitVector3, neutral *geom.Plane, angle float64) error {
 	for _, f := range solid.Faces() {
 		if !d.selected[f.ID()] {
 			d.faceSurf[f.ID()] = f.Geometry()
@@ -59,7 +59,7 @@ func (d *draftMod) tiltSelectedFaces(solid *topo.Body, pull math.UnitVector3, an
 		if _, ok := f.Geometry().(geom.Plane); !ok {
 			return fmt.Errorf("draft: selected face %d is %T; only planar faces can be drafted (curved-face draft is future work)", f.ID(), f.Geometry())
 		}
-		tilted := draftedPlane(f, pull, angle)
+		tilted := draftedPlane(f, pull, neutral, angle)
 		d.faceSurf[f.ID()], d.newSurf[f.ID()] = tilted, tilted
 	}
 	return nil

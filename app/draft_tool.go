@@ -6,20 +6,38 @@ import (
 	"errors"
 	stdmath "math"
 
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
 	"oblikovati.org/model/feature"
 )
 
 // degToRad converts the draft angle the UI takes in degrees to the radians the feature uses.
 const degToRad = stdmath.Pi / 180
 
-// DraftTool is the interactive Draft command: activate it, click one or more faces, set the
-// draft angle (degrees) in the property window, and OK to taper them about the +Z pull
-// direction (the mould-pull default). Negative angle leans the face in, positive out.
+// draftPickMode selects which slot the next viewport click fills: the faces to taper, the pull-
+// direction face (its normal), or the neutral (parting) plane face. Mirrors ReplaceFaceTool's mode.
+type draftPickMode int
+
+const (
+	pickDraftFaces draftPickMode = iota
+	pickDraftPull
+	pickDraftNeutral
+)
+
+// DraftTool is the interactive Draft command: activate it, click one or more faces, optionally set a
+// pull-direction face and a neutral (parting) plane face, set the draft angle (degrees), and OK to
+// taper. Pull defaults to +Z (the mould-pull default); with no neutral plane each face pivots on the
+// implicit lowest-vertex hinge. Negative angle leans the face in, positive out (#1801).
 type DraftTool struct {
 	featureEditMode // set ⇒ this panel re-edits a committed draft (see editDraftTool)
 	faces           []FaceHandle
 	seededFaceKeys  [][]byte // edit mode: the feature's existing face keys
 	angleDeg        float64
+	mode            draftPickMode
+	pull            *FaceHandle   // pull-direction face (its normal); nil ⇒ default/seeded
+	neutral         *FaceHandle   // neutral parting-plane face; nil ⇒ default/seeded
+	seededPull      *math.Vector3 // edit mode: the committed pull direction (kept if not re-picked)
+	seededNeutral   *geom.Plane   // edit mode: the committed neutral plane (kept if not re-picked)
 	added           *feature.PartFeature
 }
 
@@ -35,16 +53,91 @@ func (t *DraftTool) Start(*Session) {}
 // AcceptedKinds declares draft picks faces (the faces to taper).
 func (t *DraftTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
 
-// Picks reports the picked faces for the unified highlight.
-func (t *DraftTool) Picks() []Selectable { return selectables(t.faces) }
-
-// Pick appends the clicked face (ignoring a duplicate).
+// Pick routes the clicked face to the active slot: the pull-direction face, the neutral-plane face,
+// or (default) the faces to taper.
 func (t *DraftTool) Pick(_ *Session, sel Selectable) {
 	f, ok := sel.(FaceHandle)
-	if !ok || t.hasFace(f) {
+	if !ok {
 		return
 	}
-	t.faces = append(t.faces, f)
+	switch t.mode {
+	case pickDraftPull:
+		fc := f
+		t.pull = &fc
+	case pickDraftNeutral:
+		fc := f
+		t.neutral = &fc
+	default:
+		if !t.hasFace(f) {
+			t.faces = append(t.faces, f)
+		}
+	}
+}
+
+// Picks reports the tapered faces plus the pull and neutral faces for the unified highlight.
+func (t *DraftTool) Picks() []Selectable {
+	return appendPick(appendPick(selectables(t.faces), t.pull), t.neutral)
+}
+
+// SetPickMode / PickMode switch which slot the next viewport click fills.
+func (t *DraftTool) SetPickMode(m draftPickMode) { t.mode = m }
+func (t *DraftTool) PickMode() draftPickMode     { return t.mode }
+
+// PickingPull / PickingNeutral report the active pick slot (for the dialog's row highlight).
+func (t *DraftTool) PickingPull() bool    { return t.mode == pickDraftPull }
+func (t *DraftTool) PickingNeutral() bool { return t.mode == pickDraftNeutral }
+
+// SetPickingPull / SetPickingNeutral route the next viewport click to the pull-direction or
+// neutral-plane slot when enabled, or back to picking faces when disabled — the exported toggles
+// the head's dialog drives (mirrors ReplaceFaceTool.SetPickingTarget). Enabling one clears the
+// other so only one slot is armed at a time.
+func (t *DraftTool) SetPickingPull(on bool) {
+	if on {
+		t.mode = pickDraftPull
+		return
+	}
+	t.mode = pickDraftFaces
+}
+func (t *DraftTool) SetPickingNeutral(on bool) {
+	if on {
+		t.mode = pickDraftNeutral
+		return
+	}
+	t.mode = pickDraftFaces
+}
+
+// PullSet / NeutralSet report whether a pull face / neutral plane is in effect (picked or seeded).
+func (t *DraftTool) PullSet() bool    { return t.pull != nil || t.seededPull != nil }
+func (t *DraftTool) NeutralSet() bool { return t.neutral != nil || t.seededNeutral != nil }
+
+// ClearPull / ClearNeutral drop the pull / neutral input, reverting to the default (+Z / implicit
+// hinge), and return to picking faces.
+func (t *DraftTool) ClearPull()    { t.pull, t.seededPull, t.mode = nil, nil, pickDraftFaces }
+func (t *DraftTool) ClearNeutral() { t.neutral, t.seededNeutral, t.mode = nil, nil, pickDraftFaces }
+
+// pullVector resolves the pull direction: the picked face's normal, else the seeded (edit) direction,
+// else the +Z mould-pull default.
+func (t *DraftTool) pullVector() math.Vector3 {
+	if t.pull != nil {
+		if pl, ok := t.pull.Face.Geometry().(geom.Plane); ok {
+			return pl.Normal()
+		}
+	}
+	if t.seededPull != nil {
+		return *t.seededPull
+	}
+	return math.V3(0, 0, 1)
+}
+
+// neutralPlane resolves the neutral parting plane: the picked planar face, else the seeded (edit)
+// plane, else nil (the implicit lowest-vertex hinge).
+func (t *DraftTool) neutralPlane() *geom.Plane {
+	if t.neutral != nil {
+		if pl, ok := t.neutral.Face.Geometry().(geom.Plane); ok {
+			return &pl
+		}
+	}
+	return t.seededNeutral
 }
 
 func (t *DraftTool) hasFace(f FaceHandle) bool {
@@ -103,7 +196,7 @@ func (t *DraftTool) Commit(s *Session) error {
 // both Commit (the part's engine) and DraftFeature (a scratch engine).
 func (t *DraftTool) addDraft(dress *feature.DressUpFeatures) *feature.PartFeature {
 	rad := t.angleDeg * degToRad
-	return dress.AddDraft(t.selectedFaceKeys(), func() float64 { return rad })
+	return dress.AddDraftPullNeutral(t.selectedFaceKeys(), t.pullVector(), t.neutralPlane(), func() float64 { return rad })
 }
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
@@ -142,6 +235,8 @@ func (t *DraftTool) commitEdit(s *Session) error {
 	def := t.target.Definition().(*feature.FaceDraftFeature).Definition()
 	def.FaceKeys = t.selectedFaceKeys()
 	def.Angle = konst(t.angleDeg * degToRad)
+	def.PullDir = t.pullVector()
+	def.Neutral = t.neutralPlane()
 	return commitFeatureEdit(s, t.target)
 }
 

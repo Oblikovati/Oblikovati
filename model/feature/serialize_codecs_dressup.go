@@ -76,7 +76,9 @@ func (r featureCodecSet) registerDressUpCodecs() {
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			df := f.(*FaceDraftFeature)
 			p := df.def.PullDir
-			fd.Draft = &FaceDressData{Faces: encodeKeys(df.def.FaceKeys), Value: evalFloat(df.def.Angle), Pull: []float64{p.X, p.Y, p.Z}, GeomFaces: encodeGeomFaces(df.def.GeomFaces)}
+			no, nn := neutralData(df.def.Neutral)
+			fd.Draft = &FaceDressData{Faces: encodeKeys(df.def.FaceKeys), Value: evalFloat(df.def.Angle),
+				Pull: []float64{p.X, p.Y, p.Z}, NeutralOrigin: no, NeutralNormal: nn, GeomFaces: encodeGeomFaces(df.def.GeomFaces)}
 			return nil
 		},
 		decode: decodeDraft,
@@ -226,6 +228,7 @@ func decodeDraft(rc *restoreContext, fd FeatureData) (*PartFeature, error) {
 		return nil, err
 	}
 	return NewDressUpFeatures(rc.fs).addFaceDraft(&FaceDraftDefinition{
-		FaceKeys: d.keys, GeomFaces: d.geomFaces, PullDir: draftPull(fd.Draft.Pull), Angle: constFloat(d.value),
+		FaceKeys: d.keys, GeomFaces: d.geomFaces, PullDir: draftPull(fd.Draft.Pull),
+		Neutral: draftNeutral(fd.Draft.NeutralOrigin, fd.Draft.NeutralNormal), Angle: constFloat(d.value),
 	}), nil
 }
