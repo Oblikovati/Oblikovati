@@ -22,7 +22,14 @@ func TestMarcherCentreCurvePlaneCylinder(t *testing.T) {
 	}
 	m := &Marcher{Inside: inside, Res: geom.ResolutionForSize(6)}
 
-	centre, ok := m.centreCurve(plane, cyl, 0.5)
+	anchor, ok := m.expectedCentre(math.P3(2, 0, 3), plane, cyl, 0.5) // guide point on the rim edge
+	if !ok {
+		t.Fatal("no seed section at the guide station")
+	}
+	if stdmath.Abs(float64(anchor.DistanceTo(math.P3(1.5, 0, 2.5)))) > 1e-9 {
+		t.Errorf("expected centre = %v, want (1.5, 0, 2.5)", anchor)
+	}
+	centre, ok := m.centreCurve(plane, cyl, 0.5, anchor)
 	if !ok {
 		t.Fatal("no centre curve found for plane+cylinder rolling ball")
 	}
@@ -49,6 +56,39 @@ func TestMarcherCentreCurvePlaneCylinder(t *testing.T) {
 	assertBlendTangent(t, tor, 3.0, 2.0)
 }
 
+// TestMarcherCentreCurvePlanePlane is the #1797 straight-segment regression: a convex 90° edge
+// between two planes has an UNBOUNDED line as its rolling-ball centre curve, so the old
+// domain-midpoint validation sampled meaningless far-off points and the seed failed. The
+// anchor-based selection must pick that line (blend surface = a cylinder of radius r).
+func TestMarcherCentreCurvePlanePlane(t *testing.T) {
+	planeX, _ := geom.NewPlane(math.P3(1, 0, 0), math.V3(1, 0, 0)) // x = 1
+	planeZ, _ := geom.NewPlane(math.P3(0, 0, 1), math.V3(0, 0, 1)) // z = 1
+	inside := func(p math.Point3) bool { return float64(p.X) < 1 && float64(p.Z) < 1 }
+	m := &Marcher{Inside: inside, Res: geom.ResolutionForSize(4)}
+
+	anchor, ok := m.expectedCentre(math.P3(1, 0, 1), planeX, planeZ, 0.3) // guide point on the edge
+	if !ok {
+		t.Fatal("no seed section for the plane∩plane straight edge")
+	}
+	if float64(anchor.DistanceTo(math.P3(0.7, 0, 0.7))) > 1e-9 {
+		t.Errorf("expected centre = %v, want (0.7, 0, 0.7)", anchor)
+	}
+	centre, ok := m.centreCurve(planeX, planeZ, 0.3, anchor)
+	if !ok {
+		t.Fatal("no centre curve for the plane∩plane rolling ball (the unbounded-line regression)")
+	}
+	if lo, hi := centre.Domain(); !stdmath.IsInf(lo, 0) && !stdmath.IsInf(hi, 0) {
+		t.Errorf("plane∩plane centre curve should be an unbounded line, got domain [%g,%g]", lo, hi)
+	}
+	surf, ok := analyticBlendSurface(centre, 0.3)
+	if !ok {
+		t.Fatal("no analytic blend surface for a line centre curve")
+	}
+	if cyl, isCyl := surf.(geom.Cylinder); !isCyl || stdmath.Abs(cyl.Radius-0.3) > 1e-9 {
+		t.Fatalf("blend surface = %T, want a cylinder of radius 0.3", surf)
+	}
+}
+
 // assertBlendTangent samples the torus tube's extreme point on each principal direction: its top
 // must reach the cap plane and its outer equator the cylinder radius.
 func assertBlendTangent(t *testing.T, tor geom.Torus, capZ, cylR float64) {
@@ -72,7 +112,8 @@ func TestFitCanalMatchesTorusOracle(t *testing.T) {
 		return float64(p.Z) < 3 && stdmath.Hypot(float64(p.X), float64(p.Y)) < 2
 	}
 	m := &Marcher{Inside: inside, Res: geom.ResolutionForSize(6)}
-	centre, _ := m.centreCurve(plane, cyl, 0.5)
+	anchor, _ := m.expectedCentre(math.P3(2, 0, 3), plane, cyl, 0.5)
+	centre, _ := m.centreCurve(plane, cyl, 0.5, anchor)
 	lo, hi := centre.Domain()
 	// A real segment spans a bounded sub-arc (a quarter-cylinder rim is 90°); the full 360° circle
 	// as one bicubic is under-resolved. Fit the first quarter, as a bounded edge would.

@@ -3,6 +3,8 @@
 package blend
 
 import (
+	stdmath "math"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
@@ -40,7 +42,11 @@ func (m *Marcher) March(sp *Spine, sec SectionFunctional) Result {
 // segment builds one blend segment over spine edge i between supports a and b.
 func (m *Marcher) segment(sp *Spine, i int, a, b geom.Surface, sec SectionFunctional) (BlendSegment, ErrorStatus) {
 	r := sec.Extent(midSpineParam(sp, i))
-	centre, ok := m.centreCurve(a, b, r)
+	anchor, ok := m.expectedCentre(sp.PointAt(midSpineParam(sp, i)), a, b, r)
+	if !ok {
+		return BlendSegment{}, StatusStartSectionFailed // radius exceeds the local curvature bound here
+	}
+	centre, ok := m.centreCurve(a, b, r, anchor)
 	if !ok {
 		return BlendSegment{}, StatusStartSectionFailed
 	}
@@ -64,8 +70,12 @@ func (m *Marcher) segment(sp *Spine, i int, a, b geom.Surface, sec SectionFuncti
 
 // centreCurve returns the rolling-ball centre curve between primitive supports a and b at radius r:
 // it intersects the analytic offsets for each of the four inside/outside sign combinations and
-// returns the branch whose sections are valid and whose centre lies in the solid (the convex fillet).
-func (m *Marcher) centreCurve(a, b geom.Surface, r float64) (geom.Curve3, bool) {
+// returns the branch passing through the anchor (the analytic ball centre at the guide station). The
+// anchor — not domain sampling — selects the branch, so it is robust for an UNBOUNDED centre curve
+// (a plane∩plane blend's centre is an infinite line, whose domain midpoint is meaningless): #1797's
+// straight segments failed the old domain-sampled validation for exactly this reason.
+func (m *Marcher) centreCurve(a, b geom.Surface, r float64, anchor math.Point3) (geom.Curve3, bool) {
+	best, bestErr := geom.Curve3(nil), stdmath.Inf(1)
 	for _, sa := range [2]float64{-r, r} {
 		oa, oka := offsetPrimitive(a, sa)
 		if !oka {
@@ -81,30 +91,67 @@ func (m *Marcher) centreCurve(a, b geom.Surface, r float64) (geom.Curve3, bool) 
 				continue
 			}
 			for _, cv := range curves {
-				if m.centreValid(cv, a, b, r) {
-					return cv, true
+				if d := distPointToCurve(cv, anchor); d < bestErr {
+					best, bestErr = cv, d
 				}
 			}
 		}
 	}
-	return nil, false
+	if best == nil || bestErr > m.Res.Weld() {
+		return nil, false
+	}
+	return best, true
 }
 
-// centreValid reports whether curve cv is the fillet centre curve: sampled points lie in the solid
-// (a convex fillet's ball centre is inside the material) and admit an exposed section of radius r.
-func (m *Marcher) centreValid(cv geom.Curve3, a, b geom.Surface, r float64) bool {
+// expectedCentre returns the exact rolling-ball centre at a guide station: the point receded from the
+// spine point mid by r along the interior bisector of the two supports (offDir = −(nA+nB)/(1+nA·nB),
+// the same convex-fillet offset ops uses), with each support normal oriented outward via Inside. It
+// doubles as the seed-section existence check — ok=false when the centre admits no exposed section of
+// radius r (the radius exceeds the local curvature bound, OCCT's StartSolFailure).
+func (m *Marcher) expectedCentre(mid math.Point3, a, b geom.Surface, r float64) (math.Point3, bool) {
+	nA, nB := m.outwardNormal(a, mid), m.outwardNormal(b, mid)
+	denom := 1 + nA.Dot(nB)
+	if denom < 1e-9 { // supports face opposite ways (a ~180° edge) — no rolling-ball corner
+		return math.Point3{}, false
+	}
+	offDir := nA.Add(nB).Scale(-r / denom)
+	c := mid.TranslateBy(offDir)
+	if _, ok := sectionAt(c, a, b, r, m.Res.Weld(), m.Inside); !ok {
+		return math.Point3{}, false
+	}
+	return c, true
+}
+
+// outwardNormal returns support s's unit normal at the foot of p, flipped to point OUT of the solid
+// (a small step along it leaves the material). The sign is what makes offDir recede into the solid.
+func (m *Marcher) outwardNormal(s geom.Surface, p math.Point3) math.Vector3 {
+	u, v := s.ParamAt(p)
+	n := unitVec(s.NormalAt(u, v))
+	if m.Inside(p.TranslateBy(n.Scale(10 * m.Res.Weld()))) {
+		return n.Scale(-1)
+	}
+	return n
+}
+
+// distPointToCurve is the distance from p to curve cv — closed-form for an unbounded line, else the
+// minimum over a dense domain sampling (all other analytic centre curves — circle, ellipse — are
+// bounded). It ranks the offset-intersection branches so centreCurve picks the one through the anchor.
+func distPointToCurve(cv geom.Curve3, p math.Point3) float64 {
 	lo, hi := cv.Domain()
-	tol := m.Res.Weld()
-	for _, t := range []float64{lo + 0.25*(hi-lo), lo + 0.5*(hi-lo), lo + 0.75*(hi-lo)} {
-		c := cv.PointAt(t)
-		if !m.Inside(c) {
-			return false
-		}
-		if _, ok := sectionAt(c, a, b, r, tol, m.Inside); !ok {
-			return false
+	if stdmath.IsInf(lo, 0) || stdmath.IsInf(hi, 0) {
+		o := cv.PointAt(0)
+		d := unitVec(cv.TangentAt(0))
+		w := o.VectorTo(p)
+		return float64(w.Sub(d.Scale(w.Dot(d))).Length())
+	}
+	best := stdmath.Inf(1)
+	const n = 64
+	for i := 0; i <= n; i++ {
+		if d := float64(cv.PointAt(lo + (hi-lo)*float64(i)/n).DistanceTo(p)); d < best {
+			best = d
 		}
 	}
-	return true
+	return best
 }
 
 // offsetPrimitive returns the exact offset of a primitive support by signed distance d — the plane
