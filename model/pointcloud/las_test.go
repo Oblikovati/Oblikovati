@@ -50,6 +50,34 @@ func TestLASMillimetreScan(t *testing.T) {
 	}
 }
 
+// TestLASUnitMM: an explicit CRS linear unit wins over the quantisation heuristic — a survey in feet
+// or a WKT-declared millimetre keeps its true scale even when its coarse integer scale would
+// otherwise be read as millimetres — while a file with no CRS falls back to the heuristic (#1789).
+func TestLASUnitMM(t *testing.T) {
+	coarse := [3]float64{1, 1, 1}   // heuristic alone → millimetres
+	fine := [3]float64{0.001, 1, 1} // heuristic alone → metres (a sub-metre axis)
+	cases := []struct {
+		name        string
+		crsMetres   float64
+		crsDeclared bool
+		scale       [3]float64
+		want        float64
+	}{
+		{"metre CRS over coarse scale", 1.0, true, coarse, 1000},
+		{"US survey foot CRS over coarse scale", 0.30480060960121924, true, coarse, 304.80060960121924},
+		{"millimetre CRS over fine scale", 0.001, true, fine, 1},
+		{"no CRS, coarse scale → mm heuristic", 0, false, coarse, 1},
+		{"no CRS, fine scale → metre heuristic", 0, false, fine, 1000},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := lasUnitMM(c.crsMetres, c.crsDeclared, c.scale); got != c.want {
+				t.Errorf("lasUnitMM(%v, %v, %v) = %v, want %v", c.crsMetres, c.crsDeclared, c.scale, got, c.want)
+			}
+		})
+	}
+}
+
 // TestLASReaderImplementsPerFileUnit: the LAS reader must expose the per-file unit seam, and an
 // undecodable header must decline (ok=false) so the static FileUnitMM stays in force (#1789).
 func TestLASReaderImplementsPerFileUnit(t *testing.T) {

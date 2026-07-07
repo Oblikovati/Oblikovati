@@ -36,17 +36,30 @@ func lasMillimetreScan(scale [3]float64) bool {
 	return scale[0] >= 1 && scale[1] >= 1 && scale[2] >= 1
 }
 
-// fileUnitMM overrides the metre default (see FileUnitMM) for a LAS whose coordinate quantisation is
-// too coarse to be metres, reading it as millimetres so a millimetre-authored scan does not import
-// 1000× oversized and kilometres from the origin, where it renders invisibly (#1789). Conformant
-// surveys (sub-metre scale) keep the metre unit. ok is false only when the header cannot be parsed,
-// leaving the static FileUnitMM in force (the decode then fails in ReadSamples with the real error).
+// fileUnitMM overrides the static metre default (see FileUnitMM) with the file's true coordinate
+// unit (#1789). It first honours an explicit CRS declaration — a WKT or GeoTIFF linear unit in the
+// VLRs — so a survey in US survey feet (~3.28× off if read as metres) or a WKT-declared millimetre
+// scan places at true scale. With no linear CRS it falls back to the quantisation heuristic: a scan
+// quantised to a whole metre or coarser is really millimetres, else the ASPRS metre. ok is false
+// only when the header cannot be parsed, leaving the static FileUnitMM in force (the decode then
+// fails in ReadSamples with the real error).
 func (lasReader) fileUnitMM(data []byte) (mm float64, ok bool) {
 	doc, err := lasfmt.Parse(data)
 	if err != nil {
 		return 0, false
 	}
-	return scanUnitMM(lasMillimetreScan(doc.Header().Scale)), true
+	crsMetres, declared := doc.CoordinateUnitMetres()
+	return lasUnitMM(crsMetres, declared, doc.Header().Scale), true
+}
+
+// lasUnitMM chooses the file's millimetres-per-unit: an explicit CRS linear unit wins (its
+// metres-per-unit scaled to mm), else the coarse-quantisation heuristic decides mm vs metre (#1789).
+// Kept pure so the CRS-over-heuristic precedence is tested without synthesising LAS bytes.
+func lasUnitMM(crsMetres float64, crsDeclared bool, scale [3]float64) float64 {
+	if crsDeclared {
+		return crsMetres * 1000 // metres-per-unit → millimetres-per-unit
+	}
+	return scanUnitMM(lasMillimetreScan(scale))
 }
 
 // ReadSamples decodes the LAS point records into cloud-local samples.

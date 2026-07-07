@@ -28,7 +28,9 @@ var signature = []byte("LASF")
 type lasHeader struct {
 	versionMajor    uint8
 	versionMinor    uint8
+	headerSize      uint16
 	pointDataOffset uint32
+	vlrCount        uint32
 	pointFormat     uint8
 	recordLength    uint16
 	pointCount      uint64
@@ -48,7 +50,9 @@ func parseHeader(data []byte) (lasHeader, error) {
 	h := lasHeader{
 		versionMajor:    data[24],
 		versionMinor:    data[25],
+		headerSize:      binary.LittleEndian.Uint16(data[94:]),
 		pointDataOffset: binary.LittleEndian.Uint32(data[96:]),
+		vlrCount:        binary.LittleEndian.Uint32(data[100:]),
 		pointFormat:     data[104] & 0x3f, // mask the compression bits a LAZ writer may set
 		recordLength:    binary.LittleEndian.Uint16(data[105:]),
 	}
