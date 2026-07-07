@@ -52,6 +52,26 @@ func (d *Document) Vertices() ([]omath.Point3, error) {
 	return data.Points, nil
 }
 
+// CartesianIntegerResolution reports whether the scan's cartesian XYZ channels are all stored at
+// integer resolution — a ScaledInteger with unit scale, or a plain Integer. Such a file quantises
+// positions to whole file-units, which is meaningless at the ASTM E2807 metre default (no scanner
+// captures at 1-metre resolution), so its raw integers are in practice millimetres; callers use this
+// to keep such a scan from importing 1000× oversized (Oblikovati/Oblikovati#1789). Returns false
+// when any cartesian channel is a Float, carries a sub-unit scale, or is absent — i.e. whenever the
+// spec's metre unit should stand.
+func (d *Document) CartesianIntegerResolution() bool {
+	xi, yi, zi, err := d.cartesianIndices()
+	if err != nil {
+		return false
+	}
+	for _, i := range []int{xi, yi, zi} {
+		if !d.points.fields[i].integerResolution() {
+			return false
+		}
+	}
+	return true
+}
+
 // cartesianIndices returns the prototype positions of cartesianX/Y/Z.
 func (d *Document) cartesianIndices() (int, int, int, error) {
 	xi, yi, zi := -1, -1, -1

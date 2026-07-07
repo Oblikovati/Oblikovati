@@ -30,6 +30,21 @@ type protoField struct {
 	doublePrec bool
 }
 
+// integerResolution reports whether the field quantises values to whole file-units: a plain
+// Integer, or a ScaledInteger whose scale is exactly 1 (so the stored integer IS the real value).
+// A sub-unit scale (e.g. 0.001) or a Float encodes finer resolution and is not flagged. Callers use
+// this on the cartesian channels to spot a scan mis-declared in metres (Oblikovati/Oblikovati#1789).
+func (f protoField) integerResolution() bool {
+	switch f.kind {
+	case kindInteger:
+		return true
+	case kindScaledInteger:
+		return f.scale == 1
+	default:
+		return false
+	}
+}
+
 // pointsSection is the decoded <points> CompressedVector: where its binary section starts
 // (a physical offset), how many records it holds, and the prototype field layout.
 type pointsSection struct {
