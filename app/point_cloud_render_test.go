@@ -41,6 +41,33 @@ func TestPointCloudItemsRendersVisibleClouds(t *testing.T) {
 	}
 }
 
+// TestPointCloudBounds returns the model-space extent of the visible clouds — the box the viewport
+// far plane consults to enclose a large or distant scan (#1789). No clouds, or only hidden ones,
+// yield an empty box.
+func TestPointCloudBounds(t *testing.T) {
+	s, def := emptyPartSession(t)
+	if !s.PointCloudBounds().IsEmpty() {
+		t.Fatal("a part with no clouds must report an empty point-cloud box")
+	}
+
+	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("scan")})
+	pts := []math.Point3{math.P3(-100, -200, -300), math.P3(100, 200, 300)}
+	pc, err := def.PointClouds().Add("Cloud1", "c.xyz", rid, pts)
+	if err != nil {
+		t.Fatalf("attach: %v", err)
+	}
+
+	box := s.PointCloudBounds()
+	if box.Min != math.P3(-100, -200, -300) || box.Max != math.P3(100, 200, 300) {
+		t.Errorf("cloud bounds = %v..%v, want (-100,-200,-300)..(100,200,300)", box.Min, box.Max)
+	}
+
+	pc.SetVisible(false)
+	if !s.PointCloudBounds().IsEmpty() {
+		t.Error("a hidden cloud must not contribute to the point-cloud box")
+	}
+}
+
 // TestPointCloudItemsColorsByDisplayMode checks the draw batch carries per-point colors when a
 // cloud is set to RGB or intensity display.
 func TestPointCloudItemsColorsByDisplayMode(t *testing.T) {

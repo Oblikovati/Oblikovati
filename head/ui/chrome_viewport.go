@@ -739,6 +739,10 @@ func viewportFarPlane(s *app.Session, cam scene.Camera, mn, mx [3]float32, hasGe
 		lo, hi = unionBounds(lo, hi, ok, smn, smx)
 		ok = true
 	}
+	if cmn, cmx, cok := pointCloudFarBounds(s); cok { // #1789: enclose a large/distant scan
+		lo, hi = unionBounds(lo, hi, ok, cmn, cmx)
+		ok = true
+	}
 	return viewportClipFar(cam, lo, hi, ok)
 }
 

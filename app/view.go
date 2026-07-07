@@ -163,6 +163,15 @@ func (s *Session) unionCloudBounds(box math.Box) math.Box {
 	return box
 }
 
+// PointCloudBounds returns the model-space extent of the active part's visible point clouds, or an
+// empty box when none are attached. Point clouds render from a separate retained GL-points buffer
+// that the viewport's instanced/overlay framing bounds never see, so the far clip plane must consult
+// this to enclose a large or distant scan — otherwise the scan falls beyond the fixed far plane and
+// renders as nothing (#1789).
+func (s *Session) PointCloudBounds() math.Box {
+	return s.unionCloudBounds(math.EmptyBox())
+}
+
 // unionSketchBounds widens box by the model-space extent of the active part's visible 2D and 3D
 // sketches. Curves are sampled the same way the viewport overlay and ray picker sample them
 // (EntityPolyline / SamplePolyline3D), so the framed box matches what is drawn. The sample
