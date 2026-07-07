@@ -107,3 +107,25 @@ func circleEdge(t *testing.T, b *topo.Body) *topo.Edge {
 	t.Fatal("no circular edge")
 	return nil
 }
+
+// TestMarchCylinderRimTorus drives the full SegmentSolver.March path on a real spine: a cylinder's
+// rim (a plane+cylinder support pair) marches to a single torus blend segment — the curved-neighbour
+// case the analytic catalog could not route from a general fillet (#1806).
+func TestMarchCylinderRimTorus(t *testing.T) {
+	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sp, _ := blend.NewSpine([]*topo.Edge{circleEdge(t, cyl)}, true)
+	m := &blend.Marcher{
+		Inside: func(p math.Point3) bool { return ops.PointInsideBody(cyl, p) },
+		Res:    geom.ResolutionForBox(cyl.RangeBox()),
+	}
+	res := m.March(sp, blend.ConstRadiusFillet{R: 0.5})
+	if res.Status != blend.StatusOk || !res.HasResult() || len(res.Segments) != 1 {
+		t.Fatalf("march = status %v, %d segments; want one Ok segment", res.Status, len(res.Segments))
+	}
+	if _, ok := res.Segments[0].Surface.(geom.Torus); !ok {
+		t.Errorf("rim blend surface is %T, want a torus", res.Segments[0].Surface)
+	}
+}

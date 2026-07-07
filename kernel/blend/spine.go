@@ -87,6 +87,12 @@ func (s *Spine) TangentAt(absc float64) math.Vector3 {
 	return v
 }
 
+// EdgeSpineRange returns the spine-abscissa span [first,last] that edge i covers — the guide range
+// the marcher builds one blend segment over.
+func (s *Spine) EdgeSpineRange(i int) (first, last float64) {
+	return s.starts[i], s.starts[i] + s.lengths[i]
+}
+
 // SupportFaces returns the two solid faces edge i bounds — the pair the section functional
 // blends between at that stretch of the guideline. Orientation (which is "left") is the
 // marcher's concern; this returns them as the topology records.
