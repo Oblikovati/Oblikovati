@@ -52,7 +52,7 @@ func drawFilletPanelBody(s *app.Session, f *app.FilletTool) {
 	drawFeatureBreadcrumb(title, "")
 	if propertySection("Input Geometry") {
 		drawPickChipRow("Edges", "fillet-edges", countChipText(f.EdgeCount(), "Edge", "Select Edges"),
-			f.EdgeCount() > 0, "Click convex edges in the viewport to round", f.ClearEdges)
+			f.EdgeCount() > 0, "Click convex edges to round; Shift+click selects the whole tangent chain", f.ClearEdges)
 	}
 	if propertySection("Behavior") {
 		drawFilletRadiusRows(s, f)

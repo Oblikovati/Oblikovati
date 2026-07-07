@@ -42,7 +42,7 @@ func drawChamferDialog(s *app.Session) {
 		drawFeatureBreadcrumb(title, "")
 		if propertySection("Input Geometry") {
 			drawPickChipRow("Edges", "chamfer-edges", countChipText(c.EdgeCount(), "Edge", "Select Edges"),
-				c.EdgeCount() > 0, "Click edges in the viewport to bevel", c.ClearEdges)
+				c.EdgeCount() > 0, "Click edges to bevel; Shift+click selects the whole tangent chain", c.ClearEdges)
 		}
 		if propertySection("Behavior") {
 			drawChamferBehaviorRows(s, c)

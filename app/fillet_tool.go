@@ -123,11 +123,29 @@ func (t *FilletTool) Picks() []Selectable { return selectables(t.Edges()) }
 
 // Pick appends the clicked edge (ignoring one already chosen).
 func (t *FilletTool) Pick(_ *Session, sel Selectable) {
+	if e, ok := sel.(EdgeHandle); ok {
+		t.addEdge(e)
+	}
+}
+
+// PickWithMods adds the whole tangent chain through the clicked edge on Shift+click — the
+// "select tangent chain / loop" selection (#1798); a plain click adds the single edge.
+func (t *FilletTool) PickWithMods(s *Session, sel Selectable, mods Modifier) {
 	e, ok := sel.(EdgeHandle)
-	if !ok || t.hasEdge(e) {
+	if !ok || !mods.Has(ShiftMod) {
+		t.Pick(s, sel)
 		return
 	}
-	t.edges = append(t.edges, e)
+	for _, h := range s.tangentChainHandles(e) {
+		t.addEdge(h)
+	}
+}
+
+// addEdge appends an edge unless it is already selected.
+func (t *FilletTool) addEdge(e EdgeHandle) {
+	if !t.hasEdge(e) {
+		t.edges = append(t.edges, e)
+	}
 }
 
 func (t *FilletTool) hasEdge(e EdgeHandle) bool {
