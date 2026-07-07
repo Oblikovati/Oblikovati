@@ -275,14 +275,15 @@ func (s *Session) cachedIntensityHistogram(pc *pointcloud.PointCloud) []float32 
 	if !ok {
 		return nil
 	}
-	if m, hit := s.pcIntensityHistograms[pc]; hit && m.key == key {
+	rid := pc.ResourceID()
+	if m, hit := s.pcIntensityHistograms[rid]; hit && m.key == key {
 		return m.hist
 	}
 	hist := normalizeHistogram(binIntensities(samples, key.min, key.max, bins))
 	if s.pcIntensityHistograms == nil {
-		s.pcIntensityHistograms = map[*pointcloud.PointCloud]intensityHistogramMemo{}
+		s.pcIntensityHistograms = map[string]intensityHistogramMemo{}
 	}
-	s.pcIntensityHistograms[pc] = intensityHistogramMemo{key: key, hist: hist}
+	s.pcIntensityHistograms[rid] = intensityHistogramMemo{key: key, hist: hist}
 	return hist
 }
 

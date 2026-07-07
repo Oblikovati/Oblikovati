@@ -216,9 +216,7 @@ func parseSample(text string) (PointSample, bool) {
 		return PointSample{}, false
 	}
 	s := PointSample{Point: pt}
-	if !applySampleChannels(&s, f) {
-		return PointSample{}, false
-	}
+	applySampleChannels(&s, f)
 	return s, true
 }
 
@@ -233,12 +231,12 @@ func parseXYZ(f []string) (math.Point3, bool) {
 	return math.P3(math.Scalar(x), math.Scalar(y), math.Scalar(z)), true
 }
 
-// applySampleChannels reads the optional intensity / RGB columns from the supported ASCII layouts:
-// 3 = xyz only, 4 = +intensity, 6 = +rgb, 7 = +intensity+rgb. Any other count above 3 is an
-// unsupported layout and rejects the line.
-func applySampleChannels(s *PointSample, f []string) bool {
+// applySampleChannels reads the optional intensity / RGB columns from the recognised ASCII layouts:
+// 3 = xyz only, 4 = +intensity, 6 = +rgb, 7 = +intensity+rgb. Any other column count keeps just the
+// xyz already parsed and ignores the extra columns — a 5-column (e.g. classification/return) or a
+// 9-column (xyz+rgb+normals) scan imported before #645 and must keep importing (regression guard).
+func applySampleChannels(s *PointSample, f []string) {
 	switch len(f) {
-	case 3: // xyz only
 	case 4:
 		setSampleIntensity(s, f[3])
 	case 6:
@@ -246,10 +244,7 @@ func applySampleChannels(s *PointSample, f []string) bool {
 	case 7:
 		setSampleIntensity(s, f[3])
 		setSampleRGB(s, f[4:7])
-	default:
-		return false
 	}
-	return true
 }
 
 // setSampleIntensity sets the intensity channel from an ASCII field, leaving it unset if unparsable.

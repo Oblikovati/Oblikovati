@@ -49,6 +49,26 @@ func TestASCIIReaderParsesChannels(t *testing.T) {
 	}
 }
 
+// TestASCIIReaderKeepsUnrecognizedColumnCounts guards the regression where the channel switch began
+// rejecting any line whose column count was not exactly 3/4/6/7: a 5-column (xyz + classification +
+// return) and a 9-column (xyz + rgb + normals) scan imported before #645 by reading the first three
+// fields, and must keep importing as xyz-only rather than decoding to zero points.
+func TestASCIIReaderKeepsUnrecognizedColumnCounts(t *testing.T) {
+	samples, _, err := NewASCIIReader().ReadSamples([]byte("1 2 3 5 1\n4 5 6 255 128 0 0.1 0.2 0.9\n"))
+	if err != nil {
+		t.Fatalf("ReadSamples: %v", err)
+	}
+	if len(samples) != 2 {
+		t.Fatalf("samples = %d, want 2 (5-col and 9-col lines both kept)", len(samples))
+	}
+	if samples[0].Point != omath.P3(1, 2, 3) || samples[0].HasIntensity || samples[0].HasRGB {
+		t.Errorf("5-column sample = %+v, want xyz-only (1,2,3)", samples[0])
+	}
+	if samples[1].Point != omath.P3(4, 5, 6) || samples[1].HasRGB {
+		t.Errorf("9-column sample = %+v, want xyz-only (4,5,6)", samples[1])
+	}
+}
+
 // TestASCIIReaderWarnsOnMalformedLine: a non-coordinate line that is not a leading count header
 // is skipped with a warning citing the line — the DWG decoder's warn-and-continue policy
 // (#1646) — while a scan where NOTHING decodes still errors, naming the bad record.
