@@ -39,6 +39,8 @@ func drawDraftDialog(s *app.Session) {
 		if propertySection("Input Geometry") {
 			drawPickChipRow("Faces", "draft-faces", countChipText(d.FaceCount(), "Face", "Select Faces"),
 				d.FaceCount() > 0, "Click faces in the viewport to draft", d.ClearFaces)
+			drawDraftPullRow(d)
+			drawDraftNeutralRow(d)
 		}
 		if propertySection("Behavior") {
 			angleDegRowHint(s, "Angle", "draft-angle", " (+out / −in)", &draftUI.angle)
@@ -48,4 +50,28 @@ func drawDraftDialog(s *app.Session) {
 		drawCommitCancelButtons(s, d.CanCommit())
 	}
 	native.End()
+}
+
+// drawDraftPullRow shows the pull-direction chip (the face whose normal is the mould-pull axis,
+// defaulting to +Z when unset) and the toggle that routes the next viewport click to it.
+func drawDraftPullRow(d *app.DraftTool) {
+	drawPickChipRow("Pull direction", "draft-pull", pickChipText(d.PullSet(), "1 Face", "+Z (default)"),
+		d.PullSet(), "The face whose normal is the mould-pull direction", d.ClearPull)
+	propertyRow("")
+	pickPull := d.PickingPull()
+	if native.Checkbox("Pick pull face", &pickPull) {
+		d.SetPickingPull(pickPull)
+	}
+}
+
+// drawDraftNeutralRow shows the neutral (parting) plane chip and the toggle that routes the next
+// viewport click to it. With no neutral plane each face pivots on its implicit lowest-vertex hinge.
+func drawDraftNeutralRow(d *app.DraftTool) {
+	drawPickChipRow("Neutral plane", "draft-neutral", pickChipText(d.NeutralSet(), "1 Face", "None"),
+		d.NeutralSet(), "The parting plane the taper pivots about", d.ClearNeutral)
+	propertyRow("")
+	pickNeutral := d.PickingNeutral()
+	if native.Checkbox("Pick neutral plane", &pickNeutral) {
+		d.SetPickingNeutral(pickNeutral)
+	}
 }

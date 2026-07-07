@@ -42,6 +42,31 @@ func TestDraftFacesNeutralPivotsOnNeutralPlane(t *testing.T) {
 	}
 }
 
+// TestDraftFacesNeutralVolumeMatchesOCCT grounds the neutral-plane draft against OCCT
+// BRepOffsetAPI_DraftAngle (the oracle rule): drafting the +X face of a 2×2×2 box by 10°
+// about a neutral plane at z=0.5 removes/adds a wedge of exactly ½·|z-centroid asymmetry|.
+// OCCT reports 7.6473460386 for this case; the box is 8, so the wedge magnitude is
+// 0.352662. Our sign convention may lean the face the other way, so we compare |Δvol|.
+// Analytic: ∫₀²2·(z−0.5)·tan10° dz = tan10° = 0.1763269, ×2 = 0.3526538 (OCCT 0.3526540).
+func TestDraftFacesNeutralVolumeMatchesOCCT(t *testing.T) {
+	box := csgBox(math.P3(0, 0, 0), 2, 2, 2)
+	side := plusXFaceKey(t, box)
+	neutral, _ := geom.NewPlane(math.P3(0, 0, 0.5), math.V3(0, 0, 1))
+
+	res, err := ops.DraftFacesNeutral(box, [][]byte{side}, math.V3(0, 0, 1), &neutral, 10*stdmath.Pi/180)
+	if err != nil {
+		t.Fatalf("draft with neutral plane: %v", err)
+	}
+	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
+		t.Fatalf("neutral-plane draft is not a valid solid: %+v", r.Issues)
+	}
+	vol := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	const occtWedge = 0.3526540 // 8 − 7.6473460386, from BRepOffsetAPI_DraftAngle
+	if got := stdmath.Abs(vol - 8); stdmath.Abs(got-occtWedge) > 1e-4 {
+		t.Errorf("neutral-draft wedge = %g (vol %g), OCCT oracle wants %g", got, vol, occtWedge)
+	}
+}
+
 // plusXFaceKey returns the reference key of the box face whose outward normal is +X.
 func plusXFaceKey(t *testing.T, b *topo.Body) []byte {
 	t.Helper()

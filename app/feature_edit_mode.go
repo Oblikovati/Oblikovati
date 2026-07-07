@@ -343,6 +343,9 @@ func editDraftTool(f *feature.PartFeature, d *feature.FaceDraftFeature) *DraftTo
 	t := NewDraftTool()
 	t.seededFaceKeys = cloneKeys(def.FaceKeys)
 	t.angleDeg = callOrZeroFn(def.Angle) / degToRad
+	pull := def.PullDir
+	t.seededPull = &pull
+	t.seededNeutral = def.Neutral
 	t.bindEdit(f, snapshotDraftDef(def))
 	return t
 }
