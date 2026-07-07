@@ -23,8 +23,31 @@ func NewLASReader() PointReader { return lasReader{} }
 func (lasReader) Extensions() []string { return []string{".las"} }
 
 // FileUnitMM: LAS real coordinates (stored integers × header scale + offset, applied by lasfmt)
-// are metres by ASPRS convention, so one file unit is 1000 mm (#1636).
+// are metres by ASPRS convention, so one file unit is 1000 mm (#1636). This is the static default;
+// fileUnitMM overrides it per file when the header's scale shows it is really millimetres (#1789).
 func (lasReader) FileUnitMM() float64 { return 1000 }
+
+// lasMillimetreScan reports whether a LAS quantises coordinates to a whole metre or coarser on every
+// axis. header.Scale is the coordinate step in the assumed metre unit; a step ≥ 1 m cannot resolve
+// any real scan or survey (LiDAR is sub-centimetre), so the file's coordinates are really
+// millimetres despite the metre-unit ASPRS convention — the LAS analogue of E57's integer-resolution
+// scans (#1789). An unset/zero scale (a malformed header) is not flagged, leaving the metre default.
+func lasMillimetreScan(scale [3]float64) bool {
+	return scale[0] >= 1 && scale[1] >= 1 && scale[2] >= 1
+}
+
+// fileUnitMM overrides the metre default (see FileUnitMM) for a LAS whose coordinate quantisation is
+// too coarse to be metres, reading it as millimetres so a millimetre-authored scan does not import
+// 1000× oversized and kilometres from the origin, where it renders invisibly (#1789). Conformant
+// surveys (sub-metre scale) keep the metre unit. ok is false only when the header cannot be parsed,
+// leaving the static FileUnitMM in force (the decode then fails in ReadSamples with the real error).
+func (lasReader) fileUnitMM(data []byte) (mm float64, ok bool) {
+	doc, err := lasfmt.Parse(data)
+	if err != nil {
+		return 0, false
+	}
+	return scanUnitMM(lasMillimetreScan(doc.Header().Scale)), true
+}
 
 // ReadSamples decodes the LAS point records into cloud-local samples.
 func (lasReader) ReadSamples(data []byte) ([]PointSample, []string, error) {

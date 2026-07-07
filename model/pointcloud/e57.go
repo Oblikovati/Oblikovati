@@ -24,15 +24,6 @@ func (e57Reader) Extensions() []string { return []string{".e57"} }
 // encoding shows it is really in millimetres (#1789).
 func (e57Reader) FileUnitMM() float64 { return 1000 }
 
-// e57UnitMM maps the cartesian-resolution fact to the file's length unit in millimetres:
-// integer-resolution coordinates are millimetres (#1789), otherwise the ASTM E2807 metre.
-func e57UnitMM(integerResolution bool) float64 {
-	if integerResolution {
-		return 1 // millimetres
-	}
-	return 1000 // metres (spec default)
-}
-
 // fileUnitMM overrides the metre default for a common class of non-conformant scans: an E57 whose
 // cartesian channels are integer-resolution (see e57fmt.CartesianIntegerResolution) cannot truly be
 // metres — no scanner captures at 1-metre resolution — so its raw integers are millimetres, the
@@ -46,7 +37,7 @@ func (e57Reader) fileUnitMM(data []byte) (mm float64, ok bool) {
 	if err != nil {
 		return 0, false
 	}
-	return e57UnitMM(doc.CartesianIntegerResolution()), true
+	return scanUnitMM(doc.CartesianIntegerResolution()), true
 }
 
 // ReadSamples decodes the E57's scan points into cloud-local samples, carrying colour (normalised
