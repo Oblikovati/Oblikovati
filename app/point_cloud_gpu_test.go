@@ -294,14 +294,18 @@ func TestDensityFilteredSamplesIgnoresName(t *testing.T) {
 // density-filtered point count, not the full cloud.
 func TestPointCloudGPUVerticesApplyRenderDensity(t *testing.T) {
 	s, def := emptyPartSession(t)
-	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("scan")})
-	if _, err := def.PointClouds().Add("Scan", "s.xyz", rid, denseTestPoints(1000)); err != nil {
+	def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("scan")})
+	// A FIXED ResourceID pins the density filter's per-cloud hash seed
+	// (pointCloudDensitySeed hashes ResourceID), so the selected count is deterministic and
+	// platform-independent. A random UUID here made the count wander into the tail and flake CI on
+	// some runners (macOS drew 64/1000). This seed selects 98 of the 1000 fixed points at 10%.
+	if _, err := def.PointClouds().Add("Scan", "s.xyz", "scan-density-1", denseTestPoints(1000)); err != nil {
 		t.Fatalf("attach: %v", err)
 	}
 	s.SetPointCloudRenderDensity(10)
 	verts, n := s.PointCloudGPUVertices()
 	if n < 70 || n > 130 {
-		t.Fatalf("10%% density uploaded %d points, want about 100", n)
+		t.Fatalf("10%% density uploaded %d points, want about 100 (deterministic 98)", n)
 	}
 	if len(verts) != n*pointCloudGPUStride {
 		t.Errorf("len(verts) = %d, want %d", len(verts), n*pointCloudGPUStride)
