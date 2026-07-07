@@ -66,18 +66,18 @@ func TestDraftLostKeyErrors(t *testing.T) {
 	}
 }
 
-// TestDraftOnFilletedBodyErrors is the #1802 regression (ADR-0050 Phase 0, #1804): drafting a
-// body that carries a curved face from a prior fillet must return an error so the feature goes
-// Sick with a teaching message — NOT panic in the plane-only rebuild. Superseded by the
-// Phase-7 curved-draft modifier (#1809), which will taper such a body for real.
-func TestDraftOnFilletedBodyErrors(t *testing.T) {
+// TestDraftFilletedBodyTapers is the real #1802 fix (ADR-0050 Phase 7, #1809): drafting a planar
+// face of a body that carries a fillet's curved face produces a VALID tapered solid — the modifier
+// tilts the plane and re-intersects the cylinder (the shared edge becoming an arc), preserving the
+// fillet face — instead of panicking in the plane-only rebuild (the Phase-0 stopgap it supersedes).
+func TestDraftFilletedBodyTapers(t *testing.T) {
 	box := csgBox(math.P3(0, 0, 0), 2, 2, 2)
 	filleted, err := ops.FilletEdges(box, [][]byte{verticalEdgeKey(t, box)}, 0.5)
 	if err != nil {
 		t.Fatalf("fillet setup: %v", err)
 	}
 	if hasCylinderFaces(filleted) == 0 {
-		t.Fatal("fillet setup produced no curved face — cannot exercise the guard")
+		t.Fatal("fillet setup produced no curved face — cannot exercise the modifier")
 	}
 	var side []byte
 	for _, f := range filleted.Faces() {
@@ -88,8 +88,14 @@ func TestDraftOnFilletedBodyErrors(t *testing.T) {
 	if side == nil {
 		t.Fatal("no planar +X face to draft on the filleted body")
 	}
-	_, err = ops.DraftFaces(filleted, [][]byte{side}, math.V3(0, 0, 1), -stdmath.Atan(0.25))
-	if err == nil {
-		t.Fatal("draft on a body with curved faces must error, not silently rebuild")
+	res, err := ops.DraftFaces(filleted, [][]byte{side}, math.V3(0, 0, 1), -stdmath.Atan(0.2))
+	if err != nil {
+		t.Fatalf("draft on a filleted body must taper it, not fail: %v", err)
+	}
+	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
+		t.Fatalf("drafted filleted body is not a valid solid: %+v", r)
+	}
+	if hasCylinderFaces(res) == 0 {
+		t.Error("the fillet's cylinder face was lost by the draft — it should be re-trimmed, not dropped")
 	}
 }

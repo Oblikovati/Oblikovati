@@ -3,32 +3,10 @@
 package ops
 
 import (
-	"fmt"
-
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
-
-// requirePlanarBody guards the plane-only rebuild engine ([rebuildWithPlanes]): it rejects a
-// body carrying any non-planar face — a cylinder/sphere/torus/cone/NURBS left by a prior
-// fillet, chamfer or curved boolean — that the engine cannot represent. rebuildWithPlanes casts
-// every face to geom.Plane, so on a curved face the assertion panics (draft.go before this
-// guard: the draft-after-fillet crash, #1802). op names the operation for the message.
-//
-// This is the Phase-0 stopgap of the ADR-0050 blend milestone (#1804): the curved-capable
-// modifier-visitor (Phase 7, #1809) supersedes it for draft; standard CAD practice is to
-// draft BEFORE filleting anyway. Example: requirePlanarBody(solid, "draft").
-func requirePlanarBody(solid *topo.Body, op string) error {
-	for _, f := range solid.Faces() {
-		if _, ok := f.Geometry().(geom.Plane); !ok {
-			return fmt.Errorf(
-				"%s requires an all-planar body: face %d is %T, not a geom.Plane — apply %s before fillets/chamfers",
-				op, f.ID(), f.Geometry(), op)
-		}
-	}
-	return nil
-}
 
 // rebuildWithPlanes clones a planar solid's topology, replacing each face's surface with
 // planeOf(f) and moving each vertex to the meeting point of its adjacent faces' new planes
