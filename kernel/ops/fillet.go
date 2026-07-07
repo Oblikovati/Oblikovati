@@ -124,6 +124,9 @@ func filletEdgesCornerRec(body *topo.Body, picks []EdgeFilletRadii, corner Corne
 	if arc := loneArcPick(body, picks); arc != nil {
 		return FilletCylinderArc(body, arc.Key, arc.R0) // a cylinder/cap arc → torus + setback end-caps
 	}
+	if chain, r, ok := closedCurvedTangentStripe(body, picks); ok {
+		return filletTangentStripe(body, chain, true, r) // #1797: a closed mixed tangent loop → one stripe
+	}
 	edges, err := resolveFilletPicks(body, picks)
 	if err != nil {
 		return nil, err

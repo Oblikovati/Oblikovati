@@ -59,13 +59,69 @@ func (m *Marcher) segment(sp *Spine, i int, a, b geom.Surface, sec SectionFuncti
 		}
 	}
 	first, last := sp.EdgeSpineRange(i)
-	return BlendSegment{
+	seg := BlendSegment{
 		Surface:    surf,
 		OnS1:       FaceInterference{Face: sp.SupportFaces(i)[0]},
 		OnS2:       FaceInterference{Face: sp.SupportFaces(i)[1]},
 		FirstSpine: first,
 		LastSpine:  last,
-	}, StatusOk
+	}
+	if !m.fillInterferences(&seg, sp, a, b, r, first, last) {
+		return BlendSegment{}, StatusStartSectionFailed
+	}
+	return seg, StatusOk
+}
+
+// fillInterferences trims the segment against its two supports: the contact (foot-point) curve on
+// each support and the four common points bounding the tube (start/end × side). The blend is tangent
+// to each support along the centre curve's foot; a plane support yields a straight contact, a
+// cylinder support a circular one. These are the ChFiDS_FaceInterference + ChFiDS_CommonPoint the ops
+// stripe assembler stitches — consecutive segments share a junction section because both sample the
+// same spine abscissa there, so their end foot points coincide.
+func (m *Marcher) fillInterferences(seg *BlendSegment, sp *Spine, a, b geom.Surface, r, first, last float64) bool {
+	cLo, okLo := m.expectedCentre(sp.PointAt(first), a, b, r)
+	cMid, okMid := m.expectedCentre(sp.PointAt((first+last)/2), a, b, r)
+	cHi, okHi := m.expectedCentre(sp.PointAt(last), a, b, r)
+	if !okLo || !okMid || !okHi {
+		return false
+	}
+	seg.OnS1.Curve = contactCurve(a, cLo, cMid, cHi)
+	seg.OnS2.Curve = contactCurve(b, cLo, cMid, cHi)
+	seg.Start1 = CommonPoint{SpineParam: first, Point: footOn(a, cLo)}
+	seg.Start2 = CommonPoint{SpineParam: first, Point: footOn(b, cLo)}
+	seg.End1 = CommonPoint{SpineParam: last, Point: footOn(a, cHi)}
+	seg.End2 = CommonPoint{SpineParam: last, Point: footOn(b, cHi)}
+	return seg.OnS1.Curve != nil && seg.OnS2.Curve != nil
+}
+
+// contactCurve is the blend's contact on one support: the support-foot of the centre points at the
+// segment's two ends and middle — a line segment when the three feet are collinear (a plane support),
+// otherwise the circular arc through them (a cylinder/torus support).
+func contactCurve(s geom.Surface, cLo, cMid, cHi math.Point3) geom.Curve3 {
+	fa, fm, fb := footOn(s, cLo), footOn(s, cMid), footOn(s, cHi)
+	area := fa.VectorTo(fm).Cross(fa.VectorTo(fb)).Length()
+	if float64(area) < 1e-12 { // collinear feet ⇒ straight contact
+		return geom.NewLineSegment(fa, fb)
+	}
+	arc, err := geom.Arc3dByThreePoints(fa, fm, fb)
+	if err != nil {
+		return nil
+	}
+	return arc
+}
+
+// BallCentre returns the exact rolling-ball centre at a guide point between supports a and b at
+// radius r (ok=false when no seed section exists there). ops calls it at a junction vertex to place
+// the section circle two consecutive blend faces share.
+func (m *Marcher) BallCentre(guide math.Point3, a, b geom.Surface, r float64) (math.Point3, bool) {
+	return m.expectedCentre(guide, a, b, r)
+}
+
+// Section returns the exposed cross-section arc of radius r at a centre point on the blend's centre
+// curve — its FootA/FootB (the contacts on a and b) and PointAt(0.5) (the tube apex) let ops build
+// the junction edge as an arc through the three.
+func (m *Marcher) Section(centre math.Point3, a, b geom.Surface, r float64) (SectionArc, bool) {
+	return sectionAt(centre, a, b, r, m.Res.Weld(), m.Inside)
 }
 
 // centreCurve returns the rolling-ball centre curve between primitive supports a and b at radius r:
