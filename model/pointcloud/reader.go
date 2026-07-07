@@ -103,6 +103,17 @@ func fileUnitMM(r PointReader, data []byte) float64 {
 	return r.FileUnitMM()
 }
 
+// scanUnitMM maps a "coordinates are really millimetres" verdict to the file's length unit in
+// millimetres: a scan whose quantisation is too coarse to be metres is millimetres (#1789),
+// otherwise the format's metre convention (E57 ASTM E2807, LAS ASPRS) stands. Shared by the E57 and
+// LAS per-file overrides.
+func scanUnitMM(millimetres bool) float64 {
+	if millimetres {
+		return 1 // millimetres
+	}
+	return 1000 // metres (the format's convention)
+}
+
 // IsScanFile reports whether a path's extension is a 3D-scan point-cloud format handled by a
 // registered reader (.xyz/.pts/.asc/.txt/.ply/.e57/.las). The import flow routes such files to the
 // point-cloud attach path — the appropriate home for scan data — rather than the body/sketch

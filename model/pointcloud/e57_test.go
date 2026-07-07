@@ -28,14 +28,14 @@ func TestReadScanDispatchesE57Error(t *testing.T) {
 	}
 }
 
-// TestE57UnitMM maps the cartesian-resolution fact to the file's length unit: an integer-resolution
-// scan is treated as millimetres (#1789), a conformant scan keeps the ASTM E2807 metre.
-func TestE57UnitMM(t *testing.T) {
-	if got := e57UnitMM(true); got != 1 {
-		t.Errorf("e57UnitMM(integerResolution) = %v mm, want 1 (millimetres)", got)
+// TestScanUnitMM maps the "coordinates are really millimetres" verdict to the file's length unit:
+// a flagged scan is millimetres (#1789), otherwise the format's metre convention stands.
+func TestScanUnitMM(t *testing.T) {
+	if got := scanUnitMM(true); got != 1 {
+		t.Errorf("scanUnitMM(millimetres) = %v mm, want 1 (millimetres)", got)
 	}
-	if got := e57UnitMM(false); got != 1000 {
-		t.Errorf("e57UnitMM(conformant) = %v mm, want 1000 (metres)", got)
+	if got := scanUnitMM(false); got != 1000 {
+		t.Errorf("scanUnitMM(metres) = %v mm, want 1000 (metres)", got)
 	}
 }
 
