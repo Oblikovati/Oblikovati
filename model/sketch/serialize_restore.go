@@ -274,13 +274,18 @@ func (r *sketchRestorer) restoreDimension(dd DimensionData) (*DimensionConstrain
 		}
 		return dc.AddDistance(a, b, dd.Expression)
 	case "radius":
-		c, err := r.circle(dd.Curves, 0)
+		// AddRadius accepts any CircularCurve (circle or arc) — an arc radius/diameter
+		// dimension is common (esp. from CAD imports), so resolve as a circular curve,
+		// not a *Circle. Restoring via r.circle rejected radius-dimensioned arcs and
+		// blocked ~40% of real Inventor-exported parts. Symmetric with the write side,
+		// which serializes d.refs regardless of circle-vs-arc.
+		c, err := r.curve(dd.Curves, 0)
 		if err != nil {
 			return nil, err
 		}
 		return dc.AddRadius(c, dd.Expression)
 	case "diameter":
-		c, err := r.circle(dd.Curves, 0)
+		c, err := r.curve(dd.Curves, 0)
 		if err != nil {
 			return nil, err
 		}
@@ -467,18 +472,6 @@ func (r *sketchRestorer) line(ids []int, i int) (*Line, error) {
 		return nil, fmt.Errorf("entity %d is %T, want a line", ids[i], e)
 	}
 	return l, nil
-}
-
-func (r *sketchRestorer) circle(ids []int, i int) (*Circle, error) {
-	e, err := r.entity(ids, i)
-	if err != nil {
-		return nil, err
-	}
-	c, ok := e.(*Circle)
-	if !ok {
-		return nil, fmt.Errorf("entity %d is %T, want a circle", ids[i], e)
-	}
-	return c, nil
 }
 
 func (r *sketchRestorer) arc(ids []int, i int) (*Arc, error) {
