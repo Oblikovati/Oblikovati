@@ -124,8 +124,14 @@ func filletEdgesCornerRec(body *topo.Body, picks []EdgeFilletRadii, corner Corne
 	if arc := loneArcPick(body, picks); arc != nil {
 		return FilletCylinderArc(body, arc.Key, arc.R0) // a cylinder/cap arc → torus + setback end-caps
 	}
-	if chain, r, ok := closedCurvedTangentStripe(body, picks); ok {
-		return filletTangentStripe(body, chain, true, r) // #1797: a closed mixed tangent loop → one stripe
+	if chain, r, wholeClosed, ok := curvedTangentChain(body, picks); ok {
+		if wholeClosed {
+			return filletTangentStripe(body, chain, true, r) // #1797: a closed mixed tangent loop → one stripe
+		}
+		// A partial or OPEN curved tangent chain needs setback end-caps (ChFi3d corner processing) we do
+		// not build yet; report it honestly (ADR-0050 P6 partial-result) instead of the misleading miter
+		// error the per-edge corner solver emitted on the curved arm.
+		return nil, fmt.Errorf("fillet: an OPEN tangent chain crossing a curved face is not yet supported — select the whole closed loop, or fillet those edges one at a time")
 	}
 	edges, err := resolveFilletPicks(body, picks)
 	if err != nil {

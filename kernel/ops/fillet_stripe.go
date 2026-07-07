@@ -43,34 +43,58 @@ type tangentStripe struct {
 	down     []*topo.Edge   // down[j] = the vertical smooth edge below junction[j], split at depth r
 }
 
-// closedCurvedTangentStripe reports whether the picks are exactly a closed, constant-radius tangent
-// chain at least one of whose edges borders a curved (cylinder) face — the tangent-stripe trigger
-// (#1797's top perimeter). It returns the ordered chain edges and the radius. An all-planar closed
-// chain (no curved neighbour) is left to the existing planar corner path so nothing there regresses.
-func closedCurvedTangentStripe(body *topo.Body, picks []EdgeFilletRadii) ([]*topo.Edge, float64, bool) {
-	if len(picks) < 3 || !uniformConstRadius(picks) {
-		return nil, 0, false
+// curvedTangentChain reports whether the picks are exactly a constant-radius tangent chain at least
+// one of whose edges borders a curved (cylinder) face, returning the ordered edges, the radius, and
+// whether the chain closes a loop. ok=false leaves the selection to the existing paths (an all-planar
+// chain, a non-uniform radius, or a set that is not one whole tangent run) — so nothing there
+// regresses. The caller routes a CLOSED chain to the stripe assembler and an OPEN one to an honest
+// partial-result error (its setback end-caps are future work).
+func curvedTangentChain(body *topo.Body, picks []EdgeFilletRadii) (edges []*topo.Edge, r float64, wholeClosed, ok bool) {
+	if len(picks) < 2 || !uniformConstRadius(picks) {
+		return nil, 0, false, false
 	}
-	keys, closed, err := TangentEdgeChain(body, picks[0].Key, DefaultTangentChainAngle)
-	if err != nil || !closed || len(keys) != len(picks) || !sameKeySet(keys, picks) {
-		return nil, 0, false
+	maxKeys, isClosed, err := TangentEdgeChain(body, picks[0].Key, DefaultTangentChainAngle)
+	if err != nil || !picksWithinChain(picks, maxKeys) || !anyCurvedAdjacent(body, picks) {
+		return nil, 0, false, false
 	}
-	edges := make([]*topo.Edge, len(keys))
-	curved := false
-	for i, k := range keys {
-		e, ok := body.FindEdgeByKey(k)
-		if !ok {
-			return nil, 0, false
+	// The whole closed loop is exactly buildable as a stripe; a proper subset or an open run is not
+	// (its setback end-caps are future work) — the caller turns that into an honest error.
+	if isClosed && len(picks) == len(maxKeys) && sameKeySet(maxKeys, picks) {
+		es := make([]*topo.Edge, len(maxKeys))
+		for i, k := range maxKeys {
+			es[i], _ = body.FindEdgeByKey(k)
 		}
-		edges[i] = e
-		if _, _, isCP := cylinderPlaneEdge(e); isCP {
-			curved = true
+		return es, picks[0].R0, true, true
+	}
+	return nil, picks[0].R0, false, true
+}
+
+// picksWithinChain reports whether every pick key lies on the maximal tangent chain — i.e. the picks
+// are one tangent run (or a contiguous part of one), not an unrelated scatter of edges.
+func picksWithinChain(picks []EdgeFilletRadii, chainKeys [][]byte) bool {
+	on := make(map[string]bool, len(chainKeys))
+	for _, k := range chainKeys {
+		on[string(k)] = true
+	}
+	for _, p := range picks {
+		if !on[string(p.Key)] {
+			return false
 		}
 	}
-	if !curved {
-		return nil, 0, false
+	return true
+}
+
+// anyCurvedAdjacent reports whether any pick borders a curved (cylinder) face — the trigger that
+// distinguishes a stripe/partial-result case from the all-planar chains the existing path handles.
+func anyCurvedAdjacent(body *topo.Body, picks []EdgeFilletRadii) bool {
+	for _, p := range picks {
+		if e, ok := body.FindEdgeByKey(p.Key); ok {
+			if _, _, isCP := cylinderPlaneEdge(e); isCP {
+				return true
+			}
+		}
 	}
-	return edges, picks[0].R0, true
+	return false
 }
 
 // uniformConstRadius reports whether every pick is the same constant radius with a plain arc section
