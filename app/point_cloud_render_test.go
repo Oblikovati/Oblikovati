@@ -41,6 +41,34 @@ func TestPointCloudItemsRendersVisibleClouds(t *testing.T) {
 	}
 }
 
+// TestRGBModeDoesNotReamplifyNormalisedColor is the #1787 regression: colour arrives at the renderer
+// already normalised to 0..1 by the reader (a dark 16-bit point is ~0.003, not 200), so RGB mode must
+// pass it through with a clamp — no per-point bit-depth guessing that divided a dark point by 255 and
+// rendered it ~256× too bright. A dark point stays dark; a saturated point stays white.
+func TestRGBModeDoesNotReamplifyNormalisedColor(t *testing.T) {
+	s, def := emptyPartSession(t)
+	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("scan")})
+	dark := [3]float32{200.0 / 65535, 200.0 / 65535, 200.0 / 65535} // a dark 16-bit point, decoded
+	pc, err := def.PointClouds().AddWithSamples("Cloud1", "c.las", rid, []pointcloud.PointSample{
+		{Point: math.P3(0, 0, 5), HasRGB: true, RGB: dark},
+		{Point: math.P3(1, 0, 5), HasRGB: true, RGB: [3]float32{1, 1, 1}},
+	})
+	if err != nil {
+		t.Fatalf("attach: %v", err)
+	}
+	pc.SetDisplayMode(types.PointCloudDisplayModeRGB)
+	items := s.PointCloudItems(s.Camera(), 0.5)
+	if len(items) != 1 {
+		t.Fatalf("items = %+v, want one batch", items)
+	}
+	if got := items[0].Colors[0]; got != [4]float32{dark[0], dark[1], dark[2], 1} {
+		t.Errorf("dark 16-bit point rendered %v, want it dim %v (not re-amplified)", got, dark)
+	}
+	if got := items[0].Colors[6]; got != [4]float32{1, 1, 1, 1} {
+		t.Errorf("saturated point rendered %v, want white {1,1,1,1}", got)
+	}
+}
+
 // TestPointCloudBounds returns the model-space extent of the visible clouds — the box the viewport
 // far plane consults to enclose a large or distant scan (#1789). No clouds, or only hidden ones,
 // yield an empty box.

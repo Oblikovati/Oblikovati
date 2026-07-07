@@ -169,22 +169,11 @@ func displaySampleColor(pc *pointcloud.PointCloud, s pointcloud.PointSample, low
 	return renderer.PointCloudColor
 }
 
+// rgbMarkerColor is the marker colour for an RGB-mode scan point. The readers normalise colour to
+// 0..1 per the file's known bit depth at decode (#1787), so this only clamps into the valid range and
+// adds opaque alpha — no per-point bit-depth guessing, which mis-scaled dark 16-bit points.
 func rgbMarkerColor(rgb [3]float32) [4]float32 {
-	m := rgb[0]
-	if rgb[1] > m {
-		m = rgb[1]
-	}
-	if rgb[2] > m {
-		m = rgb[2]
-	}
-	if m <= 1 {
-		return [4]float32{clamp01(rgb[0]), clamp01(rgb[1]), clamp01(rgb[2]), 1}
-	}
-	scale := float32(255)
-	if m > 255 {
-		scale = 65535
-	}
-	return [4]float32{clamp01(rgb[0] / scale), clamp01(rgb[1] / scale), clamp01(rgb[2] / scale), 1}
+	return [4]float32{clamp01(rgb[0]), clamp01(rgb[1]), clamp01(rgb[2]), 1}
 }
 
 func intensityMarkerColor(pc *pointcloud.PointCloud, intensity float64, low, high [4]float32) ([4]float32, bool) {

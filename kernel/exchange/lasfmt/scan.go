@@ -13,8 +13,9 @@ import (
 // intensity and RGB colour when the point data record format carries them (#645, #1788). Intensity
 // and RGB are nil when the format omits them and otherwise align 1:1 with Points. Every LAS record
 // format (0–10) holds intensity, so any record whose stride reaches it yields an intensity column;
-// RGB comes only from the colour formats (2, 3, 5, 7, 8, 10). RGB holds the raw 16-bit channel
-// values; per-cloud normalisation to 0..1 is the model layer's job (#1787).
+// RGB comes only from the colour formats (2, 3, 5, 7, 8, 10). RGB is normalised to 0..1 from the
+// ASPRS 16-bit colour range (/65535), so a caller renders colour without guessing the bit depth per
+// point (#1787) — the same contract as e57fmt.Scan. Intensity is the raw decoded value.
 //
 // Example:
 //
@@ -68,8 +69,12 @@ func newLASScanData(h lasHeader) ScanData {
 	return data
 }
 
+// lasColorMax is the ASPRS 16-bit colour channel maximum; RGB is normalised to 0..1 by it (#1787).
+const lasColorMax = 65535
+
 // setChannels writes row i's intensity and colour columns from the point record. It reads only the
-// columns newLASScanData allocated, so the stride is known to hold whatever offset it reads.
+// columns newLASScanData allocated, so the stride is known to hold whatever offset it reads. Colour
+// is normalised to 0..1 from the 16-bit range; intensity stays raw (the model ramps it per cloud).
 func (data ScanData) setChannels(i int, rec []byte, h lasHeader) {
 	if data.Intensity != nil {
 		data.Intensity[i] = float64(binary.LittleEndian.Uint16(rec[12:14]))
@@ -77,9 +82,9 @@ func (data ScanData) setChannels(i int, rec []byte, h lasHeader) {
 	if data.RGB != nil {
 		off, _ := rgbRecordOffset(h.pointFormat)
 		data.RGB[i] = [3]float32{
-			float32(binary.LittleEndian.Uint16(rec[off : off+2])),
-			float32(binary.LittleEndian.Uint16(rec[off+2 : off+4])),
-			float32(binary.LittleEndian.Uint16(rec[off+4 : off+6])),
+			float32(binary.LittleEndian.Uint16(rec[off:off+2])) / lasColorMax,
+			float32(binary.LittleEndian.Uint16(rec[off+2:off+4])) / lasColorMax,
+			float32(binary.LittleEndian.Uint16(rec[off+4:off+6])) / lasColorMax,
 		}
 	}
 }

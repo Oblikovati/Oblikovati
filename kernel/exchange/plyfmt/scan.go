@@ -14,14 +14,15 @@ import (
 
 // ScanData is the vertex element's decoded channels for a point-cloud import: the XYZ positions plus
 // any intensity and colour vertex properties the header declares (#645, #1788). RGB and Intensity are
-// nil when the vertex has no such property and otherwise align 1:1 with Points. RGB holds the raw
-// property values (a uchar 0..255 colour stays 0..255, a uint16 colour 0..65535); per-cloud
-// normalisation to 0..1 is the model layer's job, tracked separately (#1787).
+// nil when the vertex has no such property and otherwise align 1:1 with Points. RGB is normalised to
+// 0..1 from each colour property's declared scalar type (uchar → /255, uint16 → /65535, float passed
+// through), so a caller renders colour without guessing the bit depth per point (#1787) — the same
+// contract as e57fmt.Scan. Intensity is the raw decoded value (the model ramps it per cloud).
 //
 // Example:
 //
 //	d, _ := plyfmt.Parse(data)
-//	scan, err := d.Scan() // scan.Points, scan.RGB (or nil), scan.Intensity (or nil)
+//	scan, err := d.Scan() // scan.Points, scan.RGB (or nil, 0..1), scan.Intensity (or nil)
 type ScanData struct {
 	Points    []omath.Point3
 	RGB       [][3]float32
@@ -35,16 +36,34 @@ func (s ScanData) HasRGB() bool { return s.RGB != nil }
 func (s ScanData) HasIntensity() bool { return s.Intensity != nil }
 
 // vertexChannelIndices are the property positions of a vertex's decoded channels within its record;
-// -1 marks an absent channel.
+// -1 marks an absent channel. rgbScale is each colour component's 0..1 normaliser, derived once from
+// its declared scalar type so the per-record decode is a plain divide (#1787).
 type vertexChannelIndices struct {
 	x, y, z   int
 	intensity int
 	rgb       [3]int
+	rgbScale  [3]float32
 }
 
 // hasRGB reports whether all three colour components were located.
 func (ch vertexChannelIndices) hasRGB() bool {
 	return ch.rgb[0] >= 0 && ch.rgb[1] >= 0 && ch.rgb[2] >= 0
+}
+
+// colorScale returns the divisor that maps a PLY colour property of the given scalar type to 0..1:
+// the integer types by their unsigned maximum, the float types passed through (PLY float colour is
+// already 0..1 by convention). An unknown type falls back to 1 rather than distort the value (#1787).
+func colorScale(scalar string) float32 {
+	switch scalar {
+	case "char", "int8", "uchar", "uint8":
+		return 255
+	case "short", "int16", "ushort", "uint16":
+		return 65535
+	case "int", "int32", "uint", "uint32":
+		return 4294967295
+	default: // float, double, or unknown — already 0..1
+		return 1
+	}
 }
 
 // Scan decodes the vertex element's positions and any intensity / colour channels in a single pass.
@@ -86,6 +105,11 @@ func vertexChannels(vtx Element) (vertexChannelIndices, error) {
 	if ch.x < 0 || ch.y < 0 || ch.z < 0 {
 		return ch, fmt.Errorf("plyfmt: vertex has no x/y/z properties")
 	}
+	for i, idx := range ch.rgb {
+		if idx >= 0 {
+			ch.rgbScale[i] = colorScale(vtx.Props[idx].Scalar)
+		}
+	}
 	return ch, nil
 }
 
@@ -122,13 +146,18 @@ func (d *Document) binaryScan(vtx Element, ch vertexChannelIndices) (ScanData, e
 	return data, nil
 }
 
-// setBinaryChannels writes row i's intensity and colour columns from the per-record value accessor.
+// setBinaryChannels writes row i's intensity and colour columns from the per-record value accessor,
+// normalising each colour component to 0..1 by its declared scalar type (#1787).
 func (data ScanData) setBinaryChannels(i int, val func(int) float64, ch vertexChannelIndices) {
 	if ch.intensity >= 0 {
 		data.Intensity[i] = val(ch.intensity)
 	}
 	if ch.hasRGB() {
-		data.RGB[i] = [3]float32{float32(val(ch.rgb[0])), float32(val(ch.rgb[1])), float32(val(ch.rgb[2]))}
+		data.RGB[i] = [3]float32{
+			float32(val(ch.rgb[0])) / ch.rgbScale[0],
+			float32(val(ch.rgb[1])) / ch.rgbScale[1],
+			float32(val(ch.rgb[2])) / ch.rgbScale[2],
+		}
 	}
 }
 
@@ -169,7 +198,11 @@ func (data ScanData) setAsciiRow(i int, f []string, ch vertexChannelIndices) boo
 		}
 	}
 	if ch.hasRGB() {
-		data.RGB[i] = [3]float32{asciiColor(f, ch.rgb[0]), asciiColor(f, ch.rgb[1]), asciiColor(f, ch.rgb[2])}
+		data.RGB[i] = [3]float32{
+			asciiColor(f, ch.rgb[0]) / ch.rgbScale[0],
+			asciiColor(f, ch.rgb[1]) / ch.rgbScale[1],
+			asciiColor(f, ch.rgb[2]) / ch.rgbScale[2],
+		}
 	}
 	return true
 }

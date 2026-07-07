@@ -131,12 +131,19 @@ func TestScanASCIIChannels(t *testing.T) {
 	if len(s.Points) != 2 || !s.HasIntensity() || !s.HasRGB() {
 		t.Fatalf("scan = %+v, want 2 points with intensity+rgb", s)
 	}
-	if s.Points[1].X != 4 || s.Intensity[0] != 77 || s.RGB[0] != [3]float32{9, 8, 7} {
-		t.Errorf("row 0 = pt %+v int %v rgb %v, want x=1 int=77 rgb=9/8/7", s.Points[0], s.Intensity[0], s.RGB[0])
+	// uchar colour is normalised to 0..1 by /255 at decode (#1787); intensity stays raw.
+	if s.Points[1].X != 4 || s.Intensity[0] != 77 || s.RGB[0] != uchar255(9, 8, 7) {
+		t.Errorf("row 0 = pt %+v int %v rgb %v, want x=1 int=77 rgb=9,8,7 /255", s.Points[0], s.Intensity[0], s.RGB[0])
 	}
-	if s.Intensity[1] != 12 || s.RGB[1] != [3]float32{1, 2, 3} {
-		t.Errorf("row 1 = int %v rgb %v, want 12 and 1/2/3", s.Intensity[1], s.RGB[1])
+	if s.Intensity[1] != 12 || s.RGB[1] != uchar255(1, 2, 3) {
+		t.Errorf("row 1 = int %v rgb %v, want 12 and 1,2,3 /255", s.Intensity[1], s.RGB[1])
 	}
+}
+
+// uchar255 is the expected 0..1 normalisation of a uchar colour triple (the same float32 /255 the
+// decoder applies, so the comparison is bit-exact).
+func uchar255(r, g, b float32) [3]float32 {
+	return [3]float32{r / 255, g / 255, b / 255}
 }
 
 // TestScanBinaryChannels: a binary vertex with a uint16 intensity and uchar RGB decodes its channels
@@ -160,8 +167,49 @@ func TestScanBinaryChannels(t *testing.T) {
 	if err != nil || len(s.Points) != 1 {
 		t.Fatalf("Scan = %+v, err %v", s, err)
 	}
-	if s.Intensity[0] != 77 || s.RGB[0] != [3]float32{9, 8, 7} || s.Points[0].Z != 3 {
-		t.Errorf("scan row = pt %+v int %v rgb %v, want z=3 int=77 rgb=9/8/7", s.Points[0], s.Intensity[0], s.RGB[0])
+	if s.Intensity[0] != 77 || s.RGB[0] != uchar255(9, 8, 7) || s.Points[0].Z != 3 {
+		t.Errorf("scan row = pt %+v int %v rgb %v, want z=3 int=77 rgb=9,8,7 /255", s.Points[0], s.Intensity[0], s.RGB[0])
+	}
+}
+
+// TestColorScale maps each PLY colour scalar type to its 0..1 normaliser: integers by their unsigned
+// max, float/unknown passed through (#1787).
+func TestColorScale(t *testing.T) {
+	cases := map[string]float32{
+		"uchar": 255, "uint8": 255, "char": 255, "int8": 255,
+		"ushort": 65535, "uint16": 65535, "short": 65535, "int16": 65535,
+		"uint": 4294967295, "int32": 4294967295,
+		"float": 1, "double": 1, "weird": 1,
+	}
+	for typ, want := range cases {
+		if got := colorScale(typ); got != want {
+			t.Errorf("colorScale(%q) = %v, want %v", typ, got, want)
+		}
+	}
+}
+
+// TestScanUint16ColorNormalised: a ushort colour triple normalises by /65535, not /255, so a value
+// that would read near-white as 8-bit reads its true dim shade (#1787).
+func TestScanUint16ColorNormalised(t *testing.T) {
+	var b bytes.Buffer
+	for _, c := range []float32{0, 0, 0} {
+		_ = binary.Write(&b, binary.LittleEndian, c)
+	}
+	for _, c := range []uint16{200, 100, 65535} {
+		_ = binary.Write(&b, binary.LittleEndian, c)
+	}
+	src := append([]byte("ply\nformat binary_little_endian 1.0\n"+
+		"element vertex 1\nproperty float x\nproperty float y\nproperty float z\n"+
+		"property ushort red\nproperty ushort green\nproperty ushort blue\n"+
+		"end_header\n"), b.Bytes()...)
+	d, _ := Parse(src)
+	s, err := d.Scan()
+	if err != nil || len(s.RGB) != 1 {
+		t.Fatalf("Scan = %+v, err %v", s, err)
+	}
+	want := [3]float32{float32(200) / 65535, float32(100) / 65535, 1}
+	if s.RGB[0] != want {
+		t.Errorf("uint16 colour = %v, want %v (/65535, blue saturates to 1)", s.RGB[0], want)
 	}
 }
 
