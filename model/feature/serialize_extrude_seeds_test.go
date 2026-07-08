@@ -83,6 +83,43 @@ func TestExtrudeSeedResolvesAtRecomputeNotStaleIndex(t *testing.T) {
 	}
 }
 
+// TestResolveSeedsDropsMissingWhenSomeHit confirms a seed that hits no region is dropped as
+// long as another seed resolves — a stray stale seed must not add a wrong (fallback) region.
+func TestResolveSeedsDropsMissingWhenSomeHit(t *testing.T) {
+	sk := splitRectSketch()
+	// First seed hits the area-2 region; second seed is off the sheet (misses).
+	got := resolveSeeds(sk, [][]float64{{0.5, 1}, {99, 99}}, []int{7, 7})
+	if len(got) != 1 {
+		t.Fatalf("want only the hit region (missed seed dropped), got %v", got)
+	}
+	if a := sk.Profiles().Item(got[0]).Area(); stdmath.Abs(a-2) > 1e-6 {
+		t.Errorf("kept region area %v, want the area-2 region the first seed hit", a)
+	}
+}
+
+// TestSeedFallbackAlignsToSeeds confirms seedFallback yields one load-time cell per seed, using
+// the recipe's first index when a seed hits nothing, and the recipe list unchanged with no seeds.
+func TestSeedFallbackAlignsToSeeds(t *testing.T) {
+	sk := splitRectSketch()
+	small, large := regionIndexOfArea(sk, 2), regionIndexOfArea(sk, 6)
+
+	fb := seedFallback(sk, [][]float64{{0.5, 1}, {2.5, 1}}, []int{9})
+	if len(fb) != 2 || fb[0] != small || fb[1] != large {
+		t.Errorf("aligned fallback = %v, want [%d %d] (the two hit cells)", fb, small, large)
+	}
+
+	// A missing seed takes the recipe's first index (def0 = 9).
+	miss := seedFallback(sk, [][]float64{{99, 99}}, []int{9})
+	if len(miss) != 1 || miss[0] != 9 {
+		t.Errorf("missed-seed fallback = %v, want [9] (recipe default)", miss)
+	}
+
+	// No seeds ⇒ the recipe index list unchanged.
+	if none := seedFallback(sk, nil, []int{3, 4}); len(none) != 2 || none[0] != 3 || none[1] != 4 {
+		t.Errorf("no-seed fallback = %v, want [3 4] (recipe unchanged)", none)
+	}
+}
+
 func TestResolveSeedsFallsBack(t *testing.T) {
 	sk := splitRectSketch()
 
