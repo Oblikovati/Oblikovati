@@ -29,7 +29,8 @@ const extrudeSchema = `{
     "direction": {"type": "string", "enum": ["positive", "negative", "symmetric"], "default": "positive", "description": "Which side(s) of the sketch plane to grow."},
     "secondDistance": {"type": "string", "description": "Asymmetric two-direction depth on the negative side, e.g. \"10 mm\"."},
     "taper": {"type": "string", "description": "Draft angle, e.g. \"3 deg\" (positive widens away from the sketch)."},
-    "toFace": {"type": "string", "description": "Termination target for the to-face extent: a planar face reference key (from model.referenceKeys), a work plane (\"plane/N\"), or an origin plane (\"origin/plane/xy\")."}
+    "toFace": {"type": "string", "description": "Termination target for the to-face extent: a planar face reference key (from model.referenceKeys), a work plane (\"plane/N\"), or an origin plane (\"origin/plane/xy\")."},
+    "profileSeeds": {"type": "array", "description": "Select the extruded region(s) by an interior seed point [x,y] (sketch 2-D cm), one per region, instead of profileIndex — for an author that cannot predict the host's region ordering. The host resolves each seed to its containing region on the solved sketch every recompute; wins over profileIndex.", "items": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2}}
   },
   "required": ["sketchIndex"]
 }`
@@ -57,6 +58,11 @@ func applyExtrude(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	}
 	pf := feature.NewExtrudeFeatures(part.Features()).
 		AddExtrude(sk, []int{in.ProfileIndex}, op, extent, taper)
+	// Interior seed points select the region(s) by containment on the solved sketch every
+	// recompute — the stable selector for an author that cannot predict the host's region order.
+	if len(in.ProfileSeeds) > 0 {
+		pf.Definition().(*feature.ExtrudeFeature).Definition().ProfileSeeds = in.ProfileSeeds
+	}
 	// Uniform feature result (feature/kind/bodies/healthy/reason), shared with every other
 	// operation so callers read one shape — and so an unhealthy extrude is reported, not hidden.
 	return recomputeResult(part, pf)

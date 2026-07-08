@@ -29,7 +29,8 @@ const revolveSchema = `{
     "axisRef": {"type": "string", "description": "Work-axis reference to revolve about, e.g. \"origin/axis/y\" (default). See get_reference_keys / list_work_planes."},
     "angle": {"type": "string", "description": "Revolve angle with units, e.g. \"360 deg\"."},
     "angle2": {"type": "string", "description": "Optional second-direction sweep (opposite sense), e.g. \"30 deg\" — the two-directional revolve."},
-    "operation": {"type": "string", "enum": ["new", "join", "cut", "intersect"], "default": "new"}
+    "operation": {"type": "string", "enum": ["new", "join", "cut", "intersect"], "default": "new"},
+    "profileSeed": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2, "description": "Select the revolved region by an interior seed point [x,y] (sketch 2-D cm) instead of profileIndex — resolved by containment on the solved sketch every recompute; wins over profileIndex."}
   },
   "required": ["sketchIndex", "angle"]
 }`
@@ -65,10 +66,21 @@ func applyRevolve(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 			return nil, err
 		}
 		pf := feature.NewRevolveFeatures(part.Features()).AddTwoDirectional(sk, in.ProfileIndex, axis, angle, angle2, op)
+		setRevolveProfileSeed(pf, in.ProfileSeed)
 		return recomputeResult(part, pf)
 	}
 	pf := feature.NewRevolveFeatures(part.Features()).Add(sk, in.ProfileIndex, axis, angle, op)
+	setRevolveProfileSeed(pf, in.ProfileSeed)
 	return recomputeResult(part, pf)
+}
+
+// setRevolveProfileSeed records an interior seed point on the revolve so its region resolves by
+// containment on the solved sketch every recompute (the stable selector for an external author).
+func setRevolveProfileSeed(pf *feature.PartFeature, seed []float64) {
+	if len(seed) == 0 {
+		return
+	}
+	pf.Definition().(*feature.RevolveFeature).Definition().ProfileSeed = append([]float64(nil), seed...)
 }
 
 // --- rib -------------------------------------------------------------------
