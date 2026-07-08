@@ -232,6 +232,12 @@ type ThreadDefinition struct {
 	Class         string
 	Tapered       bool
 	ModelDiameter types.ModelDiameterFromThread
+	// Offset and Length limit the thread to a sub-span of the face along its axis (Inventor's
+	// ThreadOffset / ThreadDepth): the thread runs from the face's min axial extent + Offset for
+	// Length (cm). A nil Offset ⇒ 0; a nil or zero Length ⇒ the full face (Inventor's FullDepth).
+	// A double-ended stud threads only its two ends by giving each thread its own Offset+Length.
+	Offset func() float64
+	Length func() float64
 	// FaceAnchors maps FaceKey to its mint-time centroid for the geometric recovery tier
 	// (ADR-0043 P6 / #1579); see FilletDefinition.EdgeAnchors.
 	FaceAnchors map[string]math.Point3
@@ -280,14 +286,16 @@ func (t *ThreadFeature) Recompute(in Input) (Output, error) {
 	if !ok {
 		return Output{}, fmt.Errorf("thread %q: face is not cylindrical (%T)", t.def.Designation, face.Geometry())
 	}
-	vMin, vMax := axialExtent(face.RangeBox(), cyl)
+	vFaceMin, vFaceMax := axialExtent(face.RangeBox(), cyl)
+	vMin, vMax := resolveThreadSpan(vFaceMin, vFaceMax, t.def.Offset, t.def.Length)
 	spec.Internal = bodyHasMaterialOutside(body, cyl, (vMin+vMax)/2, (spec.MajorDiameter-spec.MinorDiameter)/2/10)
 	t.spec = &spec
 	if !t.def.Cut {
 		return Output{Bodies: in.Bodies, Heals: faceHeal(t.def.FaceKey, mt)}, nil // cosmetic: solid unchanged
 	}
 	// Modeled (cut) thread: retype the cylindrical face to a threaded surface — O(1), no
-	// boolean — so it tessellates and measures as real threaded geometry.
+	// boolean — so it tessellates and measures as real threaded geometry. The span honours the
+	// thread's offset/length so a partial cut thread grooves only its run.
 	threaded := geom.ThreadedCylinder{
 		Cylinder: cyl, Pitch: spec.Pitch / 10, Depth: (spec.MajorDiameter - spec.MinorDiameter) / 2 / 10,
 		Internal: spec.Internal, RightHanded: spec.RightHanded, VMin: vMin, VMax: vMax,

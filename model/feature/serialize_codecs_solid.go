@@ -159,6 +159,7 @@ func (r featureCodecSet) registerSolidCodecs() {
 			t := f.(*ThreadFeature)
 			fd.Thread = &ThreadData{Face: encodeKey(t.def.FaceKey), Designation: t.def.Designation, Cut: t.def.Cut,
 				Class: t.def.Class, Tapered: t.def.Tapered, ModelDiameter: threadModelDiameterName(t.def.ModelDiameter),
+				Offset: evalFloat(t.def.Offset), Length: evalFloat(t.def.Length),
 				FaceAnchors: encodeFaceAnchors(t.def.FaceAnchors)}
 			return nil
 		},
@@ -248,7 +249,8 @@ func decodeThread(rc *restoreContext, fd FeatureData) (*PartFeature, error) {
 		return nil, err
 	}
 	return NewDressUpFeatures(rc.fs).addThreadDef(&ThreadDefinition{FaceKey: key, Designation: fd.Thread.Designation,
-		Cut: fd.Thread.Cut, Class: fd.Thread.Class, Tapered: fd.Thread.Tapered, ModelDiameter: md, FaceAnchors: anchors}), nil
+		Cut: fd.Thread.Cut, Class: fd.Thread.Class, Tapered: fd.Thread.Tapered, ModelDiameter: md,
+		Offset: constFloat(fd.Thread.Offset), Length: constFloat(fd.Thread.Length), FaceAnchors: anchors}), nil
 }
 
 // decodeSnapFit rebuilds a cantilever snap-fit from its persisted dimensions.

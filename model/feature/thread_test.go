@@ -127,6 +127,32 @@ func TestThreadDisplayHelixOnSurface(t *testing.T) {
 	}
 }
 
+// TestThreadDisplayPartialSpan checks a cosmetic thread limited by Offset/Length draws its helix
+// only over that axial window (Inventor's ThreadOffset/ThreadDepth) — the double-ended-stud case,
+// where the two end threads must not spill into the plain middle.
+func TestThreadDisplayPartialSpan(t *testing.T) {
+	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 0.4, 3.0)
+	fs := NewPartFeatures(nil)
+	NewBaseFeatures(fs).AddBase(cyl)
+	NewDressUpFeatures(fs).AddThreadDef(&ThreadDefinition{
+		FaceKey:     cylinderFaceKey(t, cyl),
+		Designation: "M8x1.25",
+		Offset:      constFloat(2.0), // start 2 cm up the 3 cm cylinder
+		Length:      constFloat(0.5), // run 0.5 cm — the nut-end band
+	})
+	fs.Recompute()
+
+	curves := ThreadDisplayCurves(fs)
+	if len(curves) != 1 {
+		t.Fatalf("got %d thread display curves, want 1", len(curves))
+	}
+	for _, p := range curves[0] {
+		if z := float64(p.Z); z < 2.0-1e-6 || z > 2.5+1e-6 {
+			t.Errorf("helix point outside the [2.0,2.5] thread span: z=%.5f", z)
+		}
+	}
+}
+
 // TestThreadCutModelsRealThreadFast checks the modeled (cut) thread retypes the face to a
 // threaded surface in O(1) — microseconds, no boolean — giving a valid solid whose volume
 // drops (the grooves are real geometry).
