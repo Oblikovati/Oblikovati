@@ -249,6 +249,14 @@ jobs:
       - name: Build head
         working-directory: head
         run: CGO_ENABLED=1 go build ./...
+      # The in-process .dll add-in loader (internal/addinhost, dl_windows.go:
+      # LoadLibrary/GetProcAddress) is exercised ONLY on Windows — the ubuntu `head`
+      # job covers the dlopen path and this job otherwise just compiles. Run the
+      # loader/automation/reload/tree/gate suite so the Win32 trampoline stays at
+      # parity on every PR (it builds real c-shared .dll fixtures via mingw gcc).
+      - name: Test head add-in loader (Windows .dll)
+        working-directory: head
+        run: CGO_ENABLED=1 go test ./internal/addinhost/...
 
   # Confirm the cgo-free core cross-compiles for every shipping target.
   build:

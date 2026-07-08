@@ -1,4 +1,4 @@
-//go:build linux || darwin
+//go:build linux || darwin || windows
 
 // SPDX-License-Identifier: GPL-2.0-only
 
@@ -24,11 +24,7 @@ import (
 // repo's go.work workspace (which does not `use` it) must not capture it.
 func buildFixture(t *testing.T, dirName string) string {
 	t.Helper()
-	ext := ".so"
-	if runtime.GOOS == "darwin" {
-		ext = ".dylib"
-	}
-	out := filepath.Join(t.TempDir(), dirName+ext)
+	out := filepath.Join(libDir(t), dirName+sharedLibExt())
 	_, thisFile, _, _ := runtime.Caller(0)
 	src := filepath.Join(filepath.Dir(thisFile), "testdata", dirName)
 
@@ -39,6 +35,37 @@ func buildFixture(t *testing.T, dirName string) string {
 		t.Fatalf("build fixture add-in %q: %v\n%s", dirName, err, combined)
 	}
 	return out
+}
+
+// sharedLibExt is the c-shared library extension for the host OS, so fixtures build
+// (and get copied) with the extension isSharedLib recognizes: .dll on Windows,
+// .dylib on macOS, .so elsewhere.
+func sharedLibExt() string {
+	switch runtime.GOOS {
+	case "windows":
+		return ".dll"
+	case "darwin":
+		return ".dylib"
+	default:
+		return ".so"
+	}
+}
+
+// libDir makes a temp directory for hosting c-shared fixtures with BEST-EFFORT
+// cleanup. On Windows a loaded add-in DLL stays resident for the process lifetime
+// (close() cannot FreeLibrary a live Go runtime — see dl_windows.go) and Windows locks
+// a mapped image file, so t.TempDir's strict RemoveAll would fail on the still-locked
+// .dll. This helper removes what it can and ignores the lock; the OS reclaims the rest
+// at process exit. On Unix it behaves like an ordinary temp dir. Used wherever a test
+// places a library it then loads.
+func libDir(t *testing.T) string {
+	t.Helper()
+	dir, err := os.MkdirTemp("", "addinhost-fixture-")
+	if err != nil {
+		t.Fatalf("make fixture temp dir: %v", err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+	return dir
 }
 
 // TestLoadDirRoundTripsHostCall is the seam proof: load a real c-shared add-in,
@@ -97,7 +124,7 @@ func TestLoadDirRoundTripsHostCall(t *testing.T) {
 // c-shared add-in reporting a mismatched ObkAddInApiMajor is left unloaded while a
 // compatible one in the same directory still loads.
 func TestLoadDirSkipsIncompatibleAddIn(t *testing.T) {
-	dir := t.TempDir()
+	dir := libDir(t)
 	placeFixture(t, "echoaddin", dir)
 	placeFixture(t, "incompataddin", dir)
 
