@@ -20,9 +20,13 @@ import (
 // identity); it only recovers a selection at recompute, and the caller maps a hit to
 // health.Warning (auto-healed, flagged), exactly like the M31 fallback tiers.
 
-// normalAlignMin is the minimum dot product (unit normals) for a candidate face's outward
-// normal to count as aligned with the descriptor's — ~25°, enough to reject the opposite
-// face of a thin feature while tolerating tessellation/curvature drift.
+// normalAlignMin is the minimum |dot product| (unit normals) for a candidate face's outward
+// normal to count as aligned with the descriptor's — ~25°, tolerating tessellation/curvature
+// drift. The match is on the normal AXIS, not its sign: an external author (e.g. an exporter)
+// can record a face's outward normal with the opposite sign convention, and a planar face's
+// identity does not depend on which way its normal is named. The opposite face of a thin
+// feature is still rejected by the point-on-plane / centroid-distance tests (its plane is a
+// thickness away), and FindPlanarFaceThrough only binds when a single candidate remains.
 const normalAlignMin = 0.9
 
 // GeometricFaceRef names a face by where it sits, not by lineage: a representative point
@@ -66,7 +70,7 @@ func (b *Body) FindFaceByGeometry(ref GeometricFaceRef, tol math.Scalar) (*Face,
 		if d > tol {
 			continue
 		}
-		if want.LengthSquared() > 0 && faceOutwardNormal(f, c).Dot(want) < normalAlignMin {
+		if want.LengthSquared() > 0 && stdmath.Abs(float64(faceOutwardNormal(f, c).Dot(want))) < normalAlignMin {
 			continue
 		}
 		best, bestD, second, secondD = rank(f, d, best, bestD, second, secondD)
@@ -83,29 +87,40 @@ func (b *Body) FindFaceByGeometry(ref GeometricFaceRef, tol math.Scalar) (*Face,
 // whereas the drill centre and the face plane are.
 func (b *Body) FindPlanarFaceThrough(p math.Point3, want math.Vector3, tol math.Scalar) (*Face, bool) {
 	wn := unitOrZero(want)
+	var planeCands []*Face
+	var containing []*Face
 	var best *Face
-	var candidates int
 	bestD := stdmath.Inf(1)
 	for _, f := range b.Faces() {
 		c := faceCentroid(f)
 		n := faceOutwardNormal(f, c)
-		if wn.LengthSquared() > 0 && n.Dot(wn) < normalAlignMin {
+		if wn.LengthSquared() > 0 && stdmath.Abs(float64(n.Dot(wn))) < normalAlignMin {
 			continue
 		}
 		if stdmath.Abs(c.VectorTo(p).Dot(n)) > tol { // perpendicular distance from p to the face plane
 			continue
 		}
-		candidates++
+		planeCands = append(planeCands, f)
+		if NewFaceEvaluator(f).Contains(p) {
+			containing = append(containing, f)
+		}
 		if d := p.DistanceTo(c); d < bestD {
 			best, bestD = f, d
 		}
 	}
-	// Bind only when the placement face is unambiguous; two faces reaching p on aligned planes is
-	// an indefensible tie, so leave the hole unbound rather than drill the wrong one.
-	if candidates != 1 {
-		return nil, false
+	// Prefer the face that actually CONTAINS p (inside its outer boundary, outside its holes):
+	// coplanar faces on aligned planes are common (a face split by a pattern/step), and only one
+	// contains the drill point, so this disambiguates them where a plane-only test would tie.
+	if len(containing) == 1 {
+		return containing[0], true
 	}
-	return best, true
+	// No unique containing face: fall back to a single plane-aligned candidate (p may sit just
+	// outside the boundary, e.g. a recorded centroid off an annular face). Two remain ⇒ an
+	// indefensible tie, so leave the hole unbound rather than drill the wrong one.
+	if len(planeCands) == 1 {
+		return best, true
+	}
+	return nil, false
 }
 
 // FindEdgeByGeometry returns the edge whose midpoint is within tol of the descriptor and
