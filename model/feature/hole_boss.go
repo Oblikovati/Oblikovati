@@ -366,16 +366,24 @@ func resolveHoleFace(body *topo.Body, def *HoleDefinition) (*topo.Face, bool) {
 		return body.FindFaceByKey(def.PlacementFaceKey)
 	}
 	if def.GeomFace != nil {
-		// Prefer the precise centroid+normal match. When it is lost — e.g. an exporter that
-		// mis-computes the face centroid, or a centroid shifted by later history — fall back to
-		// binding by the drill CENTRE, which lies on the placement face and is history-stable.
+		// Prefer the precise centroid+normal match. When it drifts past geomEdgeBindTol (an exporter
+		// computing the centroid differently, a centroid shifted by later history, or an annular face
+		// whose vertex-mean sits off the material), fall back to binding by a point on the placement
+		// face's PLANE with the recorded normal. Try TWO such points, since either may miss:
+		//   - the drill CENTRE, which lies on the face for a well-placed hole — but can sit on an
+		//     adjacent curved face at a rim, off the target plane;
+		//   - the recorded face CENTROID, which is coplanar with the placement face even when it
+		//     falls just outside the face boundary (FindPlanarFaceThrough uses perpendicular distance
+		//     to the plane, so an in-plane offset does not matter).
 		if f, ok := body.FindFaceByGeometry(*def.GeomFace, geomEdgeBindTol); ok {
 			return f, true
 		}
 		if def.Center != nil {
-			return body.FindPlanarFaceThrough(*def.Center, def.GeomFace.Normal, holeFaceThroughTol)
+			if f, ok := body.FindPlanarFaceThrough(*def.Center, def.GeomFace.Normal, holeFaceThroughTol); ok {
+				return f, true
+			}
 		}
-		return nil, false
+		return body.FindPlanarFaceThrough(def.GeomFace.Centroid, def.GeomFace.Normal, holeFaceThroughTol)
 	}
 	return nil, false
 }

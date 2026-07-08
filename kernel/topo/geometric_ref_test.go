@@ -208,3 +208,37 @@ func TestFindPlanarFaceThroughBindsByCentre(t *testing.T) {
 		t.Error("a point far off the face plane must not bind")
 	}
 }
+
+// TestGeometricFaceRefNormalIsSignAgnostic: a face descriptor whose normal is recorded with the
+// opposite sign (an external author's outward-normal convention may differ) still binds the same
+// face — a planar face's identity does not depend on which way its normal is named.
+func TestGeometricFaceRefNormalIsSignAgnostic(t *testing.T) {
+	a := box(math.P3(0, 0, 0), 2, 2, 2)
+	f := a.Faces()[0]
+	ref := topo.DescribeFace(f)
+	ref.Normal = ref.Normal.Scale(-1) // flip the sign
+	if got, ok := a.FindFaceByGeometry(ref, spikeTol); !ok || got != f {
+		t.Errorf("flipped-normal descriptor did not resolve its face (ok=%v, same=%v)", ok, got == f)
+	}
+}
+
+// TestFindPlanarFaceThroughDisambiguatesCoplanarByContainment: two coplanar, same-normal faces
+// (two disjoint boxes joined share the Z=2 plane) no longer tie — the face that CONTAINS the
+// point binds, so a hole whose drill point lands inside one of several coplanar faces resolves.
+func TestFindPlanarFaceThroughDisambiguatesCoplanarByContainment(t *testing.T) {
+	a := box(math.P3(0, 0, 0), 2, 2, 2)
+	b := box(math.P3(6, 0, 0), 2, 2, 2) // disjoint, tops coplanar at Z=2
+	u, err := ops.Boolean(ops.Join, a, b)
+	if err != nil {
+		t.Fatalf("union: %v", err)
+	}
+	up := math.Vector3{X: 0, Y: 0, Z: 1}
+	p := math.P3(1, 1, 2) // inside the FIRST box's top face only
+	got, ok := u.FindPlanarFaceThrough(p, up, spikeTol)
+	if !ok {
+		t.Fatal("a point inside one of two coplanar faces should bind that face")
+	}
+	if c := topo.DescribeFace(got).Centroid; c.X > 3 {
+		t.Errorf("bound the wrong coplanar face (centroid X=%v, want the box at X~1)", c.X)
+	}
+}

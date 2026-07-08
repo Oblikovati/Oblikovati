@@ -59,6 +59,31 @@ func TestHoleGeomFaceMatchesFaceRef(t *testing.T) {
 	}
 }
 
+// TestHoleGeomFaceFlippedNormalStillBinds: an external author may record the placement face's
+// outward normal with the opposite sign convention (observed: Inventor vs Oblikovati disagree on
+// a revolve end face). The face identity does not depend on the normal sign, so a flipped-normal
+// descriptor must still bind the same face and remove the same material. Also uses an explicit
+// center so the drill point lies on the face.
+func TestHoleGeomFaceFlippedNormalStillBinds(t *testing.T) {
+	byRef, _, _ := extrudedSolid(t)
+	refKey, _ := boxTopFace(t, byRef)
+	if _, err := applyMap(t, byRef, "hole", map[string]any{"faceRef": refKey, "diameter": "3 mm", "depth": "5 mm", "center": []float64{2, 1.5, 1}}); err != nil {
+		t.Fatalf("drill by faceRef: %v", err)
+	}
+
+	byGeom, _, _ := extrudedSolid(t)
+	g := topo.DescribeFace(topFaceOf(t, byGeom))
+	flipped := []float64{-g.Normal.X, -g.Normal.Y, -g.Normal.Z}
+	args := map[string]any{"diameter": "3 mm", "depth": "5 mm", "center": []float64{2, 1.5, 1},
+		"placementFaceGeom": map[string]any{"centroid": xyz(g.Centroid), "normal": flipped}}
+	if _, err := applyMap(t, byGeom, "hole", args); err != nil {
+		t.Fatalf("drill by placementFaceGeom (flipped normal): %v", err)
+	}
+	if vr, vg := bodyVolume(t, byRef), bodyVolume(t, byGeom); stdmath.Abs(vr-vg) > 1e-6 {
+		t.Errorf("flipped-normal geom-face hole volume = %v, faceRef = %v, want equal", vg, vr)
+	}
+}
+
 // TestHoleNeedsFaceRefOrGeom: a hole with neither faceRef nor placementFaceGeom is a clean error.
 func TestHoleNeedsFaceRefOrGeom(t *testing.T) {
 	s, _, _ := extrudedSolid(t)
