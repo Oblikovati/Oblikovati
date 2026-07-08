@@ -62,12 +62,13 @@ func keepImprintLoops(tr geom.SurfaceIntersection, res geom.Resolution, rec *dia
 	return closedTraceLoops(tr.Curves, res, rec)
 }
 
-// crossingCylinderImprint returns the intersection loops of two bare cylinder bodies as closed polylines,
-// or ok=false when either body is not a bare cylinder or no closed loop is traced. The trace window spans
-// the first body's axial extent (the cylinders cross within it), and the periodic angular direction is
-// resolved by the tracer automatically. A non-nil rec receives a diagnostic for any traced chain that
-// failed to close (#1404).
-func crossingCylinderImprint(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyline, bool) {
+// crossingCylinderLoops traces the intersection loops of two bare cylinder bodies as closed polylines,
+// declining (silently) only below the Steinmetz snap ceiling where the exact bicylinder constructor takes
+// over (#1780). Unlike crossingCylinderImprint it does NOT decline the near-pinch band — the intersect driver
+// (crossingCylinderIntersectGeneral) resolves that band robustly by trimming the fat wall per loop (#1818),
+// so it needs the raw loops. Callers that cannot yet handle the near-pinch band (cut/join, cap-crossing) use
+// crossingCylinderImprint, which adds the near-pinch decline.
+func crossingCylinderLoops(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyline, bool) {
 	ca, baseA, heightA, okA := cylinderSolidParams(facesOfAny(a))
 	cb, _, _, okB := cylinderSolidParams(facesOfAny(b))
 	if !okA || !okB {
@@ -84,19 +85,36 @@ func crossingCylinderImprint(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyli
 	if len(loops) == 0 {
 		return nil, false
 	}
-	// Above the snap ceiling the two loops are genuine, resolvable geometry — but where their mutual
-	// closest approach (the neck) is narrow relative to the imprint's own chord, the two lens loops' faceted
-	// cusps interpenetrate: the (u,v) arrangement fabricates a spurious neck crossing and fuses the two
-	// lenses into one mis-classified face (a conditioning wall, δ~√Δr vs facet error ~h²/√Δr — #1781). The
-	// analytic result is watertight ONLY on the well-separated side of that wall; on the near-pinch side we
-	// decline to the deterministic faceted route and record the degradation. Resolving that residual band
-	// analytically needs the near-pinch analytic-tip split (Oblikovati#1818), not a finer imprint.
-	if ca.Radius != cb.Radius && nearPinchLoops(loops) {
+	return loops, true
+}
+
+// crossingCylinderImprint returns the crossing-cylinder loops for callers that decline the near-pinch band to
+// their CSG fallback (cut/join, cap-crossing). It is crossingCylinderLoops plus the near-pinch gate: where the
+// two loops' neck is narrow relative to the imprint chord, the fat wall's holed-wall trim would fuse the two
+// lens holes (a conditioning wall, δ~√Δr vs facet error ~h²/√Δr — #1781), so it records the degradation and
+// declines. The INTERSECT driver bypasses this (per-loop fat trim handles the band, #1818); folding cut/join
+// onto the analytic path (the holed-wall neck bridge) is the remaining #1818 work.
+func crossingCylinderImprint(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyline, bool) {
+	loops, ok := crossingCylinderLoops(a, b, rec)
+	if !ok {
+		return nil, false
+	}
+	// Equal-radius loops touch at the Steinmetz pinches (neck 0) — that is the exact bicylinder, handled by
+	// steinmetzGeneral, NOT a near-pinch decline. Only the UNEQUAL near-pinch band declines here.
+	if unequalRadiusCrossing(a, b) && nearPinchLoops(loops) {
 		rec.Recordf(CodeImprintNearPinchDeclined, diag.Defect,
 			"crossing cylinders with a narrow imprint neck (gap/chord = %.2g) decline the analytic imprint: near-pinch lens fusion, falling back", loopGapChordRatio(loops))
 		return nil, false
 	}
 	return loops, true
+}
+
+// unequalRadiusCrossing reports whether two bare cylinder bodies have different radii — the near-pinch decline
+// applies only to the UNEQUAL band; equal radii are the exact Steinmetz pinch handled by steinmetzGeneral.
+func unequalRadiusCrossing(a, b *topo.Body) bool {
+	ca, _, _, okA := cylinderSolidParams(facesOfAny(a))
+	cb, _, _, okB := cylinderSolidParams(facesOfAny(b))
+	return okA && okB && ca.Radius != cb.Radius
 }
 
 // nearPinchLoops reports whether a pair of imprint loops is in the near-pinch band the (u,v) arrangement

@@ -128,3 +128,42 @@ func TestHoledCylinderWallDeclinesNonWrappingOuter(t *testing.T) {
 		t.Error("a non-wrapping outer loop should defer from the holed-wall mesher")
 	}
 }
+
+// squareHoleUV is a closed unit square hole loop in (u,v) offset by (du,0) — a synthetic near-pinch hole.
+func squareHoleUV(du float64) []math.Point2 {
+	return []math.Point2{
+		math.P2(math.Scalar(du), 0), math.P2(math.Scalar(du+1), 0),
+		math.P2(math.Scalar(du+1), 1), math.P2(math.Scalar(du), 1), math.P2(math.Scalar(du), 0),
+	}
+}
+
+func TestMeanLoopChord2D(t *testing.T) {
+	if got := meanLoopChord2D(squareHoleUV(0)); stdmath.Abs(got-1) > 1e-9 { // every edge is a unit segment
+		t.Errorf("meanLoopChord2D = %g, want 1", got)
+	}
+	if got := meanLoopChord2D([]math.Point2{math.P2(0, 0)}); got != 0 {
+		t.Errorf("meanLoopChord2D(single) = %g, want 0", got)
+	}
+}
+
+func TestMinCrossVertexDistance(t *testing.T) {
+	// squares at u∈[0,1] and u∈[5,6]: nearest vertices are u=1 and u=5, gap 4.
+	if got := minCrossVertexDistance(squareHoleUV(0), squareHoleUV(5)); stdmath.Abs(got-4) > 1e-9 {
+		t.Errorf("minCrossVertexDistance = %g, want 4", got)
+	}
+}
+
+func TestNeckCorridorNodes(t *testing.T) {
+	// Two holes 0.2 apart (gap/chord = 0.2 < nearNeckChords): the corridor between them is seeded.
+	if got := neckCorridorNodes([][]math.Point2{squareHoleUV(0), squareHoleUV(1.2)}); len(got) == 0 {
+		t.Error("neckCorridorNodes seeded nothing for near-touching holes (gap 0.2)")
+	}
+	// Well-separated holes (gap 6 ≫ nearNeckChords·chord): no corridor seeding.
+	if got := neckCorridorNodes([][]math.Point2{squareHoleUV(0), squareHoleUV(7)}); len(got) != 0 {
+		t.Errorf("neckCorridorNodes seeded %d nodes for well-separated holes; want 0", len(got))
+	}
+	// Not exactly two holes: never seeds (an ordinary single-hole drilling is untouched).
+	if got := neckCorridorNodes([][]math.Point2{squareHoleUV(0)}); got != nil {
+		t.Errorf("neckCorridorNodes seeded for a single hole; want nil")
+	}
+}

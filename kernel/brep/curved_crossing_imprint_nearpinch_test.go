@@ -80,3 +80,31 @@ func TestCrossingCylinderImprintRecoveredBand(t *testing.T) {
 		t.Errorf("recovered-band intersect has %d faces, want 3 (rod band + two lens caps)", n)
 	}
 }
+
+// TestCrossingCylinderIntersectNearPinchPerLoop exercises the #1818 per-loop fat-wall trim directly: a crossing
+// DEEP in the near-pinch band (below the #1781 gate) — which the cut/join path would decline — still builds the
+// exact three-face intersect, because the fat wall is trimmed one lens loop at a time (cylinderLensSplit).
+func TestCrossingCylinderIntersectNearPinchPerLoop(t *testing.T) {
+	const r = 3.0
+	thin, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), r, 12)
+	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), r+5e-5, 12) // deep near-pinch (gap/chord < gate)
+	body, ok := crossingCylinderIntersectGeneral(thin, fat, nil)
+	if !ok {
+		t.Fatal("near-pinch crossing intersect declined; #1818 per-loop path must build it")
+	}
+	if n := len(body.Faces()); n != 3 {
+		t.Errorf("near-pinch intersect has %d faces, want 3 (rod band + two lens caps)", n)
+	}
+}
+
+func TestUnequalRadiusCrossing(t *testing.T) {
+	eqA, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12)
+	eqB, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
+	if unequalRadiusCrossing(eqA, eqB) {
+		t.Error("equal radii reported unequal (would wrongly decline the Steinmetz pinch)")
+	}
+	neB, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3.001, 12)
+	if !unequalRadiusCrossing(eqA, neB) {
+		t.Error("unequal radii reported equal")
+	}
+}

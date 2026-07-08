@@ -53,10 +53,13 @@ func crossingCyls(t *testing.T, r, dr float64) (cx, cz *topo.Body) {
 // (R=3 and R=30) with |Δr| scaled by R, so the dimensionless gate is exercised identically at both — the
 // scale-invariance the near-pinch ratio gate promises.
 func TestNearPinchRecoveredBandWatertight(t *testing.T) {
+	// The whole band down to just above the snap ceiling (|Δr|≈2e-5 at R=3): #1781 recovered the upper part
+	// (gap/chord ≥ the gate) and #1818 the residual near-pinch part (per-loop fat-wall trim). All must ship
+	// the exact three-face watertight solid; none may decline.
 	for _, r := range []float64{3.0, 30.0} {
-		for _, k := range []float64{1.2e-4, 1.6e-4, 2.4e-4, 4.0e-4, 6.0e-4} {
+		for _, k := range []float64{2e-5, 4e-5, 8e-5, 1.6e-4, 3.2e-4, 6.0e-4} {
 			dr := k * (r / 3.0) // scale |Δr| with R so |Δr|/R (hence the loop gap/chord ratio) matches
-			t.Run(fmt.Sprintf("recovered/R=%g/dr=%g", r, dr), func(t *testing.T) {
+			t.Run(fmt.Sprintf("R=%g/dr=%g", r, dr), func(t *testing.T) {
 				cx, cz := crossingCyls(t, r, dr)
 				rec := &diag.Recorder{}
 				got, err := BooleanWithDiagnostics(Intersect, cx, cz, rec)
@@ -64,7 +67,7 @@ func TestNearPinchRecoveredBandWatertight(t *testing.T) {
 					t.Fatalf("Boolean(Intersect): %v", err)
 				}
 				if rec.Has(brep.CodeImprintNearPinchDeclined) {
-					t.Fatalf("R=%g dr=%g must ship the analytic path, not decline (#1781)", r, dr)
+					t.Fatalf("R=%g dr=%g must ship the analytic per-loop path, not decline (#1818)", r, dr)
 				}
 				assertWatertightCrossing(t, got, r, dr)
 			})
@@ -93,30 +96,62 @@ func assertWatertightCrossing(t *testing.T, got *topo.Body, r, dr float64) {
 	}
 }
 
-// TestNearPinchResidualBandDeclinesCleanly pins the residual lower band (#1818): where the neck is below the
-// gate the boolean must DECLINE the analytic path (recorded, never silent) and take the faceted fallback,
-// whose VOLUME must not collapse (a user gets degraded-but-correct bulk, not a wrong tiny lump — the ~98%
-// collapse the analytic arrangement would produce here). The fallback is knowingly NON-watertight in this
-// band (the ~6300-face CSG has sliver edges, #1780) — making it watertight analytically is #1818; this test
-// pins only that the decline is recorded and the volume is preserved, so #1818's arrival is a clean upgrade.
-func TestNearPinchResidualBandDeclinesCleanly(t *testing.T) {
-	const r = 3.0
-	for _, dr := range []float64{4e-5, 6e-5, 8e-5} { // |Δr|/r ≈ 1.3e-5 .. 2.7e-5, above the snap ceiling
-		t.Run(fmt.Sprintf("residual/dr=%g", dr), func(t *testing.T) {
-			cx, cz := crossingCyls(t, r, dr)
-			rec := &diag.Recorder{}
-			got, err := BooleanWithDiagnostics(Intersect, cx, cz, rec)
-			if err != nil {
-				t.Fatalf("Boolean(Intersect): %v", err)
+// TestNearPinchCutJoinWatertight is the #1818 cut/join acceptance gate: an unequal-radius near-pinch crossing
+// (below the #1781 upper-band gate, down to just above the Steinmetz snap ceiling) must SUBTRACT and UNION to
+// an EXACT watertight analytic solid — a valid closed manifold, 0 free mesh edges, volume within the
+// DefaultQuality budget of the analytic oracle — and must NOT decline. Cut (cx−cz) severs the near-equal rod
+// into two stubs (rod − intersection); Join fuses both cylinders (fat + thin − intersection). Every near-pinch
+// face is built from the raw whole imprint loops so each shared loop welds as one topo edge (the drilled fat
+// wall is the corridor-seeded keyhole; the thin walls are raw two-rim stubs), a global reorient fixing the
+// winding. Swept at two model scales with |Δr| scaled by R, so the dimensionless near-pinch gate is exercised
+// identically at both.
+func TestNearPinchCutJoinWatertight(t *testing.T) {
+	for _, r := range []float64{3.0, 30.0} {
+		for _, op := range []PartFeatureOperation{Cut, Join} {
+			for _, k := range []float64{4e-5, 6e-5, 1.6e-4, 3.2e-4} {
+				dr := k * (r / 3.0)
+				t.Run(fmt.Sprintf("%v/R=%g/dr=%g", op, r, dr), func(t *testing.T) {
+					cx, cz := crossingCyls(t, r, dr)
+					rec := &diag.Recorder{}
+					got, err := BooleanWithDiagnostics(op, cx, cz, rec)
+					if err != nil {
+						t.Fatalf("Boolean(%v): %v", op, err)
+					}
+					if rec.Has(brep.CodeImprintNearPinchDeclined) {
+						t.Fatalf("%v R=%g dr=%g must ship the analytic near-pinch path, not decline (#1818)", op, r, dr)
+					}
+					assertWatertightSolid(t, got)
+					assertCutJoinVolume(t, op, got, r, dr)
+				})
 			}
-			if !rec.Has(brep.CodeImprintNearPinchDeclined) {
-				t.Fatalf("dr=%g (below the near-pinch gate) must record the decline, not ship a silent analytic result", dr)
-			}
-			vol := BodyGeometryProperties(got, DefaultQuality()).Volume
-			want := nearPinchIntersectVolume(r, r+dr)
-			if rel := stdmath.Abs(vol-want) / want; rel > 0.05 {
-				t.Errorf("fallback volume %.4f collapsed vs analytic %.4f — rel %.3f > 5%% (the analytic arrangement would collapse it ~98%% here)", vol, want, rel)
-			}
-		})
+		}
+	}
+}
+
+// assertWatertightSolid pins a boolean result as a valid closed manifold whose mesh has zero free edges.
+func assertWatertightSolid(t *testing.T, got *topo.Body) {
+	t.Helper()
+	if v := Validate(got); !v.Valid || !v.Closed || !v.Manifold || !got.IsSolid() {
+		t.Fatalf("result not a valid closed manifold solid: %+v", v)
+	}
+	if m, _ := TessellateBody(got, DefaultQuality()); freeEdgeCount(m) != 0 {
+		t.Errorf("meshed with %d free edges; want 0 (watertight)", freeEdgeCount(m))
+	}
+}
+
+// assertCutJoinVolume checks the cut/join bulk against the analytic oracle: cx (rod, radius r) − cz (radius
+// r+Δr) is the rod minus the crossing intersection; the union adds both cylinders less that intersection.
+func assertCutJoinVolume(t *testing.T, op PartFeatureOperation, got *topo.Body, r, dr float64) {
+	t.Helper()
+	h := 4 * r
+	rod, fat := stdmath.Pi*r*r*h, stdmath.Pi*(r+dr)*(r+dr)*h
+	inter := nearPinchIntersectVolume(r, r+dr)
+	want := rod - inter
+	if op == Join {
+		want = rod + fat - inter
+	}
+	vol := BodyGeometryProperties(got, DefaultQuality()).Volume
+	if rel := stdmath.Abs(vol-want) / want; rel > 0.04 {
+		t.Errorf("%v R=%g dr=%g volume %.4f, want %.4f (analytic) — rel %.3f > 4%%", op, r, dr, vol, want, rel)
 	}
 }

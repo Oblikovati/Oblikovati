@@ -204,12 +204,18 @@ func ruledPairGeneral(a, b *topo.Body, rec *diag.Recorder,
 // a fat cylinder drilled by a rod (one solid) or a rod sliced by a fat (two stubs). ok=false outside the
 // wired clean-side-breach crossing so kernel/ops keeps its CSG fallback.
 func CrossingCylinderCutGeneral(target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
+	if body, ok := nearPinchCrossingCut(target, tool, rec); ok { // #1818 near-pinch band (raw whole-loop faces)
+		return body, true
+	}
 	return ruledPairGeneral(target, tool, rec, crossingCylinderImprint, cylinderOperand, ruledCutGeneral)
 }
 
 // CrossingCylinderJoinGeneral routes crossing-cylinder JOIN through the general ruled join (#1403/#1476):
 // a fat cylinder side-breached by a rod, welded into one solid (keyhole holed wall + two stubs + whole caps).
 func CrossingCylinderJoinGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
+	if body, ok := nearPinchCrossingJoin(a, b, rec); ok { // #1818 near-pinch band (raw whole-loop faces)
+		return body, true
+	}
 	return ruledPairGeneral(a, b, rec, crossingCylinderImprint, cylinderOperand, ruledJoinGeneral)
 }
 
@@ -245,11 +251,14 @@ func ConeCylinderJoinGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, b
 // must be traced ROD-first (its window leaves one loop); tracing fat-first windows the full crossing and
 // returns two loops. Which body is the rod is unknown, so both orderings are tried, accepting the one that
 // yields exactly one loop. ok=false for a full crossing (two loops either way) or no intersection (#1403).
+// It reads the RAW loops (crossingCylinderLoops), not crossingCylinderImprint: a near-pinch FULL crossing is
+// not a partial penetration, so it must fall through here WITHOUT recording a near-pinch decline — that band
+// is now shipped analytically by nearPinchCrossingCut/Join, and a spurious decline would misreport it (#1818).
 func partialImprint(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyline, bool) {
-	if l, ok := crossingCylinderImprint(a, b, rec); ok && len(l) == 1 {
+	if l, ok := crossingCylinderLoops(a, b, rec); ok && len(l) == 1 {
 		return l, true
 	}
-	if l, ok := crossingCylinderImprint(b, a, rec); ok && len(l) == 1 {
+	if l, ok := crossingCylinderLoops(b, a, rec); ok && len(l) == 1 {
 		return l, true
 	}
 	return nil, false
