@@ -31,9 +31,10 @@ const holeSchema = `{
     "includedAngle": {"type": "string", "description": "Countersink included angle, e.g. \"90 deg\" (type=countersink)."},
     "designation": {"type": "string", "description": "Thread designation, e.g. \"M5x0.8\" (type=tapped)."},
     "center": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Explicit drill point [x,y,z] in model-space cm (projected onto the picked face). Omit to drill at the face centroid. Needed to place more than one hole on a face."},
-    "centerExpr": {"type": "array", "items": {"type": "string"}, "minItems": 3, "maxItems": 3, "description": "Parameter-expression form of center: [x,y,z] each an expression with units (e.g. \"L/2\"). Overrides center when present."}
+    "centerExpr": {"type": "array", "items": {"type": "string"}, "minItems": 3, "maxItems": 3, "description": "Parameter-expression form of center: [x,y,z] each an expression with units (e.g. \"L/2\"). Overrides center when present."},
+    "placementFaceGeom": {"type": "object", "description": "Select the placement face by GEOMETRY instead of faceRef, so the binding survives recompute (for an external author that cannot mint a stable key). Give either this or faceRef.", "properties": {"centroid": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Face centroid [x,y,z] cm."}, "normal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Outward unit normal [x,y,z]."}}, "required": ["centroid", "normal"]}
   },
-  "required": ["faceRef", "diameter"]
+  "required": ["diameter"]
 }`
 
 func holeDescriptor() *OperationDescriptor {
@@ -45,8 +46,8 @@ func applyHole(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	if in.FaceRef == "" {
-		return nil, errors.New("hole: faceRef is empty")
+	if in.FaceRef == "" && in.PlacementFaceGeom == nil {
+		return nil, errors.New("hole: needs faceRef or placementFaceGeom")
 	}
 	dia, err := lengthClosure(part, in.Diameter, "hole: diameter")
 	if err != nil {
@@ -59,7 +60,25 @@ func applyHole(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err := applyHoleCenter(part, pf, in); err != nil {
 		return nil, err
 	}
+	if err := applyHolePlacementGeom(pf, in); err != nil {
+		return nil, err
+	}
 	return recomputeResult(part, pf)
+}
+
+// applyHolePlacementGeom binds the hole's placement face by GEOMETRY (centroid + normal) when
+// PlacementFaceGeom is given, so an external author's face selection survives recompute — the
+// hole re-resolves it against the running body each time (see resolveHoleFace / GeomFace).
+func applyHolePlacementGeom(pf *feature.PartFeature, in featureargs.Hole) error {
+	if in.PlacementFaceGeom == nil {
+		return nil
+	}
+	ref, err := geomFaceRef(*in.PlacementFaceGeom)
+	if err != nil {
+		return err
+	}
+	pf.Definition().(*feature.HoleFeature).Definition().GeomFace = &ref
+	return nil
 }
 
 // applyHoleCenter sets the hole's explicit drill center from the args (centerExpr wins over the
