@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
@@ -56,6 +57,15 @@ func TestCapCircleOfAndAxialSide(t *testing.T) {
 	if _, ok := capCircleOf(caps[0]); !ok {
 		t.Error("capCircleOf failed on a planar cap face")
 	}
+	// A face with no loops, and one whose edge is not a circle, are not cap circles.
+	if _, ok := capCircleOf(curvedFace{}); ok {
+		t.Error("capCircleOf accepted a loopless face")
+	}
+	seg := geom.NewLineSegment(math.P3(0, 0, 0), math.P3(1, 0, 0))
+	notCirc := curvedFace{loops: []curvedLoop{{edges: []loopEdge{{curve: seg, t0: 0, t1: 1}}}}}
+	if _, ok := capCircleOf(notCirc); ok {
+		t.Error("capCircleOf accepted a non-circle edge")
+	}
 	high, okH := capOnAxialSide(caps, cyl, true)
 	low, okL := capOnAxialSide(caps, cyl, false)
 	if !okH || !okL {
@@ -98,6 +108,67 @@ func TestRawStubBands(t *testing.T) {
 		if len(s.loops) != 2 { // a two-rim band: cap circle + imprint loop
 			t.Errorf("stub %d has %d loops, want 2 (cap rim + imprint loop)", i, len(s.loops))
 		}
+	}
+}
+
+// nearPinchPair builds a thin (radius r, axis x) and a fat (radius r+dr, axis z) crossing cylinder — the
+// unequal-radius near-pinch pair the cut/join constructors handle.
+func nearPinchPair(t *testing.T, r, dr float64) (thin, fat *topo.Body) {
+	t.Helper()
+	var err error
+	if thin, err = SolidCylinder(math.P3(-2*r, 0, 0), math.V3(1, 0, 0), r, 4*r); err != nil {
+		t.Fatalf("SolidCylinder thin: %v", err)
+	}
+	if fat, err = SolidCylinder(math.P3(0, 0, -2*r), math.V3(0, 0, 1), r+dr, 4*r); err != nil {
+		t.Fatalf("SolidCylinder fat: %v", err)
+	}
+	return thin, fat
+}
+
+// TestNearPinchCrossingCutJoinBuild covers the near-pinch constructors at the brep level (the ops watertight
+// sweep drives them via dispatch, but per-package coverage needs a direct brep caller): both cut directions
+// (fat−thin drill = 4 faces, thin−fat sever = 6 faces), the join (7 faces), and that each builds a valid
+// closed manifold solid.
+func TestNearPinchCrossingCutJoinBuild(t *testing.T) {
+	thin, fat := nearPinchPair(t, 3.0, 6e-5)
+	cases := []struct {
+		name      string
+		build     func() (*topo.Body, bool)
+		wantFaces int
+	}{
+		{"drill fat−thin", func() (*topo.Body, bool) { return nearPinchCrossingCut(fat, thin, nil) }, 4},
+		{"sever thin−fat", func() (*topo.Body, bool) { return nearPinchCrossingCut(thin, fat, nil) }, 6},
+		{"join", func() (*topo.Body, bool) { return nearPinchCrossingJoin(thin, fat, nil) }, 7},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			body, ok := c.build()
+			if !ok || body == nil {
+				t.Fatal("near-pinch constructor declined; want an analytic solid")
+			}
+			if n := len(body.Faces()); n != c.wantFaces {
+				t.Errorf("%s built %d faces, want %d", c.name, n, c.wantFaces)
+			}
+		})
+	}
+}
+
+// TestNearPinchGateDeclinesNonNearPinch pins that the gate — and thus the cut/join constructors — decline a
+// crossing that is NOT the unequal narrow-neck band, so those pairs fall through to the ordinary pipeline: an
+// EQUAL-radius Steinmetz pair (its own constructor owns it) and a WELL-SEPARATED thin-rod crossing.
+func TestNearPinchGateDeclinesNonNearPinch(t *testing.T) {
+	eqA, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12)
+	eqB, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12) // equal radii
+	if _, ok := nearPinchCrossingCut(eqA, eqB, nil); ok {
+		t.Error("near-pinch cut accepted an equal-radius Steinmetz pair; want decline")
+	}
+	if _, ok := nearPinchCrossingJoin(eqA, eqB, nil); ok {
+		t.Error("near-pinch join accepted an equal-radius Steinmetz pair; want decline")
+	}
+	thinRod, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1, 12)
+	fatCyl, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12) // well separated (r 1 vs 3)
+	if _, ok := nearPinchCrossingCut(thinRod, fatCyl, nil); ok {
+		t.Error("near-pinch cut accepted a well-separated crossing; want decline")
 	}
 }
 
