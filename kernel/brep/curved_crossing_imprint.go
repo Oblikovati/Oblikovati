@@ -38,11 +38,11 @@ const CodeImprintUnclosedChain diag.Code = "imprint.unclosed-chain"
 const CodeImprintFallbackContour diag.Code = "imprint.fallback-contour"
 
 // CodeImprintNearPinchDeclined marks a crossing-cylinder imprint declined in the near-pinch RESIDUAL band —
-// radii unequal by more than the snap ceiling but by less than 2.5e-4·r: the two intersection loops have a
-// resolvable but narrow neck √(2R·Δr), where the general rod-band split/classify is input-sensitive (#1598),
-// so the boolean takes the deterministic faceted fallback and records the degradation instead of assembling
+// radii unequal by more than the snap ceiling, but whose two intersection loops have a neck so narrow
+// (gap/chord below nearPinchGapChords, #1781) that the (u,v) arrangement fuses the two lens caps: the
+// boolean takes the deterministic faceted fallback and records the degradation instead of assembling
 // silently wrong analytic topology. Radii closer than the snap ceiling do NOT record this — they snap to the
-// exact Steinmetz constructor (#1780); folding this residual band onto the analytic path is #1780 Direction 2.
+// exact Steinmetz constructor (#1780); folding this residual band onto the analytic path is #1818.
 const CodeImprintNearPinchDeclined diag.Code = "imprint.near-pinch-declined"
 
 // imprintTraceLoops traces base∩other over window and keeps the loops that close — the shared trace
@@ -74,30 +74,88 @@ func crossingCylinderImprint(a, b *topo.Body, rec *diag.Recorder) ([]geom.Polyli
 		return nil, false
 	}
 	res := geom.ResolutionForBox(a.RangeBox().Union(b.RangeBox())) // model-relative loop-closure weld (#1399)
-	// Unequal radii near the pinched Steinmetz configuration split into two bands by the neck √(2R·Δr):
-	//   |Δr| ≤ snap ceiling  → the neck is below the SSI producer noise floor; the exact Steinmetz
-	//     constructor snaps the radii to their mean and builds the pinched bicylinder (#1780). Decline the
-	//     rod-band path SILENTLY so dispatch falls through to it — there is no degradation to record.
-	//   snap ceiling < |Δr| < 2.5e-4·r  → a resolvable but narrow neck where the general rod-band
-	//     split/classify is input-sensitive (face count and volume vary with sampling, #1598): record the
-	//     degradation and fall back to the deterministic faceted route (unifying this band is #1780 Direction 2).
-	// Exactly-equal radii (|Δr| = 0) are the Steinmetz pinch itself and trace through (both ellipse loops).
-	if ca.Radius != cb.Radius {
-		dr := stdmath.Abs(ca.Radius - cb.Radius)
-		if dr <= steinmetzSnapCeiling(res) {
-			return nil, false
-		}
-		if relDr := dr / stdmath.Max(ca.Radius, cb.Radius); relDr < 2.5e-4 {
-			rec.Recordf(CodeImprintNearPinchDeclined, diag.Defect,
-				"crossing cylinders with near-equal radii (|Δr|/r = %.2g) decline the general imprint: near-pinch saddle topology, falling back", relDr)
-			return nil, false
-		}
+	// Near-equal radii below the snap ceiling are the Steinmetz pinch's noise-floor neighbourhood: the exact
+	// bicylinder constructor snaps the radii to their mean and builds the pinched solid (#1780). Decline the
+	// rod-band path SILENTLY here so dispatch falls through to it — there is no degradation to record.
+	if ca.Radius != cb.Radius && stdmath.Abs(ca.Radius-cb.Radius) <= steinmetzSnapCeiling(res) {
+		return nil, false
 	}
 	loops := imprintTraceLoops(ca, cb, cylinderTraceWindow(ca, baseA, heightA), res, rec)
 	if len(loops) == 0 {
 		return nil, false
 	}
+	// Above the snap ceiling the two loops are genuine, resolvable geometry — but where their mutual
+	// closest approach (the neck) is narrow relative to the imprint's own chord, the two lens loops' faceted
+	// cusps interpenetrate: the (u,v) arrangement fabricates a spurious neck crossing and fuses the two
+	// lenses into one mis-classified face (a conditioning wall, δ~√Δr vs facet error ~h²/√Δr — #1781). The
+	// analytic result is watertight ONLY on the well-separated side of that wall; on the near-pinch side we
+	// decline to the deterministic faceted route and record the degradation. Resolving that residual band
+	// analytically needs the near-pinch analytic-tip split (Oblikovati#1818), not a finer imprint.
+	if ca.Radius != cb.Radius && nearPinchLoops(loops) {
+		rec.Recordf(CodeImprintNearPinchDeclined, diag.Defect,
+			"crossing cylinders with a narrow imprint neck (gap/chord = %.2g) decline the analytic imprint: near-pinch lens fusion, falling back", loopGapChordRatio(loops))
+		return nil, false
+	}
 	return loops, true
+}
+
+// nearPinchLoops reports whether a pair of imprint loops is in the near-pinch band the (u,v) arrangement
+// cannot resolve watertight: two loops whose mutual closest approach (the neck) is below nearPinchGapChords
+// times the imprint's own typical chord. The criterion is on the loops' GEOMETRY (a model-relative,
+// scale-free ratio), not on the radius gap — a resolved-but-narrow neck is the actual failure driver (#1781,
+// grounded in the conditioning analysis: the two lens loops separate as O(√Δr) while their faceted cusps
+// deviate as O(h²/√Δr), so the arrangement fuses them once the neck falls toward a few chord lengths).
+func nearPinchLoops(loops []geom.Polyline) bool {
+	return len(loops) == 2 && loopGapChordRatio(loops) < nearPinchGapChords
+}
+
+// nearPinchGapChords is the neck-to-chord ratio below which the near-pinch lens fusion sets in. Calibrated so
+// the analytic path ships only where its tessellated result is verified watertight (freeEdgeCount==0) and
+// declines to the faceted route below (#1781); it is dimensionless, so it is model-scale invariant.
+const nearPinchGapChords = 0.95
+
+// loopGapChordRatio is the two loops' mutual closest approach (the neck) divided by their typical chord — the
+// dimensionless separation the near-pinch gate reads. +Inf when there are not exactly two loops.
+func loopGapChordRatio(loops []geom.Polyline) float64 {
+	if len(loops) != 2 {
+		return stdmath.Inf(1)
+	}
+	chord := typicalLoopChord(loops)
+	if chord <= 0 {
+		return stdmath.Inf(1)
+	}
+	return interLoopMinDistance(loops[0], loops[1]) / chord
+}
+
+// interLoopMinDistance is the minimum distance between any vertex of one loop and any vertex of the other —
+// the resolved neck of a two-loop near-pinch imprint.
+func interLoopMinDistance(a, b geom.Polyline) float64 {
+	min := stdmath.Inf(1)
+	for _, pa := range a.Vertices {
+		for _, pb := range b.Vertices {
+			if d := float64(pa.DistanceTo(pb)); d < min {
+				min = d
+			}
+		}
+	}
+	return min
+}
+
+// typicalLoopChord is the mean consecutive-vertex chord length over both loops — the imprint's own length
+// scale, which the neck is measured against so the gate is spacing- and model-scale independent.
+func typicalLoopChord(loops []geom.Polyline) float64 {
+	var sum float64
+	var n int
+	for _, lp := range loops {
+		for i := 1; i < len(lp.Vertices); i++ {
+			sum += float64(lp.Vertices[i-1].DistanceTo(lp.Vertices[i]))
+			n++
+		}
+	}
+	if n == 0 {
+		return 0
+	}
+	return sum / float64(n)
 }
 
 // cylinderTraceWindow is the (u, v) window for tracing on a cylinder base: the full periodic angle (left

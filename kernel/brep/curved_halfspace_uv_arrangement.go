@@ -86,10 +86,19 @@ func (c ruledUV) sampleImprintUV(curve geom.Curve3) []uvSeg {
 	return segs
 }
 
-// sampleRange samples one curve parameter interval [t0,t1] into tagged (u,v) segments.
+// sampleRange samples one curve parameter interval [t0,t1] into tagged (u,v) segments. An SSI imprint
+// arrives as a *geom.Polyline whose vertices the tracer already placed adaptively (dense where the curve
+// bends — e.g. a near-pinch neck); RE-sampling it at a fixed imprintSampleCount would DECIMATE that
+// adaptive detail and misplace the arrangement's rim/seam crossings near the pinch, collapsing a lens cap
+// (Oblikovati#1781). So for a polyline dense enough to already meet the sampling contract, the arrangement
+// consumes its OWN vertices (spacing-independent); a sparse/synthetic polyline still densifies to the fixed
+// count so consumers that assume a dense azimuth cover (chooseSeamU, imprintWrapsAzimuth) are unaffected.
 func (c ruledUV) sampleRange(curve geom.Curve3, t0, t1 float64) []uvSeg {
 	if t0 == t1 {
 		return nil
+	}
+	if pl, ok := curve.(*geom.Polyline); ok && len(pl.Vertices) >= imprintSampleCount {
+		return c.sampleVertices(pl, t0, t1)
 	}
 	segs := make([]uvSeg, 0, imprintSampleCount)
 	prevT := t0
@@ -98,6 +107,29 @@ func (c ruledUV) sampleRange(curve geom.Curve3, t0, t1 float64) []uvSeg {
 		t := t0 + (t1-t0)*float64(i)/imprintSampleCount
 		p := c.paramOf(curve.PointAt(t))
 		segs = append(segs, uvSeg{a: prevP, b: p, curve: curve, tA: prevT, tB: t, kind: segImprint})
+		prevT, prevP = t, p
+	}
+	return segs
+}
+
+// sampleVertices emits one uvSeg per ACTUAL polyline vertex in [t0,t1], preserving the tracer's adaptive
+// point placement instead of re-chording it at a fixed stride (Oblikovati#1781). The polyline is uniform in
+// index, so vertex j sits at t = j/(n−1); vertices strictly inside (t0,t1) are emitted between the range
+// endpoints. The endpoints are kept exact so a clipped sub-range still starts/ends where the caller asked.
+func (c ruledUV) sampleVertices(pl *geom.Polyline, t0, t1 float64) []uvSeg {
+	n := len(pl.Vertices)
+	ts := []float64{t0}
+	for j := 0; j < n; j++ {
+		if vt := float64(j) / float64(n-1); vt > t0 && vt < t1 {
+			ts = append(ts, vt)
+		}
+	}
+	ts = append(ts, t1)
+	segs := make([]uvSeg, 0, len(ts))
+	prevT, prevP := ts[0], c.paramOf(pl.PointAt(ts[0]))
+	for _, t := range ts[1:] {
+		p := c.paramOf(pl.PointAt(t))
+		segs = append(segs, uvSeg{a: prevP, b: p, curve: pl, tA: prevT, tB: t, kind: segImprint})
 		prevT, prevP = t, p
 	}
 	return segs
