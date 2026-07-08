@@ -70,6 +70,7 @@ func workPlaneInfo(host workHost, wp *feature.WorkPlane, index int) wire.WorkPla
 		Origin:   point3Slice(wp.Plane().Origin()),
 		Normal:   vector3Slice(wp.Plane().Normal().AsVector()),
 		IsOrigin: wp.IsCoordinateSystemElement(),
+		Visible:  wp.Visible(),
 		Healthy:  wp.Health().OK(),
 		Reason:   wp.Health().Reason, // empty when healthy
 		Kind:     wp.Kind(),
@@ -185,6 +186,9 @@ func createWorkPlanes(_ *app.Session, host workHost, in wire.CreateWorkPlaneArgs
 	wp, err := buildWorkPlane(host, in)
 	if err != nil {
 		return wire.CreateWorkPlaneResult{}, err
+	}
+	if in.Visible != nil {
+		wp.SetVisible(*in.Visible) // an add-in can create a construction datum hidden (issue: PartDesigner)
 	}
 	host.Recompute()
 	return wire.CreateWorkPlaneResult{

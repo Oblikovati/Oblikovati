@@ -53,6 +53,27 @@ func TestWorkPlanesCreateOffsetThenList(t *testing.T) {
 	assertOffsetPlaneOnXY(t, r, s)
 }
 
+// TestWorkPlanesCreateHiddenPlane checks that a create request with visible:false lands a hidden
+// datum (list reports Visible=false) while an otherwise-identical default create stays visible —
+// the seam an add-in uses to keep construction datums out of a placed part.
+func TestWorkPlanesCreateHiddenPlane(t *testing.T) {
+	r, s := emptyPartSession(t)
+	var hidden, shown wire.CreateWorkPlaneResult
+	call(t, r, s, "workPlanes.create",
+		`{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"5 mm","visible":false}`, &hidden)
+	call(t, r, s, "workPlanes.create",
+		`{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"9 mm"}`, &shown)
+
+	var list wire.ListWorkPlanesResult
+	call(t, r, s, "workPlanes.list", "{}", &list)
+	if list.Planes[hidden.Index].Visible {
+		t.Errorf("plane created with visible:false is Visible=true; want it hidden")
+	}
+	if !list.Planes[shown.Index].Visible {
+		t.Errorf("plane created without a visible flag is hidden; want the default (visible)")
+	}
+}
+
 func TestWorkPlanesCreateMidplane(t *testing.T) {
 	r, s := emptyPartSession(t)
 	var res wire.CreateWorkPlaneResult
