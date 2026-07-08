@@ -58,7 +58,9 @@ const threadSchema = `{
     "cut": {"type": "boolean", "default": false, "description": "false = cosmetic thread (display only); true = model a real cut thread (the face becomes a threaded surface)."},
     "class": {"type": "string", "description": "Tolerance class recorded on the spec, e.g. \"6H\" (enumerable via threads.tableQuery)."},
     "tapered": {"type": "boolean", "default": false, "description": "Pipe-thread (tapered) data; a cut tapered thread is rejected — model it cosmetic."},
-    "modelDiameter": {"type": "string", "enum": ["major", "minor", "pitch", "tapDrill"], "description": "Which thread diameter the modeled face represents (default major)."}
+    "modelDiameter": {"type": "string", "enum": ["major", "minor", "pitch", "tapDrill"], "description": "Which thread diameter the modeled face represents (default major)."},
+    "length": {"type": "string", "description": "Threaded run along the axis (distance expression) from the face's start edge + offset; empty = full length (Inventor FullDepth)."},
+    "offset": {"type": "string", "description": "Distance expression from the face's start edge to where the thread begins; empty = 0. Thread the two ends of a stud with two features on one face."}
   },
   "required": ["faceRef", "designation"]
 }`
@@ -82,9 +84,18 @@ func applyThread(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 			return nil, fmt.Errorf("thread: unknown modelDiameter %q (want major/minor/pitch/tapDrill)", in.ModelDiameter)
 		}
 	}
+	offset, err := optionalLengthClosure(part, in.Offset, "thread: offset")
+	if err != nil {
+		return nil, err
+	}
+	length, err := optionalLengthClosure(part, in.Length, "thread: length")
+	if err != nil {
+		return nil, err
+	}
 	pf := feature.NewDressUpFeatures(part.Features()).AddThreadDef(&feature.ThreadDefinition{
 		FaceKey: []byte(in.FaceRef), Designation: in.Designation, Cut: in.Cut,
 		Class: in.Class, Tapered: in.Tapered, ModelDiameter: md,
+		Offset: offset, Length: length,
 	})
 	return recomputeResult(part, pf)
 }

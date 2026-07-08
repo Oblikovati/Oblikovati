@@ -28,7 +28,7 @@ func ThreadDisplayCurves(fs *PartFeatures) [][]math.Point3 {
 			if !ok {
 				continue
 			}
-			if h := threadHelix(f, tf.spec); len(h) > 1 {
+			if h := threadHelix(f, tf.spec, tf.def); len(h) > 1 {
 				out = append(out, h)
 			}
 			break
@@ -37,15 +37,17 @@ func ThreadDisplayCurves(fs *PartFeatures) [][]math.Point3 {
 	return out
 }
 
-// threadHelix samples a helix on the face's cylinder over the face's axial extent, spiralling
+// threadHelix samples a helix on the face's cylinder over the thread's axial span, spiralling
 // once per thread pitch (left-handed reverses the spin). The line sits on the surface so it
-// reads as the thread groove.
-func threadHelix(face *topo.Face, spec *ThreadSpec) []math.Point3 {
+// reads as the thread groove. The span is the def's offset/length window clamped to the face
+// (full face when unset), so a double-ended stud's end threads draw only over their runs.
+func threadHelix(face *topo.Face, spec *ThreadSpec, def *ThreadDefinition) []math.Point3 {
 	cyl, ok := face.Geometry().(geom.Cylinder)
 	if !ok {
 		return nil
 	}
-	vMin, vMax := axialExtent(face.RangeBox(), cyl)
+	vFaceMin, vFaceMax := axialExtent(face.RangeBox(), cyl)
+	vMin, vMax := resolveThreadSpan(vFaceMin, vFaceMax, def.Offset, def.Length)
 	length := vMax - vMin
 	pitch := spec.Pitch / 10 // designation pitch is mm; the model is cm
 	if pitch <= 0 || length <= 0 {
@@ -63,6 +65,38 @@ func threadHelix(face *topo.Face, spec *ThreadSpec) []math.Point3 {
 		pts[i] = cyl.PointAt(sign*t*turns*2*stdmath.Pi, vMin+t*length)
 	}
 	return pts
+}
+
+// resolveThreadSpan clamps a thread's [offset, offset+length] window to the face's axial extent
+// [vFaceMin, vFaceMax]. offset is measured from vFaceMin; a nil offset ⇒ 0. A nil or non-positive
+// length (Inventor's FullDepth) runs to vFaceMax. The result is always ordered and within the
+// face, so a bad offset/length degrades to a shorter thread rather than an inverted or overhanging
+// one.
+func resolveThreadSpan(vFaceMin, vFaceMax float64, offset, length func() float64) (float64, float64) {
+	start := vFaceMin
+	if offset != nil {
+		start = vFaceMin + offset()
+	}
+	start = clampAxial(start, vFaceMin, vFaceMax)
+	end := vFaceMax
+	if length != nil {
+		if l := length(); l > 0 {
+			end = start + l
+		}
+	}
+	end = clampAxial(end, start, vFaceMax)
+	return start, end
+}
+
+// clampAxial bounds v to [lo, hi].
+func clampAxial(v, lo, hi float64) float64 {
+	if v < lo {
+		return lo
+	}
+	if v > hi {
+		return hi
+	}
+	return v
 }
 
 // axialExtent projects a face's range-box corners onto the cylinder axis to bound the threaded

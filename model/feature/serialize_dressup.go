@@ -269,13 +269,17 @@ type SnapFitData struct {
 // the #325 parity fields: the tolerance class, the tapered (pipe) flag, and which thread
 // diameter the modeled face represents (wire spelling; absent = major).
 type ThreadData struct {
-	Face          string           `yaml:"face"`
-	Designation   string           `yaml:"designation"`
-	Cut           bool             `yaml:"cut,omitempty"`
-	Class         string           `yaml:"class,omitempty"`
-	Tapered       bool             `yaml:"tapered,omitempty"`
-	ModelDiameter string           `yaml:"modelDiameter,omitempty"`
-	FaceAnchors   []FaceAnchorData `yaml:"faceAnchors,omitempty"`
+	Face          string `yaml:"face"`
+	Designation   string `yaml:"designation"`
+	Cut           bool   `yaml:"cut,omitempty"`
+	Class         string `yaml:"class,omitempty"`
+	Tapered       bool   `yaml:"tapered,omitempty"`
+	ModelDiameter string `yaml:"modelDiameter,omitempty"`
+	// Offset and Length are the thread's axial window on the face (cm), resolved at save time
+	// (Inventor ThreadOffset / ThreadDepth). Absent/0 length ⇒ the thread runs the full face.
+	Offset      float64          `yaml:"offset,omitempty"`
+	Length      float64          `yaml:"length,omitempty"`
+	FaceAnchors []FaceAnchorData `yaml:"faceAnchors,omitempty"`
 }
 
 // dressInputs is the decoded (keys, value) pair shared by edge/face dress-ups, plus any
