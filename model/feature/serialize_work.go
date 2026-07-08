@@ -103,7 +103,13 @@ func serializePlaneDef(def planeDefinition) (WorkFeatureData, error) {
 }
 
 func serializeAxisDef(def axisDefinition) (WorkFeatureData, error) {
-	switch def.(type) {
+	switch v := def.(type) {
+	case fixedAxisDef: // grounded "line" axis: persist its origin + direction (no references)
+		p := v.origin
+		return WorkFeatureData{
+			Collection: "axis", Kind: def.kindName(),
+			Position: []float64{float64(p.X), float64(p.Y), float64(p.Z)}, XAxis: unitSlice(v.dir),
+		}, nil
 	case twoPointsAxisDef, planeIntersectionAxisDef:
 		return WorkFeatureData{Collection: "axis", Kind: def.kindName(), Refs: refStrings(def.refs())}, nil
 	default:
@@ -260,6 +266,9 @@ func restorePointCloudFit(c *WorkPlanes, d WorkFeatureData) error {
 }
 
 func restoreAxisFeature(c *WorkAxes, d WorkFeatureData) error {
+	if d.Kind == "line" { // grounded axis: rebuilt from its origin + direction, no references
+		return restoreLineAxis(c, d)
+	}
 	r, err := workRefs(d.Refs, 2)
 	if err != nil {
 		return err
@@ -272,6 +281,20 @@ func restoreAxisFeature(c *WorkAxes, d WorkFeatureData) error {
 	default:
 		return fmt.Errorf("no restore codec for work axis kind %q", d.Kind)
 	}
+	return nil
+}
+
+// restoreLineAxis rebuilds a grounded "line" axis from its persisted origin + direction.
+func restoreLineAxis(c *WorkAxes, d WorkFeatureData) error {
+	o, err := point3From(d.Position, "line axis origin")
+	if err != nil {
+		return err
+	}
+	dir, err := unit3From(d.XAxis, "line axis direction")
+	if err != nil {
+		return err
+	}
+	c.AddByLine(o, dir)
 	return nil
 }
 
