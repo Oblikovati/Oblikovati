@@ -253,10 +253,17 @@ jobs:
       # LoadLibrary/GetProcAddress) is exercised ONLY on Windows — the ubuntu `head`
       # job covers the dlopen path and this job otherwise just compiles. Run the
       # loader/automation/reload/tree/gate suite so the Win32 trampoline stays at
-      # parity on every PR (it builds real c-shared .dll fixtures via mingw gcc).
+      # parity on every PR (it builds real c-shared .dll fixtures via mingw gcc), and
+      # emit a coverprofile so SonarCloud actually measures dl_windows.go's coverage.
       - name: Test head add-in loader (Windows .dll)
         working-directory: head
-        run: CGO_ENABLED=1 go test ./internal/addinhost/...
+        run: CGO_ENABLED=1 go test -coverprofile=coverage-windows.out -covermode=count ./internal/addinhost/...
+      # Windows-only .dll loader coverage (dl_windows.go) for the SonarCloud `sonar` job —
+      # the ubuntu `head` job's Linux profile never contains dl_windows.go (build-tagged out).
+      - uses: actions/upload-artifact@v6
+        with:
+          name: coverage-head-windows
+          path: head/coverage-windows.out
 
   # Confirm the cgo-free core cross-compiles for every shipping target.
   build:
@@ -282,11 +289,11 @@ jobs:
 
   # Upload Go coverage to SonarCloud so it can measure coverage on new code (Automatic
   # Analysis cannot import Go coverage — sonar-project.properties has the one-time
-  # setup). Reuses the coverage profiles produced by the `test` (root) and `head` jobs,
-  # so it adds no extra test runs. The scan is SKIPPED until SONAR_TOKEN is set, so the
-  # job is green meanwhile.
+  # setup). Reuses the coverage profiles produced by the `test` (root), `head` (Linux),
+  # and `head-windows` (Windows .dll loader) jobs, so it adds no extra test runs. The
+  # scan is SKIPPED until SONAR_TOKEN is set, so the job is green meanwhile.
   sonar:
-    needs: [test, head]
+    needs: [test, head, head-windows]
     runs-on: ubuntu-latest
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -301,6 +308,10 @@ jobs:
       - uses: actions/download-artifact@v7
         with:
           name: coverage-head
+          path: head
+      - uses: actions/download-artifact@v7
+        with:
+          name: coverage-head-windows
           path: head
       - name: SonarCloud scan (coverage upload)
         if: env.SONAR_TOKEN != ''
