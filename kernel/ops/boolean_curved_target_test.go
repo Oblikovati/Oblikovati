@@ -45,36 +45,41 @@ func TestBooleanCutCurvedTargetRemovesTunnel(t *testing.T) {
 // TestBooleanNearTangentCylindersStayManifold extends the curved-boolean suite per #1598
 // (audit A2): perpendicular analytic cylinders with nearly equal radii approach the pinched
 // Steinmetz configuration — the near-tangent booleans where the SSI marcher used to
-// branch-jump or falsely close and the trim then followed the wrong locus. At |Δr|/r = 5e-4
-// the general rod-band path must produce an Euler–Poincaré-valid solid within the analytic
-// volume bracket. At |Δr|/r = 5e-5 (inside the near-pinch band) the general imprint DECLINES
-// (input-sensitive saddle topology) and the boolean takes the recorded faceted fallback: the
-// volume stays inside the bracket and the degradation is visible on the recorder — never a
-// silently wrong analytic assembly (#1403 tracks unifying the band onto the exact path).
+// branch-jump or falsely close and the trim then followed the wrong locus. Two regimes, split
+// by the near-pinch gate (#1781): where the two imprint loops' neck is well-separated relative
+// to the imprint chord the general rod-band path builds an Euler–Poincaré-valid analytic solid
+// (|Δr|/r = 5e-4 AND the recovered |Δr|/r = 5e-5 upper-band case); only where the neck is too
+// narrow for the (u,v) arrangement (|Δr|/r = 2.5e-5, the residual lower band) does the imprint
+// DECLINE to the recorded faceted fallback — never a silently wrong analytic assembly. Folding
+// that residual band onto the analytic path is #1817.
 func TestBooleanNearTangentCylindersStayManifold(t *testing.T) {
 	const r = 2.0
 	vCyl := stdmath.Pi * r * r * 6
 	steinmetz := 16.0 * r * r * r / 3
 	want := 2*vCyl - steinmetz // union volume; the intersection is a hair under Steinmetz
 
-	t.Run("general path at dr=1e-3", func(t *testing.T) {
-		union, rec := nearTangentUnion(t, r, 1e-3)
-		if res := ops.Validate(union); !res.Valid || !union.IsSolid() {
-			t.Fatalf("near-tangent union not a valid solid: %+v", res)
-		}
-		if rec.Has(brep.CodeImprintNearPinchDeclined) {
-			t.Fatal("dr=1e-3 must stay on the general path, not decline")
-		}
-		got := ops.BodyGeometryProperties(union, ops.DefaultQuality()).Volume
-		if stdmath.Abs(got-want) > 0.02*want {
-			t.Errorf("union volume = %.4f, want ≈ %.4f (2·cyl − Steinmetz)", got, want)
-		}
-	})
+	// The general analytic path holds across the clean crossing AND the recovered upper near-pinch
+	// band (dr=5e-5 → |Δr|/r=2.5e-5 was declined before #1781, now ships watertight).
+	for _, dr := range []float64{1e-3, 1e-4} {
+		t.Run("general path at dr="+fmtDr(dr), func(t *testing.T) {
+			union, rec := nearTangentUnion(t, r, dr)
+			if res := ops.Validate(union); !res.Valid || !union.IsSolid() {
+				t.Fatalf("near-tangent union not a valid solid: %+v", res)
+			}
+			if rec.Has(brep.CodeImprintNearPinchDeclined) {
+				t.Fatalf("dr=%g must stay on the general analytic path, not decline (#1781)", dr)
+			}
+			got := ops.BodyGeometryProperties(union, ops.DefaultQuality()).Volume
+			if stdmath.Abs(got-want) > 0.02*want {
+				t.Errorf("union volume = %.4f, want ≈ %.4f (2·cyl − Steinmetz)", got, want)
+			}
+		})
+	}
 
-	t.Run("recorded fallback inside the near-pinch band", func(t *testing.T) {
-		union, rec := nearTangentUnion(t, r, 1e-4)
+	t.Run("recorded fallback in the residual lower band", func(t *testing.T) {
+		union, rec := nearTangentUnion(t, r, 5e-5) // |Δr|/r = 2.5e-5 — below the near-pinch gate
 		if !rec.Has(brep.CodeImprintNearPinchDeclined) {
-			t.Fatal("near-pinch decline must be RECORDED, not silent (#1598)")
+			t.Fatal("residual near-pinch decline must be RECORDED, not silent (#1598/#1781)")
 		}
 		got := ops.BodyGeometryProperties(union, ops.DefaultQuality()).Volume
 		// The faceted fallback inscribes the cylinders, so it systematically under-measures
@@ -83,6 +88,18 @@ func TestBooleanNearTangentCylindersStayManifold(t *testing.T) {
 			t.Errorf("fallback union volume = %.4f, want ≈ %.4f — the faceted route must not lose material", got, want)
 		}
 	})
+}
+
+// fmtDr formats a radius gap for a subtest name without pulling in a format verb per call site.
+func fmtDr(dr float64) string {
+	switch dr {
+	case 1e-3:
+		return "1e-3"
+	case 1e-4:
+		return "1e-4"
+	default:
+		return "dr"
+	}
 }
 
 // nearTangentUnion joins two perpendicular solid cylinders of radius r and r−dr with a recorder.
