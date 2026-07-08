@@ -1,4 +1,4 @@
-//go:build linux || darwin
+//go:build linux || darwin || windows
 
 // SPDX-License-Identifier: GPL-2.0-only
 
@@ -90,7 +90,7 @@ func copyTo(t *testing.T, src string) string {
 	if err != nil {
 		t.Fatalf("read %q: %v", src, err)
 	}
-	dst := filepath.Join(t.TempDir(), fmt.Sprintf("copy-%d.so", time.Now().UnixNano()))
+	dst := filepath.Join(libDir(t), fmt.Sprintf("copy-%d%s", time.Now().UnixNano(), sharedLibExt()))
 	if err := os.WriteFile(dst, data, 0o755); err != nil {
 		t.Fatalf("write %q: %v", dst, err)
 	}
