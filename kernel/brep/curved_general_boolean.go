@@ -254,7 +254,7 @@ func CrossingCylinderIntersectGeneral(a, b *topo.Body, rec *diag.Recorder) (*top
 // (no rod/fat split): the rod-wall band inside the fat plus the two fat-wall lens caps fall out of the same
 // two-sided trim. ok=false when the pair is not a cylinder-through-cylinder crossing.
 func crossingCylinderIntersectGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	loops, ok := crossingCylinderImprint(a, b, rec)
+	loops, ok := crossingCylinderLoops(a, b, rec)
 	if !ok || len(loops) == 0 {
 		return nil, false
 	}
@@ -265,13 +265,38 @@ func crossingCylinderIntersectGeneral(a, b *topo.Body, rec *diag.Recorder) (*top
 	if !okA || !okB || !okMA || !okMB {
 		return nil, false
 	}
-	imprint := polylineCurves(loops)
-	keptA, okKA := keptOrNone(cylinderSideSolidSplit(fA, cylA, bandA, imprint, Intersection, false, insideB))
-	keptB, okKB := keptOrNone(cylinderSideSolidSplit(fB, cylB, bandB, imprint, Intersection, true, insideA))
-	if !okKA || !okKB {
+	// Near-pinch (#1818): the two loops project to the LARGER-radius (fat) wall as two lens ovals whose tips
+	// nearly touch at the necks; a single (u,v) arrangement carrying both fuses them, so the fat wall is
+	// trimmed one loop at a time — each oval alone in its own arrangement, which is well-conditioned. The
+	// smaller (thin) wall carries the two loops as a single full-azimuth band bounded by both, so it keeps the
+	// both-loops trim. Away from the near-pinch band both sides take the both-loops trim unchanged.
+	nearPinch := nearPinchLoops(loops)
+	keptA, okA2 := keptOrNone(cylinderLensSplit(nearPinch && cylA.Radius > cylB.Radius, fA, cylA, bandA, loops, false, insideB))
+	keptB, okB2 := keptOrNone(cylinderLensSplit(nearPinch && cylB.Radius > cylA.Radius, fB, cylB, bandB, loops, true, insideA))
+	if !okA2 || !okB2 {
 		return nil, false
 	}
 	return curvedStitch(append(keptA, keptB...)), true
+}
+
+// cylinderLensSplit trims a cylinder side by the intersection imprint. perLoop trims each loop in a SEPARATE
+// arrangement — the #1818 near-pinch fat wall, whose two lens caps sit tip-to-tip at the necks and would fuse
+// in a shared arrangement — and concatenates the resulting caps; otherwise it trims by both loops at once (the
+// thin wall's single band bounded by both loops, and every non-near-pinch crossing). Each single-loop
+// arrangement keeps the loop's clear azimuth gap, so its seam auto-places cleanly with no pinched handling.
+func cylinderLensSplit(perLoop bool, f curvedFace, cyl geom.Cylinder, band coneSideBand_, loops []geom.Polyline, isB bool, inside func(math.Point3) bool) ([]curvedFace, []loopEdge, error) {
+	if !perLoop {
+		return cylinderSideSolidSplit(f, cyl, band, polylineCurves(loops), Intersection, isB, inside)
+	}
+	var caps []curvedFace
+	for i := range loops {
+		lens, _, err := cylinderSideSolidSplit(f, cyl, band, polylineCurves(loops[i:i+1]), Intersection, isB, inside)
+		if err != nil {
+			return nil, nil, err
+		}
+		caps = append(caps, lens...)
+	}
+	return caps, nil, nil
 }
 
 // ConeCylinderIntersectGeneral is the exported entry kernel/ops routes cone∩cylinder intersect through: the
