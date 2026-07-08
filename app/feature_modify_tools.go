@@ -203,9 +203,15 @@ func (t *CombineTool) DraftFeature(s *Session) (feature.Feature, bool) {
 // SetOperation chooses Join (0), Cut (1) or Intersect (2).
 func (t *CombineTool) SetOperation(op ops.PartFeatureOperation) { t.op = op }
 
+// Params exposes the boolean operation as a named dropdown. It was an IntParam whose long
+// self-documenting label ("Operation (0=Join 1=Cut 2=Intersect)") overflowed the 95px label
+// column and collided with the InputInt steppers, rendering as illegible garble (#1803). A
+// ChoiceParam puts the short label in the column and the named options in the control.
 func (t *CombineTool) Params() ToolParams {
-	return ToolParams{Ints: []IntParam{
-		{"Operation (0=Join 1=Cut 2=Intersect)", func() int { return int(t.op) }, func(n int) { t.op = ops.PartFeatureOperation(n) }},
+	return ToolParams{Choices: []ChoiceParam{
+		{Label: "Operation", Options: []string{"Join", "Cut", "Intersect"},
+			Get: func() int { return int(t.op) },
+			Set: func(n int) { t.op = ops.PartFeatureOperation(n) }},
 	}}
 }
 

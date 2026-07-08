@@ -61,6 +61,33 @@ func TestCombineTool(t *testing.T) {
 	}
 }
 
+// TestCombineToolOperationIsChoice is the #1803 regression: the Combine "Operation" input
+// must be a ChoiceParam (a named dropdown), NOT an IntParam whose long self-documenting
+// label overflowed the 95px column and collided with the InputInt steppers into garble. It
+// asserts a short "Operation" label, the three named options in enum order, and that Set
+// routes into the tool's operation.
+func TestCombineToolOperationIsChoice(t *testing.T) {
+	tool := NewCombineTool()
+	p := tool.Params()
+	if len(p.Ints) != 0 {
+		t.Errorf("Combine still exposes %d IntParam(s) — the long-label overflow (#1803) is back", len(p.Ints))
+	}
+	if len(p.Choices) != 1 {
+		t.Fatalf("Combine Choices = %d, want 1 (the Operation dropdown)", len(p.Choices))
+	}
+	op := p.Choices[0]
+	if op.Label != "Operation" {
+		t.Errorf("Operation label = %q, want the short %q", op.Label, "Operation")
+	}
+	if want := []string{"Join", "Cut", "Intersect"}; !equalStrings(op.Options, want) {
+		t.Errorf("Operation options = %v, want %v (enum order Join=0/Cut=1/Intersect=2)", op.Options, want)
+	}
+	op.Set(int(ops.Intersect))
+	if op.Get() != int(ops.Intersect) {
+		t.Errorf("after Set(Intersect) Get = %d, want %d", op.Get(), int(ops.Intersect))
+	}
+}
+
 // Moving a body translates it.
 func TestMoveBodyTool(t *testing.T) {
 	s, def, _ := extrudedPart(t)
