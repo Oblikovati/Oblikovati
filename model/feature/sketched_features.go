@@ -28,8 +28,13 @@ const revolveSegments = 64
 // precedence: an explicit work axis; else a specific centerline (AxisCenterline on its sketch);
 // else the profile sketch's single centerline (auto).
 type RevolveDefinition struct {
-	Sketch               *sketch.Sketch
-	ProfileIndex         int
+	Sketch       *sketch.Sketch
+	ProfileIndex int
+	// ProfileSeed is an interior seed point (sketch 2-D, cm) selecting the region by
+	// containment. When set it is resolved to a region index EVERY recompute so the selection
+	// survives the sketch being re-solved between load and recompute (which reorders the DCEL
+	// regions, stranding ProfileIndex on the wrong cell — #region-seed). nil ⇒ use ProfileIndex.
+	ProfileSeed          []float64
 	Axis                 *WorkAxis
 	AxisCenterline       *sketch.Line   // a specific centerline to revolve about
 	AxisCenterlineSketch *sketch.Sketch // the centerline's sketch (for its plane)
@@ -58,7 +63,13 @@ func (r *RevolveFeature) ToolBody() *topo.Body                { return r.tool }
 // Recompute resolves the profile, spins it about the axis into a faceted solid of
 // revolution, and applies the operation against the running bodies.
 func (r *RevolveFeature) Recompute(in Input) (Output, error) {
-	prof, err := resolveSingleProfile(r.def.Sketch, r.def.ProfileIndex, "revolve")
+	// Resolve the seed against the CURRENT regions each recompute (region ordering is a DCEL
+	// artifact that shifts when the sketch re-solves — #region-seed); fall back to the index.
+	profileIndex := r.def.ProfileIndex
+	if len(r.def.ProfileSeed) > 0 {
+		profileIndex = resolveSeed(r.def.Sketch, r.def.ProfileSeed, r.def.ProfileIndex)
+	}
+	prof, err := resolveSingleProfile(r.def.Sketch, profileIndex, "revolve")
 	if err != nil {
 		return Output{}, err
 	}

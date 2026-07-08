@@ -12,6 +12,44 @@ import (
 	"oblikovati.org/model/sketch"
 )
 
+// TestRevolveSeedResolvesAtRecomputeNotStaleIndex is the #region-seed regression for revolve:
+// a seed on the definition must re-resolve the region at recompute, so a stale ProfileIndex
+// (as if the sketch re-solved and its DCEL regions reordered after load) does not spin the
+// wrong region. Two disjoint rectangles about the Y-axis centerline revolve to different
+// washers; the index points at the far (large) one while the seed points at the near (small)
+// one — the seed must win.
+func TestRevolveSeedResolvesAtRecomputeNotStaleIndex(t *testing.T) {
+	sk := sketch.NewSketches().Add(sketch.XYPlane())
+	l := sk.Lines()
+	cl := l.AddByTwoPoints(math.P2(0, 0), math.P2(0, 1)) // Y-axis centerline
+	cl.SetCenterline(true)
+	// near region x∈[1,2] and far region x∈[3,5], each y∈[0,1] (areas 1 and 2).
+	for _, r := range [][2]float64{{1, 2}, {3, 5}} {
+		l.AddByTwoPoints(math.P2(r[0], 0), math.P2(r[1], 0))
+		l.AddByTwoPoints(math.P2(r[1], 0), math.P2(r[1], 1))
+		l.AddByTwoPoints(math.P2(r[1], 1), math.P2(r[0], 1))
+		l.AddByTwoPoints(math.P2(r[0], 1), math.P2(r[0], 0))
+	}
+	far := regionIndexOfArea(sk, 2) // the WRONG cell the stale index points at
+	if far < 0 {
+		t.Fatal("setup: no area-2 (far) region")
+	}
+
+	fs := NewPartFeatures(nil)
+	pf := NewRevolveFeatures(fs).AddAboutCenterline(sk, far, nil, ops.NewBody)
+	withProfileSeed(pf, []float64{1.5, 0.5}) // seed → the NEAR (small) region
+	fs.Recompute()
+	if !pf.Health().OK() {
+		t.Fatalf("seeded revolve sick: %+v", pf.Health())
+	}
+
+	want := stdmath.Pi * (2*2 - 1*1) * 1 // near washer: π(R²−r²)·h = 3π
+	got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume
+	if relErr(got, want) > 0.02 {
+		t.Errorf("seeded revolve volume = %g, want ≈%g (3π, the NEAR region the seed selects, not the far index's 16π)", got, want)
+	}
+}
+
 // TestRevolveAboutSketchCenterline spins a profile about the sketch's own centerline (Inventor's
 // common flow), producing the same washer as revolving about an explicit Y work axis.
 func TestRevolveAboutSketchCenterline(t *testing.T) {

@@ -1,4 +1,4 @@
-//go:build linux || darwin
+//go:build linux || darwin || windows
 
 // SPDX-License-Identifier: GPL-2.0-only
 
@@ -27,7 +27,7 @@ func copyFile(t *testing.T, src, dst string) {
 // found and loaded, with its id resolved over the C ABI.
 func TestLoadInstalledTreeNested(t *testing.T) {
 	so := buildFixture(t, "echoaddin")
-	root := t.TempDir()
+	root := libDir(t)
 	nested := filepath.Join(root, "com.oblikovati.echo-fixture", "bundle")
 	if err := os.MkdirAll(nested, 0o755); err != nil {
 		t.Fatal(err)

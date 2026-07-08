@@ -369,6 +369,9 @@ func restoreRevolve(fs *PartFeatures, d *RevolveData, sk SketchIndexer, work *Wo
 		return nil, err
 	}
 	angle := d.Angle
+	// resolveSeed gives the fallback index; the seed is ALSO kept on the definition
+	// (withProfileSeed) so it re-resolves against the current regions every recompute — the
+	// sketch re-solves between load and recompute and reorders its regions (#region-seed).
 	profile := resolveSeed(skt, d.ProfilePoint, d.Profile)
 	if d.AxisSketch > 0 { // a specific centerline (1-based index)
 		axisSk, ok := sk.At(d.AxisSketch - 1)
@@ -379,11 +382,11 @@ func restoreRevolve(fs *PartFeatures, d *RevolveData, sk SketchIndexer, work *Wo
 			return nil, fmt.Errorf("revolve axis centerline references line %d out of range", d.AxisLine)
 		}
 		pf := NewRevolveFeatures(fs).AddAboutCenterlineLine(skt, profile, axisSk, axisSk.Lines().Item(d.AxisLine), func() float64 { return angle }, op)
-		return restoreSecondAngle(pf, d.Angle2), nil
+		return withProfileSeed(restoreSecondAngle(pf, d.Angle2), d.ProfilePoint), nil
 	}
 	if d.Axis == "" { // revolve about the profile sketch's own (single) centerline
 		pf := NewRevolveFeatures(fs).AddAboutCenterline(skt, profile, func() float64 { return angle }, op)
-		return restoreSecondAngle(pf, d.Angle2), nil
+		return withProfileSeed(restoreSecondAngle(pf, d.Angle2), d.ProfilePoint), nil
 	}
 	if work == nil {
 		return nil, fmt.Errorf("revolve needs the part's work geometry to resolve its axis")
@@ -394,10 +397,21 @@ func restoreRevolve(fs *PartFeatures, d *RevolveData, sk SketchIndexer, work *Wo
 	}
 	if d.Angle2 > 0 {
 		angle2 := d.Angle2
-		return NewRevolveFeatures(fs).AddTwoDirectional(skt, profile, axis,
-			func() float64 { return angle }, func() float64 { return angle2 }, op), nil
+		return withProfileSeed(NewRevolveFeatures(fs).AddTwoDirectional(skt, profile, axis,
+			func() float64 { return angle }, func() float64 { return angle2 }, op), d.ProfilePoint), nil
 	}
-	return NewRevolveFeatures(fs).Add(skt, profile, axis, func() float64 { return angle }, op), nil
+	return withProfileSeed(NewRevolveFeatures(fs).Add(skt, profile, axis, func() float64 { return angle }, op), d.ProfilePoint), nil
+}
+
+// withProfileSeed records the interior seed point on a restored revolve so its region is
+// re-resolved by containment each recompute (survives the sketch re-solving — #region-seed).
+func withProfileSeed(pf *PartFeature, seed []float64) *PartFeature {
+	if len(seed) > 0 {
+		if rf, ok := pf.feature.(*RevolveFeature); ok {
+			rf.def.ProfileSeed = append([]float64(nil), seed...)
+		}
+	}
+	return pf
 }
 
 // restoreSecondAngle re-applies a persisted second-direction sweep onto a

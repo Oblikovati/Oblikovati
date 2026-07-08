@@ -21,9 +21,15 @@ import (
 type ExtrudeDefinition struct {
 	Sketch         *sketch.Sketch
 	ProfileIndices []int // one or more sketch regions, extruded together into one feature
-	Operation      ops.PartFeatureOperation
-	Extent         Extent
-	Taper          float64 // draft angle (radians); 0 in phase A (planar sides)
+	// ProfileSeeds are interior seed points (sketch 2-D, cm) selecting the regions by
+	// containment. When present they are resolved to region indices EVERY recompute, so an
+	// externally-authored selection survives the sketch being re-solved between load and
+	// recompute (which reorders the DCEL regions and would otherwise strand ProfileIndices on
+	// the wrong cells — #region-seed). Empty ⇒ ProfileIndices is used directly.
+	ProfileSeeds [][]float64
+	Operation    ops.PartFeatureOperation
+	Extent       Extent
+	Taper        float64 // draft angle (radians); 0 in phase A (planar sides)
 }
 
 // ExtrudeFeature turns a profile into a prism and combines it with the running
@@ -111,9 +117,15 @@ func outerPolygons(profiles []*sketch.Profile) [][]math.Point2 {
 }
 
 // resolveProfiles re-derives the selected closed regions from the sketch (the shared
-// resolver), erroring (→ sick) when one is missing or open, or when none is selected.
+// resolver), erroring (→ sick) when one is missing or open, or when none is selected. Seed
+// points, when present, are resolved to indices against the CURRENT regions each recompute so
+// the selection tracks a re-solved sketch (region ordering is a DCEL artifact — #region-seed).
 func (e *ExtrudeFeature) resolveProfiles() ([]*sketch.Profile, error) {
-	return resolveClosedProfiles(e.def.Sketch, e.def.ProfileIndices, "extrude")
+	indices := e.def.ProfileIndices
+	if len(e.def.ProfileSeeds) > 0 {
+		indices = resolveSeeds(e.def.Sketch, e.def.ProfileSeeds, e.def.ProfileIndices)
+	}
+	return resolveClosedProfiles(e.def.Sketch, indices, "extrude")
 }
 
 // ExtrudeFeatures is the collection of extrude features, adding into the engine.

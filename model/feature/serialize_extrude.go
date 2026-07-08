@@ -105,15 +105,52 @@ func restoreExtrude(fs *PartFeatures, ed *ExtrudeData, sk SketchIndexer, work *W
 	if err != nil {
 		return nil, err
 	}
-	profiles := resolveSeeds(skt, ed.ProfilePoints, ed.extrudeProfiles())
-	return NewExtrudeFeatures(fs).AddExtrude(skt, profiles, op, extent, ed.Taper), nil
+	// Carry the seed points onto the feature (not a baked index list): the sketch is re-solved
+	// between here and the first recompute, reordering its DCEL regions, so a baked index would
+	// select the wrong cell. resolveProfiles resolves the seeds against the current regions each
+	// recompute instead (#region-seed). ProfileIndices holds a per-seed load-time fallback used
+	// only when a seed later misses every region.
+	return NewExtrudeFeatures(fs).AddExtrudeFeature(&ExtrudeDefinition{
+		Sketch: skt, ProfileIndices: seedFallback(skt, ed.ProfilePoints, ed.extrudeProfiles()),
+		ProfileSeeds: ed.ProfilePoints, Operation: op, Extent: extent, Taper: ed.Taper,
+	}), nil
+}
+
+// seedFallback builds the per-seed load-time fallback index list aligned to seeds: each seed's
+// smallest containing region now, or the recipe's first index when it hits none. With no seeds it
+// is the recipe index list unchanged. Used as the resolveSeeds fallback so a seed that later
+// misses (its cell shifted under a re-solve) reverts to its load-time cell, not the whole body.
+func seedFallback(skt *sketch.Sketch, seeds [][]float64, recipe []int) []int {
+	if len(seeds) == 0 {
+		return recipe
+	}
+	def0 := 0
+	if len(recipe) > 0 {
+		def0 = recipe[0]
+	}
+	profs := skt.Profiles()
+	out := make([]int, len(seeds))
+	for i, s := range seeds {
+		b := -1
+		if len(s) == 2 {
+			b = smallestContainingRegion(profs, math.P2(s[0], s[1]))
+		}
+		if b < 0 {
+			b = def0
+		}
+		out[i] = b
+	}
+	return out
 }
 
 // resolveSeeds maps each interior seed point to the smallest closed region that contains it,
-// falling back to the explicit index list when no seeds are given or none resolve. Region
-// ordering is a DCEL-walk artifact (regions.go), so an author that knows only the region
-// geometry must select by containment, not index. It never returns empty (an empty selection
-// would extrude the whole body).
+// resolved against the CURRENT regions (so it tracks a re-solved sketch — #region-seed). Region
+// ordering is a DCEL-walk artifact (regions.go), so an author that knows only the region geometry
+// must select by containment, not index. A seed that hits no region is dropped as long as ANY seed
+// resolves (a stray stale seed shouldn't add a wrong region — IOPlate); only when NONE resolves is
+// the fallback list returned whole (seedFallback's load-time cells, so an all-missed selection
+// reverts to load rather than the raw recipe index that could span the body — WheelSlider). It
+// never returns empty (an empty selection would extrude the whole body).
 func resolveSeeds(skt *sketch.Sketch, seeds [][]float64, fallback []int) []int {
 	if len(seeds) == 0 {
 		return fallback
@@ -124,15 +161,7 @@ func resolveSeeds(skt *sketch.Sketch, seeds [][]float64, fallback []int) []int {
 		if len(s) != 2 {
 			continue
 		}
-		q := math.P2(s[0], s[1])
-		best, bestArea := -1, stdmath.Inf(1)
-		for i := 0; i < profs.Count(); i++ {
-			p := profs.Item(i)
-			if p.IsClosed() && p.Contains(q) && p.Area() < bestArea {
-				best, bestArea = i, p.Area()
-			}
-		}
-		if best >= 0 {
+		if best := smallestContainingRegion(profs, math.P2(s[0], s[1])); best >= 0 {
 			idx = append(idx, best)
 		}
 	}
@@ -140,6 +169,19 @@ func resolveSeeds(skt *sketch.Sketch, seeds [][]float64, fallback []int) []int {
 		return fallback
 	}
 	return idx
+}
+
+// smallestContainingRegion returns the index of the smallest-area closed profile that contains q,
+// or -1 when none does. Smallest wins so a disk drawn inside an annulus is selectable (#1526).
+func smallestContainingRegion(profs *sketch.Profiles, q math.Point2) int {
+	best, bestArea := -1, stdmath.Inf(1)
+	for i := 0; i < profs.Count(); i++ {
+		p := profs.Item(i)
+		if p.IsClosed() && p.Contains(q) && p.Area() < bestArea {
+			best, bestArea = i, p.Area()
+		}
+	}
+	return best
 }
 
 // resolveSeed maps a single interior seed point to the region that contains it, falling back to
