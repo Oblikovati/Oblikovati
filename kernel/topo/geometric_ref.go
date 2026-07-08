@@ -92,19 +92,14 @@ func (b *Body) FindPlanarFaceThrough(p math.Point3, want math.Vector3, tol math.
 	var best *Face
 	bestD := stdmath.Inf(1)
 	for _, f := range b.Faces() {
-		c := faceCentroid(f)
-		n := faceOutwardNormal(f, c)
-		if wn.LengthSquared() > 0 && stdmath.Abs(float64(n.Dot(wn))) < normalAlignMin {
-			continue
-		}
-		if stdmath.Abs(c.VectorTo(p).Dot(n)) > tol { // perpendicular distance from p to the face plane
+		if !faceThroughPointAligned(f, p, wn, tol) {
 			continue
 		}
 		planeCands = append(planeCands, f)
 		if NewFaceEvaluator(f).Contains(p) {
 			containing = append(containing, f)
 		}
-		if d := p.DistanceTo(c); d < bestD {
+		if d := p.DistanceTo(faceCentroid(f)); d < bestD {
 			best, bestD = f, d
 		}
 	}
@@ -121,6 +116,18 @@ func (b *Body) FindPlanarFaceThrough(p math.Point3, want math.Vector3, tol math.
 		return best, true
 	}
 	return nil, false
+}
+
+// faceThroughPointAligned reports whether planar face f's plane passes through p (perpendicular
+// distance ≤ tol) with its outward normal aligned to want up to sign (see normalAlignMin). A zero
+// want skips the normal filter.
+func faceThroughPointAligned(f *Face, p math.Point3, want math.Vector3, tol math.Scalar) bool {
+	c := faceCentroid(f)
+	n := faceOutwardNormal(f, c)
+	if want.LengthSquared() > 0 && stdmath.Abs(float64(n.Dot(want))) < normalAlignMin {
+		return false
+	}
+	return stdmath.Abs(c.VectorTo(p).Dot(n)) <= tol
 }
 
 // FindEdgeByGeometry returns the edge whose midpoint is within tol of the descriptor and
