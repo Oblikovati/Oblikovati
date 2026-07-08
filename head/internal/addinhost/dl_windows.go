@@ -13,13 +13,14 @@ package addinhost
 // Windows loader primitives — the only OS-specific part of the add-in loader. The
 // resolved symbols are invoked through the portable trampolines in
 // include/addin_trampolines.h (shared with dl_unix.go, pulled in via dl_shared.go),
-// so only these Win32 calls differ from the dlopen/dlsym path.
+// and the shared openLibrary orchestration lives in dl_shared.go; only these Win32
+// calls differ from the dlopen/dlsym path.
 //
 // GetProcAddress returns FARPROC and LoadLibraryW an HMODULE; the (void*) casts to
 // the opaque handle the Go side stores happen here in C, where a function-pointer
 // <-> void* cast is the idiomatic Win32 pattern (mirroring how dlsym hands back a
 // void* on Unix). There is deliberately NO FreeLibrary wrapper: a loaded Go c-shared
-// add-in cannot be safely unmapped (see close() below).
+// add-in cannot be safely unmapped (see closeNativeLibrary below).
 
 // obk_errbuf holds the last FormatMessage'd error text. It is process-static and
 // overwritten on each failure, so the Go caller reads it (into a Go error) right
@@ -61,11 +62,10 @@ import (
 	"unsafe"
 )
 
-// openLibrary LoadLibrary's path and resolves the required ObkAddIn* exports into a
-// sharedLib (dl_shared.go holds the portable export-invocation code; this file holds
-// only the Win32 loader primitives). The path is passed as UTF-16 via LoadLibraryW so
+// openNativeLibrary LoadLibrary's path — the Win32 loader primitive behind the shared
+// openLibrary in dl_shared.go. The path is passed as UTF-16 via LoadLibraryW so
 // non-ASCII add-in paths load correctly.
-func openLibrary(path string) (addInLib, error) {
+func openNativeLibrary(path string) (unsafe.Pointer, error) {
 	wpath, err := syscall.UTF16PtrFromString(path)
 	if err != nil {
 		return nil, fmt.Errorf("addinhost: LoadLibrary path %q not encodable as UTF-16: %w", path, err)
@@ -74,67 +74,36 @@ func openLibrary(path string) (addInLib, error) {
 	if h == nil {
 		return nil, fmt.Errorf("addinhost: LoadLibrary %q: %s", path, lastError())
 	}
-	l := &sharedLib{handle: h, path: path}
-	syms := []struct {
-		name string
-		dst  *unsafe.Pointer
-	}{
-		{"ObkAddInId", &l.idSym},
-		{"ObkAddInManifest", &l.manSym},
-		{"ObkAddInActivate", &l.actSym},
-		{"ObkAddInDeactivate", &l.deactSym},
-		{"ObkAddInNotify", &l.notifSym},
-		{"ObkFree", &l.freeSym},
-	}
-	for _, s := range syms {
-		p, err := resolve(h, s.name)
-		if err != nil {
-			// Deliberately do NOT FreeLibrary the partially-resolved module: once loaded,
-			// its Go runtime has already spawned threads, and unmapping it here would race
-			// them into a crash exactly as close() explains. A malformed add-in is rare;
-			// leaking its mapping is strictly safer than crashing the host.
-			return nil, err
-		}
-		*s.dst = p
-	}
-	// Automation is an optional export: absence just means hasAutomation() is false.
-	l.autoSym = resolveOptional(h, "ObkAddInAutomation")
-	// The version exports are resolved leniently so a missing one does not abort the
-	// whole load; the compatibility gate (loader.go) turns their absence into a clear
-	// "cannot verify compatibility" skip rather than a GetProcAddress error.
-	l.majorSym = resolveOptional(h, "ObkAddInApiMajor")
-	l.minorSym = resolveOptional(h, "ObkAddInApiMinor")
-	return l, nil
+	return h, nil
 }
 
-// resolveOptional looks up a symbol the contract marks optional; nil means absent.
-func resolveOptional(h unsafe.Pointer, name string) unsafe.Pointer {
+// lookupOptionalSymbol resolves a symbol the contract marks optional; nil means absent.
+func lookupOptionalSymbol(h unsafe.Pointer, name string) unsafe.Pointer {
 	cn := C.CString(name)
 	defer C.free(unsafe.Pointer(cn))
 	return C.obk_get_proc(h, cn)
 }
 
-// resolve looks up a required symbol, returning a descriptive error (naming the
-// symbol and the GetLastError text) if absent.
-func resolve(h unsafe.Pointer, name string) (unsafe.Pointer, error) {
-	p := resolveOptional(h, name)
-	if p == nil {
-		return nil, fmt.Errorf("addinhost: GetProcAddress %q: %s", name, lastError())
+// lookupSymbol resolves a required symbol, returning an error naming the symbol and the
+// GetLastError text if absent.
+func lookupSymbol(h unsafe.Pointer, name string) (unsafe.Pointer, error) {
+	if p := lookupOptionalSymbol(h, name); p != nil {
+		return p, nil
 	}
-	return p, nil
+	return nil, fmt.Errorf("addinhost: GetProcAddress %q: %s", name, lastError())
 }
 
-// close leaves the shared library RESIDENT — it does not FreeLibrary. This mirrors the
-// Unix host's own lifetime rule (cmd/oblikovati-head/addins.go stop(): "It does NOT
-// dlclose the libraries: a Go c-shared keeps runtime threads (sysmon/GC) alive, and
-// unmapping its code ... crashes the host"). On Windows that hazard is sharper: calling
-// FreeLibrary on a live Go c-shared DLL unmaps its code while its runtime's background
-// threads are still executing, which faults the process with an access violation
-// (0xc0000005). So the safe, production-matching behavior is to keep the module mapped
-// for the process lifetime; the OS reclaims it on exit. Reload therefore follows the
-// same copy-and-coexist strategy as Unix (a fresh LoadLibrary of a replacement copy),
-// never an in-process unload. Returns nil because there is nothing to fail.
-func (l *sharedLib) close() error { return nil }
+// closeNativeLibrary intentionally leaves the module RESIDENT — it does NOT call
+// FreeLibrary, so the shared close() in dl_shared.go returns nil on Windows. This
+// mirrors the Unix host's own lifetime rule (cmd/oblikovati-head/addins.go stop(): "It
+// does NOT dlclose the libraries: a Go c-shared keeps runtime threads (sysmon/GC)
+// alive, and unmapping its code ... crashes the host"). On Windows that hazard is
+// sharper: FreeLibrary on a live Go c-shared DLL unmaps its code while its runtime's
+// background threads are still executing, faulting the process with an access violation
+// (0xc0000005). Keeping the module mapped for the process lifetime (the OS reclaims it
+// on exit) is the safe, production-matching behavior; reload uses the same
+// copy-and-coexist strategy as Unix, never an in-process unload.
+func closeNativeLibrary(unsafe.Pointer) error { return nil }
 
 // lastError returns the text of the most recent Win32 loader failure captured in C.
 func lastError() string { return C.GoString(C.obk_last_message()) }

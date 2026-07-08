@@ -41,6 +41,55 @@ type sharedLib struct {
 	path     string
 }
 
+// openLibrary loads the shared library at path and resolves the required ObkAddIn*
+// exports, returning a ready sharedLib. The orchestration — required-symbol list,
+// resolve loop, optional-symbol resolution, and struct assembly — is identical on
+// every OS and lives here once; each platform (dl_unix.go / dl_windows.go) supplies
+// only its irreducible primitives (openNativeLibrary / lookupSymbol /
+// lookupOptionalSymbol / closeNativeLibrary).
+func openLibrary(path string) (addInLib, error) {
+	h, err := openNativeLibrary(path)
+	if err != nil {
+		return nil, err
+	}
+	l := &sharedLib{handle: h, path: path}
+	required := []struct {
+		name string
+		dst  *unsafe.Pointer
+	}{
+		{"ObkAddInId", &l.idSym},
+		{"ObkAddInManifest", &l.manSym},
+		{"ObkAddInActivate", &l.actSym},
+		{"ObkAddInDeactivate", &l.deactSym},
+		{"ObkAddInNotify", &l.notifSym},
+		{"ObkFree", &l.freeSym},
+	}
+	for _, s := range required {
+		if *s.dst, err = lookupSymbol(h, s.name); err != nil {
+			_ = closeNativeLibrary(h) // unwind the partial load (a no-op on Windows)
+			return nil, err
+		}
+	}
+	// Automation is an optional export: absence just means hasAutomation() is false.
+	l.autoSym = lookupOptionalSymbol(h, "ObkAddInAutomation")
+	// The version exports are resolved leniently so a missing one does not abort the
+	// whole load; the compatibility gate (loader.go) turns their absence into a clear
+	// "cannot verify compatibility" skip rather than a symbol-lookup error.
+	l.majorSym = lookupOptionalSymbol(h, "ObkAddInApiMajor")
+	l.minorSym = lookupOptionalSymbol(h, "ObkAddInApiMinor")
+	return l, nil
+}
+
+// close unloads the library through the platform primitive, tagging the path onto any
+// failure. On Unix this dlcloses; on Windows closeNativeLibrary deliberately leaves the
+// module resident (see dl_windows.go), so this returns nil there.
+func (l *sharedLib) close() error {
+	if err := closeNativeLibrary(l.handle); err != nil {
+		return fmt.Errorf("addinhost: closing %q: %w", l.path, err)
+	}
+	return nil
+}
+
 func (l *sharedLib) id() string       { return C.GoString(C.call_str(l.idSym)) }
 func (l *sharedLib) manifest() string { return C.GoString(C.call_str(l.manSym)) }
 
