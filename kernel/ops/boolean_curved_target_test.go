@@ -76,16 +76,18 @@ func TestBooleanNearTangentCylindersStayManifold(t *testing.T) {
 		})
 	}
 
-	t.Run("recorded fallback in the residual lower band", func(t *testing.T) {
-		union, rec := nearTangentUnion(t, r, 5e-5) // |Δr|/r = 2.5e-5 — below the near-pinch gate
-		if !rec.Has(brep.CodeImprintNearPinchDeclined) {
-			t.Fatal("residual near-pinch decline must be RECORDED, not silent (#1598/#1781)")
+	t.Run("analytic path in the residual lower band", func(t *testing.T) {
+		// dr=5e-5 (|Δr|/r = 2.5e-5) is deep in the near-pinch band that #1781 declined; #1818 now ships it
+		// analytically (nearPinchCrossingJoin: raw whole-loop stubs + corridor-seeded keyhole wall).
+		union, rec := nearTangentUnion(t, r, 5e-5)
+		if res := ops.Validate(union); !res.Valid || !union.IsSolid() {
+			t.Fatalf("residual near-pinch union not a valid solid: %+v", res)
 		}
-		got := ops.BodyGeometryProperties(union, ops.DefaultQuality()).Volume
-		// The faceted fallback inscribes the cylinders, so it systematically under-measures
-		// by the facet sagitta — allow 3% where the general path gets 2%.
-		if stdmath.Abs(got-want) > 0.03*want {
-			t.Errorf("fallback union volume = %.4f, want ≈ %.4f — the faceted route must not lose material", got, want)
+		if rec.Has(brep.CodeImprintNearPinchDeclined) {
+			t.Fatalf("residual near-pinch union must ship the analytic path, not decline (#1818)")
+		}
+		if got := ops.BodyGeometryProperties(union, ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 0.02*want {
+			t.Errorf("union volume = %.4f, want ≈ %.4f (2·cyl − Steinmetz)", got, want)
 		}
 	})
 }

@@ -74,11 +74,8 @@ func unrolledWallCDT(s geom.Surface, q Quality, outer3D []math.Point3, holes3D [
 	uv, pos, nrm, loops := patchLoops2D(s, outer3D, holes3D, outer2D, holes2D)
 	nFrontier := len(uv)
 	nodes, saturated := adaptiveInteriorNodes(s, outerUV, holesUV, q, 1, false)
-	for _, g := range nodes {
-		uv = append(uv, [2]float64{g[0] * su, g[1] * sv})
-		pos = append(pos, s.PointAt(g[0], g[1]))
-		nrm = append(nrm, s.NormalAt(g[0], g[1]))
-	}
+	nodes = append(nodes, neckCorridorNodes(holesUV)...) // #1818: seed the bridge between near-touching holes
+	uv, pos, nrm = appendInteriorNodes(s, nodes, su, sv, uv, pos, nrm)
 	tris, unrecovered, leaked := constrainedDelaunayRefinedChecked(uv, loops, nFrontier)
 	if len(tris) == 0 {
 		return boundaryPatchMesh(s, outer3D, holes3D)
@@ -88,6 +85,82 @@ func unrolledWallCDT(s geom.Surface, q Quality, outer3D []math.Point3, holes3D [
 	recordCapSaturation(m, saturated, q)
 	recordConstraintLeak(m, unrecovered, leaked) // #1410: surface non-recovery; never a silent boundary leak
 	return m
+}
+
+// neckCorridorNodes seeds Steiner nodes in the BRIDGE between two near-touching lens holes (the near-pinch
+// crossing neck, #1818). Where two holes come within a few chord lengths, the interior grid — kept a margin
+// clear of every hole — leaves the thin corridor between them EMPTY, so the CDT chords one hole rim straight
+// to the other; those chords coincide with the reversed tunnel band's own pinch chords (same shared loop
+// vertices) and weld into non-manifold deg-4 edges. Seeding the corridor midline forces the wall to mesh
+// hole→node→hole on the fat surface instead, breaking the coincidence. Only fires for exactly two holes that
+// actually near-touch, so an ordinary well-separated drilling is untouched.
+func neckCorridorNodes(holesUV [][]math.Point2) [][2]float64 {
+	if len(holesUV) != 2 {
+		return nil
+	}
+	gap := minCrossVertexDistance(holesUV[0], holesUV[1])
+	chord := meanLoopChord2D(holesUV[0])
+	if chord <= 0 || gap > nearNeckChords*chord {
+		return nil // holes well separated: no corridor to seed
+	}
+	var out [][2]float64
+	for _, a := range holesUV[0] {
+		b, d := nearestVertex2D(a, holesUV[1])
+		if d <= nearNeckChords*chord {
+			out = append(out, [2]float64{float64(a.X+b.X) / 2, float64(a.Y+b.Y) / 2})
+		}
+	}
+	return out
+}
+
+// nearNeckChords is how close (in hole-chord multiples) two holes must approach before the corridor between
+// them is seeded — a dimensionless, model-scale-free threshold (#1818).
+const nearNeckChords = 4.0
+
+// minCrossVertexDistance is the smallest distance between any vertex of loop a and any of loop b.
+func minCrossVertexDistance(a, b []math.Point2) float64 {
+	min := stdmath.Inf(1)
+	for _, pa := range a {
+		if _, d := nearestVertex2D(pa, b); d < min {
+			min = d
+		}
+	}
+	return min
+}
+
+// nearestVertex2D returns the vertex of loop nearest to p and its distance.
+func nearestVertex2D(p math.Point2, loop []math.Point2) (math.Point2, float64) {
+	best, bestD := math.Point2{}, stdmath.Inf(1)
+	for _, q := range loop {
+		if d := float64(p.DistanceTo(q)); d < bestD {
+			best, bestD = q, d
+		}
+	}
+	return best, bestD
+}
+
+// meanLoopChord2D is the mean consecutive-vertex spacing of a (u,v) loop — its own length scale, the neck
+// gap is measured against so the corridor gate is spacing-independent.
+func meanLoopChord2D(loop []math.Point2) float64 {
+	if len(loop) < 2 {
+		return 0
+	}
+	var sum float64
+	for i := 1; i < len(loop); i++ {
+		sum += float64(loop[i-1].DistanceTo(loop[i]))
+	}
+	return sum / float64(len(loop)-1)
+}
+
+// appendInteriorNodes lifts each interior (u,v) node onto the surface — its metric-scaled (u,v), 3D point,
+// and normal — appending them to the CDT's parallel uv/pos/nrm buffers.
+func appendInteriorNodes(s geom.Surface, nodes [][2]float64, su, sv float64, uv [][2]float64, pos []math.Point3, nrm []math.Vector3) ([][2]float64, []math.Point3, []math.Vector3) {
+	for _, g := range nodes {
+		uv = append(uv, [2]float64{g[0] * su, g[1] * sv})
+		pos = append(pos, s.PointAt(g[0], g[1]))
+		nrm = append(nrm, s.NormalAt(g[0], g[1]))
+	}
+	return uv, pos, nrm
 }
 
 // scaleUVLoop scales a (u,v) loop by the per-axis metric (su, sv) so the CDT runs in a space isometric to
