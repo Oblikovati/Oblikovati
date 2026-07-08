@@ -3,8 +3,11 @@
 package topo_test
 
 import (
+	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
@@ -70,6 +73,51 @@ func TestGeometricEdgeRefReboundsAcrossRebuild(t *testing.T) {
 		if topo.DescribeEdge(got).Midpoint.DistanceTo(ref.Midpoint) > spikeTol {
 			t.Errorf("edge %d: resolved an edge at the wrong midpoint", i)
 		}
+	}
+}
+
+// TestClosedCircularEdgeDescribedByCentreAndAxis captures a bore/boss rim — a closed
+// circular edge whose start and end are the same vertex, so the chord midpoint/direction
+// degenerate — and confirms it is described by the circle centre + axis and re-binds on a
+// geometrically identical rebuilt edge. This is what lets a fillet/chamfer on a circular
+// edge (the case DressUpExtractor emits) resolve at recompute.
+func TestClosedCircularEdgeDescribedByCentreAndAxis(t *testing.T) {
+	// A cylinder's cap rim is a closed circular edge: start == end vertex, so the chord
+	// midpoint/direction degenerate — it must be described by the circle centre + axis.
+	cyl := func() *topo.Body {
+		b, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 4)
+		if err != nil {
+			t.Fatalf("cylinder: %v", err)
+		}
+		return b
+	}
+	body := cyl()
+
+	var rim *topo.Edge
+	for _, e := range body.Edges() {
+		if _, ok := e.Geometry().(geom.Circle); ok {
+			rim = e
+			break
+		}
+	}
+	if rim == nil {
+		t.Fatal("setup: cylinder had no circular edge")
+	}
+
+	ref := topo.DescribeEdge(rim)
+	if ref.Midpoint.DistanceTo(math.P3(0, 0, 0)) > spikeTol &&
+		ref.Midpoint.DistanceTo(math.P3(0, 0, 4)) > spikeTol {
+		t.Errorf("circle rim midpoint = %v, want a cap centre (0,0,0) or (0,0,4)", ref.Midpoint)
+	}
+	if stdmath.Abs(ref.Direction.Dot(math.V3(0, 0, 1))) < 0.9999 {
+		t.Errorf("circle rim direction = %v, want the cylinder axis (0,0,1)", ref.Direction)
+	}
+
+	if self, ok := body.FindEdgeByGeometry(ref, spikeTol); !ok || self != rim {
+		t.Fatalf("circular edge did not self-resolve (ok=%v)", ok)
+	}
+	if _, ok := cyl().FindEdgeByGeometry(ref, spikeTol); !ok {
+		t.Error("closed circular edge descriptor did not re-bind on the rebuilt cylinder")
 	}
 }
 

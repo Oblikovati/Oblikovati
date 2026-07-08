@@ -5,6 +5,7 @@ package topo
 import (
 	stdmath "math"
 
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
 
@@ -201,13 +202,35 @@ func faceOutwardNormal(f *Face, p math.Point3) math.Vector3 {
 	return unitOrZero(nrm)
 }
 
+// edgeMidpoint is the edge's representative point: for a closed circular edge (a bore/boss
+// rim, which has no distinct start/end vertex) it is the circle centre — stable under
+// recompute; for any other edge it is the chord midpoint of its two vertices.
 func edgeMidpoint(e *Edge) math.Point3 {
+	if c, ok := closedCircleOf(e); ok {
+		return c.Center
+	}
 	a, b := e.StartVertex().Point(), e.EndVertex().Point()
 	return math.P3((a.X+b.X)/2, (a.Y+b.Y)/2, (a.Z+b.Z)/2)
 }
 
+// edgeDirection is the edge's (sign-agnostic) direction: the circle axis for a closed
+// circular edge, else the chord direction between its vertices.
 func edgeDirection(e *Edge) math.Vector3 {
+	if c, ok := closedCircleOf(e); ok {
+		return c.Normal.AsVector()
+	}
 	return unitOrZero(e.StartVertex().Point().VectorTo(e.EndVertex().Point()))
+}
+
+// closedCircleOf reports the underlying circle when the edge is a full closed circle — the
+// case the vertex-based midpoint/direction can't describe (start == end, or no vertices).
+func closedCircleOf(e *Edge) (geom.Circle, bool) {
+	c, ok := e.Geometry().(geom.Circle)
+	if !ok {
+		return geom.Circle{}, false
+	}
+	return c, e.StartVertex() == nil || e.EndVertex() == nil ||
+		e.StartVertex().Point() == e.EndVertex().Point()
 }
 
 func unitOrZero(v math.Vector3) math.Vector3 {
