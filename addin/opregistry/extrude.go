@@ -11,7 +11,9 @@ import (
 	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/param"
@@ -30,6 +32,7 @@ const extrudeSchema = `{
     "secondDistance": {"type": "string", "description": "Asymmetric two-direction depth on the negative side, e.g. \"10 mm\"."},
     "taper": {"type": "string", "description": "Draft angle, e.g. \"3 deg\" (positive widens away from the sketch)."},
     "toFace": {"type": "string", "description": "Termination target for the to-face extent: a planar face reference key (from model.referenceKeys), a work plane (\"plane/N\"), or an origin plane (\"origin/plane/xy\")."},
+    "toFaceGeom": {"type": "object", "description": "Termination target for the to-face extent named by GEOMETRY (a planar body face's centroid + normal) instead of toFace — for an author that cannot mint a face key. The host binds the matching planar face on the current body and freezes its plane. Wins over toFace.", "properties": {"centroid": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}, "normal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}}, "required": ["centroid", "normal"]},
     "profileSeeds": {"type": "array", "description": "Select the extruded region(s) by an interior seed point [x,y] (sketch 2-D cm), one per region, instead of profileIndex — for an author that cannot predict the host's region ordering. The host resolves each seed to its containing region on the solved sketch every recompute; wins over profileIndex.", "items": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2}}
   },
   "required": ["sketchIndex"]
@@ -105,6 +108,11 @@ func buildExtent(part *compdef.PartComponentDefinition, in featureargs.Extrude) 
 	ext := feature.Extent{Type: etype, Direction: parseExtentDirection(in.Direction)}
 	switch etype {
 	case feature.ToFaceExtent:
+		// A geometric target (centroid+normal) wins over a ToFace key/plane-ref: an external
+		// author cannot mint the face key, so it names the stop face by geometry (see ToFaceGeom).
+		if in.ToFaceGeom != nil {
+			return withToFaceGeom(part, ext, *in.ToFaceGeom)
+		}
 		return withToFaceTarget(part, ext, in.ToFace)
 	case feature.DistanceExtent:
 		return withDistance(part, ext, in)
@@ -125,6 +133,62 @@ func withToFaceTarget(part *compdef.PartComponentDefinition, ext feature.Extent,
 	}
 	ext.ToPlane = wp
 	return ext, nil
+}
+
+// toFaceGeomBindTol is the model-space distance a to-face geometric target's centroid may sit from
+// a candidate face's centroid and still bind (see [topo.Body.FindFaceByGeometry]); it matches the
+// hole/dress-up geometric-selector tolerance.
+const toFaceGeomBindTol = 1e-3
+
+// withToFaceGeom resolves a to-face termination target named by GEOMETRY (a planar face's
+// centroid + normal) rather than a reference key — the extent counterpart of the hole's
+// PlacementFaceGeom. It finds the matching planar face on the already-built body and freezes its
+// plane, the same *WorkPlane a face-key toFace yields via NewFixedWorkPlane. Feature build order
+// guarantees the target face exists when the extrude applies, so a one-time resolve is stable.
+func withToFaceGeom(part *compdef.PartComponentDefinition, ext feature.Extent, sel featureargs.GeomFaceSel) (feature.Extent, error) {
+	ref, err := geomFaceRef(sel)
+	if err != nil {
+		return feature.Extent{}, err
+	}
+	wp, err := toFaceGeomPlane(part, ref)
+	if err != nil {
+		return feature.Extent{}, err
+	}
+	ext.ToPlane = wp
+	return ext, nil
+}
+
+// toFaceGeomPlane finds the planar body face matching the geometric descriptor and returns its
+// frozen plane. It tries an exact centroid+normal match first, then a plane-through-centroid match
+// (a large/annular stop face whose centroid sits off the recorded point still binds by its plane).
+func toFaceGeomPlane(part *compdef.PartComponentDefinition, ref topo.GeometricFaceRef) (*feature.WorkPlane, error) {
+	for _, b := range part.SurfaceBodies().All() {
+		if f, ok := b.FindFaceByGeometry(ref, toFaceGeomBindTol); ok {
+			return fixedPlaneOfFace(f)
+		}
+	}
+	for _, b := range part.SurfaceBodies().All() {
+		if f, ok := b.FindPlanarFaceThrough(ref.Centroid, ref.Normal, toFaceGeomBindTol*10); ok {
+			return fixedPlaneOfFace(f)
+		}
+	}
+	return nil, fmt.Errorf(
+		"extrude: to-face geometric target (centroid %v, normal %v) matched no planar face on the current body",
+		ref.Centroid, ref.Normal)
+}
+
+// fixedPlaneOfFace freezes a planar face's surface as a transient work plane usable as an extent
+// target (mirrors WorkGeometry.facePlane's face→plane step for a face found by geometry).
+func fixedPlaneOfFace(f *topo.Face) (*feature.WorkPlane, error) {
+	pl, ok := f.Geometry().(geom.Plane)
+	if !ok {
+		return nil, errors.New("extrude: to-face geometric target is not a planar face")
+	}
+	sp, err := sketch.NewPlane(pl.Origin, pl.UAxis, pl.VAxis)
+	if err != nil {
+		return nil, err
+	}
+	return feature.NewFixedWorkPlane(sp), nil
 }
 
 // withDistance fills the distance extent's primary (and optional asymmetric) depth.
