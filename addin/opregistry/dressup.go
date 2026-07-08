@@ -39,7 +39,8 @@ const filletSchema = `{
     "cornerType": {"type": "string", "enum": ["miter", "setback", "round"], "default": "miter", "description": "How a vertex where two filleted edges meet (third edge sharp) is treated: miter (exact crease), round (fillets the third edge into a smooth sphere). setback is reserved."},
     "crossSection": {"type": "string", "enum": ["arc", "g2", "conic"], "default": "arc", "description": "Blend cross-section shape (#1284): arc = circular rolling-ball (G1, default), g2 = curvature-continuous (no highlight break at the tangency lines), conic = rho-controlled. G2/conic apply to planar-walled edge fillets."},
     "rho": {"type": "number", "minimum": 0.1, "maximum": 0.9, "description": "Conic fullness when crossSection=conic: 0.5 = parabola, lower = flatter, higher = fuller."},
-    "concaveStrategy": {"type": "string", "enum": ["outward", "inward"], "default": "outward", "description": "Concave (internal) edge handling: outward fills the inside corner with an exact rolling-ball cylinder (default). inward rounds a recess into the corner and is only valid where the faces extend into the material (e.g. a pocket). Convex edges ignore this."}
+    "concaveStrategy": {"type": "string", "enum": ["outward", "inward"], "default": "outward", "description": "Concave (internal) edge handling: outward fills the inside corner with an exact rolling-ball cylinder (default). inward rounds a recess into the corner and is only valid where the faces extend into the material (e.g. a pocket). Convex edges ignore this."},
+    "edgesGeom": {"type": "array", "description": "Select the rounded edges by GEOMETRY instead of edgeRefs, so the binding survives recompute (for an external author that cannot mint stable keys). Give either this + radius, edgeRefs, or edgeSets.", "items": {"type": "object", "properties": {"midpoint": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Edge midpoint [x,y,z] cm."}, "direction": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Unit tangent [x,y,z]."}}, "required": ["midpoint", "direction"]}}
   }
 }`
 
@@ -51,9 +52,10 @@ const chamferSchema = `{
     "chamferType": {"type": "string", "enum": ["distance", "distanceAndAngle", "twoDistances"], "default": "distance", "description": "Setback mode."},
     "distance2": {"type": "string", "description": "twoDistances: setback on the second face, e.g. \"4 mm\"."},
     "angle": {"type": "string", "description": "distanceAndAngle: chamfer-face angle, e.g. \"30 deg\"."},
-    "concaveStrategy": {"type": "string", "enum": ["outward", "inward"], "default": "outward", "description": "Concave (internal) edge handling: outward fills the inside corner with material (default), inward cuts a recessed relief groove. Convex edges ignore this."}
+    "concaveStrategy": {"type": "string", "enum": ["outward", "inward"], "default": "outward", "description": "Concave (internal) edge handling: outward fills the inside corner with material (default), inward cuts a recessed relief groove. Convex edges ignore this."},
+    "edgesGeom": {"type": "array", "description": "Select the bevelled edges by GEOMETRY instead of edgeRefs, so the binding survives recompute. Give either this or edgeRefs.", "items": {"type": "object", "properties": {"midpoint": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Edge midpoint [x,y,z] cm."}, "direction": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Unit tangent [x,y,z]."}}, "required": ["midpoint", "direction"]}}
   },
-  "required": ["edgeRefs", "distance"]
+  "required": ["distance"]
 }`
 
 func filletDescriptor() *OperationDescriptor {
@@ -198,16 +200,33 @@ func applyFaceFillet(part *compdef.PartComponentDefinition, in featureargs.Fille
 // applyFilletFlat builds the flat (edgeRefs + single radius) fillet with the chosen corner
 // treatment and concave-edge strategy.
 func applyFilletFlat(part *compdef.PartComponentDefinition, in featureargs.Fillet, corner types.FilletCornerType, cs types.FilletConcaveStrategy, prof blendProfileArgs) (json.RawMessage, error) {
-	if len(in.EdgeRefs) == 0 {
-		return nil, errors.New("fillet: edgeRefs is empty (give edgeRefs+radius or edgeSets)")
+	if len(in.EdgeRefs) == 0 && len(in.EdgesGeom) == 0 {
+		return nil, errors.New("fillet: edgeRefs is empty (give edgeRefs+radius, edgesGeom, or edgeSets)")
 	}
 	r, err := lengthClosure(part, in.Radius, fieldFilletRadius)
 	if err != nil {
 		return nil, err
 	}
 	pf := feature.NewDressUpFeatures(part.Features()).AddFilletCorner(refKeys(in.EdgeRefs), r, corner)
+	if err := setFilletGeomEdges(pf, in.EdgesGeom); err != nil {
+		return nil, err
+	}
 	applyDressProfile(pf, cs, prof)
 	return recomputeResult(part, pf)
+}
+
+// setFilletGeomEdges binds the fillet's edges by geometry when edgesGeom is given, so an external
+// author's edge selection survives recompute (bindGeomEdges folds them into the edge list).
+func setFilletGeomEdges(pf *feature.PartFeature, sels []featureargs.GeomEdgeSel) error {
+	if len(sels) == 0 {
+		return nil
+	}
+	refs, err := geomEdgeRefs(sels)
+	if err != nil {
+		return err
+	}
+	pf.Definition().(*feature.FilletFeature).Definition().GeomEdges = refs
+	return nil
 }
 
 // applyFilletSets decodes the edge-set form and adds the fillet with the chosen corner treatment,
@@ -316,8 +335,8 @@ func applyChamfer(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	if err != nil {
 		return nil, err
 	}
-	if len(in.EdgeRefs) == 0 {
-		return nil, errors.New("chamfer: edgeRefs is empty")
+	if len(in.EdgeRefs) == 0 && len(in.EdgesGeom) == 0 {
+		return nil, errors.New("chamfer: edgeRefs is empty (give edgeRefs or edgesGeom)")
 	}
 	pf, err := buildChamfer(part, in)
 	if err != nil {
@@ -345,7 +364,16 @@ func buildChamfer(part *compdef.PartComponentDefinition, in featureargs.Chamfer)
 	if err != nil {
 		return nil, err
 	}
-	pf.Definition().(*feature.ChamferFeature).Definition().ConcaveStrategy = cs
+	def := pf.Definition().(*feature.ChamferFeature).Definition()
+	def.ConcaveStrategy = cs
+	if len(in.EdgesGeom) > 0 {
+		// Bind the chamfered edges by geometry when authored geometrically (survives recompute).
+		refs, err := geomEdgeRefs(in.EdgesGeom)
+		if err != nil {
+			return nil, err
+		}
+		def.GeomEdges = refs
+	}
 	return pf, nil
 }
 
@@ -399,9 +427,10 @@ const shellSchema = `{
   "type": "object",
   "properties": {
     "faceRefs": {"type": "array", "items": {"type": "string"}, "minItems": 1, "description": "Reference keys of the faces to remove, hollowing the body (from get_reference_keys)."},
-    "thickness": {"type": "string", "description": "Remaining wall thickness with units, e.g. \"1 mm\"."}
+    "thickness": {"type": "string", "description": "Remaining wall thickness with units, e.g. \"1 mm\"."},
+    "facesGeom": {"type": "array", "description": "Select the removed faces by GEOMETRY instead of faceRefs, so the binding survives recompute. Give either this or faceRefs.", "items": {"type": "object", "properties": {"centroid": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Face centroid [x,y,z] cm."}, "normal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Outward unit normal [x,y,z]."}}, "required": ["centroid", "normal"]}}
   },
-  "required": ["faceRefs", "thickness"]
+  "required": ["thickness"]
 }`
 
 const draftSchema = `{
@@ -409,9 +438,10 @@ const draftSchema = `{
   "properties": {
     "faceRefs": {"type": "array", "items": {"type": "string"}, "minItems": 1, "description": "Reference keys of the faces to draft (from get_reference_keys)."},
     "angle": {"type": "string", "description": "Draft angle with units, e.g. \"3 deg\"."},
-    "pullDirection": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Explicit pull/parting direction [dx,dy,dz] (only its orientation matters). Omit to let the host infer it from the neutral faces."}
+    "pullDirection": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Explicit pull/parting direction [dx,dy,dz] (only its orientation matters). Omit to let the host infer it from the neutral faces."},
+    "facesGeom": {"type": "array", "description": "Select the drafted faces by GEOMETRY instead of faceRefs, so the binding survives recompute. Give either this or faceRefs.", "items": {"type": "object", "properties": {"centroid": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Face centroid [x,y,z] cm."}, "normal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Outward unit normal [x,y,z]."}}, "required": ["centroid", "normal"]}}
   },
-  "required": ["faceRefs", "angle"]
+  "required": ["angle"]
 }`
 
 func shellDescriptor() *OperationDescriptor {
@@ -427,14 +457,22 @@ func applyShell(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(in.FaceRefs) == 0 {
-		return nil, errors.New("shell: faceRefs is empty")
+	if len(in.FaceRefs) == 0 && len(in.FacesGeom) == 0 {
+		return nil, errors.New("shell: faceRefs is empty (give faceRefs or facesGeom)")
 	}
 	th, err := lengthClosure(part, in.Thickness, "shell: thickness")
 	if err != nil {
 		return nil, err
 	}
 	pf := feature.NewDressUpFeatures(part.Features()).AddShell(refKeys(in.FaceRefs), th)
+	if len(in.FacesGeom) > 0 {
+		// Bind the removed faces by geometry when authored geometrically (survives recompute).
+		refs, err := geomFaceRefs(in.FacesGeom)
+		if err != nil {
+			return nil, err
+		}
+		pf.Definition().(*feature.ShellFeature).Definition().GeomFaces = refs
+	}
 	return recomputeResult(part, pf)
 }
 
@@ -443,8 +481,8 @@ func applyDraft(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(in.FaceRefs) == 0 {
-		return nil, errors.New("draft: faceRefs is empty")
+	if len(in.FaceRefs) == 0 && len(in.FacesGeom) == 0 {
+		return nil, errors.New("draft: faceRefs is empty (give faceRefs or facesGeom)")
 	}
 	a, err := angleClosure(part, in.Angle, "draft: angle")
 	if err != nil {
@@ -453,6 +491,14 @@ func applyDraft(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	pf, err := buildDraft(part, in, a)
 	if err != nil {
 		return nil, err
+	}
+	if len(in.FacesGeom) > 0 {
+		// Bind the drafted faces by geometry when authored geometrically (survives recompute).
+		refs, err := geomFaceRefs(in.FacesGeom)
+		if err != nil {
+			return nil, err
+		}
+		pf.Definition().(*feature.FaceDraftFeature).Definition().GeomFaces = refs
 	}
 	return recomputeResult(part, pf)
 }

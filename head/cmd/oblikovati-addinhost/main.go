@@ -27,6 +27,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -38,10 +39,26 @@ import (
 	"oblikovati.org/persistence"
 )
 
-// hostCallTimeout caps how long an add-in's host call waits to be drained. The drain
-// loop runs every drainInterval, so normal latency is sub-millisecond; the timeout only
-// guards a stalled loop.
-const hostCallTimeout = 10 * time.Second
+// defaultHostCallTimeout caps how long an add-in's host call waits to be drained. The
+// drain loop runs every drainInterval, so normal latency is sub-millisecond; the timeout
+// only guards a stalled loop. Batch/automation runs that recompute heavy features (a
+// boolean on a large body) can exceed it, so OBK_HOST_CALL_TIMEOUT overrides it (seconds).
+const defaultHostCallTimeout = 10 * time.Second
+
+// hostCallTimeout is defaultHostCallTimeout unless OBK_HOST_CALL_TIMEOUT (a positive number
+// of seconds) overrides it; a malformed or non-positive value keeps the default.
+func hostCallTimeout() time.Duration {
+	raw := os.Getenv("OBK_HOST_CALL_TIMEOUT")
+	if raw == "" {
+		return defaultHostCallTimeout
+	}
+	secs, err := strconv.ParseFloat(raw, 64)
+	if err != nil || secs <= 0 {
+		fmt.Fprintf(os.Stderr, "oblikovati-addinhost: ignoring invalid OBK_HOST_CALL_TIMEOUT %q; using %s\n", raw, defaultHostCallTimeout)
+		return defaultHostCallTimeout
+	}
+	return time.Duration(secs * float64(time.Second))
+}
 
 // drainInterval is how often the session goroutine services queued add-in calls. A few
 // milliseconds keeps MCP round-trips snappy without busy-spinning the CPU.
@@ -92,7 +109,7 @@ func newRouterHandler(session *app.Session) addinhost.Handler {
 // host call serializes onto the dispatcher the drain loop services. Call once before
 // activating any add-in.
 func installHost(session *app.Session, d *dispatch.Dispatcher) {
-	addinhost.SetHost(d, newRouterHandler(session), hostCallTimeout)
+	addinhost.SetHost(d, newRouterHandler(session), hostCallTimeout())
 }
 
 // startAddIns loads, registers, and activates every add-in in dir, reporting load

@@ -139,6 +139,33 @@ func TestAddInsDirDefaultsBesideExe(t *testing.T) {
 	}
 }
 
+// TestHostCallTimeoutDefault: with OBK_HOST_CALL_TIMEOUT unset, the default applies.
+func TestHostCallTimeoutDefault(t *testing.T) {
+	t.Setenv("OBK_HOST_CALL_TIMEOUT", "")
+	if got := hostCallTimeout(); got != defaultHostCallTimeout {
+		t.Errorf("hostCallTimeout() = %v, want the default %v", got, defaultHostCallTimeout)
+	}
+}
+
+// TestHostCallTimeoutOverride: a positive OBK_HOST_CALL_TIMEOUT (seconds) overrides the default —
+// batch runs that recompute heavy features need a longer window than the 10s default.
+func TestHostCallTimeoutOverride(t *testing.T) {
+	t.Setenv("OBK_HOST_CALL_TIMEOUT", "120")
+	if got := hostCallTimeout(); got != 120*time.Second {
+		t.Errorf("hostCallTimeout() = %v, want 120s", got)
+	}
+}
+
+// TestHostCallTimeoutInvalidKeepsDefault: a malformed or non-positive value is ignored (default).
+func TestHostCallTimeoutInvalidKeepsDefault(t *testing.T) {
+	for _, bad := range []string{"nope", "0", "-5"} {
+		t.Setenv("OBK_HOST_CALL_TIMEOUT", bad)
+		if got := hostCallTimeout(); got != defaultHostCallTimeout {
+			t.Errorf("hostCallTimeout() with %q = %v, want the default %v", bad, got, defaultHostCallTimeout)
+		}
+	}
+}
+
 // TestStartAddInsActivatesFixture is the end-to-end proof without the real bridge: it
 // loads the echo c-shared fixture, and startAddIns registers + activates it, round-tripping
 // the fixture's Activate host call through the dispatcher (drained concurrently, since
