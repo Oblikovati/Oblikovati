@@ -133,6 +133,51 @@ func TestWorkAxisByTwoPointsAndPlaneIntersection(t *testing.T) {
 	}
 }
 
+// TestWorkAxisByLine covers the grounded "line" axis: a fixed origin + direction, tracked as a
+// user axis that lists as the "line" kind (not an origin coordinate-system element).
+func TestWorkAxisByLine(t *testing.T) {
+	g := NewWorkGeometry()
+	before := g.WorkAxes().Count()
+	ax := g.WorkAxes().AddByLine(math.P3(1, 2, 3), mustUnit(0, 0, 1))
+	if g.WorkAxes().Count() != before+1 {
+		t.Fatalf("axis count = %d, want %d", g.WorkAxes().Count(), before+1)
+	}
+	if !ax.Health().OK() {
+		t.Fatalf("line axis sick: %+v", ax.Health())
+	}
+	if !ax.Origin().IsEqualTo(math.P3(1, 2, 3), wtol) {
+		t.Errorf("line axis origin = %v, want (1,2,3)", ax.Origin())
+	}
+	if !ax.Direction().AsVector().IsEqualTo(math.V3(0, 0, 1), wtol) {
+		t.Errorf("line axis dir = %v, want +Z", ax.Direction())
+	}
+	if ax.Kind() != "line" || ax.IsCoordinateSystemElement() {
+		t.Errorf("line axis Kind=%q origin=%v, want kind=line and not an origin element", ax.Kind(), ax.IsCoordinateSystemElement())
+	}
+}
+
+// TestWorkAxisLineSerializeRoundTrip pins that a grounded line axis persists by its origin +
+// direction and restores to the same geometry (serializeAxisDef / restoreLineAxis).
+func TestWorkAxisLineSerializeRoundTrip(t *testing.T) {
+	g := NewWorkGeometry()
+	g.WorkAxes().AddByLine(math.P3(1, 2, 3), mustUnit(0, 1, 0))
+	d, err := serializeAxisDef(fixedAxisDef{origin: math.P3(1, 2, 3), dir: mustUnit(0, 1, 0)})
+	if err != nil {
+		t.Fatalf("serialize line axis: %v", err)
+	}
+	if d.Kind != "line" || len(d.Position) != 3 || len(d.XAxis) != 3 {
+		t.Fatalf("serialized line axis = %+v, want kind=line with a position and direction", d)
+	}
+	restored := NewWorkGeometry()
+	if err := restoreAxisFeature(restored.WorkAxes(), d); err != nil {
+		t.Fatalf("restore line axis: %v", err)
+	}
+	ax := restored.WorkAxes().Item(restored.WorkAxes().Count() - 1)
+	if !ax.Origin().IsEqualTo(math.P3(1, 2, 3), wtol) || !ax.Direction().AsVector().IsEqualTo(math.V3(0, 1, 0), wtol) {
+		t.Errorf("restored line axis = origin %v dir %v, want (1,2,3) / +Y", ax.Origin(), ax.Direction())
+	}
+}
+
 func TestWorkPointPiercesPlane(t *testing.T) {
 	g := NewWorkGeometry()
 	wp := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(2, 3, 4) })

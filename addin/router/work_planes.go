@@ -29,6 +29,7 @@ var (
 type workHost interface {
 	WorkPlanes() *feature.WorkPlanes
 	WorkPoints() *feature.WorkPoints
+	WorkAxes() *feature.WorkAxes
 	Units() param.UnitsOfMeasure
 	Parameters() *param.Parameters
 	Recompute()
@@ -209,6 +210,25 @@ func createWorkPoint(_ *app.Session, host workHost, in wire.CreateWorkPointArgs)
 		Index: host.WorkPoints().Count() - 1,
 		Ref:   string(wp.Key()),
 		Name:  wp.Name(),
+	}, nil
+}
+
+// createWorkAxis adds a datum axis of the requested kind (line / two-points / plane-intersection,
+// built by buildWorkAxis in work_axes.go) to the active model and recomputes, returning its index,
+// reference (usable to build further datums or as a revolve axis), name, and health. It lives here
+// beside createWorkPoint because it self-orchestrates the work-geometry recompute (audit B1).
+func createWorkAxis(_ *app.Session, host workHost, in wire.CreateWorkAxisArgs) (wire.CreateWorkAxisResult, error) {
+	wa, err := buildWorkAxis(host, in)
+	if err != nil {
+		return wire.CreateWorkAxisResult{}, err
+	}
+	host.Recompute()
+	return wire.CreateWorkAxisResult{
+		Index:   host.WorkAxes().Count() - 1,
+		Ref:     string(wa.Key()),
+		Name:    wa.Name(),
+		Healthy: wa.Health().OK(),
+		Reason:  wa.Health().Reason,
 	}, nil
 }
 

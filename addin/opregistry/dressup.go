@@ -408,7 +408,8 @@ const draftSchema = `{
   "type": "object",
   "properties": {
     "faceRefs": {"type": "array", "items": {"type": "string"}, "minItems": 1, "description": "Reference keys of the faces to draft (from get_reference_keys)."},
-    "angle": {"type": "string", "description": "Draft angle with units, e.g. \"3 deg\"."}
+    "angle": {"type": "string", "description": "Draft angle with units, e.g. \"3 deg\"."},
+    "pullDirection": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Explicit pull/parting direction [dx,dy,dz] (only its orientation matters). Omit to let the host infer it from the neutral faces."}
   },
   "required": ["faceRefs", "angle"]
 }`
@@ -449,8 +450,25 @@ func applyDraft(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewDressUpFeatures(part.Features()).AddDraft(refKeys(in.FaceRefs), a)
+	pf, err := buildDraft(part, in, a)
+	if err != nil {
+		return nil, err
+	}
 	return recomputeResult(part, pf)
+}
+
+// buildDraft adds the draft feature: with an explicit pull direction when pullDirection is given
+// (AddDraftPull), otherwise the host's inferred pull (AddDraft, default +Z).
+func buildDraft(part *compdef.PartComponentDefinition, in featureargs.Draft, angle func() float64) (*feature.PartFeature, error) {
+	du := feature.NewDressUpFeatures(part.Features())
+	if len(in.PullDirection) == 0 {
+		return du.AddDraft(refKeys(in.FaceRefs), angle), nil
+	}
+	pull, err := vec3(in.PullDirection, "draft: pullDirection")
+	if err != nil {
+		return nil, err
+	}
+	return du.AddDraftPull(refKeys(in.FaceRefs), pull, angle), nil
 }
 
 // --- lip / groove (M20-F10) ------------------------------------------------

@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
+	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 )
@@ -28,7 +29,9 @@ const holeSchema = `{
     "counterDepth": {"type": "string", "description": "Counterbore depth (type=counterbore)."},
     "sinkDiameter": {"type": "string", "description": "Countersink top diameter (type=countersink)."},
     "includedAngle": {"type": "string", "description": "Countersink included angle, e.g. \"90 deg\" (type=countersink)."},
-    "designation": {"type": "string", "description": "Thread designation, e.g. \"M5x0.8\" (type=tapped)."}
+    "designation": {"type": "string", "description": "Thread designation, e.g. \"M5x0.8\" (type=tapped)."},
+    "center": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Explicit drill point [x,y,z] in model-space cm (projected onto the picked face). Omit to drill at the face centroid. Needed to place more than one hole on a face."},
+    "centerExpr": {"type": "array", "items": {"type": "string"}, "minItems": 3, "maxItems": 3, "description": "Parameter-expression form of center: [x,y,z] each an expression with units (e.g. \"L/2\"). Overrides center when present."}
   },
   "required": ["faceRef", "diameter"]
 }`
@@ -53,7 +56,54 @@ func applyHole(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := applyHoleCenter(part, pf, in); err != nil {
+		return nil, err
+	}
 	return recomputeResult(part, pf)
+}
+
+// applyHoleCenter sets the hole's explicit drill center from the args (centerExpr wins over the
+// literal center); absent both, the definition keeps its face-centroid default (Center stays nil).
+func applyHoleCenter(part *compdef.PartComponentDefinition, pf *feature.PartFeature, in featureargs.Hole) error {
+	center, err := holeCenterPoint(part, in)
+	if err != nil || center == nil {
+		return err
+	}
+	pf.Definition().(*feature.HoleFeature).Definition().Center = center
+	return nil
+}
+
+// holeCenterPoint resolves the explicit drill center: centerExpr (three unit-bearing expressions,
+// resolved to model cm) when present, else the literal center [x,y,z]; nil when neither is given.
+func holeCenterPoint(part *compdef.PartComponentDefinition, in featureargs.Hole) (*math.Point3, error) {
+	if len(in.CenterExpr) > 0 {
+		return centerFromExprs(part, in.CenterExpr)
+	}
+	if len(in.Center) == 0 {
+		return nil, nil
+	}
+	p, err := point3(in.Center, "hole: center")
+	if err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
+// centerFromExprs resolves the three coordinate expressions of centerExpr into a model-space point.
+func centerFromExprs(part *compdef.PartComponentDefinition, exprs []string) (*math.Point3, error) {
+	if len(exprs) != 3 {
+		return nil, fmt.Errorf("hole: centerExpr needs 3 expressions [x,y,z], got %d", len(exprs))
+	}
+	var c [3]float64
+	for i, e := range exprs {
+		v, err := lengthClosure(part, e, "hole: centerExpr")
+		if err != nil {
+			return nil, err
+		}
+		c[i] = v()
+	}
+	p := math.P3(c[0], c[1], c[2])
+	return &p, nil
 }
 
 // buildHole dispatches on the hole type, resolving the extra dimensions each variant needs.

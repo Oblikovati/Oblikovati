@@ -28,8 +28,9 @@ const sweepSchema = `{
   "properties": {
     "sketchIndex": {"type": "integer", "minimum": 0, "description": "Sketch holding the profile to sweep (omit for definitionType \"solid\")."},
     "profileIndex": {"type": "integer", "minimum": 0, "default": 0},
-    "pathSketchIndex": {"type": "integer", "minimum": 0, "description": "Sketch holding the open path (rail) to sweep along."},
+    "pathSketchIndex": {"type": "integer", "minimum": 0, "description": "Sketch holding the open path (rail) to sweep along (used when pathPoints is absent)."},
     "pathIndex": {"type": "integer", "minimum": 0, "default": 0, "description": "Which open path of the path sketch (see list_sketch_profiles / the sketch's chains)."},
+    "pathPoints": {"type": "array", "items": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}, "minItems": 2, "description": "Explicit 3D polyline path in cm (each entry [x,y,z]), mirroring how a loft rail's points override its sketch path. When given, the sketch path (pathSketchIndex/pathIndex) is ignored."},
     "definitionType": {"type": "string", "enum": ["path", "pathAndGuideRail", "pathAndGuideSurface", "pathAndSectionTwists", "solid"], "default": "path", "description": "The sweep definition union discriminator."},
     "orientation": {"type": "string", "enum": ["normalToPath", "parallelToOriginalProfile", "alignToVector"], "default": "normalToPath"},
     "alignVector": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Fixed profile normal for orientation alignToVector."},
@@ -42,8 +43,7 @@ const sweepSchema = `{
     "guideFaceKey": {"type": "string", "description": "Reference key of the guide face (pathAndGuideSurface)."},
     "toolBodyIndex": {"type": "integer", "minimum": 0, "description": "Running-body index of the tool to drag (definitionType \"solid\")."},
     "operation": {"type": "string", "enum": ["new", "join", "cut"], "default": "new"}
-  },
-  "required": ["pathSketchIndex"]
+  }
 }`
 
 func sweepDescriptor() *OperationDescriptor {
@@ -66,30 +66,62 @@ func applySweep(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 // sweepDefinitionFromArgs builds the union definition from the wire args,
 // validating the discriminator's required fields.
 func sweepDefinitionFromArgs(part *compdef.PartComponentDefinition, in featureargs.Sweep) (*feature.SweepDefinition, error) {
-	// Validate the path once up front, then hand the feature a live provider that
-	// re-derives it from the path sketch each recompute, so a parameter driving the
-	// rail reshapes the sweep (a snapshot would freeze it at apply time).
-	if _, err := pathFromSketch(part, in.PathSketchIndex, in.PathIndex); err != nil {
-		return nil, err
-	}
-	pathSk, err := sketchAt(part, in.PathSketchIndex)
+	path, pathSk, err := sweepPath(part, in)
 	if err != nil {
 		return nil, err
 	}
 	def := &feature.SweepDefinition{
 		ProfileIndex: in.ProfileIndex,
-		Path: func() *sketch.Path3D {
-			p, _ := pathFromSketch(part, in.PathSketchIndex, in.PathIndex)
-			return p
-		},
+		Path:         path,
 		// Attribute the live path to its sketch so a parameter driving the rail re-sweeps the
-		// body (#1414 tail invalidation; Oblikovati#1693).
+		// body (#1414 tail invalidation; Oblikovati#1693). An explicit pathPoints polyline has no
+		// sketch, so PathSketch is nil.
 		PathSketch: pathSk,
 	}
 	if err := sweepScalars(part, in, def); err != nil {
 		return nil, err
 	}
 	return def, sweepVariantFields(part, in, def)
+}
+
+// sweepPath resolves the sweep's path: an explicit pathPoints polyline (a static path, no sketch)
+// when given, otherwise a live provider re-derived from the path sketch each recompute (so a
+// parameter driving the rail reshapes the sweep; a snapshot would freeze it at apply time).
+func sweepPath(part *compdef.PartComponentDefinition, in featureargs.Sweep) (func() *sketch.Path3D, *sketch.Sketch, error) {
+	if len(in.PathPoints) > 0 {
+		p, err := path3DFromPoints(in.PathPoints)
+		if err != nil {
+			return nil, nil, err
+		}
+		return func() *sketch.Path3D { return p }, nil, nil
+	}
+	if _, err := pathFromSketch(part, in.PathSketchIndex, in.PathIndex); err != nil {
+		return nil, nil, err
+	}
+	pathSk, err := sketchAt(part, in.PathSketchIndex)
+	if err != nil {
+		return nil, nil, err
+	}
+	return func() *sketch.Path3D {
+		p, _ := pathFromSketch(part, in.PathSketchIndex, in.PathIndex)
+		return p
+	}, pathSk, nil
+}
+
+// path3DFromPoints builds an open 3D path from an [x,y,z] polyline (cm), mirroring how a loft
+// rail consumes its explicit Points. Needs at least two points.
+func path3DFromPoints(pts [][]float64) (*sketch.Path3D, error) {
+	if len(pts) < 2 {
+		return nil, fmt.Errorf("sweep: pathPoints needs at least 2 points, got %d", len(pts))
+	}
+	out := make([]*sketch.Point3D, len(pts))
+	for i, p := range pts {
+		if len(p) != 3 {
+			return nil, fmt.Errorf("sweep: pathPoints[%d] needs [x,y,z], got %v", i, p)
+		}
+		out[i] = sketch.NewPoint3D(math.P3(p[0], p[1], p[2]))
+	}
+	return sketch.NewPath3D(out, false), nil
 }
 
 // sweepScalars resolves the profile sketch, twist, taper, orientation and

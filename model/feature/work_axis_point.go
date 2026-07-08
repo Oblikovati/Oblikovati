@@ -24,7 +24,10 @@ type fixedAxisDef struct {
 	dir    math.UnitVector3
 }
 
-func (d fixedAxisDef) kindName() string { return "fixed" }
+// kindName reports the grounded axis as "line" (types.WorkAxisLine): a raw origin + direction
+// axis. The origin coordinate axes and a user AddByLine axis share this fixedAxisDef, so both
+// list as the "line" kind (the origin ones additionally report IsCoordinateSystemElement).
+func (d fixedAxisDef) kindName() string { return "line" }
 func (d fixedAxisDef) refs() []WorkRef  { return nil }
 func (d fixedAxisDef) eval(workResolver) (math.Point3, math.UnitVector3, error) {
 	return d.origin, d.dir, nil
@@ -91,6 +94,10 @@ func (w *WorkAxis) Direction() math.UnitVector3     { return w.dir }
 func (w *WorkAxis) IsCoordinateSystemElement() bool { return w.coordinateSystem }
 func (w *WorkAxis) Grounded() bool                  { return w.grounded }
 
+// Kind reports the axis's constructor name (a types.WorkAxisKind value: "line", "two-points",
+// "plane-intersection"), as workAxes.list surfaces it. Mirrors WorkPlane.Kind.
+func (w *WorkAxis) Kind() string { return w.def.kindName() }
+
 // Visible reports whether the datum axis is drawn in the viewport.
 func (w *WorkAxis) Visible() bool { return w.visible }
 
@@ -132,6 +139,14 @@ func (c *WorkAxes) addOrigin(key WorkRef, name string, origin math.Point3, dir m
 		coordinateSystem: true, grounded: true,
 	}
 	c.track(w)
+}
+
+// AddByLine creates a grounded user axis at a fixed origin and direction — the raw axis a
+// revolve or sweep spins about when it is not one of the origin axes (e.g. an axis matching a
+// sketch line, authored over the wire by an exporter, #735). Mirrors AddByTwoPoints for the
+// grounded (fixedAxisDef) kind; the tracked axis is persisted by its origin+direction.
+func (c *WorkAxes) AddByLine(origin math.Point3, dir math.UnitVector3) *WorkAxis {
+	return c.addUser(fixedAxisDef{origin: origin, dir: dir})
 }
 
 // AddByTwoPoints creates a user axis through two referenced points.
