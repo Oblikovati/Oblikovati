@@ -78,6 +78,8 @@ type WorkAxis struct {
 	dir              math.UnitVector3
 	health           health.Health
 	visible          bool
+	construction     bool // hidden, consumer-tied datum (Inventor's WorkAxis.Construction, #1849)
+	deleted          bool // tombstoned by DeleteWork (#1855)
 	coordinateSystem bool
 	grounded         bool
 	seq              uint64 // global creation stamp (0 for the origin frame); see model/seq
@@ -103,6 +105,15 @@ func (w *WorkAxis) Visible() bool { return w.visible }
 
 // SetVisible toggles the datum axis viewport visibility.
 func (w *WorkAxis) SetVisible(v bool) { w.visible = v }
+
+// Construction reports/records whether this is a construction (hidden, consumer-tied) axis, a
+// browser/lifecycle concept distinct from Visible (Inventor's WorkAxis.Construction, #1849).
+func (w *WorkAxis) Construction() bool     { return w.construction }
+func (w *WorkAxis) SetConstruction(c bool) { w.construction = c }
+
+// Deleted reports whether DeleteWork tombstoned this axis; markDeleted sets it (#1855).
+func (w *WorkAxis) Deleted() bool { return w.deleted }
+func (w *WorkAxis) markDeleted()  { w.deleted = true }
 
 // recompute re-derives the axis, going sick on a degenerate definition.
 func (w *WorkAxis) recompute(r workResolver) {
@@ -235,6 +246,8 @@ type WorkPoint struct {
 	coordinateSystem bool
 	grounded         bool
 	visible          bool
+	construction     bool   // hidden, consumer-tied datum (Inventor's WorkPoint.Construction, #1849)
+	deleted          bool   // tombstoned by DeleteWork (#1855)
 	seq              uint64 // global creation stamp (0 for the origin frame); see model/seq
 }
 
@@ -256,6 +269,15 @@ func (w *WorkPoint) Kind() string { return w.def.kindName() }
 // visibility a WorkPlane / WorkAxis already carries.
 func (w *WorkPoint) Visible() bool     { return w.visible }
 func (w *WorkPoint) SetVisible(v bool) { w.visible = v }
+
+// Construction reports/records whether this is a construction (hidden, consumer-tied) point, a
+// browser/lifecycle concept distinct from Visible (Inventor's WorkPoint.Construction, #1849).
+func (w *WorkPoint) Construction() bool     { return w.construction }
+func (w *WorkPoint) SetConstruction(c bool) { w.construction = c }
+
+// Deleted reports whether DeleteWork tombstoned this point; markDeleted sets it (#1855).
+func (w *WorkPoint) Deleted() bool { return w.deleted }
+func (w *WorkPoint) markDeleted()  { w.deleted = true }
 
 // recompute re-derives the point.
 func (w *WorkPoint) recompute(r workResolver) {

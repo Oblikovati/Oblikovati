@@ -117,6 +117,8 @@ type WorkPlane struct {
 	coordinateSystem bool
 	grounded         bool
 	visible          bool
+	construction     bool   // hidden, consumer-tied datum (Inventor's WorkPlane.Construction, #1849)
+	deleted          bool   // tombstoned by DeleteWork: slot kept for ref stability, excluded from lists (#1855)
 	seq              uint64 // global creation stamp (0 for the origin frame); see model/seq
 
 	// paramFootprint is the dependency footprint this plane's last recompute read — for an
@@ -169,12 +171,27 @@ func (w *WorkPlane) Grounded() bool                  { return w.grounded }
 func (w *WorkPlane) Visible() bool     { return w.visible }
 func (w *WorkPlane) SetVisible(v bool) { w.visible = v }
 
+// Construction reports whether this is a construction (hidden, consumer-tied) work plane — a
+// browser/lifecycle concept distinct from Visible (Inventor's WorkPlane.Construction, #1849).
+// SetConstruction records the create-time flag.
+func (w *WorkPlane) Construction() bool     { return w.construction }
+func (w *WorkPlane) SetConstruction(c bool) { w.construction = c }
+
+// Deleted reports whether DeleteWork tombstoned this plane; markDeleted sets it. A deleted plane
+// keeps its slot (so surviving datums keep their positional refs) but is excluded from lists and
+// no longer resolves as a reference (#1855).
+func (w *WorkPlane) Deleted() bool { return w.deleted }
+func (w *WorkPlane) markDeleted()  { w.deleted = true }
+
 // ShownForHostPick reports whether the plane should be drawn AND pickable given whether a datum-host
 // pick (Create 2D Sketch) is revealing the origin frame: any visible plane, plus the grounded origin
 // planes while revealing — they default hidden, so a brand-new part would otherwise offer nothing to
 // click. The viewport overlay and the app-side picker share this one rule so a plane the user can SEE
 // during host selection is always one they can CLICK, and vice versa (#1752).
 func (w *WorkPlane) ShownForHostPick(revealing bool) bool {
+	if w.deleted {
+		return false // a tombstoned datum is gone from the viewport and the picker (#1855)
+	}
 	return w.visible || (revealing && w.grounded)
 }
 

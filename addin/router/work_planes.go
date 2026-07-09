@@ -54,7 +54,7 @@ func activeWorkHost(s *app.Session) (workHost, error) {
 // listWorkPlanes enumerates the active model's datum planes (origin frame first, then
 // user planes) with their current geometry and health.
 func listWorkPlanes(_ *app.Session, host workHost) (wire.ListWorkPlanesResult, error) {
-	planes := projectAll(host.WorkPlanes(), func(i int, wp *feature.WorkPlane) wire.WorkPlaneInfo {
+	planes := projectLiveDatums(host.WorkPlanes(), func(i int, wp *feature.WorkPlane) wire.WorkPlaneInfo {
 		return workPlaneInfo(host, wp, i)
 	})
 	return wire.ListWorkPlanesResult{Planes: planes}, nil
@@ -65,18 +65,19 @@ func listWorkPlanes(_ *app.Session, host workHost) (wire.ListWorkPlanesResult, e
 // reference slots (each tagged plane|axis|point|face). Origin planes report neither.
 func workPlaneInfo(host workHost, wp *feature.WorkPlane, index int) wire.WorkPlaneInfo {
 	return wire.WorkPlaneInfo{
-		Index:    index,
-		Name:     wp.Name(),
-		Ref:      string(wp.Key()),
-		Origin:   point3Slice(wp.Plane().Origin()),
-		Normal:   vector3Slice(wp.Plane().Normal().AsVector()),
-		IsOrigin: wp.IsCoordinateSystemElement(),
-		Visible:  wp.Visible(),
-		Healthy:  wp.Health().OK(),
-		Reason:   wp.Health().Reason, // empty when healthy
-		Kind:     wp.Kind(),
-		Scalars:  workPlaneScalars(host, wp),
-		Slots:    workPlaneSlots(wp),
+		Index:        index,
+		Name:         wp.Name(),
+		Ref:          string(wp.Key()),
+		Origin:       point3Slice(wp.Plane().Origin()),
+		Normal:       vector3Slice(wp.Plane().Normal().AsVector()),
+		IsOrigin:     wp.IsCoordinateSystemElement(),
+		Visible:      wp.Visible(),
+		Construction: wp.Construction(),
+		Healthy:      wp.Health().OK(),
+		Reason:       wp.Health().Reason, // empty when healthy
+		Kind:         wp.Kind(),
+		Scalars:      workPlaneScalars(host, wp),
+		Slots:        workPlaneSlots(wp),
 	}
 }
 
@@ -189,8 +190,9 @@ func createWorkPlanes(_ *app.Session, host workHost, in wire.CreateWorkPlaneArgs
 		return wire.CreateWorkPlaneResult{}, err
 	}
 	if in.Visible != nil {
-		wp.SetVisible(*in.Visible) // an add-in can create a construction datum hidden (issue: PartDesigner)
+		wp.SetVisible(*in.Visible) // viewport display, orthogonal to Construction
 	}
+	wp.SetConstruction(in.Construction) // hidden, consumer-tied datum (#1849)
 	host.Recompute()
 	return wire.CreateWorkPlaneResult{
 		Index:   host.WorkPlanes().Count() - 1,
@@ -210,6 +212,7 @@ func createWorkPoint(_ *app.Session, host workHost, in wire.CreateWorkPointArgs)
 	if err != nil {
 		return wire.CreateWorkPointResult{}, err
 	}
+	wp.SetConstruction(in.Construction) // hidden, consumer-tied datum (#1849)
 	host.Recompute()
 	return wire.CreateWorkPointResult{
 		Index:   host.WorkPoints().Count() - 1,
@@ -278,6 +281,7 @@ func createWorkAxis(_ *app.Session, host workHost, in wire.CreateWorkAxisArgs) (
 	if err != nil {
 		return wire.CreateWorkAxisResult{}, err
 	}
+	wa.SetConstruction(in.Construction) // hidden, consumer-tied datum (#1849)
 	host.Recompute()
 	return wire.CreateWorkAxisResult{
 		Index:   host.WorkAxes().Count() - 1,
@@ -286,6 +290,30 @@ func createWorkAxis(_ *app.Session, host workHost, in wire.CreateWorkAxisArgs) (
 		Healthy: wa.Health().OK(),
 		Reason:  wa.Health().Reason,
 	}, nil
+}
+
+// deleteWorkFeature tombstones the user datum work plane, axis, or point named by the request's ref
+// and recomputes, so any retained dependent re-derives and goes unhealthy. It fails on an origin
+// datum, an unknown ref, or an already-deleted datum (feature.DeleteWork enforces this), and
+// returns every ref removed — the named datum plus, when RetainDependents is false, its cascaded
+// dependents (#1855). Like createWorkPoint it self-orchestrates the work-geometry recompute (audit
+// B1); the mutating router seam records the undo step / edit broadcast.
+func deleteWorkFeature(_ *app.Session, host workHost, in wire.DeleteWorkFeatureArgs) (wire.DeleteWorkFeatureResult, error) {
+	removed, err := host.WorkGeometry().DeleteWork(toWorkRef(in.Ref), in.RetainDependents)
+	if err != nil {
+		return wire.DeleteWorkFeatureResult{}, err
+	}
+	host.Recompute()
+	return wire.DeleteWorkFeatureResult{Deleted: workRefStrings(removed)}, nil
+}
+
+// workRefStrings renders a slice of work references as their wire string form.
+func workRefStrings(refs []feature.WorkRef) []string {
+	out := make([]string, len(refs))
+	for i, r := range refs {
+		out[i] = string(r)
+	}
+	return out
 }
 
 // refPlaneCtor builds a work plane from exactly its references (no scalar parameters);
