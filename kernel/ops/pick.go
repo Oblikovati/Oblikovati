@@ -5,23 +5,71 @@ package ops
 import (
 	stdmath "math"
 
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
 // RayCastFaces returns the nearest face of a body hit by a ray, with the hit
 // distance — the geometric core of viewport picking (the renderer's ID-buffer is an
-// optimization of the same query). Each face is tessellated and its triangles
-// tested; the closest hit wins. Pure Go, so the UI's hit-test is headless-testable.
+// optimization of the same query). The closest hit wins. Pure Go, so the UI's
+// hit-test is headless-testable.
 func RayCastFaces(b *topo.Body, origin math.Point3, dir math.Vector3, q Quality) (*topo.Face, float64, bool) {
 	var nearest *topo.Face
 	best := stdmath.Inf(1)
 	for _, f := range b.Faces() {
-		if t, ok := rayCastMesh(TessellateFace(f, q), origin, dir); ok && t < best {
+		if t, ok := rayCastFace(f, origin, dir, q); ok && t < best {
 			best, nearest = t, f
 		}
 	}
 	return nearest, best, nearest != nil
+}
+
+// rayCastFace returns the ray's forward hit distance to a face. A PLANAR face is hit-tested by
+// ray–plane intersection plus a point-in-polygon test on its boundary loops — O(m), no
+// triangulation — so the synchronous per-frame hover pick never triangulates a planar face. That
+// matters because tessellatePlanarFace runs the exact-predicate ear-clipper, which on a degenerate
+// (near-collinear) boundary escalates to O(m³) big.Rat arithmetic (seconds on a ~66-vertex face);
+// re-run every frame by the viewport's hovered-plane pick, it starved the frame-loop dispatcher an
+// async add-in build blocks on → a hard placement deadlock. A curved face still ray-tests its
+// tessellation (a bounded UV grid — no ear-clipping).
+func rayCastFace(f *topo.Face, origin math.Point3, dir math.Vector3, q Quality) (float64, bool) {
+	if _, ok := f.Geometry().(geom.Plane); ok {
+		return rayCastPlanarFace(f, origin, dir, q)
+	}
+	return rayCastMesh(TessellateFace(f, q), origin, dir)
+}
+
+// rayCastPlanarFace intersects the ray with the face's plane, then tests the hit point against the
+// face's boundary loops (inside the outer loop, outside every hole) — the same coverage a
+// triangulation of the face would give, since the boundary is discretized identically (loopBoundary),
+// but in O(m) with no ear-clipping.
+func rayCastPlanarFace(f *topo.Face, origin math.Point3, dir math.Vector3, q Quality) (float64, bool) {
+	outer3D := faceOuterBoundary(f, q)
+	if len(outer3D) < 3 {
+		return 0, false
+	}
+	normal := f.Geometry().NormalAt(0, 0)
+	denom := float64(dir.Dot(normal))
+	if stdmath.Abs(denom) < 1e-12 {
+		return 0, false // ray parallel to the face plane
+	}
+	t := float64(origin.VectorTo(outer3D[0]).Dot(normal)) / denom
+	if t <= 0 {
+		return 0, false // behind the ray origin
+	}
+	hit := origin.TranslateBy(dir.Scale(math.Scalar(t)))
+	flat := planeProjector(normal)
+	p := flat(hit)
+	if !pointInLoop2D(p, project2D(outer3D, flat)) {
+		return 0, false
+	}
+	for _, h := range faceHoleBoundaries(f, q) {
+		if pointInLoop2D(p, project2D(h, flat)) {
+			return 0, false // the ray passes through a hole
+		}
+	}
+	return t, true
 }
 
 // rayCastMesh returns the nearest positive hit distance of a ray against a mesh's
