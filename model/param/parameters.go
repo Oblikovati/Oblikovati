@@ -105,7 +105,14 @@ func (ps *Parameters) AddModelParameter(name, expression string) (*Parameter, er
 // revolve angle) so the argument joins the dependency graph and may itself
 // reference other parameters, exactly like a sketch dimension.
 func (ps *Parameters) AddAutoModelParameter(expression string) (*Parameter, error) {
-	return ps.AddModelParameter(ps.uniqueName("d"), expression)
+	p, err := ps.AddModelParameter(ps.uniqueName("d"), expression)
+	if err != nil {
+		return nil, err
+	}
+	// The feature owns this anonymous dimension backing param; flag it built-in so the generic
+	// convert API cannot re-kind it out from under its feature (Inventor's BuiltIn guard, #1850).
+	p.builtin = true
+	return p, nil
 }
 
 // uniqueName mints an unused parameter name with the given prefix.
@@ -214,6 +221,36 @@ func (ps *Parameters) add(name string, kind ParameterKind) (*Parameter, error) {
 
 // Rename changes a parameter's display name, rejecting a clash with another
 // parameter. Stable ids mean dependent expressions are unaffected.
+// convertibleKinds are the parameter categories a Convert may target — Inventor exposes
+// ConvertTo{User,Model,Reference}; a document link (Derived) or table membership is not a
+// conversion target here.
+var convertibleKinds = map[ParameterKind]bool{UserParam: true, ModelParam: true, ReferenceParam: true}
+
+// Convert changes a parameter's category in place, preserving its identity — name, expression,
+// value, tolerance, comment, and every dependency edge (edges bind by stable id, so re-kinding
+// touches nothing else). Converting to Reference makes the parameter read-only (its kind is no
+// longer Editable), so a later SetExpression is refused — the reference-parameter semantics.
+// It refuses to convert a built-in/auto parameter (a feature-dimension backing param), a derived
+// (cross-document) parameter, or a target outside user/model/reference (#1850, Inventor's
+// ModelParameter/UserParameter/ReferenceParameter.ConvertTo*).
+func (ps *Parameters) Convert(id ID, target ParameterKind) error {
+	p, ok := ps.byID[id]
+	if !ok {
+		return fmt.Errorf(errNoParameter, id)
+	}
+	if p.builtin {
+		return fmt.Errorf("param: built-in parameter %q cannot be converted", p.name)
+	}
+	if p.kind == DerivedParam {
+		return fmt.Errorf("param: derived parameter %q (linked from another document) cannot be converted", p.name)
+	}
+	if !convertibleKinds[target] {
+		return fmt.Errorf("param: cannot convert %q to %q (want user, model, or reference)", p.name, target)
+	}
+	p.kind = target
+	return nil
+}
+
 func (ps *Parameters) Rename(id ID, newName string) error {
 	p, ok := ps.byID[id]
 	if !ok {

@@ -182,6 +182,7 @@ func (r *Router) registerStandardHandlers() {
 	r.mutating(wire.MethodParametersAdd, labelEditParameters, typedHolder(addParameter))
 	r.mutating(wire.MethodParametersSet, labelEditParameters, typedHolder(setParameter))
 	r.mutating(wire.MethodParametersRename, labelEditParameters, typedHolder(renameParameter))
+	r.mutating(wire.MethodParametersConvert, labelEditParameters, typedHolder(convertParameter))
 	r.registerParameterDetailHandlers()
 	r.readOnly(wire.MethodModelTree, partQuery(modelTree))
 	r.readOnly(wire.MethodModelSelection, modelSelection)

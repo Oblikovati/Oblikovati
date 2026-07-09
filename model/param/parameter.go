@@ -55,15 +55,16 @@ func (h Health) OK() bool { return h.Status == Healthy }
 // quantity in database units; ModelValue applies the tolerance. Construct
 // parameters through a [Parameters] collection, never directly.
 type Parameter struct {
-	id     ID
-	owner  *Parameters // the collection that minted this parameter; nil for a bare test parameter
-	name   string
-	expr   Expr
-	value  Quantity
-	text   string // the value when this is a Text parameter (Unit == Text)
-	tol    Tolerance
-	kind   ParameterKind
-	health Health
+	id      ID
+	owner   *Parameters // the collection that minted this parameter; nil for a bare test parameter
+	name    string
+	expr    Expr
+	value   Quantity
+	text    string // the value when this is a Text parameter (Unit == Text)
+	tol     Tolerance
+	kind    ParameterKind
+	builtin bool // an auto-generated / system parameter (a feature-dimension backing param) — kind conversion is refused, matching Inventor's BuiltIn guard (#1850)
+	health  Health
 
 	exprList    []string // multi-value choices (empty ⇒ single-valued); see expression_list.go
 	allowCustom bool     // a value outside exprList is accepted (the one custom value)
@@ -90,6 +91,11 @@ func (p *Parameter) Name() string { return p.name }
 
 // Kind returns the parameter category.
 func (p *Parameter) Kind() ParameterKind { return p.kind }
+
+// BuiltIn reports whether this is an auto-generated / system parameter (a feature-dimension
+// backing param). A built-in parameter's kind cannot be converted — matching Inventor's BuiltIn
+// guard (#1850).
+func (p *Parameter) BuiltIn() bool { return p.builtin }
 
 // Unit returns the unit of the evaluated value.
 func (p *Parameter) Unit() Unit { return p.value.Unit }
