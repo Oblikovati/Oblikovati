@@ -145,7 +145,7 @@ func (s *SweepFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	s.tool, err = sweptSolid(sections, path.IsClosed(), featOr(s.featName, "sweep"))
+	s.tool, err = s.sweepTool(sections, path.IsClosed())
 	if err != nil {
 		return Output{}, err
 	}
@@ -154,6 +154,18 @@ func (s *SweepFeature) Recompute(in Input) (Output, error) {
 		return Output{}, err
 	}
 	return Output{Bodies: bodies}, nil
+}
+
+// sweepTool builds the swept body from its cross-sections: for the Surface operation
+// (kSurfaceOperation, #1858) an OPEN swept sheet (the profile boundary swept, no end caps) via
+// sweptShell; otherwise the swept solid. combine() adds a surface tool as a surface body (no
+// boolean).
+func (s *SweepFeature) sweepTool(sections [][]math.Point3, closed bool) (*topo.Body, error) {
+	feat := featOr(s.featName, "sweep")
+	if s.def.Operation == ops.Surface {
+		return sweptShell(sections, closed, feat)
+	}
+	return sweptSolid(sections, closed, feat)
 }
 
 // pathTangents returns a unit tangent at each path point: the forward segment at the
