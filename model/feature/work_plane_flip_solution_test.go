@@ -157,6 +157,40 @@ func TestPlaneParallelTangentProximitySelectsSide(t *testing.T) {
 	}
 }
 
+// TestCylinderTangentNormalsGolden pins cylinderTangentNormals (#1844) to values verified against
+// OpenCASCADE's GccAna_Lin2d2Tan (line tangent to a circle) via the oracle harness. Cylinder axis
+// +Z radius 2 at the origin; external axis-parallel line at (5,0,0): the two tangent contact points
+// are (0.8, ±1.833030277982336). The oracle-gated TestOracleCylinderTangentNormals (build tag
+// "oracle", _oracles/oracle_service.py) re-derives these live; this frozen copy guards them in CI.
+func TestCylinderTangentNormalsGolden(t *testing.T) {
+	const R = 2.0
+	cyl, err := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), R)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m1, m2, err := cylinderTangentNormals(math.P3(5, 0, 0), cyl)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Contact point = axis foot (the origin here) + R·m, where the normal m is the contact radial.
+	got := [][2]float64{
+		{R * float64(m1.AsVector().X), R * float64(m1.AsVector().Y)},
+		{R * float64(m2.AsVector().X), R * float64(m2.AsVector().Y)},
+	}
+	if got[0][1] > got[1][1] {
+		got[0], got[1] = got[1], got[0]
+	}
+	want := [][2]float64{{0.8, -1.833030277982336}, {0.8, 1.833030277982336}} // OCCT GccAna_Lin2d2Tan
+	for i := range want {
+		if dx := got[i][0] - want[i][0]; dx > 1e-9 || dx < -1e-9 {
+			t.Errorf("contact %d x = %v, want %v (OCCT)", i, got[i][0], want[i][0])
+		}
+		if dy := got[i][1] - want[i][1]; dy > 1e-9 || dy < -1e-9 {
+			t.Errorf("contact %d y = %v, want %v (OCCT)", i, got[i][1], want[i][1])
+		}
+	}
+}
+
 // TestLineTangentProximitySelectsSide: for a through-line tangent on a cylinder, a proximity point
 // selects which of the two tangent solutions is built (#1844).
 func TestLineTangentProximitySelectsSide(t *testing.T) {
