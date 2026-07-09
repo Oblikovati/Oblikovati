@@ -36,6 +36,55 @@ func sweptSolid(sections [][]math.Point3, closedLoop bool, feat string) (*topo.B
 	return body, nil
 }
 
+// sweptShell builds an OPEN surface shell — the side walls only, with NO start/end caps — from a
+// sequence of cross-section loops, the surface-of-revolution / swept sheet for the kSurface
+// operation (#1858). For a full revolution (closedLoop) the side walls already close into a
+// watertight sheet; for a partial sweep the result is an open sheet with boundary edges at the
+// start and end sections. combine() adds it to the model as a surface body (no boolean). It shares
+// sweptSolid's cage→B-rep path but omits the cap rows, so downstream sees an open (non-solid) body.
+func sweptShell(sections [][]math.Point3, closedLoop bool, feat string) (*topo.Body, error) {
+	if err := validateSections(sections, closedLoop); err != nil {
+		return nil, err
+	}
+	mesh := sectionSideMesh(sections, closedLoop, closureShift(sections, closedLoop))
+	body := subd.ToBody(mesh, feat)
+	// A full-revolution shell is closed, so orient it outward like a solid; an open sheet's signed
+	// volume is ~0 and the flip is a harmless no-op.
+	if ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume < 0 {
+		body = subd.ToBody(reverseFaces(mesh), feat)
+	}
+	return body, nil
+}
+
+// sectionSideMesh is sectionMesh's cage WITHOUT the start/end cap rows — the side walls only, for
+// the open surface shell sweptShell builds (#1858).
+func sectionSideMesh(sections [][]math.Point3, closedLoop bool, wrapShift int) subd.Mesh {
+	k, n := len(sections), len(sections[0])
+	verts := make([]math.Point3, 0, k*n)
+	for _, s := range sections {
+		verts = append(verts, s...)
+	}
+	segs := k - 1
+	if closedLoop {
+		segs = k
+	}
+	var faces [][]int
+	for s := 0; s < segs; s++ {
+		ns := (s + 1) % k
+		shift := 0
+		if closedLoop && ns == 0 {
+			shift = wrapShift
+		}
+		for i := 0; i < n; i++ {
+			j := (i + 1) % n
+			a, b := s*n+i, s*n+j
+			c, d := ns*n+(j+shift)%n, ns*n+(i+shift)%n
+			faces = append(faces, sideQuad(verts, a, b, c, d)...)
+		}
+	}
+	return subd.Mesh{Verts: verts, Faces: faces}
+}
+
 // validateSections rejects inputs that cannot form a solid: fewer than two sections
 // (or three for a closed loop), a degenerate cross-section, or ragged section sizes.
 func validateSections(sections [][]math.Point3, closedLoop bool) error {
