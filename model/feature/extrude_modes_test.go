@@ -86,6 +86,22 @@ func TestExtrudeToWorkPlane(t *testing.T) {
 	}
 }
 
+// TestExtrudeToFaceNilTargetIsUnhealthy: a to-face extent whose target plane never resolved (nil —
+// e.g. a geometric target whose stop face an earlier feature under-built) recomputes UNHEALTHY with
+// a clear reason, rather than panicking or erroring the apply. This is the graceful degradation the
+// exporter relies on so one unresolved feature does not abort the whole document.
+func TestExtrudeToFaceNilTargetIsUnhealthy(t *testing.T) {
+	fs := NewPartFeatures(param.NewParameters())
+	pf := NewExtrudeFeatures(fs).AddExtrude(squareSketch(2), []int{0}, ops.NewBody, Extent{Type: ToFaceExtent}, 0)
+	fs.Recompute()
+	if pf.Health().OK() {
+		t.Fatal("to-face extrude with a nil target plane should be unhealthy, not OK")
+	}
+	if pf.Health().Reason == "" {
+		t.Error("unhealthy to-face extrude should carry a reason")
+	}
+}
+
 func TestExtrudeModeRoundTrip(t *testing.T) {
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	fs := NewPartFeatures(nil)

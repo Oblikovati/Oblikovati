@@ -83,8 +83,14 @@ func throughAllSpan(ex Extent, bodies []*topo.Body, plane sketch.Plane) (span, e
 	}
 }
 
-// toPlaneSpan extrudes from the sketch plane to the (parallel) target work plane.
+// toPlaneSpan extrudes from the sketch plane to the (parallel) target work plane. A nil target is
+// an unresolved to-face selector (its face is absent on the current body — e.g. a geometric target
+// naming a face an earlier feature under-built); it recomputes to a clear unhealthy reason rather
+// than a hard error, so the caller degrades gracefully.
 func toPlaneSpan(ex Extent, plane sketch.Plane) (span, error) {
+	if ex.ToPlane == nil {
+		return span{}, errors.New("extrude: to-face target face was not found on the current body")
+	}
 	d, err := signedDistanceToPlane(ex.ToPlane, plane, "to-face")
 	if err != nil {
 		return span{}, err

@@ -148,33 +148,36 @@ const toFaceGeomBindTol = 1e-3
 func withToFaceGeom(part *compdef.PartComponentDefinition, ext feature.Extent, sel featureargs.GeomFaceSel) (feature.Extent, error) {
 	ref, err := geomFaceRef(sel)
 	if err != nil {
-		return feature.Extent{}, err
+		return feature.Extent{}, err // a malformed selector is a caller error, not a resolution miss
 	}
-	wp, err := toFaceGeomPlane(part, ref)
-	if err != nil {
-		return feature.Extent{}, err
-	}
-	ext.ToPlane = wp
+	// A target that matches no face leaves ToPlane nil; the to-face extent then recomputes UNHEALTHY
+	// (see toFaceGeomPlane) rather than erroring the whole apply, so a batch author (the exporter,
+	// reading an under-built base) flags the feature and keeps going instead of aborting the part.
+	ext.ToPlane, _ = toFaceGeomPlane(part, ref)
 	return ext, nil
 }
 
-// toFaceGeomPlane finds the planar body face matching the geometric descriptor and returns its
-// frozen plane. It tries an exact centroid+normal match first, then a plane-through-centroid match
-// (a large/annular stop face whose centroid sits off the recorded point still binds by its plane).
-func toFaceGeomPlane(part *compdef.PartComponentDefinition, ref topo.GeometricFaceRef) (*feature.WorkPlane, error) {
+// toFaceGeomPlane finds the planar body face matching the geometric descriptor and freezes its
+// plane. It tries an exact centroid+normal match first, then a plane-through-centroid match (a
+// large/annular stop face whose centroid sits off the recorded point still binds by its plane).
+// ok is false when no planar face matches — the caller leaves the extent unresolved so it degrades
+// to an unhealthy recompute (the hole's lost-placement-face pattern) rather than a hard error.
+func toFaceGeomPlane(part *compdef.PartComponentDefinition, ref topo.GeometricFaceRef) (*feature.WorkPlane, bool) {
 	for _, b := range part.SurfaceBodies().All() {
 		if f, ok := b.FindFaceByGeometry(ref, toFaceGeomBindTol); ok {
-			return fixedPlaneOfFace(f)
+			if wp, err := fixedPlaneOfFace(f); err == nil {
+				return wp, true
+			}
 		}
 	}
 	for _, b := range part.SurfaceBodies().All() {
 		if f, ok := b.FindPlanarFaceThrough(ref.Centroid, ref.Normal, toFaceGeomBindTol*10); ok {
-			return fixedPlaneOfFace(f)
+			if wp, err := fixedPlaneOfFace(f); err == nil {
+				return wp, true
+			}
 		}
 	}
-	return nil, fmt.Errorf(
-		"extrude: to-face geometric target (centroid %v, normal %v) matched no planar face on the current body",
-		ref.Centroid, ref.Normal)
+	return nil, false
 }
 
 // fixedPlaneOfFace freezes a planar face's surface as a transient work plane usable as an extent
