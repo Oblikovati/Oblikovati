@@ -117,6 +117,44 @@ func renameParameter(s *app.Session, holder compdef.ParameterHolder, in wire.Par
 	return info, nil
 }
 
+// convertParameter changes a parameter's category (user/model/reference) in place, preserving its
+// identity, expression and dependency edges; converting to reference makes it read-only. A
+// built-in/auto or derived parameter is refused by the model (#1850).
+func convertParameter(s *app.Session, holder compdef.ParameterHolder, in wire.ParameterConvertArgs) (wire.ParameterInfo, error) {
+	if in.Name == "" {
+		return wire.ParameterInfo{}, errors.New("parameters.convert: name is required")
+	}
+	p, ok := holder.Parameters().ByName(in.Name)
+	if !ok {
+		return wire.ParameterInfo{}, errors.New("parameters.convert: no parameter named " + in.Name)
+	}
+	target, err := parseConvertKind(in.TargetKind)
+	if err != nil {
+		return wire.ParameterInfo{}, err
+	}
+	if err := holder.Parameters().Convert(p.ID(), target); err != nil {
+		return wire.ParameterInfo{}, err
+	}
+	info := paramInfo(holder, p)
+	emitParameterChanged(s, info) // relay the kind change to subscribing add-ins
+	return info, nil
+}
+
+// parseConvertKind maps the wire targetKind spelling to a model parameter kind — only the three
+// Inventor-convertible categories (ConvertTo{User,Model,Reference}) are accepted here.
+func parseConvertKind(kind string) (param.ParameterKind, error) {
+	switch strings.ToLower(strings.TrimSpace(kind)) {
+	case "user":
+		return param.UserParam, nil
+	case "model":
+		return param.ModelParam, nil
+	case "reference":
+		return param.ReferenceParam, nil
+	default:
+		return 0, fmt.Errorf("parameters.convert: unknown targetKind %q (want user|model|reference)", kind)
+	}
+}
+
 // setParameter changes an existing parameter's expression and recomputes so any
 // driven features update.
 func setParameter(s *app.Session, holder compdef.ParameterHolder, in wire.ParameterSetArgs) (wire.ParameterInfo, error) {
