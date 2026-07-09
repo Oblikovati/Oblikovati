@@ -199,22 +199,56 @@ func createWorkPlanes(_ *app.Session, host workHost, in wire.CreateWorkPlaneArgs
 	}, nil
 }
 
-// createWorkPoint adds a datum point fixed at the requested position to the active model and
-// recomputes, returning its index and reference (usable as a point input to a work plane or a
-// redefine re-pick).
+// createWorkPoint adds a datum point of the requested kind (fixed position, or the point where an
+// axis pierces a plane — built by buildWorkPoint) to the active model and recomputes, returning its
+// index, reference (usable as a point input to a work plane or a redefine re-pick), name, and
+// health. A well-formed but unsatisfiable definition (an axis parallel to the plane) still creates
+// the point, reported healthy=false; the call only fails on bad arguments.
 func createWorkPoint(_ *app.Session, host workHost, in wire.CreateWorkPointArgs) (wire.CreateWorkPointResult, error) {
-	at, err := parseCoords(in.At, "workPoints.create: at")
+	wp, err := buildWorkPoint(host, in)
 	if err != nil {
 		return wire.CreateWorkPointResult{}, err
 	}
-	p := math.P3(at[0], at[1], at[2])
-	wp := host.WorkPoints().AddByPosition(func() math.Point3 { return p })
 	host.Recompute()
 	return wire.CreateWorkPointResult{
-		Index: host.WorkPoints().Count() - 1,
-		Ref:   string(wp.Key()),
-		Name:  wp.Name(),
+		Index:   host.WorkPoints().Count() - 1,
+		Ref:     string(wp.Key()),
+		Name:    wp.Name(),
+		Healthy: wp.Health().OK(),
+		Reason:  wp.Health().Reason, // empty when healthy
 	}, nil
+}
+
+// buildWorkPoint dispatches a create request to the matching model constructor. An empty kind is
+// the position constructor, so the original position-only request (just "at") is unchanged.
+func buildWorkPoint(host workHost, in wire.CreateWorkPointArgs) (*feature.WorkPoint, error) {
+	switch types.WorkPointKind(in.Kind) {
+	case "", types.WorkPointPosition:
+		return addPositionPoint(host, in)
+	case types.WorkPointPlaneAxisIntersection:
+		return addPlaneAxisPoint(host, in)
+	default:
+		return nil, fmt.Errorf("workPoints.create: unknown kind %q (see api/types WorkPoint*)", in.Kind)
+	}
+}
+
+// addPositionPoint builds the fixed-position point from its [x, y, z] coordinate.
+func addPositionPoint(host workHost, in wire.CreateWorkPointArgs) (*feature.WorkPoint, error) {
+	at, err := parseCoords(in.At, "workPoints.create: at")
+	if err != nil {
+		return nil, err
+	}
+	p := math.P3(at[0], at[1], at[2])
+	return host.WorkPoints().AddByPosition(func() math.Point3 { return p }), nil
+}
+
+// addPlaneAxisPoint builds the plane∩axis point from exactly two references [plane, axis].
+func addPlaneAxisPoint(host workHost, in wire.CreateWorkPointArgs) (*feature.WorkPoint, error) {
+	refs := toWorkRefs(in.Refs)
+	if len(refs) != 2 {
+		return nil, fmt.Errorf("workPoints.create: plane-axis-intersection needs 2 references [plane, axis], got %d", len(refs))
+	}
+	return host.WorkPoints().AddByPlaneAndAxisIntersection(refs[0], refs[1]), nil
 }
 
 // createWorkAxis adds a datum axis of the requested kind (line / two-points / plane-intersection,
