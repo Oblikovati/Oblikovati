@@ -49,6 +49,77 @@ func TestDraftNeutralPlaneBadRef(t *testing.T) {
 	}
 }
 
+// TestDraftNeutralPlanePullDirection: a neutral-plane draft accepts an explicit pull direction
+// (the override branch), overriding the plane-normal default. #1866.
+func TestDraftNeutralPlanePullDirection(t *testing.T) {
+	s, _, _ := extrudedSolid(t)
+	if _, err := applyMap(t, s, "draft", map[string]any{
+		"faceRefs": []string{sideFaceKey(t, s)}, "angle": "3 deg",
+		"neutralPlane": "origin/plane/xy", "pullDirection": []float64{0, 0, 1},
+	}); err != nil {
+		t.Fatalf("neutral-plane draft with pullDirection: %v", err)
+	}
+}
+
+// TestDraftNeutralPlaneBadPullDirection: a malformed pull direction on a neutral-plane draft is a
+// clean error (a 2-component vector cannot be a [dx,dy,dz]).
+func TestDraftNeutralPlaneBadPullDirection(t *testing.T) {
+	s, _, face := extrudedSolid(t)
+	if _, err := applyMap(t, s, "draft", map[string]any{
+		"faceRefs": []string{face}, "angle": "3 deg",
+		"neutralPlane": "origin/plane/xy", "pullDirection": []float64{0, 1},
+	}); err == nil {
+		t.Error("a 2-component pullDirection should error")
+	}
+}
+
+// TestHoleDrillPointErrors: an unknown drillPoint value and an angled point with an unparseable
+// tipAngle are both clean errors, not silent successes. #1863.
+func TestHoleDrillPointErrors(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		extra map[string]any
+	}{
+		{"unknown drillPoint", map[string]any{"drillPoint": "banana"}},
+		{"angled bad tipAngle", map[string]any{"drillPoint": "angled", "tipAngle": "banana"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			s, _, face := extrudedSolid(t)
+			args := map[string]any{"faceRef": face, "diameter": "4 mm", "depth": "5 mm"}
+			for k, v := range tc.extra {
+				args[k] = v
+			}
+			if _, err := applyMap(t, s, "hole", args); err == nil {
+				t.Errorf("%s should error", tc.name)
+			}
+		})
+	}
+}
+
+// TestCoilEndConditionErrors: an unparseable transition or flat angle on either spring end is a
+// clean error. #1883.
+func TestCoilEndConditionErrors(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		extra map[string]any
+	}{
+		{"bad startTransitionAngle", map[string]any{"startTransitionAngle": "banana"}},
+		{"bad startFlatAngle", map[string]any{"startFlatAngle": "banana"}},
+		{"bad endTransitionAngle", map[string]any{"endTransitionAngle": "banana"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			s := profiledPart(t)
+			args := map[string]any{"sketchIndex": 0, "pitch": "5 mm", "revolutions": "3"}
+			for k, v := range tc.extra {
+				args[k] = v
+			}
+			if _, err := applyMap(t, s, "coil", args); err == nil {
+				t.Errorf("%s should error", tc.name)
+			}
+		})
+	}
+}
+
 // TestCoilEndConditions: start/end transition + flat sweeps are accepted and build a healthy coil
 // with more geometry (the flat/transition turns) than the plain helix (#1883).
 func TestCoilEndConditions(t *testing.T) {
