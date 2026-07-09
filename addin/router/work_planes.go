@@ -293,6 +293,8 @@ func buildWorkPoint(host workHost, in wire.CreateWorkPointArgs) (*feature.WorkPo
 		return refPoint(in, 2, func(r []feature.WorkRef) *feature.WorkPoint { return pts.AddByTwoLines(r[0], r[1]) })
 	case types.WorkPointThreePlanes:
 		return refPoint(in, 3, func(r []feature.WorkRef) *feature.WorkPoint { return pts.AddByThreePlanes(r[0], r[1], r[2]) })
+	case types.WorkPointFaceCenter:
+		return refPoint(in, 1, func(r []feature.WorkRef) *feature.WorkPoint { return pts.AddByFaceCenter(r[0]) })
 	default:
 		return nil, fmt.Errorf("workPoints.create: unknown kind %q (see api/types WorkPoint*)", in.Kind)
 	}

@@ -80,9 +80,21 @@ func buildWorkAxis(host workHost, in wire.CreateWorkAxisArgs) (*feature.WorkAxis
 		return addRefAxis(in, "line-and-point", axes.AddByLineAndPoint)
 	case types.WorkAxisLineAndPlane:
 		return addRefAxis(in, "line-and-plane", axes.AddByLineAndPlane)
+	case types.WorkAxisRevolvedFace:
+		return addFaceAxis(in, axes.AddByRevolvedFace)
 	default:
 		return nil, fmt.Errorf("workAxes.create: unknown kind %q (see api/types WorkAxis*)", in.Kind)
 	}
+}
+
+// addFaceAxis builds a single-face axis kind (revolved-face) from exactly one face reference,
+// erroring on the wrong count (#1840).
+func addFaceAxis(in wire.CreateWorkAxisArgs, build func(feature.WorkRef) *feature.WorkAxis) (*feature.WorkAxis, error) {
+	refs := toWorkRefs(in.Refs)
+	if len(refs) != 1 {
+		return nil, fmt.Errorf("workAxes.create: revolved-face needs 1 reference (a face), got %d", len(refs))
+	}
+	return build(refs[0]), nil
 }
 
 // addLineAxis builds the grounded "line" axis from its origin point and direction vector.
