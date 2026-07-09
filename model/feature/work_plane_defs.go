@@ -142,6 +142,45 @@ func (d *normalToCurvePlaneDef) eval(r workResolver) (sketch.Plane, error) {
 	return planeFromOriginNormal(p, axis.Direction())
 }
 
+// lineAndPointPlaneDef builds a plane that contains a line and passes through a point (Inventor's
+// AddByLineAndPoint): the line direction is the X axis and the normal is line × (point − lineOrigin),
+// so the plane holds both the line and the point. It is degenerate — no unique plane — when the
+// point lies on the line.
+type lineAndPointPlaneDef struct {
+	line  WorkRef
+	point WorkRef
+}
+
+func (d *lineAndPointPlaneDef) kindName() string { return "line-point" }
+func (d *lineAndPointPlaneDef) refs() []WorkRef  { return []WorkRef{d.line, d.point} }
+func (d *lineAndPointPlaneDef) eval(r workResolver) (sketch.Plane, error) {
+	line, err := r.axis(d.line)
+	if err != nil {
+		return sketch.Plane{}, err
+	}
+	p, err := r.point(d.point)
+	if err != nil {
+		return sketch.Plane{}, err
+	}
+	x := line.Direction()
+	normal, err := math.UnitVector3FromVector(x.AsVector().Cross(line.Origin().VectorTo(p)))
+	if err != nil {
+		return sketch.Plane{}, errors.New("the point lies on the line, so no plane is defined")
+	}
+	y, err := math.UnitVector3FromVector(normal.AsVector().Cross(x.AsVector()))
+	if err != nil {
+		return sketch.Plane{}, err
+	}
+	return sketch.NewPlane(line.Origin(), x, y)
+}
+
+// AddByLineAndPoint creates a plane that contains line and passes through point (#1843).
+//
+//	wp := planes.AddByLineAndPoint(feature.OriginXAxis, hole.Key())
+func (c *WorkPlanes) AddByLineAndPoint(line, point WorkRef) *WorkPlane {
+	return c.addUser(&lineAndPointPlaneDef{line: line, point: point})
+}
+
 // AddFixed creates a user plane fixed at origin with the given in-plane axes.
 //
 //	x, _ := math.NewUnitVector3(1, 0, 0)

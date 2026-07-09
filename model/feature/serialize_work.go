@@ -93,7 +93,7 @@ func serializePlaneDef(def planeDefinition) (WorkFeatureData, error) {
 	case *linePlaneAnglePlaneDef:
 		d.Angle = v.angle()
 	case *threePointPlaneDef, *planeAndPointPlaneDef, *twoPlanesPlaneDef, *twoLinesPlaneDef,
-		*normalToCurvePlaneDef, *torusMidPlaneDef, *pointAndTangentPlaneDef,
+		*lineAndPointPlaneDef, *normalToCurvePlaneDef, *torusMidPlaneDef, *pointAndTangentPlaneDef,
 		*planeAndTangentPlaneDef, *lineAndTangentPlaneDef:
 		// references only
 	default:
@@ -201,6 +201,8 @@ func restorePlaneFeature(c *WorkPlanes, d WorkFeatureData) error {
 		})
 	case "two-lines":
 		return restoreRefPlane(d, 2, func(r []WorkRef) { c.AddByTwoLines(r[0], r[1]) })
+	case "line-point":
+		return restoreRefPlane(d, 2, func(r []WorkRef) { c.AddByLineAndPoint(r[0], r[1]) })
 	case "normal-to-curve":
 		return restoreRefPlane(d, 2, func(r []WorkRef) { c.AddByNormalToCurve(r[0], r[1]) })
 	case "torus-midplane":

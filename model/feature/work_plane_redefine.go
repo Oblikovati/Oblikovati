@@ -193,6 +193,16 @@ func (d *twoLinesPlaneDef) redefineSlots(w *WorkPlane) []WorkRefSlot {
 func (d *twoLinesPlaneDef) editableScalars() []EditableParam { return nil }
 func (d *twoLinesPlaneDef) snapshotState() func()            { return snapshotPointee(d) }
 
+// lineAndPointPlaneDef: the line and the through-point slots (#1843).
+func (d *lineAndPointPlaneDef) redefineSlots(w *WorkPlane) []WorkRefSlot {
+	return []WorkRefSlot{
+		w.slot("Line", WorkRefAxis, func(r WorkRef) { d.line = r }),
+		w.slot("Through point", WorkRefPoint, func(r WorkRef) { d.point = r }),
+	}
+}
+func (d *lineAndPointPlaneDef) editableScalars() []EditableParam { return nil }
+func (d *lineAndPointPlaneDef) snapshotState() func()            { return snapshotPointee(d) }
+
 // normalToCurvePlaneDef: curve + point slots.
 func (d *normalToCurvePlaneDef) redefineSlots(w *WorkPlane) []WorkRefSlot {
 	return []WorkRefSlot{

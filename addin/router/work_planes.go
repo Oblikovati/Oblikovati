@@ -30,6 +30,7 @@ type workHost interface {
 	WorkPlanes() *feature.WorkPlanes
 	WorkPoints() *feature.WorkPoints
 	WorkAxes() *feature.WorkAxes
+	WorkGeometry() *feature.WorkGeometry
 	Units() param.UnitsOfMeasure
 	Parameters() *param.Parameters
 	Recompute()
@@ -290,6 +291,9 @@ var refPlaneCtors = map[types.WorkPlaneKind]refPlaneCtor{
 	}},
 	types.WorkPlaneTwoLines: {2, func(p *feature.WorkPlanes, r []feature.WorkRef) *feature.WorkPlane {
 		return p.AddByTwoLines(r[0], r[1])
+	}},
+	types.WorkPlaneLineAndPoint: {2, func(p *feature.WorkPlanes, r []feature.WorkRef) *feature.WorkPlane {
+		return p.AddByLineAndPoint(r[0], r[1])
 	}},
 	types.WorkPlaneNormalToCurve: {2, func(p *feature.WorkPlanes, r []feature.WorkRef) *feature.WorkPlane {
 		return p.AddByNormalToCurve(r[0], r[1])
