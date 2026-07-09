@@ -46,6 +46,49 @@ func TestShellOpenTopBox(t *testing.T) {
 	}
 }
 
+// TestShellOutsideBox shells the same 4×4×4 open-top box OUTWARD by 0.5: the wall grows onto the
+// outside, so the outer solid [-0.5,4.5]×[-0.5,4.5]×[-0.5,4] (5·5·4.5 = 112.5) minus the original
+// 64 leaves a 48.5 wall, and the result must be a valid solid.
+func TestShellOutsideBox(t *testing.T) {
+	box := shellBox(4, 4, 4)
+	res, err := ops.ShellDirected(box, [][]byte{topFaceKey(t, box)}, 0.5, ops.ShellOutside)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
+		t.Fatalf("outward-shelled box not a valid solid: %+v", r)
+	}
+	want := 5.0*5.0*4.5 - 64.0
+	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
+		t.Errorf("outside shell volume = %g, want %g", got, want)
+	}
+}
+
+// TestShellBothBox centres a 0.5 wall on the faces of the 4×4×4 open-top box: outer offset +0.25
+// (4.5·4.5·4.25 = 86.0625) minus inner offset −0.25 (3.5·3.5·3.75 = 45.9375) = 40.125.
+func TestShellBothBox(t *testing.T) {
+	box := shellBox(4, 4, 4)
+	res, err := ops.ShellDirected(box, [][]byte{topFaceKey(t, box)}, 0.5, ops.ShellBoth)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
+		t.Fatalf("both-sides-shelled box not a valid solid: %+v", r)
+	}
+	want := 4.5*4.5*4.25 - 3.5*3.5*3.75
+	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
+		t.Errorf("both-sides shell volume = %g, want %g", got, want)
+	}
+}
+
+// TestShellDirectedUnknownDirection guards the direction switch.
+func TestShellDirectedUnknownDirection(t *testing.T) {
+	box := shellBox(2, 2, 2)
+	if _, err := ops.ShellDirected(box, [][]byte{topFaceKey(t, box)}, 0.2, ops.ShellDirection(9)); err == nil {
+		t.Error("unknown shell direction should error")
+	}
+}
+
 // TestShellLostFaceErrors checks a vanished removed-face key is reported (so the feature
 // can go Sick) rather than silently shelling a closed box.
 func TestShellLostFaceErrors(t *testing.T) {

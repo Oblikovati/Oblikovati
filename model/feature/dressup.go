@@ -173,6 +173,7 @@ type ShellDefinition struct {
 	RemovedFaceKeys [][]byte
 	Thickness       func() float64
 	GeomFaces       []topo.GeometricFaceRef // externally-authored removed faces by geometric descriptor (ADR-0040)
+	Direction       ops.ShellDirection      // which side the wall grows onto (default ShellInside) — #1864
 }
 
 // ShellFeature hollows a solid.
@@ -191,7 +192,7 @@ func (s *ShellFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	return shellBody(in, keys, callOrZero(s.def.Thickness), featOr(s.featName, "shell"))
+	return shellBody(in, keys, callOrZero(s.def.Thickness), s.def.Direction, featOr(s.featName, "shell"))
 }
 
 // FaceDraftDefinition tapers selected faces by an angle about a pull direction. Neutral, when set, is

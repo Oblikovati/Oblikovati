@@ -67,7 +67,7 @@ func (r featureCodecSet) registerDressUpCodecs() {
 	r.register("shell", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			sf := f.(*ShellFeature)
-			fd.Shell = &FaceDressData{Faces: encodeKeys(sf.def.RemovedFaceKeys), Value: evalFloat(sf.def.Thickness), GeomFaces: encodeGeomFaces(sf.def.GeomFaces)}
+			fd.Shell = &FaceDressData{Faces: encodeKeys(sf.def.RemovedFaceKeys), Value: evalFloat(sf.def.Thickness), GeomFaces: encodeGeomFaces(sf.def.GeomFaces), ShellDirection: ShellDirectionName(sf.def.Direction)}
 			return nil
 		},
 		decode: decodeShell,
@@ -210,14 +210,18 @@ func decodeRuleFillet(rc *restoreContext, fd FeatureData) (*PartFeature, error) 
 	return NewDressUpFeatures(rc.fs).AddRuleFillet(rule, constFloat(fd.RuleFillet.Value)), nil
 }
 
-// decodeShell rebuilds a shell, re-binding its removed faces by key.
+// decodeShell rebuilds a shell, re-binding its removed faces by key and its wall direction.
 func decodeShell(rc *restoreContext, fd FeatureData) (*PartFeature, error) {
 	d, err := requireFaceDress(fd.Shell, "shell")
 	if err != nil {
 		return nil, err
 	}
+	dir, ok := ParseShellDirection(fd.Shell.ShellDirection)
+	if !ok {
+		return nil, fmt.Errorf("shell: unknown direction %q", fd.Shell.ShellDirection)
+	}
 	return NewDressUpFeatures(rc.fs).addShell(&ShellDefinition{
-		RemovedFaceKeys: d.keys, GeomFaces: d.geomFaces, Thickness: constFloat(d.value),
+		RemovedFaceKeys: d.keys, GeomFaces: d.geomFaces, Thickness: constFloat(d.value), Direction: dir,
 	}), nil
 }
 

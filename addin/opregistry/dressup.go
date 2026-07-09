@@ -430,7 +430,8 @@ const shellSchema = `{
   "properties": {
     "faceRefs": {"type": "array", "items": {"type": "string"}, "minItems": 1, "description": "Reference keys of the faces to remove, hollowing the body (from get_reference_keys)."},
     "thickness": {"type": "string", "description": "Remaining wall thickness with units, e.g. \"1 mm\"."},
-    "facesGeom": {"type": "array", "description": "Select the removed faces by GEOMETRY instead of faceRefs, so the binding survives recompute. Give either this or faceRefs.", "items": {"type": "object", "properties": {"centroid": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Face centroid [x,y,z] cm."}, "normal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Outward unit normal [x,y,z]."}}, "required": ["centroid", "normal"]}}
+    "facesGeom": {"type": "array", "description": "Select the removed faces by GEOMETRY instead of faceRefs, so the binding survives recompute. Give either this or faceRefs.", "items": {"type": "object", "properties": {"centroid": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Face centroid [x,y,z] cm."}, "normal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Outward unit normal [x,y,z]."}}, "required": ["centroid", "normal"]}},
+    "direction": {"type": "string", "enum": ["inside", "outside", "both"], "default": "inside", "description": "Which side the wall grows onto: \"inside\" (outer dimensions kept), \"outside\" (outer dimensions grow by thickness), or \"both\" (wall centred on the faces). Inventor's ShellDirectionEnum."}
   },
   "required": ["thickness"]
 }`
@@ -467,14 +468,20 @@ func applyShell(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
+	dir, ok := feature.ParseShellDirection(strings.ToLower(strings.TrimSpace(in.Direction)))
+	if !ok {
+		return nil, fmt.Errorf("shell: unknown direction %q (want inside|outside|both)", in.Direction)
+	}
 	pf := feature.NewDressUpFeatures(part.Features()).AddShell(refKeys(in.FaceRefs), th)
+	def := pf.Definition().(*feature.ShellFeature).Definition()
+	def.Direction = dir
 	if len(in.FacesGeom) > 0 {
 		// Bind the removed faces by geometry when authored geometrically (survives recompute).
 		refs, err := geomFaceRefs(in.FacesGeom)
 		if err != nil {
 			return nil, err
 		}
-		pf.Definition().(*feature.ShellFeature).Definition().GeomFaces = refs
+		def.GeomFaces = refs
 	}
 	return recomputeResult(part, pf)
 }
