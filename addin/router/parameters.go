@@ -4,6 +4,9 @@ package router
 
 import (
 	"errors"
+	"fmt"
+	"strconv"
+	"strings"
 
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
@@ -17,12 +20,25 @@ import (
 func paramInfo(holder compdef.ParameterHolder, p *param.Parameter) wire.ParameterInfo {
 	info := wire.ParameterInfo{
 		Name: p.Name(), Kind: p.Kind().String(),
-		Expression: p.Expression(), Value: holder.Units().Format(p.Value()),
+		Expression: p.Expression(), Value: formatParamValue(holder, p),
 	}
 	if h := p.Health(); !h.OK() {
 		info.Health = h.Reason
 	}
 	return info
+}
+
+// formatParamValue renders a parameter's evaluated value for the wire: the literal string for a
+// text parameter, "true"/"false" for a boolean, and the unit-formatted quantity otherwise (#1845).
+func formatParamValue(holder compdef.ParameterHolder, p *param.Parameter) string {
+	switch {
+	case p.IsText():
+		return p.Text()
+	case p.IsBoolean():
+		return strconv.FormatBool(p.Bool())
+	default:
+		return holder.Units().Format(p.Value())
+	}
 }
 
 // listParameters returns the active part's or assembly's parameters.
@@ -44,16 +60,61 @@ func getParameter(_ *app.Session, holder compdef.ParameterHolder, in wire.Parame
 	return paramInfo(holder, p), nil
 }
 
-// addParameter adds a new user parameter from name + expression (e.g. "4 cm").
+// addParameter adds a new parameter. ValueType selects numeric (default) / text / boolean and
+// Kind selects the user (default) / model table — Inventor's non-numeric and model-parameter
+// creation (#1845). A numeric parameter takes a unit-bearing expression (e.g. "4 cm").
 func addParameter(_ *app.Session, holder compdef.ParameterHolder, in wire.ParameterSetArgs) (wire.ParameterInfo, error) {
-	if err := requireNameExpr(in); err != nil {
-		return wire.ParameterInfo{}, err
-	}
-	p, err := holder.Parameters().AddUserParameter(in.Name, in.Expression)
+	p, err := addParameterOfKind(holder, in)
 	if err != nil {
 		return wire.ParameterInfo{}, err
 	}
 	return paramInfo(holder, p), nil
+}
+
+// addParameterOfKind dispatches to the model's typed creators from the wire ValueType/Kind
+// discriminators. Text values may be empty; boolean values parse "true"/"false". #1845.
+func addParameterOfKind(holder compdef.ParameterHolder, in wire.ParameterSetArgs) (*param.Parameter, error) {
+	if in.Name == "" {
+		return nil, errors.New("parameters: name is required")
+	}
+	switch strings.ToLower(strings.TrimSpace(in.ValueType)) {
+	case "", "numeric":
+		if in.Expression == "" {
+			return nil, errors.New("parameters: expression is required for a numeric parameter")
+		}
+		if strings.EqualFold(strings.TrimSpace(in.Kind), "model") {
+			return holder.Parameters().AddModelParameter(in.Name, in.Expression)
+		}
+		return holder.Parameters().AddUserParameter(in.Name, in.Expression)
+	case "text":
+		return holder.Parameters().AddTextUserParameter(in.Name, in.Expression)
+	case "boolean", "bool":
+		b, err := strconv.ParseBool(strings.TrimSpace(in.Expression))
+		if err != nil {
+			return nil, fmt.Errorf("parameters: boolean parameter %q needs expression \"true\" or \"false\", got %q", in.Name, in.Expression)
+		}
+		return holder.Parameters().AddBooleanUserParameter(in.Name, b)
+	default:
+		return nil, fmt.Errorf("parameters: unknown valueType %q (want numeric|text|boolean)", in.ValueType)
+	}
+}
+
+// renameParameter renames a parameter, keeping its identity so dependent expressions stay bound
+// and are rewritten to the new name (#1847).
+func renameParameter(s *app.Session, holder compdef.ParameterHolder, in wire.ParameterRenameArgs) (wire.ParameterInfo, error) {
+	if in.Name == "" || in.NewName == "" {
+		return wire.ParameterInfo{}, errors.New("parameters.rename: name and newName are required")
+	}
+	p, ok := holder.Parameters().ByName(in.Name)
+	if !ok {
+		return wire.ParameterInfo{}, errors.New("parameters.rename: no parameter named " + in.Name)
+	}
+	if err := holder.Parameters().Rename(p.ID(), in.NewName); err != nil {
+		return wire.ParameterInfo{}, err
+	}
+	info := paramInfo(holder, p)
+	emitParameterChanged(s, info) // #148: relay the rename to subscribing add-ins
+	return info, nil
 }
 
 // setParameter changes an existing parameter's expression and recomputes so any
