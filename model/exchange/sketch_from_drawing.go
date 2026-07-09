@@ -124,11 +124,13 @@ func add2DEntity(sk *sketch.Sketch, e drawing.Entity) bool {
 		majorR := math.Hypot(g.MajorAxis[0], g.MajorAxis[1])
 		axis := gmath.V2(g.MajorAxis[0], g.MajorAxis[1])
 		// A partial ellipse (start/end parametric angles) is an elliptical arc; importing
-		// those as a full ellipse drew giant closed ovals over the drawing.
+		// those as a full ellipse drew giant closed ovals over the drawing. DXF ELLIPSE start/end
+		// params are eccentric-anomaly (parametric), so add them verbatim — NOT through the
+		// true-angle EllipticalArcs.Add, which would re-interpret and mis-place the arc (#1829).
 		if isFullEllipse(g.StartAngle, g.EndAngle) {
 			sk.Ellipses().Add(p2(g.Center), axis, majorR, majorR*g.AxisRatio)
 		} else {
-			sk.EllipticalArcs().Add(p2(g.Center), axis, majorR, majorR*g.AxisRatio, g.StartAngle, g.EndAngle)
+			sk.EllipticalArcs().AddParametric(p2(g.Center), axis, majorR, majorR*g.AxisRatio, g.StartAngle, g.EndAngle)
 		}
 	case *drawing.Spline:
 		add2DSpline(sk, g)

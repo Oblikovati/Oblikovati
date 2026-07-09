@@ -449,7 +449,9 @@ func buildEllipse(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in w
 	return e, []uint64{uint64(e.Center.EntityID())}, nil
 }
 
-// buildEllipticalArc creates an elliptical arc bounded by parametric start/end angles.
+// buildEllipticalArc creates an elliptical arc bounded by TRUE geometric start/end angles (Inventor's
+// SketchEllipticalArc convention, #1829); EllipticalArcs.Add converts them to the internal parametric
+// angles.
 func buildEllipticalArc(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in wire.AddSketchEntityArgs, pts []math.Point2) (sketch.Entity, []uint64, error) {
 	if err := wantPoints("ellipticalArc", pts, 1); err != nil {
 		return nil, nil, err

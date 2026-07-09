@@ -30,7 +30,9 @@ func TestEllipticalArcSamplesEndpoints(t *testing.T) {
 func TestEllipticalArcRoundTrips(t *testing.T) {
 	sc := NewSketches()
 	s := sc.Add(XYPlane())
-	s.EllipticalArcs().Add(gmath.P2(1, 1), gmath.V2(0, 1), 3, 2, 0.1, 1.2)
+	// AddParametric stores the angles verbatim, so this checks pure serialization fidelity of the
+	// stored (parametric) representation, independent of the true-angle authoring conversion (#1829).
+	s.EllipticalArcs().AddParametric(gmath.P2(1, 1), gmath.V2(0, 1), 3, 2, 0.1, 1.2)
 
 	out := roundTrip(t, sc)
 	if got := out.EllipticalArcs().Count(); got != 1 {
