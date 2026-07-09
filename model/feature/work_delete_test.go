@@ -163,6 +163,29 @@ func TestWorkFeatureFlagsRoundTrip(t *testing.T) {
 	}
 }
 
+// TestDeletedAxisRefStopsResolving: a deleted axis no longer resolves as an axis input, and a
+// deleted plane drops out of the viewport host-pick (#1855).
+func TestDeletedAxisRefStopsResolving(t *testing.T) {
+	g := NewWorkGeometry()
+	ax := g.WorkAxes().AddByLine(math.P3(0, 0, 0), mustUnit(0, 0, 1))
+	pl := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 1 })
+	if !pl.ShownForHostPick(false) {
+		t.Fatal("a visible user plane should be shown for host pick before deletion")
+	}
+	if _, err := g.DeleteWork(ax.Key(), true); err != nil {
+		t.Fatalf("delete axis: %v", err)
+	}
+	if _, err := g.axis(ax.Key()); err == nil {
+		t.Error("a deleted axis ref should not resolve")
+	}
+	if _, err := g.DeleteWork(pl.Key(), true); err != nil {
+		t.Fatalf("delete plane: %v", err)
+	}
+	if pl.ShownForHostPick(true) {
+		t.Error("a tombstoned plane must not be shown for host pick")
+	}
+}
+
 // TestConstructionDefaultsFalse: a freshly created datum is not construction (#1849).
 func TestConstructionDefaultsFalse(t *testing.T) {
 	g := NewWorkGeometry()
