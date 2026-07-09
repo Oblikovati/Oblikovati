@@ -143,7 +143,22 @@ func tubeSolid(outerSecs, innerSecs [][]math.Point3, closedLoop bool, feat strin
 	if err := validateTubeSections(outerSecs, innerSecs, closedLoop); err != nil {
 		return nil, err
 	}
-	mesh := tubeMesh(outerSecs, innerSecs, closedLoop)
+	mesh := tubeMesh(outerSecs, innerSecs, closedLoop, true)
+	body := subd.ToBody(mesh, feat)
+	if ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume < 0 {
+		body = subd.ToBody(reverseFaces(mesh), feat)
+	}
+	return body, nil
+}
+
+// tubeShell is tubeSolid's OPEN counterpart for the kSurface operation (#1858): the nested outer and
+// inner walls with NO annular end caps — an open pipe surface (both ends open) for a hollow loft
+// authored as a surface. combine() adds it as a surface body (no boolean).
+func tubeShell(outerSecs, innerSecs [][]math.Point3, closedLoop bool, feat string) (*topo.Body, error) {
+	if err := validateTubeSections(outerSecs, innerSecs, closedLoop); err != nil {
+		return nil, err
+	}
+	mesh := tubeMesh(outerSecs, innerSecs, closedLoop, false)
 	body := subd.ToBody(mesh, feat)
 	if ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume < 0 {
 		body = subd.ToBody(reverseFaces(mesh), feat)
@@ -155,7 +170,7 @@ func tubeSolid(outerSecs, innerSecs [][]math.Point3, closedLoop bool, feat strin
 // reverse of the outer-wall winding so the two shells stay coherently oriented (their normals
 // end up pointing opposite ways); the annular caps are wound to agree with both rims (verified
 // by edge-direction cancellation along each rim).
-func tubeMesh(outerSecs, innerSecs [][]math.Point3, closedLoop bool) subd.Mesh {
+func tubeMesh(outerSecs, innerSecs [][]math.Point3, closedLoop, caps bool) subd.Mesh {
 	k, n := len(outerSecs), len(outerSecs[0])
 	verts := make([]math.Point3, 0, 2*k*n)
 	for _, s := range outerSecs {
@@ -179,7 +194,7 @@ func tubeMesh(outerSecs, innerSecs [][]math.Point3, closedLoop bool) subd.Mesh {
 			faces = append(faces, sideQuad(verts, ii(s, i), ii(ns, i), ii(ns, j), ii(s, j))...) // inner wall (reversed)
 		}
 	}
-	if !closedLoop {
+	if caps && !closedLoop {
 		for i := 0; i < n; i++ {
 			j := (i + 1) % n
 			faces = append(faces, sideQuad(verts, oi(0, i), ii(0, i), ii(0, j), oi(0, j))...)         // start cap
