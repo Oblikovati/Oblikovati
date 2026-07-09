@@ -27,12 +27,14 @@ const extrudeSchema = `{
     "profileIndex": {"type": "integer", "minimum": 0, "default": 0, "description": "Which closed profile of the sketch to extrude."},
     "distance": {"type": "string", "description": "Extrude depth with units, e.g. \"50 mm\" or \"5 cm\". Required for distance and distance-from-face extents."},
     "operation": {"type": "string", "enum": ["new", "join", "cut", "intersect", "surface"], "default": "new", "description": "Boolean against existing bodies, or \"surface\" to build an open sheet (surface) body — Inventor's kSurfaceOperation."},
-    "extent": {"type": "string", "enum": ["distance", "through-all", "to-next", "to-face"], "default": "distance", "description": "How the extrude terminates."},
+    "extent": {"type": "string", "enum": ["distance", "through-all", "to-next", "to-face", "from-to", "distance-from-face"], "default": "distance", "description": "How the extrude terminates. \"from-to\" bounds the prism between fromFace and toFace; \"distance-from-face\" measures distance from toFace instead of the sketch plane."},
     "direction": {"type": "string", "enum": ["positive", "negative", "symmetric"], "default": "positive", "description": "Which side(s) of the sketch plane to grow."},
     "secondDistance": {"type": "string", "description": "Asymmetric two-direction depth on the negative side, e.g. \"10 mm\"."},
     "taper": {"type": "string", "description": "Draft angle, e.g. \"3 deg\" (positive widens away from the sketch)."},
-    "toFace": {"type": "string", "description": "Termination target for the to-face extent: a planar face reference key (from model.referenceKeys), a work plane (\"plane/N\"), or an origin plane (\"origin/plane/xy\")."},
-    "toFaceGeom": {"type": "object", "description": "Termination target for the to-face extent named by GEOMETRY (a planar body face's centroid + normal) instead of toFace — for an author that cannot mint a face key. The host binds the matching planar face on the current body and freezes its plane. Wins over toFace.", "properties": {"centroid": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}, "normal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}}, "required": ["centroid", "normal"]},
+    "toFace": {"type": "string", "description": "Termination target for the to-face / from-to (end) / distance-from-face extents: a planar face reference key (from model.referenceKeys), a work plane (\"plane/N\"), or an origin plane (\"origin/plane/xy\")."},
+    "toFaceGeom": {"type": "object", "description": "The toFace target named by GEOMETRY (a planar body face's centroid + normal) instead of toFace — for an author that cannot mint a face key. The host binds the matching planar face on the current body and freezes its plane. Wins over toFace.", "properties": {"centroid": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}, "normal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}}, "required": ["centroid", "normal"]},
+    "fromFace": {"type": "string", "description": "Start target for the from-to extent (the prism's lower bound): a planar face reference key, a work plane (\"plane/N\"), or an origin plane (\"origin/plane/xy\")."},
+    "fromFaceGeom": {"type": "object", "description": "The fromFace start target named by GEOMETRY (centroid + normal) instead of fromFace. Wins over fromFace.", "properties": {"centroid": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}, "normal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}}, "required": ["centroid", "normal"]},
     "profileSeeds": {"type": "array", "description": "Select the extruded region(s) by an interior seed point [x,y] (sketch 2-D cm), one per region, instead of profileIndex — for an author that cannot predict the host's region ordering. The host resolves each seed to its containing region on the solved sketch every recompute; wins over profileIndex.", "items": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2}}
   },
   "required": ["sketchIndex"]
@@ -99,7 +101,8 @@ func resolveExtrude(part *compdef.PartComponentDefinition, raw json.RawMessage) 
 }
 
 // buildExtent assembles the model extent from the request: the extent type and direction, plus
-// the distance(s) for the distance extent or the termination plane for the to-face extent.
+// the distance(s) for the distance extent, or the termination plane(s) for the to-face / from-to /
+// distance-from-face extents.
 func buildExtent(part *compdef.PartComponentDefinition, in featureargs.Extrude) (feature.Extent, error) {
 	etype, err := parseExtentType(in.Extent)
 	if err != nil {
@@ -108,12 +111,16 @@ func buildExtent(part *compdef.PartComponentDefinition, in featureargs.Extrude) 
 	ext := feature.Extent{Type: etype, Direction: parseExtentDirection(in.Direction)}
 	switch etype {
 	case feature.ToFaceExtent:
-		// A geometric target (centroid+normal) wins over a ToFace key/plane-ref: an external
-		// author cannot mint the face key, so it names the stop face by geometry (see ToFaceGeom).
-		if in.ToFaceGeom != nil {
-			return withToFaceGeom(part, ext, *in.ToFaceGeom)
+		ext.ToPlane, err = resolveEndPlane(part, in)
+		return ext, err
+	case feature.FromToExtent:
+		return withFromTo(part, ext, in)
+	case feature.DistanceFromFaceExtent:
+		// The distance-from-face base is the "to"/reference plane; the distance then offsets from it.
+		if ext.ToPlane, err = resolveEndPlane(part, in); err != nil {
+			return feature.Extent{}, err
 		}
-		return withToFaceTarget(part, ext, in.ToFace)
+		return withDistance(part, ext, in)
 	case feature.DistanceExtent:
 		return withDistance(part, ext, in)
 	default:
@@ -121,41 +128,71 @@ func buildExtent(part *compdef.PartComponentDefinition, in featureargs.Extrude) 
 	}
 }
 
-// withToFaceTarget resolves the to-face termination reference (a planar face key, "plane/N", or
-// "origin/plane/xy") onto the extent's ToPlane.
-func withToFaceTarget(part *compdef.PartComponentDefinition, ext feature.Extent, ref string) (feature.Extent, error) {
+// withFromTo resolves both terminators of a from-to extent: FromPlane (the start, from
+// fromFace/fromFaceGeom) and ToPlane (the end, from toFace/toFaceGeom). The sketch plane supplies
+// only the profile; the prism is bounded below by FromPlane and above by ToPlane.
+func withFromTo(part *compdef.PartComponentDefinition, ext feature.Extent, in featureargs.Extrude) (feature.Extent, error) {
+	from, err := resolveStartPlane(part, in)
+	if err != nil {
+		return feature.Extent{}, err
+	}
+	to, err := resolveEndPlane(part, in)
+	if err != nil {
+		return feature.Extent{}, err
+	}
+	ext.FromPlane, ext.ToPlane = from, to
+	return ext, nil
+}
+
+// resolveEndPlane resolves the extent's "to"/reference plane from the request — a geometric target
+// (toFaceGeom, centroid+normal) wins over a toFace key/plane-ref: an external author who cannot mint
+// the face key names the stop face by geometry (see ToFaceGeom). A geometric target that matches no
+// face resolves nil, so the extent recomputes unhealthy rather than erroring the apply.
+func resolveEndPlane(part *compdef.PartComponentDefinition, in featureargs.Extrude) (*feature.WorkPlane, error) {
+	if in.ToFaceGeom != nil {
+		return planeFromGeom(part, *in.ToFaceGeom)
+	}
+	return planeFromRef(part, in.ToFace, "toFace")
+}
+
+// resolveStartPlane resolves the from-to extent's start ("from") plane, mirroring resolveEndPlane
+// over fromFace/fromFaceGeom.
+func resolveStartPlane(part *compdef.PartComponentDefinition, in featureargs.Extrude) (*feature.WorkPlane, error) {
+	if in.FromFaceGeom != nil {
+		return planeFromGeom(part, *in.FromFaceGeom)
+	}
+	return planeFromRef(part, in.FromFace, "fromFace")
+}
+
+// planeFromRef resolves a termination reference (a planar face key, "plane/N", or
+// "origin/plane/xy") to a work plane; an empty reference is a caller error naming the missing field.
+func planeFromRef(part *compdef.PartComponentDefinition, ref, field string) (*feature.WorkPlane, error) {
 	if strings.TrimSpace(ref) == "" {
-		return feature.Extent{}, errors.New(`extrude: to-face extent requires "toFace" (a planar face key, "plane/N", or "origin/plane/xy")`)
+		return nil, fmt.Errorf("extrude: this extent requires %q (a planar face key, \"plane/N\", or \"origin/plane/xy\")", field)
 	}
 	wp, err := part.WorkGeometry().PlaneTargetFromRef(ref)
 	if err != nil {
-		return feature.Extent{}, fmt.Errorf("extrude: to-face target %q: %w", ref, err)
+		return nil, fmt.Errorf("extrude: %s target %q: %w", field, ref, err)
 	}
-	ext.ToPlane = wp
-	return ext, nil
+	return wp, nil
+}
+
+// planeFromGeom resolves a termination target named by GEOMETRY (a planar face's centroid+normal)
+// to a frozen work plane; a malformed selector errors, an unmatched one resolves nil (the extent
+// then recomputes unhealthy, matching to-face's graceful degradation — see toFaceGeomPlane).
+func planeFromGeom(part *compdef.PartComponentDefinition, sel featureargs.GeomFaceSel) (*feature.WorkPlane, error) {
+	ref, err := geomFaceRef(sel)
+	if err != nil {
+		return nil, err
+	}
+	wp, _ := toFaceGeomPlane(part, ref)
+	return wp, nil
 }
 
 // toFaceGeomBindTol is the model-space distance a to-face geometric target's centroid may sit from
 // a candidate face's centroid and still bind (see [topo.Body.FindFaceByGeometry]); it matches the
 // hole/dress-up geometric-selector tolerance.
 const toFaceGeomBindTol = 1e-3
-
-// withToFaceGeom resolves a to-face termination target named by GEOMETRY (a planar face's
-// centroid + normal) rather than a reference key — the extent counterpart of the hole's
-// PlacementFaceGeom. It finds the matching planar face on the already-built body and freezes its
-// plane, the same *WorkPlane a face-key toFace yields via NewFixedWorkPlane. Feature build order
-// guarantees the target face exists when the extrude applies, so a one-time resolve is stable.
-func withToFaceGeom(part *compdef.PartComponentDefinition, ext feature.Extent, sel featureargs.GeomFaceSel) (feature.Extent, error) {
-	ref, err := geomFaceRef(sel)
-	if err != nil {
-		return feature.Extent{}, err // a malformed selector is a caller error, not a resolution miss
-	}
-	// A target that matches no face leaves ToPlane nil; the to-face extent then recomputes UNHEALTHY
-	// (see toFaceGeomPlane) rather than erroring the whole apply, so a batch author (the exporter,
-	// reading an under-built base) flags the feature and keeps going instead of aborting the part.
-	ext.ToPlane, _ = toFaceGeomPlane(part, ref)
-	return ext, nil
-}
 
 // toFaceGeomPlane finds the planar body face matching the geometric descriptor and freezes its
 // plane. It tries an exact centroid+normal match first, then a plane-through-centroid match (a
@@ -226,9 +263,9 @@ func parseTaperAngle(part *compdef.PartComponentDefinition, expr string) (float6
 	return a.Value, nil
 }
 
-// parseExtentType maps an extent name to its model type (empty ⇒ distance). The to-face extent
-// terminates at a plane the request names via "toFace"; the remaining reference extents (from-to /
-// distance-from-face) are not yet exposed over the JSON API.
+// parseExtentType maps an extent name to its model type (empty ⇒ distance). The reference extents
+// terminate on plane(s) the request names: to-face / distance-from-face via "toFace", from-to via
+// both "fromFace" (start) and "toFace" (end).
 func parseExtentType(name string) (feature.ExtentType, error) {
 	switch strings.ToLower(strings.TrimSpace(name)) {
 	case "", "distance":
@@ -239,8 +276,12 @@ func parseExtentType(name string) (feature.ExtentType, error) {
 		return feature.ToNextExtent, nil
 	case "to-face", "toface":
 		return feature.ToFaceExtent, nil
+	case "from-to", "fromto":
+		return feature.FromToExtent, nil
+	case "distance-from-face", "distancefromface":
+		return feature.DistanceFromFaceExtent, nil
 	default:
-		return 0, fmt.Errorf("extrude: unknown extent %q (want distance|through-all|to-next|to-face)", name)
+		return 0, fmt.Errorf("extrude: unknown extent %q (want distance|through-all|to-next|to-face|from-to|distance-from-face)", name)
 	}
 }
 
