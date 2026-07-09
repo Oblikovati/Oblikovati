@@ -54,6 +54,43 @@ func TestMassPropertiesOfBox(t *testing.T) {
 	approx(t, "default mass", def.MassG, 30)
 }
 
+// TestMassPropertiesCurvedMatchesAnalytic gates the tessellation-driven volume/area accuracy of a
+// CURVED body (a cylinder), the case a planar box cannot exercise. Mass properties integrate over
+// the tessellated mesh, so a too-coarse facet count under-reports a curved solid's volume — this is
+// the −0.64%/curved-feature bias the display default produced against the Inventor analytic oracle.
+// Medium (the default) must land within 0.05% and High within 0.01% of the analytic value, so the
+// exporter corpus reads true volumes. If this loosens, the drift is back; do not relax the bound
+// without re-checking parity.
+func TestMassPropertiesCurvedMatchesAnalytic(t *testing.T) {
+	const r, h = 2.0, 5.0                                    // cm
+	analyticVolMm3 := math.Pi * r * r * h * 1000             // πr²h cm³ → mm³
+	analyticAreaMm2 := (2*math.Pi*r*r + 2*math.Pi*r*h) * 100 // (2 caps + side) cm² → mm²
+	cyl := func() *topo.Body {
+		b, err := brep.SolidCylinder(gmath.P3(0, 0, 0), gmath.V3(0, 0, 1), r, h)
+		if err != nil {
+			t.Fatalf("SolidCylinder: %v", err)
+		}
+		return b
+	}
+	for _, c := range []struct {
+		acc    types.MassPropertiesAccuracy
+		relTol float64
+	}{
+		{types.MassPropertiesMedium, 5e-4}, // default: parity-grade
+		{types.MassPropertiesHigh, 1e-4},
+	} {
+		mp := MassPropertiesOf([]*topo.Body{cyl()}, 1, c.acc)
+		if rel := math.Abs(mp.VolumeMm3-analyticVolMm3) / analyticVolMm3; rel > c.relTol {
+			t.Errorf("cylinder volume@%s = %.4f mm³, want %.4f (rel err %.4f%% > %.4f%%)",
+				c.acc, mp.VolumeMm3, analyticVolMm3, 100*rel, 100*c.relTol)
+		}
+		if rel := math.Abs(mp.SurfaceAreaMm2-analyticAreaMm2) / analyticAreaMm2; rel > c.relTol {
+			t.Errorf("cylinder area@%s = %.4f mm², want %.4f (rel err %.4f%% > %.4f%%)",
+				c.acc, mp.SurfaceAreaMm2, analyticAreaMm2, 100*rel, 100*c.relTol)
+		}
+	}
+}
+
 // TestMassPropertiesEmpty: no bodies yields zero properties (and no divide-by-zero centroid).
 func TestMassPropertiesEmpty(t *testing.T) {
 	mp := MassPropertiesOf(nil, 5, types.MassPropertiesMedium)

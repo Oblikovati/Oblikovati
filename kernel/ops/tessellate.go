@@ -68,6 +68,17 @@ func DefaultQuality() Quality {
 	return Quality{ChordTolerance: 0.05, AngleTolerance: 10 * stdmath.Pi / 180}
 }
 
+// PropertyQuality returns the tessellation tolerance for MASS/GEOMETRY PROPERTY readouts (volume,
+// area, centroid, inertia), which are integrated over the mesh (see BodyGeometryProperties) and so
+// need far finer faceting than the display default. An inscribed N-gon approximation of a curved
+// face under-reports its area/volume by ~π²/(3N²): the display default's ~36 facets/circle biases
+// a curved solid's volume by ~−0.64% (the recurring delta the exporter saw against Inventor's
+// analytic oracle), whereas this ~1°/360-facets tolerance holds it under ~0.01% — engineering
+// parity. Use it wherever a property value is reported, never for display (it is ~10× the facets).
+func PropertyQuality() Quality {
+	return Quality{ChordTolerance: 1e-3, AngleTolerance: 1 * stdmath.Pi / 180}
+}
+
 func (q Quality) tol() float64 {
 	if q.ChordTolerance <= 0 {
 		return DefaultQuality().ChordTolerance
