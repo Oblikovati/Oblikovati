@@ -226,6 +226,9 @@ type FaceDressData struct {
 	// path the NX exporter uses since it cannot mint Oblikovati lineage keys. Empty for an
 	// Oblikovati-authored dress-up (which uses Faces).
 	GeomFaces []GeomFaceRefData `yaml:"geomFaces,omitempty"`
+	// ShellDirection is the wall side for a shell ("outside"/"both"; absent ⇒ inside). Unused by
+	// the other dress-ups. #1864.
+	ShellDirection string `yaml:"shellDirection,omitempty"`
 }
 
 // GeomFaceRefData is the serialized form of a geometric face descriptor: the face's
