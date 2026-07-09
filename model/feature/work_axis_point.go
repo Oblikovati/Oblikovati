@@ -248,6 +248,10 @@ func (w *WorkPoint) Point() math.Point3              { return w.point }
 func (w *WorkPoint) IsCoordinateSystemElement() bool { return w.coordinateSystem }
 func (w *WorkPoint) Grounded() bool                  { return w.grounded }
 
+// Kind returns the point's constructor name (its definition's kind: "position", "two-lines",
+// "three-planes", …) — the vocabulary workPoints.list reports.
+func (w *WorkPoint) Kind() string { return w.def.kindName() }
+
 // Visible reports whether the datum point is shown; SetVisible toggles it (#1856), matching the
 // visibility a WorkPlane / WorkAxis already carries.
 func (w *WorkPoint) Visible() bool     { return w.visible }

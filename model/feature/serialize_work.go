@@ -110,7 +110,8 @@ func serializeAxisDef(def axisDefinition) (WorkFeatureData, error) {
 			Collection: "axis", Kind: def.kindName(),
 			Position: []float64{float64(p.X), float64(p.Y), float64(p.Z)}, XAxis: unitSlice(v.dir),
 		}, nil
-	case twoPointsAxisDef, planeIntersectionAxisDef:
+	case twoPointsAxisDef, planeIntersectionAxisDef,
+		pointAndPlaneAxisDef, lineAndPointAxisDef, lineAndPlaneAxisDef:
 		return WorkFeatureData{Collection: "axis", Kind: def.kindName(), Refs: refStrings(def.refs())}, nil
 	default:
 		return WorkFeatureData{}, fmt.Errorf("no codec for work axis definition %q", def.kindName())
@@ -127,7 +128,7 @@ func serializePointDef(def pointDefinition) (WorkFeatureData, error) {
 		p := v.FrozenPosition() // last good model position; the source re-derives it after relink (#645)
 		d.CloudID = v.cloudID
 		d.Position = []float64{float64(p.X), float64(p.Y), float64(p.Z)}
-	case planeAxisPointDef:
+	case planeAxisPointDef, pointRefPointDef, twoLinesPointDef, threePlanesPointDef:
 		// references only
 	default:
 		return WorkFeatureData{}, fmt.Errorf("no codec for work point definition %q", def.kindName())
@@ -280,6 +281,12 @@ func restoreAxisFeature(c *WorkAxes, d WorkFeatureData) error {
 		c.AddByTwoPoints(r[0], r[1])
 	case "plane-intersection":
 		c.AddByPlaneIntersection(r[0], r[1])
+	case "point-and-plane":
+		c.AddByPointAndPlane(r[0], r[1])
+	case "line-and-point":
+		c.AddByLineAndPoint(r[0], r[1])
+	case "line-and-plane":
+		c.AddByLineAndPlane(r[0], r[1])
 	default:
 		return fmt.Errorf("no restore codec for work axis kind %q", d.Kind)
 	}
@@ -324,6 +331,27 @@ func restorePointFeature(c *WorkPoints, d WorkFeatureData) error {
 			return err
 		}
 		c.AddByPlaneAndAxisIntersection(r[0], r[1])
+		return nil
+	case "point":
+		r, err := workRefs(d.Refs, 1)
+		if err != nil {
+			return err
+		}
+		c.AddByPoint(r[0])
+		return nil
+	case "two-lines":
+		r, err := workRefs(d.Refs, 2)
+		if err != nil {
+			return err
+		}
+		c.AddByTwoLines(r[0], r[1])
+		return nil
+	case "three-planes":
+		r, err := workRefs(d.Refs, 3)
+		if err != nil {
+			return err
+		}
+		c.AddByThreePlanes(r[0], r[1], r[2])
 		return nil
 	default:
 		return fmt.Errorf("no restore codec for work point kind %q", d.Kind)

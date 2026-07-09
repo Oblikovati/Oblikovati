@@ -40,6 +40,28 @@ func workAxisInfo(index int, wa *feature.WorkAxis) wire.WorkAxisInfo {
 	}
 }
 
+// listWorkPoints enumerates the active model's datum points (origin centre first, then user
+// points) with their position, kind, origin flag, visibility, and health (#1842).
+func listWorkPoints(_ *app.Session, host workHost) (wire.ListWorkPointsResult, error) {
+	points := projectAll(host.WorkPoints(), workPointInfo)
+	return wire.ListWorkPointsResult{Points: points}, nil
+}
+
+// workPointInfo renders one datum point as the wire DTO.
+func workPointInfo(index int, wp *feature.WorkPoint) wire.WorkPointInfo {
+	return wire.WorkPointInfo{
+		Index:    index,
+		Name:     wp.Name(),
+		Ref:      string(wp.Key()),
+		Position: point3Slice(wp.Point()),
+		IsOrigin: wp.IsCoordinateSystemElement(),
+		Visible:  wp.Visible(),
+		Healthy:  wp.Health().OK(),
+		Reason:   wp.Health().Reason, // empty when healthy
+		Kind:     wp.Kind(),
+	}
+}
+
 // buildWorkAxis dispatches a create request to the matching model constructor.
 func buildWorkAxis(host workHost, in wire.CreateWorkAxisArgs) (*feature.WorkAxis, error) {
 	axes := host.WorkAxes()
@@ -50,6 +72,12 @@ func buildWorkAxis(host workHost, in wire.CreateWorkAxisArgs) (*feature.WorkAxis
 		return addRefAxis(in, "two-points", axes.AddByTwoPoints)
 	case types.WorkAxisPlaneIntersection:
 		return addRefAxis(in, "plane-intersection", axes.AddByPlaneIntersection)
+	case types.WorkAxisPointAndPlane:
+		return addRefAxis(in, "point-and-plane", axes.AddByPointAndPlane)
+	case types.WorkAxisLineAndPoint:
+		return addRefAxis(in, "line-and-point", axes.AddByLineAndPoint)
+	case types.WorkAxisLineAndPlane:
+		return addRefAxis(in, "line-and-plane", axes.AddByLineAndPlane)
 	default:
 		return nil, fmt.Errorf("workAxes.create: unknown kind %q (see api/types WorkAxis*)", in.Kind)
 	}

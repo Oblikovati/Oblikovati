@@ -223,14 +223,31 @@ func createWorkPoint(_ *app.Session, host workHost, in wire.CreateWorkPointArgs)
 // buildWorkPoint dispatches a create request to the matching model constructor. An empty kind is
 // the position constructor, so the original position-only request (just "at") is unchanged.
 func buildWorkPoint(host workHost, in wire.CreateWorkPointArgs) (*feature.WorkPoint, error) {
+	pts := host.WorkPoints()
 	switch types.WorkPointKind(in.Kind) {
 	case "", types.WorkPointPosition:
 		return addPositionPoint(host, in)
 	case types.WorkPointPlaneAxisIntersection:
 		return addPlaneAxisPoint(host, in)
+	case types.WorkPointOnPoint:
+		return refPoint(in, 1, func(r []feature.WorkRef) *feature.WorkPoint { return pts.AddByPoint(r[0]) })
+	case types.WorkPointTwoLines:
+		return refPoint(in, 2, func(r []feature.WorkRef) *feature.WorkPoint { return pts.AddByTwoLines(r[0], r[1]) })
+	case types.WorkPointThreePlanes:
+		return refPoint(in, 3, func(r []feature.WorkRef) *feature.WorkPoint { return pts.AddByThreePlanes(r[0], r[1], r[2]) })
 	default:
 		return nil, fmt.Errorf("workPoints.create: unknown kind %q (see api/types WorkPoint*)", in.Kind)
 	}
+}
+
+// refPoint builds a reference-model work point from exactly n references, erroring on the wrong
+// count — the shared arity guard for the on-point / two-lines / three-planes kinds.
+func refPoint(in wire.CreateWorkPointArgs, n int, build func([]feature.WorkRef) *feature.WorkPoint) (*feature.WorkPoint, error) {
+	refs := toWorkRefs(in.Refs)
+	if len(refs) != n {
+		return nil, fmt.Errorf("workPoints.create: %q needs %d references, got %d", in.Kind, n, len(refs))
+	}
+	return build(refs), nil
 }
 
 // addPositionPoint builds the fixed-position point from its [x, y, z] coordinate.
