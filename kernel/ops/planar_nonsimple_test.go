@@ -4,7 +4,6 @@ package ops
 
 import (
 	"testing"
-	"time"
 
 	"oblikovati.org/math"
 )
@@ -24,44 +23,65 @@ func selfCrossingBand(n int) []math.Point2 {
 	return pts
 }
 
-// TestPlanarTrisNonSimpleBounded is the regression for the pick-path frame-starvation freeze:
-// planarTris on a self-intersecting ~264-vertex face must return a bounded triangulation quickly.
-// Before the fix (loopsSelfCross fast-path + the CDT recoverFlipWork budget) this took ~5.2 s — a
-// single such face, hover-picked every frame, starved the frame-loop dispatcher an async add-in
-// build blocks on, deadlocking placement. The ceiling is ~40x the fixed cost and ~20x under the
-// pre-fix cost, so it distinguishes fixed from broken without flaking on a slow CI host.
-func TestPlanarTrisNonSimpleBounded(t *testing.T) {
+// TestPlanarTrisNonSimpleFastPath is the regression for the pick-path frame-starvation freeze:
+// planarTris on a self-intersecting ~264-vertex face must take the loopsSelfCross fast-path and
+// skip the constrained-Delaunay entirely, returning a bounded best-effort mesh. Before the fix a
+// single such face — hover-picked every frame while an async add-in build ran — drove the CDT flip
+// recovery to O(n·T²) (~5.2 s), starving the frame-loop dispatcher and deadlocking placement. Asserted
+// on the deterministic fast-path predicate rather than wall-clock time (repeatable on any CI host).
+func TestPlanarTrisNonSimpleFastPath(t *testing.T) {
 	poly := selfCrossingBand(132) // 264 vertices
-	start := time.Now()
-	tris := planarTris(poly, nil)
-	elapsed := time.Since(start)
-	if elapsed > 250*time.Millisecond {
-		t.Fatalf("planarTris on a 264-vertex self-intersecting face took %v; want < 250ms "+
-			"(the O(n·T²) CDT flip-recovery freeze regressed)", elapsed)
+	if !loopsSelfCross(poly, nil) {
+		t.Fatal("selfCrossingBand is not detected as non-simple; the fast-path would not engage")
 	}
-	if len(tris) == 0 {
+	if tris := planarTris(poly, nil); len(tris) == 0 {
 		t.Fatal("planarTris returned no triangles for a non-simple face; want a bounded best-effort mesh")
 	}
 }
 
-// TestConstrainedDelaunayNonSimpleBounded exercises the CDT's own recoverFlipWork budget in
-// isolation — the backstop for every constrainedDelaunay caller (curved-surface (u,v) meshers,
-// conformance repair), not just planarTris' fast-path. Fed a non-simple boundary directly, the
-// triangulation must terminate quickly instead of spinning flip-recovery to O(n·T²).
-func TestConstrainedDelaunayNonSimpleBounded(t *testing.T) {
+// TestConstrainedDelaunayNonSimpleBudget exercises the CDT's own recoverFlipWork budget in isolation
+// — the backstop for every constrainedDelaunay caller (curved-surface (u,v) meshers, conformance
+// repair), not just planarTris' fast-path. Fed a non-simple boundary directly, the flip-recovery
+// budget must engage (m.overBudget), which is what caps the O(n·T²) spin and routes to the earcut
+// fallback. This is deterministic (same input → same flip sequence), unlike a wall-clock bound.
+func TestConstrainedDelaunayNonSimpleBudget(t *testing.T) {
 	poly := selfCrossingBand(132) // 264 vertices
 	pts := make([][2]float64, len(poly))
 	for i, p := range poly {
 		pts[i] = [2]float64{float64(p.X), float64(p.Y)}
 	}
 	loops := [][]int{rangeIndices(0, len(poly))}
-	start := time.Now()
-	tris := constrainedDelaunay(pts, loops)
-	if elapsed := time.Since(start); elapsed > 250*time.Millisecond {
-		t.Fatalf("constrainedDelaunay on a 264-vertex non-simple boundary took %v; want < 250ms "+
-			"(flip-recovery budget regressed)", elapsed)
+
+	m := newCDT(pts)
+	for i := 0; i < m.nsup; i++ {
+		m.insert(i)
 	}
-	_ = tris // may be empty for a fully-degenerate domain; the point is bounded time, not coverage
+	m.constrain(loops)
+	if !m.overBudget {
+		t.Fatalf("flip-recovery budget (%d) did not engage on a 264-vertex non-simple boundary; "+
+			"the O(n·T²) freeze can regress (recoverFlipWork=%d)", m.recoverBudget, m.recoverFlipWork)
+	}
+	if m.recoverFlipWork > m.recoverBudget {
+		t.Fatalf("recoverFlipWork %d exceeded budget %d", m.recoverFlipWork, m.recoverBudget)
+	}
+	// A valid convex face never trips the budget (the corridor march recovers it without recoverByFlips).
+	vm := newCDT(cvtPts(ngon2D(0, 0, 10, 64)))
+	for i := 0; i < vm.nsup; i++ {
+		vm.insert(i)
+	}
+	vm.constrain([][]int{rangeIndices(0, 64)})
+	if vm.overBudget {
+		t.Error("flip-recovery budget engaged on a valid convex n-gon; it must be invisible to valid faces")
+	}
+}
+
+// cvtPts converts a Point2 loop to the CDT's [][2]float64 form.
+func cvtPts(loop []math.Point2) [][2]float64 {
+	pts := make([][2]float64, len(loop))
+	for i, p := range loop {
+		pts[i] = [2]float64{float64(p.X), float64(p.Y)}
+	}
+	return pts
 }
 
 // TestLoopsSelfCross checks the discriminator that routes a non-simple face past the CDT: it fires
