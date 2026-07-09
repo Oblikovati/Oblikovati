@@ -12,8 +12,11 @@ import (
 
 // setWorkFeatureVisible shows or hides the datum work plane, axis, or point named by the request's
 // ref — the post-create visibility toggle Inventor exposes on every work feature (#1856). It
-// resolves the ref against the active model's work geometry (origin frame + user datums) and
-// recomputes so subscribers see the change; an unknown ref is a clean error.
+// resolves the ref against the active model's work geometry (origin frame + user datums); an
+// unknown ref is a clean error. Visibility is a display-only attribute (it changes no geometry and
+// drives no dependents), so this touches only the datum's flag — no recompute — and the mutating
+// router seam records the single undo step / edit broadcast (#1612 keeps the recompute seam out of
+// the handler).
 func setWorkFeatureVisible(_ *app.Session, host workHost, in wire.SetWorkFeatureVisibleArgs) (wire.OKResult, error) {
 	g := host.WorkGeometry()
 	ref := feature.ParseWorkRef(in.Ref)
@@ -21,7 +24,6 @@ func setWorkFeatureVisible(_ *app.Session, host workHost, in wire.SetWorkFeature
 	case setPlaneVisible(g, ref, in.Visible),
 		setAxisVisible(g, ref, in.Visible),
 		setPointVisible(g, ref, in.Visible):
-		host.Recompute()
 		return wire.OKResult{OK: true}, nil
 	default:
 		return wire.OKResult{}, fmt.Errorf("workFeatures.setVisible: no work plane, axis, or point named %q", in.Ref)
