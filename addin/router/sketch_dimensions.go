@@ -20,7 +20,11 @@ func addDimension(_ *app.Session, part *compdef.PartComponentDefinition, in wire
 	if err != nil {
 		return wire.AddDimensionResult{}, err
 	}
-	dim, err := buildDimension(sk, types.DimensionConstraintKind(in.Kind), in.Entities, in.Expression, in.FarSide)
+	orientation, ok := sketch.ParseDistanceOrientation(in.Orientation)
+	if !ok {
+		return wire.AddDimensionResult{}, fmt.Errorf("sketch.addDimension: unknown orientation %q (want aligned|horizontal|vertical)", in.Orientation)
+	}
+	dim, err := buildDimension(sk, types.DimensionConstraintKind(in.Kind), in.Entities, in.Expression, in.FarSide, orientation)
 	if err != nil {
 		return wire.AddDimensionResult{}, err
 	}
@@ -60,8 +64,9 @@ func applyDimensionEdit(part *compdef.PartComponentDefinition, dim *sketch.Dimen
 	return wire.OKResult{OK: true}, nil
 }
 
-// buildDimension resolves references and applies the matching model dimension factory.
-func buildDimension(sk *sketch.Sketch, kind types.DimensionConstraintKind, refs []uint64, expr string, farSide bool) (*sketch.DimensionConstraint, error) {
+// buildDimension resolves references and applies the matching model dimension factory. orientation
+// applies only to the distance kind (aligned/horizontal/vertical); other kinds ignore it.
+func buildDimension(sk *sketch.Sketch, kind types.DimensionConstraintKind, refs []uint64, expr string, farSide bool, orientation sketch.DistanceOrientation) (*sketch.DimensionConstraint, error) {
 	dc := sk.DimensionConstraints()
 	switch kind {
 	case types.DimConstraintDistance:
@@ -69,7 +74,7 @@ func buildDimension(sk *sketch.Sketch, kind types.DimensionConstraintKind, refs 
 		if err != nil {
 			return nil, err
 		}
-		return dc.AddDistance(a, b, expr)
+		return dc.AddDistanceOriented(a, b, expr, orientation)
 	case types.DimConstraintAngle:
 		a, b, err := twoLineRefs(sk, refs)
 		if err != nil {

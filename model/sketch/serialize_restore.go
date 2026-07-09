@@ -272,7 +272,11 @@ func (r *sketchRestorer) restoreDimension(dd DimensionData) (*DimensionConstrain
 		if err != nil {
 			return nil, err
 		}
-		return dc.AddDistance(a, b, dd.Expression)
+		o, ok := ParseDistanceOrientation(dd.Orientation)
+		if !ok {
+			return nil, fmt.Errorf("distance dimension: unknown orientation %q", dd.Orientation)
+		}
+		return dc.AddDistanceOriented(a, b, dd.Expression, o)
 	case "radius":
 		// AddRadius accepts any CircularCurve (circle or arc) — an arc radius/diameter
 		// dimension is common (esp. from CAD imports), so resolve as a circular curve,

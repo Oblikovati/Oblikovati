@@ -62,14 +62,60 @@ func (l ConstraintLimits) clamp(v float64) float64 {
 // the parameter's value (modeling/00).
 type DimensionConstraint struct {
 	constraintBase
-	kind      DimKind
-	driven    bool
-	param     *param.Parameter
-	limits    ConstraintLimits
-	measureAD adFunc1 // the measured quantity over duals; the float measure derives from it
-	vars      []*math.Scalar
-	refs      []Entity // the dimensioned geometry (points/lines/arcs), for editing + serialization
-	farSide   bool     // tangentDistance only: dimension to the far tangent point (#152)
+	kind        DimKind
+	driven      bool
+	param       *param.Parameter
+	limits      ConstraintLimits
+	measureAD   adFunc1 // the measured quantity over duals; the float measure derives from it
+	vars        []*math.Scalar
+	refs        []Entity            // the dimensioned geometry (points/lines/arcs), for editing + serialization
+	farSide     bool                // tangentDistance only: dimension to the far tangent point (#152)
+	orientation DistanceOrientation // distance only: aligned (Euclidean) / horizontal (Δx) / vertical (Δy) (#1869)
+}
+
+// DistanceOrientation selects what a two-point distance dimension measures — Inventor's
+// DimensionOrientationEnum.
+type DistanceOrientation uint8
+
+const (
+	// AlignedDistance measures the Euclidean distance |P2 − P1| (the default).
+	AlignedDistance DistanceOrientation = iota
+	// HorizontalDistance measures only the X separation |P2.x − P1.x| (the pair stays free to
+	// slide vertically).
+	HorizontalDistance
+	// VerticalDistance measures only the Y separation |P2.y − P1.y|.
+	VerticalDistance
+)
+
+// Orientation reports what a distance dimension measures (aligned for every non-distance kind).
+func (d *DimensionConstraint) Orientation() DistanceOrientation { return d.orientation }
+
+// DistanceOrientationName renders an orientation as its stable name ("" for the aligned default, so
+// the common case serializes nothing) — the vocabulary shared by the wire router and the codec.
+func DistanceOrientationName(o DistanceOrientation) string {
+	switch o {
+	case HorizontalDistance:
+		return "horizontal"
+	case VerticalDistance:
+		return "vertical"
+	default:
+		return ""
+	}
+}
+
+// ParseDistanceOrientation maps a name ("aligned"/"horizontal"/"vertical", empty ⇒ aligned) to its
+// orientation; ok is false for an unknown name.
+func ParseDistanceOrientation(name string) (DistanceOrientation, bool) {
+	switch name {
+	case "", "aligned":
+		return AlignedDistance, true
+	case "horizontal":
+		return HorizontalDistance, true
+	case "vertical":
+		return VerticalDistance, true
+	default:
+		return AlignedDistance, false
+	}
 }
 
 // FarSide reports whether a tangent-distance dimension measures to the far tangent point
@@ -174,11 +220,36 @@ func (dc *DimensionConstraints) Delete(d *DimensionConstraint) bool {
 	return false
 }
 
-// AddDistance dimensions the distance between two points to expression (e.g. "25 mm").
+// AddDistance dimensions the aligned (Euclidean) distance between two points to expression
+// (e.g. "25 mm").
 func (dc *DimensionConstraints) AddDistance(a, b *Point, expression string) (*DimensionConstraint, error) {
-	measure := func(v []ad.Number) ad.Number { return ad.V2(v[0], v[1]).Sub(ad.V2(v[2], v[3])).Length() }
+	return dc.AddDistanceOriented(a, b, expression, AlignedDistance)
+}
+
+// AddDistanceOriented dimensions the distance between two points along the chosen orientation:
+// aligned = Euclidean |P2 − P1|, horizontal = |Δx| (leaves the Y separation free), vertical = |Δy|
+// (Inventor's DimensionOrientationEnum, #1869).
+func (dc *DimensionConstraints) AddDistanceOriented(a, b *Point, expression string, o DistanceOrientation) (*DimensionConstraint, error) {
 	vars := []*math.Scalar{&a.X, &a.Y, &b.X, &b.Y}
-	return dc.create(DistanceDim, expression, []Entity{a, b}, measure, vars)
+	d, err := dc.create(DistanceDim, expression, []Entity{a, b}, distanceMeasure(o), vars)
+	if err != nil {
+		return nil, err
+	}
+	d.orientation = o
+	return d, nil
+}
+
+// distanceMeasure is the autodiff measure for a two-point distance dimension of orientation o over
+// the packed vars [a.X, a.Y, b.X, b.Y]; the solver's Jacobian follows from it automatically.
+func distanceMeasure(o DistanceOrientation) adFunc1 {
+	switch o {
+	case HorizontalDistance:
+		return func(v []ad.Number) ad.Number { return v[0].Sub(v[2]).Abs() }
+	case VerticalDistance:
+		return func(v []ad.Number) ad.Number { return v[1].Sub(v[3]).Abs() }
+	default:
+		return func(v []ad.Number) ad.Number { return ad.V2(v[0], v[1]).Sub(ad.V2(v[2], v[3])).Length() }
+	}
 }
 
 // AddRadius dimensions the radius of a circle or an arc (Inventor allows both). For

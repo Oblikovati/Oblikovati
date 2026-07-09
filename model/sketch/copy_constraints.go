@@ -244,7 +244,7 @@ func (target *Sketch) recreateCoreDimension(d *DimensionConstraint, m *cloneMap)
 	switch d.kind {
 	case DistanceDim:
 		if a, b, ok := m.refPoints2(d.refs); ok {
-			return added(dc.AddDistance(a, b, expr))
+			return added(dc.AddDistanceOriented(a, b, expr, d.orientation))
 		}
 	case AngleDim:
 		if l1, l2, ok := m.refLines2(d.refs); ok {
