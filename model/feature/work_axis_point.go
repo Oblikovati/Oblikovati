@@ -234,6 +234,7 @@ type WorkPoint struct {
 	health           health.Health
 	coordinateSystem bool
 	grounded         bool
+	visible          bool
 	seq              uint64 // global creation stamp (0 for the origin frame); see model/seq
 }
 
@@ -246,6 +247,15 @@ func (w *WorkPoint) Health() health.Health           { return w.health }
 func (w *WorkPoint) Point() math.Point3              { return w.point }
 func (w *WorkPoint) IsCoordinateSystemElement() bool { return w.coordinateSystem }
 func (w *WorkPoint) Grounded() bool                  { return w.grounded }
+
+// Kind returns the point's constructor name (its definition's kind: "position", "two-lines",
+// "three-planes", …) — the vocabulary workPoints.list reports.
+func (w *WorkPoint) Kind() string { return w.def.kindName() }
+
+// Visible reports whether the datum point is shown; SetVisible toggles it (#1856), matching the
+// visibility a WorkPlane / WorkAxis already carries.
+func (w *WorkPoint) Visible() bool     { return w.visible }
+func (w *WorkPoint) SetVisible(v bool) { w.visible = v }
 
 // recompute re-derives the point.
 func (w *WorkPoint) recompute(r workResolver) {
@@ -289,7 +299,7 @@ func (c *WorkPoints) AddByPlaneAndAxisIntersection(plane, axis WorkRef) *WorkPoi
 }
 
 func (c *WorkPoints) addUser(def pointDefinition) *WorkPoint {
-	w := &WorkPoint{id: nextID(), key: userRef("point", len(c.items)), name: "WorkPoint", def: def, seq: seq.Next()}
+	w := &WorkPoint{id: nextID(), key: userRef("point", len(c.items)), name: "WorkPoint", def: def, visible: true, seq: seq.Next()}
 	c.track(w)
 	c.g.recordUser("point", len(c.items)-1)
 	return w

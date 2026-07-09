@@ -199,9 +199,11 @@ func (r *Router) registerStandardHandlers() {
 	r.readOnly(wire.MethodWorkPlanesList, ctxQuery(activeWorkHost, listWorkPlanes))
 	r.mutating(wire.MethodWorkPlanesCreate, "Create Work Plane", typedCtx(activeWorkHost, createWorkPlanes))
 	r.mutating(wire.MethodWorkPlanesRedefine, "Redefine Work Plane", typedCtx(activeWorkHost, redefineWorkPlane))
+	r.readOnly(wire.MethodWorkPointsList, ctxQuery(activeWorkHost, listWorkPoints))
 	r.mutating(wire.MethodWorkPointsCreate, "Create Work Point", typedCtx(activeWorkHost, createWorkPoint))
 	r.readOnly(wire.MethodWorkAxesList, ctxQuery(activeWorkHost, listWorkAxes))
 	r.mutating(wire.MethodWorkAxesCreate, "Create Work Axis", typedCtx(activeWorkHost, createWorkAxis))
+	r.mutating(wire.MethodWorkFeaturesSetVisible, "Set Work Feature Visibility", typedCtx(activeWorkHost, setWorkFeatureVisible))
 
 	r.readOnly(wire.MethodWorkSurfacesList, partQuery(listWorkSurfaces))
 	r.readOnly(wire.MethodWorkSurfacesGet, typedPart(getWorkSurface))
