@@ -117,9 +117,13 @@ type WorkPlane struct {
 	coordinateSystem bool
 	grounded         bool
 	visible          bool
-	construction     bool   // hidden, consumer-tied datum (Inventor's WorkPlane.Construction, #1849)
-	deleted          bool   // tombstoned by DeleteWork: slot kept for ref stability, excluded from lists (#1855)
-	seq              uint64 // global creation stamp (0 for the origin frame); see model/seq
+	construction     bool        // hidden, consumer-tied datum (Inventor's WorkPlane.Construction, #1849)
+	deleted          bool        // tombstoned by DeleteWork: slot kept for ref stability, excluded from lists (#1855)
+	flipped          bool        // normal reversed by FlipNormal; re-applied each recompute, serialized (#1851)
+	autoResize       bool        // displayed size tracks the component box (#1851)
+	sizeC1, sizeC2   math.Point3 // explicit displayed-rectangle corners when hasSize is set (#1851)
+	hasSize          bool        // SetSize fixed the extents (overrides the displaySize square)
+	seq              uint64      // global creation stamp (0 for the origin frame); see model/seq
 
 	// paramFootprint is the dependency footprint this plane's last recompute read — for an
 	// offset/angle plane, the parameter driving its distance (its offset closure reads it
@@ -166,6 +170,41 @@ func (w *WorkPlane) Kind() string { return w.def.kindName() }
 func (w *WorkPlane) IsCoordinateSystemElement() bool { return w.coordinateSystem }
 func (w *WorkPlane) Grounded() bool                  { return w.grounded }
 
+// SetGrounded sets the datum's grounded flag (Inventor's WorkPlane.Grounded, #1851). It is a
+// user-settable associativity attribute, not the coordinate-system membership above.
+func (w *WorkPlane) SetGrounded(g bool) { w.grounded = g }
+
+// AutoResize reports/records whether the displayed size tracks the component bounding box; SetSize
+// turns it off (Inventor's WorkPlane.AutoResize, #1851).
+func (w *WorkPlane) AutoResize() bool     { return w.autoResize }
+func (w *WorkPlane) SetAutoResize(a bool) { w.autoResize = a }
+
+// FlipNormal reverses the plane's normal (Inventor's WorkPlane.FlipNormal). The flip is recorded
+// on the datum and re-applied on every recompute (see recompute), and serialized, so it survives a
+// recompute and a save/reload — the previous transient-flag attempt did not. The plane does not
+// move; only its normal reverses. #1851.
+func (w *WorkPlane) FlipNormal() { w.flipped = !w.flipped }
+
+// Flipped reports whether FlipNormal has reversed this plane's normal (#1851).
+func (w *WorkPlane) Flipped() bool { return w.flipped }
+
+// SetSize fixes the displayed rectangle to the two opposite corners c1, c2 (model cm), turning off
+// AutoResize; Size returns the current corners — the explicit pair, or a square derived from the
+// display size centred on the plane origin (Inventor's WorkPlane.Set/GetSize, #1851).
+func (w *WorkPlane) SetSize(c1, c2 math.Point3) {
+	w.sizeC1, w.sizeC2, w.hasSize, w.autoResize = c1, c2, true, false
+}
+
+// Size returns the two opposite corners of the displayed rectangle (model cm) — the explicit pair
+// set by SetSize, or the displaySize square centred on the plane origin (#1851).
+func (w *WorkPlane) Size() (math.Point3, math.Point3) {
+	if w.hasSize {
+		return w.sizeC1, w.sizeC2
+	}
+	diag := w.plane.XAxis().AsVector().Add(w.plane.YAxis().AsVector()).Scale(w.displaySize)
+	return w.plane.Origin().TranslateBy(diag.Scale(-1)), w.plane.Origin().TranslateBy(diag)
+}
+
 // Visible reports whether the datum is drawn in the viewport; SetVisible toggles it
 // (Inventor's per-work-feature Visibility). User planes are visible by default.
 func (w *WorkPlane) Visible() bool     { return w.visible }
@@ -203,7 +242,24 @@ func (w *WorkPlane) recompute(r workResolver) {
 		w.health = health.Sicken("work plane: " + err.Error())
 		return
 	}
+	if w.flipped { // re-apply the persisted normal flip every recompute (#1851)
+		p, err = flipPlaneNormal(p)
+		if err != nil {
+			w.health = health.Sicken("work plane: flip normal: " + err.Error())
+			return
+		}
+	}
 	w.plane, w.health = p, health.Healthy
+}
+
+// flipPlaneNormal returns p with its normal reversed and origin unchanged: negating the Y axis
+// flips normal = X×Y while keeping the frame right-handed (#1851).
+func flipPlaneNormal(p sketch.Plane) (sketch.Plane, error) {
+	negY, err := math.UnitVector3FromVector(p.YAxis().AsVector().Scale(-1))
+	if err != nil {
+		return sketch.Plane{}, err
+	}
+	return sketch.NewPlane(p.Origin(), p.XAxis(), negY)
 }
 
 // WorkPlanes is the part's collection of datum planes (origin first, then user). It

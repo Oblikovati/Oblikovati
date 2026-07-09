@@ -53,7 +53,10 @@ func (d *planeAndPointPlaneDef) eval(r workResolver) (sketch.Plane, error) {
 
 // twoPlanesPlaneDef bisects two planes (Inventor's AddByTwoPlanes): the dihedral-angle
 // bisector through their intersection line, or the mid-plane when they are parallel.
-type twoPlanesPlaneDef struct{ p1, p2 WorkRef }
+type twoPlanesPlaneDef struct {
+	p1, p2   WorkRef
+	quadrant *math.Point3 // solution-selection point: pick the bisector quadrant nearest it (#1844)
+}
 
 func (d *twoPlanesPlaneDef) kindName() string { return "two-planes" }
 func (d *twoPlanesPlaneDef) refs() []WorkRef  { return []WorkRef{d.p1, d.p2} }
@@ -66,7 +69,7 @@ func (d *twoPlanesPlaneDef) eval(r workResolver) (sketch.Plane, error) {
 	if err != nil {
 		return sketch.Plane{}, err
 	}
-	return bisectingPlane(p1, p2)
+	return bisectingPlane(p1, p2, d.quadrant)
 }
 
 // linePlaneAnglePlaneDef passes through a line at a given angle from a plane, swung
@@ -204,6 +207,15 @@ func (c *WorkPlanes) AddByTwoPlanes(p1, p2 WorkRef) *WorkPlane {
 	return c.addUser(&twoPlanesPlaneDef{p1: p1, p2: p2})
 }
 
+// AddByTwoPlanesToward is AddByTwoPlanes with a quadrant point selecting which of the two bisector
+// solutions (the two perpendicular dihedral bisectors) the plane lies in — the one nearest the
+// point. The choice is recorded so recompute is stable; ignored when the planes are parallel
+// (a single mid-plane). (#1844)
+func (c *WorkPlanes) AddByTwoPlanesToward(p1, p2 WorkRef, quadrant math.Point3) *WorkPlane {
+	q := quadrant
+	return c.addUser(&twoPlanesPlaneDef{p1: p1, p2: p2, quadrant: &q})
+}
+
 // AddByLinePlaneAndAngle creates a plane through line at angle (radians) from base.
 //
 //	wp := planes.AddByLinePlaneAndAngle(feature.OriginXAxis, feature.OriginXYPlane,
@@ -229,19 +241,41 @@ func (c *WorkPlanes) AddByNormalToCurve(curve, point WorkRef) *WorkPlane {
 // bisectingPlane returns the plane that bisects p1 and p2. Intersecting planes give the
 // dihedral bisector (normal n1+n2) through a point on their intersection line; parallel
 // planes give the mid-plane, parallel to both and halfway between them.
-func bisectingPlane(p1, p2 sketch.Plane) (sketch.Plane, error) {
+func bisectingPlane(p1, p2 sketch.Plane, quadrant *math.Point3) (sketch.Plane, error) {
 	origin, _, err := planeIntersectionLine(p1, p2)
 	if err != nil {
 		n1 := p1.Normal().AsVector()
 		dist := n1.Dot(p1.Origin().VectorTo(p2.Origin()))
 		mid := p1.Origin().TranslateBy(n1.Scale(dist / 2))
-		return sketch.NewPlane(mid, p1.XAxis(), p1.YAxis())
+		return sketch.NewPlane(mid, p1.XAxis(), p1.YAxis()) // parallel: single mid-plane, quadrant ignored
 	}
-	normal, err := math.UnitVector3FromVector(p1.Normal().AsVector().Add(p2.Normal().AsVector()))
-	if err != nil {
-		return sketch.Plane{}, err
+	// Intersecting planes have two perpendicular bisectors (normals n1+n2 and n1-n2). Default to the
+	// sum bisector; a quadrant point picks whichever bisector plane it lies nearest — #1844.
+	n := bisectorNormal(p1.Normal().AsVector(), p2.Normal().AsVector(), origin, quadrant)
+	return planeFromOriginNormal(origin, n)
+}
+
+// bisectorNormal returns the normal of the chosen dihedral bisector through origin: the sum
+// bisector (n1+n2) by default, or — when a quadrant point is given — whichever of the two
+// perpendicular bisectors (n1±n2) that point lies nearest (smaller point-to-plane distance) (#1844).
+func bisectorNormal(n1, n2 math.Vector3, origin math.Point3, quadrant *math.Point3) math.UnitVector3 {
+	sum, sumErr := math.UnitVector3FromVector(n1.Add(n2))
+	diff, diffErr := math.UnitVector3FromVector(n1.Sub(n2))
+	if quadrant == nil || sumErr != nil {
+		if sumErr != nil && diffErr == nil {
+			return diff
+		}
+		return sum
 	}
-	return planeFromOriginNormal(origin, normal)
+	if diffErr != nil {
+		return sum
+	}
+	rel := origin.VectorTo(*quadrant)
+	dDiff, dSum := rel.Dot(diff.AsVector()), rel.Dot(sum.AsVector())
+	if dDiff*dDiff < dSum*dSum { // |rel·diff| < |rel·sum|: the point is nearer the diff-bisector plane
+		return diff
+	}
+	return sum
 }
 
 // planeThroughLineAtAngle returns the plane that holds line and is rotated about it by

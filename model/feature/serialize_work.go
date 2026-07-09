@@ -20,18 +20,23 @@ import (
 // WorkFeatureData is the recipe form of one user work feature: which collection it
 // belongs to, its definition kind, the references it is built on, and any parameter.
 type WorkFeatureData struct {
-	Collection   string    `yaml:"collection"` // plane | axis | point
-	Kind         string    `yaml:"kind"`
-	Seq          uint64    `yaml:"seq,omitempty"`          // global creation stamp; see model/seq
-	Construction bool      `yaml:"construction,omitempty"` // hidden, consumer-tied datum (#1849)
-	Deleted      bool      `yaml:"deleted,omitempty"`      // tombstoned; slot kept for ref stability (#1855)
-	Refs         []string  `yaml:"refs,omitempty"`
-	Offset       float64   `yaml:"offset,omitempty"`   // plane-offset
-	Angle        float64   `yaml:"angle,omitempty"`    // line-plane-angle
-	Position     []float64 `yaml:"position,omitempty"` // point position / fixed-frame origin [x,y,z]
-	XAxis        []float64 `yaml:"xaxis,omitempty"`    // fixed-frame X axis [x,y,z]
-	YAxis        []float64 `yaml:"yaxis,omitempty"`    // fixed-frame Y axis [x,y,z]
-	CloudID      string    `yaml:"cloud,omitempty"`    // point-cloud-fit: the source cloud's id (provenance, #645)
+	Collection   string      `yaml:"collection"` // plane | axis | point
+	Kind         string      `yaml:"kind"`
+	Seq          uint64      `yaml:"seq,omitempty"`          // global creation stamp; see model/seq
+	Construction bool        `yaml:"construction,omitempty"` // hidden, consumer-tied datum (#1849)
+	Deleted      bool        `yaml:"deleted,omitempty"`      // tombstoned; slot kept for ref stability (#1855)
+	Flipped      bool        `yaml:"flipped,omitempty"`      // plane normal reversed by FlipNormal (#1851)
+	AutoResize   bool        `yaml:"autoResize,omitempty"`   // plane displayed size tracks the component box (#1851)
+	Grounded     bool        `yaml:"grounded,omitempty"`     // plane grounded flag (#1851)
+	SizeCorners  [][]float64 `yaml:"sizeCorners,omitempty"`  // explicit displayed-rectangle corners [x,y,z] (#1851)
+	Solution     []float64   `yaml:"solution,omitempty"`     // tangent/bisector proximity/quadrant point [x,y,z] (#1844)
+	Refs         []string    `yaml:"refs,omitempty"`
+	Offset       float64     `yaml:"offset,omitempty"`   // plane-offset
+	Angle        float64     `yaml:"angle,omitempty"`    // line-plane-angle
+	Position     []float64   `yaml:"position,omitempty"` // point position / fixed-frame origin [x,y,z]
+	XAxis        []float64   `yaml:"xaxis,omitempty"`    // fixed-frame X axis [x,y,z]
+	YAxis        []float64   `yaml:"yaxis,omitempty"`    // fixed-frame Y axis [x,y,z]
+	CloudID      string      `yaml:"cloud,omitempty"`    // point-cloud-fit: the source cloud's id (provenance, #645)
 }
 
 // MarshalWork projects the user work features into the recipe, in creation order.
@@ -47,34 +52,41 @@ func MarshalWork(g *WorkGeometry) ([]WorkFeatureData, error) {
 	return out, nil
 }
 
+// serializeWorkFeature encodes one user work feature: its definition (references, scalars, solution
+// point) plus the creation stamp and lifecycle/display flags shared across collections (#132, #1849,
+// #1855) and — for a plane — its flip/auto-resize/grounded/size display state (#1851).
 func serializeWorkFeature(g *WorkGeometry, e userEntry) (WorkFeatureData, error) {
-	d, s, c, del, err := serializeWorkDef(g, e)
-	if err != nil {
-		return WorkFeatureData{}, err
-	}
-	d.Seq, d.Construction, d.Deleted = s, c, del
-	return d, nil
-}
-
-// serializeWorkDef encodes the work feature's definition and returns its creation stamp plus its
-// construction/deleted flags, so MarshalWork persists the global order shared with sketches/
-// features (issue #132) and the lifecycle flags (#1849, #1855).
-func serializeWorkDef(g *WorkGeometry, e userEntry) (WorkFeatureData, uint64, bool, bool, error) {
 	switch e.collection {
 	case "plane":
 		w := g.planes.Item(e.index)
 		d, err := serializePlaneDef(w.def)
-		return d, w.seq, w.construction, w.deleted, err
+		if err != nil {
+			return WorkFeatureData{}, err
+		}
+		d.Seq, d.Construction, d.Deleted = w.seq, w.construction, w.deleted
+		d.Flipped, d.AutoResize, d.Grounded = w.flipped, w.autoResize, w.grounded
+		if w.hasSize {
+			d.SizeCorners = [][]float64{p3Slice(w.sizeC1), p3Slice(w.sizeC2)}
+		}
+		return d, nil
 	case "axis":
 		w := g.axes.Item(e.index)
 		d, err := serializeAxisDef(w.def)
-		return d, w.seq, w.construction, w.deleted, err
+		if err != nil {
+			return WorkFeatureData{}, err
+		}
+		d.Seq, d.Construction, d.Deleted = w.seq, w.construction, w.deleted
+		return d, nil
 	case "point":
 		w := g.points.Item(e.index)
 		d, err := serializePointDef(w.def)
-		return d, w.seq, w.construction, w.deleted, err
+		if err != nil {
+			return WorkFeatureData{}, err
+		}
+		d.Seq, d.Construction, d.Deleted = w.seq, w.construction, w.deleted
+		return d, nil
 	default:
-		return WorkFeatureData{}, 0, false, false, fmt.Errorf("unknown work collection %q", e.collection)
+		return WorkFeatureData{}, fmt.Errorf("unknown work collection %q", e.collection)
 	}
 }
 
@@ -95,9 +107,20 @@ func serializePlaneDef(def planeDefinition) (WorkFeatureData, error) {
 		d.XAxis, d.YAxis = unitSlice(v.x), unitSlice(v.y)
 	case *linePlaneAnglePlaneDef:
 		d.Angle = v.angle()
-	case *threePointPlaneDef, *planeAndPointPlaneDef, *twoPlanesPlaneDef, *twoLinesPlaneDef,
-		*lineAndPointPlaneDef, *normalToCurvePlaneDef, *torusMidPlaneDef, *pointAndTangentPlaneDef,
-		*planeAndTangentPlaneDef, *lineAndTangentPlaneDef:
+	case *twoPlanesPlaneDef:
+		if v.quadrant != nil { // persist the chosen bisector quadrant (#1844)
+			d.Solution = p3Slice(*v.quadrant)
+		}
+	case *planeAndTangentPlaneDef:
+		if v.proximity != nil { // persist the chosen tangent side (#1844)
+			d.Solution = p3Slice(*v.proximity)
+		}
+	case *lineAndTangentPlaneDef:
+		if v.proximity != nil {
+			d.Solution = p3Slice(*v.proximity)
+		}
+	case *threePointPlaneDef, *planeAndPointPlaneDef, *twoLinesPlaneDef,
+		*lineAndPointPlaneDef, *normalToCurvePlaneDef, *torusMidPlaneDef, *pointAndTangentPlaneDef:
 		// references only
 	default:
 		return WorkFeatureData{}, fmt.Errorf("no codec for work plane definition %q", def.kindName())
@@ -152,18 +175,25 @@ func ApplyWork(g *WorkGeometry, data []WorkFeatureData) error {
 	return nil
 }
 
-// restoreWorkFlags re-applies the just-restored work feature's construction/deleted flags (the
-// Add* call above created it live and visible). The restored feature is the last in its
-// collection. A deleted datum is rebuilt as a tombstone so its slot holds and surviving datums
-// keep their positional references (#1849, #1855).
+// restoreWorkFlags re-applies the just-restored work feature's lifecycle flags (construction/
+// deleted) — the Add* call above created it live and visible — and, for a plane, its flip/
+// auto-resize/grounded/size display state. The restored feature is the last in its collection. A
+// deleted datum is rebuilt as a tombstone so its slot holds and surviving datums keep their
+// positional references; a flipped plane re-applies its normal flip on the next recompute (#1849,
+// #1855, #1851).
 func restoreWorkFlags(g *WorkGeometry, d WorkFeatureData) {
-	if !d.Construction && !d.Deleted {
-		return
-	}
 	switch d.Collection {
 	case "plane":
 		w := g.planes.Item(g.planes.Count() - 1)
 		w.construction, w.deleted = d.Construction, d.Deleted
+		w.flipped, w.autoResize, w.grounded = d.Flipped, d.AutoResize, d.Grounded
+		if len(d.SizeCorners) == 2 {
+			if c1, err := point3From(d.SizeCorners[0], "plane size corner 1"); err == nil {
+				if c2, err := point3From(d.SizeCorners[1], "plane size corner 2"); err == nil {
+					w.sizeC1, w.sizeC2, w.hasSize = c1, c2, true
+				}
+			}
+		}
 	case "axis":
 		w := g.axes.Item(g.axes.Count() - 1)
 		w.construction, w.deleted = d.Construction, d.Deleted
@@ -219,7 +249,13 @@ func restorePlaneFeature(c *WorkPlanes, d WorkFeatureData) error {
 	case "plane-point":
 		return restoreRefPlane(d, 2, func(r []WorkRef) { c.AddByPlaneAndPoint(r[0], r[1]) })
 	case "two-planes":
-		return restoreRefPlane(d, 2, func(r []WorkRef) { c.AddByTwoPlanes(r[0], r[1]) })
+		return restoreRefPlane(d, 2, func(r []WorkRef) {
+			if pt, ok := solutionPoint(d); ok {
+				c.AddByTwoPlanesToward(r[0], r[1], pt)
+				return
+			}
+			c.AddByTwoPlanes(r[0], r[1])
+		})
 	case "line-plane-angle":
 		return restoreRefPlane(d, 2, func(r []WorkRef) {
 			ang := d.Angle
@@ -236,9 +272,21 @@ func restorePlaneFeature(c *WorkPlanes, d WorkFeatureData) error {
 	case "point-tangent":
 		return restoreRefPlane(d, 2, func(r []WorkRef) { c.AddByPointAndTangent(r[0], r[1]) })
 	case "plane-tangent":
-		return restoreRefPlane(d, 2, func(r []WorkRef) { c.AddByPlaneAndTangent(r[0], r[1]) })
+		return restoreRefPlane(d, 2, func(r []WorkRef) {
+			if pt, ok := solutionPoint(d); ok {
+				c.AddByPlaneAndTangentToward(r[0], r[1], pt)
+				return
+			}
+			c.AddByPlaneAndTangent(r[0], r[1])
+		})
 	case "line-tangent":
-		return restoreRefPlane(d, 2, func(r []WorkRef) { c.AddByLineAndTangent(r[0], r[1]) })
+		return restoreRefPlane(d, 2, func(r []WorkRef) {
+			if pt, ok := solutionPoint(d); ok {
+				c.AddByLineAndTangentToward(r[0], r[1], pt)
+				return
+			}
+			c.AddByLineAndTangent(r[0], r[1])
+		})
 	default:
 		return fmt.Errorf("no restore codec for work plane kind %q", d.Kind)
 	}
@@ -635,6 +683,20 @@ func workRefs(refs []string, n int) ([]WorkRef, error) {
 func unitSlice(u math.UnitVector3) []float64 {
 	v := u.AsVector()
 	return []float64{float64(v.X), float64(v.Y), float64(v.Z)}
+}
+
+// p3Slice renders a point as its [x,y,z] components for YAML.
+func p3Slice(p math.Point3) []float64 {
+	return []float64{float64(p.X), float64(p.Y), float64(p.Z)}
+}
+
+// solutionPoint returns the recipe's tangent/bisector proximity/quadrant point (and true) when one
+// was recorded, so restore rebuilds the plane with the same solution side (#1844).
+func solutionPoint(d WorkFeatureData) (math.Point3, bool) {
+	if len(d.Solution) != 3 {
+		return math.Point3{}, false
+	}
+	return math.P3(d.Solution[0], d.Solution[1], d.Solution[2]), true
 }
 
 // point3From reads a 3-component coordinate slice into a point, naming what for errors.
