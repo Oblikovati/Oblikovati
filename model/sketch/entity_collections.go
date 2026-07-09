@@ -139,9 +139,21 @@ type EllipticalArcs struct {
 	entityList[*EllipticalArc]
 }
 
-// Add creates an elliptical arc from a center, major-axis direction, the two radii, and
-// the parametric start/end angles (radians, in the major/minor frame).
-func (c *EllipticalArcs) Add(center math.Point2, majorAxis math.Vector2, majorR, minorR, start, end math.Scalar) *EllipticalArc {
+// Add creates an elliptical arc from a center, major-axis direction, the two radii, and the TRUE
+// geometric start/end angles (radians, Inventor's convention — the angle at the centre from the
+// major axis to the ray through each endpoint, #1829). They are converted to the internal parametric
+// (eccentric-anomaly) angles the arc stores. An importer that already supplies parametric angles
+// (DXF/DWG) uses [EllipticalArcs.AddParametric] instead.
+func (c *EllipticalArcs) Add(center math.Point2, majorAxis math.Vector2, majorR, minorR, startTrue, endTrue math.Scalar) *EllipticalArc {
+	aStart, aEnd := paramArcFromTrue(float64(startTrue), float64(endTrue), float64(majorR), float64(minorR))
+	return c.AddWithCenter(c.s.newPoint(center), majorAxis, majorR, minorR, math.Scalar(aStart), math.Scalar(aEnd))
+}
+
+// AddParametric creates an elliptical arc from PARAMETRIC (eccentric-anomaly) start/end angles — the
+// arc's verbatim internal representation, no true-angle conversion. For callers that already hold the
+// parametric angle: DXF/DWG ELLIPSE start/end params are eccentric-anomaly, so importing them through
+// the true-angle [EllipticalArcs.Add] would mis-place the arc.
+func (c *EllipticalArcs) AddParametric(center math.Point2, majorAxis math.Vector2, majorR, minorR, start, end math.Scalar) *EllipticalArc {
 	return c.AddWithCenter(c.s.newPoint(center), majorAxis, majorR, minorR, start, end)
 }
 
