@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
@@ -32,7 +33,9 @@ const holeSchema = `{
     "designation": {"type": "string", "description": "Thread designation, e.g. \"M5x0.8\" (type=tapped)."},
     "center": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Explicit drill point [x,y,z] in model-space cm (projected onto the picked face). Omit to drill at the face centroid. Needed to place more than one hole on a face."},
     "centerExpr": {"type": "array", "items": {"type": "string"}, "minItems": 3, "maxItems": 3, "description": "Parameter-expression form of center: [x,y,z] each an expression with units (e.g. \"L/2\"). Overrides center when present."},
-    "placementFaceGeom": {"type": "object", "description": "Select the placement face by GEOMETRY instead of faceRef, so the binding survives recompute (for an external author that cannot mint a stable key). Give either this or faceRef.", "properties": {"centroid": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Face centroid [x,y,z] cm."}, "normal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Outward unit normal [x,y,z]."}}, "required": ["centroid", "normal"]}
+    "placementFaceGeom": {"type": "object", "description": "Select the placement face by GEOMETRY instead of faceRef, so the binding survives recompute (for an external author that cannot mint a stable key). Give either this or faceRef.", "properties": {"centroid": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Face centroid [x,y,z] cm."}, "normal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Outward unit normal [x,y,z]."}}, "required": ["centroid", "normal"]},
+    "drillPoint": {"type": "string", "enum": ["flat", "angled"], "default": "flat", "description": "Blind-hole bottom: \"flat\" (disc) or \"angled\" (cone of tipAngle). Inventor's HoleDrillPointTypeEnum."},
+    "tipAngle": {"type": "string", "description": "Included angle of an \"angled\" drill point, e.g. \"118 deg\" (the default when omitted)."}
   },
   "required": ["diameter"]
 }`
@@ -63,7 +66,42 @@ func applyHole(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err := applyHolePlacementGeom(pf, in); err != nil {
 		return nil, err
 	}
+	if err := applyHoleDrillPoint(part, pf, in); err != nil {
+		return nil, err
+	}
 	return recomputeResult(part, pf)
+}
+
+// applyHoleDrillPoint sets a blind hole's conical bottom from drillPoint/tipAngle, wiring the
+// featureargs to the model's HoleDefinition.PointAngle: "flat" (or empty) keeps the flat bottom;
+// "angled" sets the included cone angle, defaulting to the standard 118° twist-drill point. #1863.
+func applyHoleDrillPoint(part *compdef.PartComponentDefinition, pf *feature.PartFeature, in featureargs.Hole) error {
+	switch strings.ToLower(strings.TrimSpace(in.DrillPoint)) {
+	case "", "flat":
+		return nil
+	case "angled":
+		angle, err := holeTipAngle(part, in.TipAngle)
+		if err != nil {
+			return err
+		}
+		hf, ok := pf.Definition().(*feature.HoleFeature)
+		if !ok {
+			return errors.New("hole: drillPoint applies only to a drilled/tapped hole")
+		}
+		hf.Definition().PointAngle = angle
+		return nil
+	default:
+		return fmt.Errorf("hole: unknown drillPoint %q (want flat|angled)", in.DrillPoint)
+	}
+}
+
+// holeTipAngle parses the drill-point included angle, defaulting to 118° (the standard twist-drill
+// point) when omitted. #1863.
+func holeTipAngle(part *compdef.PartComponentDefinition, expr string) (func() float64, error) {
+	if strings.TrimSpace(expr) == "" {
+		expr = "118 deg"
+	}
+	return angleClosure(part, expr, "hole: tipAngle")
 }
 
 // applyHolePlacementGeom binds the hole's placement face by GEOMETRY (centroid + normal) when
