@@ -26,10 +26,30 @@ func sweptSolid(sections [][]math.Point3, closedLoop bool, feat string) (*topo.B
 	if err := validateSections(sections, closedLoop); err != nil {
 		return nil, err
 	}
-	mesh := sectionMesh(sections, closedLoop, closureShift(sections, closedLoop))
+	mesh := sectionMesh(sections, closedLoop, true, closureShift(sections, closedLoop))
 	body := subd.ToBody(mesh, feat)
 	// A consistently-wound cage is either all-outward or all-inward; if the signed
 	// volume came out negative the cage is inside-out, so rebuild it face-reversed.
+	if ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume < 0 {
+		body = subd.ToBody(reverseFaces(mesh), feat)
+	}
+	return body, nil
+}
+
+// sweptShell builds an OPEN surface shell — the side walls only, with NO start/end caps — from a
+// sequence of cross-section loops, the surface-of-revolution / swept sheet for the kSurface
+// operation (#1858). For a full revolution (closedLoop) the side walls already close into a
+// watertight sheet; for a partial sweep the result is an open sheet with boundary edges at the
+// start and end sections. combine() adds it to the model as a surface body (no boolean). It shares
+// sweptSolid's cage→B-rep path but omits the cap rows, so downstream sees an open (non-solid) body.
+func sweptShell(sections [][]math.Point3, closedLoop bool, feat string) (*topo.Body, error) {
+	if err := validateSections(sections, closedLoop); err != nil {
+		return nil, err
+	}
+	mesh := sectionMesh(sections, closedLoop, false, closureShift(sections, closedLoop))
+	body := subd.ToBody(mesh, feat)
+	// A full-revolution shell is closed, so orient it outward like a solid; an open sheet's signed
+	// volume is ~0 and the flip is a harmless no-op.
 	if ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume < 0 {
 		body = subd.ToBody(reverseFaces(mesh), feat)
 	}
@@ -59,10 +79,12 @@ func validateSections(sections [][]math.Point3, closedLoop bool) error {
 }
 
 // sectionMesh assembles the cage: vertex (s,i) at index s*n+i, a quad per (segment,
-// cross-section edge), and start/end caps unless the sweep is a closed loop. wrapShift offsets
-// the cross-section index across the CLOSING segment only, so a twisted closed loft (a Möbius
-// band) joins corresponding points across the seam instead of pairing them off by the monodromy.
-func sectionMesh(sections [][]math.Point3, closedLoop bool, wrapShift int) subd.Mesh {
+// cross-section edge), and — when caps is set — start/end caps unless the sweep is a closed loop.
+// The kSurface surface-of-revolution / swept-sheet path passes caps=false for an OPEN shell (side
+// walls only); the solid path passes caps=true (#1858). wrapShift offsets the cross-section index
+// across the CLOSING segment only, so a twisted closed loft (a Möbius band) joins corresponding
+// points across the seam instead of pairing them off by the monodromy.
+func sectionMesh(sections [][]math.Point3, closedLoop, caps bool, wrapShift int) subd.Mesh {
 	k, n := len(sections), len(sections[0])
 	verts := make([]math.Point3, 0, k*n)
 	for _, s := range sections {
@@ -86,7 +108,7 @@ func sectionMesh(sections [][]math.Point3, closedLoop bool, wrapShift int) subd.
 			faces = append(faces, sideQuad(verts, a, b, c, d)...)
 		}
 	}
-	if !closedLoop {
+	if caps && !closedLoop {
 		faces = append(faces, reversedRow(0, n), row(k-1, n))
 	}
 	return subd.Mesh{Verts: verts, Faces: faces}

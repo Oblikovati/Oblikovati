@@ -88,12 +88,25 @@ func (r *RevolveFeature) Recompute(in Input) (Output, error) {
 	return Output{Bodies: bodies}, nil
 }
 
-// buildRevolveTool spins the profile into the solid of revolution, resolving the swept
-// span from the definition. The actual revolution is the shared [buildRevolveSolid] (the
-// assembly-context revolve, #735, reuses it on an assembly-space profile).
+// buildRevolveTool spins the profile into the tool body, resolving the swept span from the
+// definition. For the Surface operation (kSurfaceOperation, #1858) it revolves the profile
+// boundary into an OPEN surface of revolution (a sheet); otherwise it builds the solid of
+// revolution via the shared [buildRevolveSolid] (the assembly-context revolve, #735, reuses it).
 func (r *RevolveFeature) buildRevolveTool(prof *sketch.Profile, axis *WorkAxis) (*topo.Body, error) {
 	angle, start := revolveSpan(r.def)
-	return buildRevolveSolid(prof, r.def.Sketch.Plane(), axis, angle, start, featOr(r.featName, "revolve"))
+	plane, feat := r.def.Sketch.Plane(), featOr(r.featName, "revolve")
+	if r.def.Operation == ops.Surface {
+		return buildRevolveSheet(prof, plane, axis, angle, start, feat)
+	}
+	return buildRevolveSolid(prof, plane, axis, angle, start, feat)
+}
+
+// buildRevolveSheet revolves the profile boundary into an open surface of revolution (no caps) —
+// Inventor's Surface-operation revolve (kSurfaceOperation, #1858). Uses the faceted section sweep
+// (sweptShell), matching the faceted swept-solid path; combine() adds the result as a surface body.
+func buildRevolveSheet(prof *sketch.Profile, plane sketch.Plane, axis *WorkAxis, angle, start float64, feat string) (*topo.Body, error) {
+	sections, closed := revolveSectionsFrom(prof, plane, axis, angle, start)
+	return sweptShell(sections, closed, feat)
 }
 
 // buildRevolveSolid revolves a profile (already projected onto plane) about axis over the

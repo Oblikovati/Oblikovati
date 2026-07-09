@@ -29,7 +29,7 @@ const revolveSchema = `{
     "axisRef": {"type": "string", "description": "Work-axis reference to revolve about, e.g. \"origin/axis/y\" (default). See get_reference_keys / list_work_planes."},
     "angle": {"type": "string", "description": "Revolve angle with units, e.g. \"360 deg\"."},
     "angle2": {"type": "string", "description": "Optional second-direction sweep (opposite sense), e.g. \"30 deg\" — the two-directional revolve."},
-    "operation": {"type": "string", "enum": ["new", "join", "cut", "intersect"], "default": "new"},
+    "operation": {"type": "string", "enum": ["new", "join", "cut", "intersect", "surface"], "default": "new", "description": "Boolean against existing bodies, or \"surface\" to revolve the profile into an open surface-of-revolution (sheet) body — Inventor's kSurfaceOperation."},
     "profileSeed": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2, "description": "Select the revolved region by an interior seed point [x,y] (sketch 2-D cm) instead of profileIndex — resolved by containment on the solved sketch every recompute; wins over profileIndex."}
   },
   "required": ["sketchIndex", "angle"]
