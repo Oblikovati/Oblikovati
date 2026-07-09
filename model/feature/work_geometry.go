@@ -46,6 +46,7 @@ type workResolver interface {
 	axis(WorkRef) (*WorkAxis, error)
 	point(WorkRef) (math.Point3, error)
 	surface(WorkRef) (geom.Surface, error)
+	edge(WorkRef) (*topo.Edge, error)
 }
 
 // WorkGeometry is a part's construction-geometry frame: the static origin coordinate

@@ -64,37 +64,50 @@ func workPointInfo(index int, wp *feature.WorkPoint) wire.WorkPointInfo {
 	}
 }
 
+// axisRefCtor builds a reference-model axis from exactly its references; axisRefCtors is the table
+// of the kinds dispatched purely by reference count, keeping buildWorkAxis's body small (the
+// grounded "line" kind, which reads scalar origin/direction, stays a special case). Mirrors
+// refPlaneCtors.
+type axisRefCtor struct {
+	arity int
+	build func(*feature.WorkAxes, []feature.WorkRef) *feature.WorkAxis
+}
+
+var axisRefCtors = map[types.WorkAxisKind]axisRefCtor{
+	types.WorkAxisTwoPoints: {2, func(a *feature.WorkAxes, r []feature.WorkRef) *feature.WorkAxis { return a.AddByTwoPoints(r[0], r[1]) }},
+	types.WorkAxisPlaneIntersection: {2, func(a *feature.WorkAxes, r []feature.WorkRef) *feature.WorkAxis {
+		return a.AddByPlaneIntersection(r[0], r[1])
+	}},
+	types.WorkAxisPointAndPlane: {2, func(a *feature.WorkAxes, r []feature.WorkRef) *feature.WorkAxis {
+		return a.AddByPointAndPlane(r[0], r[1])
+	}},
+	types.WorkAxisLineAndPoint: {2, func(a *feature.WorkAxes, r []feature.WorkRef) *feature.WorkAxis {
+		return a.AddByLineAndPoint(r[0], r[1])
+	}},
+	types.WorkAxisLineAndPlane: {2, func(a *feature.WorkAxes, r []feature.WorkRef) *feature.WorkAxis {
+		return a.AddByLineAndPlane(r[0], r[1])
+	}},
+	types.WorkAxisRevolvedFace: {1, func(a *feature.WorkAxes, r []feature.WorkRef) *feature.WorkAxis { return a.AddByRevolvedFace(r[0]) }},
+	types.WorkAxisAnalyticEdge: {1, func(a *feature.WorkAxes, r []feature.WorkRef) *feature.WorkAxis { return a.AddByAnalyticEdge(r[0]) }},
+	types.WorkAxisLineByEntity: {1, func(a *feature.WorkAxes, r []feature.WorkRef) *feature.WorkAxis { return a.AddByLineByEntity(r[0]) }},
+}
+
 // buildWorkAxis dispatches a create request to the matching model constructor.
 func buildWorkAxis(host workHost, in wire.CreateWorkAxisArgs) (*feature.WorkAxis, error) {
 	axes := host.WorkAxes()
-	switch types.WorkAxisKind(in.Kind) {
-	case types.WorkAxisLine:
+	kind := types.WorkAxisKind(in.Kind)
+	if kind == types.WorkAxisLine {
 		return addLineAxis(axes, in)
-	case types.WorkAxisTwoPoints:
-		return addRefAxis(in, "two-points", axes.AddByTwoPoints)
-	case types.WorkAxisPlaneIntersection:
-		return addRefAxis(in, "plane-intersection", axes.AddByPlaneIntersection)
-	case types.WorkAxisPointAndPlane:
-		return addRefAxis(in, "point-and-plane", axes.AddByPointAndPlane)
-	case types.WorkAxisLineAndPoint:
-		return addRefAxis(in, "line-and-point", axes.AddByLineAndPoint)
-	case types.WorkAxisLineAndPlane:
-		return addRefAxis(in, "line-and-plane", axes.AddByLineAndPlane)
-	case types.WorkAxisRevolvedFace:
-		return addFaceAxis(in, axes.AddByRevolvedFace)
-	default:
+	}
+	c, ok := axisRefCtors[kind]
+	if !ok {
 		return nil, fmt.Errorf("workAxes.create: unknown kind %q (see api/types WorkAxis*)", in.Kind)
 	}
-}
-
-// addFaceAxis builds a single-face axis kind (revolved-face) from exactly one face reference,
-// erroring on the wrong count (#1840).
-func addFaceAxis(in wire.CreateWorkAxisArgs, build func(feature.WorkRef) *feature.WorkAxis) (*feature.WorkAxis, error) {
 	refs := toWorkRefs(in.Refs)
-	if len(refs) != 1 {
-		return nil, fmt.Errorf("workAxes.create: revolved-face needs 1 reference (a face), got %d", len(refs))
+	if len(refs) != c.arity {
+		return nil, fmt.Errorf("workAxes.create: %s needs %d references, got %d", in.Kind, c.arity, len(refs))
 	}
-	return build(refs[0]), nil
+	return c.build(axes, refs), nil
 }
 
 // addLineAxis builds the grounded "line" axis from its origin point and direction vector.
@@ -108,14 +121,4 @@ func addLineAxis(axes *feature.WorkAxes, in wire.CreateWorkAxisArgs) (*feature.W
 		return nil, err
 	}
 	return axes.AddByLine(math.P3(origin[0], origin[1], origin[2]), dir), nil
-}
-
-// addRefAxis builds a two-reference axis kind (two-points / plane-intersection) from exactly two
-// work references, erroring on the wrong count.
-func addRefAxis(in wire.CreateWorkAxisArgs, kind string, build func(a, b feature.WorkRef) *feature.WorkAxis) (*feature.WorkAxis, error) {
-	refs := toWorkRefs(in.Refs)
-	if len(refs) != 2 {
-		return nil, fmt.Errorf("workAxes.create: %s needs 2 references, got %d", kind, len(refs))
-	}
-	return build(refs[0], refs[1]), nil
 }

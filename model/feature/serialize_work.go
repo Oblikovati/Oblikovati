@@ -137,7 +137,7 @@ func serializeAxisDef(def axisDefinition) (WorkFeatureData, error) {
 			Position: []float64{float64(p.X), float64(p.Y), float64(p.Z)}, XAxis: unitSlice(v.dir),
 		}, nil
 	case twoPointsAxisDef, planeIntersectionAxisDef,
-		pointAndPlaneAxisDef, lineAndPointAxisDef, lineAndPlaneAxisDef, revolvedFaceAxisDef:
+		pointAndPlaneAxisDef, lineAndPointAxisDef, lineAndPlaneAxisDef, revolvedFaceAxisDef, edgeAxisDef:
 		return WorkFeatureData{Collection: "axis", Kind: def.kindName(), Refs: refStrings(def.refs())}, nil
 	default:
 		return WorkFeatureData{}, fmt.Errorf("no codec for work axis definition %q", def.kindName())
@@ -154,7 +154,8 @@ func serializePointDef(def pointDefinition) (WorkFeatureData, error) {
 		p := v.FrozenPosition() // last good model position; the source re-derives it after relink (#645)
 		d.CloudID = v.cloudID
 		d.Position = []float64{float64(p.X), float64(p.Y), float64(p.Z)}
-	case planeAxisPointDef, pointRefPointDef, twoLinesPointDef, threePlanesPointDef, faceCenterPointDef:
+	case planeAxisPointDef, pointRefPointDef, twoLinesPointDef, threePlanesPointDef, faceCenterPointDef,
+		edgeMidpointPointDef:
 		// references only
 	default:
 		return WorkFeatureData{}, fmt.Errorf("no codec for work point definition %q", def.kindName())
@@ -345,12 +346,20 @@ func restoreAxisFeature(c *WorkAxes, d WorkFeatureData) error {
 	if d.Kind == "line" { // grounded axis: rebuilt from its origin + direction, no references
 		return restoreLineAxis(c, d)
 	}
-	if d.Kind == "revolved-face" { // single face reference (#1840)
+	switch d.Kind { // single-reference axis kinds (a face or an edge) — #1840
+	case "revolved-face", "analytic-edge", "line-by-entity":
 		r, err := workRefs(d.Refs, 1)
 		if err != nil {
 			return err
 		}
-		c.AddByRevolvedFace(r[0])
+		switch d.Kind {
+		case "revolved-face":
+			c.AddByRevolvedFace(r[0])
+		case "analytic-edge":
+			c.AddByAnalyticEdge(r[0])
+		case "line-by-entity":
+			c.AddByLineByEntity(r[0])
+		}
 		return nil
 	}
 	r, err := workRefs(d.Refs, 2)
@@ -440,6 +449,13 @@ func restorePointFeature(c *WorkPoints, d WorkFeatureData) error {
 			return err
 		}
 		c.AddByFaceCenter(r[0])
+		return nil
+	case "edge-midpoint":
+		r, err := workRefs(d.Refs, 1)
+		if err != nil {
+			return err
+		}
+		c.AddByMidpointOfEdge(r[0])
 		return nil
 	default:
 		return fmt.Errorf("no restore codec for work point kind %q", d.Kind)
