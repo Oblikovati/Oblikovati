@@ -26,7 +26,7 @@ func sweptSolid(sections [][]math.Point3, closedLoop bool, feat string) (*topo.B
 	if err := validateSections(sections, closedLoop); err != nil {
 		return nil, err
 	}
-	mesh := sectionMesh(sections, closedLoop, closureShift(sections, closedLoop))
+	mesh := sectionMesh(sections, closedLoop, true, closureShift(sections, closedLoop))
 	body := subd.ToBody(mesh, feat)
 	// A consistently-wound cage is either all-outward or all-inward; if the signed
 	// volume came out negative the cage is inside-out, so rebuild it face-reversed.
@@ -46,7 +46,7 @@ func sweptShell(sections [][]math.Point3, closedLoop bool, feat string) (*topo.B
 	if err := validateSections(sections, closedLoop); err != nil {
 		return nil, err
 	}
-	mesh := sectionSideMesh(sections, closedLoop, closureShift(sections, closedLoop))
+	mesh := sectionMesh(sections, closedLoop, false, closureShift(sections, closedLoop))
 	body := subd.ToBody(mesh, feat)
 	// A full-revolution shell is closed, so orient it outward like a solid; an open sheet's signed
 	// volume is ~0 and the flip is a harmless no-op.
@@ -54,35 +54,6 @@ func sweptShell(sections [][]math.Point3, closedLoop bool, feat string) (*topo.B
 		body = subd.ToBody(reverseFaces(mesh), feat)
 	}
 	return body, nil
-}
-
-// sectionSideMesh is sectionMesh's cage WITHOUT the start/end cap rows — the side walls only, for
-// the open surface shell sweptShell builds (#1858).
-func sectionSideMesh(sections [][]math.Point3, closedLoop bool, wrapShift int) subd.Mesh {
-	k, n := len(sections), len(sections[0])
-	verts := make([]math.Point3, 0, k*n)
-	for _, s := range sections {
-		verts = append(verts, s...)
-	}
-	segs := k - 1
-	if closedLoop {
-		segs = k
-	}
-	var faces [][]int
-	for s := 0; s < segs; s++ {
-		ns := (s + 1) % k
-		shift := 0
-		if closedLoop && ns == 0 {
-			shift = wrapShift
-		}
-		for i := 0; i < n; i++ {
-			j := (i + 1) % n
-			a, b := s*n+i, s*n+j
-			c, d := ns*n+(j+shift)%n, ns*n+(i+shift)%n
-			faces = append(faces, sideQuad(verts, a, b, c, d)...)
-		}
-	}
-	return subd.Mesh{Verts: verts, Faces: faces}
 }
 
 // validateSections rejects inputs that cannot form a solid: fewer than two sections
@@ -108,10 +79,12 @@ func validateSections(sections [][]math.Point3, closedLoop bool) error {
 }
 
 // sectionMesh assembles the cage: vertex (s,i) at index s*n+i, a quad per (segment,
-// cross-section edge), and start/end caps unless the sweep is a closed loop. wrapShift offsets
-// the cross-section index across the CLOSING segment only, so a twisted closed loft (a Möbius
-// band) joins corresponding points across the seam instead of pairing them off by the monodromy.
-func sectionMesh(sections [][]math.Point3, closedLoop bool, wrapShift int) subd.Mesh {
+// cross-section edge), and — when caps is set — start/end caps unless the sweep is a closed loop.
+// The kSurface surface-of-revolution / swept-sheet path passes caps=false for an OPEN shell (side
+// walls only); the solid path passes caps=true (#1858). wrapShift offsets the cross-section index
+// across the CLOSING segment only, so a twisted closed loft (a Möbius band) joins corresponding
+// points across the seam instead of pairing them off by the monodromy.
+func sectionMesh(sections [][]math.Point3, closedLoop, caps bool, wrapShift int) subd.Mesh {
 	k, n := len(sections), len(sections[0])
 	verts := make([]math.Point3, 0, k*n)
 	for _, s := range sections {
@@ -135,7 +108,7 @@ func sectionMesh(sections [][]math.Point3, closedLoop bool, wrapShift int) subd.
 			faces = append(faces, sideQuad(verts, a, b, c, d)...)
 		}
 	}
-	if !closedLoop {
+	if caps && !closedLoop {
 		faces = append(faces, reversedRow(0, n), row(k-1, n))
 	}
 	return subd.Mesh{Verts: verts, Faces: faces}
