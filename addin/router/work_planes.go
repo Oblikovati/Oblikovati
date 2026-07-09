@@ -73,12 +73,21 @@ func workPlaneInfo(host workHost, wp *feature.WorkPlane, index int) wire.WorkPla
 		IsOrigin:     wp.IsCoordinateSystemElement(),
 		Visible:      wp.Visible(),
 		Construction: wp.Construction(),
+		AutoResize:   wp.AutoResize(),
+		Grounded:     wp.Grounded(),
+		Size:         planeSizeCorners(wp),
 		Healthy:      wp.Health().OK(),
 		Reason:       wp.Health().Reason, // empty when healthy
 		Kind:         wp.Kind(),
 		Scalars:      workPlaneScalars(host, wp),
 		Slots:        workPlaneSlots(wp),
 	}
+}
+
+// planeSizeCorners renders the plane's displayed rectangle as its two opposite corners (#1851).
+func planeSizeCorners(wp *feature.WorkPlane) [][]float64 {
+	c1, c2 := wp.Size()
+	return [][]float64{point3Slice(c1), point3Slice(c2)}
 }
 
 // workPlaneScalars renders the plane's editable scalars with their value in the document's
@@ -131,8 +140,54 @@ func redefineWorkPlane(_ *app.Session, host workHost, in wire.RedefineWorkPlaneA
 		restore()
 		return wire.RedefineWorkPlaneResult{}, err
 	}
+	if err := applyDisplayEdits(wp, in); err != nil {
+		restore()
+		return wire.RedefineWorkPlaneResult{}, err
+	}
 	host.Recompute()
 	return wire.RedefineWorkPlaneResult{Plane: workPlaneInfo(host, wp, in.Index)}, nil
+}
+
+// applyDisplayEdits applies the redefine's display/associativity edits — auto-resize, grounded, and
+// the fixed displayed size (two corners) — to a user work plane; SetSize turns off auto-resize
+// (#1851).
+func applyDisplayEdits(wp *feature.WorkPlane, in wire.RedefineWorkPlaneArgs) error {
+	if in.AutoResize != nil {
+		wp.SetAutoResize(*in.AutoResize)
+	}
+	if in.Grounded != nil {
+		wp.SetGrounded(*in.Grounded)
+	}
+	if len(in.Size) == 0 {
+		return nil
+	}
+	if len(in.Size) != 2 {
+		return fmt.Errorf("workPlanes.redefine: size needs 2 corner points, got %d", len(in.Size))
+	}
+	c1, err := parseCoords(in.Size[0], "workPlanes.redefine: size corner 1")
+	if err != nil {
+		return err
+	}
+	c2, err := parseCoords(in.Size[1], "workPlanes.redefine: size corner 2")
+	if err != nil {
+		return err
+	}
+	wp.SetSize(math.P3(c1[0], c1[1], c1[2]), math.P3(c2[0], c2[1], c2[2]))
+	return nil
+}
+
+// flipWorkPlaneNormal reverses the normal of a placed user work plane by its index and recomputes;
+// the flip is recorded on the datum and persists. It fails on a bad index or an origin plane. Like
+// createWorkPlanes it self-orchestrates the work-geometry recompute (audit B1); the mutating router
+// seam records the undo step / edit broadcast (#1851).
+func flipWorkPlaneNormal(_ *app.Session, host workHost, in wire.FlipWorkPlaneArgs) (wire.FlipWorkPlaneResult, error) {
+	wp, err := userWorkPlane(host, in.Index)
+	if err != nil {
+		return wire.FlipWorkPlaneResult{}, err
+	}
+	wp.FlipNormal()
+	host.Recompute()
+	return wire.FlipWorkPlaneResult{Plane: workPlaneInfo(host, wp, in.Index)}, nil
 }
 
 // userWorkPlane resolves a redefine index to a user (non-origin) work plane.
@@ -360,6 +415,9 @@ func buildWorkPlane(host workHost, in wire.CreateWorkPlaneArgs) (*feature.WorkPl
 	planes := host.WorkPlanes()
 	refs := toWorkRefs(in.Refs)
 	kind := types.WorkPlaneKind(in.Kind)
+	if wp, handled, err := addSolutionPlane(planes, kind, refs, in); handled {
+		return wp, err
+	}
 	if c, ok := refPlaneCtors[kind]; ok {
 		if len(refs) != c.arity {
 			return nil, fmt.Errorf("workPlanes.create: %s needs %d references, got %d", in.Kind, c.arity, len(refs))
@@ -375,6 +433,41 @@ func buildWorkPlane(host workHost, in wire.CreateWorkPlaneArgs) (*feature.WorkPl
 		return addFixedWorkPlane(host.WorkPlanes(), in)
 	default:
 		return nil, fmt.Errorf("workPlanes.create: unknown kind %q (see api/types WorkPlane*)", in.Kind)
+	}
+}
+
+// addSolutionPlane handles the tangent/bisector kinds when a proximity (tangent) or quadrant
+// (two-planes) point is supplied, threading it to the ...Toward constructor so the chosen side is
+// recorded. It returns handled=false — so buildWorkPlane falls through to the default constructor —
+// for any other kind or when no solution point is given (#1844).
+func addSolutionPlane(planes *feature.WorkPlanes, kind types.WorkPlaneKind, refs []feature.WorkRef, in wire.CreateWorkPlaneArgs) (*feature.WorkPlane, bool, error) {
+	var raw []float64
+	switch kind {
+	case types.WorkPlaneTwoPlanes:
+		raw = in.Quadrant
+	case types.WorkPlanePlaneAndTangent, types.WorkPlaneLineAndTangent:
+		raw = in.Proximity
+	default:
+		return nil, false, nil
+	}
+	if len(raw) == 0 {
+		return nil, false, nil // no solution point → default constructor
+	}
+	coords, err := parseCoords(raw, fmt.Sprintf("workPlanes.create: %s solution point", kind))
+	if err != nil {
+		return nil, true, err
+	}
+	if len(refs) != 2 {
+		return nil, true, fmt.Errorf("workPlanes.create: %s needs 2 references, got %d", kind, len(refs))
+	}
+	p := math.P3(coords[0], coords[1], coords[2])
+	switch kind {
+	case types.WorkPlaneTwoPlanes:
+		return planes.AddByTwoPlanesToward(refs[0], refs[1], p), true, nil
+	case types.WorkPlanePlaneAndTangent:
+		return planes.AddByPlaneAndTangentToward(refs[0], refs[1], p), true, nil
+	default: // WorkPlaneLineAndTangent
+		return planes.AddByLineAndTangentToward(refs[0], refs[1], p), true, nil
 	}
 }
 

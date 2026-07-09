@@ -63,7 +63,10 @@ func (d *pointAndTangentPlaneDef) eval(r workResolver) (sketch.Plane, error) {
 // planeAndTangentPlaneDef is parallel to a reference plane and tangent to the surface
 // (Inventor's AddByPlaneAndTangent). Closed-form for cylinders and spheres; other
 // surfaces report a Sick reason.
-type planeAndTangentPlaneDef struct{ base, face WorkRef }
+type planeAndTangentPlaneDef struct {
+	base, face WorkRef
+	proximity  *math.Point3 // solution-selection point: pick the tangent side nearest it (#1844)
+}
 
 func (d *planeAndTangentPlaneDef) kindName() string { return "plane-tangent" }
 func (d *planeAndTangentPlaneDef) refs() []WorkRef  { return []WorkRef{d.base, d.face} }
@@ -76,14 +79,17 @@ func (d *planeAndTangentPlaneDef) eval(r workResolver) (sketch.Plane, error) {
 	if err != nil {
 		return sketch.Plane{}, err
 	}
-	return planeParallelTangent(base, s)
+	return planeParallelTangent(base, s, d.proximity)
 }
 
 // lineAndTangentPlaneDef holds a line and is tangent to the surface (Inventor's
 // AddByLineAndTangent). Closed-form for a cylindrical face whose axis is parallel to the
 // line (the canonical case — a datum through an edge, tangent to a round); other
 // configurations report a Sick reason.
-type lineAndTangentPlaneDef struct{ line, face WorkRef }
+type lineAndTangentPlaneDef struct {
+	line, face WorkRef
+	proximity  *math.Point3 // solution-selection point: pick the tangent side nearest it (#1844)
+}
 
 func (d *lineAndTangentPlaneDef) kindName() string { return "line-tangent" }
 func (d *lineAndTangentPlaneDef) refs() []WorkRef  { return []WorkRef{d.line, d.face} }
@@ -96,7 +102,7 @@ func (d *lineAndTangentPlaneDef) eval(r workResolver) (sketch.Plane, error) {
 	if err != nil {
 		return sketch.Plane{}, err
 	}
-	return planeThroughLineTangent(line, s)
+	return planeThroughLineTangent(line, s, d.proximity)
 }
 
 // AddByTorusMidPlane creates the mid-plane of the torus face.
@@ -121,12 +127,28 @@ func (c *WorkPlanes) AddByPlaneAndTangent(base, face WorkRef) *WorkPlane {
 	return c.addUser(&planeAndTangentPlaneDef{base: base, face: face})
 }
 
+// AddByPlaneAndTangentToward is AddByPlaneAndTangent with a proximity point selecting which of the
+// two tangent solutions (which side of the cylinder/sphere) the plane sits on — the side nearest the
+// point. The choice is recorded on the definition so recompute is stable (#1844).
+func (c *WorkPlanes) AddByPlaneAndTangentToward(base, face WorkRef, proximity math.Point3) *WorkPlane {
+	p := proximity
+	return c.addUser(&planeAndTangentPlaneDef{base: base, face: face, proximity: &p})
+}
+
 // AddByLineAndTangent creates a plane through line and tangent to the surface (a
 // cylinder whose axis is parallel to the line).
 //
 //	wp := planes.AddByLineAndTangent(edgeAxis.Key(), feature.FaceRef(cylKey))
 func (c *WorkPlanes) AddByLineAndTangent(line, face WorkRef) *WorkPlane {
 	return c.addUser(&lineAndTangentPlaneDef{line: line, face: face})
+}
+
+// AddByLineAndTangentToward is AddByLineAndTangent with a proximity point selecting which of the two
+// tangent solutions the plane sits on — the side whose contact line is nearest the point. The choice
+// is recorded on the definition so recompute is stable (#1844).
+func (c *WorkPlanes) AddByLineAndTangentToward(line, face WorkRef, proximity math.Point3) *WorkPlane {
+	p := proximity
+	return c.addUser(&lineAndTangentPlaneDef{line: line, face: face, proximity: &p})
 }
 
 // FaceRef encodes a B-rep face's persistent reference key as a WorkRef, for the
@@ -188,28 +210,59 @@ func torusNormalAtPoint(t geom.Torus, p math.Point3) (math.UnitVector3, error) {
 // to the surface. For a cylinder the reference normal must be perpendicular to the axis
 // (otherwise no parallel plane is tangent along a line); the tangent point is on the +N
 // side of the axis/centre (the opposite tangent is the −N plane).
-func planeParallelTangent(base sketch.Plane, s geom.Surface) (sketch.Plane, error) {
+func planeParallelTangent(base sketch.Plane, s geom.Surface, proximity *math.Point3) (sketch.Plane, error) {
 	n := base.Normal().AsVector()
+	var center math.Point3
 	switch g := s.(type) {
 	case geom.Cylinder:
 		if !math.IsNearZero(n.Dot(g.AxisDir.AsVector()), math.DefaultTolerance) {
 			return sketch.Plane{}, fmt.Errorf("reference plane is not parallel to the cylinder axis")
 		}
-		origin := g.Origin.TranslateBy(n.Scale(g.Radius))
-		return sketch.NewPlane(origin, base.XAxis(), base.YAxis())
+		center = g.Origin
 	case geom.Sphere:
-		origin := g.Center.TranslateBy(n.Scale(g.Radius))
-		return sketch.NewPlane(origin, base.XAxis(), base.YAxis())
+		center = g.Center
 	default:
 		return sketch.Plane{}, fmt.Errorf("plane tangent to a %T is supported for cylinders and spheres only", s)
 	}
+	radius := surfaceRadius(s)
+	// Two tangent solutions, at center ± n·radius; pick the one whose tangent point is nearest the
+	// proximity point (default +n·radius when none is given) — #1844.
+	sign := tangentSideSign(center, n, radius, proximity)
+	origin := center.TranslateBy(n.Scale(sign * radius))
+	return sketch.NewPlane(origin, base.XAxis(), base.YAxis())
+}
+
+// surfaceRadius returns the radius of a cylinder or sphere surface.
+func surfaceRadius(s geom.Surface) float64 {
+	switch g := s.(type) {
+	case geom.Cylinder:
+		return g.Radius
+	case geom.Sphere:
+		return g.Radius
+	default:
+		return 0
+	}
+}
+
+// tangentSideSign returns +1 or -1 for the tangent point (center ± dir·radius) nearest proximity;
+// +1 (Inventor's arbitrary default) when no proximity point is supplied (#1844).
+func tangentSideSign(center math.Point3, dir math.Vector3, radius float64, proximity *math.Point3) float64 {
+	if proximity == nil {
+		return 1
+	}
+	plus := center.TranslateBy(dir.Scale(radius))
+	minus := center.TranslateBy(dir.Scale(-radius))
+	if proximity.VectorTo(minus).LengthSquared() < proximity.VectorTo(plus).LengthSquared() {
+		return -1
+	}
+	return 1
 }
 
 // planeThroughLineTangent returns the plane that holds the line and is tangent to the
 // surface. Supported for a cylinder whose axis is parallel to the line; the tangent is
 // solved in the cross-section (a tangent line from the line's projection to the radius
 // circle), so the line must lie outside the cylinder.
-func planeThroughLineTangent(line *WorkAxis, s geom.Surface) (sketch.Plane, error) {
+func planeThroughLineTangent(line *WorkAxis, s geom.Surface, proximity *math.Point3) (sketch.Plane, error) {
 	g, ok := s.(geom.Cylinder)
 	if !ok {
 		return sketch.Plane{}, fmt.Errorf("tangent-to-line work plane supports cylindrical faces only, got %T", s)
@@ -218,29 +271,55 @@ func planeThroughLineTangent(line *WorkAxis, s geom.Surface) (sketch.Plane, erro
 		return sketch.Plane{}, fmt.Errorf("the line must be parallel to the cylinder axis")
 	}
 	a := line.Origin()
-	normal, err := cylinderTangentNormal(a, g)
+	m1, m2, err := cylinderTangentNormals(a, g)
 	if err != nil {
 		return sketch.Plane{}, err
+	}
+	// The two tangent solutions touch the cylinder at axisFoot + R·m; pick the contact nearest the
+	// proximity point (default m1 when none is given) — #1844.
+	foot := cylinderAxisFoot(a, g)
+	normal := m1
+	if proximity != nil {
+		t1 := foot.TranslateBy(m1.AsVector().Scale(g.Radius))
+		t2 := foot.TranslateBy(m2.AsVector().Scale(g.Radius))
+		if proximity.VectorTo(t2).LengthSquared() < proximity.VectorTo(t1).LengthSquared() {
+			normal = m2
+		}
 	}
 	return planeFromOriginNormal(a, normal)
 }
 
-// cylinderTangentNormal returns the normal of the plane that holds the axis-parallel line
-// through a and is tangent to the cylinder — solved in the cross-section as a tangent line
-// from a's projection to the radius circle (the line must lie outside the cylinder).
-func cylinderTangentNormal(a math.Point3, g geom.Cylinder) (math.UnitVector3, error) {
+// cylinderAxisFoot returns the point on the cylinder axis level with a (a projected onto the axis).
+func cylinderAxisFoot(a math.Point3, g geom.Cylinder) math.Point3 {
+	rel := g.Origin.VectorTo(a)
+	return g.Origin.TranslateBy(g.AxisDir.AsVector().Scale(rel.Dot(g.AxisDir.AsVector())))
+}
+
+// cylinderTangentNormals returns the two normals of the planes that hold the axis-parallel line
+// through a and are tangent to the cylinder — solved in the cross-section as the two tangent lines
+// from a's projection to the radius circle (the line must lie outside the cylinder). They are
+// symmetric about the a-direction: u·cosA ± w·sinA.
+func cylinderTangentNormals(a math.Point3, g geom.Cylinder) (math.UnitVector3, math.UnitVector3, error) {
 	rel := g.Origin.VectorTo(a)
 	perp := rel.Sub(g.AxisDir.AsVector().Scale(rel.Dot(g.AxisDir.AsVector())))
 	d := perp.Length()
 	if d < g.Radius-math.DefaultTolerance {
-		return math.UnitVector3{}, fmt.Errorf("the line is inside the cylinder (offset %g < radius %g); no tangent plane", d, g.Radius)
+		return math.UnitVector3{}, math.UnitVector3{}, fmt.Errorf("the line is inside the cylinder (offset %g < radius %g); no tangent plane", d, g.Radius)
 	}
 	u, err := math.UnitVector3FromVector(perp)
 	if err != nil {
-		return math.UnitVector3{}, fmt.Errorf("the line is on the cylinder axis; the tangent plane is undefined")
+		return math.UnitVector3{}, math.UnitVector3{}, fmt.Errorf("the line is on the cylinder axis; the tangent plane is undefined")
 	}
 	w := g.AxisDir.Cross(u)
 	cosA := g.Radius / d
 	sinA := stdmath.Sqrt(stdmath.Max(0, 1-cosA*cosA))
-	return math.UnitVector3FromVector(u.AsVector().Scale(cosA).Add(w.Scale(sinA)))
+	m1, err := math.UnitVector3FromVector(u.AsVector().Scale(cosA).Add(w.Scale(sinA)))
+	if err != nil {
+		return math.UnitVector3{}, math.UnitVector3{}, err
+	}
+	m2, err := math.UnitVector3FromVector(u.AsVector().Scale(cosA).Sub(w.Scale(sinA)))
+	if err != nil {
+		return math.UnitVector3{}, math.UnitVector3{}, err
+	}
+	return m1, m2, nil
 }
