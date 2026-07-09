@@ -75,16 +75,30 @@ func TestExtrudeToFaceGeomFlippedNormalBinds(t *testing.T) {
 	}
 }
 
-// TestExtrudeToFaceGeomNoMatchErrors: a geometric target that matches no face on the body is a
-// clear error, not a silent no-op — the same "defensible or lost" rule the geom selectors use.
-func TestExtrudeToFaceGeomNoMatchErrors(t *testing.T) {
+// TestExtrudeToFaceGeomNoMatchDegradesGracefully: a geometric target that matches no face on the
+// body degrades to an UNHEALTHY feature (healthy:false with a clear reason), NOT a hard error that
+// aborts the operation — the hole's lost-placement-face pattern. A batch author (the exporter,
+// reading an under-built base whose target face never formed) can then flag the feature and keep
+// emitting the rest of the part instead of failing the whole document.
+func TestExtrudeToFaceGeomNoMatchDegradesGracefully(t *testing.T) {
 	byGeom := seedToFaceVolume(t)
 	args, _ := json.Marshal(map[string]any{
 		"sketchIndex": 1, "profileIndex": 0, "extent": "to-face", "operation": "new",
 		"toFaceGeom": map[string]any{"centroid": []float64{999, 999, 999}, "normal": []float64{0, 0, 1}},
 	})
-	if _, err := apply(t, byGeom, "extrude", string(args)); err == nil {
-		t.Error("to-face-geom with an unmatchable target should error")
+	out, err := apply(t, byGeom, "extrude", string(args))
+	if err != nil {
+		t.Fatalf("unmatchable to-face-geom should degrade gracefully, not error: %v", err)
+	}
+	var res struct {
+		Healthy bool   `json:"healthy"`
+		Reason  string `json:"reason"`
+	}
+	if err := json.Unmarshal(out, &res); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if res.Healthy || res.Reason == "" {
+		t.Errorf("unmatchable to-face-geom result = %+v, want healthy:false with a reason", res)
 	}
 }
 
