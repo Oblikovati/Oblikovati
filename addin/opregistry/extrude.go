@@ -26,7 +26,7 @@ const extrudeSchema = `{
     "sketchIndex": {"type": "integer", "minimum": 0, "description": "Index of the sketch to extrude (see model.tree)."},
     "profileIndex": {"type": "integer", "minimum": 0, "default": 0, "description": "Which closed profile of the sketch to extrude."},
     "distance": {"type": "string", "description": "Extrude depth with units, e.g. \"50 mm\" or \"5 cm\". Required for distance and distance-from-face extents."},
-    "operation": {"type": "string", "enum": ["new", "join", "cut", "intersect"], "default": "new", "description": "Boolean against existing bodies."},
+    "operation": {"type": "string", "enum": ["new", "join", "cut", "intersect", "surface"], "default": "new", "description": "Boolean against existing bodies, or \"surface\" to build an open sheet (surface) body — Inventor's kSurfaceOperation."},
     "extent": {"type": "string", "enum": ["distance", "through-all", "to-next", "to-face"], "default": "distance", "description": "How the extrude terminates."},
     "direction": {"type": "string", "enum": ["positive", "negative", "symmetric"], "default": "positive", "description": "Which side(s) of the sketch plane to grow."},
     "secondDistance": {"type": "string", "description": "Asymmetric two-direction depth on the negative side, e.g. \"10 mm\"."},
@@ -265,7 +265,8 @@ func sketchAt(part *compdef.PartComponentDefinition, i int) (*sketch.Sketch, err
 	return sks.Item(i), nil
 }
 
-// parseOperation maps an operation name to the boolean op (default new body).
+// parseOperation maps an operation name to the feature operation (default new body). "surface"
+// is Inventor's kSurfaceOperation — an open sheet body rather than a boolean (#1858).
 func parseOperation(name string) (ops.PartFeatureOperation, error) {
 	switch strings.ToLower(strings.TrimSpace(name)) {
 	case "", "new", "newbody", "new-body":
@@ -276,7 +277,9 @@ func parseOperation(name string) (ops.PartFeatureOperation, error) {
 		return ops.Cut, nil
 	case "intersect":
 		return ops.Intersect, nil
+	case "surface":
+		return ops.Surface, nil
 	default:
-		return 0, fmt.Errorf("extrude: unknown operation %q (want new|join|cut|intersect)", name)
+		return 0, fmt.Errorf("extrude: unknown operation %q (want new|join|cut|intersect|surface)", name)
 	}
 }

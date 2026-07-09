@@ -22,6 +22,11 @@ const (
 	Intersect
 	// NewBody creates a separate body rather than combining.
 	NewBody
+	// Surface is NOT a boolean: it is Inventor's kSurfaceOperation. The feature builds an
+	// open sheet (surface) body — walls only, uncapped, non-solid — added alongside existing
+	// bodies with no boolean. Features must short-circuit on Surface before reaching Boolean;
+	// it never maps to a B-rep boolean (see toBrepOp). #1858.
+	Surface
 )
 
 // String returns a stable name for diagnostics.
@@ -33,6 +38,8 @@ func (op PartFeatureOperation) String() string {
 		return "cut"
 	case Intersect:
 		return "intersect"
+	case Surface:
+		return "surface"
 	default:
 		return "new-body"
 	}
@@ -296,8 +303,8 @@ func volumeOutOfBracket(op PartFeatureOperation, targetVol, toolVol, bodyVol, to
 // cheaply, while a huge body's CSG attempt is costly and seldom valid.
 const csgFallbackFaceLimit = 256
 
-// toBrepOp maps the feature-level operation to the B-rep boolean operation (NewBody has no
-// B-rep analogue — it is handled before this point).
+// toBrepOp maps the feature-level operation to the B-rep boolean operation (NewBody and
+// Surface have no B-rep analogue — both are handled before this point).
 func toBrepOp(op PartFeatureOperation) (brep.Op, bool) {
 	switch op {
 	case Join:

@@ -4,6 +4,7 @@ package feature
 
 import (
 	"errors"
+	"fmt"
 	stdmath "math"
 
 	"oblikovati.org/kernel/brep"
@@ -104,6 +105,11 @@ func (e *ExtrudeFeature) Recompute(in Input) (Output, error) {
 // prisms into one body. The regions are distinct cells of the same sketch, so they never
 // overlap — a shell merge is exactly their union and avoids the intersecting Join.
 func (e *ExtrudeFeature) buildTool(profiles []*sketch.Profile, plane sketch.Plane, sp span, rec *diag.Recorder) *topo.Body {
+	// Surface (kSurfaceOperation): extrude the profile walls only — an open, uncapped sheet
+	// body — rather than a capped solid prism. #1858.
+	if e.def.Operation == ops.Surface {
+		return buildProfileSheets(profiles, plane, sp, e.def.Taper, e.featName, rec)
+	}
 	return buildProfilePrisms(profiles, plane, sp, e.def.Taper, e.featName, rec)
 }
 
@@ -186,7 +192,10 @@ func NewExtrudeFeature(def *ExtrudeDefinition) *ExtrudeFeature { return &Extrude
 // quality signal instead of shipping a silently faceted body (#1601).
 func combine(in Input, body *topo.Body, op ops.PartFeatureOperation) ([]*topo.Body, error) {
 	running := in.Bodies
-	if len(running) == 0 || op == ops.NewBody {
+	// Surface (kSurfaceOperation) and NewBody both skip the boolean: the tool body is added
+	// alongside the running bodies untouched. For Surface the tool is already an open sheet
+	// (buildTool built it uncapped/non-solid); it joins the model as a surface body. #1858.
+	if len(running) == 0 || op == ops.NewBody || op == ops.Surface {
 		return append(append([]*topo.Body(nil), running...), body), nil
 	}
 	target := running[len(running)-1]
@@ -235,6 +244,17 @@ func appendCombined(running []*topo.Body, res *topo.Body) []*topo.Body {
 // draft outward (positive) or inward (negative); the far cap stays perpendicular to the
 // normal, and each side stays a planar trapezoid.
 func buildPrism(poly []math.Point2, plane sketch.Plane, sp span, taper float64, feat string) *topo.Body {
+	return buildExtrusionShell(poly, plane, sp, taper, feat, true)
+}
+
+// buildExtrusionShell extrudes a closed polygon over the span (near→far offsets along the plane
+// normal). With caps=true it is a watertight SOLID prism: a near cap, a far cap, and one planar
+// side face per profile edge. With caps=false it is an OPEN, non-solid wall SHEET — the side
+// faces only, no caps — Inventor's Surface-operation extrude (kSurfaceOperation, #1858). A
+// non-zero taper offsets the far loop by depth·tan(taper) so the sides draft outward (positive)
+// or inward (negative); the far cap (when present) stays perpendicular to the normal, and each
+// side stays a planar trapezoid.
+func buildExtrusionShell(poly []math.Point2, plane sketch.Plane, sp span, taper float64, feat string, caps bool) *topo.Body {
 	// Normalise the cross-section to CCW: a CW input (a chamfer wedge whose edge frame happens to
 	// wind that way) previously produced a topologically INSIDE-OUT prism — outward face normals
 	// with loops traversed clockwise about them — which the orientation-faithful winding
@@ -247,7 +267,7 @@ func buildPrism(poly []math.Point2, plane sketch.Plane, sp span, taper float64, 
 	n := len(poly)
 	normal := plane.Normal().AsVector()
 	topPoly := taperedLoop(poly, sp.depth(), taper)
-	bld := topo.NewBuilder(true, topo.NewLineage(topo.Tok(feat, "body", 0)))
+	bld := topo.NewBuilder(caps, topo.NewLineage(topo.Tok(feat, "body", 0)))
 	bottom := make([]*topo.Vertex, n)
 	top := make([]*topo.Vertex, n)
 	for i := 0; i < n; i++ {
@@ -257,9 +277,43 @@ func buildPrism(poly []math.Point2, plane sketch.Plane, sp span, taper float64, 
 		top[i] = bld.AddVertex(t, topo.NewLineage(topo.Tok(feat, "vertex", n+i)))
 	}
 	be, te, ve := prismEdges(bld, bottom, top, feat)
-	addCaps(bld, bottom, top, be, te, normal, feat)
+	if caps {
+		addCaps(bld, bottom, top, be, te, normal, feat)
+	}
 	addSides(bld, bottom, top, be, te, ve, outwardSign(poly), feat)
 	return bld.Build()
+}
+
+// buildProfileSheets extrudes each selected profile into an open wall sheet (no caps), merging
+// them into one non-solid surface body — the tool for an extrude with the Surface operation
+// (kSurfaceOperation, #1858). There is no boolean; combine() adds the result as a surface body.
+func buildProfileSheets(profiles []*sketch.Profile, plane sketch.Plane, sp span, taper float64, feat string, _ *diag.Recorder) *topo.Body {
+	sheets := make([]*topo.Body, 0, len(profiles))
+	for i, p := range profiles {
+		name := feat
+		if len(profiles) > 1 {
+			name = fmt.Sprintf("%s/p%d", feat, i)
+		}
+		sheets = append(sheets, buildProfileSheet(p, plane, sp, taper, name))
+	}
+	if len(sheets) == 1 {
+		return sheets[0]
+	}
+	return topo.MergeBodies(topo.NewLineage(topo.Tok(feat, "merged", 0)), false, sheets...)
+}
+
+// buildProfileSheet builds one profile's open wall sheet: the outer loop plus each inner loop,
+// each as an uncapped tube, merged into a single non-solid body. Inner (hole) loops become their
+// own open tubes rather than being booleaned out (there is no solid to cut). #1858.
+func buildProfileSheet(p *sketch.Profile, plane sketch.Plane, sp span, taper float64, feat string) *topo.Body {
+	walls := []*topo.Body{buildExtrusionShell(p.OuterLoop().Polygon(), plane, sp, taper, feat, false)}
+	for j, loop := range p.InnerLoops() {
+		walls = append(walls, buildExtrusionShell(loop.Polygon(), plane, sp, taper, fmt.Sprintf("%s/hole%d", feat, j), false))
+	}
+	if len(walls) == 1 {
+		return walls[0]
+	}
+	return topo.MergeBodies(topo.NewLineage(topo.Tok(feat, "sheet", 0)), false, walls...)
 }
 
 // reversePoly returns the polygon with its winding reversed.
