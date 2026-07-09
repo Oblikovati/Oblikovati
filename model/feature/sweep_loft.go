@@ -377,12 +377,25 @@ func (l *LoftFeature) resolveGuides() loftGuides {
 // than via a bore Cut because a bore whose caps are coplanar with the body's caps leaves it open.
 func (l *LoftFeature) skinTool(outers [][]math.Point3, inners [][][]math.Point3, ends loftEnds, guides loftGuides, rec *diag.Recorder) (*topo.Body, error) {
 	feat := featOr(l.featName, "loft")
+	// The Surface operation (kSurfaceOperation, #1858) skins an OPEN sheet — no end caps: a plain
+	// skin for a solid section, an open pipe surface for a single-bore section. combine() adds it as
+	// a surface body. A multi-bore surface loft (the cut-based hollow path) is a follow-up.
+	surface := l.def.Operation == ops.Surface
 	switch numHoles(inners) {
 	case 0:
+		if surface {
+			return skinShell(outers, l.def.Closed, feat, ends, guides)
+		}
 		return skinLoops(outers, l.def.Closed, feat, ends, guides)
 	case 1:
+		if surface {
+			return tubeShellLoops(outers, holeRing(inners, 0), l.def.Closed, feat, ends, guides)
+		}
 		return tubeLoops(outers, holeRing(inners, 0), l.def.Closed, feat, ends, guides)
 	default:
+		if surface {
+			return nil, fmt.Errorf("loft: the surface operation supports at most one interior loop per section, got %d", numHoles(inners))
+		}
 		return hollowByCut(outers, inners, l.def.Closed, feat, ends, guides, rec)
 	}
 }
@@ -621,6 +634,19 @@ func skinLoops(loops [][]math.Point3, closed bool, feat string, ends loftEnds, g
 func tubeLoops(outers, inners [][]math.Point3, closed bool, feat string, ends loftEnds, guides loftGuides) (*topo.Body, error) {
 	n := maxLoopCount(outers, inners)
 	return tubeSolid(skinnedSections(outers, n, closed, ends, guides), skinnedSections(inners, n, closed, ends, loftGuides{}), closed, feat)
+}
+
+// skinShell is skinLoops' open counterpart for the surface operation: the skinned sections meshed
+// as an OPEN sheet (no end caps) via sweptShell (#1858).
+func skinShell(loops [][]math.Point3, closed bool, feat string, ends loftEnds, guides loftGuides) (*topo.Body, error) {
+	return sweptShell(skinnedSections(loops, maxLoopCount(loops), closed, ends, guides), closed, feat)
+}
+
+// tubeShellLoops is tubeLoops' open counterpart: the nested outer/inner skinned sections meshed as
+// an open pipe surface (no annular end caps) via tubeShell (#1858).
+func tubeShellLoops(outers, inners [][]math.Point3, closed bool, feat string, ends loftEnds, guides loftGuides) (*topo.Body, error) {
+	n := maxLoopCount(outers, inners)
+	return tubeShell(skinnedSections(outers, n, closed, ends, guides), skinnedSections(inners, n, closed, ends, loftGuides{}), closed, feat)
 }
 
 // skinnedSections resamples loops to n points, corresponds them (minimize twist), blends them with
