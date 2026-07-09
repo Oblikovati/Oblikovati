@@ -47,7 +47,46 @@ func planarTris(outer2D []math.Point2, holes2D [][]math.Point2) [][3]int {
 	if planarAreaMatches(tris, outer2D, holes2D) {
 		return tris
 	}
+	// A self-intersecting (non-simple) boundary has no correct triangulation, and feeding it to the
+	// CDT makes every boundary constraint fall into the O(T) flip-recovery fallback — O(n·T²), seconds
+	// on a ~250-vertex face — which, on the synchronous per-frame pick path, starves the frame-loop
+	// dispatcher an async add-in build waits on (a transient partially-constrained face gets revolved
+	// and hover-picked mid-build). Such input only appears transiently; a bounded best-effort mesh is
+	// fine (the real geometry replaces it next frame). The CDT's own recoverFlipWork budget backstops
+	// the non-crossing degeneracies (collinear overlap, coincident vertices) this cheap check misses.
+	if loopsSelfCross(outer2D, holes2D) {
+		return tris
+	}
 	return planarCDT(outer2D, holes2D)
+}
+
+// loopsSelfCross reports whether any two boundary segments of the loops (outer + holes) PROPERLY
+// cross — the defining signature of a non-simple boundary. It reuses the exact-predicate segmentsCross,
+// which returns false for segments that merely share an endpoint (adjacent edges) or touch, so only a
+// genuine transversal crossing trips it (no false positive on a valid simple boundary, whose faceting
+// stays simple). O(n²) with early exit, run only on the already-off area-mismatch path where n is one
+// face's facet count (<~150) — a few milliseconds worst case, and typically an immediate hit.
+func loopsSelfCross(outer2D []math.Point2, holes2D [][]math.Point2) bool {
+	var segs [][2][2]float64
+	appendLoop := func(loop []math.Point2) {
+		n := len(loop)
+		for i := 0; i < n; i++ {
+			p, q := loop[i], loop[(i+1)%n]
+			segs = append(segs, [2][2]float64{{float64(p.X), float64(p.Y)}, {float64(q.X), float64(q.Y)}})
+		}
+	}
+	appendLoop(outer2D)
+	for _, h := range holes2D {
+		appendLoop(h)
+	}
+	for i := 0; i < len(segs); i++ {
+		for j := i + 1; j < len(segs); j++ {
+			if segmentsCross(segs[i][0], segs[i][1], segs[j][0], segs[j][1]) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // planarAreaMatches reports whether tris covers exactly the face area (|outer| − Σ|holes|). A clean

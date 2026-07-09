@@ -403,7 +403,10 @@ func (m *cdt) finalizeDomain(pts [][2]float64, loops [][]int) ([][3]int, [][2]in
 	if len(m.unrecovered) == 0 {
 		return ed, nil, false
 	}
-	if m.domainLeaked(ed, loops) {
+	// A budget bail means the boundary is non-simple: the extracted domain is untrustworthy (many
+	// unrecovered constraints), so take the deterministic, bounded earcut fallback unconditionally
+	// rather than probing domainLeaked on a mesh we already know is degenerate (see recoverFlipWork).
+	if m.overBudget || m.domainLeaked(ed, loops) {
 		return earcutFromLoops(pts, loops), m.unrecovered, true
 	}
 	return ed, m.unrecovered, false

@@ -375,6 +375,15 @@ func (m *cdt) touch(t int) {
 // unrecovered for finalizeDomain) rather than spinning, exactly as before #1409.
 func (m *cdt) recoverByFlips(a, b int) bool {
 	for tries := 0; !m.hasEdge(a, b) && tries < 4*len(m.tris)+8; tries++ {
+		if m.recoverFlipWork >= m.recoverBudget {
+			// The face has spent its whole flip-recovery budget without realizing this edge: it is
+			// thoroughly degenerate (non-simple). Stop the O(n·T²) spin and let insertConstraint's
+			// splitConstraintAtVertices try (it recovers valid on-segment cases); the flag routes a
+			// genuinely-unrecoverable face to the deterministic earcut fallback in finalizeDomain.
+			m.overBudget = true
+			return false
+		}
+		m.recoverFlipWork++
 		if !m.flipOneCrossing(a, b) {
 			break
 		}
