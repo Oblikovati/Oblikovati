@@ -102,6 +102,39 @@ func TestExtrudeToFaceGeomNoMatchDegradesGracefully(t *testing.T) {
 	}
 }
 
+// TestExtrudeToFaceGeomBindsByPlaneThrough covers the plane-through fallback: a target whose recorded
+// point lies ON the stop face's plane but OFF its centroid (the common case — an exporter records a
+// point-on-face, not the running-body centroid) misses the exact centroid match and binds via
+// FindPlanarFaceThrough instead, still terminating the extrude at that plane.
+func TestExtrudeToFaceGeomBindsByPlaneThrough(t *testing.T) {
+	byGeom := seedToFaceVolume(t)
+	def := byGeom.ActiveDocument().Content().(*compdef.PartComponentDefinition)
+	g := topo.DescribeFace(topFaceOfBody(def.SurfaceBodies().Item(0)))
+	// Shift the recorded centroid 1 cm along +X: still on the top face's plane and inside its 4×3
+	// boundary, but far past the 1e-3 exact-centroid tolerance, so only the plane-through path binds.
+	args, _ := json.Marshal(map[string]any{
+		"sketchIndex": 1, "profileIndex": 0, "extent": "to-face", "operation": "new",
+		"toFaceGeom": map[string]any{
+			"centroid": []float64{float64(g.Centroid.X) + 1, float64(g.Centroid.Y), float64(g.Centroid.Z)},
+			"normal":   []float64{float64(g.Normal.X), float64(g.Normal.Y), float64(g.Normal.Z)},
+		},
+	})
+	out, err := apply(t, byGeom, "extrude", string(args))
+	if err != nil {
+		t.Fatalf("plane-through to-face-geom: %v", err)
+	}
+	var res struct {
+		Bodies  int  `json:"bodies"`
+		Healthy bool `json:"healthy"`
+	}
+	if err := json.Unmarshal(out, &res); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if !res.Healthy || res.Bodies != 2 {
+		t.Fatalf("plane-through to-face result = %+v, want healthy with 2 bodies", res)
+	}
+}
+
 // seedToFaceVolume builds the base body a to-face extrude terminates against (a 10 mm prism), the
 // shared fixture for the geometric to-face tests.
 func seedToFaceVolume(t *testing.T) *app.Session {
