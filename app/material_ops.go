@@ -146,7 +146,9 @@ func (s *Session) sumBodyProperties(part *compdef.PartComponentDefinition) types
 	assign := part.Assignments()
 	var a massAccum
 	for _, b := range part.SurfaceBodies().All() {
-		gp := ops.BodyGeometryProperties(b, ops.DefaultQuality())
+		// Property readouts integrate over the mesh, so they use the fine PropertyQuality — the
+		// display DefaultQuality under-reports a curved solid's volume by ~0.64% (see PropertyQuality).
+		gp := ops.BodyGeometryProperties(b, ops.PropertyQuality())
 		density := 0.0
 		if m, ok := assign.EffectiveMaterial(look, material.RefKey(b.ReferenceKey())); ok {
 			density = m.Density()

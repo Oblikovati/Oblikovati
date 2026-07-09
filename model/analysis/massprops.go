@@ -39,14 +39,27 @@ type MassProperties struct {
 }
 
 // qualityFor maps an accuracy level to a tessellation quality (planar bodies are exact regardless).
+//
+// Mass properties are integrated over the TESSELLATED mesh (ops.BodyGeometryProperties sums signed
+// tetrahedra), so the facet count of a curved face sets the volume/area/inertia accuracy: an
+// inscribed N-gon approximation of a curved surface under-reports by ~π²/(3N²). At the display
+// default (ChordTolerance 0.05, AngleTolerance 10° → ~36 facets/circle) that is a systematic
+// −0.64% per curved feature — the exact bias that showed up as a recurring −0.6413% delta against
+// the Inventor (analytic) oracle across the exporter corpus, and compounded to several percent on
+// parts with many curved cuts/revolves. The default (Medium) accuracy therefore uses a far finer
+// tessellation than the display mesh: at AngleTolerance 1° (~360 facets/circle) the deficit is
+// ~−0.01%, and High (0.5°) is ~−0.003% — both well inside engineering parity. Low stays coarse for
+// a fast interactive preview. (An exact analytic integration over the B-rep faces would remove the
+// deficit entirely and is the eventual home for this; the fine mesh is the pragmatic equivalent.)
 func qualityFor(accuracy types.MassPropertiesAccuracy) ops.Quality {
 	switch accuracy {
 	case types.MassPropertiesLow:
 		return ops.Quality{ChordTolerance: 0.2, AngleTolerance: 20 * stdmath.Pi / 180}
 	case types.MassPropertiesHigh:
-		return ops.Quality{ChordTolerance: 0.01, AngleTolerance: 5 * stdmath.Pi / 180}
+		return ops.Quality{ChordTolerance: 1e-4, AngleTolerance: 0.5 * stdmath.Pi / 180}
 	default:
-		return ops.DefaultQuality()
+		// Medium is the parity-grade default shared with the get_physical_properties readout.
+		return ops.PropertyQuality()
 	}
 }
 
