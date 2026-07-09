@@ -4,6 +4,7 @@ package opregistry
 
 import (
 	"encoding/json"
+	"math"
 	"testing"
 )
 
@@ -61,6 +62,53 @@ func TestSweepPathPointsOverridesSketch(t *testing.T) {
 	if _, err := applyMap(t, s, "sweep", args); err != nil {
 		t.Fatalf("pathPoints should override the (invalid) sketch path: %v", err)
 	}
+}
+
+// TestSweepIntersectOperation: the sweep accepts Inventor's INTERSECT operation (A ∩ B), not just
+// new/join/cut — the geometry and parseOperation always supported it; only the schema enum withheld
+// it (parity with PartFeatureOperationEnum, minus the surface op). Verified by the boolean identity
+// A∩B + (A−B) = A: sweeping the same tool onto identical base boxes with intersect and with cut must
+// give complementary volumes that sum to the base — proof both are real, correct booleans, and that
+// intersect is now reachable over the wire.
+func TestSweepIntersectOperation(t *testing.T) {
+	vBase, vInt := sweepThenVolume(t, "intersect")
+	_, vCut := sweepThenVolume(t, "cut")
+	if vInt <= 0 || vInt >= vBase {
+		t.Errorf("intersect volume = %g, want 0 < v < base %g (a join would be ≥ base)", vInt, vBase)
+	}
+	if want := vBase; math.Abs((vInt+vCut)-want) > 1e-6*want {
+		t.Errorf("A∩B + A−B = %g, want the base %g (intersect and cut must be complementary)", vInt+vCut, want)
+	}
+}
+
+// sweepThenVolume builds a base box (extrude profile 0 up 5 cm), sweeps profile 1 up 3 cm with the
+// given boolean op, and returns the base and result volumes.
+func sweepThenVolume(t *testing.T, op string) (base, result float64) {
+	t.Helper()
+	s := profiledPart(t)
+	if _, err := applyMap(t, s, "extrude", map[string]any{"sketchIndex": 0, "distance": "5 cm", "operation": "new"}); err != nil {
+		t.Fatalf("base extrude: %v", err)
+	}
+	base = bodyVolume(t, s)
+	raw, err := applyMap(t, s, "sweep", map[string]any{
+		"sketchIndex": 1, "profileIndex": 0,
+		"pathPoints": [][]float64{{0, 0, 0}, {0, 0, 3}}, // tool z∈[0,3] ⊂ base z∈[0,5]
+		"operation":  op,
+	})
+	if err != nil {
+		t.Fatalf("sweep %s: %v", op, err)
+	}
+	var res struct {
+		Bodies  int  `json:"bodies"`
+		Healthy bool `json:"healthy"`
+	}
+	if err := json.Unmarshal(raw, &res); err != nil {
+		t.Fatalf("decode result: %v", err)
+	}
+	if !res.Healthy || res.Bodies != 1 {
+		t.Fatalf("sweep %s result = %+v, want one healthy body", op, res)
+	}
+	return base, bodyVolume(t, s)
 }
 
 // TestSweepPathPointsTooFew: a polyline with fewer than two points is a clean error.

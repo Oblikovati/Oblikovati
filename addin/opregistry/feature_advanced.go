@@ -42,7 +42,7 @@ const sweepSchema = `{
     "scaling": {"type": "string", "enum": ["xy", "x", "none"], "default": "xy", "description": "How the guide rail scales the profile."},
     "guideFaceKey": {"type": "string", "description": "Reference key of the guide face (pathAndGuideSurface)."},
     "toolBodyIndex": {"type": "integer", "minimum": 0, "description": "Running-body index of the tool to drag (definitionType \"solid\")."},
-    "operation": {"type": "string", "enum": ["new", "join", "cut"], "default": "new"}
+    "operation": {"type": "string", "enum": ["new", "join", "cut", "intersect"], "default": "new", "description": "Boolean against existing bodies (Inventor's PartFeatureOperationEnum, minus the surface op)."}
   }
 }`
 
