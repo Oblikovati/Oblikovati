@@ -65,6 +65,20 @@ type cdt struct {
 	// current segment's recovery completes (#1604): recovery alone leaves the corridor non-Delaunay,
 	// which both degrades triangle quality and invalidates the walk-based point location.
 	pendingLegal [][2]int
+	// recoverFlipWork counts flipOneCrossing invocations across ALL recoverByFlips calls, and
+	// recoverBudget caps it. recoverByFlips is the O(T) whole-mesh fallback taken only when the
+	// corridor march fails on a degeneracy; on a NON-SIMPLE (self-intersecting / overlapping /
+	// pinched) boundary — a transient partially-constrained face hover-picked mid-build — that
+	// degeneracy hits every constraint, so each spins its per-segment cap of O(T) scans and the
+	// face costs O(n·T²) (seconds on a ~250-vertex face). That is synchronous per-frame pick work,
+	// so it starves the frame-loop dispatcher an async add-in build depends on → hard deadlock.
+	// A GLOBAL budget stops the spin once a face proves thoroughly degenerate; overBudget then
+	// forces finalizeDomain to the deterministic earcut fallback. A valid face barely touches
+	// recoverByFlips (the march handles it, and splitConstraintAtVertices recovers the rare
+	// on-segment vertex even after a budget bail), so the budget is invisible to it.
+	recoverFlipWork int
+	recoverBudget   int
+	overBudget      bool
 }
 
 func conKey(a, b int) [2]int {
@@ -114,6 +128,12 @@ func newCDT(pts [][2]float64) *cdt {
 	m := &cdt{pts: all, con: map[[2]int]int{}, nsup: nsup}
 	m.tris = []cdtTri{{v: [3]int{nsup, nsup + 1, nsup + 2}, n: [3]int{-1, -1, -1}}}
 	m.dead = []bool{false}
+	// recoverByFlips is a rare legacy fallback: the corridor march (#1409) plus splitConstraintAtVertices
+	// recover every VALID face's constraints without it (the whole CDT/tessellation suite passes with this
+	// budget at 0). So a modest global budget lets a genuinely-hard segment still get a burst of flips while
+	// capping a malformed face — where every constraint falls back and each flipOneCrossing is an O(T) scan —
+	// at O(nsup) total scans instead of O(nsup²), the O(n·T²) freeze fixed here. See recoverFlipWork.
+	m.recoverBudget = 2*nsup + 64
 	return m
 }
 
