@@ -49,6 +49,19 @@ func CoaxialCylinderUnion(a, b *topo.Body) (*topo.Body, bool) {
 	return union, true
 }
 
+// CoaxialEqualCylinders reports whether a and b are each a BARE analytic cylinder (one geom.Cylinder
+// side + two planar caps) sharing the same axis line and radius — the precondition CoaxialCylinderUnion
+// unions into a single analytic cylinder. The model boolean gate (model/feature.combine) uses it to
+// route such a JOIN to the curved boolean, which keeps the analytic cylinder, instead of faceting both
+// operands into prisms first and shattering the wall into planar facets (#1831). It does NOT apply the
+// axial-gap test — a gapped pair still passes here but CoaxialCylinderUnion then returns ok=false, so
+// the caller cleanly falls back to the planar path.
+func CoaxialEqualCylinders(a, b *topo.Body) bool {
+	ca, baseA, _, okA := cylinderSolidParams(facesOfAny(a))
+	cb, baseB, _, okB := cylinderSolidParams(facesOfAny(b))
+	return okA && okB && coaxialEqualRadius(ca, baseA, cb, baseB)
+}
+
 // coaxialEqualRadius reports whether two cylinders share the same axis line (parallel directions, each
 // base on the other's axis) and the same radius — the precondition for their side faces to be coincident.
 func coaxialEqualRadius(ca geom.Cylinder, baseA math.Point3, cb geom.Cylinder, baseB math.Point3) bool {
