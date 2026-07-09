@@ -208,7 +208,11 @@ const coilSchema = `{
     "revolutions": {"type": "string", "description": "Number of turns, e.g. \"4\"."},
     "height": {"type": "string", "description": "Total axial rise, e.g. \"30 mm\" — combines with pitch OR revolutions."},
     "taper": {"type": "string", "description": "Optional taper angle, e.g. \"5 deg\" — the helix radius grows with height."},
-    "operation": {"type": "string", "enum": ["new", "join", "cut"], "default": "new"}
+    "operation": {"type": "string", "enum": ["new", "join", "cut"], "default": "new"},
+    "startTransitionAngle": {"type": "string", "description": "Spring start-end transition sweep (pitch winds down to zero), e.g. \"90 deg\". Grounds/flattens the coil start."},
+    "startFlatAngle": {"type": "string", "description": "Spring start-end flat sweep (zero pitch) after the transition, e.g. \"180 deg\"."},
+    "endTransitionAngle": {"type": "string", "description": "Spring end transition sweep (pitch winds down to zero), e.g. \"90 deg\"."},
+    "endFlatAngle": {"type": "string", "description": "Spring end flat sweep (zero pitch) after the transition, e.g. \"180 deg\"."}
   },
   "required": ["sketchIndex"]
 }`
@@ -242,13 +246,40 @@ func applyCoil(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
+	startEnd, err := coilEndCondition(part, in.StartTransitionAngle, in.StartFlatAngle, "coil: start")
+	if err != nil {
+		return nil, err
+	}
+	endEnd, err := coilEndCondition(part, in.EndTransitionAngle, in.EndFlatAngle, "coil: end")
+	if err != nil {
+		return nil, err
+	}
 	def := &feature.CoilDefinition{
 		Sketch: sk, ProfileIndex: in.ProfileIndex, Axis: axis,
 		Pitch: pitch, Revolutions: revs, Height: height,
 		Taper: callOrZeroF(taper), Operation: op,
+		StartEnd: startEnd, EndEnd: endEnd,
 	}
 	pf := feature.NewCoilFeatures(part.Features()).AddDefinition(def)
 	return recomputeResult(part, pf)
+}
+
+// coilEndCondition parses one spring end's transition + flat sweep angles into a CoilEndCondition
+// (radians). It is active (Flat) only when at least one angle is given; the transition sweeps the
+// pitch down to zero and the flat sweep then holds zero pitch (a ground spring end). #1883.
+func coilEndCondition(part *compdef.PartComponentDefinition, transition, flat, ctx string) (feature.CoilEndCondition, error) {
+	if transition == "" && flat == "" {
+		return feature.CoilEndCondition{}, nil
+	}
+	tf, err := optionalAngleClosure(part, transition, ctx+": transitionAngle")
+	if err != nil {
+		return feature.CoilEndCondition{}, err
+	}
+	ff, err := optionalAngleClosure(part, flat, ctx+": flatAngle")
+	if err != nil {
+		return feature.CoilEndCondition{}, err
+	}
+	return feature.CoilEndCondition{Flat: true, TransitionAngle: callOrZeroF(tf), FlatAngle: callOrZeroF(ff)}, nil
 }
 
 // callOrZeroF evaluates an optional closure (nil ⇒ 0).

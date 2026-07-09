@@ -6,10 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 )
@@ -439,7 +441,8 @@ const draftSchema = `{
     "faceRefs": {"type": "array", "items": {"type": "string"}, "minItems": 1, "description": "Reference keys of the faces to draft (from get_reference_keys)."},
     "angle": {"type": "string", "description": "Draft angle with units, e.g. \"3 deg\"."},
     "pullDirection": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Explicit pull/parting direction [dx,dy,dz] (only its orientation matters). Omit to let the host infer it from the neutral faces."},
-    "facesGeom": {"type": "array", "description": "Select the drafted faces by GEOMETRY instead of faceRefs, so the binding survives recompute. Give either this or faceRefs.", "items": {"type": "object", "properties": {"centroid": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Face centroid [x,y,z] cm."}, "normal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Outward unit normal [x,y,z]."}}, "required": ["centroid", "normal"]}}
+    "facesGeom": {"type": "array", "description": "Select the drafted faces by GEOMETRY instead of faceRefs, so the binding survives recompute. Give either this or faceRefs.", "items": {"type": "object", "properties": {"centroid": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Face centroid [x,y,z] cm."}, "normal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Outward unit normal [x,y,z]."}}, "required": ["centroid", "normal"]}},
+    "neutralPlane": {"type": "string", "description": "Fixed-plane draft: a planar face key, work plane (\"plane/N\"), or origin plane (\"origin/plane/xy\"). Faces pivot on their intersection with it (dimensions in the plane preserved); pull defaults to its normal. Inventor's kFixedPlaneFaceDraftDefinitionType."}
   },
   "required": ["angle"]
 }`
@@ -503,18 +506,45 @@ func applyDraft(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	return recomputeResult(part, pf)
 }
 
-// buildDraft adds the draft feature: with an explicit pull direction when pullDirection is given
-// (AddDraftPull), otherwise the host's inferred pull (AddDraft, default +Z).
+// buildDraft adds the draft feature: a fixed-plane (neutral) draft when neutralPlane is given,
+// else an explicit-pull draft (AddDraftPull) when pullDirection is given, else the host's inferred
+// pull (AddDraft, default +Z).
 func buildDraft(part *compdef.PartComponentDefinition, in featureargs.Draft, angle func() float64) (*feature.PartFeature, error) {
 	du := feature.NewDressUpFeatures(part.Features())
+	keys := refKeys(in.FaceRefs)
+	if strings.TrimSpace(in.NeutralPlane) != "" {
+		return buildNeutralDraft(part, du, in, keys, angle)
+	}
 	if len(in.PullDirection) == 0 {
-		return du.AddDraft(refKeys(in.FaceRefs), angle), nil
+		return du.AddDraft(keys, angle), nil
 	}
 	pull, err := vec3(in.PullDirection, "draft: pullDirection")
 	if err != nil {
 		return nil, err
 	}
-	return du.AddDraftPull(refKeys(in.FaceRefs), pull, angle), nil
+	return du.AddDraftPull(keys, pull, angle), nil
+}
+
+// buildNeutralDraft resolves the fixed neutral plane (a planar face key, "plane/N", or origin
+// plane) and drafts the faces pivoting on their intersection with it — Inventor's fixed-plane
+// draft. The pull defaults to the plane normal unless pullDirection overrides it. #1866.
+func buildNeutralDraft(part *compdef.PartComponentDefinition, du *feature.DressUpFeatures, in featureargs.Draft, keys [][]byte, angle func() float64) (*feature.PartFeature, error) {
+	wp, err := part.WorkGeometry().PlaneTargetFromRef(in.NeutralPlane)
+	if err != nil {
+		return nil, fmt.Errorf("draft: neutralPlane %q: %w", in.NeutralPlane, err)
+	}
+	pl := wp.Plane()
+	neutral, err := geom.NewPlane(pl.Origin(), pl.Normal().AsVector())
+	if err != nil {
+		return nil, fmt.Errorf("draft: neutralPlane %q: %w", in.NeutralPlane, err)
+	}
+	pull := pl.Normal().AsVector()
+	if len(in.PullDirection) > 0 {
+		if pull, err = vec3(in.PullDirection, "draft: pullDirection"); err != nil {
+			return nil, err
+		}
+	}
+	return du.AddDraftPullNeutral(keys, pull, &neutral, angle), nil
 }
 
 // --- lip / groove (M20-F10) ------------------------------------------------
