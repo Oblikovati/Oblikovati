@@ -441,17 +441,9 @@ func buildWorkPlane(host workHost, in wire.CreateWorkPlaneArgs) (*feature.WorkPl
 // recorded. It returns handled=false — so buildWorkPlane falls through to the default constructor —
 // for any other kind or when no solution point is given (#1844).
 func addSolutionPlane(planes *feature.WorkPlanes, kind types.WorkPlaneKind, refs []feature.WorkRef, in wire.CreateWorkPlaneArgs) (*feature.WorkPlane, bool, error) {
-	var raw []float64
-	switch kind {
-	case types.WorkPlaneTwoPlanes:
-		raw = in.Quadrant
-	case types.WorkPlanePlaneAndTangent, types.WorkPlaneLineAndTangent:
-		raw = in.Proximity
-	default:
-		return nil, false, nil
-	}
-	if len(raw) == 0 {
-		return nil, false, nil // no solution point → default constructor
+	raw, ok := solutionPointArg(kind, in)
+	if !ok {
+		return nil, false, nil // not a solution kind, or no point given → default constructor
 	}
 	coords, err := parseCoords(raw, fmt.Sprintf("workPlanes.create: %s solution point", kind))
 	if err != nil {
@@ -460,14 +452,34 @@ func addSolutionPlane(planes *feature.WorkPlanes, kind types.WorkPlaneKind, refs
 	if len(refs) != 2 {
 		return nil, true, fmt.Errorf("workPlanes.create: %s needs 2 references, got %d", kind, len(refs))
 	}
-	p := math.P3(coords[0], coords[1], coords[2])
+	return buildSolutionPlane(planes, kind, refs, math.P3(coords[0], coords[1], coords[2])), true, nil
+}
+
+// solutionPointArg returns the solution-selection point a tangent/bisector kind was given — the
+// quadrant point for two-planes, the proximity point for the tangent kinds — and false when the
+// kind takes none or none was supplied.
+func solutionPointArg(kind types.WorkPlaneKind, in wire.CreateWorkPlaneArgs) ([]float64, bool) {
+	var raw []float64
 	switch kind {
 	case types.WorkPlaneTwoPlanes:
-		return planes.AddByTwoPlanesToward(refs[0], refs[1], p), true, nil
+		raw = in.Quadrant
+	case types.WorkPlanePlaneAndTangent, types.WorkPlaneLineAndTangent:
+		raw = in.Proximity
+	default:
+		return nil, false
+	}
+	return raw, len(raw) > 0
+}
+
+// buildSolutionPlane calls the ...Toward constructor for the given tangent/bisector kind.
+func buildSolutionPlane(planes *feature.WorkPlanes, kind types.WorkPlaneKind, refs []feature.WorkRef, p math.Point3) *feature.WorkPlane {
+	switch kind {
+	case types.WorkPlaneTwoPlanes:
+		return planes.AddByTwoPlanesToward(refs[0], refs[1], p)
 	case types.WorkPlanePlaneAndTangent:
-		return planes.AddByPlaneAndTangentToward(refs[0], refs[1], p), true, nil
+		return planes.AddByPlaneAndTangentToward(refs[0], refs[1], p)
 	default: // WorkPlaneLineAndTangent
-		return planes.AddByLineAndTangentToward(refs[0], refs[1], p), true, nil
+		return planes.AddByLineAndTangentToward(refs[0], refs[1], p)
 	}
 }
 
