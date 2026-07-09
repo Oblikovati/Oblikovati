@@ -91,6 +91,26 @@ func TestDressUpFeaturesRoundTrip(t *testing.T) {
 	}
 }
 
+// TestShellDirectionRoundTrip checks a non-default shell wall direction survives a marshal/restore
+// (the default inside serializes nothing; outside/both must persist). #1864.
+func TestShellDirectionRoundTrip(t *testing.T) {
+	fs := NewPartFeatures(nil)
+	pf := NewDressUpFeatures(fs).AddShell([][]byte{[]byte("face-a")}, func() float64 { return 2 })
+	pf.Definition().(*ShellFeature).Definition().Direction = ops.ShellOutside
+
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	fresh := NewPartFeatures(nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	if got := fresh.Item(0).Definition().(*ShellFeature).Definition().Direction; got != ops.ShellOutside {
+		t.Errorf("restored shell direction = %d, want ShellOutside (%d)", got, ops.ShellOutside)
+	}
+}
+
 // TestDraftPullNeutralRoundTrip checks a draft's explicit pull direction and neutral (parting) plane
 // survive a recipe round trip (#1801).
 func TestDraftPullNeutralRoundTrip(t *testing.T) {
