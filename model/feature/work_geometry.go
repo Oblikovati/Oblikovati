@@ -174,7 +174,11 @@ func (g *WorkGeometry) plane(ref WorkRef) (sketch.Plane, error) {
 		if i < 0 || i >= g.planes.Count() {
 			return sketch.Plane{}, fmt.Errorf(errNoWorkPlane, ref)
 		}
-		return g.planes.Item(i).Plane(), nil
+		wp := g.planes.Item(i)
+		if wp.deleted {
+			return sketch.Plane{}, fmt.Errorf("work geometry: work plane %q was deleted", ref)
+		}
+		return wp.Plane(), nil
 	}
 	w, ok := g.planes.byKey[ref]
 	if !ok {
@@ -196,7 +200,11 @@ func (g *WorkGeometry) WorkPlaneByRef(ref WorkRef) (*WorkPlane, error) {
 		if i < 0 || i >= g.planes.Count() {
 			return nil, fmt.Errorf(errNoWorkPlane, ref)
 		}
-		return g.planes.Item(i), nil
+		wp := g.planes.Item(i)
+		if wp.deleted {
+			return nil, fmt.Errorf("work geometry: work plane %q was deleted", ref)
+		}
+		return wp, nil
 	}
 	w, ok := g.planes.byKey[ref]
 	if !ok {
@@ -210,7 +218,11 @@ func (g *WorkGeometry) axis(ref WorkRef) (*WorkAxis, error) {
 		if i < 0 || i >= g.axes.Count() {
 			return nil, fmt.Errorf("work geometry: no work axis %q", ref)
 		}
-		return g.axes.Item(i), nil
+		wa := g.axes.Item(i)
+		if wa.deleted {
+			return nil, fmt.Errorf("work geometry: work axis %q was deleted", ref)
+		}
+		return wa, nil
 	}
 	w, ok := g.axes.byKey[ref]
 	if !ok {
@@ -239,7 +251,11 @@ func (g *WorkGeometry) WorkPointByRef(ref WorkRef) (*WorkPoint, bool) {
 		if i < 0 || i >= g.points.Count() {
 			return nil, false
 		}
-		return g.points.Item(i), true
+		wp := g.points.Item(i)
+		if wp.deleted {
+			return nil, false
+		}
+		return wp, true
 	}
 	w, ok := g.points.byKey[ref]
 	return w, ok
@@ -253,7 +269,11 @@ func (g *WorkGeometry) point(ref WorkRef) (math.Point3, error) {
 		if i < 0 || i >= g.points.Count() {
 			return math.Point3{}, fmt.Errorf("work geometry: no work point %q", ref)
 		}
-		return g.points.Item(i).Point(), nil
+		wp := g.points.Item(i)
+		if wp.deleted {
+			return math.Point3{}, fmt.Errorf("work geometry: work point %q was deleted", ref)
+		}
+		return wp.Point(), nil
 	}
 	w, ok := g.points.byKey[ref]
 	if !ok {

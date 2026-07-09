@@ -20,7 +20,7 @@ import (
 // listWorkAxes enumerates the active model's datum axes (origin frame first, then user axes)
 // with their current geometry and health.
 func listWorkAxes(_ *app.Session, host workHost) (wire.ListWorkAxesResult, error) {
-	axes := projectAll(host.WorkAxes(), workAxisInfo)
+	axes := projectLiveDatums(host.WorkAxes(), workAxisInfo)
 	return wire.ListWorkAxesResult{Axes: axes}, nil
 }
 
@@ -28,37 +28,39 @@ func listWorkAxes(_ *app.Session, host workHost) (wire.ListWorkAxesResult, error
 // whether it is one of the origin coordinate axes, health, and constructor kind.
 func workAxisInfo(index int, wa *feature.WorkAxis) wire.WorkAxisInfo {
 	return wire.WorkAxisInfo{
-		Index:     index,
-		Name:      wa.Name(),
-		Ref:       string(wa.Key()),
-		Kind:      wa.Kind(),
-		Origin:    point3Slice(wa.Origin()),
-		Direction: vector3Slice(wa.Direction().AsVector()),
-		IsOrigin:  wa.IsCoordinateSystemElement(),
-		Healthy:   wa.Health().OK(),
-		Reason:    wa.Health().Reason, // empty when healthy
+		Index:        index,
+		Name:         wa.Name(),
+		Ref:          string(wa.Key()),
+		Kind:         wa.Kind(),
+		Origin:       point3Slice(wa.Origin()),
+		Direction:    vector3Slice(wa.Direction().AsVector()),
+		IsOrigin:     wa.IsCoordinateSystemElement(),
+		Construction: wa.Construction(),
+		Healthy:      wa.Health().OK(),
+		Reason:       wa.Health().Reason, // empty when healthy
 	}
 }
 
 // listWorkPoints enumerates the active model's datum points (origin centre first, then user
 // points) with their position, kind, origin flag, visibility, and health (#1842).
 func listWorkPoints(_ *app.Session, host workHost) (wire.ListWorkPointsResult, error) {
-	points := projectAll(host.WorkPoints(), workPointInfo)
+	points := projectLiveDatums(host.WorkPoints(), workPointInfo)
 	return wire.ListWorkPointsResult{Points: points}, nil
 }
 
 // workPointInfo renders one datum point as the wire DTO.
 func workPointInfo(index int, wp *feature.WorkPoint) wire.WorkPointInfo {
 	return wire.WorkPointInfo{
-		Index:    index,
-		Name:     wp.Name(),
-		Ref:      string(wp.Key()),
-		Position: point3Slice(wp.Point()),
-		IsOrigin: wp.IsCoordinateSystemElement(),
-		Visible:  wp.Visible(),
-		Healthy:  wp.Health().OK(),
-		Reason:   wp.Health().Reason, // empty when healthy
-		Kind:     wp.Kind(),
+		Index:        index,
+		Name:         wp.Name(),
+		Ref:          string(wp.Key()),
+		Position:     point3Slice(wp.Point()),
+		IsOrigin:     wp.IsCoordinateSystemElement(),
+		Visible:      wp.Visible(),
+		Construction: wp.Construction(),
+		Healthy:      wp.Health().OK(),
+		Reason:       wp.Health().Reason, // empty when healthy
+		Kind:         wp.Kind(),
 	}
 }
 

@@ -74,3 +74,116 @@ func TestSetWorkFeatureVisibleUnknownRef(t *testing.T) {
 		t.Error("an unknown ref should error")
 	}
 }
+
+// TestDeleteWorkFeature removes a user plane over the wire: the delete reports it removed, and
+// workPlanes.list no longer includes it (#1855).
+func TestDeleteWorkFeature(t *testing.T) {
+	r, s := emptyPartSession(t)
+	var pl wire.CreateWorkPlaneResult
+	call(t, r, s, "workPlanes.create", `{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"10 mm"}`, &pl)
+
+	var del wire.DeleteWorkFeatureResult
+	call(t, r, s, "workFeatures.delete", `{"ref":"`+pl.Ref+`","retainDependents":true}`, &del)
+	if len(del.Deleted) != 1 || del.Deleted[0] != pl.Ref {
+		t.Errorf("deleted = %v, want just %q", del.Deleted, pl.Ref)
+	}
+	var list wire.ListWorkPlanesResult
+	call(t, r, s, "workPlanes.list", "{}", &list)
+	for _, p := range list.Planes {
+		if p.Ref == pl.Ref {
+			t.Error("a deleted plane should not appear in workPlanes.list")
+		}
+	}
+}
+
+// TestDeleteWorkFeatureCascades: deleting a point (retainDependents=false) also removes the axis
+// built through it, and both drop out of their lists (#1855).
+func TestDeleteWorkFeatureCascades(t *testing.T) {
+	r, s := emptyPartSession(t)
+	var pt wire.CreateWorkPointResult
+	call(t, r, s, "workPoints.create", `{"at":[0,0,5]}`, &pt)
+	var ax wire.CreateWorkAxisResult
+	call(t, r, s, "workAxes.create", `{"kind":"two-points","refs":["`+pt.Ref+`","origin/point/center"]}`, &ax)
+
+	var del wire.DeleteWorkFeatureResult
+	call(t, r, s, "workFeatures.delete", `{"ref":"`+pt.Ref+`"}`, &del)
+	if len(del.Deleted) != 2 {
+		t.Errorf("deleted = %v, want the point and its dependent axis", del.Deleted)
+	}
+	var axes wire.ListWorkAxesResult
+	call(t, r, s, "workAxes.list", "{}", &axes)
+	for _, a := range axes.Axes {
+		if a.Ref == ax.Ref {
+			t.Error("the cascaded axis should be gone from workAxes.list")
+		}
+	}
+}
+
+// TestDeleteWorkFeatureErrors: an origin ref and an unknown ref both fail cleanly (#1855).
+func TestDeleteWorkFeatureErrors(t *testing.T) {
+	r, s := emptyPartSession(t)
+	if _, err := r.Handle(s, "workFeatures.delete", []byte(`{"ref":"origin/plane/xy"}`)); err == nil {
+		t.Error("deleting an origin datum should error")
+	}
+	if _, err := r.Handle(s, "workFeatures.delete", []byte(`{"ref":"point/404"}`)); err == nil {
+		t.Error("deleting an unknown ref should error")
+	}
+}
+
+// TestCreateConstructionDatum: the construction flag on create is reported back on each list DTO,
+// independent of visibility (#1849).
+func TestCreateConstructionDatum(t *testing.T) {
+	r, s := emptyPartSession(t)
+	var pl wire.CreateWorkPlaneResult
+	call(t, r, s, "workPlanes.create", `{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"5 mm","construction":true,"visible":false}`, &pl)
+	var pt wire.CreateWorkPointResult
+	call(t, r, s, "workPoints.create", `{"at":[1,2,3],"construction":true}`, &pt)
+	var ax wire.CreateWorkAxisResult
+	call(t, r, s, "workAxes.create", `{"kind":"line","origin":[0,0,0],"direction":[0,0,1],"construction":true}`, &ax)
+
+	var planes wire.ListWorkPlanesResult
+	call(t, r, s, "workPlanes.list", "{}", &planes)
+	if !findPlane(planes.Planes, pl.Ref).Construction {
+		t.Error("plane should report construction=true")
+	}
+	if findPlane(planes.Planes, pl.Ref).Visible {
+		t.Error("construction and visible are independent; this plane was created hidden")
+	}
+	var points wire.ListWorkPointsResult
+	call(t, r, s, "workPoints.list", "{}", &points)
+	if !findPointConstruction(points.Points, pt.Ref) {
+		t.Error("point should report construction=true")
+	}
+	var axes wire.ListWorkAxesResult
+	call(t, r, s, "workAxes.list", "{}", &axes)
+	if !findAxisConstruction(axes.Axes, ax.Ref) {
+		t.Error("axis should report construction=true")
+	}
+}
+
+func findPlane(planes []wire.WorkPlaneInfo, ref string) wire.WorkPlaneInfo {
+	for _, p := range planes {
+		if p.Ref == ref {
+			return p
+		}
+	}
+	return wire.WorkPlaneInfo{}
+}
+
+func findPointConstruction(points []wire.WorkPointInfo, ref string) bool {
+	for _, p := range points {
+		if p.Ref == ref {
+			return p.Construction
+		}
+	}
+	return false
+}
+
+func findAxisConstruction(axes []wire.WorkAxisInfo, ref string) bool {
+	for _, a := range axes {
+		if a.Ref == ref {
+			return a.Construction
+		}
+	}
+	return false
+}

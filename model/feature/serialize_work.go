@@ -20,16 +20,18 @@ import (
 // WorkFeatureData is the recipe form of one user work feature: which collection it
 // belongs to, its definition kind, the references it is built on, and any parameter.
 type WorkFeatureData struct {
-	Collection string    `yaml:"collection"` // plane | axis | point
-	Kind       string    `yaml:"kind"`
-	Seq        uint64    `yaml:"seq,omitempty"` // global creation stamp; see model/seq
-	Refs       []string  `yaml:"refs,omitempty"`
-	Offset     float64   `yaml:"offset,omitempty"`   // plane-offset
-	Angle      float64   `yaml:"angle,omitempty"`    // line-plane-angle
-	Position   []float64 `yaml:"position,omitempty"` // point position / fixed-frame origin [x,y,z]
-	XAxis      []float64 `yaml:"xaxis,omitempty"`    // fixed-frame X axis [x,y,z]
-	YAxis      []float64 `yaml:"yaxis,omitempty"`    // fixed-frame Y axis [x,y,z]
-	CloudID    string    `yaml:"cloud,omitempty"`    // point-cloud-fit: the source cloud's id (provenance, #645)
+	Collection   string    `yaml:"collection"` // plane | axis | point
+	Kind         string    `yaml:"kind"`
+	Seq          uint64    `yaml:"seq,omitempty"`          // global creation stamp; see model/seq
+	Construction bool      `yaml:"construction,omitempty"` // hidden, consumer-tied datum (#1849)
+	Deleted      bool      `yaml:"deleted,omitempty"`      // tombstoned; slot kept for ref stability (#1855)
+	Refs         []string  `yaml:"refs,omitempty"`
+	Offset       float64   `yaml:"offset,omitempty"`   // plane-offset
+	Angle        float64   `yaml:"angle,omitempty"`    // line-plane-angle
+	Position     []float64 `yaml:"position,omitempty"` // point position / fixed-frame origin [x,y,z]
+	XAxis        []float64 `yaml:"xaxis,omitempty"`    // fixed-frame X axis [x,y,z]
+	YAxis        []float64 `yaml:"yaxis,omitempty"`    // fixed-frame Y axis [x,y,z]
+	CloudID      string    `yaml:"cloud,omitempty"`    // point-cloud-fit: the source cloud's id (provenance, #645)
 }
 
 // MarshalWork projects the user work features into the recipe, in creation order.
@@ -46,32 +48,33 @@ func MarshalWork(g *WorkGeometry) ([]WorkFeatureData, error) {
 }
 
 func serializeWorkFeature(g *WorkGeometry, e userEntry) (WorkFeatureData, error) {
-	d, s, err := serializeWorkDef(g, e)
+	d, s, c, del, err := serializeWorkDef(g, e)
 	if err != nil {
 		return WorkFeatureData{}, err
 	}
-	d.Seq = s
+	d.Seq, d.Construction, d.Deleted = s, c, del
 	return d, nil
 }
 
-// serializeWorkDef encodes the work feature's definition and returns its creation stamp,
-// so MarshalWork can persist the global order shared with sketches/features (issue #132).
-func serializeWorkDef(g *WorkGeometry, e userEntry) (WorkFeatureData, uint64, error) {
+// serializeWorkDef encodes the work feature's definition and returns its creation stamp plus its
+// construction/deleted flags, so MarshalWork persists the global order shared with sketches/
+// features (issue #132) and the lifecycle flags (#1849, #1855).
+func serializeWorkDef(g *WorkGeometry, e userEntry) (WorkFeatureData, uint64, bool, bool, error) {
 	switch e.collection {
 	case "plane":
 		w := g.planes.Item(e.index)
 		d, err := serializePlaneDef(w.def)
-		return d, w.seq, err
+		return d, w.seq, w.construction, w.deleted, err
 	case "axis":
 		w := g.axes.Item(e.index)
 		d, err := serializeAxisDef(w.def)
-		return d, w.seq, err
+		return d, w.seq, w.construction, w.deleted, err
 	case "point":
 		w := g.points.Item(e.index)
 		d, err := serializePointDef(w.def)
-		return d, w.seq, err
+		return d, w.seq, w.construction, w.deleted, err
 	default:
-		return WorkFeatureData{}, 0, fmt.Errorf("unknown work collection %q", e.collection)
+		return WorkFeatureData{}, 0, false, false, fmt.Errorf("unknown work collection %q", e.collection)
 	}
 }
 
@@ -144,8 +147,30 @@ func ApplyWork(g *WorkGeometry, data []WorkFeatureData) error {
 			return fmt.Errorf("work feature %d (%s/%s): %w", i, d.Collection, d.Kind, err)
 		}
 		restoreWorkSeq(g, d)
+		restoreWorkFlags(g, d)
 	}
 	return nil
+}
+
+// restoreWorkFlags re-applies the just-restored work feature's construction/deleted flags (the
+// Add* call above created it live and visible). The restored feature is the last in its
+// collection. A deleted datum is rebuilt as a tombstone so its slot holds and surviving datums
+// keep their positional references (#1849, #1855).
+func restoreWorkFlags(g *WorkGeometry, d WorkFeatureData) {
+	if !d.Construction && !d.Deleted {
+		return
+	}
+	switch d.Collection {
+	case "plane":
+		w := g.planes.Item(g.planes.Count() - 1)
+		w.construction, w.deleted = d.Construction, d.Deleted
+	case "axis":
+		w := g.axes.Item(g.axes.Count() - 1)
+		w.construction, w.deleted = d.Construction, d.Deleted
+	case "point":
+		w := g.points.Item(g.points.Count() - 1)
+		w.construction, w.deleted = d.Construction, d.Deleted
+	}
 }
 
 // restoreWorkSeq pins the just-restored work feature's creation stamp to its saved value
