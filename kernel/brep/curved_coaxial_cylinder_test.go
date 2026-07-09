@@ -43,6 +43,26 @@ func TestCoaxialCylinderUnionAbut(t *testing.T) {
 	}
 }
 
+// TestCoaxialEqualCylinders covers the predicate the model boolean gate uses (#1831): true for a
+// coaxial equal-radius bare-cylinder pair (overlap or abut), false for a different radius, an offset
+// axis, or a non-cylinder body — so a JOIN is routed to the analytic path only when it applies.
+func TestCoaxialEqualCylinders(t *testing.T) {
+	base, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 4)
+	abut, _ := SolidCylinder(math.P3(0, 0, 4), math.V3(0, 0, 1), 2, 4)
+	overlap, _ := SolidCylinder(math.P3(0, 0, 3), math.V3(0, 0, 1), 2, 4)
+	if !CoaxialEqualCylinders(base, abut) || !CoaxialEqualCylinders(base, overlap) {
+		t.Error("coaxial equal-radius cylinders (abut/overlap) should report true")
+	}
+	bigR, _ := SolidCylinder(math.P3(0, 0, 4), math.V3(0, 0, 1), 3, 4)
+	offset, _ := SolidCylinder(math.P3(5, 0, 4), math.V3(0, 0, 1), 2, 4)
+	block, _ := SolidBlock(math.P3(0, 0, 0), math.P3(2, 2, 2), "b")
+	for name, other := range map[string]*topo.Body{"bigger radius": bigR, "offset axis": offset, "block": block} {
+		if CoaxialEqualCylinders(base, other) {
+			t.Errorf("%s should NOT report as a coaxial equal-radius cylinder pair", name)
+		}
+	}
+}
+
 // TestCoaxialCylinderUnionOrderIndependent: union resolves whichever cylinder is passed first.
 func TestCoaxialCylinderUnionOrderIndependent(t *testing.T) {
 	a, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 4)

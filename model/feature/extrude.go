@@ -6,6 +6,7 @@ import (
 	"errors"
 	stdmath "math"
 
+	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
@@ -196,7 +197,12 @@ func combine(in Input, body *topo.Body, op ops.PartFeatureOperation) ([]*topo.Bo
 	// cylinder/cone tool, which previously fell through to faceting and shattered the hole rim into 24 straight
 	// segments (#1472). CurvedBoolean takes (target, tool) in feature order; each kernel path checks its own
 	// operand roles, so the same call serves both directions.
-	if exactlyOneCurvedPrimitive(target, body) {
+	// The curved boolean also keeps analyticity for a JOIN of two coaxial equal-radius cylinders (a
+	// stepped/stacked shaft) — brep.CoaxialCylinderUnion returns one cylinder spanning the merged
+	// extent. Without this the both-cylinder pair fails exactlyOneCurvedPrimitive (both are curved), so
+	// combine faceted BOTH into 24-gon prisms and shattered the wall into planar facets (#1831). On no
+	// match the curved boolean returns ok=false and we fall through to the planar path unchanged.
+	if exactlyOneCurvedPrimitive(target, body) || (op == ops.Join && brep.CoaxialEqualCylinders(target, body)) {
 		if res, ok := ops.CurvedBooleanWithDiagnostics(op, target, body, in.Diag); ok {
 			return appendCombined(running, res), nil
 		}
