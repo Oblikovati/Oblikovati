@@ -409,7 +409,7 @@ func (c *CoilFeature) Recompute(in Input) (Output, error) {
 		return Output{}, err
 	}
 	sections := coilSections(prof, c.def.Sketch.Plane(), c.def.Axis, rise, totalTurns, c.def.Taper)
-	c.tool, err = sweptSolid(sections, false, featOr(c.featName, "coil"))
+	c.tool, err = c.coilTool(sections)
 	if err != nil {
 		return Output{}, err
 	}
@@ -418,6 +418,18 @@ func (c *CoilFeature) Recompute(in Input) (Output, error) {
 		return Output{}, err
 	}
 	return Output{Bodies: bodies}, nil
+}
+
+// coilTool builds the coiled body from its helical cross-sections: for the Surface operation
+// (kSurfaceOperation, #1858) an OPEN coiled sheet (the profile boundary swept along the helix, no
+// end caps) via sweptShell; otherwise the coiled solid. combine() adds a surface tool as a surface
+// body (no boolean).
+func (c *CoilFeature) coilTool(sections [][]math.Point3) (*topo.Body, error) {
+	feat := featOr(c.featName, "coil")
+	if c.def.Operation == ops.Surface {
+		return sweptShell(sections, false, feat)
+	}
+	return sweptSolid(sections, false, feat)
 }
 
 // coilSections places the profile along the helix rail: at each step it is

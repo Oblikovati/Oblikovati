@@ -208,7 +208,7 @@ const coilSchema = `{
     "revolutions": {"type": "string", "description": "Number of turns, e.g. \"4\"."},
     "height": {"type": "string", "description": "Total axial rise, e.g. \"30 mm\" — combines with pitch OR revolutions."},
     "taper": {"type": "string", "description": "Optional taper angle, e.g. \"5 deg\" — the helix radius grows with height."},
-    "operation": {"type": "string", "enum": ["new", "join", "cut"], "default": "new"},
+    "operation": {"type": "string", "enum": ["new", "join", "cut", "surface"], "default": "new", "description": "Boolean against existing bodies, or \"surface\" to coil the profile into an open swept-surface (sheet) body — Inventor's kSurfaceOperation."},
     "startTransitionAngle": {"type": "string", "description": "Spring start-end transition sweep (pitch winds down to zero), e.g. \"90 deg\". Grounds/flattens the coil start."},
     "startFlatAngle": {"type": "string", "description": "Spring start-end flat sweep (zero pitch) after the transition, e.g. \"180 deg\"."},
     "endTransitionAngle": {"type": "string", "description": "Spring end transition sweep (pitch winds down to zero), e.g. \"90 deg\"."},
