@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"math"
 	"testing"
+
+	"oblikovati.org/model/compdef"
 )
 
 // TestPath3DFromPoints covers the polyline→path helper: a valid chain builds an open path; too
@@ -120,5 +122,33 @@ func TestSweepPathPointsTooFew(t *testing.T) {
 	}
 	if _, err := applyMap(t, s, "sweep", args); err == nil {
 		t.Error("a single-point pathPoints should error")
+	}
+}
+
+// TestSweepSurfaceOperation sweeps the profile with operation:"surface" (kSurfaceOperation, #1858):
+// the rectangle swept 5 up +Z builds one healthy OPEN sheet body (walls only, no end caps), not
+// booleaned against anything.
+func TestSweepSurfaceOperation(t *testing.T) {
+	s := profiledPart(t)
+	raw, err := applyMap(t, s, "sweep", map[string]any{
+		"sketchIndex": 0, "profileIndex": 0, "operation": "surface",
+		"pathPoints": [][]float64{{0, 0, 0}, {0, 0, 5}},
+	})
+	if err != nil {
+		t.Fatalf("surface sweep: %v", err)
+	}
+	var res struct {
+		Bodies  int  `json:"bodies"`
+		Healthy bool `json:"healthy"`
+	}
+	if err := json.Unmarshal(raw, &res); err != nil {
+		t.Fatalf("decode result: %v", err)
+	}
+	if !res.Healthy || res.Bodies != 1 {
+		t.Fatalf("surface sweep result = %+v, want one healthy body", res)
+	}
+	b := s.ActiveDocument().Content().(*compdef.PartComponentDefinition).SurfaceBodies().Item(0)
+	if b.IsSolid() {
+		t.Error("surface-operation sweep produced a SOLID body, want an open sheet")
 	}
 }
