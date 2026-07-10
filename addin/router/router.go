@@ -420,6 +420,8 @@ func (r *Router) registerSketchAuthoringHandlers() {
 	r.readOnly(wire.MethodSketchGetText, typedPart(getText))
 	r.readOnly(wire.MethodSketchAutoDimension, typedPart(autoDimensionSketch))
 	r.mutating(wire.MethodSketchProject, "Project Geometry", typedPart(projectGeometry))
+	r.mutating(wire.MethodSketchProjectCutEdges, "Project Cut Edges", typedPart(projectCutEdges))
+	r.mutating(wire.MethodSketchProjectSilhouette, "Project Silhouette", typedPart(projectSilhouette))
 }
 
 // registerCommandHandlers wires the command and ribbon methods — the add-in UI surface

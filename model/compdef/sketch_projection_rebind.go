@@ -50,6 +50,16 @@ func (d *PartComponentDefinition) CurveProjectionSource(kind, id string, plane s
 		return NewWorkAxisRefSource(d, feature.WorkRef(id)), true
 	case "workPlane":
 		return NewWorkPlaneRefSource(d, feature.WorkRef(id), plane), true
+	case "cutEdge":
+		if bi, wi, ok := parseCutEdgeSourceID(id); ok {
+			return NewCutEdgeRefSource(d, plane, bi, wi), true
+		}
+		return nil, false
+	case "silhouette":
+		if faceRef, prox, incl, ok := parseSilhouetteSourceID(id); ok {
+			return NewSilhouetteRefSource(d, faceRef, plane, prox, incl), true
+		}
+		return nil, false
 	default:
 		return nil, false
 	}
