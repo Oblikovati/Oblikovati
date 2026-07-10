@@ -154,8 +154,12 @@ func serializePointDef(def pointDefinition) (WorkFeatureData, error) {
 		p := v.FrozenPosition() // last good model position; the source re-derives it after relink (#645)
 		d.CloudID = v.cloudID
 		d.Position = []float64{float64(p.X), float64(p.Y), float64(p.Z)}
+	case curveEntityPointDef:
+		if v.proximity != nil { // record the solution-selection point so the side is stable (#1842)
+			d.Solution = []float64{float64(v.proximity.X), float64(v.proximity.Y), float64(v.proximity.Z)}
+		}
 	case planeAxisPointDef, pointRefPointDef, twoLinesPointDef, threePlanesPointDef, faceCenterPointDef,
-		edgeMidpointPointDef:
+		edgeMidpointPointDef, centroidPointDef:
 		// references only
 	default:
 		return WorkFeatureData{}, fmt.Errorf("no codec for work point definition %q", def.kindName())
@@ -457,6 +461,23 @@ func restorePointFeature(c *WorkPoints, d WorkFeatureData) error {
 		}
 		c.AddByMidpointOfEdge(r[0])
 		return nil
+	case "curve-and-entity":
+		r, err := workRefs(d.Refs, 2)
+		if err != nil {
+			return err
+		}
+		var prox *math.Point3
+		if p, ok := solutionPoint(d); ok {
+			prox = &p
+		}
+		c.AddByCurveAndEntity(r[0], r[1], prox)
+		return nil
+	case "centroid":
+		if len(d.Refs) == 0 {
+			return fmt.Errorf("centroid work point: no edge references")
+		}
+		c.AddAtCentroid(allWorkRefs(d.Refs)...)
+		return nil
 	default:
 		return fmt.Errorf("no restore codec for work point kind %q", d.Kind)
 	}
@@ -684,6 +705,16 @@ func coilEndFromData(d *CoilEndData) CoilEndCondition {
 		return CoilEndCondition{}
 	}
 	return CoilEndCondition{Flat: true, TransitionAngle: d.TransitionAngle, FlatAngle: d.FlatAngle}
+}
+
+// allWorkRefs casts every persisted reference string to a WorkRef — the variable-arity counterpart
+// of workRefs, for kinds like centroid that take an unbounded edge list.
+func allWorkRefs(refs []string) []WorkRef {
+	out := make([]WorkRef, len(refs))
+	for i, r := range refs {
+		out[i] = WorkRef(r)
+	}
+	return out
 }
 
 // refStrings renders work references as their string form for YAML.
