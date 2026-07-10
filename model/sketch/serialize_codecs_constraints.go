@@ -15,6 +15,7 @@ func init() {
 	registerTwoCurveConstraintCodecs()
 	registerMixedConstraintCodecs()
 	registerEntitySymmetryConstraintCodecs()
+	registerEllipseAxisConstraintCodecs()
 	registerTagConstraintCodecs()
 }
 

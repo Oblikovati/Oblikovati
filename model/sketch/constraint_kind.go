@@ -40,13 +40,19 @@ const (
 	LineSymmetryKind     ConstraintKind = "symmetryLine"
 	CircularSymmetryKind ConstraintKind = "symmetryCircular"
 	ArcMidpointKind      ConstraintKind = "midpointArc"
-	FixKind              ConstraintKind = "fix"
-	SmoothKind           ConstraintKind = "smooth"
-	GroundKind           ConstraintKind = "ground"
-	OffsetKind           ConstraintKind = "offset"
-	PatternLinkKind      ConstraintKind = "patternLink"
-	TextBoxAnchorKind    ConstraintKind = "textBox"
-	CustomKind           ConstraintKind = "custom"
+	// Ellipse-axis relations (#1879): parallel/perpendicular/collinear with an ellipse-axis
+	// operand. They enumerate as the wire parallel/perpendicular/collinear but persist distinctly
+	// (they carry per-operand major/minor flags a plain two-line constraint has no place for).
+	EllipseParallelKind      ConstraintKind = "ellipseParallel"
+	EllipsePerpendicularKind ConstraintKind = "ellipsePerpendicular"
+	EllipseCollinearKind     ConstraintKind = "ellipseCollinear"
+	FixKind                  ConstraintKind = "fix"
+	SmoothKind               ConstraintKind = "smooth"
+	GroundKind               ConstraintKind = "ground"
+	OffsetKind               ConstraintKind = "offset"
+	PatternLinkKind          ConstraintKind = "patternLink"
+	TextBoxAnchorKind        ConstraintKind = "textBox"
+	CustomKind               ConstraintKind = "custom"
 )
 
 // KindedConstraint is the capability the serializer and the router enumerate
@@ -91,7 +97,11 @@ func (c *LineSymmetryConstraint) ConstraintKind() ConstraintKind    { return Lin
 func (c *CircularSymmetryConstraint) ConstraintKind() ConstraintKind {
 	return CircularSymmetryKind
 }
-func (c *ArcMidpointConstraint) ConstraintKind() ConstraintKind   { return ArcMidpointKind }
+func (c *ArcMidpointConstraint) ConstraintKind() ConstraintKind { return ArcMidpointKind }
+
+// AxisRelationConstraint carries its persisted kind (one of the five ellipse-axis kinds) in a
+// field, since one Go type covers all five relations/orientations (#1879).
+func (c *AxisRelationConstraint) ConstraintKind() ConstraintKind  { return c.kind }
 func (c *FixConstraint) ConstraintKind() ConstraintKind           { return FixKind }
 func (c *SmoothConstraint) ConstraintKind() ConstraintKind        { return SmoothKind }
 func (c *GroundConstraint) ConstraintKind() ConstraintKind        { return GroundKind }
@@ -127,8 +137,20 @@ func (c *CircularSymmetryConstraint) RelatedEntities() []Entity {
 	return []Entity{c.C1, c.C2, c.About}
 }
 func (c *ArcMidpointConstraint) RelatedEntities() []Entity { return []Entity{c.P, c.A} }
-func (c *FixConstraint) RelatedEntities() []Entity         { return []Entity{c.P} }
-func (c *SmoothConstraint) RelatedEntities() []Entity      { return []Entity{c.C1, c.C2} }
+
+// RelatedEntities lists the operand entities, skipping the world axis of a horizontal/vertical
+// form (which names no entity).
+func (c *AxisRelationConstraint) RelatedEntities() []Entity {
+	out := make([]Entity, 0, 2)
+	for _, op := range []AxisOperand{c.a, c.b} {
+		if e := op.operandEntity(); e != nil {
+			out = append(out, e)
+		}
+	}
+	return out
+}
+func (c *FixConstraint) RelatedEntities() []Entity    { return []Entity{c.P} }
+func (c *SmoothConstraint) RelatedEntities() []Entity { return []Entity{c.C1, c.C2} }
 func (c *GroundConstraint) RelatedEntities() []Entity {
 	pts := c.Points()
 	out := make([]Entity, len(pts))
@@ -166,6 +188,7 @@ var (
 	_ KindedConstraint = (*LineSymmetryConstraint)(nil)
 	_ KindedConstraint = (*CircularSymmetryConstraint)(nil)
 	_ KindedConstraint = (*ArcMidpointConstraint)(nil)
+	_ KindedConstraint = (*AxisRelationConstraint)(nil)
 	_ KindedConstraint = (*FixConstraint)(nil)
 	_ KindedConstraint = (*SmoothConstraint)(nil)
 	_ KindedConstraint = (*GroundConstraint)(nil)

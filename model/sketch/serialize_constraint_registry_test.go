@@ -29,6 +29,7 @@ var (
 		ParallelKind, PerpendicularKind, CollinearKind, EqualLengthKind,
 		ConcentricKind, EqualRadiusKind, CircularTangentKind, TangentKind,
 		SymmetryKind, LineSymmetryKind, CircularSymmetryKind, ArcMidpointKind,
+		EllipseParallelKind, EllipsePerpendicularKind, EllipseCollinearKind,
 		FixKind, SmoothKind,
 		GroundKind, OffsetKind, PatternLinkKind, TextBoxAnchorKind, CustomKind,
 	}
@@ -152,6 +153,12 @@ func populateEvery2DConstraintKind(s *Sketch) {
 	g.AddLineSymmetry(sl1, sl2, axis)
 	g.AddCircularSymmetry(c1, c2, axis)
 	g.AddMidpointToArc(s.Points().Add(math.P2(0, 6)), arc)
+	// Ellipse-axis relations (#1879): one instance of each kind, mixing major/minor selectors.
+	ell := s.Ellipses().Add(math.P2(20, 0), math.V2(1, 0), 3, 1)
+	ellOp := func(major bool) AxisOperand { op, _ := EllipseAxisOf(ell, major); return op }
+	g.AddEllipseParallel(ellOp(true), LineAxis(l1))
+	g.AddEllipsePerpendicular(ellOp(false), LineAxis(l2))
+	g.AddEllipseCollinear(ellOp(true), LineAxis(l1))
 	g.AddFix(l1.A)
 	g.AddSmooth(l1, arc, l1.B, arc.Start)
 	g.AddGroundPoints(l2.A, l2.B)
