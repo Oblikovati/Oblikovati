@@ -35,30 +35,32 @@ func carrier[T Constraint](carry func(g *GeometricConstraints, v T, m *cloneMap)
 // Duplicate keys are a compile error; completeness against the persisted
 // vocabulary is enforced by TestConstraintCarrierRegistryMatchesVocabulary.
 var constraintCarriers2D = map[ConstraintKind]constraintCarrier{
-	CoincidentKind:       carrier(carryCoincident),
-	HorizontalKind:       carrier(carryHorizontal),
-	VerticalKind:         carrier(carryVertical),
-	PointOnLineKind:      carrier(carryPointOnLine),
-	MidpointKind:         carrier(carryMidpoint),
-	PointOnCircleKind:    carrier(carryPointOnCircle),
-	ParallelKind:         carrier(carryParallel),
-	PerpendicularKind:    carrier(carryPerpendicular),
-	CollinearKind:        carrier(carryCollinear),
-	EqualLengthKind:      carrier(carryEqualLength),
-	ConcentricKind:       carrier(carryConcentric),
-	EqualRadiusKind:      carrier(carryEqualRadius),
-	CircularTangentKind:  carrier(carryCircularTangent),
-	TangentKind:          carrier(carryTangent),
-	SymmetryKind:         carrier(carrySymmetryKind),
-	LineSymmetryKind:     carrier(carryLineSymmetry),
-	CircularSymmetryKind: carrier(carryCircularSymmetry),
-	ArcMidpointKind:      carrier(carryArcMidpoint),
-	FixKind:              carrier(carryFixKind),
-	SmoothKind:           carrier(carrySmooth),
-	GroundKind:           carrier(carryGround),
-	OffsetKind:           carrier(carryOffset),
-	PatternLinkKind:      carrier(carryPatternLink),
-	CustomKind:           carrier(carryCustom),
+	CoincidentKind:           carrier(carryCoincident),
+	HorizontalKind:           carrier(carryHorizontal),
+	VerticalKind:             carrier(carryVertical),
+	SingleLineHorizontalKind: carrier(carryLineHorizontal),
+	SingleLineVerticalKind:   carrier(carryLineVertical),
+	PointOnLineKind:          carrier(carryPointOnLine),
+	MidpointKind:             carrier(carryMidpoint),
+	PointOnCircleKind:        carrier(carryPointOnCircle),
+	ParallelKind:             carrier(carryParallel),
+	PerpendicularKind:        carrier(carryPerpendicular),
+	CollinearKind:            carrier(carryCollinear),
+	EqualLengthKind:          carrier(carryEqualLength),
+	ConcentricKind:           carrier(carryConcentric),
+	EqualRadiusKind:          carrier(carryEqualRadius),
+	CircularTangentKind:      carrier(carryCircularTangent),
+	TangentKind:              carrier(carryTangent),
+	SymmetryKind:             carrier(carrySymmetryKind),
+	LineSymmetryKind:         carrier(carryLineSymmetry),
+	CircularSymmetryKind:     carrier(carryCircularSymmetry),
+	ArcMidpointKind:          carrier(carryArcMidpoint),
+	FixKind:                  carrier(carryFixKind),
+	SmoothKind:               carrier(carrySmooth),
+	GroundKind:               carrier(carryGround),
+	OffsetKind:               carrier(carryOffset),
+	PatternLinkKind:          carrier(carryPatternLink),
+	CustomKind:               carrier(carryCustom),
 	// A text-box anchor is auto-created with its TextBox (anchorTextBox) and
 	// sketch copy does not clone text boxes (cloneEntity has no TextBox case),
 	// so the anchor can never be remapped — the one documented skip (#1637).
@@ -110,6 +112,26 @@ func carryHorizontal(g *GeometricConstraints, v *HorizontalConstraint, m *cloneM
 
 func carryVertical(g *GeometricConstraints, v *VerticalConstraint, m *cloneMap) bool {
 	return carryPoints(m, v.A, v.B, g.AddVertical)
+}
+
+// carryLineHorizontal / carryLineVertical remap the single line of a single-line
+// horizontal/vertical constraint (#1871).
+func carryLineHorizontal(g *GeometricConstraints, v *SingleLineHorizontalConstraint, m *cloneMap) bool {
+	l, ok := m.line(v.L)
+	if !ok {
+		return false
+	}
+	g.AddLineHorizontal(l)
+	return true
+}
+
+func carryLineVertical(g *GeometricConstraints, v *SingleLineVerticalConstraint, m *cloneMap) bool {
+	l, ok := m.line(v.L)
+	if !ok {
+		return false
+	}
+	g.AddLineVertical(l)
+	return true
 }
 
 func carryPointOnLine(g *GeometricConstraints, v *PointOnLineConstraint, m *cloneMap) bool {

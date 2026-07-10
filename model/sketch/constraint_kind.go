@@ -13,21 +13,27 @@ type ConstraintKind string
 
 // The persisted 2D geometric constraint kinds.
 const (
-	CoincidentKind      ConstraintKind = "coincident"
-	HorizontalKind      ConstraintKind = "horizontal"
-	VerticalKind        ConstraintKind = "vertical"
-	PointOnLineKind     ConstraintKind = "pointOnLine"
-	MidpointKind        ConstraintKind = "midpoint"
-	PointOnCircleKind   ConstraintKind = "pointOnCircle"
-	ParallelKind        ConstraintKind = "parallel"
-	PerpendicularKind   ConstraintKind = "perpendicular"
-	CollinearKind       ConstraintKind = "collinear"
-	EqualLengthKind     ConstraintKind = "equalLength"
-	ConcentricKind      ConstraintKind = "concentric"
-	EqualRadiusKind     ConstraintKind = "equalRadius"
-	CircularTangentKind ConstraintKind = "circularTangent"
-	TangentKind         ConstraintKind = "tangent"
-	SymmetryKind        ConstraintKind = "symmetry"
+	CoincidentKind ConstraintKind = "coincident"
+	// HorizontalKind / VerticalKind are the two-point *align* forms (Inventor's
+	// HorizontalAlign/VerticalAlign); they keep the "horizontal"/"vertical" recipe
+	// spelling for .obk stability but map to the wire horizontalAlign/verticalAlign
+	// (#1871). The single-line forms below carry the wire "horizontal"/"vertical".
+	HorizontalKind           ConstraintKind = "horizontal"
+	VerticalKind             ConstraintKind = "vertical"
+	SingleLineHorizontalKind ConstraintKind = "horizontalLine"
+	SingleLineVerticalKind   ConstraintKind = "verticalLine"
+	PointOnLineKind          ConstraintKind = "pointOnLine"
+	MidpointKind             ConstraintKind = "midpoint"
+	PointOnCircleKind        ConstraintKind = "pointOnCircle"
+	ParallelKind             ConstraintKind = "parallel"
+	PerpendicularKind        ConstraintKind = "perpendicular"
+	CollinearKind            ConstraintKind = "collinear"
+	EqualLengthKind          ConstraintKind = "equalLength"
+	ConcentricKind           ConstraintKind = "concentric"
+	EqualRadiusKind          ConstraintKind = "equalRadius"
+	CircularTangentKind      ConstraintKind = "circularTangent"
+	TangentKind              ConstraintKind = "tangent"
+	SymmetryKind             ConstraintKind = "symmetry"
 	// Entity symmetry and arc-midpoint (#1870, #1872) are coarser on the wire — they
 	// enumerate as the wire "symmetry"/"midpoint", like circularTangent→"tangent" — but
 	// persist under their own kinds so each has a distinct codec.
@@ -60,9 +66,15 @@ type KindedConstraint interface {
 // ConstraintKind identifies each 2D constraint for codec and factory dispatch
 // (and, mapped at the router boundary, for enumeration). Each concrete type
 // declares its own — like Kind() on entities — so no consumer needs a switch.
-func (c *CoincidentConstraint) ConstraintKind() ConstraintKind      { return CoincidentKind }
-func (c *HorizontalConstraint) ConstraintKind() ConstraintKind      { return HorizontalKind }
-func (c *VerticalConstraint) ConstraintKind() ConstraintKind        { return VerticalKind }
+func (c *CoincidentConstraint) ConstraintKind() ConstraintKind { return CoincidentKind }
+func (c *HorizontalConstraint) ConstraintKind() ConstraintKind { return HorizontalKind }
+func (c *VerticalConstraint) ConstraintKind() ConstraintKind   { return VerticalKind }
+func (c *SingleLineHorizontalConstraint) ConstraintKind() ConstraintKind {
+	return SingleLineHorizontalKind
+}
+func (c *SingleLineVerticalConstraint) ConstraintKind() ConstraintKind {
+	return SingleLineVerticalKind
+}
 func (c *PointOnLineConstraint) ConstraintKind() ConstraintKind     { return PointOnLineKind }
 func (c *MidpointConstraint) ConstraintKind() ConstraintKind        { return MidpointKind }
 func (c *PointOnCircleConstraint) ConstraintKind() ConstraintKind   { return PointOnCircleKind }
@@ -89,18 +101,20 @@ func (c *TextBoxAnchorConstraint) ConstraintKind() ConstraintKind { return TextB
 func (c *CustomConstraint) ConstraintKind() ConstraintKind        { return CustomKind }
 
 // RelatedEntities per type, in API enumeration order.
-func (c *CoincidentConstraint) RelatedEntities() []Entity    { return []Entity{c.A, c.B} }
-func (c *HorizontalConstraint) RelatedEntities() []Entity    { return []Entity{c.A, c.B} }
-func (c *VerticalConstraint) RelatedEntities() []Entity      { return []Entity{c.A, c.B} }
-func (c *PointOnLineConstraint) RelatedEntities() []Entity   { return []Entity{c.P, c.L} }
-func (c *MidpointConstraint) RelatedEntities() []Entity      { return []Entity{c.P, c.L} }
-func (c *PointOnCircleConstraint) RelatedEntities() []Entity { return []Entity{c.P, c.C} }
-func (c *ParallelConstraint) RelatedEntities() []Entity      { return []Entity{c.L1, c.L2} }
-func (c *PerpendicularConstraint) RelatedEntities() []Entity { return []Entity{c.L1, c.L2} }
-func (c *CollinearConstraint) RelatedEntities() []Entity     { return []Entity{c.L1, c.L2} }
-func (c *EqualLengthConstraint) RelatedEntities() []Entity   { return []Entity{c.L1, c.L2} }
-func (c *ConcentricConstraint) RelatedEntities() []Entity    { return []Entity{c.C1, c.C2} }
-func (c *EqualRadiusConstraint) RelatedEntities() []Entity   { return []Entity{c.C1, c.C2} }
+func (c *CoincidentConstraint) RelatedEntities() []Entity           { return []Entity{c.A, c.B} }
+func (c *HorizontalConstraint) RelatedEntities() []Entity           { return []Entity{c.A, c.B} }
+func (c *VerticalConstraint) RelatedEntities() []Entity             { return []Entity{c.A, c.B} }
+func (c *SingleLineHorizontalConstraint) RelatedEntities() []Entity { return []Entity{c.L} }
+func (c *SingleLineVerticalConstraint) RelatedEntities() []Entity   { return []Entity{c.L} }
+func (c *PointOnLineConstraint) RelatedEntities() []Entity          { return []Entity{c.P, c.L} }
+func (c *MidpointConstraint) RelatedEntities() []Entity             { return []Entity{c.P, c.L} }
+func (c *PointOnCircleConstraint) RelatedEntities() []Entity        { return []Entity{c.P, c.C} }
+func (c *ParallelConstraint) RelatedEntities() []Entity             { return []Entity{c.L1, c.L2} }
+func (c *PerpendicularConstraint) RelatedEntities() []Entity        { return []Entity{c.L1, c.L2} }
+func (c *CollinearConstraint) RelatedEntities() []Entity            { return []Entity{c.L1, c.L2} }
+func (c *EqualLengthConstraint) RelatedEntities() []Entity          { return []Entity{c.L1, c.L2} }
+func (c *ConcentricConstraint) RelatedEntities() []Entity           { return []Entity{c.C1, c.C2} }
+func (c *EqualRadiusConstraint) RelatedEntities() []Entity          { return []Entity{c.C1, c.C2} }
 func (c *CircularTangentConstraint) RelatedEntities() []Entity {
 	return []Entity{c.C1, c.C2}
 }
@@ -135,6 +149,8 @@ var (
 	_ KindedConstraint = (*CoincidentConstraint)(nil)
 	_ KindedConstraint = (*HorizontalConstraint)(nil)
 	_ KindedConstraint = (*VerticalConstraint)(nil)
+	_ KindedConstraint = (*SingleLineHorizontalConstraint)(nil)
+	_ KindedConstraint = (*SingleLineVerticalConstraint)(nil)
 	_ KindedConstraint = (*PointOnLineConstraint)(nil)
 	_ KindedConstraint = (*MidpointConstraint)(nil)
 	_ KindedConstraint = (*PointOnCircleConstraint)(nil)

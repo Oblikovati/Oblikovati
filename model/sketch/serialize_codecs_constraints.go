@@ -10,11 +10,40 @@ package sketch
 
 func init() {
 	registerTwoPointConstraintCodecs()
+	registerSingleLineConstraintCodecs()
 	registerTwoLineConstraintCodecs()
 	registerTwoCurveConstraintCodecs()
 	registerMixedConstraintCodecs()
 	registerEntitySymmetryConstraintCodecs()
 	registerTagConstraintCodecs()
+}
+
+// registerSingleLineConstraintCodecs covers the single-line horizontal/vertical forms (#1871):
+// each stores the one line id in Curves and re-adds it through its factory.
+func registerSingleLineConstraintCodecs() {
+	registerConstraintCodec(SingleLineHorizontalKind, singleLineConstraintCodec(
+		func(c Constraint) *Line { return c.(*SingleLineHorizontalConstraint).L },
+		func(g *GeometricConstraints, l *Line) { g.AddLineHorizontal(l) }))
+	registerConstraintCodec(SingleLineVerticalKind, singleLineConstraintCodec(
+		func(c Constraint) *Line { return c.(*SingleLineVerticalConstraint).L },
+		func(g *GeometricConstraints, l *Line) { g.AddLineVertical(l) }))
+}
+
+// singleLineConstraintCodec pairs a one-line constraint row with its factory.
+func singleLineConstraintCodec(lineOf func(Constraint) *Line, add func(*GeometricConstraints, *Line)) constraintCodec {
+	return constraintCodec{
+		encode: func(c Constraint) (ConstraintData, error) {
+			return ConstraintData{Curves: []int{int(lineOf(c).id)}}, nil
+		},
+		decode: func(r *sketchRestorer, cd ConstraintData) error {
+			l, err := r.line(cd.Curves, 0)
+			if err != nil {
+				return err
+			}
+			add(r.s.geomCons, l)
+			return nil
+		},
+	}
 }
 
 // twoPointConstraintCodec pairs a two-point constraint row with its factory.

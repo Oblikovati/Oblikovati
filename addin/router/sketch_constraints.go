@@ -19,15 +19,25 @@ func addConstraint(_ *app.Session, part *compdef.PartComponentDefinition, in wir
 	if err != nil {
 		return wire.AddConstraintResult{}, err
 	}
+	// Report the kind the CREATED constraint actually enumerates as, not the request kind:
+	// a two-point horizontal is created as (and reports as) horizontalAlign, a single line as
+	// horizontal (#1871). The custom kind returns no constraint, so it echoes its request kind.
+	kind := in.Kind
 	if types.GeometricConstraintKind(in.Kind) == types.GeoConstraintCustom {
 		if err := addCustomConstraint(sk, in); err != nil {
 			return wire.AddConstraintResult{}, err
 		}
-	} else if _, err := buildGeometricConstraint(sk, types.GeometricConstraintKind(in.Kind), in.Entities); err != nil {
-		return wire.AddConstraintResult{}, err
+	} else {
+		c, err := buildGeometricConstraint(sk, types.GeometricConstraintKind(in.Kind), in.Entities)
+		if err != nil {
+			return wire.AddConstraintResult{}, err
+		}
+		if wk, _ := geometricShape(c); wk != types.GeoConstraintUnknown {
+			kind = string(wk)
+		}
 	}
 	g := sk.GeometricConstraints()
-	return wire.AddConstraintResult{Index: g.Count() - 1, Kind: in.Kind, DOF: sk.DegreesOfFreedom()}, nil
+	return wire.AddConstraintResult{Index: g.Count() - 1, Kind: kind, DOF: sk.DegreesOfFreedom()}, nil
 }
 
 // deleteConstraint removes a geometric constraint by index.
@@ -66,6 +76,9 @@ func addCustomConstraint(sk *sketch.Sketch, in wire.AddConstraintArgs) error {
 // constraint. The kinds are split into small groups to keep each switch readable.
 func buildGeometricConstraint(sk *sketch.Sketch, kind types.GeometricConstraintKind, refs []uint64) (sketch.Constraint, error) {
 	if c, ok, err := pointPairConstraint(sk, kind, refs); ok {
+		return c, err
+	}
+	if c, ok, err := horizontalVerticalConstraint(sk, kind, refs); ok {
 		return c, err
 	}
 	if c, ok, err := lineConstraint(sk, kind, refs); ok {
@@ -136,9 +149,29 @@ func pointPairConstraint(sk *sketch.Sketch, kind types.GeometricConstraintKind, 
 	switch kind {
 	case types.GeoConstraintCoincident:
 		return withTwoPoints(sk, refs, func(a, b *sketch.Point) sketch.Constraint { return g.AddCoincident(a, b) })
+	default:
+		return nil, false, nil
+	}
+}
+
+// horizontalVerticalConstraint routes the horizontal/vertical family (#1871): the plain
+// horizontal/vertical make a single line horizontal/vertical (one line ref) or level two
+// points (the align form, two point refs); horizontalAlign/verticalAlign are the explicit
+// two-point align kinds.
+func horizontalVerticalConstraint(sk *sketch.Sketch, kind types.GeometricConstraintKind, refs []uint64) (sketch.Constraint, bool, error) {
+	g := sk.GeometricConstraints()
+	switch kind {
 	case types.GeoConstraintHorizontal:
-		return withTwoPoints(sk, refs, func(a, b *sketch.Point) sketch.Constraint { return g.AddHorizontal(a, b) })
+		return singleLineOrAlign(sk, refs,
+			func(l *sketch.Line) sketch.Constraint { return g.AddLineHorizontal(l) },
+			func(a, b *sketch.Point) sketch.Constraint { return g.AddHorizontal(a, b) })
 	case types.GeoConstraintVertical:
+		return singleLineOrAlign(sk, refs,
+			func(l *sketch.Line) sketch.Constraint { return g.AddLineVertical(l) },
+			func(a, b *sketch.Point) sketch.Constraint { return g.AddVertical(a, b) })
+	case types.GeoConstraintHorizontalAlign:
+		return withTwoPoints(sk, refs, func(a, b *sketch.Point) sketch.Constraint { return g.AddHorizontal(a, b) })
+	case types.GeoConstraintVerticalAlign:
 		return withTwoPoints(sk, refs, func(a, b *sketch.Point) sketch.Constraint { return g.AddVertical(a, b) })
 	default:
 		return nil, false, nil

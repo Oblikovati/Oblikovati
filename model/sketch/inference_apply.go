@@ -128,9 +128,11 @@ func (s *Sketch) otherLines(l *Line) []*Line {
 func (s *Sketch) applyDirectionConstraint(l *Line, kind SuggestionKind, target *Line) {
 	switch kind {
 	case SuggestHorizontal:
-		s.geomCons.AddHorizontal(l.A, l.B)
+		// The inference is "this LINE is horizontal", so it applies the single-line form
+		// (enumerates "horizontal"), not the two-point align form (#1871).
+		s.geomCons.AddLineHorizontal(l)
 	case SuggestVertical:
-		s.geomCons.AddVertical(l.A, l.B)
+		s.geomCons.AddLineVertical(l)
 	case SuggestParallel:
 		s.geomCons.AddParallel(l, target)
 	case SuggestPerpendicular:

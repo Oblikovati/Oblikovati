@@ -40,6 +40,28 @@ func currentPerpDistance(l1, l2 *sketch.Line) float64 {
 	return float64(w.X-a.X)*nx + float64(w.Y-a.Y)*ny
 }
 
+// singleLineOrAlign routes the plain horizontal/vertical kinds by operand count: one line ref
+// makes that line horizontal/vertical (the single-entity form), two point refs level the points
+// (the align form) — Inventor's distinct AddHorizontal(line) vs AddHorizontalAlign(p,p) (#1871).
+func singleLineOrAlign(sk *sketch.Sketch, refs []uint64, addLine func(*sketch.Line) sketch.Constraint, addAlign func(a, b *sketch.Point) sketch.Constraint) (sketch.Constraint, bool, error) {
+	switch len(refs) {
+	case 1:
+		l, err := lineRef(sk, refs[0])
+		if err != nil {
+			return nil, true, fmt.Errorf("sketch.addConstraint: single-entity horizontal/vertical needs a line ref: %w", err)
+		}
+		return addLine(l), true, nil
+	case 2:
+		a, b, err := twoPointRefs(sk, refs)
+		if err != nil {
+			return nil, true, err
+		}
+		return addAlign(a, b), true, nil
+	default:
+		return nil, true, fmt.Errorf("sketch.addConstraint: horizontal/vertical needs 1 line ref or 2 point refs, got %d", len(refs))
+	}
+}
+
 // withTwoPoints resolves two point refs and applies a two-point constraint factory.
 func withTwoPoints(sk *sketch.Sketch, refs []uint64, add func(a, b *sketch.Point) sketch.Constraint) (sketch.Constraint, bool, error) {
 	a, b, err := twoPointRefs(sk, refs)
