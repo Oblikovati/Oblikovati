@@ -3,6 +3,8 @@
 package router
 
 import (
+	"fmt"
+
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
@@ -62,4 +64,41 @@ func projectRef(part *compdef.PartComponentDefinition, sk *sketch.Sketch, ref st
 		return sk.ProjectCurve(compdef.NewWorkPlaneRefSource(part, feature.WorkRef(ref), sk.Plane())), true
 	}
 	return nil, false
+}
+
+// projectCutEdges projects the section curves where the sketch plane cuts the part solid as
+// associative reference geometry — one projected curve per section loop (#1873).
+func projectCutEdges(_ *app.Session, part *compdef.PartComponentDefinition, in wire.ProjectCutEdgesArgs) (wire.ProjectGeometryResult, error) {
+	sk, err := sketchAtIndex(part, in.SketchIndex)
+	if err != nil {
+		return wire.ProjectGeometryResult{}, err
+	}
+	sources := part.CutEdgeSources(sk.Plane())
+	if len(sources) == 0 {
+		return wire.ProjectGeometryResult{}, fmt.Errorf("sketch.projectCutEdges: the sketch plane cuts no solid body")
+	}
+	created := make([]uint64, 0, len(sources))
+	for _, c := range sk.ProjectCutEdges(sources) {
+		created = append(created, uint64(c.EntityID()))
+	}
+	return wire.ProjectGeometryResult{Created: created, Healthy: true}, nil
+}
+
+// projectSilhouette projects the referenced face's silhouette onto the sketch plane as an
+// associative reference curve, choosing the loop nearest the proximity point (#1873).
+func projectSilhouette(_ *app.Session, part *compdef.PartComponentDefinition, in wire.ProjectSilhouetteArgs) (wire.ProjectGeometryResult, error) {
+	sk, err := sketchAtIndex(part, in.SketchIndex)
+	if err != nil {
+		return wire.ProjectGeometryResult{}, err
+	}
+	prox, err := xyzPoint(in.ProximityPoint, "sketch.projectSilhouette: proximityPoint")
+	if err != nil {
+		return wire.ProjectGeometryResult{}, err
+	}
+	src, ok := part.SilhouetteSource(in.FaceRef, sk.Plane(), prox, in.IncludeBoundary)
+	if !ok {
+		return wire.ProjectGeometryResult{}, fmt.Errorf("sketch.projectSilhouette: face %q has no silhouette on the sketch plane", in.FaceRef)
+	}
+	c := sk.ProjectCurve(src)
+	return wire.ProjectGeometryResult{Created: []uint64{uint64(c.EntityID())}, Healthy: true}, nil
 }
