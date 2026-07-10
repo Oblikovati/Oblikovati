@@ -124,6 +124,18 @@ func adProjectionAlong(w, dir ad.Vec2) ad.Number {
 	return w.Dot(dir).Div(length)
 }
 
+// adPointSymmetry returns the two residuals that hold points a and b symmetric across the
+// mirror line la→lb: the midpoint of a,b lies on the line (signed perpendicular distance
+// zero) and the a→b segment is perpendicular to it (projection along the line zero). Both
+// are normalised by the mirror line's length so they are independent of its arbitrary
+// representation (#1418). Shared by the point-pair, line and circular symmetry constraints
+// (#1574, #1870) so entity symmetry reuses the one grounded equation.
+func adPointSymmetry(a, b, la, lb ad.Vec2) []ad.Number {
+	dir := lb.Sub(la)
+	mid := a.Add(b).Scale(0.5)
+	return []ad.Number{adSignedPerpDistance(dir, mid.Sub(la)), adProjectionAlong(b.Sub(a), dir)}
+}
+
 // adUnit2 returns v scaled to unit length, or the zero vector when v is (near) zero —
 // the dual twin of unit2, keeping a degenerate direction from producing NaNs.
 func adUnit2(v ad.Vec2) ad.Vec2 {

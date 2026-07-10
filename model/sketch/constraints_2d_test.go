@@ -117,11 +117,14 @@ func TestAllConstraintsExposeVariables(t *testing.T) {
 	l2 := s.Lines().AddByTwoPoints(math.P2(0, 1), math.P2(1, 1))
 	c1 := s.Circles().AddByCenterRadius(math.P2(0, 0), 1)
 	c2 := s.Circles().AddByCenterRadius(math.P2(3, 0), 1)
+	arc := s.Arcs().AddByCenterStartEnd(math.P2(0, 5), math.P2(1, 5), math.P2(0, 6), true)
 	cons := []Constraint{
 		g.AddCoincident(p1, p2), g.AddHorizontal(p1, p2), g.AddVertical(p1, p2),
 		g.AddParallel(l1, l2), g.AddPerpendicular(l1, l2), g.AddCollinear(l1, l2),
 		g.AddConcentric(c1, c2), g.AddEqualLength(l1, l2), g.AddEqualRadius(c1, c2),
 		g.AddTangent(l1, c1), g.AddSymmetry(p1, p2, l1), g.AddFix(p1),
+		g.AddLineSymmetry(l1, l2, l1), g.AddCircularSymmetry(c1, c2, l1),
+		g.AddMidpointToArc(s.Points().Add(math.P2(0, 0)), arc),
 	}
 	for _, c := range cons {
 		if len(c.Variables()) == 0 {

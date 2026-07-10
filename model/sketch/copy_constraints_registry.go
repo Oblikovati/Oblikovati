@@ -35,27 +35,30 @@ func carrier[T Constraint](carry func(g *GeometricConstraints, v T, m *cloneMap)
 // Duplicate keys are a compile error; completeness against the persisted
 // vocabulary is enforced by TestConstraintCarrierRegistryMatchesVocabulary.
 var constraintCarriers2D = map[ConstraintKind]constraintCarrier{
-	CoincidentKind:      carrier(carryCoincident),
-	HorizontalKind:      carrier(carryHorizontal),
-	VerticalKind:        carrier(carryVertical),
-	PointOnLineKind:     carrier(carryPointOnLine),
-	MidpointKind:        carrier(carryMidpoint),
-	PointOnCircleKind:   carrier(carryPointOnCircle),
-	ParallelKind:        carrier(carryParallel),
-	PerpendicularKind:   carrier(carryPerpendicular),
-	CollinearKind:       carrier(carryCollinear),
-	EqualLengthKind:     carrier(carryEqualLength),
-	ConcentricKind:      carrier(carryConcentric),
-	EqualRadiusKind:     carrier(carryEqualRadius),
-	CircularTangentKind: carrier(carryCircularTangent),
-	TangentKind:         carrier(carryTangent),
-	SymmetryKind:        carrier(carrySymmetryKind),
-	FixKind:             carrier(carryFixKind),
-	SmoothKind:          carrier(carrySmooth),
-	GroundKind:          carrier(carryGround),
-	OffsetKind:          carrier(carryOffset),
-	PatternLinkKind:     carrier(carryPatternLink),
-	CustomKind:          carrier(carryCustom),
+	CoincidentKind:       carrier(carryCoincident),
+	HorizontalKind:       carrier(carryHorizontal),
+	VerticalKind:         carrier(carryVertical),
+	PointOnLineKind:      carrier(carryPointOnLine),
+	MidpointKind:         carrier(carryMidpoint),
+	PointOnCircleKind:    carrier(carryPointOnCircle),
+	ParallelKind:         carrier(carryParallel),
+	PerpendicularKind:    carrier(carryPerpendicular),
+	CollinearKind:        carrier(carryCollinear),
+	EqualLengthKind:      carrier(carryEqualLength),
+	ConcentricKind:       carrier(carryConcentric),
+	EqualRadiusKind:      carrier(carryEqualRadius),
+	CircularTangentKind:  carrier(carryCircularTangent),
+	TangentKind:          carrier(carryTangent),
+	SymmetryKind:         carrier(carrySymmetryKind),
+	LineSymmetryKind:     carrier(carryLineSymmetry),
+	CircularSymmetryKind: carrier(carryCircularSymmetry),
+	ArcMidpointKind:      carrier(carryArcMidpoint),
+	FixKind:              carrier(carryFixKind),
+	SmoothKind:           carrier(carrySmooth),
+	GroundKind:           carrier(carryGround),
+	OffsetKind:           carrier(carryOffset),
+	PatternLinkKind:      carrier(carryPatternLink),
+	CustomKind:           carrier(carryCustom),
 	// A text-box anchor is auto-created with its TextBox (anchorTextBox) and
 	// sketch copy does not clone text boxes (cloneEntity has no TextBox case),
 	// so the anchor can never be remapped — the one documented skip (#1637).
@@ -155,6 +158,42 @@ func carryTangent(g *GeometricConstraints, v *TangentConstraint, m *cloneMap) bo
 
 func carrySymmetryKind(g *GeometricConstraints, v *SymmetryConstraint, m *cloneMap) bool {
 	return carrySymmetry(m, v, g)
+}
+
+// carryLineSymmetry remaps the two mirrored lines and the axis; the clone re-derives the
+// endpoint pairing from the copied geometry (#1870).
+func carryLineSymmetry(g *GeometricConstraints, v *LineSymmetryConstraint, m *cloneMap) bool {
+	l1, ok1 := m.line(v.L1)
+	l2, ok2 := m.line(v.L2)
+	about, ok3 := m.line(v.About)
+	if !ok1 || !ok2 || !ok3 {
+		return false
+	}
+	g.AddLineSymmetry(l1, l2, about)
+	return true
+}
+
+// carryCircularSymmetry remaps the two mirrored circular curves and the axis (#1870).
+func carryCircularSymmetry(g *GeometricConstraints, v *CircularSymmetryConstraint, m *cloneMap) bool {
+	c1, ok1 := m.curve(v.C1)
+	c2, ok2 := m.curve(v.C2)
+	about, ok3 := m.line(v.About)
+	if !ok1 || !ok2 || !ok3 {
+		return false
+	}
+	g.AddCircularSymmetry(c1, c2, about)
+	return true
+}
+
+// carryArcMidpoint remaps the point and the arc (#1872).
+func carryArcMidpoint(g *GeometricConstraints, v *ArcMidpointConstraint, m *cloneMap) bool {
+	p, ok1 := m.point(v.P)
+	a, ok2 := m.arc(v.A)
+	if !ok1 || !ok2 {
+		return false
+	}
+	g.AddMidpointToArc(p, a)
+	return true
 }
 
 func carryFixKind(g *GeometricConstraints, v *FixConstraint, m *cloneMap) bool {

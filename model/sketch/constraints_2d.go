@@ -442,12 +442,7 @@ func (g *GeometricConstraints) AddSymmetry(a, b *Point, about *Line) *SymmetryCo
 func (c *SymmetryConstraint) residualAD(v []ad.Number) []ad.Number {
 	a, b := ad.V2(v[0], v[1]), ad.V2(v[2], v[3])
 	la, lb := ad.V2(v[4], v[5]), ad.V2(v[6], v[7])
-	dir := lb.Sub(la)
-	mid := a.Add(b).Scale(0.5)
-	// Midpoint's perpendicular distance to the mirror line, and the A→B segment's
-	// component along it (zero when perpendicular) — both normalised by the mirror line's
-	// length so they are independent of its arbitrary representation (#1418).
-	return []ad.Number{adSignedPerpDistance(dir, mid.Sub(la)), adProjectionAlong(b.Sub(a), dir)}
+	return adPointSymmetry(a, b, la, lb)
 }
 func (c *SymmetryConstraint) Residuals() []float64  { return adResiduals(c.Variables(), c.residualAD) }
 func (c *SymmetryConstraint) Partials() [][]float64 { return adPartials(c.Variables(), c.residualAD) }

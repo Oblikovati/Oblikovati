@@ -182,7 +182,7 @@ func mixedConstraint(sk *sketch.Sketch, kind types.GeometricConstraintKind, refs
 	case types.GeoConstraintPointOnLine:
 		return pointLineConstraint(sk, refs, func(p *sketch.Point, l *sketch.Line) sketch.Constraint { return g.AddPointOnLine(p, l) })
 	case types.GeoConstraintMidpoint:
-		return pointLineConstraint(sk, refs, func(p *sketch.Point, l *sketch.Line) sketch.Constraint { return g.AddMidpoint(p, l) })
+		return midpointConstraint(sk, refs)
 	case types.GeoConstraintPointOnCircle:
 		return pointCircleConstraint(sk, refs)
 	case types.GeoConstraintTangent:

@@ -13,6 +13,7 @@ func init() {
 	registerTwoLineConstraintCodecs()
 	registerTwoCurveConstraintCodecs()
 	registerMixedConstraintCodecs()
+	registerEntitySymmetryConstraintCodecs()
 	registerTagConstraintCodecs()
 }
 
@@ -120,6 +121,7 @@ func registerMixedConstraintCodecs() {
 	registerConstraintCodec(MidpointKind, pointLineConstraintCodec(
 		func(c Constraint) (*Point, *Line) { v := c.(*MidpointConstraint); return v.P, v.L },
 		func(g *GeometricConstraints, p *Point, l *Line) { g.AddMidpoint(p, l) }))
+	registerConstraintCodec(ArcMidpointKind, arcMidpointCodec())
 	registerConstraintCodec(PointOnCircleKind, pointOnCircleCodec())
 	registerConstraintCodec(TangentKind, tangentCodec())
 	registerConstraintCodec(SymmetryKind, symmetryCodec())
@@ -189,6 +191,96 @@ func symmetryCodec() constraintCodec {
 				return err
 			}
 			r.s.geomCons.AddSymmetry(a, b, about)
+			return nil
+		},
+	}
+}
+
+// registerEntitySymmetryConstraintCodecs covers the entity-symmetry kinds (#1870): line and
+// circular symmetry both store their two operands plus the mirror line in Curves, and re-derive
+// the endpoint pairing from the restored geometry (like CircularTangent's internal flag), so no
+// flag needs to persist.
+func registerEntitySymmetryConstraintCodecs() {
+	registerConstraintCodec(LineSymmetryKind, lineSymmetryCodec())
+	registerConstraintCodec(CircularSymmetryKind, circularSymmetryCodec())
+}
+
+func lineSymmetryCodec() constraintCodec {
+	return constraintCodec{
+		encode: func(c Constraint) (ConstraintData, error) {
+			v := c.(*LineSymmetryConstraint)
+			return ConstraintData{Curves: []int{int(v.L1.id), int(v.L2.id), int(v.About.id)}}, nil
+		},
+		decode: func(r *sketchRestorer, cd ConstraintData) error {
+			return decodeThreeLines(r, cd, func(l1, l2, about *Line) {
+				r.s.geomCons.AddLineSymmetry(l1, l2, about)
+			})
+		},
+	}
+}
+
+// decodeThreeLines resolves the three line ids a line-symmetry row stores (two operands + the
+// mirror axis) and applies the factory.
+func decodeThreeLines(r *sketchRestorer, cd ConstraintData, add func(l1, l2, about *Line)) error {
+	l1, err := r.line(cd.Curves, 0)
+	if err != nil {
+		return err
+	}
+	l2, err := r.line(cd.Curves, 1)
+	if err != nil {
+		return err
+	}
+	about, err := r.line(cd.Curves, 2)
+	if err != nil {
+		return err
+	}
+	add(l1, l2, about)
+	return nil
+}
+
+func circularSymmetryCodec() constraintCodec {
+	return constraintCodec{
+		encode: func(c Constraint) (ConstraintData, error) {
+			v := c.(*CircularSymmetryConstraint)
+			return ConstraintData{Curves: []int{int(v.C1.EntityID()), int(v.C2.EntityID()), int(v.About.id)}}, nil
+		},
+		decode: func(r *sketchRestorer, cd ConstraintData) error {
+			c1, err := r.curve(cd.Curves, 0)
+			if err != nil {
+				return err
+			}
+			c2, err := r.curve(cd.Curves, 1)
+			if err != nil {
+				return err
+			}
+			about, err := r.line(cd.Curves, 2)
+			if err != nil {
+				return err
+			}
+			r.s.geomCons.AddCircularSymmetry(c1, c2, about)
+			return nil
+		},
+	}
+}
+
+// arcMidpointCodec stores the point + arc; decode re-seeds the point to the arc midpoint (the
+// restored point is already there, so it is idempotent) and re-adds the constraint.
+func arcMidpointCodec() constraintCodec {
+	return constraintCodec{
+		encode: func(c Constraint) (ConstraintData, error) {
+			v := c.(*ArcMidpointConstraint)
+			return ConstraintData{Points: []int{int(v.P.id)}, Curves: []int{int(v.A.id)}}, nil
+		},
+		decode: func(r *sketchRestorer, cd ConstraintData) error {
+			p, err := r.point(cd.Points, 0)
+			if err != nil {
+				return err
+			}
+			a, err := r.arc(cd.Curves, 0)
+			if err != nil {
+				return err
+			}
+			r.s.geomCons.AddMidpointToArc(p, a)
 			return nil
 		},
 	}
