@@ -128,6 +128,7 @@ void obk_ig_set_next_window_size_first_use(float w, float h);
 // next_row/next_column advance the cursor (next_column returns visibility). push_id_int/
 // pop_id scope per-row widget ids so identical cell labels don't collide.
 int  obk_ig_begin_table(const char* id, int columns, float outer_w, float outer_h);
+int  obk_ig_begin_table_scrollx(const char* id, int columns, float outer_w, float outer_h);
 void obk_ig_table_setup_column(const char* label);
 void obk_ig_table_setup_scroll_freeze(int cols, int rows);
 void obk_ig_table_headers_row(void);
@@ -606,6 +607,14 @@ func BeginTable(id string, columns int, w, h float32) bool {
 	return C.obk_ig_begin_table(c, C.int(columns), C.float(w), C.float(h)) != 0
 }
 func EndTable() { C.obk_ig_end_table() }
+
+// BeginTableScrollX is BeginTable plus horizontal scrolling — for a wide grid (many columns) in a
+// narrow docked panel. Pair every true return with EndTable.
+func BeginTableScrollX(id string, columns int, w, h float32) bool {
+	c, free := cstr(id)
+	defer free()
+	return C.obk_ig_begin_table_scrollx(c, C.int(columns), C.float(w), C.float(h)) != 0
+}
 
 // TableSetupColumn declares the next header column; TableSetupScrollFreeze keeps the
 // first cols columns / rows rows pinned while scrolling; TableHeadersRow emits the

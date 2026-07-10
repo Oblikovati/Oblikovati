@@ -522,6 +522,15 @@ int  obk_ig_begin_table(const char* id, int columns, float outer_w, float outer_
                             ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY;
     return ImGui::BeginTable(id, columns, flags, ImVec2(outer_w, outer_h)) ? 1 : 0;
 }
+// begin_table_scrollx is begin_table plus horizontal scrolling, for wide data grids in a narrow
+// dock (a content-center member table). Kept separate from begin_table because ScrollX changes
+// column auto-sizing and the existing tables rely on the stretch default.
+int obk_ig_begin_table_scrollx(const char* id, int columns, float outer_w, float outer_h) {
+    ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
+                            ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY |
+                            ImGuiTableFlags_ScrollX;
+    return ImGui::BeginTable(id, columns, flags, ImVec2(outer_w, outer_h)) ? 1 : 0;
+}
 void obk_ig_table_setup_column(const char* label)      { ImGui::TableSetupColumn(label); }
 void obk_ig_table_setup_scroll_freeze(int cols, int rows) { ImGui::TableSetupScrollFreeze(cols, rows); }
 void obk_ig_table_headers_row(void)                    { ImGui::TableHeadersRow(); }
