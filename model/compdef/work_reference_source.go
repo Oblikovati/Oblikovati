@@ -3,6 +3,7 @@
 package compdef
 
 import (
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/sketch"
@@ -129,6 +130,39 @@ func (s WorkPlaneRefSource) SamplePoints() ([]math.Point3, bool) {
 	}
 	step := dir.AsVector().Scale(s.span())
 	return []math.Point3{at.TranslateBy(step.Scale(-1)), at.TranslateBy(step)}, true
+}
+
+// WorkPlaneSurfaceSource adapts a datum work plane (by WorkRef) to a sketch SURFACE source: it
+// re-resolves the plane through the part's work geometry and yields its infinite plane surface, so
+// a 3D intersection curve can take a work plane as an operand (#1854). It re-resolves on every read
+// (associative) and returns a nil surface — treated as no intersection by the kernel tracer — when
+// the reference is lost or the plane is degenerate. Structurally satisfies sketch.SurfaceSource
+// without this package importing that seam type.
+type WorkPlaneSurfaceSource struct {
+	ref  feature.WorkRef
+	work func() *feature.WorkGeometry
+}
+
+// NewWorkPlaneSurfaceSource binds an associative surface source to the datum plane with ref.
+func NewWorkPlaneSurfaceSource(part *PartComponentDefinition, ref feature.WorkRef) WorkPlaneSurfaceSource {
+	return WorkPlaneSurfaceSource{ref: ref, work: func() *feature.WorkGeometry { return part.WorkGeometry() }}
+}
+
+// SourceID returns the datum plane reference (its stable cross-recompute identity).
+func (s WorkPlaneSurfaceSource) SourceID() string { return string(s.ref) }
+
+// Surface re-resolves the work plane and returns its infinite plane surface, or nil when lost.
+func (s WorkPlaneSurfaceSource) Surface() geom.Surface {
+	wp, err := s.work().WorkPlaneByRef(s.ref)
+	if err != nil {
+		return nil
+	}
+	p := wp.Plane()
+	plane, err := geom.NewPlane(p.Origin(), p.Normal().AsVector())
+	if err != nil {
+		return nil
+	}
+	return plane
 }
 
 // referenceLineHalfSpan sizes a projected work-axis / plane-intersection reference line: half
