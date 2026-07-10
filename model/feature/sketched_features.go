@@ -550,7 +550,9 @@ func (r *RibFeature) Recompute(in Input) (Output, error) {
 		return Output{}, err
 	}
 	band := ensureCCW2(thickenPath(pts, t))
-	r.tool = buildPrism(band, r.def.Sketch.Plane(), orderedSpan(0, d), 0, "rib")
+	// The Surface operation (kSurfaceOperation, #1858) builds the rib walls only — an open sheet, no
+	// caps — rather than the capped prism; combine() adds it as a surface body (no boolean).
+	r.tool = buildExtrusionShell(band, r.def.Sketch.Plane(), orderedSpan(0, d), 0, "rib", r.def.Operation != ops.Surface)
 	bodies, err := combine(in, r.tool, r.def.Operation)
 	if err != nil {
 		return Output{}, err

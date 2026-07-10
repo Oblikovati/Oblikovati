@@ -93,7 +93,7 @@ const ribSchema = `{
     "thickness": {"type": "string", "description": "Rib wall thickness, e.g. \"2 mm\"."},
     "depth": {"type": "string", "description": "How far the rib grows toward the body, e.g. \"10 mm\" (sign picks the direction; omit with toNext)."},
     "toNext": {"type": "boolean", "default": false, "description": "Extend the wall until it fully lands on the existing material (the to-next rib)."},
-    "operation": {"type": "string", "enum": ["new", "join"], "default": "join"}
+    "operation": {"type": "string", "enum": ["new", "join", "surface"], "default": "join", "description": "Join the rib to existing material (default), a new body, or \"surface\" to build the rib walls as an open sheet — Inventor's kSurfaceOperation."}
   },
   "required": ["sketchIndex", "thickness"]
 }`
