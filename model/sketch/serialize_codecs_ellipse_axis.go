@@ -21,6 +21,29 @@ func registerEllipseAxisConstraintCodecs() {
 	registerConstraintCodec(EllipseCollinearKind, axisRelationCodec(func(g *GeometricConstraints, a, b AxisOperand) {
 		g.AddEllipseCollinear(a, b)
 	}))
+	registerConstraintCodec(EllipseHorizontalKind, ellipseWorldAxisCodec(func(g *GeometricConstraints, e AxisOperand) {
+		g.AddEllipseHorizontal(e)
+	}))
+	registerConstraintCodec(EllipseVerticalKind, ellipseWorldAxisCodec(func(g *GeometricConstraints, e AxisOperand) {
+		g.AddEllipseVertical(e)
+	}))
+}
+
+// ellipseWorldAxisCodec pairs a horizontal/vertical ellipse-axis relation with its factory: only
+// the ellipse operand is stored (the world axis is implied by the kind), so decode resolves the
+// single stored operand and the factory supplies the world axis (#1879 AC2).
+func ellipseWorldAxisCodec(add func(*GeometricConstraints, AxisOperand)) constraintCodec {
+	return constraintCodec{
+		encode: encodeAxisOperands,
+		decode: func(r *sketchRestorer, cd ConstraintData) error {
+			e, err := r.axisOperand(cd, 0)
+			if err != nil {
+				return err
+			}
+			add(r.s.geomCons, e)
+			return nil
+		},
+	}
 }
 
 // encodeAxisOperands stores each real operand's entity id + major flag (a world axis names no

@@ -164,9 +164,11 @@ func TestSolveStatusStrings(t *testing.T) {
 
 func TestEllipseRadiiAreDegreesOfFreedom(t *testing.T) {
 	s := NewSketches().Add(XYPlane())
-	s.Ellipses().Add(math.P2(0, 0), math.V2(1, 0), 4, 2) // center(2) + 2 radii = 4 free vars
+	// center(2) + 2 radii + orientation angle = 5 free vars; the orientation DOF (#1879 AC2) lets
+	// the ellipse rotate until a constraint pins its axis.
+	s.Ellipses().Add(math.P2(0, 0), math.V2(1, 0), 4, 2)
 	a := s.AnalyzeConstraints()
-	if a.Variables != 4 || a.DOF != 4 {
-		t.Errorf("ellipse DOF universe = %d vars / %d DOF, want 4 / 4", a.Variables, a.DOF)
+	if a.Variables != 5 || a.DOF != 5 {
+		t.Errorf("ellipse DOF universe = %d vars / %d DOF, want 5 / 5", a.Variables, a.DOF)
 	}
 }

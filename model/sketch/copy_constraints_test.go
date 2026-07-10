@@ -128,6 +128,8 @@ func TestCopyCarriesEveryConstraintAndDimensionKind(t *testing.T) {
 	g.AddEllipseParallel(eop(true), LineAxis(l1))
 	g.AddEllipsePerpendicular(eop(false), LineAxis(l2))
 	g.AddEllipseCollinear(eop(true), LineAxis(l3))
+	g.AddEllipseHorizontal(eop(true)) // ellipse H/V carry the world-axis operand (#1879 AC2)
+	g.AddEllipseVertical(eop(false))
 	g.AddFix(pa)
 
 	// The six kinds the pre-#1637 switch silently dropped (TextBoxAnchor is the

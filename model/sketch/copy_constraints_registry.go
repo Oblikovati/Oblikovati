@@ -58,6 +58,8 @@ var constraintCarriers2D = map[ConstraintKind]constraintCarrier{
 	EllipseParallelKind:      carrier(carryEllipseAxis),
 	EllipsePerpendicularKind: carrier(carryEllipseAxis),
 	EllipseCollinearKind:     carrier(carryEllipseAxis),
+	EllipseHorizontalKind:    carrier(carryEllipseAxis),
+	EllipseVerticalKind:      carrier(carryEllipseAxis),
 	FixKind:                  carrier(carryFixKind),
 	SmoothKind:               carrier(carrySmooth),
 	GroundKind:               carrier(carryGround),

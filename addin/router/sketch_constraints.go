@@ -72,15 +72,17 @@ func addCustomConstraint(sk *sketch.Sketch, in wire.AddConstraintArgs) error {
 	return err
 }
 
-// axisFlags carries the per-operand ellipse major/minor-axis selectors of a parallel/
-// perpendicular/collinear relation (#1879), defaulted to the major axis (Inventor's default)
-// when the request omits them.
-type axisFlags struct{ one, two bool }
+// axisFlags carries the ellipse major/minor-axis selectors of a constraint request (#1879):
+// one/two are the first/second operand of a parallel/perpendicular/collinear relation; major is
+// the single-operand horizontal/vertical form (#1879 AC2). All default to the major axis
+// (Inventor's default) when the request omits them.
+type axisFlags struct{ one, two, major bool }
 
 func axisFlagsFrom(in wire.AddConstraintArgs) axisFlags {
 	return axisFlags{
-		one: boolOrTrue(in.UseEllipseOneMajorAxis),
-		two: boolOrTrue(in.UseEllipseTwoMajorAxis),
+		one:   boolOrTrue(in.UseEllipseOneMajorAxis),
+		two:   boolOrTrue(in.UseEllipseTwoMajorAxis),
+		major: boolOrTrue(in.UseEllipseMajorAxis),
 	}
 }
 
@@ -94,7 +96,7 @@ func buildGeometricConstraint(sk *sketch.Sketch, kind types.GeometricConstraintK
 	if c, ok, err := pointPairConstraint(sk, kind, refs); ok {
 		return c, err
 	}
-	if c, ok, err := horizontalVerticalConstraint(sk, kind, refs); ok {
+	if c, ok, err := horizontalVerticalConstraint(sk, kind, refs, flags); ok {
 		return c, err
 	}
 	if c, ok, err := lineConstraint(sk, kind, refs, flags); ok {
@@ -170,19 +172,22 @@ func pointPairConstraint(sk *sketch.Sketch, kind types.GeometricConstraintKind, 
 	}
 }
 
-// horizontalVerticalConstraint routes the horizontal/vertical family (#1871): the plain
-// horizontal/vertical make a single line horizontal/vertical (one line ref) or level two
-// points (the align form, two point refs); horizontalAlign/verticalAlign are the explicit
-// two-point align kinds.
-func horizontalVerticalConstraint(sk *sketch.Sketch, kind types.GeometricConstraintKind, refs []uint64) (sketch.Constraint, bool, error) {
+// horizontalVerticalConstraint routes the horizontal/vertical family (#1871, #1879 AC2): the plain
+// horizontal/vertical make a single line horizontal/vertical (one line ref), rotate a single
+// ellipse's axis to horizontal/vertical (one ellipse ref, major/minor per UseEllipseMajorAxis), or
+// level two points (the align form, two point refs); horizontalAlign/verticalAlign are the
+// explicit two-point align kinds.
+func horizontalVerticalConstraint(sk *sketch.Sketch, kind types.GeometricConstraintKind, refs []uint64, flags axisFlags) (sketch.Constraint, bool, error) {
 	g := sk.GeometricConstraints()
 	switch kind {
 	case types.GeoConstraintHorizontal:
-		return singleLineOrAlign(sk, refs,
+		return singleEntityHVOrAlign(sk, refs, flags.major,
+			func(e sketch.AxisOperand) sketch.Constraint { return g.AddEllipseHorizontal(e) },
 			func(l *sketch.Line) sketch.Constraint { return g.AddLineHorizontal(l) },
 			func(a, b *sketch.Point) sketch.Constraint { return g.AddHorizontal(a, b) })
 	case types.GeoConstraintVertical:
-		return singleLineOrAlign(sk, refs,
+		return singleEntityHVOrAlign(sk, refs, flags.major,
+			func(e sketch.AxisOperand) sketch.Constraint { return g.AddEllipseVertical(e) },
 			func(l *sketch.Line) sketch.Constraint { return g.AddLineVertical(l) },
 			func(a, b *sketch.Point) sketch.Constraint { return g.AddVertical(a, b) })
 	case types.GeoConstraintHorizontalAlign:
