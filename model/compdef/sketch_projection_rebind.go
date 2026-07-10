@@ -24,6 +24,20 @@ func (d *PartComponentDefinition) rebindSketchProjections() {
 	}
 }
 
+// rebindSketch3DConstraints re-attaches a live face surface source to every restored surface-bound
+// 3D constraint (the onFace constraint) — the constraint analogue of rebindSketchProjections. A
+// saved onFace constraint carries only its face reference key; this rebuilds a self-resolving
+// FaceRefSource from it before Recompute, so the point-on-face pin becomes associative again (#1839).
+func (d *PartComponentDefinition) rebindSketch3DConstraints() {
+	for i := 0; i < d.sketches3D.Count(); i++ {
+		for _, c := range d.sketches3D.Item(i).GeometricConstraints3D().All() {
+			if bound, ok := c.(sketch.SurfaceBoundConstraint); ok {
+				bound.BindSurface(NewFaceRefSource(d, bound.SurfaceRef()))
+			}
+		}
+	}
+}
+
 // The part definition is the projection-source resolver: it owns the
 // vertices/edges/work geometry the persisted descriptors point at.
 var _ sketch.ProjectionSourceResolver = (*PartComponentDefinition)(nil)

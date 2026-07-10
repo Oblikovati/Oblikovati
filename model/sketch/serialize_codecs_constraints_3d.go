@@ -16,6 +16,26 @@ func init() {
 	registerLine3DConstraintCodecs()
 	registerOrientation3DConstraintCodecs()
 	registerCurveJoin3DConstraintCodecs()
+	registerOnFace3DConstraintCodec()
+}
+
+// registerOnFace3DConstraintCodec persists the point-on-face constraint (#1839): its point id plus
+// the face reference key. Decode restores it FROZEN (no live surface); the host rebinds a source
+// after load (compdef.rebindSketch3DConstraints), mirroring projected geometry.
+func registerOnFace3DConstraintCodec() {
+	registerConstraintCodec3D(OnFaceKind, constraintCodec3D{
+		encode: func(c Constraint) (Constraint3DRow, error) {
+			v := c.(*OnFace3D)
+			return Constraint3DRow{Points: []int{int(v.P.id)}, FaceRef: v.ref}, nil
+		},
+		decode: func(s *Sketch3D, cd Constraint3DRow, pts []*Point3D, _ map[int]Entity) error {
+			if len(pts) != 1 {
+				return fmt.Errorf("onFace needs 1 point, got %d", len(pts))
+			}
+			s.geomCons.add(NewOnFace3D(pts[0], nil, cd.FaceRef))
+			return nil
+		},
+	})
 }
 
 // point3DConstraintCodec pairs an all-points 3D constraint row with its factory.

@@ -20,6 +20,9 @@ const (
 	// persisted spelling is the same "helical" in the constraint table.
 	HelicalJoinKind ConstraintKind = "helical"
 	BendKind        ConstraintKind = "bend"
+	// OnFaceKind holds a 3D sketch point on a referenced part face (#1839); the persisted spelling
+	// "onFace" matches the on-face curve EntityKind, in a different table.
+	OnFaceKind ConstraintKind = "onFace"
 )
 
 // ConstraintKind per 3D type. ParallelToAxis3D/ParallelToPlane3D derive their
@@ -58,6 +61,7 @@ func (c *Smooth3D) ConstraintKind() ConstraintKind          { return SmoothKind 
 func (c *SplineFitPoints3D) ConstraintKind() ConstraintKind { return SplineFitPointsKind }
 func (c *Helical3D) ConstraintKind() ConstraintKind         { return HelicalJoinKind }
 func (c *Bend3D) ConstraintKind() ConstraintKind            { return BendKind }
+func (c *OnFace3D) ConstraintKind() ConstraintKind          { return OnFaceKind }
 
 // RelatedEntities per 3D type, in API enumeration order.
 func (c *Coincident3D) RelatedEntities() []Entity    { return []Entity{c.A, c.B} }
@@ -84,21 +88,27 @@ func (c *Bend3D) RelatedEntities() []Entity {
 	return []Entity{c.Arc, c.L1, c.L2}
 }
 
+// OnFace3D relates only its constrained point; the held face is external geometry (a reference key),
+// not an in-sketch entity (#1839).
+func (c *OnFace3D) RelatedEntities() []Entity { return []Entity{c.P} }
+
 // Every 3D constraint carries the capability — a lost method fails the build.
 var (
-	_ KindedConstraint = (*Coincident3D)(nil)
-	_ KindedConstraint = (*Collinear3D)(nil)
-	_ KindedConstraint = (*Concentric3D)(nil)
-	_ KindedConstraint = (*Equal3D)(nil)
-	_ KindedConstraint = (*Parallel3D)(nil)
-	_ KindedConstraint = (*Perpendicular3D)(nil)
-	_ KindedConstraint = (*Midpoint3D)(nil)
-	_ KindedConstraint = (*Ground3D)(nil)
-	_ KindedConstraint = (*ParallelToAxis3D)(nil)
-	_ KindedConstraint = (*ParallelToPlane3D)(nil)
-	_ KindedConstraint = (*Tangent3D)(nil)
-	_ KindedConstraint = (*Smooth3D)(nil)
-	_ KindedConstraint = (*SplineFitPoints3D)(nil)
-	_ KindedConstraint = (*Helical3D)(nil)
-	_ KindedConstraint = (*Bend3D)(nil)
+	_ KindedConstraint       = (*Coincident3D)(nil)
+	_ KindedConstraint       = (*Collinear3D)(nil)
+	_ KindedConstraint       = (*Concentric3D)(nil)
+	_ KindedConstraint       = (*Equal3D)(nil)
+	_ KindedConstraint       = (*Parallel3D)(nil)
+	_ KindedConstraint       = (*Perpendicular3D)(nil)
+	_ KindedConstraint       = (*Midpoint3D)(nil)
+	_ KindedConstraint       = (*Ground3D)(nil)
+	_ KindedConstraint       = (*ParallelToAxis3D)(nil)
+	_ KindedConstraint       = (*ParallelToPlane3D)(nil)
+	_ KindedConstraint       = (*Tangent3D)(nil)
+	_ KindedConstraint       = (*Smooth3D)(nil)
+	_ KindedConstraint       = (*SplineFitPoints3D)(nil)
+	_ KindedConstraint       = (*Helical3D)(nil)
+	_ KindedConstraint       = (*Bend3D)(nil)
+	_ KindedConstraint       = (*OnFace3D)(nil)
+	_ SurfaceBoundConstraint = (*OnFace3D)(nil)
 )

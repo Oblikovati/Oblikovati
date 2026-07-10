@@ -18,7 +18,7 @@ func addSketch3DConstraint(_ *app.Session, part *compdef.PartComponentDefinition
 	if err != nil {
 		return wire.AddSketch3DConstraintResult{}, err
 	}
-	c, err := buildSketch3DConstraint(sk, types.Geometric3DConstraintKind(in.Kind), in.Entities)
+	c, err := build3DConstraint(part, sk, in)
 	if err != nil {
 		return wire.AddSketch3DConstraintResult{}, err
 	}
@@ -26,6 +26,31 @@ func addSketch3DConstraint(_ *app.Session, part *compdef.PartComponentDefinition
 	return wire.AddSketch3DConstraintResult{
 		Index: sk.GeometricConstraints3D().Count() - 1, Kind: in.Kind, DOF: sk.DegreesOfFreedom(),
 	}, nil
+}
+
+// build3DConstraint dispatches the onFace kind (which resolves an external face ref and so needs
+// the part) and otherwise delegates to the entity-id-only factory (#1839).
+func build3DConstraint(part *compdef.PartComponentDefinition, sk *sketch.Sketch3D, in wire.AddSketch3DConstraintArgs) (sketch.Constraint, error) {
+	if types.Geometric3DConstraintKind(in.Kind) == types.Geo3DOnFace {
+		return onFaceConstraint3D(part, sk, in)
+	}
+	return buildSketch3DConstraint(sk, types.Geometric3DConstraintKind(in.Kind), in.Entities)
+}
+
+// onFaceConstraint3D resolves the point entity and the referenced face and pins the point onto the
+// face's surface (#1839).
+func onFaceConstraint3D(part *compdef.PartComponentDefinition, sk *sketch.Sketch3D, in wire.AddSketch3DConstraintArgs) (sketch.Constraint, error) {
+	if len(in.Entities) != 1 {
+		return nil, fmt.Errorf("sketch3d.addConstraint: onFace needs 1 point entity, got %d", len(in.Entities))
+	}
+	p, err := pointRef3D(sk, in.Entities[0])
+	if err != nil {
+		return nil, err
+	}
+	if !part.FaceKeyResolves(in.FaceRef) {
+		return nil, fmt.Errorf("sketch3d.addConstraint: onFace face %q does not resolve", in.FaceRef)
+	}
+	return sketch.NewOnFace3D(p, compdef.NewFaceRefSource(part, in.FaceRef), in.FaceRef), nil
 }
 
 // buildSketch3DConstraint resolves the operands and applies the matching constraint factory.

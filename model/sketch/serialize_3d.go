@@ -140,6 +140,8 @@ type Constraint3DRow struct {
 	Curves []int   `yaml:"curves,omitempty"`
 	Index  int     `yaml:"index,omitempty"`
 	Radius float64 `yaml:"radius,omitempty"`
+	// FaceRef is the face reference key an onFace constraint holds its point on (#1839).
+	FaceRef string `yaml:"faceRef,omitempty"`
 }
 
 // MarshalRecipe3D projects every 3D sketch into its serializable form, in order.

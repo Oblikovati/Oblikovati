@@ -138,6 +138,13 @@ var declared3DConstraintFixtures = map[types.Geometric3DConstraintKind]constrain
 // (#142 closed the gap; #143 added bend) — and kept so the next gap must be tracked.
 var trackedUnimplemented3DKinds = map[types.Geometric3DConstraintKind]string{}
 
+// dedicated3DConstraintKinds are implemented kinds the generic fixture harness cannot drive because
+// they take more than entity ids — onFace needs a face reference key + a real solid, so it has its
+// own end-to-end test (TestSketch3DOnFaceConstraintOverWire) instead of a fixture (#1839).
+var dedicated3DConstraintKinds = map[types.Geometric3DConstraintKind]string{
+	types.Geo3DOnFace: "TestSketch3DOnFaceConstraintOverWire",
+}
+
 // allDeclared3DConstraintKinds mirrors the const block in api/types/sketch3d.go
 // (Go cannot enumerate constants); keep in sync when the API grows.
 var allDeclared3DConstraintKinds = []types.Geometric3DConstraintKind{
@@ -146,7 +153,7 @@ var allDeclared3DConstraintKinds = []types.Geometric3DConstraintKind{
 	types.Geo3DMidpoint, types.Geo3DGround,
 	types.Geo3DParallelToXAxis, types.Geo3DParallelToYAxis, types.Geo3DParallelToZAxis,
 	types.Geo3DParallelToXYPlane, types.Geo3DParallelToXZPlane, types.Geo3DParallelToYZPlane,
-	types.Geo3DSplineFitPoints, types.Geo3DBend, types.Geo3DHelical,
+	types.Geo3DSplineFitPoints, types.Geo3DBend, types.Geo3DHelical, types.Geo3DOnFace,
 }
 
 // TestEvery3DConstraintKindAccepted drives sketch3d.addConstraint for every declared
@@ -179,12 +186,13 @@ func TestEvery3DConstraintKindAccepted(t *testing.T) {
 func TestDeclared3DConstraintKindsComplete(t *testing.T) {
 	for _, kind := range allDeclared3DConstraintKinds {
 		_, covered := declared3DConstraintFixtures[kind]
+		_, dedicated := dedicated3DConstraintKinds[kind]
 		issue, tracked := trackedUnimplemented3DKinds[kind]
 		switch {
 		case covered && tracked:
 			t.Errorf("kind %q is both covered and tracked-unimplemented (%s) — remove one", kind, issue)
-		case !covered && !tracked:
-			t.Errorf("kind %q is declared in api/types but has no fixture and no tracking issue", kind)
+		case !covered && !dedicated && !tracked:
+			t.Errorf("kind %q is declared in api/types but has no fixture, dedicated test, or tracking issue", kind)
 		}
 	}
 }
