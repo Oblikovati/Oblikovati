@@ -15,6 +15,17 @@ func customSketchSettings() types.SketchSettings {
 		InferConstraints:     true,
 		AutoApplyConstraints: false,
 		ConstraintPriority:   types.PriorityParallelPerpendicular,
+		// #1877 grid/snap + constraint-display + relax fields, all non-default so the round-trip
+		// proves each survives the .obk.
+		XSnapSpacing:                 0.25,
+		YSnapSpacing:                 0.5,
+		SnapsPerMinorGrid:            4,
+		MinorLinesPerMajorGridLine:   8,
+		PersistInferredConstraints:   true,
+		DisplayConstraintsOnCreation: true,
+		EditDimensionsWhenCreated:    false,
+		OverConstrainedBehavior:      types.OverConstrainedApplyDriving,
+		EnableRelaxMode:              true,
 	}
 }
 

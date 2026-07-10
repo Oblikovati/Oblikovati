@@ -67,12 +67,28 @@ type Document struct {
 	BodyColorStyles map[string]string `yaml:"bodyColorStyles,omitempty"`
 }
 
-// SketchSettingsRecord is the on-disk per-document sketch settings (#147): the constraint-inference
-// toggles and family priority. The priority enum is stored as its frozen integer id.
+// SketchSettingsRecord is the on-disk per-document sketch settings (#147, extended #1877): the
+// constraint-inference toggles and family priority, the grid/snap defaults, the constraint-display
+// and relax-mode behaviour. The priority and over-constrained enums are stored as their integer ids.
+// The #1877 fields are omitempty so legacy records (which never wrote them) decode to zero and are
+// then overlaid on the type defaults by the persistence layer.
 type SketchSettingsRecord struct {
 	InferConstraints     bool  `yaml:"inferConstraints"`
 	AutoApplyConstraints bool  `yaml:"autoApplyConstraints"`
 	ConstraintPriority   int32 `yaml:"constraintPriority"`
+
+	XSnapSpacing               float64 `yaml:"xSnapSpacing,omitempty"`
+	YSnapSpacing               float64 `yaml:"ySnapSpacing,omitempty"`
+	SnapsPerMinorGrid          int     `yaml:"snapsPerMinorGrid,omitempty"`
+	MinorLinesPerMajorGridLine int     `yaml:"minorLinesPerMajorGridLine,omitempty"`
+
+	PersistInferredConstraints   bool  `yaml:"persistInferredConstraints,omitempty"`
+	DisplayConstraintsOnCreation bool  `yaml:"displayConstraintsOnCreation,omitempty"`
+	EditDimensionsWhenCreated    bool  `yaml:"editDimensionsWhenCreated,omitempty"`
+	OverConstrainedBehavior      int32 `yaml:"overConstrainedBehavior,omitempty"`
+
+	EnableRelaxMode                       bool `yaml:"enableRelaxMode,omitempty"`
+	KeepDimensionsWithEquationInRelaxMode bool `yaml:"keepDimensionsWithEquationInRelaxMode,omitempty"`
 }
 
 // ColorRecord is a color value object on disk: 8-bit rgb, opacity, and the color-source enum.
