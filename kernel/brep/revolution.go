@@ -134,24 +134,49 @@ func arcCenterOnAxis(center math.Point2, axisTol float64) bool {
 }
 
 // revolveArcsAnalytic reports whether every ARC edge of the meridian revolves to a surface this
-// builder emits analytically: a torus (centre off-axis) or a spherical CAP (centre on-axis with
-// EXACTLY one endpoint on the axis, i.e. the arc runs from a rim latitude to the pole). A sphere ZONE
-// (centre on-axis, both endpoints off-axis) needs a framed sphere parameterization we do not yet
-// build, and a pole-to-pole meridian is degenerate; both return false so the caller keeps the faceted
-// revolve (no regression — today every curved-meridian revolve facets).
+// builder emits analytically: a torus (centre off-axis), a spherical CAP (centre on-axis, EXACTLY one
+// endpoint on the axis — a rim latitude to the pole), or a spherical ZONE (centre on-axis, BOTH
+// endpoints off-axis on the same side of the equator — a latitude band, addRevolutionSphereZone). It
+// still declines two on-axis cases that have no single-sphere-patch parameterization: a pole-to-pole
+// meridian (both endpoints on the axis — a whole sphere; SolidSphere is that route) and a zone whose
+// endpoints STRADDLE the equator (r not monotone in colatitude); both return false so the caller keeps
+// the faceted revolve.
 func revolveArcsAnalytic(verts []RevolveVertex, axisTol float64) bool {
 	n := len(verts)
 	for i := range verts {
 		if verts[i].ArcCenter == nil || !arcCenterOnAxis(*verts[i].ArcCenter, axisTol) {
 			continue // a straight edge or an off-axis (torus) arc — both handled
 		}
-		onPrev := float64(verts[(i-1+n)%n].P.X) <= axisTol
-		onCur := float64(verts[i].P.X) <= axisTol
-		if onPrev == onCur {
-			return false // zone (neither endpoint on-axis) or pole-to-pole (both): not analytic yet
+		prev := verts[(i-1+n)%n].P
+		cur := verts[i].P
+		onPrev := float64(prev.X) <= axisTol
+		onCur := float64(cur.X) <= axisTol
+		if onPrev != onCur {
+			continue // exactly one endpoint on the axis: a spherical cap — handled
+		}
+		if onPrev { // both endpoints on the axis: a pole-to-pole meridian — a whole sphere, declined here
+			return false
+		}
+		if !sphereZoneAnalytic(prev, cur, *verts[i].ArcCenter, axisTol) {
+			return false // an equator-straddling zone: not a single monotone-colatitude band yet
 		}
 	}
 	return true
+}
+
+// sphereZoneAnalytic reports whether an on-axis-centre arc between two OFF-axis endpoints revolves to a
+// single analytic spherical ZONE the builder emits (addRevolutionSphereZone). The zone is well defined
+// only when both rims sit on the SAME side of the equator (the latitude plane z=centre.Y): colatitude is
+// then monotone along the arc and each rim is a proper latitude circle. Endpoints straddling the equator
+// (opposite signs) or a rim ON it (|Δz| ≤ axisTol, radius = sphere radius, a tangent equator) fall back to
+// the faceted revolve. axisTol is the meridian-relative coincidence scale (res.Plane()).
+func sphereZoneAnalytic(prev, cur, center math.Point2, axisTol float64) bool {
+	dzPrev := float64(prev.Y - center.Y)
+	dzCur := float64(cur.Y - center.Y)
+	if stdmath.Abs(dzPrev) <= axisTol || stdmath.Abs(dzCur) <= axisTol {
+		return false // a rim on the equator: tangent to the neighbouring cylinder, degenerate latitude
+	}
+	return (dzPrev > 0) == (dzCur > 0) // both above OR both below the equator: same-side band
 }
 
 // revNode is one meridian vertex realized in 3D: the circle of revolution it traces (nil when the
@@ -176,10 +201,13 @@ func buildRevolution(axisOrigin math.Point3, a, ref math.UnitVector3, verts []Re
 	for i := range verts {
 		j := (i + 1) % len(verts)
 		if verts[j].ArcCenter != nil {
-			if arcCenterOnAxis(*verts[j].ArcCenter, res.Plane()) {
-				addRevolutionSphereCap(bld, nodes[i], nodes[j], *verts[j].ArcCenter, axisOrigin, a, feat, i)
-			} else {
+			switch {
+			case !arcCenterOnAxis(*verts[j].ArcCenter, res.Plane()):
 				addRevolutionTorus(bld, nodes[i], nodes[j], *verts[j].ArcCenter, axisOrigin, a, ref, feat, i)
+			case nodes[i].circle == nil || nodes[j].circle == nil:
+				addRevolutionSphereCap(bld, nodes[i], nodes[j], *verts[j].ArcCenter, axisOrigin, a, feat, i)
+			default:
+				addRevolutionSphereZone(bld, nodes[i], nodes[j], *verts[j].ArcCenter, axisOrigin, a, ref, feat, i)
 			}
 			continue
 		}
@@ -365,6 +393,37 @@ func addRevolutionSphereCap(bld *topo.Builder, ni, nj revNode, arcCenter math.Po
 		return
 	}
 	bld.AddReversedFace(sph, revLin(feat, "cap", i), loop)
+}
+
+// addRevolutionSphereZone adds the analytic spherical ZONE face for an ARC meridian edge whose centre
+// lies ON the axis but whose BOTH endpoints are OFF the axis: the arc is a latitude band of the sphere
+// centred at the revolved arc centre (radius = the arc radius). Topologically it is the torus case — two
+// shared rim circles bridged by the arc seam traversed twice — but on a geom.Sphere, so the sphere-zone
+// tessellator sweeps latitude rings between the two rims with the sphere's true bulge. This is the sphere
+// analogue of addRevolutionTorus; caller guarantees a same-side (non-equator-crossing) zone via
+// sphereZoneAnalytic. (self-aligning thrust seat #54; #129 curved-meridian follow-up.)
+func addRevolutionSphereZone(bld *topo.Builder, ni, nj revNode, arcCenter math.Point2, axisOrigin math.Point3, a, ref math.UnitVector3, feat string, i int) {
+	rc, zc := float64(arcCenter.X), float64(arcCenter.Y)
+	zi := float64(axisOrigin.VectorTo(ni.center).Dot(a.AsVector()))
+	zj := float64(axisOrigin.VectorTo(nj.center).Dot(a.AsVector()))
+	radius := stdmath.Hypot(ni.r-rc, zi-zc) // sphere radius = arc radius (centre → rim, in (r,z))
+	center := axisOrigin.TranslateBy(a.AsVector().Scale(math.Scalar(zc)))
+	sph, err := geom.NewSphere(center, radius)
+	if err != nil {
+		return
+	}
+	mid := arcMidpoint(axisOrigin, a, ref, arcCenter, radius, ni.r, zi, nj.r, zj)
+	seamArc, err := geom.Arc3dByThreePoints(ni.v.Point(), mid, nj.v.Point())
+	if err != nil {
+		return
+	}
+	seam := bld.AddEdge(seamArc, ni.v, nj.v, revLin(feat, "zone-seam", i))
+	loop := topo.OuterLoop(topo.Fwd(ni.circle), topo.Fwd(seam), topo.Rev(nj.circle), topo.Rev(seam))
+	if axialGap(ni, nj, a) > 0 { // dz>0: convex band faces outward (AddFace), like cylinder/cone/torus
+		bld.AddFace(sph, revLin(feat, "zone", i), loop)
+		return
+	}
+	bld.AddReversedFace(sph, revLin(feat, "zone", i), loop)
 }
 
 // arcMidpoint returns the 3D point at the middle of the meridian arc (centre (rc,zc) in (r,z),

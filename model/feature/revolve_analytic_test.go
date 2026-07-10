@@ -53,13 +53,13 @@ func TestAnalyticRevolveHasCylinderWalls(t *testing.T) {
 	}
 }
 
-// TestArcProfileRevolveStaysFaceted pins the analytic boundary at a FULL sphere: a half-disc whose arc
-// runs pole-to-pole (both endpoints on the axis, its centre on the axis) is a two-edge meridian, which
-// SolidOfRevolutionMeridian declines (a pole-to-pole meridian is not built as a boundary-less sphere
-// here — SolidSphere is that route), so it revolves to a valid faceted sphere with no analytic
-// cylinder/cone faces. A PARTIAL dome (an arc from a rim to a single pole) IS analytic — see
-// TestDomedRevolveMakesAnalyticSphereCap.
-func TestArcProfileRevolveStaysFaceted(t *testing.T) {
+// TestArcProfileRevolveMakesAnalyticSphere proves the #129 curved-meridian follow-up (FULL-sphere case):
+// a half-disc whose arc runs pole-to-pole (both endpoints AND centre on the axis), closed by a straight
+// side along the axis, revolves to ONE boundary-less analytic geom.Sphere face — not the ~1600-facet UV
+// sphere that shattered every representational bearing ball into sliver faces and starved the frame-loop
+// hover-pick. A PARTIAL dome (rim to a single pole) is a cap (TestDomedRevolveMakesAnalyticSphereCap); a
+// latitude band is a zone (TestSphereZoneRevolveMakesAnalyticSphere).
+func TestArcProfileRevolveMakesAnalyticSphere(t *testing.T) {
 	s := sketch.NewSketches().Add(sketch.XYPlane())
 	top := s.Points().Add(math.P2(0, 2))
 	bot := s.Points().Add(math.P2(0, -2))
@@ -71,14 +71,17 @@ func TestArcProfileRevolveStaysFaceted(t *testing.T) {
 	fs.Recompute()
 	body := fs.Result()[0]
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
-		t.Fatalf("faceted sphere revolve is not a valid solid: %+v", r.Issues)
+		t.Fatalf("sphere revolve is not a valid solid: %+v", r.Issues)
+	}
+	if got := sphereFaceCount(body); got != 1 {
+		t.Fatalf("pole-to-pole revolve has %d sphere faces, want exactly 1 analytic sphere (%d total faces)", got, len(body.Faces()))
 	}
 	if c, k := cylinderFaceCount(body), bodyConeCount(body); c != 0 || k != 0 {
-		t.Fatalf("arc-profile revolve has %d cylinder + %d cone faces, want 0 (faceted sphere)", c, k)
+		t.Fatalf("sphere revolve has %d cylinder + %d cone faces, want 0", c, k)
 	}
 	want := 4.0 / 3.0 * stdmath.Pi * 8 // (4/3)πR³, R=2
 	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.03 {
-		t.Errorf("faceted sphere volume = %g, want ≈%g", got, want)
+		t.Errorf("analytic sphere volume = %g, want ≈%g", got, want)
 	}
 }
 
@@ -182,6 +185,55 @@ func TestDomedRevolveMakesAnalyticSphereCap(t *testing.T) {
 	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.02 {
 		t.Errorf("domed revolve volume = %g, want ≈%g (πr²h + ⅔πr³)", got, want)
 	}
+}
+
+// TestSphereZoneRevolveMakesAnalyticSphere proves the #129 curved-meridian follow-up (sphere-ZONE case):
+// a dished-annulus meridian whose concave back is an arc with its centre ON the axis but BOTH endpoints
+// OFF the axis (a latitude band, neither a cap nor pole-to-pole) revolves to ONE analytic geom.Sphere
+// zone face — not the ~1600-facet swept band that starves the frame-loop hover-pick. This is the fix
+// behind the self-aligning thrust seat (#54): its housing/seat washers carry exactly such a zone back.
+func TestSphereZoneRevolveMakesAnalyticSphere(t *testing.T) {
+	const rIn, rOut, radius, zc = 2.0, 4.0, 10.0, 10.0
+	zOut := zc - stdmath.Sqrt(radius*radius-rOut*rOut) // 0.8348
+	zIn := zc - stdmath.Sqrt(radius*radius-rIn*rIn)    // 0.2020
+	s := sketch.NewSketches().Add(sketch.XYPlane())
+	s.Lines().AddByTwoPoints(math.P2(rIn, 0), math.P2(rOut, 0))                                 // bottom annulus
+	s.Lines().AddByTwoPoints(math.P2(rOut, 0), math.P2(rOut, zOut))                             // OD edge
+	s.Arcs().AddByCenterStartEnd(math.P2(0, zc), math.P2(rOut, zOut), math.P2(rIn, zIn), false) // concave zone back
+	s.Lines().AddByTwoPoints(math.P2(rIn, zIn), math.P2(rIn, 0))                                // bore edge
+	cl := s.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(0, zc))
+	cl.SetCenterline(true)
+	cl.SetConstruction(true)
+
+	fs := NewPartFeatures(nil)
+	NewRevolveFeatures(fs).AddAboutCenterline(s, 0, nil, ops.NewBody)
+	fs.Recompute()
+	body := fs.Result()[0]
+	if res := ops.Validate(body); !res.Valid || !body.IsSolid() {
+		t.Fatalf("sphere-zone revolve is not a valid solid: %+v", res.Issues)
+	}
+	if got := sphereFaceCount(body); got != 1 {
+		t.Fatalf("sphere-zone revolve has %d sphere faces, want exactly 1 analytic zone (%d total faces)", got, len(body.Faces()))
+	}
+	if got := len(body.Faces()); got != 4 {
+		t.Fatalf("sphere-zone revolve has %d faces, want 4 (bottom annulus + bore + OD + sphere zone)", got)
+	}
+	want := sphereZoneShellVolume(rIn, rOut, radius, zc)
+	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.02 {
+		t.Errorf("sphere-zone revolve volume = %g, want ≈%g", got, want)
+	}
+}
+
+// sphereZoneShellVolume integrates the dished annulus V = ∫ 2πr·(zc−√(R²−r²)) dr by shells, the
+// reference the analytic sphere-zone revolve must match.
+func sphereZoneShellVolume(rIn, rOut, radius, zc float64) float64 {
+	const n = 20000
+	acc, dr := 0.0, (rOut-rIn)/n
+	for i := 0; i < n; i++ {
+		r := rIn + (float64(i)+0.5)*dr
+		acc += r * (zc - stdmath.Sqrt(radius*radius-r*r))
+	}
+	return 2 * stdmath.Pi * acc * dr
 }
 
 // TestCircleRevolveMakesAnalyticTorus proves the #129 curved-meridian follow-up (torus case): a single
