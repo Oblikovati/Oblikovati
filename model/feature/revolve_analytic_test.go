@@ -53,10 +53,12 @@ func TestAnalyticRevolveHasCylinderWalls(t *testing.T) {
 	}
 }
 
-// TestArcProfileRevolveStaysFaceted pins the analytic boundary: a profile with a CURVED edge (a
-// half-disc → sphere) is NOT made analytic — its sampled chords would shatter into tiny cone facets,
-// worse than the faceted swept solid — so it revolves to a valid faceted sphere with no analytic
-// cylinder/cone faces (the isStraightLoop guard; curved meridian edges remain a follow-up).
+// TestArcProfileRevolveStaysFaceted pins the analytic boundary at a FULL sphere: a half-disc whose arc
+// runs pole-to-pole (both endpoints on the axis, its centre on the axis) is a two-edge meridian, which
+// SolidOfRevolutionMeridian declines (a pole-to-pole meridian is not built as a boundary-less sphere
+// here — SolidSphere is that route), so it revolves to a valid faceted sphere with no analytic
+// cylinder/cone faces. A PARTIAL dome (an arc from a rim to a single pole) IS analytic — see
+// TestDomedRevolveMakesAnalyticSphereCap.
 func TestArcProfileRevolveStaysFaceted(t *testing.T) {
 	s := sketch.NewSketches().Add(sketch.XYPlane())
 	top := s.Points().Add(math.P2(0, 2))
@@ -134,6 +136,52 @@ func torusFaceCount(b *topo.Body) int {
 		}
 	}
 	return n
+}
+
+// sphereFaceCount tallies geom.Sphere faces.
+func sphereFaceCount(b *topo.Body) int {
+	n := 0
+	for _, f := range b.Faces() {
+		if _, ok := f.Geometry().(geom.Sphere); ok {
+			n++
+		}
+	}
+	return n
+}
+
+// TestDomedRevolveMakesAnalyticSphereCap proves the #129 curved-meridian follow-up (sphere-cap case)
+// end-to-end through the revolve FEATURE: a meridian of a cylinder (r=2, h=5) topped by a 90° dome arc
+// from the rim to the on-axis pole revolves to ONE analytic geom.Sphere cap face — not the 48-facets-
+// per-arc swept solid that shattered the tapered roller into ~1700 sliver faces and starved the
+// frame-loop hover-pick. This is the fix behind the tapered-roller domed big end (#54).
+func TestDomedRevolveMakesAnalyticSphereCap(t *testing.T) {
+	r, h := 2.0, 5.0
+	s := sketch.NewSketches().Add(sketch.XYPlane())
+	s.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(r, 0))                            // bottom disk
+	s.Lines().AddByTwoPoints(math.P2(r, 0), math.P2(r, h))                            // cylinder wall
+	s.Arcs().AddByCenterStartEnd(math.P2(0, h), math.P2(r, h), math.P2(0, h+r), true) // dome to the pole
+	s.Lines().AddByTwoPoints(math.P2(0, h+r), math.P2(0, 0))                          // close along the axis
+	cl := s.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(0, h+r))
+	cl.SetCenterline(true)
+	cl.SetConstruction(true)
+
+	fs := NewPartFeatures(nil)
+	NewRevolveFeatures(fs).AddAboutCenterline(s, 0, nil, ops.NewBody)
+	fs.Recompute()
+	body := fs.Result()[0]
+	if res := ops.Validate(body); !res.Valid || !body.IsSolid() {
+		t.Fatalf("domed revolve is not a valid solid: %+v", res.Issues)
+	}
+	if got := sphereFaceCount(body); got != 1 {
+		t.Fatalf("domed revolve has %d sphere faces, want exactly 1 analytic cap (%d total faces)", got, len(body.Faces()))
+	}
+	if got := len(body.Faces()); got != 3 {
+		t.Fatalf("domed revolve has %d faces, want 3 (bottom disk + cylinder wall + sphere cap)", got)
+	}
+	want := stdmath.Pi*r*r*h + 2.0/3.0*stdmath.Pi*r*r*r // cylinder + hemisphere
+	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.02 {
+		t.Errorf("domed revolve volume = %g, want ≈%g (πr²h + ⅔πr³)", got, want)
+	}
 }
 
 // TestCircleRevolveMakesAnalyticTorus proves the #129 curved-meridian follow-up (torus case): a single

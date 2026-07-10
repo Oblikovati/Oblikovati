@@ -110,23 +110,21 @@ func buildRevolveSheet(prof *sketch.Profile, plane sketch.Plane, axis *WorkAxis,
 }
 
 // buildRevolveSolid revolves a profile (already projected onto plane) about axis over the
-// swept angle starting at start. Behind OBK_ANALYTIC_CURVES a full 360° revolve of a
-// rectilinear profile becomes a TRUE analytic solid (cylinder walls + disk/annulus caps) so
-// thread/chamfer/fillet attach to its revolved cylindrical faces (#129); every other case
-// (partial angle, an oblique/curved profile edge, or the gate off) keeps the faceted swept
-// solid. Booleans re-facet an analytic revolve body on demand (combine → planarized).
+// swept angle starting at start. A full 360° revolve becomes a TRUE analytic solid whenever every
+// profile edge revolves to an exact surface — straight edges → cylinder/cone/plane faces, an off-axis
+// arc → a torus, and an on-axis arc closing at the pole → a spherical cap (the domed end of a tapered
+// roller, #129) — so thread/chamfer/fillet attach to its revolved faces and the mesh carries true
+// curvature (not the 48-facet-per-arc swept solid that starves the frame-loop pick). Every other case
+// (partial angle, a spline edge, a sphere zone we do not build analytically) keeps the faceted swept
+// solid; SolidOfRevolutionMeridian returns nil to signal that fallback. Booleans re-facet an analytic
+// revolve body on demand (combine → planarized).
 func buildRevolveSolid(prof *sketch.Profile, plane sketch.Plane, axis *WorkAxis, angle, start float64, feat string) (*topo.Body, error) {
-	// Analytic only for a full revolve of a STRAIGHT-edged profile: those edges revolve to exact
-	// cylinder/cone/plane faces. A profile with an arc/spline (e.g. a sphere) would have its sampled
-	// chords turn into many tiny cone facets — worse than the faceted swept solid — so it stays
-	// faceted until curved meridian edges (torus, #129 follow-up) are supported.
 	if fullRevolution(angle) {
 		if body, ok := circleProfileTorus(prof, plane, axis, feat); ok {
 			return body, nil // a circle clear of the axis revolves to an analytic torus (#129 follow-up)
 		}
-		if isStraightLoop(prof.OuterLoop()) {
-			mer := meridianFromProfile(prof, plane, axis)
-			if body, err := brep.SolidOfRevolution(axis.Origin(), axis.Direction().AsVector(), mer, feat); err == nil && body != nil {
+		if verts, ok := meridianVertsFromProfile(prof, plane, axis); ok {
+			if body, err := brep.SolidOfRevolutionMeridian(axis.Origin(), axis.Direction().AsVector(), verts, feat); err == nil && body != nil {
 				return body, nil
 			}
 		}
@@ -183,34 +181,62 @@ func revolveSpan(def *RevolveDefinition) (total, start float64) {
 	return a1 + a2, -a2
 }
 
-// isStraightLoop reports whether every entity of a profile loop is a straight line segment (so its
-// revolution is an exact cylinder/cone/plane), as opposed to an arc/spline/circle.
-func isStraightLoop(l sketch.Loop) bool {
-	for _, pe := range l.Entities() {
-		if _, ok := pe.Entity.(*sketch.Line); !ok {
-			return false
-		}
-	}
-	return len(l.Entities()) > 0
-}
-
 // fullRevolution reports whether an angle is a complete turn (0 ⇒ full, like revolveSections).
 func fullRevolution(angle float64) bool { return angle <= 0 || angle >= 2*stdmath.Pi-1e-9 }
 
-// meridianFromProfile projects the profile's outer loop into the axis's (radius, height) half-plane
-// — radius = perpendicular distance from the axis, height = signed distance along it — the
-// cross-section brep.SolidOfRevolution revolves.
-func meridianFromProfile(prof *sketch.Profile, plane sketch.Plane, axis *WorkAxis) []math.Point2 {
+// meridianVertsFromProfile walks the profile's outer loop into brep.RevolveVertex meridian vertices
+// in the axis's (radius, height) half-plane — radius = perpendicular distance from the axis, height =
+// signed distance along it — one vertex per edge END, carrying the arc CENTRE when that edge is a
+// circular arc (so it revolves to a torus/sphere face, not chorded cone facets). ok is false when the
+// loop holds an entity that is neither a line nor an arc (a spline): the caller keeps the faceted
+// revolve. brep.SolidOfRevolutionMeridian orients the meridian and rejects arcs it cannot build
+// analytically (returning nil), so a mixed profile still falls back cleanly.
+func meridianVertsFromProfile(prof *sketch.Profile, plane sketch.Plane, axis *WorkAxis) ([]brep.RevolveVertex, bool) {
 	o, a := axis.Origin(), axis.Direction().AsVector()
-	poly := modelPolygon(prof, plane)
-	out := make([]math.Point2, len(poly))
-	for i, p := range poly {
-		v := o.VectorTo(p)
+	toRZ := func(p2 math.Point2) math.Point2 {
+		v := o.VectorTo(plane.ToModel(p2))
 		z := v.Dot(a)
-		radial := v.Sub(a.Scale(z))
-		out[i] = math.P2(radial.Length(), z)
+		return math.P2(v.Sub(a.Scale(z)).Length(), z)
 	}
-	return out
+	ents := prof.OuterLoop().Entities()
+	verts := make([]brep.RevolveVertex, 0, len(ents))
+	for _, pe := range ents {
+		end, center, ok := entityEndAndArcCenter(pe)
+		if !ok {
+			return nil, false
+		}
+		rv := brep.RevolveVertex{P: toRZ(end)}
+		if center != nil {
+			c := toRZ(*center)
+			rv.ArcCenter = &c
+		}
+		verts = append(verts, rv)
+	}
+	if len(verts) < 3 {
+		return nil, false
+	}
+	return verts, true
+}
+
+// entityEndAndArcCenter returns a loop entity's traversal END point (sketch 2-D) and, for an arc, its
+// centre; ok is false for anything but a line or arc (a spline keeps the profile on the faceted path).
+func entityEndAndArcCenter(pe sketch.ProfileEntity) (end math.Point2, center *math.Point2, ok bool) {
+	switch e := pe.Entity.(type) {
+	case *sketch.Line:
+		end = e.EndPoint().Position()
+		if pe.Reversed() {
+			end = e.StartPoint().Position()
+		}
+		return end, nil, true
+	case *sketch.Arc:
+		end = e.End.Position()
+		if pe.Reversed() {
+			end = e.Start.Position()
+		}
+		c := e.Center.Position()
+		return end, &c, true
+	}
+	return math.Point2{}, nil, false
 }
 
 // revolveAxis resolves the axis of revolution: an explicit work axis if set, otherwise the
