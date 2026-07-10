@@ -62,15 +62,17 @@ func (l ConstraintLimits) clamp(v float64) float64 {
 // the parameter's value (modeling/00).
 type DimensionConstraint struct {
 	constraintBase
-	kind        DimKind
-	driven      bool
-	param       *param.Parameter
-	limits      ConstraintLimits
-	measureAD   adFunc1 // the measured quantity over duals; the float measure derives from it
-	vars        []*math.Scalar
-	refs        []Entity            // the dimensioned geometry (points/lines/arcs), for editing + serialization
-	farSide     bool                // tangentDistance only: dimension to the far tangent point (#152)
-	orientation DistanceOrientation // distance only: aligned (Euclidean) / horizontal (Δx) / vertical (Δy) (#1869)
+	kind           DimKind
+	driven         bool
+	param          *param.Parameter
+	limits         ConstraintLimits
+	measureAD      adFunc1 // the measured quantity over duals; the float measure derives from it
+	vars           []*math.Scalar
+	refs           []Entity            // the dimensioned geometry (points/lines/arcs), for editing + serialization
+	farSide        bool                // tangentDistance only: dimension to the far tangent point (#152)
+	orientation    DistanceOrientation // distance only: aligned (Euclidean) / horizontal (Δx) / vertical (Δy) (#1869)
+	textPoint      *math.Point2        // annotation-text placement; nil ⇒ unset (Inventor TextPoint, #1875)
+	linearDiameter bool                // offset/tangentDistance only: value reads as a diameter, 2× the distance (#1875)
 }
 
 // DistanceOrientation selects what a two-point distance dimension measures — Inventor's
@@ -121,6 +123,22 @@ func ParseDistanceOrientation(name string) (DistanceOrientation, bool) {
 // FarSide reports whether a tangent-distance dimension measures to the far tangent point
 // (#152); false (the near side) for every other kind.
 func (d *DimensionConstraint) FarSide() bool { return d.farSide }
+
+// LinearDiameter reports whether an offset/tangent-distance dimension reads as a diameter —
+// its value is 2× the measured linear distance (Inventor bool LinearDiameter, #1875).
+func (d *DimensionConstraint) LinearDiameter() bool { return d.linearDiameter }
+
+// TextPoint returns the dimension's annotation-text placement and whether one is stored
+// (Inventor Point2d TextPoint, #1875).
+func (d *DimensionConstraint) TextPoint() (math.Point2, bool) {
+	if d.textPoint == nil {
+		return math.Point2{}, false
+	}
+	return *d.textPoint, true
+}
+
+// SetTextPoint records the dimension's annotation-text placement (#1875).
+func (d *DimensionConstraint) SetTextPoint(p math.Point2) { d.textPoint = &p }
 
 // Refs returns the geometry the dimension measures (points for a distance, the line
 // pair for an angle, the circle for a radius, …). It is what serialization records so
@@ -279,8 +297,8 @@ func (dc *DimensionConstraints) AddAngle(l1, l2 *Line, expression string) (*Dime
 // tangent point: |perpendicular distance from the center to the line| ∓ radius — the near
 // side (default) subtracts the radius, the far side adds it (#152). The solver drives the
 // line's endpoints and the curve's center/radius (circularVars) to satisfy the target.
-func (dc *DimensionConstraints) AddTangentDistance(l *Line, c CircularCurve, farSide bool, expression string) (*DimensionConstraint, error) {
-	measure := func(v []ad.Number) ad.Number {
+func (dc *DimensionConstraints) AddTangentDistance(l *Line, c CircularCurve, farSide, linearDiameter bool, expression string) (*DimensionConstraint, error) {
+	measure := diameterScaled(func(v []ad.Number) ad.Number {
 		a, b := ad.V2(v[0], v[1]), ad.V2(v[2], v[3])
 		center, radius, _ := c.circularFrameAD(v, 4)
 		dir := b.Sub(a)
@@ -293,14 +311,25 @@ func (dc *DimensionConstraints) AddTangentDistance(l *Line, c CircularCurve, far
 			return d.Add(radius)
 		}
 		return d.Sub(radius)
-	}
+	}, linearDiameter)
 	vars := append([]*math.Scalar{&l.A.X, &l.A.Y, &l.B.X, &l.B.Y}, c.circularVars()...)
 	d, err := dc.create(TangentDistanceDim, expression, []Entity{l, c}, measure, vars)
 	if err != nil {
 		return nil, err
 	}
-	d.farSide = farSide
+	d.farSide, d.linearDiameter = farSide, linearDiameter
 	return d, nil
+}
+
+// diameterScaled wraps a linear measure to read as a diameter — 2× the distance — when
+// linearDiameter is set, so an offset/tangent-distance dimension presents and drives a diameter
+// value (#1875). Doubling the measure keeps report and drive consistent: a target T solves to a
+// linear distance of T/2.
+func diameterScaled(measure adFunc1, linearDiameter bool) adFunc1 {
+	if !linearDiameter {
+		return measure
+	}
+	return func(v []ad.Number) ad.Number { return measure(v).Scale(2) }
 }
 
 // AddArcLength dimensions an arc's length (radius × swept angle).

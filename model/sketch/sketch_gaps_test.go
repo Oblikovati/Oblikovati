@@ -41,7 +41,7 @@ func TestTangentDistanceDimRoundTrip(t *testing.T) {
 	a, b := s.NewPoint(math.P2(0, 0)), s.NewPoint(math.P2(4, 0))
 	line := s.Lines().Add(a, b)
 	circle := s.Circles().Add(s.NewPoint(math.P2(0, 5)), 2)
-	d, err := s.DimensionConstraints().AddTangentDistance(line, circle, true, "1 cm")
+	d, err := s.DimensionConstraints().AddTangentDistance(line, circle, true, false, "1 cm")
 	if err != nil {
 		t.Fatalf("AddTangentDistance: %v", err)
 	}

@@ -13,7 +13,7 @@ func TestOffsetDimMeasuresPerpendicular(t *testing.T) {
 	s := NewSketches().Add(XYPlane())
 	l := s.Lines().AddByTwoPoints(gmath.P2(0, 0), gmath.P2(4, 0))
 	p := s.Points().Add(gmath.P2(2, 3))
-	d, err := s.DimensionConstraints().AddOffsetDim(p, l, "30 mm")
+	d, err := s.DimensionConstraints().AddOffsetDim(p, l, false, "30 mm")
 	if err != nil {
 		t.Fatalf("AddOffsetDim: %v", err)
 	}
@@ -58,7 +58,7 @@ func TestAdvancedDimsRoundTrip(t *testing.T) {
 	v := s.Points().Add(gmath.P2(5, 5))
 	a := s.Points().Add(gmath.P2(6, 5))
 	b := s.Points().Add(gmath.P2(5, 6))
-	if _, err := s.DimensionConstraints().AddOffsetDim(p, l, "30 mm"); err != nil {
+	if _, err := s.DimensionConstraints().AddOffsetDim(p, l, false, "30 mm"); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := s.DimensionConstraints().AddThreePointAngle(v, a, b, "90 deg"); err != nil {

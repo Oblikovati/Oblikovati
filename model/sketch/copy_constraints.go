@@ -228,6 +228,9 @@ func (target *Sketch) carryDimension(d *DimensionConstraint, m *cloneMap) bool {
 	if d.limits.Enabled {
 		nd.SetLimits(d.limits.Min, d.limits.Max)
 	}
+	if tp, ok := d.TextPoint(); ok {
+		nd.SetTextPoint(tp)
+	}
 	return true
 }
 
@@ -281,7 +284,7 @@ func (target *Sketch) recreateAdvancedDimension(d *DimensionConstraint, m *clone
 	switch d.kind {
 	case OffsetDim:
 		if p, l, ok := m.refPointLine(d.refs); ok {
-			return added(dc.AddOffsetDim(p, l, expr))
+			return added(dc.AddOffsetDim(p, l, d.linearDiameter, expr))
 		}
 	case ThreePointAngleDim:
 		if vx, a, b, ok := m.refPoints3(d.refs); ok {
@@ -293,7 +296,7 @@ func (target *Sketch) recreateAdvancedDimension(d *DimensionConstraint, m *clone
 		}
 	case TangentDistanceDim:
 		if l, c, ok := m.refLineCurve(d.refs); ok {
-			return added(dc.AddTangentDistance(l, c, d.farSide, expr))
+			return added(dc.AddTangentDistance(l, c, d.farSide, d.linearDiameter, expr))
 		}
 	}
 	return nil, false

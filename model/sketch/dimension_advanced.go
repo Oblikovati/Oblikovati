@@ -7,9 +7,10 @@ import (
 	"oblikovati.org/solve/ad"
 )
 
-// AddOffsetDim dimensions the perpendicular distance from point p to line l.
-func (dc *DimensionConstraints) AddOffsetDim(p *Point, l *Line, expression string) (*DimensionConstraint, error) {
-	measure := func(v []ad.Number) ad.Number {
+// AddOffsetDim dimensions the perpendicular distance from point p to line l. With linearDiameter
+// the value reads as a diameter — 2× that distance (Inventor's LinearDiameter, #1875).
+func (dc *DimensionConstraints) AddOffsetDim(p *Point, l *Line, linearDiameter bool, expression string) (*DimensionConstraint, error) {
+	measure := diameterScaled(func(v []ad.Number) ad.Number {
 		pt, a, b := ad.V2(v[0], v[1]), ad.V2(v[2], v[3]), ad.V2(v[4], v[5])
 		dir := b.Sub(a)
 		length := dir.Length()
@@ -17,9 +18,14 @@ func (dc *DimensionConstraints) AddOffsetDim(p *Point, l *Line, expression strin
 			return pt.Sub(a).Length() // degenerate line: distance to its point
 		}
 		return dir.Cross(pt.Sub(a)).Div(length).Abs()
-	}
+	}, linearDiameter)
 	vars := []*math.Scalar{&p.X, &p.Y, &l.A.X, &l.A.Y, &l.B.X, &l.B.Y}
-	return dc.create(OffsetDim, expression, []Entity{p, l}, measure, vars)
+	d, err := dc.create(OffsetDim, expression, []Entity{p, l}, measure, vars)
+	if err != nil {
+		return nil, err
+	}
+	d.linearDiameter = linearDiameter
+	return d, nil
 }
 
 // AddThreePointAngle dimensions the angle a–vertex–b (the included angle at vertex).
