@@ -24,6 +24,7 @@ import (
 var (
 	persistedConstraintVocabulary2D = []ConstraintKind{
 		CoincidentKind, HorizontalKind, VerticalKind,
+		SingleLineHorizontalKind, SingleLineVerticalKind,
 		PointOnLineKind, MidpointKind, PointOnCircleKind,
 		ParallelKind, PerpendicularKind, CollinearKind, EqualLengthKind,
 		ConcentricKind, EqualRadiusKind, CircularTangentKind, TangentKind,
@@ -129,6 +130,8 @@ func populateEvery2DConstraintKind(s *Sketch) {
 	g.AddCoincident(l1.A, l2.A)
 	g.AddHorizontal(l1.A, l1.B)
 	g.AddVertical(l2.A, l2.B)
+	g.AddLineHorizontal(l1)
+	g.AddLineVertical(l2)
 	g.AddPointOnLine(l2.A, l1)
 	g.AddMidpoint(l2.B, l1)
 	g.AddPointOnCircle(l1.B, c1)

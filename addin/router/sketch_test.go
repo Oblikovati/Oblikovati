@@ -339,10 +339,11 @@ func TestSketchAddConstraintReducesDOFAndSolves(t *testing.T) {
 
 	var line wire.AddSketchEntityResult
 	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"line","points":[[0,0],[4,1]]}`, &line)
-	pA, pB := line.PointIDs[0], line.PointIDs[1]
 
+	// A single line ref is the single-entity horizontal form, reported as "horizontal"
+	// (two point refs would be the align form, "horizontalAlign") — #1871.
 	var con wire.AddConstraintResult
-	args := fmt.Sprintf(`{"sketchIndex":0,"kind":"horizontal","entities":[%d,%d]}`, pA, pB)
+	args := fmt.Sprintf(`{"sketchIndex":0,"kind":"horizontal","entities":[%d]}`, line.EntityID)
 	call(t, r, s, "sketch.addConstraint", args, &con)
 	if con.Kind != "horizontal" {
 		t.Fatalf("constraint kind = %q, want horizontal", con.Kind)

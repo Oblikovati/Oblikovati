@@ -53,6 +53,13 @@ func nPoints2D(n int) constraint2DFixture {
 	}
 }
 
+// oneLine2D builds a single line and returns its id — the single-entity horizontal/vertical
+// fixture (#1871).
+func oneLine2D(t *testing.T, r *Router, s *app.Session) []uint64 {
+	t.Helper()
+	return []uint64{addEntity2D(t, r, s, `{"sketchIndex":0,"kind":"line","points":[[10,0],[11,1]]}`)}
+}
+
 // pointAndLine2D builds a standalone point and a line, point first.
 func pointAndLine2D(t *testing.T, r *Router, s *app.Session) []uint64 {
 	t.Helper()
@@ -109,26 +116,28 @@ func lineAndSpline2D(t *testing.T, r *Router, s *app.Session) []uint64 {
 
 // declared2DConstraintFixtures maps every wire-creatable kind to its minimal fixture.
 var declared2DConstraintFixtures = map[types.GeometricConstraintKind]constraint2DFixture{
-	types.GeoConstraintCoincident:    nPoints2D(2),
-	types.GeoConstraintPointOnLine:   pointAndLine2D,
-	types.GeoConstraintMidpoint:      pointAndLine2D,
-	types.GeoConstraintPointOnCircle: pointAndCircle2D,
-	types.GeoConstraintHorizontal:    nPoints2D(2),
-	types.GeoConstraintVertical:      nPoints2D(2),
-	types.GeoConstraintParallel:      twoLines2D,
-	types.GeoConstraintPerpendicular: twoLines2D,
-	types.GeoConstraintCollinear:     twoLines2D,
-	types.GeoConstraintConcentric:    twoCircles2D,
-	types.GeoConstraintEqualLength:   twoLines2D,
-	types.GeoConstraintEqualRadius:   twoCircles2D,
-	types.GeoConstraintTangent:       lineAndCircle2D,
-	types.GeoConstraintSymmetry:      symmetryTrio2D,
-	types.GeoConstraintFix:           nPoints2D(1),
-	types.GeoConstraintSmooth:        lineAndSpline2D,
-	types.GeoConstraintGround:        nPoints2D(1),
-	types.GeoConstraintOffset:        twoLines2D,
-	types.GeoConstraintPattern:       nPoints2D(2),
-	types.GeoConstraintCustom:        nPoints2D(2),
+	types.GeoConstraintCoincident:      nPoints2D(2),
+	types.GeoConstraintPointOnLine:     pointAndLine2D,
+	types.GeoConstraintMidpoint:        pointAndLine2D,
+	types.GeoConstraintPointOnCircle:   pointAndCircle2D,
+	types.GeoConstraintHorizontal:      oneLine2D, // single-line form (#1871)
+	types.GeoConstraintVertical:        oneLine2D,
+	types.GeoConstraintHorizontalAlign: nPoints2D(2),
+	types.GeoConstraintVerticalAlign:   nPoints2D(2),
+	types.GeoConstraintParallel:        twoLines2D,
+	types.GeoConstraintPerpendicular:   twoLines2D,
+	types.GeoConstraintCollinear:       twoLines2D,
+	types.GeoConstraintConcentric:      twoCircles2D,
+	types.GeoConstraintEqualLength:     twoLines2D,
+	types.GeoConstraintEqualRadius:     twoCircles2D,
+	types.GeoConstraintTangent:         lineAndCircle2D,
+	types.GeoConstraintSymmetry:        symmetryTrio2D,
+	types.GeoConstraintFix:             nPoints2D(1),
+	types.GeoConstraintSmooth:          lineAndSpline2D,
+	types.GeoConstraintGround:          nPoints2D(1),
+	types.GeoConstraintOffset:          twoLines2D,
+	types.GeoConstraintPattern:         nPoints2D(2),
+	types.GeoConstraintCustom:          nPoints2D(2),
 }
 
 // intentionallyNotWireCreatable2D are declared kinds that sketch.addConstraint must NOT
@@ -146,6 +155,7 @@ var intentionallyNotWireCreatable2D = map[types.GeometricConstraintKind]string{
 var allDeclared2DConstraintKinds = []types.GeometricConstraintKind{
 	types.GeoConstraintCoincident, types.GeoConstraintPointOnLine, types.GeoConstraintMidpoint,
 	types.GeoConstraintPointOnCircle, types.GeoConstraintHorizontal, types.GeoConstraintVertical,
+	types.GeoConstraintHorizontalAlign, types.GeoConstraintVerticalAlign,
 	types.GeoConstraintParallel, types.GeoConstraintPerpendicular, types.GeoConstraintCollinear,
 	types.GeoConstraintConcentric, types.GeoConstraintEqualLength, types.GeoConstraintEqualRadius,
 	types.GeoConstraintTangent, types.GeoConstraintSymmetry, types.GeoConstraintFix,
