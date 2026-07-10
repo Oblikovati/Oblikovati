@@ -122,10 +122,11 @@ void obk_ig_center_next_window(void);
 void obk_ig_set_next_window_size(float w, float h);
 void obk_ig_set_next_window_size_first_use(float w, float h);
 
-// Table verbs (the Parameters dialog grid). begin_table opens a bordered, row-striped,
-// vertically scrolling table of `columns` columns; pair with end_table only when it
-// returned non-zero. setup_column/setup_scroll_freeze/headers_row define the header;
-// next_row/next_column advance the cursor (next_column returns visibility). push_id_int/
+// Table verbs (the Parameters dialog grid, the content-center member table, …). begin_table
+// opens a bordered, row-striped, vertically scrolling table of `columns` columns; begin_table_scrollx
+// is the same but also scrolls horizontally (a wide grid in a narrow docked panel). Pair either with
+// end_table only when it returned non-zero. setup_column/setup_scroll_freeze/headers_row define the
+// header; next_row/next_column advance the cursor (next_column returns visibility). push_id_int/
 // pop_id scope per-row widget ids so identical cell labels don't collide.
 int  obk_ig_begin_table(const char* id, int columns, float outer_w, float outer_h);
 int  obk_ig_begin_table_scrollx(const char* id, int columns, float outer_w, float outer_h);
