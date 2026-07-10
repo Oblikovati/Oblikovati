@@ -4,7 +4,6 @@ package ui
 
 import (
 	"oblikovati.org/api/wire"
-	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
 )
 
@@ -32,7 +31,7 @@ func cellAt(row wire.TableRow, col int) string {
 // drawPanelTable renders a PanelTable: a scrolling, horizontally-scrolling data grid with a pinned
 // header. A row click pushes the row Key to the add-in (which arms Place). No per-frame allocation:
 // the spec's strings are drawn as-is.
-func drawPanelTable(s *app.Session, windowID string, control wire.PanelControlSpec) {
+func drawPanelTable(s panelEditSession, windowID string, control wire.PanelControlSpec) {
 	cols := len(control.TableColumns)
 	if cols == 0 {
 		return
@@ -54,7 +53,7 @@ func drawPanelTable(s *app.Session, windowID string, control wire.PanelControlSp
 
 // drawTableRow draws one selectable row spanning all columns; the first column carries a
 // row-spanning Selectable so a click anywhere on the row selects it.
-func drawTableRow(s *app.Session, windowID string, control wire.PanelControlSpec, i int) {
+func drawTableRow(s panelEditSession, windowID string, control wire.PanelControlSpec, i int) {
 	row := control.TableRows[i]
 	native.PushIDInt(i)
 	defer native.PopID()

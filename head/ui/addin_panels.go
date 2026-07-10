@@ -158,6 +158,15 @@ func drawAddInPanelControl(s *app.Session, windowID string, index int, control w
 	}
 }
 
+// panelEditSession is the ≤1-method view of the session an editable panel widget needs (audit I5,
+// the arrowSession pattern): just the sink that reports a user edit back to the owning add-in, so
+// tree/table/field widgets don't couple to the whole *app.Session. *app.Session satisfies it.
+type panelEditSession interface {
+	PanelValueChanged(windowID, controlID, value string)
+}
+
+var _ panelEditSession = (*app.Session)(nil)
+
 // drawEditableControl renders the editable control kinds with the stacked-caption layout
 // (#1490) and reports whether control was one, keeping the leaf dispatch small. Edits push back
 // through Session.PanelValueChanged.
@@ -186,7 +195,7 @@ func drawEditableControl(s *app.Session, windowID string, control wire.PanelCont
 // drawPanelTextField renders a stacked-caption text/combo input (#1490), pushing the new value to
 // the add-in on change. Split out of drawEditableControl to keep the dispatch switch's statement
 // count under the funlen gate as more control kinds land.
-func drawPanelTextField(s *app.Session, windowID string, control wire.PanelControlSpec) {
+func drawPanelTextField(s panelEditSession, windowID string, control wire.PanelControlSpec) {
 	buf := panelBuffer(windowID+"/"+control.ID, control.Value)
 	panelFieldLabel(control.Text)
 	if native.InputText("##field", buf) {
@@ -195,7 +204,7 @@ func drawPanelTextField(s *app.Session, windowID string, control wire.PanelContr
 }
 
 // drawPanelCheckBox renders a checkbox control, pushing the new state to the add-in on toggle.
-func drawPanelCheckBox(s *app.Session, windowID string, control wire.PanelControlSpec) {
+func drawPanelCheckBox(s panelEditSession, windowID string, control wire.PanelControlSpec) {
 	checked := control.Value == "true"
 	if native.Checkbox(control.Text, &checked) {
 		s.PanelValueChanged(windowID, control.ID, strconv.FormatBool(checked))

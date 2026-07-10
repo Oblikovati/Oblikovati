@@ -4,7 +4,6 @@ package ui
 
 import (
 	"oblikovati.org/api/wire"
-	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
 )
 
@@ -25,7 +24,7 @@ func treeFirstUse(key string) bool {
 // drawPanelTree renders a PanelTree: a hierarchy of selectable, expandable nodes. The disclosure
 // arrow toggles a node (host-side, no event); a click on a node's label selects it and pushes the
 // node ID to the add-in, which re-sends the spec (e.g. to populate a members table).
-func drawPanelTree(s *app.Session, windowID string, control wire.PanelControlSpec) {
+func drawPanelTree(s panelEditSession, windowID string, control wire.PanelControlSpec) {
 	firstUse := treeFirstUse(windowID + "/" + control.ID)
 	for i := range control.Nodes {
 		drawTreeNode(s, windowID, control.ID, control.Value, control.Nodes[i], firstUse)
@@ -35,7 +34,7 @@ func drawPanelTree(s *app.Session, windowID string, control wire.PanelControlSpe
 // drawTreeNode renders one node and recurses into its children. selected is the currently-selected
 // node ID (for highlight). A leaf uses Selectable; a branch uses TreeNodeSelectable so the arrow
 // expands while a label click selects.
-func drawTreeNode(s *app.Session, windowID, controlID, selected string, node wire.TreeNode, firstUse bool) {
+func drawTreeNode(s panelEditSession, windowID, controlID, selected string, node wire.TreeNode, firstUse bool) {
 	if len(node.Children) == 0 {
 		if native.Selectable(node.Label, node.ID == selected) {
 			s.PanelValueChanged(windowID, controlID, node.ID)
