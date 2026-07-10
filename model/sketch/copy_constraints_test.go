@@ -109,6 +109,8 @@ func TestCopyCarriesEveryConstraintAndDimensionKind(t *testing.T) {
 	g.AddCoincident(pa, pb)
 	g.AddHorizontal(l1.A, l1.B)
 	g.AddVertical(l3.A, l3.B)
+	g.AddLineHorizontal(l1) // single-line forms (#1871)
+	g.AddLineVertical(l3)
 	g.AddMidpoint(pa, l1)
 	g.AddPointOnLine(pb, l2)
 	g.AddPointOnCircle(pa, c1)
