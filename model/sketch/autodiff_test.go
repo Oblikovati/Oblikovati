@@ -220,10 +220,10 @@ func TestDimensionPartialsMatchFiniteDifference(t *testing.T) {
 		{"radius-arc", mk(d.AddRadius(arc, "2 cm"))},
 		{"diameter", mk(d.AddDiameter(c1, "4 cm"))},
 		{"angle", mk(d.AddAngle(l1, l2, "30 deg"))},
-		{"tangent-distance-near", mk(d.AddTangentDistance(l1, c1, false, "1 cm"))},
-		{"tangent-distance-far", mk(d.AddTangentDistance(l2, c1, true, "1 cm"))},
+		{"tangent-distance-near", mk(d.AddTangentDistance(l1, c1, false, false, "1 cm"))},
+		{"tangent-distance-far", mk(d.AddTangentDistance(l2, c1, true, false, "1 cm"))},
 		{"arc-length", mk(d.AddArcLength(arc, "3 cm"))},
-		{"offset", mk(d.AddOffsetDim(p, l1, "1 cm"))},
+		{"offset", mk(d.AddOffsetDim(p, l1, false, "1 cm"))},
 		{"three-point-angle", mk(d.AddThreePointAngle(vtx, p, q, "45 deg"))},
 		{"ellipse-radius", mk(d.AddEllipseRadius(ell, "3 cm"))},
 	}

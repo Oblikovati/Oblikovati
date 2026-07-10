@@ -8,6 +8,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
+	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/param"
 	"oblikovati.org/model/sketch"
@@ -24,8 +25,11 @@ func addDimension(_ *app.Session, part *compdef.PartComponentDefinition, in wire
 	if !ok {
 		return wire.AddDimensionResult{}, fmt.Errorf("sketch.addDimension: unknown orientation %q (want aligned|horizontal|vertical)", in.Orientation)
 	}
-	dim, err := buildDimension(sk, types.DimensionConstraintKind(in.Kind), in.Entities, in.Expression, in.FarSide, orientation)
+	dim, err := buildDimension(sk, types.DimensionConstraintKind(in.Kind), in.Entities, in.Expression, in.FarSide, in.LinearDiameter, orientation)
 	if err != nil {
+		return wire.AddDimensionResult{}, err
+	}
+	if err := applyCreateOptions(dim, in); err != nil {
 		return wire.AddDimensionResult{}, err
 	}
 	dc := sk.DimensionConstraints()
@@ -33,6 +37,23 @@ func addDimension(_ *app.Session, part *compdef.PartComponentDefinition, in wire
 		Index: dc.Count() - 1, Kind: in.Kind, Parameter: dim.Parameter().Name(),
 		Value: dim.Measured(), DOF: sk.DegreesOfFreedom(),
 	}, nil
+}
+
+// applyCreateOptions sets the driven flag and text placement at create (#1875), before the
+// result's DOF is read — so a driven dimension is already non-constraining and never transiently
+// over-constrains the sketch.
+func applyCreateOptions(dim *sketch.DimensionConstraint, in wire.AddDimensionArgs) error {
+	if in.Driven {
+		dim.SetDriven(true)
+	}
+	switch len(in.TextPoint) {
+	case 0:
+	case 2:
+		dim.SetTextPoint(math.P2(math.Scalar(in.TextPoint[0]), math.Scalar(in.TextPoint[1])))
+	default:
+		return fmt.Errorf("sketch.addDimension: textPoint needs [x,y], got %d values", len(in.TextPoint))
+	}
+	return nil
 }
 
 // driveDimension edits a dimension: its value (expression), driven flag, and/or limits.
@@ -66,7 +87,7 @@ func applyDimensionEdit(part *compdef.PartComponentDefinition, dim *sketch.Dimen
 
 // buildDimension resolves references and applies the matching model dimension factory. orientation
 // applies only to the distance kind (aligned/horizontal/vertical); other kinds ignore it.
-func buildDimension(sk *sketch.Sketch, kind types.DimensionConstraintKind, refs []uint64, expr string, farSide bool, orientation sketch.DistanceOrientation) (*sketch.DimensionConstraint, error) {
+func buildDimension(sk *sketch.Sketch, kind types.DimensionConstraintKind, refs []uint64, expr string, farSide, linearDiameter bool, orientation sketch.DistanceOrientation) (*sketch.DimensionConstraint, error) {
 	dc := sk.DimensionConstraints()
 	switch kind {
 	case types.DimConstraintDistance:
@@ -88,20 +109,20 @@ func buildDimension(sk *sketch.Sketch, kind types.DimensionConstraintKind, refs 
 	case types.DimConstraintArcLength:
 		return arcLengthDimension(sk, refs, expr)
 	default:
-		return buildAdvancedDimension(sk, kind, refs, expr, farSide)
+		return buildAdvancedDimension(sk, kind, refs, expr, farSide, linearDiameter)
 	}
 }
 
 // buildAdvancedDimension handles the M21 dimension kinds (offset/three-point-angle/
 // ellipse-radius) plus the tangent-distance dimension (#152); split out of buildDimension to
 // keep that switch small.
-func buildAdvancedDimension(sk *sketch.Sketch, kind types.DimensionConstraintKind, refs []uint64, expr string, farSide bool) (*sketch.DimensionConstraint, error) {
+func buildAdvancedDimension(sk *sketch.Sketch, kind types.DimensionConstraintKind, refs []uint64, expr string, farSide, linearDiameter bool) (*sketch.DimensionConstraint, error) {
 	dc := sk.DimensionConstraints()
 	switch kind {
 	case types.DimConstraintTangentDistance:
-		return tangentDistanceDimension(sk, refs, expr, farSide)
+		return tangentDistanceDimension(sk, refs, expr, farSide, linearDiameter)
 	case types.DimConstraintOffset:
-		return offsetDimension(sk, refs, expr)
+		return offsetDimension(sk, refs, expr, linearDiameter)
 	case types.DimConstraintThreePointAngle:
 		v, a, b, err := threePointRefs(sk, refs)
 		if err != nil {
@@ -121,7 +142,7 @@ func buildAdvancedDimension(sk *sketch.Sketch, kind types.DimensionConstraintKin
 
 // tangentDistanceDimension resolves a line + circle/arc ref and dimensions the distance from
 // the line to the curve's near (default) or far tangent point (#152).
-func tangentDistanceDimension(sk *sketch.Sketch, refs []uint64, expr string, farSide bool) (*sketch.DimensionConstraint, error) {
+func tangentDistanceDimension(sk *sketch.Sketch, refs []uint64, expr string, farSide, linearDiameter bool) (*sketch.DimensionConstraint, error) {
 	if len(refs) != 2 {
 		return nil, fmt.Errorf("sketch.addDimension: tangentDistance needs a line ref and a circle/arc ref, got %d", len(refs))
 	}
@@ -133,11 +154,11 @@ func tangentDistanceDimension(sk *sketch.Sketch, refs []uint64, expr string, far
 	if err != nil {
 		return nil, err
 	}
-	return sk.DimensionConstraints().AddTangentDistance(l, c, farSide, expr)
+	return sk.DimensionConstraints().AddTangentDistance(l, c, farSide, linearDiameter, expr)
 }
 
 // offsetDimension resolves a point + line ref and dimensions their perpendicular distance.
-func offsetDimension(sk *sketch.Sketch, refs []uint64, expr string) (*sketch.DimensionConstraint, error) {
+func offsetDimension(sk *sketch.Sketch, refs []uint64, expr string, linearDiameter bool) (*sketch.DimensionConstraint, error) {
 	if len(refs) != 2 {
 		return nil, fmt.Errorf("sketch.addDimension: offsetDim needs a point + line ref, got %d", len(refs))
 	}
@@ -149,7 +170,7 @@ func offsetDimension(sk *sketch.Sketch, refs []uint64, expr string) (*sketch.Dim
 	if err != nil {
 		return nil, err
 	}
-	return sk.DimensionConstraints().AddOffsetDim(p, l, expr)
+	return sk.DimensionConstraints().AddOffsetDim(p, l, linearDiameter, expr)
 }
 
 // threePointRefs resolves three point refs (vertex, a, b).

@@ -86,15 +86,19 @@ func enumerateDimensions(_ *app.Session, part *compdef.PartComponentDefinition, 
 // dimensionInfo renders one dimensional constraint as its wire summary.
 func dimensionInfo(index int, d *sketch.DimensionConstraint) wire.DimensionInfo {
 	info := wire.DimensionInfo{
-		Index:       index,
-		Kind:        string(dimensionKind(d.Kind())),
-		Value:       d.Measured(),
-		Driven:      d.Driven(),
-		Orientation: sketch.DistanceOrientationName(d.Orientation()),
+		Index:          index,
+		Kind:           string(dimensionKind(d.Kind())),
+		Value:          d.Measured(),
+		Driven:         d.Driven(),
+		Orientation:    sketch.DistanceOrientationName(d.Orientation()),
+		LinearDiameter: d.LinearDiameter(),
 	}
 	if p := d.Parameter(); p != nil {
 		info.Name = p.Name()
 		info.Expression = p.Expression()
+	}
+	if tp, ok := d.TextPoint(); ok {
+		info.TextPoint = []float64{float64(tp.X), float64(tp.Y)}
 	}
 	return info
 }

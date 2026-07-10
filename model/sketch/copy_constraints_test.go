@@ -160,10 +160,10 @@ func TestCopyCarriesEveryConstraintAndDimensionKind(t *testing.T) {
 	add(dc.AddRadius(c1, "1 mm"))
 	add(dc.AddDiameter(c2, "2 mm"))
 	add(dc.AddArcLength(arc, "1 mm"))
-	add(dc.AddOffsetDim(pa, l2, "1 mm"))
+	add(dc.AddOffsetDim(pa, l2, false, "1 mm"))
 	add(dc.AddThreePointAngle(pa, pb, l1.B, "45 deg"))
 	add(dc.AddEllipseRadius(ell, "2 mm"))
-	add(dc.AddTangentDistance(l1, c1, false, "1 mm"))
+	add(dc.AddTangentDistance(l1, c1, false, false, "1 mm"))
 
 	wantC, wantD := g.Count(), dc.Count()
 

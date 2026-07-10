@@ -44,11 +44,11 @@ func TestAllDimensionKindsSurviveRoundTrip(t *testing.T) {
 	chk("arcLength", err)
 	_, err = dc.AddEllipseRadius(ell, "2 cm")
 	chk("ellipseRadius", err)
-	_, err = dc.AddOffsetDim(c, l1, "3 cm")
+	_, err = dc.AddOffsetDim(c, l1, false, "3 cm")
 	chk("offset", err)
 	_, err = dc.AddThreePointAngle(a, b, c, "45 deg")
 	chk("threePointAngle", err)
-	_, err = dc.AddTangentDistance(l1, circle, false, "1 cm")
+	_, err = dc.AddTangentDistance(l1, circle, false, false, "1 cm")
 	chk("tangentDistance", err)
 
 	wantDims := s.DimensionConstraints().Count()

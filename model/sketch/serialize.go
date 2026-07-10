@@ -149,14 +149,16 @@ type ConstraintData struct {
 // DimensionData is one dimensional constraint: its kind, operand ids, the value
 // expression, and driving/limit state.
 type DimensionData struct {
-	Kind        string      `yaml:"kind"`
-	Points      []int       `yaml:"points,omitempty"`
-	Curves      []int       `yaml:"curves,omitempty"`
-	Expression  string      `yaml:"expression"`
-	Driven      bool        `yaml:"driven,omitempty"`
-	FarSide     bool        `yaml:"farSide,omitempty"`     // tangentDistance only (#152)
-	Orientation string      `yaml:"orientation,omitempty"` // distance only: horizontal/vertical (absent ⇒ aligned) (#1869)
-	Limits      *LimitsData `yaml:"limits,omitempty"`
+	Kind           string      `yaml:"kind"`
+	Points         []int       `yaml:"points,omitempty"`
+	Curves         []int       `yaml:"curves,omitempty"`
+	Expression     string      `yaml:"expression"`
+	Driven         bool        `yaml:"driven,omitempty"`
+	FarSide        bool        `yaml:"farSide,omitempty"`        // tangentDistance only (#152)
+	Orientation    string      `yaml:"orientation,omitempty"`    // distance only: horizontal/vertical (absent ⇒ aligned) (#1869)
+	LinearDiameter bool        `yaml:"linearDiameter,omitempty"` // offset/tangentDistance only: value reads as a diameter (#1875)
+	TextPoint      []float64   `yaml:"textPoint,omitempty"`      // [x,y] annotation placement, absent when unset (#1875)
+	Limits         *LimitsData `yaml:"limits,omitempty"`
 }
 
 // LimitsData carries a dimension's drive limits when enabled.
@@ -343,9 +345,12 @@ func serializeSplineHandles(sp *Spline) []SplineHandleData {
 }
 
 func serializeDimension(d *DimensionConstraint) (DimensionData, error) {
-	dd := DimensionData{Expression: d.param.Expression(), Driven: d.driven, FarSide: d.farSide, Orientation: DistanceOrientationName(d.orientation)}
+	dd := DimensionData{Expression: d.param.Expression(), Driven: d.driven, FarSide: d.farSide, Orientation: DistanceOrientationName(d.orientation), LinearDiameter: d.linearDiameter}
 	if d.limits.Enabled {
 		dd.Limits = &LimitsData{Min: d.limits.Min, Max: d.limits.Max}
+	}
+	if tp, ok := d.TextPoint(); ok {
+		dd.TextPoint = []float64{float64(tp.X), float64(tp.Y)}
 	}
 	kind, err := dimKindName(d.kind)
 	if err != nil {

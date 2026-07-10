@@ -257,6 +257,9 @@ func (r *sketchRestorer) restoreDimensions(dims []DimensionData) error {
 		if dd.Limits != nil {
 			d.SetLimits(dd.Limits.Min, dd.Limits.Max)
 		}
+		if len(dd.TextPoint) == 2 {
+			d.SetTextPoint(math.P2(math.Scalar(dd.TextPoint[0]), math.Scalar(dd.TextPoint[1])))
+		}
 	}
 	return nil
 }
@@ -330,7 +333,7 @@ func (r *sketchRestorer) restoreAdvancedDimension(dd DimensionData) (*DimensionC
 		if err != nil {
 			return nil, err
 		}
-		return dc.AddOffsetDim(p, l, dd.Expression)
+		return dc.AddOffsetDim(p, l, dd.LinearDiameter, dd.Expression)
 	case "threePointAngle":
 		pts, err := r.points(dd.Points, 3)
 		if err != nil {
@@ -352,7 +355,7 @@ func (r *sketchRestorer) restoreAdvancedDimension(dd DimensionData) (*DimensionC
 		if err != nil {
 			return nil, err
 		}
-		return dc.AddTangentDistance(l, c, dd.FarSide, dd.Expression)
+		return dc.AddTangentDistance(l, c, dd.FarSide, dd.LinearDiameter, dd.Expression)
 	default:
 		return nil, fmt.Errorf("unknown dimension kind %q", dd.Kind)
 	}
