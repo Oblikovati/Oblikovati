@@ -182,6 +182,8 @@ func drawEditableControl(s *app.Session, windowID string, control wire.PanelCont
 		drawPanelReferenceList(s, windowID, control)
 	case types.PanelTree:
 		drawPanelTree(s, windowID, control)
+	case types.PanelTable:
+		drawPanelTable(s, windowID, control)
 	default:
 		return false
 	}
