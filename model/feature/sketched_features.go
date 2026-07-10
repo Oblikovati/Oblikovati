@@ -220,23 +220,38 @@ func meridianVertsFromProfile(prof *sketch.Profile, plane sketch.Plane, axis *Wo
 
 // entityEndAndArcCenter returns a loop entity's traversal END point (sketch 2-D) and, for an arc, its
 // centre; ok is false for anything but a line or arc (a spline keeps the profile on the faceted path).
+// It reads the entity through the ShapedEntity capability (Kind + ShapePoints) rather than switching
+// on concrete types, per the sketch-entity type-switch ban (#1624, audit I1): ShapePoints yields
+// [start, end] for a line and [centre, start, end] for an arc.
 func entityEndAndArcCenter(pe sketch.ProfileEntity) (end math.Point2, center *math.Point2, ok bool) {
-	switch e := pe.Entity.(type) {
-	case *sketch.Line:
-		end = e.EndPoint().Position()
-		if pe.Reversed() {
-			end = e.StartPoint().Position()
+	shaped, isShaped := pe.Entity.(sketch.ShapedEntity)
+	if !isShaped {
+		return math.Point2{}, nil, false
+	}
+	pts := shaped.ShapePoints()
+	switch shaped.Kind() {
+	case sketch.LineKind:
+		if len(pts) < 2 {
+			return math.Point2{}, nil, false
 		}
-		return end, nil, true
-	case *sketch.Arc:
-		end = e.End.Position()
-		if pe.Reversed() {
-			end = e.Start.Position()
+		return orientedEnd(pts[0], pts[1], pe.Reversed()), nil, true
+	case sketch.ArcKind:
+		if len(pts) < 3 {
+			return math.Point2{}, nil, false
 		}
-		c := e.Center.Position()
-		return end, &c, true
+		c := pts[0]
+		return orientedEnd(pts[1], pts[2], pe.Reversed()), &c, true
 	}
 	return math.Point2{}, nil, false
+}
+
+// orientedEnd returns the traversal END of an edge whose forward direction runs start→end, flipped
+// to start when the edge is reversed within the loop.
+func orientedEnd(start, end math.Point2, reversed bool) math.Point2 {
+	if reversed {
+		return start
+	}
+	return end
 }
 
 // revolveAxis resolves the axis of revolution: an explicit work axis if set, otherwise the
