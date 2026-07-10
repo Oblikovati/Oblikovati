@@ -32,7 +32,9 @@ func (s *Sketch) DragSolve(pins []PinTarget) SolveResult {
 	for _, pt := range pins {
 		cons = append(cons, dragFix(pt.P, pt.Target))
 	}
-	return Solve(cons, s.variables(), Options{})
+	r := Solve(cons, s.variables(), Options{})
+	s.syncEllipseAxes()
+	return r
 }
 
 // pointDefined is an entity that can name its constrainable points (each entity declares its own

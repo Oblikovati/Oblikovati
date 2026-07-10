@@ -146,17 +146,23 @@ func (a *Arc) circularVars() []*math.Scalar {
 }
 
 // Ellipse is a full ellipse: a center, a major-axis direction, and the two radii.
+// orientation is the solver's rotational DOF — the major-axis angle from +X in radians
+// (#1879). MajorAxis is the authoritative direction outside a solve; the solver seeds
+// orientation from it and writes it back rotated (see solve_sketch.go), so callers keep
+// reading MajorAxis and never touch orientation directly.
 type Ellipse struct {
 	entityBase
 	Center      *Point
 	MajorAxis   math.Vector2
 	MajorRadius math.Scalar
 	MinorRadius math.Scalar
+	orientation math.Scalar
 }
 
 // EllipticalArc is an ellipse restricted to a parametric-angle range [StartAngle,
 // EndAngle] (radians, measured in the major/minor frame). It shares the ellipse's
-// center, major-axis direction, and two radii.
+// center, major-axis direction, and two radii. orientation is its rotational DOF
+// (see [Ellipse], #1879).
 type EllipticalArc struct {
 	entityBase
 	Center      *Point
@@ -165,6 +171,7 @@ type EllipticalArc struct {
 	MinorRadius math.Scalar
 	StartAngle  math.Scalar
 	EndAngle    math.Scalar
+	orientation math.Scalar
 }
 
 // SplineFitMethod aliases the public fit-method enum (M06-F11,

@@ -223,10 +223,13 @@ var wireConstraintKinds = map[sketch.ConstraintKind]types.GeometricConstraintKin
 	sketch.LineSymmetryKind:         types.GeoConstraintSymmetry,
 	sketch.CircularSymmetryKind:     types.GeoConstraintSymmetry,
 	sketch.ArcMidpointKind:          types.GeoConstraintMidpoint,
-	// Ellipse-axis relations enumerate as their plain wire relation (#1879).
+	// Ellipse-axis relations enumerate as their plain wire relation (#1879); the horizontal/
+	// vertical forms enumerate as the single-operand horizontal/vertical (#1879 AC2).
 	sketch.EllipseParallelKind:      types.GeoConstraintParallel,
 	sketch.EllipsePerpendicularKind: types.GeoConstraintPerpendicular,
 	sketch.EllipseCollinearKind:     types.GeoConstraintCollinear,
+	sketch.EllipseHorizontalKind:    types.GeoConstraintHorizontal,
+	sketch.EllipseVerticalKind:      types.GeoConstraintVertical,
 	sketch.FixKind:                  types.GeoConstraintFix,
 	sketch.ParallelKind:             types.GeoConstraintParallel,
 	sketch.PerpendicularKind:        types.GeoConstraintPerpendicular,

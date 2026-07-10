@@ -46,13 +46,18 @@ const (
 	EllipseParallelKind      ConstraintKind = "ellipseParallel"
 	EllipsePerpendicularKind ConstraintKind = "ellipsePerpendicular"
 	EllipseCollinearKind     ConstraintKind = "ellipseCollinear"
-	FixKind                  ConstraintKind = "fix"
-	SmoothKind               ConstraintKind = "smooth"
-	GroundKind               ConstraintKind = "ground"
-	OffsetKind               ConstraintKind = "offset"
-	PatternLinkKind          ConstraintKind = "patternLink"
-	TextBoxAnchorKind        ConstraintKind = "textBox"
-	CustomKind               ConstraintKind = "custom"
+	// Horizontal/vertical of an ellipse axis (#1879 AC2): the ellipse rotates until its axis is
+	// parallel to world X/Y. They enumerate as the wire horizontal/vertical (a single-operand form)
+	// but persist distinctly (they carry the ellipse's major/minor flag).
+	EllipseHorizontalKind ConstraintKind = "ellipseHorizontal"
+	EllipseVerticalKind   ConstraintKind = "ellipseVertical"
+	FixKind               ConstraintKind = "fix"
+	SmoothKind            ConstraintKind = "smooth"
+	GroundKind            ConstraintKind = "ground"
+	OffsetKind            ConstraintKind = "offset"
+	PatternLinkKind       ConstraintKind = "patternLink"
+	TextBoxAnchorKind     ConstraintKind = "textBox"
+	CustomKind            ConstraintKind = "custom"
 )
 
 // KindedConstraint is the capability the serializer and the router enumerate

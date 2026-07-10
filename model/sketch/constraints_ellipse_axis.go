@@ -3,48 +3,38 @@
 package sketch
 
 import (
+	stdmath "math"
+
 	"oblikovati.org/math"
 	"oblikovati.org/solve/ad"
 )
 
 // Ellipse-axis operands (#1879): Inventor's parallel/perpendicular/collinear and horizontal/
 // vertical accept an ellipse (or elliptical arc) operand, its constrained direction being the
-// ellipse's major or minor axis (UseEllipse*MajorAxis). An ellipse's axis direction is a fixed
-// reference (the major-axis direction is not a solver DOF — see solve_sketch.go's variable
-// universe), so an ellipse operand contributes a constant direction anchored at its centre; the
-// line operand adjusts. This is a direction-alignment relation, not a branch-selection one, so
-// the residuals reuse the existing scale-invariant angle/perp-distance primitives.
+// ellipse's major or minor axis (UseEllipse*MajorAxis). An ellipse's orientation IS a solver DOF
+// (#1879 AC2 — see solve_sketch.go and ellipse_orientation.go): the operand's direction is a live
+// function of the ellipse's orientation angle, so the solver can rotate the ellipse to satisfy the
+// relation (this is what makes horizontal/vertical of an ellipse axis solvable — the ellipse turns
+// to align to the fixed world axis). The residuals reuse the scale-invariant angle/perp-distance
+// primitives, so the unit-length axis direction is fine.
 
-// ellipseAxisSource is an ellipse-like entity that offers a centre and a major-axis direction —
+// ellipseAxisSource is an ellipse-like entity that offers a centre and an orientation-angle DOF —
 // satisfied by both Ellipse and EllipticalArc (#1879).
 type ellipseAxisSource interface {
 	Entity
 	axisCentre() *Point
-	// axisVector returns the (unnormalised) major or minor axis direction; adSineAngle/
-	// adCosAngle normalise, so a raw vector is fine.
-	axisVector(major bool) math.Vector2
+	// axisAngle is the ellipse's major-axis orientation DOF; the operand builds its direction
+	// from it so the solver can rotate the ellipse.
+	axisAngle() *math.Scalar
 }
 
-func (e *Ellipse) axisCentre() *Point { return e.Center }
-func (e *Ellipse) axisVector(major bool) math.Vector2 {
-	return ellipseAxisVector(e.MajorAxis, major)
-}
+func (e *Ellipse) axisCentre() *Point       { return e.Center }
 func (e *EllipticalArc) axisCentre() *Point { return e.Center }
-func (e *EllipticalArc) axisVector(major bool) math.Vector2 {
-	return ellipseAxisVector(e.MajorAxis, major)
-}
-
-// ellipseAxisVector returns the major axis as-is, or the minor axis as its left perpendicular.
-func ellipseAxisVector(major math.Vector2, useMajor bool) math.Vector2 {
-	if useMajor {
-		return major
-	}
-	return math.V2(-major.Y, major.X)
-}
 
 // AxisOperand is a direction operand of an axis-relation constraint: a line (direction from its
-// endpoints, DOFs) or an ellipse axis (a fixed direction anchored at the ellipse centre). The
-// interface is sealed (its methods are unexported); construct one with LineAxis or EllipseAxisOf.
+// endpoints, DOFs), an ellipse axis (direction from the ellipse's orientation DOF, anchored at its
+// centre), or a fixed world axis (a constant direction). The interface is sealed (its methods are
+// unexported); construct one with LineAxis, EllipseAxisOf, or the horizontal/vertical factories.
 type AxisOperand interface {
 	dirVars() []*math.Scalar
 	// readDir reads the operand's direction and anchor point from the seeded row starting at
@@ -101,13 +91,17 @@ func EllipseAxisOf(e Entity, major bool) (AxisOperand, bool) {
 
 func (o ellipseAxisOperand) dirVars() []*math.Scalar {
 	c := o.E.axisCentre()
-	return []*math.Scalar{&c.X, &c.Y}
+	return []*math.Scalar{&c.X, &c.Y, o.E.axisAngle()}
 }
 func (o ellipseAxisOperand) readDir(v []ad.Number, off int) (ad.Vec2, ad.Vec2, int) {
-	// The centre is a DOF (the anchor for collinear); the axis direction is a live constant.
+	// The centre is the anchor DOF (used by collinear); the direction is (cosθ, sinθ) of the
+	// orientation DOF, so the solver can rotate the ellipse. The minor axis is a quarter turn on.
 	centre := ad.V2(v[off], v[off+1])
-	d := o.E.axisVector(o.major)
-	return ad.V2(ad.Const(float64(d.X)), ad.Const(float64(d.Y))), centre, 2
+	angle := v[off+2]
+	if !o.major {
+		angle = angle.AddConst(stdmath.Pi / 2)
+	}
+	return ad.V2(angle.Cos(), angle.Sin()), centre, 3
 }
 func (o ellipseAxisOperand) operandEntity() Entity { return o.E }
 func (o ellipseAxisOperand) axisMajor() bool       { return o.major }
@@ -118,6 +112,20 @@ func (o ellipseAxisOperand) remap(m *cloneMap) (AxisOperand, bool) {
 	}
 	return EllipseAxisOf(ne, o.major)
 }
+
+// worldAxisOperand is a fixed world direction (the +X horizontal or +Y vertical reference) — the
+// immovable operand of an ellipse horizontal/vertical constraint. It contributes no DOF, names no
+// entity, and always remaps (it survives any copy) (#1879 AC2).
+type worldAxisOperand struct{ dir math.Vector2 }
+
+func (o worldAxisOperand) dirVars() []*math.Scalar { return nil }
+func (o worldAxisOperand) readDir(_ []ad.Number, _ int) (ad.Vec2, ad.Vec2, int) {
+	d := ad.V2(ad.Const(float64(o.dir.X)), ad.Const(float64(o.dir.Y)))
+	return d, ad.V2(ad.Const(0), ad.Const(0)), 0
+}
+func (o worldAxisOperand) operandEntity() Entity               { return nil }
+func (o worldAxisOperand) axisMajor() bool                     { return false }
+func (o worldAxisOperand) remap(*cloneMap) (AxisOperand, bool) { return o, true }
 
 // axisRelation is the geometric relation an [AxisRelationConstraint] enforces between its two
 // operand directions.
@@ -130,9 +138,10 @@ const (
 )
 
 // AxisRelationConstraint aligns two direction operands — at least one an ellipse axis — parallel,
-// perpendicular, or collinear (#1879). An ellipse operand is a fixed directional reference (its
-// orientation is not a solver DOF), so it is the line operand that the solver moves to satisfy
-// the relation; two fixed ellipse axes only hold when already so related.
+// perpendicular, or collinear, or aligns one ellipse axis to a fixed world axis (horizontal/
+// vertical, #1879). Every ellipse operand's direction tracks the ellipse's orientation DOF, so the
+// solver satisfies the relation by rotating whichever operand is free (the ellipse for a world-axis
+// relation; either an ellipse or a line for an ellipse-line relation).
 type AxisRelationConstraint struct {
 	constraintBase
 	a, b     AxisOperand
@@ -150,6 +159,19 @@ func (g *GeometricConstraints) AddEllipsePerpendicular(a, b AxisOperand) *AxisRe
 }
 func (g *GeometricConstraints) AddEllipseCollinear(a, b AxisOperand) *AxisRelationConstraint {
 	return g.addAxisRelation(a, b, axisCollinear, EllipseCollinearKind)
+}
+
+// AddEllipseHorizontal / AddEllipseVertical make an ellipse's chosen axis horizontal / vertical by
+// rotating the ellipse until that axis is parallel to the fixed world +X / +Y direction (#1879
+// AC2). The ellipse operand is the free (rotatable) side; the world axis is the datum. Like the
+// existing parallel/perpendicular constraints, an operand sitting EXACTLY perpendicular to the
+// target starts at the angular residual's zero-gradient dead point and will not rotate — a
+// measure-zero configuration real geometry does not hit.
+func (g *GeometricConstraints) AddEllipseHorizontal(e AxisOperand) *AxisRelationConstraint {
+	return g.addAxisRelation(e, worldAxisOperand{dir: math.V2(1, 0)}, axisParallel, EllipseHorizontalKind)
+}
+func (g *GeometricConstraints) AddEllipseVertical(e AxisOperand) *AxisRelationConstraint {
+	return g.addAxisRelation(e, worldAxisOperand{dir: math.V2(0, 1)}, axisParallel, EllipseVerticalKind)
 }
 
 func (g *GeometricConstraints) addAxisRelation(a, b AxisOperand, rel axisRelation, kind ConstraintKind) *AxisRelationConstraint {

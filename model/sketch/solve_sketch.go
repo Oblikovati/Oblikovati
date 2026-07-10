@@ -8,10 +8,12 @@ import (
 	"oblikovati.org/solve"
 )
 
-// variables returns the full DOF universe of the planar sketch: every point's X,Y
-// plus circle and ellipse radii. The solver needs the whole universe (not just
-// constraint-referenced variables) so that free, unconstrained geometry is counted
-// in the DOF total.
+// variables returns the full DOF universe of the planar sketch: every point's X,Y, circle and
+// ellipse radii, and each ellipse's orientation angle. The solver needs the whole universe (not
+// just constraint-referenced variables) so that free, unconstrained geometry is counted in the
+// DOF total — an unconstrained ellipse genuinely has a rotational DOF (#1879 AC2). Each ellipse's
+// orientation is re-seeded from its authoritative MajorAxis here, so every solve/analyze path
+// starts consistent regardless of who last moved the axis.
 func (s *Sketch) variables() []*math.Scalar {
 	vars := make([]*math.Scalar, 0, len(s.pts)*2)
 	for _, p := range s.pts {
@@ -21,9 +23,28 @@ func (s *Sketch) variables() []*math.Scalar {
 		vars = append(vars, &c.Radius)
 	}
 	for _, e := range s.ellipses.items {
-		vars = append(vars, &e.MajorRadius, &e.MinorRadius)
+		e.seedOrientation()
+		vars = append(vars, &e.MajorRadius, &e.MinorRadius, e.axisAngle())
+	}
+	// Elliptical arcs contribute only their orientation DOF here; their radii were never in the
+	// DOF universe (an arc's extent is authored, not solved), and this change keeps that scope.
+	for _, e := range s.ellArcs.items {
+		e.seedOrientation()
+		vars = append(vars, e.axisAngle())
 	}
 	return vars
+}
+
+// syncEllipseAxes rewrites every ellipse's MajorAxis from its solver-moved orientation, restoring
+// the authoritative direction after a geometry-mutating solve (#1879 AC2). Analyze-only paths that
+// build variables() but never move geometry skip this — orientation was only seeded, not changed.
+func (s *Sketch) syncEllipseAxes() {
+	for _, e := range s.ellipses.items {
+		e.syncAxisFromOrientation()
+	}
+	for _, e := range s.ellArcs.items {
+		e.syncAxisFromOrientation()
+	}
 }
 
 // Solve resolves the sketch from its constraints, updating geometry in place and
@@ -32,6 +53,7 @@ func (s *Sketch) variables() []*math.Scalar {
 // warning; otherwise it is healthy. Returns the full [SolveResult].
 func (s *Sketch) Solve() SolveResult {
 	result := Solve(s.Constraints(), s.variables(), Options{})
+	s.syncEllipseAxes()
 	s.health = healthFromSolve(result)
 	return result
 }
@@ -48,6 +70,7 @@ func (s *Sketch) AnalyzeConstraints() DOFAnalysis {
 func (s *Sketch) ConflictingConstraints() []Constraint {
 	cons := s.Constraints()
 	r := Solve(cons, s.variables(), Options{})
+	s.syncEllipseAxes()
 	if len(r.Conflicts) == 0 {
 		return nil
 	}

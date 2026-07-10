@@ -62,6 +62,20 @@ func singleLineOrAlign(sk *sketch.Sketch, refs []uint64, addLine func(*sketch.Li
 	}
 }
 
+// singleEntityHVOrAlign routes horizontal/vertical by operand: a single ellipse ref rotates that
+// ellipse's axis to horizontal/vertical (major/minor per the flag), otherwise it falls to the
+// line-or-align form (#1879 AC2, #1871).
+func singleEntityHVOrAlign(sk *sketch.Sketch, refs []uint64, major bool, addEllipse func(sketch.AxisOperand) sketch.Constraint, addLine func(*sketch.Line) sketch.Constraint, addAlign func(a, b *sketch.Point) sketch.Constraint) (sketch.Constraint, bool, error) {
+	if len(refs) == 1 && isEllipseRef(sk, refs[0]) {
+		op, err := axisOperandRef(sk, refs[0], major)
+		if err != nil {
+			return nil, true, err
+		}
+		return addEllipse(op), true, nil
+	}
+	return singleLineOrAlign(sk, refs, addLine, addAlign)
+}
+
 // axisOrLineRelation applies an ellipse-axis relation when either operand is an ellipse
 // (per-operand major/minor from the flags), else the plain two-line relation (#1879).
 func axisOrLineRelation(sk *sketch.Sketch, refs []uint64, flags axisFlags, addAxis func(a, b sketch.AxisOperand) sketch.Constraint, addLine func(a, b *sketch.Line) sketch.Constraint) (sketch.Constraint, bool, error) {
