@@ -15,13 +15,15 @@ func TestConstructionRefsListsOnlyConstruction(t *testing.T) {
 	cp := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 5 })
 	cp.SetConstruction(true)
 	np := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 3 }) // plain
+	cax := g.WorkAxes().AddByLine(math.P3(0, 0, 0), mustUnit(0, 0, 1))
+	cax.SetConstruction(true)
 	cpt := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(0, 0, 0) })
 	cpt.SetConstruction(true)
 	g.Recompute(nil)
 
 	refs := g.ConstructionRefs()
-	if !contains(refs, cp.Key()) || !contains(refs, cpt.Key()) {
-		t.Errorf("ConstructionRefs = %v, want both construction datums", refs)
+	if !contains(refs, cp.Key()) || !contains(refs, cax.Key()) || !contains(refs, cpt.Key()) {
+		t.Errorf("ConstructionRefs = %v, want the construction plane, axis, and point", refs)
 	}
 	if contains(refs, np.Key()) {
 		t.Error("a plain datum must not appear in ConstructionRefs")
