@@ -27,7 +27,8 @@ var (
 		PointOnLineKind, MidpointKind, PointOnCircleKind,
 		ParallelKind, PerpendicularKind, CollinearKind, EqualLengthKind,
 		ConcentricKind, EqualRadiusKind, CircularTangentKind, TangentKind,
-		SymmetryKind, FixKind, SmoothKind,
+		SymmetryKind, LineSymmetryKind, CircularSymmetryKind, ArcMidpointKind,
+		FixKind, SmoothKind,
 		GroundKind, OffsetKind, PatternLinkKind, TextBoxAnchorKind, CustomKind,
 	}
 	persistedConstraintVocabulary3D = []ConstraintKind{
@@ -140,6 +141,14 @@ func populateEvery2DConstraintKind(s *Sketch) {
 	g.AddCircularTangent(c1, c2)
 	g.AddTangent(l1, c1)
 	g.AddSymmetry(l1.A, l1.B, l2)
+	// Entity symmetry (#1870) and arc midpoint (#1872): dedicated geometry so the round-trip
+	// exercises each new codec.
+	sl1 := s.Lines().AddByTwoPoints(math.P2(10, 0), math.P2(11, 1))
+	sl2 := s.Lines().AddByTwoPoints(math.P2(13, 0), math.P2(12, 1))
+	axis := s.Lines().AddByTwoPoints(math.P2(11.5, -1), math.P2(11.5, 2))
+	g.AddLineSymmetry(sl1, sl2, axis)
+	g.AddCircularSymmetry(c1, c2, axis)
+	g.AddMidpointToArc(s.Points().Add(math.P2(0, 6)), arc)
 	g.AddFix(l1.A)
 	g.AddSmooth(l1, arc, l1.B, arc.Start)
 	g.AddGroundPoints(l2.A, l2.B)

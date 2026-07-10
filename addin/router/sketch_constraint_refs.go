@@ -138,25 +138,94 @@ func tangentConstraint(sk *sketch.Sketch, refs []uint64) (sketch.Constraint, boo
 	return g.AddCircularTangent(c1, c2), true, nil
 }
 
-// symmetryConstraint makes two points symmetric about a mirror line (point A, point B,
-// mirror line), matching the enumerate mapping (A, B, About) in sketch_enumerate.go.
+// symmetryConstraint makes two entities symmetric about a mirror line: two points, two lines,
+// or two circular curves (#1870). The operand kind is discovered by trial resolution (a single
+// typed pick each, not a type switch — archguard I1) and dispatched to the matching model
+// factory; refs are [entityOne, entityTwo, mirrorLine], matching the enumerate order.
 func symmetryConstraint(sk *sketch.Sketch, refs []uint64) (sketch.Constraint, bool, error) {
 	if len(refs) != 3 {
-		return nil, true, fmt.Errorf("sketch.addConstraint: symmetry needs 2 point refs + a mirror-line ref, got %d", len(refs))
-	}
-	a, err := pointRef(sk, refs[0])
-	if err != nil {
-		return nil, true, err
-	}
-	b, err := pointRef(sk, refs[1])
-	if err != nil {
-		return nil, true, err
+		return nil, true, fmt.Errorf("sketch.addConstraint: symmetry needs 2 entity refs + a mirror-line ref, got %d", len(refs))
 	}
 	about, err := lineRef(sk, refs[2])
 	if err != nil {
+		return nil, true, fmt.Errorf("sketch.addConstraint: symmetry mirror axis: %w", err)
+	}
+	g := sk.GeometricConstraints()
+	if a, b, ok := twoPointsOpt(sk, refs[0], refs[1]); ok {
+		return g.AddSymmetry(a, b, about), true, nil
+	}
+	if l1, l2, ok := twoLinesOpt(sk, refs[0], refs[1]); ok {
+		return g.AddLineSymmetry(l1, l2, about), true, nil
+	}
+	if c1, c2, ok := twoCircularsOpt(sk, refs[0], refs[1]); ok {
+		return g.AddCircularSymmetry(c1, c2, about), true, nil
+	}
+	return nil, true, fmt.Errorf("sketch.addConstraint: symmetry operands %d and %d are not a matching pair of points, lines, or circular curves", refs[0], refs[1])
+}
+
+// midpointConstraint places a point at the midpoint of a line (AddMidpoint) or the arc-length
+// midpoint of an arc (AddMidpointToArc, #1872). A circle has no defined midpoint and errors.
+func midpointConstraint(sk *sketch.Sketch, refs []uint64) (sketch.Constraint, bool, error) {
+	if len(refs) != 2 {
+		return nil, true, fmt.Errorf("sketch.addConstraint: midpoint needs a point ref + a line or arc ref, got %d", len(refs))
+	}
+	p, err := pointRef(sk, refs[0])
+	if err != nil {
 		return nil, true, err
 	}
-	return sk.GeometricConstraints().AddSymmetry(a, b, about), true, nil
+	g := sk.GeometricConstraints()
+	if l, err := lineRef(sk, refs[1]); err == nil {
+		return g.AddMidpoint(p, l), true, nil
+	}
+	a, err := arcRef(sk, refs[1])
+	if err != nil {
+		return nil, true, fmt.Errorf("sketch.addConstraint: midpoint host %d must be a line or an arc (a circle has no midpoint): %w", refs[1], err)
+	}
+	return g.AddMidpointToArc(p, a), true, nil
+}
+
+// twoPointsOpt resolves two ids as points, reporting ok=false (no error) when either is not a
+// point — the trial used to discover a symmetry operand kind.
+func twoPointsOpt(sk *sketch.Sketch, r0, r1 uint64) (*sketch.Point, *sketch.Point, bool) {
+	a, e0 := pointRef(sk, r0)
+	b, e1 := pointRef(sk, r1)
+	if e0 != nil || e1 != nil {
+		return nil, nil, false
+	}
+	return a, b, true
+}
+
+// twoLinesOpt resolves two ids as lines, reporting ok=false when either is not a line.
+func twoLinesOpt(sk *sketch.Sketch, r0, r1 uint64) (*sketch.Line, *sketch.Line, bool) {
+	a, e0 := lineRef(sk, r0)
+	b, e1 := lineRef(sk, r1)
+	if e0 != nil || e1 != nil {
+		return nil, nil, false
+	}
+	return a, b, true
+}
+
+// twoCircularsOpt resolves two ids as circular curves, reporting ok=false when either is not one.
+func twoCircularsOpt(sk *sketch.Sketch, r0, r1 uint64) (sketch.CircularCurve, sketch.CircularCurve, bool) {
+	a, e0 := circularRef(sk, r0)
+	b, e1 := circularRef(sk, r1)
+	if e0 != nil || e1 != nil {
+		return nil, nil, false
+	}
+	return a, b, true
+}
+
+// arcRef resolves an id to an arc (a single typed pick, not a type switch — archguard I1).
+func arcRef(sk *sketch.Sketch, id uint64) (*sketch.Arc, error) {
+	e, ok := sk.EntityByID(sketch.ID(id))
+	if !ok {
+		return nil, fmt.Errorf("sketch.addConstraint: no entity with id %d", id)
+	}
+	a, ok := e.(*sketch.Arc)
+	if !ok {
+		return nil, fmt.Errorf("sketch.addConstraint: entity %d is %T, want an arc", id, e)
+	}
+	return a, nil
 }
 
 // smoothConstraintFromRefs joins two smooth-capable curves (line/arc/spline, at least

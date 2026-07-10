@@ -28,13 +28,19 @@ const (
 	CircularTangentKind ConstraintKind = "circularTangent"
 	TangentKind         ConstraintKind = "tangent"
 	SymmetryKind        ConstraintKind = "symmetry"
-	FixKind             ConstraintKind = "fix"
-	SmoothKind          ConstraintKind = "smooth"
-	GroundKind          ConstraintKind = "ground"
-	OffsetKind          ConstraintKind = "offset"
-	PatternLinkKind     ConstraintKind = "patternLink"
-	TextBoxAnchorKind   ConstraintKind = "textBox"
-	CustomKind          ConstraintKind = "custom"
+	// Entity symmetry and arc-midpoint (#1870, #1872) are coarser on the wire — they
+	// enumerate as the wire "symmetry"/"midpoint", like circularTangent→"tangent" — but
+	// persist under their own kinds so each has a distinct codec.
+	LineSymmetryKind     ConstraintKind = "symmetryLine"
+	CircularSymmetryKind ConstraintKind = "symmetryCircular"
+	ArcMidpointKind      ConstraintKind = "midpointArc"
+	FixKind              ConstraintKind = "fix"
+	SmoothKind           ConstraintKind = "smooth"
+	GroundKind           ConstraintKind = "ground"
+	OffsetKind           ConstraintKind = "offset"
+	PatternLinkKind      ConstraintKind = "patternLink"
+	TextBoxAnchorKind    ConstraintKind = "textBox"
+	CustomKind           ConstraintKind = "custom"
 )
 
 // KindedConstraint is the capability the serializer and the router enumerate
@@ -69,13 +75,18 @@ func (c *EqualRadiusConstraint) ConstraintKind() ConstraintKind     { return Equ
 func (c *CircularTangentConstraint) ConstraintKind() ConstraintKind { return CircularTangentKind }
 func (c *TangentConstraint) ConstraintKind() ConstraintKind         { return TangentKind }
 func (c *SymmetryConstraint) ConstraintKind() ConstraintKind        { return SymmetryKind }
-func (c *FixConstraint) ConstraintKind() ConstraintKind             { return FixKind }
-func (c *SmoothConstraint) ConstraintKind() ConstraintKind          { return SmoothKind }
-func (c *GroundConstraint) ConstraintKind() ConstraintKind          { return GroundKind }
-func (c *OffsetConstraint) ConstraintKind() ConstraintKind          { return OffsetKind }
-func (c *PatternConstraint) ConstraintKind() ConstraintKind         { return PatternLinkKind }
-func (c *TextBoxAnchorConstraint) ConstraintKind() ConstraintKind   { return TextBoxAnchorKind }
-func (c *CustomConstraint) ConstraintKind() ConstraintKind          { return CustomKind }
+func (c *LineSymmetryConstraint) ConstraintKind() ConstraintKind    { return LineSymmetryKind }
+func (c *CircularSymmetryConstraint) ConstraintKind() ConstraintKind {
+	return CircularSymmetryKind
+}
+func (c *ArcMidpointConstraint) ConstraintKind() ConstraintKind   { return ArcMidpointKind }
+func (c *FixConstraint) ConstraintKind() ConstraintKind           { return FixKind }
+func (c *SmoothConstraint) ConstraintKind() ConstraintKind        { return SmoothKind }
+func (c *GroundConstraint) ConstraintKind() ConstraintKind        { return GroundKind }
+func (c *OffsetConstraint) ConstraintKind() ConstraintKind        { return OffsetKind }
+func (c *PatternConstraint) ConstraintKind() ConstraintKind       { return PatternLinkKind }
+func (c *TextBoxAnchorConstraint) ConstraintKind() ConstraintKind { return TextBoxAnchorKind }
+func (c *CustomConstraint) ConstraintKind() ConstraintKind        { return CustomKind }
 
 // RelatedEntities per type, in API enumeration order.
 func (c *CoincidentConstraint) RelatedEntities() []Entity    { return []Entity{c.A, c.B} }
@@ -95,8 +106,15 @@ func (c *CircularTangentConstraint) RelatedEntities() []Entity {
 }
 func (c *TangentConstraint) RelatedEntities() []Entity  { return []Entity{c.L, c.C} }
 func (c *SymmetryConstraint) RelatedEntities() []Entity { return []Entity{c.A, c.B, c.About} }
-func (c *FixConstraint) RelatedEntities() []Entity      { return []Entity{c.P} }
-func (c *SmoothConstraint) RelatedEntities() []Entity   { return []Entity{c.C1, c.C2} }
+func (c *LineSymmetryConstraint) RelatedEntities() []Entity {
+	return []Entity{c.L1, c.L2, c.About}
+}
+func (c *CircularSymmetryConstraint) RelatedEntities() []Entity {
+	return []Entity{c.C1, c.C2, c.About}
+}
+func (c *ArcMidpointConstraint) RelatedEntities() []Entity { return []Entity{c.P, c.A} }
+func (c *FixConstraint) RelatedEntities() []Entity         { return []Entity{c.P} }
+func (c *SmoothConstraint) RelatedEntities() []Entity      { return []Entity{c.C1, c.C2} }
 func (c *GroundConstraint) RelatedEntities() []Entity {
 	pts := c.Points()
 	out := make([]Entity, len(pts))
@@ -129,6 +147,9 @@ var (
 	_ KindedConstraint = (*CircularTangentConstraint)(nil)
 	_ KindedConstraint = (*TangentConstraint)(nil)
 	_ KindedConstraint = (*SymmetryConstraint)(nil)
+	_ KindedConstraint = (*LineSymmetryConstraint)(nil)
+	_ KindedConstraint = (*CircularSymmetryConstraint)(nil)
+	_ KindedConstraint = (*ArcMidpointConstraint)(nil)
 	_ KindedConstraint = (*FixConstraint)(nil)
 	_ KindedConstraint = (*SmoothConstraint)(nil)
 	_ KindedConstraint = (*GroundConstraint)(nil)
