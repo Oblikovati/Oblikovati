@@ -32,6 +32,11 @@ func (s *Sketch) variables() []*math.Scalar {
 		e.seedOrientation()
 		vars = append(vars, e.axisAngle())
 	}
+	// An offset spline's signed offset distance is a solver DOF, so an offset-spline dimension can
+	// drive it and an undriven offset is genuinely free (#1874).
+	for _, o := range s.offSpl.items {
+		vars = append(vars, &o.Dist)
+	}
 	return vars
 }
 

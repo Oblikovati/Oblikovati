@@ -390,6 +390,8 @@ func dimKindName(k DimKind) (string, error) {
 		return "ellipseRadius", nil
 	case TangentDistanceDim:
 		return "tangentDistance", nil
+	case OffsetSplineDim:
+		return "offsetSplineDim", nil
 	default:
 		return "", fmt.Errorf("cannot serialize dimension of kind %d (no codec)", k)
 	}

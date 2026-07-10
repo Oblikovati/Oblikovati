@@ -135,9 +135,27 @@ func buildAdvancedDimension(sk *sketch.Sketch, kind types.DimensionConstraintKin
 			return nil, err
 		}
 		return dc.AddEllipseRadius(e, expr)
+	case types.DimConstraintOffsetSpline:
+		return offsetSplineDimension(sk, refs, expr)
 	default:
 		return nil, fmt.Errorf("sketch.addDimension: unsupported kind %q", kind)
 	}
+}
+
+// offsetSplineDimension resolves a single offset-spline ref and drives its offset distance (#1874).
+func offsetSplineDimension(sk *sketch.Sketch, refs []uint64, expr string) (*sketch.DimensionConstraint, error) {
+	if len(refs) != 1 {
+		return nil, fmt.Errorf("sketch.addDimension: offsetSplineDim needs 1 offset-spline ref, got %d", len(refs))
+	}
+	e, ok := sk.EntityByID(sketch.ID(refs[0]))
+	if !ok {
+		return nil, fmt.Errorf("sketch.addDimension: no entity with id %d", refs[0])
+	}
+	o, ok := e.(*sketch.OffsetSpline)
+	if !ok {
+		return nil, fmt.Errorf("sketch.addDimension: entity %d is %T, want an offset spline", refs[0], e)
+	}
+	return sk.DimensionConstraints().AddOffsetSplineDim(o, expr)
 }
 
 // tangentDistanceDimension resolves a line + circle/arc ref and dimensions the distance from
