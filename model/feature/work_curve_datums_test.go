@@ -96,3 +96,84 @@ func TestCirclePlaneIntersectionGolden(t *testing.T) {
 }
 
 func ptr(p math.Point3) *math.Point3 { return &p }
+
+// TestCurveEntityPointRoundTrips: a curve-and-entity point serializes its refs and its proximity
+// solution point, and restores to an equivalent definition (#1842).
+func TestCurveEntityPointRoundTrips(t *testing.T) {
+	def := curveEntityPointDef{curve: WorkRef("edge/x"), entity: OriginYZPlane, proximity: ptr(math.P3(1, 2, 3))}
+	d, err := serializePointDef(def)
+	if err != nil {
+		t.Fatalf("serialize: %v", err)
+	}
+	if d.Kind != "curve-and-entity" || len(d.Refs) != 2 || len(d.Solution) != 3 {
+		t.Fatalf("serialized = %+v, want kind curve-and-entity, 2 refs, a 3-vec solution", d)
+	}
+	restored := NewWorkGeometry()
+	if err := restorePointFeature(restored.WorkPoints(), d); err != nil {
+		t.Fatalf("restore: %v", err)
+	}
+	back, err := serializePointDef(restored.WorkPoints().Item(restored.WorkPoints().Count() - 1).def)
+	if err != nil {
+		t.Fatalf("re-serialize: %v", err)
+	}
+	if back.Kind != d.Kind || len(back.Solution) != 3 || back.Solution[0] != 1 || back.Solution[2] != 3 {
+		t.Errorf("round-trip lost the proximity: %+v", back)
+	}
+}
+
+// TestCentroidPointRoundTrips: a centroid point persists its edge references (any count) and restores.
+func TestCentroidPointRoundTrips(t *testing.T) {
+	def := centroidPointDef{edges: []WorkRef{WorkRef("edge/a"), WorkRef("edge/b"), WorkRef("edge/c")}}
+	d, err := serializePointDef(def)
+	if err != nil {
+		t.Fatalf("serialize: %v", err)
+	}
+	if d.Kind != "centroid" || len(d.Refs) != 3 {
+		t.Fatalf("serialized = %+v, want kind centroid with 3 refs", d)
+	}
+	restored := NewWorkGeometry()
+	if err := restorePointFeature(restored.WorkPoints(), d); err != nil {
+		t.Fatalf("restore: %v", err)
+	}
+	if got := restored.WorkPoints().Item(restored.WorkPoints().Count() - 1).def.refs(); len(got) != 3 {
+		t.Errorf("restored centroid refs = %v, want 3", got)
+	}
+}
+
+// TestCirclePlaneNonIntersections covers the empty cases of circlePlanePoints: a plane parallel to
+// the circle's plane (no crossing) and a plane that clears the circle entirely (line misses).
+func TestCirclePlaneNonIntersections(t *testing.T) {
+	circle, err := geom.NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 1) // unit circle in z=0
+	if err != nil {
+		t.Fatal(err)
+	}
+	parallel, _ := sketch.NewPlane(math.P3(0, 0, 5), mustUnit(1, 0, 0), mustUnit(0, 1, 0)) // z=5, parallel
+	if hits := circlePlanePoints(circle, parallel); hits != nil {
+		t.Errorf("parallel plane should not intersect, got %v", hits)
+	}
+	clear, _ := sketch.NewPlane(math.P3(2, 0, 0), mustUnit(0, 1, 0), mustUnit(0, 0, 1)) // x=2, beyond radius 1
+	if hits := circlePlanePoints(circle, clear); hits != nil {
+		t.Errorf("a plane clearing the circle should not intersect, got %v", hits)
+	}
+	tangent, _ := sketch.NewPlane(math.P3(1, 0, 0), mustUnit(0, 1, 0), mustUnit(0, 0, 1)) // x=1, tangent
+	if hits := circlePlanePoints(circle, tangent); len(hits) != 1 {
+		t.Errorf("a tangent plane should touch at one point, got %v", hits)
+	}
+}
+
+// TestCurveEntityAndCentroidUnhealthy: a curve parallel to its entity (a line lying in the plane)
+// and a centroid whose only edge is unresolved both go unhealthy rather than producing garbage.
+func TestCurveEntityAndCentroidUnhealthy(t *testing.T) {
+	g := NewWorkGeometry()
+	// A +X edge in the z=0 plane is parallel to the XY entity plane → no pierce.
+	body, e := lineEdgeBody(t, math.P3(-2, 1, 0), math.P3(2, 1, 0))
+	miss := g.WorkPoints().AddByCurveAndEntity(EdgeRef(e.ReferenceKey()), OriginXYPlane, nil)
+	orphan := g.WorkPoints().AddAtCentroid(WorkRef("edge/does-not-exist"))
+	g.Recompute([]*topo.Body{body})
+	if miss.Health().OK() {
+		t.Error("a curve parallel to its entity should be unhealthy")
+	}
+	if orphan.Health().OK() {
+		t.Error("a centroid with no resolvable edge should be unhealthy")
+	}
+}
