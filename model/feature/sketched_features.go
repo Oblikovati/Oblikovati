@@ -120,6 +120,9 @@ func buildRevolveSheet(prof *sketch.Profile, plane sketch.Plane, axis *WorkAxis,
 // revolve body on demand (combine → planarized).
 func buildRevolveSolid(prof *sketch.Profile, plane sketch.Plane, axis *WorkAxis, angle, start float64, feat string) (*topo.Body, error) {
 	if fullRevolution(angle) {
+		if body, ok := sphereProfileSolid(prof, plane, axis, feat); ok {
+			return body, nil // a pole-to-pole semicircle on the axis revolves to an analytic sphere (#129 follow-up)
+		}
 		if body, ok := circleProfileTorus(prof, plane, axis, feat); ok {
 			return body, nil // a circle clear of the axis revolves to an analytic torus (#129 follow-up)
 		}
@@ -163,6 +166,66 @@ func circleProfileTorus(prof *sketch.Profile, plane sketch.Plane, axis *WorkAxis
 	return body, true
 }
 
+// sphereProfileSolid builds an analytic geom.Sphere (one boundary-less face, brep.SolidSphere) when the
+// profile is a pole-to-pole semicircle on the axis: an ARC whose centre AND both endpoints lie on the
+// revolve axis, closed by a straight LINE along the axis (the flat side of a half-disc). Revolving it a
+// full turn is a whole sphere centred at the arc centre with the arc radius. This is the #129 curved-
+// meridian follow-up for the FULL-sphere case — otherwise the half-disc facets into a ~1600-face UV
+// sphere that shatters the frame-loop hover-pick (e.g. every representational bearing ball). ok=false for
+// any other profile (the caller keeps the meridian/faceted path), including an off-axis arc (that is the
+// torus/zone case) or an arc that does not close pole-to-pole.
+func sphereProfileSolid(prof *sketch.Profile, plane sketch.Plane, axis *WorkAxis, feat string) (*topo.Body, bool) {
+	ents := prof.OuterLoop().Entities()
+	if len(ents) != 2 {
+		return nil, false
+	}
+	arc, line := arcAndLine(ents[0].Entity, ents[1].Entity)
+	if arc == nil || line == nil {
+		return nil, false
+	}
+	o, a := axis.Origin(), axis.Direction().AsVector()
+	radius := float64(arc.CurveRadius())
+	if radius <= 0 {
+		return nil, false
+	}
+	onAxis := func(p2 math.Point2) bool { // perpendicular distance from the revolve axis, relative to the sphere radius
+		v := o.VectorTo(plane.ToModel(p2))
+		return float64(v.Sub(a.Scale(v.Dot(a))).Length()) <= 1e-7*radius
+	}
+	if !halfDiscPolesOnAxis(arc, line, onAxis) {
+		return nil, false // centre/pole or the closing side off the axis: not a full sphere (torus/zone/cap case)
+	}
+	body, err := brep.SolidSphere(plane.ToModel(arc.CenterPoint().Position()), radius, feat)
+	if err != nil {
+		return nil, false
+	}
+	return body, true
+}
+
+// halfDiscPolesOnAxis reports whether the half-disc's arc centre, both arc poles, and both endpoints
+// of the closing line all lie on the revolve axis — the full-sphere signature (a pole/centre off the
+// axis is instead the torus/zone/cap case).
+func halfDiscPolesOnAxis(arc *sketch.Arc, line *sketch.Line, onAxis func(math.Point2) bool) bool {
+	return onAxis(arc.CenterPoint().Position()) && onAxis(arc.Start.Position()) && onAxis(arc.End.Position()) &&
+		onAxis(line.StartPoint().Position()) && onAxis(line.EndPoint().Position())
+}
+
+// arcAndLine returns (arc, line) from an unordered pair of profile entities, or (nil, nil) unless the
+// pair is exactly one arc and one line — the half-disc signature sphereProfileSolid recognizes.
+func arcAndLine(e0, e1 sketch.Entity) (*sketch.Arc, *sketch.Line) {
+	if a, ok := e0.(*sketch.Arc); ok {
+		if l, ok := e1.(*sketch.Line); ok {
+			return a, l
+		}
+	}
+	if a, ok := e1.(*sketch.Arc); ok {
+		if l, ok := e0.(*sketch.Line); ok {
+			return a, l
+		}
+	}
+	return nil, nil
+}
+
 // revolveSpan resolves the total swept angle and its start offset: a
 // two-directional revolve spans [-angle2, +angle1]. A combined span reaching a
 // full turn collapses to the full revolution (start irrelevant — the solid is
@@ -184,13 +247,19 @@ func revolveSpan(def *RevolveDefinition) (total, start float64) {
 // fullRevolution reports whether an angle is a complete turn (0 ⇒ full, like revolveSections).
 func fullRevolution(angle float64) bool { return angle <= 0 || angle >= 2*stdmath.Pi-1e-9 }
 
-// meridianVertsFromProfile walks the profile's outer loop into brep.RevolveVertex meridian vertices
-// in the axis's (radius, height) half-plane — radius = perpendicular distance from the axis, height =
-// signed distance along it — one vertex per edge END, carrying the arc CENTRE when that edge is a
-// circular arc (so it revolves to a torus/sphere face, not chorded cone facets). ok is false when the
-// loop holds an entity that is neither a line nor an arc (a spline): the caller keeps the faceted
-// revolve. brep.SolidOfRevolutionMeridian orients the meridian and rejects arcs it cannot build
-// analytically (returning nil), so a mixed profile still falls back cleanly.
+// meridianVertsFromProfile walks the profile's outer loop into brep.RevolveVertex meridian vertices in
+// the axis's (radius, height) half-plane — radius = perpendicular distance from the axis, height =
+// signed distance along it — one vertex per edge, at the point that edge SHARES with the next, carrying
+// the arc CENTRE when the edge is a circular arc (so it revolves to a torus/sphere face, not chorded
+// cone facets). ok is false when the loop holds a non-line/arc entity (a spline) or is not a contiguous
+// chain: the caller keeps the faceted revolve.
+//
+// The ring is built from the entities' GEOMETRY (their shared endpoints), NOT from each entity's loop
+// Reversed flag: the region extractor does not always set those flags as a consistent directed
+// traversal for a mixed line/arc loop, and a wrong flag put the groove arc's endpoints on the wrong
+// span — the revolve then built the groove torus with the wrong minor radius and the 532xx housing
+// washer's mesh volume collapsed to ~28% (Oblikovati.AddIns.PartDesigner #54). Chaining by shared
+// points is flag-independent, matching how the loop's polygon is already assembled.
 func meridianVertsFromProfile(prof *sketch.Profile, plane sketch.Plane, axis *WorkAxis) ([]brep.RevolveVertex, bool) {
 	o, a := axis.Origin(), axis.Direction().AsVector()
 	toRZ := func(p2 math.Point2) math.Point2 {
@@ -198,60 +267,102 @@ func meridianVertsFromProfile(prof *sketch.Profile, plane sketch.Plane, axis *Wo
 		z := v.Dot(a)
 		return math.P2(v.Sub(a.Scale(z)).Length(), z)
 	}
-	ents := prof.OuterLoop().Entities()
-	verts := make([]brep.RevolveVertex, 0, len(ents))
-	for _, pe := range ents {
-		end, center, ok := entityEndAndArcCenter(pe)
+	shapes, ok := loopEntityShapes(prof.OuterLoop().Entities())
+	if !ok {
+		return nil, false
+	}
+	tol := loopChainTolerance(shapes)
+	verts := make([]brep.RevolveVertex, len(shapes))
+	for k := range shapes {
+		end, ok := sharedEndpoint(shapes[k], shapes[(k+1)%len(shapes)], tol)
 		if !ok {
-			return nil, false
+			return nil, false // entities do not chain end-to-end: not a simple ring, keep faceted
 		}
 		rv := brep.RevolveVertex{P: toRZ(end)}
-		if center != nil {
-			c := toRZ(*center)
+		if shapes[k].center != nil {
+			c := toRZ(*shapes[k].center)
 			rv.ArcCenter = &c
 		}
-		verts = append(verts, rv)
-	}
-	if len(verts) < 3 {
-		return nil, false
+		verts[k] = rv
 	}
 	return verts, true
 }
 
-// entityEndAndArcCenter returns a loop entity's traversal END point (sketch 2-D) and, for an arc, its
-// centre; ok is false for anything but a line or arc (a spline keeps the profile on the faceted path).
-// It reads the entity through the ShapedEntity capability (Kind + ShapePoints) rather than switching
-// on concrete types, per the sketch-entity type-switch ban (#1624, audit I1): ShapePoints yields
-// [start, end] for a line and [centre, start, end] for an arc.
-func entityEndAndArcCenter(pe sketch.ProfileEntity) (end math.Point2, center *math.Point2, ok bool) {
+// loopEntityShape is a line/arc loop entity reduced to what the meridian ring needs: its two endpoints
+// (a, b — undirected) and, for an arc, its centre. Reading the endpoints geometrically keeps the
+// entity's stored direction and the loop Reversed flag out of the ring construction.
+type loopEntityShape struct {
+	a, b   math.Point2
+	center *math.Point2
+}
+
+// loopEntityShapes reduces the loop's entities to their shapes; ok is false when the loop is shorter
+// than a triangle or holds a non-line/arc entity (a spline), so the caller keeps the faceted revolve.
+func loopEntityShapes(ents []sketch.ProfileEntity) ([]loopEntityShape, bool) {
+	if len(ents) < 3 {
+		return nil, false
+	}
+	shapes := make([]loopEntityShape, len(ents))
+	for i, pe := range ents {
+		s, ok := shapeOfLoopEntity(pe)
+		if !ok {
+			return nil, false
+		}
+		shapes[i] = s
+	}
+	return shapes, true
+}
+
+// shapeOfLoopEntity reads a line/arc loop entity through the ShapedEntity capability (Kind +
+// ShapePoints — [start, end] for a line, [centre, start, end] for an arc), per the sketch-entity
+// type-switch ban (#1624, audit I1). ok is false for a spline (keeps the profile on the faceted path).
+func shapeOfLoopEntity(pe sketch.ProfileEntity) (loopEntityShape, bool) {
 	shaped, isShaped := pe.Entity.(sketch.ShapedEntity)
 	if !isShaped {
-		return math.Point2{}, nil, false
+		return loopEntityShape{}, false
 	}
 	pts := shaped.ShapePoints()
 	switch shaped.Kind() {
 	case sketch.LineKind:
 		if len(pts) < 2 {
-			return math.Point2{}, nil, false
+			return loopEntityShape{}, false
 		}
-		return orientedEnd(pts[0], pts[1], pe.Reversed()), nil, true
+		return loopEntityShape{a: pts[0], b: pts[1]}, true
 	case sketch.ArcKind:
 		if len(pts) < 3 {
-			return math.Point2{}, nil, false
+			return loopEntityShape{}, false
 		}
 		c := pts[0]
-		return orientedEnd(pts[1], pts[2], pe.Reversed()), &c, true
+		return loopEntityShape{a: pts[1], b: pts[2], center: &c}, true
 	}
-	return math.Point2{}, nil, false
+	return loopEntityShape{}, false
 }
 
-// orientedEnd returns the traversal END of an edge whose forward direction runs start→end, flipped
-// to start when the edge is reversed within the loop.
-func orientedEnd(start, end math.Point2, reversed bool) math.Point2 {
-	if reversed {
-		return start
+// sharedEndpoint returns the point entity s shares with the next entity t — s's END in the ring,
+// derived from geometry rather than a direction flag. ok is false when they do not touch (the loop is
+// not a contiguous chain).
+func sharedEndpoint(s, t loopEntityShape, tol float64) (math.Point2, bool) {
+	for _, p := range [2]math.Point2{s.a, s.b} {
+		if near2D(p, t.a, tol) || near2D(p, t.b, tol) {
+			return p, true
+		}
 	}
-	return end
+	return math.Point2{}, false
+}
+
+// near2D reports whether two sketch points coincide within tol.
+func near2D(p, q math.Point2, tol float64) bool {
+	return stdmath.Hypot(float64(p.X-q.X), float64(p.Y-q.Y)) <= tol
+}
+
+// loopChainTolerance is the endpoint-coincidence tolerance for chaining, scaled to the loop's extent so
+// it holds across model scales (ADR-0042) instead of a cm-anchored constant.
+func loopChainTolerance(shapes []loopEntityShape) float64 {
+	ext := 1.0
+	for _, s := range shapes {
+		ext = stdmath.Max(ext, stdmath.Max(stdmath.Abs(float64(s.a.X)), stdmath.Abs(float64(s.a.Y))))
+	}
+	return ext * 1e-6
 }
 
 // revolveAxis resolves the axis of revolution: an explicit work axis if set, otherwise the
