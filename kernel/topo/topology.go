@@ -212,6 +212,13 @@ type Face struct {
 	derived        bool
 	cachedEdges    []*Edge
 	cachedVertices []*Vertex
+	// pickTess memoizes the ops-tessellated mesh the synchronous hover-pick ray-tests a CURVED face
+	// against, so an orbit does not re-tessellate every curved face EVERY frame (the recurring pick
+	// starvation: #1913 was a planar face triangulated per frame; the analytic-sphere balls then hit
+	// the same trap on the curved path). Face-lifetime (dies with the face on recompute, so no leak
+	// and no stale geometry) and opaque to topo — the ops package owns the payload type and only the
+	// single-threaded pick path writes it (mirrors the render loop's bodyGeometryCache assumption).
+	pickTess any
 }
 
 func (f *Face) ID() uint64           { return f.id }
@@ -221,6 +228,16 @@ func (f *Face) ReferenceKey() []byte { return referenceKey(KindFace, f.lineage) 
 
 // Geometry returns the face's underlying transient surface (a Plane/Cylinder…).
 func (f *Face) Geometry() geom.Surface { return f.surface }
+
+// PickTess returns the opaque, ops-owned pick-tessellation memo (nil until the hover-pick first
+// tessellates this curved face). See the pickTess field: it exists so orbiting a curved model does
+// not re-tessellate every face every frame. Written only by the single-threaded pick path.
+func (f *Face) PickTess() any { return f.pickTess }
+
+// SetPickTess stores the ops-owned pick-tessellation memo for this face. The payload is opaque to
+// topo (the ops package defines and type-asserts it), keeping the tessellator out of the topology
+// layer while giving the memo the face's lifetime.
+func (f *Face) SetPickTess(v any) { f.pickTess = v }
 
 // Reversed reports whether the face's outward (material) side is OPPOSITE its surface
 // normal — true for the cut wall a Difference carves, where the surface (e.g. a cylinder's

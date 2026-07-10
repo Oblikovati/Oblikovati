@@ -37,7 +37,30 @@ func rayCastFace(f *topo.Face, origin math.Point3, dir math.Vector3, q Quality) 
 	if _, ok := f.Geometry().(geom.Plane); ok {
 		return rayCastPlanarFace(f, origin, dir, q)
 	}
-	return rayCastMesh(TessellateFace(f, q), origin, dir)
+	return rayCastMesh(pickFaceMesh(f, q), origin, dir)
+}
+
+// facePickTess is the ops-owned payload of topo.Face.pickTess: the mesh a curved face was last
+// tessellated to for picking, plus the quality it was built at (picking always uses DefaultQuality,
+// but the quality guard rebuilds correctly if a caller ever passes another).
+type facePickTess struct {
+	mesh *Mesh
+	q    Quality
+}
+
+// pickFaceMesh returns the curved face's tessellation for ray-casting, tessellating it once and
+// memoizing on the face. Without this the synchronous hover-pick re-tessellated every curved face
+// EVERY frame while merely orbiting — 151 µs and 151 allocs per analytic-sphere ball, ×16 balls, is
+// the self-aligning bearing's orbit stutter (and the general recurring pick-starvation class). The
+// face is immutable once its body is finalized, so the memo is valid until the face is replaced by a
+// recompute (which yields a fresh face with an empty memo — no stale geometry, no leak).
+func pickFaceMesh(f *topo.Face, q Quality) *Mesh {
+	if c, ok := f.PickTess().(facePickTess); ok && c.q == q {
+		return c.mesh
+	}
+	m := TessellateFace(f, q)
+	f.SetPickTess(facePickTess{mesh: m, q: q})
+	return m
 }
 
 // rayCastPlanarFace intersects the ray with the face's plane, then tests the hit point against the

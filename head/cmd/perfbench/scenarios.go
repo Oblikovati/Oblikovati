@@ -62,7 +62,7 @@ type OrbitResult struct {
 // frame per step through the real DrawChrome path and recording each frame's wall time —
 // the ViewCube-orbit stress that exercises command-buffer recording and per-instance frustum
 // culling (M34-F1: as the view turns, the off-screen part of the car is dropped before upload).
-func orbitScenario(win *native.Window, s *app.Session, frames int) OrbitResult {
+func orbitScenario(win *native.Window, s *app.Session, frames int, hoverpick bool) OrbitResult {
 	if frames < 2 {
 		frames = 2
 	}
@@ -73,10 +73,25 @@ func orbitScenario(win *native.Window, s *app.Session, frames int) OrbitResult {
 		s.SetCamera(s.Camera().Orbit(yaw, 0))
 		t0 := time.Now()
 		drawFrame(win, s)
+		if hoverpick {
+			frameHoverPick(s) // the live head's per-frame viewport-centre hover-pick (RayCastFaces over the scene)
+		}
 		times = append(times, msSince(t0))
 	}
 	sum, _ := prof.Stop()
 	return orbitStats(times, sum)
+}
+
+// frameHoverPick reproduces the live head's per-frame hover-pick: a ray through the viewport centre
+// against the scene. It is what turns an orbit slow when picking re-tessellates curved faces every
+// frame; measured here it guards the pick-tessellation memo (ops.pickFaceMesh) at scene scale. The
+// camera pixel size is set by DrawChrome's updateViewportCamera on the frame just drawn.
+func frameHoverPick(s *app.Session) {
+	cam := s.Camera()
+	if cam.Width <= 0 || cam.Height <= 0 {
+		return
+	}
+	s.PickAt(float64(cam.Width)/2, float64(cam.Height)/2, app.NewSelectionFilter())
 }
 
 // uiStressScenario measures the per-frame model-browser tree the UI rebuilds every frame

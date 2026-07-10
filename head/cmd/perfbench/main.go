@@ -22,6 +22,7 @@ import (
 
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/benchgen"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/perf/benchprof"
@@ -47,14 +48,16 @@ func main() {
 	png := flag.String("png", "", "save a viewport PNG after the orbit (visual confirmation)")
 	frames := flag.Int("frames", 120, "frames in the 360° orbit scenario")
 	uiIters := flag.Int("ui-iters", 200, "model-tree builds in the UI stress scenario")
+	hoverpick := flag.Bool("hoverpick", false, "fire a viewport-centre hover-pick each orbit frame — the "+
+		"interactive per-frame cost the live head pays (guards the pick-tessellation memo against regression)")
 	flag.Parse()
-	if err := run(*profileName, *assembly, *out, *png, *frames, *uiIters); err != nil {
+	if err := run(*profileName, *assembly, *out, *png, *frames, *uiIters, *hoverpick); err != nil {
 		fmt.Fprintln(os.Stderr, "perfbench:", err)
 		os.Exit(1)
 	}
 }
 
-func run(profileName, assembly, out, png string, frames, uiIters int) error {
+func run(profileName, assembly, out, png string, frames, uiIters int, hoverpick bool) error {
 	s := app.NewSessionWithStore(persistence.NewPackageStore())
 	res := Result{Profile: profileName, Source: "generated"}
 	cold, err := loadOrGenerate(s, profileName, assembly, &res)
@@ -71,11 +74,7 @@ func run(profileName, assembly, out, png string, frames, uiIters int) error {
 	win.InitViewport()
 	res.ColdLoad.FirstFrameMs = firstFrameUpload(win, s)
 
-	s.FitView()
-	res.Orbit = orbitScenario(win, s, frames)
-	res.UIStress = uiStressScenario(s, uiIters)
-	res.Propagation = propagationScenario(s)
-
+	runScenarios(win, s, &res, frames, uiIters, hoverpick)
 	if png != "" {
 		drawFrame(win, s)
 		if err := win.SaveViewportPNG(png); err != nil {
@@ -84,6 +83,18 @@ func run(profileName, assembly, out, png string, frames, uiIters int) error {
 		fmt.Println("wrote", png)
 	}
 	return report(res, out)
+}
+
+// runScenarios frames the scene and runs the three timed scenarios into res. With hoverpick set it
+// installs the ray picker first so the orbit pays the live head's per-frame hover-pick cost.
+func runScenarios(win *native.Window, s *app.Session, res *Result, frames, uiIters int, hoverpick bool) {
+	s.FitView()
+	if hoverpick {
+		installBenchPicker(s)
+	}
+	res.Orbit = orbitScenario(win, s, frames, hoverpick)
+	res.UIStress = uiStressScenario(s, uiIters)
+	res.Propagation = propagationScenario(s)
 }
 
 // loadOrGenerate fills the session with the assembly — opening the saved root (the true
@@ -122,6 +133,16 @@ func fillSession(s *app.Session, profileName, assembly string, res *Result) (*do
 	}
 	root, _, err := benchgen.Generate(s.Workspace(), "perfbench", profile)
 	return root, err
+}
+
+// installBenchPicker gives the session the same ray picker the live head uses (minus the sketch/
+// work-geometry providers a static orbit never queries), so orbitScenario can pay the real per-frame
+// hover-pick cost. The assembly BVH (RayPickBodies) supplies candidates; the base body list is the
+// part-only fallback, unused for the generated assembly. SetCamera (called each orbit frame) keeps
+// the picker's view current.
+func installBenchPicker(s *app.Session) {
+	s.SetPicker(app.NewRayPicker(s.Camera(), func() []*topo.Body { return nil }).
+		WithRayBodies(s.RayPickBodies))
 }
 
 // firstFrameUpload times the first rendered frame — the cold vertex/index/instance
