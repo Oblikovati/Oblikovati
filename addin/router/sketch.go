@@ -39,16 +39,25 @@ type sketchHost interface {
 	Parameters() *param.Parameters
 	Units() param.UnitsOfMeasure
 	WorkPlanes() *feature.WorkPlanes
+	WorkGeometry() *feature.WorkGeometry // resolve orientation-axis refs (#1920)
 }
 
 // createSketch adds a sketch on an origin or work plane of the active sketch host (part
 // or assembly) and returns its index (for sketch.rectangle / features.add).
 func createSketch(_ *app.Session, host sketchHost, in wire.CreateSketchArgs) (wire.CreateSketchResult, error) {
-	plane, name, wp, err := sketchCreatePlane(host, in)
+	base, name, wp, err := sketchCreatePlane(host, in)
 	if err != nil {
 		return wire.CreateSketchResult{}, err
 	}
-	sk := host.Sketches().Add(plane)
+	// Validate the orientation up-front so a bad axis fails the create call, not a later
+	// recompute; then track the (re-)oriented plane so the frame survives plane motion.
+	if in.Orientation != nil {
+		if _, err := orientSketchPlane(host, base, in.Orientation); err != nil {
+			return wire.CreateSketchResult{}, err
+		}
+	}
+	planeOf := sketchPlaneFn(host, base, wp, in.Orientation)
+	sk := host.Sketches().Add(planeOf())
 	// Share the host's parameter DAG so dimension expressions can reference user
 	// parameters (e.g. "od/2") and the dimension's own d0,d1… parameters live in
 	// the host's table — the way Inventor sketch dimensions work. Without this the
@@ -59,10 +68,88 @@ func createSketch(_ *app.Session, host sketchHost, in wire.CreateSketchArgs) (wi
 	// plane's offset parameter into the sketch's footprint so an offset edit targets this
 	// sketch's features instead of forcing a wholesale rebuild (ADR-0044).
 	if wp != nil {
-		sk.SetPlaneHost(func() sketch.Plane { return wp.Plane() })
+		sk.SetPlaneHost(planeOf)
 		sk.SetHostFootprint(func() []depend.Key { return wp.ParameterFootprint() })
 	}
 	return wire.CreateSketchResult{SketchIndex: host.Sketches().Count() - 1, Plane: name}, nil
+}
+
+// sketchPlaneFn returns the source of a sketch's host plane on each recompute: the base
+// plane (or the live work plane when wp is set), reframed by an optional orientation. The
+// orientation is re-applied every recompute so the pinned frame follows the plane if it
+// moves; if the reframe later degenerates it falls back to the base frame (it was validated
+// at create time). See [orientSketchPlane] and #1920.
+func sketchPlaneFn(host sketchHost, base sketch.Plane, wp *feature.WorkPlane, o *wire.SketchOrientation) func() sketch.Plane {
+	basePlane := func() sketch.Plane {
+		if wp != nil {
+			return wp.Plane()
+		}
+		return base
+	}
+	if o == nil {
+		return basePlane
+	}
+	return func() sketch.Plane {
+		p, err := orientSketchPlane(host, basePlane(), o)
+		if err != nil {
+			return basePlane()
+		}
+		return p
+	}
+}
+
+// orientSketchPlane reframes a sketch plane so a reference axis (projected into the plane)
+// becomes its X or Y axis — Inventor's PlanarSketches.AddWithOrientation. The plane's origin
+// and normal are preserved (so the sketch faces the same way and normal = X×Y still holds);
+// only the in-plane rotation and, optionally, the origin change. Errors if the axis is
+// perpendicular to the plane (its in-plane projection is degenerate). See #1920.
+func orientSketchPlane(host sketchHost, base sketch.Plane, o *wire.SketchOrientation) (sketch.Plane, error) {
+	dir, err := orientationAxisDir(host, o.Axis)
+	if err != nil {
+		return sketch.Plane{}, err
+	}
+	normal := base.Normal().AsVector()
+	chosen, err := math.UnitVector3FromVector(dir.Sub(normal.Scale(dir.Dot(normal))))
+	if err != nil {
+		return sketch.Plane{}, fmt.Errorf("sketch.create: orientation axis %q is perpendicular to the plane "+
+			"(normal %v); its in-plane projection is degenerate", o.Axis, normal)
+	}
+	if o.Reverse {
+		chosen, _ = math.UnitVector3FromVector(chosen.AsVector().Scale(-1))
+	}
+	origin := base.Origin()
+	if len(o.Origin) == 3 {
+		origin = math.P3(o.Origin[0], o.Origin[1], o.Origin[2])
+	}
+	x, y, err := orientedAxes(chosen, base.Normal(), o.AxisIsX)
+	if err != nil {
+		return sketch.Plane{}, err
+	}
+	return sketch.NewPlane(origin, x, y)
+}
+
+// orientedAxes completes an orthonormal in-plane frame from the chosen axis and the plane
+// normal: the chosen axis is X (then Y = normal×X) or Y (then X = Y×normal), each choice
+// giving normal = X×Y so the plane's facing is preserved.
+func orientedAxes(chosen, normal math.UnitVector3, axisIsX bool) (x, y math.UnitVector3, err error) {
+	if axisIsX {
+		x = chosen
+		y, err = math.UnitVector3FromVector(normal.Cross(x))
+		return x, y, err
+	}
+	y = chosen
+	x, err = math.UnitVector3FromVector(y.Cross(normal).Scale(-1)) // X = Y × normal
+	return x, y, err
+}
+
+// orientationAxisDir resolves an orientation-axis reference (an origin-axis constant, a work
+// axis, or a linear edge) to its unit direction in model space.
+func orientationAxisDir(host sketchHost, ref string) (math.Vector3, error) {
+	wa, ok := host.WorkGeometry().AxisByRef(feature.ParseWorkRef(ref))
+	if !ok {
+		return math.Vector3{}, fmt.Errorf("sketch.create: orientation axis %q not found", ref)
+	}
+	return wa.Direction().AsVector(), nil
 }
 
 // sketchCreatePlane resolves the plane a new sketch starts on: a user work plane (when
