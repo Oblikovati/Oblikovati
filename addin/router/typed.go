@@ -149,14 +149,22 @@ func projectAll[I, Info any](col indexed[I], project func(int, I) Info) []Info {
 // tombstonable is a datum that can be deleted by tombstone (work planes/axes/points, #1855).
 type tombstonable interface{ Deleted() bool }
 
-// projectLiveDatums is projectAll for a datum collection: it skips tombstoned (deleted) items
-// while passing each surviving row its stable COLLECTION index, so a redefine index and a
-// "plane/N" reference keep resolving after a delete (#1855).
-func projectLiveDatums[I tombstonable, Info any](col indexed[I], project func(int, I) Info) []Info {
+// listableDatum is a datum whose listing can be filtered: tombstoned rows are always hidden, and
+// construction (hidden, consumer-tied) rows are hidden unless the caller opts in (#1849).
+type listableDatum interface {
+	tombstonable
+	Construction() bool
+}
+
+// projectListedDatums is projectAll for a datum collection: it skips tombstoned (deleted) rows
+// (#1855) and hides construction datums unless includeConstruction is set — the default
+// browser/list surface excludes them (#1849). Each surviving row still gets its stable COLLECTION
+// index, so a skipped (deleted or construction) datum never shifts a "plane/N" reference.
+func projectListedDatums[I listableDatum, Info any](col indexed[I], includeConstruction bool, project func(int, I) Info) []Info {
 	out := make([]Info, 0, col.Count())
 	for i := 0; i < col.Count(); i++ {
 		it := col.Item(i)
-		if it.Deleted() {
+		if it.Deleted() || (!includeConstruction && it.Construction()) {
 			continue
 		}
 		out = append(out, project(i, it))
