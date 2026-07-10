@@ -158,32 +158,57 @@ func drawAddInPanelControl(s *app.Session, windowID string, index int, control w
 	}
 }
 
+// panelEditSession is the ≤1-method view of the session an editable panel widget needs (audit I5,
+// the arrowSession pattern): just the sink that reports a user edit back to the owning add-in, so
+// tree/table/field widgets don't couple to the whole *app.Session. *app.Session satisfies it.
+type panelEditSession interface {
+	PanelValueChanged(windowID, controlID, value string)
+}
+
+var _ panelEditSession = (*app.Session)(nil)
+
 // drawEditableControl renders the editable control kinds with the stacked-caption layout
 // (#1490) and reports whether control was one, keeping the leaf dispatch small. Edits push back
 // through Session.PanelValueChanged.
 func drawEditableControl(s *app.Session, windowID string, control wire.PanelControlSpec) bool {
 	switch control.Kind {
 	case types.PanelTextBox, types.PanelValueEditor, types.PanelComboBox:
-		buf := panelBuffer(windowID+"/"+control.ID, control.Value)
-		panelFieldLabel(control.Text)
-		if native.InputText("##field", buf) {
-			s.PanelValueChanged(windowID, control.ID, bufString(buf))
-		}
+		drawPanelTextField(s, windowID, control)
 	case types.PanelCheckBox:
-		checked := control.Value == "true"
-		if native.Checkbox(control.Text, &checked) {
-			s.PanelValueChanged(windowID, control.ID, strconv.FormatBool(checked))
-		}
+		drawPanelCheckBox(s, windowID, control)
 	case types.PanelDropdown:
 		drawPanelDropdown(s, windowID, control)
 	case types.PanelSlider:
 		drawPanelSlider(s, windowID, control)
 	case types.PanelReferenceList:
 		drawPanelReferenceList(s, windowID, control)
+	case types.PanelTree:
+		drawPanelTree(s, windowID, control)
+	case types.PanelTable:
+		drawPanelTable(s, windowID, control)
 	default:
 		return false
 	}
 	return true
+}
+
+// drawPanelTextField renders a stacked-caption text/combo input (#1490), pushing the new value to
+// the add-in on change. Split out of drawEditableControl to keep the dispatch switch's statement
+// count under the funlen gate as more control kinds land.
+func drawPanelTextField(s panelEditSession, windowID string, control wire.PanelControlSpec) {
+	buf := panelBuffer(windowID+"/"+control.ID, control.Value)
+	panelFieldLabel(control.Text)
+	if native.InputText("##field", buf) {
+		s.PanelValueChanged(windowID, control.ID, bufString(buf))
+	}
+}
+
+// drawPanelCheckBox renders a checkbox control, pushing the new state to the add-in on toggle.
+func drawPanelCheckBox(s panelEditSession, windowID string, control wire.PanelControlSpec) {
+	checked := control.Value == "true"
+	if native.Checkbox(control.Text, &checked) {
+		s.PanelValueChanged(windowID, control.ID, strconv.FormatBool(checked))
+	}
 }
 
 // drawPanelSlider renders a bounded numeric slider with its caption stacked above (#1490),
