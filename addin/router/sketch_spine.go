@@ -105,9 +105,11 @@ func deleteSketch(_ *app.Session, part *compdef.PartComponentDefinition, in wire
 	if err := rejectIfConsumed(part, sk); err != nil {
 		return wire.OKResult{}, err
 	}
+	snapshot := snapshotConstructionConsumers(part) // before delete: construction datums with a consumer (#1849)
 	if !part.Sketches().Remove(sk.ID()) {
 		return wire.OKResult{}, fmt.Errorf("sketch.delete: sketch %d could not be removed", sk.ID())
 	}
+	pruneConstructionAfterDelete(part, snapshot) // auto-delete the host work plane if this sketch was its last consumer
 	return wire.OKResult{OK: true}, nil
 }
 

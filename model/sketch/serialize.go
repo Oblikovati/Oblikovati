@@ -38,6 +38,7 @@ type SketchData struct {
 	CustomLineFile    string            `yaml:"customLineFile,omitempty"`
 	CustomLinePattern []float64         `yaml:"customLinePattern,omitempty,flow"`
 	Plane             PlaneData         `yaml:"plane"`
+	HostPlaneRef      string            `yaml:"hostPlaneRef,omitempty"` // datum ref the sketch is hosted on (#1849)
 	Points            []PointData       `yaml:"points,omitempty"`
 	Entities          []EntityData      `yaml:"entities,omitempty"`
 	Constraints       []ConstraintData  `yaml:"constraints,omitempty"`
@@ -187,6 +188,7 @@ func serializeSketch(s *Sketch) (SketchData, error) {
 		LineWeight:   s.lineWeight,
 		DeferUpdates: s.deferUpdates,
 		Plane:        serializePlane(s.plane),
+		HostPlaneRef: s.hostWorkRef,
 	}
 	if d, file, ok := s.CustomLineType(); ok {
 		sd.CustomLineName, sd.CustomLineFile, sd.CustomLinePattern = d.Name, file, d.Pattern
