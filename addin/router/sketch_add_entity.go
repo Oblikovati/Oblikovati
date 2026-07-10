@@ -29,6 +29,7 @@ func addSketchEntity(s *app.Session, part *compdef.PartComponentDefinition, in w
 		return wire.AddSketchEntityResult{}, err
 	}
 	applyConstruction(ent, in.Construction)
+	applyCenterline(ent, in.Centerline)
 	out := wire.AddSketchEntityResult{
 		EntityID: uint64(ent.EntityID()), Kind: in.Kind, PointIDs: pointIDs,
 	}
@@ -572,5 +573,18 @@ func wantPoints(what string, pts []math.Point2, n int) error {
 func applyConstruction(e sketch.Entity, construction bool) {
 	if c, ok := e.(interface{ SetConstruction(bool) }); ok {
 		c.SetConstruction(construction)
+	}
+}
+
+// applyCenterline marks a line as the sketch's axis of revolution (Inventor's "revolve about the
+// sketch centerline"). Only line-like entities carry it; IsConstruction already treats a
+// centerline as construction, so no separate construction flag is needed. Lets a revolve with no
+// explicit axis spin about this line — see wire.AddSketchEntityArgs.Centerline (PartDesigner #54).
+func applyCenterline(e sketch.Entity, centerline bool) {
+	if !centerline {
+		return
+	}
+	if c, ok := e.(interface{ SetCenterline(bool) }); ok {
+		c.SetCenterline(centerline)
 	}
 }

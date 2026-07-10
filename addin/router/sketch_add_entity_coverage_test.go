@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
+	"oblikovati.org/model/compdef"
 )
 
 // tryCall invokes a method and returns its error (for paths where a clean error on
@@ -78,5 +79,60 @@ func TestSketchAddEntityErrors(t *testing.T) {
 				t.Errorf("expected an error for %s", args)
 			}
 		})
+	}
+}
+
+// TestSketchAddCenterlineMarksAxisOfRevolution is the regression for the centerline flag
+// (PartDesigner #54): a line added with centerline:true becomes the sketch's single centerline,
+// so a revolve with no explicit axis resolves it. A plain construction line does NOT.
+func TestSketchAddCenterlineMarksAxisOfRevolution(t *testing.T) {
+	r, s := seededSession(t)
+	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
+	sk := def.Sketches().Item(0)
+	if n := len(sk.Centerlines()); n != 0 {
+		t.Fatalf("seeded sketch already has %d centerlines, want 0", n)
+	}
+	if err := tryCall(t, r, s, "sketch.addEntity",
+		`{"sketchIndex":0,"kind":"line","points":[[0,0],[0,5]],"centerline":true}`); err != nil {
+		t.Fatalf("add centerline: %v", err)
+	}
+	if n := len(sk.Centerlines()); n != 1 {
+		t.Fatalf("Centerlines() = %d, want 1 after centerline:true", n)
+	}
+	if err := tryCall(t, r, s, "sketch.addEntity",
+		`{"sketchIndex":0,"kind":"line","points":[[1,0],[1,5]],"construction":true}`); err != nil {
+		t.Fatalf("add construction line: %v", err)
+	}
+	if n := len(sk.Centerlines()); n != 1 {
+		t.Fatalf("Centerlines() = %d after a plain construction line, want still 1", n)
+	}
+}
+
+// TestRevolveAboutCenterlineOverWire is the e2e regression for the whole PartDesigner #54 axis
+// path: author an offset profile + a centerline through sketch.addEntity, then features.add a
+// revolve with aboutCenterline:true. It must spin about the sketch centerline (not the default Y
+// work axis) and yield the 24π-cm³ washer — proving the centerline flag and the revolve flag
+// resolve together, as a procedural add-in revolving a tilted roller about its own axis relies on.
+func TestRevolveAboutCenterlineOverWire(t *testing.T) {
+	r, s := seededSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	call(t, r, s, "sketch.addEntity",
+		`{"sketchIndex":1,"kind":"polyline","points":[[2,0],[4,0],[4,2],[2,2]],"closed":true}`,
+		&wire.AddSketchEntityResult{})
+	call(t, r, s, "sketch.addEntity",
+		`{"sketchIndex":1,"kind":"line","points":[[0,0],[0,2]],"centerline":true}`,
+		&wire.AddSketchEntityResult{})
+	var res struct {
+		Name string `json:"name"`
+	}
+	call(t, r, s, "features.add",
+		`{"kind":"revolve","args":{"sketchIndex":1,"profileIndex":0,"aboutCenterline":true,"angle":"360 deg","operation":"new"}}`,
+		&res)
+
+	var mp wire.MassPropertiesResult
+	call(t, r, s, "body.physicalProperties", `{"bodyIndex":0}`, &mp)
+	const wantMm3 = 24 * 3.14159265 * 1000 // 24π cm³ washer → mm³ (outer R4, inner R2, height 2 cm)
+	if mp.VolumeMm3 < wantMm3*0.97 || mp.VolumeMm3 > wantMm3*1.03 {
+		t.Fatalf("centerline-revolved volume = %g mm³, want ≈%g (24π cm³); the revolve did not use the centerline", mp.VolumeMm3, wantMm3)
 	}
 }
