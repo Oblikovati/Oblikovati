@@ -280,6 +280,8 @@ func advancedDimensionKind(k sketch.DimKind) types.DimensionConstraintKind {
 		return types.DimConstraintEllipseRadius
 	case sketch.TangentDistanceDim:
 		return types.DimConstraintTangentDistance
+	case sketch.OffsetSplineDim:
+		return types.DimConstraintOffsetSpline
 	default:
 		return types.DimConstraintUnknown
 	}

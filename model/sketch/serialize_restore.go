@@ -356,6 +356,12 @@ func (r *sketchRestorer) restoreAdvancedDimension(dd DimensionData) (*DimensionC
 			return nil, err
 		}
 		return dc.AddTangentDistance(l, c, dd.FarSide, dd.LinearDiameter, dd.Expression)
+	case "offsetSplineDim":
+		o, err := r.offsetSpline(dd.Curves, 0)
+		if err != nil {
+			return nil, err
+		}
+		return dc.AddOffsetSplineDim(o, dd.Expression)
 	default:
 		return nil, fmt.Errorf("unknown dimension kind %q", dd.Kind)
 	}
@@ -371,6 +377,17 @@ func (r *sketchRestorer) ellipse(ids []int, i int) (*Ellipse, error) {
 		return nil, fmt.Errorf("entity %d is not an ellipse", ids[i])
 	}
 	return e, nil
+}
+
+func (r *sketchRestorer) offsetSpline(ids []int, i int) (*OffsetSpline, error) {
+	if i >= len(ids) {
+		return nil, fmt.Errorf("offset-spline operand %d missing", i)
+	}
+	o, ok := r.entityMap[ids[i]].(*OffsetSpline)
+	if !ok {
+		return nil, fmt.Errorf("entity %d is not an offset spline", ids[i])
+	}
+	return o, nil
 }
 
 // --- operand resolution -------------------------------------------------------------

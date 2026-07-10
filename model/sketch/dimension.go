@@ -30,6 +30,8 @@ const (
 	SplineLengthDimKind3D // a 3D spline's sampled arc length
 	// Appended for issue #152 (do not reorder).
 	TangentDistanceDim // distance from a line to a circle/arc's near/far tangent point
+	// Appended for issue #1874 (do not reorder).
+	OffsetSplineDim // an offset spline's offset distance from its parent
 )
 
 // ConstraintLimits bounds a dimension's value for drive/animation. When Enabled,

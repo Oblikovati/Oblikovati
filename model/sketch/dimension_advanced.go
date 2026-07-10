@@ -44,3 +44,11 @@ func (dc *DimensionConstraints) AddEllipseRadius(e *Ellipse, expression string) 
 	measure := func(v []ad.Number) ad.Number { return v[0] }
 	return dc.create(EllipseRadiusDim, expression, []Entity{e}, measure, []*math.Scalar{&e.MajorRadius})
 }
+
+// AddOffsetSplineDim drives an offset spline's offset distance from its parent (#1874). The
+// measure is the magnitude of the signed offset, so a positive length expression preserves the
+// side the offset was created on while setting its distance.
+func (dc *DimensionConstraints) AddOffsetSplineDim(o *OffsetSpline, expression string) (*DimensionConstraint, error) {
+	measure := func(v []ad.Number) ad.Number { return v[0].Abs() }
+	return dc.create(OffsetSplineDim, expression, []Entity{o}, measure, []*math.Scalar{&o.Dist})
+}

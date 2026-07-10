@@ -131,11 +131,12 @@ func (c *FixedSplines) Count() int              { return len(c.items) }
 func (c *FixedSplines) Item(i int) *FixedSpline { return c.items[i] }
 
 // OffsetSpline is the offset of a parent spline by a signed distance (left of the parent's
-// direction for a positive distance). Immutable; tracks the parent by reference.
+// direction for a positive distance). It tracks the parent by reference; Dist is a solver DOF, so
+// an offset-spline dimension can drive it (#1874) and an undriven offset is free to slide.
 type OffsetSpline struct {
 	entityBase
 	Parent *Spline
-	Dist   float64
+	Dist   math.Scalar
 }
 
 // OffsetSplines creates and tracks offset splines.
