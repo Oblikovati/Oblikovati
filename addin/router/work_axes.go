@@ -21,6 +21,9 @@ import (
 // with their current geometry and health. Construction axes are hidden unless the request opts
 // in with IncludeConstruction (#1849).
 func listWorkAxes(_ *app.Session, host workHost, in wire.ListWorkAxesArgs) (wire.ListWorkAxesResult, error) {
+	if len(in.Occurrence) > 0 {
+		return listWorkAxesInOccurrence(host, in.Occurrence, in.IncludeConstruction)
+	}
 	axes := projectListedDatums(host.WorkAxes(), in.IncludeConstruction, workAxisInfo)
 	return wire.ListWorkAxesResult{Axes: axes}, nil
 }
@@ -46,6 +49,9 @@ func workAxisInfo(index int, wa *feature.WorkAxis) wire.WorkAxisInfo {
 // points) with their position, kind, origin flag, visibility, and health (#1842). Construction
 // points are hidden unless the request opts in with IncludeConstruction (#1849).
 func listWorkPoints(_ *app.Session, host workHost, in wire.ListWorkPointsArgs) (wire.ListWorkPointsResult, error) {
+	if len(in.Occurrence) > 0 {
+		return listWorkPointsInOccurrence(host, in.Occurrence, in.IncludeConstruction)
+	}
 	points := projectListedDatums(host.WorkPoints(), in.IncludeConstruction, workPointInfo)
 	return wire.ListWorkPointsResult{Points: points}, nil
 }

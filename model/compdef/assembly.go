@@ -82,6 +82,9 @@ func NewAssemblyComponentDefinition() *AssemblyComponentDefinition {
 	a.dsJoints = assembly.NewDSJointSet()
 	a.representations = assembly.NewRepresentations(occ, a.constraints, a.joints)
 	a.contacts = assembly.NewContactSolver()
+	// Accept occurrence-qualified datum refs ("occ/<path>/plane/N") as inputs to the assembly's
+	// own sketch/feature tools, resolved through the occurrence tree + transform (#1857).
+	a.work.SetExternalDatumResolver(occurrenceDatumResolver{asm: a})
 	return a
 }
 

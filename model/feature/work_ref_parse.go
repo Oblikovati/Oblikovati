@@ -5,11 +5,12 @@ package feature
 import "strings"
 
 // workFeatureRefPrefixes are the reference-string prefixes that name a work feature — an origin
-// datum, a user plane/axis/point, a UCS, a model vertex, or a B-rep edge (a lineage-key "edge/…" or
-// an ADR-0040 geometric "edge-geom/…" descriptor) — rather than a raw B-rep face key. The two edge
-// forms are kept verbatim so the edge resolver (work_edge_ref.go) can bind them; without this a
-// wire edge ref was mis-wrapped as a face key and every edge-based datum went unhealthy (#1840, #1842).
-var workFeatureRefPrefixes = []string{"origin/", "plane/", "axis/", "point/", "ucs/", "vertex/", "edge/", "edge-geom/"}
+// datum, a user plane/axis/point, a UCS, a model vertex, a B-rep edge (a lineage-key "edge/…" or an
+// ADR-0040 geometric "edge-geom/…" descriptor), or an occurrence-qualified datum ("occ/…", a datum
+// inside a sub-component reached through an occurrence) — rather than a raw B-rep face key. Each is
+// kept verbatim so its resolver (work_edge_ref.go / occurrence_ref.go) can bind it; without this a
+// wire ref was mis-wrapped as a face key and the datum went unhealthy (#1840, #1842, #1857).
+var workFeatureRefPrefixes = []string{"origin/", "plane/", "axis/", "point/", "ucs/", "vertex/", "edge/", "edge-geom/", "occ/"}
 
 // ParseWorkRef classifies a raw reference string from the wire: a work-feature reference is kept
 // verbatim; any other string is treated as a raw B-rep face key and wrapped as a face ref. It is
