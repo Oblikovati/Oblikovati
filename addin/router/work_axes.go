@@ -18,9 +18,10 @@ import (
 // (reported healthy=false); the call only fails on bad arguments.
 
 // listWorkAxes enumerates the active model's datum axes (origin frame first, then user axes)
-// with their current geometry and health.
-func listWorkAxes(_ *app.Session, host workHost) (wire.ListWorkAxesResult, error) {
-	axes := projectLiveDatums(host.WorkAxes(), workAxisInfo)
+// with their current geometry and health. Construction axes are hidden unless the request opts
+// in with IncludeConstruction (#1849).
+func listWorkAxes(_ *app.Session, host workHost, in wire.ListWorkAxesArgs) (wire.ListWorkAxesResult, error) {
+	axes := projectListedDatums(host.WorkAxes(), in.IncludeConstruction, workAxisInfo)
 	return wire.ListWorkAxesResult{Axes: axes}, nil
 }
 
@@ -42,9 +43,10 @@ func workAxisInfo(index int, wa *feature.WorkAxis) wire.WorkAxisInfo {
 }
 
 // listWorkPoints enumerates the active model's datum points (origin centre first, then user
-// points) with their position, kind, origin flag, visibility, and health (#1842).
-func listWorkPoints(_ *app.Session, host workHost) (wire.ListWorkPointsResult, error) {
-	points := projectLiveDatums(host.WorkPoints(), workPointInfo)
+// points) with their position, kind, origin flag, visibility, and health (#1842). Construction
+// points are hidden unless the request opts in with IncludeConstruction (#1849).
+func listWorkPoints(_ *app.Session, host workHost, in wire.ListWorkPointsArgs) (wire.ListWorkPointsResult, error) {
+	points := projectListedDatums(host.WorkPoints(), in.IncludeConstruction, workPointInfo)
 	return wire.ListWorkPointsResult{Points: points}, nil
 }
 

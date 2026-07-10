@@ -52,9 +52,10 @@ func activeWorkHost(s *app.Session) (workHost, error) {
 }
 
 // listWorkPlanes enumerates the active model's datum planes (origin frame first, then
-// user planes) with their current geometry and health.
-func listWorkPlanes(_ *app.Session, host workHost) (wire.ListWorkPlanesResult, error) {
-	planes := projectLiveDatums(host.WorkPlanes(), func(i int, wp *feature.WorkPlane) wire.WorkPlaneInfo {
+// user planes) with their current geometry and health. Construction planes are hidden unless the
+// request opts in with IncludeConstruction (#1849).
+func listWorkPlanes(_ *app.Session, host workHost, in wire.ListWorkPlanesArgs) (wire.ListWorkPlanesResult, error) {
+	planes := projectListedDatums(host.WorkPlanes(), in.IncludeConstruction, func(i int, wp *feature.WorkPlane) wire.WorkPlaneInfo {
 		return workPlaneInfo(host, wp, i)
 	})
 	return wire.ListWorkPlanesResult{Planes: planes}, nil

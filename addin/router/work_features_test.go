@@ -130,7 +130,8 @@ func TestDeleteWorkFeatureErrors(t *testing.T) {
 	}
 }
 
-// TestCreateConstructionDatum: the construction flag on create is reported back on each list DTO,
+// TestCreateConstructionDatum: construction datums are hidden from the default list surface, appear
+// (with construction=true) only when the request opts in with includeConstruction, and the flag is
 // independent of visibility (#1849).
 func TestCreateConstructionDatum(t *testing.T) {
 	r, s := emptyPartSession(t)
@@ -141,23 +142,34 @@ func TestCreateConstructionDatum(t *testing.T) {
 	var ax wire.CreateWorkAxisResult
 	call(t, r, s, "workAxes.create", `{"kind":"line","origin":[0,0,0],"direction":[0,0,1],"construction":true}`, &ax)
 
+	// Default list hides construction datums (browser-hidden semantics).
 	var planes wire.ListWorkPlanesResult
 	call(t, r, s, "workPlanes.list", "{}", &planes)
+	if findPlane(planes.Planes, pl.Ref).Ref == pl.Ref {
+		t.Error("construction plane should be hidden from the default list")
+	}
+
+	// includeConstruction reveals them, with construction=true, independent of visibility.
+	call(t, r, s, "workPlanes.list", `{"includeConstruction":true}`, &planes)
 	if !findPlane(planes.Planes, pl.Ref).Construction {
-		t.Error("plane should report construction=true")
+		t.Error("plane should report construction=true when included")
 	}
 	if findPlane(planes.Planes, pl.Ref).Visible {
 		t.Error("construction and visible are independent; this plane was created hidden")
 	}
 	var points wire.ListWorkPointsResult
-	call(t, r, s, "workPoints.list", "{}", &points)
+	call(t, r, s, "workPoints.list", `{"includeConstruction":true}`, &points)
 	if !findPointConstruction(points.Points, pt.Ref) {
-		t.Error("point should report construction=true")
+		t.Error("point should report construction=true when included")
+	}
+	call(t, r, s, "workPoints.list", "{}", &points)
+	if findPointConstruction(points.Points, pt.Ref) {
+		t.Error("construction point should be hidden from the default list")
 	}
 	var axes wire.ListWorkAxesResult
-	call(t, r, s, "workAxes.list", "{}", &axes)
+	call(t, r, s, "workAxes.list", `{"includeConstruction":true}`, &axes)
 	if !findAxisConstruction(axes.Axes, ax.Ref) {
-		t.Error("axis should report construction=true")
+		t.Error("axis should report construction=true when included")
 	}
 }
 
