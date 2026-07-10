@@ -13,6 +13,7 @@ import (
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/feature"
 	"oblikovati.org/model/sketch"
 )
 
@@ -111,15 +112,27 @@ func uvPairs(flat []float64) ([]math.Point2, error) {
 	return out, nil
 }
 
-// intersectionCurve3D resolves two face refs and adds their (associative) intersection.
+// intersectionCurve3D resolves the two operands — each a face or a work plane, in any mix — and
+// adds their (associative) intersection (#1854). Faces come first as the bounded base; a work
+// plane contributes its infinite plane surface.
 func intersectionCurve3D(part *compdef.PartComponentDefinition, sk *sketch.Sketch3D, in wire.AddSketch3DSurfaceCurveArgs) (json.RawMessage, error) {
-	if len(in.FaceRefs) != 2 {
-		return nil, fmt.Errorf("sketch3d.addSurfaceCurve: intersection needs 2 face refs, got %d", len(in.FaceRefs))
+	if len(in.FaceRefs)+len(in.WorkRefs) != 2 {
+		return nil, fmt.Errorf("sketch3d.addSurfaceCurve: intersection needs 2 operands (face and/or work-plane refs), got %d", len(in.FaceRefs)+len(in.WorkRefs))
 	}
-	if !part.FaceKeyResolves(in.FaceRefs[0]) || !part.FaceKeyResolves(in.FaceRefs[1]) {
-		return surfaceCurveUnhealthy(in.Kind)
+	sources := make([]sketch.SurfaceSource, 0, 2)
+	for _, f := range in.FaceRefs {
+		if !part.FaceKeyResolves(f) {
+			return surfaceCurveUnhealthy(in.Kind)
+		}
+		sources = append(sources, compdef.NewFaceRefSource(part, f))
 	}
-	c := sk.AddIntersectionCurve3DRef(compdef.NewFaceRefSource(part, in.FaceRefs[0]), compdef.NewFaceRefSource(part, in.FaceRefs[1]), gridFromArgs(in))
+	for _, w := range in.WorkRefs {
+		if !part.WorkPlaneKeyResolves(w) {
+			return surfaceCurveUnhealthy(in.Kind)
+		}
+		sources = append(sources, compdef.NewWorkPlaneSurfaceSource(part, feature.WorkRef(w)))
+	}
+	c := sk.AddIntersectionCurve3DRef(sources[0], sources[1], gridFromArgs(in))
 	return surfaceCurveResult(c.EntityID(), in.Kind)
 }
 
