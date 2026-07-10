@@ -39,7 +39,7 @@ var (
 		ParallelKind, PerpendicularKind, MidpointKind, GroundKind,
 		ParallelToXAxisKind, ParallelToYAxisKind, ParallelToZAxisKind,
 		ParallelToXYKind, ParallelToXZKind, ParallelToYZKind,
-		TangentKind, SmoothKind, SplineFitPointsKind, HelicalJoinKind, BendKind,
+		TangentKind, SmoothKind, SplineFitPointsKind, HelicalJoinKind, BendKind, OnFaceKind,
 	}
 )
 
@@ -245,6 +245,9 @@ func populateEvery3DConstraintKind(t *testing.T, s *Sketch3D) {
 	if _, err := s.AddBend3D(s.AddLine3D(math.P3(6, 0, 0), math.P3(9, 0, 0)), s.AddLine3D(math.P3(9, 0, 0), math.P3(9, 3, 0)), 0.5); err != nil {
 		t.Fatalf("AddBend3D: %v", err)
 	}
+	// onFace carries only a point id + a face reference key; a nil surface serializes fine (the
+	// live source is a host-rebind concern, exercised in compdef, #1839).
+	g.Add(NewOnFace3D(c, nil, "face-ref"))
 }
 
 func addSplineFit3D(t *testing.T, g *GeometricConstraints, sp *Spline3D, p *Point3D) {
