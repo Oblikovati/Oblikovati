@@ -429,15 +429,14 @@ func createWorkAxis(_ *app.Session, host workHost, in wire.CreateWorkAxisArgs) (
 // returns every ref removed — the named datum plus, when RetainDependents is false, its cascaded
 // dependents (#1855). Like createWorkPoint it self-orchestrates the work-geometry recompute (audit
 // B1); the mutating router seam records the undo step / edit broadcast.
-func deleteWorkFeature(_ *app.Session, host workHost, in wire.DeleteWorkFeatureArgs) (wire.DeleteWorkFeatureResult, error) {
-	part, _ := host.(*compdef.PartComponentDefinition)
-	snapshot := snapshotConstructionConsumers(part) // datum-on-datum consumer removal can orphan a construction datum (#1849)
+func deleteWorkFeature(s *app.Session, host workHost, in wire.DeleteWorkFeatureArgs) (wire.DeleteWorkFeatureResult, error) {
+	snapshot := s.ConstructionConsumerSnapshot() // datum-on-datum consumer removal can orphan a construction datum (#1849)
 	removed, err := host.WorkGeometry().DeleteWork(toWorkRef(in.Ref), in.RetainDependents)
 	if err != nil {
 		return wire.DeleteWorkFeatureResult{}, err
 	}
 	host.Recompute()
-	pruneConstructionAfterDelete(part, snapshot)
+	s.PruneOrphanedConstructionDatums(snapshot)
 	return wire.DeleteWorkFeatureResult{Deleted: workRefStrings(removed)}, nil
 }
 

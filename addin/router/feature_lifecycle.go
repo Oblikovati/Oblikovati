@@ -134,11 +134,11 @@ func deleteFeature(s *app.Session, part *compdef.PartComponentDefinition, in wir
 		return wire.DeleteFeatureResult{}, err
 	}
 	id := uint64(f.ID())
-	snapshot := snapshotConstructionConsumers(part) // construction datums with a consumer, before delete (#1849)
-	if err := s.DeleteFeature(f); err != nil {      // emits feature.deleted (#1085)
+	snapshot := s.ConstructionConsumerSnapshot() // construction datums with a consumer, before delete (#1849)
+	if err := s.DeleteFeature(f); err != nil {   // emits feature.deleted (#1085)
 		return wire.DeleteFeatureResult{}, err
 	}
-	pruneConstructionAfterDelete(part, snapshot) // auto-delete a construction datum this feature was the last consumer of
+	s.PruneOrphanedConstructionDatums(snapshot) // auto-delete a construction datum this feature was the last consumer of
 	return wire.DeleteFeatureResult{ID: id, Deleted: true}, nil
 }
 
