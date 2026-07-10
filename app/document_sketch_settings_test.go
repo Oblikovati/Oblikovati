@@ -36,6 +36,29 @@ func TestSketchInferenceOptionsReadActiveDocument(t *testing.T) {
 	}
 }
 
+// TestDocumentSketchSettingsRoundTripsGridAndConstraintFields checks the #1877 grid/snap,
+// constraint-display and relax fields set through the document API read back unchanged.
+func TestDocumentSketchSettingsRoundTripsGridAndConstraintFields(t *testing.T) {
+	s, _ := emptyPartSession(t)
+	want := types.SketchSettings{
+		InferConstraints: true, AutoApplyConstraints: true, ConstraintPriority: types.PriorityHorizontalVertical,
+		XSnapSpacing: 0.2, YSnapSpacing: 0.4, SnapsPerMinorGrid: 3, MinorLinesPerMajorGridLine: 6,
+		PersistInferredConstraints: true, DisplayConstraintsOnCreation: true, EditDimensionsWhenCreated: false,
+		OverConstrainedBehavior: types.OverConstrainedPrompt,
+		EnableRelaxMode:         true, KeepDimensionsWithEquationInRelaxMode: true,
+	}
+	if _, err := s.SetDocumentSketchSettings(0, want); err != nil {
+		t.Fatalf("SetDocumentSketchSettings: %v", err)
+	}
+	got, err := s.DocumentSketchSettings(0)
+	if err != nil {
+		t.Fatalf("DocumentSketchSettings: %v", err)
+	}
+	if got != want {
+		t.Errorf("round-trip settings = %+v, want %+v", got, want)
+	}
+}
+
 // TestSetDocumentSketchSettingsNoActiveDocument checks the addressed-document error path.
 func TestSetDocumentSketchSettingsNoActiveDocument(t *testing.T) {
 	s := NewSession() // no document open
