@@ -62,6 +62,9 @@ type WorkGeometry struct {
 	bodies  []*topo.Body // the running solid result, so surface-tangent work planes can
 	// resolve a picked B-rep face's reference key to its surface (set each Recompute).
 	tracker FootprintTracker // captures each plane's parameter footprint (set by the part); nil ⇒ no capture
+	// external resolves occurrence-qualified references (a datum in another component reached
+	// through an occurrence) — set by an assembly, nil for a plain part (#1857).
+	external ExternalDatumResolver
 }
 
 // FootprintTracker captures the dependency keys read while fn runs — satisfied by
@@ -168,6 +171,12 @@ func (g *WorkGeometry) seedOrigin() {
 
 // plane/axis/point implement workResolver, resolving a ref to its current geometry.
 func (g *WorkGeometry) plane(ref WorkRef) (sketch.Plane, error) {
+	if g.external != nil && isOccurrenceRef(ref) {
+		if pl, ok := g.external.OccurrencePlane(ref); ok {
+			return pl, nil
+		}
+		return sketch.Plane{}, fmt.Errorf("work geometry: occurrence plane %q does not resolve", ref)
+	}
 	if pl, isFace, err := g.facePlane(ref); isFace {
 		return pl, err // a planar B-rep face used as a plane input (offset-from-face, etc.)
 	}
@@ -194,6 +203,10 @@ func (g *WorkGeometry) plane(ref WorkRef) (sketch.Plane, error) {
 // mirror's plane; errors when the ref names no resolvable plane.
 func (g *WorkGeometry) ResolvePlaneRef(ref WorkRef) (sketch.Plane, error) { return g.plane(ref) }
 
+// ResolvePointRef resolves a WorkRef to its model-space point (origin/user datum point or a
+// vertex) — exported so an assembly can read a sub-component's datum point through an occurrence.
+func (g *WorkGeometry) ResolvePointRef(ref WorkRef) (math.Point3, error) { return g.point(ref) }
+
 // WorkPlaneByRef resolves a WorkRef to its *WorkPlane (origin or user) — for features
 // that reference a datum plane, e.g. an extrude's to-face / from-to target.
 func (g *WorkGeometry) WorkPlaneByRef(ref WorkRef) (*WorkPlane, error) {
@@ -215,6 +228,12 @@ func (g *WorkGeometry) WorkPlaneByRef(ref WorkRef) (*WorkPlane, error) {
 }
 
 func (g *WorkGeometry) axis(ref WorkRef) (*WorkAxis, error) {
+	if g.external != nil && isOccurrenceRef(ref) {
+		if o, d, ok := g.external.OccurrenceAxisLine(ref); ok {
+			return newOccurrenceAxis(ref, o, d), nil
+		}
+		return nil, fmt.Errorf("work geometry: occurrence axis %q does not resolve", ref)
+	}
 	if i, ok := userIndex(ref, "axis"); ok {
 		if i < 0 || i >= g.axes.Count() {
 			return nil, fmt.Errorf("work geometry: no work axis %q", ref)
@@ -263,6 +282,12 @@ func (g *WorkGeometry) WorkPointByRef(ref WorkRef) (*WorkPoint, bool) {
 }
 
 func (g *WorkGeometry) point(ref WorkRef) (math.Point3, error) {
+	if g.external != nil && isOccurrenceRef(ref) {
+		if p, ok := g.external.OccurrencePoint(ref); ok {
+			return p, nil
+		}
+		return math.Point3{}, fmt.Errorf("work geometry: occurrence point %q does not resolve", ref)
+	}
 	if p, isVertex, err := g.vertexPoint(ref); isVertex {
 		return p, err
 	}
