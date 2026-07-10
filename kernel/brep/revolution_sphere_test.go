@@ -115,5 +115,105 @@ func TestSolidOfRevolutionSphereZoneFallsBack(t *testing.T) {
 	}
 }
 
+// TestSolidOfRevolutionSphereZoneConvex is the same-side spherical ZONE the self-aligning thrust seat
+// (#54) needs: an on-axis-centre arc whose BOTH endpoints are off the axis and on the SAME side of the
+// equator revolves to ONE analytic geom.Sphere band (addRevolutionSphereZone) — NOT the equator-
+// straddling zone that still falls back (TestSolidOfRevolutionSphereZoneFallsBack). Sphere centre (0,0)
+// radius 5; the band runs z∈[1,3] (both above the equator), so the arc bulges OUTWARD (dz>0 ⇒ AddFace).
+// The revolved region is {0≤r≤√(25−z²), 1≤z≤3}, volume π∫₁³(25−z²)dz.
+func TestSolidOfRevolutionSphereZoneConvex(t *testing.T) {
+	c := math.P2(0, 0) // sphere centre on the axis; both rims (z=1,z=3) sit above the equator z=0
+	rLo := stdmath.Sqrt(24)
+	zone := []brep.RevolveVertex{
+		{P: math.P2(0, 1)},
+		{P: math.P2(rLo, 1)},
+		{P: math.P2(4, 3), ArcCenter: &c}, // arc edge (√24,1)→(4,3) about (0,0): the outward-bulging band
+		{P: math.P2(0, 3)},
+	}
+	body, err := brep.SolidOfRevolutionMeridian(math.P3(0, 0, 0), math.V3(0, 0, 1), zone, "zone-convex")
+	if err != nil || body == nil {
+		t.Fatalf("SolidOfRevolutionMeridian(convex same-side zone) = (%v, %v), want an analytic body", body, err)
+	}
+	if res := ops.Validate(body); !res.Valid || !body.IsSolid() {
+		t.Fatalf("convex sphere-zone body is not a valid solid: %+v", res.Issues)
+	}
+	if got := sphereFaces(body); got != 1 {
+		t.Fatalf("convex sphere zone has %d sphere faces, want exactly 1 (of %d total)", got, len(body.Faces()))
+	}
+	want := stdmath.Pi * (25*3 - 27.0/3 - (25*1 - 1.0/3)) // π∫₁³(25−z²)dz
+	if got := vol(body); relErrF(got, want) > 0.02 {
+		t.Errorf("convex sphere-zone volume = %g, want ≈%g (π∫₁³(25−z²)dz)", got, want)
+	}
+}
+
+// TestSolidOfRevolutionSphereZoneConcave is the CONCAVE seat orientation: the sphere band is the INNER
+// wall of an annulus (material OUTSIDE the sphere), so the arc edge descends in z (dz<0 ⇒ AddReversedFace)
+// — the housing washer's outboard spherical seat. Same sphere (centre (0,0), R=5), band z∈[1,3], wrapped
+// by an r=6 cylinder. Revolved region {√(25−z²)≤r≤6, 1≤z≤3}, volume π∫₁³(36−(25−z²))dz = π∫₁³(11+z²)dz.
+func TestSolidOfRevolutionSphereZoneConcave(t *testing.T) {
+	c := math.P2(0, 0)
+	rLo := stdmath.Sqrt(24)
+	annulus := []brep.RevolveVertex{
+		{P: math.P2(rLo, 1), ArcCenter: &c}, // arc edge (4,3)→(√24,1) about (0,0): the inward-facing seat band
+		{P: math.P2(6, 1)},
+		{P: math.P2(6, 3)},
+		{P: math.P2(4, 3)},
+	}
+	body, err := brep.SolidOfRevolutionMeridian(math.P3(0, 0, 0), math.V3(0, 0, 1), annulus, "zone-concave")
+	if err != nil || body == nil {
+		t.Fatalf("SolidOfRevolutionMeridian(concave zone annulus) = (%v, %v), want an analytic body", body, err)
+	}
+	if res := ops.Validate(body); !res.Valid || !body.IsSolid() {
+		t.Fatalf("concave sphere-zone annulus is not a valid solid: %+v", res.Issues)
+	}
+	if got := sphereFaces(body); got != 1 {
+		t.Fatalf("concave sphere-zone annulus has %d sphere faces, want exactly 1 (of %d total)", got, len(body.Faces()))
+	}
+	want := stdmath.Pi * (11*3 + 27.0/3 - (11*1 + 1.0/3)) // π∫₁³(11+z²)dz
+	if got := vol(body); relErrF(got, want) > 0.02 {
+		t.Errorf("concave sphere-zone volume = %g, want ≈%g (π∫₁³(11+z²)dz)", got, want)
+	}
+}
+
+// TestSolidOfRevolutionPoleToPoleArcFallsBack pins the other declined on-axis case: an arc whose BOTH
+// endpoints lie ON the axis is a pole-to-pole meridian — a WHOLE sphere, which has no single-patch zone
+// parameterization here (SolidSphere is that route), so revolveArcsAnalytic returns false and the builder
+// falls back (nil,nil). Half-disc: axis segment (0,0)→(0,4) closed by the 180° arc back about (0,2).
+func TestSolidOfRevolutionPoleToPoleArcFallsBack(t *testing.T) {
+	c := math.P2(0, 2) // on the axis; the arc's two endpoints (0,0) and (0,4) are on the axis too
+	halfDisc := []brep.RevolveVertex{
+		{P: math.P2(0, 0)},
+		{P: math.P2(0, 4), ArcCenter: &c},
+	}
+	body, err := brep.SolidOfRevolutionMeridian(math.P3(0, 0, 0), math.V3(0, 0, 1), halfDisc, "pole-to-pole")
+	if err != nil {
+		t.Fatalf("SolidOfRevolutionMeridian(pole-to-pole arc) error = %v, want nil (clean fallback)", err)
+	}
+	if body != nil {
+		t.Fatalf("pole-to-pole arc built %d faces, want nil (a whole sphere ⇒ fall back)", len(body.Faces()))
+	}
+}
+
+// TestSolidOfRevolutionSphereZoneEquatorRimFallsBack covers the degenerate zone where one rim sits ON the
+// equator (|Δz|≈0): that rim's latitude circle is the sphere's own equator, tangent to the neighbouring
+// band, so sphereZoneAnalytic declines it and the builder falls back. Centre (0,2), rims (2,2) [on the
+// equator z=2] and (√3,3).
+func TestSolidOfRevolutionSphereZoneEquatorRimFallsBack(t *testing.T) {
+	c := math.P2(0, 2)
+	zone := []brep.RevolveVertex{
+		{P: math.P2(0, 2)},
+		{P: math.P2(2, 2)}, // rim on the equator plane z=2 (Δz from centre = 0)
+		{P: math.P2(stdmath.Sqrt(3), 3), ArcCenter: &c}, // arc (2,2)→(√3,3) about (0,2)
+		{P: math.P2(0, 3)},
+	}
+	body, err := brep.SolidOfRevolutionMeridian(math.P3(0, 0, 0), math.V3(0, 0, 1), zone, "equator-rim")
+	if err != nil {
+		t.Fatalf("SolidOfRevolutionMeridian(equator-rim zone) error = %v, want nil (clean fallback)", err)
+	}
+	if body != nil {
+		t.Fatalf("equator-rim zone built %d faces, want nil (degenerate latitude ⇒ fall back)", len(body.Faces()))
+	}
+}
+
 // relErrF is the relative error between got and want (want ≠ 0).
 func relErrF(got, want float64) float64 { return stdmath.Abs(got-want) / stdmath.Abs(want) }
