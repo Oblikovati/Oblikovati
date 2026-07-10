@@ -164,16 +164,9 @@ func drawAddInPanelControl(s *app.Session, windowID string, index int, control w
 func drawEditableControl(s *app.Session, windowID string, control wire.PanelControlSpec) bool {
 	switch control.Kind {
 	case types.PanelTextBox, types.PanelValueEditor, types.PanelComboBox:
-		buf := panelBuffer(windowID+"/"+control.ID, control.Value)
-		panelFieldLabel(control.Text)
-		if native.InputText("##field", buf) {
-			s.PanelValueChanged(windowID, control.ID, bufString(buf))
-		}
+		drawPanelTextField(s, windowID, control)
 	case types.PanelCheckBox:
-		checked := control.Value == "true"
-		if native.Checkbox(control.Text, &checked) {
-			s.PanelValueChanged(windowID, control.ID, strconv.FormatBool(checked))
-		}
+		drawPanelCheckBox(s, windowID, control)
 	case types.PanelDropdown:
 		drawPanelDropdown(s, windowID, control)
 	case types.PanelSlider:
@@ -188,6 +181,25 @@ func drawEditableControl(s *app.Session, windowID string, control wire.PanelCont
 		return false
 	}
 	return true
+}
+
+// drawPanelTextField renders a stacked-caption text/combo input (#1490), pushing the new value to
+// the add-in on change. Split out of drawEditableControl to keep the dispatch switch's statement
+// count under the funlen gate as more control kinds land.
+func drawPanelTextField(s *app.Session, windowID string, control wire.PanelControlSpec) {
+	buf := panelBuffer(windowID+"/"+control.ID, control.Value)
+	panelFieldLabel(control.Text)
+	if native.InputText("##field", buf) {
+		s.PanelValueChanged(windowID, control.ID, bufString(buf))
+	}
+}
+
+// drawPanelCheckBox renders a checkbox control, pushing the new state to the add-in on toggle.
+func drawPanelCheckBox(s *app.Session, windowID string, control wire.PanelControlSpec) {
+	checked := control.Value == "true"
+	if native.Checkbox(control.Text, &checked) {
+		s.PanelValueChanged(windowID, control.ID, strconv.FormatBool(checked))
+	}
 }
 
 // drawPanelSlider renders a bounded numeric slider with its caption stacked above (#1490),
