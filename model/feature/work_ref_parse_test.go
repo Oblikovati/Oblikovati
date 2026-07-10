@@ -23,6 +23,20 @@ func TestParseWorkRefClassifies(t *testing.T) {
 	}
 }
 
+// TestParseWorkRefKeepsEdgeRefs: both edge reference forms — the lineage-key "edge/…" and the
+// ADR-0040 geometric "edge-geom/…" — must pass through verbatim, not be mis-wrapped as a face key.
+// Regression for the wire path where edge-based datums silently went unhealthy (#1840, #1842).
+func TestParseWorkRefKeepsEdgeRefs(t *testing.T) {
+	lineage := string(EdgeRef([]byte("edge-key")))
+	if got := ParseWorkRef(lineage); string(got) != lineage {
+		t.Errorf("lineage edge ref = %q, want it verbatim (%q)", got, lineage)
+	}
+	geom := "edge-geom/AAAA"
+	if got := ParseWorkRef(geom); string(got) != geom {
+		t.Errorf("geometric edge ref = %q, want it verbatim (%q)", got, geom)
+	}
+}
+
 // TestPlaneTargetFromRefResolvesPlanes: an origin plane and a user work plane both resolve to a
 // *WorkPlane target, and an unknown reference errors.
 func TestPlaneTargetFromRefResolvesPlanes(t *testing.T) {

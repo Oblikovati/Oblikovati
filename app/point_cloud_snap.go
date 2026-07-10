@@ -4,6 +4,7 @@ package app
 
 import (
 	"errors"
+	"fmt"
 
 	"oblikovati.org/math"
 	"oblikovati.org/model/feature"
@@ -48,6 +49,28 @@ func (s *Session) CreateWorkPointAtSelectedCloudPoint() (*feature.WorkPoint, err
 		return nil, errors.New("app: select a point on a scan (snap to a cloud point) to place a work point")
 	}
 	wp := part.WorkPoints().AddByCloudPoint(newCloudPointSource(h.Cloud, h.Point))
+	part.Recompute()
+	s.recordEdit(part, labelWorkPoint)
+	return wp, nil
+}
+
+// CreatePointCloudPoint adds a datum point anchored on the named cloud at the scan point nearest
+// `at`, then recomputes — the headless/wire counterpart of CreateWorkPointAtSelectedCloudPoint,
+// which needs a viewport selection. The point keeps a live link to its cloud (provenance): it
+// follows the cloud's placement and the link round-trips in the document (#645). It makes the
+// model's AddByCloudPoint constructor reachable over the API (#1842). It errors when there is no
+// active part or no cloud of that name.
+func (s *Session) CreatePointCloudPoint(cloud string, at math.Point3) (*feature.WorkPoint, error) {
+	part, err := activePart(s)
+	if err != nil {
+		return nil, err
+	}
+	pc, ok := part.PointClouds().ByName(cloud)
+	if !ok {
+		return nil, fmt.Errorf("app: no point cloud named %q to place a work point on", cloud)
+	}
+	snapped, _ := pc.NearestModelPoint(at) // snap `at` onto the scan; an empty cloud leaves it at `at`
+	wp := part.WorkPoints().AddByCloudPoint(newCloudPointSource(pc, snapped))
 	part.Recompute()
 	s.recordEdit(part, labelWorkPoint)
 	return wp, nil

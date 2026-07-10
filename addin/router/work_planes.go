@@ -262,8 +262,8 @@ func createWorkPlanes(_ *app.Session, host workHost, in wire.CreateWorkPlaneArgs
 // index, reference (usable as a point input to a work plane or a redefine re-pick), name, and
 // health. A well-formed but unsatisfiable definition (an axis parallel to the plane) still creates
 // the point, reported healthy=false; the call only fails on bad arguments.
-func createWorkPoint(_ *app.Session, host workHost, in wire.CreateWorkPointArgs) (wire.CreateWorkPointResult, error) {
-	wp, err := buildWorkPoint(host, in)
+func createWorkPoint(s *app.Session, host workHost, in wire.CreateWorkPointArgs) (wire.CreateWorkPointResult, error) {
+	wp, err := buildOrAnchorWorkPoint(s, host, in)
 	if err != nil {
 		return wire.CreateWorkPointResult{}, err
 	}
@@ -278,6 +278,28 @@ func createWorkPoint(_ *app.Session, host workHost, in wire.CreateWorkPointArgs)
 	}, nil
 }
 
+// buildOrAnchorWorkPoint routes cloud-point creation through the session (it needs the part's point
+// clouds, which the work host does not expose) and every other kind through buildWorkPoint (#1842).
+func buildOrAnchorWorkPoint(s *app.Session, host workHost, in wire.CreateWorkPointArgs) (*feature.WorkPoint, error) {
+	if types.WorkPointKind(in.Kind) == types.WorkPointCloud {
+		return anchorCloudWorkPoint(s, in)
+	}
+	return buildWorkPoint(host, in)
+}
+
+// anchorCloudWorkPoint places a datum point on the referenced cloud at the position `at`, making the
+// model's AddByCloudPoint constructor reachable over the wire (#1842). Refs = [cloudID], At = [x,y,z].
+func anchorCloudWorkPoint(s *app.Session, in wire.CreateWorkPointArgs) (*feature.WorkPoint, error) {
+	if len(in.Refs) != 1 {
+		return nil, fmt.Errorf("workPoints.create: cloud-point needs 1 reference [cloudID], got %d", len(in.Refs))
+	}
+	at, err := parseCoords(in.At, "workPoints.create: at")
+	if err != nil {
+		return nil, err
+	}
+	return s.CreatePointCloudPoint(in.Refs[0], math.P3(at[0], at[1], at[2]))
+}
+
 // buildWorkPoint dispatches a create request to the matching model constructor. An empty kind is
 // the position constructor, so the original position-only request (just "at") is unchanged.
 func buildWorkPoint(host workHost, in wire.CreateWorkPointArgs) (*feature.WorkPoint, error) {
@@ -287,6 +309,18 @@ func buildWorkPoint(host workHost, in wire.CreateWorkPointArgs) (*feature.WorkPo
 		return addPositionPoint(host, in)
 	case types.WorkPointPlaneAxisIntersection:
 		return addPlaneAxisPoint(host, in)
+	case types.WorkPointCurveAndEntity:
+		return addCurveEntityPoint(pts, in)
+	case types.WorkPointCentroid:
+		return addCentroidPoint(pts, in)
+	}
+	return buildRefModelWorkPoint(pts, in)
+}
+
+// buildRefModelWorkPoint dispatches the fixed-arity reference-model point kinds (on-point,
+// two-lines, three-planes, face-center, edge-midpoint) through the shared refPoint arity guard.
+func buildRefModelWorkPoint(pts *feature.WorkPoints, in wire.CreateWorkPointArgs) (*feature.WorkPoint, error) {
+	switch types.WorkPointKind(in.Kind) {
 	case types.WorkPointOnPoint:
 		return refPoint(in, 1, func(r []feature.WorkRef) *feature.WorkPoint { return pts.AddByPoint(r[0]) })
 	case types.WorkPointTwoLines:
@@ -300,6 +334,43 @@ func buildWorkPoint(host workHost, in wire.CreateWorkPointArgs) (*feature.WorkPo
 	default:
 		return nil, fmt.Errorf("workPoints.create: unknown kind %q (see api/types WorkPoint*)", in.Kind)
 	}
+}
+
+// addCurveEntityPoint builds the curve∩entity point from [curve, entity], threading the optional
+// Proximity solution-selection point (nil when absent) so a circle's near/far side is stable (#1842).
+func addCurveEntityPoint(pts *feature.WorkPoints, in wire.CreateWorkPointArgs) (*feature.WorkPoint, error) {
+	refs := toWorkRefs(in.Refs)
+	if len(refs) != 2 {
+		return nil, fmt.Errorf("workPoints.create: curve-and-entity needs 2 references [curve, entity], got %d", len(refs))
+	}
+	prox, err := optionalPoint(in.Proximity, "workPoints.create: proximity")
+	if err != nil {
+		return nil, err
+	}
+	return pts.AddByCurveAndEntity(refs[0], refs[1], prox), nil
+}
+
+// addCentroidPoint builds the length-weighted centroid point from one or more edge references (#1842).
+func addCentroidPoint(pts *feature.WorkPoints, in wire.CreateWorkPointArgs) (*feature.WorkPoint, error) {
+	refs := toWorkRefs(in.Refs)
+	if len(refs) == 0 {
+		return nil, fmt.Errorf("workPoints.create: centroid needs at least one edge reference, got 0")
+	}
+	return pts.AddAtCentroid(refs...), nil
+}
+
+// optionalPoint parses an optional [x,y,z] point argument: nil/empty yields (nil, nil); a
+// well-formed triple yields a pointer; any other length is an error naming what was expected.
+func optionalPoint(xyz []float64, what string) (*math.Point3, error) {
+	if len(xyz) == 0 {
+		return nil, nil
+	}
+	c, err := parseCoords(xyz, what)
+	if err != nil {
+		return nil, err
+	}
+	p := math.P3(c[0], c[1], c[2])
+	return &p, nil
 }
 
 // refPoint builds a reference-model work point from exactly n references, erroring on the wrong
