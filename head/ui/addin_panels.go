@@ -180,6 +180,8 @@ func drawEditableControl(s *app.Session, windowID string, control wire.PanelCont
 		drawPanelSlider(s, windowID, control)
 	case types.PanelReferenceList:
 		drawPanelReferenceList(s, windowID, control)
+	case types.PanelTree:
+		drawPanelTree(s, windowID, control)
 	default:
 		return false
 	}
