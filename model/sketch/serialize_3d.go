@@ -95,6 +95,8 @@ type Entity3DData struct {
 	ZExpr  string    `yaml:"zExpr,omitempty"`
 	T0     float64   `yaml:"t0,omitempty"`
 	T1     float64   `yaml:"t1,omitempty"`
+	// CoordinateSystem is an equation curve's coordinate-system id (0 ⇒ cartesian; #1846).
+	CoordinateSystem int32 `yaml:"coordinateSystem,omitempty"`
 	// Spline only (M06-F11, #626): the active tangency handles.
 	Handles []SplineHandle3DData `yaml:"handles,omitempty"`
 	// Helical only (M06-F09, #624): the shape definition — kind spelling,

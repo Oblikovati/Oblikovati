@@ -5,6 +5,7 @@ package sketch
 import (
 	"fmt"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/math"
 )
 
@@ -158,11 +159,11 @@ func registerSpline3DCodecs() {
 			v := e.(*EquationCurve3D)
 			return Entity3DData{
 				ID: int(v.id), XExpr: v.XExpr, YExpr: v.YExpr, ZExpr: v.ZExpr,
-				T0: v.T0, T1: v.T1, Construction: v.construction,
+				T0: v.T0, T1: v.T1, CoordinateSystem: int32(v.coord), Construction: v.construction,
 			}, nil
 		},
 		decode: func(s *Sketch3D, ed Entity3DData, _ []*Point3D) (Entity, error) {
-			e, err := s.AddEquationCurve3D(ed.XExpr, ed.YExpr, ed.ZExpr, ed.T0, ed.T1)
+			e, err := s.AddEquationCurve3DIn(types.CoordinateSystemType(ed.CoordinateSystem), ed.XExpr, ed.YExpr, ed.ZExpr, ed.T0, ed.T1)
 			if err != nil {
 				return nil, fmt.Errorf("equationCurve entity: %w", err)
 			}
