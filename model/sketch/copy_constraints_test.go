@@ -123,6 +123,11 @@ func TestCopyCarriesEveryConstraintAndDimensionKind(t *testing.T) {
 	g.AddCircularTangent(c1, c2)
 	g.AddTangent(l1, c1)
 	g.AddSymmetry(pa, pb, l3)
+	// Ellipse-axis relations (#1879): a line aligned to the ellipse's major/minor axis.
+	eop := func(major bool) AxisOperand { op, _ := EllipseAxisOf(ell, major); return op }
+	g.AddEllipseParallel(eop(true), LineAxis(l1))
+	g.AddEllipsePerpendicular(eop(false), LineAxis(l2))
+	g.AddEllipseCollinear(eop(true), LineAxis(l3))
 	g.AddFix(pa)
 
 	// The six kinds the pre-#1637 switch silently dropped (TextBoxAnchor is the
