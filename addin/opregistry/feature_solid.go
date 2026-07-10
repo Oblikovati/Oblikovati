@@ -27,6 +27,7 @@ const revolveSchema = `{
     "sketchIndex": {"type": "integer", "minimum": 0},
     "profileIndex": {"type": "integer", "minimum": 0, "default": 0},
     "axisRef": {"type": "string", "description": "Work-axis reference to revolve about, e.g. \"origin/axis/y\" (default). See get_reference_keys / list_work_planes."},
+    "aboutCenterline": {"type": "boolean", "default": false, "description": "Revolve about the sketch's single centerline (an internal, tilted axis) instead of axisRef; the sketch must have exactly one centerline."},
     "angle": {"type": "string", "description": "Revolve angle with units, e.g. \"360 deg\"."},
     "angle2": {"type": "string", "description": "Optional second-direction sweep (opposite sense), e.g. \"30 deg\" — the two-directional revolve."},
     "operation": {"type": "string", "enum": ["new", "join", "cut", "intersect", "surface"], "default": "new", "description": "Boolean against existing bodies, or \"surface\" to revolve the profile into an open surface-of-revolution (sheet) body — Inventor's kSurfaceOperation."},
@@ -48,15 +49,23 @@ func applyRevolve(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	if err != nil {
 		return nil, err
 	}
-	axis, err := axisFromRef(part, in.AxisRef)
-	if err != nil {
-		return nil, err
-	}
 	angle, err := angleClosure(part, in.Angle, "revolve: angle")
 	if err != nil {
 		return nil, err
 	}
 	op, err := parseOperation(in.Operation)
+	if err != nil {
+		return nil, err
+	}
+	if in.AboutCenterline {
+		if in.Angle2 != "" {
+			return nil, errors.New("revolve: aboutCenterline does not support a second-direction angle2")
+		}
+		pf := feature.NewRevolveFeatures(part.Features()).AddAboutCenterline(sk, in.ProfileIndex, angle, op)
+		setRevolveProfileSeed(pf, in.ProfileSeed)
+		return recomputeResult(part, pf)
+	}
+	axis, err := axisFromRef(part, in.AxisRef)
 	if err != nil {
 		return nil, err
 	}
