@@ -28,7 +28,7 @@ func addConstraint(_ *app.Session, part *compdef.PartComponentDefinition, in wir
 			return wire.AddConstraintResult{}, err
 		}
 	} else {
-		c, err := buildGeometricConstraint(sk, types.GeometricConstraintKind(in.Kind), in.Entities)
+		c, err := buildGeometricConstraint(sk, types.GeometricConstraintKind(in.Kind), in)
 		if err != nil {
 			return wire.AddConstraintResult{}, err
 		}
@@ -72,16 +72,32 @@ func addCustomConstraint(sk *sketch.Sketch, in wire.AddConstraintArgs) error {
 	return err
 }
 
+// axisFlags carries the per-operand ellipse major/minor-axis selectors of a parallel/
+// perpendicular/collinear relation (#1879), defaulted to the major axis (Inventor's default)
+// when the request omits them.
+type axisFlags struct{ one, two bool }
+
+func axisFlagsFrom(in wire.AddConstraintArgs) axisFlags {
+	return axisFlags{
+		one: boolOrTrue(in.UseEllipseOneMajorAxis),
+		two: boolOrTrue(in.UseEllipseTwoMajorAxis),
+	}
+}
+
+func boolOrTrue(p *bool) bool { return p == nil || *p }
+
 // buildGeometricConstraint resolves the references and applies the matching model
 // constraint. The kinds are split into small groups to keep each switch readable.
-func buildGeometricConstraint(sk *sketch.Sketch, kind types.GeometricConstraintKind, refs []uint64) (sketch.Constraint, error) {
+func buildGeometricConstraint(sk *sketch.Sketch, kind types.GeometricConstraintKind, in wire.AddConstraintArgs) (sketch.Constraint, error) {
+	refs := in.Entities
+	flags := axisFlagsFrom(in)
 	if c, ok, err := pointPairConstraint(sk, kind, refs); ok {
 		return c, err
 	}
 	if c, ok, err := horizontalVerticalConstraint(sk, kind, refs); ok {
 		return c, err
 	}
-	if c, ok, err := lineConstraint(sk, kind, refs); ok {
+	if c, ok, err := lineConstraint(sk, kind, refs, flags); ok {
 		return c, err
 	}
 	if c, ok, err := circularConstraint(sk, kind, refs); ok {
@@ -178,16 +194,23 @@ func horizontalVerticalConstraint(sk *sketch.Sketch, kind types.GeometricConstra
 	}
 }
 
-// lineConstraint handles the constraints between two lines.
-func lineConstraint(sk *sketch.Sketch, kind types.GeometricConstraintKind, refs []uint64) (sketch.Constraint, bool, error) {
+// lineConstraint handles the direction relations between two lines — or, when at least one
+// operand is an ellipse, between the two operands' axes (#1879).
+func lineConstraint(sk *sketch.Sketch, kind types.GeometricConstraintKind, refs []uint64, flags axisFlags) (sketch.Constraint, bool, error) {
 	g := sk.GeometricConstraints()
 	switch kind {
 	case types.GeoConstraintParallel:
-		return withTwoLines(sk, refs, func(a, b *sketch.Line) sketch.Constraint { return g.AddParallel(a, b) })
+		return axisOrLineRelation(sk, refs, flags,
+			func(a, b sketch.AxisOperand) sketch.Constraint { return g.AddEllipseParallel(a, b) },
+			func(a, b *sketch.Line) sketch.Constraint { return g.AddParallel(a, b) })
 	case types.GeoConstraintPerpendicular:
-		return withTwoLines(sk, refs, func(a, b *sketch.Line) sketch.Constraint { return g.AddPerpendicular(a, b) })
+		return axisOrLineRelation(sk, refs, flags,
+			func(a, b sketch.AxisOperand) sketch.Constraint { return g.AddEllipsePerpendicular(a, b) },
+			func(a, b *sketch.Line) sketch.Constraint { return g.AddPerpendicular(a, b) })
 	case types.GeoConstraintCollinear:
-		return withTwoLines(sk, refs, func(a, b *sketch.Line) sketch.Constraint { return g.AddCollinear(a, b) })
+		return axisOrLineRelation(sk, refs, flags,
+			func(a, b sketch.AxisOperand) sketch.Constraint { return g.AddEllipseCollinear(a, b) },
+			func(a, b *sketch.Line) sketch.Constraint { return g.AddCollinear(a, b) })
 	case types.GeoConstraintEqualLength:
 		return withTwoLines(sk, refs, func(a, b *sketch.Line) sketch.Constraint { return g.AddEqualLength(a, b) })
 	default:

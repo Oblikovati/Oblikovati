@@ -62,6 +62,50 @@ func singleLineOrAlign(sk *sketch.Sketch, refs []uint64, addLine func(*sketch.Li
 	}
 }
 
+// axisOrLineRelation applies an ellipse-axis relation when either operand is an ellipse
+// (per-operand major/minor from the flags), else the plain two-line relation (#1879).
+func axisOrLineRelation(sk *sketch.Sketch, refs []uint64, flags axisFlags, addAxis func(a, b sketch.AxisOperand) sketch.Constraint, addLine func(a, b *sketch.Line) sketch.Constraint) (sketch.Constraint, bool, error) {
+	if len(refs) != 2 || (!isEllipseRef(sk, refs[0]) && !isEllipseRef(sk, refs[1])) {
+		return withTwoLines(sk, refs, addLine)
+	}
+	a, err := axisOperandRef(sk, refs[0], flags.one)
+	if err != nil {
+		return nil, true, err
+	}
+	b, err := axisOperandRef(sk, refs[1], flags.two)
+	if err != nil {
+		return nil, true, err
+	}
+	return addAxis(a, b), true, nil
+}
+
+// isEllipseRef reports whether an id resolves to an ellipse or elliptical arc.
+func isEllipseRef(sk *sketch.Sketch, ref uint64) bool {
+	e, ok := sk.EntityByID(sketch.ID(ref))
+	if !ok {
+		return false
+	}
+	_, ok = sketch.EllipseAxisOf(e, true)
+	return ok
+}
+
+// axisOperandRef resolves an id to an axis-relation operand: an ellipse's major/minor axis, or a
+// line's direction (a single typed pick, not a type switch — archguard I1).
+func axisOperandRef(sk *sketch.Sketch, ref uint64, major bool) (sketch.AxisOperand, error) {
+	e, ok := sk.EntityByID(sketch.ID(ref))
+	if !ok {
+		return nil, fmt.Errorf("sketch.addConstraint: no entity with id %d", ref)
+	}
+	if op, ok := sketch.EllipseAxisOf(e, major); ok {
+		return op, nil
+	}
+	l, ok := e.(*sketch.Line)
+	if !ok {
+		return nil, fmt.Errorf("sketch.addConstraint: entity %d (%T) is neither a line nor an ellipse", ref, e)
+	}
+	return sketch.LineAxis(l), nil
+}
+
 // withTwoPoints resolves two point refs and applies a two-point constraint factory.
 func withTwoPoints(sk *sketch.Sketch, refs []uint64, add func(a, b *sketch.Point) sketch.Constraint) (sketch.Constraint, bool, error) {
 	a, b, err := twoPointRefs(sk, refs)

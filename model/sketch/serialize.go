@@ -137,6 +137,9 @@ type ConstraintData struct {
 	Points []int   `yaml:"points,omitempty"`
 	Curves []int   `yaml:"curves,omitempty"`
 	Value  float64 `yaml:"value,omitempty"` // offset constraint's signed distance
+	// AxisMajor is the per-operand major-axis flag of an ellipse-axis constraint (#1879), one
+	// entry per Curves operand; absent for every other kind.
+	AxisMajor []bool `yaml:"axisMajor,omitempty"`
 	// Custom (add-in tag) constraints carry their owner and record name
 	// (M06-F11, #626).
 	ClientID string `yaml:"clientId,omitempty"`

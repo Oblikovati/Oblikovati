@@ -53,6 +53,13 @@ func (m *cloneMap) arc(a *Arc) (*Arc, bool) {
 	return na, ok
 }
 
+// entity resolves any source entity to its clone — the generic lookup an axis-relation operand
+// uses to remap a line or ellipse without knowing which it is (#1879).
+func (m *cloneMap) entity(e Entity) (Entity, bool) {
+	c, ok := m.entities[e]
+	return c, ok
+}
+
 func (m *cloneMap) ellipse(e *Ellipse) (*Ellipse, bool) {
 	c, ok := m.entities[e]
 	if !ok {

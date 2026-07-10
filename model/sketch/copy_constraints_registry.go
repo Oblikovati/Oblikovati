@@ -55,6 +55,9 @@ var constraintCarriers2D = map[ConstraintKind]constraintCarrier{
 	LineSymmetryKind:         carrier(carryLineSymmetry),
 	CircularSymmetryKind:     carrier(carryCircularSymmetry),
 	ArcMidpointKind:          carrier(carryArcMidpoint),
+	EllipseParallelKind:      carrier(carryEllipseAxis),
+	EllipsePerpendicularKind: carrier(carryEllipseAxis),
+	EllipseCollinearKind:     carrier(carryEllipseAxis),
 	FixKind:                  carrier(carryFixKind),
 	SmoothKind:               carrier(carrySmooth),
 	GroundKind:               carrier(carryGround),
@@ -204,6 +207,18 @@ func carryCircularSymmetry(g *GeometricConstraints, v *CircularSymmetryConstrain
 		return false
 	}
 	g.AddCircularSymmetry(c1, c2, about)
+	return true
+}
+
+// carryEllipseAxis remaps both operands of an ellipse-axis relation and re-adds it preserving
+// the relation and kind (a world-axis operand of a horizontal/vertical form always remaps) (#1879).
+func carryEllipseAxis(g *GeometricConstraints, v *AxisRelationConstraint, m *cloneMap) bool {
+	a, ok1 := v.a.remap(m)
+	b, ok2 := v.b.remap(m)
+	if !ok1 || !ok2 {
+		return false
+	}
+	g.addAxisRelation(a, b, v.relation, v.kind)
 	return true
 }
 
