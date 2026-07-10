@@ -12,11 +12,12 @@ const (
 	errNoBaseView         = "drawing: no base view to dimension — add a base view first"
 	errBaseViewNoGeometry = "drawing: base view %q has no geometry to dimension"
 
-	labelBaseView       = "Base View"
-	labelWorkPlane      = "Work Plane"
-	labelWorkPoint      = "Work Point"
-	labelCropPointCloud = "Crop Point Cloud"
-	tabGetStarted       = "Get Started"
+	labelBaseView                = "Base View"
+	labelWorkPlane               = "Work Plane"
+	labelWorkPoint               = "Work Point"
+	labelDeleteConstructionDatum = "Delete Construction Feature"
+	labelCropPointCloud          = "Crop Point Cloud"
+	tabGetStarted                = "Get Started"
 
 	promptSelectTwoLines        = "Select two lines"
 	promptSelectLineOrTwoPoints = "Select a line or two points"

@@ -70,6 +70,7 @@ func createSketch(_ *app.Session, host sketchHost, in wire.CreateSketchArgs) (wi
 	if wp != nil {
 		sk.SetPlaneHost(planeOf)
 		sk.SetHostFootprint(func() []depend.Key { return wp.ParameterFootprint() })
+		sk.SetHostWorkRef(string(wp.Key())) // consumer link: this sketch consumes the work plane (#1849)
 	}
 	return wire.CreateSketchResult{SketchIndex: host.Sketches().Count() - 1, Plane: name}, nil
 }

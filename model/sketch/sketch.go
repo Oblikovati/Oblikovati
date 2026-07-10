@@ -156,11 +156,15 @@ type Sketch struct {
 	base
 	plane     Plane
 	planeHost func() Plane // when set, RefreshPlane re-reads the host (e.g. a work plane)
-	ents      []Entity
-	pts       []*Point              // every constrainable point (endpoints, centers, standalone) — the solver's variables
-	refPts    []*Point              // fixed reference points (projected anchors): constrainable but not solved
-	cloudPts  []*cloudAnchoredPoint // sketch points anchored on scan points (datum-cloud provenance, #645)
-	ptArena   pointArena            // block allocator backing newPoint (one alloc per block, not per vertex)
+	// hostWorkRef is the datum reference ("plane/N") this sketch was created on, empty for an
+	// origin/fixed plane. Kept as a plain string (no feature dependency) so the host can tell which
+	// sketches consume a construction work plane and auto-delete it with its last consumer (#1849).
+	hostWorkRef string
+	ents        []Entity
+	pts         []*Point              // every constrainable point (endpoints, centers, standalone) — the solver's variables
+	refPts      []*Point              // fixed reference points (projected anchors): constrainable but not solved
+	cloudPts    []*cloudAnchoredPoint // sketch points anchored on scan points (datum-cloud provenance, #645)
+	ptArena     pointArena            // block allocator backing newPoint (one alloc per block, not per vertex)
 
 	lines         *Lines
 	arcs          *Arcs
@@ -235,6 +239,13 @@ func (s *Sketch) SetPlaneHost(host func() Plane) {
 		s.plane = host()
 	}
 }
+
+// SetHostWorkRef records the datum reference ("plane/N") this sketch is hosted on, so the host can
+// count the sketch as a consumer of that work plane (#1849). Empty for an origin/fixed plane.
+func (s *Sketch) SetHostWorkRef(ref string) { s.hostWorkRef = ref }
+
+// HostWorkRef returns the datum reference this sketch was created on, or "" for an origin/fixed plane.
+func (s *Sketch) HostWorkRef() string { return s.hostWorkRef }
 
 // RefreshPlane re-reads the host plane if the sketch tracks one (no-op otherwise).
 // Called by the part recompute after work geometry is recomputed, so a moved work

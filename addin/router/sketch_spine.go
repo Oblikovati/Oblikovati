@@ -97,7 +97,7 @@ func dofStatus(dof, redundant int) string {
 }
 
 // deleteSketch removes a sketch (only valid when no feature consumes it).
-func deleteSketch(_ *app.Session, part *compdef.PartComponentDefinition, in wire.SketchArgs) (wire.OKResult, error) {
+func deleteSketch(s *app.Session, part *compdef.PartComponentDefinition, in wire.SketchArgs) (wire.OKResult, error) {
 	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
 		return wire.OKResult{}, err
@@ -105,9 +105,11 @@ func deleteSketch(_ *app.Session, part *compdef.PartComponentDefinition, in wire
 	if err := rejectIfConsumed(part, sk); err != nil {
 		return wire.OKResult{}, err
 	}
+	snapshot := s.ConstructionConsumerSnapshot() // before delete: construction datums with a consumer (#1849)
 	if !part.Sketches().Remove(sk.ID()) {
 		return wire.OKResult{}, fmt.Errorf("sketch.delete: sketch %d could not be removed", sk.ID())
 	}
+	s.PruneOrphanedConstructionDatums(snapshot) // auto-delete the host work plane if this sketch was its last consumer
 	return wire.OKResult{OK: true}, nil
 }
 

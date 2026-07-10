@@ -90,6 +90,7 @@ func restoreSketchProps(s *Sketch, sd SketchData) {
 	}
 	s.SetLineWeight(sd.LineWeight)
 	s.SetDeferUpdates(sd.DeferUpdates)
+	s.SetHostWorkRef(sd.HostPlaneRef) // the host re-wires the live plane host; this keeps the consumer link (#1849)
 }
 
 // restoreSeq pins the sketch's creation stamp to its saved value (so reopened documents
