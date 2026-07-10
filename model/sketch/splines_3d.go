@@ -3,6 +3,9 @@
 package sketch
 
 import (
+	stdmath "math"
+
+	"oblikovati.org/api/types"
 	"oblikovati.org/math"
 	"oblikovati.org/model/param"
 )
@@ -55,17 +58,42 @@ func (s *FixedSpline3D) Sample() []math.Point3 {
 	return sampleChain3D(append([]math.Point3(nil), s.Pts...), s.Closed, true)
 }
 
-// EquationCurve3D is a parametric 3D curve x(t)/y(t)/z(t) over t ∈ [T0, T1].
+// EquationCurve3D is a parametric 3D curve over t ∈ [T0, T1]. The three expressions are
+// interpreted by Coord (#1846): Cartesian x/y/z, cylindrical radius/theta/z, or spherical
+// radius/theta/phi.
 type EquationCurve3D struct {
 	entityBase
 	XExpr, YExpr, ZExpr string
 	T0, T1              float64
+	coord               types.CoordinateSystemType
 	xc, yc, zc          param.Expr
 }
 
-// At evaluates the curve at parameter t.
+// CoordinateSystem reports how the three expressions are interpreted (#1846).
+func (e *EquationCurve3D) CoordinateSystem() types.CoordinateSystemType { return e.coord }
+
+// At evaluates the curve at parameter t, mapping the three expression values to a Cartesian
+// point through the curve's coordinate system.
 func (e *EquationCurve3D) At(t float64) math.Point3 {
-	return math.P3(math.Scalar(evalT(e.xc, t)), math.Scalar(evalT(e.yc, t)), math.Scalar(evalT(e.zc, t)))
+	return equationCurvePoint(e.coord, evalT(e.xc, t), evalT(e.yc, t), evalT(e.zc, t))
+}
+
+// equationCurvePoint converts the three evaluated expressions to Cartesian per coordinate system
+// (#1846): cylindrical (r,θ,z)→(r·cosθ, r·sinθ, z); spherical (r,θ,φ)→(r·sinφ·cosθ, r·sinφ·sinθ,
+// r·cosφ). θ/φ are radians, r/z centimetres.
+func equationCurvePoint(coord types.CoordinateSystemType, a, b, c float64) math.Point3 {
+	switch coord {
+	case types.CoordinateSystemCylindrical:
+		return math.P3(math.Scalar(a*stdmath.Cos(b)), math.Scalar(a*stdmath.Sin(b)), math.Scalar(c))
+	case types.CoordinateSystemSpherical:
+		return math.P3(
+			math.Scalar(a*stdmath.Sin(c)*stdmath.Cos(b)),
+			math.Scalar(a*stdmath.Sin(c)*stdmath.Sin(b)),
+			math.Scalar(a*stdmath.Cos(c)),
+		)
+	default:
+		return math.P3(math.Scalar(a), math.Scalar(b), math.Scalar(c))
+	}
 }
 
 // Sample returns n+1 evenly-spaced points along the curve.
@@ -105,13 +133,19 @@ func (s *Sketch3D) AddFixedSpline3D(coords []math.Point3, closed bool) *FixedSpl
 // AddEquationCurve3D adds a parametric curve from x(t)/y(t)/z(t) expressions over [t0,t1],
 // erroring if any expression fails to parse/bind to t.
 func (s *Sketch3D) AddEquationCurve3D(xExpr, yExpr, zExpr string, t0, t1 float64) (*EquationCurve3D, error) {
+	return s.AddEquationCurve3DIn(types.CoordinateSystemCartesian, xExpr, yExpr, zExpr, t0, t1)
+}
+
+// AddEquationCurve3DIn adds a parametric curve whose three expressions are interpreted in the given
+// coordinate system (#1846); the Cartesian case is [Sketch3D.AddEquationCurve3D].
+func (s *Sketch3D) AddEquationCurve3DIn(coord types.CoordinateSystemType, xExpr, yExpr, zExpr string, t0, t1 float64) (*EquationCurve3D, error) {
 	xc, yc, zc, err := bindEquation3D(xExpr, yExpr, zExpr)
 	if err != nil {
 		return nil, err
 	}
 	e := &EquationCurve3D{
 		entityBase: newEntity(), XExpr: xExpr, YExpr: yExpr, ZExpr: zExpr,
-		T0: t0, T1: t1, xc: xc, yc: yc, zc: zc,
+		T0: t0, T1: t1, coord: coord, xc: xc, yc: yc, zc: zc,
 	}
 	s.addEntity3D(e)
 	return e, nil

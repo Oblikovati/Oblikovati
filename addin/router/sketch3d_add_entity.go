@@ -382,9 +382,14 @@ func buildFixedSpline3D(sk *sketch.Sketch3D, in wire.AddSketch3DEntityArgs) (jso
 	return entityResult(uint64(sp.EntityID()), in.Kind)
 }
 
-// buildEquationCurve3D builds a parametric x(t)/y(t)/z(t) curve.
+// buildEquationCurve3D builds a parametric curve whose three expressions are interpreted in the
+// requested coordinate system (cartesian by default, #1846).
 func buildEquationCurve3D(sk *sketch.Sketch3D, in wire.AddSketch3DEntityArgs) (json.RawMessage, error) {
-	e, err := sk.AddEquationCurve3D(in.XExpr, in.YExpr, in.ZExpr, in.T0, in.T1)
+	coord, ok := types.ParseCoordinateSystemType(in.CoordinateSystem)
+	if !ok {
+		return nil, fmt.Errorf("sketch3d.addEntity: unknown coordinate system %q (want cartesian|cylindrical|spherical)", in.CoordinateSystem)
+	}
+	e, err := sk.AddEquationCurve3DIn(coord, in.XExpr, in.YExpr, in.ZExpr, in.T0, in.T1)
 	if err != nil {
 		return nil, fmt.Errorf("sketch3d.addEntity: equation curve: %w", err)
 	}

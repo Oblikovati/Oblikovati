@@ -79,6 +79,9 @@ func entity3DInfo(index int, e sketch.Entity) wire.Sketch3DEntityInfo {
 	info.Points = point3sCoords(se.ShapePoints3D())
 	info.Radius = entityRadius(e)
 	info.Construction = isConstruction(e)
+	if eq, ok := e.(*sketch.EquationCurve3D); ok && eq.CoordinateSystem() != types.CoordinateSystemCartesian {
+		info.CoordinateSystem = eq.CoordinateSystem().String() // omit for cartesian (#1846)
+	}
 	return info
 }
 
