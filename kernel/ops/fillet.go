@@ -568,7 +568,21 @@ func edgePlanarFaces(e *topo.Edge) (a, b *topo.Face, nA, nB math.Vector3, err er
 	if !oka || !okb {
 		return nil, nil, nA, nB, fmt.Errorf("fillet: both faces of the edge must be planar")
 	}
-	return faces[0], faces[1], pa.Normal(), pb.Normal(), nil
+	// Material-OUTWARD normals: a plane's geometric normal negated when its face is reversed.
+	// Native construction leaves faces unreversed with outward plane normals, but STEP-imported
+	// (and any oriented) faces carry a Reversed flag with an inward plane normal. Ignoring it
+	// flips offDir outward, so the rolling-ball centre lands outside and a plainly convex edge
+	// reads as non-convex — filleting every imported solid failed until this was applied.
+	return faces[0], faces[1], outwardPlaneNormal(faces[0], pa), outwardPlaneNormal(faces[1], pb), nil
+}
+
+// outwardPlaneNormal is a planar face's material-outward normal (its plane normal, negated
+// when the face is reversed) — matching outwardFaceNormal's orientation handling.
+func outwardPlaneNormal(f *topo.Face, p geom.Plane) math.Vector3 {
+	if f.Reversed() {
+		return p.Normal().Negate()
+	}
+	return p.Normal()
 }
 
 // cornerInputs bundles the per-edge data a corner needs. offDir is the centre offset from
