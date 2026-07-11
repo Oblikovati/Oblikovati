@@ -25,12 +25,16 @@ type PatchLoopData struct {
 	Condition string `yaml:"condition"`
 }
 
-// RuledSurfaceData is a ruled surface's recipe: a profile swept by straight rulings.
+// RuledSurfaceData is a ruled surface's recipe: a profile swept by straight rulings. Direction is
+// the sweep ruling vector, DraftAngle the outward flare, Flip the ruling-side reversal (#1868).
 type RuledSurfaceData struct {
-	Sketch   int     `yaml:"sketch"`
-	Profile  int     `yaml:"profile"`
-	Type     string  `yaml:"type"`
-	Distance float64 `yaml:"distance"`
+	Sketch     int       `yaml:"sketch"`
+	Profile    int       `yaml:"profile"`
+	Type       string    `yaml:"type"`
+	Distance   float64   `yaml:"distance"`
+	Direction  []float64 `yaml:"direction,omitempty"`
+	DraftAngle float64   `yaml:"draftAngle,omitempty"`
+	Flip       bool      `yaml:"flip,omitempty"`
 }
 
 func serializeBoundaryPatch(def *BoundaryPatchDefinition, sk SketchIndexer) (*BoundaryPatchData, error) {
@@ -102,7 +106,14 @@ func serializeRuledSurface(def *RuledSurfaceDefinition, sk SketchIndexer) (*Rule
 	if err != nil {
 		return nil, err
 	}
-	return &RuledSurfaceData{Sketch: idx, Profile: def.ProfileIndex, Type: kind, Distance: evalFloat(def.Distance)}, nil
+	d := &RuledSurfaceData{Sketch: idx, Profile: def.ProfileIndex, Type: kind, Distance: evalFloat(def.Distance), Flip: def.Flip}
+	if def.Type == RuledSweep {
+		d.Direction = encodeVec3(def.Direction)
+	}
+	if a := evalFloat(def.DraftAngle); a != 0 {
+		d.DraftAngle = a
+	}
+	return d, nil
 }
 
 func restoreRuledSurface(fs *PartFeatures, d *RuledSurfaceData, sk SketchIndexer) (*PartFeature, error) {
@@ -117,7 +128,14 @@ func restoreRuledSurface(fs *PartFeatures, d *RuledSurfaceData, sk SketchIndexer
 	if err != nil {
 		return nil, err
 	}
-	return NewRuledSurfaceFeatures(fs).AddByDistance(skt, d.Profile, kind, constFloat(d.Distance)), nil
+	def := &RuledSurfaceDefinition{
+		Sketch: skt, ProfileIndex: d.Profile, Type: kind, Distance: constFloat(d.Distance),
+		DraftAngle: constFloat(d.DraftAngle), Flip: d.Flip,
+	}
+	if len(d.Direction) == 3 {
+		def.Direction = decodeVec3(d.Direction)
+	}
+	return NewRuledSurfaceFeatures(fs).AddRuled(def), nil
 }
 
 // patchConditionName / parsePatchCondition map the continuity condition to/from a name.
@@ -147,15 +165,16 @@ func parsePatchCondition(name string) (PatchCondition, error) {
 	}
 }
 
-// ruledTypeName / parseRuledType map the ruled-surface direction type to/from a name.
+// ruledTypeName / parseRuledType map the ruled-surface direction type to/from a name. "perpendicular"
+// is the pre-#1868 spelling of the sweep type and still parses (back-compat) but serializes as "sweep".
 func ruledTypeName(t RuledSurfaceType) (string, error) {
 	switch t {
 	case RuledNormal:
 		return "normal", nil
 	case RuledTangent:
 		return "tangent", nil
-	case RuledPerpendicular:
-		return "perpendicular", nil
+	case RuledSweep:
+		return "sweep", nil
 	default:
 		return "", fmt.Errorf("unknown ruled surface type %d", t)
 	}
@@ -167,9 +186,9 @@ func parseRuledType(name string) (RuledSurfaceType, error) {
 		return RuledNormal, nil
 	case "tangent":
 		return RuledTangent, nil
-	case "perpendicular":
-		return RuledPerpendicular, nil
+	case "sweep", "perpendicular":
+		return RuledSweep, nil
 	default:
-		return 0, fmt.Errorf("unknown ruled surface type %q (want normal|tangent|perpendicular)", name)
+		return 0, fmt.Errorf("unknown ruled surface type %q (want normal|tangent|sweep)", name)
 	}
 }
