@@ -38,8 +38,25 @@ func TestSketch3DProjectAlongVectorOverWire(t *testing.T) {
 	}
 }
 
-// TestSketch3DProjectWrapNotYetSupported: wrap is deferred to #1841 part 2 and errors cleanly.
-func TestSketch3DProjectWrapNotYetSupported(t *testing.T) {
+// TestSketch3DProjectWrapOverWire wraps a source curve onto a face through an origin work plane as
+// the flattening frame (#1841 part 2).
+func TestSketch3DProjectWrapOverWire(t *testing.T) {
+	r, s := emptyPartSession(t)
+	faceRef, source := projectSourceOverBlock(t, r, s)
+
+	var res wire.AddSketch3DSurfaceCurveResult
+	args, _ := json.Marshal(wire.AddSketch3DSurfaceCurveArgs{
+		SketchIndex: 0, Kind: "projectToSurface", FaceRefs: []string{faceRef},
+		SourceEntityID: source, ProjectionType: "wrap", WrapPlaneRef: "origin/plane/xy",
+	})
+	call(t, r, s, "sketch3d.addSurfaceCurve", string(args), &res)
+	if !res.Healthy || res.EntityID == 0 {
+		t.Fatalf("wrap projection = %+v, want healthy with an entity id", res)
+	}
+}
+
+// TestSketch3DProjectWrapNeedsPlaneRef: wrap without a wrapPlaneRef errors (no flattening frame).
+func TestSketch3DProjectWrapNeedsPlaneRef(t *testing.T) {
 	r, s := emptyPartSession(t)
 	faceRef, source := projectSourceOverBlock(t, r, s)
 
@@ -48,7 +65,7 @@ func TestSketch3DProjectWrapNotYetSupported(t *testing.T) {
 		SourceEntityID: source, ProjectionType: "wrap",
 	})
 	if err := tryCall(t, r, s, "sketch3d.addSurfaceCurve", string(args)); err == nil {
-		t.Error("wrap projection should error until #1841 part 2")
+		t.Error("wrap projection without wrapPlaneRef should error")
 	}
 }
 
