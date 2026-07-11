@@ -19,6 +19,7 @@ type ChamferTool struct {
 	distance        float64
 	flatCorners     bool
 	concaveStrategy types.ChamferConcaveStrategy // concave edges: outward fill (default) or inward relief
+	tangentChain    bool                         // a plain pick selects the whole tangent chain (#1947)
 	added           *feature.PartFeature
 }
 
@@ -36,7 +37,13 @@ func (t *ChamferTool) Name() string { return "Chamfer" }
 func (t *ChamferTool) Start(s *Session) {
 	t.flatCorners = s.ChamferFlatCorners()
 	t.concaveStrategy = s.ChamferConcaveStrategy()
+	t.tangentChain = s.TangentChainSelect()
 }
+
+// SetTangentChain/TangentChain choose whether a plain pick selects the whole tangent chain through
+// the clicked edge (Inventor's tangent propagation) or just that edge. Shift+click always expands.
+func (t *ChamferTool) SetTangentChain(on bool) { t.tangentChain = on }
+func (t *ChamferTool) TangentChain() bool      { return t.tangentChain }
 
 // AcceptedKinds declares chamfer picks edges (the edges to bevel).
 func (t *ChamferTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectEdge} }
@@ -80,17 +87,18 @@ func (t *ChamferTool) Pick(_ *Session, sel Selectable) {
 	}
 }
 
-// PickWithMods adds the whole tangent chain through the clicked edge on Shift+click — the
-// "select tangent chain / loop" selection (#1798); a plain click adds the single edge.
+// PickWithMods adds the whole tangent chain through the clicked edge when tangent-chain mode is on
+// (the default, Inventor's tangent propagation) or on Shift+click — the "select tangent chain /
+// loop" selection (#1798/#1947); otherwise a plain click adds the single edge. Shift always expands.
 func (t *ChamferTool) PickWithMods(s *Session, sel Selectable, mods Modifier) {
 	e, ok := sel.(EdgeHandle)
-	if !ok || !mods.Has(ShiftMod) {
-		t.Pick(s, sel)
+	if ok && (t.tangentChain || mods.Has(ShiftMod)) {
+		for _, h := range s.tangentChainHandles(e) {
+			t.addEdge(h)
+		}
 		return
 	}
-	for _, h := range s.tangentChainHandles(e) {
-		t.addEdge(h)
-	}
+	t.Pick(s, sel)
 }
 
 // addEdge appends an edge unless it is already selected.

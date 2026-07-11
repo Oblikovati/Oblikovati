@@ -37,6 +37,10 @@ type Sketch struct {
 // Part is the part-modeling defaults, applied live to the session.
 type Part struct {
 	ChamferFlatCorners bool `yaml:"chamferFlatCorners"`
+	// TangentChainSelect makes a Fillet/Chamfer pick select the whole tangent chain through the
+	// clicked edge (Inventor's tangent propagation). Defaults true; Load merges over Defaults so a
+	// stored file missing the key keeps the default. See #1798 follow-up (#1947).
+	TangentChainSelect bool `yaml:"tangentChainSelect"`
 }
 
 // Save is the save policy (M03-F09, #610): thumbnail capture on save (read by
@@ -92,7 +96,7 @@ func Defaults() All {
 	return All{
 		General:   General{StartupAction: types.StartupNewPart},
 		Sketch:    Sketch{GridSpacingCm: 1, GridVisible: true, GridMajorEvery: 5, SnapToPoints: true, SnapToGrid: true, HeadsUpDisplay: true},
-		Part:      Part{ChamferFlatCorners: true},
+		Part:      Part{ChamferFlatCorners: true, TangentChainSelect: true},
 		Save:      Save{Thumbnail: types.ThumbnailNone},
 		Updates:   Updates{CheckOnStartup: true},
 		Telemetry: Telemetry{ShareUsageStatistics: true},

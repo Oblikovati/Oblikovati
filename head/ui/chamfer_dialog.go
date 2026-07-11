@@ -16,6 +16,7 @@ var chamferUI = struct {
 	distance     float32
 	flatCorners  bool
 	concaveIndex int              // concave-edge strategy combo: 0 outward (fill), 1 inward (relief)
+	tangentChain bool             // select the whole tangent chain on a plain pick (#1947)
 	seeded       *app.ChamferTool // the tool the fields were seeded from (nil = none)
 }{distance: 1, flatCorners: true}
 
@@ -28,21 +29,15 @@ func drawChamferDialog(s *app.Session) {
 		return
 	}
 	if chamferUI.seeded != c {
-		chamferUI.distance = float32(c.Distance())
-		chamferUI.flatCorners = c.FlatCorners()
-		chamferUI.concaveIndex = c.ConcaveStrategyIndex()
-		chamferUI.seeded = c
+		seedChamferUI(c)
 	}
 	dialogSizeOnce(340, 250)
 	if native.Begin("Chamfer") {
-		title := "Chamfer"
-		if name := c.EditingName(); name != "" {
-			title = name // re-editing a committed chamfer: the breadcrumb names it
-		}
-		drawFeatureBreadcrumb(title, "")
+		drawFeatureBreadcrumb(chamferTitle(c), "")
 		if propertySection("Input Geometry") {
 			drawPickChipRow("Edges", "chamfer-edges", countChipText(c.EdgeCount(), "Edge", "Select Edges"),
-				c.EdgeCount() > 0, "Click edges to bevel; Shift+click selects the whole tangent chain", c.ClearEdges)
+				c.EdgeCount() > 0, "Click edges to bevel; with Tangent chain on, a click selects the whole connected loop (Shift+click always does)", c.ClearEdges)
+			drawTangentChainRow("chamfer", &chamferUI.tangentChain, c.SetTangentChain)
 		}
 		if propertySection("Behavior") {
 			drawChamferBehaviorRows(s, c)
@@ -51,6 +46,25 @@ func drawChamferDialog(s *app.Session) {
 		drawCommitCancelButtons(s, c.CanCommit())
 	}
 	native.End()
+}
+
+// chamferTitle is the panel/breadcrumb title: a committed chamfer's name when re-editing, else
+// "Chamfer".
+func chamferTitle(c *app.ChamferTool) string {
+	if name := c.EditingName(); name != "" {
+		return name
+	}
+	return "Chamfer"
+}
+
+// seedChamferUI loads the panel buffers from the tool the first frame it appears (creation
+// defaults, or a committed chamfer's values in edit mode) — mirrors seedFilletUI.
+func seedChamferUI(c *app.ChamferTool) {
+	chamferUI.distance = float32(c.Distance())
+	chamferUI.flatCorners = c.FlatCorners()
+	chamferUI.concaveIndex = c.ConcaveStrategyIndex()
+	chamferUI.tangentChain = c.TangentChain()
+	chamferUI.seeded = c
 }
 
 // drawChamferBehaviorRows renders the setback distance, the concave-edge strategy combo, and the

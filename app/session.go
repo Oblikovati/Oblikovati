@@ -140,6 +140,7 @@ type Session struct {
 	styles                    *style.Registry                   // document color styles + style-library cascade (M16-F02 #403/#408)
 	displayOptions            display.Options                   // app-level display options that parameterize the display modes (M16-F07 #643)
 	chamferFlatCorners        bool                              // default three-edge-corner treatment for new chamfers
+	tangentChainSelect        bool                              // default: a fillet/chamfer pick selects the whole tangent chain (#1947)
 	chamferConcaveOut         bool                              // default concave-edge strategy for new chamfers (true ⇒ outward fill)
 	paramsDialogOpen          bool                              // the Manage ▸ Parameters dialog is open
 	keymapEditorOpen          bool                              // the Tools ▸ Customize Keyboard panel is open (M05-F17)
@@ -233,6 +234,7 @@ func newSession(store doc.Store) *Session {
 		lightingStyle:           renderer.LightingThreePoint,
 		lighting:                renderer.SceneLightingFor(renderer.LightingThreePoint),
 		chamferFlatCorners:      true, // match Inventor's default flat three-edge-corner blend
+		tangentChainSelect:      true, // match Inventor's tangent propagation: a pick grabs the tangent chain
 		hudEnabled:              true, // dynamic-input HUD on by default, like Inventor (#790)
 		chamferConcaveOut:       true, // concave edges fill the inside corner by default (outward)
 		pointCloudRenderDensity: 100,

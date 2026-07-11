@@ -29,6 +29,7 @@ func (s *Session) UseOptionsStore(store options.Store) error {
 	s.appOptions = loaded
 	s.applySketchOptions(loaded.Sketch)
 	s.chamferFlatCorners = loaded.Part.ChamferFlatCorners
+	s.tangentChainSelect = loaded.Part.TangentChainSelect
 	return nil
 }
 
@@ -52,6 +53,7 @@ func (s *Session) SetSketchOptions(o options.Sketch) error {
 func (s *Session) SetPartOptions(p options.Part) error {
 	s.appOptions.Part = p
 	s.chamferFlatCorners = p.ChamferFlatCorners
+	s.tangentChainSelect = p.TangentChainSelect
 	return s.saveOptions()
 }
 
@@ -69,7 +71,7 @@ func (s *Session) PersistLiveOptions() error {
 		HeadsUpDisplay: s.hudEnabled,
 		RelaxMode:      s.relaxMode,
 	}
-	s.appOptions.Part = options.Part{ChamferFlatCorners: s.chamferFlatCorners}
+	s.appOptions.Part = options.Part{ChamferFlatCorners: s.chamferFlatCorners, TangentChainSelect: s.tangentChainSelect}
 	return s.saveOptions()
 }
 

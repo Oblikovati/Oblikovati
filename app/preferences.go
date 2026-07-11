@@ -79,6 +79,14 @@ func (s *Session) ChamferFlatCorners() bool { return s.chamferFlatCorners }
 // SetChamferFlatCorners sets the default corner treatment for new chamfers.
 func (s *Session) SetChamferFlatCorners(flat bool) { s.chamferFlatCorners = flat }
 
+// TangentChainSelect reports whether new Fillet/Chamfer tools select the whole tangent chain
+// through a clicked edge (Inventor's tangent propagation) rather than the single edge. Defaults
+// true; Shift+click always expands regardless. See #1947.
+func (s *Session) TangentChainSelect() bool { return s.tangentChainSelect }
+
+// SetTangentChainSelect sets the default tangent-chain selection mode for new fillets/chamfers.
+func (s *Session) SetTangentChainSelect(on bool) { s.tangentChainSelect = on }
+
 // ChamferConcaveStrategy reports the default concave-edge strategy new Chamfer tools start with:
 // outward fills the inside corner with material (the default), inward cuts a recessed relief.
 func (s *Session) ChamferConcaveStrategy() types.ChamferConcaveStrategy {
