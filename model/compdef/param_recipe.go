@@ -72,6 +72,8 @@ func recordParameterPresentation(pr *parameterRecipe, p *param.Parameter) {
 		pr.SortedValueList = !p.CustomOrder()
 	}
 	pr.Hidden = !p.Visible
+	pr.Renamed = p.Renamed()
+	pr.DisabledActions = p.DisabledActionTypes().Names()
 	if p.DisplayFormat != param.DisplayFormatDecimal {
 		pr.DisplayFormat = p.DisplayFormat.String()
 	}
@@ -146,6 +148,10 @@ func addReadOnlyParameterTo(pr parameterRecipe, add func(string, param.Quantity)
 func applyParameterState(p *param.Parameter, pr parameterRecipe) error {
 	p.Comment, p.IsKey, p.ExposedAsProperty, p.Precision = pr.Comment, pr.Key, pr.Export, pr.Precision
 	p.Visible = !pr.Hidden
+	p.SetRenamed(pr.Renamed)
+	if err := applyDisabledActions(p, pr); err != nil {
+		return err
+	}
 	if err := applyParameterFormats(p, pr); err != nil {
 		return err
 	}
@@ -153,6 +159,20 @@ func applyParameterState(p *param.Parameter, pr parameterRecipe) error {
 		return err
 	}
 	return applyParameterValueList(p, pr)
+}
+
+// applyDisabledActions restores the restricted-action mask from its persisted
+// spellings (#1853).
+func applyDisabledActions(p *param.Parameter, pr parameterRecipe) error {
+	if len(pr.DisabledActions) == 0 {
+		return nil
+	}
+	mask, ok := types.ActionTypeMask(pr.DisabledActions)
+	if !ok {
+		return fmt.Errorf("unknown disabled action type in %v (want edit|rename|delete)", pr.DisabledActions)
+	}
+	p.SetDisabledActionTypes(mask)
+	return nil
 }
 
 // applyParameterFormats restores the display format and custom-property format

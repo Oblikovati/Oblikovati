@@ -263,6 +263,12 @@ func (ps *Parameters) Rename(id ID, newName string) error {
 	delete(ps.byName, oldName)
 	ps.byName[newName] = id
 	p.name = newName
+	// A renamed model parameter no longer carries its generated name; Inventor
+	// surfaces this as ModelParameter.Renamed (#1853). User parameters own their
+	// authored name, so the flag is meaningless for them.
+	if p.kind == ModelParam {
+		p.renamed = true
+	}
 	// References stay bound by stable id; update dependents' display text so it
 	// tracks the rename (edges are untouched, so dependents still evaluate).
 	for dep := range ps.dependents[id] {

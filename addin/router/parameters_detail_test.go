@@ -111,6 +111,45 @@ func TestParameterUpdateRejectsUnknownSpellings(t *testing.T) {
 	}
 }
 
+// TestParameterIntrospectionOverWire: getDetail reports builtIn/renamed, update
+// round-trips disabledActionTypes, and a rename of a model parameter flips
+// renamed to true (#1853).
+func TestParameterIntrospectionOverWire(t *testing.T) {
+	r, s := seededSession(t)
+	// A user parameter is neither built-in nor renamed, with no disabled actions.
+	if d := getDetail(t, r, s, "width"); d.BuiltIn || d.Renamed || len(d.DisabledActionTypes) != 0 {
+		t.Errorf("user param introspection = builtIn=%v renamed=%v disabled=%v, want all clear", d.BuiltIn, d.Renamed, d.DisabledActionTypes)
+	}
+	// disabledActionTypes replaces the whole mask and reads back in emission order.
+	var d wire.ParameterDetail
+	call(t, r, s, "parameters.update", `{"name":"width","disabledActionTypes":["rename","delete"]}`, &d)
+	if !slices.Equal(d.DisabledActionTypes, []string{"rename", "delete"}) {
+		t.Errorf("disabledActionTypes = %v, want [rename delete]", d.DisabledActionTypes)
+	}
+	// An empty list clears it. Read back through a fresh getDetail: the omitempty
+	// response field would otherwise leave the reused struct's stale value.
+	call(t, r, s, "parameters.update", `{"name":"width","disabledActionTypes":[]}`, nil)
+	if cleared := getDetail(t, r, s, "width"); len(cleared.DisabledActionTypes) != 0 {
+		t.Errorf("cleared disabledActionTypes = %v, want empty", cleared.DisabledActionTypes)
+	}
+	// Renaming a model parameter raises renamed.
+	call(t, r, s, "parameters.add", `{"name":"d0","kind":"model","expression":"5 mm"}`, nil)
+	call(t, r, s, "parameters.rename", `{"name":"d0","newName":"thickness"}`, nil)
+	if d := getDetail(t, r, s, "thickness"); !d.Renamed {
+		t.Errorf("renamed model param reports renamed=%v, want true", d.Renamed)
+	}
+}
+
+// TestParameterUpdateRejectsUnknownAction: an unrecognised disabled-action
+// spelling is refused, naming the offender (#1853).
+func TestParameterUpdateRejectsUnknownAction(t *testing.T) {
+	r, s := seededSession(t)
+	_, err := r.Handle(s, "parameters.update", []byte(`{"name":"width","disabledActionTypes":["suppress"]}`))
+	if err == nil || !strings.Contains(err.Error(), "disabled action type") {
+		t.Errorf("update with unknown action err = %v, want it to mention the disabled action type", err)
+	}
+}
+
 func TestParameterToleranceModesOverWire(t *testing.T) {
 	r, s := seededSession(t)
 	// Each mutation's response is checked through a fresh getDetail: omitempty
