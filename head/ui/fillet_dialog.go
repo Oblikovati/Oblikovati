@@ -15,11 +15,12 @@ import (
 // (the reference panel schema) shows the picked-edges chip and the blend radius, then
 // OK/Cancel.
 var filletUI = struct {
-	radius      float32
-	startRadius float32
-	endRadius   float32
-	rho         float32         // conic cross-section fullness (#1284)
-	seeded      *app.FilletTool // the tool the fields were seeded from (nil = none)
+	radius       float32
+	startRadius  float32
+	endRadius    float32
+	rho          float32         // conic cross-section fullness (#1284)
+	tangentChain bool            // select the whole tangent chain on a plain pick (#1947)
+	seeded       *app.FilletTool // the tool the fields were seeded from (nil = none)
 }{radius: 1, startRadius: 1, endRadius: 1, rho: 0.5}
 
 // drawFilletDialog shows the Fillet property panel while the Fillet tool is active —
@@ -52,7 +53,8 @@ func drawFilletPanelBody(s *app.Session, f *app.FilletTool) {
 	drawFeatureBreadcrumb(title, "")
 	if propertySection("Input Geometry") {
 		drawPickChipRow("Edges", "fillet-edges", countChipText(f.EdgeCount(), "Edge", "Select Edges"),
-			f.EdgeCount() > 0, "Click convex edges to round; Shift+click selects the whole tangent chain", f.ClearEdges)
+			f.EdgeCount() > 0, "Click convex edges to round; with Tangent chain on, a click selects the whole connected loop (Shift+click always does)", f.ClearEdges)
+		drawTangentChainRow("fillet", &filletUI.tangentChain, f.SetTangentChain)
 	}
 	if propertySection("Behavior") {
 		drawFilletRadiusRows(s, f)
@@ -95,6 +97,7 @@ func seedFilletUI(f *app.FilletTool) {
 	filletUI.startRadius = float32(f.StartRadius())
 	filletUI.endRadius = float32(f.EndRadius())
 	filletUI.rho = float32(f.Rho())
+	filletUI.tangentChain = f.TangentChain()
 	filletUI.seeded = f
 }
 
