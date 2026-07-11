@@ -15,6 +15,26 @@ const (
 	SkipImportDivergence         // STEP input did not import faithfully — not a fillet defect
 )
 
+// String names an outcome for the scoreboard table.
+func (o Outcome) String() string {
+	switch o {
+	case Pass:
+		return "PASS"
+	case FailFaulty:
+		return "FAIL(faulty)"
+	case FailArea:
+		return "FAIL(area)"
+	case Incomplete:
+		return "SKIP(varradius)"
+	case SkipTODO:
+		return "SKIP(todo)"
+	case SkipImportDivergence:
+		return "SKIP(import)"
+	default:
+		return "UNKNOWN"
+	}
+}
+
 // classify maps one case's run facts to OCCT's verdict semantics. TODO wins (we never claim
 // to be stricter than OCCT); import divergence is separated from fillet defects so a STEP
 // round-trip gap never gets blamed on the fillet engine; an invalid result is Faulty.

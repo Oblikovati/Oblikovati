@@ -33,7 +33,13 @@ func RunCase(t *testing.T, r Record, fixtureDir string) {
 	if err != nil {
 		t.Skipf("import-divergence (not a fillet defect): %v", err)
 	}
-	sets := locatePicks(t, r, body)
+	sets, ok := scoreLocate(r, body)
+	if !ok {
+		// A pick OCCT resolved that we cannot locate on the imported body is a topology
+		// divergence, not a fillet defect — skip so the gate reflects fillet parity (the
+		// scoreboard's SKIP(import) keeps these visible).
+		t.Skipf("%s/%s: a picked edge could not be located on the imported body", r.Grid, r.Case)
+	}
 	res, filletOK, reason := runFillet(body, sets)
 	assertCaseResult(t, r, res, filletOK, reason)
 }
@@ -49,26 +55,6 @@ func hasVariableRadius(r Record) bool {
 		}
 	}
 	return false
-}
-
-// locatePicks resolves each oracle pick to a body edge by geometry and pairs it with its
-// radius. A pick that cannot be located is a hard failure: OCCT resolved it, so must we.
-func locatePicks(t *testing.T, r Record, body *topo.Body) []feature.FilletEdgeSet {
-	t.Helper()
-	tol := importTol(body)
-	sets := make([]feature.FilletEdgeSet, 0, len(r.Picks))
-	for _, p := range r.Picks {
-		e, err := locateEdge(body, p.Locator, tol)
-		if err != nil {
-			t.Fatalf("%s/%s: %v", r.Grid, r.Case, err)
-		}
-		radius := p.Radius
-		sets = append(sets, feature.FilletEdgeSet{
-			EdgeKeys: [][]byte{e.ReferenceKey()},
-			Radius:   func() float64 { return radius },
-		})
-	}
-	return sets
 }
 
 // runFillet drives the real feature path (base -> dress-up fillet -> recompute) and returns

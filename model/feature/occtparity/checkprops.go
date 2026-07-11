@@ -23,11 +23,17 @@ const driftWarnRel = 1e-3
 // reach here).
 func assertArea(t testingT, name string, got, expected, deps float64) {
 	rel := stdmath.Abs(got-expected) / stdmath.Abs(expected)
-	if rel > deps {
+	if !areaWithin(got, expected, deps) {
 		t.Errorf("%s: area %.6g != OCCT %.6g (rel %.4f%% > %.2f%%)", name, got, expected, rel*100, deps*100)
 		return
 	}
 	if rel > driftWarnRel {
 		t.Logf("%s: area drift %.4f%% from OCCT %.6g (within %.1f%% gate)", name, rel*100, expected, deps*100)
 	}
+}
+
+// areaWithin reports whether got is within OCCT's relative tolerance deps of expected — the
+// gate condition, shared by assertArea (gating) and the scoreboard (non-gating tally).
+func areaWithin(got, expected, deps float64) bool {
+	return stdmath.Abs(got-expected)/stdmath.Abs(expected) <= deps
 }
