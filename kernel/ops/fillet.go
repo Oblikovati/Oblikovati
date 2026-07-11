@@ -146,7 +146,7 @@ func filletEdgesCornerRec(body *topo.Body, picks []EdgeFilletRadii, corner Corne
 // assembles the validated result body. Round/setback corners have already been reduced to 3-edge
 // sphere blends by augmenting the third edge, so the corner solver only ever sees miters and blends.
 func filletResolvedEdges(body *topo.Body, edges []filletPick, concave ConcaveFill, rec *diag.Recorder) (*topo.Body, error) {
-	if err := validateFilletRadii(edges); err != nil {
+	if err := validateFilletRadii(edges, concave); err != nil {
 		return nil, err // #1800: reject an over-large radius before it self-intersects
 	}
 	blends, miters, err := computeCorners(edges)
