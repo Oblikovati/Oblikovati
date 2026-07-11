@@ -24,10 +24,13 @@ fingerprint).
 
 ### Cluster 1a — apex-edge fillet on partial revolved primitives (6)
 `simple/{A9,B4,B8,C3,D2,D6}`. Inputs are partial `pcylinder`/`pcone`/`psphere` sectors; the
-picked edge (OCCT `s_9`) is the **revolution-axis apex edge** — a planar↔planar edge (both
-neighbour faces are `geom.Plane`, the two radial cut faces) lying on the axis, whose two
-endpoints are **high-valence vertices** (the sector centers, where both radials + the
-top/bottom sector faces + the lateral quadric all converge). Verified failure signature:
+picked edge (OCCT `s_9`) is the **revolution-axis apex edge** — a straight planar↔planar edge
+(both neighbour faces are `geom.Plane`, the two radial cut faces) lying **on the quadric's
+revolution axis**. Verified incidence (probed, correcting an earlier guess): the two endpoint
+vertices are **valence-3 and incident only to planes** (NOT high-valence, NOT touching the
+quadric); the distinguishing invariant is that **both radial neighbour faces each border the
+common quadric lateral face** (they seam the cylinder/cone/sphere), and the edge is collinear
+with that quadric's axis. Verified failure signature:
 - A9 = 90° cylinder (apex edge **convex**), B4 = 270° cylinder (apex edge **concave**) →
   **identical** result (area 19098.9, vol 122853.2, 6 faces) despite different base bodies
   (196344 vs 589040 vol). Same pattern for cone (B8/C3) and sphere (D2/D6).
@@ -60,12 +63,21 @@ Investigation-led, one cluster at a time, each ending at the gate (green or hone
    - *If tractable within this package* (e.g. the corner reconstruction at an axis vertex uses
      the wrong neighbour faces / ignores the dihedral sign): fix it, so all 6 turn green. This
      is the preferred outcome; ground the corner math in `geometry-math-advisor`.
-   - *If it is genuinely the general high-valence / axis-vertex corner problem* (ADR-0050
-     Phase 6 territory): add an **interim guard** that detects the pathology and rejects
-     honestly (health goes sick with a specific reason), so these stop emitting silent-wrong
-     solids, and move the real fix to G5 (corner). Detection must be precise — key it on the
-     verifiable pathology (an apex edge whose endpoints are high-valence vertices incident to a
-     quadric lateral face), **not** on a result-plausibility heuristic.
+   - *If it is genuinely the general revolution-axis-apex corner problem* (ADR-0050 Phase 6
+     territory): add an **interim guard** that detects the pathology and rejects honestly
+     (health goes sick with a specific reason), so these stop emitting silent-wrong solids, and
+     move the real fix to G5 (corner). The guard predicate is an **output of step 1**, not a
+     guess, and is chosen against two hard constraints: (i) the **structural signature** —
+     preferred form: a straight edge collinear with the axis of an adjacent quadric-of-
+     revolution face, both of whose bounding planar faces seam that same quadric (the verified
+     sector-apex invariant); (ii) a **false-positive gate** — the predicate is run against
+     every currently-PASSING fillet (the 13 corpus passes + the `kernel/ops` and
+     `model/feature` fillet suites) and must fire on **exactly zero** of them, making
+     "no false positives" an empirical, regression-tested property rather than a judgment call.
+     As a stronger floor if the structural predicate proves leaky, prefer a **post-build
+     tangency correctness invariant** (the fillet strip must be tangent to its neighbour faces
+     within tolerance — the byte-identical convex/concave result fails this) over any
+     result-plausibility heuristic, which is banned.
 3. **Gate:** the 6 cases are green, or fail with the honest reason and are logged to the G5
    backlog. Either way, no silent wrong solid.
 
