@@ -110,11 +110,14 @@ type parameterRecipe struct {
 }
 
 // toleranceRecipe is the persisted form of a non-zero engineering tolerance:
-// the flavor's wire spelling plus the deviation band in database units.
+// the flavor's wire spelling plus the deviation band in database units, and the
+// ISO fit class strings for a fits tolerance (#1848).
 type toleranceRecipe struct {
-	Type  string  `yaml:"type,omitempty"`
-	Upper float64 `yaml:"upper,omitempty"`
-	Lower float64 `yaml:"lower,omitempty"`
+	Type           string  `yaml:"type,omitempty"`
+	Upper          float64 `yaml:"upper,omitempty"`
+	Lower          float64 `yaml:"lower,omitempty"`
+	HoleTolerance  string  `yaml:"holeTolerance,omitempty"`
+	ShaftTolerance string  `yaml:"shaftTolerance,omitempty"`
 }
 
 // parameterSettingsRecipe persists the document-level parameter settings when

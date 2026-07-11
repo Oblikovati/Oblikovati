@@ -182,6 +182,29 @@ func TestParameterToleranceModesOverWire(t *testing.T) {
 	}
 }
 
+// TestParameterFitsToleranceOverWire: the fits/basic/reference modes resolve and round-trip
+// through the wire (#1848). width is 4 cm (40 mm); H7 at 40 mm is +25/0 µm = +0.0025/0 cm.
+func TestParameterFitsToleranceOverWire(t *testing.T) {
+	r, s := seededSession(t)
+	call(t, r, s, "parameters.setTolerance", `{"name":"width","mode":"fits","hole":"H7","shaft":"g6"}`, nil)
+	d := getDetail(t, r, s, "width")
+	if d.Tolerance.Type != "limitsFitsStacked" || d.Tolerance.HoleTolerance != "H7" || d.Tolerance.ShaftTolerance != "g6" {
+		t.Errorf("fits tolerance = %+v, want limitsFitsStacked H7/g6", d.Tolerance)
+	}
+	if !approx(d.Tolerance.Upper, 0.0025) || d.Tolerance.Lower != 0 {
+		t.Errorf("fits band = +%v/%v cm, want +0.0025/0 (40H7)", d.Tolerance.Upper, d.Tolerance.Lower)
+	}
+	// basic and reference carry no band.
+	call(t, r, s, "parameters.setTolerance", `{"name":"width","mode":"basic"}`, nil)
+	if d := getDetail(t, r, s, "width"); d.Tolerance.Type != "basic" || d.Tolerance.Upper != 0 {
+		t.Errorf("basic tolerance = %+v, want bandless basic", d.Tolerance)
+	}
+	call(t, r, s, "parameters.setTolerance", `{"name":"width","mode":"reference"}`, nil)
+	if d := getDetail(t, r, s, "width"); d.Tolerance.Type != "reference" {
+		t.Errorf("reference tolerance = %+v, want reference", d.Tolerance)
+	}
+}
+
 func TestParameterToleranceRejectsBadInput(t *testing.T) {
 	r, s := seededSession(t)
 	for args, want := range map[string]string{
@@ -190,6 +213,8 @@ func TestParameterToleranceRejectsBadInput(t *testing.T) {
 		`{"name":"width","mode":"deviation","upper":"0.1 cm"}`:                   "lower value is required",
 		`{"name":"width","mode":"symmetric","upper":"banana"}`:                   "banana",
 		`{"name":"width","mode":"deviation","upper":"-0.1 cm","lower":"0.1 cm"}`: "upper",
+		`{"name":"width","mode":"fits"}`:                                         "hole or shaft class",
+		`{"name":"width","mode":"fits","hole":"Z9"}`:                             "unsupported ISO fit letter",
 	} {
 		if _, err := r.Handle(s, "parameters.setTolerance", []byte(args)); err == nil || !strings.Contains(err.Error(), want) {
 			t.Errorf("setTolerance(%s) err = %v, want it to mention %q", args, err, want)

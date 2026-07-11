@@ -62,7 +62,10 @@ func recordParameterValue(pr *parameterRecipe, p *param.Parameter) {
 // format, and the custom-property format. Zero/default values are omitted (the recipe is sparse).
 func recordParameterPresentation(pr *parameterRecipe, p *param.Parameter) {
 	if t := p.Tolerance(); t != (param.Tolerance{}) {
-		pr.Tolerance = &toleranceRecipe{Type: t.Kind().String(), Upper: t.Upper, Lower: t.Lower}
+		pr.Tolerance = &toleranceRecipe{
+			Type: t.Kind().String(), Upper: t.Upper, Lower: t.Lower,
+			HoleTolerance: t.HoleTolerance, ShaftTolerance: t.ShaftTolerance,
+		}
 	}
 	if m := p.ModelValueType(); m != param.Nominal {
 		pr.ModelValueType = m.String()
@@ -227,7 +230,10 @@ func applyParameterTolerance(p *param.Parameter, pr parameterRecipe) error {
 		if !ok {
 			return fmt.Errorf("unknown tolerance type %q", pr.Tolerance.Type)
 		}
-		p.SetTolerance(param.Tolerance{Type: t, Upper: pr.Tolerance.Upper, Lower: pr.Tolerance.Lower})
+		p.SetTolerance(param.Tolerance{
+			Type: t, Upper: pr.Tolerance.Upper, Lower: pr.Tolerance.Lower,
+			HoleTolerance: pr.Tolerance.HoleTolerance, ShaftTolerance: pr.Tolerance.ShaftTolerance,
+		})
 	}
 	if pr.ModelValueType == "" {
 		return nil
