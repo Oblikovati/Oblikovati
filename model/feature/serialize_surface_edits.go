@@ -103,21 +103,55 @@ func restoreSurfaceOffset(fs *PartFeatures, d *SurfaceOffsetData) (*PartFeature,
 	return NewSurfaceOffsetFeatures(fs).AddByDistance(constFloat(d.Distance)), nil
 }
 
-// MidSurfaceData is a mid-surface's recipe: the maximum thin-wall thickness a face pair may have.
-// The extracted per-pair thicknesses are a recompute result, not part of the recipe.
+// MidSurfaceData is a mid-surface's recipe (#1885): the auto-pairing thickness range, optional
+// input-body selection, and optional manual face-key pairs. The extracted per-pair thicknesses are
+// a recompute result, not part of the recipe.
 type MidSurfaceData struct {
-	MaxThickness float64 `yaml:"maxThickness"`
+	MaxThickness float64     `yaml:"maxThickness"`
+	MinThickness float64     `yaml:"minThickness,omitempty"`
+	BodyIndices  []int       `yaml:"bodyIndices,omitempty"`
+	Pairs        [][2]string `yaml:"pairs,omitempty"` // base64 face-key pairs
 }
 
 func serializeMidSurface(def *MidSurfaceDefinition) *MidSurfaceData {
-	return &MidSurfaceData{MaxThickness: def.MaxThickness}
+	d := &MidSurfaceData{MaxThickness: def.MaxThickness, MinThickness: def.MinThickness, BodyIndices: def.BodyIndices}
+	for _, pr := range def.Pairs {
+		d.Pairs = append(d.Pairs, [2]string{encodeKey(pr[0]), encodeKey(pr[1])})
+	}
+	return d
 }
 
 func restoreMidSurface(fs *PartFeatures, d *MidSurfaceData) (*PartFeature, error) {
 	if d == nil {
 		return nil, fmt.Errorf("mid-surface feature is missing its payload")
 	}
-	return NewMidSurfaceFeatures(fs).AddByThickness(d.MaxThickness), nil
+	pairs, err := decodeKeyPairs(d.Pairs)
+	if err != nil {
+		return nil, fmt.Errorf("mid-surface feature pairs: %w", err)
+	}
+	return NewMidSurfaceFeatures(fs).AddMidSurface(&MidSurfaceDefinition{
+		MaxThickness: d.MaxThickness, MinThickness: d.MinThickness, BodyIndices: d.BodyIndices, Pairs: pairs,
+	}), nil
+}
+
+// decodeKeyPairs decodes a list of base64 face-key pairs.
+func decodeKeyPairs(encoded [][2]string) ([][2][]byte, error) {
+	if len(encoded) == 0 {
+		return nil, nil
+	}
+	out := make([][2][]byte, len(encoded))
+	for i, pr := range encoded {
+		a, err := decodeKey(pr[0])
+		if err != nil {
+			return nil, err
+		}
+		b, err := decodeKey(pr[1])
+		if err != nil {
+			return nil, err
+		}
+		out[i] = [2][]byte{a, b}
+	}
+	return out, nil
 }
 
 // StitchData is a stitch/knit's recipe: the coincidence tolerance and whether to keep a closed

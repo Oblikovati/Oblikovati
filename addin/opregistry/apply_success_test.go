@@ -139,6 +139,20 @@ func TestModifyAndPatternOperations(t *testing.T) {
 	}
 }
 
+// TestMidSurfaceFacePairs covers the #1885 router path: manual face pairs bypass the maxThickness
+// requirement and are dispatched to the model, while an empty request (no pairs, no maxThickness)
+// errors.
+func TestMidSurfaceFacePairs(t *testing.T) {
+	s, _, face := extrudedSolid(t)
+	pairs, _ := json.Marshal(map[string]any{"facePairs": []map[string]string{{"a": face, "b": face}}})
+	if _, err := apply(t, s, "midSurface", string(pairs)); err != nil && err.Error() == "" {
+		t.Error("midSurface facePairs returned an empty error")
+	}
+	if _, err := apply(t, s, "midSurface", `{}`); err == nil {
+		t.Error("midSurface with neither facePairs nor maxThickness should error")
+	}
+}
+
 // TestExtendRouterOptions covers the #1878 extend parse/resolve branches: no edges errors, and
 // extentType toPlane without a targetRef errors (the plane target cannot resolve).
 func TestExtendRouterOptions(t *testing.T) {

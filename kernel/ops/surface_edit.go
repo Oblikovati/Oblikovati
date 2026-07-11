@@ -290,15 +290,19 @@ func unit3(v math.Vector3) math.Vector3 {
 
 // MidPatch is one extracted mid-surface: the surface body lying halfway between a
 // paired set of faces, plus the recorded wall thickness between them (for FEA, M18).
+// Min/Max bound the thickness across the pair (equal for perfectly parallel walls;
+// they differ when the walls taper), mirroring Inventor's MidSurfaceThickness (#1885).
 type MidPatch struct {
 	Body      *topo.Body
-	Thickness float64
+	Thickness float64 // representative (centroid) separation
+	Min       float64
+	Max       float64
 }
 
-// MidSurfaces extracts mid-surfaces from a solid's antiparallel planar face pairs
-// whose separation is within maxThickness (the thin-wall pairs). Each yields a patch
-// on the mid-plane and the recorded thickness. Curved walls are phase C.
-func MidSurfaces(body *topo.Body, maxThickness float64, feat string) ([]MidPatch, error) {
+// MidSurfaces extracts mid-surfaces from a solid's antiparallel planar face pairs whose
+// separation is within [minThickness, maxThickness] (the thin-wall pairs). Each yields a patch
+// on the mid-plane and the recorded thickness range. Curved walls are phase C.
+func MidSurfaces(body *topo.Body, minThickness, maxThickness float64, feat string) ([]MidPatch, error) {
 	faces := planarFaces(body)
 	if len(faces) < 2 {
 		return nil, errors.New("mid-surface: body has fewer than two planar faces")
@@ -306,7 +310,7 @@ func MidSurfaces(body *topo.Body, maxThickness float64, feat string) ([]MidPatch
 	var patches []MidPatch
 	used := make([]bool, len(faces))
 	for i := 0; i < len(faces); i++ {
-		j := matchOpposite(faces, used, i, maxThickness)
+		j := matchOpposite(faces, used, i, minThickness, maxThickness)
 		if j < 0 {
 			continue
 		}
@@ -319,9 +323,34 @@ func MidSurfaces(body *topo.Body, maxThickness float64, feat string) ([]MidPatch
 	return patches, nil
 }
 
-// matchOpposite finds an unused face antiparallel to face i and separated from it by
-// at most maxThickness (a thin-wall pair), returning its index or -1.
-func matchOpposite(faces []*topo.Face, used []bool, i int, maxThickness float64) int {
+// MidSurfacesByPairs extracts mid-surfaces for an explicit set of face-key pairs (Inventor's
+// manual pairing, for ribs/bosses where auto-pairing fails), reporting each pair's thickness
+// range. A lost or non-planar face makes the op error so the feature can go Sick (#1885).
+func MidSurfacesByPairs(body *topo.Body, pairs [][2][]byte, feat string) ([]MidPatch, error) {
+	if len(pairs) == 0 {
+		return nil, errors.New("mid-surface: no face pairs")
+	}
+	patches := make([]MidPatch, 0, len(pairs))
+	for _, pr := range pairs {
+		a, aok := body.FindFaceByKey(pr[0])
+		b, bok := body.FindFaceByKey(pr[1])
+		if !aok || !bok {
+			return nil, errors.New("mid-surface: face pair reference lost")
+		}
+		if _, ok := a.Geometry().(geom.Plane); !ok {
+			return nil, errors.New("mid-surface: paired face is not planar")
+		}
+		if _, ok := b.Geometry().(geom.Plane); !ok {
+			return nil, errors.New("mid-surface: paired face is not planar")
+		}
+		patches = append(patches, midPatch(a, b, feat, len(patches)))
+	}
+	return patches, nil
+}
+
+// matchOpposite finds an unused face antiparallel to face i and separated from it by a distance
+// within [minThickness, maxThickness] (a thin-wall pair), returning its index or -1.
+func matchOpposite(faces []*topo.Face, used []bool, i int, minThickness, maxThickness float64) int {
 	ni := faces[i].Geometry().(geom.Plane).Normal()
 	ci := centroid(facePolygon(faces[i]))
 	for j := i + 1; j < len(faces); j++ {
@@ -333,7 +362,7 @@ func matchOpposite(faces []*topo.Face, used []bool, i int, maxThickness float64)
 			continue
 		}
 		sep := stdmath.Abs(ci.VectorTo(centroid(facePolygon(faces[j]))).Dot(ni))
-		if sep > 1e-9 && sep <= maxThickness {
+		if sep > 1e-9 && sep >= minThickness && sep <= maxThickness {
 			return j
 		}
 	}
@@ -341,7 +370,7 @@ func matchOpposite(faces []*topo.Face, used []bool, i int, maxThickness float64)
 }
 
 // midPatch builds the mid-surface patch between two antiparallel faces by shifting
-// face a's polygon halfway toward b, and records the separation as the thickness.
+// face a's polygon halfway toward b, and records the separation and its range.
 func midPatch(a, b *topo.Face, feat string, idx int) MidPatch {
 	na := a.Geometry().(geom.Plane).Normal()
 	polyA := facePolygon(a)
@@ -354,7 +383,22 @@ func midPatch(a, b *topo.Face, feat string, idx int) MidPatch {
 	for i, p := range polyA {
 		moved[i] = p.TranslateBy(shift)
 	}
-	return MidPatch{Body: buildSheet([]sheetPatch{{poly: moved, normal: na}}, feat+"-mid-"+strconv.Itoa(idx)), Thickness: sep}
+	lo, hi := midThicknessRange(polyA, b.Geometry().(geom.Plane))
+	return MidPatch{
+		Body:      buildSheet([]sheetPatch{{poly: moved, normal: na}}, feat+"-mid-"+strconv.Itoa(idx)),
+		Thickness: sep, Min: lo, Max: hi,
+	}
+}
+
+// midThicknessRange returns the min and max perpendicular distance from face a's vertices to
+// face b's plane — the wall-thickness range across the pair (equal for parallel walls).
+func midThicknessRange(polyA []math.Point3, planeB geom.Plane) (float64, float64) {
+	lo, hi := stdmath.Inf(1), stdmath.Inf(-1)
+	for _, p := range polyA {
+		d := stdmath.Abs(float64(geom.SignedDistanceToPlane(planeB, p)))
+		lo, hi = stdmath.Min(lo, d), stdmath.Max(hi, d)
+	}
+	return lo, hi
 }
 
 // centroid returns the average of a polygon's vertices.

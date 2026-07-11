@@ -194,10 +194,14 @@ func (c *SurfaceOffsetFeatures) AddByDistance(distance func() float64) *PartFeat
 	return pf
 }
 
-// MidSurfaceThickness records one paired-face wall thickness measured during
-// mid-surface extraction (consumed by FEA shell meshing, M18).
+// MidSurfaceThickness records one paired-face wall thickness measured during mid-surface
+// extraction (consumed by FEA shell meshing, M18). Min/Max bound the thickness across the pair
+// (equal for parallel walls; they differ when the walls taper), mirroring Inventor's
+// MidSurfaceThickness.Minimum/Maximum (#1885). Value is the representative (centroid) thickness.
 type MidSurfaceThickness struct {
 	Value float64
+	Min   float64
+	Max   float64
 }
 
 // MidSurfaceThicknesses is the ordered set of per-pair thicknesses of a mid-surface.
@@ -210,14 +214,17 @@ func (ts *MidSurfaceThicknesses) Count() int                      { return len(t
 func (ts *MidSurfaceThicknesses) Item(i int) *MidSurfaceThickness { return ts.items[i] }
 
 func (ts *MidSurfaceThicknesses) reset() { ts.items = nil }
-func (ts *MidSurfaceThicknesses) add(v float64) {
-	ts.items = append(ts.items, &MidSurfaceThickness{Value: v})
+func (ts *MidSurfaceThicknesses) add(p ops.MidPatch) {
+	ts.items = append(ts.items, &MidSurfaceThickness{Value: p.Thickness, Min: p.Min, Max: p.Max})
 }
 
 // MidSurfaceDefinition is the recipe for a mid-surface: the maximum wall thickness a
 // face pair may have to be treated as a thin wall.
 type MidSurfaceDefinition struct {
 	MaxThickness float64
+	MinThickness float64     // auto-pairing lower bound (#1885); 0 = no floor
+	Pairs        [][2][]byte // manual face-key pairs (#1885); when set, bypasses auto-pairing
+	BodyIndices  []int       // input body selection (#1885); empty = the last running body
 }
 
 // MidSurfaceFeature extracts mid-surfaces from the running solid's thin-wall planar
@@ -237,24 +244,76 @@ func (m *MidSurfaceFeature) Thicknesses() *MidSurfaceThicknesses { return m.thic
 // Kind implements [Feature].
 func (m *MidSurfaceFeature) Kind() string { return "mid-surface" }
 
-// Recompute extracts the mid-surface patches and records their thicknesses, replacing
-// the running solid with the mid-surface bodies.
+// Recompute extracts the mid-surface patches and records their thickness ranges. Manual face
+// pairs (Pairs) pair explicitly; otherwise the selected input bodies (BodyIndices, default the
+// last running body) are auto-paired within [MinThickness, MaxThickness]. The selected solids are
+// replaced by their mid-surface patches; unselected bodies pass through.
 func (m *MidSurfaceFeature) Recompute(in Input) (Output, error) {
+	m.thicknesses.reset()
+	if len(m.def.Pairs) > 0 {
+		return m.recomputeByPairs(in)
+	}
+	return m.recomputeAuto(in)
+}
+
+// recomputeByPairs extracts mid-surfaces for the explicit face-key pairs on the last body.
+func (m *MidSurfaceFeature) recomputeByPairs(in Input) (Output, error) {
 	target, err := lastBody(in, "mid-surface")
 	if err != nil {
 		return Output{}, err
 	}
-	patches, err := ops.MidSurfaces(target, m.def.MaxThickness, m.featName)
+	patches, err := ops.MidSurfacesByPairs(target, m.def.Pairs, m.featName)
 	if err != nil {
 		return Output{}, err
 	}
-	m.thicknesses.reset()
-	bodies := make([]*topo.Body, len(patches))
-	for i, p := range patches {
-		bodies[i] = p.Body
-		m.thicknesses.add(p.Thickness)
+	return m.emit(in.Bodies[:len(in.Bodies)-1], patches), nil // keep all but the consumed target
+}
+
+// recomputeAuto auto-pairs the selected bodies (default: the last one), keeping unselected bodies.
+func (m *MidSurfaceFeature) recomputeAuto(in Input) (Output, error) {
+	if len(in.Bodies) == 0 {
+		return Output{}, errors.New("mid-surface: no target body in the running state")
 	}
-	return Output{Bodies: bodies}, nil
+	selected := m.selectedBodies(len(in.Bodies))
+	var kept []*topo.Body
+	var patches []ops.MidPatch
+	for i, b := range in.Bodies {
+		if !selected[i] {
+			kept = append(kept, b)
+			continue
+		}
+		got, err := ops.MidSurfaces(b, m.def.MinThickness, m.def.MaxThickness, m.featName)
+		if err != nil {
+			return Output{}, err
+		}
+		patches = append(patches, got...)
+	}
+	return m.emit(kept, patches), nil
+}
+
+// selectedBodies is the set of body indices to mid-surface — BodyIndices, or the last body.
+func (m *MidSurfaceFeature) selectedBodies(n int) map[int]bool {
+	set := map[int]bool{}
+	if len(m.def.BodyIndices) == 0 {
+		set[n-1] = true
+		return set
+	}
+	for _, i := range m.def.BodyIndices {
+		if i >= 0 && i < n {
+			set[i] = true
+		}
+	}
+	return set
+}
+
+// emit appends the patch bodies to the kept bodies and records each pair's thickness range.
+func (m *MidSurfaceFeature) emit(kept []*topo.Body, patches []ops.MidPatch) Output {
+	bodies := append([]*topo.Body(nil), kept...)
+	for _, p := range patches {
+		bodies = append(bodies, p.Body)
+		m.thicknesses.add(p)
+	}
+	return Output{Bodies: bodies}
 }
 
 // MidSurfaceFeatures adds mid-surface features into the engine.
@@ -267,7 +326,13 @@ func NewMidSurfaceFeatures(engine *PartFeatures) *MidSurfaceFeatures {
 
 // AddByThickness extracts mid-surfaces from face pairs no thicker than maxThickness.
 func (c *MidSurfaceFeatures) AddByThickness(maxThickness float64) *PartFeature {
-	mf := &MidSurfaceFeature{def: &MidSurfaceDefinition{MaxThickness: maxThickness}, thicknesses: &MidSurfaceThicknesses{}, featName: "MidSurface"}
+	return c.AddMidSurface(&MidSurfaceDefinition{MaxThickness: maxThickness})
+}
+
+// AddMidSurface extracts mid-surfaces per the definition — auto-paired within a thickness range on
+// selected bodies, or from explicit manual face pairs (#1885).
+func (c *MidSurfaceFeatures) AddMidSurface(def *MidSurfaceDefinition) *PartFeature {
+	mf := &MidSurfaceFeature{def: def, thicknesses: &MidSurfaceThicknesses{}, featName: "MidSurface"}
 	pf := c.engine.Add(mf)
 	mf.featName = pf.name
 	return pf
