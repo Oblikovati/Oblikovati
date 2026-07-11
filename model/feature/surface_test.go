@@ -129,6 +129,37 @@ func TestBoundaryPatchGoesSickOnOpenProfile(t *testing.T) {
 	}
 }
 
+// TestBoundaryPatchEdgeLoopRoundTrip: the #1867 3D edge-loop patch (edge keys, curvature continuity,
+// guide-rail keys, tangent weight) survives marshal→restore.
+func TestBoundaryPatchEdgeLoopRoundTrip(t *testing.T) {
+	fs := NewPartFeatures(nil)
+	NewBoundaryPatchFeatures(fs).AddEdgeLoop([][]byte{{1, 2}, {3, 4}, {5, 6}}, PatchCurvature, [][]byte{{9, 9}}, 0.75)
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	fresh := NewPartFeatures(nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	d := fresh.Item(0).Definition().(*BoundaryPatchFeature).Definition()
+	if len(d.EdgeKeys) != 3 || d.Condition != PatchCurvature {
+		t.Errorf("restored patch = {edges:%d cond:%v}, want {3 PatchCurvature}", len(d.EdgeKeys), d.Condition)
+	}
+	if len(d.GuideRailKeys) != 1 || d.TangentWeight != 0.75 {
+		t.Errorf("restored rails/weight = {%d %v}, want {1 0.75}", len(d.GuideRailKeys), d.TangentWeight)
+	}
+}
+
+// TestPatchContinuityOrder maps free/tangent/curvature to the G0/G1/G2 fill order.
+func TestPatchContinuityOrder(t *testing.T) {
+	for c, want := range map[PatchCondition]int{PatchFree: 0, PatchTangent: 1, PatchCurvature: 2} {
+		if got := patchContinuityOrder(c); got != want {
+			t.Errorf("patchContinuityOrder(%v) = %d, want %d", c, got, want)
+		}
+	}
+}
+
 func TestRuledSurfaceBuildsBand(t *testing.T) {
 	fs := NewPartFeatures(nil)
 	pf := NewRuledSurfaceFeatures(fs).AddByDistance(squareSketch(2), 0, RuledNormal, func() float64 { return 3 })

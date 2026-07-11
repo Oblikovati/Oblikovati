@@ -21,7 +21,8 @@ import (
 // N-sided G2 convergence limit.
 
 // FillNSided fills the opening bounded by neighbours (3 or more single-face surface bodies) with one
-// NURBS at the requested continuity order. With exactly four neighbours it is the four-sided fill.
+// NURBS at the requested continuity order. With exactly four neighbours it is the four-sided fill;
+// otherwise the N inner edges chain onto four compatible quad sides via the shared edge-loop fill.
 func FillNSided(neighbours []*topo.Body, order int) (*topo.Body, error) {
 	if len(neighbours) < 3 {
 		return nil, fmt.Errorf("ops.FillNSided: needs at least 3 bounding surfaces, have %d", len(neighbours))
@@ -29,40 +30,11 @@ func FillNSided(neighbours []*topo.Body, order int) (*topo.Body, error) {
 	if len(neighbours) == 4 {
 		return FillFourSided([4]*topo.Body{neighbours[0], neighbours[1], neighbours[2], neighbours[3]}, order)
 	}
-	c0, c1, d0, d1, err := quadSidesFromOpening(neighbours)
+	edges, err := openingEdgesN(neighbours)
 	if err != nil {
 		return nil, err
 	}
-	sides := [4]geom.FillSide{fillSide(c0, order), fillSide(c1, order), fillSide(d0, order), fillSide(d1, order)}
-	fill, err := geom.FillSurface(c0.curve, c1.curve, d0.curve, d1.curve, sides)
-	if err != nil {
-		return nil, fmt.Errorf("ops.FillNSided: %w", err)
-	}
-	return fullDomainBody(fill, "fill"), nil
-}
-
-// quadSidesFromOpening maps the N inner edges of the opening onto the four compatible, oriented quad
-// sides (chain → quad-ify by splitting → group into four → make opposite pairs knot-compatible).
-func quadSidesFromOpening(neighbours []*topo.Body) (c0, c1, d0, d1 boundaryEdge, err error) {
-	edges, err := openingEdgesN(neighbours)
-	if err != nil {
-		return c0, c1, d0, d1, err
-	}
-	loop, err := orderLoop(edges)
-	if err != nil {
-		return c0, c1, d0, d1, err
-	}
-	for len(loop) < 4 {
-		loop = splitLongestEdge(loop)
-	}
-	c0, c1, d0, d1, err = chainLoop(groupToFourSides(loop))
-	if err != nil {
-		return c0, c1, d0, d1, fmt.Errorf("ops.FillNSided: %w", err)
-	}
-	if err = makeSidesCompatible(&c0, &c1, &d0, &d1); err != nil {
-		return c0, c1, d0, d1, fmt.Errorf("ops.FillNSided: %w", err)
-	}
-	return c0, c1, d0, d1, nil
+	return fillFromBoundaryEdges(edges, order)
 }
 
 // makeSidesCompatible refines the two opposite side pairs (c0/c1 in u, d0/d1 in v) to share degree

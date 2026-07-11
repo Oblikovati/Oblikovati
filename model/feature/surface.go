@@ -9,6 +9,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -58,10 +59,17 @@ func (ls *BoundaryPatchLoops) Add(skt *sketch.Sketch, profileIndex int, cond Pat
 func (ls *BoundaryPatchLoops) Count() int                    { return len(ls.items) }
 func (ls *BoundaryPatchLoops) Item(i int) *BoundaryPatchLoop { return ls.items[i] }
 
-// BoundaryPatchDefinition is the recipe for a boundary patch: the boundary loops it
-// fills. Phase A fills the first closed planar loop (with the others as holes).
+// BoundaryPatchDefinition is the recipe for a boundary patch. Loops is the planar-sketch form (the
+// first closed loop is filled, the others cut as holes). EdgeKeys is the non-planar 3D edge-loop form
+// (#1867): reference keys of surface-body boundary edges filled with a NURBS that blends to their
+// adjacent faces at Condition continuity (free/tangent/curvature → G0/G1/G2). GuideRailKeys and
+// TangentWeight are recorded for the interior-interpolation phase (accepted, not yet honoured).
 type BoundaryPatchDefinition struct {
-	Loops *BoundaryPatchLoops
+	Loops         *BoundaryPatchLoops
+	EdgeKeys      [][]byte
+	Condition     PatchCondition
+	GuideRailKeys [][]byte
+	TangentWeight float64
 }
 
 // BoundaryPatchFeature fills a closed boundary with a trimmed surface patch.
@@ -81,6 +89,9 @@ func (b *BoundaryPatchFeature) Kind() string { return "boundary-patch" }
 // planar loop satisfies any condition vacuously (there is no adjacent face to blend
 // to). Patching a non-planar 3D boundary is the NURBS phase-B case (deferred).
 func (b *BoundaryPatchFeature) Recompute(in Input) (Output, error) {
+	if len(b.def.EdgeKeys) > 0 {
+		return b.fillEdgeLoop(in)
+	}
 	if b.def.Loops == nil || b.def.Loops.Count() == 0 {
 		return Output{}, errors.New("boundary patch: no boundary loops")
 	}
@@ -91,6 +102,56 @@ func (b *BoundaryPatchFeature) Recompute(in Input) (Output, error) {
 	}
 	patch := buildPlanarPatch(profile, loop.Sketch.Plane(), b.featName)
 	return Output{Bodies: appendBody(in.Bodies, patch)}, nil
+}
+
+// fillEdgeLoop fills a non-planar 3D edge loop taken from surface-body boundary edges with a NURBS
+// patch that blends to the adjacent faces at the definition's continuity (#1867).
+func (b *BoundaryPatchFeature) fillEdgeLoop(in Input) (Output, error) {
+	edges, err := resolveLoopEdges(in.Bodies, b.def.EdgeKeys)
+	if err != nil {
+		return Output{}, err
+	}
+	patch, err := ops.FillEdgeLoop(edges, patchContinuityOrder(b.def.Condition))
+	if err != nil {
+		return Output{}, fmt.Errorf("boundary patch: %w", err)
+	}
+	return Output{Bodies: appendBody(in.Bodies, patch)}, nil
+}
+
+// resolveLoopEdges resolves each boundary-edge reference key against the running bodies.
+func resolveLoopEdges(bodies []*topo.Body, keys [][]byte) ([]*topo.Edge, error) {
+	edges := make([]*topo.Edge, 0, len(keys))
+	for _, k := range keys {
+		e, ok := findEdgeByKey(bodies, k)
+		if !ok {
+			return nil, fmt.Errorf("boundary patch: edge %x not found in the model", k)
+		}
+		edges = append(edges, e)
+	}
+	return edges, nil
+}
+
+// findEdgeByKey looks a reference key up across all running bodies.
+func findEdgeByKey(bodies []*topo.Body, key []byte) (*topo.Edge, bool) {
+	for _, bd := range bodies {
+		if e, ok := bd.FindEdgeByKey(key); ok {
+			return e, true
+		}
+	}
+	return nil, false
+}
+
+// patchContinuityOrder maps a patch condition to the fill's NURBS continuity order (free→G0,
+// tangent→G1, curvature→G2).
+func patchContinuityOrder(c PatchCondition) int {
+	switch c {
+	case PatchTangent:
+		return 1
+	case PatchCurvature:
+		return 2
+	default:
+		return 0
+	}
 }
 
 // BoundaryPatchFeatures adds boundary patches into the engine.
@@ -105,7 +166,19 @@ func NewBoundaryPatchFeatures(engine *PartFeatures) *BoundaryPatchFeatures {
 func (c *BoundaryPatchFeatures) Add(skt *sketch.Sketch, profileIndex int, cond PatchCondition) *PartFeature {
 	loops := &BoundaryPatchLoops{}
 	loops.Add(skt, profileIndex, cond)
-	bf := &BoundaryPatchFeature{def: &BoundaryPatchDefinition{Loops: loops}, featName: "BoundaryPatch"}
+	return c.add(&BoundaryPatchDefinition{Loops: loops})
+}
+
+// AddEdgeLoop fills a non-planar loop of surface-body boundary edges (reference keys) with a NURBS
+// patch at the given continuity, blending to the loop's adjacent faces (#1867). guideRails and
+// tangentWeight are recorded for a later interior-interpolation phase.
+func (c *BoundaryPatchFeatures) AddEdgeLoop(edgeKeys [][]byte, cond PatchCondition, guideRails [][]byte, tangentWeight float64) *PartFeature {
+	return c.add(&BoundaryPatchDefinition{EdgeKeys: edgeKeys, Condition: cond, GuideRailKeys: guideRails, TangentWeight: tangentWeight})
+}
+
+// add registers a boundary-patch feature from its definition and back-fills the feature name.
+func (c *BoundaryPatchFeatures) add(def *BoundaryPatchDefinition) *PartFeature {
+	bf := &BoundaryPatchFeature{def: def, featName: "BoundaryPatch"}
 	pf := c.engine.Add(bf)
 	bf.featName = pf.name
 	return pf

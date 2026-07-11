@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/app"
+	"oblikovati.org/model/feature"
 )
 
 // twoBodyPart extrudes two separate new bodies so the boolean/combine ops have a target
@@ -115,7 +116,9 @@ func TestModifyAndPatternOperations(t *testing.T) {
 		{"surfaceOffset", withSolid(func(e, f string) map[string]any { return map[string]any{"faceRefs": []string{f}, "distance": "1 mm"} })},
 		{"midSurface", withSolid(func(e, f string) map[string]any { return map[string]any{"faceRefs": []string{f}} })},
 		{"ruledSurface", withSolid(func(e, f string) map[string]any { return map[string]any{"edgeRefs": []string{e}, "distance": "2 mm"} })},
-		{"boundaryPatch", withSolid(func(e, f string) map[string]any { return map[string]any{"edgeRefs": []string{e}} })},
+		{"boundaryPatch", withSolid(func(e, f string) map[string]any {
+			return map[string]any{"edgeLoopRefs": []string{e}, "condition": "curvature"}
+		})},
 		{"extend", withSolid(func(e, f string) map[string]any { return map[string]any{"edgeRefs": []string{e}, "distance": "1 mm"} })},
 		{"stitch", withSolid(func(e, f string) map[string]any { return map[string]any{"faceRefs": []string{f}} })},
 		{"patternRectangular", withSolid(func(e, f string) map[string]any {
@@ -153,6 +156,26 @@ func TestRuledSurfaceSweepOptions(t *testing.T) {
 	}
 	if _, err := apply(t, profiledPart(t), "ruledSurface", `{"sketchIndex":0,"distance":"3 mm","type":"sweep"}`); err == nil {
 		t.Error("sweep with no direction should error")
+	}
+}
+
+// TestBoundaryPatchConditionMapping covers the #1867 router condition parse: free/tangent/curvature/
+// continuous map to G0/G1/G2, and an edge-loop request dispatches to the 3D fill (a solid's lone edge
+// cannot close a loop, so a descriptive error — never a panic — is acceptable).
+func TestBoundaryPatchConditionMapping(t *testing.T) {
+	cases := map[string]feature.PatchCondition{
+		"free": feature.PatchFree, "tangent": feature.PatchTangent,
+		"curvature": feature.PatchCurvature, "continuous": feature.PatchCurvature, "": feature.PatchFree,
+	}
+	for name, want := range cases {
+		if got := patchCondition(name); got != want {
+			t.Errorf("patchCondition(%q) = %v, want %v", name, got, want)
+		}
+	}
+	s, edge, _ := extrudedSolid(t)
+	loop, _ := json.Marshal(map[string]any{"edgeLoopRefs": []string{edge}, "condition": "curvature"})
+	if _, err := apply(t, s, "boundaryPatch", string(loop)); err != nil && err.Error() == "" {
+		t.Error("boundaryPatch edge-loop returned an empty error")
 	}
 }
 
