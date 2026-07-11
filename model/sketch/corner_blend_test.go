@@ -70,6 +70,45 @@ func TestFilletDropsOrphanCorner(t *testing.T) {
 	}
 }
 
+// TestFilletKeepsCornerStillInUse: the fillet must NOT drop the shared corner when anything else
+// still references it — a third edge, a geometric constraint, or a dimension. Only a truly
+// orphaned vertex is removed (#69). Each keep-reason exercises a branch of pointReferenced.
+func TestFilletKeepsCornerStillInUse(t *testing.T) {
+	keepBy := map[string]func(s *Sketch, corner *Point){
+		"third edge": func(s *Sketch, c *Point) { s.Lines().Add(c, s.newPoint(gmath.P2(-4, 0))) },
+		"constraint": func(s *Sketch, c *Point) { s.GeometricConstraints().AddFix(c) },
+		"dimension": func(s *Sketch, c *Point) {
+			_, _ = s.DimensionConstraints().AddDistance(c, s.newPoint(gmath.P2(0, -3)), "3 cm")
+		},
+	}
+	for reason, keep := range keepBy {
+		s := NewSketches().Add(XYPlane())
+		corner := s.newPoint(gmath.P2(0, 0))
+		l1 := s.Lines().Add(corner, s.newPoint(gmath.P2(4, 0)))
+		l2 := s.Lines().Add(corner, s.newPoint(gmath.P2(0, 4)))
+		keep(s, corner)
+		arc, err := s.AddFillet(l1, l2, 1)
+		if err != nil {
+			t.Fatalf("[%s] AddFillet: %v", reason, err)
+		}
+		found := false
+		for _, p := range s.AllPoints() {
+			if p == corner {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("[%s] corner still in use was wrongly removed", reason)
+		}
+		// The tangency records are structural: they cannot be deleted on their own.
+		for _, ft := range arc.filletTangents {
+			if ft.Deletable() {
+				t.Errorf("[%s] fillet tangency constraint should be non-deletable", reason)
+			}
+		}
+	}
+}
+
 // TestFilletedSlopedCornerReachesDOF0 is the #69 regression: a fillet on a SLOPED corner (a
 // tapered flange's root) reaches DOF 0 with only the caller's edge directions + a radius
 // dimension, because AddFillet now drops the orphan corner and pins tangency non-degenerately.
