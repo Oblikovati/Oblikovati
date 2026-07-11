@@ -281,18 +281,11 @@ func loopEdges(bld *topo.Builder, verts []*topo.Vertex, feat, role string, idx i
 	return uses
 }
 
-// buildRuledBand sweeps a closed polygon by distance along the plane normal into a
-// band of planar quad faces (no caps) — an open surface body whose straight rulings
-// connect the bottom and top loops. Reuses the prism edge/side helpers (extrude.go).
-func buildRuledBand(poly []math.Point2, plane sketch.Plane, dist float64, feat string) *topo.Body {
-	return buildRuledBandDir(poly, plane, plane.Normal().AsVector(), dist, 0, feat)
-}
-
 // buildRuledBandDir sweeps a closed polygon by dist along the ruling direction dir into a band of
-// planar quad faces (an open surface body). A non-zero draft flares each ruling radially outward by
-// dist·tan(draft), producing a tapered/flared band (#1868). dir need not be the plane normal.
+// planar quad faces (no caps) — an open surface body whose straight rulings connect the bottom and
+// top loops. A non-zero draft flares each ruling radially outward by dist·tan(draft), producing a
+// tapered/flared band (#1868). dir need not be the plane normal. Reuses the prism edge/side helpers.
 func buildRuledBandDir(poly []math.Point2, plane sketch.Plane, dir math.Vector3, dist, draft float64, feat string) *topo.Body {
-	n := len(poly)
 	bld := topo.NewBuilder(false, topo.NewLineage(topo.Tok(feat, "body", 0)))
 	u, err := math.UnitVector3FromVector(dir)
 	if err != nil {
@@ -300,9 +293,18 @@ func buildRuledBandDir(poly []math.Point2, plane sketch.Plane, dir math.Vector3,
 	}
 	up := u.AsVector().Scale(dist)
 	center := plane.ToModel(polygonCentroid2(poly))
-	flare := dist * stdmath.Tan(draft)
-	bottom := make([]*topo.Vertex, n)
-	top := make([]*topo.Vertex, n)
+	bottom, top := ruledBandVertices(bld, poly, plane, up, center, dist*stdmath.Tan(draft), feat)
+	be, te, ve := prismEdges(bld, bottom, top, feat)
+	addSides(bld, bottom, top, be, te, ve, outwardSign(poly), feat)
+	return bld.Build()
+}
+
+// ruledBandVertices builds the bottom loop (the profile in model space) and the top loop (each vertex
+// swept by up, then flared radially outward from center by flare for a draft taper) (#1868).
+func ruledBandVertices(bld *topo.Builder, poly []math.Point2, plane sketch.Plane, up math.Vector3, center math.Point3, flare float64, feat string) (bottom, top []*topo.Vertex) {
+	n := len(poly)
+	bottom = make([]*topo.Vertex, n)
+	top = make([]*topo.Vertex, n)
 	for i, p := range poly {
 		b := plane.ToModel(p)
 		t := b.TranslateBy(up)
@@ -314,9 +316,7 @@ func buildRuledBandDir(poly []math.Point2, plane sketch.Plane, dir math.Vector3,
 		bottom[i] = bld.AddVertex(b, topo.NewLineage(topo.Tok(feat, "vertex", i)))
 		top[i] = bld.AddVertex(t, topo.NewLineage(topo.Tok(feat, "vertex", n+i)))
 	}
-	be, te, ve := prismEdges(bld, bottom, top, feat)
-	addSides(bld, bottom, top, be, te, ve, outwardSign(poly), feat)
-	return bld.Build()
+	return bottom, top
 }
 
 // polygonCentroid2 averages a 2D polygon's vertices.
