@@ -72,15 +72,30 @@ proc blend {args} {
     catch {eval __real_blend $args}
 }
 
-# Intercept `checkprops shape -s <area> [-deps <d>]`: capture OCCT's reference area and
-# tolerance; do NOT delegate (we assert on our side, not OCCT's).
+# Neutralise `checkprops` so the real command never runs (we assert on our side). The
+# reference area/deps are read STATICALLY from the case text below, not from this call —
+# many cases run post-blend commands (explode/tcopy) that error and abort the sourced script
+# before its checkprops line, which would otherwise lose the area (the tolblend area:0 bug).
 rename checkprops __real_checkprops
-proc checkprops {args} {
-    global ORV
-    set i [lsearch -exact $args "-s"]
-    if {$i >= 0} { set ORV(exparea) [lindex $args [expr {$i + 1}]] }
-    set d [lsearch -exact $args "-deps"]
-    if {$d >= 0} { set ORV(deps) [lindex $args [expr {$d + 1}]] }
+proc checkprops {args} {}
+
+# scanCheckprops reads the reference surface area (`-s`) and tolerance (`-deps`) directly from
+# the case's checkprops line. Prefers the line asserting `result` (the blend output); falls
+# back to the first `-s` seen. Returns {area deps}, each "" when absent.
+proc scanCheckprops {path} {
+    set fh [open $path r]
+    set txt [read $fh]
+    close $fh
+    set area ""
+    set deps ""
+    foreach line [split $txt "\n"] {
+        if {![regexp -- {^\s*checkprops\s+(\S+)} $line -> shape]} { continue }
+        if {[regexp -- {-s\s+([0-9eE.+-]+)} $line -> s]} {
+            if {$area eq "" || $shape eq "result"} { set area $s }
+        }
+        if {[regexp -- {-deps\s+([0-9eE.+-]+)} $line -> d]} { set deps $d }
+    }
+    return [list $area $deps]
 }
 
 # Variable-radius fillet: `mkevol result s` then `updatevol edge p0 r0 p1 r1 …` (repeated)
@@ -142,6 +157,11 @@ proc scanTodo {path} {
 }
 
 set ORV(todo) [scanTodo $casePath]
+
+# Reference area/deps come from the case text, robust to a mid-script abort.
+set cp [scanCheckprops $casePath]
+if {[lindex $cp 0] ne ""} { set ORV(exparea) [lindex $cp 0] }
+if {[lindex $cp 1] ne ""} { set ORV(deps)    [lindex $cp 1] }
 
 # --- run the grid setup + the case (both intercepted) -------------------------------
 catch {source $beginPath}
