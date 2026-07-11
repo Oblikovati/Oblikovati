@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -148,6 +149,29 @@ func TestTrimByPlaneEmptyErrors(t *testing.T) {
 	// Keep the x ≥ 10 side — nothing remains.
 	if _, err := TrimByPlane(patch, math.P3(10, 0, 0), math.V3(1, 0, 0), true, "trim"); err == nil {
 		t.Error("trimming away the whole patch should error")
+	}
+}
+
+// TestBodyPlaneOfPlanarSurface returns the plane of a single-face (and a coplanar two-face) surface
+// body, and rejects a non-coplanar body — the Trim surface-body tool (#1880).
+func TestBodyPlaneOfPlanarSurface(t *testing.T) {
+	quad := quadBody("q", math.P3(0, 0, 5), math.P3(4, 0, 5), math.P3(4, 4, 5), math.P3(0, 4, 5)) // z=5 plane
+	pl, ok := BodyPlane(quad)
+	if !ok {
+		t.Fatal("BodyPlane should resolve a single planar face")
+	}
+	if n := pl.Normal(); !approx(float64(n.Z*n.Z), 1) {
+		t.Errorf("plane normal = %v, want ±Z", n)
+	}
+	if d := geom.SignedDistanceToPlane(pl, math.P3(0, 0, 5)); !approx(float64(d), 0) {
+		t.Errorf("z=5 point is %g off the plane, want 0", d)
+	}
+	if _, ok := BodyPlane(twoQuadSheet(t)); !ok {
+		t.Error("a coplanar quilt should resolve one plane")
+	}
+	box, _ := Stitch(boxFaces(2, 2, 2), 0, false, "box")
+	if _, ok := BodyPlane(box); ok {
+		t.Error("a multi-plane body should not resolve a single tool plane")
 	}
 }
 

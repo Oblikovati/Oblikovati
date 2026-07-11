@@ -171,6 +171,27 @@ func TrimByPlane(body *topo.Body, origin math.Point3, normal math.Vector3, keepP
 	return buildSheet(patches, feat), nil
 }
 
+// BodyPlane returns the common plane of a planar surface body (its faces' shared plane) — for use
+// as a Trim cutting tool (#1880). It reports false for an empty, non-planar, or multi-plane body
+// (a curved tool surface is phase C).
+func BodyPlane(body *topo.Body) (geom.Plane, bool) {
+	faces := body.Faces()
+	if len(faces) == 0 {
+		return geom.Plane{}, false
+	}
+	pl, ok := faces[0].Geometry().(geom.Plane)
+	if !ok {
+		return geom.Plane{}, false
+	}
+	for _, f := range faces[1:] {
+		other, ok := f.Geometry().(geom.Plane)
+		if !ok || !sameDirection(pl.Normal(), other.Normal()) || stdmath.Abs(float64(geom.SignedDistanceToPlane(pl, other.Origin))) > 1e-6 {
+			return geom.Plane{}, false // not a single coplanar tool surface
+		}
+	}
+	return pl, true
+}
+
 // clipHalfSpace clips a planar polygon against one half-space (Sutherland–Hodgman),
 // keeping vertices on the plane's keep side and inserting edge–plane intersections.
 func clipHalfSpace(poly []math.Point3, origin math.Point3, normal math.Vector3, keepPositive bool) []math.Point3 {

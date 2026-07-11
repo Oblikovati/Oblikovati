@@ -153,6 +153,29 @@ func TestMidSurfaceFacePairs(t *testing.T) {
 	}
 }
 
+// TestTrimCuttingTools covers the #1880 trim tool resolution: a work-plane tool and a sketch-line
+// tool resolve to a cutting plane (result or a descriptive error, never a resolution panic); a
+// multi-plane surface-body tool and an empty request error clearly.
+func TestTrimCuttingTools(t *testing.T) {
+	// Fresh session per assertion — each trim mutates the running body.
+	s1, _, _ := extrudedSolid(t)
+	if _, err := apply(t, s1, "trim", `{"toolRef":"origin/plane/xy"}`); err != nil && err.Error() == "" {
+		t.Error("trim toolRef returned an empty error")
+	}
+	s2, _, _ := extrudedSolid(t)
+	if _, err := apply(t, s2, "trim", `{"toolSketchIndex":0,"toolLineIndex":0}`); err != nil && err.Error() == "" {
+		t.Error("trim sketch-line tool returned an empty error")
+	}
+	s3, _, _ := extrudedSolid(t)
+	if _, err := apply(t, s3, "trim", `{"toolBodyIndex":0}`); err == nil {
+		t.Error("trim with a multi-plane tool body should error")
+	}
+	s4, _, _ := extrudedSolid(t)
+	if _, err := apply(t, s4, "trim", `{}`); err == nil {
+		t.Error("trim with no cutting tool should error")
+	}
+}
+
 // TestExtendRouterOptions covers the #1878 extend parse/resolve branches: no edges errors, and
 // extentType toPlane without a targetRef errors (the plane target cannot resolve).
 func TestExtendRouterOptions(t *testing.T) {
