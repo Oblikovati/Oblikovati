@@ -83,6 +83,49 @@ proc checkprops {args} {
     if {$d >= 0} { set ORV(deps) [lindex $args [expr {$d + 1}]] }
 }
 
+# Variable-radius fillet: `mkevol result s` then `updatevol edge p0 r0 p1 r1 …` (repeated)
+# then `buildevol`. Record verb+input on mkevol; each updatevol becomes one pick carrying its
+# parameter→radius law (constant Radius unused, 0). Parameters and radii may be SCALE
+# expressions, so evaluate at global scope (see the blend override).
+rename mkevol __real_mkevol
+proc mkevol {args} {
+    global ORV
+    set ORV(verb)  "buildevol"
+    set ORV(input) [lindex $args 1]
+    catch {eval __real_mkevol $args}
+}
+rename updatevol __real_updatevol
+proc updatevol {args} {
+    global ORV
+    set edge [lindex $args 0]
+    set law  {}
+    foreach {p r} [lrange $args 1 end] {
+        lappend law [list [uplevel #0 [list dval $p]] [uplevel #0 [list dval $r]]]
+    }
+    lappend ORV(picks) [list 0 $edge $law]
+    catch {eval __real_updatevol $args}
+}
+# buildevol must be wrapped too: an uncaught build error would abort the sourced case before
+# the trailing `checkprops` line runs, losing the reference area (the area:0 bug).
+rename buildevol __real_buildevol
+proc buildevol {args} {
+    catch {eval __real_buildevol $args}
+}
+
+# bfuseblend: fuse(shape1,shape2), then blend ALL edges of their boolean section with one
+# radius (BRepTest_FilletCommands.cxx). Record only the operands + radius here; the fused
+# solid and the section edges are resolved post-source at global scope (see below), so the
+# input STEP is the fused solid and one pick is emitted per section edge, all same radius.
+rename bfuseblend __real_bfuseblend
+proc bfuseblend {args} {
+    global ORV
+    set ORV(verb)   "bfuseblend"
+    set ORV(bf_s)   [lindex $args 1]
+    set ORV(bf_b)   [lindex $args 2]
+    set ORV(bf_rad) [uplevel #0 [list dval [lindex $args 3]]]
+    catch {eval __real_bfuseblend $args}
+}
+
 # --- detect OCCT's own TODO/INCOMPLETE marker in the case text ----------------------
 # OCCT marks a case it knows fails with `puts "TODO … TEST INCOMPLETE"`; we mirror that
 # (never stricter than OCCT). Scan the file text rather than trapping puts at runtime.
@@ -103,6 +146,23 @@ set ORV(todo) [scanTodo $casePath]
 # --- run the grid setup + the case (both intercepted) -------------------------------
 catch {source $beginPath}
 catch {source $casePath}
+
+# bfuseblend post-processing (global scope): build the fused input solid and one pick per
+# boolean-section edge — the exact edge set OCCT's bfuseblend blends.
+if {$ORV(verb) eq "bfuseblend" && [info exists ORV(bf_s)]} {
+    global __bf_fused __bf_sec
+    if {![catch {bfuse __bf_fused $ORV(bf_s) $ORV(bf_b)}]} {
+        set ORV(input) "__bf_fused"
+    }
+    if {![catch {bsection __bf_sec $ORV(bf_s) $ORV(bf_b)} secErr]} {
+        set secEdges [explode __bf_sec e]
+        foreach e $secEdges {
+            lappend ORV(picks) [list $ORV(bf_rad) $e ""]
+        }
+    } else {
+        set ORV(todo) "bfuseblend-section-failed: $secErr"
+    }
+}
 
 # --- JSON emission ------------------------------------------------------------------
 proc jnum {x} { return [format "%.10g" $x] }

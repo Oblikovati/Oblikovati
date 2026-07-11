@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "SPDX-License-Identifier: GPL-2.0-only. The per-case record emitted by oracle.tcl and consumed by model/feature/occtparity/record.go. One file per OCCT tests/blend case.",
+  "title": "OCCT blend-parity oracle record",
+  "type": "object",
+  "required": ["grid", "case", "verb", "expectedArea", "deps", "todo", "inputStep", "picks"],
+  "properties": {
+    "grid": { "type": "string", "description": "OCCT grid name, e.g. \"simple\", \"buildevol\", \"bfuseblend\"." },
+    "case": { "type": "string", "description": "OCCT case name, e.g. \"A1\"." },
+    "verb": {
+      "type": "string",
+      "enum": ["blend", "buildevol", "bfuseblend", ""],
+      "description": "Which blend command drove the case; \"\" when the case never blended (e.g. a TODO stub)."
+    },
+    "expectedArea": {
+      "type": "number",
+      "description": "OCCT's reference surface area from `checkprops -s`. 0 for TODO cases (checkprops -s 0)."
+    },
+    "deps": {
+      "type": "number",
+      "description": "Relative tolerance from `checkprops -deps`, else 0.01 (OCCT's checkprops default)."
+    },
+    "todo": {
+      "type": "string",
+      "description": "OCCT's own TODO/INCOMPLETE marker line if the case carries one, else \"\". Mirrored so we are never stricter than OCCT."
+    },
+    "inputStep": {
+      "type": "string",
+      "description": "Filename (sibling of this JSON) of OCCT's exact input solid as STEP. For bfuseblend, the FUSED solid. \"\" when no input was captured."
+    },
+    "picks": {
+      "type": "array",
+      "description": "One entry per blended edge. For bfuseblend, one per boolean-section edge (all same radius).",
+      "items": {
+        "type": "object",
+        "required": ["radius", "locator", "law"],
+        "properties": {
+          "radius": { "type": "number", "description": "Constant fillet radius (0 for variable-radius buildevol picks, which use `law`)." },
+          "locator": {
+            "type": "object",
+            "required": ["midpoint", "direction"],
+            "description": "Geometry-only edge locator = the edge's true mid-parameter point and unit tangent (OCCT's own curve evaluation), used to re-find the picked edge on our imported body.",
+            "properties": {
+              "midpoint":  { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
+              "direction": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 }
+            }
+          },
+          "law": {
+            "type": ["array", "null"],
+            "description": "Variable-radius law: the updatevol (parameter, radius) pairs. null for constant-radius picks.",
+            "items": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 }
+          }
+        }
+      }
+    }
+  }
+}
