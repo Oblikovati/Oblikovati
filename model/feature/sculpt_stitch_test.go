@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/health"
+	"oblikovati.org/model/sketch"
 )
 
 // cubeFaceBody builds one outward-oriented quad surface body of the unit cube.
@@ -108,6 +109,66 @@ func TestSculptFillsBoundedVolume(t *testing.T) {
 	// The filled volume spans the unit cube.
 	if d := body.RangeBox().Diagonal(); !approxEq(d.X, 1) || !approxEq(d.Y, 1) || !approxEq(d.Z, 1) {
 		t.Errorf("sculpt box diagonal = %v, want (1,1,1)", d)
+	}
+}
+
+// TestSculptDirectedFillsVolume is #1881: with an explicit direction per bounding surface (keep the
+// inside of each outward cube face), sculpt intersects the directed halfspaces into the unit solid.
+func TestSculptDirectedFillsVolume(t *testing.T) {
+	fs := NewPartFeatures(nil)
+	NewBaseFeatures(fs).AddBase(unitCubeFaces()...)
+	pf := NewSculptFeatures(fs).AddSculpt(&SculptDefinition{Operation: ops.NewBody, Directions: make([]bool, 6)})
+	fs.Recompute()
+	if !pf.Health().OK() {
+		t.Fatalf("directed sculpt went unhealthy: %+v", pf.Health())
+	}
+	body := fs.Result()[0]
+	if !body.IsSolid() {
+		t.Fatal("directed sculpt should fill a solid")
+	}
+	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; !approxEq(v, 1) {
+		t.Errorf("directed sculpt volume = %g, want 1 (unit cube)", v)
+	}
+}
+
+// TestSculptBodySelectionKeepsOthers is #1881: sculpting only the selected bounding surfaces leaves
+// an unselected body untouched alongside the new sculpted solid.
+func TestSculptBodySelectionKeepsOthers(t *testing.T) {
+	fs := NewPartFeatures(nil)
+	NewBaseFeatures(fs).AddBase(unitCubeFaces()...)                                                          // bodies 0..5: cube faces
+	NewBaseFeatures(fs).AddBase(buildPrism(squarePoly(10), sketch.XYPlane(), span{near: 0, far: 1}, 0, "b")) // body 6: a far solid
+	pf := NewSculptFeatures(fs).AddSculpt(&SculptDefinition{Operation: ops.NewBody, BodyIndices: []int{0, 1, 2, 3, 4, 5}, Directions: make([]bool, 6)})
+	fs.Recompute()
+	if !pf.Health().OK() {
+		t.Fatalf("body-selected sculpt sick: %+v", pf.Health())
+	}
+	if got := len(fs.Result()); got != 2 {
+		t.Fatalf("result = %d bodies, want 2 (the far solid + the sculpted cube)", got)
+	}
+}
+
+// TestSculptOptionsRoundTrip pins #1881 serialization: directions, body selection, and the affected
+// index survive the recipe codec.
+func TestSculptOptionsRoundTrip(t *testing.T) {
+	fs := NewPartFeatures(nil)
+	affected := 2
+	NewSculptFeatures(fs).AddSculpt(&SculptDefinition{
+		Operation: ops.Cut, Tolerance: 0.01, Directions: []bool{true, false, true}, BodyIndices: []int{0, 1, 3}, AffectedIndex: &affected,
+	})
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	if d := data[0].Sculpt; len(d.Directions) != 3 || len(d.BodyIndices) != 3 || d.AffectedIndex == nil || *d.AffectedIndex != 2 {
+		t.Fatalf("serialized sculpt = %+v", d)
+	}
+	fresh := NewPartFeatures(nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	def := fresh.Item(0).Definition().(*SculptFeature).Definition()
+	if len(def.Directions) != 3 || !def.Directions[0] || def.Directions[1] || len(def.BodyIndices) != 3 || def.AffectedIndex == nil || *def.AffectedIndex != 2 {
+		t.Errorf("restored sculpt = %+v", def)
 	}
 }
 

@@ -142,7 +142,9 @@ const sculptSchema = `{
   "type": "object",
   "properties": {
     "operation": {"type": "string", "enum": ["new", "join", "cut"], "default": "new"},
-    "tolerance": {"type": "string", "description": "Sculpt tolerance, e.g. \"0.1 mm\".", "default": "0.1 mm"}
+    "tolerance": {"type": "string", "description": "Sculpt tolerance, e.g. \"0.1 mm\".", "default": "0.1 mm"},
+    "surfaces": {"type": "array", "items": {"type": "object", "properties": {"bodyIndex": {"type": "integer", "minimum": 0}, "direction": {"type": "string", "enum": ["positive", "negative"]}}, "required": ["bodyIndex"]}, "description": "Bounding surfaces with the side (direction) facing the volume; omit to weld all running surfaces (a closed quilt)."},
+    "affectedBodyIndex": {"type": "integer", "minimum": 0, "description": "Body join/cut targets (default the last solid)."}
   }
 }`
 
@@ -461,7 +463,12 @@ func applySculpt(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewSculptFeatures(part.Features()).Add(op, tol)
+	def := &feature.SculptDefinition{Operation: op, Tolerance: tol, AffectedIndex: in.AffectedBodyIndex}
+	for _, srf := range in.Surfaces {
+		def.BodyIndices = append(def.BodyIndices, srf.BodyIndex)
+		def.Directions = append(def.Directions, srf.Direction == "positive") // else keep the −normal side
+	}
+	pf := feature.NewSculptFeatures(part.Features()).AddSculpt(def)
 	return recomputeResult(part, pf)
 }
 

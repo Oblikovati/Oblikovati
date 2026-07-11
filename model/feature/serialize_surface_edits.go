@@ -175,8 +175,11 @@ func restoreStitch(fs *PartFeatures, d *StitchData) (*PartFeature, error) {
 // SculptData is a sculpt's recipe: the boolean operation against existing material and the
 // coincidence tolerance for closing the bounding surfaces.
 type SculptData struct {
-	Operation string  `yaml:"operation"`
-	Tolerance float64 `yaml:"tolerance"`
+	Operation     string  `yaml:"operation"`
+	Tolerance     float64 `yaml:"tolerance"`
+	Directions    []bool  `yaml:"directions,omitempty"`    // #1881: per-surface keep-positive
+	BodyIndices   []int   `yaml:"bodyIndices,omitempty"`   // #1881: bounding-surface selection
+	AffectedIndex *int    `yaml:"affectedIndex,omitempty"` // #1881: join/cut target
 }
 
 func serializeSculpt(def *SculptDefinition) (*SculptData, error) {
@@ -184,7 +187,10 @@ func serializeSculpt(def *SculptDefinition) (*SculptData, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &SculptData{Operation: op, Tolerance: def.Tolerance}, nil
+	return &SculptData{
+		Operation: op, Tolerance: def.Tolerance,
+		Directions: def.Directions, BodyIndices: def.BodyIndices, AffectedIndex: def.AffectedIndex,
+	}, nil
 }
 
 func restoreSculpt(fs *PartFeatures, d *SculptData) (*PartFeature, error) {
@@ -195,5 +201,8 @@ func restoreSculpt(fs *PartFeatures, d *SculptData) (*PartFeature, error) {
 	if err != nil {
 		return nil, fmt.Errorf("sculpt feature operation: %w", err)
 	}
-	return NewSculptFeatures(fs).Add(op, d.Tolerance), nil
+	return NewSculptFeatures(fs).AddSculpt(&SculptDefinition{
+		Operation: op, Tolerance: d.Tolerance,
+		Directions: d.Directions, BodyIndices: d.BodyIndices, AffectedIndex: d.AffectedIndex,
+	}), nil
 }

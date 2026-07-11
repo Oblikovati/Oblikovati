@@ -4,6 +4,7 @@ package feature
 
 import (
 	"errors"
+	"fmt"
 
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
@@ -70,15 +71,21 @@ type KnitFeatures = StitchFeatures
 // NewKnitFeatures binds a knit (alias of stitch) collection to an engine.
 func NewKnitFeatures(engine *PartFeatures) *KnitFeatures { return NewStitchFeatures(engine) }
 
-// SculptDefinition is the recipe for a sculpt: the operation against existing
-// material and the coincidence tolerance for closing the bounding surfaces.
+// SculptDefinition is the recipe for a sculpt: the operation against existing material, the
+// coincidence tolerance for closing the bounding surfaces, and the #1881 options. Directions gives
+// a per-bounding-surface keep-positive side (empty ⇒ closed-quilt stitch); BodyIndices selects the
+// bounding surfaces (empty ⇒ all running bodies); AffectedIndex targets a body for join/cut.
 type SculptDefinition struct {
-	Operation ops.PartFeatureOperation
-	Tolerance float64
+	Operation     ops.PartFeatureOperation
+	Tolerance     float64
+	Directions    []bool
+	BodyIndices   []int
+	AffectedIndex *int
 }
 
-// SculptFeature fills a volume bounded by the running surface bodies, producing a
-// solid (PBI-110). The bounding surfaces must enclose a closed cell.
+// SculptFeature fills a volume bounded by the running surface bodies, producing a solid (PBI-110).
+// Closed quilts weld into the solid; open bounding surfaces are closed by their per-surface
+// directions (#1881). new adds a body; join/cut boolean it into the affected solid.
 type SculptFeature struct {
 	def      *SculptDefinition
 	featName string
@@ -90,20 +97,91 @@ func (s *SculptFeature) Definition() *SculptDefinition { return s.def }
 // Kind implements [Feature].
 func (s *SculptFeature) Kind() string { return "sculpt" }
 
-// Recompute welds the bounding surfaces into a solid; if they do not enclose a
-// volume (the quilt is open) the feature goes sick — it cannot define a region.
+// Recompute builds the sculpted solid from the selected bounding surfaces (welding a closed quilt,
+// or intersecting the directed halfspaces of open surfaces) and combines it per the operation.
 func (s *SculptFeature) Recompute(in Input) (Output, error) {
 	if len(in.Bodies) == 0 {
 		return Output{}, errors.New("sculpt: no bounding surfaces in the running state")
 	}
-	solid, err := ops.Stitch(in.Bodies, s.def.Tolerance, false, s.featName)
+	surfaces, others := s.partition(in.Bodies)
+	if len(surfaces) == 0 {
+		return Output{}, errors.New("sculpt: no bounding surfaces selected")
+	}
+	solid, err := s.buildSolid(surfaces)
 	if err != nil {
 		return Output{}, err
 	}
-	if !solid.IsSolid() {
-		return Output{}, errors.New("sculpt: bounding surfaces do not enclose a volume")
+	if s.def.Operation == ops.Cut || s.def.Operation == ops.Join {
+		return sculptBoolean(others, solid, s.def.Operation, s.def.AffectedIndex)
 	}
-	return Output{Bodies: []*topo.Body{solid}}, nil
+	return Output{Bodies: append(others, solid)}, nil // new body
+}
+
+// partition splits the running bodies into the selected bounding surfaces and the rest (which carry
+// through and hold the affected body for join/cut). No selection ⇒ every body is a bounding surface.
+func (s *SculptFeature) partition(bodies []*topo.Body) (surfaces, others []*topo.Body) {
+	if len(s.def.BodyIndices) == 0 {
+		return bodies, nil
+	}
+	picked := map[int]bool{}
+	for _, i := range s.def.BodyIndices { // preserve the caller's order so Directions[i] aligns
+		if i >= 0 && i < len(bodies) {
+			surfaces = append(surfaces, bodies[i])
+			picked[i] = true
+		}
+	}
+	for i, b := range bodies {
+		if !picked[i] {
+			others = append(others, b)
+		}
+	}
+	return surfaces, others
+}
+
+// buildSolid welds a closed quilt into a solid, or — with per-surface directions — intersects the
+// directed halfspaces of the (possibly open) bounding surfaces.
+func (s *SculptFeature) buildSolid(surfaces []*topo.Body) (*topo.Body, error) {
+	if len(s.def.Directions) > 0 {
+		return ops.SculptDirected(surfaces, s.def.Directions, s.featName)
+	}
+	solid, err := ops.Stitch(surfaces, s.def.Tolerance, false, s.featName)
+	if err != nil {
+		return nil, err
+	}
+	if !solid.IsSolid() {
+		return nil, errors.New("sculpt: bounding surfaces do not enclose a volume")
+	}
+	return solid, nil
+}
+
+// sculptBoolean combines the sculpted solid into the affected body (index into the carried bodies,
+// default the last solid), leaving the other carried bodies untouched.
+func sculptBoolean(others []*topo.Body, solid *topo.Body, op ops.PartFeatureOperation, affected *int) (Output, error) {
+	target := sculptTarget(others, affected)
+	if target < 0 {
+		return Output{}, fmt.Errorf("sculpt %s: no solid body to modify", op)
+	}
+	result, err := ops.Boolean(op, others[target], solid)
+	if err != nil {
+		return Output{}, fmt.Errorf("sculpt %s: %w", op, err)
+	}
+	out := append([]*topo.Body(nil), others...)
+	out[target] = result
+	return Output{Bodies: out}, nil
+}
+
+// sculptTarget returns the index (into others) of the affected body: the given index if it is a
+// valid solid, else the most recent solid, or -1.
+func sculptTarget(others []*topo.Body, affected *int) int {
+	if affected != nil && *affected >= 0 && *affected < len(others) && others[*affected].IsSolid() {
+		return *affected
+	}
+	for i := len(others) - 1; i >= 0; i-- {
+		if others[i].IsSolid() {
+			return i
+		}
+	}
+	return -1
 }
 
 // SculptFeatures adds sculpt features into the engine.
@@ -112,9 +190,13 @@ type SculptFeatures struct{ engine *PartFeatures }
 // NewSculptFeatures binds the collection to a feature engine.
 func NewSculptFeatures(engine *PartFeatures) *SculptFeatures { return &SculptFeatures{engine: engine} }
 
-// Add fills the volume bounded by the running surfaces, combining via op.
+// Add fills the volume bounded by the running surfaces, combining via op (closed-quilt form).
 func (c *SculptFeatures) Add(op ops.PartFeatureOperation, tolerance float64) *PartFeature {
-	def := &SculptDefinition{Operation: op, Tolerance: tolerance}
+	return c.AddSculpt(&SculptDefinition{Operation: op, Tolerance: tolerance})
+}
+
+// AddSculpt fills the volume bounded by the (optionally directed / selected) surfaces per def (#1881).
+func (c *SculptFeatures) AddSculpt(def *SculptDefinition) *PartFeature {
 	sf := &SculptFeature{def: def, featName: "Sculpt"}
 	pf := c.engine.Add(sf)
 	sf.featName = pf.name

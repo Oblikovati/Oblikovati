@@ -153,6 +153,20 @@ func TestMidSurfaceFacePairs(t *testing.T) {
 	}
 }
 
+// TestSculptSurfaces covers the #1881 router path: bounding surfaces with per-surface directions
+// and an affected-body index parse and dispatch (result or a descriptive error, never a panic).
+func TestSculptSurfaces(t *testing.T) {
+	s, _, _ := extrudedSolid(t)
+	args, _ := json.Marshal(map[string]any{
+		"operation":         "new",
+		"surfaces":          []map[string]any{{"bodyIndex": 0, "direction": "positive"}},
+		"affectedBodyIndex": 0,
+	})
+	if _, err := apply(t, s, "sculpt", string(args)); err != nil && err.Error() == "" {
+		t.Error("sculpt surfaces returned an empty error")
+	}
+}
+
 // TestTrimCuttingTools covers the #1880 trim tool resolution: a work-plane tool and a sketch-line
 // tool resolve to a cutting plane (result or a descriptive error, never a resolution panic); a
 // multi-plane surface-body tool and an empty request error clearly.
