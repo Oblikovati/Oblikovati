@@ -6,6 +6,8 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
+	"runtime"
 )
 
 // corpusJSON is the generated OCCT tests/blend corpus (all grids), produced by
@@ -29,7 +31,14 @@ func Corpus() []Record {
 	return records
 }
 
-// CorpusFixtureDir is the directory (relative to this package, i.e. resolved from a test's
-// working directory) holding the committed STEP fixtures Corpus() records reference via
-// InputStep.
-func CorpusFixtureDir() string { return "fixtures" }
+// CorpusFixtureDir is the absolute directory holding the committed STEP fixtures that Corpus()
+// records reference via InputStep. It is resolved from this source file's location (not the
+// test's working directory) so callers in any package — occtparity's own tests and the feature
+// grid tests, which run with different CWDs — find the fixtures identically.
+func CorpusFixtureDir() string {
+	_, thisFile, _, ok := runtime.Caller(0)
+	if !ok {
+		return "fixtures"
+	}
+	return filepath.Join(filepath.Dir(thisFile), "fixtures")
+}
