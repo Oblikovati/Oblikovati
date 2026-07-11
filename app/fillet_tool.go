@@ -25,6 +25,7 @@ type FilletTool struct {
 	concaveStrategy types.FilletConcaveStrategy // concave edges: outward fill (default) or inward recess
 	crossSection    feature.FilletCrossSection  // blend cross-section: arc (default), G2, or conic (#1284)
 	rho             float64                     // conic fullness (0<ρ<1, 0.5 = parabola)
+	tangentChain    bool                        // a plain pick selects the whole tangent chain (#1947)
 	added           *feature.PartFeature
 }
 
@@ -113,7 +114,12 @@ func (t *FilletTool) SetCornerTypeIndex(i int) {
 func (t *FilletTool) Name() string { return "Fillet" }
 
 // Start is a no-op; the engine installs the filter from AcceptedKinds.
-func (t *FilletTool) Start(*Session) {}
+func (t *FilletTool) Start(s *Session) { t.tangentChain = s.TangentChainSelect() }
+
+// SetTangentChain/TangentChain choose whether a plain pick selects the whole tangent chain through
+// the clicked edge (Inventor's tangent propagation) or just that edge. Shift+click always expands.
+func (t *FilletTool) SetTangentChain(on bool) { t.tangentChain = on }
+func (t *FilletTool) TangentChain() bool      { return t.tangentChain }
 
 // AcceptedKinds declares fillet picks edges (the edges to round).
 func (t *FilletTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectEdge} }
@@ -128,17 +134,19 @@ func (t *FilletTool) Pick(_ *Session, sel Selectable) {
 	}
 }
 
-// PickWithMods adds the whole tangent chain through the clicked edge on Shift+click — the
-// "select tangent chain / loop" selection (#1798); a plain click adds the single edge.
+// PickWithMods adds the whole tangent chain through the clicked edge when tangent-chain mode is on
+// (the default, Inventor's tangent propagation) or on Shift+click — the "select tangent chain /
+// loop" selection (#1798/#1947); otherwise a plain click adds the single edge. Shift always expands,
+// so it still works even when the mode is toggled off.
 func (t *FilletTool) PickWithMods(s *Session, sel Selectable, mods Modifier) {
 	e, ok := sel.(EdgeHandle)
-	if !ok || !mods.Has(ShiftMod) {
-		t.Pick(s, sel)
+	if ok && (t.tangentChain || mods.Has(ShiftMod)) {
+		for _, h := range s.tangentChainHandles(e) {
+			t.addEdge(h)
+		}
 		return
 	}
-	for _, h := range s.tangentChainHandles(e) {
-		t.addEdge(h)
-	}
+	t.Pick(s, sel)
 }
 
 // addEdge appends an edge unless it is already selected.

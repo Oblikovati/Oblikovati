@@ -9,27 +9,37 @@ import (
 	"oblikovati.org/kernel/topo"
 )
 
-// TestChamferShiftClickSelectsTangentLoop is the #1798 acceptance at the UI seam: after rounding
-// a block's four vertical edges, Shift-clicking one straight edge of the resulting tangent top
-// rim selects the whole 8-edge loop in one gesture (4 sides + 4 corner arcs) — the "pick one
-// edge → select tangent chain" the Chamfer/Fillet tools were missing. A plain click still adds
-// only the clicked edge.
+// TestChamferShiftClickSelectsTangentLoop is the #1798/#1947 acceptance at the UI seam: after
+// rounding a block's four vertical edges, one click on a straight edge of the resulting tangent top
+// rim selects the whole 8-edge loop (4 sides + 4 corner arcs). With the "Tangent chain" toggle at
+// its default (on, Inventor's tangent propagation) a PLAIN click expands; toggling it off makes a
+// plain click select just the clicked edge; and Shift+click always expands regardless.
 func TestChamferShiftClickSelectsTangentLoop(t *testing.T) {
 	s, block := newPartWithBlock(t, 2)
 	roundVerticalEdges(t, s, block, 0.5)
 	rounded := activePartDef(t, s).SurfaceBodies().Item(0)
 	seed := longestTopRimEdgeHandle(t, rounded, 2.0)
 
-	ch := NewChamferTool()
-	s.StartTool(ch)
-	ch.PickWithMods(s, seed, 0) // plain click adds only the seed
-	if got := len(ch.Edges()); got != 1 {
-		t.Fatalf("plain click selected %d edges, want 1", got)
+	def := NewChamferTool()
+	s.StartTool(def) // seeds tangentChain from the session default (on)
+	def.PickWithMods(s, seed, 0)
+	if got := len(def.Edges()); got != 8 {
+		t.Fatalf("plain click with the Tangent-chain default (on) selected %d edges, want the 8-edge loop", got)
 	}
-	ch2 := NewChamferTool()
-	s.StartTool(ch2)
-	ch2.PickWithMods(s, seed, ShiftMod) // Shift-click expands to the tangent loop
-	if got := len(ch2.Edges()); got != 8 {
+
+	off := NewChamferTool()
+	s.StartTool(off)
+	off.SetTangentChain(false)
+	off.PickWithMods(s, seed, 0) // toggle off ⇒ plain click adds only the seed
+	if got := len(off.Edges()); got != 1 {
+		t.Fatalf("plain click with Tangent chain off selected %d edges, want 1", got)
+	}
+
+	shift := NewChamferTool()
+	s.StartTool(shift)
+	shift.SetTangentChain(false)
+	shift.PickWithMods(s, seed, ShiftMod) // Shift always expands, even with the toggle off
+	if got := len(shift.Edges()); got != 8 {
 		t.Fatalf("Shift-click selected %d edges, want the 8-edge tangent loop", got)
 	}
 }

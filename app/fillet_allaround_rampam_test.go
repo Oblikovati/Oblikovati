@@ -84,19 +84,36 @@ func TestFilletAllAroundShiftClickExpandsTangentLoop(t *testing.T) {
 	}
 }
 
-// TestFilletAllAroundPlainClickIsSingleEdge documents rampam's likely experience (#1 "unable to
-// fillet all around, it does not detect tangency"): a PLAIN click selects only the one clicked edge,
-// so a user who does not know the (undiscoverable) Shift+click gets a single-edge fillet, not an
-// all-around one. This is the interaction gap — the kernel/feature layers are correct (they round
-// all 8 when handed them), but nothing surfaces the tangent loop on a normal click.
-func TestFilletAllAroundPlainClickIsSingleEdge(t *testing.T) {
+// TestFilletAllAroundIsDiscoverableByDefault is the #1947 affordance for rampam's #1 ("does not
+// detect tangency"): with the "Tangent chain" toggle at its default (on), a PLAIN viewport click
+// (PickWithMods, no modifier) selects the whole 8-edge loop, so "fillet all around" works on the
+// first click with no hidden gesture. Toggling it off restores single-edge picking; the explicit
+// Pick API is always single (it is the deterministic per-edge entry the toggle does not touch).
+func TestFilletAllAroundIsDiscoverableByDefault(t *testing.T) {
 	s, block := newPartWithBlock(t, 2)
 	rounded := filletVerticalsOf(t, s, block)
+	seed := oneTopRimEdge(t, rounded)
 
-	f := NewFilletTool()
-	s.StartTool(f)
-	f.Pick(s, oneTopRimEdge(t, rounded)) // plain click — no modifier
-	if n := len(f.Edges()); n != 1 {
-		t.Fatalf("plain click selected %d edges, want 1 (no tangent-chain on a normal click)", n)
+	on := NewFilletTool()
+	s.StartTool(on) // seeds tangentChain from the session default (on)
+	on.PickWithMods(s, seed, 0)
+	if n := len(on.Edges()); n != 8 {
+		t.Fatalf("plain click with the Tangent-chain default (on) selected %d edges, want the 8-edge loop", n)
+	}
+
+	off := NewFilletTool()
+	s.StartTool(off)
+	off.SetTangentChain(false)
+	off.PickWithMods(s, seed, 0)
+	if n := len(off.Edges()); n != 1 {
+		t.Fatalf("plain click with Tangent chain off selected %d edges, want 1", n)
+	}
+
+	// The explicit single-edge Pick API is unaffected by the toggle.
+	exp := NewFilletTool()
+	s.StartTool(exp)
+	exp.Pick(s, seed)
+	if n := len(exp.Edges()); n != 1 {
+		t.Fatalf("explicit Pick selected %d edges, want 1", n)
 	}
 }
