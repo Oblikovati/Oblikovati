@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
+	"oblikovati.org/kernel/ops"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 )
@@ -52,7 +53,13 @@ func applyCombine(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 const thickenSchema = `{
   "type": "object",
   "properties": {
-    "thickness": {"type": "string", "description": "Wall thickness to add to the surface body, e.g. \"2 mm\"."},
+    "thickness": {"type": "string", "description": "Wall thickness to add to the surface body, e.g. \"2 mm\" (0 allowed for operation surface = a copy)."},
+    "direction": {"type": "string", "enum": ["positive", "negative", "symmetric"], "default": "positive", "description": "Offset side: +normal, -normal, or half each way."},
+    "operation": {"type": "string", "enum": ["join", "cut", "intersect", "surface"], "default": "join", "description": "join solidifies; cut/intersect boolean the solid into the running solid; surface offsets as a surface body."},
+    "faceRefs": {"type": "array", "items": {"type": "string"}, "description": "Reference keys of a face subset to thicken (get_reference_keys); empty = whole body."},
+    "createVerticalSurfaces": {"type": "boolean", "default": true, "description": "Close subset-boundary edges with side walls."},
+    "automaticFaceChain": {"type": "boolean", "default": false, "description": "Accepted for parity; selection is explicit, so not applied."},
+    "automaticBlending": {"type": "boolean", "default": false, "description": "Accepted for parity; not geometrically applied."},
     "approximation": {"type": "string", "enum": ["none", "mean", "neverTooThick", "neverTooThin"], "description": "Accepted approximation (#331 parity); the kernel computes the exact offset, which satisfies every bound."}
   },
   "required": ["thickness"]
@@ -75,10 +82,40 @@ func applyThicken(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	if err != nil {
 		return nil, err
 	}
+	dir, ok := ops.ParseThickenDirection(in.Direction)
+	if !ok {
+		return nil, fmt.Errorf("thicken: unknown direction %q (want positive/negative/symmetric)", in.Direction)
+	}
+	op, asSurface, err := parseThickenOperation(in.Operation)
+	if err != nil {
+		return nil, err
+	}
 	pf := feature.NewModifyFeatures(part.Features()).AddThickenFn(th)
-	pf.Definition().(*feature.ThickenFeature).SetApproximation(approx)
+	tf := pf.Definition().(*feature.ThickenFeature)
+	tf.SetApproximation(approx)
+	tf.SetThickenOptions(dir, op, asSurface, refKeys(in.FaceRefs), boolOrTrue(in.CreateVerticalSurfaces), in.AutomaticFaceChain, in.AutomaticBlending)
 	return recomputeResult(part, pf)
 }
+
+// parseThickenOperation maps the thicken output mode to (operation, asSurface). "" defaults to
+// join; "surface" is the offset-surface path; cut/intersect boolean into the running solid.
+func parseThickenOperation(name string) (ops.PartFeatureOperation, bool, error) {
+	switch name {
+	case "", "join":
+		return ops.Join, false, nil
+	case "cut":
+		return ops.Cut, false, nil
+	case "intersect":
+		return ops.Intersect, false, nil
+	case "surface":
+		return ops.Join, true, nil
+	default:
+		return ops.Join, false, fmt.Errorf("thicken: unknown operation %q (want join/cut/intersect/surface)", name)
+	}
+}
+
+// boolOrTrue defaults an omitted *bool to true (Inventor's CreateVerticalSurfaces default).
+func boolOrTrue(b *bool) bool { return b == nil || *b }
 
 // approximationArg parses the optional #331 approximation spelling (empty = none/exact).
 func approximationArg(s, op string) (types.FeatureApproximationType, error) {

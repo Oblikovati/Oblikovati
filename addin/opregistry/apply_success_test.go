@@ -42,6 +42,18 @@ func TestAdditiveOperations(t *testing.T) {
 	}
 }
 
+// TestThickenOptionErrors covers the #1876 router parse branches: an unknown direction or
+// operation is rejected with a descriptive error rather than silently defaulting.
+func TestThickenOptionErrors(t *testing.T) {
+	s, _, _ := extrudedSolid(t)
+	if _, err := apply(t, s, "thicken", `{"thickness":"1 mm","direction":"sideways"}`); err == nil {
+		t.Error("unknown thicken direction should error")
+	}
+	if _, err := apply(t, s, "thicken", `{"thickness":"1 mm","operation":"weld"}`); err == nil {
+		t.Error("unknown thicken operation should error")
+	}
+}
+
 // TestModifyAndPatternOperations drives the body-modifying, boolean, pattern, and mirror
 // operations against a solid. They must return a result or a descriptive error (some need
 // geometry the seeded box lacks), never panic — exercising decode/resolve/build.

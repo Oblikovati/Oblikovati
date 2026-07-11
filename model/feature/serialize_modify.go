@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/ops"
 )
 
 // This file holds the YAML codec for the direct face-edit features — split, move-face,
@@ -33,10 +34,66 @@ type FaceEditData struct {
 }
 
 // ThickenData is a thicken feature: the wall thickness applied to the running surface body,
-// plus the #331 approximation request (wire spelling; absent = none/exact).
+// plus the #331 approximation request (wire spelling; absent = none/exact) and the #1876 options.
+// The zero value of each new field restores the pre-#1876 behaviour: Direction "" = symmetric,
+// Operation "" = join, and NoWalls false = vertical surfaces on (stored negated so a legacy recipe,
+// which always built walls, restores unchanged).
 type ThickenData struct {
-	Value         float64 `yaml:"value"`
-	Approximation string  `yaml:"approximation,omitempty"`
+	Value         float64  `yaml:"value"`
+	Approximation string   `yaml:"approximation,omitempty"`
+	Direction     string   `yaml:"direction,omitempty"` // "" = symmetric (legacy)
+	Operation     string   `yaml:"operation,omitempty"` // "" = join; "surface" = offset surface
+	Faces         []string `yaml:"faces,omitempty"`     // face subset (empty = whole body)
+	NoWalls       bool     `yaml:"noWalls,omitempty"`   // inverse of createVerticalSurfaces
+	AutoChain     bool     `yaml:"autoChain,omitempty"`
+	AutoBlend     bool     `yaml:"autoBlend,omitempty"`
+}
+
+// thickenDirectionName / thickenDirectionOf map the direction enum to its serialized spelling;
+// symmetric encodes as "" so a legacy recipe (no field) and a new symmetric thicken both restore
+// symmetric.
+func thickenDirectionName(d ops.ThickenDirection) string {
+	if d == ops.ThickenSymmetric {
+		return ""
+	}
+	return d.String()
+}
+
+func thickenDirectionOf(s string) ops.ThickenDirection {
+	switch s {
+	case "positive":
+		return ops.ThickenPositive
+	case "negative":
+		return ops.ThickenNegative
+	default:
+		return ops.ThickenSymmetric // "" legacy / symmetric
+	}
+}
+
+// thickenOperationName encodes the thicken output mode: "surface" for the offset-surface path,
+// "cut"/"intersect" for the booleans, and "" for join (the legacy default, so it stays omitted).
+func thickenOperationName(op ops.PartFeatureOperation, asSurface bool) string {
+	if asSurface {
+		return "surface"
+	}
+	if op == ops.Join {
+		return ""
+	}
+	return op.String()
+}
+
+// thickenOperationOf decodes the mode back to (operation, asSurface). "" = join.
+func thickenOperationOf(s string) (ops.PartFeatureOperation, bool) {
+	switch s {
+	case "surface":
+		return ops.Join, true
+	case "cut":
+		return ops.Cut, false
+	case "intersect":
+		return ops.Intersect, false
+	default:
+		return ops.Join, false
+	}
 }
 
 // approximationName / approximationOf map the enum to its wire spelling (empty for the zero
