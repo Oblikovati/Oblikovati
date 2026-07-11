@@ -27,7 +27,12 @@ func RunCase(t *testing.T, r Record, fixtureDir string) {
 		t.Skipf("OCCT marks incomplete: %s", r.TODO)
 	}
 	if hasVariableRadius(r) {
-		t.Skipf("%s/%s: variable-radius (buildevol) pending Task 12", r.Grid, r.Case)
+		// The feature layer supports variable radius (FilletEdgeSet.StartRadius/EndRadius/
+		// RadiusPoints), but OCCT's updatevol law is defined in EDGE-PARAMETER space, which
+		// STEP import discards (edges reparameterize to [0,1]) — the same problem the locator
+		// solved with arc-length. Porting the law faithfully needs arc-length reparameterization
+		// of each law point on both sides; until that lands, skip rather than ship a wrong law.
+		t.Skipf("%s/%s: variable-radius (buildevol) law mapping is a tracked follow-up", r.Grid, r.Case)
 	}
 	body, err := importInput(filepath.Join(fixtureDir, r.InputStep))
 	if err != nil {
