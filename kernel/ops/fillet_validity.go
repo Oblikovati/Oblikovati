@@ -21,13 +21,24 @@ const filletFitEps = 1e-9
 // the fillet self-intersects, which the topological Validate cannot catch (#1800). Only edges
 // between two planar faces are bounded here; curved-neighbour edges get their r_max from the
 // marcher's seed solve in Phase 4. Radii are unchanged — this fails honestly, it does not clamp.
-func validateFilletRadii(picks []filletPick) error {
+func validateFilletRadii(picks []filletPick, concave ConcaveFill) error {
 	for _, p := range picks {
 		a, b, nA, nB, err := edgePlanarFaces(p.edge)
 		if err != nil {
 			continue // non-planar edge: not on the analytic planar path
 		}
-		rMax, bindingFace, bindingW, ok := maxFilletRadius(p, a, b, nA, nB, picks)
+		// The rolling ball recedes INTO each finite wall. For a convex edge that recession points
+		// into the face; for a concave OUTWARD fill (the default pocket fill) the frame negates the
+		// normals/offset (see filletFrame), so the width must be measured in that negated direction —
+		// otherwise the ray escapes the face and the bound is +Inf, letting an over-large concave
+		// radius overrun the pocket (rampam #1800 concave gap). A concave INWARD recess lands its
+		// tangent points off the bounded faces by design, so it is left to the assembly's validity
+		// gate rather than bounded here.
+		concaveOutward := ClassifyEdgeConvexity(p.edge) == EdgeConcave && concave == FillConcaveOutward
+		if ClassifyEdgeConvexity(p.edge) == EdgeConcave && !concaveOutward {
+			continue
+		}
+		rMax, bindingFace, bindingW, ok := maxFilletRadius(p, a, b, nA, nB, picks, concaveOutward)
 		if !ok {
 			continue // degenerate dihedral: leave to the assembly's own validity gate
 		}
@@ -45,12 +56,18 @@ func validateFilletRadii(picks []filletPick) error {
 // pick p, r_max = cot(α/2)·min(W_A,W_B), with W the available in-face width toward the nearest
 // competing boundary (reduced by any co-filleted neighbour's own band). ok=false on a degenerate
 // dihedral (near-flat or razor faces). Mirrors the derivation in ADR-0050 Phase 2.
-func maxFilletRadius(p filletPick, a, b *topo.Face, nA, nB math.Vector3, all []filletPick) (rMax float64, bindingFace uint64, bindingW float64, ok bool) {
+func maxFilletRadius(p filletPick, a, b *topo.Face, nA, nB math.Vector3, all []filletPick, concaveOutward bool) (rMax float64, bindingFace uint64, bindingW float64, ok bool) {
 	c := float64(nA.Dot(nB))
 	if 1-c < filletFitEps || 1+c < filletFitEps {
 		return 0, 0, 0, false
 	}
 	offDir := nA.Add(nB).Scale(math.Scalar(-1 / (1 + c)))
+	if concaveOutward {
+		// Match the outward-fill frame (filletFrame): the ball sits in the void, so the recession
+		// runs the other way — negate the offset and the wall normals so availableWidth casts INTO
+		// the pocket walls. c (and thus k) is unchanged: (−nA)·(−nB) = nA·nB.
+		offDir, nA, nB = offDir.Scale(-1), nA.Scale(-1), nB.Scale(-1)
+	}
 	k := stdmath.Sqrt((1 + c) / (1 - c)) // cot(α/2): r_max = k · W
 	wA := availableWidth(p.edge, a, nA, offDir, all)
 	wB := availableWidth(p.edge, b, nB, offDir, all)

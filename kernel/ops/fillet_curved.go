@@ -64,6 +64,50 @@ func curvedAdjacentError(e *topo.Edge) error {
 	return nil
 }
 
+// curvedEndpointError rejects a planar-flanked edge whose ENDPOINT runs into a curved (non-planar)
+// face left by a PRIOR round — the fillet-meets-fillet corner rampam hit (#1797): fillet a cube's
+// top rim, then its verticals, and each vertical is plane∩plane (so curvedAdjacentError passes) but
+// its top vertex touches the top-rim cylinders. The rolling-ball cylinder cannot terminate cleanly
+// into that existing round, so assembleBody produced an invalid solid — the misleading "not a valid
+// solid" (and, on older builds, a facet-cage). Reject here with an actionable reason instead. The
+// guard fires ONLY on a curved face that already exists on the body; edges filleted TOGETHER don't
+// trip it, since their rounds aren't built yet when this runs. picked holds the edges being filleted
+// in this op — a curved face touching the endpoint that belongs to one of those picks is this op's
+// own in-progress corner (handled by the corner solver), not a prior round, so it is ignored.
+func curvedEndpointError(e *topo.Edge, picked map[uint64]bool) error {
+	own := map[uint64]bool{}
+	for _, f := range e.Faces() {
+		own[f.ID()] = true
+	}
+	for _, v := range e.Vertices() {
+		for _, f := range facesAtVertex(v) {
+			if own[f.ID()] {
+				continue // one of the edge's own two (planar) walls
+			}
+			if _, planar := f.Geometry().(geom.Plane); planar {
+				continue
+			}
+			if faceBordersAnyPick(f, picked) {
+				continue // this op's own adjacent-edge round, not a pre-existing one
+			}
+			return fmt.Errorf("fillet: cannot round edge %d — it runs into an existing rounded (%s) face at its end; "+
+				"fillet these edges BEFORE the adjacent rounds, or select them together", e.ID(), surfaceKind(f.Geometry()))
+		}
+	}
+	return nil
+}
+
+// faceBordersAnyPick reports whether face f is bounded by an edge that is one of the ops's picks —
+// i.e. f is a round this same op is about to build, not a pre-existing curved neighbour.
+func faceBordersAnyPick(f *topo.Face, picked map[uint64]bool) bool {
+	for _, e := range f.Edges() {
+		if picked[e.ID()] {
+			return true
+		}
+	}
+	return false
+}
+
 // surfaceKind names a surface for an error message (its concrete geometry type), e.g. "cylinder".
 func surfaceKind(s geom.Surface) string {
 	switch s.(type) {
