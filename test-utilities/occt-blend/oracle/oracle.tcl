@@ -203,7 +203,10 @@ proc jlocator {loc} {
     return "{\"midpoint\":\[[jnum [lindex $loc 0]],[jnum [lindex $loc 1]],[jnum [lindex $loc 2]]\],\"direction\":\[[jnum [lindex $loc 3]],[jnum [lindex $loc 4]],[jnum [lindex $loc 5]]\]}"
 }
 
-proc jesc {s} { return [string map {\\ \\\\ \" \\\"} $s] }
+# jesc escapes a string for a JSON literal. Newline/CR/tab must be escaped too — OCCT error
+# text captured into `todo` (e.g. "edge has no 3d curve\n") carries a trailing newline that
+# otherwise emits an invalid raw control char (the encoderegularity/A5 unparsed record).
+proc jesc {s} { return [string map [list \\ \\\\ \" \\\" \n \\n \r \\r \t \\t] $s] }
 
 proc jlaw {law} {
     if {$law eq ""} { return "null" }
