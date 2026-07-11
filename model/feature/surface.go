@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 
+	stdmath "math"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -109,27 +111,31 @@ func (c *BoundaryPatchFeatures) Add(skt *sketch.Sketch, profileIndex int, cond P
 	return pf
 }
 
-// RuledSurfaceType is the direction convention for a ruled surface's straight
-// rulings (Inventor's RuledSurfaceTypeEnum): along the source plane Normal, Tangent
-// to the adjacent face, or Perpendicular to a reference plane.
+// RuledSurfaceType is the direction convention for a ruled surface's straight rulings (Inventor's
+// RuledSurfaceTypeEnum): along the source plane Normal, Tangent to the adjacent face, or Sweep along
+// an explicit direction vector (kSweepRuledSurfaceType) (#1868).
 type RuledSurfaceType int
 
 const (
-	// RuledNormal rules along the source profile-plane normal (phase A, real).
+	// RuledNormal rules along the source profile-plane normal.
 	RuledNormal RuledSurfaceType = iota
-	// RuledTangent rules tangent to the adjacent face (needs face data; phase B).
+	// RuledTangent rules tangent to the adjacent face — needs edge-face pairs off a body (phase C).
 	RuledTangent
-	// RuledPerpendicular rules perpendicular to a reference plane (phase B).
-	RuledPerpendicular
+	// RuledSweep rules along an explicit direction vector (Inventor kSweepRuledSurfaceType) (#1868).
+	RuledSweep
 )
 
-// RuledSurfaceDefinition is the recipe for a ruled surface: a profile whose edges
-// are swept by straight rulings over a distance.
+// RuledSurfaceDefinition is the recipe for a ruled surface: a profile whose edges are swept by
+// straight rulings over a distance. Direction is the ruling vector for RuledSweep (RuledNormal uses
+// the profile-plane normal); DraftAngle tilts each ruling outward; Flip reverses the ruling side.
 type RuledSurfaceDefinition struct {
 	Sketch       *sketch.Sketch
 	ProfileIndex int
 	Type         RuledSurfaceType
 	Distance     func() float64
+	Direction    math.Vector3
+	DraftAngle   func() float64
+	Flip         bool
 }
 
 // RuledSurfaceFeature sweeps a profile's edges by straight rulings into a band.
@@ -144,22 +150,33 @@ func (r *RuledSurfaceFeature) Definition() *RuledSurfaceDefinition { return r.de
 // Kind implements [Feature].
 func (r *RuledSurfaceFeature) Kind() string { return "ruled-surface" }
 
-// Recompute resolves the profile and builds the ruled band. Tangent/perpendicular
-// rulings need the adjacent face's tangent / a reference plane, which is phase B —
-// the inputs are validated then the geometry is deferred (Warning, passthrough).
+// Recompute resolves the profile and builds the ruled band: Normal rules along the profile-plane
+// normal, Sweep along the explicit Direction, both honouring the draft angle and flip. Tangent
+// rulings need the adjacent face's tangent along a body edge (edge-face pairs) — phase C, deferred.
 func (r *RuledSurfaceFeature) Recompute(in Input) (Output, error) {
 	profile, err := resolveClosedProfile(r.def.Sketch, r.def.ProfileIndex, "ruled surface")
 	if err != nil {
 		return Output{}, err
 	}
-	if r.def.Type != RuledNormal {
+	if r.def.Type == RuledTangent {
 		return Output{Bodies: in.Bodies}, ErrDeferred
 	}
 	dist := measure(r.def.Distance)
 	if dist == 0 {
 		return Output{}, errors.New("ruled surface: distance is zero")
 	}
-	band := buildRuledBand(profile.OuterLoop().Polygon(), r.def.Sketch.Plane(), dist, r.featName)
+	plane := r.def.Sketch.Plane()
+	dir := plane.Normal().AsVector()
+	if r.def.Type == RuledSweep {
+		if r.def.Direction.LengthSquared() < 1e-18 {
+			return Output{}, errors.New("ruled surface: sweep needs a non-zero direction")
+		}
+		dir = r.def.Direction
+	}
+	if r.def.Flip {
+		dir = dir.Scale(-1)
+	}
+	band := buildRuledBandDir(profile.OuterLoop().Polygon(), plane, dir, dist, measure(r.def.DraftAngle), r.featName)
 	return Output{Bodies: appendBody(in.Bodies, band)}, nil
 }
 
@@ -172,9 +189,13 @@ func NewRuledSurfaceFeatures(engine *PartFeatures) *RuledSurfaceFeatures {
 }
 
 // AddByDistance rules the closed profileIndex profile of skt by distance, in the
-// kind direction.
+// kind direction (Normal/Tangent — the plain rulings, no draft or explicit vector).
 func (c *RuledSurfaceFeatures) AddByDistance(skt *sketch.Sketch, profileIndex int, kind RuledSurfaceType, distance func() float64) *PartFeature {
-	def := &RuledSurfaceDefinition{Sketch: skt, ProfileIndex: profileIndex, Type: kind, Distance: distance}
+	return c.AddRuled(&RuledSurfaceDefinition{Sketch: skt, ProfileIndex: profileIndex, Type: kind, Distance: distance})
+}
+
+// AddRuled adds a ruled surface from a fully-specified definition (sweep direction, draft, flip) (#1868).
+func (c *RuledSurfaceFeatures) AddRuled(def *RuledSurfaceDefinition) *PartFeature {
 	rf := &RuledSurfaceFeature{def: def, featName: "RuledSurface"}
 	pf := c.engine.Add(rf)
 	rf.featName = pf.name
@@ -264,17 +285,46 @@ func loopEdges(bld *topo.Builder, verts []*topo.Vertex, feat, role string, idx i
 // band of planar quad faces (no caps) — an open surface body whose straight rulings
 // connect the bottom and top loops. Reuses the prism edge/side helpers (extrude.go).
 func buildRuledBand(poly []math.Point2, plane sketch.Plane, dist float64, feat string) *topo.Body {
+	return buildRuledBandDir(poly, plane, plane.Normal().AsVector(), dist, 0, feat)
+}
+
+// buildRuledBandDir sweeps a closed polygon by dist along the ruling direction dir into a band of
+// planar quad faces (an open surface body). A non-zero draft flares each ruling radially outward by
+// dist·tan(draft), producing a tapered/flared band (#1868). dir need not be the plane normal.
+func buildRuledBandDir(poly []math.Point2, plane sketch.Plane, dir math.Vector3, dist, draft float64, feat string) *topo.Body {
 	n := len(poly)
 	bld := topo.NewBuilder(false, topo.NewLineage(topo.Tok(feat, "body", 0)))
-	up := plane.Normal().AsVector().Scale(dist)
+	u, err := math.UnitVector3FromVector(dir)
+	if err != nil {
+		u = plane.Normal()
+	}
+	up := u.AsVector().Scale(dist)
+	center := plane.ToModel(polygonCentroid2(poly))
+	flare := dist * stdmath.Tan(draft)
 	bottom := make([]*topo.Vertex, n)
 	top := make([]*topo.Vertex, n)
 	for i, p := range poly {
 		b := plane.ToModel(p)
+		t := b.TranslateBy(up)
+		if flare != 0 {
+			if out, oerr := math.UnitVector3FromVector(center.VectorTo(b)); oerr == nil {
+				t = t.TranslateBy(out.AsVector().Scale(flare))
+			}
+		}
 		bottom[i] = bld.AddVertex(b, topo.NewLineage(topo.Tok(feat, "vertex", i)))
-		top[i] = bld.AddVertex(b.TranslateBy(up), topo.NewLineage(topo.Tok(feat, "vertex", n+i)))
+		top[i] = bld.AddVertex(t, topo.NewLineage(topo.Tok(feat, "vertex", n+i)))
 	}
 	be, te, ve := prismEdges(bld, bottom, top, feat)
 	addSides(bld, bottom, top, be, te, ve, outwardSign(poly), feat)
 	return bld.Build()
+}
+
+// polygonCentroid2 averages a 2D polygon's vertices.
+func polygonCentroid2(poly []math.Point2) math.Point2 {
+	var sx, sy float64
+	for _, p := range poly {
+		sx, sy = sx+float64(p.X), sy+float64(p.Y)
+	}
+	n := float64(len(poly))
+	return math.P2(sx/n, sy/n)
 }

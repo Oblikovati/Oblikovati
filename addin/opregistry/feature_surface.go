@@ -15,6 +15,7 @@ import (
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
+	"oblikovati.org/model/sketch"
 )
 
 // The surfacing features: build surface bodies (boundary patch, ruled surface), modify them
@@ -62,8 +63,11 @@ const ruledSchema = `{
   "properties": {
     "sketchIndex": {"type": "integer", "minimum": 0},
     "profileIndex": {"type": "integer", "minimum": 0, "default": 0},
-    "type": {"type": "string", "enum": ["normal", "tangent", "perpendicular"], "default": "normal", "description": "Direction of the straight rulings."},
-    "distance": {"type": "string", "description": "Ruling length, e.g. \"10 mm\"."}
+    "type": {"type": "string", "enum": ["normal", "tangent", "sweep", "perpendicular"], "default": "normal", "description": "Ruling convention: normal (profile-plane normal), sweep (explicit direction), tangent (phase C). \"perpendicular\" is the legacy spelling of sweep."},
+    "distance": {"type": "string", "description": "Ruling length, e.g. \"10 mm\"."},
+    "direction": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Ruling direction [x,y,z] for the sweep type."},
+    "draftAngle": {"type": "string", "description": "Outward flare per ruling, e.g. \"5 deg\"."},
+    "flip": {"type": "boolean", "description": "Reverse the ruling side.", "default": false}
   },
   "required": ["sketchIndex", "distance"]
 }`
@@ -81,20 +85,42 @@ func applyRuledSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, er
 	if err != nil {
 		return nil, err
 	}
+	def, err := ruledDefinition(part, sk, in)
+	if err != nil {
+		return nil, err
+	}
+	pf := feature.NewRuledSurfaceFeatures(part.Features()).AddRuled(def)
+	return recomputeResult(part, pf)
+}
+
+// ruledDefinition resolves the ruled-surface request into a definition: the distance and (for the
+// sweep type) the explicit ruling direction, plus the optional draft angle and flip flag (#1868).
+func ruledDefinition(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in featureargs.RuledSurface) (*feature.RuledSurfaceDefinition, error) {
 	dist, err := lengthClosure(part, in.Distance, "ruledSurface: distance")
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewRuledSurfaceFeatures(part.Features()).AddByDistance(sk, in.ProfileIndex, ruledType(in.Type), dist)
-	return recomputeResult(part, pf)
+	kind := ruledType(in.Type)
+	def := &feature.RuledSurfaceDefinition{Sketch: sk, ProfileIndex: in.ProfileIndex, Type: kind, Distance: dist, Flip: in.Flip}
+	if kind == feature.RuledSweep {
+		if def.Direction, err = vec3(in.Direction, "ruledSurface: direction"); err != nil {
+			return nil, err
+		}
+	}
+	if in.DraftAngle != "" {
+		if def.DraftAngle, err = angleClosure(part, in.DraftAngle, "ruledSurface: draftAngle"); err != nil {
+			return nil, err
+		}
+	}
+	return def, nil
 }
 
 func ruledType(name string) feature.RuledSurfaceType {
 	switch strings.ToLower(strings.TrimSpace(name)) {
 	case "tangent":
 		return feature.RuledTangent
-	case "perpendicular":
-		return feature.RuledPerpendicular
+	case "sweep", "perpendicular":
+		return feature.RuledSweep
 	default:
 		return feature.RuledNormal
 	}

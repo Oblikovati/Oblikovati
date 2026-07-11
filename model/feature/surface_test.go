@@ -156,6 +156,108 @@ func TestRuledSurfaceBuildsBand(t *testing.T) {
 	}
 }
 
+// nearly compares two floats with a loose tolerance for the draft/sweep trig checks.
+func nearly(a, b float64) bool { d := a - b; return d < 1e-6 && d > -1e-6 }
+
+// TestRuledSurfaceSweepDirection rules a square along an explicit oblique vector (3,0,4)·5: the top
+// loop shifts +3 in X and +4 in Z, so the band spans X∈[0,5] Z∈[0,4] (#1868).
+func TestRuledSurfaceSweepDirection(t *testing.T) {
+	fs := NewPartFeatures(nil)
+	def := &RuledSurfaceDefinition{Sketch: squareSketch(2), ProfileIndex: 0, Type: RuledSweep, Distance: func() float64 { return 5 }, Direction: math.V3(3, 0, 4)}
+	pf := NewRuledSurfaceFeatures(fs).AddRuled(def)
+	fs.Recompute()
+	if !pf.Health().OK() {
+		t.Fatalf("swept ruled surface went unhealthy: %+v", pf.Health())
+	}
+	body := fs.Result()[0]
+	if r := ops.Validate(body); !r.Valid {
+		t.Errorf("swept band failed validation: %+v", r)
+	}
+	d := body.RangeBox().Diagonal()
+	if !nearly(d.X, 5) || !nearly(d.Z, 4) {
+		t.Errorf("swept band bbox diagonal = (%v,_,%v), want X=5 Z=4", d.X, d.Z)
+	}
+}
+
+// TestRuledSurfaceSweepNeedsDirection: the sweep type with a zero direction goes sick.
+func TestRuledSurfaceSweepNeedsDirection(t *testing.T) {
+	fs := NewPartFeatures(nil)
+	def := &RuledSurfaceDefinition{Sketch: squareSketch(2), ProfileIndex: 0, Type: RuledSweep, Distance: func() float64 { return 3 }}
+	pf := NewRuledSurfaceFeatures(fs).AddRuled(def)
+	fs.Recompute()
+	if pf.Health().Status != health.Sick {
+		t.Errorf("zero-direction sweep = %v, want sick", pf.Health().Status)
+	}
+}
+
+// TestRuledSurfaceDraftFlare: a 30° draft flares each ruling radially outward by dist·tan(30°), so the
+// top square grows and the band's X-span becomes 2 + dist·tan(30°)·√2 (#1868).
+func TestRuledSurfaceDraftFlare(t *testing.T) {
+	fs := NewPartFeatures(nil)
+	def := &RuledSurfaceDefinition{Sketch: squareSketch(2), ProfileIndex: 0, Type: RuledNormal, Distance: func() float64 { return 3 }, DraftAngle: func() float64 { return 0.5235987755982988 }} // 30°
+	pf := NewRuledSurfaceFeatures(fs).AddRuled(def)
+	fs.Recompute()
+	if !pf.Health().OK() {
+		t.Fatalf("drafted ruled surface went unhealthy: %+v", pf.Health())
+	}
+	d := fs.Result()[0].RangeBox().Diagonal()
+	if wantX := 4.44948974968; !nearly(d.X, wantX) {
+		t.Errorf("drafted band X-span = %v, want %v", d.X, wantX)
+	}
+	if !nearly(d.Z, 3) {
+		t.Errorf("drafted band height = %v, want 3", d.Z)
+	}
+}
+
+// TestRuledSurfaceFlipReversesRulings: Flip negates the ruling direction, so a +Z normal band instead
+// grows down to Z=-3 (#1868).
+func TestRuledSurfaceFlipReversesRulings(t *testing.T) {
+	fs := NewPartFeatures(nil)
+	def := &RuledSurfaceDefinition{Sketch: squareSketch(2), ProfileIndex: 0, Type: RuledNormal, Distance: func() float64 { return 3 }, Flip: true}
+	pf := NewRuledSurfaceFeatures(fs).AddRuled(def)
+	fs.Recompute()
+	if !pf.Health().OK() {
+		t.Fatalf("flipped ruled surface went unhealthy: %+v", pf.Health())
+	}
+	box := fs.Result()[0].RangeBox()
+	if !nearly(box.Min.Z, -3) || !nearly(box.Max.Z, 0) {
+		t.Errorf("flipped band Z-range = [%v,%v], want [-3,0]", box.Min.Z, box.Max.Z)
+	}
+}
+
+// TestRuledSweepRoundTrip: a sweep with direction/draft/flip survives marshal→restore (#1868).
+func TestRuledSweepRoundTrip(t *testing.T) {
+	sk := squareSketch(2)
+	fs := NewPartFeatures(nil)
+	NewRuledSurfaceFeatures(fs).AddRuled(&RuledSurfaceDefinition{
+		Sketch: sk, ProfileIndex: 0, Type: RuledSweep, Distance: func() float64 { return 5 },
+		Direction: math.V3(3, 0, 4), DraftAngle: func() float64 { return 0.25 }, Flip: true,
+	})
+	data, err := fs.MarshalRecipe(oneSketch{sk})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	fresh := NewPartFeatures(nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{sk}, nil); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	d := fresh.Item(0).Definition().(*RuledSurfaceFeature).Definition()
+	if d.Type != RuledSweep || d.Direction != math.V3(3, 0, 4) || !d.Flip {
+		t.Errorf("restored ruled = {type:%v dir:%v flip:%v}, want {Sweep (3,0,4) true}", d.Type, d.Direction, d.Flip)
+	}
+	if a := measure(d.DraftAngle); !nearly(a, 0.25) {
+		t.Errorf("restored draft = %v, want 0.25", a)
+	}
+}
+
+// TestRuledPerpendicularBackCompat: the legacy "perpendicular" type name restores as the sweep type.
+func TestRuledPerpendicularBackCompat(t *testing.T) {
+	got, err := parseRuledType("perpendicular")
+	if err != nil || got != RuledSweep {
+		t.Errorf("parseRuledType(perpendicular) = %v,%v, want RuledSweep,nil", got, err)
+	}
+}
+
 func TestRuledSurfaceTangentDefers(t *testing.T) {
 	fs := NewPartFeatures(nil)
 	pf := NewRuledSurfaceFeatures(fs).AddByDistance(squareSketch(2), 0, RuledTangent, func() float64 { return 3 })

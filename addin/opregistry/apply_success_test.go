@@ -139,6 +139,23 @@ func TestModifyAndPatternOperations(t *testing.T) {
 	}
 }
 
+// TestRuledSurfaceSweepOptions covers the #1868 router path: the sweep type resolves its explicit
+// direction (and optional draft/flip) and builds; a sweep with no direction, and an unknown type,
+// error clearly. The legacy "perpendicular" spelling still resolves to the sweep type.
+func TestRuledSurfaceSweepOptions(t *testing.T) {
+	ok, _ := json.Marshal(map[string]any{"sketchIndex": 0, "distance": "3 mm", "type": "sweep", "direction": []float64{0, 0, 1}, "draftAngle": "5 deg", "flip": true})
+	if _, err := apply(t, profiledPart(t), "ruledSurface", string(ok)); err != nil {
+		t.Fatalf("ruledSurface sweep: %v", err)
+	}
+	legacy, _ := json.Marshal(map[string]any{"sketchIndex": 0, "distance": "3 mm", "type": "perpendicular", "direction": []float64{0, 0, 1}})
+	if _, err := apply(t, profiledPart(t), "ruledSurface", string(legacy)); err != nil {
+		t.Fatalf("ruledSurface perpendicular (legacy): %v", err)
+	}
+	if _, err := apply(t, profiledPart(t), "ruledSurface", `{"sketchIndex":0,"distance":"3 mm","type":"sweep"}`); err == nil {
+		t.Error("sweep with no direction should error")
+	}
+}
+
 // TestMidSurfaceFacePairs covers the #1885 router path: manual face pairs bypass the maxThickness
 // requirement and are dispatched to the model, while an empty request (no pairs, no maxThickness)
 // errors.
