@@ -11,6 +11,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
@@ -110,10 +111,13 @@ const surfaceOffsetSchema = `{
 const extendSchema = `{
   "type": "object",
   "properties": {
-    "edgeRef": {"type": "string", "description": "Reference key of the surface edge to extend (get_reference_keys)."},
-    "distance": {"type": "string", "description": "Extend distance, e.g. \"5 mm\"."}
-  },
-  "required": ["edgeRef", "distance"]
+    "edgeRefs": {"type": "array", "items": {"type": "string"}, "description": "Reference keys of the surface boundary edges to extend (get_reference_keys)."},
+    "edgeRef": {"type": "string", "description": "Legacy single edge (use edgeRefs)."},
+    "extentType": {"type": "string", "enum": ["distance", "toPlane", "toObject"], "default": "distance", "description": "distance grows by distance; toPlane/toObject grows each edge until it reaches targetRef."},
+    "distance": {"type": "string", "description": "Extend distance for extentType distance, e.g. \"5 mm\"."},
+    "targetRef": {"type": "string", "description": "Target plane/face for extentType toPlane (a planar face key, \"plane/N\", or \"origin/plane/xy\")."},
+    "extensionType": {"type": "string", "enum": ["stretched", "natural"], "default": "stretched", "description": "Continuity mode; coincides with stretched for planar faces."}
+  }
 }`
 
 const midSurfaceSchema = `{
@@ -347,15 +351,52 @@ func applyExtend(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	if in.EdgeRef == "" {
-		return nil, errors.New("extend: edgeRef is empty")
+	edges := extendEdgeKeys(in)
+	if len(edges) == 0 {
+		return nil, errors.New("extend: edgeRefs is empty")
 	}
-	d, err := lengthClosure(part, in.Distance, "extend: distance")
-	if err != nil {
+	def := &feature.ExtendDefinition{EdgeKeys: edges, Natural: in.ExtensionType == "natural"}
+	if err := resolveExtendExtent(part, in, def); err != nil {
 		return nil, err
 	}
-	pf := feature.NewExtendFeatures(part.Features()).Add([]byte(in.EdgeRef), d)
+	pf := feature.NewExtendFeatures(part.Features()).AddExtend(def)
 	return recomputeResult(part, pf)
+}
+
+// resolveExtendExtent fills the extend definition's extent: a target plane for extentType
+// toPlane/toObject (resolved from a work plane / planar face), else the distance closure (#1878).
+func resolveExtendExtent(part *compdef.PartComponentDefinition, in featureargs.Extend, def *feature.ExtendDefinition) error {
+	switch in.ExtentType {
+	case "toPlane", "toObject":
+		wp, err := part.WorkGeometry().PlaneTargetFromRef(in.TargetRef)
+		if err != nil {
+			return fmt.Errorf("extend: target %q: %w", in.TargetRef, err)
+		}
+		pl, err := geom.NewPlane(wp.Plane().Origin(), wp.Plane().Normal().AsVector())
+		if err != nil {
+			return fmt.Errorf("extend: target %q: %w", in.TargetRef, err)
+		}
+		def.TargetPlane = &pl
+		return nil
+	default:
+		d, err := lengthClosure(part, in.Distance, "extend: distance")
+		if err != nil {
+			return err
+		}
+		def.Distance = d
+		return nil
+	}
+}
+
+// extendEdgeKeys returns the extend edges: the multi-edge EdgeRefs, else the legacy single EdgeRef.
+func extendEdgeKeys(in featureargs.Extend) [][]byte {
+	if len(in.EdgeRefs) > 0 {
+		return refKeys(in.EdgeRefs)
+	}
+	if in.EdgeRef != "" {
+		return [][]byte{[]byte(in.EdgeRef)}
+	}
+	return nil
 }
 
 func applyMidSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {

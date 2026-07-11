@@ -139,6 +139,18 @@ func TestModifyAndPatternOperations(t *testing.T) {
 	}
 }
 
+// TestExtendRouterOptions covers the #1878 extend parse/resolve branches: no edges errors, and
+// extentType toPlane without a targetRef errors (the plane target cannot resolve).
+func TestExtendRouterOptions(t *testing.T) {
+	s, _, _ := extrudedSolid(t)
+	if _, err := apply(t, s, "extend", `{"distance":"1 mm"}`); err == nil {
+		t.Error("extend with no edges should error")
+	}
+	if _, err := apply(t, s, "extend", `{"edgeRefs":["e1"],"extentType":"toPlane"}`); err == nil {
+		t.Error("extend toPlane with no targetRef should error")
+	}
+}
+
 // TestCombineTwoBodies covers the boolean-combine path that needs a tool body.
 func TestCombineTwoBodies(t *testing.T) {
 	for _, op := range []string{"join", "cut", "intersect"} {

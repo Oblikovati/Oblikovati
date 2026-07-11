@@ -5,6 +5,7 @@ package feature
 import (
 	"testing"
 
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/math"
 	"oblikovati.org/model/health"
@@ -61,6 +62,81 @@ func TestExtendFeatureGrowsSurface(t *testing.T) {
 	box := fs.Result()[0].RangeBox()
 	if !approxEq(box.Min.Y, -2) || !approxEq(box.Max.Y, 4) {
 		t.Errorf("extended y-span = [%v,%v], want [-2,4]", box.Min.Y, box.Max.Y)
+	}
+}
+
+// TestExtendFeatureMultiEdge extends the bottom (y=0) and top (y=4) edges of the 4×4 patch by 2
+// each in one feature: the y-span grows to [-2,6] (#1878).
+func TestExtendFeatureMultiEdge(t *testing.T) {
+	fs := NewPartFeatures(nil)
+	patchSurface(fs)
+	fs.Recompute()
+	var bottom, top []byte
+	for _, e := range fs.Result()[0].Edges() {
+		a, b := e.StartVertex().Point(), e.EndVertex().Point()
+		if a.Y == 0 && b.Y == 0 {
+			bottom = e.ReferenceKey()
+		}
+		if approxEq(a.Y, 4) && approxEq(b.Y, 4) {
+			top = e.ReferenceKey()
+		}
+	}
+	pf := NewExtendFeatures(fs).AddExtend(&ExtendDefinition{EdgeKeys: [][]byte{bottom, top}, Distance: func() float64 { return 2 }})
+	fs.Recompute()
+	if !pf.Health().OK() {
+		t.Fatalf("multi-edge extend sick: %+v", pf.Health())
+	}
+	box := fs.Result()[0].RangeBox()
+	if !approxEq(box.Min.Y, -2) || !approxEq(box.Max.Y, 6) {
+		t.Errorf("extended y-span = [%v,%v], want [-2,6]", box.Min.Y, box.Max.Y)
+	}
+}
+
+// TestExtendFeatureToPlane extends the bottom edge of the 4×4 patch until it reaches the plane
+// y=-3: the y-span grows to [-3,4] (#1878).
+func TestExtendFeatureToPlane(t *testing.T) {
+	fs := NewPartFeatures(nil)
+	patchSurface(fs)
+	fs.Recompute()
+	var bottom []byte
+	for _, e := range fs.Result()[0].Edges() {
+		if e.StartVertex().Point().Y == 0 && e.EndVertex().Point().Y == 0 {
+			bottom = e.ReferenceKey()
+		}
+	}
+	target, _ := geom.NewPlane(math.P3(0, -3, 0), math.V3(0, 1, 0))
+	pf := NewExtendFeatures(fs).AddExtend(&ExtendDefinition{EdgeKeys: [][]byte{bottom}, TargetPlane: &target})
+	fs.Recompute()
+	if !pf.Health().OK() {
+		t.Fatalf("extend-to-plane sick: %+v", pf.Health())
+	}
+	if box := fs.Result()[0].RangeBox(); !approxEq(box.Min.Y, -3) || !approxEq(box.Max.Y, 4) {
+		t.Errorf("extended y-span = [%v,%v], want [-3,4]", box.Min.Y, box.Max.Y)
+	}
+}
+
+// TestExtendOptionsRoundTrip pins #1878 serialization: multi-edge, extend-to-plane target, and the
+// natural flag survive the recipe codec; a legacy single-edge recipe still restores.
+func TestExtendOptionsRoundTrip(t *testing.T) {
+	target, _ := geom.NewPlane(math.P3(0, -3, 0), math.V3(0, 1, 0))
+	fs := NewPartFeatures(nil)
+	NewExtendFeatures(fs).AddExtend(&ExtendDefinition{
+		EdgeKeys: [][]byte{[]byte("e-a"), []byte("e-b")}, TargetPlane: &target, Natural: true,
+	})
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	if d := data[0].Extend; len(d.Edges) != 2 || len(d.TargetNormal) != 3 || !d.Natural {
+		t.Fatalf("serialized extend = %+v", d)
+	}
+	fresh := NewPartFeatures(nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	def := fresh.Item(0).Definition().(*ExtendFeature).Definition()
+	if len(def.EdgeKeys) != 2 || def.TargetPlane == nil || !def.Natural {
+		t.Errorf("restored extend = %d edges, target %v, natural %v", len(def.EdgeKeys), def.TargetPlane, def.Natural)
 	}
 }
 
