@@ -188,6 +188,86 @@ func TestMidSurfaceFeatureExtractsThinWall(t *testing.T) {
 	}
 }
 
+// TestMidSurfaceManualPairsAndRange is #1885: manual face pairs extract the mid-surface without
+// auto-pairing, and each pair reports an equal min/max range (1) for the parallel plate walls.
+func TestMidSurfaceManualPairsAndRange(t *testing.T) {
+	fs := NewPartFeatures(nil)
+	NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(4), 0, ops.NewBody, func() float64 { return 1 })
+	fs.Recompute()
+	var top, bot []byte
+	for _, f := range fs.Result()[0].Faces() {
+		if n := f.Geometry().NormalAt(0, 0); n.Z > 0.99 {
+			top = f.ReferenceKey()
+		} else if n.Z < -0.99 {
+			bot = f.ReferenceKey()
+		}
+	}
+	pf := NewMidSurfaceFeatures(fs).AddMidSurface(&MidSurfaceDefinition{Pairs: [][2][]byte{{top, bot}}})
+	fs.Recompute()
+	if !pf.Health().OK() {
+		t.Fatalf("manual-pair mid-surface sick: %+v", pf.Health())
+	}
+	if len(fs.Result()) != 1 || fs.Result()[0].IsSolid() {
+		t.Errorf("result = %d bodies (solid=%v), want 1 surface", len(fs.Result()), fs.Result()[0].IsSolid())
+	}
+	th := pf.Definition().(*MidSurfaceFeature).Thicknesses()
+	if th.Count() != 1 {
+		t.Fatalf("recorded %d thicknesses, want 1", th.Count())
+	}
+	if it := th.Item(0); !approxEq(it.Min, 1) || !approxEq(it.Max, 1) {
+		t.Errorf("thickness range = [%v,%v], want [1,1]", it.Min, it.Max)
+	}
+}
+
+// TestMidSurfaceBodySelectionKeepsUnselected is #1885: mid-surfacing only body 0 of a two-body
+// part leaves body 1 (a solid) untouched alongside the new mid-surface.
+func TestMidSurfaceBodySelectionKeepsUnselected(t *testing.T) {
+	fs := NewPartFeatures(nil)
+	NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(4), 0, ops.NewBody, func() float64 { return 1 })    // body 0: thin plate
+	NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(1), 0, ops.NewBody, func() float64 { return 1 })    // body 1: cube (no thin pair)
+	pf := NewMidSurfaceFeatures(fs).AddMidSurface(&MidSurfaceDefinition{MaxThickness: 2, BodyIndices: []int{0}}) // only the plate
+	fs.Recompute()
+	if !pf.Health().OK() {
+		t.Fatalf("body-selected mid-surface sick: %+v", pf.Health())
+	}
+	res := fs.Result()
+	solids, surfaces := 0, 0
+	for _, b := range res {
+		if b.IsSolid() {
+			solids++
+		} else {
+			surfaces++
+		}
+	}
+	if solids != 1 || surfaces != 1 {
+		t.Errorf("result = %d solids + %d surfaces, want 1 each (cube kept, plate → mid-surface)", solids, surfaces)
+	}
+}
+
+// TestMidSurfaceOptionsRoundTrip pins #1885 serialization: min/max, body indices, and manual pairs
+// survive the recipe codec.
+func TestMidSurfaceOptionsRoundTrip(t *testing.T) {
+	fs := NewPartFeatures(nil)
+	NewMidSurfaceFeatures(fs).AddMidSurface(&MidSurfaceDefinition{
+		MaxThickness: 3, MinThickness: 1, BodyIndices: []int{0, 2}, Pairs: [][2][]byte{{[]byte("fa"), []byte("fb")}},
+	})
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	if d := data[0].MidSurface; d.MinThickness != 1 || len(d.BodyIndices) != 2 || len(d.Pairs) != 1 {
+		t.Fatalf("serialized mid-surface = %+v", d)
+	}
+	fresh := NewPartFeatures(nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	def := fresh.Item(0).Definition().(*MidSurfaceFeature).Definition()
+	if def.MinThickness != 1 || len(def.BodyIndices) != 2 || len(def.Pairs) != 1 || string(def.Pairs[0][0]) != "fa" {
+		t.Errorf("restored mid-surface = %+v", def)
+	}
+}
+
 func TestMidSurfaceFeatureGoesSickOnNoThinPair(t *testing.T) {
 	fs := NewPartFeatures(nil)
 	// A 1×1×1 cube: all separations are 1, none within a 0.5 threshold.

@@ -122,8 +122,12 @@ const extendSchema = `{
 
 const midSurfaceSchema = `{
   "type": "object",
-  "properties": {"maxThickness": {"type": "string", "description": "Max wall thickness to pair into a mid-surface, e.g. \"3 mm\"."}},
-  "required": ["maxThickness"]
+  "properties": {
+    "maxThickness": {"type": "string", "description": "Max wall thickness to auto-pair into a mid-surface, e.g. \"3 mm\"."},
+    "minThickness": {"type": "string", "description": "Min wall thickness for auto-pairing (default 0)."},
+    "bodyIndices": {"type": "array", "items": {"type": "integer", "minimum": 0}, "description": "Input body indices (model.tree order); default the last body."},
+    "facePairs": {"type": "array", "items": {"type": "object", "properties": {"a": {"type": "string"}, "b": {"type": "string"}}, "required": ["a", "b"]}, "description": "Manual face-key pairs (get_reference_keys) — pairs these directly instead of auto-pairing."}
+  }
 }`
 
 const stitchSchema = `{
@@ -404,12 +408,31 @@ func applyMidSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 	if err != nil {
 		return nil, err
 	}
-	th, err := lengthValue(part, in.MaxThickness, "midSurface: maxThickness")
-	if err != nil {
-		return nil, err
+	def := &feature.MidSurfaceDefinition{BodyIndices: in.BodyIndices, Pairs: midFacePairs(in.FacePairs)}
+	if len(def.Pairs) == 0 {
+		if def.MaxThickness, err = lengthValue(part, in.MaxThickness, "midSurface: maxThickness"); err != nil {
+			return nil, err
+		}
+		if in.MinThickness != "" {
+			if def.MinThickness, err = lengthValue(part, in.MinThickness, "midSurface: minThickness"); err != nil {
+				return nil, err
+			}
+		}
 	}
-	pf := feature.NewMidSurfaceFeatures(part.Features()).AddByThickness(th)
+	pf := feature.NewMidSurfaceFeatures(part.Features()).AddMidSurface(def)
 	return recomputeResult(part, pf)
+}
+
+// midFacePairs converts the wire face pairs to reference-key pairs.
+func midFacePairs(pairs []featureargs.FacePair) [][2][]byte {
+	if len(pairs) == 0 {
+		return nil
+	}
+	out := make([][2][]byte, len(pairs))
+	for i, pr := range pairs {
+		out[i] = [2][]byte{[]byte(pr.A), []byte(pr.B)}
+	}
+	return out
 }
 
 func applyStitch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {

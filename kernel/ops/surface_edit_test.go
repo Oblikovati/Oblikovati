@@ -166,7 +166,7 @@ func TestOffsetSurfaceMovesAlongNormal(t *testing.T) {
 func TestMidSurfacesThinBox(t *testing.T) {
 	// A 4×4×1 thin plate: only the top/bottom faces (separation 1) are a thin pair.
 	solid, _ := Stitch(boxFaces(4, 4, 1), 0, false, "box")
-	patches, err := MidSurfaces(solid, 2, "mid")
+	patches, err := MidSurfaces(solid, 0, 2, "mid")
 	if err != nil {
 		t.Fatalf("MidSurfaces: %v", err)
 	}
@@ -175,6 +175,10 @@ func TestMidSurfacesThinBox(t *testing.T) {
 	}
 	if !approx(patches[0].Thickness, 1) {
 		t.Errorf("recorded thickness = %v, want 1", patches[0].Thickness)
+	}
+	// The parallel caps give an equal min/max range at the thickness (#1885).
+	if !approx(patches[0].Min, 1) || !approx(patches[0].Max, 1) {
+		t.Errorf("thickness range = [%v,%v], want [1,1] for parallel walls", patches[0].Min, patches[0].Max)
 	}
 	// The mid patch sits on z = 0.5, midway between the caps.
 	box := patches[0].Body.RangeBox()
@@ -185,7 +189,48 @@ func TestMidSurfacesThinBox(t *testing.T) {
 
 func TestMidSurfacesNoThinPairErrors(t *testing.T) {
 	solid, _ := Stitch(boxFaces(1, 1, 1), 0, false, "box")
-	if _, err := MidSurfaces(solid, 0.5, "mid"); err == nil {
+	if _, err := MidSurfaces(solid, 0, 0.5, "mid"); err == nil {
 		t.Error("a cube with all separations 1 should have no pair within 0.5")
+	}
+}
+
+// TestMidSurfacesMinThicknessFloor: a min floor excludes pairs thinner than it (#1885). A 4×4×1
+// plate's separations are 1 (caps) and 4 (sides); the window [2,3] excludes both, so no pair.
+func TestMidSurfacesMinThicknessFloor(t *testing.T) {
+	solid, _ := Stitch(boxFaces(4, 4, 1), 0, false, "box")
+	if _, err := MidSurfaces(solid, 2, 3, "mid"); err == nil {
+		t.Error("the window [2,3] should exclude the sep-1 caps and sep-4 sides")
+	}
+}
+
+// TestMidSurfacesByPairs pairs the 4×4×1 plate's top and bottom caps explicitly, yielding one
+// mid-patch on z=0.5 with thickness 1 (#1885).
+func TestMidSurfacesByPairs(t *testing.T) {
+	solid, _ := Stitch(boxFaces(4, 4, 1), 0, false, "box")
+	var top, bot []byte
+	for _, f := range solid.Faces() {
+		if n := f.Geometry().NormalAt(0, 0); approx(n.Z, 1) {
+			top = f.ReferenceKey()
+		} else if approx(n.Z, -1) {
+			bot = f.ReferenceKey()
+		}
+	}
+	patches, err := MidSurfacesByPairs(solid, [][2][]byte{{top, bot}}, "mid")
+	if err != nil {
+		t.Fatalf("MidSurfacesByPairs: %v", err)
+	}
+	if len(patches) != 1 || !approx(patches[0].Thickness, 1) {
+		t.Fatalf("got %d patches (thickness %v), want 1 at thickness 1", len(patches), patches[0].Thickness)
+	}
+	if box := patches[0].Body.RangeBox(); !approx(box.Min.Z, 0.5) || !approx(box.Max.Z, 0.5) {
+		t.Errorf("manual mid patch z = [%v,%v], want flat at 0.5", box.Min.Z, box.Max.Z)
+	}
+}
+
+// TestMidSurfacesByPairsLostKeyErrors: an unresolved face key makes the op error.
+func TestMidSurfacesByPairsLostKeyErrors(t *testing.T) {
+	solid, _ := Stitch(boxFaces(4, 4, 1), 0, false, "box")
+	if _, err := MidSurfacesByPairs(solid, [][2][]byte{{[]byte("ghost"), []byte("gone")}}, "mid"); err == nil {
+		t.Error("a lost face-pair key should error")
 	}
 }
