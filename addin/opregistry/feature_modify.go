@@ -11,6 +11,7 @@ import (
 	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 )
@@ -134,15 +135,18 @@ func approximationArg(s, op string) (types.FeatureApproximationType, error) {
 const trimSchema = `{
   "type": "object",
   "properties": {
-    "origin": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Cutting-plane origin [x,y,z] in cm."},
-    "normal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Cutting-plane normal [x,y,z]."},
-    "keepPositive": {"type": "boolean", "default": true, "description": "Keep the half on the +normal side."}
-  },
-  "required": ["origin", "normal"]
+    "origin": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Explicit cutting-plane origin [x,y,z] in cm."},
+    "normal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Explicit cutting-plane normal [x,y,z]."},
+    "toolRef": {"type": "string", "description": "Cutting tool: a work plane or planar face (\"plane/N\", \"origin/plane/xy\", or a face key)."},
+    "toolBodyIndex": {"type": "integer", "minimum": 0, "description": "Cutting tool: a planar surface body by index (model.tree order)."},
+    "toolSketchIndex": {"type": "integer", "minimum": 0, "description": "Cutting tool: the sketch holding a straight cutting line (swept along the sketch normal)."},
+    "toolLineIndex": {"type": "integer", "minimum": 0, "default": 0, "description": "Which line of toolSketchIndex is the cutting line."},
+    "keepPositive": {"type": "boolean", "default": true, "description": "Keep the side on the +normal side of the cut."}
+  }
 }`
 
 func trimDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: featureargs.KindTrim, Summary: "Trim the body with a cutting plane, keeping one half.", Schema: json.RawMessage(trimSchema), Apply: applyTrim}
+	return &OperationDescriptor{Name: featureargs.KindTrim, Summary: "Trim a surface with a cutting tool (plane / work plane / surface body / sketch line), keeping one side.", Schema: json.RawMessage(trimSchema), Apply: applyTrim}
 }
 
 func applyTrim(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -150,16 +154,68 @@ func applyTrim(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	origin, err := point3(in.Origin, "trim: origin")
-	if err != nil {
-		return nil, err
-	}
-	normal, err := vec3(in.Normal, "trim: normal")
+	origin, normal, err := trimCuttingPlane(part, in)
 	if err != nil {
 		return nil, err
 	}
 	pf := feature.NewTrimFeatures(part.Features()).AddByPlane(origin, normal, in.KeepPositive)
 	return recomputeResult(part, pf)
+}
+
+// trimCuttingPlane resolves the trim's cutting tool to a plane (origin+normal): an explicit plane,
+// a work plane / planar face, a planar surface body, or a straight sketch line swept along its
+// sketch normal (#1880).
+func trimCuttingPlane(part *compdef.PartComponentDefinition, in featureargs.Trim) (math.Point3, math.Vector3, error) {
+	switch {
+	case in.ToolRef != "":
+		wp, err := part.WorkGeometry().PlaneTargetFromRef(in.ToolRef)
+		if err != nil {
+			return math.Point3{}, math.Vector3{}, fmt.Errorf("trim: tool %q: %w", in.ToolRef, err)
+		}
+		return wp.Plane().Origin(), wp.Plane().Normal().AsVector(), nil
+	case in.ToolBodyIndex != nil:
+		return trimBodyPlane(part, *in.ToolBodyIndex)
+	case in.ToolSketchIndex != nil:
+		return trimSketchLinePlane(part, *in.ToolSketchIndex, in.ToolLineIndex)
+	default:
+		origin, err := point3(in.Origin, "trim: origin")
+		if err != nil {
+			return math.Point3{}, math.Vector3{}, err
+		}
+		normal, err := vec3(in.Normal, "trim: normal")
+		return origin, normal, err
+	}
+}
+
+// trimBodyPlane extracts the plane of a planar surface body used as a cutting tool.
+func trimBodyPlane(part *compdef.PartComponentDefinition, index int) (math.Point3, math.Vector3, error) {
+	bodies := part.Features().Result()
+	if index < 0 || index >= len(bodies) {
+		return math.Point3{}, math.Vector3{}, fmt.Errorf("trim: tool body index %d out of range (have %d)", index, len(bodies))
+	}
+	pl, ok := ops.BodyPlane(bodies[index])
+	if !ok {
+		return math.Point3{}, math.Vector3{}, fmt.Errorf("trim: tool body %d is not a planar surface", index)
+	}
+	return pl.Origin, pl.Normal(), nil // geom.Plane.Normal() is already a Vector3
+}
+
+// trimSketchLinePlane derives the cutting plane of a straight sketch line: the plane containing the
+// line and the sketch normal (the line swept perpendicular to its sketch).
+func trimSketchLinePlane(part *compdef.PartComponentDefinition, sketchIndex, lineIndex int) (math.Point3, math.Vector3, error) {
+	sk, err := sketchAt(part, sketchIndex)
+	if err != nil {
+		return math.Point3{}, math.Vector3{}, err
+	}
+	if lineIndex < 0 || lineIndex >= sk.Lines().Count() {
+		return math.Point3{}, math.Vector3{}, fmt.Errorf("trim: line index %d out of range (sketch has %d lines)", lineIndex, sk.Lines().Count())
+	}
+	origin, dir := sk.Lines().Item(lineIndex).Axis3D(sk.Plane())
+	normal := dir.Cross(sk.Plane().Normal().AsVector())
+	if normal.LengthSquared() < 1e-18 {
+		return math.Point3{}, math.Vector3{}, fmt.Errorf("trim: cutting line is degenerate")
+	}
+	return origin, normal, nil
 }
 
 // --- face direct edits (move / offset / delete / split) --------------------
