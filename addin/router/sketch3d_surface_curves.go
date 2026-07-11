@@ -64,8 +64,32 @@ func projectToSurfaceCurve3D(part *compdef.PartComponentDefinition, sk *sketch.S
 	if !part.FaceKeyResolves(in.FaceRefs[0]) {
 		return surfaceCurveUnhealthy(in.Kind)
 	}
-	c := sk.AddProjectToSurfaceCurve3DRef(src, compdef.NewFaceRefSource(part, in.FaceRefs[0]))
+	c, err := addProjectToSurface3D(sk, src, compdef.NewFaceRefSource(part, in.FaceRefs[0]), in)
+	if err != nil {
+		return nil, err
+	}
 	return surfaceCurveResult(c.EntityID(), in.Kind)
+}
+
+// addProjectToSurface3D builds the projection in the requested mode: closest-point (default) or
+// along a direction vector; wrap is deferred to #1841 part 2 (#1841).
+func addProjectToSurface3D(sk *sketch.Sketch3D, src geom.Curve3, surface sketch.SurfaceSource, in wire.AddSketch3DSurfaceCurveArgs) (*sketch.ProjectToSurfaceCurve3D, error) {
+	proj, ok := types.ParseProjectCurveToSurfaceType(in.ProjectionType)
+	if !ok {
+		return nil, fmt.Errorf("sketch3d.addSurfaceCurve: unknown projectionType %q (want closestPoint|alongVector|wrap)", in.ProjectionType)
+	}
+	switch proj {
+	case types.ProjectAlongVector:
+		dir, err := vector3Arg(in.ProjectDirection)
+		if err != nil {
+			return nil, fmt.Errorf("sketch3d.addSurfaceCurve: alongVector projectDirection: %w", err)
+		}
+		return sk.AddProjectToSurfaceCurve3DAlongVector(src, surface, dir), nil
+	case types.ProjectWrapToSurface:
+		return nil, fmt.Errorf("sketch3d.addSurfaceCurve: wrap projection is not yet supported (#1841 part 2)")
+	default:
+		return sk.AddProjectToSurfaceCurve3DRef(src, surface), nil
+	}
 }
 
 // offsetCurve3 resolves an in-sketch source curve and adds its offset by OffsetDistance in

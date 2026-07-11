@@ -5,6 +5,7 @@ package sketch
 import (
 	"fmt"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
@@ -91,27 +92,70 @@ func (c *SilhouetteCurve3D) Evaluate() [][]math.Point3 {
 	return geom.Silhouette(surface, c.ViewDir, c.Grid)
 }
 
-// ProjectToSurfaceCurve3D is a source curve projected onto a referenced surface (the
-// perpendicular foot of each sampled point).
+// ProjectToSurfaceCurve3D is a source curve projected onto a referenced surface. Projection is
+// either the perpendicular foot of each sample (closest point, the default) or the nearest point
+// where a ray from the sample along Direction pierces the surface (alongVector, #1841).
 type ProjectToSurfaceCurve3D struct {
 	entityBase
-	Source  geom.Curve3
-	Surface SurfaceSource
-	Samples int
+	Source     geom.Curve3
+	Surface    SurfaceSource
+	Samples    int
+	Projection types.ProjectCurveToSurfaceType
+	Direction  math.Vector3 // ray direction for the alongVector projection
 }
 
-// Evaluate samples the source curve and projects each point onto the surface.
+// Evaluate samples the source curve and projects each point onto the surface; a lost reference
+// (nil surface) yields no geometry.
 func (c *ProjectToSurfaceCurve3D) Evaluate() []math.Point3 {
 	surface := c.Surface.Surface()
+	if surface == nil {
+		return nil
+	}
 	n := samplesOr(c.Samples)
 	lo, hi := c.Source.Domain()
 	out := make([]math.Point3, n+1)
 	for i := range out {
 		t := lo + (hi-lo)*float64(i)/float64(n)
-		_, _, foot := geom.ClosestPointOnSurface(surface, c.Source.PointAt(t))
-		out[i] = foot
+		out[i] = c.projectSample(surface, c.Source.PointAt(t))
 	}
 	return out
+}
+
+// projectSample maps one source point onto the surface: along Direction (the nearest ray pierce)
+// for the alongVector projection, otherwise the perpendicular foot (#1841).
+func (c *ProjectToSurfaceCurve3D) projectSample(surface geom.Surface, p math.Point3) math.Point3 {
+	_, _, foot := geom.ClosestPointOnSurface(surface, p)
+	if c.Projection != types.ProjectAlongVector {
+		return foot
+	}
+	if pierce, ok := rayPierceSurface(surface, p, c.Direction, foot); ok {
+		return pierce
+	}
+	return foot // the ray missed the surface: keep the closest foot
+}
+
+// rayPierceSurface returns the point nearest p where the line through p along dir pierces the
+// surface; ok=false when the ray misses or dir is degenerate (#1841). The probe segment is sized
+// from p's distance to the surface so it reaches across without a runaway length.
+func rayPierceSurface(surface geom.Surface, p math.Point3, dir math.Vector3, foot math.Point3) (math.Point3, bool) {
+	length := float64(dir.Length())
+	if length == 0 {
+		return math.Point3{}, false
+	}
+	unit := dir.Scale(math.Scalar(1 / length))
+	span := math.Scalar(10*float64(p.DistanceTo(foot)) + 1)
+	seg := geom.NewLineSegment(p.TranslateBy(unit.Scale(-span)), p.TranslateBy(unit.Scale(span)))
+	hits := geom.IntersectCurveSurface(seg, surface)
+	if len(hits) == 0 {
+		return math.Point3{}, false
+	}
+	best, bestD := hits[0], p.DistanceTo(hits[0])
+	for _, h := range hits[1:] {
+		if d := p.DistanceTo(h); d < bestD {
+			best, bestD = h, d
+		}
+	}
+	return best, true
 }
 
 // OnFaceCurve3D is a curve drawn in a referenced surface's parameter space, mapped to 3D
@@ -205,10 +249,18 @@ func (s *Sketch3D) AddProjectToSurfaceCurve3D(source geom.Curve3, surface geom.S
 	return s.AddProjectToSurfaceCurve3DRef(source, StaticSurface(surface))
 }
 
-// AddProjectToSurfaceCurve3DRef projects a source curve onto a surface source (the surface
-// is associative and rebinds on recompute; the source curve is a fixed snapshot).
+// AddProjectToSurfaceCurve3DRef projects a source curve onto a surface source to its closest point
+// (the surface is associative and rebinds on recompute; the source curve is a fixed snapshot).
 func (s *Sketch3D) AddProjectToSurfaceCurve3DRef(source geom.Curve3, surface SurfaceSource) *ProjectToSurfaceCurve3D {
-	c := &ProjectToSurfaceCurve3D{entityBase: newEntity(), Source: source, Surface: surface}
+	c := &ProjectToSurfaceCurve3D{entityBase: newEntity(), Source: source, Surface: surface, Projection: types.ProjectToClosestPoint}
+	s.addEntity3D(c)
+	return c
+}
+
+// AddProjectToSurfaceCurve3DAlongVector projects a source curve onto a surface source along dir:
+// each sample maps to the nearest point where the ray from it along dir pierces the surface (#1841).
+func (s *Sketch3D) AddProjectToSurfaceCurve3DAlongVector(source geom.Curve3, surface SurfaceSource, dir math.Vector3) *ProjectToSurfaceCurve3D {
+	c := &ProjectToSurfaceCurve3D{entityBase: newEntity(), Source: source, Surface: surface, Projection: types.ProjectAlongVector, Direction: dir}
 	s.addEntity3D(c)
 	return c
 }
