@@ -2,7 +2,12 @@
 
 package feature
 
-import "fmt"
+import (
+	"fmt"
+
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
+)
 
 // Serialized forms of the surface-editing features (M10-F01/F02): trim, extend, surface offset,
 // mid-surface, stitch, and sculpt. These kinds were creatable but carried no serialization codec,
@@ -29,26 +34,57 @@ func restoreTrim(fs *PartFeatures, d *TrimData) (*PartFeature, error) {
 	return NewTrimFeatures(fs).AddByPlane(decodePoint3(d.Origin), decodeVec3(d.Normal), d.KeepPositive), nil
 }
 
-// ExtendData is a surface extend's recipe: the boundary edge (base64 reference key) and the
-// outward distance.
+// ExtendData is a surface extend's recipe (#1878): the boundary edges (base64 reference keys), the
+// outward distance or a target plane (extend-to-plane), and the continuity mode. EdgeKey is the
+// legacy single-edge field, read when Edges is empty so pre-#1878 recipes restore unchanged.
 type ExtendData struct {
-	EdgeKey  string  `yaml:"edgeKey"`
-	Distance float64 `yaml:"distance"`
+	EdgeKey      string    `yaml:"edgeKey,omitempty"`
+	Edges        []string  `yaml:"edges,omitempty"`
+	Distance     float64   `yaml:"distance,omitempty"`
+	TargetOrigin []float64 `yaml:"targetOrigin,omitempty"` // extend-to-plane target (origin + normal)
+	TargetNormal []float64 `yaml:"targetNormal,omitempty"`
+	Natural      bool      `yaml:"natural,omitempty"`
 }
 
 func serializeExtend(def *ExtendDefinition) *ExtendData {
-	return &ExtendData{EdgeKey: encodeKey(def.EdgeKey), Distance: evalFloat(def.Distance)}
+	d := &ExtendData{Edges: encodeKeys(def.EdgeKeys), Distance: evalFloat(def.Distance), Natural: def.Natural}
+	if p := def.TargetPlane; p != nil {
+		o, n := p.Origin, p.Normal()
+		d.TargetOrigin = []float64{float64(o.X), float64(o.Y), float64(o.Z)}
+		d.TargetNormal = []float64{float64(n.X), float64(n.Y), float64(n.Z)}
+	}
+	return d
 }
 
 func restoreExtend(fs *PartFeatures, d *ExtendData) (*PartFeature, error) {
 	if d == nil {
 		return nil, fmt.Errorf("extend feature is missing its payload")
 	}
+	keys, err := extendEdgeKeys(d)
+	if err != nil {
+		return nil, err
+	}
+	def := &ExtendDefinition{EdgeKeys: keys, Distance: constFloat(d.Distance), Natural: d.Natural}
+	if len(d.TargetNormal) == 3 && len(d.TargetOrigin) == 3 {
+		pl, err := geom.NewPlane(math.P3(d.TargetOrigin[0], d.TargetOrigin[1], d.TargetOrigin[2]), math.V3(d.TargetNormal[0], d.TargetNormal[1], d.TargetNormal[2]))
+		if err != nil {
+			return nil, fmt.Errorf("extend feature target plane: %w", err)
+		}
+		def.TargetPlane = &pl
+	}
+	return NewExtendFeatures(fs).AddExtend(def), nil
+}
+
+// extendEdgeKeys decodes the multi-edge Edges list, falling back to the legacy single EdgeKey.
+func extendEdgeKeys(d *ExtendData) ([][]byte, error) {
+	if len(d.Edges) > 0 {
+		return decodeKeys(d.Edges)
+	}
 	key, err := decodeKey(d.EdgeKey)
 	if err != nil {
 		return nil, fmt.Errorf("extend feature edge key: %w", err)
 	}
-	return NewExtendFeatures(fs).Add(key, constFloat(d.Distance)), nil
+	return [][]byte{key}, nil
 }
 
 // SurfaceOffsetData is a surface offset's recipe: the offset distance along the face normal.

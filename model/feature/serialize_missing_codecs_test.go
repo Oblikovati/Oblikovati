@@ -31,8 +31,8 @@ func TestSurfaceEditCodecsRoundTrip(t *testing.T) {
 		t.Errorf("restored trim = %+v, want origin (1,2,3) normal (0,0,1) keepPositive", trim)
 	}
 	ext := featAt[*ExtendFeature](t, fresh, 1).Definition()
-	if string(ext.EdgeKey) != "edge-key-\x00\xff" || ext.Distance() != 2.5 {
-		t.Errorf("restored extend key=%q dist=%g, want the original key and 2.5", ext.EdgeKey, ext.Distance())
+	if len(ext.EdgeKeys) != 1 || string(ext.EdgeKeys[0]) != "edge-key-\x00\xff" || ext.Distance() != 2.5 {
+		t.Errorf("restored extend keys=%q dist=%g, want the original key and 2.5", ext.EdgeKeys, ext.Distance())
 	}
 	if off := featAt[*SurfaceOffsetFeature](t, fresh, 2).Definition(); off.Distance() != -1.25 {
 		t.Errorf("restored surface-offset distance = %g, want -1.25", off.Distance())

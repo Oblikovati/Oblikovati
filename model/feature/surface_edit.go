@@ -5,6 +5,7 @@ package feature
 import (
 	"errors"
 
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -79,14 +80,19 @@ func (c *TrimFeatures) AddByPlane(origin math.Point3, normal math.Vector3, keepP
 	return pf
 }
 
-// ExtendDefinition is the recipe for extending a planar surface's boundary edge outward by a
-// distance (the edge held by reference key, re-resolved each recompute).
+// ExtendDefinition is the recipe for extending a planar surface's boundary edges outward — by a
+// distance, or until they reach a target plane (#1878). Edges are held by reference key and
+// re-resolved each recompute. Natural marks the continuity mode (natural vs stretched); for the
+// planar faces supported today both extend linearly, so it is carried for parity and only bites on
+// the curved (NURBS) extend that is phase C.
 type ExtendDefinition struct {
-	EdgeKey  []byte
-	Distance func() float64
+	EdgeKeys    [][]byte
+	Distance    func() float64
+	TargetPlane *geom.Plane // non-nil ⇒ extend-to-plane (Inventor's to-object) instead of by distance
+	Natural     bool
 }
 
-// ExtendFeature extends a planar surface body's boundary edge, growing the face (PBI-111).
+// ExtendFeature extends a planar surface body's boundary edges, growing the face (PBI-111, #1878).
 // Multi-face and curved-surface extension are the remaining phase-C (NURBS) work.
 type ExtendFeature struct {
 	def      *ExtendDefinition
@@ -99,13 +105,19 @@ func (e *ExtendFeature) Definition() *ExtendDefinition { return e.def }
 // Kind implements [Feature].
 func (e *ExtendFeature) Kind() string { return "extend" }
 
-// Recompute resolves the boundary edge and extends its face outward; a lost edge → Sick.
+// Recompute resolves the boundary edges and extends their face outward — to the target plane when
+// one is set, otherwise by the distance. A lost edge → Sick.
 func (e *ExtendFeature) Recompute(in Input) (Output, error) {
 	body, err := lastBody(in, "extend")
 	if err != nil {
 		return Output{}, err
 	}
-	extended, err := ops.ExtendByEdge(body, e.def.EdgeKey, callOrZero(e.def.Distance), e.featName)
+	var extended *topo.Body
+	if e.def.TargetPlane != nil {
+		extended, err = ops.ExtendEdgesToPlane(body, e.def.EdgeKeys, *e.def.TargetPlane, e.featName)
+	} else {
+		extended, err = ops.ExtendEdgesByDistance(body, e.def.EdgeKeys, callOrZero(e.def.Distance), e.featName)
+	}
 	if err != nil {
 		return Output{}, err
 	}
@@ -118,9 +130,14 @@ type ExtendFeatures struct{ engine *PartFeatures }
 // NewExtendFeatures binds the collection to a feature engine.
 func NewExtendFeatures(engine *PartFeatures) *ExtendFeatures { return &ExtendFeatures{engine: engine} }
 
-// Add extends the boundary edge (by reference key) outward by distance.
+// Add extends a single boundary edge outward by distance (the simple back-compatible form).
 func (c *ExtendFeatures) Add(edgeKey []byte, distance func() float64) *PartFeature {
-	ef := &ExtendFeature{def: &ExtendDefinition{EdgeKey: edgeKey, Distance: distance}, featName: "Extend"}
+	return c.AddExtend(&ExtendDefinition{EdgeKeys: [][]byte{edgeKey}, Distance: distance})
+}
+
+// AddExtend extends the definition's boundary edges — by distance or to a target plane (#1878).
+func (c *ExtendFeatures) AddExtend(def *ExtendDefinition) *PartFeature {
+	ef := &ExtendFeature{def: def, featName: "Extend"}
 	pf := c.engine.Add(ef)
 	ef.featName = pf.name
 	return pf
