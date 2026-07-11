@@ -73,7 +73,7 @@ func (t *DeleteFaceTool) Commit(s *Session) error {
 
 // addDeleteFace builds the delete-face feature into engine fs — shared by Commit and preview.
 func (t *DeleteFaceTool) addDeleteFace(fs *feature.PartFeatures) *feature.PartFeature {
-	return feature.NewModifyFeatures(fs).AddDeleteFace(faceKeys(t.faces))
+	return feature.NewModifyFeatures(fs).AddDeleteFace(faceKeys(t.faces), true) // interactive Delete Face heals (#1884)
 }
 
 // AddedFeature returns the feature created on commit (for inspection/tests).

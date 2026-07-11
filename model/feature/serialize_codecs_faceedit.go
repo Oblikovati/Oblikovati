@@ -39,15 +39,22 @@ func (r featureCodecSet) registerFaceEditCodecs() {
 		},
 		decode: decodeFaceEdit,
 	})
-	// split and delete-face carry only their face keys, via the generic faceEditor interface (any
-	// feature exposing FaceKeys() that is not one of the explicit kinds above).
-	for _, kind := range []string{"split", "delete-face"} {
-		r.register(kind, featureCodec{
-			encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
-				fd.FaceEdit = &FaceEditData{Faces: encodeKeys(f.(faceEditor).FaceKeys())}
-				return nil
-			},
-			decode: decodeFaceEdit,
-		})
-	}
+	// delete-face carries its face keys plus the inverse-heal flag (#1884); Open is negated so a
+	// pre-#1884 recipe (no field) restores as healed.
+	r.register("delete-face", featureCodec{
+		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
+			df := f.(*DeleteFaceFeature)
+			fd.FaceEdit = &FaceEditData{Faces: encodeKeys(df.FaceKeys()), Open: !df.Heal()}
+			return nil
+		},
+		decode: decodeFaceEdit,
+	})
+	// split carries only its face keys, via the generic faceEditor interface.
+	r.register("split", featureCodec{
+		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
+			fd.FaceEdit = &FaceEditData{Faces: encodeKeys(f.(faceEditor).FaceKeys())}
+			return nil
+		},
+		decode: decodeFaceEdit,
+	})
 }

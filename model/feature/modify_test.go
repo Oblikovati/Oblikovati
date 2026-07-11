@@ -133,13 +133,39 @@ func TestDeleteFaceHealsInModel(t *testing.T) {
 			chamfer = f.ReferenceKey()
 		}
 	}
-	del := NewModifyFeatures(fs).AddDeleteFace([][]byte{chamfer})
+	del := NewModifyFeatures(fs).AddDeleteFace([][]byte{chamfer}, true)
 	fs.Recompute()
 	if !del.Health().OK() {
 		t.Fatalf("delete-face sick: %+v", del.Health())
 	}
 	if got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(got, 8) > 1e-6 {
 		t.Errorf("healed volume = %g, want 8", got)
+	}
+}
+
+// TestDeleteFaceOpenLeavesSurface is the heal=false arm (#1884): deleting the top face without
+// healing leaves an open, non-solid surface body of five faces.
+func TestDeleteFaceOpenLeavesSurface(t *testing.T) {
+	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
+	var top []byte
+	for _, f := range box.Faces() {
+		if f.Geometry().NormalAt(0, 0).Z > 0.99 {
+			top = f.ReferenceKey()
+		}
+	}
+	fs := NewPartFeatures(nil)
+	NewBaseFeatures(fs).AddBase(box)
+	del := NewModifyFeatures(fs).AddDeleteFace([][]byte{top}, false)
+	fs.Recompute()
+	if !del.Health().OK() {
+		t.Fatalf("delete-face (open) sick: %+v", del.Health())
+	}
+	body := fs.Result()[0]
+	if body.IsSolid() {
+		t.Error("heal=false should leave an open (non-solid) surface body")
+	}
+	if got := len(body.Faces()); got != 5 {
+		t.Errorf("open body has %d faces, want 5 (6 minus the deleted top)", got)
 	}
 }
 

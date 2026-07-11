@@ -151,7 +151,10 @@ const faceOffsetSchema = `{
 
 const deleteFaceSchema = `{
   "type": "object",
-  "properties": {"faceRefs": {"type": "array", "items": {"type": "string"}, "minItems": 1, "description": "Reference keys of the faces to delete (get_reference_keys)."}},
+  "properties": {
+    "faceRefs": {"type": "array", "items": {"type": "string"}, "minItems": 1, "description": "Reference keys of the faces to delete (get_reference_keys). Faces on an internal void shell delete that void and restore mass."},
+    "heal": {"type": "boolean", "default": false, "description": "Extend the neighbouring faces to close the opening. Default false (Inventor parity) leaves the body open (a surface)."}
+  },
   "required": ["faceRefs"]
 }`
 
@@ -170,7 +173,7 @@ func faceOffsetDescriptor() *OperationDescriptor {
 }
 
 func deleteFaceDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: featureargs.KindDeleteFace, Summary: "Delete picked faces, healing the body (direct edit).", Schema: json.RawMessage(deleteFaceSchema), Apply: applyDeleteFace}
+	return &OperationDescriptor{Name: featureargs.KindDeleteFace, Summary: "Delete picked faces (heal to close, or leave open); a void selection removes the void (direct edit).", Schema: json.RawMessage(deleteFaceSchema), Apply: applyDeleteFace}
 }
 
 func splitFaceDescriptor() *OperationDescriptor {
@@ -242,7 +245,7 @@ func applyDeleteFace(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 	if len(in.FaceRefs) == 0 {
 		return nil, errors.New("deleteFace: faceRefs is empty")
 	}
-	pf := feature.NewModifyFeatures(part.Features()).AddDeleteFace(refKeys(in.FaceRefs))
+	pf := feature.NewModifyFeatures(part.Features()).AddDeleteFace(refKeys(in.FaceRefs), in.Heal)
 	return recomputeResult(part, pf)
 }
 

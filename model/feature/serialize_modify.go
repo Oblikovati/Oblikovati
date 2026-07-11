@@ -26,6 +26,10 @@ type FaceEditData struct {
 	Distance      float64   `yaml:"distance,omitempty"`      // face-offset
 	Approximation string    `yaml:"approximation,omitempty"` // face-offset (#331), wire spelling
 	Target        string    `yaml:"target,omitempty"`        // replace-face: source face key
+	// Open is delete-face's inverse-heal flag (#1884): stored as the negation so the zero value
+	// (absent field) restores the legacy healed behaviour — pre-#1884 recipes had no field and
+	// were always healed. Open=true means the delete left the body open (heal=false).
+	Open bool `yaml:"open,omitempty"`
 }
 
 // ThickenData is a thicken feature: the wall thickness applied to the running surface body,
@@ -97,7 +101,7 @@ func restoreFaceEdit(fs *PartFeatures, kind string, d *FaceEditData) (*PartFeatu
 		}
 		return m.AddFaceOffsetApprox(keys, constFloat(d.Distance), approx), nil
 	case "delete-face":
-		return m.AddDeleteFace(keys), nil
+		return m.AddDeleteFace(keys, !d.Open), nil // Open is stored negated (see FaceEditData.Open)
 	case "replace-face":
 		target, err := decodeKey(d.Target)
 		if err != nil {

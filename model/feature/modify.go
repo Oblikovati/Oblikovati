@@ -136,13 +136,40 @@ func (f *ReplaceFaceFeature) Recompute(in Input) (Output, error) {
 	})
 }
 
-// DeleteFaceFeature removes the picked faces and heals the openings (extends neighbours).
-type DeleteFaceFeature struct{ faceEditFeature }
+// DeleteFaceFeature removes the picked faces. Heal (default false, Inventor parity #1884) extends
+// the neighbouring faces to close the opening; heal=false leaves the body open (a surface). If the
+// picked faces sit on an internal void shell instead, the whole void is removed (mass restored).
+type DeleteFaceFeature struct {
+	faceEditFeature
+	heal bool
+}
 
-// Recompute deletes the picked faces from the running body and heals it (see
-// kernel/ops/delete_face.go); a non-healable selection makes the feature go Sick.
+// Heal reports whether the openings are closed by extending neighbours (for serialization).
+func (f *DeleteFaceFeature) Heal() bool { return f.heal }
+
+// Recompute deletes the picked faces from the running body. Faces on an internal void shell drop
+// that void (restoring mass, see kernel/ops/delete_void.go); otherwise heal extends neighbours to
+// close the gap (kernel/ops/delete_face.go) and heal=false leaves it open (kernel/ops/drop_faces.go).
+// A non-healable selection or lost key makes the feature go Sick.
 func (f *DeleteFaceFeature) Recompute(in Input) (Output, error) {
-	return retopoFacesBody(in, f.faceKeys, f.kind, ops.DeleteFaces)
+	body, err := runningBody(in)
+	if err != nil {
+		return Output{}, err
+	}
+	q := ops.DefaultQuality()
+	var result *topo.Body
+	switch {
+	case ops.FacesOnVoidShell(body, f.faceKeys, q):
+		result, err = ops.RemoveVoidShellByFaces(body, f.faceKeys, q)
+	case f.heal:
+		result, err = ops.DeleteFaces(body, f.faceKeys)
+	default:
+		result, err = ops.DropFaces(body, f.faceKeys, false)
+	}
+	if err != nil {
+		return Output{}, fmt.Errorf("%s: %w", f.kind, err)
+	}
+	return Output{Bodies: replaceBody(in.Bodies, body, result)}, nil
 }
 
 // MoveFaceFeature translates the picked faces by a vector — or, in rotate mode (#331),
@@ -266,8 +293,10 @@ func (c *ModifyFeatures) AddFaceOffsetApprox(faceKeys [][]byte, distance func() 
 	})
 }
 
-func (c *ModifyFeatures) AddDeleteFace(faceKeys [][]byte) *PartFeature {
-	return c.engine.Add(&DeleteFaceFeature{faceEditFeature{kind: "delete-face", faceKeys: faceKeys}})
+// AddDeleteFace deletes the picked faces. heal=true extends the neighbouring faces to close the
+// opening; heal=false leaves the body open. Faces on an internal void shell drop that void (#1884).
+func (c *ModifyFeatures) AddDeleteFace(faceKeys [][]byte, heal bool) *PartFeature {
+	return c.engine.Add(&DeleteFaceFeature{faceEditFeature: faceEditFeature{kind: "delete-face", faceKeys: faceKeys}, heal: heal})
 }
 
 func (c *ModifyFeatures) AddReplaceFace(faceKeys [][]byte, targetKey []byte) *PartFeature {

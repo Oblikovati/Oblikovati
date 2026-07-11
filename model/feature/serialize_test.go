@@ -597,7 +597,7 @@ func TestFaceEditFeaturesRoundTrip(t *testing.T) {
 	m.AddSplit([][]byte{[]byte("f-split")})
 	m.AddMoveFace([][]byte{[]byte("f-move")}, math.V3(1, 2, 3))
 	m.AddFaceOffset([][]byte{[]byte("f-off")}, 0.5)
-	m.AddDeleteFace([][]byte{[]byte("f-del")})
+	m.AddDeleteFace([][]byte{[]byte("f-del")}, true)
 	m.AddReplaceFace([][]byte{[]byte("f-rep")}, []byte("f-target"))
 	m.AddThicken(0.5)
 
@@ -623,6 +623,31 @@ func TestFaceEditFeaturesRoundTrip(t *testing.T) {
 	split := fresh.Item(0).Definition().(faceEditor)
 	if len(split.FaceKeys()) != 1 || string(split.FaceKeys()[0]) != "f-split" {
 		t.Errorf("split face keys = %v, want [f-split]", split.FaceKeys())
+	}
+	// The delete-face heal flag survives (this recipe used heal=true).
+	if df := fresh.Item(3).Definition().(*DeleteFaceFeature); !df.Heal() {
+		t.Error("restored delete-face heal = false, want true")
+	}
+}
+
+// TestDeleteFaceHealFlagRoundTrip pins #1884's inverse-heal serialization: a heal=false delete
+// restores as heal=false (the `open` flag), while a recipe with no flag restores healed (legacy).
+func TestDeleteFaceHealFlagRoundTrip(t *testing.T) {
+	fs := NewPartFeatures(nil)
+	NewModifyFeatures(fs).AddDeleteFace([][]byte{[]byte("f-open")}, false)
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	if !data[0].FaceEdit.Open {
+		t.Error("heal=false delete-face should serialize open=true")
+	}
+	fresh := NewPartFeatures(nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	if df := fresh.Item(0).Definition().(*DeleteFaceFeature); df.Heal() {
+		t.Error("restored heal = true, want false (open)")
 	}
 }
 
