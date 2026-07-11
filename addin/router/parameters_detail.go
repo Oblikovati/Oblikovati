@@ -37,7 +37,10 @@ func paramDetail(holder compdef.ParameterHolder, p *param.Parameter) wire.Parame
 	if p.IsNumeric() {
 		tol := p.Tolerance()
 		d.ModelValue = p.ModelValue()
-		d.Tolerance = &wire.ToleranceInfo{Type: tol.Kind().String(), Upper: tol.Upper, Lower: tol.Lower}
+		d.Tolerance = &wire.ToleranceInfo{
+			Type: tol.Kind().String(), Upper: tol.Upper, Lower: tol.Lower,
+			HoleTolerance: tol.HoleTolerance, ShaftTolerance: tol.ShaftTolerance,
+		}
 	}
 	if p.IsMultiValue() {
 		d.ExpressionList = &wire.ExpressionListInfo{
@@ -206,14 +209,10 @@ func setParameterTolerance(s *app.Session, in wire.ParameterToleranceArgs) (wire
 }
 
 // applyToleranceMode dispatches one wire tolerance mode onto the model setters.
+// The operand-bearing modes (symmetric/deviation/limits) parse their unit-bearing
+// values here; the rest go through applyOperandlessTolerance.
 func applyToleranceMode(holder compdef.ParameterHolder, p *param.Parameter, in wire.ParameterToleranceArgs) error {
 	switch in.Mode {
-	case "default":
-		return p.SetToleranceDefault()
-	case "min":
-		return p.SetToleranceMinMax(types.ToleranceMin)
-	case "max":
-		return p.SetToleranceMinMax(types.ToleranceMax)
 	case "symmetric":
 		band, err := toleranceOperand(holder, p, in.Upper, "upper")
 		if err != nil {
@@ -222,8 +221,29 @@ func applyToleranceMode(holder compdef.ParameterHolder, p *param.Parameter, in w
 		return p.SetToleranceSymmetric(band)
 	case "deviation", "limits":
 		return applyToleranceBand(holder, p, in)
+	}
+	return applyOperandlessTolerance(p, in)
+}
+
+// applyOperandlessTolerance dispatches the tolerance modes that take no
+// unit-bearing operands: the bandless flavors and the ISO fits/basic/reference
+// modes (#1848).
+func applyOperandlessTolerance(p *param.Parameter, in wire.ParameterToleranceArgs) error {
+	switch in.Mode {
+	case "default":
+		return p.SetToleranceDefault()
+	case "min":
+		return p.SetToleranceMinMax(types.ToleranceMin)
+	case "max":
+		return p.SetToleranceMinMax(types.ToleranceMax)
+	case "fits":
+		return p.SetToleranceFits(in.Hole, in.Shaft)
+	case "basic":
+		return p.SetToleranceBasic()
+	case "reference":
+		return p.SetToleranceReference()
 	default:
-		return fmt.Errorf("parameters.setTolerance: unknown mode %q (want default|deviation|symmetric|limits|min|max)", in.Mode)
+		return fmt.Errorf("parameters.setTolerance: unknown mode %q (want default|deviation|symmetric|limits|min|max|fits|basic|reference)", in.Mode)
 	}
 }
 

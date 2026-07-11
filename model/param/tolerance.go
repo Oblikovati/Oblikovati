@@ -94,6 +94,61 @@ func (p *Parameter) SetToleranceLimits(upperLimit, lowerLimit float64) error {
 	return nil
 }
 
+// SetToleranceFits sets an ISO 286 limits-and-fits tolerance (#1848). The band is
+// resolved from the nominal value and the class governing the dimensioned feature
+// — the hole class when present, else the shaft class (hole-basis convention) —
+// and both class strings are recorded for the fit annotation. The tolerance type
+// is kLimitsFitsStacked. nominalMM must be > 0 and match the parameter's own
+// nominal in millimetres; the caller passes it because the band scales with size.
+func (p *Parameter) SetToleranceFits(hole, shaft string) error {
+	if err := p.requireNumericTolerance(); err != nil {
+		return err
+	}
+	if p.value.Unit != Length {
+		return fmt.Errorf("param: fits tolerance for %q needs a length parameter (ISO limits-and-fits apply to linear sizes)", p.name)
+	}
+	governing := hole
+	if governing == "" {
+		governing = shaft
+	}
+	if governing == "" {
+		return fmt.Errorf("param: fits tolerance for %q needs a hole or shaft class (e.g. hole \"H7\")", p.name)
+	}
+	upperMM, lowerMM, err := ISOFitBand(p.value.Value*millimetresPerDatabaseLength, governing)
+	if err != nil {
+		return err
+	}
+	// ISOFitBand works in millimetres; the stored band is in database units (cm).
+	p.tol = Tolerance{
+		Type:          types.ToleranceLimitsFitsStacked,
+		Upper:         upperMM / millimetresPerDatabaseLength,
+		Lower:         lowerMM / millimetresPerDatabaseLength,
+		HoleTolerance: hole, ShaftTolerance: shaft,
+	}
+	return nil
+}
+
+// SetToleranceBasic marks the value as a basic (boxed) dimension: exact nominal,
+// no tolerance band (kBasicTolerance, #1848).
+func (p *Parameter) SetToleranceBasic() error {
+	return p.setBandlessTolerance(types.ToleranceBasic)
+}
+
+// SetToleranceReference marks the value as a reference (parenthesized) dimension:
+// informational, no tolerance band (kReferenceTolerance, #1848).
+func (p *Parameter) SetToleranceReference() error {
+	return p.setBandlessTolerance(types.ToleranceReference)
+}
+
+// setBandlessTolerance sets a tolerance flavor that carries no deviation band.
+func (p *Parameter) setBandlessTolerance(t ToleranceType) error {
+	if err := p.requireNumericTolerance(); err != nil {
+		return err
+	}
+	p.tol = Tolerance{Type: t}
+	return nil
+}
+
 // SetToleranceMinMax marks the value as a MIN or MAX tolerance (no band).
 func (p *Parameter) SetToleranceMinMax(t ToleranceType) error {
 	if err := p.requireNumericTolerance(); err != nil {
