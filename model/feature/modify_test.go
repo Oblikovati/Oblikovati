@@ -306,6 +306,52 @@ func TestThickenOptionsRoundTrip(t *testing.T) {
 	}
 }
 
+// TestReplaceFacePlanesFlattens is the #1886 frozen-target arm: replacing a 2×2×2 box's top face
+// with a work-plane-style target at z=3 grows the box to vol 12, and the target planes survive the
+// recipe codec.
+func TestReplaceFacePlanesFlattens(t *testing.T) {
+	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
+	var top []byte
+	for _, f := range box.Faces() {
+		if f.Geometry().NormalAt(0, 0).Z > 0.99 {
+			top = f.ReferenceKey()
+		}
+	}
+	target, _ := geom.NewPlane(math.P3(0, 0, 3), math.V3(0, 0, 1))
+	fs := NewPartFeatures(nil)
+	NewBaseFeatures(fs).AddBase(box)
+	rf := NewModifyFeatures(fs).AddReplaceFacePlanes([][]byte{top}, []geom.Plane{target})
+	fs.Recompute()
+	if !rf.Health().OK() {
+		t.Fatalf("replace-face (planes) sick: %+v", rf.Health())
+	}
+	if got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(got, 12) > 1e-6 {
+		t.Errorf("replaced volume = %g, want 12 (top raised to z=3)", got)
+	}
+}
+
+// TestReplaceFacePlanesRoundTrip pins #1886's frozen-plane serialization: a replace-face carrying
+// target planes survives the recipe codec.
+func TestReplaceFacePlanesRoundTrip(t *testing.T) {
+	target, _ := geom.NewPlane(math.P3(0, 0, 3), math.V3(0, 0, 1))
+	fs := NewPartFeatures(nil)
+	NewModifyFeatures(fs).AddReplaceFacePlanes([][]byte{[]byte("f-top")}, []geom.Plane{target})
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	if n := len(data[0].FaceEdit.NewFaces); n != 1 {
+		t.Fatalf("serialized newFaces = %d, want 1", n)
+	}
+	fresh := NewPartFeatures(nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	if got := fresh.Item(0).Definition().(*ReplaceFaceFeature).TargetPlanes(); len(got) != 1 || stdmath.Abs(float64(got[0].Origin.Z)-3) > 1e-9 {
+		t.Errorf("restored target planes = %+v, want one plane at z=3", got)
+	}
+}
+
 // patchSurfaceBody builds a one-face planar surface (non-solid) body [0,w]×[0,h] at z=0.
 func patchSurfaceBody(w, h float64) *topo.Body {
 	lin := topo.NewLineage(topo.Tok("test", "patch", 0))

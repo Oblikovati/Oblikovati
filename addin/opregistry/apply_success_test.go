@@ -3,6 +3,7 @@
 package opregistry
 
 import (
+	"encoding/json"
 	"testing"
 
 	"oblikovati.org/app"
@@ -51,6 +52,21 @@ func TestThickenOptionErrors(t *testing.T) {
 	}
 	if _, err := apply(t, s, "thicken", `{"thickness":"1 mm","operation":"weld"}`); err == nil {
 		t.Error("unknown thicken operation should error")
+	}
+}
+
+// TestReplaceFaceNewFaceRefs covers the #1886 router path: replacing a face with a new-face set
+// (here the face's own key) resolves through the plane target and rebuilds without error, and an
+// empty new-face/target set is rejected.
+func TestReplaceFaceNewFaceRefs(t *testing.T) {
+	s, _, face := extrudedSolid(t)
+	ok, _ := json.Marshal(map[string]any{"faceRefs": []string{face}, "newFaceRefs": []string{face}})
+	if _, err := apply(t, s, "replaceFace", string(ok)); err != nil {
+		t.Fatalf("replaceFace newFaceRefs: %v", err)
+	}
+	bad, _ := json.Marshal(map[string]any{"faceRefs": []string{face}})
+	if _, err := apply(t, s, "replaceFace", string(bad)); err == nil {
+		t.Error("replaceFace with neither newFaceRefs nor targetRef should error")
 	}
 }
 

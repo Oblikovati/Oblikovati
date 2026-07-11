@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -115,7 +116,7 @@ func (f *ThickenFeature) SetApproximation(a types.FeatureApproximationType) { f.
 
 // Direction / Operation / AsSurface / FaceKeys / Walls / ChainBlend expose the #1876 options
 // for serialization.
-func (f *ThickenFeature) Direction() ops.ThickenDirection    { return f.direction }
+func (f *ThickenFeature) Direction() ops.ThickenDirection     { return f.direction }
 func (f *ThickenFeature) Operation() ops.PartFeatureOperation { return f.operation }
 func (f *ThickenFeature) AsSurface() bool                     { return f.asSurface }
 func (f *ThickenFeature) FaceKeys() [][]byte                  { return f.faceKeys }
@@ -209,16 +210,25 @@ func lastSolidExcept(bodies []*topo.Body, skip *topo.Body) *topo.Body {
 // ReplaceFaceFeature replaces the picked faces' surface with that of a target face.
 type ReplaceFaceFeature struct {
 	faceEditFeature
-	targetKey []byte
+	targetKey    []byte       // legacy: a same-body face key, re-resolved each recompute (associative)
+	targetPlanes []geom.Plane // #1886: frozen new-face / work-plane target planes (from the router)
 }
 
-// TargetKey returns the reference key of the face whose plane replaces the picked faces.
+// TargetKey returns the reference key of the legacy single same-body target face.
 func (f *ReplaceFaceFeature) TargetKey() []byte { return f.targetKey }
 
-// Recompute replaces the picked faces with the target face's plane on the running body (see
-// kernel/ops/replace_face.go); a lost picked or target face makes the feature go Sick.
+// TargetPlanes returns the frozen new-face target planes (#1886), empty for the legacy path.
+func (f *ReplaceFaceFeature) TargetPlanes() []geom.Plane { return f.targetPlanes }
+
+// Recompute replaces the picked faces with their target plane(s) on the running body (see
+// kernel/ops/replace_face.go). The #1886 targetPlanes path assigns each picked face to its nearest
+// frozen target (work plane or new face, possibly cross-body); the legacy path re-resolves a single
+// same-body target face each recompute. A lost picked or target face makes the feature go Sick.
 func (f *ReplaceFaceFeature) Recompute(in Input) (Output, error) {
 	return retopoFacesBody(in, f.faceKeys, f.kind, func(b *topo.Body, keys [][]byte) (*topo.Body, error) {
+		if len(f.targetPlanes) > 0 {
+			return ops.ReplaceFacesMulti(b, keys, f.targetPlanes)
+		}
 		target, ok := ops.PlaneOfFace(b, f.targetKey)
 		if !ok {
 			return nil, fmt.Errorf("replace-face: target face reference lost")
@@ -392,6 +402,13 @@ func (c *ModifyFeatures) AddDeleteFace(faceKeys [][]byte, heal bool) *PartFeatur
 
 func (c *ModifyFeatures) AddReplaceFace(faceKeys [][]byte, targetKey []byte) *PartFeature {
 	return c.engine.Add(&ReplaceFaceFeature{faceEditFeature: faceEditFeature{kind: "replace-face", faceKeys: faceKeys}, targetKey: targetKey})
+}
+
+// AddReplaceFacePlanes replaces the picked faces with a set of frozen target planes (#1886) — work
+// planes and/or new faces, possibly from other bodies. Each picked face is assigned to its nearest
+// target at recompute.
+func (c *ModifyFeatures) AddReplaceFacePlanes(faceKeys [][]byte, targets []geom.Plane) *PartFeature {
+	return c.engine.Add(&ReplaceFaceFeature{faceEditFeature: faceEditFeature{kind: "replace-face", faceKeys: faceKeys}, targetPlanes: targets})
 }
 
 // AddThicken thickens the running surface body into a solid of the given wall thickness.

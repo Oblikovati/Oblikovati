@@ -34,7 +34,7 @@ func (r featureCodecSet) registerFaceEditCodecs() {
 	r.register("replace-face", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			rf := f.(*ReplaceFaceFeature)
-			fd.FaceEdit = &FaceEditData{Faces: encodeKeys(rf.FaceKeys()), Target: encodeKey(rf.TargetKey())}
+			fd.FaceEdit = &FaceEditData{Faces: encodeKeys(rf.FaceKeys()), Target: encodeKey(rf.TargetKey()), NewFaces: encodePlanes(rf.TargetPlanes())}
 			return nil
 		},
 		decode: decodeFaceEdit,
