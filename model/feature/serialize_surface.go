@@ -13,9 +13,15 @@ import (
 // distance). Like extrude, they reference their input sketch by index via the
 // SketchIndexer.
 
-// BoundaryPatchData is a boundary patch's recipe: the closed sketch loops it fills.
+// BoundaryPatchData is a boundary patch's recipe: either the closed sketch loops it fills, or (the
+// #1867 3D form) the surface-body boundary-edge keys, the fill continuity, and the reserved
+// guide-rail keys / tangent weight.
 type BoundaryPatchData struct {
-	Loops []PatchLoopData `yaml:"loops"`
+	Loops         []PatchLoopData `yaml:"loops,omitempty"`
+	EdgeKeys      []string        `yaml:"edgeKeys,omitempty"`
+	Condition     string          `yaml:"condition,omitempty"`
+	GuideRailKeys []string        `yaml:"guideRailKeys,omitempty"`
+	TangentWeight float64         `yaml:"tangentWeight,omitempty"`
 }
 
 // PatchLoopData is one boundary loop: a sketch profile and its continuity condition.
@@ -38,6 +44,16 @@ type RuledSurfaceData struct {
 }
 
 func serializeBoundaryPatch(def *BoundaryPatchDefinition, sk SketchIndexer) (*BoundaryPatchData, error) {
+	if len(def.EdgeKeys) > 0 {
+		cond, err := patchConditionName(def.Condition)
+		if err != nil {
+			return nil, err
+		}
+		return &BoundaryPatchData{
+			EdgeKeys: encodeKeys(def.EdgeKeys), Condition: cond,
+			GuideRailKeys: encodeKeys(def.GuideRailKeys), TangentWeight: def.TangentWeight,
+		}, nil
+	}
 	if def.Loops == nil || def.Loops.Count() == 0 {
 		return nil, fmt.Errorf("boundary patch has no loops")
 	}
@@ -58,7 +74,13 @@ func serializeBoundaryPatch(def *BoundaryPatchDefinition, sk SketchIndexer) (*Bo
 }
 
 func restoreBoundaryPatch(fs *PartFeatures, d *BoundaryPatchData, sk SketchIndexer) (*PartFeature, error) {
-	if d == nil || len(d.Loops) == 0 {
+	if d == nil {
+		return nil, fmt.Errorf("boundary-patch feature is missing its payload")
+	}
+	if len(d.EdgeKeys) > 0 {
+		return restoreEdgeLoopPatch(fs, d)
+	}
+	if len(d.Loops) == 0 {
 		return nil, fmt.Errorf("boundary-patch feature is missing its loops")
 	}
 	first, err := resolvePatchLoop(d.Loops[0], sk)
@@ -75,6 +97,24 @@ func restoreBoundaryPatch(fs *PartFeatures, d *BoundaryPatchData, sk SketchIndex
 		pf.feature.(*BoundaryPatchFeature).def.Loops.Add(more.skt, more.profile, more.cond)
 	}
 	return pf, nil
+}
+
+// restoreEdgeLoopPatch restores the #1867 3D edge-loop boundary patch: decode the boundary-edge keys,
+// continuity, and reserved guide-rail keys / tangent weight.
+func restoreEdgeLoopPatch(fs *PartFeatures, d *BoundaryPatchData) (*PartFeature, error) {
+	edges, err := decodeKeys(d.EdgeKeys)
+	if err != nil {
+		return nil, fmt.Errorf("boundary-patch edge keys: %w", err)
+	}
+	rails, err := decodeKeys(d.GuideRailKeys)
+	if err != nil {
+		return nil, fmt.Errorf("boundary-patch guide-rail keys: %w", err)
+	}
+	cond, err := parsePatchCondition(d.Condition)
+	if err != nil {
+		return nil, err
+	}
+	return NewBoundaryPatchFeatures(fs).AddEdgeLoop(edges, cond, rails, d.TangentWeight), nil
 }
 
 // patchLoopInputs is the resolved (sketch, profile, condition) of one loop.

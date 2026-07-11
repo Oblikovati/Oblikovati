@@ -28,15 +28,17 @@ import (
 const boundaryPatchSchema = `{
   "type": "object",
   "properties": {
-    "sketchIndex": {"type": "integer", "minimum": 0},
+    "sketchIndex": {"type": "integer", "minimum": 0, "description": "Planar sketch loop to fill (omit when edgeLoopRefs is given)."},
     "profileIndex": {"type": "integer", "minimum": 0, "default": 0},
-    "condition": {"type": "string", "enum": ["free", "tangent"], "default": "free", "description": "Edge continuity to neighbouring faces."}
-  },
-  "required": ["sketchIndex"]
+    "condition": {"type": "string", "enum": ["free", "tangent", "curvature", "continuous"], "default": "free", "description": "Edge continuity to the adjacent faces: free (G0), tangent (G1), curvature/continuous (G2)."},
+    "edgeLoopRefs": {"type": "array", "items": {"type": "string"}, "description": "Reference keys of surface-body boundary edges forming a (possibly non-planar) loop to fill with a NURBS patch (get_reference_keys)."},
+    "guideRailRefs": {"type": "array", "items": {"type": "string"}, "description": "Interior guide-rail curves the patch interpolates (reserved)."},
+    "tangentWeight": {"type": "number", "description": "Tangent-pull magnitude for tangent/curvature blends (reserved)."}
+  }
 }`
 
 func boundaryPatchDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: featureargs.KindBoundaryPatch, Summary: "Fill a closed sketch loop with a surface patch.", Schema: json.RawMessage(boundaryPatchSchema), Apply: applyBoundaryPatch}
+	return &OperationDescriptor{Name: featureargs.KindBoundaryPatch, Summary: "Fill a closed sketch loop or 3D edge loop with a surface patch.", Schema: json.RawMessage(boundaryPatchSchema), Apply: applyBoundaryPatch}
 }
 
 func applyBoundaryPatch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -44,16 +46,30 @@ func applyBoundaryPatch(s *app.Session, raw json.RawMessage) (json.RawMessage, e
 	if err != nil {
 		return nil, err
 	}
+	patches := feature.NewBoundaryPatchFeatures(part.Features())
+	if len(in.EdgeLoopRefs) > 0 {
+		pf := patches.AddEdgeLoop(refKeys(in.EdgeLoopRefs), patchCondition(in.Condition), refKeys(in.GuideRailRefs), in.TangentWeight)
+		return recomputeResult(part, pf)
+	}
 	sk, err := sketchAt(part, in.SketchIndex)
 	if err != nil {
 		return nil, err
 	}
-	cond := feature.PatchFree
-	if strings.EqualFold(in.Condition, "tangent") {
-		cond = feature.PatchTangent
-	}
-	pf := feature.NewBoundaryPatchFeatures(part.Features()).Add(sk, in.ProfileIndex, cond)
+	pf := patches.Add(sk, in.ProfileIndex, patchCondition(in.Condition))
 	return recomputeResult(part, pf)
+}
+
+// patchCondition maps the wire continuity name to the model's PatchCondition: tangent → G1,
+// curvature/continuous → G2, anything else (incl. "free") → G0.
+func patchCondition(name string) feature.PatchCondition {
+	switch strings.ToLower(strings.TrimSpace(name)) {
+	case "tangent":
+		return feature.PatchTangent
+	case "curvature", "continuous":
+		return feature.PatchCurvature
+	default:
+		return feature.PatchFree
+	}
 }
 
 // --- ruled surface ---------------------------------------------------------
