@@ -27,6 +27,8 @@ func paramDetail(holder compdef.ParameterHolder, p *param.Parameter) wire.Parame
 		Comment:       p.Comment, IsKey: p.IsKey, Visible: p.Visible,
 		InUse: ps.InUse(p.ID()), Precision: p.Precision,
 		DisplayFormat: p.DisplayFormat.String(), ExposedAsProperty: p.ExposedAsProperty,
+		BuiltIn: p.BuiltIn(), Renamed: p.Renamed(),
+		DisabledActionTypes:  p.DisabledActionTypes().Names(),
 		ModelValueType:       p.ModelValueType().String(),
 		CustomPropertyFormat: customPropertyInfo(p.CustomProperty),
 		DrivenBy:             paramNames(ps, ps.DrivenBy(p.ID())),
@@ -124,6 +126,15 @@ func applyParameterUpdate(p *param.Parameter, in wire.ParameterUpdateArgs) error
 	setIfPresent(in.Visible, &p.Visible)
 	setIfPresent(in.Precision, &p.Precision)
 	setIfPresent(in.ExposedAsProperty, &p.ExposedAsProperty)
+	if err := applyParameterEnums(p, in); err != nil {
+		return err
+	}
+	return applyCustomPropertyUpdate(p, in.CustomPropertyFormat)
+}
+
+// applyParameterEnums applies the update's enum-valued fields (display format,
+// model-value selection, disabled-action mask), validating each spelling.
+func applyParameterEnums(p *param.Parameter, in wire.ParameterUpdateArgs) error {
 	if in.DisplayFormat != nil {
 		f, ok := types.ParseParameterDisplayFormat(*in.DisplayFormat)
 		if !ok {
@@ -140,7 +151,14 @@ func applyParameterUpdate(p *param.Parameter, in wire.ParameterUpdateArgs) error
 			return err
 		}
 	}
-	return applyCustomPropertyUpdate(p, in.CustomPropertyFormat)
+	if in.DisabledActionTypes != nil {
+		mask, ok := types.ActionTypeMask(*in.DisabledActionTypes)
+		if !ok {
+			return fmt.Errorf("parameters.update: unknown disabled action type in %v (want edit|rename|delete)", *in.DisabledActionTypes)
+		}
+		p.SetDisabledActionTypes(mask)
+	}
+	return nil
 }
 
 // setIfPresent copies a pointer-optional update field when it was sent.

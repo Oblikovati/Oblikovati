@@ -23,6 +23,19 @@ const (
 	TableParam     = types.TableParam
 )
 
+// ActionType is the bitmask of edit actions restricted on a parameter
+// (Parameter.DisabledActionTypes). Defined once in the Apache-2.0 contract
+// ([types.ActionType]); aliased here so param call sites keep their spelling
+// (ADR-0018, #1853).
+type ActionType = types.ActionType
+
+const (
+	ActionNone   = types.ActionNone
+	ActionEdit   = types.ActionEdit
+	ActionRename = types.ActionRename
+	ActionDelete = types.ActionDelete
+)
+
 // ParameterHealth is a parameter's evaluation health: a simplified three-value status (current /
 // stale / errored). It is a DISTINCT concept from api/types.HealthStatus (the entity/feature/constraint
 // health, OK/Warning/Sick/Suppressed) — a parameter has no Suppressed state and OutOfDate has no entity
@@ -64,7 +77,11 @@ type Parameter struct {
 	tol     Tolerance
 	kind    ParameterKind
 	builtin bool // an auto-generated / system parameter (a feature-dimension backing param) — kind conversion is refused, matching Inventor's BuiltIn guard (#1850)
-	health  Health
+	renamed bool // a model parameter renamed from its generated name (Inventor's ModelParameter.Renamed, #1853)
+	// disabledActions is the mask of edit actions restricted on this parameter
+	// (Inventor's Parameter.DisabledActionTypes, #1853). Zero = nothing disabled.
+	disabledActions ActionType
+	health          Health
 
 	exprList    []string // multi-value choices (empty ⇒ single-valued); see expression_list.go
 	allowCustom bool     // a value outside exprList is accepted (the one custom value)
@@ -96,6 +113,22 @@ func (p *Parameter) Kind() ParameterKind { return p.kind }
 // backing param). A built-in parameter's kind cannot be converted — matching Inventor's BuiltIn
 // guard (#1850).
 func (p *Parameter) BuiltIn() bool { return p.builtin }
+
+// Renamed reports whether a model parameter was renamed away from its
+// auto-generated name (Inventor's ModelParameter.Renamed, #1853). It is only
+// ever true for model parameters; user parameters carry their authored name.
+func (p *Parameter) Renamed() bool { return p.renamed }
+
+// DisabledActionTypes returns the mask of edit actions restricted on this
+// parameter (Inventor's Parameter.DisabledActionTypes, #1853).
+func (p *Parameter) DisabledActionTypes() ActionType { return p.disabledActions }
+
+// SetDisabledActionTypes replaces the restricted-action mask.
+func (p *Parameter) SetDisabledActionTypes(mask ActionType) { p.disabledActions = mask }
+
+// SetRenamed restores the renamed flag on a deserialised parameter (#1853); the
+// flag is otherwise raised only by [Parameters.Rename]. Persistence-only.
+func (p *Parameter) SetRenamed(renamed bool) { p.renamed = renamed }
 
 // Unit returns the unit of the evaluated value.
 func (p *Parameter) Unit() Unit { return p.value.Unit }

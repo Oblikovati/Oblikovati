@@ -102,6 +102,11 @@ type parameterRecipe struct {
 	// DisplayFormat is the wire spelling; empty means decimal.
 	DisplayFormat  string                `yaml:"displayFormat,omitempty"`
 	CustomProperty *customPropertyRecipe `yaml:"customProperty,omitempty"`
+	// Renamed marks a model parameter renamed from its generated name; DisabledActions
+	// is the list of restricted edit-action spellings (types.ActionType.Names()). Both
+	// are sparse (omitted when default), the parameter-introspection state (#1853).
+	Renamed         bool     `yaml:"renamed,omitempty"`
+	DisabledActions []string `yaml:"disabledActions,omitempty"`
 }
 
 // toleranceRecipe is the persisted form of a non-zero engineering tolerance:
