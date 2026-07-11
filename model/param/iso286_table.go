@@ -10,7 +10,7 @@ package param
 //
 // Scope: nominal sizes over 3 mm up to and including 500 mm (where the size
 // step's geometric mean D = √(lo·hi) is unambiguous), grades IT5–IT11, and the
-// clearance/location letters d,e,f,g,h (with the hole letters D–H by the
+// clearance/location letters d,f,g,h (with the hole letters D,F,G,H by the
 // EI = −es rule) plus symmetric js/JS. Anything outside this range is rejected
 // with a clear error rather than returning a dubious band.
 

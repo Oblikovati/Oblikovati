@@ -59,7 +59,7 @@ func composeFitBand(letter string, isHole bool, itWidth int, d float64) (upper, 
 	}
 	es, ok := shaftFundamentalMicron(strings.ToLower(letter), d)
 	if !ok {
-		return 0, 0, fmt.Errorf("param: unsupported ISO fit letter %q (want d, e, f, g, h, or js, upper-case for a hole)", letter)
+		return 0, 0, fmt.Errorf("param: unsupported ISO fit letter %q (want d, f, g, h, or js, upper-case for a hole)", letter)
 	}
 	if isHole {
 		ei := -es // hole EI = −es of the same-letter shaft (H → 0)
@@ -70,7 +70,10 @@ func composeFitBand(letter string, isHole bool, itWidth int, d float64) (upper, 
 
 // shaftFundamentalMicron returns the shaft upper deviation es in µm (rounded, ≤0)
 // for the clearance/location letters at geometric mean d (mm); h is exactly 0.
-// The formulas are ISO 286-1's fundamental-deviation expressions.
+// The formulas are ISO 286-1's fundamental-deviation expressions, restricted to
+// the letters whose rounded output was validated against the published table
+// (d, f, g, h) — e is deliberately omitted (its rounding could diverge by 1 µm
+// from the standard and there was no in-repo table to confirm it).
 func shaftFundamentalMicron(letter string, d float64) (int, bool) {
 	switch letter {
 	case "h":
@@ -79,8 +82,6 @@ func shaftFundamentalMicron(letter string, d float64) (int, bool) {
 		return roundMicron(-2.5 * stdmath.Pow(d, 0.34)), true
 	case "f":
 		return roundMicron(-5.5 * stdmath.Pow(d, 0.41)), true
-	case "e":
-		return roundMicron(-11 * stdmath.Pow(d, 0.41)), true
 	case "d":
 		return roundMicron(-16 * stdmath.Pow(d, 0.44)), true
 	}
