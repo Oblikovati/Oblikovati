@@ -12,12 +12,17 @@ import (
 	"fmt"
 )
 
-// Locator is a geometry-only edge locator: the picked edge's true mid-parameter point and
-// unit tangent, as OCCT resolved it. We re-find the same edge on our imported body by
-// matching midpoints, so neither kernel's edge ordering matters.
+// Locator is a geometry-only edge locator, as OCCT resolved the picked edge. Midpoint and
+// Direction are the mid-parameter point + tangent (reference only). Centroid and Length are
+// the MATCHING key: STEP import reparameterizes edges to [0,1], so a curved edge's
+// mid-parameter point does not correspond between kernels, but the arc-length centroid and
+// total length are parameterization-invariant — both kernels compute the same values for the
+// same physical edge, so we re-find it by centroid without depending on edge ordering.
 type Locator struct {
 	Midpoint  [3]float64 `json:"midpoint"`
 	Direction [3]float64 `json:"direction"`
+	Centroid  [3]float64 `json:"centroid"`
+	Length    float64    `json:"length"`
 }
 
 // Pick is one blended edge. Radius is the constant fillet radius; Law is the variable-radius

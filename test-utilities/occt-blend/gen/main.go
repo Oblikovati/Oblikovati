@@ -267,6 +267,8 @@ func printSummary(records []record) {
 type locator struct {
 	Midpoint  [3]float64 `json:"midpoint"`
 	Direction [3]float64 `json:"direction"`
+	Centroid  [3]float64 `json:"centroid"`
+	Length    float64    `json:"length"`
 }
 type pick struct {
 	Radius  float64      `json:"radius"`

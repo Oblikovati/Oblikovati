@@ -40,21 +40,60 @@ set ORV(deps)       "0.01"
 set ORV(todo)       ""
 set ORV(blendcalls) 0  ;# distinct blend operations (blend/mkevol/bfuseblend); >1 ⇒ not one fillet
 
-# edgeloc: OCCT's own resolution of a picked edge into a geometry-only locator —
-# the true curve mid-parameter point and unit tangent. DRAW shapes are Tcl *globals*,
-# so both the input edge and the temp curve must be declared global inside the proc
-# (the load-bearing DRAW gotcha found in the Task 1 spike).
+# edgeloc: OCCT's resolution of a picked edge into a geometry-only locator. Returns 10 values:
+# the mid-parameter point + unit tangent (reference only), then the arc-length CENTROID + total
+# LENGTH — the matching key. STEP import reparameterizes edges to [0,1], so a curved edge's
+# mid-parameter point does NOT correspond between OCCT and us (a full circle's mid-param can
+# land a diameter away); the arc-length centroid + length are parameterization-invariant, so
+# both kernels compute the same value for the same physical edge. Sampled with the SAME chord
+# scheme as the Go side (model/feature/occtparity/edgepick.go). DRAW shapes are Tcl *globals*,
+# so the input edge and temp curve must be declared global here (the Task 1 spike gotcha).
 proc edgeloc {edge} {
     global __oc
     global $edge
     mkcurve __oc $edge
     bounds __oc __lo __hi
-    set um [expr {([dval __lo] + [dval __hi]) / 2.0}]
+    set lo [dval __lo]
+    set hi [dval __hi]
+    set um [expr {($lo + $hi) / 2.0}]
     cvalue __oc $um __px __py __pz __dx __dy __dz
     set L [expr {sqrt([dval __dx]*[dval __dx] + [dval __dy]*[dval __dy] + [dval __dz]*[dval __dz])}]
     if {$L == 0} { set L 1 }
-    return [list [dval __px] [dval __py] [dval __pz] \
-                 [expr {[dval __dx]/$L}] [expr {[dval __dy]/$L}] [expr {[dval __dz]/$L}]]
+    set mid [list [dval __px] [dval __py] [dval __pz]]
+    set dir [list [expr {[dval __dx]/$L}] [expr {[dval __dy]/$L}] [expr {[dval __dz]/$L}]]
+    set N 64
+    set sx 0.0
+    set sy 0.0
+    set sz 0.0
+    set len 0.0
+    set have 0
+    for {set i 0} {$i <= $N} {incr i} {
+        set t [expr {$lo + ($hi - $lo) * $i / double($N)}]
+        cvalue __oc $t __qx __qy __qz
+        set qx [dval __qx]
+        set qy [dval __qy]
+        set qz [dval __qz]
+        if {$have} {
+            set ex [expr {$qx - $rx}]
+            set ey [expr {$qy - $ry}]
+            set ez [expr {$qz - $rz}]
+            set seg [expr {sqrt($ex*$ex + $ey*$ey + $ez*$ez)}]
+            set sx [expr {$sx + ($qx + $rx) / 2.0 * $seg}]
+            set sy [expr {$sy + ($qy + $ry) / 2.0 * $seg}]
+            set sz [expr {$sz + ($qz + $rz) / 2.0 * $seg}]
+            set len [expr {$len + $seg}]
+        }
+        set rx $qx
+        set ry $qy
+        set rz $qz
+        set have 1
+    }
+    if {$len > 0} {
+        set cen [list [expr {$sx / $len}] [expr {$sy / $len}] [expr {$sz / $len}]]
+    } else {
+        set cen $mid
+    }
+    return [concat $mid $dir $cen [list $len]]
 }
 
 # Intercept `blend result object (rad edge)+`. Record the input object and each
@@ -200,7 +239,10 @@ if {$ORV(blendcalls) > 1 && $ORV(todo) eq ""} {
 proc jnum {x} { return [format "%.10g" $x] }
 
 proc jlocator {loc} {
-    return "{\"midpoint\":\[[jnum [lindex $loc 0]],[jnum [lindex $loc 1]],[jnum [lindex $loc 2]]\],\"direction\":\[[jnum [lindex $loc 3]],[jnum [lindex $loc 4]],[jnum [lindex $loc 5]]\]}"
+    set mid "\[[jnum [lindex $loc 0]],[jnum [lindex $loc 1]],[jnum [lindex $loc 2]]\]"
+    set dir "\[[jnum [lindex $loc 3]],[jnum [lindex $loc 4]],[jnum [lindex $loc 5]]\]"
+    set cen "\[[jnum [lindex $loc 6]],[jnum [lindex $loc 7]],[jnum [lindex $loc 8]]\]"
+    return "{\"midpoint\":$mid,\"direction\":$dir,\"centroid\":$cen,\"length\":[jnum [lindex $loc 9]]}"
 }
 
 # jesc escapes a string for a JSON literal. Newline/CR/tab must be escaped too — OCCT error
@@ -222,7 +264,7 @@ foreach p $ORV(picks) {
     set law    [lindex $p 2]
     if {[catch {edgeloc $edge} loc]} {
         # Unresolvable edge — record loudly so the generator never silently drops it.
-        set locJson "{\"midpoint\":\[0,0,0\],\"direction\":\[0,0,0\]}"
+        set locJson "{\"midpoint\":\[0,0,0\],\"direction\":\[0,0,0\],\"centroid\":\[0,0,0\],\"length\":0}"
         set ORV(todo) "unresolved-edge $edge: $loc"
     } else {
         set locJson [jlocator $loc]
