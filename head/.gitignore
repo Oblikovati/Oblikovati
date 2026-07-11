@@ -1,3 +1,5 @@
-
-# compiled head binary (build artifact)
+# compiled head binaries (build artifacts) — bare and Windows .exe names
 /oblikovati-head
+/oblikovati-head.exe
+/oblikovati-addinhost
+/oblikovati-addinhost.exe
