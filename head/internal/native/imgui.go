@@ -30,6 +30,7 @@ int  obk_ig_begin_tab_bar(const char* id);
 int  obk_ig_begin_tab_item_ex(const char* label, int setSelected);
 int  obk_ig_begin_tab_item_closable(const char* label, int setSelected, int* open);
 int  obk_ig_selectable(const char* label, int selected);
+int  obk_ig_selectable_span_all_columns(const char* label, int selected);
 int  obk_ig_begin_drag_drop_source(void);
 void obk_ig_set_drag_drop_payload_int(const char* type, int v);
 void obk_ig_end_drag_drop_source(void);
@@ -123,13 +124,15 @@ void obk_ig_set_next_window_size(float w, float h);
 void obk_ig_set_next_window_size_first_use(float w, float h);
 
 // Table verbs (the Parameters dialog grid, the content-center member table, …). begin_table
-// opens a bordered, row-striped, vertically scrolling table of `columns` columns; begin_table_scrollx
-// is the same but also scrolls horizontally (a wide grid in a narrow docked panel). Pair either with
-// end_table only when it returned non-zero. setup_column/setup_scroll_freeze/headers_row define the
-// header; next_row/next_column advance the cursor (next_column returns visibility). push_id_int/
-// pop_id scope per-row widget ids so identical cell labels don't collide.
+// opens a bordered, row-striped, vertically scrolling table of `columns` columns; begin_table_stretch
+// is the same but sizes every column to an equal share of the table width (a member grid that fills a
+// wide docked panel). Pair either with end_table only when it returned non-zero. setup_column/
+// setup_scroll_freeze/headers_row define the header; next_row/next_column advance the cursor
+// (next_column returns visibility). push_id_int/pop_id scope per-row widget ids so identical cell
+// labels don't collide.
 int  obk_ig_begin_table(const char* id, int columns, float outer_w, float outer_h);
-int  obk_ig_begin_table_scrollx(const char* id, int columns, float outer_w, float outer_h);
+int  obk_ig_begin_table_stretch(const char* id, int columns, float outer_w, float outer_h);
+void obk_ig_table_set_row_bg(float r, float g, float b, float a);
 void obk_ig_table_setup_column(const char* label);
 void obk_ig_table_setup_scroll_freeze(int cols, int rows);
 void obk_ig_table_headers_row(void);
@@ -609,12 +612,21 @@ func BeginTable(id string, columns int, w, h float32) bool {
 }
 func EndTable() { C.obk_ig_end_table() }
 
-// BeginTableScrollX is BeginTable plus horizontal scrolling — for a wide grid (many columns) in a
-// narrow docked panel. Pair every true return with EndTable.
-func BeginTableScrollX(id string, columns int, w, h float32) bool {
+// BeginTableStretch is BeginTable with equal-width stretch sizing — every column takes the same
+// share of the table width, filling a wide docked panel instead of clustering narrow columns on the
+// left. Resizable still lets the user redistribute. Pair every true return with EndTable.
+func BeginTableStretch(id string, columns int, w, h float32) bool {
 	c, free := cstr(id)
 	defer free()
-	return C.obk_ig_begin_table_scrollx(c, C.int(columns), C.float(w), C.float(h)) != 0
+	return C.obk_ig_begin_table_stretch(c, C.int(columns), C.float(w), C.float(h)) != 0
+}
+
+// TableSetRowBg paints the current table row's whole-row background in an explicit RGBA color, a
+// clearly visible persistent highlight for a selected row (the theme's resting ImGuiCol_Header is
+// dark, so a Selectable's own selected fill is near-invisible). Pass the accent at full alpha. Call
+// this right after TableNextRow. Uses ImGui's RowBg1 selection-marking layer, drawn behind the text.
+func TableSetRowBg(r, g, b, a float32) {
+	C.obk_ig_table_set_row_bg(C.float(r), C.float(g), C.float(b), C.float(a))
 }
 
 // TableSetupColumn declares the next header column; TableSetupScrollFreeze keeps the
@@ -712,6 +724,15 @@ func Selectable(label string, selected bool) bool {
 	c, free := cstr(label)
 	defer free()
 	return C.obk_ig_selectable(c, cBool(selected)) != 0
+}
+
+// SelectableSpanAllColumns is Selectable whose click target and highlight fill span the whole table
+// row rather than just the current cell. Use it for the first cell of a table row so a selected row
+// shows a persistent, full-width highlight (a plain Selectable confines the fill to column 0).
+func SelectableSpanAllColumns(label string, selected bool) bool {
+	c, free := cstr(label)
+	defer free()
+	return C.obk_ig_selectable_span_all_columns(c, cBool(selected)) != 0
 }
 
 // BeginDragDropSource reports whether the last item is being dragged this frame; if so set a

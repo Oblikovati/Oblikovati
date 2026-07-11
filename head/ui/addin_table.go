@@ -28,16 +28,16 @@ func cellAt(row wire.TableRow, col int) string {
 	return row.Cells[col]
 }
 
-// drawPanelTable renders a PanelTable: a scrolling, horizontally-scrolling data grid with a pinned
-// header. A row click pushes the row Key to the add-in (which arms Place). No per-frame allocation:
-// the spec's strings are drawn as-is.
+// drawPanelTable renders a PanelTable: a vertically-scrolling data grid with a pinned header whose
+// columns stretch to equal widths filling the dock. A row click pushes the row Key to the add-in
+// (which arms Place). No per-frame allocation: the spec's strings are drawn as-is.
 func drawPanelTable(s panelEditSession, windowID string, control wire.PanelControlSpec) {
 	cols := len(control.TableColumns)
 	if cols == 0 {
 		return
 	}
 	h := rowHeight() * addInTableRows
-	if !native.BeginTableScrollX("##"+control.ID, cols, -1, h) {
+	if !native.BeginTableStretch("##"+control.ID, cols, -1, h) {
 		return
 	}
 	defer native.EndTable()
@@ -58,12 +58,22 @@ func drawTableRow(s panelEditSession, windowID string, control wire.PanelControl
 	native.PushIDInt(i)
 	defer native.PopID()
 	native.TableNextRow()
+	if row.Key == control.Value {
+		// Paint the whole selected row in the chrome accent (opaque) so the selection is unmistakable
+		// and PERSISTS after the click. A Selectable's own selected fill is the theme's dark resting
+		// Header color, near-invisible against the row stripes — hence the explicit accent RowBg here.
+		a := chromeTheme.accentColor
+		native.TableSetRowBg(a[0], a[1], a[2], 1)
+	}
 	for c := 0; c < len(control.TableColumns); c++ {
 		if !native.TableNextColumn() {
 			continue
 		}
 		if c == 0 {
-			if native.Selectable(cellAt(row, 0), row.Key == control.Value) {
+			// SpanAllColumns so hovering and clicking anywhere on the row (not just column 0) selects
+			// it; the persistent selected fill is drawn above via TableSetRowBg, so this Selectable
+			// is never itself "selected" (that fill would be the near-invisible dark Header).
+			if native.SelectableSpanAllColumns(cellAt(row, 0), false) {
 				s.PanelValueChanged(windowID, control.ID, row.Key)
 			}
 			continue
