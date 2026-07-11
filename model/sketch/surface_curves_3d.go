@@ -93,25 +93,31 @@ func (c *SilhouetteCurve3D) Evaluate() [][]math.Point3 {
 }
 
 // ProjectToSurfaceCurve3D is a source curve projected onto a referenced surface. Projection is
-// either the perpendicular foot of each sample (closest point, the default) or the nearest point
-// where a ray from the sample along Direction pierces the surface (alongVector, #1841).
+// the perpendicular foot of each sample (closest point, the default), the nearest point where a
+// ray from the sample along Direction pierces the surface (alongVector), or the arc-length wrap of
+// the source curve onto the surface through Frame (wrap — Inventor's MapPointCurve, #1841).
 type ProjectToSurfaceCurve3D struct {
 	entityBase
 	Source     geom.Curve3
 	Surface    SurfaceSource
 	Samples    int
 	Projection types.ProjectCurveToSurfaceType
-	Direction  math.Vector3 // ray direction for the alongVector projection
+	Direction  math.Vector3   // ray direction for the alongVector projection
+	Frame      geom.WrapFrame // source's planar frame for the wrap projection
 }
 
-// Evaluate samples the source curve and projects each point onto the surface; a lost reference
-// (nil surface) yields no geometry.
+// Evaluate samples the source curve and projects each point onto the surface (or, for the wrap
+// projection, maps the whole curve preserving arc length); a lost reference (nil surface) yields
+// no geometry.
 func (c *ProjectToSurfaceCurve3D) Evaluate() []math.Point3 {
 	surface := c.Surface.Surface()
 	if surface == nil {
 		return nil
 	}
 	n := samplesOr(c.Samples)
+	if c.Projection == types.ProjectWrapToSurface {
+		return geom.WrapCurveOntoSurface(surface, c.Source, c.Frame, n)
+	}
 	lo, hi := c.Source.Domain()
 	out := make([]math.Point3, n+1)
 	for i := range out {
@@ -261,6 +267,16 @@ func (s *Sketch3D) AddProjectToSurfaceCurve3DRef(source geom.Curve3, surface Sur
 // each sample maps to the nearest point where the ray from it along dir pierces the surface (#1841).
 func (s *Sketch3D) AddProjectToSurfaceCurve3DAlongVector(source geom.Curve3, surface SurfaceSource, dir math.Vector3) *ProjectToSurfaceCurve3D {
 	c := &ProjectToSurfaceCurve3D{entityBase: newEntity(), Source: source, Surface: surface, Projection: types.ProjectAlongVector, Direction: dir}
+	s.addEntity3D(c)
+	return c
+}
+
+// AddProjectToSurfaceCurve3DWrap wraps a source curve onto a surface source, preserving arc length
+// from frame's origin anchor: each source point's planar U/V displacement becomes an equal
+// on-surface arc length along the surface's u/v parameters (Inventor kWrapToSurfaceType, #1841).
+// frame is the source curve's planar frame (origin + in-plane axes); the surface is associative.
+func (s *Sketch3D) AddProjectToSurfaceCurve3DWrap(source geom.Curve3, surface SurfaceSource, frame geom.WrapFrame) *ProjectToSurfaceCurve3D {
+	c := &ProjectToSurfaceCurve3D{entityBase: newEntity(), Source: source, Surface: surface, Projection: types.ProjectWrapToSurface, Frame: frame}
 	s.addEntity3D(c)
 	return c
 }

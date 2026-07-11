@@ -41,6 +41,37 @@ func TestProjectToSurface3DAlongVectorPiercesAtDirection(t *testing.T) {
 	}
 }
 
+// TestProjectToSurface3DWrapUnwrapsOntoCylinder: the wrap projection maps a planar source line onto
+// a cylinder preserving arc length — planar x becomes angle u = x/R (#1841). Exercised through the
+// model entity so the sketch wiring (Frame field + wrap branch of Evaluate) is covered.
+func TestProjectToSurface3DWrapUnwrapsOntoCylinder(t *testing.T) {
+	const r = 2.0
+	s := NewSketches3D().Add()
+	cyl, err := geom.NewCylinderWithRef(gmath.P3(0, 0, 0), gmath.V3(0, 0, 1), gmath.V3(1, 0, 0), r)
+	if err != nil {
+		t.Fatalf("NewCylinderWithRef: %v", err)
+	}
+	arc := stdmath.Pi * r / 2
+	src := geom.NewLineSegment(gmath.P3(r, 0, 0), gmath.P3(r, arc, 0))
+	frame := geom.WrapFrame{Origin: gmath.P3(r, 0, 0), U: gmath.V3(0, 1, 0), V: gmath.V3(0, 0, 1)}
+
+	c := s.AddProjectToSurfaceCurve3DWrap(src, StaticSurface(cyl), frame)
+	if c.Projection != types.ProjectWrapToSurface {
+		t.Errorf("Projection = %v, want wrap", c.Projection)
+	}
+	pts := c.Evaluate()
+	if len(pts) == 0 {
+		t.Fatal("wrap projection produced no points")
+	}
+	if !pts[0].IsEqualTo(gmath.P3(r, 0, 0), 1e-6) {
+		t.Errorf("wrap start = %v, want the anchor (2,0,0)", pts[0])
+	}
+	// A quarter-turn's worth of planar length lands at (0, R, 0), a quarter around the cylinder.
+	if !pts[len(pts)-1].IsEqualTo(gmath.P3(0, r, 0), 1e-6) {
+		t.Errorf("wrap end = %v, want (0,2,0)", pts[len(pts)-1])
+	}
+}
+
 // TestProjectToSurface3DClosestPointUnchanged: the default projection still drops each sample to its
 // perpendicular foot (#1841 — no behaviour change for existing callers).
 func TestProjectToSurface3DClosestPointUnchanged(t *testing.T) {

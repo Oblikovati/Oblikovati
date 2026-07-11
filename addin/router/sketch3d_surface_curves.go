@@ -64,16 +64,16 @@ func projectToSurfaceCurve3D(part *compdef.PartComponentDefinition, sk *sketch.S
 	if !part.FaceKeyResolves(in.FaceRefs[0]) {
 		return surfaceCurveUnhealthy(in.Kind)
 	}
-	c, err := addProjectToSurface3D(sk, src, compdef.NewFaceRefSource(part, in.FaceRefs[0]), in)
+	c, err := addProjectToSurface3D(part, sk, src, compdef.NewFaceRefSource(part, in.FaceRefs[0]), in)
 	if err != nil {
 		return nil, err
 	}
 	return surfaceCurveResult(c.EntityID(), in.Kind)
 }
 
-// addProjectToSurface3D builds the projection in the requested mode: closest-point (default) or
-// along a direction vector; wrap is deferred to #1841 part 2 (#1841).
-func addProjectToSurface3D(sk *sketch.Sketch3D, src geom.Curve3, surface sketch.SurfaceSource, in wire.AddSketch3DSurfaceCurveArgs) (*sketch.ProjectToSurfaceCurve3D, error) {
+// addProjectToSurface3D builds the projection in the requested mode: closest-point (default),
+// along a direction vector, or an arc-length wrap through a work-plane flattening frame (#1841).
+func addProjectToSurface3D(part *compdef.PartComponentDefinition, sk *sketch.Sketch3D, src geom.Curve3, surface sketch.SurfaceSource, in wire.AddSketch3DSurfaceCurveArgs) (*sketch.ProjectToSurfaceCurve3D, error) {
 	proj, ok := types.ParseProjectCurveToSurfaceType(in.ProjectionType)
 	if !ok {
 		return nil, fmt.Errorf("sketch3d.addSurfaceCurve: unknown projectionType %q (want closestPoint|alongVector|wrap)", in.ProjectionType)
@@ -86,10 +86,28 @@ func addProjectToSurface3D(sk *sketch.Sketch3D, src geom.Curve3, surface sketch.
 		}
 		return sk.AddProjectToSurfaceCurve3DAlongVector(src, surface, dir), nil
 	case types.ProjectWrapToSurface:
-		return nil, fmt.Errorf("sketch3d.addSurfaceCurve: wrap projection is not yet supported (#1841 part 2)")
+		frame, err := wrapFrameFromRef(part, in.WrapPlaneRef)
+		if err != nil {
+			return nil, err
+		}
+		return sk.AddProjectToSurfaceCurve3DWrap(src, surface, frame), nil
 	default:
 		return sk.AddProjectToSurfaceCurve3DRef(src, surface), nil
 	}
+}
+
+// wrapFrameFromRef resolves the flattening frame for a wrap projection from a work-plane reference:
+// the plane's origin and in-plane X/Y axes become the frame's origin and U/V axes (#1841).
+func wrapFrameFromRef(part *compdef.PartComponentDefinition, ref string) (geom.WrapFrame, error) {
+	if ref == "" {
+		return geom.WrapFrame{}, fmt.Errorf("sketch3d.addSurfaceCurve: wrap projection needs wrapPlaneRef (the flattening plane)")
+	}
+	wp, err := part.WorkGeometry().WorkPlaneByRef(feature.WorkRef(ref))
+	if err != nil {
+		return geom.WrapFrame{}, fmt.Errorf("sketch3d.addSurfaceCurve: wrap wrapPlaneRef %q: %w", ref, err)
+	}
+	pl := wp.Plane()
+	return geom.WrapFrame{Origin: pl.Origin(), U: pl.XAxis().AsVector(), V: pl.YAxis().AsVector()}, nil
 }
 
 // offsetCurve3 resolves an in-sketch source curve and adds its offset by OffsetDistance in
