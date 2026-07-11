@@ -153,9 +153,13 @@ func filletResolvedEdges(body *topo.Body, edges []filletPick, concave ConcaveFil
 	if err != nil {
 		return nil, err
 	}
+	picked := make(map[uint64]bool, len(edges))
+	for _, p := range edges {
+		picked[p.edge.ID()] = true
+	}
 	fils := make([]edgeFillet, 0, len(edges))
 	for _, p := range edges {
-		ef, err := computeEdgeFillet(body, p, blends, miters, concave)
+		ef, err := computeEdgeFillet(body, p, blends, miters, concave, picked)
 		if err != nil {
 			return nil, err
 		}
@@ -259,13 +263,16 @@ type edgeFillet struct {
 // computeEdgeFillet solves the rolling-ball geometry for one convex straight edge, using a
 // corner blend at either endpoint that is a shared corner. A varying pick gets its end arcs
 // sampled as chords (shared by the ruling strips and the end faces).
-func computeEdgeFillet(body *topo.Body, p filletPick, blends map[uint64]*cornerBlend, miters map[uint64]*cornerMiter, concave ConcaveFill) (edgeFillet, error) {
+func computeEdgeFillet(body *topo.Body, p filletPick, blends map[uint64]*cornerBlend, miters map[uint64]*cornerMiter, concave ConcaveFill, picked map[uint64]bool) (edgeFillet, error) {
 	e := p.edge
 	if cyl, pl, ok := cylinderPlaneEdge(e); ok {
 		return edgeFillet{}, curvedFilletError(e, cyl, pl) // fillet of a fillet — Phase A: classify & report
 	}
 	if err := curvedAdjacentError(e); err != nil {
 		return edgeFillet{}, err // any other curved neighbour (cyl∩cyl miter seam, torus, sphere)
+	}
+	if err := curvedEndpointError(e, picked); err != nil {
+		return edgeFillet{}, err // planar edge whose END runs into a PRIOR round (#1797 fillet-into-fillet)
 	}
 	a, b, nA, nB, err := edgePlanarFaces(e)
 	if err != nil {
