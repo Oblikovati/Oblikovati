@@ -223,8 +223,8 @@ func TestMidSurfaceManualPairsAndRange(t *testing.T) {
 // part leaves body 1 (a solid) untouched alongside the new mid-surface.
 func TestMidSurfaceBodySelectionKeepsUnselected(t *testing.T) {
 	fs := NewPartFeatures(nil)
-	NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(4), 0, ops.NewBody, func() float64 { return 1 })    // body 0: thin plate
-	NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(1), 0, ops.NewBody, func() float64 { return 1 })    // body 1: cube (no thin pair)
+	NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(4), 0, ops.NewBody, func() float64 { return 1 })     // body 0: thin plate
+	NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(1), 0, ops.NewBody, func() float64 { return 1 })     // body 1: cube (no thin pair)
 	pf := NewMidSurfaceFeatures(fs).AddMidSurface(&MidSurfaceDefinition{MaxThickness: 2, BodyIndices: []int{0}}) // only the plate
 	fs.Recompute()
 	if !pf.Health().OK() {
