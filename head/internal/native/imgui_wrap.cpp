@@ -129,6 +129,14 @@ void obk_ig_end_tab_item(void)               { ImGui::EndTabItem(); }
 int  obk_ig_selectable(const char* label, int selected) {
     return ImGui::Selectable(label, selected != 0) ? 1 : 0;
 }
+// selectable_span_all_columns is selectable whose click target AND highlight fill span the whole
+// table row (all columns), not just the current cell. Without SpanAllColumns a Selectable placed
+// in column 0 confines both its hover and its persistent `selected` fill to that one column, so a
+// selected member row shows no visible full-row highlight (the tree gets this via
+// TreeNodeFlags_SpanAvailWidth; a table needs SpanAllColumns to match).
+int  obk_ig_selectable_span_all_columns(const char* label, int selected) {
+    return ImGui::Selectable(label, selected != 0, ImGuiSelectableFlags_SpanAllColumns) ? 1 : 0;
+}
 
 // Drag-and-drop: reorder a list by dragging a row onto another (#1222). The payload is a single
 // int (the dragged row index); SetDragDropPayload copies it internally so a local is safe.
@@ -522,18 +530,28 @@ int  obk_ig_begin_table(const char* id, int columns, float outer_w, float outer_
                             ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY;
     return ImGui::BeginTable(id, columns, flags, ImVec2(outer_w, outer_h)) ? 1 : 0;
 }
-// begin_table_scrollx is begin_table plus horizontal scrolling, for wide data grids in a narrow
-// dock (a content-center member table). Kept separate from begin_table because ScrollX changes
-// column auto-sizing and the existing tables rely on the stretch default.
-int obk_ig_begin_table_scrollx(const char* id, int columns, float outer_w, float outer_h) {
+// begin_table_stretch is begin_table with equal-width stretch sizing: SizingStretchSame gives every
+// column the same share of the table width instead of shrinking each to its content and leaving the
+// surplus width empty (the content-center member table in a wide dock). Resizable still lets the user
+// redistribute. No ScrollX: horizontal scroll and stretch sizing are mutually exclusive in ImGui —
+// ScrollX forces SizingFixedFit, which is exactly the narrow-columns-with-empty-space symptom.
+int obk_ig_begin_table_stretch(const char* id, int columns, float outer_w, float outer_h) {
     ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
                             ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY |
-                            ImGuiTableFlags_ScrollX;
+                            ImGuiTableFlags_SizingStretchSame;
     return ImGui::BeginTable(id, columns, flags, ImVec2(outer_w, outer_h)) ? 1 : 0;
 }
 void obk_ig_table_setup_column(const char* label)      { ImGui::TableSetupColumn(label); }
 void obk_ig_table_setup_scroll_freeze(int cols, int rows) { ImGui::TableSetupScrollFreeze(cols, rows); }
 void obk_ig_table_headers_row(void)                    { ImGui::TableHeadersRow(); }
+// table_set_row_bg fills the CURRENT row's whole-row background with an explicit RGBA color, drawn
+// behind the cell text (RowBg1 is ImGui's dedicated selection-marking layer). The caller passes the
+// chrome accent at full opacity for a selected row: this theme maps the resting ImGuiCol_Header (a
+// Selectable's own selected fill) to the DARK header background, near-invisible against the striped
+// grid, so the selection highlight must be painted explicitly. Call right after TableNextRow().
+void obk_ig_table_set_row_bg(float r, float g, float b, float a) {
+    ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImGui::GetColorU32(ImVec4(r, g, b, a)));
+}
 void obk_ig_table_next_row(void)                       { ImGui::TableNextRow(); }
 int  obk_ig_table_next_column(void)                    { return ImGui::TableNextColumn() ? 1 : 0; }
 void obk_ig_end_table(void)                            { ImGui::EndTable(); }
