@@ -10,11 +10,20 @@ import (
 )
 
 // AddFillet rounds the corner where two lines meet with a tangent arc of the given
-// radius: it trims each line back to its tangent point and inserts the arc between them.
+// radius: it trims each line back to its tangent point, inserts the arc between them, drops
+// the now-orphaned corner vertex, and pins the arc tangent to each edge. The tangency +
+// corner removal make a filleted corner reach DOF 0 with only a radius dimension added by the
+// caller — the pre-#69 AddFillet left the corner point floating (+2 DOF) and added no tangency,
+// so a filleted sketch could never fully constrain (Oblikovati.AddIns.PartDesigner#69). Apply
+// the fillet before other constraints reference the corner, as the corner vertex is consumed.
 // It errors when the lines do not share a corner or are (anti)parallel.
 //
 //	arc, err := sk.AddFillet(l1, l2, 0.5)
 func (s *Sketch) AddFillet(l1, l2 *Line, radius math.Scalar) (*Arc, error) {
+	cornerA, far1, cornerB, far2, ok := sharedCorner(l1, l2)
+	if !ok {
+		return nil, fmt.Errorf("fillet: the two lines do not share a corner")
+	}
 	corner, dir1, dir2, half, err := cornerFrame("fillet", l1, l2)
 	if err != nil {
 		return nil, err
@@ -27,7 +36,74 @@ func (s *Sketch) AddFillet(l1, l2 *Line, radius math.Scalar) (*Arc, error) {
 	trimTo(l1, l2, corner, t1, t2)
 	c := s.newPoint(center)
 	ccw := center.VectorTo(t1.Position()).Cross(center.VectorTo(t2.Position())) > 0
-	return s.arcs.Add(c, t1, t2, ccw), nil
+	arc := s.arcs.Add(c, t1, t2, ccw)
+	arc.filletTangents = []*filletTangencyConstraint{
+		newFilletTangency(c, t1, far1), // tangent to l1 at t1
+		newFilletTangency(c, t2, far2), // tangent to l2 at t2
+	}
+	s.dropOrphanCorner(cornerA)
+	if cornerB != cornerA {
+		s.dropOrphanCorner(cornerB)
+	}
+	return arc, nil
+}
+
+// dropOrphanCorner removes a corner vertex the fillet trimmed away, once nothing else references
+// it. A corner still used by another edge or a user constraint is left in place (the caller
+// filleted a shared/constrained corner); only a truly orphaned vertex is removed.
+func (s *Sketch) dropOrphanCorner(p *Point) {
+	if s.pointReferenced(p) {
+		return
+	}
+	s.removePoint(p)
+}
+
+// pointReferenced reports whether any surviving entity, geometric constraint, or dimension still
+// uses point p — the guard [Sketch.dropOrphanCorner] uses before discarding a filleted corner.
+func (s *Sketch) pointReferenced(p *Point) bool {
+	for _, e := range s.ents {
+		if e != Entity(p) && entityRefsPoint(e, p) {
+			return true
+		}
+	}
+	for _, c := range s.geomCons.All() {
+		if kc, ok := c.(KindedConstraint); ok && refsPoint(kc.RelatedEntities(), p) {
+			return true
+		}
+	}
+	for _, d := range s.dimCons.items {
+		if refsPoint(d.Refs(), p) {
+			return true
+		}
+	}
+	return false
+}
+
+// refsPoint reports whether any entity in ents is, or is defined by, point p.
+func refsPoint(ents []Entity, p *Point) bool {
+	for _, e := range ents {
+		if entityRefsPoint(e, p) {
+			return true
+		}
+	}
+	return false
+}
+
+// entityRefsPoint reports whether entity e is point p or has p among its defining points.
+func entityRefsPoint(e Entity, p *Point) bool {
+	if e == Entity(p) {
+		return true
+	}
+	pd, ok := e.(pointDefined)
+	if !ok {
+		return false
+	}
+	for _, dp := range pd.definingPoints() {
+		if dp == p {
+			return true
+		}
+	}
+	return false
 }
 
 // AddChamfer bevels the corner where two lines meet with a straight line, trimming each
