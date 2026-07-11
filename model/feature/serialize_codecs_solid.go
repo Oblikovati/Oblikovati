@@ -179,7 +179,14 @@ func (r featureCodecSet) registerSolidCodecs() {
 	r.register("thicken", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			t := f.(*ThickenFeature)
-			fd.Thicken = &ThickenData{Value: t.Thickness(), Approximation: approximationName(t.Approximation())}
+			chain, blend := t.ChainBlend()
+			fd.Thicken = &ThickenData{
+				Value: t.Thickness(), Approximation: approximationName(t.Approximation()),
+				Direction: thickenDirectionName(t.Direction()),
+				Operation: thickenOperationName(t.Operation(), t.AsSurface()),
+				Faces:     encodeKeys(t.FaceKeys()), NoWalls: !t.Walls(),
+				AutoChain: chain, AutoBlend: blend,
+			}
 			return nil
 		},
 		decode: decodeThicken,
@@ -264,16 +271,24 @@ func decodeSnapFit(rc *restoreContext, fd FeatureData) (*PartFeature, error) {
 		constFloat(d.CatchLength), constFloat(d.CatchHeight)), nil
 }
 
-// decodeThicken rebuilds a thicken, restoring the surface-offset approximation mode.
+// decodeThicken rebuilds a thicken, restoring the #331 approximation mode and #1876 options.
 func decodeThicken(rc *restoreContext, fd FeatureData) (*PartFeature, error) {
 	if fd.Thicken == nil {
 		return nil, fmt.Errorf("thicken feature is missing its payload")
 	}
-	approx, err := approximationOf(fd.Thicken.Approximation)
+	d := fd.Thicken
+	approx, err := approximationOf(d.Approximation)
 	if err != nil {
 		return nil, err
 	}
-	pf := NewModifyFeatures(rc.fs).AddThicken(fd.Thicken.Value)
-	pf.Definition().(*ThickenFeature).SetApproximation(approx)
+	keys, err := decodeKeys(d.Faces)
+	if err != nil {
+		return nil, err
+	}
+	pf := NewModifyFeatures(rc.fs).AddThicken(d.Value)
+	tf := pf.Definition().(*ThickenFeature)
+	tf.SetApproximation(approx)
+	op, asSurface := thickenOperationOf(d.Operation)
+	tf.SetThickenOptions(thickenDirectionOf(d.Direction), op, asSurface, keys, !d.NoWalls, d.AutoChain, d.AutoBlend)
 	return pf, nil
 }

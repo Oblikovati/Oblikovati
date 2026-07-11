@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -82,11 +83,23 @@ func (f *faceEditFeature) FaceKeys() [][]byte { return f.faceKeys }
 // SplitFeature is the direct edit whose geometry still defers (phase C).
 type SplitFeature struct{ faceEditFeature }
 
-// ThickenFeature turns the running surface (sheet) body into a solid of a wall thickness.
-// Approximation mirrors FaceOffsetFeature's (#331): carried, exact path computed.
+// ThickenFeature turns the running surface (sheet) body into a solid of a wall thickness, or —
+// with operation surface — an offset surface (#1876). Direction picks the side(s) offset;
+// faceKeys thickens a subset (empty = whole body); walls is Inventor's CreateVerticalSurfaces.
+// operation join solidifies; cut/intersect boolean the thickened solid into the running solid.
+// Approximation mirrors FaceOffsetFeature's (#331): carried, exact path computed. autoChain /
+// autoBlend are accepted for parity but not geometrically applied (selection is explicit).
 type ThickenFeature struct {
 	thickness     func() float64
 	approximation types.FeatureApproximationType
+	featName      string
+	direction     ops.ThickenDirection
+	operation     ops.PartFeatureOperation
+	asSurface     bool
+	faceKeys      [][]byte
+	walls         bool
+	autoChain     bool
+	autoBlend     bool
 }
 
 // Kind implements [Feature].
@@ -101,33 +114,121 @@ func (f *ThickenFeature) Approximation() types.FeatureApproximationType { return
 // SetApproximation records the approximation request (the kernel still computes exact).
 func (f *ThickenFeature) SetApproximation(a types.FeatureApproximationType) { f.approximation = a }
 
-// Recompute thickens the running surface body into a solid (see kernel/ops/thicken.go); a
-// non-surface or non-thickenable body makes the feature go Sick.
+// Direction / Operation / AsSurface / FaceKeys / Walls / ChainBlend expose the #1876 options
+// for serialization.
+func (f *ThickenFeature) Direction() ops.ThickenDirection     { return f.direction }
+func (f *ThickenFeature) Operation() ops.PartFeatureOperation { return f.operation }
+func (f *ThickenFeature) AsSurface() bool                     { return f.asSurface }
+func (f *ThickenFeature) FaceKeys() [][]byte                  { return f.faceKeys }
+func (f *ThickenFeature) Walls() bool                         { return f.walls }
+func (f *ThickenFeature) ChainBlend() (chain, blend bool)     { return f.autoChain, f.autoBlend }
+
+// SetThickenOptions records the #1876 options on a thicken feature (direction, operation,
+// as-surface, face subset, vertical surfaces, and the carried chain/blend flags).
+func (f *ThickenFeature) SetThickenOptions(dir ops.ThickenDirection, op ops.PartFeatureOperation, asSurface bool, faceKeys [][]byte, walls, chain, blend bool) {
+	f.direction, f.operation, f.asSurface = dir, op, asSurface
+	f.faceKeys, f.walls, f.autoChain, f.autoBlend = faceKeys, walls, chain, blend
+}
+
+// Recompute thickens the running surface into a solid (or offsets it as a surface); operation
+// cut/intersect boolean the solid into the running solid body. See kernel/ops/thicken.go. A
+// non-surface / non-thickenable body or a missing boolean target makes the feature go Sick.
 func (f *ThickenFeature) Recompute(in Input) (Output, error) {
-	body, err := runningBody(in)
+	surface, err := runningBody(in)
 	if err != nil {
 		return Output{}, err
 	}
-	result, err := ops.Thicken(body, f.thickness())
+	if f.asSurface {
+		return f.recomputeAsSurface(in, surface)
+	}
+	solid, err := ops.ThickenSolid(surface, f.thickness(), f.direction, f.faceKeys, f.walls)
 	if err != nil {
 		return Output{}, fmt.Errorf("thicken: %w", err)
 	}
-	return Output{Bodies: replaceBody(in.Bodies, body, result)}, nil
+	if f.operation == ops.Cut || f.operation == ops.Intersect {
+		return thickenBoolean(in, surface, solid, f.operation)
+	}
+	return Output{Bodies: replaceBody(in.Bodies, surface, solid)}, nil
+}
+
+// recomputeAsSurface offsets the (optionally subset) surface into a parallel surface body; a zero
+// distance yields a copy (Inventor's Thicken surface, Distance 0).
+func (f *ThickenFeature) recomputeAsSurface(in Input, surface *topo.Body) (Output, error) {
+	src := surface
+	if len(f.faceKeys) > 0 {
+		kept, err := ops.DropFaces(surface, f.faceKeys, true)
+		if err != nil {
+			return Output{}, fmt.Errorf("thicken surface: %w", err)
+		}
+		src = kept
+	}
+	d := f.thickness()
+	if f.direction == ops.ThickenNegative {
+		d = -d
+	}
+	result, err := ops.OffsetSurface(src, d, f.featName)
+	if err != nil {
+		return Output{}, fmt.Errorf("thicken surface: %w", err)
+	}
+	return Output{Bodies: replaceBody(in.Bodies, surface, result)}, nil
+}
+
+// thickenBoolean cuts/intersects the thickened solid into the most recent running solid body
+// (the surface is consumed). A missing target solid makes the feature go Sick.
+func thickenBoolean(in Input, surface, solid *topo.Body, op ops.PartFeatureOperation) (Output, error) {
+	target := lastSolidExcept(in.Bodies, surface)
+	if target == nil {
+		return Output{}, fmt.Errorf("thicken %s: no solid body to modify", op)
+	}
+	result, err := ops.Boolean(op, target, solid)
+	if err != nil {
+		return Output{}, fmt.Errorf("thicken %s: %w", op, err)
+	}
+	bodies := make([]*topo.Body, 0, len(in.Bodies))
+	for _, b := range in.Bodies {
+		switch b {
+		case surface: // consumed by the thicken
+		case target:
+			bodies = append(bodies, result)
+		default:
+			bodies = append(bodies, b)
+		}
+	}
+	return Output{Bodies: bodies}, nil
+}
+
+// lastSolidExcept returns the most recent solid body that is not skip, or nil.
+func lastSolidExcept(bodies []*topo.Body, skip *topo.Body) *topo.Body {
+	for i := len(bodies) - 1; i >= 0; i-- {
+		if bodies[i] != skip && bodies[i].IsSolid() {
+			return bodies[i]
+		}
+	}
+	return nil
 }
 
 // ReplaceFaceFeature replaces the picked faces' surface with that of a target face.
 type ReplaceFaceFeature struct {
 	faceEditFeature
-	targetKey []byte
+	targetKey    []byte       // legacy: a same-body face key, re-resolved each recompute (associative)
+	targetPlanes []geom.Plane // #1886: frozen new-face / work-plane target planes (from the router)
 }
 
-// TargetKey returns the reference key of the face whose plane replaces the picked faces.
+// TargetKey returns the reference key of the legacy single same-body target face.
 func (f *ReplaceFaceFeature) TargetKey() []byte { return f.targetKey }
 
-// Recompute replaces the picked faces with the target face's plane on the running body (see
-// kernel/ops/replace_face.go); a lost picked or target face makes the feature go Sick.
+// TargetPlanes returns the frozen new-face target planes (#1886), empty for the legacy path.
+func (f *ReplaceFaceFeature) TargetPlanes() []geom.Plane { return f.targetPlanes }
+
+// Recompute replaces the picked faces with their target plane(s) on the running body (see
+// kernel/ops/replace_face.go). The #1886 targetPlanes path assigns each picked face to its nearest
+// frozen target (work plane or new face, possibly cross-body); the legacy path re-resolves a single
+// same-body target face each recompute. A lost picked or target face makes the feature go Sick.
 func (f *ReplaceFaceFeature) Recompute(in Input) (Output, error) {
 	return retopoFacesBody(in, f.faceKeys, f.kind, func(b *topo.Body, keys [][]byte) (*topo.Body, error) {
+		if len(f.targetPlanes) > 0 {
+			return ops.ReplaceFacesMulti(b, keys, f.targetPlanes)
+		}
 		target, ok := ops.PlaneOfFace(b, f.targetKey)
 		if !ok {
 			return nil, fmt.Errorf("replace-face: target face reference lost")
@@ -136,13 +237,40 @@ func (f *ReplaceFaceFeature) Recompute(in Input) (Output, error) {
 	})
 }
 
-// DeleteFaceFeature removes the picked faces and heals the openings (extends neighbours).
-type DeleteFaceFeature struct{ faceEditFeature }
+// DeleteFaceFeature removes the picked faces. Heal (default false, Inventor parity #1884) extends
+// the neighbouring faces to close the opening; heal=false leaves the body open (a surface). If the
+// picked faces sit on an internal void shell instead, the whole void is removed (mass restored).
+type DeleteFaceFeature struct {
+	faceEditFeature
+	heal bool
+}
 
-// Recompute deletes the picked faces from the running body and heals it (see
-// kernel/ops/delete_face.go); a non-healable selection makes the feature go Sick.
+// Heal reports whether the openings are closed by extending neighbours (for serialization).
+func (f *DeleteFaceFeature) Heal() bool { return f.heal }
+
+// Recompute deletes the picked faces from the running body. Faces on an internal void shell drop
+// that void (restoring mass, see kernel/ops/delete_void.go); otherwise heal extends neighbours to
+// close the gap (kernel/ops/delete_face.go) and heal=false leaves it open (kernel/ops/drop_faces.go).
+// A non-healable selection or lost key makes the feature go Sick.
 func (f *DeleteFaceFeature) Recompute(in Input) (Output, error) {
-	return retopoFacesBody(in, f.faceKeys, f.kind, ops.DeleteFaces)
+	body, err := runningBody(in)
+	if err != nil {
+		return Output{}, err
+	}
+	q := ops.DefaultQuality()
+	var result *topo.Body
+	switch {
+	case ops.FacesOnVoidShell(body, f.faceKeys, q):
+		result, err = ops.RemoveVoidShellByFaces(body, f.faceKeys, q)
+	case f.heal:
+		result, err = ops.DeleteFaces(body, f.faceKeys)
+	default:
+		result, err = ops.DropFaces(body, f.faceKeys, false)
+	}
+	if err != nil {
+		return Output{}, fmt.Errorf("%s: %w", f.kind, err)
+	}
+	return Output{Bodies: replaceBody(in.Bodies, body, result)}, nil
 }
 
 // MoveFaceFeature translates the picked faces by a vector — or, in rotate mode (#331),
@@ -266,12 +394,21 @@ func (c *ModifyFeatures) AddFaceOffsetApprox(faceKeys [][]byte, distance func() 
 	})
 }
 
-func (c *ModifyFeatures) AddDeleteFace(faceKeys [][]byte) *PartFeature {
-	return c.engine.Add(&DeleteFaceFeature{faceEditFeature{kind: "delete-face", faceKeys: faceKeys}})
+// AddDeleteFace deletes the picked faces. heal=true extends the neighbouring faces to close the
+// opening; heal=false leaves the body open. Faces on an internal void shell drop that void (#1884).
+func (c *ModifyFeatures) AddDeleteFace(faceKeys [][]byte, heal bool) *PartFeature {
+	return c.engine.Add(&DeleteFaceFeature{faceEditFeature: faceEditFeature{kind: "delete-face", faceKeys: faceKeys}, heal: heal})
 }
 
 func (c *ModifyFeatures) AddReplaceFace(faceKeys [][]byte, targetKey []byte) *PartFeature {
 	return c.engine.Add(&ReplaceFaceFeature{faceEditFeature: faceEditFeature{kind: "replace-face", faceKeys: faceKeys}, targetKey: targetKey})
+}
+
+// AddReplaceFacePlanes replaces the picked faces with a set of frozen target planes (#1886) — work
+// planes and/or new faces, possibly from other bodies. Each picked face is assigned to its nearest
+// target at recompute.
+func (c *ModifyFeatures) AddReplaceFacePlanes(faceKeys [][]byte, targets []geom.Plane) *PartFeature {
+	return c.engine.Add(&ReplaceFaceFeature{faceEditFeature: faceEditFeature{kind: "replace-face", faceKeys: faceKeys}, targetPlanes: targets})
 }
 
 // AddThicken thickens the running surface body into a solid of the given wall thickness.
@@ -279,7 +416,11 @@ func (c *ModifyFeatures) AddThicken(thickness float64) *PartFeature {
 	return c.AddThickenFn(constFloat(thickness))
 }
 
-// AddThickenFn is AddThicken with a live (parameter-driven) thickness.
+// AddThickenFn is AddThicken with a live (parameter-driven) thickness. Options default to the
+// whole-body, symmetric, join, walls-on thicken; the router/UI refine them via SetThickenOptions.
 func (c *ModifyFeatures) AddThickenFn(thickness func() float64) *PartFeature {
-	return c.engine.Add(&ThickenFeature{thickness: thickness})
+	tf := &ThickenFeature{thickness: thickness, walls: true, featName: "Thicken"}
+	pf := c.engine.Add(tf)
+	tf.featName = pf.name
+	return pf
 }

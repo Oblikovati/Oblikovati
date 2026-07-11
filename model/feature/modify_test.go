@@ -133,13 +133,39 @@ func TestDeleteFaceHealsInModel(t *testing.T) {
 			chamfer = f.ReferenceKey()
 		}
 	}
-	del := NewModifyFeatures(fs).AddDeleteFace([][]byte{chamfer})
+	del := NewModifyFeatures(fs).AddDeleteFace([][]byte{chamfer}, true)
 	fs.Recompute()
 	if !del.Health().OK() {
 		t.Fatalf("delete-face sick: %+v", del.Health())
 	}
 	if got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(got, 8) > 1e-6 {
 		t.Errorf("healed volume = %g, want 8", got)
+	}
+}
+
+// TestDeleteFaceOpenLeavesSurface is the heal=false arm (#1884): deleting the top face without
+// healing leaves an open, non-solid surface body of five faces.
+func TestDeleteFaceOpenLeavesSurface(t *testing.T) {
+	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
+	var top []byte
+	for _, f := range box.Faces() {
+		if f.Geometry().NormalAt(0, 0).Z > 0.99 {
+			top = f.ReferenceKey()
+		}
+	}
+	fs := NewPartFeatures(nil)
+	NewBaseFeatures(fs).AddBase(box)
+	del := NewModifyFeatures(fs).AddDeleteFace([][]byte{top}, false)
+	fs.Recompute()
+	if !del.Health().OK() {
+		t.Fatalf("delete-face (open) sick: %+v", del.Health())
+	}
+	body := fs.Result()[0]
+	if body.IsSolid() {
+		t.Error("heal=false should leave an open (non-solid) surface body")
+	}
+	if got := len(body.Faces()); got != 5 {
+		t.Errorf("open body has %d faces, want 5 (6 minus the deleted top)", got)
 	}
 }
 
@@ -184,6 +210,145 @@ func TestThickenSurfaceToSlab(t *testing.T) {
 	}
 	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, 3) > 1e-6 {
 		t.Errorf("slab volume = %g, want 3", got)
+	}
+}
+
+// TestThickenAsSurfaceOffset is the operation=surface arm (#1876): a 2×3 patch offset +1 stays an
+// open surface of the same area (6) at z=1; a zero distance is a copy (area 6 at z=0).
+func TestThickenAsSurfaceOffset(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		dist  float64
+		wantZ float64
+	}{
+		{"offset", 1, 1},
+		{"copy", 0, 0},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			fs := NewPartFeatures(nil)
+			NewBaseFeatures(fs).AddBase(patchSurfaceBody(2, 3))
+			th := NewModifyFeatures(fs).AddThickenFn(constFloat(tc.dist))
+			th.Definition().(*ThickenFeature).SetThickenOptions(ops.ThickenPositive, ops.Join, true, nil, true, false, false)
+			fs.Recompute()
+			if !th.Health().OK() {
+				t.Fatalf("thicken surface sick: %+v", th.Health())
+			}
+			res := fs.Result()[0]
+			if res.IsSolid() {
+				t.Error("operation surface should leave a non-solid surface body")
+			}
+			if a := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Area; relErr(a, 6) > 1e-6 {
+				t.Errorf("surface area = %g, want 6", a)
+			}
+			// Centroid is ill-defined for a zero-volume sheet, so check the offset via vertex z.
+			for _, v := range res.Vertices() {
+				if stdmath.Abs(float64(v.Point().Z)-tc.wantZ) > 1e-9 {
+					t.Errorf("surface vertex z = %g, want %g", v.Point().Z, tc.wantZ)
+				}
+			}
+		})
+	}
+}
+
+// TestThickenCutIntoSolid is the operation=cut arm (#1876): thickening the box's bottom face 0.5
+// into the +z side and cutting removes that slab (2·2·0.5 = 2) from the vol-8 box, leaving 6.
+func TestThickenCutIntoSolid(t *testing.T) {
+	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
+	fs := NewPartFeatures(nil)
+	NewBaseFeatures(fs).AddBase(box)
+	NewBaseFeatures(fs).AddBase(patchSurfaceBody(2, 2)) // coincident with the box's z=0 face
+	th := NewModifyFeatures(fs).AddThickenFn(constFloat(0.5))
+	th.Definition().(*ThickenFeature).SetThickenOptions(ops.ThickenPositive, ops.Cut, false, nil, true, false, false)
+	fs.Recompute()
+	if !th.Health().OK() {
+		t.Fatalf("thicken cut sick: %+v", th.Health())
+	}
+	res := fs.Result()
+	if len(res) != 1 {
+		t.Fatalf("after cut there are %d bodies, want 1 (surface consumed)", len(res))
+	}
+	if got := ops.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume; relErr(got, 6) > 1e-3 {
+		t.Errorf("cut volume = %g, want 6 (8 minus a 2×2×0.5 slab)", got)
+	}
+}
+
+// TestThickenOptionsRoundTrip pins #1876 serialization: direction/operation/faces/vertical-surfaces
+// and the carried chain/blend flags survive the recipe codec, and a legacy thicken restores
+// symmetric/join/walls-on.
+func TestThickenOptionsRoundTrip(t *testing.T) {
+	fs := NewPartFeatures(nil)
+	pf := NewModifyFeatures(fs).AddThicken(0.2)
+	pf.Definition().(*ThickenFeature).SetThickenOptions(ops.ThickenNegative, ops.Cut, false, [][]byte{[]byte("f-a")}, false, true, true)
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	d := data[0].Thicken
+	if d.Direction != "negative" || d.Operation != "cut" || !d.NoWalls || !d.AutoChain || !d.AutoBlend || len(d.Faces) != 1 {
+		t.Fatalf("serialized thicken options = %+v", d)
+	}
+	fresh := NewPartFeatures(nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	tf := fresh.Item(0).Definition().(*ThickenFeature)
+	if tf.Direction() != ops.ThickenNegative || tf.Operation() != ops.Cut || tf.Walls() || len(tf.FaceKeys()) != 1 {
+		t.Errorf("restored options = dir %v op %v walls %v faces %d", tf.Direction(), tf.Operation(), tf.Walls(), len(tf.FaceKeys()))
+	}
+	// A legacy recipe (no #1876 fields) restores symmetric / join / walls-on.
+	legacy := NewPartFeatures(nil)
+	if err := legacy.ApplyRecipe([]FeatureData{{Kind: "thicken", Thicken: &ThickenData{Value: 0.3}}}, oneSketch{}, nil); err != nil {
+		t.Fatalf("legacy ApplyRecipe: %v", err)
+	}
+	lt := legacy.Item(0).Definition().(*ThickenFeature)
+	if lt.Direction() != ops.ThickenSymmetric || lt.Operation() != ops.Join || !lt.Walls() || lt.AsSurface() {
+		t.Errorf("legacy restore = dir %v op %v walls %v asSurface %v, want symmetric/join/walls/solid", lt.Direction(), lt.Operation(), lt.Walls(), lt.AsSurface())
+	}
+}
+
+// TestReplaceFacePlanesFlattens is the #1886 frozen-target arm: replacing a 2×2×2 box's top face
+// with a work-plane-style target at z=3 grows the box to vol 12, and the target planes survive the
+// recipe codec.
+func TestReplaceFacePlanesFlattens(t *testing.T) {
+	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
+	var top []byte
+	for _, f := range box.Faces() {
+		if f.Geometry().NormalAt(0, 0).Z > 0.99 {
+			top = f.ReferenceKey()
+		}
+	}
+	target, _ := geom.NewPlane(math.P3(0, 0, 3), math.V3(0, 0, 1))
+	fs := NewPartFeatures(nil)
+	NewBaseFeatures(fs).AddBase(box)
+	rf := NewModifyFeatures(fs).AddReplaceFacePlanes([][]byte{top}, []geom.Plane{target})
+	fs.Recompute()
+	if !rf.Health().OK() {
+		t.Fatalf("replace-face (planes) sick: %+v", rf.Health())
+	}
+	if got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(got, 12) > 1e-6 {
+		t.Errorf("replaced volume = %g, want 12 (top raised to z=3)", got)
+	}
+}
+
+// TestReplaceFacePlanesRoundTrip pins #1886's frozen-plane serialization: a replace-face carrying
+// target planes survives the recipe codec.
+func TestReplaceFacePlanesRoundTrip(t *testing.T) {
+	target, _ := geom.NewPlane(math.P3(0, 0, 3), math.V3(0, 0, 1))
+	fs := NewPartFeatures(nil)
+	NewModifyFeatures(fs).AddReplaceFacePlanes([][]byte{[]byte("f-top")}, []geom.Plane{target})
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	if n := len(data[0].FaceEdit.NewFaces); n != 1 {
+		t.Fatalf("serialized newFaces = %d, want 1", n)
+	}
+	fresh := NewPartFeatures(nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	if got := fresh.Item(0).Definition().(*ReplaceFaceFeature).TargetPlanes(); len(got) != 1 || stdmath.Abs(float64(got[0].Origin.Z)-3) > 1e-9 {
+		t.Errorf("restored target planes = %+v, want one plane at z=3", got)
 	}
 }
 

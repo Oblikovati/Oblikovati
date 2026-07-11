@@ -11,6 +11,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
@@ -443,13 +444,14 @@ const replaceFaceSchema = `{
   "type": "object",
   "properties": {
     "faceRefs": {"type": "array", "items": {"type": "string"}, "minItems": 1, "description": "Reference keys of the faces to replace (get_reference_keys)."},
-    "targetRef": {"type": "string", "description": "Reference key of the face whose surface replaces them."}
+    "newFaceRefs": {"type": "array", "items": {"type": "string"}, "description": "Replacement geometry: planar face keys and/or work planes (\"plane/N\", \"origin/plane/xy\"); faces may be from other bodies. Each picked face retrims onto its nearest new face."},
+    "targetRef": {"type": "string", "description": "Legacy single same-body target face (associative). newFaceRefs takes precedence."}
   },
-  "required": ["faceRefs", "targetRef"]
+  "required": ["faceRefs"]
 }`
 
 func replaceFaceDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: featureargs.KindReplaceFace, Summary: "Replace picked faces with another face's surface (direct edit).", Schema: json.RawMessage(replaceFaceSchema), Apply: applyReplaceFace}
+	return &OperationDescriptor{Name: featureargs.KindReplaceFace, Summary: "Replace picked faces with new faces / a work plane (direct edit).", Schema: json.RawMessage(replaceFaceSchema), Apply: applyReplaceFace}
 }
 
 func applyReplaceFace(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -457,11 +459,40 @@ func applyReplaceFace(s *app.Session, raw json.RawMessage) (json.RawMessage, err
 	if err != nil {
 		return nil, err
 	}
-	if len(in.FaceRefs) == 0 || in.TargetRef == "" {
-		return nil, errors.New("replaceFace: faceRefs and targetRef are required")
+	if len(in.FaceRefs) == 0 {
+		return nil, errors.New("replaceFace: faceRefs is required")
+	}
+	if len(in.NewFaceRefs) > 0 {
+		planes, err := replaceFacePlanes(part, in.NewFaceRefs)
+		if err != nil {
+			return nil, err
+		}
+		pf := feature.NewModifyFeatures(part.Features()).AddReplaceFacePlanes(refKeys(in.FaceRefs), planes)
+		return recomputeResult(part, pf)
+	}
+	if in.TargetRef == "" {
+		return nil, errors.New("replaceFace: newFaceRefs or targetRef is required")
 	}
 	pf := feature.NewModifyFeatures(part.Features()).AddReplaceFace(refKeys(in.FaceRefs), []byte(in.TargetRef))
 	return recomputeResult(part, pf)
+}
+
+// replaceFacePlanes resolves each new-face reference (a planar face key or a work plane) to a
+// frozen plane the replace-face feature retrims onto (#1886).
+func replaceFacePlanes(part *compdef.PartComponentDefinition, refs []string) ([]geom.Plane, error) {
+	planes := make([]geom.Plane, 0, len(refs))
+	for _, ref := range refs {
+		wp, err := part.WorkGeometry().PlaneTargetFromRef(ref)
+		if err != nil {
+			return nil, fmt.Errorf("replaceFace: new face %q: %w", ref, err)
+		}
+		pl, err := geom.NewPlane(wp.Plane().Origin(), wp.Plane().Normal().AsVector())
+		if err != nil {
+			return nil, fmt.Errorf("replaceFace: new face %q: %w", ref, err)
+		}
+		planes = append(planes, pl)
+	}
+	return planes, nil
 }
 
 // --- core/cavity -----------------------------------------------------------

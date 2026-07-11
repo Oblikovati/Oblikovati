@@ -6,6 +6,9 @@ import (
 	"fmt"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
 )
 
 // This file holds the YAML codec for the direct face-edit features — split, move-face,
@@ -25,14 +28,115 @@ type FaceEditData struct {
 	Angle         float64   `yaml:"angle,omitempty"`         // move-face rotate, radians
 	Distance      float64   `yaml:"distance,omitempty"`      // face-offset
 	Approximation string    `yaml:"approximation,omitempty"` // face-offset (#331), wire spelling
-	Target        string    `yaml:"target,omitempty"`        // replace-face: source face key
+	Target        string    `yaml:"target,omitempty"`        // replace-face: legacy same-body source face key
+	// NewFaces are replace-face's frozen target planes (#1886): work planes and/or new faces resolved
+	// to origin+normal by the router. Present only for the multi/work-plane path; the legacy Target
+	// (same-body face key) stays associative and is used when NewFaces is empty.
+	NewFaces []PlaneData `yaml:"newFaces,omitempty"`
+	// Open is delete-face's inverse-heal flag (#1884): stored as the negation so the zero value
+	// (absent field) restores the legacy healed behaviour — pre-#1884 recipes had no field and
+	// were always healed. Open=true means the delete left the body open (heal=false).
+	Open bool `yaml:"open,omitempty"`
+}
+
+// PlaneData is a frozen plane (origin + unit normal) — replace-face's #1886 target planes.
+type PlaneData struct {
+	Origin []float64 `yaml:"origin"`
+	Normal []float64 `yaml:"normal"`
+}
+
+// encodePlanes / decodePlanes convert between the frozen geom.Plane list and its serialized form.
+func encodePlanes(planes []geom.Plane) []PlaneData {
+	if len(planes) == 0 {
+		return nil
+	}
+	out := make([]PlaneData, len(planes))
+	for i, p := range planes {
+		o, n := p.Origin, p.Normal()
+		out[i] = PlaneData{Origin: []float64{float64(o.X), float64(o.Y), float64(o.Z)}, Normal: []float64{float64(n.X), float64(n.Y), float64(n.Z)}}
+	}
+	return out
+}
+
+func decodePlanes(data []PlaneData) ([]geom.Plane, error) {
+	if len(data) == 0 {
+		return nil, nil
+	}
+	out := make([]geom.Plane, len(data))
+	for i, d := range data {
+		if len(d.Origin) != 3 || len(d.Normal) != 3 {
+			return nil, fmt.Errorf("replace-face: target plane %d needs origin[3]+normal[3], got %v/%v", i, d.Origin, d.Normal)
+		}
+		pl, err := geom.NewPlane(math.P3(d.Origin[0], d.Origin[1], d.Origin[2]), math.V3(d.Normal[0], d.Normal[1], d.Normal[2]))
+		if err != nil {
+			return nil, fmt.Errorf("replace-face: target plane %d: %w", i, err)
+		}
+		out[i] = pl
+	}
+	return out, nil
 }
 
 // ThickenData is a thicken feature: the wall thickness applied to the running surface body,
-// plus the #331 approximation request (wire spelling; absent = none/exact).
+// plus the #331 approximation request (wire spelling; absent = none/exact) and the #1876 options.
+// The zero value of each new field restores the pre-#1876 behaviour: Direction "" = symmetric,
+// Operation "" = join, and NoWalls false = vertical surfaces on (stored negated so a legacy recipe,
+// which always built walls, restores unchanged).
 type ThickenData struct {
-	Value         float64 `yaml:"value"`
-	Approximation string  `yaml:"approximation,omitempty"`
+	Value         float64  `yaml:"value"`
+	Approximation string   `yaml:"approximation,omitempty"`
+	Direction     string   `yaml:"direction,omitempty"` // "" = symmetric (legacy)
+	Operation     string   `yaml:"operation,omitempty"` // "" = join; "surface" = offset surface
+	Faces         []string `yaml:"faces,omitempty"`     // face subset (empty = whole body)
+	NoWalls       bool     `yaml:"noWalls,omitempty"`   // inverse of createVerticalSurfaces
+	AutoChain     bool     `yaml:"autoChain,omitempty"`
+	AutoBlend     bool     `yaml:"autoBlend,omitempty"`
+}
+
+// thickenDirectionName / thickenDirectionOf map the direction enum to its serialized spelling;
+// symmetric encodes as "" so a legacy recipe (no field) and a new symmetric thicken both restore
+// symmetric.
+func thickenDirectionName(d ops.ThickenDirection) string {
+	if d == ops.ThickenSymmetric {
+		return ""
+	}
+	return d.String()
+}
+
+func thickenDirectionOf(s string) ops.ThickenDirection {
+	switch s {
+	case "positive":
+		return ops.ThickenPositive
+	case "negative":
+		return ops.ThickenNegative
+	default:
+		return ops.ThickenSymmetric // "" legacy / symmetric
+	}
+}
+
+// thickenOperationName encodes the thicken output mode: "surface" for the offset-surface path,
+// "cut"/"intersect" for the booleans, and "" for join (the legacy default, so it stays omitted).
+func thickenOperationName(op ops.PartFeatureOperation, asSurface bool) string {
+	if asSurface {
+		return "surface"
+	}
+	if op == ops.Join {
+		return ""
+	}
+	return op.String()
+}
+
+// thickenOperationOf decodes the mode back to (operation, asSurface). "" = join.
+func thickenOperationOf(s string) (ops.PartFeatureOperation, bool) {
+	switch s {
+	case "surface":
+		return ops.Join, true
+	case "cut":
+		return ops.Cut, false
+	case "intersect":
+		return ops.Intersect, false
+	default:
+		return ops.Join, false
+	}
 }
 
 // approximationName / approximationOf map the enum to its wire spelling (empty for the zero
@@ -97,8 +201,15 @@ func restoreFaceEdit(fs *PartFeatures, kind string, d *FaceEditData) (*PartFeatu
 		}
 		return m.AddFaceOffsetApprox(keys, constFloat(d.Distance), approx), nil
 	case "delete-face":
-		return m.AddDeleteFace(keys), nil
+		return m.AddDeleteFace(keys, !d.Open), nil // Open is stored negated (see FaceEditData.Open)
 	case "replace-face":
+		if len(d.NewFaces) > 0 {
+			planes, err := decodePlanes(d.NewFaces)
+			if err != nil {
+				return nil, err
+			}
+			return m.AddReplaceFacePlanes(keys, planes), nil
+		}
 		target, err := decodeKey(d.Target)
 		if err != nil {
 			return nil, err
