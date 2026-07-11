@@ -32,12 +32,13 @@ set gridName  $env(ORACLE_GRID)
 set caseName  $env(ORACLE_NAME)
 
 # --- recording state (global; DRAW command overrides write here) --------------------
-set ORV(verb)    ""
-set ORV(input)   ""
-set ORV(picks)   {} ;# each: {radiusNumeric edgeName lawOrEmpty}
-set ORV(exparea) "0"
-set ORV(deps)    "0.01"
-set ORV(todo)    ""
+set ORV(verb)       ""
+set ORV(input)      ""
+set ORV(picks)      {} ;# each: {radiusNumeric edgeName lawOrEmpty}
+set ORV(exparea)    "0"
+set ORV(deps)       "0.01"
+set ORV(todo)       ""
+set ORV(blendcalls) 0  ;# distinct blend operations (blend/mkevol/bfuseblend); >1 ⇒ not one fillet
 
 # edgeloc: OCCT's own resolution of a picked edge into a geometry-only locator —
 # the true curve mid-parameter point and unit tangent. DRAW shapes are Tcl *globals*,
@@ -65,6 +66,7 @@ rename blend __real_blend
 proc blend {args} {
     global ORV
     set ORV(verb)  "blend"
+    incr ORV(blendcalls)
     set ORV(input) [lindex $args 1]
     foreach {r e} [lrange $args 2 end] {
         lappend ORV(picks) [list [uplevel #0 [list dval $r]] $e ""]
@@ -106,6 +108,7 @@ rename mkevol __real_mkevol
 proc mkevol {args} {
     global ORV
     set ORV(verb)  "buildevol"
+    incr ORV(blendcalls)
     set ORV(input) [lindex $args 1]
     catch {eval __real_mkevol $args}
 }
@@ -135,6 +138,7 @@ rename bfuseblend __real_bfuseblend
 proc bfuseblend {args} {
     global ORV
     set ORV(verb)   "bfuseblend"
+    incr ORV(blendcalls)
     set ORV(bf_s)   [lindex $args 1]
     set ORV(bf_b)   [lindex $args 2]
     set ORV(bf_rad) [uplevel #0 [list dval [lindex $args 3]]]
@@ -182,6 +186,14 @@ if {$ORV(verb) eq "bfuseblend" && [info exists ORV(bf_s)]} {
     } else {
         set ORV(todo) "bfuseblend-section-failed: $secErr"
     }
+}
+
+# A case that ran more than one blend operation (e.g. a foreach over scales, or sequential
+# fillet-then-fillet) is several logical fillets — the one-record-per-case / all-picks-in-one
+# model cannot represent it, so mark it skipped-with-reason (never mis-model). Preserves the
+# corpus count; RunCase treats a non-empty todo as a skip.
+if {$ORV(blendcalls) > 1 && $ORV(todo) eq ""} {
+    set ORV(todo) "occtparity: multi-blend case ($ORV(blendcalls) blend ops) — not modeled as a single fillet"
 }
 
 # --- JSON emission ------------------------------------------------------------------
