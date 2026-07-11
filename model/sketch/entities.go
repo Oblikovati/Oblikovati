@@ -105,7 +105,8 @@ type Arc struct {
 	Start            *Point
 	End              *Point
 	CounterClockwise bool
-	circularity      *arcCircularityConstraint // system-owned; keeps End at the arc radius
+	circularity      *arcCircularityConstraint  // system-owned; keeps End at the arc radius
+	filletTangents   []*filletTangencyConstraint // system-owned; tangency to the blended edges (#69)
 }
 
 // Radius returns the current center-to-start distance.

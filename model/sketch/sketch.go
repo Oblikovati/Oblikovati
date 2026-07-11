@@ -360,6 +360,9 @@ func (s *Sketch) Constraints() []Constraint {
 	// (#1419); the solver consumes it like any other, but it is not a user-facing relation.
 	for _, a := range s.arcs.items {
 		out = append(out, a.circularity)
+		for _, ft := range a.filletTangents {
+			out = append(out, ft) // fillet tangency to each blended edge (#69)
+		}
 	}
 	for _, d := range s.dimCons.items {
 		if !d.driven {
