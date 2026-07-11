@@ -7,7 +7,7 @@ require (
 	golang.org/x/image v0.0.0-20211028202545-6944b10bf410
 	gopkg.in/yaml.v3 v3.0.1
 	gotest.tools/gotestsum v1.12.0
-	oblikovati.org/api v0.142.1
+	oblikovati.org/api v0.142.2
 )
 
 require (
