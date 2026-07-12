@@ -20,7 +20,7 @@ gaps. Counts are from the failure messages; a case can shift buckets once diagno
 | G2 | **Radius > max / degenerate** | 19→**14 core + 5 split** | P2 | **Endpoint-phantom FIXED 2026-07-12** (advisor-grounded): `availableWidth` now samples the fillet edge's endpoints at the EXACT stored vertices (+ excludes the boundary edges incident to that endpoint), so the shared-corner crossing is x=0 exactly instead of a roundoff x≈1e-14 that collapsed the width to ~0. `r_max` restored to sane values (V3 2.8e-15→7.2, N5→20, X8→46, R7→1.5); #1800 self-intersection rejection intact. **BUT this greens 0 cases alone — it UNMASKS the next engine layer:** V3,V5 now build correct geometry (area within 1% of OCCT) yet fail the validity gate with an empty reason; X8→G5 (4-edge corner); R7→G4/G5 (non-planar corner face); E3→G6 (sphere neighbour); T3 = a real build bug (inconsistent edge orientation); N5 = a SECOND, distinct width collapse (~4.9e-11, in the concave/multi-pick path, not the endpoint phantom). Regression `kernel/ops/fillet_maxwidth_test.go`. **Triaged 2026-07-12 (systematic-debugging): three families, not one.** (a) **~14 genuine max-width bug** — `availableWidth` samples the fillet edge *including its endpoints*; at an endpoint an adjacent boundary edge shares that vertex, so its ray crossing is at x=0 but **float roundoff makes it x≈1e-14**, slipping past the `x<=0` guard and poisoning the min width to ~0 → `rMax≈0` → every real radius rejected. Cases: `complex/E3`, `simple/{N5,R7,T3,V3,V5,X2,X8}`, `tolblend_simple/{A9,B1,B2,E6,E7,E8}`. **This is the "one fix unlocks many" cluster.** (b) **G3,G4,G6 → STEP-import gap, NOT fillet**: importer drops the `SURFACE_OF_LINEAR_EXTRUSION` face (B-spline profile), leaving an open 3-face shell with degenerate 2-edge coincident-edge lunes; guard then *correctly* reads ~0 width. Reassign to a STEP-import work item. (c) **complex/D6, simple/Q6 → G6**: "arc radius > cylinder radius" — curved-neighbour large-radius, import is clean |
 | G3 | **Generic invalid-solid (triage)** | 30 | — | Fillet ran but the assembled solid is invalid with no specific reason; diagnose → reassign to G4/G5/G6 or a real assembly bug. **−4:** `A2,A6,K7,W1` were the same corner-solve orientation bug as G1 1b and turned green with that fix |
 | G4 | **Miter blends** (2 convex edges meet) | 61 | P6 | Two filleted edges meet and the corner/outer face is non-planar, or no outer face exists — miter reconstruction gap |
-| G5 | **Corner blends** (vertex convergence) | 54 | P6 | n-way / trihedral vertices, mixed radius, arc-end-not-tangent, endpoint-no-end-face — corner reconstruction (IntersectionAtEnd, n-way). (The 6 apex cases briefly parked here were NOT corner reconstruction — they were the curved survivor-edge bug, now FIXED in G1; see note.) |
+| G5 | **Corner blends** (vertex convergence) | 54→**53** | P6 | n-way / trihedral vertices, mixed radius, arc-end-not-tangent, endpoint-no-end-face — corner reconstruction (IntersectionAtEnd, n-way). (The 6 apex cases briefly parked here were NOT corner reconstruction — they were the curved survivor-edge bug, now FIXED in G1; see note.) **First slice (2026-07-12): `simple/V3` (valence-5 single-fillet runout) CLOSED + gated (`TestG5RunoutCasesPass`); `simple/V5` (valence-6) builds a valid solid but still fails the 1% area gate — deferred, tripwired (`TestG5V5StillFailsArea`); see "G5 first slice" note below.** |
 | G6 | **Curved-neighbour + fillet-into-fillet** | 53 | P4/P6 | Filleting an edge adjacent to a cylinder/cone/sphere/bspline face, or running into an existing round (#1797). **+2 from G1 1c:** `W2,H6` (arc edge bordering a cylinder face) |
 | G7 | **Topology edge≠2-planar + misc** | 5+ | — | Edge bounds ≠ 2 planar faces; a few one-offs |
 | G8 | **Variable radius (buildevol)** | 108* | P?/M44 | *SKIP today.* Feature API exists; blocker is mapping OCCT's edge-parameter `updatevol` law to our reparameterized edge (arc-length) |
@@ -179,7 +179,39 @@ regression `kernel/ops/fillet_box_corner_test.go`, triage `model/feature/occtpar
     sextet (see "apex-edge" note above). G1's area-parity bucket is now closed (only `W2,H6` remain,
     reclassified to G6).
 
-## Cross-cutting notes
+## G5 first slice (n-valent fillet-runout) outcome (2026-07-12)
+
+Implemented across 8 tasks on `feat/occt-blend-parity-corpus` (Tasks 1-7: fan detector, split-point
+solver, three-tier spread membership, arc-fit + validity certificate, rebuild wiring, honest-reject;
+Task 8: this gate). Hard gate: `TestG5RunoutCasesPass` (`model/feature/occtparity/fillet_g5_runout_test.go`).
+
+- **`simple/V3` (valence-5 runout vertex) — PASS, gated.** Closes to a valid solid
+  (`TestV3FilletClosesToSolid`, `kernel/ops/fillet_runout_rebuild_test.go`) and scores within OCCT's
+  area tolerance (0.22% drift). This is the case that drove the whole feature; it is now a hard,
+  committed regression gate.
+- **`simple/V5` (valence-6 runout vertex) — NOT gated, deferred.** V5 moved off `FailFaulty` (it now
+  builds a valid closed solid, same as V3) but scores `FailArea`: 25347.1 vs OCCT 24551.4, a 3.24%
+  drift — over the 1% gate. Task 8 investigated the anticipated "non-planar far face" deferral
+  reason from the task-8 brief and **disproved it**: every face incident to V5's valence-6 runout
+  vertex is `geom.Plane` (throwaway diagnostic, deleted after use). So the residual is a genuine,
+  still-open valence-6 spread-assembly defect (likely the three-tier membership or arc-fit not
+  generalizing cleanly past valence-5), not a quadric-far-face gap. Pinned as a tripwire
+  (`TestG5V5StillFailsArea`, expects exactly `FailArea`) so the day this changes — either direction —
+  the test fails loudly instead of drifting silently. Own follow-up effort before V5 joins the hard
+  gate.
+- **Unanticipated interaction — `simple/X9` and `simple/V1` also moved.** The stash-diff (feature-ON
+  HEAD vs. the pre-feature commit `b411c881`, full 475-case corpus, via a disposable sibling
+  worktree) shows the delta is NOT limited to {V3, V5} as originally assumed:
+  - `simple/X9` (single pick, radius 10): `FailFaulty` → **PASS** (a genuine bonus win — evidence the
+    fan/spread machinery is general-purpose, not overfit to V3/V5's specific coordinates).
+  - `simple/V1` (single pick, radius 5): `FailFaulty` → `FailArea` (still failing, but now builds a
+    valid solid instead of an open shell — partial progress, same open-question class as V5).
+  - Every other case across all 475 records — every trihedral case in `simple`, and every case in
+    `bfuseblend`/`buildevol`/`complex`/`encoderegularity`/`tolblend_buildvol`/`tolblend_simple` — is
+    byte-identical between the two runs. **No trihedral regression.** Total corpus PASS: 27 (pre-
+    feature) → 29 (feature-ON), net +2 (`V3`, `X9`), matching the scoreboard's `TOTAL PASS=29`.
+  - `X9`/`V1` are not separately gated in Task 8 (out of this task's scope — `X9` is already implicitly
+    protected by `TestOCCTBlendSimple/X9` in the per-grid gate; `V1` stays open like V5).
 
 - **Grounding, per CLAUDE.md:** G1/G2 and all of Phase B/C route through
   `geometry-math-advisor`; the corner/miter architecture (G4/G5) also warrants a
