@@ -176,6 +176,55 @@ func TestVertexValence(t *testing.T) {
 	}
 }
 
+// TestClassifyEndCornersExcludesKGreaterThanOne locks the k>=2 boundary (Task 2): a corner where
+// TWO filleted edges meet must never become an endCornerFan, even at a >3-valent vertex where the
+// fan detector's valence gate alone would not exclude it — it is the corner.miter/blend flags, set
+// by computeCorners BEFORE any fils exist, that do the excluding.
+//
+// The fixture is V3's own valence-5 runout vertex (already proven fan-eligible by valence in
+// TestClassifyEndCornersV3), picking two of its OTHER four edges (10 and 24) that share face 25:
+// a real miter configuration, not a synthetic body, confirming the boundary on production geometry.
+// computeCorners resolves any >=2-filleted-edge vertex to a miter/blend or errors outright before
+// computeFillets ever runs — so a corner with c.blend==false && c.miter==false is structurally only
+// reachable at k<=1, and fanForEndCorner's existing `c.blend || c.miter` gate already excludes k>=2
+// without any code change.
+func TestClassifyEndCornersExcludesKGreaterThanOne(t *testing.T) {
+	b := importCorpusSolid(t, "simple/V3")
+	v := vertexNear(t, b, math.P3(34.202014332567, 93.969262078591, 50))
+	if got := vertexValence(v); got <= 3 {
+		t.Fatalf("setup: vertex valence = %d, want >3 (fan-eligible by valence alone)", got)
+	}
+	e1 := edgeBetween(t, b, v, vertexNear(t, b, math.P3(0, 0, 0)))
+	e2 := edgeBetween(t, b, v, vertexNear(t, b, math.P3(93.969262078591, -34.20201433256, 0)))
+	picks := []filletPick{{edge: e1, r0: 1, r1: 1}, {edge: e2, r0: 1, r1: 1}}
+
+	blends, miters, err := computeCorners(picks)
+	if err != nil {
+		t.Fatalf("computeCorners: %v", err)
+	}
+	if miters[v.ID()] == nil {
+		t.Fatalf("setup: expected a miter at the shared vertex (blend=%v)", blends[v.ID()] != nil)
+	}
+
+	picked := map[uint64]bool{e1.ID(): true, e2.ID(): true}
+	fils := make([]edgeFillet, len(picks))
+	for i, p := range picks {
+		fil, err := computeEdgeFillet(b, p, blends, miters, FillConcaveOutward, picked)
+		if err != nil {
+			t.Fatalf("computeEdgeFillet: %v", err)
+		}
+		fils[i] = fil
+	}
+
+	fans, owned := classifyEndCorners(fils)
+	if len(fans) != 0 {
+		t.Errorf("k=2 miter corner produced %d fans, want 0", len(fans))
+	}
+	if owned[v.ID()] {
+		t.Errorf("k=2 miter vertex marked fan-owned, want untouched (belongs to addCornerRound/miter)")
+	}
+}
+
 // TestVertexFacesDeduplicates covers the helper vertexValence is built on: a vertex incident to
 // several edges that share the same face must count that face once, not once per edge.
 func TestVertexFacesDeduplicates(t *testing.T) {
