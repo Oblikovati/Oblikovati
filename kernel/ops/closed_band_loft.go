@@ -46,6 +46,12 @@ func closedBandLoftMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
 	return loftRows(s, lo, hi, mid), true
 }
 
+// isFullCircleArc reports whether an Arc3d spans a full turn (a closed circle minted as an arc — a
+// fillet-band rim), distinguishing it from the partial seam arc across the tube.
+func isFullCircleArc(a geom.Arc3d) bool {
+	return stdmath.Abs(stdmath.Abs(a.SweepAngle)-2*stdmath.Pi) < seamAngularTol
+}
+
 // wrapPi folds an angle into (−π, π] — the signed shortest step between two tube parameters.
 func wrapPi(a float64) float64 {
 	const twoPi = 2 * stdmath.Pi
@@ -63,11 +69,16 @@ func wrapPi(a float64) float64 {
 // seamMid that arc's midpoint (whose tube parameter picks which arc the band spans). ok=false with no seam.
 func bandRingsAndSeam(f *topo.Face, q Quality) (rings [][]math.Point3, seamN int, seamMid math.Point3, ok bool) {
 	for _, e := range f.Edges() {
-		switch e.Geometry().(type) {
+		switch g := e.Geometry().(type) {
 		case geom.Circle:
 			rings = append(rings, dropClosingDup(TessellateEdge(e, q)))
 		case geom.Arc3d:
-			if pts := TessellateEdge(e, q); len(pts) > seamN {
+			// A full-circle Arc3d (|sweep|≈2π) is a closed rim minted as an arc — the fillet re-weld
+			// represents a full-circle rim this way (build_edge.go circleEdge), so it is a RING, not the
+			// tube seam. Only the partial arc (|sweep|<2π) is the seam that sets the tube subdivision.
+			if isFullCircleArc(g) {
+				rings = append(rings, dropClosingDup(TessellateEdge(e, q)))
+			} else if pts := TessellateEdge(e, q); len(pts) > seamN {
 				seamN, seamMid, ok = len(pts), pts[len(pts)/2], true
 			}
 		}
