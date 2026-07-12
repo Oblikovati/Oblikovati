@@ -62,6 +62,40 @@ Open question the fix must settle: does this convention belong in the fillet reb
 `transformFace`) or upstream as an imported-body orientation-normalization pass? (Candidate for
 `software-architect-advisor` — who owns the winding⊕reversed convention.)
 
+## Fix attempts + architecture correction (3 failed — STOP per systematic-debugging)
+
+The architect brief proposed: topo owns a Canonical Orientation Invariant (COI); normalize each minted
+face's winding to its effective outward normal; fold `reversed` into `Validate` (ADR-B). Implementing
+and MEASURING it disproved two of its own load-bearing claims:
+
+1. **ADR-B (fold `reversed` into Validate) is WRONG.** Edge-use consistency is a pure *winding*
+   property (`assemble_curved.go:189` `ec.use`: two faces are consistent iff they emit the shared
+   segment in opposite point-order). The `reversed` flag is *orthogonal* — it only flips the surface
+   parametric normal for tessellation. Folding it in (`(u0.Reversed ^ f0.reversed) != …`) would
+   MIS-REJECT valid imported bodies (imported T3 e34 is consistent under winding-only but fails the
+   folded check). The current winding-only `Validate` is correct; do NOT change it.
+2. **The COI normalizer's primitive (`newellNormal` vs effective normal) is UNSOUND for the faces
+   that matter.** `newellNormal` is a *planar* winding measure, but the ~20 failing faces are exactly
+   the CURVED ones (torus/cone/sphere/bspline) whose outer loops are non-planar 3D space curves —
+   Newell has no meaningful sign there. Measured: carry-`reversed` + conditional Newell re-wind
+   scored simple PASS **31→28** (regressed 3 planar faces on Newell noise, greened 0 of the curved 20).
+3. Earlier: carry-`reversed` alone = no-op; blanket re-wind of every reversed face = 31→2.
+
+**What remains genuinely not understood:** WHY `assembleBody` emits a curved reversed survivor's
+shared edge in the SAME point-order as its neighbor (producing the inconsistency), when
+`transformLoop`+`useFromVertex` appear to emit each face's loop in its stored traversal order (which
+for the valid imported body is opposite on shared edges). The direction flip is inside the
+weld/`ec.use` interaction and was not isolated. Until that exact flip is understood, any normalizer is
+a guess — and Newell is the wrong primitive for curved faces regardless.
+
+**Corrected fix direction (for whoever picks this up):** the orientation test for a trimmed CURVED
+face cannot be planar-Newell. It must use the SURFACE's own parametric orientation along the boundary
+(e.g. at a boundary point, sign of `(∂S/∂u × ∂S/∂v) · (edgeTangent × inwardOffset)`, or integrate the
+loop's turning against the surface normal field) — a `geometry-math-advisor` question. OR: preserve
+the imported edge-use directions through the re-weld directly (thread each segment's original
+`use.Reversed()` into `filletLoop` and have `ec.use` honor it) instead of re-deriving from geometry —
+which sidesteps winding entirely and may be the smaller, safer change. Both are unverified.
+
 ## Recount after reclassification
 Of the 26: **5 → STEP-import gap**, **1 (D5) → IsSolid one-off**, **20 → the genuine
 orientation fix** above. So the "one fix unlocks many" is ~20 cases (still a strong cluster), plus 5
