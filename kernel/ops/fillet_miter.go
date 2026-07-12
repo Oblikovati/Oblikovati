@@ -131,11 +131,14 @@ func sharedFace(e1, e2 *topo.Edge) *topo.Face {
 	return nil
 }
 
-// planeNormal returns f's unit normal and ok=true when f is planar.
+// planeNormal returns f's material-OUTWARD unit normal and ok=true when f is planar. It must
+// respect face.Reversed() (STEP-imported faces carry an inward plane normal): the miter arm's
+// offDir and seam plane are built from these normals, so a raw plane normal flips one arm on an
+// imported solid — the corner-path analogue of the edgePlanarFaces fix (commit dbd28339).
 func planeNormal(f *topo.Face) (math.Vector3, bool) {
 	pl, ok := f.Geometry().(geom.Plane)
 	if !ok {
 		return math.Vector3{}, false
 	}
-	return pl.Normal(), true
+	return outwardPlaneNormal(f, pl), true
 }

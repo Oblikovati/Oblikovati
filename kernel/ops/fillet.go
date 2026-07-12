@@ -817,7 +817,10 @@ func solveBlend(v *topo.Vertex, faces []*topo.Face, r float64) (*cornerBlend, er
 		if !ok {
 			return nil, fmt.Errorf("fillet: corner face must be planar")
 		}
-		n := pl.Normal()
+		// Material-OUTWARD normal (respects face.Reversed()): the centre sits r INSIDE each face,
+		// n·s = n·origin − r, which only holds when n points outward. A raw plane normal on a
+		// reversed (imported) face solves for a sphere on the wrong side (same defect as the miter).
+		n := outwardPlaneNormal(f, pl)
 		a[i] = [3]float64{n.X, n.Y, n.Z}
 		b[i] = n.Dot(pl.Origin.AsVector()) - r // distance r on the inside of each face
 	}
@@ -832,7 +835,8 @@ func solveBlend(v *topo.Vertex, faces []*topo.Face, r float64) (*cornerBlend, er
 	}
 	tan := make(map[uint64]math.Point3, 3)
 	for _, f := range faces {
-		tan[f.ID()] = s.TranslateBy(f.Geometry().(geom.Plane).Normal().Scale(r))
+		// Tangent point is the sphere centre pushed r along the OUTWARD normal to reach the face.
+		tan[f.ID()] = s.TranslateBy(outwardPlaneNormal(f, f.Geometry().(geom.Plane)).Scale(r))
 	}
 	return &cornerBlend{vertex: v, center: s, sphere: sph, tan: tan}, nil
 }
