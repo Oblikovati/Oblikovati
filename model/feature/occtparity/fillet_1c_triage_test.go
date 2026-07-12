@@ -11,25 +11,19 @@ import (
 	"oblikovati.org/kernel/topo"
 )
 
-// TestG1Cluster1cTriage locks the diagnosis that routed the four G1 "restored solid" area-parity
-// cases (simple/{W2,H6,Y2,Q1}) to their true owners, so the reclassification is evidence-backed
-// and cannot silently rot (roadmap 2026-07-11-occt-blend-greening-roadmap.md, "G1 1c triage"):
+// TestG1Cluster1cTriage records where the four G1 "restored solid" area-parity cases
+// (simple/{W2,H6,Y2,Q1}) ended up (roadmap 2026-07-11-occt-blend-greening-roadmap.md). Y2 and Q1
+// are now FIXED; W2/H6 are genuinely G6. The subtests assert the current, load-bearing facts.
 //
-//   - W2, H6 → G6 (curved neighbour): the picked edge is a geom.Arc3d bordering a geom.Cylinder,
-//     so this is a fillet-adjacent-to-a-curved-face blend, not a planar defect. Stays FAIL(area)
-//     on the gate until G6 builds the curved-neighbour corner.
-//   - Y2 → a body-tessellation bug, NOT a fillet defect: the built B-rep is correct (sum of the
-//     per-face tessellations is within 0.16% of OCCT's 61050), but ops.BodyGeometryProperties
-//     under-measures the assembled body by ~12.6%. Split out as a tessellation issue (CLAUDE.md:
-//     tessellation correctness outranks feature work); the corpus gate measures via the body path,
-//     so this case fails on measurement, not geometry.
-//   - Q1 → a genuine planar single-edge fillet error (+3.41%), kept as the lone G1 residual: the
-//     picked edge and both its endpoints are incident only to planes (no curved neighbour), on an
-//     irregular non-axis-aligned prism, so the defect is in the planar fillet run-out itself.
-//
-// This test asserts the load-bearing facts behind each route (edge/neighbour kinds; the Y2
-// per-face-vs-body split). It does NOT assert OCCT parity — that is the gate's job, and these
-// stay red there until their owning package fixes them.
+//   - W2, H6 → G6 (curved neighbour): the picked edge is a geom.Arc3d bordering a geom.Cylinder —
+//     a fillet ON a curved-face-adjacent edge, not a planar defect. Still FAIL(area) until G6.
+//   - Y2 → FIXED by the conformance-repair guard (Bug A). The B-rep was always correct (per-face
+//     tess sum ≈ OCCT); ops.BodyGeometryProperties used to under-measure it ~12.6% because the
+//     boundary-faithful CDT collapsed a face on a self-intersecting loop. Now body ≈ sum ≈ OCCT.
+//     (The self-intersecting loop itself — Bug B — is a tracked, harmless topology blemish.)
+//   - Q1 → FIXED by survivorCurve. Its PICKED edge is planar (asserted below), which is exactly why
+//     the first read "planar run-out bug" was wrong: the real defect was a curved SURVIVOR edge on
+//     the end-cap face (bordering the solid's cylinder) being straightened. Now matches OCCT.
 func TestG1Cluster1cTriage(t *testing.T) {
 	dir := CorpusFixtureDir()
 
@@ -44,30 +38,35 @@ func TestG1Cluster1cTriage(t *testing.T) {
 		}
 	})
 
-	t.Run("Y2_is_body_tessellation_bug_not_fillet", func(t *testing.T) {
+	t.Run("Y2_fixed_body_tess_matches_geometry", func(t *testing.T) {
 		e := locate1c(t, dir, "Y2")
 		res := fillet1c(t, dir, "Y2", e)
 		sum := sumFaceTess(res)
 		body := ops.BodyGeometryProperties(res, ops.PropertyQuality()).Area
 		occt := caseArea(t, "Y2")
-		// The geometry is right (per-face sum ≈ OCCT) but the body tessellation drops area.
-		if rel := (sum - occt) / occt; rel < -0.01 || rel > 0.01 {
-			t.Errorf("Y2: per-face-tess sum %.5g not within 1%% of OCCT %.5g (rel %+.2f%%) — geometry, not just measurement, is off", sum, occt, rel*100)
+		if rel := (body - occt) / occt; rel < -0.01 || rel > 0.01 {
+			t.Errorf("Y2: body area %.5g not within 1%% of OCCT %.5g (rel %+.2f%%) — Bug A conformance guard regressed", body, occt, rel*100)
 		}
-		if body >= sum*0.99 {
-			t.Errorf("Y2: body-tess %.5g no longer under-measures the correct per-face sum %.5g — tessellation bug may be FIXED; re-evaluate the split", body, sum)
+		if rel := (body - sum) / sum; rel < -0.005 || rel > 0.005 {
+			t.Errorf("Y2: body-tess %.5g diverges from per-face sum %.5g — a face collapsed again", body, sum)
 		}
 	})
 
-	t.Run("Q1_is_genuine_planar_fillet_residual", func(t *testing.T) {
+	t.Run("Q1_fixed_picked_edge_was_planar", func(t *testing.T) {
 		e := locate1c(t, dir, "Q1")
+		res := fillet1c(t, dir, "Q1", e)
+		// The picked edge is planar (defect was on a survivor edge elsewhere, not this run-out).
 		if hasCylinderNeighbour(e) {
-			t.Errorf("Q1: picked edge unexpectedly has a curved neighbour %v — would reroute to G6", neighbourKinds(e))
+			t.Errorf("Q1: picked edge unexpectedly has a curved neighbour %v", neighbourKinds(e))
 		}
 		for _, v := range []*topo.Vertex{e.StartVertex(), e.EndVertex()} {
 			if vertexTouchesCurved(v) {
-				t.Errorf("Q1: endpoint %v touches a curved face — the fillet run-out is a curved-neighbour case, reroute to G6", v.Point())
+				t.Errorf("Q1: picked-edge endpoint %v touches a curved face", v.Point())
 			}
+		}
+		body := ops.BodyGeometryProperties(res, ops.PropertyQuality()).Area
+		if occt := caseArea(t, "Q1"); (body-occt)/occt < -0.01 || (body-occt)/occt > 0.01 {
+			t.Errorf("Q1: body area %.5g not within 1%% of OCCT %.5g — survivorCurve fix regressed", body, occt)
 		}
 	})
 }
