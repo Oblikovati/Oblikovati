@@ -103,11 +103,20 @@ regression `kernel/ops/fillet_box_corner_test.go`, triage `model/feature/occtpar
 - **1c triage (`W2,H6,Y2,Q1`):**
   - `W2,H6` → **G6**: picked edge is a `geom.Arc3d` bordering a `geom.Cylinder` — curved-neighbour
     blends, not planar defects.
-  - `Y2` → **body-tessellation bug, split out of G1** (NOT a fillet defect). The built B-rep is
-    correct — the sum of per-face tessellations is 61147, within 0.16% of OCCT's 61050 — but
-    `ops.BodyGeometryProperties` under-measures the assembled body at 53337 (−12.63%). Per CLAUDE.md
-    tessellation correctness outranks feature work; the corpus gate measures via the body path, so
-    this fails on measurement, not geometry. Track as its own tessellation issue.
+  - `Y2` → **two stacked bugs, both handled.** Symptom was `ops.BodyGeometryProperties`
+    under-measuring the assembled body at 53337 (−12.63%) though the per-face tessellation sum is
+    61147 (within 0.16% of OCCT 61050). **Bug A (FIXED):** conformance-repair's boundary-faithful
+    CDT collapsed a face on a self-intersecting boundary (8475→675); it now bails on a non-simple
+    loop and keeps the robust earclip mesh (`kernel/ops/conformance_repair.go`, guard `simpleLoop2D`;
+    regression `fillet_conformance_notch_test.go`). Y2 now PASSES the gate (61147, +0.16%).
+    **Bug B (TRACKED known-limitation):** the upstream cause is that `FilletEdges` builds a
+    *self-intersecting neighbour-face loop* when a feature protrudes into the removed strip
+    (`transformLoop` pulls back only the edge's own endpoints). A per-face 2D clip cannot fix it —
+    the protrusion's vertices are shared with the feature's wall faces, so clipping one face cracks
+    the body; the correct fix is a coordinated regularized 3D trim (OCCT `ChFi3d`), a substantial
+    fillet-engine effort. Bounded impact: earclip is robust, so area/render are correct and only the
+    B-rep topology is blemished. Repro skipped in `kernel/ops/fillet_neighbour_clip_test.go`;
+    geometry-math-advisor design in `.superpowers/sdd/progress.md`.
   - `Q1` → the lone **real G1 residual**: a genuine planar single-edge fillet error (+3.41%, sum =
     body) on an irregular non-axis-aligned prism; edge and both endpoints incident only to planes
     (no curved neighbour), so the defect is in the planar fillet run-out itself. Needs its own
