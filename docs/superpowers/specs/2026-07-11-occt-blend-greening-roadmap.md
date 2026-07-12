@@ -20,7 +20,7 @@ gaps. Counts are from the failure messages; a case can shift buckets once diagno
 | G2 | **Radius > max / degenerate** | 19→**14 core + 5 split** | P2 | **Endpoint-phantom FIXED 2026-07-12** (advisor-grounded): `availableWidth` now samples the fillet edge's endpoints at the EXACT stored vertices (+ excludes the boundary edges incident to that endpoint), so the shared-corner crossing is x=0 exactly instead of a roundoff x≈1e-14 that collapsed the width to ~0. `r_max` restored to sane values (V3 2.8e-15→7.2, N5→20, X8→46, R7→1.5); #1800 self-intersection rejection intact. **BUT this greens 0 cases alone — it UNMASKS the next engine layer:** V3,V5 now build correct geometry (area within 1% of OCCT) yet fail the validity gate with an empty reason; X8→G5 (4-edge corner); R7→G4/G5 (non-planar corner face); E3→G6 (sphere neighbour); T3 = a real build bug (inconsistent edge orientation); N5 = a SECOND, distinct width collapse (~4.9e-11, in the concave/multi-pick path, not the endpoint phantom). Regression `kernel/ops/fillet_maxwidth_test.go`. **Triaged 2026-07-12 (systematic-debugging): three families, not one.** (a) **~14 genuine max-width bug** — `availableWidth` samples the fillet edge *including its endpoints*; at an endpoint an adjacent boundary edge shares that vertex, so its ray crossing is at x=0 but **float roundoff makes it x≈1e-14**, slipping past the `x<=0` guard and poisoning the min width to ~0 → `rMax≈0` → every real radius rejected. Cases: `complex/E3`, `simple/{N5,R7,T3,V3,V5,X2,X8}`, `tolblend_simple/{A9,B1,B2,E6,E7,E8}`. **This is the "one fix unlocks many" cluster.** (b) **G3,G4,G6 → STEP-import gap, NOT fillet**: importer drops the `SURFACE_OF_LINEAR_EXTRUSION` face (B-spline profile), leaving an open 3-face shell with degenerate 2-edge coincident-edge lunes; guard then *correctly* reads ~0 width. Reassign to a STEP-import work item. (c) **complex/D6, simple/Q6 → G6**: "arc radius > cylinder radius" — curved-neighbour large-radius, import is clean |
 | G3 | **Generic invalid-solid (triage)** | 30 | — | Fillet ran but the assembled solid is invalid with no specific reason; diagnose → reassign to G4/G5/G6 or a real assembly bug. **−4:** `A2,A6,K7,W1` were the same corner-solve orientation bug as G1 1b and turned green with that fix |
 | G4 | **Miter blends** (2 convex edges meet) | 61 | P6 | Two filleted edges meet and the corner/outer face is non-planar, or no outer face exists — miter reconstruction gap |
-| G5 | **Corner blends** (vertex convergence) | 54→**53** | P6 | n-way / trihedral vertices, mixed radius, arc-end-not-tangent, endpoint-no-end-face — corner reconstruction (IntersectionAtEnd, n-way). (The 6 apex cases briefly parked here were NOT corner reconstruction — they were the curved survivor-edge bug, now FIXED in G1; see note.) **First slice (2026-07-12): `simple/V3` (valence-5 single-fillet runout) CLOSED + gated (`TestG5RunoutCasesPass`); `simple/V5` (valence-6) builds a valid solid but still fails the 1% area gate — deferred, tripwired (`TestG5V5StillFailsArea`); see "G5 first slice" note below.** |
+| G5 | **Corner blends** (vertex convergence) | 54→**53** | P6 | n-way / trihedral vertices, mixed radius, arc-end-not-tangent, endpoint-no-end-face — corner reconstruction (IntersectionAtEnd, n-way). (The 6 apex cases briefly parked here were NOT corner reconstruction — they were the curved survivor-edge bug, now FIXED in G1; see note.) **Single-fillet runout at an n-valent vertex DONE (2026-07-12): `simple/V3` (valence-5), `simple/V5` (valence-6) and `simple/V1` all PASS the 1% area gate (`TestG5RunoutCasesPass`); tripwire retired. Two commits — Step A near-apex root (`63ad9205`) + rail-termination setback (`5db6c9df`); see "G5 first slice" note below.** |
 | G6 | **Curved-neighbour + fillet-into-fillet** | 53 | P4/P6 | Filleting an edge adjacent to a cylinder/cone/sphere/bspline face, or running into an existing round (#1797). **+2 from G1 1c:** `W2,H6` (arc edge bordering a cylinder face) |
 | G7 | **Topology edge≠2-planar + misc** | 5+ | — | Edge bounds ≠ 2 planar faces; a few one-offs |
 | G8 | **Variable radius (buildevol)** | 108* | P?/M44 | *SKIP today.* Feature API exists; blocker is mapping OCCT's edge-parameter `updatevol` law to our reparameterized edge (arc-length) |
@@ -67,20 +67,24 @@ turned on (correctly) for true completeness.
   far-face fan → unwelded hole passing as a solid. Scoreboard 27→29: `simple/V3` (valence-5) →
   **PASS**, `simple/X9` → **PASS** (bonus — generalizes). Trihedral corpus byte-for-byte unmoved.
   Honest-reject verified end-to-end on `tolblend_simple/C4` (valence-4, over-radius).
-  **OPEN follow-up — valence-6 area drift (Step A landed; re-architecture scoped):** `simple/V5`
-  (val-6) + `simple/V1` CLOSE to valid solids but over-count area (tripwired `TestG5V5StillFailsArea`).
-  Investigated via DRAWEXE oracle (systematic-debugging); two hypotheses (three-tier membership;
-  true-ellipse arc mid) DISCONFIRMED by measurement. **Step A DONE (commit `63ad9205`):** fixed
-  `splitOnFarEdge` root selection — was picking the far/back-of-cylinder crossing instead of the
-  near-apex one; the fix lands our runout vertices exactly on OCCT's and halved V5's drift
-  (+3.24%→+1.45%). **Ground truth (OCCT direct dump):** OCCT drops the apex vertex, builds NO cap and
-  NO far-face arc surfaces, and welds the runout with a chain of shared `cyl∩far-plane` ellipse edges
-  trimming the still-planar far faces directly. Our residual +351 u² far-plane over-count is the G5
-  slice's cap + separate arc-piece structure fighting that. **Re-architecture deferred to its own
-  increment** — spec+plan `docs/superpowers/{specs,plans}/2026-07-12-v5-runout-rearchitecture*.md`
-  (cylinder end = shared ellipse-edge chain, trim far faces, delete cap, drop V; first task is a spike
-  on arc-fit vs a new `geom` conic type). Also deferred: quadric far faces (`cyl∩quadric` SSI edges),
-  multi-edge (k≥2) corner/vertex blends (X8/R7).
+  **valence-6 area drift — CLOSED 2026-07-12 (commit `5db6c9df`): `simple/V5` + `simple/V1` now PASS**
+  the 1% area gate (scoreboard `simple` PASS 29→31, FAIL(area) 5→3; stash-diff confirms EXACTLY
+  {V5,V1} moved, nothing else). Gated by `TestG5RunoutCasesPass` (V3+V5+V1); the `TestG5V5StillFailsArea`
+  tripwire is retired. The fix: **rail-termination setback** (`fillet_runout_setback.go`,
+  `applyRunoutSetback` in `filletResolvedEdges`). Path there, via DRAWEXE oracle + systematic-debugging:
+  **Step A (commit `63ad9205`)** fixed `splitOnFarEdge` root selection (far/back-of-cylinder → near-apex
+  crossing), landing our runout vertices exactly on OCCT's and halving V5's drift (+3.24%→+1.45%). A
+  **Task-1 spike then DISCONFIRMED the shared-ellipse-edge premise** (a third killed hypothesis after
+  three-tier membership + true-ellipse-mid): the exact `cyl∩plane` ellipse closes only ~15% of the gap;
+  73% of the residual sits on straight-edge-only flank triangles no conic can touch — and our build was
+  ALREADY the no-cap direct-trim topology (the "cap" was a misnomer for a planar-far-face arc warp). A
+  **characterization** (`v5-setback-characterization.md`) found the true lever: OCCT terminates each
+  flank tangent rail where it PIERCES the adjacent far plane (`t = n·(Q−A)/(n·û)`, `Q`=apex) — NOT at
+  the picked edge-vertex's axial projection (our overshooting `ta`/`tb`). One line∩plane formula predicts
+  all six V5+V1 setback vertices to ≤3.4e-5·r; the runout interior (near-root splits) already matched
+  OCCT and is untouched. Still deferred: quadric far faces (`cyl∩quadric` SSI edges), multi-edge (k≥2)
+  corner/vertex blends (X8/R7); an exact `cyl∩plane` ellipse edge remains an optional 2nd-order
+  weld-fidelity improvement (NOT a gate-closer).
 
 **Phase C — curved neighbours & the rest:**
 
