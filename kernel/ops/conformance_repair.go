@@ -199,11 +199,40 @@ func conformingPlaneMesh(f *topo.Face, q Quality) *Mesh {
 	if holesOverlap(holes2D) {
 		return nil
 	}
+	if !simpleLoop2D(outer2D) {
+		return nil // a self-intersecting boundary: the boundary-faithful CDT collapses on it (it
+		// once shrank a correct 8475 face to 675 — issue: fillet builds a self-intersecting loop
+		// when a feature protrudes into the removed strip). The robust earclip initial mesh has the
+		// right area; conformance must never REPLACE a good mesh with a collapsed one, so keep it.
+	}
 	tris := planarCDT(outer2D, holes2D)
 	if len(tris) == 0 {
 		return nil
 	}
 	return planarMeshFromTris(outer3D, holes3D, tris, normal)
+}
+
+// simpleLoop2D reports whether the closed polygon pts has no two non-adjacent edges properly
+// crossing — i.e. it is a simple polygon the boundary-faithful CDT can triangulate. Adjacent edges
+// (sharing a vertex) are skipped; segmentsCross uses a strict sign test so shared endpoints and
+// collinear touches do not count. O(n^2), fine for a face boundary's vertex count.
+func simpleLoop2D(pts []math.Point2) bool {
+	n := len(pts)
+	if n < 4 {
+		return true
+	}
+	for i := 0; i < n; i++ {
+		a, b := xy(pts[i]), xy(pts[(i+1)%n])
+		for j := i + 2; j < n; j++ {
+			if i == 0 && j == n-1 {
+				continue // edges n-1→0 and 0→1 are adjacent (share vertex 0)
+			}
+			if segmentsCross(a, b, xy(pts[j]), xy(pts[(j+1)%n])) {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // planarMeshFromTris builds a planar face mesh: the outer-then-holes 3D vertex buffer (the order
