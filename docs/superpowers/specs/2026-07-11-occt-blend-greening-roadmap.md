@@ -16,12 +16,12 @@ gaps. Counts are from the failure messages; a case can shift buckets once diagno
 
 | # | Package | Cases | ADR-0050 | Root cause (one line) |
 |---|---------|------:|----------|-----------------------|
-| G1 | **Area-parity bugs** | 6 | P?/audit | Builds a valid solid, area disagrees with OCCT > 1%. **Was 12**; investigation moved the 6 apex-edge cases (`A9,B4,B8,C3,D2,D6`) to G5 (see note). G1 now = 1b box shared-corner (`P8,V8`) + 1c restored (`W2,Y2,Q1,H6`) |
+| G1 | **Area-parity bugs** | 1 residual | DONE (1b) | **Was 12 → 6 → 1.** 6 apex-edge cases moved to G5; 1b (box shared-corner `P8,V8`) FIXED (corner-solve orientation, see note); 1c triaged: `W2,H6`→G6, `Y2`→tessellation split, leaving **`Q1`** the lone real G1 residual (genuine planar single-edge fillet +3.41%) |
 | G2 | **Radius > max / degenerate** | 19 | P? | Max-radius comes back ~0 (`2.7e-15`) at certain scales/faces — a max-width computation bug, likely one fix unlocks many |
-| G3 | **Generic invalid-solid (triage)** | 34 | — | Fillet ran but the assembled solid is invalid with no specific reason; diagnose → reassign to G4/G5/G6 or a real assembly bug |
+| G3 | **Generic invalid-solid (triage)** | 30 | — | Fillet ran but the assembled solid is invalid with no specific reason; diagnose → reassign to G4/G5/G6 or a real assembly bug. **−4:** `A2,A6,K7,W1` were the same corner-solve orientation bug as G1 1b and turned green with that fix |
 | G4 | **Miter blends** (2 convex edges meet) | 61 | P6 | Two filleted edges meet and the corner/outer face is non-planar, or no outer face exists — miter reconstruction gap |
 | G5 | **Corner blends** (vertex convergence) | 60 | P6 | n-way / trihedral vertices, mixed radius, arc-end-not-tangent, endpoint-no-end-face — corner reconstruction (IntersectionAtEnd, n-way). **+6 from G1**: the revolution-axis apex-edge fillet (`A9,B4,B8,C3,D2,D6`) is corner reconstruction at revolution poles (see note) |
-| G6 | **Curved-neighbour + fillet-into-fillet** | 51 | P4/P6 | Filleting an edge adjacent to a cylinder/cone/sphere/bspline face, or running into an existing round (#1797) |
+| G6 | **Curved-neighbour + fillet-into-fillet** | 53 | P4/P6 | Filleting an edge adjacent to a cylinder/cone/sphere/bspline face, or running into an existing round (#1797). **+2 from G1 1c:** `W2,H6` (arc edge bordering a cylinder face) |
 | G7 | **Topology edge≠2-planar + misc** | 5+ | — | Edge bounds ≠ 2 planar faces; a few one-offs |
 | G8 | **Variable radius (buildevol)** | 108* | P?/M44 | *SKIP today.* Feature API exists; blocker is mapping OCCT's edge-parameter `updatevol` law to our reparameterized edge (arc-length) |
 
@@ -84,6 +84,34 @@ The 6 apex cases were reclassified from G1 to G5 after investigation
   predicate separates the good from the bad — a rejection guard keyed on apex-detection wrongly
   rejects M1. The zero-false-positive gate caught this before it shipped. G5 fixes the pole
   corner reconstruction (which also tightens M1); until then these are honest `FAIL(area)`.
+
+## G1 1b/1c outcome (2026-07-12)
+
+Implemented from plan `docs/superpowers/plans/2026-07-12-g1-area-parity-bugs.md`; kernel
+regression `kernel/ops/fillet_box_corner_test.go`, triage `model/feature/occtparity/fillet_1c_triage_test.go`.
+
+- **1b box shared-corner (`P8,V8`) — FIXED** (commit on `feat/occt-blend-parity-corpus`). Root
+  cause was NOT a corner double-count (the plan's guess) but a corner-solve **orientation** bug:
+  `fillet_miter.go:planeNormal` and `fillet.go:solveBlend` read raw geometric plane normals,
+  ignoring `face.Reversed()`. On STEP-imported solids (inward plane normals) one miter arm's frame
+  flipped — cylinder overshot, shared face under-trimmed → +3.4%. A native `brep.SolidBlock` box
+  filleted correctly (145.126 vs OCCT 145.137); only the imported box failed. Fix routes both
+  corner sites through the existing `outwardPlaneNormal` helper — the corner-path analogue of the
+  earlier `edgePlanarFaces` fix (dbd28339). **Corpus: +6 PASS (13→19), 0 regressions**: greened
+  `P8,V8` plus `A2,A6,K7,W1` (same root cause, were mis-filed under G3). Real user-facing bug:
+  corner fillets on every imported STEP solid were wrong.
+- **1c triage (`W2,H6,Y2,Q1`):**
+  - `W2,H6` → **G6**: picked edge is a `geom.Arc3d` bordering a `geom.Cylinder` — curved-neighbour
+    blends, not planar defects.
+  - `Y2` → **body-tessellation bug, split out of G1** (NOT a fillet defect). The built B-rep is
+    correct — the sum of per-face tessellations is 61147, within 0.16% of OCCT's 61050 — but
+    `ops.BodyGeometryProperties` under-measures the assembled body at 53337 (−12.63%). Per CLAUDE.md
+    tessellation correctness outranks feature work; the corpus gate measures via the body path, so
+    this fails on measurement, not geometry. Track as its own tessellation issue.
+  - `Q1` → the lone **real G1 residual**: a genuine planar single-edge fillet error (+3.41%, sum =
+    body) on an irregular non-axis-aligned prism; edge and both endpoints incident only to planes
+    (no curved neighbour), so the defect is in the planar fillet run-out itself. Needs its own
+    root-cause before it can green.
 
 ## Cross-cutting notes
 
