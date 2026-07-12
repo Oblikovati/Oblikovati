@@ -52,10 +52,31 @@ turned on (correctly) for true completeness.
   two edges). Build the miter reconstruction for non-planar shared/outer faces (and the
   "no outer face" degenerate). Sub-buckets: shared-face-not-planar (31), outer-face-not-planar
   (22), no-outer-face (8). This is the natural first corner-machinery slice.
-- **G5 Corner blends (54).** Generalizes G4 to vertices where ≥3 fillets converge (n-way /
+- **G5 Corner blends (53).** Generalizes G4 to vertices where ≥3 fillets converge (n-way /
   trihedral), mixed radius at a corner, arc-end tangency, and endpoint-no-end-face. Depends on
   G4's machinery. This is OCCT's `PerformN Corner` / `IntersectionAtEnd` territory — the hard IP;
   route through `geometry-math-advisor` before implementing.
+
+  **G5 first slice DONE (2026-07-12, commits `4919daad`..`4ab535a5`; plan+spec `docs/superpowers/
+  {plans,specs}/2026-07-12-g5-nvalent-runout*.md`):** single-EDGE fillet runout at an n-valent
+  (>3-valence) vertex with PLANAR far faces. Detector (`fillet_runout_fan.go`) → pure geom+math
+  solver (`fillet_runout_spread.go`: material-side split quadratic + circular-arc-fit of the true
+  elliptical section + monotone-angular self-intersection certificate → honest-reject) → rebuild
+  (`fillet_runout_rebuild.go` + one `transformLoop` arm, `caps` map welds cap↔far-face). Closed the
+  **silent-open-shell landmine**: a filleted edge ending at a >3-valent vertex used to drop the
+  far-face fan → unwelded hole passing as a solid. Scoreboard 27→29: `simple/V3` (valence-5) →
+  **PASS**, `simple/X9` → **PASS** (bonus — generalizes). Trihedral corpus byte-for-byte unmoved.
+  Honest-reject verified end-to-end on `tolblend_simple/C4` (valence-4, over-radius).
+  **OPEN follow-up — valence-6 area drift:** `simple/V5` (val-6) + `simple/V1` moved FailFaulty→
+  **FailArea** — they now CLOSE to valid solids (weld/topology correct) but carry ~3.24% area drift
+  (V5: 25347 vs OCCT 24551, area too HIGH), over the 1% gate. Tripwired by `TestG5V5StillFailsArea`.
+  The "non-planar far face" hypothesis was DISPROVED (all 6 faces planar). Positive drift + the
+  final-review diagnosis point at the deferred **three-tier membership** (this slice forces an arc
+  onto EVERY fan face → over-covers faces OCCT leaves flat) AND `ellipseMidPoint` placing the arc mid
+  on the cylinder but NOT on the far-face plane (tension-1 arc-fit error, grows with span/obliquity).
+  Next increment: instrument which faces OCCT actually rounds vs. which get an arc here to separate
+  membership over-coverage from arc-fit crudeness before touching either. Also deferred: quadric far
+  faces (SSI quartic pieces), multi-edge setback vertex blends (X8/R7).
 
 **Phase C — curved neighbours & the rest:**
 

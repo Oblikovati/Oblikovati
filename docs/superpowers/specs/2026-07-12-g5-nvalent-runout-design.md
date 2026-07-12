@@ -80,9 +80,15 @@ Splits map[edgeID]Point3, Valid}` out; `cornerPiece{Curve geom.Curve3, TIn, TOut
 
 **ADRs:** (A) n-valent runout is a pre-pass producing a face→pieces map, NOT a branch in `transformLoop`
 (cross-face split consistency must be computed once, centrally — computing it per-face is the exact bug).
-(B) the seam is a topology-free value object; the solver never sees `*topo.*`. (C) far-edge splits reuse
-the `#695 inserts` channel. Honest-reject propagates through `filletResolvedEdges` (where `#1800` errors
-already flow), so no signature surgery on `filletResultFaces`.
+(B) the seam is a topology-free value object; the solver never sees `*topo.*`. (C) ~~far-edge splits reuse
+the `#695 inserts` channel~~ **SUPERSEDED at implementation (commit `f6d79781`)** — reusing the `#695
+inserts` channel would DOUBLE-ADD each split (the far-face spread arm already emits the split point as
+its piece endpoint), producing a zero-length degenerate segment. As-built instead uses a dedicated
+`caps` map that tiles the cylinder end-cap from the SAME `sp.pieces` values the far faces weld to, so
+cap↔far-face weld curve-for-curve and weld-twice holds by construction for any valence≥4. The `#695
+inserts` channel remains the right tool for the deferred non-arc tiers (split-pullback), where a face is
+pulled to a split it does not itself emit an arc for. Honest-reject propagates through
+`filletResolvedEdges` (where `#1800` errors already flow), so no signature surgery on `filletResultFaces`.
 
 **Keep the trihedral path byte-for-byte** — it is heavily regression-pinned; unify only the *concept* and
 the *dispatch point*, not the implementation. `fillet_faces.go` is already 584 lines (over the 500 budget)
