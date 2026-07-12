@@ -96,6 +96,33 @@ the imported edge-use directions through the re-weld directly (thread each segme
 `use.Reversed()` into `filletLoop` and have `ec.use` honor it) instead of re-deriving from geometry —
 which sidesteps winding entirely and may be the smaller, safer change. Both are unverified.
 
+## DECISIVE REFRAME (targeted ec.use probe) — it was NEVER the reversed flag
+
+A parity probe on T3 (dump the loop-use order + degeneracy of every inconsistent edge) overturned the
+whole orientation theory. The `reversed`-flag correlation was a **red herring** (periodic curved faces
+happen to be imported reversed). Classifying all 99 inconsistent edges across the 20 cases:
+
+| sub-cluster | cases | edges | true root cause |
+|---|---|---|---|
+| **B1 seam/pole** | R9,S1,S3,S4,S6,S7,S9,T1,T3,T4,T9,X3,Y1 (13) | 33 (**100% DEGENERATE**, start==end) | periodic-surface **seam/pole edges** collapse to zero-length self-loops in the re-weld; `ec.use` cannot orient a self-loop (`canon2(a,a)`, `rec.from != a` always false → both uses same direction). Faces: Cyl/Cone/Torus/Sphere/BSpline ↔ Plane. |
+| **B2 fillet-face winding** | K6,K9,L1,L3,L4,L6,L7 (7) | 66 (**0% degenerate**) | the fillet's OWN generated `cylinder` + `sphere-patch` faces wind inconsistently with planes/each-other (`Plane\|Cylinder`, `Cylinder\|Sphere`, `Cylinder\|Cylinder`). A fillet-face winding issue, distinct from B1. |
+
+Evidence (T3 imported reversed Torus face 41 outer loop): `use[1] from=(27.46,3.93,23.57)
+to=(27.46,3.93,23.57)` — a degenerate seam use; the RESULT inconsistent edges e85/e90 have
+start==end. Both B1 and B2 defeat "approach (b)" (thread `use.Reversed()` through the weld): a
+zero-length self-loop has no meaningful direction (B1), and B2's faces are op-generated (no source
+use). So the corrected fix direction earlier in this doc is ALSO wrong; the real work is two separate
+hard kernel-topology problems:
+- **B1:** periodic-surface seam/pole handling in `assembleBody` — either don't collapse the seam's two
+  endpoints (keep the seam edge non-degenerate via UV/param distinction), or drop zero-length edges and
+  represent the pole as a single vertex. Needs `geometry-math-advisor` (periodic-surface topology).
+- **B2:** the fillet cylinder/sphere-patch face winding (`cylinderFace`/`spherePatchFace`) vs its
+  neighbours on the K/L box family — a fillet-engine winding audit.
+
+**Net:** the "one fix unlocks many" premise is dead — this is 5 import defects + 1 IsSolid one-off + 13
+periodic-seam + 7 fillet-winding, four unrelated causes. Recommend a deliberate scope decision before
+any further fix (each of B1/B2 is its own increment), rather than a fourth patch.
+
 ## Recount after reclassification
 Of the 26: **5 → STEP-import gap**, **1 (D5) → IsSolid one-off**, **20 → the genuine
 orientation fix** above. So the "one fix unlocks many" is ~20 cases (still a strong cluster), plus 5
