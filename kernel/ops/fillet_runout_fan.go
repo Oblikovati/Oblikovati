@@ -3,6 +3,7 @@
 package ops
 
 import (
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -63,3 +64,155 @@ func vertexFaces(v *topo.Vertex) []*topo.Face {
 // to decide whether a fillet-edge end needs the n-valent fan treatment (N>3) instead of the
 // existing trihedral-corner path.
 func vertexValence(v *topo.Vertex) int { return len(vertexFaces(v)) }
+
+// classifyEndCorners partitions the fils' simple end corners: valence>3 ends with all-planar far
+// faces become endCornerFans and their vertices are marked owned (so filletMaps' trihedral ends
+// path skips them, Task 6); every other corner — blend/miter/runout, trihedral (valence<=3), or a
+// non-planar far face — is left untouched for the existing addCornerRound path.
+//
+// Example: on the occtparity simple/V3 fixture the valence-5 pick end yields one fan (3 far faces),
+// while the valence-3 end yields none.
+func classifyEndCorners(fils []edgeFillet) ([]endCornerFan, map[uint64]bool) {
+	var fans []endCornerFan
+	owned := map[uint64]bool{}
+	for _, ef := range fils {
+		for _, c := range []corner{ef.c0, ef.c1} {
+			fan, ok := fanForEndCorner(ef, c)
+			if !ok {
+				continue
+			}
+			fans = append(fans, fan)
+			owned[c.vertex.ID()] = true
+		}
+	}
+	return fans, owned
+}
+
+// fanForEndCorner returns the fan for a SIMPLE end corner at a >3-valent, all-planar vertex; ok=false
+// for blend/miter/runout corners, trihedral (valence<=3) ends, or non-planar far faces — all of which
+// stay on the shipping trihedral path.
+func fanForEndCorner(ef edgeFillet, c corner) (endCornerFan, bool) {
+	if c.blend || c.miter || c.runout || vertexValence(c.vertex) <= 3 {
+		return endCornerFan{}, false
+	}
+	return buildEndCornerFan(ef, c)
+}
+
+// buildEndCornerFan orders the far faces cyclically from the A flank to the B flank around the runout
+// vertex and snapshots the geometry. Returns ok=false if a far face is non-planar (quadric far faces
+// are deferred to the trihedral path in this slice).
+func buildEndCornerFan(ef edgeFillet, c corner) (endCornerFan, bool) {
+	chain, ok := orderedFarChain(c.vertex, ef.a, ef.b)
+	if !ok {
+		return endCornerFan{}, false
+	}
+	faces, ok := fanFacesOf(chain)
+	if !ok {
+		return endCornerFan{}, false // a far face is non-planar
+	}
+	return endCornerFan{
+		filletEdge: ef.edge.ID(), faceA: ef.a.ID(), faceB: ef.b.ID(), radius: ef.cyl.Radius,
+		center: c.cen, axis: ef.cyl.AxisDir.AsVector(), apex: c.vertex.Point(), ta: c.ta, tb: c.tb,
+		fan: faces, farEdges: farEdgesOf(chain),
+	}, true
+}
+
+// farChain is the A->B ordered fan of far faces and the interior far edges between them.
+type farChain struct {
+	faces []*topo.Face
+	edges []*topo.Edge // len == len(faces)-1
+}
+
+// orderedFarChain walks the faces around v from A's flank to B's flank via shared at-v edges,
+// collecting the far faces (every incident face except A and B) in cyclic order and the interior
+// edges between consecutive far faces (len(edges) == len(faces)-1). ok=false on a non-simple ring
+// (dead end, or the walk wraps back to A without reaching B).
+func orderedFarChain(v *topo.Vertex, a, b *topo.Face) (farChain, bool) {
+	start, _, ok := farNeighbourAcross(v, a, b)
+	if !ok {
+		return farChain{}, false
+	}
+	chain := farChain{faces: []*topo.Face{start}}
+	prev, cur := a.ID(), start
+	for {
+		nf, ne, ok := nextFar(v, cur, prev)
+		if !ok || nf == a {
+			return farChain{}, false
+		}
+		if nf == b { // ne is the B-side flank edge, not an interior far edge
+			return chain, true
+		}
+		chain.edges = append(chain.edges, ne)
+		chain.faces = append(chain.faces, nf)
+		prev, cur = cur.ID(), nf
+	}
+}
+
+// farNeighbourAcross returns the far face across a's non-fillet at-v edge (the A-flank far face,
+// neither a nor b) plus that edge — the entry of the fan. The fillet edge a|b is skipped because
+// its other face is b. ok=false if a has no such flank edge at v.
+func farNeighbourAcross(v *topo.Vertex, a, b *topo.Face) (*topo.Face, *topo.Edge, bool) {
+	for _, e := range v.Edges() {
+		if !edgeHasFace(e, a) {
+			continue
+		}
+		if o := otherFace(e, a); o != nil && o != b {
+			return o, e, true
+		}
+	}
+	return nil, nil, false
+}
+
+// nextFar returns the face sharing an at-v edge with cur that is not prevID (the next step of the
+// cyclic walk around v) plus the shared edge. ok=false at a dead end.
+func nextFar(v *topo.Vertex, cur *topo.Face, prevID uint64) (*topo.Face, *topo.Edge, bool) {
+	for _, e := range v.Edges() {
+		if !edgeHasFace(e, cur) {
+			continue
+		}
+		if o := otherFace(e, cur); o != nil && o.ID() != prevID {
+			return o, e, true
+		}
+	}
+	return nil, nil, false
+}
+
+// fanFacesOf snapshots the chain's far faces in order; ok=false if any is non-planar (the runout
+// solver only handles planar far faces in this slice — quadric far faces are deferred).
+func fanFacesOf(chain farChain) ([]fanFace, bool) {
+	out := make([]fanFace, 0, len(chain.faces))
+	for i, f := range chain.faces {
+		pl, isPlane := f.Geometry().(geom.Plane)
+		if !isPlane {
+			return nil, false
+		}
+		out = append(out, fanFaceOf(f, pl, chain.edges, i))
+	}
+	return out, true
+}
+
+// fanFaceOf snapshots far face f (plane pl) at position i in the chain, wiring its entry/exit far
+// edges. Position 0 has no entry (the A flank, sentinel 0); the last face has no exit (the B flank).
+func fanFaceOf(f *topo.Face, pl geom.Plane, edges []*topo.Edge, i int) fanFace {
+	ff := fanFace{face: f.ID(), normal: outwardPlaneNormal(f, pl)}
+	if i > 0 {
+		ff.entryEdge = edges[i-1].ID()
+	}
+	if i < len(edges) {
+		ff.exitEdge = edges[i].ID()
+	}
+	return ff
+}
+
+// farEdgesOf snapshots the interior far edges with the two far faces each separates (edge i lies
+// between chain.faces[i] and chain.faces[i+1], aligned with the fan gaps).
+func farEdgesOf(chain farChain) []fanEdge {
+	out := make([]fanEdge, 0, len(chain.edges))
+	for i, e := range chain.edges {
+		out = append(out, fanEdge{
+			edge: e.ID(), from: e.StartVertex().Point(), to: e.EndVertex().Point(),
+			leftFace: chain.faces[i].ID(), rightFace: chain.faces[i+1].ID(),
+		})
+	}
+	return out
+}
