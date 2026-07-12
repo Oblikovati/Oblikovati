@@ -225,3 +225,17 @@ func farEdgesOf(chain farChain) []fanEdge {
 	}
 	return out
 }
+
+// validateRunoutFans honest-rejects any n-valent runout whose spread fails the validity certificate
+// (self-intersecting, over-radius, tangent-degenerate) — the n-valent analogue of validateFilletRadii
+// / #1800. Without this pre-pass, buildSpreadMaps would quietly skip the bad fan (it has no other way
+// to fail the whole op) and the rebuild would ship an open shell instead of erroring.
+func validateRunoutFans(fils []edgeFillet) error {
+	fans, _ := classifyEndCorners(fils)
+	for _, fan := range fans {
+		if _, err := solveRunoutSpread(fan); err != nil {
+			return err
+		}
+	}
+	return nil
+}

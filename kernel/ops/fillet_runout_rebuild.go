@@ -21,8 +21,10 @@ type facePiece struct {
 // gives the far face its arc piece (transformLoop's new arm), and caps[apexID] gives the ordered
 // A→B pieces the cylinder end is subdivided into (cylinderFace) so the cylinder cap and the far
 // pieces weld edge-for-edge at the shared split points — the whole reason the runout closes into a
-// solid rather than 4 open edges. A solver error skips the fan (Task 7 adds the hard pre-pass
-// reject); a failed fan never emits a partial spread.
+// solid rather than 4 open edges. A solver error, or an apex with no coincident body vertex, skips
+// the fan (validateRunoutFans is the hard pre-pass reject that stops the op before this point on a
+// solver error; the apex-miss skip is defense-in-depth against a mis-keyed fan); a failed fan never
+// emits a partial spread.
 func buildSpreadMaps(fans []endCornerFan, body *topo.Body) (map[*topo.Face]map[uint64]facePiece, map[uint64][]cornerPiece) {
 	spreads := map[*topo.Face]map[uint64]facePiece{}
 	caps := map[uint64][]cornerPiece{}
@@ -32,7 +34,10 @@ func buildSpreadMaps(fans []endCornerFan, body *topo.Body) (map[*topo.Face]map[u
 		if err != nil {
 			continue
 		}
-		vid := vertexIDForApex(body, fan.apex)
+		vid, ok := vertexIDForApex(body, fan.apex)
+		if !ok {
+			continue // apex has no coincident body vertex — skip rather than mis-key under id 0
+		}
 		addFanSpread(spreads, faceByID, fan, sp, vid)
 		caps[vid] = orderedPieces(fan, sp)
 	}
@@ -50,13 +55,15 @@ func indexFaces(body *topo.Body) map[uint64]*topo.Face {
 
 // vertexIDForApex returns the id of the body vertex coincident with the fan apex (the fan is
 // topology-free — it carries the apex point, not the vertex — so the rebuild re-locates it here).
-func vertexIDForApex(body *topo.Body, apex math.Point3) uint64 {
+// ok=false when no vertex matches: silently keying the fan under id 0 would mis-key it onto whatever
+// spread the caller keeps at 0, so the caller must skip the fan on a miss instead.
+func vertexIDForApex(body *topo.Body, apex math.Point3) (uint64, bool) {
 	for _, v := range body.Vertices() {
 		if v.Point().DistanceTo(apex) < 1e-9 {
-			return v.ID()
+			return v.ID(), true
 		}
 	}
-	return 0
+	return 0, false
 }
 
 // addFanSpread records each far face's arc piece under the apex vertex id, tagged with the far edges

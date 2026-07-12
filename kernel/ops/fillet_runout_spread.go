@@ -94,8 +94,8 @@ func solveRunoutSpread(fan endCornerFan) (runoutSpread, error) {
 		return runoutSpread{}, filletRunoutError(fan, "runout crossings are not in monotone angular order (self-intersecting)", fan.filletEdge)
 	}
 	for i, ff := range fan.fan {
-		tIn := boundaryPoint(fan, sp, ff.entryEdge, i == 0, fan.ta)
-		tOut := boundaryPoint(fan, sp, ff.exitEdge, i == len(fan.fan)-1, fan.tb)
+		tIn := boundaryPoint(sp, ff.entryEdge, i == 0, fan.ta)
+		tOut := boundaryPoint(sp, ff.exitEdge, i == len(fan.fan)-1, fan.tb)
 		piece, err := arcPiece(fan, ff, tIn, tOut)
 		if err != nil {
 			return runoutSpread{}, err
@@ -206,7 +206,7 @@ func angleAbout(uhat, ref math.Vector3, c, p math.Point3) float64 {
 // boundaryPoint resolves one end of a far face's piece: the rail point (ta or tb) at the flank
 // (sentinel edge==0), else the split shared with the adjacent far face on the bounding far edge —
 // the read that makes the weld-twice invariant hold (both neighbours read the same sp.splits entry).
-func boundaryPoint(fan endCornerFan, sp runoutSpread, edge uint64, isFlank bool, rail math.Point3) math.Point3 {
+func boundaryPoint(sp runoutSpread, edge uint64, isFlank bool, rail math.Point3) math.Point3 {
 	if isFlank && edge == 0 {
 		return rail
 	}

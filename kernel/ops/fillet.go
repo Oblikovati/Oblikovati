@@ -153,6 +153,23 @@ func filletResolvedEdges(body *topo.Body, edges []filletPick, concave ConcaveFil
 	if err != nil {
 		return nil, err
 	}
+	fils, err := computeFillets(body, edges, blends, miters, concave, rec)
+	if err != nil {
+		return nil, err
+	}
+	if err := validateRunoutFans(fils); err != nil {
+		return nil, err // n-valent analogue of #1800: reject a self-intersecting/over-radius runout before it silently drops to an open shell
+	}
+	res := assembleBody(filletResultFaces(body, fils, blends), "fillet")
+	if rep := Validate(res); !rep.Valid || !res.IsSolid() {
+		return nil, fmt.Errorf("fillet: result is not a valid solid %v", rep.Issues)
+	}
+	return res, nil
+}
+
+// computeFillets solves every picked edge's edgeFillet against the already-solved corners,
+// recording a faceted-blend diagnostic for any that fell back to the C0 strip.
+func computeFillets(body *topo.Body, edges []filletPick, blends map[uint64]*cornerBlend, miters map[uint64]*cornerMiter, concave ConcaveFill, rec *diag.Recorder) ([]edgeFillet, error) {
 	picked := make(map[uint64]bool, len(edges))
 	for _, p := range edges {
 		picked[p.edge.ID()] = true
@@ -169,11 +186,7 @@ func filletResolvedEdges(body *topo.Body, edges []filletPick, concave ConcaveFil
 		}
 		fils = append(fils, ef)
 	}
-	res := assembleBody(filletResultFaces(body, fils, blends), "fillet")
-	if rep := Validate(res); !rep.Valid || !res.IsSolid() {
-		return nil, fmt.Errorf("fillet: result is not a valid solid %v", rep.Issues)
-	}
-	return res, nil
+	return fils, nil
 }
 
 // filletPick is one resolved fillet input: the edge, its per-end radii, and cross-section.
