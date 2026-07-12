@@ -58,7 +58,9 @@ func TestClassifyEndCornersV3(t *testing.T) {
 	}
 	f := fans[0]
 	if len(f.fan) != 3 || len(f.farEdges) != 2 {
-		t.Errorf("V3 fan: %d far faces / %d far edges, want 3 / 2", len(f.fan), len(f.farEdges))
+		// Fatal, not Errorf: assertFanChainOrder below indexes fan/farEdges unconditionally,
+		// so a short fan must abort this test cleanly rather than panic the whole binary.
+		t.Fatalf("V3 fan: %d far faces / %d far edges, want 3 / 2", len(f.fan), len(f.farEdges))
 	}
 	if !fanV[vertexNear(t, b, math.P3(34.2, 94, 50)).ID()] {
 		t.Error("V3: valence-5 vertex not marked a fan vertex")
