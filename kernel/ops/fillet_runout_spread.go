@@ -203,15 +203,26 @@ func arcPiece(fan endCornerFan, ff fanFace, tIn, tOut math.Point3) (cornerPiece,
 // (tIn, tOut ~antipodal about the axis): the bisector direction is undefined and the section spans a
 // half-turn — a genuine degeneracy to reject rather than emit as a sliver.
 func ellipseMidPoint(fan endCornerFan, tIn, tOut math.Point3) (math.Point3, bool) {
-	uhat := unit(fan.axis)
-	chordMid := tIn.Midpoint(tOut)
-	w := fan.center.VectorTo(chordMid)
-	foot := fan.center.TranslateBy(uhat.Scale(w.Dot(uhat)))
+	return axisBisectorPoint(fan.center, fan.axis, fan.radius, tIn, tOut)
+}
+
+// axisBisectorPoint returns the on-cylinder point at the angular bisector of ta and tb about the axis
+// line (through center along axis, radius r): project the chord midpoint onto the axis and push the
+// radial back out to r. ta and tb both sit at radius r, so this lands strictly between them for spans
+// < pi — the well-defined mid for an arc-fit of the cylinder∩plane section. Shared by the runout
+// pieces (ellipseMidPoint) and the trihedral set-back end arc (setbackTrihedralCorner). ok=false when
+// the chord midpoint lies ON the axis (ta,tb ~antipodal): the bisector is undefined (a half-turn
+// section to reject rather than emit as a sliver).
+func axisBisectorPoint(center math.Point3, axis math.Vector3, radius float64, ta, tb math.Point3) (math.Point3, bool) {
+	uhat := unit(axis)
+	chordMid := ta.Midpoint(tb)
+	w := center.VectorTo(chordMid)
+	foot := center.TranslateBy(uhat.Scale(w.Dot(uhat)))
 	radial := foot.VectorTo(chordMid) // perpendicular to the axis by construction
-	if radial.Length() < 1e-9*fan.radius {
+	if radial.Length() < 1e-9*radius {
 		return math.Point3{}, false
 	}
-	return foot.TranslateBy(unit(radial).Scale(fan.radius)), true
+	return foot.TranslateBy(unit(radial).Scale(radius)), true
 }
 
 // monotoneAroundAxis is the non-self-intersection certificate: the boundary chain

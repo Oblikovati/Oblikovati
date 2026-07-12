@@ -130,6 +130,9 @@ func filletPickForCase(rel string) (a, b math.Point3, radius float64, ok bool) {
 		return math.P3(34.2, 94, 50), math.P3(-0.612, 86, 59.7), 5, true
 	case "simple/V5":
 		return math.P3(42.26, 90.63, 50), math.P3(-36.25, 16.91, 25.82), 5, true
+	case "simple/V1":
+		// V1 = OCCT wedge scaled ×10; the pick edge runs apex (50,70,50) to start (0,0,100), r=5.
+		return math.P3(50, 70, 50), math.P3(0, 0, 100), 5, true
 	}
 	return math.Point3{}, math.Point3{}, 0, false
 }

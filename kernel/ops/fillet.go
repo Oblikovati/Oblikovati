@@ -157,6 +157,9 @@ func filletResolvedEdges(body *topo.Body, edges []filletPick, concave ConcaveFil
 	if err != nil {
 		return nil, err
 	}
+	if err := applyRunoutSetback(fils); err != nil {
+		return nil, err // a runout flank rail is parallel to its far plane — no pierce (n-valent degeneracy)
+	}
 	if err := validateRunoutFans(fils); err != nil {
 		return nil, err // n-valent analogue of #1800: reject a self-intersecting/over-radius runout before it silently drops to an open shell
 	}
