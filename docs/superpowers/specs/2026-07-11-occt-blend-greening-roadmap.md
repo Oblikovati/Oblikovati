@@ -92,9 +92,18 @@ The endpoint-phantom fix (`kernel/ops/fillet_validity.go`, commit 294581cc) clea
   edges bounding a MISSING face** — the reconstruction drops/malforms a neighbour face at the
   runout vertex (v8), leaving a hole. `Validate` reports `Valid=true` only because its closed/Euler
   checks are gated on `IsSolid()`, which is already false — so it defers, it does not independently
-  confirm closure. This is a single-edge fillet (no multi-fillet corner), so it is a
-  `transformLoop`/`filletResultFaces` reconstruction defect (same family as the G1 survivor-curve
-  work), NOT G4/G5 corner machinery. Its own investigation.
+  confirm closure. **Root cause CONFIRMED (2026-07-12, Phase 1):** fillet RUNOUT at a **vertex of
+  valence > 3**. V3 pick edge 9 (v8–v6): v6 valence-3 reconstructs cleanly; v8 **valence-5** breaks —
+  the runout moves v8 on the three fillet-related faces (a=11, b=34, endFace=25) but leaves the OTHER
+  v8-incident faces (28, 31) untouched, still on the original v8, so the shared edges (v13–v8, v8–v17)
+  mismatch and don't weld → the 4-edge hole. V5 is identical (v42 val-3 clean + v44 **val-6** broken).
+  `filletMaps`/`transformLoop`'s end-corner logic assumes a TRIHEDRAL end vertex (a + b + one
+  endFace); at valence>3 the non-fillet faces are orphaned. So it **bridges to G5** (n-face
+  corner/runout reconstruction, OCCT ChFi3d) with empirical proof — though it is the SINGLE-fillet
+  runout-at-n-valent-vertex case, distinct from the multi-fillet miter/sphere corners. Own effort;
+  route through geometry-math-advisor + software-architect-advisor. **Danger:** any filleted edge
+  ending at a >3-valent vertex silently ships an open shell that passes as solid (area ≈ correct when
+  the hole face is near-coplanar) — a latent boolean/volume landmine per the tessellation rule.
 
 ## The "apex-edge" cases were the curved survivor-edge bug — FIXED (2026-07-12)
 
