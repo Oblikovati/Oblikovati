@@ -20,23 +20,22 @@ type apexCase struct {
 	area float64
 }
 
-// TestApexFilletMatchesOCCT pins the G1 cluster-1a defect and its RESOLVED scope.
+// TestApexFilletMatchesOCCT regresses the G1 cluster-1a defect — now FIXED, and NOT by what the
+// name "apex" first suggested.
 //
-// Filleting the revolution-axis apex edge of a partial revolved primitive is geometrically
-// wrong: A9 (90° sector, apex convex) and B4 (270° sector, apex concave) both yield area
-// 19098.9 / vol 122853.2 — the fillet ignores the dihedral and removes ~73000 vol³ where an r10
-// round should barely change the body (OCCT: 21308.8 and 44956.6). The built faces are the
-// right TYPES (a cylindrical fillet strip + trimmed planes) but grossly wrong EXTENT.
+// Symptom: filleting the revolution-axis apex edge of a partial revolved primitive was wrong —
+// A9 (90° sector) and B4 (270° sector) both yielded area 19098.9 / vol 122853.2, removing ~73000
+// vol³ where an r10 round should barely change the body (OCCT: 21308.8 and 44956.6). It looked
+// like a corner-reconstruction defect at the revolution poles and was tentatively deferred to G5.
 //
-// Scope decision (revised after investigation, superseding an earlier "interim guard" plan):
-// this is NOT interim-guardable. simple/M1 fillets a structurally-identical apex edge (a small
-// fused partial cylinder) and is CORRECT to -0.29% — so the engine can fillet an apex edge, a
-// clean structural predicate cannot separate the good case from the bad (they are topologically
-// identical), and any rejection guard keyed on apex-detection would wrongly reject M1's valid
-// fillet. It is a real corner-reconstruction geometry bug whose magnitude scales with the
-// sector geometry (M1 -0.29%, A9 -10%, B4/C3 -57%). The fix belongs to greening package G5
-// (corner reconstruction at revolution-axis poles); this test is the regression target and is
-// RED until G5 makes the apex fillet match OCCT. It must never be made green by loosening it.
+// Real root cause (found later, while chasing Q1): it was the curved-survivor-edge bug in
+// transformLoop, not corner reconstruction. A partial primitive's radial cut faces border the
+// quadric lateral face along ARC edges; rebuilding those faces, transformLoop dropped the arc
+// curve (nil), and because both faces sharing each arc are transformed the shared edge collapsed
+// to a straight chord — grossly deforming the sector and its measured volume. survivorCurve
+// (fillet_faces.go) now carries the arc, correctly oriented to the loop traversal, so A9/B4/B8/C3/
+// D2/D6 all match OCCT. (This also explains why M1 stayed correct: its shared arcs were oriented
+// such that straightening barely moved the area.) Must never be made green by loosening it.
 func TestApexFilletMatchesOCCT(t *testing.T) {
 	for _, c := range []apexCase{{"A9", 21308.8}, {"B4", 44956.6}} {
 		body := importPartCyl(t, c.name)

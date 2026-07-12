@@ -174,11 +174,34 @@ func transformLoop(f *topo.Face, l *topo.Loop, subs map[uint64]math.Point3, ends
 		default:
 			// unchanged survivor: carry its vertex id AND the edge leaving it, so a coincident
 			// tangent seam (two edges on one line sharing endpoints) stays two edges (#1600).
-			fl.addID(v.Point(), nil, v.ID(), u.Edge().ID())
+			// Preserve a CURVED survivor edge's geometry: both faces sharing it are transformed,
+			// so if both dropped the curve (nil) the shared edge would collapse to a straight
+			// LineSegment (ec.use), bulging a planar face that borders a cylinder — the Q1 area
+			// defect. A straight edge stays nil (a LineSegment curve is identical to nil there).
+			fl.addID(v.Point(), survivorCurve(u), v.ID(), u.Edge().ID())
 		}
 		addEdgeInserts(&fl, inserts, u)
 	}
 	return fl
+}
+
+// survivorCurve returns a survivor arc edge's curve, oriented to the loop's TRAVERSAL direction, to
+// carry into the rebuilt loop. Both faces sharing a curved survivor edge are transformed, so if both
+// dropped it (nil) the shared edge collapsed to a straight LineSegment (ec.use), inflating a planar
+// face that borders a cylinder — the Q1 defect. The edge catalog builds the edge from whichever face
+// provides the curve first, keyed on the loop's (from→to) vertices, so the curve MUST run from→to:
+// a reversed use needs the reversed arc, else the two symmetric end caps come out different (one
+// right, one bulged). Straight edges (and non-arc curves) stay nil — a no-op for the all-planar case.
+func survivorCurve(u *topo.EdgeUse) geom.Curve3 {
+	arc, ok := u.Edge().Geometry().(geom.Arc3d)
+	if !ok {
+		return nil
+	}
+	if u.Reversed() {
+		arc.StartAngle += arc.SweepAngle
+		arc.SweepAngle = -arc.SweepAngle
+	}
+	return arc
 }
 
 // addEdgeInserts appends the mid tangent points along edge use u (oriented to the traversal direction),
