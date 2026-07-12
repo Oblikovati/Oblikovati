@@ -3,10 +3,37 @@
 package ops
 
 import (
+	stdmath "math"
 	"testing"
 
 	"oblikovati.org/math"
 )
+
+// distToAxis returns the perpendicular distance from p to the line through c with unit direction u
+// — the cylinder-membership check (|dist - r| must be ~0 for a point on the fillet tube).
+func distToAxis(p, c math.Point3, u math.Vector3) float64 {
+	w := c.VectorTo(p)
+	perp := w.Sub(u.Scale(w.Dot(u)))
+	return float64(perp.Length())
+}
+
+// threeFaceFan is the canonical valid fan the arc/certificate tests share: axis +x through the
+// origin, r=2, three planar far faces fanning ta(0,2,0) -> tb(0,-2,0) across two far edges.
+func threeFaceFan() endCornerFan {
+	return endCornerFan{
+		radius: 2, center: math.P3(0, 0, 0), axis: math.V3(1, 0, 0), apex: math.P3(0, 0, 0),
+		ta: math.P3(0, 2, 0), tb: math.P3(0, -2, 0),
+		fan: []fanFace{
+			{face: 101, normal: math.V3(0, 1, 0), entryEdge: 0, exitEdge: 201},
+			{face: 102, normal: math.V3(0, 0, 1), entryEdge: 201, exitEdge: 202},
+			{face: 103, normal: math.V3(0, -1, 0), entryEdge: 202, exitEdge: 0},
+		},
+		farEdges: []fanEdge{
+			{edge: 201, from: math.P3(0, 0, 0), to: math.P3(0, 7, 7), leftFace: 101, rightFace: 102},
+			{edge: 202, from: math.P3(0, 0, 0), to: math.P3(0, -7, 7), leftFace: 102, rightFace: 103},
+		},
+	}
+}
 
 // A synthetic fan: axis along +x through the origin, radius 2. A far edge from the apex (0,0,0)
 // straight along +y crosses the cylinder (distance-2 tube about the x-axis) at y=2.
@@ -119,5 +146,65 @@ func TestSolveRunoutSpreadChainCloses(t *testing.T) {
 	}
 	if c.tIn.DistanceTo(sp.splits[202]) > 1e-9 {
 		t.Errorf("face103.tIn must equal split 202")
+	}
+}
+
+// TestRunoutPieceIsArcOnCylinder is the arc-fit gate: every far-face piece carries a non-nil arc
+// that passes through its tIn/tOut EXACTLY (that is what welds the pieces), and the ellipse mid
+// point the arc bulges through actually lies on the fillet cylinder (|dist-to-axis - r| ~ 0) — the
+// ellipseMidPoint correctness check the brief's nil-only assertion omitted.
+func TestRunoutPieceIsArcOnCylinder(t *testing.T) {
+	fan := threeFaceFan()
+	sp, err := solveRunoutSpread(fan)
+	if err != nil {
+		t.Fatalf("solve: %v", err)
+	}
+	uhat := unit(fan.axis)
+	for id, pc := range sp.pieces {
+		if pc.curve == nil {
+			t.Fatalf("face %d piece has no arc curve", id)
+		}
+		if d := pc.curve.PointAt(0).DistanceTo(pc.tIn); d > 1e-9 {
+			t.Errorf("face %d arc start %v != tIn %v (dist %.3g)", id, pc.curve.PointAt(0), pc.tIn, d)
+		}
+		if d := pc.curve.PointAt(1).DistanceTo(pc.tOut); d > 1e-9 {
+			t.Errorf("face %d arc end %v != tOut %v (dist %.3g)", id, pc.curve.PointAt(1), pc.tOut, d)
+		}
+		ff := fanFaceByID(fan, id)
+		mid, ok := ellipseMidPoint(fan, ff, pc.tIn, pc.tOut)
+		if !ok {
+			t.Fatalf("face %d ellipseMidPoint reported degenerate on a valid fan", id)
+		}
+		if d := stdmath.Abs(distToAxis(mid, fan.center, uhat) - fan.radius); d > 1e-9 {
+			t.Errorf("face %d mid %v is off the cylinder (|dist-r| = %.3g)", id, mid, d)
+		}
+	}
+}
+
+// fanFaceByID returns the fanFace with the given id (test helper).
+func fanFaceByID(fan endCornerFan, id uint64) fanFace {
+	for _, ff := range fan.fan {
+		if ff.face == id {
+			return ff
+		}
+	}
+	return fanFace{}
+}
+
+// TestMonotoneRejectsScrambled proves the non-self-intersection certificate actually fires: the
+// valid fan (splits advance in angular order ta -> 201 -> 202 -> tb) solves cleanly, while swapping
+// the two far edges' geometry folds the angular sequence back on itself and must be rejected — not
+// silently welded into a self-intersecting cap.
+func TestMonotoneRejectsScrambled(t *testing.T) {
+	if _, err := solveRunoutSpread(threeFaceFan()); err != nil {
+		t.Fatalf("valid 3-face fan must solve, got: %v", err)
+	}
+	scrambled := threeFaceFan()
+	// Swap the two far edges' target geometry so 201 now crosses toward -y+z and 202 toward +y+z:
+	// the split points swap angular slots and the ta->splits->tb chain folds back on itself.
+	scrambled.farEdges[0].to = math.P3(0, -7, 7)
+	scrambled.farEdges[1].to = math.P3(0, 7, 7)
+	if _, err := solveRunoutSpread(scrambled); err == nil {
+		t.Fatal("scrambled (non-monotone) fan must be rejected by the angular-order certificate")
 	}
 }

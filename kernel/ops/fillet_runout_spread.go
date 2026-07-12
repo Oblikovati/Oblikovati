@@ -90,12 +90,120 @@ func solveRunoutSpread(fan endCornerFan) (runoutSpread, error) {
 		}
 		sp.splits[fe.edge] = p
 	}
+	if !monotoneAroundAxis(fan, sp) {
+		return runoutSpread{}, filletRunoutError(fan, "runout crossings are not in monotone angular order (self-intersecting)", fan.filletEdge)
+	}
 	for i, ff := range fan.fan {
 		tIn := boundaryPoint(fan, sp, ff.entryEdge, i == 0, fan.ta)
 		tOut := boundaryPoint(fan, sp, ff.exitEdge, i == len(fan.fan)-1, fan.tb)
-		sp.pieces[ff.face] = cornerPiece{curve: nil, tIn: tIn, tOut: tOut} // curve filled in Task 5
+		piece, err := arcPiece(fan, ff, tIn, tOut)
+		if err != nil {
+			return runoutSpread{}, err
+		}
+		sp.pieces[ff.face] = piece
 	}
 	return sp, nil
+}
+
+// arcPiece fills one far face's cornerPiece with a circular-arc approximation of the true elliptical
+// section (cylinder ∩ ff's plane) through (tIn, mid, tOut). The arc passes through tIn/tOut EXACTLY
+// (welding the pieces) and bulges through mid, a point placed on the cylinder. A tangent/degenerate
+// face or a collinear (tIn,mid,tOut) is honest-rejected — never emitted as a sliver.
+func arcPiece(fan endCornerFan, ff fanFace, tIn, tOut math.Point3) (cornerPiece, error) {
+	mid, ok := ellipseMidPoint(fan, ff, tIn, tOut)
+	if !ok {
+		return cornerPiece{}, filletRunoutError(fan, "runout section is tangent/degenerate on a far face", ff.face)
+	}
+	arc, err := geom.Arc3dByThreePoints(tIn, mid, tOut)
+	if err != nil {
+		return cornerPiece{}, filletRunoutError(fan, "runout section arc-fit failed (collinear section)", ff.face)
+	}
+	return cornerPiece{curve: arc, tIn: tIn, tOut: tOut}, nil
+}
+
+// ellipseMidPoint returns a point on the ellipse (cylinder ∩ ff's plane) roughly midway between tIn
+// and tOut, by projecting the chord midpoint onto the cylinder along the in-plane direction
+// perpendicular to the axis (radial = ff.normal × û). It lands on the cylinder because it is pushed
+// exactly r away from the axis foot along that radial. ok=false when |radial| ~ 0 — the face grazes
+// the tube (axis lies in the plane), the degeneracy that must be rejected, not emitted as a sliver.
+func ellipseMidPoint(fan endCornerFan, ff fanFace, tIn, tOut math.Point3) (math.Point3, bool) {
+	uhat := unit(fan.axis)
+	radial := ff.normal.Cross(uhat) // lies in ff's plane and ⟂ axis
+	if float64(radial.Length()) < 1e-9 {
+		return math.Point3{}, false
+	}
+	radial = unit(radial)
+	chordMid := tIn.Midpoint(tOut)
+	w := fan.center.VectorTo(chordMid)
+	foot := fan.center.TranslateBy(uhat.Scale(w.Dot(uhat))) // axis point nearest chordMid
+	dir := radial
+	if float64(foot.VectorTo(chordMid).Dot(radial)) < 0 { // push toward chordMid's side
+		dir = radial.Scale(-1)
+	}
+	return foot.TranslateBy(dir.Scale(fan.radius)), true
+}
+
+// monotoneAroundAxis is the non-self-intersection certificate: the boundary chain
+// tA → (ordered far-edge splits) → tB must wind about the fillet axis strictly in one rotational
+// sense and by less than a full turn. A fold (a step that reverses the winding) or a full wrap means
+// the cap section self-intersects (math advisor invariant 3). ta is the reference (angle 0);
+// wraparound is handled by scoring each STEP as a signed delta in (−π,π], not by comparing absolute
+// [0,2π) angles, so the test is immune to the 0/2π seam.
+func monotoneAroundAxis(fan endCornerFan, sp runoutSpread) bool {
+	uhat := unit(fan.axis)
+	ref := unit(fan.center.VectorTo(fan.ta))
+	return windsMonotone(uhat, ref, fan.center, runoutBoundarySeq(fan, sp))
+}
+
+// runoutBoundarySeq is the ordered boundary polyline the certificate checks: tA, each far-edge split
+// in fan order, then tB.
+func runoutBoundarySeq(fan endCornerFan, sp runoutSpread) []math.Point3 {
+	seq := make([]math.Point3, 0, len(fan.farEdges)+2)
+	seq = append(seq, fan.ta)
+	for _, fe := range fan.farEdges {
+		seq = append(seq, sp.splits[fe.edge])
+	}
+	return append(seq, fan.tb)
+}
+
+// windsMonotone reports whether seq advances about û (through c, from ref) strictly in one
+// rotational sense and by less than a full turn. Each step's signed delta is wrapped to (−π,π] so a
+// near-zero (coincident) or sign-flipping (fold) step, or a cumulative |turn| ≥ 2π (self-overlap),
+// fails it.
+func windsMonotone(uhat, ref math.Vector3, c math.Point3, seq []math.Point3) bool {
+	const eps = 1e-9
+	prev := angleAbout(uhat, ref, c, seq[0])
+	sign, total := 0.0, 0.0
+	for i := 1; i < len(seq); i++ {
+		a := angleAbout(uhat, ref, c, seq[i])
+		d := wrapPi(a - prev)
+		if stdmath.Abs(d) < eps || (sign != 0 && d*sign < 0) {
+			return false
+		}
+		sign, total, prev = signOf(d), total+d, a
+	}
+	return stdmath.Abs(total) < 2*stdmath.Pi-eps
+}
+
+// signOf returns −1 for a negative x and +1 otherwise (the rotational sense of a step).
+func signOf(x float64) float64 {
+	if x < 0 {
+		return -1
+	}
+	return 1
+}
+
+// angleAbout returns the angle (0..2π) of point p about axis û through c, measured from ref.
+func angleAbout(uhat, ref math.Vector3, c, p math.Point3) float64 {
+	w := c.VectorTo(p)
+	inPlane := w.Add(uhat.Scale(-w.Dot(uhat)))
+	x := float64(inPlane.Dot(ref))
+	y := float64(inPlane.Dot(uhat.Cross(ref)))
+	a := stdmath.Atan2(y, x)
+	if a < 0 {
+		a += 2 * stdmath.Pi
+	}
+	return a
 }
 
 // boundaryPoint resolves one end of a far face's piece: the rail point (ta or tb) at the flank
