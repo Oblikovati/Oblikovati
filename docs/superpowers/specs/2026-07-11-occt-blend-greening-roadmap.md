@@ -69,6 +69,33 @@ turned on (correctly) for true completeness.
   runner maps it onto the feature's `RadiusPoint.T` after confirming that field's semantics.
   Then the buildevol grid measures real variable-radius parity.
 
+## G2 dispositions (2026-07-12) — where each case went after the max-width fix
+
+The endpoint-phantom fix (`kernel/ops/fillet_validity.go`, commit 294581cc) cleared the wrongful
+`r_max≈0` rejections; the cases then proceeded and revealed their true owners. Reassigned:
+
+- **→ G5 (corner blends):** `simple/X8` (a fillet at a 4-edge / 4-face vertex — "need 3 edges at a
+  trihedral vertex, or 2 sharing a face").
+- **→ G4/G5 (corner face):** `simple/R7` ("corner face must be planar" — the corner/miter patch is
+  non-planar; confirm G4 vs G5 when its corner machinery is built).
+- **→ G6 (curved neighbour):** `simple/E3` (edge borders a sphere face), `complex/D6` (arc r59 > cyl
+  r20), `simple/Q6` (arc r2000 > cyl r1000).
+- **→ STEP-import work item (NOT fillet):** `simple/G3,G4,G6` — the importer drops the
+  `SURFACE_OF_LINEAR_EXTRUSION` (B-spline profile) face, so the fillet is handed a degenerate open
+  shell. File against `kernel/exchange/step`.
+- **`simple/T3`:** a real fillet build bug — result has inconsistent edge orientation (edges 360/365).
+- **`simple/N5`:** a SECOND, distinct max-width collapse (~4.9e-11, in the concave / multi-pick
+  `neighbourBand` path, not the endpoint phantom) — stays a G2 numeric follow-up.
+- **`simple/V3,V5`: NOT a validity-checker false negative** (first guess, disproved by evidence).
+  The reconstructed fillet is a genuinely OPEN shell: `curvedSolid` correctly finds edges used ≠2
+  (`useHist={1:4, 2:14}` for V3), and the 4 boundary edges form a **closed loop of ~100–150-unit
+  edges bounding a MISSING face** — the reconstruction drops/malforms a neighbour face at the
+  runout vertex (v8), leaving a hole. `Validate` reports `Valid=true` only because its closed/Euler
+  checks are gated on `IsSolid()`, which is already false — so it defers, it does not independently
+  confirm closure. This is a single-edge fillet (no multi-fillet corner), so it is a
+  `transformLoop`/`filletResultFaces` reconstruction defect (same family as the G1 survivor-curve
+  work), NOT G4/G5 corner machinery. Its own investigation.
+
 ## The "apex-edge" cases were the curved survivor-edge bug — FIXED (2026-07-12)
 
 The 6 "apex" cases (`A9,B4,B8,C3,D2,D6`) were briefly parked in G5 as suspected revolution-pole
