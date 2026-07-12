@@ -1,5 +1,17 @@
 # V5/V1 valence-6 runout — area re-architecture (design)
 
+> **SUPERSEDED IN PART (2026-07-12) — the shared-ellipse-edge core premise is DISCONFIRMED.**
+> The Task-1 spike (`.superpowers/sdd/task-1-report.md`) measured the no-cap direct-trim config
+> (which, it also found, is what we ALREADY ship) and showed the exact `cyl∩plane` ellipse closes
+> only ~15% of the gap — neither arc-fit nor exact ellipse reaches <1%. The real lever, found and
+> verified in `.superpowers/sdd/v5-setback-characterization.md`, is a **rail-termination setback**:
+> OCCT terminates each flank tangent rail where it PIERCES the adjacent far plane
+> (`t_pierce = n·(Q−A)/(n·û)`, `Q=apex`), not at the picked edge-vertex's axial projection (our
+> `ta`/`tb`). The runout interior already matches OCCT (Step A). See the characterization report and
+> the (rewritten) Task 3 in `docs/superpowers/plans/2026-07-12-v5-runout-rearchitecture.md`. Sections
+> below are retained for the OCCT ground-truth dump and the disconfirmed-hypothesis record; the
+> "re-architecture (design)" construction (shared ellipse-edge chain, delete cap) is NOT the fix.
+
 **Status:** design synthesis, grounded in a DRAWEXE oracle dump of OCCT's actual V5 result +
 two disconfirmed hypotheses. Follows the G5 first slice (`2026-07-12-g5-nvalent-runout*.md`).
 Scope: close the residual area gap on `simple/V5` (valence-6) and `simple/V1` runouts, which
