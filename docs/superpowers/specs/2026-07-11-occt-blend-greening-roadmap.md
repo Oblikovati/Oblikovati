@@ -16,11 +16,11 @@ gaps. Counts are from the failure messages; a case can shift buckets once diagno
 
 | # | Package | Cases | ADR-0050 | Root cause (one line) |
 |---|---------|------:|----------|-----------------------|
-| G1 | **Area-parity bugs** | 1 residual | DONE (1b) | **Was 12 → 6 → 1.** 6 apex-edge cases moved to G5; 1b (box shared-corner `P8,V8`) FIXED (corner-solve orientation, see note); 1c triaged: `W2,H6`→G6, `Y2`→tessellation split, leaving **`Q1`** the lone real G1 residual (genuine planar single-edge fillet +3.41%) |
+| G1 | **Area-parity bugs** | CLOSED | DONE | **Was 12 → 0 G1 residuals.** All fixed: 1b box shared-corner (`P8,V8`, corner-solve orientation); apex sextet (`A9,B4,B8,C3,D2,D6`) + `Q1` (curved survivor-edge straightening — one fix, see note); `Y2` (conformance-repair guard, Bug A). Only `W2,H6` remain and are **true G6** (fillet ON an arc edge bordering a cylinder), not G1 |
 | G2 | **Radius > max / degenerate** | 19 | P? | Max-radius comes back ~0 (`2.7e-15`) at certain scales/faces — a max-width computation bug, likely one fix unlocks many |
 | G3 | **Generic invalid-solid (triage)** | 30 | — | Fillet ran but the assembled solid is invalid with no specific reason; diagnose → reassign to G4/G5/G6 or a real assembly bug. **−4:** `A2,A6,K7,W1` were the same corner-solve orientation bug as G1 1b and turned green with that fix |
 | G4 | **Miter blends** (2 convex edges meet) | 61 | P6 | Two filleted edges meet and the corner/outer face is non-planar, or no outer face exists — miter reconstruction gap |
-| G5 | **Corner blends** (vertex convergence) | 60 | P6 | n-way / trihedral vertices, mixed radius, arc-end-not-tangent, endpoint-no-end-face — corner reconstruction (IntersectionAtEnd, n-way). **+6 from G1**: the revolution-axis apex-edge fillet (`A9,B4,B8,C3,D2,D6`) is corner reconstruction at revolution poles (see note) |
+| G5 | **Corner blends** (vertex convergence) | 54 | P6 | n-way / trihedral vertices, mixed radius, arc-end-not-tangent, endpoint-no-end-face — corner reconstruction (IntersectionAtEnd, n-way). (The 6 apex cases briefly parked here were NOT corner reconstruction — they were the curved survivor-edge bug, now FIXED in G1; see note.) |
 | G6 | **Curved-neighbour + fillet-into-fillet** | 53 | P4/P6 | Filleting an edge adjacent to a cylinder/cone/sphere/bspline face, or running into an existing round (#1797). **+2 from G1 1c:** `W2,H6` (arc edge bordering a cylinder face) |
 | G7 | **Topology edge≠2-planar + misc** | 5+ | — | Edge bounds ≠ 2 planar faces; a few one-offs |
 | G8 | **Variable radius (buildevol)** | 108* | P?/M44 | *SKIP today.* Feature API exists; blocker is mapping OCCT's edge-parameter `updatevol` law to our reparameterized edge (arc-length) |
@@ -69,21 +69,27 @@ turned on (correctly) for true completeness.
   runner maps it onto the feature's `RadiusPoint.T` after confirming that field's semantics.
   Then the buildevol grid measures real variable-radius parity.
 
-## G1→G5 apex-edge finding (2026-07-12)
+## The "apex-edge" cases were the curved survivor-edge bug — FIXED (2026-07-12)
 
-The 6 apex cases were reclassified from G1 to G5 after investigation
-(spec `docs/superpowers/specs/2026-07-12-g1-area-parity-bugs-design.md`, kernel test
-`kernel/ops/fillet_apex_diagnosis_test.go`):
+The 6 "apex" cases (`A9,B4,B8,C3,D2,D6`) were briefly parked in G5 as suspected revolution-pole
+corner reconstruction. That diagnosis was **wrong**. Chasing the separate Q1 residual surfaced the
+real, shared root cause and a single fix greened all seven (kernel test
+`kernel/ops/fillet_apex_diagnosis_test.go`, now green; fix `kernel/ops/fillet_faces.go`
+`survivorCurve` + `kernel/ops/fillet_survivor_curve_test.go`):
 
-- The picked edge is the **revolution-axis apex** of a partial primitive (planar↔planar edge on
-  the axis; both radial faces seam the quadric). Our fillet removes ~73000 vol³ and is identical
-  for convex (A9 90°) and concave (B4 270°) — a corner-reconstruction defect at the revolution
-  poles, error scaling with the sector (M1 -0.29%, A9 -10%, B4 -57%).
-- **Not interim-guardable.** `simple/M1` fillets a *structurally identical* apex edge (a small
-  fused partial cylinder) CORRECTLY (-0.29%), so the engine can do it and no clean structural
-  predicate separates the good from the bad — a rejection guard keyed on apex-detection wrongly
-  rejects M1. The zero-false-positive gate caught this before it shipped. G5 fixes the pole
-  corner reconstruction (which also tightens M1); until then these are honest `FAIL(area)`.
+- **Root cause:** `transformLoop` rebuilt a filleted face's loop adding every non-corner
+  ("survivor") vertex with a **nil curve**, dropping the geometry of any curved boundary edge that
+  survived the fillet. Because both faces sharing such an edge are transformed, the shared **arc
+  collapsed to a straight chord** (the edge catalog makes a `LineSegment` when neither side supplies
+  a curve). A partial primitive's radial cut faces border the quadric along arc edges, so the sector
+  deformed — the "apex" symptom (A9/B4 both 19098.9, off by 10–57%). It also inflated any planar face
+  bordering a cylinder — the Q1 +3.4%.
+- **The fix** carries an arc survivor edge's geometry through the rebuild, **oriented to the loop
+  traversal** (a reversed use needs the reversed arc, or the two symmetric end caps come out
+  different — one right, one bulged; that orientation subtlety is why the first attempt made Q1
+  worse before the reversal was added). No-op for straight edges. Greened `A9,B4,B8,C3,D2,D6,Q1`;
+  **+7 corpus PASS (20→27), 0 regressions** (stash-diff of the pass set). This is why M1 always
+  passed: its shared arcs were oriented such that straightening barely moved the area.
 
 ## G1 1b/1c outcome (2026-07-12)
 
@@ -117,10 +123,11 @@ regression `kernel/ops/fillet_box_corner_test.go`, triage `model/feature/occtpar
     fillet-engine effort. Bounded impact: earclip is robust, so area/render are correct and only the
     B-rep topology is blemished. Repro skipped in `kernel/ops/fillet_neighbour_clip_test.go`;
     geometry-math-advisor design in `.superpowers/sdd/progress.md`.
-  - `Q1` → the lone **real G1 residual**: a genuine planar single-edge fillet error (+3.41%, sum =
-    body) on an irregular non-axis-aligned prism; edge and both endpoints incident only to planes
-    (no curved neighbour), so the defect is in the planar fillet run-out itself. Needs its own
-    root-cause before it can green.
+  - `Q1` → **FIXED.** First mis-read as a planar run-out error; the real cause was the curved
+    survivor-edge straightening (its end-cap face borders the solid's cylinder along an arc that was
+    collapsed to a chord). The `survivorCurve` fix greens it — and, as the same bug, the whole apex
+    sextet (see "apex-edge" note above). G1's area-parity bucket is now closed (only `W2,H6` remain,
+    reclassified to G6).
 
 ## Cross-cutting notes
 
