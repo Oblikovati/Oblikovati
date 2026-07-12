@@ -46,8 +46,8 @@ func TestSplitOnFarEdgeAnalyticOblique(t *testing.T) {
 	}
 }
 
-// A far edge that never comes within the fillet radius of the axis (constant distance 5 > r=2)
-// must report no crossing.
+// A far edge that never comes within the fillet radius of the axis (at least distance 5 from the
+// axis, always outside the r=2 tube) must report no crossing.
 func TestSplitOnFarEdgeAnalyticMiss(t *testing.T) {
 	fan := endCornerFan{
 		radius: 2,
@@ -57,5 +57,16 @@ func TestSplitOnFarEdgeAnalyticMiss(t *testing.T) {
 	fe := fanEdge{from: math.P3(5, 5, 0), to: math.P3(5, 10, 0)}
 	if _, ok := splitOnFarEdge(fan, fe); ok {
 		t.Fatal("expected no crossing for an edge that never nears the tube")
+	}
+}
+
+// Far edge exactly parallel to the +x axis at radial distance 3 from it; with r=2 the tube
+// is never reached, and the quadratic degenerates (a=0,b=0) -> the axis-parallel fallback
+// in smallestRootIn01 must return ok=false rather than divide by zero.
+func TestSplitOnFarEdgeParallelMiss(t *testing.T) {
+	fan := endCornerFan{radius: 2, center: math.P3(0, 0, 0), axis: math.V3(1, 0, 0), apex: math.P3(0, 0, 0)}
+	fe := fanEdge{from: math.P3(0, 3, 0), to: math.P3(10, 3, 0)}
+	if _, ok := splitOnFarEdge(fan, fe); ok {
+		t.Error("parallel non-crossing edge must not report a split")
 	}
 }

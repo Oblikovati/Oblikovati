@@ -27,11 +27,12 @@ type cornerPiece struct {
 	tIn, tOut math.Point3
 }
 
-// splitOnFarEdge solves d²(x, axis) = r² for x = from + t·(to-from), returning the crossing at the
-// physical root t ∈ (0,1) nearest the apex. d²(x,ℓ) = |x-c|² - ((x-c)·û)². The quadratic in t is
-// A t² + 2B t + C with A = |w|² - (w·û)², B = (u0·w) - (u0·û)(w·û), C = |u0|² - (u0·û)² - r², where
-// u0 = from-center, w = to-from, û = normalized axis. Returns ok=false unless a single physical
-// crossing lies in (0,1) — the far edge doesn't graze or miss the fillet tube.
+// splitOnFarEdge solves d²(x, axis) = r² for x = from + t·(to-from), returning the crossing
+// nearest fe.from (the fan apex) among the roots t ∈ (0,1) — it does not verify the crossing is
+// singular. d²(x,ℓ) = |x-c|² - ((x-c)·û)². The quadratic in t is A t² + 2B t + C with
+// A = |w|² - (w·û)², B = (u0·w) - (u0·û)(w·û), C = |u0|² - (u0·û)² - r², where u0 = from-center,
+// w = to-from, û = normalized axis. Returns ok=false if no root lies in (0,1) — the far edge
+// doesn't graze or miss the fillet tube.
 func splitOnFarEdge(fan endCornerFan, fe fanEdge) (math.Point3, bool) {
 	uhat := unit(fan.axis)
 	u0 := fan.center.VectorTo(fe.from)
