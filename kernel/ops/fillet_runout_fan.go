@@ -133,9 +133,17 @@ func orderedFarChain(v *topo.Vertex, a, b *topo.Face) (farChain, bool) {
 		return farChain{}, false
 	}
 	chain := farChain{faces: []*topo.Face{start}}
-	prev, cur := a.ID(), start
-	for {
-		nf, ne, ok := nextFar(v, cur, prev)
+	return walkFarChain(v, a, b, chain, a.ID(), start)
+}
+
+// walkFarChain steps nextFar from cur (arrived via prevID) until it reaches b, appending interior
+// far faces/edges to chain. The step cap is len(v.Edges()): a valid fan visits at most one face
+// per incident edge, so this bounds the walk even on a non-manifold edge — Edge.Faces() returning
+// 3+ faces could otherwise spin nextFar forever (Task 7 owns explicit non-manifold rejection; this
+// is just a hang guard).
+func walkFarChain(v *topo.Vertex, a, b *topo.Face, chain farChain, prevID uint64, cur *topo.Face) (farChain, bool) {
+	for step := 0; step < len(v.Edges()); step++ {
+		nf, ne, ok := nextFar(v, cur, prevID)
 		if !ok || nf == a {
 			return farChain{}, false
 		}
@@ -144,8 +152,9 @@ func orderedFarChain(v *topo.Vertex, a, b *topo.Face) (farChain, bool) {
 		}
 		chain.edges = append(chain.edges, ne)
 		chain.faces = append(chain.faces, nf)
-		prev, cur = cur.ID(), nf
+		prevID, cur = cur.ID(), nf
 	}
+	return farChain{}, false
 }
 
 // farNeighbourAcross returns the far face across a's non-fillet at-v edge (the A-flank far face,

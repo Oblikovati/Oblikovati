@@ -63,9 +63,36 @@ func TestClassifyEndCornersV3(t *testing.T) {
 	if !fanV[vertexNear(t, b, math.P3(34.2, 94, 50)).ID()] {
 		t.Error("V3: valence-5 vertex not marked a fan vertex")
 	}
-	// Consecutive fan faces share a far edge -> the interior far edges number len(fan)-1.
-	if len(f.farEdges) != len(f.fan)-1 {
-		t.Errorf("V3: far edges %d != fan-1 %d", len(f.farEdges), len(f.fan)-1)
+	assertFanChainOrder(t, f)
+}
+
+// assertFanChainOrder locks the cyclic A-flank -> B-flank walk itself, not just the face/edge
+// counts: the sentinels at both flanks, that consecutive fan faces are chained by sharing the
+// interior far edge between them, and that each far edge's left/right face matches the fan
+// entries on either side of it (in the orientation buildEndCornerFan/farEdgesOf actually produce:
+// farEdges[i].leftFace is the face BEFORE the edge in the chain, rightFace the face AFTER).
+func assertFanChainOrder(t *testing.T, f endCornerFan) {
+	t.Helper()
+	if f.fan[0].entryEdge != 0 {
+		t.Errorf("V3 fan[0].entryEdge = %d, want 0 (A-flank sentinel)", f.fan[0].entryEdge)
+	}
+	last := len(f.fan) - 1
+	if f.fan[last].exitEdge != 0 {
+		t.Errorf("V3 fan[%d].exitEdge = %d, want 0 (B-flank sentinel)", last, f.fan[last].exitEdge)
+	}
+	for i, fe := range f.farEdges {
+		if f.fan[i].exitEdge != fe.edge {
+			t.Errorf("V3 fan[%d].exitEdge = %d, want farEdges[%d].edge = %d", i, f.fan[i].exitEdge, i, fe.edge)
+		}
+		if f.fan[i+1].entryEdge != fe.edge {
+			t.Errorf("V3 fan[%d].entryEdge = %d, want farEdges[%d].edge = %d", i+1, f.fan[i+1].entryEdge, i, fe.edge)
+		}
+		if fe.leftFace != f.fan[i].face {
+			t.Errorf("V3 farEdges[%d].leftFace = %d, want fan[%d].face = %d", i, fe.leftFace, i, f.fan[i].face)
+		}
+		if fe.rightFace != f.fan[i+1].face {
+			t.Errorf("V3 farEdges[%d].rightFace = %d, want fan[%d].face = %d", i, fe.rightFace, i+1, f.fan[i+1].face)
+		}
 	}
 }
 
