@@ -98,6 +98,68 @@ func TestSplitOnFarEdgeParallelMiss(t *testing.T) {
 	}
 }
 
+// TestSplitOnFarEdgeSelectsNearApexV5 is the regression gate for the valence-6 area over-shoot: on
+// V5's real runout fan, each interior far edge crosses the fillet cylinder TWICE — a near-apex
+// crossing (~1 cm from the apex, inside the fillet's minor-arc band, OCCT's) and a far one deep in
+// the body (~9-14 cm from the apex, outside the band). splitOnFarEdge MUST return the near one. The
+// old "smallest root in (0,1)" rule shipped the far crossing (edge from (0,0,100): far root
+// distToApex ~11.9), which forced a spurious cap and drifted V5's area +3.24% (see the
+// geometry-math-advisor derivation and .superpowers/sdd/v5-stepA-report.md). We pin the edge whose
+// outer endpoint is (0,0,100) — the advisor's edge22 — and assert both the point (~(41.87,89.79,
+// 50.46), matching the advisor's independent (41.870,89.793,50.462)) and that its apex distance is
+// ~1.03, NOT ~11.9. Every far edge on this fan must land its split within one radius of the apex.
+func TestSplitOnFarEdgeSelectsNearApexV5(t *testing.T) {
+	b := importCorpusSolid(t, "simple/V5")
+	fils := solvedFilsForCase(t, b, "simple/V5")
+	fans, _ := classifyEndCorners(fils)
+	if len(fans) != 1 {
+		t.Fatalf("V5: got %d fans, want 1 (the valence-6 end)", len(fans))
+	}
+	fan := fans[0]
+	for _, fe := range fan.farEdges {
+		p, ok := splitOnFarEdge(fan, fe)
+		if !ok {
+			t.Fatalf("far edge %d reported no crossing on V5's valid fan", fe.edge)
+		}
+		if d := float64(p.DistanceTo(fan.apex)); d >= fan.radius {
+			t.Errorf("far edge %d split %v is %.3f from apex (>= r=%.3f) — the far crossing, not the near-apex one",
+				fe.edge, p, d, fan.radius)
+		}
+	}
+	assertEdge22NearApex(t, fan)
+}
+
+// assertEdge22NearApex pins the advisor's worked example: the far edge running out to (0,0,100)
+// must split at the near-apex crossing (41.87,89.79,50.46) ~1.03 from the apex, not the far one at
+// ~11.9. Locating the edge by its outer endpoint (not a topology-dependent id) keeps the gate stable
+// across re-imports.
+func assertEdge22NearApex(t *testing.T, fan endCornerFan) {
+	t.Helper()
+	fe, ok := farEdgeFromOuter(fan, math.P3(0, 0, 100))
+	if !ok {
+		t.Fatal("V5 fan has no far edge running out to (0,0,100)")
+	}
+	p, _ := splitOnFarEdge(fan, fe)
+	want := math.P3(41.8689325645522, 89.7882156390301, 50.464832740425756)
+	if d := float64(p.DistanceTo(want)); d > 1e-2 {
+		t.Errorf("edge22 split %v != near-apex %v (dist %.4g)", p, want, d)
+	}
+	if d := float64(p.DistanceTo(fan.apex)); d < 0.5 || d > 2 {
+		t.Errorf("edge22 split apex-distance %.4f, want ~1.03 (near root), not ~11.9 (far root)", d)
+	}
+}
+
+// farEdgeFromOuter returns the fan far edge whose non-apex endpoint is near p (fixtures are exact;
+// tol is generous), disambiguating one interior edge from another by geometry rather than id.
+func farEdgeFromOuter(fan endCornerFan, p math.Point3) (fanEdge, bool) {
+	for _, fe := range fan.farEdges {
+		if fe.from.DistanceTo(p) < 1e-6 || fe.to.DistanceTo(p) < 1e-6 {
+			return fe, true
+		}
+	}
+	return fanEdge{}, false
+}
+
 // TestSolveRunoutSpreadChainCloses is the weld-twice invariant gate: a hand-built 3-far-face fan
 // (axis +x, r=2, apex origin) must assemble into a closed tA -> split(201) -> split(202) -> tB
 // chain, with every interior far edge split at exactly the point its two bordering faces share.

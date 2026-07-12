@@ -28,12 +28,20 @@ type cornerPiece struct {
 	tIn, tOut math.Point3
 }
 
-// splitOnFarEdge solves d²(x, axis) = r² for x = from + t·(to-from), returning the crossing
-// nearest fe.from (the fan apex) among the roots t ∈ (0,1) — it does not verify the crossing is
-// singular. d²(x,ℓ) = |x-c|² - ((x-c)·û)². The quadratic in t is A t² + 2B t + C with
+// splitOnFarEdge solves d²(x, axis) = r² for x = from + t·(to-from), returning the crossing whose
+// POINT is NEAREST the fan apex among the edge's two cylinder crossings — it does not verify the
+// crossing is singular. d²(x,ℓ) = |x-c|² - ((x-c)·û)². The quadratic in t is A t² + 2B t + C with
 // A = |w|² - (w·û)², B = (u0·w) - (u0·û)(w·û), C = |u0|² - (u0·û)² - r², where u0 = from-center,
-// w = to-from, û = normalized axis. Returns ok=false if no root lies in (0,1) — the far edge
-// doesn't graze or miss the fillet tube.
+// w = to-from, û = normalized axis. Returns ok=false if neither crossing sits on the edge segment
+// — the far edge doesn't graze or miss the fillet tube.
+//
+// Each interior far edge (a straight line from the apex out into the body) crosses the fillet
+// cylinder at TWO points: the near one, ~r from the apex inside the fillet's minor-arc band, and a
+// far one deep in the body outside the band. Only the near-apex crossing is OCCT's; the far one
+// forces a spurious cap and over-shoots the runout area (V5: +3.24%). The earlier "smallest root in
+// (0,1)" rule was orientation-dependent — with far edges stored from→to as outer→apex both roots
+// land in (0,1) and the smaller-t root is the WRONG far one — so we select by proximity to the apex
+// instead, which is orientation-independent (geometry-math-advisor derivation, V5 valence-6 gap).
 func splitOnFarEdge(fan endCornerFan, fe fanEdge) (math.Point3, bool) {
 	uhat := unit(fan.axis)
 	u0 := fan.center.VectorTo(fe.from)
@@ -42,36 +50,67 @@ func splitOnFarEdge(fan endCornerFan, fe fanEdge) (math.Point3, bool) {
 	a := w.LengthSquared() - wu*wu
 	b := u0.Dot(w) - u0u*wu
 	c := u0.LengthSquared() - u0u*u0u - fan.radius*fan.radius
-	t, ok := smallestRootIn01(a, b, c)
+	roots, ok := edgeCylinderRoots(a, b, c, w.LengthSquared())
 	if !ok {
 		return math.Point3{}, false
 	}
-	return fe.from.TranslateBy(w.Scale(t)), true
+	return nearestApexCrossing(fan, fe, w, roots)
 }
 
-// smallestRootIn01 returns the smallest real root of A t² + 2B t + C = 0 lying strictly in (0,1),
-// with the linear fallback when |A| is tiny (axis parallel to the edge, so the quadratic term
-// vanishes). ok=false if no root lies in that range.
-func smallestRootIn01(a, b, c float64) (float64, bool) {
-	const eps = 1e-12
-	if stdmath.Abs(a) < eps {
-		if stdmath.Abs(b) < eps {
-			return 0, false
+// edgeCylinderRoots returns the real roots of A t² + 2B t + C = 0 (one or two), with the linear
+// fallback when |A| is tiny relative to the edge scale |w|² (axis parallel to the edge, so the
+// quadratic term vanishes) — a relative cutoff so it holds across model scales, not a bare epsilon.
+// ok=false when there is no real root (discriminant < 0) or the degenerate branch has no linear term
+// either. It does NOT filter by segment membership — that is the caller's near-apex selector — so the
+// correct root the old strict-(0,1) filter could drop stays a candidate.
+func edgeCylinderRoots(a, b, c, wl2 float64) ([]float64, bool) {
+	const rel = 1e-12 // |A|/|w|² = sin²(edge,axis); below this the edge is axis-parallel (A vanishes)
+	if stdmath.Abs(a) < rel*wl2 {
+		if stdmath.Abs(b) < rel*wl2 {
+			return nil, false
 		}
-		t := -c / (2 * b)
-		return t, t > eps && t < 1-eps
+		return []float64{-c / (2 * b)}, true
 	}
 	disc := b*b - a*c
 	if disc < 0 {
-		return 0, false
+		return nil, false
 	}
 	s := stdmath.Sqrt(disc)
-	for _, t := range []float64{(-b - s) / a, (-b + s) / a} {
-		if t > eps && t < 1-eps {
-			return t, true
+	return []float64{(-b - s) / a, (-b + s) / a}, true
+}
+
+// nearestApexCrossing maps each root t to its point from + t·w and returns the one NEAREST the fan
+// apex among those on the edge segment (t within a model-scaled slack of [0,1]). Both roots are
+// cylinder points at radius r by construction, so no separate distance-to-axis guard is needed. The
+// near-apex crossing is the fillet's genuine runout split; the far one lies deep in the body outside
+// the minor-arc band. ok=false when neither root sits on the segment (the edge misses the tube).
+func nearestApexCrossing(fan endCornerFan, fe fanEdge, w math.Vector3, roots []float64) (math.Point3, bool) {
+	tol := crossingSegmentTol(fan, fe)
+	best, bestD, found := math.Point3{}, stdmath.Inf(1), false
+	for _, t := range roots {
+		if t < -tol || t > 1+tol {
+			continue
+		}
+		p := fe.from.TranslateBy(w.Scale(t))
+		if d := float64(p.DistanceTo(fan.apex)); d < bestD {
+			best, bestD, found = p, d, true
 		}
 	}
-	return 0, false
+	return best, found
+}
+
+// crossingSegmentTol is the parametric slack (in t-units) allowed beyond [0,1] when testing whether
+// a root lies on the far-edge segment: a small physical length κ·min(r, |edge|) converted to
+// parameter units by /|edge|, so a crossing nudged just past an endpoint by float rounding still
+// counts while a root clearly off the segment does not. Model-scaled rather than a bare epsilon so
+// it holds across model scales (CLAUDE.md param-unit rule).
+func crossingSegmentTol(fan endCornerFan, fe fanEdge) float64 {
+	const kappa = 1e-6
+	edgeLen := float64(fe.from.DistanceTo(fe.to))
+	if edgeLen == 0 {
+		return kappa // degenerate zero-length far edge (from==to); should not occur, but avoid /0
+	}
+	return kappa * stdmath.Min(fan.radius, edgeLen) / edgeLen
 }
 
 // solveRunoutSpread turns a fan into the per-face arc pieces + per-far-edge split points, or an

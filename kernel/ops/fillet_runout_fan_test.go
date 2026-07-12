@@ -98,25 +98,40 @@ func assertFanChainOrder(t *testing.T, f endCornerFan) {
 	}
 }
 
-// solvedFilsForCase solves V3's real pick edge (the valence-5 -> valence-3 edge the corpus locator
+// solvedFilsForCase solves a wired corpus case's real pick edge (the runout edge the corpus locator
 // selects, verified against corpus.json's Locator) exactly as production does. The edge is located
 // coordinate-robustly by its two end vertices (vertexNear tolerates the fixture's exact-but-noisy
-// coords), NOT by a hard-coded endpoint: the real v5 sits at y=93.969, so edgeByEndpoints' 1e-3 tol
-// against a rounded (34.2,94,50) would miss it.
+// coords), NOT by a hard-coded endpoint: the real V3 v5 sits at y=93.969, so edgeByEndpoints' 1e-3
+// tol against a rounded (34.2,94,50) would miss it.
 func solvedFilsForCase(t *testing.T, b *topo.Body, rel string) []edgeFillet {
 	t.Helper()
-	if rel != "simple/V3" {
-		t.Fatalf("solvedFilsForCase: only simple/V3 is wired, got %q", rel)
+	pa, pb, r, ok := filletPickForCase(rel)
+	if !ok {
+		t.Fatalf("solvedFilsForCase: case %q is not wired", rel)
 	}
-	v5 := vertexNear(t, b, math.P3(34.2, 94, 50))
-	v3 := vertexNear(t, b, math.P3(-0.612, 86, 59.7))
-	e := edgeBetween(t, b, v5, v3)
-	fil, err := computeEdgeFillet(b, filletPick{edge: e, r0: 5, r1: 5},
+	va := vertexNear(t, b, pa)
+	vb := vertexNear(t, b, pb)
+	e := edgeBetween(t, b, va, vb)
+	fil, err := computeEdgeFillet(b, filletPick{edge: e, r0: r, r1: r},
 		map[uint64]*cornerBlend{}, map[uint64]*cornerMiter{}, FillConcaveOutward, map[uint64]bool{e.ID(): true})
 	if err != nil {
 		t.Fatalf("%s computeEdgeFillet: %v", rel, err)
 	}
 	return []edgeFillet{fil}
+}
+
+// filletPickForCase gives the two runout-edge endpoints and pick radius (from corpus.json) for each
+// wired corpus case, so solvedFilsForCase resolves the real pick edge for V3 (valence-5 end) and V5
+// (valence-6 end) alike. Endpoints are the pick's midpoint ± direction·length/2 from the case's
+// Locator, rounded — vertexNear snaps them to the fixture's exact vertices.
+func filletPickForCase(rel string) (a, b math.Point3, radius float64, ok bool) {
+	switch rel {
+	case "simple/V3":
+		return math.P3(34.2, 94, 50), math.P3(-0.612, 86, 59.7), 5, true
+	case "simple/V5":
+		return math.P3(42.26, 90.63, 50), math.P3(-36.25, 16.91, 25.82), 5, true
+	}
+	return math.Point3{}, math.Point3{}, 0, false
 }
 
 // edgeBetween returns the body edge whose two endpoints are exactly the vertices p and q.
