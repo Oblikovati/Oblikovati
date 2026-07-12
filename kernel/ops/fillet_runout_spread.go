@@ -107,12 +107,12 @@ func solveRunoutSpread(fan endCornerFan) (runoutSpread, error) {
 
 // arcPiece fills one far face's cornerPiece with a circular-arc approximation of the true elliptical
 // section (cylinder ∩ ff's plane) through (tIn, mid, tOut). The arc passes through tIn/tOut EXACTLY
-// (welding the pieces) and bulges through mid, a point placed on the cylinder. A tangent/degenerate
-// face or a collinear (tIn,mid,tOut) is honest-rejected — never emitted as a sliver.
+// (welding the pieces) and bulges through mid, a point placed on the cylinder. A degenerate
+// (antipodal) chord or a collinear (tIn,mid,tOut) is honest-rejected — never emitted as a sliver.
 func arcPiece(fan endCornerFan, ff fanFace, tIn, tOut math.Point3) (cornerPiece, error) {
-	mid, ok := ellipseMidPoint(fan, ff, tIn, tOut)
+	mid, ok := ellipseMidPoint(fan, tIn, tOut)
 	if !ok {
-		return cornerPiece{}, filletRunoutError(fan, "runout section is tangent/degenerate on a far face", ff.face)
+		return cornerPiece{}, filletRunoutError(fan, "runout section endpoints are antipodal about the fillet axis (degenerate half-turn section)", ff.face)
 	}
 	arc, err := geom.Arc3dByThreePoints(tIn, mid, tOut)
 	if err != nil {
@@ -121,26 +121,23 @@ func arcPiece(fan endCornerFan, ff fanFace, tIn, tOut math.Point3) (cornerPiece,
 	return cornerPiece{curve: arc, tIn: tIn, tOut: tOut}, nil
 }
 
-// ellipseMidPoint returns a point on the ellipse (cylinder ∩ ff's plane) roughly midway between tIn
-// and tOut, by projecting the chord midpoint onto the cylinder along the in-plane direction
-// perpendicular to the axis (radial = ff.normal × û). It lands on the cylinder because it is pushed
-// exactly r away from the axis foot along that radial. ok=false when |radial| ~ 0 — the face grazes
-// the tube (axis lies in the plane), the degeneracy that must be rejected, not emitted as a sliver.
-func ellipseMidPoint(fan endCornerFan, ff fanFace, tIn, tOut math.Point3) (math.Point3, bool) {
+// ellipseMidPoint returns an on-cylinder point at the angular bisector of tIn and tOut about the
+// fillet axis — the well-defined mid for the arc-fit of the true elliptical section. tIn and tOut
+// are both at radius r from the axis (they are cylinder crossings), so their chord midpoint lies on
+// their angle-bisector ray from the axis; projecting it out to r lands mid at the bisector angle,
+// strictly between the endpoints for spans < pi. ok=false when the chord midpoint sits ON the axis
+// (tIn, tOut ~antipodal about the axis): the bisector direction is undefined and the section spans a
+// half-turn — a genuine degeneracy to reject rather than emit as a sliver.
+func ellipseMidPoint(fan endCornerFan, tIn, tOut math.Point3) (math.Point3, bool) {
 	uhat := unit(fan.axis)
-	radial := ff.normal.Cross(uhat) // lies in ff's plane and ⟂ axis
-	if float64(radial.Length()) < 1e-9 {
-		return math.Point3{}, false
-	}
-	radial = unit(radial)
 	chordMid := tIn.Midpoint(tOut)
 	w := fan.center.VectorTo(chordMid)
-	foot := fan.center.TranslateBy(uhat.Scale(w.Dot(uhat))) // axis point nearest chordMid
-	dir := radial
-	if float64(foot.VectorTo(chordMid).Dot(radial)) < 0 { // push toward chordMid's side
-		dir = radial.Scale(-1)
+	foot := fan.center.TranslateBy(uhat.Scale(w.Dot(uhat)))
+	radial := foot.VectorTo(chordMid) // perpendicular to the axis by construction
+	if radial.Length() < 1e-9*fan.radius {
+		return math.Point3{}, false
 	}
-	return foot.TranslateBy(dir.Scale(fan.radius)), true
+	return foot.TranslateBy(unit(radial).Scale(fan.radius)), true
 }
 
 // monotoneAroundAxis is the non-self-intersection certificate: the boundary chain

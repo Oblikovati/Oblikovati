@@ -150,9 +150,13 @@ func TestSolveRunoutSpreadChainCloses(t *testing.T) {
 }
 
 // TestRunoutPieceIsArcOnCylinder is the arc-fit gate: every far-face piece carries a non-nil arc
-// that passes through its tIn/tOut EXACTLY (that is what welds the pieces), and the ellipse mid
-// point the arc bulges through actually lies on the fillet cylinder (|dist-to-axis - r| ~ 0) — the
-// ellipseMidPoint correctness check the brief's nil-only assertion omitted.
+// that passes through its tIn/tOut EXACTLY (that is what welds the pieces), the ellipse mid point
+// the arc bulges through actually lies on the fillet cylinder (|dist-to-axis - r| ~ 0), AND that mid
+// is angularly STRICTLY BETWEEN tIn and tOut about the fillet axis. The on-cylinder check alone is
+// tautological (any ellipseMidPoint output is at radius r by construction); the in-span check is the
+// one that actually distinguishes a correct bisector mid from a wrong-but-still-on-cylinder one — the
+// old radial=ff.normal×axis derivation put face 101's mid at 90° (tIn=0°, tOut=45°), OUTSIDE the
+// span, while passing the on-cylinder check.
 func TestRunoutPieceIsArcOnCylinder(t *testing.T) {
 	fan := threeFaceFan()
 	sp, err := solveRunoutSpread(fan)
@@ -160,6 +164,7 @@ func TestRunoutPieceIsArcOnCylinder(t *testing.T) {
 		t.Fatalf("solve: %v", err)
 	}
 	uhat := unit(fan.axis)
+	ref := unit(fan.center.VectorTo(fan.ta))
 	for id, pc := range sp.pieces {
 		if pc.curve == nil {
 			t.Fatalf("face %d piece has no arc curve", id)
@@ -170,25 +175,37 @@ func TestRunoutPieceIsArcOnCylinder(t *testing.T) {
 		if d := pc.curve.PointAt(1).DistanceTo(pc.tOut); d > 1e-9 {
 			t.Errorf("face %d arc end %v != tOut %v (dist %.3g)", id, pc.curve.PointAt(1), pc.tOut, d)
 		}
-		ff := fanFaceByID(fan, id)
-		mid, ok := ellipseMidPoint(fan, ff, pc.tIn, pc.tOut)
+		mid, ok := ellipseMidPoint(fan, pc.tIn, pc.tOut)
 		if !ok {
 			t.Fatalf("face %d ellipseMidPoint reported degenerate on a valid fan", id)
 		}
 		if d := stdmath.Abs(distToAxis(mid, fan.center, uhat) - fan.radius); d > 1e-9 {
 			t.Errorf("face %d mid %v is off the cylinder (|dist-r| = %.3g)", id, mid, d)
 		}
+		assertMidBisectsSpan(t, fan, uhat, ref, id, pc.tIn, pc.tOut, mid)
 	}
 }
 
-// fanFaceByID returns the fanFace with the given id (test helper).
-func fanFaceByID(fan endCornerFan, id uint64) fanFace {
-	for _, ff := range fan.fan {
-		if ff.face == id {
-			return ff
-		}
+// assertMidBisectsSpan asserts mid sits angularly strictly between tIn and tOut about the fillet
+// axis, on the minor-arc side (span < pi) — the property that distinguishes a correct bisector mid
+// from an out-of-span one, which the mere on-cylinder check cannot catch.
+func assertMidBisectsSpan(t *testing.T, fan endCornerFan, uhat, ref math.Vector3, id uint64, tIn, tOut, mid math.Point3) {
+	t.Helper()
+	angleIn := angleAbout(uhat, ref, fan.center, tIn)
+	angleOut := wrapPi(angleAbout(uhat, ref, fan.center, tOut) - angleIn)
+	angleMid := wrapPi(angleAbout(uhat, ref, fan.center, mid) - angleIn)
+	if stdmath.Abs(angleOut) >= stdmath.Pi {
+		t.Fatalf("face %d span %.3g rad is not the minor arc (>= pi)", id, angleOut)
 	}
-	return fanFace{}
+	if angleOut >= 0 {
+		if !(angleMid > 1e-9 && angleMid < angleOut-1e-9) {
+			t.Errorf("face %d mid angle %.3g not strictly between 0 and span %.3g", id, angleMid, angleOut)
+		}
+		return
+	}
+	if !(angleMid < -1e-9 && angleMid > angleOut+1e-9) {
+		t.Errorf("face %d mid angle %.3g not strictly between span %.3g and 0", id, angleMid, angleOut)
+	}
 }
 
 // TestMonotoneRejectsScrambled proves the non-self-intersection certificate actually fires: the
