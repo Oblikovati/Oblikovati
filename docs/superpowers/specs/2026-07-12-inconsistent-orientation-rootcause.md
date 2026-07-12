@@ -123,6 +123,33 @@ hard kernel-topology problems:
 periodic-seam + 7 fillet-winding, four unrelated causes. Recommend a deliberate scope decision before
 any further fix (each of B1/B2 is its own increment), rather than a fourth patch.
 
+## RESOLUTION (2026-07-12) — B1 was "closed seam", NOT "degenerate/zero-length"
+
+The reframe table above called the 33 B1 edges "100% DEGENERATE (start==end)". A telemetry
+probe **corrected that**: measuring the 3D arc length of every `start==end` edge on all 13 B1
+imported bodies showed **every one is a real full circle** (arc length = 2πR, clean integer
+radii 8/20/25/30/35), **zero** zero-length edges. `start==end` meant *vertex coincidence* (the
+normal representation of a closed circle — a cylinder/torus seam), NOT zero length. Poles are a
+separate matter and are correctly dropped as STEP `VERTEX_LOOP`s on import (never edges). So B1
+is **Case A: real-arc closed seam** — a *weld-orientation predicate* bug, not a surface
+constructor bug.
+
+**Fix (shipped this increment):** `edgeCatalog.use` (`assemble_curved.go`) could not orient the
+second use of an `a==b` closed edge (`rec.from != a` is always false → both uses same parity →
+`Validate` rejects). The closed-seam flip returns the 2nd use `Reversed=true`, gated on
+geometric closure (`isClosedSeam`). Method A per the geometry-math consult; tessellation-safe
+(the periodic mesher rebuilds from the surface domain, never reads the seam use flag). Design:
+`2026-07-12-b1-closed-seam-orientation-design.md`. Tests: `assemble_curved_seam_test.go` +
+`fillet_b1_seam_test.go`.
+
+**Result & residual split (the fix EXPOSED, did not cause, three downstream defects):** 12/13
+B1 cases now assemble into **valid manifold solids** (Y1 excluded — its seam is fillet-generated
++ a distinct Euler-χ=1 defect = **P3**). Of the 12 valid: 2 green outright (R9, S6); the rest
+fail the corpus **area** gate on pre-existing gaps the invalid-solid rejection had masked —
+**P2** torus faces meshed over their FULL doubly-periodic domain (`262144` tris, area +20…62%:
+S9/T1/T3/T4) and **P1** curved-fillet area accuracy (1–3%: S1/S3/S4/S7/T9/X3). P2 is next
+(a `doublyPeriodicBandGrid` trimming gap, tessellation priority); P1 and P3 follow.
+
 ## Recount after reclassification
 Of the 26: **5 → STEP-import gap**, **1 (D5) → IsSolid one-off**, **20 → the genuine
 orientation fix** above. So the "one fix unlocks many" is ~20 cases (still a strong cluster), plus 5
