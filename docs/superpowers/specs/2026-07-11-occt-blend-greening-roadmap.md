@@ -67,16 +67,20 @@ turned on (correctly) for true completeness.
   far-face fan → unwelded hole passing as a solid. Scoreboard 27→29: `simple/V3` (valence-5) →
   **PASS**, `simple/X9` → **PASS** (bonus — generalizes). Trihedral corpus byte-for-byte unmoved.
   Honest-reject verified end-to-end on `tolblend_simple/C4` (valence-4, over-radius).
-  **OPEN follow-up — valence-6 area drift:** `simple/V5` (val-6) + `simple/V1` moved FailFaulty→
-  **FailArea** — they now CLOSE to valid solids (weld/topology correct) but carry ~3.24% area drift
-  (V5: 25347 vs OCCT 24551, area too HIGH), over the 1% gate. Tripwired by `TestG5V5StillFailsArea`.
-  The "non-planar far face" hypothesis was DISPROVED (all 6 faces planar). Positive drift + the
-  final-review diagnosis point at the deferred **three-tier membership** (this slice forces an arc
-  onto EVERY fan face → over-covers faces OCCT leaves flat) AND `ellipseMidPoint` placing the arc mid
-  on the cylinder but NOT on the far-face plane (tension-1 arc-fit error, grows with span/obliquity).
-  Next increment: instrument which faces OCCT actually rounds vs. which get an arc here to separate
-  membership over-coverage from arc-fit crudeness before touching either. Also deferred: quadric far
-  faces (SSI quartic pieces), multi-edge setback vertex blends (X8/R7).
+  **OPEN follow-up — valence-6 area drift (Step A landed; re-architecture scoped):** `simple/V5`
+  (val-6) + `simple/V1` CLOSE to valid solids but over-count area (tripwired `TestG5V5StillFailsArea`).
+  Investigated via DRAWEXE oracle (systematic-debugging); two hypotheses (three-tier membership;
+  true-ellipse arc mid) DISCONFIRMED by measurement. **Step A DONE (commit `63ad9205`):** fixed
+  `splitOnFarEdge` root selection — was picking the far/back-of-cylinder crossing instead of the
+  near-apex one; the fix lands our runout vertices exactly on OCCT's and halved V5's drift
+  (+3.24%→+1.45%). **Ground truth (OCCT direct dump):** OCCT drops the apex vertex, builds NO cap and
+  NO far-face arc surfaces, and welds the runout with a chain of shared `cyl∩far-plane` ellipse edges
+  trimming the still-planar far faces directly. Our residual +351 u² far-plane over-count is the G5
+  slice's cap + separate arc-piece structure fighting that. **Re-architecture deferred to its own
+  increment** — spec+plan `docs/superpowers/{specs,plans}/2026-07-12-v5-runout-rearchitecture*.md`
+  (cylinder end = shared ellipse-edge chain, trim far faces, delete cap, drop V; first task is a spike
+  on arc-fit vs a new `geom` conic type). Also deferred: quadric far faces (`cyl∩quadric` SSI edges),
+  multi-edge (k≥2) corner/vertex blends (X8/R7).
 
 **Phase C — curved neighbours & the rest:**
 
