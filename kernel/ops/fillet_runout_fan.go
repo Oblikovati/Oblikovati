@@ -25,6 +25,11 @@ type endCornerFan struct {
 }
 
 // fanFace is one far face incident to the runout vertex (neither A nor B).
+//
+// entryEdge/exitEdge use 0 as the A/B-flank sentinel ("no far edge here, use fan.ta/fan.tb instead"
+// — see boundaryPoint/loopEntersFromEntry). Safe only because real topo edge ids are never 0:
+// kernel/topo/lineage.go mints ids from idSeq (zero-valued atomic.Uint64) via nextID() =
+// idSeq.Add(1), so the first live id is 1 and 0 is never assigned to a real edge.
 type fanFace struct {
 	face      uint64
 	normal    math.Vector3 // material-outward

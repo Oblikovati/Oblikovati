@@ -83,15 +83,20 @@ func smallestRootIn01(a, b, c float64) (float64, bool) {
 // invariant, asserted by TestSolveRunoutSpreadChainCloses.
 func solveRunoutSpread(fan endCornerFan) (runoutSpread, error) {
 	sp := runoutSpread{pieces: map[uint64]cornerPiece{}, splits: map[uint64]math.Point3{}}
-	for _, fe := range fan.farEdges {
-		p, ok := splitOnFarEdge(fan, fe)
-		if !ok {
-			return runoutSpread{}, filletRunoutError(fan, "no single crossing on far edge", fe.edge)
-		}
-		sp.splits[fe.edge] = p
+	if err := collectFarEdgeSplits(fan, sp.splits); err != nil {
+		return runoutSpread{}, err
 	}
 	if !monotoneAroundAxis(fan, sp) {
 		return runoutSpread{}, filletRunoutError(fan, "runout crossings are not in monotone angular order (self-intersecting)", fan.filletEdge)
+	}
+	// Certificate for boundaryPoint below: it reads sp.splits[edge] without a comma-ok (its
+	// signature can't return an error), so every non-flank entry/exit edge the fan loop is about
+	// to ask for must already be solved. In this slice the two always line up (fan.fan's
+	// entry/exitEdge and fan.farEdges both come from farEdgesOf(chain)), so this never fires
+	// today — it exists to turn a future membership-tier miss (deferred three-tier binding) into
+	// an honest reject instead of boundaryPoint silently falling through to a zero Point3.
+	if err := verifyFanEdgesSplit(fan, sp); err != nil {
+		return runoutSpread{}, err
 	}
 	for i, ff := range fan.fan {
 		tIn := boundaryPoint(sp, ff.entryEdge, i == 0, fan.ta)
@@ -103,6 +108,36 @@ func solveRunoutSpread(fan endCornerFan) (runoutSpread, error) {
 		sp.pieces[ff.face] = piece
 	}
 	return sp, nil
+}
+
+// collectFarEdgeSplits solves every far edge's fillet-cylinder crossing into dst, keyed by edge id
+// — the population half of sp.splits that verifyFanEdgesSplit later checks completeness against.
+func collectFarEdgeSplits(fan endCornerFan, dst map[uint64]math.Point3) error {
+	for _, fe := range fan.farEdges {
+		p, ok := splitOnFarEdge(fan, fe)
+		if !ok {
+			return filletRunoutError(fan, "no single crossing on far edge", fe.edge)
+		}
+		dst[fe.edge] = p
+	}
+	return nil
+}
+
+// verifyFanEdgesSplit is the certificate guarding boundaryPoint's unchecked sp.splits[edge] read: it
+// fails loudly if any far face's non-flank entry/exit edge lacks a split point, rather than letting
+// boundaryPoint return a silent zero Point3 for a missing key.
+func verifyFanEdgesSplit(fan endCornerFan, sp runoutSpread) error {
+	for _, ff := range fan.fan {
+		for _, edge := range []uint64{ff.entryEdge, ff.exitEdge} {
+			if edge == 0 {
+				continue // flank sentinel, resolved from fan.ta/fan.tb instead
+			}
+			if _, ok := sp.splits[edge]; !ok {
+				return filletRunoutError(fan, "far face bounding edge has no runout split point", edge)
+			}
+		}
+	}
+	return nil
 }
 
 // arcPiece fills one far face's cornerPiece with a circular-arc approximation of the true elliptical
