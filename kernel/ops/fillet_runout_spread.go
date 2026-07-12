@@ -6,6 +6,7 @@
 package ops
 
 import (
+	"fmt"
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
@@ -71,4 +72,47 @@ func smallestRootIn01(a, b, c float64) (float64, bool) {
 		}
 	}
 	return 0, false
+}
+
+// solveRunoutSpread turns a fan into the per-face arc pieces + per-far-edge split points, or an
+// error on a validity-certificate failure (Task 5). Membership is three-tier: a far face bounded by
+// two crossings gets an arc; one only touched by a neighbour's split gets a split-pullback; an
+// untouched face is omitted (its vertex survives). This slice implements the arc tier only — every
+// fan face gets a piece — leaving boundaryPoint as the seam Task 6 uses to add the other two tiers.
+// Every interior far edge yields exactly one split shared by its two faces — the weld-twice
+// invariant, asserted by TestSolveRunoutSpreadChainCloses.
+func solveRunoutSpread(fan endCornerFan) (runoutSpread, error) {
+	sp := runoutSpread{pieces: map[uint64]cornerPiece{}, splits: map[uint64]math.Point3{}}
+	for _, fe := range fan.farEdges {
+		p, ok := splitOnFarEdge(fan, fe)
+		if !ok {
+			return runoutSpread{}, filletRunoutError(fan, "no single crossing on far edge", fe.edge)
+		}
+		sp.splits[fe.edge] = p
+	}
+	for i, ff := range fan.fan {
+		tIn := boundaryPoint(fan, sp, ff.entryEdge, i == 0, fan.ta)
+		tOut := boundaryPoint(fan, sp, ff.exitEdge, i == len(fan.fan)-1, fan.tb)
+		sp.pieces[ff.face] = cornerPiece{curve: nil, tIn: tIn, tOut: tOut} // curve filled in Task 5
+	}
+	return sp, nil
+}
+
+// boundaryPoint resolves one end of a far face's piece: the rail point (ta or tb) at the flank
+// (sentinel edge==0), else the split shared with the adjacent far face on the bounding far edge —
+// the read that makes the weld-twice invariant hold (both neighbours read the same sp.splits entry).
+func boundaryPoint(fan endCornerFan, sp runoutSpread, edge uint64, isFlank bool, rail math.Point3) math.Point3 {
+	if isFlank && edge == 0 {
+		return rail
+	}
+	return sp.splits[edge]
+}
+
+// filletRunoutError reports an n-valent runout certificate failure with the offending fillet edge,
+// vertex valence, apex location, and the far edge that failed, plus the standard remediation — the
+// generalisation of the #1800 over-radius reject to N>3 corners. Task 5/7 add more certificate
+// checks that funnel through this constructor.
+func filletRunoutError(fan endCornerFan, reason string, edge uint64) error {
+	return fmt.Errorf("fillet: cannot round edge %d at a %d-valent runout vertex %v — %s (edge %d); reduce the radius or fillet the neighbours first",
+		fan.filletEdge, len(fan.fan)+2, fan.apex, reason, edge)
 }
