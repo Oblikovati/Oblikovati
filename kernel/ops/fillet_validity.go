@@ -99,6 +99,7 @@ func availableWidth(e *topo.Edge, f *topo.Face, nF, offDir math.Vector3, all []f
 		mF = mF.Scale(math.Scalar(1 / l))
 	}
 	yAxis := nF.Cross(mF) // in-plane, ⟂ to the ray
+	graze := grazeFloor * float64(e.StartVertex().Point().VectorTo(e.EndVertex().Point()).Length())
 	best := stdmath.Inf(1)
 	for _, sp := range widthSamples(e) {
 		for _, g := range f.Edges() {
@@ -106,9 +107,20 @@ func availableWidth(e *topo.Edge, f *topo.Face, nF, offDir math.Vector3, all []f
 				continue // skip e itself and, at an endpoint sample, the edges meeting e there
 			}
 			s, hit := rayClearance(sp.point, mF, yAxis, g.StartVertex().Point(), g.EndVertex().Point())
-			if hit {
-				best = stdmath.Min(best, s-neighbourBand(g, all))
+			if !hit {
+				continue
 			}
+			// An edge meeting the fillet edge at a shared vertex is part of the SAME-side boundary
+			// (the fillet edge's own straight or tangent-curved continuation), not an opposing wall.
+			// A straight one grazes to x=0 only at the shared vertex (caught by sp.corner above); a
+			// tangent CURVED one hugs the ray and grazes sub-ε along the whole span (N5: a near-line
+			// arc tangent to the fillet edge, x~1e-10). Drop those grazes. A genuine opposing wall —
+			// including a real thin ligament — shares NO vertex with e, so this never blinds the
+			// #1800 self-intersection gate. Threshold is model-scaled to the fillet edge length.
+			if s < graze && incidentToFilletEdge(g, e) {
+				continue
+			}
+			best = stdmath.Min(best, s-neighbourBand(g, all))
 		}
 	}
 	return stdmath.Max(best, 0)
@@ -146,6 +158,17 @@ func sharesVertex(g *topo.Edge, v *topo.Vertex) bool {
 		return false
 	}
 	return g.StartVertex().ID() == v.ID() || g.EndVertex().ID() == v.ID()
+}
+
+// grazeFloor scales, relative to the fillet edge length, the clearance below which a boundary edge
+// SHARING a fillet-edge vertex is treated as the same-side continuation (a straight or tangent-arc
+// grazing) rather than an opposing wall. Sits far above float roundoff (~1e-9·L worst case) and far
+// below any real in-face ligament (≥ ~1e-4·L). See geometry-math-advisor ε valley.
+const grazeFloor = 1e-6
+
+// incidentToFilletEdge reports whether g meets the fillet edge e at either of e's endpoints.
+func incidentToFilletEdge(g, e *topo.Edge) bool {
+	return sharesVertex(g, e.StartVertex()) || sharesVertex(g, e.EndVertex())
 }
 
 // rayClearance returns the distance s>0 at which the in-plane ray from origin O along xAxis

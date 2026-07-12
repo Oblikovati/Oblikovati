@@ -82,6 +82,38 @@ func TestMaxRadiusNoEndpointPhantom(t *testing.T) {
 	}
 }
 
+// TestGrazingIncidentArcNoCollapse is the N5 regression, driven through the real validity gate
+// (validateFilletRadii) with N5's two co-picked, vertex-sharing edges so the concave-fill branch
+// and the neighbour interaction match production. One picked edge's planar face continues from the
+// fillet edge into a near-straight ARC tangent at their shared vertex; that same-side continuation
+// grazes the recession ray at ~1e-10 along the whole span — a genuine tangency, distinct from the
+// endpoint roundoff phantom — and before the incident-edge graze floor it collapsed the in-face
+// width and r_max to ~4.9e-11, rejecting the r=5 pick with "exceeds geometric maximum". OCCT rounds
+// these edges, so the gate must not reject them.
+func TestGrazingIncidentArcNoCollapse(t *testing.T) {
+	body := importMaxWidthFixture(t, "n5_graze.step")
+	e14 := edgeByEndpoints(t, body, math.P3(115.845593, 81.115958, 50), math.P3(112.372630, 61.419800, 50))
+	e24 := edgeByEndpoints(t, body, math.P3(96.149438, 84.588921, 50), math.P3(115.845593, 81.115958, 50))
+	picks := []filletPick{{edge: e14, r0: 5, r1: 5}, {edge: e24, r0: 5, r1: 5}}
+	if err := validateFilletRadii(picks, FillConcaveOutward); err != nil {
+		t.Fatalf("validateFilletRadii rejected N5's r=5 picks — the tangent same-side arc grazing collapse is back: %v", err)
+	}
+}
+
+// edgeByEndpoints finds the body edge whose two vertices match p and q (either orientation).
+func edgeByEndpoints(t *testing.T, b *topo.Body, p, q math.Point3) *topo.Edge {
+	t.Helper()
+	const tol = math.Scalar(1e-3)
+	for _, e := range b.Edges() {
+		s, u := e.StartVertex().Point(), e.EndVertex().Point()
+		if (s.DistanceTo(p) < tol && u.DistanceTo(q) < tol) || (s.DistanceTo(q) < tol && u.DistanceTo(p) < tol) {
+			return e
+		}
+	}
+	t.Fatalf("no edge with endpoints %v and %v", p, q)
+	return nil
+}
+
 func importMaxWidthFixture(t *testing.T, name string) *topo.Body {
 	t.Helper()
 	data, err := os.ReadFile(filepath.Join("testdata", name))

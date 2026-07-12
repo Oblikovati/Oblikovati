@@ -71,6 +71,12 @@ turned on (correctly) for true completeness.
 
 ## G2 dispositions (2026-07-12) — where each case went after the max-width fix
 
+**G2 numeric work is COMPLETE (2026-07-12).** Two distinct `availableWidth` precision/classification
+bugs fixed — the endpoint roundoff phantom (294581cc) and the tangent same-side-arc graze floor
+(this commit) — both advisor-grounded and #1800-safe. Every remaining "G2" case now fails for a
+non-numeric reason and has been reassigned to its true engine bucket below. No G2 numeric follow-ups
+remain.
+
 The endpoint-phantom fix (`kernel/ops/fillet_validity.go`, commit 294581cc) cleared the wrongful
 `r_max≈0` rejections; the cases then proceeded and revealed their true owners. Reassigned:
 
@@ -84,8 +90,16 @@ The endpoint-phantom fix (`kernel/ops/fillet_validity.go`, commit 294581cc) clea
   `SURFACE_OF_LINEAR_EXTRUSION` (B-spline profile) face, so the fillet is handed a degenerate open
   shell. File against `kernel/exchange/step`.
 - **`simple/T3`:** a real fillet build bug — result has inconsistent edge orientation (edges 360/365).
-- **`simple/N5`:** a SECOND, distinct max-width collapse (~4.9e-11, in the concave / multi-pick
-  `neighbourBand` path, not the endpoint phantom) — stays a G2 numeric follow-up.
+- **`simple/N5`: FIXED (numeric) → reassigned to G6.** The ~4.9e-11 collapse was a THIRD distinct
+  mechanism (not the endpoint phantom, not `neighbourBand`): a planar face whose boundary continues
+  from the picked edge into a near-straight ARC (radius ~1e12) **tangent at their shared vertex**, so
+  the same-side continuation grazes the recession ray at ~1e-10 along the whole span. Fixed by the
+  incident-edge **graze floor** (`fillet_validity.go`, commit pending): a boundary edge sharing a
+  fillet-edge vertex whose crossing is below `1e-6·(edge length)` is the same-side continuation, not
+  an opposing wall — dropped. Provably #1800-safe (a genuine opposing wall / thin ligament shares no
+  vertex). N5 then proceeds and honestly reports its REAL blocker — pick edge 14 runs into an
+  existing rounded cylinder face → **G6** (curved neighbour / fillet-into-fillet ordering). Regression
+  `kernel/ops/fillet_maxwidth_test.go::TestGrazingIncidentArcNoCollapse` (through the real gate).
 - **`simple/V3,V5`: NOT a validity-checker false negative** (first guess, disproved by evidence).
   The reconstructed fillet is a genuinely OPEN shell: `curvedSolid` correctly finds edges used ≠2
   (`useHist={1:4, 2:14}` for V3), and the 4 boundary edges form a **closed loop of ~100–150-unit
