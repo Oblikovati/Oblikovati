@@ -81,6 +81,18 @@ func maxFilletRadius(p filletPick, a, b *topo.Face, nA, nB math.Vector3, all []f
 // found by casting rays from samples along e toward the tangent-recession direction and taking
 // the nearest boundary hit. When the nearest boundary is itself a filleted edge, its own band is
 // subtracted so the two bands do not collide (constraint (b) of the ADR-0050 P2 derivation).
+//
+// The clearance w(t) along the spine is a pointwise minimum of affine functions (each competing
+// edge's crossing distance is affine in t because the ray origin moves along e while the ray
+// direction is fixed), hence CONCAVE — so its minimum is attained at a spine endpoint, never
+// strictly inside. The two endpoints are therefore load-bearing and must be sampled EXACTLY at the
+// stored vertices: interpolating A+(B−A) reintroduces ~u_mach·|coords| of roundoff (≈4e-13 at
+// 2000-unit scale), which makes a boundary edge sharing that endpoint vertex cross the ray at
+// x≈5e-15 instead of exactly 0 — slipping past rayClearance's x≤0 guard and poisoning the width to
+// ~0 (the G2 "radius exceeds geometric maximum 0" bug). Sampling the exact vertex plus excluding
+// the edges incident to that vertex (they meet e at the corner, where the crossing is x=0 by
+// construction, not a real opposing wall) removes the phantom exactly for polygonal faces while
+// still catching a reflex fold via the interior samples. See geometry-math-advisor derivation.
 func availableWidth(e *topo.Edge, f *topo.Face, nF, offDir math.Vector3, all []filletPick) float64 {
 	mF := offDir.Add(nF) // = tangent-recession direction, already in F's plane (offDir·nF = −1)
 	if l := float64(mF.Length()); l > 0 {
@@ -88,18 +100,52 @@ func availableWidth(e *topo.Edge, f *topo.Face, nF, offDir math.Vector3, all []f
 	}
 	yAxis := nF.Cross(mF) // in-plane, ⟂ to the ray
 	best := stdmath.Inf(1)
-	for _, p := range edgeSamples(e, 5) {
+	for _, sp := range widthSamples(e) {
 		for _, g := range f.Edges() {
-			if g == e {
-				continue
+			if g == e || sharesVertex(g, sp.corner) {
+				continue // skip e itself and, at an endpoint sample, the edges meeting e there
 			}
-			s, hit := rayClearance(p, mF, yAxis, g.StartVertex().Point(), g.EndVertex().Point())
+			s, hit := rayClearance(sp.point, mF, yAxis, g.StartVertex().Point(), g.EndVertex().Point())
 			if hit {
 				best = stdmath.Min(best, s-neighbourBand(g, all))
 			}
 		}
 	}
 	return stdmath.Max(best, 0)
+}
+
+// widthSample is one ray origin along the fillet edge. corner is the stored vertex when the sample
+// sits exactly on an edge endpoint (so incident boundary edges are excluded there), nil for the
+// interior samples.
+type widthSample struct {
+	point  math.Point3
+	corner *topo.Vertex
+}
+
+// widthSamples returns the ray origins used to probe a face's in-face width: the two edge
+// endpoints taken EXACTLY from the stored vertices (concave-clearance minima live there, and exact
+// coordinates keep a shared-corner crossing at exactly x=0), plus evenly spaced interior points.
+func widthSamples(e *topo.Edge) []widthSample {
+	sv, ev := e.StartVertex(), e.EndVertex()
+	s, t := sv.Point(), ev.Point()
+	const n = 5
+	out := make([]widthSample, n)
+	out[0] = widthSample{point: s, corner: sv}
+	out[n-1] = widthSample{point: t, corner: ev}
+	for i := 1; i < n-1; i++ {
+		out[i] = widthSample{point: s.TranslateBy(s.VectorTo(t).Scale(math.Scalar(float64(i) / float64(n-1))))}
+	}
+	return out
+}
+
+// sharesVertex reports whether edge g is incident to vertex v (nil v ⇒ false, for interior
+// samples). Compared by vertex identity so a boundary edge meeting the fillet edge at a corner is
+// recognised regardless of coordinate roundoff.
+func sharesVertex(g *topo.Edge, v *topo.Vertex) bool {
+	if v == nil {
+		return false
+	}
+	return g.StartVertex().ID() == v.ID() || g.EndVertex().ID() == v.ID()
 }
 
 // rayClearance returns the distance s>0 at which the in-plane ray from origin O along xAxis
@@ -139,16 +185,6 @@ func neighbourBand(g *topo.Edge, all []filletPick) float64 {
 		return p.maxRadius() * stdmath.Sqrt((1-c)/(1+c)) // d(r) = r·√((1−c)/(1+c))
 	}
 	return 0
-}
-
-// edgeSamples returns n points spread evenly along a straight edge (planar-face edges are lines).
-func edgeSamples(e *topo.Edge, n int) []math.Point3 {
-	s, t := e.StartVertex().Point(), e.EndVertex().Point()
-	pts := make([]math.Point3, n)
-	for i := 0; i < n; i++ {
-		pts[i] = s.TranslateBy(s.VectorTo(t).Scale(math.Scalar(float64(i) / float64(n-1))))
-	}
-	return pts
 }
 
 // maxRadius is the largest radius applied along a pick (both ends plus any intermediate stops) —
