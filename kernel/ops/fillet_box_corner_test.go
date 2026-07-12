@@ -31,8 +31,7 @@ func TestBoxSharedCornerArea(t *testing.T) {
 	const occtArea = 145.137 // OCCT checkprops -s for simple/P8 and simple/V8
 
 	t.Run("native/miter", func(t *testing.T) {
-		box, _ := brep.SolidBlock(math.P3(0, 0, 0), math.P3(5, 5, 5), "box")
-		assertCornerArea(t, filletBoxCorner(t, box, ops.CornerMiter), occtArea)
+		assertCornerArea(t, filletBoxCorner(t, mustBox5(t), ops.CornerMiter), occtArea)
 	})
 	t.Run("imported/miter", func(t *testing.T) {
 		box := importOrientedBox5(t)
@@ -98,7 +97,10 @@ func mustBox5(t *testing.T) *topo.Body {
 }
 
 // importOrientedBox5 imports the box 5^3 STEP fixture (reversed faces, inward plane normals — the
-// P8/V8 input solid), the orientation that exposed the corner-solve normal bug.
+// P8/V8 input solid), the orientation that exposed the corner-solve normal bug. The fixture is a
+// copy of model/feature/occtparity/fixtures/simple/P8.step (only its FILE_NAME timestamp differs);
+// it is package-local so the kernel test needs no cross-package fixture path. A hand-built reversed
+// box would not exercise the STEP reader's SAME_SENSE-flag path that actually sets Reversed().
 func importOrientedBox5(t *testing.T) *topo.Body {
 	t.Helper()
 	data, err := os.ReadFile(filepath.Join("testdata", "box5_corner_oriented.step"))
