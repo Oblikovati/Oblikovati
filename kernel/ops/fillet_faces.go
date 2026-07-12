@@ -14,9 +14,12 @@ import (
 // (or a planar ruling strip per variable one), and one sphere patch per corner blend.
 func filletResultFaces(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend) []filletFace {
 	abSubst, endCorner, edgeInserts := filletMaps(fils)
+	fans, fanV := classifyEndCorners(fils)
+	spreads, caps := buildSpreadMaps(fans, body)
+	pruneEndCorners(endCorner, fanV) // a fan vertex is rounded by the spread arm alone, never as a trihedral end
 	var out []filletFace
 	for _, f := range body.Faces() {
-		out = append(out, transformFace(f, abSubst[f], endCorner[f], edgeInserts[f]))
+		out = append(out, transformFace(f, abSubst[f], endCorner[f], edgeInserts[f], spreads[f]))
 	}
 	for _, ef := range fils {
 		switch {
@@ -25,7 +28,7 @@ func filletResultFaces(body *topo.Body, fils []edgeFillet, blends map[uint64]*co
 		case ef.varying:
 			out = append(out, rulingStripFaces(ef)...)
 		default:
-			out = append(out, cylinderFace(ef))
+			out = append(out, cylinderFace(ef, caps))
 		}
 	}
 	for _, cb := range blends {
@@ -147,23 +150,27 @@ func putEdgeInserts(inserts map[*topo.Face]map[uint64][]math.Point3, ef edgeFill
 // transformFace rebuilds a face's loops, pulling A/B corners to their tangent points and
 // expanding each end corner into a tangent-point-to-tangent-point arc. A face untouched by
 // any fillet is copied unchanged.
-func transformFace(f *topo.Face, subs map[uint64]math.Point3, ends map[uint64]corner, inserts map[uint64][]math.Point3) filletFace {
+func transformFace(f *topo.Face, subs map[uint64]math.Point3, ends map[uint64]corner, inserts map[uint64][]math.Point3, spread map[uint64]facePiece) filletFace {
 	ff := filletFace{surface: f.Geometry(), parent: f.Lineage()} // provenance: the original face (ADR-0043)
 	for _, l := range f.Loops() {
-		ff.loops = append(ff.loops, transformLoop(f, l, subs, ends, inserts))
+		ff.loops = append(ff.loops, transformLoop(f, l, subs, ends, inserts, spread))
 	}
 	return ff
 }
 
 // transformLoop walks a loop's edge uses and applies the per-vertex fillet substitutions, then
 // subdivides the filleted edge at any intermediate tangent points (variable fillets, #695).
-func transformLoop(f *topo.Face, l *topo.Loop, subs map[uint64]math.Point3, ends map[uint64]corner, inserts map[uint64][]math.Point3) filletLoop {
+func transformLoop(f *topo.Face, l *topo.Loop, subs map[uint64]math.Point3, ends map[uint64]corner, inserts map[uint64][]math.Point3, spread map[uint64]facePiece) filletLoop {
 	uses := l.EdgeUses()
 	n := len(uses)
 	var fl filletLoop
 	for i, u := range uses {
 		v := useFromVertex(u)
 		switch {
+		case spread != nil && hasFacePiece(spread, v):
+			// A valence>3 runout apex: this far face carries one arc piece of the spread cap,
+			// oriented to the loop's traversal by the edges arriving at / leaving the apex.
+			addRunoutApex(&fl, spread[v.ID()], uses[(i-1+n)%n].Edge().ID(), u.Edge().ID())
 		case ends != nil && hasCorner(ends, v):
 			c := ends[v.ID()]
 			tIn := c.tOf(otherFace(uses[(i-1+n)%n].Edge(), f))
@@ -302,11 +309,11 @@ func otherFace(e *topo.Edge, f *topo.Face) *topo.Face {
 // corner 1, tangent line on B, the rounded end at corner 0. Each end is a single arc for a
 // simple/blend corner, or the seam chords for a miter corner. The loop is wound so its normal
 // matches the cylinder's outward radial.
-func cylinderFace(ef edgeFillet) filletFace {
-	segs := []endSeg{{from: ef.c0.ta, to: ef.c1.ta}}             // A-tangent line c0.ta → c1.ta
-	segs = append(segs, cornerEndSegs(ef.c1)...)                 // rounded end 1: c1.ta → c1.tb
-	segs = append(segs, endSeg{from: ef.c1.tb, to: ef.c0.tb})    // B-tangent line c1.tb → c0.tb
-	segs = append(segs, reverseEndSegs(cornerEndSegs(ef.c0))...) // rounded end 0: c0.tb → c0.ta
+func cylinderFace(ef edgeFillet, caps map[uint64][]cornerPiece) filletFace {
+	segs := []endSeg{{from: ef.c0.ta, to: ef.c1.ta}}                   // A-tangent line c0.ta → c1.ta
+	segs = append(segs, cornerEndSegs(ef.c1, caps)...)                 // rounded end 1: c1.ta → c1.tb
+	segs = append(segs, endSeg{from: ef.c1.tb, to: ef.c0.tb})          // B-tangent line c1.tb → c0.tb
+	segs = append(segs, reverseEndSegs(cornerEndSegs(ef.c0, caps))...) // rounded end 0: c0.tb → c0.ta
 	// A concave fillet's surface faces the cylinder CENTRE (material is on the far side), so its loop
 	// must wind against the cylinder's outward radial — invert the convex sense.
 	if cylinderSegsFlipped(ef, segs) != ef.flip {
@@ -333,9 +340,15 @@ type endSeg struct {
 	arc      bool
 }
 
-// cornerEndSegs returns the segments rounding corner c from its ta to its tb: the seam chords
-// for a miter corner, otherwise a single arc through the corner's mid.
-func cornerEndSegs(c corner) []endSeg {
+// cornerEndSegs returns the segments rounding corner c from its ta to its tb: for a valence>3 runout
+// apex the ordered far-face pieces (so the cylinder cap splits at the same points the far faces weld
+// to), else the seam chords for a miter corner, otherwise a single arc through the corner's mid.
+func cornerEndSegs(c corner, caps map[uint64][]cornerPiece) []endSeg {
+	if c.vertex != nil {
+		if pieces, ok := caps[c.vertex.ID()]; ok {
+			return capEndSegs(pieces)
+		}
+	}
 	if c.miter {
 		segs := make([]endSeg, 0, len(c.seam)-1)
 		for i := 0; i+1 < len(c.seam); i++ {
