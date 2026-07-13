@@ -164,22 +164,25 @@ func filletResolvedEdges(body *topo.Body, edges []filletPick, concave ConcaveFil
 		return nil, err // n-valent analogue of #1800: reject a self-intersecting/over-radius runout before it silently drops to an open shell
 	}
 	res := assembleBody(filletResultFaces(body, fils, blends), "fillet")
-	if rep := Validate(res); !rep.Valid || !res.IsSolid() {
-		return nil, fmt.Errorf("fillet: result is not a valid solid %v", rep.Issues)
+	rep := Validate(res)
+	if rep.Valid && res.IsSolid() {
+		return res, nil
 	}
-	return res, nil
+	// build-then-certify (#1797): the corner-into-round was BUILT, not rejected up front. Most such
+	// junctions close into a valid solid (asymmetric round); only the symmetric equal-radius corner
+	// still fails. Name that actionable cause instead of the generic invalid-solid message.
+	if e, round := firstCornerIntoRound(edges); round != nil {
+		return nil, cornerIntoRoundError(e, round)
+	}
+	return nil, fmt.Errorf("fillet: result is not a valid solid %v", rep.Issues)
 }
 
 // computeFillets solves every picked edge's edgeFillet against the already-solved corners,
 // recording a faceted-blend diagnostic for any that fell back to the C0 strip.
 func computeFillets(body *topo.Body, edges []filletPick, blends map[uint64]*cornerBlend, miters map[uint64]*cornerMiter, concave ConcaveFill, rec *diag.Recorder) ([]edgeFillet, error) {
-	picked := make(map[uint64]bool, len(edges))
-	for _, p := range edges {
-		picked[p.edge.ID()] = true
-	}
 	fils := make([]edgeFillet, 0, len(edges))
 	for _, p := range edges {
-		ef, err := computeEdgeFillet(body, p, blends, miters, concave, picked)
+		ef, err := computeEdgeFillet(body, p, blends, miters, concave)
 		if err != nil {
 			return nil, err
 		}
@@ -279,7 +282,7 @@ type edgeFillet struct {
 // computeEdgeFillet solves the rolling-ball geometry for one convex straight edge, using a
 // corner blend at either endpoint that is a shared corner. A varying pick gets its end arcs
 // sampled as chords (shared by the ruling strips and the end faces).
-func computeEdgeFillet(body *topo.Body, p filletPick, blends map[uint64]*cornerBlend, miters map[uint64]*cornerMiter, concave ConcaveFill, picked map[uint64]bool) (edgeFillet, error) {
+func computeEdgeFillet(body *topo.Body, p filletPick, blends map[uint64]*cornerBlend, miters map[uint64]*cornerMiter, concave ConcaveFill) (edgeFillet, error) {
 	e := p.edge
 	if cyl, pl, ok := cylinderPlaneEdge(e); ok {
 		return edgeFillet{}, curvedFilletError(e, cyl, pl) // fillet of a fillet — Phase A: classify & report
@@ -287,9 +290,9 @@ func computeEdgeFillet(body *topo.Body, p filletPick, blends map[uint64]*cornerB
 	if err := curvedAdjacentError(e); err != nil {
 		return edgeFillet{}, err // any other curved neighbour (cyl∩cyl miter seam, torus, sphere)
 	}
-	if err := curvedEndpointError(e, picked); err != nil {
-		return edgeFillet{}, err // planar edge whose END runs into a PRIOR round (#1797 fillet-into-fillet)
-	}
+	// A planar edge whose END runs into a PRIOR round (#1797) is NO LONGER rejected here: the corner
+	// is built and certified by Validate downstream (build-then-certify). filletResolvedEdges names the
+	// #1797 cause only if that certificate fails (the still-uncloseable symmetric equal-radius corner).
 	a, b, nA, nB, err := edgePlanarFaces(e)
 	if err != nil {
 		return edgeFillet{}, err

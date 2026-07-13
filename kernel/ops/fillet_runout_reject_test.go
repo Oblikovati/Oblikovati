@@ -66,7 +66,7 @@ func TestValidateRunoutFansRejectsRealFan(t *testing.T) {
 	b := importCorpusSolid(t, "tolblend_simple/C4")
 	e := tolblendC4Edge(t, b)
 	fil, err := computeEdgeFillet(b, filletPick{edge: e, r0: 10, r1: 10},
-		map[uint64]*cornerBlend{}, map[uint64]*cornerMiter{}, FillConcaveOutward, map[uint64]bool{e.ID(): true})
+		map[uint64]*cornerBlend{}, map[uint64]*cornerMiter{}, FillConcaveOutward)
 	if err != nil {
 		t.Fatalf("computeEdgeFillet: %v", err)
 	}

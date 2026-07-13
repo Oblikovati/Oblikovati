@@ -64,17 +64,20 @@ func curvedAdjacentError(e *topo.Edge) error {
 	return nil
 }
 
-// curvedEndpointError rejects a planar-flanked edge whose ENDPOINT runs into a curved (non-planar)
-// face left by a PRIOR round — the fillet-meets-fillet corner rampam hit (#1797): fillet a cube's
-// top rim, then its verticals, and each vertical is plane∩plane (so curvedAdjacentError passes) but
-// its top vertex touches the top-rim cylinders. The rolling-ball cylinder cannot terminate cleanly
-// into that existing round, so assembleBody produced an invalid solid — the misleading "not a valid
-// solid" (and, on older builds, a facet-cage). Reject here with an actionable reason instead. The
-// guard fires ONLY on a curved face that already exists on the body; edges filleted TOGETHER don't
-// trip it, since their rounds aren't built yet when this runs. picked holds the edges being filleted
-// in this op — a curved face touching the endpoint that belongs to one of those picks is this op's
-// own in-progress corner (handled by the corner solver), not a prior round, so it is ignored.
-func curvedEndpointError(e *topo.Edge, picked map[uint64]bool) error {
+// runsIntoExistingRound reports the pre-existing curved round face an edge's ENDPOINT runs into, or
+// nil. A planar-flanked edge (curvedAdjacentError already filtered curved WALLS) whose end touches a
+// curved face that is NOT one of its own two walls and NOT one of this op's own in-progress rounds is
+// the fillet-meets-fillet corner rampam hit (#1797): fillet a cube's top rim, then its verticals —
+// each vertical is plane∩plane but its top vertex touches the top-rim cylinders.
+//
+// This USED to reject up front. It no longer does (build-then-certify): the planar corner machinery
+// closes many such junctions into a valid solid — an asymmetric-radius round trims cleanly — so we
+// BUILD the corner and let Validate certify it, greening the ~14 corner-into-round corpus cases the
+// blanket guard wrongly rejected. Only the still-uncloseable symmetric equal-radius case fails
+// Validate; filletResolvedEdges then calls this to NAME the actionable cause instead of the misleading
+// "not a valid solid" that once shipped a facet-cage octagon. picked holds this op's picks, so a round
+// bordering a pick is this op's own corner (solved normally), not a prior round, and is ignored.
+func runsIntoExistingRound(e *topo.Edge, picked map[uint64]bool) *topo.Face {
 	own := map[uint64]bool{}
 	for _, f := range e.Faces() {
 		own[f.ID()] = true
@@ -90,11 +93,33 @@ func curvedEndpointError(e *topo.Edge, picked map[uint64]bool) error {
 			if faceBordersAnyPick(f, picked) {
 				continue // this op's own adjacent-edge round, not a pre-existing one
 			}
-			return fmt.Errorf("fillet: cannot round edge %d — it runs into an existing rounded (%s) face at its end; "+
-				"fillet these edges BEFORE the adjacent rounds, or select them together", e.ID(), surfaceKind(f.Geometry()))
+			return f
 		}
 	}
 	return nil
+}
+
+// firstCornerIntoRound returns the first picked edge that runs into a pre-existing round and that
+// round (nil,nil if none) — used to shape a build-then-certify failure into the actionable #1797
+// message rather than the generic invalid-solid one.
+func firstCornerIntoRound(edges []filletPick) (*topo.Edge, *topo.Face) {
+	picked := make(map[uint64]bool, len(edges))
+	for _, p := range edges {
+		picked[p.edge.ID()] = true
+	}
+	for _, p := range edges {
+		if round := runsIntoExistingRound(p.edge, picked); round != nil {
+			return p.edge, round
+		}
+	}
+	return nil, nil
+}
+
+// cornerIntoRoundError names the uncloseable pre-existing round and the fix (#1797): the honest,
+// actionable rejection for the symmetric corner the planar blend still cannot close.
+func cornerIntoRoundError(e *topo.Edge, round *topo.Face) error {
+	return fmt.Errorf("fillet: cannot round edge %d — it runs into an existing rounded (%s) face at its end; "+
+		"fillet these edges BEFORE the adjacent rounds, or select them together", e.ID(), surfaceKind(round.Geometry()))
 }
 
 // faceBordersAnyPick reports whether face f is bounded by an edge that is one of the ops's picks —

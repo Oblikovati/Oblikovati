@@ -113,7 +113,7 @@ func solvedFilsForCase(t *testing.T, b *topo.Body, rel string) []edgeFillet {
 	vb := vertexNear(t, b, pb)
 	e := edgeBetween(t, b, va, vb)
 	fil, err := computeEdgeFillet(b, filletPick{edge: e, r0: r, r1: r},
-		map[uint64]*cornerBlend{}, map[uint64]*cornerMiter{}, FillConcaveOutward, map[uint64]bool{e.ID(): true})
+		map[uint64]*cornerBlend{}, map[uint64]*cornerMiter{}, FillConcaveOutward)
 	if err != nil {
 		t.Fatalf("%s computeEdgeFillet: %v", rel, err)
 	}
@@ -209,10 +209,9 @@ func TestClassifyEndCornersExcludesKGreaterThanOne(t *testing.T) {
 		t.Fatalf("setup: expected a miter at the shared vertex (blend=%v)", blends[v.ID()] != nil)
 	}
 
-	picked := map[uint64]bool{e1.ID(): true, e2.ID(): true}
 	fils := make([]edgeFillet, len(picks))
 	for i, p := range picks {
-		fil, err := computeEdgeFillet(b, p, blends, miters, FillConcaveOutward, picked)
+		fil, err := computeEdgeFillet(b, p, blends, miters, FillConcaveOutward)
 		if err != nil {
 			t.Fatalf("computeEdgeFillet: %v", err)
 		}
