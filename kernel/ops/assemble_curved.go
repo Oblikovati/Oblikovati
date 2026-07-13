@@ -62,12 +62,7 @@ func assembleBody(faces []filletFace, tag string) *topo.Body {
 	pts := collectLoopPoints(faces)
 	weld := ResolutionForPoints(pts).Weld()
 	w := newPointWelder(weld)
-	rings := make([][][]int, len(faces))
-	for i, f := range faces {
-		for _, l := range f.loops {
-			rings[i] = append(rings[i], w.weldRingID(l.pts, l.srcV)) // identity-preserving weld (#1600)
-		}
-	}
+	rings := weldRings(faces, w, weld)
 	classes := pairEdgeClasses(faces, rings)
 	orientFilletShell(faces, rings, classes) // B2: unify loop windings before the catalog builds co-edges
 	bld := topo.NewBuilder(curvedSolid(faces, rings, classes), topo.NewLineage(topo.Tok(tag, "body", 0)))
