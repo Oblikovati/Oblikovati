@@ -39,11 +39,30 @@ The analytic-vs-approximation choice does not live in the engine; it lives in th
 interchangeable providers behind one seam**. This mirrors OCCT (`ChFiKPart` → `ChFi3d` general) and
 lets a family start as approximation and be promoted to exact *in place*, zero blast radius.
 
+### Corrected integration points (2026-07-13 corpus triage)
+
+The engine plugs into the **corner/miter SOLVER's planarity guards**, where the planar solver gives up
+because a corner/miter neighbor face is curved — NOT the edge-level `curvedAdjacentError`/
+`curvedEndpointError`. Triage of the 142 simple-grid `FAIL(faulty)` rejects by exact reason:
+
+| Bucket | ~count | Reject site | This engine? |
+|---|---|---|---|
+| miter corner shared/outer face must be planar; no outer face opposite | ~37 | `fillet_miter.go:47/70/74` | **YES — Slice 1** |
+| corner (trihedral) face must be planar; N-edge/N-face vertex unsupported | ~35 | `fillet.go:834`, `fillet.go:782` | **YES — Slice 2** |
+| corner runs into an existing rounded face (#1797) | ~16 | `curvedEndpointError` | later — corner-patch variant |
+| edge borders a curved wall (cyl/cone/sphere/torus/bspline) | ~29 | `curvedAdjacentError` | **NO — separate blend-surface engine** (the arm itself rides a curved host; not a junction fill) |
+| invalid-solid ("[]" / Euler-χ / inconsistent-orientation) | ~8 | assembleBody/Validate | bugs — Y/Q Euler-χ are the *excluded* fillet-seam class; F6 "[]" is a distinct defect to probe |
+| assorted setup gaps (arc-end tangency, radius range, one-radius corner) | ~17 | various | out of scope for this engine |
+
+So the corner/miter engine's real target is the **~72 "must be planar" corner/miter rejects** (the two
+largest buckets), reached from the corner/miter solver — validating the engine while relocating its
+wiring. The `curvedAdjacent` edge-on-curved-wall bucket is a DIFFERENT engine (the blend *surface* along
+a curved-host edge) and is out of scope here.
+
 ```
-computeEdgeFillet (fillet.go)                        ★ assembleBody / orientFilletShell ★
-  ├─ curvedFilletError    (fillet-of-fillet, Phase A)   UNCHANGED — consumes filletFace as today
-  ├─ curvedAdjacentError  ──▶ MITER junction ─┐
-  └─ curvedEndpointError  ──▶ CORNER junction ┴─▶ resolveCornerBlend(req, tiers)
+cornerAt / buildMiter (fillet.go, fillet_miter.go)   ★ assembleBody / orientFilletShell ★
+  ├─ planar corner/miter  ─────────────────────────▶  UNCHANGED planar path (I4, byte-for-byte)
+  └─ "…face must be planar" (neighbor is curved) ──▶ resolveCornerBlend(req, tiers)
                                                     ├─ analytic-known-part providers  (later, per family)
                                                     ├─ bspline-general provider        (this spec, universal)
                                                     └─ (none certified) ─▶ honest-reject (#1800, today's error)
@@ -187,21 +206,30 @@ Each slice: increment on `feat/occt-blend-parity-corpus`, gated by the scoreboar
 faulty→area/PASS, **never** regress), plus the ops suite + corpus gating green. NO PR until the whole
 corpus is green (branch discipline).
 
-- **Slice 0 — the seam (zero behavior change).** `corner_blend.go`: port, Request/Patch/Certificate
-  (incl. `MaxAngleDev` + `NoFold`), `resolveCornerBlend`, `Certificate.Valid`. A bspline provider stub
-  that always declines. Wire `computeEdgeFillet` to route the two curved rejects through
-  `resolveCornerBlend` → still honest-reject (through the new path). Trihedral/planar path byte-for-byte
-  unchanged. **Gate:** scoreboard identical; ops + corpus green.
-- **Slice 1 — 4-sided miter/quad via `FillSurface` + certificate.** Assemble 4 boundary curves + 4
-  `FillSide`; certify (MaxDev/MaxAngleDev/fold); certify-or-reject. **Gate:** the 4-sided miter subset
-  migrates faulty→area/PASS; zero regression.
-- **Slice 2 — trihedral 6-sided corner.** The alternating-side G1 that MatchSurface's G0 fallback can't
-  hit: the ribbon-constrained certify/refine (h-refine first; escalate to the in-house KKT solve only
-  if refinement plateaus). **Gate:** trihedral corner subset migrates; zero regression.
-- **Slice 3 — n-valent (n>3) + hardening.** Higher-valence junctions; the pitfall guardrails as tests.
+- **Slice 0 — the seam (zero behavior change). DONE (commit 7946559a).** `corner_blend.go`: port,
+  Request/Patch/Certificate (incl. `MaxAngleDev` + `NoFold`), `resolveCornerBlend`, `Certificate.Valid`
+  + 5 unit tests. No wiring yet — request construction lands with its consumer (Slice 1). Scoreboard
+  unchanged (35/18/142).
+- **Slice 1 — MITER corner with a curved neighbor face (~37 cases).** Wire the miter solver's three
+  planarity guards (`fillet_miter.go:47/70/74`): when the shared/outer face is curved, build a
+  `CornerBlendRequest` from the miter arms + curved neighbor, run `resolveCornerBlend`. The miter is a
+  4-sided junction (2 arm-ends + shared + outer), so `geom.FillSurface` gives native G1 — no new solver;
+  add the certificate (MaxDev/MaxAngleDev/fold) + honest-reject. **Gate:** the miter-planar subset
+  migrates faulty→area/PASS; zero regression; planar miter path byte-for-byte unchanged (I4).
+- **Slice 2 — trihedral CORNER with a curved corner face (~35 cases).** Wire `fillet.go:834`/`:782`.
+  The alternating-side G1 that `FillNSided`'s G0 fallback can't hit: ribbon-constrained certify/refine
+  (h-refine first; escalate to the in-house KKT solve only if refinement plateaus). **Gate:** corner
+  subset migrates; zero regression.
+- **Slice 3 — corner-into-round (#1797, ~16) + n-valent + hardening.** Fold the `curvedEndpointError`
+  corner-into-existing-round into the corner variant; higher-valence junctions; pitfall guards as tests.
 - **Later — analytic-known-part promotions.** Per family, as the geometry-math advisor derives exact
   surfaces (constant-radius ball on cylinder/torus first). Each promotion = one provider file + one
   line in the tier constructor + a tier-ordering test. Assembly and callers untouched.
+
+**Out of scope for this engine** (tracked separately): the ~29 `curvedAdjacentError` edge-on-curved-wall
+cases (a blend-*surface* on a curved host, not a junction fill); the ~8 invalid-solid defects (the Euler-χ
+Y/Q cases are the excluded fillet-seam class; F6's empty-issue "[]" is a distinct bug worth its own probe);
+assorted setup gaps (one-radius-at-corner, arc-end tangency, radius range).
 
 ---
 
