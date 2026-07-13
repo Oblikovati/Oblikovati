@@ -1,10 +1,14 @@
 # Curved Corner/Miter Blend Engine — Design
 
-**Status:** approved design (architect + geometry-math consults ratified 2026-07-13)
+**Status:** approved design (architect + geometry-math consults ratified 2026-07-13; scope corrected by
+corpus instrumentation to two phases)
 **Branch:** `feat/occt-blend-parity-corpus`
-**Goal:** build the corner/miter blend surfaces the fillet kernel currently honest-rejects on
-non-planar hosts, greening the 58-case `FAIL(faulty)` "needs curved corner/miter" pool without
-regressing the 35 PASS / trihedral-planar path.
+**Goal (Phase 1, this spec):** fill the **corner-into-round** junctions — a planar-hosted cylinder
+fillet whose endpoint runs into a pre-existing curved round — greening the ~16 `curvedEndpointError`
+(#1797) cases without regressing the 35 PASS / planar path. **Phase 2 (separate thread):** the ~100
+arm-on-curved-host CANAL-surface cases (the "…must be planar" + `curvedAdjacentError` rejects), a
+continuous-sweep engine designed on its own. Instrumentation (I2 `outer=cone`, J1 `shared=cone`) showed
+the "must be planar" rejects have a curved WALL on the arm — the canal class, not a junction fill.
 
 ---
 
@@ -39,30 +43,47 @@ The analytic-vs-approximation choice does not live in the engine; it lives in th
 interchangeable providers behind one seam**. This mirrors OCCT (`ChFiKPart` → `ChFi3d` general) and
 lets a family start as approximation and be promoted to exact *in place*, zero blast radius.
 
-### Corrected integration points (2026-07-13 corpus triage)
+### Integration point (2026-07-13 corpus triage + instrumentation)
 
-The engine plugs into the **corner/miter SOLVER's planarity guards**, where the planar solver gives up
-because a corner/miter neighbor face is curved — NOT the edge-level `curvedAdjacentError`/
-`curvedEndpointError`. Triage of the 142 simple-grid `FAIL(faulty)` rejects by exact reason:
+Triage first bucketed rejects by message; **instrumenting the actual face geometry then corrected the
+reading**. The miter/corner "…face must be planar" rejects are NOT junction fills — the picked edge's
+own WALL is curved, so the rolling ball rides a curved host (I2 `outer=cone`, J1 `shared=cone`, J3
+`shared=torus`). That is the **arm-on-curved-host CANAL-surface** class, the SAME geometry as the
+edge-level `curvedAdjacentError` cases, and it is a **separate engine** (Phase 2 below), out of scope
+here. Final classification of the 142 simple-grid `FAIL(faulty)` rejects:
 
 | Bucket | ~count | Reject site | This engine? |
 |---|---|---|---|
-| miter corner shared/outer face must be planar; no outer face opposite | ~37 | `fillet_miter.go:47/70/74` | **YES — Slice 1** |
-| corner (trihedral) face must be planar; N-edge/N-face vertex unsupported | ~35 | `fillet.go:834`, `fillet.go:782` | **YES — Slice 2** |
-| corner runs into an existing rounded face (#1797) | ~16 | `curvedEndpointError` | later — corner-patch variant |
-| edge borders a curved wall (cyl/cone/sphere/torus/bspline) | ~29 | `curvedAdjacentError` | **NO — separate blend-surface engine** (the arm itself rides a curved host; not a junction fill) |
+| **corner runs into a pre-existing round (#1797)** — planar-cylinder arm, curved junction neighbor | **~16** | `curvedEndpointError` (`fillet.go:290`) | **YES — the engine's real target, Slice 1** |
+| miter/corner "…face must be planar" — a **curved WALL** on the arm | ~72 | `fillet_miter.go`, `fillet.go:834/782` | **NO — Phase 2 canal engine** (arm rides a curved host) |
+| edge borders a curved wall | ~29 | `curvedAdjacentError` | **NO — Phase 2 canal engine** (same class) |
 | invalid-solid ("[]" / Euler-χ / inconsistent-orientation) | ~8 | assembleBody/Validate | bugs — Y/Q Euler-χ are the *excluded* fillet-seam class; F6 "[]" is a distinct defect to probe |
-| assorted setup gaps (arc-end tangency, radius range, one-radius corner) | ~17 | various | out of scope for this engine |
+| assorted setup gaps (arc-end tangency, radius range, one-radius corner) | ~17 | various | out of scope |
 
-So the corner/miter engine's real target is the **~72 "must be planar" corner/miter rejects** (the two
-largest buckets), reached from the corner/miter solver — validating the engine while relocating its
-wiring. The `curvedAdjacent` edge-on-curved-wall bucket is a DIFFERENT engine (the blend *surface* along
-a curved-host edge) and is out of scope here.
+**Phase 1 (this spec):** the ~16 corner-into-round junction fills — the honest n-sided-hole-fill target.
+**Phase 2 (separate thread):** the ~100-case canal-surface engine (a rolling ball swept along a 3D path
+over a curved B-rep host — a fundamentally different, continuous-sweep pipeline with its own architect +
+geometry-math consults and solver tier). Not designed here.
+
+The seam is wired at the **`curvedEndpointError` site**, admitting a junction fill ONLY when the
+**guard** holds — the guarantee we never capture a swept-arm case:
 
 ```
-cornerAt / buildMiter (fillet.go, fillet_miter.go)   ★ assembleBody / orientFilletShell ★
-  ├─ planar corner/miter  ─────────────────────────▶  UNCHANGED planar path (I4, byte-for-byte)
-  └─ "…face must be planar" (neighbor is curved) ──▶ resolveCornerBlend(req, tiers)
+admit ⇔ (1) BOTH flanking walls of the picked edge are geom.Plane   // arm is a CYLINDER, not a canal
+      ∧ (2) a curved face touches the endpoint that is NOT one of the edge's own walls
+            AND NOT bordering any co-pick                            // a PRIOR round (#1797), not our own
+```
+
+Clause (1) alone excludes every canal case (each has a curved wall) and is self-contained — it does not
+depend on the dispatch order (the miter pre-pass + `curvedAdjacentError` already filter curved-host
+cases first, but the guard does not rely on that). Clause (2) is `curvedEndpointError`'s existing
+`own`/`faceBordersAnyPick` logic.
+
+```
+computeEdgeFillet (fillet.go)                        ★ assembleBody / orientFilletShell ★
+  ├─ curvedFilletError / curvedAdjacentError ──▶ (canal cases — Phase 2, still reject)
+  └─ curvedEndpointError site:                        UNCHANGED planar path (I4, byte-for-byte)
+       if bothWallsPlanar(e) ∧ prior-round-at-endpoint ─▶ resolveCornerBlend(req, tiers)
                                                     ├─ analytic-known-part providers  (later, per family)
                                                     ├─ bspline-general provider        (this spec, universal)
                                                     └─ (none certified) ─▶ honest-reject (#1800, today's error)
@@ -210,26 +231,24 @@ corpus is green (branch discipline).
   Request/Patch/Certificate (incl. `MaxAngleDev` + `NoFold`), `resolveCornerBlend`, `Certificate.Valid`
   + 5 unit tests. No wiring yet — request construction lands with its consumer (Slice 1). Scoreboard
   unchanged (35/18/142).
-- **Slice 1 — MITER corner with a curved neighbor face (~37 cases).** Wire the miter solver's three
-  planarity guards (`fillet_miter.go:47/70/74`): when the shared/outer face is curved, build a
-  `CornerBlendRequest` from the miter arms + curved neighbor, run `resolveCornerBlend`. The miter is a
-  4-sided junction (2 arm-ends + shared + outer), so `geom.FillSurface` gives native G1 — no new solver;
-  add the certificate (MaxDev/MaxAngleDev/fold) + honest-reject. **Gate:** the miter-planar subset
-  migrates faulty→area/PASS; zero regression; planar miter path byte-for-byte unchanged (I4).
-- **Slice 2 — trihedral CORNER with a curved corner face (~35 cases).** Wire `fillet.go:834`/`:782`.
-  The alternating-side G1 that `FillNSided`'s G0 fallback can't hit: ribbon-constrained certify/refine
-  (h-refine first; escalate to the in-house KKT solve only if refinement plateaus). **Gate:** corner
-  subset migrates; zero regression.
-- **Slice 3 — corner-into-round (#1797, ~16) + n-valent + hardening.** Fold the `curvedEndpointError`
-  corner-into-existing-round into the corner variant; higher-valence junctions; pitfall guards as tests.
+- **Slice 1 — corner-into-round via `curvedEndpointError` + certificate (~16 cases).** Wire the
+  `curvedEndpointError` site behind the `bothWallsPlanar(e) ∧ prior-round-at-endpoint` guard: build a
+  `CornerBlendRequest` from the planar-cylinder arm(s) + the pre-existing round neighbor, run
+  `resolveCornerBlend`, drive `geom.FillSurface` (native G1), certify (MaxDev/MaxAngleDev/fold),
+  certify-or-honest-reject. **Gate:** the corner-into-round subset migrates faulty→area/PASS; zero
+  regression; planar corner path byte-for-byte unchanged (I4). Start with the low-valence subset; escalate
+  to the ribbon-constrained certify/refine (in-house KKT) only if the alternating-side G1 needs it.
+- **Slice 2 — hardening + n-valent corner-into-round.** Higher-valence junctions among the ~16; pitfall
+  guards as tests; the certify/refine loop where MatchSurface's G0 fallback can't hit G1.
 - **Later — analytic-known-part promotions.** Per family, as the geometry-math advisor derives exact
-  surfaces (constant-radius ball on cylinder/torus first). Each promotion = one provider file + one
-  line in the tier constructor + a tier-ordering test. Assembly and callers untouched.
+  surfaces. Each promotion = one provider file + one line in the tier constructor + a tier-ordering test.
+  Assembly and callers untouched.
 
-**Out of scope for this engine** (tracked separately): the ~29 `curvedAdjacentError` edge-on-curved-wall
-cases (a blend-*surface* on a curved host, not a junction fill); the ~8 invalid-solid defects (the Euler-χ
-Y/Q cases are the excluded fillet-seam class; F6's empty-issue "[]" is a distinct bug worth its own probe);
-assorted setup gaps (one-radius-at-corner, arc-end tangency, radius range).
+**Out of scope for this engine — Phase 2, a separate architectural thread:** the ~100 arm-on-curved-host
+CANAL-surface cases (the ~72 miter/corner "must be planar" + ~29 `curvedAdjacentError`) — a rolling ball
+swept along a 3D path over a curved B-rep host, a continuous-sweep pipeline that gets its own design, math
+consult, and solver tier. Also out: the ~8 invalid-solid defects (Euler-χ Y/Q = excluded fillet-seam
+class; F6 "[]" a distinct bug); assorted setup gaps.
 
 ---
 
