@@ -69,6 +69,7 @@ func assembleBody(faces []filletFace, tag string) *topo.Body {
 		}
 	}
 	classes := pairEdgeClasses(faces, rings)
+	orientFilletShell(faces, rings, classes) // B2: unify loop windings before the catalog builds co-edges
 	bld := topo.NewBuilder(curvedSolid(faces, rings, classes), topo.NewLineage(topo.Tok(tag, "body", 0)))
 	tv := make([]*topo.Vertex, len(w.points))
 	for i, p := range w.points {
