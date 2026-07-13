@@ -122,12 +122,14 @@ func TestObstacleRailsBuildT6(t *testing.T) {
 // TestReverseBSplineCurve exercises reverseBSplineCurve's INTERIOR directly — the reversed control
 // points, weights, and reflected knots — WITHOUT the endpoint pinning (pinEnds) that would mask an
 // interior bug in TestObstacleRailsBuildT6 (which only checks corners, and pinning fixes those
-// regardless). Uses a genuinely asymmetric degree-2 RATIONAL curve (distinct control points,
-// non-uniform weights) so a wrong reversal cannot pass by coincidence.
+// regardless). Uses a genuinely asymmetric degree-2 RATIONAL curve (distinct control points AND
+// NON-PALINDROMIC weights {1,2,3}) so a wrong reversal cannot pass by coincidence — palindromic
+// weights would leave a "forgot to reverse Weights" bug undetected (the rational blend is unchanged
+// by reversing a symmetric weight vector).
 func TestReverseBSplineCurve(t *testing.T) {
 	orig, err := geom.NewBSplineCurve(2,
 		[]math.Point3{math.P3(0, 0, 0), math.P3(1, 2, 0), math.P3(3, 1, 0)},
-		[]float64{1, 2, 1},
+		[]float64{1, 2, 3},
 		[]float64{0, 0, 0, 1, 1, 1})
 	if err != nil {
 		t.Fatalf("build original: %v", err)
