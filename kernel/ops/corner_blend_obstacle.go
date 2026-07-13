@@ -14,11 +14,12 @@ import (
 // identity and no T-junction crack appears. WallLine is the fillet's wall-tangent seam; HostPlane and
 // the wing/rim are the neighbour surfaces the certify measures G1/G0 against.
 type ObstacleFeature struct {
-	RimCurve             geom.Curve3     // obstacle base rim (T6: the base ellipse), full curve
-	Nodes                [2]math.Point3  // P-, P+ : rim ∩ receded boundary
-	WingStart, WingEnd   geom.Curve3     // cylinder-wing section arcs at P-, P+ (the shared end rails)
-	WallLine             geom.Curve3     // wall-tangent seam between the Nodes' wall points
-	HostPlane            geom.Plane      // the notched host face's plane (for the rim-side G0 side)
+	RimCurve           geom.Curve3    // obstacle base rim (T6: the base ellipse), full curve
+	RimArcPts          []math.Point3  // ordered dip-side rim samples P- -> P+ INCLUSIVE (task 6); source for the c1 rail fit (obstacleRimArc)
+	Nodes              [2]math.Point3 // P-, P+ : rim ∩ receded boundary
+	WingStart, WingEnd geom.Curve3    // cylinder-wing section arcs at P-, P+ (the shared end rails)
+	WallLine           geom.Curve3    // wall-tangent seam between the Nodes' wall points
+	HostPlane          geom.Plane     // the notched host face's plane (for the rim-side G0 side)
 }
 
 // bsplineObstacleProvider is the obstacle-variant tier of the corner-blend engine: a single Coons
