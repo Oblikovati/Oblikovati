@@ -162,7 +162,7 @@ func convergeToIntersection(a, b geom.Surface, p math.Point3) math.Point3 {
 // accept any shared polyline; only the grid surfaces constrain where the snap must land.
 func isGridMeshedSurface(s geom.Surface) bool {
 	switch s.(type) {
-	case geom.Cylinder, geom.Cone, geom.Sphere, geom.Torus:
+	case geom.Cylinder, geom.EllipticalCylinder, geom.Cone, geom.Sphere, geom.Torus:
 		return true
 	default:
 		return false

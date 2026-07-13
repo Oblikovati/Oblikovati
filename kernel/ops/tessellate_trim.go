@@ -150,7 +150,7 @@ func meshSeamCrossingFace(f *topo.Face, s geom.Surface, outer3D []math.Point3, h
 // Anything else keeps the best-fit-plane ear-clip (boundaryPatchMesh).
 func nonRectangularMesh(s geom.Surface, q Quality, outer3D []math.Point3, holes3D [][]math.Point3, outerUV []math.Point2, holesUV [][]math.Point2) *Mesh {
 	switch s.(type) {
-	case geom.Torus, geom.Sphere, geom.Cylinder, geom.Cone, geom.BSplineSurface:
+	case geom.Torus, geom.Sphere, geom.Cylinder, geom.EllipticalCylinder, geom.Cone, geom.BSplineSurface:
 		// These trims fold when flattened to a best-fit plane (boundaryPatchMesh) or meshed over a plain
 		// anisotropic (u,v) (gridPatchMesh): a torus's ring-vs-tube, a sphere near its poles, a trimmed
 		// cyl/cone, a freeform B-spline. metricPatchMesh triangulates in a TRIM-LOCAL metric-scaled (u,v)

@@ -42,7 +42,7 @@ func conformCylConeFaces(faces []*topo.Face, idx map[*topo.Face]int, fm []*Mesh,
 // segment, so the face conforms to its neighbour; nil for anything else (left as meshed).
 func conformingMesh(f *topo.Face, q Quality) *Mesh {
 	switch f.Geometry().(type) {
-	case geom.Cylinder, geom.Cone:
+	case geom.Cylinder, geom.EllipticalCylinder, geom.Cone:
 		if isPeriodicTwoRimBand(f) {
 			return nil // a periodic two-rim band: the saddle loft already meshed it exactly, and its
 			// full-wrap outer loop degenerates the (u,v) CDT (constrainedDelaunay can spin) — keep the loft
@@ -87,7 +87,7 @@ func addConformableNeighbours(f *topo.Face, i int, idx map[*topo.Face]int, toFix
 // (conformingMesh): cylinders, cones, and planes.
 func conformable(s geom.Surface) bool {
 	switch s.(type) {
-	case geom.Cylinder, geom.Cone, geom.Plane:
+	case geom.Cylinder, geom.EllipticalCylinder, geom.Cone, geom.Plane:
 		return true
 	}
 	return false

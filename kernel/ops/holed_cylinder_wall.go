@@ -45,11 +45,12 @@ func holedConicWallMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.
 	return unrolledWallCDT(s, q, outer3D, holes3D, outerUV, holesUV), true
 }
 
-// isDevelopableSide reports whether the surface is a cylinder or a cone — the developable (zero
-// Gaussian-curvature) sides whose walls unroll, so a holed wall on them meshes through the unrolled CDT.
+// isDevelopableSide reports whether the surface is a cylinder (circular or elliptical) or a cone — the
+// developable (zero Gaussian-curvature) sides whose walls unroll, so a holed wall on them meshes
+// through the unrolled CDT.
 func isDevelopableSide(s geom.Surface) bool {
 	switch s.(type) {
-	case geom.Cylinder, geom.Cone:
+	case geom.Cylinder, geom.EllipticalCylinder, geom.Cone:
 		return true
 	default:
 		return false
