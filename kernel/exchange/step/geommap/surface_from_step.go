@@ -57,6 +57,9 @@ func surfaceByKeyword(g *part21.EntityGraph, ent *part21.RawEntity, id int, scal
 		// Carrier surfaces: the real geometry is the basis surface at parameter 1;
 		// the face's boundary loops do the trimming.
 		return wrappedSurface(g, ent, 1, scale)
+	case "SURFACE_OF_LINEAR_EXTRUSION":
+		// An oblique extrusion of a conic is a right elliptical cylinder (exact).
+		return linearExtrusionFromStep(g, ent, id, scale)
 	default:
 		return nil, ErrUnsupportedSurface{Keyword: ent.Keyword, ID: id}
 	}
