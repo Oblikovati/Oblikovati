@@ -143,7 +143,35 @@ ADR-2: A family is promoted approximation→exact by INSERTING an analytic provi
 ADR-3: A junction with no valid certificate is honest-rejected, never approximated past tolerance.
        The certificate — not "the code ran" — is the admission proof. Preserves #1800; a G0-tight
        but G1-kinked or folded patch is REJECTED, not shipped.
+
+ADR-4: The mid-span host-face OBSTACLE case (Thread ②: a straight fillet whose PLANAR host face is
+       notched by a through-feature, so the receded blend boundary crosses a coplanar hole and the
+       hole protrudes past its own outer loop) routes through the SAME CornerBlendProvider seam — a
+       new TRIGGER + an extended request, never a sibling engine. Trigger = the 26f2da61 hole-
+       containment watchdog (the universal dispatcher): protrudes(hole, receded_boundary) ⇒ build a
+       CornerBlendPatch instead of emitting the malformed face. Request gains one OPTIONAL field,
+       ObstacleFeature{ RimCurve geom.Curve3; Nodes [2]math.Point3 } (the P± crossing points +
+       the interfering rim). The patch is a 4-SIDED region — {blend-section@P₋, wall-tangent rail,
+       obstacle rim arc, blend-section@P₊} — so it takes the spec's single-`FillSurface` path (§3,
+       native G1 on all four sides), with the obstacle rim as the fourth boundary (for T6: the
+       column-base ellipse arc, verified by DRAWEXE — the top rail is the ARC, not a y=const line).
+  Consequences: ONE certification path (MaxDev/MaxAngleDev/anti-fold) for junction + obstacle; the
+                watchdog flips panic→valid the moment a certified patch replaces the protrusion; no
+                rebuild-logic duplication; the 13 protruding-hole corpus cases (S1 S3 S4 S9 T1 T4 T6
+                T7 T9 U1 U3 U4 X3) become the obstacle-variant's first parity targets. Assembly and
+                orientFilletShell stay byte-for-byte (they consume filletFace as today). Oracle for
+                T6's obstacle patch = area 156.364 ± 0.1%.
+  Rejected: a SIBLING seam at the watchdog site (duplicates the certificate + FillSurface plumbing,
+            splits one geometric problem — bridge disparate rails with a certified G1 patch — across
+            two code paths that would drift); the KEML/planar-lune trim (measured Δ ≈ 1.31% > 1% area
+            gate, and non-watertight without the lune since blend∩column is tangent, touching only at
+            P± — no trim curve exists). ObstacleFeature is OPTIONAL so junction requests are unchanged.
 ```
+
+The ObstacleFeature variant does NOT weaken the `curvedEndpointError` guard (§2); it is a **distinct
+admission path** keyed on the watchdog, reached from the fillet-rebuild step that today emits the
+protruding face. Junction fills (Arms/Junction) and obstacle fills (ObstacleFeature) are two request
+shapes into the *same* `resolveCornerBlend` tier + certificate floor.
 
 ### Lineage invariance (ADR-0043 audit — RESOLVED)
 
