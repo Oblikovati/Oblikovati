@@ -192,10 +192,7 @@ func conformingPlaneMesh(f *topo.Face, q Quality) *Mesh {
 		// single triangle the initial mesher built, so re-meshing is a no-op — keep it (#1766).
 	}
 	outer2D := project2D(outer3D, flat)
-	holes2D := make([][]math.Point2, len(holes3D))
-	for i, h := range holes3D {
-		holes2D[i] = project2D(h, flat)
-	}
+	holes2D := project2DLoops(holes3D, flat)
 	if holesOverlap(holes2D) {
 		return nil
 	}
@@ -209,7 +206,71 @@ func conformingPlaneMesh(f *topo.Face, q Quality) *Mesh {
 	if len(tris) == 0 {
 		return nil
 	}
+	tris = leakGuardedTris(outer2D, holes2D, tris)
 	return planarMeshFromTris(outer3D, holes3D, tris, normal)
+}
+
+// project2DLoops projects each 3D loop onto the plane via flat, preserving order — the hole loops for
+// the boundary-faithful CDT (kept out of conformingPlaneMesh to hold it under the statement budget).
+func project2DLoops(loops3D [][]math.Point3, flat func(math.Point3) math.Point2) [][]math.Point2 {
+	out := make([][]math.Point2, len(loops3D))
+	for i, h := range loops3D {
+		out[i] = project2D(h, flat)
+	}
+	return out
+}
+
+// leakGuardedTris returns whichever of the constrained-Delaunay triangulation or the deterministic
+// ear-clip of the SAME loops covers LESS area. A holed planar region has a fixed true area, and both
+// meshers triangulate every boundary point (neither under-covers), so any defect only ADDS area — the
+// constrained Delaunay FILLING a finely-discretized hole whose constraint edges it failed to recover (a
+// 337-point elliptical rim leaks past domainLeaked's interior-vs-boundary heuristic), or the ear-clip
+// bridging a hole the wrong way. The minimum-area triangulation is therefore the correct one, with no
+// magic tolerance (a shoelace bracket like patchCovers mis-scores a hole that touches the outer). On a
+// clean hole the two areas tie and the higher-quality Delaunay mesh is kept.
+func leakGuardedTris(outer2D []math.Point2, holes2D [][]math.Point2, cdt [][3]int) [][3]int {
+	if len(holes2D) == 0 {
+		return cdt // no hole can leak; keep the Delaunay mesh
+	}
+	pts := flattenLoops2D(outer2D, holes2D)
+	ec := earcutFromLoops(pts, cdtLoopIndices(outer2D, holes2D))
+	if len(ec) == 0 {
+		return cdt
+	}
+	if trisUnsignedArea(pts, ec) < trisUnsignedArea(pts, cdt) {
+		return ec
+	}
+	return cdt
+}
+
+// cdtLoopIndices builds the per-loop index lists (outer, then each hole) into the flattenLoops2D point
+// slice — the loop argument earcutFromLoops and the CDT take.
+func cdtLoopIndices(outer2D []math.Point2, holes2D [][]math.Point2) [][]int {
+	loops := make([][]int, 0, 1+len(holes2D))
+	next := 0
+	for _, n := range append([]int{len(outer2D)}, loopLens(holes2D)...) {
+		idx := make([]int, n)
+		for i := range idx {
+			idx[i] = next + i
+		}
+		loops = append(loops, idx)
+		next += n
+	}
+	return loops
+}
+
+// trisUnsignedArea is the total unsigned area of a triangulation indexing into pts.
+func trisUnsignedArea(pts [][2]float64, tris [][3]int) float64 {
+	var area float64
+	for _, t := range tris {
+		a, b, c := pts[t[0]], pts[t[1]], pts[t[2]]
+		s := ((b[0]-a[0])*(c[1]-a[1]) - (c[0]-a[0])*(b[1]-a[1])) / 2
+		if s < 0 {
+			s = -s
+		}
+		area += s
+	}
+	return area
 }
 
 // simpleLoop2D reports whether the closed polygon pts has no two non-adjacent edges properly
