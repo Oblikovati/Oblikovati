@@ -52,10 +52,10 @@ func TestConjugateAreaOracle(t *testing.T) {
 // This mirrors STEP case U3: CIRCLE(12) swept along an oblique direction.
 func TestConjugateObliqueCircleForeshortens(t *testing.T) {
 	r := 12.0
-	n := math.V3(0, 0, 1)           // circle plane normal
-	m := math.V3(1, 0, 0)           // any in-plane axis
-	w := n.Cross(m)                 // = (0,1,0)
-	phi := 0.6                      // tilt angle of d off the normal
+	n := math.V3(0, 0, 1) // circle plane normal
+	m := math.V3(1, 0, 0) // any in-plane axis
+	w := n.Cross(m)       // = (0,1,0)
+	phi := 0.6            // tilt angle of d off the normal
 	d := math.V3(stdmath.Sin(phi), 0, stdmath.Cos(phi))
 	dn := d.Dot(n) // = cos phi
 	// conjugate semi-diameters = r·(m − (m·d)d), r·(w − (w·d)d)

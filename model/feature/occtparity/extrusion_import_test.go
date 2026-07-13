@@ -71,7 +71,10 @@ func openMeshEdgeCount(m *ops.Mesh) int {
 	round := func(p [3]float64) pk {
 		return pk{int64(p[0]*1e6 + 0.5), int64(p[1]*1e6 + 0.5), int64(p[2]*1e6 + 0.5)}
 	}
-	key := func(i int) pk { p := m.Positions[i]; return round([3]float64{float64(p.X), float64(p.Y), float64(p.Z)}) }
+	key := func(i int) pk {
+		p := m.Positions[i]
+		return round([3]float64{float64(p.X), float64(p.Y), float64(p.Z)})
+	}
 	use := map[[2]pk]int{}
 	for t := 0; t+2 < len(m.Indices); t += 3 {
 		tri := [3]int{m.Indices[t], m.Indices[t+1], m.Indices[t+2]}
