@@ -231,15 +231,21 @@ corpus is green (branch discipline).
   Request/Patch/Certificate (incl. `MaxAngleDev` + `NoFold`), `resolveCornerBlend`, `Certificate.Valid`
   + 5 unit tests. No wiring yet — request construction lands with its consumer (Slice 1). Scoreboard
   unchanged (35/18/142).
-- **Slice 1 — corner-into-round via `curvedEndpointError` + certificate (~16 cases).** Wire the
-  `curvedEndpointError` site behind the `bothWallsPlanar(e) ∧ prior-round-at-endpoint` guard: build a
-  `CornerBlendRequest` from the planar-cylinder arm(s) + the pre-existing round neighbor, run
-  `resolveCornerBlend`, drive `geom.FillSurface` (native G1), certify (MaxDev/MaxAngleDev/fold),
-  certify-or-honest-reject. **Gate:** the corner-into-round subset migrates faulty→area/PASS; zero
-  regression; planar corner path byte-for-byte unchanged (I4). Start with the low-valence subset; escalate
-  to the ribbon-constrained certify/refine (in-house KKT) only if the alternating-side G1 needs it.
-- **Slice 2 — hardening + n-valent corner-into-round.** Higher-valence junctions among the ~16; pitfall
-  guards as tests; the certify/refine loop where MatchSurface's G0 fallback can't hit G1.
+- **Slice 1 — corner-into-round via build-then-certify. DONE (commit f4c10161).** Instrumentation
+  overturned the FillSurface plan: the planar corner machinery ALREADY closes the asymmetric
+  corner-into-round junctions into a valid solid; the #1797 guard was just rejecting them up front. So
+  Slice 1 shipped as a guard relaxation, NOT a fill patch — `curvedEndpointError` removed from
+  `computeEdgeFillet`; the corner is built and the fillet's existing final `Validate` certifies it;
+  `runsIntoExistingRound`/`firstCornerIntoRound`/`cornerIntoRoundError` name the actionable #1797 cause
+  only when the build fails (the still-uncloseable symmetric corner). PASS 35→40, FAIL(faulty) 142→128
+  (~14 cases); zero regression by construction; #1797 pins unchanged; new gate covers cyl/cone/sphere/
+  torus rounds. **The `CornerBlendProvider`/`FillSurface` seam was NOT needed here** — it is reserved
+  for the residual below.
+- **Residual — symmetric equal-radius trihedral corner** (the still-caging #1797 box; 3 fillets meet at
+  a vertex). This is the genuine corner-PATCH case. Open question for a geometry-math consult: the
+  equal-radius trihedral corner is very likely an **exact analytic sphere cap** (the classic 3-fillet
+  corner), not a bspline fill — so the seam's analytic-known-part tier, or a direct sphere-blend, may be
+  the honest tool rather than the bspline-general fallback. Decide before building.
 - **Later — analytic-known-part promotions.** Per family, as the geometry-math advisor derives exact
   surfaces. Each promotion = one provider file + one line in the tier constructor + a tier-ordering test.
   Assembly and callers untouched.
