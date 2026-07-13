@@ -47,7 +47,7 @@ func rimCrossings(rim []math.Point2, b boundaryLine2, res Resolution) []crossing
 // lerpAtZero returns the point on segment a→c where the signed distance crosses zero.
 func lerpAtZero(a, c math.Point2, da, dc float64) math.Point2 {
 	t := da / (da - dc)
-	return math.P2(a.X+t*(c.X-a.X), a.Y+t*(c.Y-a.Y))
+	return a.Lerp(c, t) // Point2.Lerp: stable single-eval, exact at t=0/1 (#1654)
 }
 
 // obstacleNodes returns the two rim crossing indices bracketing the dip past the boundary, or
@@ -64,9 +64,12 @@ func obstacleNodes(rim []math.Point2, b boundaryLine2, res Resolution) ([2]cross
 }
 
 // dipsPast reports whether the rim actually dips PAST the boundary between the two crossings (into the
-// fillet band), vs. bulging away — the mid-arc sample must be on the fillet side. side is +1 when the
-// fillet band is on the negative-signed-distance side of the boundary.
+// fillet band), vs. bulging away — the mid-arc sample (the forward arc c0→c1, wrapping the array when
+// c0.I > c1.I) must be on the fillet side. side is +1 when the fillet band is on the
+// negative-signed-distance side of the boundary (signedDist: host +ve, fillet -ve). A genuine dip has
+// the mid sample in the fillet band, so side*signedDist(mid) is NEGATIVE — hence the `< 0` test (a
+// bulge keeps the mid on the host side, giving a positive product → false).
 func dipsPast(rim []math.Point2, c0, c1 crossing, b boundaryLine2, side float64) bool {
 	mid := rim[(c0.I+1+((c1.I-c0.I+len(rim))%len(rim))/2)%len(rim)]
-	return side*b.signedDist(mid) > 0
+	return side*b.signedDist(mid) < 0
 }
