@@ -93,17 +93,27 @@ func onSegment2D(a, b, p math.Point2, tol float64) bool {
 
 // hostSideSubArc extracts the hole rim's HOST-side sub-arc — the complement of Task 2's dip range
 // (indices nodes[1].I+1..nodes[0].I, wrapping) — as an open polyline from the exact P+ crossing to
-// the exact P- crossing (native forward order), carrying the rim's per-segment curves so the mesher
-// still samples the true rim curve there, not a chord.
+// the exact P- crossing (native forward order). Interior segments carry the rim's per-segment curves
+// so the mesher still samples the true rim curve there, not a chord.
+//
+// The TWO segments touching the truncation crossings P± carry a NIL curve (a straight chord): the
+// crossing sits INSIDE the original hole segment (nodes[1].I leaving P+, nodes[0].I arriving at P-),
+// so the original untrimmed segment curve is domain-mismatched there — its PointAt(0)/PointAt(1) are
+// the ORIGINAL pre-truncation samples, not the crossing, so a mesher sampling its [0,1] domain would
+// walk across the DISCARDED span and kink exactly at the joint Task 6's topo weld must match. srcE is
+// still carried on those partial segments so the weld can share the hole-rim edge identity; only the
+// stale GEOMETRY is dropped (a straight chord over the tiny truncated remainder is faithful to the
+// model weld, see TestMergeHoleIntoNotchBoundarySegmentFidelity).
 func hostSideSubArc(hole filletLoop, nodes [2]crossing, back func(math.Point2) math.Point3) filletLoop {
 	n := len(hole.pts)
 	var arc filletLoop
-	arc.addID(back(nodes[1].P), curveAt(hole.curves, nodes[1].I), 0, srcIDAt(hole.srcE, nodes[1].I))
+	arc.addID(back(nodes[1].P), nil, 0, srcIDAt(hole.srcE, nodes[1].I)) // P+ leg: truncated → nil curve
 	for i := (nodes[1].I + 1) % n; ; i = (i + 1) % n {
-		arc.addID(hole.pts[i], curveAt(hole.curves, i), srcIDAt(hole.srcV, i), srcIDAt(hole.srcE, i))
 		if i == nodes[0].I {
+			arc.addID(hole.pts[i], nil, srcIDAt(hole.srcV, i), srcIDAt(hole.srcE, i)) // P- leg: truncated → nil
 			break
 		}
+		arc.addID(hole.pts[i], curveAt(hole.curves, i), srcIDAt(hole.srcV, i), srcIDAt(hole.srcE, i))
 	}
 	arc.addID(back(nodes[0].P), nil, 0, 0)
 	return arc

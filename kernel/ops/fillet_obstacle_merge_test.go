@@ -118,6 +118,15 @@ func TestMergeHoleIntoNotchT6(t *testing.T) {
 	if !ok {
 		t.Fatal("merge failed")
 	}
+	assertT6Notch(t, notch, flat)
+}
+
+// assertT6Notch is the shared invariant for a correctly-merged T6 notch, whatever orientation the
+// splice took: a single simple loop whose front edge stays at the receded boundary y≈-7, whose 2D
+// area is 760 (rect) − 426.914 (ellipse-above-boundary) = 333.086, and which reaches up into the
+// rectangle along the absorbed UPPER ellipse arc (a point near its apex (0,10,0)).
+func assertT6Notch(t *testing.T, notch filletLoop, flat func(m.Point3) m.Point2) {
+	t.Helper()
 	if ymin := loopMinY(notch); stdmath.Abs(ymin-(-7)) > 0.05 {
 		t.Errorf("notch front edge should stay at the receded boundary y=-7, got y-min %.4f", ymin)
 	}
@@ -130,6 +139,112 @@ func TestMergeHoleIntoNotchT6(t *testing.T) {
 	if !loopHasPointNear(notch, m.P3(0, 10, 0), 0.05) {
 		t.Errorf("notch must absorb the ellipse's UPPER arc (expected a point near (0,10,0))")
 	}
+}
+
+// TestMergeHoleIntoNotchNativeOrientation exercises orientedHostArc's NATIVE (non-reversed) branch,
+// which T6 never hits (T6 always reverses). Traversing the receded front edge in the opposite
+// direction — a clockwise rectangle — flips nearerNode's verdict so the host arc is spliced in its
+// native P+→P- order. The merged loop must still satisfy every T6 invariant (single simple loop,
+// y-min≈-7, area≈333.086, upper arc absorbed) — proving the orientation branch, not just the case
+// T6 happens to take, is correct.
+func TestMergeHoleIntoNotchNativeOrientation(t *testing.T) {
+	outer := recededTopOuterT6CW()
+	hole := ellipseHoleT6()
+	nodes := nodesForT6(t)
+	flat, back := zPlaneProjector()
+	if nearerNode(outer, 0, nodes, flat) != 1 {
+		t.Fatalf("fixture must select the NATIVE branch (nearerNode==1); got %d", nearerNode(outer, 0, nodes, flat))
+	}
+	notch, ok := mergeHoleIntoNotch(outer, hole, nodes, flat, back)
+	if !ok {
+		t.Fatal("merge failed on the native-orientation fixture")
+	}
+	assertT6Notch(t, notch, flat)
+}
+
+// TestMergeHoleIntoNotchBoundarySegmentFidelity is the regression guard for the stale-curve fix: the
+// two host-arc segments that touch the truncation crossings P± must carry NO domain-mismatched curve.
+// It samples each boundary segment exactly as the mesher would (nil ⇒ straight chord; non-nil ⇒
+// curve.PointAt over [0,1]) and requires every sample within the model weld of the segment's OWN
+// (truncated) chord. The stale original-segment curve — whose small-t samples fall in the DISCARDED
+// span beyond the crossing — lands a full sample-spacing off that chord, so this fails loudly if the
+// curve is ever reintroduced.
+func TestMergeHoleIntoNotchBoundarySegmentFidelity(t *testing.T) {
+	hole := ellipseHoleT6()
+	nodes := nodesForT6(t)
+	_, back := zPlaneProjector()
+	arc := hostSideSubArc(hole, nodes, back)
+	weld := ResolutionForPoints(arc.pts).Weld()
+	for _, seg := range []int{0, len(arc.pts) - 2} { // P+ leg and P- leg
+		if arc.curves[seg] != nil {
+			t.Errorf("boundary segment %d must not carry the stale original-segment curve", seg)
+		}
+		dev := maxSegmentChordDeviation(arc.pts[seg], arc.pts[seg+1], arc.curves[seg])
+		if dev > weld {
+			t.Errorf("boundary segment %d samples %.3g off its truncated chord (weld %.3g) — stale span", seg, dev, weld)
+		}
+	}
+}
+
+// TestMergeHoleIntoNotchAmbiguousEdgeRejected covers frontEdgeSegment's hits>1 honest-reject: an
+// outer loop with TWO edges each spanning both Nodes on the receded boundary is ambiguous (the
+// splice cannot pick a cut edge), so the merge must reject rather than mis-splice.
+func TestMergeHoleIntoNotchAmbiguousEdgeRejected(t *testing.T) {
+	var outer filletLoop
+	outer.add(m.P3(-20, -7, 0), nil) // edge 0: (-20,-7)->(20,-7) spans both Nodes
+	outer.add(m.P3(20, -7, 0), nil)  // edge 1: (20,-7)->(-20,-7) ALSO spans both Nodes (back-and-forth)
+	outer.add(m.P3(-20, -7, 0), nil)
+	outer.add(m.P3(20, 12, 0), nil)
+	outer.add(m.P3(-20, 12, 0), nil)
+	hole := ellipseHoleT6()
+	nodes := nodesForT6(t)
+	flat, back := zPlaneProjector()
+	if _, ok := mergeHoleIntoNotch(outer, hole, nodes, flat, back); ok {
+		t.Error("an outer loop with two front-edge candidates must be rejected as ambiguous")
+	}
+}
+
+// recededTopOuterT6CW is recededTopOuterT6 with the front edge traversed right-to-left (a clockwise
+// rectangle): same geometry, opposite winding — the fixture that drives orientedHostArc's native
+// (non-reversed) branch.
+func recededTopOuterT6CW() filletLoop {
+	var loop filletLoop
+	loop.add(m.P3(20, -7, 0), nil)
+	loop.add(m.P3(-20, -7, 0), nil)
+	loop.add(m.P3(-20, 12, 0), nil)
+	loop.add(m.P3(20, 12, 0), nil)
+	return loop
+}
+
+// maxSegmentChordDeviation samples a segment as the mesher would — the straight chord p0→p1 when
+// curve is nil, else curve.PointAt(t) over its [0,1] domain — and returns the largest perpendicular
+// distance of an interior sample from the chord p0→p1. Small-t samples are included on purpose: a
+// stale full-segment curve places them in the discarded span, off the truncated chord.
+func maxSegmentChordDeviation(p0, p1 m.Point3, curve geom.Curve3) float64 {
+	var maxDev float64
+	for _, u := range []float64{0.05, 0.15, 0.3, 0.5, 0.7, 0.9} {
+		s := p0.Lerp(p1, u)
+		if curve != nil {
+			s = curve.PointAt(u)
+		}
+		if d := pointToSegmentDist3(s, p0, p1); d > maxDev {
+			maxDev = d
+		}
+	}
+	return maxDev
+}
+
+// pointToSegmentDist3 is the distance from p to the segment a→b (clamped at the endpoints, so a
+// sample projecting BEYOND an endpoint — into the discarded span — reports the true off-chord gap).
+func pointToSegmentDist3(p, a, b m.Point3) float64 {
+	ab := a.VectorTo(b)
+	lenSq := ab.LengthSquared()
+	if lenSq == 0 {
+		return p.DistanceTo(a)
+	}
+	u := a.VectorTo(p).Dot(ab) / lenSq
+	u = stdmath.Max(0, stdmath.Min(1, u))
+	return p.DistanceTo(a.TranslateBy(ab.Scale(u)))
 }
 
 // TestMergeHoleIntoNotchEmptyLoopsRejected covers mergeHoleIntoNotch's honest-reject path: an
