@@ -173,17 +173,18 @@ func reverseBSplineCurve(c geom.BSplineCurve) (geom.BSplineCurve, bool) {
 }
 
 // obstacleSides returns the four FillSide continuity orders: the wall (c0) and both wings
-// (d0, d1) are G1 (Order 1) — the fill matches tangent to the wall plane and by-identity to the
-// wing surfaces (killing the T-junction crack). The RIM (c1) is G0 (Order 0): the fillet meets the
-// vertical obstacle wall at a SHARP base-rim crease, and forcing G1 to a vertical wall inflates
-// the patch into a sliver (spec §Item 2, resolved: G0).
+// (d0, d1) are G1 (Order 1) — the fill matches tangent to the wall and wing neighbour RIBBONS
+// (extrudeRibbon), killing the T-junction crack. Each neighbour is a degree-(p,1) extrusion whose
+// rail edge is its VMinEdge, so ALL three share on VMinEdge. The RIM (c1) is G0 (Order 0): the
+// fillet meets the vertical obstacle wall at a SHARP base-rim crease, and forcing G1 to a vertical
+// wall inflates the patch into a sliver (spec §Item 2, resolved: G0).
 //
 //nolint:unparam // of is part of the fixed signature Task 4's provider calls (brief resolution); unused today, reserved for a future HostPlane-driven side.
-func obstacleSides(of *ObstacleFeature, wingL, wingR, wallPlane geom.BSplineSurface) [4]geom.FillSide {
+func obstacleSides(of *ObstacleFeature, wingL, wingR, wall geom.BSplineSurface) [4]geom.FillSide {
 	return [4]geom.FillSide{
-		{Adjacent: wallPlane, AdjEdge: geom.VMinEdge, Order: 1}, // c0 wall  -> G1
+		{Adjacent: wall, AdjEdge: geom.VMinEdge, Order: 1}, // c0 wall  -> G1 (ribbon VMinEdge = c0)
 		{Order: 0}, // c1 rim -> G0 (no ribbon)
-		{Adjacent: wingL, AdjEdge: geom.UMinEdge, Order: 1}, // d0 wingL -> G1
-		{Adjacent: wingR, AdjEdge: geom.UMaxEdge, Order: 1}, // d1 wingR -> G1
+		{Adjacent: wingL, AdjEdge: geom.VMinEdge, Order: 1}, // d0 wingL -> G1 (ribbon VMinEdge = d0)
+		{Adjacent: wingR, AdjEdge: geom.VMinEdge, Order: 1}, // d1 wingR -> G1 (ribbon VMinEdge = d1)
 	}
 }

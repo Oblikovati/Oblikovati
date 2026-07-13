@@ -60,6 +60,9 @@ func newT6Obstacle(t *testing.T) *ObstacleFeature {
 		WingEnd:   quarterWingArc(t, d, pPlus),
 		WallLine:  geom.NewLineSegment(a, d),
 		RimArcPts: ellipseLowerArcSamples(pMinus, pPlus, 15, 10, 13),
+		Radius:    6,                 // rolling-ball blend radius → the G1-ribbon length
+		BlendAxis: math.V3(1, 0, 0),  // fillet-cylinder axis: the wings extrude along ±X
+		WallInto:  math.V3(0, 0, -1), // in the wall plane, ⟂ the bottom rail, pointing down into the wall
 	}
 }
 
@@ -117,6 +120,59 @@ func TestObstacleRailsBuildT6(t *testing.T) {
 	if _, err := geom.CoonsFill(c0, c1, d0, d1); err != nil {
 		t.Errorf("CoonsFill(rails) = %v, want no error (corners must meet within 1e-9)", err)
 	}
+}
+
+// TestObstacleBuildT6AreaAndCert is the crux test (spec §3): the obstacle provider Fits an obstacle
+// request, Builds a 4-sided FillSurface with G1 wall+wing ribbons, and the certificate is Valid — in
+// particular NoFold true (the fillet normal sweeps ~90°, |S_u×S_v| stays ~137..212, never 0). The
+// patch area is asserted only within a GENEROUS band of the OCCT oracle 156.364 (the binding 1% gate
+// is body-level in Task 7; G1 ribbons shift the area off the advisor's bilinear ~178 estimate).
+func TestObstacleBuildT6AreaAndCert(t *testing.T) {
+	of := newT6Obstacle(t)
+	req := CornerBlendRequest{ObstacleFeature: of, Setback: ResolutionForSize(50)}
+	var p bsplineObstacleProvider
+	if !p.Fits(req) {
+		t.Fatal("provider must Fit an obstacle request")
+	}
+	patch, cert, ok := p.Build(req)
+	if !ok {
+		t.Fatal("Build failed on a valid T6 obstacle")
+	}
+	if !cert.NoFold {
+		t.Errorf("T6 patch must not fold (|S_u×S_v| stays ~137..212, never 0); cert=%+v", cert)
+	}
+	if !cert.Valid(req.Setback) {
+		t.Errorf("T6 patch certificate must be Valid, got %+v", cert)
+	}
+	bs, isBS := patch.Surface.(geom.BSplineSurface)
+	if !isBS {
+		t.Fatalf("patch surface must be a BSplineSurface, got %T", patch.Surface)
+	}
+	area := surfaceArea(bs)
+	rel := stdmath.Abs(area-156.364) / 156.364
+	t.Logf("T6 obstacle patch area = %.4f (oracle 156.364, rel %.2f%%); cert=%+v", area, rel*100, cert)
+	if stdmath.IsInf(area, 0) || stdmath.IsNaN(area) || rel > 0.20 {
+		t.Errorf("patch area %.4f vs oracle 156.364 (rel %.4f > 0.20)", area, rel)
+	}
+}
+
+// surfaceArea is a fine-midpoint (40×40) quadrature of ∬|S_u×S_v| du dv over the surface domain — a
+// test-only integrator for the patch-area parity check (NOT model code; kept in the test file).
+func surfaceArea(s geom.BSplineSurface) float64 {
+	u0, u1 := s.UDomain()
+	v0, v1 := s.VDomain()
+	const n = 40
+	du, dv := (u1-u0)/n, (v1-v0)/n
+	area := 0.0
+	for i := 0; i < n; i++ {
+		for j := 0; j < n; j++ {
+			u := u0 + (float64(i)+0.5)*du
+			v := v0 + (float64(j)+0.5)*dv
+			pu, pv := s.DerivativesAt(u, v)
+			area += pu.Cross(pv).Length() * du * dv
+		}
+	}
+	return area
 }
 
 // TestReverseBSplineCurve exercises reverseBSplineCurve's INTERIOR directly — the reversed control
