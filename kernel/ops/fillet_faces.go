@@ -192,23 +192,34 @@ func transformLoop(f *topo.Face, l *topo.Loop, subs map[uint64]math.Point3, ends
 	return fl
 }
 
-// survivorCurve returns a survivor arc edge's curve, oriented to the loop's TRAVERSAL direction, to
-// carry into the rebuilt loop. Both faces sharing a curved survivor edge are transformed, so if both
-// dropped it (nil) the shared edge collapsed to a straight LineSegment (ec.use), inflating a planar
-// face that borders a cylinder — the Q1 defect. The edge catalog builds the edge from whichever face
-// provides the curve first, keyed on the loop's (from→to) vertices, so the curve MUST run from→to:
-// a reversed use needs the reversed arc, else the two symmetric end caps come out different (one
-// right, one bulged). Straight edges (and non-arc curves) stay nil — a no-op for the all-planar case.
+// survivorCurve returns a survivor edge's curve, oriented to the loop's TRAVERSAL direction, to carry
+// into the rebuilt loop. Both faces sharing a curved survivor edge are transformed, so if both dropped
+// it (nil) the shared edge collapsed to a straight LineSegment (ec.use), inflating a planar face that
+// borders a cylinder — the Q1 defect. The edge catalog builds the edge from whichever face provides the
+// curve first, keyed on the loop's (from→to) vertices, so an open arc MUST run from→to: a reversed use
+// needs the reversed arc, else the two symmetric end caps come out different (one right, one bulged).
+//
+// A closed conic rim edge (a full-circle or full-ellipse seam, e.g. the top/bottom rim of an imported
+// oblique elliptical cylinder — SURFACE_OF_LINEAR_EXTRUSION) welds both endpoints to ONE vertex. Its
+// type is not Arc3d, so the old code dropped it to nil and the coincident-endpoint rim collapsed to a
+// zero-length stub, degenerating the wall + cap faces (T6/T7/U4 "inconsistent orientation" / open
+// shell). It is carried through here UNCHANGED: the edge catalog recognises it as a closed seam
+// (isClosedSeam) and forces the second co-edge's parity, and the periodic curved-face mesher rebuilds
+// from the surface (u,v) rather than reading the rim's intrinsic direction — so no reversal is needed.
+// Straight edges stay nil (a LineSegment curve is identical to nil in ec.use), a no-op for planar faces.
 func survivorCurve(u *topo.EdgeUse) geom.Curve3 {
-	arc, ok := u.Edge().Geometry().(geom.Arc3d)
-	if !ok {
-		return nil
+	switch c := u.Edge().Geometry().(type) {
+	case geom.Arc3d:
+		if u.Reversed() {
+			c.StartAngle += c.SweepAngle
+			c.SweepAngle = -c.SweepAngle
+		}
+		return c
+	case geom.LineSegment:
+		return nil // straight survivor: nil is identical and keeps the all-planar path a no-op
+	default:
+		return c // a non-arc curved survivor (closed-ellipse rim, B-spline): carry it, don't drop it
 	}
-	if u.Reversed() {
-		arc.StartAngle += arc.SweepAngle
-		arc.SweepAngle = -arc.SweepAngle
-	}
-	return arc
 }
 
 // addEdgeInserts appends the mid tangent points along edge use u (oriented to the traversal direction),
