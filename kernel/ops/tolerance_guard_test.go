@@ -96,6 +96,7 @@ func TestNoUnjustifiedAbsoluteEpsilons(t *testing.T) {
 		// model-relative, not a bare cm-anchored epsilon).
 		"../ops/corner_blend_obstacle_rails.go",
 		"../ops/corner_blend_obstacle.go",
+		"../ops/corner_blend_obstacle_certify.go",
 		"../ops/fillet_obstacle_detect.go",
 		// ops: self-intersection, section, stitch, and the degeneracy/weld helpers.
 		"../ops/self_intersect.go",

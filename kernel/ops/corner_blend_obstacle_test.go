@@ -102,6 +102,40 @@ func ellipseLowerArcSamples(p0, p1 math.Point3, a, b float64, n int) []math.Poin
 	return pts
 }
 
+// newFoldingObstacle returns a T6 obstacle whose WallInto is set PARALLEL to the bottom rail (c0 runs
+// along +X, so WallInto=+X instead of the required in-plane ⟂ direction). This is a real geometric
+// degeneracy, not a random perturbation: the wall's G1 tangent ribbon (extrudeRibbon(c0, WallInto·len))
+// then extrudes ALONG the seam, collapsing to a zero-area strip whose normal vanishes. FillSurface
+// still produces a surface (Build ok=true), but matching to that degenerate ribbon drives the fill's
+// S_u and S_v parallel at the wall seam, so |S_u×S_v|→0 there — a genuine fold the anti-fold gate must
+// reject. It exercises the CERTIFICATE (NoFold), not just the rail nil-checks.
+func newFoldingObstacle(t *testing.T) *ObstacleFeature {
+	of := newT6Obstacle(t)
+	of.WallInto = math.V3(1, 0, 0) // parallel to c0 (the bottom rail runs along +X) ⇒ degenerate wall ribbon
+	return of
+}
+
+// TestObstacleCertificateDeclinesPathological proves ADR-3 honest-reject at the CERTIFICATE level: a
+// patch whose wall tangent ribbon is degenerate (folding the fill) is DECLINED — Build produces the
+// surface, but cert.NoFold is false and cert.Valid is false, so resolveCornerBlend passes this tier
+// over. This is the safety net for a malformed detector output (a wrong WallInto direction), the whole
+// reason the certificate exists rather than trusting "the code ran".
+func TestObstacleCertificateDeclinesPathological(t *testing.T) {
+	of := newFoldingObstacle(t)
+	req := CornerBlendRequest{ObstacleFeature: of, Setback: ResolutionForSize(50)}
+	var p bsplineObstacleProvider
+	_, cert, ok := p.Build(req)
+	if !ok {
+		t.Fatal("Build should still PRODUCE a patch (the decline is the certificate's job, not Build's)")
+	}
+	if cert.NoFold {
+		t.Errorf("degenerate wall ribbon folds the fill; cert.NoFold must be false, got cert=%+v", cert)
+	}
+	if cert.Valid(req.Setback) {
+		t.Errorf("a folded patch must not certify Valid (honest-reject); got cert=%+v", cert)
+	}
+}
+
 // TestObstacleRailsBuildT6 exercises the real converters (asBSplineCurve on the wing Arc3ds and the
 // wall LineSegment, obstacleRimArc's fit) on a genuine T6 obstacle, not just the nil-check path —
 // the corner-exactness contract is only proven by handing the four rails to the real CoonsFill

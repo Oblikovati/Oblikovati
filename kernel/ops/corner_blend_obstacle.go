@@ -71,9 +71,10 @@ func (bsplineObstacleProvider) Build(req CornerBlendRequest) (CornerBlendPatch, 
 // leaves on the BOUNDARY while keeping the G1-matched INTERIOR rows. A single-side match preserves its
 // own position row, so only the shared wall∩wing corner cells drifted (a later adjacent match rewrote
 // them); this restores exact G0 → watertight → MaxDev≈0. The four corner control points must still
-// agree across the two rails meeting there — Task 3 pinned the rail corners, so they do.
+// agree across the two rails meeting there — Task 3 pinned the rail corners, so they do. It works on a
+// DEEP COPY of the net (copyNet/copyWeights) so the caller's fill value is never mutated in place.
 func pinFillBoundary(fill geom.BSplineSurface, c0, c1, d0, d1 geom.BSplineCurve) (geom.BSplineSurface, error) {
-	ctrl, w := fill.Ctrl, fill.Weights
+	ctrl, w := copyNet(fill.Ctrl), copyWeights(fill.Weights)
 	nu, nv := len(ctrl), len(ctrl[0])
 	for i := 0; i < nu; i++ {
 		ctrl[i][0], w[i][0] = c0.Ctrl[i], c0.Weights[i]       // VMin edge ← c0 (wall)
@@ -84,6 +85,24 @@ func pinFillBoundary(fill geom.BSplineSurface, c0, c1, d0, d1 geom.BSplineCurve)
 		ctrl[nu-1][j], w[nu-1][j] = d1.Ctrl[j], d1.Weights[j] // UMax edge ← d1 (wingR)
 	}
 	return geom.NewBSplineSurface(fill.UDegree, fill.VDegree, ctrl, w, fill.UKnots, fill.VKnots)
+}
+
+// copyNet deep-copies a control net so a mutation never aliases the source surface's backing arrays.
+func copyNet(src [][]math.Point3) [][]math.Point3 {
+	out := make([][]math.Point3, len(src))
+	for i := range src {
+		out[i] = append([]math.Point3(nil), src[i]...)
+	}
+	return out
+}
+
+// copyWeights deep-copies a weight net (see copyNet).
+func copyWeights(src [][]float64) [][]float64 {
+	out := make([][]float64, len(src))
+	for i := range src {
+		out[i] = append([]float64(nil), src[i]...)
+	}
+	return out
 }
 
 // relaxCornerInterior is the optional best-effort G1 corner touch-up (spec Option 1 step 2): a light
