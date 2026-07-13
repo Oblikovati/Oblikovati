@@ -98,6 +98,7 @@ func TestNoUnjustifiedAbsoluteEpsilons(t *testing.T) {
 		"../ops/corner_blend_obstacle.go",
 		"../ops/corner_blend_obstacle_certify.go",
 		"../ops/fillet_obstacle_detect.go",
+		"../ops/fillet_obstacle_merge.go",
 		// ops: self-intersection, section, stitch, and the degeneracy/weld helpers.
 		"../ops/self_intersect.go",
 		"../ops/section_plane.go",
