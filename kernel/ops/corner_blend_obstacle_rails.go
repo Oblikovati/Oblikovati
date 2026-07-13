@@ -7,12 +7,6 @@ import (
 	"oblikovati.org/math"
 )
 
-// railMatchTol is how far a raw rail's endpoint may sit from its target corner (spec §Numerical
-// pitfalls) before pinnedRail honest-rejects instead of silently welding mismatched geometry
-// (ADR-3) — generous enough to absorb a curve-fit's floating-point noise, tight enough that it
-// never masks a genuinely wrong ObstacleFeature.
-const railMatchTol = 1e-6
-
 // obstacleRails builds the four FillSurface boundary curves for the obstacle patch and makes them
 // pairwise-compatible (c0/c1 share degree+knots, d0/d1 share degree+knots — FillSurface's
 // precondition). It FIRST nil-checks the wing pointers: the end rails MUST be the abutting
@@ -59,7 +53,9 @@ func farEndpoint(c geom.Curve3, node math.Point3) math.Point3 {
 
 // pinRawRails converts each source curve to a BSplineCurve and orients+pins it to the canonical
 // corners (railCorners) — the step that guarantees a shared endpoint is the SAME math.Point3 value
-// across rails, not merely a close one.
+// across rails, not merely a close one. The endpoint-match weld is model-relative (ADR-0042):
+// ResolutionForPoints over the four corners scales it on a µm-part or a km-part, never a bare
+// cm-anchored absolute epsilon.
 func pinRawRails(of *ObstacleFeature, a, d, pMinus, pPlus math.Point3) (c0, c1, d0, d1 geom.BSplineCurve, ok bool) {
 	rawC0, ok0 := asBSplineCurve(of.WallLine)
 	rawC1, ok1 := obstacleRimArc(of)
@@ -68,10 +64,11 @@ func pinRawRails(of *ObstacleFeature, a, d, pMinus, pPlus math.Point3) (c0, c1, 
 	if !ok0 || !ok1 || !ok2 || !ok3 {
 		return geom.BSplineCurve{}, geom.BSplineCurve{}, geom.BSplineCurve{}, geom.BSplineCurve{}, false
 	}
-	c0, okC0 := pinnedRail(rawC0, a, d)
-	c1, okC1 := pinnedRail(rawC1, pMinus, pPlus)
-	d0, okD0 := pinnedRail(rawD0, a, pMinus)
-	d1, okD1 := pinnedRail(rawD1, d, pPlus)
+	tol := ResolutionForPoints([]math.Point3{a, d, pMinus, pPlus}).Weld()
+	c0, okC0 := pinnedRail(rawC0, a, d, tol)
+	c1, okC1 := pinnedRail(rawC1, pMinus, pPlus, tol)
+	d0, okD0 := pinnedRail(rawD0, a, pMinus, tol)
+	d1, okD1 := pinnedRail(rawD1, d, pPlus, tol)
 	return c0, c1, d0, d1, okC0 && okC1 && okD0 && okD1
 }
 
@@ -124,15 +121,21 @@ func makeRailPair(a, b geom.BSplineCurve) (geom.BSplineCurve, geom.BSplineCurve,
 	return ra, rb, err == nil
 }
 
-// pinnedRail orients raw so it runs from->to (reversing if it instead runs to->from within
-// railMatchTol) and then overwrites its two end control points with the exact from/to values —
-// what makes a corner shared between two rails bit-identical, not merely close (see finishRails).
-func pinnedRail(raw geom.BSplineCurve, from, to math.Point3) (geom.BSplineCurve, bool) {
+// pinnedRail orients raw so it runs from->to (reversing if it instead runs to->from within the
+// model-relative weld tol) and then overwrites its two end control points with the exact from/to
+// values — what makes a corner shared between two rails bit-identical, not merely close (see
+// finishRails). tol is a model-scaled weld from ResolutionForPoints (ADR-0042), never an absolute
+// epsilon, so it holds on µm and km parts alike.
+func pinnedRail(raw geom.BSplineCurve, from, to math.Point3, tol float64) (geom.BSplineCurve, bool) {
 	last := len(raw.Ctrl) - 1
 	switch {
-	case raw.Ctrl[0].DistanceTo(from) <= railMatchTol && raw.Ctrl[last].DistanceTo(to) <= railMatchTol:
-	case raw.Ctrl[0].DistanceTo(to) <= railMatchTol && raw.Ctrl[last].DistanceTo(from) <= railMatchTol:
-		raw = reverseBSplineCurve(raw)
+	case raw.Ctrl[0].DistanceTo(from) <= tol && raw.Ctrl[last].DistanceTo(to) <= tol:
+	case raw.Ctrl[0].DistanceTo(to) <= tol && raw.Ctrl[last].DistanceTo(from) <= tol:
+		rev, ok := reverseBSplineCurve(raw)
+		if !ok {
+			return geom.BSplineCurve{}, false
+		}
+		raw = rev
 	default:
 		return geom.BSplineCurve{}, false
 	}
@@ -149,9 +152,12 @@ func pinEnds(c *geom.BSplineCurve, from, to math.Point3) {
 }
 
 // reverseBSplineCurve returns c traced start-to-end reversed — same geometry, control points and
-// weights reversed and the knot vector reflected about the domain. geom has no curve Reverse
-// (grepped kernel/geom); this package's rail orientation (pinnedRail) is the only caller.
-func reverseBSplineCurve(c geom.BSplineCurve) geom.BSplineCurve {
+// weights reversed and the knot vector reflected about the domain (lo+hi-k). geom has no curve
+// Reverse (grepped kernel/geom); this package's rail orientation (pinnedRail) is the only caller.
+// It rebuilds through the validating geom.NewBSplineCurve constructor (validateBSpline +
+// requirePositiveWeights); ok=false if the reversed net is somehow rejected (a shape-preserving
+// reversal of a valid curve never should — reflected weights stay positive, knots stay ascending).
+func reverseBSplineCurve(c geom.BSplineCurve) (geom.BSplineCurve, bool) {
 	n := len(c.Ctrl)
 	ctrl, weights := make([]math.Point3, n), make([]float64, n)
 	for i := range c.Ctrl {
@@ -162,7 +168,8 @@ func reverseBSplineCurve(c geom.BSplineCurve) geom.BSplineCurve {
 	for i, k := range c.Knots {
 		knots[len(c.Knots)-1-i] = lo + hi - k
 	}
-	return geom.BSplineCurve{Degree: c.Degree, Ctrl: ctrl, Weights: weights, Knots: knots}
+	rev, err := geom.NewBSplineCurve(c.Degree, ctrl, weights, knots)
+	return rev, err == nil
 }
 
 // obstacleSides returns the four FillSide continuity orders: the wall (c0) and both wings

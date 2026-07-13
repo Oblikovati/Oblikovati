@@ -81,7 +81,11 @@ func quarterWingArc(t *testing.T, wallPt, nodePt math.Point3) geom.Arc3d {
 
 // ellipseLowerArcSamples returns n ordered points from p0 through the ellipse's bottom to p1,
 // tracing the (a, b) ellipse's lower half (x = a*cos(theta), y = -b*sin(theta)) — the base rim's
-// dip-side arc that RimArcPts (task 6) is documented to hold.
+// dip-side arc that RimArcPts (task 6) is documented to hold. The first and last samples are PINNED
+// to the exact p0/p1 the caller passes: in the real pipeline the detector computes the Nodes AND
+// the rim samples from the SAME crossing, so Nodes[i] == RimArcPts[endpoint] to machine precision —
+// the model-relative corner weld (ADR-0042) relies on that self-consistency, which a trig
+// round-trip of a truncated node literal would otherwise break by ~4e-7.
 func ellipseLowerArcSamples(p0, p1 math.Point3, a, b float64, n int) []math.Point3 {
 	theta0 := stdmath.Acos(p0.X / a)
 	theta1 := stdmath.Acos(p1.X / a)
@@ -91,6 +95,7 @@ func ellipseLowerArcSamples(p0, p1 math.Point3, a, b float64, n int) []math.Poin
 		theta := theta0 + f*(theta1-theta0)
 		pts[i] = math.P3(a*stdmath.Cos(theta), -b*stdmath.Sin(theta), 0)
 	}
+	pts[0], pts[n-1] = p0, p1
 	return pts
 }
 
@@ -111,5 +116,61 @@ func TestObstacleRailsBuildT6(t *testing.T) {
 	}
 	if _, err := geom.CoonsFill(c0, c1, d0, d1); err != nil {
 		t.Errorf("CoonsFill(rails) = %v, want no error (corners must meet within 1e-9)", err)
+	}
+}
+
+// TestReverseBSplineCurve exercises reverseBSplineCurve's INTERIOR directly — the reversed control
+// points, weights, and reflected knots — WITHOUT the endpoint pinning (pinEnds) that would mask an
+// interior bug in TestObstacleRailsBuildT6 (which only checks corners, and pinning fixes those
+// regardless). Uses a genuinely asymmetric degree-2 RATIONAL curve (distinct control points,
+// non-uniform weights) so a wrong reversal cannot pass by coincidence.
+func TestReverseBSplineCurve(t *testing.T) {
+	orig, err := geom.NewBSplineCurve(2,
+		[]math.Point3{math.P3(0, 0, 0), math.P3(1, 2, 0), math.P3(3, 1, 0)},
+		[]float64{1, 2, 1},
+		[]float64{0, 0, 0, 1, 1, 1})
+	if err != nil {
+		t.Fatalf("build original: %v", err)
+	}
+	rev, ok := reverseBSplineCurve(orig)
+	if !ok {
+		t.Fatalf("reverseBSplineCurve rejected a valid rational curve")
+	}
+	assertReversedTraces(t, orig, rev)
+	assertReversedNet(t, orig, rev)
+}
+
+// assertReversedTraces checks the geometric reversal: reversed.PointAt(t) == original.PointAt(1-t)
+// at several interior parameters (the rational blend, weights included, must match end to end).
+func assertReversedTraces(t *testing.T, orig, rev geom.BSplineCurve) {
+	t.Helper()
+	for _, u := range []float64{0.1, 0.25, 0.5, 0.75, 0.9} {
+		want := orig.PointAt(1 - u)
+		got := rev.PointAt(u)
+		if !got.IsEqualTo(want, 1e-9) {
+			t.Errorf("rev.PointAt(%.2f) = %v, want orig.PointAt(%.2f) = %v", u, got, 1-u, want)
+		}
+	}
+}
+
+// assertReversedNet checks the representation: control points and weights order-reversed, knots
+// reflected about the domain (lo+hi-k).
+func assertReversedNet(t *testing.T, orig, rev geom.BSplineCurve) {
+	t.Helper()
+	n := len(orig.Ctrl)
+	for i := 0; i < n; i++ {
+		if !rev.Ctrl[i].IsEqualTo(orig.Ctrl[n-1-i], 1e-12) {
+			t.Errorf("rev.Ctrl[%d] = %v, want %v", i, rev.Ctrl[i], orig.Ctrl[n-1-i])
+		}
+		if stdmath.Abs(rev.Weights[i]-orig.Weights[n-1-i]) > 1e-12 {
+			t.Errorf("rev.Weights[%d] = %v, want %v", i, rev.Weights[i], orig.Weights[n-1-i])
+		}
+	}
+	lo, hi := orig.Knots[0], orig.Knots[len(orig.Knots)-1]
+	m := len(orig.Knots)
+	for i, k := range orig.Knots {
+		if stdmath.Abs(rev.Knots[m-1-i]-(lo+hi-k)) > 1e-12 {
+			t.Errorf("rev.Knots[%d] = %v, want %v", m-1-i, rev.Knots[m-1-i], lo+hi-k)
+		}
 	}
 }
