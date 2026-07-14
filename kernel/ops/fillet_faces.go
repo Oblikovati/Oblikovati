@@ -11,18 +11,16 @@ import (
 // filletResultFaces builds the faces of the filleted body — every original face transformed for the
 // fillets touching it (A/B corners pulled to tangent points, simple end corners replaced by an arc or
 // chord fan), one cylinder face per constant filleted edge (or a ruling strip per variable one), and
-// one sphere patch per corner blend — and reports whether the mid-span obstacle rebuild (ADR-4) handled
-// any edge. enableObstacles=false forces the baseline path (no notch/wings/patch) so the caller can
-// fall back when the rebuild fires but does not achieve hole-containment (Option 1 do-no-harm).
-func filletResultFaces(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend, enableRebuild bool) ([]filletFace, bool) {
-	abSubst, endCorner, edgeInserts := filletMaps(fils)
-	fans, fanV := classifyEndCorners(fils)
-	spreads, caps := buildSpreadMaps(fans, body)
-	pruneEndCorners(endCorner, fanV) // a fan vertex is rounded by the spread arm alone, never as a trihedral end
-	maps := filletRebuildMaps{abSubst: abSubst, endCorner: endCorner, edgeInserts: edgeInserts, spreads: spreads}
+// one sphere patch per corner blend — and reports whether either enabled local rebuild (the mid-span
+// obstacle notch, ADR-4, or the double-interference runout tiling, ADR-5) handled any edge.
+// enableObstacles/enableRunout independently gate the two rebuilds so a caller can assemble any of the
+// four compositions (baseline, obstacle-only, runout-only, both) and let each clear the do-no-harm bar
+// on its own — a failing one must never veto a passing other (M2 whole-branch review, systemic minor).
+func filletResultFaces(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend, enableObstacles, enableRunout bool) ([]filletFace, bool) {
+	maps, caps := filletBuildMaps(body, fils)
 	replace, extra, handled := map[uint64]filletFace{}, map[uint64][]filletFace{}, map[uint64]bool{}
-	if enableRebuild {
-		replace, extra, handled = collectRebuildFaces(body, fils, ResolutionForBody(body), maps)
+	if enableObstacles || enableRunout {
+		replace, extra, handled = collectRebuildFaces(body, fils, ResolutionForBody(body), maps, enableObstacles, enableRunout)
 	}
 	out := transformedBodyFaces(body, maps, replace)
 	out = append(out, filletBlendFaces(fils, caps, handled, extra)...)
@@ -32,13 +30,37 @@ func filletResultFaces(body *topo.Body, fils []edgeFillet, blends map[uint64]*co
 	return out, len(handled) > 0
 }
 
-// collectRebuildFaces runs both local fillet rebuilds — the mid-span obstacle notch (ADR-4) and the
-// double-interference runout tiling (ADR-5) — and merges their face substitutions, extra faces and
-// handled-edge sets into one lookup. The runout path skips any edge the obstacle path already owns, so
-// an edge is rebuilt by exactly one of them; both suppress the default cylinder strip on their edges.
-func collectRebuildFaces(body *topo.Body, fils []edgeFillet, res Resolution, maps filletRebuildMaps) (
+// filletBuildMaps builds the per-face substitution/insert/spread maps and end-corner cap pieces every
+// rebuild composition shares — independent of which local rebuild(s), if any, are enabled.
+func filletBuildMaps(body *topo.Body, fils []edgeFillet) (filletRebuildMaps, map[uint64][]cornerPiece) {
+	abSubst, endCorner, edgeInserts := filletMaps(fils)
+	fans, fanV := classifyEndCorners(fils)
+	spreads, caps := buildSpreadMaps(fans, body)
+	pruneEndCorners(endCorner, fanV) // a fan vertex is rounded by the spread arm alone, never as a trihedral end
+	return filletRebuildMaps{abSubst: abSubst, endCorner: endCorner, edgeInserts: edgeInserts, spreads: spreads}, caps
+}
+
+// collectRebuildFaces runs the ENABLED local fillet rebuild(s) — the mid-span obstacle notch (ADR-4)
+// and/or the double-interference runout tiling (ADR-5) — and merges their face substitutions, extra
+// faces and handled-edge sets into one lookup. The runout path skips any edge the obstacle path already
+// owns, so when both are enabled an edge is rebuilt by exactly one of them.
+func collectRebuildFaces(body *topo.Body, fils []edgeFillet, res Resolution, maps filletRebuildMaps,
+	enableObstacles, enableRunout bool) (map[uint64]filletFace, map[uint64][]filletFace, map[uint64]bool) {
+	replace, extra, handled := map[uint64]filletFace{}, map[uint64][]filletFace{}, map[uint64]bool{}
+	if enableObstacles {
+		replace, extra, handled = collectObstacles(body, fils, res, maps)
+	}
+	if !enableRunout {
+		return replace, extra, handled
+	}
+	return mergeRunoutFaces(body, fils, res, maps, replace, extra, handled)
+}
+
+// mergeRunoutFaces runs collectRunouts and folds its result into the (possibly still-empty)
+// obstacle-path maps, so an edge already owned by the obstacle rebuild is never double-handled.
+func mergeRunoutFaces(body *topo.Body, fils []edgeFillet, res Resolution, maps filletRebuildMaps,
+	replace map[uint64]filletFace, extra map[uint64][]filletFace, handled map[uint64]bool) (
 	map[uint64]filletFace, map[uint64][]filletFace, map[uint64]bool) {
-	replace, extra, handled := collectObstacles(body, fils, res, maps)
 	rnReplace, rnExtra, rnHandled := collectRunouts(body, fils, res, handled, maps)
 	for id, f := range rnReplace {
 		replace[id] = f

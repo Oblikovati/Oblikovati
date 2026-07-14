@@ -177,20 +177,74 @@ func filletResolvedEdges(body *topo.Body, edges []filletPick, concave ConcaveFil
 	return nil, fmt.Errorf("fillet: result is not a valid solid %v", rep.Issues)
 }
 
-// assembleFilletBody builds the filleted body with the mid-span obstacle rebuild enabled, then applies
-// do-no-harm (ADR-4, Option 1, 2026-07-14): the single-host rebuild may FIRE on a body it cannot fully
-// resolve (e.g. a second obstacle column it does not model), producing a still-protruding or otherwise
-// degraded shell. It is kept only when it yields a watertight, hole-contained solid — a strict
-// improvement over the pre-rebuild fillet; otherwise the baseline (no-obstacle) build is used. That
+// rebuildChoice names one do-no-harm candidate composition of the two independent local
+// rebuilds (mid-span obstacle, ADR-4; double-interference runout, ADR-5).
+type rebuildChoice int
+
+const (
+	chooseBoth     rebuildChoice = iota // obstacle + runout composed into one watertight solid
+	chooseObstacle                      // only the obstacle rebuild improves; runout dropped
+	chooseRunout                        // only the runout rebuild improves; obstacle dropped
+	chooseBaseline                      // neither improves — the pre-rebuild fillet (do-no-harm)
+)
+
+// chooseRebuild picks the highest-priority rebuild composition whose assembled body clears the
+// do-no-harm bar. {both} wins when the two rebuilds compose watertight; else the best single path
+// (obstacle preferred — the older, more-proven path); else baseline. Splitting the ADR-4 verdict so
+// a failing runout can never veto a passing obstacle rebuild (M2 whole-branch review, systemic minor).
+func chooseRebuild(improved func(rebuildChoice) bool) rebuildChoice {
+	for _, c := range []rebuildChoice{chooseBoth, chooseObstacle, chooseRunout} {
+		if improved(c) {
+			return c
+		}
+	}
+	return chooseBaseline
+}
+
+// assembleFilletBody builds the do-no-harm candidate bodies (ADR-4/ADR-5, Option 1, 2026-07-14; split
+// into independent obstacle/runout verdicts, M3 whole-branch review) and picks the highest-priority one
+// that clears the bar: a local rebuild may FIRE on a body it cannot fully resolve (e.g. a second obstacle
+// column it does not model, or a runout that opens the shell), producing a degraded shell. Gating the two
+// verdicts independently means a failing runout can never veto a passing obstacle rebuild (and vice
+// versa) — only a strict improvement over the baseline (no-rebuild) fillet is ever kept. That baseline
 // fallback is the same green body as before ADR-4 (HolesContained is a tripwire, not folded into Valid).
 func assembleFilletBody(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend) *topo.Body {
-	faces, rebuildFired := filletResultFaces(body, fils, blends, true)
-	res := assembleBody(faces, "fillet")
-	if !rebuildFired || obstacleImprovedSolid(res) {
-		return res
+	cands := rebuildCandidates(body, fils, blends) // lazily assembled; chooseBaseline always present
+	choice := chooseRebuild(func(c rebuildChoice) bool {
+		b, ok := cands[c]
+		return ok && obstacleImprovedSolid(b)
+	})
+	return cands[choice]
+}
+
+// rebuildCandidates lazily assembles the do-no-harm candidate bodies: the baseline (no local rebuild) is
+// always built; {both}/{obstacle-only}/{runout-only} are built only when that composition's collectors
+// actually handle an edge — so the overwhelmingly common body (no obstacle, no runout anywhere) costs a
+// SINGLE assembleBody call, the same cost as before this split.
+func rebuildCandidates(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend) map[rebuildChoice]*topo.Body {
+	cands := map[rebuildChoice]*topo.Body{chooseBaseline: assembleFilletFaces(body, fils, blends, false, false)}
+	if _, bothFired := filletResultFaces(body, fils, blends, true, true); !bothFired {
+		return cands // neither local rebuild handled any edge: baseline is the only useful candidate
 	}
-	base, _ := filletResultFaces(body, fils, blends, false)
-	return assembleBody(base, "fillet")
+	addRebuildCandidate(cands, chooseBoth, body, fils, blends, true, true)
+	addRebuildCandidate(cands, chooseObstacle, body, fils, blends, true, false)
+	addRebuildCandidate(cands, chooseRunout, body, fils, blends, false, true)
+	return cands
+}
+
+// addRebuildCandidate assembles one composition (both, obstacle-only, or runout-only) and records
+// it under choice only when that composition's collectors handled an edge on their own.
+func addRebuildCandidate(cands map[rebuildChoice]*topo.Body, choice rebuildChoice, body *topo.Body,
+	fils []edgeFillet, blends map[uint64]*cornerBlend, enableObstacles, enableRunout bool) {
+	if _, fired := filletResultFaces(body, fils, blends, enableObstacles, enableRunout); fired {
+		cands[choice] = assembleFilletFaces(body, fils, blends, enableObstacles, enableRunout)
+	}
+}
+
+// assembleFilletFaces builds and assembles one rebuild composition's faces in a single call.
+func assembleFilletFaces(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend, enableObstacles, enableRunout bool) *topo.Body {
+	faces, _ := filletResultFaces(body, fils, blends, enableObstacles, enableRunout)
+	return assembleBody(faces, "fillet")
 }
 
 // obstacleImprovedSolid reports whether an obstacle-rebuilt body is a watertight, hole-contained solid —

@@ -25,7 +25,7 @@ func s1RebuiltShell(t *testing.T) *topo.Body {
 	if err != nil {
 		t.Fatalf("s1RebuiltShell: computeEdgeFillet: %v", err)
 	}
-	faces, fired := filletResultFaces(body, []edgeFillet{fil}, map[uint64]*cornerBlend{}, true)
+	faces, fired := filletResultFaces(body, []edgeFillet{fil}, map[uint64]*cornerBlend{}, true, true)
 	if !fired {
 		t.Fatal("s1RebuiltShell: runout rebuild did not fire")
 	}
