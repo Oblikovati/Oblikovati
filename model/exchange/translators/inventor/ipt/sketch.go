@@ -40,17 +40,24 @@ const (
 	curveTailMark = 0x10 // the invariant 4th word of a curve header
 	curveWordMin  = 2    // w1,w2 bounds: a curve endpoint's count is ≥2; >4 is not a curve header
 	curveWordMax  = 4
+	// ellipseSentinel is the u32 at curve+72 that marks a sketch ellipse. An ellipse's node has the
+	// same shape as a circle's (centre by reference, +16 not a ref) but adds an inline unit
+	// major-axis (+36/+44) and two semi-axis lengths (majorR@+52, minorR@+60); a real circle instead
+	// carries denormal garbage (~1e-308) in those slots and a node reference (0x800000xx) at +72, so
+	// the sentinel plus normal-range radii cleanly tell the two apart.
+	ellipseSentinel = 0x01170000
 )
 
 type Point2D struct{ X, Y float64 }
 
-// Sketch is a decoded 2D sketch: standalone points, lines, circles, and arcs. Constraints
-// and dimensions are not decoded yet.
+// Sketch is a decoded 2D sketch: standalone points, lines, circles, arcs, and ellipses.
+// Constraints and dimensions are not decoded here (see sketchconstraint.go).
 type Sketch struct {
-	Points  []Point2D
-	Lines   []Line
-	Circles []Circle
-	Arcs    []Arc
+	Points   []Point2D
+	Lines    []Line
+	Circles  []Circle
+	Arcs     []Arc
+	Ellipses []Ellipse
 	// Resolved is true when the curve endpoints were reconstructed exactly from their entity
 	// references (a faithful loop), false when the convex-ordering fallback guessed the
 	// connectivity — which mangles a non-convex profile. Revolve gates on this: a scrambled
@@ -71,6 +78,16 @@ type Arc struct {
 	Radius float64
 	Start  Point2D
 	End    Point2D
+}
+
+// Ellipse is a decoded sketch ellipse: its centre, the unit direction of the major axis, and
+// the two semi-axis lengths (cm). Inventor stores the centre BY REFERENCE (like a circle); the
+// major-axis direction and both radii are inline.
+type Ellipse struct {
+	Center    Point2D
+	MajorAxis Point2D // unit direction of the major axis
+	MajorR    float64
+	MinorR    float64
 }
 
 // idPoint is a decoded geometry point tagged with its entity id, needed to resolve which
@@ -103,14 +120,24 @@ type arcEnt struct {
 	radius             float64
 }
 
+// ellipseEnt is a decoded ellipse: the entity reference to its centre point (resolved via the
+// shared point-reference map, like a circle's centre), plus the inline unit major-axis direction
+// and the two semi-axis lengths.
+type ellipseEnt struct {
+	ref            uint32
+	axisX, axisY   float64
+	majorR, minorR float64
+}
+
 // sketchItem is one decoded sketch entity in file order (by byte offset): a point, a
-// circle, a line, or an arc — exactly one is non-nil.
+// circle, a line, an arc, or an ellipse — exactly one is non-nil.
 type sketchItem struct {
-	off    int
-	pt     *idPoint
-	circle *circleEnt
-	line   *lineRefs
-	arc    *arcEnt
+	off     int
+	pt      *idPoint
+	circle  *circleEnt
+	line    *lineRefs
+	arc     *arcEnt
+	ellipse *ellipseEnt
 }
 
 // DecodeSketch extracts one part's sketch geometry from PmDCSegment (all entities grouped
@@ -147,7 +174,7 @@ func clusterItems(seg []byte) [][]sketchItem {
 func DecodeSketches(seg []byte) []Sketch {
 	var out []Sketch
 	for _, cl := range clusterItems(seg) {
-		if s := assembleCluster(cl); len(s.Points) > 0 || len(s.Lines) > 0 || len(s.Circles) > 0 || len(s.Arcs) > 0 {
+		if s := assembleCluster(cl); len(s.Points) > 0 || len(s.Lines) > 0 || len(s.Circles) > 0 || len(s.Arcs) > 0 || len(s.Ellipses) > 0 {
 			out = append(out, s)
 		}
 	}
@@ -217,16 +244,36 @@ func collectItems(seg []byte) []sketchItem {
 			items = append(items, sketchItem{off: C, line: &lineRefs{
 				a: w16 &^ refBit, b: w20 &^ refBit, paired: w20&refBit != 0,
 			}})
+		} else if cref := binary.LittleEndian.Uint32(seg[C+32:]); cref&refBit != 0 && isEllipseNode(seg, C) {
+			// Same node shape as a referenced-centre circle, but the sentinel + normal-range radii
+			// (a circle carries denormals and a node ref there) identify a genuine ellipse.
+			items = append(items, sketchItem{off: C, ellipse: &ellipseEnt{
+				ref: cref &^ refBit, axisX: f64(seg, C+36), axisY: f64(seg, C+44),
+				majorR: f64(seg, C+52), minorR: f64(seg, C+60),
+			}})
 		} else {
 			ce := circleEnt{radius: f64(seg, C+36), inline: Point2D{f64(seg, C+16), f64(seg, C+24)}}
-			if r := binary.LittleEndian.Uint32(seg[C+32:]); r&refBit != 0 {
-				ce.ref, ce.hasRef = r&^refBit, true
+			if cref&refBit != 0 {
+				ce.ref, ce.hasRef = cref&^refBit, true
 			}
 			items = append(items, sketchItem{off: C, circle: &ce})
 		}
 	}
 	sort.Slice(items, func(i, j int) bool { return items[i].off < items[j].off })
 	return items
+}
+
+// isEllipseNode reports whether the referenced-centre curve at C is a sketch ellipse rather than
+// a circle. It requires the ellipse sentinel at +72 AND both semi-axis lengths (majorR@+52,
+// minorR@+60) in a normal positive range: a circle stores denormal garbage (~1e-308) in those
+// two slots and a node reference (0x800000xx) at +72, so all three checks fail on a circle. The
+// three independent signals make a false positive (a circle read as an ellipse) impossible.
+func isEllipseNode(seg []byte, C int) bool {
+	if C+80 > len(seg) || binary.LittleEndian.Uint32(seg[C+72:]) != ellipseSentinel {
+		return false
+	}
+	majorR, minorR := f64(seg, C+52), f64(seg, C+60)
+	return majorR > 1e-6 && majorR < 1e5 && minorR > 1e-6 && minorR < 1e5
 }
 
 // assembleCluster reconstructs one sketch from its entities. When the cluster is clean
@@ -239,6 +286,7 @@ func assembleCluster(items []sketchItem) Sketch {
 	var circs []circleEnt
 	var lines []lineRefs
 	var arcs []arcEnt
+	var ells []ellipseEnt
 	for _, it := range items {
 		switch {
 		case it.pt != nil:
@@ -249,9 +297,11 @@ func assembleCluster(items []sketchItem) Sketch {
 			lines = append(lines, *it.line)
 		case it.arc != nil:
 			arcs = append(arcs, *it.arc)
+		case it.ellipse != nil:
+			ells = append(ells, *it.ellipse)
 		}
 	}
-	if s, ok := resolveByRefs(pts, circs, lines, arcs); ok {
+	if s, ok := resolveByRefs(pts, circs, lines, arcs, ells); ok {
 		s.Resolved = true
 		return s
 	}
@@ -283,8 +333,8 @@ func hasOriginPoint(pts []idPoint) bool {
 // circle rebuild faithfully. Returns ok=false (caller falls back) unless the cluster is
 // clean: at least one curve, every line paired, every circle referenced, and #distinct
 // references == #points.
-func resolveByRefs(pts []idPoint, circs []circleEnt, lines []lineRefs, arcs []arcEnt) (Sketch, bool) {
-	if len(lines) == 0 && len(circs) == 0 && len(arcs) == 0 {
+func resolveByRefs(pts []idPoint, circs []circleEnt, lines []lineRefs, arcs []arcEnt, ells []ellipseEnt) (Sketch, bool) {
+	if len(lines) == 0 && len(circs) == 0 && len(arcs) == 0 && len(ells) == 0 {
 		return Sketch{}, false
 	}
 	refSet := map[uint32]struct{}{}
@@ -305,6 +355,9 @@ func resolveByRefs(pts []idPoint, circs []circleEnt, lines []lineRefs, arcs []ar
 		refSet[a.start] = struct{}{}
 		refSet[a.end] = struct{}{}
 		refSet[a.center] = struct{}{}
+	}
+	for _, e := range ells {
+		refSet[e.ref] = struct{}{}
 	}
 	// The sketch origin (0,0) is an implicit centre point that geometry can reference but that
 	// carries no coordinate node (so it never appears in pts). When exactly one referenced point
@@ -338,6 +391,11 @@ func resolveByRefs(pts []idPoint, circs []circleEnt, lines []lineRefs, arcs []ar
 	}
 	for _, a := range arcs {
 		s.Arcs = append(s.Arcs, Arc{Center: coord[a.center], Radius: a.radius, Start: coord[a.start], End: coord[a.end]})
+	}
+	for _, e := range ells {
+		s.Ellipses = append(s.Ellipses, Ellipse{
+			Center: coord[e.ref], MajorAxis: Point2D{e.axisX, e.axisY}, MajorR: e.majorR, MinorR: e.minorR,
+		})
 	}
 	return s, true
 }

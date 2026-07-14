@@ -278,6 +278,31 @@ func TestPartialRevolveTranslationRebuildsSolid(t *testing.T) {
 	}
 }
 
+// TestEllipseTranslationRoundTrips translates ke_ellipse.ipt (a two-line base sketch plus one
+// ellipse at centre (10,5), major axis +X, majorR 3, minorR 1.5) through the full pipeline and
+// checks the reopened .opd carries a native Oblikovati ellipse with those exact parameters — not
+// the phantom radius-1 circle it decoded as before the sentinel-gated discriminator.
+func TestEllipseTranslationRoundTrips(t *testing.T) {
+	def := reopenPart(t, "ke_ellipse.ipt")
+	if def.Sketches().Count() != 1 {
+		t.Fatalf("got %d sketches, want 1", def.Sketches().Count())
+	}
+	sk := def.Sketches().Item(0)
+	if n := sk.Circles().Count(); n != 0 {
+		t.Errorf("got %d circles, want 0 (the ellipse must not emit as a circle)", n)
+	}
+	if n := sk.Ellipses().Count(); n != 1 {
+		t.Fatalf("got %d ellipses, want 1", n)
+	}
+	e := sk.Ellipses().Item(0)
+	if math.Abs(e.MajorRadius-3) > 1e-9 || math.Abs(e.MinorRadius-1.5) > 1e-9 {
+		t.Errorf("radii = (%.4g,%.4g), want majorR=3 minorR=1.5", e.MajorRadius, e.MinorRadius)
+	}
+	if math.Abs(e.Center.X-10) > 1e-9 || math.Abs(e.Center.Y-5) > 1e-9 {
+		t.Errorf("centre = (%.4g,%.4g), want (10,5)", e.Center.X, e.Center.Y)
+	}
+}
+
 // reopenPart translates an .ipt through the full pipeline and reopens it, returning the definition.
 func reopenPart(t *testing.T, file string) *compdef.PartComponentDefinition {
 	t.Helper()

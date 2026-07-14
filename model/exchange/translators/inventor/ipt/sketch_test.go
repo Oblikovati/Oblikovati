@@ -243,7 +243,7 @@ func TestResolveByRefsSynthesizesOrigin(t *testing.T) {
 		{a: 20, b: 22, paired: true}, // (2,0)  -> (2,2)
 		{a: 22, b: 10, paired: true}, // (2,2)  -> origin
 	}
-	s, ok := resolveByRefs(pts, nil, lines, nil)
+	s, ok := resolveByRefs(pts, nil, lines, nil, nil)
 	if !ok || len(s.Lines) != 3 {
 		t.Fatalf("resolveByRefs ok=%v, lines=%d; want ok, 3 lines", ok, len(s.Lines))
 	}

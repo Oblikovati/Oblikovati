@@ -448,7 +448,7 @@ func emitSketch(def *compdef.PartComponentDefinition, s ipt.Sketch) *sketch.Sket
 // per line (AddByTwoPoints) — gives the rebuilt sketch the same degrees of freedom as the original
 // (a closed N-gon: 2N free DOF, not 4N).
 func emitSketchOn(def *compdef.PartComponentDefinition, s ipt.Sketch, plane sketch.Plane) (*sketch.Sketch, []*sketch.Line) {
-	if len(s.Points) == 0 && len(s.Lines) == 0 && len(s.Circles) == 0 && len(s.Arcs) == 0 {
+	if len(s.Points) == 0 && len(s.Lines) == 0 && len(s.Circles) == 0 && len(s.Arcs) == 0 && len(s.Ellipses) == 0 {
 		return nil, nil
 	}
 	sk := def.Sketches().Add(plane)
@@ -468,6 +468,11 @@ func emitSketchOn(def *compdef.PartComponentDefinition, s ipt.Sketch, plane sket
 	}
 	for _, c := range s.Circles {
 		sk.Circles().AddByCenterRadius(m.P2(c.Center.X, c.Center.Y), m.Scalar(c.Radius))
+	}
+	for _, e := range s.Ellipses {
+		// Share the centre with any coincident corner (pointAt), matching how Inventor stores an
+		// ellipse's centre by reference. The major-axis direction and both semi-axes are verbatim.
+		sk.Ellipses().AddWithCenter(pointAt(e.Center), m.V2(e.MajorAxis.X, e.MajorAxis.Y), m.Scalar(e.MajorR), m.Scalar(e.MinorR))
 	}
 	return sk, lines
 }
