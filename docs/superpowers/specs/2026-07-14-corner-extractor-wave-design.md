@@ -104,12 +104,17 @@ cylinder/cone; circular for tori) to form the `RailLoop` boundary. Corner
 vertices `P_k` are **shared cyclically** between adjacent arms so the loop closes
 watertight.
 
-### Golden-Diff gate
+### Golden-Diff gate (against the corrected baseline)
 
 The full corpus run must show **zero byte-changes** in the output files of the
-existing green planar-trihedral and obstacle-rebuild cases, proving the seam is
-transparent. Wired behind the do-no-harm fallback (§6), a mis-extraction can
-never regress the green corpus.
+green cases, proving the seam is transparent — with one caveat forced by F2
+(§5): the **planar-trihedral sphere** cases are byte-for-byte against their
+current output (genuinely correct today), but the **obstacle** cases are
+byte-for-byte against the **sign-corrected** baseline established by the M1
+obstacle-sign-correction task, *not* the pre-correction output (which carries a
+latent fold). Corpus PASS itself (area within OCCT 1 %, an external oracle) is
+unaffected by the sign flip. Wired behind the do-no-harm fallback (§6), a
+mis-extraction can never regress the green corpus.
 
 ---
 
@@ -131,47 +136,70 @@ approximation), preventing systematic normal deviation in the certificate.
 
 ---
 
-## 5. F2 ribbon-sign reconciliation (mandatory pre-flight)
+## 5. F2 ribbon-sign reconciliation (resolved — dual-path probe, 2026-07-14)
 
-Before any legacy obstacle-class geometry routes through the `coons4` transfinite
-solver, the ribbon-sign evaluation must be unified. A real static divergence
-exists between the two shipped conventions:
+The F2 dual-path derivation is **done** (geometry-math advisor; full report at
+`scratchpad/f2-reconciliation-report.md`). The reconciliation is not "two valid
+conventions" — one is proven correct and the other is a **latent bug**.
 
-- **Shipped foundation convention** (coons4/tri3): ribbons extrude **outward**,
-  `awayRef = inwardCross·(−1)`. The foundation's final review **proved** this
-  correct by deriving it from `geom/match_surface.go`'s `into()` sign (a
-  VMin↔VMin Order-1 match negates the ribbon cross-derivative, so outward is
-  required for a non-folding seam).
-- **Shipped obstacle convention** (`corner_blend_obstacle.go` `orientInward`):
-  ribbons extrude **inward**, with identical `MatchSurface` parameters, yet is
-  empirically green. It is masked because `seamCrease` uses
-  `creaseAngle = min(θ, π−θ)`, which is **sign-insensitive**; only `NoFold`
-  guards sign, and each path passes on its own geometry.
-- **Theoretical host-normal anchor** (proposed): with `n_adj` = adjacent outward
-  unit normal, `t` = unit rail tangent `C'(0.5)`, `n_patch` = host-face normal
-  pointing **into** the patch interior, `b_ref = t × n_patch`:
+**Locked-in convention: OUTWARD `awayRef`.** `awayRef = inwardCross·(−1)`,
+`dir = orientInward(n_adj×t, awayRef)`; the ribbon extrudes **outward**. Derived
+directly from `geom/match_surface.go`'s `into()`: a VMin↔VMin Order-1 match sets
+`(fill ∂/∂v, into interior) = −dir`, so non-fold **requires** `dir = −c_in =
+awayRef = outward`. It is anchored on the fill's own Coons interior derivative
+`c_in`, so it needs **no host normal** and does **not** degenerate on a flat
+dihedral. coons4/tri3 are correct by construction.
 
-  ```
-  σ = sign( (t × n_adj) · n_patch )
-  ```
+**The shipped obstacle path is mis-signed.** `corner_blend_obstacle.go`
+`orientInward(WallInto, inwardCrossV(base,false))` sets `dir ≈ +c_in` — the wrong
+sign (fill's first station steps *out* of the patch, must fold back one control
+station). It is green today only by two accidents: `creaseAngle = min(θ, π−θ)` is
+antipodal-blind (so `MaxAngleDev ≈ 0` for either sign), and at 24×24 the shallow
+near-seam fold does not resolve into a confirmed reversal in `obstacleNoFold`. It
+passes by **sampling luck, not correctness** — "obstacle passes ⇒ its sign is
+right" is **false** and must not propagate into the `coons4` route. → This is why
+§7 Milestone 1 corrects the obstacle sign as its **own gated task** before the
+strangler migration.
 
-  passed to `MatchSurface` so `S_v` points consistently inward relative to the
-  patch boundary.
+**The host-normal `σ = sign((t×n_adj)·n_patch)` is demoted to a cross-check.** It
+equals the `awayRef` sign **only** on a well-conditioned convex trihedral/runout
+(where `c_in ∝ +b_ref` and the trihedron keeps one handedness). It **diverges** on
+saddle/mixed-convexity corners, near-flat dihedrals (its triple product → 0, sign
+becomes round-off), high-curvature adjacents sampled at one midpoint, and the
+**T6 obstacle-crossing class** (convex on one span, concave on the other). σ is
+used only as a conditioning-gated second opinion in the probe; the fill-anchored
+`awayRef` is always primary.
 
-**This σ formula is NOT oracle-backed against the shipped Go foundation.** It is a
-standard differential-geometry derivation, but the foundation locked in `awayRef`
-natively. Assuming they are identical is exactly how the just-eradicated fold
-returns. It anchors on the **host normal** `n_patch`, whereas the shipped
-coons4/tri3 anchor on the **plain-Coons interior cross-derivative** — a different
-anchor.
+### The runtime dual-path probe (the M1 gate instrument)
 
-**Mandatory pre-flight guard (Milestone 1, first task):** the geometry-math
-advisor executes a **dual-path derivation** proving the mapping between `awayRef`
-and `σ` on the shipped `coons4`/`tri3` fixtures and the obstacle **T6** case, and
-specifies the **runtime dual-path probe** (feed one loop through both ribbon
-builders; assert the same oriented normal field / both `NoFold`). The wave locks
-into whichever convention reproduces the non-folding `awayRef` behavior the
-foundation verified. No obstacle geometry touches `coons4` until this is proven.
+For each **G1 side**, at the seam midpoint (rail param `lo + 0.5(hi−lo)`; tri3
+pole side excluded, v-range capped at `v1 − 0.1·(v1−v0)`):
+
+1. **Same oriented normal** (the sign test `creaseAngle` omits):
+   `n̂_fill · n̂_rib > 0.1` — a fold flips this to ≈ −1.
+2. **Matched fill still points inward:** `c_in^fill · inwardCross(base) > 0`.
+3. **`NoFold`** holds on the matched fill.
+4. **σ cross-check, gated:** if `|n̂_adj × n̂_patch| ≥ sin θ_min` (θ_min = 1e-3
+   rad), assert `sign((t×n_adj)·n_patch) == awayRef sign`; else abstain.
+
+**Cross-path assertion (the reconciliation itself):** run **both** the obstacle
+`Build` and `coons4` on the same **T6** loop; assert per-side `n_fill` agree in
+orientation **after** the obstacle sign flip. Before the flip this assertion is
+expected to **FAIL** on the crossing span — that failure is the proof the masked
+fold was real, and is the regression test for the sign correction.
+
+**Tolerances (model-scaled, no bare constants):** the sign/agreement threshold is
+a unit-normal dot `> 0` with margin `0.1` (dimensionless); its validity is gated
+on `|S_u×S_v| ≥ scale.Weld()` with `scale = ResolutionForPoints(loop corners)`
+(ADR-0042) — the probe **abstains** below the floor rather than assert a sign.
+Ribbon-direction / σ conditioning floors are `|n̂×·| ≥ sin(1e-3 rad)`.
+
+**Honest-reject floor (ADR-3):** if the per-Greville sign of `w·awayRef` along a
+seam is **not constant** above the degeneracy floor (a genuine within-side
+convexity flip — a true saddle), no single ribbon orientation is G1-correct;
+honest-reject and defer to a finer tier rather than ship a half-folded ribbon.
+`awayRef` *detects* this (it sees the per-point flip); a single-point σ silently
+returns one sign — the second reason to anchor on `awayRef`.
 
 ---
 
@@ -225,21 +253,32 @@ area improved toward parity; else the baseline.
 
 Assumes the foundation wave (rail.go, providers, dispatcher) is shipped (§1).
 
-### Milestone 1 — F2/F3 reconciliation & the Strangler Migration
+### Milestone 1 — F2 sign correction, F3 de-dup & the Strangler Migration
 
-- **Task A — F2 dual-path probe** (geometry-math advisor). Derive the mapping
-  between `awayRef` and the host-normal `σ` on the shipped `coons4`/`tri3`
-  fixtures and obstacle T6; specify + implement the runtime dual-path probe;
-  document the proven ribbon-sign convention the wave locks in.
-- **Task B — F3 certify-helper de-dup.** Unify the triplicated certify quartet
+Ordered so the obstacle sign is corrected and re-baselined **before** the
+strangler migration, keeping the migration a pure byte-for-byte no-op refactor.
+
+- **Task A — F2 dual-path probe (DONE, derivation) + implement the probe.** The
+  derivation is complete (§5); implement the runtime dual-path probe as a
+  reusable test instrument: per-G1-side oriented-normal check
+  (`n̂_fill·n̂_rib > 0.1`) + `NoFold` + gated σ cross-check, model-scaled
+  degeneracy floor. This is the gate instrument for Task B.
+- **Task B — correct the obstacle ribbon sign (the latent-fold fix).** Flip
+  `corner_blend_obstacle.go`'s wall + two wings from `inwardCrossV(base,false)`
+  to the **outward** `awayRef` reference (`…​.Scale(-1)`), matching the coons4
+  `ribbonSide`. **Gate:** corpus stays ≥ 50 PASS (area vs OCCT) **AND** the
+  Task-A probe passes on **T6** with the flip actually taken (cross-path assertion
+  green; the pre-flip FAIL is the regression witness). This re-establishes the
+  **corrected obstacle baseline** the strangler diffs against.
+- **Task C — F3 certify-helper de-dup.** Unify the triplicated certify quartet
   (`tri3NoFold`/`obstacleNoFold` via a shared column-scanner taking a v-upper-
   bound; `tri3RibLen`/`coons4RibLen` via a valence-agnostic rib-length helper).
-  Enabled by convergence; gated by the obstacle suite.
-- **Task C — `extractTrihedral` (planar only) + `extractObstacle`.** Reuse
-  `chainArcs`/arm-trim for boundary limits (§3A) to secure the golden diff. Wire
-  `solveCorner` as the strangler facade (§6).
-- **Gate:** full corpus run yields **zero byte-changes** in the output files of
-  the existing green planar-trihedral and obstacle-rebuild cases.
+  Gated by the obstacle suite (now sign-corrected).
+- **Task D — `extractTrihedral` (planar only) + `extractObstacle`.** Reuse
+  `chainArcs`/arm-trim for boundary limits (§3A). Wire `solveCorner` as the
+  strangler facade (§6).
+- **Gate:** full corpus run yields **zero byte-changes** — sphere cases vs their
+  current output, obstacle cases vs the **Task-B corrected** baseline (§3).
 
 ### Milestone 2 — Runout extractor integration (the Tracer Bullet)
 
