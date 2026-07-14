@@ -209,6 +209,30 @@ func surfaceArea(s geom.BSplineSurface) float64 {
 	return area
 }
 
+// TestObstacleT6RibbonNonFolding proves the sign-corrected obstacle patch passes the F2 probe.
+// Before the fix this FAILS on the wall seam — that failure is the regression witness the report
+// predicts (f2-reconciliation-report.md §C, "before the flip this assertion is expected to FAIL").
+func TestObstacleT6RibbonNonFolding(t *testing.T) {
+	of := newT6Obstacle(t)
+	g, ok := obstaclePatchNeighbours(of)
+	if !ok {
+		t.Fatal("obstaclePatchNeighbours declined T6")
+	}
+	sides := obstacleSides(of, g.wingL, g.wingR, g.wall)
+	rails := [4]geom.BSplineCurve{g.c0, g.c1, g.d0, g.d1}
+	fill, err := geom.FillSurface(g.c0, g.c1, g.d0, g.d1, sides)
+	if err != nil {
+		t.Fatalf("FillSurface: %v", err)
+	}
+	fill, err = pinFillBoundary(fill, g.c0, g.c1, g.d0, g.d1)
+	if err != nil {
+		t.Fatalf("pinFillBoundary: %v", err)
+	}
+	if !ribbonSeamNonFolding(fill, rails, sides, blendScale()) {
+		t.Fatal("sign-corrected obstacle T6 patch still folds")
+	}
+}
+
 // TestReverseBSplineCurve exercises reverseBSplineCurve's INTERIOR directly — the reversed control
 // points, weights, and reflected knots — WITHOUT the endpoint pinning (pinEnds) that would mask an
 // interior bug in TestObstacleRailsBuildT6 (which only checks corners, and pinning fixes those

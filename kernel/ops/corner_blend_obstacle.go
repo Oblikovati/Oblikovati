@@ -139,24 +139,31 @@ func obstaclePatchNeighbours(of *ObstacleFeature) (obstaclePatchGeom, bool) {
 		return obstaclePatchGeom{}, false
 	}
 	length := ribbonLength(of)
-	wall, e0 := extrudeRibbon(c0, orientInward(of.WallInto.Scale(length), inwardCrossV(base, false)))
-	wingL, e1 := extrudeRibbon(d0, orientInward(wingDir(of, of.Nodes[0], length), inwardCrossU(base, false)))
-	wingR, e2 := extrudeRibbon(d1, orientInward(wingDir(of, of.Nodes[1], length), inwardCrossU(base, true)))
+	wall, e0 := extrudeRibbon(c0, orientInward(of.WallInto.Scale(length), inwardCrossV(base, false).Scale(-1)))
+	wingL, e1 := extrudeRibbon(d0, orientInward(wingDir(of, of.Nodes[0], length), inwardCrossU(base, false).Scale(-1)))
+	wingR, e2 := extrudeRibbon(d1, orientInward(wingDir(of, of.Nodes[1], length), inwardCrossU(base, true).Scale(-1)))
 	if e0 != nil || e1 != nil || e2 != nil {
 		return obstaclePatchGeom{}, false
 	}
 	return obstaclePatchGeom{c0: c0, c1: c1, d0: d0, d1: d1, wall: wall, wingL: wingL, wingR: wingR}, true
 }
 
-// orientInward flips dir so it points toward the patch INTERIOR (positive dot with the seam's inward
-// cross-derivative). A G1 tangent ribbon fixes the seam's tangent PLANE regardless of the extrude
-// SIGN, but the sign sets whether the patch's cross-derivative there points into or out of the patch;
-// the wrong sign forces the surface to leave the seam the wrong way and fold back (a normal reversal
-// one station in — the T6 wall folded under refinement because WallInto pointed into the wall, −S_v).
-// Anchoring to the plain Coons interior derivative makes the sign robust to whatever the detector
-// supplies for WallInto/BlendAxis (only their LINE — the tangent-plane info — is load-bearing).
-func orientInward(dir, inward math.Vector3) math.Vector3 {
-	if dir.Dot(inward) < 0 {
+// orientInward flips dir to agree with ref, the seam's OUTWARD cross-derivative (the negated
+// plain-Coons inward cross-derivative, matching coons4Sides — F2 fix, f2-reconciliation-report.md,
+// task-2-brief.md; the function name predates the flip and is kept to minimize the diff, but every
+// call site now anchors outward, not inward). A G1 tangent ribbon fixes the seam's tangent PLANE
+// regardless of the extrude SIGN, but the sign sets whether MatchSurface's glued cross-derivative
+// lands inside or outside the patch: MatchSurface negates the ribbon derivative across the seam
+// (geom/match_surface.go), so an OUTWARD-anchored ribbon lands the fill's cross-derivative back INSIDE
+// the patch, while an inward-anchored one (the original bug) forces the surface to fold back one
+// station in. The original inward anchor passed the T6 corpus only because antipodal-blind
+// creaseAngle + 24×24 sampling missed the fold; ribbonSeamNonFolding (Task 1's boundary-exact probe)
+// catches it and TestObstacleT6RibbonNonFolding is the regression witness. Anchoring to the plain
+// Coons interior derivative (rather than WallInto/BlendAxis directly) makes the sign robust to
+// whatever the detector supplies for those fields (only their LINE — the tangent-plane info — is
+// load-bearing).
+func orientInward(dir, ref math.Vector3) math.Vector3 {
+	if dir.Dot(ref) < 0 {
 		return dir.Scale(-1)
 	}
 	return dir
