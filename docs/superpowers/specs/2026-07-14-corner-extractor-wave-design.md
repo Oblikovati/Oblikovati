@@ -60,8 +60,9 @@ Why strangler over a curved-only guard:
 
 The tracer proves **both** arities and **both** fill classes through the single
 dispatcher in one wave: a 3-sided analytic case (`extractTrihedral` planar →
-`analyticSphere`) and a 4-sided transfinite case (`extractRunout` S1 →
-`coons4`).
+`analyticSphere`) and the transfinite runout case (`extractRunout` S1 → **three**
+valence-4 `coons4` patches tiling the interference hexagon — see §M2; the oracle
+proved S1 is a double interference, not the single 4-sided quad first assumed).
 
 **The strangler's real risk is the trim, not the surface.** Today
 `spherePatchFace` emits `cb.sphere` bounded by `cb.arcs` (`chainArcs`), and
@@ -290,20 +291,43 @@ strangler migration, keeping the migration a pure byte-for-byte no-op refactor.
 - **Gate:** full corpus run yields **zero byte-changes** — sphere cases vs their
   current output, obstacle cases vs the **Task-B corrected** baseline (§3).
 
-### Milestone 2 — Runout extractor integration (the Tracer Bullet)
+### Milestone 2 — Runout extractor integration (oracle-derived 3-quad hexagon tiling)
 
-- **Task — `extractRunout`.** Reuse the preserved `detectRunouts`/`solveImprint`
-  (Tasks 2–3) as the rail source. Compute curved analytical setbacks (§3B) where
-  needed; capture crossing nodes `P±`; trim fillet arms axially; generate the
-  4-sided `RailLoop`.
-- **Gate:** the 5 area-discrepancy cases (**S1/S4/T1/T7/T9**) transition to
-  **PASS**, surface area matching the OCCT Gauss-integrated oracle to **< 1 %**;
-  full per-case before/after diff shows **zero regression** on all other cases.
+**The original single-4-sided `extractRunout` was empirically falsified.** The
+DRAWEXE oracle (report `scratchpad/tracer/s1-runout-topology.md`) proved S1 is a
+**double interference**: two bosses cross one fillet (footprint circles on host
+planes A and B). The interfered region is a **hexagon**; our engine has only
+`coons4`/`tri3`, so — exactly as OCCT does — we tile it into **3 valence-4
+`coons4` patches** (central + left + right) joined by **2 internal G1 seams**.
+The single-quad guess put two coplanar sides on the same endpoints (`Closed=false`,
+a flat lune). Measured constants (radius 6, ⟂ hosts): `d = r·tan((π−γ)/2) = r`;
+fillet-cut abscissa `x = ±√(R_B²−d²) = ±√48 = 6.93`. **T9 is deferred to Milestone
+3** — its fill is 2 patches including a valence-6 one that needs the n-sided provider.
 
-### Milestone 3 — Curved miter generalization & N-way
+- **Task 7 — `solveImprint` accepts `geom.Arc3d`.** Imported footprints arrive as
+  `geom.Arc3d`, never `geom.Circle`; extend `footprintConic` to reconstruct the
+  circle from the arc basis (unblocks S1/S4/T1).
+- **Task 8 — `detectRunoutRegions`.** Cluster coupled crossings: project each
+  crossing's `[pMinus,pPlus]` onto the fillet spine, merge overlapping intervals
+  into one `runoutRegion` (S1's two bosses → one hexagon, not two runouts).
+- **Task 9 — `extractRunout` 3-quad tiler.** Emit the 3 measured RailLoops
+  (central/left/right) with 2 free-placement internal G1 seams; **G0** on the
+  un-blended feature-arc sides (no tangent — a feature-wall G1 ribbon inverts the
+  patch), **G1** on the fillet ¼-circles, host-plane runout curves, and seams.
+- **Task 10 — Wire + oracle-gate S1** behind do-no-harm; split the fillet cylinder
+  outside the region and replace the span with the 3 patches.
+- **Tasks 11–12 — S4/T1** (cone/torus circular footprints, reuse tiler) then **T7**
+  (`solveImprint` ellipse extension; line∩ellipse).
+- **Gate:** **S1/S4/T1/T7** transition to **PASS**, area matching the OCCT
+  Gauss-integrated oracle to **< 1 %**; full per-case diff shows **zero
+  regression** on all other cases. Corpus ≥ **54** PASS. **T9 excluded** (M3).
+
+### Milestone 3 — Curved miter generalization, N-way & n-sided fill (incl. T9)
 
 - **Task — `extractMiter`** (release the curved-host restriction) + remaining
-  high-valence extractors; expand analytical setback to `n`-sided geometries.
+  high-valence extractors; **build the n-sided transfinite fill** (subdivision or
+  Charrot–Gregory) and green **T9** (valence-6 runout patch) through it; expand
+  analytical setback to `n`-sided geometries.
 - **Gate:** the ~69-case corner/miter block is evaluated, transitioning valid
   cases to **watertight solids** and clearing the largest failing block on the
   scoreboard.

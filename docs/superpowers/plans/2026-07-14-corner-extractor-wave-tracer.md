@@ -4,7 +4,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Prove the generalized corner-blend seam end-to-end by routing junctions through one `ExtractRailLoop → resolveBlend` facade — correcting the latent obstacle ribbon-sign fold, holding the green planar-trihedral + obstacle cases byte-for-byte, then greening the five runout cases (S1/S4/T1/T7/T9).
+**Goal:** Prove the generalized corner-blend seam end-to-end by routing junctions through one `ExtractRailLoop → resolveBlend` facade — correcting the latent obstacle ribbon-sign fold, holding the green planar-trihedral + obstacle cases byte-for-byte, then greening the runout cases via the oracle-derived 3-quad hexagon tiler (S1/S4/T1/T7; T9 deferred to Milestone 3's n-sided fill).
 
 **Architecture:** Strangler pattern behind the existing `assembleFilletBody` do-no-harm fallback. Milestone 1 corrects the obstacle ribbon sign (F2), builds the runtime dual-path probe that gates it, de-dups the certify helpers (F3), then wires `extractTrihedral`/`extractObstacle` → `resolveBlend` proving byte-for-byte. Milestone 2 adds `extractRunout` (a single adapter over the already-shipped `detectRunouts`/`solveImprint`) → 4-sided `RailLoop` → `coons4`, gated per family by the DRAWEXE area oracle.
 
@@ -758,188 +758,144 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## MILESTONE 2 — Runout extractor integration (the Tracer Bullet)
+## MILESTONE 2 — Runout extractor (oracle-derived 3-quad hexagon tiling)
 
-Greens the five FAIL(area) runout cases by feeding the already-shipped runout detection into the general 4-sided fill. `solveImprint` already tiers the five families internally (S1 cyl / S4 cone / T1 torus / T7 ellip-cyl / T9 bspline), so `extractRunout` is **one adapter**, gated **five times** by the DRAWEXE area oracle.
+**Supersedes the original single-4-quad M2 (empirically falsified — see below).** The S1 runout was proven by the DRAWEXE oracle (report: `scratchpad/tracer/s1-runout-topology.md`) to be a **double interference**: two features cross one fillet (horizontal r6 boss → footprint circle on host plane A; vertical r8 boss → footprint circle on host plane B). The interfered region is intrinsically a **hexagon** (6 sides: plane-A-left, fillet-left, featureB-arc, fillet-right, plane-A-right, featureA-arc). Our engine has only `coons4`/`tri3`, so — exactly as OCCT does — we tile the hexagon into **3 valence-4 `coons4` patches** (central + left + right) joined by **2 internal G1 seams**. The original guess (one quad, one boss) put two coplanar sides sharing both endpoints (a flat lune, `Closed=false`); the real hole spans both host planes, so every tiled quad has a side that lifts off plane A. **T9 is deferred to Milestone 3** (its fill is 2 patches including a valence-6 one that needs the n-sided provider).
 
-### Task 7: `extractRunout` — runout crossing → 4-sided RailLoop
+Measured constants (S1, radius 6, perpendicular hosts, `d = r·tan((π−γ)/2) = r = 6`): fillet axis `{y=-4, z=4}` along X; fillet-cut abscissa `x = ±√(R_B²−d²) = ±√48 = 6.93`; the three RailLoops' corners are tabulated per task below (all verified closed, 4 distinct corners).
+
+### Task 7: `solveImprint` accepts `geom.Arc3d` (circular footprint)
+
+**Files:**
+- Modify: `kernel/ops/fillet_runout_imprint.go` (the `geom.Circle`-only type gate at `solveImprint`'s head)
+- Test: `kernel/ops/fillet_runout_imprint_test.go`
+
+**Interfaces:**
+- Consumes: `solveImprint(im runoutImprint, res Resolution) (imprintCut, bool)`, `runoutImprint.footprintEdge *topo.Edge`, `edge.Geometry() geom.Surface`-or-curve, `geom.Circle`, `geom.Arc3d{Center math.Point3; Normal, RefDir math.UnitVector3; Radius float64}`.
+- Produces: `footprintConic(edge *topo.Edge) (center math.Point3, radius float64, normal math.UnitVector3, ok bool)` (accepts `geom.Circle` OR `geom.Arc3d`).
+
+The blocker (verified): imported STEP feature footprints arrive as `geom.Arc3d`, never `geom.Circle`, so `solveImprint`'s `circle, ok := im.footprintEdge.Geometry().(geom.Circle)` rejects every real fixture. Extend it to reconstruct the underlying circle from the `Arc3d` basis (an `Arc3d` already carries `Center`/`Radius`/`Normal` — no sample-fit; do NOT sample-and-fit, that loses exactness).
+
+- [ ] **Step 1: Write the failing test** — drive the REAL S1 substrate (`runoutFixtureCrossingBoss(t)` from the shipped runout tests imports `simple/S1` + runs `computeEdgeFillet` + `detectRunouts`), assert both imprints (feature-A on plane A, feature-B on plane B) now yield `solveImprint ok==true` with non-degenerate `pMinus`/`pPlus` (they returned `ok==false` before). Assert the feature-B fillet-cut abscissa `|pPlus.X| ≈ 6.93` within `res.Weld()`. Show the complete test.
+
+- [ ] **Step 2: Run RED** — `go test ./kernel/ops/ -run TestSolveImprintArc3d -v` → FAIL (`ok==false` on the Arc3d footprint).
+
+- [ ] **Step 3: Implement `footprintConic`** and re-point `solveImprint` to use it. Add a `footprintConic` that returns the conic params for both `geom.Circle` and `geom.Arc3d`; `solveImprint` calls it and honest-rejects only when neither matches (message carries the actual `Geometry()` type). Keep the existing `geom.Ellipse`/bspline honest-reject (Task 12 / T9 add those). Show the code.
+
+- [ ] **Step 4: Run GREEN** — both imprints yield sane `imprintCut`.
+
+- [ ] **Step 5: Gates** — `go build ./kernel/... && go vet ./kernel/ops/ && golangci-lint run ./kernel/ops/`; corpus `TestOCCTBlendSimple` grep-count = 50 (not wired yet).
+
+- [ ] **Step 6: Commit** — `feat(blend): solveImprint accepts geom.Arc3d circular footprints (unblocks S1/S4/T1)`.
+
+### Task 8: Runout-region detection (multi-crossing spine clustering)
+
+**Files:**
+- Create: `kernel/ops/corner_runout_region.go`
+- Test: `kernel/ops/corner_runout_region_test.go`
+
+**Interfaces:**
+- Consumes: `detectRunouts(ef, res) []runoutImprint`, `solveImprint(im, res) (imprintCut, bool)`, `edgeFillet{cyl geom.Cylinder; c0,c1 corner; edge}`, `imprintCut{pMinus, pPlus math.Point3; arc geom.Curve3}`.
+- Produces: `type runoutRegion struct { imprints []runoutImprint; cuts []imprintCut; loEdge, hiEdge float64 }`, `detectRunoutRegions(ef edgeFillet, res Resolution) []runoutRegion`.
+
+S1 has **two** imprints interfering in the **same** fillet span → **one** coupled hexagonal hole, NOT two independent runouts (advisor pitfall 5). Project each crossing's `[pMinus,pPlus]` onto the fillet spine (the cylinder axis parameter), sort, and **merge overlapping intervals** into one region. A region with ≥2 imprints is the double-interference hexagon; a region with 1 imprint is a simpler runout (still handled by the same tiler with the missing feature side degenerating — but S1/S4/T1/T7 are all double, so scope this task to the ≥2 case and honest-skip singletons for now).
+
+- [ ] **Step 1: Failing test** — on the S1 fixture, `detectRunoutRegions(ef, res)` returns exactly **1** region whose `imprints` has length 2 (both bosses), and whose spine interval covers `x ∈ [-6.93, 6.93]`. Show the test (build `ef` via the real pipeline as Task 7 does).
+
+- [ ] **Step 2: RED** — `undefined: detectRunoutRegions`.
+
+- [ ] **Step 3: Implement** — call `detectRunouts`, `solveImprint` each (skip `ok==false`), project `[pMinus,pPlus]` onto the spine via `ef.cyl.AxisDir`, sort by lo, merge overlapping, bundle into `runoutRegion`s. Show the clustering code (each func 4-20 lines).
+
+- [ ] **Step 4: GREEN.**
+
+- [ ] **Step 5: Gates** — build/vet/lint; corpus = 50.
+
+- [ ] **Step 6: Commit** — `feat(blend): detectRunoutRegions clusters coupled multi-crossing runouts`.
+
+### Task 9: Hexagon → 3-quad tiler (`extractRunout`)
 
 **Files:**
 - Create: `kernel/ops/corner_extract_runout.go`
 - Test: `kernel/ops/corner_extract_runout_test.go`
 
 **Interfaces:**
-- Consumes: `detectRunouts(ef edgeFillet, res Resolution) []runoutImprint`, `runoutImprint{host; hostIsA; plane geom.Plane; footprintEdge; nodes [2]crossing; boundary; side; flat; back}`, `solveImprint(im runoutImprint, res Resolution) (imprintCut, bool)`, `imprintCut{pMinus, pPlus math.Point3; arc geom.Curve3}`, `edgeFillet{a,b; cyl geom.Cylinder; c0,c1 corner; edge}`, `Side`/`RailLoop`, `G0`/`G1`.
-- Produces: `extractRunout(ef edgeFillet, im runoutImprint, cut imprintCut, res Resolution) (RailLoop, bool)`.
+- Consumes: `runoutRegion` (Task 8), `edgeFillet`, `imprintCut`, `geom.Arc3dByThreePoints(a,mid,b)`, `Side{Curve; Adjacent; Cont}`, `RailLoop`, `G0`/`G1`, `ribbonSeamNonFolding(fill, rails, sides, scale)` (Task 1), the host-plane `geom.Plane` + fillet `geom.Cylinder` + feature-wall `geom.Cylinder` surfaces.
+- Produces: `extractRunout(region runoutRegion, ef edgeFillet, res Resolution) ([]RailLoop, bool)` — the **3** RailLoops (central/left/right).
 
-The 4-sided runout loop: **s0** = the receded fillet-boundary segment between the crossing nodes P−→P+ (on the host plane, the `boundary`/`side` from `runoutImprint`), G1 to the host plane; **s1** = the fillet arm cross-section arc at P+ (from `ef.cyl` at the P+ generator), G1 to `ef.cyl`; **s2** = the footprint arc `cut.arc` from P+→P− (the curved feature's base curve, G0 crease); **s3** = the fillet arm cross-section arc at P− , G1 to `ef.cyl`. This replaces the un-trimmed fillet strip in the crossing span with a coons4 patch bounded by the exact footprint.
+Emit the three RailLoops exactly as the oracle measured (report §"The three RailLoops"). Continuity is load-bearing: **G1** where the fill is tangent (fillet ¼-circle → fillet cylinder; host-plane runout curve → host plane); **G0** at the un-blended feature walls (the feature-arc sides carry **NO** tangent — feeding a feature-wall tangent as a G1 ribbon INVERTS the patch, advisor pitfall 4); **G1** on the two internal seams (shared tangent field between flanking patches, else a crease on the seam).
 
-- [ ] **Step 1: Write the failing test**
+**CENTRAL** (bridges the two feature walls) — corners `(-3.38,-10,4.96)→(3.38,-10,4.96)→(3.38,-7.25,10)→(-3.38,-7.25,10)`:
+`[featA-arc r6 (G0, adj=featureA cyl) | seam_right (G1, adj=right patch) | featB-arc r8 (G0, adj=featureB cyl) | seam_left (G1, adj=left patch)]`
 
-```go
-// TestExtractRunoutIsClosedValence4 drives the S1-shaped synthetic fixture: a straight plane∧plane
-// fillet cylinder whose runout crosses a coplanar cylindrical boss footprint.
-func TestExtractRunoutIsClosedValence4(t *testing.T) {
-	ef, im, cut, res := s1RunoutFixture(t)
-	loop, ok := extractRunout(ef, im, cut, res)
-	if !ok {
-		t.Fatal("extractRunout declined the S1 fixture")
-	}
-	if loop.Valence() != 4 {
-		t.Fatalf("valence = %d, want 4", loop.Valence())
-	}
-	if !loop.Closed(res.Weld()) {
-		t.Fatal("runout loop not closed")
-	}
-}
+**RIGHT** — corners `(3.38,-10,4.96)→(6.93,-10,4)→(6.93,-4,10)→(3.38,-7.25,10)`:
+`[plane-A runout curve (G1, adj=host plane A) | fillet ¼-circle (G1, adj=fillet cyl) | featB-arc portion (G0, adj=featureB cyl) | seam_right (G1, adj=central patch)]`
 
-// TestExtractRunoutFillsAndDoesNotFold proves the loop fills via coons4 and passes the F2 probe.
-func TestExtractRunoutFillsAndDoesNotFold(t *testing.T) {
-	ef, im, cut, res := s1RunoutFixture(t)
-	loop, _ := extractRunout(ef, im, cut, res)
-	fill, rails, sides, ok := coons4Fill(loop)
-	if !ok {
-		t.Fatal("coons4Fill declined the runout loop")
-	}
-	if !ribbonSeamNonFolding(fill, rails, sides, res) {
-		t.Fatal("runout loop folds under coons4")
-	}
-}
-```
+**LEFT** — mirror of RIGHT (x → −x).
 
-`s1RunoutFixture(t)` is a named fixture returning a hand-built `edgeFillet` (a straight cylinder over a plane∧plane edge), the `runoutImprint` a `detectRunouts` call yields on it, its `solveImprint` `imprintCut`, and the model `Resolution`. Build it from a synthetic slab + coplanar cylindrical boss (mirror the "synthetic slab+coplanar-boss" fixture named in the spec's verification section). Prefer constructing `ef`/`im` via the real `computeEdgeFillet` + `detectRunouts` on a small `topo.Body` so the fixture exercises the true detection path, not a fabricated struct.
+Seam placement is a **free parameter** (the fill is area-validated). Derive the seam endpoints from the arc parameterization (e.g. project the feature-A∩feature-B mutual point, or the arc midpoints between the fillet-cut points and the loop's symmetry plane) — **do NOT hard-code x = 3.38**. The seam runs `(±x_s, -7.25, 10) → (±x_s, -10, 4.96)` connecting the featureB arc (plane B) to the plane-A/featureA junction.
 
-- [ ] **Step 2: Run test to verify it fails**
+Helpers (each 4-20 lines, own unit test): `armSectionArc(ef, atCut math.Point3, res) (geom.Curve3, bool)` (fillet cross-section ¼-circle via `Arc3dByThreePoints(ta, mid, tb)` translated to the cut station — the same construction `fillet_faces.go` uses); `planeARunoutCurve(...)` (the host-plane-A curve between the featureA arc and the fillet-cut, on the plane); `internalSeam(...)` (the free-placement seam curve, a line or arc). For the seam's `Adjacent` (the flanking fill patch), use the neighbouring RailLoop's fill surface OR — since patches are built together — a shared `geom.Surface` derived from the seam's two flanking ribbons (the seam is G1-internal: its tangent must agree on both sides).
 
-Run: `go test ./kernel/ops/ -run TestExtractRunout -v`
-Expected: FAIL — `undefined: extractRunout`.
+- [ ] **Step 1: Failing test** — on the S1 region (Task 8), `extractRunout` returns 3 loops; assert each `loop.Closed(res.Weld())` and `Valence()==4` with 4 pairwise-distinct corners at the measured coordinates above; assert the union's outer boundary is the 6-side hexagon (drop the 2 seams). Then `TestExtractRunoutQuadsFillNonFolding`: `coons4Fill` each loop and `ribbonSeamNonFolding(fill, rails, sides, res)` (pass rails from `coons4Fill`) → all non-folding. Show the tests with the measured corners.
 
-- [ ] **Step 3: Write the implementation**
+- [ ] **Step 2: RED** — `undefined: extractRunout`.
 
-```go
-// SPDX-License-Identifier: GPL-2.0-only
-package ops
+- [ ] **Step 3: Implement** the hexagon boundary + the 3-quad split + the per-side G0/G1 roles. Include the flat-lune guard (advisor pitfall 1): reject any loop where two **consecutive** sides share the same carrier plane and the enclosed area `< res.Weld()²` — that means a mis-tile. Show the code.
 
-import (
-	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/topo"
-)
+- [ ] **Step 4: GREEN.**
 
-// extractRunout turns one runout crossing into the 4-sided RailLoop the general coons4 tier fills:
-// the receded host-plane boundary segment (G1 to the plane), the two fillet-arm cross-section arcs at
-// the crossing nodes (G1 to the fillet cylinder), and the curved feature's footprint arc (G0 crease).
-// It reuses the shipped detectRunouts/solveImprint as the rail source (they already tier S1/S4/T1/T7/T9).
-// ok=false on a bad cross-section / non-crossing → honest-reject (ADR-3), leaving the fillet whole.
-func extractRunout(ef edgeFillet, im runoutImprint, cut imprintCut, res Resolution) (RailLoop, bool) {
-	boundary, ok := recededBoundaryRail(im, cut, res) // s0: P- -> P+ along the receded fillet boundary, on im.plane
-	if !ok {
-		return RailLoop{}, false
-	}
-	armPlus, ok := armSectionArc(ef, cut.pPlus, res) // s1: fillet cross-section arc at P+
-	if !ok {
-		return RailLoop{}, false
-	}
-	armMinus, ok := armSectionArc(ef, cut.pMinus, res) // s3: fillet cross-section arc at P-
-	if !ok {
-		return RailLoop{}, false
-	}
-	sides := []Side{
-		{Curve: boundary, Adjacent: im.plane, Cont: G1},
-		{Curve: armPlus, Adjacent: ef.cyl, Cont: G1},
-		{Curve: cut.arc, Adjacent: im.host.Geometry().(geom.Surface), Cont: G0},
-		{Curve: armMinus, Adjacent: ef.cyl, Cont: G1},
-	}
-	return RailLoop{Sides: sides, Provenance: topo.Lineage{}}, true
-}
-```
+- [ ] **Step 5: Gates** — build/vet/gofmt/lint; corpus = 50 (still unwired). No `topo` import except `topo.Lineage{}` in the produced RailLoops.
 
-Two helpers to implement (each 4-20 lines, with their own unit tests):
+- [ ] **Step 6: Commit** — `feat(blend): extractRunout tiles the runout hexagon into 3 coons4 RailLoops`.
 
-- `recededBoundaryRail(im runoutImprint, cut imprintCut, res Resolution) (geom.Curve3, bool)` — the segment of the receded fillet boundary line (`im.boundary`, a `boundaryLine2` in `im.plane`'s 2D frame) between the 2D projections of `cut.pMinus`/`cut.pPlus`, mapped back to 3D via `im.back`. A straight segment ⇒ build a `geom.LineSegment3d` (grep the real line-segment type in `geom`). Guard the degenerate zero-length segment (`< res.Weld()`).
-- `armSectionArc(ef edgeFillet, at math.Point3, res Resolution) (geom.Curve3, bool)` — the fillet cylinder's circular cross-section (radius `ef.cyl.Radius`) in the plane through `at` perpendicular to `ef.cyl.AxisDir`, swept the quarter between the two host tangents. Reuse the arm-end section geometry `corner`/`cornerAt` already computes (grep `EndSection`/section-arc construction on the cylinder). Guard a section that does not reach the boundary.
-
-Note the `im.host.Geometry().(geom.Surface)` type assertion for the G0 footprint Adjacent — the rim is G0 (no ribbon), so the Adjacent is used only structurally; if the host geometry does not assert to `geom.Surface`, return `ok=false`.
-
-- [ ] **Step 4: Run test to verify it passes**
-
-Run: `go test ./kernel/ops/ -run TestExtractRunout -v`
-Expected: PASS.
-
-- [ ] **Step 5: Build + fmt + commit**
-
-Run: `go build ./kernel/... && go vet ./kernel/ops/ && gofmt -l kernel/ops/corner_extract_runout.go`
-
-```bash
-git add kernel/ops/corner_extract_runout.go kernel/ops/corner_extract_runout_test.go
-git commit -m "feat(blend): extractRunout (runout crossing -> 4-sided RailLoop)
-
-Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
-```
-
----
-
-### Task 8: Wire the runout strangler behind the do-no-harm fallback
+### Task 10: Wire runout into the fillet assembly (do-no-harm) + oracle-gate S1
 
 **Files:**
-- Modify: `kernel/ops/fillet_faces.go` (`filletResultFaces` — the runout branch) or `kernel/ops/fillet.go` (the assembly path)
-- Test: `kernel/ops/corner_extract_runout_test.go` (integration case)
+- Modify: `kernel/ops/fillet_faces.go` (`filletResultFaces` runout branch) and/or `kernel/ops/fillet.go` (`assembleFilletBody`)
+- Test: `kernel/ops/corner_extract_runout_test.go` (integration) + the corpus gate
 
 **Interfaces:**
-- Consumes: `extractRunout` (Task 7), `resolveBlend`, `patchToFilletFace` (Task 4), `detectRunouts`/`solveImprint`, `assembleFilletBody`'s existing `obstacleImprovedSolid` do-no-harm pattern.
-- Produces: a runout patch emitted as a `filletFace` and trimmed fillet arms, active only when it yields an area-improved valid solid.
+- Consumes: `detectRunoutRegions` (Task 8), `extractRunout` (Task 9), `resolveBlend(loop, scale)`, `patchToFilletFace(patch, parent)` (Task 4), the do-no-harm pattern in `assembleFilletBody` (fillet.go:186-194, `obstacleImprovedSolid`).
 
-Mirror `assembleFilletBody`'s do-no-harm fallback (fillet.go:186-194): build the runout-patched faces; keep them only if the result is a valid, hole-contained solid whose area improved toward parity, else the baseline. This guarantees a mis-fire cannot regress the green corpus.
+For each `edgeFillet`: `detectRunoutRegions`; for each region, `extractRunout` → 3 loops → `resolveBlend` each → `patchToFilletFace`; **split the fillet cylinder** so the plain quarter-cyl survives only outside the region's spine interval (`|x| > 6.93` for S1), replacing the interfered span with the 3 patches. Extend the `obstacleFired` do-no-harm flag to cover the runout path (or a parallel `runoutFired`) so `assembleFilletBody` keeps the runout result only if it yields an area-improved valid solid; else baseline. Mirror the existing obstacle branch exactly.
 
-- [ ] **Step 1: Write the failing test** — an integration test that runs the full fillet on the S1 synthetic body and asserts the result is a watertight solid whose area is within 1% of the analytic expected area (the boss-free trimmed fillet + the coons4 patch). Provide `s1SyntheticBody(t) (*topo.Body, []filletPick)` and assert `assembleFilletBody(...)` (or the top-level `Fillet` entry) yields `IsSolid()` + area within tolerance. Show the complete assertion code.
+- [ ] **Step 1: Failing integration test** — drive the full fillet on the S1 body; assert the result `IsSolid()` and total area within 1% of the oracle `3662.79`. Show the assertion.
 
-- [ ] **Step 2: Run test to verify it fails** — Expected: FAIL (runout branch not wired; area still shows the un-trimmed surplus).
+- [ ] **Step 2: RED** — area still shows the un-trimmed surplus (~+1.15%).
 
-- [ ] **Step 3: Wire the runout branch** — in `filletResultFaces` (fillet_faces.go:17), for each `edgeFillet`, call `detectRunouts(ef, res)`; for each imprint with a valid `solveImprint`, `extractRunout` → `resolveBlend` → `patchToFilletFace`, add the patch face and trim the fillet arm to the crossing generators (exclude the under-footprint strip). Return the `obstacleFired`-style bool so `assembleFilletBody` runs its do-no-harm check on the runout path too (extend `obstacleFired` to `patchesFired`, or add a parallel flag — keep the existing obstacle fallback intact). Show the exact code for the branch, mirroring the existing obstacle branch in the same function.
+- [ ] **Step 3: Wire the runout branch** (mirror the obstacle branch in `filletResultFaces`) + the fillet split + the do-no-harm flag. Show the exact code.
 
-- [ ] **Step 4: Run test to verify it passes** — Expected: PASS (S1 synthetic body watertight, area within 1%).
+- [ ] **Step 4: GREEN + S1 oracle gate** — `go test ./model/feature -run 'TestOCCTBlendSimple/S1' -v` → PASS; area within OCCT's 1% (`printf 'source S1.tcl\n' | ../occt-build/lin64/gcc/bin/DRAWEXE -b` → `checkprops -s 3662.79`).
 
-- [ ] **Step 5: Corpus gate** — `go test ./model/feature -run TestOCCTBlendSimple -v 2>&1 | grep -cE '^\s*--- PASS: TestOCCTBlendSimple/'` → `50` (no regression; the real corpus S1/S4/T1/T7/T9 green in Tasks 9-11, but nothing must drop here). Confirm byte-identity on all non-runout cases.
+- [ ] **Step 5: Zero-regression corpus** — `TestOCCTBlendSimple` count = 51 (50 + S1), every other case's PASS/FAIL byte-identical (diff the name set).
 
-- [ ] **Step 6: Commit** — `feat(blend): wire runout strangler behind do-no-harm fallback`.
+- [ ] **Step 6: Commit** — `feat(blend): wire runout 3-quad fill behind do-no-harm fallback; green S1`.
 
----
+### Task 11: Green S4 + T1 (cone→circle, torus→circle)
 
-### Task 9: Green S1 + S4 (cylinder + cone footprints) — DRAWEXE oracle gate
+**Files:** Test/oracle only unless a footprint exposes a gap; possibly `kernel/ops/fillet_runout_imprint.go` if the cone/torus footprint edge isn't already a circular `Arc3d` on the host plane.
 
-**Files:** Test/oracle only (`test-utilities/occt-blend/oracle/`), no new production code if Tasks 7-8 generalize correctly.
+S4 (cone boss, footprint = cone∩⊥plane = **circle**) and T1 (torus boss, footprint = torus∩plane = **circle**) are the SAME 3×val-4 family with circular footprints — Task 7's `Arc3d` solve + Task 9's tiler should green them with no new geometry. **Classify the footprint from the actual surface∩plane, not the feature's surface type** (advisor pitfall 7 — a cone crossed by an oblique plane would be an ellipse; verify the S4/T1 host planes are ⟂ the feature axis so the footprint is genuinely circular).
 
-**Interfaces:** Consumes the wired runout path; the DRAWEXE oracle (`printf 'source S1.tcl\n' | DRAWEXE -b`).
+- [ ] **Step 1: Run `TestOCCTBlendSimple/S4`** — FAIL(area) before. Oracle-compare; confirm within 1%.
+- [ ] **Step 2: If a gap,** debug against the S4 oracle (systematic-debugging: per-face area diff first). Do NOT loosen tolerance.
+- [ ] **Step 3: Repeat for T1** (torus footprint).
+- [ ] **Step 4: Zero-regression corpus** (count rises to 53).
+- [ ] **Step 5: Commit** — `test(blend): green S4+T1 runout cases (cone/torus circular footprints)`.
 
-- [ ] **Step 1: Run the S1 case** — `go test ./model/feature -run 'TestOCCTBlendSimple/S1' -v`. Expected before: FAIL(area) (+~1.15% surplus). Capture the current area.
-- [ ] **Step 2: Compare to the DRAWEXE oracle** — run the S1 oracle script, record OCCT's Gauss-integrated area; confirm the wired path's area is now within 1%.
-- [ ] **Step 3: If S1 still fails,** debug the extractRunout geometry against the oracle (systematic-debugging: gather the per-face area diff first). Do NOT loosen the tolerance. The likely culprits: the arm-section arc sweep bounds, the footprint arc direction, or the boundary-segment endpoints — each checkable against the S1 oracle's face dump.
-- [ ] **Step 4: Repeat for S4** (cone footprint — `solveImprint`'s cone tier). Expected: `TestOCCTBlendSimple/S4` FAIL(area)→PASS.
-- [ ] **Step 5: Full corpus zero-regression** — the full `TestOCCTBlendSimple` count rises by exactly the newly-greened cases; every other case byte-identical.
-- [ ] **Step 6: Commit** — `test(blend): green S1+S4 runout cases (cyl+cone footprint) vs DRAWEXE oracle`.
+### Task 12: Green T7 (elliptical-cylinder → ellipse footprint)
 
----
+**Files:** Modify `kernel/ops/fillet_runout_imprint.go` (`footprintConic` + the line∩ellipse solve); test/oracle.
 
-### Task 10: Green T1 (torus footprint) — oracle gate
+T7's feature-A is an elliptical cylinder (STEP `SURFACE_OF_LINEAR_EXTRUSION` over an ELLIPSE), footprint = **ellipse**. Extend Task 7's `footprintConic`/`solveImprint` to accept `geom.Ellipse`; the crossing is line∩ellipse (same quadratic after the affine normalization `x→x/a, y→y/b`). The 3-quad tiler (Task 9) is unchanged — only the featureA-arc side becomes an elliptical arc (still G0, position-only).
 
-**Files:** Test/oracle only (production code only if the torus footprint exposes a gap).
+- [ ] **Step 1: Failing test** — `solveImprint` on a `geom.Ellipse` footprint yields a sane `imprintCut` (was honest-rejected).
+- [ ] **Step 2: RED.**
+- [ ] **Step 3: Implement** the ellipse branch in `footprintConic` + the line∩ellipse root solve (model-scaled discriminant guard). Show the code.
+- [ ] **Step 4: GREEN + `TestOCCTBlendSimple/T7` oracle gate** — FAIL→PASS within 1%.
+- [ ] **Step 5: Zero-regression corpus** (count rises to 54; S1/S4/T1/T7 all PASS).
+- [ ] **Step 6: Commit** — `test(blend): green T7 runout case (elliptical-cylinder footprint)`.
 
-- [ ] **Step 1: Run `TestOCCTBlendSimple/T1`** — Expected before: FAIL(area).
-- [ ] **Step 2: Oracle compare** (torus footprint = circle; `solveImprint`'s line∩circle tier). Confirm within 1%.
-- [ ] **Step 3: If a gap, fix `armSectionArc`/`recededBoundaryRail` for the torus case** (the footprint is a circle on the host plane; the tier already solves it — most likely the fix is in the arm trim, not a new solver). Show the fix.
-- [ ] **Step 4: Zero-regression corpus run.**
-- [ ] **Step 5: Commit** — `test(blend): green T1 runout case (torus footprint)`.
-
----
-
-### Task 11: Green T7 + T9 (ellip-cyl + bspline footprints) — oracle gate
-
-**Files:** Test/oracle only (production code only if the elliptical/bspline footprint exposes a gap).
-
-- [ ] **Step 1: Run `TestOCCTBlendSimple/T7`** (elliptical-cylinder footprint = ellipse; `solveImprint`'s line∩ellipse tier) — Expected before: FAIL(area). Oracle compare within 1%.
-- [ ] **Step 2: Run `TestOCCTBlendSimple/T9`** (bspline footprint; `solveImprint`'s marched root-find tier) — Expected before: FAIL(area). Oracle compare within 1%.
-- [ ] **Step 3: Fix any gap** exposed by the ellipse/bspline footprint (the `cut.arc` for T9 is a bspline segment, so the G0 side carries a bspline `geom.Curve3` — confirm `coons4Fill`'s `asBSplineCurve` accepts it; if not, that is the fix, in the rail conversion, not a new solver). Show the fix.
-- [ ] **Step 4: Full corpus** — all five runout cases (S1/S4/T1/T7/T9) now PASS; every non-runout case byte-identical; count ≥ 55.
-- [ ] **Step 5: Commit** — `test(blend): green T7+T9 runout cases (ellip-cyl+bspline footprint)`.
 
 ---
 
@@ -947,16 +903,16 @@ Mirror `assembleFilletBody`'s do-no-harm fallback (fillet.go:186-194): build the
 
 - `go test ./kernel/ops/ ./model/feature` — all green.
 - `golangci-lint run ./kernel/ops/` — 0 issues.
-- `go test ./model/feature -run TestOCCTBlendSimple -v 2>&1 | grep -cE '^\s*--- PASS: TestOCCTBlendSimple/'` ≥ 55, with S1/S4/T1/T7/T9 among the PASSes and every other case byte-identical to the pre-wave output.
-- The strangler seam is proven (sphere + obstacle byte-for-byte against their correct baselines; runout greened through the same `resolveBlend`), unblocking the Milestone 3 follow-up plan (curved miter + N-way).
+- `go test ./model/feature -run TestOCCTBlendSimple -v 2>&1 | grep -cE '^\s*--- PASS: TestOCCTBlendSimple/'` ≥ 54, with **S1/S4/T1/T7** among the PASSes and every other case byte-identical to the pre-wave output. **T9 is deferred to Milestone 3** (its fill needs the n-sided provider — see M2 header) and is NOT expected to pass here.
+- The strangler seam is proven (sphere + obstacle byte-for-byte against their correct baselines; the runout hexagon greened through the same `resolveBlend` via the 3-quad tiler), unblocking the Milestone 3 follow-up plan (curved miter + N-way + n-sided fill for T9).
 - **No PR** — the whole corpus is not yet green (Milestone 3 remains). Accumulate on the branch.
 
 ---
 
 ## Plan Self-Review
 
-**Spec coverage:** §2 Tracer/Strangler → Tasks 6 (sphere), 5 (obstacle), 7-8 (runout). §3 golden-diff bifurcation → Task 6 (planar reuse of `chainArcs`), Task 7 (curved via `solveImprint`). §4 shared-normal law → carried by the shipped `adjacentRibbon` (Adjacent surfaces supplied by Tasks 5/7). §5 F2 → Tasks 1 (probe) + 2 (sign fix). §6 strangler facade + do-no-harm → Tasks 6, 8. §7 M1 order A→B→C→D → Tasks 1→2→3→(4,5,6). §7 M2 → Tasks 7-11. F3 → Task 3. Milestone 3 → explicitly deferred (Scope Check).
+**Spec coverage:** §2 Tracer/Strangler → Tasks 6 (sphere), 5 (obstacle), 7-12 (runout). §3 golden-diff bifurcation → Task 6 (planar reuse of `chainArcs`), Tasks 7/9 (curved via `solveImprint` + oracle-derived 3-quad tiler). §4 shared-normal law → carried by the shipped `adjacentRibbon` (Adjacent surfaces supplied by Tasks 5/9). §5 F2 → Tasks 1 (probe) + 2 (sign fix). §6 strangler facade + do-no-harm → Tasks 6, 10. §7 M1 order A→B→C→D → Tasks 1→2→3→(4,5,6). §7 M2 (oracle-derived 3-quad hexagon tiling) → Tasks 7-12; T9 deferred to Milestone 3 (n-sided fill). F3 → Task 3. Milestone 3 → explicitly deferred (Scope Check).
 
-**Placeholder scan:** two deliberate "grep for the real symbol" notes remain — `geom.NewArc3dThrough` (Task 6, Step 3) and the line-segment/section-arc types (Task 7, Step 3). These are NOT banned placeholders: the plan states the exact fields to compute and mandates a named helper + unit test if the constructor is absent. Flagged for the implementer to bind to the real `geom` API rather than invent a signature.
+**Placeholder scan:** the M2 tasks name helpers to bind against the real `geom` API rather than invent signatures — `footprintConic` (Task 7), `armSectionArc`/`planeARunoutCurve`/`internalSeam` (Task 9). These are NOT banned placeholders: each task states the exact fields to compute (the measured RailLoop corners, the `d=r`/`x=±√48` constants) and mandates a named helper + unit test. The runout topology is grounded in the DRAWEXE oracle (`scratchpad/tracer/s1-runout-topology.md`), replacing the empirically-falsified single-quad guess.
 
-**Type consistency:** `ribbonSeamNonFolding(fill, sides, scale)` used identically in Tasks 1/2/5/7. `loopRibLen(loop)` replaces `coons4RibLen`/`tri3RibLen` (Task 3) and is consumed in Task 1's fixed-up test. `patchToFilletFace(patch, parent)` defined in Task 4, consumed in 6/8. `extractTrihedral(cb)`/`extractObstacle(of)`/`extractRunout(ef,im,cut,res)` signatures fixed at definition and matched at every call site. `Side{Curve, Adjacent, Cont}` + `RailLoop{Sides, Provenance}` per the shipped `corner_rail.go`.
+**Type consistency:** `ribbonSeamNonFolding(fill, rails, sides, scale)` used identically in Tasks 1/2/5/9. `loopRibLen(loop)` replaces `coons4RibLen`/`tri3RibLen` (Task 3) and is consumed in Task 1's fixed-up test. `patchToFilletFace(patch, parent)` defined in Task 4, consumed in 6/10. `extractTrihedral(cb)`/`extractObstacle(of)` signatures fixed at definition. The M2 chain is `solveImprint(im,res)→imprintCut` (Task 7) → `detectRunoutRegions(ef,res)→[]runoutRegion` (Task 8) → `extractRunout(region,ef,res)→[]RailLoop` (Task 9) → `resolveBlend`/`patchToFilletFace` (Task 10). `Side{Curve, Adjacent, Cont}` + `RailLoop{Sides, Provenance}` per the shipped `corner_rail.go`.
