@@ -88,6 +88,7 @@ func buildPart(ws *doc.Workspace, outPath string, d *ipt.Document, meshFallback 
 	warns = append(warns, applySymmetryConstraints(def, d)...)
 	warns = append(warns, applyDistanceDimensions(def, d)...)
 	warns = append(warns, applyRadiusDimensions(def, d)...)
+	warns = append(warns, applyAngleDimensions(def, d)...)
 	warns = append(warns, applyRevolveRadii(def, d)...)
 	warns = append(warns, applyAxialLengths(def, d)...)
 	warns = append(warns, applyCentrelineAnchor(def, d)...)
@@ -782,6 +783,77 @@ func applyDistanceDim(def *compdef.PartComponentDefinition, dm ipt.DistanceDim) 
 		return true
 	}
 	return false
+}
+
+// applyAngleDimensions binds each decoded angle dimension (ipt.DecodeAngleDimensions) onto the
+// sketch holding both its lines, as an AddAngle of their current angle. The value equals the
+// present geometric angle, so it pins the angle DOF without moving geometry. Applied only while the
+// sketch has free DOF.
+func applyAngleDimensions(def *compdef.PartComponentDefinition, d *ipt.Document) []string {
+	seg, ok := d.Segment("PmDCSegment")
+	if !ok {
+		return nil
+	}
+	applied := 0
+	for _, ad := range ipt.DecodeAngleDimensions(seg) {
+		if applyAngleDim(def, ad) {
+			applied++
+		}
+	}
+	if applied == 0 {
+		return nil
+	}
+	return []string{fmt.Sprintf("applied %d angle dimension(s)", applied)}
+}
+
+// applyAngleDim adds one angle dimension to the first sketch that holds both its lines — but only
+// if it does not move the geometry. An angle dimension pins the UNSIGNED angle between two lines; on
+// an under-constrained sketch the solver can satisfy it by rotating/flipping the profile into a
+// different configuration, silently corrupting a revolve/extrude profile (observed on a chamfered
+// revolve — the profile drifted and the swept volume changed). So it is applied speculatively, the
+// sketch is solved, and the dimension is kept only when every point stayed put; otherwise it is
+// removed and the points restored. This keeps the correctness-first invariant: a decoded dimension
+// is reproduced only when it is a pure degree-of-freedom reduction, never a geometry edit.
+func applyAngleDim(def *compdef.PartComponentDefinition, ad ipt.AngleDim) bool {
+	for k := 0; k < def.Sketches().Count(); k++ {
+		sk := def.Sketches().Item(k)
+		l1, l2 := lineAtCoords(sk, ad.L1), lineAtCoords(sk, ad.L2)
+		if l1 == nil || l2 == nil || l1 == l2 || sk.DegreesOfFreedom() <= 0 {
+			continue
+		}
+		return keptWithoutMoving(sk, func() (*sketch.DimensionConstraint, error) {
+			return sk.DimensionConstraints().AddAngle(l1, l2, fmt.Sprintf("%g deg", ad.Degrees))
+		})
+	}
+	return false
+}
+
+// keptWithoutMoving adds a dimension via add, solves the sketch, and keeps it only if no point
+// moved; otherwise it deletes the dimension and restores every point to its snapshot. Reports
+// whether the dimension was kept. Used for dimensions (like a two-line angle) whose solve can admit
+// a geometry-changing alternative configuration.
+func keptWithoutMoving(sk *sketch.Sketch, add func() (*sketch.DimensionConstraint, error)) bool {
+	pts := sk.Points()
+	snap := make([]m.Point2, pts.Count())
+	for i := 0; i < pts.Count(); i++ {
+		snap[i] = pts.Item(i).Position()
+	}
+	dim, err := add()
+	if err != nil {
+		return false
+	}
+	sk.Solve()
+	for i := 0; i < pts.Count(); i++ {
+		if pts.Item(i).Position().DistanceTo(snap[i]) <= coincideEps {
+			continue
+		}
+		sk.DimensionConstraints().Delete(dim)
+		for j := 0; j < pts.Count(); j++ {
+			pts.Item(j).SetPosition(snap[j])
+		}
+		return false
+	}
+	return true
 }
 
 // applyRadiusDimensions binds each decoded radius/diameter dimension (ipt.DecodeRadiusDimensions)

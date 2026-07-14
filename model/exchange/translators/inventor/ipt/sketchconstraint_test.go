@@ -359,6 +359,47 @@ func TestDecodeRadiusDimensions(t *testing.T) {
 	}
 }
 
+// TestDecodeAngleDimensions verifies two-line angle decode. An angle-dimension node has its first
+// ref = the 0x10 sentinel and its second (+40) and t44 (+44) refs both resolving to lines. k_angle2
+// dimensions L1 = (0,0)-(4,0) (horizontal) against L2 = (0,1)-(3,5) (direction (3,4)); the unsigned
+// angle between them is atan2(4,3) = 53.13°. The value is read from the geometry (the label's inline
+// coords are a decoy), so the base — with both lines but no dimension — decodes none.
+func TestDecodeAngleDimensions(t *testing.T) {
+	if a := DecodeAngleDimensions(segFor(t, "k_anglebase.ipt")); len(a) != 0 {
+		t.Errorf("k_anglebase: got %d angle dims, want 0", len(a))
+	}
+	as := DecodeAngleDimensions(segFor(t, "k_angle2.ipt"))
+	if len(as) != 1 {
+		t.Fatalf("k_angle2: got %d angle dims, want 1", len(as))
+	}
+	if absf(as[0].Degrees-53.13010235) > 1e-4 {
+		t.Errorf("angle = %.6f deg, want 53.13010 (atan2(4,3))", as[0].Degrees)
+	}
+	// The two dimensioned lines must be the horizontal L1 and the (3,4)-direction L2.
+	if !isHorizontal(as[0].L1) && !isHorizontal(as[0].L2) {
+		t.Errorf("neither dimensioned line is L1 (horizontal): %v %v", as[0].L1, as[0].L2)
+	}
+}
+
+// TestLineAngleDegrees locks the angle measure (unsigned, [0,180], atan2(|cross|,dot)): perpendicular
+// lines read 90°, a (3,4) direction against horizontal reads 53.13°, and the measure is orientation-
+// independent (reversing a segment gives the same unsigned angle).
+func TestLineAngleDegrees(t *testing.T) {
+	horiz := [2]Point2D{{0, 0}, {4, 0}}
+	vert := [2]Point2D{{0, 0}, {0, 3}}
+	diag := [2]Point2D{{0, 0}, {3, 4}}
+	if got := lineAngleDegrees(horiz, vert); absf(got-90) > 1e-6 {
+		t.Errorf("perpendicular angle = %.6f, want 90", got)
+	}
+	if got := lineAngleDegrees(horiz, diag); absf(got-53.13010235) > 1e-4 {
+		t.Errorf("(3,4) vs horizontal = %.6f, want 53.13010", got)
+	}
+	rev := [2]Point2D{{3, 4}, {0, 0}} // diag reversed
+	if got := lineAngleDegrees(horiz, rev); absf(got-(180-53.13010235)) > 1e-4 {
+		t.Errorf("reversed diag = %.6f, want 126.87 (supplementary — direction flips)", got)
+	}
+}
+
 // TestHorizontalConstraintBindsRightLine checks the decoded horizontal constraint names the
 // horizontal line (0,0)-(3,0), proving the line resolves to its endpoint coordinates.
 func TestHorizontalConstraintBindsRightLine(t *testing.T) {

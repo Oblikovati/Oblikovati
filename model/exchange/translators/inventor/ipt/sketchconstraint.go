@@ -197,6 +197,52 @@ func DecodeCircleRelations(seg []byte) []CircleRelation {
 	return out
 }
 
+// AngleDim is a decoded angle dimension between two lines, resolved to both lines' endpoints and
+// the unsigned angle between them in degrees ([0,180]). The value is the current geometric angle,
+// so applying AddAngle(l1, l2, "<deg> deg") pins the angle without moving geometry.
+type AngleDim struct {
+	L1, L2  [2]Point2D
+	Degrees float64
+}
+
+// DecodeAngleDimensions returns the sketch's two-line angle dimensions. An angle-dimension node has
+// its first reference = the 0x10 list sentinel (its label sits at +32, so the first entity ref is
+// the empty-list marker, like a radius dim) and its second reference (+40) AND its t44 word (+44)
+// BOTH resolve to lines — the two lines it dimensions. A distance dimension's t44 references a text
+// point; a symmetry's first two refs are points; a radius/tangent's line-bearing ref is a circle —
+// so none of those pass the two-lines gate. The value is the current unsigned angle between the
+// lines, so the dimension reproduces without moving geometry. A near-parallel pair (angle ≈ 0/180)
+// is dropped: you don't dimension the angle between parallel lines, and it is ill-posed to solve.
+func DecodeAngleDimensions(seg []byte) []AngleDim {
+	vc := vertexCoords(seg)
+	le := lineEndpoints(seg, vc)
+	var out []AngleDim
+	for _, c := range collectRawCons(seg) {
+		if c.r1 != emptyListMark || c.r2&refBit == 0 || c.disc&refBit == 0 {
+			continue
+		}
+		l1, ok1 := le[c.r2&^refBit]
+		l2, ok2 := le[c.disc&^refBit]
+		if !ok1 || !ok2 {
+			continue
+		}
+		deg := lineAngleDegrees(l1, l2)
+		if deg < 1e-2 || deg > 180-1e-2 {
+			continue // parallel/anti-parallel — not an angle dimension
+		}
+		out = append(out, AngleDim{L1: l1, L2: l2, Degrees: deg})
+	}
+	return out
+}
+
+// lineAngleDegrees returns the unsigned angle in degrees ([0,180]) between two segments' directions,
+// using the same measure AddAngle solves against: atan2(|cross|, dot).
+func lineAngleDegrees(a, b [2]Point2D) float64 {
+	ax, ay := a[1].X-a[0].X, a[1].Y-a[0].Y
+	bx, by := b[1].X-b[0].X, b[1].Y-b[0].Y
+	return math.Atan2(math.Abs(ax*by-ay*bx), ax*bx+ay*by) * 180 / math.Pi
+}
+
 // RadiusDim is a decoded radius or diameter dimension of a circle or an arc, resolved to the
 // curve's geometry so the translator can bind it by coordinate. Radius and diameter are
 // byte-identical in the node (both pin the same degree of freedom — the curve's radius), so both
