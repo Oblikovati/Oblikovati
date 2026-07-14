@@ -82,6 +82,7 @@ func buildPart(ws *doc.Workspace, outPath string, d *ipt.Document, meshFallback 
 	built, notes := addFeatures(def, d)
 	warns = append(warns, notes...)
 	warns = append(warns, applyGeometricConstraints(def, d)...)
+	warns = append(warns, applyTangentConstraints(def, d)...)
 	warns = append(warns, applyDistanceDimensions(def, d)...)
 	warns = append(warns, applyRevolveRadii(def, d)...)
 	warns = append(warns, applyAxialLengths(def, d)...)
@@ -510,6 +511,54 @@ func applyGeometricConstraints(def *compdef.PartComponentDefinition, d *ipt.Docu
 		return nil
 	}
 	return []string{fmt.Sprintf("applied %d geometric constraint(s)", applied)}
+}
+
+// applyTangentConstraints binds each decoded line↔circle tangent (ipt.DecodeTangentConstraints)
+// onto the sketch that holds both the line and the circle, as an AddTangent. The geometry is
+// already tangent (validated at decode — perpendicular distance from centre == radius), so it only
+// removes degrees of freedom, never moves a point. DOF-guarded.
+func applyTangentConstraints(def *compdef.PartComponentDefinition, d *ipt.Document) []string {
+	seg, ok := d.Segment("PmDCSegment")
+	if !ok {
+		return nil
+	}
+	applied := 0
+	for _, tc := range ipt.DecodeTangentConstraints(seg) {
+		if applyTangent(def, tc) {
+			applied++
+		}
+	}
+	if applied == 0 {
+		return nil
+	}
+	return []string{fmt.Sprintf("applied %d tangent constraint(s)", applied)}
+}
+
+// applyTangent binds one tangent to the first sketch that holds both its line and its circle.
+func applyTangent(def *compdef.PartComponentDefinition, tc ipt.TangentConstraint) bool {
+	for k := 0; k < def.Sketches().Count(); k++ {
+		sk := def.Sketches().Item(k)
+		l := lineAtCoords(sk, tc.Line)
+		c := circleAtCoord(sk, tc.Center, tc.Radius)
+		if l == nil || c == nil || sk.DegreesOfFreedom() <= 0 {
+			continue
+		}
+		sk.GeometricConstraints().AddTangent(l, c)
+		return true
+	}
+	return false
+}
+
+// circleAtCoord returns the sketch circle whose centre matches c and radius matches r (within
+// coincideEps), or nil.
+func circleAtCoord(sk *sketch.Sketch, c ipt.Point2D, r float64) *sketch.Circle {
+	circles := sk.Circles()
+	for i := 0; i < circles.Count(); i++ {
+		if q := circles.Item(i); samePt(q.Center, c) && math.Abs(float64(q.Radius)-r) < coincideEps {
+			return q
+		}
+	}
+	return nil
 }
 
 // applyGeoConstraint applies one geometric constraint to the first sketch containing its geometry.

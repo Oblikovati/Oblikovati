@@ -152,6 +152,82 @@ func DecodeGeometricConstraints(seg []byte) []GeoConstraint {
 	return out
 }
 
+// TangentConstraint is a decoded line↔circle tangent constraint, resolved to the line's endpoints
+// and the circle's centre and radius so the translator can bind it by coordinate.
+type TangentConstraint struct {
+	Line   [2]Point2D
+	Center Point2D
+	Radius float64
+}
+
+// DecodeTangentConstraints returns the sketch's line↔circle tangents. A tangent node has a
+// different layout from the two-ref geometric constraints: its List6 map is non-empty, so the
+// LINE reference sits at +32 (a plain two-ref constraint holds the 0x10 sentinel there) and the
+// CIRCLE reference is the +44 word (which doubles as the discriminator, high bit set). The circle
+// is named by its ENTITY id = centre-point ref + 1 (circleByEntityID). Emitted only when the line
+// is actually tangent to the circle (perpendicular distance from centre == radius), so a
+// coincidentally-shaped node never yields a spurious constraint and no geometry moves.
+func DecodeTangentConstraints(seg []byte) []TangentConstraint {
+	vc := vertexCoords(seg)
+	le := lineEndpoints(seg, vc)
+	circ := circleByEntityID(seg, vc)
+	var out []TangentConstraint
+	seen := map[[6]int64]bool{}
+	for i := 0; i+48 <= len(seg); i++ {
+		if binary.LittleEndian.Uint32(seg[i:]) != dcNodeTag ||
+			binary.LittleEndian.Uint32(seg[i+8:]) != nullRef ||
+			binary.LittleEndian.Uint32(seg[i+16:]) != constraintHdr {
+			continue
+		}
+		lref := binary.LittleEndian.Uint32(seg[i+32:])
+		cref := binary.LittleEndian.Uint32(seg[i+conDiscOff:])
+		if lref&refBit == 0 || cref&refBit == 0 {
+			continue
+		}
+		l, ok1 := le[lref&^refBit]
+		c, ok2 := circ[cref&^refBit]
+		if !ok1 || !ok2 || !lineTangentToCircle(l, c.inline, c.radius) {
+			continue
+		}
+		key := [6]int64{r4(l[0].X), r4(l[0].Y), r4(l[1].X), r4(l[1].Y), r4(c.inline.X), r4(c.inline.Y)}
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		out = append(out, TangentConstraint{Line: l, Center: c.inline, Radius: c.radius})
+	}
+	return out
+}
+
+// circleByEntityID maps each circle's ENTITY id (its centre-point reference + 1, the id a
+// constraint uses to name the circle) to the circle with its centre resolved.
+func circleByEntityID(seg []byte, vc map[uint32]Point2D) map[uint32]circleEnt {
+	m := map[uint32]circleEnt{}
+	for _, it := range collectItems(seg) {
+		if it.circle == nil || !it.circle.hasRef {
+			continue
+		}
+		ce := *it.circle
+		if p, ok := vc[ce.ref]; ok {
+			ce.inline = p
+		}
+		m[ce.ref+1] = ce
+	}
+	return m
+}
+
+// lineTangentToCircle reports whether the segment's infinite line is tangent to the circle: the
+// perpendicular distance from the centre to the line equals the radius.
+func lineTangentToCircle(l [2]Point2D, center Point2D, radius float64) bool {
+	dx, dy := l[1].X-l[0].X, l[1].Y-l[0].Y
+	length := math.Hypot(dx, dy)
+	if length < 1e-9 {
+		return false
+	}
+	dist := math.Abs((center.X-l[0].X)*dy-(center.Y-l[0].Y)*dx) / length
+	return math.Abs(dist-radius) < 1e-4
+}
+
 // DistanceDim is a decoded point-to-point distance dimension: the two sketch points it dimensions
 // and their separation (cm). The value is taken from the geometry (the points' distance), which
 // equals the dimension's stored value for a driving dimension at the solved geometry — so applying

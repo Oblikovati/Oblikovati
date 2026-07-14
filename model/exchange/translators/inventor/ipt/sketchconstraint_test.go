@@ -127,6 +127,29 @@ func TestDecodeMidpoint(t *testing.T) {
 	}
 }
 
+// TestDecodeTangent verifies the line↔circle tangent constraint. Its node uses a non-standard
+// layout — the line ref is at +32 (a two-ref constraint holds the 0x10 sentinel there) and the
+// circle ref is the +44 discriminator word (high bit set), naming the circle by its entity id
+// (centre ref + 1). k2_tangent makes the line y=8.5 tangent to the circle centred (0,10) r=1.5
+// (their gap is exactly 1.5). Accepted only when the line is genuinely tangent, so the base — with
+// the same line and circle but no constraint — decodes to none.
+func TestDecodeTangent(t *testing.T) {
+	if ts := DecodeTangentConstraints(segFor(t, "k2_base.ipt")); len(ts) != 0 {
+		t.Errorf("k2_base: got %d tangents, want 0", len(ts))
+	}
+	ts := DecodeTangentConstraints(segFor(t, "k2_tangent.ipt"))
+	if len(ts) != 1 {
+		t.Fatalf("k2_tangent: got %d tangents, want 1", len(ts))
+	}
+	tc := ts[0]
+	if absf(tc.Center.X) > 1e-6 || absf(tc.Center.Y-10) > 1e-6 || absf(tc.Radius-1.5) > 1e-6 {
+		t.Errorf("tangent circle = centre %v r %.3g, want (0,10) r 1.5", tc.Center, tc.Radius)
+	}
+	if !lineTangentToCircle(tc.Line, tc.Center, tc.Radius) {
+		t.Errorf("decoded tangent line %v is not tangent to the circle", tc.Line)
+	}
+}
+
 // TestHorizontalConstraintBindsRightLine checks the decoded horizontal constraint names the
 // horizontal line (0,0)-(3,0), proving the line resolves to its endpoint coordinates.
 func TestHorizontalConstraintBindsRightLine(t *testing.T) {
