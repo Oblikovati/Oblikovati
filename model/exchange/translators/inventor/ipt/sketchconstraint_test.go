@@ -359,6 +359,25 @@ func TestDecodeRadiusDimensions(t *testing.T) {
 	}
 }
 
+// TestArcLengthSubsumedByRadius locks the finding that an arc-LENGTH dimension is byte-identical to
+// an arc-RADIUS dimension at the constraint level (their type lives only in a deep sub-structure the
+// decoder does not read), so it decodes as an arc radius of the curve's own radius. k_arclen puts an
+// arc-length dimension on the r=2 arc centred (10,0); it decodes to exactly one arc radius dim of
+// radius 2 — a faithful one-DOF, geometry-exact reproduction. The base (arc, no dimension) is none.
+func TestArcLengthSubsumedByRadius(t *testing.T) {
+	if r := DecodeRadiusDimensions(segFor(t, "k_arclbase.ipt")); len(r) != 0 {
+		t.Errorf("k_arclbase: got %d radius dims, want 0", len(r))
+	}
+	rs := DecodeRadiusDimensions(segFor(t, "k_arclen.ipt"))
+	if len(rs) != 1 {
+		t.Fatalf("k_arclen: got %d radius dims, want 1 (arc-length is decoded as an arc radius)", len(rs))
+	}
+	r := rs[0]
+	if !r.Arc || absf(r.Radius-2) > 1e-6 || absf(r.Center.X-10) > 1e-6 || absf(r.Center.Y) > 1e-6 {
+		t.Errorf("arc-length dim decoded as %+v, want an arc radius r=2 at (10,0)", r)
+	}
+}
+
 // TestDecodeAngleDimensions verifies two-line angle decode. An angle-dimension node has its first
 // ref = the 0x10 sentinel and its second (+40) and t44 (+44) refs both resolving to lines. k_angle2
 // dimensions L1 = (0,0)-(4,0) (horizontal) against L2 = (0,1)-(3,5) (direction (3,4)); the unsigned

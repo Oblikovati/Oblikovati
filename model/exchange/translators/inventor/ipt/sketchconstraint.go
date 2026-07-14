@@ -317,6 +317,16 @@ type RadiusDim struct {
 // entity id (circle = centre ref + 1; arc = its highest point ref + 1). The value is the curve's
 // own decoded radius, so the dimension reproduces exactly. A node whose second reference resolves
 // to neither a circle nor an arc is dropped rather than guessed.
+//
+// Radius, diameter, AND arc-length dimensions all share this exact node shape at the constraint
+// level (t44 == 0, 0x10 sentinel, curve ref) — they are byte-identical apart from positional ids;
+// their type lives only in a deep dimension sub-structure this decoder does not read. All three are
+// therefore decoded here as a radius of the curve's own radius. This is faithful for DOF parity:
+// each removes exactly one degree of freedom and, being self-validated against the current radius,
+// moves no geometry — so an arc-length dimension reproduced as an arc-radius dimension yields the
+// same DOF and the same solved geometry. The only unrecoverable detail is the label (r / ⌀ / arc
+// length), which does not affect parity. (Same reasoning as radius-vs-diameter, which are likewise
+// indistinguishable.)
 func DecodeRadiusDimensions(seg []byte) []RadiusDim {
 	vc := vertexCoords(seg)
 	circ := circleByEntityID(seg, vc)
