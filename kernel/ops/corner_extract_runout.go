@@ -212,19 +212,10 @@ func armSectionArc(cyl geom.Cylinder, first, second geom.Plane, spine float64) (
 // featureSubArc is the sub-arc of an imprint's footprint circle from `from` to `to` (both already
 // on the circle), built through the circle point on the angular bisector of the two — exact for the
 // sub-180° arcs this hexagon uses (feature footprints reconstructed by footprintConic, no fitting).
+// Delegates to footprintSubArc (fillet_setback_extract.go) so the split-boss and intact-boss paths
+// read the footprint conic through one shared helper (no duplication).
 func featureSubArc(im runoutImprint, from, to math.Point3) (geom.Arc3d, bool) {
-	c, r, ok := footprintConic(im.footprintEdge)
-	if !ok {
-		return geom.Arc3d{}, false
-	}
-	bis := c.VectorTo(from).Add(c.VectorTo(to))
-	l := bis.Length()
-	if l < arcBisectorTiny*r {
-		return geom.Arc3d{}, false // endpoints near-antipodal on the footprint circle
-	}
-	mid := c.TranslateBy(bis.Scale(r / l))
-	arc, err := geom.Arc3dByThreePoints(from, mid, to)
-	return arc, err == nil
+	return footprintSubArc(im.footprintEdge, from, to)
 }
 
 // featureMajorArc is the MAJOR (>180°) sub-arc of an imprint's footprint circle from `from` to `to`,
