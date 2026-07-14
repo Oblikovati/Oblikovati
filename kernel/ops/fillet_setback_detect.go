@@ -3,6 +3,7 @@
 package ops
 
 import (
+	"math"
 	"sort"
 
 	"oblikovati.org/kernel/geom"
@@ -24,6 +25,20 @@ type crossingBoss struct {
 // outer setback stations (where the plain fillet ends), and seams are the interior boundaries
 // splitting the flank band(s) (outer boss only) from the central band (every boss). bosses is
 // ordered by xSetback descending (outer reach first) — the order bandsFromBosses assumes.
+//
+// The whole partition assumes every boss shares the SAME transverse midplane — D2's "on the SAME
+// centered span" — because bandsFromBosses hard-symmetrizes to cutLo=−outer, cutHi=+outer,
+// seams=±x_s relative to that ONE shared plane: ±x_s equal the true plain-fillet ends ONLY when
+// every boss's own axial midpoint c=(lo+hi)/2 (setbackMidpoint) agrees with the others'. That
+// shared plane is NOT v=0 in the fillet cylinder's own spine frame — cyl.Origin sits at an
+// arbitrary edge endpoint, so c itself carries no absolute meaning, only agreement BETWEEN
+// bosses does (verified against S1: both its bosses read c≈10, not 0). A boss whose midpoint
+// disagrees with the rest is rejected outright by detectSetbackBands' centeredness guard
+// (bossesShareTransverseMidplane; this milestone honest-defers rather than emit a wrong-but-
+// plausible symmetric split); supporting real disagreement needs a richer per-boss lo/hi
+// representation than this single xSetback field carries (future milestone). A LONE boss has
+// nothing to disagree with, so this guard cannot catch a single off-center boss — only a multi-
+// boss mismatch (same future-milestone gap).
 type setbackBands struct {
 	bosses       []crossingBoss
 	cutLo, cutHi float64
@@ -46,37 +61,47 @@ const setbackNearZeroCoef = 64
 // this in.
 func detectSetbackBands(ef edgeFillet, res Resolution) (setbackBands, bool) {
 	bosses := make([]crossingBoss, 0, 2)
+	mids := make([]float64, 0, 2)
 	for _, im := range detectRunouts(ef, res) {
-		if cb, ok := setbackBossFrom(im, ef, res); ok {
-			bosses = append(bosses, cb)
+		cb, c, ok := setbackBossFrom(im, ef, res)
+		if !ok {
+			continue
 		}
+		bosses = append(bosses, cb)
+		mids = append(mids, c)
 	}
 	if len(bosses) == 0 {
 		return setbackBands{}, false
+	}
+	if !bossesShareTransverseMidplane(mids, ef.cyl) {
+		return setbackBands{}, false // off-center boss: honest-defer, see bossesShareTransverseMidplane
 	}
 	sortBossesByReach(bosses)
 	return bandsFromBosses(bosses), true
 }
 
-// setbackBossFrom turns one solved runout imprint into a crossingBoss. The boss wall is read via
-// the existing otherFace(footprintEdge, host) idiom (fillet_runout_hosts.go's buildHostBAndWall/
+// setbackBossFrom turns one solved runout imprint into a crossingBoss plus its axial midpoint c
+// (setbackMidpoint — returned separately, not stored on crossingBoss, since only
+// detectSetbackBands' cross-boss centeredness guard needs it). The boss wall is read via the
+// existing otherFace(footprintEdge, host) idiom (fillet_runout_hosts.go's buildHostBAndWall/
 // buildHostAAndWall) and kept intact — no split is called. xSetback is read off the imprint's
 // already-solved footprint∩band crossings (solveImprint) rather than re-solving the line∩conic
 // from scratch — see setbackStation.
-func setbackBossFrom(im runoutImprint, ef edgeFillet, res Resolution) (crossingBoss, bool) {
+func setbackBossFrom(im runoutImprint, ef edgeFillet, res Resolution) (crossingBoss, float64, bool) {
 	cut, ok := solveImprint(im, res)
 	if !ok {
-		return crossingBoss{}, false
+		return crossingBoss{}, 0, false
 	}
 	wall := otherFace(im.footprintEdge, im.host)
 	if wall == nil {
-		return crossingBoss{}, false
+		return crossingBoss{}, 0, false
 	}
 	xs := setbackStation(cut, ef.cyl)
 	if !nonDegenerateSetback(xs, res) {
-		return crossingBoss{}, false
+		return crossingBoss{}, 0, false
 	}
-	return crossingBoss{wall: wall.Geometry(), footEdge: im.footprintEdge, host: im.host, xSetback: xs}, true
+	cb := crossingBoss{wall: wall.Geometry(), footEdge: im.footprintEdge, host: im.host, xSetback: xs}
+	return cb, setbackMidpoint(cut, ef.cyl), true
 }
 
 // setbackStation is the boss's D1 setback reach x_s: half the axial span between its already-
@@ -87,9 +112,71 @@ func setbackBossFrom(im runoutImprint, ef edgeFillet, res Resolution) (crossingB
 // (√(r_b²−(a−R)²)) independently; verified equal to it to 1e-6 on S1
 // (TestDetectSetbackBands_S1TwoBosses: cutHi=√48, seam=√20). spineInterval guarantees lo≤hi, so
 // the result is always ≥0 — no separate abs() needed anywhere downstream.
+//
+// This DISCARDS the interval's midpoint c=(lo+hi)/2 (see setbackMidpoint) — only the half-span
+// survives. ±x_s equal the true plain-fillet ends ONLY when every boss on the edge shares the
+// SAME c (D1's "Fᵢ a conic centered on the transverse plane x=0" — a plane shared by all bosses,
+// not necessarily v=0 in cyl's own frame, see setbackMidpoint); a boss whose c disagrees with the
+// others is rejected by bossesShareTransverseMidplane before xSetback is ever trusted downstream.
 func setbackStation(cut imprintCut, cyl geom.Cylinder) float64 {
 	lo, hi := spineInterval(cut, cyl)
 	return (hi - lo) / 2
+}
+
+// setbackMidpoint is the boss's axial midpoint c=(lo+hi)/2 on the fillet cylinder's spine — the
+// projection setbackStation discards when it keeps only the half-span. D1's closed form assumes
+// every boss on the edge shares the same c (setback-patch-derivation.md: "Fᵢ a conic centered on
+// the transverse plane x=0"), but that plane carries NO absolute meaning in cyl's own coordinate
+// frame: cyl.Origin sits wherever the edge's solve happened to place it (an imported-STEP
+// endpoint, not the physical midplane), so c itself is an arbitrary offset — verified against the
+// S1 fixture, both its crossing bosses read c≈10, not 0. Only AGREEMENT between bosses'
+// setbackMidpoint values is meaningful; bossesShareTransverseMidplane checks exactly that.
+func setbackMidpoint(cut imprintCut, cyl geom.Cylinder) float64 {
+	lo, hi := spineInterval(cut, cyl)
+	return (lo + hi) / 2
+}
+
+// setbackCenteredCoef is the dimensionless, GENEROUS fraction of the fillet radius R below which
+// two bosses' axial midpoints (setbackMidpoint) read as "the same transverse plane" rather than
+// genuinely disagreeing — the do-no-harm guard this Task 2 review finding calls for:
+// bandsFromBosses hard-assumes every boss shares one plane and silently mis-partitions if that's
+// false, so bossesShareTransverseMidplane must reject (ok=false) loudly rather than emit a
+// plausible-looking wrong split. 1% of R sits many orders of magnitude above the floating-point
+// noise spineParam's dot-product projections carry (~1e-14 relative to model size, the same order
+// TestNonDegenerateSetback_NearTangencyClamp's weld-scale floor guards against — confirmed on the
+// real S1 fixture, whose two independently-solved bosses agree on c=10 to 4e-15) — genuinely
+// agreeing bosses NEVER trip this — yet stays far below any disagreement that would actually
+// matter: two bosses on truly different transverse planes differ by a meaningful fraction of
+// their own footprint radius or of R, not by a percent of it. R (not res.Weld()) is the scale
+// because c lives in the same axial coordinate as R (both measured off the fillet cylinder's own
+// frame), so it tracks the LOCAL fillet's size even when the document-wide Resolution's model
+// size differs from it.
+const setbackCenteredCoef = 0.01
+
+// bossesShareTransverseMidplane is the do-no-harm centeredness guard (Task 2 review finding,
+// corrected against real S1 data — see setbackMidpoint for why a literal |c|≈0 check would have
+// rejected the very corpus case it must pass): true when every boss's axial midpoint agrees with
+// the first, within setbackCenteredCoef·R, so bandsFromBosses' shared-plane assumption (D2: "on
+// the SAME centered span") holds. detectSetbackBands calls this over ALL detected bosses before
+// trusting any of their xSetback; a false result means honest-defer (ok=false), never a silent
+// symmetric split built from bosses that don't actually share a plane. A single boss (len(mids)
+// ==1) has nothing to disagree with and trivially passes — this guard cannot detect a LONE
+// off-center boss, only a multi-boss mismatch (see setbackBands' doc comment).
+func bossesShareTransverseMidplane(mids []float64, cyl geom.Cylinder) bool {
+	for _, m := range mids[1:] {
+		if !withinCenteredTolerance(m-mids[0], cyl) {
+			return false
+		}
+	}
+	return true
+}
+
+// withinCenteredTolerance is true when offset sits within setbackCenteredCoef·R of zero — the
+// generous, R-relative floor bossesShareTransverseMidplane compares each boss's midpoint
+// disagreement against. See setbackCenteredCoef for why 1% of R can never be tripped by
+// floating-point noise alone.
+func withinCenteredTolerance(offset float64, cyl geom.Cylinder) bool {
+	return math.Abs(offset) <= setbackCenteredCoef*cyl.Radius
 }
 
 // nonDegenerateSetback rejects a boss reach too close to zero to be a genuine crossing — the D1
@@ -112,6 +199,11 @@ func sortBossesByReach(bosses []crossingBoss) {
 // boundary), and every SMALLER reach becomes an interior seam at ±its own x_s, splitting the
 // flank band (outer boss only) from the central band (both bosses). N bosses ⇒ up to 2N−1 bands;
 // this only computes the seam stations, not the band geometry itself (Task 3+, unwired here).
+//
+// Like setbackStation, this hard-ASSUMES every boss shares the SAME transverse midplane — it has
+// no lo/hi (or c=(lo+hi)/2) of its own to check agreement against, only xSetback (the half-span).
+// Callers must reject disagreeing bosses upstream (bossesShareTransverseMidplane, in
+// detectSetbackBands) before any boss ever reaches here.
 func bandsFromBosses(bosses []crossingBoss) setbackBands {
 	outer := bosses[0].xSetback
 	seams := make([]float64, 0, 2*(len(bosses)-1))
