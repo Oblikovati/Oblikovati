@@ -28,29 +28,50 @@ type imprintCut struct {
 }
 
 // solveImprint computes the exact crossing of im's footprint against the receded fillet band
-// (reconstructed from im.nodes) and the outboard sub-arc between the crossings. It is scoped to
-// a circular footprint for now — ellipse/b-spline conics are Tasks 7/9 and honest-reject here
-// (ok=false), same as a tangential/grazing crossing.
+// (reconstructed from im.nodes) and the outboard sub-arc between the crossings. The footprint
+// must be a circular conic — footprintConic accepts a full geom.Circle or a geom.Arc3d (Task 7:
+// imported STEP feature footprints arrive as Arc3d, never Circle); ellipse/b-spline conics are
+// Tasks 9/12 and honest-reject here (ok=false), same as a tangential/grazing crossing.
 //
 // Example: a boss footprint circle centered at the origin (r=8) crossing the band at y=-4
 // crosses at (±√48,−4); solveImprint returns those points and the ~300° arc that stays above
 // the band (geom.Arc3d, PointAt/TangentAt/Domain).
 func solveImprint(im runoutImprint, res Resolution) (imprintCut, bool) {
-	circle, ok := im.footprintEdge.Geometry().(geom.Circle)
+	center, radius, ok := footprintConic(im.footprintEdge)
 	if !ok {
-		return imprintCut{}, false // ellipse/b-spline footprint: not this task's scope
+		return imprintCut{}, false // e.g. geom.EllipseFull/b-spline footprint: Task 9/12's scope
 	}
 	if im.nodes[0].P.DistanceTo(im.nodes[1].P) <= res.Weld() {
 		return imprintCut{}, false // nodes too close to fix a band direction from
 	}
 	band := bandLineFromNodes(im.nodes)
-	center2 := im.flat(circle.Center)
-	t0, t1, ok := lineCircleRoots(band, center2, circle.Radius, hostBoundingDiag(im.host))
+	center2 := im.flat(center)
+	t0, t1, ok := lineCircleRoots(band, center2, radius, hostBoundingDiag(im.host))
 	if !ok {
 		return imprintCut{}, false
 	}
 	p0, p1 := im.back(band.origin.TranslateBy(band.dir.Scale(t0))), im.back(band.origin.TranslateBy(band.dir.Scale(t1)))
+	// outboardArc needs a full geom.Circle (Normal/RefDir) to pick the outbound sub-arc; im.plane's
+	// normal gives it one (NewCircle's arbitrary RefDir is fine — outboardArc's candidate/fallback
+	// pair is exhaustive and symmetric under any RefDir or Normal-sign choice, see its doc comment).
+	circle, _ := geom.NewCircle(center, im.plane.Normal(), radius)
 	return imprintCut{pMinus: p0, pPlus: p1, arc: outboardArc(im, circle, p0, p1)}, true
+}
+
+// footprintConic returns the exact center and radius of edge's footprint conic when it is a full
+// geom.Circle or a geom.Arc3d (both already carry Center/Radius directly — no sample-and-fit,
+// which would lose exactness). It reports ok=false for any other concrete geometry (e.g.
+// geom.EllipseFull or a B-spline curve): those footprint kinds are Tasks 9/12's scope, not this
+// one's, same honest-reject solveImprint used before Arc3d support.
+func footprintConic(edge *topo.Edge) (center math.Point3, radius float64, ok bool) {
+	switch g := edge.Geometry().(type) {
+	case geom.Circle:
+		return g.Center, g.Radius, true
+	case geom.Arc3d:
+		return g.Center, g.Radius, true
+	default:
+		return math.Point3{}, 0, false
+	}
 }
 
 // bandLineFromNodes rebuilds the receded fillet band as a 2D line through both crossing nodes:

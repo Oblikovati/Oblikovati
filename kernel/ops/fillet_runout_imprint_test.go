@@ -155,6 +155,44 @@ func TestSolveImprint_DeepDipSelectsMinorOutboardArc(t *testing.T) {
 	}
 }
 
+// TestSolveImprintArc3d is the Arc3d-footprint regression (Task 7): imported STEP feature
+// footprints arrive as geom.Arc3d, never geom.Circle, so solveImprint (via footprintConic) must
+// accept them too — before this task it honest-rejected (ok=false) on every real fixture. Drives
+// the REAL S1 substrate (runoutFixtureCrossingBoss + detectRunouts, not a hand-built fixture) so
+// the footprint geometry is genuinely Arc3d, not a synthetic geom.Circle standing in for it.
+func TestSolveImprintArc3d(t *testing.T) {
+	ef, res := runoutFixtureCrossingBoss(t)
+	imprints := detectRunouts(ef, res)
+	if len(imprints) != 2 {
+		t.Fatalf("want 2 imprints (S1's two independent bosses), got %d: %+v", len(imprints), imprints)
+	}
+	featureBCut, sawFeatureB := imprintCut{}, false
+	for i, im := range imprints {
+		arc, ok := im.footprintEdge.Geometry().(geom.Arc3d)
+		if !ok {
+			t.Fatalf("imprint %d footprint geometry = %T, want geom.Arc3d (fixture assumption changed)",
+				i, im.footprintEdge.Geometry())
+		}
+		cut, ok := solveImprint(im, res)
+		if !ok {
+			t.Fatalf("imprint %d (radius %v): solveImprint ok=false, want true — Arc3d footprints must be accepted", i, arc.Radius)
+		}
+		if cut.pMinus.DistanceTo(cut.pPlus) <= res.Weld() {
+			t.Fatalf("imprint %d: pMinus/pPlus degenerate (%v, %v)", i, cut.pMinus, cut.pPlus)
+		}
+		if stdmath.Abs(arc.Radius-8) < res.Weld() { // the r8 top boss (S1's feature-B, on ef.a/hostIsA==true)
+			featureBCut, sawFeatureB = cut, true
+		}
+	}
+	if !sawFeatureB {
+		t.Fatal("no imprint carried the r8 top-boss (feature-B) footprint")
+	}
+	wantAbsX := stdmath.Sqrt(48) // top boss (r=8) crosses its receded band (offset 4) at half-width sqrt(8²−4²)
+	if gotAbsX := stdmath.Abs(featureBCut.pPlus.X); stdmath.Abs(gotAbsX-wantAbsX) > res.Weld() {
+		t.Fatalf("feature-B pPlus.X = %v, want |x| ≈ %v within %v", gotAbsX, wantAbsX, res.Weld())
+	}
+}
+
 func TestLineCircleRoots_ExactChord(t *testing.T) {
 	b := boundaryLine2{origin: math.P2(-100, -4), dir: math.V2(1, 0)}
 	t0, t1, ok := lineCircleRoots(b, math.P2(0, 0), 8, 100)
