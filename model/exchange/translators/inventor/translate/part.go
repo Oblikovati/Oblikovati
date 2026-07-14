@@ -769,7 +769,10 @@ func applyDistanceDimensions(def *compdef.PartComponentDefinition, d *ipt.Docume
 	return []string{fmt.Sprintf("applied %d distance dimension(s)", applied)}
 }
 
-// applyDistanceDim adds one distance dimension to the first sketch containing both endpoints.
+// applyDistanceDim adds one distance dimension to the first sketch containing both endpoints, kept
+// only if it does not move geometry (keptWithoutMoving) — the value equals the current separation,
+// so a well-decoded dimension is a pure DOF reduction, but the guard makes that a checked invariant
+// rather than an assumption.
 func applyDistanceDim(def *compdef.PartComponentDefinition, dm ipt.DistanceDim) bool {
 	for k := 0; k < def.Sketches().Count(); k++ {
 		sk := def.Sketches().Item(k)
@@ -777,10 +780,9 @@ func applyDistanceDim(def *compdef.PartComponentDefinition, dm ipt.DistanceDim) 
 		if pa == nil || pb == nil || sk.DegreesOfFreedom() <= 0 {
 			continue
 		}
-		if _, err := sk.DimensionConstraints().AddDistance(pa, pb, fmt.Sprintf("%g cm", dm.Value)); err != nil {
-			return false
-		}
-		return true
+		return keptWithoutMoving(sk, func() (*sketch.DimensionConstraint, error) {
+			return sk.DimensionConstraints().AddDistance(pa, pb, fmt.Sprintf("%g cm", dm.Value))
+		})
 	}
 	return false
 }
@@ -878,7 +880,10 @@ func applyRadiusDimensions(def *compdef.PartComponentDefinition, d *ipt.Document
 	return []string{fmt.Sprintf("applied %d radius/diameter dimension(s)", applied)}
 }
 
-// applyRadiusDim adds one radius dimension to the first sketch that holds its circle or arc.
+// applyRadiusDim adds one radius dimension to the first sketch that holds its circle or arc, kept
+// only if it does not move geometry (keptWithoutMoving). An arc's radius has no DOF of its own (it
+// is |centre − start|), so pinning it drives the centre/start points — the guard ensures the solve
+// pins the radius in place rather than sliding those points to a different arc.
 func applyRadiusDim(def *compdef.PartComponentDefinition, rd ipt.RadiusDim) bool {
 	for k := 0; k < def.Sketches().Count(); k++ {
 		sk := def.Sketches().Item(k)
@@ -896,10 +901,9 @@ func applyRadiusDim(def *compdef.PartComponentDefinition, rd ipt.RadiusDim) bool
 		if c == nil {
 			continue
 		}
-		if _, err := sk.DimensionConstraints().AddRadius(c, fmt.Sprintf("%g cm", rd.Radius)); err != nil {
-			return false
-		}
-		return true
+		return keptWithoutMoving(sk, func() (*sketch.DimensionConstraint, error) {
+			return sk.DimensionConstraints().AddRadius(c, fmt.Sprintf("%g cm", rd.Radius))
+		})
 	}
 	return false
 }
