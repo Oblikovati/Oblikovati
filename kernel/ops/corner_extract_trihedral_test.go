@@ -6,7 +6,9 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
@@ -67,5 +69,80 @@ func TestExtractTrihedralDeclinesNonTriadic(t *testing.T) {
 	cb.arcs = cb.arcs[:2]
 	if _, ok := extractTrihedral(cb); ok {
 		t.Fatal("extractTrihedral must decline a non-triadic cornerBlend")
+	}
+}
+
+// realTrihedralBlend drives the ACTUAL fillet corner pipeline on a genuine box corner (three filleted
+// edges meeting at a valence-3 vertex) and returns the solved *cornerBlend whose arcs are in NATURAL
+// registration order — the order registerBlendArc appends them per edge-pick (fillet.go), NOT the
+// hand-chained order the synthetic fixture uses. This is the seam-proof witness on real data: with the
+// pre-fix append-order extractor, RailLoop.Closed is false on these arcs → the sphere certificate fails
+// → resolveBlend declines, so TestExtractTrihedralRecognizesRealCorner FAILS pre-fix and PASSES post-fix.
+func realTrihedralBlend(t *testing.T) *cornerBlend {
+	t.Helper()
+	box, err := brep.SolidBlock(math.P3(0, 0, 0), math.P3(5, 5, 5), "box")
+	if err != nil {
+		t.Fatalf("SolidBlock: %v", err)
+	}
+	picks := cornerEdgePicks(t, box, math.P3(0, 0, 0), 1)
+	blends, miters, err := computeCorners(picks)
+	if err != nil {
+		t.Fatalf("computeCorners: %v", err)
+	}
+	if _, err := computeFillets(box, picks, blends, miters, FillConcaveOutward, nil); err != nil {
+		t.Fatalf("computeFillets: %v", err) // populates blend.arcs in natural registration order
+	}
+	return singleBlend(t, blends)
+}
+
+// cornerEdgePicks builds a constant-radius filletPick for each of the three box edges incident to the
+// corner vertex at point p (a valence-3 trihedral corner), erroring unless exactly three are found.
+func cornerEdgePicks(t *testing.T, b *topo.Body, corner math.Point3, r float64) []filletPick {
+	t.Helper()
+	var picks []filletPick
+	for _, e := range b.Edges() {
+		if e.StartVertex().Point().DistanceTo(corner) < 1e-9 || e.EndVertex().Point().DistanceTo(corner) < 1e-9 {
+			picks = append(picks, filletPick{edge: e, r0: r, r1: r})
+		}
+	}
+	if len(picks) != 3 {
+		t.Fatalf("corner %v: got %d incident edges, want 3", corner, len(picks))
+	}
+	return picks
+}
+
+// singleBlend returns the one cornerBlend the corner solve produced, erroring unless there is exactly one.
+func singleBlend(t *testing.T, blends map[uint64]*cornerBlend) *cornerBlend {
+	t.Helper()
+	if len(blends) != 1 {
+		t.Fatalf("got %d blends, want exactly 1 trihedral corner", len(blends))
+	}
+	for _, cb := range blends {
+		return cb
+	}
+	return nil
+}
+
+// TestExtractTrihedralRecognizesRealCorner is the seam proof on REAL data: a cornerBlend from the live
+// fillet pipeline (arcs in natural registration order) must, once chain-ordered by extractTrihedral, be
+// claimed by the exact sphere tier and yield the SAME sphere as the cornerBlend. This fails with the
+// pre-fix append-order extractor (RailLoop.Closed false) and passes after the chain-order fix.
+func TestExtractTrihedralRecognizesRealCorner(t *testing.T) {
+	cb := realTrihedralBlend(t)
+	if len(cb.arcs) != 3 {
+		t.Fatalf("real corner produced %d arcs, want 3", len(cb.arcs))
+	}
+	loop, ok := extractTrihedral(cb)
+	if !ok {
+		t.Fatal("extractTrihedral declined a real planar-trihedral corner")
+	}
+	patch, ok := resolveBlend(loop, sphereScale(cb))
+	if !ok || patch.Kind != BlendKindSphere {
+		t.Fatalf("resolveBlend on real corner: kind=%q ok=%v, want analytic-sphere", patch.Kind, ok)
+	}
+	got := patch.Surface.(geom.Sphere)
+	weld := blendScale().Weld()
+	if got.Center.DistanceTo(cb.sphere.Center) > weld || abs(got.Radius-cb.sphere.Radius) > weld {
+		t.Fatalf("recognized sphere %+v != real cornerBlend sphere %+v (weld %g)", got, cb.sphere, weld)
 	}
 }
