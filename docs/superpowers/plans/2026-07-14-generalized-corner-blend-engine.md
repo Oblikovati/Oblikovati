@@ -214,22 +214,28 @@ git commit -m "feat(blend): RailLoop currency for the generalized corner engine 
 **Context for the implementer:** the existing `solveBlend` (fillet.go:854) builds the corner
 sphere from 3 planar faces and is called *directly* by `solveCorner` — that call site is NOT
 touched (corpus-neutral). This task re-expresses the SAME 3×3 tangency solve as a `RailLoop`
-provider so a future `extractTrihedral` can feed it. The recognition predicate (ADR-0051 §recognition):
-all sides' `Adjacent` are `geom.Plane`, equal rolling-ball radius `r`, and the sphere center
-(solved from the 3 offset planes) is at distance `r` (within `scale.Weld()`) from every rail.
-Reuse `solve3` (retopo.go:123) for the linear system — do NOT re-derive it. Do NOT use
-`outwardPlaneNormal` (it needs a `*topo.Face`, which the provider no longer sees): take each
-plane's normal from `geom.Plane.Normal()` and pick the sign so the solved center lands on the
-**loop-interior** side — compute the loop centroid (mean of rail sample points) and require the
-center and centroid to sit on the same side of each plane; that makes recognition orientation-
-agnostic. Extract `railRadius(RailLoop) (float64, bool)` — the shared rolling-ball radius read off
-the arc rails (`cornerRadius` at fillet.go:815 works on picks, not rails, so this is new).
+provider so a future `extractTrihedral` can feed it.
+
+**Recognition is purely off the RAILS (verified geometry, simpler & more robust than a plane
+solve):** each arm end-section arc is the sphere∩arm-cylinder intersection; for equal fillet
+radius `r` both surfaces have radius `r`, so every end-section is a **great circle of the corner
+sphere** — its `geom.Arc3d.Center` equals the sphere center and its `Radius` equals `r`. Therefore
+the predicate is: **all sides' `Curve` are `geom.Arc3d`, with equal `Radius` `r` and a common
+`Center` `C` (each within `scale.Weld()`) ⇒ `Sphere{Center: C, Radius: r}`.** No planes, no
+`solve3`, no orientation logic — and it does NOT read `Side.Adjacent` at all (Adjacent matters only
+for the G1 fills; the sphere IS the surface). This parallels the torus recognition (Task 6). Extract
+`railRadius(RailLoop) (float64, bool)` (common arc radius; `nil`/ok=false if any side isn't an arc or
+radii disagree) and `railArcsConcentric(RailLoop, tol) (math.Point3, bool)` (common center or not).
+Verify by checking every rail's sampled points lie on the sphere within `scale.Weld()` (they do by
+construction when center+radius match).
 
 - [ ] **Step 1: Write the failing test** — build a symmetric trihedral corner (three mutually
   perpendicular planes offset to radius `r`, three quarter-arcs as rails), assert `Fits` is true,
   `Build` returns a patch whose `Surface` is a `geom.Sphere` of radius `r` centered at
   `(r,r,r)` from the corner, `cert.Valid(scale)` true, and every rail lies on the sphere within
-  `scale.Weld()`. Add a negative test: swap one `Adjacent` to a cylinder → `Fits` false.
+  `scale.Weld()`. Add a negative test: perturb one rail arc's `Center` off the common center (by
+  ≫ `scale.Weld()`) → `Fits` false (recognition depends on concentric equal-radius arcs, not on
+  `Adjacent`).
 
 ```go
 func TestAnalyticSphereFitsTrihedralPlanar(t *testing.T) {
@@ -283,88 +289,80 @@ func TestAnalyticSphereFitsTrihedralPlanar(t *testing.T) {
 - Create: `kernel/ops/corner_provider_coons4.go`
 - Test: `kernel/ops/corner_provider_coons4_test.go`
 
-**Interfaces:**
-- Consumes: `RailLoop` (Valence 4), `geom.FillSurface`/`FillSide`/`MatchSurface`, and the
-  obstacle provider's proven helpers — `extrudeRibbon`, `pinFillBoundary`, `refineForG1`,
-  `orientInward`, `inwardCrossU/V` (corner_blend_obstacle.go). These are the reusable
-  substrate; extract them from `corner_blend_obstacle.go` into a shared
-  `corner_fill_ribbon.go` (no behavior change — pure move) so both providers call them.
-- Produces: `coons4Provider` (implements `railProvider`); `func coons4Fill(loop RailLoop,
-  scale Resolution) (geom.BSplineSurface, Certificate, bool)`; `func sideAsBSpline(Side) (geom.BSplineCurve, bool)`
-  (exact rational-BSpline of a rail); `func adjacentRibbon(Side, geom.BSplineSurface) (geom.BSplineSurface, geom.Boundary, bool)`.
+**Interfaces (NO file extraction — everything below is package `ops` already; coons4 just CALLS it):**
+- Reuse directly (do NOT move): `asBSplineCurve(geom.Curve3) (geom.BSplineCurve, bool)`
+  (corner_blend_obstacle_rails.go — Curve3→BSpline, LineSegment exact / else `RebuildCurve`),
+  `makeRailPair`/`pinnedRail`/`pinEnds`/`reverseBSplineCurve` (rail compat + corner pinning),
+  `extrudeRibbon`/`orientInward`/`inwardCrossU`/`inwardCrossV`/`pinFillBoundary`/`refineForG1`
+  (corner_blend_obstacle.go), and the certify internals `obstacleNoFold`/`columnFolds`/
+  `normalsReverse`/`railDev`/`seamCrease`/`fillEdge`/`fillParam`/`creaseAngle`/`vectorAngle`
+  (corner_blend_obstacle_certify.go — all already generic in `(surf, rail/nbr, edge, scale)`).
+- Produces: `coons4Provider` (implements `railProvider`); `coons4Fill(loop RailLoop, scale Resolution)
+  (geom.BSplineSurface, [4]ribbonSide, Certificate, bool)`; `loopRails(loop RailLoop) (c0,c1,d0,d1
+  geom.BSplineCurve, ok bool)` (4 sides→4 pinned compatible rails, corners = the loop's shared
+  endpoints); `adjacentRibbon(rail geom.BSplineCurve, adj geom.Surface, base geom.BSplineSurface,
+  atMaxU, atMaxV bool, isU bool, length float64) (geom.BSplineSurface, bool)` (the ONE new geometry).
+- **Also fold in the Task-2 carried Important finding:** make `sampleRailOpen`
+  (corner_blend_obstacle.go) delegate to `sampleCurve3Open` (corner_provider_sphere.go) — a
+  `geom.BSplineCurve` satisfies `geom.Curve3`, so this removes the duplication the Task-2 reviewer
+  flagged. Re-run the obstacle tests to prove the delegation is behavior-preserving.
 
-**Context:** this is the general 4-sided fill. Given a 4-side loop, build the four rail
-BSplines (`sideAsBSpline`; a `geom.Curve3` arc/line/ellipse converts losslessly), Coons-fill,
-then for each side with `Cont == G1` match to a ribbon built from the side's `Adjacent` surface
-(`extrudeRibbon` when the adjacent is a plane/cylinder whose ruling is the extrude direction —
-same trick the obstacle wall/wings use; for a general curved adjacent, sample its true normal
-along the rail via `MatchSurface` directly against the adjacent BSpline). Side order is the
-Coons convention `c0=Sides[0], c1=Sides[2], d0=Sides[3], d1=Sides[1]` — verify the mapping against
-`geom.FillSurface`'s doc (`c0 v=0, c1 v=1, d0 u=0, d1 u=1`) and the loop winding; write it down
-in a comment. Per-side `FillSide.Order = int(Sides[i].Cont)`. `pinFillBoundary` for exact G0;
-certify with the shared `certifyPatch` (extract the obstacle's `certifyObstaclePatch` sampling
-into a general `certifyPatch(surf, loop, ribbons, scale)` — curvature-adaptive station density,
-`MaxDev`/`MaxAngleDev`/anti-fold — so tri3 and obstacle reuse it).
+**Context:** the general 4-sided fill. `loopRails` builds the four rails via `asBSplineCurve` + the
+obstacle's `makeRailPair`/`pinnedRail`/`pinEnds` machinery, taking the four corner points from the
+loop's consecutive shared endpoints (`curveStart`/`curveEnd`). Map to the Coons convention (side
+order `c0=v0, c1=v1, d0=u0, d1=u1` — write the RailLoop-index→Coons-edge mapping in a comment and
+pin it with an assertion). The **new** piece is `adjacentRibbon`: for a `Cont==G1` side, build a
+degree-(p,1) ruled ribbon whose VMin edge IS the rail and whose second row is each rail control
+point pushed along the Adjacent surface's inward tangent — generalizing `extrudeRibbon`'s single
+`dir` to a PER-CONTROL-POINT direction `n_i × t_i` where `n_i = adj.NormalAt(adj.ParamAt(c_i))` and
+`t_i` = the rail tangent (reuse `orientInward` against the plain-Coons interior derivative so the
+sign is robust, exactly as the obstacle does). For a planar/cylindrical Adjacent this reduces to
+`extrudeRibbon`; for a cone/torus it tracks the true normal. Then `FillSurface` with
+`FillSide{Adjacent: ribbon_i, AdjEdge: VMinEdge, Order: int(Sides[i].Cont)}` (G0 sides get
+`Order:0`, no ribbon) → `pinFillBoundary` → certify. `certifyCoons4Patch(surf, rails, ribbons,
+orders, scale)` is a thin (~12-line) function calling the generic internals: `NoFold: obstacleNoFold(surf,
+scale)`; `MaxDev:` max `railDev` over the 4 rails; `MaxAngleDev:` max `seamCrease` over the G1 sides
+only (skip `Order==0` sides — the obstacle rim excludes itself the same way); `Closed/WeldsArms` from
+`loop.Closed(scale.Weld())` + all four sides spanned.
 
 - [ ] **Step 1: Write the failing test** — construct a synthetic 4-sided loop that is NOT
-  analytically special: two opposite sides are equal-radius circular arcs on two perpendicular
-  cylinders, two are straight rails on planes, all `Cont=G1`. Assert `coons4Provider.Fits`
-  (Valence 4) true, `Build` returns `ok && cert.Valid(scale)`, the fill interpolates all four
-  rails within `scale.Weld()` (sample endpoints + midpoints), and `cert.NoFold` true. Add a
-  degenerate test: a loop whose two adjacent rails are near-colinear (sliver) → `cert.Valid` false
-  (honest-reject), NOT a panic.
+  analytically special: two opposite sides are equal-radius circular arcs (on two perpendicular
+  cylinders), two are straight rails on planes, all `Cont=G1`, `Adjacent` set to the respective
+  `geom.Cylinder`/`geom.Plane`. Assert `coons4Provider.Fits` (Valence 4) true, `Build` returns
+  `ok && cert.Valid(scale)`, the fill interpolates all four rails within `scale.Weld()` (sample
+  endpoints + midpoints), `cert.NoFold` true, and each G1 side's crease (`seamCrease`) is below
+  `seamAngularTol`. Add a degenerate test: a loop whose two adjacent rails are near-colinear (sliver)
+  → `cert.Valid` false (honest-reject), NOT a panic. (Confirm `geom.Cylinder` exists + its ctor via
+  `grep -rn 'type Cylinder' kernel/geom`; if the synthetic cylinder ribbon is awkward, a plane
+  Adjacent on all four sides is an acceptable first fixture — the ribbon path is exercised either way.)
 
 - [ ] **Step 2: Run test to verify it fails** — FAIL (`undefined: coons4Provider`).
 
-- [ ] **Step 3: Write minimal implementation** — the extraction move first (Step 3a: move the
-  shared ribbon/pin/refine/certify helpers to `corner_fill_ribbon.go`, run the existing obstacle
-  tests to prove the move is behavior-preserving), then `coons4Provider` on top. Keep functions
-  4–20 lines; `Build` orchestrates `sideAsBSpline ×4 → refineForG1 → CoonsFill → per-side G1
-  match → pinFillBoundary → certifyPatch`.
+- [ ] **Step 3: Write minimal implementation** — `coons4Provider` + `loopRails` + `adjacentRibbon` +
+  `coons4Fill` + `certifyCoons4Patch`, all calling the reused helpers above; do the `sampleRailOpen`
+  delegation. Keep functions 4–20 lines. `Build` orchestrates `loopRails → refineForG1 → adjacentRibbon
+  ×(G1 sides) → FillSurface → pinFillBoundary → certifyCoons4Patch`.
 
-- [ ] **Step 4: Run test to verify it passes** — `go test ./kernel/ops/ -run 'TestCoons4|TestObstacle' -v` → PASS (new + the moved-helper obstacle tests).
+- [ ] **Step 4: Run test to verify it passes** — `go test ./kernel/ops/ -run 'TestCoons4|Obstacle|TestFillet' -v`
+  → PASS (new coons4 tests AND every existing obstacle/fillet test — proving the `sampleRailOpen`
+  delegation and any shared-helper touch stayed behavior-preserving).
 
 - [ ] **Step 5: Commit** — `feat(blend): coons4Provider — general 4-sided ribbon-G1 fill over a RailLoop`.
 
 ---
 
-### Task 4: Re-express bsplineObstacleProvider on the shared coons4 core (byte-for-byte)
+### Task 4: ~~Re-express bsplineObstacleProvider on the shared coons4 core~~ — SUPERSEDED (dropped)
 
-**Files:**
-- Modify: `kernel/ops/corner_blend_obstacle.go`
-- Test: `kernel/ops/corner_blend_obstacle_test.go` (existing) + corpus gate.
-
-**Interfaces:**
-- Consumes: `coons4Fill`/`certifyPatch`/the shared ribbon helpers (Task 3).
-- Produces: `func obstacleLoop(*ObstacleFeature) (RailLoop, bool)` (ObstacleFeature → 4-side
-  RailLoop: c0=wall G1, c1=rim G0, d0=wingL G1, d1=wingR G1); `bsplineObstacleProvider.Build`
-  delegates to the shared core through that loop.
-
-**Context:** the obstacle provider currently owns the FillSurface plumbing; Task 3 moved the
-helpers out. Now make `bsplineObstacleProvider.Build` construct a `RailLoop` from its
-`ObstacleFeature` and call the shared `coons4Fill`, so there is ONE 4-sided fill path. The
-obstacle's ribbons are special (purpose-built `extrudeRibbon`s, not derived from a `topo.Face`
-`Adjacent`), so `obstacleLoop`'s Sides carry `Adjacent=nil` and the provider passes the
-pre-built ribbons alongside — OR (cleaner) `coons4Fill` gains an optional ribbon-override
-parameter. Choose the smaller-blast-radius option and document it. **This MUST be byte-for-byte:**
-the obstacle patch geometry cannot change.
-
-- [ ] **Step 1: Write the failing test** — none new; the gate is that the EXISTING obstacle
-  tests + corpus stay green. Before editing, capture the baseline:
-  `go test ./kernel/ops/ -run 'TestFilletSingleHostObstacleWatertight|TestFilletSlabColumnWatertight' -v`
-  and record PASS. Also snapshot the obstacle patch: add a one-off characterization test
-  `TestObstaclePatchAreaStable` asserting the T6 obstacle patch area == the current value
-  (read it from the current run, pin it as the golden) — this catches any geometric drift.
-
-- [ ] **Step 2: Run** the characterization test against current code → PASS (defines the golden).
-
-- [ ] **Step 3: Refactor** `Build` to route through `obstacleLoop` + shared `coons4Fill`.
-
-- [ ] **Step 4: Verify** `go test ./kernel/ops/ -run 'Obstacle|Fillet' -v` PASS AND
-  `go test ./model/feature -run TestOCCTBlendSimple` → 50 PASS, and run the full per-case diff
-  vs the pre-task baseline (script: `test-utilities/occt-blend/` scoreboard) → ZERO change.
-
-- [ ] **Step 5: Commit** — `refactor(blend): route the obstacle patch through the shared coons4 fill (byte-for-byte)`.
+**Status: dropped 2026-07-14 during execution.** The rationale for this task was "one 4-sided fill
+path, no drift." But everything is package `ops`: `coons4` already CALLS the very same helpers the
+obstacle provider uses (`asBSplineCurve`, `extrudeRibbon`, `pinFillBoundary`, `refineForG1`, and the
+`obstacleNoFold`/`railDev`/`seamCrease` certify internals) — there is no logic duplication to remove.
+Rerouting the *green* obstacle `Build` through `coons4Fill` would force `coons4Fill` to accept the
+obstacle's direction-supplied ribbons (a ribbon-override parameter), re-coupling the two paths and
+putting the byte-for-byte corpus gate at risk for **zero** real de-duplication. So the obstacle
+provider is left **untouched** (byte-for-byte trivially preserved), and "migrate provider_obstacle"
+is satisfied by shared-helper reuse, not a Build reroute. The one genuine duplication the Task-2
+reviewer found (`sampleRailOpen`/`sampleCurve3Open`) is de-duped inside **Task 3** instead.
 
 ---
 
