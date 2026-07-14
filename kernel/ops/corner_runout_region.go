@@ -44,7 +44,7 @@ func detectRunoutRegions(ef edgeFillet, res Resolution) []runoutRegion {
 		lo, hi := spineInterval(cut, ef.cyl)
 		clusters = append(clusters, spineCluster{im: im, cut: cut, lo: lo, hi: hi})
 	}
-	return mergeSpineClusters(clusters)
+	return mergeSpineClusters(clusters, res.Weld())
 }
 
 // spineCluster is one imprint/cut pair with its projected spine-axis interval — the unit
@@ -73,13 +73,18 @@ func spineInterval(cut imprintCut, cyl geom.Cylinder) (lo, hi float64) {
 }
 
 // mergeSpineClusters sorts clusters by their interval's low edge and merges any whose spine
-// intervals overlap (or touch) into a single runoutRegion — the double-interference grouping
-// detectRunoutRegions exists to compute. Disjoint intervals stay as separate, singleton regions.
-func mergeSpineClusters(clusters []spineCluster) []runoutRegion {
+// intervals overlap, touch, or sit within one weld tolerance of each other into a single
+// runoutRegion — the double-interference grouping detectRunoutRegions exists to compute.
+// weld is the fillet's model-relative merge slack (res.Weld()): the two bosses' cuts are
+// independently solved conics, so their spine intervals can disagree by ULP-level float noise
+// even when they truly touch, and an exact `c.lo <= hiEdge` compare would nondeterministically
+// split or join them on that noise. Intervals separated by MORE than weld stay disjoint,
+// singleton regions.
+func mergeSpineClusters(clusters []spineCluster, weld float64) []runoutRegion {
 	sort.Slice(clusters, func(i, j int) bool { return clusters[i].lo < clusters[j].lo })
 	var out []runoutRegion
 	for _, c := range clusters {
-		if n := len(out); n > 0 && c.lo <= out[n-1].hiEdge {
+		if n := len(out); n > 0 && c.lo <= out[n-1].hiEdge+weld {
 			out[n-1] = extendRegion(out[n-1], c)
 			continue
 		}

@@ -7,6 +7,37 @@ import (
 	"testing"
 )
 
+// syntheticSpineClusterPair builds two single-imprint spineClusters with the given [lo,hi]
+// spine intervals — a named fixture for exercising mergeSpineClusters' merge predicate in
+// isolation, without paying for a real edgeFillet/imprint solve (runoutImprint/imprintCut are
+// irrelevant to the merge decision itself, only lo/hi are).
+func syntheticSpineClusterPair(loA, hiA, loB, hiB float64) []spineCluster {
+	return []spineCluster{
+		{lo: loA, hi: hiA},
+		{lo: loB, hi: hiB},
+	}
+}
+
+// TestMergeSpineClusters_SeparateRunoutsStaySeparate is the tolerance-slack regression: two
+// independently-solved conics can report spine intervals that disagree by ULP-level float noise
+// even when they truly touch, so the merge predicate must accept a model-relative weld slack
+// (res.Weld()) rather than an exact `lo <= hiEdge` compare. Clusters separated by MORE than weld
+// must stay two regions; clusters within weld (but not exactly touching — the case a bare
+// compare gets wrong) must merge into one.
+func TestMergeSpineClusters_SeparateRunoutsStaySeparate(t *testing.T) {
+	weld := ResolutionForSize(50).Weld()
+
+	beyond := syntheticSpineClusterPair(0, 10, 10+1.5*weld, 20)
+	if got := mergeSpineClusters(beyond, weld); len(got) != 2 {
+		t.Fatalf("want 2 regions for intervals separated by >weld (%v), got %d: %+v", weld, len(got), got)
+	}
+
+	within := syntheticSpineClusterPair(0, 10, 10+0.5*weld, 20)
+	if got := mergeSpineClusters(within, weld); len(got) != 1 {
+		t.Fatalf("want 1 region for intervals within weld (%v) of each other, got %d: %+v", weld, len(got), got)
+	}
+}
+
 // TestDetectRunoutRegions_S1BossesClusterIntoOneRegion is the crux case this task exists for:
 // S1's two bosses (one per host plane) both interfere in the SAME fillet span, so
 // detectRunoutRegions must cluster their two imprints into a single coupled region — the
