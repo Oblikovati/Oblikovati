@@ -534,6 +534,28 @@ func TestMirrorTranslationRebuildsSolid(t *testing.T) {
 	}
 }
 
+// TestArcProfileRebuildsSolid guards arc emission: a real filleted linkage part whose profile mixes
+// lines and arcs must now emit its arcs (so the profile closes) and extrude to a solid — before arc
+// emission its open profile computed to no body (PARTIAL). The arc endpoints are shared with the
+// adjacent lines, so the loop is watertight.
+func TestArcProfileRebuildsSolid(t *testing.T) {
+	def := reopenPart(t, "real_arc_linkage.ipt")
+	arcs := 0
+	for k := 0; k < def.Sketches().Count(); k++ {
+		arcs += def.Sketches().Item(k).Arcs().Count()
+	}
+	if arcs == 0 {
+		t.Error("filleted profile emitted no arcs (arc emission missing)")
+	}
+	body := def.SurfaceBodies().All()
+	if len(body) == 0 || !body[0].IsSolid() {
+		t.Fatal("arc-profile linkage did not rebuild a solid (open profile)")
+	}
+	if v := analysis.MassPropertiesOf(body, 1, types.MassPropertiesHigh).VolumeMm3; v < 400 || v > 560 {
+		t.Errorf("arc-profile linkage volume = %.0f mm^3, want ~477 (a wrong-direction arc would bulge it)", v)
+	}
+}
+
 // TestProfileCornersShareCoincidentPoints guards that a rebuilt profile's touching corners are
 // ONE shared sketch point, not independent duplicated endpoints — reproducing the original's
 // endpoint coincidence constraints and so its degrees of freedom. The L-profile is a closed

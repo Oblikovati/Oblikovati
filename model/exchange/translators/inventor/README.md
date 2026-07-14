@@ -88,9 +88,14 @@ Zstd; resolved via `go.work`, main module untouched). RE notes + oracles: `../..
   Net: **the ReelToReel shafts (bearing / roller / torquimeter) rebuild as correct parametric solids —
   the stepped bearing shaft at full 360° (≈11.9 cm³, was a 1-radian sliver), the torquimeter shaft
   reunited across its cluster split — with zero wrong revolves; partial revolves (80/150/220/270°)
-  rebuild at their exact swept fraction.** Still open: **arc/fillet profiles** (`LineProfiles` declines
-  an arc-bearing part so a fillet arc is never emitted as a straight chord), and partial revolves whose
-  extent enum is absent AND whose angle isn't a lone parameter (1677K262 — declined on axis ambiguity).
+  rebuild at their exact swept fraction.** Still open: partial revolves whose extent enum is absent
+  AND whose angle isn't a lone parameter (1677K262 — declined on axis ambiguity).
+- ✅ **Arc emission**: a filleted profile's arcs are now emitted (endpoints shared with the adjacent
+  lines, so the loop stays closed), consuming the MINOR arc with its sweep direction derived from
+  geometry. A mixed line/arc extrude profile that used to compute to no body (open loop) now rebuilds
+  a solid — 6 real linkage/cover parts moved PARTIAL→SOLID, zero previously-solid regressions. Still
+  open: MAJOR arcs (>π), and a revolve whose profile carries an arc (`LineProfiles` still declines an
+  arc-bearing profile so it never emits a fillet as a straight chord; the extrude path handles arcs).
 - ✅ **Decoupled extraction + partial-state save** (the default): sketch EXTRACTION and feature
   BUILD are two separate passes (`translate/part.go`). Every decoded sketch is emitted first —
   independent of any feature — so the geometry always reaches the document; then features are built

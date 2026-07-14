@@ -448,7 +448,7 @@ func emitSketch(def *compdef.PartComponentDefinition, s ipt.Sketch) *sketch.Sket
 // per line (AddByTwoPoints) — gives the rebuilt sketch the same degrees of freedom as the original
 // (a closed N-gon: 2N free DOF, not 4N).
 func emitSketchOn(def *compdef.PartComponentDefinition, s ipt.Sketch, plane sketch.Plane) (*sketch.Sketch, []*sketch.Line) {
-	if len(s.Points) == 0 && len(s.Lines) == 0 && len(s.Circles) == 0 {
+	if len(s.Points) == 0 && len(s.Lines) == 0 && len(s.Circles) == 0 && len(s.Arcs) == 0 {
 		return nil, nil
 	}
 	sk := def.Sketches().Add(plane)
@@ -460,10 +460,28 @@ func emitSketchOn(def *compdef.PartComponentDefinition, s ipt.Sketch, plane sket
 	for i, l := range s.Lines {
 		lines[i] = sk.Lines().Add(pointAt(l.A), pointAt(l.B))
 	}
+	for _, a := range s.Arcs {
+		// Share the arc's endpoints with the adjacent lines (pointAt) so a filleted profile stays a
+		// closed loop, exactly as a shared line corner does. Consumers decode the MINOR arc, so its
+		// sweep direction (CCW when the CCW span start→end is the shorter one) is derived here.
+		sk.Arcs().Add(pointAt(a.Center), pointAt(a.Start), pointAt(a.End), minorArcCCW(a))
+	}
 	for _, c := range s.Circles {
 		sk.Circles().AddByCenterRadius(m.P2(c.Center.X, c.Center.Y), m.Scalar(c.Radius))
 	}
 	return sk, lines
+}
+
+// minorArcCCW reports whether the minor arc from Start to End sweeps counter-clockwise about the
+// centre — true when the CCW span (start angle → end angle) is the shorter (≤ π) way round.
+func minorArcCCW(a ipt.Arc) bool {
+	a0 := math.Atan2(a.Start.Y-a.Center.Y, a.Start.X-a.Center.X)
+	a1 := math.Atan2(a.End.Y-a.Center.Y, a.End.X-a.Center.X)
+	sweep := a1 - a0
+	for sweep < 0 {
+		sweep += 2 * math.Pi
+	}
+	return sweep <= math.Pi
 }
 
 // applyGeometricConstraints binds each decoded geometric constraint (horizontal / vertical /
