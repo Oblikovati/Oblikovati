@@ -604,6 +604,16 @@ func applyGeoConstraint(def *compdef.PartComponentDefinition, gc ipt.GeoConstrai
 			}
 			sk.GeometricConstraints().AddMidpoint(p, l)
 			return true
+		case ipt.GeoPointOnLine:
+			// The pinned vertex lies on the line's interior (validated at decode). Bind it only when
+			// both the line and a sketch point at that vertex are present, so it never invents a point.
+			l := lineAtCoords(sk, gc.L1)
+			p := pointAtCoord(sk, gc.Pt)
+			if l == nil || p == nil || sk.DegreesOfFreedom() <= 0 {
+				continue
+			}
+			sk.GeometricConstraints().AddPointOnLine(p, l)
+			return true
 		}
 	}
 	return false

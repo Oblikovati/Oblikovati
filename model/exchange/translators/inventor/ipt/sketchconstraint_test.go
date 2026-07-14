@@ -150,6 +150,59 @@ func TestDecodeTangent(t *testing.T) {
 	}
 }
 
+// TestDecodePointOnLine verifies point-on-line decode on a real part. A point-on-line is a 0x3e
+// coincidence node pinning a curve vertex to a line's INTERIOR (a coincidence at an endpoint is a
+// plain corner). TorquimeterShaft (real_shaft_splitcluster) has two: the step-transition vertices
+// lie on the interior of the shaft's vertical edge. The stepped/L-profile shafts, whose vertices
+// only meet at corners, decode none — proving endpoints aren't mistaken for interior points.
+func TestDecodePointOnLine(t *testing.T) {
+	count := func(file string) []GeoConstraint {
+		var pol []GeoConstraint
+		for _, g := range DecodeGeometricConstraints(segFor(t, file)) {
+			if g.Kind == GeoPointOnLine {
+				pol = append(pol, g)
+			}
+		}
+		return pol
+	}
+	pol := count("real_shaft_splitcluster.ipt")
+	if len(pol) != 2 {
+		t.Fatalf("splitcluster shaft: got %d point-on-line, want 2", len(pol))
+	}
+	for _, g := range pol {
+		if !onSegmentInterior(g.Pt, g.L1[0], g.L1[1]) {
+			t.Errorf("point %v not strictly interior to line %v", g.Pt, g.L1)
+		}
+	}
+	for _, f := range []string{"real_shaft_stepped.ipt", "18_lprofile.ipt"} {
+		if n := count(f); len(n) != 0 {
+			t.Errorf("%s: got %d point-on-line, want 0 (corners are not interior points)", f, len(n))
+		}
+	}
+}
+
+// TestOnSegmentInterior locks the interior test used to separate point-on-line from corner
+// coincidences: a point strictly between the endpoints is interior; an endpoint or an off-line
+// point is not.
+func TestOnSegmentInterior(t *testing.T) {
+	a, b := Point2D{0, 0}, Point2D{4, 0}
+	cases := []struct {
+		p    Point2D
+		want bool
+	}{
+		{Point2D{2, 0}, true},     // midpoint — interior
+		{Point2D{0, 0}, false},    // endpoint a
+		{Point2D{4, 0}, false},    // endpoint b
+		{Point2D{2, 0.01}, false}, // off the line
+		{Point2D{5, 0}, false},    // collinear but past b
+	}
+	for _, c := range cases {
+		if got := onSegmentInterior(c.p, a, b); got != c.want {
+			t.Errorf("onSegmentInterior(%v) = %v, want %v", c.p, got, c.want)
+		}
+	}
+}
+
 // TestHorizontalConstraintBindsRightLine checks the decoded horizontal constraint names the
 // horizontal line (0,0)-(3,0), proving the line resolves to its endpoint coordinates.
 func TestHorizontalConstraintBindsRightLine(t *testing.T) {

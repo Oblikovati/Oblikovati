@@ -48,6 +48,7 @@ const (
 	GeoCollinear
 	GeoEqualLength
 	GeoMidpoint
+	GeoPointOnLine
 )
 
 // GeoConstraint is a decoded geometric constraint with its lines resolved to endpoint coordinates,
@@ -149,6 +150,7 @@ func DecodeGeometricConstraints(seg []byte) []GeoConstraint {
 			}
 		}
 	}
+	out = append(out, decodePointOnLine(seg, vc)...)
 	return out
 }
 
@@ -490,10 +492,10 @@ func clusterPoints(cl []sketchItem) []Point2D {
 	return pts
 }
 
-// lineEndpoints maps each line reference (the reference shared by a line's two coincidence nodes,
-// which pin its endpoints) to that line's two endpoint coordinates.
-func lineEndpoints(seg []byte, vc map[uint32]Point2D) map[uint32][2]Point2D {
-	ends := map[uint32][]Point2D{}
+// coincidenceGroups maps each line reference to every point pinned to it by a 0x3e coincidence
+// node — its two endpoints, plus any interior point-on-line vertex.
+func coincidenceGroups(seg []byte, vc map[uint32]Point2D) map[uint32][]Point2D {
+	grp := map[uint32][]Point2D{}
 	for _, c := range collectRawCons(seg) {
 		if c.disc != coincidenceDisc || c.r1&refBit == 0 || c.r2&refBit == 0 {
 			continue
@@ -506,13 +508,71 @@ func lineEndpoints(seg []byte, vc map[uint32]Point2D) map[uint32][2]Point2D {
 				continue
 			}
 		}
-		ends[line] = append(ends[line], p)
+		grp[line] = append(grp[line], p)
 	}
+	return grp
+}
+
+// lineEndpoints maps each line reference to its two endpoint coordinates (a line with exactly two
+// coincidence points). A line carrying an extra interior point-on-line vertex has >2 points and is
+// intentionally left out here — point-on-line resolves its own endpoints via extremePair in
+// decodePointOnLine, so this core resolver stays unchanged (recovering such lines here showed no
+// benefit on the corpus and would broaden the resolver's behaviour without cause).
+func lineEndpoints(seg []byte, vc map[uint32]Point2D) map[uint32][2]Point2D {
 	out := map[uint32][2]Point2D{}
-	for line, ps := range ends {
+	for line, ps := range coincidenceGroups(seg, vc) {
 		if len(ps) == 2 {
 			out[line] = [2]Point2D{ps[0], ps[1]}
 		}
 	}
 	return out
+}
+
+// extremePair returns the two points farthest apart in a collinear set — a line's endpoints.
+func extremePair(ps []Point2D) [2]Point2D {
+	ai, bi, best := 0, 1, -1.0
+	for i := range ps {
+		for j := i + 1; j < len(ps); j++ {
+			if d := math.Hypot(ps[i].X-ps[j].X, ps[i].Y-ps[j].Y); d > best {
+				best, ai, bi = d, i, j
+			}
+		}
+	}
+	return [2]Point2D{ps[ai], ps[bi]}
+}
+
+// decodePointOnLine returns the sketch's point-on-line constraints: a curve vertex pinned onto a
+// line's INTERIOR by a 0x3e coincidence node (a coincidence at an endpoint is a plain corner, not a
+// point-on-line). Each is real — a decoded coincidence node whose point resolves to a vertex lying
+// strictly between the line's endpoints — so applying it moves no geometry. (A point-on-line on a
+// STANDALONE point isn't covered: a standalone point isn't a curve vertex, so its arbitrary
+// position along the line can't be resolved.)
+func decodePointOnLine(seg []byte, vc map[uint32]Point2D) []GeoConstraint {
+	var out []GeoConstraint
+	for _, ps := range coincidenceGroups(seg, vc) {
+		if len(ps) < 3 {
+			continue
+		}
+		e := extremePair(ps)
+		for _, p := range ps {
+			if !samePoint2D(p, e[0]) && !samePoint2D(p, e[1]) && onSegmentInterior(p, e[0], e[1]) {
+				out = append(out, GeoConstraint{Kind: GeoPointOnLine, L1: e, Pt: p})
+			}
+		}
+	}
+	return out
+}
+
+// onSegmentInterior reports whether p lies on segment a–b strictly between the endpoints.
+func onSegmentInterior(p, a, b Point2D) bool {
+	dx, dy := b.X-a.X, b.Y-a.Y
+	length := math.Hypot(dx, dy)
+	if length < 1e-6 {
+		return false
+	}
+	if math.Abs((p.X-a.X)*dy-(p.Y-a.Y)*dx)/length > 1e-4 {
+		return false // not on the line
+	}
+	tt := ((p.X-a.X)*dx + (p.Y-a.Y)*dy) / (length * length)
+	return tt > 1e-3 && tt < 1-1e-3
 }
