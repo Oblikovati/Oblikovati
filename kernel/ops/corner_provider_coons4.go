@@ -38,7 +38,7 @@ func (coons4Provider) Fits(loop RailLoop) bool { return loop.Valence() == 4 }
 // Build fills the loop and certifies it, or declines (ok=false) so a later tier / honest-reject
 // handles it. It is the RailLoop-path sibling of bsplineObstacleProvider.Build.
 func (coons4Provider) Build(loop RailLoop, scale Resolution) (CornerBlendPatch, Certificate, bool) {
-	fill, rails, sides, ok := coons4Fill(loop, scale)
+	fill, rails, sides, ok := coons4Fill(loop)
 	if !ok {
 		return CornerBlendPatch{}, Certificate{}, false
 	}
@@ -50,7 +50,7 @@ func (coons4Provider) Build(loop RailLoop, scale Resolution) (CornerBlendPatch, 
 // coons4Fill builds the four compatible+refined boundary rails, the G1 ribbons, and the matched
 // FillSurface. It returns the refined rails and the assembled sides so certify measures against the
 // exact same geometry (no recomputation/duplication). ok=false on any failure (honest-reject, ADR-3).
-func coons4Fill(loop RailLoop, scale Resolution) (geom.BSplineSurface, [4]geom.BSplineCurve, [4]geom.FillSide, bool) {
+func coons4Fill(loop RailLoop) (geom.BSplineSurface, [4]geom.BSplineCurve, [4]geom.FillSide, bool) {
 	var noRails [4]geom.BSplineCurve
 	c0, c1, d0, d1, ok := loopRails(loop)
 	if !ok {
@@ -61,12 +61,12 @@ func coons4Fill(loop RailLoop, scale Resolution) (geom.BSplineSurface, [4]geom.B
 		return geom.BSplineSurface{}, noRails, [4]geom.FillSide{}, false
 	}
 	rails := [4]geom.BSplineCurve{c0, c1, d0, d1}
-	return assembleCoons4(loop, rails, scale)
+	return assembleCoons4(loop, rails)
 }
 
 // assembleCoons4 turns the refined rails into a matched, boundary-pinned FillSurface. Split from
 // coons4Fill to keep both bodies within the function-length budget.
-func assembleCoons4(loop RailLoop, rails [4]geom.BSplineCurve, scale Resolution) (geom.BSplineSurface, [4]geom.BSplineCurve, [4]geom.FillSide, bool) {
+func assembleCoons4(loop RailLoop, rails [4]geom.BSplineCurve) (geom.BSplineSurface, [4]geom.BSplineCurve, [4]geom.FillSide, bool) {
 	base, err := geom.CoonsFill(rails[0], rails[1], rails[2], rails[3])
 	if err != nil {
 		return geom.BSplineSurface{}, rails, [4]geom.FillSide{}, false

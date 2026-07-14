@@ -31,7 +31,10 @@ func (tri3Provider) Fits(loop RailLoop) bool { return loop.Valence() == 3 }
 // or declines (ok=false) so a later tier / honest-reject handles it. The RailLoop-path sibling of
 // coons4Provider.Build for the 3-valence case.
 func (tri3Provider) Build(loop RailLoop, scale Resolution) (CornerBlendPatch, Certificate, bool) {
-	fill, rails, sides, ok := tri3Fill(loop, choosePole(loop), scale)
+	if loop.Valence() != 3 {
+		return CornerBlendPatch{}, Certificate{}, false
+	}
+	fill, rails, sides, ok := tri3Fill(loop, choosePole(loop))
 	if !ok {
 		return CornerBlendPatch{}, Certificate{}, false
 	}
@@ -84,7 +87,7 @@ func adjNormalAt(adj geom.Surface, p math.Point3) (math.Vector3, bool) {
 // tri3Fill builds the degenerate-4 rails, the base Coons fill, the three G1 ribbons, and the matched,
 // boundary-pinned FillSurface. It returns the refined rails and assembled sides so certify measures the
 // exact same geometry (no recomputation). ok=false on any failure (honest-reject, ADR-3).
-func tri3Fill(loop RailLoop, pole int, scale Resolution) (geom.BSplineSurface, [4]geom.BSplineCurve, [4]geom.FillSide, bool) {
+func tri3Fill(loop RailLoop, pole int) (geom.BSplineSurface, [4]geom.BSplineCurve, [4]geom.FillSide, bool) {
 	var noRails [4]geom.BSplineCurve
 	c0, c1, d0, d1, s0, dA, dB, ok := tri3Rails(loop, pole)
 	if !ok {
@@ -94,7 +97,7 @@ func tri3Fill(loop RailLoop, pole int, scale Resolution) (geom.BSplineSurface, [
 	if err != nil {
 		return geom.BSplineSurface{}, noRails, [4]geom.FillSide{}, false
 	}
-	return assembleTri3(loop, [4]geom.BSplineCurve{c0, c1, d0, d1}, base, s0, dA, dB, scale)
+	return assembleTri3(loop, [4]geom.BSplineCurve{c0, c1, d0, d1}, base, s0, dA, dB)
 }
 
 // tri3Rails builds the four degenerate-4 boundary rails from the 3-sided loop with corner `pole`
@@ -168,9 +171,7 @@ func degeneratePole(c0 geom.BSplineCurve, apex math.Point3) (geom.BSplineCurve, 
 // assembleTri3 turns the refined rails into a matched, boundary-pinned FillSurface. The pole side (c1)
 // gets NO ribbon (always G0); the three real sides get an outward cross-tangent ribbon (ribbonSide).
 // Split from tri3Fill to keep both bodies within the function-length budget.
-//
-//nolint:unparam // scale mirrors coons4's assembleCoons4 signature (fill path is scale-agnostic; certify carries it).
-func assembleTri3(loop RailLoop, rails [4]geom.BSplineCurve, base geom.BSplineSurface, s0, dA, dB Side, scale Resolution) (geom.BSplineSurface, [4]geom.BSplineCurve, [4]geom.FillSide, bool) {
+func assembleTri3(loop RailLoop, rails [4]geom.BSplineCurve, base geom.BSplineSurface, s0, dA, dB Side) (geom.BSplineSurface, [4]geom.BSplineCurve, [4]geom.FillSide, bool) {
 	sides, ok := tri3Sides(rails, base, s0, dA, dB, tri3RibLen(loop))
 	if !ok {
 		return geom.BSplineSurface{}, rails, [4]geom.FillSide{}, false

@@ -112,6 +112,18 @@ func TestTri3RejectsValence4(t *testing.T) {
 	}
 }
 
+// TestTri3BuildGuardsValence proves Build self-guards on loop.Valence() (mirrors coons4Provider.Build
+// and analyticSphereProvider.Build): calling Build directly (skipping Fits, as a misbehaving caller
+// might) on a Valence-2 loop must honest-reject rather than panic inside choosePole/cornerNormalAgreement,
+// which indexes loop.Sides[0..2] and would go out of range on fewer than 3 sides.
+func TestTri3BuildGuardsValence(t *testing.T) {
+	loop := RailLoop{Sides: []Side{{}, {}}}
+	_, _, ok := (tri3Provider{}).Build(loop, blendScale())
+	if ok {
+		t.Fatal("Build must return ok=false for a Valence-2 loop, not attempt to fill it")
+	}
+}
+
 // TestTri3TwistedRejects flips one rail's orientation so the loop no longer chains; Build must NOT
 // panic and must honest-reject (ok==false OR an invalid certificate) at the pole rather than ship a
 // self-intersecting patch.
