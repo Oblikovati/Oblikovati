@@ -170,7 +170,9 @@ func buildComponent(ws *doc.Workspace, srcPath, outPath string, built map[string
 	if err != nil {
 		return nil, nil, err
 	}
-	return buildPart(ws, outPath, pd)
+	// An assembly is about component placement/silhouette, not per-part feature troubleshooting,
+	// so a component that doesn't rebuild parametrically still imports its display mesh.
+	return buildPart(ws, outPath, pd, true)
 }
 
 // componentName is a component's base name (file name without extension).

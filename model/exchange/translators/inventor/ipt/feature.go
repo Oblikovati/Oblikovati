@@ -247,6 +247,37 @@ func RevolveProfile(sketches []Sketch) (b RevolveBinding, ok bool) {
 	return RevolveBinding{}, false
 }
 
+// ReuniteRevolveAxis merges a revolve's separate VERTICAL centreline sketch back into its profile
+// sketch, so both live in one sketch — as Inventor authored them, where the centreline is
+// construction geometry inside the profile's own sketch. Incidence decoding splits them because the
+// centreline shares no endpoint with the profile loop (a disconnected component), landing it in its
+// own sketch; but a dimension that positions a profile edge relative to the centreline (a revolve's
+// radius dimension) can only bind when both live in ONE sketch. Reuniting also moves the part from
+// RevolveProfile case B to case A (an in-profile vertical centreline) with the identical axis line,
+// so the rebuilt solid is unchanged. Only a vertical centreline is merged (case A requires it); a
+// non-vertical separate centreline is left as its own sketch for case B.
+func ReuniteRevolveAxis(sketches []Sketch) []Sketch {
+	b, ok := RevolveProfile(sketches)
+	if !ok || b.AxisSketch == b.ProfileSketch {
+		return sketches
+	}
+	axis := sketches[b.AxisSketch].Lines[b.AxisLine]
+	if !isVerticalLine(axis) {
+		return sketches
+	}
+	out := make([]Sketch, 0, len(sketches))
+	for i, s := range sketches {
+		if i == b.AxisSketch {
+			continue // its line moves into the profile sketch; drop the now-empty axis sketch
+		}
+		if i == b.ProfileSketch {
+			s.Lines = append(append([]Line(nil), s.Lines...), axis)
+		}
+		out = append(out, s)
+	}
+	return out
+}
+
 // onXAxis reports whether a line lies on the sketch's vertical axis (both endpoints x≈0) — used to
 // tell a separate centreline that coincides with a profile's x≈0 edge (same axis, unambiguous)
 // from one running elsewhere (a conflicting axis).

@@ -15,6 +15,7 @@ import (
 	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/feature"
+	"oblikovati.org/model/sketch"
 	"oblikovati.org/persistence"
 )
 
@@ -533,9 +534,151 @@ func TestMirrorTranslationRebuildsSolid(t *testing.T) {
 	}
 }
 
+// TestProfileCornersShareCoincidentPoints guards that a rebuilt profile's touching corners are
+// ONE shared sketch point, not independent duplicated endpoints — reproducing the original's
+// endpoint coincidence constraints and so its degrees of freedom. The L-profile is a closed
+// 6-corner loop: 6 shared points ⇒ 12 free DOF (2 per point), not 24 (4 per unconstrained line).
+func TestProfileCornersShareCoincidentPoints(t *testing.T) {
+	def := reopenPart(t, "18_lprofile.ipt")
+	s := def.Sketches().Item(0)
+	if got := s.Points().Count(); got != 6 {
+		t.Errorf("L-profile sketch has %d points, want 6 (corners must share one coincident point)", got)
+	}
+	if got := s.Lines().Count(); got != 6 {
+		t.Errorf("L-profile sketch has %d lines, want 6", got)
+	}
+	if dof := s.DegreesOfFreedom(); dof != 12 {
+		t.Errorf("L-profile sketch DOF = %d, want 12 (a coincident 6-gon; 24 means corners were left independent)", dof)
+	}
+}
+
+// TestRevolveCentrelineReunited guards that a revolve's separate vertical centreline is merged
+// back into its profile sketch: the stepped shaft, whose incidence decode splits the centreline
+// into its own component, must rebuild as ONE sketch containing the 6 profile edges plus the
+// vertical x≈0 centreline (7 lines) — so the revolve's radius dimensions can bind in one sketch —
+// and the revolve solid must be unchanged (same axis line, ~11.9 cm³).
+func TestRevolveCentrelineReunited(t *testing.T) {
+	def := reopenPart(t, "real_shaft_stepped.ipt")
+	if n := def.Sketches().Count(); n != 1 {
+		t.Errorf("stepped shaft has %d sketches, want 1 (centreline reunited into the profile)", n)
+	}
+	s := def.Sketches().Item(0)
+	if s.Lines().Count() != 7 {
+		t.Errorf("reunited sketch has %d lines, want 7 (6 profile + centreline)", s.Lines().Count())
+	}
+	axis := 0
+	for i := 0; i < s.Lines().Count(); i++ {
+		l := s.Lines().Item(i)
+		if math.Abs(float64(l.A.X)) < 1e-4 && math.Abs(float64(l.B.X)) < 1e-4 {
+			axis++
+		}
+	}
+	if axis != 1 {
+		t.Errorf("reunited sketch has %d lines on x=0, want 1 (the centreline)", axis)
+	}
+	body := def.SurfaceBodies().All()
+	if len(body) == 0 || !body[0].IsSolid() {
+		t.Fatal("shaft no longer rebuilds a solid after reuniting the centreline")
+	}
+	if v := analysis.MassPropertiesOf(body, 1, types.MassPropertiesHigh).VolumeMm3; v < 11000 || v > 13000 {
+		t.Errorf("shaft volume = %.0f mm^3, want ~12000 — reuniting the centreline changed the solid", v)
+	}
+}
+
+// TestGeometricConstraintsReduceDOF guards that decoded geometric constraints (parallel /
+// perpendicular / horizontal / vertical) are applied to the rebuilt sketch and remove degrees of
+// freedom — the real-part step toward DOF parity. The stepped-shaft profile carries perpendicular
+// constraints between its steps; applying them drops its 6-corner profile below the coincidence-only
+// 12 DOF. Its revolve solid must still rebuild unchanged (the constraints are already satisfied, so
+// they pin DOF without moving geometry).
+func TestGeometricConstraintsReduceDOF(t *testing.T) {
+	def := reopenPart(t, "real_shaft_stepped.ipt")
+	profile := profileSketch(def)
+	if profile == nil {
+		t.Fatal("no 6-line profile sketch found")
+	}
+	a := profile.AnalyzeConstraints()
+	if a.Equations == 0 {
+		t.Error("shaft profile has no constraint equations — geometric constraints were not applied")
+	}
+	if a.DOF >= 12 {
+		t.Errorf("shaft profile DOF = %d, want < 12 (constraints must reduce it below the coincidence-only baseline)", a.DOF)
+	}
+	// geometry must be unchanged: the revolve solid still rebuilds to ~11.9 cm³ (Pappus).
+	body := def.SurfaceBodies().All()
+	if len(body) == 0 || !body[0].IsSolid() {
+		t.Fatal("shaft no longer rebuilds a solid after applying constraints")
+	}
+	if v := analysis.MassPropertiesOf(body, 1, types.MassPropertiesHigh).VolumeMm3; v < 11000 || v > 13000 {
+		t.Errorf("shaft volume = %.0f mm^3, want ~12000 — constraints moved geometry", v)
+	}
+}
+
+// TestShaftConstraintPipeline guards the cumulative DOF-parity pipeline on the stepped shaft:
+// shared coincident corners + perpendicular constraints + radius dimensions + axial step-length
+// dimensions + the centreline origin anchor bring its free 24-DOF profile down to a well-driven
+// sketch (≤6 DOF, no redundant constraints), while the revolve solid stays exact (~11.9 cm³).
+func TestShaftConstraintPipeline(t *testing.T) {
+	def := reopenPart(t, "real_shaft_stepped.ipt")
+	s := profileSketch(def)
+	if s == nil {
+		t.Fatal("no revolve profile sketch")
+	}
+	a := s.AnalyzeConstraints()
+	if a.DOF > 6 {
+		t.Errorf("shaft profile DOF = %d, want ≤ 6 (constraints + dimensions + anchor should drive it down from 24)", a.DOF)
+	}
+	if a.Redundant != 0 {
+		t.Errorf("shaft profile has %d redundant constraints, want 0 (no over-constraint)", a.Redundant)
+	}
+	body := def.SurfaceBodies().All()
+	if v := analysis.MassPropertiesOf(body, 1, types.MassPropertiesHigh).VolumeMm3; v < 11000 || v > 13000 {
+		t.Errorf("shaft volume = %.0f mm^3, want ~12000 — a constraint moved geometry", v)
+	}
+}
+
+// profileSketch returns the part's revolve profile sketch — the stepped shaft's 6 profile edges
+// plus the reunited vertical centreline (7 lines).
+func profileSketch(def *compdef.PartComponentDefinition) *sketch.Sketch {
+	for k := 0; k < def.Sketches().Count(); k++ {
+		if s := def.Sketches().Item(k); s.Lines().Count() >= 6 {
+			return s
+		}
+	}
+	return nil
+}
+
+// TestSketchExtractionDecoupledFromFeatures guards the decoupling of sketch extraction from
+// feature building: a sketch-only part (no feature) still emits its sketch, and — with the mesh
+// fallback OFF by default — no opaque display body is imported to mask it. This is the property
+// that makes a partially-translated part inspectable in the browser.
+func TestSketchExtractionDecoupledFromFeatures(t *testing.T) {
+	def := reopenPart(t, "sketch_line.ipt")
+	if n := def.Sketches().Count(); n != 1 {
+		t.Errorf("reopened part has %d sketches, want 1 (sketch not emitted independently of a feature)", n)
+	}
+	if bodies := def.SurfaceBodies().All(); len(bodies) != 0 {
+		t.Errorf("reopened sketch-only part has %d bodies, want 0 (a mesh body was imported by default, hiding the partial state)", len(bodies))
+	}
+}
+
+// TestMeshFallbackGateHonorsEnv guards the toggle that chooses partial-parametric (default) vs
+// the opaque display mesh. The default is OFF so troubleshooting sees the real tree;
+// OBK_IPT_MESH_FALLBACK=1 turns it back on.
+func TestMeshFallbackGateHonorsEnv(t *testing.T) {
+	t.Setenv("OBK_IPT_MESH_FALLBACK", "")
+	if meshFallbackEnabled() {
+		t.Error("mesh fallback should be OFF by default")
+	}
+	t.Setenv("OBK_IPT_MESH_FALLBACK", "1")
+	if !meshFallbackEnabled() {
+		t.Error("OBK_IPT_MESH_FALLBACK=1 should enable the mesh fallback")
+	}
+}
+
 // TestImportRoundTripsThroughOPD imports the box to a .opd, reopens it with a fresh
-// workspace, and checks the reconstructed-then-reloaded body still measures 8 cm^3.
-// This proves the body persists (as an ImportedBodyFeature) and re-derives on open.
+// workspace, and checks the reconstructed-then-reloaded body still measures 8 cm^3 — proving
+// the body persists through the recipe and re-derives on open.
 func TestImportRoundTripsThroughOPD(t *testing.T) {
 	out := filepath.Join(t.TempDir(), "box.opd")
 	if _, err := FromInventor(readCorpus(t, "10_box.ipt"), out); err != nil {

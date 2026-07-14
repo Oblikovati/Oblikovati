@@ -91,14 +91,25 @@ Zstd; resolved via `go.work`, main module untouched). RE notes + oracles: `../..
   rebuild at their exact swept fraction.** Still open: **arc/fillet profiles** (`LineProfiles` declines
   an arc-bearing part so a fillet arc is never emitted as a straight chord), and partial revolves whose
   extent enum is absent AND whose angle isn't a lone parameter (1677K262 — declined on axis ambiguity).
-- 🟡 **Static-body fallback from Inventor's own display mesh** (`ipt/graphics.go`): for a part that
-  doesn't rebuild parametrically, the `PmGraphicsSegment` tessellation (per-face triangle patches —
-  curved faces, holes, and fillets already meshed) is decoded and imported. It preserves the part's
-  silhouette and reopens for the great majority of a real mechanical library (a reel-to-reel deck:
-  102 of 104 parts), **but** Inventor's stored tessellation is *non-manifold / not watertight*, so it
-  imports as an **open surface body (not a solid)** — its mass properties are unreliable (volume reads
-  ~2× true). Making the fallback a watertight solid (weld + hole-fill, or gate on manifoldness) is a
-  known follow-up. The older planar-only ACIS reconstruction remains a secondary fallback.
+- ✅ **Decoupled extraction + partial-state save** (the default): sketch EXTRACTION and feature
+  BUILD are two separate passes (`translate/part.go`). Every decoded sketch is emitted first —
+  independent of any feature — so the geometry always reaches the document; then features are built
+  in history order over those sketches, and a step that can't be translated is skipped with a note,
+  leaving the emitted sketches and any earlier features intact. A partially-translated part is saved
+  in that **partial parametric state**, so its sketch/feature history is visible in the browser and a
+  failed step can be diagnosed — rather than being replaced by an opaque imported body.
+- 🟡 **Static-body fallback from Inventor's own display mesh** (`ipt/graphics.go`) — now **opt-in**,
+  not the default. For a part that doesn't rebuild parametrically, the `PmGraphicsSegment`
+  tessellation (per-face triangle patches — curved faces, holes, and fillets already meshed) is
+  decoded and imported. It preserves the part's silhouette and reopens for the great majority of a
+  real mechanical library (a reel-to-reel deck: 102 of 104 parts), **but** Inventor's stored
+  tessellation is *non-manifold / not watertight*, so it imports as an **open surface body (not a
+  solid)** and its mass properties are unreliable (volume reads ~2× true) — and, more importantly, it
+  hides the sketch/feature history behind a single body, which is why it no longer runs by default.
+  Set **`OBK_IPT_MESH_FALLBACK=1`** to re-enable it (useful when only the silhouette matters, e.g. an
+  assembly preview; assemblies keep it on). Making the mesh a watertight solid (weld + hole-fill, or
+  gate on manifoldness) is a known follow-up. The older planar-only ACIS reconstruction remains a
+  secondary fallback under the same opt-in.
 - ✅ **Assemblies (`.iam`)** → native Oblikovati assemblies, **including sub-assemblies**. The
   RSeStorage **node graph** is decoded (M-stream block metadata → typed B-stream blocks,
   `ipt/nodegraph.go`): occurrence structure from `AmDcSegment`, and each occurrence's

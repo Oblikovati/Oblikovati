@@ -4,6 +4,7 @@ package translate
 
 import (
 	"fmt"
+	"math"
 	"os"
 
 	"oblikovati.org/api/types"
@@ -33,9 +34,11 @@ func BodyFromIPT(iptBytes []byte) (*topo.Body, []string, error) {
 }
 
 // FromInventor translates an .ipt into a native Oblikovati part package at outPath:
-// user parameters become Oblikovati parameters, and (interim) the solid body is
-// reconstructed for parts we can rebuild. Sketches and the feature tree are the next
-// decode stages. Returns any non-fatal translation warnings.
+// user parameters become Oblikovati parameters, sketches are extracted and emitted, and the
+// feature tree is rebuilt in history order. A part that can't be fully translated is saved in
+// its PARTIAL parametric state (sketches + whatever features built) so its history stays
+// inspectable in the browser — not replaced by Inventor's opaque display mesh (see
+// meshFallbackEnabled). Returns any non-fatal translation warnings.
 func FromInventor(iptBytes []byte, outPath string) ([]string, error) {
 	d, err := ipt.Open(iptBytes)
 	if err != nil {
@@ -45,7 +48,7 @@ func FromInventor(iptBytes []byte, outPath string) ([]string, error) {
 		return nil, assemblyError(d)
 	}
 	ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
-	document, warns, err := buildPart(ws, outPath, d)
+	document, warns, err := buildPart(ws, outPath, d, meshFallbackEnabled())
 	if err != nil {
 		return warns, err
 	}
@@ -55,22 +58,38 @@ func FromInventor(iptBytes []byte, outPath string) ([]string, error) {
 	return warns, nil
 }
 
+// meshFallbackEnabled reports whether to import Inventor's stored display tessellation for a
+// part that doesn't fully rebuild parametrically. Default OFF: the translator saves the partial
+// parametric state (sketches + built features) so the sketch/feature history is inspectable and
+// a failed step can be diagnosed. Set OBK_IPT_MESH_FALLBACK=1 to instead import the opaque
+// display-mesh body — useful when only the silhouette matters (e.g. an assembly preview).
+func meshFallbackEnabled() bool {
+	return os.Getenv("OBK_IPT_MESH_FALLBACK") == "1"
+}
+
 // buildPart adds a part document to ws at outPath and populates it from the decoded .ipt —
-// parameters, then the parametric feature tree (falling back to the ACIS body). It stops
-// short of saving so callers (a standalone part, or an assembly component) control that.
-func buildPart(ws *doc.Workspace, outPath string, d *ipt.Document) (*doc.Document, []string, error) {
+// parameters, then the extracted sketches, then the feature tree over those sketches. It stops
+// short of saving so callers (a standalone part, or an assembly component) control that. The
+// partial parametric state is kept as-is; the display mesh is imported only when meshFallback is
+// set AND the parametric path produced no solid.
+func buildPart(ws *doc.Workspace, outPath string, d *ipt.Document, meshFallback bool) (*doc.Document, []string, error) {
 	document, err := compdef.AddPart(ws, outPath, true)
 	if err != nil {
 		return nil, nil, err
 	}
 	def := document.Content().(*compdef.PartComponentDefinition)
 	warns := addParameters(def, d)
-	built := addFeatures(def, d)
+	built, notes := addFeatures(def, d)
+	warns = append(warns, notes...)
+	warns = append(warns, applyGeometricConstraints(def, d)...)
+	warns = append(warns, applyDistanceDimensions(def, d)...)
+	warns = append(warns, applyRevolveRadii(def, d)...)
+	warns = append(warns, applyAxialLengths(def, d)...)
+	warns = append(warns, applyCentrelineAnchor(def, d)...)
 	def.Recompute()
-	// Fall back to Inventor's stored display tessellation (curved faces + holes already meshed)
-	// when the parametric path built nothing OR produced no solid — real interactively-modelled
-	// parts routinely exceed the feature decode, and a static body beats an empty one.
-	if !built || !hasSolidBody(def) {
+	// Inventor's display mesh hides the sketch/feature history behind a single imported body,
+	// so it is imported ONLY on explicit opt-in — otherwise the partial parametric tree stands.
+	if meshFallback && (!built || !hasSolidBody(def)) {
 		warns = append(warns, addBodyIfPresent(def, d)...)
 		def.Recompute()
 	}
@@ -114,113 +133,174 @@ func addParameters(def *compdef.PartComponentDefinition, d *ipt.Document) []stri
 	return warns
 }
 
-// addFeatures decodes the part's sketches and features and builds them. Each extrude
-// consumes its own sketch (matched by order); a revolve consumes the first sketch.
-// Returns true if at least one feature was built. v1: extrude(distance,operation) and
-// full-revolve; feature order is assumed to match sketch/parameter order.
-func addFeatures(def *compdef.PartComponentDefinition, d *ipt.Document) bool {
+// placedSketch is a decoded 2D sketch together with the plane it lives on — the product of
+// sketch EXTRACTION, deliberately independent of any feature that will consume it.
+type placedSketch struct {
+	geom  ipt.Sketch
+	plane sketch.Plane
+}
+
+// emittedSketch is a placedSketch after it has been added to the document: the sketch handle and
+// its line entities in decode order (a revolve/extrude references these by index).
+type emittedSketch struct {
+	sk    *sketch.Sketch
+	lines []*sketch.Line
+}
+
+// addFeatures translates the part in two decoupled passes: first EXTRACT and emit every sketch
+// (so the geometry always reaches the document), then BUILD features that reference those
+// sketches by decode order. A feature that can't be translated is skipped with an explanatory
+// note, leaving the emitted sketches and any earlier features intact — the partial parametric
+// state is what gets saved. Returns whether any feature built, plus per-step notes.
+func addFeatures(def *compdef.PartComponentDefinition, d *ipt.Document) (bool, []string) {
 	seg, ok := d.Segment("PmDCSegment")
 	if !ok {
-		return false
+		return false, nil
 	}
+	// Loft and sweep are self-contained whole-part builders that own their sketch placement
+	// (offset section planes / a 3D sweep path). When one applies it fully defines the part, so
+	// it runs before — and instead of — the general extract-then-build path.
 	sketches := ipt.DecodeSketches(seg)
-	// A loft blends 2+ profile sketches on parallel planes stacked along +Z; its sections need
-	// custom plane placement, so build it before the on-XY emit path.
 	if heights, ok := ipt.LoftSectionHeights(seg, len(sketches)); ok {
 		if addLoft(def, sketches, heights) {
-			return true
+			return true, nil
 		}
 	}
-	// A sweep pushes a profile along a 3D path — the path is a curve, not an on-XY profile.
 	if sw, ok := ipt.DecodeSweep(seg); ok {
 		if addSweep(def, sw) {
-			return true
+			return true, nil
 		}
 	}
-	// A revolve is handled before the general emit path: it emits only the chosen profile + axis.
-	// Build it only when RevolveProfile validates a CLOSED, one-sided profile about an unambiguous
-	// axis; otherwise fall back to the mesh body (a merely-"Resolved" cluster can be an incomplete
-	// open chain that would revolve to a wrong solid).
+	// Decoupled path: extract + emit all sketches unconditionally, then build features over them.
+	placed := extractSketches(seg)
+	emitted := emitSketches(def, placed)
 	if ipt.HasRevolve(seg) {
-		// Reconstruct the profile from point incidence — exact connectivity that reunites a profile
-		// split across the 800-byte cluster gap (the clustered DecodeSketches leaves those as open
-		// chains). Fall back to the clustered sketches when incidence yields nothing (e.g. an
-		// arc-bearing profile it declines).
-		profiles := ipt.LineProfiles(seg)
-		if len(profiles) == 0 {
-			profiles = sketches
-		}
-		b, ok := ipt.RevolveProfile(profiles)
-		if !ok {
-			return false
-		}
-		var angle func() float64 // nil ⇒ full 360°
-		if a, ok := ipt.RevolveAngle(seg); ok {
-			a := a
-			angle = func() float64 { return a }
-		}
-		return addRevolve(def, profiles, b, angle)
+		return buildRevolve(def, seg, placed, emitted)
 	}
-	// Emit every decoded sketch first (a sketch-only part keeps its sketch even with no feature),
-	// then build features that consume them by order.
-	emitted := make([]*sketch.Sketch, len(sketches))
-	for i := range sketches {
-		emitted[i], _ = emitSketchOn(def, sketches[i], sketch.XYPlane())
+	return buildExtrudeFeatures(def, d, seg, placed, emitted)
+}
+
+// extractSketches decodes the part's 2D sketch geometry into placed sketches, WITHOUT regard to
+// the feature that will consume them. A revolve profile is reconstructed from point incidence
+// (exact connectivity that reunites a profile split across the 800-byte cluster gap); everything
+// else uses the clustered decode. All land on the XY origin plane. Keeping extraction separate
+// from the feature build is what lets a part's sketches always reach the document.
+func extractSketches(seg []byte) []placedSketch {
+	decoded := ipt.DecodeSketches(seg)
+	if ipt.HasRevolve(seg) {
+		// Incidence connectivity beats the clustered decode for a revolve profile; fall back to
+		// the clustered sketches when it declines (e.g. an arc-bearing profile).
+		if profiles := ipt.LineProfiles(seg); len(profiles) > 0 {
+			// Reunite a separate vertical centreline into the profile sketch (as Inventor authored
+			// it) so the revolve's radius dimensions can bind to the profile in one sketch.
+			decoded = ipt.ReuniteRevolveAxis(profiles)
+		}
 	}
+	placed := make([]placedSketch, len(decoded))
+	for i := range decoded {
+		placed[i] = placedSketch{geom: decoded[i], plane: sketch.XYPlane()}
+	}
+	return placed
+}
+
+// emitSketches adds every extracted sketch to the document and returns the handles in the same
+// order (an empty sketch yields a nil handle so indices still line up with the decode). Runs
+// unconditionally, before any feature is attempted.
+func emitSketches(def *compdef.PartComponentDefinition, placed []placedSketch) []emittedSketch {
+	out := make([]emittedSketch, len(placed))
+	for i, ps := range placed {
+		sk, lines := emitSketchOn(def, ps.geom, ps.plane)
+		out[i] = emittedSketch{sk: sk, lines: lines}
+	}
+	return out
+}
+
+// buildRevolve builds the revolve over the already-emitted sketches — it emits no geometry
+// itself. It picks the profile + axis by the binding RevolveProfile validates (a CLOSED,
+// one-sided profile about an unambiguous centreline, which may live in a different sketch than
+// the profile) and revolves about that line. When no such profile/axis is found, or the chosen
+// sketch/line came out empty, it builds nothing and returns a note; the emitted sketches remain
+// for inspection. angle is nil ⇒ full 360°.
+func buildRevolve(def *compdef.PartComponentDefinition, seg []byte, placed []placedSketch, emitted []emittedSketch) (bool, []string) {
+	geoms := make([]ipt.Sketch, len(placed))
+	for i := range placed {
+		geoms[i] = placed[i].geom
+	}
+	b, ok := ipt.RevolveProfile(geoms)
+	if !ok {
+		return false, []string{"revolve: no unambiguous closed profile + axis — sketches emitted, revolve not built"}
+	}
+	if b.ProfileSketch >= len(emitted) || emitted[b.ProfileSketch].sk == nil {
+		return false, []string{"revolve: chosen profile sketch is empty — revolve not built"}
+	}
+	axis := emitted[b.AxisSketch]
+	if b.AxisLine >= len(axis.lines) || axis.lines[b.AxisLine] == nil {
+		return false, []string{"revolve: axis line not emitted — revolve not built"}
+	}
+	var angle func() float64 // nil ⇒ full 360°
+	if a, ok := ipt.RevolveAngle(seg); ok {
+		a := a
+		angle = func() float64 { return a }
+	}
+	feature.NewRevolveFeatures(def.Features()).AddAboutCenterlineLine(
+		emitted[b.ProfileSketch].sk, 0, axis.sk, axis.lines[b.AxisLine], angle, ops.NewBody)
+	return true, nil
+}
+
+// buildExtrudeFeatures builds the extrude chain over the already-emitted sketches: each extrude
+// consumes the sketch at its index, then a hole cuts the base, then a pattern/mirror replicates
+// the last extrude. Each stage that is decoded but can't be built appends a note and is skipped;
+// whatever built stays. Returns whether any feature built.
+func buildExtrudeFeatures(def *compdef.PartComponentDefinition, d *ipt.Document, seg []byte, placed []placedSketch, emitted []emittedSketch) (bool, []string) {
 	built := false
+	var notes []string
 	extrudes := ipt.DecodeExtrudes(seg)
 	var lastExtrude *feature.PartFeature
 	for i, ex := range extrudes {
-		if i >= len(emitted) || emitted[i] == nil {
+		if i >= len(emitted) || emitted[i].sk == nil {
+			notes = append(notes, fmt.Sprintf("extrude %d has no sketch to consume — skipped", i))
 			continue
 		}
 		dist := ex.Distance
-		lastExtrude = feature.NewExtrudeFeatures(def.Features()).AddByDistanceExtent(emitted[i], 0, operationOf(ex.Operation), func() float64 { return dist })
+		lastExtrude = feature.NewExtrudeFeatures(def.Features()).AddByDistanceExtent(emitted[i].sk, 0, operationOf(ex.Operation), func() float64 { return dist })
 		built = true
 	}
-	// A drilled hole cuts the base solid: place it on the extrude's top face (analytic),
-	// drilling at the profile centroid. Needs the base extrude to have built the body first.
-	if h, ok := ipt.DecodeHole(seg); ok && len(extrudes) > 0 && len(sketches) > 0 {
-		cx, cy := profileCentroid(sketches[0])
-		addHole(def, h, cx, cy, extrudes[0].Distance)
-		built = true
+	// A drilled hole cuts the base solid: place it on the extrude's top face (analytic), drilling
+	// at the profile centroid. Needs the base extrude to have built the body first.
+	if h, ok := ipt.DecodeHole(seg); ok {
+		if len(extrudes) > 0 && len(placed) > 0 && len(emitted) > 0 && emitted[0].sk != nil {
+			cx, cy := profileCentroid(placed[0].geom)
+			addHole(def, h, cx, cy, extrudes[0].Distance)
+			built = true
+		} else {
+			notes = append(notes, "hole decoded but no base extrude to cut — skipped")
+		}
 	}
-	// A pattern or mirror replicates the last feature. It must run after the source feature
-	// has been added so its occurrences re-cut the running body. Rectangular (grid), circular
-	// (about Z), and mirror are mutually exclusive per their node name.
-	if rp, ok := ipt.DecodeRectPattern(seg); ok && lastExtrude != nil {
-		addRectPattern(def, lastExtrude, rp)
-		built = true
-	} else if cp, ok := ipt.DecodeCircPattern(seg); ok && lastExtrude != nil {
-		addCircPattern(def, lastExtrude, cp)
-		built = true
-	} else if mir, ok := ipt.DecodeMirror(d); ok && lastExtrude != nil {
-		addMirror(def, lastExtrude, mir)
-		built = true
+	// A pattern or mirror replicates the last feature; it must run after the source feature so its
+	// occurrences re-cut the running body. Rectangular / circular / mirror are mutually exclusive.
+	if rp, ok := ipt.DecodeRectPattern(seg); ok {
+		if lastExtrude != nil {
+			addRectPattern(def, lastExtrude, rp)
+			built = true
+		} else {
+			notes = append(notes, "rectangular pattern decoded but no source feature — skipped")
+		}
+	} else if cp, ok := ipt.DecodeCircPattern(seg); ok {
+		if lastExtrude != nil {
+			addCircPattern(def, lastExtrude, cp)
+			built = true
+		} else {
+			notes = append(notes, "circular pattern decoded but no source feature — skipped")
+		}
+	} else if mir, ok := ipt.DecodeMirror(d); ok {
+		if lastExtrude != nil {
+			addMirror(def, lastExtrude, mir)
+			built = true
+		} else {
+			notes = append(notes, "mirror decoded but no source feature — skipped")
+		}
 	}
-	return built
-}
-
-// addRevolve emits the chosen profile (and, for a separate-sketch axis, the axis sketch) and builds
-// a revolve about the decoded centreline — the axisLine ipt.RevolveProfile validated as the axis of
-// a closed one-sided profile, which may live in a different sketch than the profile. Revolving about
-// that line (rather than the fixed X origin axis, which spun a mis-picked profile into a blob)
-// reproduces the real solid of revolution. Returns false when the profile emits no geometry. angle
-// is nil ⇒ full turn.
-func addRevolve(def *compdef.PartComponentDefinition, sketches []ipt.Sketch, b ipt.RevolveBinding, angle func() float64) bool {
-	profile, profLines := emitSketchOn(def, sketches[b.ProfileSketch], sketch.XYPlane())
-	if profile == nil {
-		return false
-	}
-	axisSk, axisLines := profile, profLines
-	if b.AxisSketch != b.ProfileSketch {
-		axisSk, axisLines = emitSketchOn(def, sketches[b.AxisSketch], sketch.XYPlane())
-	}
-	if b.AxisLine >= len(axisLines) || axisLines[b.AxisLine] == nil {
-		return false
-	}
-	feature.NewRevolveFeatures(def.Features()).AddAboutCenterlineLine(profile, 0, axisSk, axisLines[b.AxisLine], angle, ops.NewBody)
-	return true
+	return built, notes
 }
 
 // addMirror reflects the source feature across the decoded mirror plane (origin + normal in
@@ -361,23 +441,297 @@ func emitSketch(def *compdef.PartComponentDefinition, s ipt.Sketch) *sketch.Sket
 // emitSketchOn adds a decoded 2D sketch on the given plane (in cm), or returns nil when it
 // has no geometry. It also returns the emitted line entities in decode order (so a revolve can
 // pick out its centreline). Loft sections use it to place profiles on parallel offset planes.
+//
+// Corners that share a coordinate share a single sketch Point (sharedPoints): in Inventor a
+// profile's touching endpoints carry an explicit coincident constraint, so two lines meeting at a
+// corner are ONE point, not two free ones. Reproducing that — rather than minting fresh endpoints
+// per line (AddByTwoPoints) — gives the rebuilt sketch the same degrees of freedom as the original
+// (a closed N-gon: 2N free DOF, not 4N).
 func emitSketchOn(def *compdef.PartComponentDefinition, s ipt.Sketch, plane sketch.Plane) (*sketch.Sketch, []*sketch.Line) {
 	if len(s.Points) == 0 && len(s.Lines) == 0 && len(s.Circles) == 0 {
 		return nil, nil
 	}
 	sk := def.Sketches().Add(plane)
+	pointAt := sharedPoints(sk)
 	for _, p := range s.Points {
-		sk.Points().Add(m.P2(p.X, p.Y))
+		pointAt(p) // a standalone point still shares a coordinate with a coincident corner
 	}
 	lines := make([]*sketch.Line, len(s.Lines))
 	for i, l := range s.Lines {
-		lines[i] = sk.Lines().AddByTwoPoints(m.P2(l.A.X, l.A.Y), m.P2(l.B.X, l.B.Y))
+		lines[i] = sk.Lines().Add(pointAt(l.A), pointAt(l.B))
 	}
 	for _, c := range s.Circles {
 		sk.Circles().AddByCenterRadius(m.P2(c.Center.X, c.Center.Y), m.Scalar(c.Radius))
 	}
 	return sk, lines
 }
+
+// applyGeometricConstraints binds each decoded geometric constraint (horizontal / vertical /
+// parallel / perpendicular — ipt.DecodeGeometricConstraints) onto the emitted sketch that holds its
+// line(s), by coordinate. These constraints carry no value and are already satisfied by the solved
+// geometry, so applying them removes degrees of freedom WITHOUT moving a point — the profile the
+// feature consumes is unchanged. A constraint is applied only while the sketch still has free DOF,
+// so a redundant one is never piled on to over-constrain it. Reports how many were applied.
+func applyGeometricConstraints(def *compdef.PartComponentDefinition, d *ipt.Document) []string {
+	seg, ok := d.Segment("PmDCSegment")
+	if !ok {
+		return nil
+	}
+	applied := 0
+	for _, gc := range ipt.DecodeGeometricConstraints(seg) {
+		if applyGeoConstraint(def, gc) {
+			applied++
+		}
+	}
+	if applied == 0 {
+		return nil
+	}
+	return []string{fmt.Sprintf("applied %d geometric constraint(s)", applied)}
+}
+
+// applyGeoConstraint applies one geometric constraint to the first sketch containing its geometry.
+func applyGeoConstraint(def *compdef.PartComponentDefinition, gc ipt.GeoConstraint) bool {
+	for k := 0; k < def.Sketches().Count(); k++ {
+		sk := def.Sketches().Item(k)
+		switch gc.Kind {
+		case ipt.GeoHorizontal, ipt.GeoVertical:
+			pa, pb := pointAtCoord(sk, gc.L1[0]), pointAtCoord(sk, gc.L1[1])
+			if pa == nil || pb == nil || sk.DegreesOfFreedom() <= 0 {
+				continue
+			}
+			if gc.Kind == ipt.GeoHorizontal {
+				sk.GeometricConstraints().AddHorizontal(pa, pb)
+			} else {
+				sk.GeometricConstraints().AddVertical(pa, pb)
+			}
+			return true
+		case ipt.GeoParallel, ipt.GeoPerpendicular:
+			l1, l2 := lineAtCoords(sk, gc.L1), lineAtCoords(sk, gc.L2)
+			if l1 == nil || l2 == nil || sk.DegreesOfFreedom() <= 0 {
+				continue
+			}
+			if gc.Kind == ipt.GeoParallel {
+				sk.GeometricConstraints().AddParallel(l1, l2)
+			} else {
+				sk.GeometricConstraints().AddPerpendicular(l1, l2)
+			}
+			return true
+		}
+	}
+	return false
+}
+
+// applyDistanceDimensions binds each decoded point-to-point distance dimension
+// (ipt.DecodeDistanceDimensions) onto the emitted sketch holding both endpoints, as a driving
+// AddDistance. The value equals the current separation, so it pins DOF without moving geometry. It
+// is applied only while the sketch has free DOF, so a redundant dimension can't over-constrain.
+func applyDistanceDimensions(def *compdef.PartComponentDefinition, d *ipt.Document) []string {
+	seg, ok := d.Segment("PmDCSegment")
+	if !ok {
+		return nil
+	}
+	applied := 0
+	for _, dm := range ipt.DecodeDistanceDimensions(seg) {
+		if applyDistanceDim(def, dm) {
+			applied++
+		}
+	}
+	if applied == 0 {
+		return nil
+	}
+	return []string{fmt.Sprintf("applied %d distance dimension(s)", applied)}
+}
+
+// applyDistanceDim adds one distance dimension to the first sketch containing both endpoints.
+func applyDistanceDim(def *compdef.PartComponentDefinition, dm ipt.DistanceDim) bool {
+	for k := 0; k < def.Sketches().Count(); k++ {
+		sk := def.Sketches().Item(k)
+		pa, pb := pointAtCoord(sk, dm.A), pointAtCoord(sk, dm.B)
+		if pa == nil || pb == nil || sk.DegreesOfFreedom() <= 0 {
+			continue
+		}
+		if _, err := sk.DimensionConstraints().AddDistance(pa, pb, fmt.Sprintf("%g cm", dm.Value)); err != nil {
+			return false
+		}
+		return true
+	}
+	return false
+}
+
+// applyRevolveRadii binds each decoded revolve radius dimension (ipt.DecodeRevolveRadii) as a
+// HORIZONTAL distance from the x=0 centreline to the vertical profile edge at x=V, in the sketch
+// holding both (the reunited profile+centreline sketch). The value equals the edge's current x, so
+// it pins the radius without moving geometry. Applied only while the sketch has free DOF.
+func applyRevolveRadii(def *compdef.PartComponentDefinition, d *ipt.Document) []string {
+	seg, ok := d.Segment("PmDCSegment")
+	if !ok {
+		return nil
+	}
+	applied := 0
+	for _, x := range ipt.DecodeRevolveRadii(seg) {
+		if applyRevolveRadius(def, x) {
+			applied++
+		}
+	}
+	if applied == 0 {
+		return nil
+	}
+	return []string{fmt.Sprintf("applied %d revolve radius dimension(s)", applied)}
+}
+
+// applyRevolveRadius adds one radius dimension: a horizontal distance from a centreline point (x≈0)
+// to an edge point (x≈radius) in the first sketch that holds both.
+func applyRevolveRadius(def *compdef.PartComponentDefinition, radius float64) bool {
+	for k := 0; k < def.Sketches().Count(); k++ {
+		sk := def.Sketches().Item(k)
+		p0, pv := pointAtX(sk, 0), pointAtX(sk, radius)
+		if p0 == nil || pv == nil || sk.DegreesOfFreedom() <= 0 {
+			continue
+		}
+		if _, err := sk.DimensionConstraints().AddDistanceOriented(p0, pv, fmt.Sprintf("%g cm", radius), sketch.HorizontalDistance); err != nil {
+			return false
+		}
+		return true
+	}
+	return false
+}
+
+// applyAxialLengths binds each decoded axial step-length dimension (ipt.DecodeAxialLengths) as a
+// VERTICAL distance between the two horizontal profile edges it spans, in the sketch holding both.
+// The value equals the edges' current separation, so it pins the step length without moving
+// geometry. Applied only while the sketch has free DOF.
+func applyAxialLengths(def *compdef.PartComponentDefinition, d *ipt.Document) []string {
+	seg, ok := d.Segment("PmDCSegment")
+	if !ok {
+		return nil
+	}
+	applied := 0
+	for _, ax := range ipt.DecodeAxialLengths(seg) {
+		if applyAxialLength(def, ax) {
+			applied++
+		}
+	}
+	if applied == 0 {
+		return nil
+	}
+	return []string{fmt.Sprintf("applied %d axial length dimension(s)", applied)}
+}
+
+// applyAxialLength adds one vertical distance between a point at y≈Y1 and a point at y≈Y2.
+func applyAxialLength(def *compdef.PartComponentDefinition, ax ipt.AxialLength) bool {
+	for k := 0; k < def.Sketches().Count(); k++ {
+		sk := def.Sketches().Item(k)
+		p1, p2 := pointAtY(sk, ax.Y1), pointAtY(sk, ax.Y2)
+		if p1 == nil || p2 == nil || sk.DegreesOfFreedom() <= 0 {
+			continue
+		}
+		if _, err := sk.DimensionConstraints().AddDistanceOriented(p1, p2, fmt.Sprintf("%g cm", ax.Value), sketch.VerticalDistance); err != nil {
+			return false
+		}
+		return true
+	}
+	return false
+}
+
+// applyCentrelineAnchor fixes a revolve sketch's point at the sketch origin (0,0). A revolve's
+// centreline runs from the origin, and geometry drawn AT the sketch origin is coincident with the
+// origin — a fixed reference in every CAD sketch — so pinning that point reproduces the anchoring
+// the file leaves implicit (there is no explicit fix node; the axis line carries no vertical/fix
+// constraint of its own). Fixing a point at its current position never moves geometry, and it is
+// applied only while the sketch has free DOF. Gated to revolves so it only ever pins a centreline
+// origin, not an incidental origin-touching corner of an extrude profile.
+func applyCentrelineAnchor(def *compdef.PartComponentDefinition, d *ipt.Document) []string {
+	seg, ok := d.Segment("PmDCSegment")
+	if !ok || !ipt.HasRevolve(seg) {
+		return nil
+	}
+	for k := 0; k < def.Sketches().Count(); k++ {
+		sk := def.Sketches().Item(k)
+		p := pointAtCoord(sk, ipt.Point2D{X: 0, Y: 0})
+		if p == nil || sk.DegreesOfFreedom() <= 0 {
+			continue
+		}
+		sk.GeometricConstraints().AddFix(p)
+		return []string{"anchored the centreline to the sketch origin"}
+	}
+	return nil
+}
+
+// pointAtY returns a sketch point whose Y coordinate is within coincideEps of y, or nil.
+func pointAtY(sk *sketch.Sketch, y float64) *sketch.Point {
+	pts := sk.Points()
+	for i := 0; i < pts.Count(); i++ {
+		if q := pts.Item(i); math.Abs(float64(q.Y)-y) < coincideEps {
+			return q
+		}
+	}
+	return nil
+}
+
+// pointAtX returns a sketch point whose X coordinate is within coincideEps of x, or nil.
+func pointAtX(sk *sketch.Sketch, x float64) *sketch.Point {
+	pts := sk.Points()
+	for i := 0; i < pts.Count(); i++ {
+		if q := pts.Item(i); math.Abs(float64(q.X)-x) < coincideEps {
+			return q
+		}
+	}
+	return nil
+}
+
+// pointAtCoord returns the sketch point at coordinate p (within coincideEps), or nil.
+func pointAtCoord(sk *sketch.Sketch, p ipt.Point2D) *sketch.Point {
+	pts := sk.Points()
+	for i := 0; i < pts.Count(); i++ {
+		if q := pts.Item(i); math.Abs(float64(q.X)-p.X) < coincideEps && math.Abs(float64(q.Y)-p.Y) < coincideEps {
+			return q
+		}
+	}
+	return nil
+}
+
+// lineAtCoords returns the sketch line whose endpoints match e (in either order), or nil.
+func lineAtCoords(sk *sketch.Sketch, e [2]ipt.Point2D) *sketch.Line {
+	lines := sk.Lines()
+	for i := 0; i < lines.Count(); i++ {
+		l := lines.Item(i)
+		if (samePt(l.A, e[0]) && samePt(l.B, e[1])) || (samePt(l.A, e[1]) && samePt(l.B, e[0])) {
+			return l
+		}
+	}
+	return nil
+}
+
+// samePt reports whether a sketch point sits at coordinate p (within coincideEps).
+func samePt(q *sketch.Point, p ipt.Point2D) bool {
+	return math.Abs(float64(q.X)-p.X) < coincideEps && math.Abs(float64(q.Y)-p.Y) < coincideEps
+}
+
+// sharedPoints returns a coordinate→Point allocator over one sketch: the first time a coordinate
+// is seen it mints a sketch Point; a later corner within coincideEps of it reuses the same Point.
+// This makes touching profile corners structurally coincident (the original's endpoint coincidence
+// constraints), so the rebuilt sketch has the same DOF instead of independent duplicated endpoints.
+func sharedPoints(sk *sketch.Sketch) func(ipt.Point2D) *sketch.Point {
+	type cached struct {
+		p  ipt.Point2D
+		pt *sketch.Point
+	}
+	var cache []cached
+	return func(p ipt.Point2D) *sketch.Point {
+		for _, e := range cache {
+			if math.Abs(e.p.X-p.X) < coincideEps && math.Abs(e.p.Y-p.Y) < coincideEps {
+				return e.pt
+			}
+		}
+		pt := sk.Points().Add(m.P2(p.X, p.Y))
+		cache = append(cache, cached{p, pt})
+		return pt
+	}
+}
+
+// coincideEps is the coordinate tolerance (cm) below which two profile corners are treated as one
+// coincident sketch point.
+const coincideEps = 1e-6
 
 // operationOf maps a decoded Inventor boolean operation to the kernel operation.
 func operationOf(op int) ops.PartFeatureOperation {
