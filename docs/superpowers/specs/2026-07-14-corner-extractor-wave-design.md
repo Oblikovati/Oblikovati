@@ -332,6 +332,12 @@ fillet-cut abscissa `x = ±√(R_B²−d²) = ±√48 = 6.93`. **T9 is deferred 
 
 ### Milestone 3 — Curved miter, N-way, n-sided fill (T9) & coupled single-boss+survivor runout (T1/T7)
 
+- **Prerequisite (from the M2 whole-branch review) — split the do-no-harm verdict.** Today
+  `assembleFilletBody` applies ONE all-or-nothing solid gate over the COMBINED obstacle+runout
+  face set; if both rebuilds fire and the runout half opens the shell, the obstacle rebuild is
+  dropped too. Safe in M2 (runout skips `obHandled` edges, only ≥2-imprint regions fire,
+  `bodyHasFragileBand` short-circuits), but **before M3 broadens the runout surface**, give the
+  runout path its own do-no-harm verdict (or assert the two rebuilds never co-fire on one body).
 - **Task — coupled single-boss+survivor runout (T1/T7).** A tiling variant where one
   imprint's boss is run out while the coupled boss is kept **intact** (torus for T1,
   elliptical cylinder for T7): leave that face untouched, keep its host footprint a
