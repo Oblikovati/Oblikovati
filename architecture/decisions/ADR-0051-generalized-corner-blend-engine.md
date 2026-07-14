@@ -107,6 +107,14 @@ Order (analytic-first):
 
 No provider fits / none certifies ⇒ `honest-reject` (ADR-3 preserved).
 
+**Implementation status (2026-07-14):** the foundation wave ships tiers 1/3/4
+(`analyticSphere → coons4 → tri3`) + honest-reject. Tiers 2 (`analyticTorus`) and 5
+(`nFanProvider`) are **deferred promotions** — this ADR's tier *order* already reserves
+their slots, and ADR-2 lets each drop in ahead of `coons4`/at the end with zero caller
+change once its recognition/fill is grounded in oracle-verified corpus geometry (the
+extractor-wiring phase). `coons4`/`tri3` already fill torus- and n-sided-bounded loops as
+certified approximations meanwhile, so deferral is a lost *optimization*, not lost coverage.
+
 ### Consequences
 
 - One certificate + one `FillSurface` code path for every junction class; a

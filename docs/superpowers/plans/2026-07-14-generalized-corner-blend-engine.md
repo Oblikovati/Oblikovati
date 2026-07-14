@@ -412,39 +412,21 @@ path excludes the pole row; add it and default it off for coons4.
 
 ---
 
-### Task 6: analyticTorusProvider (torus recognition predicate)
+### Task 6: ~~analyticTorusProvider~~ — DEFERRED (analytic promotion, not this wave)
 
-**Files:**
-- Create: `kernel/ops/corner_provider_torus.go`
-- Test: `kernel/ops/corner_provider_torus_test.go`
-
-**Interfaces:**
-- Consumes: `RailLoop`, `geom.Torus`, `geom.Arc3d` introspection (arcs are `Arc3d`; there is no
-  `Circle3` — a full circle is an `Arc3d` over its full angular domain), `Resolution`.
-- Produces: `analyticTorusProvider` (implements `railProvider`); `func torusFromArcRails(RailLoop,
-  float64) (geom.Torus, bool)` — recognizes a torus when ALL rails are circular arcs of minor
-  radius `r` whose planes share a common axis line `L` with centers on `L` at a common major
-  radius `R` (ADR-0051 §recognition ii). Constructive test, no nonlinear fit.
-
-**Context:** gate before `coons4`/`tri3` so a torus corner emits the exact `geom.Torus` instead of
-a fitted patch. Predicate (constructive): (1) every side's `Curve` is a circular arc of radius `r`
-(within `scale.Weld()`); (2) fit a line `L` to the arc centers, residual `< scale.Weld()`; (3) each
-arc's points are at distance `R` from `L`, common within `scale.Weld()`. If all hold → `geom.Torus{Axis: L, Major: R, Minor: r}`; certify like the sphere (torus never folds; MaxDev = max rail
-deviation; MaxAngleDev vs each side's required tangent).
-
-- [ ] **Step 1: Write the failing test** — build a torus, take three minor-radius arcs on it as a
-  loop, assert `Fits`+`Build` recover `geom.Torus` with the right `Major`/`Minor` within
-  `scale.Weld()` and `cert.Valid`. Negative: perturb one arc's center off `L` → `Fits` false.
-
-- [ ] **Step 2: Run** → FAIL (`undefined: analyticTorusProvider`).
-
-- [ ] **Step 3: Implement** `torusFromArcRails` (constructive) + provider; reuse `railRadius`,
-  add `arcCenterAndAxis(geom.Curve3) (math.Point3, math.Vector3, float64, bool)` and a small
-  `fitAxisLine(centers []math.Point3) (origin math.Point3, dir math.Vector3, resid float64)`.
-
-- [ ] **Step 4: Run** `go test ./kernel/ops/ -run TestAnalyticTorus -v` → PASS.
-
-- [ ] **Step 5: Commit** — `feat(blend): analyticTorusProvider — constructive torus recognition on arc rails`.
+**Status: deferred 2026-07-14 during execution** to the extractor-wiring phase, as an oracle-grounded
+analytic promotion (ADR-0051 ADR-2 — a family is promoted to exact by inserting a provider earlier,
+later, with zero caller change). Two reasons this cannot be built RIGHT now:
+1. A torus **patch** is bounded by **mixed-radius** arcs — the minor circles (radius `r` = MinorRadius)
+   AND the parallel circles (radius `R + r·cos v`). The "all rails radius `r`" sketch above is simply
+   wrong, and the true rail geometry of a torus corner blend is only known from real corpus cases (the
+   DRAWEXE oracle), which don't exist until an extractor produces them.
+2. A robust fallback (fit a torus to the rails) is a nonlinear 5–6-DOF least-squares with no existing
+   in-kernel helper — disproportionate, and not needed here.
+`coons4`/`tri3` already FILL torus-bounded loops correctly (certified), so this is a promote-to-exact
+optimization, NOT a coverage gap. Building it on a guessed predicate would be the cheap shortcut CLAUDE.md
+forbids. The foundation tier walk (Task 7) is therefore `[analyticSphere, coons4, tri3]` + honest-reject;
+`analyticTorus` slots in ahead of `coons4` when the extractor phase grounds its recognition in oracle data.
 
 ---
 
@@ -455,21 +437,24 @@ deviation; MaxAngleDev vs each side's required tangent).
 - Test: `kernel/ops/corner_resolve_test.go`
 
 **Interfaces:**
-- Consumes: all four providers + `railProvider`.
-- Produces: `func blendTiers() []railProvider` (the ADR-0051 order: sphere, torus, coons4, tri3;
-  nFan deferred); `func resolveBlend(loop RailLoop, scale Resolution) (CornerBlendPatch, bool)`
-  (walks tiers, returns the first `Fits`+`cert.Valid` patch, else `false` = honest-reject).
+- Consumes: the three foundation providers (`analyticSphereProvider`, `coons4Provider`, `tri3Provider`)
+  + `railProvider`.
+- Produces: `func blendTiers() []railProvider` (the foundation order: **sphere → coons4 → tri3**;
+  analyticTorus and nFan are DEFERRED promotions, inserted later per ADR-2); `func resolveBlend(loop
+  RailLoop, scale Resolution) (CornerBlendPatch, bool)` (walks tiers, returns the first `Fits`+`cert.Valid`
+  patch, else `false` = honest-reject).
 
 **Context:** this is the generalized analogue of `resolveCornerBlend` for the RailLoop path. It is
 NOT yet called from `computeCorners`/`solveCorner`/obstacle detection — no extractor exists yet, so
 no corpus request reaches it (corpus-neutral; the gate below proves it). The tier-ordering tests
 (ADR-2) pin that an analytic provider, when it Fits, wins over `coons4`/`tri3`.
 
-- [ ] **Step 1: Write the failing test** — (a) a trihedral-planar loop resolves to
-  `BlendKindSphere` (sphere wins over coons4/tri3 by order); (b) a torus-arc loop resolves to the
-  torus kind; (c) a generic 4-sided loop resolves to `coons4`; (d) a generic 3-sided loop resolves
-  to `tri3`; (e) a degenerate loop no provider certifies → `ok=false` (honest-reject). Use a
-  `fakeRailProvider` named type for an ordering-isolation test (earlier fit wins).
+- [ ] **Step 1: Write the failing test** — (a) a trihedral spherical loop (Task-2 `sphereTriLoop`)
+  resolves to `BlendKindSphere` (sphere wins over coons4/tri3 by order); (b) a generic 4-sided loop
+  (Task-3 `quarterCylLoop`) resolves to `BlendKindCoons4`; (c) a generic 3-sided loop whose rails are
+  NOT concentric (so analyticSphere declines) resolves to `BlendKindTri3`; (d) a degenerate loop no
+  provider certifies → `ok=false` (honest-reject). Use a `fakeRailProvider` named type for an
+  ordering-isolation test (earlier Fit+Valid wins over a later one).
 
 - [ ] **Step 2: Run** → FAIL (`undefined: resolveBlend`).
 
@@ -480,7 +465,7 @@ no corpus request reaches it (corpus-neutral; the gate below proves it). The tie
   `go test ./model/feature -run TestOCCTBlendSimple` → **50 PASS, full per-case diff ZERO change**
   vs the branch baseline (this is the release gate for the whole wave).
 
-- [ ] **Step 5: Commit** — `feat(blend): resolveBlend tier walk (sphere→torus→coons4→tri3, honest-reject)`.
+- [ ] **Step 5: Commit** — `feat(blend): resolveBlend tier walk (sphere→coons4→tri3, honest-reject)`.
 
 ---
 
@@ -490,7 +475,7 @@ no corpus request reaches it (corpus-neutral; the gate below proves it). The tie
 with named fakes; functions 4–20 lines; files < 500; `golangci-lint run ./kernel/...` clean;
 SPDX headers present (`scripts/add-spdx-headers.py --check`).
 
-**Whole-wave (the corpus-neutral gate, MUST hold after Tasks 4 and 7):**
+**Whole-wave (the corpus-neutral gate, MUST hold after Task 3 and Task 7):**
 `go test ./model/feature -run TestOCCTBlendSimple` → 50 PASS, and the per-case scoreboard diff
 against the pre-branch-tip baseline shows **byte-for-byte identical** results on every case. Any
 change is a regression — this wave adds capability WITHOUT touching dispatch.
