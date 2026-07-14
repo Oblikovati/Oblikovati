@@ -173,6 +173,28 @@ admission path** keyed on the watchdog, reached from the fillet-rebuild step tha
 protruding face. Junction fills (Arms/Junction) and obstacle fills (ObstacleFeature) are two request
 shapes into the *same* `resolveCornerBlend` tier + certificate floor.
 
+**ADR-4a (scope narrowing, shipped 2026-07-14 — Option 1):** ADR-4's integration proved the obstacle
+patch works for the *single-host, straight-axis cylinder* case (T6 and a synthetic slab+column are now
+genuinely watertight solids), but the 13 corpus cases split into three geometries, and only the first
+was landable without regressing the (already-green) corpus:
+
+- **Single-host mid-span (landed):** one planar host holed by one straight-column dip, a rebuildable
+  *tube* obstacle wall (cylinder / cone / elliptical-cylinder), no fragile survivor band. Fires the
+  rebuild.
+- **Dual-host corner-pierce (deferred):** the column holes BOTH fillet faces over overlapping axis
+  spans (S1 S4 S6 S7 T1 T4 T7) — the patch would need a hole on two rails (a simultaneous constraint,
+  Phase-2 KKT/Gregory). Detection honest-rejects when both faces qualify (`qualifying != 1`).
+- **Torus/BSpline survivor band (deferred):** a surviving rim-fillet band (S9 T3 T9) whose trim the
+  obstacle re-weld would de-classify into a full-domain mesh; and multi-column bodies (U4). Gated out
+  by `bodyHasFragileBand` + `rebuildableTube`, with a do-no-harm fallback (`obstacleImprovedSolid`)
+  that keeps the rebuild only when it yields a watertight, hole-contained solid.
+
+Consequently `HolesContained` is **kept as a diagnostic tripwire, NOT folded into `Valid`** (ADR-4's
+"watchdog flips panic→valid" is deferred): folding it now would fail every un-handled protrusion and
+regress the corpus. The fold + the deferred geometries are a Phase-2 track backed by the DRAWEXE
+oracle. The single-host win is pinned by `TestFilletSingleHostObstacleWatertight` (corpus T6) and
+`TestFilletSlabColumnWatertight` (synthetic), asserting `IsSolid && HolesContained` directly.
+
 ### Lineage invariance (ADR-0043 audit — RESOLVED)
 
 Topological naming keys on the **generating lineage tokens** (root vertex + converging arm edge ids),
