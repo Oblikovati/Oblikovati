@@ -289,18 +289,11 @@ func boundaryRing(c0, d1, c1, d0 geom.BSplineCurve) []math.Point3 {
 }
 
 // sampleRailOpen returns ringSegSamples points along c (reversed if rev), EXCLUDING the far endpoint
-// so segments concatenate without duplicating the shared corner.
+// so segments concatenate without duplicating the shared corner. It delegates to the generic
+// sampleCurve3Open (corner_provider_sphere.go) — a geom.BSplineCurve satisfies geom.Curve3 — so the
+// BSpline and Curve3 boundary-ring samplers share one implementation (Task-3 de-dup).
 func sampleRailOpen(c geom.BSplineCurve, rev bool) []math.Point3 {
-	lo, hi := c.Domain()
-	pts := make([]math.Point3, ringSegSamples)
-	for i := 0; i < ringSegSamples; i++ {
-		f := float64(i) / float64(ringSegSamples)
-		if rev {
-			f = 1 - f
-		}
-		pts[i] = c.PointAt(lo + f*(hi-lo))
-	}
-	return pts
+	return sampleCurve3Open(c, ringSegSamples, rev)
 }
 
 // ringSegSamples is the per-rail sample count of the placeholder boundary loop (Task 6 refines it).

@@ -28,6 +28,7 @@ const (
 	BlendKindNone    CornerBlendKind = ""                // no provider claimed / produced the patch
 	BlendKindBSpline CornerBlendKind = "bspline-general" // the universal Coons+certify fallback tier
 	BlendKindSphere  CornerBlendKind = "analytic-sphere" // exact corner sphere (equal-radius trihedral)
+	BlendKindCoons4  CornerBlendKind = "coons4-general"  // general 4-sided ribbon-G1 Coons fill over a RailLoop
 )
 
 // BlendArm is one fillet converging on the junction: its rolling-ball contact path (spine), the
