@@ -544,6 +544,17 @@ func applyGeoConstraint(def *compdef.PartComponentDefinition, gc ipt.GeoConstrai
 				sk.GeometricConstraints().AddEqualLength(l1, l2)
 			}
 			return true
+		case ipt.GeoMidpoint:
+			// Bind only when a sketch point actually sits at the line's midpoint (the pinned point,
+			// whether a standalone point or another line's endpoint at a T-junction). If none does,
+			// the constraint isn't reproduced rather than inventing a point.
+			l := lineAtCoords(sk, gc.L1)
+			p := pointAtCoord(sk, gc.Pt)
+			if l == nil || p == nil || sk.DegreesOfFreedom() <= 0 {
+				continue
+			}
+			sk.GeometricConstraints().AddMidpoint(p, l)
+			return true
 		}
 	}
 	return false

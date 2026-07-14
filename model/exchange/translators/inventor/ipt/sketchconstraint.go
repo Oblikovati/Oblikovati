@@ -34,6 +34,7 @@ const (
 	axisAlignDisc   = 0x01030000 // horizontal/vertical (one line)
 	lineRelateDisc  = 0x00400000 // parallel/perpendicular (two lines)
 	axisRadiusDisc  = 0x01150000 // a revolve radius dimension (distance from the x=0 centreline)
+	midpointDisc    = 0x00000000 // midpoint (line + a point at its midpoint); shared with radius dims
 )
 
 // GeoKind is a decoded geometric-constraint type.
@@ -46,13 +47,16 @@ const (
 	GeoPerpendicular
 	GeoCollinear
 	GeoEqualLength
+	GeoMidpoint
 )
 
 // GeoConstraint is a decoded geometric constraint with its lines resolved to endpoint coordinates,
-// so the translator can bind it to the emitted sketch by coordinate. L2 is unused for H/V.
+// so the translator can bind it to the emitted sketch by coordinate. L2 is unused for H/V; Pt is
+// set only for point-on-geometry constraints (midpoint), where it is the pinned point's coordinate.
 type GeoConstraint struct {
 	Kind   GeoKind
 	L1, L2 [2]Point2D
+	Pt     Point2D
 }
 
 // rawCon is a decoded constraint/dimension node before its references are resolved.
@@ -128,6 +132,20 @@ func DecodeGeometricConstraints(seg []byte) []GeoConstraint {
 			l2, ok2 := le[c.r2&^refBit]
 			if ok1 && ok2 && c.r1&refBit != 0 && c.r2&refBit != 0 && lengthsEqual(l1, l2) {
 				out = append(out, GeoConstraint{Kind: GeoEqualLength, L1: l1, L2: l2})
+			}
+		case midpointDisc:
+			// A disc-0 node whose first ref resolves to a line is a MIDPOINT constraint: a sketch
+			// point pinned to the line's midpoint. Radius/diameter dimensions share disc 0 but their
+			// first ref is the 0x10 sentinel (not a ref), so lineEndpoints won't resolve it — the
+			// line gate cleanly excludes them. The pinned point's coordinate is the line's geometric
+			// midpoint, COMPUTED from the resolved line rather than read from the (offset, hard to
+			// resolve) point reference; the apply step binds it only when a sketch point actually sits
+			// there, so a stray disc-0 node can't invent a constraint.
+			if c.r1&refBit == 0 {
+				continue
+			}
+			if l, ok := le[c.r1&^refBit]; ok {
+				out = append(out, GeoConstraint{Kind: GeoMidpoint, L1: l, Pt: midpointOf(l)})
 			}
 		}
 	}
@@ -322,6 +340,11 @@ func lengthsEqual(a, b [2]Point2D) bool {
 	la := math.Hypot(a[1].X-a[0].X, a[1].Y-a[0].Y)
 	lb := math.Hypot(b[1].X-b[0].X, b[1].Y-b[0].Y)
 	return math.Abs(la-lb) < 1e-4
+}
+
+// midpointOf returns the midpoint of a segment.
+func midpointOf(l [2]Point2D) Point2D {
+	return Point2D{X: (l[0].X + l[1].X) / 2, Y: (l[0].Y + l[1].Y) / 2}
 }
 
 func maxLen(ax, ay, bx, by float64) float64 {

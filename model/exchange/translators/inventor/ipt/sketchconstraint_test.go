@@ -101,6 +101,32 @@ func TestDecodeCollinearAndEqualLength(t *testing.T) {
 	}
 }
 
+// TestDecodeMidpoint verifies the midpoint constraint (disc 0x00000000, line + a point at its
+// midpoint). It shares the discriminator with radius/diameter dimensions, but those reference the
+// 0x10 sentinel (not a line) so they don't resolve here. The pinned point's coordinate is computed
+// from the resolved line — k2_midpoint pins a point to L1 (0,0)-(3,0), whose midpoint is (1.5,0).
+// The base decodes to no midpoint (guards against a stray disc-0 node firing).
+func TestDecodeMidpoint(t *testing.T) {
+	countMid := func(file string) (mids []Point2D) {
+		for _, g := range DecodeGeometricConstraints(segFor(t, file)) {
+			if g.Kind == GeoMidpoint {
+				mids = append(mids, g.Pt)
+			}
+		}
+		return
+	}
+	if m := countMid("k2_base.ipt"); len(m) != 0 {
+		t.Errorf("k2_base: got %d midpoints, want 0", len(m))
+	}
+	m := countMid("k2_midpoint.ipt")
+	if len(m) != 1 {
+		t.Fatalf("k2_midpoint: got %d midpoints, want 1", len(m))
+	}
+	if absf(m[0].X-1.5) > 1e-6 || absf(m[0].Y) > 1e-6 {
+		t.Errorf("midpoint = %v, want (1.5,0) (midpoint of L1 (0,0)-(3,0))", m[0])
+	}
+}
+
 // TestHorizontalConstraintBindsRightLine checks the decoded horizontal constraint names the
 // horizontal line (0,0)-(3,0), proving the line resolves to its endpoint coordinates.
 func TestHorizontalConstraintBindsRightLine(t *testing.T) {
