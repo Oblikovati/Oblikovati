@@ -14,22 +14,42 @@ import (
 // one sphere patch per corner blend — and reports whether the mid-span obstacle rebuild (ADR-4) handled
 // any edge. enableObstacles=false forces the baseline path (no notch/wings/patch) so the caller can
 // fall back when the rebuild fires but does not achieve hole-containment (Option 1 do-no-harm).
-func filletResultFaces(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend, enableObstacles bool) ([]filletFace, bool) {
+func filletResultFaces(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend, enableRebuild bool) ([]filletFace, bool) {
 	abSubst, endCorner, edgeInserts := filletMaps(fils)
 	fans, fanV := classifyEndCorners(fils)
 	spreads, caps := buildSpreadMaps(fans, body)
 	pruneEndCorners(endCorner, fanV) // a fan vertex is rounded by the spread arm alone, never as a trihedral end
 	maps := filletRebuildMaps{abSubst: abSubst, endCorner: endCorner, edgeInserts: edgeInserts, spreads: spreads}
-	obReplace, obExtra, obHandled := map[uint64]filletFace{}, map[uint64][]filletFace{}, map[uint64]bool{}
-	if enableObstacles {
-		obReplace, obExtra, obHandled = collectObstacles(body, fils, ResolutionForBody(body), maps)
+	replace, extra, handled := map[uint64]filletFace{}, map[uint64][]filletFace{}, map[uint64]bool{}
+	if enableRebuild {
+		replace, extra, handled = collectRebuildFaces(body, fils, ResolutionForBody(body), maps)
 	}
-	out := transformedBodyFaces(body, maps, obReplace)
-	out = append(out, filletBlendFaces(fils, caps, obHandled, obExtra)...)
+	out := transformedBodyFaces(body, maps, replace)
+	out = append(out, filletBlendFaces(fils, caps, handled, extra)...)
 	for _, cb := range blends {
 		out = append(out, spherePatchFace(cb))
 	}
-	return out, len(obHandled) > 0
+	return out, len(handled) > 0
+}
+
+// collectRebuildFaces runs both local fillet rebuilds — the mid-span obstacle notch (ADR-4) and the
+// double-interference runout tiling (ADR-5) — and merges their face substitutions, extra faces and
+// handled-edge sets into one lookup. The runout path skips any edge the obstacle path already owns, so
+// an edge is rebuilt by exactly one of them; both suppress the default cylinder strip on their edges.
+func collectRebuildFaces(body *topo.Body, fils []edgeFillet, res Resolution, maps filletRebuildMaps) (
+	map[uint64]filletFace, map[uint64][]filletFace, map[uint64]bool) {
+	replace, extra, handled := collectObstacles(body, fils, res, maps)
+	rnReplace, rnExtra, rnHandled := collectRunouts(fils, res, handled)
+	for id, f := range rnReplace {
+		replace[id] = f
+	}
+	for id, fs := range rnExtra {
+		extra[id] = fs
+	}
+	for id := range rnHandled {
+		handled[id] = true
+	}
+	return replace, extra, handled
 }
 
 // transformedBodyFaces transforms every original body face for the fillets touching it, except that a

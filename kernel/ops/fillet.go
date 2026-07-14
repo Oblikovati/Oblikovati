@@ -184,9 +184,9 @@ func filletResolvedEdges(body *topo.Body, edges []filletPick, concave ConcaveFil
 // improvement over the pre-rebuild fillet; otherwise the baseline (no-obstacle) build is used. That
 // fallback is the same green body as before ADR-4 (HolesContained is a tripwire, not folded into Valid).
 func assembleFilletBody(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend) *topo.Body {
-	faces, obstacleFired := filletResultFaces(body, fils, blends, true)
+	faces, rebuildFired := filletResultFaces(body, fils, blends, true)
 	res := assembleBody(faces, "fillet")
-	if !obstacleFired || obstacleImprovedSolid(res) {
+	if !rebuildFired || obstacleImprovedSolid(res) {
 		return res
 	}
 	base, _ := filletResultFaces(body, fils, blends, false)
