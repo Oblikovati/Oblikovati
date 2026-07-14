@@ -47,7 +47,7 @@ const (G0 Continuity = 0; G1 Continuity = 1)
 
 type Side struct {
     Curve    geom.Curve3   // an EXACT boundary rail (arm end-section, host trim, or footprint arc)
-    Adjacent *topo.Face    // the surface across this rail (the ARM face for a corner side; see note)
+    Adjacent geom.Surface  // the surface across this rail — the ARM/host geometry itself (see note)
     Cont     Continuity    // required continuity to Adjacent along Curve
 }
 type RailLoop struct {
@@ -61,6 +61,14 @@ is the fillet **arm surface** (a cylinder/cone/torus — convert to exact ration
 BSpline losslessly), **not** the host face. The two arms at each patch corner
 already share the host tangent plane, so G1-to-arm ribbons are twist-*compatible*
 at the corners — the property that lets a polynomial fill satisfy them.
+
+**`Adjacent` is `geom.Surface`, not `*topo.Face`** (refined during implementation):
+the dependency rule below forbids a provider from importing `topo`, and a provider
+needs only `NormalAt`/`DerivativesAt` off the surface to match a ribbon or recognise
+a known part — so the extractor (which holds the `topo.Face`) supplies the surface
+oriented material-outward, and topo identity travels on `RailLoop.Provenance`. This
+also makes every provider unit-testable against synthetic `geom.Plane`/`geom.Cylinder`
+with no heavy `topo.Face` fixture.
 
 `CornerBlendRequest` keeps its `Junction/Arms/Hosts/Setback/ObstacleFeature`
 fields for backward compatibility; a `Loop *RailLoop` path is added and the

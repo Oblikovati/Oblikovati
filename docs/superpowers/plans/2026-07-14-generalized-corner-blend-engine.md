@@ -49,7 +49,9 @@ with named fakes; the corpus gate is `go test ./model/feature -run TestOCCTBlend
 
 **Interfaces:**
 - Consumes: `geom.Curve3`, `topo.Face`, `topo.Lineage`, `math.Point3`.
-- Produces: `Continuity` (`G0`/`G1`), `Side{Curve geom.Curve3; Adjacent *topo.Face; Cont Continuity}`,
+- Produces: `Continuity` (`G0`/`G1`), `Side{Curve geom.Curve3; Adjacent geom.Surface; Cont Continuity}`
+  (Adjacent is the oriented arm/host SURFACE, not a topo.Face — providers use geom+math only; the
+  extractor supplies it material-outward, topo identity lives on `RailLoop.Provenance`),
   `RailLoop{Sides []Side; Provenance topo.Lineage}`, `func (RailLoop) Closed(tol float64) bool`,
   `func (RailLoop) Valence() int`.
 
@@ -213,9 +215,15 @@ git commit -m "feat(blend): RailLoop currency for the generalized corner engine 
 sphere from 3 planar faces and is called *directly* by `solveCorner` — that call site is NOT
 touched (corpus-neutral). This task re-expresses the SAME 3×3 tangency solve as a `RailLoop`
 provider so a future `extractTrihedral` can feed it. The recognition predicate (ADR-0051 §recognition):
-all sides `Adjacent` are `geom.Plane`, equal rolling-ball radius `r`, and the sphere center
-(solved from the 3 outward-offset planes) is at distance `r` (within `scale.Weld()`) from every
-rail. Reuse `solve3`/`outwardPlaneNormal`; do not re-derive the linear system.
+all sides' `Adjacent` are `geom.Plane`, equal rolling-ball radius `r`, and the sphere center
+(solved from the 3 offset planes) is at distance `r` (within `scale.Weld()`) from every rail.
+Reuse `solve3` (retopo.go:123) for the linear system — do NOT re-derive it. Do NOT use
+`outwardPlaneNormal` (it needs a `*topo.Face`, which the provider no longer sees): take each
+plane's normal from `geom.Plane.Normal()` and pick the sign so the solved center lands on the
+**loop-interior** side — compute the loop centroid (mean of rail sample points) and require the
+center and centroid to sit on the same side of each plane; that makes recognition orientation-
+agnostic. Extract `railRadius(RailLoop) (float64, bool)` — the shared rolling-ball radius read off
+the arc rails (`cornerRadius` at fillet.go:815 works on picks, not rails, so this is new).
 
 - [ ] **Step 1: Write the failing test** — build a symmetric trihedral corner (three mutually
   perpendicular planes offset to radius `r`, three quarter-arcs as rails), assert `Fits` is true,
@@ -242,8 +250,11 @@ func TestAnalyticSphereFitsTrihedralPlanar(t *testing.T) {
 ```
 
   (Write `trihedralPlanarLoop` in the test file as a named helper producing the loop + a
-  `Resolution` scale; it constructs three `geom.Plane`s wrapped in `topo.Face`s. Grep for an
-  existing test that builds a `topo.Face` over a `geom.Plane` — `grep -rn 'topo.NewFace\|faceFromSurface' kernel/ops/*_test.go` — and reuse that construction so the fake face is valid.)
+  `Resolution` scale via the existing `blendScale()` helper in `corner_blend_test.go`. Because
+  `Side.Adjacent` is now `geom.Surface`, the helper sets each side's `Adjacent` to an **oriented
+  `geom.Plane` directly** (normal pointing material-outward) — NO `topo.Face` fixture is needed.
+  The sphere provider derives the corner-interior side from the loop geometry, not from a supplied
+  normal sign, so it never calls `outwardPlaneNormal`/`topo`.)
 
 - [ ] **Step 2: Run test to verify it fails** — `go test ./kernel/ops/ -run TestAnalyticSphere -v` → FAIL (`undefined: analyticSphereProvider`).
 

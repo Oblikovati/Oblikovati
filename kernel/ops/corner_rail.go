@@ -29,9 +29,13 @@ const (
 type Side struct {
 	// Curve is the EXACT boundary rail the fill interpolates.
 	Curve geom.Curve3
-	// Adjacent is the surface across this rail. It may be nil for a pure-G0 side,
-	// where no tangent-plane agreement is required.
-	Adjacent *topo.Face
+	// Adjacent is the surface across this rail — the arm/host geometry itself, not a
+	// topo.Face: a fill provider depends only on geom+math (ADR-0051 dependency rule),
+	// and NormalAt/DerivativesAt are all it needs to match a ribbon or recognise a
+	// known part. The extractor holds the topo.Face and supplies the surface oriented
+	// so NormalAt points material-outward; topo identity lives in RailLoop.Provenance.
+	// It may be nil for a pure-G0 side, where no tangent-plane agreement is required.
+	Adjacent geom.Surface
 	// Cont is the continuity required to Adjacent along Curve.
 	Cont Continuity
 }
