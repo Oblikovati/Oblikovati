@@ -25,6 +25,12 @@
 - The +49.85 is entirely in the **fillet + adjacent receded planes**. Our fillet is the **full untrimmed quarter-cylinder 188.495** (=½π·6·20). S1 has TWO bosses on TWO host planes (r8 vertical on top plane z=10; r6 horizontal on front plane y=−10), each crossing the receded band.
 - The exact split of the surplus between "trim the fillet" and "merge the plane lens" is NOT yet localized (Step-0 matched 8 faces by area; the other 7 OCCT faces were inferred). **Task 1 localizes it definitively via a per-face surface-type dump.** Everything downstream is the confirmed Mode-A architecture (surplus in the fillet+plane region; walls/caps untouched; fix = imprint footprint → merge band + trim fillet).
 
+**TASK-1 FINDING (localized 2026-07-14, DRAWEXE per-face reconciliation) — FILLET-TRIM DOMINANT:**
+- **Fillet: Δ +43.2 (the dominant fix).** Ours = the FULL untrimmed quarter-cylinder 188.495. OCCT SPLITS the fillet into **5 pieces** {34.19, 28.951, 28.951, 26.595, 26.595 = 145.28}, symmetric about x=0. The split points are the boss-footprint crossings of the fillet's tangent rails: **x=±6.93** (r8 top boss, x²+y²=64 ∩ y=−4) and **x=±4.47** (r6 front boss, x²+z²=36 ∩ z=4). Segments: [−10,−6.93], [−6.93,−4.47], [−4.47,4.47], [4.47,6.93], [6.93,10]. In the middle segments the fillet's cross-section is TRIMMED where the boss footprint covers its tangent rail (the fillet's top rail follows the boss circle where it crosses into the band).
+- **Planes: Δ +6.6 (minor).** Top receded plane 122.171→118.246 (Δ+3.9), front 183.802→181.089 (Δ+2.7) — the lens merge.
+- Σ = 49.8 = the surplus. ✓
+- **Implication for Task 4:** the fillet TRIM (split at axial crossings + cross-section trim along the boss-footprint pre-image) is the primary work; the host-plane lens MERGE (Task 5-style) is a secondary ~13% correction. `whatis`/`dumpsurface` are uninformative in DRAWEXE 8.0.0 — localization is by AREA reconciliation + the symmetric-small-cylinder-pieces structure (see `test-utilities/occt-blend/oracle/facetypes.tcl`).
+
 ## File Structure
 
 - `kernel/ops/fillet_runout_detect.go` (NEW) — runout-imprint detection: find, per host plane, a coplanar feature footprint whose base curve crosses the receded fillet band. Reuses `boundaryLine2`, `rimCrossings`, `obstacleNodes`, `dipsPast`, `planeFrame`, `boundaryFromTangents`, `hostTangents`, `singleHoleEdge`, `sampleHoleRim` from `fillet_obstacle_detect*.go`.
