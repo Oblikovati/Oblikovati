@@ -49,15 +49,15 @@ func TestFeatureTagsMarksRevolve(t *testing.T) {
 // TestWriteReportHasHeader checks the TSV writer emits the column header and one line per row.
 func TestWriteReportHasHeader(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "r.tsv")
-	if err := writeReport(path, []row{{outcome: "SOLID", volumeMm3: 8000, sketches: 1, features: 1, featTags: "ext", rel: "a.ipt"}}); err != nil {
+	if err := writeReport(path, []row{{outcome: "SOLID", volumeMm3: 8000, sketches: 1, features: 1, dof: 3, eqs: 5, featTags: "ext", rel: "a.ipt"}}); err != nil {
 		t.Fatalf("writeReport: %v", err)
 	}
 	b, _ := os.ReadFile(path)
 	text := string(b)
-	if !strings.HasPrefix(text, "outcome\tvolume_mm3\tsketches\tfeatures\tfeat_tags\tpart\n") {
+	if !strings.HasPrefix(text, "outcome\tvolume_mm3\tsketches\tfeatures\tdof\teqs\tfeat_tags\tpart\n") {
 		t.Errorf("report missing header, got:\n%s", text)
 	}
-	if !strings.Contains(text, "SOLID\t8000\t1\t1\text\ta.ipt") {
+	if !strings.Contains(text, "SOLID\t8000\t1\t1\t3\t5\text\ta.ipt") {
 		t.Errorf("report missing data row, got:\n%s", text)
 	}
 }

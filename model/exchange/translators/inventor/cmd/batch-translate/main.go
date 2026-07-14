@@ -49,16 +49,20 @@ func main() {
 		os.Exit(1)
 	}
 	printTally(rep, len(rows), tally)
+	printConstraintStats(rows)
 }
 
 // row is one part's audit line.
 type row struct {
-	outcome   string
-	volumeMm3 float64
-	sketches  int
-	features  int
-	featTags  string
-	rel       string
+	outcome     string
+	volumeMm3   float64
+	sketches    int
+	features    int
+	dof         int // remaining degrees of freedom summed over the part's sketches
+	eqs         int // constraint+dimension equations summed over the part's sketches
+	constrained int // sketches carrying at least one constraint equation
+	featTags    string
+	rel         string
 }
 
 // run walks inDir for .ipt files, translates each into outDir (mirrored), and classifies it.
@@ -111,6 +115,14 @@ func classify(r *row, outPath string) {
 	}
 	r.sketches = def.Sketches().Count()
 	r.features = def.Features().Count()
+	for k := 0; k < r.sketches; k++ {
+		a := def.Sketches().Item(k).AnalyzeConstraints()
+		r.dof += a.DOF
+		r.eqs += a.Equations
+		if a.Equations > 0 {
+			r.constrained++
+		}
+	}
 	bodies := def.SurfaceBodies().All()
 	switch {
 	case len(bodies) > 0 && bodies[0].IsSolid():
@@ -158,11 +170,41 @@ func featureTags(data []byte) string {
 // writeReport writes the audit rows as a TSV.
 func writeReport(path string, rows []row) error {
 	var b strings.Builder
-	b.WriteString("outcome\tvolume_mm3\tsketches\tfeatures\tfeat_tags\tpart\n")
+	b.WriteString("outcome\tvolume_mm3\tsketches\tfeatures\tdof\teqs\tfeat_tags\tpart\n")
 	for _, r := range rows {
-		fmt.Fprintf(&b, "%s\t%.0f\t%d\t%d\t%s\t%s\n", r.outcome, r.volumeMm3, r.sketches, r.features, r.featTags, r.rel)
+		fmt.Fprintf(&b, "%s\t%.0f\t%d\t%d\t%d\t%d\t%s\t%s\n", r.outcome, r.volumeMm3, r.sketches, r.features, r.dof, r.eqs, r.featTags, r.rel)
 	}
 	return os.WriteFile(path, []byte(b.String()), 0o644)
+}
+
+// printConstraintStats summarizes the DOF-parity work across the library: how much of the emitted
+// sketch geometry now carries constraints/dimensions rather than being a free point-soup.
+func printConstraintStats(rows []row) {
+	var sketches, constrained, eqs, dof, partsWithSketches, partsWithConstraints int
+	for _, r := range rows {
+		sketches += r.sketches
+		constrained += r.constrained
+		eqs += r.eqs
+		dof += r.dof
+		if r.sketches > 0 {
+			partsWithSketches++
+		}
+		if r.eqs > 0 {
+			partsWithConstraints++
+		}
+	}
+	fmt.Println("constraint / DOF stats:")
+	fmt.Printf("  %d sketches emitted across %d parts\n", sketches, partsWithSketches)
+	fmt.Printf("  %d sketches carry constraints (%.0f%% of emitted)\n", constrained, pct(constrained, sketches))
+	fmt.Printf("  %d parts have ≥1 constrained sketch (%.0f%% of parts with sketches)\n", partsWithConstraints, pct(partsWithConstraints, partsWithSketches))
+	fmt.Printf("  %d constraint/dimension equations applied; %d DOF remaining\n", eqs, dof)
+}
+
+func pct(n, total int) float64 {
+	if total == 0 {
+		return 0
+	}
+	return 100 * float64(n) / float64(total)
 }
 
 // printTally prints a one-line-per-outcome summary to stdout.
