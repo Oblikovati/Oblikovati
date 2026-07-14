@@ -872,7 +872,41 @@ For each `edgeFillet`: `detectRunoutRegions`; for each region, `extractRunout` �
 
 - [ ] **Step 5: Zero-regression corpus** — `TestOCCTBlendSimple` count = 51 (50 + S1), every other case's PASS/FAIL byte-identical (diff the name set).
 
-- [ ] **Step 6: Commit** — `feat(blend): wire runout 3-quad fill behind do-no-harm fallback; green S1`.
+- [ ] **Step 6: Commit** — done as `f35f9ccb` (foundation). **Task 10 SPLIT after execution:** the wiring landed and proved the area is already in-window, but the 3 patches + wings form an OPEN shell — watertight closure is **Task 10b** below.
+
+**Task 10 outcome (recorded):** `collectRunouts` wired (commit `f35f9ccb`); `detectRunoutRegions`→1 region/2 imprints→`extractRunout`→3 loops→all `resolveBlend`=coons4 BSpline patches + 2 wings. **S1 runout-rebuilt AREA = 3641.49 → INSIDE the 1% window [3626.16, 3699.42]** (0.58% under OCCT 3662.79). The tiling geometry is correct; the plane-A straight curve is NOT an area problem (the flat-fill triangles ADD area toward 3662.79). But the body is an OPEN shell (56 boundary edges, `IsSolid()=false`) → do-no-harm rejects → corpus byte-identical at 50, S1 still FAIL. Closure is the sole remaining barrier.
+
+### Task 10b: Watertight assembly closure — host-plane reconstruction + boss-wall split (greens S1)
+
+**Files:**
+- Modify: `kernel/ops/fillet_runout_faces.go` (re-add `body *topo.Body` + `maps filletRebuildMaps` params to `collectRunouts`/`runoutFacesFor`; add the host + wall reconstruction)
+- Reference (read, mirror — do NOT duplicate): `kernel/ops/fillet_obstacle_faces.go` (`collectObstacles`, `buildSplitObstacleWall`, the obstacle host-loop re-cut), `railLoopToFilletLoops` + `sampleCurve3Open(curve, ringSegSamples=6, ·)` (the patch boundary sampling every added face must match), `transformFace`/`otherFace`.
+- Test: `kernel/ops/fillet_runout_faces_test.go` + the S1 corpus gate.
+
+**Root cause (diagnosed):** `assembleBody` welds by loop-point coincidence and requires **every edge used exactly twice** — it does NOT auto-split. So the patches + wings leave 56 open edges in 4 classes: (1) **wing cut arcs vs patch fillet arcs** — wings emit each quarter-cylinder cut as ONE arc, patches sample every side into `ringSegSamples=6` chords → sample the wing cut from the SAME `armSectionArc` curve via `sampleCurve3Open(...,6,·)`; (2) **host-plane front tangent lines un-split**; (3) **boss footprints protrude** (`HolesContained=false`) — the base circles remain as inner-loop holes, must be merged out of the host outer loop; (4) **patch feature arcs vs full boss-wall rims** — the walls carry the full closed circle, must be split so each sub-arc welds to its neighbour patch/host.
+
+**Exact S1 geometry (measured, not derived — build the reconstruction against these):**
+- Fillet: cyl axis `(x,-4,4)`, `x∈[-10,10]`, R=6; tangent to plane A (y=-10) along z=4, plane B (z=10) along y=-4.
+- Region spine `x∈[-6.928, 6.928]` (=±√48, the fillet cut stations).
+- Fillet-cut corners: `faL/faR=(±6.928,-10,4)`, `fbL/fbR=(±6.928,-4,10)`.
+- Seam points: `sbL/sbR=(±3.464,-10,4.899)` (on featA), `stL/stR=(±3.464,-7.211,10)` (on featB).
+- Feature-A footprint: centre `(0,-10,0)`, r=6 (plane A); crossings `caL/caR≈(∓4.472,-10,4)`.
+- Feature-B footprint: centre `(0,0,10)`, r=8 (plane B); crossings coincide with `fbL/fbR`.
+
+**The reconstruction (beyond the wired patches+wings):**
+- **Host plane A (feature-A boss, y=-10):** re-cut the outer loop over `x∈[-6.928,6.928]`, replacing the straight tangent segment with the detour `faL→(runout curve)→sbL→(featA arc)→caL→(featA host arc)→caR→(featA arc)→sbR→(runout curve)→faR`, and DROP the boss hole loop. The two triangles `faL·sbL·caL` and `caR·sbR·faR` are the flat host-plane fill (the area that lifts 3641→~3662), bounded by the plane-A runout curve.
+- **Host plane B (feature-B boss, z=10):** simpler — the feature-B crossings coincide with the fillet cuts (`fbL,fbR`), so a clean notch: replace tangent segment `fbL..fbR` with the boss-B host (major) arc `fbL→(0,8,10)→fbR`; no flat fill.
+- **Boss A wall:** split its footprint rim at `{caL, sbL, sbR, caR}` (4 arcs: 3→host A, 1→central patch), preserving the seam + closed top rim + cap-vertex id weld (like `buildSplitObstacleWall`).
+- **Boss B wall:** split its rim at `{fbL, stL, stR, fbR}` (3 arcs→flanks+central, 1→host B).
+- **Every shared arc sampled identically to the patches** (`sampleCurve3Open`, `ringSegSamples=6`); build the host/wall faces BEFORE the patches so shared edges weld consistently.
+
+- [ ] **Step 1: Failing integration test** — drive the full fillet on the S1 body; assert `res.IsSolid()` && `HolesContained` && total area within 1% of `3662.79`. Run RED first: the current foundation returns an open shell (`IsSolid()=false`) → do-no-harm falls back to 3713.45.
+- [ ] **Step 2: Reconstruct host plane B + boss B wall** (the simpler notch, no flat fill) — commit, confirm the plane-B/boss-B open edges drop (inspect boundary-edge count).
+- [ ] **Step 3: Reconstruct host plane A (with flat fill) + boss A wall** — commit; boundary-edge count → 0.
+- [ ] **Step 4: Reconcile the wing/patch arc sampling** (class 1) — sample wing cuts via `sampleCurve3Open(armSectionArc,6)`.
+- [ ] **Step 5: GREEN + S1 oracle gate** — `go test ./model/feature -run 'TestOCCTBlendSimple/S1$' -v` → PASS; area in `[3626.16, 3699.42]`. If the assembled area then OVERSHOOTS `3699.42`, the plane-A runout curve is the targeted knob (OCCT's boundary bulges) — fix it in `extractRunout` (Task 9's `planeARunoutCurve`) and re-run; do NOT loosen the gate.
+- [ ] **Step 6: Zero-regression corpus** — count = **51** (50 + S1), every other case's PASS/FAIL byte-identical (diff the name set).
+- [ ] **Step 7: Commit** — `feat(blend): watertight runout closure (host reconstruction + boss-wall split); green S1`.
 
 ### Task 11: Green S4 + T1 (cone→circle, torus→circle)
 
