@@ -298,8 +298,10 @@ DRAWEXE oracle (report `scratchpad/tracer/s1-runout-topology.md`) proved S1 is a
 **double interference**: two bosses cross one fillet (footprint circles on host
 planes A and B). The interfered region is a **hexagon**; our engine has only
 `coons4`/`tri3`, so — exactly as OCCT does — we tile it into **3 valence-4
-`coons4` patches** (central + left + right) joined by **2 internal G1 seams**.
-The single-quad guess put two coplanar sides on the same endpoints (`Closed=false`,
+`coons4` patches** (central + left + right) joined by **2 shared internal seams**
+(G0/watertight for this tracer; fill-to-fill G1 across the seams is a coupled
+multi-patch solve deferred to M3 — the area oracle does not measure internal-seam
+tangent). The single-quad guess put two coplanar sides on the same endpoints (`Closed=false`,
 a flat lune). Measured constants (radius 6, ⟂ hosts): `d = r·tan((π−γ)/2) = r`;
 fillet-cut abscissa `x = ±√(R_B²−d²) = ±√48 = 6.93`. **T9 is deferred to Milestone
 3** — its fill is 2 patches including a valence-6 one that needs the n-sided provider.
@@ -311,9 +313,11 @@ fillet-cut abscissa `x = ±√(R_B²−d²) = ±√48 = 6.93`. **T9 is deferred 
   crossing's `[pMinus,pPlus]` onto the fillet spine, merge overlapping intervals
   into one `runoutRegion` (S1's two bosses → one hexagon, not two runouts).
 - **Task 9 — `extractRunout` 3-quad tiler.** Emit the 3 measured RailLoops
-  (central/left/right) with 2 free-placement internal G1 seams; **G0** on the
-  un-blended feature-arc sides (no tangent — a feature-wall G1 ribbon inverts the
-  patch), **G1** on the fillet ¼-circles, host-plane runout curves, and seams.
+  (central/left/right) with 2 free-placement **shared** internal seams; **G0
+  (Adjacent nil)** on the un-blended feature-arc sides (no tangent — a feature-wall
+  G1 ribbon inverts the patch) AND on the internal seams (fill-to-fill G1 deferred
+  to M3); **G1** on the fillet ¼-circles (→ `ef.cyl`) and host-plane runout curves
+  (→ host plane). Central is thus a pure-position all-G0 Coons patch.
 - **Task 10 — Wire + oracle-gate S1** behind do-no-harm; split the fillet cylinder
   outside the region and replace the span with the 3 patches.
 - **Tasks 11–12 — S4/T1** (cone/torus circular footprints, reuse tiler) then **T7**
