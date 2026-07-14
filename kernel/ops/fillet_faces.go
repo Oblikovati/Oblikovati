@@ -435,15 +435,45 @@ func cylinderSegsFlipped(ef edgeFillet, segs []endSeg) bool {
 	return n.Dot(ef.cyl.NormalAt(u, v)) < 0
 }
 
-// spherePatchFace builds the corner sphere patch: a spherical triangle bounded by the blend's
-// three arcs (each shared with a cylinder fillet), wound so its normal points outward (away
-// from the sphere centre).
+// spherePatchFace builds the corner sphere patch: a spherical triangle bounded by the blend's three
+// arcs (each shared with a cylinder fillet), wound so its normal points outward (away from the sphere
+// centre). The SURFACE is now VALIDATED through the generalized engine (extractTrihedral → resolveBlend
+// recognizes the exact sphere), proving the RailLoop path agrees; the boundary LOOP is still
+// chainArcs(cb.arcs) so the assembled face is byte-for-byte with the pre-strangler output (the
+// trim/arcs are the byte-for-byte risk — see the extractor-wave spec §2/§3).
 func spherePatchFace(cb *cornerBlend) filletFace {
+	surface := sphereSurfaceViaRail(cb) // extractor-recognized sphere, == cb.sphere by construction
 	loop := chainArcs(cb.arcs)
 	if spherePatchFlipped(cb, loop) {
 		loop = reverseArcLoop(loop)
 	}
-	return filletFace{surface: cb.sphere, loops: []filletLoop{loop}}
+	return filletFace{surface: surface, loops: []filletLoop{loop}}
+}
+
+// sphereSurfaceViaRail routes the corner sphere through the RailLoop engine and returns the recognized
+// analytic sphere; it falls back to cb.sphere if extraction/recognition declines (do-no-harm), so a
+// mis-extraction can never change the byte-for-byte output.
+func sphereSurfaceViaRail(cb *cornerBlend) geom.Surface {
+	loop, ok := extractTrihedral(cb)
+	if !ok {
+		return cb.sphere
+	}
+	patch, ok := resolveBlend(loop, sphereScale(cb))
+	if !ok || patch.Kind != BlendKindSphere {
+		return cb.sphere
+	}
+	return patch.Surface
+}
+
+// sphereScale is the model-relative tolerance for the sphere recognition, derived from the arc tangent
+// points so it never uses a bare epsilon (ADR-0042); spherePatchFace's caller has no Resolution in
+// scope, so it is recomputed here from the same geometry the loop is built from.
+func sphereScale(cb *cornerBlend) Resolution {
+	pts := make([]math.Point3, 0, len(cb.arcs)*2)
+	for _, a := range cb.arcs {
+		pts = append(pts, a.ta, a.tb)
+	}
+	return ResolutionForPoints(pts)
 }
 
 // chainArcs links the blend's arcs head-to-tail into a closed loop (each tangent point is an
