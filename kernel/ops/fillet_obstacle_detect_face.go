@@ -97,26 +97,42 @@ func detectObstacleOnHost(ef edgeFillet, host *topo.Face, hostIsA bool, res Reso
 	return crossingDetection(ef, host, hostIsA, pl, holeEdge, res)
 }
 
-// crossingDetection builds the receded boundary line and the sampled rim, then admits the obstacle
-// only when the rim crosses the boundary exactly twice AND the enclosed arc dips onto the fillet
-// side (a genuine mid-span obstacle, not a rim bulging away).
+// crossingDetection runs the shared band-crossing test (bandCrossings) against holeEdge already
+// confirmed as host's single closed hole rim, then packages the obstacle only when it passes.
 func crossingDetection(ef edgeFillet, host *topo.Face, hostIsA bool, pl geom.Plane,
 	holeEdge *topo.Edge, res Resolution) (obstacleDetection, bool) {
-	flat, back := planeFrame(pl)
-	boundary, ok := boundaryFromTangents(ef, hostIsA, flat)
+	sampled, nodes, flat, back, ok := bandCrossings(ef, hostIsA, pl, holeEdge, res)
 	if !ok {
-		return obstacleDetection{}, false
-	}
-	sampled := sampleHoleRim(holeEdge.Geometry(), holeEdge.ID())
-	rim2D := project2D(sampled.pts, flat)
-	nodes, ok := obstacleNodes(rim2D, boundary, res)
-	if !ok {
-		return obstacleDetection{}, false
-	}
-	if !dipsPast(rim2D, nodes[0], nodes[1], boundary, filletBandSide(ef, boundary, flat)) {
 		return obstacleDetection{}, false
 	}
 	return packDetection(ef, host, hostIsA, holeEdge, sampled, nodes, flat, back), true
+}
+
+// bandCrossings builds the receded fillet boundary in host plane's 2D frame, samples the footprint
+// rim, and admits it only when the rim crosses the boundary exactly twice AND the enclosed arc dips
+// onto the fillet side (a genuine crossing, not a rim bulging away). Both detectObstacle's mid-span
+// obstacle path (crossingDetection above) and detectRunouts' runout-imprint path (runoutOnHost,
+// fillet_runout_detect.go) need this identical sequence — planeFrame → boundaryFromTangents →
+// sampleHoleRim → project2D → obstacleNodes → filletBandSide → dipsPast; only their gating (dual-host
+// reject vs independent-host admit) and result packaging differ, so it is extracted once here
+// (CLAUDE.md: no duplication) and each caller adds its own gating around the ok=false/true result.
+func bandCrossings(ef edgeFillet, hostIsA bool, pl geom.Plane, fp *topo.Edge, res Resolution) (
+	sampled filletLoop, nodes [2]crossing, flat func(math.Point3) math.Point2, back func(math.Point2) math.Point3, ok bool) {
+	flat, back = planeFrame(pl)
+	boundary, ok := boundaryFromTangents(ef, hostIsA, flat)
+	if !ok {
+		return filletLoop{}, [2]crossing{}, flat, back, false
+	}
+	sampled = sampleHoleRim(fp.Geometry(), fp.ID())
+	rim2D := project2D(sampled.pts, flat)
+	nodes, ok = obstacleNodes(rim2D, boundary, res)
+	if !ok {
+		return filletLoop{}, [2]crossing{}, flat, back, false
+	}
+	if !dipsPast(rim2D, nodes[0], nodes[1], boundary, filletBandSide(ef, boundary, flat)) {
+		return filletLoop{}, [2]crossing{}, flat, back, false
+	}
+	return sampled, nodes, flat, back, true
 }
 
 // packDetection fills the detection record, resolving the obstacle wall (the face sharing the hole

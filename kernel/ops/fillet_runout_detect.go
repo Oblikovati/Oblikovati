@@ -51,13 +51,12 @@ func detectRunouts(ef edgeFillet, res Resolution) []runoutImprint {
 	return out
 }
 
-// runoutOnHost runs the crossing/dip test for one candidate host face: the host must be a plane
-// carrying exactly one closed-loop hole (the feature footprint), the footprint rim must cross the
-// receded fillet boundary exactly twice, and the enclosed arc must genuinely dip onto the fillet
-// side (not merely bulge toward it). It deliberately carries none of detectObstacleOnHost's extra
-// gates (qualifying==1, rebuildableTube, wall-plane checks) — those exist to keep the mid-span
+// runoutOnHost checks host qualifies as a runout-imprint candidate: a plane carrying exactly one
+// closed-loop hole (the feature footprint). It deliberately carries none of detectObstacleOnHost's
+// extra gates (qualifying==1, rebuildableTube, wall-plane checks) — those exist to keep the mid-span
 // obstacle REBUILD scoped to a single host; the runout-imprint path never rebuilds a blend surface,
-// so a footprint on the other host is simply a second, independent imprint.
+// so a footprint on the other host is simply a second, independent imprint. The actual crossing/dip
+// test is the shared bandCrossings sequence, delegated to runoutOnPlane.
 func runoutOnHost(ef edgeFillet, host *topo.Face, hostIsA bool, res Resolution) (runoutImprint, bool) {
 	pl, ok := host.Geometry().(geom.Plane)
 	if !ok {
@@ -67,19 +66,17 @@ func runoutOnHost(ef edgeFillet, host *topo.Face, hostIsA bool, res Resolution) 
 	if !ok || fp.StartVertex() != fp.EndVertex() {
 		return runoutImprint{}, false
 	}
-	flat, back := planeFrame(pl)
-	b, ok := boundaryFromTangents(ef, hostIsA, flat)
+	return runoutOnPlane(ef, host, hostIsA, pl, fp, res)
+}
+
+// runoutOnPlane runs the shared crossing/dip test (bandCrossings, fillet_obstacle_detect_face.go)
+// against fp — host's confirmed single closed hole rim — and packages the runout-imprint record on
+// success: the footprint rim must cross the receded fillet boundary exactly twice, and the enclosed
+// arc must genuinely dip onto the fillet side (not merely bulge toward it).
+func runoutOnPlane(ef edgeFillet, host *topo.Face, hostIsA bool, pl geom.Plane, fp *topo.Edge,
+	res Resolution) (runoutImprint, bool) {
+	_, nodes, flat, back, ok := bandCrossings(ef, hostIsA, pl, fp, res)
 	if !ok {
-		return runoutImprint{}, false
-	}
-	rim := sampleHoleRim(fp.Geometry(), fp.ID())
-	rim2 := project2D(rim.pts, flat) // reuse earclip.go's projector — no second projector (no-dup rule)
-	nodes, ok := obstacleNodes(rim2, b, res)
-	if !ok {
-		return runoutImprint{}, false
-	}
-	side := filletBandSide(ef, b, flat)
-	if !dipsPast(rim2, nodes[0], nodes[1], b, side) {
 		return runoutImprint{}, false
 	}
 	return runoutImprint{host, hostIsA, pl, fp, nodes, flat, back}, true
