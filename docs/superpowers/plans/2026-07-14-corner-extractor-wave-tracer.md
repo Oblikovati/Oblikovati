@@ -61,10 +61,12 @@ The **foundation wave is DONE and OUT OF SCOPE**: `corner_rail.go` (`Side`/`Rail
 - Test: `kernel/ops/corner_ribbon_probe_test.go`
 
 **Interfaces:**
-- Consumes: `geom.BSplineSurface`, `geom.FillSide{Adjacent BSplineSurface; AdjEdge Boundary; Order int}`, `fillEdge`/`edgeVMin…edgeUMax` + `coons4Edges() [4]fillEdge` (corner_blend_obstacle_certify.go / corner_provider_coons4.go), `surfaceNormal(s, u, v) math.Vector3`, `obstacleNoFold(s, scale) bool`, `Resolution.Weld()`.
-- Produces: `ribbonSeamNonFolding(fill geom.BSplineSurface, sides [4]geom.FillSide, scale Resolution) bool`, `probeSignMargin` const.
+- Consumes: `geom.BSplineSurface`, `geom.CoonsFill(c0,c1,d0,d1) (BSplineSurface, error)`, `geom.FillSide{Adjacent BSplineSurface; AdjEdge Boundary; Order int}`, `fillEdge`/`edgeVMin…edgeUMax` + `coons4Edges() [4]fillEdge`, `inwardCrossV(s, atMax) math.Vector3` / `inwardCrossU(s, atMax) math.Vector3` (corner_blend_obstacle.go), `obstacleNoFold(s, scale) bool`, `Resolution.Weld()`.
+- Produces: `ribbonSeamNonFolding(fill geom.BSplineSurface, rails [4]geom.BSplineCurve, sides [4]geom.FillSide, scale Resolution) bool`.
 
-This is the instrument that catches the exact defect `creaseAngle` masks — a ribbon whose tangent plane is right but whose *oriented* normal is flipped (§5 of the spec). For each G1 side (`Order > 0`), it asserts the matched fill's normal and its ribbon's normal point the **same** way at the seam midpoint, then that the whole patch passes `NoFold`.
+This is the instrument that catches the exact defect `creaseAngle` masks — a ribbon whose tangent plane is right but whose *oriented* normal is flipped (§5 of the spec).
+
+**⚠ CORRECTED after Task-1 first attempt (a provably-blind method was caught):** the advisor's report and the earlier draft of this task compared the fill normal to the ribbon normal at the seam (`n̂_fill·n̂_rib`). That is **tautological**: for a VMin↔VMin Order-1 match the operator forces `F_v(boundary) = −dir` *exactly*, so `nf = −nr` **identically for both orientations** — the test is blind to the fold (empirically verified: identical dot on the correct and the inverted fixture). The **real discriminator** is the advisor's check #2: compare the MATCHED fill's into-patch cross-derivative against the **base Coons** interior cross-derivative at the same edge. The base depends only on rail *positions* (ribbon-independent), so matched-vs-base flips sign with the ribbon orientation. It is boundary-local and exact — it catches even T6's shallow fold with no 24×24 sampling luck. For each G1 side (`Order > 0`), assert `matched_cross · base_cross > 0`, then that the whole patch passes `NoFold`.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -72,17 +74,21 @@ This is the instrument that catches the exact defect `creaseAngle` masks — a r
 // SPDX-License-Identifier: GPL-2.0-only
 package ops
 
-import "testing"
+import (
+	"testing"
+
+	"oblikovati.org/kernel/geom"
+)
 
 // TestRibbonSeamNonFoldingAcceptsOutwardCoons4 proves the probe passes the shipped, correct
 // coons4 patch (outward ribbons) built from the quarter-cylinder fixture.
 func TestRibbonSeamNonFoldingAcceptsOutwardCoons4(t *testing.T) {
 	loop := quarterCylLoop(t, 4)
-	fill, _, sides, ok := coons4Fill(loop)
+	fill, rails, sides, ok := coons4Fill(loop)
 	if !ok {
 		t.Fatal("coons4Fill declined the quarter-cyl fixture")
 	}
-	if !ribbonSeamNonFolding(fill, sides, blendScale()) {
+	if !ribbonSeamNonFolding(fill, rails, sides, blendScale()) {
 		t.Fatal("probe rejected the correct outward-ribbon coons4 patch")
 	}
 }
@@ -109,7 +115,7 @@ func TestRibbonSeamNonFoldingRejectsInwardRibbon(t *testing.T) {
 		t.Fatalf("FillSurface: %v", err)
 	}
 	fill, _ = pinFillBoundary(fill, rails[0], rails[1], rails[2], rails[3])
-	if ribbonSeamNonFolding(fill, inward, blendScale()) {
+	if ribbonSeamNonFolding(fill, rails, inward, blendScale()) {
 		t.Fatal("probe accepted an inward-signed (folded) ribbon patch")
 	}
 }
@@ -125,12 +131,12 @@ func invertedCoons4Sides(loop RailLoop, rails [4]geom.BSplineCurve, base geom.BS
 }
 ```
 
-Add the import block (`geom "oblikovati.org/kernel/geom"`) at the top of the test file.
+`length := coons4RibLen(loop)` in the RejectsInward test compiles today; add `// TODO(Task 3): loopRibLen` and switch when Task 3 lands.
 
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `go test ./kernel/ops/ -run TestRibbonSeamNonFolding -v`
-Expected: FAIL — `undefined: ribbonSeamNonFolding` (and `loopRibLen`; that is added in Task 3 — for now, temporarily inline `coons4RibLen(loop)` in the test to compile, and switch it to `loopRibLen` when Task 3 lands).
+Expected: FAIL — `undefined: ribbonSeamNonFolding` / `undefined: invertedCoons4Sides`.
 
 - [ ] **Step 3: Write the implementation**
 
@@ -139,69 +145,67 @@ Expected: FAIL — `undefined: ribbonSeamNonFolding` (and `loopRibLen`; that is 
 package ops
 
 import (
-	stdmath "math"
-
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
 
-// probeSignMargin is the dimensionless oriented-normal agreement floor (unit-normal dot). A genuine
-// fold flips the dot to ≈ −1, so any positive margin is decisive; 0.1 is the advisor-specified value
-// (f2-reconciliation-report.md §C) — not delicate for a sign test.
-const probeSignMargin = 0.1
-
-// ribbonSeamNonFolding is the F2 runtime probe: it catches a ribbon whose tangent PLANE is correct
-// (so creaseAngle reads ~0) but whose ORIENTED normal is flipped — the latent fold. For every G1
-// side it asserts the matched fill's normal agrees with its ribbon's normal at the seam midpoint,
-// then requires the whole patch to pass the anti-fold sweep. G0 / ribbon-less sides are skipped.
-func ribbonSeamNonFolding(fill geom.BSplineSurface, sides [4]geom.FillSide, scale Resolution) bool {
+// ribbonSeamNonFolding is the F2 runtime probe. For every G1 side it asserts the MATCHED fill's
+// into-patch cross-derivative still agrees with the BASE Coons interior cross-derivative there — the
+// sign-sensitive test creaseAngle omits — then requires the whole patch to pass the anti-fold sweep.
+// It reconstructs the base from the rails (identical to the base used during the match). G0 /
+// ribbon-less sides are skipped.
+//
+// WHY NOT compare the fill normal to the ribbon normal: for a VMin↔VMin Order-1 match the operator
+// forces F_v(boundary) = −dir EXACTLY, so the fill normal nf = −nr IDENTICALLY for BOTH orientations —
+// a boundary nf·nr test is tautological, blind to the fold (proven + empirically confirmed in the F2
+// wave). The base's interior cross-derivative depends only on rail POSITIONS (ribbon-independent), so
+// matched-vs-base DOES flip sign with the ribbon orientation and is the real discriminator.
+func ribbonSeamNonFolding(fill geom.BSplineSurface, rails [4]geom.BSplineCurve, sides [4]geom.FillSide, scale Resolution) bool {
+	base, err := geom.CoonsFill(rails[0], rails[1], rails[2], rails[3])
+	if err != nil {
+		return false
+	}
 	edges := coons4Edges()
 	for i, e := range edges {
 		if sides[i].Order <= 0 {
 			continue
 		}
-		if !seamNormalsAgree(fill, sides[i].Adjacent, e, scale) {
+		if !matchedCrossPointsInward(fill, base, e, scale) {
 			return false
 		}
 	}
 	return obstacleNoFold(fill, scale)
 }
 
-// seamNormalsAgree samples the fill normal at edge e's midpoint and the ribbon normal at its VMin
-// edge midpoint (the ribbon's shared-rail edge is VMinEdge by construction — adjacentRibbon /
-// extrudeRibbon) and requires the unit normals to agree within probeSignMargin. It ABSTAINS (returns
-// true) when either normal is degenerate below the model-scaled weld floor, per the advisor's rule.
-func seamNormalsAgree(fill, rib geom.BSplineSurface, e fillEdge, scale Resolution) bool {
-	uf, vf := edgeMidParam(fill, e)
-	ur, vr := edgeMidParam(rib, edgeVMin)
-	nf, nr := surfaceNormal(fill, uf, vf), surfaceNormal(rib, ur, vr)
-	if nf.Length() < scale.Weld() || nr.Length() < scale.Weld() {
-		return true // degenerate sample — abstain rather than assert a sign
+// matchedCrossPointsInward compares the matched fill's into-patch cross-derivative at edge e's
+// midpoint against the base Coons interior cross-derivative there. Correct (outward) ribbon: the
+// matched cross-derivative lands back inside the patch, agreeing with base (dot > 0). Inward/folded
+// ribbon: it flips (dot < 0). Boundary-local and exact — catches even a shallow fold (no 24×24
+// sampling luck). Abstains (true) when either derivative is degenerate below the model-scaled weld floor.
+func matchedCrossPointsInward(fill, base geom.BSplineSurface, e fillEdge, scale Resolution) bool {
+	cf, cb := inwardCrossAt(fill, e), inwardCrossAt(base, e)
+	if cf.Length() < scale.Weld() || cb.Length() < scale.Weld() {
+		return true
 	}
-	return nf.Normalized().Dot(nr.Normalized()) > probeSignMargin
+	return cf.Dot(cb) > 0
 }
 
-// edgeMidParam returns the (u,v) midpoint of a fill edge in the surface's own domain.
-func edgeMidParam(s geom.BSplineSurface, e fillEdge) (u, v float64) {
-	u0, u1 := s.UDomain()
-	v0, v1 := s.VDomain()
-	um, vm := (u0+u1)/2, (v0+v1)/2
+// inwardCrossAt returns the into-patch cross-derivative at fill edge e's midpoint, reusing the
+// obstacle certify sign convention (+∂/∂v at VMin, −∂/∂v at VMax, +∂/∂u at UMin, −∂/∂u at UMax) so it
+// matches the awayRef anchor coons4Sides/obstacleSides build against.
+func inwardCrossAt(s geom.BSplineSurface, e fillEdge) math.Vector3 {
 	switch e {
 	case edgeVMin:
-		return um, v0
+		return inwardCrossV(s, false)
 	case edgeVMax:
-		return um, v1
+		return inwardCrossV(s, true)
 	case edgeUMin:
-		return u0, vm
+		return inwardCrossU(s, false)
 	default: // edgeUMax
-		return u1, vm
+		return inwardCrossU(s, true)
 	}
 }
-
-var _ = stdmath.Max // keep stdmath import if unused after edits; remove if the file needs no float helpers
 ```
-
-Remove the `stdmath` import + the `var _` line if no other function in the file needs it (they don't as written) — they are shown only so the file compiles if you add a float helper. Prefer deleting both.
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -251,6 +255,7 @@ func TestObstacleT6RibbonNonFolding(t *testing.T) {
 		t.Fatal("obstaclePatchNeighbours declined T6")
 	}
 	sides := obstacleSides(of, g.wingL, g.wingR, g.wall)
+	rails := [4]geom.BSplineCurve{g.c0, g.c1, g.d0, g.d1}
 	fill, err := geom.FillSurface(g.c0, g.c1, g.d0, g.d1, sides)
 	if err != nil {
 		t.Fatalf("FillSurface: %v", err)
@@ -259,7 +264,7 @@ func TestObstacleT6RibbonNonFolding(t *testing.T) {
 	if err != nil {
 		t.Fatalf("pinFillBoundary: %v", err)
 	}
-	if !ribbonSeamNonFolding(fill, sides, blendScale()) {
+	if !ribbonSeamNonFolding(fill, rails, sides, blendScale()) {
 		t.Fatal("sign-corrected obstacle T6 patch still folds")
 	}
 }
@@ -535,11 +540,11 @@ func TestExtractObstacleIsClosedValence4(t *testing.T) {
 func TestExtractObstacleResolvesToCoons4(t *testing.T) {
 	of := newT6Obstacle(t)
 	loop, _ := extractObstacle(of)
-	fill, _, sides, ok := coons4Fill(loop)
+	fill, rails, sides, ok := coons4Fill(loop)
 	if !ok {
 		t.Fatal("coons4Fill declined the extracted obstacle loop")
 	}
-	if !ribbonSeamNonFolding(fill, sides, blendScale()) {
+	if !ribbonSeamNonFolding(fill, rails, sides, blendScale()) {
 		t.Fatal("extracted obstacle loop folds under coons4")
 	}
 }
@@ -792,11 +797,11 @@ func TestExtractRunoutIsClosedValence4(t *testing.T) {
 func TestExtractRunoutFillsAndDoesNotFold(t *testing.T) {
 	ef, im, cut, res := s1RunoutFixture(t)
 	loop, _ := extractRunout(ef, im, cut, res)
-	fill, _, sides, ok := coons4Fill(loop)
+	fill, rails, sides, ok := coons4Fill(loop)
 	if !ok {
 		t.Fatal("coons4Fill declined the runout loop")
 	}
-	if !ribbonSeamNonFolding(fill, sides, res) {
+	if !ribbonSeamNonFolding(fill, rails, sides, res) {
 		t.Fatal("runout loop folds under coons4")
 	}
 }

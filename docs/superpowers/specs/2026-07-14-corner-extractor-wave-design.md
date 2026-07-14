@@ -175,12 +175,22 @@ used only as a conditioning-gated second opinion in the probe; the fill-anchored
 For each **G1 side**, at the seam midpoint (rail param `lo + 0.5(hi−lo)`; tri3
 pole side excluded, v-range capped at `v1 − 0.1·(v1−v0)`):
 
-1. **Same oriented normal** (the sign test `creaseAngle` omits):
-   `n̂_fill · n̂_rib > 0.1` — a fold flips this to ≈ −1.
-2. **Matched fill still points inward:** `c_in^fill · inwardCross(base) > 0`.
-3. **`NoFold`** holds on the matched fill.
-4. **σ cross-check, gated:** if `|n̂_adj × n̂_patch| ≥ sin θ_min` (θ_min = 1e-3
+1. **Matched fill still points inward (the primary discriminator):**
+   `c_in^fill · inwardCross(base) > 0` — the matched fill's into-patch
+   cross-derivative agrees with the base Coons interior cross-derivative. The
+   base depends only on rail *positions* (ribbon-independent), so this dot flips
+   sign with the ribbon orientation; a folded ribbon gives `< 0`. Boundary-local
+   and exact.
+2. **`NoFold`** holds on the matched fill (interior anti-fold sweep).
+3. **σ cross-check, gated:** if `|n̂_adj × n̂_patch| ≥ sin θ_min` (θ_min = 1e-3
    rad), assert `sign((t×n_adj)·n_patch) == awayRef sign`; else abstain.
+
+> **Superseded during implementation (2026-07-14):** an earlier draft asserted
+> `n̂_fill · n̂_rib > 0.1` ("same oriented normal"). That is **tautological** —
+> a VMin↔VMin Order-1 match forces `F_v(boundary) = −dir` exactly, so
+> `n̂_fill = −n̂_rib` *identically for both orientations* (proven + empirically
+> confirmed). The boundary normal-dot cannot see the fold; check 1 above (matched
+> cross vs base cross) is the real, sign-sensitive discriminator.
 
 **Cross-path assertion (the reconciliation itself):** run **both** the obstacle
 `Build` and `coons4` on the same **T6** loop; assert per-side `n_fill` agree in
