@@ -528,15 +528,20 @@ func applyGeoConstraint(def *compdef.PartComponentDefinition, gc ipt.GeoConstrai
 				sk.GeometricConstraints().AddVertical(pa, pb)
 			}
 			return true
-		case ipt.GeoParallel, ipt.GeoPerpendicular:
+		case ipt.GeoParallel, ipt.GeoPerpendicular, ipt.GeoCollinear, ipt.GeoEqualLength:
 			l1, l2 := lineAtCoords(sk, gc.L1), lineAtCoords(sk, gc.L2)
 			if l1 == nil || l2 == nil || sk.DegreesOfFreedom() <= 0 {
 				continue
 			}
-			if gc.Kind == ipt.GeoParallel {
+			switch gc.Kind {
+			case ipt.GeoParallel:
 				sk.GeometricConstraints().AddParallel(l1, l2)
-			} else {
+			case ipt.GeoPerpendicular:
 				sk.GeometricConstraints().AddPerpendicular(l1, l2)
+			case ipt.GeoCollinear:
+				sk.GeometricConstraints().AddCollinear(l1, l2)
+			case ipt.GeoEqualLength:
+				sk.GeometricConstraints().AddEqualLength(l1, l2)
 			}
 			return true
 		}

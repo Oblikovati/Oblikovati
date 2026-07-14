@@ -63,6 +63,44 @@ func TestDecodeGeometricConstraintsSingleVariable(t *testing.T) {
 	}
 }
 
+// TestDecodeCollinearAndEqualLength verifies the batch-2 line constraints. Collinear shares the
+// line-relate discriminator (0x00400000) with parallel/perpendicular and IS parallel, so it must
+// be classified by geometry (both lines on one infinite line) BEFORE parallel — otherwise a
+// collinear pair would mis-decode as parallel. Equal-length uses the coincidence discriminator
+// (0x0000003e) but references two lines (not the usual line↔endpoint), and is accepted only when
+// the lengths actually match. The base decodes to neither.
+func TestDecodeCollinearAndEqualLength(t *testing.T) {
+	count := func(file string) (collinear, equal, para int) {
+		for _, g := range DecodeGeometricConstraints(segFor(t, file)) {
+			switch g.Kind {
+			case GeoCollinear:
+				collinear++
+			case GeoEqualLength:
+				equal++
+			case GeoParallel:
+				para++
+			}
+		}
+		return
+	}
+	if c, e, p := count("k2_base.ipt"); c != 0 || e != 0 {
+		t.Errorf("k2_base: got collinear=%d equal=%d, want 0/0 (para=%d)", c, e, p)
+	}
+	// Collinear must NOT leak into the parallel bucket.
+	if c, e, p := count("k2_collinear.ipt"); c != 1 || e != 0 || p != 0 {
+		t.Errorf("k2_collinear: got collinear=%d equal=%d parallel=%d, want 1/0/0", c, e, p)
+	}
+	if c, e, _ := count("k2_equall.ipt"); c != 0 || e != 1 {
+		t.Errorf("k2_equall: got collinear=%d equal=%d, want 0/1", c, e)
+	}
+	// The collinear constraint binds the two collinear lines (both on y=0).
+	for _, g := range DecodeGeometricConstraints(segFor(t, "k2_collinear.ipt")) {
+		if g.Kind == GeoCollinear && !linesCollinear(g.L1, g.L2) {
+			t.Errorf("collinear bound non-collinear lines %v %v", g.L1, g.L2)
+		}
+	}
+}
+
 // TestHorizontalConstraintBindsRightLine checks the decoded horizontal constraint names the
 // horizontal line (0,0)-(3,0), proving the line resolves to its endpoint coordinates.
 func TestHorizontalConstraintBindsRightLine(t *testing.T) {

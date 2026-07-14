@@ -44,6 +44,8 @@ const (
 	GeoVertical
 	GeoParallel
 	GeoPerpendicular
+	GeoCollinear
+	GeoEqualLength
 )
 
 // GeoConstraint is a decoded geometric constraint with its lines resolved to endpoint coordinates,
@@ -107,10 +109,25 @@ func DecodeGeometricConstraints(seg []byte) []GeoConstraint {
 			if !ok1 || !ok2 || c.r1&refBit == 0 || c.r2&refBit == 0 {
 				continue
 			}
-			if linesParallel(l1, l2) {
+			// Collinear shares this discriminator with parallel/perpendicular (all "line relate"
+			// two lines) and IS parallel, so it must be tested first: two collinear lines lie on one
+			// infinite line, which parallel-but-offset lines do not.
+			if linesCollinear(l1, l2) {
+				out = append(out, GeoConstraint{Kind: GeoCollinear, L1: l1, L2: l2})
+			} else if linesParallel(l1, l2) {
 				out = append(out, GeoConstraint{Kind: GeoParallel, L1: l1, L2: l2})
 			} else if linesPerpendicular(l1, l2) {
 				out = append(out, GeoConstraint{Kind: GeoPerpendicular, L1: l1, L2: l2})
+			}
+		case coincidenceDisc:
+			// A coincidence node whose BOTH references are lines (not the usual line↔endpoint) is an
+			// equal-length constraint. lineEndpoints already ignores it (it needs one ref to be a
+			// point), so this read doesn't disturb endpoint resolution. Emitted only when the lengths
+			// actually match, so it never implies geometry the sketch doesn't already have.
+			l1, ok1 := le[c.r1&^refBit]
+			l2, ok2 := le[c.r2&^refBit]
+			if ok1 && ok2 && c.r1&refBit != 0 && c.r2&refBit != 0 && lengthsEqual(l1, l2) {
+				out = append(out, GeoConstraint{Kind: GeoEqualLength, L1: l1, L2: l2})
 			}
 		}
 	}
@@ -287,6 +304,24 @@ func linesPerpendicular(a, b [2]Point2D) bool {
 	ax, ay := a[1].X-a[0].X, a[1].Y-a[0].Y
 	bx, by := b[1].X-b[0].X, b[1].Y-b[0].Y
 	return math.Abs(ax*bx+ay*by) < geoEps*maxLen(ax, ay, bx, by)
+}
+
+// linesCollinear reports whether the two segments lie on the same infinite line: parallel AND
+// one segment's start lies on the other's line (its offset from that line is ≈ 0).
+func linesCollinear(a, b [2]Point2D) bool {
+	if !linesParallel(a, b) {
+		return false
+	}
+	ax, ay := a[1].X-a[0].X, a[1].Y-a[0].Y
+	bx, by := b[0].X-a[0].X, b[0].Y-a[0].Y
+	return math.Abs(ax*by-ay*bx) < geoEps*maxLen(ax, ay, bx, by)
+}
+
+// lengthsEqual reports whether two segments have the same length (to sketch precision).
+func lengthsEqual(a, b [2]Point2D) bool {
+	la := math.Hypot(a[1].X-a[0].X, a[1].Y-a[0].Y)
+	lb := math.Hypot(b[1].X-b[0].X, b[1].Y-b[0].Y)
+	return math.Abs(la-lb) < 1e-4
 }
 
 func maxLen(ax, ay, bx, by float64) float64 {
