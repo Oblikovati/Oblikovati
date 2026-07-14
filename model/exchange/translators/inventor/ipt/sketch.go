@@ -46,6 +46,24 @@ const (
 	// carries denormal garbage (~1e-308) in those slots and a node reference (0x800000xx) at +72, so
 	// the sentinel plus normal-range radii cleanly tell the two apart.
 	ellipseSentinel = 0x01170000
+
+	// constructionFlag marks a curve entity as Inventor construction / reference geometry — a dashed
+	// diagonal, centreline, or reference line that constrains the sketch but is NOT part of a
+	// profile. It is bit 0x00080000 of the curve's dcNode FLAG word, which sits in the 24-byte node
+	// header preceding the curve signature: tag@C-24, id@C-20, nullRef@C-16, marker@C-12, flag@C-8,
+	// typetag@C-4, then the 0x30000002 curve header at C. Validated against live Inventor's
+	// Construction property: bit-exact counts on FlangeReelMotor (2/2) and EncoderFrame (2/2), zero
+	// on the shaft fixtures, and it never fires on real profile geometry.
+	//
+	// NOT YET ACTED ON — deliberately. A construction curve references the sketch's List6 constraint
+	// nodes rather than geometry points, so today it decodes as a phantom line; but simply skipping
+	// construction curves in collectItems regressed the library batch (SOLID 35→29). Removing the
+	// curve leaves its now-unreferenced points still collected, which breaks the #refs==#points
+	// parity resolveByRefs relies on — the same entanglement that blocks the denormal-garbage-point
+	// fix. Construction geometry must be dropped together with its construction-only points, and that
+	// requires the resolver rework (see the memory note ipt-sketch-entities). This constant is kept
+	// so that work has the marker ready. To read it: flag@C-8, guarded by nullRef present at C-16.
+	constructionFlag = 0x00080000
 )
 
 type Point2D struct{ X, Y float64 }
