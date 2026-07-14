@@ -20,8 +20,11 @@ type runoutImprint struct {
 	plane         geom.Plane
 	footprintEdge *topo.Edge // the closed feature base curve on host (inner loop)
 	nodes         [2]crossing
-	flat          func(math.Point3) math.Point2
-	back          func(math.Point2) math.Point3
+	boundary      boundaryLine2 // the receded fillet band line in host-plane 2D (bandCrossings)
+	side          float64       // dipsPast's host/fillet sign (filletBandSide) for boundary — the
+	// signed test outboardArc (fillet_runout_imprint.go) uses to pick the true outboard sub-arc
+	flat func(math.Point3) math.Point2
+	back func(math.Point2) math.Point3
 }
 
 // detectRunouts finds, per host plane of a straight (constant-radius) plane∧plane fillet edge, a
@@ -75,9 +78,12 @@ func runoutOnHost(ef edgeFillet, host *topo.Face, hostIsA bool, res Resolution) 
 // arc must genuinely dip onto the fillet side (not merely bulge toward it).
 func runoutOnPlane(ef edgeFillet, host *topo.Face, hostIsA bool, pl geom.Plane, fp *topo.Edge,
 	res Resolution) (runoutImprint, bool) {
-	_, nodes, flat, back, ok := bandCrossings(ef, hostIsA, pl, fp, res)
+	_, nodes, flat, back, boundary, side, ok := bandCrossings(ef, hostIsA, pl, fp, res)
 	if !ok {
 		return runoutImprint{}, false
 	}
-	return runoutImprint{host, hostIsA, pl, fp, nodes, flat, back}, true
+	return runoutImprint{
+		host: host, hostIsA: hostIsA, plane: pl, footprintEdge: fp, nodes: nodes,
+		boundary: boundary, side: side, flat: flat, back: back,
+	}, true
 }

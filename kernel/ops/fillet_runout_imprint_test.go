@@ -53,7 +53,11 @@ func bandNodes(y0 float64) [2]crossing {
 
 // runoutImprintCircle is the named test fixture: a runoutImprint whose footprint is a circle of
 // radius r centered at center (host-plane 2D), crossing the receded band described by nodes.
-func runoutImprintCircle(center math.Point2, r float64, nodes [2]crossing) runoutImprint {
+// side is bandCrossings' host/fillet sign (filletBandSide): every fixture here builds nodes via
+// bandNodes, a line through y=y0 directed toward +x, whose signedDist is p.y−y0 (positive above
+// the line) — so side=1 means "the fillet band is below the line, host is above" and side=-1 the
+// reverse, matching what a real detection would have found for an edge sitting on that side.
+func runoutImprintCircle(center math.Point2, r float64, nodes [2]crossing, side float64) runoutImprint {
 	pl := hostPlaneZ0()
 	flat, back := planeFrame(pl)
 	circle, _ := geom.NewCircle(back(center), pl.Normal(), r)
@@ -63,6 +67,8 @@ func runoutImprintCircle(center math.Point2, r float64, nodes [2]crossing) runou
 		plane:         pl,
 		footprintEdge: footprintCircleEdge(circle),
 		nodes:         nodes,
+		boundary:      bandLineFromNodes(nodes),
+		side:          side,
 		flat:          flat,
 		back:          back,
 	}
@@ -73,7 +79,7 @@ func runoutImprintCircle(center math.Point2, r float64, nodes [2]crossing) runou
 func unitRes() Resolution { return ResolutionForSize(1) }
 
 func TestSolveImprint_CircleCrossing(t *testing.T) {
-	im := runoutImprintCircle(math.P2(0, 0), 8, bandNodes(-4))
+	im := runoutImprintCircle(math.P2(0, 0), 8, bandNodes(-4), 1)
 	cut, ok := solveImprint(im, unitRes())
 	if !ok {
 		t.Fatal("want crossing, got tangential")
@@ -91,7 +97,7 @@ func TestSolveImprint_CircleCrossing(t *testing.T) {
 }
 
 func TestSolveImprint_TangentRejected(t *testing.T) {
-	im := runoutImprintCircle(math.P2(0, 0), 8, bandNodes(-8))
+	im := runoutImprintCircle(math.P2(0, 0), 8, bandNodes(-8), 1)
 	if _, ok := solveImprint(im, unitRes()); ok {
 		t.Fatal("tangential line must not imprint")
 	}
@@ -102,7 +108,7 @@ func TestSolveImprint_TangentRejected(t *testing.T) {
 // outboard (away-from-band) arc is the major arc and must stay entirely at y > -4 (except at
 // its endpoints, which sit exactly on the band).
 func TestSolveImprint_ArcIsOutboardMajorArc(t *testing.T) {
-	im := runoutImprintCircle(math.P2(0, 0), 8, bandNodes(-4))
+	im := runoutImprintCircle(math.P2(0, 0), 8, bandNodes(-4), 1)
 	cut, ok := solveImprint(im, unitRes())
 	if !ok {
 		t.Fatal("want crossing, got tangential")
@@ -118,6 +124,33 @@ func TestSolveImprint_ArcIsOutboardMajorArc(t *testing.T) {
 		p := arc.PointAt(float64(i) / 10)
 		if p.Y < -4-1e-9 {
 			t.Fatalf("arc point %v dips below the band (y=-4)", p)
+		}
+	}
+}
+
+// TestSolveImprint_DeepDipSelectsMinorOutboardArc is Finding 1's regression: a DEEP dip, where
+// the footprint circle's CENTER sits on the FILLET side of the band (here y=-6, below y=-4, the
+// side bandNodes/side=1 marks as fillet — see runoutImprintCircle). Most of the circle is now on
+// the fillet side, so the outboard (host, y>-4) cap is the MINOR arc — the old "pick the major
+// arc" heuristic would have wrongly returned the huge fillet-side arc here. r=8, center-to-band
+// distance=2 ⇒ half-angle=arccos(2/8)≈75.52°, so the host-side cap's sweep is ≈151.04° < π.
+func TestSolveImprint_DeepDipSelectsMinorOutboardArc(t *testing.T) {
+	im := runoutImprintCircle(math.P2(0, -6), 8, bandNodes(-4), 1)
+	cut, ok := solveImprint(im, unitRes())
+	if !ok {
+		t.Fatal("want crossing, got tangential")
+	}
+	arc, ok := cut.arc.(geom.Arc3d)
+	if !ok {
+		t.Fatalf("arc type = %T, want geom.Arc3d", cut.arc)
+	}
+	if stdmath.Abs(arc.SweepAngle) >= stdmath.Pi {
+		t.Fatalf("sweep = %v, want |sweep| < π (the minor, host-side arc)", arc.SweepAngle)
+	}
+	for i := 0; i <= 10; i++ {
+		p := arc.PointAt(float64(i) / 10)
+		if p.Y < -4-1e-9 {
+			t.Fatalf("arc point %v dips below the band (y=-4): not the outboard/host-side arc", p)
 		}
 	}
 }

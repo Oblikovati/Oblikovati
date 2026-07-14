@@ -50,7 +50,7 @@ func solveImprint(im runoutImprint, res Resolution) (imprintCut, bool) {
 		return imprintCut{}, false
 	}
 	p0, p1 := im.back(band.origin.TranslateBy(band.dir.Scale(t0))), im.back(band.origin.TranslateBy(band.dir.Scale(t1)))
-	return imprintCut{pMinus: p0, pPlus: p1, arc: outboardArc(circle, p0, p1)}, true
+	return imprintCut{pMinus: p0, pPlus: p1, arc: outboardArc(im, circle, p0, p1)}, true
 }
 
 // bandLineFromNodes rebuilds the receded fillet band as a 2D line through both crossing nodes:
@@ -80,44 +80,50 @@ func lineCircleRoots(b boundaryLine2, c math.Point2, r, scale float64) (t0, t1 f
 	return -bb - s, -bb + s, true
 }
 
-// hostBoundingDiag is host's characteristic model size (its vertex bounding-box diagonal),
-// mirroring occtparity.boundingDiag / the body-scale pattern used elsewhere in kernel/ops — the
-// grazing guard above must scale with the model, not a hard-coded constant.
+// hostBoundingDiag is host's characteristic model size (its vertex bounding-box diagonal, via
+// math.BoxFromPoints/Diagonal/Length — math/box.go — rather than a hand-rolled min/max fold,
+// audit finding: this used to reimplement math.Box), mirroring occtparity.boundingDiag / the
+// body-scale pattern used elsewhere in kernel/ops — the grazing guard above must scale with the
+// model, not a hard-coded constant.
 func hostBoundingDiag(host *topo.Face) float64 {
 	verts := host.Vertices()
 	if len(verts) == 0 {
 		return 1
 	}
-	lo, hi := verts[0].Point(), verts[0].Point()
-	for _, v := range verts[1:] {
-		lo, hi = minPoint3(lo, v.Point()), maxPoint3(hi, v.Point())
+	pts := make([]math.Point3, len(verts))
+	for i, v := range verts {
+		pts[i] = v.Point()
 	}
-	return lo.DistanceTo(hi)
-}
-
-// minPoint3 and maxPoint3 are the per-axis min/max of two points — the bounding-box extend step
-// hostBoundingDiag folds over a face's vertices.
-func minPoint3(a, b math.Point3) math.Point3 {
-	return math.P3(stdmath.Min(a.X, b.X), stdmath.Min(a.Y, b.Y), stdmath.Min(a.Z, b.Z))
-}
-
-func maxPoint3(a, b math.Point3) math.Point3 {
-	return math.P3(stdmath.Max(a.X, b.X), stdmath.Max(a.Y, b.Y), stdmath.Max(a.Z, b.Z))
+	return math.BoxFromPoints(pts...).Diagonal().Length()
 }
 
 // outboardArc builds the footprint circle's OUTBOARD sub-arc between p0 and p1 as an exact
-// geom.Arc3d (no re-sampling). The runout-imprint trigger (fillet_runout_detect.go) only admits
-// a footprint that genuinely DIPS into the band — a small cap clipped off one side — so the
-// larger of the two arcs the chord cuts is always the one that stays outboard; picking by sweep
-// magnitude avoids needing the (here-unavailable, see bandLineFromNodes) original signed-side
-// convention.
-func outboardArc(c geom.Circle, p0, p1 math.Point3) geom.Arc3d {
+// geom.Arc3d (no re-sampling). It picks between the chord's two candidate sub-arcs by an exact
+// signed test — the candidate whose angular MIDPOINT lies on the HOST side of im's band line
+// (im.side*im.boundary.signedDist(...) > 0, mirroring dipsPast's host/fillet sign convention,
+// fillet_obstacle_detect.go) is outboard. This replaced a "pick the larger (major) arc" size
+// heuristic that is WRONG for a DEEP dip: when the footprint circle's center sits on the FILLET
+// side of the band, the host-side cap is the MINOR arc, not the major one (Finding 1; see
+// TestSolveImprint_DeepDipSelectsMinorOutboardArc). The two candidates' midpoints are always
+// antipodal on the circle (they split the full turn in two), so testing the first candidate and
+// falling back to its complement is exhaustive.
+func outboardArc(im runoutImprint, c geom.Circle, p0, p1 math.Point3) geom.Arc3d {
 	binormal := c.Normal.Cross(c.RefDir)
 	a0 := circleAngleOf(c, binormal, p0)
-	a1 := circleAngleOf(c, binormal, p1)
-	sweep := majorSweep(a1 - a0)
-	arc, _ := geom.NewArc3d(c.Center, c.Normal.AsVector(), c.RefDir.AsVector(), c.Radius, a0, sweep)
-	return arc
+	ccw := ccwSweep(circleAngleOf(c, binormal, p1) - a0)
+	first, _ := geom.NewArc3d(c.Center, c.Normal.AsVector(), c.RefDir.AsVector(), c.Radius, a0, ccw)
+	if onHostSide(im, first.PointAt(0.5)) {
+		return first
+	}
+	second, _ := geom.NewArc3d(c.Center, c.Normal.AsVector(), c.RefDir.AsVector(), c.Radius, a0, ccw-2*stdmath.Pi)
+	return second
+}
+
+// onHostSide reports whether p lies on the HOST (outboard) side of im's band line — the same
+// signed convention dipsPast uses for the fillet side (fillet_obstacle_detect.go), negated: im.side
+// maps the fillet band to signedDist<0, so the host side is where the product is positive.
+func onHostSide(im runoutImprint, p math.Point3) bool {
+	return im.side*im.boundary.signedDist(im.flat(p)) > 0
 }
 
 // circleAngleOf returns p's parameter angle on circle c — the inverse of geom's internal
@@ -127,16 +133,14 @@ func circleAngleOf(c geom.Circle, binormal math.Vector3, p math.Point3) float64 
 	return stdmath.Atan2(d.Dot(binormal), d.Dot(c.RefDir.AsVector()))
 }
 
-// majorSweep normalizes a raw a1−a0 angle difference to the LARGER of the two arcs it could
-// describe (magnitude > π), signed so StartAngle+SweepAngle lands exactly on a1 (mod 2π).
-func majorSweep(raw float64) float64 {
+// ccwSweep normalizes a raw a1−a0 angle difference to [0, 2π): the CCW sweep from a0 to a1, the
+// first of outboardArc's two candidate sub-arcs (its complement, going the other way around the
+// circle, is ccw−2π).
+func ccwSweep(raw float64) float64 {
 	const twoPi = 2 * stdmath.Pi
 	ccw := stdmath.Mod(raw, twoPi)
 	if ccw < 0 {
 		ccw += twoPi
 	}
-	if ccw > stdmath.Pi {
-		return ccw
-	}
-	return ccw - twoPi
+	return ccw
 }
