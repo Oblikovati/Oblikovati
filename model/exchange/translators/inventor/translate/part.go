@@ -84,6 +84,8 @@ func buildPart(ws *doc.Workspace, outPath string, d *ipt.Document, meshFallback 
 	warns = append(warns, applyGeometricConstraints(def, d)...)
 	warns = append(warns, applyTangentConstraints(def, d)...)
 	warns = append(warns, applyCircleRelations(def, d)...)
+	warns = append(warns, applyGroundConstraints(def, d)...)
+	warns = append(warns, applySymmetryConstraints(def, d)...)
 	warns = append(warns, applyDistanceDimensions(def, d)...)
 	warns = append(warns, applyRevolveRadii(def, d)...)
 	warns = append(warns, applyAxialLengths(def, d)...)
@@ -584,6 +586,91 @@ func applyCircleRelation(def *compdef.PartComponentDefinition, cr ipt.CircleRela
 		} else {
 			sk.GeometricConstraints().AddEqualRadius(c1, c2)
 		}
+		return true
+	}
+	return false
+}
+
+// applyGroundConstraints binds each decoded ground constraint (ipt.DecodeGroundConstraints) onto
+// the sketch holding its entity, as an AddGround. Grounding freezes the entity at its current
+// position, so it only removes degrees of freedom — no geometry moves. DOF-guarded.
+func applyGroundConstraints(def *compdef.PartComponentDefinition, d *ipt.Document) []string {
+	seg, ok := d.Segment("PmDCSegment")
+	if !ok {
+		return nil
+	}
+	applied := 0
+	for _, gc := range ipt.DecodeGroundConstraints(seg) {
+		if applyGround(def, gc) {
+			applied++
+		}
+	}
+	if applied == 0 {
+		return nil
+	}
+	return []string{fmt.Sprintf("applied %d ground constraint(s)", applied)}
+}
+
+// applyGround grounds one decoded entity on the first sketch that holds it.
+func applyGround(def *compdef.PartComponentDefinition, gc ipt.GroundConstraint) bool {
+	for k := 0; k < def.Sketches().Count(); k++ {
+		sk := def.Sketches().Item(k)
+		if sk.DegreesOfFreedom() <= 0 {
+			continue
+		}
+		switch gc.Kind {
+		case ipt.GroundLine:
+			if l := lineAtCoords(sk, gc.Line); l != nil {
+				sk.GeometricConstraints().AddGround(l)
+				return true
+			}
+		case ipt.GroundCircle:
+			if c := circleAtCoord(sk, gc.Center, gc.Radius); c != nil {
+				sk.GeometricConstraints().AddGround(c)
+				return true
+			}
+		case ipt.GroundPoint:
+			if p := pointAtCoord(sk, gc.Pt); p != nil {
+				sk.GeometricConstraints().AddGround(p)
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// applySymmetryConstraints binds each decoded symmetry (ipt.DecodeSymmetryConstraints) onto the
+// sketch holding both points and the axis line, as an AddSymmetry. The geometry is already
+// symmetric (validated at decode — each point reflects onto the other across the axis), so it only
+// removes degrees of freedom, never moves a point. DOF-guarded.
+func applySymmetryConstraints(def *compdef.PartComponentDefinition, d *ipt.Document) []string {
+	seg, ok := d.Segment("PmDCSegment")
+	if !ok {
+		return nil
+	}
+	applied := 0
+	for _, sc := range ipt.DecodeSymmetryConstraints(seg) {
+		if applySymmetry(def, sc) {
+			applied++
+		}
+	}
+	if applied == 0 {
+		return nil
+	}
+	return []string{fmt.Sprintf("applied %d symmetry constraint(s)", applied)}
+}
+
+// applySymmetry binds one symmetry to the first sketch that holds both points and its axis line.
+func applySymmetry(def *compdef.PartComponentDefinition, sc ipt.SymmetryConstraint) bool {
+	for k := 0; k < def.Sketches().Count(); k++ {
+		sk := def.Sketches().Item(k)
+		p1 := pointAtCoord(sk, sc.P1)
+		p2 := pointAtCoord(sk, sc.P2)
+		ax := lineAtCoords(sk, sc.Axis)
+		if p1 == nil || p2 == nil || ax == nil || p1 == p2 || sk.DegreesOfFreedom() <= 0 {
+			continue
+		}
+		sk.GeometricConstraints().AddSymmetry(p1, p2, ax)
 		return true
 	}
 	return false

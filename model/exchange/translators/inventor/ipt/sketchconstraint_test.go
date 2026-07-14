@@ -242,6 +242,78 @@ func TestDecodeCircleRelations(t *testing.T) {
 	}
 }
 
+// TestDecodeGround verifies ground decode. A ground node (t44 = groundDisc) freezes one entity;
+// k2_ground grounds the horizontal line L1 = (0,0)-(3,0). The base, with the geometry but no
+// ground, decodes none.
+func TestDecodeGround(t *testing.T) {
+	if gs := DecodeGroundConstraints(segFor(t, "k2_base.ipt")); len(gs) != 0 {
+		t.Errorf("k2_base: got %d ground constraints, want 0", len(gs))
+	}
+	gs := DecodeGroundConstraints(segFor(t, "k2_ground.ipt"))
+	if len(gs) != 1 {
+		t.Fatalf("k2_ground: got %d ground constraints, want 1", len(gs))
+	}
+	g := gs[0]
+	if g.Kind != GroundLine {
+		t.Fatalf("ground kind = %v, want GroundLine", g.Kind)
+	}
+	// L1 spans x 0..3 at y=0.
+	minX, maxX := minOf(g.Line[0].X, g.Line[1].X), maxOf(g.Line[0].X, g.Line[1].X)
+	if absf(g.Line[0].Y) > 1e-6 || absf(g.Line[1].Y) > 1e-6 || minX > 1e-6 || absf(maxX-3) > 1e-6 {
+		t.Errorf("grounded line = %v, want (0,0)-(3,0)", g.Line)
+	}
+}
+
+// TestDecodeSymmetry verifies symmetry decode end-to-end on a part whose symmetric points are
+// CURVE VERTICES (so the resolver recovers them). k2_symv has three vertical lines — axis at x=5,
+// left at x=2, right at x=8 — with both endpoint pairs constrained symmetric about the axis; it
+// decodes to two symmetry constraints, each mirror-valid. The base, with the geometry but no
+// symmetry, decodes none. The two point refs and the axis-line ref at t44 all resolve.
+func TestDecodeSymmetry(t *testing.T) {
+	if ss := DecodeSymmetryConstraints(segFor(t, "k2_symv_base.ipt")); len(ss) != 0 {
+		t.Errorf("k2_symv_base: got %d symmetry constraints, want 0", len(ss))
+	}
+	ss := DecodeSymmetryConstraints(segFor(t, "k2_symv.ipt"))
+	if len(ss) != 2 {
+		t.Fatalf("k2_symv: got %d symmetry constraints, want 2", len(ss))
+	}
+	for _, s := range ss {
+		if !pointsSymmetric(s.P1, s.P2, s.Axis) {
+			t.Errorf("decoded symmetry not mirror-valid: p1=%v p2=%v axis=%v", s.P1, s.P2, s.Axis)
+		}
+		// The axis is the vertical line at x=5.
+		if !isVertical(s.Axis) || absf(s.Axis[0].X-5) > 1e-6 {
+			t.Errorf("symmetry axis = %v, want vertical at x=5", s.Axis)
+		}
+	}
+	// The symmetry nodes must NOT leak into the distance-dimension decoder (same high-bit t44
+	// shape, but t44 references the axis line, not a text point).
+	if dims := DecodeDistanceDimensions(segFor(t, "k2_symv.ipt")); len(dims) != 0 {
+		t.Errorf("k2_symv: got %d distance dimensions, want 0 (symmetry must not leak)", len(dims))
+	}
+}
+
+// TestPointsSymmetric locks the mirror predicate: two points reflect across a vertical axis when
+// equidistant on opposite sides at the same height; a same-side or offset point does not.
+func TestPointsSymmetric(t *testing.T) {
+	axis := [2]Point2D{{5, 0}, {5, 6}} // vertical at x=5
+	cases := []struct {
+		p1, p2 Point2D
+		want   bool
+	}{
+		{Point2D{2, 1}, Point2D{8, 1}, true},  // mirror about x=5
+		{Point2D{2, 4}, Point2D{8, 4}, true},  // mirror at a different height
+		{Point2D{2, 1}, Point2D{8, 2}, false}, // different height
+		{Point2D{2, 1}, Point2D{7, 1}, false}, // not equidistant
+		{Point2D{2, 1}, Point2D{2, 1}, false}, // coincident (on same side)
+	}
+	for _, c := range cases {
+		if got := pointsSymmetric(c.p1, c.p2, axis); got != c.want {
+			t.Errorf("pointsSymmetric(%v,%v) = %v, want %v", c.p1, c.p2, got, c.want)
+		}
+	}
+}
+
 // TestHorizontalConstraintBindsRightLine checks the decoded horizontal constraint names the
 // horizontal line (0,0)-(3,0), proving the line resolves to its endpoint coordinates.
 func TestHorizontalConstraintBindsRightLine(t *testing.T) {

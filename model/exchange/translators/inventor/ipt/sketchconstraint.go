@@ -35,6 +35,8 @@ const (
 	lineRelateDisc  = 0x00400000 // parallel/perpendicular (two lines)
 	axisRadiusDisc  = 0x01150000 // a revolve radius dimension (distance from the x=0 centreline)
 	midpointDisc    = 0x00000000 // midpoint (line + a point at its midpoint); shared with radius dims
+	groundDisc      = 0x00010300 // ground: fully fix one entity at its current position
+	emptyListMark   = 0x00000010 // the +32 empty-extra-list marker of a plain two-ref constraint node
 )
 
 // GeoKind is a decoded geometric-constraint type.
@@ -195,6 +197,111 @@ func DecodeCircleRelations(seg []byte) []CircleRelation {
 	return out
 }
 
+// GroundKind selects which entity a decoded ground constraint fixes.
+type GroundKind int
+
+const (
+	GroundLine GroundKind = iota
+	GroundCircle
+	GroundPoint
+)
+
+// GroundConstraint is a decoded "fully fix this geometry" (Inventor Ground): one entity frozen at
+// its current position. It carries the resolved entity by coordinate; only the field selected by
+// Kind is meaningful. Grounding pins the entity where it already sits, so applying it removes
+// degrees of freedom WITHOUT moving anything.
+type GroundConstraint struct {
+	Kind   GroundKind
+	Line   [2]Point2D // GroundLine
+	Center Point2D    // GroundCircle
+	Radius float64    // GroundCircle
+	Pt     Point2D    // GroundPoint
+}
+
+// DecodeGroundConstraints returns the sketch's ground constraints. A ground node's t44 is
+// groundDisc and its FIRST reference names the grounded entity (its second word is a non-ref
+// count, not an entity). The entity is resolved as a line, a circle (by entity id = centre + 1),
+// or a bare point — whichever the reference matches — so the translator can bind it by coordinate.
+// A node whose reference resolves to none of these is dropped rather than guessed.
+func DecodeGroundConstraints(seg []byte) []GroundConstraint {
+	vc := vertexCoords(seg)
+	le := lineEndpoints(seg, vc)
+	circ := circleByEntityID(seg, vc)
+	var out []GroundConstraint
+	for _, c := range collectRawCons(seg) {
+		if c.disc != groundDisc || c.r1&refBit == 0 {
+			continue
+		}
+		id := c.r1 &^ refBit
+		switch {
+		case hasLine(le, id):
+			out = append(out, GroundConstraint{Kind: GroundLine, Line: le[id]})
+		case hasCircle(circ, id):
+			ce := circ[id]
+			out = append(out, GroundConstraint{Kind: GroundCircle, Center: ce.inline, Radius: ce.radius})
+		case hasPoint(vc, id):
+			out = append(out, GroundConstraint{Kind: GroundPoint, Pt: vc[id]})
+		}
+	}
+	return out
+}
+
+func hasLine(m map[uint32][2]Point2D, id uint32) bool  { _, ok := m[id]; return ok }
+func hasCircle(m map[uint32]circleEnt, id uint32) bool { _, ok := m[id]; return ok }
+func hasPoint(m map[uint32]Point2D, id uint32) bool    { _, ok := m[id]; return ok }
+
+// SymmetryConstraint is a decoded symmetry: two points mirror-symmetric about an axis line. The
+// two symmetric points sit at the usual +36/+40 references; the axis line is a THIRD reference at
+// +44 (where a plain two-ref constraint carries a small discriminator — here its high bit is set,
+// naming the axis). Resolved to coordinates and self-validated (each point reflects onto the other
+// across the axis) so a coincidentally-shaped node never yields a spurious constraint.
+type SymmetryConstraint struct {
+	P1, P2 Point2D
+	Axis   [2]Point2D
+}
+
+// DecodeSymmetryConstraints returns the sketch's symmetry constraints. Gate: the +32 empty-list
+// sentinel (a plain two-ref layout — a tangent puts a line ref there instead), both entity refs
+// resolve to POINTS, and the t44 word is itself a reference resolving to the axis LINE. The last
+// point distinguishes symmetry from a point-to-point distance dimension, whose t44 also has its
+// high bit set but references a text/label point (not a line). Finally the geometry must actually
+// be symmetric (pointsSymmetric), so a stray node can't invent a constraint and nothing moves.
+func DecodeSymmetryConstraints(seg []byte) []SymmetryConstraint {
+	vc := vertexCoords(seg)
+	le := lineEndpoints(seg, vc)
+	var out []SymmetryConstraint
+	for _, c := range collectRawCons(seg) {
+		if c.r1&refBit == 0 || c.r2&refBit == 0 || c.disc&refBit == 0 ||
+			binary.LittleEndian.Uint32(seg[c.off+32:]) != emptyListMark {
+			continue
+		}
+		axis, isLine := le[c.disc&^refBit]
+		if !isLine {
+			continue
+		}
+		p1, ok1 := vc[c.r1&^refBit]
+		p2, ok2 := vc[c.r2&^refBit]
+		if ok1 && ok2 && pointsSymmetric(p1, p2, axis) {
+			out = append(out, SymmetryConstraint{P1: p1, P2: p2, Axis: axis})
+		}
+	}
+	return out
+}
+
+// pointsSymmetric reports whether p1 and p2 are mirror images across the infinite axis line
+// (reflecting p1 through its perpendicular foot on the axis lands on p2).
+func pointsSymmetric(p1, p2 Point2D, axis [2]Point2D) bool {
+	ax, ay := axis[1].X-axis[0].X, axis[1].Y-axis[0].Y
+	l2 := ax*ax + ay*ay
+	if l2 < 1e-12 {
+		return false
+	}
+	tt := ((p1.X-axis[0].X)*ax + (p1.Y-axis[0].Y)*ay) / l2
+	fx, fy := axis[0].X+tt*ax, axis[0].Y+tt*ay
+	rx, ry := 2*fx-p1.X, 2*fy-p1.Y
+	return math.Abs(rx-p2.X) < 1e-4 && math.Abs(ry-p2.Y) < 1e-4
+}
+
 // TangentConstraint is a decoded line↔circle tangent constraint, resolved to the line's endpoints
 // and the circle's centre and radius so the translator can bind it by coordinate.
 type TangentConstraint struct {
@@ -288,6 +395,7 @@ type DistanceDim struct {
 // isn't captured, and distance-from-line dimensions, are not covered here.)
 func DecodeDistanceDimensions(seg []byte) []DistanceDim {
 	vc := vertexCoords(seg)
+	le := lineEndpoints(seg, vc)
 	var out []DistanceDim
 	seen := map[[4]int64]bool{}
 	for _, c := range collectRawCons(seg) {
@@ -297,6 +405,12 @@ func DecodeDistanceDimensions(seg []byte) []DistanceDim {
 		// Requiring t44 to be a reference keeps a two-point *geometric* relation (align/symmetry) from
 		// being mistaken for a distance dimension.
 		if c.disc&refBit == 0 || c.r1&refBit == 0 || c.r2&refBit == 0 {
+			continue
+		}
+		// A SYMMETRY node has the same shape (high-bit t44, two point refs), but its t44 references
+		// the symmetry AXIS line rather than a text point. So skip when t44 resolves to a line —
+		// otherwise the two symmetric points would be misread as a spurious distance dimension.
+		if _, isAxis := le[c.disc&^refBit]; isAxis {
 			continue
 		}
 		p1, ok1 := vc[c.r1&^refBit]
