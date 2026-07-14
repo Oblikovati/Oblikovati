@@ -56,12 +56,20 @@ func certifyObstaclePatch(s geom.BSplineSurface, g obstaclePatchGeom, scale Reso
 // normal is degenerate/undefined at the corner point exactly — the same edges excluded from the G1
 // measure. Interior columns carry the real anti-fold guarantee.
 func obstacleNoFold(s geom.BSplineSurface, scale Resolution) bool {
-	u0, u1 := s.UDomain()
 	v0, v1 := s.VDomain()
+	return noFoldOverColumns(s, v0, v1, scale)
+}
+
+// noFoldOverColumns is the shared anti-fold column sweep: it scans obstacleFoldSamples u-columns
+// (skipping the corner-excluded band, see obstacleNoFold) over [vLo,vHi] and reports true iff no
+// column folds (columnFolds). obstacleNoFold sweeps the full v-range; tri3NoFold caps vHi below the
+// degenerate pole row. (F3 de-dup of the obstacle/tri3 sweeps — same u-stride, different v-window.)
+func noFoldOverColumns(s geom.BSplineSurface, vLo, vHi float64, scale Resolution) bool {
+	u0, u1 := s.UDomain()
 	span := 1 - 2*obstacleCornerExcl
 	for i := 0; i <= obstacleFoldSamples; i++ {
 		u := u0 + (obstacleCornerExcl+float64(i)/float64(obstacleFoldSamples)*span)*(u1-u0)
-		if columnFolds(s, u, v0, v1, scale) {
+		if columnFolds(s, u, vLo, vHi, scale) {
 			return false
 		}
 	}

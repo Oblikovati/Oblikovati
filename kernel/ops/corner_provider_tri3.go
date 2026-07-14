@@ -172,7 +172,7 @@ func degeneratePole(c0 geom.BSplineCurve, apex math.Point3) (geom.BSplineCurve, 
 // gets NO ribbon (always G0); the three real sides get an outward cross-tangent ribbon (ribbonSide).
 // Split from tri3Fill to keep both bodies within the function-length budget.
 func assembleTri3(loop RailLoop, rails [4]geom.BSplineCurve, base geom.BSplineSurface, s0, dA, dB Side) (geom.BSplineSurface, [4]geom.BSplineCurve, [4]geom.FillSide, bool) {
-	sides, ok := tri3Sides(rails, base, s0, dA, dB, tri3RibLen(loop))
+	sides, ok := tri3Sides(rails, base, s0, dA, dB, loopRibLen(loop))
 	if !ok {
 		return geom.BSplineSurface{}, rails, [4]geom.FillSide{}, false
 	}
@@ -199,17 +199,6 @@ func tri3Sides(rails [4]geom.BSplineCurve, base geom.BSplineSurface, s0, dA, dB 
 	return [4]geom.FillSide{fs0, {Order: 0}, fs2, fs3}, true // c1 (pole) = G0, no ribbon
 }
 
-// tri3RibLen is the model-relative ribbon length: a small fraction of the loop's corner span
-// (ADR-0042). coons4RibLen is NOT reused — it reads four corners and would panic on a 3-side loop — so
-// this valence-3 sibling gathers the loop's own corners.
-func tri3RibLen(loop RailLoop) float64 {
-	corners := make([]math.Point3, len(loop.Sides))
-	for i := range loop.Sides {
-		corners[i] = curveStart(loop.Sides[i].Curve)
-	}
-	return ResolutionForPoints(corners).Size() * ribbonSpanFactor
-}
-
 // poleExcl is the parametric window excluded BELOW the degenerate v=1 pole row in the anti-fold scan.
 // At the pole the whole VMax edge collapses to the single point P, so |S_u×S_v|→0 there BY
 // CONSTRUCTION — scanning to v=1 would false-flag a fold at a genuine (correct) geometric corner. 0.1
@@ -219,19 +208,12 @@ const poleExcl = 0.1
 // tri3NoFold sweeps the interior u-columns (excluding the two corner columns via obstacleCornerExcl,
 // like obstacleNoFold) but caps the v-range BELOW the pole row (vMax = v1 − poleExcl·(v1−v0)); the
 // degenerate v=1 row is excluded because its Jacobian vanishes by construction. Any interior column
-// that folds ⇒ false. It mirrors obstacleNoFold's u-loop; the ONLY change is vMax instead of v1.
+// that folds ⇒ false. It shares obstacleNoFold's u-sweep via noFoldOverColumns; the ONLY change is
+// vMax instead of v1 (F3 de-dup).
 func tri3NoFold(fill geom.BSplineSurface, scale Resolution) bool {
-	u0, u1 := fill.UDomain()
 	v0, v1 := fill.VDomain()
 	vMax := v1 - poleExcl*(v1-v0)
-	span := 1 - 2*obstacleCornerExcl
-	for i := 0; i <= obstacleFoldSamples; i++ {
-		u := u0 + (obstacleCornerExcl+float64(i)/float64(obstacleFoldSamples)*span)*(u1-u0)
-		if columnFolds(fill, u, v0, vMax, scale) {
-			return false
-		}
-	}
-	return true
+	return noFoldOverColumns(fill, v0, vMax, scale)
 }
 
 // certifyTri3Patch proves the degenerate-4 patch (ADR-3), reusing the obstacle certify generics:

@@ -35,9 +35,7 @@ func TestRibbonSeamNonFoldingRejectsInwardRibbon(t *testing.T) {
 		t.Fatalf("CoonsFill: %v", err)
 	}
 	// INWARD ribbons: the negation of the shipped outward awayRef (the bug we are guarding against).
-	// TODO(Task 3): loopRibLen — switch to the loop-native rib length once it lands; coons4RibLen
-	// compiles today and matches the length coons4Sides itself uses.
-	length := coons4RibLen(loop)
+	length := loopRibLen(loop)
 	inward := invertedCoons4Sides(loop, rails, base, length)
 	fill, err := geom.FillSurface(rails[0], rails[1], rails[2], rails[3], inward)
 	if err != nil {

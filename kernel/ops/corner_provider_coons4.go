@@ -127,7 +127,7 @@ func sideRail(s Side, from, to math.Point3, tol float64) (geom.BSplineCurve, boo
 // see geom/match_surface.go), so a ribbon extruded outward lands the fill's cross-derivative back
 // INSIDE the patch; an inward ribbon reverses S_v at the seam and folds the surface one station in.
 func coons4Sides(loop RailLoop, rails [4]geom.BSplineCurve, base geom.BSplineSurface) ([4]geom.FillSide, bool) {
-	length := coons4RibLen(loop)
+	length := loopRibLen(loop)
 	fs0, ok0 := ribbonSide(rails[0], loop.Sides[0], inwardCrossV(base, false).Scale(-1), length) // c0
 	fs1, ok1 := ribbonSide(rails[1], loop.Sides[2], inwardCrossV(base, true).Scale(-1), length)  // c1
 	fs2, ok2 := ribbonSide(rails[2], loop.Sides[3], inwardCrossU(base, false).Scale(-1), length) // d0
@@ -151,11 +151,16 @@ func ribbonSide(rail geom.BSplineCurve, s Side, awayRef math.Vector3, length flo
 	return geom.FillSide{Adjacent: rib, AdjEdge: geom.VMinEdge, Order: int(s.Cont)}, true
 }
 
-// coons4RibLen is the model-relative ribbon length: a small fraction of the loop's bounding span
-// (ADR-0042). Ribbon length only affects first-order matching, so a modest value suffices.
-func coons4RibLen(loop RailLoop) float64 {
-	a, b, c, d := loopCorners(loop)
-	return ResolutionForPoints([]math.Point3{a, b, c, d}).Size() * ribbonSpanFactor
+// loopRibLen is the model-relative ribbon length for a loop of ANY valence: a small fraction of the
+// loop's bounding span over ALL side-start corners (ADR-0042). Ribbon length only affects first-order
+// matching, so a modest value suffices. Replaces the former coons4RibLen (4-corner) / tri3RibLen
+// (3-corner) siblings — both were the same span×factor formula, differing only in corner count (F3).
+func loopRibLen(loop RailLoop) float64 {
+	pts := make([]math.Point3, loop.Valence())
+	for i, s := range loop.Sides {
+		pts[i] = curveStart(s.Curve)
+	}
+	return ResolutionForPoints(pts).Size() * ribbonSpanFactor
 }
 
 // adjacentRibbon is THE new geometry: a degree-(p,1) ribbon whose VMinEdge IS rail and whose second
