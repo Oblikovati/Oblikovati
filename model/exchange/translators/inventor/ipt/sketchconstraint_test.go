@@ -400,6 +400,51 @@ func TestLineAngleDegrees(t *testing.T) {
 	}
 }
 
+// TestDecodeOffsetDimensions verifies both offset (distance-from-line) forms. The node shares the
+// angle head (r1 = 0x10 sentinel, r2 = a line) but its t44 reference is a POINT (point-to-line) or a
+// PARALLEL line (line-to-line). k_offpt7 offsets line L2 (x=7) from point (0,0) → 7 cm; k_offln6
+// offsets line L1 (y=0) from the parallel line L3 (y=6) → 6 cm, reduced to L3's endpoint (0,6). The
+// base (same lines, no dimension) decodes none, and the parallel line-to-line offset must NOT leak
+// into the angle decoder.
+func TestDecodeOffsetDimensions(t *testing.T) {
+	if o := DecodeOffsetDimensions(segFor(t, "k_base.ipt")); len(o) != 0 {
+		t.Errorf("k_base: got %d offset dims, want 0", len(o))
+	}
+	pt := DecodeOffsetDimensions(segFor(t, "k_offpt7.ipt"))
+	if len(pt) != 1 {
+		t.Fatalf("k_offpt7: got %d offset dims, want 1", len(pt))
+	}
+	if absf(pt[0].Value-7) > 1e-6 {
+		t.Errorf("point-to-line offset = %.4f, want 7", pt[0].Value)
+	}
+	if !isVertical(pt[0].Line) || absf(pt[0].Line[0].X-7) > 1e-6 {
+		t.Errorf("offset reference line = %v, want vertical at x=7", pt[0].Line)
+	}
+	ln := DecodeOffsetDimensions(segFor(t, "k_offln6.ipt"))
+	if len(ln) != 1 {
+		t.Fatalf("k_offln6: got %d offset dims, want 1", len(ln))
+	}
+	if absf(ln[0].Value-6) > 1e-6 {
+		t.Errorf("line-to-line offset = %.4f, want 6", ln[0].Value)
+	}
+	// The parallel line-to-line offset must not be mistaken for an angle dimension.
+	if a := DecodeAngleDimensions(segFor(t, "k_offln6.ipt")); len(a) != 0 {
+		t.Errorf("k_offln6: got %d angle dims, want 0 (a parallel offset is not an angle)", len(a))
+	}
+}
+
+// TestPointLineDistance locks the perpendicular point-to-line measure used by offset decode.
+func TestPointLineDistance(t *testing.T) {
+	line := [2]Point2D{{7, 0}, {7, 4}} // vertical at x=7
+	if got := pointLineDistance(Point2D{0, 0}, line); absf(got-7) > 1e-9 {
+		t.Errorf("distance (0,0)→x=7 = %.6f, want 7", got)
+	}
+	horiz := [2]Point2D{{0, 0}, {3, 0}} // y=0
+	if got := pointLineDistance(Point2D{1, 6}, horiz); absf(got-6) > 1e-9 {
+		t.Errorf("distance (1,6)→y=0 = %.6f, want 6", got)
+	}
+}
+
 // TestHorizontalConstraintBindsRightLine checks the decoded horizontal constraint names the
 // horizontal line (0,0)-(3,0), proving the line resolves to its endpoint coordinates.
 func TestHorizontalConstraintBindsRightLine(t *testing.T) {

@@ -92,6 +92,10 @@ func buildPart(ws *doc.Workspace, outPath string, d *ipt.Document, meshFallback 
 	warns = append(warns, applyRevolveRadii(def, d)...)
 	warns = append(warns, applyAxialLengths(def, d)...)
 	warns = append(warns, applyCentrelineAnchor(def, d)...)
+	// Offset (distance-from-line) dims last: on a revolve profile they can duplicate the
+	// radius/axial dims above, so applying those first lets keptWithoutMoving's DOF-reduction check
+	// drop a redundant offset instead of over-constraining (the shaft carries exactly such a pair).
+	warns = append(warns, applyOffsetDimensions(def, d)...)
 	def.Recompute()
 	// Inventor's display mesh hides the sketch/feature history behind a single imported body,
 	// so it is imported ONLY on explicit opt-in — otherwise the partial parametric tree stands.
@@ -830,32 +834,77 @@ func applyAngleDim(def *compdef.PartComponentDefinition, ad ipt.AngleDim) bool {
 	return false
 }
 
-// keptWithoutMoving adds a dimension via add, solves the sketch, and keeps it only if no point
-// moved; otherwise it deletes the dimension and restores every point to its snapshot. Reports
-// whether the dimension was kept. Used for dimensions (like a two-line angle) whose solve can admit
-// a geometry-changing alternative configuration.
+// applyOffsetDimensions binds each decoded offset (distance-from-line) dimension
+// (ipt.DecodeOffsetDimensions) onto the sketch holding its point and reference line, as an
+// AddOffsetDim of the current perpendicular distance. Kept only if it does not move geometry.
+func applyOffsetDimensions(def *compdef.PartComponentDefinition, d *ipt.Document) []string {
+	seg, ok := d.Segment("PmDCSegment")
+	if !ok {
+		return nil
+	}
+	applied := 0
+	for _, od := range ipt.DecodeOffsetDimensions(seg) {
+		if applyOffsetDim(def, od) {
+			applied++
+		}
+	}
+	if applied == 0 {
+		return nil
+	}
+	return []string{fmt.Sprintf("applied %d offset dimension(s)", applied)}
+}
+
+// applyOffsetDim adds one offset dimension to the first sketch that holds its point and line.
+func applyOffsetDim(def *compdef.PartComponentDefinition, od ipt.OffsetDim) bool {
+	for k := 0; k < def.Sketches().Count(); k++ {
+		sk := def.Sketches().Item(k)
+		p, l := pointAtCoord(sk, od.Pt), lineAtCoords(sk, od.Line)
+		if p == nil || l == nil || sk.DegreesOfFreedom() <= 0 {
+			continue
+		}
+		return keptWithoutMoving(sk, func() (*sketch.DimensionConstraint, error) {
+			return sk.DimensionConstraints().AddOffsetDim(p, l, false, fmt.Sprintf("%g cm", od.Value))
+		})
+	}
+	return false
+}
+
+// keptWithoutMoving adds a dimension via add and keeps it only when it is a faithful reproduction:
+// it must STRICTLY REDUCE the sketch's degrees of freedom (a redundant dimension that duplicates an
+// existing constraint would only over-constrain — e.g. the shaft's offset dim vs its radius dims)
+// AND leave every point where it was after a solve (a dimension whose solve admits a different
+// configuration, like a two-line angle flip, would silently edit the geometry). If either fails the
+// dimension is deleted and the points restored. Reports whether it was kept.
 func keptWithoutMoving(sk *sketch.Sketch, add func() (*sketch.DimensionConstraint, error)) bool {
 	pts := sk.Points()
 	snap := make([]m.Point2, pts.Count())
 	for i := 0; i < pts.Count(); i++ {
 		snap[i] = pts.Item(i).Position()
 	}
+	dofBefore := sk.DegreesOfFreedom()
 	dim, err := add()
 	if err != nil {
 		return false
 	}
 	sk.Solve()
-	for i := 0; i < pts.Count(); i++ {
-		if pts.Item(i).Position().DistanceTo(snap[i]) <= coincideEps {
-			continue
-		}
-		sk.DimensionConstraints().Delete(dim)
-		for j := 0; j < pts.Count(); j++ {
-			pts.Item(j).SetPosition(snap[j])
-		}
-		return false
+	if sk.DegreesOfFreedom() < dofBefore && !anyPointMoved(pts, snap) {
+		return true
 	}
-	return true
+	sk.DimensionConstraints().Delete(dim)
+	for i := 0; i < pts.Count(); i++ {
+		pts.Item(i).SetPosition(snap[i])
+	}
+	return false
+}
+
+// anyPointMoved reports whether any sketch point drifted from its snapshot beyond coincideEps.
+func anyPointMoved(pts *sketch.Points, snap []m.Point2) bool {
+	for i := 0; i < pts.Count(); i++ {
+		if pts.Item(i).Position().DistanceTo(snap[i]) > coincideEps {
+			return true
+		}
+	}
+	return false
 }
 
 // applyRadiusDimensions binds each decoded radius/diameter dimension (ipt.DecodeRadiusDimensions)

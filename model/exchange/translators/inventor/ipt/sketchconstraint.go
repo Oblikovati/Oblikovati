@@ -197,6 +197,60 @@ func DecodeCircleRelations(seg []byte) []CircleRelation {
 	return out
 }
 
+// OffsetDim is a decoded offset (distance-from-line) dimension: the perpendicular distance from a
+// point to a reference line. Two Inventor forms decode to this: a point-to-line offset, and a
+// line-to-line offset between two PARALLEL lines (reduced here to the reference line plus one
+// endpoint of the other line, whose perpendicular distance is the line-to-line separation). The
+// value is the current perpendicular distance, so applying it never moves geometry.
+type OffsetDim struct {
+	Line  [2]Point2D // the reference line (r2)
+	Pt    Point2D    // the dimensioned point, or an endpoint of the parallel line
+	Value float64    // perpendicular distance (cm)
+}
+
+// DecodeOffsetDimensions returns the sketch's offset (distance-from-line) dimensions. The node has
+// the same head as an angle dimension — first ref = the 0x10 list sentinel, second ref (+40) = a
+// line — but its t44 (+44) reference is either a POINT (point-to-line offset) or a LINE that is
+// PARALLEL to the second (line-to-line offset). An angle dimension's t44 line is NON-parallel, so
+// the angle decoder (which drops near-parallel pairs) and this one are disjoint. The value is the
+// current perpendicular distance, self-validating.
+func DecodeOffsetDimensions(seg []byte) []OffsetDim {
+	vc := vertexCoords(seg)
+	le := lineEndpoints(seg, vc)
+	var out []OffsetDim
+	for _, c := range collectRawCons(seg) {
+		if c.r1 != emptyListMark || c.r2&refBit == 0 || c.disc&refBit == 0 {
+			continue
+		}
+		line, isLine := le[c.r2&^refBit]
+		if !isLine {
+			continue
+		}
+		if pt, ok := vc[c.disc&^refBit]; ok {
+			if d := pointLineDistance(pt, line); d > 1e-4 {
+				out = append(out, OffsetDim{Line: line, Pt: pt, Value: d})
+			}
+		} else if other, ok := le[c.disc&^refBit]; ok && linesParallel(line, other) {
+			// line-to-line offset: an endpoint of the other (parallel) line to the reference line.
+			if d := pointLineDistance(other[0], line); d > 1e-4 {
+				out = append(out, OffsetDim{Line: line, Pt: other[0], Value: d})
+			}
+		}
+	}
+	return out
+}
+
+// pointLineDistance returns the perpendicular distance from a point to a segment's infinite line
+// (falling back to point-to-endpoint distance for a degenerate segment).
+func pointLineDistance(p Point2D, l [2]Point2D) float64 {
+	dx, dy := l[1].X-l[0].X, l[1].Y-l[0].Y
+	length := math.Hypot(dx, dy)
+	if length < 1e-9 {
+		return math.Hypot(p.X-l[0].X, p.Y-l[0].Y)
+	}
+	return math.Abs((p.X-l[0].X)*dy-(p.Y-l[0].Y)*dx) / length
+}
+
 // AngleDim is a decoded angle dimension between two lines, resolved to both lines' endpoints and
 // the unsigned angle between them in degrees ([0,180]). The value is the current geometric angle,
 // so applying AddAngle(l1, l2, "<deg> deg") pins the angle without moving geometry.
