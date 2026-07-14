@@ -10,6 +10,24 @@ import (
 	"oblikovati.org/math"
 )
 
+// sharedMidpointFromFixture independently re-derives the shared transverse midplane c
+// (setbackMidpoint) the same way detectSetbackBands does internally (detectRunouts + solveImprint
+// + setbackMidpoint) — so the absolute-station assertions below check against an INDEPENDENTLY
+// re-derived expected value, not against bandsFromBosses' own arithmetic reflected back at itself
+// (which would be a tautology that could never catch the mid±x_s vs ∓x_s coordinate-frame bug this
+// fix corrects).
+func sharedMidpointFromFixture(t *testing.T, ef edgeFillet, res Resolution) float64 {
+	t.Helper()
+	for _, im := range detectRunouts(ef, res) {
+		cut, ok := solveImprint(im, res)
+		if ok {
+			return setbackMidpoint(cut, ef.cyl)
+		}
+	}
+	t.Fatalf("sharedMidpointFromFixture: no solvable imprint in fixture")
+	return 0
+}
+
 // TestDetectSetbackBands_S1TwoBosses pins the D1/D2 stations against the S1 fixture (box slab,
 // top-front edge R=6; r8 top boss at a=10 crosses first/outer, r6 front boss at a=10 crosses
 // second/inner) — the same DRAWEXE-verified numbers as the derivation doc
@@ -18,20 +36,41 @@ import (
 // (fillet_runout_detect_test.go) — NOT a new fixture — since it already builds exactly this
 // substrate off real S1 topology (edgeFillet's corner fields are interdependent invariants a
 // hand-rolled fixture would risk violating silently).
+//
+// cutLo/cutHi/seams are now ABSOLUTE spine stations (mid±x_s), not half-widths about spine-0 (the
+// coordinate-frame bug this fix corrects: cyl.Origin sits at an arbitrary imported-STEP edge
+// endpoint, NOT the transverse midplane, so S1's true stations are mid±x_s with mid≈10, not ∓x_s
+// about 0). mid is read independently via sharedMidpointFromFixture rather than hard-coded, so a
+// regression in EITHER the station math OR the absolute placement is caught.
 func TestDetectSetbackBands_S1TwoBosses(t *testing.T) {
 	ef, res := runoutFixtureCrossingBoss(t)
 	b, ok := detectSetbackBands(ef, res)
 	if !ok || len(b.bosses) != 2 {
 		t.Fatalf("detectSetbackBands: ok=%v bosses=%d, want ok=true, 2 crossing bosses (r8,r6)", ok, len(b.bosses))
 	}
-	if stdmath.Abs(b.cutHi-stdmath.Sqrt(48)) > 1e-6 {
-		t.Fatalf("outer setback cutHi = %v, want sqrt(48)=6.9282 (r8 top boss)", b.cutHi)
+	mid := sharedMidpointFromFixture(t, ef, res)
+	outer, inner := stdmath.Sqrt(48.0), stdmath.Sqrt(20.0)
+
+	if stdmath.Abs(b.cutHi-(mid+outer)) > 1e-6 {
+		t.Fatalf("outer setback cutHi = %v, want mid+sqrt(48) = %v (ABSOLUTE station, r8 top boss)", b.cutHi, mid+outer)
 	}
-	if stdmath.Abs(b.cutLo+stdmath.Sqrt(48)) > 1e-6 {
-		t.Fatalf("outer setback cutLo = %v, want -sqrt(48)=-6.9282", b.cutLo)
+	if stdmath.Abs(b.cutLo-(mid-outer)) > 1e-6 {
+		t.Fatalf("outer setback cutLo = %v, want mid-sqrt(48) = %v (ABSOLUTE station)", b.cutLo, mid-outer)
 	}
-	if len(b.seams) != 2 || stdmath.Abs(stdmath.Abs(b.seams[0])-stdmath.Sqrt(20)) > 1e-6 {
-		t.Fatalf("inner seam = %v, want ±sqrt(20)=4.4721 (r6 front boss)", b.seams)
+	if stdmath.Abs((b.cutLo+b.cutHi)/2-mid) > 1e-6 {
+		t.Fatalf("cutLo/cutHi not centered on shared midplane: (cutLo+cutHi)/2 = %v, want mid = %v", (b.cutLo+b.cutHi)/2, mid)
+	}
+	if stdmath.Abs(b.cutHi-b.cutLo-2*outer) > 1e-6 {
+		t.Fatalf("cutHi-cutLo = %v, want 2*sqrt(48) = %v (span width unchanged by absolute placement)", b.cutHi-b.cutLo, 2*outer)
+	}
+
+	if len(b.seams) != 2 {
+		t.Fatalf("seams = %v, want 2 entries (mid±sqrt(20), r6 front boss)", b.seams)
+	}
+	seamLo, seamHi := stdmath.Min(b.seams[0], b.seams[1]), stdmath.Max(b.seams[0], b.seams[1])
+	if stdmath.Abs(seamLo-(mid-inner)) > 1e-6 || stdmath.Abs(seamHi-(mid+inner)) > 1e-6 {
+		t.Fatalf("inner seams = %v, want {mid-sqrt(20), mid+sqrt(20)} = {%v, %v} (ABSOLUTE stations)",
+			b.seams, mid-inner, mid+inner)
 	}
 }
 

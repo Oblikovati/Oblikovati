@@ -21,19 +21,26 @@ type crossingBoss struct {
 	xSetback float64      // D1 setback reach |x_s| ≥ 0 — see setbackStation
 }
 
-// setbackBands is the D2 band partition of a runout edge's interfered span: cutLo/cutHi are the
-// outer setback stations (where the plain fillet ends), and seams are the interior boundaries
-// splitting the flank band(s) (outer boss only) from the central band (every boss). bosses is
-// ordered by xSetback descending (outer reach first) — the order bandsFromBosses assumes.
+// setbackBands is the D2 band partition of a runout edge's interfered span: cutLo/cutHi and seams
+// are ABSOLUTE stations on the fillet cylinder's own spine (mid±x_s — NOT half-widths about
+// spine-0) where the plain fillet ends and where the interior band boundaries fall. cutLo/cutHi
+// are the outer setback stations (where the plain fillet ends), and seams are the interior
+// boundaries splitting the flank band(s) (outer boss only) from the central band (every boss).
+// bosses is ordered by xSetback descending (outer reach first) — the order bandsFromBosses
+// assumes. Downstream (Task 3+) reads cutLo/cutHi/seams directly as spine coordinates to place the
+// fillet-end cross-section arcs, so they must be absolute — a half-width representation about an
+// arbitrary spine-0 would place those arcs at the wrong stations and the patch rail loops built
+// from them would not close when the path is wired (Task 5).
 //
 // The whole partition assumes every boss shares the SAME transverse midplane — D2's "on the SAME
-// centered span" — because bandsFromBosses hard-symmetrizes to cutLo=−outer, cutHi=+outer,
-// seams=±x_s relative to that ONE shared plane: ±x_s equal the true plain-fillet ends ONLY when
-// every boss's own axial midpoint c=(lo+hi)/2 (setbackMidpoint) agrees with the others'. That
-// shared plane is NOT v=0 in the fillet cylinder's own spine frame — cyl.Origin sits at an
-// arbitrary edge endpoint, so c itself carries no absolute meaning, only agreement BETWEEN
-// bosses does (verified against S1: both its bosses read c≈10, not 0). A boss whose midpoint
-// disagrees with the rest is rejected outright by detectSetbackBands' centeredness guard
+// centered span" — because bandsFromBosses places every station relative to that ONE shared plane,
+// mid: cutLo=mid−outer, cutHi=mid+outer, seams=mid±x_s. mid equals the true plain-fillet ends'
+// center ONLY when every boss's own axial midpoint c=(lo+hi)/2 (setbackMidpoint) agrees with the
+// others'. mid is NOT v=0 (spine-0) in the fillet cylinder's own spine frame — cyl.Origin sits at
+// an arbitrary edge endpoint, so a bare c carries no absolute meaning in isolation, only agreement
+// BETWEEN bosses does (verified against S1: both its bosses read c≈10, not 0 — so cutLo/cutHi come
+// out as 10∓√48≈{3.0718,16.9282}, NOT ∓√48≈{−6.9282,+6.9282} about a false origin). A boss whose
+// midpoint disagrees with the rest is rejected outright by detectSetbackBands' centeredness guard
 // (bossesShareTransverseMidplane; this milestone honest-defers rather than emit a wrong-but-
 // plausible symmetric split); supporting real disagreement needs a richer per-boss lo/hi
 // representation than this single xSetback field carries (future milestone). A LONE boss has
@@ -77,7 +84,9 @@ func detectSetbackBands(ef edgeFillet, res Resolution) (setbackBands, bool) {
 		return setbackBands{}, false // off-center boss: honest-defer, see bossesShareTransverseMidplane
 	}
 	sortBossesByReach(bosses)
-	return bandsFromBosses(bosses), true
+	// mids[0]: any already-agreeing mid works (bossesShareTransverseMidplane just verified
+	// agreement within tolerance) — the first is as good as the mean and cheaper to compute.
+	return bandsFromBosses(bosses, mids[0]), true
 }
 
 // setbackBossFrom turns one solved runout imprint into a crossingBoss plus its axial midpoint c
@@ -114,10 +123,12 @@ func setbackBossFrom(im runoutImprint, ef edgeFillet, res Resolution) (crossingB
 // the result is always ≥0 — no separate abs() needed anywhere downstream.
 //
 // This DISCARDS the interval's midpoint c=(lo+hi)/2 (see setbackMidpoint) — only the half-span
-// survives. ±x_s equal the true plain-fillet ends ONLY when every boss on the edge shares the
-// SAME c (D1's "Fᵢ a conic centered on the transverse plane x=0" — a plane shared by all bosses,
-// not necessarily v=0 in cyl's own frame, see setbackMidpoint); a boss whose c disagrees with the
-// others is rejected by bossesShareTransverseMidplane before xSetback is ever trusted downstream.
+// survives here; bandsFromBosses re-attaches the shared c (passed in as mid) when it turns this
+// half-span into an ABSOLUTE spine station (mid±x_s), see bandsFromBosses. mid+x_s and mid−x_s
+// equal the true plain-fillet ends ONLY when every boss on the edge shares the SAME c (D1's "Fᵢ a
+// conic centered on the transverse plane x=0" — a plane shared by all bosses, not necessarily v=0
+// in cyl's own frame, see setbackMidpoint); a boss whose c disagrees with the others is rejected by
+// bossesShareTransverseMidplane before xSetback is ever trusted downstream.
 func setbackStation(cut imprintCut, cyl geom.Cylinder) float64 {
 	lo, hi := spineInterval(cut, cyl)
 	return (hi - lo) / 2
@@ -195,20 +206,26 @@ func sortBossesByReach(bosses []crossingBoss) {
 }
 
 // bandsFromBosses computes D2's 3-patch partition from bosses already ordered outer→inner by
-// reach: the outer band ends at ±the largest x_s (cutLo/cutHi — the plain-segment/runout
-// boundary), and every SMALLER reach becomes an interior seam at ±its own x_s, splitting the
-// flank band (outer boss only) from the central band (both bosses). N bosses ⇒ up to 2N−1 bands;
-// this only computes the seam stations, not the band geometry itself (Task 3+, unwired here).
+// reach, placed at ABSOLUTE positions on the fillet cylinder's own spine about the shared
+// transverse midplane mid (NOT spine-0 — see setbackBands' and setbackMidpoint's doc comments for
+// why a bare spine coordinate carries no meaning in isolation): the outer band ends at mid∓the
+// largest x_s (cutLo/cutHi — the plain-segment/runout boundary), and every SMALLER reach becomes
+// an interior seam at mid∓its own x_s, splitting the flank band (outer boss only) from the central
+// band (both bosses). N bosses ⇒ up to 2N−1 bands; this only computes the seam stations, not the
+// band geometry itself (Task 3+, unwired here).
 //
-// Like setbackStation, this hard-ASSUMES every boss shares the SAME transverse midplane — it has
-// no lo/hi (or c=(lo+hi)/2) of its own to check agreement against, only xSetback (the half-span).
+// mid must be the ONE shared transverse midplane every boss agrees on — detectSetbackBands passes
+// mids[0] (any of the already-agreeing mids would do: bossesShareTransverseMidplane has already
+// verified they agree within tolerance, so the first is as good as the mean and cheaper). Like
+// setbackStation, this hard-ASSUMES every boss shares that SAME transverse midplane — it has no
+// lo/hi (or c=(lo+hi)/2) of its own to check agreement against, only xSetback (the half-span).
 // Callers must reject disagreeing bosses upstream (bossesShareTransverseMidplane, in
 // detectSetbackBands) before any boss ever reaches here.
-func bandsFromBosses(bosses []crossingBoss) setbackBands {
+func bandsFromBosses(bosses []crossingBoss, mid float64) setbackBands {
 	outer := bosses[0].xSetback
 	seams := make([]float64, 0, 2*(len(bosses)-1))
 	for _, b := range bosses[1:] {
-		seams = append(seams, b.xSetback, -b.xSetback)
+		seams = append(seams, mid+b.xSetback, mid-b.xSetback)
 	}
-	return setbackBands{bosses: bosses, cutLo: -outer, cutHi: outer, seams: seams}
+	return setbackBands{bosses: bosses, cutLo: mid - outer, cutHi: mid + outer, seams: seams}
 }
