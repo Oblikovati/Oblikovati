@@ -49,6 +49,8 @@ const (
 	GeoEqualLength
 	GeoMidpoint
 	GeoPointOnLine
+	GeoConcentric
+	GeoEqualRadius
 )
 
 // GeoConstraint is a decoded geometric constraint with its lines resolved to endpoint coordinates,
@@ -151,6 +153,45 @@ func DecodeGeometricConstraints(seg []byte) []GeoConstraint {
 		}
 	}
 	out = append(out, decodePointOnLine(seg, vc)...)
+	return out
+}
+
+// CircleRelation is a decoded circle↔circle constraint (concentric or equal-radius), resolved to
+// both circles' centres and radii so the translator can bind them by coordinate.
+type CircleRelation struct {
+	Kind   GeoKind // GeoConcentric or GeoEqualRadius
+	C1, C2 Point2D // centres
+	R1, R2 float64 // radii
+}
+
+// DecodeCircleRelations returns the sketch's concentric and equal-radius constraints. Both are
+// stored as a coincidence node (t44 0x3e) whose two references resolve to CIRCLES (each named by
+// its entity id = centre ref + 1, via circleByEntityID) — the same shape equal-length uses for two
+// lines. Concentric and equal-radius share the discriminator and are told apart by geometry: a
+// concentric pair shares a centre (different radii); an equal-radius pair shares a radius
+// (different centres). Emitted only when the geometry actually exhibits the relation, so a stray
+// node never yields a spurious constraint and nothing moves.
+func DecodeCircleRelations(seg []byte) []CircleRelation {
+	circ := circleByEntityID(seg, vertexCoords(seg))
+	var out []CircleRelation
+	for _, c := range collectRawCons(seg) {
+		if c.disc != coincidenceDisc || c.r1&refBit == 0 || c.r2&refBit == 0 {
+			continue
+		}
+		a, ok1 := circ[c.r1&^refBit]
+		b, ok2 := circ[c.r2&^refBit]
+		if !ok1 || !ok2 {
+			continue
+		}
+		sameCentre := samePoint2D(a.inline, b.inline)
+		sameRadius := math.Abs(a.radius-b.radius) < 1e-4
+		switch {
+		case sameCentre && !sameRadius:
+			out = append(out, CircleRelation{Kind: GeoConcentric, C1: a.inline, C2: b.inline, R1: a.radius, R2: b.radius})
+		case sameRadius && !sameCentre:
+			out = append(out, CircleRelation{Kind: GeoEqualRadius, C1: a.inline, C2: b.inline, R1: a.radius, R2: b.radius})
+		}
+	}
 	return out
 }
 

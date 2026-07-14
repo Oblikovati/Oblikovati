@@ -203,6 +203,45 @@ func TestOnSegmentInterior(t *testing.T) {
 	}
 }
 
+// TestDecodeCircleRelations verifies concentric and equal-radius decode. Both are a coincidence
+// node (0x3e) whose two refs resolve to circles (named by entity id = centre ref + 1), the same
+// shape equal-length uses for lines. They share the discriminator and are told apart by geometry:
+// k2_concentric constrains two same-centre circles (0,10) r1.5 and r0.8; k2_equalr constrains two
+// same-radius circles r1.5 at (0,10) and (6,10). The base, with the circles but no constraint,
+// decodes to none.
+func TestDecodeCircleRelations(t *testing.T) {
+	kinds := func(file string) (conc, eq int) {
+		for _, cr := range DecodeCircleRelations(segFor(t, file)) {
+			if cr.Kind == GeoConcentric {
+				conc++
+			} else if cr.Kind == GeoEqualRadius {
+				eq++
+			}
+		}
+		return
+	}
+	if c, e := kinds("k2_base.ipt"); c != 0 || e != 0 {
+		t.Errorf("k2_base: got concentric=%d equal-radius=%d, want 0/0", c, e)
+	}
+	if c, e := kinds("k2_concentric.ipt"); c != 1 || e != 0 {
+		t.Errorf("k2_concentric: got concentric=%d equal-radius=%d, want 1/0", c, e)
+	}
+	if c, e := kinds("k2_equalr.ipt"); c != 0 || e != 1 {
+		t.Errorf("k2_equalr: got concentric=%d equal-radius=%d, want 0/1", c, e)
+	}
+	// The concentric pair shares a centre; the equal-radius pair shares a radius.
+	for _, cr := range DecodeCircleRelations(segFor(t, "k2_concentric.ipt")) {
+		if !samePoint2D(cr.C1, cr.C2) {
+			t.Errorf("concentric circles have different centres: %v %v", cr.C1, cr.C2)
+		}
+	}
+	for _, cr := range DecodeCircleRelations(segFor(t, "k2_equalr.ipt")) {
+		if absf(cr.R1-cr.R2) > 1e-6 {
+			t.Errorf("equal-radius circles have different radii: %.3g %.3g", cr.R1, cr.R2)
+		}
+	}
+}
+
 // TestHorizontalConstraintBindsRightLine checks the decoded horizontal constraint names the
 // horizontal line (0,0)-(3,0), proving the line resolves to its endpoint coordinates.
 func TestHorizontalConstraintBindsRightLine(t *testing.T) {

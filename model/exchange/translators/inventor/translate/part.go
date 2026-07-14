@@ -83,6 +83,7 @@ func buildPart(ws *doc.Workspace, outPath string, d *ipt.Document, meshFallback 
 	warns = append(warns, notes...)
 	warns = append(warns, applyGeometricConstraints(def, d)...)
 	warns = append(warns, applyTangentConstraints(def, d)...)
+	warns = append(warns, applyCircleRelations(def, d)...)
 	warns = append(warns, applyDistanceDimensions(def, d)...)
 	warns = append(warns, applyRevolveRadii(def, d)...)
 	warns = append(warns, applyAxialLengths(def, d)...)
@@ -544,6 +545,45 @@ func applyTangent(def *compdef.PartComponentDefinition, tc ipt.TangentConstraint
 			continue
 		}
 		sk.GeometricConstraints().AddTangent(l, c)
+		return true
+	}
+	return false
+}
+
+// applyCircleRelations binds each decoded concentric / equal-radius constraint
+// (ipt.DecodeCircleRelations) onto the sketch holding both circles. The relation already holds in
+// the geometry (validated at decode), so it only removes degrees of freedom. DOF-guarded.
+func applyCircleRelations(def *compdef.PartComponentDefinition, d *ipt.Document) []string {
+	seg, ok := d.Segment("PmDCSegment")
+	if !ok {
+		return nil
+	}
+	applied := 0
+	for _, cr := range ipt.DecodeCircleRelations(seg) {
+		if applyCircleRelation(def, cr) {
+			applied++
+		}
+	}
+	if applied == 0 {
+		return nil
+	}
+	return []string{fmt.Sprintf("applied %d circle relation(s)", applied)}
+}
+
+// applyCircleRelation binds one circle relation to the first sketch holding both its circles.
+func applyCircleRelation(def *compdef.PartComponentDefinition, cr ipt.CircleRelation) bool {
+	for k := 0; k < def.Sketches().Count(); k++ {
+		sk := def.Sketches().Item(k)
+		c1 := circleAtCoord(sk, cr.C1, cr.R1)
+		c2 := circleAtCoord(sk, cr.C2, cr.R2)
+		if c1 == nil || c2 == nil || c1 == c2 || sk.DegreesOfFreedom() <= 0 {
+			continue
+		}
+		if cr.Kind == ipt.GeoConcentric {
+			sk.GeometricConstraints().AddConcentric(c1, c2)
+		} else {
+			sk.GeometricConstraints().AddEqualRadius(c1, c2)
+		}
 		return true
 	}
 	return false
