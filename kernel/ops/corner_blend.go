@@ -44,10 +44,10 @@ type BlendArm struct {
 // host faces meeting there (read-only), and the model-relative setback the arms were trimmed to
 // (ADR-0042 — the scale every tolerance is taken relative to).
 type CornerBlendRequest struct {
-	Junction       math.Point3
-	Arms           []BlendArm
-	Hosts          []*topo.Face
-	Setback        Resolution
+	Junction math.Point3
+	Arms     []BlendArm
+	Hosts    []*topo.Face
+	Setback  Resolution
 	// ObstacleFeature, when non-nil, marks this as a MID-SPAN OBSTACLE request (ADR-4): a straight
 	// fillet whose planar host face is notched by a through-feature, NOT a junction of arms. Junction
 	// requests leave it nil and behave exactly as before. Only the obstacle provider reads it.

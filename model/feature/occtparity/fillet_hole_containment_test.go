@@ -9,17 +9,20 @@ import (
 	"oblikovati.org/kernel/ops"
 )
 
-// TestFilletProtrudingHoleTripwire pins the malformed-face defect behind the elliptical-prism blend
-// cases (②): the imported prism has a valid base plane (outer loop y∈[-13,12] contains the elliptical
-// hole y∈[-10,10]), but filleting the base edge shrinks the outer loop's bottom to y=-7 while leaving the
-// coplanar full-ellipse hole untouched, so the hole now protrudes 3 units past its own boundary. That
-// malformed face is what the tessellator was struggling to mesh (the phantom "fill"/crack artifacts).
+// TestFilletSingleHostObstacleWatertight pins the single-host mid-span obstacle win on corpus T6: the
+// imported prism has a valid base plane (outer loop y∈[-13,12] contains the elliptical hole y∈[-10,10]),
+// but filleting the base edge shrinks the outer loop's bottom to y=-7 while leaving the coplanar
+// full-ellipse hole untouched, so without the rebuild the hole protrudes 3 units past its own boundary —
+// the malformed face the tessellator meshed into the phantom "fill"/crack artifacts.
 //
-// ops.Validate reports this via HolesContained. It is a TRIPWIRE: the fillet trim that stops producing
-// the protrusion is not yet written, so this test asserts the CURRENT (defective) state — imported body
-// contained, filleted body NOT contained. When the fillet fix lands, flip the filleted assertion to true
-// and fold HolesContained into Validate.Valid.
-func TestFilletProtrudingHoleTripwire(t *testing.T) {
+// The mid-span obstacle rebuild (ADR-4, ops.obstacleFacesFor) notches the host plane around the obstacle,
+// splits the obstacle wall's rim, and bridges the gap with two wings and a corner-blend patch, so the
+// filleted T6 is now a genuinely WATERTIGHT, hole-contained solid. HolesContained is deliberately kept as
+// a diagnostic tripwire (NOT folded into Valid) until the Phase-2 corner engine also handles the
+// dual-host and torus-band configurations, so this asserts the watertightness directly (IsSolid +
+// HolesContained) rather than through Valid. The dual-host/torus cases are honest-rejected by the
+// detection gate and stay on the baseline path.
+func TestFilletSingleHostObstacleWatertight(t *testing.T) {
 	fixtureDir := CorpusFixtureDir()
 	var rec Record
 	for _, r := range Corpus() {
@@ -43,10 +46,11 @@ func TestFilletProtrudingHoleTripwire(t *testing.T) {
 	if !filletOK || len(res) != 1 || res[0] == nil {
 		t.Fatalf("fillet did not produce a solid: %s", reason)
 	}
-	rep := ops.Validate(res[0])
-	if rep.HolesContained {
-		t.Errorf("filleted T6 body: expected the base-plane hole to protrude past the shrunken outer loop " +
-			"(the ② defect); HolesContained was true — the fillet trim may already be fixed, so fold " +
-			"HolesContained into Valid and flip this assertion")
+	if !res[0].IsSolid() {
+		t.Errorf("filleted T6 body must be a single closed solid (the obstacle rebuild welds the wing/patch/wall shell)")
+	}
+	if rep := ops.Validate(res[0]); !rep.HolesContained {
+		t.Errorf("filleted T6 body: the mid-span obstacle patch must make the base plane hole-contained; "+
+			"got protrusion: %v", rep.Issues)
 	}
 }

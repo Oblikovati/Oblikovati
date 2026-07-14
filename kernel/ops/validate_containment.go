@@ -14,7 +14,13 @@ import (
 // holeEdgeSamples is how many points per edge the containment check samples. A full-ellipse hole is a
 // single closed edge whose two endpoints weld to ONE seam vertex, so a vertex-only bbox would collapse
 // to a point and miss a protrusion — several samples per edge are required to trace the real rim.
-const holeEdgeSamples = 6
+//
+// It must ALSO be dense enough that a sampled CURVED OUTER loop (a cylinder-cap rim: one closed circle
+// edge) does not under-approximate its own boundary and falsely flag a hole that is strictly inside the
+// true rim but outside the coarse inscribed polygon. A curved-boolean cap's exit-ellipse sits ~0.03·R
+// inside a circular rim; at 64 samples the inscribed polygon's chord sagitta is ~5e-4·R, well under
+// that margin, so a valid interior hole passes while a genuine (multi-unit) fillet protrusion still trips.
+const holeEdgeSamples = 64
 
 // checkHoleContainment flags any PLANAR face whose hole loop is not strictly inside its outer loop — the
 // B-rep invariant that a hole is an interior void, not a protrusion. A fillet that shrinks a face's outer

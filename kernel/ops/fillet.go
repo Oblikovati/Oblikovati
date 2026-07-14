@@ -163,7 +163,7 @@ func filletResolvedEdges(body *topo.Body, edges []filletPick, concave ConcaveFil
 	if err := validateRunoutFans(fils); err != nil {
 		return nil, err // n-valent analogue of #1800: reject a self-intersecting/over-radius runout before it silently drops to an open shell
 	}
-	res := assembleBody(filletResultFaces(body, fils, blends), "fillet")
+	res := assembleFilletBody(body, fils, blends)
 	rep := Validate(res)
 	if rep.Valid && res.IsSolid() {
 		return res, nil
@@ -175,6 +175,29 @@ func filletResolvedEdges(body *topo.Body, edges []filletPick, concave ConcaveFil
 		return nil, cornerIntoRoundError(e, round)
 	}
 	return nil, fmt.Errorf("fillet: result is not a valid solid %v", rep.Issues)
+}
+
+// assembleFilletBody builds the filleted body with the mid-span obstacle rebuild enabled, then applies
+// do-no-harm (ADR-4, Option 1, 2026-07-14): the single-host rebuild may FIRE on a body it cannot fully
+// resolve (e.g. a second obstacle column it does not model), producing a still-protruding or otherwise
+// degraded shell. It is kept only when it yields a watertight, hole-contained solid — a strict
+// improvement over the pre-rebuild fillet; otherwise the baseline (no-obstacle) build is used. That
+// fallback is the same green body as before ADR-4 (HolesContained is a tripwire, not folded into Valid).
+func assembleFilletBody(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend) *topo.Body {
+	faces, obstacleFired := filletResultFaces(body, fils, blends, true)
+	res := assembleBody(faces, "fillet")
+	if !obstacleFired || obstacleImprovedSolid(res) {
+		return res
+	}
+	base, _ := filletResultFaces(body, fils, blends, false)
+	return assembleBody(base, "fillet")
+}
+
+// obstacleImprovedSolid reports whether an obstacle-rebuilt body is a watertight, hole-contained solid —
+// the bar the rebuild must clear to be kept over the baseline fillet.
+func obstacleImprovedSolid(res *topo.Body) bool {
+	r := Validate(res)
+	return r.Valid && res.IsSolid() && r.HolesContained
 }
 
 // computeFillets solves every picked edge's edgeFillet against the already-solved corners,

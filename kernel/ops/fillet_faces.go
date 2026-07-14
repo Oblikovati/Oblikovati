@@ -8,21 +8,53 @@ import (
 	"oblikovati.org/math"
 )
 
-// filletResultFaces builds the faces of the filleted body: every original face transformed
-// for the fillets touching it (its A/B corners pulled back to the tangent points, its simple
-// end corners replaced by an arc or chord fan), one cylinder face per constant filleted edge
-// (or a planar ruling strip per variable one), and one sphere patch per corner blend.
-func filletResultFaces(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend) []filletFace {
+// filletResultFaces builds the faces of the filleted body — every original face transformed for the
+// fillets touching it (A/B corners pulled to tangent points, simple end corners replaced by an arc or
+// chord fan), one cylinder face per constant filleted edge (or a ruling strip per variable one), and
+// one sphere patch per corner blend — and reports whether the mid-span obstacle rebuild (ADR-4) handled
+// any edge. enableObstacles=false forces the baseline path (no notch/wings/patch) so the caller can
+// fall back when the rebuild fires but does not achieve hole-containment (Option 1 do-no-harm).
+func filletResultFaces(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend, enableObstacles bool) ([]filletFace, bool) {
 	abSubst, endCorner, edgeInserts := filletMaps(fils)
 	fans, fanV := classifyEndCorners(fils)
 	spreads, caps := buildSpreadMaps(fans, body)
 	pruneEndCorners(endCorner, fanV) // a fan vertex is rounded by the spread arm alone, never as a trihedral end
-	var out []filletFace
-	for _, f := range body.Faces() {
-		out = append(out, transformFace(f, abSubst[f], endCorner[f], edgeInserts[f], spreads[f]))
+	maps := filletRebuildMaps{abSubst: abSubst, endCorner: endCorner, edgeInserts: edgeInserts, spreads: spreads}
+	obReplace, obExtra, obHandled := map[uint64]filletFace{}, map[uint64][]filletFace{}, map[uint64]bool{}
+	if enableObstacles {
+		obReplace, obExtra, obHandled = collectObstacles(body, fils, ResolutionForBody(body), maps)
 	}
+	out := transformedBodyFaces(body, maps, obReplace)
+	out = append(out, filletBlendFaces(fils, caps, obHandled, obExtra)...)
+	for _, cb := range blends {
+		out = append(out, spherePatchFace(cb))
+	}
+	return out, len(obHandled) > 0
+}
+
+// transformedBodyFaces transforms every original body face for the fillets touching it, except that a
+// face the mid-span obstacle rebuild replaced (ADR-4) is substituted by its notched / split-wall face.
+func transformedBodyFaces(body *topo.Body, maps filletRebuildMaps, obReplace map[uint64]filletFace) []filletFace {
+	out := make([]filletFace, 0, len(body.Faces()))
+	for _, f := range body.Faces() {
+		if notched, ok := obReplace[f.ID()]; ok {
+			out = append(out, notched) // host notch / split obstacle wall replaces the default transform
+			continue
+		}
+		out = append(out, transformFace(f, maps.abSubst[f], maps.endCorner[f], maps.edgeInserts[f], maps.spreads[f]))
+	}
+	return out
+}
+
+// filletBlendFaces builds the blend face(s) of each filleted edge: an obstacle edge (ADR-4) contributes
+// its pre-built two wings + corner-blend patch; a variable edge a ruled/strip blend; a constant edge one
+// cylinder face. A non-obstacle edge takes the same path byte-for-byte as before ADR-4.
+func filletBlendFaces(fils []edgeFillet, caps map[uint64][]cornerPiece, obHandled map[uint64]bool, obExtra map[uint64][]filletFace) []filletFace {
+	var out []filletFace
 	for _, ef := range fils {
 		switch {
+		case obHandled[ef.edge.ID()]:
+			out = append(out, obExtra[ef.edge.ID()]...) // two wings + the corner-blend patch
 		case ef.varying && ef.exact:
 			out = append(out, ruledBlendFaces(ef)...)
 		case ef.varying:
@@ -30,9 +62,6 @@ func filletResultFaces(body *topo.Body, fils []edgeFillet, blends map[uint64]*co
 		default:
 			out = append(out, cylinderFace(ef, caps))
 		}
-	}
-	for _, cb := range blends {
-		out = append(out, spherePatchFace(cb))
 	}
 	return out
 }
