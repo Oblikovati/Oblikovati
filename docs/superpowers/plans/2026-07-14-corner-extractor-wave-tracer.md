@@ -908,30 +908,40 @@ For each `edgeFillet`: `detectRunoutRegions`; for each region, `extractRunout` �
 - [ ] **Step 6: Zero-regression corpus** — count = **51** (50 + S1), every other case's PASS/FAIL byte-identical (diff the name set).
 - [ ] **Step 7: Commit** — `feat(blend): watertight runout closure (host reconstruction + boss-wall split); green S1`.
 
-### Task 11: Green S4 + T1 (cone→circle, torus→circle)
+### Task 11: Green T1 (torus boss — fragile-band gate refinement + torus wall split)
 
-**Files:** Test/oracle only unless a footprint exposes a gap; possibly `kernel/ops/fillet_runout_imprint.go` if the cone/torus footprint edge isn't already a circular `Arc3d` on the host plane.
+**S4 already greened for free with S1 (Task 10b).** T1 remains. **Scoped from the topology probe** (`scratchpad/tracer/t1-t7-topology.md`): T1 IS a double-interference like S1/S4 — `detectRunouts`→2 `geom.Arc3d` imprints, both `solveImprint` ok; `detectRunoutRegions`→1 region/2 imprints (spine [18.13,41.87]); the tiler math applies unchanged. Two concrete blockers, both in the CLOSURE:
 
-S4 (cone boss, footprint = cone∩⊥plane = **circle**) and T1 (torus boss, footprint = torus∩plane = **circle**) are the SAME 3×val-4 family with circular footprints — Task 7's `Arc3d` solve + Task 9's tiler should green them with no new geometry. **Classify the footprint from the actual surface∩plane, not the feature's surface type** (advisor pitfall 7 — a cone crossed by an oblique plane would be an ellipse; verify the S4/T1 host planes are ⟂ the feature axis so the footprint is genuinely circular).
+**Blocker 1 — the fragile-band gate over-vetoes.** `collectRunouts` (`fillet_runout_faces.go:33`) early-returns empty when `bodyHasFragileBand(body)` is true, and that guard (`fillet_obstacle_faces.go:107`) fires on ANY `geom.Torus`/`geom.BSplineSurface` face. In T1 the torus is the **boss being cut** (the runout's own feature), NOT a fragile survivor band — so T1 is wrongly rejected before the tiler runs. **This guard is what fixed the T4 regression** (T4 has a torus SURVIVOR that must not be re-welded), so the refinement is regression-sensitive: distinguish "torus/bspline that is a runout boss the tiler will consume" from "torus/bspline survivor band that must defer". A safe discriminator: veto only if the fragile face is NOT one of the detected runout imprints' features (i.e. compute the runout regions first; if every fragile band face is a boss owned by a region the tiler handles, proceed; otherwise defer as before). **T4 must stay green** (it has no crossing boss → no region → still defers).
 
-- [ ] **Step 1: Run `TestOCCTBlendSimple/S4`** — FAIL(area) before. Oracle-compare; confirm within 1%.
-- [ ] **Step 2: If a gap,** debug against the S4 oracle (systematic-debugging: per-face area diff first). Do NOT loosen tolerance.
-- [ ] **Step 3: Repeat for T1** (torus footprint).
-- [ ] **Step 4: Zero-regression corpus** (count rises to 53).
-- [ ] **Step 5: Commit** — `test(blend): green S4+T1 runout cases (cone/torus circular footprints)`.
+**Blocker 2 — `buildSplitBossWall` assumes a cylinder wall.** T1's boss wall is a `geom.Torus`; its footprint rim is an `Arc3d` on the torus, not a cylinder. Extend the boss-wall split (Task 10b's `buildSplitBossWall`/`cylinderWallSeam`) to split a **torus** rim into welding sub-arcs at the tiling corners, preserving the torus wall surface (do NOT approximate it as a cylinder). Read how the wall surface is carried and generalize the surface type.
 
-### Task 12: Green T7 (elliptical-cylinder → ellipse footprint)
+**Files:** `kernel/ops/fillet_runout_faces.go` (gate refinement), the boss-wall split file from Task 10b (`fillet_runout_walls.go` or wherever `buildSplitBossWall` landed); test + the T1 corpus gate.
 
-**Files:** Modify `kernel/ops/fillet_runout_imprint.go` (`footprintConic` + the line∩ellipse solve); test/oracle.
+- [ ] **Step 1: Failing test** — `TestOCCTBlendSimple/T1$` FAILs at baseline surplus (area 15334.8 vs OCCT 15179.9, +1.02%). Add a focused test asserting `collectRunouts` on the T1 body returns a NON-empty `handled` (the gate no longer vetoes it).
+- [ ] **Step 2: Refine the fragile-band gate** so a runout-boss torus/bspline does not veto while a survivor band still does. **Re-run T4** (`TestOCCTBlendSimple/T4$` + `TestCollectRunouts_DefersOnFragileBand`) after the change — it MUST stay green. Show the discriminator.
+- [ ] **Step 3: Extend the boss-wall split to a torus wall** (Arc3d rim on `geom.Torus`). Show the code.
+- [ ] **Step 4: GREEN + T1 oracle gate** — `go test ./model/feature -run 'TestOCCTBlendSimple/T1$' -v` → PASS, area within 1% of 15179.9 (`[15028.1, 15331.7]`). Do NOT loosen the gate; if area overshoots, debug the torus-wall split / host reconstruction against the T1 oracle.
+- [ ] **Step 5: Zero-regression corpus** — count = **53** (S1/S4/T1), every other case byte-identical (diff the name set; T4 explicitly re-checked).
+- [ ] **Step 6: Commit** — `feat(blend): green T1 runout (fragile-band gate refinement + torus boss-wall split)`.
 
-T7's feature-A is an elliptical cylinder (STEP `SURFACE_OF_LINEAR_EXTRUSION` over an ELLIPSE), footprint = **ellipse**. Extend Task 7's `footprintConic`/`solveImprint` to accept `geom.Ellipse`; the crossing is line∩ellipse (same quadratic after the affine normalization `x→x/a, y→y/b`). The 3-quad tiler (Task 9) is unchanged — only the featureA-arc side becomes an elliptical arc (still G0, position-only).
+### Task 12: Green T7 (elliptical-cylinder boss — ellipse footprint + elliptical wall split)
 
-- [ ] **Step 1: Failing test** — `solveImprint` on a `geom.Ellipse` footprint yields a sane `imprintCut` (was honest-rejected).
+**Scoped from the topology probe:** T7's boss is a `geom.EllipticalCylinder`; `detectRunouts`→2 imprints, but host B's footprint is a `geom.EllipseFull` which `footprintConic`/`solveImprint` (`fillet_runout_imprint.go:66`) honest-reject (circle/Arc3d only) → the region collapses to a **singleton** (1 imprint) → `runoutFacesFor` skips it (`len<2`). Two blockers:
+
+**Blocker 1 — ellipse footprint unsolved.** Extend `footprintConic`/`solveImprint` to accept `geom.EllipseFull`. The crossing is line∩ellipse (the quadratic after the affine normalization `x→x/a, y→y/b`, with a model-scaled discriminant guard). `outboardArc` currently builds a `geom.Circle` — the outboard sub-arc must become an **elliptical** sub-arc (a sub-domain of the `EllipseFull`, or an `Arc3d`-analogue on the ellipse). Once the ellipse imprint solves, it clusters with the Arc3d imprint into a 2-imprint region → double-interference like S1/S4, tiler applies.
+
+**Blocker 2 — `EllipticalCylinder` boss-wall split** in the closure (analogous to Task 11's torus wall): split the elliptical-cylinder footprint rim at the tiling corners, preserving the `geom.EllipticalCylinder` wall surface.
+
+**Files:** `kernel/ops/fillet_runout_imprint.go` (`footprintConic` + line∩ellipse + elliptical `outboardArc`); the boss-wall split file (elliptical-cylinder case); test + the T7 corpus gate.
+
+- [ ] **Step 1: Failing test** — `solveImprint` on the T7 host-B `geom.EllipseFull` footprint yields a sane `imprintCut` (was ok=false); assert `detectRunoutRegions(T7)` yields 1 region with **2** imprints (currently 1).
 - [ ] **Step 2: RED.**
-- [ ] **Step 3: Implement** the ellipse branch in `footprintConic` + the line∩ellipse root solve (model-scaled discriminant guard). Show the code.
-- [ ] **Step 4: GREEN + `TestOCCTBlendSimple/T7` oracle gate** — FAIL→PASS within 1%.
-- [ ] **Step 5: Zero-regression corpus** (count rises to 54; S1/S4/T1/T7 all PASS).
-- [ ] **Step 6: Commit** — `test(blend): green T7 runout case (elliptical-cylinder footprint)`.
+- [ ] **Step 3: Implement** the ellipse branch in `footprintConic` + line∩ellipse roots (model-scaled discriminant) + the elliptical outboard sub-arc. Show the code.
+- [ ] **Step 4: Extend the boss-wall split to an `EllipticalCylinder` wall.** Show the code.
+- [ ] **Step 5: GREEN + T7 oracle gate** — `go test ./model/feature -run 'TestOCCTBlendSimple/T7$' -v` → PASS, area within 1% of 7479.62 (`[7404.8, 7554.4]`). Do NOT loosen the gate.
+- [ ] **Step 6: Zero-regression corpus** — count = **54** (S1/S4/T1/T7); every other case byte-identical.
+- [ ] **Step 7: Commit** — `feat(blend): green T7 runout (ellipse footprint solve + elliptical boss-wall split)`.
 
 
 ---
