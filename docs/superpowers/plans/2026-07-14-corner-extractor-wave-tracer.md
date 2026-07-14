@@ -908,7 +908,18 @@ For each `edgeFillet`: `detectRunoutRegions`; for each region, `extractRunout` �
 - [ ] **Step 6: Zero-regression corpus** — count = **51** (50 + S1), every other case's PASS/FAIL byte-identical (diff the name set).
 - [ ] **Step 7: Commit** — `feat(blend): watertight runout closure (host reconstruction + boss-wall split); green S1`.
 
-### Task 11: Green T1 (torus boss — fragile-band gate refinement + torus wall split)
+### Task 11: Green T1 (torus boss) — ★ DEFERRED TO MILESTONE 3 (user decision 2026-07-14)
+
+> **RE-SCOPED & DEFERRED.** The task below was executed and BLOCKED with decisive oracle
+> forensics (`.superpowers/sdd/task-11-report.md`): the topology probe MIS-classified T1. T1/T4 are
+> **NOT** double-interference — they are **single cylinder-boss runouts coupled with an INTACT
+> torus SURVIVOR**. OCCT keeps the torus whole (face area 1144.04 == our unsplit torus 1143.986)
+> and its host footprint a hole (1204.6); reconciliation lands ~15168 vs OCCT 15179.9. Greening T1
+> needs a **new coupled single-boss+survivor tiling mode** (run out one boss, keep the coupled boss
+> intact) that touches the load-bearing S1/S4/T4 tiler and must keep T4 green — a new vertical,
+> comparable in scope to the S1 work. Per the user decision, this and Task 12 are **folded into the
+> Milestone-3 follow-up plan** alongside T9. The correct-model notes below are the M3 seed. Nothing
+> for Task 11/12 is committed; the branch stays green at corpus 52 (S1/S4 + baseline).
 
 **S4 already greened for free with S1 (Task 10b).** T1 remains. **Scoped from the topology probe** (`scratchpad/tracer/t1-t7-topology.md`): T1 IS a double-interference like S1/S4 — `detectRunouts`→2 `geom.Arc3d` imprints, both `solveImprint` ok; `detectRunoutRegions`→1 region/2 imprints (spine [18.13,41.87]); the tiler math applies unchanged. Two concrete blockers, both in the CLOSURE:
 
@@ -925,7 +936,13 @@ For each `edgeFillet`: `detectRunoutRegions`; for each region, `extractRunout` �
 - [ ] **Step 5: Zero-regression corpus** — count = **53** (S1/S4/T1), every other case byte-identical (diff the name set; T4 explicitly re-checked).
 - [ ] **Step 6: Commit** — `feat(blend): green T1 runout (fragile-band gate refinement + torus boss-wall split)`.
 
-### Task 12: Green T7 (elliptical-cylinder boss — ellipse footprint + elliptical wall split)
+### Task 12: Green T7 (elliptical-cylinder boss) — ★ DEFERRED TO MILESTONE 3 (with Task 11)
+
+> **DEFERRED.** Folded into the Milestone-3 follow-up alongside Task 11 (T1) and T9. T7 very likely
+> shares T1's corrected shape (a coupled **survivor**, here an ellipse, not a second runout boss) —
+> the probe's double-interference read is no longer trusted for the T-cases after the T1 forensics.
+> M3 must re-verify T7's true topology (single-boss+survivor vs genuine double) before implementing.
+> The notes below (ellipse footprint solver + elliptical wall handling) are still relevant M3 seeds.
 
 **Scoped from the topology probe:** T7's boss is a `geom.EllipticalCylinder`; `detectRunouts`→2 imprints, but host B's footprint is a `geom.EllipseFull` which `footprintConic`/`solveImprint` (`fillet_runout_imprint.go:66`) honest-reject (circle/Arc3d only) → the region collapses to a **singleton** (1 imprint) → `runoutFacesFor` skips it (`len<2`). Two blockers:
 
@@ -950,8 +967,9 @@ For each `edgeFillet`: `detectRunoutRegions`; for each region, `extractRunout` �
 
 - `go test ./kernel/ops/ ./model/feature` — all green.
 - `golangci-lint run ./kernel/ops/` — 0 issues.
-- `go test ./model/feature -run TestOCCTBlendSimple -v 2>&1 | grep -cE '^\s*--- PASS: TestOCCTBlendSimple/'` ≥ 54, with **S1/S4/T1/T7** among the PASSes and every other case byte-identical to the pre-wave output. **T9 is deferred to Milestone 3** (its fill needs the n-sided provider — see M2 header) and is NOT expected to pass here.
-- The strangler seam is proven (sphere + obstacle byte-for-byte against their correct baselines; the runout hexagon greened through the same `resolveBlend` via the 3-quad tiler), unblocking the Milestone 3 follow-up plan (curved miter + N-way + n-sided fill for T9).
+- **ACHIEVED:** `go test ./model/feature -run TestOCCTBlendSimple -v 2>&1 | grep -cE '^\s*--- PASS: TestOCCTBlendSimple/'` = **52**, with **S1 and S4** among the PASSes (the double-boss-interference runout family, greened end-to-end through detect→cluster→tile→`resolveBlend`→watertight closure) and every other case byte-identical to the pre-wave output.
+- **DEFERRED to Milestone 3** (user decision 2026-07-14): **T1, T7** (single-boss+survivor coupled runout — a new tiling mode, see Tasks 11/12) and **T9** (n-sided fill). These were re-scoped out of M2 after oracle forensics showed they are a distinct, larger vertical than the double-boss tracer.
+- The strangler seam is proven (sphere + obstacle byte-for-byte against their correct baselines; the runout hexagon greened through the same `resolveBlend` via the 3-quad tiler + watertight closure), unblocking the Milestone 3 follow-up plan (curved miter + N-way + n-sided fill for T9 + the coupled single-boss+survivor mode for T1/T7).
 - **No PR** — the whole corpus is not yet green (Milestone 3 remains). Accumulate on the branch.
 
 ---

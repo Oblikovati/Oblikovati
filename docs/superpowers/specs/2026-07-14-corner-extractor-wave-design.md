@@ -319,15 +319,27 @@ fillet-cut abscissa `x = ±√(R_B²−d²) = ±√48 = 6.93`. **T9 is deferred 
   to M3); **G1** on the fillet ¼-circles (→ `ef.cyl`) and host-plane runout curves
   (→ host plane). Central is thus a pure-position all-G0 Coons patch.
 - **Task 10 — Wire + oracle-gate S1** behind do-no-harm; split the fillet cylinder
-  outside the region and replace the span with the 3 patches.
-- **Tasks 11–12 — S4/T1** (cone/torus circular footprints, reuse tiler) then **T7**
-  (`solveImprint` ellipse extension; line∩ellipse).
-- **Gate:** **S1/S4/T1/T7** transition to **PASS**, area matching the OCCT
-  Gauss-integrated oracle to **< 1 %**; full per-case diff shows **zero
-  regression** on all other cases. Corpus ≥ **54** PASS. **T9 excluded** (M3).
+  outside the region and replace the span with the 3 patches (Task 10a wiring +
+  Task 10b watertight closure: host-plane reconstruction + boss-wall split).
+- **Gate (ACHIEVED):** **S1 and S4** transition to **PASS** as watertight solids,
+  area matching the OCCT oracle to **< 1 %** (S1 0.12 %, S4 0.18 %); full per-case
+  diff shows **zero regression**. Corpus **52 PASS**.
+- **DEFERRED to M3 (user decision 2026-07-14):** **T1/T7** — oracle forensics
+  (`.superpowers/sdd/task-11-report.md`) disproved the double-interference reading:
+  T1/T4 are **single cylinder-boss runouts coupled with an INTACT torus SURVIVOR**
+  (OCCT keeps the torus whole + its footprint a hole), which needs a **new
+  coupled single-boss+survivor tiling mode**, a distinct larger vertical.
 
-### Milestone 3 — Curved miter generalization, N-way & n-sided fill (incl. T9)
+### Milestone 3 — Curved miter, N-way, n-sided fill (T9) & coupled single-boss+survivor runout (T1/T7)
 
+- **Task — coupled single-boss+survivor runout (T1/T7).** A tiling variant where one
+  imprint's boss is run out while the coupled boss is kept **intact** (torus for T1,
+  elliptical cylinder for T7): leave that face untouched, keep its host footprint a
+  hole, weld the fillet notch/wings/patches to the runout boss on one side and the
+  intact fillet/host boundary on the survivor side. Discriminator: "is there a
+  NON-fragile boss whose runout the tiler can build" (protects T4's baseline). Prefer
+  never splitting the survivor (sidesteps the split-rim torus-band tessellation gap,
+  `tessellate_trim.go:22`). Re-verify T7's true topology first.
 - **Task — `extractMiter`** (release the curved-host restriction) + remaining
   high-valence extractors; **build the n-sided transfinite fill** (subdivision or
   Charrot–Gregory) and green **T9** (valence-6 runout patch) through it; expand
