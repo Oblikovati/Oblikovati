@@ -300,7 +300,7 @@ func boundaryRing(c0, d1, c1, d0 geom.BSplineCurve) []math.Point3 {
 // sampleCurve3Open (corner_provider_sphere.go) — a geom.BSplineCurve satisfies geom.Curve3 — so the
 // BSpline and Curve3 boundary-ring samplers share one implementation (Task-3 de-dup).
 func sampleRailOpen(c geom.BSplineCurve, rev bool) []math.Point3 {
-	return sampleCurve3Open(c, ringSegSamples, rev)
+	return sampleCurve3Open(c, rev)
 }
 
 // ringSegSamples is the per-rail sample count of the placeholder boundary loop (Task 6 refines it).

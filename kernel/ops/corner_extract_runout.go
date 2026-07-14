@@ -28,19 +28,27 @@ import (
 // outside a feature circle), and honest-rejects a mis-tiled loop via the flat-lune guard. This
 // task is UNWIRED — Task 10 connects it — so its only obligation is to emit the three loops.
 func extractRunout(region runoutRegion, ef edgeFillet, res Resolution) ([]RailLoop, bool) {
+	loops, _, ok := extractRunoutTiled(region, ef, res)
+	return loops, ok
+}
+
+// extractRunoutTiled is extractRunout with the resolved runoutTiling also returned, so the closure
+// path (buildRunoutHostsAndWalls) can reconstruct the host planes and split the boss walls against
+// the SAME corners the loops were tiled from (bit-identical shared corners ⇒ watertight, Task 10b).
+func extractRunoutTiled(region runoutRegion, ef edgeFillet, res Resolution) ([]RailLoop, runoutTiling, bool) {
 	tl, ok := resolveTiling(region, ef)
 	if !ok {
-		return nil, false
+		return nil, runoutTiling{}, false
 	}
 	loops := make([]RailLoop, 0, 3)
 	for _, build := range []func() (RailLoop, bool){tl.centralLoop, tl.rightLoop, tl.leftLoop} {
 		loop, ok := build()
 		if !ok || !loopWellFormed(loop, res.Weld()) {
-			return nil, false
+			return nil, runoutTiling{}, false
 		}
 		loops = append(loops, loop)
 	}
-	return loops, true
+	return loops, tl, true
 }
 
 // runoutTiling is extractRunout's resolved geometry: the fillet cylinder, the two host planes and
@@ -57,6 +65,7 @@ type runoutTiling struct {
 	fbL, faL       math.Point3 // ∩planeB / ∩planeA at -x
 	sbR, sbL       math.Point3 // seam bottoms (on feature-A footprint, plane A)
 	stR, stL       math.Point3 // seam tops (on feature-B footprint, plane B)
+	caL, caR       math.Point3 // feature-A footprint crossings of the receded band (plane A, x-ordered)
 }
 
 // resolveTiling classifies the two features, derives the free seam abscissa, and computes the
@@ -77,7 +86,17 @@ func resolveTiling(region runoutRegion, ef edgeFillet) (runoutTiling, bool) {
 	if !t.resolveCorners(aCut, bCut, center+half/2, center-half/2) {
 		return runoutTiling{}, false
 	}
+	t.caL, t.caR = xOrdered(aCut.pMinus, aCut.pPlus)
 	return t, true
+}
+
+// xOrdered returns (p,q) sorted so the first has the smaller X — the left/right convention the host-A
+// notch + flat-fill triangles use for the feature-A crossings (caL left, caR right).
+func xOrdered(a, b math.Point3) (lo, hi math.Point3) {
+	if a.X <= b.X {
+		return a, b
+	}
+	return b, a
 }
 
 // resolveCorners fills the four fillet-cut corners (exact cylinder∩plane contacts) and the four
@@ -206,6 +225,36 @@ func featureSubArc(im runoutImprint, from, to math.Point3) (geom.Arc3d, bool) {
 	mid := c.TranslateBy(bis.Scale(r / l))
 	arc, err := geom.Arc3dByThreePoints(from, mid, to)
 	return arc, err == nil
+}
+
+// featureMajorArc is the MAJOR (>180°) sub-arc of an imprint's footprint circle from `from` to `to`,
+// built through the point ANTIPODAL to featureSubArc's bisector midpoint — the piece that wraps the far
+// side of the boss, where featureSubArc's minor arc would cut straight across it.
+func featureMajorArc(im runoutImprint, from, to math.Point3) (geom.Arc3d, bool) {
+	c, r, ok := footprintConic(im.footprintEdge)
+	if !ok {
+		return geom.Arc3d{}, false
+	}
+	bis := c.VectorTo(from).Add(c.VectorTo(to))
+	l := bis.Length()
+	if l < arcBisectorTiny*r {
+		return geom.Arc3d{}, false // endpoints near-antipodal: the major/minor split is ill-defined
+	}
+	mid := c.TranslateBy(bis.Scale(-r / l)) // antipodal to featureSubArc's midpoint → the major side
+	arc, err := geom.Arc3dByThreePoints(from, mid, to)
+	return arc, err == nil
+}
+
+// hostSideArc is the footprint sub-arc from `from` to `to` that stays on the imprint's HOST side (away
+// from the fillet band): the minor (featureSubArc) arc when ITS midpoint is host-side, else the major
+// one. It reuses onHostSide's signed band test (fillet_runout_imprint.go) so the host-plane notch and
+// the split boss wall trace the SAME boundary the boss footprint had before the fillet.
+func hostSideArc(im runoutImprint, from, to math.Point3) (geom.Arc3d, bool) {
+	minor, ok := featureSubArc(im, from, to)
+	if ok && onHostSide(im, minor.PointAt(0.5)) {
+		return minor, true
+	}
+	return featureMajorArc(im, from, to)
 }
 
 // planeARunoutCurve is the fill's boundary on host plane A between a seam-bottom and a fillet-cut

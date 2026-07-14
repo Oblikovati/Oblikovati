@@ -123,7 +123,7 @@ func railLoopToFilletLoops(loop RailLoop) []filletLoop {
 	var pts []math.Point3
 	var curves []geom.Curve3
 	for _, side := range loop.Sides {
-		for _, p := range sampleCurve3Open(side.Curve, ringSegSamples, false) {
+		for _, p := range sampleCurve3Open(side.Curve, false) {
 			pts = append(pts, p)
 			curves = append(curves, side.Curve)
 		}
@@ -131,14 +131,16 @@ func railLoopToFilletLoops(loop RailLoop) []filletLoop {
 	return []filletLoop{{pts: pts, curves: curves}}
 }
 
-// sampleCurve3Open returns n points along c (reversed if rev), EXCLUDING the far endpoint, so
-// segments from consecutive calls concatenate without duplicating a shared corner. Generic over
-// geom.Curve3 — sampleRailOpen (corner_blend_obstacle.go) is its geom.BSplineCurve-only sibling.
-func sampleCurve3Open(c geom.Curve3, n int, rev bool) []math.Point3 {
+// sampleCurve3Open returns ringSegSamples points along c (reversed if rev), EXCLUDING the far endpoint,
+// so segments from consecutive calls concatenate without duplicating a shared corner. The density is the
+// one ring granularity every blend boundary shares (ringSegSamples), so a host/wall/patch that tiles the
+// SAME curve welds point-for-point. Generic over geom.Curve3 — sampleRailOpen (corner_blend_obstacle.go)
+// is its geom.BSplineCurve-only sibling.
+func sampleCurve3Open(c geom.Curve3, rev bool) []math.Point3 {
 	lo, hi := c.Domain()
-	pts := make([]math.Point3, n)
-	for i := 0; i < n; i++ {
-		f := float64(i) / float64(n)
+	pts := make([]math.Point3, ringSegSamples)
+	for i := 0; i < ringSegSamples; i++ {
+		f := float64(i) / float64(ringSegSamples)
 		if rev {
 			f = 1 - f
 		}
@@ -165,7 +167,7 @@ func certifySphere(sph geom.Sphere, loop RailLoop, scale Resolution) Certificate
 func sphereRailDeviation(sph geom.Sphere, loop RailLoop, weld float64) (maxDev float64, weldsArms bool) {
 	weldsArms = true
 	for _, side := range loop.Sides {
-		for _, p := range sampleCurve3Open(side.Curve, ringSegSamples, false) {
+		for _, p := range sampleCurve3Open(side.Curve, false) {
 			dev := stdmath.Abs(p.DistanceTo(sph.Center) - sph.Radius)
 			maxDev = stdmath.Max(maxDev, dev)
 			weldsArms = weldsArms && dev <= weld

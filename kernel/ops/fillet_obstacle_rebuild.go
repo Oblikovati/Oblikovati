@@ -183,12 +183,21 @@ func nodeSection(d obstacleDetection, og obstacleGeom, idx int) wingCut {
 	return wingCut{nodeTa: wallP, nodeTb: node, mid: mid}
 }
 
-// buildWingFace assembles one wing's cylinder face: the truncated tangent lines, the node section arc,
-// and the untouched c0/c1 rounded end (cornerEndSegs) — then applies cylinderFace's winding flip.
+// buildWingFace assembles one wing's cylinder face with the mid-span obstacle path's single analytic
+// quarter-arc cut section (cutSegs nil).
 func buildWingFace(ef edgeFillet, cut wingCut, leftWing bool) filletFace {
-	segs := leftWingSegs(ef, cut)
+	return buildWingFaceCut(ef, cut, leftWing, nil)
+}
+
+// buildWingFaceCut assembles one wing's cylinder face: the truncated tangent lines, the node cut
+// section, and the untouched c0/c1 rounded end (cornerEndSegs) — then applies cylinderFace's winding
+// flip. cutSegs is the cut section oriented nodeTa→nodeTb; nil ⇒ the single analytic quarter-arc. The
+// runout path (Task 10b) passes the flank patch's arm arc sampled into ringSegSamples chords so the
+// wing and patch share those vertices (class 1, no T-junction).
+func buildWingFaceCut(ef edgeFillet, cut wingCut, leftWing bool, cutSegs []endSeg) filletFace {
+	segs := leftWingSegs(ef, cut, cutSegs)
 	if !leftWing {
-		segs = rightWingSegs(ef, cut)
+		segs = rightWingSegs(ef, cut, cutSegs)
 	}
 	if cylinderSegsFlipped(ef, segs) != ef.flip {
 		segs = reverseEndSegs(segs)
@@ -196,24 +205,32 @@ func buildWingFace(ef edgeFillet, cut wingCut, leftWing bool) filletFace {
 	return filletFace{surface: ef.cyl, loops: []filletLoop{loopFromSegs(segs)}, parent: filletEdgeProvenance(ef.edge)}
 }
 
-// leftWingSegs is the c0→node wing boundary: A-tangent c0.ta→nodeTa, the node section nodeTa→nodeTb,
+// cutSectionSegs returns the wing's cut section oriented nodeTa→nodeTb: the caller's sampled chain when
+// present (already nodeTa→nodeTb), else the single analytic quarter-arc through cut.mid.
+func cutSectionSegs(cut wingCut, cutSegs []endSeg) []endSeg {
+	if cutSegs != nil {
+		return cutSegs
+	}
+	arc, _ := geom.Arc3dByThreePoints(cut.nodeTa, cut.mid, cut.nodeTb)
+	return []endSeg{{from: cut.nodeTa, to: cut.nodeTb, curve: arc, mid: cut.mid, arc: true}}
+}
+
+// leftWingSegs is the c0→node wing boundary: A-tangent c0.ta→nodeTa, the node cut section nodeTa→nodeTb,
 // B-tangent nodeTb→c0.tb, and the reversed c0 rounded end — cylinderFace's chain with the c1 end
 // replaced by the node cut.
-func leftWingSegs(ef edgeFillet, cut wingCut) []endSeg {
-	arc, _ := geom.Arc3dByThreePoints(cut.nodeTa, cut.mid, cut.nodeTb)
+func leftWingSegs(ef edgeFillet, cut wingCut, cutSegs []endSeg) []endSeg {
 	segs := []endSeg{{from: ef.c0.ta, to: cut.nodeTa}}
-	segs = append(segs, endSeg{from: cut.nodeTa, to: cut.nodeTb, curve: arc, mid: cut.mid, arc: true})
+	segs = append(segs, cutSectionSegs(cut, cutSegs)...)
 	segs = append(segs, endSeg{from: cut.nodeTb, to: ef.c0.tb})
 	return append(segs, reverseEndSegs(cornerEndSegs(ef.c0, nil))...)
 }
 
 // rightWingSegs is the node→c1 wing boundary: A-tangent nodeTa→c1.ta, the c1 rounded end, B-tangent
-// c1.tb→nodeTb, and the reversed node section nodeTb→nodeTa — cylinderFace's chain with the c0 end
+// c1.tb→nodeTb, and the reversed node cut section nodeTb→nodeTa — cylinderFace's chain with the c0 end
 // replaced by the node cut.
-func rightWingSegs(ef edgeFillet, cut wingCut) []endSeg {
-	arc, _ := geom.Arc3dByThreePoints(cut.nodeTb, cut.mid, cut.nodeTa)
+func rightWingSegs(ef edgeFillet, cut wingCut, cutSegs []endSeg) []endSeg {
 	segs := []endSeg{{from: cut.nodeTa, to: ef.c1.ta}}
 	segs = append(segs, cornerEndSegs(ef.c1, nil)...)
 	segs = append(segs, endSeg{from: ef.c1.tb, to: cut.nodeTb})
-	return append(segs, endSeg{from: cut.nodeTb, to: cut.nodeTa, curve: arc, mid: cut.mid, arc: true})
+	return append(segs, reverseEndSegs(cutSectionSegs(cut, cutSegs))...)
 }

@@ -4,6 +4,7 @@ package ops
 
 import (
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
@@ -78,7 +79,16 @@ type obstacleWallSeam struct {
 // loop: the bottom rim is the shared hole edge (skipped), the top rim is the other closed edge
 // (StartVertex==EndVertex), the seam is the remaining open edge. ok=false on any unexpected shape.
 func wallSeamAndTop(d obstacleDetection) (obstacleWallSeam, bool) {
-	loops := d.obstacleWall.Loops()
+	return cylinderWallSeam(d.obstacleWall, d.holeEdge)
+}
+
+// cylinderWallSeam extracts a swept wall face's preserved pieces from its single loop given its bottom
+// rim edge: the bottom rim (holeEdge) is skipped, the closed top rim (StartVertex==EndVertex) yields
+// top/topEdge/topCurve/topVID, and the remaining open edge is the parametric seam. Shared by the mid-
+// span obstacle wall (elliptical tube) and the runout boss wall (circular cylinder), both of which
+// preserve seam + closed top rim while their bottom rim is re-split (Task 10b, no duplication).
+func cylinderWallSeam(wall *topo.Face, holeEdge *topo.Edge) (obstacleWallSeam, bool) {
+	loops := wall.Loops()
 	if len(loops) != 1 {
 		return obstacleWallSeam{}, false
 	}
@@ -86,7 +96,7 @@ func wallSeamAndTop(d obstacleDetection) (obstacleWallSeam, bool) {
 	for _, u := range loops[0].EdgeUses() {
 		e := u.Edge()
 		switch {
-		case e.ID() == d.holeEdge.ID():
+		case e.ID() == holeEdge.ID():
 			continue
 		case e.StartVertex() == e.EndVertex():
 			s.topEdge, s.topCurve, s.top = e.ID(), e.Geometry(), e.StartVertex().Point()
@@ -95,7 +105,7 @@ func wallSeamAndTop(d obstacleDetection) (obstacleWallSeam, bool) {
 			s.seamEdge = e.ID()
 		}
 	}
-	s.bottom = d.holeEdge.StartVertex().Point()
+	s.bottom = holeEdge.StartVertex().Point()
 	return s, s.topEdge != 0 && s.seamEdge != 0
 }
 

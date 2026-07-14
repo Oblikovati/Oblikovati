@@ -39,7 +39,7 @@ func filletResultFaces(body *topo.Body, fils []edgeFillet, blends map[uint64]*co
 func collectRebuildFaces(body *topo.Body, fils []edgeFillet, res Resolution, maps filletRebuildMaps) (
 	map[uint64]filletFace, map[uint64][]filletFace, map[uint64]bool) {
 	replace, extra, handled := collectObstacles(body, fils, res, maps)
-	rnReplace, rnExtra, rnHandled := collectRunouts(fils, res, handled)
+	rnReplace, rnExtra, rnHandled := collectRunouts(body, fils, res, handled, maps)
 	for id, f := range rnReplace {
 		replace[id] = f
 	}
