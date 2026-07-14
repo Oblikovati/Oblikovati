@@ -197,6 +197,83 @@ func DecodeCircleRelations(seg []byte) []CircleRelation {
 	return out
 }
 
+// RadiusDim is a decoded radius or diameter dimension of a circle or an arc, resolved to the
+// curve's geometry so the translator can bind it by coordinate. Radius and diameter are
+// byte-identical in the node (both pin the same degree of freedom — the curve's radius), so both
+// decode to this and apply as a radius dimension of the curve's OWN radius; the value equals the
+// current radius, so applying it removes a DOF without moving geometry. The label form (r vs ⌀) is
+// not recoverable and not needed for DOF parity.
+type RadiusDim struct {
+	Center Point2D
+	Radius float64
+	Arc    bool    // true → bind an arc (matched by centre + radius), false → a circle
+	Start  Point2D // arc endpoints (zero for a circle)
+	End    Point2D
+}
+
+// DecodeRadiusDimensions returns the sketch's radius/diameter dimensions. A radius-dimension node
+// has t44 == 0 (shared with midpoint) but its first reference is the 0x10 list sentinel — a
+// midpoint's first reference is a LINE — and its SECOND reference resolves to a circle or arc
+// entity id (circle = centre ref + 1; arc = its highest point ref + 1). The value is the curve's
+// own decoded radius, so the dimension reproduces exactly. A node whose second reference resolves
+// to neither a circle nor an arc is dropped rather than guessed.
+func DecodeRadiusDimensions(seg []byte) []RadiusDim {
+	vc := vertexCoords(seg)
+	circ := circleByEntityID(seg, vc)
+	arcs := arcByEntityID(seg, vc)
+	var out []RadiusDim
+	for _, c := range collectRawCons(seg) {
+		if c.disc != 0 || c.r1 != emptyListMark || c.r2&refBit == 0 {
+			continue
+		}
+		id := c.r2 &^ refBit
+		if ce, ok := circ[id]; ok {
+			out = append(out, RadiusDim{Center: ce.inline, Radius: ce.radius})
+		} else if a, ok := arcs[id]; ok {
+			out = append(out, RadiusDim{Center: a.Center, Radius: a.Radius, Arc: true, Start: a.Start, End: a.End})
+		}
+	}
+	return out
+}
+
+// arcByEntityID maps each arc's ENTITY id to the arc with its centre and endpoints resolved and its
+// inline radius. Inventor allocates the arc entity right after its centre/start/end point nodes, so
+// the entity id is the highest of those three point references + 1 — the same "+1 after the
+// constituent point(s)" rule circleByEntityID uses for a circle's single centre. This is the id a
+// radius dimension uses to name the arc.
+func arcByEntityID(seg []byte, vc map[uint32]Point2D) map[uint32]Arc {
+	m := map[uint32]Arc{}
+	for _, it := range collectItems(seg) {
+		if it.arc == nil {
+			continue
+		}
+		a := it.arc
+		arc := Arc{Radius: a.radius}
+		if p, ok := vc[a.center]; ok {
+			arc.Center = p
+		}
+		if p, ok := vc[a.start]; ok {
+			arc.Start = p
+		}
+		if p, ok := vc[a.end]; ok {
+			arc.End = p
+		}
+		m[maxRef(a.center, a.start, a.end)+1] = arc
+	}
+	return m
+}
+
+func maxRef(a, b, c uint32) uint32 {
+	m := a
+	if b > m {
+		m = b
+	}
+	if c > m {
+		m = c
+	}
+	return m
+}
+
 // GroundKind selects which entity a decoded ground constraint fixes.
 type GroundKind int
 
@@ -612,10 +689,11 @@ func vertexCoords(seg []byte) map[uint32]Point2D {
 }
 
 // clusterVertexRefs returns the distinct point references in one cluster, ascending — every
-// reference a curve makes to a point node: a line's two endpoints, an arc's endpoints, and a
-// circle's centre. The centre matters even though it is not a "vertex": omitting it leaves the
-// reference set one short of the point set whenever the sketch has a circle, so the count check in
-// vertexCoords would reject the whole cluster (a part with any circle would resolve no constraints).
+// reference a curve makes to a point node: a line's two endpoints, an arc's endpoints AND centre,
+// and a circle's centre. A centre matters even though it is not a "vertex": every centre has its
+// own point node in clusterPoints, so omitting it leaves the reference set short of the point set
+// and misaligns the rank correspondence (a circle-bearing cluster would resolve nothing; an arc's
+// centre would rank-align to the wrong point). Including all centres keeps refs and points in step.
 func clusterVertexRefs(cl []sketchItem) []uint32 {
 	seen := map[uint32]bool{}
 	for _, it := range cl {
@@ -623,7 +701,7 @@ func clusterVertexRefs(cl []sketchItem) []uint32 {
 		case it.line != nil && it.line.paired:
 			seen[it.line.a], seen[it.line.b] = true, true
 		case it.arc != nil:
-			seen[it.arc.start], seen[it.arc.end] = true, true
+			seen[it.arc.start], seen[it.arc.end], seen[it.arc.center] = true, true, true
 		case it.circle != nil && it.circle.hasRef:
 			seen[it.circle.ref] = true
 		}

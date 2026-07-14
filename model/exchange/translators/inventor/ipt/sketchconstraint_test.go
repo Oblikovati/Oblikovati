@@ -314,6 +314,51 @@ func TestPointsSymmetric(t *testing.T) {
 	}
 }
 
+// TestDecodeRadiusDimensions verifies radius/diameter decode for both a circle and an arc. The
+// node has t44 == 0 (shared with midpoint) but its first ref is the 0x10 sentinel (not a line) and
+// its second ref resolves to a circle (centre ref + 1) or arc (highest point ref + 1) entity id.
+// Radius and diameter are byte-identical, so k_rad/k_dia and k_arcrad/k_arcdia each decode to one
+// dimension of the curve's own radius. k_rad/k_dia dimension circle C1 = (0,10) r1.5; the arc pair
+// dimension an arc of radius 2 centred (10,0). The coincidence-only bases decode none.
+func TestDecodeRadiusDimensions(t *testing.T) {
+	circleCase := func(file string) []RadiusDim { return DecodeRadiusDimensions(segFor(t, file)) }
+	if r := circleCase("k_base.ipt"); len(r) != 0 {
+		t.Errorf("k_base: got %d radius dims, want 0", len(r))
+	}
+	for _, file := range []string{"k_rad.ipt", "k_dia.ipt"} {
+		rs := circleCase(file)
+		if len(rs) != 1 {
+			t.Fatalf("%s: got %d radius dims, want 1", file, len(rs))
+		}
+		r := rs[0]
+		if r.Arc {
+			t.Errorf("%s: dimensioned an arc, want a circle", file)
+		}
+		if absf(r.Center.X) > 1e-6 || absf(r.Center.Y-10) > 1e-6 || absf(r.Radius-1.5) > 1e-6 {
+			t.Errorf("%s: circle radius dim = centre %v r %.3g, want (0,10) r 1.5", file, r.Center, r.Radius)
+		}
+	}
+	if r := DecodeRadiusDimensions(segFor(t, "k_arcbase.ipt")); len(r) != 0 {
+		t.Errorf("k_arcbase: got %d radius dims, want 0", len(r))
+	}
+	for _, file := range []string{"k_arcrad.ipt", "k_arcdia.ipt"} {
+		rs := DecodeRadiusDimensions(segFor(t, file))
+		if len(rs) != 1 {
+			t.Fatalf("%s: got %d radius dims, want 1", file, len(rs))
+		}
+		r := rs[0]
+		if !r.Arc {
+			t.Errorf("%s: dimensioned a circle, want an arc", file)
+		}
+		if absf(r.Radius-2) > 1e-6 {
+			t.Errorf("%s: arc radius dim = r %.3g, want 2", file, r.Radius)
+		}
+		if absf(r.Center.X-10) > 1e-6 || absf(r.Center.Y) > 1e-6 {
+			t.Errorf("%s: arc centre = %v, want (10,0)", file, r.Center)
+		}
+	}
+}
+
 // TestHorizontalConstraintBindsRightLine checks the decoded horizontal constraint names the
 // horizontal line (0,0)-(3,0), proving the line resolves to its endpoint coordinates.
 func TestHorizontalConstraintBindsRightLine(t *testing.T) {

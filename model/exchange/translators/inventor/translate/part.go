@@ -87,6 +87,7 @@ func buildPart(ws *doc.Workspace, outPath string, d *ipt.Document, meshFallback 
 	warns = append(warns, applyGroundConstraints(def, d)...)
 	warns = append(warns, applySymmetryConstraints(def, d)...)
 	warns = append(warns, applyDistanceDimensions(def, d)...)
+	warns = append(warns, applyRadiusDimensions(def, d)...)
 	warns = append(warns, applyRevolveRadii(def, d)...)
 	warns = append(warns, applyAxialLengths(def, d)...)
 	warns = append(warns, applyCentrelineAnchor(def, d)...)
@@ -781,6 +782,66 @@ func applyDistanceDim(def *compdef.PartComponentDefinition, dm ipt.DistanceDim) 
 		return true
 	}
 	return false
+}
+
+// applyRadiusDimensions binds each decoded radius/diameter dimension (ipt.DecodeRadiusDimensions)
+// onto the sketch holding its circle or arc, as an AddRadius of the curve's own radius. Radius and
+// diameter are indistinguishable in the file and pin the same DOF, so both apply as a radius
+// dimension — the value equals the current radius, so nothing moves. Applied only while the sketch
+// has free DOF.
+func applyRadiusDimensions(def *compdef.PartComponentDefinition, d *ipt.Document) []string {
+	seg, ok := d.Segment("PmDCSegment")
+	if !ok {
+		return nil
+	}
+	applied := 0
+	for _, rd := range ipt.DecodeRadiusDimensions(seg) {
+		if applyRadiusDim(def, rd) {
+			applied++
+		}
+	}
+	if applied == 0 {
+		return nil
+	}
+	return []string{fmt.Sprintf("applied %d radius/diameter dimension(s)", applied)}
+}
+
+// applyRadiusDim adds one radius dimension to the first sketch that holds its circle or arc.
+func applyRadiusDim(def *compdef.PartComponentDefinition, rd ipt.RadiusDim) bool {
+	for k := 0; k < def.Sketches().Count(); k++ {
+		sk := def.Sketches().Item(k)
+		if sk.DegreesOfFreedom() <= 0 {
+			continue
+		}
+		var c sketch.CircularCurve
+		if rd.Arc {
+			if a := arcAtCoord(sk, rd.Center, rd.Radius); a != nil {
+				c = a
+			}
+		} else if cc := circleAtCoord(sk, rd.Center, rd.Radius); cc != nil {
+			c = cc
+		}
+		if c == nil {
+			continue
+		}
+		if _, err := sk.DimensionConstraints().AddRadius(c, fmt.Sprintf("%g cm", rd.Radius)); err != nil {
+			return false
+		}
+		return true
+	}
+	return false
+}
+
+// arcAtCoord returns the sketch arc whose centre matches center and radius matches r (within
+// coincideEps), or nil.
+func arcAtCoord(sk *sketch.Sketch, center ipt.Point2D, r float64) *sketch.Arc {
+	arcs := sk.Arcs()
+	for i := 0; i < arcs.Count(); i++ {
+		if a := arcs.Item(i); samePt(a.Center, center) && math.Abs(float64(a.Radius())-r) < coincideEps {
+			return a
+		}
+	}
+	return nil
 }
 
 // applyRevolveRadii binds each decoded revolve radius dimension (ipt.DecodeRevolveRadii) as a
