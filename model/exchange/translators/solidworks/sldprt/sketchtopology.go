@@ -178,6 +178,9 @@ func assembleLines(region []byte, ends map[uint16]map[Point]bool, distinctOrder 
 // construction flag comes from the flag table at its normalised draw position. Leftover points are
 // standalone. The recovered construction count must match the table, else the mapping is untrusted.
 func referencedWithFlags(refs []indexedLine, flags []bool, nConstr int, standalone []Point) ([]Line, []bool, []Point, bool) {
+	if len(refs) == 0 {
+		return nil, nil, nil, false // no entities to reconstruct (degenerate); fall back
+	}
 	minIdx := refs[0].idx // refs are sorted by index
 	lines := make([]Line, len(refs))
 	construction := make([]bool, len(refs))
