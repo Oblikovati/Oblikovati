@@ -101,6 +101,25 @@ func TestConstraintApplication(t *testing.T) {
 	}
 }
 
+// TestDimensionApplication checks that decoded dimensions are applied, pinning the geometry they
+// measure: a 25x15 mm dimensioned rectangle drops to 2 DOF (only its position is free — width and
+// height are set), and a Ø8 mm dimensioned circle to 2 DOF (only its centre is free — the diameter
+// is set). The value-matching infers the kind (a line length -> distance, 2x radius -> diameter).
+func TestDimensionApplication(t *testing.T) {
+	for _, c := range []struct {
+		file string
+		dof  int
+	}{
+		{"dimrect_fmtb.sldprt", 2},
+		{"dimcirc_fmtb.sldprt", 2},
+	} {
+		def := reopen(t, c.file)
+		if got := def.Sketches().Item(0).DegreesOfFreedom(); got != c.dof {
+			t.Errorf("%s: sketch DOF = %d, want %d", c.file, got, c.dof)
+		}
+	}
+}
+
 // TestMixedSketchTranslation translates the rounded rectangle (4 lines + 4 fillet arcs) and checks
 // both kinds persist.
 func TestMixedSketchTranslation(t *testing.T) {

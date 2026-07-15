@@ -142,6 +142,7 @@ func emitSketch(def *compdef.PartComponentDefinition, s sldprt.Sketch) *sketch.S
 		circles[i] = sk.Circles().AddByCenterRadius(m.P2(c.Center.X*metresToCm, c.Center.Y*metresToCm), m.Scalar(c.Radius*metresToCm))
 	}
 	applyConstraints(sk, s.Constraints, lines, arcs, circles)
+	applyDimensions(sk, s.Dimensions, lines, arcs, circles)
 	return sk
 }
 
