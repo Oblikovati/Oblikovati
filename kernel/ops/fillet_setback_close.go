@@ -281,9 +281,9 @@ func bandFootArcs(footEdge *topo.Edge, cross1, cross2 math.Point3, bandInner []m
 }
 
 // hostSideFootArc is the footprint sub-arc from→to that stays on the boss's HOST side (away from the
-// fillet band): the minor arc when its midpoint is host-side, else the major one — the crossingBoss
-// sibling of hostSideArc (which reads a runoutImprint). The host detour and the wall rim both route
-// their host-side pieces through here, so the two trace the identical curve and weld.
+// fillet band): the minor arc when its midpoint is host-side, else the major one, read from the
+// crossingBoss (footEdge conic + host plane). The host detour and the wall rim both route their
+// host-side pieces through here, so the two trace the identical curve and weld.
 func hostSideFootArc(boss crossingBoss, cyl geom.Cylinder, from, to math.Point3) (geom.Arc3d, bool) {
 	contact, edgeward, ok := footEdgeward(boss, cyl)
 	if !ok {
@@ -319,7 +319,7 @@ func footEdgeward(boss crossingBoss, cyl geom.Cylinder) (math.Point3, math.Vecto
 
 // footprintMajorArc is the MAJOR (>180°) footprint sub-arc from→to on a crossingBoss footprint conic,
 // through the point antipodal to footprintSubArc's bisector midpoint — the piece that wraps the far side
-// of the boss (the featureMajorArc sibling reading a topo.Edge instead of a runoutImprint).
+// of the boss (reading the footprint conic from footEdge).
 func footprintMajorArc(footEdge *topo.Edge, from, to math.Point3) (geom.Arc3d, bool) {
 	c, r, ok := footprintConic(footEdge)
 	if !ok {

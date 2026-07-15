@@ -12,9 +12,9 @@ import (
 
 // extractSetbackPatches turns Task 2's setbackBands (the D2 partition of a runout edge's interfered
 // span) into one valence-4 RailLoop per band — the setback-patch topology OCCT ships here, keeping
-// each boss wall INTACT (setback-patch-derivation.md D3, "Candidate method ii"). Unlike the split-boss
-// extractRunout, the footprint rails carry the intact boss wall as a G1 Adjacent, so the coons4 ribbon
-// fairs the fill out to the true cylinder/cone/torus instead of to a split sub-arc.
+// each boss wall INTACT (setback-patch-derivation.md D3, "Candidate method ii"). Unlike the removed
+// split-boss tiler, the footprint rails carry the intact boss wall as a G1 Adjacent, so the coons4
+// ribbon fairs the fill out to the true cylinder/cone/torus instead of to a split sub-arc.
 //
 // It tiles the 2-boss S1 shape (left flank / central / right flank → 3 loops): both flanks run out to
 // the OUTER boss only (plain on the other tangent side, a G1 host-plane contact seam), and the central
@@ -125,8 +125,8 @@ func (t setbackTiling) rightFlank() (RailLoop, bool) {
 }
 
 // leftFlank is rightFlank mirrored to the −x band [cutLo, seamLo], wound the OPPOSITE way (arm arc
-// pInner→pOuter) so its internal seam is traversed opposite to the central patch's — the same mirror
-// convention extractRunout's left/right loops use, which keeps the shared seams weld-consistent.
+// pInner→pOuter) so its internal seam is traversed opposite to the central patch's — the mirror
+// convention that keeps the shared seams weld-consistent between the flank and central patches.
 func (t setbackTiling) leftFlank() (RailLoop, bool) {
 	arc, ok0 := armSectionArc(t.cyl, t.pInner, t.pOuter, t.cutLo)
 	foot, ok1 := footprintSubArc(t.outer.footEdge, t.aCutLo, t.aSeamLo)
@@ -162,8 +162,8 @@ func (t setbackTiling) central() (RailLoop, bool) {
 }
 
 // footprintPointAtStation is the point on boss's INTACT footprint conic at absolute spine station s, on
-// the edgeward side (toward the fillet band) — the setback sibling of seamPointOnFeature, reading the
-// boss from a crossingBoss (footEdge conic + host plane) instead of a runoutImprint. The edgeward
+// the edgeward side (toward the fillet band), reading the boss from a crossingBoss (footEdge conic +
+// host plane). The edgeward
 // in-plane direction is center→(the fillet contact at the footprint's OWN station): perpendicular to the
 // spine (the host plane contains the spine-parallel edge) and pointing at the band. ok=false when the
 // station falls outside the footprint circle (|s−center-station| ≥ radius), so the caller honest-rejects.
@@ -192,7 +192,7 @@ func footprintPointAtStation(boss crossingBoss, cyl geom.Cylinder, s float64) (m
 // footprintSubArc is the minor sub-arc of a footprint conic (a full geom.Circle/geom.Arc3d read from
 // footEdge via footprintConic) between from and to, built through the conic point on their angular
 // bisector — the exact intact-footprint rail (no fitting) the setback patch is G1 to along the boss
-// wall. The split-boss featureSubArc now delegates here, so both read the footprint conic identically.
+// wall. The single source for every footprint sub-arc (wall rim, host detour, patch rails).
 func footprintSubArc(footEdge *topo.Edge, from, to math.Point3) (geom.Arc3d, bool) {
 	c, r, ok := footprintConic(footEdge)
 	if !ok {

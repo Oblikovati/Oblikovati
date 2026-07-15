@@ -100,48 +100,6 @@ func setbackBossesFaithful(b setbackBands) bool {
 	return true
 }
 
-// appendRegionFaces tiles one region into its three patches and two surviving wings, reconstructs the
-// two host planes and splits the two boss walls (buildRunoutHostsAndWalls), and folds them all into
-// set. The host/wall faces are built FIRST so their shared arcs are sampled identically to the patch
-// rails (sampleCurve3Open, ringSegSamples) and weld point-for-point. ok=false when the tiler declines,
-// any loop fails to resolve, or a host/wall re-cut is malformed — the caller then honest-rejects.
-func appendRegionFaces(set *runoutSet, region runoutRegion, ef edgeFillet, res Resolution, maps filletRebuildMaps) bool {
-	loops, tl, ok := extractRunoutTiled(region, ef, res)
-	if !ok {
-		return false
-	}
-	if !buildRunoutHostsAndWalls(set, ef, tl, maps) {
-		return false
-	}
-	// Wings are appended BEFORE the patches so the shared fillet-cut edge is built from the wing's
-	// straight chords (a LineSegment on the cylinder), not the patch's full arc — otherwise the wing's
-	// cylinder trim re-traces the whole quarter-arc over each 1/6-span sub-edge (the 56s pathology, 10b).
-	set.extra = append(set.extra, runoutWings(ef, tl)...)
-	parent := filletEdgeProvenance(ef.edge)
-	for _, loop := range loops {
-		patch, ok := resolveBlend(loop, res)
-		if !ok {
-			return false
-		}
-		set.extra = append(set.extra, patchToFilletFace(patch, parent))
-	}
-	return true
-}
-
-// runoutWings builds the two surviving cylinder wings flanking the freed span: the left wing runs
-// from corner c0 to the low cut station cutL, the right wing from the high cut station cutR to corner
-// c1. Each cut cross-section is the flank patch's arm arc (armSectionArc, the SAME curve the leftLoop/
-// rightLoop tile from) sampled into ringSegSamples chords, so the wing and patch share those vertices
-// and weld with no T-junction (class 1, Task 10b).
-func runoutWings(ef edgeFillet, tl runoutTiling) []filletFace {
-	leftArc, _ := armSectionArc(tl.cyl, tl.planeB, tl.planeA, tl.cutL)
-	rightArc, _ := armSectionArc(tl.cyl, tl.planeA, tl.planeB, tl.cutR)
-	leftCut, rightCut := wingCutAtSpine(ef, tl.cutL), wingCutAtSpine(ef, tl.cutR)
-	left := buildWingFaceCut(ef, leftCut, true, sampledArcSegs(leftArc, leftCut.nodeTa, leftCut.nodeTb))
-	right := buildWingFaceCut(ef, rightCut, false, sampledArcSegs(rightArc, rightCut.nodeTa, rightCut.nodeTb))
-	return []filletFace{left, right}
-}
-
 // sampledArcSegs chops arc into ringSegSamples straight sub-chords oriented start→end, pinning the two
 // ends to the wing's exact node points (start/end) while taking every interior vertex from arc.PointAt at
 // i/n — the SAME points sampleCurve3Open hands the flank patch, so the two share every welded vertex. The
