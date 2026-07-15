@@ -256,11 +256,26 @@ func transformLoop(f *topo.Face, l *topo.Loop, subs map[uint64]math.Point3, ends
 			// so if both dropped the curve (nil) the shared edge would collapse to a straight
 			// LineSegment (ec.use), bulging a planar face that borders a cylinder — the Q1 area
 			// defect. A straight edge stays nil (a LineSegment curve is identical to nil there).
-			fl.addID(v.Point(), survivorCurve(u), v.ID(), u.Edge().ID())
+			fl.addID(v.Point(), subdividedSurvivorCurve(u, inserts), v.ID(), u.Edge().ID())
 		}
 		addEdgeInserts(&fl, inserts, u)
 	}
 	return fl
+}
+
+// subdividedSurvivorCurve returns the survivor's carried curve, EXCEPT it drops a CLOSED-conic rim edge
+// (start vertex == end vertex, e.g. an intact runout boss wall's footprint circle) to nil when that edge
+// has inserts: the inserts (Task 4, subdivideBossWall) re-trace the rim as straight chords that weld to
+// the setback patches/re-clipped host, so carrying the full-circle curve on the first chord would make
+// that one edge tessellate the WHOLE circle and self-cross the loop. Corpus-neutral: variable-fillet
+// inserts (the only inserts today) live on OPEN straight tangent edges, so this branch never fires there.
+func subdividedSurvivorCurve(u *topo.EdgeUse, inserts map[uint64][]math.Point3) geom.Curve3 {
+	if inserts != nil && u.Edge().StartVertex() == u.Edge().EndVertex() {
+		if _, ok := inserts[u.Edge().ID()]; ok {
+			return nil
+		}
+	}
+	return survivorCurve(u)
 }
 
 // survivorCurve returns a survivor edge's curve, oriented to the loop's TRAVERSAL direction, to carry

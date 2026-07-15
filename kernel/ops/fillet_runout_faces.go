@@ -116,15 +116,18 @@ func runoutWings(ef edgeFillet, tl runoutTiling) []filletFace {
 	leftArc, _ := armSectionArc(tl.cyl, tl.planeB, tl.planeA, tl.cutL)
 	rightArc, _ := armSectionArc(tl.cyl, tl.planeA, tl.planeB, tl.cutR)
 	leftCut, rightCut := wingCutAtSpine(ef, tl.cutL), wingCutAtSpine(ef, tl.cutR)
-	left := buildWingFaceCut(ef, leftCut, true, sampledArcSegs(leftArc, ringSegSamples, leftCut.nodeTa, leftCut.nodeTb))
-	right := buildWingFaceCut(ef, rightCut, false, sampledArcSegs(rightArc, ringSegSamples, rightCut.nodeTa, rightCut.nodeTb))
+	left := buildWingFaceCut(ef, leftCut, true, sampledArcSegs(leftArc, leftCut.nodeTa, leftCut.nodeTb))
+	right := buildWingFaceCut(ef, rightCut, false, sampledArcSegs(rightArc, rightCut.nodeTa, rightCut.nodeTb))
 	return []filletFace{left, right}
 }
 
-// sampledArcSegs chops arc into n straight sub-chords oriented start→end, pinning the two ends to the
-// wing's exact node points (start/end) while taking every interior vertex from arc.PointAt at i/n — the
-// SAME points sampleCurve3Open(arc,n,·) hands the flank patch, so the two share every welded vertex.
-func sampledArcSegs(arc geom.Curve3, n int, start, end math.Point3) []endSeg {
+// sampledArcSegs chops arc into ringSegSamples straight sub-chords oriented start→end, pinning the two
+// ends to the wing's exact node points (start/end) while taking every interior vertex from arc.PointAt at
+// i/n — the SAME points sampleCurve3Open hands the flank patch, so the two share every welded vertex. The
+// count is fixed at ringSegSamples (the one ring granularity every blend boundary shares); a parameter
+// would only ever receive it (unparam), and a mismatch here would open the wing↔patch weld.
+func sampledArcSegs(arc geom.Curve3, start, end math.Point3) []endSeg {
+	n := ringSegSamples
 	lo, hi := arc.Domain()
 	pts := make([]math.Point3, n+1)
 	for i := 0; i <= n; i++ {

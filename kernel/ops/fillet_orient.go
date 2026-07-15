@@ -148,11 +148,26 @@ func reverseFilletLoop(loop filletLoop) filletLoop {
 		out.pts[i] = from
 		out.srcV[i] = srcIDAt(loop.srcV, (n-i)%n)
 		out.srcE[i] = srcIDAt(loop.srcE, seg)
-		if curveAt(loop.curves, seg) != nil {
-			out.curves[i], _ = geom.Arc3dByThreePoints(from, mids[seg], to)
+		if c := curveAt(loop.curves, seg); c != nil {
+			out.curves[i] = reverseSegmentCurve(c, from, mids[seg], to)
 		}
 	}
 	return out
+}
+
+// reverseSegmentCurve reverses one loop segment's curve for reverseFilletLoop. An OPEN arc is re-derived
+// through its recovered midpoint in the new direction (the historical path, byte-identical). A CLOSED
+// self-loop arc (from==to — a full-circle rim seam, e.g. an intact runout boss wall's top rim) cannot be
+// rebuilt from three points (two coincide → a degenerate zero Arc3d, the r8 cap→0 defect); it is reversed
+// by flipping the ORIGINAL arc's sweep, exactly as survivorCurve does for a reversed edge use.
+func reverseSegmentCurve(c geom.Curve3, from, mid, to math.Point3) geom.Curve3 {
+	if arc, ok := c.(geom.Arc3d); ok && from == to {
+		arc.StartAngle += arc.SweepAngle
+		arc.SweepAngle = -arc.SweepAngle
+		return arc
+	}
+	r, _ := geom.Arc3dByThreePoints(from, mid, to)
+	return r
 }
 
 // reverseIntRing reverses a welded-index ring with the SAME anchor convention as reverseFilletLoop
