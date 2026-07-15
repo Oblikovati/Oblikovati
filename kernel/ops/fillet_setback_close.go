@@ -142,7 +142,7 @@ func hostArcDetour(boss crossingBoss, cyl geom.Cylinder, from, near, far math.Po
 // first — arc STARTS at the seam (hostSideFootArc(seam, …)), so its point[0] IS the seam and would
 // double it under id 0. Emitting the seam once, id-pinned, is exactly what closes the wall↔host weld
 // that addID's distinct-id rule (#1600) otherwise splits (S4 cone/cyl runout).
-func appendSeamArc(segs []notchSeg, boss crossingBoss, arc geom.Arc3d) []notchSeg {
+func appendSeamArc(segs []notchSeg, boss crossingBoss, arc geom.Curve3) []notchSeg {
 	seamV := boss.footEdge.StartVertex()
 	segs = append(segs, notchSeg{pt: seamV.Point(), srcV: seamV.ID()})
 	tail := sampleCurve3Open(arc, false)
@@ -235,17 +235,43 @@ func bossRimRing(boss crossingBoss, cyl geom.Cylinder, seam, cross1, cross2 math
 // which assembleBody's shell-orient corrupts into a zero-curve top rim (the r8 cap→0 defect). Aligning to
 // the edge's native direction keeps the two rims opposite, so the loop is a simple band.
 func orientRingToEdge(ring []math.Point3, footEdge *topo.Edge) []math.Point3 {
-	arc, ok := footEdge.Geometry().(geom.Arc3d)
+	fwd, ok := footEdgeNativeForward(footEdge)
 	if !ok || len(ring) < 3 {
 		return ring
 	}
-	lo, hi := arc.Domain()
-	fwd := arc.PointAt(lo + 0.02*(hi-lo)) // a hair past the seam in the edge's native direction
 	if ring[1].DistanceTo(fwd) <= ring[len(ring)-1].DistanceTo(fwd) {
 		return ring
 	}
 	out := append([]math.Point3{ring[0]}, reversePts(ring[1:])...)
 	return out
+}
+
+// footEdgeNativeForward is a point a hair (2% of the domain) past the footprint edge's seam in its own
+// native parametrization — orientRingToEdge's winding reference. It covers both footprint curve kinds a
+// setback boss can carry: a geom.Arc3d (circle boss) and a geom.EllipseFull (oblique elliptical-cylinder
+// boss, T7). A curve kind it does not recognise leaves the ring unoriented (ok=false).
+func footEdgeNativeForward(footEdge *topo.Edge) (math.Point3, bool) {
+	switch g := footEdge.Geometry().(type) {
+	case geom.Arc3d:
+		lo, hi := g.Domain()
+		return g.PointAt(lo + 0.02*(hi-lo)), true
+	case geom.EllipseFull:
+		lo, hi := g.Domain()
+		return g.PointAt(lo + 0.02*(hi-lo)), true
+	default:
+		return math.Point3{}, false
+	}
+}
+
+// footprintCenter returns the footprint conic's center for either boss footprint kind: a circle/arc
+// (geom.Circle/geom.Arc3d via footprintConic) or an ellipse (geom.EllipseFull, the oblique elliptical-
+// cylinder boss of T7). ok=false for any non-conic footprint.
+func footprintCenter(edge *topo.Edge) (math.Point3, bool) {
+	if e, ok := edge.Geometry().(geom.EllipseFull); ok {
+		return e.Center, true
+	}
+	c, _, ok := footprintConic(edge)
+	return c, ok
 }
 
 // bossRimSubArcs is the ordered curve chain of a boss footprint rim from the seam: host-side seam→cross1,
@@ -284,10 +310,10 @@ func bandFootArcs(footEdge *topo.Edge, cross1, cross2 math.Point3, bandInner []m
 // fillet band): the minor arc when its midpoint is host-side, else the major one, read from the
 // crossingBoss (footEdge conic + host plane). The host detour and the wall rim both route their
 // host-side pieces through here, so the two trace the identical curve and weld.
-func hostSideFootArc(boss crossingBoss, cyl geom.Cylinder, from, to math.Point3) (geom.Arc3d, bool) {
+func hostSideFootArc(boss crossingBoss, cyl geom.Cylinder, from, to math.Point3) (geom.Curve3, bool) {
 	contact, edgeward, ok := footEdgeward(boss, cyl)
 	if !ok {
-		return geom.Arc3d{}, false
+		return nil, false
 	}
 	minor, ok0 := footprintSubArc(boss.footEdge, from, to)
 	if ok0 && contact.VectorTo(minor.PointAt(0.5)).Dot(edgeward) < 0 {
@@ -304,7 +330,7 @@ func hostSideFootArc(boss crossingBoss, cyl geom.Cylinder, from, to math.Point3)
 // mis-rejects it (r8 hostB picked the 270° major arc). ok=false for a non-conic footprint / non-planar
 // host.
 func footEdgeward(boss crossingBoss, cyl geom.Cylinder) (math.Point3, math.Vector3, bool) {
-	center, _, ok0 := footprintConic(boss.footEdge)
+	center, ok0 := footprintCenter(boss.footEdge)
 	plane, ok1 := boss.host.Geometry().(geom.Plane)
 	if !ok0 || !ok1 {
 		return math.Point3{}, math.Vector3{}, false
@@ -320,7 +346,10 @@ func footEdgeward(boss crossingBoss, cyl geom.Cylinder) (math.Point3, math.Vecto
 // footprintMajorArc is the MAJOR (>180°) footprint sub-arc from→to on a crossingBoss footprint conic,
 // through the point antipodal to footprintSubArc's bisector midpoint — the piece that wraps the far side
 // of the boss (reading the footprint conic from footEdge).
-func footprintMajorArc(footEdge *topo.Edge, from, to math.Point3) (geom.Arc3d, bool) {
+func footprintMajorArc(footEdge *topo.Edge, from, to math.Point3) (geom.Curve3, bool) {
+	if e, ok := footEdge.Geometry().(geom.EllipseFull); ok {
+		return ellipseSubArc(e, from, to, true) // oblique elliptical-cylinder boss (T7): the >180° ellipse arc
+	}
 	c, r, ok := footprintConic(footEdge)
 	if !ok {
 		return geom.Arc3d{}, false

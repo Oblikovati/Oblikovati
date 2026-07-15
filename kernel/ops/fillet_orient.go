@@ -157,14 +157,22 @@ func reverseFilletLoop(loop filletLoop) filletLoop {
 
 // reverseSegmentCurve reverses one loop segment's curve for reverseFilletLoop. An OPEN arc is re-derived
 // through its recovered midpoint in the new direction (the historical path, byte-identical). A CLOSED
-// self-loop arc (from==to — a full-circle rim seam, e.g. an intact runout boss wall's top rim) cannot be
-// rebuilt from three points (two coincide → a degenerate zero Arc3d, the r8 cap→0 defect); it is reversed
-// by flipping the ORIGINAL arc's sweep, exactly as survivorCurve does for a reversed edge use.
+// self-loop rim seam (from==to — a full-turn rim, e.g. an intact runout boss wall's top rim) cannot be
+// rebuilt from three points (two coincide → a degenerate zero Arc3d, the r8 cap→0 defect): a geom.Arc3d
+// reverses by flipping its ORIGINAL sweep, and any OTHER closed rim curve — a geom.EllipseFull top/bottom
+// rim of an oblique elliptical-cylinder wall (T7), a closed b-spline seam — is carried UNCHANGED, exactly
+// as survivorCurve does for a reversed edge use (the periodic mesher rebuilds it from the surface (u,v)
+// and never reads the rim's intrinsic direction, so no reversal is needed). Rebuilding such a closed rim
+// via Arc3dByThreePoints collapsed the elliptical wall to a degenerate arc through the ellipse centre,
+// meshing the whole boss as a cone/disk (T7 area 2381.68 → 450) — the same class as the r8 cap→0 defect.
 func reverseSegmentCurve(c geom.Curve3, from, mid, to math.Point3) geom.Curve3 {
-	if arc, ok := c.(geom.Arc3d); ok && from == to {
-		arc.StartAngle += arc.SweepAngle
-		arc.SweepAngle = -arc.SweepAngle
-		return arc
+	if from == to {
+		if arc, ok := c.(geom.Arc3d); ok {
+			arc.StartAngle += arc.SweepAngle
+			arc.SweepAngle = -arc.SweepAngle
+			return arc
+		}
+		return c // a closed non-arc rim seam (full-turn ellipse / b-spline): reversal is a no-op for the mesher
 	}
 	r, _ := geom.Arc3dByThreePoints(from, mid, to)
 	return r

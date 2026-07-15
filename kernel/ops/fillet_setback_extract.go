@@ -168,6 +168,9 @@ func (t setbackTiling) central() (RailLoop, bool) {
 // spine (the host plane contains the spine-parallel edge) and pointing at the band. ok=false when the
 // station falls outside the footprint circle (|s−center-station| ≥ radius), so the caller honest-rejects.
 func footprintPointAtStation(boss crossingBoss, cyl geom.Cylinder, s float64) (math.Point3, bool) {
+	if e, ok := boss.footEdge.Geometry().(geom.EllipseFull); ok {
+		return ellipseStationPoint(e, boss.host, cyl, s) // oblique elliptical-cylinder boss (T7)
+	}
 	center, r, ok := footprintConic(boss.footEdge)
 	if !ok {
 		return math.Point3{}, false
@@ -189,11 +192,16 @@ func footprintPointAtStation(boss crossingBoss, cyl geom.Cylinder, s float64) (m
 	return center.TranslateBy(cyl.AxisDir.AsVector().Scale(a)).TranslateBy(edgeward.AsVector().Scale(h)), true
 }
 
-// footprintSubArc is the minor sub-arc of a footprint conic (a full geom.Circle/geom.Arc3d read from
-// footEdge via footprintConic) between from and to, built through the conic point on their angular
-// bisector — the exact intact-footprint rail (no fitting) the setback patch is G1 to along the boss
-// wall. The single source for every footprint sub-arc (wall rim, host detour, patch rails).
-func footprintSubArc(footEdge *topo.Edge, from, to math.Point3) (geom.Arc3d, bool) {
+// footprintSubArc is the minor sub-arc of a footprint conic between from and to — the exact intact-
+// footprint rail (no fitting) the setback patch is G1 to along the boss wall. It dispatches on the
+// footprint edge geometry: a circle/arc (geom.Circle/geom.Arc3d via footprintConic) built through the
+// conic point on the endpoints' angular bisector as a geom.Arc3d, or an ELLIPSE (geom.EllipseFull, the
+// oblique elliptical-cylinder boss of T7) as the exact geom.EllipticalArc via ellipseSubArc. The single
+// source for every footprint sub-arc (wall rim, host detour, patch rails).
+func footprintSubArc(footEdge *topo.Edge, from, to math.Point3) (geom.Curve3, bool) {
+	if e, ok := footEdge.Geometry().(geom.EllipseFull); ok {
+		return ellipseSubArc(e, from, to, false) // oblique elliptical-cylinder boss (T7): geom.EllipticalArc
+	}
 	c, r, ok := footprintConic(footEdge)
 	if !ok {
 		return geom.Arc3d{}, false

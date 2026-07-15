@@ -262,6 +262,31 @@ func TestFilletEdges_S4WallsIntact(t *testing.T) {
 	}
 }
 
+// countEllipCylFacesNear counts elliptical-cylinder faces whose tessellated area is within tol of want —
+// the intact-wall proof for the oblique elliptical-cylinder boss of T7 (its SurfaceOfLinearExtrusion of an
+// ellipse elementarises to geom.EllipticalCylinder on import), surface-type-agnostic like the cyl/cone gates.
+func countEllipCylFacesNear(body *topo.Body, want, tol float64) int {
+	return countSurfaceFacesNear[geom.EllipticalCylinder](body, want, tol)
+}
+
+// TestFilletEdges_T7WallsIntact is TestFilletEdges_S4WallsIntact for T7 (an OBLIQUE ELLIPTICAL-CYLINDER
+// boss + an r8 cylinder): the wired op (FilletEdges → collectRunouts → runoutFacesFor → the intact-boss
+// path) must keep the elliptical-cylinder wall (analytic 2381.68, forensics §2) and the r8 cylinder
+// (603.186, §1) each as ONE intact face, not split. The elliptical wall's tessellated area sits a sub-1%
+// band under its analytic value (the straight-chord subdivision of its footprint rim), so ±24 brackets that
+// undershoot yet excludes a split wall (a half-wall ≈1191, nowhere near). This is the topology-faithful
+// proof that the ellipse footprint (geom.EllipseFull) rails to the intact wall — total area alone (the
+// corpus gate) can be right by coincidence.
+func TestFilletEdges_T7WallsIntact(t *testing.T) {
+	body := filletedCorpusEdge(t, "simple/T7", math.P3(0, -13, 0), 6)
+	if got := countEllipCylFacesNear(body, 2381.68, 24); got != 1 {
+		t.Fatalf("wired T7: want ONE intact oblique-ellipse boss wall near 2381.68 (un-split), got %d", got)
+	}
+	if got := countCylFacesNear(body, 603.186, 6); got != 1 {
+		t.Fatalf("wired T7: want ONE intact r8 boss wall near 603.186 (un-split), got %d", got)
+	}
+}
+
 // filletedCorpusEdge runs the real FilletEdges op on the corpus fixture's edge at mid, radius r, and
 // returns the result body — the end-to-end path the corpus area gate drives, so a wall-intact assertion
 // on its output proves the WIRED runout path (not the test-only setbackAssembled shortcut) is faithful.

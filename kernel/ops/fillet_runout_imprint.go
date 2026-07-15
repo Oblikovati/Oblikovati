@@ -28,18 +28,22 @@ type imprintCut struct {
 }
 
 // solveImprint computes the exact crossing of im's footprint against the receded fillet band
-// (reconstructed from im.nodes) and the outboard sub-arc between the crossings. The footprint
-// must be a circular conic — footprintConic accepts a full geom.Circle or a geom.Arc3d (Task 7:
-// imported STEP feature footprints arrive as Arc3d, never Circle); ellipse/b-spline conics are
-// Tasks 9/12 and honest-reject here (ok=false), same as a tangential/grazing crossing.
+// (reconstructed from im.nodes) and the outboard sub-arc between the crossings. It dispatches on the
+// footprint curve type: a circular conic (geom.Circle / geom.Arc3d — imported STEP feature footprints
+// arrive as Arc3d) via footprintConic + lineCircleRoots, and an ELLIPSE (geom.EllipseFull — the oblique
+// elliptical-cylinder boss of T7, setback-patch-derivation.md D4) via solveImprintEllipse. A b-spline or
+// other non-conic footprint honest-rejects (ok=false), same as a tangential/grazing crossing.
 //
 // Example: a boss footprint circle centered at the origin (r=8) crossing the band at y=-4
 // crosses at (±√48,−4); solveImprint returns those points and the ~300° arc that stays above
 // the band (geom.Arc3d, PointAt/TangentAt/Domain).
 func solveImprint(im runoutImprint, res Resolution) (imprintCut, bool) {
+	if e, ok := im.footprintEdge.Geometry().(geom.EllipseFull); ok {
+		return solveImprintEllipse(im, e, res) // oblique elliptical-cylinder boss (T7): line∩ellipse
+	}
 	center, radius, ok := footprintConic(im.footprintEdge)
 	if !ok {
-		return imprintCut{}, false // e.g. geom.EllipseFull/b-spline footprint: Task 9/12's scope
+		return imprintCut{}, false // e.g. a b-spline footprint: not an analytic setback boss
 	}
 	if im.nodes[0].P.DistanceTo(im.nodes[1].P) <= res.Weld() {
 		return imprintCut{}, false // nodes too close to fix a band direction from

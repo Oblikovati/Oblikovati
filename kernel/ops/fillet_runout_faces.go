@@ -84,17 +84,18 @@ func runoutFacesFor(ef edgeFillet, res Resolution, maps filletRebuildMaps) (runo
 }
 
 // setbackBossesFaithful gates the intact-boss path to the crossing-boss wall surface types it is proven
-// faithful on: CYLINDER (S1) and CONE (S4). Any other wall — a SPHERE (S7), an oblique elliptical
-// cylinder / SurfaceOfLinearExtrusion (T7), etc. — declines to BASELINE (do-no-harm), never a wrong
-// intact fill. This is load-bearing, not defensive: a sphere boss is a periodic cap whose seam/pole the
-// intact transformFace collapses to ~0 area (verified on S7: −5.5% area), and S7's do-no-harm baseline
-// is already within OCCT's 1%, so deferring it there keeps the case green. Cylinder/cone re-weld
-// cleanly (the same reason bodyHasFragileBand admits them); widening this whitelist needs a per-type
-// closure proof like S1/S4's (a later task greens sphere/ellipse-cyl runouts).
+// faithful on: CYLINDER (S1), CONE (S4), and the oblique ELLIPTICAL CYLINDER (T7, geom.EllipticalCylinder
+// — the elementarised SurfaceOfLinearExtrusion of an ellipse whose footprint is a geom.EllipseFull). Any
+// other wall — a SPHERE (S7), etc. — declines to BASELINE (do-no-harm), never a wrong intact fill. This
+// is load-bearing, not defensive: a sphere boss is a periodic cap whose seam/pole the intact transformFace
+// collapses to ~0 area (verified on S7: −5.5% area), and S7's do-no-harm baseline is already within OCCT's
+// 1%, so deferring it there keeps the case green. The three admitted walls re-weld cleanly and their
+// footprint conic (circle / ellipse) rails exactly (fillet_setback_ellipse.go); widening this whitelist
+// further needs a per-type closure proof like S1/S4/T7's.
 func setbackBossesFaithful(b setbackBands) bool {
 	for _, boss := range b.bosses {
 		switch boss.wall.(type) {
-		case geom.Cylinder, geom.Cone:
+		case geom.Cylinder, geom.Cone, geom.EllipticalCylinder:
 		default:
 			return false
 		}
