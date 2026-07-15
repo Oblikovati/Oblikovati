@@ -130,6 +130,11 @@ func emitSketch(def *compdef.PartComponentDefinition, s sldprt.Sketch) *sketch.S
 			points = append(points, pointAt(p))
 		}
 	}
+	// StandalonePoints are free points in a line sketch (e.g. a midpoint reference) — emitted in
+	// addition to the geometry and available to point-referencing dimensions/constraints.
+	for _, p := range s.StandalonePoints {
+		points = append(points, pointAt(p))
+	}
 	lines := make([]*sketch.Line, len(s.Lines))
 	for i, l := range s.Lines {
 		lines[i] = sk.Lines().Add(pointAt(l.A), pointAt(l.B))
@@ -153,7 +158,7 @@ func emitSketch(def *compdef.PartComponentDefinition, s sldprt.Sketch) *sketch.S
 		sk.Splines().AddByPoints(fit, sp.Closed)
 	}
 	applyConstruction(s, lines, arcs, circles)
-	applyConstraints(sk, s.Constraints, lines, arcs, circles)
+	applyConstraints(sk, s.Constraints, lines, arcs, circles, points)
 	applyDimensions(sk, s.Dimensions, lines, arcs, circles, points)
 	return sk
 }

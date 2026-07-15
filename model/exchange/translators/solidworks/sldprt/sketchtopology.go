@@ -52,10 +52,10 @@ func placedPoints(region []byte) []placedPoint {
 // segments and a parallel construction flag per segment. The result is accepted only when it fully
 // self-validates (see assembleLines); any mismatch returns ok=false so the caller keeps
 // loopFromVertices, so an incompletely-referenced sketch is never silently mis-reconstructed.
-func reconstructLines(region []byte) (lines []Line, construction []bool, ok bool) {
+func reconstructLines(region []byte) (lines []Line, construction []bool, standalone []Point, ok bool) {
 	pts := placedPoints(region)
 	if len(pts) == 0 {
-		return nil, nil, false
+		return nil, nil, nil, false
 	}
 	ends := map[uint16]map[Point]bool{}
 	seen := map[Point]bool{}
@@ -68,8 +68,11 @@ func reconstructLines(region []byte) (lines []Line, construction []bool, ok bool
 		}
 		hasOrigin = hasOrigin || pp.p == origin
 		lo := pp.off + len(pointMarker) + 16 // just past the x,y coordinate
+		// A point's record — holding its owning-entity references — runs to the next point. Scan the
+		// whole record so a reference displaced by a class registration (the first entity's point) is
+		// still seen. Only the last point is capped, since the trailing entity-record table follows it.
 		hi := lo + 40
-		if i+1 < len(pts) && pts[i+1].off < hi {
+		if i+1 < len(pts) {
 			hi = pts[i+1].off
 		}
 		if hi > len(region) {
@@ -89,7 +92,41 @@ func reconstructLines(region []byte) (lines []Line, construction []bool, ok bool
 			}
 		}
 	}
-	return assembleLines(region, ends, distinctOrder)
+	completeFirstPoint(ends, pts[0].p)
+	lines, construction, standalone, ok = assembleLines(region, ends, distinctOrder)
+	return lines, construction, standalone, ok
+}
+
+// completeFirstPoint fills the first entity's start endpoint, whose reference the sketch's first class
+// registration displaces (the class name is written where the reference would go). The first cached
+// point is that start; when it is still uncovered and exactly one entity is left short, it completes
+// that entity. Guarded to one short entity so an ambiguous case is left for the assembler to reject.
+func completeFirstPoint(ends map[uint16]map[Point]bool, first Point) {
+	if pointCovered(ends, first) {
+		return
+	}
+	var short map[Point]bool
+	for _, set := range ends {
+		if len(set) == 1 {
+			if short != nil {
+				return // more than one short entity: which one owns the first point is ambiguous
+			}
+			short = set
+		}
+	}
+	if short != nil {
+		short[first] = true
+	}
+}
+
+// pointCovered reports whether p is already an endpoint of any entity.
+func pointCovered(ends map[uint16]map[Point]bool, p Point) bool {
+	for _, set := range ends {
+		if set[p] {
+			return true
+		}
+	}
+	return false
 }
 
 // assembleLines turns the entity→endpoints map into ordered line segments with per-segment
@@ -100,9 +137,11 @@ func reconstructLines(region []byte) (lines []Line, construction []bool, ok bool
 // the leftover points stay adjacent per line in stream order (verified on generated parts with two
 // construction lines, including interleaved draw order) — they are paired consecutively. Guards: each
 // referenced entity has two endpoints, the referenced count equals the non-construction count, the
-// leftover count is exactly two per construction line with no degenerate pair, and every cached point
-// is covered.
-func assembleLines(region []byte, ends map[uint16]map[Point]bool, distinctOrder []Point) ([]Line, []bool, bool) {
+// leftover count is exactly two per construction line with no degenerate pair. A cached point that is
+// neither a referenced endpoint nor part of a construction line is a standalone sketch point, returned
+// separately — but only when there are no construction lines, since otherwise a leftover point is
+// ambiguous between a standalone point and a construction endpoint (that mixed case falls back).
+func assembleLines(region []byte, ends map[uint16]map[Point]bool, distinctOrder []Point) ([]Line, []bool, []Point, bool) {
 	flags := entityConstruction(region)
 	nConstr := 0
 	for _, c := range flags {
@@ -112,25 +151,24 @@ func assembleLines(region []byte, ends map[uint16]map[Point]bool, distinctOrder 
 	}
 	lines, covered, ok := referencedLines(ends)
 	if !ok || len(lines) != len(flags)-nConstr {
-		return nil, nil, false
+		return nil, nil, nil, false
 	}
 	construction := make([]bool, len(lines))
 	leftover := uncoveredInOrder(distinctOrder, covered)
-	if len(leftover) != 2*nConstr {
-		return nil, nil, false
+	switch {
+	case nConstr == 0:
+		return lines, construction, leftover, true // leftover points are standalone sketch points
+	case len(leftover) != 2*nConstr:
+		return nil, nil, nil, false // construction lines mixed with standalone points: ambiguous
 	}
 	for i := 0; i < len(leftover); i += 2 {
 		if leftover[i] == leftover[i+1] {
-			return nil, nil, false // a construction line with a zero-length (degenerate) span
+			return nil, nil, nil, false // a construction line with a zero-length (degenerate) span
 		}
 		lines = append(lines, Line{A: leftover[i], B: leftover[i+1]})
 		construction = append(construction, true)
-		covered[leftover[i]], covered[leftover[i+1]] = true, true
 	}
-	if len(covered) != len(distinctOrder) {
-		return nil, nil, false
-	}
-	return lines, construction, true
+	return lines, construction, nil, true
 }
 
 // referencedLines builds one line per referenced entity (in entity-index order), reporting the set of

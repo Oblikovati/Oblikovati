@@ -5,6 +5,7 @@ package translate
 import (
 	"math"
 
+	m "oblikovati.org/math"
 	"oblikovati.org/model/exchange/translators/solidworks/sldprt"
 	"oblikovati.org/model/sketch"
 )
@@ -19,7 +20,7 @@ const geomEps = 1e-6
 // that already satisfies it, up to the decoded count and only while the sketch has free degrees of
 // freedom. Because the geometry is exact, applying a satisfied relation removes DOF without moving a
 // point. Coincidence is omitted: touching corners already share one point (see sharedPoints).
-func applyConstraints(sk *sketch.Sketch, cons []sldprt.Constraint, lines []*sketch.Line, arcs []*sketch.Arc, circles []*sketch.Circle) {
+func applyConstraints(sk *sketch.Sketch, cons []sldprt.Constraint, lines []*sketch.Line, arcs []*sketch.Arc, circles []*sketch.Circle, points []*sketch.Point) {
 	n := map[sldprt.ConstraintKind]int{}
 	for _, c := range cons {
 		if c.Kind.IsGeometric() {
@@ -27,6 +28,7 @@ func applyConstraints(sk *sketch.Sketch, cons []sldprt.Constraint, lines []*sket
 		}
 	}
 	g := sk.GeometricConstraints()
+	applyMidpoints(sk, n, points, lines, g)
 	applyToLines(sk, n, sldprt.Horizontal, lines, func(l *sketch.Line) bool {
 		if !lineHorizontal(l) {
 			return false
@@ -47,6 +49,26 @@ func applyConstraints(sk *sketch.Sketch, cons []sldprt.Constraint, lines []*sket
 	applyToLinePairs(sk, n, sldprt.EqualLength, lines, equalLength, g.AddEqualLength)
 	applyTangents(sk, n, lines, curvesOf(arcs, circles), g)
 	applyToCurvePairs(sk, n, sldprt.Concentric, curvesOf(arcs, circles), concentric, g.AddConcentric)
+}
+
+// applyMidpoints binds each decoded midpoint relation to a standalone point that already sits at a
+// line's midpoint, up to the decoded count and while free DOF remain. Because the point is exactly at
+// the midpoint, the constraint pins it without moving it.
+func applyMidpoints(sk *sketch.Sketch, n map[sldprt.ConstraintKind]int, points []*sketch.Point, lines []*sketch.Line, g *sketch.GeometricConstraints) {
+	for _, p := range points {
+		for _, l := range lines {
+			if n[sldprt.Midpoint] <= 0 || sk.DegreesOfFreedom() <= 0 {
+				return
+			}
+			mid := m.P2((l.A.Position().X+l.B.Position().X)/2, (l.A.Position().Y+l.B.Position().Y)/2)
+			d := p.Position().DistanceTo(mid)
+			if float64(d) < geomEps {
+				g.AddMidpoint(p, l)
+				n[sldprt.Midpoint]--
+				break
+			}
+		}
+	}
 }
 
 // applyToLines applies bind to each line satisfying it, up to the decoded count for kind and while

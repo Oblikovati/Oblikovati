@@ -178,6 +178,20 @@ func TestOpenProfileTranslation(t *testing.T) {
 	}
 }
 
+// TestMidpointConstraint checks a midpoint relation is applied: a horizontal line with a point
+// constrained to its middle reopens as one line plus the point, at 3 DOF — a free line and point
+// would be 6, less 1 for horizontal and 2 for the midpoint pin.
+func TestMidpointConstraint(t *testing.T) {
+	def := reopen(t, "midpoint_fmtb.sldprt")
+	sk := def.Sketches().Item(0)
+	if sk.Lines().Count() != 1 {
+		t.Fatalf("got %d lines, want 1 (a line + a midpoint point, not a triangle)", sk.Lines().Count())
+	}
+	if got := sk.DegreesOfFreedom(); got != 3 {
+		t.Errorf("sketch DOF = %d, want 3 (horizontal + midpoint applied)", got)
+	}
+}
+
 // TestPointPairDistance checks a distance dimension between two sketch points is applied: two free
 // points (4 DOF) with a 30 mm distance between them drop to 3 DOF (the separation is pinned).
 func TestPointPairDistance(t *testing.T) {

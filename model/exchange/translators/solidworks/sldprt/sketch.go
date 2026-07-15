@@ -48,6 +48,9 @@ type Sketch struct {
 	// Lines came from the exact entity-reference reconstruction (reconstructLines). It is nil when the
 	// lines were recovered by the loopFromVertices fallback, whose order is not entity order.
 	LineConstruction []bool
+	// StandalonePoints are cached coordinates in a line sketch that are not line endpoints — free
+	// sketch points (e.g. a midpoint reference). Emitted as points in addition to the line geometry.
+	StandalonePoints []Point
 }
 
 // pointMarker precedes every sketch coordinate in the MFC CArchive: the two bytes 1e 00 (a 2D-point
@@ -107,9 +110,10 @@ func sketchFromRegion(region []byte) (Sketch, bool) {
 			sk.Circles = circlesFromPoints(ordered) // centre+rim pairs -> full circles
 		}
 	case hasLine && !hasArc:
-		if lines, construction, ok := reconstructLines(region); ok {
+		if lines, construction, standalone, ok := reconstructLines(region); ok {
 			sk.Lines = lines // exact endpoints + true open/closed topology from the entity-reference graph
 			sk.LineConstruction = construction
+			sk.StandalonePoints = standalone // cached points that are not line endpoints
 		} else {
 			sk.Lines = loopFromVertices(sk.Points) // graph incomplete: fall back to the convex-loop guess
 		}
