@@ -3,6 +3,8 @@
 package ops
 
 import (
+	stdmath "math"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -113,8 +115,8 @@ func reclipInnerHost(set *runoutSet, ef edgeFillet, t setbackTiling, maps fillet
 
 // outerHostDetour is the outer host's notch builder: from the receded tangent corner (from) a straight
 // survivor to the near setback crossing, the boss host-side footprint arc split at the wall seam point
-// (near→seam→far), and a straight survivor to the other corner. Sampled identically to the wall rim's
-// host sub-arcs (hostSideFootArc/appendArcSegs) so the two weld point-for-point.
+// (near→seam→far), and a straight survivor to the other corner. Its host sub-arcs come from the same
+// σ-partition (hostRimArcs) the wall rim uses, so the two weld point-for-point.
 func outerHostDetour(boss crossingBoss, cyl geom.Cylinder, t setbackTiling) func(from, to math.Point3) ([]notchSeg, bool) {
 	return func(from, to math.Point3) ([]notchSeg, bool) {
 		near, far := orderByNearer(from, t.aCutLo, t.aCutHi)
@@ -124,28 +126,49 @@ func outerHostDetour(boss crossingBoss, cyl geom.Cylinder, t setbackTiling) func
 
 // hostArcDetour builds a notch that runs from→near (straight), the host-side footprint arc near→seam→far,
 // then far→(to) (straight). The arc is split at the boss wall's own footprint seam so both halves weld to
-// the subdivided wall rim.
+// the subdivided wall rim. Its two host sub-arcs come from the SAME scale-invariant σ-partition
+// (hostRimArcs → partitionFootprintRim / footprintArcBySpan) the wall rim's hostA/hostB derive from
+// (bossRimSubArcs), so the host notch and the wall rim trace IDENTICAL host arcs by construction — the M4
+// Task-3 fix that welds the LARGE torus rim (host = 241.6° MAJOR arc) where the old local-midpoint
+// hostSideFootArc took the 118° MINOR arc and left the notch un-welded (m4-spike.md §CRITICAL).
 func hostArcDetour(boss crossingBoss, cyl geom.Cylinder, from, near, far math.Point3) ([]notchSeg, bool) {
-	seam := boss.footEdge.StartVertex().Point()
-	arc1, ok1 := hostSideFootArc(boss, cyl, near, seam)
-	arc2, ok2 := hostSideFootArc(boss, cyl, seam, far)
-	if !ok1 || !ok2 {
+	arc1, arc2, ok := hostRimArcs(boss, cyl, near, boss.footEdge.StartVertex().Point(), far)
+	if !ok {
 		return nil, false
 	}
-	segs := appendArcSegs([]notchSeg{{pt: from}}, arc1)
+	segs := appendArcSegs([]notchSeg{{pt: from}}, arc1, torusHostArcChordCount(boss.wall, arc1))
 	segs = appendSeamArc(segs, boss, arc2)
 	return append(segs, notchSeg{pt: far}), true
 }
 
+// hostRimArcs returns the two σ-partition host-side footprint sub-arcs of a boss rim, oriented from→seam
+// and seam→to (the notch-traversal direction), each with the exact native span the wall-rim subdivision
+// derives (partitionFootprintRim: hostA=span(seam↔from), hostB=span(to↔seam)). It is the single source of
+// truth that makes every host detour trace the wall rim's host arcs point-for-point — the DRY seam Task 1
+// flagged: the wall rim was σ-partitioned but the detours still chose minor-vs-major by a local midpoint,
+// which agrees on the small cyl/cone/ellipse footprint yet diverges on the large torus (major vs minor).
+func hostRimArcs(boss crossingBoss, cyl geom.Cylinder, from, seam, to math.Point3) (arc1, arc2 geom.Curve3, ok bool) {
+	part, ok := partitionFootprintRim(boss, cyl, seam, from, to)
+	if !ok {
+		return nil, nil, false
+	}
+	arc1, ok1 := footprintArcBySpan(boss.footEdge, from, seam, part.hostA)
+	arc2, ok2 := footprintArcBySpan(boss.footEdge, seam, to, part.hostB)
+	if !ok1 || !ok2 {
+		return nil, nil, false
+	}
+	return arc1, arc2, true
+}
+
 // appendSeamArc appends the boss footprint SEAM (pinned to its intact-wall vertex id via notchSeg.srcV,
 // so spliceNotch welds the notch to the kept wall's seam vertex) followed by arc's samples EXCLUDING its
-// first — arc STARTS at the seam (hostSideFootArc(seam, …)), so its point[0] IS the seam and would
+// first — arc STARTS at the seam (hostRimArcs' seam→to arc), so its point[0] IS the seam and would
 // double it under id 0. Emitting the seam once, id-pinned, is exactly what closes the wall↔host weld
 // that addID's distinct-id rule (#1600) otherwise splits (S4 cone/cyl runout).
 func appendSeamArc(segs []notchSeg, boss crossingBoss, arc geom.Curve3) []notchSeg {
 	seamV := boss.footEdge.StartVertex()
 	segs = append(segs, notchSeg{pt: seamV.Point(), srcV: seamV.ID()})
-	tail := sampleCurve3Open(arc, false)
+	tail := sampleCurveN(arc, torusHostArcChordCount(boss.wall, arc), false)
 	for _, p := range tail[1:] {
 		segs = append(segs, notchSeg{pt: p})
 	}
@@ -168,16 +191,14 @@ func innerHostDetour(boss crossingBoss, cyl geom.Cylinder, t setbackTiling) func
 // keep the closure short): from→nearCut, the near plain seam, the host-side arc through the wall seam,
 // the far plain seam, farCut→to.
 func innerHostSegs(boss crossingBoss, cyl geom.Cylinder, from, nearCut, nearSeam, farSeam, farCut math.Point3) ([]notchSeg, bool) {
-	seam := boss.footEdge.StartVertex().Point()
-	arc1, ok1 := hostSideFootArc(boss, cyl, nearSeam, seam)
-	arc2, ok2 := hostSideFootArc(boss, cyl, seam, farSeam)
-	if !ok1 || !ok2 {
+	arc1, arc2, ok := hostRimArcs(boss, cyl, nearSeam, boss.footEdge.StartVertex().Point(), farSeam)
+	if !ok {
 		return nil, false
 	}
-	segs := appendArcSegs([]notchSeg{{pt: from}}, geom.NewLineSegment(nearCut, nearSeam))
-	segs = appendArcSegs(segs, arc1)
+	segs := appendArcSegs([]notchSeg{{pt: from}}, geom.NewLineSegment(nearCut, nearSeam), ringSegSamples)
+	segs = appendArcSegs(segs, arc1, torusHostArcChordCount(boss.wall, arc1))
 	segs = appendSeamArc(segs, boss, arc2)
-	segs = appendArcSegs(segs, geom.NewLineSegment(farSeam, farCut))
+	segs = appendArcSegs(segs, geom.NewLineSegment(farSeam, farCut), ringSegSamples)
 	return append(segs, notchSeg{pt: farCut}), true
 }
 
@@ -222,10 +243,60 @@ func bossRimRing(boss crossingBoss, cyl geom.Cylinder, seam, cross1, cross2 math
 		return nil, false
 	}
 	var ring []math.Point3
-	for _, a := range subs {
-		ring = append(ring, sampleCurve3Open(a, false)...)
+	for i, a := range subs {
+		ring = append(ring, sampleCurveN(a, rimSubArcChordCount(boss.wall, a, i, len(subs)), false)...)
 	}
 	return orientRingToEdge(ring, boss.footEdge), len(ring) > 0
+}
+
+// torusRimChordAngle is the maximum swept angle per straight chord (≈7.5°) a TORUS boss's host rim arc is
+// sampled at — fine enough that its doubly-curved band (which bulges in the tube parameter) lofts within
+// the T1/T4 area gate (measured: 1143.99/2825.96, exact), yet far coarser than the surface tessellation
+// (so the shared host-notch boundary stays cheap). A dimensionless angle — scale-free by construction.
+const torusRimChordAngle = 2 * stdmath.Pi / 48
+
+// rimSubArcChordCount is the chord count for one footprint rim sub-arc at position i of total. The BAND
+// sub-arcs (interior, 0<i<total-1) and every RULED boss's arcs stay at ringSegSamples: a cylinder/cone/
+// elliptical-cylinder band lofts as flat quads that match any chord density (S1/S4/T7 byte-identical), and
+// the band sub-arcs weld to the setback patches which also tile at ringSegSamples. Only the two HOST sub-
+// arcs (i==0, i==total-1) of a TORUS wall densify — the host arcs weld to the flat host notch (never a
+// patch), and a coarse host arc on the doubly-curved torus band over-covers the chord-to-arc segment
+// (the 241.6° major arc at 6 chords lofted T1 +8.6%, m4-spike §CRITICAL). See torusHostArcChordCount.
+func rimSubArcChordCount(wall geom.Surface, arc geom.Curve3, i, total int) int {
+	if i != 0 && i != total-1 {
+		return ringSegSamples // band sub-arc: welds to the patches, keep the shared granularity
+	}
+	return torusHostArcChordCount(wall, arc)
+}
+
+// torusHostArcChordCount is the chord count for a boss's host-side footprint arc: span-proportional
+// (≈torusRimChordAngle per chord, floored at ringSegSamples) for a TORUS wall so its band lofts accurately,
+// and exactly ringSegSamples for any RULED wall (cylinder/cone/elliptical-cylinder) so S1/S4/T7 stay byte-
+// identical. Both the wall rim and the host notch sample the SAME host arc through here, so they stay
+// weld-identical at whatever count the wall type sets (a non-arc curve floors at ringSegSamples).
+func torusHostArcChordCount(wall geom.Surface, arc geom.Curve3) int {
+	if _, isTorus := wall.(geom.Torus); !isTorus {
+		return ringSegSamples
+	}
+	n := int(stdmath.Ceil(arcSweepAbs(arc) / torusRimChordAngle))
+	if n < ringSegSamples {
+		return ringSegSamples
+	}
+	return n
+}
+
+// arcSweepAbs is the absolute swept angle of a footprint sub-arc (a geom.Arc3d circle arc or a
+// geom.EllipticalArc), 0 for any other curve (a straight flank chord) — the ruler the torus host-arc chord
+// count is derived from.
+func arcSweepAbs(c geom.Curve3) float64 {
+	switch a := c.(type) {
+	case geom.Arc3d:
+		return stdmath.Abs(a.SweepAngle)
+	case geom.EllipticalArc:
+		return stdmath.Abs(a.SweepAngle)
+	default:
+		return 0
+	}
 }
 
 // orientRingToEdge reverses the rim ring (keeping the seam point first) when it winds AGAINST the
@@ -311,22 +382,6 @@ func bandFootArcs(footEdge *topo.Edge, cross1, cross2 math.Point3, bandInner []m
 		out = append(out, a)
 	}
 	return out, true
-}
-
-// hostSideFootArc is the footprint sub-arc from→to that stays on the boss's HOST side (away from the
-// fillet band): the minor arc when its midpoint is host-side, else the major one, read from the
-// crossingBoss (footEdge conic + host plane). The host detour and the wall rim both route their
-// host-side pieces through here, so the two trace the identical curve and weld.
-func hostSideFootArc(boss crossingBoss, cyl geom.Cylinder, from, to math.Point3) (geom.Curve3, bool) {
-	contact, edgeward, ok := footEdgeward(boss, cyl)
-	if !ok {
-		return nil, false
-	}
-	minor, ok0 := footprintSubArc(boss.footEdge, from, to)
-	if ok0 && contact.VectorTo(minor.PointAt(0.5)).Dot(edgeward) < 0 {
-		return minor, true // midpoint is behind the fillet contact line (host side), not inside the band
-	}
-	return footprintMajorArc(boss.footEdge, from, to)
 }
 
 // footEdgeward returns the fillet contact point at the footprint's own centre station AND the in-plane

@@ -305,6 +305,56 @@ func filletedCorpusEdge(t *testing.T, rel string, mid math.Point3, r float64) *t
 	return res
 }
 
+// TestFilletEdges_T1TorusIntact is TestFilletEdges_S4WallsIntact for T1 (a crossing TORUS boss + an r6
+// cylinder): the wired op (FilletEdges → collectRunouts → runoutFacesFor → the intact-boss path) must keep
+// the torus wall as ONE intact face near its band area 1144.04 (m4-spike.md §(d): pre-fillet 1143.986,
+// OCCT parity) — NOT the 3947.68 full donut the old boss-splitting path produced — and the r6 cylinder
+// (565.487) as ONE intact face. The torus tessellates as a chorded band (band_ring_chain.go), not the full
+// parametric donut; a single face near 1144 proves both the intact-boss topology AND the band mesher.
+func TestFilletEdges_T1TorusIntact(t *testing.T) {
+	body := filletedCorpusEdge(t, "simple/T1", math.P3(0, -30, 0), 8)
+	if got := countSurfaceFacesNear[geom.Torus](body, 1144.04, 11); got != 1 {
+		t.Fatalf("wired T1: want ONE intact torus boss wall near 1144.04 (NOT the 3947.68 donut), got %d", got)
+	}
+	if got := countCylFacesNear(body, 565.487, 6); got != 1 {
+		t.Fatalf("wired T1: want ONE intact r6 boss wall near 565.487 (un-split), got %d", got)
+	}
+}
+
+// TestFilletEdges_T4TorusIntact is TestFilletEdges_T1TorusIntact for T4 (a larger crossing TORUS boss
+// R35/r10 + an r10 cylinder): the wired intact-boss op must keep the torus as ONE face near its band area
+// 2826.04 (m4-spike.md §(d): pre-fillet 2825.957) — NOT the 13816.88 full donut — and the r10 cylinder
+// (628.30, r10×h10) intact. T4 was baseline-green before; this proves it now routes the torus through the
+// intact setback path FAITHFULLY, not by the do-no-harm area coincidence. (The task brief's "942.478" is an
+// S4 copy-paste; T4's cylinder is r10×h10 = 628.30, measured pre-fillet and confirmed intact post-fillet.)
+func TestFilletEdges_T4TorusIntact(t *testing.T) {
+	body := filletedCorpusEdge(t, "simple/T4", math.P3(0, -30, 0), 8)
+	if got := countSurfaceFacesNear[geom.Torus](body, 2826.04, 28); got != 1 {
+		t.Fatalf("wired T4: want ONE intact torus boss wall near 2826.04 (NOT the 13816.88 donut), got %d", got)
+	}
+	if got := countCylFacesNear(body, 628.30, 6); got != 1 {
+		t.Fatalf("wired T4: want ONE intact r10 boss wall near 628.30 (un-split), got %d", got)
+	}
+}
+
+// TestFilletEdges_T1SetbackSeamWatertight crosses the setback↔intact-torus seam no other test drives: the
+// full FilletEdges op on T1 (box + crossing torus boss) through the intact setback path must weld to a
+// watertight, hole-contained SOLID whose torus wall meshes to its band area ≈1144 (band_ring_chain.go),
+// NOT the 3947 full donut. The old split path left this seam a full-domain-grid donut and could not weld;
+// the intact path keeps the torus whole and welds the setback patches to its subdivided footprint rim.
+func TestFilletEdges_T1SetbackSeamWatertight(t *testing.T) {
+	body := filletedCorpusEdge(t, "simple/T1", math.P3(0, -30, 0), 8)
+	if !body.IsSolid() {
+		t.Fatalf("T1 intact-torus setback shell is not a solid: %d open edges", len(openEdges(body)))
+	}
+	if r := Validate(body); !r.Valid || !r.HolesContained {
+		t.Fatalf("T1 intact-torus setback shell invalid: Valid=%v HolesContained=%v", r.Valid, r.HolesContained)
+	}
+	if got := countSurfaceFacesNear[geom.Torus](body, 1144.04, 11); got != 1 {
+		t.Fatalf("T1 torus wall must mesh to its band area ≈1144 (NOT 3947 donut), got %d faces in band", got)
+	}
+}
+
 // synthTorusSetbackBoss builds a crossingBoss mimicking T1's intact torus wall: the host-plane footprint
 // is a circle of radius r_f=25 centered at the origin in the z=0 plane, with its seam vertex at world
 // (25,0,0) (azimuth 0°). The fillet R=8 band runs along the box edge at y=-22 (contact line σ=0), so the

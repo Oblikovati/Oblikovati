@@ -115,10 +115,8 @@ func t4RunoutFils(t *testing.T) (*topo.Body, []edgeFillet) {
 
 // t4FragileRunoutFils adds the same filletRebuildMaps filletResultFaces builds (fillet_faces.go:
 // 17-22) on top of t4RunoutFils's edgeFillet. This is real production input, not a zero-value
-// filletRebuildMaps, so TestCollectRunouts_DefersOnFragileBand actually exercises collectRunouts'
-// bodyHasFragileBand guard: T4's torus survivor band trips that guard FIRST, before the maps are
-// ever consulted, so the deferral is proven by the fragile-band check itself — the maps just need
-// to be realistic enough that a passing test can't be blamed on some other, unrelated honest-reject.
+// filletRebuildMaps, so TestCollectRunouts_TorusFiresOnRunoutPath actually exercises collectRunouts
+// end-to-end: T4's torus survivor no longer trips runoutDefersBody, so the intact-boss runout builds.
 // Named so the test can assert directly against collectRunouts's real production inputs.
 func t4FragileRunoutFils(t *testing.T) (*topo.Body, []edgeFillet, filletRebuildMaps) {
 	t.Helper()
@@ -131,29 +129,41 @@ func t4FragileRunoutFils(t *testing.T) (*topo.Body, []edgeFillet, filletRebuildM
 	return body, fils, maps
 }
 
-// TestCollectRunouts_DefersOnFragileBand pins the bodyHasFragileBand guard in collectRunouts
-// (fillet_runout_faces.go:33) against the T4 regression: T4's imported STEP already carries a
-// TOROIDAL_SURFACE survivor band, and firing the runout re-weld on its front-top edge (radius 8,
-// the corpus pick) loses that torus's trim classification, inflating the rebuilt area from OCCT's
-// 19514.7 to 32463.27 (full-domain torus fallback, confirmed locally via FilletEdges end-to-end
-// with the guard temporarily disabled). The guard must defer the WHOLE edge to baseline (empty
-// replace/extra/handled) whenever the body carries a fragile (torus/b-spline) band, same scope
-// decision as the mid-span obstacle path (collectObstacles, ADR-4).
+// TestCollectRunouts_TorusFiresOnRunoutPath pins the M4-Task-3 narrowing of the runout deferral: a TORUS
+// survivor body (T4's imported STEP carries a TOROIDAL_SURFACE band + a crossing torus boss) is NO LONGER
+// deferred on the runout path — runoutDefersBody(T4)==false — so collectRunouts now FIRES the intact-boss
+// runout (handled non-empty), keeping the torus boss whole (band_ring_chain.go meshes it correctly). The
+// old boss-splitting path had to defer (torus split → full-domain donut, 32463.27 vs OCCT 19514.7); the
+// intact path never splits, so the per-boss-type setbackBossesFaithful whitelist is the real gate now.
 //
-// RED check (2026-07-14): with `if bodyHasFragileBand(body) { ... }` in collectRunouts replaced by
-// `if false && bodyHasFragileBand(body) { ... }`, this test FAILS — collectRunouts on this exact
-// (body, fils) fires the runout rebuild (handled becomes non-empty) once the guard is bypassed.
-// Verified locally (temporary edit, reverted, not committed) alongside the FilletEdges area check
-// above (19640.09 with the guard vs 32463.27 without).
-func TestCollectRunouts_DefersOnFragileBand(t *testing.T) {
+// The SHARED obstacle gate stays UNTOUCHED: bodyHasFragileBand(T4) is STILL true (a torus IS fragile on
+// the obstacle re-weld), so collectObstacles keeps deferring it — this asserts both that the narrowing is
+// scoped to the runout path and that the obstacle path is byte-identical.
+func TestCollectRunouts_TorusFiresOnRunoutPath(t *testing.T) {
 	body, fils, maps := t4FragileRunoutFils(t)
-	if !bodyHasFragileBand(body) {
-		t.Fatal("TestCollectRunouts_DefersOnFragileBand: T4 fixture has no torus/b-spline survivor face — fixture regressed")
+	if runoutDefersBody(body) {
+		t.Fatal("runoutDefersBody(T4 torus) = true — the runout narrowing (M4 Task 3) regressed; a torus survivor must NOT defer here")
 	}
-	replace, extra, handled := collectRunouts(body, fils, ResolutionForBody(body),
-		map[uint64]bool{}, maps)
-	if len(replace) != 0 || len(extra) != 0 || len(handled) != 0 {
-		t.Fatalf("collectRunouts fired on a fragile-band body (T4 torus survivor): replace=%d extra=%d handled=%d — expected the runout path to defer to baseline",
-			len(replace), len(extra), len(handled))
+	if !bodyHasFragileBand(body) {
+		t.Fatal("bodyHasFragileBand(T4 torus) = false — the SHARED obstacle gate was changed; it must stay true (obstacle path untouched)")
+	}
+	_, _, handled := collectRunouts(body, fils, ResolutionForBody(body), map[uint64]bool{}, maps)
+	if len(handled) == 0 {
+		t.Fatal("collectRunouts did not fire the intact-boss runout on the T4 torus body — expected it to build, not defer")
+	}
+}
+
+// TestRunoutDefersBody_BSplineOnly pins that the runout deferral is narrowed to FREE-FORM (b-spline)
+// survivor bands ONLY: a b-spline body (T9: {BSplineSurface:1, Plane:7}, m4-spike §T9) still defers (no
+// band mesher recovers a doubly-periodic b-spline on re-weld), while a torus body (T4) does NOT — the
+// exact split from the shared bodyHasFragileBand (which defers BOTH). Guards against a future re-widening.
+func TestRunoutDefersBody_BSplineOnly(t *testing.T) {
+	bspline := importCorpusSolid(t, "simple/T9")
+	if !runoutDefersBody(bspline) {
+		t.Fatal("runoutDefersBody(T9 b-spline) = false — a free-form survivor band must still defer on the runout path")
+	}
+	torus, _ := t4RunoutFils(t)
+	if runoutDefersBody(torus) {
+		t.Fatal("runoutDefersBody(T4 torus) = true — a torus survivor must no longer defer (M4 Task 3)")
 	}
 }

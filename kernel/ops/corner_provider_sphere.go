@@ -137,10 +137,18 @@ func railLoopToFilletLoops(loop RailLoop) []filletLoop {
 // SAME curve welds point-for-point. Generic over geom.Curve3 — sampleRailOpen (corner_blend_obstacle.go)
 // is its geom.BSplineCurve-only sibling.
 func sampleCurve3Open(c geom.Curve3, rev bool) []math.Point3 {
+	return sampleCurveN(c, ringSegSamples, rev)
+}
+
+// sampleCurveN is sampleCurve3Open at an explicit chord count n (≥1) — the density lever the intact-boss
+// torus rim uses to sample its large host arcs finely enough that the doubly-curved band lofts within
+// tolerance (rimSubArcChordCount, fillet_setback_close.go), while every ruled boss/blend stays at
+// ringSegSamples. Excludes the far endpoint, like sampleCurve3Open, so consecutive spans concatenate.
+func sampleCurveN(c geom.Curve3, n int, rev bool) []math.Point3 {
 	lo, hi := c.Domain()
-	pts := make([]math.Point3, ringSegSamples)
-	for i := 0; i < ringSegSamples; i++ {
-		f := float64(i) / float64(ringSegSamples)
+	pts := make([]math.Point3, n)
+	for i := 0; i < n; i++ {
+		f := float64(i) / float64(n)
 		if rev {
 			f = 1 - f
 		}

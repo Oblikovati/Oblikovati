@@ -32,11 +32,13 @@ func collectRunouts(body *topo.Body, fils []edgeFillet, res Resolution,
 	replace := map[uint64]filletFace{}
 	extra := map[uint64][]filletFace{}
 	handled := map[uint64]bool{}
-	if bodyHasFragileBand(body) {
-		// A torus / free-form (b-spline) survivor band loses its trim classification when the runout
-		// re-weld adds vertices/edges, and then tessellates over its full parametric domain (the S9/T3/
-		// T9 / T4 regression — a surviving torus rim-fillet inflates the area). Same scope decision as
-		// the mid-span obstacle path (collectObstacles, ADR-4): defer such bodies to the corner engine.
+	if runoutDefersBody(body) {
+		// A free-form (b-spline) survivor band loses its trim classification when the runout re-weld adds
+		// vertices/edges and then tessellates over its full parametric domain (the T9 regression). It has
+		// no band mesher, so defer the whole body to the corner engine (same scope decision as the obstacle
+		// path). A TORUS survivor is NO LONGER deferred here: the intact-boss path never splits it, and the
+		// chorded-rim torus-band tessellator (M4 Task 2) meshes it correctly — the per-boss-type gate
+		// setbackBossesFaithful is the real torus gate now (M4 Task 3). See runoutDefersBody.
 		return replace, extra, handled
 	}
 	for i := range fils {
@@ -54,6 +56,23 @@ func collectRunouts(body *topo.Body, fils []edgeFillet, res Resolution,
 		handled[fils[i].edge.ID()] = true
 	}
 	return replace, extra, handled
+}
+
+// runoutDefersBody reports whether the RUNOUT rebuild must defer a whole body to the corner engine — the
+// runout-path-scoped narrowing of the shared obstacle gate (bodyHasFragileBand, fillet_obstacle_faces.go,
+// left UNTOUCHED). The obstacle gate defers BOTH torus and b-spline survivors; the intact-boss runout path
+// keeps every boss wall INTACT (never splits a torus into a full-donut grid) and the chorded-rim torus-band
+// tessellator (band_ring_chain.go, M4 Task 2) meshes a surviving torus band as a ruled strip, so a TORUS
+// survivor no longer corrupts on re-weld — the per-boss-type setbackBossesFaithful whitelist is its real
+// gate (M4 Task 3, greening T1/T4). Only a free-form (b-spline) survivor band still loses its trim
+// classification on the runout re-weld with no band mesher to recover it (T9), so it alone defers here.
+func runoutDefersBody(body *topo.Body) bool {
+	for _, f := range body.Faces() {
+		if _, ok := f.Geometry().(geom.BSplineSurface); ok {
+			return true
+		}
+	}
+	return false
 }
 
 // runoutFacesFor detects the intact-boss runout bands on a constant-radius straight fillet edge and,
@@ -84,18 +103,21 @@ func runoutFacesFor(ef edgeFillet, res Resolution, maps filletRebuildMaps) (runo
 }
 
 // setbackBossesFaithful gates the intact-boss path to the crossing-boss wall surface types it is proven
-// faithful on: CYLINDER (S1), CONE (S4), and the oblique ELLIPTICAL CYLINDER (T7, geom.EllipticalCylinder
-// — the elementarised SurfaceOfLinearExtrusion of an ellipse whose footprint is a geom.EllipseFull). Any
-// other wall — a SPHERE (S7), etc. — declines to BASELINE (do-no-harm), never a wrong intact fill. This
-// is load-bearing, not defensive: a sphere boss is a periodic cap whose seam/pole the intact transformFace
-// collapses to ~0 area (verified on S7: −5.5% area), and S7's do-no-harm baseline is already within OCCT's
-// 1%, so deferring it there keeps the case green. The three admitted walls re-weld cleanly and their
-// footprint conic (circle / ellipse) rails exactly (fillet_setback_ellipse.go); widening this whitelist
-// further needs a per-type closure proof like S1/S4/T7's.
+// faithful on: CYLINDER (S1), CONE (S4), the oblique ELLIPTICAL CYLINDER (T7, geom.EllipticalCylinder —
+// the elementarised SurfaceOfLinearExtrusion of an ellipse whose footprint is a geom.EllipseFull), and the
+// TORUS (T1/T4, M4). Any other wall — a SPHERE (S7), etc. — declines to BASELINE (do-no-harm), never a
+// wrong intact fill. This is load-bearing, not defensive: a sphere boss is a periodic cap whose seam/pole
+// the intact transformFace collapses to ~0 area (verified on S7: −5.5% area), and S7's do-no-harm baseline
+// is already within OCCT's 1%, so deferring it there keeps the case green. The admitted walls re-weld
+// cleanly and their footprint conic (circle / ellipse) rails exactly (fillet_setback_ellipse.go). The torus
+// is admitted only now that its rim rebuilds as the full 360° σ-partition (fillet_setback_partition.go, M4
+// Task 1) — including the host DETOUR (M4 Task 3) so the host notch welds the 241.6° major host arc — and
+// its intact wall meshes as a chorded band (band_ring_chain.go, M4 Task 2), NOT the 3947 full donut the old
+// boss-splitting path produced. Widening this whitelist further needs a per-type closure proof like these.
 func setbackBossesFaithful(b setbackBands) bool {
 	for _, boss := range b.bosses {
 		switch boss.wall.(type) {
-		case geom.Cylinder, geom.Cone, geom.EllipticalCylinder:
+		case geom.Cylinder, geom.Cone, geom.EllipticalCylinder, geom.Torus:
 		default:
 			return false
 		}

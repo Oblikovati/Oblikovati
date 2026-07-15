@@ -28,7 +28,7 @@ type rimPartition struct {
 // §D2): with σ(p)=(p−contact)·ê the fillet-band ruler, both crossings lie on σ=0, so the band is the
 // between-crossings arc whose interior midpoint has σ>0 and the two host arcs are the complement F∖band
 // split at the seam. The one σ-sign test is taken deep inside the notch (never near the contact line), so
-// it cannot flip with footprint size — unlike the old hostSideFootArc midpoint test that dropped 242° of
+// it cannot flip with footprint size — unlike the old local-midpoint host-arc test that dropped 242° of
 // the large torus rim (m4-spike.md §CRITICAL). ok=false honest-rejects the degenerate cases (§pitfalls:
 // seam under the fillet, coincident/engulfing crossings, non-conic footprint, failed closure).
 func partitionFootprintRim(boss crossingBoss, cyl geom.Cylinder, seam, cross1, cross2 math.Point3) (rimPartition, bool) {

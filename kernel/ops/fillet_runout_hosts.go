@@ -33,12 +33,14 @@ func hostTangent(c corner, hostIsA bool) math.Point3 {
 	return c.tb
 }
 
-// appendArcSegs appends arc's open samples (excluding the far endpoint) as STRAIGHT chords (curve nil).
-// The samples are the same points the neighbour (wall/patch) tiles from the identical arc, so the faces
-// weld; a nil curve keeps each welded edge a LineSegment between two on-surface points — sampleEdgeCurve
-// would otherwise re-trace the FULL arc over each 1/6-span sub-edge and self-cross the boundary.
-func appendArcSegs(segs []notchSeg, arc geom.Curve3) []notchSeg {
-	for _, p := range sampleCurve3Open(arc, false) {
+// appendArcSegs appends arc's open samples (excluding the far endpoint) as STRAIGHT chords (curve nil), at
+// chord count n. The samples are the same points the neighbour (wall rim/patch) tiles from the identical
+// arc AT THE SAME COUNT, so the faces weld; a nil curve keeps each welded edge a LineSegment between two
+// on-surface points — sampleEdgeCurve would otherwise re-trace the FULL arc over each sub-edge and
+// self-cross the boundary. n lets a torus host arc densify (rimSubArcChordCount) while lines/ruled arcs
+// stay at ringSegSamples.
+func appendArcSegs(segs []notchSeg, arc geom.Curve3, n int) []notchSeg {
+	for _, p := range sampleCurveN(arc, n, false) {
 		segs = append(segs, notchSeg{pt: p})
 	}
 	return segs
