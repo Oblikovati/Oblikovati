@@ -60,13 +60,11 @@ func reconstructLines(region []byte) (lines []Line, construction []bool, standal
 	ends := map[uint16]map[Point]bool{}
 	seen := map[Point]bool{}
 	var distinctOrder []Point // distinct coordinates in stream (serialization) order
-	hasOrigin := false
 	for i, pp := range pts {
 		if !seen[pp.p] {
 			seen[pp.p] = true
 			distinctOrder = append(distinctOrder, pp.p)
 		}
-		hasOrigin = hasOrigin || pp.p == origin
 		lo := pp.off + len(pointMarker) + 16 // just past the x,y coordinate
 		// A point's record — holding its owning-entity references — runs to the next point. Scan the
 		// whole record so a reference displaced by a class registration (the first entity's point) is
@@ -85,14 +83,19 @@ func reconstructLines(region []byte) (lines []Line, construction []bool, standal
 			ends[idx][pp.p] = true
 		}
 	}
-	if hasOrigin {
+	// Fill the endpoints whose references were dropped. Which points those are depends on whether the
+	// sketch anchors at the origin: if the first cached point IS the origin, every short entity's
+	// missing endpoint is the origin (lines meeting there); otherwise only the first cached point lost
+	// its reference (to the first entity's class registration), completing the one entity left short.
+	if pts[0].p == origin {
 		for _, set := range ends {
 			if len(set) == 1 {
-				set[origin] = true // an endpoint at the sketch origin omits its reference
+				set[origin] = true
 			}
 		}
+	} else {
+		completeFirstPoint(ends, pts[0].p)
 	}
-	completeFirstPoint(ends, pts[0].p)
 	lines, construction, standalone, ok = assembleLines(region, ends, distinctOrder)
 	return lines, construction, standalone, ok
 }
@@ -129,18 +132,25 @@ func pointCovered(ends map[uint16]map[Point]bool, p Point) bool {
 	return false
 }
 
+// indexedLine is a reconstructed line tagged with the entity index that referenced it, so its
+// construction flag can be recovered from the draw-ordered construction-flag table.
+type indexedLine struct {
+	idx  int
+	line Line
+}
+
 // assembleLines turns the entity→endpoints map into ordered line segments with per-segment
-// construction flags, but only if every guard holds; otherwise ok is false. Referenced entities are
-// the normal (non-construction) lines. A construction line drops its endpoint references, so its
-// endpoints are the cached points left uncovered; the construction-flag table (entityConstruction)
-// says how many construction lines to expect. Each entity serialises its two endpoints together, so
-// the leftover points stay adjacent per line in stream order (verified on generated parts with two
-// construction lines, including interleaved draw order) — they are paired consecutively. Guards: each
-// referenced entity has two endpoints, the referenced count equals the non-construction count, the
-// leftover count is exactly two per construction line with no degenerate pair. A cached point that is
-// neither a referenced endpoint nor part of a construction line is a standalone sketch point, returned
-// separately — but only when there are no construction lines, since otherwise a leftover point is
-// ambiguous between a standalone point and a construction endpoint (that mixed case falls back).
+// construction flags, but only if every guard holds; otherwise ok is false. There are two ways a
+// construction line is stored, handled as two cases against the construction-flag table
+// (entityConstruction, one flag per entity in draw order):
+//   - A centerline keeps its endpoint references, so every entity is referenced; its construction
+//     flag is read from the table by draw position (the referenced indices, normalised to zero-based).
+//   - A construction line toggled from a normal line drops its endpoint references, so it is not
+//     referenced; its endpoints are the leftover cached points, paired consecutively in stream order.
+//
+// A cached point that is neither a referenced endpoint nor a construction endpoint is a standalone
+// sketch point (the origin excepted — it is the sketch's own origin, not a free point). A mix of the
+// two construction storages, or leftover that neither pairs nor forms standalone points, falls back.
 func assembleLines(region []byte, ends map[uint16]map[Point]bool, distinctOrder []Point) ([]Line, []bool, []Point, bool) {
 	flags := entityConstruction(region)
 	nConstr := 0
@@ -149,17 +159,52 @@ func assembleLines(region []byte, ends map[uint16]map[Point]bool, distinctOrder 
 			nConstr++
 		}
 	}
-	lines, covered, ok := referencedLines(ends)
-	if !ok || len(lines) != len(flags)-nConstr {
+	refs, covered, ok := referencedLines(ends)
+	if !ok {
 		return nil, nil, nil, false
 	}
-	construction := make([]bool, len(lines))
-	leftover := uncoveredInOrder(distinctOrder, covered)
+	leftover := pointsExcept(uncoveredInOrder(distinctOrder, covered), origin)
 	switch {
-	case nConstr == 0:
-		return lines, construction, leftover, true // leftover points are standalone sketch points
-	case len(leftover) != 2*nConstr:
-		return nil, nil, nil, false // construction lines mixed with standalone points: ambiguous
+	case len(refs) == len(flags):
+		return referencedWithFlags(refs, flags, nConstr, leftover)
+	case len(refs) == len(flags)-nConstr:
+		return leftoverConstruction(refs, nConstr, leftover)
+	default:
+		return nil, nil, nil, false
+	}
+}
+
+// referencedWithFlags handles the all-referenced case (normal lines and centerlines): each line's
+// construction flag comes from the flag table at its normalised draw position. Leftover points are
+// standalone. The recovered construction count must match the table, else the mapping is untrusted.
+func referencedWithFlags(refs []indexedLine, flags []bool, nConstr int, standalone []Point) ([]Line, []bool, []Point, bool) {
+	minIdx := refs[0].idx // refs are sorted by index
+	lines := make([]Line, len(refs))
+	construction := make([]bool, len(refs))
+	got := 0
+	for i, r := range refs {
+		lines[i] = r.line
+		if pos := r.idx - minIdx; pos >= 0 && pos < len(flags) && flags[pos] {
+			construction[i] = true
+			got++
+		}
+	}
+	if got != nConstr {
+		return nil, nil, nil, false
+	}
+	return lines, construction, standalone, true
+}
+
+// leftoverConstruction handles the toggled-construction case: the referenced entities are the normal
+// lines, and the leftover points are the construction lines' endpoints, paired consecutively.
+func leftoverConstruction(refs []indexedLine, nConstr int, leftover []Point) ([]Line, []bool, []Point, bool) {
+	lines := make([]Line, len(refs))
+	for i, r := range refs {
+		lines[i] = r.line
+	}
+	construction := make([]bool, len(refs))
+	if len(leftover) != 2*nConstr {
+		return nil, nil, nil, false // construction endpoints mixed with standalone points: ambiguous
 	}
 	for i := 0; i < len(leftover); i += 2 {
 		if leftover[i] == leftover[i+1] {
@@ -171,16 +216,16 @@ func assembleLines(region []byte, ends map[uint16]map[Point]bool, distinctOrder 
 	return lines, construction, nil, true
 }
 
-// referencedLines builds one line per referenced entity (in entity-index order), reporting the set of
+// referencedLines builds one line per referenced entity, sorted by entity index, reporting the set of
 // covered points. ok is false if any entity does not have exactly two endpoints.
-func referencedLines(ends map[uint16]map[Point]bool) ([]Line, map[Point]bool, bool) {
+func referencedLines(ends map[uint16]map[Point]bool) ([]indexedLine, map[Point]bool, bool) {
 	idxs := make([]int, 0, len(ends))
 	for idx := range ends {
 		idxs = append(idxs, int(idx))
 	}
 	sort.Ints(idxs)
 	covered := map[Point]bool{}
-	lines := make([]Line, 0, len(idxs))
+	lines := make([]indexedLine, 0, len(idxs))
 	for _, idx := range idxs {
 		set := ends[uint16(idx)]
 		if len(set) != 2 {
@@ -191,9 +236,20 @@ func referencedLines(ends map[uint16]map[Point]bool) ([]Line, map[Point]bool, bo
 			ab = append(ab, p)
 			covered[p] = true
 		}
-		lines = append(lines, Line{A: ab[0], B: ab[1]})
+		lines = append(lines, indexedLine{idx: idx, line: Line{A: ab[0], B: ab[1]}})
 	}
 	return lines, covered, true
+}
+
+// pointsExcept returns pts with any occurrence of skip removed, preserving order.
+func pointsExcept(pts []Point, skip Point) []Point {
+	out := pts[:0:0]
+	for _, p := range pts {
+		if p != skip {
+			out = append(out, p)
+		}
+	}
+	return out
 }
 
 // uncoveredInOrder returns the distinct points not in covered, preserving stream (serialization)

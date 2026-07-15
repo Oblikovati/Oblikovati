@@ -178,6 +178,29 @@ func TestOpenProfileTranslation(t *testing.T) {
 	}
 }
 
+// TestSymmetricConstraint checks a symmetry relation is applied: two vertical lines mirrored about a
+// construction centerline reopen as three lines (one construction), and the symmetry pins the mirror
+// pair — DOF drop from 9 (three verticals only) to 6.
+func TestSymmetricConstraint(t *testing.T) {
+	def := reopen(t, "symmetric_fmtb.sldprt")
+	sk := def.Sketches().Item(0)
+	if sk.Lines().Count() != 3 {
+		t.Fatalf("got %d lines, want 3 (two lines + a centerline)", sk.Lines().Count())
+	}
+	constr := 0
+	for i := 0; i < sk.Lines().Count(); i++ {
+		if sk.Lines().Item(i).IsConstruction() {
+			constr++
+		}
+	}
+	if constr != 1 {
+		t.Errorf("got %d construction lines, want 1 (the centerline)", constr)
+	}
+	if got := sk.DegreesOfFreedom(); got != 6 {
+		t.Errorf("sketch DOF = %d, want 6 (symmetry applied)", got)
+	}
+}
+
 // TestMidpointConstraint checks a midpoint relation is applied: a horizontal line with a point
 // constrained to its middle reopens as one line plus the point, at 3 DOF — a free line and point
 // would be 6, less 1 for horizontal and 2 for the midpoint pin.

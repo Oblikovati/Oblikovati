@@ -29,6 +29,7 @@ func applyConstraints(sk *sketch.Sketch, cons []sldprt.Constraint, lines []*sket
 	}
 	g := sk.GeometricConstraints()
 	applyMidpoints(sk, n, points, lines, g)
+	applySymmetric(sk, n, lines, g)
 	applyToLines(sk, n, sldprt.Horizontal, lines, func(l *sketch.Line) bool {
 		if !lineHorizontal(l) {
 			return false
@@ -49,6 +50,70 @@ func applyConstraints(sk *sketch.Sketch, cons []sldprt.Constraint, lines []*sket
 	applyToLinePairs(sk, n, sldprt.EqualLength, lines, equalLength, g.AddEqualLength)
 	applyTangents(sk, n, lines, curvesOf(arcs, circles), g)
 	applyToCurvePairs(sk, n, sldprt.Concentric, curvesOf(arcs, circles), concentric, g.AddConcentric)
+}
+
+// applySymmetric binds each decoded symmetry relation to a pair of lines that are already mirror
+// images about a construction line (the axis): the two lines' corresponding endpoints are made
+// symmetric about that axis. SolidWorks stores line symmetry; Oblikovati expresses it per point, so
+// each matched pair yields two point-symmetry constraints. Applied up to the decoded count while DOF
+// remains; because the geometry is already symmetric, no point moves.
+func applySymmetric(sk *sketch.Sketch, n map[sldprt.ConstraintKind]int, lines []*sketch.Line, g *sketch.GeometricConstraints) {
+	for _, axis := range lines {
+		if !axis.IsConstruction() {
+			continue // the mirror axis is a construction line (a centerline)
+		}
+		for i := 0; i < len(lines); i++ {
+			for j := i + 1; j < len(lines); j++ {
+				if n[sldprt.Symmetric] <= 0 || sk.DegreesOfFreedom() <= 0 {
+					return
+				}
+				a, b := lines[i], lines[j]
+				if a == axis || b == axis || a.IsConstruction() || b.IsConstruction() {
+					continue
+				}
+				if pa, pb := symmetricEndpoints(a, b, axis); pa != nil {
+					g.AddSymmetry(pa[0], pb[0], axis)
+					g.AddSymmetry(pa[1], pb[1], axis)
+					n[sldprt.Symmetric]--
+				}
+			}
+		}
+	}
+}
+
+// symmetricEndpoints reports the corresponding endpoint pairs of two lines that are mirror images
+// about axis: reflecting a's endpoints across the axis must land on b's endpoints. Returns the
+// endpoints of a and the matching endpoints of b (index-aligned), or nil if the lines are not
+// symmetric about the axis.
+func symmetricEndpoints(a, b, axis *sketch.Line) (*[2]*sketch.Point, *[2]*sketch.Point) {
+	ra := reflectAcrossLine(a.A.Position(), axis)
+	rb := reflectAcrossLine(a.B.Position(), axis)
+	switch {
+	case coincides(ra, b.A.Position()) && coincides(rb, b.B.Position()):
+		return &[2]*sketch.Point{a.A, a.B}, &[2]*sketch.Point{b.A, b.B}
+	case coincides(ra, b.B.Position()) && coincides(rb, b.A.Position()):
+		return &[2]*sketch.Point{a.A, a.B}, &[2]*sketch.Point{b.B, b.A}
+	}
+	return nil, nil
+}
+
+// reflectAcrossLine mirrors p across the infinite line through the axis segment.
+func reflectAcrossLine(p m.Point2, axis *sketch.Line) m.Point2 {
+	a := axis.A.Position()
+	dir := axis.A.Position().VectorTo(axis.B.Position())
+	dd := float64(dir.X*dir.X + dir.Y*dir.Y)
+	if dd == 0 {
+		return p
+	}
+	v := a.VectorTo(p)
+	t := float64(v.X*dir.X+v.Y*dir.Y) / dd // projection parameter of p onto the axis
+	foot := m.P2(a.X+m.Scalar(t)*dir.X, a.Y+m.Scalar(t)*dir.Y)
+	return m.P2(2*foot.X-p.X, 2*foot.Y-p.Y)
+}
+
+// coincides reports whether two points are within geomEps.
+func coincides(a, b m.Point2) bool {
+	return math.Abs(float64(a.X-b.X)) < geomEps && math.Abs(float64(a.Y-b.Y)) < geomEps
 }
 
 // applyMidpoints binds each decoded midpoint relation to a standalone point that already sits at a
