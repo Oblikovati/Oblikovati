@@ -193,6 +193,22 @@ func TestExtrudeVolume(t *testing.T) {
 	}
 }
 
+// TestRevolveVolume checks a full revolve builds the right solid: a 10x30 mm rectangle whose near
+// edge is 10 mm from the axis, revolved 360 deg, is a tube of outer radius 2 cm, inner radius 1 cm,
+// height 3 cm — analytic volume 9π ≈ 28.27 cm3. The reconstructed body is tessellated, so the check
+// allows ~1% faceting error.
+func TestRevolveVolume(t *testing.T) {
+	def := reopen(t, "revolve_fmtb.sldprt")
+	bodies := def.SurfaceBodies().All()
+	if len(bodies) != 1 {
+		t.Fatalf("got %d bodies, want 1", len(bodies))
+	}
+	vol := ops.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
+	if analytic := 9 * math.Pi; math.Abs(vol-analytic) > 0.01*analytic {
+		t.Errorf("revolved volume = %.4f cm3, want ~%.4f (9π)", vol, analytic)
+	}
+}
+
 // TestSymmetricConstraint checks a symmetry relation is applied: two vertical lines mirrored about a
 // construction centerline reopen as three lines (one construction), and the symmetry pins the mirror
 // pair — DOF drop from 9 (three verticals only) to 6.

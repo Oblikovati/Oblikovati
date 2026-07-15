@@ -61,18 +61,47 @@ func buildPart(ws *doc.Workspace, outPath string, d *sldprt.Document) (*doc.Docu
 	return document, warns, nil
 }
 
-// addFeatures builds the part's solid features from the decoded feature graph onto the emitted
-// sketches. Only a single blind boss extrude is supported so far: it extrudes the first sketch's
-// first profile region by the decoded depth, as a new body. A part with no extrude keeps just its
-// parametric sketches.
+// addFeatures builds the part's solid feature from the decoded feature graph onto the emitted
+// sketches. A single base feature is supported so far — a blind boss extrude, or a revolve about the
+// profile sketch's construction centerline — building the first sketch's first profile region as a
+// new body. A part with neither keeps just its parametric sketches.
 func addFeatures(def *compdef.PartComponentDefinition, d *sldprt.Document, sketches []*sketch.Sketch) {
-	exts := d.Extrusions()
-	if len(exts) == 0 || len(sketches) == 0 {
+	if len(sketches) == 0 {
 		return
 	}
-	depth := exts[0].Depth * metresToCm
-	feature.NewExtrudeFeatures(def.Features()).AddByDistanceExtent(sketches[0], 0, ops.NewBody, func() float64 { return depth })
+	switch {
+	case len(d.Revolutions()) > 0:
+		addRevolve(def, sketches[0], d.Revolutions()[0])
+	case len(d.Extrusions()) > 0:
+		depth := d.Extrusions()[0].Depth * metresToCm
+		feature.NewExtrudeFeatures(def.Features()).AddByDistanceExtent(sketches[0], 0, ops.NewBody, func() float64 { return depth })
+		def.Recompute()
+	}
+}
+
+// addRevolve builds a revolve of sk's first profile about sk's construction centerline. A sweep of a
+// full turn (2π) is passed as 0, which Oblikovati reads as a full revolution. No centerline ⇒ skip.
+func addRevolve(def *compdef.PartComponentDefinition, sk *sketch.Sketch, rev sldprt.Revolution) {
+	axis := constructionAxis(sk)
+	if axis == nil {
+		return
+	}
+	angle := rev.Angle
+	if math.Abs(angle-2*math.Pi) < 1e-6 {
+		angle = 0 // a full revolution
+	}
+	feature.NewRevolveFeatures(def.Features()).AddAboutCenterlineLine(sk, 0, sk, axis, func() float64 { return angle }, ops.NewBody)
 	def.Recompute()
+}
+
+// constructionAxis returns the sketch's first construction line, used as a revolve axis, or nil.
+func constructionAxis(sk *sketch.Sketch) *sketch.Line {
+	for i := 0; i < sk.Lines().Count(); i++ {
+		if l := sk.Lines().Item(i); l.IsConstruction() {
+			return l
+		}
+	}
+	return nil
 }
 
 // addParameters maps each global variable onto an Oblikovati user parameter, converting units to

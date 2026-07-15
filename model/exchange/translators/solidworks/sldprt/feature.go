@@ -10,9 +10,17 @@ type Extrusion struct {
 	Depth float64
 }
 
+// Revolution is a decoded revolve feature. Angle is the sweep in radians (2π = a full revolution).
+// The axis is the sketch's construction centerline, resolved by the translate layer.
+type Revolution struct {
+	Angle float64
+}
+
 var (
 	extrusionClass   = []byte("moExtrusion_c")
+	revolutionClass  = []byte("moRevolution_c")
 	lengthParamClass = []byte("moLengthParameter_c")
+	angleParamClass  = []byte("moAngleParameter_c")
 )
 
 // Extrusions decodes the part's extrude features from the resolved-feature graph. Each moExtrusion_c
@@ -47,4 +55,39 @@ func extrusionDepth(stream []byte, at int) (float64, bool) {
 		return 0, false
 	}
 	return dimValueAfter(stream, at+lp+len(lengthParamClass))
+}
+
+// Revolutions decodes the part's revolve features. Each moRevolution_c is one revolve; its sweep
+// angle is the angle parameter that follows it (radians). Only the angle is read so far — the axis is
+// the sketch centerline (resolved during emit) and cut-vs-boss is later work.
+func (d *Document) Revolutions() []Revolution {
+	stream, ok := d.sketchStream()
+	if !ok {
+		return nil
+	}
+	var out []Revolution
+	for i := 0; ; {
+		e := bytes.Index(stream[i:], revolutionClass)
+		if e < 0 {
+			break
+		}
+		at := i + e
+		i = at + len(revolutionClass)
+		if angle, ok := revolutionAngle(stream, at); ok {
+			out = append(out, Revolution{Angle: angle})
+		}
+	}
+	return out
+}
+
+// revolutionAngle reads the sweep angle (radians) of the revolve beginning at `at`: the value of the
+// first angle parameter that follows the feature. Angles use the same 2.0-factor value encoding as a
+// length, so a full revolution reads ~2π.
+func revolutionAngle(stream []byte, at int) (float64, bool) {
+	ap := bytes.Index(stream[at:], angleParamClass)
+	if ap < 0 {
+		return 0, false
+	}
+	// A sweep angle (radians, ≤ 2π < 10) uses the same value encoding as a length dimension.
+	return dimValueAfter(stream, at+ap+len(angleParamClass))
 }

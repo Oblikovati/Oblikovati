@@ -265,18 +265,25 @@ func uncoveredInOrder(distinctOrder []Point, covered map[Point]bool) []Point {
 }
 
 // entityRefsIn returns the entity indices referenced by the owning-entity links in a point record's
-// tail: each `<0x80ac|0x80ae> <idx:u16> ff ff ff ff`. The four-byte 0xff suffix rejects coincidental
-// tag-byte matches, so only real references are collected.
+// tail. The tail begins `00 00 <count:u16>` (the number of entities the point belongs to — one, or
+// two at a shared corner), then that many references `<tag> <idx:u16> ff ff ff ff` spaced 12 bytes
+// apart. The reference tag is an MFC object-map handle whose low byte varies per file (0x80ac, 0x80ae
+// and 0x80b5 all seen), so it is matched only by its 0x80 high byte and the four-byte 0xff suffix —
+// reading exactly count references avoids mistaking a later object reference for an endpoint link.
 func entityRefsIn(seg []byte) []uint16 {
+	if len(seg) < 4 {
+		return nil
+	}
+	count := int(binary.LittleEndian.Uint16(seg[2:]))
+	if count == 0 || count > 4 {
+		return nil // no link, or an implausible count (a mis-scan)
+	}
 	var out []uint16
-	for i := 0; i+8 <= len(seg); i++ {
-		if seg[i+1] != 0x80 || (seg[i] != 0xac && seg[i] != 0xae) {
-			continue
+	for pos := 4; len(out) < count && pos+8 <= len(seg); pos += 12 {
+		if seg[pos+1] != 0x80 || !bytes.Equal(seg[pos+4:pos+8], entityRefSuffix) {
+			break
 		}
-		if !bytes.Equal(seg[i+4:i+8], entityRefSuffix) {
-			continue
-		}
-		out = append(out, binary.LittleEndian.Uint16(seg[i+2:]))
+		out = append(out, binary.LittleEndian.Uint16(seg[pos+2:]))
 	}
 	return out
 }

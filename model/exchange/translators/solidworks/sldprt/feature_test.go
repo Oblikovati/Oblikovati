@@ -23,6 +23,22 @@ func TestExtrusionDecode(t *testing.T) {
 	}
 }
 
+// TestRevolutionDecode checks a full revolve decodes with a 2π sweep angle: the generated part
+// revolves a profile a full turn about a centerline.
+func TestRevolutionDecode(t *testing.T) {
+	d, err := Open(readTestdata(t, "revolve_fmtb.sldprt"))
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	rev := d.Revolutions()
+	if len(rev) != 1 {
+		t.Fatalf("got %d revolutions, want 1", len(rev))
+	}
+	if math.Abs(rev[0].Angle-2*math.Pi) > 1e-6 {
+		t.Errorf("angle = %g rad, want 2π", rev[0].Angle)
+	}
+}
+
 // TestNoExtrusion verifies a sketch-only part decodes no extrude features.
 func TestNoExtrusion(t *testing.T) {
 	d, err := Open(readTestdata(t, "box10_fmtb.sldprt"))
