@@ -104,20 +104,22 @@ func runoutFacesFor(ef edgeFillet, res Resolution, maps filletRebuildMaps) (runo
 
 // setbackBossesFaithful gates the intact-boss path to the crossing-boss wall surface types it is proven
 // faithful on: CYLINDER (S1), CONE (S4), the oblique ELLIPTICAL CYLINDER (T7, geom.EllipticalCylinder —
-// the elementarised SurfaceOfLinearExtrusion of an ellipse whose footprint is a geom.EllipseFull), and the
-// TORUS (T1/T4, M4). Any other wall — a SPHERE (S7), etc. — declines to BASELINE (do-no-harm), never a
-// wrong intact fill. This is load-bearing, not defensive: a sphere boss is a periodic cap whose seam/pole
-// the intact transformFace collapses to ~0 area (verified on S7: −5.5% area), and S7's do-no-harm baseline
-// is already within OCCT's 1%, so deferring it there keeps the case green. The admitted walls re-weld
-// cleanly and their footprint conic (circle / ellipse) rails exactly (fillet_setback_ellipse.go). The torus
-// is admitted only now that its rim rebuilds as the full 360° σ-partition (fillet_setback_partition.go, M4
-// Task 1) — including the host DETOUR (M4 Task 3) so the host notch welds the 241.6° major host arc — and
-// its intact wall meshes as a chorded band (band_ring_chain.go, M4 Task 2), NOT the 3947 full donut the old
-// boss-splitting path produced. Widening this whitelist further needs a per-type closure proof like these.
+// the elementarised SurfaceOfLinearExtrusion of an ellipse whose footprint is a geom.EllipseFull), the
+// TORUS (T1/T4, M4), and the SPHERE (S7, M5). Any other wall declines to BASELINE (do-no-harm), never a
+// wrong intact fill. This is load-bearing, not defensive: each admitted wall re-welds cleanly and its
+// footprint conic (circle / ellipse) rails exactly (fillet_setback_ellipse.go). The doubly-curved walls
+// (torus, sphere) are admitted only because M4's fixes close them: the rim rebuilds as the full 360°
+// σ-partition (fillet_setback_partition.go, M4 Task 1) — including the host DETOUR (M4 Task 3) so the host
+// notch welds the major host arc — and the intact wall meshes as a chorded band (band_ring_chain.go, M4
+// Task 2), NOT a full-domain blow-up. The sphere is the retroactive win: pre-M4 its periodic cap collapsed
+// to ~0 through the split path (the reason it rode do-no-harm baseline), but the R=13 hemisphere now meshes
+// intact at its 2πR²=1061.86 area and the result is watertight — an UPGRADE over the baseline, which left
+// the boss footprints piercing the host planes (HolesContained=false, green only by area tolerance).
+// Widening this whitelist further needs a per-type closure proof like these (TestFilletEdges_*Intact).
 func setbackBossesFaithful(b setbackBands) bool {
 	for _, boss := range b.bosses {
 		switch boss.wall.(type) {
-		case geom.Cylinder, geom.Cone, geom.EllipticalCylinder, geom.Torus:
+		case geom.Cylinder, geom.Cone, geom.EllipticalCylinder, geom.Torus, geom.Sphere:
 		default:
 			return false
 		}

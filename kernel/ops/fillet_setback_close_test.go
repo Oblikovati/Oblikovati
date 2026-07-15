@@ -355,6 +355,28 @@ func TestFilletEdges_T1SetbackSeamWatertight(t *testing.T) {
 	}
 }
 
+// TestFilletEdges_S7SphereIntact is the per-type closure proof for the SPHERE boss (S7), admitted to the
+// intact-boss setback path once M4's σ-partition rim (fillet_setback_partition.go) + chorded-band mesher
+// (band_ring_chain.go) landed. The wired op (FilletEdges → collectRunouts → runoutFacesFor → intact-boss
+// path) must keep the R=13 hemisphere cap as ONE intact geom.Sphere face near its area 2πR²=1061.86 (NOT
+// the ~0 pole-collapse the pre-M4 path produced, NOT a 2123.7 full-sphere blow-up) and weld to a
+// watertight, hole-contained SOLID. The pre-M4 baseline left both boss footprints PIERCING the host planes
+// (HolesContained=false) — a topologically-broken solid that passed only by area tolerance; this proves the
+// sphere now closes faithfully like S1/S4/T1. (m5-s7-spike.md: OCCT keeps the hemisphere intact 1061.86;
+// our path meshes it 1069.75, whole body +0.732% in-gate, census matching OCCT.)
+func TestFilletEdges_S7SphereIntact(t *testing.T) {
+	body := filletedCorpusEdge(t, "simple/S7", math.P3(0, -15, 0), 3)
+	if !body.IsSolid() {
+		t.Fatalf("S7 intact-sphere setback shell is not a solid: %d open edges", len(openEdges(body)))
+	}
+	if r := Validate(body); !r.Valid || !r.HolesContained {
+		t.Fatalf("S7 intact-sphere setback shell invalid: Valid=%v HolesContained=%v (baseline leaves boss footprints piercing host planes)", r.Valid, r.HolesContained)
+	}
+	if got := countSurfaceFacesNear[geom.Sphere](body, 1061.86, 12); got != 1 {
+		t.Fatalf("wired S7: want ONE intact sphere cap near 1061.86 (NOT ~0 pole-collapse or 2123.7 full sphere), got %d", got)
+	}
+}
+
 // synthTorusSetbackBoss builds a crossingBoss mimicking T1's intact torus wall: the host-plane footprint
 // is a circle of radius r_f=25 centered at the origin in the z=0 plane, with its seam vertex at world
 // (25,0,0) (azimuth 0°). The fillet R=8 band runs along the box edge at y=-22 (contact line σ=0), so the
