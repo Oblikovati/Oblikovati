@@ -54,29 +54,50 @@ func collectRunouts(body *topo.Body, fils []edgeFillet, res Resolution,
 	return replace, extra, handled
 }
 
-// runoutFacesFor detects the double-interference runout regions on a constant-radius straight fillet
-// edge and, when present, tiles each region into three certified corner-blend patches (extractRunout
-// -> resolveBlend, ADR-0051) bridging the two surviving cylinder wings, and reconstructs the two host
-// planes + splits the two boss walls so the whole rebuild welds into a watertight solid (Task 10b).
-// ok=false leaves the whole edge on the existing path (honest-reject, ADR-3): a partial fill — a wing
-// without its patches, a host whose re-cut fails — is a hole, forbidden. Only constant-radius handled.
+// runoutFacesFor detects the intact-boss runout bands on a constant-radius straight fillet edge and,
+// when present, tiles the interfered span into certified setback patches (extractSetbackPatches ->
+// resolveBlend) that fair the trimmed fillet out to each crossing boss wall, kept INTACT — the
+// dual-intact-survivor topology OCCT ships (t1-t7-oracle-forensics.md §8): every boss (cylinder, cone,
+// torus, oblique-ellipse) is left byte-area-preserved, the two host planes are re-clipped single-loop,
+// and buildSetbackFaces welds it all watertight. This REPLACES the old boss-SPLITTING path (whose
+// green on S1/S4 was area-coincidental, not topology-faithful). ok=false leaves the whole edge on the
+// existing path (honest-reject, ADR-3): a partial fill is a hole, forbidden. Constant-radius only.
 func runoutFacesFor(ef edgeFillet, res Resolution, maps filletRebuildMaps) (runoutSet, bool) {
 	if ef.varying {
 		return runoutSet{}, false
 	}
-	regions := detectRunoutRegions(ef, res)
-	set := runoutSet{replace: map[uint64]filletFace{}}
-	fired := false
-	for _, region := range regions {
-		if len(region.imprints) < 2 {
-			continue // a single, uncoupled imprint is not this milestone's tiling target
-		}
-		if !appendRegionFaces(&set, region, ef, res, maps) {
-			return runoutSet{}, false // honest-reject the WHOLE edge (no partial fill)
-		}
-		fired = true
+	b, ok := detectSetbackBands(ef, res)
+	if !ok || !setbackBossesFaithful(b) {
+		return runoutSet{}, false
 	}
-	return set, fired
+	loops, ok := extractSetbackPatches(b, ef, res)
+	if !ok {
+		return runoutSet{}, false
+	}
+	set := runoutSet{replace: map[uint64]filletFace{}}
+	if !buildSetbackFaces(&set, ef, b, loops, res, maps) {
+		return runoutSet{}, false // honest-reject the WHOLE edge (no partial fill)
+	}
+	return set, true
+}
+
+// setbackBossesFaithful gates the intact-boss path to the crossing-boss wall surface types it is proven
+// faithful on: CYLINDER (S1) and CONE (S4). Any other wall — a SPHERE (S7), an oblique elliptical
+// cylinder / SurfaceOfLinearExtrusion (T7), etc. — declines to BASELINE (do-no-harm), never a wrong
+// intact fill. This is load-bearing, not defensive: a sphere boss is a periodic cap whose seam/pole the
+// intact transformFace collapses to ~0 area (verified on S7: −5.5% area), and S7's do-no-harm baseline
+// is already within OCCT's 1%, so deferring it there keeps the case green. Cylinder/cone re-weld
+// cleanly (the same reason bodyHasFragileBand admits them); widening this whitelist needs a per-type
+// closure proof like S1/S4's (a later task greens sphere/ellipse-cyl runouts).
+func setbackBossesFaithful(b setbackBands) bool {
+	for _, boss := range b.bosses {
+		switch boss.wall.(type) {
+		case geom.Cylinder, geom.Cone:
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 // appendRegionFaces tiles one region into its three patches and two surviving wings, reconstructs the

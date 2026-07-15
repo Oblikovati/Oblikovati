@@ -235,6 +235,50 @@ func TestBuildSetbackFaces_S4HostsSingleLoop(t *testing.T) {
 	}
 }
 
+// TestFilletEdges_S1WallsIntact is the WIRED-path faithfulness proof for S1: the FULL fillet op
+// (FilletEdges → collectRunouts → runoutFacesFor → the intact-boss path) must leave both cylinder
+// bosses INTACT — r6 565.487, r8 753.982 (forensics §8.2) — not split. Total area alone (the corpus
+// gate) can be right by coincidence; one intact face per boss is the topology-faithful proof.
+func TestFilletEdges_S1WallsIntact(t *testing.T) {
+	body := filletedCorpusEdge(t, "simple/S1", math.P3(0, -10, 10), 6)
+	if got := countCylFacesNear(body, 753.982, 8); got != 1 {
+		t.Fatalf("wired S1: want ONE intact r8 boss wall near 753.982 (un-split), got %d", got)
+	}
+	if got := countCylFacesNear(body, 565.487, 6); got != 1 {
+		t.Fatalf("wired S1: want ONE intact r6 boss wall near 565.487 (un-split), got %d", got)
+	}
+}
+
+// TestFilletEdges_S4WallsIntact is TestFilletEdges_S1WallsIntact for S4: the wired op keeps the cone
+// boss (≈1218.1) and the r10 cylinder (≈942.478) each as ONE intact face (forensics §8.3) — the proof
+// that the cone routes through the new path faithfully, not the old area-coincidental split.
+func TestFilletEdges_S4WallsIntact(t *testing.T) {
+	body := filletedCorpusEdge(t, "simple/S4", math.P3(0, -15, 0), 8)
+	if got := countConeFacesNear(body, 1218.1, 18); got != 1 {
+		t.Fatalf("wired S4: want ONE intact cone boss wall near 1218.1 (un-split), got %d", got)
+	}
+	if got := countCylFacesNear(body, 942.478, 8); got != 1 {
+		t.Fatalf("wired S4: want ONE intact r10 boss wall near 942.478 (un-split), got %d", got)
+	}
+}
+
+// filletedCorpusEdge runs the real FilletEdges op on the corpus fixture's edge at mid, radius r, and
+// returns the result body — the end-to-end path the corpus area gate drives, so a wall-intact assertion
+// on its output proves the WIRED runout path (not the test-only setbackAssembled shortcut) is faithful.
+func filletedCorpusEdge(t *testing.T, rel string, mid math.Point3, r float64) *topo.Body {
+	t.Helper()
+	b := importCorpusSolid(t, rel)
+	e := edgeAtMidpoint(b, mid)
+	if e == nil {
+		t.Fatalf("filletedCorpusEdge: edge %v not found on %s", mid, rel)
+	}
+	res, err := FilletEdges(b, [][]byte{e.ReferenceKey()}, r)
+	if err != nil {
+		t.Fatalf("filletedCorpusEdge: FilletEdges(%s, r=%v): %v", rel, r, err)
+	}
+	return res
+}
+
 // tessArea sums a mesh's triangle areas.
 func tessArea(m *Mesh) float64 {
 	a := 0.0
