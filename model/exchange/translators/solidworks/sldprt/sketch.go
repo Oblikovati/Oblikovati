@@ -91,7 +91,11 @@ func sketchFromRegion(region []byte) (Sketch, bool) {
 			sk.Circles = circlesFromPoints(ordered) // centre+rim pairs -> full circles
 		}
 	case hasLine && !hasArc:
-		sk.Lines = loopFromVertices(sk.Points)
+		if lines, ok := reconstructLines(region); ok {
+			sk.Lines = lines // exact endpoints + true open/closed topology from the entity-reference graph
+		} else {
+			sk.Lines = loopFromVertices(sk.Points) // graph incomplete: fall back to the convex-loop guess
+		}
 	}
 	return sk, true
 }

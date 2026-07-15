@@ -139,6 +139,17 @@ func TestConstructionAttribution(t *testing.T) {
 	}
 }
 
+// TestOpenProfileTranslation checks the open-profile fix survives translation: an angle sketch of two
+// lines meeting at the origin reopens as two lines (an open V), not the spurious closed triangle the
+// old convex-loop reconstruction produced. The exact entity-reference topology carries through.
+func TestOpenProfileTranslation(t *testing.T) {
+	def := reopen(t, "angledim_fmtb.sldprt")
+	sk := def.Sketches().Item(0)
+	if got := sk.Lines().Count(); got != 2 {
+		t.Errorf("open angle sketch reopened with %d lines, want 2 (not a closed triangle)", got)
+	}
+}
+
 // TestMixedSketchTranslation translates the rounded rectangle (4 lines + 4 fillet arcs) and checks
 // both kinds persist.
 func TestMixedSketchTranslation(t *testing.T) {

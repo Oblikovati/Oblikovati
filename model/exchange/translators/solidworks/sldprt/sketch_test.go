@@ -193,26 +193,68 @@ func TestMixedLineArc(t *testing.T) {
 	}
 }
 
-// TestLineLoopEntity checks a pure-line sketch reconstructs into a closed loop of the right size
-// whose segments join end-to-end and whose vertices are the sketch corners.
-func TestLineLoopEntity(t *testing.T) {
+// TestLineTopology checks that pure-line sketches reconstruct into the exact segment set from the
+// entity-reference graph — the true endpoints and the true open/closed topology, not a convex-loop
+// guess. A closed square/triangle yields its edges (shared corners); two disjoint lines and two lines
+// meeting at the origin stay OPEN (they are NOT closed into a spurious extra edge, which the old
+// centroid-ordered loopFromVertices did). Segments are compared as an unordered set of unordered
+// endpoint pairs.
+func TestLineTopology(t *testing.T) {
+	seg := func(a, b Point) [2]Point { // canonical unordered endpoint pair
+		if a.X < b.X || (a.X == b.X && a.Y < b.Y) {
+			return [2]Point{a, b}
+		}
+		return [2]Point{b, a}
+	}
+	p := func(x, y float64) Point { return Point{X: x, Y: y} }
 	cases := []struct {
-		file  string
-		count int
-	}{{"box10_fmtb.sldprt", 4}, {"tri_fmtb.sldprt", 3}}
+		file string
+		want [][2]Point
+	}{
+		{"box10_fmtb.sldprt", [][2]Point{ // closed square, 10mm
+			seg(p(0, 0), p(0.01, 0)), seg(p(0.01, 0), p(0.01, 0.01)),
+			seg(p(0.01, 0.01), p(0, 0.01)), seg(p(0, 0.01), p(0, 0))}},
+		{"tri_fmtb.sldprt", [][2]Point{ // closed right triangle
+			seg(p(0, 0), p(0.03, 0)), seg(p(0.03, 0), p(0, 0.02)), seg(p(0, 0.02), p(0, 0))}},
+		{"twoline_open_fmtb.sldprt", [][2]Point{ // two DISJOINT lines, open
+			seg(p(0, 0), p(0.05, 0)), seg(p(0, 0.02), p(0.03, 0.02))}},
+	}
 	for _, c := range cases {
 		d, err := Open(readTestdata(t, c.file))
 		if err != nil {
 			t.Fatalf("Open %s: %v", c.file, err)
 		}
-		lines := d.Sketches()[0].Lines
-		if len(lines) != c.count {
-			t.Fatalf("%s: got %d lines, want %d", c.file, len(lines), c.count)
+		got := map[[2]Point]int{}
+		for _, l := range d.Sketches()[0].Lines {
+			got[seg(l.A, l.B)]++
 		}
-		for i := range lines {
-			if lines[i].B != lines[(i+1)%len(lines)].A {
-				t.Errorf("%s: line %d end != next start (open loop): %+v", c.file, i, lines)
+		if len(got) != len(c.want) {
+			t.Fatalf("%s: got %d segments %v, want %d", c.file, len(got), d.Sketches()[0].Lines, len(c.want))
+		}
+		for _, w := range c.want {
+			if got[w] == 0 {
+				t.Errorf("%s: missing segment %v in %v", c.file, w, d.Sketches()[0].Lines)
 			}
+		}
+	}
+}
+
+// TestOpenProfileNotClosed is the regression for the open-profile bug: two lines meeting at the
+// origin (an angle sketch) must reconstruct as two OPEN segments, never closed into a triangle by
+// ordering the three vertices around their centroid.
+func TestOpenProfileNotClosed(t *testing.T) {
+	d, err := Open(readTestdata(t, "angledim_fmtb.sldprt"))
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	lines := d.Sketches()[0].Lines
+	if len(lines) != 2 {
+		t.Fatalf("got %d lines, want 2 open segments (not a closed triangle): %+v", len(lines), lines)
+	}
+	shared := Point{X: 0, Y: 0}
+	for _, l := range lines { // both segments must touch the origin, and neither is the closing edge
+		if l.A != shared && l.B != shared {
+			t.Errorf("segment %+v does not meet at the origin — spurious closure", l)
 		}
 	}
 }
