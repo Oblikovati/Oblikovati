@@ -37,6 +37,7 @@ type Sketch struct {
 	Circles     []Circle
 	Arcs        []Arc
 	Constraints []Constraint
+	Dimensions  []Dimension
 }
 
 // pointMarker precedes every sketch coordinate in the MFC CArchive: the two bytes 1e 00 (a 2D-point
@@ -73,7 +74,7 @@ func sketchFromRegion(region []byte) (Sketch, bool) {
 	if len(ordered) == 0 {
 		return Sketch{}, false
 	}
-	sk := Sketch{Points: distinctPoints(ordered), Constraints: constraintsIn(region)}
+	sk := Sketch{Points: distinctPoints(ordered), Constraints: constraintsIn(region), Dimensions: dimensionsIn(region)}
 	hasLine := bytes.Contains(region, []byte("sgLineHandle"))
 	hasArc := bytes.Contains(region, []byte("sgArcHandle"))
 	switch {
@@ -115,25 +116,34 @@ var nameMarker = []byte{0x04, 0x80, 0xff, 0xfe, 0xff}
 // This name-boundary split is exact when each sketch introduces its own entity classes; a sketch
 // that only re-uses a kind first seen in an earlier sketch loses that class string (it is written as
 // an object instance), so its kind is not yet detected — the full fix is an MFC object-graph walk.
+// A sketch's span runs from its own name marker to the NEXT sketch's name marker, so it takes in the
+// dimension sub-features (each a named feature, e.g. "D1") that follow the geometry — not just the
+// geometry up to the first such marker.
 func sketchRegions(stream []byte) [][]byte {
-	var starts []int
+	var markers []int
 	for i := 0; i+len(nameMarker) <= len(stream); i++ {
 		if bytes.Equal(stream[i:i+len(nameMarker)], nameMarker) {
-			starts = append(starts, i)
+			markers = append(markers, i)
 		}
 	}
-	starts = append(starts, len(stream))
-	var regions [][]byte
-	for i := 0; i+1 < len(starts); i++ {
-		r := stream[starts[i]:starts[i+1]]
-		if len(pointsIn(r)) >= 2 {
-			regions = append(regions, r)
+	markers = append(markers, len(stream))
+	// A marker starts a sketch when its immediate segment holds sketch geometry (>= 2 points).
+	var sketchStarts []int
+	for i := 0; i+1 < len(markers); i++ {
+		if len(pointsIn(stream[markers[i]:markers[i+1]])) >= 2 {
+			sketchStarts = append(sketchStarts, markers[i])
 		}
 	}
-	if len(regions) == 0 {
+	if len(sketchStarts) == 0 {
 		if s := bytes.Index(stream, []byte("sgSketch")); s >= 0 {
 			return [][]byte{stream[s:]}
 		}
+		return nil
+	}
+	sketchStarts = append(sketchStarts, len(stream))
+	regions := make([][]byte, 0, len(sketchStarts)-1)
+	for i := 0; i+1 < len(sketchStarts); i++ {
+		regions = append(regions, stream[sketchStarts[i]:sketchStarts[i+1]])
 	}
 	return regions
 }
