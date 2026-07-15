@@ -154,6 +154,14 @@ func emitSketch(def *compdef.PartComponentDefinition, s sldprt.Sketch) *sketch.S
 // loop the vertices are re-ordered during reconstruction, so its draw order is not recoverable yet —
 // attribution there waits on the entity-graph walk; the flags are still decoded on the Sketch.
 func applyConstruction(s sldprt.Sketch, lines []*sketch.Line, arcs []*sketch.Arc, circles []*sketch.Circle) {
+	// Lines carry their own per-entity flags from the exact reference reconstruction (index-aligned to
+	// Lines), so they are marked directly regardless of the other kinds present.
+	if len(s.LineConstruction) == len(lines) {
+		for i, l := range lines {
+			l.SetConstruction(s.LineConstruction[i])
+		}
+	}
+	// Circles/arcs use the draw-order flags, mapped only where that order is unambiguous.
 	flags := s.Construction
 	if len(flags) != len(lines)+len(arcs)+len(circles) {
 		return // count mismatch: cannot trust the mapping

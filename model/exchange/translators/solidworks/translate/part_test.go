@@ -139,6 +139,26 @@ func TestConstructionAttribution(t *testing.T) {
 	}
 }
 
+// TestLineConstructionAttribution checks a construction line survives translation: a sketch of one
+// real line and one construction line reopens with two lines, exactly one marked construction (so it
+// is excluded from profiles). Exercises the reference-graph reconstruction's per-line flags.
+func TestLineConstructionAttribution(t *testing.T) {
+	def := reopen(t, "constrline_fmtb.sldprt")
+	sk := def.Sketches().Item(0)
+	if sk.Lines().Count() != 2 {
+		t.Fatalf("got %d lines, want 2", sk.Lines().Count())
+	}
+	constr := 0
+	for i := 0; i < sk.Lines().Count(); i++ {
+		if sk.Lines().Item(i).IsConstruction() {
+			constr++
+		}
+	}
+	if constr != 1 {
+		t.Errorf("got %d construction lines, want 1", constr)
+	}
+}
+
 // TestOpenProfileTranslation checks the open-profile fix survives translation: an angle sketch of two
 // lines meeting at the origin reopens as two lines (an open V), not the spurious closed triangle the
 // old convex-loop reconstruction produced. The exact entity-reference topology carries through.

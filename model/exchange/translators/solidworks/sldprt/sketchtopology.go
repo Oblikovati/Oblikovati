@@ -48,16 +48,14 @@ func placedPoints(region []byte) []placedPoint {
 
 // reconstructLines rebuilds a pure-line sketch's segments exactly from the point→entity reference
 // graph. It replaces the geometry-first loopFromVertices (which orders vertices around their centroid
-// and so wrongly closes an open profile) whenever the graph fully self-validates. The result is
-// accepted only when: one entity per construction-table entry (entityConstruction), every entity has
-// exactly two distinct endpoints (after origin completion), and the endpoint set equals the cached
-// distinct points. Any mismatch returns ok=false so the caller keeps loopFromVertices — so a sketch
-// whose references are incomplete (e.g. a construction line, whose endpoints carry no reference) is
-// never silently mis-reconstructed.
-func reconstructLines(region []byte) ([]Line, bool) {
+// and so wrongly closes an open profile) whenever the graph fully self-validates. It returns the
+// segments and a parallel construction flag per segment. The result is accepted only when it fully
+// self-validates (see assembleLines); any mismatch returns ok=false so the caller keeps
+// loopFromVertices, so an incompletely-referenced sketch is never silently mis-reconstructed.
+func reconstructLines(region []byte) (lines []Line, construction []bool, ok bool) {
 	pts := placedPoints(region)
 	if len(pts) == 0 {
-		return nil, false
+		return nil, nil, false
 	}
 	ends := map[uint16]map[Point]bool{}
 	distinct := map[Point]bool{}
@@ -83,20 +81,57 @@ func reconstructLines(region []byte) ([]Line, bool) {
 	if hasOrigin {
 		for _, set := range ends {
 			if len(set) == 1 {
-				set[origin] = true
+				set[origin] = true // an endpoint at the sketch origin omits its reference
 			}
 		}
 	}
-	return validatedLines(region, ends, distinct)
+	return assembleLines(region, ends, distinct)
 }
 
-// validatedLines turns the entity→endpoints map into ordered line segments, but only if every guard
-// holds; otherwise ok is false. The entity count must match the construction-table entity count, each
-// entity must have exactly two endpoints, and the endpoints must exactly cover the cached points.
-func validatedLines(region []byte, ends map[uint16]map[Point]bool, distinct map[Point]bool) ([]Line, bool) {
-	if len(ends) == 0 || len(ends) != len(entityConstruction(region)) {
-		return nil, false
+// assembleLines turns the entity→endpoints map into ordered line segments with per-segment
+// construction flags, but only if every guard holds; otherwise ok is false. Referenced entities are
+// the normal (non-construction) lines. A construction line drops its endpoint references, so its
+// endpoints are the cached points left uncovered; the construction-flag table (entityConstruction)
+// says how many construction lines to expect. The guards: each referenced entity has exactly two
+// endpoints, the referenced count equals the number of non-construction entities, the leftover points
+// pair exactly into the expected construction lines, and every cached point is covered. Only a single
+// construction line is reconstructed — with more, pairing the leftover points is ambiguous, so it
+// falls back.
+func assembleLines(region []byte, ends map[uint16]map[Point]bool, distinct map[Point]bool) ([]Line, []bool, bool) {
+	flags := entityConstruction(region)
+	nConstr := 0
+	for _, c := range flags {
+		if c {
+			nConstr++
+		}
 	}
+	lines, covered, ok := referencedLines(ends)
+	if !ok || len(lines) != len(flags)-nConstr {
+		return nil, nil, false
+	}
+	construction := make([]bool, len(lines))
+	leftover := uncovered(distinct, covered)
+	switch nConstr {
+	case 0:
+	case 1:
+		if len(leftover) != 2 {
+			return nil, nil, false
+		}
+		lines = append(lines, Line{A: leftover[0], B: leftover[1]})
+		construction = append(construction, true)
+		covered[leftover[0]], covered[leftover[1]] = true, true
+	default:
+		return nil, nil, false // ambiguous pairing of >1 construction line's endpoints
+	}
+	if len(covered) != len(distinct) {
+		return nil, nil, false
+	}
+	return lines, construction, true
+}
+
+// referencedLines builds one line per referenced entity (in entity-index order), reporting the set of
+// covered points. ok is false if any entity does not have exactly two endpoints.
+func referencedLines(ends map[uint16]map[Point]bool) ([]Line, map[Point]bool, bool) {
 	idxs := make([]int, 0, len(ends))
 	for idx := range ends {
 		idxs = append(idxs, int(idx))
@@ -107,7 +142,7 @@ func validatedLines(region []byte, ends map[uint16]map[Point]bool, distinct map[
 	for _, idx := range idxs {
 		set := ends[uint16(idx)]
 		if len(set) != 2 {
-			return nil, false
+			return nil, nil, false
 		}
 		ab := make([]Point, 0, 2)
 		for p := range set {
@@ -116,15 +151,21 @@ func validatedLines(region []byte, ends map[uint16]map[Point]bool, distinct map[
 		}
 		lines = append(lines, Line{A: ab[0], B: ab[1]})
 	}
-	if len(covered) != len(distinct) {
-		return nil, false
-	}
+	return lines, covered, true
+}
+
+// uncovered returns the cached distinct points not in covered, in sorted order for a stable pairing.
+func uncovered(distinct, covered map[Point]bool) []Point {
+	var out []Point
 	for p := range distinct {
 		if !covered[p] {
-			return nil, false
+			out = append(out, p)
 		}
 	}
-	return lines, true
+	sort.Slice(out, func(i, j int) bool {
+		return out[i].X < out[j].X || (out[i].X == out[j].X && out[i].Y < out[j].Y)
+	})
+	return out
 }
 
 // entityRefsIn returns the entity indices referenced by the owning-entity links in a point record's
