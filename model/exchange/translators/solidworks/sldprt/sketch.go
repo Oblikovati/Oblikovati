@@ -32,10 +32,11 @@ type Arc struct {
 // full object-graph walk); Points is always populated, Lines/Circles when the entity kind is
 // unambiguous (a pure-line loop or circle sketch).
 type Sketch struct {
-	Points  []Point
-	Lines   []Line
-	Circles []Circle
-	Arcs    []Arc
+	Points      []Point
+	Lines       []Line
+	Circles     []Circle
+	Arcs        []Arc
+	Constraints []Constraint
 }
 
 // pointMarker precedes every sketch coordinate in the MFC CArchive: the two bytes 1e 00 (a 2D-point
@@ -72,7 +73,7 @@ func sketchFromRegion(region []byte) (Sketch, bool) {
 	if len(ordered) == 0 {
 		return Sketch{}, false
 	}
-	sk := Sketch{Points: distinctPoints(ordered)}
+	sk := Sketch{Points: distinctPoints(ordered), Constraints: constraintsIn(region)}
 	hasLine := bytes.Contains(region, []byte("sgLineHandle"))
 	hasArc := bytes.Contains(region, []byte("sgArcHandle"))
 	switch {

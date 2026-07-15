@@ -80,6 +80,27 @@ func TestSketchTranslation(t *testing.T) {
 	}
 }
 
+// TestConstraintApplication checks that the decoded relations are applied to the emitted geometry,
+// removing degrees of freedom: a square rectangle (2 horizontal + 2 vertical + equal-length) lands
+// at 3 DOF (position + size) instead of a free 8, and a triangle (1 horizontal + 1 vertical) at 4
+// instead of 6. A single circle has exactly 3 DOF (centre + radius) with no stray free points.
+func TestConstraintApplication(t *testing.T) {
+	cases := []struct {
+		file string
+		dof  int
+	}{
+		{"box10_fmtb.sldprt", 3},
+		{"tri_fmtb.sldprt", 4},
+		{"cyl_fmtb.sldprt", 3},
+	}
+	for _, c := range cases {
+		def := reopen(t, c.file)
+		if got := def.Sketches().Item(0).DegreesOfFreedom(); got != c.dof {
+			t.Errorf("%s: sketch DOF = %d, want %d", c.file, got, c.dof)
+		}
+	}
+}
+
 // TestMixedSketchTranslation translates the rounded rectangle (4 lines + 4 fillet arcs) and checks
 // both kinds persist.
 func TestMixedSketchTranslation(t *testing.T) {

@@ -122,18 +122,26 @@ func emitSketch(def *compdef.PartComponentDefinition, s sldprt.Sketch) *sketch.S
 	}
 	sk := def.Sketches().Add(sketch.XYPlane())
 	pointAt := sharedPoints(sk)
-	for _, p := range s.Points {
-		pointAt(p)
+	// Standalone points are emitted only for a point-only sketch; otherwise each entity creates its
+	// own points (via pointAt / AddByCenterRadius), so emitting s.Points too would add free points.
+	if len(s.Lines)+len(s.Circles)+len(s.Arcs) == 0 {
+		for _, p := range s.Points {
+			pointAt(p)
+		}
 	}
-	for _, l := range s.Lines {
-		sk.Lines().Add(pointAt(l.A), pointAt(l.B))
+	lines := make([]*sketch.Line, len(s.Lines))
+	for i, l := range s.Lines {
+		lines[i] = sk.Lines().Add(pointAt(l.A), pointAt(l.B))
 	}
-	for _, a := range s.Arcs {
-		sk.Arcs().Add(pointAt(a.Center), pointAt(a.Start), pointAt(a.End), minorArcCCW(a))
+	arcs := make([]*sketch.Arc, len(s.Arcs))
+	for i, a := range s.Arcs {
+		arcs[i] = sk.Arcs().Add(pointAt(a.Center), pointAt(a.Start), pointAt(a.End), minorArcCCW(a))
 	}
-	for _, c := range s.Circles {
-		sk.Circles().AddByCenterRadius(m.P2(c.Center.X*metresToCm, c.Center.Y*metresToCm), m.Scalar(c.Radius*metresToCm))
+	circles := make([]*sketch.Circle, len(s.Circles))
+	for i, c := range s.Circles {
+		circles[i] = sk.Circles().AddByCenterRadius(m.P2(c.Center.X*metresToCm, c.Center.Y*metresToCm), m.Scalar(c.Radius*metresToCm))
 	}
+	applyConstraints(sk, s.Constraints, lines, arcs, circles)
 	return sk
 }
 
