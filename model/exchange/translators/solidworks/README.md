@@ -58,9 +58,13 @@ contains **two distinct container formats**, both of which the translator target
   decodes each sketch separately (validated on a rectangle+circle part; format-B parts split into
   their many sketches). Two known limits, both awaiting an MFC object-graph walk: older CFBF
   multi-sketch parts lack the marker and fall back to one merged region; and a sketch that re-uses an
-  entity kind first seen earlier loses that class string, so its kind isn't detected. **Next:** the
-  object-graph walk, then equations/global-variables → parameters. Oracle: `scratchpad/sw_dump.ps1`.
-- ⬜ Features, and the Parasolid body fallback (zlib-inflate the partition), come after.
+  entity kind first seen earlier loses that class string, so its kind isn't detected (both await an
+  MFC object-graph walk). **Parameters** (`param.go`, `Document.Parameters()`): global variables —
+  the user parameters that drive sketch dimensions — are decoded from the `moRelMgr_c` equation
+  strings (`"name" = expr`) in `Contents/Config-0`, dimension equations (`…@…`) excluded;
+  `Parameter.Number` parses a numeric literal + unit. Validated exact against the `EquationMgr`
+  oracle. Oracle harness: `scratchpad/sw_dump.ps1`.
+- ⬜ The Oblikovati mapping (`translate/`), custom properties, and the Parasolid body path come after.
 
 ## RE oracle (SolidWorks 2026)
 The live COM API is the ground truth (SW2026 opens both formats; it saves Format B). The compiled-
