@@ -8,6 +8,8 @@ package translate
 import (
 	"fmt"
 	"math"
+	"os"
+	"time"
 
 	"oblikovati.org/kernel/ops"
 	m "oblikovati.org/math"
@@ -24,10 +26,17 @@ import (
 // (centimetres).
 const metresToCm = 100.0
 
+// featureBuildTimeout bounds the solid-feature recompute. Building a feature on a decoded profile can
+// hang the kernel when the profile is subtly malformed (e.g. a revolve profile that crosses its axis)
+// — real parts hit this. If the build does not finish in time, the translation falls back to the
+// sketches-only result so it always terminates.
+const featureBuildTimeout = 30 * time.Second
+
 // FromSolidWorks translates a .SLDPRT into a native Oblikovati part package at outPath: global
-// variables become user parameters and every decoded sketch is emitted. It saves the partial
-// parametric state (parameters + sketches) — features and the solid body are later work. Returns
-// non-fatal warnings.
+// variables become user parameters, every decoded sketch is emitted, and a base extrude/revolve is
+// built when the profile reconstructed exactly. The feature build is time-bounded (featureBuildTimeout)
+// and falls back to a sketches-only result on timeout or error, so it never hangs. Returns non-fatal
+// warnings.
 func FromSolidWorks(sldBytes []byte, outPath string) ([]string, error) {
 	d, err := sldprt.Open(sldBytes)
 	if err != nil {
@@ -36,8 +45,42 @@ func FromSolidWorks(sldBytes []byte, outPath string) ([]string, error) {
 	if d.Type == sldprt.Assembly {
 		return nil, fmt.Errorf("solidworks: assembly translation not yet supported")
 	}
+	// Attempt the full build (with features) in the background, writing to a temp package so a hung
+	// build cannot race the fallback on outPath. On success, promote the temp package to outPath.
+	tmp := outPath + ".withfeatures"
+	type built struct {
+		warns []string
+		err   error
+	}
+	ch := make(chan built, 1)
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				ch <- built{err: fmt.Errorf("solidworks: feature build panicked: %v", r)}
+			}
+		}()
+		w, e := saveTranslation(tmp, d, true)
+		ch <- built{warns: w, err: e}
+	}()
+	select {
+	case r := <-ch:
+		if r.err == nil {
+			if err := os.Rename(tmp, outPath); err == nil {
+				return r.warns, nil
+			}
+		}
+		_ = os.Remove(tmp)
+	case <-time.After(featureBuildTimeout):
+		// The feature build is hung; leak that goroutine (it writes only to tmp) and fall back.
+	}
+	return saveTranslation(outPath, d, false)
+}
+
+// saveTranslation builds a part package at path from the decoded part and saves it. withFeatures
+// selects whether base solid features are built (sketches and parameters are always emitted).
+func saveTranslation(path string, d *sldprt.Document, withFeatures bool) ([]string, error) {
 	ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
-	document, warns, err := buildPart(ws, outPath, d)
+	document, warns, err := buildPart(ws, path, d, withFeatures)
 	if err != nil {
 		return warns, err
 	}
@@ -48,16 +91,20 @@ func FromSolidWorks(sldBytes []byte, outPath string) ([]string, error) {
 }
 
 // buildPart adds a part document to ws at outPath and populates it from the decoded part —
-// parameters, then sketches. It stops short of saving so callers control that.
-func buildPart(ws *doc.Workspace, outPath string, d *sldprt.Document) (*doc.Document, []string, error) {
+// parameters, sketches, and (when withFeatures) a base solid feature. It stops short of saving so
+// callers control that.
+func buildPart(ws *doc.Workspace, outPath string, d *sldprt.Document, withFeatures bool) (*doc.Document, []string, error) {
 	document, err := compdef.AddPart(ws, outPath, true)
 	if err != nil {
 		return nil, nil, err
 	}
 	def := document.Content().(*compdef.PartComponentDefinition)
 	warns := addParameters(def, d)
-	sketches := addSketches(def, d)
-	addFeatures(def, d, sketches)
+	decoded := d.Sketches()
+	sketches := addSketches(def, decoded)
+	if withFeatures {
+		addFeatures(def, d, decoded, sketches)
+	}
 	return document, warns, nil
 }
 
@@ -65,8 +112,10 @@ func buildPart(ws *doc.Workspace, outPath string, d *sldprt.Document) (*doc.Docu
 // sketches. A single base feature is supported so far — a blind boss extrude, or a revolve about the
 // profile sketch's construction centerline — building the first sketch's first profile region as a
 // new body. A part with neither keeps just its parametric sketches.
-func addFeatures(def *compdef.PartComponentDefinition, d *sldprt.Document, sketches []*sketch.Sketch) {
-	if len(sketches) == 0 {
+func addFeatures(def *compdef.PartComponentDefinition, d *sldprt.Document, decoded []sldprt.Sketch, sketches []*sketch.Sketch) {
+	// Only build on an exactly-reconstructed profile. A loopFromVertices fallback can be
+	// self-intersecting, and feeding a malformed profile to the kernel's recompute can hang it.
+	if len(sketches) == 0 || len(decoded) == 0 || sketches[0] == nil || !decoded[0].Exact {
 		return
 	}
 	switch {
@@ -153,12 +202,10 @@ func lengthToCm(value float64, unit string) (float64, bool) {
 
 // addSketches emits every decoded sketch onto the XY plane, converting metres to centimetres, and
 // returns the emitted sketches in order (for features to build on).
-func addSketches(def *compdef.PartComponentDefinition, d *sldprt.Document) []*sketch.Sketch {
-	var out []*sketch.Sketch
-	for _, s := range d.Sketches() {
-		if sk := emitSketch(def, s); sk != nil {
-			out = append(out, sk)
-		}
+func addSketches(def *compdef.PartComponentDefinition, decoded []sldprt.Sketch) []*sketch.Sketch {
+	out := make([]*sketch.Sketch, 0, len(decoded))
+	for _, s := range decoded {
+		out = append(out, emitSketch(def, s))
 	}
 	return out
 }
@@ -208,10 +255,21 @@ func emitSketch(def *compdef.PartComponentDefinition, s sldprt.Sketch) *sketch.S
 		sk.Splines().AddByPoints(fit, sp.Closed)
 	}
 	applyConstruction(s, lines, arcs, circles)
-	applyConstraints(sk, s.Constraints, lines, arcs, circles, points)
-	applyDimensions(sk, s.Dimensions, lines, arcs, circles, points)
+	// Constraints and dimensions re-solve the sketch repeatedly, so they are applied only when the
+	// geometry is exact (a relation cannot be matched to approximate loopFromVertices geometry anyway)
+	// and the sketch is small enough that the repeated solves stay cheap — a huge decoded profile
+	// (hundreds of entities) would otherwise make solving pathologically slow.
+	if s.Exact && len(lines)+len(arcs)+len(circles) <= maxSolvedEntities {
+		applyConstraints(sk, s.Constraints, lines, arcs, circles, points)
+		applyDimensions(sk, s.Dimensions, lines, arcs, circles, points)
+	}
 	return sk
 }
+
+// maxSolvedEntities caps how many curve entities a sketch may have before its constraints and
+// dimensions are skipped: each applied relation re-solves the sketch, so the cost grows with entity
+// count, and a several-hundred-entity profile would otherwise take minutes.
+const maxSolvedEntities = 200
 
 // applyConstruction marks the emitted entities that SolidWorks stored as construction (reference)
 // geometry, so they shape constraints/dimensions but are excluded from profiles. The decoded flags

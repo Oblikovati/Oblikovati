@@ -51,6 +51,11 @@ type Sketch struct {
 	// StandalonePoints are cached coordinates in a line sketch that are not line endpoints — free
 	// sketch points (e.g. a midpoint reference). Emitted as points in addition to the line geometry.
 	StandalonePoints []Point
+	// Exact reports that the geometry was recovered by an exact decode (the entity-reference line
+	// reconstruction, or a clean circle/arc/ellipse/spline) rather than the loopFromVertices fallback,
+	// whose convex-loop guess can be self-intersecting. Only exact sketches are safe to build solid
+	// features on — a malformed profile can hang the kernel.
+	Exact bool
 }
 
 // pointMarker precedes every sketch coordinate in the MFC CArchive: the two bytes 1e 00 (a 2D-point
@@ -87,7 +92,10 @@ func sketchFromRegion(region []byte) (Sketch, bool) {
 	if len(ordered) == 0 {
 		return Sketch{}, false
 	}
-	sk := Sketch{Points: distinctPoints(ordered), Constraints: constraintsIn(region), Dimensions: dimensionsIn(region), Construction: entityConstruction(region)}
+	// Exact is true by default (points, circles, arcs, ellipses, splines and the entity-reference line
+	// reconstruction are exact decodes); it is cleared only on the two approximate paths — the mixed
+	// line/arc chain and the loopFromVertices fallback — whose geometry may be wrong.
+	sk := Sketch{Points: distinctPoints(ordered), Constraints: constraintsIn(region), Dimensions: dimensionsIn(region), Construction: entityConstruction(region), Exact: true}
 	hasLine := bytes.Contains(region, []byte("sgLineHandle"))
 	hasArc := bytes.Contains(region, []byte("sgArcHandle"))
 	hasEllipse := bytes.Contains(region, []byte("sgEllipseHandle"))
@@ -103,6 +111,7 @@ func sketchFromRegion(region []byte) (Sketch, bool) {
 		}
 	case hasLine && hasArc:
 		sk.Lines, sk.Arcs = chainEntities(ordered)
+		sk.Exact = false // geometry-first chain: endpoints are not graph-resolved
 	case hasArc && !hasLine:
 		if a, ok := singleArc(sk.Points); ok {
 			sk.Arcs = []Arc{a}
@@ -116,6 +125,7 @@ func sketchFromRegion(region []byte) (Sketch, bool) {
 			sk.StandalonePoints = standalone // cached points that are not line endpoints
 		} else {
 			sk.Lines = loopFromVertices(sk.Points) // graph incomplete: fall back to the convex-loop guess
+			sk.Exact = false
 		}
 	}
 	return sk, true
