@@ -83,6 +83,14 @@ func bandRingsAndSeam(f *topo.Face, q Quality) (rings [][]math.Point3, seamN int
 			}
 		}
 	}
+	if len(rings) >= 2 {
+		return rings, seamN, seamMid, ok // plain single-edge rim fillets: byte-identical path unchanged
+	}
+	// A chorded/mixed-edge footprint rim (the M4 setback torus rebuild) leaves <2 single-edge rings;
+	// chain its edges into rings, gated on congruence (band_ring_chain.go). ok=false → keep the old result.
+	if cRings, cN, cMid, cOK := chainBoundaryRings(f, q); cOK {
+		return cRings, cN, cMid, true
+	}
 	return rings, seamN, seamMid, ok
 }
 

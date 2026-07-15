@@ -126,22 +126,7 @@ func nonSeamEdgePolylines(f *topo.Face, q Quality) [][]math.Point3 {
 			use[eu.Edge().ID()]++
 		}
 	}
-	var segs [][]math.Point3
-	for _, l := range f.Loops() {
-		for _, eu := range l.EdgeUses() {
-			if use[eu.Edge().ID()] >= 2 {
-				continue // seam edge
-			}
-			pts := discretizeEdge(eu.Edge(), q)
-			if eu.Reversed() {
-				pts = reverse3(pts)
-			}
-			if len(pts) >= 2 {
-				segs = append(segs, pts)
-			}
-		}
-	}
-	return segs
+	return orientedEdgePolylines(f, q, func(e *topo.Edge) bool { return use[e.ID()] >= 2 })
 }
 
 // traceClosedRings chains oriented polyline segments head-to-tail by welded endpoints into closed rings.
