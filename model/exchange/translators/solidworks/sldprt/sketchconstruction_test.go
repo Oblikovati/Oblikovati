@@ -37,33 +37,44 @@ func TestEntityConstructionDecode(t *testing.T) {
 	}
 }
 
-// TestLineConstructionReconstruction checks that a pure-line sketch with a construction line
-// reconstructs both segments and flags the construction one. constrline_fmtb is a real line plus a
-// construction line: the real line is recovered from its endpoint references, the construction line
-// (whose endpoints carry no reference) from the leftover cached points, and LineConstruction marks it.
+// TestLineConstructionReconstruction checks that pure-line sketches with construction lines
+// reconstruct every segment and flag the construction ones. A construction line drops its endpoint
+// references, so the real lines come from their references and the construction lines from the
+// leftover cached points, paired in serialization order — validated for one construction line, for
+// two, and for two interleaved with two real lines in draw order. Each construction line is
+// identified by an endpoint at a known y (its distinct row).
 func TestLineConstructionReconstruction(t *testing.T) {
-	d, err := Open(readTestdata(t, "constrline_fmtb.sldprt"))
-	if err != nil {
-		t.Fatalf("Open: %v", err)
+	yIsConstruction := func(y float64) func(Line) bool {
+		return func(l Line) bool { return l.A.Y == y || l.B.Y == y }
 	}
-	sk := d.Sketches()[0]
-	if len(sk.Lines) != 2 || len(sk.LineConstruction) != 2 {
-		t.Fatalf("got %d lines / %d flags, want 2/2 (%+v)", len(sk.Lines), len(sk.LineConstruction), sk.Lines)
+	cases := []struct {
+		file       string
+		lines      int
+		constrRows []float64 // y-coordinate identifying each construction line
+	}{
+		{"constrline_fmtb.sldprt", 2, []float64{0.03}},      // 1 real + 1 construction
+		{"twoconstr_fmtb.sldprt", 3, []float64{0.02, 0.04}}, // 1 real + 2 construction
+		{"mixconstr_fmtb.sldprt", 4, []float64{0.02, 0.06}}, // 2 real + 2 construction, interleaved
 	}
-	nConstr := 0
-	for _, c := range sk.LineConstruction {
-		if c {
-			nConstr++
+	for _, c := range cases {
+		d, err := Open(readTestdata(t, c.file))
+		if err != nil {
+			t.Fatalf("Open %s: %v", c.file, err)
 		}
-	}
-	if nConstr != 1 {
-		t.Errorf("got %d construction lines, want 1 (%v)", nConstr, sk.LineConstruction)
-	}
-	// The construction line is the one whose endpoints are the off-origin (0,0.03)-(0.03,0.05) pair.
-	for i, l := range sk.Lines {
-		isConstr := (l.A == Point{X: 0, Y: 0.03} || l.B == Point{X: 0, Y: 0.03})
-		if sk.LineConstruction[i] != isConstr {
-			t.Errorf("line %d %+v construction=%v, want %v", i, l, sk.LineConstruction[i], isConstr)
+		sk := d.Sketches()[0]
+		if len(sk.Lines) != c.lines || len(sk.LineConstruction) != c.lines {
+			t.Fatalf("%s: got %d lines / %d flags, want %d (%+v)", c.file, len(sk.Lines), len(sk.LineConstruction), c.lines, sk.Lines)
+		}
+		for i, l := range sk.Lines {
+			want := false
+			for _, y := range c.constrRows {
+				if yIsConstruction(y)(l) {
+					want = true
+				}
+			}
+			if sk.LineConstruction[i] != want {
+				t.Errorf("%s: line %d %+v construction=%v, want %v", c.file, i, l, sk.LineConstruction[i], want)
+			}
 		}
 	}
 }

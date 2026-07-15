@@ -139,23 +139,31 @@ func TestConstructionAttribution(t *testing.T) {
 	}
 }
 
-// TestLineConstructionAttribution checks a construction line survives translation: a sketch of one
-// real line and one construction line reopens with two lines, exactly one marked construction (so it
-// is excluded from profiles). Exercises the reference-graph reconstruction's per-line flags.
+// TestLineConstructionAttribution checks construction lines survive translation: sketches with one
+// and with two construction lines (the latter interleaved with real lines in draw order) reopen with
+// the right number of lines marked construction, so they are excluded from profiles.
 func TestLineConstructionAttribution(t *testing.T) {
-	def := reopen(t, "constrline_fmtb.sldprt")
-	sk := def.Sketches().Item(0)
-	if sk.Lines().Count() != 2 {
-		t.Fatalf("got %d lines, want 2", sk.Lines().Count())
-	}
-	constr := 0
-	for i := 0; i < sk.Lines().Count(); i++ {
-		if sk.Lines().Item(i).IsConstruction() {
-			constr++
+	for _, c := range []struct {
+		file          string
+		lines, constr int
+	}{
+		{"constrline_fmtb.sldprt", 2, 1},
+		{"mixconstr_fmtb.sldprt", 4, 2}, // 2 real + 2 construction, interleaved
+	} {
+		def := reopen(t, c.file)
+		sk := def.Sketches().Item(0)
+		if sk.Lines().Count() != c.lines {
+			t.Fatalf("%s: got %d lines, want %d", c.file, sk.Lines().Count(), c.lines)
 		}
-	}
-	if constr != 1 {
-		t.Errorf("got %d construction lines, want 1", constr)
+		constr := 0
+		for i := 0; i < sk.Lines().Count(); i++ {
+			if sk.Lines().Item(i).IsConstruction() {
+				constr++
+			}
+		}
+		if constr != c.constr {
+			t.Errorf("%s: got %d construction lines, want %d", c.file, constr, c.constr)
+		}
 	}
 }
 

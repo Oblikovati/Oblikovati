@@ -58,10 +58,14 @@ func reconstructLines(region []byte) (lines []Line, construction []bool, ok bool
 		return nil, nil, false
 	}
 	ends := map[uint16]map[Point]bool{}
-	distinct := map[Point]bool{}
+	seen := map[Point]bool{}
+	var distinctOrder []Point // distinct coordinates in stream (serialization) order
 	hasOrigin := false
 	for i, pp := range pts {
-		distinct[pp.p] = true
+		if !seen[pp.p] {
+			seen[pp.p] = true
+			distinctOrder = append(distinctOrder, pp.p)
+		}
 		hasOrigin = hasOrigin || pp.p == origin
 		lo := pp.off + len(pointMarker) + 16 // just past the x,y coordinate
 		hi := lo + 40
@@ -85,19 +89,20 @@ func reconstructLines(region []byte) (lines []Line, construction []bool, ok bool
 			}
 		}
 	}
-	return assembleLines(region, ends, distinct)
+	return assembleLines(region, ends, distinctOrder)
 }
 
 // assembleLines turns the entity→endpoints map into ordered line segments with per-segment
 // construction flags, but only if every guard holds; otherwise ok is false. Referenced entities are
 // the normal (non-construction) lines. A construction line drops its endpoint references, so its
 // endpoints are the cached points left uncovered; the construction-flag table (entityConstruction)
-// says how many construction lines to expect. The guards: each referenced entity has exactly two
-// endpoints, the referenced count equals the number of non-construction entities, the leftover points
-// pair exactly into the expected construction lines, and every cached point is covered. Only a single
-// construction line is reconstructed — with more, pairing the leftover points is ambiguous, so it
-// falls back.
-func assembleLines(region []byte, ends map[uint16]map[Point]bool, distinct map[Point]bool) ([]Line, []bool, bool) {
+// says how many construction lines to expect. Each entity serialises its two endpoints together, so
+// the leftover points stay adjacent per line in stream order (verified on generated parts with two
+// construction lines, including interleaved draw order) — they are paired consecutively. Guards: each
+// referenced entity has two endpoints, the referenced count equals the non-construction count, the
+// leftover count is exactly two per construction line with no degenerate pair, and every cached point
+// is covered.
+func assembleLines(region []byte, ends map[uint16]map[Point]bool, distinctOrder []Point) ([]Line, []bool, bool) {
 	flags := entityConstruction(region)
 	nConstr := 0
 	for _, c := range flags {
@@ -110,20 +115,19 @@ func assembleLines(region []byte, ends map[uint16]map[Point]bool, distinct map[P
 		return nil, nil, false
 	}
 	construction := make([]bool, len(lines))
-	leftover := uncovered(distinct, covered)
-	switch nConstr {
-	case 0:
-	case 1:
-		if len(leftover) != 2 {
-			return nil, nil, false
-		}
-		lines = append(lines, Line{A: leftover[0], B: leftover[1]})
-		construction = append(construction, true)
-		covered[leftover[0]], covered[leftover[1]] = true, true
-	default:
-		return nil, nil, false // ambiguous pairing of >1 construction line's endpoints
+	leftover := uncoveredInOrder(distinctOrder, covered)
+	if len(leftover) != 2*nConstr {
+		return nil, nil, false
 	}
-	if len(covered) != len(distinct) {
+	for i := 0; i < len(leftover); i += 2 {
+		if leftover[i] == leftover[i+1] {
+			return nil, nil, false // a construction line with a zero-length (degenerate) span
+		}
+		lines = append(lines, Line{A: leftover[i], B: leftover[i+1]})
+		construction = append(construction, true)
+		covered[leftover[i]], covered[leftover[i+1]] = true, true
+	}
+	if len(covered) != len(distinctOrder) {
 		return nil, nil, false
 	}
 	return lines, construction, true
@@ -154,17 +158,15 @@ func referencedLines(ends map[uint16]map[Point]bool) ([]Line, map[Point]bool, bo
 	return lines, covered, true
 }
 
-// uncovered returns the cached distinct points not in covered, in sorted order for a stable pairing.
-func uncovered(distinct, covered map[Point]bool) []Point {
+// uncoveredInOrder returns the distinct points not in covered, preserving stream (serialization)
+// order so a construction line's two endpoints — serialised together — stay adjacent for pairing.
+func uncoveredInOrder(distinctOrder []Point, covered map[Point]bool) []Point {
 	var out []Point
-	for p := range distinct {
+	for _, p := range distinctOrder {
 		if !covered[p] {
 			out = append(out, p)
 		}
 	}
-	sort.Slice(out, func(i, j int) bool {
-		return out[i].X < out[j].X || (out[i].X == out[j].X && out[i].Y < out[j].Y)
-	})
 	return out
 }
 
