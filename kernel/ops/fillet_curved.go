@@ -33,19 +33,60 @@ func cylinderPlaneEdge(e *topo.Edge) (cyl geom.Cylinder, pl geom.Plane, ok bool)
 	return geom.Cylinder{}, geom.Plane{}, false
 }
 
+// curvedTangencyBand is k in the surface-tangency band ε = k·res.Weld()/R (ADR-0042): the
+// dot-product slack |n̂_C·n̂_P| > 1−ε below which the cylinder is treated as G1-tangent into the
+// plane. It is a MODEL-relative angular band (weld resolution over the arc radius), never a bare
+// 1e-6 — the same normal slack is negligible on a small cylinder and a visible mis-call on a huge
+// one. k=1 keeps the band as tight as the derivation allows for a smooth/sharp discrimination.
+const curvedTangencyBand = 1
+
 // curvedFilletError reports why a cylinder+plane edge cannot (yet) be rounded. A tangent edge —
 // the cylinder is G1-smooth into the plane (a fillet cylinder meeting the very face it was made
 // tangent to) — has NO corner to round, so it is rejected as smooth, not "unsupported". Any other
-// cylinder+plane edge (a sharp arc cap, or a sharp axial cut) is a real fillet target Phase B/C
-// will build; until then it errors clearly instead of producing the misleading "invalid solid" /
-// "miter" the planar path emitted.
-func curvedFilletError(e *topo.Edge, cyl geom.Cylinder, pl geom.Plane) error {
+// cylinder+plane edge that the arm builder declined (concave rim, oblique ellipse edge, or a
+// degenerate spindle/clearance) errors clearly instead of the misleading "invalid solid" / "miter"
+// the planar path emitted. res scales the tangency band to the model (ADR-0042).
+func curvedFilletError(e *topo.Edge, cyl geom.Cylinder, pl geom.Plane, res Resolution) error {
 	mid := e.StartVertex().Point().Midpoint(e.EndVertex().Point())
 	u, _ := cyl.ParamAt(mid)
-	if stdmath.Abs(cyl.NormalAt(u, 0).Dot(pl.Normal())) > 1-1e-6 {
+	eps := curvedTangencyBand * res.Weld() / cyl.Radius
+	if stdmath.Abs(cyl.NormalAt(u, 0).Dot(pl.Normal())) > 1-eps {
 		return fmt.Errorf("fillet: edge between a cylinder and a tangent plane is smooth (no corner to round)")
 	}
 	return fmt.Errorf("fillet: rounding an edge that borders a curved (cylinder) face is not yet supported")
+}
+
+// curvedArmFillet builds the exact rolling-ball arm on a CONVEX axis-aligned Plane∧Cylinder edge
+// (M5 Slice A, m5-curved-arm-derivation.md): an exact torus (axis ⊥ plane, circle edge) or an exact
+// cylinder (axis ∥ plane, line edge), carried in the same edgeFillet the straight-edge path emits.
+// Returns false — so the caller honest-rejects via curvedFilletError (do-no-harm) — for a CONCAVE
+// (root) rim, a varying radius, config iii (oblique ellipse edge, Slice B), or any constructor
+// decline (spindle/clearance). The arm constructors are convex-external only (Task 2 caveat), so
+// this owns the material-side gate: an R−r torus on a concave rim is never emitted.
+func curvedArmFillet(e *topo.Edge, cyl geom.Cylinder, pl geom.Plane, p filletPick, res Resolution) (edgeFillet, bool) {
+	if p.varying() || ClassifyEdgeConvexity(e) != EdgeConvex {
+		return edgeFillet{}, false // constant-radius convex-external only
+	}
+	switch classifyCurvedArm(cyl, pl, res) {
+	case armTorus:
+		tor, ok := torusArmSurface(cyl, pl, p.r0, res)
+		return curvedArmEdgeFillet(e, tor, ok)
+	case armCylinder:
+		arm, ok := cylinderArmSurface(e, cyl, pl, p.r0)
+		return curvedArmEdgeFillet(e, arm, ok)
+	default:
+		return edgeFillet{}, false // armRejected: oblique ellipse edge (config iii, Slice B)
+	}
+}
+
+// curvedArmEdgeFillet packs a built arm surface into an edgeFillet carrying the edge's two host
+// faces, or returns false when the constructor declined (built == false) — the do-no-harm relay.
+func curvedArmEdgeFillet(e *topo.Edge, arm geom.Surface, built bool) (edgeFillet, bool) {
+	if !built {
+		return edgeFillet{}, false
+	}
+	faces := e.Faces()
+	return edgeFillet{a: faces[0], b: faces[1], edge: e, armSurface: arm}, true
 }
 
 // curvedAdjacentError rejects an edge bordering a curved (non-planar) face that the cylinder+plane

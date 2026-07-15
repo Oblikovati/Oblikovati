@@ -354,6 +354,11 @@ type edgeFillet struct {
 	// audit A10) instead of the C0 polyhedral strip; secW is the sections' shoulder weight.
 	exact bool
 	secW  float64
+	// armSurface is the exact analytic rolling-ball arm on a CONVEX axis-aligned Plane∧Cylinder edge
+	// (M5 Slice A): a geom.Torus (axis ⊥ plane) or a geom.Cylinder (axis ∥ plane). Nil on the ordinary
+	// planar straight-edge fillet, whose surface is `cyl`. The corner engine (Task 4) reads it for the
+	// section rail; it is byte-invisible to the planar/straight paths, which never set it.
+	armSurface geom.Surface
 }
 
 // computeEdgeFillet solves the rolling-ball geometry for one convex straight edge, using a
@@ -362,7 +367,11 @@ type edgeFillet struct {
 func computeEdgeFillet(body *topo.Body, p filletPick, blends map[uint64]*cornerBlend, miters map[uint64]*cornerMiter, concave ConcaveFill) (edgeFillet, error) {
 	e := p.edge
 	if cyl, pl, ok := cylinderPlaneEdge(e); ok {
-		return edgeFillet{}, curvedFilletError(e, cyl, pl) // fillet of a fillet — Phase A: classify & report
+		res := ResolutionForBody(body)
+		if ef, built := curvedArmFillet(e, cyl, pl, p, res); built {
+			return ef, nil // M5 Slice A: exact torus/cylinder arm on a convex axis-aligned rim
+		}
+		return edgeFillet{}, curvedFilletError(e, cyl, pl, res) // concave / oblique / decline — do-no-harm
 	}
 	if err := curvedAdjacentError(e); err != nil {
 		return edgeFillet{}, err // any other curved neighbour (cyl∩cyl miter seam, torus, sphere)
