@@ -65,6 +65,34 @@ func (k FeatureKind) Solid() bool {
 	return k != KindSketch && k != KindUnknown
 }
 
+// Material reports whether the feature adds or removes a body volume — as opposed to a cosmetic
+// feature (fillet, chamfer, draft) that only rounds or tapers an existing body's edges/faces.
+// A part with more than one material feature cannot yet be built correctly (its later profiles need
+// the per-sketch object-graph split), so counting these gates whether a base feature is safe to
+// build; skipping only the cosmetic tail still yields a faithful, un-rounded body.
+func (k FeatureKind) Material() bool {
+	switch k {
+	case KindExtrude, KindCut, KindRevolve, KindRevolveCut,
+		KindMirror, KindCircularPattern, KindLinearPattern, KindHole:
+		return true
+	default:
+		return false
+	}
+}
+
+// MaterialFeatureCount returns how many material (volume-changing) features the tree holds. Zero
+// means no feature-tree information was recovered (e.g. a format-B tree stored elsewhere), which the
+// caller distinguishes from a genuine single-feature part.
+func (d *Document) MaterialFeatureCount() int {
+	n := 0
+	for _, f := range d.FeatureTree() {
+		if f.Kind.Material() {
+			n++
+		}
+	}
+	return n
+}
+
 // FeatureNode is one node of the live feature tree, in tree (creation) order.
 type FeatureNode struct {
 	Name string

@@ -60,6 +60,21 @@ func TestFeatureTreeDecode(t *testing.T) {
 	}
 }
 
+func TestFeatureKindMaterial(t *testing.T) {
+	material := []FeatureKind{KindExtrude, KindCut, KindRevolve, KindRevolveCut, KindMirror, KindCircularPattern, KindLinearPattern, KindHole}
+	cosmetic := []FeatureKind{KindFillet, KindChamfer, KindDraft, KindSketch, KindUnknown}
+	for _, k := range material {
+		if !k.Material() {
+			t.Errorf("%v: Material() = false, want true", k)
+		}
+	}
+	for _, k := range cosmetic {
+		if k.Material() {
+			t.Errorf("%v: Material() = true, want false", k)
+		}
+	}
+}
+
 func TestClassifyFeature(t *testing.T) {
 	cases := []struct {
 		class, name string

@@ -118,6 +118,14 @@ func addFeatures(def *compdef.PartComponentDefinition, d *sldprt.Document, decod
 	if len(sketches) == 0 || len(decoded) == 0 || sketches[0] == nil || !decoded[0].Exact {
 		return
 	}
+	// Only build when the feature tree shows a single material (volume-changing) feature: the base.
+	// A part with several bosses/cuts needs its later profiles, which the format-A per-sketch split
+	// does not yet recover, so building only the base would produce a WRONG solid — keep the
+	// parametric sketches instead. A count of zero means no tree information (e.g. a format-B part
+	// whose tree is elsewhere): fall through to the prior single-feature behavior.
+	if n := d.MaterialFeatureCount(); n > 1 {
+		return
+	}
 	switch {
 	case len(d.Revolutions()) > 0:
 		addRevolve(def, sketches[0], d.Revolutions()[0])

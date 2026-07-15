@@ -32,7 +32,15 @@ func main() {
 		return
 	}
 	if os.Args[2] == "-features" {
-		for i, f := range doc.FeatureTree() {
+		tree := doc.FeatureTree()
+		nsk := 0
+		for _, f := range tree {
+			if f.Kind == sldprt.KindSketch {
+				nsk++
+			}
+		}
+		fmt.Printf("# tree=%d treeSketches=%d decodedSketches=%d\n", len(tree), nsk, len(doc.Sketches()))
+		for i, f := range tree {
 			fmt.Printf("%2d  %-20s %s\n", i, f.Kind, f.Name)
 		}
 		return
