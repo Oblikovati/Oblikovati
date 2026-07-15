@@ -13,7 +13,8 @@ import (
 // TestExtractSetbackPatches_S1IntactFootprintRibbon is the crux test: the S1 fixture (r8 top boss +
 // r6 front boss, filleted R=6) tiles into exactly three setback RailLoops (left flank / central /
 // right flank), each a closed valence-4 loop whose footprint rail carries the INTACT boss wall (a
-// full geom.Cylinder) as a G1 Adjacent — the D3 correction over extractRunout's split sub-arcs.
+// full geom.Cylinder) as a G1 Adjacent — the D3 correction over the boss's whole, unsplit footprint
+// rail (never the split sub-arcs of the deleted boss-splitting path).
 func TestExtractSetbackPatches_S1IntactFootprintRibbon(t *testing.T) {
 	ef, res := runoutFixtureCrossingBoss(t)
 	b, ok := detectSetbackBands(ef, res)

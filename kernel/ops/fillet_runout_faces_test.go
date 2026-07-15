@@ -114,11 +114,12 @@ func t4RunoutFils(t *testing.T) (*topo.Body, []edgeFillet) {
 }
 
 // t4FragileRunoutFils adds the same filletRebuildMaps filletResultFaces builds (fillet_faces.go:
-// 17-22) on top of t4RunoutFils's edgeFillet. buildRunoutHostsAndWalls consumes maps.abSubst to
-// re-cut the host planes; with an empty map it honest-rejects for an unrelated reason (the host
-// re-cut looks malformed), so a test built on a zero-value filletRebuildMaps would pass whether or
-// not the fragile-band guard exists — silently proving nothing. Named so the test can assert
-// directly against collectRunouts's real production inputs.
+// 17-22) on top of t4RunoutFils's edgeFillet. This is real production input, not a zero-value
+// filletRebuildMaps, so TestCollectRunouts_DefersOnFragileBand actually exercises collectRunouts'
+// bodyHasFragileBand guard: T4's torus survivor band trips that guard FIRST, before the maps are
+// ever consulted, so the deferral is proven by the fragile-band check itself — the maps just need
+// to be realistic enough that a passing test can't be blamed on some other, unrelated honest-reject.
+// Named so the test can assert directly against collectRunouts's real production inputs.
 func t4FragileRunoutFils(t *testing.T) (*topo.Body, []edgeFillet, filletRebuildMaps) {
 	t.Helper()
 	body, fils := t4RunoutFils(t)

@@ -9,11 +9,13 @@ import (
 )
 
 // runoutSet is the fully-built runout rebuild for one filleted edge (the S1-shaped double-
-// interference runout, ADR-5): the host planes whose boss footprint is re-cut so it no longer
-// protrudes AND the two boss walls whose closed footprint rim is split so each sub-arc welds to a
-// neighbour (keyed by body-face ID), plus the newly generated faces (two surviving cylinder wings
-// outside the freed span + the three corner-blend patches that fill it). Mirrors obstacleSet
-// (fillet_obstacle_faces.go) so the assembly path treats both rebuilds uniformly.
+// interference runout, ADR-5): replace holds ONLY the two re-clipped host-plane notches, keyed by
+// body-face ID, whose boss footprint is re-cut so it no longer protrudes (reclipOuterHost/
+// reclipInnerHost, fillet_setback_close.go). The two boss walls are kept INTACT — transformFace
+// merely subdivides their footprint rim (maps.edgeInserts) so neighbours weld; a wall is NEVER
+// split and NEVER placed in replace. extra holds the newly generated faces: the two plain cyl-R
+// wings outside the freed span plus the resolved setback corner-blend patches that fill it. Mirrors
+// obstacleSet (fillet_obstacle_faces.go) so the assembly path treats both rebuilds uniformly.
 type runoutSet struct {
 	replace map[uint64]filletFace
 	extra   []filletFace

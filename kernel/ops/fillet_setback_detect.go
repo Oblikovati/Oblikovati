@@ -92,10 +92,10 @@ func detectSetbackBands(ef edgeFillet, res Resolution) (setbackBands, bool) {
 // setbackBossFrom turns one solved runout imprint into a crossingBoss plus its axial midpoint c
 // (setbackMidpoint — returned separately, not stored on crossingBoss, since only
 // detectSetbackBands' cross-boss centeredness guard needs it). The boss wall is read via the
-// existing otherFace(footprintEdge, host) idiom (fillet_runout_hosts.go's buildHostBAndWall/
-// buildHostAAndWall) and kept intact — no split is called. xSetback is read off the imprint's
-// already-solved footprint∩band crossings (solveImprint) rather than re-solving the line∩conic
-// from scratch — see setbackStation.
+// existing otherFace(footprintEdge, host) idiom (fillet_faces.go) and kept intact — the wall is
+// merely subdivided later by reclipOuterHost/reclipInnerHost (fillet_setback_close.go), never
+// split. xSetback is read off the imprint's already-solved footprint∩band crossings (solveImprint)
+// rather than re-solving the line∩conic from scratch — see setbackStation.
 func setbackBossFrom(im runoutImprint, ef edgeFillet, res Resolution) (crossingBoss, float64, bool) {
 	cut, ok := solveImprint(im, res)
 	if !ok {
