@@ -115,10 +115,19 @@ type idPoint struct {
 	p  Point2D
 }
 
-// lineRefs is a line's two endpoint entity references (paired == both were real refs).
+// lineRefs is a line's two endpoint entity references (paired == both were real refs), plus the
+// line's inline geometry: a curve node caches the exact infinite line as (midpoint, unit-direction)
+// f64 immediately after its endpoint refs (at C+24+4*w1). This is decoded WITHOUT reference
+// resolution, so it recovers a line's position/orientation even when the point-ref rank-alignment
+// fails — the basis for reconstructInlineLoop. unit is set when the stored direction is unit length
+// (a genuine line); an uninitialised/garbage slot holds a huge non-unit value and clears it.
 type lineRefs struct {
 	a, b   uint32
 	paired bool
+	mid    Point2D
+	dir    Point2D
+	unit   bool
+	constr bool // Inventor construction/reference geometry (not part of a profile)
 }
 
 // circleEnt is a decoded circle plus the entity reference to its centre point. Inventor
@@ -259,9 +268,9 @@ func collectItems(seg []byte) []sketchItem {
 					continue
 				}
 			}
-			items = append(items, sketchItem{off: C, line: &lineRefs{
-				a: w16 &^ refBit, b: w20 &^ refBit, paired: w20&refBit != 0,
-			}})
+			lr := lineRefs{a: w16 &^ refBit, b: w20 &^ refBit, paired: w20&refBit != 0}
+			readInlineLine(seg, C, &lr)
+			items = append(items, sketchItem{off: C, line: &lr})
 		} else if cref := binary.LittleEndian.Uint32(seg[C+32:]); cref&refBit != 0 && isEllipseNode(seg, C) {
 			// Same node shape as a referenced-centre circle, but the sentinel + normal-range radii
 			// (a circle carries denormals and a node ref there) identify a genuine ellipse.
@@ -321,6 +330,13 @@ func assembleCluster(items []sketchItem) Sketch {
 	}
 	if s, ok := resolveByRefs(pts, circs, lines, arcs, ells); ok {
 		s.Resolved = true
+		return s
+	}
+	// resolveByRefs failed (its reference and point counts disagree). For a pure-line cluster,
+	// try reconstructing the profile from each line's inline infinite-line geometry, which needs no
+	// reference resolution — accepted only when every corner lands on a collected point (self-
+	// validated), so it never emits guessed geometry. Falls through to the convex-ring heuristic.
+	if s, ok := reconstructInlineLoop(items); ok {
 		return s
 	}
 	inline := make([]Circle, len(circs))
