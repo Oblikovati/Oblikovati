@@ -178,6 +178,20 @@ func TestOpenProfileTranslation(t *testing.T) {
 	}
 }
 
+// TestEllipseTranslation checks an ellipse survives translation to the native part: a 30x20 mm
+// ellipse reopens as one ellipse with the semi-axes converted to centimetres (3 and 2 cm).
+func TestEllipseTranslation(t *testing.T) {
+	def := reopen(t, "ellipse_fmtb.sldprt")
+	sk := def.Sketches().Item(0)
+	if sk.Ellipses().Count() != 1 {
+		t.Fatalf("got %d ellipses, want 1", sk.Ellipses().Count())
+	}
+	e := sk.Ellipses().Item(0)
+	if math.Abs(float64(e.MajorRadius)-3) > 1e-6 || math.Abs(float64(e.MinorRadius)-2) > 1e-6 {
+		t.Errorf("radii = %g/%g cm, want 3/2", float64(e.MajorRadius), float64(e.MinorRadius))
+	}
+}
+
 // TestMixedSketchTranslation translates the rounded rectangle (4 lines + 4 fillet arcs) and checks
 // both kinds persist.
 func TestMixedSketchTranslation(t *testing.T) {

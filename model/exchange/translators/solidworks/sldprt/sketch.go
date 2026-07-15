@@ -36,6 +36,7 @@ type Sketch struct {
 	Lines       []Line
 	Circles     []Circle
 	Arcs        []Arc
+	Ellipses    []Ellipse
 	Constraints []Constraint
 	Dimensions  []Dimension
 	// Construction holds, in entity-creation order, whether each curve entity is construction
@@ -85,7 +86,12 @@ func sketchFromRegion(region []byte) (Sketch, bool) {
 	sk := Sketch{Points: distinctPoints(ordered), Constraints: constraintsIn(region), Dimensions: dimensionsIn(region), Construction: entityConstruction(region)}
 	hasLine := bytes.Contains(region, []byte("sgLineHandle"))
 	hasArc := bytes.Contains(region, []byte("sgArcHandle"))
+	hasEllipse := bytes.Contains(region, []byte("sgEllipseHandle"))
 	switch {
+	case hasEllipse && !hasLine && !hasArc:
+		if e, ok := ellipseFromPoints(sk.Points); ok {
+			sk.Ellipses = []Ellipse{e}
+		}
 	case hasLine && hasArc:
 		sk.Lines, sk.Arcs = chainEntities(ordered)
 	case hasArc && !hasLine:
