@@ -20,13 +20,15 @@ func applyDimensions(sk *sketch.Sketch, dims []sldprt.Dimension, lines []*sketch
 	dc := sk.DimensionConstraints()
 	cs := curvesOf(arcs, circles)
 	for _, dm := range dims {
-		applyOneDimension(sk, dc, dm.Value*metresToCm, lines, cs)
+		if !applyLengthDimension(sk, dc, dm.Value*metresToCm, lines, cs) {
+			applyAngleDimension(sk, dc, dm.Value, lines) // a value that isn't a length may be an angle (radians)
+		}
 	}
 }
 
-// applyOneDimension binds a single value (cm) as the first dimension that measures it: a curve
+// applyLengthDimension binds a length value (cm) as the first dimension that measures it: a curve
 // diameter, a curve radius, or a line length. Returns whether one was applied.
-func applyOneDimension(sk *sketch.Sketch, dc *sketch.DimensionConstraints, v float64, lines []*sketch.Line, cs []curve) bool {
+func applyLengthDimension(sk *sketch.Sketch, dc *sketch.DimensionConstraints, v float64, lines []*sketch.Line, cs []curve) bool {
 	expr := fmt.Sprintf("%g cm", v)
 	for _, c := range cs {
 		if math.Abs(2*c.r-v) < geomEps && keptWithoutMoving(sk, func() (*sketch.DimensionConstraint, error) { return dc.AddDiameter(c.h, expr) }) {
@@ -43,6 +45,36 @@ func applyOneDimension(sk *sketch.Sketch, dc *sketch.DimensionConstraints, v flo
 		}
 	}
 	return false
+}
+
+// applyAngleDimension binds a value interpreted as an angle (radians, as SolidWorks stores it) onto
+// the first line pair whose included angle equals it, as an AddAngle in degrees.
+func applyAngleDimension(sk *sketch.Sketch, dc *sketch.DimensionConstraints, radians float64, lines []*sketch.Line) bool {
+	deg := radians * 180 / math.Pi
+	if deg <= 0 || deg >= 180 {
+		return false
+	}
+	expr := fmt.Sprintf("%g deg", deg)
+	for i := 0; i < len(lines); i++ {
+		for j := i + 1; j < len(lines); j++ {
+			if !anglesMatch(lines[i], lines[j], deg) {
+				continue
+			}
+			li, lj := lines[i], lines[j]
+			if keptWithoutMoving(sk, func() (*sketch.DimensionConstraint, error) { return dc.AddAngle(li, lj, expr) }) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// anglesMatch reports whether the included angle between two lines (either orientation) equals deg.
+func anglesMatch(a, b *sketch.Line, deg float64) bool {
+	ax, ay := unitDir(a)
+	bx, by := unitDir(b)
+	between := math.Acos(math.Max(-1, math.Min(1, ax*bx+ay*by))) * 180 / math.Pi
+	return math.Abs(between-deg) < 1e-4 || math.Abs((180-between)-deg) < 1e-4
 }
 
 // keptWithoutMoving applies a dimension and keeps it only if the sketch then has strictly fewer

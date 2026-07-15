@@ -17,6 +17,7 @@ func TestDimensionDecode(t *testing.T) {
 	}{
 		{"dimrect_fmtb.sldprt", map[string]float64{"D1": 0.025, "D2": 0.015}},
 		{"dimcirc_fmtb.sldprt", map[string]float64{"D1": 0.016}},
+		{"angledim_fmtb.sldprt", map[string]float64{"D1": 40 * math.Pi / 180}}, // 40 deg, stored in radians
 	}
 	for _, c := range cases {
 		d, err := Open(readTestdata(t, c.file))
