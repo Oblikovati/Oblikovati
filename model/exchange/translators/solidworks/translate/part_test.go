@@ -120,6 +120,25 @@ func TestDimensionApplication(t *testing.T) {
 	}
 }
 
+// TestConstructionAttribution checks that a construction (reference) entity survives translation and
+// reopening: a two-circle sketch whose second circle was drawn as construction geometry reopens with
+// exactly one of its two circles marked construction, in the source draw order (real, then
+// construction). Construction geometry is excluded from profiles, so preserving it keeps extrudes
+// correct.
+func TestConstructionAttribution(t *testing.T) {
+	def := reopen(t, "constrcirc_fmtb.sldprt")
+	sk := def.Sketches().Item(0)
+	if sk.Circles().Count() != 2 {
+		t.Fatalf("got %d circles, want 2", sk.Circles().Count())
+	}
+	want := []bool{false, true}
+	for i, w := range want {
+		if got := sk.Circles().Item(i).IsConstruction(); got != w {
+			t.Errorf("circle %d IsConstruction = %v, want %v", i, got, w)
+		}
+	}
+}
+
 // TestMixedSketchTranslation translates the rounded rectangle (4 lines + 4 fillet arcs) and checks
 // both kinds persist.
 func TestMixedSketchTranslation(t *testing.T) {

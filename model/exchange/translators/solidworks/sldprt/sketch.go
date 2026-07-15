@@ -38,6 +38,10 @@ type Sketch struct {
 	Arcs        []Arc
 	Constraints []Constraint
 	Dimensions  []Dimension
+	// Construction holds, in entity-creation order, whether each curve entity is construction
+	// (reference) geometry. It mixes entity kinds; consumers map it onto typed geometry only when
+	// draw order is recoverable (e.g. a pure-circle sketch, decoded in cached order).
+	Construction []bool
 }
 
 // pointMarker precedes every sketch coordinate in the MFC CArchive: the two bytes 1e 00 (a 2D-point
@@ -74,7 +78,7 @@ func sketchFromRegion(region []byte) (Sketch, bool) {
 	if len(ordered) == 0 {
 		return Sketch{}, false
 	}
-	sk := Sketch{Points: distinctPoints(ordered), Constraints: constraintsIn(region), Dimensions: dimensionsIn(region)}
+	sk := Sketch{Points: distinctPoints(ordered), Constraints: constraintsIn(region), Dimensions: dimensionsIn(region), Construction: entityConstruction(region)}
 	hasLine := bytes.Contains(region, []byte("sgLineHandle"))
 	hasArc := bytes.Contains(region, []byte("sgArcHandle"))
 	switch {

@@ -141,9 +141,31 @@ func emitSketch(def *compdef.PartComponentDefinition, s sldprt.Sketch) *sketch.S
 	for i, c := range s.Circles {
 		circles[i] = sk.Circles().AddByCenterRadius(m.P2(c.Center.X*metresToCm, c.Center.Y*metresToCm), m.Scalar(c.Radius*metresToCm))
 	}
+	applyConstruction(s, lines, arcs, circles)
 	applyConstraints(sk, s.Constraints, lines, arcs, circles)
 	applyDimensions(sk, s.Dimensions, lines, arcs, circles)
 	return sk
+}
+
+// applyConstruction marks the emitted entities that SolidWorks stored as construction (reference)
+// geometry, so they shape constraints/dimensions but are excluded from profiles. The decoded flags
+// are in draw order across all kinds; this only acts where that order maps unambiguously onto a typed
+// slice: a pure-circle sketch (circles are decoded in cached = draw order) or a lone arc. For a line
+// loop the vertices are re-ordered during reconstruction, so its draw order is not recoverable yet —
+// attribution there waits on the entity-graph walk; the flags are still decoded on the Sketch.
+func applyConstruction(s sldprt.Sketch, lines []*sketch.Line, arcs []*sketch.Arc, circles []*sketch.Circle) {
+	flags := s.Construction
+	if len(flags) != len(lines)+len(arcs)+len(circles) {
+		return // count mismatch: cannot trust the mapping
+	}
+	switch {
+	case len(lines) == 0 && len(arcs) == 0:
+		for i, c := range circles {
+			c.SetConstruction(flags[i])
+		}
+	case len(lines) == 0 && len(circles) == 0 && len(arcs) == 1:
+		arcs[0].SetConstruction(flags[0])
+	}
 }
 
 // sharedPoints returns a resolver that maps a SolidWorks coordinate (metres) to a sketch Point in
