@@ -912,9 +912,22 @@ func edgesOf(ps []filletPick) []*topo.Edge {
 	return out
 }
 
-// solveBlend builds the corner sphere from the three planar faces meeting at v (the point
-// at distance r from all three, inside) and its tangent points on each.
+// solveBlend builds the corner sphere at the trihedral vertex v. An all-planar corner solves the
+// sphere equidistant (r) from the three planes (the historical path, byte-identical below). A corner
+// whose host set is ONE cylinder and two planes (M5 Slice A: a curved-rim boss corner) instead solves
+// the ball tangent to the cylinder and the two planes — an analytic geom.Sphere of the same radius r,
+// matching OCCT's equal-radius corner KPart (BREP surface code 4). Any other host mix (two curved
+// faces, a cone/sphere/torus host) still returns "corner face must be planar" (do-no-harm).
 func solveBlend(v *topo.Vertex, faces []*topo.Face, r float64) (*cornerBlend, error) {
+	if cyl, planes, ok := cylinderHostCorner(faces); ok {
+		return solveCurvedBlend(v, faces, cyl, planes, r) // curved rim: analytic sphere corner
+	}
+	return solvePlanarBlend(v, faces, r)
+}
+
+// solvePlanarBlend builds the corner sphere from the three planar faces meeting at v (the point
+// at distance r from all three, inside) and its tangent points on each.
+func solvePlanarBlend(v *topo.Vertex, faces []*topo.Face, r float64) (*cornerBlend, error) {
 	var a [3][3]float64
 	var b [3]float64
 	for i, f := range faces {
