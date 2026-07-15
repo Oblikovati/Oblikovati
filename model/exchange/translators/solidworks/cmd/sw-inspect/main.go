@@ -31,6 +31,12 @@ func main() {
 		}
 		return
 	}
+	if os.Args[2] == "-features" {
+		for i, f := range doc.FeatureTree() {
+			fmt.Printf("%2d  %-20s %s\n", i, f.Kind, f.Name)
+		}
+		return
+	}
 	b, err := doc.Stream(os.Args[2])
 	must(err)
 	os.Stdout.Write(b)
