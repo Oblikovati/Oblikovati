@@ -3,6 +3,7 @@
 package ops
 
 import (
+	stdmath "math"
 	"testing"
 
 	"oblikovati.org/kernel/geom"
@@ -302,6 +303,81 @@ func filletedCorpusEdge(t *testing.T, rel string, mid math.Point3, r float64) *t
 		t.Fatalf("filletedCorpusEdge: FilletEdges(%s, r=%v): %v", rel, r, err)
 	}
 	return res
+}
+
+// synthTorusSetbackBoss builds a crossingBoss mimicking T1's intact torus wall: the host-plane footprint
+// is a circle of radius r_f=25 centered at the origin in the z=0 plane, with its seam vertex at world
+// (25,0,0) (azimuth 0°). The fillet R=8 band runs along the box edge at y=-22 (contact line σ=0), so the
+// fillet interference crosses the footprint circle at cross1 (−11.874,−22,0) [az −118.4°] and cross2
+// (11.874,−22,0) [az −61.6°]. Only footEdge (the conic) and host (the plane) are read by bossRimSubArcs,
+// plus cyl/seam/cross1/cross2, so a fully-fused body is not needed. Exact frame: m4-spike.md §(a).
+func synthTorusSetbackBoss(t *testing.T) (crossingBoss, geom.Cylinder, math.Point3, math.Point3, math.Point3) {
+	t.Helper()
+	seam := math.P3(25, 0, 0)
+	c1, c2 := math.P3(-11.874, -22, 0), math.P3(11.874, -22, 0)
+	circle, err := geom.NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 25)
+	if err != nil {
+		t.Fatalf("synthTorusSetbackBoss: NewCircle: %v", err)
+	}
+	plane, err := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
+	if err != nil {
+		t.Fatalf("synthTorusSetbackBoss: NewPlane: %v", err)
+	}
+	bld := topo.NewBuilder(true, topo.NewLineage(topo.Tok("synthTorus", "body", 0)))
+	seamV := bld.AddVertex(seam, topo.NewLineage(topo.Tok("synthTorus", "v", 0)))
+	footEdge := bld.AddEdge(circle, seamV, seamV, topo.NewLineage(topo.Tok("synthTorus", "e", 0)))
+	host := bld.AddFace(plane, topo.NewLineage(topo.Tok("synthTorus", "face", 0)))
+	// Fillet R=8 cylinder tangent to z=0 along the line y=-22: axis at height R above that line, running
+	// along +x (the box edge). Its contact foot at the footprint centre station is (0,-22,0).
+	cyl, err := geom.NewCylinder(math.P3(0, -22, 8), math.V3(1, 0, 0), 8)
+	if err != nil {
+		t.Fatalf("synthTorusSetbackBoss: NewCylinder: %v", err)
+	}
+	return crossingBoss{footEdge: footEdge, host: host}, cyl, seam, c1, c2
+}
+
+// TestBossRimSubArcs_TorusFootprintSpansFullCircle pins the scale-invariant σ-partition (M4 Task 1): an
+// intact torus wall's footprint rim must be rebuilt as the FULL 360° conic (host major 241.6° + band
+// notch 57° + host 61.6°), not the 118° out-and-back slit the old local minor/major midpoint test emitted
+// on a large footprint (m4-spike.md §CRITICAL — 242° dropped).
+func TestBossRimSubArcs_TorusFootprintSpansFullCircle(t *testing.T) {
+	boss, fillet, seam, c1, c2 := synthTorusSetbackBoss(t)
+	subs, ok := bossRimSubArcs(boss, fillet, seam, c1, c2, nil)
+	if !ok {
+		t.Fatalf("bossRimSubArcs rejected a valid torus footprint boss")
+	}
+	span := totalDirectedSpan(subs)
+	if stdmath.Abs(span-2*stdmath.Pi) > 1e-3 {
+		t.Fatalf("footprint rim spans %.1f°, want 360° — a partial span means the minor arc was chosen (the 118° slit bug); subs=%d",
+			span*180/stdmath.Pi, len(subs))
+	}
+	if a := directedSpan(subs[0]); a < stdmath.Pi {
+		t.Fatalf("hostA span %.1f° < 180° — chose the minor arc for the large torus footprint", a*180/stdmath.Pi)
+	}
+}
+
+// directedSpan is the swept native-parameter angle (magnitude) of one emitted footprint sub-arc — its
+// own SweepAngle, which for a circle/ellipse arc is the exact angular extent it covers. It is the ruler
+// the closure invariant Δ_hostA+Δ_band+Δ_hostB=2π is checked with (m4-rim-partition-derivation.md §D3).
+func directedSpan(c geom.Curve3) float64 {
+	switch a := c.(type) {
+	case geom.Arc3d:
+		return stdmath.Abs(a.SweepAngle)
+	case geom.EllipticalArc:
+		return stdmath.Abs(a.SweepAngle)
+	default:
+		return 0
+	}
+}
+
+// totalDirectedSpan sums the directed native spans of every emitted sub-arc — 2π exactly for a valid
+// full-conic partition (a partial sum betrays a dropped span, the minor-arc slit bug).
+func totalDirectedSpan(subs []geom.Curve3) float64 {
+	total := 0.0
+	for _, c := range subs {
+		total += directedSpan(c)
+	}
+	return total
 }
 
 // tessArea sums a mesh's triangle areas.

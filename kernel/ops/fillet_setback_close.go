@@ -275,13 +275,20 @@ func footprintCenter(edge *topo.Edge) (math.Point3, bool) {
 }
 
 // bossRimSubArcs is the ordered curve chain of a boss footprint rim from the seam: host-side seam→cross1,
-// the band-side chain cross1→bandInner…→cross2, host-side cross2→seam. It is the shared source of truth
-// for both the wall-rim subdivision (all sub-arcs) and the host detour (the two host-side ones), so the
-// two are sampled from the SAME curves.
+// the band-side chain cross1→bandInner…→cross2, host-side cross2→seam — a partition of the FULL conic
+// (Σ directed span = 2π). The two host sub-arcs come from the scale-invariant σ-partition
+// (partitionFootprintRim, rule (b) §D2 of m4-rim-partition-derivation.md): their minor-vs-major sense is
+// DERIVED from the exact native spans of the host complement F∖band, not guessed by a local midpoint test
+// (which dropped 242° of the large torus rim, m4-spike.md §CRITICAL). It is the shared source of truth for
+// the wall-rim subdivision (all sub-arcs) and the host detour (the two host-side ones).
 func bossRimSubArcs(boss crossingBoss, cyl geom.Cylinder, seam, cross1, cross2 math.Point3, bandInner []math.Point3) ([]geom.Curve3, bool) {
-	hostA, ok0 := hostSideFootArc(boss, cyl, seam, cross1)
-	hostB, ok1 := hostSideFootArc(boss, cyl, cross2, seam)
-	band, ok2 := bandFootArcs(boss.footEdge, cross1, cross2, bandInner)
+	part, ok := partitionFootprintRim(boss, cyl, seam, cross1, cross2)
+	if !ok {
+		return nil, false
+	}
+	hostA, ok0 := footprintArcBySpan(boss.footEdge, seam, cross1, part.hostA)
+	band, ok1 := bandFootArcs(boss.footEdge, cross1, cross2, bandInner)
+	hostB, ok2 := footprintArcBySpan(boss.footEdge, cross2, seam, part.hostB)
 	if !ok0 || !ok1 || !ok2 {
 		return nil, false
 	}
