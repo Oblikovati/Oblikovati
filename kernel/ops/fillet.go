@@ -157,6 +157,9 @@ func filletResolvedEdges(body *topo.Body, edges []filletPick, concave ConcaveFil
 	if err != nil {
 		return nil, err
 	}
+	if curvedArmFils(fils) {
+		return nil, curvedArmUnweldedError(fils) // do-no-harm floor: an unassembled curved arm never panics
+	}
 	if err := applyRunoutSetback(fils); err != nil {
 		return nil, err // a runout flank rail is parallel to its far plane — no pierce (n-valent degeneracy)
 	}
