@@ -47,12 +47,19 @@ contains **two distinct container formats**, both of which the translator target
   per-object lengths, so each class's `Serialize` layout is RE'd incrementally). **Sketch decode**
   (`sketch.go`, `Document.Sketches()` → `{Points, Lines, Circles}`): the `1e 00` + X,Y-f64 point tag
   is read from the `sgSketch` region of `Config-0-ResolvedFeatures` (format B) or `Config-0` (format
-  A) — one path for both containers. Entities are associated geometrically (the point-index
-  references would need a full object-graph walk): **circles** (centre+rim → radius) and **line
-  loops** (convex reconstruction), gated by `sgArcHandle`/`sgLineHandle`. Validated exact against the
-  SolidWorks-2026 COM oracle and known generated parts (rectangle, triangle, origin/off-origin/
-  multiple circles). **Next:** arcs + mixed line/arc sketches, per-sketch splitting, and
-  equations/global-variables → parameters. Oracle: `scratchpad/sw_dump.ps1`.
+  A) — one path for both containers. Entities (`{Lines, Circles, Arcs}`) are associated
+  geometrically (the point-index references would need a full object-graph walk): **circles**
+  (centre+rim → radius), **line loops** (convex reconstruction), **arcs**, and **mixed line/arc
+  profiles** — a segment is an arc when its cached centre is equidistant from its two endpoints, a
+  line otherwise. Validated exact against the SolidWorks-2026 COM oracle and generated known parts:
+  rectangle, triangle, circles (origin/off-origin/multiple), a standalone arc, and a **rounded
+  rectangle (4 edges + 4 fillet arcs)**. **Per-sketch splitting** groups the stream into one sketch
+  per feature (by the `04 80 ff fe ff` name marker) before association, so a multi-sketch part
+  decodes each sketch separately (validated on a rectangle+circle part; format-B parts split into
+  their many sketches). Two known limits, both awaiting an MFC object-graph walk: older CFBF
+  multi-sketch parts lack the marker and fall back to one merged region; and a sketch that re-uses an
+  entity kind first seen earlier loses that class string, so its kind isn't detected. **Next:** the
+  object-graph walk, then equations/global-variables → parameters. Oracle: `scratchpad/sw_dump.ps1`.
 - ⬜ Features, and the Parasolid body fallback (zlib-inflate the partition), come after.
 
 ## RE oracle (SolidWorks 2026)

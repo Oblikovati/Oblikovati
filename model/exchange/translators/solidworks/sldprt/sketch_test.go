@@ -129,6 +129,70 @@ func TestTwoCircleEntities(t *testing.T) {
 	}
 }
 
+// TestMultiSketchSplit verifies a two-sketch part decodes as two separate sketches — a rectangle
+// (4 lines) and a circle — rather than merging every point into one. Each sketch's entities must
+// stay with it (folders, planes and the origin point contribute no sketch).
+func TestMultiSketchSplit(t *testing.T) {
+	d, err := Open(readTestdata(t, "twosketch_fmtb.sldprt"))
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	sk := d.Sketches()
+	if len(sk) != 2 {
+		t.Fatalf("got %d sketches, want 2", len(sk))
+	}
+	rect, circ := sk[0], sk[1]
+	if len(rect.Lines) != 4 || len(rect.Circles) != 0 {
+		t.Errorf("sketch 0 (rectangle): %d lines %d circles, want 4/0", len(rect.Lines), len(rect.Circles))
+	}
+	if len(circ.Circles) != 1 || len(circ.Lines) != 0 {
+		t.Errorf("sketch 1 (circle): %d circles %d lines, want 1/0", len(circ.Circles), len(circ.Lines))
+	}
+	if c := circ.Circles[0]; math.Abs(c.Center.X-0.03) > 1e-6 || math.Abs(c.Center.Y-0.02) > 1e-6 || math.Abs(c.Radius-0.005) > 1e-6 {
+		t.Errorf("circle wrong: %+v", c)
+	}
+}
+
+// TestArcEntity decodes a standalone 90° arc: centre (0,0), radius 0.01, from (0.01,0) to (0,0.01).
+func TestArcEntity(t *testing.T) {
+	d, err := Open(readTestdata(t, "arc90_fmtb.sldprt"))
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	arcs := d.Sketches()[0].Arcs
+	if len(arcs) != 1 {
+		t.Fatalf("got %d arcs, want 1", len(arcs))
+	}
+	a := arcs[0]
+	near := func(p Point, x, y float64) bool { return math.Abs(p.X-x) < 1e-6 && math.Abs(p.Y-y) < 1e-6 }
+	if !near(a.Center, 0, 0) || math.Abs(a.Radius-0.01) > 1e-6 || !near(a.Start, 0.01, 0) || !near(a.End, 0, 0.01) {
+		t.Errorf("arc wrong: %+v", a)
+	}
+}
+
+// TestMixedLineArc decodes a rounded rectangle (4 straight edges + 4 fillet arcs) — the canonical
+// mixed sketch. Each segment is classified geometrically: a fillet's centre is equidistant from its
+// two endpoints, a straight edge's is not. All eight entities must come out with the right kind,
+// the arcs all at the fillet radius, and the whole profile must close.
+func TestMixedLineArc(t *testing.T) {
+	d, err := Open(readTestdata(t, "rrect_fmtb.sldprt"))
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	sk := d.Sketches()[0]
+	if len(sk.Lines) != 4 || len(sk.Arcs) != 4 {
+		t.Fatalf("got %d lines %d arcs, want 4 and 4", len(sk.Lines), len(sk.Arcs))
+	}
+	for _, a := range sk.Arcs {
+		if math.Abs(a.Radius-0.005) > 1e-6 {
+			t.Errorf("arc radius = %g, want 0.005 (%+v)", a.Radius, a)
+		}
+		if math.Abs(math.Hypot(a.Start.X-a.Center.X, a.Start.Y-a.Center.Y)-a.Radius) > 1e-6 {
+			t.Errorf("arc start not on radius: %+v", a)
+		}
+	}
+}
+
 // TestLineLoopEntity checks a pure-line sketch reconstructs into a closed loop of the right size
 // whose segments join end-to-end and whose vertices are the sketch corners.
 func TestLineLoopEntity(t *testing.T) {
