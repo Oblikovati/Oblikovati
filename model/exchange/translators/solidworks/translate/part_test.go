@@ -178,6 +178,16 @@ func TestOpenProfileTranslation(t *testing.T) {
 	}
 }
 
+// TestPointPairDistance checks a distance dimension between two sketch points is applied: two free
+// points (4 DOF) with a 30 mm distance between them drop to 3 DOF (the separation is pinned).
+func TestPointPairDistance(t *testing.T) {
+	def := reopen(t, "ptdist_fmtb.sldprt")
+	sk := def.Sketches().Item(0)
+	if got := sk.DegreesOfFreedom(); got != 3 {
+		t.Errorf("sketch DOF = %d, want 3 (two points with a distance dimension)", got)
+	}
+}
+
 // TestEllipseTranslation checks an ellipse survives translation to the native part: a 30x20 mm
 // ellipse reopens as one ellipse with the semi-axes converted to centimetres (3 and 2 cm).
 func TestEllipseTranslation(t *testing.T) {

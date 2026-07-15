@@ -16,14 +16,38 @@ import (
 // with constraints — the value is matched to a geometric measurement that already equals it: a
 // circle's diameter or radius, or a line's length. The dimension is kept only if it removes a degree
 // of freedom without moving a point (keptWithoutMoving), so a mis-matched value never edits geometry.
-func applyDimensions(sk *sketch.Sketch, dims []sldprt.Dimension, lines []*sketch.Line, arcs []*sketch.Arc, circles []*sketch.Circle) {
+func applyDimensions(sk *sketch.Sketch, dims []sldprt.Dimension, lines []*sketch.Line, arcs []*sketch.Arc, circles []*sketch.Circle, points []*sketch.Point) {
 	dc := sk.DimensionConstraints()
 	cs := curvesOf(arcs, circles)
 	for _, dm := range dims {
-		if !applyLengthDimension(sk, dc, dm.Value*metresToCm, lines, cs) {
-			applyAngleDimension(sk, dc, dm.Value, lines) // a value that isn't a length may be an angle (radians)
+		if applyLengthDimension(sk, dc, dm.Value*metresToCm, lines, cs) {
+			continue
+		}
+		if applyPointPairDistance(sk, dc, dm.Value*metresToCm, points) {
+			continue
+		}
+		applyAngleDimension(sk, dc, dm.Value, lines) // a value that isn't a length may be an angle (radians)
+	}
+}
+
+// applyPointPairDistance binds a length value (cm) as the distance between the first pair of sketch
+// points that measure it. SolidWorks references the two points through the object graph (not yet
+// resolved), so — as elsewhere — the value is matched to a pair whose separation already equals it,
+// kept only if it removes a degree of freedom without moving a point.
+func applyPointPairDistance(sk *sketch.Sketch, dc *sketch.DimensionConstraints, v float64, points []*sketch.Point) bool {
+	expr := fmt.Sprintf("%g cm", v)
+	for i := 0; i < len(points); i++ {
+		for j := i + 1; j < len(points); j++ {
+			pi, pj := points[i], points[j]
+			if math.Abs(float64(pi.Position().DistanceTo(pj.Position()))-v) >= geomEps {
+				continue
+			}
+			if keptWithoutMoving(sk, func() (*sketch.DimensionConstraint, error) { return dc.AddDistance(pi, pj, expr) }) {
+				return true
+			}
 		}
 	}
+	return false
 }
 
 // applyLengthDimension binds a length value (cm) as the first dimension that measures it: a curve

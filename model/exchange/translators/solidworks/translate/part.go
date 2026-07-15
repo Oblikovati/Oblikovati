@@ -124,9 +124,10 @@ func emitSketch(def *compdef.PartComponentDefinition, s sldprt.Sketch) *sketch.S
 	pointAt := sharedPoints(sk)
 	// Standalone points are emitted only for a point-only sketch; otherwise each entity creates its
 	// own points (via pointAt / AddByCenterRadius), so emitting s.Points too would add free points.
+	var points []*sketch.Point
 	if len(s.Lines)+len(s.Circles)+len(s.Arcs)+len(s.Ellipses)+len(s.Splines) == 0 {
 		for _, p := range s.Points {
-			pointAt(p)
+			points = append(points, pointAt(p))
 		}
 	}
 	lines := make([]*sketch.Line, len(s.Lines))
@@ -153,7 +154,7 @@ func emitSketch(def *compdef.PartComponentDefinition, s sldprt.Sketch) *sketch.S
 	}
 	applyConstruction(s, lines, arcs, circles)
 	applyConstraints(sk, s.Constraints, lines, arcs, circles)
-	applyDimensions(sk, s.Dimensions, lines, arcs, circles)
+	applyDimensions(sk, s.Dimensions, lines, arcs, circles, points)
 	return sk
 }
 
