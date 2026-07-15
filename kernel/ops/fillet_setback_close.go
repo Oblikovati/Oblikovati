@@ -132,9 +132,24 @@ func hostArcDetour(boss crossingBoss, cyl geom.Cylinder, from, near, far math.Po
 	if !ok1 || !ok2 {
 		return nil, false
 	}
-	segs := appendArcSegs([]notchSeg{{from, nil}}, arc1)
-	segs = appendArcSegs(segs, arc2)
-	return append(segs, notchSeg{far, nil}), true
+	segs := appendArcSegs([]notchSeg{{pt: from}}, arc1)
+	segs = appendSeamArc(segs, boss, arc2)
+	return append(segs, notchSeg{pt: far}), true
+}
+
+// appendSeamArc appends the boss footprint SEAM (pinned to its intact-wall vertex id via notchSeg.srcV,
+// so spliceNotch welds the notch to the kept wall's seam vertex) followed by arc's samples EXCLUDING its
+// first — arc STARTS at the seam (hostSideFootArc(seam, …)), so its point[0] IS the seam and would
+// double it under id 0. Emitting the seam once, id-pinned, is exactly what closes the wall↔host weld
+// that addID's distinct-id rule (#1600) otherwise splits (S4 cone/cyl runout).
+func appendSeamArc(segs []notchSeg, boss crossingBoss, arc geom.Arc3d) []notchSeg {
+	seamV := boss.footEdge.StartVertex()
+	segs = append(segs, notchSeg{pt: seamV.Point(), srcV: seamV.ID()})
+	tail := sampleCurve3Open(arc, false)
+	for _, p := range tail[1:] {
+		segs = append(segs, notchSeg{pt: p})
+	}
+	return segs
 }
 
 // innerHostDetour is the inner host's notch builder: from the receded tangent corner a straight survivor
@@ -159,11 +174,11 @@ func innerHostSegs(boss crossingBoss, cyl geom.Cylinder, from, nearCut, nearSeam
 	if !ok1 || !ok2 {
 		return nil, false
 	}
-	segs := appendArcSegs([]notchSeg{{from, nil}}, geom.NewLineSegment(nearCut, nearSeam))
+	segs := appendArcSegs([]notchSeg{{pt: from}}, geom.NewLineSegment(nearCut, nearSeam))
 	segs = appendArcSegs(segs, arc1)
-	segs = appendArcSegs(segs, arc2)
+	segs = appendSeamArc(segs, boss, arc2)
 	segs = appendArcSegs(segs, geom.NewLineSegment(farSeam, farCut))
-	return append(segs, notchSeg{farCut, nil}), true
+	return append(segs, notchSeg{pt: farCut}), true
 }
 
 // orderByNearer returns (a,b) so a is the one nearer to ref — the near/far split every host detour uses

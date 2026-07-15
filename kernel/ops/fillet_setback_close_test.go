@@ -19,19 +19,32 @@ import (
 func s1SetbackAssembled(t *testing.T) *topo.Body {
 	t.Helper()
 	ef, body := s1SetbackEdge(t)
+	return setbackAssembled(t, ef, body)
+}
+
+// setbackAssembled drives one runout edge through the full intact-boss path (detectSetbackBands →
+// extractSetbackPatches → buildSetbackFaces) and assembles the result: every original body face
+// transformed as usual (each crossing boss wall left INTACT — footprint SUBDIVIDED by buildSetbackFaces'
+// inserts but never split, never emitted; the two host planes RE-CLIPPED via set.replace) + the two
+// plain-R wings + the resolved setback patches. It mirrors filletResultFaces' composition
+// (transformedBodyFaces + extra) but drives buildSetbackFaces directly — the only way to validate
+// closure, since a shell can only be judged by ASSEMBLING it (assembleBody's weld invariant). Shared by
+// the S1 (two cylinders) and S4 (cone + cylinder) closure gates so both exercise the identical path.
+func setbackAssembled(t *testing.T, ef edgeFillet, body *topo.Body) *topo.Body {
+	t.Helper()
 	maps := s1RebuildMaps(body, ef)
 	res := ResolutionForBody(body)
 	b, ok := detectSetbackBands(ef, res)
 	if !ok {
-		t.Fatal("s1SetbackAssembled: detectSetbackBands ok=false")
+		t.Fatal("setbackAssembled: detectSetbackBands ok=false")
 	}
 	loops, ok := extractSetbackPatches(b, ef, res)
 	if !ok {
-		t.Fatal("s1SetbackAssembled: extractSetbackPatches ok=false")
+		t.Fatal("setbackAssembled: extractSetbackPatches ok=false (an Adjacent boss wall did not resolve)")
 	}
 	set := runoutSet{replace: map[uint64]filletFace{}}
 	if !buildSetbackFaces(&set, ef, b, loops, res, maps) {
-		t.Fatal("s1SetbackAssembled: buildSetbackFaces ok=false")
+		t.Fatal("setbackAssembled: buildSetbackFaces ok=false")
 	}
 	faces := append(transformedBodyFaces(body, maps, set.replace), set.extra...)
 	return assembleBody(faces, "fillet")
@@ -125,9 +138,21 @@ func TestBuildSetbackFaces_HonestReject(t *testing.T) {
 // countCylFacesNear counts cylinder faces whose tessellated area is within tol of want — the intact-wall
 // presence test (exactly one per boss radius proves un-split).
 func countCylFacesNear(body *topo.Body, want, tol float64) int {
+	return countSurfaceFacesNear[geom.Cylinder](body, want, tol)
+}
+
+// countConeFacesNear is countCylFacesNear for a cone wall (S4's r13→r5 boss) — the surface-type-agnostic
+// intact-wall proof the forensics §8.3/§8.4 calls for (a cone is kept whole exactly like a cylinder).
+func countConeFacesNear(body *topo.Body, want, tol float64) int {
+	return countSurfaceFacesNear[geom.Cone](body, want, tol)
+}
+
+// countSurfaceFacesNear counts faces of concrete surface type S whose tessellated area is within tol of
+// want. Shared by the cylinder/cone intact-wall gates so a new boss surface type needs no new counter.
+func countSurfaceFacesNear[S geom.Surface](body *topo.Body, want, tol float64) int {
 	n := 0
 	for _, f := range body.Faces() {
-		if _, ok := f.Geometry().(geom.Cylinder); !ok {
+		if _, ok := f.Geometry().(S); !ok {
 			continue
 		}
 		if a := tessArea(TessellateFace(f, PropertyQuality())); a >= want-tol && a <= want+tol {
@@ -135,6 +160,79 @@ func countCylFacesNear(body *topo.Body, want, tol float64) int {
 		}
 	}
 	return n
+}
+
+// s4SetbackAssembled is s1SetbackAssembled for S4 (a CONE boss r13→r5 + an r10 cylinder boss): it builds
+// the FULL intact-boss result through the new path and assembles it, the only way to validate closure of
+// a cone-Adjacent runout (forensics §8.3). S4 is the case that proves the intact-boss path is surface-
+// type-agnostic — the cone wall is kept whole and G1-faired exactly like a cylinder.
+func s4SetbackAssembled(t *testing.T) *topo.Body {
+	t.Helper()
+	ef, body := s4SetbackEdge(t)
+	return setbackAssembled(t, ef, body)
+}
+
+// s4SetbackEdge resolves S4's front-top edge fillet (R=8, its corpus radius, edge mid (0,-15,0)) — the
+// same pick the corpus gate uses, paired with its body so the closure test can transform the body faces.
+func s4SetbackEdge(t *testing.T) (edgeFillet, *topo.Body) {
+	t.Helper()
+	body := importCorpusSolid(t, "simple/S4")
+	e := edgeAtMidpoint(body, math.P3(0, -15, 0))
+	if e == nil {
+		t.Fatal("s4SetbackEdge: front-top edge (0,-15,0) not found")
+	}
+	fil, err := computeEdgeFillet(body, filletPick{edge: e, r0: 8, r1: 8},
+		map[uint64]*cornerBlend{}, map[uint64]*cornerMiter{}, FillConcaveOutward)
+	if err != nil {
+		t.Fatalf("s4SetbackEdge: computeEdgeFillet: %v", err)
+	}
+	return fil, body
+}
+
+// TestBuildSetbackFaces_S4Watertight is the S4 closure gate: the assembled intact-boss (cone+cyl) body
+// must be a watertight, hole-contained solid whose tessellated area is within OCCT's 1% (ref 7004.23,
+// forensics §8.3, window [6934.2, 7074.3]). The cone Adjacent must resolve for extractSetbackPatches.
+func TestBuildSetbackFaces_S4Watertight(t *testing.T) {
+	body := s4SetbackAssembled(t)
+	if !body.IsSolid() {
+		t.Fatalf("S4 intact-boss shell is not a solid: %d open edges", len(openEdges(body)))
+	}
+	r := Validate(body)
+	if !r.Valid || !r.HolesContained {
+		t.Fatalf("S4 intact-boss shell invalid: Valid=%v HolesContained=%v", r.Valid, r.HolesContained)
+	}
+	area := BodyGeometryProperties(body, PropertyQuality()).Area
+	if area < 6934.2 || area > 7074.3 {
+		t.Fatalf("S4 area %.4f outside OCCT 1%% gate [6934.2, 7074.3] (ref 7004.23)", area)
+	}
+}
+
+// TestBuildSetbackFaces_S4BossWallsIntact pins the faithfulness invariant: S4's cone boss survives as ONE
+// cone face near its analytic 1218.1 and the r10 cylinder as ONE face near 942.478 (forensics §8.3) —
+// never split into sub-faces. This is what the old split path violated (area-coincidental green).
+func TestBuildSetbackFaces_S4BossWallsIntact(t *testing.T) {
+	body := s4SetbackAssembled(t)
+	// The tessellated area is a straight-chord polygon of the footprint rim, so it sits a sub-2% band
+	// UNDER the analytic value (the intact-boss subdivision, not a lost region): cone 1203.45 vs 1218.1,
+	// r10 cyl 937.42 vs 942.478. The tolerances bracket that undershoot yet exclude a SPLIT wall (a
+	// half-cone ≈609, a half-cylinder ≈471 — nowhere near these bands), so exactly ONE proves un-split.
+	if got := countConeFacesNear(body, 1218.1, 18); got != 1 {
+		t.Fatalf("want exactly ONE intact cone boss wall near 1218.1 (un-split), got %d", got)
+	}
+	if got := countCylFacesNear(body, 942.478, 8); got != 1 {
+		t.Fatalf("want exactly ONE intact r10 boss wall near 942.478 (un-split), got %d", got)
+	}
+}
+
+// TestBuildSetbackFaces_S4HostsSingleLoop pins forensics §8.3: every S4 result face is WIRE:1 — both boss
+// footprint holes (cone base + r10) are opened into the fillet cut, never preserved as inner loops.
+func TestBuildSetbackFaces_S4HostsSingleLoop(t *testing.T) {
+	body := s4SetbackAssembled(t)
+	for _, f := range body.Faces() {
+		if n := len(f.Loops()); n != 1 {
+			t.Fatalf("face %T has %d loops, want WIRE:1 (footprint opened into the cut)", f.Geometry(), n)
+		}
+	}
 }
 
 // tessArea sums a mesh's triangle areas.

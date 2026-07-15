@@ -14,6 +14,13 @@ import (
 type notchSeg struct {
 	pt    math.Point3
 	curve geom.Curve3
+	// srcV is the source-vertex id this detour point welds under (0 ⇒ weld by coordinate). It is
+	// set only for a boss footprint SEAM point re-inserted by the intact-boss re-clip: that seam is
+	// shared with the kept-intact boss wall, whose transformFace carries it under its real vertex id,
+	// so the notch must weld the same point under the SAME id or addID's distinct-id rule (#1600)
+	// keeps them separate and the wall rim never welds to the host notch (S4's cone/cyl runout left
+	// 4 open edges at the inner-boss seam before this).
+	srcV uint64
 }
 
 // buildRunoutHostsAndWalls reconstructs the two host planes (their boss footprint re-cut so it no
@@ -100,11 +107,11 @@ func hostADetour(im runoutImprint, tl runoutTiling, seam math.Point3) func(from,
 		if !ok {
 			return nil, false
 		}
-		segs := []notchSeg{{from, nil}}
+		segs := []notchSeg{{pt: from}}
 		for _, a := range arcs {
 			segs = appendArcSegs(segs, a)
 		}
-		return append(segs, notchSeg{far.fa, nil}), true
+		return append(segs, notchSeg{pt: far.fa}), true
 	}
 }
 
@@ -161,10 +168,10 @@ func hostBDetour(im runoutImprint, tl runoutTiling, seam math.Point3) func(from,
 		if !ok1 || !ok2 {
 			return nil, false
 		}
-		segs := []notchSeg{{from, nil}}
+		segs := []notchSeg{{pt: from}}
 		segs = appendArcSegs(segs, arc1)
 		segs = appendArcSegs(segs, arc2)
-		return append(segs, notchSeg{fbTo, nil}), true
+		return append(segs, notchSeg{pt: fbTo}), true
 	}
 }
 
@@ -174,7 +181,7 @@ func hostBDetour(im runoutImprint, tl runoutTiling, seam math.Point3) func(from,
 // would otherwise re-trace the FULL arc over each 1/6-span sub-edge and self-cross the boundary (10b).
 func appendArcSegs(segs []notchSeg, arc geom.Curve3) []notchSeg {
 	for _, p := range sampleCurve3Open(arc, false) {
-		segs = append(segs, notchSeg{p, nil})
+		segs = append(segs, notchSeg{pt: p})
 	}
 	return segs
 }
@@ -230,7 +237,7 @@ func spliceNotch(l filletLoop, i int, segs []notchSeg) filletLoop {
 	for k := 0; k < len(l.pts); k++ {
 		if k == i {
 			for _, s := range segs {
-				out.addID(s.pt, s.curve, 0, 0)
+				out.addID(s.pt, s.curve, s.srcV, 0) // srcV pins a shared boss seam to the intact wall's vertex
 			}
 			continue
 		}
