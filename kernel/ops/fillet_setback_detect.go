@@ -115,7 +115,7 @@ func setbackBossFrom(im runoutImprint, ef edgeFillet, res Resolution) (crossingB
 
 // setbackStation is the boss's D1 setback reach x_s: half the axial span between its already-
 // solved footprint∩band crossings (imprintCut.pMinus/pPlus), projected onto the fillet cylinder's
-// spine via spineInterval (corner_runout_region.go, itself built on spineParam). detectRunouts'
+// spine via spineInterval (fillet_spine.go, itself built on spineParam). detectRunouts'
 // crossings already ARE the ±x_s stations — solveImprint's own doc example (an r8 footprint
 // crossing the band at (±√48,y)) — so this reads them off instead of re-deriving D1's closed form
 // (√(r_b²−(a−R)²)) independently; verified equal to it to 1e-6 on S1

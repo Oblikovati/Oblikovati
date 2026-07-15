@@ -2,7 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax.
 
-**Goal:** Re-architect the runout path to OCCT's *true* model — a box-edge fillet running out against **fully-intact** crossing bosses via cylinder-R segments + `G¹` BSpline **setback patches** (host planes re-clipped to single loops). This greens the whole runout family faithfully: **T1** and **T7** flip red→green (corpus 52→54) **and** the currently area-coincidental **S1/S4** become topology-faithful (kept green throughout).
+**Goal:** Re-architect the runout path to OCCT's *true* model — a box-edge fillet running out against **fully-intact** crossing bosses via cylinder-R segments + `G¹` BSpline **setback patches** (host planes re-clipped to single loops). This greens the runout family faithfully by boss surface type: the currently area-coincidental **S1/S4** become topology-faithful and **T7** flips red→green (all kept green throughout).
+
+**Landed status (2026-07-15):** Tasks 1–6 DONE and reviewed clean — corpus **50→53** (S1/S4 now faithful, T7 green), boss-splitting code removed, gate = a per-boss-type `setbackBossesFaithful` whitelist (admits Cylinder/Cone/EllipticalCylinder). **Task 7 (torus T1/T4) is DEFERRED** — blocked on a chorded-rim torus-band tessellator (see Task 7). **S7 (sphere boss)** rides its do-no-harm baseline (green by 0.33%) pending a sphere-cap closure — a follow-up. No PR (the full corpus is not green).
 
 **Architecture:** The RailLoop transfinite-fill engine (`resolveBlend`/coons4, MatchSurface ribbon-`G¹`), the `assembleBody` weld, and the do-no-harm gate are UNCHANGED — this is a re-rail behind the stable seam. The runout tiler stops splitting boss walls; each setback patch is a transfinite fill bounded by the plain-fillet end arc (`G¹` to the fillet cylinder), the **intact** boss footprint conic (`G¹` to the intact boss wall as `Adjacent`), and host-plane seams. New mechanism is built as **unwired** functions first (corpus byte-identical), then swapped in atomically under the per-case oracle gate.
 
@@ -267,7 +269,10 @@ Extend the footprint/boss handling to the oblique elliptical cylinder (`SurfaceO
 
 ---
 
-## Task 7: Torus footprint spike + T1/T4 — torus survivors
+## Task 7: Torus footprint spike + T1/T4 — torus survivors — ⛔ DEFERRED (2026-07-15)
+
+**Outcome: BLOCKED at the Step-0 spike; deferred to a torus-band tessellator follow-up (user decision 2026-07-15).**
+The spike proved the runout *logic* is ready (the T1/T4 torus↔host footprint is a circle, DRAWEXE-confirmed; only the whitelist + fragile-band scoping remained) but hit a **tessellation-infrastructure** gap: keeping the torus a single intact face, the runout weld still chord-subdivides its footprint rim into ~26 `geom.LineSegment` sub-edges, and `bandRingsAndSeam` (`closed_band_loft.go:70`) recognizes a ring ONLY as a single `geom.Circle`/full-sweep `Arc3d` → `closedBandLoftMesh` fails → `fullDomainGridMesh` grids the whole `[0,2π]²` domain → the intact torus meshes as the FULL DONUT (T1 3947.68 vs OCCT 1144.04; T4 13816.9 vs 2826.04) — exactly the `tessellate_trim.go:22` gap. Per CLAUDE.md, tessellation correctness is the highest priority; the fix (a chorded-rim torus-band mesher — coalesce coplanar-circle sub-edges into a ring, or a periodic-band CDT) is its own spike→plan→SDD sub-project and very likely also unblocks T9/S9/T3. See `.superpowers/sdd/task-7-report.md`. Steps below stand as the recipe for when the tessellator lands.
 
 Green T1 and make T4 faithful. **First a verification spike** (advisor flag D4): confirm via DRAWEXE whether the T1/T4 torus footprint on the host plane is a conic (circle) or a higher-degree curve — this decides the rail type. Then extract the torus footprint rail + intact torus wall as `G¹ Adjacent` (no split — sidesteps the split-rim torus-band tessellation gap `tessellate_trim.go:22`).
 
