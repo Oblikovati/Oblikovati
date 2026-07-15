@@ -192,6 +192,16 @@ func TestEllipseTranslation(t *testing.T) {
 	}
 }
 
+// TestSplineTranslation checks a fit-point spline survives translation: a four-point spline reopens
+// as one spline with four fit points.
+func TestSplineTranslation(t *testing.T) {
+	def := reopen(t, "spline_fmtb.sldprt")
+	sk := def.Sketches().Item(0)
+	if sk.Splines().Count() != 1 {
+		t.Fatalf("got %d splines, want 1", sk.Splines().Count())
+	}
+}
+
 // TestMixedSketchTranslation translates the rounded rectangle (4 lines + 4 fillet arcs) and checks
 // both kinds persist.
 func TestMixedSketchTranslation(t *testing.T) {

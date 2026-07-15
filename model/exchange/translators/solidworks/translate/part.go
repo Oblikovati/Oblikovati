@@ -117,14 +117,14 @@ func addSketches(def *compdef.PartComponentDefinition, d *sldprt.Document) []str
 // that share a coordinate share one sketch point (sharedPoints), so a closed profile stays closed
 // with the same degrees of freedom as the source rather than minting free endpoints per segment.
 func emitSketch(def *compdef.PartComponentDefinition, s sldprt.Sketch) *sketch.Sketch {
-	if len(s.Points)+len(s.Lines)+len(s.Circles)+len(s.Arcs)+len(s.Ellipses) == 0 {
+	if len(s.Points)+len(s.Lines)+len(s.Circles)+len(s.Arcs)+len(s.Ellipses)+len(s.Splines) == 0 {
 		return nil
 	}
 	sk := def.Sketches().Add(sketch.XYPlane())
 	pointAt := sharedPoints(sk)
 	// Standalone points are emitted only for a point-only sketch; otherwise each entity creates its
 	// own points (via pointAt / AddByCenterRadius), so emitting s.Points too would add free points.
-	if len(s.Lines)+len(s.Circles)+len(s.Arcs)+len(s.Ellipses) == 0 {
+	if len(s.Lines)+len(s.Circles)+len(s.Arcs)+len(s.Ellipses)+len(s.Splines) == 0 {
 		for _, p := range s.Points {
 			pointAt(p)
 		}
@@ -143,6 +143,13 @@ func emitSketch(def *compdef.PartComponentDefinition, s sldprt.Sketch) *sketch.S
 	}
 	for _, e := range s.Ellipses {
 		sk.Ellipses().Add(m.P2(e.Center.X*metresToCm, e.Center.Y*metresToCm), m.V2(m.Scalar(e.MajorX), m.Scalar(e.MajorY)), m.Scalar(e.MajorRadius*metresToCm), m.Scalar(e.MinorRadius*metresToCm))
+	}
+	for _, sp := range s.Splines {
+		fit := make([]m.Point2, len(sp.FitPoints))
+		for i, p := range sp.FitPoints {
+			fit[i] = m.P2(p.X*metresToCm, p.Y*metresToCm)
+		}
+		sk.Splines().AddByPoints(fit, sp.Closed)
 	}
 	applyConstruction(s, lines, arcs, circles)
 	applyConstraints(sk, s.Constraints, lines, arcs, circles)
