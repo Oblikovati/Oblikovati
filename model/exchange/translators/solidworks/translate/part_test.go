@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"oblikovati.org/kernel/ops"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
@@ -175,6 +176,20 @@ func TestOpenProfileTranslation(t *testing.T) {
 	sk := def.Sketches().Item(0)
 	if got := sk.Lines().Count(); got != 2 {
 		t.Errorf("open angle sketch reopened with %d lines, want 2 (not a closed triangle)", got)
+	}
+}
+
+// TestExtrudeVolume checks a blind extrude builds the right solid: a 40x30 mm rectangle extruded
+// 10 mm reopens as one body of 12 cm3 (4 x 3 x 1 cm).
+func TestExtrudeVolume(t *testing.T) {
+	def := reopen(t, "extrude_fmtb.sldprt")
+	bodies := def.SurfaceBodies().All()
+	if len(bodies) != 1 {
+		t.Fatalf("got %d bodies, want 1", len(bodies))
+	}
+	vol := ops.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
+	if math.Abs(vol-12) > 1e-3 {
+		t.Errorf("extruded volume = %.4f cm3, want 12", vol)
 	}
 }
 

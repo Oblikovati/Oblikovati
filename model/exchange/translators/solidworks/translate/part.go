@@ -9,11 +9,13 @@ import (
 	"fmt"
 	"math"
 
+	"oblikovati.org/kernel/ops"
 	m "oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/exchange/translators/solidworks/sldprt"
+	"oblikovati.org/model/feature"
 	"oblikovati.org/model/sketch"
 	"oblikovati.org/persistence"
 )
@@ -54,8 +56,23 @@ func buildPart(ws *doc.Workspace, outPath string, d *sldprt.Document) (*doc.Docu
 	}
 	def := document.Content().(*compdef.PartComponentDefinition)
 	warns := addParameters(def, d)
-	warns = append(warns, addSketches(def, d)...)
+	sketches := addSketches(def, d)
+	addFeatures(def, d, sketches)
 	return document, warns, nil
+}
+
+// addFeatures builds the part's solid features from the decoded feature graph onto the emitted
+// sketches. Only a single blind boss extrude is supported so far: it extrudes the first sketch's
+// first profile region by the decoded depth, as a new body. A part with no extrude keeps just its
+// parametric sketches.
+func addFeatures(def *compdef.PartComponentDefinition, d *sldprt.Document, sketches []*sketch.Sketch) {
+	exts := d.Extrusions()
+	if len(exts) == 0 || len(sketches) == 0 {
+		return
+	}
+	depth := exts[0].Depth * metresToCm
+	feature.NewExtrudeFeatures(def.Features()).AddByDistanceExtent(sketches[0], 0, ops.NewBody, func() float64 { return depth })
+	def.Recompute()
 }
 
 // addParameters maps each global variable onto an Oblikovati user parameter, converting units to
@@ -105,12 +122,16 @@ func lengthToCm(value float64, unit string) (float64, bool) {
 	return value * f, ok
 }
 
-// addSketches emits every decoded sketch onto the XY plane, converting metres to centimetres.
-func addSketches(def *compdef.PartComponentDefinition, d *sldprt.Document) []string {
+// addSketches emits every decoded sketch onto the XY plane, converting metres to centimetres, and
+// returns the emitted sketches in order (for features to build on).
+func addSketches(def *compdef.PartComponentDefinition, d *sldprt.Document) []*sketch.Sketch {
+	var out []*sketch.Sketch
 	for _, s := range d.Sketches() {
-		emitSketch(def, s)
+		if sk := emitSketch(def, s); sk != nil {
+			out = append(out, sk)
+		}
 	}
-	return nil
+	return out
 }
 
 // emitSketch adds one decoded sketch to the document on the XY plane, in centimetres. Endpoints
