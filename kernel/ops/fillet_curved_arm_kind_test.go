@@ -3,6 +3,7 @@
 package ops
 
 import (
+	stdmath "math"
 	"testing"
 
 	"oblikovati.org/kernel/geom"
@@ -48,5 +49,31 @@ func TestClassifyCurvedArm(t *testing.T) {
 	// oblique → rejected (Slice B)
 	if k := classifyCurvedArm(cylAxis(0, 0, 1, 50), planeWithNormal(0, 0.6, 0.8), res); k != armRejected {
 		t.Fatalf("oblique: want armRejected, got %v", k)
+	}
+	// axis flipped, |s|=1 via dot=-1 → still torus arm. Every case above has a non-negative
+	// axis·normal dot (1, 0, 0.8); this is the regression case for a dropped stdmath.Abs in
+	// classifyCurvedArm's s := |cyl.AxisDir.Dot(n)| — without Abs this dot lands at s=-1,
+	// which fails both the armTorus and armCylinder bands and misclassifies as armRejected.
+	if k := classifyCurvedArm(cylAxis(0, 0, -1, 50), planeWithNormal(0, 0, 1), res); k != armTorus {
+		t.Fatalf("flipped axis (dot=-1): want armTorus, got %v", k)
+	}
+	// oblique with a negative raw dot (axis flipped, dot=0.64) → rejected. Covers the sign
+	// path on the reject branch too, not just the accept branches exercised above.
+	if k := classifyCurvedArm(cylAxis(0, 0, -1, 50), planeWithNormal(0, 0.6, -0.8), res); k != armRejected {
+		t.Fatalf("oblique, negative dot: want armRejected, got %v", k)
+	}
+	// near-threshold: a hair inside/outside the oblique band epsAng = angArmClassifyCoef *
+	// res.Weld() / R (m5-curved-arm-derivation.md §Numerical pitfalls) — stresses the |s|
+	// comparison itself, which the coarse-angle cases above (s=1, s=0, s=0.8) don't reach.
+	const armRadius = 50.0
+	epsAng := angArmClassifyCoef * res.Weld() / armRadius
+	sInside, sOutside := 1-epsAng/2, 1-epsAng*2
+	axInside := stdmath.Sqrt(1 - sInside*sInside)
+	axOutside := stdmath.Sqrt(1 - sOutside*sOutside)
+	if k := classifyCurvedArm(cylAxis(axInside, 0, sInside, armRadius), planeWithNormal(0, 0, 1), res); k != armTorus {
+		t.Fatalf("just inside oblique band (s=%.17g): want armTorus, got %v", sInside, k)
+	}
+	if k := classifyCurvedArm(cylAxis(axOutside, 0, sOutside, armRadius), planeWithNormal(0, 0, 1), res); k != armRejected {
+		t.Fatalf("just outside oblique band (s=%.17g): want armRejected, got %v", sOutside, k)
 	}
 }
