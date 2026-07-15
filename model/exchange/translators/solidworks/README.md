@@ -32,11 +32,15 @@ contains **two distinct container formats**, both of which the translator target
 - `sldprt/` — the format decoder:
   - `doc.go` — open a compound `.SLDPRT`/`.SLDASM`, classify by root CLSID (part/assembly/
     drawing — they differ only in CLSID byte[0]: `0x30`/`0x36`/`0x34`), expose streams.
-  - `version.go` — the internal build stamp parsed from the `_MO_VERSION_NNNN` storage (3400).
-  - *(next)* `carchive.go` — the MFC `CArchive` tag protocol (new-class `ff ff schema len name`,
-    old-class back-refs, string tag `ff fe ff len utf16`); per-class `Serialize` decoders for
-    the `sg*` sketch handles (points/lines/arcs/circles), parameters, and features.
-- *(next)* `translate/` — maps the decoded model onto Oblikovati (`FromSolidWorks`).
+  - `version.go` — the internal build stamp parsed from the `_MO_VERSION_NNNN` storage (3400/19000).
+  - `formatb.go` — the SolidWorks-2026 log-structured record reader (nibble-swap + raw-inflate).
+  - `sketch.go` — sketch decode (points, lines, circles, arcs, mixed profiles, per-sketch split).
+  - `param.go` — global variables, from the `moRelMgr_c` equation strings in `Contents/Config-0`.
+- `translate/` — maps the decoded model onto a native Oblikovati document (`FromSolidWorks`):
+  parameters (unit-converted to cm), then sketches (metres → cm, coincident corners shared). Saves
+  the partial parametric state (parameters + sketches); features and the body are later work.
+- `cmd/from-solidworks/` — headless CLI `from-solidworks <file.SLDPRT> [-o <out.opd>]`.
+- `cmd/sw-inspect/` — dev tool to dump a decoded stream from either container format.
 
 ## Status
 - ✅ Container: **both formats decode through one interface** (`Document.Stream`). Format A via
@@ -64,7 +68,9 @@ contains **two distinct container formats**, both of which the translator target
   strings (`"name" = expr`) in `Contents/Config-0`, dimension equations (`…@…`) excluded;
   `Parameter.Number` parses a numeric literal + unit. Validated exact against the `EquationMgr`
   oracle. Oracle harness: `scratchpad/sw_dump.ps1`.
-- ⬜ The Oblikovati mapping (`translate/`), custom properties, and the Parasolid body path come after.
+- ✅ **Oblikovati mapping** (`translate/`, `FromSolidWorks` + `cmd/from-solidworks`): parameters and
+  sketches become a native `.opd` (validated by round-trip reopen and `oblikovati-cli open`).
+- ⬜ Features, custom properties, and the Parasolid body path come after.
 
 ## RE oracle (SolidWorks 2026)
 The live COM API is the ground truth (SW2026 opens both formats; it saves Format B). The compiled-
