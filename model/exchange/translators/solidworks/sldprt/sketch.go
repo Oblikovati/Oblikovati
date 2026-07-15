@@ -76,8 +76,15 @@ func (d *Document) Sketches() []Sketch {
 	if !ok {
 		return nil
 	}
+	// Format A repeats no per-sketch name marker in the stream, so split it by the feature tree's
+	// sketch-node offsets when available; otherwise (format B, or a single-sketch part) use the
+	// name-marker split.
+	regions := d.formatASketchRegions()
+	if regions == nil {
+		regions = sketchRegions(stream)
+	}
 	var out []Sketch
-	for _, region := range sketchRegions(stream) {
+	for _, region := range regions {
 		if sk, ok := sketchFromRegion(region); ok {
 			out = append(out, sk)
 		}

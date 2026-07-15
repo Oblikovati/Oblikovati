@@ -141,6 +141,65 @@ func (d *Document) featureRegion() ([]byte, bool) {
 	return nil, false
 }
 
+// formatASketchRegions splits a format-A (CFBF) part's "Contents/Config-0" into one byte region per
+// sketch feature, using the live feature tree's sketch-node offsets. Format A repeats no per-feature
+// name marker in the sketch stream (only the object-tagged tree names, which sketchRegions cannot
+// see), so without this every sketch's points merge into one region and reconstruct as a single wrong
+// cross-sketch loop. Each region runs from a sketch node to the next kept feature node, taking in the
+// sketch's geometry and dimension sub-nodes. Returns nil for a single-sketch part (the existing
+// whole-stream path already handles it) or when no feature tree is present, so those paths are
+// untouched. Format B is excluded (it keeps its validated name-marker split).
+func (d *Document) formatASketchRegions() [][]byte {
+	if d.cf == nil {
+		return nil // format A only
+	}
+	b, err := d.Stream("Contents/Config-0")
+	if err != nil {
+		return nil
+	}
+	start := bytes.Index(b, []byte(originFeatureClass))
+	if start < 0 {
+		return nil
+	}
+	return splitByFeatureTree(b[start:])
+}
+
+// splitByFeatureTree cuts a feature-definition region into one slice per sketch feature, each running
+// from its sketch node to the next kept feature node. Returns nil for a region with fewer than two
+// sketches (the whole-stream path already handles the single-sketch case).
+func splitByFeatureTree(region []byte) [][]byte {
+	var bounds, sketchOffs []int
+	for _, n := range featureNameTags(region) {
+		k, keep := classifyFeature(n.class, n.name)
+		if !keep {
+			continue
+		}
+		bounds = append(bounds, n.off)
+		if k == KindSketch {
+			sketchOffs = append(sketchOffs, n.off)
+		}
+	}
+	if len(sketchOffs) < 2 {
+		return nil
+	}
+	var regions [][]byte
+	for _, so := range sketchOffs {
+		regions = append(regions, region[so:nextBound(bounds, so, len(region))])
+	}
+	return regions
+}
+
+// nextBound returns the smallest boundary offset greater than off, or end when off is the last
+// feature. bounds is in ascending stream order (feature nodes are scanned in order).
+func nextBound(bounds []int, off, end int) int {
+	for _, b := range bounds {
+		if b > off {
+			return b
+		}
+	}
+	return end
+}
+
 // cstringMarker precedes a UTF-16 CString's length+bytes in the MFC CArchive. A live feature name is
 // an object-tagged CString: `<tag:u16 with 0x8000 set> ff fe ff <len:u8> <name UTF-16LE>`. The
 // object tag's high byte (the byte just before the marker) carries the 0x80 bit — and rises past 0x80
@@ -153,10 +212,11 @@ var cstringMarker = []byte{0xff, 0xfe, 0xff}
 var classRegistration = regexp.MustCompile(`[A-Za-z][A-Za-z0-9]{2,40}_c`)
 
 // namedNode is a decoded name tag with the class name that immediately precedes it (empty when the
-// class was registered earlier and only referenced here).
+// class was registered earlier and only referenced here) and the offset of its name tag in the region.
 type namedNode struct {
 	class string
 	name  string
+	off   int
 }
 
 // featureNameTags scans a feature-definition region for every live feature name, in stream (tree)
@@ -177,7 +237,7 @@ func featureNameTags(region []byte) []namedNode {
 		if !ok {
 			continue
 		}
-		out = append(out, namedNode{class: classBefore(region, at-2), name: name})
+		out = append(out, namedNode{class: classBefore(region, at-2), name: name, off: at})
 	}
 	return out
 }

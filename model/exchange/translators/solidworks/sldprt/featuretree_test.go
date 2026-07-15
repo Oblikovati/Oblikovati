@@ -60,6 +60,56 @@ func TestFeatureTreeDecode(t *testing.T) {
 	}
 }
 
+// TestSplitByFeatureTree checks the format-A per-sketch split: each sketch node's slice runs to the
+// next kept feature node (taking in its dimension sub-nodes), and a single-sketch region declines so
+// the caller keeps the whole-stream path.
+func TestSplitByFeatureTree(t *testing.T) {
+	var region []byte
+	region = append(region, []byte(originFeatureClass)...)
+	region = append(region, node("moProfileFeature_c", "Schizzo1", 0x80)...)
+	region = append(region, node("moLengthParameter_c", "D1", 0x80)...) // a dim sub-node of Schizzo1
+	region = append(region, node("moExtrusion_c", "Estrusione1", 0x80)...)
+	region = append(region, node("moProfileFeature_c", "Schizzo2", 0x80)...)
+	region = append(region, node("moCut_c", "Taglio-Estrusione1", 0x80)...)
+
+	regions := splitByFeatureTree(region)
+	if len(regions) != 2 {
+		t.Fatalf("got %d sketch regions, want 2", len(regions))
+	}
+	// The first sketch region must contain its dimension sub-node and end at the extrude.
+	if !bytesHas(regions[0], "Schizzo1") || !bytesHas(regions[0], "D1") {
+		t.Error("region 0 missing its sketch name or dimension sub-node")
+	}
+	if bytesHas(regions[0], "Estrusione1") {
+		t.Error("region 0 leaked into the following extrude feature")
+	}
+
+	// A single-sketch region declines (the whole-stream path handles it).
+	var one []byte
+	one = append(one, []byte(originFeatureClass)...)
+	one = append(one, node("moProfileFeature_c", "Schizzo1", 0x80)...)
+	if splitByFeatureTree(one) != nil {
+		t.Error("single-sketch region should decline splitting")
+	}
+}
+
+func bytesHas(b []byte, utf16word string) bool {
+	var w []byte
+	for _, r := range utf16word {
+		w = append(w, byte(r), byte(r>>8))
+	}
+	return indexOf(b, w) >= 0
+}
+
+func indexOf(haystack, needle []byte) int {
+	for i := 0; i+len(needle) <= len(haystack); i++ {
+		if string(haystack[i:i+len(needle)]) == string(needle) {
+			return i
+		}
+	}
+	return -1
+}
+
 func TestFeatureKindMaterial(t *testing.T) {
 	material := []FeatureKind{KindExtrude, KindCut, KindRevolve, KindRevolveCut, KindMirror, KindCircularPattern, KindLinearPattern, KindHole}
 	cosmetic := []FeatureKind{KindFillet, KindChamfer, KindDraft, KindSketch, KindUnknown}

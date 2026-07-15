@@ -31,6 +31,13 @@ func main() {
 		}
 		return
 	}
+	if os.Args[2] == "-sketches" {
+		for i, s := range doc.Sketches() {
+			fmt.Printf("sk%-2d pts=%d lines=%d arcs=%d circles=%d ellipses=%d splines=%d exact=%v\n",
+				i, len(s.Points), len(s.Lines), len(s.Arcs), len(s.Circles), len(s.Ellipses), len(s.Splines), s.Exact)
+		}
+		return
+	}
 	if os.Args[2] == "-features" {
 		tree := doc.FeatureTree()
 		nsk := 0
