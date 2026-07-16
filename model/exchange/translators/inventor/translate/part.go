@@ -290,6 +290,7 @@ func buildExtrudeFeatures(def *compdef.PartComponentDefinition, d *ipt.Document,
 	// Each extrude names the profile it consumes (see ipt.ExtrudeProfiles); "extrude i uses sketch
 	// i" only ever held for the generated corpus.
 	profiles := ipt.ExtrudeProfiles(d)
+	regions := ipt.ExtrudeRegions(d)
 	var lastExtrude *feature.PartFeature
 	for i, ex := range extrudes {
 		p := profileIndex(profiles, i)
@@ -297,8 +298,16 @@ func buildExtrudeFeatures(def *compdef.PartComponentDefinition, d *ipt.Document,
 			notes = append(notes, fmt.Sprintf("extrude %d: no profile sketch resolved — skipped", i))
 			continue
 		}
+		region := extrudeRegionAt(regions, i)
+		r := regionProfileIndex(emitted[p].sk, region)
+		if r < 0 {
+			// The sketch holds several regions and we can't tell which this extrude names, so any
+			// choice would be a guess; leave the sketch standing without a body.
+			notes = append(notes, fmt.Sprintf("extrude %d: could not match its region (%d edges) to a rebuilt profile — skipped", i, len(region)))
+			continue
+		}
 		dist := ex.Distance
-		lastExtrude = feature.NewExtrudeFeatures(def.Features()).AddByDistanceExtent(emitted[p].sk, 0, operationOf(ex.Operation), func() float64 { return dist })
+		lastExtrude = feature.NewExtrudeFeatures(def.Features()).AddByDistanceExtent(emitted[p].sk, r, operationOf(ex.Operation), func() float64 { return dist })
 		built = true
 	}
 	// A drilled hole cuts the base solid: place it on the extrude's top face (analytic), drilling
@@ -1267,4 +1276,12 @@ func sketchEntityCount(sketches []ipt.Sketch) int {
 		n += len(s.Points) + len(s.Lines) + len(s.Circles) + len(s.Arcs) + len(s.Ellipses)
 	}
 	return n
+}
+
+// extrudeRegionAt returns the decoded region for extrude i, or nil when the decode produced none.
+func extrudeRegionAt(regions [][]ipt.RegionEdge, i int) []ipt.RegionEdge {
+	if i >= len(regions) {
+		return nil
+	}
+	return regions[i]
 }

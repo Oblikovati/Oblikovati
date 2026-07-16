@@ -1,0 +1,255 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package ipt
+
+// The region an extrude actually consumes.
+//
+// A sketch usually holds several closed regions; the feature names the one (or ones) it uses. That
+// naming runs patch -> FaceBound -> parts: each part is a Loop carrying an operation flag and an
+// ordered list of edges, and each edge is a SketchEntityRef naming its curve by ASSOCIATIVE ID
+// within the sketch — an id the curve itself carries in an FxAttrStyles attribute, reached through
+// the attribute chain hanging off every node's `next` reference.
+//
+// Without this, the extrude falls back to "profile index 0", which was harmless only while the
+// cluster decode saw almost no geometry. Once GraphSketches decoded whole sketches, index 0 became
+// an arbitrary loop of many (BigChunkyPlate built 0.01x of its true volume).
+//
+// Grounded in the GPL InventorLoader reference: Read_1E3A132C "Loop" (operation 8=Fuse, 0=Cut),
+// Read_90874D13 "SketchEntityRef" (entityAI), Read_90874D15 "FxAttrStyles" (associativeID),
+// ReadHeaderLinkedElement, and createBoundary/addBoundaryPart's use of them.
+
+import "encoding/binary"
+
+const (
+	loopNodeType       = 0x1E3A132C // Loop — an ordered edge cycle bounding part of a region
+	loop3DNodeType     = 0xA3277869 // Loop3D — same layout, used on some parts
+	entityRefNodeType  = 0x90874D13 // SketchEntityRef — names a curve by associative id
+	attrStylesNodeType = 0x90874D15 // FxAttrStyles — carries a curve's associative id
+)
+
+// Byte layout for this Inventor generation (block size 0; the post-2023 4-byte gap included).
+const (
+	nodeAttrChainOffset = 6  // a content node's `next` child ref: the head of its attribute chain
+	attrChainNextOffset = 26 // an attribute's own `next`, continuing the chain
+	assocIDOffset       = 34 // FxAttrStyles.associativeID
+	loopOperationOffset = 10 // Loop.operation
+	loopEdgesOffset     = 18 // Loop.edges (List2 of refs)
+	entityRefAIOffset   = 22 // SketchEntityRef.entityAI
+	// SketchEntityRef.sketch. NOT 4-aligned: the `posDir` boolean before it is a single byte, so
+	// the reference lands at 55 (confirmed on every SketchEntityRef in the corpus).
+	entityRefSketchOffset = 55
+)
+
+// loopKeepsMaterial is the mask InventorLoader's createBoundary applies to a loop's operation to
+// keep the parts that bound the region (rather than a construction/blanked one).
+const loopKeepsMaterial = 0x18
+
+// RegionEdge is one curve of a region's boundary, identified by geometry so it can be matched
+// against a rebuilt profile's entities. Exactly one of the shapes is meaningful, per Kind.
+type RegionEdge struct {
+	Kind   EdgeKind
+	Line   Line
+	Circle Circle
+	Arc    Arc
+}
+
+// EdgeKind names which curve a RegionEdge carries.
+type EdgeKind int
+
+const (
+	EdgeLine EdgeKind = iota
+	EdgeCircle
+	EdgeArc
+)
+
+// ExtrudeRegions returns, for each extrude in feature order, the edges bounding the region it
+// consumes — aligned with DecodeExtrudes and ExtrudeProfiles. An extrude whose region can't be
+// resolved yields a nil slice, so callers decline rather than guess a profile.
+func ExtrudeRegions(d *Document) [][]RegionEdge {
+	nodes := dcNodes(d)
+	_, sketchIndex := sketchOrdinals(nodes)
+	assoc := associativeEntities(nodes, sketchIndex)
+	patchLoops := boundPatchLoops(nodes)
+	var out [][]RegionEdge
+	for _, n := range nodes {
+		if n.typ != featureNodeType {
+			continue
+		}
+		if _, ok := extrudeDepth(nodes, n.payload); !ok {
+			continue
+		}
+		out = append(out, regionOf(nodes, n.payload, patchLoops, assoc, sketchIndex))
+	}
+	return out
+}
+
+// assocKey identifies a curve by its associative id within one sketch: the ids restart per sketch,
+// so the sketch is part of the key (14_box_two's two rectangles both use ids 5..8).
+type assocKey struct {
+	sketch int
+	id     int
+}
+
+// regionOf collects the edges of every material-bearing loop bounding one extrude's patch.
+func regionOf(nodes []dcNode, pay []byte, patchLoops map[int][]int, assoc map[assocKey]dcNode, sketchIndex map[int]int) []RegionEdge {
+	props, ok := featureProperties(pay)
+	if !ok || len(props) <= propProfile {
+		return nil
+	}
+	var out []RegionEdge
+	for _, loopRef := range patchLoops[props[propProfile]] {
+		loop, ok := nodeAt(nodes, loopRef)
+		if !ok {
+			return nil
+		}
+		edges, ok := loopEdges(nodes, loop, assoc, sketchIndex)
+		if !ok {
+			return nil // an unreadable loop makes the region unknown; say so rather than part-guess
+		}
+		out = append(out, edges...)
+	}
+	return out
+}
+
+// loopEdges resolves one loop's ordered edges to their curves. Loops that carry no material are
+// skipped (they bound nothing), which is not a failure.
+func loopEdges(nodes []dcNode, loop dcNode, assoc map[assocKey]dcNode, sketchIndex map[int]int) ([]RegionEdge, bool) {
+	if len(loop.payload) < loopEdgesOffset+8 {
+		return nil, false
+	}
+	if binary.LittleEndian.Uint32(loop.payload[loopOperationOffset:])&loopKeepsMaterial == 0 {
+		return nil, true
+	}
+	refs, _, ok := refList2(loop.payload, loopEdgesOffset)
+	if !ok {
+		return nil, false
+	}
+	out := make([]RegionEdge, 0, len(refs))
+	for _, r := range refs {
+		e, ok := resolveRegionEdge(nodes, r, assoc, sketchIndex)
+		if !ok {
+			return nil, false
+		}
+		out = append(out, e)
+	}
+	return out, true
+}
+
+// resolveRegionEdge turns one SketchEntityRef into the curve it names, via the associative id.
+func resolveRegionEdge(nodes []dcNode, ref int, assoc map[assocKey]dcNode, sketchIndex map[int]int) (RegionEdge, bool) {
+	er, ok := nodeAt(nodes, ref)
+	if !ok || er.typ != entityRefNodeType || len(er.payload) < entityRefAIOffset+4 {
+		return RegionEdge{}, false
+	}
+	sk, ok := entityRefSketch(er, sketchIndex)
+	if !ok {
+		return RegionEdge{}, false
+	}
+	key := assocKey{sk, int(binary.LittleEndian.Uint32(er.payload[entityRefAIOffset:]) & refIndexMask)}
+	curve, ok := assoc[key]
+	if !ok {
+		return RegionEdge{}, false
+	}
+	return regionEdgeOf(nodes, curve)
+}
+
+// entityRefSketch reports which sketch a SketchEntityRef's associative id is scoped to — the ids
+// restart per sketch, so the ref alone is meaningless without it.
+func entityRefSketch(er dcNode, sketchIndex map[int]int) (int, bool) {
+	if len(er.payload) < entityRefSketchOffset+4 {
+		return 0, false
+	}
+	i, ok := sketchIndex[int(binary.LittleEndian.Uint32(er.payload[entityRefSketchOffset:])&refIndexMask)]
+	return i, ok
+}
+
+// regionEdgeOf reads a curve node into a geometric edge descriptor.
+func regionEdgeOf(nodes []dcNode, n dcNode) (RegionEdge, bool) {
+	switch n.typ {
+	case line2DNodeType:
+		a, b, ok := edgeEndpoints(nodes, n.payload)
+		return RegionEdge{Kind: EdgeLine, Line: Line{A: a, B: b}}, ok
+	case circle2DNodeType:
+		c, ok := circle2DAt(nodes, n.payload)
+		return RegionEdge{Kind: EdgeCircle, Circle: c}, ok
+	case arc2DNodeType:
+		a, ok := arc2DAt(nodes, n.payload)
+		return RegionEdge{Kind: EdgeArc, Arc: a}, ok
+	}
+	return RegionEdge{}, false
+}
+
+// associativeEntities maps (sketch, associative id) to the curve node carrying that id.
+func associativeEntities(nodes []dcNode, sketchIndex map[int]int) map[assocKey]dcNode {
+	out := map[assocKey]dcNode{}
+	for _, n := range nodes {
+		owner, ok := entityOwner(n, sketchIndex)
+		if !ok {
+			continue
+		}
+		if id, ok := associativeID(nodes, n); ok {
+			out[assocKey{owner, id}] = n
+		}
+	}
+	return out
+}
+
+// associativeID walks a node's attribute chain to the FxAttrStyles that carries its id.
+func associativeID(nodes []dcNode, n dcNode) (int, bool) {
+	if len(n.payload) < nodeAttrChainOffset+4 {
+		return 0, false
+	}
+	ref := int(binary.LittleEndian.Uint32(n.payload[nodeAttrChainOffset:]) & refIndexMask)
+	for hops := 0; hops < maxAttrChainHops; hops++ {
+		a, ok := nodeAt(nodes, ref)
+		if !ok {
+			return 0, false
+		}
+		if a.typ == attrStylesNodeType {
+			if len(a.payload) < assocIDOffset+4 {
+				return 0, false
+			}
+			return int(binary.LittleEndian.Uint32(a.payload[assocIDOffset:]) & refIndexMask), true
+		}
+		if len(a.payload) < attrChainNextOffset+4 {
+			return 0, false
+		}
+		ref = int(binary.LittleEndian.Uint32(a.payload[attrChainNextOffset:]) & refIndexMask)
+	}
+	return 0, false
+}
+
+// maxAttrChainHops bounds the attribute walk so a corrupt or cyclic chain can't spin.
+const maxAttrChainHops = 32
+
+// boundPatchLoops maps each BoundaryPatch ordinal to the loops bounding it, from the FaceBound that
+// names the patch as its proxy. The loops are the FaceBound's first reference list.
+func boundPatchLoops(nodes []dcNode) map[int][]int {
+	out := map[int][]int{}
+	for _, n := range nodes {
+		if n.typ != faceBoundNodeType && n.typ != faceBoundOuterNodeType {
+			continue
+		}
+		parts, _, ok := refList2(n.payload, faceBoundHeaderEnd)
+		if !ok {
+			continue
+		}
+		_, patchRef, ok := faceBoundRefs(n.payload)
+		if !ok {
+			continue
+		}
+		out[patchRef] = append(out[patchRef], loopRefsAmong(nodes, parts)...)
+	}
+	return out
+}
+
+// loopRefsAmong keeps the references that name a Loop.
+func loopRefsAmong(nodes []dcNode, refs []int) []int {
+	var out []int
+	for _, r := range refs {
+		if n, ok := nodeAt(nodes, r); ok && (n.typ == loopNodeType || n.typ == loop3DNodeType) {
+			out = append(out, r)
+		}
+	}
+	return out
+}
