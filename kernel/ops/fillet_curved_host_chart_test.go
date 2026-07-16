@@ -99,6 +99,107 @@ func TestArmRulingEnd_AuthorityRejectsWrongRim(t *testing.T) {
 	}
 }
 
+// xEqual50PlaneChart builds the x=50 corner-host plane's chart with a DETERMINISTIC (u,v)=(y,z) basis
+// (NewPlaneFromAxes, not NewPlane's arbitrary in-plane pick), so the vertex coordinates in the N7 x=50
+// tests below read directly as (y,z).
+func xEqual50PlaneChart(t *testing.T) planeChart {
+	t.Helper()
+	pl, err := geom.NewPlaneFromAxes(math.P3(50, 0, 0), math.V3(0, 1, 0), math.V3(0, 0, 1))
+	if err != nil {
+		t.Fatalf("build x=50 plane: %v", err)
+	}
+	return planeChart{pl}
+}
+
+// openNotchLoop is the N7 x=50 plane host's OWN bitten (opened) loop near the wall/plane junction
+// vertex vtx: a single dangling edge running from vtx outward on the +y side only. This mirrors the
+// real post-bite topology gap — the loop is opened at the corner, so nothing covers the OTHER side of
+// vtx. Confirmed empirically (probe): an exact-vertex ray already succeeds against this chain (u=0 is
+// always in [0,1] at an edge's OWN endpoint), but a ray whose independently-computed target (the arm's
+// far-vertex authority, ~thousandths off the loop's own vertex — same provenance gap runoutAgrees
+// tolerates elsewhere) drifts toward the UNCOVERED side finds no interior hit on any edge at all: that
+// is the genuine N7 "no valid exit" mechanism, not a boundary-inclusivity bug (u∈[0,1] here is already
+// inclusive) — the brief's "strict u∈(0,1)" framing was pre-N2; what's actually missing is a candidate
+// that doesn't depend on which side of vtx an edge happens to extend.
+func openNotchLoop(t *testing.T, vtx math.Point3) []endSeg {
+	t.Helper()
+	far := vtx.TranslateBy(math.V3(0, 40, 0))
+	corner := far.TranslateBy(math.V3(0, 0, -70))
+	return []endSeg{
+		{from: vtx, to: far},
+		{from: far, to: corner},
+	}
+}
+
+// TestChartRulingExit_LandsOnLoopVertex is the concrete N7 x=50 plane decline: the s_4 ruling's target
+// (tHost≈(50,0,10), independently-computed far vertex near (50,0,80)) drifts a few thousandths toward
+// the side openNotchLoop's single dangling edge does NOT cover. Today's interior-only scan finds no
+// crossing (see the probe evidence in the task report) → chartRulingExit must ALSO try each edge's
+// endpoints as candidates and snap the winner onto the loop's own vertex.
+func TestChartRulingExit_LandsOnLoopVertex(t *testing.T) {
+	ch := xEqual50PlaneChart(t)
+	vtx := math.P3(50, 0, 80)
+	segs := openNotchLoop(t, vtx)
+	tHost := math.P3(50, 0, 10) // s_4 setback foot on the x=50 plane
+	o2 := ch.to2(tHost)
+	target := math.P3(50, -0.005, 80.01) // arm authority's independently-computed near-vertex, off-side
+	d2 := ch.to2(target).AsVector().Sub(o2.AsVector())
+	tol := 0.02 // res.Weld()*r, r=5
+
+	end, ok := chartRulingExit(ch, segs, o2, d2, tol)
+
+	if !ok {
+		t.Fatalf("chartRulingExit rejected a ruling landing within tol of loop vertex %v (the N7 x=50 decline)", vtx)
+	}
+	if got := float64(end.DistanceTo(vtx)); got > tol {
+		t.Fatalf("chartRulingExit landed at %v; want the loop vertex %v (snap, no split); dist=%.6f > tol=%.4f", end, vtx, got, tol)
+	}
+}
+
+// TestChartRulingExit_GrazingRulingDeclinesNotPanics is the collinear/grazing floor: a ruling direction
+// nearly parallel to a loop edge must not divide by ~0 in raySegment2d's line solve. The edge here is
+// offset 5 chart-units from the ruling's own line (well beyond tol) at BOTH ends, so neither the
+// (declined) interior crossing nor an endpoint candidate can land near the ray: chartRulingExit must
+// cleanly decline — never panic, never fabricate a crossing — falling through to C1's far-vertex
+// authority in the real armRulingEnd caller.
+func TestChartRulingExit_GrazingRulingDeclinesNotPanics(t *testing.T) {
+	ch := xEqual50PlaneChart(t)
+	segs := []endSeg{{from: math.P3(50, 5, 10), to: math.P3(50, 5+1e-9, 130)}} // ~parallel to d2, offset 5 from it
+	o2 := ch.to2(math.P3(50, 0, 10))
+	d2 := math.V2(0, 1) // pure +z ruling — nearly collinear with the lone edge above
+
+	end, ok := chartRulingExit(ch, segs, o2, d2, 0.02)
+
+	if ok {
+		t.Fatalf("grazing ruling: expected no crossing (collinear edge, offset endpoints), got end=%v", end)
+	}
+}
+
+// TestSnapToVertex_ReusesExistingCorner: a landing 0.005 off the true vertex (within tol=0.02) snaps to
+// the loop's own stored vertex exactly — so the far-path splice reuses it (no zero-length sliver split).
+func TestSnapToVertex_ReusesExistingCorner(t *testing.T) {
+	vtx := math.P3(50, 0, 80)
+	segs := openNotchLoop(t, vtx)
+	p := math.P3(50, 0, 80.005) // within tol of the vertex
+
+	v, ok := snapToVertex(p, segs, 0.02)
+
+	if !ok || float64(v.DistanceTo(vtx)) > 1e-9 {
+		t.Fatalf("snapToVertex must return the exact loop vertex %v; got %v ok=%v", vtx, v, ok)
+	}
+}
+
+// TestSnapToVertex_NoNearbyVertexDeclines: a point far from every loop vertex must not spuriously snap
+// (the far-path splice must still split there, not silently jump to an unrelated corner).
+func TestSnapToVertex_NoNearbyVertexDeclines(t *testing.T) {
+	segs := openNotchLoop(t, math.P3(50, 0, 80))
+	p := math.P3(50, 20, 45) // mid-edge-ish, nowhere near vtx=(50,0,80) or far=(50,40,80)
+
+	if v, ok := snapToVertex(p, segs, 0.02); ok {
+		t.Fatalf("snapToVertex: expected no vertex within tol of %v, got %v", p, v)
+	}
+}
+
 // TestCylChart_RoundTrip checks the (θ,z) chart's to2/to3 invert on the wall — a point maps to its
 // azimuth+height and back to itself. The wall's ref is pinned to x̂ so θ is deterministic (NewCylinder
 // picks an arbitrary in-plane ref).
