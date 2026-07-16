@@ -351,6 +351,46 @@ func assertCurvedCornerDeclinesCleanly(t *testing.T, rel string, r float64) {
 	}
 }
 
+// TestFilletEdges_B3UnconsumedPickDeclines is the I-2 do-no-harm regression (M5 Slice A whole-branch
+// review): the curved weld consumes ONLY the arms meeting the shared trihedral vertex, so a pick that
+// sits outside that corner must make the WHOLE op decline — never a solid with the extra edge left
+// unrounded. The fixture is B3's three certified corner picks PLUS B3's bottom radial segment
+// (mid (25,0,0)), a planar edge that shares no vertex with the corner, so it reaches the weld and would
+// (pre-guard) be silently dropped into an otherwise-valid returned solid. Asserts a clean decline
+// (non-nil error, nil body, no panic). This FAILS against the pre-guard code (which returned a solid).
+func TestFilletEdges_B3UnconsumedPickDeclines(t *testing.T) {
+	defer func() {
+		if p := recover(); p != nil {
+			t.Fatalf("B3 + unconsumed pick PANICKED (do-no-harm floor breached): %v", p)
+		}
+	}()
+	body, err := b3PicksPlusExtra(t, math.P3(25, 0, 0)) // bottom radial segment, disjoint from the top corner
+	if err == nil {
+		t.Fatalf("FilletEdges returned no error — an unconsumed pick must decline, not ship a solid with it unrounded")
+	}
+	if body != nil {
+		t.Fatalf("FilletEdges returned a non-nil body alongside the decline error (partial solid): %v", err)
+	}
+}
+
+// b3PicksPlusExtra fillets B3's three certified curved-corner picks plus one extra edge located at
+// `extra`, all in one op — the fixture for the unconsumed-pick decline (I-2). It reuses the corpus
+// locator (curvedArmEdgeAt) so the extra edge is resolved by geometric midpoint like the corner picks.
+func b3PicksPlusExtra(t *testing.T, extra math.Point3) (*topo.Body, error) {
+	t.Helper()
+	b := importCorpusSolid(t, "simple/B3")
+	mids := append(append([]math.Point3(nil), curvedArmCorpusPicks["simple/B3"]...), extra)
+	keys := make([][]byte, 0, len(mids))
+	for _, m := range mids {
+		e := curvedArmEdgeAt(b, m)
+		if e == nil {
+			t.Fatalf("b3PicksPlusExtra: edge near %v not found", m)
+		}
+		keys = append(keys, e.ReferenceKey())
+	}
+	return FilletEdges(b, keys, 10)
+}
+
 // TestCurvedWeldFaceProvenance is the ADR-0043 provenance regression (Important #4): a trimmed arm face
 // must carry its GENERATING filleted edge's lineage as parent (via filletEdgeProvenance — the same helper
 // the planar cyl faces use), so the blend's edges/faces get a stable topological name that survives an

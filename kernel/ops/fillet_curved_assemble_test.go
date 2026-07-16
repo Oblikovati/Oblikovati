@@ -90,5 +90,5 @@ func TestFilletEdges_B3NoPanic(t *testing.T) {
 		t.Fatalf("B3: FilletEdges returned nil body and nil error")
 	}
 	// Until the weld lands this is a clean error; after the weld a valid solid. Either is acceptable
-	// here — the invariant under test is NO PANIC. (Faithfulness is TestFilletEdges_B3CurvedArmIntact.)
+	// here — the invariant under test is NO PANIC. (Faithfulness is TestFilletEdges_B3CurvedArmWeld.)
 }

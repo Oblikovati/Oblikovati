@@ -60,6 +60,9 @@ func assembleCurvedArmBody(body *topo.Body, fils []edgeFillet, blends map[uint64
 	if len(arms) < 3 {
 		return nil, fmt.Sprintf("trihedral corner needs 3 arms (got %d at vertex %d)", len(arms), vid)
 	}
+	if reason := declineUnconsumedPicks(fils, arms, vid); reason != "" {
+		return nil, reason // a pick outside the welded corner would be left unrounded — decline, don't ship a partial
+	}
 	w, sphere, reason := solveCurvedArmCorner(arms, blends, vid, res)
 	if reason != "" {
 		return nil, reason
@@ -95,6 +98,21 @@ func cornerArms(fils []edgeFillet, vid uint64) []edgeFillet {
 		}
 	}
 	return out
+}
+
+// declineUnconsumedPicks returns a non-empty do-no-harm reason when the welded trihedral corner does not
+// consume EVERY pick. Slice A welds exactly the arms meeting the shared vertex vid (arms ⊆ fils, gathered
+// by cornerArms), so any pick not at that vertex — an extra curved arm at a different vertex, or an
+// unrelated planar edge — is never rounded, yet the corner weld alone can still close into a body that
+// passes Validate and IsSolid and would be RETURNED with that pick left unrounded (a partial/wrong solid).
+// Declining here routes the whole op to the clean floor (curvedArmUnweldedError) instead. Empty means
+// every pick is consumed by the corner. (M5 Slice A whole-branch review, I-2.)
+func declineUnconsumedPicks(fils, arms []edgeFillet, vid uint64) string {
+	if len(arms) == len(fils) {
+		return ""
+	}
+	return fmt.Sprintf("curved weld consumes only the %d arms at trihedral vertex %d, but %d edges were picked: %d unconsumed pick(s) would be left unrounded (Slice A welds one trihedral corner)",
+		len(arms), vid, len(fils), len(fils)-len(arms))
 }
 
 // armWithSurface normalizes one corner arm's surface: a planar Plane∧Plane fillet takes its rolling-ball
