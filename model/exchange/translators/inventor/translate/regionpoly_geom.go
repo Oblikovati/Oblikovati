@@ -89,17 +89,18 @@ func pointInPoly(q math.Point2, poly []math.Point2) bool {
 	return in
 }
 
-// interiorPoint returns a point strictly inside a simple polygon. A centroid is NOT safe — a
-// concave cell's centroid can fall outside it — so this looks for a vertex whose i/i+2 midpoint
-// lies inside, and only falls back to the centroid.
-func interiorPoint(poly []math.Point2) (math.Point2, bool) {
+// interiorPointAvoiding returns a point inside poly that also satisfies keep — used to place a test
+// point in a cell's material rather than in one of its own holes. A centroid is NOT safe (a concave
+// cell's centroid can fall outside it, and an annulus's lands in its hole), so this walks for a
+// vertex whose i/i+2 midpoint qualifies and only then falls back to the centroid.
+func interiorPointAvoiding(poly []math.Point2, keep func(math.Point2) bool) (math.Point2, bool) {
 	if len(poly) < 3 {
 		return math.Point2{}, false
 	}
 	for i := range poly {
 		a, b := poly[i], poly[(i+2)%len(poly)]
 		mid := math.P2((a.X+b.X)/2, (a.Y+b.Y)/2)
-		if pointInPoly(mid, poly) {
+		if pointInPoly(mid, poly) && keep(mid) {
 			return mid, true
 		}
 	}
@@ -109,5 +110,5 @@ func interiorPoint(poly []math.Point2) (math.Point2, bool) {
 		sy += float64(p.Y)
 	}
 	c := math.P2(math.Scalar(sx/float64(len(poly))), math.Scalar(sy/float64(len(poly))))
-	return c, pointInPoly(c, poly)
+	return c, pointInPoly(c, poly) && keep(c)
 }

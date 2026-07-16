@@ -46,7 +46,7 @@ func containedProfileIndices(sk *sketch.Sketch, region []ipt.RegionLoop) ([]int,
 		if !p.IsClosed() {
 			continue // an open chain bounds no area; see regionProfileIndices
 		}
-		q, ok := interiorPoint(p.OuterLoop().Polygon())
+		q, ok := profileInteriorPoint(p)
 		if !ok {
 			return nil, false // cannot place a test point: decline rather than mis-select
 		}
@@ -55,6 +55,29 @@ func containedProfileIndices(sk *sketch.Sketch, region []ipt.RegionLoop) ([]int,
 		}
 	}
 	return out, true
+}
+
+// profileInteriorPoint returns a point inside the cell's MATERIAL — inside its outer loop and
+// outside its own holes.
+//
+// Testing the outer loop alone is not enough and silently mis-selects: an ANNULAR cell's outer
+// polygon contains its hole, so the test point can land in the hole — which is not the cell at all.
+// CompressionRollerArmActuatorScrew regressed that way. Its bore-cut names a small disc, and the
+// annulus around that disc got a test point sitting in its own middle, i.e. inside the named disc,
+// so the annulus counted as part of the region and the CUT removed four times too much (1.008x ->
+// 0.784x). #27.
+func profileInteriorPoint(p *sketch.Profile) (math.Point2, bool) {
+	inner := p.InnerLoops()
+	outside := func(q math.Point2) bool {
+		for _, h := range inner {
+			if pointInPoly(q, h.Polygon()) {
+				return false
+			}
+		}
+		return true
+	}
+	q, ok := interiorPointAvoiding(p.OuterLoop().Polygon(), outside)
+	return q, ok
 }
 
 // regionBoundaries reconstructs the region's material outlines and its holes.
