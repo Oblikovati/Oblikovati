@@ -28,6 +28,8 @@ import (
 func extractCurvedCorner(w cornerWeld, arms []edgeFillet, res Resolution) (RailLoop, bool) {
 	segs, ok := chainSetbackArcs(w) // ordered/oriented head-to-tail — the byte-path ordering
 	if !ok {
+		// w's arms (center=w.center, radius=w.radius) did not chain into a single closed head-to-tail
+		// ring of great-arcs — not the clean octant topology chainSetbackArcs expects.
 		return RailLoop{}, false
 	}
 	tol := res.Weld() * w.radius
@@ -51,11 +53,15 @@ func setbackSides(w cornerWeld, arms []edgeFillet, segs []endSeg, tol float64) (
 	for _, s := range segs {
 		arc, ok := s.curve.(geom.Arc3d)
 		if !ok {
-			return nil, false // a non-analytic ordered rail is not the sphere-octant path
+			// s.curve's dynamic type is %T, not geom.Arc3d — a non-analytic ordered rail falls outside
+			// the sphere-octant path (expects every setback segment to be an analytic great-arc).
+			return nil, false
 		}
 		i := armIndexForRail(w, s, tol)
 		if i < 0 {
-			return nil, false // an ordered rail matched no arm's tangent-point pair (mis-ordered)
+			// seg endpoints (s.from=%v, s.to=%v) matched no arm's host-tangent point pair within tol —
+			// mis-ordered rail or a corner topology armIndexForRail does not recognize.
+			return nil, false
 		}
 		sides = append(sides, Side{Curve: arc, Adjacent: arms[i].armSurface, Cont: G1})
 	}
@@ -81,23 +87,4 @@ func endpointsCoincide(a0, a1, b0, b1 math.Point3, tol float64) bool {
 	fwd := float64(a0.DistanceTo(b0)) <= tol && float64(a1.DistanceTo(b1)) <= tol
 	rev := float64(a0.DistanceTo(b1)) <= tol && float64(a1.DistanceTo(b0)) <= tol
 	return fwd || rev
-}
-
-// curvedCornerSurfaceViaRail routes the corner surface through the RailLoop engine and returns the
-// engine-recognized analytic sphere, mirroring the planar sphereSurfaceViaRail. It is the ADR-2 Step-2
-// surface-recognition seam: it falls back to `sphere` on any extraction/recognition decline or a
-// non-sphere tier (do-no-harm), so a mis-extraction can never change the surface. The wired octant path
-// (curvedCornerFace) keeps the EXACT-centre `sphere` for byte-identity — the engine's circumcentre-
-// recovered sphere carries ~1e-12 FP noise — so this seam is validated independently now and consumed by
-// the gated loop-collapse follow-up.
-func curvedCornerSurfaceViaRail(w cornerWeld, arms []edgeFillet, sphere geom.Sphere, res Resolution) geom.Surface {
-	loop, ok := extractCurvedCorner(w, arms, res)
-	if !ok {
-		return sphere
-	}
-	patch, ok := resolveBlend(loop, res)
-	if !ok || patch.Kind != BlendKindSphere {
-		return sphere
-	}
-	return patch.Surface
 }

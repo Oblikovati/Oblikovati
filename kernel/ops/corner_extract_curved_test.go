@@ -43,7 +43,7 @@ func TestExtractCurvedCorner_OctantIsThreeValentSphere(t *testing.T) {
 	if !ok || patch.Kind != BlendKindSphere {
 		t.Fatalf("octant must resolve to the analytic sphere tier; ok=%v kind=%q", ok, patch.Kind)
 	}
-	assertSameSphere(t, patch.Surface, sphere)
+	assertSameSphere(t, patch.Surface, sphere, res.Weld()*w.radius)
 }
 
 // TestExtractCurvedCorner_SidesCarryArmAdjacents asserts each Side welds against its ARM surface (not
@@ -77,28 +77,20 @@ func countDistinctAdjacents(loop RailLoop) int {
 	return len(seen)
 }
 
-// TestCurvedCornerSurfaceViaRail_B3 proves the ADR-2 Step-2 surface-recognition seam (mirrors
-// sphereSurfaceViaRail): routed through the engine, the clean octant's corner surface is recognized as
-// the solved corner sphere (centre + radius). This is the seam the gated loop-collapse follow-up
-// consumes; the wired octant path keeps the exact-centre sphere for byte-identity (see curvedCornerFace).
-func TestCurvedCornerSurfaceViaRail_B3(t *testing.T) {
-	w, arms, sphere, res := b3CornerWeld(t)
-	assertSameSphere(t, curvedCornerSurfaceViaRail(w, arms, sphere, res), sphere)
-}
-
-// assertSameSphere asserts got is a geom.Sphere whose centre and radius match want within a tight
-// model epsilon (the engine's circumcentre-recovered sphere carries only ~1e-12 FP noise vs the solved
-// exact-centre sphere).
-func assertSameSphere(t *testing.T, got geom.Surface, want geom.Sphere) {
+// assertSameSphere asserts got is a geom.Sphere whose centre and radius match want within tol — pass
+// res.Weld()·radius (the same model-relative weld epsilon extractCurvedCorner uses to close its
+// RailLoop, not a bare literal), since the engine's circumcentre-recovered sphere carries only ~1e-12
+// FP noise vs the solved exact-centre sphere and any model-scale-derived tol comfortably covers that.
+func assertSameSphere(t *testing.T, got geom.Surface, want geom.Sphere, tol float64) {
 	t.Helper()
 	sph, ok := got.(geom.Sphere)
 	if !ok {
 		t.Fatalf("recognized surface is %T, want geom.Sphere", got)
 	}
-	if d := sph.Center.DistanceTo(want.Center); float64(d) > 1e-6 {
-		t.Fatalf("recognized sphere centre %v off solved %v by %.3e", sph.Center, want.Center, d)
+	if d := sph.Center.DistanceTo(want.Center); float64(d) > tol {
+		t.Fatalf("recognized sphere centre %v off solved %v by %.3e (tol %.3e)", sph.Center, want.Center, d, tol)
 	}
-	if e := stdmath.Abs(sph.Radius - want.Radius); e > 1e-6 {
-		t.Fatalf("recognized sphere radius %.9f, want solved %.9f (Δ=%.3e)", sph.Radius, want.Radius, e)
+	if e := stdmath.Abs(sph.Radius - want.Radius); e > tol {
+		t.Fatalf("recognized sphere radius %.9f, want solved %.9f (Δ=%.3e, tol %.3e)", sph.Radius, want.Radius, e, tol)
 	}
 }
