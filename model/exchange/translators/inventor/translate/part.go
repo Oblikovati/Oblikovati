@@ -306,8 +306,8 @@ func buildExtrudeFeatures(def *compdef.PartComponentDefinition, d *ipt.Document,
 			notes = append(notes, fmt.Sprintf("extrude %d: could not match its region (%d loops) to any rebuilt profile — skipped", i, len(region)))
 			continue
 		}
-		dist := ex.Distance
-		lastExtrude = feature.NewExtrudeFeatures(def.Features()).AddByDistanceExtentProfiles(emitted[p].sk, idx, operationOf(ex.Operation), func() float64 { return dist })
+		lastExtrude = feature.NewExtrudeFeatures(def.Features()).AddExtrude(
+			emitted[p].sk, idx, operationOf(ex.Operation), extentOf(ex), 0)
 		built = true
 	}
 	// A drilled hole cuts the base solid: place it on the extrude's top face (analytic), drilling
@@ -1289,4 +1289,20 @@ func extrudeRegionAt(regions [][]ipt.RegionLoop, i int) []ipt.RegionLoop {
 		return nil
 	}
 	return regions[i]
+}
+
+// extentOf turns a decoded extrude's termination into the feature engine's extent. A through-all
+// extrude carries no distance — it runs until it leaves the material — so it must NOT be built as a
+// length: its depth parameter decodes as 0, and a 0-length extrude is a degenerate zero-thickness
+// body (that is what made BigChunkyPlate a surface rather than a solid).
+func extentOf(ex ipt.Extrude) feature.Extent {
+	if ex.ThroughAll {
+		return feature.Extent{Type: feature.ThroughAllExtent, Direction: feature.PositiveDir}
+	}
+	dist := ex.Distance
+	return feature.Extent{
+		Type:      feature.DistanceExtent,
+		Direction: feature.PositiveDir,
+		Distance:  func() float64 { return dist },
+	}
 }

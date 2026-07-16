@@ -55,10 +55,14 @@ func DecodeOperations(seg []byte) []int {
 	return enumNodeValues(seg, 5)
 }
 
-// Extrude is a decoded extrude feature: its distance in cm and boolean operation.
+// Extrude is a decoded extrude feature: how far it goes, how it terminates, and its boolean
+// operation. A ThroughAll extrude carries NO distance — it runs until it leaves the material — so
+// Distance is meaningless there and must not be built as a length (extruding it 0 makes a
+// degenerate zero-thickness body, which is what turned BigChunkyPlate into a surface).
 type Extrude struct {
-	Distance  float64
-	Operation int
+	Distance   float64
+	ThroughAll bool
+	Operation  int
 }
 
 // DecodeExtrude reports the part's first extrude feature, if present.
@@ -134,7 +138,7 @@ func DecodeExtrudes(d *Document) []Extrude {
 		if !ok {
 			op = OpNewBody // a feature naming no operation starts a body
 		}
-		out = append(out, Extrude{Distance: dist, Operation: op})
+		out = append(out, Extrude{Distance: dist, ThroughAll: extrudeThroughAll(nodes, n.payload), Operation: op})
 	}
 	return out
 }

@@ -67,3 +67,31 @@ func TestDecodeExtrudeOperations(t *testing.T) {
 		}
 	}
 }
+
+// TestDecodeExtrudeThroughAll guards the extent decode. A through-all extrude carries NO distance —
+// it runs until it leaves the material — so its depth parameter decodes as 0, and building that as
+// a length makes a degenerate zero-thickness body. The fixture (ReelToReel's TorquimeterDisk) has
+// exactly one such extrude alongside measured ones; the generated corpus authors distances only, so
+// every one of its extrudes must report ThroughAll false.
+func TestDecodeExtrudeThroughAll(t *testing.T) {
+	through := 0
+	for _, ex := range DecodeExtrudes(openDoc(t, "real_multipoint_disk.ipt")) {
+		if !ex.ThroughAll {
+			continue
+		}
+		through++
+		if ex.Distance != 0 {
+			t.Errorf("a through-all extrude reports distance %v; it has none", ex.Distance)
+		}
+	}
+	if through != 1 {
+		t.Errorf("got %d through-all extrudes, want 1", through)
+	}
+	for _, file := range []string{"10_box.ipt", "14_box_two.ipt", "17_box_cut.ipt"} {
+		for i, ex := range DecodeExtrudes(openDoc(t, file)) {
+			if ex.ThroughAll {
+				t.Errorf("%s: extrude[%d] read as through-all, but the corpus authors distances", file, i)
+			}
+		}
+	}
+}

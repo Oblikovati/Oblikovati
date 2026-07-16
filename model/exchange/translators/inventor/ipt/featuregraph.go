@@ -271,3 +271,27 @@ func extrudeOperation(nodes []dcNode, pay []byte) (int, bool) {
 	}
 	return int(binary.LittleEndian.Uint16(n.payload[enumValueOffset:])), true
 }
+
+// propExtent is the extrude's termination property (InventorLoader Create_FxExtrude_New reads
+// `extend = getPropertyValue(properties, 0x06, 'value')`).
+const propExtent = 6
+
+// extentAll is the `extend` value meaning the extrude runs through ALL the material, taking its
+// length from the body rather than from a parameter. Verified on BigChunkyPlate: its four
+// distance-less extrudes read 5 here while every measured one reads 1.
+const extentAll = 5
+
+// extrudeThroughAll reports whether a feature terminates by running through all the material. Such
+// an extrude has NO distance: its depth parameter decodes as 0, and building that as a length makes
+// a zero-thickness body.
+func extrudeThroughAll(nodes []dcNode, pay []byte) bool {
+	props, ok := featureProperties(pay)
+	if !ok || len(props) <= propExtent {
+		return false
+	}
+	n, ok := nodeAt(nodes, props[propExtent])
+	if !ok || len(n.payload) < enumValueOffset+2 {
+		return false
+	}
+	return binary.LittleEndian.Uint16(n.payload[enumValueOffset:]) == extentAll
+}
