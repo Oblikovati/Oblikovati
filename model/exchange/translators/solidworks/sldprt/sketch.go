@@ -107,6 +107,16 @@ func sketchFromRegion(region []byte) (Sketch, bool) {
 	hasArc := bytes.Contains(region, []byte("sgArcHandle"))
 	hasEllipse := bytes.Contains(region, []byte("sgEllipseHandle"))
 	hasSpline := bytes.Contains(region, []byte("sgSplineHandle"))
+	// The point-index entity graph names each entity's endpoints outright, so it decodes a sketch
+	// exactly even when its kind class string is absent (a re-used kind). It is tried first and
+	// accepted only when it fully self-validates; ellipse/spline sketches are excluded because their
+	// entity records are sized differently and only line/arc/circle sizes are known.
+	if !hasEllipse && !hasSpline {
+		if lines, arcs, circles, construction, ok := decodeEntityGraph(region); ok {
+			sk.Lines, sk.Arcs, sk.Circles, sk.LineConstruction = lines, arcs, circles, construction
+			return sk, true
+		}
+	}
 	switch {
 	case hasSpline && !hasLine && !hasArc && !hasEllipse:
 		if s, ok := splineFromPoints(ordered); ok {
