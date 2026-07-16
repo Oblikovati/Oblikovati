@@ -231,6 +231,8 @@ git commit -m "feat(blend): route the curved-arm corner surface through the Rail
 
 ### Task 3: The 4-sided fill — wall-contact rail + adjacency + area cert (T-N7.2)
 
+> **CORRECTED (2026-07-16, during implementation):** the "keep 3 great-arc rails + append a 4th" framing below is geometrically WRONG for N7 — the three offset spines do not concur, so there is no single corner ball. The correct rails are each arm's **cross-section circle at its reflected-family centre** (m_i on that arm's spine) + an **on-wall** bridge curve (not a spatial Arc3d — coons4 silently re-projects an off-wall arc, faking the area). See `.superpowers/sdd/n7-fill-rails-rederivation.md` (oracle-validated: reproduces result_5's 4 vertices exactly). The implementer works from the corrected brief `cf-task-3-brief.md`, not the steps below. Architecture (delegate to coons4) + reduction-to-B3 (octant: all m_i=C → great circles → valence-3) unchanged.
+
 `coons4Provider` already fills a valence-4 `RailLoop`. This task makes `extractCurvedCorner` emit the **4th rail** (the wall-contact arc) for a degenerate corner, wires its `Adjacent` = the wall cylinder, and certifies the resulting fill matches the oracle (result_5 = **90.194**, G1 to all four neighbours).
 
 **Files:**
