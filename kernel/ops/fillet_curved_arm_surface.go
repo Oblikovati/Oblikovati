@@ -175,7 +175,10 @@ func armSectionSpan(hostRadius, r float64, convex bool) (float64, bool) {
 		rho = hostRadius - r
 	}
 	if rho <= 0 || r >= rho {
-		return 0, false // r=%v ≥ ρ=%v (R=%v): antipodal/out-of-domain, no radius-r fillet on this rim
+		// r ≥ ρ means the rolling ball is too large for this rim: the offset plane P_r no longer
+		// meets the offset cylinder C_ρ inside its real span (r/ρ ≥ 1 leaves asin's domain), so the
+		// convex plane∧cylinder valley has no radius-r fillet — the offset spine is empty.
+		return 0, false
 	}
 	roll := stdmath.Asin(r / rho)
 	if !convex {

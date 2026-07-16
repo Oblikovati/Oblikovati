@@ -144,6 +144,24 @@ func TestCurvedArmSectionArc_CylinderSpan(t *testing.T) {
 	}
 }
 
+// TestCurvedArmSectionArc_RejectsOversizeRadius is the reject-path regression for armSectionSpan's
+// r ≥ ρ guard (m5-arm-section-derivation.md §sign): once the fillet radius reaches (r=25, the exact
+// boundary, ρ=R−r=25) or exceeds (r=30, ρ=20) half the R=50 rim's convex offset, the rolling ball no
+// longer fits the plane∧cylinder valley and curvedArmSectionArc must return nil — never a NaN arc
+// (asin(r/ρ) leaving its domain) or a panic. The arm cylinder's own shape is irrelevant here: the
+// guard fires on host.Radius/r/convex alone, before cylinderSectionArc ever reads the arm's geometry
+// (cylinderArmSurface's OWN ruling guard would also reject these r/R pairs for the B3 wall edge, so
+// the arm is built directly rather than through it, to isolate this specific guard).
+func TestCurvedArmSectionArc_RejectsOversizeRadius(t *testing.T) {
+	host := cylAxis(0, 0, 1, 50)
+	for _, r := range []float64{25, 30} { // ρ=25 (boundary, r≥ρ) and ρ=20 (beyond, r>ρ)
+		arm := cylAxis(0, 0, 1, r)
+		if sec := curvedArmSectionArc(arm, 0, host, r, true); sec != nil {
+			t.Fatalf("curvedArmSectionArc(r=%.0f, R=50) = %#v, want nil (r ≥ ρ=R-r: no fit)", r, sec)
+		}
+	}
+}
+
 // assertCylSectionSpan checks the config-ii section arc: a radius-r Arc3d whose |SweepAngle| is the
 // certified span, with its endpoints on the two host faces (checked by assertSectionContacts).
 func assertCylSectionSpan(t *testing.T, sec geom.Curve3, r, wantSpan float64) {
