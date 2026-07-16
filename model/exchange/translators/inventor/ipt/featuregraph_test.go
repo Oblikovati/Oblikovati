@@ -41,3 +41,29 @@ func TestExtrudeProfiles(t *testing.T) {
 		t.Errorf("single-extrude profiles = %v, want [0]", got)
 	}
 }
+
+// TestDecodeExtrudeOperations pins the boolean operation to what each feature NAMES (its first
+// property), not to the i-th enum node found by scanning. The corpus authored these explicitly:
+// 14_box_two is kNewBodyOperation then kJoinOperation, 17_box_cut is kNewBody then kCut.
+func TestDecodeExtrudeOperations(t *testing.T) {
+	cases := []struct {
+		file string
+		want []int
+	}{
+		{"14_box_two.ipt", []int{OpNewBody, OpJoin}},
+		{"17_box_cut.ipt", []int{OpNewBody, OpCut}},
+		{"10_box.ipt", []int{OpNewBody}},
+	}
+	for _, tc := range cases {
+		ex := DecodeExtrudes(openDoc(t, tc.file))
+		if len(ex) != len(tc.want) {
+			t.Errorf("%s: got %d extrudes, want %d", tc.file, len(ex), len(tc.want))
+			continue
+		}
+		for i := range ex {
+			if ex[i].Operation != tc.want[i] {
+				t.Errorf("%s: extrude[%d] operation = %d, want %d", tc.file, i, ex[i].Operation, tc.want[i])
+			}
+		}
+	}
+}

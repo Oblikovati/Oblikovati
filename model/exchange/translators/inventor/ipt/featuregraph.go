@@ -242,3 +242,32 @@ func faceBoundRefs(pay []byte) (sketchRef, patchRef int, ok bool) {
 	patchRef = int(binary.LittleEndian.Uint32(pay[i+4:]) & refIndexMask)
 	return sketchRef, patchRef, true
 }
+
+// partFeatureOperationEnumType is the enum node an extrude names as its FIRST property: the boolean
+// operation it applies (InventorLoader Read_729ABE28 "PartFeatureOperationEnum", whose values —
+// 1 NewBody, 2 Cut, 3 Join, 4 Intersection — are the OpNewBody..OpIntersect constants).
+const partFeatureOperationEnumType = 0x729ABE28
+
+// propOperation is the extrude's operation property (InventorLoader Create_FxExtrude reads
+// `getPropertyValue(properties, 0x00, 'value')`).
+const propOperation = 0
+
+// enumValueOffset is where an enum node holds its value: the content header runs to 34, then a
+// 2-byte type discriminator.
+const enumValueOffset = 36
+
+// extrudeOperation returns the boolean operation a feature node NAMES, and whether it names one.
+// The predecessor took the i-th enum node found by scanning the segment's bytes, which pairs
+// operations with extrudes by position — the same guess that made every extrude take the wrong
+// depth, and just as wrong on a part whose features are not authored in scan order.
+func extrudeOperation(nodes []dcNode, pay []byte) (int, bool) {
+	props, ok := featureProperties(pay)
+	if !ok || len(props) <= propOperation {
+		return 0, false
+	}
+	n, ok := nodeAt(nodes, props[propOperation])
+	if !ok || n.typ != partFeatureOperationEnumType || len(n.payload) < enumValueOffset+2 {
+		return 0, false
+	}
+	return int(binary.LittleEndian.Uint16(n.payload[enumValueOffset:])), true
+}

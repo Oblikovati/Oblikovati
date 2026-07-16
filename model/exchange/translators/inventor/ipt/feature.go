@@ -114,25 +114,25 @@ func modelParamValues(seg []byte) []float64 {
 	return out
 }
 
-// DecodeExtrudes returns every extrude feature in order, each bound to ITS OWN distance —
-// resolved through the feature node's distance-parameter reference (see ExtrudeDepths), not by
-// position. The predecessor took the i-th model parameter, which on any part with more than one
-// parameter is some unrelated sketch dimension: BigChunkyPlate then extruded a 3 cm plate by
-// 40 cm (26x its true volume). Empty when the part has no extrude.
-//
-// The operation still comes from the i-th operation node, so it remains positional.
+// DecodeExtrudes returns every extrude feature in order, each bound to ITS OWN distance and
+// operation — both resolved through the feature node's own property references, not by position.
+// The predecessor took the i-th model parameter as the distance and the i-th enum node as the
+// operation; on any part with more than one of either, those are unrelated: BigChunkyPlate extruded
+// a 3 cm plate by 40 cm (26x its true volume). Empty when the part has no extrude.
 func DecodeExtrudes(d *Document) []Extrude {
-	seg, ok := d.Segment("PmDCSegment")
-	if !ok {
-		return nil
-	}
-	ops := DecodeOperations(seg)
-	depths := ExtrudeDepths(d)
-	out := make([]Extrude, 0, len(depths))
-	for i, dist := range depths {
-		op := OpNewBody
-		if i < len(ops) {
-			op = ops[i]
+	nodes := dcNodes(d)
+	var out []Extrude
+	for _, n := range nodes {
+		if n.typ != featureNodeType {
+			continue
+		}
+		dist, ok := extrudeDepth(nodes, n.payload)
+		if !ok {
+			continue
+		}
+		op, ok := extrudeOperation(nodes, n.payload)
+		if !ok {
+			op = OpNewBody // a feature naming no operation starts a body
 		}
 		out = append(out, Extrude{Distance: dist, Operation: op})
 	}
