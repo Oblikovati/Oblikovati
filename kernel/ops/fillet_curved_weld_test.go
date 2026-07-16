@@ -329,7 +329,6 @@ func relErrVol(got, want float64) float64 { return stdmath.Abs(got-want) / stdma
 // green. See task-5.5-report.md for the full per-case verdict.
 func TestFilletEdges_N1O1DeclineCleanly(t *testing.T) {
 	for _, rel := range []string{"simple/N1", "simple/O1"} {
-		rel := rel
 		t.Run(rel, func(t *testing.T) { assertCurvedCornerDeclinesCleanly(t, rel, 5) })
 	}
 }
