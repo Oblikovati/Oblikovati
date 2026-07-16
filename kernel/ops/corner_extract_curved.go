@@ -26,6 +26,17 @@ import (
 //
 //	loop, ok := extractCurvedCorner(w, arms, res); if ok { patch, ok := resolveBlend(loop, res) }
 func extractCurvedCorner(w cornerWeld, arms []edgeFillet, res Resolution) (RailLoop, bool) {
+	if loop, ok := extractTangentDegenerateCorner(w, arms, res); ok {
+		return loop, true // N7: the tangent-degenerate valence-4 fill (reflected-family rails + on-wall E2)
+	}
+	return extractOctantCorner(w, arms, res)
+}
+
+// extractOctantCorner builds the octant (3-valence) RailLoop — the clean corner where all reflected
+// centres collapse to C and the three cross-section circles ARE the corner sphere's great arcs. It is
+// the historical body of extractCurvedCorner; the tangent-degenerate branch declines to it (do-no-harm),
+// so B3 stays byte-identical.
+func extractOctantCorner(w cornerWeld, arms []edgeFillet, res Resolution) (RailLoop, bool) {
 	segs, ok := chainSetbackArcs(w) // ordered/oriented head-to-tail — the byte-path ordering
 	if !ok {
 		// w's arms (center=w.center, radius=w.radius) did not chain into a single closed head-to-tail
