@@ -46,6 +46,67 @@ func TestSolveBlend_B3CurvedCorner(t *testing.T) {
 	assertOnCylinderWall(t, cb.center, body)
 }
 
+// n7CornerInputs is the named fake for N7's tangent-degenerate trihedral corner, taken straight from
+// the committed OCCT fixture (not hand-authored coords — the real solve inputs, so the fake cannot
+// model impossible topology). Wall cylinder R=50 axis ẑ at (50,50); the x=50 diametral plane (through
+// the axis) and the z=10 plane; V=(50,0,10); r=5. curvedCornerCenter picks the WRONG reflected root
+// (centre z=5, wall-tangent z=5) today; the correct root is z=15 (oracle corner face at z∈[5,15]).
+func n7CornerInputs(t *testing.T) (geom.Cylinder, [2]*topo.Face, *topo.Vertex, float64) {
+	t.Helper()
+	return cornerHostInputs(t, "simple/N7", math.P3(50, 0, 10), 5)
+}
+
+// cleanOctantInputs is the named fake for B3's clean (non-tangent) trihedral corner from the fixture:
+// wall R=50 axis ẑ at origin, cap z=100 and radial x=0 planes, V=(0,−50,100), r=10. Its in-domain
+// root IS the nearer-vertex root the legacy solve returns (centre (10,−√1500,90)) — the reduction case.
+func cleanOctantInputs(t *testing.T) (geom.Cylinder, [2]*topo.Face, *topo.Vertex, float64) {
+	t.Helper()
+	return cornerHostInputs(t, "simple/B3", math.P3(0, -50, 100), 10)
+}
+
+// cornerHostInputs imports a corpus fixture and returns the curved trihedral corner at point p: the
+// wall cylinder, its two planar hosts, the corner vertex, and radius r — exactly what solveCurvedBlend
+// receives (facesAtVertex → cylinderHostCorner), so the tests exercise the real call path.
+func cornerHostInputs(t *testing.T, rel string, p math.Point3, r float64) (geom.Cylinder, [2]*topo.Face, *topo.Vertex, float64) {
+	t.Helper()
+	v := vertexNear(t, importCorpusSolid(t, rel), p)
+	cyl, planes, ok := cylinderHostCorner(facesAtVertex(v))
+	if !ok {
+		t.Fatalf("%s corner at %v is not [cylinder,plane,plane]", rel, p)
+	}
+	return cyl, planes, v, r
+}
+
+// TestCurvedCornerCenter_PicksInDomainRootAtTangentDihedron pins the N7 fix: the ball must root at the
+// z=15 reflected root (wall-tangent z=15), NOT the nearer-vertex z=5 root the legacy tiebreak returns
+// (which yields corner area 42 vs the oracle 90.19). See n7-runout-rederivation.md §tangent-dihedron.
+func TestCurvedCornerCenter_PicksInDomainRootAtTangentDihedron(t *testing.T) {
+	cyl, planes, v, r := n7CornerInputs(t)
+	res := curvedCornerResolution(v, cyl, planes)
+	c, ok := curvedCornerCenter(cyl, planes, r, v, res)
+	if !ok {
+		t.Fatalf("curvedCornerCenter declined the N7 tangent-dihedron corner")
+	}
+	if got := float64(cylinderWallPoint(cyl, c).Z); stdmath.Abs(got-15) > res.Weld()*r {
+		t.Fatalf("ball mis-rooted: wall-tangent z=%.6f; want z=15 (reflected z=5 root gives corner area 42 vs oracle 90.19)", got)
+	}
+}
+
+// TestCurvedCornerCenter_CleanOctantUnchanged is the B3 reduction: on a clean (non-tangent) corner the
+// in-domain root IS the legacy nearer-vertex root, so the returned centre is UNCHANGED — (10,−√1500,90),
+// wall-tangent z=90. This guards byte-faithfulness: the new root selection must not perturb B3.
+func TestCurvedCornerCenter_CleanOctantUnchanged(t *testing.T) {
+	cyl, planes, v, r := cleanOctantInputs(t)
+	res := curvedCornerResolution(v, cyl, planes)
+	c, ok := curvedCornerCenter(cyl, planes, r, v, res)
+	if !ok {
+		t.Fatalf("curvedCornerCenter declined the clean B3 octant")
+	}
+	if !nearlyPt(c, math.P3(10, -stdmath.Sqrt(1500), 90)) {
+		t.Fatalf("clean octant centre = %v, want (10,−38.7298,90) (legacy nearer-vertex root, unchanged)", c)
+	}
+}
+
 // assertOnCylinderWall confirms the corner centre sits at distance R−r (=40) from B3's boss axis — the
 // convex/concave discrimination: an R+r=60 (concave) or mis-signed centre fails here, not just the
 // nominal coordinate check.

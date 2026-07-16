@@ -59,7 +59,7 @@ func cylinderHostCorner(faces []*topo.Face) (geom.Cylinder, [2]*topo.Face, bool)
 // or the solved centre is inconsistent) — so a declined curved corner still errors exactly as before.
 func solveCurvedBlend(v *topo.Vertex, faces []*topo.Face, cyl geom.Cylinder, planes [2]*topo.Face, r float64) (*cornerBlend, error) {
 	res := curvedCornerResolution(v, cyl, planes)
-	c, ok := curvedCornerCenter(cyl, planes, r, v.Point(), res)
+	c, ok := curvedCornerCenter(cyl, planes, r, v, res)
 	if !ok || !curvedCornerConsistent(c, cyl, planes, r, res) {
 		return nil, fmt.Errorf("fillet: corner face must be planar")
 	}
@@ -67,28 +67,151 @@ func solveCurvedBlend(v *topo.Vertex, faces []*topo.Face, cyl geom.Cylinder, pla
 	if err != nil {
 		return nil, err
 	}
-	return &cornerBlend{vertex: v, center: c, sphere: sph, tan: curvedCornerTangents(faces, cyl, c, r)}, nil
+	return &cornerBlend{vertex: v, center: c, sphere: sph, tan: curvedCornerTangents(faces, cyl, c)}, nil
 }
 
-// curvedCornerCenter solves the ball centre tangent to the two planes and the cylinder. The two plane
-// constraints n̂ᵢ·c = n̂ᵢ·oᵢ − r pin c to a line (direction d = n̂₁×n̂₂); planePairLine returns a point on
-// it, then the convex tangency dist(c, axis) = R−r becomes a quadratic in the line parameter. Picks
-// the root nearer the corner vertex (the ball sits in the wedge, not on its mirror side). ok=false on
-// a spindle (R−r collapses), parallel planes (no line), or the line clearing the offset cylinder.
-func curvedCornerCenter(cyl geom.Cylinder, planes [2]*topo.Face, r float64, vertex math.Point3, res Resolution) (math.Point3, bool) {
+// curvedCornerCenter solves the ball centre tangent to the two planes and the cylinder, then selects
+// the correct reflected root. The two plane constraints pin c to a line (direction d = n̂₁×n̂₂);
+// planePairLine returns a point on it, then the convex tangency dist(c, axis) = R−r becomes a quadratic
+// (cylinderLineParam) whose nearer-vertex root is the legacy seed c0. At a tangent/diametral dihedron
+// (N7: the x=50 plane passes through the wall axis) c0 is the WRONG reflected root — r inside the plane
+// but on the wrong side of the corner — so selectCornerRoot re-picks by station domain (see below).
+// ok=false on a spindle (R−r collapses), parallel planes (no line), the line clearing the offset
+// cylinder, or an ambiguous corner where the station witness admits neither/both roots (do-no-harm).
+func curvedCornerCenter(cyl geom.Cylinder, planes [2]*topo.Face, r float64, v *topo.Vertex, res Resolution) (math.Point3, bool) {
 	rho := cyl.Radius - r
 	if rho < curvedCornerBandK*res.Weld() {
 		return math.Point3{}, false // spindle: the convex ball reaches the axis, no fillet
 	}
-	p0, d, ok := planePairLine(planes, r, vertex)
+	p0, d, ok := planePairLine(planes, r, v.Point())
 	if !ok {
 		return math.Point3{}, false
 	}
-	t, ok := cylinderLineParam(cyl, p0, d, rho, vertex)
+	t, ok := cylinderLineParam(cyl, p0, d, rho, v.Point())
 	if !ok {
 		return math.Point3{}, false
 	}
-	return p0.TranslateBy(d.Scale(t)), true
+	return selectCornerRoot(cyl, planes, r, v, p0.TranslateBy(d.Scale(t)), res)
+}
+
+// selectCornerRoot re-roots the corner ball at a tangent/diametral dihedron (n7-runout-rederivation.md
+// §"tangent-dihedron reflected-root trap"). The ball-tangent system has a reflected pair — c0 and its
+// mirror across each plane — all valid equal-r tangent balls, so curvedCornerConsistent (tangency) and
+// the closure certificate accept BOTH; the tiebreak is the station domain. For each candidate it
+// demands that on EVERY straight (cylinder) arm at V the ball sit on the arm's material-inward spine
+// AND station on the same side of V as the far vertex (rootStationsInDomain). Reduces to c0 on a clean
+// corner (B3: c0 is the unique in-domain root). When no straight arm can discriminate (none built at
+// V) it keeps the legacy c0 unchanged; when a straight arm is present but neither/both roots qualify it
+// honest-rejects (ok=false) rather than emit a wrong corner. A re-picked root is additionally area-
+// witnessed (curvedCornerTriangleArea) so a degenerate flip is never accepted.
+func selectCornerRoot(cyl geom.Cylinder, planes [2]*topo.Face, r float64, v *topo.Vertex, c0 math.Point3, res Resolution) (math.Point3, bool) {
+	arms := cornerCylinderArms(v, r, res)
+	if len(arms) == 0 {
+		return c0, true // no straight arm to root against — keep the legacy nearer-vertex root
+	}
+	scale := cyl.Radius
+	var chosen math.Point3
+	n := 0
+	for _, c := range curvedCornerRootCandidates(c0, planes) {
+		if rootStationsInDomain(arms, v.Point(), c, scale, res) {
+			chosen, n = c, n+1
+		}
+	}
+	if n != 1 {
+		return math.Point3{}, false // neither/both roots in-domain: ambiguous — honest-reject (do-no-harm)
+	}
+	if chosen.DistanceTo(c0) > res.Weld()*r && curvedCornerTriangleArea(cyl, planes, chosen) < res.Weld()*r*r {
+		return math.Point3{}, false // area witness: a re-picked root that collapses the corner triangle
+	}
+	return chosen, true
+}
+
+// cornerArm is a built straight (cylinder) arm at the corner vertex plus its far edge terminus — the
+// station-domain frame the reflected-root selector tests each candidate ball centre against.
+type cornerArm struct {
+	spine geom.Cylinder // the material-inward rolling-ball cylinder about the filleted ruling
+	far   math.Point3   // the filleted edge's vertex away from the corner (the runout terminus)
+}
+
+// cornerCylinderArms builds the material-inward straight arm at every Plane∧Cylinder line edge at V
+// (the arms whose station cleanly separates the reflected pair; torus arms are excluded because the
+// corner ball's angular station on a torus is near-antipodal, not a reliable domain signal). It reuses
+// the production arm builder so each spine is the exact branch the weld will use.
+func cornerCylinderArms(v *topo.Vertex, r float64, res Resolution) []cornerArm {
+	var arms []cornerArm
+	for _, e := range v.Edges() {
+		wc, pl, ok := cylinderPlaneEdge(e)
+		if !ok || classifyCurvedArm(wc, pl, res) != armCylinder {
+			continue
+		}
+		spine, ok := cylinderArmSurface(e, wc, pl, r)
+		if !ok {
+			continue
+		}
+		arms = append(arms, cornerArm{spine: spine, far: farVertexNotVid(e, v.ID())})
+	}
+	return arms
+}
+
+// curvedCornerRootCandidates enumerates the reflected root family: the legacy centre c0 and its mirror
+// across each planar host. Mirroring across a plane flips that plane's offset sign while preserving
+// tangency to the wall and the other plane, so it is a valid alternate tangent ball — exactly the
+// z=5↔z=15 reflected pair the tangent dihedron admits.
+func curvedCornerRootCandidates(c0 math.Point3, planes [2]*topo.Face) [3]math.Point3 {
+	return [3]math.Point3{c0, reflectAcrossFace(c0, planes[0]), reflectAcrossFace(c0, planes[1])}
+}
+
+// reflectAcrossFace mirrors point c across the plane of face f (c − 2·((c−o)·n̂)·n̂).
+func reflectAcrossFace(c math.Point3, f *topo.Face) math.Point3 {
+	pl := f.Geometry().(geom.Plane)
+	n := pl.Normal()
+	signed := float64(pl.Origin.VectorTo(c).Dot(n))
+	return c.TranslateBy(n.Scale(-2 * signed))
+}
+
+// rootStationsInDomain reports whether candidate ball centre c is in-domain adjacent to V on EVERY
+// straight arm: c must lie on the arm's (material-inward) spine — off-spine means the reflected branch,
+// r-outside that arm's plane host — AND its axial station must fall on the same side of V as the far
+// vertex (the filleted extent), not on V's mirror side. A valid corner root satisfies both on all arms;
+// the wrong reflected root fails one (off-spine, or station past V away from the edge).
+func rootStationsInDomain(arms []cornerArm, vp math.Point3, c math.Point3, scale float64, res Resolution) bool {
+	for _, a := range arms {
+		if _, onSpine := cylinderStation(a.spine, c, scale, res); !onSpine {
+			return false // c off the arm spine: the reflected branch (r-outside this arm's plane host)
+		}
+		if !stationTowardFar(a.spine, vp, a.far, c) {
+			return false // station on V's mirror side, away from the far terminus — out of the arm domain
+		}
+	}
+	return true
+}
+
+// stationTowardFar reports whether c's axial station lies on the same side of V as the far vertex —
+// (station(c)−station(V)) and (station(far)−station(V)) agree in sign — i.e. c sits in the filleted
+// extent adjacent to V, not on the reflected mirror side.
+func stationTowardFar(spine geom.Cylinder, vp, far, c math.Point3) bool {
+	axis := spine.AxisDir.AsVector()
+	cst := float64(spine.Origin.VectorTo(c).Dot(axis))
+	vst := float64(spine.Origin.VectorTo(vp).Dot(axis))
+	fst := float64(spine.Origin.VectorTo(far).Dot(axis))
+	return (cst-vst)*(fst-vst) >= 0
+}
+
+// curvedCornerTriangleArea is the area of the host-tangent triangle (the ball's three tangent feet on
+// the two planes and the wall) — the area witness that rejects a re-picked root collapsing the corner.
+func curvedCornerTriangleArea(cyl geom.Cylinder, planes [2]*topo.Face, c math.Point3) float64 {
+	t0 := planeFootPoint(planes[0], c)
+	t1 := planeFootPoint(planes[1], c)
+	tw := cylinderWallPoint(cyl, c)
+	return 0.5 * float64(t0.VectorTo(t1).Cross(t0.VectorTo(tw)).Length())
+}
+
+// planeFootPoint is the foot of the perpendicular from c onto face f's plane (the ball's tangent point).
+func planeFootPoint(f *topo.Face, c math.Point3) math.Point3 {
+	pl := f.Geometry().(geom.Plane)
+	n := pl.Normal()
+	signed := float64(pl.Origin.VectorTo(c).Dot(n))
+	return c.TranslateBy(n.Scale(-signed))
 }
 
 // planePairLine returns a point p0 on the intersection of the two r-offset planes plus the line
@@ -147,13 +270,15 @@ func nearerRoot(qa, qb, qc float64, p0 math.Point3, d math.Vector3, vertex math.
 }
 
 // curvedCornerTangents places the ball's tangent point on each host face, keyed by face id: on a plane
-// it is the centre pushed r along the material-outward normal (as in the all-planar corner); on the
-// cylinder it is the centre projected radially onto the wall (to radius R from the axis).
-func curvedCornerTangents(faces []*topo.Face, cyl geom.Cylinder, c math.Point3, r float64) map[uint64]math.Point3 {
+// it is the perpendicular foot of the centre (the true tangent point, valid whichever side of the plane
+// the ball sits — the re-picked reflected root is r OUTSIDE one plane); on the cylinder it is the centre
+// projected radially onto the wall (radius R). For a material-inward centre the foot equals the old
+// centre+outward·r, so the historical planar/B3 corners are byte-identical.
+func curvedCornerTangents(faces []*topo.Face, cyl geom.Cylinder, c math.Point3) map[uint64]math.Point3 {
 	tan := make(map[uint64]math.Point3, 3)
 	for _, f := range faces {
-		if pl, ok := f.Geometry().(geom.Plane); ok {
-			tan[f.ID()] = c.TranslateBy(outwardPlaneNormal(f, pl).Scale(r))
+		if _, ok := f.Geometry().(geom.Plane); ok {
+			tan[f.ID()] = planeFootPoint(f, c)
 			continue
 		}
 		tan[f.ID()] = cylinderWallPoint(cyl, c)
@@ -175,16 +300,19 @@ func cylinderWallPoint(cyl geom.Cylinder, c math.Point3) math.Point3 {
 	return foot.TranslateBy(radial.AsVector().Scale(cyl.Radius))
 }
 
-// curvedCornerConsistent verifies the solved centre truly sits r inside both planes and R−r from the
-// cylinder axis (m5 §D5), within the model weld tolerance — the "valid equal-r sphere" gate. A failure
-// (ill-conditioned solve, or the far/wrong quadratic root) makes solveCurvedBlend return the do-no-harm
+// curvedCornerConsistent verifies the solved centre truly sits r from both planes and R−r from the
+// cylinder axis (m5 §D5), within the model weld tolerance — the "valid equal-r sphere" gate. The plane
+// test is two-sided (|dist| = r, either side): at a tangent/diametral dihedron the correct root is r
+// OUTSIDE one plane (N7's z=15 root), a valid tangent ball whose side is already fixed by the station
+// witness (selectCornerRoot); a material-inward-only test would wrongly reject it. A magnitude failure
+// (ill-conditioned solve, or a non-tangent centre) still makes solveCurvedBlend return the do-no-harm
 // reject rather than emit a bad corner.
 func curvedCornerConsistent(c math.Point3, cyl geom.Cylinder, planes [2]*topo.Face, r float64, res Resolution) bool {
 	for _, f := range planes {
 		pl := f.Geometry().(geom.Plane)
 		n := outwardPlaneNormal(f, pl)
-		if stdmath.Abs(float64(pl.Origin.VectorTo(c).Dot(n))+r) > res.Weld() {
-			return false // not r inside this plane
+		if stdmath.Abs(stdmath.Abs(float64(pl.Origin.VectorTo(c).Dot(n)))-r) > res.Weld() {
+			return false // not at distance r from this plane (either side)
 		}
 	}
 	a := cyl.AxisDir.AsVector()
