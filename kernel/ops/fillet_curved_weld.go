@@ -205,7 +205,7 @@ func curvedWeldFaces(body *topo.Body, arms []edgeFillet, w cornerWeld, sphere ge
 	for i := range bundles {
 		faces = append(faces, curvedArmTrimmedFace(bundles[i], arms[i]))
 	}
-	sf, ok := curvedSphereFace(w, sphere)
+	sf, ok := curvedCornerFace(w, sphere, arms, res)
 	if !ok {
 		return nil, "corner sphere spherical-triangle face declined"
 	}
@@ -318,6 +318,32 @@ func curvedArmTrimmedFace(rails armRails, ef edgeFillet) filletFace {
 		surface: ef.armSurface,
 		loops:   []filletLoop{loopFromSegs(rails.segs)},
 		parent:  filletEdgeProvenance(ef.edge),
+	}
+}
+
+// curvedCornerFace emits the corner patch: the SURFACE is validated through the RailLoop engine
+// (extractCurvedCorner→resolveBlend — analyticSphere wins the octant, coons4 the degenerate 4-sided
+// fill), while the octant's boundary LOOP stays the legacy chainSetbackArcs so B3 is byte-for-byte
+// (ADR-2 Step 1 strangler; sphere loop-collapse is a gated follow-up). Falls back to curvedSphereFace
+// wholesale on any engine decline (do-no-harm). The Kind-gate is load-bearing: only BlendKindSphere
+// (via the legacy loop) and BlendKindCoons4 are admitted; any other tier (e.g. tri3) is NOT a valid
+// curved corner and falls back rather than shipping a wrong 3-sided corner on N7's not-yet-4-valent loop.
+func curvedCornerFace(w cornerWeld, sphere geom.Sphere, arms []edgeFillet, res Resolution) (filletFace, bool) {
+	loop, ok := extractCurvedCorner(w, arms, res)
+	if !ok {
+		return curvedSphereFace(w, sphere) // extractor declined — legacy octant path
+	}
+	patch, ok := resolveBlend(loop, res)
+	if !ok {
+		return curvedSphereFace(w, sphere)
+	}
+	switch patch.Kind {
+	case BlendKindSphere:
+		return curvedSphereFace(w, sphere) // octant: engine-validated surface == sphere, KEEP legacy loop (ADR-2 Step 1)
+	case BlendKindCoons4:
+		return patchToFilletFace(patch, topo.Lineage{}), true // degenerate 4-sided fill: take the engine's loops
+	default:
+		return curvedSphereFace(w, sphere) // any other tier (e.g. tri3) is NOT a valid curved corner — do-no-harm
 	}
 }
 
