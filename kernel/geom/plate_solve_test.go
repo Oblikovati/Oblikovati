@@ -80,8 +80,13 @@ func TestPlateSingularityIsRemovable(t *testing.T) {
 	}
 }
 
-// TestPlateReproducesQuadratic is the RED self-check (kit §5b): 7 G0 samples of q → λ≈0, poly
-// coefficients = q's, and Eval(0.4,0.6)=1.28, all against closed-form oracles to 1e-9.
+// TestPlateReproducesQuadratic is the §5b self-check: 7 G0 samples of q → λ≈0 and the recovered
+// SURFACE is exactly q (Eval matches q everywhere, incl. Eval(0.4,0.6)=1.28), against closed-form
+// oracles to 1e-9. Since P2.1 the solver stores its polynomial in the normalized frame û=(u−u0)/L
+// (coeffs.poly = q∘normalize, NOT q's world coefficients), so reproduction is asserted
+// BEHAVIOURALLY on Eval — a representation-independent, strictly stronger identity witness than a
+// raw poly-coefficient equality (it also certifies the normalization is an exact identity: the
+// world surface is unchanged, only its internal frame moved).
 func TestPlateReproducesQuadratic(t *testing.T) {
 	var cs []PlateConstraint
 	for _, p := range reproPoints() {
@@ -92,7 +97,7 @@ func TestPlateReproducesQuadratic(t *testing.T) {
 		t.Fatalf("PlateSolve returned error: %v", err)
 	}
 	assertLambdaVanishes(t, coeffs)
-	assertPoly(t, coeffs.poly, [6]float64{1, 2, -1, 0.5, 3, -2})
+	assertReproducesQuadratic(t, coeffs)
 	if got := coeffs.Eval(0.4, 0.6); stdmath.Abs(got-1.28) > 1e-9 {
 		t.Errorf("Eval(0.4,0.6) = %.12f, want 1.28 (= q(0.4,0.6))", got)
 	}
@@ -100,7 +105,8 @@ func TestPlateReproducesQuadratic(t *testing.T) {
 }
 
 // TestPlateReproducesQuadraticWithG1 extends §5b with ∂u/∂v rows (values q_u,q_v) — exercising
-// the derivative rows in K and P. The interpolant is still exactly q, λ still 0.
+// the derivative rows in K and P (and, since P2.1, the G1 RHS ×L normalization scaling). The
+// interpolant is still exactly q, λ still 0.
 func TestPlateReproducesQuadraticWithG1(t *testing.T) {
 	var cs []PlateConstraint
 	for _, p := range reproPoints() {
@@ -115,9 +121,28 @@ func TestPlateReproducesQuadraticWithG1(t *testing.T) {
 		t.Fatalf("PlateSolve (G1) returned error: %v", err)
 	}
 	assertLambdaVanishes(t, coeffs)
-	assertPoly(t, coeffs.poly, [6]float64{1, 2, -1, 0.5, 3, -2})
+	assertReproducesQuadratic(t, coeffs)
 	if got := coeffs.Eval(0.4, 0.6); stdmath.Abs(got-1.28) > 1e-9 {
 		t.Errorf("Eval(0.4,0.6) with G1 rows = %.12f, want 1.28", got)
+	}
+}
+
+// assertReproducesQuadratic asserts the recovered plate value AND gradient equal q and ∇q over an
+// interior grid to 1e-9 — the coordinate-frame-independent statement of "the interpolant IS q"
+// that survives the P2.1 normalization (which moves coeffs.poly into the unit-diameter frame but
+// leaves the world surface identical).
+func assertReproducesQuadratic(t *testing.T, c PlateCoeffs) {
+	t.Helper()
+	for _, uv := range [][2]float64{{0.2, 0.3}, {0.7, 0.1}, {0.4, 0.6}, {0.55, 0.85}, {0.9, 0.9}} {
+		u, v := uv[0], uv[1]
+		if got := c.Eval(u, v); stdmath.Abs(got-reproQuad(u, v)) > 1e-9 {
+			t.Errorf("Eval(%.2f,%.2f) = %.12f, want %.12f (= q)", u, v, got, reproQuad(u, v))
+		}
+		fu, fv := c.EvalGrad(u, v)
+		if stdmath.Abs(fu-reproQuadU(u, v)) > 1e-8 || stdmath.Abs(fv-reproQuadV(u, v)) > 1e-8 {
+			t.Errorf("EvalGrad(%.2f,%.2f) = (%.9f,%.9f), want (%.9f,%.9f)",
+				u, v, fu, fv, reproQuadU(u, v), reproQuadV(u, v))
+		}
 	}
 }
 
@@ -320,19 +345,4 @@ func assertLambdaVanishes(t *testing.T, c PlateCoeffs) {
 		t.Errorf("‖λ‖∞ = %.3g, want ≤ 1e-9 (all RBF weights vanish)", maxLambda)
 	}
 	t.Logf("‖λ‖∞ = %.3g", maxLambda)
-}
-
-// assertPoly asserts the recovered quadratic coefficients match want to 1e-9.
-func assertPoly(t *testing.T, got, want [6]float64) {
-	t.Helper()
-	maxErr := 0.0
-	for k := range got {
-		if e := stdmath.Abs(got[k] - want[k]); e > maxErr {
-			maxErr = e
-		}
-	}
-	if maxErr > 1e-9 {
-		t.Errorf("poly = %v, want %v (‖·‖∞ err %.3g)", got, want, maxErr)
-	}
-	t.Logf("poly = %v (‖·‖∞ err %.3g)", got, maxErr)
 }

@@ -358,19 +358,30 @@ func TestPlateFillN7CornerArea(t *testing.T) {
 
 	surf, err := PlateFill(sides, 0.5)
 	if err != nil {
-		// MOMENT-OF-TRUTH BLOCKER (honest, no tuning): the G1-constrained Duchon solve is
-		// ill-conditioned at the r=5 corner — the math-kit §4 PRIMARY RBF trap. Probed here: the
-		// G0-only variant nearly converges (residual ~8e-7 vs the ultra-tight weld·‖b‖ ~2.7e-7),
-		// but the G1 derivative rows (the tangency that makes the fill watertight — the whole point
-		// of prescribe-E2) blow the residual to ~1e11. The fix is P2's Duchon ridge (§4 guard #2),
-		// which the landed PlateSolveMulti does not yet implement; it is out of P4a's file scope
-		// (plate_fill.go only). So the emergent area is UNMEASURABLE until P2 is hardened — a
-		// controller decision (add the §4 ridge / corner-relative acceptance, then re-run the
-		// moment-of-truth at P5). PlateFill itself is proven by TestPlateFillSaddlePatch.
-		t.Skipf("N7 emergent-area moment-of-truth BLOCKED on P2 RBF conditioning (math-kit §4): %v", err)
+		// P2.1 MOMENT-OF-TRUTH (honest, no tuning). P2.1 non-dimensionalized PlateSolveMulti, which
+		// cures the *scale* conditioning the advisory identified — but production PlateFill still
+		// honest-rejects N7 (residual ~1.28e11) because N7 has a SECOND, scale-invariant defect the
+		// normalization cannot touch: two rail stations land 3.8e-5 apart in Ω (2.57e-6·L), a
+		// near-coincident RBF pair whose distinguishing kernel entries drown below machine-eps at
+		// ANY scale. Rejecting → coons4 is the correct do-no-harm behaviour (production must not ship
+		// a torn corner). The diagnostic below removes that near-coincident pair (a separation-
+		// distance decimation, advisory §5 ordering step 2 — NOT shipped, because the resulting patch
+		// fails G1 and would still need a rejecting certificate P4a does not have) purely to MEASURE
+		// the emergent area once the solve is fully conditioned:
+		area, g1 := n7EmergentAreaFullyConditioned(t, sides)
+		dev := stdmath.Abs(area - n7OracleArea)
+		t.Logf("N7 EMERGENT area (fully conditioned) = %.4f  oracle = %.3f  |dev| = %.4f  rel = %.3e  G1(rad) = %.3e",
+			area, n7OracleArea, dev, dev/n7OracleArea, g1)
+		// The measured miss (area ~52.5 vs 90.194, ~42%%; G1 ~1.5 rad — a full tangency break) is an
+		// HONEST result, NOT something to tune away: it is the decisive evidence that the PRESCRIBED-E2
+		// plate does not reproduce the N7 corner even with the solve perfectly conditioned. That
+		// signals the emerge-E2 escalation — a controller decision for P5 — so Test B stays skipped.
+		t.Skipf("N7 prescribe-E2 MISSES oracle (area %.4f vs %.3f, rel %.3e; G1 %.3e rad) with the solve "+
+			"fully conditioned → emerge-E2 escalation (P5). Production honest-rejects → coons4: %v",
+			area, n7OracleArea, dev/n7OracleArea, g1, err)
 	}
-	// If a future P2 ridge lets it converge, this measures the emergent area and checks it against
-	// the re-derivation's own 1%% band (the T-N7.2 probe reached 0.02%%) — NO scalar tuned to hit it.
+	// If a future change lets production PlateFill converge, this measures the emergent area and
+	// checks it against the re-derivation's own 1%% band — NO scalar tuned to hit it.
 	area := SurfaceArea(surf)
 	dev := stdmath.Abs(area - n7OracleArea)
 	g1 := boundaryG1Residual(surf, sides)
@@ -383,6 +394,55 @@ func TestPlateFillN7CornerArea(t *testing.T) {
 	if g1 > 5e-2 {
 		t.Errorf("N7 fill G1-to-host residual %.3e rad exceeds 5e-2 (watertight break)", g1)
 	}
+}
+
+// n7EmergentAreaFullyConditioned measures the N7 prescribe-E2 emergent area with the plate solve
+// FULLY conditioned: the P2.1 normalization plus a diagnostic separation-distance decimation that
+// removes the near-coincident (2.57e-6·L) rail-station pair which alone blocks production PlateFill.
+// It replays the plate_fill.go pipeline (domain → discretise → decimate → solve → grid → fit) with
+// the extra decimation pass so the moment-of-truth area is MEASURABLE. Diagnostic only — the extra
+// decimation is not in production because the fitted patch still breaks G1 and PlateFill has no area
+// /G1 certificate to reject it (that is the emerge-E2 work for P5).
+func n7EmergentAreaFullyConditioned(t *testing.T, sides [4]PlateSide) (area, g1 float64) {
+	t.Helper()
+	d, err := plateFillDomain(sides)
+	if err != nil {
+		t.Fatalf("plateFillDomain: %v", err)
+	}
+	cs, vals, err := DiscretizeSides(sides, d, plateRailSamples)
+	if err != nil {
+		t.Fatalf("DiscretizeSides: %v", err)
+	}
+	cs, vals = decimateCoincidentRows(cs, vals)
+	cs, vals = decimateNearCoincidentRows(cs, vals, 1e-4*plateDomainDiameter(cs))
+	coeffs, err := PlateSolveMulti(cs, vals[:])
+	if err != nil {
+		t.Fatalf("fully-conditioned N7 solve still failed (unexpected): %v", err)
+	}
+	pts, us, vs := plateGrid(sides, d, coeffs)
+	surf, err := ApproximateSurfaceLS(pts, us, vs, plateFitDegree, plateFitDegree, plateFitControls, plateFitControls)
+	if err != nil {
+		t.Fatalf("ApproximateSurfaceLS: %v", err)
+	}
+	return SurfaceArea(surf), boundaryG1Residual(surf, sides)
+}
+
+// decimateNearCoincidentRows drops any constraint within hSep (in Ω) of an already-kept same-order
+// constraint — a diagnostic separation-distance pass, stronger than production's weld-tight
+// decimateCoincidentRows, used only to condition the N7 moment-of-truth measurement.
+func decimateNearCoincidentRows(cs []PlateConstraint, vals [3][]float64, hSep float64) ([]PlateConstraint, [3][]float64) {
+	var keptCs []PlateConstraint
+	var keptVals [3][]float64
+	for i := range cs {
+		if isCoincidentRow(keptCs, cs[i], hSep) {
+			continue
+		}
+		keptCs = append(keptCs, cs[i])
+		for c := 0; c < 3; c++ {
+			keptVals[c] = append(keptVals[c], vals[c][i])
+		}
+	}
+	return keptCs, keptVals
 }
 
 // verifyN7RailVertices asserts each constructed rail starts/ends on the DRAWEXE vertices, so a

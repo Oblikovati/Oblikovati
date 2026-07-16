@@ -34,14 +34,23 @@ type PlateConstraint struct {
 }
 
 // PlateCoeffs is a solved scalar plate field: the RBF weights lambda (one per constraint, in
-// input order), the quadratic polynomial coefficients poly (basis 1,u,v,u²,uv,v²), and the
-// constraint centres plus the r→0 floor rFloor needed to re-evaluate the representers. Evaluate
-// it anywhere in Ω with Eval / EvalGrad.
+// input order), the quadratic polynomial coefficients poly (basis 1,û,v̂,û²,ûv̂,v̂²), and the
+// constraint centres plus the r→0 floor rFloor needed to re-evaluate the representers. The
+// centres, poly and lambda live in the NORMALIZED unit-diameter frame û=(u−u0)/scale,
+// v̂=(v−v0)/scale (see [plateDomainFrame]); Eval / EvalGrad normalize their world (u,v) input
+// before evaluating. Evaluate the field anywhere in Ω with Eval / EvalGrad.
 type PlateCoeffs struct {
-	centers []PlateConstraint
-	lambda  []float64
-	poly    [6]float64
-	rFloor  float64
+	centers       []PlateConstraint
+	lambda        []float64
+	poly          [6]float64
+	rFloor        float64
+	u0, v0, scale float64 // the non-dimensionalizing frame; see plateDomainFrame
+}
+
+// normalize maps a world Ω coordinate into the unit-diameter frame the coefficients were solved
+// in (û=(u−u0)/scale, v̂=(v−v0)/scale). The inverse of the assembly-time similarity transform.
+func (c PlateCoeffs) normalize(u, v float64) (uh, vh float64) {
+	return (u - c.u0) / c.scale, (v - c.v0) / c.scale
 }
 
 // PlateSolve solves the Duchon order-3 plate for ONE scalar field: it packs each constraint's
@@ -75,15 +84,25 @@ func PlateSolveMulti(cs []PlateConstraint, values [][]float64) ([]PlateCoeffs, e
 	if err := validatePlateInput(cs, values); err != nil {
 		return nil, err
 	}
-	res := ResolutionForSize(plateDomainDiameter(cs))
-	rFloor := plateRFloor(res)
-	a := assemblePlateMatrix(cs, rFloor)
-	b := assemblePlateRHS(cs, values)
+	frame, err := newPlateDomainFrame(cs)
+	if err != nil {
+		return nil, err
+	}
+	// The Resolution — hence the acceptance threshold weld·‖b‖ and the r→0 floor — is measured
+	// against the WORLD domain diameter (frame.scale), a relative tolerance unchanged by the
+	// non-dimensionalization; the normalized floor is res.Weld()² = rFloor_world/scale² because
+	// the normalized squared radius R̂ = R_world/scale² (advisory §4 step 4).
+	res := ResolutionForSize(frame.scale)
+	rFloor := res.Weld() * res.Weld()
+	ncs := frame.normalizeConstraints(cs)
+	nvals := frame.normalizeValues(cs, values)
+	a := assemblePlateMatrix(ncs, rFloor)
+	b := assemblePlateRHS(ncs, nvals)
 	x, err := solvePlateSystem(a, b, res.Weld())
 	if err != nil {
 		return nil, err
 	}
-	return buildPlateCoeffs(cs, x, rFloor), nil
+	return buildPlateCoeffs(ncs, x, rFloor, frame), nil
 }
 
 // validatePlateInput rejects an empty constraint set, an empty value list, or any value field
@@ -119,13 +138,83 @@ func plateDomainDiameter(cs []PlateConstraint) float64 {
 	return longest
 }
 
-// plateRFloor is the removable-singularity guard R_floor = (res.Weld·L)² (kit §1). Below it,
-// the E kernel and every partial return their exact r→0 limit of 0; above it, only genuinely
-// distinct centres remain (P1 pre-conditions samples to be distinct to weld·L), so this fires
-// solely on self-terms P_i−P_i = 0.
+// plateRFloor is the removable-singularity guard R_floor = (res.Weld·L)² (kit §1) in WORLD
+// coordinates. The solver runs on normalized coordinates and uses res.Weld()² (= this / L²)
+// instead; this world form is kept for the assembly-symmetry self-check, which assembles the
+// matrix directly on world constraints without the normalizing frame.
 func plateRFloor(res Resolution) float64 {
 	w := res.Weld() * res.Size()
 	return w * w
+}
+
+// plateDomainFrame is the similarity transform that non-dimensionalizes the bordered TPS system
+// to unit-diameter coordinates û=(u−u0)/scale, v̂=(v−v0)/scale, where (u0,v0) is the constraint
+// (u,v) bounding-box centre and scale is the domain diameter. In these O(1) coordinates the RBF
+// K-block (whose entries otherwise span L⁴logL … L²logL across G0/G1 rows) and the polynomial
+// border (otherwise 1:L:L²) are all O(1)-conditioned, so the dense Gauss-Jordan solve no longer
+// loses the 10–100×-smaller G1-derivative rows at model scale — the P4a G1 divergence
+// (residual ~1e11 at the r=5 corner). Under the moment conditions Pᵀλ=0 the transform preserves
+// the interpolant EXACTLY in exact arithmetic (Duchon dilation-invariance; advisory §3), so it
+// re-conditions the matrix without smoothing the rails (watertight-preserving).
+type plateDomainFrame struct {
+	u0, v0, scale float64
+}
+
+// newPlateDomainFrame derives the non-dimensionalizing frame from the constraints' (u,v) extent:
+// (u0,v0) is the bounding-box centre (centering keeps û∈[−½,½], minimizing the monomial
+// magnitudes) and scale is the domain diameter (max pairwise distance). Rejects an all-coincident
+// set, whose zero diameter would divide by zero (carrying the measured diameter and the required
+// minimum).
+func newPlateDomainFrame(cs []PlateConstraint) (plateDomainFrame, error) {
+	minU, maxU, minV, maxV := cs[0].U, cs[0].U, cs[0].V, cs[0].V
+	for _, c := range cs {
+		minU, maxU = stdmath.Min(minU, c.U), stdmath.Max(maxU, c.U)
+		minV, maxV = stdmath.Min(minV, c.V), stdmath.Max(maxV, c.V)
+	}
+	scale := plateDomainDiameter(cs)
+	if scale <= 0 {
+		return plateDomainFrame{}, fmt.Errorf(
+			"geom: plate domain degenerate: all %d constraints coincide in (u,v) (diameter %.6g, need > 0)",
+			len(cs), scale)
+	}
+	return plateDomainFrame{u0: (minU + maxU) / 2, v0: (minV + maxV) / 2, scale: scale}, nil
+}
+
+// normalize maps a world (u,v) into the unit-diameter frame û=(u−u0)/scale, v̂=(v−v0)/scale.
+func (f plateDomainFrame) normalize(u, v float64) (uh, vh float64) {
+	return (u - f.u0) / f.scale, (v - f.v0) / f.scale
+}
+
+// normalizeConstraints rebuilds the constraint list in the unit-diameter frame — same Order and
+// Value, only (U,V) transformed. The kernel formulas then receive O(1) Δû,Δv̂ unchanged.
+func (f plateDomainFrame) normalizeConstraints(cs []PlateConstraint) []PlateConstraint {
+	out := make([]PlateConstraint, len(cs))
+	for i, c := range cs {
+		u, v := f.normalize(c.U, c.V)
+		out[i] = PlateConstraint{U: u, V: v, Order: c.Order, Value: c.Value}
+	}
+	return out
+}
+
+// normalizeValues scales each RHS target by scale^{order}: a G0 value is scale-free (order 0), a
+// first-derivative target carries one inverse length so its normalized value is ×scale
+// (∂f/∂û = scale·∂f/∂u; advisory §3.2). This is the ONLY change to the value packing and the
+// crux that balances the G0 and G1 rows.
+func (f plateDomainFrame) normalizeValues(cs []PlateConstraint, values [][]float64) [][]float64 {
+	out := make([][]float64, len(values))
+	for fld, vf := range values {
+		out[fld] = make([]float64, len(vf))
+		for i, v := range vf {
+			out[fld][i] = v * f.orderScale(cs[i].Order)
+		}
+	}
+	return out
+}
+
+// orderScale is scale^{a+b} for a constraint of derivative order (a,b) — 1 for a G0 value,
+// scale for a first-derivative target.
+func (f plateDomainFrame) orderScale(order [2]int) float64 {
+	return stdmath.Pow(f.scale, float64(order[0]+order[1]))
 }
 
 // plateColSign is the column-order parity (−1)^{a_j+b_j} of the K sign rule
@@ -320,17 +409,18 @@ func allFinite(x [][]float64) bool {
 
 // buildPlateCoeffs slices the stacked solution x = [λ; a] (per field f) into PlateCoeffs; all
 // fields share one copy of the constraint centres and the rFloor.
-func buildPlateCoeffs(cs []PlateConstraint, x [][]float64, rFloor float64) []PlateCoeffs {
-	centers := append([]PlateConstraint(nil), cs...)
+func buildPlateCoeffs(ncs []PlateConstraint, x [][]float64, rFloor float64, frame plateDomainFrame) []PlateCoeffs {
+	centers := append([]PlateConstraint(nil), ncs...)
 	out := make([]PlateCoeffs, len(x[0]))
 	for f := range out {
-		out[f] = extractFieldCoeffs(centers, x, f, rFloor)
+		out[f] = extractFieldCoeffs(centers, x, f, rFloor, frame)
 	}
 	return out
 }
 
-// extractFieldCoeffs reads field f's λ (top N rows) and quadratic coefficients (last 6 rows).
-func extractFieldCoeffs(centers []PlateConstraint, x [][]float64, f int, rFloor float64) PlateCoeffs {
+// extractFieldCoeffs reads field f's λ (top N rows) and quadratic coefficients (last 6 rows),
+// stamping the normalizing frame so Eval/EvalGrad can map world (u,v) into the solved frame.
+func extractFieldCoeffs(centers []PlateConstraint, x [][]float64, f int, rFloor float64, frame plateDomainFrame) PlateCoeffs {
 	n := len(centers)
 	lambda := make([]float64, n)
 	for i := 0; i < n; i++ {
@@ -340,33 +430,40 @@ func extractFieldCoeffs(centers []PlateConstraint, x [][]float64, f int, rFloor 
 	for k := 0; k < 6; k++ {
 		poly[k] = x[n+k][f]
 	}
-	return PlateCoeffs{centers: centers, lambda: lambda, poly: poly, rFloor: rFloor}
+	return PlateCoeffs{centers: centers, lambda: lambda, poly: poly, rFloor: rFloor, u0: frame.u0, v0: frame.v0, scale: frame.scale}
 }
 
-// Eval returns the plate value f(u,v) = Σ λ_j·ψ_j(u,v) + a·[1,u,v,u²,uv,v²], where the
-// representer ψ_j = (−1)^{a_j+b_j}·D^{(a_j,b_j)}E((u,v)−P_j) (kit §1/§2).
+// Eval returns the plate value f(u,v) = Σ λ_j·ψ_j(û,v̂) + a·[1,û,v̂,û²,ûv̂,v̂²], where (û,v̂) is
+// the world input normalized into the solve frame and ψ_j = (−1)^{a_j+b_j}·D^{(a_j,b_j)}E((û,v̂)
+// −P̂_j) (kit §1/§2). The field VALUE is scale-invariant (f=f̂), so the result is returned
+// unchanged — the normalization touches only the coordinates fed to the representers/poly
+// (advisory §3.2).
 func (c PlateCoeffs) Eval(u, v float64) float64 {
-	sum := polyValue(c.poly, u, v)
+	uh, vh := c.normalize(u, v)
+	sum := polyValue(c.poly, uh, vh)
 	for j, center := range c.centers {
-		du, dv := u-center.U, v-center.V
+		du, dv := uh-center.U, vh-center.V
 		psi := plateColSign(center.Order) * plateDeriv(center.Order[0], center.Order[1], du, dv, c.rFloor)
 		sum += c.lambda[j] * psi
 	}
 	return sum
 }
 
-// EvalGrad returns the plate gradient (∂f/∂u, ∂f/∂v). Each representer term differentiates once
-// more in u or v — raising the kernel order by one (still ≤ 2, so plateDeriv covers it).
+// EvalGrad returns the world plate gradient (∂f/∂u, ∂f/∂v). It evaluates the NORMALIZED gradient
+// (∂f/∂û, ∂f/∂v̂) at the normalized input, then applies the chain rule ∂f/∂u = (1/scale)·∂f/∂û
+// (advisory §3.2, the one place output is rescaled). Each representer term differentiates once
+// more in û or v̂ — raising the kernel order by one (still ≤ 2, so plateDeriv covers it).
 func (c PlateCoeffs) EvalGrad(u, v float64) (fu, fv float64) {
-	fu, fv = polyGrad(c.poly, u, v)
+	uh, vh := c.normalize(u, v)
+	fu, fv = polyGrad(c.poly, uh, vh)
 	for j, center := range c.centers {
-		du, dv := u-center.U, v-center.V
+		du, dv := uh-center.U, vh-center.V
 		sign := c.lambda[j] * plateColSign(center.Order)
 		au, bv := center.Order[0], center.Order[1]
 		fu += sign * plateDeriv(au+1, bv, du, dv, c.rFloor)
 		fv += sign * plateDeriv(au, bv+1, du, dv, c.rFloor)
 	}
-	return fu, fv
+	return fu / c.scale, fv / c.scale
 }
 
 // polyValue evaluates the quadratic a·[1,u,v,u²,uv,v²].
