@@ -90,83 +90,15 @@ func hostChartFor(surf geom.Surface) (hostChart, bool) {
 // chart direction d2) leaves the loop segs — the outer end of a straight ruling rail on a host. It is
 // the generalized planeRayLoopExit body: chart-agnostic over hostChart, so a cylinder wall (θ,z) and a
 // plane (u,v) share one first-crossing scan.
-//
-// N3 (C2): besides each edge's INTERIOR line/arc crossing, it also tries each edge's ENDPOINTS as
-// candidate exits (rayPointHit2d) and keeps the nearest across both. This is the N7 x=50 plane fix: a
-// bitten loop is opened at its corner, so near that corner only ONE of the two (formerly-adjacent) edges
-// may remain in segs — an independently-computed ruling target (a few thousandths off the loop's own
-// vertex, same provenance gap runoutAgrees tolerates) can then miss that lone edge's own [0,1] interior
-// span with nothing on the "other side" to catch it, though the vertex itself is well within tol
-// (derivation R.1 pitfalls). The winning landing is then snapped onto an exact loop vertex when one is
-// within tol, so the far-path splice reuses it rather than the ray's not-quite-exact numeric landing.
 func chartRulingExit(ch hostChart, segs []endSeg, o2 math.Point2, d2 math.Vector2, tol float64) (math.Point3, bool) {
-	hit, found := nearestRulingCandidate(ch, segs, o2, d2, tol)
-	if !found {
-		return math.Point3{}, false
-	}
-	if v, ok := snapToVertex(hit, segs, tol); ok {
-		return v, true
-	}
-	return hit, true
-}
-
-// nearestRulingCandidate scans every seg's interior crossing AND both its endpoints, keeping the
-// nearest forward (t>tol) hit — the merged interior+endpoint scan chartRulingExit's doc describes.
-func nearestRulingCandidate(ch hostChart, segs []endSeg, o2 math.Point2, d2 math.Vector2, tol float64) (math.Point3, bool) {
 	best, found := stdmath.Inf(1), false
 	var bestPt math.Point3
-	keep := func(t float64, q math.Point3, ok bool) {
-		if ok && t > tol && t < best {
+	for _, s := range segs {
+		if t, q, ok := rayEdgeHit2d(ch, s, o2, d2, tol); ok && t > tol && t < best {
 			best, bestPt, found = t, q, true
 		}
 	}
-	for _, s := range segs {
-		keep(rayEdgeHit2d(ch, s, o2, d2, tol))
-		keep(rayPointHit2d(ch, o2, d2, s.from, tol))
-		keep(rayPointHit2d(ch, o2, d2, s.to, tol))
-	}
 	return bestPt, found
-}
-
-// rayPointHit2d tests one loop-edge ENDPOINT p as a candidate ruling exit, independent of whether p's
-// own edge(s) claim it as an interior crossing: p counts as a forward hit at ray parameter t when its
-// chart projection onto the ray lands within tol of p in 3D (the to3 round trip keeps the check
-// dimensionally correct on a cylinder chart, where u=θ is an angle and v=z is a length — a raw chart-
-// space distance would wrongly mix the two). This is what lets chartRulingExit land on a vertex that a
-// single one-sided open edge (post-bite) cannot interior-cross (N7 x=50 plane, see chartRulingExit doc).
-func rayPointHit2d(ch hostChart, o2 math.Point2, d2 math.Vector2, p math.Point3, tol float64) (float64, math.Point3, bool) {
-	d2Len2 := float64(d2.Dot(d2))
-	if d2Len2 < sinFloor*sinFloor { // degenerate ruling direction — no forward projection to test against
-		return 0, math.Point3{}, false
-	}
-	p2 := ch.to2(p)
-	t := float64(o2.VectorTo(p2).Dot(d2)) / d2Len2
-	if t <= 0 {
-		return 0, math.Point3{}, false // p sits behind the ruling's origin, not a forward exit
-	}
-	closest := ch.to3(o2.TranslateBy(d2.Scale(math.Scalar(t))))
-	if float64(closest.DistanceTo(p)) > tol {
-		return 0, math.Point3{}, false // p is not near the ruling's line
-	}
-	return t, p, true
-}
-
-// snapToVertex returns the loop vertex within tol of p (checking both endpoints of every seg — a
-// landing can coincide with an edge's "from" OR "to", e.g. an open post-bite chain where the target
-// vertex is only ever a "from"), so a landing that coincides with an existing corner reuses it instead
-// of splitting the edge into a zero-length sliver (derivation R.1 pitfalls; insertSplits/splitSeg
-// already no-op on a non-interior point, so this is what makes the exit point BE that exact vertex
-// rather than a near-miss the split logic would then reject anyway).
-func snapToVertex(p math.Point3, segs []endSeg, tol float64) (math.Point3, bool) {
-	for _, s := range segs {
-		if float64(s.from.DistanceTo(p)) <= tol {
-			return s.from, true
-		}
-		if float64(s.to.DistanceTo(p)) <= tol {
-			return s.to, true
-		}
-	}
-	return math.Point3{}, false
 }
 
 // rayEdgeHit2d intersects the chart ray (o2 + t·d2) with one loop edge, returning the forward hit's
@@ -190,7 +122,7 @@ func raySegment2d(ch hostChart, o2 math.Point2, d2 math.Vector2, s endSeg) (floa
 	a2, b2 := ch.to2(s.from), ch.to2(s.to)
 	e := a2.VectorTo(b2)
 	denom := d2.Cross(e)
-	if collinear(d2, e, denom) {
+	if stdmath.Abs(float64(denom)) < 1e-15 {
 		return 0, math.Point3{}, false
 	}
 	ao := o2.VectorTo(a2)
@@ -200,23 +132,6 @@ func raySegment2d(ch hostChart, o2 math.Point2, d2 math.Vector2, s endSeg) (floa
 		return 0, math.Point3{}, false
 	}
 	return t, ch.to3(o2.TranslateBy(d2.Scale(math.Scalar(t)))), true
-}
-
-// collinear reports whether ray direction d2 and edge direction e are parallel within the scale-free
-// angular floor sinFloor: |d2×e|/(|d2||e|) is exactly sin(angle between them), so below sinFloor the
-// edge is numerically indistinguishable from running ALONG the ruling — solving the line intersection
-// would divide by a ~0 denominator (N3, R.1 pitfalls). It replaces a prior raw |denom|<1e-15 check,
-// which was not scale-invariant: |denom|=|d2||e|·sinθ also shrinks with short d2/e even at a real
-// (non-parallel) angle, so a fixed absolute floor could wrongly reject a short-but-crossing edge, or
-// (dually) accept a long-but-grazing one. A grazing/collinear edge is skipped here, not fatal — the
-// caller's far-vertex authority (armRulingEnd's runoutAgrees, C1) is the fallback when a ruling runs
-// along an edge instead of crossing it.
-func collinear(d2, e math.Vector2, cross math.Scalar) bool {
-	denomLen := float64(d2.Length()) * float64(e.Length())
-	if denomLen < 1e-15 { // near-zero-length direction(s) — floating-underflow guard, not a model tolerance
-		return true
-	}
-	return stdmath.Abs(float64(cross))/denomLen < sinFloor
 }
 
 // rayArc2d solves the ray against an arc edge in the PLANE chart, keeping the nearest forward crossing
