@@ -1297,12 +1297,51 @@ func extrudeRegionAt(regions [][]ipt.RegionLoop, i int) []ipt.RegionLoop {
 // body (that is what made BigChunkyPlate a surface rather than a solid).
 func extentOf(ex ipt.Extrude) feature.Extent {
 	if ex.ThroughAll {
-		return feature.Extent{Type: feature.ThroughAllExtent, Direction: feature.PositiveDir}
+		return feature.Extent{Type: feature.ThroughAllExtent, Direction: directionOf(ex)}
 	}
 	dist := ex.Distance
-	return feature.Extent{
+	e := feature.Extent{
 		Type:      feature.DistanceExtent,
-		Direction: feature.PositiveDir,
+		Direction: directionOf(ex),
 		Distance:  func() float64 { return dist },
 	}
+	// A two-sided extrude grows dimLength2 the other way. Its own direction stays PositiveDir:
+	// Distance2 IS the negative side, so pairing it with NegativeDir would grow both spans the
+	// same way.
+	if ex.Distance2 != 0 && !ex.Midplane {
+		d2 := ex.Distance2
+		e.Direction = feature.PositiveDir
+		e.Distance2 = func() float64 { return d2 }
+	}
+	return e
+}
+
+// directionOf maps the extrude's own direction operands onto the extent direction. Midplane wins
+// over reversed: straddling the sketch plane is symmetric, so which way it "grows" is moot.
+//
+// `reversed` alone does NOT mean "grow against the profile normal": it flips the DirectionAxis's
+// OWN vector (InventorLoader sets pad.Dir = dir then pad.Reversed = reversed), and that vector may
+// already point either way relative to the sketch. Mapping reversed straight onto NegativeDir is
+// therefore a coin flip — measured on the corpus it fixed some parts and broke others that were
+// already exact (the actuator screw went 1.01x → 1.16x), a net loss. The direction is only
+// meaningful as dir flipped by reversed, compared against the sketch normal.
+//
+// Every sketch we emit lands on the XY plane (see extractSketches), so the normal is +Z and the
+// comparison reduces to the sign of the effective Z. A file that states no direction keeps the
+// positive default rather than guessing.
+func directionOf(ex ipt.Extrude) feature.ExtentDirection {
+	if ex.Midplane {
+		return feature.SymmetricDir
+	}
+	if !ex.DirOK {
+		return feature.PositiveDir
+	}
+	z := ex.Dir[2]
+	if ex.Reversed {
+		z = -z
+	}
+	if z < 0 {
+		return feature.NegativeDir
+	}
+	return feature.PositiveDir
 }

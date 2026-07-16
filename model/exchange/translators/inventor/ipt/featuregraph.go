@@ -24,13 +24,28 @@ const (
 	directionAxisType = 0xCE52DF40 // an extrude's direction; absent on revolve/other features
 )
 
-// Property indices on a feature node, from InventorLoader's Create_FxExtrude_New. Only the two we
-// need are named: a feature whose property 2 is a DirectionAxis is an extrude, and its property 4
-// is the Parameter holding the depth (dimLength1).
+// Property indices on a feature node, from InventorLoader's Create_FxExtrude_New. A feature whose
+// property 2 is a DirectionAxis is an extrude, and its property 4 is the Parameter holding the
+// depth (dimLength1).
 const (
+	propReversed  = 3 // Boolean: grow against the profile normal
 	propDirection = 2
 	propDistance  = 4
+	propMidplane  = 7    // Boolean: grow half each way about the sketch plane
+	propDistance2 = 0x1B // Parameter: the second direction's length (a two-sided extrude)
 )
+
+// booleanNodeType is InventorLoader's Read_90874D28 "Boolean".
+const booleanNodeType = 0x90874D28
+
+// directionVecOffset is where a DirectionAxis holds its unit direction. InventorLoader
+// Read_CE52DF40: header, an f64, the >2017 4-byte gap, then the f64x3 'dir'. Self-validating —
+// every one of the corpus's 252 extrude directions reads back with |d| = 1 here.
+const directionVecOffset = 50
+
+// booleanNameOffset is where a Boolean node's length-prefixed UTF-16 name begins: the content
+// header runs to 34, exactly as on a Parameter.
+const booleanNameOffset = 34
 
 // Byte layout of a feature node's payload, for this Inventor generation (block size 0, and the
 // post-2023 4-byte gap in the content header). The property list is a List2 of cross-references:
@@ -115,6 +130,76 @@ func parameterValue(pay []byte) (float64, bool) {
 		return 0, false
 	}
 	return v, true
+}
+
+// booleanValue reads a Boolean node's value. Layout after the content header (InventorLoader
+// Read_90874D28): a length-prefixed UTF-16 name, a 4-byte gap, then ONE byte — NOT the u16 an enum
+// node carries at 36. Reading it at the enum offset lands on the name-length field, which is 0 on
+// every node here, so the whole corpus silently reported false.
+func booleanValue(pay []byte) (bool, bool) {
+	if booleanNameOffset+4 > len(pay) {
+		return false, false
+	}
+	n := int(binary.LittleEndian.Uint32(pay[booleanNameOffset:]))
+	if n < 0 || n > 256 {
+		return false, false
+	}
+	at := booleanNameOffset + 4 + 2*n + 4 // name, gap(4)
+	if at >= len(pay) {
+		return false, false
+	}
+	return pay[at] != 0, true
+}
+
+// featureBoolean reads the Boolean a feature's property i references (false when absent).
+func featureBoolean(nodes []dcNode, props []int, i int) bool {
+	if i >= len(props) {
+		return false
+	}
+	n, ok := nodeAt(nodes, props[i])
+	if !ok || n.typ != booleanNodeType {
+		return false
+	}
+	v, ok := booleanValue(n.payload)
+	return ok && v
+}
+
+// extrudeDirection reads the unit direction the feature's DirectionAxis names, and whether it read
+// at all. This is the vector the extrude actually grows along; `reversed` flips THIS, not the
+// profile normal — so reversed cannot be interpreted without it (see Extrude.Dir).
+func extrudeDirection(nodes []dcNode, props []int) ([3]float64, bool) {
+	var d [3]float64
+	if propDirection >= len(props) {
+		return d, false
+	}
+	n, ok := nodeAt(nodes, props[propDirection])
+	if !ok || n.typ != directionAxisType || len(n.payload) < directionVecOffset+24 {
+		return d, false
+	}
+	for i := 0; i < 3; i++ {
+		d[i] = math.Float64frombits(binary.LittleEndian.Uint64(n.payload[directionVecOffset+8*i:]))
+	}
+	l := math.Sqrt(d[0]*d[0] + d[1]*d[1] + d[2]*d[2])
+	if math.IsNaN(l) || math.Abs(l-1) > 1e-6 {
+		return [3]float64{}, false // not a unit vector ⇒ not this layout; decline rather than guess
+	}
+	return d, true
+}
+
+// featureParameter reads the Parameter value a feature's property i references (0 when absent).
+func featureParameter(nodes []dcNode, props []int, i int) float64 {
+	if i >= len(props) {
+		return 0
+	}
+	n, ok := nodeAt(nodes, props[i])
+	if !ok || n.typ != parameterNodeType {
+		return 0
+	}
+	v, ok := parameterValue(n.payload)
+	if !ok {
+		return 0
+	}
+	return v
 }
 
 // extrudeDepth returns the depth a feature node references, and whether that node is an extrude at

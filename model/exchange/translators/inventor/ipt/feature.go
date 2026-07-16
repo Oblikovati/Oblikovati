@@ -59,10 +59,24 @@ func DecodeOperations(seg []byte) []int {
 // operation. A ThroughAll extrude carries NO distance — it runs until it leaves the material — so
 // Distance is meaningless there and must not be built as a length (extruding it 0 makes a
 // degenerate zero-thickness body, which is what turned BigChunkyPlate into a surface).
+// Direction (reversed/midplane) and Distance2 are the feature's own operands, all three read by
+// InventorLoader's Create_FxExtrude_New. Ignoring them built every extrude one-sided along the
+// profile normal: a REVERSED cut then removes material from the wrong side of the sketch (140 of
+// the corpus's extrudes say reversed), a MIDPLANE extrude lands wholly on one side instead of
+// straddling the plane (30 say so), and a two-sided extrude loses its second direction entirely.
 type Extrude struct {
 	Distance   float64
 	ThroughAll bool
 	Operation  int
+	Reversed   bool
+	Midplane   bool
+	// Dir is the DirectionAxis's unit vector — the direction the extrude ACTUALLY grows along.
+	// Reversed flips Dir, not the profile normal, so the two only mean something together; DirOK
+	// is false when the file did not state one.
+	Dir   [3]float64
+	DirOK bool
+	// Distance2 is the second direction's length; 0 ⇒ single-direction.
+	Distance2 float64
 }
 
 // DecodeExtrude reports the part's first extrude feature, if present.
@@ -138,7 +152,16 @@ func DecodeExtrudes(d *Document) []Extrude {
 		if !ok {
 			op = OpNewBody // a feature naming no operation starts a body
 		}
-		out = append(out, Extrude{Distance: dist, ThroughAll: extrudeThroughAll(nodes, n.payload), Operation: op})
+		props, _ := featureProperties(n.payload)
+		out = append(out, Extrude{
+			Distance:   dist,
+			ThroughAll: extrudeThroughAll(nodes, n.payload),
+			Operation:  op,
+			Reversed:   featureBoolean(nodes, props, propReversed),
+			Midplane:   featureBoolean(nodes, props, propMidplane),
+			Distance2:  featureParameter(nodes, props, propDistance2),
+		})
+		out[len(out)-1].Dir, out[len(out)-1].DirOK = extrudeDirection(nodes, props)
 	}
 	return out
 }
