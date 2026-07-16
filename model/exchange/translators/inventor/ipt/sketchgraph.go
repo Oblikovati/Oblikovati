@@ -175,11 +175,17 @@ func point2DAt(pay []byte) (Point2D, bool) {
 	return Point2D{x, y}, true
 }
 
-// edgeEndpoints resolves an edge's two endpoint references to coordinates — the exact
-// connectivity, stated by the file rather than inferred from creation order.
+// edgeEndpoints resolves an edge's endpoints to coordinates — the exact connectivity, stated by the
+// file rather than inferred from creation order.
+//
+// The FIRST TWO references are the endpoints (InventorLoader's addSketch_Line2D reads points[0] and
+// points[1]); an edge lists every point lying ON it, so further references are midpoints and
+// coincidences, not ends. Requiring exactly two dropped any line a point was constrained to —
+// BigChunkyPlate's base profile lost an edge that way, which nulled its whole region and left the
+// part with only its cuts.
 func edgeEndpoints(nodes []dcNode, pay []byte) (a, b Point2D, ok bool) {
 	refs, _, ok := refList2(pay, edgePointsListOffset)
-	if !ok || len(refs) != 2 {
+	if !ok || len(refs) < 2 {
 		return a, b, false
 	}
 	if a, ok = referencedPoint(nodes, refs[0]); !ok {

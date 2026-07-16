@@ -80,3 +80,41 @@ func closedLoop(ls []Line) bool {
 }
 
 func nearPt(a, b Point2D) bool { return absf(a.X-b.X) < 1e-9 && absf(a.Y-b.Y) < 1e-9 }
+
+// TestGraphSketchesMultiPointEdges guards the endpoint rule against a real part whose edges carry
+// MORE than two point references. An edge lists every point lying on it — a midpoint, a coincidence
+// — and only the first two are its ends (InventorLoader's addSketch_Line2D reads points[0] and
+// points[1]). Requiring exactly two silently DROPPED such an edge, which cost the sketch a curve and
+// nulled the region built from it. This fixture is ReelToReel's TorquimeterDisk: 4 of its 15 edges
+// have 3+ point refs, and none may be lost.
+func TestGraphSketchesMultiPointEdges(t *testing.T) {
+	d := openDoc(t, "real_multipoint_disk.ipt")
+	nodes := dcNodes(d)
+	_, index := sketchOrdinals(nodes)
+
+	declared, multi := 0, 0
+	for _, n := range nodes {
+		if n.typ != line2DNodeType && n.typ != arc2DNodeType {
+			continue
+		}
+		if _, ok := entityOwner(n, index); !ok {
+			continue
+		}
+		declared++
+		if refs, _, ok := refList2(n.payload, edgePointsListOffset); ok && len(refs) > 2 {
+			multi++
+		}
+	}
+	if multi == 0 {
+		t.Fatal("fixture no longer has an edge with >2 point refs — it cannot guard the rule")
+	}
+	decoded := 0
+	for _, s := range GraphSketches(d) {
+		decoded += len(s.Lines) + len(s.Arcs)
+	}
+	if decoded != declared {
+		t.Errorf("decoded %d line/arc curves from %d the file declares — %d dropped; an edge with "+
+			"more than two point refs must keep its FIRST TWO as endpoints, not be discarded",
+			decoded, declared, declared-decoded)
+	}
+}
