@@ -299,15 +299,15 @@ func buildExtrudeFeatures(def *compdef.PartComponentDefinition, d *ipt.Document,
 			continue
 		}
 		region := extrudeRegionAt(regions, i)
-		r := regionProfileIndex(emitted[p].sk, region)
-		if r < 0 {
+		idx := regionProfileIndices(emitted[p].sk, region)
+		if len(idx) == 0 {
 			// The sketch holds several regions and we can't tell which this extrude names, so any
 			// choice would be a guess; leave the sketch standing without a body.
-			notes = append(notes, fmt.Sprintf("extrude %d: could not match its region (%d edges) to a rebuilt profile — skipped", i, len(region)))
+			notes = append(notes, fmt.Sprintf("extrude %d: could not match its region (%d loops) to any rebuilt profile — skipped", i, len(region)))
 			continue
 		}
 		dist := ex.Distance
-		lastExtrude = feature.NewExtrudeFeatures(def.Features()).AddByDistanceExtent(emitted[p].sk, r, operationOf(ex.Operation), func() float64 { return dist })
+		lastExtrude = feature.NewExtrudeFeatures(def.Features()).AddByDistanceExtentProfiles(emitted[p].sk, idx, operationOf(ex.Operation), func() float64 { return dist })
 		built = true
 	}
 	// A drilled hole cuts the base solid: place it on the extrude's top face (analytic), drilling
@@ -504,15 +504,20 @@ func emitSketchOn(def *compdef.PartComponentDefinition, s ipt.Sketch, plane sket
 	lines := make([]*sketch.Line, len(s.Lines))
 	for i, l := range s.Lines {
 		lines[i] = sk.Lines().Add(pointAt(l.A), pointAt(l.B))
+		// Construction geometry must stay construction: as real geometry it CUTS the regions around
+		// it, and the kernel excludes it from profiles only when marked.
+		lines[i].SetConstruction(s.LineIsConstruction(i))
 	}
-	for _, a := range s.Arcs {
+	for i, a := range s.Arcs {
 		// Share the arc's endpoints with the adjacent lines (pointAt) so a filleted profile stays a
 		// closed loop, exactly as a shared line corner does. Consumers decode the MINOR arc, so its
 		// sweep direction (CCW when the CCW span start→end is the shorter one) is derived here.
-		sk.Arcs().Add(pointAt(a.Center), pointAt(a.Start), pointAt(a.End), minorArcCCW(a))
+		sk.Arcs().Add(pointAt(a.Center), pointAt(a.Start), pointAt(a.End), minorArcCCW(a)).
+			SetConstruction(s.ArcIsConstruction(i))
 	}
-	for _, c := range s.Circles {
-		sk.Circles().AddByCenterRadius(m.P2(c.Center.X, c.Center.Y), m.Scalar(c.Radius))
+	for i, c := range s.Circles {
+		sk.Circles().AddByCenterRadius(m.P2(c.Center.X, c.Center.Y), m.Scalar(c.Radius)).
+			SetConstruction(s.CircleIsConstruction(i))
 	}
 	for _, e := range s.Ellipses {
 		// Share the centre with any coincident corner (pointAt), matching how Inventor stores an
@@ -1279,7 +1284,7 @@ func sketchEntityCount(sketches []ipt.Sketch) int {
 }
 
 // extrudeRegionAt returns the decoded region for extrude i, or nil when the decode produced none.
-func extrudeRegionAt(regions [][]ipt.RegionEdge, i int) []ipt.RegionEdge {
+func extrudeRegionAt(regions [][]ipt.RegionLoop, i int) []ipt.RegionLoop {
 	if i >= len(regions) {
 		return nil
 	}

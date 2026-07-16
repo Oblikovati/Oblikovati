@@ -13,11 +13,18 @@ func TestExtrudeRegions(t *testing.T) {
 		t.Fatalf("got %d regions, want 2", len(got))
 	}
 	for i, r := range got {
-		if len(r) != 4 {
-			t.Errorf("region %d has %d edges, want 4", i, len(r))
+		if len(r) != 1 {
+			t.Errorf("region %d has %d loops, want 1 (a plain rectangle)", i, len(r))
 			continue
 		}
-		for _, e := range r {
+		if r[0].Cut {
+			t.Errorf("region %d: the rectangle's only loop is marked Cut, want a material loop", i)
+		}
+		if len(r[0].Edges) != 4 {
+			t.Errorf("region %d has %d edges, want 4", i, len(r[0].Edges))
+			continue
+		}
+		for _, e := range r[0].Edges {
 			if e.Kind != EdgeLine {
 				t.Errorf("region %d: edge kind %v, want a line", i, e.Kind)
 			}
@@ -25,8 +32,8 @@ func TestExtrudeRegions(t *testing.T) {
 	}
 	// the two regions must be DIFFERENT rectangles: the associative ids repeat per sketch, so a
 	// decode that ignored the owning sketch would return the same edges twice.
-	if regionKey(got[0]) == regionKey(got[1]) {
-		t.Errorf("both extrudes resolved to the same region %v — the associative id was not scoped to its sketch", regionKey(got[0]))
+	if regionKey(got[0][0].Edges) == regionKey(got[1][0].Edges) {
+		t.Errorf("both extrudes resolved to the same region %v — the associative id was not scoped to its sketch", regionKey(got[0][0].Edges))
 	}
 }
 
@@ -48,4 +55,32 @@ func regionKey(r []RegionEdge) [4]float64 {
 		}
 	}
 	return k
+}
+
+// TestExtrudeRegionHoles guards that a region keeps its HOLES. The linkage's patch is bounded by
+// one material loop (its obround: two circles + two tangent lines) and two cut loops (its bores).
+// Those cut loops read operation 0, which an earlier mask discarded as "no material" — losing the
+// bores and leaving a region no rebuilt profile could match.
+func TestExtrudeRegionHoles(t *testing.T) {
+	got := ExtrudeRegions(openDoc(t, "real_arc_linkage.ipt"))
+	if len(got) != 1 {
+		t.Fatalf("got %d regions, want 1", len(got))
+	}
+	material, cuts := 0, 0
+	for _, l := range got[0] {
+		if l.Cut {
+			cuts++
+			if len(l.Edges) != 1 || l.Edges[0].Kind != EdgeCircle {
+				t.Errorf("hole loop has %d edges (kind %v), want one circle", len(l.Edges), l.Edges[0].Kind)
+			}
+			continue
+		}
+		material++
+		if len(l.Edges) != 4 {
+			t.Errorf("outer loop has %d edges, want 4 (2 circles + 2 tangent lines)", len(l.Edges))
+		}
+	}
+	if material != 1 || cuts != 2 {
+		t.Errorf("region has %d material + %d cut loops, want 1 + 2", material, cuts)
+	}
 }

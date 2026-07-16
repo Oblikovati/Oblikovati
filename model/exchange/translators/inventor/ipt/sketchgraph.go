@@ -37,6 +37,7 @@ const (
 // owning-sketch reference sits at 38 and a point's coordinates at 42. An edge instead has its
 // endpoint List2 at 42.
 const (
+	entityFlags2Offset    = 34 // the entity's flag word; constructionFlag lives here
 	entitySketchRefOffset = 38
 	point2DPosOffset      = 42
 	edgePointsListOffset  = 42
@@ -101,6 +102,7 @@ func entityOwner(n dcNode, index map[int]int) (int, bool) {
 // missing curve is a visibly incomplete profile, which the body gate then catches, whereas a
 // guessed one would be silently wrong.
 func addGraphEntity(s *Sketch, nodes []dcNode, n dcNode) {
+	c := isConstructionEntity(n.payload)
 	switch n.typ {
 	case point2DNodeType:
 		if p, ok := point2DAt(n.payload); ok {
@@ -109,20 +111,33 @@ func addGraphEntity(s *Sketch, nodes []dcNode, n dcNode) {
 	case line2DNodeType:
 		if a, b, ok := edgeEndpoints(nodes, n.payload); ok {
 			s.Lines = append(s.Lines, Line{A: a, B: b})
+			s.LineConstruction = append(s.LineConstruction, c)
 		}
 	case circle2DNodeType:
-		if c, ok := circle2DAt(nodes, n.payload); ok {
-			s.Circles = append(s.Circles, c)
+		if circ, ok := circle2DAt(nodes, n.payload); ok {
+			s.Circles = append(s.Circles, circ)
+			s.CircleConstruction = append(s.CircleConstruction, c)
 		}
 	case arc2DNodeType:
 		if a, ok := arc2DAt(nodes, n.payload); ok {
 			s.Arcs = append(s.Arcs, a)
+			s.ArcConstruction = append(s.ArcConstruction, c)
 		}
 	case ellipse2DNodeType:
 		if e, ok := ellipse2DAt(nodes, n.payload); ok {
 			s.Ellipses = append(s.Ellipses, e)
 		}
 	}
+}
+
+// isConstructionEntity reports whether a 2D entity is construction (reference) geometry, from the
+// flag word every sketch entity carries. Verified on the linkage: its centreline reads 0x00080000
+// there while the two profile lines read 0.
+func isConstructionEntity(pay []byte) bool {
+	if len(pay) < entityFlags2Offset+4 {
+		return false
+	}
+	return binary.LittleEndian.Uint32(pay[entityFlags2Offset:])&constructionFlag != 0
 }
 
 // ellipse2DAt reads a SketchEllipse: centre by reference, then the major-axis unit direction and

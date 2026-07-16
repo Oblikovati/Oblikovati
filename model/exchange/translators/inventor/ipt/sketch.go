@@ -81,7 +81,28 @@ type Sketch struct {
 	// connectivity — which mangles a non-convex profile. Revolve gates on this: a scrambled
 	// profile turned about an axis is a blob, so an unresolved revolve yields to the mesh body.
 	Resolved bool
+	// Construction marks, per curve, whether it is construction (reference) geometry — a centreline
+	// or similar, which Inventor draws but does not let bound a region. Each slice runs parallel to
+	// the curve slice it names and may be shorter/absent, meaning "none known". This must be
+	// carried, not dropped: a construction line left as real geometry CUTS the regions around it
+	// (the linkage's centreline split its one region into two, so no profile matched what the file
+	// named). Filled by GraphSketches; the cluster decode drops construction curves instead.
+	LineConstruction   []bool
+	CircleConstruction []bool
+	ArcConstruction    []bool
 }
+
+// LineIsConstruction reports whether line i is construction geometry, tolerating an absent flag
+// slice (the decoders that don't carry the flag).
+func (s Sketch) LineIsConstruction(i int) bool { return flagAt(s.LineConstruction, i) }
+
+// CircleIsConstruction reports whether circle i is construction geometry.
+func (s Sketch) CircleIsConstruction(i int) bool { return flagAt(s.CircleConstruction, i) }
+
+// ArcIsConstruction reports whether arc i is construction geometry.
+func (s Sketch) ArcIsConstruction(i int) bool { return flagAt(s.ArcConstruction, i) }
+
+func flagAt(flags []bool, i int) bool { return i < len(flags) && flags[i] }
 
 type Line struct{ A, B Point2D }
 type Circle struct {

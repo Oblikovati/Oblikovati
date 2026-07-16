@@ -40,9 +40,17 @@ const (
 	entityRefSketchOffset = 55
 )
 
-// loopKeepsMaterial is the mask InventorLoader's createBoundary applies to a loop's operation to
-// keep the parts that bound the region (rather than a construction/blanked one).
-const loopKeepsMaterial = 0x18
+// loopAddsMaterial is the operation bit that marks a loop as bounding material (Fuse). A loop
+// WITHOUT it is a Cut: a hole inside the region, not something to discard — dropping those lost
+// the linkage's two bores and made its region unmatchable.
+const loopAddsMaterial = 0x18
+
+// RegionLoop is one closed boundary of a region: the curves bounding it, and whether it adds
+// material (the outer boundary) or cuts it away (a hole).
+type RegionLoop struct {
+	Edges []RegionEdge
+	Cut   bool
+}
 
 // RegionEdge is one curve of a region's boundary, identified by geometry so it can be matched
 // against a rebuilt profile's entities. Exactly one of the shapes is meaningful, per Kind.
@@ -62,15 +70,15 @@ const (
 	EdgeArc
 )
 
-// ExtrudeRegions returns, for each extrude in feature order, the edges bounding the region it
+// ExtrudeRegions returns, for each extrude in feature order, the loops bounding the region it
 // consumes — aligned with DecodeExtrudes and ExtrudeProfiles. An extrude whose region can't be
 // resolved yields a nil slice, so callers decline rather than guess a profile.
-func ExtrudeRegions(d *Document) [][]RegionEdge {
+func ExtrudeRegions(d *Document) [][]RegionLoop {
 	nodes := dcNodes(d)
 	_, sketchIndex := sketchOrdinals(nodes)
 	assoc := associativeEntities(nodes, sketchIndex)
 	patchLoops := boundPatchLoops(nodes)
-	var out [][]RegionEdge
+	var out [][]RegionLoop
 	for _, n := range nodes {
 		if n.typ != featureNodeType {
 			continue
@@ -90,49 +98,46 @@ type assocKey struct {
 	id     int
 }
 
-// regionOf collects the edges of every material-bearing loop bounding one extrude's patch.
-func regionOf(nodes []dcNode, pay []byte, patchLoops map[int][]int, assoc map[assocKey]dcNode, sketchIndex map[int]int) []RegionEdge {
+// regionOf collects every loop bounding one extrude's patch, outer and holes alike.
+func regionOf(nodes []dcNode, pay []byte, patchLoops map[int][]int, assoc map[assocKey]dcNode, sketchIndex map[int]int) []RegionLoop {
 	props, ok := featureProperties(pay)
 	if !ok || len(props) <= propProfile {
 		return nil
 	}
-	var out []RegionEdge
+	var out []RegionLoop
 	for _, loopRef := range patchLoops[props[propProfile]] {
 		loop, ok := nodeAt(nodes, loopRef)
 		if !ok {
 			return nil
 		}
-		edges, ok := loopEdges(nodes, loop, assoc, sketchIndex)
+		l, ok := loopAt(nodes, loop, assoc, sketchIndex)
 		if !ok {
 			return nil // an unreadable loop makes the region unknown; say so rather than part-guess
 		}
-		out = append(out, edges...)
+		out = append(out, l)
 	}
 	return out
 }
 
-// loopEdges resolves one loop's ordered edges to their curves. Loops that carry no material are
-// skipped (they bound nothing), which is not a failure.
-func loopEdges(nodes []dcNode, loop dcNode, assoc map[assocKey]dcNode, sketchIndex map[int]int) ([]RegionEdge, bool) {
+// loopAt resolves one loop's ordered edges to their curves, and whether it cuts rather than adds.
+func loopAt(nodes []dcNode, loop dcNode, assoc map[assocKey]dcNode, sketchIndex map[int]int) (RegionLoop, bool) {
 	if len(loop.payload) < loopEdgesOffset+8 {
-		return nil, false
+		return RegionLoop{}, false
 	}
-	if binary.LittleEndian.Uint32(loop.payload[loopOperationOffset:])&loopKeepsMaterial == 0 {
-		return nil, true
-	}
+	cut := binary.LittleEndian.Uint32(loop.payload[loopOperationOffset:])&loopAddsMaterial == 0
 	refs, _, ok := refList2(loop.payload, loopEdgesOffset)
 	if !ok {
-		return nil, false
+		return RegionLoop{}, false
 	}
 	out := make([]RegionEdge, 0, len(refs))
 	for _, r := range refs {
 		e, ok := resolveRegionEdge(nodes, r, assoc, sketchIndex)
 		if !ok {
-			return nil, false
+			return RegionLoop{}, false
 		}
 		out = append(out, e)
 	}
-	return out, true
+	return RegionLoop{Edges: out, Cut: cut}, true
 }
 
 // resolveRegionEdge turns one SketchEntityRef into the curve it names, via the associative id.
