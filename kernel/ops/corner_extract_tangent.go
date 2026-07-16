@@ -53,7 +53,11 @@ func extractTangentDegenerateCorner(w cornerWeld, arms []edgeFillet, res Resolut
 	if !ok {
 		return RailLoop{}, false
 	}
-	loop := RailLoop{Sides: sides, Provenance: topo.Lineage{}}
+	// Stamped ONLY here, after wallFeetSplit above confirmed the degenerate valence-4 topology (the
+	// N7 family) — the plate tier's sole recognition signal (M6, ADR-0051). extractOctantCorner
+	// (the valence-3 sibling) never touches this stamp, so it leaves RailSignatureGeneral and the
+	// plate tier never fires for it (B3 byte-identical).
+	loop := RailLoop{Sides: sides, Provenance: topo.Lineage{}, Signature: RailSignatureTangentPlate}
 	return loop, loop.Closed(res.Weld() * scale)
 }
 

@@ -68,13 +68,15 @@ func TestResolveBlendHonestReject(t *testing.T) {
 }
 
 // TestResolveBlendTiersOrder pins the ADR-0051 foundation tier order: analytic-known-part first
-// (exact sphere), then the general fills (4-sided coons4, 3-sided tri3).
+// (exact sphere), then the M6 plate tier (RailSignatureTangentPlate-marked loops only), then the
+// general fills (4-sided coons4, 3-sided tri3). See TestBlendTiersOrderIncludesPlate
+// (corner_provider_plate_test.go) for the plate-specific coverage.
 func TestResolveBlendTiersOrder(t *testing.T) {
 	tiers := blendTiers()
-	if len(tiers) != 3 {
-		t.Fatalf("expected 3 tiers, got %d", len(tiers))
+	if len(tiers) != 4 {
+		t.Fatalf("expected 4 tiers, got %d", len(tiers))
 	}
-	want := []CornerBlendKind{BlendKindSphere, BlendKindCoons4, BlendKindTri3}
+	want := []CornerBlendKind{BlendKindSphere, BlendKindPlate, BlendKindCoons4, BlendKindTri3}
 	for i, k := range want {
 		if tiers[i].Name() != k {
 			t.Errorf("tier %d: expected %q, got %q", i, k, tiers[i].Name())

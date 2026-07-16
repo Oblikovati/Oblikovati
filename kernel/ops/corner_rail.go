@@ -40,6 +40,22 @@ type Side struct {
 	Cont Continuity
 }
 
+// RailSignature classifies a RailLoop's GEOMETRIC FAMILY as recognized by the extractor that built
+// it — the ONLY channel an extractor uses to hand a provider-specific hint downstream (ADR-0051 M6):
+// a provider's Fits reads Signature, never topo/extractor internals, so providers stay topo-free.
+type RailSignature int
+
+const (
+	// RailSignatureGeneral is the zero value: no extractor claimed a special family for this loop.
+	// Every existing extractor (extractOctantCorner, coons4/tri3's own fixtures, etc.) leaves it
+	// unset, so every pre-M6 loop is unaffected by the new plate tier (corpus-neutral by default).
+	RailSignatureGeneral RailSignature = iota
+	// RailSignatureTangentPlate marks a tangent-degenerate valence-4 corner (N7's family): the
+	// extractor confirmed wallFeetSplit's degenerate topology, the plate tier's ONLY recognition
+	// signal (kernel/ops/corner_extract_tangent.go). See plateProvider.Fits.
+	RailSignatureTangentPlate
+)
+
 // RailLoop is the single request type every junction valence (bevel, 3-way,
 // n-sided) is expressed as (ADR-0051): an ordered closed cycle of [Side]s bounding
 // one fill patch.
@@ -49,6 +65,10 @@ type RailLoop struct {
 	// Provenance carries the generating tokens for ADR-0043 topological naming.
 	// It is identity/history bookkeeping only — a fill provider never reads it.
 	Provenance topo.Lineage
+	// Signature is the extractor's classification hint (RailSignatureGeneral by default). It is the
+	// ONLY channel from extractor to provider (ADR-0051 M6) — geom never reads it, and a provider's
+	// Fits may key on it instead of/alongside loop shape.
+	Signature RailSignature
 }
 
 // Valence returns the number of sides in the loop (a triangle corner is 3, a
