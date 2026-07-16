@@ -241,6 +241,116 @@ func assertB3FaithfulFaces(t *testing.T, body *topo.Body) {
 	}
 }
 
+// b3OracleVolume is the DRAWEXE vprops mass (density 1) of B3 — `pcylinder s 50 100 90;
+// trotate 270; blend result s 10 s_1 10 s_4 10 s_5` — the self-contained OCCT
+// tests/blend/simple/B3 script (checkprops -s 20559.5; vprops mass 190761).
+const b3OracleVolume = 190761.0
+
+// TestFilletEdges_B3VolumeRegression is the load-bearing WRONG-SIGN guard the T5.4 review identified as
+// missing: the tessellated-AREA faithfulness check (assertB3FaithfulFaces) is orientation-BLIND — an
+// inside-out (reversed-winding) face preserves its area magnitude and still passes IsSolid. Only the
+// divergence-theorem VOLUME is orientation-sensitive, so a wrong-sign weld is caught here and nowhere
+// else. The mutation (assertInsideOutTorusFailsVolume) proves the gate BITES: reversing only the torus
+// arm face drops the volume ~31%, far outside the 1% band, while its area and IsSolid are unchanged.
+func TestFilletEdges_B3VolumeRegression(t *testing.T) {
+	body, err := filletedCorpusEdges(t, "simple/B3", 10)
+	if err != nil {
+		t.Fatalf("B3 curved-arm weld errored (want a solid): %v", err)
+	}
+	if body == nil || !body.IsSolid() {
+		t.Fatalf("B3 curved-arm weld is not a solid (IsSolid=false)")
+	}
+	if rep := Validate(body); !rep.Valid || !rep.HolesContained {
+		t.Fatalf("B3 weld invalid: Valid=%v HolesContained=%v issues=%v", rep.Valid, rep.HolesContained, rep.Issues)
+	}
+	mesh, _ := TessellateBody(body, DefaultQuality())
+	if rel := relErrVol(bodyVolume(mesh), b3OracleVolume); rel > 0.01 {
+		t.Fatalf("B3 tessellated volume %.2f, want %.1f ±1%% (rel %.4f) — a wrong-sign/mis-trimmed weld",
+			bodyVolume(mesh), b3OracleVolume, rel)
+	}
+	assertInsideOutTorusFailsVolume(t, body)
+}
+
+// assertInsideOutTorusFailsVolume rebuilds the body mesh with ONLY the torus arm face wound inside-out
+// and asserts the tessellated volume then leaves the 1% band — the proof that the volume gate catches
+// an orientation defect the area/IsSolid gates miss (T5.4 review's "orientation-blind area" finding).
+func assertInsideOutTorusFailsVolume(t *testing.T, body *topo.Body) {
+	t.Helper()
+	base, flipped := torusFlippedVolumes(body)
+	if relErrVol(base, b3OracleVolume) > 0.01 {
+		t.Fatalf("B3 base volume %.2f drifted from %.1f (harness mesh error)", base, b3OracleVolume)
+	}
+	if relErrVol(flipped, b3OracleVolume) <= 0.01 {
+		t.Fatalf("inside-out torus volume %.2f still within 1%% of %.1f — the volume guard does not bite",
+			flipped, b3OracleVolume)
+	}
+}
+
+// torusFlippedVolumes returns the body's divergence-theorem volume as tessellated, and again with the
+// torus arm face's triangle winding reversed (the inside-out mutation). It merges per-face meshes so a
+// single face can be flipped in isolation — TessellateBody would hide it behind a whole-body merge.
+func torusFlippedVolumes(body *topo.Body) (base, flipped float64) {
+	merged, mutated := &Mesh{}, &Mesh{}
+	for _, f := range body.Faces() {
+		fm := TessellateFace(f, DefaultQuality())
+		mergeMesh(merged, fm)
+		if _, isTorus := f.Geometry().(geom.Torus); isTorus {
+			mergeMesh(mutated, reversedWinding(fm))
+			continue
+		}
+		mergeMesh(mutated, fm)
+	}
+	return bodyVolume(merged), bodyVolume(mutated)
+}
+
+// reversedWinding returns a copy of m with every triangle's winding reversed (b,c swapped) — an
+// inside-out face. Positions/Normals are shared; only the index copy is mutated.
+func reversedWinding(m *Mesh) *Mesh {
+	idx := append([]int(nil), m.Indices...)
+	for i := 0; i+2 < len(idx); i += 3 {
+		idx[i+1], idx[i+2] = idx[i+2], idx[i+1]
+	}
+	return &Mesh{Positions: m.Positions, Normals: m.Normals, Indices: idx}
+}
+
+// relErrVol is the relative error |got−want|/|want| used by the volume gate (want ≠ 0 here).
+func relErrVol(got, want float64) float64 { return stdmath.Abs(got-want) / stdmath.Abs(want) }
+
+// TestFilletEdges_N1O1DeclineCleanly pins the do-no-harm floor for the two r=5 family corners the T5.5
+// investigation found are NOT the B3 wedge topology (their expected areas 58091.9/65104.9 are OCCT's).
+// N1's picked wall is a CONCAVE bore (radius 20, material OUTSIDE): the pre-M5 convex-external-only arm
+// builder and the planar corner solver place the arms and the corner sphere INSIDE the bore (the wrong
+// material side — the sphere centre lands outside the solid), so the station-coincidence gate correctly
+// declines (C is not on the vertical wall arm's spine). O1 carries a concave/oblique picked edge the
+// curved-arm classifier rejects even earlier ("edge borders a curved cylinder face not yet supported").
+// Either way the WHOLE op must honest-reject to the clean floor error — never panic, never a partial or
+// wrong-sign solid. This is the correct outcome for an unsupported case; it is NOT loosened to force a
+// green. See task-5.5-report.md for the full per-case verdict.
+func TestFilletEdges_N1O1DeclineCleanly(t *testing.T) {
+	for _, rel := range []string{"simple/N1", "simple/O1"} {
+		rel := rel
+		t.Run(rel, func(t *testing.T) { assertCurvedCornerDeclinesCleanly(t, rel, 5) })
+	}
+}
+
+// assertCurvedCornerDeclinesCleanly requires FilletEdges to honest-reject rel at radius r: a non-nil
+// error, a nil body (no partial solid shipped), and no panic — the do-no-harm floor.
+func assertCurvedCornerDeclinesCleanly(t *testing.T, rel string, r float64) {
+	t.Helper()
+	defer func() {
+		if p := recover(); p != nil {
+			t.Fatalf("%s curved-arm fillet PANICKED (do-no-harm floor breached): %v", rel, p)
+		}
+	}()
+	body, err := filletedCorpusEdges(t, rel, r)
+	if err == nil {
+		t.Fatalf("%s: FilletEdges returned no error — an unsupported corner must honest-reject, not ship a solid", rel)
+	}
+	if body != nil {
+		t.Fatalf("%s: FilletEdges returned a non-nil body alongside the decline error (partial solid): %v", rel, err)
+	}
+}
+
 // mustHostArc builds a host arc or fails the test.
 func mustHostArc(t *testing.T, host geom.Surface, tor geom.Torus, w cornerWeld, res Resolution) geom.Arc3d {
 	t.Helper()
