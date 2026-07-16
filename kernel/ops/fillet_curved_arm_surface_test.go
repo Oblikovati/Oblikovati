@@ -97,7 +97,7 @@ func TestCurvedArmSectionArc_B3(t *testing.T) {
 	if !ok {
 		t.Fatalf("torusArmSurface declined a valid convex B3 rim")
 	}
-	sec := curvedArmSectionArc(tor, 0)
+	sec := curvedArmSectionArc(tor, 0, cylAxis(0, 0, 1, 50), 10, true)
 	arc, isArc := sec.(geom.Arc3d)
 	if !isArc || !nearlyArm(arc.Radius, 10) {
 		t.Fatalf("section arc = %#v, want a radius-10 Arc3d", sec)
@@ -108,5 +108,66 @@ func TestCurvedArmSectionArc_B3(t *testing.T) {
 	}
 	if !nearlyArm(end.Z, 100) { // plane-contact on the cap
 		t.Fatalf("section end z = %.6f, want 100 (cap plane)", end.Z)
+	}
+}
+
+// occtCylSectionSpan / occtCylSectionSpanR5 are the DRAWEXE-certified config-ii CONVEX section spans
+// (m5-arm-section-derivation.md): host R=50, ρ=R−r, span = π/2 + asin(r/ρ). r=10 ⟹ 104.4775°,
+// r=5 ⟹ 96.3794°. The planar π/2 (1.5708 rad) these must NOT collapse to is the pre-fix defect.
+const (
+	occtCylSectionSpan   = 1.823476 // π/2 + asin(10/40), R=50 r=10
+	occtCylSectionSpanR5 = 1.682137 // π/2 + asin(5/45),  R=50 r=5
+)
+
+// nearlyRad is the angular tolerance for the section-span assertions: the certified spans are exact
+// closed forms, so 1e-4 rad (≈0.006°) is a pure numerical floor, not a geometry allowance.
+func nearlyRad(got, want float64) bool { return stdmath.Abs(got-want) < 1e-4 }
+
+// TestCurvedArmSectionArc_CylinderSpan pins the config-ii CYLINDER arm's cross-section span to the
+// DRAWEXE ground truth π/2 + asin(r/ρ) (104.4775° at r=10) — NOT the planar π/2 the constructor used
+// to defer to (the corrected latent defect). It also checks the endpoints land on the two host faces:
+// the cyl-contact on the R=50 wall (radius 50 from the axis), the plane-contact on the x=0 flat. The
+// r=5 sub-case pins 96.3794°, so the asin(r/ρ) term is exercised at two radii, not one.
+func TestCurvedArmSectionArc_CylinderSpan(t *testing.T) {
+	host := cylAxis(0, 0, 1, 50)
+	for _, tc := range []struct {
+		r, wantSpan float64
+	}{
+		{10, occtCylSectionSpan},
+		{5, occtCylSectionSpanR5},
+	} {
+		arm, ok := cylinderArmSurface(b3VerticalWallEdge(t), host, planeWithNormal(1, 0, 0), tc.r)
+		if !ok {
+			t.Fatalf("cylinderArmSurface declined a valid convex wall (r=%.0f)", tc.r)
+		}
+		assertCylSectionSpan(t, curvedArmSectionArc(arm, 0, host, tc.r, true), tc.r, tc.wantSpan)
+	}
+}
+
+// assertCylSectionSpan checks the config-ii section arc: a radius-r Arc3d whose |SweepAngle| is the
+// certified span, with its endpoints on the two host faces (checked by assertSectionContacts).
+func assertCylSectionSpan(t *testing.T, sec geom.Curve3, r, wantSpan float64) {
+	t.Helper()
+	arc, isArc := sec.(geom.Arc3d)
+	if !isArc || !nearlyArm(arc.Radius, r) {
+		t.Fatalf("section arc = %#v, want a radius-%.0f Arc3d", sec, r)
+	}
+	got := stdmath.Abs(arc.SweepAngle)
+	if !nearlyRad(got, wantSpan) {
+		t.Fatalf("section span = %.6f rad (%.4f°), want %.6f rad", got, got*180/stdmath.Pi, wantSpan)
+	}
+	assertSectionContacts(t, sec)
+}
+
+// assertSectionContacts checks the section arc's endpoints straddle the host faces: the start
+// (cyl-contact) sits on the R=50 wall, the end (plane-contact) on the x=0 flat.
+func assertSectionContacts(t *testing.T, sec geom.Curve3) {
+	t.Helper()
+	start, end := sec.PointAt(0), sec.PointAt(1)
+	if !nearlyArm(stdmath.Hypot(start.X, start.Y), 50) {
+		t.Fatalf("cyl-contact radius = %.6f, want 50 (R=50 wall)", stdmath.Hypot(start.X, start.Y))
+	}
+	if !nearlyArm(end.X, 0) {
+		t.Fatalf("plane-contact x = %.6f, want 0 (x=0 flat)", end.X)
 	}
 }
