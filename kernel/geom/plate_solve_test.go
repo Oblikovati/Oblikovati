@@ -188,6 +188,125 @@ func TestPlateRejectsMismatchedValues(t *testing.T) {
 	}
 }
 
+// TestPlateAssemblyIsSymmetric asserts the assembled bordered saddle matrix A = [K Pᵀ; P 0]
+// (kit §2) is symmetric, for a mixed G0+G1 constraint set — the mix matters because
+// plateColSign is the identity (+1) on every G0-G0 pair, so a G0-only set can't distinguish
+// the correct column-parity sign rule from a broken one. This is the kit's own "cheap
+// correctness trip" (§2: "assert |A[i][j]-A[j][i]| <= eps*||A||"). It targets the assembly
+// seam directly (assemblePlateMatrix), independent of the quadratic-reproduction tests below,
+// which drive λ→0 and so never stress K's off-diagonal RBF entries: a P2 review found the K
+// sign rule and the RBF branch of Eval/EvalGrad are exercised by NOTHING in this suite because
+// every existing target lies in the reproduction span. This test (plus
+// TestPlateInterpolatesNonPolynomialTarget below) closes that gap.
+func TestPlateAssemblyIsSymmetric(t *testing.T) {
+	var cs []PlateConstraint
+	for _, p := range reproPoints() {
+		u, v := p[0], p[1]
+		cs = append(cs,
+			PlateConstraint{U: u, V: v, Order: [2]int{0, 0}},
+			PlateConstraint{U: u, V: v, Order: [2]int{1, 0}},
+			PlateConstraint{U: u, V: v, Order: [2]int{0, 1}})
+	}
+	res := ResolutionForSize(plateDomainDiameter(cs))
+	a := assemblePlateMatrix(cs, plateRFloor(res))
+	assertMatrixSymmetric(t, a)
+}
+
+// assertMatrixSymmetric asserts a is symmetric to a norm-relative tolerance (kit §2: "assert
+// |A[i][j]-A[j][i]| <= eps*||A||"). eps is a dimensionless ratio against the matrix's own
+// max-abs entry — never a bare absolute number (ADR-0042) — so the check scales with whatever
+// magnitude the RBF/polynomial entries happen to take at this domain size.
+func assertMatrixSymmetric(t *testing.T, a [][]float64) {
+	t.Helper()
+	const eps = 1e-12
+	maxAbs, maxAsym := 0.0, 0.0
+	for i := range a {
+		for j := range a[i] {
+			if v := stdmath.Abs(a[i][j]); v > maxAbs {
+				maxAbs = v
+			}
+			if d := stdmath.Abs(a[i][j] - a[j][i]); d > maxAsym {
+				maxAsym = d
+			}
+		}
+	}
+	tol := eps * maxAbs
+	if maxAsym > tol {
+		t.Errorf("A not symmetric: max |A[i][j]-A[j][i]| = %.3g, want <= %.3g (eps=%.3g * maxAbs=%.3g)",
+			maxAsym, tol, eps, maxAbs)
+	}
+	t.Logf("max asymmetry = %.3g (tol %.3g, maxAbs %.3g)", maxAsym, tol, maxAbs)
+}
+
+// bumpPoints are 8 scattered (u,v) sites, deliberately NOT reproPoints(): reproPoints() is the
+// unit square's 4 corners plus its center/near-diagonal points, so many pairwise domain
+// distances land exactly on R=1 where E=R²·log R vanishes identically (log 1 = 0) — that
+// coincidence leaves K rank-deficient enough that EVERY G0 target on reproPoints() (not just
+// ones in the quadratic span) solves with λ≈0, silently defeating a λ≠0 test. These 8 points
+// have no such coincidental equal-distance pairs (confirmed: the solved λ below is O(1), not
+// O(1e-15)).
+func bumpPoints() [][2]float64 {
+	return [][2]float64{
+		{0.13, 0.27}, {0.82, 0.11}, {0.35, 0.91}, {0.77, 0.68},
+		{0.52, 0.24}, {0.19, 0.63}, {0.88, 0.42}, {0.44, 0.55},
+	}
+}
+
+// TestPlateInterpolatesNonPolynomialTarget feeds a "bump" target — value 1 at the first site, 0
+// at the rest — which does NOT lie in the quadratic reproduction span {1,u,v,u²,uv,v²}, so
+// (unlike every other test in this file) the solved λ is genuinely nonzero and the live RBF
+// branch of assemblePlateMatrix/Eval is actually engaged. A correct polyharmonic interpolant
+// reproduces every G0 constraint exactly; this is the direct assembly↔Eval consistency check
+// the P2 review found missing (it catches a whole-K-negation or an Eval-representer-sign
+// mutation, either of which breaks that consistency while leaving the quadratic self-checks —
+// where λ≈0 makes the RBF term a no-op — untouched).
+func TestPlateInterpolatesNonPolynomialTarget(t *testing.T) {
+	pts := bumpPoints()
+	bump := []float64{1, 0, 0, 0, 0, 0, 0, 0}
+	var cs []PlateConstraint
+	for i, p := range pts {
+		cs = append(cs, PlateConstraint{U: p[0], V: p[1], Order: [2]int{0, 0}, Value: bump[i]})
+	}
+	coeffs, err := PlateSolve(cs)
+	if err != nil {
+		t.Fatalf("PlateSolve returned error: %v", err)
+	}
+	assertLambdaEngaged(t, coeffs)
+	assertInterpolatesConstraints(t, coeffs, cs)
+}
+
+// assertLambdaEngaged asserts at least one RBF weight is meaningfully nonzero — confirming this
+// target actually drives the live RBF path (as opposed to reproducing the polynomial span,
+// where λ≈0 and this whole file's other tests would pass even with a broken K/Eval RBF branch).
+func assertLambdaEngaged(t *testing.T, c PlateCoeffs) {
+	t.Helper()
+	maxLambda := 0.0
+	for _, l := range c.lambda {
+		if a := stdmath.Abs(l); a > maxLambda {
+			maxLambda = a
+		}
+	}
+	if maxLambda < 1e-3 {
+		t.Fatalf("‖λ‖∞ = %.3g, want >> 0 (RBF path not engaged — this test would prove nothing)", maxLambda)
+	}
+	t.Logf("‖λ‖∞ = %.3g (RBF path engaged)", maxLambda)
+}
+
+// assertInterpolatesConstraints asserts Eval reproduces every G0 constraint's value at its own
+// site, to the model-relative weld tolerance (the same bound solvePlateSystem itself accepts
+// on) — the defining property of an interpolant, and the assembly↔Eval consistency check.
+func assertInterpolatesConstraints(t *testing.T, c PlateCoeffs, cs []PlateConstraint) {
+	t.Helper()
+	res := ResolutionForSize(plateDomainDiameter(cs))
+	tol := res.Weld()
+	for i, con := range cs {
+		if got := c.Eval(con.U, con.V); stdmath.Abs(got-con.Value) > tol {
+			t.Errorf("Eval(%.2f,%.2f) = %.12f, want %.12f (constraint %d, tol %.3g)",
+				con.U, con.V, got, con.Value, i, tol)
+		}
+	}
+}
+
 // assertLambdaVanishes asserts every RBF weight is within 1e-9 of 0 (kit §5b: q ∈ span ⇒ λ=0).
 func assertLambdaVanishes(t *testing.T, c PlateCoeffs) {
 	t.Helper()
