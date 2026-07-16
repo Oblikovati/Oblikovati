@@ -65,15 +65,47 @@ type taggedSeg struct {
 
 // collectSegments facets every entity into straight segments (closed curves wrap back
 // to their first point), each tagged with its source entity.
+//
+// A circle is sampled THROUGH the endpoints that touch it (see sampleCircleThrough). Sampling it
+// on a fixed angular grid instead leaves a curve that merely ENDS on the circle unable to meet it:
+// the endpoint lies on the true circle, but the circle is a chord polygon, so the two are up to a
+// sagitta apart (0.008565·r — far outside arrMergeTol) and never share a node. The touching curve
+// then dangles, the region never partitions, and the extrude consuming it finds no profile (#25).
+// The failure is angular: an endpoint that happens to land on a sample angle worked, one landing
+// mid-facet did not.
 func collectSegments(entities []Entity) []taggedSeg {
+	touches := touchPoints(entities)
 	var out []taggedSeg
 	for _, e := range entities {
-		pts, closed := entityPolyline(e)
+		pts, closed := entityPolylineThrough(e, touches)
 		for k := 0; k+1 < len(pts); k++ {
 			out = append(out, taggedSeg{pts[k], pts[k+1], e})
 		}
 		if closed && len(pts) >= 2 {
 			out = append(out, taggedSeg{pts[len(pts)-1], pts[0], e})
+		}
+	}
+	return out
+}
+
+// entityPolylineThrough is entityPolyline, with a circle routed through the touching endpoints.
+func entityPolylineThrough(e Entity, touches []math.Point2) (pts []math.Point2, closed bool) {
+	if c, ok := e.(*Circle); ok {
+		return sampleCircleThrough(c, touches), true
+	}
+	return entityPolyline(e)
+}
+
+// touchPoints is every entity endpoint a curve could touch. Only ENDPOINTS matter: a crossing in a
+// curve's interior is already found by intersectionCuts; it is the mere touch that is invisible.
+func touchPoints(entities []Entity) []math.Point2 {
+	var out []math.Point2
+	for _, e := range entities {
+		switch t := e.(type) {
+		case *Line:
+			out = append(out, t.A.Position(), t.B.Position())
+		case *Arc:
+			out = append(out, t.Start.Position(), t.End.Position())
 		}
 	}
 	return out
