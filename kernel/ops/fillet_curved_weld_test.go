@@ -81,9 +81,10 @@ func assertSetbackRail(t *testing.T, w cornerWeld, a armSetback, wantEnds [2]mat
 	if e := stdmath.Abs(rail.Radius - w.radius); e > tol {
 		t.Fatalf("rail radius = %.9f, want r=%.9f ±%.1e", rail.Radius, w.radius, tol)
 	}
-	if off := stdmath.Abs(rail.Center.VectorTo(w.center).Dot(rail.Normal.AsVector())); off > tol {
-		t.Fatalf("C is %.3e off the rail plane (want ≤%.1e) — plane not through C", off, tol)
-	}
+	// (No separate "plane through C" check: |（C−rail.Center)·n̂| ≤ ‖C−rail.Center‖ by Cauchy–Schwarz
+	// with n̂ unit, so the centre-distance check above already bounds it — it could never fail
+	// independently. The rail plane's orientation is pinned by the endpoint + sweep checks below, and the
+	// weld's exact-G1 seat is covered independently by TestCurvedRailG1_B3.)
 	assertRailEnds(t, rail, wantEnds, tol)
 	if s := stdmath.Abs(rail.SweepAngle); stdmath.Abs(s-wantSubtense) > 1e-4 {
 		t.Fatalf("rail subtense = %.6f rad, want %.6f ±1e-4", s, wantSubtense)

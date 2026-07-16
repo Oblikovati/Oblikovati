@@ -19,7 +19,8 @@ import (
 // curvedSetbackRail (the arm↔sphere great-circle weld rails), and T5.3 retrimCurvedHost (the circular
 // host-retrim). The one guarantee that makes the weld watertight: assembleBody welds faces by shared
 // loop POINTS, so every rail an arm and its neighbour share is built by the SAME constructor here and
-// in T5.3 (curvedHostArc for torus arcs, cylinderRulingOuter matching T5.3's ruling ends, and one
+// in T5.3 (curvedHostArc for torus arcs, rulingOuterEnd for the cylinder ruling ends — the weld side
+// calls it through cylinderRulingOuterOnHost so both sides land identically by construction — and one
 // farCrossSectionArc reused by the arm face AND the far-runout host) — the two sides land on identical
 // endpoints and weld without a crack. Any solve/closure/retrim decline returns the do-no-harm floor.
 
@@ -211,9 +212,8 @@ type armRails struct {
 func armRailBundle(set armSetback, ef edgeFillet, w cornerWeld, res Resolution) (armRails, bool) {
 	t0 := endpointOf(w.center, w.radius, set.railDir0) // host-tangent point on ef.a
 	t1 := endpointOf(w.center, w.radius, set.railDir1) // host-tangent point on ef.b
-	far := armFarVertex(ef, w.center)
-	h0, ok0 := armHostContactRail(ef.a, set, t0, far, w, res)
-	h1, ok1 := armHostContactRail(ef.b, set, t1, far, w, res)
+	h0, ok0 := armHostContactRail(ef.a, set, t0, w, res)
+	h1, ok1 := armHostContactRail(ef.b, set, t1, w, res)
 	setback, ok2 := setbackEndSeg(w, set, t0, t1)
 	farArc, ok3 := farCrossSectionArc(set.arm, w.radius, h0.from, h1.from)
 	if !ok0 || !ok1 || !ok2 || !ok3 {
@@ -225,21 +225,11 @@ func armRailBundle(set armSetback, ef edgeFillet, w cornerWeld, res Resolution) 
 	return armRails{segs: segs, far: farArc}, true
 }
 
-// armFarVertex is the arm edge's far end — the endpoint AWAY from the trihedral corner (the corner end
-// sits within ~r√2 of the ball centre C, the far end is the arm's runout station). It anchors a
-// cylinder arm's straight ruling and its far cross-section circle.
-func armFarVertex(ef edgeFillet, c math.Point3) math.Point3 {
-	s, e := ef.edge.StartVertex().Point(), ef.edge.EndVertex().Point()
-	if s.DistanceTo(c) >= e.DistanceTo(c) {
-		return s
-	}
-	return e
-}
-
 // armHostContactRail builds one arm's contact rail on host, oriented outer→tHost: a torus arm carves a
 // circular arc (curvedHostArc — the SAME constructor T5.3's retrim uses, so the two sides weld), a
-// cylinder arm a straight ruling from the far runout to tHost. Declines when neither applies.
-func armHostContactRail(host *topo.Face, set armSetback, tHost, far math.Point3, w cornerWeld, res Resolution) (endSeg, bool) {
+// cylinder arm a straight ruling whose outer end is rulingOuterEnd (the SAME landing the retrim uses).
+// Declines when neither applies.
+func armHostContactRail(host *topo.Face, set armSetback, tHost math.Point3, w cornerWeld, res Resolution) (endSeg, bool) {
 	tol := res.Weld() * w.radius
 	switch s := set.arm.(type) {
 	case geom.Torus:
@@ -249,17 +239,29 @@ func armHostContactRail(host *topo.Face, set armSetback, tHost, far math.Point3,
 		}
 		return endSeg{from: arc.PointAt(0), to: tHost, curve: arc, mid: arc.PointAt(0.5), arc: true}, true
 	case geom.Cylinder:
-		return endSeg{from: cylinderRulingOuter(s, tHost, far), to: tHost}, true
+		outer, ok := cylinderRulingOuterOnHost(host, s, tHost, w, tol)
+		if !ok {
+			return endSeg{}, false
+		}
+		return endSeg{from: outer, to: tHost}, true
 	}
 	return endSeg{}, false
 }
 
-// cylinderRulingOuter is the far end of a cylinder arm's straight ruling on a host: tHost slid along the
-// arm axis to the far runout's axial station. This reproduces T5.3's rulingOuterEnd landing (wall axial
-// extreme / planar loop exit) in closed form, so the arm face and the retrimmed host weld on it.
-func cylinderRulingOuter(cyl geom.Cylinder, tHost, far math.Point3) math.Point3 {
-	axis := cyl.AxisDir.AsVector()
-	return tHost.TranslateBy(axis.Scale(tHost.VectorTo(far).Dot(axis)))
+// cylinderRulingOuterOnHost is the SINGLE source of truth for a cylinder arm ruling's outer end on a
+// host: it calls the SAME rulingOuterEnd (T5.3) the host retrim uses, with the host's OWN original loop
+// and bitten vertex, so the arm face and the retrimmed host land on a byte-identical point and weld
+// without a crack. This replaces the former closed-form cylinderRulingOuter, which slid tHost to the arm
+// FAR VERTEX's axial station: that equalled the host loop's extreme only when the far vertex happened to
+// sit on the host rim (true for B3, a coincidence — NOT the identity the old docstring claimed). Routing
+// both sides through one helper makes the coupling correct by construction, or declines to the floor.
+func cylinderRulingOuterOnHost(host *topo.Face, arm geom.Cylinder, tHost math.Point3, w cornerWeld, tol float64) (math.Point3, bool) {
+	segs := originalHostSegs(host)
+	if len(segs) == 0 {
+		return math.Point3{}, false // a host with no readable outer loop cannot anchor a ruling
+	}
+	v := bittenVertex(segs, w.center)
+	return rulingOuterEnd(host, arm, tHost, v, segs, tol)
 }
 
 // setbackEndSeg wraps the arm↔sphere great-circle weld rail (T5.2) as an endSeg oriented t0→t1.
