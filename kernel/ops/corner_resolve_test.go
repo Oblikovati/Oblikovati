@@ -69,7 +69,7 @@ func TestResolveBlendHonestReject(t *testing.T) {
 
 // TestResolveBlendTiersOrder pins the ADR-0051 foundation tier order: analytic-known-part first
 // (exact sphere), then the M6 plate tier (RailSignatureTangentPlate-marked loops only), then the
-// general fills (4-sided coons4, 3-sided tri3). See TestBlendTiersOrderIncludesPlate
+// general fills (4-sided coons4, 3-sided tri3). See TestPlateProviderFits
 // (corner_provider_plate_test.go) for the plate-specific coverage.
 func TestResolveBlendTiersOrder(t *testing.T) {
 	tiers := blendTiers()
