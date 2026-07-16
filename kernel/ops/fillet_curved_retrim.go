@@ -11,14 +11,14 @@ import (
 )
 
 // M5 Slice A, Task 5.3 (m5-weld-setback-retrim-derivation.md §B): the curved-HOST retrim. Each
-// original host face at the trihedral corner (the cylinder wall, the top/bottom caps, the radial
-// planes) is re-clipped to a single outer loop whose corner bite is bounded by the arm CONTACT
-// RAILS. Two of those rails are CIRCULAR arcs the ordinary transformFace (which only pulls a
-// straight tangent vertex) cannot emit: the torus arm carves a circle of radius R in the wall
-// (spine plane z=C_z) and a circle of radius R−r in the cap (§B.1/B.2), and a through-cylinder arm
-// carves its cross-section circle on the cap it exits (§B.5 foot-bite). This file emits those exact
-// arcs plus the straight rulings, and assembles the retrimmed host loops. It wires into nothing yet
-// — T5.4 consumes retrimCurvedHost to build the nine result faces.
+// CORNER host face at the trihedral corner (the two hosts each arm rolls on — the cylinder wall, the
+// top cap, the radial plane) is re-clipped to a single outer loop whose corner bite is bounded by the
+// arm CONTACT RAILS. Two of those rails are CIRCULAR arcs the ordinary transformFace (which only pulls
+// a straight tangent vertex) cannot emit: the torus arm carves a circle of radius R in the wall (spine
+// plane z=C_z) and a circle of radius R−r in the cap (§B.1/B.2). This file emits those exact arcs plus
+// the straight rulings, and assembles the retrimmed corner-host loops. The FAR-runout hosts (the y=0
+// cut two arms run out to, and the bottom cap the through-arm exits — §B.5) are NOT corner hosts; their
+// cross-section bite is spliced by fillet_curved_farrunout.go, not here. T5.4 consumes retrimCurvedHost.
 
 // retrimAxisParallelTol is the dimensionless floor for the "coaxial / perpendicular" host↔arm
 // tests (a torus rail exists only on a wall coaxial with the torus axis, or a cap perpendicular to
@@ -116,12 +116,12 @@ func capContactCircle(pl geom.Plane, tor geom.Torus, res Resolution) (math.Point
 	return tor.Center.TranslateBy(axis.Scale(math.Scalar(t))), tor.MajorRadius, true
 }
 
-// retrimCurvedHost re-clips one host face at the trihedral corner: its OUTER loop's original edges are
-// cut back where the arms/sphere contact them, plus the arm contact rails spliced in (circular arcs
-// for the torus-adjacent hosts, straight rulings for the cylinder/planar-adjacent ones, and the
-// through-arm foot arc on the cap it exits — §B.5). Any INNER (hole) loop on the host is untouched by
-// the corner and is carried through verbatim (innerHostLoops) — the bite only ever reshapes the
-// boundary. It honest-rejects (ok=false) when a contact rail is missing or a landing point does not lie
+// retrimCurvedHost re-clips one CORNER host face at the trihedral corner: its OUTER loop's original
+// edges are cut back where the two arms/sphere contact it, plus the arm contact rails spliced in
+// (circular arcs for the torus-adjacent hosts, straight rulings for the cylinder/planar-adjacent ones).
+// Any INNER (hole) loop on the host is untouched by the corner and is carried through verbatim
+// (innerHostLoops) — the bite only ever reshapes the boundary. It honest-rejects (ok=false) when a
+// contact rail is missing or a landing point does not lie
 // on the original loop, never an open or self-crossing loop (a mis-closed retrim corrupts the mesh).
 // Example:
 //
@@ -142,21 +142,21 @@ func retrimCurvedHost(host *topo.Face, w cornerWeld, res Resolution) (filletFace
 	return filletFace{surface: host.Geometry(), loops: loops, parent: host.Lineage()}, true
 }
 
-// retrimHostSegs routes a host to its retrim mode: two corner arms meeting at a shared host-tangent
-// point (wall/cap/radial), or a single through-arm foot-bite (the bottom cap the vertical arm exits).
-// The on-edge / on-surface tolerance is corner-local (res.Weld·r, ADR-0042) — the corner is a local
-// feature, so a body-diameter tolerance would mask a real crack.
+// retrimHostSegs re-clips a CORNER host: the two arms rolling on it meet at a shared host-tangent
+// point (wall/cap/radial), and their contact rails bound the bite. The on-edge / on-surface tolerance
+// is corner-local (res.Weld·r, ADR-0042) — the corner is a local feature, so a body-diameter tolerance
+// would mask a real crack. A host reached by any other count declines: exactly-one arm is not part of
+// this trihedral weld, and the far-runout hosts (e.g. the bottom cap the through-arm exits) are NOT
+// corner hosts — their cross-section bite is spliced by spliceCornerBite (fillet_curved_farrunout.go),
+// not here, so retrimCurvedHost is only ever called on the two-arm corner hosts.
 func retrimHostSegs(host *topo.Face, segs []endSeg, w cornerWeld, res Resolution) ([]endSeg, bool) {
 	tol := res.Weld() * w.radius
-	v := bittenVertex(segs, w.center)
 	arms, tHost, n := armsRollingOnHost(host, w, tol)
-	if n == 2 {
-		return retrimCornerHost(host, segs, v, arms, tHost, w, res, tol)
+	if n != 2 {
+		return nil, false
 	}
-	if n == 0 {
-		return retrimFootHost(host, segs, v, w, tol)
-	}
-	return nil, false // a host touching exactly one corner arm is not part of this trihedral weld
+	v := bittenVertex(segs, w.center)
+	return retrimCornerHost(host, segs, v, arms, tHost, w, res, tol)
 }
 
 // armsRollingOnHost returns the corner arms with a rail endpoint (a host-tangent point) lying on this
@@ -269,72 +269,4 @@ func awayFrom(axis math.Vector3, tHost, v math.Point3) math.Vector3 {
 		return axis
 	}
 	return axis.Scale(-1)
-}
-
-// retrimFootHost assembles the bottom-cap foot-bite: the through-arm's cross-section arc replaces the
-// corner near the bitten vertex, closed by the surviving far path (§B.5 — the reason the bottom cap
-// is 1932.47, not the naive quarter-disk 1963.50).
-func retrimFootHost(host *topo.Face, segs []endSeg, v math.Point3, w cornerWeld, tol float64) ([]endSeg, bool) {
-	pl, ok := host.Geometry().(geom.Plane)
-	if !ok {
-		return nil, false
-	}
-	center, radius, ok := footContact(pl, w)
-	if !ok {
-		return nil, false
-	}
-	hits := footCircleLoopHits(pl, segs, center, radius, tol)
-	if len(hits) != 2 {
-		return nil, false // the foot arc must cut the original loop in exactly two points
-	}
-	rail := footArcSeg(center, radius, pl, hits[0], hits[1], v)
-	far, ok := farPathSegs(segs, hits[1], hits[0], v, tol)
-	if !ok {
-		return nil, false
-	}
-	return append([]endSeg{rail}, far...), true
-}
-
-// footContact finds the through-cylinder arm perpendicular to the cap and returns its cross-section
-// circle there (centre = axis∩plane, radius = tube r) — the foot-bite the arm carves on the cap.
-func footContact(pl geom.Plane, w cornerWeld) (math.Point3, float64, bool) {
-	n, err := math.UnitVector3FromVector(pl.Normal())
-	if err != nil {
-		return math.Point3{}, 0, false
-	}
-	for _, a := range w.arms {
-		cyl, ok := a.arm.(geom.Cylinder)
-		if !ok || !cyl.AxisDir.IsParallelTo(n, retrimAxisParallelTol) {
-			continue
-		}
-		axis, nv := cyl.AxisDir.AsVector(), n.AsVector()
-		t := float64(cyl.Origin.VectorTo(pl.Origin).Dot(nv) / axis.Dot(nv))
-		return cyl.Origin.TranslateBy(axis.Scale(math.Scalar(t))), cyl.Radius, true
-	}
-	return math.Point3{}, 0, false
-}
-
-// footArcSeg builds the foot-bite arc from h0 to h1 on the circle (centre, radius) in the cap plane,
-// picking the sub-arc whose midpoint is NEARER the bitten vertex — the near-corner arc that bounds
-// the removed lens, and so also bounds the KEPT region on its interior side (the far/interior-bulging
-// sub-arc would carve a much larger region than the fillet removes).
-func footArcSeg(center math.Point3, radius float64, pl geom.Plane, h0, h1, v math.Point3) endSeg {
-	n, _ := math.UnitVector3FromVector(pl.Normal())
-	midDir, err := math.UnitVector3FromVector(center.VectorTo(h0.Midpoint(h1)))
-	if err != nil {
-		// h0,h1 diametric: center.VectorTo(midpoint) vanishes. Fall back to a genuine IN-PLANE
-		// perpendicular to the chord h0→h1 — unit(n × chord), which lies IN the cap plane and is ⊥
-		// the chord — NOT the plane normal n itself (n points OUT of the plane, which tilted/
-		// degenerated the arc — Minor finding, T5.3 review). h0≠h1 here (footCircleLoopHits only
-		// returns distinct crossings), so the chord, and this cross product, are never zero.
-		midDir, _ = math.UnitVector3FromVector(n.AsVector().Cross(h0.VectorTo(h1)))
-	}
-	toward := center.TranslateBy(midDir.AsVector().Scale(math.Scalar(radius)))
-	away := center.TranslateBy(midDir.AsVector().Scale(math.Scalar(-radius)))
-	mid := toward
-	if v.DistanceTo(away) < v.DistanceTo(toward) {
-		mid = away
-	}
-	arc, _ := geom.Arc3dByThreePoints(h0, mid, h1)
-	return endSeg{from: h0, to: h1, curve: arc, mid: mid, arc: true}
 }

@@ -14,8 +14,8 @@ import (
 // M5 Slice A, Task 5.3 — the loop machinery behind retrimCurvedHost. It reads a host face's
 // original outer loop, splits its edges where the arm contact rails land, and returns the surviving
 // "far" path (the boundary away from the trihedral vertex) so the caller can splice the rails in.
-// The two circular splits (the wall bottom-rim sub-arc, the bottom-cap foot arc) are re-emitted as
-// exact Arc3d edges, never chords, so the assembled mesh cannot bulge or crack (tessellation-first).
+// A circular split (the wall bottom-rim sub-arc) is re-emitted as an exact Arc3d edge, never a chord,
+// so the assembled mesh cannot bulge or crack (tessellation-first).
 
 // originalHostSegs reads the host's OUTER loop as an ordered ring of endSegs (each from→to carrying
 // the edge's Arc3d curve oriented to the traversal, or nil for a straight edge). The corner bite is
@@ -352,66 +352,4 @@ func rayArc2d(ch planeChart, o2 math.Point2, d2 math.Vector2, s endSeg, tol floa
 		}
 	}
 	return best, bestPt, found
-}
-
-// footCircleLoopHits returns every point where the foot circle (centre, radius, in the host plane)
-// crosses the original loop — the two ends of the through-arm's foot-bite arc (§B.5).
-func footCircleLoopHits(pl geom.Plane, segs []endSeg, center math.Point3, radius, tol float64) []math.Point3 {
-	ch := planeChart{pl}
-	fc := geom.NewCircle2d(ch.to2(center), radius)
-	var out []math.Point3
-	for _, s := range segs {
-		out = appendDistinct(out, edgeCircleHits2d(ch, s, fc, tol), tol)
-	}
-	return out
-}
-
-// edgeCircleHits2d crosses one loop edge with the foot circle in the chart (segment↔circle for a
-// straight edge, circle↔circle filtered to the sweep for an arc edge).
-func edgeCircleHits2d(ch planeChart, s endSeg, fc geom.Circle2d, tol float64) []math.Point3 {
-	if !s.arc {
-		seg2d := geom.NewLineSegment2d(ch.to2(s.from), ch.to2(s.to))
-		return lift2d(ch, geom.SegmentCircle2dIntersection(seg2d, fc, tol))
-	}
-	arc := s.curve.(geom.Arc3d)
-	ec := geom.NewCircle2d(ch.to2(arc.Center), arc.Radius)
-	var out []math.Point3
-	for _, p2 := range geom.Circle2dCircle2dIntersection(fc, ec, tol) {
-		if q := ch.to3(p2); onArc3d(arc, q, tol) {
-			out = append(out, q)
-		}
-	}
-	return out
-}
-
-// onArc3d reports whether p lies on arc's circle and inside its sweep (endpoints allowed).
-func onArc3d(arc geom.Arc3d, p math.Point3, tol float64) bool {
-	if stdmath.Abs(float64(p.DistanceTo(arc.Center))-arc.Radius) > tol {
-		return false
-	}
-	w := arc.Center.VectorTo(p)
-	bin := arc.Normal.Cross(arc.RefDir)
-	raw := stdmath.Atan2(float64(w.Dot(bin)), float64(w.Dot(arc.RefDir.AsVector())))
-	frac := wrapToSweep(raw-arc.StartAngle, arc.SweepAngle) / arc.SweepAngle
-	return frac >= -1e-9 && frac <= 1+1e-9
-}
-
-// lift2d maps chart points back to 3D on the plane.
-func lift2d(ch planeChart, pts []math.Point2) []math.Point3 {
-	out := make([]math.Point3, len(pts))
-	for i, p := range pts {
-		out[i] = ch.to3(p)
-	}
-	return out
-}
-
-// appendDistinct appends the points not already within tol of an existing one (dedup crossings that
-// two adjacent edges share at a vertex).
-func appendDistinct(dst, src []math.Point3, tol float64) []math.Point3 {
-	for _, p := range src {
-		if matchPoint(dst, p, tol) < 0 {
-			dst = append(dst, p)
-		}
-	}
-	return dst
 }

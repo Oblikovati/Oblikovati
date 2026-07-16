@@ -147,11 +147,12 @@ func assertLoopPointsEqual(t *testing.T, loop filletLoop, want []math.Point3) {
 	}
 }
 
-// TestRetrimCurvedHost_B3 drives the curved-host retrim on all four B3 hosts and asserts each
+// TestRetrimCurvedHost_B3 drives the curved-host retrim on the three CORNER hosts and asserts each
 // retrimmed loop reproduces the oracle-closed area (§B) AND is genuinely correct — CLOSED (every arc
 // edge joins the two loop points it spans, no chord gap) and carrying the certified circular RAILS
-// (not straight chords): the wall/cap torus arcs and the bottom-cap foot arc. The bottom-cap 1932.47
-// (≠ the naive quarter-disk 1963.50) proves the through-arm foot-bite is applied (§B.5).
+// (not straight chords): the wall/cap torus arcs. The bottom cap is NOT a corner host — its far-runout
+// cross-section bite is produced by spliceCornerBite (fillet_curved_farrunout.go), covered end-to-end
+// by the B3 weld volume regression, not by retrimCurvedHost.
 func TestRetrimCurvedHost_B3(t *testing.T) {
 	sphere, arms := b3CornerArms(t)
 	res := geom.ResolutionForSize(150)
@@ -159,13 +160,10 @@ func TestRetrimCurvedHost_B3(t *testing.T) {
 	if !ok {
 		t.Fatalf("solveCurvedCorner rejected the certified B3 corner")
 	}
-	wall, topCap, radial, botCap := b3HostFaces(t)
-	cy := b3CornerCY
+	wall, topCap, radial, _ := b3HostFaces(t)
 	assertRetrim(t, wall, w, res, 5931.52, math.P3(0, 0, 90), 50)    // wall torus rail R=50 @ z=90
 	assertRetrim(t, topCap, w, res, 860.844, math.P3(0, 0, 100), 40) // cap torus rail R=40 @ z=100
 	assertRetrim(t, radial, w, res, 3485.69, math.Point3{}, 0)       // radial: two straight rulings, no arc
-	assertRetrim(t, botCap, w, res, 1932.47, math.P3(10, cy, 0), 10) // bottom-cap foot arc R=10
-	assertFootBiteApplied(t, botCap, w, res)
 }
 
 // assertRetrim retrims one host, then checks its loop is closed, has the certified circular rail (a
@@ -241,23 +239,6 @@ func assertArcRail(t *testing.T, loop filletLoop, center math.Point3, radius flo
 		}
 	}
 	t.Fatalf("retrim loop carries no arc on circle centre %v radius %.1f (rail collapsed to a chord?)", center, radius)
-}
-
-// assertFootBiteApplied is the mutation check: the retrimmed bottom cap must be the foot-bitten
-// 1932.47, distinctly LESS than the naive quarter-disk 1963.50 — so a build that skipped the P1
-// foot-bite (leaving the quarter disk) would fail this by ~31.
-func assertFootBiteApplied(t *testing.T, botCap *topo.Face, w cornerWeld, res Resolution) {
-	t.Helper()
-	ff, ok := retrimCurvedHost(botCap, w, res)
-	if !ok {
-		t.Fatalf("retrimCurvedHost declined the bottom cap")
-	}
-	quarterDisk := stdmath.Pi * 50 * 50 / 4 // 1963.495 — the un-bitten cap
-	a := developedLoopArea(botCap.Geometry(), ff.loops[0])
-	if quarterDisk-a < 20 {
-		t.Fatalf("bottom cap = %.4f, only %.4f below the un-bitten quarter disk %.4f — foot-bite not applied",
-			a, quarterDisk-a, quarterDisk)
-	}
 }
 
 // developedLoopArea is the true surface area a retrimmed loop bounds, measured in the host's isometric
