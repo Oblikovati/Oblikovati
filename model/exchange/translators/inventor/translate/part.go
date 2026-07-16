@@ -190,7 +190,7 @@ func addFeatures(def *compdef.PartComponentDefinition, d *ipt.Document) (bool, [
 		}
 	}
 	// Decoupled path: extract + emit all sketches unconditionally, then build features over them.
-	placed := extractSketches(seg)
+	placed := extractSketches(d, seg)
 	emitted := emitSketches(def, placed)
 	if ipt.HasRevolve(seg) {
 		return buildRevolve(def, seg, placed, emitted)
@@ -203,8 +203,22 @@ func addFeatures(def *compdef.PartComponentDefinition, d *ipt.Document) (bool, [
 // (exact connectivity that reunites a profile split across the 800-byte cluster gap); everything
 // else uses the clustered decode. All land on the XY origin plane. Keeping extraction separate
 // from the feature build is what lets a part's sketches always reach the document.
-func extractSketches(seg []byte) []placedSketch {
+func extractSketches(d *ipt.Document, seg []byte) []placedSketch {
 	decoded := ipt.DecodeSketches(seg)
+	// The node graph states sketch membership and curve connectivity outright, so prefer it over
+	// the byte-offset clustering, which both splits one sketch (Linkage1: 1 sketch decoded as 3)
+	// and loses most of the geometry (BigChunkyPlate: 2143 entities decoded as 19). Scoped to the
+	// extrude path: a revolve profile still goes through the incidence reconstruction below, whose
+	// closed-loop gate the revolve build depends on.
+	//
+	// Taken only when it actually decoded entities: some parts hold Sketch2D nodes whose entities
+	// this layout can't read (an older save generation, presumably), and an empty graph result must
+	// not replace geometry the cluster decode did find.
+	if !ipt.HasRevolve(seg) {
+		if graph := ipt.GraphSketches(d); sketchEntityCount(graph) > 0 {
+			decoded = graph
+		}
+	}
 	if ipt.HasRevolve(seg) {
 		// Incidence connectivity beats the clustered decode for a revolve profile; fall back to
 		// the clustered sketches when it declines (e.g. an arc-bearing profile).
@@ -273,14 +287,18 @@ func buildExtrudeFeatures(def *compdef.PartComponentDefinition, d *ipt.Document,
 	built := false
 	var notes []string
 	extrudes := ipt.DecodeExtrudes(d)
+	// Each extrude names the profile it consumes (see ipt.ExtrudeProfiles); "extrude i uses sketch
+	// i" only ever held for the generated corpus.
+	profiles := ipt.ExtrudeProfiles(d)
 	var lastExtrude *feature.PartFeature
 	for i, ex := range extrudes {
-		if i >= len(emitted) || emitted[i].sk == nil {
-			notes = append(notes, fmt.Sprintf("extrude %d has no sketch to consume — skipped", i))
+		p := profileIndex(profiles, i)
+		if p < 0 || p >= len(emitted) || emitted[p].sk == nil {
+			notes = append(notes, fmt.Sprintf("extrude %d: no profile sketch resolved — skipped", i))
 			continue
 		}
 		dist := ex.Distance
-		lastExtrude = feature.NewExtrudeFeatures(def.Features()).AddByDistanceExtent(emitted[i].sk, 0, operationOf(ex.Operation), func() float64 { return dist })
+		lastExtrude = feature.NewExtrudeFeatures(def.Features()).AddByDistanceExtent(emitted[p].sk, 0, operationOf(ex.Operation), func() float64 { return dist })
 		built = true
 	}
 	// A drilled hole cuts the base solid: place it on the extrude's top face (analytic), drilling
@@ -1226,4 +1244,27 @@ func writeTempSTL(data []byte) (path string, cleanup func(), err error) {
 	}
 	f.Close()
 	return f.Name(), func() { os.Remove(f.Name()) }, nil
+}
+
+// profileIndex returns the sketch index extrude i consumes. It falls back to i only when the
+// profile list is absent entirely (an older decode path), never when the graph resolved a profile
+// and simply could not bind one — that case must skip rather than build on a guess.
+func profileIndex(profiles []int, i int) int {
+	if len(profiles) == 0 {
+		return i
+	}
+	if i >= len(profiles) {
+		return -1
+	}
+	return profiles[i]
+}
+
+// sketchEntityCount totals the curves and points across decoded sketches — the signal that a decode
+// actually read geometry rather than producing empty shells.
+func sketchEntityCount(sketches []ipt.Sketch) int {
+	n := 0
+	for _, s := range sketches {
+		n += len(s.Points) + len(s.Lines) + len(s.Circles) + len(s.Arcs) + len(s.Ellipses)
+	}
+	return n
 }

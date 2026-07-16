@@ -39,6 +39,9 @@ const (
 	featurePropListOffset = 34
 	list2Marker           = 0x0002
 	list2Owner            = 0x3000
+	maxListElements       = 4096
+	// refIndexMask strips SecNodeRef's high flag bit; the rest is the node's ordinal.
+	refIndexMask = 0x7FFFFFFF
 )
 
 // dcNode is one node of the DC segment. A reference names a node by its 1-BASED ORDINAL in walk
@@ -87,7 +90,7 @@ func featureProperties(pay []byte) ([]int, bool) {
 	out := make([]int, cnt)
 	for i := range out {
 		// the high bit is a ref flag, not part of the index (InventorLoader SecNodeRef.mask)
-		out[i] = int(binary.LittleEndian.Uint32(pay[ds+i*4:]) & 0x7FFFFFFF)
+		out[i] = int(binary.LittleEndian.Uint32(pay[ds+i*4:]) & refIndexMask)
 	}
 	return out, true
 }
@@ -147,4 +150,95 @@ func ExtrudeDepths(d *Document) []float64 {
 		}
 	}
 	return out
+}
+
+// The profile side of the feature graph: an extrude names a BoundaryPatch (property 1), and a
+// FaceBound node points BACK at that patch while naming the Sketch2D it bounds. So the profile
+// binding is patch -> faceBound -> sketch, which is what replaces "extrude i consumes sketch i" —
+// a guess that is provably wrong on real parts (BigChunkyPlate's 13th extrude uses its 15th
+// sketch). Grounded in InventorLoader: Read_22947391 "BoundaryPatch", Read_424EB7D7 "FaceBound",
+// Read_F9884C43 "FaceBoundOuter", ReadHeaderFaceBound.
+const (
+	boundaryPatchNodeType  = 0x22947391
+	faceBoundNodeType      = 0x424EB7D7
+	faceBoundOuterNodeType = 0xF9884C43
+)
+
+// propProfile is the extrude's BoundaryPatch property (InventorLoader Create_FxExtrude_New's
+// `patch = getProperty(properties, 0x01)`).
+const propProfile = 1
+
+// faceBoundHeaderEnd is where a FaceBound's three reference lists begin; its `sketch` and `proxy`
+// refs follow them and a u32 pair.
+const faceBoundHeaderEnd = 30
+
+// ExtrudeProfiles returns, for each extrude in feature order, the index of the sketch it actually
+// consumes (indices into GraphSketches). An extrude whose profile can't be resolved yields -1, so
+// callers skip it rather than build on a guessed sketch.
+func ExtrudeProfiles(d *Document) []int {
+	nodes := dcNodes(d)
+	_, sketchIndex := sketchOrdinals(nodes)
+	patchToSketch := boundPatchSketches(nodes, sketchIndex)
+	var out []int
+	for _, n := range nodes {
+		if n.typ != featureNodeType {
+			continue
+		}
+		if _, ok := extrudeDepth(nodes, n.payload); !ok {
+			continue // not an extrude; keep this list aligned with DecodeExtrudes
+		}
+		out = append(out, profileOf(n.payload, patchToSketch))
+	}
+	return out
+}
+
+// profileOf maps one extrude to its sketch index via its BoundaryPatch property.
+func profileOf(pay []byte, patchToSketch map[int]int) int {
+	props, ok := featureProperties(pay)
+	if !ok || len(props) <= propProfile {
+		return -1
+	}
+	if i, ok := patchToSketch[props[propProfile]]; ok {
+		return i
+	}
+	return -1
+}
+
+// boundPatchSketches maps each BoundaryPatch ordinal to the index of the sketch that bounds it,
+// by walking the FaceBound nodes that name the patch as their proxy.
+func boundPatchSketches(nodes []dcNode, sketchIndex map[int]int) map[int]int {
+	out := map[int]int{}
+	for _, n := range nodes {
+		if n.typ != faceBoundNodeType && n.typ != faceBoundOuterNodeType {
+			continue
+		}
+		sketchRef, patchRef, ok := faceBoundRefs(n.payload)
+		if !ok {
+			continue
+		}
+		if i, ok := sketchIndex[sketchRef]; ok {
+			out[patchRef] = i
+		}
+	}
+	return out
+}
+
+// faceBoundRefs reads a FaceBound's `sketch` and `proxy` references, which follow its three
+// variable-length reference lists and a u32 pair.
+func faceBoundRefs(pay []byte) (sketchRef, patchRef int, ok bool) {
+	i := faceBoundHeaderEnd
+	for k := 0; k < 3; k++ {
+		_, next, ok := refList2(pay, i)
+		if !ok {
+			return 0, 0, false
+		}
+		i = next
+	}
+	i += 8 // the u32 pair before the refs
+	if i+8 > len(pay) {
+		return 0, 0, false
+	}
+	sketchRef = int(binary.LittleEndian.Uint32(pay[i:]) & refIndexMask)
+	patchRef = int(binary.LittleEndian.Uint32(pay[i+4:]) & refIndexMask)
+	return sketchRef, patchRef, true
 }

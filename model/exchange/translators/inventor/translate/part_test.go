@@ -559,33 +559,40 @@ func TestMirrorTranslationRebuildsSolid(t *testing.T) {
 	}
 }
 
-// TestArcProfileEmitsArcs guards arc emission on a real filleted linkage whose profile mixes lines
-// and arcs: the arcs must be emitted so the profile closes.
+// TestLinkageProfileMatchesTheFile pins the real linkage's sketch to what the FILE actually holds.
 //
-// The fixture is ReelToReel's CompressionRollerActuatorLinkage1, whose TRUE volume is 45 mm^3
-// (Inventor 2027 MassProperties). We do not assert that number yet: the depth now decodes correctly
-// (DecodeExtrudes binds each extrude to its own distance parameter) but the PROFILE is still
-// mis-decoded, so the body lands near 60 mm^3. The bound below is a regression guard, not a
-// statement that 60 is right — it catches a return of the old 477 mm^3 (10.5x) over-build, which an
-// earlier test had codified as "want ~477" by copying our own output instead of asking Inventor.
-// Tighten to 45 mm^3 once the profile decode lands.
-func TestArcProfileEmitsArcs(t *testing.T) {
+// The fixture is ReelToReel's CompressionRollerActuatorLinkage1 (true volume 45 mm^3, Inventor
+// 2027). Its sketch contains exactly 4 circles and 3 lines and ZERO arcs — its rounded ends are
+// full circles trimmed by the boundary patch. The predecessor of this test asserted that arcs must
+// be emitted; that expectation came from the old cluster decode, which FABRICATED arcs this file
+// does not contain. Like the "want ~477 mm^3" before it, it codified our own output as truth.
+// GraphSketches now decodes the entities the file declares, so the counts below come from the file.
+func TestLinkageProfileMatchesTheFile(t *testing.T) {
 	def := reopenPart(t, "real_arc_linkage.ipt")
-	arcs := 0
-	for k := 0; k < def.Sketches().Count(); k++ {
-		arcs += def.Sketches().Item(k).Arcs().Count()
+	if n := def.Sketches().Count(); n != 1 {
+		t.Errorf("emitted %d sketches; the file declares ONE Sketch2D node", n)
 	}
-	if arcs == 0 {
-		t.Error("filleted profile emitted no arcs (arc emission missing)")
+	circles, lines, arcs := 0, 0, 0
+	for k := 0; k < def.Sketches().Count(); k++ {
+		s := def.Sketches().Item(k)
+		circles += s.Circles().Count()
+		lines += s.Lines().Count()
+		arcs += s.Arcs().Count()
+	}
+	if circles != 4 || lines != 3 || arcs != 0 {
+		t.Errorf("sketch has %d circles / %d lines / %d arcs; the file declares 4 / 3 / 0",
+			circles, lines, arcs)
 	}
 	bodies := def.SurfaceBodies().All()
 	if len(bodies) == 0 {
-		return // gated or not rebuilt: no wrong solid shipped, which is acceptable
+		return // no body shipped is acceptable; a wrong one is not
 	}
-	v := analysis.MassPropertiesOf(bodies, 1, types.MassPropertiesHigh).VolumeMm3
-	if v > 100 {
+	// A regression guard, NOT a claim that the current volume is right: the extrude still takes
+	// profile index 0 rather than the region its BoundaryPatch names, so the body is undersized.
+	// This catches a return of the old 477 mm^3 (10.5x) over-build from the positional depth guess.
+	if v := analysis.MassPropertiesOf(bodies, 1, types.MassPropertiesHigh).VolumeMm3; v > 100 {
 		t.Errorf("linkage volume = %.0f mm^3; true volume is 45 mm^3 — a >2x over-build means the "+
-			"extrude is taking a wrong depth again (regression of the positional model-param guess)", v)
+			"extrude is taking a wrong depth again", v)
 	}
 }
 

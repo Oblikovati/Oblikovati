@@ -30,3 +30,14 @@ func TestExtrudeDepths(t *testing.T) {
 		}
 	}
 }
+
+// TestExtrudeProfiles pins the profile binding: each extrude names the sketch it consumes, so
+// 14_box_two's two extrudes take sketch 0 and sketch 1 respectively.
+func TestExtrudeProfiles(t *testing.T) {
+	if got := ExtrudeProfiles(openDoc(t, "14_box_two.ipt")); len(got) != 2 || got[0] != 0 || got[1] != 1 {
+		t.Errorf("profiles = %v, want [0 1]", got)
+	}
+	if got := ExtrudeProfiles(openDoc(t, "10_box.ipt")); len(got) != 1 || got[0] != 0 {
+		t.Errorf("single-extrude profiles = %v, want [0]", got)
+	}
+}
