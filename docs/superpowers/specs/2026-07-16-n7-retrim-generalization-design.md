@@ -1,5 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
+> **SUPERSEDED (2026-07-16)** by `2026-07-16-n7-tangent-degenerate-corner-fill-design.md`. Evidence (`.superpowers/sdd/n7-c2-diagnosis.md` + `n7-runout-rederivation.md`) falsified this framing: N7 is a tangent-degenerate trihedral corner with a 4-sided rational FILL + a mis-rooted ball, not a boolean-cut retrim generalization. Kept for provenance.
+
 # Slice B — Curved-arm fillet host-retrim generalization (N7) design
 
 ## Context

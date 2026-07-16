@@ -1,5 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
+> **SUPERSEDED (2026-07-16)** — its premise (C1 gives z=80; C3/C4 in retrimCurvedHost) was falsified; retrimCurvedHost is never reached on real N7. Tasks N1 (C0 bitten-loop, 81f4b190) + N2 (C1 chart termination, 859f650f) LANDED and sound; N3 (C2) REVERTED as inert (a7b62edb). Continuation: `2026-07-16-n7-tangent-degenerate-corner-fill.md` (to be written). Kept for provenance.
+
 # N7 Curved-Arm Host-Retrim Generalization Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
