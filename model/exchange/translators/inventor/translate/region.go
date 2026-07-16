@@ -30,6 +30,9 @@ func regionProfileIndices(sk *sketch.Sketch, region []ipt.RegionLoop) []int {
 	if sk == nil || len(region) == 0 {
 		return nil
 	}
+	if idx, ok := containedProfileIndices(sk, region); ok {
+		return idx
+	}
 	named := namedCurves(region)
 	holes := holeCurveSets(region)
 	profiles := sk.Profiles()

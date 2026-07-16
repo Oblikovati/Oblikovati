@@ -35,6 +35,14 @@ const (
 	loopOperationOffset = 10 // Loop.operation
 	loopEdgesOffset     = 18 // Loop.edges (List2 of refs)
 	entityRefAIOffset   = 22 // SketchEntityRef.entityAI
+	// The arc TRIM, from InventorLoader Read_90874D13. A loop names a circle WHOLE even where the
+	// face walks only an arc of it, so which arc is not in the geometry — it is these fields.
+	// point1AI/point2AI name the arc's start/end associative points, and posDir gives the
+	// orientation ("required for e.g. circles", per the reference). The offsets corroborate
+	// entityRefSketchOffset below: posDir is the single byte that pushes it off 4-alignment.
+	entityRefPoint1Offset = 34
+	entityRefPoint2Offset = 46
+	entityRefPosDirOffset = 54
 	// SketchEntityRef.sketch. NOT 4-aligned: the `posDir` boolean before it is a single byte, so
 	// the reference lands at 55 (confirmed on every SketchEntityRef in the corpus).
 	entityRefSketchOffset = 55
@@ -155,7 +163,55 @@ func resolveRegionEdge(nodes []dcNode, ref int, assoc map[assocKey]dcNode, sketc
 	if !ok {
 		return RegionEdge{}, false
 	}
-	return regionEdgeOf(nodes, curve)
+	e, ok := regionEdgeOf(nodes, curve)
+	if !ok {
+		return RegionEdge{}, false
+	}
+	if e.Kind == EdgeCircle {
+		e = trimCircleEdge(e, er, assoc, sk)
+	}
+	return e, true
+}
+
+// trimCircleEdge cuts a named WHOLE circle back to the arc the face actually walks, from the
+// reference's own trim fields. Without it the arc has to be guessed from geometry, and no geometric
+// rule can do it: an obround's two arcs are EXACTLY 180 degrees, so "the shorter one" is a coin
+// flip and picks the inner halves — a lens instead of the obround, at half the area (#26).
+//
+// Mirrors InventorLoader's Part.Circle branch (importerFreeCAD Create..._createBoundary): the arc
+// runs counter-clockwise p1 -> p2 when posDir is set and p2 -> p1 when it is not; p1 == p2 (or an
+// unresolvable point) means the face really does use the whole circle, as a bore's hole loop does.
+func trimCircleEdge(e RegionEdge, er dcNode, assoc map[assocKey]dcNode, sk int) RegionEdge {
+	p1, ok1 := entityRefPoint(er, entityRefPoint1Offset, assoc, sk)
+	p2, ok2 := entityRefPoint(er, entityRefPoint2Offset, assoc, sk)
+	if !ok1 || !ok2 || samePoint2D(p1, p2) {
+		return e // whole circle
+	}
+	start, end := p1, p2
+	if !entityRefPosDir(er) {
+		start, end = p2, p1
+	}
+	return RegionEdge{Kind: EdgeArc, Arc: Arc{Center: e.Circle.Center, Radius: e.Circle.Radius, Start: start, End: end}}
+}
+
+// entityRefPoint resolves one of a SketchEntityRef's trim points.
+func entityRefPoint(er dcNode, off int, assoc map[assocKey]dcNode, sk int) (Point2D, bool) {
+	if len(er.payload) < off+4 {
+		return Point2D{}, false
+	}
+	n, ok := assoc[assocKey{sk, int(binary.LittleEndian.Uint32(er.payload[off:]) & refIndexMask)}]
+	if !ok || n.typ != point2DNodeType {
+		return Point2D{}, false
+	}
+	return point2DAt(n.payload)
+}
+
+// entityRefPosDir reports the edge's orientation flag.
+func entityRefPosDir(er dcNode) bool {
+	if len(er.payload) <= entityRefPosDirOffset {
+		return false
+	}
+	return er.payload[entityRefPosDirOffset] != 0
 }
 
 // entityRefSketch reports which sketch a SketchEntityRef's associative id is scoped to — the ids
