@@ -152,7 +152,7 @@ func featureTags(data []byte) string {
 		return ""
 	}
 	var tags []string
-	if len(ipt.DecodeExtrudes(seg)) > 0 {
+	if len(ipt.DecodeExtrudes(d)) > 0 {
 		tags = append(tags, "ext")
 	}
 	if ipt.HasRevolve(seg) {

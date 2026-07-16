@@ -40,15 +40,14 @@ func gateBodyAgainstMesh(def *compdef.PartComponentDefinition, d *ipt.Document) 
 	if !ok {
 		return nil
 	}
-	axis, over, ok := escapingAxis(body, mesh)
-	if !ok {
-		return nil
+	if axis, over, escaped := escapingAxis(body, mesh); escaped {
+		dropAllFeatures(def)
+		def.Recompute()
+		return []string{fmt.Sprintf(
+			"dropped the rebuilt body: it exceeds Inventor's own tessellation by %.1fx on its %s extent "+
+				"(body %.2f cm vs mesh %.2f cm) — a wrong solid is worse than none", over, axis, body[axisIndex(axis)], mesh[axisIndex(axis)])}
 	}
-	dropAllFeatures(def)
-	def.Recompute()
-	return []string{fmt.Sprintf(
-		"dropped the rebuilt body: it exceeds Inventor's own tessellation by %.1fx on its %s extent "+
-			"(body %.2f cm vs mesh %.2f cm) — a wrong solid is worse than none", over, axis, body[axisIndex(axis)], mesh[axisIndex(axis)])}
+	return nil
 }
 
 // escapingAxis returns the sorted-extent axis on which the body most exceeds the mesh, if any.

@@ -26,11 +26,12 @@ type CircPattern struct {
 }
 
 // DecodeRectPattern reports the part's rectangular pattern, if present (see patternDims).
-func DecodeRectPattern(seg []byte) (RectPattern, bool) {
-	if !containsUTF16(seg, "Rectangular") || !containsUTF16(seg, "Pattern") {
+func DecodeRectPattern(d *Document) (RectPattern, bool) {
+	seg, ok := d.Segment("PmDCSegment")
+	if !ok || !containsUTF16(seg, "Rectangular") || !containsUTF16(seg, "Pattern") {
 		return RectPattern{}, false
 	}
-	count, spacing, ok := patternDims(seg)
+	count, spacing, ok := patternDims(d, seg)
 	if !ok {
 		return RectPattern{}, false
 	}
@@ -39,11 +40,12 @@ func DecodeRectPattern(seg []byte) (RectPattern, bool) {
 
 // DecodeCircPattern reports the part's circular pattern, if present (see patternDims); the
 // second dimension is the total sweep in radians.
-func DecodeCircPattern(seg []byte) (CircPattern, bool) {
-	if !containsUTF16(seg, "Circular") || !containsUTF16(seg, "Pattern") {
+func DecodeCircPattern(d *Document) (CircPattern, bool) {
+	seg, ok := d.Segment("PmDCSegment")
+	if !ok || !containsUTF16(seg, "Circular") || !containsUTF16(seg, "Pattern") {
 		return CircPattern{}, false
 	}
-	count, angle, ok := patternDims(seg)
+	count, angle, ok := patternDims(d, seg)
 	if !ok {
 		return CircPattern{}, false
 	}
@@ -53,9 +55,9 @@ func DecodeCircPattern(seg []byte) (CircPattern, bool) {
 // patternDims returns a pattern's occurrence count and its second dimension (spacing cm for
 // rectangular, sweep radians for circular): the two model parameters authored right after
 // the base features' distances — count at index nExtrudes, the second at nExtrudes+1.
-func patternDims(seg []byte) (count int, second float64, ok bool) {
+func patternDims(d *Document, seg []byte) (count int, second float64, ok bool) {
 	mp := modelParamValues(seg)
-	n := len(DecodeExtrudes(seg))
+	n := len(DecodeExtrudes(d))
 	if n == 0 || len(mp) < n+2 {
 		return 0, 0, false
 	}

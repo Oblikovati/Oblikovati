@@ -80,11 +80,7 @@ func TestDecodeExtrude(t *testing.T) {
 	}
 	for _, tc := range cases {
 		d := openDoc(t, tc.file)
-		seg, ok := d.Segment("PmDCSegment")
-		if !ok {
-			t.Fatalf("%s: no PmDCSegment", tc.file)
-		}
-		ex, ok := DecodeExtrude(seg)
+		ex, ok := DecodeExtrude(d)
 		if ok != tc.wantOK {
 			t.Errorf("%s: DecodeExtrude ok=%v, want %v", tc.file, ok, tc.wantOK)
 			continue

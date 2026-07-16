@@ -1,0 +1,32 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package ipt
+
+import "testing"
+
+// TestExtrudeDepths pins the depth binding on parts whose depth is known independently: the
+// generated corpus authored the distance explicitly, and a revolve must yield NO extrude depth
+// (its property 2 is not a DirectionAxis).
+func TestExtrudeDepths(t *testing.T) {
+	cases := []struct {
+		file string
+		want []float64
+	}{
+		{"10_box.ipt", []float64{1.0}},          // rectangle extruded 1 cm
+		{"15_cylinder.ipt", []float64{2.0}},     // circle extruded 2 cm
+		{"14_box_two.ipt", []float64{1.0, 2.0}}, // two extrudes, 1 cm then 2 cm — the positional
+		{"16_revolve.ipt", nil},                 // guess bound BOTH to the first parameter
+	}
+	for _, tc := range cases {
+		got := ExtrudeDepths(openDoc(t, tc.file))
+		if len(got) != len(tc.want) {
+			t.Errorf("%s: got %v depths, want %v", tc.file, got, tc.want)
+			continue
+		}
+		for i := range got {
+			if absf(got[i]-tc.want[i]) > 1e-9 {
+				t.Errorf("%s: depth[%d] = %g cm, want %g", tc.file, i, got[i], tc.want[i])
+			}
+		}
+	}
+}

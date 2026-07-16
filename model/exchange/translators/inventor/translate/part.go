@@ -272,7 +272,7 @@ func buildRevolve(def *compdef.PartComponentDefinition, seg []byte, placed []pla
 func buildExtrudeFeatures(def *compdef.PartComponentDefinition, d *ipt.Document, seg []byte, placed []placedSketch, emitted []emittedSketch) (bool, []string) {
 	built := false
 	var notes []string
-	extrudes := ipt.DecodeExtrudes(seg)
+	extrudes := ipt.DecodeExtrudes(d)
 	var lastExtrude *feature.PartFeature
 	for i, ex := range extrudes {
 		if i >= len(emitted) || emitted[i].sk == nil {
@@ -296,14 +296,14 @@ func buildExtrudeFeatures(def *compdef.PartComponentDefinition, d *ipt.Document,
 	}
 	// A pattern or mirror replicates the last feature; it must run after the source feature so its
 	// occurrences re-cut the running body. Rectangular / circular / mirror are mutually exclusive.
-	if rp, ok := ipt.DecodeRectPattern(seg); ok {
+	if rp, ok := ipt.DecodeRectPattern(d); ok {
 		if lastExtrude != nil {
 			addRectPattern(def, lastExtrude, rp)
 			built = true
 		} else {
 			notes = append(notes, "rectangular pattern decoded but no source feature — skipped")
 		}
-	} else if cp, ok := ipt.DecodeCircPattern(seg); ok {
+	} else if cp, ok := ipt.DecodeCircPattern(d); ok {
 		if lastExtrude != nil {
 			addCircPattern(def, lastExtrude, cp)
 			built = true

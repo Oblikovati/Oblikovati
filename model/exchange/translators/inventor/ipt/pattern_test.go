@@ -8,11 +8,7 @@ import "testing"
 // 1.5 cm spacing (the two model params authored after the box + pocket distances).
 func TestDecodeRectPattern(t *testing.T) {
 	d := openDoc(t, "21_pocket_rect.ipt")
-	seg, ok := d.Segment("PmDCSegment")
-	if !ok {
-		t.Fatal("no PmDCSegment")
-	}
-	rp, ok := DecodeRectPattern(seg)
+	rp, ok := DecodeRectPattern(d)
 	if !ok {
 		t.Fatal("no rectangular pattern decoded")
 	}
@@ -28,11 +24,7 @@ func TestDecodeRectPattern(t *testing.T) {
 // full 2π sweep (the two model params after the disk + pocket distances).
 func TestDecodeCircPattern(t *testing.T) {
 	d := openDoc(t, "22_pocket_circ.ipt")
-	seg, ok := d.Segment("PmDCSegment")
-	if !ok {
-		t.Fatal("no PmDCSegment")
-	}
-	cp, ok := DecodeCircPattern(seg)
+	cp, ok := DecodeCircPattern(d)
 	if !ok {
 		t.Fatal("no circular pattern decoded")
 	}
@@ -48,13 +40,11 @@ func TestDecodeCircPattern(t *testing.T) {
 // node name: the rectangular part is not read as circular, and vice versa.
 func TestDecodePatternsDontCrossMatch(t *testing.T) {
 	rect := openDoc(t, "21_pocket_rect.ipt")
-	rseg, _ := rect.Segment("PmDCSegment")
-	if _, ok := DecodeCircPattern(rseg); ok {
+	if _, ok := DecodeCircPattern(rect); ok {
 		t.Error("rectangular part decoded as circular")
 	}
 	circ := openDoc(t, "22_pocket_circ.ipt")
-	cseg, _ := circ.Segment("PmDCSegment")
-	if _, ok := DecodeRectPattern(cseg); ok {
+	if _, ok := DecodeRectPattern(circ); ok {
 		t.Error("circular part decoded as rectangular")
 	}
 }
@@ -63,11 +53,10 @@ func TestDecodePatternsDontCrossMatch(t *testing.T) {
 func TestDecodeRectPatternAbsent(t *testing.T) {
 	for _, file := range []string{"10_box.ipt", "17_box_cut.ipt", "19_box_hole.ipt"} {
 		d := openDoc(t, file)
-		seg, _ := d.Segment("PmDCSegment")
-		if _, ok := DecodeRectPattern(seg); ok {
+		if _, ok := DecodeRectPattern(d); ok {
 			t.Errorf("%s: decoded a pattern where there is none", file)
 		}
-		if _, ok := DecodeCircPattern(seg); ok {
+		if _, ok := DecodeCircPattern(d); ok {
 			t.Errorf("%s: decoded a circular pattern where there is none", file)
 		}
 	}

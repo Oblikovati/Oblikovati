@@ -61,22 +61,12 @@ type Extrude struct {
 	Operation int
 }
 
-// DecodeExtrude reports the part's extrude feature, if present. v1: single extrude —
-// distance from the first model parameter, operation from the first operation node.
-// Multi-feature enumeration/binding is future work.
-func DecodeExtrude(seg []byte) (Extrude, bool) {
-	if !containsUTF16(seg, "Extrusion") {
-		return Extrude{}, false
+// DecodeExtrude reports the part's first extrude feature, if present.
+func DecodeExtrude(d *Document) (Extrude, bool) {
+	if ex := DecodeExtrudes(d); len(ex) > 0 {
+		return ex[0], true
 	}
-	v, ok := firstModelParamValue(seg)
-	if !ok {
-		return Extrude{}, false
-	}
-	op := OpNewBody
-	if ops := DecodeOperations(seg); len(ops) > 0 {
-		op = ops[0]
-	}
-	return Extrude{Distance: v, Operation: op}, true
+	return Extrude{}, false
 }
 
 // Inventor unit-type ids on a model parameter, at valueOffset+20 (the value f64, its duplicate,
@@ -124,30 +114,27 @@ func modelParamValues(seg []byte) []float64 {
 	return out
 }
 
-func firstModelParamValue(seg []byte) (float64, bool) {
-	if v := modelParamValues(seg); len(v) > 0 {
-		return v[0], true
-	}
-	return 0, false
-}
-
-// DecodeExtrudes returns every extrude feature in order, each bound to its distance
-// (ordered model parameter) and operation (ordered operation node). Empty when the part
-// has no extrude. Assumes feature order == sketch/param/operation order (holds for the
-// corpus); mixed extrude+revolve ordering is future work.
-func DecodeExtrudes(seg []byte) []Extrude {
-	if !containsUTF16(seg, "Extrusion") {
+// DecodeExtrudes returns every extrude feature in order, each bound to ITS OWN distance —
+// resolved through the feature node's distance-parameter reference (see ExtrudeDepths), not by
+// position. The predecessor took the i-th model parameter, which on any part with more than one
+// parameter is some unrelated sketch dimension: BigChunkyPlate then extruded a 3 cm plate by
+// 40 cm (26x its true volume). Empty when the part has no extrude.
+//
+// The operation still comes from the i-th operation node, so it remains positional.
+func DecodeExtrudes(d *Document) []Extrude {
+	seg, ok := d.Segment("PmDCSegment")
+	if !ok {
 		return nil
 	}
-	dists := modelParamValues(seg)
 	ops := DecodeOperations(seg)
-	n := len(ops)
-	if len(dists) < n {
-		n = len(dists)
-	}
-	out := make([]Extrude, n)
-	for i := 0; i < n; i++ {
-		out[i] = Extrude{Distance: dists[i], Operation: ops[i]}
+	depths := ExtrudeDepths(d)
+	out := make([]Extrude, 0, len(depths))
+	for i, dist := range depths {
+		op := OpNewBody
+		if i < len(ops) {
+			op = ops[i]
+		}
+		out = append(out, Extrude{Distance: dist, Operation: op})
 	}
 	return out
 }
