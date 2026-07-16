@@ -231,7 +231,7 @@ func armContactRail(host *topo.Face, arm armSetback, tHost, v math.Point3, segs 
 		outer := arc.PointAt(0)
 		return endSeg{from: outer, to: tHost, curve: arc, mid: arc.PointAt(0.5), arc: true}, outer, true
 	case geom.Cylinder:
-		outer, ok := rulingOuterEnd(host, s, tHost, v, segs, tol)
+		outer, ok := armRulingEnd(host, s, arm, tHost, v, segs, tol)
 		if !ok {
 			return endSeg{}, math.Point3{}, false
 		}
@@ -240,33 +240,64 @@ func armContactRail(host *topo.Face, arm armSetback, tHost, v math.Point3, segs 
 	return endSeg{}, math.Point3{}, false
 }
 
-// rulingOuterEnd is the far end of a cylinder arm's straight ruling on a host: on a cylinder wall the
-// ruling runs along the shared axis to the far rim (the axial extreme away from the bitten vertex);
-// on a planar host it runs along the arm axis to where it exits the original loop.
-func rulingOuterEnd(host *topo.Face, cylArm geom.Cylinder, tHost, v math.Point3, segs []endSeg, tol float64) (math.Point3, bool) {
-	axis := cylArm.AxisDir.AsVector()
-	switch h := host.Geometry().(type) {
-	case geom.Cylinder:
-		return axialExtremeEnd(h, segs, tHost, v, axis), true
-	case geom.Plane:
-		return planeRayLoopExit(h, segs, tHost, awayFrom(axis, tHost, v), tol)
+// sinFloor is the dimensionless (angular, scale-free) floor for a DEGENERATE ruling: a chart direction
+// whose magnitude falls below it means the arm axis is (near-)perpendicular to a planar host — the
+// ruling projects to a point and casting it would divide by ~0. Like retrimAxisParallelTol, an angle
+// carries no length, so ADR-0042's model-relative rule does not apply; 1e-6 sits far inside the exact
+// geometry yet rejects any real misalignment. Never triggers on the corpus (every arm axis lies in / is
+// parallel to its host), so it is a defensive decline, not a hot path.
+const sinFloor = 1e-6
+
+// armRulingEnd is the far end of a cylinder arm's straight ruling on a host: the FIRST forward crossing
+// of the ruling with the (bitten) loop, computed in the host's intrinsic chart (θ,z on a wall; u,v on a
+// plane), then cross-checked against the filleted edge's far vertex (the runout authority, R.1a).
+// Replaces axialExtremeEnd, which slid to the loop's GLOBAL axial extreme and overshot any intermediate
+// trim edge (N7 s_4: global rim z=130, true runout z=80). It honest-rejects (false) when the crossing's
+// runout disagrees with the far vertex's beyond tol (the edge ends at an interior weld — out of scope —
+// or a wrong edge was hit), or when the chart ruling is degenerate (arm axis ⊥ a planar host).
+func armRulingEnd(host *topo.Face, cylArm geom.Cylinder, arm armSetback, tHost, v math.Point3, segs []endSeg, tol float64) (math.Point3, bool) {
+	ch, o2, d2, ok := rulingChartRay(host, cylArm, tHost, v)
+	if !ok {
+		return math.Point3{}, false // no host chart, or the ruling projects to a point (grazing) — decline
 	}
-	return math.Point3{}, false
+	end, ok := chartRulingExit(ch, segs, o2, d2, tol)
+	if !ok {
+		return math.Point3{}, false // the ruling meets no forward loop edge
+	}
+	if arm.runoutKnown && !runoutAgrees(ch, o2, d2, end, arm.farVertex, tol) {
+		return math.Point3{}, false // crossing runout ≠ edge far-vertex runout: interior weld or wrong edge
+	}
+	return end, true
 }
 
-// axialExtremeEnd slides tHost along the wall axis to the loop's extreme axial coordinate on the side
-// away from the bitten vertex — the far rim the vertical ruling reaches.
-func axialExtremeEnd(cyl geom.Cylinder, segs []endSeg, tHost, v math.Point3, axis math.Vector3) math.Point3 {
-	base := float64(cyl.Origin.VectorTo(tHost).Dot(axis))
-	up := base >= float64(cyl.Origin.VectorTo(v).Dot(axis)) // away from v = away from its axial coord
-	ext := base
-	for _, s := range segs {
-		a := float64(cyl.Origin.VectorTo(s.from).Dot(axis))
-		if (up && a > ext) || (!up && a < ext) {
-			ext = a
-		}
+// rulingChartRay develops the host and returns the arm ruling as a chart ray: origin ch.to2(tHost),
+// direction the arm axis oriented away from the bitten vertex, mapped into the chart (θ fixed → vertical
+// on a wall; projected axis on a plane). ok=false when the host has no chart or the ruling is degenerate
+// (the axis projects to a ~0 chart direction — sinFloor guards the divide chartRulingExit would do).
+func rulingChartRay(host *topo.Face, cylArm geom.Cylinder, tHost, v math.Point3) (hostChart, math.Point2, math.Vector2, bool) {
+	ch, ok := hostChartFor(host.Geometry())
+	if !ok {
+		return nil, math.Point2{}, math.Vector2{}, false // host is neither plane nor cylinder
 	}
-	return tHost.TranslateBy(axis.Scale(math.Scalar(ext - base)))
+	dir := awayFrom(cylArm.AxisDir.AsVector(), tHost, v)
+	o2 := ch.to2(tHost)
+	d2 := o2.VectorTo(ch.to2(tHost.TranslateBy(dir)))
+	if float64(d2.Length()) < sinFloor { // arm axis ⊥ a planar host: ruling has no chart extent
+		return nil, math.Point2{}, math.Vector2{}, false
+	}
+	return ch, o2, d2, true
+}
+
+// runoutAgrees reports whether the crossing end and the far vertex share the same RUNOUT (their extent
+// along the ruling direction d2), within tol. It compares only the along-ruling coordinate — NOT the
+// full 3D distance — because a fillet's contact ruling is laterally offset from its sharp edge by ~r, so
+// the ruling end and the edge far vertex share the runout coordinate (both reach the same rim) but sit
+// at different lateral positions; a 3D distance would false-reject by that offset.
+func runoutAgrees(ch hostChart, o2 math.Point2, d2 math.Vector2, end, farVertex math.Point3, tol float64) bool {
+	unit := d2.Scale(math.Scalar(1 / float64(d2.Length())))
+	rEnd := float64(o2.VectorTo(ch.to2(end)).Dot(unit))
+	rFar := float64(o2.VectorTo(ch.to2(farVertex)).Dot(unit))
+	return stdmath.Abs(rEnd-rFar) <= tol
 }
 
 // awayFrom returns axis oriented to point away from the bitten vertex v (the side the ruling runs to).

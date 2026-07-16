@@ -33,10 +33,12 @@ const closureAngleTol = 1e-4
 // parameter where spine(station)=C, and the two unit rail directions (C→host-tangent-point)/r
 // of its two hosts — the endpoints of the great-circle arc the arm welds to the sphere along.
 type armSetback struct {
-	arm      geom.Surface     // ef.armSurface: a geom.Torus (axis ⊥ plane) or geom.Cylinder (axis ∥ plane)
-	station  float64          // spine parameter where spine(station)=C (torus: major angle; cyl: axial)
-	railDir0 math.UnitVector3 // unit (T_hostA − C)/r
-	railDir1 math.UnitVector3 // unit (T_hostB − C)/r
+	arm         geom.Surface     // ef.armSurface: a geom.Torus (axis ⊥ plane) or geom.Cylinder (axis ∥ plane)
+	station     float64          // spine parameter where spine(station)=C (torus: major angle; cyl: axial)
+	railDir0    math.UnitVector3 // unit (T_hostA − C)/r
+	railDir1    math.UnitVector3 // unit (T_hostB − C)/r
+	farVertex   math.Point3      // the filleted edge's terminus away from C — the runout authority (R.1a)
+	runoutKnown bool             // farVertex is stamped (a real filleted edge was wired); false for bare-face unit corners
 }
 
 // cornerWeld is the solved trihedral corner: the sphere (centre C, radius r), the per-arm setbacks,
@@ -88,7 +90,22 @@ func solveArmSetback(ef edgeFillet, c math.Point3, r, scale float64, res Resolut
 	if !ok0 || !ok1 {
 		return armSetback{}, false // a host is not tangent to the sphere at radius r
 	}
-	return armSetback{arm: ef.armSurface, station: station, railDir0: d0, railDir1: d1}, true
+	set := armSetback{arm: ef.armSurface, station: station, railDir0: d0, railDir1: d1}
+	if ef.edge != nil { // bare-face unit corners (b3CornerArms) carry no edge — leave the authority off
+		set.farVertex, set.runoutKnown = fartherEndpoint(ef.edge, c), true
+	}
+	return set, true
+}
+
+// fartherEndpoint is the filleted edge's vertex farther from the corner centre c — the arm's far
+// runout terminus (the near vertex is the corner). Used as the ruling-termination authority (R.1a):
+// the ruling's first forward crossing must agree with this vertex's runout, else the weld declines.
+func fartherEndpoint(e *topo.Edge, c math.Point3) math.Point3 {
+	s, t := e.StartVertex().Point(), e.EndVertex().Point()
+	if s.DistanceTo(c) >= t.DistanceTo(c) {
+		return s
+	}
+	return t
 }
 
 // armStation reads the setback station off the arm spine in closed form (spine(station)=C).
