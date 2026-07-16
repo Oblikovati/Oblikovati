@@ -169,3 +169,46 @@ func assertPerturbedRailRejected(t *testing.T, w cornerWeld, dirs [3]math.UnitVe
 		t.Fatalf("curvedClosureValid accepted a 5°-perturbed rail (the guard did not bite)")
 	}
 }
+
+// TestSolveCurvedCorner_RejectsOffSpine drives armStation's off-spine guard (cylinderStation, via
+// the W∧N vertical-cyl arm) in isolation: perturb ONLY that arm's own spine geometry (its axis
+// line, 5 units off in x — origin x=15 instead of x=10), leaving the sphere and every host face
+// untouched so the host-tangency guards (hostTangentPoint) stay satisfied and cannot mask this
+// one. dist(C, perturbed axis)=5 is ~6 orders past the res.Weld()*50≈7.5e-6 gate at this model
+// size, so solveCurvedCorner must decline the corner right there, before any closure math runs.
+func TestSolveCurvedCorner_RejectsOffSpine(t *testing.T) {
+	sphere, arms := b3CornerArms(t)
+	res := geom.ResolutionForSize(150)
+	arms[1].armSurface = mustCylinder(t, math.P3(15, b3CornerCY, 0), math.V3(0, 0, 1), 10) // was x=10
+	if _, ok := solveCurvedCorner(sphere, arms, res); ok {
+		t.Fatalf("solveCurvedCorner accepted an arm spine 5 units off the sphere centre")
+	}
+}
+
+// TestSolveCurvedCorner_RejectsTooFewArms drives solveCurvedCorner's arm-count guard: a trihedral
+// corner needs three arms to close a spherical triangle, so two arms (a dihedral edge, not a
+// corner) must be declined outright, before any station or closure math runs.
+func TestSolveCurvedCorner_RejectsTooFewArms(t *testing.T) {
+	sphere, arms := b3CornerArms(t)
+	res := geom.ResolutionForSize(150)
+	if _, ok := solveCurvedCorner(sphere, arms[:2], res); ok {
+		t.Fatalf("solveCurvedCorner accepted only 2 arms (want ok=false: <3 cannot close a trihedral corner)")
+	}
+}
+
+// TestSolveCurvedCorner_RejectsNonTangentHost drives hostTangentPoint's "host not tangent at
+// radius r" guard (cylinderTangentPoint): swap the B3 wall host (R=50, tangent to the sphere at
+// r=10 since dist(C,axis)=40 and |40−50|=10) for one 5 units wider (R=55, |40−55|=15≠10) so the
+// sphere no longer touches it at the corner radius. Both the torus (W∧K) and vertical-cyl (W∧N)
+// arms share this wall host, so either's railDir call must decline.
+func TestSolveCurvedCorner_RejectsNonTangentHost(t *testing.T) {
+	sphere, arms := b3CornerArms(t)
+	res := geom.ResolutionForSize(150)
+	bld := topo.NewBuilder(true, topo.Lineage{})
+	badWall := bld.AddFace(mustCylinder(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 55), topo.Lineage{})
+	arms[0].a = badWall // torus arm's wall host, now off the r=10 tangency by 5 units
+	arms[1].a = badWall // vertical-cyl arm's wall host, same fault
+	if _, ok := solveCurvedCorner(sphere, arms, res); ok {
+		t.Fatalf("solveCurvedCorner accepted a host wall not tangent to the sphere at radius r")
+	}
+}

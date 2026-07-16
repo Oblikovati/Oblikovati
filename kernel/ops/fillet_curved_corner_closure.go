@@ -18,7 +18,9 @@ import (
 // curvedClosureValid enforces the four §A.3 fail-loud invariants and returns false on any failure:
 //  1. endpoint match — the arms' rails chain into one closed loop over exactly three shared points;
 //  2. length = geodesic — each rail's subtense equals the geodesic between its two host-tangent points;
-//  3. signed closure — the spherical excess E∈(0,2π) and r²E equals the forward triangle area;
+//  3. excess/area MAGNITUDE closure — |E|∈(0,2π) and r²·|E| equals the forward triangle area.
+//     NOTE: unsigned magnitude only; right-handed chirality is deferred to T5.4, which adopts
+//     the already-signed `solidAngle` helper.
 //  4. per-arm station — each arm carries a resolved (finite) station root.
 //
 // Example:
