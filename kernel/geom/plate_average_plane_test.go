@@ -55,6 +55,32 @@ func TestAveragePlaneMatchesKnownNormal(t *testing.T) {
 	}
 }
 
+// wallScaleTiltedPlaneAnchors is tiltedPlaneAnchors scaled x1e4 — wall/room-scale coordinates,
+// not toy 0-3 units. Regression coverage for the Jacobi convergence floor (M6 P1 review): a
+// BARE absolute residual floor is unreachable by scatter-matrix entries at this scale (~1e8,
+// since entries carry units of length²), so jacobiEigen3 must scale its convergence check by
+// the matrix's own Frobenius norm to still resolve the correct normal here.
+func wallScaleTiltedPlaneAnchors() []math.Point3 {
+	const scale = 1e4
+	base := tiltedPlaneAnchors()
+	scaled := make([]math.Point3, len(base))
+	for i, p := range base {
+		scaled[i] = math.P3(p.X*scale, p.Y*scale, p.Z*scale)
+	}
+	return scaled
+}
+
+func TestAveragePlaneMatchesKnownNormalAtWallScale(t *testing.T) {
+	dom, err := AveragePlane(wallScaleTiltedPlaneAnchors())
+	if err != nil {
+		t.Fatalf("AveragePlane: %v", err)
+	}
+	expected := tiltedPlaneUnitNormal()
+	if !dom.N.IsParallelTo(expected, 0) {
+		t.Errorf("N = %+v not parallel (to within tol, up to sign) to known plane normal %+v", dom.N, expected)
+	}
+}
+
 func TestAveragePlaneFrameIsOrthonormalRightHanded(t *testing.T) {
 	dom, err := AveragePlane(tiltedPlaneAnchors())
 	if err != nil {
@@ -106,6 +132,39 @@ func TestAveragePlaneRejectsCollinearAnchors(t *testing.T) {
 	_, err := AveragePlane(collinearAnchors())
 	if err == nil {
 		t.Fatal("AveragePlane: expected error for collinear anchors, got nil")
+	}
+	if !strings.Contains(err.Error(), "collinear") {
+		t.Errorf("error %q should name the collinear/rank-deficient defect", err.Error())
+	}
+}
+
+// TestPlaneFrameFromEigenAcceptsHealthySecondSpread and
+// TestPlaneFrameFromEigenRejectsWhenSecondSpreadCollapses call planeFrameFromEigen directly
+// with synthetic eigenvalue triples, bypassing jacobiEigen3/AveragePlane entirely. This closes
+// a review gap (M6 P1): tiltedPlaneAnchors' real sqrt(values[lo])/majorSpread ratio is ~4.8e-9
+// — just ABOVE domainDegenerateTol (1e-9) — so a guard mistakenly comparing values[lo] instead
+// of values[mid] would STILL pass on that fixture, and the rank-guard test couldn't prove
+// planeFrameFromEigen reads the SECOND-largest eigenvalue (values[mid]) rather than the
+// smallest (values[lo] — which is *supposed* to be ~0 for any valid planar fit; that's the
+// normal direction, not evidence of degeneracy). These two triples pin values[lo] at an
+// unambiguous ~0 (1e-20, far below the 1e-9 floor by itself) so a mid->lo swap changes the
+// outcome: the healthy triple below is accepted by the correct (mid) guard and WRONGLY
+// rejected by a lo-based guard, since values[lo] <= values[mid] always holds (sortEigenIndices
+// invariant) and a valid planar fit's lo is always ~0 — the guard direction that discriminates
+// is "buggy over-rejects", not "buggy under-rejects".
+func TestPlaneFrameFromEigenAcceptsHealthySecondSpread(t *testing.T) {
+	values := [3]float64{1e-20, 5, 10} // lo, mid, hi: two healthy in-plane spreads (mid, hi)
+	_, _, _, err := planeFrameFromEigen(values, identity3(), ResolutionForSize(1))
+	if err != nil {
+		t.Fatalf("planeFrameFromEigen: expected accept for healthy second spread, got %v", err)
+	}
+}
+
+func TestPlaneFrameFromEigenRejectsWhenSecondSpreadCollapses(t *testing.T) {
+	values := [3]float64{1e-20, 1e-20, 10} // lo, mid both ~0: only one in-plane spread (hi)
+	_, _, _, err := planeFrameFromEigen(values, identity3(), ResolutionForSize(1))
+	if err == nil {
+		t.Fatal("planeFrameFromEigen: expected reject when second-largest spread collapses, got nil")
 	}
 	if !strings.Contains(err.Error(), "collinear") {
 		t.Errorf("error %q should name the collinear/rank-deficient defect", err.Error())

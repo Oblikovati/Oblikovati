@@ -179,10 +179,16 @@ func sortEigenIndices(values [3]float64) (lo, mid, hi int) {
 // so a pathological input degrades to "did not fully converge" rather than looping forever.
 const jacobiMaxSweeps = 50
 
-// jacobiConvergedFloor is the sum-of-squared-off-diagonals residual below which a itself is
-// considered diagonal — a convergence/numeric guard (not a model length), so it is a bare
-// constant by design (tol:numeric).
-const jacobiConvergedFloor = 1e-28
+// jacobiConvergedRelTol is the DIMENSIONLESS ratio (tol:numeric — a machine-epsilon-scaled
+// convergence ratio, not a model length) the off-diagonal residual is compared against, scaled
+// by a's own Frobenius norm (ADR-0042 model-relative tolerances). A bare absolute floor is
+// wrong here: scatter-matrix entries carry units of length², so for wall-scale anchors
+// (entries ~1e8 at 1e4-length scale) an absolute 1e-28 floor sits ~40 orders below the
+// achievable residual and never trips — the solver silently burns all jacobiMaxSweeps sweeps
+// every call instead of exiting early once actually converged. Scaling by ||a||_F (invariant
+// under the Jacobi rotations' orthogonal similarity transform, so it can be measured once from
+// the input a before any sweep) keeps the check meaningful at any matrix scale.
+const jacobiConvergedRelTol = 1e-15
 
 // jacobiSkipFloor is the per-pivot "already zero" guard inside a single rotation — avoids a
 // needless rotation (and its associated floating-point noise) on an off-diagonal entry
@@ -201,8 +207,9 @@ const jacobiSkipFloor = 1e-30
 // vectors (vectors[i][k] is the i-th component of the k-th eigenvector).
 func jacobiEigen3(a [3][3]float64) (values [3]float64, vectors [3][3]float64) {
 	vectors = identity3()
+	floor := jacobiConvergedRelTol * jacobiConvergedRelTol * frobeniusNormSquared(a)
 	for sweep := 0; sweep < jacobiMaxSweeps; sweep++ {
-		if jacobiSweep(&a, &vectors) < jacobiConvergedFloor {
+		if jacobiSweep(&a, &vectors) <= floor {
 			break
 		}
 	}
@@ -213,9 +220,24 @@ func identity3() [3][3]float64 {
 	return [3][3]float64{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}
 }
 
+// frobeniusNormSquared returns Σ a[i][j]² over all 9 entries (diagonal and off-diagonal) — the
+// squared Frobenius norm jacobiEigen3 scales its relative convergence floor by. Computed once
+// from the input a: the Jacobi rotations are orthogonal similarity transforms, which preserve
+// the Frobenius norm sweep to sweep, so the pre-loop value stays valid as the residual floor
+// for every sweep.
+func frobeniusNormSquared(a [3][3]float64) float64 {
+	var sum float64
+	for i := 0; i < 3; i++ {
+		for j := 0; j < 3; j++ {
+			sum += a[i][j] * a[i][j]
+		}
+	}
+	return sum
+}
+
 // jacobiSweep applies one cyclic sweep — rotations zeroing the (0,1),(0,2),(1,2)
 // off-diagonal pairs in turn — and returns the resulting sum of squared off-diagonal
-// entries (the convergence residual jacobiEigen3 checks against jacobiConvergedFloor).
+// entries (the convergence residual jacobiEigen3 checks against its Frobenius-relative floor).
 func jacobiSweep(a *[3][3]float64, v *[3][3]float64) float64 {
 	pairs := [3][2]int{{0, 1}, {0, 2}, {1, 2}}
 	for _, pq := range pairs {
