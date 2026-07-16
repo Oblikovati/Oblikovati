@@ -77,6 +77,76 @@ func mustArc(t *testing.T, center math.Point3, radius, start, sweep float64) geo
 	return arc
 }
 
+// buildRadialFaceWithHole builds the same x=0 radial rectangle as buildRadialFace, but with a small
+// square INNER (hole) loop added FIRST — at Loops()[0] — and the outer boundary loop added second.
+// This ordering is deliberate: a retrim that (bug) reads Loops()[0] unconditionally would try to bite
+// the hole instead of the rectangle's boundary, so this fixture makes that regression fail loudly
+// rather than silently (Important review finding, T5.3). Returns the hole's loop points in traversal
+// order, for the caller to check they survive the retrim unchanged.
+func buildRadialFaceWithHole(t *testing.T) (*topo.Face, []math.Point3) {
+	t.Helper()
+	bld := topo.NewBuilder(true, topo.Lineage{})
+	lin := topo.Lineage{}
+	v := func(p math.Point3) *topo.Vertex { return bld.AddVertex(p, lin) }
+	seg := func(a, b *topo.Vertex) *topo.Edge {
+		return bld.AddEdge(geom.NewLineSegment(a.Point(), b.Point()), a, b, lin)
+	}
+	// outer boundary: identical rectangle to buildRadialFace (y∈[−50,0]×z∈[0,100]).
+	c0, c1, c2, c3 := v(math.P3(0, 0, 0)), v(math.P3(0, -50, 0)), v(math.P3(0, -50, 100)), v(math.P3(0, 0, 100))
+	oe0, oe1, oe2, oe3 := seg(c0, c1), seg(c1, c2), seg(c2, c3), seg(c3, c0)
+	// inner hole: a small 2×2 square well clear of the bitten corner near (0,−50,100) and of the
+	// straight-ruling exits, so a CORRECT retrim (reading only the outer loop) is unaffected by it.
+	h0, h1, h2, h3 := v(math.P3(0, -24, 49)), v(math.P3(0, -26, 49)), v(math.P3(0, -26, 51)), v(math.P3(0, -24, 51))
+	he0, he1, he2, he3 := seg(h0, h1), seg(h1, h2), seg(h2, h3), seg(h3, h0)
+	pl := mustPlane(t, math.P3(0, 0, 0), math.V3(1, 0, 0))
+	face := bld.AddFace(pl, lin,
+		topo.InnerLoop(topo.Fwd(he0), topo.Fwd(he1), topo.Fwd(he2), topo.Fwd(he3)),
+		topo.OuterLoop(topo.Fwd(oe0), topo.Fwd(oe1), topo.Fwd(oe2), topo.Fwd(oe3)),
+	)
+	return face, []math.Point3{h0.Point(), h1.Point(), h2.Point(), h3.Point()}
+}
+
+// TestRetrimCurvedHost_InnerLoopSurvives is the regression for the Important review finding: the
+// retrim must select the host's OUTER loop by topo.Loop.IsOuter(), not Loops()[0] — a face's inner
+// (hole) loops can sit at any index — and must carry any inner loop through into the result UNCHANGED.
+// buildRadialFaceWithHole plants the inner loop at index 0 precisely so a Loops()[0]-reading retrim
+// bites the hole (wrong shape / wrong area / decline) instead of the rectangle's boundary.
+func TestRetrimCurvedHost_InnerLoopSurvives(t *testing.T) {
+	sphere, arms := b3CornerArms(t)
+	res := geom.ResolutionForSize(150)
+	w, ok := solveCurvedCorner(sphere, arms, res)
+	if !ok {
+		t.Fatalf("solveCurvedCorner rejected the certified B3 corner")
+	}
+	host, holePts := buildRadialFaceWithHole(t)
+	ff, ok := retrimCurvedHost(host, w, res)
+	if !ok {
+		t.Fatalf("retrimCurvedHost declined the holed radial host")
+	}
+	if len(ff.loops) != 2 {
+		t.Fatalf("retrimmed face has %d loops, want 2 (retrimmed outer + unchanged inner hole)", len(ff.loops))
+	}
+	assertNoArcs(t, ff.loops[0]) // outer retrim: same straight-rulings shape as the un-holed radial (§B)
+	if a := developedLoopArea(host.Geometry(), ff.loops[0]); stdmath.Abs(a-3485.69) > areaTol(3485.69) {
+		t.Fatalf("outer retrim area = %.4f, want 3485.69 (the hole must not perturb the boundary bite)", a)
+	}
+	assertLoopPointsEqual(t, ff.loops[1], holePts)
+}
+
+// assertLoopPointsEqual checks a filletLoop's points match want exactly, in order — proof an inner
+// (hole) loop passed through the retrim byte-for-byte unchanged.
+func assertLoopPointsEqual(t *testing.T, loop filletLoop, want []math.Point3) {
+	t.Helper()
+	if len(loop.pts) != len(want) {
+		t.Fatalf("inner loop has %d points, want %d (%v)", len(loop.pts), len(want), want)
+	}
+	for i, p := range want {
+		if float64(p.DistanceTo(loop.pts[i])) > 1e-9 {
+			t.Fatalf("inner loop point %d = %v, want %v (unchanged)", i, loop.pts[i], p)
+		}
+	}
+}
+
 // TestRetrimCurvedHost_B3 drives the curved-host retrim on all four B3 hosts and asserts each
 // retrimmed loop reproduces the oracle-closed area (§B) AND is genuinely correct — CLOSED (every arc
 // edge joins the two loop points it spans, no chord gap) and carrying the certified circular RAILS

@@ -196,9 +196,9 @@ func TestCurvedHostArc_B3(t *testing.T) {
 	tor := b3TorusArm(t, w)
 	tW, tK, _ := b3TangentPoints()
 	wall := mustCylinder(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 50)
-	cap := mustPlane(t, math.P3(0, 0, 100), math.V3(0, 0, 1))
+	capPl := mustPlane(t, math.P3(0, 0, 100), math.V3(0, 0, 1))
 	assertHostArc(t, mustHostArc(t, wall, tor, w, res), math.P3(0, 0, 90), 50, math.P3(50, 0, 90), tW)
-	assertHostArc(t, mustHostArc(t, cap, tor, w, res), math.P3(0, 0, 100), 40, math.P3(40, 0, 100), tK)
+	assertHostArc(t, mustHostArc(t, capPl, tor, w, res), math.P3(0, 0, 100), 40, math.P3(40, 0, 100), tK)
 }
 
 // mustHostArc builds a host arc or fails the test.

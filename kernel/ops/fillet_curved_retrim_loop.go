@@ -17,19 +17,59 @@ import (
 // The two circular splits (the wall bottom-rim sub-arc, the bottom-cap foot arc) are re-emitted as
 // exact Arc3d edges, never chords, so the assembled mesh cannot bulge or crack (tessellation-first).
 
-// originalHostSegs reads the host's outer loop as an ordered ring of endSegs (each from→to carrying
-// the edge's Arc3d curve oriented to the traversal, or nil for a straight edge).
+// originalHostSegs reads the host's OUTER loop as an ordered ring of endSegs (each from→to carrying
+// the edge's Arc3d curve oriented to the traversal, or nil for a straight edge). The corner bite is
+// always cut from the outer boundary; any inner (hole) loop is untouched by the retrim and is carried
+// through separately (see innerHostLoops) rather than read here.
 func originalHostSegs(host *topo.Face) []endSeg {
-	loops := host.Loops()
-	if len(loops) == 0 {
+	loop := outerHostLoop(host)
+	if loop == nil {
 		return nil
 	}
-	uses := loops[0].EdgeUses()
+	uses := loop.EdgeUses()
 	segs := make([]endSeg, 0, len(uses))
 	for _, u := range uses {
 		segs = append(segs, endSegFromUse(u))
 	}
 	return segs
+}
+
+// outerHostLoop returns the host face's outer boundary loop, found by topo.Loop.IsOuter() rather than
+// assumed to sit at Loops()[0] — a face's inner (hole) loops can be stored at any index, and reading
+// index 0 unconditionally would retrim a hole instead of the boundary on such a face (review finding,
+// T5.3). Returns nil if the face carries no outer loop (malformed topology).
+func outerHostLoop(host *topo.Face) *topo.Loop {
+	for _, l := range host.Loops() {
+		if l.IsOuter() {
+			return l
+		}
+	}
+	return nil
+}
+
+// innerHostLoops carries every INNER (hole) loop of the host through unchanged into the retrimmed
+// result: the corner bite only re-clips the outer boundary (§B), so a host with a genuine hole must
+// keep it verbatim, else the retrim would silently erase it.
+func innerHostLoops(host *topo.Face) []filletLoop {
+	var out []filletLoop
+	for _, l := range host.Loops() {
+		if !l.IsOuter() {
+			out = append(out, unchangedLoop(l))
+		}
+	}
+	return out
+}
+
+// unchangedLoop copies a topo loop into a filletLoop with no modification, preserving each vertex's
+// source identity and the source edge leaving it (mirrors transformLoop's "unchanged survivor" case,
+// fillet_faces.go) so the assembler's welder keeps the loop's original topo provenance.
+func unchangedLoop(l *topo.Loop) filletLoop {
+	var fl filletLoop
+	for _, u := range l.EdgeUses() {
+		v := useFromVertex(u)
+		fl.addID(v.Point(), survivorCurve(u), v.ID(), u.Edge().ID())
+	}
+	return fl
 }
 
 // endSegFromUse turns one edge use into an endSeg, carrying an Arc3d curve (with its midpoint, for

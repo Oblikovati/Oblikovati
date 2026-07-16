@@ -116,12 +116,14 @@ func capContactCircle(pl geom.Plane, tor geom.Torus, res Resolution) (math.Point
 	return tor.Center.TranslateBy(axis.Scale(math.Scalar(t))), tor.MajorRadius, true
 }
 
-// retrimCurvedHost re-clips one host face at the trihedral corner to a single outer loop: the
-// original outer edges, cut back where the arms/sphere contact them, plus the arm contact rails
-// (circular arcs for the torus-adjacent hosts, straight rulings for the cylinder/planar-adjacent
-// ones, and the through-arm foot arc on the cap it exits — §B.5). It honest-rejects (ok=false) when
-// a contact rail is missing or a landing point does not lie on the original loop, never an open or
-// self-crossing loop (a mis-closed retrim corrupts the mesh). Example:
+// retrimCurvedHost re-clips one host face at the trihedral corner: its OUTER loop's original edges are
+// cut back where the arms/sphere contact them, plus the arm contact rails spliced in (circular arcs
+// for the torus-adjacent hosts, straight rulings for the cylinder/planar-adjacent ones, and the
+// through-arm foot arc on the cap it exits — §B.5). Any INNER (hole) loop on the host is untouched by
+// the corner and is carried through verbatim (innerHostLoops) — the bite only ever reshapes the
+// boundary. It honest-rejects (ok=false) when a contact rail is missing or a landing point does not lie
+// on the original loop, never an open or self-crossing loop (a mis-closed retrim corrupts the mesh).
+// Example:
 //
 //	ff, ok := retrimCurvedHost(wallFace, w, res)
 //	if !ok { /* decline the weld — do-no-harm */ }
@@ -134,7 +136,10 @@ func retrimCurvedHost(host *topo.Face, w cornerWeld, res Resolution) (filletFace
 	if !ok {
 		return filletFace{}, false
 	}
-	return filletFace{surface: host.Geometry(), loops: []filletLoop{loopFromSegs(loop)}, parent: host.Lineage()}, true
+	// outer loop first (retrimmed), any inner (hole) loops after, carried through unchanged — the
+	// corner bite never touches a hole (Important finding, T5.3 review).
+	loops := append([]filletLoop{loopFromSegs(loop)}, innerHostLoops(host)...)
+	return filletFace{surface: host.Geometry(), loops: loops, parent: host.Lineage()}, true
 }
 
 // retrimHostSegs routes a host to its retrim mode: two corner arms meeting at a shared host-tangent
@@ -317,7 +322,12 @@ func footArcSeg(center math.Point3, radius float64, pl geom.Plane, h0, h1, v mat
 	n, _ := math.UnitVector3FromVector(pl.Normal())
 	midDir, err := math.UnitVector3FromVector(center.VectorTo(h0.Midpoint(h1)))
 	if err != nil {
-		midDir = n // h0,h1 diametric: any in-plane direction works (not reached in Slice A)
+		// h0,h1 diametric: center.VectorTo(midpoint) vanishes. Fall back to a genuine IN-PLANE
+		// perpendicular to the chord h0→h1 — unit(n × chord), which lies IN the cap plane and is ⊥
+		// the chord — NOT the plane normal n itself (n points OUT of the plane, which tilted/
+		// degenerated the arc — Minor finding, T5.3 review). h0≠h1 here (footCircleLoopHits only
+		// returns distinct crossings), so the chord, and this cross product, are never zero.
+		midDir, _ = math.UnitVector3FromVector(n.AsVector().Cross(h0.VectorTo(h1)))
 	}
 	toward := center.TranslateBy(midDir.AsVector().Scale(math.Scalar(radius)))
 	away := center.TranslateBy(midDir.AsVector().Scale(math.Scalar(-radius)))
