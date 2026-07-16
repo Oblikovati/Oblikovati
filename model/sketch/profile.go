@@ -4,6 +4,7 @@ package sketch
 
 import (
 	stdmath "math"
+	"sort"
 
 	"oblikovati.org/math"
 )
@@ -348,11 +349,14 @@ func mergeAbuttingLoops(loops []Loop) []Loop {
 
 // boundaryDirEdges keeps the directed edges whose reverse is absent — the outline of the union
 // (an edge shared by two abutting cells appears in both directions and is dropped).
+//
+// Emitted in sorted order: Go randomizes map iteration, and this slice seeds the adjacency
+// chainLoopBoundary walks, whose append order decides how edges pair at a touching vertex.
 func boundaryDirEdges(dir map[[2]int]int) [][2]int {
 	var keep [][2]int
-	for e, c := range dir {
+	for _, e := range sortedDirKeys(dir) {
 		if dir[[2]int{e[1], e[0]}] == 0 {
-			for k := 0; k < c; k++ {
+			for k := 0; k < dir[e]; k++ {
 				keep = append(keep, e)
 			}
 		}
@@ -360,14 +364,40 @@ func boundaryDirEdges(dir map[[2]int]int) [][2]int {
 	return keep
 }
 
+// sortedDirKeys returns the directed edges in ascending (from, to) order.
+func sortedDirKeys(dir map[[2]int]int) [][2]int {
+	keys := make([][2]int, 0, len(dir))
+	for e := range dir {
+		keys = append(keys, e)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		if keys[i][0] != keys[j][0] {
+			return keys[i][0] < keys[j][0]
+		}
+		return keys[i][1] < keys[j][1]
+	})
+	return keys
+}
+
 // chainLoopBoundary links directed edges head-to-tail into closed rings.
+//
+// The ring START is taken in sorted order, not map order. A ring's start vertex fixes the point
+// SEQUENCE Polygon() hands downstream, and the extrude builds one prism face per polygon edge in
+// that order — so a randomly-rotated hole ring produced a prism with the same vertices but its
+// faces on different planes, and the boolean consuming it drifted run to run (#23). Where two hole
+// rings touch at a vertex the start also decides the edge PAIRING, changing the rings themselves.
 func chainLoopBoundary(edges [][2]int, pts []math.Point2) [][]math.Point2 {
 	next := make(map[int][]int, len(edges))
 	for _, e := range edges {
 		next[e[0]] = append(next[e[0]], e[1])
 	}
+	starts := make([]int, 0, len(next))
+	for v := range next {
+		starts = append(starts, v)
+	}
+	sort.Ints(starts)
 	var rings [][]math.Point2
-	for start := range next {
+	for _, start := range starts {
 		for len(next[start]) > 0 {
 			if ring := traceRing(start, next, pts); len(ring) >= 3 {
 				rings = append(rings, ring)
