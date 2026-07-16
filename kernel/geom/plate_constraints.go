@@ -206,6 +206,11 @@ func railDomainFrame(tangent math.Vector3, d PlateDomain, res Resolution, foot m
 	du := tangent.Dot(d.U)
 	dv := tangent.Dot(d.V)
 	rho = stdmath.Hypot(du, dv)
+	// ρ is a domain SPEED (d(u,v)/dt of the curve's own parameterization), not an arc-length —
+	// so this guard trips at a threshold that shifts with how the rail happens to be
+	// parameterized. checkStripNonDegenerate's domain ARC-LENGTH gate (parameterization-
+	// invariant) is the authoritative degeneracy check; this one only protects the A=t/ρ
+	// division from blowing up at a near-perpendicular rail.
 	if rho <= res.Weld() {
 		return 0, 0, 0, fmt.Errorf(
 			"geom: DiscretizeSides G1 rail near-perpendicular to the average plane at foot %v "+

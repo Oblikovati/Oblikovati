@@ -87,6 +87,51 @@ func squareSides() [4]PlateSide {
 	}
 }
 
+// genericNormal is a fully generic unit Adjacent normal — three DISTINCT, NONZERO components
+// ((12,3,-4)/13, a clean unit vector via the 3-4-12-13 Pythagorean quadruple). This is the P3
+// review fixture fix: squareSides' tilted normals (0,±1/√2,1/√2) have X=0 AND |Y|=|Z|, two
+// symmetries that leave the normal (and hence the parallelism check against it) invariant
+// under an axis swap or a Y↔Z transposition — hiding exactly those mutations. genericNormal has
+// no such symmetry: swapping or transposing any pair of its components produces a DIFFERENT
+// vector, not a scalar multiple of the original.
+var genericNormal = math.V3(12, 3, -4).Scale(1.0 / 13.0)
+
+// genericRailTangent is the along-rail world tangent paired with genericNormal: the matching
+// leg of the same 3-4-12-13 quadruple, so tangent·normal=0 (the G1 precondition — the rail
+// lies in Adjacent's tangent plane). Its domain (x,y) projection (3,4) is NOT axis-aligned
+// (unlike squareSides' bottom/top rails, whose tangents are exactly (±1,0,0) — giving one of
+// {d̂ᵘ,d̂ᵛ} the vacuous value 0, which hides an S_u↔S_v swap; see the along-rail identity check
+// in checkAlongRailIdentity).
+var genericRailTangent = math.V3(3, 4, 12)
+
+// genericPlaneDU, genericPlaneDV complete (genericPlaneDU, genericPlaneDV, genericNormal) into
+// a right-handed orthonormal frame (genericPlaneDU = unit(genericRailTangent); genericPlaneDV =
+// genericNormal × genericPlaneDU) — only needed so fakePlaneSurface.ParamAt has a well-defined
+// (non-degenerate) projection basis; NormalAt is constant, so these don't affect the G1 math.
+var (
+	genericPlaneDU = genericRailTangent.Scale(1.0 / 13.0)
+	genericPlaneDV = math.V3(4, -12, 3).Scale(1.0 / 13.0)
+)
+
+// genericCornerSides builds a synthetic 4-rail corner whose SINGLE G1 side carries the fully
+// generic genericNormal/genericRailTangent pair above. Used by the hardened watertight and
+// along-rail-identity tests (P3 review) so a wrong transverse direction, a collapsed tangent
+// frame, an S_u↔S_v swap, or a Y↔Z value transposition all show up as a genuine, non-symmetric
+// residual — none of the four mutations leaves this fixture invariant. The other 3 sides are
+// plain G0 rails; DiscretizeSides treats each side independently, so they need not close a
+// planar loop the way squareSides' do.
+func genericCornerSides() [4]PlateSide {
+	origin := math.P3(0, 0, 0)
+	tip := origin.TranslateBy(genericRailTangent) // (3,4,12): distinct, nonzero X/Y/Z
+	return [4]PlateSide{
+		{Curve: fakeSegment{origin, tip}, Order: 1,
+			Adjacent: fakePlaneSurface{point: origin, normal: genericNormal, du: genericPlaneDU, dv: genericPlaneDV}},
+		{Curve: fakeSegment{tip, math.P3(6, 0, 0)}, Order: 0},
+		{Curve: fakeSegment{math.P3(6, 0, 0), math.P3(0, 6, 0)}, Order: 0},
+		{Curve: fakeSegment{math.P3(0, 6, 0), origin}, Order: 0},
+	}
+}
+
 func TestDiscretizeSidesCounts(t *testing.T) {
 	cs, vals, err := DiscretizeSides(squareSides(), unitSquareDomain(), 5)
 	if err != nil {
@@ -183,9 +228,17 @@ func checkSideG1(t *testing.T, side PlateSide, d PlateDomain, cs []PlateConstrai
 		u, v := d.Project(foot)
 		su := rowVector(cs, vals, u, v, [2]int{1, 0})
 		sv := rowVector(cs, vals, u, v, [2]int{0, 1})
+		raw := su.Cross(sv)
+		// Non-degeneracy guard (P3 review): a collapsed tangent frame (τ=0, or τ ∥ A from a
+		// dropped n̂×Â cross) makes unitOrZero(raw)=0, and 0×n̂=0 ≤ weld passes the parallelism
+		// check below VACUOUSLY. Must fail loudly here, before that check would short-circuit.
+		if raw.Length() <= res.Weld() {
+			t.Fatalf("G1 foot %v: |S_u×S_v|=%.3e <= weld %.3e; tangent frame is degenerate (collapsed or τ ∥ A)",
+				foot, raw.Length(), res.Weld())
+		}
 		fu, fv := side.Adjacent.ParamAt(foot)
 		n := side.Adjacent.NormalAt(fu, fv)
-		cross := unitOrZero(su.Cross(sv))
+		cross := unitOrZero(raw)
 		resid := float64(cross.Cross(n).Length())
 		if resid > res.Weld() {
 			t.Fatalf("G1 foot %v: unit(S_u×S_v)=%v not ∥ n̂=%v (residual %.3e > weld %.3e)", foot, cross, n, resid, res.Weld())
@@ -223,6 +276,76 @@ func assertVec(t *testing.T, name string, got, want math.Vector3) {
 	if !got.IsEqualTo(want, 1e-12) {
 		t.Fatalf("%s = %v, want %v", name, got, want)
 	}
+}
+
+// checkAlongRailIdentity verifies the kit §3 along-rail identity — moving along the domain
+// direction d̂ reproduces the rail's own world tangent: d̂ᵘ·S_u + d̂ᵛ·S_v = A = tangent/ρ. This
+// holds EXACTLY for the correct recipe regardless of how {S_u,S_v} decompose {A,τ} (the
+// decomposition is a rotation of an orthonormal frame, and d̂ᵘ²+d̂ᵛ²=1 cancels the cross terms)
+// — but an S_u↔S_v swap breaks it whenever the rail is NOT axis-aligned in the domain (d̂ᵘ,d̂ᵛ
+// both nonzero), which genericRailTangent's (3,4) domain projection guarantees (squareSides'
+// rails are exactly axis-aligned, d̂ᵛ=0 there, which would hide this exact swap).
+func checkAlongRailIdentity(t *testing.T, side PlateSide, d PlateDomain, cs []PlateConstraint, vals [3][]float64, ts []float64, res Resolution) {
+	t.Helper()
+	for _, tp := range ts {
+		foot := side.Curve.PointAt(tp)
+		tangent := side.Curve.TangentAt(tp)
+		du, dv := tangent.Dot(d.U), tangent.Dot(d.V)
+		rho := stdmath.Hypot(du, dv)
+		dhu, dhv := du/rho, dv/rho
+		u, v := d.Project(foot)
+		su := rowVector(cs, vals, u, v, [2]int{1, 0})
+		sv := rowVector(cs, vals, u, v, [2]int{0, 1})
+		reconstructed := su.Scale(dhu).Add(sv.Scale(dhv))
+		wantA := tangent.Scale(1 / rho)
+		if resid := reconstructed.Sub(wantA).Length(); resid > res.Weld() {
+			t.Fatalf("G1 foot %v: d̂ᵘS_u+d̂ᵛS_v=%v, want rail tangent A=%v "+
+				"(along-rail identity broken, residual %.3e > weld %.3e)", foot, reconstructed, wantA, resid, res.Weld())
+		}
+	}
+}
+
+// genericCornerRes is the model-relative Resolution for genericCornerSides — sized off its
+// largest coordinate (genericRailTangent's hypotenuse, 13, the 3-4-12-13 quadruple).
+func genericCornerRes() Resolution { return ResolutionForSize(13.0) }
+
+// TestDiscretizeSidesG1WatertightGenericNormal is the P3-review-hardened counterpart of
+// TestDiscretizeSidesG1Watertight: it runs the SAME parallelism witness (via checkSideG1, which
+// now also carries the non-degeneracy guard) plus the along-rail identity over genericCornerSides
+// — a fixture with NO axis/component symmetry — so each of the 4 reviewer mutations produces its
+// own independent failure here, not just in the single hand-pinned TestDiscretizeSidesG1ClosedForm.
+func TestDiscretizeSidesG1WatertightGenericNormal(t *testing.T) {
+	sides := genericCornerSides()
+	d := unitSquareDomain()
+	cs, vals, err := DiscretizeSides(sides, d, 5)
+	if err != nil {
+		t.Fatalf("DiscretizeSides: %v", err)
+	}
+	res := genericCornerRes()
+	g1 := sides[0]
+	checkSideG1(t, g1, d, cs, vals, res)
+	checkAlongRailIdentity(t, g1, d, cs, vals, curveParams(g1.Curve, 5), res)
+}
+
+// TestDiscretizeSidesG0ValuesGeneric is the P3-review-hardened counterpart of
+// TestDiscretizeSidesG0Values: the probed foot is genericCornerSides' rail tip (3,4,12) —
+// three DISTINCT, NONZERO coordinates (unlike the z=0-plane squareSides fixture, where every
+// G0 value has Z=0) — so a Y↔Z (or any) coordinate transposition in the value columns changes
+// the asserted numbers instead of leaving a degenerate 0 column unchanged.
+func TestDiscretizeSidesG0ValuesGeneric(t *testing.T) {
+	sides := genericCornerSides()
+	d := unitSquareDomain()
+	cs, vals, err := DiscretizeSides(sides, d, 5)
+	if err != nil {
+		t.Fatalf("DiscretizeSides: %v", err)
+	}
+	tip := sides[0].Curve.PointAt(1) // (3,4,12): the shared endpoint of side 0 and side 1
+	u, v := d.Project(tip)
+	i := findRow(cs, u, v, [2]int{0, 0})
+	if i < 0 {
+		t.Fatalf("no G0 row at tip %v (u,v)=(%g,%g); rows=%v", tip, u, v, cs)
+	}
+	assertXYZ(t, vals, i, float64(tip.X), float64(tip.Y), float64(tip.Z))
 }
 
 // TestDiscretizeSidesDegenerateStrip rejects a side that projects to a near-degenerate strip
