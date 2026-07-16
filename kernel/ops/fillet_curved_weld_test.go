@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
@@ -199,6 +200,45 @@ func TestCurvedHostArc_B3(t *testing.T) {
 	capPl := mustPlane(t, math.P3(0, 0, 100), math.V3(0, 0, 1))
 	assertHostArc(t, mustHostArc(t, wall, tor, w, res), math.P3(0, 0, 90), 50, math.P3(50, 0, 90), tW)
 	assertHostArc(t, mustHostArc(t, capPl, tor, w, res), math.P3(0, 0, 100), 40, math.P3(40, 0, 100), tK)
+}
+
+// TestFilletEdges_B3CurvedArmWeld is the T5.4 integration gate: rounding B3's three axis-aligned
+// Plane∧Cylinder picks in ONE op must now assemble the nine result faces into a WATERTIGHT solid
+// (§B.5) whose per-type faces reproduce the oracle. It is never gated on IsSolid alone — a wrong-sign
+// arm welds inside-out and still passes IsSolid — so it pairs closure with Validate.HolesContained AND
+// a per-surface-type tessellated-area faithfulness check: exactly one torus ≈960.008, one sphere
+// ≈182.348, and the two cylinder arm faces ≈1641.13 and ≈608.367.
+func TestFilletEdges_B3CurvedArmWeld(t *testing.T) {
+	body, err := filletedCorpusEdges(t, "simple/B3", 10)
+	if err != nil {
+		t.Fatalf("B3 curved-arm weld errored (want a solid): %v", err)
+	}
+	if body == nil || !body.IsSolid() {
+		t.Fatalf("B3 curved-arm weld is not a solid (IsSolid=false)")
+	}
+	rep := Validate(body)
+	if !rep.Valid || !rep.HolesContained {
+		t.Fatalf("B3 weld invalid: Valid=%v HolesContained=%v issues=%v", rep.Valid, rep.HolesContained, rep.Issues)
+	}
+	assertB3FaithfulFaces(t, body)
+}
+
+// assertB3FaithfulFaces checks each result face type reproduces its oracle-closed area (§B.5) via the
+// TESSELLATED area — the only faithfulness that also catches an inside-out or mis-trimmed analytic face.
+func assertB3FaithfulFaces(t *testing.T, body *topo.Body) {
+	t.Helper()
+	if n := countSurfaceFacesNear[geom.Torus](body, 960.008, 5); n != 1 {
+		t.Fatalf("torus arm faces ≈960.008: got %d, want 1", n)
+	}
+	if n := countSurfaceFacesNear[geom.Sphere](body, 182.348, 2); n != 1 {
+		t.Fatalf("sphere corner faces ≈182.348: got %d, want 1", n)
+	}
+	if n := countSurfaceFacesNear[geom.Cylinder](body, 1641.13, 5); n != 1 {
+		t.Fatalf("cyl arm faces ≈1641.13: got %d, want 1", n)
+	}
+	if n := countSurfaceFacesNear[geom.Cylinder](body, 608.367, 5); n != 1 {
+		t.Fatalf("cyl arm faces ≈608.367: got %d, want 1", n)
+	}
 }
 
 // mustHostArc builds a host arc or fails the test.

@@ -29,7 +29,7 @@ func s1RebuiltShell(t *testing.T) *topo.Body {
 	if !fired {
 		t.Fatal("s1RebuiltShell: runout rebuild did not fire")
 	}
-	return assembleBody(faces, "fillet")
+	return assembleBody(faces)
 }
 
 // boundaryEdgeReport is the systematic-debugging evidence for closure: every edge used a number

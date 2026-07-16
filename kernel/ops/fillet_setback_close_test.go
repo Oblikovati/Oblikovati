@@ -48,7 +48,7 @@ func setbackAssembled(t *testing.T, ef edgeFillet, body *topo.Body) *topo.Body {
 		t.Fatal("setbackAssembled: buildSetbackFaces ok=false")
 	}
 	faces := append(transformedBodyFaces(body, maps, set.replace), set.extra...)
-	return assembleBody(faces, "fillet")
+	return assembleBody(faces)
 }
 
 // s1SetbackEdge resolves S1's front-top edge fillet (R=6, its corpus radius) — the same edgeFillet the

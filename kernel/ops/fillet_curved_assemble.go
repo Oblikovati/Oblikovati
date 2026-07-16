@@ -26,14 +26,17 @@ func curvedArmFils(fils []edgeFillet) bool {
 	return false
 }
 
-// curvedArmUnweldedError names the first unassembled curved-arm edge as an honest, actionable reject
-// (do-no-harm): rounding a curved Plane∧Cylinder edge is classified and its exact surface built, but the
-// watertight weld into the solid is not yet available, so the whole op declines rather than panics.
-func curvedArmUnweldedError(fils []edgeFillet) error {
+// curvedArmUnweldedError names the first curved-arm edge whose watertight weld into the solid declined,
+// as an honest, actionable reject (do-no-harm): rounding a curved Plane∧Cylinder edge is classified and
+// its exact surface built, but this corner could not be welded, so the whole op declines rather than
+// emitting a partial body. reason (T5.1-review requirement) carries WHY — a station gap, a host
+// non-tangency, a Gauss–Bonnet closure failure, a host-retrim decline, or a non-solid weld — so a real
+// reject is diagnosable at the point it reaches the user (repo rule: messages carry the offending shape).
+func curvedArmUnweldedError(fils []edgeFillet, reason string) error {
 	for i := range fils {
 		if fils[i].armSurface != nil {
-			return fmt.Errorf("fillet: curved (%s-arm) Plane∧Cylinder edge %d is classified but not yet assembled into the solid (M5 Slice A weld pending)",
-				surfaceKind(fils[i].armSurface), fils[i].edge.ID())
+			return fmt.Errorf("fillet: curved (%s-arm) Plane∧Cylinder edge %d could not be welded into the solid: %s",
+				surfaceKind(fils[i].armSurface), fils[i].edge.ID(), reason)
 		}
 	}
 	return nil

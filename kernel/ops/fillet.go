@@ -158,8 +158,14 @@ func filletResolvedEdges(body *topo.Body, edges []filletPick, concave ConcaveFil
 		return nil, err
 	}
 	if curvedArmFils(fils) {
-		return nil, curvedArmUnweldedError(fils) // do-no-harm floor: an unassembled curved arm never panics
+		return weldCurvedArmOrFloor(body, fils, blends) // M5 Slice A weld or the do-no-harm floor
 	}
+	return assemblePlanarFilletBody(body, edges, fils, blends)
+}
+
+// assemblePlanarFilletBody runs the planar fillet's runout guards, assembles the do-no-harm body, and
+// certifies it — naming the #1797 corner-into-round cause when the build-then-certify result still fails.
+func assemblePlanarFilletBody(body *topo.Body, edges []filletPick, fils []edgeFillet, blends map[uint64]*cornerBlend) (*topo.Body, error) {
 	if err := applyRunoutSetback(fils); err != nil {
 		return nil, err // a runout flank rail is parallel to its far plane — no pierce (n-valent degeneracy)
 	}
@@ -247,7 +253,7 @@ func addRebuildCandidate(cands map[rebuildChoice]*topo.Body, choice rebuildChoic
 // assembleFilletFaces builds and assembles one rebuild composition's faces in a single call.
 func assembleFilletFaces(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend, enableObstacles, enableRunout bool) *topo.Body {
 	faces, _ := filletResultFaces(body, fils, blends, enableObstacles, enableRunout)
-	return assembleBody(faces, "fillet")
+	return assembleBody(faces)
 }
 
 // obstacleImprovedSolid reports whether an obstacle-rebuilt body is a watertight, hole-contained solid —

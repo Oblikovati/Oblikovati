@@ -54,11 +54,17 @@ func collectLoopPoints(faces []filletFace) []math.Point3 {
 	return pts
 }
 
+// filletAssemblyTag is the lineage token namespace every fillet result body is built under (its body,
+// op-generated vertices, edges, and un-provenanced faces). A single constant — the tag is invariant
+// across all assembleBody call sites, so it is not a per-call parameter.
+const filletAssemblyTag = "fillet"
+
 // assembleBody welds the faces' loop points into a watertight body: one shared edge per
 // undirected vertex pair (carrying the curve the first user supplied, oriented its way), and
 // a face per surface. A closed result (every edge used twice) is a solid. Curves let a face
 // carry arc edges (a fillet's end arcs) alongside straight ones.
-func assembleBody(faces []filletFace, tag string) *topo.Body {
+func assembleBody(faces []filletFace) *topo.Body {
+	tag := filletAssemblyTag
 	pts := collectLoopPoints(faces)
 	weld := ResolutionForPoints(pts).Weld()
 	w := newPointWelder(weld)
@@ -71,7 +77,7 @@ func assembleBody(faces []filletFace, tag string) *topo.Body {
 		tv[i] = bld.AddVertex(p, topo.NewLineage(topo.Tok(tag, "v", i)))
 	}
 	ec := &edgeCatalog{bld: bld, verts: w.points, tv: tv, edges: map[seamEdgeKey]edgeRec{}, classes: classes, tag: tag, weld: weld}
-	provByFace := addCurvedFaces(bld, faces, rings, ec, tag)
+	provByFace := addCurvedFaces(bld, faces, rings, ec)
 	body := bld.Build()
 	// Provenance naming (ADR-0043): once the faces are named by their parents, the edges and
 	// vertices are renamed by their bordering faces' provenance, replacing the build-order counter
@@ -86,7 +92,7 @@ func assembleBody(faces []filletFace, tag string) *topo.Body {
 // parent when it has one (a transformed original face, a blend cylinder), else a build-order
 // ordinal under tag (e.g. a variable-fillet ruling strip, not yet provenanced). Returns the
 // provenanced faces so the caller can rename their edges/vertices by provenance (ADR-0043).
-func addCurvedFaces(bld *topo.Builder, faces []filletFace, rings [][][]int, ec *edgeCatalog, tag string) map[*topo.Face]topo.Lineage {
+func addCurvedFaces(bld *topo.Builder, faces []filletFace, rings [][][]int, ec *edgeCatalog) map[*topo.Face]topo.Lineage {
 	provByFace := map[*topo.Face]topo.Lineage{}
 	for fi, f := range faces {
 		specs := make([]topo.LoopSpec, len(f.loops))
@@ -95,7 +101,7 @@ func addCurvedFaces(bld *topo.Builder, faces []filletFace, rings [][][]int, ec *
 		}
 		lin := f.parent
 		if len(lin.Key()) == 0 {
-			lin = topo.NewLineage(topo.Tok(tag, "f", fi))
+			lin = topo.NewLineage(topo.Tok(filletAssemblyTag, "f", fi))
 		}
 		face := bld.AddFace(f.surface, lin, specs...)
 		if len(f.parent.Key()) > 0 {
