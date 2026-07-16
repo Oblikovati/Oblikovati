@@ -169,3 +169,69 @@ func observedRailMismatch(arm geom.Surface, rail geom.Arc3d, center math.Point3,
 	}
 	return worst
 }
+
+// b3TorusArm returns the B3 torus arm surface from the solved corner (the W∧K rolling-ball torus).
+func b3TorusArm(t *testing.T, w cornerWeld) geom.Torus {
+	t.Helper()
+	for _, a := range w.arms {
+		if tor, ok := a.arm.(geom.Torus); ok {
+			return tor
+		}
+	}
+	t.Fatalf("no torus arm in the solved corner")
+	return geom.Torus{}
+}
+
+// TestCurvedHostArc_B3 drives the circular host-rail emitter (T5.3 §B.1/B.2): the torus arm carves a
+// circle of radius R=50 in the wall (spine plane z=90) and a circle of radius R−r=40 in the cap
+// (plane z=100), each sweeping azimuth 0°→−75.522° from the y=0 cut to the sphere-side host-tangent
+// point. This is the rail the straight-pull transformFace cannot represent.
+func TestCurvedHostArc_B3(t *testing.T) {
+	sphere, arms := b3CornerArms(t)
+	res := geom.ResolutionForSize(150)
+	w, ok := solveCurvedCorner(sphere, arms, res)
+	if !ok {
+		t.Fatalf("solveCurvedCorner rejected the certified B3 corner")
+	}
+	tor := b3TorusArm(t, w)
+	tW, tK, _ := b3TangentPoints()
+	wall := mustCylinder(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 50)
+	cap := mustPlane(t, math.P3(0, 0, 100), math.V3(0, 0, 1))
+	assertHostArc(t, mustHostArc(t, wall, tor, w, res), math.P3(0, 0, 90), 50, math.P3(50, 0, 90), tW)
+	assertHostArc(t, mustHostArc(t, cap, tor, w, res), math.P3(0, 0, 100), 40, math.P3(40, 0, 100), tK)
+}
+
+// mustHostArc builds a host arc or fails the test.
+func mustHostArc(t *testing.T, host geom.Surface, tor geom.Torus, w cornerWeld, res Resolution) geom.Arc3d {
+	t.Helper()
+	arc, ok := curvedHostArc(host, tor, w, res)
+	if !ok {
+		t.Fatalf("curvedHostArc declined host %T", host)
+	}
+	return arc
+}
+
+// assertHostArc checks a host arc against its certified circle: centre, radius, a plane normal along
+// ẑ (the arc lies in a constant-z plane), the far endpoint at azimuth 0, the near endpoint at the
+// host-tangent point, and the certified −75.522° sweep.
+func assertHostArc(t *testing.T, arc geom.Arc3d, center math.Point3, radius float64, far, near math.Point3) {
+	t.Helper()
+	if d := arc.Center.DistanceTo(center); float64(d) > 1e-6 {
+		t.Fatalf("arc centre %v off %v by %.3e", arc.Center, center, d)
+	}
+	if e := stdmath.Abs(arc.Radius - radius); e > 1e-6 {
+		t.Fatalf("arc radius = %.9f, want %.9f", arc.Radius, radius)
+	}
+	if z := stdmath.Abs(float64(arc.Normal.Z()) - 1); z > 1e-9 {
+		t.Fatalf("arc normal %v not ±ẑ (arc not in a constant-z plane)", arc.Normal)
+	}
+	if d := arc.PointAt(0).DistanceTo(far); float64(d) > 1e-4 {
+		t.Fatalf("arc PointAt(0) = %v, want far end %v (Δ=%.3e)", arc.PointAt(0), far, d)
+	}
+	if d := arc.PointAt(1).DistanceTo(near); float64(d) > 1e-4 {
+		t.Fatalf("arc PointAt(1) = %v, want host-tangent %v (Δ=%.3e)", arc.PointAt(1), near, d)
+	}
+	if s := stdmath.Abs(arc.SweepAngle) - 75.522*stdmath.Pi/180; stdmath.Abs(s) > 1e-3 {
+		t.Fatalf("arc sweep = %.6f rad, want 75.522° (Δ=%.3e)", arc.SweepAngle, s)
+	}
+}
