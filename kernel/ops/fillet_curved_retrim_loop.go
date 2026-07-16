@@ -26,12 +26,7 @@ func originalHostSegs(host *topo.Face) []endSeg {
 	if loop == nil {
 		return nil
 	}
-	uses := loop.EdgeUses()
-	segs := make([]endSeg, 0, len(uses))
-	for _, u := range uses {
-		segs = append(segs, endSegFromUse(u))
-	}
-	return segs
+	return segsFromLoop(loop)
 }
 
 // outerHostLoop returns the host face's outer boundary loop, found by topo.Loop.IsOuter() rather than
@@ -49,11 +44,64 @@ func outerHostLoop(host *topo.Face) *topo.Loop {
 
 // innerHostLoops carries every INNER (hole) loop of the host through unchanged into the retrimmed
 // result: the corner bite only re-clips the outer boundary (§B), so a host with a genuine hole must
-// keep it verbatim, else the retrim would silently erase it.
+// keep it verbatim, else the retrim would silently erase it. Kept for the far-runout / weld callers
+// (fillet_curved_farrunout.go, fillet_curved_weld.go) that still only ever retrim the outer loop; on
+// a single-outer-loop host it is exactly loopsExcept(host, that outer loop).
 func innerHostLoops(host *topo.Face) []filletLoop {
+	return loopsExcept(host, outerHostLoop(host))
+}
+
+// bittenLoop is the loop whose vertex nearest the corner-sphere centre c is globally minimal — the
+// wire the trihedral corner actually bites, which may be the OUTER rim (B3) or an INNER notch window
+// (N7's boolean-cut wall, where the corner lands on the hole loop, not the boundary). Generalizes the
+// T5.3 "retrim the outer loop" assumption (derivation R.0). Rejects (false) when two loops tie for
+// nearest within tol (an ambiguous symmetric part — do-no-harm) or the face carries no loops.
+func bittenLoop(host *topo.Face, c math.Point3, tol float64) (*topo.Loop, bool) {
+	var best *topo.Loop
+	bestD, tie := stdmath.Inf(1), false
+	for _, l := range host.Loops() {
+		d := loopMinDistToCentre(l, c)
+		switch {
+		case d < bestD-tol:
+			best, bestD, tie = l, d, false
+		case stdmath.Abs(d-bestD) <= tol && l != best:
+			tie = true
+		}
+	}
+	if best == nil || tie {
+		return nil, false // no loop, or an ambiguous nearest-loop tie: cannot pick the bitten wire
+	}
+	return best, true
+}
+
+// loopMinDistToCentre is the distance from c to the loop's nearest vertex.
+func loopMinDistToCentre(l *topo.Loop, c math.Point3) float64 {
+	best := stdmath.Inf(1)
+	for _, u := range l.EdgeUses() {
+		if d := float64(useFromVertex(u).Point().DistanceTo(c)); d < best {
+			best = d
+		}
+	}
+	return best
+}
+
+// segsFromLoop turns one loop's edge uses into endSegs (generalizes originalHostSegs, which retrimmed
+// only the outer loop, to any loop bittenLoop selects).
+func segsFromLoop(l *topo.Loop) []endSeg {
+	uses := l.EdgeUses()
+	segs := make([]endSeg, 0, len(uses))
+	for _, u := range uses {
+		segs = append(segs, endSegFromUse(u))
+	}
+	return segs
+}
+
+// loopsExcept carries every loop of host except keep through unchanged (generalizes innerHostLoops:
+// once the bitten loop can be inner, the carried-through set is "all others", not "all inner").
+func loopsExcept(host *topo.Face, keep *topo.Loop) []filletLoop {
 	var out []filletLoop
 	for _, l := range host.Loops() {
-		if !l.IsOuter() {
+		if l != keep {
 			out = append(out, unchangedLoop(l))
 		}
 	}

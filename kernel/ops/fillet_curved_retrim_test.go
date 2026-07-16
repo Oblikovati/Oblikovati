@@ -241,6 +241,168 @@ func assertArcRail(t *testing.T, loop filletLoop, center math.Point3, radius flo
 	t.Fatalf("retrim loop carries no arc on circle centre %v radius %.1f (rail collapsed to a chord?)", center, radius)
 }
 
+// squareRim returns a square's four corners (side `size`, lower-left corner at (origin,origin,0) in
+// the z=0 plane) — a stand-in outer rim for the bittenLoop fakes below. bittenLoop reads only loop
+// topology (Loops/EdgeUses/vertex points), never the host surface, so the fake face's actual plane is
+// inert for these tests; it exists only so topo.Builder.AddFace has a valid geom.Surface.
+func squareRim(origin, size float64) []math.Point3 {
+	lo, hi := math.Scalar(origin), math.Scalar(origin+size)
+	return []math.Point3{
+		math.P3(lo, lo, 0),
+		math.P3(hi, lo, 0),
+		math.P3(hi, hi, 0),
+		math.P3(lo, hi, 0),
+	}
+}
+
+// notchWindow returns a small triangle whose FIRST vertex sits exactly at (x,y,z) — the fake inner
+// notch loop's nearest-to-C vertex, standing in for N7's boolean-cut window whose corner-side vertex
+// the trihedral corner actually bites.
+func notchWindow(x, y, z float64) []math.Point3 {
+	return []math.Point3{
+		math.P3(math.Scalar(x), math.Scalar(y), math.Scalar(z)),
+		math.P3(math.Scalar(x+2), math.Scalar(y), math.Scalar(z)),
+		math.P3(math.Scalar(x), math.Scalar(y+2), math.Scalar(z)),
+	}
+}
+
+// ringLoop wires pts into a closed straight-edge topo.LoopSpec (outer or inner) on bld — the shared
+// plumbing behind every bittenLoop fake host below.
+func ringLoop(bld *topo.Builder, pts []math.Point3, outer bool) topo.LoopSpec {
+	lin := topo.Lineage{}
+	verts := make([]*topo.Vertex, len(pts))
+	for i, p := range pts {
+		verts[i] = bld.AddVertex(p, lin)
+	}
+	uses := make([]topo.Use, len(pts))
+	for i := range pts {
+		a, b := verts[i], verts[(i+1)%len(pts)]
+		uses[i] = topo.Fwd(bld.AddEdge(geom.NewLineSegment(a.Point(), b.Point()), a, b, lin))
+	}
+	if outer {
+		return topo.OuterLoop(uses...)
+	}
+	return topo.InnerLoop(uses...)
+}
+
+// newTwoLoopFace builds a fake host with an OUTER loop and one INNER loop, both straight-edged — the
+// N7-shaped fake: a wall's outer rim plus a boolean-cut inner notch window.
+func newTwoLoopFace(t *testing.T, outerPts, innerPts []math.Point3) *topo.Face {
+	t.Helper()
+	bld := topo.NewBuilder(true, topo.Lineage{})
+	pl := mustPlane(t, math.P3(0, 0, 0), math.V3(0, 0, 1))
+	return bld.AddFace(pl, topo.Lineage{}, ringLoop(bld, innerPts, false), ringLoop(bld, outerPts, true))
+}
+
+// newSingleLoopFace builds a fake host with a single OUTER loop — the B3 shape bittenLoop must reduce
+// to trivially (one loop, so it is always "the bitten loop" regardless of C).
+func newSingleLoopFace(t *testing.T, pts []math.Point3) *topo.Face {
+	t.Helper()
+	bld := topo.NewBuilder(true, topo.Lineage{})
+	pl := mustPlane(t, math.P3(0, 0, 0), math.V3(0, 0, 1))
+	return bld.AddFace(pl, topo.Lineage{}, ringLoop(bld, pts, true))
+}
+
+// newTieLoopFace builds a fake host with two loops whose nearest vertices to C=(0,0,0) sit 0.01 apart
+// — inside the 0.02 tol TestBittenLoop_TieRejects calls bittenLoop with — so neither loop is
+// unambiguously "the" bitten one (do-no-harm: bittenLoop must decline, not guess which wire the
+// trihedral corner actually bit).
+func newTieLoopFace(t *testing.T) *topo.Face {
+	t.Helper()
+	a := []math.Point3{math.P3(1, 0, 0), math.P3(10, 10, 10), math.P3(10, -10, 10)}
+	b := []math.Point3{math.P3(1.01, 0, 0), math.P3(10, 10, -10), math.P3(10, -10, -10)}
+	bld := topo.NewBuilder(true, topo.Lineage{})
+	pl := mustPlane(t, math.P3(0, 0, 0), math.V3(0, 0, 1))
+	return bld.AddFace(pl, topo.Lineage{}, ringLoop(bld, a, false), ringLoop(bld, b, true))
+}
+
+// TestBittenLoop_SelectsInnerNotchLoop is the N7 shape: the corner-sphere centre lands nearest a
+// vertex on the INNER notch loop (min dist 0, exact), far from the outer rim (min dist ≈51) — the
+// bitten loop must be the inner one, not the outer rim T5.3's original code assumed.
+func TestBittenLoop_SelectsInnerNotchLoop(t *testing.T) {
+	c := math.P3(50, 0, 10) // corner-sphere centre near the inner loop
+	host := newTwoLoopFace(t,
+		squareRim(0, 100),      // outer rim vertices, min dist to c ≈ 51
+		notchWindow(50, 0, 10)) // inner notch vertices, nearest vertex = (50,0,10) = c exactly
+	tol := 0.02 // res.Weld()*r for r=5
+
+	l, ok := bittenLoop(host, c, tol)
+
+	if !ok {
+		t.Fatalf("bittenLoop: expected the inner notch loop, got ok=false")
+	}
+	if l.IsOuter() {
+		t.Fatalf("bittenLoop selected the OUTER rim; want the inner notch loop (nearest to C=%v)", c)
+	}
+}
+
+// TestBittenLoop_SingleLoopReducesToOuter is the B3 reduction gate (R.0): every B3 corner host is
+// single-loop, so bittenLoop must return that (outer) loop regardless of C — the generalized selector
+// must not change behaviour on the clean wedge.
+func TestBittenLoop_SingleLoopReducesToOuter(t *testing.T) {
+	c := math.P3(10, -38.7298, 90) // B3 corner centre
+	host := newSingleLoopFace(t, squareRim(0, 100))
+
+	l, ok := bittenLoop(host, c, 0.02)
+
+	if !ok || !l.IsOuter() {
+		t.Fatalf("bittenLoop on a single-loop host must return that (outer) loop; ok=%v outer=%v", ok, l.IsOuter())
+	}
+}
+
+// TestBittenLoop_TieRejects is the do-no-harm ambiguity gate: two loops equidistant to C within tol
+// means the retrim cannot tell which wire the corner actually bit, so bittenLoop must decline rather
+// than guess (a wrong pick would bite the wrong loop and corrupt the mesh silently).
+func TestBittenLoop_TieRejects(t *testing.T) {
+	c := math.P3(0, 0, 0)
+	host := newTieLoopFace(t)
+
+	if _, ok := bittenLoop(host, c, 0.02); ok {
+		t.Fatalf("bittenLoop must reject an ambiguous two-loop tie (do-no-harm), got ok=true")
+	}
+}
+
+// TestSegsFromLoop_MatchesLoopEdgeOrder proves segsFromLoop reads one loop's edge uses, in traversal
+// order, as endSegs — the primitive that lets retrimCurvedHost retrim whichever loop bittenLoop picked
+// (outer or inner), generalizing the old "always read the outer loop" originalHostSegs.
+func TestSegsFromLoop_MatchesLoopEdgeOrder(t *testing.T) {
+	pts := squareRim(0, 10)
+	host := newSingleLoopFace(t, pts)
+	loop := host.Loops()[0]
+
+	segs := segsFromLoop(loop)
+
+	if len(segs) != len(pts) {
+		t.Fatalf("segsFromLoop returned %d segs, want %d (one per loop edge)", len(segs), len(pts))
+	}
+	for i, p := range pts {
+		if float64(segs[i].from.DistanceTo(p)) > 1e-9 {
+			t.Fatalf("seg %d starts at %v, want loop vertex %v", i, segs[i].from, p)
+		}
+	}
+}
+
+// TestLoopsExcept_CarriesEveryOtherLoopVerbatim proves loopsExcept keeps every loop but the excluded
+// one — on the N7 wall that is the outer rim, once bittenLoop has picked the inner notch as L*,
+// generalizing innerHostLoops' "carry every hole" to "carry every OTHER loop".
+func TestLoopsExcept_CarriesEveryOtherLoopVerbatim(t *testing.T) {
+	outer, inner := squareRim(0, 100), notchWindow(50, 0, 10)
+	host := newTwoLoopFace(t, outer, inner)
+	var bitten *topo.Loop
+	for _, l := range host.Loops() {
+		if !l.IsOuter() {
+			bitten = l
+		}
+	}
+
+	kept := loopsExcept(host, bitten)
+
+	if len(kept) != 1 {
+		t.Fatalf("loopsExcept kept %d loops, want 1 (the outer rim, excluding the bitten inner loop)", len(kept))
+	}
+	assertLoopPointsEqual(t, kept[0], outer)
+}
+
 // developedLoopArea is the true surface area a retrimmed loop bounds, measured in the host's isometric
 // development (plane u,v; cylinder unrolled to R·θ × axial): each arc edge is densely sampled so it
 // contributes its exact segment area, then a shoelace over the chart gives the area. This is the

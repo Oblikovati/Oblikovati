@@ -116,19 +116,26 @@ func capContactCircle(pl geom.Plane, tor geom.Torus, res Resolution) (math.Point
 	return tor.Center.TranslateBy(axis.Scale(math.Scalar(t))), tor.MajorRadius, true
 }
 
-// retrimCurvedHost re-clips one CORNER host face at the trihedral corner: its OUTER loop's original
-// edges are cut back where the two arms/sphere contact it, plus the arm contact rails spliced in
-// (circular arcs for the torus-adjacent hosts, straight rulings for the cylinder/planar-adjacent ones).
-// Any INNER (hole) loop on the host is untouched by the corner and is carried through verbatim
-// (innerHostLoops) — the bite only ever reshapes the boundary. It honest-rejects (ok=false) when a
-// contact rail is missing or a landing point does not lie
-// on the original loop, never an open or self-crossing loop (a mis-closed retrim corrupts the mesh).
-// Example:
+// retrimCurvedHost re-clips one CORNER host face at the trihedral corner: the BITTEN loop L* — the
+// loop the corner-sphere centre actually lands nearest (bittenLoop), which is the OUTER rim on every
+// B3 host but can be an INNER notch window on a boolean-cut wall like N7's — has its original edges
+// cut back where the two arms/sphere contact it, plus the arm contact rails spliced in (circular arcs
+// for the torus-adjacent hosts, straight rulings for the cylinder/planar-adjacent ones). Every OTHER
+// loop on the host (incl. the outer rim, when L* is inner) is untouched by the corner and is carried
+// through verbatim (loopsExcept) — generalizes the T5.3 "always retrim the outer loop" assumption
+// (C0 / derivation R.0). It honest-rejects (ok=false) when L* is ambiguous (bittenLoop tie), a contact
+// rail is missing, or a landing point does not lie on L*'s original edges — never an open or
+// self-crossing loop (a mis-closed retrim corrupts the mesh). Example:
 //
 //	ff, ok := retrimCurvedHost(wallFace, w, res)
 //	if !ok { /* decline the weld — do-no-harm */ }
 func retrimCurvedHost(host *topo.Face, w cornerWeld, res Resolution) (filletFace, bool) {
-	segs := originalHostSegs(host)
+	tol := res.Weld() * w.radius
+	star, ok := bittenLoop(host, w.center, tol)
+	if !ok {
+		return filletFace{}, false // no unambiguous bitten loop — do-no-harm
+	}
+	segs := segsFromLoop(star)
 	if len(segs) < 3 {
 		return filletFace{}, false // a host loop needs ≥3 edges to bite a corner from
 	}
@@ -136,9 +143,8 @@ func retrimCurvedHost(host *topo.Face, w cornerWeld, res Resolution) (filletFace
 	if !ok {
 		return filletFace{}, false
 	}
-	// outer loop first (retrimmed), any inner (hole) loops after, carried through unchanged — the
-	// corner bite never touches a hole (Important finding, T5.3 review).
-	loops := append([]filletLoop{loopFromSegs(loop)}, innerHostLoops(host)...)
+	// the bitten loop, retrimmed, first; every other loop (incl. the outer rim on the wall) verbatim.
+	loops := append([]filletLoop{loopFromSegs(loop)}, loopsExcept(host, star)...)
 	return filletFace{surface: host.Geometry(), loops: loops, parent: host.Lineage()}, true
 }
 
