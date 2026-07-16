@@ -97,6 +97,14 @@ func buildPart(ws *doc.Workspace, outPath string, d *ipt.Document, meshFallback 
 	// drop a redundant offset instead of over-constraining (the shaft carries exactly such a pair).
 	warns = append(warns, applyOffsetDimensions(def, d)...)
 	def.Recompute()
+	// A rebuilt body that escapes Inventor's own tessellation was mis-decoded; drop it rather than
+	// ship wrong geometry (see gateBodyAgainstMesh).
+	if built {
+		if dropped := gateBodyAgainstMesh(def, d); len(dropped) > 0 {
+			warns = append(warns, dropped...)
+			built = false
+		}
+	}
 	// Inventor's display mesh hides the sketch/feature history behind a single imported body,
 	// so it is imported ONLY on explicit opt-in — otherwise the partial parametric tree stands.
 	if meshFallback && (!built || !hasSolidBody(def)) {

@@ -559,11 +559,17 @@ func TestMirrorTranslationRebuildsSolid(t *testing.T) {
 	}
 }
 
-// TestArcProfileRebuildsSolid guards arc emission: a real filleted linkage part whose profile mixes
-// lines and arcs must now emit its arcs (so the profile closes) and extrude to a solid — before arc
-// emission its open profile computed to no body (PARTIAL). The arc endpoints are shared with the
-// adjacent lines, so the loop is watertight.
-func TestArcProfileRebuildsSolid(t *testing.T) {
+// TestArcProfileEmitsArcsAndIsGated guards arc emission on a real filleted linkage whose profile
+// mixes lines and arcs: the arcs must be emitted (so the profile closes at all).
+//
+// It must NOT ship a solid. This fixture is ReelToReel's CompressionRollerActuatorLinkage1, whose
+// true volume is 45 mm^3 (Inventor 2027 MassProperties) — we rebuild it at ~477 mm^3, 10.5x too
+// big, because the extrude takes a wrong depth (Inventor's own tessellation of this part is 1 mm
+// thick; we extrude 8 mm). An earlier version of this test asserted "want ~477", codifying our own
+// wrong output as the expectation; that number never came from Inventor. gateBodyAgainstMesh now
+// catches the over-build and drops it, so the honest result is sketches without a body. Restore the
+// solid assertion (against 45 mm^3) once the extrude depth decodes correctly.
+func TestArcProfileEmitsArcsAndIsGated(t *testing.T) {
 	def := reopenPart(t, "real_arc_linkage.ipt")
 	arcs := 0
 	for k := 0; k < def.Sketches().Count(); k++ {
@@ -572,12 +578,13 @@ func TestArcProfileRebuildsSolid(t *testing.T) {
 	if arcs == 0 {
 		t.Error("filleted profile emitted no arcs (arc emission missing)")
 	}
-	body := def.SurfaceBodies().All()
-	if len(body) == 0 || !body[0].IsSolid() {
-		t.Fatal("arc-profile linkage did not rebuild a solid (open profile)")
-	}
-	if v := analysis.MassPropertiesOf(body, 1, types.MassPropertiesHigh).VolumeMm3; v < 400 || v > 560 {
-		t.Errorf("arc-profile linkage volume = %.0f mm^3, want ~477 (a wrong-direction arc would bulge it)", v)
+	for _, b := range def.SurfaceBodies().All() {
+		if !b.IsSolid() {
+			continue
+		}
+		v := analysis.MassPropertiesOf(def.SurfaceBodies().All(), 1, types.MassPropertiesHigh).VolumeMm3
+		t.Fatalf("shipped a solid of %.0f mm^3 for a part whose true volume is 45 mm^3: the "+
+			"mis-decoded body must be gated out, not emitted", v)
 	}
 }
 
