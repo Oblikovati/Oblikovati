@@ -35,7 +35,17 @@ func regionProfileIndices(sk *sketch.Sketch, region []ipt.RegionLoop) []int {
 	profiles := sk.Profiles()
 	var out []int
 	for i := 0; i < profiles.Count(); i++ {
-		keys := profileCurveKeys(profiles.Item(i))
+		p := profiles.Item(i)
+		// An OPEN profile is a connected-but-unclosed chain the sketch reports alongside its real
+		// regions; it bounds no area, so it is never part of the material an extrude consumes. It
+		// must be skipped rather than matched: the feature layer fails the WHOLE extrude when any
+		// selected profile is open (resolveClosedProfiles), so one open chain whose curves the
+		// region happens to name costs the entire feature its body. ReadWriteHead lost its second
+		// extrude that way — sick "profile is open", no body, 0.17x.
+		if !p.IsClosed() {
+			continue
+		}
+		keys := profileCurveKeys(p)
 		if len(keys) == 0 || !withinNamedCurves(keys, named) || isHoleInterior(keys, holes) {
 			continue
 		}
