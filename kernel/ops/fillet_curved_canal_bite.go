@@ -156,25 +156,27 @@ func footLocusBite(c geom.Curve3) endSeg {
 	return endSeg{from: c.PointAt(lo), to: c.PointAt(hi), curve: c}
 }
 
-// footLocusChords sub-samples a canal foot-locus into ringSegSamples straight chords across the SAME
-// ringSegSamples+1 vertices the corner patch tiles it into: sampleCurve3Open(c, rev) reproduces the
-// patch's ringSegSamples interior samples BIT-IDENTICALLY (same call, same rev), and the one excluded
-// domain endpoint (the arm-rail junction the corner patch gets from its neighbouring side) is appended —
-// so the retrimmed host and the corner patch share EVERY vertex along the foot-locus and weld watertight
-// (F3 crack fix; the pre-F3 single whole-curve edge shared only the two endpoints, cracking the 5 interior
-// vertices). Each chord carries the WHOLE foot-locus curve as its geometry, the convention canalPatchLoops
-// and the arm face already use for their shared sub-edges.
+// footLocusChords sub-samples a canal foot-locus into ringSegSamples sub-edges across the SAME
+// ringSegSamples+1 vertices the corner patch tiles it into: sampleCurve3OpenTrimmed(c, rev) reproduces
+// the patch's ringSegSamples interior samples BIT-IDENTICALLY (same points as sampleCurve3Open, same rev),
+// and the one excluded domain endpoint (the arm-rail junction the corner patch gets from its neighbouring
+// side) is appended — so the retrimmed host and the corner patch share EVERY vertex along the foot-locus
+// and weld watertight (F3 crack fix; the pre-F3 single whole-curve edge shared only the two endpoints,
+// cracking the 5 interior vertices). Each sub-edge carries the foot-locus curve TRIMMED to its own
+// sub-span (curveSpan==vGap, the same convention canalPatchLoops and the arm face now use), NOT the whole
+// curve — carrying the whole curve made the shared tessellator sweep the entire foot-locus per sub-edge
+// and self-overlap the host loop (N7 cylinder-arm half-cover; n7-tessellation-diagnosis.md §2).
 func footLocusChords(c geom.Curve3, rev bool) []endSeg {
-	pts := sampleCurve3Open(c, rev) // the ringSegSamples patch-identical samples (excludes the far endpoint)
+	pts, curves := sampleCurve3OpenTrimmed(c, rev) // patch-identical samples + per-sub-edge trimmed curves
 	lo, hi := c.Domain()
-	far := c.PointAt(hi) // sampleCurve3Open excludes the HIGH end when forward…
+	far := c.PointAt(hi) // sampleCurve3Open* excludes the HIGH end when forward…
 	if rev {
 		far = c.PointAt(lo) // …and the LOW end when reversed
 	}
 	pts = append(pts, far)
-	segs := make([]endSeg, len(pts)-1)
+	segs := make([]endSeg, len(curves))
 	for i := range segs {
-		segs[i] = endSeg{from: pts[i], to: pts[i+1], curve: c}
+		segs[i] = endSeg{from: pts[i], to: pts[i+1], curve: curves[i]}
 	}
 	return segs
 }

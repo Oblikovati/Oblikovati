@@ -5,7 +5,6 @@ package occtparity
 import (
 	"path/filepath"
 
-	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/feature"
 )
@@ -40,13 +39,11 @@ func ScoreCase(r Record, fixtureDir string) Outcome {
 		return SkipImportDivergence // an unlocatable pick is a fixture/harness gap, not a fillet defect
 	}
 	res, filletOK, _ := runFillet(body, sets)
-	valid := filletOK && len(res) == 1 && res[0] != nil &&
-		ops.BodyGeometryProperties(res[0], ops.PropertyQuality()).Volume > 0
-	if o := classify(r, true, filletOK, valid); o != Pass {
+	props, ok := caseProperties(res, filletOK)
+	if o := classify(r, true, filletOK, ok && props.Volume > 0); o != Pass {
 		return o
 	}
-	got := ops.BodyGeometryProperties(res[0], ops.PropertyQuality()).Area
-	if areaWithin(got, r.ExpectedArea, r.Deps) {
+	if areaWithin(props.Area, r.ExpectedArea, r.Deps) {
 		return Pass
 	}
 	return FailArea

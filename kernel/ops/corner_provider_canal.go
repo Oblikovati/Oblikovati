@@ -94,10 +94,12 @@ func canalPatchLoops(surf geom.BSplineSurface) ([]filletLoop, error) {
 	var pts []math.Point3
 	var curves []geom.Curve3
 	for _, s := range sides {
-		for _, p := range sampleCurve3Open(s.curve, s.rev) {
-			pts = append(pts, p)
-			curves = append(curves, s.curve)
-		}
+		// Each boundary sub-edge carries its curve TRIMMED to its own sub-span (not the whole
+		// isocurve), so the patch loop is a simple polygon the NURBS mesher tiles fold-free instead
+		// of a self-overlapping ring (N7 fold cure; n7-tessellation-diagnosis.md §3).
+		p, cv := sampleCurve3OpenTrimmed(s.curve, s.rev)
+		pts = append(pts, p...)
+		curves = append(curves, cv...)
 	}
 	return []filletLoop{{pts: pts, curves: curves}}, nil
 }

@@ -147,7 +147,10 @@ func canalArmHostRails(arm edgeFillet, set armSetback, wi cornerWeld, res Resolu
 // Mutation C: orientEndSeg reversed into a 75-unit gap) used to survive this gate silently and only get
 // caught downstream, in assertArmFaceCloses or assembleBody, with a far less precise reason (W2 review).
 func canalArmLoop(h0, h1, far endSeg, cornerRail geom.Curve3, cornerRev bool, tol float64) (filletLoop, string) {
-	corner := sampleCurve3Open(cornerRail, cornerRev)
+	// Sample the corner rail OPEN (pts, byte-identical to sampleCurve3Open) plus each sub-edge's
+	// trimmed sub-span curve — the shared-edge weld to the corner patch is point-for-point, and both
+	// faces now present the sub-span (not the whole rail), so the tessellator meshes it cleanly.
+	corner, cornerCurves := sampleCurve3OpenTrimmed(cornerRail, cornerRev)
 	if len(corner) == 0 {
 		return filletLoop{}, "canal arm loop: corner rail sampled to zero points"
 	}
@@ -170,7 +173,7 @@ func canalArmLoop(h0, h1, far endSeg, cornerRail geom.Curve3, cornerRev bool, to
 	if gap, ok := chainsWithin(hn.to, corner[0], tol); !ok {
 		return filletLoop{}, fmt.Sprintf("canal arm loop: ring does not close — near host rail's end is %.3e from the corner rail's start %v (tol %.3e)", gap, corner[0], tol)
 	}
-	return buildArmFilletLoop(corner, cornerRail, hf, fr, hn), ""
+	return buildArmFilletLoop(corner, cornerCurves, hf, fr, hn), ""
 }
 
 // chainOnto orients seg to start at target (via orientEndSeg) and turns a failed orientation into a
@@ -185,13 +188,15 @@ func chainOnto(junction string, seg endSeg, target math.Point3, tol float64) (en
 }
 
 // buildArmFilletLoop flattens the sampled corner rail + the three chained boundary segments into one
-// filletLoop: each corner sample carries cornerRail as its leaving curve; each trailing segment carries
-// its own oriented curve. loop.pts[:len(corner)] is exactly the shared corner-rail sampling.
-func buildArmFilletLoop(corner []math.Point3, cornerRail geom.Curve3, segs ...endSeg) filletLoop {
+// filletLoop: each corner sample i carries cornerCurves[i] — the corner rail TRIMMED to that sub-edge's
+// own sub-span (curveSpan==vGap, the convention every normal edge obeys) instead of the whole rail — as
+// its leaving curve; each trailing segment carries its own oriented curve. loop.pts[:len(corner)] is
+// exactly the shared corner-rail sampling, so the arm face welds point-for-point to the corner patch.
+func buildArmFilletLoop(corner []math.Point3, cornerCurves []geom.Curve3, segs ...endSeg) filletLoop {
 	fl := filletLoop{}
-	for _, p := range corner {
+	for i, p := range corner {
 		fl.pts = append(fl.pts, p)
-		fl.curves = append(fl.curves, cornerRail)
+		fl.curves = append(fl.curves, cornerCurves[i])
 	}
 	for _, s := range segs {
 		fl.pts = append(fl.pts, s.from)

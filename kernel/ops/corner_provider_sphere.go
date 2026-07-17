@@ -148,13 +148,43 @@ func sampleCurveN(c geom.Curve3, n int, rev bool) []math.Point3 {
 	lo, hi := c.Domain()
 	pts := make([]math.Point3, n)
 	for i := 0; i < n; i++ {
-		f := float64(i) / float64(n)
-		if rev {
-			f = 1 - f
-		}
-		pts[i] = c.PointAt(lo + f*(hi-lo))
+		pts[i] = c.PointAt(openSampleParam(lo, hi, i, n, rev))
 	}
 	return pts
+}
+
+// sampleCurve3OpenTrimmed returns the SAME ringSegSamples points sampleCurve3Open returns (they MUST be
+// byte-identical — the watertight shared-vertex weld between a canal face and its neighbour keys on the
+// point, ADR-C4-2/F3) AND, per sample i, the base curve RESTRICTED to that sample's little sub-span
+// [t_i, t_{i+1}] (a geom.TrimmedCurve3). Every NORMAL kernel edge carries its curve trimmed to exactly
+// that edge (curveSpan==vGap); a canal boundary sub-edge must too, else the shared tessellator
+// (sampleEdgeCurve) sweeps the WHOLE rail once per sub-edge, self-overlapping the loop → the cylinder
+// mesher tiles exactly half and the NURBS patch mesher folds+diverges (N7 defect, 2000× slowdown;
+// .superpowers/sdd/n7-tessellation-diagnosis.md). The far endpoint is excluded from pts (open sampling,
+// like sampleCurve3Open) but IS the Hi of the last sub-curve, so consecutive sides still concatenate
+// without duplicating the shared corner.
+func sampleCurve3OpenTrimmed(c geom.Curve3, rev bool) ([]math.Point3, []geom.Curve3) {
+	lo, hi := c.Domain()
+	pts := make([]math.Point3, ringSegSamples)
+	curves := make([]geom.Curve3, ringSegSamples)
+	for i := 0; i < ringSegSamples; i++ {
+		a := openSampleParam(lo, hi, i, ringSegSamples, rev)   // this sub-edge's own start vertex param
+		b := openSampleParam(lo, hi, i+1, ringSegSamples, rev) // its end vertex param (far endpoint at i+1==n)
+		pts[i] = c.PointAt(a)
+		curves[i] = geom.TrimmedCurve3{Base: c, Lo: a, Hi: b}
+	}
+	return pts, curves
+}
+
+// openSampleParam is the base-curve parameter of open-sample k∈[0,n]: the SAME lo+f·(hi-lo) mapping
+// sampleCurveN uses (f=k/n, reversed to 1-k/n), factored out so sampleCurve3OpenTrimmed's pts stay
+// byte-identical to sampleCurve3Open's. k==n yields the excluded far endpoint (hi forward, lo reversed).
+func openSampleParam(lo, hi float64, k, n int, rev bool) float64 {
+	f := float64(k) / float64(n)
+	if rev {
+		f = 1 - f
+	}
+	return lo + f*(hi-lo)
 }
 
 // certifySphere proves the sphere patch (ADR-3): Closed/WeldsArms are structural (the rail loop

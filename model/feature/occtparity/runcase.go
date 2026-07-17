@@ -76,15 +76,25 @@ func runFillet(body *topo.Body, sets []feature.FilletEdgeSet) ([]*topo.Body, boo
 // verdict semantics through classify.
 func assertCaseResult(t *testing.T, r Record, res []*topo.Body, filletOK bool, reason string) {
 	t.Helper()
-	valid := filletOK && len(res) == 1 && res[0] != nil &&
-		ops.BodyGeometryProperties(res[0], ops.PropertyQuality()).Volume > 0
-	switch classify(r, true, filletOK, valid) {
+	props, ok := caseProperties(res, filletOK)
+	switch classify(r, true, filletOK, ok && props.Volume > 0) {
 	case FailFaulty:
 		t.Fatalf("%s/%s: result not a valid solid: %s", r.Grid, r.Case, reason)
 	case Pass:
-		got := ops.BodyGeometryProperties(res[0], ops.PropertyQuality()).Area
-		assertArea(t, r.Grid+"/"+r.Case, got, r.ExpectedArea, r.Deps)
+		assertArea(t, r.Grid+"/"+r.Case, props.Area, r.ExpectedArea, r.Deps)
 	}
+}
+
+// caseProperties tessellates the single result body ONCE (Property quality) and returns its
+// volume+area+centroid, or ok=false when the fillet is unhealthy / not a single body. Both the
+// validity gate (Volume>0) and the area gate then read the SAME tessellation instead of running two
+// full passes — a wasteful ~2× that dominated N7 scoring before the canal tessellation fix
+// (n7-tessellation-diagnosis.md §5).
+func caseProperties(res []*topo.Body, filletOK bool) (ops.GeometryProperties, bool) {
+	if !filletOK || len(res) != 1 || res[0] == nil {
+		return ops.GeometryProperties{}, false
+	}
+	return ops.BodyGeometryProperties(res[0], ops.PropertyQuality()), true
 }
 
 // importTol scales the locator match tolerance to the body so scaled fixtures (tscale
