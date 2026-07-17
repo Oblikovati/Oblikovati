@@ -121,12 +121,21 @@ func armStation(surf geom.Surface, c math.Point3, scale float64, res Resolution)
 }
 
 // torusStation solves the major angle φ* with (ρcosφ*, ρsinφ*) = C−centre in the torus plane.
-// Rejects when C is off the spine circle by more than res.Weld·R (R = ρ + minor = host wall radius).
+// Rejects when C is off the spine circle by more than res.Weld·R (R = ρ + minor = host wall radius):
+// either its in-plane radius misses ρ, or (ADR-C4-4) it sits off the spine PLANE altogether — the
+// spine is a circle IN A PLANE, so in-plane radius alone is not sufficient (N7's degenerate corner
+// passes a centre 2·minorRadius off-plane that still matches the in-plane radius by construction;
+// left unchecked, the failure was silently deferred downstream to the arm rail bundle instead of
+// an honest decline here).
 func torusStation(t geom.Torus, c math.Point3, scale float64, res Resolution) (float64, bool) {
 	d := t.Center.VectorTo(c) // C − centre
 	axis := t.AxisDir.AsVector()
 	ref := t.Ref.AsVector()
-	inPlane := d.Sub(axis.Scale(d.Dot(axis)))
+	axialOffset := d.Dot(axis)
+	if stdmath.Abs(axialOffset) > res.Weld()*scale {
+		return 0, false // C off the torus spine plane (axial offset too large — not a coplanar centre)
+	}
+	inPlane := d.Sub(axis.Scale(axialOffset))
 	if stdmath.Abs(inPlane.Length()-t.MajorRadius) > res.Weld()*scale {
 		return 0, false // C not on the torus spine circle (|‖C−centre‖_inPlane − ρ| too large)
 	}

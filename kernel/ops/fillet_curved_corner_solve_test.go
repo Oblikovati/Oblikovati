@@ -185,6 +185,48 @@ func TestSolveCurvedCorner_RejectsOffSpine(t *testing.T) {
 	}
 }
 
+// torusStationFixture builds a torus (major=40, minor=5, spine plane z=5) and the corner-scale
+// used to derive res.Weld()·scale, matching N7's degenerate corner (ADR-C4-4): a center on the
+// in-plane spine circle (radius=MajorRadius) but with a nonzero axial offset from the spine
+// plane must be an honest decline, not a silently-accepted station.
+func torusStationFixture(t *testing.T) (geom.Torus, Resolution, float64) {
+	t.Helper()
+	tr, err := geom.NewTorusWithRef(math.P3(0, 0, 5), math.V3(0, 0, 1), math.V3(1, 0, 0), 40, 5)
+	if err != nil {
+		t.Fatalf("build torus arm: %v", err)
+	}
+	res := geom.ResolutionForSize(150)
+	return tr, res, tr.MajorRadius // scale ~ station-solve's cornerRScale magnitude order (R = major+minor)
+}
+
+// TestTorusStation_RejectsOffPlane drives the axial-offset guard (ADR-C4-4): N7's degenerate
+// corner passes a candidate centre 2·minorRadius off the torus spine plane (z=15 vs the z=5
+// plane) that still satisfies the in-plane radius check (|C−centre|_inPlane == MajorRadius).
+// Before the guard, torusStation wrongly accepted this and deferred the failure downstream to
+// the arm rail bundle; the guard must decline right here, honestly, at the solve.
+func TestTorusStation_RejectsOffPlane(t *testing.T) {
+	tr, res, scale := torusStationFixture(t)
+	c := math.P3(40, 0, 15) // in-plane radius 40 = MajorRadius; axial offset (z−5) = 10 = 2·minorRadius
+	if _, ok := torusStation(tr, c, scale, res); ok {
+		t.Fatalf("torusStation accepted a centre 2r off the torus spine plane (axial offset=10, want decline)")
+	}
+}
+
+// TestTorusStation_AcceptsOnPlane is the unchanged-behaviour companion: a centre ON the spine
+// plane (axial offset 0) at the same in-plane radius must still be accepted, at angle 0 (it sits
+// along the torus's Ref direction).
+func TestTorusStation_AcceptsOnPlane(t *testing.T) {
+	tr, res, scale := torusStationFixture(t)
+	c := math.P3(40, 0, 5) // on the z=5 spine plane, in-plane radius 40 = MajorRadius, along Ref
+	phi, ok := torusStation(tr, c, scale, res)
+	if !ok {
+		t.Fatalf("torusStation rejected a centre on the spine plane (axial offset=0, want accept)")
+	}
+	if stdmath.Abs(phi) > 1e-9 {
+		t.Fatalf("torusStation angle = %.9f rad, want 0 (centre lies along Ref)", phi)
+	}
+}
+
 // TestSolveCurvedCorner_RejectsTooFewArms drives solveCurvedCorner's arm-count guard: a trihedral
 // corner needs three arms to close a spherical triangle, so two arms (a dihedral edge, not a
 // corner) must be declined outright, before any station or closure math runs.
