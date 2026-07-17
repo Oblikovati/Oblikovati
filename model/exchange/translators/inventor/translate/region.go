@@ -147,17 +147,29 @@ func uniqueSorted(keys []string) []string {
 // An arc keys as its full circle, because the region names the whole circle the patch trims it
 // from. An unknown entity kind yields ok=false, which makes its profile unmatchable — the honest
 // outcome, since we cannot claim it belongs to the named region.
+//
+// It asks the entity what it is (sketch.ShapedEntity: Kind + ShapePoints, plus RadiusedEntity for
+// the circular kinds) rather than type-switching over *sketch.Line/Circle/Arc, so a new entity kind
+// cannot silently fall into the wrong branch here (#1624, audit I1). ShapePoints puts a line's two
+// endpoints first and a circle's/arc's centre first, which is exactly what the keys need.
 func entityKey(e sketch.Entity) (string, bool) {
-	switch c := e.(type) {
-	case *sketch.Line:
-		a, b := c.StartPoint().Position(), c.EndPoint().Position()
-		return lineKey(float64(a.X), float64(a.Y), float64(b.X), float64(b.Y)), true
-	case *sketch.Circle:
-		p := c.CenterPoint().Position()
-		return circleKey(float64(p.X), float64(p.Y), float64(c.CurveRadius())), true
-	case *sketch.Arc:
-		p := c.CenterPoint().Position()
-		return circleKey(float64(p.X), float64(p.Y), float64(c.CurveRadius())), true
+	s, ok := e.(sketch.ShapedEntity)
+	if !ok {
+		return "", false
+	}
+	pts := s.ShapePoints()
+	switch s.Kind() {
+	case sketch.LineKind:
+		if len(pts) < 2 {
+			return "", false
+		}
+		return lineKey(float64(pts[0].X), float64(pts[0].Y), float64(pts[1].X), float64(pts[1].Y)), true
+	case sketch.CircleKind, sketch.ArcKind:
+		r, radiused := e.(sketch.RadiusedEntity)
+		if !radiused || len(pts) == 0 {
+			return "", false
+		}
+		return circleKey(float64(pts[0].X), float64(pts[0].Y), r.ShapeRadius()), true
 	}
 	return "", false
 }
