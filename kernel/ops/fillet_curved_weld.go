@@ -63,6 +63,9 @@ func assembleCurvedArmBody(body *topo.Body, fils []edgeFillet, blends map[uint64
 	if reason := declineUnconsumedPicks(fils, arms, vid); reason != "" {
 		return nil, reason // a pick outside the welded corner would be left unrounded — decline, don't ship a partial
 	}
+	if b, reason, took := canalArmBody(body, arms, blends, vid, res); took {
+		return b, reason // ADR-C4-1: tangent-degenerate valence-4 corner → sibling canal weld (single-ball path below is UNTOUCHED)
+	}
 	w, sphere, reason := solveCurvedArmCorner(arms, blends, vid, res)
 	if reason != "" {
 		return nil, reason
