@@ -761,11 +761,14 @@ func cornerTangents(v *topo.Vertex, in cornerInputs, r float64, blend *cornerBle
 // frame-derived centre along the edge axis; the blend ball sits ON that line — but OFFSET by the setback
 // distance ALONG the axis, so the test is the ball's PERPENDICULAR distance to the spine line, not the raw
 // point distance (which the setback would always overshoot). It adopts the blend ball only when that
-// perpendicular gap ≤ in.weld. For a concurrent corner (every planar box/round/setback corner, and the
-// concave-trihedral L6 — the single ball lies on every arm's spine) this is the blend ball, byte-identical
-// to the pre-F3a override. For a NON-concurrent canal corner the ball is on the other two arms' spines
-// only (s_10's ball is 10 off its x=55 spine); adopting it would build the arm cylinder on the mirrored
-// x=45 side, so the frame-derived centre is kept — the sphere-patch arc still registers on the ball (mid).
+// perpendicular gap ≤ in.weld. Where the blend ball lies on THIS arm's spine (perp ≈ 0 — every planar
+// box/round/setback corner, and the arms of a partly-concurrent corner) this adopts the blend ball,
+// byte-identical to the pre-F3a override. Where it does not — the s_10 canal arm, whose ball is 10 off its
+// x=55 spine — the frame-derived centre is kept, so the arm cylinder is NOT built on the mirrored x=45
+// side; the corner-blend arc still registers on the ball (blend.center/mid), decoupled from this centre.
+// (Note: a corner may be concurrent for some arms and not others — L6 adopts on 1 of its 3 arms and keeps
+// frame on the other 2; its byte-identity across F3a comes from that per-arm split + the curved-corner
+// machinery rebuilding the kept-frame arms, NOT from a single ball lying on every arm's spine.)
 func armCornerCentre(frame math.Point3, in cornerInputs, blend *cornerBlend) math.Point3 {
 	d := frame.VectorTo(blend.center)
 	perp := d.Sub(in.axis.Scale(d.Dot(in.axis))) // component of ball→spine offset ⊥ to the edge axis
