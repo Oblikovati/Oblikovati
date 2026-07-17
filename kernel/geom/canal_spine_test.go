@@ -39,30 +39,101 @@ func TestCanalSpineN7EndpointsMatchFamilyCenters(t *testing.T) {
 	wall, s10 := n7Hosts()
 	ends := n7Ends()
 	res := n7Resolution(ends)
+	weld := res.Weld()
 	spine, err := canalSpine([]Surface{wall, s10}, 5, ends, res)
 	if err != nil {
 		t.Fatalf("canalSpine: unexpected error: %v", err)
 	}
-	weld := res.Weld()
 	if d := float64(spine.PointAt(0).DistanceTo(ends[0])); d > weld {
 		t.Errorf("spine start %v != C″ %v (dist %g > weld %g)", spine.PointAt(0), ends[0], d, weld)
 	}
 	if d := float64(spine.PointAt(1).DistanceTo(ends[1])); d > weld {
 		t.Errorf("spine end %v != C %v (dist %g > weld %g)", spine.PointAt(1), ends[1], d, weld)
 	}
+
+	// The two checks above hold BY CONSTRUCTION — subRun force-snaps the boundary vertices to
+	// ends — so they would still pass even if the raw march stopped well short of the true
+	// endpoints (C1 review finding 1: they are vacuous as a regression guard). Reproduce
+	// canalSpine's pipeline up to (but not through) the force-snap and assert the RAW,
+	// pre-snap nearest traced vertex reaches each end within the same tight guard the
+	// production path enforces (assertTraceReachesEnd) — this is the discriminating check.
+	offs, err := offsetHostsToward([]Surface{wall, s10}, 5, ends, weld)
+	if err != nil {
+		t.Fatalf("offsetHostsToward: %v", err)
+	}
+	window := spineTraceWindow(offs[0], ends)
+	curves := TraceSurfaceIntersection(offs[0], offs[1], window).Curves
+	rawPoly := polylineThroughEnds(curves, ends)
+	if rawPoly == nil {
+		t.Fatal("polylineThroughEnds found no raw traced curve through both ends")
+	}
+	i0, i1 := nearestIndex(rawPoly, ends[0]), nearestIndex(rawPoly, ends[1])
+	if err := assertTraceReachesEnd(rawPoly, i0, ends[0], weld); err != nil {
+		t.Errorf("raw (pre-snap) trace does not reach C″: %v", err)
+	}
+	if err := assertTraceReachesEnd(rawPoly, i1, ends[1], weld); err != nil {
+		t.Errorf("raw (pre-snap) trace does not reach C: %v", err)
+	}
+}
+
+// TestTrimTracedToEndsRejectsShortfall proves the endpoint guard added for C1 review finding 1
+// actually discriminates: a traced polyline that stops ~1 unit short of a family-center end must
+// be REJECTED by trimTracedToEnds, not silently force-snapped by subRun. This is the regression
+// TestCanalSpineN7EndpointsMatchFamilyCenters's post-snap PointAt(0)==ends[0] assertion alone could
+// never catch — that equality holds after the unconditional overwrite regardless of how far short
+// the raw trace actually got. Mutation evidence (manually, by temporarily neutering the guard):
+// disabling assertTraceReachesEnd's call site turns this test's "want reject" branch into a FAIL
+// ("trimTracedToEnds accepted a trace that stops ~1 unit short..."), confirming it fires; restoring
+// the guard turns it back to PASS.
+func TestTrimTracedToEndsRejectsShortfall(t *testing.T) {
+	ends := n7Ends()
+	res := n7Resolution(ends)
+	weld := res.Weld()
+
+	const step = 0.05
+	healthy := straightSteps(ends[1], ends[0], step) // dense straight trace, ends[1] -> ends[0]
+	if _, err := trimTracedToEnds([][]math.Point3{healthy}, ends, weld); err != nil {
+		t.Fatalf("trimTracedToEnds rejected a healthy trace reaching both ends: %v", err)
+	}
+
+	// Drop the last ~1.0 units of coverage near ends[0] (20 steps of 0.05) — a stand-in for a
+	// tracer that stopped short of the true endpoint.
+	dropped := int(1.0 / step)
+	short := healthy[:len(healthy)-dropped]
+	_, err := trimTracedToEnds([][]math.Point3{short}, ends, weld)
+	if err == nil {
+		t.Fatal("trimTracedToEnds accepted a trace that stops ~1 unit short of ends[0]; want reject")
+	}
+	if !strings.Contains(err.Error(), "stopped short") {
+		t.Errorf("shortfall error should name the condition, got: %v", err)
+	}
+}
+
+// straightSteps returns points stepped by `step` along the straight segment from a to b, ending
+// exactly at b — a synthetic stand-in for a traced polyline, used to test the endpoint guard in
+// isolation from the real SSI tracer.
+func straightSteps(a, b math.Point3, step float64) []math.Point3 {
+	d := float64(a.DistanceTo(b))
+	n := int(stdmath.Ceil(d / step))
+	dir := a.VectorTo(b)
+	pts := make([]math.Point3, 0, n+1)
+	for i := 0; i < n; i++ {
+		pts = append(pts, a.TranslateBy(dir.Scale(float64(i)*step/d)))
+	}
+	return append(pts, b)
 }
 
 // spineSamples returns ~count evenly-spaced sample points (rolling-ball centers) of the spine.
-// It samples the polyline VERTICES, not PointAt(t): a polyline's off-vertex points ride the
-// chords (sag ~4e-5), so the rolling-ball invariant is a property of the spine's own samples —
-// exactly the centers C2 lofts its cross-sections at. White-box: the spine is a geom.Polyline.
+// It reads the polyline VERTICES via [SpineVertices], not PointAt(t): a polyline's off-vertex
+// points ride the chords (sag ~4e-5), so the rolling-ball invariant is a property of the spine's
+// own samples — exactly the centers C2 lofts its cross-sections at (C1 review finding 2: this
+// used to reach past canalSpine's Curve3 return with a fragile spine.(Polyline) type-assertion).
 func spineSamples(t *testing.T, spine Curve3, count int) []math.Point3 {
 	t.Helper()
-	pl, ok := spine.(Polyline)
+	verts, ok := SpineVertices(spine)
 	if !ok {
-		t.Fatalf("spine is %T, want geom.Polyline", spine)
+		t.Fatalf("spine is %T, want a spine curve exposing vertices (SpineVertices)", spine)
 	}
-	verts := pl.Vertices
 	out := make([]math.Point3, 0, count+1)
 	for i := 0; i <= count; i++ {
 		out = append(out, verts[i*(len(verts)-1)/count])
@@ -171,7 +242,8 @@ func TestTrimAnalyticToEndsSnapsToEnds(t *testing.T) {
 		t.Fatalf("NewCircle: %v", err)
 	}
 	ends := [2]math.Point3{math.P3(5, 0, 0), math.P3(0, 5, 0)} // 0 and 90° on the circle
-	pts, err := trimAnalyticToEnds([]Curve3{circle}, ends)
+	weld := n7Resolution(ends).Weld()
+	pts, err := trimAnalyticToEnds([]Curve3{circle}, ends, weld)
 	if err != nil {
 		t.Fatalf("trimAnalyticToEnds: %v", err)
 	}

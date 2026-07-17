@@ -20,7 +20,9 @@ import (
 // concur → the ends coincide → no corner exists), an offset self-intersection (radius exceeds a
 // host's concave curvature → the ball cannot fit), a wrong offset sign (the ends do not lie on
 // both offsets), or an SSI that does not converge through the corner pinch. Every tolerance is
-// model-relative via res (ADR-0042). Consumed by the canal cross-section loft (C2).
+// model-relative via res (ADR-0042). Consumed by the canal cross-section loft (C2): C2 MUST loft at
+// the returned curve's exact VERTICES via [SpineVertices], never resample with PointAt(t) — a
+// polyline's off-vertex points ride the chord sag between its on-host vertices.
 //
 //	spine, err := canalSpine([]Surface{wall, s10}, 5, [2]math.Point3{cPrime, c}, res)
 func canalSpine(rolls []Surface, radius float64, ends [2]math.Point3, res Resolution) (Curve3, error) {
@@ -124,25 +126,26 @@ func distanceToOffset(off OffsetSurface, p math.Point3) float64 {
 // fire and the marched path carries every case here — the analytic branch is kept for future
 // concrete-primitive spines.
 func traceSpineBetweenEnds(offs [2]OffsetSurface, ends [2]math.Point3, res Resolution) ([]math.Point3, error) {
+	weld := res.Weld()
 	if curves, handled := IntersectSurfacesAnalytic(offs[0], offs[1], res); handled {
-		return trimAnalyticToEnds(curves, ends)
+		return trimAnalyticToEnds(curves, ends, weld)
 	}
 	window := spineTraceWindow(offs[0], ends)
 	curves := TraceSurfaceIntersection(offs[0], offs[1], window).Curves
-	return trimTracedToEnds(curves, ends)
+	return trimTracedToEnds(curves, ends, weld)
 }
 
 // trimAnalyticToEnds tessellates each closed-form SSI curve into points and trims to the ends,
 // sharing the marched-path trimmer. Unbounded curves (an infinite line) have no finite polyline
 // form and are skipped.
-func trimAnalyticToEnds(curves []Curve3, ends [2]math.Point3) ([]math.Point3, error) {
+func trimAnalyticToEnds(curves []Curve3, ends [2]math.Point3, weld float64) ([]math.Point3, error) {
 	polys := make([][]math.Point3, 0, len(curves))
 	for _, c := range curves {
 		if pl, err := PolylineFromCurve3(c, spineAnalyticSamples); err == nil {
 			polys = append(polys, pl.Vertices)
 		}
 	}
-	return trimTracedToEnds(polys, ends)
+	return trimTracedToEnds(polys, ends, weld)
 }
 
 // spineAnalyticSamples tessellates a closed-form SSI curve densely enough that trimming to the ends
@@ -175,8 +178,10 @@ func padRange(a, b float64) (lo, hi float64) {
 }
 
 // trimTracedToEnds picks the traced polyline carrying BOTH endpoint ball-centers and returns its
-// sub-run from ends[0] to ends[1]. Errors when the SSI produced no curve reaching both ends.
-func trimTracedToEnds(curves [][]math.Point3, ends [2]math.Point3) ([]math.Point3, error) {
+// sub-run from ends[0] to ends[1]. Errors when the SSI produced no curve reaching both ends, or when
+// the curve it did pick stops short of one — see assertTraceReachesEnd (C1 review finding 1): the
+// force-snap in subRun is only safe once we know the raw trace actually arrived.
+func trimTracedToEnds(curves [][]math.Point3, ends [2]math.Point3, weld float64) ([]math.Point3, error) {
 	poly := polylineThroughEnds(curves, ends)
 	if poly == nil {
 		return nil, fmt.Errorf(
@@ -184,7 +189,58 @@ func trimTracedToEnds(curves [][]math.Point3, ends [2]math.Point3) ([]math.Point
 	}
 	i0 := nearestIndex(poly, ends[0])
 	i1 := nearestIndex(poly, ends[1])
+	if err := assertTraceReachesEnd(poly, i0, ends[0], weld); err != nil {
+		return nil, err
+	}
+	if err := assertTraceReachesEnd(poly, i1, ends[1], weld); err != nil {
+		return nil, err
+	}
 	return subRun(poly, i0, i1, ends), nil
+}
+
+// endSnapGapFactor bounds how far the raw traced polyline's nearest vertex to a family-center end may
+// sit before subRun's force-snap is allowed to overwrite it: a small multiple of the LOCAL chord at
+// that vertex (the spacing to its neighbour) — the natural yardstick for how far a HEALTHY march
+// sample can land from a true on-curve point at that sampling density. This is deliberately tighter
+// than polylineThroughEnds' branch-selection gate (a quarter of the end separation): that gate only
+// picks which SSI curve among several carries both ends, so it must stay loose; this one guards the
+// force-snap itself and must catch a tracer that stops even a couple of chords short of the real
+// endpoint, which the branch gate alone would silently wave through (C1 review finding 1).
+const endSnapGapFactor = 2.0 // tol:parametric — max end-snap gap as a multiple of the local chord
+
+// assertTraceReachesEnd requires the raw traced vertex poly[idx] (the nearest sample to end) to sit
+// within endSnapGapFactor local chords of end, floored at weld so a near-zero local chord (a dense
+// march through a tight corner) cannot make an already-tiny, sub-weld gap look like a violation. On
+// failure the error carries the measured gap and the tolerance it exceeded, per the error-message rule.
+func assertTraceReachesEnd(poly []math.Point3, idx int, end math.Point3, weld float64) error {
+	gap, chord := nearestVertexGap(poly, idx, end)
+	tol := stdmath.Max(endSnapGapFactor*chord, weld)
+	if gap > tol {
+		return fmt.Errorf(
+			"assertTraceReachesEnd: raw traced vertex %v is %g from family-center end %v, want <= %g "+
+				"(= max(%g x local chord %g, weld %g)): the SSI tracer stopped short of the endpoint",
+			poly[idx], gap, end, tol, endSnapGapFactor, chord, weld)
+	}
+	return nil
+}
+
+// nearestVertexGap returns the distance from poly[idx] to target and the LOCAL chord length at idx
+// (the shorter of its adjacent segments, or the gap itself for a single-vertex poly) — the sampling
+// density right there, used to scale assertTraceReachesEnd's tolerance to how finely the march sampled
+// that stretch of the curve.
+func nearestVertexGap(poly []math.Point3, idx int, target math.Point3) (gap, localChord float64) {
+	gap = float64(poly[idx].DistanceTo(target))
+	localChord = stdmath.Inf(1)
+	if idx > 0 {
+		localChord = stdmath.Min(localChord, float64(poly[idx-1].DistanceTo(poly[idx])))
+	}
+	if idx+1 < len(poly) {
+		localChord = stdmath.Min(localChord, float64(poly[idx+1].DistanceTo(poly[idx])))
+	}
+	if stdmath.IsInf(localChord, 1) {
+		localChord = gap
+	}
+	return gap, localChord
 }
 
 // polylineThroughEnds returns the traced polyline whose combined nearest approach to both ends is
@@ -208,7 +264,10 @@ func polylineThroughEnds(curves [][]math.Point3, ends [2]math.Point3) []math.Poi
 
 // subRun extracts the inclusive slice of pts between i0 and i1, oriented ends[0]→ends[1], with the
 // two boundary vertices replaced by the EXACT ends (the family centers are known in closed form; the
-// traced samples near them carry march noise).
+// traced samples near them carry march noise). The overwrite is unconditional here — it is SAFE only
+// because the caller (trimTracedToEnds) has already asserted via assertTraceReachesEnd that pts[i0]
+// and pts[i1] are within a tight, chord-relative tolerance of ends[0]/ends[1]; this function never
+// sees a pts that stopped short.
 func subRun(pts []math.Point3, i0, i1 int, ends [2]math.Point3) []math.Point3 {
 	lo, hi, reversed := i0, i1, false
 	if i0 > i1 {
@@ -301,4 +360,23 @@ func correctToOffsetPair(offA, offB OffsetSurface, p math.Point3, tol float64) (
 		p = p.TranslateBy(correctorStep(nA, nB, sA, sB))
 	}
 	return p, false
+}
+
+// SpineVertices returns the exact rolling-ball-center samples of a canal spine curve — the vertices
+// canalSpine traced and refined onto both offsets (on-host to weld), NOT c.PointAt(t) resampling: a
+// polyline's off-vertex points ride the chord between vertices (~4e-5 sag for N7) and its TangentAt
+// is piecewise-constant per segment, so a consumer that needs the true rolling-ball centers — C2's
+// cross-section loft MUST use these, never PointAt(t) — reads them here rather than reaching past
+// canalSpine's Curve3 return with its own type-assertion (C1 review finding 2). canalSpine keeps
+// returning a plain Curve3 so it stays directly usable by C2/C3's generic curve machinery; this is
+// the one seam that additionally exposes the vertices. ok is false when c is not a spine-shaped
+// curve (currently: not a [Polyline] — canalSpine's concrete return type).
+//
+//	verts, ok := geom.SpineVertices(spine)
+func SpineVertices(c Curve3) (verts []math.Point3, ok bool) {
+	pl, ok := c.(Polyline)
+	if !ok {
+		return nil, false
+	}
+	return pl.Vertices, true
 }
