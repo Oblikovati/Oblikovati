@@ -37,6 +37,12 @@ func canalArmRailsAndTerminal(arm edgeFillet, set armSetback, wi cornerWeld, res
 	if !ok {
 		return endSeg{}, endSeg{}, endSeg{}, false
 	}
+	// Same honest-reject gate as canalTerminalSection's arc branch: the reused loop-crossing rails' outer
+	// ends must be a genuine radius-r cross-section before farCrossSectionArc snaps an arc through them
+	// (inert for the W2/bare-face fixtures, whose feet ARE a ⊥-spine cross-section).
+	if !feetOnFarCrossSection(set.arm, wi.radius, h0.from, h1.from, res.Weld()*wi.radius) {
+		return endSeg{}, endSeg{}, endSeg{}, false
+	}
 	far, ok := farCrossSectionArc(set.arm, wi.radius, h0.from, h1.from)
 	return h0, h1, far, ok
 }
@@ -156,14 +162,17 @@ func canalFarRail(host *topo.Face, set armSetback, railDir math.UnitVector3, ffa
 }
 
 // cylinderFarRail terminates a cylinder arm's straight ruling (fixed point tHost, direction = arm axis)
-// at its intersection with F_far (line∩plane, derivation §3). Declines when the ruling is parallel to
-// F_far (the arm never terminates on it).
+// at its intersection with F_far (line∩plane, derivation §3). Declines when the ruling is (near-)parallel
+// to F_far — |â·n̂| ≤ sinFloor, the scale-free sine floor: the ruling grazes the plane and the crossing is
+// not robust (the arm never cleanly terminates on it). Both â (arm axis) and n̂ (F_far normal, UAxis×VAxis)
+// are unit, so LinePlaneIntersection's direction·normal test IS |â·n̂| — passing sinFloor as its tol makes
+// it the derivation's sine-floor guard. Inert on-corpus (|â·n̂|=1, the ruling meets F_far square).
 func cylinderFarRail(cyl geom.Cylinder, tHost math.Point3, ffar geom.Plane) (endSeg, bool) {
 	line, err := geom.NewLine(tHost, cyl.AxisDir.AsVector())
 	if err != nil {
 		return endSeg{}, false
 	}
-	outer, ok := geom.LinePlaneIntersection(line, ffar, 0)
+	outer, ok := geom.LinePlaneIntersection(line, ffar, sinFloor)
 	if !ok {
 		return endSeg{}, false
 	}
@@ -195,7 +204,10 @@ func torusFarRail(host *topo.Face, tor geom.Torus, tHost math.Point3, ffar geom.
 // is a closed form of the torus + F_far, no tuned constant. Only the far end moves — the near (tHost)
 // end at angle StartAngle+SweepAngle is unchanged. Declines when F_far is secant to the cap circle.
 func extendCapRail(arc geom.Arc3d, tor geom.Torus, ffar geom.Plane) (geom.Arc3d, bool) {
-	d := capPlaneAxisDistance(tor, ffar)
+	d, ok := capPlaneAxisDistance(tor, ffar)
+	if !ok {
+		return geom.Arc3d{}, false // degenerate F_far normal — skip the extension rather than move by δ=0
+	}
 	rho, wallR := tor.MajorRadius, tor.MajorRadius+tor.MinorRadius
 	if d >= rho {
 		return geom.Arc3d{}, false
@@ -211,20 +223,25 @@ func extendCapRail(arc geom.Arc3d, tor geom.Torus, ffar geom.Plane) (geom.Arc3d,
 }
 
 // capPlaneAxisDistance is the perpendicular distance from the torus axis to the axis-parallel plane
-// F_far — |(ffar.Origin − Center)·n̂_F|, with n̂_F ⊥ the axis in the oblique case.
-func capPlaneAxisDistance(tor geom.Torus, ffar geom.Plane) float64 {
+// F_far — |(ffar.Origin − Center)·n̂_F|, with n̂_F ⊥ the axis in the oblique case. Declines (false) on a
+// degenerate F_far normal so extendCapRail skips the extension outright, rather than reading a silent
+// zero distance (δ_cap = 0) that would leave the cap rail un-extended without anyone noticing.
+func capPlaneAxisDistance(tor geom.Torus, ffar geom.Plane) (float64, bool) {
 	n, err := math.UnitVector3FromVector(ffar.Normal())
 	if err != nil {
-		return 0
+		return 0, false
 	}
-	return stdmath.Abs(float64(tor.Center.VectorTo(ffar.Origin).Dot(n.AsVector())))
+	return stdmath.Abs(float64(tor.Center.VectorTo(ffar.Origin).Dot(n.AsVector()))), true
 }
 
 // canalTerminalSection builds the arm's terminal boundary between the two host feet (h0.from, h1.from):
 // the radius-r cross-section ARC when F_far is ⊥ the spine (farCrossSectionArc — s_4/s_10, derivation
 // §4), or the SPIRIC section of the torus by the axis-parallel plane when it is oblique (s_5 —
-// geom.SpiricArc, exact on both surfaces, NOT a circular arc). Non-torus oblique / unsupported → the
-// arc branch, which farCrossSectionArc declines if the feet are not a true cross-section.
+// geom.SpiricArc, exact on both surfaces, NOT a circular arc). The arc branch is GATED by
+// feetOnFarCrossSection: farCrossSectionArc 3-point-fits SOME arc through ANY two feet and never checks
+// they are a true radius-r cross-section about the far ball centre, so an oblique F_far (feet at unequal
+// distances from m_far — e.g. a future torus arm whose terminating plane is neither ∥-axis nor ⊥-spine)
+// would silently snap a wrong surface; the gate declines it to the honest-reject fallback instead.
 func canalTerminalSection(armSurf geom.Surface, r float64, ffar geom.Plane, h0, h1 endSeg, tol float64) (endSeg, bool) {
 	if tor, ok := armSurf.(geom.Torus); ok && planeParallelToAxis(tor, ffar) {
 		return spiricTerminalSection(tor, ffar, h0.from, h1.from, tol)
@@ -232,7 +249,26 @@ func canalTerminalSection(armSurf geom.Surface, r float64, ffar geom.Plane, h0, 
 	if cyl, ok := armSurf.(geom.Cylinder); ok && !planePerpToDir(ffar, cyl.AxisDir) {
 		return endSeg{}, false // oblique cylinder terminus — not a radius-r cross-section, out of closed-form scope
 	}
+	if !feetOnFarCrossSection(armSurf, r, h0.from, h1.from, tol) {
+		return endSeg{}, false // feet are NOT a radius-r cross-section about m_far (oblique F_far) — never snap an arc
+	}
 	return farCrossSectionArc(armSurf, r, h0.from, h1.from)
+}
+
+// feetOnFarCrossSection reports whether BOTH terminal feet lie on the radius-r cross-section circle about
+// the arm's far ball centre m_far (the spine point at the runout) — the precondition farCrossSectionArc
+// silently assumes but never verifies. For a true cross-section (F_far ⊥ the spine) both feet share the
+// SAME ball centre and sit at distance r from it; an OBLIQUE F_far puts the second foot at a different
+// spine point (unequal distance), so |dist(m_far, footᵢ) − r| exceeds tol and the arc branch declines
+// rather than snapping an arc through feet that are not a cross-section (mutation-proven: 6.33 vs r=5).
+func feetOnFarCrossSection(arm geom.Surface, r float64, foot0, foot1 math.Point3, tol float64) bool {
+	mFar, ok := armBallCenter(arm, foot0)
+	if !ok {
+		return false
+	}
+	d0 := stdmath.Abs(float64(mFar.DistanceTo(foot0)) - r)
+	d1 := stdmath.Abs(float64(mFar.DistanceTo(foot1)) - r)
+	return d0 <= tol && d1 <= tol
 }
 
 // planePerpToDir reports whether the plane pl is perpendicular to direction d (its normal is parallel to
@@ -272,8 +308,8 @@ func spiricTerminalSection(tor geom.Torus, ffar geom.Plane, wallFoot, capFoot ma
 // the host rails' outer ends); a branch/endpoint mismatch → false rather than a curve off the feet.
 func torusPlaneSection(tor geom.Torus, ffar geom.Plane, a, b math.Point3, tol float64) (geom.SpiricArc, bool) {
 	phi, m, k, c := geom.TorusSectionCoeffs(tor, ffar)
-	va, ok0 := tubeAngleOf(tor, a)
-	vb, ok1 := tubeAngleOf(tor, b)
+	va, ok0 := tubeAngleOf(tor, a, tol)
+	vb, ok1 := tubeAngleOf(tor, b, tol)
 	if !ok0 || !ok1 {
 		return geom.SpiricArc{}, false
 	}
@@ -287,13 +323,19 @@ func torusPlaneSection(tor geom.Torus, ffar geom.Plane, a, b math.Point3, tol fl
 }
 
 // tubeAngleOf is the torus tube angle v of a point p ON the torus: sin v = (p−Center)·axis / r,
-// cos v = (|in-plane (p−Center)| − ρ) / r, so v = atan2(sin v, cos v).
-func tubeAngleOf(tor geom.Torus, p math.Point3) (float64, bool) {
+// cos v = (|in-plane (p−Center)| − ρ) / r, so v = atan2(sin v, cos v). Declines (false) when p is not on
+// the tube — its distance from the spine circle, r·hypot(sin v, cos v), differs from r by more than tol —
+// so a caller never reads a tube angle off a foot that does not lie on the torus (which would place the
+// spiric branch's endpoints on the wrong meridian).
+func tubeAngleOf(tor geom.Torus, p math.Point3, tol float64) (float64, bool) {
 	axis := tor.AxisDir.AsVector()
 	d := tor.Center.VectorTo(p)
 	along := float64(d.Dot(axis))
 	inPlane := d.Sub(axis.Scale(along))
 	sv := along / tor.MinorRadius
 	cv := (float64(inPlane.Length()) - tor.MajorRadius) / tor.MinorRadius
+	if stdmath.Abs(stdmath.Hypot(sv, cv)-1)*tor.MinorRadius > tol { // p off the tube (dist to spine ≠ r)
+		return 0, false
+	}
 	return stdmath.Atan2(sv, cv), true
 }

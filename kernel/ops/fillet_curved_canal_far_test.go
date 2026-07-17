@@ -234,6 +234,46 @@ func TestCanalFar_LoopCrossingMutationFails(t *testing.T) {
 	}
 }
 
+// TestCanalFar_ArcBranchGuardDeclinesObliqueFeet is the do-no-harm guard proof (F1 review, Finding 1):
+// farCrossSectionArc 3-point-fits SOME arc through ANY two feet, so if the spiric branch is bypassed a
+// torus arm whose F_far is NOT ⊥ its spine reaches the arc branch and SILENTLY snaps a wrong surface. The
+// reviewer's mutation (spiric branch disabled) sent the s_5 feet — the wall foot (80,10,5) at r=5 and the
+// cap foot (80,50−√1125,10) at 6.33 from the far ball centre (77,14,5) — through farCrossSectionArc and the
+// arm loop STILL closed. feetOnFarCrossSection now GATES the branch: it declines feet that are not a true
+// radius-r cross-section, and canalTerminalSection (arc branch, reached here via an OBLIQUE F_far that
+// takes neither the spiric nor the ⊥-cylinder path) declines with it.
+func TestCanalFar_ArcBranchGuardDeclinesObliqueFeet(t *testing.T) {
+	tor, err := geom.NewTorus(math.P3(50, 50, 5), math.V3(0, 0, 1), 45, 5)
+	if err != nil {
+		t.Fatalf("build torus: %v", err)
+	}
+	const r, tol = 5.0, 7.5e-6
+	mFar := math.P3(77, 14, 5) // torusBallCenter of the wall foot — the far cross-section centre
+	wallFoot := math.P3(80, 10, 5)
+	capFoot := math.P3(80, 50-stdmath.Sqrt(1125), 10) // the true s_5 cap foot: 6.33 from m_far, NOT r
+	if d := float64(mFar.DistanceTo(capFoot)); stdmath.Abs(d-6.328) > 0.01 {
+		t.Fatalf("precondition: cap foot is %.3f from m_far, want the reviewer's 6.33", d)
+	}
+	// The guard: the mutation feet are NOT a radius-r cross-section → decline (no snapped arc).
+	if feetOnFarCrossSection(tor, r, wallFoot, capFoot, tol) {
+		t.Fatalf("guard admitted feet at {%.3f,%.3f} from m_far as an r=%.1f cross-section",
+			float64(mFar.DistanceTo(wallFoot)), float64(mFar.DistanceTo(capFoot)), r)
+	}
+	// A TRUE cross-section (both feet at r from m_far, same tube meridian) still builds.
+	if !feetOnFarCrossSection(tor, r, wallFoot, math.P3(77, 14, 10), tol) {
+		t.Fatal("guard rejected a genuine radius-r cross-section (both feet at r from m_far)")
+	}
+	// End-to-end: an OBLIQUE F_far (|n̂·axis|=√.5) bypasses the spiric branch, so canalTerminalSection
+	// reaches the arc branch and DECLINES the mutation feet rather than snapping the 5/6.33 arc.
+	oblique, err := geom.NewPlane(math.P3(80, 10, 5), math.V3(1, 0, 1))
+	if err != nil {
+		t.Fatalf("build oblique plane: %v", err)
+	}
+	if _, ok := canalTerminalSection(tor, r, oblique, endSeg{from: wallFoot}, endSeg{from: capFoot}, tol); ok {
+		t.Fatal("canalTerminalSection built a terminal through non-cross-section feet on the arc branch")
+	}
+}
+
 // cylinderArmAlong returns the index of the cylinder arm whose axis is parallel to dir, or fails.
 func cylinderArmAlong(t *testing.T, arms []edgeFillet, dir math.Vector3) int {
 	t.Helper()
