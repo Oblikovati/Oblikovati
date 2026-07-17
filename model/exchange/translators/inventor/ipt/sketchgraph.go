@@ -56,6 +56,9 @@ func GraphSketches(d *Document) []Sketch {
 	out := make([]Sketch, len(order))
 	for i := range out {
 		out[i].Resolved = true // exact by construction: no inference to be unsure about
+		if n, ok := nodeAt(nodes, order[i]); ok {
+			out[i].Plane, out[i].PlaneOK = sketchPlane(nodes, n)
+		}
 	}
 	for _, n := range nodes {
 		owner, ok := entityOwner(n, index)

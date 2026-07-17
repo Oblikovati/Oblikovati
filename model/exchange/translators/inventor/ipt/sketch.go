@@ -81,6 +81,10 @@ type Sketch struct {
 	// connectivity — which mangles a non-convex profile. Revolve gates on this: a scrambled
 	// profile turned about an axis is a blob, so an unresolved revolve yields to the mesh body.
 	Resolved bool
+	// Plane is where the sketch lives; PlaneOK is false when the file states no placement this
+	// layout can read, and the caller must then fall back to XY rather than invent one.
+	Plane   SketchPlacement
+	PlaneOK bool
 	// Construction marks, per curve, whether it is construction (reference) geometry — a centreline
 	// or similar, which Inventor draws but does not let bound a region. Each slice runs parallel to
 	// the curve slice it names and may be shorter/absent, meaning "none known". This must be

@@ -230,9 +230,34 @@ func extractSketches(d *ipt.Document, seg []byte) []placedSketch {
 	}
 	placed := make([]placedSketch, len(decoded))
 	for i := range decoded {
-		placed[i] = placedSketch{geom: decoded[i], plane: sketch.XYPlane()}
+		placed[i] = placedSketch{geom: decoded[i], plane: sketchPlaneOf(decoded[i])}
 	}
 	return placed
+}
+
+// sketchPlaneOf places a sketch where the file says it lives. A sketch's entity coordinates are 2D
+// IN ITS OWN PLANE, so putting them all on XY builds any feature authored elsewhere in the wrong
+// place: BigChunkyPlate has 9 sketches on its top face at z=3.00 whose bosses grow DOWN into the
+// plate, and forced onto XY they hung BELOW it instead — a 5.60 cm body against a true 3.00, which
+// cost the part all 46 features to the body gate (#29).
+//
+// Falls back to XY when the file states no placement this layout can read, so an unreadable
+// transform declines to today's behaviour rather than inventing a plane.
+func sketchPlaneOf(s ipt.Sketch) sketch.Plane {
+	if !s.PlaneOK {
+		return sketch.XYPlane()
+	}
+	x, xerr := m.NewUnitVector3(m.Scalar(s.Plane.XAxis[0]), m.Scalar(s.Plane.XAxis[1]), m.Scalar(s.Plane.XAxis[2]))
+	y, yerr := m.NewUnitVector3(m.Scalar(s.Plane.YAxis[0]), m.Scalar(s.Plane.YAxis[1]), m.Scalar(s.Plane.YAxis[2]))
+	if xerr != nil || yerr != nil {
+		return sketch.XYPlane()
+	}
+	p, err := sketch.NewPlane(
+		m.P3(m.Scalar(s.Plane.Origin[0]), m.Scalar(s.Plane.Origin[1]), m.Scalar(s.Plane.Origin[2])), x, y)
+	if err != nil {
+		return sketch.XYPlane()
+	}
+	return p
 }
 
 // emitSketches adds every extracted sketch to the document and returns the handles in the same
