@@ -43,10 +43,12 @@ func n7CornerFill(t *testing.T) (cornerWeld, []edgeFillet, Resolution) {
 	return cornerWeld{center: math.P3(45, y, 15), radius: 5}, arms, geom.ResolutionForSize(150)
 }
 
-// TestExtractTangentCorner_IsValence4Coons4 is the slice's core gate: the N7 corner must extract as a
-// CLOSED valence-4 RailLoop that resolveBlend fills with coons4, whose area matches the DRAWEXE oracle
-// 90.194 within 1%.
-func TestExtractTangentCorner_IsValence4Coons4(t *testing.T) {
+// TestExtractTangentCorner_IsValence4Canal is the slice's core gate (M6' C3): the N7 corner must
+// extract as a CLOSED valence-4 RailLoop that resolveBlend now fills with the rolling-ball CANAL tier
+// (BlendKindCanal, Canal-payload-marked), whose EMERGENT area matches the DRAWEXE oracle 90.194 within
+// the C2-justified 0.05% (the canal is the RIGHT surface for this tangent-degenerate corner; coons4
+// was the do-no-harm fallback that held it to 1% before the canal solve landed).
+func TestExtractTangentCorner_IsValence4Canal(t *testing.T) {
 	w, arms, res := n7CornerFill(t)
 	loop, ok := extractCurvedCorner(w, arms, res)
 	if !ok || loop.Valence() != 4 {
@@ -56,12 +58,12 @@ func TestExtractTangentCorner_IsValence4Coons4(t *testing.T) {
 		t.Fatalf("N7 RailLoop is not closed")
 	}
 	patch, ok := resolveBlend(loop, res)
-	if !ok || patch.Kind != BlendKindCoons4 {
-		t.Fatalf("N7 must resolve to coons4; ok=%v kind=%q", ok, patch.Kind)
+	if !ok || patch.Kind != BlendKindCanal {
+		t.Fatalf("N7 must resolve to the canal tier; ok=%v kind=%q", ok, patch.Kind)
 	}
 	area := geom.SurfaceArea(patch.Surface)
-	if e := stdmath.Abs(area-90.194) / 90.194; e > 0.01 {
-		t.Fatalf("N7 corner fill area = %.5f, want 90.194 within 1%% (off %.3f%%)", area, 100*e)
+	if e := stdmath.Abs(area-90.194) / 90.194; e > 5e-4 {
+		t.Fatalf("N7 canal fill area = %.5f, want 90.194 within 0.05%% (off %.4f%%)", area, 100*e)
 	}
 }
 

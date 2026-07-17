@@ -64,7 +64,14 @@ func extractTangentDegenerateCorner(w cornerWeld, arms []edgeFillet, res Resolut
 	loop := RailLoop{
 		Sides:      sides,
 		Provenance: topo.Lineage{},
-		Canal:      &CanalCorner{Rolls: rolls, Radius: w.radius},
+		// Ends are the two WALL-sharing arms' reflected-family centres (N7: C, C″) — the ball-centres
+		// the canal spine is trimmed to. The extractor knows them exactly (unlike a rail-centre scan,
+		// which cannot separate them from the mid arm's centre without the offset sign — ADR-C1).
+		Canal: &CanalCorner{
+			Rolls:  rolls,
+			Radius: w.radius,
+			Ends:   [2]math.Point3{centres[wa[0]], centres[wa[1]]},
+		},
 	}
 	return loop, loop.Closed(res.Weld() * scale)
 }

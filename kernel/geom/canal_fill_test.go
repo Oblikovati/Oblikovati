@@ -200,3 +200,110 @@ func sampleGrid(surf BSplineSurface, u0, u1, v0, v1 float64, nu, nv int) []math.
 	}
 	return out
 }
+
+// n7CanalRails builds the 4-rail array CanalCornerFill self-checks against: the two END cross-section
+// Arc3d arcs (centred at the two spine ends, radius 5) — built the SAME way the ops extractor does
+// (Arc3dByThreePoints on the two host feet + the bisector mid), so they are genuine geom.Arc3d the
+// self-check reads. The two fillers reuse the end arcs (only Arc3d-at-end rails are inspected).
+func n7CanalRails(t *testing.T) (rails [4]Curve3, wall, s10 Surface, ends [2]math.Point3) {
+	t.Helper()
+	wall, s10 = n7Hosts()
+	ends = n7Ends()
+	a0 := endArc3d(t, wall, s10, ends[0], 5)
+	a1 := endArc3d(t, wall, s10, ends[1], 5)
+	return [4]Curve3{a0, a1, a0, a1}, wall, s10, ends
+}
+
+// endArc3d builds the radius-r cross-section Arc3d centred at ball-centre m between its two host feet
+// (the wall foot fa, the s10 foot fb) — a geom.Arc3d whose Center is m, mirroring the ops extractor's
+// crossSectionArc (corner_extract_tangent_rails.go: Arc3dByThreePoints(fa, m+bisector·r, fb)).
+func endArc3d(t *testing.T, wall, s10 Surface, m math.Point3, r float64) Arc3d {
+	t.Helper()
+	_, _, fa := ClosestPointOnSurface(wall, m)
+	_, _, fb := ClosestPointOnSurface(s10, m)
+	r0, _ := math.UnitVector3FromVector(m.VectorTo(fa))
+	r1, _ := math.UnitVector3FromVector(m.VectorTo(fb))
+	bis, err := math.UnitVector3FromVector(r0.AsVector().Add(r1.AsVector()))
+	if err != nil {
+		t.Fatalf("endArc3d bisector at %v: %v", m, err)
+	}
+	arc, err := Arc3dByThreePoints(fa, m.TranslateBy(bis.AsVector().Scale(r)), fb)
+	if err != nil {
+		t.Fatalf("endArc3d at %v: %v", m, err)
+	}
+	return arc
+}
+
+// TestCanalCornerFillN7AreaEmerges is the composition gate: CanalCornerFill (spine + loft in one call)
+// must emit the same DRAWEXE-oracle area 90.194 (within the C2-justified 0.05%) as the hand-composed
+// pipeline — no tuned constant, the area emerges from the rolling-ball geometry.
+func TestCanalCornerFillN7AreaEmerges(t *testing.T) {
+	rails, wall, s10, ends := n7CanalRails(t)
+	surf, err := CanalCornerFill([]Surface{wall, s10}, 5, rails, ends, n7Resolution(ends))
+	if err != nil {
+		t.Fatalf("CanalCornerFill: %v", err)
+	}
+	area := SurfaceArea(surf)
+	if e := stdmath.Abs(area-90.194) / 90.194; e > 5e-4 {
+		t.Fatalf("CanalCornerFill area = %.5f, want 90.194 within 0.05%% (off %.4f%%)", area, 100*e)
+	}
+}
+
+// TestCanalCornerFillRejectsPointSpine is the B3 reduction, unit-tested directly: when the two ends
+// coincide (the host offsets concur → the octant) canalSpine's point-spine guard fires and
+// CanalCornerFill returns that error instead of lofting a degenerate point-spine — so the provider
+// declines and analyticSphere wins the clean octant.
+func TestCanalCornerFillRejectsPointSpine(t *testing.T) {
+	rails, wall, s10, ends := n7CanalRails(t)
+	coincident := [2]math.Point3{ends[0], ends[0]} // offsets concur → no rolling-ball corner
+	_, err := CanalCornerFill([]Surface{wall, s10}, 5, rails, coincident, n7Resolution(ends))
+	if err == nil {
+		t.Fatal("CanalCornerFill must reject a point-spine (coincident ends) — the B3 octant reduction")
+	}
+	if !stringsContains(err.Error(), "point-spine") {
+		t.Fatalf("point-spine error must name the degeneracy; got %q", err)
+	}
+}
+
+// TestCanalCornerFillRejectsMismatchedRails pins the watertight self-check: when the received rails'
+// arc centres do NOT match the (valid) spine ends the payload is inconsistent with the rails, so
+// CanalCornerFill honest-rejects rather than lofting a patch onto rails it does not weld to. The ends
+// are the real ones (the spine builds fine); only the rails are wrong, isolating the self-check.
+func TestCanalCornerFillRejectsMismatchedRails(t *testing.T) {
+	_, wall, s10, ends := n7CanalRails(t)
+	bad := badCenteredRails(t, wall, s10, ends, math.V3(0, 0, 3)) // rail arcs centred 3 off the ends
+	_, err := CanalCornerFill([]Surface{wall, s10}, 5, bad, ends, n7Resolution(ends))
+	if err == nil {
+		t.Fatal("CanalCornerFill must reject rails whose arc centres are not the spine ends (self-check)")
+	}
+	if !stringsContains(err.Error(), "do not agree with the rails") {
+		t.Fatalf("self-check error must name the payload/rails disagreement; got %q", err)
+	}
+}
+
+// badCenteredRails builds end cross-section Arc3d centred at ends+shift (radius 5) — valid arcs, wrong
+// centres — so CanalCornerFill's rail self-check sees no rail centred at the true spine ends.
+func badCenteredRails(t *testing.T, wall, s10 Surface, ends [2]math.Point3, shift math.Vector3) [4]Curve3 {
+	t.Helper()
+	a0 := endArc3d(t, wall, s10, ends[0].TranslateBy(shift), 5)
+	a1 := endArc3d(t, wall, s10, ends[1].TranslateBy(shift), 5)
+	return [4]Curve3{a0, a1, a0, a1}
+}
+
+// TestCanalCornerFillRejectsWrongHostCount guards the arity precondition.
+func TestCanalCornerFillRejectsWrongHostCount(t *testing.T) {
+	rails, wall, _, ends := n7CanalRails(t)
+	if _, err := CanalCornerFill([]Surface{wall}, 5, rails, ends, n7Resolution(ends)); err == nil {
+		t.Fatal("CanalCornerFill must reject a host count != 2")
+	}
+}
+
+// stringsContains is a tiny substring check kept local so the test file needs no strings import churn.
+func stringsContains(haystack, needle string) bool {
+	for i := 0; i+len(needle) <= len(haystack); i++ {
+		if haystack[i:i+len(needle)] == needle {
+			return true
+		}
+	}
+	return false
+}

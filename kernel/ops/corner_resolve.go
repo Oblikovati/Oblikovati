@@ -4,7 +4,7 @@ package ops
 
 // blendTiers is the ADR-0051 foundation tier order: analytic-known-part first (exact sphere), then
 // the M6' canal tier (a tangent-degenerate valence-4 corner is a rolling-ball CANAL, not a plain
-// Coons fill — RailLoop.Canal-marked loops only, ADR-C1/C2; a stub that always declines until C3),
+// Coons fill — RailLoop.Canal-marked loops only, ADR-C1/C2; the real spine+loft solve lands at C3),
 // then the general fills (4-sided coons4, 3-sided tri3). analyticTorus and nFan are deferred
 // promotions (ADR-2) — they slot in ahead of coons4 / at the end when their recognition is
 // oracle-grounded. canalProvider took this slot from the now-retired plateProvider (ADR-C3): the

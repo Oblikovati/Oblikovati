@@ -326,8 +326,8 @@ func curvedArmTrimmedFace(rails armRails, ef edgeFillet) filletFace {
 // fill), while the octant's boundary LOOP stays the legacy chainSetbackArcs so B3 is byte-for-byte
 // (ADR-2 Step 1 strangler; sphere loop-collapse is a gated follow-up). Falls back to curvedSphereFace
 // wholesale on any engine decline (do-no-harm). The Kind-gate is load-bearing: only BlendKindSphere
-// (via the legacy loop) and BlendKindCoons4 are admitted; any other tier (e.g. tri3) is NOT a valid
-// curved corner and falls back rather than shipping a wrong 3-sided corner on N7's not-yet-4-valent loop.
+// (via the legacy loop), BlendKindCoons4, and the M6' BlendKindCanal are admitted; any other tier
+// (e.g. tri3) is NOT a valid curved corner and falls back rather than shipping a wrong 3-sided corner.
 func curvedCornerFace(w cornerWeld, sphere geom.Sphere, arms []edgeFillet, res Resolution) (filletFace, bool) {
 	loop, ok := extractCurvedCorner(w, arms, res)
 	if !ok {
@@ -342,6 +342,8 @@ func curvedCornerFace(w cornerWeld, sphere geom.Sphere, arms []edgeFillet, res R
 		return curvedSphereFace(w, sphere) // octant: engine-validated surface == sphere, KEEP legacy loop (ADR-2 Step 1)
 	case BlendKindCoons4:
 		return patchToFilletFace(patch, topo.Lineage{}), true // degenerate 4-sided fill: take the engine's loops
+	case BlendKindCanal:
+		return patchToFilletFace(patch, topo.Lineage{}), true // M6' rolling-ball canal: same handoff as coons4 (surface + received-rail loops)
 	default:
 		return curvedSphereFace(w, sphere) // any other tier (e.g. tri3) is NOT a valid curved corner — do-no-harm
 	}

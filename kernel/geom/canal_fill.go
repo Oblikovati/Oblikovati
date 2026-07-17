@@ -46,6 +46,67 @@ func loftCanal(spine Curve3, hosts [2]Surface, radius float64, res Resolution) (
 	return assembleCanalLoft(cols, vParams, vDeg)
 }
 
+// CanalCornerFill composes the C1 rolling-ball SPINE and the C2 cross-section LOFT into the finished
+// rolling-ball corner patch for a tangent-degenerate valence-4 junction (N7's family): it traces the
+// ball-center spine (canalSpine) between the two endpoint ball-centers `ends`, then lofts the radius-r
+// cross-section arcs along it (loftCanal). `rolls` are the two surfaces the ball stays tangent to
+// (rolls[0] → the u=0 wall foot-locus, rolls[1] → the u=1 foot-locus; canal-corner-math.md); `ends`
+// are the two reflected-family ball-centers the corner already computed — the caller hands them
+// through RailLoop.Canal.Ends because reading them off a rail is fragile (the mid arm's reflected
+// centre is ALSO tangent to both rolls, only its offset SIGN distinguishes it — exactly the ADR-C1
+// argument that made Radius explicit). `rails` are the four received boundary rails, used ONLY for a
+// watertight SELF-CHECK (each spine end must coincide with a received radius-r cross-section rail's arc
+// centre — a mis-populated payload is caught here and declined, do-no-harm).
+//
+// It errors — never fabricates geometry — on any stage failure: a point-spine (the B3 reduction —
+// when `ends` coincide / the host offsets concur the canal degenerates to the sphere octant, so
+// canalSpine's point-spine guard fires, the caller declines, and analyticSphere wins), an offset
+// self-intersection, a non-convergent SSI, grazing feet, or an off-radius station. Every such error
+// makes canalProvider.Build honest-reject and fall through to coons4 (ADR-0051 do-no-harm). res gives
+// the model-relative weld (ADR-0042); no bare epsilon.
+//
+//	surf, err := geom.CanalCornerFill([]Surface{wall, s10}, 5, rails, [2]math.Point3{c, cPrime}, res)
+func CanalCornerFill(rolls []Surface, radius float64, rails [4]Curve3, ends [2]math.Point3, res Resolution) (BSplineSurface, error) {
+	if len(rolls) != 2 {
+		return BSplineSurface{}, fmt.Errorf("CanalCornerFill: need exactly 2 roll hosts, got %d", len(rolls))
+	}
+	spine, err := canalSpine(rolls, radius, ends, res) // point-spine (B3) / self-intersect / SSI errors surface here
+	if err != nil {
+		return BSplineSurface{}, err
+	}
+	if err := assertEndsAreRailCenters(rails, ends, radius, res.Weld()); err != nil {
+		return BSplineSurface{}, err
+	}
+	return loftCanal(spine, [2]Surface{rolls[0], rolls[1]}, radius, res)
+}
+
+// assertEndsAreRailCenters is the watertight SELF-CHECK: each spine end must coincide (within weld)
+// with a received radius-`radius` cross-section rail's arc centre. The loft emits its v=0/v=1 end
+// cross-sections as radius-r arcs centred at the ends (C2), so they weld to those rails ONLY IF the
+// ends ARE two of the rail centres. A payload whose ends disagree with the rails it was extracted
+// alongside is a bug; catching it here turns a silently-wrong patch into an honest reject (decline).
+func assertEndsAreRailCenters(rails [4]Curve3, ends [2]math.Point3, radius, weld float64) error {
+	for _, e := range ends {
+		if !railCenterNear(rails, e, radius, weld) {
+			return fmt.Errorf(
+				"CanalCornerFill: spine end %v matches no received radius-%g cross-section rail centre (weld %g): "+
+					"payload ends do not agree with the rails", e, radius, weld)
+		}
+	}
+	return nil
+}
+
+// railCenterNear reports whether some rail is a radius-`radius` Arc3d whose centre is within weld of p.
+func railCenterNear(rails [4]Curve3, p math.Point3, radius, weld float64) bool {
+	for _, c := range rails {
+		arc, ok := c.(Arc3d)
+		if ok && float64(arc.Center.DistanceTo(p)) <= weld && stdmath.Abs(arc.Radius-radius) <= weld {
+			return true
+		}
+	}
+	return false
+}
+
 // arcStation is one v-station's cross-section arc control triple + shoulder weight: the column of
 // the 3×N control net the loft assembles.
 type arcStation struct {

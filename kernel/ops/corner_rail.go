@@ -57,6 +57,13 @@ type CanalCorner struct {
 	// arc rail is fragile, whereas the extractor knows w.radius exactly and for free. Zero for
 	// non-canal loops (Canal itself is nil there, so this field is never read).
 	Radius float64
+	// Ends are the two endpoint ball-centres the offset-SSI spine is trimmed to (the reflected-family
+	// centres of the two WALL-sharing arms; N7: C and C″). EXPLICIT for the SAME reason Radius is
+	// (ADR-C1): reading them off the rails is fragile — the mid arm's reflected centre is ALSO tangent
+	// to both roll hosts, and only the host-offset SIGN distinguishes it from the two true ends, so a
+	// rail-centre scan cannot pick the spine ends without re-deriving the topology the extractor
+	// already knows. The extractor holds them exactly and for free (centres[wa[0]], centres[wa[1]]).
+	Ends [2]math.Point3
 }
 
 // RailLoop is the single request type every junction valence (bevel, 3-way,
