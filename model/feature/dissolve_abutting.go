@@ -36,27 +36,33 @@ func abuttingProfileGroups(profiles []*sketch.Profile) [][]int {
 }
 
 // dissolveGroup fuses a group's profiles into their union outline(s), returning the merged polygons
-// and true only when the group has ≥2 profiles, every one is hole-free (the dissolve is on outer
-// loops; a hole-carrying profile keeps the per-prism hole-honouring path), and the merge CONSERVES
-// area (a non-conserving result means the cells overlapped rather than abutted — not our case, so use
-// the safe path). A singleton returns false, so a lone bore keeps its analytic-cylinder prism.
-func dissolveGroup(profiles []*sketch.Profile, group []int) ([][]math.Point2, bool) {
+// and true only when the group has ≥2 profiles and the merge of their OUTER loops CONSERVES area (a
+// non-conserving result means the cells overlapped rather than abutted — not our case, so use the safe
+// path). A singleton returns false, so a lone bore keeps its analytic-cylinder prism. Any inner (hole)
+// loops the group's profiles carry are gathered and assigned to the merged region that contains them,
+// so a hole-carrying dog-bone (a relieved slot with a bore in it) dissolves too — the blind-pocket
+// bottom that cracked BigChunkyPlate at z=1.8 — instead of falling back to the coincident-wall path.
+type mergedRegion struct {
+	outer  []math.Point2
+	inners []sketch.Loop
+}
+
+func dissolveGroup(profiles []*sketch.Profile, group []int) ([]mergedRegion, bool) {
 	if len(group) < 2 {
 		return nil, false
 	}
 	polys := make([][]math.Point2, 0, len(group))
+	var inners []sketch.Loop
 	var want float64
 	for _, pi := range group {
 		p := profiles[pi]
-		if len(p.InnerLoops()) > 0 {
-			return nil, false
-		}
 		poly := ccwPolygon(p.OuterLoop().Polygon())
 		if len(poly) < 3 {
 			return nil, false
 		}
 		polys = append(polys, poly)
 		want += polygonArea2D(poly)
+		inners = append(inners, p.InnerLoops()...)
 	}
 	merged := ops.MergeAbuttingLoops(polys)
 	if len(merged) == 0 || len(merged) >= len(polys) {
@@ -72,7 +78,33 @@ func dissolveGroup(profiles []*sketch.Profile, group []int) ([][]math.Point2, bo
 	if stdmath.Abs(got-want) > 1e-6*want {
 		return nil, false
 	}
-	return merged, true
+	regions := make([]mergedRegion, len(merged))
+	for i, m := range merged {
+		regions[i] = mergedRegion{outer: m}
+	}
+	for _, in := range inners {
+		idx := regionContaining(regions, in)
+		if idx < 0 {
+			return nil, false // a hole outside every merged outline: bail to the safe per-profile path
+		}
+		regions[idx].inners = append(regions[idx].inners, in)
+	}
+	return regions, true
+}
+
+// regionContaining returns the index of the merged region whose outer polygon contains the loop's
+// first point, or -1 when none does.
+func regionContaining(regions []mergedRegion, loop sketch.Loop) int {
+	poly := loop.Polygon()
+	if len(poly) == 0 {
+		return -1
+	}
+	for i, r := range regions {
+		if pointInPolygon2D(poly[0], r.outer) {
+			return i
+		}
+	}
+	return -1
 }
 
 // ccwPolygon returns poly wound counter-clockwise, the shared winding both the abutment test and

@@ -131,7 +131,10 @@ func firstBodyIsSolid(def *compdef.PartComponentDefinition) bool {
 // solid. When the part didn't come back a solid, rebuild it with the dissolve OFF and keep that: the
 // per-region prisms are the pre-dissolve baseline, so a non-solid part is never worse than before, and
 // a part the dissolve regressed (WheelSlider) is restored to its solid. The dissolve is thus retained
-// only where it PRODUCES a solid (MainFrameSingleHeadBlock: SURFACE → SOLID).
+// only where it PRODUCES a solid (MainFrameSingleHeadBlock: SURFACE → SOLID). A "keep the fewer-crack
+// mesh when neither is solid" refinement was measured but reverted: it needs a third recompute of the
+// part, ~5 min on a heavy part like BigChunkyPlate, for only a mesh-quality gain on a body that stays
+// non-solid either way.
 func retryWithoutDissolve(def *compdef.PartComponentDefinition) {
 	if feature.SetExtrudeDissolve(def.Features(), false) == 0 {
 		return // no extrude dissolved: nothing to undo

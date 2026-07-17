@@ -195,10 +195,10 @@ func profilePrismsDissolving(profiles []*sketch.Profile, plane sketch.Plane, sp 
 	var prisms []*topo.Body
 	dissolved := false
 	for _, g := range groups {
-		if merged, ok := dissolveGroup(profiles, g); ok {
+		if regions, ok := dissolveGroup(profiles, g); ok {
 			dissolved = true
-			for _, poly := range merged {
-				prisms = append(prisms, buildPrism(poly, plane, sp, taper, indexedPrismName(feat, len(prisms))))
+			for _, r := range regions {
+				prisms = append(prisms, buildMergedRegionPrism(r, plane, sp, taper, indexedPrismName(feat, len(prisms)), rec))
 			}
 			continue
 		}
@@ -207,6 +207,17 @@ func profilePrismsDissolving(profiles []*sketch.Profile, plane sketch.Plane, sp 
 		}
 	}
 	return prisms, dissolved
+}
+
+// buildMergedRegionPrism extrudes a dissolved abutting group's union outline into a solid prism, then
+// drills the group's carried inner loops out of it — a faceted prism (the union of ≥2 abutting cells is
+// never a bare circle), so no analytic-cylinder special case applies.
+func buildMergedRegionPrism(r mergedRegion, plane sketch.Plane, sp span, taper float64, feat string, rec *diag.Recorder) *topo.Body {
+	solid := buildPrism(r.outer, plane, sp, taper, feat)
+	if len(r.inners) > 0 {
+		return drillProfileHoles(solid, r.inners, plane, sp, taper, feat, rec)
+	}
+	return solid
 }
 
 // indexedPrismName always tags a prism with its running index: the group path (a mix of merged and

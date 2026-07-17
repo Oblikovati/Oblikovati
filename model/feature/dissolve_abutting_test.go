@@ -63,15 +63,50 @@ func TestDissolveFusesSlotAndCornerDiscs(t *testing.T) {
 		t.Fatal("dissolveGroup declined a clean hole-free abutting group")
 	}
 	if len(merged) != 1 {
-		t.Fatalf("the dog-bone union is one simply-connected loop; got %d loops", len(merged))
+		t.Fatalf("the dog-bone union is one simply-connected region; got %d regions", len(merged))
+	}
+	if len(merged[0].inners) != 0 {
+		t.Errorf("the hole-free dog-bone has no inner loops; got %d", len(merged[0].inners))
 	}
 	var want float64
 	for _, p := range profs {
 		want += stdmath.Abs(p.Area())
 	}
-	got := polygonArea2D(merged[0])
+	got := polygonArea2D(merged[0].outer)
 	if stdmath.Abs(got-want) > 1e-6*want {
 		t.Errorf("merged area %g, want the union %g (abutting cells don't overlap, so union = sum)", got, want)
+	}
+}
+
+// TestDissolveCarriesInnerLoops: a relieved slot with a BORE through it (an inner loop) plus its four
+// corner discs still dissolves — the merged region carries the bore forward as an inner loop, so a
+// hole-carrying dog-bone fuses instead of falling back to the coincident-wall path. This is the
+// blind-pocket-bottom crack that kept BigChunkyPlate open at z=1.8 (#38 follow-up).
+func TestDissolveCarriesInnerLoops(t *testing.T) {
+	s := sketch.NewSketches().Add(sketch.XYPlane())
+	roundedRect(s, -4, 4, -2, 2, 0.5)
+	for _, c := range [][2]float64{{-3.5, 1.5}, {3.5, 1.5}, {-3.5, -1.5}, {3.5, -1.5}} {
+		s.Circles().AddByCenterRadius(math.P2(math.Scalar(c[0]), math.Scalar(c[1])), 0.5)
+	}
+	s.Circles().AddByCenterRadius(math.P2(0, 0), 0.75) // a bore through the middle of the slot
+	profs := s.Profiles().All()
+	// The slot-with-bore cell abuts the four corner discs; the bore is its own (inner) region.
+	groups := abuttingProfileGroups(profs)
+	var big []int
+	for _, g := range groups {
+		if len(g) > len(big) {
+			big = g
+		}
+	}
+	regions, ok := dissolveGroup(profs, big)
+	if !ok {
+		t.Fatal("dissolveGroup declined a hole-carrying abutting group")
+	}
+	if len(regions) != 1 {
+		t.Fatalf("the dog-bone union is one region; got %d", len(regions))
+	}
+	if len(regions[0].inners) == 0 {
+		t.Error("the merged region must carry the bore forward as an inner loop; got none")
 	}
 }
 
