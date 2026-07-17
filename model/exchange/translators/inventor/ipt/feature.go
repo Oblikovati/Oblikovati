@@ -77,6 +77,12 @@ type Extrude struct {
 	DirOK bool
 	// Distance2 is the second direction's length; 0 ⇒ single-direction.
 	Distance2 float64
+	// ToPlane is the face this extrude terminates AT, and ToPlaneOK reports that the file states a
+	// "To" extent whose target this layout could read. Such an extrude carries NO usable length —
+	// its Distance is a stale leftover — so a caller that ignores ToPlaneOK and builds Distance puts
+	// the feature wherever that number happens to point (see toTargetPlane).
+	ToPlane   SketchPlacement
+	ToPlaneOK bool
 }
 
 // DecodeExtrude reports the part's first extrude feature, if present.
@@ -162,6 +168,9 @@ func DecodeExtrudes(d *Document) []Extrude {
 			Distance2:  featureParameter(nodes, props, propDistance2),
 		})
 		out[len(out)-1].Dir, out[len(out)-1].DirOK = extrudeDirection(nodes, props)
+		if v, ok := extrudeExtentEnum(nodes, props); ok && v == extentTo {
+			out[len(out)-1].ToPlane, out[len(out)-1].ToPlaneOK = toTargetPlane(nodes, props)
+		}
 	}
 	return out
 }

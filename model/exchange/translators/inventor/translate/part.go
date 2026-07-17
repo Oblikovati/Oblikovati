@@ -247,17 +247,27 @@ func sketchPlaneOf(s ipt.Sketch) sketch.Plane {
 	if !s.PlaneOK {
 		return sketch.XYPlane()
 	}
-	x, xerr := m.NewUnitVector3(m.Scalar(s.Plane.XAxis[0]), m.Scalar(s.Plane.XAxis[1]), m.Scalar(s.Plane.XAxis[2]))
-	y, yerr := m.NewUnitVector3(m.Scalar(s.Plane.YAxis[0]), m.Scalar(s.Plane.YAxis[1]), m.Scalar(s.Plane.YAxis[2]))
-	if xerr != nil || yerr != nil {
-		return sketch.XYPlane()
-	}
-	p, err := sketch.NewPlane(
-		m.P3(m.Scalar(s.Plane.Origin[0]), m.Scalar(s.Plane.Origin[1]), m.Scalar(s.Plane.Origin[2])), x, y)
-	if err != nil {
+	p, ok := planeOf(s.Plane)
+	if !ok {
 		return sketch.XYPlane()
 	}
 	return p
+}
+
+// planeOf builds a sketch plane from a decoded placement (origin + two in-plane axes), or ok=false
+// when the axes do not make one. Shared by the sketch placement and the "To" extent's target, which
+// the file states in the same form.
+func planeOf(pl ipt.SketchPlacement) (sketch.Plane, bool) {
+	x, xerr := m.NewUnitVector3(m.Scalar(pl.XAxis[0]), m.Scalar(pl.XAxis[1]), m.Scalar(pl.XAxis[2]))
+	y, yerr := m.NewUnitVector3(m.Scalar(pl.YAxis[0]), m.Scalar(pl.YAxis[1]), m.Scalar(pl.YAxis[2]))
+	if xerr != nil || yerr != nil {
+		return sketch.Plane{}, false
+	}
+	p, err := sketch.NewPlane(m.P3(m.Scalar(pl.Origin[0]), m.Scalar(pl.Origin[1]), m.Scalar(pl.Origin[2])), x, y)
+	if err != nil {
+		return sketch.Plane{}, false
+	}
+	return p, true
 }
 
 // emitSketches adds every extracted sketch to the document and returns the handles in the same
@@ -1323,6 +1333,15 @@ func extrudeRegionAt(regions [][]ipt.RegionLoop, i int) []ipt.RegionLoop {
 func extentOf(ex ipt.Extrude) feature.Extent {
 	if ex.ThroughAll {
 		return feature.Extent{Type: feature.ThroughAllExtent, Direction: directionOf(ex)}
+	}
+	// A "To <face>" extrude terminates AT a plane and its Distance is a stale leftover, so it must be
+	// built from the target, never as a length. Direction is deliberately left at its zero value:
+	// toPlaneSpan derives the span from the SIGNED distance to the target, so which way it runs is
+	// already decided by where that target is (see ipt.toTargetPlane).
+	if ex.ToPlaneOK {
+		if pl, ok := planeOf(ex.ToPlane); ok {
+			return feature.Extent{Type: feature.ToFaceExtent, ToPlane: feature.NewFixedWorkPlane(pl)}
+		}
 	}
 	dist := ex.Distance
 	e := feature.Extent{

@@ -366,17 +366,17 @@ const propExtent = 6
 // distance-less extrudes read 5 here while every measured one reads 1.
 const extentAll = 5
 
+// extentEnumNodeType is the PartFeatureExtentEnum node (InventorLoader Read_92637D29).
+const extentEnumNodeType = 0x92637D29
+
 // extrudeThroughAll reports whether a feature terminates by running through all the material. Such
 // an extrude has NO distance: its depth parameter decodes as 0, and building that as a length makes
 // a zero-thickness body.
 func extrudeThroughAll(nodes []dcNode, pay []byte) bool {
 	props, ok := featureProperties(pay)
-	if !ok || len(props) <= propExtent {
+	if !ok {
 		return false
 	}
-	n, ok := nodeAt(nodes, props[propExtent])
-	if !ok || len(n.payload) < enumValueOffset+2 {
-		return false
-	}
-	return binary.LittleEndian.Uint16(n.payload[enumValueOffset:]) == extentAll
+	v, ok := extrudeExtentEnum(nodes, props)
+	return ok && v == extentAll
 }
