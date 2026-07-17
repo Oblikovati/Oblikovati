@@ -58,13 +58,16 @@ func TestCanalWeldFacesFloorsOnHostRetrims(t *testing.T) {
 	}
 	faces, reason := canalWeldFaces(emptyBody(t), arms, w, loop, res)
 	if reason == "" {
-		t.Fatal("W2 canalWeldFaces must decline (host retrims not yet assembled), got empty reason")
+		t.Fatal("W3 canalWeldFaces must decline (final weld not yet assembled), got empty reason")
 	}
-	if !strings.Contains(reason, "host retrims not yet assembled") {
-		t.Fatalf("unexpected decline reason %q, want the W2 host-retrims-pending reason", reason)
+	if !strings.Contains(reason, "final weld not yet assembled") {
+		t.Fatalf("unexpected decline reason %q, want the W3 final-weld-pending reason", reason)
 	}
+	// On a FACE-LESS body the host retrims produce no faces, so canalWeldFaces returns exactly the corner
+	// patch + the three arm faces and floors on the W4 whole-body assembly (the real host retrims run only
+	// when the body actually carries the wall/plane faces — see the direct retrimCanalHost tests).
 	if len(faces) != 1+len(arms) {
-		t.Fatalf("W2 must build the corner patch + %d arm faces = %d faces, got %d", len(arms), 1+len(arms), len(faces))
+		t.Fatalf("W3 must build the corner patch + %d arm faces = %d faces, got %d", len(arms), 1+len(arms), len(faces))
 	}
 	if _, isBSpline := faces[0].surface.(geom.BSplineSurface); !isBSpline {
 		t.Fatalf("corner face surface is %T, want the canal geom.BSplineSurface", faces[0].surface)
@@ -86,10 +89,10 @@ func TestCanalArmBodyRoutesN7(t *testing.T) {
 		t.Fatal("canalArmBody must TAKE the tangent-degenerate N7 corner (loop.Canal != nil)")
 	}
 	if body != nil {
-		t.Fatalf("W2 must still floor (nil body), got %v", body)
+		t.Fatalf("W3 must still floor (nil body), got %v", body)
 	}
-	if !strings.Contains(reason, "host retrims not yet assembled") {
-		t.Fatalf("routed N7 must carry the W2 host-retrims-pending decline; got %q", reason)
+	if !strings.Contains(reason, "final weld not yet assembled") {
+		t.Fatalf("routed N7 must carry the W3 final-weld-pending decline; got %q", reason)
 	}
 }
 

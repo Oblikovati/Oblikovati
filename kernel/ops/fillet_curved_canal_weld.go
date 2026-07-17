@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // Canal-aware arm-weld (M6' C4, architecture: .superpowers/sdd/canal-armweld-architecture.md). A
@@ -61,27 +62,86 @@ func canalArmBody(body *topo.Body, arms []edgeFillet, blends map[uint64]*cornerB
 //
 //	if faces, reason := canalWeldFaces(body, arms, w, loop, res); reason == "" { /* watertight weld */ }
 func canalWeldFaces(body *topo.Body, arms []edgeFillet, w cornerWeld, loop RailLoop, res Resolution) ([]filletFace, string) {
-	patch, ok := resolveBlend(loop, res)
-	if !ok {
-		return nil, "canal corner patch declined (resolveBlend honest-reject)"
-	}
-	boundaries, err := canalBoundaryRoles(patch)
-	if err != nil {
-		return nil, fmt.Sprintf("canal boundary roles unavailable: %v", err)
-	}
-	scale := tangentCornerScale(w, arms)
-	centres, ok := reflectedArmCentres(w, arms, scale, res)
-	if !ok {
-		return nil, "canal per-arm reflected centres unresolved"
+	patch, boundaries, centres, scale, reason := canalWeldContext(loop, w, arms, res)
+	if reason != "" {
+		return nil, reason
 	}
 	armFaces, reason := canalArmFaces(arms, w, boundaries, centres, scale, res)
 	if reason != "" {
 		return nil, reason
 	}
-	faces := make([]filletFace, 0, len(body.Faces())+len(arms)+1)
+	bundles, ok := canalArmBundles(arms, w, centres, scale, res)
+	if !ok {
+		return nil, "canal arm far cross-sections unresolved (far-runout bundle)"
+	}
+	hostFaces, reason := canalHostFaces(body, arms, w, boundaries, bundles, res)
+	if reason != "" {
+		return nil, reason
+	}
+	faces := assembleCanalFaces(body, patch, armFaces, hostFaces)
+	return faces, "canal final weld not yet assembled (W3: corner patch + per-arm-centre arm faces + host retrims/far-runout ready; whole-body assembly + Σ verification pending W4)"
+}
+
+// canalWeldContext resolves the corner patch ONCE (ADR-C4-2, the single source of the boundary curves)
+// and derives the tagged boundary isocurves, the per-arm reflected centres, and the model scale — the
+// shared inputs the arm-face + host-retrim builders thread. Non-empty reason names WHY it declined.
+func canalWeldContext(loop RailLoop, w cornerWeld, arms []edgeFillet, res Resolution) (CornerBlendPatch, canalBoundaries, []math.Point3, float64, string) {
+	patch, ok := resolveBlend(loop, res)
+	if !ok {
+		return CornerBlendPatch{}, canalBoundaries{}, nil, 0, "canal corner patch declined (resolveBlend honest-reject)"
+	}
+	boundaries, err := canalBoundaryRoles(patch)
+	if err != nil {
+		return CornerBlendPatch{}, canalBoundaries{}, nil, 0, fmt.Sprintf("canal boundary roles unavailable: %v", err)
+	}
+	scale := tangentCornerScale(w, arms)
+	centres, ok := reflectedArmCentres(w, arms, scale, res)
+	if !ok {
+		return CornerBlendPatch{}, canalBoundaries{}, nil, 0, "canal per-arm reflected centres unresolved"
+	}
+	return patch, boundaries, centres, scale, ""
+}
+
+// assembleCanalFaces gathers the canal weld's faces in assembly order: the corner canal-patch face, the
+// three per-arm-centre arm faces, then the retrimmed/far-runout host faces (empty on a face-less body).
+func assembleCanalFaces(body *topo.Body, patch CornerBlendPatch, armFaces, hostFaces []filletFace) []filletFace {
+	faces := make([]filletFace, 0, len(body.Faces())+len(armFaces)+1)
 	faces = append(faces, patchToFilletFace(patch, topo.Lineage{}))
 	faces = append(faces, armFaces...)
-	return faces, "canal host retrims not yet assembled (W2: corner patch + per-arm-centre arm faces ready; host retrims + far-runout pending W3-W4)"
+	return append(faces, hostFaces...)
+}
+
+// canalArmBundles builds each arm's far-runout rail bundle (only .far populated) at its reflected centre —
+// the far cross-section arc the far-runout host retrim (canalFarOrPassthrough → farArcsBiting) splices in.
+// It reuses the W2 per-arm-centre machinery (solveArmSetback / canalArmHostRails / farCrossSectionArc), so
+// the far arc is byte-identical to the one the arm FACE closes on. Declines (false) if any arm's far arc
+// cannot be built at its reflected centre.
+func canalArmBundles(arms []edgeFillet, w cornerWeld, centres []math.Point3, scale float64, res Resolution) ([]armRails, bool) {
+	bundles := make([]armRails, len(arms))
+	for i := range arms {
+		far, ok := canalArmFar(arms[i], centres[i], w, scale, res)
+		if !ok {
+			return nil, false
+		}
+		bundles[i] = armRails{far: far}
+	}
+	return bundles, true
+}
+
+// canalArmFar returns one arm's far cross-section arc at its reflected centre, via the SAME per-arm-centre
+// solve the arm face uses (a one-arm local cornerWeld at the reflected centre), so the far arc the
+// far-runout host splices is identical to the one the arm face closes on.
+func canalArmFar(arm edgeFillet, centre math.Point3, w cornerWeld, scale float64, res Resolution) (endSeg, bool) {
+	set, ok := solveArmSetback(arm, centre, w.radius, scale, res)
+	if !ok {
+		return endSeg{}, false
+	}
+	wi := cornerWeld{center: centre, radius: w.radius, arms: []armSetback{set}}
+	h0, h1, ok := canalArmHostRails(arm, set, wi, res)
+	if !ok {
+		return endSeg{}, false
+	}
+	return farCrossSectionArc(set.arm, w.radius, h0.from, h1.from)
 }
 
 // canalBoundaries is the canal patch's four boundary isocurves tagged by ROLE (ADR-C4-2, the SINGLE
