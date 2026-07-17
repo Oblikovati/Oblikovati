@@ -29,8 +29,18 @@ func booleanInputQuality() Quality {
 // The exact planar B-rep boolean hangs on a full periodic curved face, so a curved operand must be
 // faceted before ops.Boolean (Oblikovati/Oblikovati#129); this is the general fallback for bodies
 // the feature layer's analytic-cylinder re-faceter doesn't special-case. Returns nil when empty.
+//
+// It facets at the ANGLE-BOUNDED DefaultQuality, NOT the BSP's chord-only booleanInputQuality: the
+// cage it returns becomes the operand of the EXACT PLANAR boolean, which has none of the BSP's
+// hairline-crack fragility, so it must not inherit that trade. Chord-only faceting is radius-blind
+// and collapses a small cylinder outright — at the display chord tolerance (0.05) a r=0.15 shaft
+// admits 2*acos(1-0.05/0.15) = 1.68 rad per facet, i.e. FOUR of them: a square prism holding 2r²h
+// = 64% of the true volume. A screw's Ø3mm shaft silently lost 38.5 of its 106.03 mm³ THAT WAY,
+// before any boolean ran, and the cut that followed was then exactly as wrong as its input. The
+// angle bound is radius-independent (~32 facets/circle at any size, DefaultQuality), which costs
+// the documented ~0.64% inscribed-N-gon bias instead of 36%.
 func Facet(b *topo.Body, feat string) *topo.Body {
-	cage := trianglesToBody(bodyTriangles(b), feat)
+	cage := trianglesToBody(bodyTrianglesAt(b, DefaultQuality()), feat)
 	if cage == nil {
 		return nil
 	}
@@ -49,7 +59,14 @@ func Facet(b *topo.Body, feat string) *topo.Body {
 // subtracts nothing (cylinder − tool returned the uncut cylinder). We fix the
 // winding here with the per-vertex shading normals, which point outward.
 func bodyTriangles(b *topo.Body) []tri {
-	mesh, _ := TessellateBody(b, booleanInputQuality())
+	return bodyTrianglesAt(b, booleanInputQuality())
+}
+
+// bodyTrianglesAt is [bodyTriangles] at an explicit faceting quality. The BSP CSG needs its
+// chord-only booleanInputQuality for robustness; Facet, whose cage feeds the exact planar boolean
+// instead, needs the angle-bounded one so small curved faces survive (see Facet).
+func bodyTrianglesAt(b *topo.Body, q Quality) []tri {
+	mesh, _ := TessellateBody(b, q)
 	var out []tri
 	for i := 0; i+2 < len(mesh.Indices); i += 3 {
 		ia, ib, ic := mesh.Indices[i], mesh.Indices[i+1], mesh.Indices[i+2]

@@ -22,12 +22,14 @@ import (
 // chains without drift — no bore touches CSG.
 
 // curvedDrillCap is a planar cap face the new hole axis pierces, with its pierce centre, its axial
-// parameter (to order entry before exit), and its index in the face list (so the other faces copy through).
+// parameter (to order entry before exit), its index in the face list (so the other faces copy through),
+// and its OUTWARD normal (which says on which side of the cap the material lies — see capsBoundMaterial).
 type curvedDrillCap struct {
-	face   curvedFace
-	idx    int
-	center math.Point3
-	param  float64
+	face    curvedFace
+	idx     int
+	center  math.Point3
+	param   float64
+	outward math.Vector3
 }
 
 // drillThroughCurved cuts target − (cylinder of axis base→ua, radius) as an exact through-hole, accepting a
@@ -59,8 +61,29 @@ func drillThroughCurved(target *topo.Body, base math.Point3, ua math.Vector3, ra
 // findDrillCaps returns the exactly-two planar faces the axis pierces cleanly (perpendicular, the circle
 // strictly inside and clear of existing holes), ordered entry (lower param) before exit. A perpendicular
 // face the axis misses is left for copying; a circle that straddles a face boundary or an existing hole is
-// an error (a partial/overlapping hole the general boolean must handle).
+// an error (a partial/overlapping hole the general boolean must handle), as is a pair that bounds a VOID
+// rather than material (capsBoundMaterial).
 func findDrillCaps(faces []curvedFace, base math.Point3, ua math.Vector3, radius float64) ([2]curvedDrillCap, error) {
+	caps, err := piercedCaps(faces, base, ua, radius)
+	if err != nil {
+		return [2]curvedDrillCap{}, err
+	}
+	if len(caps) != 2 {
+		return [2]curvedDrillCap{}, fmt.Errorf("brep: a through-hole needs exactly 2 perpendicular pierced faces, found %d", len(caps))
+	}
+	if caps[0].param > caps[1].param {
+		caps[0], caps[1] = caps[1], caps[0]
+	}
+	if !capsBoundMaterial(caps[0], caps[1], ua) {
+		return [2]curvedDrillCap{}, fmt.Errorf("brep: the two pierced faces (at %+v and %+v) face each other across a VOID, not material, so there is nothing to drill between them; the general boolean must handle it", caps[0].center, caps[1].center)
+	}
+	return [2]curvedDrillCap{caps[0], caps[1]}, nil
+}
+
+// piercedCaps collects the planar faces perpendicular to the axis whose interior the hole circle
+// pierces cleanly, in face order. It errors on a circle that straddles a face boundary or an existing
+// hole (a partial/overlapping hole the general boolean must handle).
+func piercedCaps(faces []curvedFace, base math.Point3, ua math.Vector3, radius float64) ([]curvedDrillCap, error) {
 	var caps []curvedDrillCap
 	for i, f := range faces {
 		pl, ok := f.surface.(geom.Plane)
@@ -73,17 +96,30 @@ func findDrillCaps(faces []curvedFace, base math.Point3, ua math.Vector3, radius
 			continue // a perpendicular face the axis misses — copied unchanged
 		}
 		if !clean {
-			return [2]curvedDrillCap{}, fmt.Errorf("brep: hole circle (r=%g at %+v) straddles a pierced face boundary or an existing hole; partial holes need the general boolean", radius, c)
+			return nil, fmt.Errorf("brep: hole circle (r=%g at %+v) straddles a pierced face boundary or an existing hole; partial holes need the general boolean", radius, c)
 		}
-		caps = append(caps, curvedDrillCap{face: f, idx: i, center: c, param: pierceParam(base, ua, pl)})
+		caps = append(caps, curvedDrillCap{face: f, idx: i, center: c, param: pierceParam(base, ua, pl), outward: capOutwardNormal(f)})
 	}
-	if len(caps) != 2 {
-		return [2]curvedDrillCap{}, fmt.Errorf("brep: a through-hole needs exactly 2 perpendicular pierced faces, found %d", len(caps))
-	}
-	if caps[0].param > caps[1].param {
-		caps[0], caps[1] = caps[1], caps[0]
-	}
-	return [2]curvedDrillCap{caps[0], caps[1]}, nil
+	return caps, nil
+}
+
+// capsBoundMaterial reports whether the drill span runs through MATERIAL rather than an existing void.
+//
+// Being perpendicular pierced faces is not enough: it says the axis crosses them, not that there is
+// anything between them to remove. A pocket's two facing walls satisfy every other precondition — both
+// planar, both perpendicular, the circle strictly inside each — so the drill "bored" the empty gap and
+// stitched a cylinder wall across it, MATERIALIZING a plug: a slotted screw head gained exactly
+// pi*r^2*slotWidth of material (a cut that ADDED 11.31 mm^3), and the result still reported IsSolid.
+//
+// Orientation settles it locally and exactly. Travelling along ua, a real drill ENTERS through a face
+// whose outward normal opposes the travel and EXITS through one whose normal runs with it, so the solid
+// is between them. Facing walls have those signs INVERTED — they bound the void, and their material lies
+// outside the span. The caps are perpendicular, so these dots are exactly -1/+1: no tolerance is involved.
+//
+// Measured: every drill in the suite reads entry -1 / exit +1; the slotted-head case read entry +1 /
+// exit -1. Declining sends it to the general boolean, which cuts it correctly.
+func capsBoundMaterial(entry, exit curvedDrillCap, ua math.Vector3) bool {
+	return entry.outward.Dot(ua) < 0 && exit.outward.Dot(ua) > 0
 }
 
 // circleVsCap classifies the hole circle against a perpendicular planar face: pierced when its centre is
