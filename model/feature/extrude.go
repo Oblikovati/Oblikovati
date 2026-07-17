@@ -93,12 +93,54 @@ func (e *ExtrudeFeature) Recompute(in Input) (Output, error) {
 	if sp.depth() == 0 {
 		return Output{}, errors.New("extrude: the extent has zero depth")
 	}
-	e.tool = e.buildTool(profiles, plane, sp, in.Diag)
-	bodies, err := combine(in, e.tool, e.def.Operation)
+	if e.def.Operation == ops.Surface {
+		e.tool = e.buildTool(profiles, plane, sp, in.Diag)
+		bodies, err := combine(in, e.tool, e.def.Operation)
+		if err != nil {
+			return Output{}, err
+		}
+		return Output{Bodies: bodies}, nil
+	}
+	prisms := profilePrisms(profiles, plane, sp, e.def.Taper, e.featName, in.Diag)
+	e.tool = mergePrisms(prisms, e.featName) // a pattern replicates the whole tool, lumps and all
+	bodies, err := combinePrisms(in, prisms, e.tool, e.def.Operation)
 	if err != nil {
 		return Output{}, err
 	}
 	return Output{Bodies: bodies}, nil
+}
+
+// combinePrisms applies a multi-region selection's prisms to the running bodies.
+//
+// A Cut or a Join applies each prism SEPARATELY, which is the SAME result by construction —
+// A−(B₁∪B₂) = ((A−B₁)−B₂) and A∪(B₁∪B₂) = ((A∪B₁)∪B₂) — but a far better one in practice, because
+// the merged multi-lump tool is NOT a bare analytic primitive: it fails combine's
+// exactlyOneCurvedPrimitive test, so BOTH operands get faceted and the whole cut runs through the
+// planar path. Per lump the exact curved boolean applies instead, and each boolean is small.
+//
+// TorquimeterDisk cuts 52 regions at once. Merged, that is an 878-face 52-shell tool, and the planar
+// boolean returned a body it had itself just classified invalid (booleanGeneral ships the planar
+// result when the operands are over csgFallbackFaceLimit, so no CSG fallback is even attempted):
+// 1630 faces, 25 shells, NOT CLOSED. Lump by lump the same part is 461 faces, ONE shell, a closed
+// solid within 5% of Inventor. It is also cheaper, not dearer.
+//
+// Intersect is NOT decomposable this way — A∩(B₁∪B₂) = (A∩B₁)∪(A∩B₂), not a chain — and NewBody
+// wants the merged tool as one body, so both keep the merged path. With no running bodies combine
+// just adds the tool, and chaining would instead cut/join the lumps into each OTHER, so that case
+// keeps the merged path too.
+func combinePrisms(in Input, prisms []*topo.Body, merged *topo.Body, op ops.PartFeatureOperation) ([]*topo.Body, error) {
+	if len(prisms) < 2 || len(in.Bodies) == 0 || (op != ops.Cut && op != ops.Join) {
+		return combine(in, merged, op)
+	}
+	run, out := in, in.Bodies
+	for _, p := range prisms {
+		bodies, err := combine(run, p, op)
+		if err != nil {
+			return nil, err
+		}
+		run.Bodies, out = bodies, bodies
+	}
+	return out, nil
 }
 
 // buildTool extrudes each selected region into a prism over the span and merges the

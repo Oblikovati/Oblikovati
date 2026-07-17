@@ -163,6 +163,13 @@ func resolveClosedProfiles(sk *sketch.Sketch, indices []int, what string) ([]*sk
 // several into one tool body — the shared prism builder for extrude/emboss. rec collects the
 // hole-drilling booleans' fallback diagnostics (#1601; nil discards).
 func buildProfilePrisms(profiles []*sketch.Profile, plane sketch.Plane, sp span, taper float64, feat string, rec *diag.Recorder) *topo.Body {
+	return mergePrisms(profilePrisms(profiles, plane, sp, taper, feat, rec), feat)
+}
+
+// profilePrisms extrudes each closed profile to its OWN prism — the per-region tools, unmerged.
+// A caller that applies them with a boolean should prefer these to the merged body: see
+// combinePrisms for why a merged multi-lump tool is worse than the sum of its lumps.
+func profilePrisms(profiles []*sketch.Profile, plane sketch.Plane, sp span, taper float64, feat string, rec *diag.Recorder) []*topo.Body {
 	prisms := make([]*topo.Body, len(profiles))
 	for i, p := range profiles {
 		name := feat
@@ -171,6 +178,12 @@ func buildProfilePrisms(profiles []*sketch.Profile, plane sketch.Plane, sp span,
 		}
 		prisms[i] = buildPrismWithHoles(p, plane, sp, taper, name, rec)
 	}
+	return prisms
+}
+
+// mergePrisms merges the per-region prisms into one tool body. The regions are distinct cells of
+// the same sketch, so they never overlap — a shell merge is exactly their union.
+func mergePrisms(prisms []*topo.Body, feat string) *topo.Body {
 	if len(prisms) == 1 {
 		return prisms[0]
 	}
