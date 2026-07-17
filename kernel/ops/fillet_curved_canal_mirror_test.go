@@ -78,26 +78,25 @@ func TestS10ArmSpineUnmirrored(t *testing.T) {
 	}
 }
 
-// TestN7FloorAdvancesToFinalAssembly proves the fix un-blocks the canal host bites: driving the REAL N7
-// fillet through the production entry point must no longer floor on the z=10 canal host bite (the mirrored
-// s_10 foot 5.0 off the loop) but ADVANCE to the W3 final-assembly floor (whole-body weld pending, F3). N7
-// does NOT green here — only its floor moves past every host bite.
-func TestN7FloorAdvancesToFinalAssembly(t *testing.T) {
+// TestN7CanalWeldsToValidSolid proves F3 assembles the REAL N7 fillet through the production entry point
+// into a WATERTIGHT solid — the culmination of the un-mirror fix (F3a) + the whole-body assembly (F3). It
+// must NOT floor (neither on the mirrored s_10 host bite "far span will not close", nor on the W3 "final
+// weld not yet assembled" floor F3 removed) and the result must be a valid closed manifold solid. This is
+// the kernel-level analogue of the corpus area gate TestOCCTBlendSimple/N7.
+func TestN7CanalWeldsToValidSolid(t *testing.T) {
 	body := importCorpusSolid(t, "simple/N7")
 	corner := vertexNear(t, body, math.P3(50, 0, 10))
 	keys := make([][]byte, 0, 3)
 	for _, e := range corner.Edges() {
 		keys = append(keys, e.ReferenceKey())
 	}
-	_, err := FilletEdges(body, keys, 5)
-	if err == nil {
-		t.Fatal("N7 must still floor in F3a (final weld is F3), got a valid solid")
+	welded, err := FilletEdges(body, keys, 5)
+	if err != nil {
+		t.Fatalf("N7 canal weld must now succeed (F3), got floor: %v", err)
 	}
-	if strings.Contains(err.Error(), "far span will not close") {
-		t.Fatalf("N7 still floors on a canal HOST BITE (the mirror is not fixed): %v", err)
-	}
-	if !strings.Contains(err.Error(), "final weld not yet assembled") {
-		t.Fatalf("N7 floor did not advance to the W3 final-assembly string, got: %v", err)
+	if rep := Validate(welded); !rep.Valid || !rep.Closed || !welded.IsSolid() {
+		t.Fatalf("N7 canal weld is not a watertight solid: valid=%v closed=%v solid=%v issues=%v",
+			rep.Valid, rep.Closed, welded.IsSolid(), rep.Issues)
 	}
 }
 

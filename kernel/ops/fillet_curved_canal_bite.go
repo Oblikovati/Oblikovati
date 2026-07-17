@@ -46,8 +46,27 @@ func canalHostBite(host *topo.Face, bundles []canalArmBundle, b canalBoundaries,
 	if reason != "" {
 		return filletFace{}, reason
 	}
-	loops := append([]filletLoop{loop}, loopsExcept(host, star)...)
-	return filletFace{surface: host.Geometry(), loops: loops, parent: host.Lineage()}, ""
+	return filletFace{surface: host.Geometry(), loops: hostLoopsWithBiteReplaced(host, star, loop), parent: host.Lineage()}, ""
+}
+
+// hostLoopsWithBiteReplaced rebuilds host's loop list with the bitten loop star SUBSTITUTED by its
+// retrimmed form `bite`, PRESERVING every loop's original position — and thus its outer/inner role, since
+// the assembler marks loop 0 outer and the rest inner (addCurvedFaces). This is the fix for an INNER
+// bitten loop: N7's wall notch window is a HOLE, not the outer rim, so the pre-F3 "[bite, ...others]"
+// order forced the window to loop 0 (outer) and demoted the wall's rim-seam boundary to a hole — which
+// mis-trims the cylinder (a self-overlapping mesh, ~9% area error). For an OUTER bitten loop (every B3
+// host, where star is already Face.Loops()[0]) the order is unchanged. Face.Loops() is outer-first by
+// construction, so the outer rim keeps position 0 whenever star is inner.
+func hostLoopsWithBiteReplaced(host *topo.Face, star *topo.Loop, bite filletLoop) []filletLoop {
+	loops := make([]filletLoop, 0, len(host.Loops()))
+	for _, l := range host.Loops() {
+		if l == star {
+			loops = append(loops, bite)
+			continue
+		}
+		loops = append(loops, unchangedLoop(l))
+	}
+	return loops
 }
 
 // canalInnerBite collects host's arm rails + optional foot-locus bridge and chains them into the inner
@@ -56,8 +75,8 @@ func canalHostBite(host *topo.Face, bundles []canalArmBundle, b canalBoundaries,
 // foot-locus), never widened (risk #2). A host with neither rails nor a foot-locus is a routing error.
 func canalInnerBite(host *topo.Face, bundles []canalArmBundle, b canalBoundaries, rolls []geom.Surface, tol float64) ([]endSeg, string) {
 	pieces := armRailsOnHost(host, bundles)
-	if bridge, ok := footLocusForHost(host, b, rolls, tol); ok {
-		pieces = append(pieces, bridge)
+	if chords, ok := footLocusChordsForHost(host, b, rolls, tol); ok {
+		pieces = append(pieces, chords...)
 	}
 	if len(pieces) == 0 {
 		return nil, fmt.Sprintf("canal inner bite (%T): host has neither arm rails nor a foot-locus", host.Geometry())
@@ -86,30 +105,78 @@ func armRailsOnHost(host *topo.Face, bundles []canalArmBundle) []endSeg {
 	return rails
 }
 
-// footLocusForHost returns the canal foot-locus that bites host, mapped by the ROLL-HOST identity in
-// CanalCorner.Rolls (rolls[0]=wall → feet[0]; rolls[1]=s_10 boss surface → feet[1]) — NOT guessed from the
-// host's geometry (the "recognize by payload, not shape" rule, canalProvider.Fits). A host on neither roll
-// surface (the two planes) gets no bridge; then the arm rails alone compose the bite.
-func footLocusForHost(host *topo.Face, b canalBoundaries, rolls []geom.Surface, tol float64) (endSeg, bool) {
+// footLocusIndexForHost returns which canal foot-locus (0 = wall/feet[0], 1 = s_10 boss/feet[1]) bites
+// host, mapped by the ROLL-HOST identity in CanalCorner.Rolls (rolls[0]=wall, rolls[1]=s_10 boss surface)
+// — NOT guessed from the host's geometry (the "recognize by payload, not shape" rule, canalProvider.Fits).
+// A host on neither roll surface (the two planes) gets no foot-locus; then the arm rails alone compose the
+// bite. The single source both footLocusForHost (routing predicate) and footLocusChordsForHost (the sampled
+// bite) share, so the roll-host match is written once.
+func footLocusIndexForHost(host *topo.Face, rolls []geom.Surface, tol float64) (int, bool) {
 	if len(rolls) < 2 {
-		return endSeg{}, false
+		return 0, false
 	}
 	if sameRollSurface(host.Geometry(), rolls[0], tol) {
-		return footLocusBite(b.feet[0]), true
+		return 0, true
 	}
 	if sameRollSurface(host.Geometry(), rolls[1], tol) {
-		return footLocusBite(b.feet[1]), true
+		return 1, true
 	}
-	return endSeg{}, false
+	return 0, false
 }
 
-// footLocusBite turns a foot-locus curve into the endSeg the host bite chains: from/to are its endpoints
-// and curve is the foot-locus ITSELF (the shared object, ADR-C4-2), so the retrimmed host loop carries the
-// SAME curve the corner patch / arm neighbour does. arc=false — a foot-locus is a canal BSpline isocurve,
-// not a circular Arc3d.
+// footLocusForHost returns the canal foot-locus that bites host as a single whole-curve endSeg — the
+// ROUTING/identity view (canalHostFace's has-bridge predicate). The retrimmed host loop is built from the
+// point-sampled footLocusChordsForHost, not this one segment.
+func footLocusForHost(host *topo.Face, b canalBoundaries, rolls []geom.Surface, tol float64) (endSeg, bool) {
+	i, ok := footLocusIndexForHost(host, rolls, tol)
+	if !ok {
+		return endSeg{}, false
+	}
+	return footLocusBite(b.feet[i]), true
+}
+
+// footLocusChordsForHost samples host's canal foot-locus into ringSegSamples straight sub-chords matching
+// the corner patch's OWN sampling (sampleCurve3Open with the patch's rev direction, b.feetRev[i]), so the
+// retrimmed host welds point-for-point to the corner patch along the shared foot-locus (F3 watertightness,
+// derivation §7.1). Empty (false) when host carries no foot-locus (the two planes / a non-roll host).
+func footLocusChordsForHost(host *topo.Face, b canalBoundaries, rolls []geom.Surface, tol float64) ([]endSeg, bool) {
+	i, ok := footLocusIndexForHost(host, rolls, tol)
+	if !ok {
+		return nil, false
+	}
+	return footLocusChords(b.feet[i], b.feetRev[i]), true
+}
+
+// footLocusBite turns a foot-locus curve into a single whole-curve endSeg: from/to are its domain
+// endpoints and curve is the foot-locus ITSELF (the shared object, ADR-C4-2). Used only by the routing
+// predicate and the direct unit tests; the assembled bite uses footLocusChords (point-identical to the
+// corner patch). arc=false — a foot-locus is a canal BSpline isocurve, not a circular Arc3d.
 func footLocusBite(c geom.Curve3) endSeg {
 	lo, hi := c.Domain()
 	return endSeg{from: c.PointAt(lo), to: c.PointAt(hi), curve: c}
+}
+
+// footLocusChords sub-samples a canal foot-locus into ringSegSamples straight chords across the SAME
+// ringSegSamples+1 vertices the corner patch tiles it into: sampleCurve3Open(c, rev) reproduces the
+// patch's ringSegSamples interior samples BIT-IDENTICALLY (same call, same rev), and the one excluded
+// domain endpoint (the arm-rail junction the corner patch gets from its neighbouring side) is appended —
+// so the retrimmed host and the corner patch share EVERY vertex along the foot-locus and weld watertight
+// (F3 crack fix; the pre-F3 single whole-curve edge shared only the two endpoints, cracking the 5 interior
+// vertices). Each chord carries the WHOLE foot-locus curve as its geometry, the convention canalPatchLoops
+// and the arm face already use for their shared sub-edges.
+func footLocusChords(c geom.Curve3, rev bool) []endSeg {
+	pts := sampleCurve3Open(c, rev) // the ringSegSamples patch-identical samples (excludes the far endpoint)
+	lo, hi := c.Domain()
+	far := c.PointAt(hi) // sampleCurve3Open excludes the HIGH end when forward…
+	if rev {
+		far = c.PointAt(lo) // …and the LOW end when reversed
+	}
+	pts = append(pts, far)
+	segs := make([]endSeg, len(pts)-1)
+	for i := range segs {
+		segs[i] = endSeg{from: pts[i], to: pts[i+1], curve: c}
+	}
+	return segs
 }
 
 // sameRollSurface reports whether host is the SAME roll surface as a CanalCorner.Rolls entry — matched by

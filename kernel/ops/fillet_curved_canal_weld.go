@@ -52,13 +52,16 @@ func canalArmBody(body *topo.Body, arms []edgeFillet, blends map[uint64]*cornerB
 	return assembleBody(faces), "", true
 }
 
-// canalWeldFaces assembles the canal corner into a watertight solid's faces, or names WHY the weld
-// declined (empty reason = watertight). It resolves the corner patch ONCE (ADR-C4-2, the single source
-// of the boundary curves), tags the four shared rails (canalBoundaryRoles) and the per-arm reflected
-// centres (reflectedArmCentres, ADR-C4-3) — computed ONCE here and threaded into the arm-face builder,
-// never recomputed — then builds the corner canal-patch face + the three per-arm-centre arm faces (W2).
-// It still floors to the do-no-harm floor for the missing canal host retrims + far-runout (W3-W4), so
-// N7 stays declined (corpus unchanged) but with a diagnostic canal-specific reason. Example:
+// canalWeldFaces gathers the canal corner's result faces, or names WHY the weld declined (empty reason =
+// the faces assemble into a watertight solid). It resolves the corner patch ONCE (ADR-C4-2, the single
+// source of the boundary curves), tags the four shared rails (canalBoundaryRoles) and the per-arm
+// reflected centres (reflectedArmCentres, ADR-C4-3) — computed ONCE here and threaded into the arm-face
+// builder, never recomputed — then builds the corner canal-patch face (W1), the three per-arm-centre arm
+// faces (W2), and the retrimmed/far-runout host faces (W3b/F1/F2). F3 returns them with an EMPTY reason so
+// canalArmBody welds them via assembleBody into the watertight N7 solid (greening TestOCCTBlendSimple/N7).
+// Any sub-step decline (patch / arm face / bundle / host bite) returns its diagnostic reason and no faces —
+// the clean do-no-harm floor. The whole-body watertightness is gated by TestN7WholeBodyWatertight (every
+// edge exactly 2-incident) and TestOCCTBlendSimple/N7 (Σ = 61222.9 within 1%). Example:
 //
 //	if faces, reason := canalWeldFaces(body, arms, w, loop, res); reason == "" { /* watertight weld */ }
 func canalWeldFaces(body *topo.Body, arms []edgeFillet, w cornerWeld, loop RailLoop, res Resolution) ([]filletFace, string) {
@@ -79,7 +82,7 @@ func canalWeldFaces(body *topo.Body, arms []edgeFillet, w cornerWeld, loop RailL
 		return nil, reason
 	}
 	faces := assembleCanalFaces(body, patch, armFaces, hostFaces)
-	return faces, "canal final weld not yet assembled (W3: corner patch + per-arm-centre arm faces + host retrims/far-runout ready; whole-body assembly + Σ verification pending W4)"
+	return faces, "" // F3 whole-body weld: corner patch + 3 arm faces + retrimmed hosts → assembleBody (watertight)
 }
 
 // canalWeldContext resolves the corner patch ONCE (ADR-C4-2, the single source of the boundary curves)

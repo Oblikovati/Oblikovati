@@ -4,7 +4,6 @@ package ops
 
 import (
 	stdmath "math"
-	"strings"
 	"testing"
 
 	"oblikovati.org/kernel/geom"
@@ -45,29 +44,23 @@ func TestCanalBoundaryRoles(t *testing.T) {
 	}
 }
 
-// TestCanalWeldFacesFloorsOnHostRetrims pins the W2 behaviour: driving canalWeldFaces on the real N7
-// canal loop now builds the corner patch face AND the three per-arm-centre arm faces, but still DECLINES
-// (non-empty reason) for the still-missing canal host retrims + far-runout, so the whole op floors —
-// N7 stays declined (corpus unchanged) until W3-W4. It returns exactly the four faces it did build, the
-// first of which is the canal BSpline corner patch.
-func TestCanalWeldFacesFloorsOnHostRetrims(t *testing.T) {
+// TestCanalWeldFacesAssemblesCornerAndArms pins the F3 behaviour on a FACE-LESS fixture body: canalWeldFaces
+// builds the corner patch face + the three per-arm-centre arm faces and returns an EMPTY reason (F3 wired
+// the final assembly, replacing the W3 "not yet assembled" floor). With no host faces on the fixture body,
+// it returns exactly the corner patch + the three arm faces (the host retrims run only when the body
+// carries the wall/plane faces — the whole-body watertight weld is gated by TestOCCTBlendSimple/N7).
+func TestCanalWeldFacesAssemblesCornerAndArms(t *testing.T) {
 	w, arms, res := n7CornerFill(t)
 	loop, ok := extractCurvedCorner(w, arms, res)
 	if !ok || loop.Canal == nil {
 		t.Fatalf("N7 must extract a Canal-marked loop (the dispatch signal); ok=%v canal=%v", ok, loop.Canal != nil)
 	}
 	faces, reason := canalWeldFaces(emptyBody(t), arms, w, loop, res)
-	if reason == "" {
-		t.Fatal("W3 canalWeldFaces must decline (final weld not yet assembled), got empty reason")
+	if reason != "" {
+		t.Fatalf("F3 canalWeldFaces must assemble (empty reason), got decline %q", reason)
 	}
-	if !strings.Contains(reason, "final weld not yet assembled") {
-		t.Fatalf("unexpected decline reason %q, want the W3 final-weld-pending reason", reason)
-	}
-	// On a FACE-LESS body the host retrims produce no faces, so canalWeldFaces returns exactly the corner
-	// patch + the three arm faces and floors on the W4 whole-body assembly (the real host retrims run only
-	// when the body actually carries the wall/plane faces — see the direct retrimCanalHost tests).
 	if len(faces) != 1+len(arms) {
-		t.Fatalf("W3 must build the corner patch + %d arm faces = %d faces, got %d", len(arms), 1+len(arms), len(faces))
+		t.Fatalf("F3 must build the corner patch + %d arm faces = %d faces, got %d", len(arms), 1+len(arms), len(faces))
 	}
 	if _, isBSpline := faces[0].surface.(geom.BSplineSurface); !isBSpline {
 		t.Fatalf("corner face surface is %T, want the canal geom.BSplineSurface", faces[0].surface)
@@ -75,8 +68,11 @@ func TestCanalWeldFacesFloorsOnHostRetrims(t *testing.T) {
 }
 
 // TestCanalArmBodyRoutesN7 proves the dispatch ROUTES the N7 corner (loop.Canal != nil) into the canal
-// weld: canalArmBody, fed the blend sphere at the corner ball centre C, takes the corner (took=true) and
-// floors (nil body, the W1 skeleton reason). This is the observable that N7 goes to the sibling assembler.
+// weld AND that F3 now assembles it: canalArmBody, fed the blend sphere at the corner ball centre C, takes
+// the corner (took=true) and returns a non-nil assembled body with no decline reason (the sibling
+// assembler produced a body). The whole-body watertightness is gated on the real STEP body by
+// TestOCCTBlendSimple/N7; here the fixture is face-less, so the returned body carries only the corner +
+// arm faces (not a closed solid) — the observable under test is that the canal path assembles, not floors.
 func TestCanalArmBodyRoutesN7(t *testing.T) {
 	w, arms, res := n7CornerFill(t)
 	sphere, err := geom.NewSphere(w.center, w.radius)
@@ -88,11 +84,11 @@ func TestCanalArmBodyRoutesN7(t *testing.T) {
 	if !took {
 		t.Fatal("canalArmBody must TAKE the tangent-degenerate N7 corner (loop.Canal != nil)")
 	}
-	if body != nil {
-		t.Fatalf("W3 must still floor (nil body), got %v", body)
+	if reason != "" {
+		t.Fatalf("F3 canalArmBody must assemble (empty reason), got decline %q", reason)
 	}
-	if !strings.Contains(reason, "final weld not yet assembled") {
-		t.Fatalf("routed N7 must carry the W3 final-weld-pending decline; got %q", reason)
+	if body == nil {
+		t.Fatal("F3 canalArmBody must return the assembled body, got nil")
 	}
 }
 

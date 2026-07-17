@@ -98,10 +98,13 @@ func TestFootLocusForHost_TagsByRolls(t *testing.T) {
 	assertBridgeIs(t, boss, boundaries, rolls, tol, boundaries.feet[1], "s_10 boss→feet[1]")
 }
 
-// TestCanalInnerBite_WallChainsRailsFootRails is the W3b core gate: the wall inner bite composes the three
-// pieces [s_4 wall rail, feet[0] bridge, s_5 wall rail] and chains them by shared endpoints — every
-// junction meeting within tol — with feet[0] (the middle piece) point-identical to the two rails' inner
-// ends W0/W1 (shared-edge identity, residual 0).
+// TestCanalInnerBite_WallChainsRailsFootRails is the W3b/F3 core gate + the F3 shared-edge vertex-identity
+// check: the wall inner bite composes [s_4 wall rail, feet[0] as ringSegSamples sub-chords, s_5 wall rail]
+// and chains them by shared endpoints — every junction meeting within tol. F3 replaced the single
+// whole-curve feet[0] bridge (which shared only its two endpoints with the corner patch and cracked the 5
+// interior vertices) with the SAME sampleCurve3Open sub-chords the corner patch tiles feet[0] into, so the
+// retrimmed wall welds point-for-point to the corner patch. This asserts the foot sub-chords are exactly
+// the patch's sampling (residual 0, equal count) — the watertightness crux.
 func TestCanalInnerBite_WallChainsRailsFootRails(t *testing.T) {
 	w, arms, res := n7CornerFill(t)
 	bundles, boundaries, rolls := n7CanalBiteInputs(t, w, arms, res)
@@ -110,17 +113,33 @@ func TestCanalInnerBite_WallChainsRailsFootRails(t *testing.T) {
 	if reason != "" {
 		t.Fatalf("wall inner bite declined: %s", reason)
 	}
-	if len(inner) != 3 {
-		t.Fatalf("wall inner bite = %d pieces, want 3 (s_4 rail, feet[0], s_5 rail)", len(inner))
+	// 2 wall rails (s_4, s_5) + ringSegSamples foot-locus sub-chords (feet[0]).
+	if want := 2 + ringSegSamples; len(inner) != want {
+		t.Fatalf("wall inner bite = %d pieces, want %d (2 rails + %d feet[0] sub-chords)", len(inner), want, ringSegSamples)
 	}
 	assertChainMeets(t, inner, tol, "wall")
-	f0 := boundaries.feet[0]
-	lo, hi := f0.Domain()
-	// The bridge (middle piece) is the shared foot-locus feet[0] itself: its endpoints are exactly W0/W1.
-	res0 := pairResidual([]math.Point3{inner[1].from, inner[1].to}, f0.PointAt(lo), f0.PointAt(hi))
-	t.Logf("wall bite bridge ↔ feet[0] shared-edge residual = %.3e", res0)
-	if res0 != 0 {
-		t.Fatalf("wall bite bridge is not feet[0] point-identical; residual %.3e (want 0)", res0)
+	assertFootChordsMatchPatch(t, inner, boundaries.feet[0], boundaries.feetRev[0])
+}
+
+// assertFootChordsMatchPatch proves every foot-locus sub-chord vertex in the inner bite is BIT-IDENTICAL to
+// the corner patch's own feet[0] sampling (sampleCurve3Open with the patch rev) — the F3 shared-edge
+// vertex-sequence identity that welds the retrimmed wall to the corner patch without a crack (residual 0).
+func assertFootChordsMatchPatch(t *testing.T, inner []endSeg, foot geom.Curve3, rev bool) {
+	t.Helper()
+	var verts []math.Point3 // every inner-bite vertex (rails + foot sub-chords); geom.Curve3 is uncomparable
+	for _, s := range inner {
+		verts = append(verts, s.from, s.to)
+	}
+	for _, p := range sampleCurve3Open(foot, rev) { // the corner patch's exact feet[0] samples
+		best := 1.0
+		for _, q := range verts {
+			if d := float64(p.DistanceTo(q)); d < best {
+				best = d
+			}
+		}
+		if best != 0 {
+			t.Fatalf("corner-patch feet[0] sample %v has no bit-identical wall foot-chord vertex (nearest residual %.3e, want 0)", p, best)
+		}
 	}
 }
 
