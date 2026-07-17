@@ -64,6 +64,30 @@ func TestPlanarAreaMatches(t *testing.T) {
 	}
 }
 
+// TestPlanarTrisCollinearSlotBottomsCoverExactly pins the #39 finding: earcut fans the material below
+// three in-line rectangular slots with ONE long edge spanning all three slot bottoms, so each
+// slot-bottom loop segment is SUBSUMED (collinear), not reproduced as its own triangle edge — yet the
+// coverage/area is exact. This is why the guard checks AREA, not literal per-segment reproduction: a
+// per-segment check would flag this trivially-clean face as defective and route it to the CDT. The
+// collinear subsumption is watertight (the surface is flat along the shared line).
+func TestPlanarTrisCollinearSlotBottomsCoverExactly(t *testing.T) {
+	outer := rectHole(0, 0, 10, 10)
+	holes := [][]math.Point2{rectHole(1, 1, 3, 9), rectHole(4, 1, 6, 9), rectHole(7, 1, 9, 9)}
+	want := stdmath.Abs(signedArea(outer))
+	for _, h := range holes {
+		want -= stdmath.Abs(signedArea(h))
+	}
+	tris := planarTris(outer, holes)
+	if got := planarTrisArea(tris, outer, holes); stdmath.Abs(got-want) > 1e-6*want {
+		t.Errorf("three in-line slots: planarTris area = %g, want %g", got, want)
+	}
+	// The guard must ACCEPT earcut here (keep the cheap path), not route to the CDT: earcut's own area
+	// already matches despite subsuming the slot bottoms.
+	if !planarAreaMatches(earcut(outer, holes), outer, holes) {
+		t.Error("earcut on three collinear slots is area-exact and must be accepted, not sent to the CDT")
+	}
+}
+
 // TestPlanarCDTLargeFaceAreaExact pins the justification for retiring the 256-vertex CDT
 // budget (#1610): with #1409's corridor-walk segment insertion the CDT re-meshes a
 // 600-boundary-vertex annulus area-exact well inside the per-recompute tessellation
