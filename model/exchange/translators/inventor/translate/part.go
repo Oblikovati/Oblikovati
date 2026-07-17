@@ -1344,28 +1344,24 @@ func extentOf(ex ipt.Extrude) feature.Extent {
 // directionOf maps the extrude's own direction operands onto the extent direction. Midplane wins
 // over reversed: straddling the sketch plane is symmetric, so which way it "grows" is moot.
 //
-// `reversed` alone does NOT mean "grow against the profile normal": it flips the DirectionAxis's
-// OWN vector (InventorLoader sets pad.Dir = dir then pad.Reversed = reversed), and that vector may
-// already point either way relative to the sketch. Mapping reversed straight onto NegativeDir is
-// therefore a coin flip — measured on the corpus it fixed some parts and broke others that were
-// already exact (the actuator screw went 1.01x → 1.16x), a net loss. The direction is only
-// meaningful as dir flipped by reversed, compared against the sketch normal.
+// The extent direction is expressed in the SKETCH's frame, not the world's: buildExtrusionShell
+// grows the prism along plane.Normal() scaled by the span, so PositiveDir means "along this
+// sketch's own normal" wherever that points. Measured on all 517 corpus sketch placements, the
+// DirectionAxis is the sketch's own normal in world coordinates (dot = +1.000 on every extrude of
+// every part probed), so `dir` adds nothing to the comparison — only `reversed` decides, by
+// flipping that vector to run against the normal.
 //
-// Every sketch we emit lands on the XY plane (see extractSketches), so the normal is +Z and the
-// comparison reduces to the sign of the effective Z. A file that states no direction keeps the
-// positive default rather than guessing.
+// This deliberately replaces `sign(dir.z)` vs world +Z, which was only ever a shortcut valid while
+// every sketch was forced onto XY (before ee6ac047 decoded the real planes). That shortcut is
+// silently BLIND on any sketch whose normal is perpendicular to Z: dir.z is then 0, so it returns
+// PositiveDir and ignores `reversed` entirely. CompressionRollerArmActuatorScrew is built from
+// ±X-facing sketches, and its screwdriver-slot cut was placed OUTSIDE the head, removing nothing —
+// scoring 1.033x on a no-op (proven: the volume is bit-identical across that feature).
 func directionOf(ex ipt.Extrude) feature.ExtentDirection {
 	if ex.Midplane {
 		return feature.SymmetricDir
 	}
-	if !ex.DirOK {
-		return feature.PositiveDir
-	}
-	z := ex.Dir[2]
 	if ex.Reversed {
-		z = -z
-	}
-	if z < 0 {
 		return feature.NegativeDir
 	}
 	return feature.PositiveDir
