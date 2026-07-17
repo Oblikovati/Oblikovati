@@ -40,21 +40,24 @@ type Side struct {
 	Cont Continuity
 }
 
-// RailSignature classifies a RailLoop's GEOMETRIC FAMILY as recognized by the extractor that built
-// it — the ONLY channel an extractor uses to hand a provider-specific hint downstream (ADR-0051 M6):
-// a provider's Fits reads Signature, never topo/extractor internals, so providers stay topo-free.
-type RailSignature int
-
-const (
-	// RailSignatureGeneral is the zero value: no extractor claimed a special family for this loop.
-	// Every existing extractor (extractOctantCorner, coons4/tri3's own fixtures, etc.) leaves it
-	// unset, so every pre-M6 loop is unaffected by the new plate tier (corpus-neutral by default).
-	RailSignatureGeneral RailSignature = iota
-	// RailSignatureTangentPlate marks a tangent-degenerate valence-4 corner (N7's family): the
-	// extractor confirmed wallFeetSplit's degenerate topology, the plate tier's ONLY recognition
-	// signal (kernel/ops/corner_extract_tangent.go). See plateProvider.Fits.
-	RailSignatureTangentPlate
-)
+// CanalCorner carries what the canal provider needs BEYOND the rails (ADR-C1, M6'
+// canal-corner-seam-architecture.md): the surfaces the rolling ball stays tangent to (the spine is
+// their ±Radius offset intersection) and the ball radius. nil for EVERY non-canal loop, so the
+// canal provider declines and the corpus is unaffected — it mirrors CornerBlendRequest.ObstacleFeature,
+// a nilable provider-scoped payload only its extractor sets and only its provider reads.
+type CanalCorner struct {
+	// Rolls are the roll HOSTS the ball stays tangent to (len 2 for the N7 family: the wall + the
+	// non-wall arm's own surface, e.g. wall+s_10 in the OCCT recipe naming — see
+	// canal-corner-math.md STEP 2 / blend-sweep-spike-report.md). These are the surfaces the spine's
+	// offset-SSI is built from, NOT the Side.Adjacent ARM surfaces the rails already carry —
+	// building the spine from the rails/arms missed the oracle area by +75% (blend-sweep-spike-
+	// report.md); geom.Surface only (never topo.Face), so the provider stays topo-free.
+	Rolls []geom.Surface
+	// Radius is the rolling-ball radius r, EXPLICIT: the offset is ±r and reading r off a rational
+	// arc rail is fragile, whereas the extractor knows w.radius exactly and for free. Zero for
+	// non-canal loops (Canal itself is nil there, so this field is never read).
+	Radius float64
+}
 
 // RailLoop is the single request type every junction valence (bevel, 3-way,
 // n-sided) is expressed as (ADR-0051): an ordered closed cycle of [Side]s bounding
@@ -65,10 +68,10 @@ type RailLoop struct {
 	// Provenance carries the generating tokens for ADR-0043 topological naming.
 	// It is identity/history bookkeeping only — a fill provider never reads it.
 	Provenance topo.Lineage
-	// Signature is the extractor's classification hint (RailSignatureGeneral by default). It is the
-	// ONLY channel from extractor to provider (ADR-0051 M6) — geom never reads it, and a provider's
-	// Fits may key on it instead of/alongside loop shape.
-	Signature RailSignature
+	// Canal, when non-nil, carries the canal provider's payload (roll hosts + radius) — nil for
+	// every non-canal loop. It is the ONLY channel from extractor to the canal provider (ADR-C1/
+	// ADR-C2, M6') — geom never reads it, and canalProvider.Fits keys on the pointer itself.
+	Canal *CanalCorner
 }
 
 // Valence returns the number of sides in the loop (a triangle corner is 3, a

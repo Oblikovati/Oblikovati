@@ -3,13 +3,14 @@
 package ops
 
 // blendTiers is the ADR-0051 foundation tier order: analytic-known-part first (exact sphere), then
-// the M6 plate tier (a tangent-degenerate valence-4 corner GeomPlate can solve better than a plain
-// Coons fill — RailSignatureTangentPlate-marked loops only; a stub that always declines until P5),
+// the M6' canal tier (a tangent-degenerate valence-4 corner is a rolling-ball CANAL, not a plain
+// Coons fill — RailLoop.Canal-marked loops only, ADR-C1/C2; a stub that always declines until C3),
 // then the general fills (4-sided coons4, 3-sided tri3). analyticTorus and nFan are deferred
 // promotions (ADR-2) — they slot in ahead of coons4 / at the end when their recognition is
-// oracle-grounded.
+// oracle-grounded. canalProvider took this slot from the now-retired plateProvider (ADR-C3): the
+// plate model was empirically overturned for N7's result_5 (blend-sweep-spike-report.md).
 func blendTiers() []railProvider {
-	return []railProvider{analyticSphereProvider{}, plateProvider{}, coons4Provider{}, tri3Provider{}}
+	return []railProvider{analyticSphereProvider{}, canalProvider{}, coons4Provider{}, tri3Provider{}}
 }
 
 // resolveBlend fills a RailLoop junction with the first tier whose provider Fits and returns a

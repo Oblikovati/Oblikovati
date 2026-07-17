@@ -53,12 +53,35 @@ func extractTangentDegenerateCorner(w cornerWeld, arms []edgeFillet, res Resolut
 	if !ok {
 		return RailLoop{}, false
 	}
-	// Stamped ONLY here, after wallFeetSplit above confirmed the degenerate valence-4 topology (the
-	// N7 family) — the plate tier's sole recognition signal (M6, ADR-0051). extractOctantCorner
-	// (the valence-3 sibling) never touches this stamp, so it leaves RailSignatureGeneral and the
-	// plate tier never fires for it (B3 byte-identical).
-	loop := RailLoop{Sides: sides, Provenance: topo.Lineage{}, Signature: RailSignatureTangentPlate}
+	rolls, ok := canalRollHosts(wall, arms, wa)
+	if !ok {
+		return RailLoop{}, false
+	}
+	// Populated ONLY here, after wallFeetSplit above confirmed the degenerate valence-4 topology
+	// (the N7 family) — the canal tier's sole recognition signal (M6', ADR-C1/C2).
+	// extractOctantCorner (the valence-3 sibling) never touches this field, so it leaves Canal nil
+	// and the canal tier never fires for it (B3 byte-identical).
+	loop := RailLoop{
+		Sides:      sides,
+		Provenance: topo.Lineage{},
+		Canal:      &CanalCorner{Rolls: rolls, Radius: w.radius},
+	}
 	return loop, loop.Closed(res.Weld() * scale)
+}
+
+// canalRollHosts resolves the two surfaces the canal's rolling ball stays tangent to (ADR-C1,
+// canal-corner-math.md STEP 2 / blend-sweep-spike-report.md): the wall cylinder, and the non-wall
+// arm's own surface — the spike's "wall R=50, s_10 cylinder R=5" pair, whose ±r offset intersection
+// is the corner's true ball-center spine (a rail/arm-derived spine missed the oracle area by
+// +75%). mid<0 or a nil arm surface cannot happen once tangentDegenerateSides has already succeeded
+// with the same wa (nonWallArmIndex is deterministic on the same inputs), but is guarded rather
+// than trusted (ADR-3 do-no-harm).
+func canalRollHosts(wall geom.Cylinder, arms []edgeFillet, wa [2]int) ([]geom.Surface, bool) {
+	mid := nonWallArmIndex(arms, wa[0], wa[1])
+	if mid < 0 || arms[mid].armSurface == nil {
+		return nil, false
+	}
+	return []geom.Surface{wall, arms[mid].armSurface}, true
 }
 
 // tangentCornerWall returns the single cylinder host face + its geometry, requiring exactly one
