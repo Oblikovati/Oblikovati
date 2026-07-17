@@ -3,6 +3,7 @@
 package ops
 
 import (
+	"fmt"
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
@@ -17,8 +18,9 @@ import (
 // neither analyticSphere nor a plain Coons fill is the RIGHT surface — the canal spine (the two roll
 // hosts' ±r offset intersection) is. Task C3 wires the real Build: Fits recognizes the family via the
 // Canal payload pointer; Build composes the geom canal (kernel/geom/CanalCornerFill: spine SSI + cross-
-// section loft), certifies it, and emits it on the received rails, or honest-rejects to coons4 (do-no-
-// harm floor, ADR-0051/ADR-C2). Per the engine dependency rule this file imports geom+math, NEVER topo
+// section loft), certifies it, and emits it on the canal's OWN boundary isoparms (canalPatchLoops), or
+// honest-rejects to coons4 (do-no-harm floor, ADR-0051/ADR-C2). Per the engine dependency rule this
+// file imports geom+math, NEVER topo
 // (ADR-0051, ADR-C1); the certificate reuses obstacleNoFold/creaseAngle from the shared certify layer.
 type canalProvider struct{}
 
@@ -39,12 +41,16 @@ func (canalProvider) Fits(l RailLoop) bool {
 
 // Build maps the canal payload (roll hosts + radius + reflected-family ends) and the four received
 // rails into geom.CanalCornerFill (spine + loft), certifies the emitted surface, and returns it on the
-// RECEIVED rails (railLoopToFilletLoops) for a watertight weld — exactly as coons4 does. Any geom
-// error (offset self-intersect, non-convergent SSI, B3 point-spine, off-radius station, or the rail
-// self-check) OR a mis-shaped loop → honest-reject (ok=false) → resolveBlend falls through to coons4
-// (ADR-0051 do-no-harm: N7 can only improve to the canal or fall back to today's coons4, never
-// regress). The area 90.194 is an emergent property of the surface, NEVER a cert field (no magic
-// scalar in the gate — the seam architecture's load-bearing constraint).
+// canal's OWN four boundary isoparms (canalPatchLoops) for a watertight weld. It CANNOT reuse the
+// received rails as coons4 does: one received rail, the mid-arm cross-section amid, sits ~0.28 off the
+// canal surface (its centre C′ is not a canal boundary — the canal spans C→C″), so emitting it would
+// produce a MALFORMED face (a trim edge 0.28 off its own surface). The canal's own boundary isocurves
+// lie ON the surface by construction, and assertLoopsOnCanal GATES that before returning (the check the
+// C3 certificate was silent on). Any geom error (offset self-intersect, non-convergent SSI, B3 point-
+// spine, off-radius station, the rail self-check) OR a loop off the surface → honest-reject (ok=false)
+// → resolveBlend falls through to coons4 (ADR-0051 do-no-harm: N7 can only improve to the canal or
+// fall back to today's coons4, never regress). The area 90.194 is an emergent property of the surface,
+// NEVER a cert field (no magic scalar in the gate — the seam architecture's load-bearing constraint).
 func (canalProvider) Build(l RailLoop, res Resolution) (CornerBlendPatch, Certificate, bool) {
 	if l.Canal == nil || l.Valence() != 4 {
 		return CornerBlendPatch{}, Certificate{}, false
@@ -54,8 +60,97 @@ func (canalProvider) Build(l RailLoop, res Resolution) (CornerBlendPatch, Certif
 	if err != nil {
 		return CornerBlendPatch{}, Certificate{}, false
 	}
-	patch := CornerBlendPatch{Surface: surf, Loops: railLoopToFilletLoops(l), Kind: BlendKindCanal}
+	loops, err := canalPatchLoops(surf)
+	if err != nil {
+		return CornerBlendPatch{}, Certificate{}, false
+	}
+	if err := assertLoopsOnCanal(surf, loops, res.Weld()); err != nil {
+		return CornerBlendPatch{}, Certificate{}, false
+	}
+	patch := CornerBlendPatch{Surface: surf, Loops: loops, Kind: BlendKindCanal}
 	return patch, certifyCanalPatch(surf, l, res), true
+}
+
+// canalRingSide is one boundary isocurve of the canal patch plus whether the assembly ring traverses
+// it reversed, so the four sides chain end-to-end into a single non-self-crossing closed loop.
+type canalRingSide struct {
+	curve geom.Curve3
+	rev   bool
+}
+
+// canalPatchLoops traces the canal surface's OWN four boundary isocurves into ONE closed assembly-ready
+// loop, mirroring railLoopToFilletLoops' open-sample-then-concatenate convention (each side sampled
+// OPEN so consecutive sides share a corner without duplication). This is the C3-review fix: the
+// received rails include amid, the mid-arm cross-section centred at C′, which sits ~0.28 off the canal
+// surface (C′ is NOT a canal boundary — the canal spans C→C″), so emitting the rails yields a malformed
+// face. The four isocurves lie on the surface by construction. The two v-boundaries (the end cross-
+// section arcs) ARE the received a0/a1 rails already, so only the two u-boundaries switch from the
+// wrong received [amid, E2] to the true on-host foot-loci — the whole point of the fix.
+func canalPatchLoops(surf geom.BSplineSurface) ([]filletLoop, error) {
+	sides, err := canalBoundaryIsocurves(surf)
+	if err != nil {
+		return nil, err
+	}
+	var pts []math.Point3
+	var curves []geom.Curve3
+	for _, s := range sides {
+		for _, p := range sampleCurve3Open(s.curve, s.rev) {
+			pts = append(pts, p)
+			curves = append(curves, s.curve)
+		}
+	}
+	return []filletLoop{{pts: pts, curves: curves}}, nil
+}
+
+// canalBoundaryIsocurves extracts the canal patch's four boundary isocurves in CLOSED-ring order:
+// v=v0 (forward) → u=u1 (forward) → v=v1 (reversed) → u=u0 (reversed). geom.SurfaceIsoCurve with
+// uDirection=false fixes v and runs the curve along u (an end cross-section arc); uDirection=true fixes
+// u and runs it along v (a foot-locus). The reversal flags chain the sides: v=v0 ends at (u1,v0) where
+// u=u1 begins; u=u1 ends at (u1,v1) where v=v1-reversed begins; v=v1-reversed ends at (u0,v1) where
+// u=u0-reversed begins and closes back to (u0,v0). Any degenerate-parameter iso extraction errors →
+// the caller honest-rejects to coons4.
+func canalBoundaryIsocurves(surf geom.BSplineSurface) ([]canalRingSide, error) {
+	u0, u1 := surf.UDomain()
+	v0, v1 := surf.VDomain()
+	specs := [4]struct {
+		uDirection bool
+		param      float64
+		rev        bool
+	}{
+		{false, v0, false}, // v=v0 end cross-section arc, forward along u
+		{true, u1, false},  // u=u1 foot-locus, forward along v
+		{false, v1, true},  // v=v1 end cross-section arc, reversed along u
+		{true, u0, true},   // u=u0 foot-locus, reversed along v
+	}
+	sides := make([]canalRingSide, len(specs))
+	for i, s := range specs {
+		c, err := geom.SurfaceIsoCurve(surf, s.uDirection, s.param)
+		if err != nil {
+			return nil, fmt.Errorf("canalPatchLoops: boundary isocurve (uDirection=%v, param=%g): %w", s.uDirection, s.param, err)
+		}
+		sides[i] = canalRingSide{curve: c, rev: s.rev}
+	}
+	return sides, nil
+}
+
+// assertLoopsOnCanal is the watertight SELF-CHECK the C3 certificate was silent on: every emitted loop
+// point must lie ON the canal surface within weld (nearest-point distance via ClosestPointOnSurface).
+// For the canal's OWN boundary isocurves this holds BY CONSTRUCTION, so it passes — but making it a
+// Build-time GATE means a future regression (or re-introducing the received rails, whose amid rail sits
+// ~0.28 off-surface) is an honest reject, not a silently malformed face. It errors carrying the max
+// off-surface distance and the weld bound so the reject is diagnosable.
+func assertLoopsOnCanal(surf geom.BSplineSurface, loops []filletLoop, weld float64) error {
+	maxDev := 0.0
+	for _, l := range loops {
+		for _, p := range l.pts {
+			_, _, foot := geom.ClosestPointOnSurface(surf, p)
+			maxDev = stdmath.Max(maxDev, float64(foot.DistanceTo(p)))
+		}
+	}
+	if maxDev > weld {
+		return fmt.Errorf("canalPatchLoops: max loop-to-surface distance %g exceeds weld %g (loops not on the canal surface)", maxDev, weld)
+	}
+	return nil
 }
 
 // canalCertSamples / canalFootSamples are the per-rail and per-foot-locus scan densities for the canal
@@ -70,10 +165,12 @@ const (
 // v=0/v=1 boundaries, the rails whose arc centre is a spine End — and welds G1 to those arms; (2) its
 // u=0/u=1 FOOT-LOCI lie ON the two roll hosts and are tangent to them (G1). The OTHER two received
 // rails — the on-wall bridge E2 and the mid-arm PLANAR cross-section amid — are coons4's approximations
-// of the foot-loci, up to 0.28 off the true rolling-ball surface (the spine dips ~0.28 in y that a
-// planar rail cannot follow); measuring the canal against them would falsely reject a correct patch
-// (seam brief: "only the two end cross-section rails match; the 0.557 residual is interior iso-
-// parametrization, not the boundary"). This mirrors the obstacle patch excluding its free G0 rim.
+// of the foot-loci; the C3-review measurement showed amid sits ~0.28 off the true rolling-ball surface
+// (the spine dips ~0.28 in y that amid's planar rail cannot follow) while E2 is ~7.6e-4 off (nearly on
+// it) — so measuring the canal against amid would falsely reject a correct patch (seam brief: "only the
+// two end cross-section rails match; the 0.557 residual is interior iso-parametrization, not the
+// boundary"). Build therefore emits the canal's OWN boundary isoparms (canalPatchLoops), never these
+// received foot-locus approximations. This mirrors the obstacle patch excluding its free G0 rim.
 // Closed from the loop; WeldsArms structural; NoFold via the shared column sweep; area 90.194 is a
 // test oracle, never a cert field (no magic scalar in the gate).
 func certifyCanalPatch(surf geom.BSplineSurface, loop RailLoop, scale Resolution) Certificate {

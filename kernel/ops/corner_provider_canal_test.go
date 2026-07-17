@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
 )
 
 // The canal tier (M6' C1-C3): Fits classifies by the RailLoop.Canal payload pointer; Build composes
@@ -63,8 +64,8 @@ func TestCanalProviderBuildDeclinesOnIncompletePayload(t *testing.T) {
 // TestN7LoopResolvesCanal is the C3 gate at the resolveBlend seam: the real N7 fixture extracts a
 // Canal-populated valence-4 loop that the canal tier now BUILDS and certifies (BlendKindCanal), with
 // the emergent DRAWEXE-oracle area 90.194 within the C2-justified 0.05% and the Loops emitted on the
-// RECEIVED rails (watertight — same rails coons4 would have used). The certificate is independently
-// Valid at the model scale.
+// canal's OWN four boundary isoparms (watertight — every boundary lies ON the surface, unlike the
+// received amid rail which sits 0.28 off it). The certificate is independently Valid at the model scale.
 func TestN7LoopResolvesCanal(t *testing.T) {
 	w, arms, res := n7CornerFill(t)
 	loop, ok := extractCurvedCorner(w, arms, res)
@@ -78,7 +79,43 @@ func TestN7LoopResolvesCanal(t *testing.T) {
 	if area := geom.SurfaceArea(patch.Surface); stdmath.Abs(area-90.194)/90.194 > 5e-4 {
 		t.Fatalf("N7 canal area = %.5f, want 90.194 within 0.05%%", area)
 	}
-	assertLoopsAreReceivedRails(t, patch, loop)
+	assertLoopsAreCanalBoundary(t, patch, loop, res)
+}
+
+// TestCanalPatchLoopsOnSurface is the C3-review regression: the emitted patch Loops must lie ON the
+// canal surface within the model weld. This holds for the canal's OWN boundary isocurves (by
+// construction) and FAILS at ~0.28 for the pre-fix received-rails emission (the mid-arm cross-section
+// amid, centred at C′ which is not a canal boundary, is 0.28 off the surface). Proving it here makes
+// the on-surface property TESTED, so re-introducing the received rails is a red test, not a silently
+// malformed trim edge (a face with an edge 0.28 off its own surface).
+func TestCanalPatchLoopsOnSurface(t *testing.T) {
+	w, arms, res := n7CornerFill(t)
+	loop, _ := extractCurvedCorner(w, arms, res)
+	patch, ok := resolveBlend(loop, res)
+	if !ok || patch.Kind != BlendKindCanal {
+		t.Fatalf("N7 loop must resolve to the canal tier; ok=%v kind=%q", ok, patch.Kind)
+	}
+	surf, isBSpline := patch.Surface.(geom.BSplineSurface)
+	if !isBSpline {
+		t.Fatalf("canal patch surface is %T, want geom.BSplineSurface", patch.Surface)
+	}
+	maxDev := maxLoopToSurface(surf, patch.Loops)
+	if maxDev > res.Weld() {
+		t.Fatalf("max loop-to-surface distance = %.3e exceeds weld %.3e — emitted Loops are not on the canal surface", maxDev, res.Weld())
+	}
+}
+
+// maxLoopToSurface is the max nearest-point distance from any loop point to surf (the on-surface
+// witness assertLoopsOnCanal gates Build with; recomputed in the test to prove the property directly).
+func maxLoopToSurface(surf geom.BSplineSurface, loops []filletLoop) float64 {
+	maxDev := 0.0
+	for _, l := range loops {
+		for _, p := range l.pts {
+			_, _, foot := geom.ClosestPointOnSurface(surf, p)
+			maxDev = stdmath.Max(maxDev, float64(foot.DistanceTo(p)))
+		}
+	}
+	return maxDev
 }
 
 // TestN7CanalCertificateValid witnesses the canal patch's certificate directly: the surface welds G1
@@ -116,22 +153,95 @@ func TestCurvedCornerFaceAdmitsCanal(t *testing.T) {
 	}
 }
 
-// assertLoopsAreReceivedRails proves the emitted patch Loops ARE the received rails (watertight weld):
-// they are byte-for-byte railLoopToFilletLoops(loop) — the same boundary points and per-segment curves
-// coons4 would have emitted, so the canal patch welds to the arm end-sections on the identical rails.
-func assertLoopsAreReceivedRails(t *testing.T, patch CornerBlendPatch, loop RailLoop) {
+// assertLoopsAreCanalBoundary proves the emitted patch Loops are the canal's OWN four boundary
+// isoparms (the C3-review fix), NOT the received rails: (1) one loop of 4·ringSegSamples points, every
+// point ON the surface within weld; (2) the ring is CLOSED and correctly ordered — its four sides
+// start at the four patch corners (u0,v0)→(u1,v0)→(u1,v1)→(u0,v1); (3) the two v-boundaries still equal
+// the received a0/a1 end cross-section arcs (each v-boundary point lies on a received end-arc rail's
+// circle), so the fix preserves the GOOD rails and only replaces the two off-surface u-boundaries.
+func assertLoopsAreCanalBoundary(t *testing.T, patch CornerBlendPatch, loop RailLoop, res Resolution) {
 	t.Helper()
-	want := railLoopToFilletLoops(loop)
-	if len(patch.Loops) != len(want) || len(want) == 0 {
-		t.Fatalf("patch Loops count = %d, want %d (railLoopToFilletLoops)", len(patch.Loops), len(want))
+	surf := patch.Surface.(geom.BSplineSurface)
+	weld := res.Weld()
+	n := ringSegSamples
+	if len(patch.Loops) != 1 || len(patch.Loops[0].pts) != 4*n {
+		t.Fatalf("canal Loops = %d loops, %d pts; want 1 loop of %d (4·ringSegSamples)", len(patch.Loops), loopPtCount(patch.Loops), 4*n)
 	}
-	got := patch.Loops[0]
-	if len(got.pts) != len(want[0].pts) || len(got.pts) == 0 {
-		t.Fatalf("loop point count = %d, want %d", len(got.pts), len(want[0].pts))
+	if dev := maxLoopToSurface(surf, patch.Loops); dev > weld {
+		t.Fatalf("canal boundary loop is %.3e off the surface, want <= weld %.3e", dev, weld)
 	}
-	for i, p := range want[0].pts {
-		if got.pts[i] != p {
-			t.Fatalf("loop point %d = %v, want the received rail point %v — patch not on received rails", i, got.pts[i], p)
+	assertRingClosedAtCorners(t, surf, patch.Loops[0].pts, n, weld)
+	assertVBoundariesAreEndArcs(t, patch.Loops[0].pts, loop, n, weld)
+}
+
+// loopPtCount totals the points across loops (for the diagnostic in the count assertion).
+func loopPtCount(loops []filletLoop) int {
+	n := 0
+	for _, l := range loops {
+		n += len(l.pts)
+	}
+	return n
+}
+
+// assertRingClosedAtCorners proves the ring is closed and correctly ordered: each of the four sides is
+// sampled OPEN including its NEAR endpoint, so the four patch corners (u0,v0)→(u1,v0)→(u1,v1)→(u0,v1)
+// appear as the sides' start points at indices 0, n, 2n, 3n — visiting every corner in ring order.
+func assertRingClosedAtCorners(t *testing.T, surf geom.BSplineSurface, pts []math.Point3, n int, weld float64) {
+	t.Helper()
+	u0, u1 := surf.UDomain()
+	v0, v1 := surf.VDomain()
+	corners := [4]math.Point3{surf.PointAt(u0, v0), surf.PointAt(u1, v0), surf.PointAt(u1, v1), surf.PointAt(u0, v1)}
+	for i, c := range corners {
+		if d := float64(pts[i*n].DistanceTo(c)); d > weld {
+			t.Fatalf("ring side %d start = %v is %.3e from patch corner %v (want <= weld %.3e) — loop not closed in order", i, pts[i*n], d, c, weld)
 		}
 	}
+}
+
+// assertVBoundariesAreEndArcs proves the two v-boundary runs (sides 0 and 2, at pts[0:n] and
+// pts[2n:3n]) still coincide with the received a0/a1 end cross-section arcs — each v-boundary point
+// lies on a received end-arc rail's circle (radius r about the arc centre, in the arc plane) within
+// weld. This is the invariant the fix must preserve: the GOOD end rails are unchanged; only the two
+// off-surface u-boundaries switched to the true foot-loci.
+func assertVBoundariesAreEndArcs(t *testing.T, pts []math.Point3, loop RailLoop, n int, weld float64) {
+	t.Helper()
+	arcs := receivedEndArcs(loop, weld)
+	if len(arcs) != 2 {
+		t.Fatalf("want exactly 2 received end-arc rails (arc centre = a spine end), got %d", len(arcs))
+	}
+	for _, run := range [2][]math.Point3{pts[0:n], pts[2*n : 3*n]} {
+		if d := minCircleDistOverArcs(run, arcs); d > weld {
+			t.Fatalf("a v-boundary run is %.3e off both received end-arc circles (want <= weld %.3e) — the fix altered a good end rail", d, weld)
+		}
+	}
+}
+
+// receivedEndArcs returns the received rails that are radius-r Arc3d whose centre is a spine end (a0,
+// a1) — the two end cross-section rails, excluding the mid-arm amid arc (centred 10 away at C′).
+func receivedEndArcs(loop RailLoop, weld float64) []geom.Arc3d {
+	var arcs []geom.Arc3d
+	for _, s := range loop.Sides {
+		if arc, ok := s.Curve.(geom.Arc3d); ok && centreIsSpineEnd(arc.Center, loop.Canal.Ends, weld) {
+			arcs = append(arcs, arc)
+		}
+	}
+	return arcs
+}
+
+// minCircleDistOverArcs is the smallest (over the candidate arcs) worst-point circle distance for a
+// run: for each arc, the max over run points of |dist(p,centre) − r| + |axial offset from the arc
+// plane| (zero iff every point is exactly on that arc's circle).
+func minCircleDistOverArcs(run []math.Point3, arcs []geom.Arc3d) float64 {
+	best := stdmath.Inf(1)
+	for _, arc := range arcs {
+		worst := 0.0
+		for _, p := range run {
+			radial := arc.Center.VectorTo(p)
+			axial := radial.Dot(arc.Normal.AsVector())
+			d := stdmath.Abs(float64(p.DistanceTo(arc.Center))-arc.Radius) + stdmath.Abs(float64(axial))
+			worst = stdmath.Max(worst, d)
+		}
+		best = stdmath.Min(best, worst)
+	}
+	return best
 }
