@@ -52,12 +52,12 @@ func canalArmBody(body *topo.Body, arms []edgeFillet, blends map[uint64]*cornerB
 }
 
 // canalWeldFaces assembles the canal corner into a watertight solid's faces, or names WHY the weld
-// declined (empty reason = watertight). W1 SKELETON: it resolves the corner patch ONCE (ADR-C4-2, the
-// single source of the boundary curves), gates on the tagged shared rails (canalBoundaryRoles) and the
-// per-arm reflected centres (reflectedArmCentres, ADR-C4-3 — the single source W2 consumes), builds the
-// corner canal-patch face, and then declines to the do-no-harm floor for the still-missing per-arm arm
-// faces + host retrims (W2-W4). So N7 floors exactly as today (corpus unchanged) but with a diagnostic
-// canal-specific reason. Example:
+// declined (empty reason = watertight). It resolves the corner patch ONCE (ADR-C4-2, the single source
+// of the boundary curves), tags the four shared rails (canalBoundaryRoles) and the per-arm reflected
+// centres (reflectedArmCentres, ADR-C4-3) — computed ONCE here and threaded into the arm-face builder,
+// never recomputed — then builds the corner canal-patch face + the three per-arm-centre arm faces (W2).
+// It still floors to the do-no-harm floor for the missing canal host retrims + far-runout (W3-W4), so
+// N7 stays declined (corpus unchanged) but with a diagnostic canal-specific reason. Example:
 //
 //	if faces, reason := canalWeldFaces(body, arms, w, loop, res); reason == "" { /* watertight weld */ }
 func canalWeldFaces(body *topo.Body, arms []edgeFillet, w cornerWeld, loop RailLoop, res Resolution) ([]filletFace, string) {
@@ -65,15 +65,23 @@ func canalWeldFaces(body *topo.Body, arms []edgeFillet, w cornerWeld, loop RailL
 	if !ok {
 		return nil, "canal corner patch declined (resolveBlend honest-reject)"
 	}
-	if _, err := canalBoundaryRoles(patch); err != nil {
+	boundaries, err := canalBoundaryRoles(patch)
+	if err != nil {
 		return nil, fmt.Sprintf("canal boundary roles unavailable: %v", err)
 	}
-	if _, ok := reflectedArmCentres(w, arms, tangentCornerScale(w, arms), res); !ok {
+	scale := tangentCornerScale(w, arms)
+	centres, ok := reflectedArmCentres(w, arms, scale, res)
+	if !ok {
 		return nil, "canal per-arm reflected centres unresolved"
+	}
+	armFaces, reason := canalArmFaces(arms, w, boundaries, centres, scale, res)
+	if reason != "" {
+		return nil, reason
 	}
 	faces := make([]filletFace, 0, len(body.Faces())+len(arms)+1)
 	faces = append(faces, patchToFilletFace(patch, topo.Lineage{}))
-	return faces, "canal arm faces not yet assembled (W1 skeleton: corner patch + tagged rails + per-arm centres ready; per-arm faces + host retrims pending W2-W4)"
+	faces = append(faces, armFaces...)
+	return faces, "canal host retrims not yet assembled (W2: corner patch + per-arm-centre arm faces ready; host retrims + far-runout pending W3-W4)"
 }
 
 // canalBoundaries is the canal patch's four boundary isocurves tagged by ROLE (ADR-C4-2, the SINGLE
@@ -84,6 +92,11 @@ func canalWeldFaces(body *topo.Body, arms []edgeFillet, w cornerWeld, loop RailL
 type canalBoundaries struct {
 	endArcs [2]geom.Curve3 // v=v0, v=v1 cross-section arcs (@ the two reflected ball centres)
 	feet    [2]geom.Curve3 // feet[0] = u=u0 foot-locus on the wall; feet[1] = u=u1 foot-locus on s_10
+	// endArcsRev/feetRev carry each boundary's canalPatchLoops sampling direction (the canalRingSide.rev
+	// flag) so a neighbour arm face samples the SHARED curve the SAME way the corner patch does — the
+	// point-for-point identity that welds them watertight (ADR-C4-2). Parallel to endArcs/feet by index.
+	endArcsRev [2]bool
+	feetRev    [2]bool
 }
 
 // canalBoundaryRoles tags the canal patch's four boundary isocurves by role, reusing canalBoundaryIsocurves
@@ -107,7 +120,9 @@ func canalBoundaryRoles(patch CornerBlendPatch) (canalBoundaries, error) {
 		return canalBoundaries{}, fmt.Errorf("canalBoundaryRoles: got %d boundary isocurves, want 4 (canal patch)", len(sides))
 	}
 	return canalBoundaries{
-		endArcs: [2]geom.Curve3{sides[0].curve, sides[2].curve}, // v=v0, v=v1 cross-section arcs
-		feet:    [2]geom.Curve3{sides[3].curve, sides[1].curve}, // u=u0 (wall), u=u1 (s_10) foot-loci
+		endArcs:    [2]geom.Curve3{sides[0].curve, sides[2].curve}, // v=v0, v=v1 cross-section arcs
+		endArcsRev: [2]bool{sides[0].rev, sides[2].rev},
+		feet:       [2]geom.Curve3{sides[3].curve, sides[1].curve}, // u=u0 (wall), u=u1 (s_10) foot-loci
+		feetRev:    [2]bool{sides[3].rev, sides[1].rev},
 	}, nil
 }

@@ -26,9 +26,16 @@ func n7CornerFill(t *testing.T) (cornerWeld, []edgeFillet, Resolution) {
 	t.Helper()
 	y := 50 - stdmath.Sqrt(2000) // 5.27864… — s_4 spine y where x=45 meets the R−r=45 offset circle
 	bld := topo.NewBuilder(true, topo.Lineage{})
-	fWall := bld.AddFace(mustCylinder(t, math.P3(50, 50, 0), math.V3(0, 0, 1), 50), topo.Lineage{})
-	fx50 := bld.AddFace(mustPlane(t, math.P3(50, 0, 0), math.V3(1, 0, 0)), topo.Lineage{})
-	fz10 := bld.AddFace(mustPlane(t, math.P3(0, 0, 10), math.V3(0, 0, 1)), topo.Lineage{})
+	// The three host faces carry real OUTER loops (W2): the cylinder-arm contact rulings (s_4 vertical,
+	// s_10 axial) exit these loops via armHostContactRail's ruling terminator, and each cylinder arm's
+	// two host rails terminate at ONE far station (wall/fx50 both z=-60, fx50/fz10 both y=-60) so its far
+	// cross-section arc is a clean constant-station section. The s_5 torus arm reads its hosts by curved
+	// geometry (curvedHostArc), so it needs no loop.
+	fWall := n7WallHost(t, bld)
+	fx50 := n7PlaneHost(t, bld, mustPlane(t, math.P3(50, 0, 0), math.V3(1, 0, 0)),
+		[]math.Point3{math.P3(50, -60, -60), math.P3(50, 70, -60), math.P3(50, 70, 70), math.P3(50, -60, 70)})
+	fz10 := n7PlaneHost(t, bld, mustPlane(t, math.P3(0, 0, 10), math.V3(0, 0, 1)),
+		[]math.Point3{math.P3(0, -60, 10), math.P3(110, -60, 10), math.P3(110, 70, 10), math.P3(0, 70, 10)})
 	s4 := mustCylinder(t, math.P3(45, y, 0), math.V3(0, 0, 1), 5)   // wall ∧ x=50 straight arm
 	s10 := mustCylinder(t, math.P3(55, 0, 15), math.V3(0, 1, 0), 5) // x=50 ∧ z=10 straight arm
 	s5, err := geom.NewTorusWithRef(math.P3(50, 50, 5), math.V3(0, 0, 1), math.V3(1, 0, 0), 45, 5)
@@ -41,6 +48,55 @@ func n7CornerFill(t *testing.T) (cornerWeld, []edgeFillet, Resolution) {
 		{a: fWall, b: fz10, armSurface: s5},
 	}
 	return cornerWeld{center: math.P3(45, y, 15), radius: 5}, arms, geom.ResolutionForSize(150)
+}
+
+// n7WallHost builds the N7 wall cylinder (R=50 about (50,50), axis z) with an outer-loop BAND the s_4
+// arm's vertical contact ruling exits: two z-rims (z=-60 far, z=60 near) over the corner azimuth
+// [-140°,-40°], closed by two vertical edges. The s_4 ruling exits the FAR rim at z=-60 — matched to
+// fx50's z=-60 edge so the arm's far cross-section arc is a clean constant-z section.
+func n7WallHost(t *testing.T, bld *topo.Builder) *topo.Face {
+	t.Helper()
+	lin := topo.Lineage{}
+	axis, ref := math.V3(0, 0, 1), math.V3(1, 0, 0)
+	deg := stdmath.Pi / 180
+	bot := mustArcRef(t, math.P3(50, 50, -60), axis, ref, 50, -140*deg, 100*deg) // z=-60, θ:-140°→-40°
+	top := mustArcRef(t, math.P3(50, 50, 60), axis, ref, 50, -40*deg, -100*deg)  // z=60, θ:-40°→-140°
+	a0, a1 := bld.AddVertex(bot.PointAt(0), lin), bld.AddVertex(bot.PointAt(1), lin)
+	a2, a3 := bld.AddVertex(top.PointAt(0), lin), bld.AddVertex(top.PointAt(1), lin)
+	be := bld.AddEdge(bot, a0, a1, lin)
+	right := bld.AddEdge(geom.NewLineSegment(a1.Point(), a2.Point()), a1, a2, lin)
+	te := bld.AddEdge(top, a2, a3, lin)
+	left := bld.AddEdge(geom.NewLineSegment(a3.Point(), a0.Point()), a3, a0, lin)
+	cyl := mustCylinder(t, math.P3(50, 50, 0), math.V3(0, 0, 1), 50)
+	return bld.AddFace(cyl, lin, topo.OuterLoop(topo.Fwd(be), topo.Fwd(right), topo.Fwd(te), topo.Fwd(left)))
+}
+
+// n7PlaneHost builds a plane host face with a straight-edged rectangular outer loop through corners (in
+// order) — a real loop for the cylinder-arm ruling terminator to cross.
+func n7PlaneHost(t *testing.T, bld *topo.Builder, pl geom.Plane, corners []math.Point3) *topo.Face {
+	t.Helper()
+	lin := topo.Lineage{}
+	verts := make([]*topo.Vertex, len(corners))
+	for i, p := range corners {
+		verts[i] = bld.AddVertex(p, lin)
+	}
+	uses := make([]topo.Use, len(corners))
+	for i := range corners {
+		a, b := verts[i], verts[(i+1)%len(corners)]
+		uses[i] = topo.Fwd(bld.AddEdge(geom.NewLineSegment(a.Point(), b.Point()), a, b, lin))
+	}
+	return bld.AddFace(pl, lin, topo.OuterLoop(uses...))
+}
+
+// mustArcRef builds an Arc3d with an explicit centre/axis/ref (unlike mustArc's z-constant convention),
+// or fails the test.
+func mustArcRef(t *testing.T, center math.Point3, axis, ref math.Vector3, r, start, sweep float64) geom.Arc3d {
+	t.Helper()
+	arc, err := geom.NewArc3d(center, axis, ref, r, start, sweep)
+	if err != nil {
+		t.Fatalf("build arc: %v", err)
+	}
+	return arc
 }
 
 // TestExtractTangentCorner_IsValence4Canal is the slice's core gate (M6' C3): the N7 corner must

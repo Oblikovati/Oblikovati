@@ -45,10 +45,12 @@ func TestCanalBoundaryRoles(t *testing.T) {
 	}
 }
 
-// TestCanalWeldFacesSkeletonFloors pins the W1 skeleton behaviour: driving canalWeldFaces on the real N7
-// canal loop builds the corner patch face but DECLINES (non-empty reason) for the still-missing arm faces,
-// so the whole op floors — exactly today's N7 result. It returns exactly the one corner face it did build.
-func TestCanalWeldFacesSkeletonFloors(t *testing.T) {
+// TestCanalWeldFacesFloorsOnHostRetrims pins the W2 behaviour: driving canalWeldFaces on the real N7
+// canal loop now builds the corner patch face AND the three per-arm-centre arm faces, but still DECLINES
+// (non-empty reason) for the still-missing canal host retrims + far-runout, so the whole op floors —
+// N7 stays declined (corpus unchanged) until W3-W4. It returns exactly the four faces it did build, the
+// first of which is the canal BSpline corner patch.
+func TestCanalWeldFacesFloorsOnHostRetrims(t *testing.T) {
 	w, arms, res := n7CornerFill(t)
 	loop, ok := extractCurvedCorner(w, arms, res)
 	if !ok || loop.Canal == nil {
@@ -56,13 +58,13 @@ func TestCanalWeldFacesSkeletonFloors(t *testing.T) {
 	}
 	faces, reason := canalWeldFaces(emptyBody(t), arms, w, loop, res)
 	if reason == "" {
-		t.Fatal("W1 canalWeldFaces skeleton must decline (arm faces not yet assembled), got empty reason")
+		t.Fatal("W2 canalWeldFaces must decline (host retrims not yet assembled), got empty reason")
 	}
-	if !strings.Contains(reason, "arm faces not yet assembled") {
-		t.Fatalf("unexpected decline reason %q, want the W1 arm-faces-pending skeleton reason", reason)
+	if !strings.Contains(reason, "host retrims not yet assembled") {
+		t.Fatalf("unexpected decline reason %q, want the W2 host-retrims-pending reason", reason)
 	}
-	if len(faces) != 1 {
-		t.Fatalf("skeleton must build exactly the corner patch face, got %d faces", len(faces))
+	if len(faces) != 1+len(arms) {
+		t.Fatalf("W2 must build the corner patch + %d arm faces = %d faces, got %d", len(arms), 1+len(arms), len(faces))
 	}
 	if _, isBSpline := faces[0].surface.(geom.BSplineSurface); !isBSpline {
 		t.Fatalf("corner face surface is %T, want the canal geom.BSplineSurface", faces[0].surface)
@@ -84,10 +86,10 @@ func TestCanalArmBodyRoutesN7(t *testing.T) {
 		t.Fatal("canalArmBody must TAKE the tangent-degenerate N7 corner (loop.Canal != nil)")
 	}
 	if body != nil {
-		t.Fatalf("W1 skeleton must floor (nil body), got %v", body)
+		t.Fatalf("W2 must still floor (nil body), got %v", body)
 	}
-	if !strings.Contains(reason, "arm faces not yet assembled") {
-		t.Fatalf("routed N7 must carry the W1 skeleton decline; got %q", reason)
+	if !strings.Contains(reason, "host retrims not yet assembled") {
+		t.Fatalf("routed N7 must carry the W2 host-retrims-pending decline; got %q", reason)
 	}
 }
 
