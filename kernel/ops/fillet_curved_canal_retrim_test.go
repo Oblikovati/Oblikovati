@@ -12,87 +12,243 @@ import (
 	"oblikovati.org/math"
 )
 
-// W3 canal-aware HOST retrims. Every assertion drives the REAL N7 fixture (n7CornerFill →
-// extractCurvedCorner → resolveBlend), never a fabricated patch. The load-bearing deliverable is the
-// WATERTIGHTNESS ANCHOR evidence (architect-flagged): the foot-locus endpoints must lie on the host's
-// bitten loop for the splice to anchor. On N7 they do NOT (the corner vertices are the arm-rail junctions,
-// ~37 units interior to the wall band), so retrimCanalHost HONEST-DECLINES with the measured gap and the
-// weld floors — an honest report, never a loosened splice.
+// W3b unified canal HOST bite. Every assertion drives the REAL N7 fixture (n7CornerFill →
+// extractCurvedCorner → resolveBlend), never a fabricated patch. The load-bearing deliverables:
+//   - each corner host's INNER BITE composes from the arms' W2 host rails (collected, shared-edge
+//     identity — NOT rebuilt at a shared centre) +/- the host foot-locus, chained by shared endpoints
+//     (junctions meet ~1e-14, feet[0]/feet[1] point-identical to the rails' inner ends → residual 0);
+//   - a plane host (2 rails, no bridge, rails meeting at a point) CLOSES to a valid retrimmed face;
+//   - the risk #1 anchor evidence — the WALL bite's arm-rail OUTER ends vs the wall bitten loop: s_4
+//     anchors at ~0, the s_5 TORUS rail's far end (azimuth 0) overshoots the FIXTURE band by ~34u, so
+//     canalHostBite HONEST-DECLINES with the measured gap (a fixture host-extent limit, not a mis-centred
+//     rail — the junctions meet exactly); and
+//   - a MIS-TAGGED foot-locus (feet[0]↔feet[1] swapped) is caught by the chain gate, never papered over.
 
-// TestRetrimCanalHost_WallAnchorGap is the escalation-evidence gate: on the real N7 wall host + wall
-// foot-locus feet[0], it (1) MEASURES the foot-locus-endpoint→bitten-loop anchor gaps and logs them (the
-// evidence W4 relies on), (2) asserts they exceed res.Weld·scale by orders of magnitude (the anchor does
-// NOT hold), and (3) asserts retrimCanalHost DECLINES rather than forcing a non-anchoring splice. If a
-// future intersection fix lands the foot-locus endpoints on the wall loop, this test flips and must be
-// revisited (the anchor would then hold) — it is the exact tripwire the flag calls for.
-func TestRetrimCanalHost_WallAnchorGap(t *testing.T) {
-	w, arms, res := n7CornerFill(t)
-	_, boundaries, _, scale := n7CanalWeldInputs(t, w, arms, res)
-	wall := arms[0].a // the cylinder wall host (arm s_4 rolls on it)
-	if _, isCyl := wall.Geometry().(geom.Cylinder); !isCyl {
-		t.Fatalf("N7 wall host is %T, want geom.Cylinder", wall.Geometry())
+// n7CanalBiteInputs resolves the real N7 corner into the W3b bite inputs: the per-arm rail bundles, the
+// tagged boundary isocurves, and the CanalCorner.Rolls payload (rolls[0]=wall, rolls[1]=s_10 surface).
+func n7CanalBiteInputs(t *testing.T, w cornerWeld, arms []edgeFillet, res Resolution) ([]canalArmBundle, canalBoundaries, []geom.Surface) {
+	t.Helper()
+	loop, ok := extractCurvedCorner(w, arms, res)
+	if !ok || loop.Canal == nil {
+		t.Fatalf("N7 must extract a Canal-marked loop; ok=%v canal=%v", ok, loop.Canal != nil)
 	}
-	weldScale := res.Weld() * scale
-
-	star, ok := bittenLoop(wall, footLocusMid(boundaries.feet[0]), res.Weld()*w.radius)
+	patch, ok := resolveBlend(loop, res)
+	if !ok || patch.Kind != BlendKindCanal {
+		t.Fatalf("N7 must resolve to the canal tier; ok=%v kind=%q", ok, patch.Kind)
+	}
+	boundaries, err := canalBoundaryRoles(patch)
+	if err != nil {
+		t.Fatalf("canalBoundaryRoles declined: %v", err)
+	}
+	scale := tangentCornerScale(w, arms)
+	centres, ok := reflectedArmCentres(w, arms, scale, res)
 	if !ok {
-		t.Fatal("wall host must have an unambiguous bitten loop for feet[0]")
+		t.Fatalf("reflectedArmCentres unresolved for N7")
 	}
-	g0, g1 := footLocusAnchorGaps(star, boundaries.feet[0])
-	t.Logf("WALL foot-locus feet[0] anchor gaps: endpoint0=%.4e endpoint1=%.4e (res.Weld·scale=%.3e)", g0, g1, weldScale)
-
-	if g0 <= weldScale || g1 <= weldScale {
-		t.Fatalf("EXPECTED the foot-locus to NOT anchor on the fixture wall loop; got gaps %.4e/%.4e ≤ tol %.3e — revisit the anchor claim", g0, g1, weldScale)
-	}
-	if _, ok := retrimCanalHost(wall, boundaries.feet[0], w, res); ok {
-		t.Fatal("retrimCanalHost must HONEST-DECLINE a non-anchoring foot-locus (never force a loosened splice)")
-	}
-}
-
-// TestCanalHostFaces_WallDeclineCarriesAnchorGap proves the honest floor is DIAGNOSTIC: routing the wall
-// host through canalHostFace declines with a reason that carries the measured anchor gap (so the
-// controller can escalate the exact foot-locus↔loop intersection), not a bare failure.
-func TestCanalHostFaces_WallDeclineCarriesAnchorGap(t *testing.T) {
-	w, arms, res := n7CornerFill(t)
-	_, boundaries, centres, scale := n7CanalWeldInputs(t, w, arms, res)
 	bundles, ok := canalArmBundles(arms, w, centres, scale, res)
 	if !ok {
-		t.Fatal("canalArmBundles must build the N7 far arcs")
+		t.Fatalf("canalArmBundles must build the N7 per-arm rail bundles")
 	}
-	wall := arms[0].a // the wall host; routing it (f == wall) triggers the foot-locus retrim + decline
-	_, reason := canalHostFace(wall, wall, boundaries, bundles, w, res, res.Weld()*w.radius)
-	if reason == "" {
-		t.Fatal("canalHostFace must decline when the wall foot-locus does not anchor")
-	}
-	if !strings.Contains(reason, "watertightness anchor") {
-		t.Fatalf("wall decline must carry the anchor diagnostic; got %q", reason)
-	}
-	t.Logf("honest wall-retrim floor: %s", reason)
+	return bundles, boundaries, loop.Canal.Rolls
 }
 
-// TestRetrimCanalHost_S10SharedEdgeIdentity is the s_10 shared-edge gate: the foot-locus the s_10 host
-// retrim would splice (feet[1]) is the SAME curve object the mid (s_10) arm face closes on
-// (canalArmCornerRail), so the two seams are point-identical BY CONSTRUCTION. It asserts the retrim's
-// bite curve IS boundaries.feet[1], and that the mid-arm face's corner-rail samples are byte-identical
-// (residual 0.0) to sampling feet[1] the same way — the watertight s_10 seam identity.
-func TestRetrimCanalHost_S10SharedEdgeIdentity(t *testing.T) {
+// TestArmRailsOnHost_CollectsPerHost is the W3b collection gate: armRailsOnHost gathers exactly the arms
+// that roll on each host (2 on the wall / each plane), reading each arm's ALREADY-built rail from its
+// bundle (shared-edge identity), and the wall's two rails' inner ends are point-identical to the wall
+// foot-locus feet[0]'s endpoints (the W0/W1 chain junctions, residual 0).
+func TestArmRailsOnHost_CollectsPerHost(t *testing.T) {
 	w, arms, res := n7CornerFill(t)
-	_, boundaries, centres, scale := n7CanalWeldInputs(t, w, arms, res)
+	bundles, boundaries, _ := n7CanalBiteInputs(t, w, arms, res)
+	wall, fx50, fz10 := arms[0].a, arms[0].b, arms[1].b
+	for name, host := range map[string]*topo.Face{"wall": wall, "planeB(fx50)": fx50, "planeA(fz10)": fz10} {
+		if n := len(armRailsOnHost(host, bundles)); n != 2 {
+			t.Errorf("%s: armRailsOnHost = %d rails, want 2", name, n)
+		}
+	}
+	// The two wall rails' inner (tHost) ends MEET feet[0]'s endpoints W0/W1 — the chain junctions the wall
+	// bite closes on (they coincide to ~1e-14; the bit-exact identity is the bridge curve feet[0] itself,
+	// asserted in TestCanalInnerBite_WallChainsRailsFootRails).
+	f0 := boundaries.feet[0]
+	lo, hi := f0.Domain()
+	rails := armRailsOnHost(wall, bundles)
+	got := []math.Point3{rails[0].to, rails[1].to}
+	junction := stdmath.Min(pairResidual(got, f0.PointAt(lo), f0.PointAt(hi)), pairResidual(got, f0.PointAt(hi), f0.PointAt(lo)))
+	tol := res.Weld() * w.radius
+	t.Logf("wall rails' inner ends ↔ feet[0] endpoints junction gap = %.3e (tol %.3e)", junction, tol)
+	if junction > tol {
+		t.Fatalf("wall rails' inner ends do not meet feet[0]; junction gap %.3e > tol %.3e", junction, tol)
+	}
+}
+
+// TestFootLocusForHost_TagsByRolls proves the foot-locus↔host mapping is by CanalCorner.Rolls IDENTITY,
+// not geometry-guessing (risk #3): the wall gets feet[0], the s_10 boss gets feet[1], and the two planes
+// (on neither roll surface) get NO bridge.
+func TestFootLocusForHost_TagsByRolls(t *testing.T) {
+	w, arms, res := n7CornerFill(t)
+	bundles, boundaries, rolls := n7CanalBiteInputs(t, w, arms, res)
+	_ = bundles
+	tol := res.Weld() * w.radius
+	wall, fx50, fz10 := arms[0].a, arms[0].b, arms[1].b
+
+	assertBridgeIs(t, wall, boundaries, rolls, tol, boundaries.feet[0], "wall→feet[0]")
+	assertNoBridge(t, fx50, boundaries, rolls, tol, "planeB(fx50)")
+	assertNoBridge(t, fz10, boundaries, rolls, tol, "planeA(fz10)")
+
+	boss := n7BossHost(t)
+	assertBridgeIs(t, boss, boundaries, rolls, tol, boundaries.feet[1], "s_10 boss→feet[1]")
+}
+
+// TestCanalInnerBite_WallChainsRailsFootRails is the W3b core gate: the wall inner bite composes the three
+// pieces [s_4 wall rail, feet[0] bridge, s_5 wall rail] and chains them by shared endpoints — every
+// junction meeting within tol — with feet[0] (the middle piece) point-identical to the two rails' inner
+// ends W0/W1 (shared-edge identity, residual 0).
+func TestCanalInnerBite_WallChainsRailsFootRails(t *testing.T) {
+	w, arms, res := n7CornerFill(t)
+	bundles, boundaries, rolls := n7CanalBiteInputs(t, w, arms, res)
+	tol := res.Weld() * w.radius
+	inner, reason := canalInnerBite(arms[0].a, bundles, boundaries, rolls, tol)
+	if reason != "" {
+		t.Fatalf("wall inner bite declined: %s", reason)
+	}
+	if len(inner) != 3 {
+		t.Fatalf("wall inner bite = %d pieces, want 3 (s_4 rail, feet[0], s_5 rail)", len(inner))
+	}
+	assertChainMeets(t, inner, tol, "wall")
+	f0 := boundaries.feet[0]
+	lo, hi := f0.Domain()
+	// The bridge (middle piece) is the shared foot-locus feet[0] itself: its endpoints are exactly W0/W1.
+	res0 := pairResidual([]math.Point3{inner[1].from, inner[1].to}, f0.PointAt(lo), f0.PointAt(hi))
+	t.Logf("wall bite bridge ↔ feet[0] shared-edge residual = %.3e", res0)
+	if res0 != 0 {
+		t.Fatalf("wall bite bridge is not feet[0] point-identical; residual %.3e (want 0)", res0)
+	}
+}
+
+// TestCanalInnerBite_PlanesMeetAtPoint proves the two-rail plane bites (no bridge) chain by the two arm
+// rails MEETING AT A POINT (P0 on plane B, P1 on plane A) — the (2,-) composition the same assembler
+// handles with no special case.
+func TestCanalInnerBite_PlanesMeetAtPoint(t *testing.T) {
+	w, arms, res := n7CornerFill(t)
+	bundles, boundaries, rolls := n7CanalBiteInputs(t, w, arms, res)
+	tol := res.Weld() * w.radius
+	for name, host := range map[string]*topo.Face{"planeB(fx50)": arms[0].b, "planeA(fz10)": arms[1].b} {
+		inner, reason := canalInnerBite(host, bundles, boundaries, rolls, tol)
+		if reason != "" {
+			t.Fatalf("%s inner bite declined: %s", name, reason)
+		}
+		if len(inner) != 2 {
+			t.Fatalf("%s inner bite = %d pieces, want 2 (two arm rails, no bridge)", name, len(inner))
+		}
+		gap := float64(inner[0].to.DistanceTo(inner[1].from))
+		t.Logf("%s: two arm rails meet at %v (junction gap %.3e)", name, inner[0].to, gap)
+		if gap > tol {
+			t.Fatalf("%s rails do not meet at a point: gap %.3e > tol %.3e", name, gap, tol)
+		}
+	}
+}
+
+// TestCanalHostBite_PlaneBClosesToValidFace proves the unified assembler CLOSES the plane-B corner host to
+// a valid retrimmed face on the fixture: both arm rails' outer ends anchor on the plane rectangle, so the
+// far span closes and canalHostBite returns a face whose first loop is the retrimmed bite (inner + far).
+func TestCanalHostBite_PlaneBClosesToValidFace(t *testing.T) {
+	w, arms, res := n7CornerFill(t)
+	bundles, boundaries, rolls := n7CanalBiteInputs(t, w, arms, res)
+	ff, reason := canalHostBite(arms[0].b, bundles, boundaries, rolls, w, res)
+	if reason != "" {
+		t.Fatalf("canalHostBite must CLOSE plane B (both outer ends anchor); declined: %s", reason)
+	}
+	if len(ff.loops) == 0 || len(ff.loops[0].pts) < 4 {
+		t.Fatalf("plane-B retrim must yield a closed bite loop; got %d loops", len(ff.loops))
+	}
+	if _, isPl := ff.surface.(geom.Plane); !isPl {
+		t.Fatalf("plane-B retrim surface is %T, want geom.Plane", ff.surface)
+	}
+	t.Logf("plane B retrimmed to a valid face: %d loops, outer bite has %d vertices", len(ff.loops), len(ff.loops[0].pts))
+}
+
+// TestCanalHostBite_WallAnchorEvidence is the risk #1 escalation gate: on the real N7 wall it MEASURES the
+// two wall arm-rails' OUTER-end → bitten-loop anchor gaps (the evidence W4 relies on), asserts s_4 anchors
+// (~0) while the s_5 TORUS rail's far end (azimuth 0) overshoots the FIXTURE band by orders of magnitude,
+// and asserts canalHostBite HONEST-DECLINES with the measured gap rather than forcing a non-anchoring
+// close. If a future fix lands the torus runout on the wall loop (a wider host / a rail terminator), this
+// flips and must be revisited — the exact tripwire the flag calls for.
+func TestCanalHostBite_WallAnchorEvidence(t *testing.T) {
+	w, arms, res := n7CornerFill(t)
+	bundles, boundaries, rolls := n7CanalBiteInputs(t, w, arms, res)
+	tol := res.Weld() * w.radius
+	wall := arms[0].a
+	inner, reason := canalInnerBite(wall, bundles, boundaries, rolls, tol)
+	if reason != "" {
+		t.Fatalf("wall inner bite declined: %s", reason)
+	}
+	star, ok := bittenLoop(wall, innerBiteKey(inner), tol)
+	if !ok {
+		t.Fatal("wall host must have an unambiguous bitten loop")
+	}
+	wsegs := segsFromLoop(star)
+	gS4 := distPointToLoopEdges(wsegs, inner[0].from)          // s_4 (cylinder) rail outer end
+	gS5 := distPointToLoopEdges(wsegs, inner[len(inner)-1].to) // s_5 (torus) rail outer end
+	t.Logf("WALL outer-end anchor gaps (risk #1): s_4=%.4e  s_5(torus)=%.4e  (tol=res.Weld·r=%.3e)", gS4, gS5, tol)
+	if gS4 > tol {
+		t.Errorf("s_4 wall rail outer end must anchor on the wall loop; gap %.4e > tol %.3e", gS4, tol)
+	}
+	if gS5 <= tol {
+		t.Fatalf("EXPECTED the s_5 torus rail to overshoot the fixture wall band; gap %.4e ≤ tol %.3e — revisit", gS5, tol)
+	}
+	_, br := canalHostBite(wall, bundles, boundaries, rolls, w, res)
+	if br == "" || !strings.Contains(br, "far span will not close") {
+		t.Fatalf("canalHostBite must honest-decline the wall with the anchor diagnostic; got %q", br)
+	}
+	t.Logf("honest wall bite decline: %s", br)
+}
+
+// TestChainBiteSegs_MistaggedFootLocusDeclines is the discrimination mutation: swapping feet[0]↔feet[1]
+// (a mis-tagged foot-locus) makes the wall bridge feet[1], whose endpoints do NOT meet the wall rails'
+// inner ends W0/W1 — so the chain gate DECLINES at the non-meeting junction instead of welding a corrupt
+// loop. A passing bite must survive this; the real tag survives, the mutated one does not.
+func TestChainBiteSegs_MistaggedFootLocusDeclines(t *testing.T) {
+	w, arms, res := n7CornerFill(t)
+	bundles, boundaries, rolls := n7CanalBiteInputs(t, w, arms, res)
+	tol := res.Weld() * w.radius
+
+	if _, reason := canalInnerBite(arms[0].a, bundles, boundaries, rolls, tol); reason != "" {
+		t.Fatalf("the CORRECT wall foot-locus tag must chain; got decline %q", reason)
+	}
+	swapped := canalBoundaries{
+		endArcs: boundaries.endArcs, endArcsRev: boundaries.endArcsRev,
+		feet:    [2]geom.Curve3{boundaries.feet[1], boundaries.feet[0]},
+		feetRev: [2]bool{boundaries.feetRev[1], boundaries.feetRev[0]},
+	}
+	_, reason := canalInnerBite(arms[0].a, bundles, swapped, rolls, tol)
+	if reason == "" {
+		t.Fatal("a MIS-TAGGED wall foot-locus (feet[1] in feet[0]'s slot) must be caught by the chain gate")
+	}
+	if !strings.Contains(reason, "does not chain") {
+		t.Fatalf("mis-tag decline must name the non-meeting junction; got %q", reason)
+	}
+	t.Logf("mis-tag caught by the chain gate: %s", reason)
+}
+
+// TestFootLocusBite_S10SharedEdgeIdentity is the s_10 shared-edge gate (unchanged intent from W3): the
+// foot-locus feet[1] the s_10 boss bite splices is the SAME curve object the mid (s_10) arm face closes
+// on (canalArmCornerRail), so the two seams are point-identical BY CONSTRUCTION. It asserts the bite's
+// endpoints ARE the mid-arm corner-rail endpoints, and the mid-arm face's corner-rail samples are
+// byte-identical (residual 0.0) to sampling feet[1] the same way.
+func TestFootLocusBite_S10SharedEdgeIdentity(t *testing.T) {
+	w, arms, res := n7CornerFill(t)
+	patch, boundaries, centres, scale := n7CanalWeldInputs(t, w, arms, res)
+	_ = patch
 	mid := n7MidArmIndex(t, arms)
 
 	rail, rev, ok := canalArmCornerRail(boundaries, centres[mid], mid, mid)
 	if !ok {
 		t.Fatal("mid arm must take the u=1 foot-locus corner rail")
 	}
-	// The retrim's bite is built from the SAME shared foot-locus feet[1] the mid arm closes on; its
-	// endpoints are the foot-locus endpoints, so the s_10 host seam and the s_10 arm face share the curve.
-	// (geom.BSplineCurve is uncomparable, so identity is proved by point equality, not ==.)
 	bite := footLocusBite(boundaries.feet[1])
 	railLo, railHi := rail.Domain()
 	if bite.from != rail.PointAt(railLo) || bite.to != rail.PointAt(railHi) {
-		t.Fatalf("retrim bite endpoints (%v→%v) are not the mid arm's corner-rail endpoints (%v→%v)", bite.from, bite.to, rail.PointAt(railLo), rail.PointAt(railHi))
+		t.Fatalf("s_10 bite endpoints (%v→%v) are not the mid arm's corner-rail endpoints (%v→%v)", bite.from, bite.to, rail.PointAt(railLo), rail.PointAt(railHi))
 	}
-	// Build the mid arm face and assert its corner-rail portion equals sampling feet[1] the same way (0.0).
 	face, ok := canalArmFace(arms[mid], centres[mid], rail, rev, w, scale, res)
 	if !ok {
 		t.Fatal("mid arm face must build")
@@ -100,29 +256,27 @@ func TestRetrimCanalHost_S10SharedEdgeIdentity(t *testing.T) {
 	corner := sampleCurve3Open(rail, rev)
 	maxDev := 0.0
 	for k, p := range corner {
-		d := float64(p.DistanceTo(face.loops[0].pts[k]))
-		maxDev = stdmath.Max(maxDev, d)
+		maxDev = stdmath.Max(maxDev, float64(p.DistanceTo(face.loops[0].pts[k])))
 	}
 	if maxDev != 0 {
-		t.Fatalf("s_10 retrim↔mid-arm shared-edge residual = %.3e, want exactly 0 (same curve, same sampling)", maxDev)
+		t.Fatalf("s_10 bite↔mid-arm shared-edge residual = %.3e, want exactly 0 (same curve, same sampling)", maxDev)
 	}
-	t.Logf("s_10 shared-edge (feet[1]) identity residual = %.3e (mid-arm corner rail is the retrim's bite curve)", maxDev)
+	t.Logf("s_10 shared-edge (feet[1]) identity residual = %.3e", maxDev)
 }
 
 // TestCanalHostFaces_FarRunoutVerbatim proves the far-runout branch is VERBATIM reuse: canalHostFaces
-// routes a far-runout-bitten host through farArcsBiting/farRunoutFace, producing a face byte-identical
-// (loop points exactly equal) to calling farRunoutFace directly, and passes an untouched face through
-// transformFace unchanged. Proof it is the same leaf machinery, not a reimplementation.
+// routes a far-runout-bitten host (on no roll surface, carrying no arm rails) through farArcsBiting/
+// farRunoutFace, producing a face byte-identical to calling farRunoutFace directly, and passes an
+// untouched face through transformFace unchanged.
 func TestCanalHostFaces_FarRunoutVerbatim(t *testing.T) {
 	w, arms, res := n7CornerFill(t)
-	_, boundaries, _, _ := n7CanalWeldInputs(t, w, arms, res)
+	_, boundaries, rolls := n7CanalBiteInputs(t, w, arms, res)
 	tol := res.Weld() * w.radius
 
-	body, host, bite := farRunoutHostAndBite(t) // a plane rectangle + a corner-biting far arc
-	bundles := []armRails{{far: bite}}
+	body, host, bite := farRunoutHostAndBite(t)
+	bundles := []canalArmBundle{{far: bite}}
 
-	// direct single-ball leaf calls (the oracle for "verbatim")
-	wantBites := farArcsBiting(host, bundles, tol)
+	wantBites := farArcsBiting(host, farBundles(bundles), tol)
 	if len(wantBites) != 1 {
 		t.Fatalf("far arc must bite the synthetic host; got %d bites", len(wantBites))
 	}
@@ -130,8 +284,7 @@ func TestCanalHostFaces_FarRunoutVerbatim(t *testing.T) {
 	if !ok {
 		t.Fatal("farRunoutFace must splice the synthetic bite")
 	}
-
-	got, reason := canalHostFaces(body, arms, w, boundaries, bundles, res)
+	got, reason := canalHostFaces(body, w, boundaries, bundles, rolls, res)
 	if reason != "" {
 		t.Fatalf("canalHostFaces declined the far-runout host: %s", reason)
 	}
@@ -140,13 +293,75 @@ func TestCanalHostFaces_FarRunoutVerbatim(t *testing.T) {
 	}
 	assertSameLoopPoints(t, got[0], want, "far-runout")
 
-	// an untouched face passes through transformFace verbatim
 	plainBody, plain := farRunoutPlainHost(t)
-	gotPlain, reason := canalHostFaces(plainBody, arms, w, boundaries, nil, res)
+	gotPlain, reason := canalHostFaces(plainBody, w, boundaries, nil, rolls, res)
 	if reason != "" {
 		t.Fatalf("canalHostFaces declined the untouched host: %s", reason)
 	}
 	assertSameLoopPoints(t, gotPlain[0], transformFace(plain, nil, nil, nil, nil), "pass-through")
+}
+
+// --- helpers ---------------------------------------------------------------
+
+// pairResidual is the max distance of got[0]→a and got[1]→b — a point-pair identity residual (0 iff the
+// two points coincide with (a,b) in that order).
+func pairResidual(got []math.Point3, a, b math.Point3) float64 {
+	return stdmath.Max(float64(got[0].DistanceTo(a)), float64(got[1].DistanceTo(b)))
+}
+
+// assertChainMeets asserts every consecutive junction of a chain meets within tol, logging the max gap.
+func assertChainMeets(t *testing.T, chain []endSeg, tol float64, name string) {
+	t.Helper()
+	maxGap := 0.0
+	for i := 0; i+1 < len(chain); i++ {
+		g := float64(chain[i].to.DistanceTo(chain[i+1].from))
+		maxGap = stdmath.Max(maxGap, g)
+	}
+	t.Logf("%s inner-bite chain max junction gap = %.3e (tol %.3e)", name, maxGap, tol)
+	if maxGap > tol {
+		t.Fatalf("%s inner-bite chain does not meet: max junction gap %.3e > tol %.3e", name, maxGap, tol)
+	}
+}
+
+// assertBridgeIs asserts footLocusForHost(host) returns a bridge whose curve is the wanted foot-locus.
+func assertBridgeIs(t *testing.T, host *topo.Face, b canalBoundaries, rolls []geom.Surface, tol float64, want geom.Curve3, name string) {
+	t.Helper()
+	bridge, ok := footLocusForHost(host, b, rolls, tol)
+	if !ok {
+		t.Fatalf("%s: footLocusForHost returned no bridge", name)
+	}
+	wlo, whi := want.Domain()
+	if bridge.from != want.PointAt(wlo) || bridge.to != want.PointAt(whi) {
+		t.Fatalf("%s: bridge endpoints (%v→%v) are not the wanted foot-locus (%v→%v)", name, bridge.from, bridge.to, want.PointAt(wlo), want.PointAt(whi))
+	}
+}
+
+// assertNoBridge asserts footLocusForHost(host) returns no bridge (a plane host, on no roll surface).
+func assertNoBridge(t *testing.T, host *topo.Face, b canalBoundaries, rolls []geom.Surface, tol float64, name string) {
+	t.Helper()
+	if _, ok := footLocusForHost(host, b, rolls, tol); ok {
+		t.Fatalf("%s: footLocusForHost must return NO bridge (host is on neither roll surface)", name)
+	}
+}
+
+// n7BossHost builds the s_10 boss host face (cylinder R=5 about (55,·,15) axis y) as a band — used only to
+// check footLocusForHost tags it to feet[1] by roll-host identity (its loop content is not load-bearing).
+func n7BossHost(t *testing.T) *topo.Face {
+	t.Helper()
+	bld := topo.NewBuilder(true, topo.Lineage{})
+	lin := topo.Lineage{}
+	axis, ref := math.V3(0, 1, 0), math.V3(1, 0, 0)
+	deg := stdmath.Pi / 180
+	bot := mustArcRef(t, math.P3(55, -20, 15), axis, ref, 5, -190*deg, 100*deg)
+	top := mustArcRef(t, math.P3(55, 30, 15), axis, ref, 5, -90*deg, -100*deg)
+	a0, a1 := bld.AddVertex(bot.PointAt(0), lin), bld.AddVertex(bot.PointAt(1), lin)
+	a2, a3 := bld.AddVertex(top.PointAt(0), lin), bld.AddVertex(top.PointAt(1), lin)
+	be := bld.AddEdge(bot, a0, a1, lin)
+	right := bld.AddEdge(geom.NewLineSegment(a1.Point(), a2.Point()), a1, a2, lin)
+	te := bld.AddEdge(top, a2, a3, lin)
+	left := bld.AddEdge(geom.NewLineSegment(a3.Point(), a0.Point()), a3, a0, lin)
+	cyl := mustCylinder(t, math.P3(55, 0, 15), math.V3(0, 1, 0), 5)
+	return bld.AddFace(cyl, lin, topo.OuterLoop(topo.Fwd(be), topo.Fwd(right), topo.Fwd(te), topo.Fwd(left)))
 }
 
 // farRunoutHostAndBite builds a z=0 plane rectangle (in its own body) and a quarter-circle far arc that

@@ -74,7 +74,7 @@ func canalWeldFaces(body *topo.Body, arms []edgeFillet, w cornerWeld, loop RailL
 	if !ok {
 		return nil, "canal arm far cross-sections unresolved (far-runout bundle)"
 	}
-	hostFaces, reason := canalHostFaces(body, arms, w, boundaries, bundles, res)
+	hostFaces, reason := canalHostFaces(body, w, boundaries, bundles, loop.Canal.Rolls, res)
 	if reason != "" {
 		return nil, reason
 	}
@@ -111,37 +111,53 @@ func assembleCanalFaces(body *topo.Body, patch CornerBlendPatch, armFaces, hostF
 	return append(faces, hostFaces...)
 }
 
-// canalArmBundles builds each arm's far-runout rail bundle (only .far populated) at its reflected centre —
-// the far cross-section arc the far-runout host retrim (canalFarOrPassthrough → farArcsBiting) splices in.
-// It reuses the W2 per-arm-centre machinery (solveArmSetback / canalArmHostRails / farCrossSectionArc), so
-// the far arc is byte-identical to the one the arm FACE closes on. Declines (false) if any arm's far arc
-// cannot be built at its reflected centre.
-func canalArmBundles(arms []edgeFillet, w cornerWeld, centres []math.Point3, scale float64, res Resolution) ([]armRails, bool) {
-	bundles := make([]armRails, len(arms))
+// canalArmBundle is one arm's per-reflected-centre weld rails the canal HOST retrims collect (W3b): the
+// far cross-section arc (the rail shared with the far-runout hosts, canalFarOrPassthrough → farArcsBiting)
+// PLUS the two host contact rails, each tagged with the host face it lies on. canalHostBite COLLECTS an
+// arm's already-built host rail from here (shared-edge identity for free) instead of rebuilding it at a
+// shared w.center — which is exactly why the single-ball retrimCornerHost is not reusable: its rails come
+// from one shared centre, but the canal arms have DIFFERENT reflected centres (architecture §"Assembly
+// decision"). rails[k] lies on hosts[k]; rails[0] is on arm.a, rails[1] on arm.b (canalArmHostRails' order).
+type canalArmBundle struct {
+	far   endSeg
+	rails [2]endSeg
+	hosts [2]*topo.Face
+}
+
+// canalArmBundles builds each arm's per-reflected-centre rail bundle (far arc + the two host rails) at its
+// reflected centre, reusing the W2 machinery (solveArmSetback / canalArmHostRails / farCrossSectionArc) so
+// every rail is byte-identical to the one the arm FACE closes on (shared-edge identity). Declines (false)
+// if any arm's rails cannot be built at its reflected centre.
+func canalArmBundles(arms []edgeFillet, w cornerWeld, centres []math.Point3, scale float64, res Resolution) ([]canalArmBundle, bool) {
+	bundles := make([]canalArmBundle, len(arms))
 	for i := range arms {
-		far, ok := canalArmFar(arms[i], centres[i], w, scale, res)
+		b, ok := canalArmBundle1(arms[i], centres[i], w, scale, res)
 		if !ok {
 			return nil, false
 		}
-		bundles[i] = armRails{far: far}
+		bundles[i] = b
 	}
 	return bundles, true
 }
 
-// canalArmFar returns one arm's far cross-section arc at its reflected centre, via the SAME per-arm-centre
-// solve the arm face uses (a one-arm local cornerWeld at the reflected centre), so the far arc the
-// far-runout host splices is identical to the one the arm face closes on.
-func canalArmFar(arm edgeFillet, centre math.Point3, w cornerWeld, scale float64, res Resolution) (endSeg, bool) {
+// canalArmBundle1 solves ONE arm at its reflected centre (a one-arm local cornerWeld) and collects its far
+// cross-section arc + the two host contact rails, tagged with the host faces they lie on. Declines (false)
+// if the setback, the host rails, or the far arc cannot be built at this centre.
+func canalArmBundle1(arm edgeFillet, centre math.Point3, w cornerWeld, scale float64, res Resolution) (canalArmBundle, bool) {
 	set, ok := solveArmSetback(arm, centre, w.radius, scale, res)
 	if !ok {
-		return endSeg{}, false
+		return canalArmBundle{}, false
 	}
 	wi := cornerWeld{center: centre, radius: w.radius, arms: []armSetback{set}}
 	h0, h1, ok := canalArmHostRails(arm, set, wi, res)
 	if !ok {
-		return endSeg{}, false
+		return canalArmBundle{}, false
 	}
-	return farCrossSectionArc(set.arm, w.radius, h0.from, h1.from)
+	far, ok := farCrossSectionArc(set.arm, w.radius, h0.from, h1.from)
+	if !ok {
+		return canalArmBundle{}, false
+	}
+	return canalArmBundle{far: far, rails: [2]endSeg{h0, h1}, hosts: [2]*topo.Face{arm.a, arm.b}}, true
 }
 
 // canalBoundaries is the canal patch's four boundary isocurves tagged by ROLE (ADR-C4-2, the SINGLE
