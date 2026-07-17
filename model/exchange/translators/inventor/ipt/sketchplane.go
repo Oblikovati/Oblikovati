@@ -113,7 +113,15 @@ func matrixCell(pay []byte, i int, d1, d2, b uint32) (float64, int, bool) {
 }
 
 // isRigidPlacement is the decode's own oracle: a placement's axes are orthonormal. A wrong offset
-// produces an all -1 matrix, which this rejects — so the layout needs no separate proof.
+// produces an all -1 matrix, which this rejects — so the OFFSET needs no separate proof.
+//
+// It does NOT prove the ORIENTATION, and must not be read as doing so: a rotation's transpose is
+// also a rotation, so reading the axes as rows instead of columns passes this check identically.
+// What settles that is the translation, which is not symmetric — of the corpus's 517 sketch
+// transforms, 346 carry it in the last COLUMN (m[0..2][3]) and 0 in the last row, i.e. the matrix is
+// the column-vector convention p' = M·p and the basis vectors are its columns, as read below. That
+// matters: 210 of those 517 placements have a normal pointing away from +Z, and a transposed read
+// would have silently flipped them while still passing here (see translate.directionOf).
 func isRigidPlacement(m [4][4]float64) bool {
 	x := [3]float64{m[0][0], m[1][0], m[2][0]}
 	y := [3]float64{m[0][1], m[1][1], m[2][1]}
