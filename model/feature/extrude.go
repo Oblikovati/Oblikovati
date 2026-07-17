@@ -7,7 +7,6 @@ import (
 	"fmt"
 	stdmath "math"
 
-	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
@@ -115,7 +114,7 @@ func (e *ExtrudeFeature) Recompute(in Input) (Output, error) {
 // A Cut or a Join applies each prism SEPARATELY, which is the SAME result by construction —
 // A−(B₁∪B₂) = ((A−B₁)−B₂) and A∪(B₁∪B₂) = ((A∪B₁)∪B₂) — but a far better one in practice, because
 // the merged multi-lump tool is NOT a bare analytic primitive: it fails combine's
-// exactlyOneCurvedPrimitive test, so BOTH operands get faceted and the whole cut runs through the
+// curvedBooleanWorthTrying test, so BOTH operands get faceted and the whole cut runs through the
 // planar path. Per lump the exact curved boolean applies instead, and each boolean is small.
 //
 // TorquimeterDisk cuts 52 regions at once. Merged, that is an 878-face 52-shell tool, and the planar
@@ -241,19 +240,20 @@ func combine(in Input, body *topo.Body, op ops.PartFeatureOperation) ([]*topo.Bo
 		return append(append([]*topo.Body(nil), running...), body), nil
 	}
 	target := running[len(running)-1]
-	// First try the EXACT curved boolean on the still-analytic operands when exactly one of them is a BARE
-	// analytic primitive and the other is all-planar (see exactlyOneCurvedPrimitive): the result keeps the
-	// curved surface through the M2 curved boolean instead of being re-faceted into a prism. This routes BOTH
-	// directions — a curved solid cut by a planar box (#1334/#1335) AND a planar box drilled/joined by a
-	// cylinder/cone tool, which previously fell through to faceting and shattered the hole rim into 24 straight
-	// segments (#1472). CurvedBoolean takes (target, tool) in feature order; each kernel path checks its own
-	// operand roles, so the same call serves both directions.
-	// The curved boolean also keeps analyticity for a JOIN of two coaxial equal-radius cylinders (a
-	// stepped/stacked shaft) — brep.CoaxialCylinderUnion returns one cylinder spanning the merged
-	// extent. Without this the both-cylinder pair fails exactlyOneCurvedPrimitive (both are curved), so
-	// combine faceted BOTH into 24-gon prisms and shattered the wall into planar facets (#1831). On no
-	// match the curved boolean returns ok=false and we fall through to the planar path unchanged.
-	if exactlyOneCurvedPrimitive(target, body) || (op == ops.Join && brep.CoaxialEqualCylinders(target, body)) {
+	// First try the EXACT curved boolean on the still-analytic operands (see curvedBooleanWorthTrying): the
+	// result keeps the curved surface through the M2 curved boolean instead of being re-faceted into a prism.
+	// This routes BOTH directions — a curved solid cut by a planar box (#1334/#1335) AND a planar box
+	// drilled/joined by a cylinder/cone tool, which previously fell through to faceting and shattered the hole
+	// rim into 24 straight segments (#1472). CurvedBoolean takes (target, tool) in feature order; each kernel
+	// path checks its own operand roles, so the same call serves both directions, and on no match it returns
+	// ok=false and we fall through to the planar path unchanged.
+	//
+	// This subsumes the old explicit CoaxialEqualCylinders clause for a JOIN of two coaxial equal-radius
+	// cylinders (a stepped/stacked shaft, #1831). That clause existed only because the both-cylinder pair
+	// failed the then-tighter gate; CoaxialEqualCylinders requires both operands to be BARE cylinder solids,
+	// which curvedBooleanWorthTrying now admits on its own, and brep.CoaxialCylinderUnion still recognises
+	// the pair from inside curvedExactPaths.
+	if curvedBooleanWorthTrying(target, body) {
 		if res, ok := ops.CurvedBooleanWithDiagnostics(op, target, body, in.Diag); ok {
 			return appendCombined(running, res), nil
 		}

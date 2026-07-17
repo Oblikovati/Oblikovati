@@ -17,18 +17,19 @@ import (
 	"oblikovati.org/model/sketch"
 )
 
-// A multi-region extrude must apply its regions' prisms ONE AT A TIME, not merge them into a single
-// multi-lump tool and run one boolean (#33).
+// Two defects that both end in the same place — a body faceted where it should have stayed analytic —
+// and that compound on the same shape, so they are pinned together here.
 //
-// The two are the same set operation — A−(B₁∪B₂) = ((A−B₁)−B₂) — but not the same computation. The
-// merged tool is not a bare analytic primitive, so combine's exactlyOneCurvedPrimitive test fails and
-// BOTH operands are faceted into the planar path; per lump, the exact curved boolean applies instead.
+// #33: a multi-region extrude must apply its regions' prisms ONE AT A TIME rather than merge them into
+// a single multi-lump tool. Same set operation — A−(B₁∪B₂) = ((A−B₁)−B₂) — different computation: the
+// merged tool is not a bare analytic primitive, so combine's gate fails and BOTH operands are faceted.
+// At scale it broke outright (TorquimeterDisk's 52-region cut came back 1630 faces / 25 shells / not
+// closed, from a planar boolean that had itself classified the result invalid).
 //
-// The real cost was not cosmetic. TorquimeterDisk cuts 52 regions at once: merged, that is an
-// 878-face 52-shell tool, and the planar boolean returned a body it had ITSELF classified invalid
-// (booleanGeneral ships the planar result unchecked once the operands exceed csgFallbackFaceLimit) —
-// 1630 faces, 25 shells, not closed. Lump by lump: 461 faces, one shell, a closed solid within 5% of
-// Inventor.
+// #34: combine's gate additionally demanded an ALL-PLANAR target, which defeated the kernel's own
+// chaining — every bore after the first meets a target already carrying a cylinder wall, so both were
+// faceted again and the earlier bore's wall was shattered in passing. brep.drillThroughCurved was
+// built precisely to chain onto an already-curved target (#1336).
 
 func cylinderFaceCount(b *topo.Body) int {
 	n := 0
@@ -71,19 +72,18 @@ func threeBoresSketch(t *testing.T, r, z float64) *sketch.Sketch {
 	return s
 }
 
-// TestMultiRegionCutKeepsTheAnalyticPath pins the fix by its sharpest SYNTHETIC signal: a bore must
-// survive as an analytic cylinder wall. Merged, the tool is not a bare primitive, so combine facets
-// BOTH operands and every bore comes back a 24-gon — measured: ZERO cylinder faces and 102 total,
-// against 1 and 63 per-lump.
+// TestMultiRegionCutKeepsTheAnalyticPath pins the sharpest SYNTHETIC signal of #33 and #34 together:
+// a drilled plate must come back as its EXACT B-rep — 6 box planes + one analytic cylinder wall per
+// bore, 9 faces, no facets anywhere.
 //
-// It asserts >= 1, not one per bore, because only some survive today: after the first bore the TARGET
-// carries a cylinder wall, so exactlyOneCurvedPrimitive fails on the next one and combine facets both
-// again — even though drillThroughCurved exists precisely to chain bores onto an already-curved
-// target (#1336). That gate is a separate defect (tracked in #34); this test pins the #33 fix and
-// would catch a regression of it, without freezing today's alternating behaviour as if it were right.
+// Each defect alone shredded it. Merged into one multi-lump tool (#33), the tool is not a bare
+// primitive, combine facets BOTH operands, and every bore lands as a 24-gon: ZERO cylinder faces, 102
+// total. Per-lump but with combine's old target-must-be-planar gate (#34), only the 1st and 3rd bores
+// stayed round — bore 2 met an already-curved target, so both were faceted again and bore 1's wall was
+// shattered in passing: 1 cylinder face, 63 total.
 //
-// This synthetic case does NOT reproduce #33's headline failure (the non-closed body): merged stays
-// valid and closed here, and even at 40 clean bores / 1226 faces. That needs the real geometry —
+// This case does NOT reproduce #33's headline failure (the non-closed body): merged stays valid and
+// closed here, and even at 40 clean bores / 1226 faces. That needs the real geometry —
 // translate.TestMultipointDiskRebuildsAsAClosedSolid.
 func TestMultiRegionCutKeepsTheAnalyticPath(t *testing.T) {
 	const r = 0.5
@@ -106,9 +106,14 @@ func TestMultiRegionCutKeepsTheAnalyticPath(t *testing.T) {
 		t.Errorf("drilled plate: IsSolid=%v Valid=%v Closed=%v — a multi-region cut must stay a closed solid",
 			b.IsSolid(), rep.Valid, rep.Closed)
 	}
-	if n := cylinderFaceCount(b); n < 1 {
-		t.Errorf("drilled plate kept %d analytic cylinder walls, want at least 1 — a merged multi-lump "+
-			"tool is not a bare primitive, so combine facets every bore into a 24-gon", n)
+	if n := cylinderFaceCount(b); n != 3 {
+		t.Errorf("drilled plate kept %d analytic cylinder walls, want 3 (one per bore): "+
+			"0 means the merged multi-lump tool faceted every bore (#33); 1 means the chain broke on the "+
+			"already-curved target after bore 1 (#34)", n)
+	}
+	if n := len(b.Faces()); n != 9 {
+		t.Errorf("drilled plate has %d faces, want 9 — the exact B-rep is 6 box planes + 3 hole walls; "+
+			"more means something was faceted (63 per-lump-only, 102 merged)", n)
 	}
 	want := 10*6*2 - 3*stdmath.Pi*r*r*2
 	got := analysis.MassPropertiesOf(bodies, 1, types.MassPropertiesHigh).VolumeMm3 / 1000 // mm³ → cm³
@@ -143,4 +148,52 @@ func TestMultiRegionJoinStaysOneClosedSolid(t *testing.T) {
 	if stdmath.Abs(got-want)/want > 0.01 {
 		t.Errorf("bossed plate volume = %g cm³, want %g ±1%%", got, want)
 	}
+}
+
+// TestWasherKeepsBothWallsAnalytic pins the simplest shape #34's gate used to shred: a washer is
+// cylinder − cylinder, so BOTH operands are curved. The old gate demanded that exactly one of them be
+// a bare primitive and the OTHER be all-planar, so the commonest tube in CAD never took the curved
+// path — both walls were faceted into 24-gons (measured 9.3175 cm³ and ZERO analytic faces, against an
+// analytic 9.4248). Nothing multi-region is involved; this is the plain two-cylinder case.
+func TestWasherKeepsBothWallsAnalytic(t *testing.T) {
+	const rOut, rIn, h = 2.0, 1.0, 1.0
+	fs := feature.NewPartFeatures(param.NewParameters())
+	feature.NewExtrudeFeatures(fs).AddExtrude(boreSketch(t, rOut, 0), []int{0}, ops.NewBody,
+		feature.Extent{Type: feature.DistanceExtent, Direction: feature.PositiveDir, Distance: func() float64 { return h }}, 0)
+	fs.Recompute()
+	feature.NewExtrudeFeatures(fs).AddExtrude(boreSketch(t, rIn, 0), []int{0}, ops.Cut,
+		feature.Extent{Type: feature.ThroughAllExtent, Direction: feature.SymmetricDir}, 0)
+	fs.Recompute()
+
+	bodies := fs.Result()
+	if len(bodies) != 1 {
+		t.Fatalf("got %d bodies, want 1", len(bodies))
+	}
+	b := bodies[0]
+	if !b.IsSolid() || !ops.Validate(b).Closed {
+		t.Errorf("washer is not a closed solid (IsSolid=%v)", b.IsSolid())
+	}
+	if n := cylinderFaceCount(b); n != 2 {
+		t.Errorf("washer kept %d analytic cylinder walls, want 2 (outer + bore) — "+
+			"a both-operands-curved pair must still take the exact curved path", n)
+	}
+	want := stdmath.Pi * (rOut*rOut - rIn*rIn) * h
+	got := analysis.MassPropertiesOf(bodies, 1, types.MassPropertiesHigh).VolumeMm3 / 1000
+	if stdmath.Abs(got-want)/want > 0.005 {
+		t.Errorf("washer volume = %g cm³, want %g ±0.5%% (faceted walls read 9.3175)", got, want)
+	}
+}
+
+// boreSketch is one circle of radius r on the plane z.
+func boreSketch(t *testing.T, r, z float64) *sketch.Sketch {
+	t.Helper()
+	ux, _ := math.NewUnitVector3(1, 0, 0)
+	uy, _ := math.NewUnitVector3(0, 1, 0)
+	pl, err := sketch.NewPlane(math.P3(0, 0, math.Scalar(z)), ux, uy)
+	if err != nil {
+		t.Fatalf("plane: %v", err)
+	}
+	s := sketch.NewSketches().Add(pl)
+	s.Circles().AddByCenterRadius(math.P2(0, 0), math.Scalar(r))
+	return s
 }

@@ -41,16 +41,35 @@ func curvedFaceCount(b *topo.Body) int {
 	return n
 }
 
-// exactlyOneCurvedPrimitive reports whether exactly one of target/tool is a BARE analytic primitive
-// (a single curved face — an extruded cylinder/cone, a revolved torus, a sphere) and the other is
-// all-planar. Only then can the exact M2 curved boolean keep the curved surface: a box drilled by a
-// cylinder tool keeps its cylindrical hole wall (#1472), the mirror of a curved solid cut by a planar
-// box (#1334/#1335). The single-curved-face gate is deliberately tight — a composite curved body (a
-// washer's two cylinder walls, a filleted edge) is NOT a primitive the half-space cut handles, so it
-// stays on the faceted planar path; CurvedBoolean can over-match such a body and cut it wrongly.
-func exactlyOneCurvedPrimitive(target, tool *topo.Body) bool {
+// curvedBooleanWorthTrying reports whether the exact M2 curved boolean is worth attempting on these
+// operands, so the result can keep its analytic surfaces instead of being faceted for the planar path.
+// It holds when the TOOL is a bare analytic primitive (a single curved face — an extruded
+// cylinder/cone, a revolved torus, a sphere), whatever the target is, or in the mirror case of a
+// bare-primitive target cut by an all-planar tool (#1334/#1335).
+//
+// The TARGET used to have to be all-planar too, which quietly defeated the kernel's own chaining. Every
+// bore after the first meets a target that already carries a cylinder wall, so the gate failed and
+// combine faceted BOTH operands — permanently shattering the earlier bore into a 24-gon, and the next
+// bore then found a planar target again, so a drilled plate ALTERNATED analytic/faceted. That is
+// exactly what brep.drillThroughCurved was built to avoid: "One curvedStitch drill path serves both an
+// all-planar slab and one that already carries curved faces (a prior bore's wall), so a drilled plate
+// chains exactly instead of falling to CSG" (#1336/#1403) — the kernel supported it; the feature layer
+// never called it. A 3-bore plate went from 1 analytic wall in 63 faces to 3 in 9 — the exact B-rep
+// (6 box planes + 3 hole walls). The tight gate also faceted the simplest tube in the codebase: a
+// washer is cylinder − cylinder, so BOTH operands are curved and it never took the curved path
+// (measured 9.3175 cm³ with 0 analytic walls, against 9.4245 and 2 walls now; analytic 9.4248).
+//
+// Trying is safe by construction: every path in curvedExactPaths checks its own operand roles and
+// declines with ok=false when it does not apply, and curvedExactGuarded brackets the result's volume
+// and falls back when a recognizer mis-matched (#1601). The old comment here warned that CurvedBoolean
+// "can over-match" a composite curved body (a washer, a filleted edge) and cut it wrongly; measured on
+// exactly those shapes — washer joined/cut by a coaxial cylinder, washer bored off-axis — every result
+// moved CLOSER to its analytic volume and none over-matched, and the whole model suite stays green.
+// A tool with MORE than one curved face is still not attempted: no path recognises such a tool, so it
+// keeps the faceted path.
+func curvedBooleanWorthTrying(target, tool *topo.Body) bool {
 	tc, oc := curvedFaceCount(target), curvedFaceCount(tool)
-	return (tc == 1 && oc == 0) || (tc == 0 && oc == 1)
+	return oc == 1 || (tc == 1 && oc == 0)
 }
 
 // planarized converts a body with analytic curved faces into a planar B-rep the exact boolean can
