@@ -114,13 +114,9 @@ func canalArmFace(arm edgeFillet, centre math.Point3, cornerRail geom.Curve3, co
 		return filletFace{}, false // C not on this arm's spine at its reflected centre — a gap
 	}
 	wi := cornerWeld{center: centre, radius: w.radius, arms: []armSetback{set}}
-	h0, h1, ok := canalArmHostRails(arm, set, wi, res)
+	h0, h1, far, ok := canalArmRailsAndTerminal(arm, set, wi, res)
 	if !ok {
-		return filletFace{}, false
-	}
-	far, ok := farCrossSectionArc(set.arm, w.radius, h0.from, h1.from)
-	if !ok {
-		return filletFace{}, false
+		return filletFace{}, false // F_far section or reused rail declined at this reflected centre
 	}
 	loop, reason := canalArmLoop(h0, h1, far, cornerRail, cornerRev, res.Weld()*scale)
 	if reason != "" {

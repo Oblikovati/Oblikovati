@@ -149,11 +149,7 @@ func canalArmBundle1(arm edgeFillet, centre math.Point3, w cornerWeld, scale flo
 		return canalArmBundle{}, false
 	}
 	wi := cornerWeld{center: centre, radius: w.radius, arms: []armSetback{set}}
-	h0, h1, ok := canalArmHostRails(arm, set, wi, res)
-	if !ok {
-		return canalArmBundle{}, false
-	}
-	far, ok := farCrossSectionArc(set.arm, w.radius, h0.from, h1.from)
+	h0, h1, far, ok := canalArmRailsAndTerminal(arm, set, wi, res)
 	if !ok {
 		return canalArmBundle{}, false
 	}

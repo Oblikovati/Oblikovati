@@ -465,6 +465,11 @@ func reverseEndSegs(segs []endSeg) []endSeg {
 		r := endSeg{from: s.to, to: s.from, mid: s.mid, arc: s.arc}
 		if s.arc {
 			r.curve, _ = geom.Arc3dByThreePoints(s.to, s.mid, s.from)
+		} else if s.curve != nil {
+			// A non-arc curved segment (a canal terminal SPIRIC section) has no by-endpoints
+			// reconstruction; wrap it reversed. The single-ball path has no such segment (its
+			// curved rails are all arcs, its straight rulings carry no curve), so it is byte-unchanged.
+			r.curve = geom.ReverseCurve3(s.curve)
 		}
 		out[len(segs)-1-i] = r
 	}
