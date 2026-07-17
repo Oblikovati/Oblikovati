@@ -42,7 +42,7 @@ func canalHostBite(host *topo.Face, bundles []canalArmBundle, b canalBoundaries,
 	if !ok {
 		return filletFace{}, fmt.Sprintf("canal host bite (%T): no unambiguous bitten loop (tol %.3e)", host.Geometry(), tol)
 	}
-	loop, reason := canalCloseFar(host, star, inner, w, tol)
+	loop, reason := canalCloseFar(host, star, inner, bundles, w, tol)
 	if reason != "" {
 		return filletFace{}, reason
 	}
@@ -139,16 +139,19 @@ func innerBiteKey(inner []endSeg) math.Point3 {
 }
 
 // canalCloseFar closes the inner bite into a full host loop with the surviving far span of the host's
-// bitten loop (farPathSegs, reused verbatim): the far path runs from the inner bite's last outer end back
-// to its first, avoiding the bitten trihedral vertex. Honest-declines (carrying the measured outer-end→
-// loop anchor gaps) when an outer end does not lie on the bitten loop (risk #1) — never snapped.
-func canalCloseFar(host *topo.Face, star *topo.Loop, inner []endSeg, w cornerWeld, tol float64) (filletLoop, string) {
+// bitten loop: the far path runs from the inner bite's last outer end back to its first, avoiding the
+// bitten trihedral vertex. On a FAR-END corner host (the wall) the outer ends are the arm rails' off-loop
+// runout feet, so the far path is anchored on the window loop AUGMENTED by the arms' through-vertex
+// extension edges (canalFarSpan, F2 derivation §5-6); with none it is farPathSegs verbatim. Honest-declines
+// (carrying the measured outer-end→loop anchor gaps) when an outer end neither anchors nor extends onto the
+// bitten loop (risk #1) — never snapped.
+func canalCloseFar(host *topo.Face, star *topo.Loop, inner []endSeg, bundles []canalArmBundle, w cornerWeld, tol float64) (filletLoop, string) {
 	segs := segsFromLoop(star)
 	if len(segs) < 3 {
 		return filletLoop{}, fmt.Sprintf("canal host bite (%T): bitten loop has %d edges, need ≥3", host.Geometry(), len(segs))
 	}
 	outerA, outerB := inner[0].from, inner[len(inner)-1].to
-	far, ok := farPathSegs(segs, outerB, outerA, bittenVertex(segs, w.center), tol)
+	far, ok := canalFarSpan(segs, outerA, outerB, extensionsOnHost(host, bundles), bittenVertex(segs, w.center), tol)
 	if !ok {
 		return filletLoop{}, canalAnchorDeclineReason(host, segs, outerA, outerB, tol)
 	}

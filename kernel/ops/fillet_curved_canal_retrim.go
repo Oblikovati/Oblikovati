@@ -3,8 +3,6 @@
 package ops
 
 import (
-	"fmt"
-
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 )
@@ -51,7 +49,7 @@ func canalHostFace(f *topo.Face, boundaries canalBoundaries, bundles []canalArmB
 	if len(armRailsOnHost(f, bundles)) > 0 || hasBridge {
 		return canalHostBite(f, bundles, boundaries, rolls, w, res)
 	}
-	return canalFarOrPassthrough(f, farBundles(bundles), tol)
+	return canalImprintFace(f, bundles, tol)
 }
 
 // farBundles projects the per-arm canal bundles onto the far-only armRails view the verbatim far-runout
@@ -65,18 +63,8 @@ func farBundles(bundles []canalArmBundle) []armRails {
 	return out
 }
 
-// canalFarOrPassthrough is the VERBATIM far-runout / pass-through branch, mirroring the far half of the
-// single-ball curvedHostFace: a face bitten by any arm's far cross-section arc is spliced by the EXISTING
-// farRunoutFace; an untouched face is carried through by transformFace. It calls the same leaf functions
-// the single-ball path does (no reimplementation), so the far faces are byte-identical.
-func canalFarOrPassthrough(f *topo.Face, bundles []armRails, tol float64) (filletFace, string) {
-	bites := farArcsBiting(f, bundles, tol)
-	if len(bites) == 0 {
-		return transformFace(f, nil, nil, nil, nil), "" // untouched by the corner — carried through verbatim
-	}
-	ff, ok := farRunoutFace(f, bites, tol)
-	if !ok {
-		return filletFace{}, fmt.Sprintf("canal far-runout retrim declined (%T, %d bites)", f.Geometry(), len(bites))
-	}
-	return ff, ""
-}
+// The far-end host imprints (the notch faces the arm termini bite) are retrimmed by canalImprintFace
+// (fillet_curved_canal_imprint.go, F2), which splices each arm's terminal — or its extension edge +
+// terminal when the wall-side foot runs off the loop (derivation §5) — and passes untouched faces through
+// transformFace. It supersedes the W3 armRails-only far-runout branch (which could not carry the extension
+// edges); farBundles remains the far-only projection the shared-edge identity tests read.

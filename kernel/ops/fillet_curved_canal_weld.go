@@ -122,6 +122,14 @@ type canalArmBundle struct {
 	far   endSeg
 	rails [2]endSeg
 	hosts [2]*topo.Face
+	// ext is the arm's far-end THROUGH-VERTEX extension edge (F2, derivation §5): the co-circular arc /
+	// collinear segment along the wall∩F_far section that carries the wall-side runout foot back to the
+	// F_far loop's far vertex when it lands off the loop (s_4 z=80 arc, s_5 x=80 segment). extHost is the
+	// host face it lies on (the wall cylinder). extHost == nil ⇒ no extension (s_10 — the terminal's feet
+	// already land on the F_far loop, a verbatim splice). The SAME ext object is spliced into the F_far
+	// imprint face (canalImprintFace) AND the wall's far path (canalFarSpan) — shared-edge identity §7.3.
+	ext     endSeg
+	extHost *topo.Face
 }
 
 // canalArmBundles builds each arm's per-reflected-centre rail bundle (far arc + the two host rails) at its
@@ -153,7 +161,8 @@ func canalArmBundle1(arm edgeFillet, centre math.Point3, w cornerWeld, scale flo
 	if !ok {
 		return canalArmBundle{}, false
 	}
-	return canalArmBundle{far: far, rails: [2]endSeg{h0, h1}, hosts: [2]*topo.Face{arm.a, arm.b}}, true
+	ext, extHost, _ := canalArmExtension(arm, h0, h1, wi, res) // optional far-end extension (nil host ⇒ none)
+	return canalArmBundle{far: far, rails: [2]endSeg{h0, h1}, hosts: [2]*topo.Face{arm.a, arm.b}, ext: ext, extHost: extHost}, true
 }
 
 // canalBoundaries is the canal patch's four boundary isocurves tagged by ROLE (ADR-C4-2, the SINGLE
