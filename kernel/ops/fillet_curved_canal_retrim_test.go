@@ -41,7 +41,7 @@ func n7CanalBiteInputs(t *testing.T, w cornerWeld, arms []edgeFillet, res Resolu
 		t.Fatalf("canalBoundaryRoles declined: %v", err)
 	}
 	scale := tangentCornerScale(w, arms)
-	centres, ok := reflectedArmCentres(w, arms, scale, res)
+	centres, ok, _ := reflectedArmCentres(w, arms, scale, res)
 	if !ok {
 		t.Fatalf("reflectedArmCentres unresolved for N7")
 	}

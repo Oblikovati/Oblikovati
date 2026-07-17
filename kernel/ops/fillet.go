@@ -401,6 +401,7 @@ func computeEdgeFillet(body *topo.Body, p filletPick, blends map[uint64]*cornerB
 		return edgeFillet{}, err
 	}
 	in.a, in.b, in.axis = a, b, axis.AsVector()
+	in.weld = ResolutionForBody(body).Weld() // F3a: the spine-concurrence tolerance cornerAt gates the override on
 	return solvedEdgeFillet(e, p, in, blends, miters)
 }
 
@@ -707,7 +708,8 @@ type cornerInputs struct {
 	nA, nB math.Vector3
 	offDir math.Vector3
 	axis   math.Vector3
-	flip   bool // invert the cylinder face's outward sense (a concave fillet's surface faces the centre)
+	flip   bool    // invert the cylinder face's outward sense (a concave fillet's surface faces the centre)
+	weld   float64 // model-relative coincidence tolerance for the F3a spine-concurrence gate (armCornerCentre)
 }
 
 // cornerAt solves a fillet corner at vertex v with the local radius r. Without a blend it is
@@ -720,26 +722,57 @@ func cornerAt(v *topo.Vertex, in cornerInputs, r float64, blend *cornerBlend, mi
 		p := v.Point()
 		return corner{a: in.a, b: in.b, vertex: v, cen: p, ta: p, tb: p, mid: p, runout: true}, nil
 	}
-	cen := v.Point().TranslateBy(in.offDir.Scale(r)) // the rolling-ball centre, on the cylinder axis
-	ta := cen.TranslateBy(in.nA.Scale(r))
-	tb := cen.TranslateBy(in.nB.Scale(r))
-	var end *topo.Face
-	var seam []math.Point3
+	cen, ta, tb, arcCen, end, seam, err := cornerTangents(v, in, r, blend, miter)
+	if err != nil {
+		return corner{}, err
+	}
+	// mid uses arcCen (the blend ball for a shared corner) so the sphere-patch arc registers ON the sphere
+	// even when the arm SURFACE centre was kept frame-derived by the F3a spine-concurrence gate (armCornerCentre).
+	mid := arcCen.TranslateBy(perpToward(arcCen, v.Point(), in.axis).Scale(r))
+	c := corner{a: in.a, b: in.b, endFace: end, vertex: v, cen: cen, ta: ta, tb: tb, mid: mid, blend: blend != nil, miter: miter != nil, seam: seam}
+	registerBlendArc(blend, c, in, variable)
+	return c, nil
+}
+
+// cornerTangents resolves a corner's arm-surface centre (cen), the two face tangent points, the sphere-patch
+// arc centre (arcCen), and the end face / miter seam, by corner kind: a miter seam, a blend ball (whose
+// override is gated on spine concurrence via armCornerCentre, F3a), or a plain end-face round. Split out of
+// cornerAt to keep it within funlen; it errors only on a plain corner with no end face to round.
+func cornerTangents(v *topo.Vertex, in cornerInputs, r float64, blend *cornerBlend, miter *cornerMiter) (cen, ta, tb, arcCen math.Point3, end *topo.Face, seam []math.Point3, err error) {
+	cen = v.Point().TranslateBy(in.offDir.Scale(r)) // the frame-derived rolling-ball centre, on the arm axis
+	ta = cen.TranslateBy(in.nA.Scale(r))
+	tb = cen.TranslateBy(in.nB.Scale(r))
+	arcCen = cen // the sphere-patch arc's centre: the blend ball for a shared (concurrent OR canal) corner
 	switch {
 	case miter != nil:
 		ta, tb, seam = miterTangents(in, miter) // the end is the seam, not an end-face arc
 	case blend != nil:
-		cen, ta, tb = blend.center, blend.tan[in.a.ID()], blend.tan[in.b.ID()]
+		cen, ta, tb, arcCen = armCornerCentre(cen, in, blend), blend.tan[in.a.ID()], blend.tan[in.b.ID()], blend.center
 	default:
 		if end = endFaceAt(v, in.a, in.b); end == nil {
-			return corner{}, fmt.Errorf("fillet: edge endpoint has no end face to round")
+			return cen, ta, tb, arcCen, nil, nil, fmt.Errorf("fillet: edge endpoint has no end face to round")
 		}
 	}
-	// mid is computed AFTER the switch so a blend corner's arc midpoint uses the sphere centre.
-	mid := cen.TranslateBy(perpToward(cen, v.Point(), in.axis).Scale(r))
-	c := corner{a: in.a, b: in.b, endFace: end, vertex: v, cen: cen, ta: ta, tb: tb, mid: mid, blend: blend != nil, miter: miter != nil, seam: seam}
-	registerBlendArc(blend, c, in, variable)
-	return c, nil
+	return cen, ta, tb, arcCen, end, seam, nil
+}
+
+// armCornerCentre returns the ARM SURFACE's rolling-ball centre at a shared (blend) corner, gating the
+// blend-ball override on SPINE CONCURRENCE (F3a). The arm's offset spine is the LINE through the
+// frame-derived centre along the edge axis; the blend ball sits ON that line — but OFFSET by the setback
+// distance ALONG the axis, so the test is the ball's PERPENDICULAR distance to the spine line, not the raw
+// point distance (which the setback would always overshoot). It adopts the blend ball only when that
+// perpendicular gap ≤ in.weld. For a concurrent corner (every planar box/round/setback corner, and the
+// concave-trihedral L6 — the single ball lies on every arm's spine) this is the blend ball, byte-identical
+// to the pre-F3a override. For a NON-concurrent canal corner the ball is on the other two arms' spines
+// only (s_10's ball is 10 off its x=55 spine); adopting it would build the arm cylinder on the mirrored
+// x=45 side, so the frame-derived centre is kept — the sphere-patch arc still registers on the ball (mid).
+func armCornerCentre(frame math.Point3, in cornerInputs, blend *cornerBlend) math.Point3 {
+	d := frame.VectorTo(blend.center)
+	perp := d.Sub(in.axis.Scale(d.Dot(in.axis))) // component of ball→spine offset ⊥ to the edge axis
+	if perp.Length() <= in.weld {
+		return blend.center
+	}
+	return frame
 }
 
 // registerBlendArc records the corner's boundary arc on the sphere patch when v is a blend corner. A

@@ -3,6 +3,8 @@
 package ops
 
 import (
+	"fmt"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -41,7 +43,7 @@ func extractTangentDegenerateCorner(w cornerWeld, arms []edgeFillet, res Resolut
 		return RailLoop{}, false
 	}
 	scale := tangentCornerScale(w, arms)
-	centres, ok := reflectedArmCentres(w, arms, scale, res)
+	centres, ok, _ := reflectedArmCentres(w, arms, scale, res) // do-no-harm extractor: reason surfaces at the canal weld
 	if !ok {
 		return RailLoop{}, false
 	}
@@ -142,23 +144,24 @@ func tangentCornerScale(w cornerWeld, arms []edgeFillet) float64 {
 // carries w.center; every other arm's centre is a resolved neighbour's centre reflected across the
 // plane the two arms share, kept only if it lands on this arm's spine (armStation) — else it falls
 // back to w.center (the octant, where all spines concur at C). ok=false if any arm stays unresolved.
-func reflectedArmCentres(w cornerWeld, arms []edgeFillet, scale float64, res Resolution) ([]math.Point3, bool) {
+func reflectedArmCentres(w cornerWeld, arms []edgeFillet, scale float64, res Resolution) ([]math.Point3, bool, string) {
 	centres := make([]math.Point3, len(arms))
 	done := make([]bool, len(arms))
+	reasons := make([]string, len(arms))
 	seedRootArm(w, arms, scale, res, centres, done)
 	for pass := 0; pass <= len(arms); pass++ {
 		for i := range arms {
 			if !done[i] {
-				centres[i], done[i] = resolveArmCentre(w, arms, i, centres, done, scale, res)
+				centres[i], done[i], reasons[i] = resolveArmCentre(w, arms, i, centres, done, scale, res)
 			}
 		}
 	}
-	for _, d := range done {
+	for i, d := range done {
 		if !d {
-			return nil, false
+			return nil, false, reasons[i] // the first still-unresolved arm's measured decline reason
 		}
 	}
-	return centres, true
+	return centres, true, ""
 }
 
 // seedRootArm marks the first arm whose spine contains w.center as resolved with centre w.center.
@@ -172,8 +175,14 @@ func seedRootArm(w cornerWeld, arms []edgeFillet, scale float64, res Resolution,
 }
 
 // resolveArmCentre resolves arm i from a resolved neighbour: reflect that neighbour's centre across the
-// shared plane; accept it if it lies on arm i's spine, else w.center if that does, else leave unresolved.
-func resolveArmCentre(w cornerWeld, arms []edgeFillet, i int, centres []math.Point3, done []bool, scale float64, res Resolution) (math.Point3, bool) {
+// shared plane and accept it if it lies on arm i's own spine. It no longer SILENTLY falls back to w.center
+// when the reflected candidate is off-spine (F3a): that fallback was self-consistent on a MIRRORED arm
+// surface and so MASKED the s_10 x=45 mirror. With the mirror fixed the reflected candidate lies on the
+// correct spine, so a residual disagreement is a real (mirror-class) defect — decline honestly, carrying
+// the measured off-spine candidate, w.center, and the tolerance, so the next such defect surfaces here.
+func resolveArmCentre(w cornerWeld, arms []edgeFillet, i int, centres []math.Point3, done []bool, scale float64, res Resolution) (math.Point3, bool, string) {
+	tol := res.Weld() * scale
+	reason := fmt.Sprintf("arm %d: no resolved neighbour shares a plane host", i)
 	for j := range arms {
 		if !done[j] {
 			continue
@@ -184,13 +193,12 @@ func resolveArmCentre(w cornerWeld, arms []edgeFillet, i int, centres []math.Poi
 		}
 		cand := reflectAcrossFace(centres[j], pl)
 		if _, ok := armStation(arms[i].armSurface, cand, scale, res); ok {
-			return cand, true
+			return cand, true, ""
 		}
-		if _, ok := armStation(arms[i].armSurface, w.center, scale, res); ok {
-			return w.center, true
-		}
+		reason = fmt.Sprintf("arm %d: reflected centre %v off its own spine; corner ball %v not substituted (tol %.3e)",
+			i, cand, w.center, tol)
 	}
-	return math.Point3{}, false
+	return math.Point3{}, false, reason
 }
 
 // sharedPlaneFace returns the plane host face two arms share (by pointer identity), if any.

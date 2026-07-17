@@ -45,7 +45,7 @@ func n7RealHostInputs(t *testing.T) n7RealHost {
 		arms[i] = bindArmToRealEdge(t, fix[i], corner)
 	}
 	scale := tangentCornerScale(w, arms)
-	centres, ok := reflectedArmCentres(w, arms, scale, res)
+	centres, ok, _ := reflectedArmCentres(w, arms, scale, res)
 	if !ok {
 		t.Fatal("real-body reflectedArmCentres unresolved")
 	}

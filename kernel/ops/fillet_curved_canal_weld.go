@@ -95,9 +95,9 @@ func canalWeldContext(loop RailLoop, w cornerWeld, arms []edgeFillet, res Resolu
 		return CornerBlendPatch{}, canalBoundaries{}, nil, 0, fmt.Sprintf("canal boundary roles unavailable: %v", err)
 	}
 	scale := tangentCornerScale(w, arms)
-	centres, ok := reflectedArmCentres(w, arms, scale, res)
+	centres, ok, reason := reflectedArmCentres(w, arms, scale, res)
 	if !ok {
-		return CornerBlendPatch{}, canalBoundaries{}, nil, 0, "canal per-arm reflected centres unresolved"
+		return CornerBlendPatch{}, canalBoundaries{}, nil, 0, "canal per-arm reflected centres unresolved: " + reason
 	}
 	return patch, boundaries, centres, scale, ""
 }
