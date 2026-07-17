@@ -4,6 +4,7 @@ package ops
 
 import (
 	stdmath "math"
+	"strings"
 	"testing"
 
 	"oblikovati.org/kernel/geom"
@@ -126,6 +127,69 @@ func TestCanalArmFaces_WrongEndArcMappingRejects(t *testing.T) {
 		if _, ok := canalArmFace(arms[i], centres[i], wrong, wrongRev, w, scale, res); ok {
 			t.Fatalf("wall arm %d must REJECT the swapped (other arm's) end arc — the loop cannot close", i)
 		}
+	}
+}
+
+// TestCanalArmLoop_EarlierJunctionGapRejected is the mutation-evidence test for the W2 review's
+// closure-gate finding: canalArmLoop's own gate used to check only the FINAL junction (hn.to vs
+// corner[0]) — near-definitionally satisfied because orderArmHostRails selects hNear BY matching .to
+// against corner[0]. A break at an EARLIER junction (here: the far host rail's target, hFar.to → far.from,
+// the same class of break as the W2 reviewer's Mutation C — orientEndSeg reversed into a 75-unit gap)
+// used to sail through canalArmLoop unnoticed and only surface downstream (assertArmFaceCloses /
+// assembleBody). After the fix, canalArmLoop must decline the break ITSELF, naming the junction and the
+// measured gap. Proves it discriminates: (1) the real, uncorrupted geometry closes; (2) the hand-broken
+// geometry is declined AT canalArmLoop with ~75 in the reason; (3) restoring the real geometry closes
+// again (the break, not the tolerance, caused the decline).
+func TestCanalArmLoop_EarlierJunctionGapRejected(t *testing.T) {
+	w, arms, res := n7CornerFill(t)
+	_, boundaries, centres, scale := n7CanalWeldInputs(t, w, arms, res)
+	mid := n7MidArmIndex(t, arms)
+	i := torusArmIndex(t, arms)
+	arm, centre := arms[i], centres[i]
+	tol := res.Weld() * scale
+
+	rail, rev, ok := canalArmCornerRail(boundaries, centres[i], i, mid)
+	if !ok {
+		t.Fatalf("torus arm: no corner-side rail")
+	}
+	set, ok := solveArmSetback(arm, centre, w.radius, scale, res)
+	if !ok {
+		t.Fatalf("torus arm: solveArmSetback declined")
+	}
+	wi := cornerWeld{center: centre, radius: w.radius, arms: []armSetback{set}}
+	h0, h1, ok := canalArmHostRails(arm, set, wi, res)
+	if !ok {
+		t.Fatalf("torus arm: host rails declined")
+	}
+	far, ok := farCrossSectionArc(set.arm, w.radius, h0.from, h1.from)
+	if !ok {
+		t.Fatalf("torus arm: far cross-section arc declined")
+	}
+
+	// (1) the real, unbroken geometry closes — canalArmLoop's own gate accepts it.
+	if _, reason := canalArmLoop(h0, h1, far, rail, rev, tol); reason != "" {
+		t.Fatalf("torus arm: canalArmLoop declined the real N7 geometry: %s", reason)
+	}
+
+	// (2) hand-introduce an EARLIER-junction break (junction 2: hFar.to → far.from), NOT the final one
+	// (junction 4: hNear.to → corner[0]): translate the far cross-section arc's endpoints off their
+	// chain points by 75 units, mirroring the W2 reviewer's Mutation C gap magnitude.
+	const gapMag = 75.0
+	broken := far
+	broken.from = math.P3(broken.from.X+gapMag, broken.from.Y, broken.from.Z)
+	broken.to = math.P3(broken.to.X+gapMag, broken.to.Y, broken.to.Z)
+	_, brokenReason := canalArmLoop(h0, h1, broken, rail, rev, tol)
+	if brokenReason == "" {
+		t.Fatal("canalArmLoop must decline an earlier-junction break, not silently build a malformed loop")
+	}
+	if !strings.Contains(brokenReason, "gap") {
+		t.Fatalf("canalArmLoop's decline reason must carry the measured gap, got: %s", brokenReason)
+	}
+	t.Logf("earlier-junction break correctly caught at canalArmLoop's own gate: %s", brokenReason)
+
+	// (3) restore: the SAME uncorrupted inputs still close — the break, not the tolerance, caused (2).
+	if _, reason := canalArmLoop(h0, h1, far, rail, rev, tol); reason != "" {
+		t.Fatalf("torus arm: canalArmLoop declined the restored geometry: %s", reason)
 	}
 }
 

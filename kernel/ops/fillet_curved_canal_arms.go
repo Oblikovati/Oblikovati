@@ -122,9 +122,9 @@ func canalArmFace(arm edgeFillet, centre math.Point3, cornerRail geom.Curve3, co
 	if !ok {
 		return filletFace{}, false
 	}
-	loop, ok := canalArmLoop(h0, h1, far, cornerRail, cornerRev, res.Weld()*scale)
-	if !ok {
-		return filletFace{}, false
+	loop, reason := canalArmLoop(h0, h1, far, cornerRail, cornerRev, res.Weld()*scale)
+	if reason != "" {
+		return filletFace{}, false // canalArmLoop already carries the precise junction+gap; see canalOneArmFace
 	}
 	return filletFace{surface: arm.armSurface, loops: []filletLoop{loop}, parent: armFaceProvenance(arm.edge)}, true
 }
@@ -145,23 +145,47 @@ func canalArmHostRails(arm edgeFillet, set armSetback, wi cornerWeld, res Resolu
 // shared-edge identity (ADR-C4-2) that welds the arm face to the corner patch without a crack — and put
 // FIRST, so it is loop.pts[:len(corner)]. The remaining three sides (the far host rail, the far
 // cross-section arc, the near host rail) are oriented head-to-tail from the corner rail's far end back
-// to its start. Declines if the host rails do not chain onto the corner rail's two ends.
-func canalArmLoop(h0, h1, far endSeg, cornerRail geom.Curve3, cornerRev bool, tol float64) (filletLoop, bool) {
+// to its start. Declines (non-empty reason, carrying the junction + measured gap) if the host rails do
+// not chain onto the corner rail's two ends — checked at EVERY junction (tb→hFar, hFar.to→far,
+// far.to→hNear, hNear.to→corner[0]), not just the final one: a break at an EARLIER junction (e.g.
+// Mutation C: orientEndSeg reversed into a 75-unit gap) used to survive this gate silently and only get
+// caught downstream, in assertArmFaceCloses or assembleBody, with a far less precise reason (W2 review).
+func canalArmLoop(h0, h1, far endSeg, cornerRail geom.Curve3, cornerRev bool, tol float64) (filletLoop, string) {
 	corner := sampleCurve3Open(cornerRail, cornerRev)
 	if len(corner) == 0 {
-		return filletLoop{}, false
+		return filletLoop{}, "canal arm loop: corner rail sampled to zero points"
 	}
 	hNear, hFar, tb, ok := orderArmHostRails(h0, h1, corner[0], tol)
 	if !ok {
-		return filletLoop{}, false // neither host rail ends at the corner rail's start point
+		return filletLoop{}, fmt.Sprintf("canal arm loop: neither host rail ends at the corner rail's start %v (tol %.3e)", corner[0], tol)
 	}
-	hf := orientEndSeg(hFar, tb, tol)     // tb → outerFar
-	fr := orientEndSeg(far, hf.to, tol)   // outerFar → outerNear
-	hn := orientEndSeg(hNear, fr.to, tol) // outerNear → corner[0]
-	if float64(hn.to.DistanceTo(corner[0])) > tol {
-		return filletLoop{}, false // the ring does not close back to the corner rail's start
+	hf, reason := chainOnto("corner rail's far end→far host rail", hFar, tb, tol) // tb → outerFar
+	if reason != "" {
+		return filletLoop{}, reason
 	}
-	return buildArmFilletLoop(corner, cornerRail, hf, fr, hn), true
+	fr, reason := chainOnto("far host rail→far cross-section arc", far, hf.to, tol) // outerFar → outerNear
+	if reason != "" {
+		return filletLoop{}, reason
+	}
+	hn, reason := chainOnto("far cross-section arc→near host rail", hNear, fr.to, tol) // outerNear → corner[0]
+	if reason != "" {
+		return filletLoop{}, reason
+	}
+	if gap, ok := chainsWithin(hn.to, corner[0], tol); !ok {
+		return filletLoop{}, fmt.Sprintf("canal arm loop: ring does not close — near host rail's end is %.3e from the corner rail's start %v (tol %.3e)", gap, corner[0], tol)
+	}
+	return buildArmFilletLoop(corner, cornerRail, hf, fr, hn), ""
+}
+
+// chainOnto orients seg to start at target (via orientEndSeg) and turns a failed orientation into a
+// reason string naming the junction label and the measured gap, so canalArmLoop's decline points at the
+// SPECIFIC broken junction instead of a generic "did not close" at the end of the loop.
+func chainOnto(junction string, seg endSeg, target math.Point3, tol float64) (endSeg, string) {
+	oriented, gap, ok := orientEndSeg(seg, target, tol)
+	if ok {
+		return oriented, ""
+	}
+	return endSeg{}, fmt.Sprintf("canal arm loop: junction %s does not chain at %v (gap %.3e > tol %.3e)", junction, target, gap, tol)
 }
 
 // buildArmFilletLoop flattens the sampled corner rail + the three chained boundary segments into one
@@ -194,12 +218,28 @@ func orderArmHostRails(h0, h1 endSeg, ta math.Point3, tol float64) (endSeg, endS
 }
 
 // orientEndSeg returns s (or its reverse) oriented to start at p, so a mixed chain of rails built in
-// different directions can be walked head-to-tail.
-func orientEndSeg(s endSeg, p math.Point3, tol float64) endSeg {
-	if float64(s.from.DistanceTo(p)) <= tol {
-		return s
+// different directions can be walked head-to-tail. Rejects (ok=false, with the smaller of the two
+// measured gaps) when NEITHER orientation starts at p within tol — previously this reversed blindly on
+// any mismatch, so a segment that could not actually be made to chain (Mutation C: e.g. a broken
+// reversal) was returned anyway and the gap only surfaced downstream. Example:
+//
+//	oriented, gap, ok := orientEndSeg(hostRail, farHostPoint, res.Weld()*scale)
+//	if !ok { /* honest-decline: report gap */ }
+func orientEndSeg(s endSeg, p math.Point3, tol float64) (endSeg, float64, bool) {
+	if gap, ok := chainsWithin(s.from, p, tol); ok {
+		return s, gap, true
 	}
-	return reverseEndSegs([]endSeg{s})[0]
+	rev := reverseEndSegs([]endSeg{s})[0]
+	gap, ok := chainsWithin(rev.from, p, tol)
+	return rev, gap, ok
+}
+
+// chainsWithin reports whether a and b are within tol of each other — a shared-endpoint chaining
+// junction — returning the measured gap either way so a failing caller can report it precisely instead
+// of a bare "did not close".
+func chainsWithin(a, b math.Point3, tol float64) (float64, bool) {
+	gap := float64(a.DistanceTo(b))
+	return gap, gap <= tol
 }
 
 // armFaceProvenance is the arm face's ADR-0043 lineage: the filleted edge's name when a real edge was
