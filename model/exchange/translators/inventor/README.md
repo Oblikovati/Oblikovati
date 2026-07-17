@@ -149,3 +149,28 @@ go test ./...
 go run ./cmd/from-inventor testdata/10_box.ipt -o /tmp/box.opd
 ../../../../dist/oblikovati-cli.exe open /tmp/box.opd
 ```
+
+## Validating against Inventor itself
+
+The in-file tessellation is a *weak* oracle: it renders visible sketches and work planes too, so its
+box is inflated (on `MainFrameSingleHeadBlock` it measures 76.80 × 83.37 cm where the solid is
+40.00 × 48.00). Do **not** read a rebuild that is smaller than the mesh as wrong.
+
+Inventor itself is the strong oracle, over COM — it answers for the SOLID:
+
+```powershell
+Add-Type -Path '<repo>/../Oblikovati.Exporter.Inventor/interop/2027/Autodesk.Inventor.Interop.dll'
+$inv = New-Object -ComObject Inventor.Application
+$inv.Visible = $false; $inv.SilentOperation = $true
+$doc = $inv.Documents.Open('P:\ReelToReel\Mechanical\MainFrameSingleHeadBlock.ipt', $false)
+$cd = $doc.ComponentDefinition
+$rb = $cd.RangeBox   # the solid's box, in cm — NOT the tessellation's
+foreach ($b in $cd.SurfaceBodies) { $b.Volume(0.001) }   # cm³; the volume truth
+$doc.Close($true); $inv.Quit()
+```
+
+`RangeBox` and `Volume` are independent of anything our decoder derives, so they settle whether a
+rebuild is right. They are how the per-part volume truth was measured, and how the two large plates'
+footprints were confirmed exact (1.20 × 40.00 × 48.00 and 3.00 × 40.53 × 48.00, matching our rebuild
+to the centimetre) after the tessellation suggested otherwise. If COM fails to start, see the
+exporter's notes — Inventor must not already be running headless from an earlier session.

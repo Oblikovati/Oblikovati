@@ -31,6 +31,16 @@ const meshEscapeTolerance = 1.02
 // the check more permissive, never falsely strict, so a correct body can't be rejected by it.
 // Validated on the 175-part ReelToReel corpus: 16 wrong bodies caught (up to 26.3x), 0 of the
 // volume-correct bodies rejected.
+//
+// That inflation is LARGE on sketch-heavy parts, which bounds how much this gate can ever catch.
+// Measured against Inventor's own ComponentDefinition.RangeBox (COM, an oracle outside the file):
+// MainFrameSingleHeadBlock's solid is 1.20 x 40.00 x 48.00 cm and BigChunkyPlate's is
+// 3.00 x 40.53 x 48.00 — both matching our rebuild EXACTLY — while their stored tessellations
+// measure 1.20 x 76.80 x 83.37 and 3.00 x 76.80 x 83.96. So on those parts the two big extents are
+// ~1.8x the solid's, and nothing under that escapes. Note also that this only tests a body for
+// EXCEEDING the mesh: an under-built body, or a correct-size one of wrong VOLUME, passes untouched
+// (BigChunkyPlate ships at 1.051x). Filtering the graphics patches by provenance would give a real
+// volume gate — see #18.
 func gateBodyAgainstMesh(def *compdef.PartComponentDefinition, d *ipt.Document) []string {
 	mesh, ok := meshExtents(d)
 	if !ok {
