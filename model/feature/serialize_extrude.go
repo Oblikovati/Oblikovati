@@ -31,6 +31,10 @@ type ExtrudeData struct {
 	// predict the reader's DCEL region ordering, so it names regions by containment. When present
 	// it wins over Profiles/Profile; absent, the index-based selection is used unchanged.
 	ProfilePoints [][]float64 `yaml:"profilePoints,omitempty"`
+	// NoDissolve keeps abutting profiles as separate prisms (#38). Persisted so a part the translator's
+	// whole-part fallback rebuilt without the dissolve reopens the same way — otherwise the reopened
+	// recipe would re-run with the dissolve on and regress to the open body again.
+	NoDissolve bool `yaml:"noDissolve,omitempty"`
 }
 
 // extrudeProfiles returns the region indices a payload selects, accepting both the
@@ -74,6 +78,7 @@ func serializeExtrude(def *ExtrudeDefinition, sk SketchIndexer) (*ExtrudeData, e
 		Sketch: idx, Profiles: append([]int(nil), def.ProfileIndices...), Operation: op,
 		Extent: ename, Direction: directionNames[def.Extent.Direction],
 		Distance: def.Extent.distance(), Distance2: def.Extent.distance2(), Taper: def.Taper,
+		NoDissolve: def.NoDissolve,
 	}
 	if def.Extent.ToPlane != nil {
 		d.ToPlane = string(def.Extent.ToPlane.Key())
@@ -113,6 +118,7 @@ func restoreExtrude(fs *PartFeatures, ed *ExtrudeData, sk SketchIndexer, work *W
 	return NewExtrudeFeatures(fs).AddExtrudeFeature(&ExtrudeDefinition{
 		Sketch: skt, ProfileIndices: seedFallback(skt, ed.ProfilePoints, ed.extrudeProfiles()),
 		ProfileSeeds: ed.ProfilePoints, Operation: op, Extent: extent, Taper: ed.Taper,
+		NoDissolve: ed.NoDissolve,
 	}), nil
 }
 

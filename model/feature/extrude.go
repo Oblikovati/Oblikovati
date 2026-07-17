@@ -31,6 +31,11 @@ type ExtrudeDefinition struct {
 	Operation    ops.PartFeatureOperation
 	Extent       Extent
 	Taper        float64 // draft angle (radians); 0 in phase A (planar sides)
+	// NoDissolve keeps abutting profiles as separate prisms instead of fusing them into one (#38).
+	// The dissolve is on by default (it fixes the coincident-wall crack a slot-with-corner-reliefs cut
+	// leaves); a caller that finds the merged tool trips a downstream boolean fragility on a particular
+	// part sets this to fall back to the per-region prisms for that part.
+	NoDissolve bool
 }
 
 // ExtrudeFeature turns a profile into a prism and combines it with the running
@@ -100,7 +105,7 @@ func (e *ExtrudeFeature) Recompute(in Input) (Output, error) {
 		}
 		return Output{Bodies: bodies}, nil
 	}
-	prisms := profilePrisms(profiles, plane, sp, e.def.Taper, e.featName, in.Diag)
+	prisms, _ := profilePrismsDissolving(profiles, plane, sp, e.def.Taper, e.featName, in.Diag, !e.def.NoDissolve)
 	e.tool = mergePrisms(prisms, e.featName) // a pattern replicates the whole tool, lumps and all
 	bodies, err := combinePrisms(in, prisms, e.tool, e.def.Operation)
 	if err != nil {
@@ -174,6 +179,25 @@ func (e *ExtrudeFeature) resolveProfiles() ([]*sketch.Profile, error) {
 		indices = resolveSeeds(e.def.Sketch, e.def.ProfileSeeds, e.def.ProfileIndices)
 	}
 	return resolveClosedProfiles(e.def.Sketch, indices, "extrude")
+}
+
+// SetExtrudeDissolve toggles the abutting-prism dissolve (#38) on every extrude feature in fs and
+// returns how many it changed, marking them for the next recompute. The translator's whole-part
+// fallback disables the dissolve when the merged tool regressed a working solid — a downstream boolean
+// fragility that only surfaces in a LATER feature, so it cannot be caught per-feature — then re-enables
+// it if that did not help (the dissolve's mesh is otherwise the better one). 0 ⇒ no extrude to toggle.
+func SetExtrudeDissolve(fs *PartFeatures, on bool) int {
+	n := 0
+	for i := 0; i < fs.Count(); i++ {
+		if e, ok := fs.Item(i).feature.(*ExtrudeFeature); ok {
+			e.def.NoDissolve = !on
+			n++
+		}
+	}
+	if n > 0 {
+		fs.MarkAllDirty()
+	}
+	return n
 }
 
 // ExtrudeFeatures is the collection of extrude features, adding into the engine.

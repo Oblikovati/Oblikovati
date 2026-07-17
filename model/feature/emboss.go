@@ -169,16 +169,68 @@ func buildProfilePrisms(profiles []*sketch.Profile, plane sketch.Plane, sp span,
 // profilePrisms extrudes each closed profile to its OWN prism — the per-region tools, unmerged.
 // A caller that applies them with a boolean should prefer these to the merged body: see
 // combinePrisms for why a merged multi-lump tool is worse than the sum of its lumps.
+//
+// Abutting profiles (touching cells of one over-split region — a slot with its corner-relief discs)
+// are first DISSOLVED into their union outline so they extrude as one clean prism, not several that
+// leave coincident interior walls when cut one at a time (#38). Disjoint profiles are untouched.
 func profilePrisms(profiles []*sketch.Profile, plane sketch.Plane, sp span, taper float64, feat string, rec *diag.Recorder) []*topo.Body {
+	prisms, _ := profilePrismsDissolving(profiles, plane, sp, taper, feat, rec, true)
+	return prisms
+}
+
+// profilePrismsDissolving is [profilePrisms] with an explicit dissolve switch, returning whether it
+// actually fused any abutting group. The switch lets the extrude self-validate: it dissolves first,
+// and if that turns a closed solid open (a rare downstream boolean fragility on a merged faceted
+// prism) it rebuilds with dissolve OFF, so the dissolve never regresses a working solid (#38).
+func profilePrismsDissolving(profiles []*sketch.Profile, plane sketch.Plane, sp span, taper float64, feat string, rec *diag.Recorder, allowDissolve bool) ([]*topo.Body, bool) {
+	if !allowDissolve {
+		return perProfilePrisms(profiles, plane, sp, taper, feat, rec), false
+	}
+	groups := abuttingProfileGroups(profiles)
+	if len(groups) == len(profiles) {
+		// All disjoint: every profile is its own prism. This is the common case (#33's per-region
+		// selection), and it keeps a lone circular bore on the analytic-cylinder path.
+		return perProfilePrisms(profiles, plane, sp, taper, feat, rec), false
+	}
+	var prisms []*topo.Body
+	dissolved := false
+	for _, g := range groups {
+		if merged, ok := dissolveGroup(profiles, g); ok {
+			dissolved = true
+			for _, poly := range merged {
+				prisms = append(prisms, buildPrism(poly, plane, sp, taper, indexedPrismName(feat, len(prisms))))
+			}
+			continue
+		}
+		for _, pi := range g {
+			prisms = append(prisms, buildPrismWithHoles(profiles[pi], plane, sp, taper, indexedPrismName(feat, len(prisms)), rec))
+		}
+	}
+	return prisms, dissolved
+}
+
+// indexedPrismName always tags a prism with its running index: the group path (a mix of merged and
+// per-region prisms) can't use the count-based [prismName], since a dissolved group changes the prism
+// count and its members don't line up with the profile list.
+func indexedPrismName(feat string, i int) string {
+	return fmt.Sprintf("%s/p%d", feat, i)
+}
+
+// perProfilePrisms extrudes one prism per profile, honouring inner loops — the all-disjoint path.
+func perProfilePrisms(profiles []*sketch.Profile, plane sketch.Plane, sp span, taper float64, feat string, rec *diag.Recorder) []*topo.Body {
 	prisms := make([]*topo.Body, len(profiles))
 	for i, p := range profiles {
-		name := feat
-		if len(profiles) > 1 {
-			name = fmt.Sprintf("%s/p%d", feat, i)
-		}
-		prisms[i] = buildPrismWithHoles(p, plane, sp, taper, name, rec)
+		prisms[i] = buildPrismWithHoles(p, plane, sp, taper, prismName(feat, i, len(profiles)), rec)
 	}
 	return prisms
+}
+
+// prismName is the per-prism lineage name: the bare feature for a lone prism, else feat/pN.
+func prismName(feat string, i, n int) string {
+	if n <= 1 {
+		return feat
+	}
+	return fmt.Sprintf("%s/p%d", feat, i)
 }
 
 // mergePrisms merges the per-region prisms into one tool body. The regions are distinct cells of

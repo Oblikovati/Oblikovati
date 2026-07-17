@@ -97,6 +97,9 @@ func buildPart(ws *doc.Workspace, outPath string, d *ipt.Document, meshFallback 
 	// drop a redundant offset instead of over-constraining (the shaft carries exactly such a pair).
 	warns = append(warns, applyOffsetDimensions(def, d)...)
 	def.Recompute()
+	if built && !firstBodyIsSolid(def) {
+		retryWithoutDissolve(def)
+	}
 	// A rebuilt body that escapes Inventor's own tessellation was mis-decoded; drop it rather than
 	// ship wrong geometry (see gateBodyAgainstMesh).
 	if built {
@@ -112,6 +115,28 @@ func buildPart(ws *doc.Workspace, outPath string, d *ipt.Document, meshFallback 
 		def.Recompute()
 	}
 	return document, warns, nil
+}
+
+// firstBodyIsSolid reports whether the part's first body is a closed solid — the exact test the
+// corpus classifier uses to call a part SOLID (vs an open SURFACE body).
+func firstBodyIsSolid(def *compdef.PartComponentDefinition) bool {
+	bodies := def.SurfaceBodies().All()
+	return len(bodies) > 0 && bodies[0].IsSolid()
+}
+
+// retryWithoutDissolve is the whole-part fallback for the abutting-prism dissolve (#38). The dissolve
+// fixes the coincident-wall crack a slot-with-corner-reliefs cut leaves and turns some parts from an
+// open SURFACE into a closed SOLID — but on a few it trips a downstream boolean fragility (in a LATER
+// feature, so it can't be caught per-feature) and OPENS a body that per-region prisms would have kept
+// solid. When the part didn't come back a solid, rebuild it with the dissolve OFF and keep that: the
+// per-region prisms are the pre-dissolve baseline, so a non-solid part is never worse than before, and
+// a part the dissolve regressed (WheelSlider) is restored to its solid. The dissolve is thus retained
+// only where it PRODUCES a solid (MainFrameSingleHeadBlock: SURFACE → SOLID).
+func retryWithoutDissolve(def *compdef.PartComponentDefinition) {
+	if feature.SetExtrudeDissolve(def.Features(), false) == 0 {
+		return // no extrude dissolved: nothing to undo
+	}
+	def.Recompute()
 }
 
 // hasSolidBody reports whether the definition holds a non-degenerate solid after recompute —

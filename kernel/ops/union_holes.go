@@ -100,6 +100,18 @@ func tessellateCell(cell brep.Face2D) ([]math.Point2, [][3]int) {
 	return verts, earcut(cell.Outer, holes)
 }
 
+// MergeAbuttingLoops fuses closed loops that SHARE edges into their union-boundary outline(s): a
+// directed edge that appears in two loops traversed oppositely is interior and dropped; the surviving
+// edges chain into the union's boundary loops. Disjoint loops pass through unchanged. Every input loop
+// MUST carry the same winding, so an interior edge cancels; DCEL cells of one sketch (all wound CCW)
+// satisfy this. The extrude feature uses it to dissolve a region an upstream arrangement over-split
+// into abutting cells — a slot plus its corner-relief discs, sharing arcs — into ONE prism, instead of
+// several prisms cut one at a time that leave coincident interior walls (#38). Thin wrapper over the
+// hole-merge primitive so its exact behaviour is shared, not duplicated.
+func MergeAbuttingLoops(loops [][]math.Point2) [][]math.Point2 {
+	return mergeAbuttingHoles(loops)
+}
+
 // mergeAbuttingHoles fuses hole loops that share edges into their boundary outline: a directed
 // edge shared by two abutting loops (traversed oppositely) is interior and dropped; the surviving
 // edges chain into the union's boundary loops. A single (or disjoint) hole set is returned as-is.
