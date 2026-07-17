@@ -49,6 +49,15 @@ func TestLoftCanalN7AreaEmerges(t *testing.T) {
 	if relErr > gate {
 		t.Errorf("area %.5f is %.4f%% off oracle %.3f (gate %.3f%%)", area, relErr*100, oracle, gate*100)
 	}
+	// Grid convergence: the area must be an intrinsic property of the surface, not an
+	// under-integration coincidence near the oracle. A coarse and a fine grid must agree to a
+	// far tighter bound than the gate, so refining the integrator cannot move the number onto 90.194.
+	coarse := surfaceArea(surf, 48, 192)
+	fine := surfaceArea(surf, 192, 768)
+	if converge := stdmath.Abs(fine-coarse) / oracle; converge > 1e-4 {
+		t.Errorf("area not grid-converged: coarse %.5f vs fine %.5f differ %.5f%% (want <0.01%%)",
+			coarse, fine, converge*100)
+	}
 }
 
 // TestLoftCanalN7Watertight is the load-bearing correctness gate: the four boundary isoparms ARE the
