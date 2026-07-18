@@ -109,8 +109,12 @@ jobs:
           go-version-file: go.mod
           cache: false
       - uses: ./.github/actions/api-contract
-        # Install the version locked in go.mod/go.sum (pinned via tools.go) rather than
-        # resolving one ad hoc — reproducible, lock-enforced (SonarCloud githubactions:S8545).
+        # Wire the API replace into the translator modules too, not just the root: they are
+        # separate modules whose COMMITTED `replace oblikovati.org/api => ../../../../../Oblikovati.API`
+        # points at a sibling checkout that doesn't exist in CI (the contract lands in _api/). The
+        # action rewrites each named module's replace to the _api path so their tests can build.
+        with:
+          modules: . model/exchange/translators/solidworks model/exchange/translators/inventor
       - run: go install gotest.tools/gotestsum
       - name: Test
         run: gotestsum --junitfile test-results-${{ matrix.os }}.xml -- -coverprofile=coverage.out -covermode=count ./...
