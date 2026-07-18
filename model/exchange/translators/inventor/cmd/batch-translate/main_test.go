@@ -61,3 +61,25 @@ func TestWriteReportHasHeader(t *testing.T) {
 		t.Errorf("report missing data row, got:\n%s", text)
 	}
 }
+
+// TestPct covers the percentage helper, including the divide-by-zero guard.
+func TestPct(t *testing.T) {
+	if got := pct(1, 4); got != 25 {
+		t.Errorf("pct(1,4) = %v, want 25", got)
+	}
+	if got := pct(3, 0); got != 0 {
+		t.Errorf("pct(3,0) = %v, want 0 (no divide by zero)", got)
+	}
+}
+
+// TestPrintSummariesDoNotPanic exercises the stdout summary helpers on a small synthetic library —
+// they format aggregates and must handle both populated and empty inputs without panicking.
+func TestPrintSummariesDoNotPanic(t *testing.T) {
+	rows := []row{
+		{sketches: 2, constrained: 1, eqs: 5, dof: 3},
+		{sketches: 0, constrained: 0, eqs: 0, dof: 0},
+	}
+	printConstraintStats(rows)
+	printConstraintStats(nil) // empty library: the pct guards must hold
+	printTally("out.tsv", 3, map[string]int{"SOLID": 2, "SKETCH": 1})
+}
