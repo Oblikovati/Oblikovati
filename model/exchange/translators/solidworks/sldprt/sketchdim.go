@@ -87,7 +87,7 @@ func dimValueAfter(region []byte, from int) (float64, bool) {
 	}
 	for o := f + 8; o <= end; o++ {
 		v := math.Float64frombits(binary.LittleEndian.Uint64(region[o:]))
-		if v == v && math.Abs(v) > 1e-5 && math.Abs(v) < 10 && v != 1.0 && v != 2.0 {
+		if !math.IsNaN(v) && math.Abs(v) > 1e-5 && math.Abs(v) < 10 && v != 1.0 && v != 2.0 {
 			return v, true
 		}
 	}

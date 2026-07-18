@@ -4,6 +4,7 @@ package ipt
 
 import (
 	"encoding/binary"
+	"math"
 	"sort"
 )
 
@@ -41,7 +42,7 @@ func collectIncidencePoints(seg []byte) []incPoint {
 			return
 		}
 		x, y := f64(seg, j+24), f64(seg, j+32)
-		if x != x || y != y || absf(x) > 1e4 || absf(y) > 1e4 {
+		if math.IsNaN(x) || math.IsNaN(y) || absf(x) > 1e4 || absf(y) > 1e4 {
 			return
 		}
 		deg := int(binary.LittleEndian.Uint32(seg[j+44:]))

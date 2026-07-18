@@ -64,7 +64,7 @@ func isUnitVec(b []byte, o int) bool {
 		return false
 	}
 	x, y, z := f64(b, o), f64(b, o+8), f64(b, o+16)
-	if x != x || y != y || z != z || math.IsInf(x, 0) || math.IsInf(y, 0) || math.IsInf(z, 0) {
+	if math.IsNaN(x) || math.IsNaN(y) || math.IsNaN(z) || math.IsInf(x, 0) || math.IsInf(y, 0) || math.IsInf(z, 0) {
 		return false
 	}
 	return absf(math.Sqrt(x*x+y*y+z*z)-1) < 1e-9

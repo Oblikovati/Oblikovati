@@ -4,6 +4,7 @@ package ipt
 
 import (
 	"encoding/binary"
+	"math"
 )
 
 // PmDCSegment (Document Content) holds the parametric model as a node graph. This file
@@ -79,7 +80,7 @@ func firstNonZeroDoubleAt(seg []byte, offset, window int) (value float64, at int
 		c := newCursor(seg)
 		c.i = o
 		v := c.f64()
-		if v == v && absf(v) > 1e-9 && absf(v) < 1e6 {
+		if !math.IsNaN(v) && absf(v) > 1e-9 && absf(v) < 1e6 {
 			return v, o, true // skip zeros and denormal padding; real values are O(0.001..1000) cm
 		}
 	}

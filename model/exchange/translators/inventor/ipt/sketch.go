@@ -250,7 +250,7 @@ func collectItems(seg []byte) []sketchItem {
 			return
 		}
 		x, y := f64(seg, j+24), f64(seg, j+32)
-		if x == x && y == y && absf(x) < 1e4 && absf(y) < 1e4 {
+		if !math.IsNaN(x) && !math.IsNaN(y) && absf(x) < 1e4 && absf(y) < 1e4 {
 			ip := idPoint{id: binary.LittleEndian.Uint32(seg[j+4:]), p: Point2D{x, y}}
 			items = append(items, sketchItem{off: j, pt: &ip})
 		}
