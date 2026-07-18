@@ -23,7 +23,6 @@ func runCorpusGrids(t *testing.T, grids ...string) {
 			continue
 		}
 		ran++
-		r := r
 		t.Run(r.Case, func(t *testing.T) {
 			occtparity.RunCase(t, r, occtparity.CorpusFixtureDir())
 		})
