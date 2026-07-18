@@ -51,23 +51,42 @@ func dissolveGroup(profiles []*sketch.Profile, group []int) ([]mergedRegion, boo
 	if len(group) < 2 {
 		return nil, false
 	}
-	polys := make([][]math.Point2, 0, len(group))
-	var inners []sketch.Loop
-	var want float64
-	for _, pi := range group {
-		p := profiles[pi]
-		poly := ccwPolygon(p.OuterLoop().Polygon())
-		if len(poly) < 3 {
-			return nil, false
-		}
-		polys = append(polys, poly)
-		want += polygonArea2D(poly)
-		inners = append(inners, p.InnerLoops()...)
+	polys, inners, want, ok := groupOuterPolys(profiles, group)
+	if !ok {
+		return nil, false
 	}
 	merged := ops.MergeAbuttingLoops(polys)
 	if len(merged) == 0 || len(merged) >= len(polys) {
 		return nil, false
 	}
+	regions, ok := regionsFromMerged(merged, want)
+	if !ok {
+		return nil, false
+	}
+	return assignInnerLoops(regions, inners)
+}
+
+// groupOuterPolys gathers each profile's CCW outer polygon, all their inner (hole) loops, and the
+// total outer area the merge must conserve. ok=false if any outer loop is degenerate.
+func groupOuterPolys(profiles []*sketch.Profile, group []int) (polys [][]math.Point2, inners []sketch.Loop, want float64, ok bool) {
+	polys = make([][]math.Point2, 0, len(group))
+	for _, pi := range group {
+		p := profiles[pi]
+		poly := ccwPolygon(p.OuterLoop().Polygon())
+		if len(poly) < 3 {
+			return nil, nil, 0, false
+		}
+		polys = append(polys, poly)
+		want += polygonArea2D(poly)
+		inners = append(inners, p.InnerLoops()...)
+	}
+	return polys, inners, want, true
+}
+
+// regionsFromMerged wraps each merged outline as a hole-free region, but only when the merge CONSERVES
+// the group's outer area — a non-conserving result means the cells overlapped rather than abutted, so
+// the caller must take the safe per-profile path. ok=false on a degenerate or non-conserving merge.
+func regionsFromMerged(merged [][]math.Point2, want float64) ([]mergedRegion, bool) {
 	var got float64
 	for _, m := range merged {
 		if len(m) < 3 {
@@ -82,10 +101,16 @@ func dissolveGroup(profiles []*sketch.Profile, group []int) ([]mergedRegion, boo
 	for i, m := range merged {
 		regions[i] = mergedRegion{outer: m}
 	}
+	return regions, true
+}
+
+// assignInnerLoops routes each gathered hole loop to the merged region that contains it. ok=false when
+// a hole lies outside every merged outline — bail to the safe per-profile path rather than drop it.
+func assignInnerLoops(regions []mergedRegion, inners []sketch.Loop) ([]mergedRegion, bool) {
 	for _, in := range inners {
 		idx := regionContaining(regions, in)
 		if idx < 0 {
-			return nil, false // a hole outside every merged outline: bail to the safe per-profile path
+			return nil, false
 		}
 		regions[idx].inners = append(regions[idx].inners, in)
 	}

@@ -174,29 +174,26 @@ func buildProfilePrisms(profiles []*sketch.Profile, plane sketch.Plane, sp span,
 // are first DISSOLVED into their union outline so they extrude as one clean prism, not several that
 // leave coincident interior walls when cut one at a time (#38). Disjoint profiles are untouched.
 func profilePrisms(profiles []*sketch.Profile, plane sketch.Plane, sp span, taper float64, feat string, rec *diag.Recorder) []*topo.Body {
-	prisms, _ := profilePrismsDissolving(profiles, plane, sp, taper, feat, rec, true)
-	return prisms
+	return profilePrismsDissolving(profiles, plane, sp, taper, feat, rec, true)
 }
 
-// profilePrismsDissolving is [profilePrisms] with an explicit dissolve switch, returning whether it
-// actually fused any abutting group. The switch lets the extrude self-validate: it dissolves first,
-// and if that turns a closed solid open (a rare downstream boolean fragility on a merged faceted
-// prism) it rebuilds with dissolve OFF, so the dissolve never regresses a working solid (#38).
-func profilePrismsDissolving(profiles []*sketch.Profile, plane sketch.Plane, sp span, taper float64, feat string, rec *diag.Recorder, allowDissolve bool) ([]*topo.Body, bool) {
+// profilePrismsDissolving is [profilePrisms] with an explicit dissolve switch. The switch lets the
+// extrude self-validate: it dissolves first, and if that turns a closed solid open (a rare downstream
+// boolean fragility on a merged faceted prism) the caller rebuilds with dissolve OFF, so the dissolve
+// never regresses a working solid (#38).
+func profilePrismsDissolving(profiles []*sketch.Profile, plane sketch.Plane, sp span, taper float64, feat string, rec *diag.Recorder, allowDissolve bool) []*topo.Body {
 	if !allowDissolve {
-		return perProfilePrisms(profiles, plane, sp, taper, feat, rec), false
+		return perProfilePrisms(profiles, plane, sp, taper, feat, rec)
 	}
 	groups := abuttingProfileGroups(profiles)
 	if len(groups) == len(profiles) {
 		// All disjoint: every profile is its own prism. This is the common case (#33's per-region
 		// selection), and it keeps a lone circular bore on the analytic-cylinder path.
-		return perProfilePrisms(profiles, plane, sp, taper, feat, rec), false
+		return perProfilePrisms(profiles, plane, sp, taper, feat, rec)
 	}
 	var prisms []*topo.Body
-	dissolved := false
 	for _, g := range groups {
 		if regions, ok := dissolveGroup(profiles, g); ok {
-			dissolved = true
 			for _, r := range regions {
 				prisms = append(prisms, buildMergedRegionPrism(r, plane, sp, taper, indexedPrismName(feat, len(prisms)), rec))
 			}
@@ -206,7 +203,7 @@ func profilePrismsDissolving(profiles []*sketch.Profile, plane sketch.Plane, sp 
 			prisms = append(prisms, buildPrismWithHoles(profiles[pi], plane, sp, taper, indexedPrismName(feat, len(prisms)), rec))
 		}
 	}
-	return prisms, dissolved
+	return prisms
 }
 
 // buildMergedRegionPrism extrudes a dissolved abutting group's union outline into a solid prism, then

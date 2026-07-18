@@ -98,16 +98,22 @@ func (e *ExtrudeFeature) Recompute(in Input) (Output, error) {
 		return Output{}, errors.New("extrude: the extent has zero depth")
 	}
 	if e.def.Operation == ops.Surface {
-		e.tool = e.buildTool(profiles, plane, sp, in.Diag)
-		bodies, err := combine(in, e.tool, e.def.Operation)
-		if err != nil {
-			return Output{}, err
-		}
-		return Output{Bodies: bodies}, nil
+		return e.recomputeSurface(in, profiles, plane, sp)
 	}
-	prisms, _ := profilePrismsDissolving(profiles, plane, sp, e.def.Taper, e.featName, in.Diag, !e.def.NoDissolve)
+	prisms := profilePrismsDissolving(profiles, plane, sp, e.def.Taper, e.featName, in.Diag, !e.def.NoDissolve)
 	e.tool = mergePrisms(prisms, e.featName) // a pattern replicates the whole tool, lumps and all
 	bodies, err := combinePrisms(in, prisms, e.tool, e.def.Operation)
+	if err != nil {
+		return Output{}, err
+	}
+	return Output{Bodies: bodies}, nil
+}
+
+// recomputeSurface builds an open (unmerged) sheet tool and applies it — the Surface operation keeps
+// the profile as a surface body rather than sweeping a solid prism.
+func (e *ExtrudeFeature) recomputeSurface(in Input, profiles []*sketch.Profile, plane sketch.Plane, sp span) (Output, error) {
+	e.tool = e.buildTool(profiles, plane, sp, in.Diag)
+	bodies, err := combine(in, e.tool, e.def.Operation)
 	if err != nil {
 		return Output{}, err
 	}
