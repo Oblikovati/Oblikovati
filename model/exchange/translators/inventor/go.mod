@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 module oblikovati.org/model/exchange/translators/inventor
 
-go 1.22
+go 1.25.0
 
 require (
 	github.com/klauspost/compress v1.18.0
@@ -11,8 +11,8 @@ require (
 )
 
 require (
-	golang.org/x/image v0.0.0-20211028202545-6944b10bf410 // indirect
-	golang.org/x/text v0.22.0 // indirect
+	golang.org/x/image v0.41.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
