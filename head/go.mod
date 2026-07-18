@@ -5,7 +5,7 @@
 // consumed via the replace directive below.
 module oblikovati.org/head
 
-go 1.22
+go 1.26.0
 
 require (
 	github.com/srwiley/oksvg v0.0.0-20221011165216-be6e8873101c
@@ -19,7 +19,7 @@ require golang.org/x/image v0.0.0-20211028202545-6944b10bf410 // icon glyph norm
 require (
 	github.com/yuin/gopher-lua v1.1.1 // indirect
 	golang.org/x/net v0.0.0-20211118161319-6a13c67c3ce4 // indirect
-	golang.org/x/sys v0.20.0 // indirect
+	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
