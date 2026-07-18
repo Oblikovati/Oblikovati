@@ -1,0 +1,191 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package ops
+
+import (
+	stdmath "math"
+
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
+)
+
+// FR2 — closed-form spring curves and runout feet (far-runout-port-math.md §5).
+//
+// Each fillet arm touches its two host faces along a SPRING (contact) curve; the runout feet are the two
+// crossings spring ∩ capping. Per ADR-4 the engine owns the feet: in FR3 it builds them here and hands
+// them to intersectArmCapping. FR2 lands the closed forms and pins them to DRAWEXE (D5: the plane-spring
+// foot matches OCCT's edge endpoint to 3.9e-5 — its own blend tolerance — the sphere-spring foot to 8.2e-8):
+//
+//   - Torus arm (sphere host + plane host) → two LATITUDE circles: the tube touches the host plane at the
+//     tube angle where its axial offset reaches ±r (v_P), and the host sphere along the tangent-contact
+//     latitude v_S = atan2(B, A) of the |P−O|² = R² identity (both are proper-fillet tangencies).
+//   - Cylinder arm (two plane hosts) → two axis RULINGS at θ_i = atan2(−n̂_i·b̂, −n̂_i·r̂).
+//
+// Feet = spring ∩ capping, closed form and low degree (circle∩plane → atan2±arccos, ruling∩plane → linear),
+// the nearer root to the far vertex kept (the nearerRoot precedent).
+
+// armSprings returns an arm's two host-contact spring curves. hostA/hostB are the arm's two host surfaces
+// (edgeFillet.a/.b in FR3). Declines when the hosts are not a recognized fillet pairing or are not tangent
+// to the arm — a wrong pairing must never fabricate a spring. r is the fillet radius (torus minor).
+func armSprings(arm, hostA, hostB geom.Surface, r float64) ([2]geom.Curve3, bool) {
+	switch a := arm.(type) {
+	case geom.Torus:
+		return torusArmSprings(a, hostA, hostB)
+	case geom.Cylinder:
+		return cylinderArmSprings(a, hostA, hostB)
+	}
+	_ = r
+	return [2]geom.Curve3{}, false
+}
+
+// torusArmSprings builds the sphere-host and plane-host latitude circles, ordered [sphere, plane] so their
+// feet come out sphere-first (the DRAWEXE far edge runs sphere foot → plane foot).
+func torusArmSprings(t geom.Torus, hostA, hostB geom.Surface) ([2]geom.Curve3, bool) {
+	sp, pl, ok := spherePlaneHosts(hostA, hostB)
+	if !ok {
+		return [2]geom.Curve3{}, false
+	}
+	tol := geom.ResolutionForPoints([]math.Point3{t.Center, sp.Center, pl.Origin}).Weld()
+	sphereSpring, ok1 := torusSphereSpring(t, sp, tol)
+	planeSpring, ok2 := torusPlaneSpring(t, pl, tol)
+	if !ok1 || !ok2 {
+		return [2]geom.Curve3{}, false
+	}
+	return [2]geom.Curve3{sphereSpring, planeSpring}, true
+}
+
+// spherePlaneHosts identifies which host is the sphere and which the plane (order-independent).
+func spherePlaneHosts(a, b geom.Surface) (geom.Sphere, geom.Plane, bool) {
+	if sp, ok := a.(geom.Sphere); ok {
+		if pl, ok2 := b.(geom.Plane); ok2 {
+			return sp, pl, true
+		}
+	}
+	if sp, ok := b.(geom.Sphere); ok {
+		if pl, ok2 := a.(geom.Plane); ok2 {
+			return sp, pl, true
+		}
+	}
+	return geom.Sphere{}, geom.Plane{}, false
+}
+
+// torusPlaneSpring is the latitude circle where the tube is tangent to the host plane: the plane normal is
+// ∥ the torus axis and its axial offset from the torus centre is ±r (tube extreme). Declines otherwise.
+func torusPlaneSpring(t geom.Torus, pl geom.Plane, tol float64) (geom.Circle, bool) {
+	axis := t.AxisDir.AsVector()
+	n := pl.Normal()
+	if stdmath.Abs(float64(axis.Dot(n))) < 1-sinFloor {
+		return geom.Circle{}, false // plane normal not ∥ torus axis: not this fillet's host plane
+	}
+	a := float64(axis.Dot(t.Center.VectorTo(pl.Origin))) // signed axial distance centre → plane
+	if stdmath.Abs(stdmath.Abs(a)-t.MinorRadius) > tol {
+		return geom.Circle{}, false // plane not tangent to the tube
+	}
+	sinV := math.Clamp(a/t.MinorRadius, -1, 1)
+	cosV := stdmath.Sqrt(stdmath.Max(1-sinV*sinV, 0))
+	center := t.Center.TranslateBy(axis.Scale(math.Scalar(t.MinorRadius * sinV)))
+	return geom.Circle{Center: center, Normal: t.AxisDir, RefDir: t.Ref, Radius: t.MajorRadius + t.MinorRadius*cosV}, true
+}
+
+// torusSphereSpring is the latitude circle where the tube is tangent to the host sphere: the double root of
+// |P(u,v) − O|² = R_c², which collapses to v = atan2(B, A) with A = 2R′r, B = 2(d·â)r, d = C − O.
+func torusSphereSpring(t geom.Torus, sp geom.Sphere, tol float64) (geom.Circle, bool) {
+	axis := t.AxisDir.AsVector()
+	d := sp.Center.VectorTo(t.Center) // C − O_c
+	da := float64(d.Dot(axis))
+	R, r := t.MajorRadius, t.MinorRadius
+	a, b := 2*R*r, 2*da*r
+	rhs := sp.Radius*sp.Radius - float64(d.LengthSquared()) - R*R - r*r
+	amp := stdmath.Hypot(a, b)
+	if amp < tol || stdmath.Abs(rhs)-amp > tol {
+		return geom.Circle{}, false // no tangent contact with the sphere: not this fillet's host sphere
+	}
+	v := stdmath.Atan2(b, a)
+	center := t.Center.TranslateBy(axis.Scale(math.Scalar(r * stdmath.Sin(v))))
+	return geom.Circle{Center: center, Normal: t.AxisDir, RefDir: t.Ref, Radius: R + r*stdmath.Cos(v)}, true
+}
+
+// cylinderArmSprings builds the two axis rulings where the tube is tangent to each host plane.
+func cylinderArmSprings(c geom.Cylinder, hostA, hostB geom.Surface) ([2]geom.Curve3, bool) {
+	plA, okA := hostA.(geom.Plane)
+	plB, okB := hostB.(geom.Plane)
+	if !okA || !okB {
+		return [2]geom.Curve3{}, false
+	}
+	r0, ok0 := cylinderPlaneRuling(c, plA)
+	r1, ok1 := cylinderPlaneRuling(c, plB)
+	if !ok0 || !ok1 {
+		return [2]geom.Curve3{}, false
+	}
+	return [2]geom.Curve3{r0, r1}, true
+}
+
+// cylinderPlaneRuling is the ruling where the cylinder touches host plane pl: azimuth θ = atan2(−n̂·b̂,
+// −n̂·r̂) (the tube offset −r·n̂ reaches the host), a line through that contact point along the axis.
+func cylinderPlaneRuling(c geom.Cylinder, pl geom.Plane) (geom.Line, bool) {
+	n := pl.Normal()
+	ref := c.Ref.AsVector()
+	bin := c.AxisDir.Cross(c.Ref)
+	theta := stdmath.Atan2(-float64(n.Dot(bin)), -float64(n.Dot(ref)))
+	cos, sin := stdmath.Cos(theta), stdmath.Sin(theta)
+	radial := ref.Scale(math.Scalar(cos)).Add(bin.Scale(math.Scalar(sin)))
+	origin := c.Origin.TranslateBy(radial.Scale(math.Scalar(c.Radius)))
+	ln, err := geom.NewLine(origin, c.AxisDir.AsVector())
+	if err != nil {
+		return geom.Line{}, false
+	}
+	return ln, true
+}
+
+// springCapFoot returns the foot where a spring curve crosses the capping face — the nearer root to the far
+// vertex `near`. Circle∩plane (α·cos u + β·sin u = γ) and ruling∩plane (linear) ship; sphere/cone/cyl
+// cappings are the §5 follow-ons and decline.
+func springCapFoot(spring geom.Curve3, capping geom.Surface, near math.Point3, res Resolution) (math.Point3, bool) {
+	pl, ok := capping.(geom.Plane)
+	if !ok {
+		return math.Point3{}, false
+	}
+	switch s := spring.(type) {
+	case geom.Circle:
+		return circlePlaneFoot(s, pl, near, res)
+	case geom.Line:
+		return linePlaneFoot(s, pl)
+	}
+	return math.Point3{}, false
+}
+
+// circlePlaneFoot solves α·cos u + β·sin u = γ for the circle-in-plane intersection and returns the root
+// nearer the far vertex (α = a·m̂·r̂, β = a·m̂·b̂, γ = m̂·(o − Q); u = atan2(β,α) ± arccos(γ/√(α²+β²))).
+func circlePlaneFoot(c geom.Circle, pl geom.Plane, near math.Point3, res Resolution) (math.Point3, bool) {
+	n := pl.Normal()
+	ref, bin := c.RefDir.AsVector(), c.Normal.Cross(c.RefDir)
+	alpha := c.Radius * float64(n.Dot(ref))
+	beta := c.Radius * float64(n.Dot(bin))
+	gamma := float64(n.Dot(c.Center.VectorTo(pl.Origin)))
+	mag := stdmath.Hypot(alpha, beta)
+	if mag < res.Weld() || stdmath.Abs(gamma) > mag+res.Weld() {
+		return math.Point3{}, false // circle ∥ plane, or the plane clears it: no crossing
+	}
+	base, off := stdmath.Atan2(beta, alpha), stdmath.Acos(math.Clamp(gamma/mag, -1, 1))
+	return nearerCircleRoot(c, base+off, base-off, near), true
+}
+
+// nearerCircleRoot returns the point at whichever of the two circle angles is nearer the far vertex.
+func nearerCircleRoot(c geom.Circle, u0, u1 float64, near math.Point3) math.Point3 {
+	p0, p1 := c.PointAt(u0/(2*stdmath.Pi)), c.PointAt(u1/(2*stdmath.Pi))
+	if p0.DistanceTo(near) <= p1.DistanceTo(near) {
+		return p0
+	}
+	return p1
+}
+
+// linePlaneFoot returns the single crossing of a ruling with the capping plane (t = m̂·(o−q₀)/(m̂·d̂)).
+func linePlaneFoot(l geom.Line, pl geom.Plane) (math.Point3, bool) {
+	n := pl.Normal()
+	denom := float64(n.Dot(l.Dir.AsVector()))
+	if denom == 0 {
+		return math.Point3{}, false // ruling parallel to the plane: no crossing
+	}
+	t := float64(n.Dot(l.Origin.VectorTo(pl.Origin))) / denom
+	return l.PointAt(t), true
+}

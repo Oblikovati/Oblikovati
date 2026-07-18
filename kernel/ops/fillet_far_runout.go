@@ -223,9 +223,7 @@ func uniqueNonHostTransverseFace(v *topo.Vertex, a, b *topo.Face, tan math.UnitV
 }
 
 // intersectArmCapping is the far-runout PORT (architecture ADR-3): the runout trim armSurface ∩ capping
-// between the two feet, exact on BOTH surfaces, analytic-on-the-arm (never a bare polyline). FR1 declares
-// the seam and ships a decline STUB; FR2 implements the pairing table (torus∩plane spiric, cyl∩plane
-// ellipse, …). The engine never sees which pairing built the curve. Returns (nil, false) until FR2.
-func intersectArmCapping(arm, capping geom.Surface, feet [2]math.Point3, r float64, res Resolution) (geom.Curve3, bool) {
-	return nil, false
-}
+// between the two feet, exact on BOTH surfaces, analytic-on-the-arm (never a bare polyline). FR1 declared
+// the seam; FR2 implements it in fillet_intersect_arm_capping.go (torus∩plane spiric, cyl∩plane ellipse),
+// with the un-exercised ∩sphere/∩cone/∩cyl pairings clean-declining. The engine never sees which pairing
+// built the curve.

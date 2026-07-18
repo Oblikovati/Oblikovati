@@ -174,13 +174,14 @@ func buildNValentFarVertex(t *testing.T) (edgeFillet, *topo.Vertex) {
 	return edgeFillet{a: faceA, b: faceB, edge: e, armSurface: arm}, vFar
 }
 
-// TestIntersectArmCapping_StubDeclines: the FR1 port stub declines (FR2 implements it). armFarRunout's
-// oblique branch therefore floors honestly.
-func TestIntersectArmCapping_StubDeclines(t *testing.T) {
+// TestIntersectArmCapping_DeclinesInvalidFeet: FR2 implements the port, but zero/placeholder feet are not
+// on the arm's section ellipse, so the §0 on-arm certificate declines — the oblique branch still floors
+// honestly on invalid feet (do-no-harm), as it must until FR3 supplies authoritative closed-form feet.
+func TestIntersectArmCapping_DeclinesInvalidFeet(t *testing.T) {
 	arm, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 10)
 	pl := planeOn(t, math.P3(0, 0, 100), math.V3(1, 0, 1))
 	if c, ok := intersectArmCapping(arm, pl, [2]math.Point3{{}, {}}, 10, ResolutionForSize(200)); ok || c != nil {
-		t.Fatalf("intersectArmCapping stub returned (%v, %v), want (nil, false) until FR2", c, ok)
+		t.Fatalf("intersectArmCapping returned (%v, %v) on placeholder feet, want (nil, false)", c, ok)
 	}
 }
 
