@@ -375,12 +375,11 @@ type edgeFillet struct {
 // sampled as chords (shared by the ruling strips and the end faces).
 func computeEdgeFillet(body *topo.Body, p filletPick, blends map[uint64]*cornerBlend, miters map[uint64]*cornerMiter, concave ConcaveFill) (edgeFillet, error) {
 	e := p.edge
-	if cyl, pl, ok := cylinderPlaneEdge(e); ok {
-		res := ResolutionForBody(body)
-		if ef, built := curvedArmFillet(e, cyl, pl, p, res); built {
-			return ef, nil // M5 Slice A: exact torus/cylinder arm on a convex axis-aligned rim
-		}
-		return edgeFillet{}, curvedFilletError(e, cyl, pl, res) // concave / oblique / decline — do-no-harm
+	if ef, handled, err := cylinderArmEdge(body, e, p); handled {
+		return ef, err // M5 Slice A: exact cylinder/torus arm on a convex axis-aligned rim, or its honest reject
+	}
+	if ef, handled, err := sphereArmEdge(body, e, p); handled {
+		return ef, err // SP1: exact torus arm on a convex Sphere∧Plane rim, or its honest reject
 	}
 	if err := curvedAdjacentError(e); err != nil {
 		return edgeFillet{}, err // any other curved neighbour (cyl∩cyl miter seam, torus, sphere)

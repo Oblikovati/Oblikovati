@@ -56,6 +56,23 @@ func curvedFilletError(e *topo.Edge, cyl geom.Cylinder, pl geom.Plane, res Resol
 	return fmt.Errorf("fillet: rounding an edge that borders a curved (cylinder) face is not yet supported")
 }
 
+// cylinderArmEdge dispatches a Cylinder∧Plane edge to the M5 Slice A arm builder. handled=true means
+// the edge WAS a cylinder∧plane edge and computeEdgeFillet must return this result — the built arm or
+// the honest reject; handled=false leaves the edge to the sphere/planar dispatch unchanged. Split out
+// (the sibling of sphereArmEdge) to keep computeEdgeFillet within funlen; behavior is identical to the
+// former inline branch.
+func cylinderArmEdge(body *topo.Body, e *topo.Edge, p filletPick) (edgeFillet, bool, error) {
+	cyl, pl, ok := cylinderPlaneEdge(e)
+	if !ok {
+		return edgeFillet{}, false, nil
+	}
+	res := ResolutionForBody(body)
+	if ef, built := curvedArmFillet(e, cyl, pl, p, res); built {
+		return ef, true, nil // exact torus/cylinder arm on a convex axis-aligned rim
+	}
+	return edgeFillet{}, true, curvedFilletError(e, cyl, pl, res) // concave / oblique / decline — do-no-harm
+}
+
 // curvedArmFillet builds the exact rolling-ball arm on a CONVEX axis-aligned Plane∧Cylinder edge
 // (M5 Slice A, m5-curved-arm-derivation.md): an exact torus (axis ⊥ plane, circle edge) or an exact
 // cylinder (axis ∥ plane, line edge), carried in the same edgeFillet the straight-edge path emits.
