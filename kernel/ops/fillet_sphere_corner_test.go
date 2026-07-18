@@ -109,6 +109,68 @@ func TestSphereHostCornerSpindleRejects(t *testing.T) {
 	}
 }
 
+// concaveSphereCornerFixture builds a synthetic sphere-host corner with the SAME geometry as the D5
+// oracle (sphere-host-corner-derivation.md) — sphere O=(0,0,0) R=150, planes y=0 (outward −ŷ) and
+// z=129.9038105676658 (outward +ẑ), vertex (−75,0,129.9038105676658) — but the sphere face REVERSED:
+// material OUTSIDE the sphere, a concave-bore corner (SP1's dimpleRimFixtureEdge pattern generalised
+// from a two-face edge to the three-face trihedral corner). solveBlend only reads v.Point() and the
+// three faces' Geometry()/Reversed() (no edge/loop wiring), so this minimal fixture drives the real
+// solveBlend→sphereHostCorner→solveSphereBlend path without a full topological body.
+func concaveSphereCornerFixture(t *testing.T) (*topo.Vertex, []*topo.Face) {
+	t.Helper()
+	lin := topo.NewLineage(topo.Tok("test", "sphere-corner-concave", 0))
+	bld := topo.NewBuilder(true, lin)
+	v := bld.AddVertex(sphereCornerOracles[0].vertex, lin)
+	sphereFace := bld.AddReversedFace(d5r150(t), lin) // material OUTSIDE the sphere: concave bore
+	plane0 := bld.AddFace(planeOn(t, math.P3(0, 0, 0), math.V3(0, -1, 0)), lin)
+	plane1 := bld.AddFace(planeOn(t, math.P3(0, 0, 129.9038105676658), math.V3(0, 0, 1)), lin)
+	return v, []*topo.Face{sphereFace, plane0, plane1}
+}
+
+// TestSphereHostCornerConcaveRejects is the SP2-review regression: a concave-bore sphere host (material
+// OUTSIDE the sphere, Reversed face) must honest-reject with the exact historical string via the s-gate
+// in sphereCornerRho (s = (v−O)·n̂_host,out ≤ 0), rather than solve a ρ = R+r corner ball — that concave
+// case is explicitly out of SP2's scope (sphereCornerRho's doc comment: "a follow-on slice"). Mutation
+// witness: flipping the gate's sign (s<=0 → s>=0) would let this fixture's s=−150 through and go on to
+// build a wrong-side (ρ=R−r instead of R+r) ball instead of rejecting; this test pins the reject.
+func TestSphereHostCornerConcaveRejects(t *testing.T) {
+	v, faces := concaveSphereCornerFixture(t)
+	if _, err := solveBlend(v, faces, 10); err == nil || err.Error() != "fillet: corner face must be planar" {
+		t.Fatalf("concave sphere-host corner: got err %v, want %q", err, "fillet: corner face must be planar")
+	}
+}
+
+// TestSphereRootsSeparated_CollapsedRootsReject is the SP2-review regression for the grazing/no-real-root
+// branch. A cleanly-negative discriminant (the plane-pair line clearing the offset sphere outright) is
+// NOT a discriminating fixture: sphereLineParam's √(negative) already propagates NaN through nearerRoot,
+// and sphereCornerConsistent's final `< res.Weld()` comparison is false for any NaN operand — so a
+// disabled discriminant guard is silently backstopped by that unrelated consistency check and the test
+// would still pass even with sphereRootsSeparated's own logic gutted (verified live: stubbing it to
+// `return true` and also removing nearerRoot's `disc<0` guard still left the corner rejected via NaN
+// propagation). The ONE case that is genuinely unique to sphereRootsSeparated is a near-tangent line
+// whose discriminant is small and POSITIVE — a real (non-NaN), consistency-passing pair of roots that
+// simply sit closer together than curvedCornerBandK·res.Weld() (sphereLineParam's doc comment: "the
+// near/far pick is noise"). Constructing that exact regime from real plane/sphere geometry is itself
+// ill-conditioned (it sits at the float64 precision floor by definition), so — per this task's documented
+// fallback — this drives sphereRootsSeparated directly with hand-picked qa/qb/qc reproducing a small,
+// clean, reproducible positive discriminant, rather than reaching it through the full solveBlend pipeline.
+//
+// rho=1, u=(x0,0,0) with x0=1−1e−12, d=(0,0,1): qc = x0²−rho² ≈ −2e−12, disc = qb²−4·qa·qc ≈ 8e−12,
+// sep = √disc/|d| ≈ 2.83e−6 — a genuine disc>0 pair, but far inside the band=4e−4 a 1e5-unit-model
+// Resolution gives (curvedCornerBandK·1e−9·1e5), so it must still reject as collapsed.
+func TestSphereRootsSeparated_CollapsedRootsReject(t *testing.T) {
+	x0 := 1 - 1e-12
+	qa, qb, qc := 1.0, 0.0, x0*x0-1
+	d := math.V3(0, 0, 1)
+	res := ResolutionForSize(1e5)
+	if disc := qb*qb - 4*qa*qc; disc <= 0 {
+		t.Fatalf("fixture invalid: discriminant %.3e is not positive (want a real near-tangent pair)", disc)
+	}
+	if sphereRootsSeparated(qa, qb, qc, d, res) {
+		t.Fatalf("collapsed near-tangent roots accepted as separated (qa=%v qb=%v qc=%v), want reject", qa, qb, qc)
+	}
+}
+
 // assertSphereHostSet checks the corner vertex bounds exactly one sphere host and two planes — the
 // recognizer's precondition (sphereHostCorner), so a locator drift is caught here, not downstream.
 func assertSphereHostSet(t *testing.T, faces []*topo.Face) {
