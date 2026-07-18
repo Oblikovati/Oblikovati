@@ -3,6 +3,7 @@
 package ops
 
 import (
+	"fmt"
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
@@ -28,8 +29,12 @@ import (
 type runoutRegime int
 
 const (
-	runoutPerpendicular runoutRegime = iota // plane f₃, |n̂_cap·t̂_spine| > 1−sinFloor → farCrossSectionArc
-	runoutOblique                           // trihedral f₃ oblique/curved → intersectArmCapping (FR2)
+	// runoutUnclassified is the ZERO value: a declined/empty armRunout{} carries this, so it can never be
+	// mis-read as a perpendicular runout (iota 0 would otherwise alias runoutPerpendicular). FR3's host
+	// router keys on regime, so the empty value must be its own state, not the fast-path.
+	runoutUnclassified  runoutRegime = iota
+	runoutPerpendicular              // plane f₃, |n̂_cap·t̂_spine| > 1−sinFloor → farCrossSectionArc
+	runoutOblique                    // trihedral f₃ oblique/curved → intersectArmCapping (FR2)
 )
 
 // armRunout is one arm's far termination as a single SHARED data object: the runout trim (armSurface ∩
@@ -48,37 +53,40 @@ type armRunout struct {
 // h0.from, h1.from) → the bytes are identical to today by construction (ADR-2); the host rails h0/h1
 // pass through untouched. The OBLIQUE branch routes to the intersectArmCapping port (FR2); FR1 ships that
 // port as a decline stub, so an oblique far vertex returns ok=false and floors to the do-no-harm path
-// exactly as today. ok=false ⇒ the caller keeps its clean unwelded error. Example:
+// exactly as today. ok=false ⇒ the caller keeps its clean unwelded error, and the returned reason string
+// carries the exact obstruction (offending vertex/edge id + counts) up to the do-no-harm floor — invariant
+// #3 of the handoff contract; FR3 plumbs it. filletedEdges is the set of picked edge IDs at this corner:
+// the admission gate declines if a SECOND one ends at the far vertex (fillet-fillet interference). Example:
 //
-//	h0, h1, run, ok := armFarRunout(ef, w, h0, h1, res)
+//	h0, h1, run, ok, reason := armFarRunout(ef, w, h0, h1, filletedEdges, res)
 //	if ok && run.regime == runoutPerpendicular { /* run.trim == farCrossSectionArc(ef.armSurface, …) */ }
-func armFarRunout(ef edgeFillet, w cornerWeld, h0, h1 endSeg, res Resolution) (endSeg, endSeg, armRunout, bool) {
+func armFarRunout(ef edgeFillet, w cornerWeld, h0, h1 endSeg, filletedEdges map[uint64]bool, res Resolution) (endSeg, endSeg, armRunout, bool, string) {
 	if ef.edge == nil {
-		return h0, h1, armRunout{}, false // a bare/unwired arm edge has no identifiable far vertex
+		return h0, h1, armRunout{}, false, "far runout: arm edge is nil (a bare/unwired arm has no identifiable far vertex)"
 	}
 	far := farEndVertex(ef.edge, w.center)
-	capping, ok := cappingFaceAtFarVertex(far, ef)
+	capping, ok, reason := cappingFaceAtFarVertex(far, ef, filletedEdges)
 	if !ok {
-		return h0, h1, armRunout{}, false // out of scope: not a trihedral far vertex (setback regime)
+		return h0, h1, armRunout{}, false, reason // out of scope: not a trihedral far vertex (setback regime)
 	}
 	if farRunoutIsPerpendicular(capping, ef.armSurface, h0.from) {
 		return perpendicularRunout(ef.armSurface, w.radius, capping, h0, h1)
 	}
-	run, ok := obliqueRunout(ef.armSurface, capping, [2]math.Point3{h0.from, h1.from}, w.radius, res)
-	return h0, h1, run, ok
+	run, ok, reason := obliqueRunout(ef.armSurface, capping, [2]math.Point3{h0.from, h1.from}, w.radius, res)
+	return h0, h1, run, ok, reason
 }
 
 // perpendicularRunout is the fast-path far termination: the radius-r cross-section arc from the EXISTING
 // farCrossSectionArc, invoked with the exact arguments today's armRailBundle passes, so run.trim is
 // byte-identical to the current path (ADR-2). The host rails already end on the feet (their .from ends),
 // so they pass through unchanged — the perpendicular regime never moves a rail terminus.
-func perpendicularRunout(arm geom.Surface, r float64, capping *topo.Face, h0, h1 endSeg) (endSeg, endSeg, armRunout, bool) {
+func perpendicularRunout(arm geom.Surface, r float64, capping *topo.Face, h0, h1 endSeg) (endSeg, endSeg, armRunout, bool, string) {
 	trim, ok := farCrossSectionArc(arm, r, h0.from, h1.from)
 	if !ok {
-		return h0, h1, armRunout{}, false
+		return h0, h1, armRunout{}, false, fmt.Sprintf("perpendicular runout: cross-section arc failed on feet %v→%v", h0.from, h1.from)
 	}
 	run := armRunout{trim: trim, feet: [2]math.Point3{h0.from, h1.from}, capping: capping, regime: runoutPerpendicular}
-	return h0, h1, run, true
+	return h0, h1, run, true, ""
 }
 
 // obliqueRunout is the oblique-regime port entry: the runout trim is armSurface ∩ capping
@@ -86,15 +94,16 @@ func perpendicularRunout(arm geom.Surface, r float64, capping *topo.Face, h0, h1
 // FR1 ships intersectArmCapping as a decline stub, so this returns ok=false and the arm floors to the
 // do-no-harm path (D5's oblique far vertex declines exactly as today) — the engine still reports the
 // classified regime + capping face for the FR3 host router.
-func obliqueRunout(arm geom.Surface, capping *topo.Face, feet [2]math.Point3, r float64, res Resolution) (armRunout, bool) {
+func obliqueRunout(arm geom.Surface, capping *topo.Face, feet [2]math.Point3, r float64, res Resolution) (armRunout, bool, string) {
 	run := armRunout{capping: capping, regime: runoutOblique}
 	section, ok := intersectArmCapping(arm, capping.Geometry(), feet, r, res)
 	if !ok {
-		return run, false // FR2 fills the port; until then oblique floors honestly
+		// FR2 fills the port; until then oblique floors honestly, carrying the regime + feet it declined on.
+		return run, false, fmt.Sprintf("oblique runout: intersectArmCapping port unimplemented (FR2) for feet %v→%v", feet[0], feet[1])
 	}
 	run.trim = endSeg{from: feet[0], to: feet[1], curve: section, mid: section.PointAt(0.5)}
 	run.feet = feet
-	return run, true
+	return run, true, ""
 }
 
 // farRunoutIsPerpendicular is the dispatch predicate (per arm, per far vertex): perpendicular iff the
@@ -149,24 +158,55 @@ func torusSpineTangent(t geom.Torus, foot math.Point3) (math.UnitVector3, bool) 
 // cappingFaceAtFarVertex is the engine's admission gate (the scope guard, architecture Q5): it returns
 // the UNIQUE non-host face at the far vertex transverse to the arm edge's tangent — the capping face f₃
 // closing the corner. It generalizes canalFarFace's transverseNonHostPlane by admitting a capping face
-// of ANY surface type (the oblique port handles curved cappings). It DECLINES (ok=false) the setback
-// regime out of scope for the single-ball trihedral engine: 0 or ≥2 non-host transverse faces at F. At a
-// manifold vertex #faces = #edges, so "exactly one non-host face" is equivalently the TRIHEDRAL test
-// (valence 3 = 1 filleted edge + 2 sharp) — a second picked/filleted edge or an n-valent apex raises the
-// non-host count and declines here. Declines flow to the do-no-harm floor; NEVER a snapped runout.
-func cappingFaceAtFarVertex(far *topo.Vertex, ef edgeFillet) (*topo.Face, bool) {
+// of ANY surface type (the oblique port handles curved cappings). It DECLINES the setback regime out of
+// scope for the single-ball trihedral engine, on TWO independent obstructions:
+//
+//   - 0 or ≥2 non-host transverse faces at F (n-valent / ≥2-cap apex);
+//   - a SECOND filleted (picked) edge also ending at F (fillet-fillet interference).
+//
+// The second guard is NOT subsumed by the face-count guard — the earlier "valence 3 ⇔ one non-host face"
+// claim was WRONG. Counterexample: two adjacent picked edges e₁=A∧B (this arm, hosts a=A,b=B) and e₂=A∧C
+// both ending at F leave the non-host set = {C} (exactly one, transverse) → the face-count guard ACCEPTS,
+// yet C is a live host of fillet e₂, so treating it as a plain capping face is wrong (that is the
+// n-valent-setback / fillet-fillet regime, out of scope). Hence the explicit secondFilletedEdgeAt guard,
+// keyed on the picked-edge-id set. Declines flow to the do-no-harm floor with a reason; NEVER a snapped runout.
+func cappingFaceAtFarVertex(far *topo.Vertex, ef edgeFillet, filletedEdges map[uint64]bool) (*topo.Face, bool, string) {
 	tan, ok := edgeTangentAt(ef.edge, far)
 	if !ok {
-		return nil, false // degenerate far-edge tangent — cannot classify transversality
+		return nil, false, fmt.Sprintf("far vertex %d: degenerate arm-edge tangent — cannot classify transversality", far.ID())
 	}
-	return uniqueNonHostTransverseFace(far, ef.a, ef.b, tan)
+	if other, second := secondFilletedEdgeAt(far, ef.edge, filletedEdges); second {
+		return nil, false, fmt.Sprintf("far vertex %d: a second filleted edge %d also ends here (fillet-fillet interference / setback regime, out of scope)", far.ID(), other)
+	}
+	found, n := uniqueNonHostTransverseFace(far, ef.a, ef.b, tan)
+	if n != 1 {
+		return nil, false, fmt.Sprintf("far vertex %d is not trihedral: %d non-host transverse faces (want exactly 1 capping face)", far.ID(), n)
+	}
+	return found, true, ""
+}
+
+// secondFilletedEdgeAt reports whether any edge at far OTHER than the arm's own edge is itself a filleted
+// (picked) edge — the genuine fillet-fillet-interference regime the single-ball trihedral engine declines
+// (architecture Q5). filletedEdges is the set of picked edge IDs. Returns the offending edge id (for the
+// decline reason) with true, or (0,false) when the arm's edge is the only picked edge reaching far.
+func secondFilletedEdgeAt(far *topo.Vertex, armEdge *topo.Edge, filletedEdges map[uint64]bool) (uint64, bool) {
+	for _, e := range far.Edges() {
+		if e.ID() == armEdge.ID() {
+			continue
+		}
+		if filletedEdges[e.ID()] {
+			return e.ID(), true
+		}
+	}
+	return 0, false
 }
 
 // uniqueNonHostTransverseFace returns the single face at v that is neither host a/b and is transverse to
 // the edge tangent tan (|tan·n̂| above the scale-free sinFloor, n̂ via outwardFaceNormalAt so it works for
-// any surface type). Exactly one such face is the capping face; zero or several → decline (v is not a
-// simple trihedral runout). The plane-only transverseNonHostPlane sibling, generalized past planes.
-func uniqueNonHostTransverseFace(v *topo.Vertex, a, b *topo.Face, tan math.UnitVector3) (*topo.Face, bool) {
+// any surface type), together with the COUNT of such faces (the caller admits only count==1 as the
+// capping face; 0 or several ⇒ not a simple trihedral runout). The plane-only transverseNonHostPlane
+// sibling, generalized past planes. The count is returned so the decline reason can carry it.
+func uniqueNonHostTransverseFace(v *topo.Vertex, a, b *topo.Face, tan math.UnitVector3) (*topo.Face, int) {
 	var found *topo.Face
 	n := 0
 	for _, f := range facesAround(v) {
@@ -179,7 +219,7 @@ func uniqueNonHostTransverseFace(v *topo.Vertex, a, b *topo.Face, tan math.UnitV
 		}
 		found, n = f, n+1
 	}
-	return found, n == 1
+	return found, n
 }
 
 // intersectArmCapping is the far-runout PORT (architecture ADR-3): the runout trim armSurface ∩ capping
