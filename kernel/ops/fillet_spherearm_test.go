@@ -4,6 +4,7 @@ package ops
 
 import (
 	stdmath "math"
+	"strings"
 	"testing"
 
 	"oblikovati.org/kernel/geom"
@@ -82,9 +83,9 @@ func assertSphereArm(t *testing.T, sp geom.Sphere, c sphereArmTest, res Resoluti
 	t.Helper()
 	pl := planeOn(t, c.planeOrigin, c.outwardN)
 	n, _ := math.UnitVector3FromVector(c.outwardN)
-	tor, ok := sphereArmSurface(sp, pl, n, 10, res)
-	if !ok {
-		t.Fatalf("%s: sphereArmSurface declined a valid convex arm", c.name)
+	tor, reason := sphereArmSurface(sp, pl, n, 10, res)
+	if reason != sphereArmBuilt {
+		t.Fatalf("%s: sphereArmSurface declined a valid convex arm (reason %d)", c.name, reason)
 	}
 	if !nearlyArm(tor.MinorRadius, 10) || !nearlyArm(tor.MajorRadius, c.wantMajor) {
 		t.Fatalf("%s torus radii = {major %.7f, minor %.7f}, want {%.7f, 10}", c.name, tor.MajorRadius, tor.MinorRadius, c.wantMajor)
@@ -107,8 +108,8 @@ func TestSphereArmSurface_Spindle(t *testing.T) {
 	}
 	pl := planeOn(t, math.P3(0, 0, 0), math.V3(0, 0, 1))
 	n, _ := math.UnitVector3FromVector(math.V3(0, 0, 1))
-	if _, ok := sphereArmSurface(sp, pl, n, 10, ResolutionForSize(50)); ok {
-		t.Fatalf("sphereArmSurface accepted r=10 ≥ R=8: a spindle torus must be rejected")
+	if _, reason := sphereArmSurface(sp, pl, n, 10, ResolutionForSize(50)); reason != sphereArmSpindle {
+		t.Fatalf("sphereArmSurface accepted r=10 ≥ R=8: want a spindle reject, got reason %d", reason)
 	}
 }
 
@@ -118,8 +119,8 @@ func TestSphereArmSurface_Clears(t *testing.T) {
 	sp := d5r150(t)
 	n, _ := math.UnitVector3FromVector(math.V3(0, 0, 1))
 	far := planeOn(t, math.P3(0, 0, 200), math.V3(0, 0, 1)) // offset plane at z=190 > ρ=140: |h| ≥ ρ
-	if _, ok := sphereArmSurface(sp, far, n, 10, ResolutionForSize(300)); ok {
-		t.Fatalf("sphereArmSurface accepted a plane that clears the offset sphere (|h|=190 > ρ=140)")
+	if _, reason := sphereArmSurface(sp, far, n, 10, ResolutionForSize(300)); reason != sphereArmClears {
+		t.Fatalf("sphereArmSurface accepted a plane that clears the offset sphere (|h|=190 > ρ=140), reason %d", reason)
 	}
 }
 
@@ -127,14 +128,18 @@ func TestSphereArmSurface_Clears(t *testing.T) {
 // surfaces and the plane's face; a plane∧plane edge (the third, straight edge) is not recognized.
 func TestSpherePlaneEdge(t *testing.T) {
 	spEdge, planeGeom := spherePlaneFixtureEdge(t)
-	sp, pl, pf, ok := spherePlaneEdge(spEdge)
+	sp, pl, sf, pf, ok := spherePlaneEdge(spEdge)
 	if !ok {
 		t.Fatalf("spherePlaneEdge did not recognize a sphere∧plane edge")
 	}
-	if sp.Radius != sphereHostR || pl.Origin != planeGeom.Origin || pf == nil {
-		t.Fatalf("spherePlaneEdge returned {R=%g, planeOrigin=%v, face=%v}, want {150, %v, non-nil}", sp.Radius, pl.Origin, pf, planeGeom.Origin)
+	if sp.Radius != sphereHostR || pl.Origin != planeGeom.Origin || sf == nil || pf == nil {
+		t.Fatalf("spherePlaneEdge returned {R=%g, planeOrigin=%v, sphereFace=%v, planeFace=%v}, want {150, %v, non-nil, non-nil}",
+			sp.Radius, pl.Origin, sf, pf, planeGeom.Origin)
 	}
-	if _, _, _, ok := spherePlaneEdge(planePlaneFixtureEdge(t)); ok {
+	if _, ok := sf.Geometry().(geom.Sphere); !ok {
+		t.Fatalf("spherePlaneEdge returned a non-sphere as the sphere face: %T", sf.Geometry())
+	}
+	if _, _, _, _, ok := spherePlaneEdge(planePlaneFixtureEdge(t)); ok {
 		t.Fatalf("spherePlaneEdge wrongly recognized a plane∧plane edge")
 	}
 }
@@ -152,6 +157,57 @@ func TestSphereArmEdge_Dispatches(t *testing.T) {
 	if _, handled, _ := sphereArmEdge(nil, pp, filletPick{edge: pp, r0: 10, r1: 10}); handled {
 		t.Fatalf("sphereArmEdge wrongly handled a plane∧plane edge (want handled=false, keep the planar path)")
 	}
+}
+
+// TestSphereArm_ConcaveDimpleHostRejects is the SP1-review regression: a spherical DIMPLE rim — the
+// sphere face is Reversed (material OUTSIDE the sphere, a deburred countersink meeting a plate top) —
+// is a genuinely CONVEX edge, so the old naked convexity guard PASSED it and sphereArmSurface silently
+// built a wrong-side R−r torus (major √(140²−110²) = 86.6025 for O=(0,0,100) R=150 plane z=0 r=10,
+// whereas the true concave host needs ρ = R+r → major 116.1895, Δ 29.59). The host material-side gate
+// (sphereHostMaterialSign) must HONEST-REJECT it (s ≤ 0), naming the concave host — no torus built.
+func TestSphereArm_ConcaveDimpleHostRejects(t *testing.T) {
+	e := dimpleRimFixtureEdge(t)
+	if ClassifyEdgeConvexity(e) != EdgeConvex {
+		t.Fatalf("dimple rim must classify CONVEX (the whole point of the regression), got %v", ClassifyEdgeConvexity(e))
+	}
+	// Mutation witness: the ungated surface builder WOULD build the wrong-side major 86.6025 torus.
+	sp, pl, sphereFace, planeFace, _ := spherePlaneEdge(e)
+	n, _ := math.UnitVector3FromVector(outwardPlaneNormal(planeFace, pl))
+	if tor, reason := sphereArmSurface(sp, pl, n, 10, ResolutionForBody(nil)); reason != sphereArmBuilt || !nearlyArm(tor.MajorRadius, sqrt(7500)) {
+		t.Fatalf("mutation witness broken: ungated surface gave reason %d major %.4f, want built major 86.6025", reason, tor.MajorRadius)
+	}
+	// The gate rejects with the concave-host reason — no arm is built.
+	if _, reason := sphereArmFillet(e, sp, pl, sphereFace, planeFace, filletPick{edge: e, r0: 10, r1: 10}, ResolutionForBody(nil)); reason != sphereArmConcaveHost {
+		t.Fatalf("concave dimple host was NOT rejected as concave: reason %d (a wrong-side torus would be built)", reason)
+	}
+	ef, handled, err := sphereArmEdge(nil, e, filletPick{edge: e, r0: 10, r1: 10})
+	if !handled || err == nil || ef.armSurface != nil {
+		t.Fatalf("dimple rim: want handled+error+no-arm, got handled=%v err=%v armSurface=%v", handled, err, ef.armSurface)
+	}
+	if !strings.Contains(err.Error(), "CONCAVE") {
+		t.Fatalf("reject message does not name the concave host: %q", err.Error())
+	}
+}
+
+// dimpleRimFixtureEdge builds the concave-dimple rim edge: host sphere O=(0,0,100) R=150 with the
+// sphere face REVERSED (material outside), plane z=0, on the rim circle x²+y²=12500 (radius √12500).
+// The edge is a short arc about the rim point (√12500,0,0), oriented so the dihedral reads CONVEX.
+func dimpleRimFixtureEdge(t *testing.T) *topo.Edge {
+	t.Helper()
+	lin := topo.NewLineage(topo.Tok("test", "dimple-rim", 0))
+	bld := topo.NewBuilder(true, lin)
+	arc, err := geom.NewArc3d(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), sqrt(12500), -0.2, 0.4)
+	if err != nil {
+		t.Fatalf("rim arc: %v", err)
+	}
+	e := bld.AddEdge(arc, bld.AddVertex(arc.PointAt(-0.2), lin), bld.AddVertex(arc.PointAt(0.2), lin), lin)
+	sp, err := geom.NewSphere(math.P3(0, 0, 100), sphereHostR)
+	if err != nil {
+		t.Fatalf("dimple sphere: %v", err)
+	}
+	bld.AddReversedFace(sp, lin, topo.OuterLoop(topo.Fwd(e))) // material OUTSIDE the sphere
+	bld.AddFace(planeOn(t, math.P3(0, 0, 0), math.V3(0, 0, 1)), lin, topo.OuterLoop(topo.Rev(e)))
+	return e
 }
 
 // spherePlaneFixtureEdge builds a minimal edge shared by a sphere face and a plane face (enough for
