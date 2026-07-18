@@ -54,6 +54,26 @@ func TestLoopTurnsNegativeFlipsWithOrder(t *testing.T) {
 	}
 }
 
+// TestCompactSpherePoleGate proves the seed GATE (D9-T2 review): a compact cap bite (every vertex within
+// 90° of the mean) is admitted with a pole ≈ the cap axis, while a wide crescent bite with a vertex >90°
+// from the mean (the E4-like case base left to the mesher) is rejected — this is why E4 stays byte-identical.
+func TestCompactSpherePoleGate(t *testing.T) {
+	sph := geom.Sphere{Center: math.P3(0, 0, 0), Radius: 10}
+	cap := spherePatchLoop(sph, 30*stdmath.Pi/180, 6) // all dirs within 30° of +Z
+	pole, ok := compactSpherePole(sph, cap)
+	if !ok || float64(pole.Z) < 0.99 {
+		t.Fatalf("compactSpherePole(compact cap) = (%v, ok=%v), want ok=true pole≈+Z", pole, ok)
+	}
+	wide := []math.Point3{ // +X, +Y, then −X−Y: the last vertex is >90° from the (+X+Y) mean
+		sph.Center.TranslateBy(math.V3(1, 0, 0).Scale(math.Scalar(sph.Radius))),
+		sph.Center.TranslateBy(math.V3(0, 1, 0).Scale(math.Scalar(sph.Radius))),
+		sph.Center.TranslateBy(math.V3(-1, -1, 0).Scale(math.Scalar(sph.Radius))),
+	}
+	if _, ok := compactSpherePole(sph, wide); ok {
+		t.Fatal("compactSpherePole(wide crescent) = ok=true, want ok=false (an E4-like bite must not reseed)")
+	}
+}
+
 func TestReverseFilletFacePreservesMetadata(t *testing.T) {
 	sph := geom.Sphere{Center: math.P3(0, 0, 0), Radius: 10}
 	pts := spherePatchLoop(sph, 30*stdmath.Pi/180, 4)

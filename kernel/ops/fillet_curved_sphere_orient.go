@@ -16,10 +16,14 @@ import (
 // sense and can mesh the COMPLEMENT (D5: 224929 vs ~57815; D9: 103387 vs ~179292). The fix seeds the shell
 // from the host sphere itself, wound so the mesher fills the MATERIAL zone: move that face to faces[0] (so
 // orientFilletShell keeps its sense) and reverse it first when it would otherwise fill the complement. It
-// samples the loop's ARC edges (sphereLoopSamples) so a >hemisphere zone is told from a compact cap by
-// the SAME boundary the mesher sees — the four bare vertices alone cannot distinguish them (both regions
-// share them). Fires ONLY for a genuine host sphere (from curvedHostFaces — never the convex corner-blend
-// patch `sf`, not in hostFaces); non-sphere-host welds (the rest of the corpus) are untouched.
+// reads the material-zone pole off the ORIGINAL face's sampled loop (originalZonePole) — the four bare
+// bite vertices alone cannot place it (both regions share them). It reseeds EXACTLY the hosts base did:
+// only when the bite loop is COMPACT (compactSpherePole — its bare verts fit in a hemisphere: true for the
+// D5 sub-hemisphere cap AND the D9 reflex corner, whose SMALL bite loop is compact even though its material
+// zone is >hemisphere; false for the E4 wide crescent, which base left to the mesher's own winding — the
+// D9-T2 review's byte-identity gate). Fires ONLY for a genuine host sphere (from curvedHostFaces — never
+// the convex corner-blend patch `sf`, not in hostFaces); non-sphere-host welds (the rest of the corpus)
+// are untouched.
 func orientForSphereHost(body *topo.Body, all, hostFaces []filletFace) []filletFace {
 	if body == nil {
 		return all // no original body to anchor the material interior — do-no-harm (never in the weld path)
@@ -29,6 +33,9 @@ func orientForSphereHost(body *topo.Body, all, hostFaces []filletFace) []filletF
 		return all
 	}
 	sph := all[i].surface.(geom.Sphere)
+	if _, compact := compactSpherePole(sph, all[i].loops[0].pts); !compact {
+		return all // non-compact BITE loop (E4): base left it to the mesher's own winding — do not reseed (D9-T2 review)
+	}
 	pole, ok := originalZonePole(body, sph)
 	if !ok {
 		return all
@@ -96,6 +103,30 @@ func sphereLoopVectorArea(sph geom.Sphere, ring []math.Point3) math.Vector3 {
 		sum = sum.Add(a.Cross(b))
 	}
 	return sum
+}
+
+// compactSpherePole returns the bite loop's mean outward direction as a compact pole, ok only when EVERY
+// boundary vertex lies within 90° of it (the bite is a genuinely compact patch — its corner rim fits in a
+// hemisphere). This is the seed GATE, reproducing base's decision set EXACTLY: the D5 cap and the D9 reflex
+// corner (both compact bite loops) are reseeded; the E4 wide-crescent bite (a vertex >90° from the mean) is
+// NOT, so E4 stays byte-identical to base (D9-T2 review). The returned pole is only the gate cue; the
+// reversal pole comes from originalZonePole (the material zone), which is correct for a >hemisphere host too.
+func compactSpherePole(sph geom.Sphere, pts []math.Point3) (math.Vector3, bool) {
+	var sum math.Vector3
+	for _, p := range pts {
+		sum = sum.Add(sphereDir(sph, p))
+	}
+	mean, err := math.UnitVector3FromVector(sum)
+	if err != nil {
+		return math.Vector3{}, false
+	}
+	pole := mean.AsVector()
+	for _, p := range pts {
+		if float64(sphereDir(sph, p).Dot(pole)) <= 0 {
+			return math.Vector3{}, false // a vertex >90° from the mean — a wide (E4-like) bite, not compact
+		}
+	}
+	return pole, true
 }
 
 // loopTurnsNegative reports whether the loop turns clockwise (NOT CCW-seen-from-outside) around the compact
