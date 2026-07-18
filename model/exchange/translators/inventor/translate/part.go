@@ -97,7 +97,7 @@ func buildPart(ws *doc.Workspace, outPath string, d *ipt.Document, meshFallback 
 	// drop a redundant offset instead of over-constraining (the shaft carries exactly such a pair).
 	warns = append(warns, applyOffsetDimensions(def, d)...)
 	def.Recompute()
-	if built && !firstBodyIsSolid(def) {
+	if built && !firstBodyIsSolid(def) && nearlySolid(def) {
 		retryWithoutDissolve(def)
 	}
 	// A rebuilt body that escapes Inventor's own tessellation was mis-decoded; drop it rather than
@@ -124,17 +124,77 @@ func firstBodyIsSolid(def *compdef.PartComponentDefinition) bool {
 	return len(bodies) > 0 && bodies[0].IsSolid()
 }
 
+// nearlySolidEdgeLimit gates the dissolve fallback: a body with more open mesh edges than this was
+// never close to a solid, so per-region prisms cannot recover one. The largest dissolve REGRESSION
+// observed (WheelSlider, a coincident-wall crack the merged tool tripped on an otherwise-solid part)
+// is 3 open edges; a fundamentally-cracked part is far above this (BigChunkyPlate: 94). The limit sits
+// well above the former and below the latter, so a genuine regression still triggers the fallback
+// while a hopeless part skips it.
+const nearlySolidEdgeLimit = 40
+
+// nearlySolid reports whether the first body is close enough to closed that the dissolve fallback's
+// per-region rebuild could plausibly recover a SOLID — i.e. the dissolve merely tripped a small
+// coincident-wall crack. Used to skip the expensive off-recompute (~2.5 min on BigChunkyPlate) on a
+// body whose many open edges mean it was never near-solid, where the fallback would only spend that
+// time producing a worse, still-open mesh.
+func nearlySolid(def *compdef.PartComponentDefinition) bool {
+	bodies := def.SurfaceBodies().All()
+	if len(bodies) == 0 {
+		return false
+	}
+	return openEdgeCount(bodies[0]) <= nearlySolidEdgeLimit
+}
+
+// openEdgeCount is the number of boundary (single-triangle) mesh edges of the body — 0 for a
+// watertight solid, growing with how cracked an open body is. Undirected edges are welded by
+// coordinate so the count is independent of per-face vertex indexing.
+func openEdgeCount(b *topo.Body) int {
+	mesh, _ := ops.TessellateBody(b, ops.DefaultQuality())
+	const grid = 1e-6
+	key := func(p m.Point3) [3]int64 {
+		return [3]int64{int64(p.X / grid), int64(p.Y / grid), int64(p.Z / grid)}
+	}
+	count := map[[2][3]int64]int{}
+	for i := 0; i+2 < len(mesh.Indices); i += 3 {
+		for e := 0; e < 3; e++ {
+			a, bb := key(mesh.Positions[mesh.Indices[i+e]]), key(mesh.Positions[mesh.Indices[i+(e+1)%3]])
+			if a == bb {
+				continue
+			}
+			if lessKey(bb, a) {
+				a, bb = bb, a
+			}
+			count[[2][3]int64{a, bb}]++
+		}
+	}
+	open := 0
+	for _, c := range count {
+		if c == 1 {
+			open++
+		}
+	}
+	return open
+}
+
+func lessKey(a, b [3]int64) bool {
+	if a[0] != b[0] {
+		return a[0] < b[0]
+	}
+	if a[1] != b[1] {
+		return a[1] < b[1]
+	}
+	return a[2] < b[2]
+}
+
 // retryWithoutDissolve is the whole-part fallback for the abutting-prism dissolve (#38). The dissolve
 // fixes the coincident-wall crack a slot-with-corner-reliefs cut leaves and turns some parts from an
 // open SURFACE into a closed SOLID — but on a few it trips a downstream boolean fragility (in a LATER
 // feature, so it can't be caught per-feature) and OPENS a body that per-region prisms would have kept
-// solid. When the part didn't come back a solid, rebuild it with the dissolve OFF and keep that: the
-// per-region prisms are the pre-dissolve baseline, so a non-solid part is never worse than before, and
-// a part the dissolve regressed (WheelSlider) is restored to its solid. The dissolve is thus retained
-// only where it PRODUCES a solid (MainFrameSingleHeadBlock: SURFACE → SOLID). A "keep the fewer-crack
-// mesh when neither is solid" refinement was measured but reverted: it needs a third recompute of the
-// part, ~5 min on a heavy part like BigChunkyPlate, for only a mesh-quality gain on a body that stays
-// non-solid either way.
+// solid. When the part didn't come back a solid AND is near-solid (see nearlySolid), rebuild it with
+// the dissolve OFF and keep that: per-region prisms restore the regressed solid (WheelSlider). A part
+// far from solid never reaches here — the dissolve's (usually cleaner) mesh stands, and its ~2.5-min
+// off-recompute is skipped. The dissolve is thus retained wherever it helps or is neutral, and undone
+// only where per-region prisms recover a solid.
 func retryWithoutDissolve(def *compdef.PartComponentDefinition) {
 	if feature.SetExtrudeDissolve(def.Features(), false) == 0 {
 		return // no extrude dissolved: nothing to undo
