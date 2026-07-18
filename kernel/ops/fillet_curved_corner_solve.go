@@ -177,9 +177,29 @@ func hostTangentPoint(surf geom.Surface, c math.Point3, r float64, res Resolutio
 		return planeTangentPoint(s, c, r, res)
 	case geom.Cylinder:
 		return cylinderTangentPoint(s, c, r, res)
+	case geom.Sphere:
+		return sphereHostTangentPoint(s, c, r, res)
 	default:
-		return math.Point3{}, false // only planar / cylindrical hosts are supported in Slice A
+		return math.Point3{}, false // only planar / cylindrical / spherical hosts are supported
 	}
+}
+
+// sphereHostTangentPoint is the radial projection of the corner centre C onto the host sphere wall at
+// radius R (O + R·(C−O)/|C−O|) — the point where the corner ball touches the host sphere (sphere-host
+// campaign SP3). The sphere is tangent there iff |dist(C, O) − R| == r (internal convex tangency
+// dist = R−r, or external dist = R+r) — the exact sibling of cylinderTangentPoint for a spherical host.
+// This is the DEGENERATE host-tangency pinch vertex: both torus arms at a sphere-host corner touch the
+// host sphere at THIS single point, so their two setback rails meet here on the corner sphere.
+func sphereHostTangentPoint(sph geom.Sphere, c math.Point3, r float64, res Resolution) (math.Point3, bool) {
+	radial := sph.Center.VectorTo(c)
+	dir, err := math.UnitVector3FromVector(radial)
+	if err != nil {
+		return math.Point3{}, false // C at the sphere centre (degenerate) — unreachable once the spindle guard holds
+	}
+	if stdmath.Abs(stdmath.Abs(radial.Length()-sph.Radius)-r) > res.Weld()*sph.Radius {
+		return math.Point3{}, false // sphere not tangent to the host wall at radius r (want |dist−R|=r)
+	}
+	return sph.Center.TranslateBy(dir.AsVector().Scale(sph.Radius)), true
 }
 
 // planeTangentPoint is the foot of the perpendicular from C onto the plane; the sphere is tangent

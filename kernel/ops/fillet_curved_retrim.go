@@ -27,9 +27,23 @@ import (
 // misalignment (a 1° tilt is 0.017 in the parallel residual, eight orders larger).
 const retrimAxisParallelTol = 1e-9
 
-// torusArmStation returns the torus arm's setback major angle φ* from the solved corner — the
-// azimuth span 0→φ* every torus contact rail sweeps (§B.1: wall arc 0°→−75.522°). ok=false when no
-// torus arm meets at this corner (then there is no circular host rail to emit).
+// torusStationForArm returns the setback major angle φ* of the SPECIFIC torus arm tor — the azimuth
+// span 0→φ* that arm's contact rail sweeps (§B.1: wall arc 0°→−75.522°). A sphere-host corner has TWO
+// torus arms rolling on the SAME host sphere with DIFFERENT stations (SP3), so the rail must use the
+// station of the arm being drawn, not "a" torus arm's. Falls back to the first torus arm's station when
+// tor is not found among w.arms — which keeps the single-ball (B3) and canal (N7) one-torus-arm paths
+// byte-identical, since there the sole torus arm is always the match. ok=false when no torus arm meets.
+func torusStationForArm(w cornerWeld, tor geom.Torus) (float64, bool) {
+	for _, a := range w.arms {
+		if t, ok := a.arm.(geom.Torus); ok && t == tor {
+			return a.station, true
+		}
+	}
+	return torusArmStation(w)
+}
+
+// torusArmStation returns the first torus arm's setback major angle φ* — the fallback for
+// torusStationForArm when the specific arm is not in w.arms (a one-torus-arm corner: B3 / N7).
 func torusArmStation(w cornerWeld) (float64, bool) {
 	for _, a := range w.arms {
 		if _, ok := a.arm.(geom.Torus); ok {
@@ -49,7 +63,7 @@ func torusArmStation(w cornerWeld) (float64, bool) {
 //	arc, ok := curvedHostArc(wall.Geometry(), torusArm, w, res)
 //	if !ok { /* this host carries no torus rail */ }
 func curvedHostArc(host geom.Surface, tor geom.Torus, w cornerWeld, res Resolution) (geom.Arc3d, bool) {
-	phi, ok := torusArmStation(w)
+	phi, ok := torusStationForArm(w, tor)
 	if !ok {
 		return geom.Arc3d{}, false
 	}
@@ -73,9 +87,33 @@ func torusContactCircle(host geom.Surface, tor geom.Torus, res Resolution) (math
 		return wallContactCircle(h, tor, res)
 	case geom.Plane:
 		return capContactCircle(h, tor, res)
+	case geom.Sphere:
+		return sphereContactCircle(h, tor, res)
 	default:
-		return math.Point3{}, 0, false // only a cylinder wall or a cap plane carries a torus rail
+		return math.Point3{}, 0, false // only a cylinder wall, a cap plane, or a host sphere carries a torus rail
 	}
+}
+
+// sphereContactCircle is the torus↔host-sphere contact (sphere-host campaign SP3): the arm's rolling
+// ball, centred on the torus spine circle at signed distance h = n̂·(O−O′) from the sphere centre O
+// along the torus axis n̂, touches the host sphere (O, R) along the spine circle scaled radially by
+// R/ρ about O. The result circle lies in a plane ⊥ n̂ (the same frame as the torus, so curvedHostArc's
+// [0→φ*] sweep lands the pinch at PointAt(1)): centre O + (R/ρ)·(O′−O), radius (R/ρ)·MajorRadius, with
+// ρ = √(h² + MajorRadius²) = R−r. Rejects a torus not internally tangent to the host (|ρ−(R−r)| > tol).
+func sphereContactCircle(sph geom.Sphere, tor geom.Torus, res Resolution) (math.Point3, float64, bool) {
+	n := tor.AxisDir.AsVector()
+	offset := tor.Center.VectorTo(sph.Center).Dot(n) // n̂·(O−O′) = h
+	h := float64(offset)
+	rho := stdmath.Sqrt(h*h + tor.MajorRadius*tor.MajorRadius)
+	if rho < res.Weld()*sph.Radius {
+		return math.Point3{}, 0, false // torus spine passes through the sphere centre — degenerate
+	}
+	if stdmath.Abs(rho-(sph.Radius-tor.MinorRadius)) > res.Weld()*sph.Radius {
+		return math.Point3{}, 0, false // torus not internally tangent to the host sphere (ρ ≠ R−r)
+	}
+	k := sph.Radius / rho
+	center := sph.Center.TranslateBy(sph.Center.VectorTo(tor.Center).Scale(math.Scalar(k)))
+	return center, k * tor.MajorRadius, true
 }
 
 // wallContactCircle is the torus↔wall contact: the torus outer equator (radius ρ+r) in the spine
@@ -198,6 +236,8 @@ func onHostSurface(surf geom.Surface, p math.Point3, tol float64) bool {
 		axis := h.AxisDir.AsVector()
 		w := h.Origin.VectorTo(p)
 		return stdmath.Abs(float64(w.Sub(axis.Scale(w.Dot(axis))).Length())-h.Radius) <= tol
+	case geom.Sphere:
+		return stdmath.Abs(float64(h.Center.VectorTo(p).Length())-h.Radius) <= tol
 	}
 	return false
 }
