@@ -43,8 +43,11 @@ var oracleHostSphere = map[string]float64{"D5": 57537.1, "E4": 57646.0}
 var oracleTotal = map[string]float64{"D5": 134780, "E4": 134002}
 
 const (
-	armAreaRelTol   = 0.005 // torus-arm mesh vs OCCT per-face oracle: a curved-band property-mesh lands ≤0.14% off
-	knownE4FoldArea = 6234  // the folding E4 arm meshes to 6236.8 (>this), its clean twin to 6228.1 (<this)
+	armAreaRelTol   = 0.005  // torus-arm mesh vs OCCT per-face oracle: a curved-band property-mesh lands ≤0.14% off
+	knownE4FoldArea = 6234   // the folding E4 arm meshes to 6236.8 (>this), its clean twin to 6228.1 (<this)
+	e4FoldCeiling   = 6237.5 // regression ceiling on the folding arm: it meshes to 6236.80 (vs OCCT oracle
+	// 6230.42, +0.10%); the same 2 fold edges creasing ~5× worse would still clear the 0.5% arm pin (≈6261),
+	// so bound the area here just above the measured value (+0.011% margin) to catch a WORSENED fold.
 )
 
 func TestD5E4TessellationFoldGate(t *testing.T) {
@@ -105,6 +108,9 @@ func pinTorusArm(t *testing.T, name string, tor geom.Torus, area float64) {
 			best, bestErr = o, e
 		}
 	}
+	if best == 0 { // no oracle entry for this case: guard the best-relative ratio below (÷0 → NaN/Inf)
+		t.Fatalf("no matching torus-arm oracle for case %q (torus Rmaj %.3f, mesh area %.2f)", name, tor.MajorRadius, area)
+	}
 	if bestErr > armAreaRelTol*best {
 		t.Fatalf("%s torus arm (Rmaj %.3f) mesh area %.2f, no OCCT oracle within %.1f%% (nearest %.2f, err %.3f%%)",
 			name, tor.MajorRadius, area, armAreaRelTol*100, best, 100*bestErr/best)
@@ -123,6 +129,12 @@ func assertKnownResidualFold(t *testing.T, name string, f *topo.Face, m *ops.Mes
 	if n := ops.FoldEdgeCount(m); n != 2 {
 		t.Fatalf("E4 folding torus arm has %d fold edges, want the known 2 (a WORSENED or FIXED mesh; "+
 			"if fixed, remove this exception — see fr5-report.md)", n)
+	}
+	// The 2-edge count alone would not catch the SAME edges creasing worse (a deeper needle inflates area
+	// while the count stays 2). Ceiling the folded arm's area just above the known 6236.80 (oracle 6230.42).
+	if area > e4FoldCeiling {
+		t.Fatalf("E4 folding torus arm mesh area %.2f exceeds the regression ceiling %.1f (known 6236.80 vs "+
+			"OCCT oracle 6230.42) — the 2-edge fold has WORSENED; see fr5-report.md", area, e4FoldCeiling)
 	}
 }
 
