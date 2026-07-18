@@ -119,7 +119,7 @@ func TestRetrimCurvedHost_InnerLoopSurvives(t *testing.T) {
 		t.Fatalf("solveCurvedCorner rejected the certified B3 corner")
 	}
 	host, holePts := buildRadialFaceWithHole(t)
-	ff, ok := retrimCurvedHost(host, w, res)
+	ff, ok := retrimCurvedHost(host, nil, nil, w, res)
 	if !ok {
 		t.Fatalf("retrimCurvedHost declined the holed radial host")
 	}
@@ -170,7 +170,7 @@ func TestRetrimCurvedHost_B3(t *testing.T) {
 // zero wantRadius means the loop must be all straight), and reproduces the oracle developed area.
 func assertRetrim(t *testing.T, host *topo.Face, w cornerWeld, res Resolution, wantArea float64, arcCenter math.Point3, arcRadius float64) {
 	t.Helper()
-	ff, ok := retrimCurvedHost(host, w, res)
+	ff, ok := retrimCurvedHost(host, nil, nil, w, res)
 	if !ok {
 		t.Fatalf("retrimCurvedHost declined host %T", host.Geometry())
 	}

@@ -217,17 +217,111 @@ func curvedWeldFaces(body *topo.Body, arms []edgeFillet, w cornerWeld, sphere ge
 	if reason != "" {
 		return nil, reason
 	}
-	return append(append(faces, sf), hostFaces...), ""
+	all := append(append(faces, sf), hostFaces...)
+	return orientForSphereHost(all, hostFaces), ""
+}
+
+// orientForSphereHost fixes the weld's global loop sense for the sphere-patch mesher when a sub-hemisphere
+// sphere HOST face is present (D5/E4). The mesher (spherePatchMesh/interiorAxis) resolves which of the two
+// regions a sphere loop bounds from the loop's ABSOLUTE winding, but the weld's global sense is otherwise
+// free: orientFilletShell (in assembleBody) only unifies RELATIVE windings and pins the ABSOLUTE sense to
+// its SEED (faces[0]) — an arm face — so the host sphere inherits an arbitrary sense and can mesh the
+// COMPLEMENT (D5: 224929 vs ~57815). The fix seeds the shell from the host sphere itself, wound
+// CCW-seen-from-outside around its compact pole: move that face to faces[0] (so orientFilletShell keeps its
+// sense) and reverse it first when it came out clockwise. It fires ONLY for a genuine host sphere (from
+// curvedHostFaces — never the convex corner-blend patch, which is `sf`, not in hostFaces) that is
+// sub-hemispheric, so a >hemisphere host (D6) and every non-sphere-host weld (the whole existing corpus)
+// are untouched. Sub-hemisphere host spheres only arise on the curved-ARM weld (this function's caller).
+func orientForSphereHost(all, hostFaces []filletFace) []filletFace {
+	i, pole, ok := subHemisphereSphereHost(all, hostFaces)
+	if !ok {
+		return all
+	}
+	if loopTurnsNegative(all[i].surface.(geom.Sphere), pole, all[i].loops[0].pts) {
+		all[i] = reverseFilletFace(all[i]) // emit it CCW-seen-from-outside so the seeded sense meshes the patch
+	}
+	all[0], all[i] = all[i], all[0] // seed orientFilletShell from the host sphere (it keeps faces[0]'s sense)
+	return all
+}
+
+// subHemisphereSphereHost finds a host sphere face whose whole boundary lies within a hemisphere (a compact
+// pole exists), returning its index in `all` and that pole. ok=false when no host face is a sub-hemisphere
+// sphere (a >hemisphere host — D6 — has no compact pole and is left to the mesher's winding test).
+func subHemisphereSphereHost(all, hostFaces []filletFace) (int, math.Vector3, bool) {
+	for _, hf := range hostFaces {
+		sph, isSphere := hf.surface.(geom.Sphere)
+		if !isSphere || len(hf.loops) == 0 || len(hf.loops[0].pts) < 3 {
+			continue
+		}
+		pole, compact := compactSpherePole(sph, hf.loops[0].pts)
+		if !compact {
+			continue
+		}
+		for i := range all {
+			if all[i].surface == hf.surface && len(all[i].loops) > 0 {
+				return i, pole, true
+			}
+		}
+	}
+	return 0, math.Vector3{}, false
+}
+
+// compactSpherePole returns the loop's mean outward direction as the patch's compact pole, ok only when
+// EVERY boundary vertex lies within 90° of it (a genuinely sub-hemisphere patch, so the pole is
+// unambiguously inside the patch). ok=false for a >hemisphere host (D6), where the winding is the only cue.
+func compactSpherePole(sph geom.Sphere, pts []math.Point3) (math.Vector3, bool) {
+	var sum math.Vector3
+	for _, p := range pts {
+		sum = sum.Add(sphereDir(sph, p))
+	}
+	mean, err := math.UnitVector3FromVector(sum)
+	if err != nil {
+		return math.Vector3{}, false
+	}
+	pole := mean.AsVector()
+	for _, p := range pts {
+		if float64(sphereDir(sph, p).Dot(pole)) <= 0 {
+			return math.Vector3{}, false // a vertex >90° from the mean — not a sub-hemisphere patch
+		}
+	}
+	return pole, true
+}
+
+// loopTurnsNegative reports whether the loop turns clockwise (NOT CCW-seen-from-outside) around the compact
+// pole — the winding sense the sphere-patch mesher's sign test misreads as the complement.
+func loopTurnsNegative(sph geom.Sphere, pole math.Vector3, pts []math.Point3) bool {
+	center := sph.Center.TranslateBy(pole.Scale(math.Scalar(sph.Radius)))
+	return loopWindingAround(pts, center, pole) < 0
+}
+
+// reverseFilletFace reverses every loop of a face (metadata-preserving), so orientForSphereHost can wind
+// the seed host sphere CCW-seen-from-outside — via the same reverseFilletLoop the shell 2-colouring uses.
+func reverseFilletFace(f filletFace) filletFace {
+	loops := make([]filletLoop, len(f.loops))
+	for i, l := range f.loops {
+		loops[i] = reverseFilletLoop(l)
+	}
+	return filletFace{surface: f.surface, loops: loops, parent: f.parent}
 }
 
 // armRails is one arm's four boundary edges as a closed loop (host rail on ef.a, setback great-arc,
 // host rail on ef.b reversed, far runout trim), plus that far trim alone (outer0→outer1) — the rail
 // shared with the far-runout host, kept separate so both faces reuse the identical curve — and the
 // runout object (regime + capping identity) the far-runout host bite router reads (FR3).
+//
+// hostA/hostB are the SAME (possibly oblique-re-terminated) host contact rails, un-reversed and oriented
+// outer→tHost — hostA on ef.a, hostB on ef.b. They are kept as their own fields (not re-extracted from
+// segs) so the CORNER-HOST retrim (fillet_curved_retrim.go, FR4) consumes the identical curve OBJECT the
+// arm face carries, welding the two sides by construction: for a perpendicular runout hostA/hostB are the
+// untouched full curvedHostArc arcs (existing greens byte-identical), for an oblique runout their outer
+// ends are the closed-form feet ON the host loop (D5/E4). Re-extracting from segs would double-reverse
+// segs[2] and re-derive its arc — a congruent but NOT bit-identical curve, breaking the weld identity.
 type armRails struct {
 	segs   []endSeg
 	far    endSeg
 	runout armRunout
+	hostA  endSeg // ef.a host contact rail, oriented outer→tHost (== segs[0])
+	hostB  endSeg // ef.b host contact rail, oriented outer→tHost (segs[2] is this, reversed)
 }
 
 // armRailBundle assembles one arm's four boundary rails (§B.5). t0/t1 are the arm's two host-tangent
@@ -261,7 +355,7 @@ func closeArmRails(h0, h1, setback endSeg, run armRunout) armRails {
 	segs := []endSeg{h0, setback}
 	segs = append(segs, reverseEndSegs([]endSeg{h1})...)       // t1 → outer1
 	segs = append(segs, reverseEndSegs([]endSeg{run.trim})...) // outer1 → outer0 (closes to h0.from)
-	return armRails{segs: segs, far: run.trim, runout: run}
+	return armRails{segs: segs, far: run.trim, runout: run, hostA: h0, hostB: h1}
 }
 
 // filletedEdgeSet is the set of picked (filleted) edge ids at the welded corner — the arm edges gathered

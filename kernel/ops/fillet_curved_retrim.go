@@ -165,9 +165,14 @@ func capContactCircle(pl geom.Plane, tor geom.Torus, res Resolution) (math.Point
 // rail is missing, or a landing point does not lie on L*'s original edges — never an open or
 // self-crossing loop (a mis-closed retrim corrupts the mesh). Example:
 //
-//	ff, ok := retrimCurvedHost(wallFace, w, res)
+//	ff, ok := retrimCurvedHost(wallFace, edges, bundles, w, res)
 //	if !ok { /* decline the weld — do-no-harm */ }
-func retrimCurvedHost(host *topo.Face, w cornerWeld, res Resolution) (filletFace, bool) {
+//
+// edges/bundles are the corner arms' edgeFillets and their weld rail bundles, index-aligned with w.arms
+// (FR4). They let the corner rail consume the arm's OWN host bundle rail — oblique-re-terminated onto the
+// loop for D5/E4, byte-identical to the old full arc for every perpendicular green — instead of rebuilding
+// curvedHostArc. Both may be nil (the direct unit fixtures), whereupon armContactRail rebuilds the arc.
+func retrimCurvedHost(host *topo.Face, edges []edgeFillet, bundles []armRails, w cornerWeld, res Resolution) (filletFace, bool) {
 	tol := res.Weld() * w.radius
 	star, ok := bittenLoop(host, w.center, tol)
 	if !ok {
@@ -177,7 +182,7 @@ func retrimCurvedHost(host *topo.Face, w cornerWeld, res Resolution) (filletFace
 	if len(segs) < 3 {
 		return filletFace{}, false // a host loop needs ≥3 edges to bite a corner from
 	}
-	loop, ok := retrimHostSegs(host, segs, w, res)
+	loop, ok := retrimHostSegs(host, segs, edges, bundles, w, res)
 	if !ok {
 		return filletFace{}, false
 	}
@@ -193,9 +198,9 @@ func retrimCurvedHost(host *topo.Face, w cornerWeld, res Resolution) (filletFace
 // this trihedral weld, and the far-runout hosts (e.g. the bottom cap the through-arm exits) are NOT
 // corner hosts — their cross-section bite is spliced by spliceCornerBite (fillet_curved_farrunout.go),
 // not here, so retrimCurvedHost is only ever called on the two-arm corner hosts.
-func retrimHostSegs(host *topo.Face, segs []endSeg, w cornerWeld, res Resolution) ([]endSeg, bool) {
+func retrimHostSegs(host *topo.Face, segs []endSeg, edges []edgeFillet, bundles []armRails, w cornerWeld, res Resolution) ([]endSeg, bool) {
 	tol := res.Weld() * w.radius
-	arms, tHost, n := armsRollingOnHost(host, w, tol)
+	arms, tHost, n := armsRollingOnHost(host, edges, bundles, w, tol)
 	if n != 2 {
 		return nil, false
 	}
@@ -203,23 +208,71 @@ func retrimHostSegs(host *topo.Face, segs []endSeg, w cornerWeld, res Resolution
 	return retrimCornerHost(host, segs, v, arms, tHost, w, res, tol)
 }
 
+// cornerHostArm is a corner arm rolling on a host, paired with the weld-bundle host contact rail the arm
+// face already built ON THAT host (rail/hasRail) — the oblique-aware, single-source-of-truth rail (FR4).
+// Without a bundle (the direct unit fixtures) hasRail is false and armContactRail rebuilds curvedHostArc.
+type cornerHostArm struct {
+	set     armSetback
+	rail    endSeg
+	hasRail bool
+}
+
 // armsRollingOnHost returns the corner arms with a rail endpoint (a host-tangent point) lying on this
-// host, plus that shared tangent point. Two arms → a corner host; none → a foot-bite host.
-func armsRollingOnHost(host *topo.Face, w cornerWeld, tol float64) ([]armSetback, math.Point3, int) {
+// host, each paired with its weld-bundle rail on this host (cornerHostArmFor), plus that shared tangent
+// point. Two arms → a corner host; none → a foot-bite host. It iterates w.arms by INDEX so it can look up
+// the index-aligned edges[i]/bundles[i] (the FR4 by-index match, not by surface-value equality).
+func armsRollingOnHost(host *topo.Face, edges []edgeFillet, bundles []armRails, w cornerWeld, tol float64) ([]cornerHostArm, math.Point3, int) {
 	surf := host.Geometry()
-	var arms []armSetback
+	var arms []cornerHostArm
 	var tHost math.Point3
-	for _, a := range w.arms {
-		for _, d := range [2]math.UnitVector3{a.railDir0, a.railDir1} {
-			ep := endpointOf(w.center, w.radius, d)
-			if onHostSurface(surf, ep, tol) {
-				arms = append(arms, a)
-				tHost = ep
-				break
-			}
+	for i, a := range w.arms {
+		ep, ok := armTangentOnHost(surf, a, w, tol)
+		if !ok {
+			continue
 		}
+		tHost = ep
+		arms = append(arms, cornerHostArmFor(host, a, i, edges, bundles))
 	}
 	return arms, tHost, len(arms)
+}
+
+// armTangentOnHost returns the arm's host-tangent point on host — the endpoint of a rail direction lying
+// on the surface — or ok=false when neither rail direction lands on this host.
+func armTangentOnHost(surf geom.Surface, a armSetback, w cornerWeld, tol float64) (math.Point3, bool) {
+	for _, d := range [2]math.UnitVector3{a.railDir0, a.railDir1} {
+		ep := endpointOf(w.center, w.radius, d)
+		if onHostSurface(surf, ep, tol) {
+			return ep, true
+		}
+	}
+	return math.Point3{}, false
+}
+
+// cornerHostArmFor pairs corner arm a (index i into the index-aligned w.arms/edges/bundles) with its
+// weld-bundle host rail on THIS host, so the retrim consumes the identical curve object the arm face
+// carries. With no bundle (i out of range — the direct unit fixtures) rail is absent and armContactRail
+// rebuilds curvedHostArc (the fallback).
+func cornerHostArmFor(host *topo.Face, a armSetback, i int, edges []edgeFillet, bundles []armRails) cornerHostArm {
+	if i >= len(edges) || i >= len(bundles) {
+		return cornerHostArm{set: a}
+	}
+	rail, ok := hostBundleRail(host, edges[i], bundles[i])
+	return cornerHostArm{set: a, rail: rail, hasRail: ok}
+}
+
+// hostBundleRail returns the arm's host contact rail on host from its weld bundle — hostA on ef.a, hostB
+// on ef.b (both oriented outer→tHost) — the SAME curve object the arm face's boundary loop carries, so the
+// retrim and the arm face weld watertight (the oblique foot lands on the loop; the perpendicular full arc
+// is unchanged). ok=false when host is neither ef.a nor ef.b (a coincidental surface match) — the caller
+// then rebuilds curvedHostArc, preserving the pre-FR4 behaviour on that arm.
+func hostBundleRail(host *topo.Face, ef edgeFillet, bundle armRails) (endSeg, bool) {
+	if host == ef.a {
+		return bundle.hostA, true
+	}
+	if host == ef.b {
+		return bundle.hostB, true
+	}
+	return endSeg{}, false
 }
 
 // onHostSurface reports whether p lies on the host surface within tol (signed distance to a plane, or
@@ -244,7 +297,7 @@ func onHostSurface(surf geom.Surface, p math.Point3, tol float64) bool {
 
 // retrimCornerHost assembles a two-arm host loop: rail A (outer→tHost), rail B (tHost→outer), then
 // the surviving far path (outerB→outerA) that avoids the bitten trihedral vertex.
-func retrimCornerHost(host *topo.Face, segs []endSeg, v math.Point3, arms []armSetback, tHost math.Point3, w cornerWeld, res Resolution, tol float64) ([]endSeg, bool) {
+func retrimCornerHost(host *topo.Face, segs []endSeg, v math.Point3, arms []cornerHostArm, tHost math.Point3, w cornerWeld, res Resolution, tol float64) ([]endSeg, bool) {
 	railA, outerA, okA := armContactRail(host, arms[0], tHost, v, segs, w, res, tol)
 	railB, outerB, okB := armContactRail(host, arms[1], tHost, v, segs, w, res, tol)
 	if !okA || !okB {
@@ -258,11 +311,16 @@ func retrimCornerHost(host *topo.Face, segs []endSeg, v math.Point3, arms []armS
 	return append(out, far...), true                                   // …→outerA (closed)
 }
 
-// armContactRail builds one arm's contact rail on a corner host as an endSeg oriented outer→tHost,
-// plus the outer landing point. Torus arms carve a circular arc (curvedHostArc); cylinder arms carve
-// a straight ruling from the far runout to tHost.
-func armContactRail(host *topo.Face, arm armSetback, tHost, v math.Point3, segs []endSeg, w cornerWeld, res Resolution, tol float64) (endSeg, math.Point3, bool) {
-	switch s := arm.arm.(type) {
+// armContactRail builds one arm's contact rail on a corner host as an endSeg oriented outer→tHost, plus
+// the outer landing point. When the arm carries its weld bundle (ha.hasRail, the production path) it
+// consumes that rail VERBATIM (bundleContactRail) — the single-source-of-truth weld with the arm face,
+// oblique-aware by construction. Without a bundle (the unit fixtures) it rebuilds: torus arms carve a
+// circular arc (curvedHostArc); cylinder arms carve a straight ruling from the far runout to tHost.
+func armContactRail(host *topo.Face, ha cornerHostArm, tHost, v math.Point3, segs []endSeg, w cornerWeld, res Resolution, tol float64) (endSeg, math.Point3, bool) {
+	if ha.hasRail {
+		return bundleContactRail(ha.rail, tHost, tol)
+	}
+	switch s := ha.set.arm.(type) {
 	case geom.Torus:
 		arc, ok := curvedHostArc(host.Geometry(), s, w, res)
 		if !ok || float64(arc.PointAt(1).DistanceTo(tHost)) > tol {
@@ -271,13 +329,25 @@ func armContactRail(host *topo.Face, arm armSetback, tHost, v math.Point3, segs 
 		outer := arc.PointAt(0)
 		return endSeg{from: outer, to: tHost, curve: arc, mid: arc.PointAt(0.5), arc: true}, outer, true
 	case geom.Cylinder:
-		outer, ok := armRulingEnd(host, s, arm, tHost, v, segs, tol)
+		outer, ok := armRulingEnd(host, s, ha.set, tHost, v, segs, tol)
 		if !ok {
 			return endSeg{}, math.Point3{}, false
 		}
 		return endSeg{from: outer, to: tHost}, outer, true
 	}
 	return endSeg{}, math.Point3{}, false
+}
+
+// bundleContactRail consumes an arm's weld-bundle host rail verbatim as the retrim's corner rail (already
+// oriented outer→tHost), so the retrimmed host and the arm face share ONE curve object — watertight by
+// construction: the oblique regime's outer end is the foot ON the loop, the perpendicular regime's is the
+// untouched full-arc P0. Declines when the bundle rail's inner end misses the shared tangent point beyond
+// tol (a mis-paired bundle — do-no-harm rather than weld a crack).
+func bundleContactRail(rail endSeg, tHost math.Point3, tol float64) (endSeg, math.Point3, bool) {
+	if float64(rail.to.DistanceTo(tHost)) > tol {
+		return endSeg{}, math.Point3{}, false
+	}
+	return rail, rail.from, true
 }
 
 // sinFloor is the dimensionless (angular, scale-free) floor for a DEGENERATE ruling: a chart direction

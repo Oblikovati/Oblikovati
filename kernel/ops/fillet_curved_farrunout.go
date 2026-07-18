@@ -25,7 +25,7 @@ func curvedHostFaces(body *topo.Body, arms []edgeFillet, bundles []armRails, w c
 	tol := res.Weld() * w.radius
 	out := make([]filletFace, 0, len(body.Faces()))
 	for _, f := range body.Faces() {
-		ff, reason := curvedHostFace(f, corner, bundles, w, res, tol)
+		ff, reason := curvedHostFace(f, corner, arms, bundles, w, res, tol)
 		if reason != "" {
 			return nil, reason
 		}
@@ -35,10 +35,12 @@ func curvedHostFaces(body *topo.Body, arms []edgeFillet, bundles []armRails, w c
 }
 
 // curvedHostFace routes one host face to its treatment (corner retrim / far-runout retrim / pass-through)
-// and returns its rebuilt face, or a diagnostic reason on a retrim decline.
-func curvedHostFace(f *topo.Face, corner map[*topo.Face]bool, bundles []armRails, w cornerWeld, res Resolution, tol float64) (filletFace, string) {
+// and returns its rebuilt face, or a diagnostic reason on a retrim decline. arms/bundles are the corner
+// arms' edgeFillets and rail bundles (index-aligned with w.arms), threaded into the corner retrim so it
+// consumes each arm's own oblique-aware host bundle rail (FR4).
+func curvedHostFace(f *topo.Face, corner map[*topo.Face]bool, arms []edgeFillet, bundles []armRails, w cornerWeld, res Resolution, tol float64) (filletFace, string) {
 	if corner[f] {
-		ff, ok := retrimCurvedHost(f, w, res)
+		ff, ok := retrimCurvedHost(f, arms, bundles, w, res)
 		if !ok {
 			return filletFace{}, fmt.Sprintf("corner host retrim declined (%T)", f.Geometry())
 		}
