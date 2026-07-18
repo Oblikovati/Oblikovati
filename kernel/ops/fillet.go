@@ -421,8 +421,13 @@ func filletFrame(body *topo.Body, e *topo.Edge, nA, nB math.Vector3, rMid float6
 		}
 		// Inward recess: the ball rolls in the MATERIAL (the convex-formula side). Its tangent points
 		// land off the bounded faces unless they extend that way, so it is only valid on geometry that
-		// permits it (e.g. a pocket); elsewhere the assembled body fails validation and the feature
-		// goes sick honestly. A concave edge's natural fillet is the outward fill above.
+		// permits it (e.g. a pocket). The explicit realizability gate rejects the impossible case
+		// honestly — before it existed the rejection was an ACCIDENT of inconsistent loop winding, which
+		// B2's orientFilletShell (fee0da5c) laundered into a Validate-passing self-intersecting solid.
+		// A concave edge's natural fillet is the outward fill above.
+		if p, ok := concaveInwardRealizable(body, e, nA, nB, offDir, rMid); !ok {
+			return cornerInputs{}, fmt.Errorf("fillet: inward recess unrealizable at concave edge — tangent point %v is not material-backed (must lie on a bounded face with material behind and void in front)", p)
+		}
 		return cornerInputs{nA: nA, nB: nB, offDir: offDir}, nil
 	}
 	if !PointInsideBody(body, mid.TranslateBy(offDir.Scale(rMid))) {
