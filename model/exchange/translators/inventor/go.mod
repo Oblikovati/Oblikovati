@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 module oblikovati.org/model/exchange/translators/inventor
 
-go 1.22
+go 1.26.0
 
 require (
 	github.com/klauspost/compress v1.18.0

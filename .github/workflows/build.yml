@@ -74,7 +74,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.24"
+          go-version: "1.26"
           cache: false
       - uses: ./.github/actions/api-contract
         with:
@@ -213,7 +213,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.24"
+          go-version: "1.26"
           cache: false
       - uses: ./.github/actions/api-contract
         with:
@@ -250,7 +250,7 @@ jobs:
       # via head/cmd/genappicon (pure Go; no brew deps). iconutil ships with the runner.
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.24"
+          go-version: "1.26"
           cache: false
       - uses: ./.github/actions/api-contract
         with:
