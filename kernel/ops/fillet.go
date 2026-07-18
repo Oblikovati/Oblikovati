@@ -960,11 +960,18 @@ func edgesOf(ps []filletPick) []*topo.Edge {
 // sphere equidistant (r) from the three planes (the historical path, byte-identical below). A corner
 // whose host set is ONE cylinder and two planes (M5 Slice A: a curved-rim boss corner) instead solves
 // the ball tangent to the cylinder and the two planes — an analytic geom.Sphere of the same radius r,
-// matching OCCT's equal-radius corner KPart (BREP surface code 4). Any other host mix (two curved
-// faces, a cone/sphere/torus host) still returns "corner face must be planar" (do-no-harm).
+// matching OCCT's equal-radius corner KPart (BREP surface code 4). A ONE sphere + two planes host set
+// solves the same analytic corner via sphereHostCorner (SP2). Any other host mix (two curved faces, a
+// cone/torus host, or ≥2 curved faces) still returns "corner face must be planar" (do-no-harm).
 func solveBlend(v *topo.Vertex, faces []*topo.Face, r float64) (*cornerBlend, error) {
 	if cyl, planes, ok := cylinderHostCorner(faces); ok {
 		return solveCurvedBlend(v, faces, cyl, planes, r) // curved rim: analytic sphere corner
+	}
+	// SP2: a sphere host + two planes solves the analytic sphere corner too (sphere-host campaign).
+	// Ordered AFTER the untouched cylinderHostCorner and before solvePlanarBlend, so the cylinder (M5)
+	// and all-planar paths stay byte-identical (unreachable-by-construction for non-sphere hosts).
+	if sph, sphereFace, planes, ok := sphereHostCorner(faces); ok {
+		return solveSphereBlend(v, faces, sph, sphereFace, planes, r)
 	}
 	return solvePlanarBlend(v, faces, r)
 }
