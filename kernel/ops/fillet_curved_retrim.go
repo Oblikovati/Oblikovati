@@ -362,22 +362,57 @@ const sinFloor = 1e-6
 // of the ruling with the (bitten) loop, computed in the host's intrinsic chart (θ,z on a wall; u,v on a
 // plane), then cross-checked against the filleted edge's far vertex (the runout authority, R.1a).
 // Replaces axialExtremeEnd, which slid to the loop's GLOBAL axial extreme and overshot any intermediate
-// trim edge (N7 s_4: global rim z=130, true runout z=80). It honest-rejects (false) when the crossing's
-// runout disagrees with the far vertex's beyond tol (the edge ends at an interior weld — out of scope —
-// or a wrong edge was hit), or when the chart ruling is degenerate (arm axis ⊥ a planar host).
+// trim edge (N7 s_4: global rim z=130, true runout z=80). The accepted crossing (the common convex case)
+// is a forward loop crossing whose runout MATCHES the far vertex. When the loop-crossing path produces
+// NO accepted outer end — none found, OR the one found has the WRONG runout — it falls back to the
+// reflex-corner interior station (rulingStationOuter, D9-T1): a >180° wedge leaves the true outer end
+// interior to the host sector, on no loop edge, so the ruling either misses the loop (backward-shadowed)
+// or crosses its FAR side at a longer runout than the far vertex (D9's cap rim at t=+145.9 vs 71.58).
+// It still honest-declines (false) when the chart ruling is degenerate (rulingChartRay) or the station
+// itself is off-face / on-loop (rulingStationOuter), so nothing is fabricated where the ruling genuinely
+// runs off the host.
 func armRulingEnd(host *topo.Face, cylArm geom.Cylinder, arm armSetback, tHost, v math.Point3, segs []endSeg, tol float64) (math.Point3, bool) {
 	ch, o2, d2, ok := rulingChartRay(host, cylArm, tHost, v)
 	if !ok {
 		return math.Point3{}, false // no host chart, or the ruling projects to a point (grazing) — decline
 	}
-	end, ok := chartRulingExit(ch, segs, o2, d2, tol)
-	if !ok {
-		return math.Point3{}, false // the ruling meets no forward loop edge
+	if end, ok := chartRulingExit(ch, segs, o2, d2, tol); ok &&
+		(!arm.runoutKnown || runoutAgrees(ch, o2, d2, end, arm.farVertex, tol)) {
+		return end, true // forward loop crossing whose runout matches the far vertex — the verbatim green path
 	}
-	if arm.runoutKnown && !runoutAgrees(ch, o2, d2, end, arm.farVertex, tol) {
-		return math.Point3{}, false // crossing runout ≠ edge far-vertex runout: interior weld or wrong edge
+	return rulingStationOuter(ch, cylArm, arm, tHost, v, segs) // reflex corner: interior far-vertex station
+}
+
+// rulingStationOuter is armRulingEnd's reflex-corner (>180° wedge) fallback: when the ruling meets no
+// forward loop edge, the arm's true outer end is the far-vertex STATION projected onto the ruling —
+// outer = tHost + d̂·((farVertex−tHost)·d̂), the PRE-N2 closed-form terminator. It is correct here because
+// a reflex wedge can leave that station INTERIOR to the host sector, on no loop edge (D9's 270° cap:
+// station (−10,0,129.9038) at azimuth 180°, radius 10 ≪ 72.27 — forensic §1). Accept it only when the
+// runout is stamped and its chart point lies strictly inside the host loop; off-face (or unknown runout)
+// → decline, so no outer end is fabricated where the ruling genuinely runs off the face.
+func rulingStationOuter(ch hostChart, cylArm geom.Cylinder, arm armSetback, tHost, v math.Point3, segs []endSeg) (math.Point3, bool) {
+	if !arm.runoutKnown {
+		return math.Point3{}, false // no far vertex stamped (bare-face unit corner) — nothing to project onto
 	}
-	return end, true
+	d := awayFrom(cylArm.AxisDir.AsVector(), tHost, v) // unit ruling direction, away from the bitten vertex
+	outer := tHost.TranslateBy(d.Scale(tHost.VectorTo(arm.farVertex).Dot(d)))
+	if !chartPointInLoop(ch, ch.to2(outer), segs) {
+		return math.Point3{}, false // station runs off the host face — decline (do not fabricate an end)
+	}
+	return outer, true
+}
+
+// chartPointInLoop reports whether chart point q2 lies inside host loop segs, developed into the same
+// chart. It samples each seg (arcs included, via segPolyline) so a curved loop edge — D9's 270° cap rim
+// — contributes its true shape, not a chord, then ray-casts (pointInLoop2D). Both helpers are reused
+// verbatim (segPolyline from the far-runout file, pointInLoop2D from union_holes) — no duplication.
+func chartPointInLoop(ch hostChart, q2 math.Point2, segs []endSeg) bool {
+	ring3 := segPolyline(segs)
+	loop2 := make([]math.Point2, len(ring3))
+	for i, p := range ring3 {
+		loop2[i] = ch.to2(p)
+	}
+	return pointInLoop2D(q2, loop2)
 }
 
 // rulingChartRay develops the host and returns the arm ruling as a chart ray: origin ch.to2(tHost),

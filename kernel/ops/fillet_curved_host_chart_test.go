@@ -39,6 +39,25 @@ func cleanWallLoop(t *testing.T, z float64) []endSeg {
 	return []endSeg{rimArcSeg(t, z, -0.5, 1.0)}
 }
 
+// wallPointAt returns the R=50 axis-ẑ (ref x̂) wall point at chart (θ, z).
+func wallPointAt(theta, z float64) math.Point3 {
+	return math.P3(50*stdmath.Cos(theta), 50*stdmath.Sin(theta), z)
+}
+
+// closedWallRect is a genuine CLOSED wall-face loop on the R=50 axis-ẑ cylinder bounding the region
+// θ∈[−1,1], z∈[zlo,zhi]: bottom rim (zlo), right axial edge (θ=1), top rim (zhi), left axial edge
+// (θ=−1). Unlike a bare pair of rim arcs, this is a real ring, so chartPointInLoop develops it into a
+// well-defined interior — the fixture the D9-T1 reflex-corner station guard needs to tell an interior
+// far-vertex station (accept) from an off-face one (decline). The θ=0 ruling crosses only the two rims.
+func closedWallRect(t *testing.T, zlo, zhi float64) []endSeg {
+	t.Helper()
+	bottom := rimArcSeg(t, zlo, -1, 2) // θ: −1 → 1 at z=zlo
+	top := rimArcSeg(t, zhi, 1, -2)    // θ:  1 → −1 at z=zhi
+	right := endSeg{from: wallPointAt(1, zlo), to: wallPointAt(1, zhi)}
+	left := endSeg{from: wallPointAt(-1, zhi), to: wallPointAt(-1, zlo)}
+	return []endSeg{bottom, right, top, left}
+}
+
 // hostFaceFor wraps the wall cylinder as a bare host face — armRulingEnd reads only host.Geometry() for
 // the chart (the crossing loop is passed as segs), so no boundary loops are needed on the face.
 func hostFaceFor(t *testing.T, cyl geom.Cylinder) *topo.Face {
@@ -84,18 +103,38 @@ func TestArmRulingEnd_CleanWallReducesToGlobalExtreme(t *testing.T) {
 	}
 }
 
-// TestArmRulingEnd_AuthorityRejectsWrongRim proves the far-vertex authority BITES: when the first
-// chart crossing (z=80) disagrees with the filleted edge's far vertex (here z=125, an interior weld /
-// wrong-edge scenario), armRulingEnd honest-rejects rather than fabricate a rail.
+// TestArmRulingEnd_AuthorityRejectsWrongRim proves the far-vertex authority BITES: when the ruling's
+// forward loop crossing (top rim z=80) disagrees with the far vertex AND that far vertex lies OFF the
+// host face (z=125, above the z=80 boundary of the closed wall region z∈[15,80]), armRulingEnd
+// honest-rejects rather than fabricate a rail past the boundary. Post D9-T1 the runout-disagreeing
+// crossing falls through to the interior-station fallback (rulingStationOuter), and that fallback
+// declines because the station's chart point is OUTSIDE the loop — the authority still bites off-face.
 func TestArmRulingEnd_AuthorityRejectsWrongRim(t *testing.T) {
 	cyl := mustCylinder(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 50)
 	tHost := math.P3(50, 0, 15)
 	v := math.P3(50, 0, 10)
-	segs := notchedWallLoop(t) // first crossing at z=80
+	segs := closedWallRect(t, 15, 80) // host face region z∈[15,80]; ruling crosses the top rim z=80
 	arm := armSetback{arm: cyl, farVertex: math.P3(50, 0, 125), runoutKnown: true}
 
 	if _, ok := armRulingEnd(hostFaceFor(t, cyl), cyl, arm, tHost, v, segs, 0.02); ok {
-		t.Fatalf("authority: crossing z=80 disagrees with far vertex z=125 by 45 ≫ tol, must decline")
+		t.Fatalf("authority: far vertex z=125 lies above the host's z=80 boundary (off-face), must decline")
+	}
+}
+
+// TestArmRulingEnd_InteriorStationAccepted is the D9-T1 reflex-corner accept: when the ruling's forward
+// loop crossing (top rim z=80) OVERSHOOTS the far vertex (z=60, interior to the face region z∈[15,80]),
+// the true outer end is the interior far-vertex STATION, not the crossing. armRulingEnd falls back to
+// rulingStationOuter and returns the station z=60 — the same mechanism that greens D9's cap ruling.
+func TestArmRulingEnd_InteriorStationAccepted(t *testing.T) {
+	cyl := mustCylinder(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 50)
+	tHost := math.P3(50, 0, 15)
+	v := math.P3(50, 0, 10)
+	segs := closedWallRect(t, 15, 80)
+	arm := armSetback{arm: cyl, farVertex: math.P3(50, 0, 60), runoutKnown: true}
+
+	end, ok := armRulingEnd(hostFaceFor(t, cyl), cyl, arm, tHost, v, segs, 0.02)
+	if !ok || stdmath.Abs(float64(end.Z)-60) > 0.02 {
+		t.Fatalf("interior far vertex z=60 must be accepted at the station; got z=%.4f ok=%v", float64(end.Z), ok)
 	}
 }
 

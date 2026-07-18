@@ -134,9 +134,12 @@ func raySegment2d(ch hostChart, o2 math.Point2, d2 math.Vector2, s endSeg) (floa
 	return t, ch.to3(o2.TranslateBy(d2.Scale(math.Scalar(t)))), true
 }
 
-// rayArc2d solves the ray against an arc edge in the PLANE chart, keeping the nearest forward crossing
-// that lies inside the arc's sweep. (An in-plane arc develops to a true 2D circle only on an isometric
-// plane chart — the cylinder wall's horizontal rim arc goes through rayCylArc2d instead.)
+// rayArc2d solves the ray against an arc edge in the PLANE chart, keeping the nearest FORWARD crossing
+// (t>tol) that lies inside the arc's sweep. (An in-plane arc develops to a true 2D circle only on an
+// isometric plane chart — the cylinder wall's horizontal rim arc goes through rayCylArc2d instead.)
+// The forward filter mirrors chartRulingExit's own t>tol: a line meets a circle in two points, so a
+// BACKWARD (t≤tol) crossing must never shadow a legitimate forward one by winning the min-t contest
+// (D9's 270° rim arc is crossed at t=−2.75 backward and t=+145.9 forward — forensic §1(a)).
 func rayArc2d(ch hostChart, o2 math.Point2, d2 math.Vector2, s endSeg, tol float64) (float64, math.Point3, bool) {
 	line, err := geom.NewLine2d(o2, d2)
 	if err != nil {
@@ -149,7 +152,7 @@ func rayArc2d(ch hostChart, o2 math.Point2, d2 math.Vector2, s endSeg, tol float
 	for _, p2 := range geom.LineCircle2dIntersection(line, c2, tol) {
 		t := float64(o2.VectorTo(p2).Dot(d2) / d2.Dot(d2))
 		q := ch.to3(p2)
-		if _, ok := arcParam(arc, q, tol); ok && t < best {
+		if _, ok := arcParam(arc, q, tol); ok && t > tol && t < best {
 			best, bestPt, found = t, q, true
 		}
 	}
