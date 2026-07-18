@@ -101,6 +101,25 @@ func chartRulingExit(ch hostChart, segs []endSeg, o2 math.Point2, d2 math.Vector
 	return bestPt, found
 }
 
+// stationRunReached reports whether a reflex ruling reaches its far-vertex STATION without first leaving
+// the host loop (the D9-T2 overshoot guard for rulingStationOuter): the ruling's first forward loop
+// crossing (if any) must lie at or beyond the station's along-ruling runout. An endpoint-only interiority
+// test does not certify the whole ruling span — a re-entrant loop whose ruling exits before the station
+// (an UNDERSHOOT, rFirst < rFar) would let the reflex fallback fabricate a rail spanning off-face
+// territory even though the station point itself lands back inside by parity. So require an OVERSHOOT
+// crossing (rFirst ≥ rFar) or none. D9's cap: the sole forward crossing is the rim at rFirst=145.9, well
+// beyond the station rFar=71.58 — reached.
+func stationRunReached(ch hostChart, segs []endSeg, o2 math.Point2, d2 math.Vector2, farVertex math.Point3, tol float64) bool {
+	end, ok := chartRulingExit(ch, segs, o2, d2, tol)
+	if !ok {
+		return true // the ruling never re-crosses the loop — no earlier exit to fear
+	}
+	unit := d2.Scale(math.Scalar(1 / float64(d2.Length())))
+	rFirst := float64(o2.VectorTo(ch.to2(end)).Dot(unit))
+	rFar := float64(o2.VectorTo(ch.to2(farVertex)).Dot(unit))
+	return rFirst >= rFar-tol
+}
+
 // rayEdgeHit2d intersects the chart ray (o2 + t·d2) with one loop edge, returning the forward hit's
 // ray parameter and 3D point. A straight edge uses a 2D line/segment solve (valid on both charts: our
 // straight wall edges are axial → vertical chart segments, our straight plane edges are in-plane). An

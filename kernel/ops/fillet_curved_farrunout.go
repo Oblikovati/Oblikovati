@@ -23,9 +23,10 @@ import (
 func curvedHostFaces(body *topo.Body, arms []edgeFillet, bundles []armRails, w cornerWeld, res Resolution) ([]filletFace, string) {
 	corner := cornerHostSet(arms)
 	tol := res.Weld() * w.radius
+	conns := reflexConnectors(arms, bundles, w, tol) // the reflex far-vertex host splices (D9); empty for convex corners
 	out := make([]filletFace, 0, len(body.Faces()))
 	for _, f := range body.Faces() {
-		ff, reason := curvedHostFace(f, corner, arms, bundles, w, res, tol)
+		ff, reason := curvedHostFace(f, corner, arms, bundles, w, res, tol, conns)
 		if reason != "" {
 			return nil, reason
 		}
@@ -38,9 +39,9 @@ func curvedHostFaces(body *topo.Body, arms []edgeFillet, bundles []armRails, w c
 // and returns its rebuilt face, or a diagnostic reason on a retrim decline. arms/bundles are the corner
 // arms' edgeFillets and rail bundles (index-aligned with w.arms), threaded into the corner retrim so it
 // consumes each arm's own oblique-aware host bundle rail (FR4).
-func curvedHostFace(f *topo.Face, corner map[*topo.Face]bool, arms []edgeFillet, bundles []armRails, w cornerWeld, res Resolution, tol float64) (filletFace, string) {
+func curvedHostFace(f *topo.Face, corner map[*topo.Face]bool, arms []edgeFillet, bundles []armRails, w cornerWeld, res Resolution, tol float64, conns []cornerConnector) (filletFace, string) {
 	if corner[f] {
-		ff, ok := retrimCurvedHost(f, arms, bundles, w, res)
+		ff, ok := retrimCurvedHost(f, arms, bundles, w, res, conns)
 		if !ok {
 			return filletFace{}, fmt.Sprintf("corner host retrim declined (%T)", f.Geometry())
 		}
@@ -50,7 +51,7 @@ func curvedHostFace(f *topo.Face, corner map[*topo.Face]bool, arms []edgeFillet,
 	if len(bites) == 0 {
 		return transformFace(f, nil, nil, nil, nil), "" // untouched by the corner — carried through verbatim
 	}
-	ff, ok := farRunoutFace(f, bites, tol)
+	ff, ok := farRunoutFace(f, bites, conns, tol)
 	if !ok {
 		return filletFace{}, fmt.Sprintf("far-runout retrim declined (%T, %d bites)", f.Geometry(), len(bites))
 	}
@@ -93,15 +94,16 @@ func farBiteOnHost(f *topo.Face, surf geom.Surface, b armRails, tol float64) boo
 }
 
 // farRunoutFace retrims a far-runout host: each arm far arc bites off the rectangle/quarter-disk corner
-// it spans, spliced in as an exact arc (never a chord). Any inner (hole) loop is carried through
-// unchanged (mirrors retrimCurvedHost). Declines when a bite cannot be spliced onto the outer loop.
-func farRunoutFace(host *topo.Face, bites []endSeg, tol float64) (filletFace, bool) {
+// it spans, spliced in as an exact arc (never a chord). A bite whose foot is a reflex connector's interior
+// station EXTENDS the face across its old boundary instead (spliceBite, D9's lon-0 capping). Any inner
+// (hole) loop is carried through unchanged (mirrors retrimCurvedHost). Declines when a bite cannot splice.
+func farRunoutFace(host *topo.Face, bites []endSeg, conns []cornerConnector, tol float64) (filletFace, bool) {
 	segs := originalHostSegs(host)
 	if len(segs) < 3 {
 		return filletFace{}, false
 	}
 	for _, bite := range bites {
-		spliced, ok := spliceCornerBite(segs, bite, tol)
+		spliced, ok := spliceBite(segs, bite, conns, tol)
 		if !ok {
 			return filletFace{}, false
 		}

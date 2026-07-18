@@ -218,7 +218,7 @@ func curvedWeldFaces(body *topo.Body, arms []edgeFillet, w cornerWeld, sphere ge
 		return nil, reason
 	}
 	all := append(append(faces, sf), hostFaces...)
-	return orientForSphereHost(all, hostFaces), "" // orientForSphereHost lives in fillet_curved_sphere_orient.go
+	return orientForSphereHost(body, all, hostFaces), "" // orientForSphereHost lives in fillet_curved_sphere_orient.go
 }
 
 // armRails is one arm's four boundary edges as a closed loop (host rail on ef.a, setback great-arc,

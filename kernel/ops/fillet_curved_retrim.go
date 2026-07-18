@@ -36,7 +36,7 @@ const retrimAxisParallelTol = 1e-9
 func torusStationForArm(w cornerWeld, tor geom.Torus) (float64, bool) {
 	for _, a := range w.arms {
 		if t, ok := a.arm.(geom.Torus); ok && t == tor {
-			return a.station, true
+			return armArcSweep(a), true
 		}
 	}
 	return torusArmStation(w)
@@ -47,10 +47,20 @@ func torusStationForArm(w cornerWeld, tor geom.Torus) (float64, bool) {
 func torusArmStation(w cornerWeld) (float64, bool) {
 	for _, a := range w.arms {
 		if _, ok := a.arm.(geom.Torus); ok {
-			return a.station, true
+			return armArcSweep(a), true
 		}
 	}
 	return 0, false
+}
+
+// armArcSweep is the signed angle curvedHostArc sweeps the torus arm's contact rail: the reflex-aware
+// armSweep when the arm was solved (a >180° arm carves the MAJOR arc; convex arms keep φ byte-identically),
+// falling back to the raw station for a manually-built unit fixture that never stamped armSweep.
+func armArcSweep(a armSetback) float64 {
+	if a.armSweepKnown {
+		return a.armSweep
+	}
+	return a.station
 }
 
 // curvedHostArc returns the circular contact rail where the torus arm meets a host: on the WALL it
@@ -165,14 +175,16 @@ func capContactCircle(pl geom.Plane, tor geom.Torus, res Resolution) (math.Point
 // rail is missing, or a landing point does not lie on L*'s original edges — never an open or
 // self-crossing loop (a mis-closed retrim corrupts the mesh). Example:
 //
-//	ff, ok := retrimCurvedHost(wallFace, edges, bundles, w, res)
+//	ff, ok := retrimCurvedHost(wallFace, edges, bundles, w, res, conns)
 //	if !ok { /* decline the weld — do-no-harm */ }
 //
 // edges/bundles are the corner arms' edgeFillets and their weld rail bundles, index-aligned with w.arms
 // (FR4). They let the corner rail consume the arm's OWN host bundle rail — oblique-re-terminated onto the
 // loop for D5/E4, byte-identical to the old full arc for every perpendicular green — instead of rebuilding
 // curvedHostArc. Both may be nil (the direct unit fixtures), whereupon armContactRail rebuilds the arc.
-func retrimCurvedHost(host *topo.Face, edges []edgeFillet, bundles []armRails, w cornerWeld, res Resolution) (filletFace, bool) {
+// conns are the reflex far-vertex splices (D9's top cap closes its far path through the connector edge);
+// empty for every convex corner, so the far path is farPathSegs verbatim (byte-identity).
+func retrimCurvedHost(host *topo.Face, edges []edgeFillet, bundles []armRails, w cornerWeld, res Resolution, conns []cornerConnector) (filletFace, bool) {
 	tol := res.Weld() * w.radius
 	star, ok := bittenLoop(host, w.center, tol)
 	if !ok {
@@ -182,7 +194,7 @@ func retrimCurvedHost(host *topo.Face, edges []edgeFillet, bundles []armRails, w
 	if len(segs) < 3 {
 		return filletFace{}, false // a host loop needs ≥3 edges to bite a corner from
 	}
-	loop, ok := retrimHostSegs(host, segs, edges, bundles, w, res)
+	loop, ok := retrimHostSegs(host, segs, edges, bundles, w, res, conns)
 	if !ok {
 		return filletFace{}, false
 	}
@@ -198,14 +210,14 @@ func retrimCurvedHost(host *topo.Face, edges []edgeFillet, bundles []armRails, w
 // this trihedral weld, and the far-runout hosts (e.g. the bottom cap the through-arm exits) are NOT
 // corner hosts — their cross-section bite is spliced by spliceCornerBite (fillet_curved_farrunout.go),
 // not here, so retrimCurvedHost is only ever called on the two-arm corner hosts.
-func retrimHostSegs(host *topo.Face, segs []endSeg, edges []edgeFillet, bundles []armRails, w cornerWeld, res Resolution) ([]endSeg, bool) {
+func retrimHostSegs(host *topo.Face, segs []endSeg, edges []edgeFillet, bundles []armRails, w cornerWeld, res Resolution, conns []cornerConnector) ([]endSeg, bool) {
 	tol := res.Weld() * w.radius
 	arms, tHost, n := armsRollingOnHost(host, edges, bundles, w, tol)
 	if n != 2 {
 		return nil, false
 	}
 	v := bittenVertex(segs, w.center)
-	return retrimCornerHost(host, segs, v, arms, tHost, w, res, tol)
+	return retrimCornerHost(host, segs, v, arms, tHost, w, res, tol, conns)
 }
 
 // cornerHostArm is a corner arm rolling on a host, paired with the weld-bundle host contact rail the arm
@@ -296,14 +308,15 @@ func onHostSurface(surf geom.Surface, p math.Point3, tol float64) bool {
 }
 
 // retrimCornerHost assembles a two-arm host loop: rail A (outer→tHost), rail B (tHost→outer), then
-// the surviving far path (outerB→outerA) that avoids the bitten trihedral vertex.
-func retrimCornerHost(host *topo.Face, segs []endSeg, v math.Point3, arms []cornerHostArm, tHost math.Point3, w cornerWeld, res Resolution, tol float64) ([]endSeg, bool) {
+// the surviving far path (outerB→outerA) that avoids the bitten trihedral vertex. cornerFarPath is
+// farPathSegs verbatim unless a reflex connector bridges an off-loop interior station (Splice 1, D9's cap).
+func retrimCornerHost(host *topo.Face, segs []endSeg, v math.Point3, arms []cornerHostArm, tHost math.Point3, w cornerWeld, res Resolution, tol float64, conns []cornerConnector) ([]endSeg, bool) {
 	railA, outerA, okA := armContactRail(host, arms[0], tHost, v, segs, w, res, tol)
 	railB, outerB, okB := armContactRail(host, arms[1], tHost, v, segs, w, res, tol)
 	if !okA || !okB {
 		return nil, false
 	}
-	far, ok := farPathSegs(segs, outerB, outerA, v, tol)
+	far, ok := cornerFarPath(segs, outerB, outerA, v, tol, conns)
 	if !ok {
 		return nil, false
 	}
@@ -380,7 +393,7 @@ func armRulingEnd(host *topo.Face, cylArm geom.Cylinder, arm armSetback, tHost, 
 		(!arm.runoutKnown || runoutAgrees(ch, o2, d2, end, arm.farVertex, tol)) {
 		return end, true // forward loop crossing whose runout matches the far vertex — the verbatim green path
 	}
-	return rulingStationOuter(ch, cylArm, arm, tHost, v, segs) // reflex corner: interior far-vertex station
+	return rulingStationOuter(ch, cylArm, arm, tHost, v, segs, o2, d2, tol) // reflex corner: interior far-vertex station
 }
 
 // rulingStationOuter is armRulingEnd's reflex-corner (>180° wedge) fallback: when the ruling meets no
@@ -388,9 +401,12 @@ func armRulingEnd(host *topo.Face, cylArm geom.Cylinder, arm armSetback, tHost, 
 // outer = tHost + d̂·((farVertex−tHost)·d̂), the PRE-N2 closed-form terminator. It is correct here because
 // a reflex wedge can leave that station INTERIOR to the host sector, on no loop edge (D9's 270° cap:
 // station (−10,0,129.9038) at azimuth 180°, radius 10 ≪ 72.27 — forensic §1). Accept it only when the
-// runout is stamped and its chart point lies strictly inside the host loop; off-face (or unknown runout)
-// → decline, so no outer end is fabricated where the ruling genuinely runs off the face.
-func rulingStationOuter(ch hostChart, cylArm geom.Cylinder, arm armSetback, tHost, v math.Point3, segs []endSeg) (math.Point3, bool) {
+// runout is stamped and its chart point lies strictly inside the host loop AND the ruling reaches the
+// station WITHOUT first leaving the loop (stationRunReached — the D9-T2 overshoot guard: an endpoint-only
+// interiority test does not certify the whole ruling span, so a re-entrant loop whose ruling exits before
+// the station is rejected); off-face, unknown runout, or an undershoot → decline, so no outer end is
+// fabricated where the ruling genuinely runs off the face.
+func rulingStationOuter(ch hostChart, cylArm geom.Cylinder, arm armSetback, tHost, v math.Point3, segs []endSeg, o2 math.Point2, d2 math.Vector2, tol float64) (math.Point3, bool) {
 	if !arm.runoutKnown {
 		return math.Point3{}, false // no far vertex stamped (bare-face unit corner) — nothing to project onto
 	}
@@ -398,6 +414,9 @@ func rulingStationOuter(ch hostChart, cylArm geom.Cylinder, arm armSetback, tHos
 	outer := tHost.TranslateBy(d.Scale(tHost.VectorTo(arm.farVertex).Dot(d)))
 	if !chartPointInLoop(ch, ch.to2(outer), segs) {
 		return math.Point3{}, false // station runs off the host face — decline (do not fabricate an end)
+	}
+	if !stationRunReached(ch, segs, o2, d2, arm.farVertex, tol) {
+		return math.Point3{}, false // the ruling exits the loop before the station (undershoot) — off-face span
 	}
 	return outer, true
 }

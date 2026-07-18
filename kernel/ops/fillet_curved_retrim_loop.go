@@ -270,18 +270,60 @@ func wrapToSweep(delta, sweep float64) float64 {
 }
 
 // subSeg returns the portion of edge s between from and to (both on s): a straight sub-segment, or
-// an exact Arc3d sub-arc through the circle's angular midpoint (never a chord).
+// an exact Arc3d sub-arc through the circle's angular midpoint (never a chord). A MAJOR (>π) retained
+// sub-span is carried as a genuine sub-arc of the parent circle (subArcMajor) so it stays major; every
+// minor span keeps the verbatim shorter-arc re-fit (byte-identity for the whole convex corpus).
 func subSeg(s endSeg, from, to math.Point3) endSeg {
 	if !s.arc {
 		return endSeg{from: from, to: to}
 	}
 	arc := s.curve.(geom.Arc3d)
+	if sub, mid, ok := subArcMajor(arc, from, to); ok {
+		return endSeg{from: from, to: to, curve: sub, mid: mid, arc: true}
+	}
 	mid := arcMidBetween(arc.Center, arc.Radius, from, to)
 	sub, err := geom.Arc3dByThreePoints(from, mid, to)
 	if err != nil {
 		return endSeg{from: from, to: to}
 	}
 	return endSeg{from: from, to: to, curve: sub, mid: mid, arc: true}
+}
+
+// subArcMajor carries the kept sub-span of parent between from and to as a genuine sub-arc of the PARENT
+// circle — same centre/axis/radius, StartAngle at from's parent-offset, SweepAngle = to.offset − from.offset
+// — ONLY when that span is MAJOR (>π along the parent's own sweep). It fires only for D9's 270° rim splits;
+// a minor span returns ok=false so the caller keeps the byte-identical shorter-arc re-fit. Building the
+// sub-arc from the parent's parameters (not a three-point re-fit, which is ill-conditioned past a
+// semicircle — it silently snaps to the minor complement) keeps a >180° kept span faithfully major (the
+// N7 whole-curve-sub-span lesson).
+func subArcMajor(parent geom.Arc3d, from, to math.Point3) (geom.Arc3d, math.Point3, bool) {
+	tf, okf := arcFrac(parent, from)
+	tt, okt := arcFrac(parent, to)
+	if !okf || !okt || stdmath.Abs((tt-tf)*parent.SweepAngle) <= stdmath.Pi {
+		return geom.Arc3d{}, math.Point3{}, false
+	}
+	sub := geom.Arc3d{
+		Center: parent.Center, Normal: parent.Normal, RefDir: parent.RefDir, Radius: parent.Radius,
+		StartAngle: parent.StartAngle + tf*parent.SweepAngle, SweepAngle: (tt - tf) * parent.SweepAngle,
+	}
+	return sub, sub.PointAt(0.5), true
+}
+
+// arcFrac is p's fractional parameter t∈[0,1] on the parent arc (angle = StartAngle + t·SweepAngle),
+// ENDPOINTS included and orientation-robust for a reversed (negative-sweep) parent — unlike wrapToSweep,
+// which maps the start point of a negative-sweep arc to −2π rather than 0. It reduces the raw atan2 angle
+// modulo the arc's period (2π/|SweepAngle| > 1 for a sub-2π arc), so the unique on-arc representative lands
+// in [0,1]. ok=false when p is off the circle beyond a hard tolerance.
+func arcFrac(arc geom.Arc3d, p math.Point3) (float64, bool) {
+	if stdmath.Abs(float64(p.DistanceTo(arc.Center))-arc.Radius) > 1e-6*(arc.Radius+1) {
+		return 0, false
+	}
+	w := arc.Center.VectorTo(p)
+	bin := arc.Normal.Cross(arc.RefDir)
+	raw := stdmath.Atan2(float64(w.Dot(bin)), float64(w.Dot(arc.RefDir.AsVector())))
+	t := (raw - arc.StartAngle) / arc.SweepAngle
+	per := 2 * stdmath.Pi / stdmath.Abs(arc.SweepAngle) // param period > 1 for a sub-2π arc
+	return t - per*stdmath.Round((t-0.5)/per), true     // representative nearest the [0,1] window (endpoint fp-robust)
 }
 
 // arcMidBetween is the point on the circle (centre, radius) on the shorter arc between from and to —

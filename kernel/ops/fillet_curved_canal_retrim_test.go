@@ -299,7 +299,7 @@ func TestCanalHostFaces_FarRunoutVerbatim(t *testing.T) {
 	if len(wantBites) != 1 {
 		t.Fatalf("far arc must bite the synthetic host; got %d bites", len(wantBites))
 	}
-	want, ok := farRunoutFace(host, wantBites, tol)
+	want, ok := farRunoutFace(host, wantBites, nil, tol)
 	if !ok {
 		t.Fatal("farRunoutFace must splice the synthetic bite")
 	}

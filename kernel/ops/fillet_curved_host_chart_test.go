@@ -138,6 +138,41 @@ func TestArmRulingEnd_InteriorStationAccepted(t *testing.T) {
 	}
 }
 
+// reentrantWallLoop is a wall-face loop whose region re-enters along the θ=0 ruling: a rectangle θ∈[−1,1],
+// z∈[15,80] with a NOTCH (a slot z∈[40,50] removed across θ∈[−1,0.5]). The vertical ruling θ=0 up from
+// z=15 crosses the boundary at z=15, 40, 50, 80 — so a station at z=60 sits inside by ray-cast PARITY
+// (odd crossings above it) yet the rail from z=15 to z=60 spans the OFF-FACE notch (z∈[40,50]).
+func reentrantWallLoop(t *testing.T) []endSeg {
+	t.Helper()
+	return []endSeg{
+		rimArcSeg(t, 15, -1, 2),                                // bottom rim z=15, θ:−1→1
+		{from: wallPointAt(1, 15), to: wallPointAt(1, 80)},     // right axial θ=1
+		rimArcSeg(t, 80, 1, -2),                                // top rim z=80, θ:1→−1
+		{from: wallPointAt(-1, 80), to: wallPointAt(-1, 50)},   // left-upper axial θ=−1
+		rimArcSeg(t, 50, -1, 1.5),                              // notch-top rim z=50, θ:−1→0.5
+		{from: wallPointAt(0.5, 50), to: wallPointAt(0.5, 40)}, // notch-right axial θ=0.5
+		rimArcSeg(t, 40, 0.5, -1.5),                            // notch-bottom rim z=40, θ:0.5→−1
+		{from: wallPointAt(-1, 40), to: wallPointAt(-1, 15)},   // left-lower axial θ=−1
+	}
+}
+
+// TestArmRulingEnd_UndershootStationDeclined is the D9-T2 overshoot-guard regression: on a RE-ENTRANT loop
+// the far-vertex station (z=60) lands inside by ray-cast parity, but the ruling first LEAVES the loop at
+// the notch (z=40, an UNDERSHOOT: rFirst=25 < the station runout rFar=45), so the rail would span off-face
+// territory. armRulingEnd must DECLINE rather than fabricate it — an endpoint-only interiority test would
+// wrongly accept. (Reverting stationRunReached re-accepts, re-reddening this.)
+func TestArmRulingEnd_UndershootStationDeclined(t *testing.T) {
+	cyl := mustCylinder(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 50)
+	tHost := math.P3(50, 0, 15)
+	v := math.P3(50, 0, 10)
+	segs := reentrantWallLoop(t)
+	arm := armSetback{arm: cyl, farVertex: math.P3(50, 0, 60), runoutKnown: true}
+
+	if end, ok := armRulingEnd(hostFaceFor(t, cyl), cyl, arm, tHost, v, segs, 0.02); ok {
+		t.Fatalf("undershoot station z=60 must be DECLINED (ruling exits the loop at the notch z=40 first); got z=%.4f", float64(end.Z))
+	}
+}
+
 // TestCylChart_RoundTrip checks the (θ,z) chart's to2/to3 invert on the wall — a point maps to its
 // azimuth+height and back to itself. The wall's ref is pinned to x̂ so θ is deterministic (NewCylinder
 // picks an arbitrary in-plane ref).

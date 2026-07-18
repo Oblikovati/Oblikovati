@@ -7,13 +7,13 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
-// FR5 — targeted coverage for the sphere-host loop-orientation seed (orientForSphereHost and helpers). The
-// D5/E4 corpus exercises only the taken path; these build the sub-hemisphere / >hemisphere / degenerate
-// cases directly on a real geom.Sphere so compactSpherePole, loopTurnsNegative and reverseFilletFace are
-// all driven with exact geometry.
+// Targeted coverage for the sphere-host loop-orientation seed (orientForSphereHost and helpers). The
+// D5/E4/D9 corpus exercises the taken path; these drive sphereLoopVectorArea, loopTurnsNegative and
+// reverseFilletFace directly with exact geometry, plus the seed/do-no-harm branches of orientForSphereHost.
 
 // spherePatchLoop returns a ring of points on sphere sph at polar angle `polar` (radians from +Z), CCW in φ.
 func spherePatchLoop(sph geom.Sphere, polar float64, n int) []math.Point3 {
@@ -27,21 +27,20 @@ func spherePatchLoop(sph geom.Sphere, polar float64, n int) []math.Point3 {
 	return pts
 }
 
-func TestCompactSpherePole(t *testing.T) {
+// TestSphereLoopVectorArea proves the material-interior pole helper: a loop wound CCW-seen-from-outside
+// around a +Z cap has a vector area (∫∫ r̂ dA) pointing at +Z (the cap centroid), and reversing the loop
+// flips it to −Z — the property that lets orientForSphereHost read the zone interior off the original
+// face's OUTWARD loop for both a sub- and a >hemisphere host.
+func TestSphereLoopVectorArea(t *testing.T) {
 	sph := geom.Sphere{Center: math.P3(0, 0, 0), Radius: 10}
-	pole, ok := compactSpherePole(sph, spherePatchLoop(sph, 30*stdmath.Pi/180, 6))
-	if !ok || float64(pole.Z) < 0.99 {
-		t.Fatalf("compactSpherePole(30° patch) = (%v,%v), want pole≈+Z, compact", pole, ok)
+	loop := spherePatchLoop(sph, 30*stdmath.Pi/180, 12) // CCW in φ = CCW-seen-from-outside about +Z
+	a, err := math.UnitVector3FromVector(sphereLoopVectorArea(sph, loop))
+	if err != nil || float64(a.AsVector().Z) < 0.99 {
+		t.Fatalf("sphereLoopVectorArea(+Z cap) = (%v,%v), want ≈+Z (the cap centroid)", a, err)
 	}
-	// a lopsided loop: a tight +Z cluster whose mean points ≈+Z, plus one vertex past the equator — that
-	// vertex sits >90° from the mean, so the patch is NOT sub-hemispheric.
-	lopsided := append(spherePatchLoop(sph, 5*stdmath.Pi/180, 8), spherePatchLoop(sph, 150*stdmath.Pi/180, 1)...)
-	if _, ok := compactSpherePole(sph, lopsided); ok {
-		t.Fatal("compactSpherePole(lopsided patch) = compact, want false (a vertex >90° from the mean)")
-	}
-	antipodal := []math.Point3{math.P3(10, 0, 0), math.P3(-10, 0, 0), math.P3(10, 0, 0), math.P3(-10, 0, 0)}
-	if _, ok := compactSpherePole(sph, antipodal); ok {
-		t.Fatal("compactSpherePole(zero-sum dirs) = compact, want false (no mean direction)")
+	r, _ := math.UnitVector3FromVector(sphereLoopVectorArea(sph, reverse3(loop)))
+	if float64(r.AsVector().Z) > -0.99 {
+		t.Fatalf("sphereLoopVectorArea(reversed) = %v, want ≈−Z (the complement side)", r)
 	}
 }
 
@@ -69,18 +68,35 @@ func TestReverseFilletFacePreservesMetadata(t *testing.T) {
 	}
 }
 
-// TestOrientForSphereHostSeedsHost drives the whole seed: a sub-hemisphere host sphere in `all` is moved to
-// index 0 (so orientFilletShell keeps its sense). A weld with NO sphere host is returned untouched.
+// TestOrientForSphereHostSeedsHost drives the seed against the real D9 body (which carries the original
+// R=150 host sphere the material pole is read from): a host sphere in `all` is moved to index 0 (so
+// orientFilletShell keeps its sense). A weld with NO sphere host, and a nil body, are returned untouched.
 func TestOrientForSphereHostSeedsHost(t *testing.T) {
-	sph := geom.Sphere{Center: math.P3(0, 0, 0), Radius: 150}
+	body := corpusFixture(t, "simple/D9.step")
+	sph, ok := firstSphereSurface(body)
+	if !ok {
+		t.Fatal("D9 fixture carries no sphere face")
+	}
 	host := filletFace{surface: sph, loops: []filletLoop{{pts: spherePatchLoop(sph, 20*stdmath.Pi/180, 8)}}}
 	arm := filletFace{surface: geom.Torus{}, loops: []filletLoop{{pts: []math.Point3{math.P3(1, 0, 0), math.P3(0, 1, 0), math.P3(0, 0, 1)}}}}
-	out := orientForSphereHost([]filletFace{arm, host}, []filletFace{host})
+	out := orientForSphereHost(body, []filletFace{arm, host}, []filletFace{host})
 	if _, ok := out[0].surface.(geom.Sphere); !ok {
 		t.Fatalf("orientForSphereHost did not seed faces[0] from the host sphere: got %T", out[0].surface)
 	}
-	noHost := []filletFace{arm}
-	if got := orientForSphereHost(noHost, nil); len(got) != 1 || got[0].surface != arm.surface {
+	if got := orientForSphereHost(body, []filletFace{arm}, nil); len(got) != 1 || got[0].surface != arm.surface {
 		t.Fatal("orientForSphereHost with no sphere host must return the weld untouched")
 	}
+	if got := orientForSphereHost(nil, []filletFace{arm, host}, []filletFace{host}); len(got) != 2 || got[0].surface != arm.surface {
+		t.Fatal("orientForSphereHost with a nil body must return the weld untouched (do-no-harm)")
+	}
+}
+
+// firstSphereSurface returns the first geom.Sphere face surface on body, or ok=false.
+func firstSphereSurface(body *topo.Body) (geom.Sphere, bool) {
+	for _, f := range body.Faces() {
+		if s, ok := f.Geometry().(geom.Sphere); ok {
+			return s, true
+		}
+	}
+	return geom.Sphere{}, false
 }

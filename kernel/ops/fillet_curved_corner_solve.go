@@ -39,6 +39,13 @@ type armSetback struct {
 	railDir1    math.UnitVector3 // unit (T_hostB − C)/r
 	farVertex   math.Point3      // the filleted edge's terminus away from C — the runout authority (R.1a)
 	runoutKnown bool             // farVertex is stamped (a real filleted edge was wired); false for bare-face unit corners
+	// armSweep is the SIGNED angle the torus arm's contact rail sweeps on its hosts — the station azimuth
+	// φ unwrapped to the direction and >π extent of the filleted edge, so a REFLEX (>180°, D9's 270° rim)
+	// arm carves the MAJOR arc through the material (equals φ, byte-identical, for a convex arm). Consumed
+	// by curvedHostArc via torusStationForArm; armSweepKnown gates the fallback to the raw station for the
+	// manually-built unit fixtures (which never solve a reflex arm).
+	armSweep      float64
+	armSweepKnown bool
 }
 
 // cornerWeld is the solved trihedral corner: the sphere (centre C, radius r), the per-arm setbacks,
@@ -93,8 +100,39 @@ func solveArmSetback(ef edgeFillet, c math.Point3, r, scale float64, res Resolut
 	set := armSetback{arm: ef.armSurface, station: station, railDir0: d0, railDir1: d1}
 	if ef.edge != nil { // bare-face unit corners (b3CornerArms) carry no edge — leave the authority off
 		set.farVertex, set.runoutKnown = fartherEndpoint(ef.edge, c), true
+		if tor, ok := ef.armSurface.(geom.Torus); ok {
+			set.armSweep, set.armSweepKnown = armContactSweep(ef.edge, tor, station), true
+		}
 	}
 	return set, true
+}
+
+// armContactSweep is the SIGNED angle a torus arm's contact rail sweeps on its hosts: the station azimuth
+// phi (spine(phi)=C) UNWRAPPED to the rotational direction and >π extent of the arm's filleted edge, so a
+// REFLEX arm (a >180° filleted edge, D9's 270° rim) carves the MAJOR arc through the material rather than
+// the minor complement atan2 would give (phi ∈ (−π,π]). A convex arm's phi already turns the arm's way
+// (sgn·phi ≥ 0), so it is returned verbatim — byte-identical to the pre-D9 contact arc. A non-circular
+// edge carries no reflex information and yields phi unchanged.
+func armContactSweep(edge *topo.Edge, tor geom.Torus, phi float64) float64 {
+	arc, ok := edge.Geometry().(geom.Arc3d)
+	if !ok || stdmath.Abs(arc.SweepAngle) <= stdmath.Pi {
+		return phi // straight or CONVEX (<180°) filleted edge: the minor arc is correct — byte-identical
+	}
+	sgn := edgeWindingSign(arc, tor.AxisDir.AsVector())
+	if sgn*phi >= 0 {
+		return phi // reflex edge yet station already turns the arm's way — nothing to unwrap (defensive)
+	}
+	return phi + sgn*2*stdmath.Pi // reflex (>180° edge): unwrap phi into the edge's rotational sense — the major arc
+}
+
+// edgeWindingSign is +1/−1 as the arm's filleted circular edge turns CCW/CW about the torus arm's axis
+// (the axis its contact rail sweeps about): sign(edge.Normal·axis · edge.SweepAngle). A torus arm's edge
+// is coaxial with its rolling tube by construction, so its normal is (anti)parallel to the torus axis.
+func edgeWindingSign(arc geom.Arc3d, axis math.Vector3) float64 {
+	if float64(arc.Normal.AsVector().Dot(axis))*arc.SweepAngle >= 0 {
+		return 1
+	}
+	return -1
 }
 
 // fartherEndpoint is the filleted edge's vertex farther from the corner centre c — the arm's far

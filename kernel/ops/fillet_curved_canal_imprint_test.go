@@ -119,7 +119,7 @@ func TestCanalImprint_Y30Verbatim(t *testing.T) {
 	}
 	assertClosedImprint(t, ff, "y=30")
 	// Verbatim: the chain splice with the single terminal equals farRunoutFace's single-bite splice.
-	want, ok := farRunoutFace(f, []endSeg{b.far}, tol)
+	want, ok := farRunoutFace(f, []endSeg{b.far}, nil, tol)
 	if !ok {
 		t.Fatal("farRunoutFace must splice the y=30 terminal (both feet on-loop)")
 	}

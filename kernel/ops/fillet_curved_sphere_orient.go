@@ -4,73 +4,98 @@ package ops
 
 import (
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
-// orientForSphereHost fixes the weld's global loop sense for the sphere-patch mesher when a sub-hemisphere
-// sphere HOST face is present (D5/E4). The mesher (spherePatchMesh/interiorAxis) resolves which of the two
-// regions a sphere loop bounds from the loop's ABSOLUTE winding, but the weld's global sense is otherwise
-// free: orientFilletShell (in assembleBody) only unifies RELATIVE windings and pins the ABSOLUTE sense to
-// its SEED (faces[0]) — an arm face — so the host sphere inherits an arbitrary sense and can mesh the
-// COMPLEMENT (D5: 224929 vs ~57815). The fix seeds the shell from the host sphere itself, wound
-// CCW-seen-from-outside around its compact pole: move that face to faces[0] (so orientFilletShell keeps its
-// sense) and reverse it first when it came out clockwise. It fires ONLY for a genuine host sphere (from
-// curvedHostFaces — never the convex corner-blend patch, which is `sf`, not in hostFaces) that is
-// sub-hemispheric, so a >hemisphere host (D6) and every non-sphere-host weld (the whole existing corpus)
-// are untouched. Sub-hemisphere host spheres only arise on the curved-ARM weld (weldCurvedArmFaces, its caller).
-func orientForSphereHost(all, hostFaces []filletFace) []filletFace {
-	i, pole, ok := subHemisphereSphereHost(all, hostFaces)
+// orientForSphereHost fixes the weld's global loop sense for the sphere-patch mesher when a sphere HOST
+// face is present (D5/E4 sub-hemisphere, D9 >hemisphere). The mesher (spherePatchMesh/interiorAxis)
+// resolves which of the two regions a sphere loop bounds from the loop's ABSOLUTE winding, but the weld's
+// global sense is otherwise free: orientFilletShell (in assembleBody) only unifies RELATIVE windings and
+// pins the ABSOLUTE sense to its SEED (faces[0]) — an arm face — so the host sphere inherits an arbitrary
+// sense and can mesh the COMPLEMENT (D5: 224929 vs ~57815; D9: 103387 vs ~179292). The fix seeds the shell
+// from the host sphere itself, wound so the mesher fills the MATERIAL zone: move that face to faces[0] (so
+// orientFilletShell keeps its sense) and reverse it first when it would otherwise fill the complement. It
+// samples the loop's ARC edges (sphereLoopSamples) so a >hemisphere zone is told from a compact cap by
+// the SAME boundary the mesher sees — the four bare vertices alone cannot distinguish them (both regions
+// share them). Fires ONLY for a genuine host sphere (from curvedHostFaces — never the convex corner-blend
+// patch `sf`, not in hostFaces); non-sphere-host welds (the rest of the corpus) are untouched.
+func orientForSphereHost(body *topo.Body, all, hostFaces []filletFace) []filletFace {
+	if body == nil {
+		return all // no original body to anchor the material interior — do-no-harm (never in the weld path)
+	}
+	i, ok := hostSphereIndex(all, hostFaces)
 	if !ok {
 		return all
 	}
-	if loopTurnsNegative(all[i].surface.(geom.Sphere), pole, all[i].loops[0].pts) {
+	sph := all[i].surface.(geom.Sphere)
+	pole, ok := originalZonePole(body, sph)
+	if !ok {
+		return all
+	}
+	if loopTurnsNegative(sph, pole, all[i].loops[0].pts) {
 		all[i] = reverseFilletFace(all[i]) // emit it CCW-seen-from-outside so the seeded sense meshes the patch
 	}
 	all[0], all[i] = all[i], all[0] // seed orientFilletShell from the host sphere (it keeps faces[0]'s sense)
 	return all
 }
 
-// subHemisphereSphereHost finds a host sphere face whose whole boundary lies within a hemisphere (a compact
-// pole exists), returning its index in `all` and that pole. ok=false when no host face is a sub-hemisphere
-// sphere (a >hemisphere host — D6 — has no compact pole and is left to the mesher's winding test).
-func subHemisphereSphereHost(all, hostFaces []filletFace) (int, math.Vector3, bool) {
+// hostSphereIndex returns the index in `all` of a host sphere face (one carrying a boundary loop), or
+// ok=false when none is present. The host sphere is matched by surface identity to a curvedHostFaces entry.
+func hostSphereIndex(all, hostFaces []filletFace) (int, bool) {
 	for _, hf := range hostFaces {
-		sph, isSphere := hf.surface.(geom.Sphere)
-		if !isSphere || len(hf.loops) == 0 || len(hf.loops[0].pts) < 3 {
-			continue
-		}
-		pole, compact := compactSpherePole(sph, hf.loops[0].pts)
-		if !compact {
+		if _, isSphere := hf.surface.(geom.Sphere); !isSphere || len(hf.loops) == 0 || len(hf.loops[0].pts) < 3 {
 			continue
 		}
 		for i := range all {
 			if all[i].surface == hf.surface && len(all[i].loops) > 0 {
-				return i, pole, true
+				return i, true
 			}
 		}
 	}
-	return 0, math.Vector3{}, false
+	return 0, false
 }
 
-// compactSpherePole returns the loop's mean outward direction as the patch's compact pole, ok only when
-// EVERY boundary vertex lies within 90° of it (a genuinely sub-hemisphere patch, so the pole is
-// unambiguously inside the patch). ok=false for a >hemisphere host (D6), where the winding is the only cue.
-func compactSpherePole(sph geom.Sphere, pts []math.Point3) (math.Vector3, bool) {
-	var sum math.Vector3
-	for _, p := range pts {
-		sum = sum.Add(sphereDir(sph, p))
-	}
-	mean, err := math.UnitVector3FromVector(sum)
-	if err != nil {
-		return math.Vector3{}, false
-	}
-	pole := mean.AsVector()
-	for _, p := range pts {
-		if float64(sphereDir(sph, p).Dot(pole)) <= 0 {
-			return math.Vector3{}, false // a vertex >90° from the mean — not a sub-hemisphere patch
+// originalZonePole returns a direction inside the host sphere's MATERIAL zone, taken from the ORIGINAL
+// imported sphere face of the same surface. The original face is a valid solid boundary, so its loop is
+// stored in a face-consistent (outward, CCW-seen-from-outside) traversal — the Newell area vector of that
+// loop (∝ the region's spherical vector area ∫∫ r̂ dA) therefore points at the MATERIAL zone's centroid for
+// BOTH a sub-hemisphere (D5/E4) and a >hemisphere (D9) host, where the boundary mean would point at the
+// removed region instead. The loop's arc edges are sampled (segPolyline) so the Newell integral resolves.
+// ok=false when no original sphere face matches or the loop degenerates.
+func originalZonePole(body *topo.Body, sph geom.Sphere) (math.Vector3, bool) {
+	for _, f := range body.Faces() {
+		if s, ok := f.Geometry().(geom.Sphere); !ok || s != sph {
+			continue
 		}
+		loop := outerHostLoop(f)
+		if loop == nil {
+			return math.Vector3{}, false
+		}
+		ring := segPolyline(segsFromLoop(loop))
+		if len(ring) < 3 {
+			return math.Vector3{}, false
+		}
+		pole, err := math.UnitVector3FromVector(sphereLoopVectorArea(sph, ring))
+		if err != nil {
+			return math.Vector3{}, false
+		}
+		return pole.AsVector(), true
 	}
-	return pole, true
+	return math.Vector3{}, false
+}
+
+// sphereLoopVectorArea is the discrete spherical vector area of a boundary ring on sphere sph: (1/2) Σ
+// (p_i−c) × (p_{i+1}−c), which points toward the centroid of the region the ring bounds CCW-seen-from-
+// outside (its ∫∫ r̂ dA). Used to read the material zone's interior from the original face's outward loop.
+func sphereLoopVectorArea(sph geom.Sphere, ring []math.Point3) math.Vector3 {
+	var sum math.Vector3
+	for i := range ring {
+		a := sph.Center.VectorTo(ring[i])
+		b := sph.Center.VectorTo(ring[(i+1)%len(ring)])
+		sum = sum.Add(a.Cross(b))
+	}
+	return sum
 }
 
 // loopTurnsNegative reports whether the loop turns clockwise (NOT CCW-seen-from-outside) around the compact
