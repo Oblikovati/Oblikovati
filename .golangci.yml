@@ -77,6 +77,13 @@ linters:
       - linters:
           - gocyclo
         path: model/feature/thread_spec\.go
+      # go/parser.ParseDir is deprecated since Go 1.25 because it ignores build tags, but these
+      # test-only architecture walkers parse untagged .go files under a single directory, where
+      # that limitation does not apply. Surfaced when the linter moved to a Go 1.26 build.
+      - linters:
+          - staticcheck
+        text: "SA1019: parser.ParseDir"
+        path: _test\.go
     paths:
       - third_party$
       - builtin$
