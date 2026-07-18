@@ -17,9 +17,13 @@ import (
 //
 // Only RELATIVE consistency matters here: ops.Validate compares the two co-edges of each manifold
 // edge (uses[0].Reversed != uses[1].Reversed) and never reads the surface normal or Face.reversed,
-// so a uniform global flip is invisible downstream. Tessellation is likewise winding-independent
-// (triangles are wound to the surface normal, then Face.reversed is applied). A non-orientable shell
-// (an odd cycle in the graph) is left as built and fails Validate loud rather than being laundered.
+// so a uniform global flip is invisible downstream. Tessellation is winding-independent for every
+// mesher EXCEPT the sphere-patch mesher (spherePatchMesh), which reads a sub-hemisphere host sphere
+// loop's ABSOLUTE winding to pick which region it bounds — so a genuine host sphere (D5/E4) must be
+// seeded here wound CCW-seen-from-outside; orientForSphereHost (fillet_curved_sphere_orient.go) does
+// that BEFORE calling this pass. Otherwise triangles are wound to the surface normal, then
+// Face.reversed is applied. A non-orientable shell (an odd cycle in the graph) is left as built and
+// fails Validate loud rather than being laundered.
 func orientFilletShell(faces []filletFace, rings [][][]int, classes map[[2]int]int) {
 	uses := buildEdgeSides(faces, rings, classes)
 	adj := filletAdjacency(len(faces), uses)

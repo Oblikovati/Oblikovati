@@ -21,17 +21,23 @@ import (
 // or the sphere-patch mesher filling the complement) fails the host-sphere-area assertion loud and fast.
 func TestD5E4WholeBodyWatertight(t *testing.T) {
 	for _, tc := range []struct {
-		name       string
-		faces      int
-		hostSphere float64 // expected tessellated area of the large host-sphere face (~sphere minus the bite)
+		name         string
+		faces        int
+		hostSphere   float64 // expected tessellated area of the large host-sphere face (~sphere minus the bite)
+		cornerSphere float64 // expected tessellated area of the SMALL corner-blend sphere patch (0 = only assert finite positive)
+		torusArms    int     // expected number of trimmed torus ARM faces (each must mesh to a finite positive area)
 	}{
-		{"D5", 9, 57815},
-		{"E4", 8, 57609},
+		// cornerSphere 55.7891 is the brief-mandated analytic area of the D5 corner-blend spherical
+		// triangle; the tessellation lands ~55.784 (a convex-patch under-estimate, ~0.01% < the 2% tol).
+		{"D5", 9, 57815, 55.7891, 2},
+		{"E4", 8, 57609, 0, 2},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			body := caseResultBody(t, tc.name)
 			assertWatertight(t, tc.name, body, tc.faces)
 			assertHostSphereRegion(t, tc.name, body, tc.hostSphere)
+			assertCornerSphereArea(t, tc.name, body, tc.cornerSphere)
+			assertTorusArmFaces(t, tc.name, body, tc.torusArms)
 		})
 	}
 }
@@ -96,6 +102,57 @@ func assertHostSphereRegion(t *testing.T, name string, body *topo.Body, want flo
 		return
 	}
 	t.Fatalf("%s carries no host-sphere face (radius 150)", name)
+}
+
+// assertCornerSphereArea checks the SMALL corner-blend sphere patch (radius = fillet r, the analytic
+// geom.Sphere corner triangle, distinct from the radius-150 host sphere) meshes to its brief-mandated
+// area. want==0 asserts only a finite positive area (a corner sphere that meshed the wrong region or
+// collapsed would read a wildly different or zero area). The relative tol mirrors assertHostSphereRegion.
+func assertCornerSphereArea(t *testing.T, name string, body *topo.Body, want float64) {
+	t.Helper()
+	f := cornerBlendSphereFace(body)
+	if f == nil {
+		t.Fatalf("%s carries no corner-blend sphere face (radius < 100)", name)
+	}
+	a := faceMeshArea2(f)
+	if a <= 0 || stdmath.IsInf(a, 0) || stdmath.IsNaN(a) {
+		t.Fatalf("%s corner-blend sphere area %.4f is not finite positive", name, a)
+	}
+	if want > 0 && stdmath.Abs(a-want) > 0.02*want {
+		t.Fatalf("%s corner-blend sphere area %.4f, want ~%.4f (a mis-wound/collapsed corner reads far off)", name, a, want)
+	}
+}
+
+// cornerBlendSphereFace returns the corner-blend sphere face — the one geom.Sphere whose radius is the
+// fillet r (< 100), located by the same radius cut assertHostSphereRegion uses to skip it.
+func cornerBlendSphereFace(body *topo.Body) *topo.Face {
+	for _, f := range body.Faces() {
+		if sph, ok := f.Geometry().(geom.Sphere); ok && sph.Radius < 100 {
+			return f
+		}
+	}
+	return nil
+}
+
+// assertTorusArmFaces checks the trimmed torus ARM faces (every geom.Torus face — the host here is a
+// sphere+planes, so no torus is a host) number the oracle count and each meshes to a finite positive
+// area. The exact trimmed-torus area is not cheaply derivable from the result body alone (the arm's
+// four bounding rails are not carried here), so this pins the COUNT and finite-positivity per the brief.
+func assertTorusArmFaces(t *testing.T, name string, body *topo.Body, want int) {
+	t.Helper()
+	got := 0
+	for _, f := range body.Faces() {
+		if _, ok := f.Geometry().(geom.Torus); !ok {
+			continue
+		}
+		got++
+		if a := faceMeshArea2(f); a <= 0 || stdmath.IsInf(a, 0) || stdmath.IsNaN(a) {
+			t.Fatalf("%s torus-arm face meshed to %.4f, want a finite positive area", name, a)
+		}
+	}
+	if got != want {
+		t.Fatalf("%s has %d torus-arm faces, want %d", name, got, want)
+	}
 }
 
 // faceMeshArea2 sums the triangle areas of a face's Property-quality tessellation.
