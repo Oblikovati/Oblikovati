@@ -109,11 +109,27 @@ jobs:
           go-version-file: go.mod
           cache: false
       - uses: ./.github/actions/api-contract
-        # Install the version locked in go.mod/go.sum (pinned via tools.go) rather than
-        # resolving one ad hoc — reproducible, lock-enforced (SonarCloud githubactions:S8545).
+        # Wire the API replace into the translator modules too, not just the root: they are
+        # separate modules whose COMMITTED `replace oblikovati.org/api => ../../../../../Oblikovati.API`
+        # points at a sibling checkout that doesn't exist in CI (the contract lands in _api/). The
+        # action rewrites each named module's replace to the _api path so their tests can build.
+        with:
+          modules: . model/exchange/translators/solidworks model/exchange/translators/inventor
       - run: go install gotest.tools/gotestsum
       - name: Test
         run: gotestsum --junitfile test-results-${{ matrix.os }}.xml -- -coverprofile=coverage.out -covermode=count ./...
+      # The SolidWorks/Inventor translators are separate go.work modules, so the root `./...`
+      # above never runs their tests — leaving SonarCloud to see ~0% coverage on new code that
+      # is in fact 74–85% covered. Run each nested module's tests (Linux, the leg that feeds
+      # Sonar) and MERGE their `count` profiles into coverage.out: same `oblikovati.org/...`
+      # paths Sonar already resolves for the root profile, so no path-mapping surprises.
+      - name: Translator-module coverage
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          for m in model/exchange/translators/solidworks model/exchange/translators/inventor; do
+            (cd "$m" && go test -covermode=count -coverprofile=cover.out ./...)
+            tail -n +2 "$m/cover.out" >> coverage.out
+          done
       - uses: actions/upload-artifact@v6
         if: always()
         with:

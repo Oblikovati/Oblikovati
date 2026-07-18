@@ -7,7 +7,6 @@ import (
 	"fmt"
 	stdmath "math"
 
-	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
@@ -32,6 +31,11 @@ type ExtrudeDefinition struct {
 	Operation    ops.PartFeatureOperation
 	Extent       Extent
 	Taper        float64 // draft angle (radians); 0 in phase A (planar sides)
+	// NoDissolve keeps abutting profiles as separate prisms instead of fusing them into one (#38).
+	// The dissolve is on by default (it fixes the coincident-wall crack a slot-with-corner-reliefs cut
+	// leaves); a caller that finds the merged tool trips a downstream boolean fragility on a particular
+	// part sets this to fall back to the per-region prisms for that part.
+	NoDissolve bool
 }
 
 // ExtrudeFeature turns a profile into a prism and combines it with the running
@@ -93,12 +97,60 @@ func (e *ExtrudeFeature) Recompute(in Input) (Output, error) {
 	if sp.depth() == 0 {
 		return Output{}, errors.New("extrude: the extent has zero depth")
 	}
+	if e.def.Operation == ops.Surface {
+		return e.recomputeSurface(in, profiles, plane, sp)
+	}
+	prisms := profilePrismsDissolving(profiles, plane, sp, e.def.Taper, e.featName, in.Diag, !e.def.NoDissolve)
+	e.tool = mergePrisms(prisms, e.featName) // a pattern replicates the whole tool, lumps and all
+	bodies, err := combinePrisms(in, prisms, e.tool, e.def.Operation)
+	if err != nil {
+		return Output{}, err
+	}
+	return Output{Bodies: bodies}, nil
+}
+
+// recomputeSurface builds an open (unmerged) sheet tool and applies it — the Surface operation keeps
+// the profile as a surface body rather than sweeping a solid prism.
+func (e *ExtrudeFeature) recomputeSurface(in Input, profiles []*sketch.Profile, plane sketch.Plane, sp span) (Output, error) {
 	e.tool = e.buildTool(profiles, plane, sp, in.Diag)
 	bodies, err := combine(in, e.tool, e.def.Operation)
 	if err != nil {
 		return Output{}, err
 	}
 	return Output{Bodies: bodies}, nil
+}
+
+// combinePrisms applies a multi-region selection's prisms to the running bodies.
+//
+// A Cut or a Join applies each prism SEPARATELY, which is the SAME result by construction —
+// A−(B₁∪B₂) = ((A−B₁)−B₂) and A∪(B₁∪B₂) = ((A∪B₁)∪B₂) — but a far better one in practice, because
+// the merged multi-lump tool is NOT a bare analytic primitive: it fails combine's
+// curvedBooleanWorthTrying test, so BOTH operands get faceted and the whole cut runs through the
+// planar path. Per lump the exact curved boolean applies instead, and each boolean is small.
+//
+// TorquimeterDisk cuts 52 regions at once. Merged, that is an 878-face 52-shell tool, and the planar
+// boolean returned a body it had itself just classified invalid (booleanGeneral ships the planar
+// result when the operands are over csgFallbackFaceLimit, so no CSG fallback is even attempted):
+// 1630 faces, 25 shells, NOT CLOSED. Lump by lump the same part is 461 faces, ONE shell, a closed
+// solid within 5% of Inventor. It is also cheaper, not dearer.
+//
+// Intersect is NOT decomposable this way — A∩(B₁∪B₂) = (A∩B₁)∪(A∩B₂), not a chain — and NewBody
+// wants the merged tool as one body, so both keep the merged path. With no running bodies combine
+// just adds the tool, and chaining would instead cut/join the lumps into each OTHER, so that case
+// keeps the merged path too.
+func combinePrisms(in Input, prisms []*topo.Body, merged *topo.Body, op ops.PartFeatureOperation) ([]*topo.Body, error) {
+	if len(prisms) < 2 || len(in.Bodies) == 0 || (op != ops.Cut && op != ops.Join) {
+		return combine(in, merged, op)
+	}
+	run, out := in, in.Bodies
+	for _, p := range prisms {
+		bodies, err := combine(run, p, op)
+		if err != nil {
+			return nil, err
+		}
+		run.Bodies, out = bodies, bodies
+	}
+	return out, nil
 }
 
 // buildTool extrudes each selected region into a prism over the span and merges the
@@ -133,6 +185,25 @@ func (e *ExtrudeFeature) resolveProfiles() ([]*sketch.Profile, error) {
 		indices = resolveSeeds(e.def.Sketch, e.def.ProfileSeeds, e.def.ProfileIndices)
 	}
 	return resolveClosedProfiles(e.def.Sketch, indices, "extrude")
+}
+
+// SetExtrudeDissolve toggles the abutting-prism dissolve (#38) on every extrude feature in fs and
+// returns how many it changed, marking them for the next recompute. The translator's whole-part
+// fallback disables the dissolve when the merged tool regressed a working solid — a downstream boolean
+// fragility that only surfaces in a LATER feature, so it cannot be caught per-feature — then re-enables
+// it if that did not help (the dissolve's mesh is otherwise the better one). 0 ⇒ no extrude to toggle.
+func SetExtrudeDissolve(fs *PartFeatures, on bool) int {
+	n := 0
+	for i := 0; i < fs.Count(); i++ {
+		if e, ok := fs.Item(i).feature.(*ExtrudeFeature); ok {
+			e.def.NoDissolve = !on
+			n++
+		}
+	}
+	if n > 0 {
+		fs.MarkAllDirty()
+	}
+	return n
 }
 
 // ExtrudeFeatures is the collection of extrude features, adding into the engine.
@@ -199,19 +270,20 @@ func combine(in Input, body *topo.Body, op ops.PartFeatureOperation) ([]*topo.Bo
 		return append(append([]*topo.Body(nil), running...), body), nil
 	}
 	target := running[len(running)-1]
-	// First try the EXACT curved boolean on the still-analytic operands when exactly one of them is a BARE
-	// analytic primitive and the other is all-planar (see exactlyOneCurvedPrimitive): the result keeps the
-	// curved surface through the M2 curved boolean instead of being re-faceted into a prism. This routes BOTH
-	// directions — a curved solid cut by a planar box (#1334/#1335) AND a planar box drilled/joined by a
-	// cylinder/cone tool, which previously fell through to faceting and shattered the hole rim into 24 straight
-	// segments (#1472). CurvedBoolean takes (target, tool) in feature order; each kernel path checks its own
-	// operand roles, so the same call serves both directions.
-	// The curved boolean also keeps analyticity for a JOIN of two coaxial equal-radius cylinders (a
-	// stepped/stacked shaft) — brep.CoaxialCylinderUnion returns one cylinder spanning the merged
-	// extent. Without this the both-cylinder pair fails exactlyOneCurvedPrimitive (both are curved), so
-	// combine faceted BOTH into 24-gon prisms and shattered the wall into planar facets (#1831). On no
-	// match the curved boolean returns ok=false and we fall through to the planar path unchanged.
-	if exactlyOneCurvedPrimitive(target, body) || (op == ops.Join && brep.CoaxialEqualCylinders(target, body)) {
+	// First try the EXACT curved boolean on the still-analytic operands (see curvedBooleanWorthTrying): the
+	// result keeps the curved surface through the M2 curved boolean instead of being re-faceted into a prism.
+	// This routes BOTH directions — a curved solid cut by a planar box (#1334/#1335) AND a planar box
+	// drilled/joined by a cylinder/cone tool, which previously fell through to faceting and shattered the hole
+	// rim into 24 straight segments (#1472). CurvedBoolean takes (target, tool) in feature order; each kernel
+	// path checks its own operand roles, so the same call serves both directions, and on no match it returns
+	// ok=false and we fall through to the planar path unchanged.
+	//
+	// This subsumes the old explicit CoaxialEqualCylinders clause for a JOIN of two coaxial equal-radius
+	// cylinders (a stepped/stacked shaft, #1831). That clause existed only because the both-cylinder pair
+	// failed the then-tighter gate; CoaxialEqualCylinders requires both operands to be BARE cylinder solids,
+	// which curvedBooleanWorthTrying now admits on its own, and brep.CoaxialCylinderUnion still recognises
+	// the pair from inside curvedExactPaths.
+	if curvedBooleanWorthTrying(target, body) {
 		if res, ok := ops.CurvedBooleanWithDiagnostics(op, target, body, in.Diag); ok {
 			return appendCombined(running, res), nil
 		}

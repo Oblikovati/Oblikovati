@@ -4,6 +4,7 @@ package brep
 
 import (
 	stdmath "math"
+	"sort"
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
@@ -178,15 +179,23 @@ func orientRingVerts(ring []ringVertex, n math.Vector3, hole bool) []ringVertex 
 // chainBoundary walks the surviving directed half-edges (net use count > 0) into closed vertex
 // loops. Every boundary vertex has matched in/out degree on a manifold cage, so the walk consumes
 // each survivor exactly once and closes each loop.
+//
+// Both the adjacency build and the start selection run in SORTED id order. Go randomizes map
+// iteration, and at a vertex where two boundary loops touch (out-degree > 1) BOTH the order the
+// candidates were appended in and the vertex the walk starts from decide which outgoing edge pairs
+// with which incoming one — so the loops themselves, not merely their order, varied run to run.
+// ops.Facet unifies coplanar faces when it re-facets an analytic operand for the planar boolean, so
+// that fed a differently-connected tool into every rebuild: the same part alternated between solid
+// and surface, and its volume wandered, on identical input (#23).
 func chainBoundary(net map[[2]uint64]int, pts map[uint64]math.Point3) [][]math.Point3 {
 	next := map[uint64][]uint64{}
-	for e, c := range net {
-		for ; c > 0; c-- {
+	for _, e := range sortedHalfEdges(net) {
+		for c := net[e]; c > 0; c-- {
 			next[e[0]] = append(next[e[0]], e[1])
 		}
 	}
 	var loops [][]math.Point3
-	for start := range next {
+	for _, start := range sortedLoopStarts(next) {
 		for len(next[start]) > 0 {
 			loop := walkCoplanarLoop(start, next, pts)
 			if len(loop) >= 3 {
@@ -195,6 +204,32 @@ func chainBoundary(net map[[2]uint64]int, pts map[uint64]math.Point3) [][]math.P
 		}
 	}
 	return loops
+}
+
+// sortedHalfEdges returns net's directed edges in ascending (from, to) order.
+func sortedHalfEdges(net map[[2]uint64]int) [][2]uint64 {
+	keys := make([][2]uint64, 0, len(net))
+	for e := range net {
+		keys = append(keys, e)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		if keys[i][0] != keys[j][0] {
+			return keys[i][0] < keys[j][0]
+		}
+		return keys[i][1] < keys[j][1]
+	})
+	return keys
+}
+
+// sortedLoopStarts returns the vertices carrying outgoing half-edges, in ascending id order. The
+// keys are fixed before the walk consumes them, so mutating next below cannot perturb the order.
+func sortedLoopStarts(next map[uint64][]uint64) []uint64 {
+	keys := make([]uint64, 0, len(next))
+	for v := range next {
+		keys = append(keys, v)
+	}
+	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
+	return keys
 }
 
 // walkCoplanarLoop follows the next-vertex adjacency from start until it returns, consuming each directed

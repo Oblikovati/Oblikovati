@@ -9,22 +9,36 @@ import (
 	"oblikovati.org/math"
 )
 
-// A planar face's triangulation must cover the face exactly: every loop segment (outer + each hole) is
-// reproduced as a triangle edge, so the face stitches watertight to the neighbour that shares that
-// segment (both discretize the edge identically via discretizeEdge). earcut is a heuristic ear-clipper
-// whose self-intersection-cure and brute-force fallback passes do NOT guarantee that on a hard
-// multi-hole input — on the EDF duct's top cap (a complex outer loop + two small bore holes) it dropped
-// a hole segment and left bridge edges single-sided, producing OVERLAPPING triangles that crack the cap
-// against its cylinder/torus neighbours. constrainedDelaunay treats every loop segment as a hard
-// constraint and flood-fills the interior, so it cannot drop a boundary edge; with the exact predicates
-// (see [orient2d]/[inCircle]) it is also robust on the near-cocircular points a sampled circular hole
-// produces. We keep earcut on the hot path and fall back to the CDT only when earcut's triangulated
-// AREA disagrees with the true face area — the signature of a real defect. We deliberately do NOT fall
-// back on a mere collinear-point merge: earcut's filterPoints drops only EXACTLY-collinear (zero-area)
-// boundary points, which leaves the area unchanged and never cracks (a straight edge is sampled the
-// same — just two endpoints — by both of its faces). Gating on area keeps the O(n²) CDT off the
-// thousands of clean faces (a 390-point cap would otherwise route to it on every recompute) and reserves
-// it for the genuine defect.
+// A planar face's triangulation must COVER the face exactly: no overlap, no gap, over exactly
+// (outer − Σ holes). That is the watertightness the face needs to stitch to its neighbours, and AREA
+// is the faithful proxy for it — a genuine coverage defect (overlapping or gapped triangles) shifts
+// the triangulated area off the true face area, so we keep earcut on the hot path and fall back to the
+// CDT only when earcut's area disagrees. earcut is a heuristic ear-clipper whose self-intersection-cure
+// and brute-force fallback passes do NOT guarantee coverage on a hard multi-hole input — on the EDF
+// duct's top cap (a complex outer loop + two small bore holes) it dropped a hole segment and left
+// bridge edges single-sided, producing overlapping triangles that both crack the cap AND throw its area
+// off. constrainedDelaunay treats every loop segment as a hard constraint and flood-fills the interior,
+// so it cannot drop a boundary edge; with the exact predicates (see [orient2d]/[inCircle]) it is also
+// robust on the near-cocircular points a sampled circular hole produces.
+//
+// AREA IS A PROXY, NOT THE LITERAL "every loop segment is a triangle edge" — and that distinction is
+// deliberate, because two area-CONSERVING ways a boundary segment is legitimately NOT its own triangle
+// edge must NOT trip the fallback:
+//   - COLLINEAR SUBSUMPTION. earcut fans a straight strip with ONE long edge that runs along several
+//     collinear boundary vertices — e.g. a plate with three in-line rectangular slots triangulates the
+//     material below them with a single edge spanning all three slot bottoms, so each slot-bottom
+//     segment is subsumed, not reproduced. This is watertight: the edge is collinear with those
+//     segments, so the surface is flat and continuous, and the neighbour's extra vertices lie exactly
+//     ON that edge (a coplanar T-vertex, no gap). removeTJunctions splits it out only where the WELDED
+//     CSG cage needs a closed 2-manifold; the display mesh does not.
+//   - SHARED-VOID EDGES. a segment shared by two loops (two abutting holes, or a hole touching the
+//     outer) borders no material on either side, so no triangle need use it (#37's dog-bone slot).
+// A literal per-segment guard would FALSE-POSITIVE on both — even three disjoint slots — and route
+// thousands of clean faces to the O(n²) CDT (a 390-point cap on every recompute). Gating on area
+// admits both benign cases and still catches the genuine coverage defect, which is the one that counts.
+// (The theoretical hole — an overlap and a gap that cancel to the same total area — was searched for
+// and not produced on realistic multi-hole faces; if one is ever found, the fix is a coverage check
+// here, NOT a per-segment one.)
 
 // planarTris triangulates a planar face's projected boundary. Indices address outer2D[i] for
 // i<len(outer2D), then the holes concatenated after it — the same vertex ordering earcut uses, so
@@ -89,9 +103,11 @@ func loopsSelfCross(outer2D []math.Point2, holes2D [][]math.Point2) bool {
 	return false
 }
 
-// planarAreaMatches reports whether tris covers exactly the face area (|outer| − Σ|holes|). A clean
-// triangulation (incl. one that merged only zero-area collinear points) matches; a defective one that
-// overlaps or leaves gaps does not. Empty tris never matches (forces the fallback).
+// planarAreaMatches reports whether tris covers exactly the face area (|outer| − Σ|holes|) — the
+// coverage proxy the package comment justifies. A clean triangulation matches, INCLUDING the two
+// area-conserving cases where a boundary segment is legitimately not its own triangle edge (collinear
+// subsumption and shared-void edges); a defective one that overlaps or gaps does not. Empty tris never
+// matches (forces the fallback).
 func planarAreaMatches(tris [][3]int, outer2D []math.Point2, holes2D [][]math.Point2) bool {
 	if len(tris) == 0 {
 		return false

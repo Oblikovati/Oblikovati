@@ -4,6 +4,7 @@ package ops
 
 import (
 	stdmath "math"
+	"sort"
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
@@ -99,6 +100,18 @@ func tessellateCell(cell brep.Face2D) ([]math.Point2, [][3]int) {
 	return verts, earcut(cell.Outer, holes)
 }
 
+// MergeAbuttingLoops fuses closed loops that SHARE edges into their union-boundary outline(s): a
+// directed edge that appears in two loops traversed oppositely is interior and dropped; the surviving
+// edges chain into the union's boundary loops. Disjoint loops pass through unchanged. Every input loop
+// MUST carry the same winding, so an interior edge cancels; DCEL cells of one sketch (all wound CCW)
+// satisfy this. The extrude feature uses it to dissolve a region an upstream arrangement over-split
+// into abutting cells — a slot plus its corner-relief discs, sharing arcs — into ONE prism, instead of
+// several prisms cut one at a time that leave coincident interior walls (#38). Thin wrapper over the
+// hole-merge primitive so its exact behaviour is shared, not duplicated.
+func MergeAbuttingLoops(loops [][]math.Point2) [][]math.Point2 {
+	return mergeAbuttingHoles(loops)
+}
+
 // mergeAbuttingHoles fuses hole loops that share edges into their boundary outline: a directed
 // edge shared by two abutting loops (traversed oppositely) is interior and dropped; the surviving
 // edges chain into the union's boundary loops. A single (or disjoint) hole set is returned as-is.
@@ -125,11 +138,14 @@ func mergeAbuttingHoles(holes [][]math.Point2) [][]math.Point2 {
 
 // boundaryEdges keeps the directed edges whose reverse is absent — the outline of the union (an
 // edge shared by two abutting loops appears in both directions and cancels).
+//
+// Emitted in sorted order: Go randomizes map iteration, and this slice seeds the adjacency
+// chainBoundaryEdges walks, where the append order decides how edges pair at a touching vertex.
 func boundaryEdges(dirCount map[[2]int]int) [][2]int {
 	var keep [][2]int
-	for e, c := range dirCount {
+	for _, e := range sortedDirEdges(dirCount) {
 		if dirCount[[2]int{e[1], e[0]}] == 0 {
-			for k := 0; k < c; k++ {
+			for k := 0; k < dirCount[e]; k++ {
 				keep = append(keep, e)
 			}
 		}
@@ -137,14 +153,38 @@ func boundaryEdges(dirCount map[[2]int]int) [][2]int {
 	return keep
 }
 
+// sortedDirEdges returns the directed edges in ascending (from, to) order.
+func sortedDirEdges(dirCount map[[2]int]int) [][2]int {
+	keys := make([][2]int, 0, len(dirCount))
+	for e := range dirCount {
+		keys = append(keys, e)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		if keys[i][0] != keys[j][0] {
+			return keys[i][0] < keys[j][0]
+		}
+		return keys[i][1] < keys[j][1]
+	})
+	return keys
+}
+
 // chainBoundaryEdges links directed edges head-to-tail into closed loops.
+//
+// Loop starts are taken in sorted order for the same reason boundaryEdges sorts: where two hole
+// loops touch at a single welded vertex, the start the walk picks decides which outgoing edge pairs
+// with which incoming one, so map order changed the LOOPS, not just their order (#23).
 func chainBoundaryEdges(edges [][2]int, pts []math.Point2) [][]math.Point2 {
 	next := make(map[int][]int, len(edges))
 	for _, e := range edges {
 		next[e[0]] = append(next[e[0]], e[1])
 	}
+	starts := make([]int, 0, len(next))
+	for v := range next {
+		starts = append(starts, v)
+	}
+	sort.Ints(starts)
 	var loops [][]math.Point2
-	for start := range next {
+	for _, start := range starts {
 		for len(next[start]) > 0 {
 			loop := traceBoundaryLoop(start, next)
 			if len(loop) >= 3 {
