@@ -88,19 +88,29 @@ func torusPlaneSpring(t geom.Torus, pl geom.Plane, tol float64) (geom.Circle, bo
 }
 
 // torusSphereSpring is the latitude circle where the tube is tangent to the host sphere: the double root of
-// |P(u,v) − O|² = R_c², which collapses to v = atan2(B, A) with A = 2R′r, B = 2(d·â)r, d = C − O.
+// |P(u,v) − O|² = R_c², which collapses to v = atan2(B, A) with A = 2R′r, B = 2(d·â)r, d = C − O. The
+// collapse to a single latitude (a full u-circle of contact) is ONLY valid when the sphere is COAXIAL with
+// the torus axis — off-axis the |P−O|² has a cos(u−Ψ) term (far-runout-port-math §2) and there is no
+// latitude-circle spring, so a transverse offset A⊥ > tol declines rather than fabricating a wrong spring.
 func torusSphereSpring(t geom.Torus, sp geom.Sphere, tol float64) (geom.Circle, bool) {
 	axis := t.AxisDir.AsVector()
 	d := sp.Center.VectorTo(t.Center) // C − O_c
 	da := float64(d.Dot(axis))
+	aPerp := float64(d.Sub(axis.Scale(math.Scalar(da))).Length()) // A⊥: sphere-centre offset ⊥ the axis
+	if aPerp > tol {
+		return geom.Circle{}, false // off-axis sphere (A⊥ > tol): no latitude-circle spring, never fabricate
+	}
 	R, r := t.MajorRadius, t.MinorRadius
 	a, b := 2*R*r, 2*da*r
 	rhs := sp.Radius*sp.Radius - float64(d.LengthSquared()) - R*R - r*r
 	amp := stdmath.Hypot(a, b)
-	if amp < tol || stdmath.Abs(rhs)-amp > tol {
-		return geom.Circle{}, false // no tangent contact with the sphere: not this fillet's host sphere
+	if amp < tol || stdmath.Abs(stdmath.Abs(rhs)-amp) > tol {
+		return geom.Circle{}, false // no DOUBLE root (tangent contact): |rhs|≠amp ⇒ not this fillet's host sphere
 	}
 	v := stdmath.Atan2(b, a)
+	if rhs < 0 {
+		v += stdmath.Pi // the rhs=−amp tangency is the antipodal tube angle (atan2 alone is π-wrong here)
+	}
 	center := t.Center.TranslateBy(axis.Scale(math.Scalar(r * stdmath.Sin(v))))
 	return geom.Circle{Center: center, Normal: t.AxisDir, RefDir: t.Ref, Radius: R + r*stdmath.Cos(v)}, true
 }
@@ -182,9 +192,9 @@ func nearerCircleRoot(c geom.Circle, u0, u1 float64, near math.Point3) math.Poin
 // linePlaneFoot returns the single crossing of a ruling with the capping plane (t = m̂·(o−q₀)/(m̂·d̂)).
 func linePlaneFoot(l geom.Line, pl geom.Plane) (math.Point3, bool) {
 	n := pl.Normal()
-	denom := float64(n.Dot(l.Dir.AsVector()))
-	if denom == 0 {
-		return math.Point3{}, false // ruling parallel to the plane: no crossing
+	denom := float64(n.Dot(l.Dir.AsVector())) // = sin(angle ruling↔plane): n̂, d̂ both unit
+	if stdmath.Abs(denom) <= sinFloor {
+		return math.Point3{}, false // ruling near-parallel to the plane (|n̂·d̂| ≤ sinFloor): no stable crossing
 	}
 	t := float64(n.Dot(l.Origin.VectorTo(pl.Origin))) / denom
 	return l.PointAt(t), true

@@ -274,3 +274,124 @@ func TestIntersectArmCapping_HonestReject(t *testing.T) {
 		t.Fatalf("a cap plane ⊥ the torus axis (M→0) must decline (latitude-circle follow-on); got (%v,%v)", c, ok)
 	}
 }
+
+// canonSpiricTorus is the canonical spiric fixture torus: centre origin, axis ẑ, ref x̂, R′=50, r=10 — the
+// section-only tests below drive it with an axis-parallel capping plane (normal x̂ ⇒ C=0, M=1, Φ=0) so the
+// spiric coefficients are exact and the branch/band behaviour is analysable by hand.
+func canonSpiricTorus(t *testing.T) geom.Torus {
+	t.Helper()
+	tor, err := geom.NewTorusWithRef(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 50, 10)
+	if err != nil {
+		t.Fatalf("canonical spiric torus: %v", err)
+	}
+	return tor
+}
+
+// placeSpiricFoot puts a foot exactly ON the spiric section of tor∩pl at tube angle v on the given branch
+// (reusing the production spiricPoint), so selectSpiricBranch/spiricBandOK see a genuine section point.
+func placeSpiricFoot(tor geom.Torus, pl geom.Plane, branch, v float64) math.Point3 {
+	phi, m, k, c := geom.TorusSectionCoeffs(tor, pl)
+	return spiricPoint(tor, phi, m, k, c, branch, v)
+}
+
+// TestSpiricBandOK_GrazingRejects pins the existence/grazing guard (far-runout-port-math §6 pitfalls). The
+// capping plane x=52.5 grazes the tube: its spiric section reaches the arm at foot₁ (v=0, w=0.875) but a
+// foot placed at v=π/2 sits BEYOND the section extreme (w=52.5/50=1.05 > 1) — the plane does not cut the
+// tube there. selectSpiricBranch still finds a unique branch (so the decline is the band guard's alone), so
+// intersectArmCapping must return (nil,false). MUTATION PROOF: delete the spiricBandOK call in
+// torusPlaneTrim and this test fails — the port returns a garbage SpiricArc whose v=π/2 endpoint is off the
+// plane.
+func TestSpiricBandOK_GrazingRejects(t *testing.T) {
+	tor := canonSpiricTorus(t)
+	grazeCap := planeOn(t, math.P3(52.5, 0, 0), math.V3(1, 0, 0)) // K=52.5 ⇒ w(π/2)=1.05 > 1 at v=π/2
+	feet := [2]math.Point3{
+		placeSpiricFoot(tor, grazeCap, 1, stdmath.Pi/2), // beyond the section extreme (w>1)
+		placeSpiricFoot(tor, grazeCap, 1, 0),            // on the section (w=0.875)
+	}
+	res := ResolutionForSize(120)
+
+	// The band guard is the sole reason for the decline: the branch certificate would otherwise accept.
+	phi, m, k, c := geom.TorusSectionCoeffs(tor, grazeCap)
+	tol := armCapTol(feet[0], feet[1], tor.Center, math.P3(52.5, 0, 0))
+	if _, ok := selectSpiricBranch(tor, phi, m, k, c, stdmath.Pi/2, 0, feet, tol); !ok {
+		t.Fatal("precondition: selectSpiricBranch must find a unique branch, so the band guard is what declines")
+	}
+	if spiricBandOK(tor, m, k, c, stdmath.Pi/2, 0, tol) {
+		t.Fatal("precondition: spiricBandOK must reject the grazing band (w=1.05 at v=π/2)")
+	}
+	if curve, ok := intersectArmCapping(tor, grazeCap, feet, 10, res); ok || curve != nil {
+		t.Fatalf("grazing band must decline (foot at w=1.05 > 1); got (%v,%v)", curve, ok)
+	}
+}
+
+// TestSpiricBandOK_HealthyAccepts is the positive: on D5's real (spanning) band spiricBandOK returns true —
+// the guard rejects grazing without over-rejecting the healthy arm the sphere slice actually ships.
+func TestSpiricBandOK_HealthyAccepts(t *testing.T) {
+	tor, sphere, lonPlane, cap := d5MeridianArm(t)
+	feet := d5Feet(t, tor, sphere, lonPlane, cap)
+	phi, m, k, c := geom.TorusSectionCoeffs(tor, cap)
+	_ = phi
+	v0, ok0 := torusChartV(tor, feet[0], 1e-4)
+	v1, ok1 := torusChartV(tor, feet[1], 1e-4)
+	if !ok0 || !ok1 {
+		t.Fatalf("D5 feet must invert onto the arm: %v %v", ok0, ok1)
+	}
+	if !spiricBandOK(tor, m, k, c, v0, v1, 1e-4) {
+		t.Fatal("spiricBandOK must accept D5's healthy spanning band")
+	}
+}
+
+// TestIntersectArmCapping_PlusOneBranch is the +1-branch witness (far-runout-port-math §6.1). D5's correct
+// material branch is −1; here both feet are placed on branch +1 of an oblique-in-tube section, so the port
+// must SELECT +1 and its trim endpoints must hit both feet. MUTATION PROOF: hardcode selectSpiricBranch to
+// return −1 (delete the enumerate-both-signs certificate) and this test fails — the −1 arc's endpoints miss
+// the +1 feet by ~1e2.
+func TestIntersectArmCapping_PlusOneBranch(t *testing.T) {
+	tor := canonSpiricTorus(t)
+	cap := planeOn(t, math.P3(40, 0, 0), math.V3(1, 0, 0)) // K=40 ⇒ |w|≈0.7 across [−0.6,0.6]: healthy
+	feet := [2]math.Point3{
+		placeSpiricFoot(tor, cap, 1, -0.6),
+		placeSpiricFoot(tor, cap, 1, 0.6),
+	}
+	curve, ok := intersectArmCapping(tor, cap, feet, 10, ResolutionForSize(120))
+	if !ok || curve == nil {
+		t.Fatal("the +1-branch trim must build")
+	}
+	sa, isSpiric := curve.(geom.SpiricArc)
+	if !isSpiric {
+		t.Fatalf("trim is %T, want geom.SpiricArc", curve)
+	}
+	if sa.Branch != 1 {
+		t.Fatalf("port selected branch %v, want +1 (the material side for this fixture)", sa.Branch)
+	}
+	e0 := float64(sa.PointAt(0).DistanceTo(feet[0]))
+	e1 := float64(sa.PointAt(1).DistanceTo(feet[1]))
+	t.Logf("+1 trim endpoint gaps: %.3e, %.3e", e0, e1)
+	if e0 > 1e-9 || e1 > 1e-9 {
+		t.Fatalf("+1 trim endpoints miss the feet (%.3e, %.3e) — a hardcoded −1 branch would fail here", e0, e1)
+	}
+}
+
+// TestIntersectArmCapping_ZeroSurvivorDeclines is the 0-survivor certificate decline (§6.4): the two feet
+// lie on DIFFERENT branches of the same section (foot₀ on +1, foot₁ on −1), so no single sign certifies
+// both — an ambiguous/degenerate pairing. The band is healthy (so the decline is the branch certificate's),
+// and the port must return (nil,false) rather than pick a sign.
+func TestIntersectArmCapping_ZeroSurvivorDeclines(t *testing.T) {
+	tor := canonSpiricTorus(t)
+	cap := planeOn(t, math.P3(40, 0, 0), math.V3(1, 0, 0))
+	feet := [2]math.Point3{
+		placeSpiricFoot(tor, cap, 1, -0.6), // +1 branch
+		placeSpiricFoot(tor, cap, -1, 0.6), // −1 branch: no single sign hits both
+	}
+	phi, m, k, c := geom.TorusSectionCoeffs(tor, cap)
+	tol := armCapTol(feet[0], feet[1], tor.Center, math.P3(40, 0, 0))
+	if spiricBandOK(tor, m, k, c, -0.6, 0.6, tol) != true {
+		t.Fatal("precondition: the band must be healthy, so the decline is the branch certificate's")
+	}
+	if _, ok := selectSpiricBranch(tor, phi, m, k, c, -0.6, 0.6, feet, tol); ok {
+		t.Fatal("precondition: no single branch may certify both feet (0 survivors)")
+	}
+	if curve, ok := intersectArmCapping(tor, cap, feet, 10, ResolutionForSize(120)); ok || curve != nil {
+		t.Fatalf("mismatched-branch feet must decline (0 survivors); got (%v,%v)", curve, ok)
+	}
+}
