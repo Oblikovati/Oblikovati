@@ -197,10 +197,11 @@ func sharedCornerVertex(arms []edgeFillet) (uint64, bool) {
 // bundle ONCE so the arm face and its neighbour host land on byte-identical rails (watertight weld).
 func curvedWeldFaces(body *topo.Body, arms []edgeFillet, w cornerWeld, sphere geom.Sphere, res Resolution) ([]filletFace, string) {
 	bundles := make([]armRails, len(arms))
+	picks := filletedEdgeSet(arms)
 	for i := range arms {
-		b, ok := armRailBundle(w.arms[i], arms[i], w, res)
-		if !ok {
-			return nil, fmt.Sprintf("arm rail bundle declined (%T)", arms[i].armSurface)
+		b, reason := armRailBundle(w.arms[i], arms[i], w, picks, res)
+		if reason != "" {
+			return nil, fmt.Sprintf("arm rail bundle declined (%T): %s", arms[i].armSurface, reason)
 		}
 		bundles[i] = b
 	}
@@ -220,30 +221,58 @@ func curvedWeldFaces(body *topo.Body, arms []edgeFillet, w cornerWeld, sphere ge
 }
 
 // armRails is one arm's four boundary edges as a closed loop (host rail on ef.a, setback great-arc,
-// host rail on ef.b reversed, far cross-section arc), plus that far arc alone (outer0→outer1) — the
-// rail shared with the far-runout host, kept separate so both faces reuse the identical curve.
+// host rail on ef.b reversed, far runout trim), plus that far trim alone (outer0→outer1) — the rail
+// shared with the far-runout host, kept separate so both faces reuse the identical curve — and the
+// runout object (regime + capping identity) the far-runout host bite router reads (FR3).
 type armRails struct {
-	segs []endSeg
-	far  endSeg
+	segs   []endSeg
+	far    endSeg
+	runout armRunout
 }
 
 // armRailBundle assembles one arm's four boundary rails (§B.5). t0/t1 are the arm's two host-tangent
-// points (the setback rail endpoints); the far cross-section arc joins the two host rails' outer ends
-// on the arm's terminal radius-r circle. Declines when a host rail or the setback rail cannot be built.
-func armRailBundle(set armSetback, ef edgeFillet, w cornerWeld, res Resolution) (armRails, bool) {
+// points (the setback rail endpoints); the far terminus runs THROUGH the general far-runout engine
+// (armFarRunout, FR3) — perpendicular caps take the existing farCrossSectionArc verbatim (byte-identity
+// by call-graph, ADR-2) and pass the host rails through untouched; an oblique cap builds the analytic
+// section trim (intersectArmCapping) and RE-TERMINATES the two host rails on the feet (ADR-4). Returns a
+// non-empty reason (the exact obstruction) on any host-rail / setback / far-runout decline — do-no-harm.
+func armRailBundle(set armSetback, ef edgeFillet, w cornerWeld, filletedEdges map[uint64]bool, res Resolution) (armRails, string) {
 	t0 := endpointOf(w.center, w.radius, set.railDir0) // host-tangent point on ef.a
 	t1 := endpointOf(w.center, w.radius, set.railDir1) // host-tangent point on ef.b
 	h0, ok0 := armHostContactRail(ef.a, set, t0, w, res)
 	h1, ok1 := armHostContactRail(ef.b, set, t1, w, res)
 	setback, ok2 := setbackEndSeg(w, set, t0, t1)
-	farArc, ok3 := farCrossSectionArc(set.arm, w.radius, h0.from, h1.from)
-	if !ok0 || !ok1 || !ok2 || !ok3 {
-		return armRails{}, false
+	if !ok0 || !ok1 || !ok2 {
+		return armRails{}, "host contact rail or setback rail could not be built"
 	}
+	h0, h1, run, ok3, reason := armFarRunout(ef, w, h0, h1, filletedEdges, res)
+	if !ok3 {
+		return armRails{}, reason
+	}
+	return closeArmRails(h0, h1, setback, run), ""
+}
+
+// closeArmRails assembles one arm's four-rail boundary loop from its (possibly re-terminated) host rails,
+// the setback great-arc, and the far runout trim reversed (outer1→outer0, closing to h0.from).
+// reverseEndSegs reverses ANY curve — an Arc3d by its three points (a perpendicular cross-section arc,
+// byte-identical to the pre-FR3 loop) or an analytic section curve via ReverseCurve3 (an oblique spiric/
+// ellipse trim) — so both regimes close the loop the same way.
+func closeArmRails(h0, h1, setback endSeg, run armRunout) armRails {
 	segs := []endSeg{h0, setback}
-	segs = append(segs, reverseEndSegs([]endSeg{h1})...)     // t1 → outer1
-	segs = append(segs, reverseEndSegs([]endSeg{farArc})...) // outer1 → outer0 (closes to h0.from)
-	return armRails{segs: segs, far: farArc}, true
+	segs = append(segs, reverseEndSegs([]endSeg{h1})...)       // t1 → outer1
+	segs = append(segs, reverseEndSegs([]endSeg{run.trim})...) // outer1 → outer0 (closes to h0.from)
+	return armRails{segs: segs, far: run.trim, runout: run}
+}
+
+// filletedEdgeSet is the set of picked (filleted) edge ids at the welded corner — the arm edges gathered
+// by cornerArms. The far-runout admission gate reads it to decline when a SECOND picked edge ends at an
+// arm's far vertex (fillet-fillet interference, out of scope; architecture Q5).
+func filletedEdgeSet(arms []edgeFillet) map[uint64]bool {
+	set := make(map[uint64]bool, len(arms))
+	for _, ef := range arms {
+		set[ef.edge.ID()] = true
+	}
+	return set
 }
 
 // armHostContactRail builds one arm's contact rail on host, oriented outer→tHost: a torus arm carves a

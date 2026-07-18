@@ -66,17 +66,28 @@ func cornerHostSet(arms []edgeFillet) map[*topo.Face]bool {
 	return set
 }
 
-// farArcsBiting returns the arms' far cross-section arcs whose BOTH endpoints lie on host f's surface —
-// the arms that run out onto f (§B.5: the y=0 cut receives two, the through-arm's exit cap one).
+// farArcsBiting returns the arms' far runout trims that bite host f (§B.5: the y=0 cut receives two, the
+// through-arm's exit cap one). The perpendicular/legacy population routes by SURFACE MEMBERSHIP (both
+// feet on f's surface) — verbatim, so the existing corpus' bytes never move; an OBLIQUE runout routes by
+// CAPPING IDENTITY (f IS the capping face the engine trimmed the arm against), tolerance-free and
+// unambiguous when a foot lies on an edge shared by two faces (architecture Q3).
 func farArcsBiting(f *topo.Face, bundles []armRails, tol float64) []endSeg {
 	var out []endSeg
 	surf := f.Geometry()
 	for _, b := range bundles {
-		if onHostSurface(surf, b.far.from, tol) && onHostSurface(surf, b.far.to, tol) {
+		if farBiteOnHost(f, surf, b, tol) {
 			out = append(out, b.far)
 		}
 	}
 	return out
+}
+
+// farBiteOnHost reports whether arm bundle b's far runout trim bites host f (see farArcsBiting).
+func farBiteOnHost(f *topo.Face, surf geom.Surface, b armRails, tol float64) bool {
+	if b.runout.regime == runoutOblique {
+		return f == b.runout.capping // shared-edge identity: the arm face's far edge and this bite are the SAME trim
+	}
+	return onHostSurface(surf, b.far.from, tol) && onHostSurface(surf, b.far.to, tol)
 }
 
 // farRunoutFace retrims a far-runout host: each arm far arc bites off the rectangle/quarter-disk corner
@@ -137,30 +148,36 @@ func cornerBiteArea(span []endSeg, bite endSeg) float64 {
 	return float64(newellNormal(ring).Length()) / 2
 }
 
-// segPolyline expands an ordered, endpoint-connected endSeg path into a 3D point list, sampling each arc
-// edge with biteArcSamples chords so a curved edge contributes its true shape to a downstream Newell
-// area/winding computation. It emits each seg's `from` (plus that seg's arc interior); the caller appends
-// the path's final `to` when a closed ring is wanted.
+// segPolyline expands an ordered, endpoint-connected endSeg path into a 3D point list, sampling each
+// curved edge with biteArcSamples chords so it contributes its true shape to a downstream Newell area/
+// winding computation. It emits each seg's `from` plus that seg's interior (curveInterior: an Arc3d edge
+// via arcInteriorPoints — byte-identical to the pre-FR3 sampler — any other analytic curve via PointAt, a
+// straight edge nothing); the caller appends the path's final `to` when a closed ring is wanted. The span
+// this samples is a host loop (Arc3d-or-straight edges only), so the general-curve branch is inert here —
+// it is the far-runout BITE seg (an oblique spiric/ellipse trim) that exercises it, via biteArcBulge.
 func segPolyline(segs []endSeg) []math.Point3 {
 	var pts []math.Point3
 	for _, s := range segs {
 		pts = append(pts, s.from)
-		if arc, ok := s.curve.(geom.Arc3d); ok && s.arc {
-			pts = append(pts, arcInteriorPoints(arc, s.from, biteArcSamples)...)
-		}
+		pts = append(pts, curveInterior(s)...)
 	}
 	return pts
 }
 
-// biteArcBulge samples the bite arc's interior points ordered from `from` (one bite endpoint) toward the
-// other, so they fill the arc's curvature between the span's two ends when appended to the area ring. A
-// straight bite (no arc) contributes no bulge — its chord already closes the ring.
+// biteArcBulge samples the far-runout bite's interior points ordered from `from` (one bite endpoint)
+// toward the other, so they fill the trim's curvature between the span's two ends when appended to the
+// area ring. An Arc3d bite (a perpendicular cross-section arc) uses arcInteriorPoints VERBATIM (existing
+// bite areas bit-identical); an oblique analytic section trim (a spiric / ellipse, arc==false) samples
+// curve.PointAt at the same interior parameters — the SAME curve object the arm face's far edge carries
+// (shared-edge identity). A straight bite (nil curve) contributes no bulge — its chord already closes.
 func biteArcBulge(bite endSeg, from math.Point3) []math.Point3 {
-	arc, ok := bite.curve.(geom.Arc3d)
-	if !ok || !bite.arc {
-		return nil
+	if arc, ok := bite.curve.(geom.Arc3d); ok && bite.arc {
+		return arcInteriorPoints(arc, from, biteArcSamples)
 	}
-	return arcInteriorPoints(arc, from, biteArcSamples)
+	if bite.curve != nil {
+		return curve3InteriorPoints(bite.curve, from, biteArcSamples)
+	}
+	return nil
 }
 
 // biteArcSamples is the per-arc chord count used to develop a bite/rim arc into the area polyline. A

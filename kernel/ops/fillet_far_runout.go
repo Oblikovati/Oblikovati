@@ -72,8 +72,7 @@ func armFarRunout(ef edgeFillet, w cornerWeld, h0, h1 endSeg, filletedEdges map[
 	if farRunoutIsPerpendicular(capping, ef.armSurface, h0.from) {
 		return perpendicularRunout(ef.armSurface, w.radius, capping, h0, h1)
 	}
-	run, ok, reason := obliqueRunout(ef.armSurface, capping, [2]math.Point3{h0.from, h1.from}, w.radius, res)
-	return h0, h1, run, ok, reason
+	return obliqueRunout(ef, capping, h0, h1, w.radius, res)
 }
 
 // perpendicularRunout is the fast-path far termination: the radius-r cross-section arc from the EXISTING
@@ -89,21 +88,32 @@ func perpendicularRunout(arm geom.Surface, r float64, capping *topo.Face, h0, h1
 	return h0, h1, run, true, ""
 }
 
-// obliqueRunout is the oblique-regime port entry: the runout trim is armSurface ∩ capping
-// (intersectArmCapping, FR2), built on the SAME feet the host rails end on (the shared-edge identity).
-// FR1 ships intersectArmCapping as a decline stub, so this returns ok=false and the arm floors to the
-// do-no-harm path (D5's oblique far vertex declines exactly as today) — the engine still reports the
-// classified regime + capping face for the FR3 host router.
-func obliqueRunout(arm geom.Surface, capping *topo.Face, feet [2]math.Point3, r float64, res Resolution) (armRunout, bool, string) {
+// obliqueRunout is the oblique-regime far termination (FR3, ADR-4). The engine OWNS the whole termination:
+// it fixes the AUTHORITATIVE feet closed-form (armRunoutFeet: armSprings ∩ capping, ordered to the arm's
+// hosts ef.a/ef.b), builds the runout trim armSurface ∩ capping through those feet (intersectArmCapping,
+// FR2's port), and RE-TERMINATES the two host rails so their outer ends land ON the feet (reterminateRail)
+// — the three coincident identities trim.endpoints == feet == rail-outer-ends. Any decline (no springs,
+// no foot, trim decline, foot off a rail) floors honestly, carrying the exact obstruction; NEVER a snapped
+// curve. h0/h1 are the incoming (perpendicular-built) rails; their .from ends seed springCapFoot's root.
+func obliqueRunout(ef edgeFillet, capping *topo.Face, h0, h1 endSeg, r float64, res Resolution) (endSeg, endSeg, armRunout, bool, string) {
 	run := armRunout{capping: capping, regime: runoutOblique}
-	section, ok := intersectArmCapping(arm, capping.Geometry(), feet, r, res)
+	tol := res.Weld() * r
+	feet, ok, reason := armRunoutFeet(ef, capping.Geometry(), h0.from, h1.from, r, res)
 	if !ok {
-		// FR2 fills the port; until then oblique floors honestly, carrying the regime + feet it declined on.
-		return run, false, fmt.Sprintf("oblique runout: intersectArmCapping port unimplemented (FR2) for feet %v→%v", feet[0], feet[1])
+		return h0, h1, run, false, reason
+	}
+	section, ok := intersectArmCapping(ef.armSurface, capping.Geometry(), feet, r, res)
+	if !ok {
+		return h0, h1, run, false, fmt.Sprintf("oblique runout: intersectArmCapping declined the trim through feet %v→%v", feet[0], feet[1])
+	}
+	h0p, ok0 := reterminateRail(h0, feet[0], tol)
+	h1p, ok1 := reterminateRail(h1, feet[1], tol)
+	if !ok0 || !ok1 {
+		return h0, h1, run, false, fmt.Sprintf("oblique runout: host rail re-termination declined (foot %v on ef.a rail=%v, foot %v on ef.b rail=%v)", feet[0], ok0, feet[1], ok1)
 	}
 	run.trim = endSeg{from: feet[0], to: feet[1], curve: section, mid: section.PointAt(0.5)}
 	run.feet = feet
-	return run, true, ""
+	return h0p, h1p, run, true, ""
 }
 
 // farRunoutIsPerpendicular is the dispatch predicate (per arm, per far vertex): perpendicular iff the
