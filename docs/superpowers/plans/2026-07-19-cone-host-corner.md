@@ -93,14 +93,29 @@ canal-arm crux. One `geom.Cone` host + two `geom.Plane`s. Dispatch: `coneHostCor
     pinch-at-T (do NOT synthesize OCCT's 0.14 sliver; dedup C8's two canal cone-rails). Reuse FR1–FR3 for
     the cylinder perpendicular caps + torus meridian caps. → green C2/C6/D1 (corpus 60→63). Watertight +
     volume + per-face fold gates; byte-identity.
+  - **CN4b-1 (DONE, commit 36386894):** the canal arm's far-runout cap — oblique `canal ∩ cap-plane`
+    ψ-SWEEP (NOT x_f-sweep: x_f is non-monotone, the trim folds; sweep the monotone arc angle ψ and
+    root-find x_f per station) + D1 snout exact circle. Corpus 60, byte-identity verified.
+  - **CN4b-2 (DONE, commit e427c6c4): C2/C6 GREEN, corpus 60→62.** Cone corner weld + retrim; canal arm
+    rebuilt over `[x_f,far, x_f,C]`; great-circle welds reused; cone/plane host bites; pinch-at-T; D1 snout
+    auto-routed. Byte-identity of all 60 prior greens PROVEN (211-case fingerprint + vol). **D1 turned out to
+    be a SECOND C8-class deviation** (see below).
   - **CN-C8 (separate):** C8's apex-strip / consumed-apex topology (both radial planes → bottom slivers;
-    corner ball wraps over the top, excess 4.498 sr, area 448.4). Watertight + volume-positive; area
-    +1.07% (red pending the CN6 override).
+    corner ball wraps over the top, excess 4.498 sr, area 448.4). Watertight + volume-positive; MEASURE the
+    exact area (built +1.46%, over the +1.07% estimate — verify the topology is the correct exact
+    construction, not merely *some* watertight solid); area red pending the CN6 override.
 
-- **CN6 — Corpus gates + the C8 area decision.** occtparity scoreboard → corpus 64; do-no-harm across the
-  60 prior greens (mesh-hash); per-case fold/watertight gates for C2/C6/C8/D1; **MEASURE C8's exact-body
-  area**, and if over the 1% gate (est. +1.07%) add the hard-coded C8 test override with the forensic
-  receipts (never widen global deps). DRAWEXE per-face cross-check for all four.
+- **CN6 — Corpus gates + the C8 AND D1 area overrides.** occtparity scoreboard → corpus 64; do-no-harm
+  across the prior greens (mesh-hash); per-case fold/watertight gates for C2/C6/C8/D1; **MEASURE C8's + D1's
+  exact-body areas**, and add hard-coded per-case test overrides for **BOTH C8 (+1.46%) and D1 (+1.39%)**
+  with the forensic receipts (measured Δ; the specific way OCCT is wrong — C8's 3-stripe sag 0.052 off
+  tangency, D1's snout arm −3.5% under the envelope; that Oblikovati ships the exact rolling-ball) — never
+  widen global deps → corpus 64. DRAWEXE per-face cross-check for all four. User decision 2026-07-19
+  (memory `occt-oracle-not-religion`). Also: **COMMIT a shared canonical byte-identity fingerprint harness**
+  (CN4b-2 review Minor #2 — implementers keep rolling their own on the wrong bodies; re-invented in
+  CN1/M5/CN4b-1/CN4b-2). Fold in the carried CN4b-2 minors (#3 `fillet_orient.go:789` global-Polyline scope
+  vs its cone-canal comment; #4 `cornerBlendMeshesComplement` latent >hemisphere flip; #5 style-floor funcs
+  / dead assignment).
 
 **Order:** CN1 → CN2 (crux) → CN3 → CN4 → CN5 → CN6. CN3 needs CN1+CN2's arms to weld; CN4 needs CN3.
 Each task: fresh opus implementer + fable review + mesh-hash byte-identity + fold/watertight gates.
