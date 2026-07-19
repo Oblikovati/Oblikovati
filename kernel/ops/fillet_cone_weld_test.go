@@ -11,14 +11,16 @@ import (
 	"oblikovati.org/math"
 )
 
-// CN4b-2 — the cone-host corner WELD greens OCCT blend/simple/{C2,C6} and builds the exact D1 snout solid.
-// These drive the REAL imported fixtures through the full weld (computeCorners → computeFillets →
+// CN4b-2 — the cone-host corner WELD greens OCCT blend/simple/{C2,C6} and builds the exact D1 snout + C8
+// apex solids. These drive the REAL imported fixtures through the full weld (computeCorners → computeFillets →
 // weldCurvedArmOrFloor) and pin: watertight (Valid+HolesContained+IsSolid), volume-positive, per-face
 // FOLD-FREE (the brief's highest-priority gate), and the exact corner spherical-triangle Girard area.
 // D1's whole-body area is the EXACT rolling-ball fillet (canal band verified against direct integration in
 // the derivation), +1.39% over OCCT's snout APPROXIMATION — an honest exact-vs-OCCT deviation like C8,
 // forensically confirmed against DRAWEXE per-face (torus/cylinder/plane match to <0.01%; OCCT's canal is
 // 3.6% under the exact envelope). So D1's TOTAL is asserted as the exact value, not OCCT's approximation.
+// C8 (CN-C8) joins them: its exact apex-strip solid is +1.46% over OCCT, whose C8 corner is a non-tangent
+// filled sag (345.038 vs our exact ball cap 448.387) — the same exact-vs-OCCT posture, CN6 overrides both.
 
 // coneWeldFixture is a cone-host rim/snout corner and its DRAWEXE-pinned corner centre + Girard area.
 type coneWeldFixture struct {
@@ -35,6 +37,14 @@ func coneWeldFixtures() []coneWeldFixture {
 		{"C2", math.P3(90, 0, 0), 206.879, 40666.13, 40663.6, false},
 		{"C6", math.P3(0, -40, 150), 144.309, 89364.89, 89366.1, false},
 		{"D1", math.P3(50, 0, 0), 238.485, 10078.84, 9940.87, true},
+		// C8 — the APEX/consumed-apex corner (corner vertex IS the cone apex (0,0,120), CN-C8). Its two
+		// filleted edges are the two Cone∧Plane RULINGS (both canal arms end at the SAME pinch T, deduped —
+		// no bridge), the apex wedge opens into the cut, so the corner ball wraps OVER the top as the ROOF
+		// (Girard 448.387, spherical excess 4.498 sr — far bigger than a rim corner). Whole area 9781.45 is
+		// the EXACT rolling-ball fillet, +1.46% over OCCT's 9640.68: OCCT's own C8 corner is a non-tangent
+		// filled BSpline sag (area 345.038, base rail z=60.1934 vs our exact ball centre z=60.0589, 0.052 off
+		// cone tangency — DRAWEXE forensic in cnc8-report.md). An exact-vs-OCCT deviation like D1; CN6 overrides.
+		{"C8", math.P3(0, 0, 120), 448.387, 9781.45, 9640.68, true},
 	}
 }
 
