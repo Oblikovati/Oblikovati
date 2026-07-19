@@ -74,7 +74,27 @@ func assembleCurvedArmBody(body *topo.Body, fils []edgeFillet, blends map[uint64
 	if reason != "" {
 		return nil, reason
 	}
-	return assembleBody(faces), ""
+	return assembleCornerBlendBody(body, faces), ""
+}
+
+// assembleCornerBlendBody welds the corner faces, then corrects the one thing orientFilletShell cannot
+// pin: the corner blend sphere patch's ABSOLUTE winding, which the sphere-patch mesher reads to pick which
+// of the two regions it bounds. orientFilletShell fixes only RELATIVE windings and pins the shell's global
+// sense to an arbitrary arm seed, so a cone-host corner blend can land inverted and mesh the COMPLEMENT
+// (D1: 1016.7 vs the exact 238.5). When the original body has no host sphere and the built patch meshes >
+// a hemisphere, the whole shell is UNIFORMLY reversed and re-welded — a uniform flip is invisible to every
+// mesher except the sphere patch (whose region it inverts). It fires ONLY on the genuinely-inverted case
+// (never B3 or the 60 greens, whose sub-hemisphere caps mesh correctly), so byte-identity holds.
+func assembleCornerBlendBody(originalBody *topo.Body, faces []filletFace) *topo.Body {
+	built := assembleBody(faces)
+	if !cornerBlendMeshesComplement(originalBody, built) {
+		return built
+	}
+	flipped := make([]filletFace, len(faces))
+	for i, f := range faces {
+		flipped[i] = reverseFilletFace(f)
+	}
+	return assembleBody(flipped)
 }
 
 // curvedArmsOf returns the fils carrying an exact analytic arm surface (the curved Plane∧Cylinder
@@ -239,6 +259,11 @@ type armRails struct {
 	runout armRunout
 	hostA  endSeg // ef.a host contact rail, oriented outer→tHost (== segs[0])
 	hostB  endSeg // ef.b host contact rail, oriented outer→tHost (segs[2] is this, reversed)
+	// armSurface overrides ef.armSurface for the trimmed arm FACE when non-nil — the cone-ruling canal arm
+	// (CN4b-2) re-lofts over the CORNER span [x_f,far, x_f,C] (NOT the edge span), so the setback boundary is
+	// the exact v-edge of the surface rather than a curve interior to it (which meshes the sliver past the
+	// corner, D1 +119). nil for every torus/cylinder arm (its analytic surface already stops at the corner).
+	armSurface geom.Surface
 }
 
 // armRailBundle assembles one arm's four boundary rails (§B.5). t0/t1 are the arm's two host-tangent
@@ -248,6 +273,9 @@ type armRails struct {
 // section trim (intersectArmCapping) and RE-TERMINATES the two host rails on the feet (ADR-4). Returns a
 // non-empty reason (the exact obstruction) on any host-rail / setback / far-runout decline — do-no-harm.
 func armRailBundle(set armSetback, ef edgeFillet, w cornerWeld, filletedEdges map[uint64]bool, res Resolution) (armRails, string) {
+	if set.canalSpine != nil {
+		return canalArmRailBundle(set, ef, w, filletedEdges, res) // CN4b-2: cone-ruling canal arm (spring rails + oblique/snout cap)
+	}
 	t0 := endpointOf(w.center, w.radius, set.railDir0) // host-tangent point on ef.a
 	t1 := endpointOf(w.center, w.radius, set.railDir1) // host-tangent point on ef.b
 	h0, ok0 := armHostContactRail(ef.a, set, t0, w, res)
@@ -357,8 +385,12 @@ func farCrossSectionArc(arm geom.Surface, r float64, outer0, outer1 math.Point3)
 // faces use) so the blend's edges/faces inherit a stable topological name that survives an upstream
 // edit, rather than a build-order name that renumbers.
 func curvedArmTrimmedFace(rails armRails, ef edgeFillet) filletFace {
+	surface := ef.armSurface
+	if rails.armSurface != nil {
+		surface = rails.armSurface // CN4b-2: the canal arm re-lofted over the corner span [x_f,far, x_f,C]
+	}
 	return filletFace{
-		surface: ef.armSurface,
+		surface: surface,
 		loops:   []filletLoop{loopFromSegs(rails.segs)},
 		parent:  filletEdgeProvenance(ef.edge),
 	}

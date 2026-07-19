@@ -33,3 +33,14 @@ func (r reversedCurve3) TangentAt(t float64) math.Vector3 {
 }
 
 func (r reversedCurve3) Domain() (lo, hi float64) { return r.inner.Domain() }
+
+// InnerCurve unwraps a ReverseCurve3 wrapper to the underlying curve, so a caller can dispatch on the
+// CONCRETE type of a possibly-reversed rail (CN4b-2's reverseSegmentCurve: a cone-canal spring reversed at
+// build time is a reversedCurve3, and the type switch must still see the spring underneath). ReverseCurve3
+// never nests (it unwraps), so a single unwrap suffices; a non-reversed curve is returned unchanged.
+func InnerCurve(c Curve3) Curve3 {
+	if r, ok := c.(reversedCurve3); ok {
+		return r.inner
+	}
+	return c
+}

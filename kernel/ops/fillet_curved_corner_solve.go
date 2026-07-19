@@ -46,6 +46,10 @@ type armSetback struct {
 	// manually-built unit fixtures (which never solve a reflex arm).
 	armSweep      float64
 	armSweepKnown bool
+	// canalSpine is the exact hyperbola ball-centre spine of a Cone∧Plane RULING (canal) arm (CN2), carried
+	// on the setback so the weld's host-rail + far-runout builders reach it without the geom.BSplineSurface
+	// armSurface (which the tessellator keys on) having to smuggle it. nil for every torus/cylinder arm.
+	canalSpine *coneCanalSpine
 }
 
 // cornerWeld is the solved trihedral corner: the sphere (centre C, radius r), the per-arm setbacks,
@@ -97,7 +101,7 @@ func solveArmSetback(ef edgeFillet, c math.Point3, r, scale float64, res Resolut
 	if !ok0 || !ok1 {
 		return armSetback{}, false // a host is not tangent to the sphere at radius r
 	}
-	set := armSetback{arm: ef.armSurface, station: station, railDir0: d0, railDir1: d1}
+	set := armSetback{arm: ef.armSurface, station: station, railDir0: d0, railDir1: d1, canalSpine: ef.armCanalSpine}
 	if ef.edge != nil { // bare-face unit corners (b3CornerArms) carry no edge — leave the authority off
 		set.farVertex, set.runoutKnown = fartherEndpoint(ef.edge, c), true
 		if tor, ok := ef.armSurface.(geom.Torus); ok {

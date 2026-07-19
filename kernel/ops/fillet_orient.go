@@ -178,7 +178,16 @@ func reverseSegmentCurve(c geom.Curve3, from, mid, to math.Point3) geom.Curve3 {
 		}
 		return c // a closed non-arc rim seam (full-turn ellipse / b-spline): reversal is a no-op for the mesher
 	}
-	r, _ := geom.Arc3dByThreePoints(from, mid, to)
+	switch geom.InnerCurve(c).(type) {
+	case coneCanalSpring, geom.Polyline:
+		// A CN4b-2 cone-ruling-canal rail — the exact plane/cone-foot SPRING or the ⊥-axis far-cap polyline —
+		// has no by-endpoints reconstruction; reverse it generically (as reverseEndSegs does with ReverseCurve3),
+		// never re-fit it as an arc (which would replace the exact locus with a wrong circle). Scoped to these
+		// two cone-canal types ONLY so the pre-CN4b-2 corpus — incl. N7's BSpline/spiric canal-CORNER rails,
+		// which base reverses via Arc3dByThreePoints — stays byte-identical (the N7 byte-identity gate).
+		return geom.ReverseCurve3(c)
+	}
+	r, _ := geom.Arc3dByThreePoints(from, mid, to) // an OPEN arc (or any pre-CN4b-2 rail): the historical path, byte-identical
 	return r
 }
 

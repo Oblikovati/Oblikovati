@@ -112,9 +112,17 @@ func (s coneCanalSpine) xfSpanLoose(e *topo.Edge) (lo, hi float64) {
 // a general oblique cap is out of the cone corpus and declines with the offending pose. Called from
 // springCapFoot (which drops the reason) and springCapFootReasoned (which surfaces it).
 func (s coneCanalSpring) canalCapFoot(capping geom.Surface, near math.Point3, res Resolution) (math.Point3, bool, string) {
+	p, _, ok, reason := s.canalCapFootStation(capping, near, res)
+	return p, ok, reason
+}
+
+// canalCapFootStation is canalCapFoot plus the SIGNED hyperbola station x_f of the crossing — CN4b-2's
+// weld host-rail builder needs x_f to trim the spring locus exactly to its foot. Same classification and
+// guards as canalCapFoot (⊥-axis closed form / radial D1-snout / oblique reject).
+func (s coneCanalSpring) canalCapFootStation(capping geom.Surface, near math.Point3, res Resolution) (math.Point3, float64, bool, string) {
 	pl, ok := capping.(geom.Plane)
 	if !ok {
-		return math.Point3{}, false, fmt.Sprintf("canal cap foot: capping is %T, want geom.Plane", capping)
+		return math.Point3{}, 0, false, fmt.Sprintf("canal cap foot: capping is %T, want geom.Plane", capping)
 	}
 	axisDot := stdmath.Abs(float64(pl.Normal().Dot(s.spine.axis)))
 	switch {
@@ -123,7 +131,7 @@ func (s coneCanalSpring) canalCapFoot(capping geom.Surface, near math.Point3, re
 	case axisDot <= sinFloor:
 		return s.capFootRadial(pl, res)
 	}
-	return math.Point3{}, false, fmt.Sprintf(
+	return math.Point3{}, 0, false, fmt.Sprintf(
 		"canal cap foot: cap plane obliquely posed to the cone axis (|n̂·â|=%g, need ≥%g [⊥ axis] or ≤%g [radial through axis]) — out of the cone corpus",
 		axisDot, 1-sinFloor, sinFloor)
 }
@@ -131,16 +139,17 @@ func (s coneCanalSpring) canalCapFoot(capping geom.Surface, near math.Point3, re
 // capFootPerpAxis crosses the spring with a cap plane ⊥ the axis at apex-height h_cap: the ball-centre
 // axis distance ρ closing on h_cap is closed form (coneCapRho), and x_f=±√(ρ²−r²), the sign the ruling's
 // side (nearerFoot). ρ<r ⇒ the cap sits below the hyperbola vertex; decline with the offending values.
-func (s coneCanalSpring) capFootPerpAxis(pl geom.Plane, near math.Point3) (math.Point3, bool, string) {
+func (s coneCanalSpring) capFootPerpAxis(pl geom.Plane, near math.Point3) (math.Point3, float64, bool, string) {
 	hCap := float64(s.spine.apex.VectorTo(pl.Origin).Dot(s.spine.axis))
 	rho := coneCapRho(s.spine, hCap, s.onCone)
 	if rho < s.spine.radius {
-		return math.Point3{}, false, fmt.Sprintf(
+		return math.Point3{}, 0, false, fmt.Sprintf(
 			"canal cap foot: rolling ball never reaches the ⊥-axis cap on the %s spring (ρ=%g < r=%g at cap height h_cap=%g, cone half-angle α=%g rad)",
 			s.springName(), rho, s.spine.radius, hCap, s.spine.halfAngle())
 	}
 	xf := stdmath.Sqrt(rho*rho - s.spine.radius*s.spine.radius)
-	return s.nearerFoot(xf, near), true, ""
+	foot, signed := s.nearerFoot(xf, near)
+	return foot, signed, true, ""
 }
 
 // coneCapRho is the ball-centre axis distance ρ at which a canal spring's foot reaches apex-height h_cap:
@@ -163,36 +172,37 @@ func (s coneCanalSpring) springName() string {
 }
 
 // nearerFoot evaluates the spring foot at +x_f and −x_f (the two mirror crossings across the axis plane)
-// and keeps whichever lands nearer the far vertex — the one on the picked ruling's side.
-func (s coneCanalSpring) nearerFoot(xf float64, near math.Point3) math.Point3 {
+// and keeps whichever lands nearer the far vertex — the one on the picked ruling's side — returning both
+// the foot point and its SIGNED station (±x_f) so a caller can trim the spring locus to it.
+func (s coneCanalSpring) nearerFoot(xf float64, near math.Point3) (math.Point3, float64) {
 	p, q := s.foot(xf), s.foot(-xf)
 	if p.DistanceTo(near) <= q.DistanceTo(near) {
-		return p
+		return p, xf
 	}
-	return q
+	return q, -xf
 }
 
 // capFootRadial crosses the spring with a radial cap plane (∥ the axis) that passes THROUGH the axis —
 // the D1 snout, where both feet sit at the spine vertex x_f=0. A radial cap NOT through the axis, or one
 // whose normal is ⊥ the ruling's transverse ê, is out of scope and declines with the offending value.
-func (s coneCanalSpring) capFootRadial(pl geom.Plane, res Resolution) (math.Point3, bool, string) {
+func (s coneCanalSpring) capFootRadial(pl geom.Plane, res Resolution) (math.Point3, float64, bool, string) {
 	sp := s.spine
 	n := pl.Normal()
 	e0 := float64(sp.apex.VectorTo(pl.Origin).Dot(n)) // (o_cap − A)·n̂_cap
 	q := float64(sp.ePerp.Dot(n))
 	if tol := res.Weld() * sp.radius; stdmath.Abs(e0) > tol {
-		return math.Point3{}, false, fmt.Sprintf(
+		return math.Point3{}, 0, false, fmt.Sprintf(
 			"canal cap foot: radial cap misses the cone axis (incidence |(o−A)·n̂|=%g > tol=%g) — not the D1 snout", stdmath.Abs(e0), tol)
 	}
 	if stdmath.Abs(q) < sinFloor {
-		return math.Point3{}, false, fmt.Sprintf(
+		return math.Point3{}, 0, false, fmt.Sprintf(
 			"canal cap foot: radial cap normal ⊥ the ruling transverse ê (|ê·n̂|=%g < %g) — no crossing", stdmath.Abs(q), sinFloor)
 	}
 	xf := e0 / q
 	if s.onCone {
 		xf = sp.radius * float64(sp.nOut.Dot(n)) / q
 	}
-	return s.foot(xf), true, ""
+	return s.foot(xf), xf, true, ""
 }
 
 // halfAngle is the cone's half-angle α (radians) — for decline diagnostics.
