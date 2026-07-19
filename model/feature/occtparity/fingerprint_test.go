@@ -18,9 +18,18 @@ import (
 // adds test files must leave every prior-green body bit-identical here; this test pins the fingerprints so a
 // future shared-code edit that silently perturbs a green case fails loud. It is deliberately quantized to
 // 1e-6·(model scale) so it is robust to last-bit FP noise yet catches any real vertex move.
+//
+// SCOPE — winding is OUT of fingerprint scope. The full 3-vertex sort makes the hash invariant to a
+// triangle's WINDING (and to reflection), and the paired volume is |vol| (massprops.go re-orients each
+// facet topologically via consistentOutwardFlips, #1318), so NEITHER the hash NOR the volume detects a
+// UNIFORM triangle-winding flip — that is intentional: this kernel does not contract on tessellation
+// winding (orientation is recovered topologically), so fingerprint identity means POSITION/topology
+// identity, NOT orientation/winding identity. Do not read it as a winding oracle.
 
-// bodyMeshFingerprint returns the order-independent fingerprint of body b: the rounded volume, triangle
-// count, and the additive fold of every triangle's canonical hash. Usage:
+// bodyMeshFingerprint returns the order-independent fingerprint of body b: the raw signed-consistent volume,
+// triangle count, and the additive fold of every triangle's canonical hash. The volume is kept RAW (not
+// snapped to the quantum) so the pin can compare it at a rel tolerance well below the position quantum
+// (real re-run noise is ~1e-13); only the per-vertex POSITIONS are quantized, into the hash. Usage:
 //
 //	fp := bodyMeshFingerprint(caseResultBody(t, "B3"))
 func bodyMeshFingerprint(b *topo.Body) meshFingerprint {
@@ -32,7 +41,7 @@ func bodyMeshFingerprint(b *topo.Body) meshFingerprint {
 		sum, tris = foldFaceTriangles(f, quant, sum, tris)
 	}
 	vol := ops.BodyGeometryProperties(b, ops.PropertyQuality()).Volume
-	return meshFingerprint{Volume: roundTo(vol, quant), Triangles: tris, Hash: sum}
+	return meshFingerprint{Volume: vol, Triangles: tris, Hash: sum}
 }
 
 // meshFingerprint is a body's order-independent tessellation signature.
@@ -93,12 +102,4 @@ func sort3(h *[3]uint64) {
 	if h[0] > h[1] {
 		h[0], h[1] = h[1], h[0]
 	}
-}
-
-// roundTo snaps x to the nearest multiple of quant (guards last-bit FP noise in the volume).
-func roundTo(x, quant float64) float64 {
-	if quant <= 0 {
-		return x
-	}
-	return stdmath.Round(x/quant) * quant
 }

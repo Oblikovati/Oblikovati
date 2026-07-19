@@ -20,7 +20,7 @@ import (
 //   - both radial planes are cut down to bottom SLIVERS (two equal-area geom.Plane, + the untouched bottom
 //     disc = three planes total);
 //   - the corner ball wraps OVER the top as the ROOF — a geom.Sphere cap of Girard area ≈448.387 (spherical
-//     excess 4.498 sr), NOT its ~808 complement;
+//     excess 4.48387 sr = 448.387/r²), NOT its ~808 complement;
 //   - the two Cone∧Plane RULINGS become two symmetric canal arms (geom.BSplineSurface), whose cone-side
 //     rails BOTH end at the SAME pinch T (deduped — no synthesized bridge edge, so the edge count is 15).
 //

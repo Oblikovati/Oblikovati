@@ -40,7 +40,7 @@ func coneWeldFixtures() []coneWeldFixture {
 		// C8 — the APEX/consumed-apex corner (corner vertex IS the cone apex (0,0,120), CN-C8). Its two
 		// filleted edges are the two Cone∧Plane RULINGS (both canal arms end at the SAME pinch T, deduped —
 		// no bridge), the apex wedge opens into the cut, so the corner ball wraps OVER the top as the ROOF
-		// (Girard 448.387, spherical excess 4.498 sr — far bigger than a rim corner). Whole area 9781.45 is
+		// (Girard 448.387, spherical excess 4.48387 sr — far bigger than a rim corner). Whole area 9781.45 is
 		// the EXACT rolling-ball fillet, +1.46% over OCCT's 9640.68: OCCT's own C8 corner is a non-tangent
 		// filled BSpline sag (area 345.038, base rail z=60.1934 vs our exact ball centre z=60.0589, 0.052 off
 		// cone tangency — DRAWEXE forensic in cnc8-report.md). An exact-vs-OCCT deviation like D1; CN6 overrides.

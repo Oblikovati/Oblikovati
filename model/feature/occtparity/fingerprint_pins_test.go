@@ -9,8 +9,7 @@ import "testing"
 // shared weld/retrim/geometry code (it is verification + a forensic receipt), so every one of these must
 // stay bit-identical to the base worktree 6123169d. These VALUES were captured on base 6123169d and re-run
 // on the CN-C8 HEAD; if a future shared-code edit perturbs any of them, this fails loud with the delta. The
-// volumes match the brief's references (B3 190756.470897507, N7 963883.383205631) to the fingerprint's
-// model-relative quantum.
+// RAW volumes match the brief's references exactly (B3 190756.470897507, N7 963883.383205631).
 func TestByteIdentityFingerprints(t *testing.T) {
 	for _, tc := range byteIdentityPins() {
 		t.Run(tc.name, func(t *testing.T) {
@@ -19,8 +18,10 @@ func TestByteIdentityFingerprints(t *testing.T) {
 				t.Fatalf("%s fingerprint drifted: hash=%#x tris=%d, want hash=%#x tris=%d (shared geometry changed)",
 					tc.name, fp.Hash, fp.Triangles, tc.hash, tc.tris)
 			}
+			// RAW volume compared at rel 1e-9 — re-run noise is ~1e-13, so this has ~4 decades of margin
+			// and (unlike the earlier quantum-rounded volume) cannot false-red on a quantization boundary.
 			if rel := relErr(fp.Volume, tc.vol); rel > 1e-9 {
-				t.Fatalf("%s volume %.9f != base %.9f (rel %.3g)", tc.name, fp.Volume, tc.vol, rel)
+				t.Fatalf("%s volume %.12f != base %.12f (rel %.3g)", tc.name, fp.Volume, tc.vol, rel)
 			}
 		})
 	}
@@ -38,13 +39,13 @@ type fingerprintPin struct {
 // worktree at 6123169d and confirmed bit-identical on the CN-C8 HEAD (see cnc8-report.md §byte-identity).
 func byteIdentityPins() []fingerprintPin {
 	return []fingerprintPin{
-		{"B3", 190756.470862415, 31274, 0x2dff54b187389df4},
-		{"N7", 963883.383133711, 31472, 0x8bc99405bb8efa01},
-		{"C2", 510191.885540723, 121529, 0x1b3bc10e4d60136e},
-		{"C6", 1559718.455929083, 121634, 0xe1e51a060a4c1b02},
-		{"D5", 3432799.391739331, 64666, 0x7ef4f7950c6a410d},
-		{"D9", 10302524.214101996, 81106, 0x2eecacfc3279f7d6},
-		{"E4", 3460484.448938945, 59660, 0xf9912504516fdf8a},
-		{"C8", 64858.504100833, 39992, 0x66606a97c42af3b2},
+		{"B3", 190756.470897506602, 31274, 0x2dff54b187389df4},
+		{"N7", 963883.383205630700, 31472, 0x8bc99405bb8efa01},
+		{"C2", 510191.885601512506, 121529, 0x1b3bc10e4d60136e},
+		{"C6", 1559718.455869767116, 121634, 0xe1e51a060a4c1b02},
+		{"D5", 3432799.391629283316, 64666, 0x7ef4f7950c6a410d},
+		{"D9", 10302524.214111814275, 81106, 0x2eecacfc3279f7d6},
+		{"E4", 3460484.448986444157, 59660, 0xf9912504516fdf8a},
+		{"C8", 64858.504095408265, 39992, 0x66606a97c42af3b2},
 	}
 }
