@@ -30,8 +30,10 @@ func obliqueRetermRails(railA, railB endSeg, run0, run1 armRunout, tol float64) 
 	rA, okA := reterminateRailEnds(railA, run0.feet[0], run1.feet[0], startOblique, endOblique, tol)
 	rB, okB := reterminateRailEnds(railB, run0.feet[1], run1.feet[1], startOblique, endOblique, tol)
 	if !okA || !okB {
-		return endSeg{}, endSeg{}, fmt.Sprintf("single-arm runout: oblique rail re-termination declined "+
-			"(ef.a rail ok=%v, ef.b rail ok=%v; start-oblique=%v end-oblique=%v)", okA, okB, startOblique, endOblique)
+		return endSeg{}, endSeg{}, fmt.Sprintf("single-arm runout: oblique rail re-termination declined — a foot "+
+			"does not lie on its rail's line/circle (ef.a rail ok=%v, ef.b rail ok=%v; start-oblique=%v end-oblique=%v; "+
+			"start feet a=%v b=%v, end feet a=%v b=%v)", okA, okB, startOblique, endOblique,
+			run0.feet[0], run0.feet[1], run1.feet[0], run1.feet[1])
 	}
 	return rA, rB, ""
 }

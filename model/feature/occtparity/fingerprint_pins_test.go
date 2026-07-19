@@ -55,5 +55,18 @@ func byteIdentityPins() []fingerprintPin {
 		{"D9", 10302524.214111814275, 81106, 0x2eecacfc3279f7d6},
 		{"E4", 3460484.448986444157, 59660, 0xf9912504516fdf8a},
 		{"C8", 64858.504095408265, 39992, 0x66606a97c42af3b2},
+		// The 8 single-arm curved-RUNOUT greens (R1 fb1b0ca4 · R2a ac0249e9 · R2b 3f09eafe · R3
+		// 455b9543): B6/C9/C1 perpendicular, M7 plane-host inner-loop, C5/D8 reflex 270° major-sector,
+		// D4/E3 oblique cap. Captured on the R3 HEAD 455b9543; they lock the whole single-arm runout
+		// construction so any later slice that touches fillet_curved_single_runout*.go fails loud if it
+		// perturbs a runout body. Same cross-platform-risk caveat as above applies.
+		{"B6", 585938.532761026, 2564, 0x98fea16cb0b47c11},
+		{"C9", 74878.585980316, 33282, 0x83be9eb887bda640},
+		{"C1", 516328.521818100, 91108, 0x367226063c9789b0},
+		{"M7", 1070772.658316682, 1556, 0xbda4ca6e02f5e3fa},
+		{"C5", 1565080.392898256, 67716, 0x481e407c7b323a88},
+		{"D8", 10309699.178065298, 46272, 0x47fb6c5622612116},
+		{"D4", 3434287.473928707, 23974, 0x34f745da81d00eaf},
+		{"E3", 3478295.925438132, 52086, 0x8309a22efbfc928f},
 	}
 }
