@@ -22,10 +22,16 @@ canal-arm crux. One `geom.Cone` host + two `geom.Plane`s. Dispatch: `coneHostCor
 - **NO PR** — corpus far from whole-green; commit-on-branch only.
 - **BYTE-IDENTITY of every prior green is a HARD gate, verified at the MESH-BIT level, NOT verdict-set.**
   D9-T2 lesson: a verdict-set (PASS/FAIL) diff is INSUFFICIENT when shared retrim/solve/orient code is
-  touched — it missed a real E4 mesh drift. Each task's byte-identity gate = an FNV-64a hash over the raw
-  float64 bits of every prior-green body's full Property-quality tessellation (positions + indices), base
-  worktree vs HEAD, and ONLY the newly-greened cone cases may differ. Plus B3 vol 190756.470897507 / N7
-  vol 963883.383205631 unchanged.
+  touched — it missed a real E4 mesh drift. Each task's byte-identity gate compares, base worktree vs
+  HEAD, an **ORDER-INDEPENDENT commutative triangle-bit fingerprint** of every prior-green body's full
+  Property-quality tessellation — a mod-2⁶⁴ sum of per-triangle FNV-64a hashes. Do NOT use a POSITIONAL
+  FNV over (positions+indices): `TessellateBody`'s face/triangle EMISSION ORDER is nondeterministic
+  run-to-run (Go map-seed randomization, e.g. `facesToFix map[int]bool`), so a positional hash FLICKERS
+  even with zero geometry change (CN1 finding, confirmed pre-existing on base — a latent mesh-output-order
+  nondeterminism worth its own follow-up). The order-independent sum still catches any real geometry
+  change (a moved vertex → different incident triangles → different sum); pair it with per-body VOLUME
+  equality to cover the winding-flip blind spot. ONLY the newly-greened cone cases may differ. Plus B3 vol
+  190756.470897507 / N7 vol 963883.383205631 unchanged.
 - **EXACT canal surface — no BSpline approximation.** The ruling-edge arm is a canal over a hyperbola
   spine; build it EXACTLY via the existing geom canal stack (`crossSectionArc` exact rational-quadratic
   sections + homogeneous loft over closed-form conic stations), NOT a marched/approximated BSpline the
