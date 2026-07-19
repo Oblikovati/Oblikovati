@@ -263,20 +263,92 @@ func passthroughFace(f *topo.Face) filletFace {
 	return filletFace{surface: f.Geometry(), loops: loops, parent: f.Lineage()}
 }
 
-// singleRunoutHostFace re-clips one bitten host: it keeps the original-loop boundary span from the bite's
-// far foot back to its near foot that AVOIDS the removed feature vertex, then closes it with the bite itself
-// (the contact rail / far cross-section arc). Any inner (hole) loop is carried through unchanged. Declines
-// when the host has too few edges or a bite foot does not lie on its loop (farPathSegs) — do-no-harm.
+// singleRunoutHostFace re-clips one bitten host: it retrims the loop the bite actually consumes (the loop
+// carrying the removed feature vertex — the OUTER boundary for a simple host, but M7's flush-cut cap is bitten
+// on its INNER footprint loop), keeping that loop's span from the bite's far foot back to its near foot that
+// AVOIDS the removed vertex, then closing with the bite (the contact rail / far cross-section arc). Every OTHER
+// loop (e.g. M7 cap's unrelated outer box boundary) is carried through unchanged. Loop ROLES are preserved —
+// the OUTER loop stays at index 0 (assembleBody keys outer-ness on that) so the retrimmed inner footprint
+// stays a hole, not a phantom outer. Declines when the bitten loop is too small or a bite foot is off it.
 func singleRunoutHostFace(host *topo.Face, bite endSeg, avoid math.Point3, tol float64) (filletFace, bool) {
-	segs := originalHostSegs(host)
+	bitten := hostBittenLoop(host, avoid, tol)
+	outer := outerHostLoop(host)
+	if bitten == nil || outer == nil {
+		return filletFace{}, false // malformed host (no loops) — do-no-harm
+	}
+	retrim, ok := retrimBittenLoop(bitten, bite, avoid, tol)
+	if !ok {
+		return filletFace{}, false // a bite foot is not on the bitten loop, or the far path cannot close
+	}
+	loops := hostLoopsWithRetrim(host, bitten, outer, retrim)
+	return filletFace{surface: host.Geometry(), loops: loops, parent: host.Lineage()}, true
+}
+
+// retrimBittenLoop closes the retrimmed bitten loop: the surviving far-path span (bite's far foot back to its
+// near foot, avoiding the removed vertex) plus the bite (contact rail / far cross-section arc). Declines when
+// the loop is too small or a foot is off it. loopFromSegs drops source ids (coordinate weld) as before.
+func retrimBittenLoop(bitten *topo.Loop, bite endSeg, avoid math.Point3, tol float64) (filletLoop, bool) {
+	segs := segsFromLoop(bitten)
 	if len(segs) < 3 {
-		return filletFace{}, false
+		return filletLoop{}, false
 	}
 	far, ok := farPathSegs(segs, bite.to, bite.from, avoid, tol)
 	if !ok {
-		return filletFace{}, false // a bite foot is not on this host's loop, or the far path cannot close
+		return filletLoop{}, false
 	}
-	loop := append([]endSeg{bite}, far...)
-	loops := append([]filletLoop{loopFromSegs(loop)}, innerHostLoops(host)...)
-	return filletFace{surface: host.Geometry(), loops: loops, parent: host.Lineage()}, true
+	return loopFromSegs(append([]endSeg{bite}, far...)), true
+}
+
+// hostLoopsWithRetrim rebuilds the host's loop set with the bitten loop replaced by its retrim and every
+// other loop carried through unchanged, EMITTING THE OUTER LOOP FIRST (index 0) because assembleBody marks
+// loops[0] as the outer boundary. On a single-loop host (every prior single-arm green) this is just the
+// retrimmed outer loop — byte-identical to the previous [retrim]+no-inner emission.
+func hostLoopsWithRetrim(host *topo.Face, bitten, outer *topo.Loop, retrim filletLoop) []filletLoop {
+	out := []filletLoop{loopForRole(outer, bitten, retrim)}
+	for _, l := range host.Loops() {
+		if l != outer {
+			out = append(out, loopForRole(l, bitten, retrim))
+		}
+	}
+	return out
+}
+
+// loopForRole yields the retrim for the bitten loop and a COORDINATE-welded (loopFromSegs, id-0) pass-through
+// for any other loop — matching passthroughFace, so M7 cap's surviving outer box boundary welds to the id-0
+// pass-through box walls that share it (an id-carrying loop would not merge onto an id-0 neighbour, splitting
+// the shared edge).
+func loopForRole(l, bitten *topo.Loop, retrim filletLoop) filletLoop {
+	if l == bitten {
+		return retrim
+	}
+	return loopFromSegs(segsFromLoop(l))
+}
+
+// hostBittenLoop selects the host loop the fillet bite actually consumes — the loop carrying the picked
+// feature vertex the bite removes. It PREFERS the outer loop whenever that carries the vertex (every prior
+// single-arm green — B6/C9/C1/B7 and M7's three non-cap hosts — so their retrim stays byte-identical); it
+// drops to an inner loop only when the vertex is NOT on the outer boundary. That is M7's flush-cut cap (plane
+// x=60 through the cylinder axis): the picked-edge vertex lives on the cap's INNER footprint-hole loop, so
+// that hole (not the untouched outer box square) is the wire that recedes along the bite. nil for a loopless host.
+func hostBittenLoop(host *topo.Face, avoid math.Point3, tol float64) *topo.Loop {
+	outer := outerHostLoop(host)
+	if outer != nil && loopHasVertex(outer, avoid, tol) {
+		return outer
+	}
+	for _, l := range host.Loops() {
+		if loopHasVertex(l, avoid, tol) {
+			return l
+		}
+	}
+	return outer
+}
+
+// loopHasVertex reports whether p coincides (within the model-relative tol) with one of the loop's vertices.
+func loopHasVertex(l *topo.Loop, p math.Point3, tol float64) bool {
+	for _, u := range l.EdgeUses() {
+		if float64(useFromVertex(u).Point().DistanceTo(p)) <= tol {
+			return true
+		}
+	}
+	return false
 }
