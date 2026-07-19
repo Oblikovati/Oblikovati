@@ -101,8 +101,10 @@ func torusContactCircle(host geom.Surface, tor geom.Torus, res Resolution) (math
 		return sphereContactCircle(h, tor, res)
 	case geom.Cone:
 		return coneContactCircle(h, tor, res)
+	case geom.Torus:
+		return torusHostContactCircle(h, tor, res) // E7: arm torus rolling on a coaxial HOST torus
 	default:
-		return math.Point3{}, 0, false // only a cylinder wall, cap plane, host sphere, or host cone carries a torus rail
+		return math.Point3{}, 0, false // only a cylinder wall, cap plane, host sphere/cone, or host torus carries a torus rail
 	}
 }
 

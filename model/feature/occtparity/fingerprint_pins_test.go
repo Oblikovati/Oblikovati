@@ -73,5 +73,9 @@ func byteIdentityPins() []fingerprintPin {
 		// closed-band assembly so any later slice that touches the demux or the rim rebuild fails loud if
 		// it perturbs the J1 body. Same cross-platform-risk caveat as above applies.
 		{"J1", 3661547.474067254923, 69116, 0x33544bb82303b62c},
+		// E7: the convex latitude-cut Torus∧Plane rim welded through the single-arm runout (torusArmEdge /
+		// fillet_torusarm.go). Captured on this HEAD; it locks the E7 arm+host-torus retrim so any later slice
+		// that perturbs the torus-host arm or its contact circle fails loud. Same cross-platform-risk caveat.
+		{"E7", 2027042.935824126238, 82754, 0x9a211786edd20722},
 	}
 }
