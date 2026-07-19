@@ -375,11 +375,8 @@ type edgeFillet struct {
 // sampled as chords (shared by the ruling strips and the end faces).
 func computeEdgeFillet(body *topo.Body, p filletPick, blends map[uint64]*cornerBlend, miters map[uint64]*cornerMiter, concave ConcaveFill) (edgeFillet, error) {
 	e := p.edge
-	if ef, handled, err := cylinderArmEdge(body, e, p); handled {
-		return ef, err // M5 Slice A: exact cylinder/torus arm on a convex axis-aligned rim, or its honest reject
-	}
-	if ef, handled, err := sphereArmEdge(body, e, p); handled {
-		return ef, err // SP1: exact torus arm on a convex Sphere∧Plane rim, or its honest reject
+	if ef, handled, err := curvedHostArmEdge(body, e, p); handled {
+		return ef, err // an exact cylinder/sphere/cone-host arm on a convex curved rim, or its honest reject
 	}
 	if err := curvedAdjacentError(e); err != nil {
 		return edgeFillet{}, err // any other curved neighbour (cyl∩cyl miter seam, torus, sphere)
@@ -402,6 +399,21 @@ func computeEdgeFillet(body *topo.Body, p filletPick, blends map[uint64]*cornerB
 	in.a, in.b, in.axis = a, b, axis.AsVector()
 	in.weld = ResolutionForBody(body).Weld() // F3a: the spine-concurrence tolerance cornerAt gates the override on
 	return solvedEdgeFillet(e, p, in, blends, miters)
+}
+
+// curvedHostArmEdge dispatches an edge that borders a CURVED host face (cylinder, sphere, or cone) to
+// the matching exact-arm builder, in the do-no-harm order cylinder → sphere → cone (each fires only for
+// its own host pair, so a Plane∧Plane edge and every other host mix falls through unchanged). handled=true
+// means one builder OWNED the edge and computeEdgeFillet must return its result — the built arm or the
+// cause-specific honest reject; handled=false leaves the edge to curvedAdjacentError / the planar path.
+func curvedHostArmEdge(body *topo.Body, e *topo.Edge, p filletPick) (edgeFillet, bool, error) {
+	if ef, handled, err := cylinderArmEdge(body, e, p); handled {
+		return ef, handled, err // M5 Slice A: exact cylinder/torus arm on a convex axis-aligned rim
+	}
+	if ef, handled, err := sphereArmEdge(body, e, p); handled {
+		return ef, handled, err // SP1: exact torus arm on a convex Sphere∧Plane rim
+	}
+	return coneArmEdge(body, e, p) // CN1: exact torus arm on a convex Cone∧Plane cap (circle) edge
 }
 
 // filletFrame resolves the rolling-ball centre offset and the tangent-point normals for an edge,

@@ -99,9 +99,36 @@ func torusContactCircle(host geom.Surface, tor geom.Torus, res Resolution) (math
 		return capContactCircle(h, tor, res)
 	case geom.Sphere:
 		return sphereContactCircle(h, tor, res)
+	case geom.Cone:
+		return coneContactCircle(h, tor, res)
 	default:
-		return math.Point3{}, 0, false // only a cylinder wall, a cap plane, or a host sphere carries a torus rail
+		return math.Point3{}, 0, false // only a cylinder wall, cap plane, host sphere, or host cone carries a torus rail
 	}
+}
+
+// coneContactCircle is the torus↔host-cone contact (cone-host campaign CN1, cone-host-corner-derivation.md
+// §2): the arm's rolling ball, centred on the torus spine circle (radius R_s at apex-height h on the
+// axis), touches the host cone along the circle of radius s*·sinα centred on the axis at A + s*·cosα·â,
+// with s* = h·cosα + R_s·sinα. The result circle lies in a plane ⊥ â (the same frame as the torus, so
+// curvedHostArc's [0→φ*] sweep — including D9's reflex unwrap for C6's 270° edge — lands the pinch at
+// PointAt(1)). Rejects a torus not coaxial with the cone or whose tube is not internally tangent
+// (h·sinα − R_s·cosα ≠ r).
+func coneContactCircle(co geom.Cone, tor geom.Torus, res Resolution) (math.Point3, float64, bool) {
+	if !co.AxisDir.IsParallelTo(tor.AxisDir, retrimAxisParallelTol) {
+		return math.Point3{}, 0, false // torus axis not coaxial with the cone axis
+	}
+	a := co.AxisDir.AsVector()
+	h := float64(co.Apex.VectorTo(tor.Center).Dot(a)) // apex-height of the spine circle along â
+	band := res.Weld() * (tor.MajorRadius + tor.MinorRadius)
+	if float64(co.Apex.TranslateBy(a.Scale(h)).DistanceTo(tor.Center)) > band {
+		return math.Point3{}, 0, false // torus centre off the cone axis — not coaxial
+	}
+	sinA, cosA := stdmath.Sincos(co.HalfAngle)
+	if stdmath.Abs(h*sinA-tor.MajorRadius*cosA-tor.MinorRadius) > band {
+		return math.Point3{}, 0, false // tube not internally tangent to the cone (h·sinα − R_s·cosα ≠ r)
+	}
+	star := h*cosA + tor.MajorRadius*sinA
+	return co.Apex.TranslateBy(a.Scale(star * cosA)), star * sinA, true
 }
 
 // sphereContactCircle is the torus↔host-sphere contact (sphere-host campaign SP3): the arm's rolling
