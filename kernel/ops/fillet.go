@@ -928,6 +928,11 @@ func solveCorner(vid uint64, ps []filletPick) (*cornerBlend, *cornerMiter, error
 		cb, err := solveBlend(v, faces, r)
 		return cb, nil, err
 	case len(ps) == 2:
+		if closedRimPick(ps) {
+			return nil, nil, nil // a CLOSED rim (one edge counted twice: StartVertex==EndVertex) is not a
+			// 2-edge miter corner — it has no second edge and no shared face, so it takes no corner treatment
+			// and reaches the closed-band arm assembly (fillet_curved_closed_rim.go) instead of solveMiter (J1).
+		}
 		if p := varyingPick(ps); p != nil {
 			return nil, nil, fmt.Errorf("fillet: a variable-radius edge (radii %g→%g) cannot share a 2-edge miter corner (its cone has no seam with a cylinder); round the third edge for a setback instead", p.r0, p.r1)
 		}
@@ -949,6 +954,15 @@ func cornerRadius(vid uint64, ps []filletPick) (float64, error) {
 		}
 	}
 	return r, nil
+}
+
+// closedRimPick reports whether the two picks grouped at a corner vertex are the SAME closed edge
+// counted twice — a full-circle rim whose StartVertex==EndVertex lands its single pick in the
+// seam-vertex group at both endpoints. That is NOT a 2-edge miter (no second edge, no shared face),
+// so solveCorner returns no corner treatment and the rim reaches the closed-band arm assembly (J1).
+func closedRimPick(ps []filletPick) bool {
+	return len(ps) == 2 && ps[0].edge.ID() == ps[1].edge.ID() &&
+		ps[0].edge.StartVertex().ID() == ps[0].edge.EndVertex().ID()
 }
 
 // varyingPick returns the first pick whose radius varies along the edge, or nil if all are constant.

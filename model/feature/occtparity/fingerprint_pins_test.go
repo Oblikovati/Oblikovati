@@ -68,5 +68,10 @@ func byteIdentityPins() []fingerprintPin {
 		{"D8", 10309699.178065298, 46272, 0x47fb6c5622612116},
 		{"D4", 3434287.473928707, 23974, 0x34f745da81d00eaf},
 		{"E3", 3478295.925438132, 52086, 0x8309a22efbfc928f},
+		// The convex CLOSED cone-cap rim band (Miter-A1 / J1): a full torus band welded through the
+		// host-agnostic rim rebuild (fillet_curved_closed_rim.go). Captured on this HEAD; it locks the
+		// closed-band assembly so any later slice that touches the demux or the rim rebuild fails loud if
+		// it perturbs the J1 body. Same cross-platform-risk caveat as above applies.
+		{"J1", 3661547.474067254923, 69116, 0x33544bb82303b62c},
 	}
 }

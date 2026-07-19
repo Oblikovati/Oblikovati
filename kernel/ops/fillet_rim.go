@@ -54,10 +54,15 @@ type rimFillet struct {
 	seamEdge *topo.Edge // the wall's seam edge meeting the rim vertex, re-aimed lower
 	rimV     *topo.Vertex
 	bottomV  *topo.Vertex // the seam's other end (kept)
-	cylTan   geom.Circle  // where the torus meets the cylinder (radius Rc, receded along the axis)
+	cylTan   geom.Circle  // where the torus meets the developable host (cylinder Rc, or a cone contact circle)
 	capTan   geom.Circle  // where the torus meets the cap (radius Rc−r, at the cap)
 	torus    geom.Torus
 	r        float64
+	// seamMid is the on-arc midpoint of the tube seam joining cylTan.PointAt(0) → capTan.PointAt(0)
+	// (the point the seam Arc3dByThreePoints passes through). A perpendicular CYLINDER rim's contacts
+	// sit at tube v=0 and v=π/2, so it is torus.PointAt(0, π/4) (quarterTube); a CONE rim's contacts sit
+	// at other tube angles, so the closed-rim cone solver supplies the true between-contacts midpoint.
+	seamMid math.Point3
 }
 
 // resolveRim validates the picked edge is a convex cylinder/cap rim and solves the fillet geometry.
@@ -130,6 +135,7 @@ func solveRim(b *topo.Body, e *topo.Edge, cylF, capF *topo.Face, cyl geom.Cylind
 		cylTan: geom.Circle{Center: torusCenter, Normal: cyl.AxisDir, RefDir: ref, Radius: cyl.Radius},
 		capTan: geom.Circle{Center: capCenter, Normal: cyl.AxisDir, RefDir: ref, Radius: majorR},
 		torus:  tor, r: r,
+		seamMid: tor.PointAt(0, quarterTube), // perpendicular rim: contacts at v=0 (equator) and v=π/2 (cap)
 	}, nil
 }
 

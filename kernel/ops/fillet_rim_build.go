@@ -65,8 +65,7 @@ func (g *rimBuild) addRimEdges() {
 	lin := func(role string) topo.Lineage { return topo.NewLineage(topo.Tok("rimfillet", role, 0)) }
 	g.cylE = g.bld.AddEdge(g.rf.cylTan, g.vc, g.vc, lin("cyltan"))
 	g.capE = g.bld.AddEdge(g.rf.capTan, g.vt, g.vt, lin("captan"))
-	mid := g.rf.torus.PointAt(0, quarterTube) // the seam arc's midpoint: v=π/4, halfway cyl-tangent→cap-tangent
-	seam, _ := geom.Arc3dByThreePoints(g.rf.cylTan.PointAt(0), mid, g.rf.capTan.PointAt(0))
+	seam, _ := geom.Arc3dByThreePoints(g.rf.cylTan.PointAt(0), g.rf.seamMid, g.rf.capTan.PointAt(0))
 	g.seamE = g.bld.AddEdge(seam, g.vc, g.vt, lin("seam"))
 	bottom := g.verts[g.rf.bottomV]
 	g.wallE = g.bld.AddEdge(geom.NewLineSegment(bottom.Point(), g.vc.Point()), bottom, g.vc, lin("wallseam"))
