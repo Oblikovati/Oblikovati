@@ -24,10 +24,26 @@ import (
 // exercised only by direct construction/tests, never yet through a completed fillet.
 
 const (
-	// canalArmStations is the number of exact hyperbola stations sampled across the arm span (giving
-	// canalArmStations+1 cross-section columns). Each column is EXACT on the true envelope; the count
-	// controls only the cubic v-interpolation BETWEEN stations, so a smooth hyperbola arc needs few.
-	canalArmStations = 24
+	// canalArmStationsMin floors the ADAPTIVE station count: the refinement starts here and doubles
+	// (min, 2·, 4·, …) until the measured BETWEEN-station envelope error is ≤ the model-relative bound.
+	// Each column is EXACT on the true envelope; the count controls only the cubic v-interpolation BETWEEN
+	// stations. A smooth low-curvature arm (C2/C6) resolves within a doubling or two; the D1 snout — whose
+	// hyperbola-vertex curvature κ = cotα/r blows up — needs several (CN2 review: the old bare 24 left an
+	// uncontrolled 2.1e-2 gap at v≈0.995, right where CN5 must land the snout cap bit-exactly).
+	canalArmStationsMin = 24
+	// canalArmStationsMax caps the doubling. If the envelope error is still over bound here the spine is
+	// genuinely unresolvable (coneArmRulingUnresolved) — honest-reject with the offending error, never loft
+	// a band with a known gap (do-no-harm). D1 (the worst corpus case) resolves at 384, well inside the cap.
+	canalArmStationsMax = 512
+	// canalCurvatureWeightSamples discretizes the ∫κ^¼ cumulative used to PLACE the stations denser near the
+	// hyperbola vertex (κ^¼ equalizes the O(h⁴) cubic-loft position error κ·h⁴ across intervals). It samples
+	// the weight, not a tolerance — refinement stops on the MEASURED error, not on this count.
+	canalCurvatureWeightSamples = 2000
+	// canalCurvatureWeightExp is the ¼ power: station density ∝ κ^¼ equalizes the O(h⁴) cubic-interp error.
+	canalCurvatureWeightExp = 0.25
+	// canalSpineSearchIters is the golden-section iteration budget for the exact-spine closest-point the
+	// envelope-error measure needs (per mid-interval sample; a small bracket converges to machine precision).
+	canalSpineSearchIters = 64
 	// canalFoldArcSamples is how many points the band-arc fold guard tests per station (from the plane
 	// foot to the cone foot). The fold lobe of a canal over a high-curvature hyperbola vertex is on the
 	// concave (down-axis) side the band never enters, so sampling the band arc alone is enough.
@@ -140,11 +156,12 @@ func (s coneCanalSpine) stationOf(c math.Point3, scale, weld float64) (float64, 
 	return xf, true
 }
 
-// buildConeCanalArm builds the exact canal BSplineSurface of a convex-external Cone∧Plane ruling edge and
-// the spine descriptor the weld needs, or a cause-named reject. nOut is the plane's material-outward unit
-// normal (fixes the offset direction). It samples exact hyperbola stations across the picked edge's fit
-// span, builds each cross-section from the exact plane/cone feet, guards the band arc against a canal
-// fold, and lofts homogeneously via the shared geom canal stack — NO marching, NO approximation.
+// buildConeCanalArm builds the canal BSplineSurface of a convex-external Cone∧Plane ruling edge and the
+// spine descriptor the weld needs, or a cause-named reject. nOut is the plane's material-outward unit
+// normal (fixes the offset direction). Every station column is EXACT (closed-form hyperbola centre + exact
+// plane/cone feet) and the band arc is fold-guarded; the only inter-station approximation is the cubic
+// v-interpolation, whose envelope error resolveStations ADAPTIVELY refines to ≤ res.Weld() (curvature-weighted
+// station placement + doubling, CN2 review) — NO marching, NO uncontrolled gap.
 func buildConeCanalArm(e *topo.Edge, co geom.Cone, nOut math.UnitVector3, r float64, res Resolution) (geom.BSplineSurface, coneCanalSpine, coneArmReject) {
 	spine, reason := newConeCanalSpine(co, nOut, r, res)
 	if reason != coneArmBuilt {
@@ -154,13 +171,9 @@ func buildConeCanalArm(e *topo.Edge, co geom.Cone, nOut math.UnitVector3, r floa
 	if reason != coneArmBuilt {
 		return geom.BSplineSurface{}, coneCanalSpine{}, reason
 	}
-	centers, feetA, feetB, reason := spine.sampleStations(lo, hi)
+	_, surf, reason := spine.resolveStations(lo, hi, res)
 	if reason != coneArmBuilt {
 		return geom.BSplineSurface{}, coneCanalSpine{}, reason
-	}
-	surf, err := geom.LoftCanalStations(centers, feetA, feetB, r, res.Weld())
-	if err != nil {
-		return geom.BSplineSurface{}, coneCanalSpine{}, coneArmDegenerate
 	}
 	return surf, spine, coneArmBuilt
 }
@@ -206,29 +219,186 @@ func sortedSpan(a, b float64) (lo, hi float64) {
 	return stdmath.Min(a, b), stdmath.Max(a, b)
 }
 
-// sampleStations samples canalArmStations+1 exact hyperbola stations uniformly in x_f across [lo, hi],
-// returning the ball-centres and the exact plane/cone feet, after guarding each station's BAND ARC
-// (plane foot → cone foot) against a canal self-intersection (fold). A cone foot on the axis or a folded
-// band arc rejects (do-no-harm: never loft a malformed band).
-func (s coneCanalSpine) sampleStations(lo, hi float64) (centers, feetA, feetB []math.Point3, reason coneArmReject) {
-	n := canalArmStations
-	centers = make([]math.Point3, n+1)
-	feetA = make([]math.Point3, n+1)
-	feetB = make([]math.Point3, n+1)
-	for i := 0; i <= n; i++ {
-		xf := lo + (hi-lo)*float64(i)/float64(n)
+// canalStations bundles a chosen station set: the node coordinates x_f and their EXACT columns (ball
+// centre + plane/cone feet). It is what resolveStations produces, the loft consumes, and the envelope-error
+// measure re-reads — kept together so the node x_f (needed to bracket the closest-spine search) travels
+// with the columns.
+type canalStations struct {
+	xfs                   []float64
+	centers, feetA, feetB []math.Point3
+}
+
+// resolveStations chooses the station density that BOUNDS the between-station envelope error to the
+// model-relative res.Weld() — the same weld the arm's at-station exactness is measured to (ADR-0042). It
+// starts at canalArmStationsMin and doubles, each round placing curvature-weighted stations, lofting them,
+// and MEASURING the actual mid-interval envelope error (maxEnvelopeError), until the error is within bound —
+// returning the winning stations and their surface. If the cap canalArmStationsMax is reached still over
+// bound the spine is genuinely unresolvable (coneArmRulingUnresolved), honest-rejected rather than lofted
+// with a known gap (CN2 review replaced the old bare 24 that left D1's snout 2.1e-2 off the true envelope).
+func (s coneCanalSpine) resolveStations(lo, hi float64, res Resolution) (canalStations, geom.BSplineSurface, coneArmReject) {
+	for n := canalArmStationsMin; n <= canalArmStationsMax; n *= 2 {
+		st, reason := s.stationsAt(lo, hi, n)
+		if reason != coneArmBuilt {
+			return canalStations{}, geom.BSplineSurface{}, reason
+		}
+		surf, err := geom.LoftCanalStations(st.centers, st.feetA, st.feetB, s.radius, res.Weld())
+		if err != nil {
+			return canalStations{}, geom.BSplineSurface{}, coneArmDegenerate
+		}
+		if s.maxEnvelopeError(surf, st) <= res.Weld() {
+			return st, surf, coneArmBuilt
+		}
+	}
+	return canalStations{}, geom.BSplineSurface{}, coneArmRulingUnresolved
+}
+
+// stationsAt builds the n+1 curvature-weighted stations across [lo, hi]: exact hyperbola centre and exact
+// plane/cone feet per node, guarding each station's BAND ARC (plane foot → cone foot) against a canal
+// self-intersection (fold). A cone foot on the axis or a folded band arc rejects (do-no-harm: never loft a
+// malformed band). Nodes cluster near the hyperbola vertex (curvatureWeightedXf) rather than uniformly.
+func (s coneCanalSpine) stationsAt(lo, hi float64, n int) (canalStations, coneArmReject) {
+	xfs := s.curvatureWeightedXf(lo, hi, n)
+	st := canalStations{xfs: xfs}
+	st.centers = make([]math.Point3, n+1)
+	st.feetA = make([]math.Point3, n+1)
+	st.feetB = make([]math.Point3, n+1)
+	for i, xf := range xfs {
 		m := s.center(xf)
 		coneT, ok := s.coneFoot(m)
 		if !ok {
-			return nil, nil, nil, coneArmDegenerate
+			return canalStations{}, coneArmDegenerate
 		}
 		fP := s.planeFoot(m)
 		if s.bandArcMinRegularity(xf, m, fP, coneT) <= 0 {
-			return nil, nil, nil, coneArmRulingFold
+			return canalStations{}, coneArmRulingFold
 		}
-		centers[i], feetA[i], feetB[i] = m, fP, coneT
+		st.centers[i], st.feetA[i], st.feetB[i] = m, fP, coneT
 	}
-	return centers, feetA, feetB, coneArmBuilt
+	return st, coneArmBuilt
+}
+
+// curvatureWeightedXf places the n+1 station nodes over [lo, hi] with density ∝ κ(x_f)^¼, so the cubic
+// loft's O(h⁴) position error κ·h⁴ is equalized across intervals — clustering nodes at the hyperbola vertex
+// (κ = cotα/r maximal) instead of wasting them on the smooth far span, so a modest count resolves the D1
+// snout. Reduces to uniform where κ is constant. Nodes are the inverse-cumulative-weight images of an even
+// partition (an arc-length-style remap of x_f).
+func (s coneCanalSpine) curvatureWeightedXf(lo, hi float64, n int) []float64 {
+	cum := s.curvatureWeightCumulative(lo, hi)
+	total := cum[canalCurvatureWeightSamples]
+	span := float64(canalCurvatureWeightSamples)
+	out := make([]float64, n+1)
+	for j := 0; j <= n; j++ {
+		target := total * float64(j) / float64(n)
+		out[j] = lo + (hi-lo)*invertCumulative(cum, target)/span
+	}
+	return out
+}
+
+// curvatureWeightCumulative is the running trapezoidal integral of κ(x_f)^¼ over
+// canalCurvatureWeightSamples+1 uniform samples of [lo, hi]. κ = |curvatureVector| > 0 for every finite x_f
+// (ζ” > 0 on the hyperbola), so the cumulative is strictly increasing and invertible — no floor needed.
+func (s coneCanalSpine) curvatureWeightCumulative(lo, hi float64) []float64 {
+	cum := make([]float64, canalCurvatureWeightSamples+1)
+	prev := s.curvatureWeight(lo)
+	for i := 1; i <= canalCurvatureWeightSamples; i++ {
+		xf := lo + (hi-lo)*float64(i)/float64(canalCurvatureWeightSamples)
+		w := s.curvatureWeight(xf)
+		cum[i] = cum[i-1] + 0.5*(w+prev)
+		prev = w
+	}
+	return cum
+}
+
+// curvatureWeight is κ(x_f)^¼, the node-density weight (canalCurvatureWeightExp equalizes the O(h⁴) error).
+func (s coneCanalSpine) curvatureWeight(xf float64) float64 {
+	return stdmath.Pow(float64(s.curvatureVector(xf).Length()), canalCurvatureWeightExp)
+}
+
+// invertCumulative returns the fractional sample index t∈[0,S] where the strictly-increasing running
+// integral `cum` reaches `target`, linearly interpolating within the bracketing pair.
+func invertCumulative(cum []float64, target float64) float64 {
+	for i := 1; i < len(cum); i++ {
+		if cum[i] >= target {
+			return float64(i-1) + (target-cum[i-1])/(cum[i]-cum[i-1])
+		}
+	}
+	return float64(len(cum) - 1)
+}
+
+// maxEnvelopeError is the between-station envelope error the derivation must bound: the max over interval
+// MIDPOINTS (in v) and a u-sweep of |dist(surface point, exact spine) − r|. On the true canal every surface
+// point is at distance r from its characteristic ball centre; the cubic v-interp between exact station
+// columns deviates, and this measures that deviation with the exact spine machinery (CN2 review). At-station
+// columns are exact by construction, so the error peaks mid-interval.
+func (s coneCanalSpine) maxEnvelopeError(surf geom.BSplineSurface, st canalStations) float64 {
+	vp := spineChordParams(st.centers)
+	worst := 0.0
+	for j := 0; j+1 < len(st.centers); j++ {
+		vmid := 0.5 * (vp[j] + vp[j+1])
+		worst = stdmath.Max(worst, s.intervalEnvelopeError(surf, vmid, st.xfs[j], st.xfs[j+1]))
+	}
+	return worst
+}
+
+// intervalEnvelopeError samples the band across u at the mid-v of one station interval and returns the
+// largest |dist(point, exact spine) − r|. A mid-interval point's characteristic x_f lies between the two
+// bracketing stations, so the closest-spine search is confined to [x_f low, x_f high].
+func (s coneCanalSpine) intervalEnvelopeError(surf geom.BSplineSurface, vmid, xfA, xfB float64) float64 {
+	lo, hi := sortedSpan(xfA, xfB)
+	worst := 0.0
+	for _, u := range canalEnvelopeUSamples() {
+		p := surf.PointAt(u, vmid)
+		worst = stdmath.Max(worst, stdmath.Abs(s.distanceToSpine(p, lo, hi)-s.radius))
+	}
+	return worst
+}
+
+// canalEnvelopeUSamples are the across-band u parameters the envelope error is probed at (the two feet, the
+// mid arc, and the quarter points — enough to catch the worst deviation of the interpolated cross-section).
+func canalEnvelopeUSamples() []float64 { return []float64{0, 0.25, 0.5, 0.75, 1} }
+
+// distanceToSpine is the distance from p to the exact hyperbola spine — min over x_f∈[lo, hi] of
+// |p − center(x_f)| — by golden-section search (the distance is unimodal on a one-interval bracket around
+// the characteristic station). Reuses the exact center machinery; no marched geometry.
+func (s coneCanalSpine) distanceToSpine(p math.Point3, lo, hi float64) float64 {
+	return goldenSectionMin(func(xf float64) float64 { return float64(p.DistanceTo(s.center(xf))) }, lo, hi, canalSpineSearchIters)
+}
+
+// goldenSectionMin returns the minimum of a unimodal f over [lo, hi] after `iters` golden-section
+// contractions (each shrinks the bracket by the golden ratio ≈0.618; 64 reaches machine precision).
+func goldenSectionMin(f func(float64) float64, lo, hi float64, iters int) float64 {
+	const invPhi = 0.6180339887498949 // 1/φ
+	a, b := lo, hi
+	c, d := b-invPhi*(b-a), a+invPhi*(b-a)
+	fc, fd := f(c), f(d)
+	for k := 0; k < iters; k++ {
+		if fc < fd {
+			b, d, fd = d, c, fc
+			c = b - invPhi*(b-a)
+			fc = f(c)
+			continue
+		}
+		a, c, fc = c, d, fd
+		d = a + invPhi*(b-a)
+		fd = f(d)
+	}
+	return stdmath.Min(fc, fd)
+}
+
+// spineChordParams is the loft's v-parametrization: the normalized cumulative chord length of the station
+// centres (P&T §9.2.1, matching geom.alphaParams(·, 1)), so v_j is where station j's exact column lives on
+// the built surface. Shared by the envelope-error measure and the at-station exactness test.
+func spineChordParams(centers []math.Point3) []float64 {
+	cum := make([]float64, len(centers))
+	for k := 1; k < len(centers); k++ {
+		cum[k] = cum[k-1] + float64(centers[k-1].DistanceTo(centers[k]))
+	}
+	out := make([]float64, len(centers))
+	for k := range out {
+		out[k] = cum[k] / cum[len(centers)-1]
+	}
+	out[len(out)-1] = 1
+	return out
 }
 
 // bandArcMinRegularity is the minimum tube-regularity factor 1 − r·(K·d̂) over the BAND ARC (the
@@ -299,6 +469,10 @@ func coneCanalArmError(reason coneArmReject, co geom.Cone, r float64) error {
 	case coneArmRulingSpan:
 		return fmt.Errorf("fillet: cannot round this Cone∧Plane RULING edge with radius %g — the fittable canal-spine span "+
 			"collapses to a point (cone half-angle %g)", r, co.HalfAngle)
+	case coneArmRulingUnresolved:
+		return fmt.Errorf("fillet: cannot round this Cone∧Plane RULING edge with radius %g — the between-station envelope "+
+			"error stays over the model-relative bound at the %d-station cap (cone half-angle %g): the hyperbola spine is "+
+			"unresolvably high-curvature for this radius", r, canalArmStationsMax, co.HalfAngle)
 	default: // coneArmRulingFold
 		return fmt.Errorf("fillet: cannot round this Cone∧Plane RULING edge with radius %g — the constant-radius canal band "+
 			"self-intersects at a station (irregular band arc, 1−κ·r·cosψ ≤ 0; cone half-angle %g)", r, co.HalfAngle)

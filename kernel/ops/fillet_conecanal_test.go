@@ -203,48 +203,115 @@ func TestConeCanalArm_RealImport(t *testing.T) {
 			if !ok {
 				t.Fatalf("%s canal arm is %T, want geom.BSplineSurface", name, ef.armSurface)
 			}
-			assertLoftExactAtStations(t, name, *ef.armCanalSpine, e, surf)
+			assertLoftExactAtStations(t, name, *ef.armCanalSpine, e, ResolutionForBody(body))
 			assertArmMeshesFoldFree(t, name, surf)
 		})
 	}
 }
 
-// assertLoftExactAtStations recomputes the arm's exact stations and asserts the built surface passes
-// through each station's radius-r arc: surf.PointAt(u, v_j) is at distance r from centre c_j to ≤ weld.
-func assertLoftExactAtStations(t *testing.T, name string, s coneCanalSpine, e *topo.Edge, surf geom.BSplineSurface) {
+// TestConeCanalArm_BetweenStationBounded is the CN2-review gate: the ADAPTIVE station refinement must bound
+// the BETWEEN-station envelope error (max over interval midpoints of |dist(surface, exact spine) − r|) to
+// the model-relative weld on every real ruling arm — closing the uncontrolled 2.1e-2 gap the bare 24-station
+// count left at the D1 snout. It also pins that the count ADAPTS (D1's high-curvature snout gets many more
+// stations than C2/C6's smooth arms), not that a constant was merely bumped.
+func TestConeCanalArm_BetweenStationBounded(t *testing.T) {
+	counts := map[string]int{}
+	for _, name := range []string{"C2", "C6", "D1"} {
+		s, e, res := realConeCanalSpine(t, name)
+		lo, hi, reason := s.edgeXfSpan(e, res)
+		if reason != coneArmBuilt {
+			t.Fatalf("%s edgeXfSpan declined (reason %d)", name, reason)
+		}
+		st, surf, reason := s.resolveStations(lo, hi, res)
+		if reason != coneArmBuilt {
+			t.Fatalf("%s resolveStations declined (reason %d)", name, reason)
+		}
+		if got := s.maxEnvelopeError(surf, st); got > res.Weld() {
+			t.Fatalf("%s between-station envelope error %g over bound %g (weld) — refinement did not converge", name, got, res.Weld())
+		}
+		counts[name] = len(st.xfs) - 1
+	}
+	assertAdaptiveCounts(t, counts)
+	assertBare24LeavesD1Gap(t)
+}
+
+// assertAdaptiveCounts pins that the refinement adapts to curvature: D1's snout needs strictly more than
+// the floor, and both C2 and C6's smooth arms resolve with strictly fewer stations than D1.
+func assertAdaptiveCounts(t *testing.T, counts map[string]int) {
 	t.Helper()
-	lo, hi, reason := s.edgeXfSpan(e, ResolutionForSize(300))
+	if counts["D1"] <= canalArmStationsMin {
+		t.Fatalf("D1 resolved at %d stations, want > floor %d (the snout must refine up)", counts["D1"], canalArmStationsMin)
+	}
+	for _, name := range []string{"C2", "C6"} {
+		if counts[name] >= counts["D1"] {
+			t.Fatalf("%s resolved at %d stations, want < D1's %d (the smooth arms must need fewer)", name, counts[name], counts["D1"])
+		}
+	}
+}
+
+// assertBare24LeavesD1Gap is the mutation witness: at the old fixed 24 stations the D1 between-station
+// envelope error is grossly over the weld bound (~2e-2), proving the adaptive refinement is load-bearing.
+func assertBare24LeavesD1Gap(t *testing.T) {
+	t.Helper()
+	s, e, res := realConeCanalSpine(t, "D1")
+	lo, hi, _ := s.edgeXfSpan(e, res)
+	st, reason := s.stationsAt(lo, hi, canalArmStationsMin)
+	if reason != coneArmBuilt {
+		t.Fatalf("D1 stationsAt(24) declined (reason %d)", reason)
+	}
+	surf, err := geom.LoftCanalStations(st.centers, st.feetA, st.feetB, coneArmR, res.Weld())
+	if err != nil {
+		t.Fatalf("D1 24-station loft: %v", err)
+	}
+	if got := s.maxEnvelopeError(surf, st); got <= res.Weld()*100 {
+		t.Fatalf("witness broken: D1 at 24 stations envelope error %g not ≫ bound %g (the bare constant should be far off)", got, res.Weld())
+	}
+}
+
+// realConeCanalSpine imports a rim fixture, finds its Cone∧Plane ruling edge, and builds the exact spine
+// and the model-relative resolution — the real-geometry entry point for the ruling-arm gates.
+func realConeCanalSpine(t *testing.T, name string) (coneCanalSpine, *topo.Edge, Resolution) {
+	t.Helper()
+	body := importSimpleFixture(t, name)
+	e := findConeRulingEdge(t, body)
+	co, pl, _, planeFace, ok := conePlaneEdge(e)
+	if !ok {
+		t.Fatalf("%s edge is not a Cone∧Plane edge", name)
+	}
+	res := ResolutionForBody(body)
+	nOut, err := math.UnitVector3FromVector(outwardPlaneNormal(planeFace, pl))
+	if err != nil {
+		t.Fatalf("%s outward plane normal: %v", name, err)
+	}
+	spine, reason := newConeCanalSpine(co, nOut, coneArmR, res)
+	if reason != coneArmBuilt {
+		t.Fatalf("%s newConeCanalSpine declined (reason %d)", name, reason)
+	}
+	return spine, e, res
+}
+
+// assertLoftExactAtStations recomputes the arm's chosen (adaptive) stations and asserts the built surface
+// passes through each station's radius-r arc: surf.PointAt(u, v_j) is at distance r from centre c_j to ≤
+// weld. It uses the SAME resolveStations the production build used, so v_j matches the surface's columns.
+func assertLoftExactAtStations(t *testing.T, name string, s coneCanalSpine, e *topo.Edge, res Resolution) {
+	t.Helper()
+	lo, hi, reason := s.edgeXfSpan(e, res)
 	if reason != coneArmBuilt {
 		t.Fatalf("%s edgeXfSpan declined (reason %d)", name, reason)
 	}
-	centers, _, _, reason := s.sampleStations(lo, hi)
+	st, surf, reason := s.resolveStations(lo, hi, res)
 	if reason != coneArmBuilt {
-		t.Fatalf("%s sampleStations declined (reason %d)", name, reason)
+		t.Fatalf("%s resolveStations declined (reason %d)", name, reason)
 	}
-	weld := ResolutionForSize(300).Weld()
-	vparams := chordLengthParams(centers)
-	for j, c := range centers {
+	weld := res.Weld()
+	vparams := spineChordParams(st.centers)
+	for j, c := range st.centers {
 		for _, u := range []float64{0, 0.3, 0.5, 0.7, 1} {
 			if d := stdmath.Abs(float64(surf.PointAt(u, vparams[j]).DistanceTo(c)) - coneArmR); d > weld {
 				t.Fatalf("%s station %d u=%g: surface point %g off radius r from the exact centre (weld %g)", name, j, u, d, weld)
 			}
 		}
 	}
-}
-
-// chordLengthParams reproduces alphaParams(·, 1): the normalized cumulative chord length of the centres,
-// which is the loft's v-parametrization — so v_j is where station j's exact column lives.
-func chordLengthParams(pts []math.Point3) []float64 {
-	cum := make([]float64, len(pts))
-	for k := 1; k < len(pts); k++ {
-		cum[k] = cum[k-1] + float64(pts[k-1].DistanceTo(pts[k]))
-	}
-	out := make([]float64, len(pts))
-	for k := range out {
-		out[k] = cum[k] / cum[len(pts)-1]
-	}
-	out[len(out)-1] = 1
-	return out
 }
 
 // assertArmMeshesFoldFree tessellates the whole [0,1]² canal-arm patch through the production fold-driven

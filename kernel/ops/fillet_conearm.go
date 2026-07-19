@@ -52,18 +52,19 @@ func conePlaneEdge(e *topo.Edge) (co geom.Cone, pl geom.Plane, coneFace, planeFa
 type coneArmReject uint8
 
 const (
-	coneArmBuilt         coneArmReject = iota // the arm (torus or canal) was built — not a reject
-	coneArmVaryingRadius                      // r0≠r1: the cone arm is constant-radius only
-	coneArmConcaveBore                        // material OUTSIDE the cone (bore, s=−1) — a follow-on slice
-	coneArmOblique                            // the plane is neither ⊥ nor ∥ the axis (oblique) — out of slice
-	coneArmNearCylinder                       // sinα below band: apex shift r/sinα blows up (a true cylinder host)
-	coneArmNearPlane                          // cosα below band: near-plane cone (α→π/2)
-	coneArmClears                             // h′ ≤ 0: the offset cap plane clears the offset cone, no spine circle
-	coneArmGrazing                            // spine (major) radius R_s below band — a grazing/tangent cap
-	coneArmDegenerate                         // the torus/canal/normal constructor declined — a collapsed frame
-	coneArmRulingNoFit                        // ruling canal (CN2): the ball never fits the picked span
-	coneArmRulingSpan                         // ruling canal (CN2): the fittable x_f span collapses
-	coneArmRulingFold                         // ruling canal (CN2): a band-arc station is irregular (self-intersects)
+	coneArmBuilt            coneArmReject = iota // the arm (torus or canal) was built — not a reject
+	coneArmVaryingRadius                         // r0≠r1: the cone arm is constant-radius only
+	coneArmConcaveBore                           // material OUTSIDE the cone (bore, s=−1) — a follow-on slice
+	coneArmOblique                               // the plane is neither ⊥ nor ∥ the axis (oblique) — out of slice
+	coneArmNearCylinder                          // sinα below band: apex shift r/sinα blows up (a true cylinder host)
+	coneArmNearPlane                             // cosα below band: near-plane cone (α→π/2)
+	coneArmClears                                // h′ ≤ 0: the offset cap plane clears the offset cone, no spine circle
+	coneArmGrazing                               // spine (major) radius R_s below band — a grazing/tangent cap
+	coneArmDegenerate                            // the torus/canal/normal constructor declined — a collapsed frame
+	coneArmRulingNoFit                           // ruling canal (CN2): the ball never fits the picked span
+	coneArmRulingSpan                            // ruling canal (CN2): the fittable x_f span collapses
+	coneArmRulingFold                            // ruling canal (CN2): a band-arc station is irregular (self-intersects)
+	coneArmRulingUnresolved                      // ruling canal (CN2): between-station envelope error over bound at the station cap
 )
 
 // coneArmClass is which cone∧plane configuration an edge is, decided by the angle between the plane
@@ -253,7 +254,7 @@ func coneArmError(reason coneArmReject, e *topo.Edge, co geom.Cone, coneFace *to
 	switch reason {
 	case coneArmConcaveBore, coneArmOblique, coneArmVaryingRadius:
 		return coneArmClassifyError(reason, e, co, coneFace, r)
-	case coneArmRulingNoFit, coneArmRulingSpan, coneArmRulingFold:
+	case coneArmRulingNoFit, coneArmRulingSpan, coneArmRulingFold, coneArmRulingUnresolved:
 		return coneCanalArmError(reason, co, r) // the ruling-edge canal build declines (CN2)
 	default:
 		return coneArmSurfaceError(reason, co, r)
