@@ -142,7 +142,7 @@ func TestConeCornerGirardArea(t *testing.T) {
 	for _, fx := range coneWeldFixtures() {
 		t.Run(fx.name, func(t *testing.T) {
 			welded := weldConeCornerFixture(t, fx)
-			sph, mesh, ok := cornerSphereMesh(welded)
+			_, mesh, ok := cornerSphereMesh(welded)
 			if !ok {
 				t.Fatalf("%s: no corner sphere face", fx.name)
 			}
@@ -150,7 +150,6 @@ func TestConeCornerGirardArea(t *testing.T) {
 			if stdmath.Abs(area-fx.girard) > 0.01*fx.girard {
 				t.Fatalf("%s: corner Girard area %.3f != exact %.3f (>1%%) — cap/complement mis-mesh?", fx.name, area, fx.girard)
 			}
-			_ = sph
 		})
 	}
 }

@@ -180,11 +180,16 @@ func reverseSegmentCurve(c geom.Curve3, from, mid, to math.Point3) geom.Curve3 {
 	}
 	switch geom.InnerCurve(c).(type) {
 	case coneCanalSpring, geom.Polyline:
-		// A CN4b-2 cone-ruling-canal rail — the exact plane/cone-foot SPRING or the ⊥-axis far-cap polyline —
-		// has no by-endpoints reconstruction; reverse it generically (as reverseEndSegs does with ReverseCurve3),
-		// never re-fit it as an arc (which would replace the exact locus with a wrong circle). Scoped to these
-		// two cone-canal types ONLY so the pre-CN4b-2 corpus — incl. N7's BSpline/spiric canal-CORNER rails,
-		// which base reverses via Arc3dByThreePoints — stays byte-identical (the N7 byte-identity gate).
+		// A cone-ruling-canal rail with no by-endpoints reconstruction: the exact plane/cone-foot SPRING
+		// (coneCanalSpring), or the ⊥-axis far-cap trim, which is the ONLY geom.Polyline any fillet rail
+		// ever produces (anchoredTrimPolyline, fillet_cone_far.go — CN4b-2). Reverse it generically (as
+		// reverseEndSegs does with ReverseCurve3): a spring reverses exactly and a polyline reverses to the
+		// same polyline traversed backwards, so ReverseCurve3 is always faithful for BOTH — never re-fit
+		// either as an arc (which would replace the exact locus with a wrong circle). The geom.Polyline arm
+		// of this case is therefore effectively scoped to the cone-canal far-cap even though the type match
+		// is unqualified: no other fillet rail is a geom.Polyline. Crucially it does NOT match N7's
+		// BSpline/spiric canal-CORNER rails, which base reverses via Arc3dByThreePoints — the N7
+		// byte-identity gate; and a genuinely correct polyline reversal would be safe here regardless.
 		return geom.ReverseCurve3(c)
 	}
 	r, _ := geom.Arc3dByThreePoints(from, mid, to) // an OPEN arc (or any pre-CN4b-2 rail): the historical path, byte-identical

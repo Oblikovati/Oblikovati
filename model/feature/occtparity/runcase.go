@@ -81,7 +81,7 @@ func assertCaseResult(t *testing.T, r Record, res []*topo.Body, filletOK bool, r
 	case FailFaulty:
 		t.Fatalf("%s/%s: result not a valid solid: %s", r.Grid, r.Case, reason)
 	case Pass:
-		assertArea(t, r.Grid+"/"+r.Case, props.Area, r.ExpectedArea, r.Deps)
+		assertCaseArea(t, r.Grid+"/"+r.Case, props.Area, r)
 	}
 }
 

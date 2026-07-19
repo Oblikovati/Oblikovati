@@ -36,7 +36,15 @@ type fingerprintPin struct {
 }
 
 // byteIdentityPins are the base-6123169d fingerprints, captured by running bodyMeshFingerprint in a git
-// worktree at 6123169d and confirmed bit-identical on the CN-C8 HEAD (see cnc8-report.md §byte-identity).
+// worktree at 6123169d and confirmed bit-identical on the CN-C8 HEAD (see cnc8-report.md §byte-identity)
+// and again on the CN6 HEAD (cn6-report.md §byte-identity; CN6 is a test-harness-only change).
+//
+// CROSS-PLATFORM RISK (record only — do NOT fix here; for the pre-PR cross-platform-stability pass,
+// CLAUDE.md hard-coded-values rule): these are hard-coded 64-bit hashes of quantized tessellated
+// coordinates. arm64 FMA/libm rounding could shift a vertex across a 1e-6·scale quantization boundary
+// and flip a hash → a FALSE red off linux/amd64. Fine for the corpus's linux/amd64 runs. The pre-PR
+// pass must re-capture on arm64 and either confirm identical or widen the quantum / drop the hash pins
+// to the (rounding-robust) volume+triangle-count pins there. No arm64 re-capture is attempted here.
 func byteIdentityPins() []fingerprintPin {
 	return []fingerprintPin{
 		{"B3", 190756.470897506602, 31274, 0x2dff54b187389df4},

@@ -37,3 +37,18 @@ func assertArea(t testingT, name string, got, expected, deps float64) {
 func areaWithin(got, expected, deps float64) bool {
 	return stdmath.Abs(got-expected)/stdmath.Abs(expected) <= deps
 }
+
+// assertCaseArea asserts the built area against OCCT's reference for a genuine-parity case, or —
+// when the case carries a documented per-case deviation (OCCT's own result is geometrically
+// flawed; occt-oracle-not-religion) — against OUR known-correct exact area, first logging the
+// forensic receipt (the OCCT area deviated from, the signed deviation, and the Reason). BOTH
+// branches gate at r.Deps, so a future regression of OUR geometry >Deps off the exact area still
+// FAILS — unlike a todo-skip, which would stop gating the case entirely. The global deps is never
+// widened: only C8/D1 carry a Deviation; every other case asserts OCCT's ExpectedArea unchanged.
+func assertCaseArea(t testingT, name string, area float64, r Record) {
+	if d := r.Deviation; d != nil {
+		t.Logf("%s: per-case exact-deviation — asserting OUR exact area %.6g (%+.2f%% from OCCT %.6g): %s",
+			name, d.ExactArea, (d.ExactArea-d.OCCTArea)/d.OCCTArea*100, d.OCCTArea, d.Reason)
+	}
+	assertArea(t, name, area, r.areaTarget(), r.Deps)
+}

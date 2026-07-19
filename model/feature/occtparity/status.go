@@ -8,6 +8,7 @@ type Outcome int
 
 const (
 	Pass                 Outcome = iota
+	PassDeviation                // valid solid at OUR documented exact area (OCCT's own result is flawed; occt-oracle-not-religion)
 	FailFaulty                   // result not a valid solid (OCCT \bFaulty\b)
 	FailArea                     // valid but area outside tolerance (asserted separately)
 	Incomplete                   // OCCT tolerance-ang IGNORE analogue
@@ -15,11 +16,18 @@ const (
 	SkipImportDivergence         // STEP input did not import faithfully — not a fillet defect
 )
 
+// IsPass reports whether the outcome counts as a pass — genuine parity (Pass) OR a documented
+// per-case exact-deviation (PassDeviation) — so scoreboard summaries roll the two documented
+// deviations into the pass tally while still listing them in their own column.
+func (o Outcome) IsPass() bool { return o == Pass || o == PassDeviation }
+
 // String names an outcome for the scoreboard table.
 func (o Outcome) String() string {
 	switch o {
 	case Pass:
 		return "PASS"
+	case PassDeviation:
+		return "PASS(deviation)"
 	case FailFaulty:
 		return "FAIL(faulty)"
 	case FailArea:

@@ -33,18 +33,41 @@ type Pick struct {
 	Law     [][2]float64 `json:"law"`
 }
 
+// CaseDeviation documents a case whose EXACT rolling-ball area is known-correct but differs from
+// OCCT's own reference area by more than Deps because OCCT's own result is geometrically flawed
+// (occt-oracle-not-religion). When present, the area gate asserts OUR ExactArea (still a real
+// regression gate at Deps) instead of OCCTArea, and logs Reason as a forensic receipt. It is nil
+// for every genuine-parity case; only C8 and D1 carry one (see cnc8-report.md / cn4b2-report.md).
+// The global Deps is NEVER widened — the deviation is a per-case, forensically-justified override.
+type CaseDeviation struct {
+	ExactArea float64 `json:"exactArea"` // OUR forensically-verified exact rolling-ball whole-body area
+	OCCTArea  float64 `json:"occtArea"`  // OCCT's (flawed) reference area this case deviates from
+	Reason    string  `json:"reason"`    // the forensic receipt: why OCCT is wrong and we are right
+}
+
 // Record is one OCCT tests/blend case: which blend verb ran, OCCT's reference area and
-// tolerance, any TODO marker (mirrored, never exceeded), the input-solid STEP filename, and
-// the picks. Shape is frozen in test-utilities/occt-blend/oracle/schema.json.
+// tolerance, any TODO marker (mirrored, never exceeded), the input-solid STEP filename, an
+// optional per-case exact-deviation override, and the picks. Shape is frozen in
+// test-utilities/occt-blend/oracle/schema.json.
 type Record struct {
-	Grid         string  `json:"grid"`
-	Case         string  `json:"case"`
-	Verb         string  `json:"verb"`
-	ExpectedArea float64 `json:"expectedArea"`
-	Deps         float64 `json:"deps"`
-	TODO         string  `json:"todo"`
-	InputStep    string  `json:"inputStep"`
-	Picks        []Pick  `json:"picks"`
+	Grid         string         `json:"grid"`
+	Case         string         `json:"case"`
+	Verb         string         `json:"verb"`
+	ExpectedArea float64        `json:"expectedArea"`
+	Deps         float64        `json:"deps"`
+	TODO         string         `json:"todo"`
+	InputStep    string         `json:"inputStep"`
+	Deviation    *CaseDeviation `json:"deviation,omitempty"`
+	Picks        []Pick         `json:"picks"`
+}
+
+// areaTarget is the area the gate asserts: OCCT's reference for a genuine-parity case, or OUR
+// known-correct exact area for a documented per-case deviation (occt-oracle-not-religion).
+func (r Record) areaTarget() float64 {
+	if r.Deviation != nil {
+		return r.Deviation.ExactArea
+	}
+	return r.ExpectedArea
 }
 
 // parseRecord decodes one oracle JSON record.

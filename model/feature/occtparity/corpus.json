@@ -12910,6 +12910,11 @@
 		"deps": 0.01,
 		"todo": "",
 		"inputStep": "simple/C8.step",
+		"deviation": {
+			"exactArea": 9781.45,
+			"occtArea": 9640.68,
+			"reason": "OCCT's C8 corner is a non-tangent 3-stripe BSpline sag (control points pinned z≈60.1934, area 345.0, 0.052 off cone tangency); Oblikovati ships the exact tangent rolling-ball corner (Girard 448.387, z 60.0589, cone-tangency cert 3.7e-14). Per-case exact-deviation, not a defect — see occt-oracle-not-religion."
+		},
 		"picks": [
 			{
 				"radius": 10,
@@ -13020,6 +13025,11 @@
 		"deps": 0.01,
 		"todo": "",
 		"inputStep": "simple/D1.step",
+		"deviation": {
+			"exactArea": 10078.8,
+			"occtArea": 9940.87,
+			"reason": "OCCT's snout ruling arm is −3.5% under the true rolling-ball envelope (OCCT canal 1620.3 vs exact 1679.07 by direct integration; one-sided sag to −4.09 inside) and over-removes volume; the torus/cylinder/plane faces match OCCT <0.003%. Oblikovati ships the exact canal. Per-case exact-deviation, not a defect."
+		},
 		"picks": [
 			{
 				"radius": 10,

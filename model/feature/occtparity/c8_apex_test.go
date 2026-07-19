@@ -87,6 +87,11 @@ func assertC8Symmetries(t *testing.T, body *topo.Body, planeAreas []float64) {
 			canals = append(canals, faceMeshArea2(f))
 		}
 	}
+	// Guard the two-arm assumption before indexing/dividing: a topology regression that dropped a
+	// canal arm would otherwise panic (index) or divide by a zero area (NaN) instead of failing clean.
+	if len(canals) != 2 || canals[0] == 0 {
+		t.Fatalf("C8 expects exactly two non-degenerate canal-arm BSpline faces, got %d areas %v", len(canals), canals)
+	}
 	if rel := stdmath.Abs(canals[0]-canals[1]) / canals[0]; rel > 0.01 {
 		t.Fatalf("C8 canal arms not congruent: %.3f vs %.3f (rel %.3f%% > 1%%)", canals[0], canals[1], rel*100)
 	}

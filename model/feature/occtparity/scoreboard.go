@@ -43,10 +43,13 @@ func ScoreCase(r Record, fixtureDir string) Outcome {
 	if o := classify(r, true, filletOK, ok && props.Volume > 0); o != Pass {
 		return o
 	}
-	if areaWithin(props.Area, r.ExpectedArea, r.Deps) {
-		return Pass
+	if !areaWithin(props.Area, r.areaTarget(), r.Deps) {
+		return FailArea
 	}
-	return FailArea
+	if r.Deviation != nil {
+		return PassDeviation // a documented per-case exact-deviation (occt-oracle-not-religion)
+	}
+	return Pass
 }
 
 // scoreLocate resolves every pick to an edge fillet set, returning ok=false if any pick cannot

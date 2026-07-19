@@ -20,3 +20,19 @@ func TestClassifyMirrorsOCCT(t *testing.T) {
 		t.Fatal("import failure separates from fillet")
 	}
 }
+
+// TestPassDeviationRollsUp checks the documented per-case deviation outcome names itself distinctly
+// yet rolls into the pass tally (Pass and PassDeviation both count as a pass; failures/skips do not).
+func TestPassDeviationRollsUp(t *testing.T) {
+	if PassDeviation.String() != "PASS(deviation)" {
+		t.Fatalf("PassDeviation String = %q", PassDeviation.String())
+	}
+	if !Pass.IsPass() || !PassDeviation.IsPass() {
+		t.Fatal("Pass and PassDeviation must both count as a pass")
+	}
+	for _, o := range []Outcome{FailArea, FailFaulty, SkipTODO, SkipImportDivergence, Incomplete} {
+		if o.IsPass() {
+			t.Fatalf("%s must not count as a pass", o)
+		}
+	}
+}

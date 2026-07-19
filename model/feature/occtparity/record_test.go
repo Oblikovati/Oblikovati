@@ -48,6 +48,32 @@ func TestParseOracleRecordBuildevolLaw(t *testing.T) {
 	}
 }
 
+// A per-case exact-deviation record parses into a non-nil Deviation with the exact/OCCT areas and
+// receipt; a record without the key defaults to nil (every genuine-parity case). areaTarget then
+// picks OUR exact area for a deviation case and OCCT's ExpectedArea otherwise.
+func TestParseOracleRecordDeviation(t *testing.T) {
+	r, err := parseRecord([]byte(`{"grid":"simple","case":"C8","verb":"blend","expectedArea":9640.68,"deps":0.01,"todo":"","inputStep":"simple/C8.step","deviation":{"exactArea":9781.45,"occtArea":9640.68,"reason":"OCCT sag"},"picks":[]}`))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	if r.Deviation == nil {
+		t.Fatal("deviation record parsed with nil Deviation")
+	}
+	if r.Deviation.ExactArea != 9781.45 || r.Deviation.OCCTArea != 9640.68 || r.Deviation.Reason != "OCCT sag" {
+		t.Fatalf("deviation fields: %+v", *r.Deviation)
+	}
+	if r.areaTarget() != 9781.45 {
+		t.Fatalf("deviation areaTarget = %v, want the exact area 9781.45", r.areaTarget())
+	}
+	plain, _ := parseRecord([]byte(`{"grid":"simple","case":"A1","expectedArea":100,"deps":0.01,"picks":[]}`))
+	if plain.Deviation != nil {
+		t.Fatalf("no-deviation record got non-nil Deviation: %+v", plain.Deviation)
+	}
+	if plain.areaTarget() != 100 {
+		t.Fatalf("plain areaTarget = %v, want ExpectedArea 100", plain.areaTarget())
+	}
+}
+
 // A malformed record surfaces the offending input in the error (CLAUDE.md exception rule).
 func TestParseOracleRecordRejectsGarbage(t *testing.T) {
 	_, err := parseRecord([]byte(`{"grid":`))
