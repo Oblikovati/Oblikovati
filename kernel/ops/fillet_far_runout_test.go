@@ -284,7 +284,7 @@ func allPerpendicularFarGaps(t *testing.T, name string) []float64 {
 	body := importCorpusSolid(t, name)
 	var gaps []float64
 	for _, e := range body.Edges() {
-		ef, handled, err := cylinderArmEdge(body, e, filletPick{edge: e, r0: 10, r1: 10})
+		ef, handled, err := cylinderArmEdge(body, e, filletPick{edge: e, r0: 10, r1: 10}, FillConcaveOutward)
 		if !handled || err != nil || ef.armSurface == nil {
 			continue
 		}

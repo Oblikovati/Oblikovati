@@ -62,7 +62,7 @@ func curvedFilletError(e *topo.Edge, cyl geom.Cylinder, pl geom.Plane, res Resol
 // the honest reject; handled=false leaves the edge to the sphere/planar dispatch unchanged. Split out
 // (the sibling of sphereArmEdge) to keep computeEdgeFillet within funlen; behavior is identical to the
 // former inline branch.
-func cylinderArmEdge(body *topo.Body, e *topo.Edge, p filletPick) (edgeFillet, bool, error) {
+func cylinderArmEdge(body *topo.Body, e *topo.Edge, p filletPick, concave ConcaveFill) (edgeFillet, bool, error) {
 	cyl, pl, ok := cylinderPlaneEdge(e)
 	if !ok {
 		return edgeFillet{}, false, nil
@@ -71,7 +71,10 @@ func cylinderArmEdge(body *topo.Body, e *topo.Edge, p filletPick) (edgeFillet, b
 	if ef, built := curvedArmFillet(e, cyl, pl, p, res); built {
 		return ef, true, nil // exact torus/cylinder arm on a convex axis-aligned rim
 	}
-	return edgeFillet{}, true, curvedFilletError(e, cyl, pl, res) // concave / oblique / decline — do-no-harm
+	if ef, built := concaveCurvedArmFillet(body, e, cyl, pl, p, res, concave); built {
+		return ef, true, nil // N3/M4/N9: exact concave cylinder arm on a reentrant Cylinder∧Plane line edge
+	}
+	return edgeFillet{}, true, curvedFilletError(e, cyl, pl, res) // torus/oblique concave / decline — do-no-harm
 }
 
 // curvedArmFillet builds the exact rolling-ball arm on a CONVEX axis-aligned Plane∧Cylinder edge

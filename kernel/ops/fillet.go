@@ -373,6 +373,12 @@ type edgeFillet struct {
 	// the analytic spine cannot ride inside it). Nil on every non-canal arm. The cone-host corner weld
 	// (CN4) reads it for the closed-form arm station; byte-invisible to all other paths.
 	armCanalSpine *coneCanalSpine
+	// armConcave marks the exact analytic arm as the CONCAVE Cylinder∧Plane cylinder arm (N3/M4/N9): the
+	// ball rolls in the reentrant VOID and the fillet ADDS the fill wedge (fillet_concave_arm.go). Its
+	// material-outward normal is negated vs the convex arm ((centre−P)/r), so the single-arm runout weld
+	// winds the arm band the other way (singleRunoutFaces). FALSE on every convex arm, keeping the convex
+	// single-arm runout greens (B6/C9/C1/M7/…) byte-identical.
+	armConcave bool
 }
 
 // computeEdgeFillet solves the rolling-ball geometry for one convex straight edge, using a
@@ -380,8 +386,8 @@ type edgeFillet struct {
 // sampled as chords (shared by the ruling strips and the end faces).
 func computeEdgeFillet(body *topo.Body, p filletPick, blends map[uint64]*cornerBlend, miters map[uint64]*cornerMiter, concave ConcaveFill) (edgeFillet, error) {
 	e := p.edge
-	if ef, handled, err := curvedHostArmEdge(body, e, p); handled {
-		return ef, err // an exact cylinder/sphere/cone-host arm on a convex curved rim, or its honest reject
+	if ef, handled, err := curvedHostArmEdge(body, e, p, concave); handled {
+		return ef, err // an exact cylinder/sphere/cone-host arm on a convex curved rim (or concave cyl arm), or its honest reject
 	}
 	if err := curvedAdjacentError(e); err != nil {
 		return edgeFillet{}, err // any other curved neighbour (cyl∩cyl miter seam, torus, sphere)
@@ -411,9 +417,9 @@ func computeEdgeFillet(body *topo.Body, p filletPick, blends map[uint64]*cornerB
 // only for its own host pair, so a Plane∧Plane edge and every other host mix falls through unchanged). handled=true
 // means one builder OWNED the edge and computeEdgeFillet must return its result — the built arm or the
 // cause-specific honest reject; handled=false leaves the edge to curvedAdjacentError / the planar path.
-func curvedHostArmEdge(body *topo.Body, e *topo.Edge, p filletPick) (edgeFillet, bool, error) {
-	if ef, handled, err := cylinderArmEdge(body, e, p); handled {
-		return ef, handled, err // M5 Slice A: exact cylinder/torus arm on a convex axis-aligned rim
+func curvedHostArmEdge(body *topo.Body, e *topo.Edge, p filletPick, concave ConcaveFill) (edgeFillet, bool, error) {
+	if ef, handled, err := cylinderArmEdge(body, e, p, concave); handled {
+		return ef, handled, err // M5 Slice A: exact cylinder/torus arm on a convex (or concave N3/M4/N9) axis-aligned rim
 	}
 	if ef, handled, err := sphereArmEdge(body, e, p); handled {
 		return ef, handled, err // SP1: exact torus arm on a convex Sphere∧Plane rim

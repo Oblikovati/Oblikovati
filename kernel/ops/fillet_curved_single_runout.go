@@ -315,13 +315,27 @@ func singleRunoutHostFaces(body *topo.Body, ef edgeFillet, railA, railB endSeg, 
 			out = append(out, passthroughFace(f)) // untouched by the runout — verbatim (coordinate-welded)
 			continue
 		}
-		ff, ok := singleRunoutHostFace(f, bite, avoid[f], tol)
+		ff, ok := runoutHostRetrim(f, ef, bite, avoid[f], tol)
 		if !ok {
 			return nil, fmt.Sprintf("single-arm runout: host %T retrim declined (bite %v→%v)", f.Geometry(), bite.from, bite.to)
 		}
 		out = append(out, ff)
 	}
 	return out, ""
+}
+
+// runoutHostRetrim dispatches one bitten host's retrim: a CONCAVE arm host (ef.a/ef.b on an armConcave
+// fillet — N3/M4/N9) GROWS to the contact rail via concaveArmHostRetrim (feet on the rim-edge
+// extensions), while every convex host and every cap keeps the byte-identical recede-and-splice
+// singleRunoutHostFace. Gating on ef.armConcave keeps the convex single-arm runout greens bit-identical.
+func runoutHostRetrim(f *topo.Face, ef edgeFillet, bite endSeg, avoid math.Point3, tol float64) (filletFace, bool) {
+	if !ef.armConcave {
+		return singleRunoutHostFace(f, bite, avoid, tol)
+	}
+	if f == ef.a || f == ef.b {
+		return concaveArmHostRetrim(f, bite, ef.edge, tol) // arm host GROWS to the contact rail
+	}
+	return concaveCapRetrim(f, bite, avoid, tol) // end cap GAINS the fill wedge (variant b)
 }
 
 // passthroughFace carries a face the runout does not touch through UNCHANGED, but with COORDINATE-welded
