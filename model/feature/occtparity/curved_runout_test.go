@@ -22,6 +22,48 @@ import (
 
 const m7AreaRelTol = 0.01 // matches the corpus deps gate (1%)
 
+// TestObliqueRunoutD4E3WholeBody is the whole-body gate for the OBLIQUE-cap single-arm curved runouts —
+// D4 (both z=±130 caps OBLIQUE, |t·n|=0.5) and E3 (MIXED: one perpendicular south-pole end + one OBLIQUE
+// z=130 cap end on ONE arm). R3's per-end oblique rail re-termination (obliqueRetermRails) lands each host
+// contact rail's outer end ON the oblique cross-section trim's foot so the geom.Sphere host retrim closes;
+// before it, both floored at "host geom.Sphere retrim declined". This pins, on the REAL imported STEP
+// bodies, that each welds a watertight solid at the oracle face count (every edge 2-incident, valid +
+// closed + holes-contained + IsSolid), every face meshes FOLD-FREE (the highest-priority tessellation
+// gate), the host-sphere face carries the corner-bite region (not its ~4× complement), and the whole-body
+// mesh area equals OCCT's DRAWEXE oracle within deps 0.01. Oracle: .superpowers/sdd/curved-runout-forensic.md §1–2.
+func TestObliqueRunoutD4E3WholeBody(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		faces      int
+		wholeArea  float64 // OCCT whole-body area (deps 0.01)
+		hostSphere float64 // tessellated area of the trimmed host-sphere face (guards against a complement fill)
+	}{
+		{"D4", 6, 135107, 57831},
+		{"E3", 5, 137105, 61729},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			body := caseResultBody(t, tc.name)
+			assertWatertight(t, tc.name, body, tc.faces)
+			assertNoFaceFolds(t, tc.name, body)
+			assertHostSphereRegion(t, tc.name, body, tc.hostSphere)
+			assertWholeBodyMeshArea(t, tc.name, body, tc.wholeArea)
+		})
+	}
+}
+
+// assertWholeBodyMeshArea sums every face's Property-quality mesh area and fails unless it matches the OCCT
+// oracle within m7AreaRelTol (the corpus deps gate). A wrong-region host retrim or a collapsed trim reads far off.
+func assertWholeBodyMeshArea(t *testing.T, name string, body *topo.Body, want float64) {
+	t.Helper()
+	total := 0.0
+	for _, f := range body.Faces() {
+		total += faceMeshArea2(f)
+	}
+	if rel := stdmath.Abs(total-want) / want; rel > m7AreaRelTol {
+		t.Fatalf("%s whole-body mesh area %.1f, want OCCT %.0f within deps %.2f (rel %.5f)", name, total, want, m7AreaRelTol, rel)
+	}
+}
+
 // TestM7WholeBodyWatertight asserts the single-arm runout welds a watertight 11-face manifold solid — every
 // edge 2-incident, valid + closed + holes-contained + IsSolid — the flush-cut-cap retrim's crux (a cracked
 // or mis-classified inner-loop retrim fails here loud).

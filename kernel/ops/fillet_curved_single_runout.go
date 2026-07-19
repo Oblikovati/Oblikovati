@@ -101,16 +101,7 @@ func singleArmRunoutBody(body *topo.Body, ef edgeFillet, res Resolution) (*topo.
 	if !ok {
 		return nil, fmt.Sprintf("single-arm runout: arm surface %T is neither an exact cylinder nor torus (no rolling-ball radius)", arm)
 	}
-	feet, reason := singleRunoutFeet(ef, arm, r, res)
-	if reason != "" {
-		return nil, reason
-	}
-	railA, okA := armRunoutRail(ef.a, ef.edge, arm, feet.a0, feet.a1, res)
-	railB, okB := armRunoutRail(ef.b, ef.edge, arm, feet.b0, feet.b1, res)
-	if !okA || !okB {
-		return nil, fmt.Sprintf("single-arm runout: a host contact rail could not be built (ef.a ok=%v, ef.b ok=%v)", okA, okB)
-	}
-	run0, run1, reason := singleRunoutTrims(ef, railA, railB, r, res)
+	railA, railB, run0, run1, reason := singleRunoutRailsAndTrims(ef, arm, r, res)
 	if reason != "" {
 		return nil, reason
 	}
@@ -119,6 +110,33 @@ func singleArmRunoutBody(body *topo.Body, ef edgeFillet, res Resolution) (*topo.
 		return nil, reason
 	}
 	return assembleBody(orientRunoutSphereHost(body, faces)), ""
+}
+
+// singleRunoutRailsAndTrims builds the two host contact rails at the PERPENDICULAR rolling-ball feet,
+// terminates BOTH ends through the far-runout engine (yielding each end's cross-section trim + capping
+// identity), then re-terminates the rails onto any OBLIQUE end's analytic feet (R3, obliqueRetermRails) so
+// an oblique end's rail terminus coincides with its trim foot (D4/E3) while perpendicular ends stay
+// byte-identical. Returns rails whose outer ends match the trims' feet — the shared-edge identity the
+// host retrim needs to close. Any decline (naming the offending values) floors honestly to the caller.
+func singleRunoutRailsAndTrims(ef edgeFillet, arm geom.Surface, r float64, res Resolution) (endSeg, endSeg, armRunout, armRunout, string) {
+	feet, reason := singleRunoutFeet(ef, arm, r, res)
+	if reason != "" {
+		return endSeg{}, endSeg{}, armRunout{}, armRunout{}, reason
+	}
+	railA, okA := armRunoutRail(ef.a, ef.edge, arm, feet.a0, feet.a1, res)
+	railB, okB := armRunoutRail(ef.b, ef.edge, arm, feet.b0, feet.b1, res)
+	if !okA || !okB {
+		return endSeg{}, endSeg{}, armRunout{}, armRunout{}, fmt.Sprintf("single-arm runout: a host contact rail could not be built (ef.a ok=%v, ef.b ok=%v)", okA, okB)
+	}
+	run0, run1, reason := singleRunoutTrims(ef, railA, railB, r, res)
+	if reason != "" {
+		return endSeg{}, endSeg{}, armRunout{}, armRunout{}, reason
+	}
+	railA, railB, reason = obliqueRetermRails(railA, railB, run0, run1, res.Weld()*r)
+	if reason != "" {
+		return endSeg{}, endSeg{}, armRunout{}, armRunout{}, reason
+	}
+	return railA, railB, run0, run1, ""
 }
 
 // orientRunoutSphereHost seeds a sphere-HOST single-runout shell (D8) from its host sphere, wound so the
