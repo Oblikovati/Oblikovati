@@ -38,11 +38,22 @@ func loftCanal(spine Curve3, hosts [2]Surface, radius float64, res Resolution) (
 	if err != nil {
 		return BSplineSurface{}, err
 	}
-	vParams, err := alphaParams(coords3(verts), 1) // chord-length spine parametrization (P&T §9.2.1)
+	return loftStationColumns(verts, cols)
+}
+
+// loftStationColumns lofts precomputed cross-section columns centred at `centers` into the
+// degree-2-rational-u × spline-v canal BSpline: chord-length v-params (P&T §9.2.1), an averaged-knot
+// interpolating v-degree, and the homogeneous 3×N assembly. It is the SHARED tail of both the marched
+// N7 corner fill (loftCanal, whose columns come from projecting the ball onto the host surfaces) and the
+// exact-station arm loft (LoftCanalStations, whose columns come from closed-form feet) — extracted so
+// the CN2 canal arm reuses the P&T loft verbatim instead of forking it. len(centers) == len(cols) >= 2
+// is guaranteed by both callers, so fitDegree cannot error here.
+func loftStationColumns(centers []math.Point3, cols []arcStation) (BSplineSurface, error) {
+	vParams, err := alphaParams(coords3(centers), 1) // chord-length spine parametrization (P&T §9.2.1)
 	if err != nil {
 		return BSplineSurface{}, fmt.Errorf("loftCanal: spine chord-length params: %w", err)
 	}
-	vDeg, _ := fitDegree(len(verts)) // len(verts) >= 2 guaranteed above → no error
+	vDeg, _ := fitDegree(len(centers)) // len(centers) >= 2 guaranteed by callers → no error
 	return assembleCanalLoft(cols, vParams, vDeg)
 }
 

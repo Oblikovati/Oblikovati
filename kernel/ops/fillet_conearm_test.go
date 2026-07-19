@@ -267,13 +267,14 @@ func TestClassifyConeArm_RulingRejects(t *testing.T) {
 	cap := planeOn(t, math.P3(0, 0, 0), math.V3(0, 0, -1))    // ⊥ axis
 	ruling := planeOn(t, math.P3(0, 0, 0), math.V3(0, 1, 0))  // contains the axis (n̂ ⊥ â)
 	oblique := planeOn(t, math.P3(0, 0, 0), math.V3(0, 1, 1)) // neither
-	if got := classifyConeArm(co, cap, res); got != coneClassTorus {
+	rEdge := 90.0                                             // the C2 bottom-rim radius (the model-relative band divisor)
+	if got := classifyConeArm(co, cap, rEdge, res); got != coneClassTorus {
 		t.Fatalf("cap plane ⊥ axis classified %d, want coneClassTorus", got)
 	}
-	if got := classifyConeArm(co, ruling, res); got != coneClassRuling {
+	if got := classifyConeArm(co, ruling, rEdge, res); got != coneClassRuling {
 		t.Fatalf("ruling plane ∥ axis classified %d, want coneClassRuling", got)
 	}
-	if got := classifyConeArm(co, oblique, res); got != coneClassOblique {
+	if got := classifyConeArm(co, oblique, rEdge, res); got != coneClassOblique {
 		t.Fatalf("oblique plane classified %d, want coneClassOblique", got)
 	}
 }

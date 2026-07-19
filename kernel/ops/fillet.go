@@ -368,6 +368,11 @@ type edgeFillet struct {
 	// planar straight-edge fillet, whose surface is `cyl`. The corner engine (Task 4) reads it for the
 	// section rail; it is byte-invisible to the planar/straight paths, which never set it.
 	armSurface geom.Surface
+	// armCanalSpine is the exact hyperbola ball-centre spine of a Cone∧Plane RULING-edge canal arm (CN2),
+	// carried alongside armSurface (a geom.BSplineSurface — the tessellator keys on the concrete type, so
+	// the analytic spine cannot ride inside it). Nil on every non-canal arm. The cone-host corner weld
+	// (CN4) reads it for the closed-form arm station; byte-invisible to all other paths.
+	armCanalSpine *coneCanalSpine
 }
 
 // computeEdgeFillet solves the rolling-ball geometry for one convex straight edge, using a

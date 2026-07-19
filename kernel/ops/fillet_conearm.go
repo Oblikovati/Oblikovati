@@ -18,8 +18,8 @@ import (
 // r-offset of a cone is the coaxial cone with the same α and apex shifted r/sinα along +â, and its
 // planar section by the offset cap plane is a circle — the torus's spine (major) circle — with minor
 // radius r. The OTHER cone∧plane configuration, the RULING edge (plane CONTAINS the axis), is a canal
-// over a hyperbola — NOT a torus — and is CN2; here it honest-rejects rather than half-build. Dispatched
-// from computeEdgeFillet AFTER sphereArmEdge, before curvedAdjacentError, so every non-cone edge keeps
+// over a hyperbola — NOT a torus — built EXACTLY by coneCanalArmFillet (fillet_conecanal.go, CN2).
+// Dispatched from computeEdgeFillet AFTER sphereArmEdge, before curvedAdjacentError, so every non-cone edge keeps
 // its existing path byte-identically (a Cone∧Plane edge exists only in the still-red cone cases, and
 // their corner solve fails first at "corner face must be planar" — CN1 greens nothing on its own).
 // Convex-external only (material INSIDE the cone, A′ = A + r/sinα·â); the concave conical bore (material
@@ -52,16 +52,18 @@ func conePlaneEdge(e *topo.Edge) (co geom.Cone, pl geom.Plane, coneFace, planeFa
 type coneArmReject uint8
 
 const (
-	coneArmBuilt         coneArmReject = iota // the torus arm was built — not a reject
+	coneArmBuilt         coneArmReject = iota // the arm (torus or canal) was built — not a reject
 	coneArmVaryingRadius                      // r0≠r1: the cone arm is constant-radius only
 	coneArmConcaveBore                        // material OUTSIDE the cone (bore, s=−1) — a follow-on slice
-	coneArmRuling                             // the ruling edge (plane ∥ axis): a canal over a hyperbola — CN2
 	coneArmOblique                            // the plane is neither ⊥ nor ∥ the axis (oblique) — out of slice
 	coneArmNearCylinder                       // sinα below band: apex shift r/sinα blows up (a true cylinder host)
 	coneArmNearPlane                          // cosα below band: near-plane cone (α→π/2)
 	coneArmClears                             // h′ ≤ 0: the offset cap plane clears the offset cone, no spine circle
 	coneArmGrazing                            // spine (major) radius R_s below band — a grazing/tangent cap
-	coneArmDegenerate                         // the torus/normal constructor declined — a collapsed frame
+	coneArmDegenerate                         // the torus/canal/normal constructor declined — a collapsed frame
+	coneArmRulingNoFit                        // ruling canal (CN2): the ball never fits the picked span
+	coneArmRulingSpan                         // ruling canal (CN2): the fittable x_f span collapses
+	coneArmRulingFold                         // ruling canal (CN2): a band-arc station is irregular (self-intersects)
 )
 
 // coneArmClass is which cone∧plane configuration an edge is, decided by the angle between the plane
@@ -74,13 +76,14 @@ type coneArmClass uint8
 const (
 	coneClassOblique coneArmClass = iota // neither ⊥ nor ∥ the axis: no closed-form arm in this corpus
 	coneClassTorus                       // cap plane ⊥ axis: circle edge, exact torus arm (§2 Arm A)
-	coneClassRuling                      // plane contains the axis: ruling edge, canal arm (CN2)
+	coneClassRuling                      // plane contains the axis: ruling edge, exact canal arm (§2 Arm B, CN2)
 )
 
-// coneArmClassifyCoef is k in the ⊥/∥ classification band ε = k·res.Weld()/res.Size() (ADR-0042): a
-// MODEL-relative angular band (weld resolution over the model scale — the cone has no intrinsic length,
-// and res.Size() stands in for the edge radius), never a bare 1e-6. k=3 sits mid-band of the
-// derivation's k≈2..4, matching angArmClassifyCoef for the cylinder host.
+// coneArmClassifyCoef is k in the ⊥/∥ classification band ε_ang = k·res.Weld()/R_edge (ADR-0042): a
+// MODEL-relative angular band — the weld resolution over the actual EDGE radius (the cone has no
+// intrinsic length), matching M5's angArmClassifyCoef which divides by the cylinder radius (CN1-review
+// Minor #1: the earlier res.Size() collapsed the band to a scale-free constant). k=3 sits mid-band of
+// the derivation's k≈2..4. Over-tight (a large R_edge) errs toward an honest oblique-reject — conservative.
 const coneArmClassifyCoef = 3
 
 // coneAlphaBandCoef is k in the α-limit existence bands sinα < k·res.Weld()/L (near-cylinder: the apex
@@ -91,22 +94,32 @@ const coneAlphaBandCoef = 3
 
 // classifyConeArm decides which cone∧plane configuration the edge (co, pl) is (coneClassTorus when the
 // plane is (near-)perpendicular to the axis, coneClassRuling when (near-)parallel, coneClassOblique
-// otherwise). res scales the classification band to the model (ADR-0042) — see coneArmClassifyCoef.
-func classifyConeArm(co geom.Cone, pl geom.Plane, res Resolution) coneArmClass {
+// otherwise). rEdge is the cone radius at the edge (the arc/ruling radius) — the classification band is
+// ε_ang = k·res.Weld()/R_edge (CN1-review Minor #1: model-relative to the EDGE, not res.Size()).
+func classifyConeArm(co geom.Cone, pl geom.Plane, rEdge float64, res Resolution) coneArmClass {
 	n, err := math.UnitVector3FromVector(pl.Normal())
 	if err != nil {
 		return coneClassOblique
 	}
 	s := stdmath.Abs(co.AxisDir.Dot(n))
-	epsAng := coneArmClassifyCoef * res.Weld() / res.Size()
+	epsAng := coneArmClassifyCoef * res.Weld() / stdmath.Max(rEdge, res.Weld())
 	switch {
 	case s > 1-epsAng:
-		return coneClassTorus // cap plane ⊥ axis — the circle edge (this task)
+		return coneClassTorus // cap plane ⊥ axis — the circle edge (torus arm, CN1)
 	case s < epsAng:
-		return coneClassRuling // plane contains the axis — the ruling edge (CN2)
+		return coneClassRuling // plane contains the axis — the ruling edge (canal arm, CN2)
 	default:
 		return coneClassOblique
 	}
+}
+
+// coneRadiusAt is the cone's radius at point p: the perpendicular distance from p to the axis. It stands
+// in for the edge's arc/ruling radius R_edge in the model-relative classification band.
+func coneRadiusAt(co geom.Cone, p math.Point3) float64 {
+	w := co.Apex.VectorTo(p)
+	a := co.AxisDir.AsVector()
+	perp := w.Sub(a.Scale(float64(w.Dot(a))))
+	return float64(perp.Length())
 }
 
 // coneHostMaterialSign is the host material-side test that fixes whether this slice may round the edge.
@@ -192,9 +205,9 @@ func coneArmFillet(e *topo.Edge, co geom.Cone, pl geom.Plane, coneFace, planeFac
 	if p.varying() {
 		return edgeFillet{}, coneArmVaryingRadius
 	}
-	switch classifyConeArm(co, pl, res) {
+	switch classifyConeArm(co, pl, coneRadiusAt(co, edgeMidpoint(e)), res) {
 	case coneClassRuling:
-		return edgeFillet{}, coneArmRuling // the ruling-edge canal is CN2 — honest-reject, no half-build
+		return coneCanalArmFillet(e, co, pl, coneFace, planeFace, p.r0, res) // exact canal arm (CN2)
 	case coneClassOblique:
 		return edgeFillet{}, coneArmOblique
 	}
@@ -238,16 +251,18 @@ func coneArmEdge(body *topo.Body, e *topo.Edge, p filletPick) (edgeFillet, bool,
 // grazing) so each helper stays within funlen.
 func coneArmError(reason coneArmReject, e *topo.Edge, co geom.Cone, coneFace *topo.Face, r float64) error {
 	switch reason {
-	case coneArmConcaveBore, coneArmRuling, coneArmOblique, coneArmVaryingRadius:
+	case coneArmConcaveBore, coneArmOblique, coneArmVaryingRadius:
 		return coneArmClassifyError(reason, e, co, coneFace, r)
+	case coneArmRulingNoFit, coneArmRulingSpan, coneArmRulingFold:
+		return coneCanalArmError(reason, co, r) // the ruling-edge canal build declines (CN2)
 	default:
 		return coneArmSurfaceError(reason, co, r)
 	}
 }
 
 // coneArmClassifyError names the recognizer-stage rejects: a concave bore host (material outside the
-// cone, recomputing the measured material-side sign s as provenance), the ruling-edge canal (CN2), an
-// oblique plane, or a varying-radius pick.
+// cone, recomputing the measured material-side sign s as provenance), an oblique plane, or a
+// varying-radius pick. (The ruling edge no longer rejects here — CN2 builds its canal arm.)
 func coneArmClassifyError(reason coneArmReject, e *topo.Edge, co geom.Cone, coneFace *topo.Face, r float64) error {
 	switch reason {
 	case coneArmConcaveBore:
@@ -255,9 +270,6 @@ func coneArmClassifyError(reason coneArmReject, e *topo.Edge, co geom.Cone, cone
 		return fmt.Errorf("fillet: cannot round this Cone∧Plane edge with radius %g — the host is a CONCAVE cone "+
 			"(material OUTSIDE the cone; material-side sign s=%g ≤ 0), which needs A′ = A − r/sinα·â; the concave "+
 			"conical bore is a follow-on slice", r, s)
-	case coneArmRuling:
-		return fmt.Errorf("fillet: cannot round this Cone∧Plane RULING edge with radius %g — the ruling-edge arm is a "+
-			"canal over a hyperbola spine (cone half-angle %g), not a torus; not yet supported (CN2)", r, co.HalfAngle)
 	case coneArmOblique:
 		return fmt.Errorf("fillet: cannot round this Cone∧Plane edge with radius %g — the plane is neither ⊥ nor ∥ the "+
 			"cone axis (oblique, half-angle %g); an oblique cone∧plane arm is out of slice", r, co.HalfAngle)
