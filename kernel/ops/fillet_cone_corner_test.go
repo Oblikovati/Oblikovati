@@ -62,9 +62,10 @@ var coneCornerCases = []coneCornerCase{
 const coneCornerR = 10.0
 
 // coneCornerExactTol pins the centre solved from EXACT synthetic geometry to the DRAWEXE table (the table
-// quotes ~10–12 digits, so 1e-9 already catches any sign/transcription error, which would move the centre
-// by tens of units — root separation is ≥62 units everywhere).
-const coneCornerExactTol = 1e-9
+// quotes ~10–12 digits). Set just above the achieved ~5e-11 real-import residual floor: 1e-10 still catches
+// any sign/transcription error (which moves the centre by tens of units — root separation is ≥62 units
+// everywhere) yet leaves no slack over the observed precision.
+const coneCornerExactTol = 1e-10
 
 // coneOf builds a case's host cone: apex on the axis, axis −ẑ, half-angle atan(tanα).
 func coneOf(t *testing.T, c coneCornerCase) geom.Cone {
@@ -160,6 +161,38 @@ func TestConeTangentPointIdentity(t *testing.T) {
 				t.Fatalf("%s: |T−C| = %.12f, want r = %g (the foot must sit at radius r)", c.name, d, coneCornerR)
 			}
 		})
+	}
+}
+
+// coneCornerCertFixture returns C8's certified centre plus the exact cone, host planes, and model-relative
+// resolution that coneCornerConsistent runs against — the shared setup for the certificate accept/reject
+// proof.
+func coneCornerCertFixture(t *testing.T) (math.Point3, geom.Cone, [2]*topo.Face, Resolution) {
+	t.Helper()
+	c := caseByName(t, "C8")
+	v, faces := coneCornerExactFixture(t, c)
+	co := coneOf(t, c)
+	planes := [2]*topo.Face{faces[1], faces[2]}
+	return c.center, co, planes, coneCornerResolution(v, co, planes)
+}
+
+// TestConeCornerConsistent_RejectsPerturbedCentre is the certificate regression fence: coneCornerConsistent
+// must ACCEPT C8's certified corner centre and REJECT it once nudged 1e-3 (≈3000× the ~3e-7 weld) off — both
+// off a host plane (along plane-0's normal, which breaks that plane's |dist| = r arm) and off the host cone
+// (along +ẑ, which leaves both plane distances at r but moves the exact signed cone distance). Mutation
+// witness: forcing coneCornerConsistent → true fails the two reject arms.
+func TestConeCornerConsistent_RejectsPerturbedCentre(t *testing.T) {
+	center, co, planes, res := coneCornerCertFixture(t)
+	if !coneCornerConsistent(center, co, planes, coneCornerR, res) {
+		t.Fatalf("certified C8 centre %v rejected by the certificate; want accept", center)
+	}
+	offPlane := center.TranslateBy(math.V3(1, 0, 0).Scale(1e-3)) // along plane-0's normal: breaks a plane distance
+	if coneCornerConsistent(offPlane, co, planes, coneCornerR, res) {
+		t.Fatalf("centre %v nudged 1e-3 off plane-0 accepted by the certificate; want reject", offPlane)
+	}
+	offCone := center.TranslateBy(math.V3(0, 0, 1).Scale(1e-3)) // parallel to both planes: breaks only the cone distance
+	if coneCornerConsistent(offCone, co, planes, coneCornerR, res) {
+		t.Fatalf("centre %v nudged 1e-3 off the host cone accepted by the certificate; want reject", offCone)
 	}
 }
 
