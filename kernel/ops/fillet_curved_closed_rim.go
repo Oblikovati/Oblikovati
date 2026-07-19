@@ -11,7 +11,7 @@ import (
 )
 
 // Convex CLOSED-rim curved arm (Miter-A1 / OCCT blend/simple J1). A single CONVEX closed circular edge
-// where a developable host (cone or cylinder) meets a perpendicular cap plane rounds into a FULL torus
+// where a curved host of revolution (cone, cylinder, or sphere) meets a perpendicular cap plane rounds into a FULL torus
 // band — no corner, no runout, no capped ends. computeCorners' 2-pick miter path is demuxed away for such
 // a rim (closedRimPick: one edge counted twice, StartVertex==EndVertex), and assembleCurvedArmBody
 // dispatches it here instead of flooring at "curved arms do not meet at one shared trihedral vertex".
@@ -59,16 +59,16 @@ func convexClosedRimBandBody(body *topo.Body, ef edgeFillet, res Resolution) (*t
 	return b, ""
 }
 
-// solveClosedRimBand resolves the closed-band rim fillet: the developable host + cap faces, the arm torus
+// solveClosedRimBand resolves the closed-band rim fillet: the curved host-of-revolution + cap faces, the arm torus
 // re-framed so its seam sits at the rim-vertex azimuth (so the receded host seam stays a straight ruling on
 // the host), and the receded-host seam. Declines (naming the offending value) when the hosts are not one
-// developable + one cap plane, the rim vertex lies on the torus axis, or the torus reframe declines.
+// curved host + one cap plane, the rim vertex lies on the torus axis, or the torus reframe declines.
 func solveClosedRimBand(ef edgeFillet, res Resolution) (*rimFillet, string) {
 	arm := ef.armSurface.(geom.Torus)
 	e := ef.edge
 	devF, capF, ok := rimBandHosts(e)
 	if !ok {
-		return nil, fmt.Sprintf("closed-rim band: edge %d must border one developable host and one cap plane", e.ID())
+		return nil, fmt.Sprintf("closed-rim band: edge %d must border one curved host-of-revolution and one cap plane", e.ID())
 	}
 	rimV := e.StartVertex()
 	ref, err := math.UnitVector3FromVector(perpComponent(arm.Center.VectorTo(rimV.Point()), arm.AxisDir))
@@ -82,7 +82,7 @@ func solveClosedRimBand(ef edgeFillet, res Resolution) (*rimFillet, string) {
 	return assembleRimBand(ef, devF, capF, tor, ref, rimV, res)
 }
 
-// rimBandHosts splits a closed rim edge's two faces into the developable host (cone or cylinder) and the cap
+// rimBandHosts splits a closed rim edge's two faces into the curved host of revolution (cone, cylinder, or sphere) and the cap
 // PLANE. ok=false unless exactly one of each — the only pairing a closed circular rim can carry (a plane∧
 // plane edge is a straight line, never a circle).
 func rimBandHosts(e *topo.Edge) (devF, capF *topo.Face, ok bool) {
