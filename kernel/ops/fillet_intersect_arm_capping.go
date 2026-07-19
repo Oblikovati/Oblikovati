@@ -35,7 +35,8 @@ import (
 // decline (far-runout-port-math §6, "numerical pitfalls").
 func intersectArmCapping(ef edgeFillet, capping geom.Surface, feet [2]math.Point3, r float64, res Resolution) (geom.Curve3, bool) {
 	if ef.armCanalSpine != nil {
-		return canalCappingTrim(*ef.armCanalSpine, capping, feet, r, res)
+		c, ok, _ := canalCappingTrim(*ef.armCanalSpine, capping, feet, r, res) // reason via capTrimDeclineReason
+		return c, ok
 	}
 	switch a := ef.armSurface.(type) {
 	case geom.Torus:

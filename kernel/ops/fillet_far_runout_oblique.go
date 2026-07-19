@@ -29,10 +29,11 @@ func armRunoutFeet(ef edgeFillet, capping geom.Surface, near0, near1 math.Point3
 		return [2]math.Point3{}, false, "oblique runout: armSprings declined the arm's host pairing (not a recognized sphere/plane fillet)"
 	}
 	springA, springB := springsForHosts(ef, springs)
-	footA, okA := springCapFoot(springA, capping, near0, res)
-	footB, okB := springCapFoot(springB, capping, near1, res)
+	footA, okA, rA := springCapFootReasoned(springA, capping, near0, res)
+	footB, okB, rB := springCapFootReasoned(springB, capping, near1, res)
 	if !okA || !okB {
-		return [2]math.Point3{}, false, "oblique runout: a host spring does not cross the capping face (spring∩cap foot declined)"
+		return [2]math.Point3{}, false, firstReason(rA, rB,
+			"oblique runout: a host spring does not cross the capping face (spring∩cap foot declined)")
 	}
 	return [2]math.Point3{footA, footB}, true, ""
 }

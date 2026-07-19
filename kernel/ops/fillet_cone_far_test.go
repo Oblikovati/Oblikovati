@@ -4,6 +4,7 @@ package ops
 
 import (
 	stdmath "math"
+	"strings"
 	"testing"
 
 	"oblikovati.org/kernel/geom"
@@ -136,7 +137,7 @@ func assertFeetExact(t *testing.T, s coneFarSetup, footA, footB math.Point3) {
 	if d := stdmath.Abs(float64(s.sp.apex.VectorTo(planeFoot).Dot(s.sp.nOut))); d > coneFarExactTol {
 		t.Fatalf("plane foot %v off the radial plane by %g", planeFoot, d)
 	}
-	assertFootOnConeAtRadius(t, s.sp, coneFoot)
+	assertFootOnConeIncident(t, s.sp, coneFoot)
 	xf := float64(s.sp.apex.VectorTo(planeFoot).Dot(s.sp.ePerp))
 	if d := stdmath.Abs(float64(planeFoot.DistanceTo(s.sp.center(xf))) - coneArmR); d > coneFarExactTol {
 		t.Fatalf("plane foot %v is %g off radius r from its spine centre", planeFoot, d)
@@ -151,9 +152,10 @@ func assertOnCapPlane(t *testing.T, what string, cap geom.Plane, p math.Point3) 
 	}
 }
 
-// assertFootOnConeAtRadius checks the cone foot lies on the host cone (signed distance 0) and at ball
-// radius r from its reconstructed spine centre — the |T−m|=r envelope identity.
-func assertFootOnConeAtRadius(t *testing.T, sp coneCanalSpine, cT math.Point3) {
+// assertFootOnConeIncident checks the cone foot lies ON the host cone: the exact signed cone distance
+// (w·â)·sinα − |w⊥|·cosα is 0 within 1e-9. (The |T−m|=r envelope identity is separately pinned by CN2's
+// TestConeCanalSpine_ExactFeet and holds by construction of coneFoot.)
+func assertFootOnConeIncident(t *testing.T, sp coneCanalSpine, cT math.Point3) {
 	t.Helper()
 	w := sp.apex.VectorTo(cT)
 	axial := float64(w.Dot(sp.axis))
@@ -230,6 +232,7 @@ func TestConeCanalSnout_Exact(t *testing.T) {
 	assertSnoutCircle(t, arc)
 	assertSnoutEnds(t, arc)
 	assertSnoutGuardRejectsTilt(t, s, feet)
+	assertSnoutGuardRejectsOffset(t, s, feet)
 }
 
 // assertSnoutCircle checks the snout arc's circle: centre (0,−10,70), radius 10, in the plane {x=0}.
@@ -259,16 +262,57 @@ func assertSnoutEnds(t *testing.T, arc geom.Arc3d) {
 	}
 }
 
-// assertSnoutGuardRejectsTilt is the mutation witness: a far radial plane whose normal is tilted off the
-// vertex spine tangent (a non-90° wedge) makes canalCappingTrim honest-reject the snout.
+// assertSnoutGuardRejectsTilt is the condition-(a) mutation witness: a far radial plane whose normal is
+// tilted off the vertex spine tangent (a non-90° wedge) makes canalCappingTrim honest-reject the snout,
+// with the reason naming condition (a).
 func assertSnoutGuardRejectsTilt(t *testing.T, s coneFarSetup, feet [2]math.Point3) {
 	t.Helper()
 	tilted, err := geom.NewPlane(s.cap.Origin, math.V3(1, 0.3, 0))
 	if err != nil {
 		t.Fatalf("tilted plane: %v", err)
 	}
-	if _, ok := canalCappingTrim(s.sp, tilted, feet, coneArmR, s.res); ok {
-		t.Fatal("snout guard accepted a far plane tilted off the vertex spine tangent (want reject)")
+	_, ok, reason := canalCappingTrim(s.sp, tilted, feet, coneArmR, s.res)
+	if ok || !strings.Contains(reason, "cond (a)") {
+		t.Fatalf("snout guard cond (a) miss: ok=%v reason=%q (want reject naming cond (a))", ok, reason)
+	}
+}
+
+// assertSnoutGuardRejectsOffset is the condition-(b) mutation witness: a radial plane PARALLEL to the
+// vertex tangent (normal = ê) but OFFSET so it does not contain the vertex circle centre (an {x=c≠0}
+// plane) must honest-reject, with the reason naming condition (b) and its incidence.
+func assertSnoutGuardRejectsOffset(t *testing.T, s coneFarSetup, feet [2]math.Point3) {
+	t.Helper()
+	offset, err := geom.NewPlane(s.cap.Origin.TranslateBy(s.sp.ePerp.Scale(5)), s.sp.ePerp)
+	if err != nil {
+		t.Fatalf("offset plane: %v", err)
+	}
+	_, ok, reason := canalCappingTrim(s.sp, offset, feet, coneArmR, s.res)
+	if ok || !strings.Contains(reason, "cond (b)") {
+		t.Fatalf("snout guard cond (b) miss: ok=%v reason=%q (want reject naming cond (b))", ok, reason)
+	}
+}
+
+// TestConeCanalReject_CarriesValues proves the canal declines carry the offending values (CLAUDE.md
+// "exception messages must include the offending value"): a cap BELOW the hyperbola vertex names ρ and r,
+// and an obliquely-posed cap names |n̂·â|.
+func TestConeCanalReject_CarriesValues(t *testing.T) {
+	s := setupConeFar(t, coneFarFixtures()[2]) // D1
+	spring := coneCanalSpring{spine: s.sp, lo: 0, hi: 40, onCone: false}
+	below, err := geom.NewPlane(s.sp.apex.TranslateBy(s.sp.axis.Scale(40)), s.sp.axis)
+	if err != nil {
+		t.Fatalf("below-vertex cap: %v", err)
+	}
+	if _, ok, reason := spring.canalCapFoot(below, s.far.Point(), s.res); ok ||
+		!strings.Contains(reason, "ρ=") || !strings.Contains(reason, "r=") {
+		t.Fatalf("ρ<r reject must carry ρ and r: ok=%v reason=%q", ok, reason)
+	}
+	oblique, err := geom.NewPlane(s.cap.Origin, math.V3(1, 0, 1))
+	if err != nil {
+		t.Fatalf("oblique cap: %v", err)
+	}
+	if _, ok, reason := spring.canalCapFoot(oblique, s.far.Point(), s.res); ok ||
+		!strings.Contains(reason, "|n̂·â|=") {
+		t.Fatalf("oblique-cap reject must carry |n̂·â|: ok=%v reason=%q", ok, reason)
 	}
 }
 
@@ -395,14 +439,23 @@ func gridNearestUV(surf geom.BSplineSurface, p math.Point3, ulo, uhi, vlo, vhi f
 	bu, bv, best := ulo, vlo, stdmath.Inf(1)
 	for i := 0; i <= n; i++ {
 		u := ulo + (uhi-ulo)*float64(i)/float64(n)
-		for j := 0; j <= n; j++ {
-			v := vlo + (vhi-vlo)*float64(j)/float64(n)
-			if d := float64(surf.PointAt(u, v).DistanceTo(p)); d < best {
-				bu, bv, best = u, v, d
-			}
+		if v, d := nearestVOnColumn(surf, p, u, vlo, vhi, n); d < best {
+			bu, bv, best = u, v, d
 		}
 	}
 	return bu, bv
+}
+
+// nearestVOnColumn returns the v (and its distance) of the closest sample to p along the u=const column.
+func nearestVOnColumn(surf geom.BSplineSurface, p math.Point3, u, vlo, vhi float64, n int) (float64, float64) {
+	bv, best := vlo, stdmath.Inf(1)
+	for j := 0; j <= n; j++ {
+		v := vlo + (vhi-vlo)*float64(j)/float64(n)
+		if d := float64(surf.PointAt(u, v).DistanceTo(p)); d < best {
+			bv, best = v, d
+		}
+	}
+	return bv, best
 }
 
 // interiorCutV is the v of the near iso-cut: 30 % of the way from the trim's mean v toward the arm's

@@ -167,7 +167,8 @@ func springCapFoot(spring geom.Curve3, capping geom.Surface, near math.Point3, r
 	case geom.Line:
 		return linePlaneFoot(s, pl)
 	case coneCanalSpring:
-		return s.canalCapFoot(pl, near, res)
+		p, ok, _ := s.canalCapFoot(pl, near, res) // reason surfaced via springCapFootReasoned
+		return p, ok
 	}
 	return math.Point3{}, false
 }

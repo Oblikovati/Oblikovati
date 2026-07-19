@@ -3,6 +3,7 @@
 package ops
 
 import (
+	"fmt"
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
@@ -108,8 +109,13 @@ func (s coneCanalSpine) xfSpanLoose(e *topo.Edge) (lo, hi float64) {
 // canalCapFoot crosses a canal spring with the cap plane and returns the crossing nearer the far vertex
 // `near` (the spring's own side of the axis). The cap is classified by its pose to the cone axis: ⊥ axis
 // (C2/C6/C8, the axial closed form) or a radial plane ∥ the axis THROUGH the axis (the D1 snout, x_f=0);
-// a general oblique cap is out of the cone corpus and declines honestly. Called from springCapFoot.
-func (s coneCanalSpring) canalCapFoot(pl geom.Plane, near math.Point3, res Resolution) (math.Point3, bool) {
+// a general oblique cap is out of the cone corpus and declines with the offending pose. Called from
+// springCapFoot (which drops the reason) and springCapFootReasoned (which surfaces it).
+func (s coneCanalSpring) canalCapFoot(capping geom.Surface, near math.Point3, res Resolution) (math.Point3, bool, string) {
+	pl, ok := capping.(geom.Plane)
+	if !ok {
+		return math.Point3{}, false, fmt.Sprintf("canal cap foot: capping is %T, want geom.Plane", capping)
+	}
 	axisDot := stdmath.Abs(float64(pl.Normal().Dot(s.spine.axis)))
 	switch {
 	case axisDot >= 1-sinFloor:
@@ -117,35 +123,43 @@ func (s coneCanalSpring) canalCapFoot(pl geom.Plane, near math.Point3, res Resol
 	case axisDot <= sinFloor:
 		return s.capFootRadial(pl, res)
 	}
-	return math.Point3{}, false
+	return math.Point3{}, false, fmt.Sprintf(
+		"canal cap foot: cap plane obliquely posed to the cone axis (|n̂·â|=%g, need ≥%g [⊥ axis] or ≤%g [radial through axis]) — out of the cone corpus",
+		axisDot, 1-sinFloor, sinFloor)
 }
 
 // capFootPerpAxis crosses the spring with a cap plane ⊥ the axis at apex-height h_cap: the ball-centre
-// axis distance ρ closing on h_cap is closed form (plane spring ρ=(h_cap−r/sinα)·tanα; cone spring
-// ρ=h_cap·tanα−r·cosα), and x_f=±√(ρ²−r²), the sign the ruling's side (nearerFoot).
-func (s coneCanalSpring) capFootPerpAxis(pl geom.Plane, near math.Point3) (math.Point3, bool) {
+// axis distance ρ closing on h_cap is closed form (coneCapRho), and x_f=±√(ρ²−r²), the sign the ruling's
+// side (nearerFoot). ρ<r ⇒ the cap sits below the hyperbola vertex; decline with the offending values.
+func (s coneCanalSpring) capFootPerpAxis(pl geom.Plane, near math.Point3) (math.Point3, bool, string) {
 	hCap := float64(s.spine.apex.VectorTo(pl.Origin).Dot(s.spine.axis))
-	rho, ok := s.capRhoPerpAxis(hCap)
-	if !ok {
-		return math.Point3{}, false
+	rho := coneCapRho(s.spine, hCap, s.onCone)
+	if rho < s.spine.radius {
+		return math.Point3{}, false, fmt.Sprintf(
+			"canal cap foot: rolling ball never reaches the ⊥-axis cap on the %s spring (ρ=%g < r=%g at cap height h_cap=%g, cone half-angle α=%g rad)",
+			s.springName(), rho, s.spine.radius, hCap, s.spine.halfAngle())
 	}
 	xf := stdmath.Sqrt(rho*rho - s.spine.radius*s.spine.radius)
-	return s.nearerFoot(xf, near), true
+	return s.nearerFoot(xf, near), true, ""
 }
 
-// capRhoPerpAxis is the ball-centre axis distance ρ at which this spring's foot reaches apex-height h_cap.
-// ok=false when ρ<r — the cap sits below the hyperbola vertex, the ball never reaches it on this spring
-// (do-no-harm: the offending ρ and r are the caller's decline reason).
-func (s coneCanalSpring) capRhoPerpAxis(hCap float64) (float64, bool) {
-	sp := s.spine
-	rho := (hCap - sp.radius/sp.sinA) * sp.tanA
+// coneCapRho is the ball-centre axis distance ρ at which a canal spring's foot reaches apex-height h_cap:
+// plane spring ρ=(h_cap−r/sinα)·tanα, cone spring ρ=h_cap·tanα−r·cosα (cone-host-corner-derivation §4).
+// Raw (ungated) so callers can both test ρ<r AND report the offending ρ. Shared by capFootPerpAxis and
+// coneFootStation (was duplicated).
+func coneCapRho(sp coneCanalSpine, hCap float64, onCone bool) float64 {
+	if onCone {
+		return hCap*sp.tanA - sp.radius*sp.cosA
+	}
+	return (hCap - sp.radius/sp.sinA) * sp.tanA
+}
+
+// springName is "plane"/"cone" — the host the spring rides, for decline diagnostics.
+func (s coneCanalSpring) springName() string {
 	if s.onCone {
-		rho = hCap*sp.tanA - sp.radius*sp.cosA
+		return "cone"
 	}
-	if rho < sp.radius {
-		return 0, false
-	}
-	return rho, true
+	return "plane"
 }
 
 // nearerFoot evaluates the spring foot at +x_f and −x_f (the two mirror crossings across the axis plane)
@@ -160,30 +174,39 @@ func (s coneCanalSpring) nearerFoot(xf float64, near math.Point3) math.Point3 {
 
 // capFootRadial crosses the spring with a radial cap plane (∥ the axis) that passes THROUGH the axis —
 // the D1 snout, where both feet sit at the spine vertex x_f=0. A radial cap NOT through the axis, or one
-// whose normal is ⊥ the ruling's transverse direction, is out of scope and declines (do-no-harm).
-func (s coneCanalSpring) capFootRadial(pl geom.Plane, res Resolution) (math.Point3, bool) {
+// whose normal is ⊥ the ruling's transverse ê, is out of scope and declines with the offending value.
+func (s coneCanalSpring) capFootRadial(pl geom.Plane, res Resolution) (math.Point3, bool, string) {
 	sp := s.spine
 	n := pl.Normal()
 	e0 := float64(sp.apex.VectorTo(pl.Origin).Dot(n)) // (o_cap − A)·n̂_cap
 	q := float64(sp.ePerp.Dot(n))
-	if stdmath.Abs(e0) > res.Weld()*sp.radius || stdmath.Abs(q) < sinFloor {
-		return math.Point3{}, false
+	if tol := res.Weld() * sp.radius; stdmath.Abs(e0) > tol {
+		return math.Point3{}, false, fmt.Sprintf(
+			"canal cap foot: radial cap misses the cone axis (incidence |(o−A)·n̂|=%g > tol=%g) — not the D1 snout", stdmath.Abs(e0), tol)
+	}
+	if stdmath.Abs(q) < sinFloor {
+		return math.Point3{}, false, fmt.Sprintf(
+			"canal cap foot: radial cap normal ⊥ the ruling transverse ê (|ê·n̂|=%g < %g) — no crossing", stdmath.Abs(q), sinFloor)
 	}
 	xf := e0 / q
 	if s.onCone {
 		xf = sp.radius * float64(sp.nOut.Dot(n)) / q
 	}
-	return s.foot(xf), true
+	return s.foot(xf), true, ""
 }
+
+// halfAngle is the cone's half-angle α (radians) — for decline diagnostics.
+func (s coneCanalSpine) halfAngle() float64 { return stdmath.Atan2(s.sinA, s.cosA) }
 
 // canalCappingTrim is the far-runout cap trim of a cone-ruling canal arm — arm ∩ cap-plane oriented
 // feet[0]→feet[1]. It classifies the cap by its pose to the axis and dispatches the ⊥-axis swept trim or
-// the D1 snout arc; a general oblique cap declines. Called from intersectArmCapping's canal case.
-func canalCappingTrim(sp coneCanalSpine, capping geom.Surface, feet [2]math.Point3, r float64, res Resolution) (geom.Curve3, bool) {
+// the D1 snout arc; a general oblique cap declines with the offending pose. Called from
+// intersectArmCapping's canal case (which drops the reason) and capTrimDeclineReason (which surfaces it).
+func canalCappingTrim(sp coneCanalSpine, capping geom.Surface, feet [2]math.Point3, r float64, res Resolution) (geom.Curve3, bool, string) {
 	_ = r
 	pl, ok := capping.(geom.Plane)
 	if !ok {
-		return nil, false
+		return nil, false, fmt.Sprintf("canal cap trim: capping is %T, want geom.Plane", capping)
 	}
 	axisDot := stdmath.Abs(float64(pl.Normal().Dot(sp.axis)))
 	switch {
@@ -192,28 +215,50 @@ func canalCappingTrim(sp coneCanalSpine, capping geom.Surface, feet [2]math.Poin
 	case axisDot <= sinFloor:
 		return canalSnoutTrim(sp, pl, feet, res)
 	}
-	return nil, false
+	return nil, false, fmt.Sprintf(
+		"canal cap trim: cap plane obliquely posed to the cone axis (|n̂·â|=%g, need ≥%g [⊥ axis] or ≤%g [radial through axis])",
+		axisDot, 1-sinFloor, sinFloor)
 }
 
 // canalSnoutTrim is the D1 snout cap: the terminal characteristic arc at the hyperbola vertex (x_f=0),
-// which lies IN the radial cap plane. Two-condition guard (do-no-harm): the cap must be ⊥ the vertex
-// spine tangent m'(0)=ê (|n̂·ê|≈1, true only for the 90° wedge) AND contain the vertex circle centre;
-// otherwise it is not a snout and declines with the offending pose (no snapped/forced arc).
-func canalSnoutTrim(sp coneCanalSpine, pl geom.Plane, feet [2]math.Point3, res Resolution) (geom.Curve3, bool) {
+// which lies IN the radial cap plane. Two-condition guard (do-no-harm): (a) the cap must be ⊥ the vertex
+// spine tangent m'(0)=ê (|n̂·ê|≈1, true only for the 90° wedge) AND (b) contain the vertex circle centre;
+// otherwise it is not a snout and declines naming the failing condition + its offending value.
+func canalSnoutTrim(sp coneCanalSpine, pl geom.Plane, feet [2]math.Point3, res Resolution) (geom.Curve3, bool, string) {
 	m := sp.center(0)
-	n := pl.Normal()
 	tol := res.Weld() * sp.radius
-	if 1-stdmath.Abs(float64(n.Dot(sp.ePerp))) > sinFloor || stdmath.Abs(float64(pl.Origin.VectorTo(m).Dot(n))) > tol {
-		return nil, false
+	if reason := snoutCapGuardReason(sp, pl, m, tol); reason != "" {
+		return nil, false, reason
 	}
 	cT, ok := sp.coneFoot(m)
 	if !ok {
-		return nil, false
+		return nil, false, fmt.Sprintf("canal snout: cone foot at the vertex centre %v is degenerate (on the axis)", m)
 	}
 	if !feetMatchArcEnds(sp.planeFoot(m), cT, feet, tol) {
-		return nil, false
+		return nil, false, fmt.Sprintf("canal snout: supplied feet %v/%v are not the vertex arc ends within tol=%g", feet[0], feet[1], tol)
 	}
-	return orientedCharArc(m, feet, sp.radius, sp.ePerp)
+	arc, ok := orientedCharArc(m, feet, sp.radius, sp.ePerp)
+	if !ok {
+		return nil, false, "canal snout: characteristic arc build declined (collinear feet + centre)"
+	}
+	return arc, true, ""
+}
+
+// snoutCapGuardReason returns the two-condition snout guard's decline reason (naming the failing
+// condition + its offending value), or "" when both hold: (a) the cap is ⊥ the vertex spine tangent ê
+// (the 90° wedge), and (b) the cap contains the vertex circle centre m.
+func snoutCapGuardReason(sp coneCanalSpine, pl geom.Plane, m math.Point3, tol float64) string {
+	n := pl.Normal()
+	if align := stdmath.Abs(float64(n.Dot(sp.ePerp))); 1-align > sinFloor {
+		return fmt.Sprintf(
+			"canal snout: cond (a) far radial plane not ⊥ the vertex spine tangent ê (tilt %g rad, |n̂·ê|=%g < %g; a non-90° wedge)",
+			stdmath.Acos(math.Clamp(align, -1, 1)), align, 1-sinFloor)
+	}
+	if inc := stdmath.Abs(float64(pl.Origin.VectorTo(m).Dot(n))); inc > tol {
+		return fmt.Sprintf(
+			"canal snout: cond (b) far radial plane does not contain the vertex circle centre %v (incidence %g > tol=%g)", m, inc, tol)
+	}
+	return ""
 }
 
 // feetMatchArcEnds certifies the supplied feet ARE the vertex arc's two ends (plane foot, cone foot) in
@@ -246,22 +291,26 @@ func orientedCharArc(m math.Point3, feet [2]math.Point3, r float64, normal math.
 // traced by the MONOTONE arc angle ψ from the plane foot (ψ=0) to the cone foot (ψ=ψ_c). x_f is
 // non-monotone along the trim (it turns around near ψ=π/2), so ψ — not x_f — is the sweep parameter
 // (geometry-math CN4b-1 review). Delivered as a polyline with the endpoints anchored to the exact feet.
-func canalPerpAxisTrim(sp coneCanalSpine, pl geom.Plane, feet [2]math.Point3, res Resolution) (geom.Curve3, bool) {
+func canalPerpAxisTrim(sp coneCanalSpine, pl geom.Plane, feet [2]math.Point3, res Resolution) (geom.Curve3, bool, string) {
 	iP, ok := planeFootIndex(sp, feet, res)
 	if !ok {
-		return nil, false
+		return nil, false, fmt.Sprintf("canal cap trim: neither foot %v/%v is uniquely on the radial plane (cannot order plane vs cone)", feet[0], feet[1])
 	}
 	hCap := float64(sp.apex.VectorTo(pl.Origin).Dot(sp.axis))
 	xfP := float64(sp.apex.VectorTo(feet[iP]).Dot(sp.ePerp))
 	xfT, ok := coneFootStation(sp, feet[1-iP], hCap)
 	if !ok {
-		return nil, false
+		return nil, false, fmt.Sprintf("canal cap trim: cone foot below the hyperbola vertex at cap height h_cap=%g (ρ=%g < r=%g)", hCap, coneCapRho(sp, hCap, true), sp.radius)
 	}
 	pts, ok := traceCapTrim(sp, hCap, xfP, xfT)
 	if !ok {
-		return nil, false
+		return nil, false, fmt.Sprintf("canal cap trim: ψ-sweep station solve found no crossing between x_f stations %g→%g (h_cap=%g)", xfP, xfT, hCap)
 	}
-	return anchoredTrimPolyline(pts, feet, iP)
+	poly, ok := anchoredTrimPolyline(pts, feet, iP)
+	if !ok {
+		return nil, false, "canal cap trim: swept polyline needs ≥2 vertices"
+	}
+	return poly, true, ""
 }
 
 // planeFootIndex is the index (0/1) of the foot on the radial plane ((foot−A)·n̂ ≈ 0), the plane host's
@@ -283,7 +332,7 @@ func planeFootIndex(sp coneCanalSpine, feet [2]math.Point3, res Resolution) (int
 // x_f=±√(ρ²−r²)), the sign taken from the foot's ê side. Declines when ρ<r (the cone foot would be the
 // snout vertex — a ⊥-axis cap does not reach it).
 func coneFootStation(sp coneCanalSpine, cT math.Point3, hCap float64) (float64, bool) {
-	rho := hCap*sp.tanA - sp.radius*sp.cosA
+	rho := coneCapRho(sp, hCap, true)
 	if rho < sp.radius {
 		return 0, false
 	}
@@ -388,4 +437,40 @@ func anchoredTrimPolyline(pts []math.Point3, feet [2]math.Point3, planeIdx int) 
 		return nil, false
 	}
 	return poly, true
+}
+
+// springCapFootReasoned crosses a spring with the capping and, on decline, carries the CANAL spring's
+// offending values (ρ<r, oblique/radial cap pose) — the CLAUDE.md "offending value" rule. Non-canal
+// (torus/cylinder) springs route through the unchanged springCapFoot with no reason, so armRunoutFeet's
+// torus/cylinder decline string is byte-identical. Used by armRunoutFeet in place of the bare springCapFoot.
+func springCapFootReasoned(spring geom.Curve3, capping geom.Surface, near math.Point3, res Resolution) (math.Point3, bool, string) {
+	if canal, ok := spring.(coneCanalSpring); ok {
+		return canal.canalCapFoot(capping, near, res)
+	}
+	p, ok := springCapFoot(spring, capping, near, res)
+	return p, ok, ""
+}
+
+// capTrimDeclineReason is the trim decline message obliqueRunout surfaces: for a CANAL arm it re-derives
+// canalCappingTrim's offending-value reason (decline path only); every other arm keeps the byte-identical
+// generic string. It is called only after intersectArmCapping declined, so it never alters a good trim.
+func capTrimDeclineReason(ef edgeFillet, capping geom.Surface, feet [2]math.Point3, r float64, res Resolution) string {
+	if ef.armCanalSpine != nil {
+		if _, _, reason := canalCappingTrim(*ef.armCanalSpine, capping, feet, r, res); reason != "" {
+			return reason
+		}
+	}
+	return fmt.Sprintf("oblique runout: intersectArmCapping declined the trim through feet %v→%v", feet[0], feet[1])
+}
+
+// firstReason returns the first non-empty reason, else the fallback — so a canal spring's specific decline
+// wins over the generic one, while a torus/cylinder decline (both empty) keeps the byte-identical fallback.
+func firstReason(a, b, fallback string) string {
+	if a != "" {
+		return a
+	}
+	if b != "" {
+		return b
+	}
+	return fallback
 }
