@@ -33,16 +33,13 @@ const armSpindleBand = 4
 //
 // Example: torusArmSurface(bossWall{R:50}, topCap{z:100}, 10, res) → torus centre (0,0,90), axis ẑ,
 // major 40, minor 10 (the B3 top-rim arm, OCCT BREP `5 0 0 90 0 0 1 … 40 10`).
-func torusArmSurface(cyl geom.Cylinder, pl geom.Plane, r float64, res Resolution) (geom.Torus, bool) {
+func torusArmSurface(cyl geom.Cylinder, pl geom.Plane, outwardN math.UnitVector3, r float64, res Resolution) (geom.Torus, bool) {
 	majorR := cyl.Radius - r
 	if majorR < armSpindleBand*res.Weld() {
 		return geom.Torus{}, false
 	}
-	n, err := math.UnitVector3FromVector(pl.Normal())
-	if err != nil {
-		return geom.Torus{}, false
-	}
-	inward := n.Negate().AsVector() // outward cap normal → into the material by r
+	n := outwardN                   // the plane FACE's material-outward normal (Reversed-aware) — NOT the raw
+	inward := n.Negate().AsVector() // geom normal, which on an imported cap can point into the material (B6-class)
 	center := projectOntoPlane(cyl.Origin, pl).TranslateBy(inward.Scale(r))
 	tor, err := geom.NewTorusWithRef(center, n.AsVector(), cyl.Ref.AsVector(), majorR, r)
 	return tor, err == nil
@@ -56,16 +53,13 @@ func torusArmSurface(cyl geom.Cylinder, pl geom.Plane, r float64, res Resolution
 //
 // Example: cylinderArmSurface(wallEdge, bossWall{R:50}, radialPlane, 10) → radius-10 cylinder about
 // the wall ruling (the B3 vertical-wall arm, OCCT BREP `2 … 10`).
-func cylinderArmSurface(edge *topo.Edge, cyl geom.Cylinder, pl geom.Plane, r float64) (geom.Cylinder, bool) {
+func cylinderArmSurface(edge *topo.Edge, cyl geom.Cylinder, pl geom.Plane, outwardN math.UnitVector3, r float64) (geom.Cylinder, bool) {
 	rho := cyl.Radius - r
 	if rho <= 0 {
 		return geom.Cylinder{}, false // convex spindle: the offset cylinder has collapsed
 	}
-	n, err := math.UnitVector3FromVector(pl.Normal())
-	if err != nil {
-		return geom.Cylinder{}, false
-	}
-	base, ok := armRulingBase(edge, cyl, pl, n, rho, r)
+	n := outwardN                                       // the plane FACE's material-outward normal (Reversed-aware): armRulingBase offsets the
+	base, ok := armRulingBase(edge, cyl, pl, n, rho, r) // ruling −r into the MATERIAL, so its sign must be right
 	if !ok {
 		return geom.Cylinder{}, false
 	}

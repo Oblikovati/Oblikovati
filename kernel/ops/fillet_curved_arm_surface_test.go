@@ -16,6 +16,16 @@ import (
 // that is off by more than this is wrong, not merely imprecise.
 func nearlyArm(got, want float64) bool { return stdmath.Abs(got-want) < 1e-6 }
 
+// armOutward wraps a raw vector as a material-outward unit normal for the arm-builder tests (their bare
+// test planes are constructed with their normals already pointing out of the material).
+func armOutward(x, y, z float64) math.UnitVector3 {
+	u, err := math.UnitVector3FromVector(math.V3(x, y, z))
+	if err != nil {
+		panic(err)
+	}
+	return u
+}
+
 // planeAtZ is the B3 top cap: a plane at height z with its OUTWARD normal +z (the cylinder body
 // sits below it, so material is on the −z side — the side torusArmSurface offsets the centre onto).
 func planeAtZ(z float64) geom.Plane {
@@ -43,7 +53,7 @@ func b3VerticalWallEdge(t *testing.T) *topo.Edge {
 // cap (z = 100−10 = 90). A flipped material-side sign would give major R+r = 60 instead.
 func TestTorusArmSurface_B3(t *testing.T) {
 	res := testArmResolution()
-	tor, ok := torusArmSurface(cylAxis(0, 0, 1, 50), planeAtZ(100), 10, res)
+	tor, ok := torusArmSurface(cylAxis(0, 0, 1, 50), planeAtZ(100), armOutward(0, 0, 1), 10, res)
 	if !ok {
 		t.Fatalf("torusArmSurface declined a valid convex B3 rim")
 	}
@@ -58,7 +68,7 @@ func TestTorusArmSurface_B3(t *testing.T) {
 // honest-reject rather than emit degenerate geometry (§Numerical pitfalls).
 func TestTorusArmSurface_Spindle(t *testing.T) {
 	res := testArmResolution()
-	if _, ok := torusArmSurface(cylAxis(0, 0, 1, 50), planeAtZ(100), 50, res); ok {
+	if _, ok := torusArmSurface(cylAxis(0, 0, 1, 50), planeAtZ(100), armOutward(0, 0, 1), 50, res); ok {
 		t.Fatalf("torusArmSurface accepted r=R=50 (major R−r=0): a spindle torus must be rejected")
 	}
 }
@@ -66,7 +76,7 @@ func TestTorusArmSurface_Spindle(t *testing.T) {
 // TestCylinderArmSurface_B3 pins the config-(ii) cylinder arm: a rolling-ball cylinder of radius
 // r=10 about the selected ruling of P_r∩C_ρ on the vertical wall (OCCT BREP `2 … 10`).
 func TestCylinderArmSurface_B3(t *testing.T) {
-	cyl, ok := cylinderArmSurface(b3VerticalWallEdge(t), cylAxis(0, 0, 1, 50), planeWithNormal(1, 0, 0), 10)
+	cyl, ok := cylinderArmSurface(b3VerticalWallEdge(t), cylAxis(0, 0, 1, 50), planeWithNormal(1, 0, 0), armOutward(1, 0, 0), 10)
 	if !ok || !nearlyArm(cyl.Radius, 10) {
 		t.Fatalf("B3 cylinder arm radius = %.6f (ok=%v), want 10", cyl.Radius, ok)
 	}
@@ -83,7 +93,7 @@ func TestCylinderArmSurface_Clears(t *testing.T) {
 	if err != nil {
 		t.Fatalf("plane: %v", err)
 	}
-	if _, ok := cylinderArmSurface(b3VerticalWallEdge(t), cylAxis(0, 0, 1, 50), far, 10); ok {
+	if _, ok := cylinderArmSurface(b3VerticalWallEdge(t), cylAxis(0, 0, 1, 50), far, armOutward(1, 0, 0), 10); ok {
 		t.Fatalf("cylinderArmSurface accepted a plane that clears the offset cylinder")
 	}
 }

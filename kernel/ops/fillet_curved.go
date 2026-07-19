@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // Curved-adjacent fillets — rounding an edge that borders a CYLINDER face (the surface a prior
@@ -84,16 +85,36 @@ func curvedArmFillet(e *topo.Edge, cyl geom.Cylinder, pl geom.Plane, p filletPic
 	if p.varying() || ClassifyEdgeConvexity(e) != EdgeConvex {
 		return edgeFillet{}, false // constant-radius convex-external only
 	}
+	outwardN, ok := planeHostNormal(e, pl)
+	if !ok {
+		return edgeFillet{}, false // no readable plane host normal — cannot orient the arm into the material
+	}
 	switch classifyCurvedArm(cyl, pl, res) {
 	case armTorus:
-		tor, ok := torusArmSurface(cyl, pl, p.r0, res)
+		tor, ok := torusArmSurface(cyl, pl, outwardN, p.r0, res)
 		return curvedArmEdgeFillet(e, tor, ok)
 	case armCylinder:
-		arm, ok := cylinderArmSurface(e, cyl, pl, p.r0)
+		arm, ok := cylinderArmSurface(e, cyl, pl, outwardN, p.r0)
 		return curvedArmEdgeFillet(e, arm, ok)
 	default:
 		return edgeFillet{}, false // armRejected: oblique ellipse edge (config iii, Slice B)
 	}
+}
+
+// planeHostNormal is the material-outward unit normal of the planar host face of a Cylinder∧Plane edge —
+// the plane's normal negated when that face is Reversed (outwardPlaneNormal). The M5 arm builders must
+// offset the rolling ball into the MATERIAL, so they take this orientation-robust normal rather than the
+// raw geom normal, which on an imported face can point either way: B3's cap normal happens to point out of
+// the material, but B6's radial-cut normal points INTO it, which put the arm in the void (curved-runout R1).
+// ok=false when the edge borders no plane face (a defensive guard; cylinderPlaneEdge already found one).
+func planeHostNormal(e *topo.Edge, pl geom.Plane) (math.UnitVector3, bool) {
+	for _, f := range e.Faces() {
+		if p, isPlane := f.Geometry().(geom.Plane); isPlane && p == pl {
+			n, err := math.UnitVector3FromVector(outwardPlaneNormal(f, pl))
+			return n, err == nil
+		}
+	}
+	return math.UnitVector3{}, false
 }
 
 // curvedArmEdgeFillet packs a built arm surface into an edgeFillet carrying the edge's two host

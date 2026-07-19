@@ -52,10 +52,20 @@ func assembleCurvedArmBody(body *topo.Body, fils []edgeFillet, blends map[uint64
 	if len(curved) == 0 {
 		return nil, "no curved arm at this corner (nothing to weld)"
 	}
+	if isSingleArmRunout(fils) {
+		return singleArmRunoutBody(body, fils[0], res) // one curved arm, two plane-capped ends: corner-free both-ends weld
+	}
 	vid, ok := sharedCornerVertex(curved)
 	if !ok {
 		return nil, "curved arms do not meet at one shared trihedral vertex"
 	}
+	return trihedralCornerBody(body, fils, blends, vid, res)
+}
+
+// trihedralCornerBody welds the 3-arm trihedral corner at shared vertex vid — the single-ball path (with
+// its canal sibling) that predates the single-arm runout dispatch. Split out of assembleCurvedArmBody so
+// the runout dispatch fits without pushing the router over funlen; the body below is byte-identical.
+func trihedralCornerBody(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend, vid uint64, res Resolution) (*topo.Body, string) {
 	arms := cornerArms(fils, vid) // ALL fillets at V — 2 curved arms + the planar Plane∧Plane cyl arm
 	if len(arms) < 3 {
 		return nil, fmt.Sprintf("trihedral corner needs 3 arms (got %d at vertex %d)", len(arms), vid)

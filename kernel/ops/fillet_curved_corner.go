@@ -144,7 +144,11 @@ func cornerCylinderArms(v *topo.Vertex, r float64, res Resolution) []cornerArm {
 		if !ok || classifyCurvedArm(wc, pl, res) != armCylinder {
 			continue
 		}
-		spine, ok := cylinderArmSurface(e, wc, pl, r)
+		outwardN, ok := planeHostNormal(e, pl)
+		if !ok {
+			continue
+		}
+		spine, ok := cylinderArmSurface(e, wc, pl, outwardN, r)
 		if !ok {
 			continue
 		}
