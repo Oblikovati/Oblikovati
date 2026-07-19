@@ -330,6 +330,8 @@ func onHostSurface(surf geom.Surface, p math.Point3, tol float64) bool {
 		return stdmath.Abs(float64(w.Sub(axis.Scale(w.Dot(axis))).Length())-h.Radius) <= tol
 	case geom.Sphere:
 		return stdmath.Abs(float64(h.Center.VectorTo(p).Length())-h.Radius) <= tol
+	case geom.Cone:
+		return stdmath.Abs(coneSignedDistance(h, p)) <= tol // on the cone wall: exact signed cone distance ≈ 0
 	}
 	return false
 }

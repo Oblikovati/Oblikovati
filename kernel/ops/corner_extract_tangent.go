@@ -167,7 +167,7 @@ func reflectedArmCentres(w cornerWeld, arms []edgeFillet, scale float64, res Res
 // seedRootArm marks the first arm whose spine contains w.center as resolved with centre w.center.
 func seedRootArm(w cornerWeld, arms []edgeFillet, scale float64, res Resolution, centres []math.Point3, done []bool) {
 	for i, a := range arms {
-		if _, ok := armStation(a.armSurface, w.center, scale, res); ok {
+		if _, ok := armStation(a, w.center, scale, res); ok {
 			centres[i], done[i] = w.center, true
 			return
 		}
@@ -192,7 +192,7 @@ func resolveArmCentre(w cornerWeld, arms []edgeFillet, i int, centres []math.Poi
 			continue
 		}
 		cand := reflectAcrossFace(centres[j], pl)
-		if _, ok := armStation(arms[i].armSurface, cand, scale, res); ok {
+		if _, ok := armStation(arms[i], cand, scale, res); ok {
 			return cand, true, ""
 		}
 		reason = fmt.Sprintf("arm %d: reflected centre %v off its own spine; corner ball %v not substituted (tol %.3e)",

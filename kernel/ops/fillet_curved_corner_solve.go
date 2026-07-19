@@ -88,7 +88,7 @@ func solveCurvedCorner(sphere geom.Sphere, arms []edgeFillet, res Resolution) (c
 
 // solveArmSetback solves one arm's station and its two rail directions from its two host faces.
 func solveArmSetback(ef edgeFillet, c math.Point3, r, scale float64, res Resolution) (armSetback, bool) {
-	station, ok := armStation(ef.armSurface, c, scale, res)
+	station, ok := armStation(ef, c, scale, res)
 	if !ok {
 		return armSetback{}, false // C not on this arm's spine (gap) — the arm does not reach the corner
 	}
@@ -146,15 +146,24 @@ func fartherEndpoint(e *topo.Edge, c math.Point3) math.Point3 {
 	return t
 }
 
-// armStation reads the setback station off the arm spine in closed form (spine(station)=C).
-func armStation(surf geom.Surface, c math.Point3, scale float64, res Resolution) (float64, bool) {
-	switch s := surf.(type) {
+// armStation reads the setback station off the arm spine in closed form (spine(station)=C). The canal
+// (Cone∧Plane ruling) arm carries a geom.BSplineSurface armSurface whose analytic spine cannot ride
+// inside the concrete surface type (the tessellator keys on it), so it is recovered from the edgeFillet's
+// armCanalSpine descriptor (CN2) — the cone-host-corner-derivation.md §"why exact" closed-form station
+// x_f = (C−A)·ê, gated on C lying on the hyperbola spine. Every non-canal arm (armCanalSpine == nil) keeps
+// the torus/cylinder switch byte-identically. Takes the whole edgeFillet (all call sites hold it) so the
+// canal spine is reachable without smuggling it through geom.Surface (CN2 reviewer's local-wiring note).
+func armStation(ef edgeFillet, c math.Point3, scale float64, res Resolution) (float64, bool) {
+	if ef.armCanalSpine != nil {
+		return ef.armCanalSpine.stationOf(c, scale, res.Weld())
+	}
+	switch s := ef.armSurface.(type) {
 	case geom.Torus:
 		return torusStation(s, c, scale, res)
 	case geom.Cylinder:
 		return cylinderStation(s, c, scale, res)
 	default:
-		return 0, false // only torus / cylinder arms carry a rolling-ball spine
+		return 0, false // only torus / cylinder / canal arms carry a rolling-ball spine
 	}
 }
 
