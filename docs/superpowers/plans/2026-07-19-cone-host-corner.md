@@ -77,17 +77,25 @@ canal-arm crux. One `geom.Cone` host + two `geom.Plane`s. Dispatch: `coneHostCor
   the §3 table to 1e-12 (C2 (75.466,−10,10) res 2.8e-14, etc.); verify `cornerCylinderArms` does NOT claim
   the Cone∧Plane ruling edge.
 
-- **CN4 — Weld + retrim.** Great-circle welds (REUSED — C lies on all three spines, exact §"why exact");
-  cone-host bite (torus contact-arc + canal cone-side rail t↦T(m(t)) as Curve3, pinch at T), plane-host
-  bite (exact hyperbola foot Curve3), degenerate pinch-vertex-at-T handling (do NOT synthesize OCCT's
-  0.14 sliver bridge; dedup C8's two canal rails ending at the same T). C8: cone-strip face + consumed-apex
-  topology (both radial planes → bottom slivers). Watertight + volume + per-face fold gates; byte-identity.
-
-- **CN5 — Far-runout.** Reuse FR1–FR3 for the cylinder arms' perpendicular caps + the torus arms' meridian
-  caps (certify). NEW: canal oblique-plane cap (per-station `crossSectionArc ∩ plane`, closed form); D1's
-  **snout cap** (spine ends at the hyperbola vertex; last characteristic circle in the far radial meridian
-  plane; endpoints bit-exact on the axis edge + far ruling — guard: far plane ⊥ vertex-station tangent
-  within band, else reject the snout). Fold + watertight gates.
+- **CN4/CN5 — RE-SCOPED after the CN4 attempt (2026-07-19): the CN4/CN5 split was INFEASIBLE.** The
+  canal arm face cannot close its boundary loop without its far-runout cap, so greening C2/C6/D1 needs the
+  canal far-cap as a hard prerequisite of the weld; and the CN2 canal arm was lofted over the edge-ENDPOINT
+  span, not the corner-trimmed span. New decomposition:
+  - **CN4a (DONE, commit 6dec9883):** wire the canal `armStation` (via `armCanalSpine`) + the cone
+    `onHostSurface` case. Byte-identity-safe groundwork; corpus 60 unchanged. The corner SOLVE +
+    great-circle weld + Gauss–Bonnet closure all pass (proving `solveCurvedCorner`/`curvedSetbackRail`
+    carry over verbatim).
+  - **CN4b (= merged weld + far-runout):** rebuild the canal arm over `[x_f,far, x_f,C]` (v=C boundary =
+    the corner great circle); the canal FAR-RUNOUT cap (`intersectArmCapping`/`armSprings` canal case —
+    oblique `canal ∩ cap-plane`; D1's hyperbola-vertex snout, endpoints bit-exact on axis + far ruling,
+    guard far-plane ⊥ vertex tangent else reject); cone-host bite (torus contact-arc + canal cone-side
+    rail `t↦T(m(t))` Curve3, pinch at T) + plane-host bite (exact hyperbola foot Curve3); degenerate
+    pinch-at-T (do NOT synthesize OCCT's 0.14 sliver; dedup C8's two canal cone-rails). Reuse FR1–FR3 for
+    the cylinder perpendicular caps + torus meridian caps. → green C2/C6/D1 (corpus 60→63). Watertight +
+    volume + per-face fold gates; byte-identity.
+  - **CN-C8 (separate):** C8's apex-strip / consumed-apex topology (both radial planes → bottom slivers;
+    corner ball wraps over the top, excess 4.498 sr, area 448.4). Watertight + volume-positive; area
+    +1.07% (red pending the CN6 override).
 
 - **CN6 — Corpus gates + the C8 area decision.** occtparity scoreboard → corpus 64; do-no-harm across the
   60 prior greens (mesh-hash); per-case fold/watertight gates for C2/C6/C8/D1; **MEASURE C8's exact-body
