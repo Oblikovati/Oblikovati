@@ -995,6 +995,11 @@ func solveBlend(v *topo.Vertex, faces []*topo.Face, r float64) (*cornerBlend, er
 	if sph, sphereFace, planes, ok := sphereHostCorner(faces); ok {
 		return solveSphereBlend(v, faces, sph, sphereFace, planes, r)
 	}
+	// CN3: a cone host + two planes solves the analytic sphere corner too (cone-host campaign). Ordered
+	// AFTER sphereHostCorner and before solvePlanarBlend, so every non-cone corner stays byte-identical.
+	if co, coneFace, planes, ok := coneHostCorner(faces); ok {
+		return solveConeBlend(v, faces, co, coneFace, planes, r)
+	}
 	return solvePlanarBlend(v, faces, r)
 }
 

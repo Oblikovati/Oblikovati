@@ -217,9 +217,22 @@ func hostTangentPoint(surf geom.Surface, c math.Point3, r float64, res Resolutio
 		return cylinderTangentPoint(s, c, r, res)
 	case geom.Sphere:
 		return sphereHostTangentPoint(s, c, r, res)
+	case geom.Cone:
+		return coneHostTangentPoint(s, c, r, res)
 	default:
-		return math.Point3{}, false // only planar / cylindrical / spherical hosts are supported
+		return math.Point3{}, false // only planar / cylindrical / spherical / conical hosts are supported
 	}
+}
+
+// coneHostTangentPoint is the meridian foot T where the corner ball at centre c touches the host cone
+// (cone-host campaign CN3, cone-host-corner-derivation.md §3) — the cone sibling of sphereHostTangentPoint
+// for the corner weld (CN4). The cone is tangent there iff the exact signed cone distance equals r
+// (coneSignedDistance = r); otherwise the ball does not touch this cone wall at radius r and ok=false.
+func coneHostTangentPoint(co geom.Cone, c math.Point3, r float64, res Resolution) (math.Point3, bool) {
+	if stdmath.Abs(coneSignedDistance(co, c)-r) > res.Weld()*r {
+		return math.Point3{}, false // cone not tangent to the ball at radius r (want signed dist = r)
+	}
+	return coneTangentPoint(co, c), true
 }
 
 // sphereHostTangentPoint is the radial projection of the corner centre C onto the host sphere wall at
