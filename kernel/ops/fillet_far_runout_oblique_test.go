@@ -131,7 +131,7 @@ func contactArcRail(t *testing.T, circle geom.Circle, tor geom.Torus) endSeg {
 func TestBiteArcBulge_SamplesObliqueTrim(t *testing.T) {
 	tor, sphere, lonPlane, cap := d5MeridianArm(t)
 	feet := d5Feet(t, tor, sphere, lonPlane, cap)
-	trim, ok := intersectArmCapping(tor, cap, feet, 10, ResolutionForSize(300))
+	trim, ok := intersectArmCapping(edgeFillet{armSurface: tor}, cap, feet, 10, ResolutionForSize(300))
 	if !ok {
 		t.Fatal("precondition: the D5 spiric trim must build")
 	}

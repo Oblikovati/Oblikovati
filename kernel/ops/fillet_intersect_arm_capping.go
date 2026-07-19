@@ -27,18 +27,24 @@ import (
 // armSprings + springCapFoot (fillet_arm_springs.go); the port consumes them and never re-fits.
 
 // intersectArmCapping dispatches on the arm surface type; each pairing restricts arm ∩ capping to the
-// oriented sub-arc feet[0]→feet[1]. r is the fillet radius (carried for the §4 Newton pairings, which are
-// not exercised by this slice). Returns (nil, false) — the do-no-harm floor — for any un-shipped pairing
-// or on any existence/branch/grazing decline (far-runout-port-math §6, "numerical pitfalls").
-func intersectArmCapping(arm, capping geom.Surface, feet [2]math.Point3, r float64, res Resolution) (geom.Curve3, bool) {
-	_ = r
-	switch a := arm.(type) {
+// oriented sub-arc feet[0]→feet[1]. It takes the whole edgeFillet so a CANAL arm's cap trim can recover
+// the exact hyperbola spine (armCanalSpine, keyed BEFORE the type switch — CN4b-1, the CN4a
+// armStation(ef) precedent); every non-canal arm keeps the torus/cylinder switch byte-identically. r is
+// the fillet radius (carried for the §4 Newton pairings, not exercised by this slice). Returns
+// (nil, false) — the do-no-harm floor — for any un-shipped pairing or on any existence/branch/grazing
+// decline (far-runout-port-math §6, "numerical pitfalls").
+func intersectArmCapping(ef edgeFillet, capping geom.Surface, feet [2]math.Point3, r float64, res Resolution) (geom.Curve3, bool) {
+	if ef.armCanalSpine != nil {
+		return canalCappingTrim(*ef.armCanalSpine, capping, feet, r, res)
+	}
+	switch a := ef.armSurface.(type) {
 	case geom.Torus:
 		return torusCappingTrim(a, capping, feet) // the torus path builds its own scale-local tolerance
 	case geom.Cylinder:
 		return cylinderCappingTrim(a, capping, feet, res)
 	}
-	return nil, false // only torus/cylinder arms carry a rolling-ball section
+	_ = r
+	return nil, false // only torus/cylinder/canal arms carry a rolling-ball section
 }
 
 // torusCappingTrim routes a torus arm's capping. Only ∩Plane (the spiric) ships for the sphere slice;

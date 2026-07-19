@@ -102,7 +102,7 @@ func obliqueRunout(ef edgeFillet, capping *topo.Face, h0, h1 endSeg, r float64, 
 	if !ok {
 		return h0, h1, run, false, reason
 	}
-	section, ok := intersectArmCapping(ef.armSurface, capping.Geometry(), feet, r, res)
+	section, ok := intersectArmCapping(ef, capping.Geometry(), feet, r, res)
 	if !ok {
 		return h0, h1, run, false, fmt.Sprintf("oblique runout: intersectArmCapping declined the trim through feet %v→%v", feet[0], feet[1])
 	}

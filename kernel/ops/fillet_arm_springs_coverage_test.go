@@ -40,7 +40,7 @@ func TestCylinderArmSpringsTwoPlaneHosts(t *testing.T) {
 	}
 	plA, _ := geom.NewPlane(math.P3(10, 0, 0), math.V3(1, 0, 0)) // touched by the cyl at x=+10
 	plB, _ := geom.NewPlane(math.P3(0, 10, 0), math.V3(0, 1, 0)) // touched at y=+10
-	springs, ok := armSprings(cyl, plA, plB, 0)
+	springs, ok := armSprings(edgeFillet{armSurface: cyl}, plA, plB, 0)
 	if !ok {
 		t.Fatal("armSprings(cylinder, plane, plane) declined, want two rulings")
 	}
@@ -58,7 +58,7 @@ func TestCylinderArmSpringsTwoPlaneHosts(t *testing.T) {
 	if _, ok := cylinderArmSprings(cyl, plA, geom.Sphere{Radius: 1}); ok {
 		t.Fatal("cylinderArmSprings with a non-plane host = ok, want decline")
 	}
-	if _, ok := armSprings(geom.Sphere{Radius: 1}, plA, plB, 0); ok {
+	if _, ok := armSprings(edgeFillet{armSurface: geom.Sphere{Radius: 1}}, plA, plB, 0); ok {
 		t.Fatal("armSprings on an unrecognized (sphere) arm = ok, want the default decline")
 	}
 }

@@ -25,10 +25,16 @@ import (
 // the nearer root to the far vertex kept (the nearerRoot precedent).
 
 // armSprings returns an arm's two host-contact spring curves. hostA/hostB are the arm's two host surfaces
-// (edgeFillet.a/.b in FR3). Declines when the hosts are not a recognized fillet pairing or are not tangent
-// to the arm — a wrong pairing must never fabricate a spring. r is the fillet radius (torus minor).
-func armSprings(arm, hostA, hostB geom.Surface, r float64) ([2]geom.Curve3, bool) {
-	switch a := arm.(type) {
+// (edgeFillet.a/.b in FR3). It takes the whole edgeFillet so a CANAL arm's springs can recover the exact
+// hyperbola spine (armCanalSpine, keyed BEFORE the type switch — CN4b-1, the CN4a armStation(ef)
+// precedent); every non-canal arm keeps the torus/cylinder switch byte-identically. Declines when the
+// hosts are not a recognized fillet pairing or are not tangent to the arm — a wrong pairing must never
+// fabricate a spring. r is the fillet radius (torus minor).
+func armSprings(ef edgeFillet, hostA, hostB geom.Surface, r float64) ([2]geom.Curve3, bool) {
+	if ef.armCanalSpine != nil {
+		return canalArmSprings(*ef.armCanalSpine, ef.edge, r)
+	}
+	switch a := ef.armSurface.(type) {
 	case geom.Torus:
 		return torusArmSprings(a, hostA, hostB)
 	case geom.Cylinder:
@@ -160,6 +166,8 @@ func springCapFoot(spring geom.Curve3, capping geom.Surface, near math.Point3, r
 		return circlePlaneFoot(s, pl, near, res)
 	case geom.Line:
 		return linePlaneFoot(s, pl)
+	case coneCanalSpring:
+		return s.canalCapFoot(pl, near, res)
 	}
 	return math.Point3{}, false
 }

@@ -57,7 +57,7 @@ func d5MeridianArm(t *testing.T) (geom.Torus, geom.Sphere, geom.Plane, geom.Plan
 // like the DRAWEXE far edge. `near` is a material-side (−x) reference so springCapFoot keeps the −x roots.
 func d5Feet(t *testing.T, tor geom.Torus, sphere geom.Sphere, lonPlane, cap geom.Plane) [2]math.Point3 {
 	t.Helper()
-	springs, ok := armSprings(tor, sphere, lonPlane, 10)
+	springs, ok := armSprings(edgeFillet{armSurface: tor}, sphere, lonPlane, 10)
 	if !ok {
 		t.Fatal("armSprings declined the D5 sphere∧plane torus arm")
 	}
@@ -90,7 +90,7 @@ func TestIntersectArmCapping_D5MeridianSpiric(t *testing.T) {
 	feet := d5Feet(t, tor, sphere, lonPlane, cap)
 	assertFeetMatchOracle(t, feet)
 
-	curve, ok := intersectArmCapping(tor, cap, feet, 10, ResolutionForSize(300))
+	curve, ok := intersectArmCapping(edgeFillet{armSurface: tor}, cap, feet, 10, ResolutionForSize(300))
 	if !ok || curve == nil {
 		t.Fatal("intersectArmCapping declined D5's Torus∩Plane runout")
 	}
@@ -175,7 +175,7 @@ func closestOnCurve(curve geom.Curve3, p math.Point3) float64 {
 func TestIntersectArmCapping_D5BranchMutation(t *testing.T) {
 	tor, sphere, lonPlane, cap := d5MeridianArm(t)
 	feet := d5Feet(t, tor, sphere, lonPlane, cap)
-	curve, ok := intersectArmCapping(tor, cap, feet, 10, ResolutionForSize(300))
+	curve, ok := intersectArmCapping(edgeFillet{armSurface: tor}, cap, feet, 10, ResolutionForSize(300))
 	if !ok {
 		t.Fatal("precondition: the port must build the D5 trim")
 	}
@@ -217,7 +217,7 @@ func TestCylinderPlaneTrim_Ellipse(t *testing.T) {
 	assertEllipseMatchesOCCT(t, ell)
 
 	feet := [2]math.Point3{ell.PointAt(0.12), ell.PointAt(0.4)}
-	trim, ok := intersectArmCapping(cyl, pl, feet, 15, res)
+	trim, ok := intersectArmCapping(edgeFillet{armSurface: cyl}, pl, feet, 15, res)
 	if !ok || trim == nil {
 		t.Fatal("intersectArmCapping declined the oblique Cyl∩Plane runout")
 	}
@@ -265,12 +265,12 @@ func TestIntersectArmCapping_HonestReject(t *testing.T) {
 	tor, _, _, cap := d5MeridianArm(t)
 	res := ResolutionForSize(300)
 	offArm := [2]math.Point3{math.P3(1000, 0, 0), math.P3(0, 0, d5CapZ)}
-	if c, ok := intersectArmCapping(tor, cap, offArm, 10, res); ok || c != nil {
+	if c, ok := intersectArmCapping(edgeFillet{armSurface: tor}, cap, offArm, 10, res); ok || c != nil {
 		t.Fatalf("a foot off the arm must decline; got (%v,%v)", c, ok)
 	}
 	axisCap := planeOn(t, math.P3(0, 20, 0), math.V3(0, 1, 0)) // ⊥ the torus axis ŷ → M→0
 	feet := [2]math.Point3{tor.PointAt(0.3, 0.3), tor.PointAt(0.3, -0.3)}
-	if c, ok := intersectArmCapping(tor, axisCap, feet, 10, res); ok || c != nil {
+	if c, ok := intersectArmCapping(edgeFillet{armSurface: tor}, axisCap, feet, 10, res); ok || c != nil {
 		t.Fatalf("a cap plane ⊥ the torus axis (M→0) must decline (latitude-circle follow-on); got (%v,%v)", c, ok)
 	}
 }
@@ -319,7 +319,7 @@ func TestSpiricBandOK_GrazingRejects(t *testing.T) {
 	if spiricBandOK(tor, m, k, c, stdmath.Pi/2, 0, tol) {
 		t.Fatal("precondition: spiricBandOK must reject the grazing band (w=1.05 at v=π/2)")
 	}
-	if curve, ok := intersectArmCapping(tor, grazeCap, feet, 10, res); ok || curve != nil {
+	if curve, ok := intersectArmCapping(edgeFillet{armSurface: tor}, grazeCap, feet, 10, res); ok || curve != nil {
 		t.Fatalf("grazing band must decline (foot at w=1.05 > 1); got (%v,%v)", curve, ok)
 	}
 }
@@ -353,7 +353,7 @@ func TestIntersectArmCapping_PlusOneBranch(t *testing.T) {
 		placeSpiricFoot(tor, cap, 1, -0.6),
 		placeSpiricFoot(tor, cap, 1, 0.6),
 	}
-	curve, ok := intersectArmCapping(tor, cap, feet, 10, ResolutionForSize(120))
+	curve, ok := intersectArmCapping(edgeFillet{armSurface: tor}, cap, feet, 10, ResolutionForSize(120))
 	if !ok || curve == nil {
 		t.Fatal("the +1-branch trim must build")
 	}
@@ -391,7 +391,7 @@ func TestIntersectArmCapping_ZeroSurvivorDeclines(t *testing.T) {
 	if _, ok := selectSpiricBranch(tor, phi, m, k, c, -0.6, 0.6, feet, tol); ok {
 		t.Fatal("precondition: no single branch may certify both feet (0 survivors)")
 	}
-	if curve, ok := intersectArmCapping(tor, cap, feet, 10, ResolutionForSize(120)); ok || curve != nil {
+	if curve, ok := intersectArmCapping(edgeFillet{armSurface: tor}, cap, feet, 10, ResolutionForSize(120)); ok || curve != nil {
 		t.Fatalf("mismatched-branch feet must decline (0 survivors); got (%v,%v)", curve, ok)
 	}
 }

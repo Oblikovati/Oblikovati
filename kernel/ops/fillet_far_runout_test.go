@@ -180,7 +180,7 @@ func buildNValentFarVertex(t *testing.T) (edgeFillet, *topo.Vertex) {
 func TestIntersectArmCapping_DeclinesInvalidFeet(t *testing.T) {
 	arm, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 10)
 	pl := planeOn(t, math.P3(0, 0, 100), math.V3(1, 0, 1))
-	if c, ok := intersectArmCapping(arm, pl, [2]math.Point3{{}, {}}, 10, ResolutionForSize(200)); ok || c != nil {
+	if c, ok := intersectArmCapping(edgeFillet{armSurface: arm}, pl, [2]math.Point3{{}, {}}, 10, ResolutionForSize(200)); ok || c != nil {
 		t.Fatalf("intersectArmCapping returned (%v, %v) on placeholder feet, want (nil, false)", c, ok)
 	}
 }

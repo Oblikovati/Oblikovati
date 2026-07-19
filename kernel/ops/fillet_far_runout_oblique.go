@@ -24,7 +24,7 @@ import (
 // back to (ef.a, ef.b) so it lines up with the rails h0/h1. Declines when the hosts are not a recognized
 // fillet pairing or a spring does not cross the capping.
 func armRunoutFeet(ef edgeFillet, capping geom.Surface, near0, near1 math.Point3, r float64, res Resolution) ([2]math.Point3, bool, string) {
-	springs, ok := armSprings(ef.armSurface, ef.a.Geometry(), ef.b.Geometry(), r)
+	springs, ok := armSprings(ef, ef.a.Geometry(), ef.b.Geometry(), r)
 	if !ok {
 		return [2]math.Point3{}, false, "oblique runout: armSprings declined the arm's host pairing (not a recognized sphere/plane fillet)"
 	}
@@ -37,10 +37,17 @@ func armRunoutFeet(ef edgeFillet, capping geom.Surface, near0, near1 math.Point3
 	return [2]math.Point3{footA, footB}, true, ""
 }
 
-// springsForHosts maps the two springs armSprings returns onto the arm's host order (ef.a, ef.b). A torus
-// arm's springs come out [sphere, plane] (torusArmSprings), so they are re-ordered by which host is the
+// springsForHosts maps the two springs armSprings returns onto the arm's host order (ef.a, ef.b). A canal
+// arm's springs come out [plane, cone] (canalArmSprings), so they are re-ordered by which host is the
+// geom.Plane; a torus arm's springs come out [sphere, plane] and are re-ordered by which host is the
 // sphere; a cylinder arm's springs preserve the (hostA=ef.a, hostB=ef.b) argument order.
 func springsForHosts(ef edgeFillet, springs [2]geom.Curve3) (geom.Curve3, geom.Curve3) {
+	if ef.armCanalSpine != nil {
+		if _, aIsPlane := ef.a.Geometry().(geom.Plane); aIsPlane {
+			return springs[0], springs[1] // ef.a is the plane host → springs[0] (plane spring) is on ef.a
+		}
+		return springs[1], springs[0] // ef.a is the cone host → swap so the cone spring lands on ef.a
+	}
 	if _, isTorus := ef.armSurface.(geom.Torus); isTorus {
 		if _, aIsSphere := ef.a.Geometry().(geom.Sphere); aIsSphere {
 			return springs[0], springs[1] // ef.a is the sphere → springs[0] (sphere spring) is on ef.a
