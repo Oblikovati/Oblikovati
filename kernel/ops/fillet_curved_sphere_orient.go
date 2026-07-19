@@ -38,15 +38,44 @@ func orientForSphereHost(body *topo.Body, all, hostFaces []filletFace) []filletF
 	if _, compact := compactSpherePole(sph, all[i].loops[0].pts); !compact {
 		return all // non-compact BITE loop (E4): base left it to the mesher's own winding — do not reseed (D9-T2 review)
 	}
+	// The corner-path winding test reads the RAW bite verts (byte-identity with the pre-D9 base): the
+	// compact bite loop's chords do not shortcut across the material zone the way a wide loop's would.
+	return seedSphereHostSense(body, all, i, all[i].loops[0].pts)
+}
+
+// seedSphereHostSense reorders `all` so the host sphere at index i becomes the shell seed (faces[0]) wound
+// so the sphere-patch mesher fills the MATERIAL zone. windRing is the loop sampled for the winding-sign test:
+// the raw compact bite verts for the corner path, or the arc-sampled boundary for a WIDE single-runout loop
+// (whose 270° rail/rim chords would otherwise shortcut across the zone and misread the sign). The material
+// pole comes from originalZonePole (the original outward face), correct for a sub- and a >hemisphere zone.
+func seedSphereHostSense(body *topo.Body, all []filletFace, i int, windRing []math.Point3) []filletFace {
+	sph := all[i].surface.(geom.Sphere)
 	pole, ok := originalZonePole(body, sph)
 	if !ok {
 		return all
 	}
-	if loopTurnsNegative(sph, pole, all[i].loops[0].pts) {
+	if loopTurnsNegative(sph, pole, windRing) {
 		all[i] = reverseFilletFace(all[i]) // emit it CCW-seen-from-outside so the seeded sense meshes the patch
 	}
 	all[0], all[i] = all[i], all[0] // seed orientFilletShell from the host sphere (it keeps faces[0]'s sense)
 	return all
+}
+
+// filletLoopWindRing samples a pre-assembly filletLoop into a closed polyline (each Arc3d segment expanded
+// through its interior points via segPolyline) for the sphere-host winding-sign test. A wide single-runout
+// sphere loop is mostly reflex arcs (the 270° rail and rim), so its raw vertices alone chord across the
+// removed zone; sampling the arcs makes loopTurnsNegative read the true material-zone winding.
+func filletLoopWindRing(l filletLoop) []math.Point3 {
+	n := len(l.pts)
+	segs := make([]endSeg, n)
+	for i := range l.pts {
+		s := endSeg{from: l.pts[i], to: l.pts[(i+1)%n]}
+		if arc, ok := curveAt(l.curves, i).(geom.Arc3d); ok {
+			s.curve, s.mid, s.arc = arc, arc.PointAt(0.5), true
+		}
+		segs[i] = s
+	}
+	return segPolyline(segs)
 }
 
 // cornerBlendMeshesComplement reports whether the assembled body's CORNER BLEND sphere patch would mesh

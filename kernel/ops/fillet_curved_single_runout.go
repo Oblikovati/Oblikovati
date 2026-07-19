@@ -39,10 +39,11 @@ func isSingleArmRunout(fils []edgeFillet) bool {
 	if ef.edge == nil || !isRunoutArmKind(ef.armSurface) {
 		return false // no wired edge, or a canal/BSpline arm this construction does not model
 	}
-	if isReflexArcEdge(ef.edge) {
-		return false // a >180° curved rim: its receded cone/sphere host is a REFLEX sector whose periodic
-		// tessellation (D9-class, subArcMajor territory) is beyond R1's convex-sector tracers — keep flooring
-	}
+	// A REFLEX (>180°) rim is admitted too: its receded cone/sphere/cylinder host keeps its true major
+	// sector via reflexContactRail (subArcMajor) and, for a sphere host, orientRunoutSphereHost. The
+	// blanket reflex reject is gone — the two admission conditions below are the real gate: BOTH ends are
+	// clean trihedral single-plane caps (cappingFaceAtFarVertex), and a reflex rim whose major rail cannot
+	// close floors honestly inside singleArmRunoutBody (armRunoutRail returns false → curvedArmUnweldedError).
 	filletedEdges := map[uint64]bool{ef.edge.ID(): true}
 	for _, v := range ef.edge.Vertices() {
 		if _, ok, _ := cappingFaceAtFarVertex(v, ef, filletedEdges); !ok {
@@ -64,11 +65,11 @@ func isRunoutArmKind(arm geom.Surface) bool {
 	}
 }
 
-// isReflexArcEdge reports whether the picked edge is a curved rim sweeping MORE than half a turn (a
-// reflex arc, |sweep| > π). Such a rim's receded curved host (cone/sphere) is a reflex angular sector,
-// whose periodic-surface tessellation needs the >180° major-span handling (subArcMajor / D9) that R2/R3
-// own — beyond R1's convex-sector cylinder-arm / torus-on-cone tracers. A straight (line) edge is never
-// reflex, so a cylinder-arm pick (B6) always passes; only a torus-arm arc pick can trip this.
+// isReflexArcEdge reports whether the picked edge is a curved rim sweeping MORE than half a turn (a reflex
+// arc, |sweep| > π). Its receded curved host (cone/sphere/cylinder) is a reflex angular sector kept MAJOR by
+// reflexContactRail (subArcMajor). armRunoutRail uses this to FLOOR honestly when a reflex rim's major rail
+// cannot close — a straight or convex rim would instead take the byte-identical three-point minor rail. A
+// straight (line) edge is never reflex, so a cylinder-arm pick (B6) is never tripped; only a torus-arm arc can.
 func isReflexArcEdge(e *topo.Edge) bool {
 	arc, ok := e.Geometry().(geom.Arc3d)
 	return ok && stdmath.Abs(arc.SweepAngle) > stdmath.Pi
@@ -104,8 +105,8 @@ func singleArmRunoutBody(body *topo.Body, ef edgeFillet, res Resolution) (*topo.
 	if reason != "" {
 		return nil, reason
 	}
-	railA, okA := armRunoutRail(ef.a, arm, feet.a0, feet.a1, res)
-	railB, okB := armRunoutRail(ef.b, arm, feet.b0, feet.b1, res)
+	railA, okA := armRunoutRail(ef.a, ef.edge, arm, feet.a0, feet.a1, res)
+	railB, okB := armRunoutRail(ef.b, ef.edge, arm, feet.b0, feet.b1, res)
 	if !okA || !okB {
 		return nil, fmt.Sprintf("single-arm runout: a host contact rail could not be built (ef.a ok=%v, ef.b ok=%v)", okA, okB)
 	}
@@ -117,7 +118,26 @@ func singleArmRunoutBody(body *topo.Body, ef edgeFillet, res Resolution) (*topo.
 	if reason != "" {
 		return nil, reason
 	}
-	return assembleBody(faces), ""
+	return assembleBody(orientRunoutSphereHost(body, faces)), ""
+}
+
+// orientRunoutSphereHost seeds a sphere-HOST single-runout shell (D8) from its host sphere, wound so the
+// sphere-patch mesher fills the MATERIAL zone rather than the complement. A reflex runout's host sphere is a
+// >hemisphere 270° zone whose retrimmed boundary is a WIDE arc loop — so orientForSphereHost's compact
+// byte-identity gate skips it — but the material-zone reseed is winding-robust once the rail/rim arcs are
+// sampled (filletLoopWindRing). A cone/cylinder-host runout (C5/B6/C9/C1/M7) carries no sphere face, so this
+// is a no-op there (byte-identical). nil body ⇒ no original zone to anchor: do-no-harm pass-through.
+func orientRunoutSphereHost(body *topo.Body, faces []filletFace) []filletFace {
+	if body == nil {
+		return faces
+	}
+	for i := range faces {
+		if _, ok := faces[i].surface.(geom.Sphere); !ok || len(faces[i].loops) == 0 || len(faces[i].loops[0].pts) < 3 {
+			continue
+		}
+		return seedSphereHostSense(body, faces, i, filletLoopWindRing(faces[i].loops[0]))
+	}
+	return faces
 }
 
 // runoutFeet holds the arm's four contact feet: on host ef.a at cap0/cap1 (a0/a1) and host ef.b (b0/b1).
@@ -161,9 +181,11 @@ func armRunoutFoot(host *topo.Face, ballCenter math.Point3, r, tol float64) (mat
 
 // armRunoutRail builds one arm's host contact rail spanning both caps, oriented foot0→foot1: a CYLINDER arm
 // (spine a line) contacts a wall/plane along a straight ruling; a TORUS arm (spine a circle) contacts along
-// a circular arc of the host contact circle (torusContactCircle — the SAME circle the corner retrim uses),
-// re-fit through the two feet and the contact-circle midpoint so it is an exact Arc3d, never a chord.
-func armRunoutRail(host *topo.Face, arm geom.Surface, foot0, foot1 math.Point3, res Resolution) (endSeg, bool) {
+// a circular arc of the host contact circle (torusContactCircle — the SAME circle the corner retrim uses).
+// A CONVEX (<180°) rim's arc is re-fit through the two feet and the contact-circle midpoint (an exact minor
+// Arc3d, never a chord); a REFLEX (>180°) rim (C5/D8) keeps the MAJOR contact band via reflexContactRail so
+// its receded cone/sphere host holds the true 270° sector, not the minor complement a 3-point re-fit snaps to.
+func armRunoutRail(host *topo.Face, picked *topo.Edge, arm geom.Surface, foot0, foot1 math.Point3, res Resolution) (endSeg, bool) {
 	switch a := arm.(type) {
 	case geom.Cylinder:
 		return endSeg{from: foot0, to: foot1}, true // straight ruling on a wall/plane
@@ -171,6 +193,12 @@ func armRunoutRail(host *topo.Face, arm geom.Surface, foot0, foot1 math.Point3, 
 		center, radius, ok := torusContactCircle(host.Geometry(), a, res)
 		if !ok {
 			return endSeg{}, false // this host carries no torus contact circle
+		}
+		if seg, ok := reflexContactRail(picked, center, radius, foot0, foot1); ok {
+			return seg, true // >180° rim: MAJOR contact band (not the minor complement)
+		}
+		if picked != nil && isReflexArcEdge(picked) {
+			return endSeg{}, false // reflex rim whose major rail did not close — floor honestly (never the minor snap)
 		}
 		mid := arcMidBetween(center, radius, foot0, foot1)
 		arc, err := geom.Arc3dByThreePoints(foot0, mid, foot1)
@@ -181,6 +209,34 @@ func armRunoutRail(host *topo.Face, arm geom.Surface, foot0, foot1 math.Point3, 
 	default:
 		return endSeg{}, false
 	}
+}
+
+// reflexContactRail builds the torus arm's host contact rail as the MAJOR sub-arc of the contact circle
+// (centre/radius from torusContactCircle) when the picked rim is REFLEX (>180°). The rail must span the whole
+// picked edge's azimuth (C5/D8's 270°), so a three-point re-fit — ill-conditioned past a semicircle, silently
+// snapping to the minor complement (the N7 whole-curve-sub-span lesson) — is wrong there. It reuses subArcMajor:
+// it builds a contact-circle PARENT starting at foot0 and sweeping the picked edge's OWN signed sweep (so the
+// contact circle winds the rim's rotational sense and its endpoints stay distinct — a full 2π parent would make
+// arcFrac alias foot0 to the [0,1] window's far end), then takes that parent's from→to major sub-span. ok=false
+// for a straight or convex (<180°) picked edge (the caller keeps the byte-identical three-point rail) and when
+// the feet do not subtend a major span on the contact circle.
+func reflexContactRail(picked *topo.Edge, center math.Point3, radius float64, foot0, foot1 math.Point3) (endSeg, bool) {
+	if picked == nil {
+		return endSeg{}, false
+	}
+	arc, ok := picked.Geometry().(geom.Arc3d)
+	if !ok || stdmath.Abs(arc.SweepAngle) <= stdmath.Pi {
+		return endSeg{}, false // straight or convex rim: the minor three-point rail is correct (byte-identical)
+	}
+	parent, err := geom.NewArc3d(center, arc.Normal.AsVector(), center.VectorTo(foot0), radius, 0, arc.SweepAngle)
+	if err != nil {
+		return endSeg{}, false
+	}
+	sub, mid, ok := subArcMajor(parent, foot0, foot1)
+	if !ok {
+		return endSeg{}, false // feet do not subtend a major span on the contact circle
+	}
+	return endSeg{from: foot0, to: foot1, curve: sub, mid: mid, arc: true}, true
 }
 
 // singleRunoutTrims terminates BOTH ends through the general far-runout engine (armFarRunout). Each call
