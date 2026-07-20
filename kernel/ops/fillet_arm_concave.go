@@ -3,6 +3,7 @@
 package ops
 
 import (
+	"fmt"
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
@@ -22,52 +23,98 @@ import (
 
 // concaveCurvedArmFillet builds the exact concave cylinder arm on a reentrant axis-parallel
 // Cylinder∧Plane LINE edge (N3/M4/N9) and packs it into an edgeFillet marked armConcave so the
-// single-arm runout weld winds the arm band into the material. Returns false — so cylinderArmEdge keeps
-// the do-no-harm floor — for a varying pick, an inward-fill request, a convex/tangent edge, a non-line
-// (torus/oblique) concave edge (a later slice), a constructor decline (spindle/clearance), or a root
-// that fails the void/foot-validity gate (the spurious convex-side mirror ruling).
-func concaveCurvedArmFillet(body *topo.Body, e *topo.Edge, cyl geom.Cylinder, pl geom.Plane, p filletPick, res Resolution, concave ConcaveFill) (edgeFillet, bool) {
+// single-arm runout weld winds the arm band into the material. Returns (false, nil) — so cylinderArmEdge
+// keeps the do-no-harm floor — for a varying pick, an inward-fill request, a convex/tangent edge, a
+// non-line (torus/oblique) concave edge (a later slice), or an ambiguous void/foot gate. Returns
+// (false, err) — an HONEST reject carrying the offending r and host R — for a constructor decline
+// (spindle/clearance/degenerate frame, derivation §4).
+func concaveCurvedArmFillet(body *topo.Body, e *topo.Edge, cyl geom.Cylinder, pl geom.Plane, p filletPick, res Resolution, concave ConcaveFill) (edgeFillet, bool, error) {
 	if p.varying() || concave != FillConcaveOutward || ClassifyEdgeConvexity(e) != EdgeConcave {
-		return edgeFillet{}, false // convex-external, inward recess, and tangent edges are not this path
+		return edgeFillet{}, false, nil // convex-external, inward recess, and tangent edges are not this path
 	}
 	if classifyCurvedArm(cyl, pl, res) != armCylinder {
-		return edgeFillet{}, false // concave torus (circle edge) / oblique ellipse edge — later slice
+		return edgeFillet{}, false, nil // concave torus (circle edge) / oblique ellipse edge — later slice
 	}
 	planeN, ok := planeHostNormal(e, pl)
 	if !ok {
-		return edgeFillet{}, false // no readable plane host normal — cannot offset the ball into the void
+		return edgeFillet{}, false, nil // no readable plane host normal — cannot offset the ball into the void
 	}
-	arm, ok := concaveCylinderArmSurface(e, cyl, pl, planeN, p.r0, res)
-	if !ok || !concaveArmRootValid(body, e, arm, cyl, pl, p.r0, res) {
-		return edgeFillet{}, false
+	plus, minus, err := concaveCylinderArmCandidates(e, cyl, pl, planeN, p.r0, res)
+	if err != nil {
+		return edgeFillet{}, false, err // spindle/clearance/degenerate — honest reject with r, R
+	}
+	arm, ok := selectConcaveArmRoot(body, e, cyl, pl, plus, minus, p.r0, res)
+	if !ok {
+		return edgeFillet{}, false, nil // 0 or 2 candidates pass the void+foot gate — do-no-harm floor
 	}
 	faces := e.Faces()
-	return edgeFillet{a: faces[0], b: faces[1], edge: e, armSurface: arm, armConcave: true}, true
+	return edgeFillet{a: faces[0], b: faces[1], edge: e, armSurface: arm, armConcave: true}, true, nil
 }
 
-// concaveCylinderArmSurface builds the config-(ii) exact CONCAVE cylinder arm (derivation §1): a
-// rolling-ball fillet of radius r on the reentrant LINE edge where cylinder cyl meets plane pl with the
-// axis ∥ the plane. The arm axis is the ruling of P_r∩C_ρ with the offset plane pushed +r into the VOID
-// and the coaxial offset cylinder at ρ = R + ε·r (ε = n_C·r̂: +1 boss / −1 bore — centre = wall + r·n_C).
-// Returns false on a bore spindle (ρ collapses onto the axis, r ≥ R) or when P_r clears C_ρ (no ruling).
+// concaveCylinderArmCandidates builds BOTH config-(ii) CONCAVE cylinder arms (derivation §1) — the two
+// P_r∩C_ρ rulings as exact radius-r cylinders whose axis ∥ the host axis. The offset plane is pushed +r
+// into the VOID and the coaxial offset cylinder sits at ρ = R + ε·r (ε = n_C·r̂: +1 boss / −1 bore, so
+// centre = wall + r·n_C). The two are NOT yet disambiguated — selectConcaveArmRoot's void+foot gate picks
+// the physical one. Returns an HONEST error (carrying r and R) on a bore spindle (ρ reaches the axis),
+// a clearance (P_r clears C_ρ, no real ruling), or a degenerate arm frame.
 //
-// Example: concaveCylinderArmSurface(bossWallEdge{R:20}, boss, radialPlane, planeN, 5, res) → a radius-5
-// cylinder about the void-side ruling at distance R+r=25 from the boss axis (N3's arm).
-func concaveCylinderArmSurface(e *topo.Edge, cyl geom.Cylinder, pl geom.Plane, planeN math.UnitVector3, r float64, res Resolution) (geom.Cylinder, bool) {
+// Example: concaveCylinderArmCandidates(bossWallEdge{R:20}, boss, radialPlane, planeN, 5, res) → the two
+// radius-5 rulings on the void-side offset cylinder at distance R+r=25 from the boss axis (N3's arm pair).
+func concaveCylinderArmCandidates(e *topo.Edge, cyl geom.Cylinder, pl geom.Plane, planeN math.UnitVector3, r float64, res Resolution) (plus, minus geom.Cylinder, err error) {
+	rho, err := concaveArmOffsetRadius(e, cyl, r, res)
+	if err != nil {
+		return geom.Cylinder{}, geom.Cylinder{}, err
+	}
+	pBase, mBase, ok := concaveArmRulingBases(cyl, pl, planeN, rho, r)
+	if !ok {
+		return geom.Cylinder{}, geom.Cylinder{}, concaveClearanceErr(cyl, pl, planeN, rho, r)
+	}
+	axis, ref := cyl.AxisDir.AsVector(), planeN.AsVector()
+	plus, ep := geom.NewCylinderWithRef(pBase, axis, ref, r)
+	minus, em := geom.NewCylinderWithRef(mBase, axis, ref, r)
+	if ep != nil || em != nil {
+		return geom.Cylinder{}, geom.Cylinder{}, fmt.Errorf("concave cylinder arm: degenerate arm frame (axis ∥ plane normal) for r=%g on host R=%g", r, cyl.Radius)
+	}
+	return plus, minus, nil
+}
+
+// concaveArmOffsetRadius is ρ = R + ε·r (derivation §1): the ball-centre line's perpendicular distance to
+// the host axis, ε = n_C·r̂ ∈ {+1 boss, −1 bore}. The bore spindle reject (ρ = R−r reaches the axis when
+// r ≥ R) carries the offending r and R per §4 / CLAUDE.md. Errors on an on-axis edge (ε undefined).
+func concaveArmOffsetRadius(e *topo.Edge, cyl geom.Cylinder, r float64, res Resolution) (float64, error) {
 	eps, ok := cylinderHostRadialSign(e, cyl)
 	if !ok {
-		return geom.Cylinder{}, false // near-axis edge: the material-outward radial sign is ill-defined
+		return 0, fmt.Errorf("concave cylinder arm: radial sign undefined at an on-axis edge (host R=%g)", cyl.Radius)
 	}
 	rho := cyl.Radius + eps*r
 	if rho < armSpindleBand*res.Weld() {
-		return geom.Cylinder{}, false // bore spindle (ρ = R−r): the offset cylinder reaches the axis, r ≥ R
+		return 0, fmt.Errorf("concave cylinder arm: rolling radius r=%g must be < host radius R=%g (bore spindle: ρ=R−r=%g reaches the axis)", r, cyl.Radius, rho)
 	}
-	base, ok := concaveArmRulingBase(e, cyl, pl, planeN, rho, r)
-	if !ok {
-		return geom.Cylinder{}, false // P_r clears C_ρ — no real ruling
+	return rho, nil
+}
+
+// concaveClearanceErr reports the P_r∩C_ρ clearance reject (disc = ρ²−m² ≤ 0: the offset plane clears
+// the offset cylinder, so there is no real ruling — derivation §4) with the offending ρ, |m|, r, and R.
+func concaveClearanceErr(cyl geom.Cylinder, pl geom.Plane, planeN math.UnitVector3, rho, r float64) error {
+	m := r - pl.Origin.VectorTo(cyl.Origin).Dot(planeN.AsVector())
+	return fmt.Errorf("concave cylinder arm: offset plane clears the offset cylinder (ρ=%g ≤ |m|=%g); no real ruling for r=%g on host R=%g", rho, stdmath.Abs(m), r, cyl.Radius)
+}
+
+// selectConcaveArmRoot picks the PHYSICAL concave arm from the two candidate rulings by the void+foot
+// gate (concaveArmRootValid), NOT by nearest-to-edge-midpoint (derivation §2 / §Numerical pitfalls):
+// it validates BOTH candidates and returns the SOLE one that passes. ok=false when zero or both pass —
+// an ambiguous/degenerate config the caller then floors do-no-harm — so a symmetric config that would
+// tie nearest-midpoint to the spurious mirror ruling can never ship or needlessly floor the wrong root.
+func selectConcaveArmRoot(body *topo.Body, e *topo.Edge, cyl geom.Cylinder, pl geom.Plane, plus, minus geom.Cylinder, r float64, res Resolution) (geom.Cylinder, bool) {
+	okPlus := concaveArmRootValid(body, e, plus, cyl, pl, r, res)
+	okMinus := concaveArmRootValid(body, e, minus, cyl, pl, r, res)
+	if okPlus == okMinus {
+		return geom.Cylinder{}, false // 0 or 2 candidates satisfy the gate — cannot disambiguate
 	}
-	arm, err := geom.NewCylinderWithRef(base, cyl.AxisDir.AsVector(), planeN.AsVector(), r)
-	return arm, err == nil
+	if okPlus {
+		return plus, true
+	}
+	return minus, true
 }
 
 // cylinderHostRadialSign is ε = n_C·r̂ ∈ {+1,−1}: the sign that selects ρ = R + ε·r, from the cylinder
@@ -103,45 +150,86 @@ func cylinderHostOutwardNormal(e *topo.Edge, cyl geom.Cylinder, p math.Point3) (
 	return math.Vector3{}, false
 }
 
-// concaveArmRulingBase returns a point on the selected ruling of P_r∩C_ρ for the CONCAVE arm (derivation
-// §1) — armRulingBase's dual with the plane offset flipped into the void: in the axis frame a ruling
-// centre w satisfies |w|=ρ and w·n̂_P = +r − (A−p_P)·n̂_P (the plane pushed +r into the void), so
-// w = m·n̂_P ± √(ρ²−m²)·(â×n̂_P) are the two rulings and the edge midpoint picks the physical one. False
-// when the radicand is non-positive (P_r grazes or clears C_ρ). The void/foot gate then rejects the
-// mirror ruling if nearest-midpoint picked the spurious material-side root.
-func concaveArmRulingBase(e *topo.Edge, cyl geom.Cylinder, pl geom.Plane, planeN math.UnitVector3, rho, r float64) (math.Point3, bool) {
+// concaveArmRulingBases returns BOTH rulings of P_r∩C_ρ for the CONCAVE arm (derivation §1) —
+// armRulingBase's dual with the plane offset flipped into the void: in the axis frame a ruling centre w
+// satisfies |w|=ρ and w·n̂_P = +r − (A−p_P)·n̂_P (the plane pushed +r into the void), so
+// w = m·n̂_P ± √(ρ²−m²)·(â×n̂_P) are the two rulings. ok=false when the radicand is non-positive (P_r
+// grazes or clears C_ρ). The two are handed to selectConcaveArmRoot, which disambiguates them by the
+// void+foot gate — NOT by nearest-to-midpoint, so a symmetric config cannot pick the spurious mirror.
+func concaveArmRulingBases(cyl geom.Cylinder, pl geom.Plane, planeN math.UnitVector3, rho, r float64) (plus, minus math.Point3, ok bool) {
 	a := cyl.AxisDir.AsVector()
 	b := a.Cross(planeN.AsVector()) // ⟂ both axis and plane normal (config ii: n̂_P ⟂ â), unit length
 	m := r - pl.Origin.VectorTo(cyl.Origin).Dot(planeN.AsVector())
 	disc := rho*rho - m*m
 	if disc <= 0 {
-		return math.Point3{}, false
+		return math.Point3{}, math.Point3{}, false
 	}
 	t := stdmath.Sqrt(disc)
 	off := planeN.AsVector().Scale(m)
-	plus := cyl.Origin.TranslateBy(off.Add(b.Scale(t)))
-	minus := cyl.Origin.TranslateBy(off.Sub(b.Scale(t)))
-	return nearerRuling(e, plus, minus), true
+	plus = cyl.Origin.TranslateBy(off.Add(b.Scale(t)))
+	minus = cyl.Origin.TranslateBy(off.Sub(b.Scale(t)))
+	return plus, minus, true
 }
 
-// concaveArmRootValid disambiguates the physical concave root from the spurious material-side (convex
-// mirror) ruling (derivation §2): the ball centre at the edge midpoint's axial station must sit in the
-// VOID (PointInsideBody == false) AND be internally tangent (distance ≈ r) to BOTH host faces. The
-// convex-side mirror root fails the void gate; a clearance/degenerate config fails a foot. Uses the
-// model-relative tangency tol res.Weld()·r (ADR-0042), the same test armRunoutFoot applies in the weld.
+// concaveArmRootValid disambiguates the physical concave root from the spurious mirror ruling
+// (derivation §2): the ball centre at the edge midpoint's axial station must (1) sit in the VOID
+// (PointInsideBody == false), (2) be internally tangent (distance ≈ r) to BOTH host surfaces, AND
+// (3) land its PLANE contact foot inside the plane host's REAL trimmed loop. Condition (3) is the exact
+// discriminator §2.2/§3 mandate: for these finite bodies BOTH candidate centres sit outside the solid
+// (so the void gate alone accepts both) and BOTH are tangent to the infinite host surfaces — only the
+// physical root's plane foot RECEDES into the pre-existing plane loop; the mirror root's foot lands
+// outside it. Tangency uses the model-relative tol res.Weld()·r (ADR-0042), as armRunoutFoot does.
 func concaveArmRootValid(body *topo.Body, e *topo.Edge, arm, cyl geom.Cylinder, pl geom.Plane, r float64, res Resolution) bool {
 	centre, ok := armBallCenter(arm, edgeMidpoint(e))
 	if !ok || PointInsideBody(body, centre) {
-		return false // undefined spine, or the spurious convex-side root sitting in the material
+		return false // undefined spine, or a root sitting in the material
 	}
 	cylFace, planeFace := concaveHostFaces(e, cyl, pl)
 	if cylFace == nil || planeFace == nil {
 		return false
 	}
 	tol := res.Weld() * r
-	_, okC := armRunoutFoot(cylFace, centre, r, tol)
-	_, okP := armRunoutFoot(planeFace, centre, r, tol)
-	return okC && okP
+	if _, okC := armRunoutFoot(cylFace, centre, r, tol); !okC {
+		return false
+	}
+	footP, okP := armRunoutFoot(planeFace, centre, r, tol)
+	return okP && planeFootOnTrimmedFace(planeFace, pl, footP)
+}
+
+// planeFootOnTrimmedFace reports whether the plane contact foot lands on the plane host's REAL trimmed
+// region — inside its outer loop and outside every hole — in exact in-plane (u,v) coordinates. It is the
+// planar discriminator the void gate alone cannot supply (both candidate centres sit outside the finite
+// body): the physical concave root's plane foot recedes INTO the pre-existing loop (derivation §3), the
+// spurious mirror root's foot falls OUTSIDE it.
+func planeFootOnTrimmedFace(planeFace *topo.Face, pl geom.Plane, foot math.Point3) bool {
+	uv := func(p math.Point3) math.Point2 {
+		d := pl.Origin.VectorTo(p)
+		return math.P2(d.Dot(pl.UAxis.AsVector()), d.Dot(pl.VAxis.AsVector()))
+	}
+	f2, inOuter := uv(foot), false
+	for _, l := range planeFace.Loops() {
+		if !pointInLoop2D(f2, loopUVPolygon(l, uv)) {
+			continue
+		}
+		if !l.IsOuter() {
+			return false // inside a hole — off the trimmed region
+		}
+		inOuter = true
+	}
+	return inOuter
+}
+
+// loopUVPolygon projects a loop's boundary to the plane's (u,v) frame, sampling each arc segment's
+// midpoint so a curved rim keeps its bulge for the ray-cast containment test.
+func loopUVPolygon(l *topo.Loop, uv func(math.Point3) math.Point2) []math.Point2 {
+	var poly []math.Point2
+	for _, s := range segsFromLoop(l) {
+		poly = append(poly, uv(s.from))
+		if s.arc {
+			poly = append(poly, uv(s.mid))
+		}
+	}
+	return poly
 }
 
 // concaveHostFaces returns the edge's two host faces split by kind: the cylinder host (geometry == cyl)

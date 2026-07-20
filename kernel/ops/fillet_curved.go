@@ -71,8 +71,8 @@ func cylinderArmEdge(body *topo.Body, e *topo.Edge, p filletPick, concave Concav
 	if ef, built := curvedArmFillet(e, cyl, pl, p, res); built {
 		return ef, true, nil // exact torus/cylinder arm on a convex axis-aligned rim
 	}
-	if ef, built := concaveCurvedArmFillet(body, e, cyl, pl, p, res, concave); built {
-		return ef, true, nil // N3/M4/N9: exact concave cylinder arm on a reentrant Cylinder∧Plane line edge
+	if ef, built, err := concaveCurvedArmFillet(body, e, cyl, pl, p, res, concave); built || err != nil {
+		return ef, true, err // N3/M4/N9 arm, or the honest spindle/clearance reject (r, R in the message)
 	}
 	return edgeFillet{}, true, curvedFilletError(e, cyl, pl, res) // torus/oblique concave / decline — do-no-harm
 }
