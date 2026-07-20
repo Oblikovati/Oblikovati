@@ -102,5 +102,12 @@ func byteIdentityPins() []fingerprintPin {
 		// at ~1e-4 (the off-origin bore's large cancellation, see volTolFor). So its raw volume is pinned to
 		// the mid-spread value with a loose 5e-4 tolerance; N3/N9 (centred) stay bit-stable at 1e-9.
 		{"M4", 1002658.6, 788, 0xd0bbc06232535594},
+		// J2: the large spherical ZONE reaching an enclosed pole (psphere -90..45), filleted at r=10. Its
+		// sphere face used to mesh the WRONG (small north cap) region — whole-body area 8525 — because
+		// sphereCapFan's newellUnit axis is biased by the seam+pole samples of a pole-reaching zone;
+		// sphere_zone_mesh.go rebuilds the fan on the rim circle's exact normal + the pole vertex, greening
+		// J2 (area 30620.3, deps 0.01) for the first time. Captured on this HEAD; it locks the sphere-zone
+		// fan so any later slice that perturbs the J2 body fails loud. Same cross-platform-risk caveat.
+		{"J2", 492546.204479767184, 165886, 0xd8868b57405355f7},
 	}
 }

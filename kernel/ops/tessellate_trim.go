@@ -85,6 +85,10 @@ func specialCurvedMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, hole
 	if m, isCap := sphereCapFan(s, outer3D, q); isCap {
 		return m, true // a sphere cut by one plane (a cap): rings from the rim to the enclosed pole
 	}
+	if m, isZone := sphereZoneCapFan(f, s, q); isZone {
+		return m, true // a large sphere zone reaching an enclosed pole (one off-centre plane cut, seam to
+		// the pole): fan on the rim CIRCLE's exact normal, not the seam-biased newellUnit (J2)
+	}
 	if m, isPatch := spherePatchMesh(s, outer3D, holes3D, q); isPatch {
 		return m, true // a sphere bounded by several arcs (a box cut): gnomonic CDT, pole/seam-safe
 	}
