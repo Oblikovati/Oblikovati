@@ -61,10 +61,15 @@ func trimCarriedRimArcs(fl *filletLoop, idxs []int) {
 // the wall (√(r²+R²)), so the re-fit sub-arc leaves a small corner notch; that notch is only worth paying
 // when the chord itself is badly wrong. A chord across a >π/2 rim deviates from the wall by more than
 // R(1−cos45°) ≈ 0.29·R — a collapsed curved face (B5/C4/D7's 242–255° rims) or a large lune off the adjacent
-// meridian plane (E1/E2's 144–146° sphere rims) — so the arc MUST be carried. A ≤π/2 rim (B1/B9's 62–67°
-// sector rims) is faithfully approximated by its chord, so the base loop is kept byte-for-byte (the whole
-// planar corpus + the fingerprint pins). The two carried clusters (62–67° vs 144–255°) leave π/2 a wide
-// margin — a mere >π (major-only) gate would wrongly drop E1/E2's minor sphere meridians and un-green them.
+// meridian plane (E1/E2's 144–146° sphere rims) — so the arc MUST be carried. For a ≤π/2 rim (B1/B9's
+// 62–67° sector rims) the off-surface tangent-point notch makes the re-fit arc LESS accurate than the base
+// chord, so keeping the chord is BOTH more faithful AND byte-identical to the planar corpus + pins. π/2 is
+// therefore an EMPIRICAL CROSSOVER between two imperfect approximations (chord vs off-surface arc), NOT a
+// first-principles law; it sits in the wide 67°→144° gap between the two carried clusters (62–67° vs
+// 144–255°). A mere >π (major-only) gate would wrongly drop E1/E2's minor sphere meridians and un-green them.
+// FOLLOW-UP: an on-surface tangent-point fix (project onto the wall) would make the arc exact and retire
+// this gate. The asymmetry is deliberately safe: a sub-π/2 rim that should carry merely stays red; only a
+// super-π/2 rim that should chord could drift — none exists in the corpus (B1/B9 are pinned to lock it).
 func retainedRimCurve(parent geom.Arc3d, from, to math.Point3) geom.Curve3 {
 	if retainedSpan(parent, from, to) <= stdmath.Pi/2 {
 		return nil // ≤ a quarter turn: the chord is faithful — keep the base loop byte-identical (B1/B9)

@@ -152,5 +152,12 @@ func byteIdentityPins() []fingerprintPin {
 		// (~1e-3 swing, the host-sphere zone's near-degenerate winding); its volume is pinned to the mid-spread
 		// with the loosened volTolFor(D3) tolerance, the mesh pinned exactly. Same cross-platform caveat.
 		{"D3", 3407560.0, 17274, 0xe4772e04bfb33d22, ""},
+		// B1/B9 (simple): already-green PLANAR corner fillets whose curved survivor rims are ≤π/2 (62–67°),
+		// so the survivor-rim carry (fillet_survivor_rim.go) keeps their base chord byte-for-byte. An earlier
+		// arc-carry (82a64cbb) silently drifted them WITHIN deps (B1 0.0071%→0.0499%, toward-wrong) — caught
+		// only by adversarial fingerprinting, not by the pass/fail gate. Pinned here to lock the exact victims
+		// so any future shared-planar-path edit that re-drifts them within tolerance fails loud.
+		{"B1", 192177.835243989, 30206, 0xa0cfc51a98aea8ab, ""},
+		{"B9", 517216.198381525, 16130, 0x92904b222d8b4115, ""},
 	}
 }
