@@ -18,15 +18,16 @@ type quarantineKey struct {
 	name string
 }
 
-// quarantined maps each held case to the VERBATIM reason it is held. H6: ROOT 1 (the cone-sector
-// tessellation over-area) is fixed, but H6's whole-body area only looks acceptable because a SECOND,
-// independent defect (ROOT 2 — resolveArcFillet builds the concave open-torus fillet on the wrong
-// side) offsets it; the area gate must not read that cancellation as parity.
+// quarantined maps each held case to the reason it is held. H6: ROOT 1 (the cone-sector tessellation
+// over-area on BOTH congruent host cones) is now fixed, which UNMASKED a second, independent defect —
+// ROOT 2, resolveArcFillet builds the concave open-torus fillet on the wrong side (R−r not R+r). H6 is
+// held so this red never later reads as parity by coincidence if the geometry shifts.
 var quarantined = map[quarantineKey]string{
-	{grid: "simple", name: "H6"}: "ROOT 1 cone-sector tessellation fixed, but the underlying concave " +
-		"open-torus fillet geometry remains inverted (resolveArcFillet builds R−r not R+r, +9.73% before " +
-		"the tessellation masked it). H6 passes the area gate at −0.80% COINCIDENTALLY. Do NOT un-gate " +
-		"until resolveArcFillet is rebuilt for concave open-torus rims.",
+	{grid: "simple", name: "H6"}: "ROOT 1 cone-sector tessellation fixed (both congruent host cones now " +
+		"133286, was ×1.26 inflated); that UNMASKED ROOT 2 — resolveArcFillet builds the concave open-torus " +
+		"fillet inverted (R−r not R+r), so H6 now honestly FAILS the area gate at −1.09%. Held to document " +
+		"the defect and guard against a future coincidental pass. Do NOT un-gate until resolveArcFillet is " +
+		"rebuilt for concave open-torus rims.",
 }
 
 // quarantineReason returns the hold reason for a case and whether it is quarantined.
