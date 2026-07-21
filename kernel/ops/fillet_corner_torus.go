@@ -17,50 +17,13 @@ import (
 // R off 2r) so it is left to the honest-reject baseline rather than mis-modelled.
 const mixedTorusRadiusTol = 1e-6
 
-// adoptMixedTorusCorner re-solves every MIXED-SENSE ORTHOGONAL PLANAR trihedral corner (2 concave +
-// 1 convex fillet meeting at 3 mutually-perpendicular planar faces) to OCCT's toroidal corner and
-// returns the re-welded body, ok=true, when at least one such corner fired AND the result certifies a
-// watertight hole-contained solid. Otherwise ok=false and the caller keeps the (sphere) baseline.
-//
-// The gap it closes (OCCT tests/blend/simple K9 +1.17%, M2 +1.02%): solveBlend forces a SPHERE here
-// (solvePlanarBlend, area 274.35), but a mixed corner's rolling ball pivots AROUND the convex edge
-// while staying tangent to the shared plane, so its centre traces a 90° arc of radius R=2r — the swept
-// surface is a TORUS (axis = the convex edge's fillet axis, major R=2r, minor r; K9 patch area
-// (25π/2)(π−1)=84.100). A sphere is the degenerate R=0 torus, which is exactly why the forced sphere
-// overshoots. The pass builds the torus patch, retracts the three bands to its four contact arcs, and
-// re-trims the shared host plane along the torus's top-contact arc (a synthetic end corner injected
-// into the single-source host re-trim). The two walls re-trim through the ordinary band ta/tb coupling
-// (both bands sharing a wall land on the SAME tangent point, no arc needed).
-//
-// It never mutates the caller's fils/blends (it copies), so a decline keeps the baseline byte-
-// identical. The gate (buildMixedTorusCorner) declines every same-sense corner (all 3 concave = K6/L4
-// sphere octant, or all convex → splitMixedSense rejects), the non-orthogonal wedge (A8), the dihedral
-// miter (a 2-edge corner, not a blend) and any curved-host corner (planeNormal fails).
-func adoptMixedTorusCorner(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend) (*topo.Body, bool) {
-	mixed, ok := detectMixedTorusCorners(fils, blends)
-	if !ok {
-		return nil, false
-	}
-	setFils := retractMixedBands(fils, mixed)
-	cand := assembleMixedTorusBody(body, setFils, blendsWithout(blends, mixed), mixed)
-	if obstacleImprovedSolid(cand) {
-		return cand, true
-	}
-	return nil, false
-}
-
-// detectMixedTorusCorners recognises every mixed-sense orthogonal-planar trihedral corner among the
-// solved blends and returns its finished torus treatment (patch face + band retractions + host-plane
-// re-trim corner). fired=false leaves the caller on the sphere baseline byte-identical.
-func detectMixedTorusCorners(fils []edgeFillet, blends map[uint64]*cornerBlend) ([]mixedTorusCorner, bool) {
-	var out []mixedTorusCorner
-	for vid, cb := range blends {
-		if mc, ok := buildMixedTorusCorner(vid, cb, fils); ok {
-			out = append(out, mc)
-		}
-	}
-	return out, len(out) > 0
-}
+// The mixed-sense trihedral (torus) corner treatment (OCCT tests/blend/simple K9/M2/L6) is accumulated
+// by the unified pass (fillet_corner_setback_unified.go): accumulateMixedTorus builds one corner's
+// torus via buildMixedTorusCorner and emits its band retracts (railWrites), the dropped sphere vertex,
+// the torus patch (extraPatches), and the synthetic host end-corner (hostEnds); weldMixedTorusFaces
+// then assembles the mixed body directly. The gate + geometry helpers below (buildMixedTorusCorner,
+// solveMixedTorusCorner, splitMixedSense, mixedCornerGeom, mixedTorusPatch, …) are the reused helpers
+// the classifier + accumulate own; the old adoptMixedTorusCorner entrypoint was folded into that pass.
 
 // cornerBand is one filleted edge converging on a shared trihedral corner: its slot in the fils
 // slice (fi + which end), its two host faces, its constant cylinder, and its sense (concave = ef.flip).
@@ -179,68 +142,6 @@ func mixedCornerFaces(cvx cornerBand, cc []cornerBand) []*topo.Face {
 		out = append(out, f)
 	}
 	return out
-}
-
-// retractMixedBands returns a fresh fils slice with every mixed corner's three bands rewritten to their
-// retracted torus cross-sections; the caller's slice is never mutated (edgeFillet corners are values, so
-// the shallow copy fully isolates the writes).
-func retractMixedBands(fils []edgeFillet, mixed []mixedTorusCorner) []edgeFillet {
-	out := append([]edgeFillet(nil), fils...)
-	for _, mc := range mixed {
-		for _, br := range mc.bands {
-			applyBandRetract(&out[br.fi], br)
-		}
-	}
-	return out
-}
-
-// applyBandRetract rewrites one band's corner (c0 or c1) to its retracted cross-section: the tangent
-// point on each of its two faces and the section arc's midpoint. It keeps the corner a blend so
-// filletMaps re-trims the two host walls to the new tangents (both bands on a wall agree, no arc there);
-// the shared plane's arc detour is injected separately as a synthetic end corner.
-func applyBandRetract(ef *edgeFillet, br bandRetract) {
-	c := &ef.c0
-	if br.atC1 {
-		c = &ef.c1
-	}
-	c.ta, c.tb, c.mid = br.pt[c.a.ID()], br.pt[c.b.ID()], br.mid
-}
-
-// blendsWithout copies the blends map, dropping the mixed-corner vertices — those corners are now torus
-// patches, not sphere patches, so they must NOT emit a spherePatchFace.
-func blendsWithout(blends map[uint64]*cornerBlend, mixed []mixedTorusCorner) map[uint64]*cornerBlend {
-	out := make(map[uint64]*cornerBlend, len(blends))
-	for k, v := range blends {
-		out[k] = v
-	}
-	for _, mc := range mixed {
-		delete(out, mc.vertexID)
-	}
-	return out
-}
-
-// assembleMixedTorusBody assembles the mixed-corner body: it builds the shared per-face re-trim maps,
-// injects each corner's synthetic host-plane end corner (so the shared plane's receded vertex becomes
-// the torus top-contact arc), then welds the transformed hosts + retracted band cylinders + any
-// remaining sphere patches + the torus patch faces. Mirrors filletResultFaces' face list exactly, with
-// the torus patch as the only extra and the synthetic end corner as the only host-map injection.
-func assembleMixedTorusBody(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend, mixed []mixedTorusCorner) *topo.Body {
-	maps, caps := filletBuildMaps(body, fils)
-	for _, mc := range mixed {
-		if maps.endCorner[mc.topFace] == nil {
-			maps.endCorner[mc.topFace] = map[uint64]corner{}
-		}
-		maps.endCorner[mc.topFace][mc.vertexID] = mc.topCorner
-	}
-	out := transformedBodyFaces(body, maps, map[uint64]filletFace{})
-	out = append(out, filletBlendFaces(fils, caps, map[uint64]bool{}, map[uint64][]filletFace{})...)
-	for _, cb := range blends {
-		out = append(out, spherePatchFace(cb))
-	}
-	for _, mc := range mixed {
-		out = append(out, mc.patch)
-	}
-	return assembleBody(out)
 }
 
 // sharedBandFace returns the host face both bands touch (the shared plane the two concave bands' torus

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -56,7 +57,7 @@ func assertConvexCornerSphere(t *testing.T, name string, body *topo.Body, wantAr
 			continue
 		}
 		found++
-		if stdmath.Abs(sph.Radius-10) > 1e-6*100 {
+		if stdmath.Abs(sph.Radius-10) > ops.ResolutionForBody(body).Weld() {
 			t.Fatalf("%s corner sphere radius %.6f, want r=10", name, sph.Radius)
 		}
 		if a := faceMeshArea2(f); stdmath.Abs(a-wantArea) > 0.02*wantArea {

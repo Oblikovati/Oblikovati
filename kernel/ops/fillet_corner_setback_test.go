@@ -69,15 +69,17 @@ func TestCornerSetbackGateFiresOnlyForConcaveOrthogonalPlanarDihedral(t *testing
 	}
 }
 
-// TestApplyCornerSetbackDeclinesConvex confirms the pass reports fired=false (leaving the caller's
-// baseline body byte-identical) when the only miter is convex — the shared-path do-no-harm guarantee.
-func TestApplyCornerSetbackDeclinesConvex(t *testing.T) {
+// TestCornerSetbackDeclinesConvexMiter confirms the unified accumulate reports fired=false (leaving the
+// caller's baseline body byte-identical) when the only miter is convex — the shared-path do-no-harm
+// guarantee. classifyMiterCorner tags a convex miter decline, so accumulate contributes no railWrite.
+func TestCornerSetbackDeclinesConvexMiter(t *testing.T) {
 	fils := []edgeFillet{convexArm(t, math.V3(1, 0, 0)), convexArm(t, math.V3(0, 1, 0))}
 	fils[0].c1.miter, fils[1].c1.miter = true, true
 	v := fils[0].c1.vertex
 	miters := map[uint64]*cornerMiter{v.ID(): {shared: aPlanarFace(t), vertex: v}}
-	if _, fired := applyCornerSetback(fils, miters); fired {
-		t.Fatal("applyCornerSetback fired on a convex miter — the convex path must stay byte-identical")
+	ctx := setbackCtx{fils: fils, blends: map[uint64]*cornerBlend{}, miters: miters, ends: miterCornerEnds(fils)}
+	if accumulate(ctx).fired {
+		t.Fatal("accumulate fired on a convex miter — the convex path must stay byte-identical")
 	}
 }
 
@@ -143,8 +145,9 @@ func TestTrihedralSetbackGateFiresOnlyForConcaveOrthogonalPlanar(t *testing.T) {
 			if ok != tc.want {
 				t.Fatalf("gate fired=%v, want %v for %s", ok, tc.want, tc.name)
 			}
-			if _, fired := flipConcaveTrihedralBlends(tc.fils, map[uint64]*cornerBlend{v.ID(): cb}); fired != tc.want {
-				t.Fatalf("flipConcaveTrihedralBlends fired=%v, want %v for %s", fired, tc.want, tc.name)
+			ctx := setbackCtx{fils: tc.fils, blends: map[uint64]*cornerBlend{v.ID(): cb}, miters: map[uint64]*cornerMiter{}, ends: miterCornerEnds(tc.fils)}
+			if fired := accumulate(ctx).fired; fired != tc.want {
+				t.Fatalf("accumulate fired=%v, want %v for %s (the void-sphere concaveSphere channel)", fired, tc.want, tc.name)
 			}
 		})
 	}
@@ -337,11 +340,13 @@ func triArms(t *testing.T, flips ...bool) []edgeFillet {
 }
 
 // setTriArmFaces assigns the three faces to the arms PAIRWISE (arm i borders faces[i], faces[i+1]), so a
-// full triple covers all three distinct faces — the real trihedral adjacency the gate collects.
+// full triple covers all three distinct faces — the real trihedral adjacency the gate collects. The
+// edgeFillet a/b mirror the corner faces so cornerBandsAt (the mixed-sense classifier's band source)
+// reads the same adjacency as blendCornerFaces (the concave-sphere gate's corner-face source).
 func setTriArmFaces(fils []edgeFillet, faces [3]*topo.Face) {
 	for i := range fils {
-		fils[i].c1.a = faces[i%3]
-		fils[i].c1.b = faces[(i+1)%3]
+		fils[i].a, fils[i].c1.a = faces[i%3], faces[i%3]
+		fils[i].b, fils[i].c1.b = faces[(i+1)%3], faces[(i+1)%3]
 	}
 }
 

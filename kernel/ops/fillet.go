@@ -257,52 +257,6 @@ func assembleFilletFaces(body *topo.Body, fils []edgeFillet, blends map[uint64]*
 	return assembleBody(faces)
 }
 
-// adoptCornerSetback returns the corner-set-back body when the L1-class concave dihedral pass fires
-// AND its assembled result certifies as a watertight hole-contained solid; otherwise it returns the
-// baseline unchanged. This is DO-NO-HARM in the strong sense — it can never make a body invalid or turn
-// a green red — but it is NOT byte-identical for the whole corpus: the gate fires for every orthogonal-
-// concave-planar-dihedral miter, so it re-welds the whole rotated-boss family. Across all six grids the
-// changed-body set is exactly {L1, L7 (RED→GREEN), N5 (GREEN→GREEN, re-welded TOWARD OCCT — green only
-// by tolerance at base)}, each pinned in occtparity/fingerprint_pins_test.go. Every other config
-// (convex/curved/variable/non-orthogonal miter, trihedral blend) leaves fired=false → baseline byte-
-// identical. It never compares areas: adoption is gated purely on the set-back body certifying valid, so
-// a config whose set-back cannot close falls back to the baseline, never a worse body.
-func adoptCornerSetback(body *topo.Body, edges []filletPick, fils []edgeFillet, blends map[uint64]*cornerBlend, miters map[uint64]*cornerMiter, concave ConcaveFill, baseline *topo.Body) *topo.Body {
-	// P3: a MIXED-SENSE trihedral corner (2 concave + 1 convex on 3 orthogonal planar hosts) is a
-	// TORUS, not the sphere solveBlend forces (K9/M2). It fires only on that config and certifies its
-	// own watertight body; every other corner leaves it declined and falls through byte-identical.
-	if cand, ok := adoptMixedTorusCorner(body, fils, blends); ok {
-		return cand
-	}
-	// P4: a CONVEX SAME-SENSE trihedral corner (A8's wedge) already has the right sphere + corner-side
-	// setback; its only miss is an OBLIQUE band running off onto an un-filleted planar face. Clip that
-	// run-off rail at the pierce plane. Fires only on that config and certifies its own watertight body.
-	if cand, ok := adoptConvexWedgeSetback(body, fils, blends); ok {
-		return cand
-	}
-	workFils, workBlends := fils, blends
-	setBlends, triFired := flipConcaveTrihedralBlends(fils, blends)
-	if triFired {
-		// Re-run the corner solve so every consumer (band rail, host re-trim, sphere patch) picks up
-		// the void-side spheres through the single-source corner.ta/tb — nil recorder discards the
-		// (re-emitted) diagnostics. A re-solve error falls back to the material-side baseline path.
-		if rf, err := computeFillets(body, edges, setBlends, miters, concave, nil); err == nil {
-			workFils, workBlends = rf, setBlends
-		} else {
-			triFired = false
-		}
-	}
-	setFils, diFired := applyCornerSetback(workFils, miters)
-	if !triFired && !diFired {
-		return baseline
-	}
-	cand := assembleFilletBody(body, setFils, workBlends)
-	if obstacleImprovedSolid(cand) {
-		return cand
-	}
-	return baseline
-}
-
 // obstacleImprovedSolid reports whether an obstacle-rebuilt body is a watertight, hole-contained solid —
 // the bar the rebuild must clear to be kept over the baseline fillet.
 func obstacleImprovedSolid(res *topo.Body) bool {

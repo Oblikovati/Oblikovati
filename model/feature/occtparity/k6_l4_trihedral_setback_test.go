@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -27,7 +28,10 @@ func TestK6L4TrihedralSetbackWatertight(t *testing.T) {
 		sphereCtr math.Point3 // the VOID-side octant sphere centre (was the material-side reflection)
 	}{
 		{"K6", 15, 63733.6, math.P3(35, 15, 15)},
-		{"L4", 13, 59733.6, math.P3(77.630973, 49.228366, 35)},
+		// L4's pocket is rotated, so the void octant centre is not round — the literal carries full
+		// precision (not 6-decimal) so the model-relative Weld tolerance (M35), tighter than the old
+		// 1e-6·100, still resolves it as the void point (17.3 = 2·r·√3 from the material reflection).
+		{"L4", 13, 59733.6, math.P3(77.63097278769045, 49.22836645711565, 35)},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			body := caseResultBody(t, tc.name)
@@ -51,7 +55,7 @@ func assertVoidCornerSphere(t *testing.T, name string, body *topo.Body, want mat
 			continue
 		}
 		found++
-		if d := sph.Center.DistanceTo(want); d > 1e-6*100 {
+		if d := sph.Center.DistanceTo(want); d > ops.ResolutionForBody(body).Weld() {
 			t.Fatalf("%s corner sphere centre %v, want void-side %v (off by %.4f — sphere re-reflected to the material side?)",
 				name, sph.Center, want, d)
 		}

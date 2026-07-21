@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -52,7 +53,8 @@ func assertMixedCornerTorus(t *testing.T, name string, body *topo.Body) {
 			continue
 		}
 		found++
-		if stdmath.Abs(tor.MajorRadius-10) > 1e-6*100 || stdmath.Abs(tor.MinorRadius-5) > 1e-6*100 {
+		eps := ops.ResolutionForBody(body).Weld() // model-relative coincidence tolerance (M35), not a bare epsilon
+		if stdmath.Abs(tor.MajorRadius-10) > eps || stdmath.Abs(tor.MinorRadius-5) > eps {
 			t.Fatalf("%s corner torus radii major=%.6f minor=%.6f, want R=2r=10 minor=r=5 (a mis-sized/degenerate pivot?)",
 				name, tor.MajorRadius, tor.MinorRadius)
 		}

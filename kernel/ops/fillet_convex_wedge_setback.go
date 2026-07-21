@@ -8,90 +8,13 @@ import (
 	"oblikovati.org/math"
 )
 
-// adoptConvexWedgeSetback re-terminates the OBLIQUE run-off ends of every band converging on a CONVEX
-// SAME-SENSE trihedral corner (3 convex fillets meeting at 3 PLANAR faces — the material-side sphere
-// solvePlanarBlend already builds correctly) and returns the re-trimmed body, ok=true, when at least
-// one band end actually moved AND the result certifies a watertight hole-contained solid. Otherwise
-// ok=false and the caller keeps the baseline.
-//
-// The gap it closes (OCCT tests/blend/simple A8 +2.75%): A8 is a wedge (triangular prism) whose three
-// convex edges meet at one trihedral vertex. The corner itself is already OCCT-exact — the octant
-// sphere (frac Ω/4π, area 195.1) and the three corner-side band rails retract to the sphere's tangent
-// points, so the non-orthogonal setback s = r·cot(θ/2) at the corner is ALREADY modelled by the shared
-// blend path (geometry-derivation §4). The miss is at the OTHER (far) end of the slant-edge band: it
-// runs off the filleted edge onto the un-filleted x=0 face. Because that band's axis is OBLIQUE to the
-// run-off plane, the simple-end round overshoots the plane (a tab to x=−9.285), inflating the band, the
-// top face and the x=0 face by +742 total. OCCT clips the band's flank rails exactly where they PIERCE
-// the run-off plane (band top rail → (0,73.07,100), area 1317.09 not 1459.75). The perpendicular-axis
-// bands (band1/band3) already land ON their run-off plane, so they are byte-identical.
-//
-// The fix reuses the runout rail-slide primitive (setbackTrihedralCorner → railPierce): for each band
-// of a convex wedge corner it pierces both flank rails against the far simple end's opposite planar
-// face. The corner (blend) end is a no-op (opposFarPlane rejects a blend end); a perpendicular simple
-// end is a no-op (railPierce t=0). Only a genuinely oblique run-off end moves, TOWARD OCCT. Assembly +
-// adoption ride the same do-no-harm floor as the P2/P3 corner passes (obstacleImprovedSolid), so a
-// decline or a non-certifying candidate keeps the baseline byte-identical.
-//
-// The gate (convexTrihedralCornerBands + allBodyFacesPlanar + endOvershootsRunoff) declines: the
-// concave/mixed-sense trihedral (K6/L4 sphere, K9/M2 torus — those carry ef.flip bands), the dihedral
-// miter (a 2-edge corner, not a 3-band blend), a valence other than 3, any curved-host body (F7's
-// elliptical prism), and a non-overshooting run-off end. It does NOT require the three faces to be
-// orthogonal — A8's wedge is non-orthogonal (the slant face), which is the whole point of this slice.
-//
-// SCOPE OF CHANGE (not byte-identical for the whole corpus — the survivor-arc / N5 lesson): across all
-// six grids the changed-body set is exactly {A8 (RED→GREEN), A6 (GREEN→GREEN, a truncated-wedge sibling
-// RE-WELDED TOWARD OCCT: rel +0.79%→−0.03%, watertight+fold-free)}, each pinned in
-// occtparity/fingerprint_pins_test.go. Every other config leaves it declined → baseline byte-identical.
-func adoptConvexWedgeSetback(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend) (*topo.Body, bool) {
-	if !allBodyFacesPlanar(body) {
-		return nil, false // scope: a polyhedral wedge/box (the derivation's planar-host boundary); a
-		// curved-host body (e.g. F7's elliptical prism) runs off differently and is left byte-identical
-	}
-	setFils, fired := setbackConvexWedgeBands(fils, blends)
-	if !fired {
-		return nil, false
-	}
-	cand := assembleFilletBody(body, setFils, blends)
-	if obstacleImprovedSolid(cand) {
-		return cand, true
-	}
-	return nil, false
-}
-
-// setbackConvexWedgeBands returns a fresh fils slice with every convex-wedge band's oblique run-off end
-// re-terminated at its far-plane pierce; the caller's slice is never mutated (edgeFillet corners are
-// values, so the shallow copy fully isolates the writes). fired=false leaves the caller byte-identical.
-func setbackConvexWedgeBands(fils []edgeFillet, blends map[uint64]*cornerBlend) ([]edgeFillet, bool) {
-	bandFI := convexWedgeBandIndices(fils, blends)
-	if len(bandFI) == 0 {
-		return fils, false
-	}
-	out := append([]edgeFillet(nil), fils...)
-	fired := false
-	for fi := range bandFI {
-		if setbackObliqueRunoffEnds(&out[fi]) {
-			fired = true
-		}
-	}
-	return out, fired
-}
-
-// convexWedgeBandIndices collects the fils-slot indices of every band converging on a convex same-sense
-// trihedral corner, so their far run-off ends can be re-terminated. A body with no such corner yields
-// an empty set (the overwhelmingly common case) — the pass then declines byte-identical.
-func convexWedgeBandIndices(fils []edgeFillet, blends map[uint64]*cornerBlend) map[int]bool {
-	out := map[int]bool{}
-	for vid, cb := range blends {
-		bands, ok := convexTrihedralCornerBands(vid, cb, fils)
-		if !ok {
-			continue
-		}
-		for _, b := range bands {
-			out[b.fi] = true
-		}
-	}
-	return out
-}
+// The convex same-sense trihedral (oblique run-off) corner treatment (OCCT tests/blend/simple A8/A6) is
+// accumulated by the unified pass (fillet_corner_setback_unified.go): classifyBlendCorner tags a corner
+// convexRunoff via convexTrihedralCornerBands + allBodyFacesPlanar, and accumulateConvexRunoff clips
+// each band's oblique run-off end via setbackObliqueRunoffEnds (the reused rail-slide helper). The gate
+// + per-end predicates below (convexTrihedralCornerBands, allBodyFacesPlanar, endOvershootsRunoff,
+// setbackObliqueRunoffEnds) are the reused helpers the classifier + accumulate own; the old
+// adoptConvexWedgeSetback entrypoint was folded into that pass.
 
 // convexTrihedralCornerBands returns the three bands of the corner at vid and ok=true when it is the
 // A8-class corner this pass owns: exactly three CONVEX (not ef.flip) fillet ends meeting three PLANAR
