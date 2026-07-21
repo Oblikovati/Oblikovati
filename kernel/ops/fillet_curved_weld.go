@@ -28,8 +28,8 @@ import (
 // watertight solid, certify it (never gate on IsSolid alone — pair it with Validate.HolesContained so a
 // wrong-sign inside-out arm cannot pass), and on ANY decline return the clean do-no-harm floor error
 // (never a partial body), carrying the reason so a real reject is diagnosable.
-func weldCurvedArmOrFloor(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend) (*topo.Body, error) {
-	b, reason := assembleCurvedArmBody(body, fils, blends, ResolutionForBody(body))
+func weldCurvedArmOrFloor(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend, miters map[uint64]*cornerMiter) (*topo.Body, error) {
+	b, reason := assembleCurvedArmBody(body, fils, blends, miters, ResolutionForBody(body))
 	if reason == "" {
 		if rep := Validate(b); rep.Valid && rep.HolesContained && b.IsSolid() {
 			return b, nil
@@ -47,10 +47,13 @@ func weldCurvedArmOrFloor(body *topo.Body, fils []edgeFillet, blends map[uint64]
 // T5.1-review decline-reason requirement). Example:
 //
 //	if b, reason := assembleCurvedArmBody(body, fils, blends, res); reason == "" { /* watertight solid */ }
-func assembleCurvedArmBody(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend, res Resolution) (*topo.Body, string) {
+func assembleCurvedArmBody(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend, miters map[uint64]*cornerMiter, res Resolution) (*topo.Body, string) {
 	curved := curvedArmsOf(fils)
 	if len(curved) == 0 {
 		return nil, "no curved arm at this corner (nothing to weld)"
+	}
+	if m := curvedMiterOf(fils, miters); m != nil {
+		return curvedMiterBody(body, m, res) // families B/C: 2-arm curved miter (torus + cylinder) mutual trim
 	}
 	if isSingleArmRunout(fils) {
 		return singleArmRunoutBody(body, fils[0], res) // one curved arm, two plane-capped ends: corner-free both-ends weld

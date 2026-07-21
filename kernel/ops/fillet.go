@@ -158,7 +158,7 @@ func filletResolvedEdges(body *topo.Body, edges []filletPick, concave ConcaveFil
 		return nil, err
 	}
 	if curvedArmFils(fils) {
-		return weldCurvedArmOrFloor(body, fils, blends) // M5 Slice A weld or the do-no-harm floor
+		return weldCurvedArmOrFloor(body, fils, blends, miters) // M5 Slice A weld or the do-no-harm floor
 	}
 	return assemblePlanarFilletBody(body, edges, fils, blends)
 }
@@ -429,6 +429,9 @@ func curvedHostArmEdge(body *topo.Body, e *topo.Edge, p filletPick, concave Conc
 	}
 	if ef, handled, err := coneArmEdge(body, e, p); handled {
 		return ef, handled, err // CN1: exact torus arm on a convex Cone∧Plane cap (circle) edge
+	}
+	if ef, handled := cylCylMiterArmEdge(body, e, p); handled {
+		return ef, true, nil // family B: exact cylinder arm on an equal-parallel Cylinder∧Cylinder miter edge (P5)
 	}
 	return torusArmEdge(body, e, p) // E7: exact torus arm on a convex latitude-cut Torus∧Plane rim
 }

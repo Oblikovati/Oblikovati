@@ -67,7 +67,7 @@ func weldConeCornerFixture(t *testing.T, fx coneWeldFixture) *topo.Body {
 	if err != nil {
 		t.Fatalf("%s: computeFillets: %v", fx.name, err)
 	}
-	welded, err := weldCurvedArmOrFloor(body, fils, blends)
+	welded, err := weldCurvedArmOrFloor(body, fils, blends, miters)
 	if err != nil {
 		t.Fatalf("%s: weld: %v", fx.name, err)
 	}

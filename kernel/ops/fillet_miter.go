@@ -23,6 +23,22 @@ type cornerMiter struct {
 	shared *topo.Face
 	sBot   math.Point3
 	seam   []math.Point3
+	// curved is non-nil for a CURVED-contact miter (a cylinder shared or outer face, families B/C):
+	// its two arms are an exact torus + cylinder mutually trimming along the torus∩cylinder seam,
+	// and the body is welded by curvedMiterBody rather than the planar face path. nil for the planar
+	// (all-planar) miter, which stays byte-identical.
+	curved *curvedMiterCorner
+}
+
+// curvedMiterCorner carries a curved-contact miter's assembly data (families B/C): the two exact arm
+// surfaces (a torus + a cylinder) and the topo edge each belongs to, the shared face, and the corner
+// ball centre. The 2-arm curved weld (curvedMiterBody) reads it; the planar path never sets it.
+type curvedMiterCorner struct {
+	arms    curvedMiterArms
+	torEdge *topo.Edge
+	cylEdge *topo.Edge
+	shared  *topo.Face
+	center  math.Point3
 }
 
 // miterArm is one filleted edge's rolling-ball data at a miter corner: the cylinder centre at
@@ -41,6 +57,9 @@ func solveMiter(v *topo.Vertex, ps []filletPick, r float64) (*cornerMiter, error
 	shared := sharedFace(ps[0].edge, ps[1].edge)
 	if shared == nil {
 		return nil, fmt.Errorf("fillet: two filleted edges meeting at a vertex must share a face to miter (none shared)")
+	}
+	if miterHasCurvedContact(ps, shared) {
+		return solveCurvedMiter(v, ps, shared, r) // families B/C: a cylinder shared or outer face
 	}
 	nS, ok := planeNormal(shared)
 	if !ok {
