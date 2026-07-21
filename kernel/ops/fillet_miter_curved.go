@@ -111,78 +111,6 @@ func planarMiterArmCylinder(e *topo.Edge, nA, nB math.Vector3, r float64) (geom.
 	return arm, err == nil
 }
 
-// equalParallelCylMiterArm builds the cylinder arm of an equal-radius parallel-axis Cylinder∧Cylinder
-// miter edge (derivation D3): both ball-centre loci are the coaxial offset cylinders of radius ρ=R−r,
-// whose intersection is a pair of rulings; the ruling nearer the picked edge is the arm axis, radius
-// r. ok=false for non-equal radii, non-parallel axes, or when the offset cylinders do not meet.
-func equalParallelCylMiterArm(e *topo.Edge, r float64, res Resolution) (geom.Surface, bool) {
-	faces := e.Faces()
-	if len(faces) != 2 {
-		return nil, false
-	}
-	cA, okA := faces[0].Geometry().(geom.Cylinder)
-	cB, okB := faces[1].Geometry().(geom.Cylinder)
-	if !okA || !okB {
-		return nil, false
-	}
-	base, dir, ok := equalParallelArmRuling(e, cA, cB, r, res)
-	if !ok {
-		return nil, false
-	}
-	arm, err := geom.NewCylinderWithRef(base, dir, base.VectorTo(e.StartVertex().Point().Midpoint(e.EndVertex().Point())), r)
-	return arm, err == nil
-}
-
-// equalParallelArmRuling returns the arm-axis ruling (a base point and the shared axis direction) of
-// two equal-radius parallel-axis cylinders' ρ=R−r offset intersection, choosing the ruling nearer the
-// picked edge's midpoint. ok=false when the radii/axes disqualify or the offset circles miss.
-func equalParallelArmRuling(e *topo.Edge, cA, cB geom.Cylinder, r float64, res Resolution) (math.Point3, math.Vector3, bool) {
-	d := cA.AxisDir.AsVector()
-	tol := res.Weld() * cA.Radius
-	if stdmath.Abs(float64(cA.AxisDir.Dot(cB.AxisDir)))-1 < -res.Weld() || stdmath.Abs(cA.Radius-cB.Radius) > tol {
-		return math.Point3{}, math.Vector3{}, false // non-parallel axes or unequal radii — not this case
-	}
-	rho := cA.Radius - r
-	w := cA.Origin.VectorTo(cB.Origin)
-	wPerp := w.Sub(d.Scale(w.Dot(d)))
-	sep := float64(wPerp.Length())
-	h2 := rho*rho - (sep/2)*(sep/2)
-	if sep < res.Weld() || h2 < 0 {
-		return math.Point3{}, math.Vector3{}, false
-	}
-	uPerp, err := math.UnitVector3FromVector(wPerp)
-	if err != nil {
-		return math.Point3{}, math.Vector3{}, false
-	}
-	side := uPerp.AsVector().Cross(d)
-	mid := cA.Origin.TranslateBy(uPerp.AsVector().Scale(math.Scalar(sep / 2)))
-	plus := mid.TranslateBy(side.Scale(math.Scalar(stdmath.Sqrt(h2))))
-	minus := mid.TranslateBy(side.Scale(math.Scalar(-stdmath.Sqrt(h2))))
-	return nearerRuling(e, plus, minus), d, true
-}
-
-// cylCylMiterArmEdge builds the exact cylinder arm of an equal-radius parallel-axis Cylinder∧Cylinder
-// convex edge (family B, P5's vertical seam edge) so computeEdgeFillet no longer errors on it. It fires
-// ONLY for that specific pairing (equal radii, parallel axes, offset rulings that meet); any other
-// cyl∩cyl edge returns handled=false and keeps its former honest reject (do-no-harm). handled=true
-// means this owns the edge and the returned edgeFillet carries the cylinder arm.
-func cylCylMiterArmEdge(body *topo.Body, e *topo.Edge, p filletPick) (edgeFillet, bool) {
-	faces := e.Faces()
-	if len(faces) != 2 {
-		return edgeFillet{}, false
-	}
-	_, okA := faces[0].Geometry().(geom.Cylinder)
-	_, okB := faces[1].Geometry().(geom.Cylinder)
-	if !okA || !okB || ClassifyEdgeConvexity(e) != EdgeConvex || p.varying() {
-		return edgeFillet{}, false
-	}
-	arm, ok := equalParallelCylMiterArm(e, p.r0, ResolutionForBody(body))
-	if !ok {
-		return edgeFillet{}, false // not an equal-parallel pair — fall through to the honest reject
-	}
-	return curvedArmEdgeFillet(e, arm, true)
-}
-
 // miterHasCurvedContact reports whether a miter corner has a CYLINDER (non-planar) contact face — the
 // shared face itself, or either edge's outer face — routing it to the curved seam path (families B/C).
 // An all-planar miter returns false and keeps the byte-identical planar mirror-plane path.
@@ -211,7 +139,11 @@ func solveCurvedMiter(v *topo.Vertex, ps []filletPick, shared *topo.Face, r floa
 	if !ok {
 		return nil, fmt.Errorf("fillet: curved miter arms unsupported at vertex %d (need one torus + one cylinder equal-r arm; radius %g)", v.ID(), r)
 	}
-	seam, center, ok := sampleCurvedMiterSeam(arms, shared, v, r, res)
+	torOuter := otherFace(ps[arms.torIdx].edge, shared)
+	if torOuter == nil {
+		return nil, fmt.Errorf("fillet: curved miter torus edge %d has no outer face opposite the shared face", ps[arms.torIdx].edge.ID())
+	}
+	seam, center, ok := sampleCurvedMiterSeam(arms, shared, torOuter, v, r, res)
 	if !ok {
 		return nil, fmt.Errorf("fillet: curved miter seam did not close at vertex %d (radius %g)", v.ID(), r)
 	}
@@ -236,12 +168,12 @@ func miterResolution(v *topo.Vertex, ps []filletPick) Resolution {
 // chords (watertight). It walks the straight lerp sTop→sBot and projects each station onto the seam
 // (Newton on dist-to-spine=r for both arms); the endpoints are the corner ball's contacts with the
 // shared face and the sharp edge. Returns ok=false on any projector or endpoint decline.
-func sampleCurvedMiterSeam(arms curvedMiterArms, shared *topo.Face, v *topo.Vertex, r float64, res Resolution) ([]math.Point3, math.Point3, bool) {
+func sampleCurvedMiterSeam(arms curvedMiterArms, shared, torOuter *topo.Face, v *topo.Vertex, r float64, res Resolution) ([]math.Point3, math.Point3, bool) {
 	center, ok := miterCornerBallCenter(arms, v.Point(), res)
 	if !ok {
 		return nil, math.Point3{}, false
 	}
-	sTop, sBot, ok := curvedSeamEndpoints(arms, center, shared, r)
+	sTop, sBot, ok := curvedSeamEndpoints(arms, center, shared, torOuter, v.Point(), r, res)
 	if !ok {
 		return nil, math.Point3{}, false
 	}
@@ -249,22 +181,66 @@ func sampleCurvedMiterSeam(arms curvedMiterArms, shared *topo.Face, v *topo.Vert
 	return seam, center, ok
 }
 
-// curvedSeamEndpoints are the seam's two endpoints m*±r·n̂, where n̂ ⟂ BOTH arm spine tangents at the
-// corner-ball centre m* (so the two tubes are mutually TANGENT there — the equal-r bisector's ends,
-// a turning point of the torus∩cylinder quartic). sTop is the endpoint on the SHARED face (the corner
-// ball's shared-face contact); sBot the other (on the sharp-edge side). ok=false when the two spine
-// tangents are parallel (no distinct endpoints — a degenerate/collinear miter).
-func curvedSeamEndpoints(arms curvedMiterArms, center math.Point3, shared *topo.Face, r float64) (math.Point3, math.Point3, bool) {
-	n, ok := seamEndpointNormal(arms, center)
+// curvedSeamEndpoints are the seam's two endpoints (curved-miter-closure-derivation §1b — they are
+// ASYMMETRIC, not the two ±r·n̂ mutual-tangency points the first derivation assumed): sTop is the
+// tube∩tube∩SHARED-face vertex (the mutual-tangency point on the shared side, where torus and cylinder
+// normals coincide), sBot the tube∩tube∩(torus-outer-host) vertex where the seam exits through the
+// torus arm's outer plane (P5: sTop=(48.148,0.034,145) on the shared wall, sBot=(53.332,5.124,150) on
+// the top plane). ok=false when either endpoint declines.
+func curvedSeamEndpoints(arms curvedMiterArms, center math.Point3, shared, torOuter *topo.Face, vp math.Point3, r float64, res Resolution) (math.Point3, math.Point3, bool) {
+	sTop, ok := miterSeamTop(arms, center, shared, r)
 	if !ok {
 		return math.Point3{}, math.Point3{}, false
+	}
+	sBot, ok := miterSeamBottom(arms, torOuter, vp, res)
+	if !ok {
+		return math.Point3{}, math.Point3{}, false
+	}
+	return sTop, sBot, true
+}
+
+// miterSeamTop is sTop: the seam's shared-face endpoint, the mutual-tangency point m*±r·n̂ (n̂ ⟂ both
+// arm spine tangents at the corner-ball centre) that lands ON the shared face — the tube∩tube∩shared
+// vertex. Of the two tangency candidates it keeps the one closest to the shared surface. ok=false when
+// the two spine tangents are parallel (no distinct endpoints — a degenerate/collinear miter).
+func miterSeamTop(arms curvedMiterArms, center math.Point3, shared *topo.Face, r float64) (math.Point3, bool) {
+	n, ok := seamEndpointNormal(arms, center)
+	if !ok {
+		return math.Point3{}, false
 	}
 	e1 := center.TranslateBy(n.AsVector().Scale(math.Scalar(r)))
 	e2 := center.TranslateBy(n.AsVector().Scale(math.Scalar(-r)))
 	if distanceToSurface(shared, e1) <= distanceToSurface(shared, e2) {
-		return e1, e2, true
+		return e1, true
 	}
-	return e2, e1, true
+	return e2, true
+}
+
+// miterSeamBottom is sBot: the torus∩cylinder point on the TORUS arm's outer host (a plane, e.g. P5's
+// top plane z=150). Per curved-miter-closure §1b sBot is a tube∩tube∩outer-host vertex, NOT a second
+// mutual-tangency point: the torus is tangent to its outer plane along the contact circle (major circle
+// pushed minor·n̂_out onto the plane), and sBot is where that circle meets the cylinder arm, taking the
+// crossing nearer the corner vertex vp (the physical branch). ok=false when the outer host is not a
+// plane ⊥ the cylinder axis, or the contact circle misses the cylinder.
+func miterSeamBottom(arms curvedMiterArms, torOuter *topo.Face, vp math.Point3, res Resolution) (math.Point3, bool) {
+	pl, ok := torOuter.Geometry().(geom.Plane)
+	if !ok {
+		return math.Point3{}, false
+	}
+	nOut := outwardPlaneNormal(torOuter, pl)
+	if stdmath.Abs(float64(arms.cyl.AxisDir.AsVector().Dot(nOut)))-1 < -res.Weld() {
+		return math.Point3{}, false // cylinder axis not ⊥ the outer plane — outside the analytic scope
+	}
+	contactC := arms.tor.Center.TranslateBy(nOut.Scale(math.Scalar(arms.tor.MinorRadius)))
+	cylC := cylinderBallCenter(arms.cyl, contactC) // cyl axis ∩ contact plane (axis ⊥ plane through contactC)
+	p1, p2, ok := intersectCoplanarCircles(contactC, arms.tor.MajorRadius, cylC, arms.cyl.Radius, nOut, res)
+	if !ok {
+		return math.Point3{}, false
+	}
+	if p1.DistanceTo(vp) <= p2.DistanceTo(vp) {
+		return p1, true
+	}
+	return p2, true
 }
 
 // seamEndpointNormal is n̂ = unit(t̂₁ × t̂₂), t̂ᵢ the two arm spines' tangents at the corner-ball centre
