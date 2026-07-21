@@ -133,5 +133,13 @@ func byteIdentityPins() []fingerprintPin {
 		// follow-up) fails loud if it perturbs an A2/A3 body. Same cross-platform-risk caveat as above.
 		{"A2", 17169519.448758263141, 134668, 0x172eb5eb3a475c53, "bfuseblend"},
 		{"A3", 15606148.623794555664, 305166, 0xf29512989e349b62, "bfuseblend"},
+		// E1/E2 (simple): the 90° sphere-sector corner fillets whose CURVED survivor wall (a sphere
+		// meridian rim) was chorded by transformLoop's ENDS branch, collapsing the sphere face ~in half
+		// (curved-host-collapse-rootcause.md). The survivor-rim carry (fillet_survivor_rim.go) trims the
+		// rim to its retained sub-arc, greening both for the first time (E1 area drift 0.37%, E2 0.47%).
+		// Captured on THIS HEAD; they lock the survivor-arc carry so any later slice that perturbs the
+		// planar end-corner path fails loud. Same cross-platform-risk caveat as above applies.
+		{"E1", 3481520.754844990, 12276, 0x98e05724da9bfa49, ""},
+		{"E2", 3478198.350618430, 19000, 0xa4134742f22b4980, ""},
 	}
 }

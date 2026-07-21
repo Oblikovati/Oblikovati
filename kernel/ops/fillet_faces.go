@@ -235,6 +235,7 @@ func transformLoop(f *topo.Face, l *topo.Loop, subs map[uint64]math.Point3, ends
 	uses := l.EdgeUses()
 	n := len(uses)
 	var fl filletLoop
+	var rimCarries []int // tOut segments carrying a curved survivor's parent arc, trimmed to the retained sub-arc post-loop
 	for i, u := range uses {
 		v := useFromVertex(u)
 		switch {
@@ -243,10 +244,9 @@ func transformLoop(f *topo.Face, l *topo.Loop, subs map[uint64]math.Point3, ends
 			// oriented to the loop's traversal by the edges arriving at / leaving the apex.
 			addRunoutApex(&fl, spread[v.ID()], uses[(i-1+n)%n].Edge().ID(), u.Edge().ID())
 		case ends != nil && hasCorner(ends, v):
-			c := ends[v.ID()]
-			tIn := c.tOf(otherFace(uses[(i-1+n)%n].Edge(), f))
-			tOut := c.tOf(otherFace(u.Edge(), f))
-			addCornerRound(&fl, c, tIn, tOut)
+			if idx := addEndCorner(&fl, f, ends, uses, i); idx >= 0 {
+				rimCarries = append(rimCarries, idx) // tOut's leaving segment is a curved rim: trim it post-loop
+			}
 		case subs != nil && hasSubst(subs, v):
 			fl.add(subs[v.ID()], nil) // pulled-back to a tangent point: a new position, weld by coordinate
 		default:
@@ -260,6 +260,7 @@ func transformLoop(f *topo.Face, l *topo.Loop, subs map[uint64]math.Point3, ends
 		}
 		addEdgeInserts(&fl, inserts, u)
 	}
+	trimCarriedRimArcs(&fl, rimCarries) // curved survivor rim: parent arc → the retained sub-arc between the corner tangent points
 	return fl
 }
 
@@ -337,16 +338,25 @@ func orientedInserts(pts []math.Point3, reversed bool) []math.Point3 {
 }
 
 // addCornerRound expands a simple end corner into its rounded boundary: one true arc for a
-// constant fillet, or the chord fan (shared with the ruling strips) for a variable one.
-func addCornerRound(fl *filletLoop, c corner, tIn, tOut math.Point3) {
+// constant fillet, or the chord fan (shared with the ruling strips) for a variable one. outgoing is
+// the survivor curve of the edge LEAVING tOut (survivorCurve(u)); when it is a curved (Arc3d) wall
+// rim the parent arc is carried on the tOut segment and addCornerRound reports true so the caller can
+// trim it to the retained sub-arc (curved-host-collapse-rootcause.md). A straight survivor stays nil,
+// byte-identical to the pre-fix planar path, so no all-planar green (nor a fingerprint pin) shifts.
+func addCornerRound(fl *filletLoop, c corner, tIn, tOut math.Point3, outgoing geom.Curve3) bool {
 	if len(c.chords) == 0 {
 		fl.add(tIn, cornerSectionCurve(c, tIn, tOut))
+		if arc, curved := outgoing.(geom.Arc3d); curved {
+			fl.add(tOut, arc) // carry the curved wall's parent rim arc; trimCarriedRimArcs cuts it to the retained span
+			return true
+		}
 		fl.add(tOut, nil)
-		return
+		return false
 	}
 	for _, p := range orientedChords(c.chords, tIn) {
 		fl.add(p, nil)
 	}
+	return false
 }
 
 // orientedChords returns the corner's chord samples starting from tIn (the chords run ta→tb;
