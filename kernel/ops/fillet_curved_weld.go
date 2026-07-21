@@ -58,6 +58,9 @@ func assembleCurvedArmBody(body *topo.Body, fils []edgeFillet, blends map[uint64
 	if isConvexClosedRimArm(fils) {
 		return convexClosedRimBandBody(body, fils[0], res) // one convex CLOSED cone/cyl rim → full torus band (J1)
 	}
+	if isConcaveClosedRimArm(fils) {
+		return concaveClosedRimBandBody(body, fils[0], res) // one concave CLOSED sphere/cone cap rim → cove band (S2/S5)
+	}
 	vid, ok := sharedCornerVertex(curved)
 	if !ok {
 		return nil, "curved arms do not meet at one shared trihedral vertex"

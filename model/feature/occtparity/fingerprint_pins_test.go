@@ -2,7 +2,11 @@
 
 package occtparity
 
-import "testing"
+import (
+	"testing"
+
+	"oblikovati.org/kernel/topo"
+)
 
 // TestByteIdentityFingerprints pins the canonical mesh fingerprint + volume of the prior-green corner
 // bodies the CN-C8 brief names for do-no-harm (B3, N7, C2, C6, D5, D9, E4) plus C8 itself. CN-C8 changes no
@@ -13,7 +17,7 @@ import "testing"
 func TestByteIdentityFingerprints(t *testing.T) {
 	for _, tc := range byteIdentityPins() {
 		t.Run(tc.name, func(t *testing.T) {
-			fp := bodyMeshFingerprint(caseResultBody(t, tc.name))
+			fp := bodyMeshFingerprint(pinnedBody(t, tc.grid, tc.name))
 			if fp.Hash != tc.hash || fp.Triangles != tc.tris {
 				t.Fatalf("%s fingerprint drifted: hash=%#x tris=%d, want hash=%#x tris=%d (shared geometry changed)",
 					tc.name, fp.Hash, fp.Triangles, tc.hash, tc.tris)
@@ -40,12 +44,25 @@ func volTolFor(name string) float64 {
 	return 1e-9
 }
 
-// fingerprintPin is one body's captured order-independent fingerprint.
+// fingerprintPin is one body's captured order-independent fingerprint. grid is the corpus grid the case
+// lives in ("" means "simple"); it disambiguates cases whose name collides across grids (e.g. A2/A3 exist
+// in BOTH simple and bfuseblend).
 type fingerprintPin struct {
 	name string
 	vol  float64
 	tris int
 	hash uint64
+	grid string // "" means the "simple" grid; set for cross-grid name collisions (A2/A3 in bfuseblend)
+}
+
+// pinnedBody resolves a pinned case's result body in its grid (defaulting to "simple"), running the real
+// fillet feature — the grid-aware counterpart of caseResultBody.
+func pinnedBody(t *testing.T, grid, name string) *topo.Body {
+	t.Helper()
+	if grid == "bfuseblend" {
+		return bfuseblendResultBody(t, name)
+	}
+	return caseResultBody(t, name)
 }
 
 // byteIdentityPins are the base-6123169d fingerprints, captured by running bodyMeshFingerprint in a git
@@ -60,54 +77,61 @@ type fingerprintPin struct {
 // to the (rounding-robust) volume+triangle-count pins there. No arm64 re-capture is attempted here.
 func byteIdentityPins() []fingerprintPin {
 	return []fingerprintPin{
-		{"B3", 190756.470897506602, 31274, 0x2dff54b187389df4},
-		{"N7", 963883.383205630700, 31472, 0x8bc99405bb8efa01},
-		{"C2", 510191.885601512506, 121529, 0x1b3bc10e4d60136e},
-		{"C6", 1559718.455869767116, 121634, 0xe1e51a060a4c1b02},
-		{"D5", 3432799.391629283316, 64666, 0x7ef4f7950c6a410d},
-		{"D9", 10302524.214111814275, 81106, 0x2eecacfc3279f7d6},
-		{"E4", 3460484.448986444157, 59660, 0xf9912504516fdf8a},
-		{"C8", 64858.504095408265, 39992, 0x66606a97c42af3b2},
+		{"B3", 190756.470897506602, 31274, 0x2dff54b187389df4, ""},
+		{"N7", 963883.383205630700, 31472, 0x8bc99405bb8efa01, ""},
+		{"C2", 510191.885601512506, 121529, 0x1b3bc10e4d60136e, ""},
+		{"C6", 1559718.455869767116, 121634, 0xe1e51a060a4c1b02, ""},
+		{"D5", 3432799.391629283316, 64666, 0x7ef4f7950c6a410d, ""},
+		{"D9", 10302524.214111814275, 81106, 0x2eecacfc3279f7d6, ""},
+		{"E4", 3460484.448986444157, 59660, 0xf9912504516fdf8a, ""},
+		{"C8", 64858.504095408265, 39992, 0x66606a97c42af3b2, ""},
 		// The 8 single-arm curved-RUNOUT greens (R1 fb1b0ca4 · R2a ac0249e9 · R2b 3f09eafe · R3
 		// 455b9543): B6/C9/C1 perpendicular, M7 plane-host inner-loop, C5/D8 reflex 270° major-sector,
 		// D4/E3 oblique cap. Captured on the R3 HEAD 455b9543; they lock the whole single-arm runout
 		// construction so any later slice that touches fillet_curved_single_runout*.go fails loud if it
 		// perturbs a runout body. Same cross-platform-risk caveat as above applies.
-		{"B6", 585938.532761026, 2564, 0x98fea16cb0b47c11},
-		{"C9", 74878.585980316, 33282, 0x83be9eb887bda640},
-		{"C1", 516328.521818100, 91108, 0x367226063c9789b0},
-		{"M7", 1070772.658316682, 1556, 0xbda4ca6e02f5e3fa},
-		{"C5", 1565080.392898256, 67716, 0x481e407c7b323a88},
-		{"D8", 10309699.178065298, 46272, 0x47fb6c5622612116},
-		{"D4", 3434287.473928707, 23974, 0x34f745da81d00eaf},
-		{"E3", 3478295.925438132, 52086, 0x8309a22efbfc928f},
+		{"B6", 585938.532761026, 2564, 0x98fea16cb0b47c11, ""},
+		{"C9", 74878.585980316, 33282, 0x83be9eb887bda640, ""},
+		{"C1", 516328.521818100, 91108, 0x367226063c9789b0, ""},
+		{"M7", 1070772.658316682, 1556, 0xbda4ca6e02f5e3fa, ""},
+		{"C5", 1565080.392898256, 67716, 0x481e407c7b323a88, ""},
+		{"D8", 10309699.178065298, 46272, 0x47fb6c5622612116, ""},
+		{"D4", 3434287.473928707, 23974, 0x34f745da81d00eaf, ""},
+		{"E3", 3478295.925438132, 52086, 0x8309a22efbfc928f, ""},
 		// The convex CLOSED cone-cap rim band (Miter-A1 / J1): a full torus band welded through the
 		// host-agnostic rim rebuild (fillet_curved_closed_rim.go). Captured on this HEAD; it locks the
 		// closed-band assembly so any later slice that touches the demux or the rim rebuild fails loud if
 		// it perturbs the J1 body. Same cross-platform-risk caveat as above applies.
-		{"J1", 3661547.474067254923, 69116, 0x33544bb82303b62c},
+		{"J1", 3661547.474067254923, 69116, 0x33544bb82303b62c, ""},
 		// E7: the convex latitude-cut Torus∧Plane rim welded through the single-arm runout (torusArmEdge /
 		// fillet_torusarm.go). Captured on this HEAD; it locks the E7 arm+host-torus retrim so any later slice
 		// that perturbs the torus-host arm or its contact circle fails loud. Same cross-platform-risk caveat.
-		{"E7", 2027042.935824126238, 82754, 0x9a211786edd20722},
+		{"E7", 2027042.935824126238, 82754, 0x9a211786edd20722, ""},
 		// The CONCAVE Cylinder∧Plane single-arm runout (Group A / N3·M4·N9): a reentrant axis-parallel line
 		// edge whose fillet ADDS the fill wedge (fillet_arm_concave.go — void-side arm + concave GROW retrim
 		// of both hosts and both caps). Captured on this HEAD; they lock the concave arm surface, its
 		// void/foot root gate, and the concave grow retrim so any later concave slice (3-pick corners, torus
 		// arms) fails loud if it perturbs an N3/M4/N9 body. Same cross-platform-risk caveat as above applies.
-		{"N3", 1047315.289309623, 1808, 0x2f37905510c0ca77},
-		{"N9", 1111539.398763901, 10024, 0x31a0f264cc6c4fba},
+		{"N3", 1047315.289309623, 1808, 0x2f37905510c0ca77, ""},
+		{"N9", 1111539.398763901, 10024, 0x31a0f264cc6c4fba, ""},
 		// M4 is the reentrant BORE (axis at (50,−10), plane through the axis): its result mesh is bit-exact
 		// (hash+tris pin it), but its whole-body signed-tetra volume sum is TessellateBody-order-sensitive
 		// at ~1e-4 (the off-origin bore's large cancellation, see volTolFor). So its raw volume is pinned to
 		// the mid-spread value with a loose 5e-4 tolerance; N3/N9 (centred) stay bit-stable at 1e-9.
-		{"M4", 1002658.6, 788, 0xd0bbc06232535594},
+		{"M4", 1002658.6, 788, 0xd0bbc06232535594, ""},
 		// J2: the large spherical ZONE reaching an enclosed pole (psphere -90..45), filleted at r=10. Its
 		// sphere face used to mesh the WRONG (small north cap) region — whole-body area 8525 — because
 		// sphereCapFan's newellUnit axis is biased by the seam+pole samples of a pole-reaching zone;
 		// sphere_zone_mesh.go rebuilds the fan on the rim circle's exact normal + the pole vertex, greening
 		// J2 (area 30620.3, deps 0.01) for the first time. Captured on this HEAD; it locks the sphere-zone
 		// fan so any later slice that perturbs the J2 body fails loud. Same cross-platform-risk caveat.
-		{"J2", 492546.204479767184, 165886, 0xd8868b57405355f7},
+		{"J2", 492546.204479767184, 165886, 0xd8868b57405355f7, ""},
+		// A2/A3 (bfuseblend): the CONCAVE closed sphere/cone cap rim rounds into a full torus COVE band —
+		// the concave dual of J1 (fillet_curved_closed_rim_concave*.go: external-tangency R+r arm, concave
+		// contact circles, winding-flipped band, outward-growing plate hole). Captured on THIS HEAD; they
+		// lock the concave cove-band assembly so any later concave slice (the S2/S5 cove-onto-sidewall
+		// follow-up) fails loud if it perturbs an A2/A3 body. Same cross-platform-risk caveat as above.
+		{"A2", 17169519.448758263141, 134668, 0x172eb5eb3a475c53, "bfuseblend"},
+		{"A3", 15606148.623794555664, 305166, 0xf29512989e349b62, "bfuseblend"},
 	}
 }

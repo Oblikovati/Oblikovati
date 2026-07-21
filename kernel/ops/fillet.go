@@ -418,6 +418,9 @@ func computeEdgeFillet(body *topo.Body, p filletPick, blends map[uint64]*cornerB
 // means one builder OWNED the edge and computeEdgeFillet must return its result — the built arm or the
 // cause-specific honest reject; handled=false leaves the edge to curvedAdjacentError / the planar path.
 func curvedHostArmEdge(body *topo.Body, e *topo.Edge, p filletPick, concave ConcaveFill) (edgeFillet, bool, error) {
+	if ef, handled, err := concaveCurvedRimArmEdge(body, e, p, concave); handled {
+		return ef, handled, err // S2/S5: concave CLOSED sphere/cone cap rim → external-tangency cove arm (or spill reject)
+	}
 	if ef, handled, err := cylinderArmEdge(body, e, p, concave); handled {
 		return ef, handled, err // M5 Slice A: exact cylinder/torus arm on a convex (or concave N3/M4/N9) axis-aligned rim
 	}

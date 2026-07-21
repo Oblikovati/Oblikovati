@@ -5,6 +5,7 @@ package ops
 import (
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // rebuildWithRimFillet rebuilds the body with the rim rounded: every vertex/edge/face is copied
@@ -12,7 +13,22 @@ import (
 // (re-aimed to the receded cyl-tangent vertex). It then inserts the cyl-tangent + cap-tangent circles,
 // the torus seam, re-trims the cylinder wall and cap onto them, and adds the torus band.
 func rebuildWithRimFillet(b *topo.Body, rf *rimFillet) (*topo.Body, error) {
-	g := &rimBuild{rf: rf, bld: topo.NewBuilder(b.IsSolid(), b.Lineage()), verts: map[*topo.Vertex]*topo.Vertex{}, edges: map[*topo.Edge]*topo.Edge{}}
+	return rebuildRim(b, rf, false)
+}
+
+// rebuildWithConcaveRimFillet is the CONCAVE dual (S2/S5): the rebuild recedes the curved host UP its
+// bump and GROWS the plate hole out to the wider plane-contact circle. Two things differ from the convex
+// path, both gated on concave=true so the convex J1 band stays byte-identical: the re-aimed curved-host
+// seam stays on a SPHERE host as a meridian ARC (a cone/cylinder seam is still the straight ruling), and
+// the torus cove band winds the OTHER way so the added material fills the void and the signed volume
+// stays positive.
+func rebuildWithConcaveRimFillet(b *topo.Body, rf *rimFillet) (*topo.Body, error) {
+	return rebuildRim(b, rf, true)
+}
+
+// rebuildRim is the shared rim-rebuild driver; concave selects the S2/S5 seam/winding variants.
+func rebuildRim(b *topo.Body, rf *rimFillet, concave bool) (*topo.Body, error) {
+	g := &rimBuild{rf: rf, concave: concave, bld: topo.NewBuilder(b.IsSolid(), b.Lineage()), verts: map[*topo.Vertex]*topo.Vertex{}, edges: map[*topo.Edge]*topo.Edge{}}
 	g.copyVerts(b)
 	g.addRimVerts()
 	g.copyEdges(b)
@@ -26,16 +42,17 @@ func rebuildWithRimFillet(b *topo.Body, rf *rimFillet) (*topo.Body, error) {
 
 // rimBuild carries the in-progress rebuild: the old→new vertex/edge maps plus the new rim entities.
 type rimBuild struct {
-	rf    *rimFillet
-	bld   *topo.Builder
-	verts map[*topo.Vertex]*topo.Vertex
-	edges map[*topo.Edge]*topo.Edge
-	vc    *topo.Vertex // cyl-tangent seam vertex (replaces the rim vertex on the wall)
-	vt    *topo.Vertex // cap-tangent seam vertex
-	cylE  *topo.Edge   // cyl-tangent circle
-	capE  *topo.Edge   // cap-tangent circle
-	seamE *topo.Edge   // torus seam arc vc→vt
-	wallE *topo.Edge   // re-aimed wall seam bottom→vc
+	rf      *rimFillet
+	concave bool // S2/S5: sphere meridian-arc seam + reversed cove-band winding
+	bld     *topo.Builder
+	verts   map[*topo.Vertex]*topo.Vertex
+	edges   map[*topo.Edge]*topo.Edge
+	vc      *topo.Vertex // cyl-tangent seam vertex (replaces the rim vertex on the wall)
+	vt      *topo.Vertex // cap-tangent seam vertex
+	cylE    *topo.Edge   // cyl-tangent circle
+	capE    *topo.Edge   // cap-tangent circle
+	seamE   *topo.Edge   // torus seam arc vc→vt
+	wallE   *topo.Edge   // re-aimed wall seam bottom→vc
 }
 
 func (g *rimBuild) copyVerts(b *topo.Body) {
@@ -68,7 +85,34 @@ func (g *rimBuild) addRimEdges() {
 	seam, _ := geom.Arc3dByThreePoints(g.rf.cylTan.PointAt(0), g.rf.seamMid, g.rf.capTan.PointAt(0))
 	g.seamE = g.bld.AddEdge(seam, g.vc, g.vt, lin("seam"))
 	bottom := g.verts[g.rf.bottomV]
-	g.wallE = g.bld.AddEdge(geom.NewLineSegment(bottom.Point(), g.vc.Point()), bottom, g.vc, lin("wallseam"))
+	g.wallE = g.bld.AddEdge(g.wallSeamCurve(bottom.Point(), g.vc.Point()), bottom, g.vc, lin("wallseam"))
+}
+
+// wallSeamCurve is the re-aimed curved-host seam from the host's far vertex (bottom) to the receded
+// contact vertex vc. On a cone/cylinder host it is the straight ruling (byte-identical to the convex J1
+// / lone-rim path). On a concave SPHERE host it is the meridian ARC on the sphere (the host boundary must
+// stay on the sphere, so a line — which cuts through the sphere interior — is wrong): the great-circle
+// sub-arc through the on-sphere midpoint of bottom and vc.
+func (g *rimBuild) wallSeamCurve(bottom, vc math.Point3) geom.Curve3 {
+	sph, isSphere := g.rf.cyl.Geometry().(geom.Sphere)
+	if !g.concave || !isSphere {
+		return geom.NewLineSegment(bottom, vc)
+	}
+	db, e1 := math.UnitVector3FromVector(sph.Center.VectorTo(bottom))
+	dc, e2 := math.UnitVector3FromVector(sph.Center.VectorTo(vc))
+	if e1 != nil || e2 != nil {
+		return geom.NewLineSegment(bottom, vc)
+	}
+	mid, err := math.UnitVector3FromVector(db.AsVector().Add(dc.AsVector()))
+	if err != nil {
+		return geom.NewLineSegment(bottom, vc) // antipodal degeneracy — fall back to the ruling
+	}
+	onSphere := sph.Center.TranslateBy(mid.AsVector().Scale(sph.Radius))
+	arc, err := geom.Arc3dByThreePoints(bottom, onSphere, vc)
+	if err != nil {
+		return geom.NewLineSegment(bottom, vc)
+	}
+	return arc
 }
 
 // quarterTube is v=π/4 — the tube midpoint between the cyl-tangent contact (v=0) and the cap-tangent
@@ -120,8 +164,16 @@ func (g *rimBuild) mapUse(f *topo.Face, u *topo.EdgeUse) topo.Use {
 
 // addTorusFace adds the toroidal band: seam up the tube, around the cap-tangent circle (opposite the
 // cap), seam down, around the cyl-tangent circle (opposite the wall) — the SolidCylinderFilletedTop
-// pattern, so each circle is shared with its neighbour in the opposite orientation.
+// pattern, so each circle is shared with its neighbour in the opposite orientation. The CONCAVE cove
+// band (S2/S5) reverses that loop: the added material is on the far side of the tube, so the band's
+// outward normal — and thus its winding — flips, keeping the signed volume positive.
 func (g *rimBuild) addTorusFace() {
-	g.bld.AddFace(g.rf.torus, topo.NewLineage(topo.Tok("rimfillet", "torus", 0)),
+	lin := topo.NewLineage(topo.Tok("rimfillet", "torus", 0))
+	if g.concave {
+		g.bld.AddFace(g.rf.torus, lin,
+			topo.OuterLoop(topo.Rev(g.cylE), topo.Fwd(g.seamE), topo.Fwd(g.capE), topo.Rev(g.seamE)))
+		return
+	}
+	g.bld.AddFace(g.rf.torus, lin,
 		topo.OuterLoop(topo.Fwd(g.seamE), topo.Rev(g.capE), topo.Rev(g.seamE), topo.Fwd(g.cylE)))
 }

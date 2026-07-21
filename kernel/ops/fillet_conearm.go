@@ -182,19 +182,7 @@ func coneArmSurface(co geom.Cone, pl geom.Plane, outwardN math.UnitVector3, s, r
 	a := co.AxisDir.AsVector()
 	apexPrime := co.Apex.TranslateBy(a.Scale(s * r / sinA))      // A′ = A + s·(r/sinα)·â
 	pOff := pl.Origin.TranslateBy(outwardN.AsVector().Scale(-r)) // cap plane moved r into the material
-	hPrime := float64(apexPrime.VectorTo(pOff).Dot(a))           // h′ = (P_off − A′)·â
-	if hPrime < armSpindleBand*res.Weld() {
-		return geom.Torus{}, coneArmClears // offset cap plane on the wrong side of A′ — no spine circle
-	}
-	majorR := sinA / cosA * hPrime // tanα·h′
-	if majorR < armSpindleBand*res.Weld() {
-		return geom.Torus{}, coneArmGrazing // grazing cap: the spine circle has collapsed to a point
-	}
-	tor, err := geom.NewTorusWithRef(apexPrime.TranslateBy(a.Scale(hPrime)), a, co.Ref.AsVector(), majorR, r)
-	if err != nil {
-		return geom.Torus{}, coneArmDegenerate
-	}
-	return tor, coneArmBuilt
+	return coneOffsetTorus(co, apexPrime, pOff, r, res)          // shared spine/major/torus tail (dedup with the concave builder)
 }
 
 // coneArmFillet builds the exact torus arm on a CONVEX-EXTERNAL Cone∧Plane CAP-plane edge — the sibling
