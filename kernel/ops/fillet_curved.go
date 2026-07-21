@@ -94,23 +94,14 @@ func curvedArmFillet(e *topo.Edge, cyl geom.Cylinder, pl geom.Plane, p filletPic
 	}
 	switch classifyCurvedArm(cyl, pl, res) {
 	case armTorus:
-		return curvedTorusArmFillet(e, cyl, pl, outwardN, p.r0, res)
+		tor, ok := torusArmSurface(cyl, pl, outwardN, p.r0, res)
+		return curvedArmEdgeFillet(e, tor, ok)
 	case armCylinder:
 		arm, ok := cylinderArmSurface(e, cyl, pl, outwardN, p.r0)
 		return curvedArmEdgeFillet(e, arm, ok)
 	default:
 		return edgeFillet{}, false // armRejected: oblique ellipse edge (config iii, Slice B)
 	}
-}
-
-// curvedTorusArmFillet builds the config-(i) torus arm on a convex Cylinder∧Plane CIRCLE edge, selecting
-// the boss-cap (R−r) or external-shoulder (R+r) side by the contact-foot gate against the edge's real
-// trimmed host faces, and packs it into the edgeFillet (do-no-harm on a constructor decline). Split out
-// so curvedArmFillet stays within funlen once the side-selection reads both hosts (H6 root2).
-func curvedTorusArmFillet(e *topo.Edge, cyl geom.Cylinder, pl geom.Plane, outwardN math.UnitVector3, r float64, res Resolution) (edgeFillet, bool) {
-	cylFace, planeFace := cylinderPlaneHostFaces(e, cyl, pl)
-	tor, ok := torusArmSurface(cyl, pl, cylFace, planeFace, edgeMidpoint(e), outwardN, r, res)
-	return curvedArmEdgeFillet(e, tor, ok)
 }
 
 // planeHostNormal is the material-outward unit normal of the planar host face of a Cylinder∧Plane edge —

@@ -210,7 +210,7 @@ func assertMirrorFailsOnlyPlaneFoot(t *testing.T, s concaveArmScene, mirror geom
 	if PointInsideBody(s.body, centre) {
 		t.Fatalf("mirror centre unexpectedly inside the body — void gate already discriminates")
 	}
-	cylFace, planeFace := cylinderPlaneHostFaces(s.edge, s.cyl, s.pl)
+	cylFace, planeFace := concaveHostFaces(s.edge, s.cyl, s.pl)
 	tol := res.Weld() * s.r
 	if _, ok := armRunoutFoot(cylFace, centre, s.r, tol); !ok {
 		t.Fatalf("mirror not tangent to the cylinder host — tangency already discriminates")

@@ -184,7 +184,7 @@ func concaveArmRootValid(body *topo.Body, e *topo.Edge, arm, cyl geom.Cylinder, 
 	if !ok || PointInsideBody(body, centre) {
 		return false // undefined spine, or a root sitting in the material
 	}
-	cylFace, planeFace := cylinderPlaneHostFaces(e, cyl, pl)
+	cylFace, planeFace := concaveHostFaces(e, cyl, pl)
 	if cylFace == nil || planeFace == nil {
 		return false
 	}
@@ -232,11 +232,10 @@ func loopUVPolygon(l *topo.Loop, uv func(math.Point3) math.Point2) []math.Point2
 	return poly
 }
 
-// cylinderPlaneHostFaces returns the edge's two host faces split by kind: the cylinder host (geometry ==
-// cyl) and the plane host (geometry == pl). Either is nil when no bordering face matches — a defensive
-// guard (cylinderPlaneEdge already established both exist). Shared by the concave arm root gate and the
-// convex torus-arm side-selection (torusArmSurface), so its name is host-kind, not convexity-specific.
-func cylinderPlaneHostFaces(e *topo.Edge, cyl geom.Cylinder, pl geom.Plane) (cylFace, planeFace *topo.Face) {
+// concaveHostFaces returns the edge's two host faces split by kind: the cylinder host (geometry == cyl)
+// and the plane host (geometry == pl). Either is nil when no bordering face matches — a defensive guard
+// (cylinderPlaneEdge already established both exist).
+func concaveHostFaces(e *topo.Edge, cyl geom.Cylinder, pl geom.Plane) (cylFace, planeFace *topo.Face) {
 	for _, f := range e.Faces() {
 		switch g := f.Geometry().(type) {
 		case geom.Cylinder:
