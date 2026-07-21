@@ -3,6 +3,8 @@
 package ops
 
 import (
+	stdmath "math"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -35,11 +37,12 @@ func addEndCorner(fl *filletLoop, f *topo.Face, ends map[uint64]corner, uses []*
 // planar corpus + the 24 fingerprint pins), so only a genuinely curved wall changes.
 
 // trimCarriedRimArcs replaces each carried full parent arc (the whole rim, stamped on its tOut segment by
-// addCornerRound) with the sub-arc between that segment's own endpoints. The corner tangent points sit on
-// the fillet's CAP contact circle (radius √(r²+R²), OFF the wall surface by the root-cause receipt), so
-// each endpoint is first projected onto the rim's own circle before the retained span is measured — else
-// subArcMajor/arcFrac reject the off-circle point and the major sub-arc silently degrades to its minor
-// complement (a 270° rim would collapse back to 90°).
+// addCornerRound) with the sub-arc actually retained between that segment's own endpoints — but ONLY when
+// that sub-arc materially deviates from its chord (retainedRimCurve's quadrant gate); otherwise it restores
+// the base straight chord (nil). The corner tangent points sit on the fillet's CAP contact circle (radius
+// √(r²+R²), OFF the wall surface by the root-cause receipt), so each endpoint is first projected onto the
+// rim's own circle before the retained span is measured — else subArcMajor/arcFrac reject the off-circle
+// point and a major sub-arc silently degrades to its minor complement (a 270° rim would collapse back to 90°).
 func trimCarriedRimArcs(fl *filletLoop, idxs []int) {
 	n := len(fl.pts)
 	for _, i := range idxs {
@@ -49,25 +52,43 @@ func trimCarriedRimArcs(fl *filletLoop, idxs []int) {
 		}
 		from := projectOntoArcCircle(parent, fl.pts[i])
 		to := projectOntoArcCircle(parent, fl.pts[(i+1)%n])
-		fl.curves[i] = survivorSubArc(parent, from, to)
+		fl.curves[i] = retainedRimCurve(parent, from, to)
 	}
 }
 
-// survivorSubArc is the retained rim sub-arc between from and to (both projected onto parent's circle),
-// mirroring subSeg (fillet_curved_retrim_loop.go): a MAJOR (>π) retained span is carried from the parent's
-// OWN parameters (subArcMajor) so a >180° wall rim stays major rather than snapping to its minor complement
-// under an ill-conditioned three-point re-fit; a minor span keeps the shorter-arc re-fit through its midpoint.
-// Returns nil (a straight chord — the pre-fix behaviour) only on a degenerate near-antipodal re-fit.
-func survivorSubArc(parent geom.Arc3d, from, to math.Point3) geom.Curve3 {
-	if sub, _, ok := subArcMajor(parent, from, to); ok {
-		return sub
+// retainedRimCurve is the sub-arc to carry for a curved survivor rim, or nil (the BASE straight chord) when
+// the retained span is at most a QUADRANT (π/2). WHY the gate: the fillet cap-contact tangent points are off
+// the wall (√(r²+R²)), so the re-fit sub-arc leaves a small corner notch; that notch is only worth paying
+// when the chord itself is badly wrong. A chord across a >π/2 rim deviates from the wall by more than
+// R(1−cos45°) ≈ 0.29·R — a collapsed curved face (B5/C4/D7's 242–255° rims) or a large lune off the adjacent
+// meridian plane (E1/E2's 144–146° sphere rims) — so the arc MUST be carried. A ≤π/2 rim (B1/B9's 62–67°
+// sector rims) is faithfully approximated by its chord, so the base loop is kept byte-for-byte (the whole
+// planar corpus + the fingerprint pins). The two carried clusters (62–67° vs 144–255°) leave π/2 a wide
+// margin — a mere >π (major-only) gate would wrongly drop E1/E2's minor sphere meridians and un-green them.
+func retainedRimCurve(parent geom.Arc3d, from, to math.Point3) geom.Curve3 {
+	if retainedSpan(parent, from, to) <= stdmath.Pi/2 {
+		return nil // ≤ a quarter turn: the chord is faithful — keep the base loop byte-identical (B1/B9)
+	}
+	if sub, _, major := subArcMajor(parent, from, to); major {
+		return sub // > π: carry from the parent's own parameters so a >180° rim stays major (B5/C4/D7)
 	}
 	mid := arcMidBetween(parent.Center, parent.Radius, from, to)
 	sub, err := geom.Arc3dByThreePoints(from, mid, to)
 	if err != nil {
-		return nil
+		return nil // degenerate near-antipodal re-fit: fall back to the base chord
 	}
-	return sub
+	return sub // (π/2, π]: a large minor rim re-fit through its shorter-arc midpoint (E1/E2)
+}
+
+// retainedSpan is the absolute angular span (radians) the sub-arc from→to subtends on parent's own circle;
+// 0 when either endpoint is off the circle (arcFrac reject), which the ≤π/2 gate then treats as a chord.
+func retainedSpan(parent geom.Arc3d, from, to math.Point3) float64 {
+	tf, okf := arcFrac(parent, from)
+	tt, okt := arcFrac(parent, to)
+	if !okf || !okt {
+		return 0
+	}
+	return stdmath.Abs((tt - tf) * parent.SweepAngle)
 }
 
 // projectOntoArcCircle drops p onto the circle of arc (same centre/axis/radius): it removes p's out-of-plane

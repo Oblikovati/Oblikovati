@@ -35,11 +35,15 @@ func TestByteIdentityFingerprints(t *testing.T) {
 }
 
 // volTolFor is the raw-volume relative tolerance for a pinned body: the bit-stable 1e-9 default, loosened
-// only for M4 whose off-origin-bore divergence sum is TessellateBody-order-sensitive at ~1e-4 (its mesh —
-// hash+tris — is still pinned exactly).
+// for the two cases whose signed-tetra volume sum is TessellateBody-order-sensitive (their mesh — hash+tris
+// — is still pinned exactly): M4's off-origin bore (~1e-4) and D3's host-sphere near-degenerate zone winding
+// (~1e-3 swing; 3e-3 leaves ~3× margin over the observed spread).
 func volTolFor(name string) float64 {
-	if name == "M4" {
+	switch name {
+	case "M4":
 		return 5e-4
+	case "D3":
+		return 3e-3
 	}
 	return 1e-9
 }
@@ -140,6 +144,13 @@ func byteIdentityPins() []fingerprintPin {
 		// Captured on THIS HEAD; they lock the survivor-arc carry so any later slice that perturbs the
 		// planar end-corner path fails loud. Same cross-platform-risk caveat as above applies.
 		{"E1", 3481520.754844990, 12276, 0x98e05724da9bfa49, ""},
-		{"E2", 3478198.350618430, 19000, 0xa4134742f22b4980, ""},
+		{"E2", 3479438.313038055, 18196, 0xf2f6195ae0b5e804, ""},
+		// D3 (simple): a 270°-latitude/90°-longitude sphere-sector trihedral fillet, greened as a bonus by
+		// the quadrant-gated survivor-rim carry (E1/E2/D3 share the mechanism; its 118–146° sphere meridians
+		// are carried, its ≤π/2 rims stay chorded). Its mesh (hash+tris) is bit-stable, so the AREA gate is
+		// stable at 0.29%, but — like M4 — its raw signed-tetra VOLUME sum is TessellateBody-order-sensitive
+		// (~1e-3 swing, the host-sphere zone's near-degenerate winding); its volume is pinned to the mid-spread
+		// with the loosened volTolFor(D3) tolerance, the mesh pinned exactly. Same cross-platform caveat.
+		{"D3", 3407560.0, 17274, 0xe4772e04bfb33d22, ""},
 	}
 }

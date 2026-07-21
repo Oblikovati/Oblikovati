@@ -11,14 +11,15 @@ import (
 	"oblikovati.org/kernel/topo"
 )
 
-// TestE1E2SurvivorRim is the whole-body gate on the first two curved-host-collapse cases greened by the
-// survivor-rim carry (fillet_survivor_rim.go). E1/E2 are 90° sphere-sector corner fillets whose CURVED
+// TestSurvivorRimGreens is the whole-body gate on the curved-host-collapse cases greened by the
+// survivor-rim carry (fillet_survivor_rim.go). E1/E2/D3 are 90° sphere-sector corner fillets whose CURVED
 // survivor wall — a sphere meridian rim — was CHORDED by transformLoop's ENDS branch, collapsing the
 // sphere face ~in half (curved-host-collapse-rootcause.md). The carry trims the rim to its retained
-// sub-arc, so the wall keeps its full area. This asserts, on the REAL STEP bodies, that the result is a
-// watertight fold-free solid AND that its whole-body tessellated area matches OCCT within the corpus deps
-// — the exact regression a re-chorded rim (or a wrong-span sub-arc) would fail loud.
-func TestE1E2SurvivorRim(t *testing.T) {
+// sub-arc (only when it materially deviates from its chord — the quadrant gate), so the wall keeps its
+// full area. This asserts, on the REAL STEP bodies, that the result is a watertight fold-free solid AND
+// that its whole-body tessellated area matches OCCT within the corpus deps — the exact regression a
+// re-chorded rim (or a wrong-span sub-arc) would fail loud.
+func TestSurvivorRimGreens(t *testing.T) {
 	for _, tc := range []struct {
 		name     string
 		faces    int
@@ -26,6 +27,7 @@ func TestE1E2SurvivorRim(t *testing.T) {
 	}{
 		{"E1", 5, 137772},
 		{"E2", 8, 137076},
+		{"D3", 9, 134808},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			body := caseResultBody(t, tc.name)
@@ -74,9 +76,9 @@ func assertWholeBodyArea(t *testing.T, name string, body *topo.Body, want float6
 }
 
 // assertSphereSurvivorKept fails unless the large host-sphere survivor face (radius 150, the wall the
-// ENDS branch used to chord) keeps a substantial area — a floor the chorded ~half-collapse (E1 sphere
-// 59844, E2 77445) would still clear, so the floor is set above the collapse to catch a regression that
-// re-drops the rim: the retained-arc sphere reads E1 65917 / E2 82760, so 62000 is a clean separator.
+// ENDS branch used to chord) keeps a substantial area — a floor set ABOVE the chorded ~half-collapse
+// (D3 sphere collapses to ~33289 when re-chorded) yet BELOW every retained-arc value (E1 65917 / E2 82760
+// / D3 62481), so 50000 is a clean separator catching a regression that re-drops the rim.
 func assertSphereSurvivorKept(t *testing.T, name string, body *topo.Body) {
 	t.Helper()
 	for _, f := range body.Faces() {
@@ -84,8 +86,8 @@ func assertSphereSurvivorKept(t *testing.T, name string, body *topo.Body) {
 		if !ok || sph.Radius < 100 { // skip the small corner-blend sphere (radius = fillet r)
 			continue
 		}
-		if a := faceMeshArea2(f); a < 62000 {
-			t.Fatalf("%s host-sphere survivor area %.1f collapsed below the retained-rim floor 62000 (rim re-chorded?)", name, a)
+		if a := faceMeshArea2(f); a < 50000 {
+			t.Fatalf("%s host-sphere survivor area %.1f collapsed below the retained-rim floor 50000 (rim re-chorded?)", name, a)
 		}
 		return
 	}

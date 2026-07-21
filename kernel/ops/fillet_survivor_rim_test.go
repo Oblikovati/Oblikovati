@@ -94,21 +94,35 @@ func TestTrimCarriedRimArcMajor(t *testing.T) {
 	assertArcEndpointsOnCircle(t, "major", arc)
 }
 
-// TestTrimCarriedRimArcMinor proves a <π retained span (a B1-style 90° sector rim) trims to a MINOR sub-arc
-// (|sweep| < π) — the correct in-sector side, matching B1/B9 staying green.
-func TestTrimCarriedRimArcMinor(t *testing.T) {
-	fix := newRimCircleFixture(t, 90, 10)
+// TestTrimCarriedRimArcLargeMinor proves a LARGE minor retained span (>π/2, <π — an E1/E2-style sphere
+// meridian rim) carries a MINOR sub-arc (|sweep| < π) re-fit through its shorter-arc midpoint: the in-sector
+// side, and NOT dropped by the quadrant gate (which a major-only gate would wrongly do, un-greening E1/E2).
+func TestTrimCarriedRimArcLargeMinor(t *testing.T) {
+	fix := newRimCircleFixture(t, 170, 10) // retained ~155° — comfortably above the π/2 gate, below π
 	fl := loopWithCarriedRim(fix)
 	trimCarriedRimArcs(&fl, []int{0})
 
 	arc, ok := fl.curves[0].(geom.Arc3d)
 	if !ok {
-		t.Fatalf("minor rim: trimmed curve = %T, want geom.Arc3d", fl.curves[0])
+		t.Fatalf("large-minor rim: trimmed curve = %T, want geom.Arc3d (a >π/2 rim must be carried)", fl.curves[0])
 	}
 	if stdmath.Abs(arc.SweepAngle) >= stdmath.Pi {
-		t.Fatalf("minor rim: trimmed sweep %.1f° over-spanned, want < 180° (the in-sector side)", arc.SweepAngle*180/stdmath.Pi)
+		t.Fatalf("large-minor rim: trimmed sweep %.1f° over-spanned, want < 180° (the in-sector side)", arc.SweepAngle*180/stdmath.Pi)
 	}
-	assertArcEndpointsOnCircle(t, "minor", arc)
+	assertArcEndpointsOnCircle(t, "large-minor", arc)
+}
+
+// TestTrimCarriedRimSmallMinorStaysChord proves a SMALL minor retained span (≤π/2 — a B1/B9-style 90° sector
+// rim, retained ~75°) is RESTORED to a straight chord (nil), byte-identical to the pre-fix planar path, so
+// the whole planar corpus + the fingerprint pins are untouched (the reviewer's Critical: B1/B9 must not drift).
+func TestTrimCarriedRimSmallMinorStaysChord(t *testing.T) {
+	fix := newRimCircleFixture(t, 90, 10) // retained ~75° — below the π/2 quadrant gate
+	fl := loopWithCarriedRim(fix)
+	trimCarriedRimArcs(&fl, []int{0})
+
+	if fl.curves[0] != nil {
+		t.Fatalf("small-minor rim: curve = %v, want nil (a ≤π/2 rim keeps its faithful base chord, byte-identical)", fl.curves[0])
+	}
 }
 
 // loopWithCarriedRim builds the two-point filletLoop addCornerRound would leave for a curved survivor: the
