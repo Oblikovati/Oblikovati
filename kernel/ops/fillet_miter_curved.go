@@ -86,7 +86,8 @@ func cylinderPlaneMiterArm(e *topo.Edge, cyl geom.Cylinder, pl geom.Plane, r flo
 	}
 	switch classifyCurvedArm(cyl, pl, res) {
 	case armTorus:
-		if t, ok := torusArmSurface(cyl, pl, outwardN, r, res); ok {
+		cylFace, planeFace := cylinderPlaneHostFaces(e, cyl, pl)
+		if t, ok := torusArmSurface(cyl, pl, cylFace, planeFace, edgeMidpoint(e), outwardN, r, res); ok {
 			return t, true
 		}
 	case armCylinder:
