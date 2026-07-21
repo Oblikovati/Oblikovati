@@ -1,0 +1,297 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package ops
+
+import (
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+)
+
+// mixedTorusRadiusTol is the largest |R−2r|/r a mixed corner's pivot radius may deviate from the
+// derived 2r before the pass declines. R and r are both model lengths so the ratio is
+// DIMENSIONLESS and scale-invariant (needs no bbox factor). R=2r is the rolling-ball pivot of a
+// mixed-sense trihedral corner (the convex-edge fillet axis sits r inside each wall, the two
+// concave spines r outside → spine separation 2r, geometry-derivation §3). A pair that fails this
+// is not the box-corner torus the derivation covers (a non-orthogonal or curved mixed corner shifts
+// R off 2r) so it is left to the honest-reject baseline rather than mis-modelled.
+const mixedTorusRadiusTol = 1e-6
+
+// adoptMixedTorusCorner re-solves every MIXED-SENSE ORTHOGONAL PLANAR trihedral corner (2 concave +
+// 1 convex fillet meeting at 3 mutually-perpendicular planar faces) to OCCT's toroidal corner and
+// returns the re-welded body, ok=true, when at least one such corner fired AND the result certifies a
+// watertight hole-contained solid. Otherwise ok=false and the caller keeps the (sphere) baseline.
+//
+// The gap it closes (OCCT tests/blend/simple K9 +1.17%, M2 +1.02%): solveBlend forces a SPHERE here
+// (solvePlanarBlend, area 274.35), but a mixed corner's rolling ball pivots AROUND the convex edge
+// while staying tangent to the shared plane, so its centre traces a 90° arc of radius R=2r — the swept
+// surface is a TORUS (axis = the convex edge's fillet axis, major R=2r, minor r; K9 patch area
+// (25π/2)(π−1)=84.100). A sphere is the degenerate R=0 torus, which is exactly why the forced sphere
+// overshoots. The pass builds the torus patch, retracts the three bands to its four contact arcs, and
+// re-trims the shared host plane along the torus's top-contact arc (a synthetic end corner injected
+// into the single-source host re-trim). The two walls re-trim through the ordinary band ta/tb coupling
+// (both bands sharing a wall land on the SAME tangent point, no arc needed).
+//
+// It never mutates the caller's fils/blends (it copies), so a decline keeps the baseline byte-
+// identical. The gate (buildMixedTorusCorner) declines every same-sense corner (all 3 concave = K6/L4
+// sphere octant, or all convex → splitMixedSense rejects), the non-orthogonal wedge (A8), the dihedral
+// miter (a 2-edge corner, not a blend) and any curved-host corner (planeNormal fails).
+func adoptMixedTorusCorner(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend) (*topo.Body, bool) {
+	mixed, ok := detectMixedTorusCorners(fils, blends)
+	if !ok {
+		return nil, false
+	}
+	setFils := retractMixedBands(fils, mixed)
+	cand := assembleMixedTorusBody(body, setFils, blendsWithout(blends, mixed), mixed)
+	if obstacleImprovedSolid(cand) {
+		return cand, true
+	}
+	return nil, false
+}
+
+// detectMixedTorusCorners recognises every mixed-sense orthogonal-planar trihedral corner among the
+// solved blends and returns its finished torus treatment (patch face + band retractions + host-plane
+// re-trim corner). fired=false leaves the caller on the sphere baseline byte-identical.
+func detectMixedTorusCorners(fils []edgeFillet, blends map[uint64]*cornerBlend) ([]mixedTorusCorner, bool) {
+	var out []mixedTorusCorner
+	for vid, cb := range blends {
+		if mc, ok := buildMixedTorusCorner(vid, cb, fils); ok {
+			out = append(out, mc)
+		}
+	}
+	return out, len(out) > 0
+}
+
+// cornerBand is one filleted edge converging on a shared trihedral corner: its slot in the fils
+// slice (fi + which end), its two host faces, its constant cylinder, and its sense (concave = ef.flip).
+type cornerBand struct {
+	fi      int
+	atC1    bool
+	a, b    *topo.Face
+	cyl     geom.Cylinder
+	concave bool
+}
+
+// bandRetract is one band's rewritten corner cross-section: the new tangent point on each of its two
+// faces (keyed by face id) and the section arc's midpoint. Applied in place on a fils copy so the band
+// rail (cylinderFace), the host re-trim (filletMaps) and the torus patch all read the retracted station.
+type bandRetract struct {
+	fi   int
+	atC1 bool
+	pt   map[uint64]math.Point3
+	mid  math.Point3
+}
+
+// mixedTorusCorner is the OCCT toroidal corner for one mixed-sense trihedral vertex: the shared host
+// plane and the synthetic end corner that re-trims it along the torus top-contact arc, the finished
+// torus patch face, and the three retracted band cross-sections.
+type mixedTorusCorner struct {
+	vertexID  uint64
+	topFace   *topo.Face
+	topCorner corner
+	patch     filletFace
+	bands     [3]bandRetract
+}
+
+// buildMixedTorusCorner classifies the corner at vid and, when it is the mixed-sense orthogonal-planar
+// trihedral this pass owns, solves its torus treatment. Any other config (same-sense, non-orthogonal,
+// curved-host, wrong valence) returns ok=false so the corner keeps its baseline sphere.
+func buildMixedTorusCorner(vid uint64, cb *cornerBlend, fils []edgeFillet) (mixedTorusCorner, bool) {
+	if cb == nil || cb.vertex == nil {
+		return mixedTorusCorner{}, false
+	}
+	cvx, cc, ok := splitMixedSense(cornerBandsAt(vid, fils))
+	if !ok {
+		return mixedTorusCorner{}, false
+	}
+	faces := mixedCornerFaces(cvx, cc)
+	if len(faces) != 3 || !orthogonalPlanarTriple(faces) {
+		return mixedTorusCorner{}, false
+	}
+	return solveMixedTorusCorner(vid, cb.vertex, cvx, cc)
+}
+
+// solveMixedTorusCorner builds the torus geometry, patch face, host-plane re-trim corner and the three
+// band retractions once the gate has accepted the corner. ok=false on a degenerate torus frame or a
+// pivot radius off 2r (mixedCornerGeom's guard).
+func solveMixedTorusCorner(vid uint64, v *topo.Vertex, cvx cornerBand, cc []cornerBand) (mixedTorusCorner, bool) {
+	g, ok := mixedCornerGeom(cvx, cc)
+	if !ok {
+		return mixedTorusCorner{}, false
+	}
+	patch, ok := mixedTorusPatch(g)
+	if !ok {
+		return mixedTorusCorner{}, false
+	}
+	return mixedTorusCorner{
+		vertexID: vid, topFace: g.top, topCorner: mixedTopCorner(g, v),
+		patch: patch, bands: mixedBandRetracts(g, cvx),
+	}, true
+}
+
+// cornerBandsAt collects every filleted edge whose blend corner meets vid — the (up to three) bands
+// converging on the trihedral vertex.
+func cornerBandsAt(vid uint64, fils []edgeFillet) []cornerBand {
+	var out []cornerBand
+	for i := range fils {
+		for _, atC1 := range []bool{false, true} {
+			c := fils[i].c0
+			if atC1 {
+				c = fils[i].c1
+			}
+			if c.blend && c.vertex != nil && c.vertex.ID() == vid {
+				out = append(out, cornerBand{fi: i, atC1: atC1, a: fils[i].a, b: fils[i].b, cyl: fils[i].cyl, concave: fils[i].flip})
+			}
+		}
+	}
+	return out
+}
+
+// splitMixedSense partitions three converging bands into the single CONVEX pivot band and the two
+// CONCAVE bands. ok=false for any valence other than 3 or any sense split other than 2 concave + 1
+// convex (a same-sense corner is a sphere, not a torus).
+func splitMixedSense(bands []cornerBand) (convex cornerBand, concaves []cornerBand, ok bool) {
+	if len(bands) != 3 {
+		return cornerBand{}, nil, false
+	}
+	var cvx, cc []cornerBand
+	for _, b := range bands {
+		if b.concave {
+			cc = append(cc, b)
+		} else {
+			cvx = append(cvx, b)
+		}
+	}
+	if len(cvx) != 1 || len(cc) != 2 {
+		return cornerBand{}, nil, false
+	}
+	return cvx[0], cc, true
+}
+
+// mixedCornerFaces returns the distinct host faces of the three bands (the trihedral's three faces).
+func mixedCornerFaces(cvx cornerBand, cc []cornerBand) []*topo.Face {
+	seen := map[uint64]*topo.Face{}
+	for _, b := range append([]cornerBand{cvx}, cc...) {
+		seen[b.a.ID()], seen[b.b.ID()] = b.a, b.b
+	}
+	out := make([]*topo.Face, 0, len(seen))
+	for _, f := range seen {
+		out = append(out, f)
+	}
+	return out
+}
+
+// retractMixedBands returns a fresh fils slice with every mixed corner's three bands rewritten to their
+// retracted torus cross-sections; the caller's slice is never mutated (edgeFillet corners are values, so
+// the shallow copy fully isolates the writes).
+func retractMixedBands(fils []edgeFillet, mixed []mixedTorusCorner) []edgeFillet {
+	out := append([]edgeFillet(nil), fils...)
+	for _, mc := range mixed {
+		for _, br := range mc.bands {
+			applyBandRetract(&out[br.fi], br)
+		}
+	}
+	return out
+}
+
+// applyBandRetract rewrites one band's corner (c0 or c1) to its retracted cross-section: the tangent
+// point on each of its two faces and the section arc's midpoint. It keeps the corner a blend so
+// filletMaps re-trims the two host walls to the new tangents (both bands on a wall agree, no arc there);
+// the shared plane's arc detour is injected separately as a synthetic end corner.
+func applyBandRetract(ef *edgeFillet, br bandRetract) {
+	c := &ef.c0
+	if br.atC1 {
+		c = &ef.c1
+	}
+	c.ta, c.tb, c.mid = br.pt[c.a.ID()], br.pt[c.b.ID()], br.mid
+}
+
+// blendsWithout copies the blends map, dropping the mixed-corner vertices — those corners are now torus
+// patches, not sphere patches, so they must NOT emit a spherePatchFace.
+func blendsWithout(blends map[uint64]*cornerBlend, mixed []mixedTorusCorner) map[uint64]*cornerBlend {
+	out := make(map[uint64]*cornerBlend, len(blends))
+	for k, v := range blends {
+		out[k] = v
+	}
+	for _, mc := range mixed {
+		delete(out, mc.vertexID)
+	}
+	return out
+}
+
+// assembleMixedTorusBody assembles the mixed-corner body: it builds the shared per-face re-trim maps,
+// injects each corner's synthetic host-plane end corner (so the shared plane's receded vertex becomes
+// the torus top-contact arc), then welds the transformed hosts + retracted band cylinders + any
+// remaining sphere patches + the torus patch faces. Mirrors filletResultFaces' face list exactly, with
+// the torus patch as the only extra and the synthetic end corner as the only host-map injection.
+func assembleMixedTorusBody(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend, mixed []mixedTorusCorner) *topo.Body {
+	maps, caps := filletBuildMaps(body, fils)
+	for _, mc := range mixed {
+		if maps.endCorner[mc.topFace] == nil {
+			maps.endCorner[mc.topFace] = map[uint64]corner{}
+		}
+		maps.endCorner[mc.topFace][mc.vertexID] = mc.topCorner
+	}
+	out := transformedBodyFaces(body, maps, map[uint64]filletFace{})
+	out = append(out, filletBlendFaces(fils, caps, map[uint64]bool{}, map[uint64][]filletFace{})...)
+	for _, cb := range blends {
+		out = append(out, spherePatchFace(cb))
+	}
+	for _, mc := range mixed {
+		out = append(out, mc.patch)
+	}
+	return assembleBody(out)
+}
+
+// sharedBandFace returns the host face both bands touch (the shared plane the two concave bands' torus
+// top-contact arc lies on), or ok=false when they share none.
+func sharedBandFace(x, y cornerBand) (*topo.Face, bool) {
+	for _, fx := range []*topo.Face{x.a, x.b} {
+		if fx == y.a || fx == y.b {
+			return fx, true
+		}
+	}
+	return nil, false
+}
+
+// otherBandFace returns the band's face that is not top (its wall — the face it shares with the convex
+// pivot band).
+func otherBandFace(b cornerBand, top *topo.Face) *topo.Face {
+	if b.a == top {
+		return b.b
+	}
+	return b.a
+}
+
+// closestPointsBetweenLines returns the mutually-nearest points of two lines (o1,d1) and (o2,d2), d1/d2
+// unit — the common-perpendicular feet. For the torus corner: the point on the convex fillet axis (p1 =
+// centre C) and on a concave spine (p2) closest to each other. Assumes the lines are not parallel (the
+// convex and concave fillet axes are orthogonal at a box corner); a parallel pair divides by ~0 and is
+// screened out upstream by the orthogonal-planar gate.
+func closestPointsBetweenLines(o1 math.Point3, d1 math.Vector3, o2 math.Point3, d2 math.Vector3) (p1, p2 math.Point3) {
+	w := o2.VectorTo(o1)
+	b := d1.Dot(d2)
+	den := 1 - b*b
+	t := (b*d2.Dot(w) - d1.Dot(w)) / den
+	s := (d2.Dot(w) - b*d1.Dot(w)) / den
+	return o1.TranslateBy(d1.Scale(t)), o2.TranslateBy(d2.Scale(s))
+}
+
+// footOnLine projects p onto the line (o, d), d unit — the nearest point on the line to p.
+func footOnLine(p, o math.Point3, d math.Vector3) math.Point3 {
+	return o.TranslateBy(d.Scale(o.VectorTo(p).Dot(d)))
+}
+
+// dropOntoPlane returns c projected onto the plane of top along the plane's outward normal (the torus
+// axis is parallel to that normal at an orthogonal corner, so this is the axis∩plane top-circle centre).
+func dropOntoPlane(c math.Point3, top *topo.Face, nTop math.Vector3) math.Point3 {
+	pl := top.Geometry().(geom.Plane)
+	return c.TranslateBy(nTop.Scale(-pl.Origin.VectorTo(c).Dot(nTop)))
+}
+
+// arcMidOnCircle returns the on-circle midpoint of the 90° arc from→to: the circle centre pushed radius
+// along the bisector of the two radial directions (the bulge point Arc3dByThreePoints needs).
+func arcMidOnCircle(center, from, to math.Point3, radius float64) math.Point3 {
+	bis := center.VectorTo(from).Add(center.VectorTo(to))
+	return center.TranslateBy(unit(bis).Scale(radius))
+}

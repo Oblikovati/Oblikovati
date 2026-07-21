@@ -187,5 +187,26 @@ func byteIdentityPins() []fingerprintPin {
 		// torus, P4 non-orthogonal) fails loud if it perturbs a K6/L4 body. Same cross-platform-risk caveat.
 		{"K6", 959144.890948543, 9898, 0xfb501e5efc54048e, ""},
 		{"L4", 945198.518972720, 9676, 0x6852a95e3f8b3508, ""},
+		// K9/M2 (simple): the P3 mixed-sense trihedral corner-setback greens (fillet_corner_torus.go). Each
+		// is a box+boss (K9) / box+cyl (M2) whose single trihedral corner joins 2 CONCAVE + 1 CONVEX fillets
+		// at three mutually-orthogonal planar faces; both were RED (K9 +1.17%, M2 +1.02%) because solveBlend
+		// forced a SPHERE (area 274.35) where the rolling ball pivots AROUND the convex edge and sweeps a
+		// TORUS (axis = the convex fillet axis, major R=2r=10, minor r=5, patch area (25π/2)(π−1)=84.10). The
+		// pass builds the torus patch, retracts the 3 bands to its 4 contact arcs and re-trims the shared host
+		// plane along the top-contact arc. K9 whole-body 66160.6 (=OCCT to the digit); M2 64088.4. Pinned on
+		// the P3 HEAD to lock the torus corner so any later corner slice (P4 non-orthogonal) fails loud if it
+		// perturbs a K9/M2 body. Same cross-platform-risk caveat as above applies.
+		{"K9", 1064212.575467, 8860, 0x8b7d80c80805b0fb, ""},
+		{"M2", 1028376.359922, 16636, 0x1b7133a8b9fdd976, ""},
+		// L6 (simple): the ONE previously-GREEN case the P3 pass legitimately RE-WELDS — a 10°-rotated box
+		// corner that is ALSO a mixed-sense trihedral (2 concave + 1 convex on 3 orthogonal planar faces),
+		// green ONLY by tolerance at base (sphere, area rel 0.9033%). The torus re-weld moves it EXACTLY onto
+		// OCCT (rel 0.0000%, whole-body 65867.9) and stays watertight (valid+closed+holes+solid, every edge
+		// 2-incident, fold-free, torus patch area 84.09). It is a green→green within-deps change invisible to
+		// the pass/fail gate (the survivor-arc / N5 lesson), captured base 6dd604be → P3-HEAD-verified as the
+		// sole real changed green across ALL SIX grids (D3/D7's volume-only diff is hash-identical
+		// TessellateBody summation-order noise, positions unchanged). Pinned here so a future shared-corner-
+		// path edit cannot silently re-drift it. Same cross-platform-risk caveat as above applies.
+		{"L6", 1063051.564952, 8864, 0x72af706c3b9fc8f1, ""},
 	}
 }

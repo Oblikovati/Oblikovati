@@ -268,6 +268,12 @@ func assembleFilletFaces(body *topo.Body, fils []edgeFillet, blends map[uint64]*
 // identical. It never compares areas: adoption is gated purely on the set-back body certifying valid, so
 // a config whose set-back cannot close falls back to the baseline, never a worse body.
 func adoptCornerSetback(body *topo.Body, edges []filletPick, fils []edgeFillet, blends map[uint64]*cornerBlend, miters map[uint64]*cornerMiter, concave ConcaveFill, baseline *topo.Body) *topo.Body {
+	// P3: a MIXED-SENSE trihedral corner (2 concave + 1 convex on 3 orthogonal planar hosts) is a
+	// TORUS, not the sphere solveBlend forces (K9/M2). It fires only on that config and certifies its
+	// own watertight body; every other corner leaves it declined and falls through byte-identical.
+	if cand, ok := adoptMixedTorusCorner(body, fils, blends); ok {
+		return cand
+	}
 	workFils, workBlends := fils, blends
 	setBlends, triFired := flipConcaveTrihedralBlends(fils, blends)
 	if triFired {
