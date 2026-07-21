@@ -160,12 +160,12 @@ func filletResolvedEdges(body *topo.Body, edges []filletPick, concave ConcaveFil
 	if curvedArmFils(fils) {
 		return weldCurvedArmOrFloor(body, fils, blends, miters) // M5 Slice A weld or the do-no-harm floor
 	}
-	return assemblePlanarFilletBody(body, edges, fils, blends)
+	return assemblePlanarFilletBody(body, edges, fils, blends, miters)
 }
 
 // assemblePlanarFilletBody runs the planar fillet's runout guards, assembles the do-no-harm body, and
 // certifies it — naming the #1797 corner-into-round cause when the build-then-certify result still fails.
-func assemblePlanarFilletBody(body *topo.Body, edges []filletPick, fils []edgeFillet, blends map[uint64]*cornerBlend) (*topo.Body, error) {
+func assemblePlanarFilletBody(body *topo.Body, edges []filletPick, fils []edgeFillet, blends map[uint64]*cornerBlend, miters map[uint64]*cornerMiter) (*topo.Body, error) {
 	if err := applyRunoutSetback(fils); err != nil {
 		return nil, err // a runout flank rail is parallel to its far plane — no pierce (n-valent degeneracy)
 	}
@@ -173,6 +173,7 @@ func assemblePlanarFilletBody(body *topo.Body, edges []filletPick, fils []edgeFi
 		return nil, err // n-valent analogue of #1800: reject a self-intersecting/over-radius runout before it silently drops to an open shell
 	}
 	res := assembleFilletBody(body, fils, blends)
+	res = adoptCornerSetback(body, fils, blends, miters, res) // L1-class dihedral setback, do-no-harm floor
 	rep := Validate(res)
 	if rep.Valid && res.IsSolid() {
 		return res, nil
@@ -254,6 +255,28 @@ func addRebuildCandidate(cands map[rebuildChoice]*topo.Body, choice rebuildChoic
 func assembleFilletFaces(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend, enableObstacles, enableRunout bool) *topo.Body {
 	faces, _ := filletResultFaces(body, fils, blends, enableObstacles, enableRunout)
 	return assembleBody(faces)
+}
+
+// adoptCornerSetback returns the corner-set-back body when the L1-class concave dihedral pass fires
+// AND its assembled result certifies as a watertight hole-contained solid; otherwise it returns the
+// baseline unchanged. This is DO-NO-HARM in the strong sense — it can never make a body invalid or turn
+// a green red — but it is NOT byte-identical for the whole corpus: the gate fires for every orthogonal-
+// concave-planar-dihedral miter, so it re-welds the whole rotated-boss family. Across all six grids the
+// changed-body set is exactly {L1, L7 (RED→GREEN), N5 (GREEN→GREEN, re-welded TOWARD OCCT — green only
+// by tolerance at base)}, each pinned in occtparity/fingerprint_pins_test.go. Every other config
+// (convex/curved/variable/non-orthogonal miter, trihedral blend) leaves fired=false → baseline byte-
+// identical. It never compares areas: adoption is gated purely on the set-back body certifying valid, so
+// a config whose set-back cannot close falls back to the baseline, never a worse body.
+func adoptCornerSetback(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend, miters map[uint64]*cornerMiter, baseline *topo.Body) *topo.Body {
+	setFils, fired := applyCornerSetback(fils, miters)
+	if !fired {
+		return baseline
+	}
+	cand := assembleFilletBody(body, setFils, blends)
+	if obstacleImprovedSolid(cand) {
+		return cand
+	}
+	return baseline
 }
 
 // obstacleImprovedSolid reports whether an obstacle-rebuilt body is a watertight, hole-contained solid —

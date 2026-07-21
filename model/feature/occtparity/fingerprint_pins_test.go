@@ -159,5 +159,22 @@ func byteIdentityPins() []fingerprintPin {
 		// so any future shared-planar-path edit that re-drifts them within tolerance fails loud.
 		{"B1", 192177.835243989, 30206, 0xa0cfc51a98aea8ab, ""},
 		{"B9", 517216.198381525, 16130, 0x92904b222d8b4115, ""},
+		// L1/L7 (simple): the P1 dihedral corner-setback greens (fillet_corner_setback.go). L1 is the tracer
+		// (4 orthogonal concave dihedral miters on a box+boss); L7 is a 10°-rotated boss whose miter corners
+		// are still θ=90° in 3D, so the same orthogonal setback closes it. Both were RED (reflected-seam
+		// over-keep) before P1 and are pinned here on the P1 HEAD to lock the concave-miter seam re-sample +
+		// host re-trim so any later corner slice (P2 sphere octant, P3 torus, P4 non-orthogonal) fails loud if
+		// it perturbs an L1/L7 body. Same cross-platform-risk caveat as above applies.
+		{"L1", 1064907.332517385, 10084, 0xfc5957778e077e81, ""},
+		{"L7", 1064002.621311044, 10174, 0x8c0079d3d630ccb5, ""},
+		// N5 (simple): the ONE previously-GREEN case the P1 pass legitimately RE-WELDS — a rotated boss with
+		// two orthogonal (dot=0) concave dihedral miters (L7's family), green ONLY by tolerance at base (area
+		// rel 0.3337%, reflected-seam over-keep). The setback moves it TOWARD OCCT (rel 0.1043%) and it stays
+		// watertight (valid+holes+solid, every edge 2-incident, fold-free). It is a green→green within-deps
+		// change invisible to the pass/fail gate (the survivor-arc lesson), so it is pinned HERE on the P1
+		// HEAD — captured base→HEAD-verified as the sole changed green across ALL SIX grids — locking the
+		// re-weld so a future shared-corner-path edit or a P2–P4 slice cannot silently re-drift it. Same
+		// cross-platform-risk caveat as above applies.
+		{"N5", 1046146.284621348, 56914, 0xb27cf1e52c17e2ee, ""},
 	}
 }
