@@ -31,7 +31,14 @@ func conformCylConeFaces(faces []*topo.Face, idx map[*topo.Face]int, fm []*Mesh,
 		return // watertight body: nothing to repair (and the hot path skips the weld below)
 	}
 	for j := range facesToFix(faces, idx, fm, free, w) {
-		if m := conformingMesh(faces[j], q); m != nil {
+		// Do-no-harm: adopt the conforming re-mesh only when it does NOT ADD fold edges over the mesh it
+		// replaces. conformingPlaneMesh already refuses to REPLACE a good mesh with a collapsed one (its
+		// simpleLoop2D / leakGuardedTris guards); the cyl/cone metric-(u,v) CDT had no equivalent and could
+		// FOLD a partial cone whose crack-repair boundary it cannot triangulate cleanly — inflating a good
+		// fold-free wall into folded garbage (I3's two host cones: 30659 fold0 → 59056 fold4). The crack is
+		// better left as a hairline T-junction (the original mesh is geometrically correct) than papered over
+		// with a self-overlapping fold. A re-mesh that keeps or reduces folds is still adopted (its purpose).
+		if m := conformingMesh(faces[j], q); m != nil && FoldEdgeCount(m) <= FoldEdgeCount(fm[j]) {
 			fm[j] = m
 		}
 	}

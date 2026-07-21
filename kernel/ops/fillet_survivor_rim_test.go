@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
@@ -156,5 +157,137 @@ func TestProjectOntoArcCircle(t *testing.T) {
 	}
 	if float64(got.Z) != 100 {
 		t.Fatalf("projected z = %v, want 100 (stays in the rim plane)", got.Z)
+	}
+}
+
+// The subs-branch survivor-arc carry regression (i3-recon-rootcause.md). transformLoop's `subs` branch
+// (a fillet A/B-corner vertex pulled back to its tangent point) used to hard-code the LEAVING survivor
+// edge's curve to nil — chording a curved host rim (I3's r=300 annular-sector outer arc) to a straight
+// line, slicing −63% off the host and folding the neighbour cone. These white-box tests prove the two
+// required behaviours on named fixtures: a CURVED survivor rim leaving the tangent point is carried, a
+// STRAIGHT survivor stays nil (byte-identical), and the carry fires ONLY when chording erases a MATERIAL
+// circular segment (I3's large host rim), never a minor one (N5's small boss rim, kept byte-identical).
+
+// leavingEdgeUse builds a one-edge face carrying `curve` and returns the edge use LEAVING its start vertex
+// — the `u` transformLoop's subs branch passes to addSubstVertex. A plane surface and single-edge loop are
+// enough: addSubstVertex only reads survivorCurve(u) = u.Edge().Geometry().
+func leavingEdgeUse(t *testing.T, curve geom.Curve3, start, end math.Point3) *topo.EdgeUse {
+	t.Helper()
+	bld := topo.NewBuilder(true, topo.NewLineage())
+	v0 := bld.AddVertex(start, topo.NewLineage())
+	v1 := bld.AddVertex(end, topo.NewLineage())
+	e := bld.AddEdge(curve, v0, v1, topo.NewLineage())
+	plane, err := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
+	if err != nil {
+		t.Fatalf("build fixture plane: %v", err)
+	}
+	f := bld.AddFace(plane, topo.NewLineage(), topo.OuterLoop(topo.Fwd(e)))
+	return f.Loops()[0].EdgeUses()[0]
+}
+
+// TestAddSubstVertexCarriesCurvedSurvivor proves addSubstVertex carries a CURVED (Arc3d) leaving survivor
+// on the tangent-point segment and reports its index, while a STRAIGHT (LineSegment) leaving edge stays
+// nil and reports −1 — the byte-identity guarantee for every straight-survivor subs case (the whole planar
+// corpus + the fingerprint pins).
+func TestAddSubstVertexCarriesCurvedSurvivor(t *testing.T) {
+	arc, err := geom.NewArc3d(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 300, 0, stdmath.Pi/2)
+	if err != nil {
+		t.Fatalf("build survivor arc: %v", err)
+	}
+	tan := math.P3(-190, 300, 0) // the fillet corner pulled back to its tangent point
+
+	var curved filletLoop
+	uArc := leavingEdgeUse(t, arc, arc.PointAt(0), arc.PointAt(1))
+	if idx := addSubstVertex(&curved, tan, uArc); idx != 0 {
+		t.Fatalf("curved survivor: addSubstVertex returned idx %d, want 0 (it carries the parent rim arc)", idx)
+	}
+	if _, ok := curved.curves[0].(geom.Arc3d); !ok {
+		t.Fatalf("curved survivor: carried curve = %T, want geom.Arc3d", curved.curves[0])
+	}
+
+	var straight filletLoop
+	seg := geom.NewLineSegment(math.P3(-200, 200, 0), math.P3(-200, 300, 0))
+	uLine := leavingEdgeUse(t, seg, seg.PointAt(0), seg.PointAt(1))
+	if idx := addSubstVertex(&straight, tan, uLine); idx != -1 {
+		t.Fatalf("straight survivor: addSubstVertex returned idx %d, want -1 (nothing to carry)", idx)
+	}
+	if straight.curves[0] != nil {
+		t.Fatalf("straight survivor: curve = %v, want nil (byte-identical to the pre-fix planar path)", straight.curves[0])
+	}
+}
+
+// subsRimFixture is a named fake of a large planar HOST's boundary rim arc (the annular sector's outer arc)
+// leaving a fillet corner: `parent` is the whole sector rim (radius R, sweep sectorDeg°), `from` the moved
+// tangent point (pushed OFF the circle to √(R²+r²) by the fillet pull-back, near the start), and `to` the
+// far rim endpoint (ON the circle). `scale` is the model bounding-diagonal the material gate divides by.
+type subsRimFixture struct {
+	parent   geom.Arc3d
+	from, to math.Point3
+	scale    float64
+}
+
+func newSubsRimFixture(t *testing.T, radius, sectorDeg, filletR, scale float64) subsRimFixture {
+	t.Helper()
+	center := math.P3(0, 0, 0)
+	parent, err := geom.NewArc3d(center, math.V3(0, 0, 1), math.V3(1, 0, 0), radius, 0, sectorDeg*stdmath.Pi/180)
+	if err != nil {
+		t.Fatalf("build parent rim arc (R=%.0f sector=%.0f°): %v", radius, sectorDeg, err)
+	}
+	off := stdmath.Sqrt(radius*radius + filletR*filletR)
+	return subsRimFixture{
+		parent: parent,
+		from:   offCirclePoint(center, off, 0.05), // moved tangent point, off-circle, small inset from the start
+		to:     parent.PointAt(1),                 // the far rim endpoint, unmoved (on the circle)
+		scale:  scale,
+	}
+}
+
+// loopWithCarriedSubRim builds the two-point subs loop addSubstVertex leaves: the tangent point (index 0)
+// carrying the FULL parent rim arc, then the far rim endpoint (index 1).
+func loopWithCarriedSubRim(fix subsRimFixture) filletLoop {
+	var fl filletLoop
+	fl.add(fix.from, fix.parent) // segment 0: from → to, the parent arc to be trimmed (or reverted to nil)
+	fl.add(fix.to, nil)
+	return fl
+}
+
+// TestTrimCarriedSubArcCarriesLargeHostRim proves a large host rim (I3: R=300, ~90° sector, model scale
+// 427 — chording it erases ~24000, ~13% of scale²) is carried as a trimmed sub-arc whose endpoints land
+// back ON the parent circle (never the crude un-trimmed full parent that blows the body up).
+func TestTrimCarriedSubArcCarriesLargeHostRim(t *testing.T) {
+	fix := newSubsRimFixture(t, 300, 90, 10, 427)
+	fl := loopWithCarriedSubRim(fix)
+	trimCarriedSubArcs(&fl, []int{0}, fix.scale)
+
+	arc, ok := fl.curves[0].(geom.Arc3d)
+	if !ok {
+		t.Fatalf("large host rim: trimmed curve = %T, want geom.Arc3d (a material rim must be carried)", fl.curves[0])
+	}
+	assertArcEndpointsOnCircle(t, "large-host-rim", arc)
+}
+
+// TestTrimCarriedSubArcMinorStaysChord proves a small boss rim (N5: R=20, ~76° sector, model scale 206 —
+// chording it erases only ~64, ~0.17% of scale²) is RESTORED to a straight chord (nil), byte-identical to
+// the pre-carry planar path, so an already-green minor-face body (N5/B1/B9) is not perturbed.
+func TestTrimCarriedSubArcMinorStaysChord(t *testing.T) {
+	fix := newSubsRimFixture(t, 20, 76, 10, 206)
+	fl := loopWithCarriedSubRim(fix)
+	trimCarriedSubArcs(&fl, []int{0}, fix.scale)
+
+	if fl.curves[0] != nil {
+		t.Fatalf("minor boss rim: curve = %v, want nil (chording erases a minor segment — keep the faithful chord)", fl.curves[0])
+	}
+}
+
+// TestTrimCarriedSubArcDisabledByZeroScale proves modelScale=0 — the sentinel the specialized obstacle/
+// runout/canal rebuild callers pass — restores the chord (nil), keeping those paths byte-identical to the
+// pre-carry planar retrim regardless of the arc's size.
+func TestTrimCarriedSubArcDisabledByZeroScale(t *testing.T) {
+	fix := newSubsRimFixture(t, 300, 90, 10, 0)
+	fl := loopWithCarriedSubRim(fix)
+	trimCarriedSubArcs(&fl, []int{0}, fix.scale)
+
+	if fl.curves[0] != nil {
+		t.Fatalf("scale-0 (carry disabled): curve = %v, want nil (specialized rebuild paths stay byte-identical)", fl.curves[0])
 	}
 }

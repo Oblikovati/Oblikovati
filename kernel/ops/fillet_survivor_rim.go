@@ -27,6 +27,92 @@ func addEndCorner(fl *filletLoop, f *topo.Face, ends map[uint64]corner, uses []*
 	return -1
 }
 
+// addSubstVertex adds a fillet A/B-corner vertex that transformLoop's `subs` branch pulled back to its
+// tangent point, carrying the curve of the edge LEAVING it. A STRAIGHT leaving edge stays nil (the base
+// planar-fillet behaviour, byte-identical to the whole planar corpus + every fingerprint pin). A CURVED
+// survivor rim leaving the tangent point — an annular-sector host's outer arc leaving the fillet corner
+// (I3, i3-recon-rootcause.md) — is carried as its parent arc and the tOut segment index returned, so
+// trimCarriedSubArcs trims that parent to the sub-arc actually retained between the tangent point and the
+// next loop vertex. The pre-fix code hard-coded nil here, chording that outer arc to a straight line and
+// slicing ~24000 (−63%) off the sector, which then folded the adjacent cone (conformCylConeFaces).
+func addSubstVertex(fl *filletLoop, tan math.Point3, u *topo.EdgeUse) int {
+	if arc, curved := survivorCurve(u).(geom.Arc3d); curved {
+		fl.add(tan, arc) // carry the curved survivor rim; trimCarriedSubArcs cuts it to the retained span
+		return len(fl.pts) - 1
+	}
+	fl.add(tan, nil) // straight survivor leaving edge: nil, byte-identical to the base planar path
+	return -1
+}
+
+// subArcAreaFrac is the minimum fraction of the model's characteristic area (scale², scale = the body
+// bounding-box diagonal) that chording a carried survivor arc must ERASE for the arc to be worth carrying.
+// The ENDS branch gates on an ANGULAR span (retainedRimCurve's quadrant), which cannot separate the subs
+// cases: I3's outer rim is 88° and N5's boss rim is 76° — BOTH ≤ π/2, so an angular gate keeps I3 chorded
+// (its −63% host collapse) OR carries N5's harmless rim. The subs branch instead measures the ABSOLUTE
+// circular-segment area a chord erases, made model-relative by scale²: I3 erases ~13% of scale² (a real
+// −24000 host bite that folds the neighbour cone), N5 only ~0.17% (a faithful chord on a minor boss face).
+// The 1% cut mirrors the corpus area deps — the arc matters exactly when chording it risks the 1% gate —
+// and sits in the wide 0.17%↔13% gap between the two observed clusters with >6× margin on each side. A rim
+// below it keeps its base chord (nil), byte-identical to the whole planar corpus + every fingerprint pin.
+const subArcAreaFrac = 0.01
+
+// trimCarriedSubArcs replaces each carried full parent arc (stamped on its tOut segment by addSubstVertex)
+// with the sub-arc actually retained between that segment's own endpoints — the tangent point and the next
+// loop vertex — UNLESS chording that sub-arc erases only a minor segment (chordErasesMinorSegment), in which
+// case the base straight chord is restored (nil, byte-identical to the pre-carry planar path). The `subs`
+// branch moves the corner vertex only by the fillet pull-back, so a carried arc is nearly the WHOLE parent
+// rim (I3's outer arc trims 90°→~88°). Each endpoint is projected onto the parent's own circle first (the
+// tangent point sits ~0.17 OFF the rim by the pull-back), then the sub-arc is built from the parent's
+// parameters so its span stays faithful (subArcOnParent).
+func trimCarriedSubArcs(fl *filletLoop, idxs []int, modelScale float64) {
+	n := len(fl.pts)
+	for _, i := range idxs {
+		parent, ok := fl.curves[i].(geom.Arc3d)
+		if !ok {
+			continue // defensive: only a carried Arc3d parent is trimmable (never hit — addSubstVertex stamps only arcs)
+		}
+		from := projectOntoArcCircle(parent, fl.pts[i])
+		to := projectOntoArcCircle(parent, fl.pts[(i+1)%n])
+		if chordErasesMinorSegment(parent, from, to, modelScale) {
+			fl.curves[i] = nil // faithful chord (or carry disabled, scale 0): keep the base loop byte-identical
+			continue
+		}
+		fl.curves[i] = subArcOnParent(parent, from, to)
+	}
+}
+
+// chordErasesMinorSegment reports whether chording the retained sub-arc from→to erases only a MINOR circular
+// segment — less than subArcAreaFrac of the model's characteristic area (scale²) — so the base straight
+// chord is faithful and must be kept. It also returns true when modelScale<=0, the sentinel the specialized
+// obstacle/runout/canal rebuild callers pass to DISABLE the carry (their paths stay byte-identical to the
+// pre-carry planar retrim). The erased area is the circular segment 0.5·R²·(θ−sinθ).
+func chordErasesMinorSegment(parent geom.Arc3d, from, to math.Point3, modelScale float64) bool {
+	if modelScale <= 0 {
+		return true
+	}
+	span := retainedSpan(parent, from, to)
+	segArea := 0.5 * parent.Radius * parent.Radius * (span - stdmath.Sin(span))
+	return segArea <= subArcAreaFrac*modelScale*modelScale
+}
+
+// subArcOnParent trims parent to the sub-arc from→to, built from parent's OWN parameters (same
+// centre/axis/radius, StartAngle at from's parent-offset, SweepAngle = to.offset − from.offset) so the
+// retained span stays faithful for both a minor and a major sub-span — a three-point re-fit silently
+// snaps a >π span to its minor complement (the N7 whole-curve-sub-span lesson). Endpoints are assumed
+// already projected onto the parent circle (trimCarriedSubArcs does so); if arcFrac still rejects one the
+// carry falls back to the base straight chord (nil), never the un-trimmed full parent (the crude blow-up).
+func subArcOnParent(parent geom.Arc3d, from, to math.Point3) geom.Curve3 {
+	tf, okf := arcFrac(parent, from)
+	tt, okt := arcFrac(parent, to)
+	if !okf || !okt {
+		return nil
+	}
+	return geom.Arc3d{
+		Center: parent.Center, Normal: parent.Normal, RefDir: parent.RefDir, Radius: parent.Radius,
+		StartAngle: parent.StartAngle + tf*parent.SweepAngle, SweepAngle: (tt - tf) * parent.SweepAngle,
+	}
+}
+
 // The curved-survivor rim carry. A planar corner fillet whose END corner lands on a CURVED survivor
 // face (a partial cylinder/cone/sphere sector's wall — B5/C4/D7/E1/E2, curved-host-collapse-rootcause.md)
 // replaces that face's rim-arc endpoint with the corner tangent point. transformLoop's ENDS branch used
@@ -35,6 +121,15 @@ func addEndCorner(fl *filletLoop, f *topo.Face, ends map[uint64]corner, uses []*
 // tOut segment; this file trims that parent to the sub-arc actually retained between the two corner tangent
 // points, so the wall keeps its full area. A STRAIGHT survivor edge stays nil (byte-identical to the whole
 // planar corpus + the 24 fingerprint pins), so only a genuinely curved wall changes.
+
+// trimCarriedArcs applies the post-loop rim-arc trims for BOTH survivor-arc branches of transformLoop: the
+// ENDS branch's quadrant-gated end-corner rim carries (rimCarries, trimCarriedRimArcs) and the subs branch's
+// material-gated tangent-point carries (subCarries, trimCarriedSubArcs). Combined into one call so
+// transformLoop stays within the statement budget (funlen).
+func trimCarriedArcs(fl *filletLoop, rimCarries, subCarries []int, subArcScale float64) {
+	trimCarriedRimArcs(fl, rimCarries)
+	trimCarriedSubArcs(fl, subCarries, subArcScale)
+}
 
 // trimCarriedRimArcs replaces each carried full parent arc (the whole rim, stamped on its tOut segment by
 // addCornerRound) with the sub-arc actually retained between that segment's own endpoints — but ONLY when

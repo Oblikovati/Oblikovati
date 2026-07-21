@@ -221,5 +221,16 @@ func byteIdentityPins() []fingerprintPin {
 		// so a later corner slice fails loud if it perturbs an A8/A6 body. Same cross-platform-risk caveat.
 		{"A8", 191752.356135391, 12326, 0x5fdf710707588ca3, ""},
 		{"A6", 327951.529353541, 25000, 0xb8b3f0fc0125b58, ""},
+		// I3 (simple): a straight LineSegment fillet between a planar ANNULAR-SECTOR host and a triangular
+		// end-cap. transformLoop's `subs` branch (the A/B tangent-point pull-back) hard-coded the LEAVING
+		// survivor edge's curve to nil, CHORDING the sector's r=300 outer rim — slicing the host plane
+		// 38270→14084 (−63%) and folding the neighbour cone (conformCylConeFaces) to whole-body +2.55%
+		// (i3-recon-rootcause.md). The subs-branch survivor-arc carry (fillet_survivor_rim.go: addSubstVertex
+		// + trimCarriedSubArcs, model-scale-relative segment gate so N5's minor boss rim stays byte-identical)
+		// keeps the rim, and a conformance do-no-harm guard (conformance_repair.go, never let the cyl/cone
+		// re-mesh ADD folds) stops the cone inflation — greening I3 for the first time (whole-body 100120,
+		// rel 0.82%; sector plane recovered to 38270). Captured on THIS HEAD; it locks the subs-branch carry
+		// so any later planar-retrim slice that re-chords the rim fails loud. Same cross-platform-risk caveat.
+		{"I3", 980429.069826266, 19046, 0x35414382a0c5c37c, ""},
 	}
 }

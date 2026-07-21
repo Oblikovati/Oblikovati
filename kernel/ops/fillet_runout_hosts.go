@@ -52,7 +52,7 @@ func appendArcSegs(segs []notchSeg, arc geom.Curve3, n int) []notchSeg {
 // merged into the outer boundary). ok=false honest-rejects a host whose tangent segment is not found.
 func buildHostNotch(host *topo.Face, maps filletRebuildMaps, tanA, tanB math.Point3,
 	detour func(from, to math.Point3) ([]notchSeg, bool)) (filletFace, bool) {
-	base := transformFace(host, maps.abSubst[host], maps.endCorner[host], maps.edgeInserts[host], maps.spreads[host])
+	base := transformFace(host, maps.abSubst[host], maps.endCorner[host], maps.edgeInserts[host], maps.spreads[host], 0)
 	oi, ok := outerLoopIndex(host)
 	if !ok {
 		return filletFace{}, false

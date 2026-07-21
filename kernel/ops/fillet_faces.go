@@ -77,13 +77,14 @@ func mergeRunoutFaces(body *topo.Body, fils []edgeFillet, res Resolution, maps f
 // transformedBodyFaces transforms every original body face for the fillets touching it, except that a
 // face the mid-span obstacle rebuild replaced (ADR-4) is substituted by its notched / split-wall face.
 func transformedBodyFaces(body *topo.Body, maps filletRebuildMaps, obReplace map[uint64]filletFace) []filletFace {
+	scale := ResolutionForBody(body).Size() // model scale for the subs-branch survivor-arc-carry gate (I3)
 	out := make([]filletFace, 0, len(body.Faces()))
 	for _, f := range body.Faces() {
 		if notched, ok := obReplace[f.ID()]; ok {
 			out = append(out, notched) // host notch / split obstacle wall replaces the default transform
 			continue
 		}
-		out = append(out, transformFace(f, maps.abSubst[f], maps.endCorner[f], maps.edgeInserts[f], maps.spreads[f]))
+		out = append(out, transformFace(f, maps.abSubst[f], maps.endCorner[f], maps.edgeInserts[f], maps.spreads[f], scale))
 	}
 	return out
 }
@@ -221,21 +222,24 @@ func putEdgeInserts(inserts map[*topo.Face]map[uint64][]math.Point3, ef edgeFill
 // transformFace rebuilds a face's loops, pulling A/B corners to their tangent points and
 // expanding each end corner into a tangent-point-to-tangent-point arc. A face untouched by
 // any fillet is copied unchanged.
-func transformFace(f *topo.Face, subs map[uint64]math.Point3, ends map[uint64]corner, inserts map[uint64][]math.Point3, spread map[uint64]facePiece) filletFace {
+// subArcScale is the model scale (body bounding-box diagonal) the subs-branch survivor-arc carry gates on;
+// 0 DISABLES the carry (the specialized obstacle/runout/canal rebuild callers pass 0, staying byte-identical
+// to the pre-carry planar path — only the main transformedBodyFaces path activates the I3 carry).
+func transformFace(f *topo.Face, subs map[uint64]math.Point3, ends map[uint64]corner, inserts map[uint64][]math.Point3, spread map[uint64]facePiece, subArcScale float64) filletFace {
 	ff := filletFace{surface: f.Geometry(), parent: f.Lineage()} // provenance: the original face (ADR-0043)
 	for _, l := range f.Loops() {
-		ff.loops = append(ff.loops, transformLoop(f, l, subs, ends, inserts, spread))
+		ff.loops = append(ff.loops, transformLoop(f, l, subs, ends, inserts, spread, subArcScale))
 	}
 	return ff
 }
 
 // transformLoop walks a loop's edge uses and applies the per-vertex fillet substitutions, then
 // subdivides the filleted edge at any intermediate tangent points (variable fillets, #695).
-func transformLoop(f *topo.Face, l *topo.Loop, subs map[uint64]math.Point3, ends map[uint64]corner, inserts map[uint64][]math.Point3, spread map[uint64]facePiece) filletLoop {
+func transformLoop(f *topo.Face, l *topo.Loop, subs map[uint64]math.Point3, ends map[uint64]corner, inserts map[uint64][]math.Point3, spread map[uint64]facePiece, subArcScale float64) filletLoop {
 	uses := l.EdgeUses()
 	n := len(uses)
 	var fl filletLoop
-	var rimCarries []int // tOut segments carrying a curved survivor's parent arc, trimmed to the retained sub-arc post-loop
+	var rimCarries, subCarries []int // segments carrying a curved survivor's parent arc, trimmed to the retained sub-arc post-loop
 	for i, u := range uses {
 		v := useFromVertex(u)
 		switch {
@@ -248,7 +252,9 @@ func transformLoop(f *topo.Face, l *topo.Loop, subs map[uint64]math.Point3, ends
 				rimCarries = append(rimCarries, idx) // tOut's leaving segment is a curved rim: trim it post-loop
 			}
 		case subs != nil && hasSubst(subs, v):
-			fl.add(subs[v.ID()], nil) // pulled-back to a tangent point: a new position, weld by coordinate
+			if idx := addSubstVertex(&fl, subs[v.ID()], u); idx >= 0 {
+				subCarries = append(subCarries, idx) // the tangent point's leaving edge is a curved survivor rim (I3)
+			}
 		default:
 			// unchanged survivor: carry its vertex id AND the edge leaving it, so a coincident
 			// tangent seam (two edges on one line sharing endpoints) stays two edges (#1600).
@@ -260,7 +266,7 @@ func transformLoop(f *topo.Face, l *topo.Loop, subs map[uint64]math.Point3, ends
 		}
 		addEdgeInserts(&fl, inserts, u)
 	}
-	trimCarriedRimArcs(&fl, rimCarries) // curved survivor rim: parent arc → the retained sub-arc between the corner tangent points
+	trimCarriedArcs(&fl, rimCarries, subCarries, subArcScale) // both survivor-arc branches: parent arc → the retained sub-arc
 	return fl
 }
 
