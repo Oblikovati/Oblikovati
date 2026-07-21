@@ -274,6 +274,12 @@ func adoptCornerSetback(body *topo.Body, edges []filletPick, fils []edgeFillet, 
 	if cand, ok := adoptMixedTorusCorner(body, fils, blends); ok {
 		return cand
 	}
+	// P4: a CONVEX SAME-SENSE trihedral corner (A8's wedge) already has the right sphere + corner-side
+	// setback; its only miss is an OBLIQUE band running off onto an un-filleted planar face. Clip that
+	// run-off rail at the pierce plane. Fires only on that config and certifies its own watertight body.
+	if cand, ok := adoptConvexWedgeSetback(body, fils, blends); ok {
+		return cand
+	}
 	workFils, workBlends := fils, blends
 	setBlends, triFired := flipConcaveTrihedralBlends(fils, blends)
 	if triFired {

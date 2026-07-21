@@ -208,5 +208,18 @@ func byteIdentityPins() []fingerprintPin {
 		// TessellateBody summation-order noise, positions unchanged). Pinned here so a future shared-corner-
 		// path edit cannot silently re-drift it. Same cross-platform-risk caveat as above applies.
 		{"L6", 1063051.564952, 8864, 0x72af706c3b9fc8f1, ""},
+		// A8/A6 (simple): the P4 convex-wedge run-off setback greens (fillet_convex_wedge_setback.go). Each
+		// is a WEDGE (polyhedral prism) whose three CONVEX edges meet at one same-sense trihedral corner. The
+		// corner (material-side octant sphere + corner-side setback s=r·cot(θ/2)) is already OCCT-exact via
+		// the shared blend path; the miss was an OBLIQUE band running off onto an un-filleted face, whose
+		// rail overshot the run-off plane by a tab (A8 +2.75%, +742 area). The pass clips that rail at its
+		// far-plane pierce (setbackTrihedralCorner) ONLY when it overshoots and the body is all-planar. A8
+		// was RED; A6 is the ONE previously-GREEN sibling legitimately RE-WELDED TOWARD OCCT (rel +0.79%→
+		// −0.03%, whole-body 30056.8, watertight+fold-free) — a green→green within-deps change invisible to
+		// the pass/fail gate (N5 lesson). Both are the ONLY real changed greens across ALL SIX grids vs base
+		// e544759a (D3/M4's volume-only diff is hash-identical TessellateBody summation-order noise). Pinned
+		// so a later corner slice fails loud if it perturbs an A8/A6 body. Same cross-platform-risk caveat.
+		{"A8", 191752.356135391, 12326, 0x5fdf710707588ca3, ""},
+		{"A6", 327951.529353541, 25000, 0xb8b3f0fc0125b58, ""},
 	}
 }
