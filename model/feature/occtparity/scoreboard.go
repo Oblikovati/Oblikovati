@@ -24,11 +24,8 @@ func Scoreboard(records []Record, run func(Record) Outcome) map[Outcome]int {
 // locate failures are skips; an invalid result is FailFaulty; a valid result within OCCT's
 // tolerance is Pass, otherwise FailArea.
 func ScoreCase(r Record, fixtureDir string) Outcome {
-	if r.TODO != "" {
-		return SkipTODO
-	}
-	if hasVariableRadius(r) {
-		return Incomplete // variable-radius (buildevol) pending Task 12
+	if o, decided := preRunOutcome(r); decided {
+		return o
 	}
 	body, err := importInput(filepath.Join(fixtureDir, r.InputStep))
 	if err != nil {
@@ -50,6 +47,21 @@ func ScoreCase(r Record, fixtureDir string) Outcome {
 		return PassDeviation // a documented per-case exact-deviation (occt-oracle-not-religion)
 	}
 	return Pass
+}
+
+// preRunOutcome returns the verdict for a case decided BEFORE running the fillet — held out of the
+// green count (quarantine), OCCT-incomplete (TODO), or variable-radius (Task 12) — and whether one
+// applied. It keeps ScoreCase's decisions identical to RunCase's top-of-function skips.
+func preRunOutcome(r Record) (Outcome, bool) {
+	switch {
+	case isQuarantined(r):
+		return SkipQuarantine, true // a coincidental area pass masks a real defect (quarantine.go)
+	case r.TODO != "":
+		return SkipTODO, true
+	case hasVariableRadius(r):
+		return Incomplete, true // variable-radius (buildevol) pending Task 12
+	}
+	return Pass, false
 }
 
 // scoreLocate resolves every pick to an edge fillet set, returning ok=false if any pick cannot

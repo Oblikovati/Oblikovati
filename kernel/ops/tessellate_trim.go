@@ -75,12 +75,10 @@ func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 // and a periodic developable side with one full-circle rim plus a notched rim (a band loft). It returns
 // (mesh, true) on the first that applies, or (nil, false) so the caller falls through to toUVLoops.
 func specialCurvedMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) (*Mesh, bool) {
-	if len(holes3D) == 0 && faceIsConeApexCap(f, s) {
-		if m, isFan := coneApexFan(s, outer3D); isFan {
-			return m, true // a cone closing to its apex (a drill point or an oblique apex cap): a fan from
-			// the apex to the rim. A holed face is never an apex cap — it is a band whose inner rim is the
-			// hole; a stub (saddle-bounded) is rejected by faceIsConeApexCap, not fanned to a far-off apex.
-		}
+	if m, isApex := coneApexMesh(f, s, outer3D, holes3D); isApex {
+		return m, true // a cone apex CAP (a drill point / oblique apex cut) or an apex-collapsed SECTOR (a
+		// partial sweep): both fan the developable cone from its apex for exact, orientation-independent area
+		// — see coneApexMesh. A holed cone face is never an apex topology (its inner rim is the hole).
 	}
 	if m, isCap := sphereCapFan(s, outer3D, q); isCap {
 		return m, true // a sphere cut by one plane (a cap): rings from the rim to the enclosed pole
@@ -492,6 +490,91 @@ func coneApexFan(s geom.Surface, outer3D []math.Point3) (*Mesh, bool) {
 		m.addTriangle(apex, b, c)
 	}
 	return m, true
+}
+
+// coneApexMesh handles the two seam-free cone-apex topologies that precede the generic (u,v) trim
+// path: a closed conic apex CAP (a drill point or an oblique apex cut — coneApexFan) and an
+// apex-collapsed SECTOR (a partial angular sweep — coneApexSectorMesh). Both exploit that a cone is
+// developable, so a triangle fan from the apex gives exact area. A holed cone face is never an apex
+// topology (its inner rim is the hole, not a fan); returns (nil,false) so the caller falls through.
+func coneApexMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3) (*Mesh, bool) {
+	if _, isCone := s.(geom.Cone); !isCone || len(holes3D) != 0 {
+		return nil, false
+	}
+	if faceIsConeApexCap(f, s) {
+		if m, isFan := coneApexFan(s, outer3D); isFan {
+			return m, true // a stub (saddle-bounded) is rejected by faceIsConeApexCap, not fanned to a far apex
+		}
+	}
+	return coneApexSectorMesh(f, s, outer3D)
+}
+
+// coneApexSectorMesh meshes an apex-collapsed cone SECTOR — a partial angular sweep of a cone whose
+// boundary is one base arc plus two meridian rulings meeting at the apex (NOT a full closed conic cap,
+// which faceIsConeApexCap/coneApexFan handle). Because a cone is developable, a triangle fan from the
+// apex to the base-arc discretization reproduces the sector's EXACT area (OCCT H6 270° sector: 133286),
+// orientation-independently. The generic (u,v) trim path mis-meshes it: the apex row collapses u, so
+// ParamAt's degenerate apex angle spuriously reads a 270° sector's loop as seam-crossing on ONE
+// orientation (top vs bottom cone), routing it to the full-period band grid (closedDomainMesh) which
+// over-covers the partial sweep as if it were a full 2π cone (H6 top cone 167927, ×1.26 — the tape
+// measure). Returns (nil,false) for any cone face that is NOT an apex-reaching sector (a frustum band,
+// a saddle-bounded stub, or a closed conic cap), so every other cone face keeps its existing path.
+func coneApexSectorMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3) (*Mesh, bool) {
+	cone, ok := s.(geom.Cone)
+	if !ok || len(f.Loops()) != 1 || faceIsConeApexCap(f, s) {
+		return nil, false
+	}
+	rim := rimExcludingApex(outer3D, cone.Apex, ResolutionForPoints(outer3D).Weld())
+	if len(rim) == len(outer3D) || len(rim) < 2 {
+		return nil, false // no apex vertex on the loop (a frustum/stub), or too few rim points for a fan
+	}
+	return coneSectorFan(cone, rim), true
+}
+
+// rimExcludingApex returns the boundary points with the apex vertex removed, re-ordered to start
+// immediately AFTER the apex so the remaining points read as the open base-arc path (one meridian
+// base → base arc → the other meridian base) rather than a loop closing across the sector's void.
+// tol is the model-relative coincidence scale (ResolutionForPoints.Weld). Empty when no apex is found.
+func rimExcludingApex(loop []math.Point3, apex math.Point3, tol float64) []math.Point3 {
+	k := -1
+	for i, p := range loop {
+		if p.DistanceTo(apex) <= tol {
+			k = i
+			break
+		}
+	}
+	if k < 0 {
+		return nil
+	}
+	rim := make([]math.Point3, 0, len(loop))
+	for off := 1; off <= len(loop); off++ {
+		if p := loop[(k+off)%len(loop)]; p.DistanceTo(apex) > tol {
+			rim = append(rim, p)
+		}
+	}
+	return rim
+}
+
+// coneSectorFan builds the apex→rim triangle fan for a cone sector (rim in base-arc order, apex
+// excluded), each triangle wound to agree with the cone's outward normal. No wrap-around triangle is
+// emitted, so the fan spans only the real sector — its free boundary is the base arc plus the two
+// meridian rulings, watertight with the sector's neighbour cap and ring faces (shared discretization).
+func coneSectorFan(cone geom.Cone, rim []math.Point3) *Mesh {
+	m := &Mesh{}
+	apex := m.addVertex(cone.Apex, cone.AxisDir.AsVector().Scale(-1)) // axial normal at the pole
+	idx := make([]int, len(rim))
+	for i, p := range rim {
+		u, v := cone.ParamAt(p)
+		idx[i] = m.addVertex(p, cone.NormalAt(u, v))
+	}
+	for i := 0; i+1 < len(rim); i++ {
+		b, c := idx[i], idx[i+1]
+		if triangleFlipped(cone, cone.Apex, rim[i], rim[i+1]) {
+			b, c = c, b
+		}
+		m.addTriangle(apex, b, c)
+	}
+	return m
 }
 
 // faceIsConeApexCap reports whether a cone face is a SEAM-FREE apex cap — a single loop that is one closed

@@ -14,6 +14,7 @@ const (
 	Incomplete                   // OCCT tolerance-ang IGNORE analogue
 	SkipTODO                     // OCCT TODO/INCOMPLETE marker present
 	SkipImportDivergence         // STEP input did not import faithfully — not a fillet defect
+	SkipQuarantine               // held out of the green count: a coincidental area pass masks a real defect
 )
 
 // IsPass reports whether the outcome counts as a pass — genuine parity (Pass) OR a documented
@@ -38,13 +39,16 @@ func (o Outcome) String() string {
 		return "SKIP(todo)"
 	case SkipImportDivergence:
 		return "SKIP(import)"
+	case SkipQuarantine:
+		return "SKIP(quarantine)"
 	default:
 		return "UNKNOWN"
 	}
 }
 
-// classify maps one case's run facts to OCCT's verdict semantics. TODO wins (we never claim
-// to be stricter than OCCT); import divergence is separated from fillet defects so a STEP
+// classify maps one case's run facts to OCCT's verdict semantics. A quarantined case is held out of
+// the green count first (its area — pass or fail — is not trustworthy parity); TODO wins next (we never
+// claim to be stricter than OCCT); import divergence is separated from fillet defects so a STEP
 // round-trip gap never gets blamed on the fillet engine; an invalid result is Faulty.
 //
 // Example:
@@ -52,6 +56,8 @@ func (o Outcome) String() string {
 //	classify(r, true, true, true) // == Pass
 func classify(r Record, importOK, filletOK, valid bool) Outcome {
 	switch {
+	case isQuarantined(r):
+		return SkipQuarantine
 	case r.TODO != "":
 		return SkipTODO
 	case !importOK:
@@ -61,4 +67,10 @@ func classify(r Record, importOK, filletOK, valid bool) Outcome {
 	default:
 		return Pass
 	}
+}
+
+// isQuarantined reports whether the case is on the corpus hold list (see quarantine.go).
+func isQuarantined(r Record) bool {
+	_, held := quarantineReason(r)
+	return held
 }

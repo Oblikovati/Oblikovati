@@ -40,7 +40,7 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 	}
 	sort.Strings(grids)
 
-	order := []Outcome{Pass, PassDeviation, FailArea, FailFaulty, SkipTODO, SkipImportDivergence, Incomplete}
+	order := []Outcome{Pass, PassDeviation, FailArea, FailFaulty, SkipTODO, SkipImportDivergence, Incomplete, SkipQuarantine}
 	total := map[Outcome]int{}
 	t.Logf("OCCT blend parity scoreboard (non-gating):")
 	for _, g := range grids {

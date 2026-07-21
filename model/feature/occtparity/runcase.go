@@ -26,6 +26,9 @@ func RunCase(t *testing.T, r Record, fixtureDir string) {
 	if r.TODO != "" {
 		t.Skipf("OCCT marks incomplete: %s", r.TODO)
 	}
+	if reason, held := quarantineReason(r); held {
+		t.Skipf("%s/%s: quarantined (held out of the green count): %s", r.Grid, r.Case, reason)
+	}
 	if hasVariableRadius(r) {
 		// The feature layer supports variable radius (FilletEdgeSet.StartRadius/EndRadius/
 		// RadiusPoints), but OCCT's updatevol law is defined in EDGE-PARAMETER space, which
