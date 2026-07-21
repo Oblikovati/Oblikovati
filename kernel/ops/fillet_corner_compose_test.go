@@ -31,14 +31,56 @@ func TestComposeMixedTorusAndDihedral(t *testing.T) {
 	}
 	assertComposedWatertight(t, res)
 	assertSingleMixedTorus(t, res)
-	// Corner B set back: the box-top (z=100) hole recedes to (35,35) — the dihedral EXTENDS B's
-	// shared-face rail by exactly r=5 past the raw (40,40) endpoint. The OLD early-return leaves B at
-	// the un-set-back miter (hole corner (45,45)), so this assertion is what proves composition.
+	// Corner B set back — DISCRIMINATING on the corner-B SEAM VERTEX, not the hole's bounding box.
+	// The dihedral setback re-samples B's miter seam so its receded corner vertex lands at exactly
+	// (35,35,100) — the two shared-face rails EXTENDED +r past the raw (40,40) endpoint MEET there.
+	// If corner B's dihedral is DROPPED (the old early-return), B stays the reflected-cylinder over-keep
+	// miter whose corner vertex is (45,45,100) and (35,35,100) is ABSENT from the loop. The bounding-box
+	// lo is (35,35) EITHER WAY (the two bands' independent r-retraction supplies min-x/min-y via the
+	// (75,35) and (35,80) rail ends), so only the PRESENCE of the (35,35,100) seam vertex — and the
+	// ABSENCE of the (45,45,100) over-keep vertex — proves B's setback composed. (Verified: dropping the
+	// dihedral treatment for B flips the loop vertex (35,35,100)→(45,45,100) and fails this test.)
 	eps := ResolutionForBody(res).Weld()
-	lo, _ := boxTopHoleExtent(t, res, eps)
-	if !approxPoint(lo, math.P2(35, 35), eps) {
-		t.Fatalf("box-top hole lo=%v, want (35,35): corner B's dihedral setback was dropped (old early-return behavior)", lo)
+	verts := boxTopHoleLoopVertices(t, res, eps)
+	if !holeLoopHasPoint(verts, math.P3(35, 35, 100), eps) {
+		t.Fatalf("box-top hole loop %v lacks the receded miter vertex (35,35,100): corner B's dihedral setback was dropped", verts)
 	}
+	if holeLoopHasPoint(verts, math.P3(45, 45, 100), eps) {
+		t.Fatalf("box-top hole loop %v carries the over-keep seam vertex (45,45,100): corner B kept the un-set-back reflected miter", verts)
+	}
+}
+
+// boxTopHoleLoopVertices returns the ordered vertices of the box-top (z=100) face's single hole loop.
+func boxTopHoleLoopVertices(t *testing.T, b *topo.Body, eps float64) []math.Point3 {
+	t.Helper()
+	for _, f := range b.Faces() {
+		pl, ok := f.Geometry().(geom.Plane)
+		if !ok || stdmath.Abs(pl.Normal().Z) < 0.99 || stdmath.Abs(pl.Origin.Z-100) > eps {
+			continue
+		}
+		for _, l := range f.Loops() {
+			if l.IsOuter() {
+				continue
+			}
+			var out []math.Point3
+			for _, u := range l.EdgeUses() {
+				out = append(out, u.Edge().StartVertex().Point())
+			}
+			return out
+		}
+	}
+	t.Fatal("no box-top (z=100) plane face with a hole loop")
+	return nil
+}
+
+// holeLoopHasPoint reports whether any vertex in verts coincides with want within eps.
+func holeLoopHasPoint(verts []math.Point3, want math.Point3, eps float64) bool {
+	for _, v := range verts {
+		if v.DistanceTo(want) < eps {
+			return true
+		}
+	}
+	return false
 }
 
 // TestComposeConcaveSphereAndDihedral guards the Phase-B re-solve / Phase-C railWrite ORDER: a box −
