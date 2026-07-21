@@ -176,5 +176,16 @@ func byteIdentityPins() []fingerprintPin {
 		// re-weld so a future shared-corner-path edit or a P2–P4 slice cannot silently re-drift it. Same
 		// cross-platform-risk caveat as above applies.
 		{"N5", 1046146.284621348, 56914, 0xb27cf1e52c17e2ee, ""},
+		// K6/L4 (simple): the P2 trihedral corner-setback greens (fillet_corner_setback.go). Each is a
+		// box − pocket whose single trihedral corner joins THREE CONCAVE fillets at three mutually-orthogonal
+		// planar faces; both were RED (K6 +1.19%, L4 +1.38%) because solvePlanarBlend placed the corner
+		// sphere on the MATERIAL side (the reflection of the true void sphere through the vertex), twisting
+		// the three bands and over-keeping host tabs. Flipping the sphere to the VOID side retracts each band
+		// by r to the void tangent circle and re-trims the three hosts. K6/L4 are the ONLY bodies whose mesh
+		// changes across ALL SIX grids (base 4687de4e → P2 HEAD; verified sweep — no green→green re-weld this
+		// slice, unlike P1's N5). Pinned here to lock the void-sphere flip so any later corner slice (P3
+		// torus, P4 non-orthogonal) fails loud if it perturbs a K6/L4 body. Same cross-platform-risk caveat.
+		{"K6", 959144.890948543, 9898, 0xfb501e5efc54048e, ""},
+		{"L4", 945198.518972720, 9676, 0x6852a95e3f8b3508, ""},
 	}
 }

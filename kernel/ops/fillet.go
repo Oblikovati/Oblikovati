@@ -160,12 +160,12 @@ func filletResolvedEdges(body *topo.Body, edges []filletPick, concave ConcaveFil
 	if curvedArmFils(fils) {
 		return weldCurvedArmOrFloor(body, fils, blends, miters) // M5 Slice A weld or the do-no-harm floor
 	}
-	return assemblePlanarFilletBody(body, edges, fils, blends, miters)
+	return assemblePlanarFilletBody(body, edges, fils, blends, miters, concave)
 }
 
 // assemblePlanarFilletBody runs the planar fillet's runout guards, assembles the do-no-harm body, and
 // certifies it — naming the #1797 corner-into-round cause when the build-then-certify result still fails.
-func assemblePlanarFilletBody(body *topo.Body, edges []filletPick, fils []edgeFillet, blends map[uint64]*cornerBlend, miters map[uint64]*cornerMiter) (*topo.Body, error) {
+func assemblePlanarFilletBody(body *topo.Body, edges []filletPick, fils []edgeFillet, blends map[uint64]*cornerBlend, miters map[uint64]*cornerMiter, concave ConcaveFill) (*topo.Body, error) {
 	if err := applyRunoutSetback(fils); err != nil {
 		return nil, err // a runout flank rail is parallel to its far plane — no pierce (n-valent degeneracy)
 	}
@@ -173,7 +173,7 @@ func assemblePlanarFilletBody(body *topo.Body, edges []filletPick, fils []edgeFi
 		return nil, err // n-valent analogue of #1800: reject a self-intersecting/over-radius runout before it silently drops to an open shell
 	}
 	res := assembleFilletBody(body, fils, blends)
-	res = adoptCornerSetback(body, fils, blends, miters, res) // L1-class dihedral setback, do-no-harm floor
+	res = adoptCornerSetback(body, edges, fils, blends, miters, concave, res) // corner setback (dihedral+trihedral), do-no-harm floor
 	rep := Validate(res)
 	if rep.Valid && res.IsSolid() {
 		return res, nil
@@ -267,12 +267,24 @@ func assembleFilletFaces(body *topo.Body, fils []edgeFillet, blends map[uint64]*
 // (convex/curved/variable/non-orthogonal miter, trihedral blend) leaves fired=false → baseline byte-
 // identical. It never compares areas: adoption is gated purely on the set-back body certifying valid, so
 // a config whose set-back cannot close falls back to the baseline, never a worse body.
-func adoptCornerSetback(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend, miters map[uint64]*cornerMiter, baseline *topo.Body) *topo.Body {
-	setFils, fired := applyCornerSetback(fils, miters)
-	if !fired {
+func adoptCornerSetback(body *topo.Body, edges []filletPick, fils []edgeFillet, blends map[uint64]*cornerBlend, miters map[uint64]*cornerMiter, concave ConcaveFill, baseline *topo.Body) *topo.Body {
+	workFils, workBlends := fils, blends
+	setBlends, triFired := flipConcaveTrihedralBlends(fils, blends)
+	if triFired {
+		// Re-run the corner solve so every consumer (band rail, host re-trim, sphere patch) picks up
+		// the void-side spheres through the single-source corner.ta/tb — nil recorder discards the
+		// (re-emitted) diagnostics. A re-solve error falls back to the material-side baseline path.
+		if rf, err := computeFillets(body, edges, setBlends, miters, concave, nil); err == nil {
+			workFils, workBlends = rf, setBlends
+		} else {
+			triFired = false
+		}
+	}
+	setFils, diFired := applyCornerSetback(workFils, miters)
+	if !triFired && !diFired {
 		return baseline
 	}
-	cand := assembleFilletBody(body, setFils, blends)
+	cand := assembleFilletBody(body, setFils, workBlends)
 	if obstacleImprovedSolid(cand) {
 		return cand
 	}

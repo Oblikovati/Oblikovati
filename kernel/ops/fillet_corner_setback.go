@@ -61,6 +61,151 @@ func applyCornerSetback(fils []edgeFillet, miters map[uint64]*cornerMiter) ([]ed
 	return out, fired
 }
 
+// flipConcaveTrihedralBlends re-solves every CONCAVE ORTHOGONAL PLANAR trihedral (3-edge) corner's
+// sphere onto the VOID side and returns a FRESH blends map (arcs reset for re-population by a
+// computeFillets re-run) plus fired=true when at least one corner flipped.
+//
+// The gap it closes (OCCT tests/blend/simple K6 +1.19%, L4 +1.38%): solvePlanarBlend places the corner
+// sphere r INSIDE each face on the MATERIAL side (n·s = n·o − r) — correct for a CONVEX corner, which
+// rounds off a protruding material corner — but for a CONCAVE corner the rolling ball sits in the VOID
+// (the three fillet cylinders already roll there). The material-side sphere is the REFLECTION of the
+// true void sphere through the vertex; its tangent points land on the material side of each face, so the
+// corner pulls every band's rail off its own cylinder to those points — twisting the bands and leaving
+// the un-retracted host tabs OCCT removes. Flipping the sphere to the void side (n·s = n·o + r) puts its
+// tangent points back onto the cylinders' own rails, so RE-RUNNING the corner solve retracts each band
+// by r to the void tangent circle (the setback s = r·cot(45°) = r) and re-trims the three host planes —
+// exactly OCCT's same-sense sphere-octant corner. The sphere SURFACE is unchanged in area (πr²/2); only
+// its centre moves from the reflected material point to the true void point.
+//
+// The gate (concaveTrihedralCornerFaces) fires ONLY for three CONCAVE fillets (ef.flip) meeting three
+// mutually ORTHOGONAL PLANAR faces, so it declines the mixed-sense torus corner (K9/M2, not all concave),
+// the non-orthogonal wedge (A8), every convex trihedral (material sphere already correct — byte-
+// identical), the dihedral miter (a 2-edge corner, not a blend) and any curved-host corner.
+func flipConcaveTrihedralBlends(fils []edgeFillet, blends map[uint64]*cornerBlend) (map[uint64]*cornerBlend, bool) {
+	out := make(map[uint64]*cornerBlend, len(blends))
+	fired := false
+	for vid, cb := range blends {
+		faces, ok := concaveTrihedralCornerFaces(vid, cb, fils)
+		if ok {
+			if void, solved := solveVoidCornerSphere(cb.vertex, faces, cb.sphere.Radius); solved {
+				out[vid] = void
+				fired = true
+				continue
+			}
+		}
+		out[vid] = cloneBlendResetArcs(cb) // untouched corner: fresh struct so the re-run refills arcs once
+	}
+	return out, fired
+}
+
+// cloneBlendResetArcs copies a corner blend but clears its arcs, so a computeFillets re-run repopulates
+// them exactly once (registerBlendArc APPENDS — reusing the original struct would double every arc).
+func cloneBlendResetArcs(cb *cornerBlend) *cornerBlend {
+	tan := make(map[uint64]math.Point3, len(cb.tan))
+	for k, v := range cb.tan {
+		tan[k] = v
+	}
+	return &cornerBlend{vertex: cb.vertex, center: cb.center, sphere: cb.sphere, tan: tan}
+}
+
+// concaveTrihedralCornerFaces returns the three faces of the corner at vid and ok=true when it is the
+// K6-class corner this pass owns: exactly three CONCAVE (ef.flip) fillet ends meeting three mutually
+// ORTHOGONAL PLANAR faces. Any other config (mixed-sense, convex, non-orthogonal, non-planar, or a
+// valence other than 3) returns ok=false so the corner keeps its material-side sphere byte-identical.
+func concaveTrihedralCornerFaces(vid uint64, cb *cornerBlend, fils []edgeFillet) ([]*topo.Face, bool) {
+	if cb == nil || cb.vertex == nil {
+		return nil, false
+	}
+	faces, concave := blendCornerFaces(vid, fils)
+	if len(faces) != 3 || !concave {
+		return nil, false
+	}
+	return faces, orthogonalPlanarTriple(faces)
+}
+
+// blendCornerFaces collects the distinct faces of the fillet ends that blend at vid and reports whether
+// EVERY such end is a concave (ef.flip) fillet — the same-sense concavity the void sphere requires.
+func blendCornerFaces(vid uint64, fils []edgeFillet) ([]*topo.Face, bool) {
+	seen := map[uint64]*topo.Face{}
+	ends := 0
+	concave := true
+	for i := range fils {
+		for _, c := range []corner{fils[i].c0, fils[i].c1} {
+			if !c.blend || c.vertex == nil || c.vertex.ID() != vid {
+				continue
+			}
+			ends++
+			concave = concave && fils[i].flip
+			seen[c.a.ID()], seen[c.b.ID()] = c.a, c.b
+		}
+	}
+	faces := make([]*topo.Face, 0, len(seen))
+	for _, f := range seen {
+		faces = append(faces, f)
+	}
+	return faces, ends == 3 && concave
+}
+
+// orthogonalPlanarTriple reports whether the three faces are planar with mutually PERPENDICULAR outward
+// normals (the orthogonal box corner: |cos| between every pair below the dimensionless dihedralOrthoCosTol).
+func orthogonalPlanarTriple(faces []*topo.Face) bool {
+	ns := make([]math.Vector3, 0, 3)
+	for _, f := range faces {
+		n, ok := planeNormal(f)
+		if !ok {
+			return false
+		}
+		ns = append(ns, n)
+	}
+	return stdmath.Abs(ns[0].Dot(ns[1])) < dihedralOrthoCosTol &&
+		stdmath.Abs(ns[0].Dot(ns[2])) < dihedralOrthoCosTol &&
+		stdmath.Abs(ns[1].Dot(ns[2])) < dihedralOrthoCosTol
+}
+
+// solveVoidCornerSphere builds the concave corner's rolling-ball sphere on the VOID side of the three
+// planes: its centre is r from each face on the OUTWARD (void) side (n·s = n·o + r, the sign flip from
+// solvePlanarBlend's material-side n·s = n·o − r), and each tangent point is the centre pushed r back
+// toward the face (s − n·r). It returns a fresh blend (arcs nil) so the corner re-solve can register the
+// three bounding arcs on it. ok=false on a non-planar face or a degenerate (near-parallel) triple.
+func solveVoidCornerSphere(v *topo.Vertex, faces []*topo.Face, r float64) (*cornerBlend, bool) {
+	s, ok := voidSphereCentre(faces, r)
+	if !ok {
+		return nil, false
+	}
+	sph, err := geom.NewSphere(s, r)
+	if err != nil {
+		return nil, false
+	}
+	tan := make(map[uint64]math.Point3, 3)
+	for _, f := range faces {
+		n, _ := planeNormal(f)
+		tan[f.ID()] = s.TranslateBy(n.Scale(-r)) // back toward the face from the void centre
+	}
+	return &cornerBlend{vertex: v, center: s, sphere: sph, tan: tan}, true
+}
+
+// voidSphereCentre solves the point r from each of the three planes on their VOID (outward-normal) side —
+// the sign flip (n·s = n·o + r) from solvePlanarBlend's material-side n·s = n·o − r. ok=false on a
+// non-planar face or a degenerate (near-parallel) triple.
+func voidSphereCentre(faces []*topo.Face, r float64) (math.Point3, bool) {
+	var a [3][3]float64
+	var b [3]float64
+	for i, f := range faces {
+		n, ok := planeNormal(f)
+		if !ok {
+			return math.Point3{}, false
+		}
+		pl := f.Geometry().(geom.Plane)
+		a[i] = [3]float64{n.X, n.Y, n.Z}
+		b[i] = n.Dot(pl.Origin.AsVector()) + r
+	}
+	x, ok := solve3(a, b)
+	if !ok {
+		return math.Point3{}, false
+	}
+	return math.P3(x[0], x[1], x[2]), true
+}
+
 // miterEnd locates one filleted edge's miter corner: its index in fils and which end (c1 or c0).
 type miterEnd struct {
 	fi   int
