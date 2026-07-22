@@ -80,7 +80,7 @@ func runFillet(body *topo.Body, sets []feature.FilletEdgeSet) ([]*topo.Body, boo
 func assertCaseResult(t *testing.T, r Record, res []*topo.Body, filletOK bool, reason string) {
 	t.Helper()
 	props, ok := caseProperties(res, filletOK)
-	switch classify(r, true, filletOK, ok && props.Volume > 0) {
+	switch classify(r, true, filletOK, isWatertightSolid(res, filletOK, props, ok)) {
 	case FailFaulty:
 		t.Fatalf("%s/%s: result not a valid solid: %s", r.Grid, r.Case, reason)
 	case Pass:

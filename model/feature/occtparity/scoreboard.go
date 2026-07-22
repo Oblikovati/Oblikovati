@@ -37,7 +37,7 @@ func ScoreCase(r Record, fixtureDir string) Outcome {
 	}
 	res, filletOK, _ := runFillet(body, sets)
 	props, ok := caseProperties(res, filletOK)
-	if o := classify(r, true, filletOK, ok && props.Volume > 0); o != Pass {
+	if o := classify(r, true, filletOK, isWatertightSolid(res, filletOK, props, ok)); o != Pass {
 		return o
 	}
 	if !areaWithin(props.Area, r.areaTarget(), r.Deps) {

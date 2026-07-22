@@ -13,9 +13,17 @@ import "testing"
 // area (a defect only ever ADDS area, so the minimum is correct), which greens every case below.
 var leakGuardGreenedCases = []string{"S3", "S7", "S9", "T3", "T6", "U4", "X3"}
 
-// TestLeakGuardedPlaneMeshGreensAreaCases pins the min-area conformance guard: each case must now score
-// PASS (a valid solid whose surface area is within OCCT's tolerance), proving the hole-filled re-mesh no
-// longer inflates the planar face area.
+// leakGuardQuarantinedByHoleLoop are leakGuardGreenedCases members whose result ALSO carries the
+// unrelated #2007 malformed hole-loop defect (ops.Validate().HolesContained == false; quarantine.go).
+// The leak-guard min-area re-mesh repaired their AREA number (no more constrained-Delaunay fill
+// inflation) — that fix stands, unregressed — but it never touched this independent topology defect.
+// The hardened gate (isWatertightSolid, watertight.go) correctly holds them at SkipQuarantine rather
+// than PASS; only S3/S7/T6/X3 are genuinely watertight. See green-gate-validate-audit-report.md.
+var leakGuardQuarantinedByHoleLoop = map[string]bool{"S9": true, "T3": true, "U4": true}
+
+// TestLeakGuardedPlaneMeshGreensAreaCases pins the min-area conformance guard: each case must score
+// PASS — or, for the 3 that also carry the independent #2007 hole-loop defect, SkipQuarantine (never
+// FailArea/FailFaulty) — proving the hole-filled re-mesh still does not inflate the planar face area.
 func TestLeakGuardedPlaneMeshGreensAreaCases(t *testing.T) {
 	byCase := map[string]Record{}
 	for _, r := range Corpus() {
@@ -29,8 +37,12 @@ func TestLeakGuardedPlaneMeshGreensAreaCases(t *testing.T) {
 		if !ok {
 			t.Fatalf("simple/%s not found in corpus", id)
 		}
-		if got := ScoreCase(r, dir); got != Pass {
-			t.Errorf("simple/%s scored %v, want PASS (conformance plane re-mesh must not inflate a holed face)", id, got)
+		want := Pass
+		if leakGuardQuarantinedByHoleLoop[id] {
+			want = SkipQuarantine
+		}
+		if got := ScoreCase(r, dir); got != want {
+			t.Errorf("simple/%s scored %v, want %v (conformance plane re-mesh must not inflate a holed face)", id, got, want)
 		}
 	}
 }
