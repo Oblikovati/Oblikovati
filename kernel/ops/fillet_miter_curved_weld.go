@@ -4,6 +4,7 @@ package ops
 
 import (
 	"fmt"
+	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
@@ -122,7 +123,7 @@ func assembleMiterArmSide(m *cornerMiter, arm geom.Surface, edge *topo.Edge, out
 // each arm's receded outer host and far cap, and every untouched face carried through verbatim.
 func curvedMiterFaces(body *topo.Body, m *cornerMiter, tor, cyl miterArmSide, r float64, res Resolution) ([]filletFace, string) {
 	tol := res.Weld() * r
-	shared, ok := sharedMiterRetrim(m.shared, tor.railSh, cyl.railSh, m.vertex.Point(), tol)
+	shared, ok := sharedMiterRetrim(m, tor, cyl, tol)
 	if !ok {
 		return nil, "curved miter: shared-face two-rail retrim declined"
 	}
@@ -187,21 +188,113 @@ func seamEndSegs(seam []math.Point3) []endSeg {
 	return segs
 }
 
-// sharedMiterRetrim recedes the shared face: it removes the corner span carrying the miter vertex v and
+// sharedMiterRetrim recedes the shared face: it removes the corner span carrying the miter vertex and
 // splices in BOTH arms' shared-face contact rails, which meet at the seam top sTop — so the shared face
-// recedes to the two rails joined at their common tangent point. railTor/railCyl run farShared→sTop.
-func sharedMiterRetrim(shared *topo.Face, railTor, railCyl endSeg, v math.Point3, tol float64) (filletFace, bool) {
+// recedes to the two rails joined at their common tangent point. On a CURVED shared face (P5's cylinder)
+// an arm's far shared foot can be an INTERIOR fresh cut the fillet itself makes (mid-wall, not on any
+// original edge); sharedMiterLoop then bridges it to the arm's far vertex with one cap-bridge arc so the
+// far path can anchor on the original loop. The all-on-loop case stays byte-identical (no bridge).
+func sharedMiterRetrim(m *cornerMiter, tor, cyl miterArmSide, tol float64) (filletFace, bool) {
+	shared, v := m.shared, m.vertex.Point()
 	bitten := hostBittenLoop(shared, v, tol)
 	outer := outerHostLoop(shared)
 	if bitten == nil || outer == nil {
 		return filletFace{}, false
 	}
-	bite := append([]endSeg{railTor}, reverseEndSegs([]endSeg{railCyl})...) // farShared_tor → sTop → farShared_cyl
-	far, ok := farPathSegs(segsFromLoop(bitten), railCyl.from, railTor.from, v, tol)
+	retrim, ok := sharedMiterLoop(m, tor, cyl, segsFromLoop(bitten), tol)
 	if !ok {
 		return filletFace{}, false
 	}
-	retrim := loopFromSegs(append(bite, far...))
 	loops := hostLoopsWithRetrim(shared, bitten, outer, retrim)
 	return filletFace{surface: shared.Geometry(), loops: loops, parent: shared.Lineage()}, true
+}
+
+// sharedMiterLoop builds the receded shared face's boundary loop: both arms' shared rails (farShared_tor
+// →sTop→farShared_cyl), each arm's cap-bridge to its far vertex when its far foot is an off-loop fresh cut
+// (P5's cyl side; empty on the on-loop torus side → byte-identical), and the surviving original-loop far
+// path between the two anchors that avoids the miter vertex. false on any anchor / far-path decline.
+func sharedMiterLoop(m *cornerMiter, tor, cyl miterArmSide, segs []endSeg, tol float64) (filletLoop, bool) {
+	vid, v := m.vertex.ID(), m.vertex.Point()
+	torAnchor, torBridge, okT := sharedRailAnchor(m.shared, tor, vid, segs, tol)
+	cylAnchor, cylBridge, okC := sharedRailAnchor(m.shared, cyl, vid, segs, tol)
+	if !okT || !okC {
+		return filletLoop{}, false
+	}
+	far, ok := farPathSegs(segs, cylAnchor, torAnchor, v, tol)
+	if !ok {
+		return filletLoop{}, false
+	}
+	return loopFromSegs(sharedRetrimSegs(tor, cyl, cylBridge, far, torBridge)), true
+}
+
+// sharedRetrimSegs concatenates the receded shared loop in traversal order: railTor (farShared_tor→sTop),
+// railCyl reversed (sTop→farShared_cyl), the cyl arm's cap-bridge (→its far vertex, empty when on-loop),
+// the surviving far path (→the tor anchor), and the tor arm's cap-bridge reversed (→farShared_tor, empty
+// when on-loop). With both bridges empty this is byte-identical to the prior [railTor, railCyl⁻¹, far] splice.
+func sharedRetrimSegs(tor, cyl miterArmSide, cylBridge, far, torBridge []endSeg) []endSeg {
+	segs := append([]endSeg{tor.railSh}, reverseEndSegs([]endSeg{cyl.railSh})...)
+	segs = append(segs, cylBridge...)
+	segs = append(segs, far...)
+	return append(segs, reverseEndSegs(torBridge)...)
+}
+
+// sharedRailAnchor resolves where one arm's shared-face contact rail re-enters the host's original loop,
+// plus any cap-bridge arc needed to reach it. When the rail's far foot already lies on the original loop
+// (a vertex or interior to an edge — the torus side of P5 and every planar host), the anchor IS the foot
+// and there is no bridge (byte-identical). When the foot is an interior fresh cut the fillet itself makes
+// on a CURVED shared face (P5's cyl side, mid-wall at (48.148,0.034,60)), the far path cannot begin there;
+// the anchor is the arm's FAR VERTEX (an original-loop vertex = shared ∩ the arm's far capping plane) and
+// a single Arc3d on the shared cylinder bridges foot→farVertex. false only when the foot is off-loop AND
+// no exact bridge closes (a non-cylinder shared face or a degenerate span) — the do-no-harm floor.
+func sharedRailAnchor(shared *topo.Face, side miterArmSide, vid uint64, segs []endSeg, tol float64) (math.Point3, []endSeg, bool) {
+	foot := side.railSh.from
+	if pointOnLoop(segs, foot, tol) {
+		return foot, nil, true // already on the original loop — no bridge (byte-identical)
+	}
+	farVtx := farVertexNotVid(side.edge, vid)
+	bridge, ok := capBridgeArc(shared.Geometry(), foot, farVtx, tol)
+	if !ok {
+		return math.Point3{}, nil, false
+	}
+	return farVtx, []endSeg{bridge}, true
+}
+
+// pointOnLoop reports whether p lies on the loop — coincident with a vertex OR interior to an edge — using
+// the SAME insertSplits/indexOfSegFrom mechanism farPathSegs anchors on, so a foot farPathSegs would accept
+// is never mis-routed through a spurious cap-bridge (and an interior fresh-cut foot is always caught).
+func pointOnLoop(segs []endSeg, p math.Point3, tol float64) bool {
+	return indexOfSegFrom(insertSplits(segs, []math.Point3{p}, tol), p, tol) >= 0
+}
+
+// capBridgeArc builds the cap-bridge: the single exact Arc3d on the shared cylinder from an arm's interior
+// far foot to its far vertex, both on the same latitude circle (shared ∩ the arm's far capping plane). It
+// is a genuine MINOR arc through the circle midpoint (never a chord) so the shared-cyl↔cap weld stays
+// watertight. ok=false when the shared face is not a cylinder, the two points are not co-latitude on its
+// axis, or either is not at the cylinder radius — a curved shared face this bridge does not model floors.
+func capBridgeArc(shared geom.Surface, foot, farVtx math.Point3, tol float64) (endSeg, bool) {
+	cyl, ok := shared.(geom.Cylinder)
+	if !ok {
+		return endSeg{}, false
+	}
+	center := projectOntoAxis(foot, cyl.Origin, cyl.AxisDir)
+	if !coLatitudeOnCyl(cyl, center, foot, farVtx, tol) {
+		return endSeg{}, false
+	}
+	mid := arcMidBetween(center, cyl.Radius, foot, farVtx)
+	arc, err := geom.Arc3dByThreePoints(foot, mid, farVtx)
+	if err != nil {
+		return endSeg{}, false
+	}
+	return endSeg{from: foot, to: farVtx, curve: arc, mid: mid, arc: true}, true
+}
+
+// coLatitudeOnCyl reports whether foot and farVtx lie on the SAME latitude circle of cyl — both at the
+// cylinder radius from center (the axis point at foot's height) and farVtx projecting to that same center
+// — so a single horizontal Arc3d bridges them. Guards capBridgeArc against a non-planar/oblique far cap.
+func coLatitudeOnCyl(cyl geom.Cylinder, center, foot, farVtx math.Point3, tol float64) bool {
+	if float64(center.DistanceTo(projectOntoAxis(farVtx, cyl.Origin, cyl.AxisDir))) > tol {
+		return false
+	}
+	return stdmath.Abs(float64(foot.DistanceTo(center))-cyl.Radius) <= tol &&
+		stdmath.Abs(float64(farVtx.DistanceTo(center))-cyl.Radius) <= tol
 }
