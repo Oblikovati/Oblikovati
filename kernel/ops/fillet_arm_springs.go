@@ -222,8 +222,8 @@ func cylinderPlaneRuling(c geom.Cylinder, pl geom.Plane) (geom.Line, bool) {
 
 // springCapFoot returns the foot where a spring curve crosses the capping face — the nearer root to the far
 // vertex `near`. Plane cappings ship the FR2 sphere-slice forms (circle/ruling/canal); Cylinder cappings
-// ship the Link-2 forms (circle∩cylinder, ruling∩cylinder). Sphere/cone cappings are §5 follow-ons and
-// decline.
+// ship the Link-2 circle∩cylinder form (the torus-arm equator spring, P5). Sphere/cone cappings are §5
+// follow-ons and decline.
 func springCapFoot(spring geom.Curve3, capping geom.Surface, near math.Point3, res Resolution) (math.Point3, bool) {
 	switch cap := capping.(type) {
 	case geom.Plane:
@@ -250,14 +250,11 @@ func springPlaneFoot(spring geom.Curve3, pl geom.Plane, near math.Point3, res Re
 }
 
 // springCylinderFoot crosses a spring with a capping CYLINDER (O₂,â₂,R₂) — Link 2 of the torus∩cylinder
-// far-runout chain. A circle spring (torus-arm equator) → circleCylinderFoot; a ruling spring (cylinder-arm)
-// → lineCylinderFoot. Both keep the nearer root to the far vertex (the nearerRoot precedent).
+// far-runout chain. A torus arm's host-contact springs are CIRCLES (equator/latitude), so only the circle
+// form is reachable; it keeps the nearer root to the far vertex (the nearerRoot precedent).
 func springCylinderFoot(spring geom.Curve3, cyl geom.Cylinder, near math.Point3, res Resolution) (math.Point3, bool) {
-	switch s := spring.(type) {
-	case geom.Circle:
-		return circleCylinderFoot(s, cyl, near, res)
-	case geom.Line:
-		return lineCylinderFoot(s, cyl, near, res)
+	if c, ok := spring.(geom.Circle); ok {
+		return circleCylinderFoot(c, cyl, near, res)
 	}
 	return math.Point3{}, false
 }

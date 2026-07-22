@@ -52,9 +52,10 @@ func NewTorusCylinderArc(t Torus, cyl Cylinder, v0, u0, v1, u1, weld float64) (T
 }
 
 // buildTorusCylLadder sweeps v from v0 to v1, Newton-solving the on-cylinder u at each slice seeded from the
-// previous one (from u0 at v0). Declines on a fold (g′→0) or a branch jump (|Δu|>π/2 between adjacent slices,
-// which the linear v-map cannot cross without leaving the u(v)-graph). u1 is the second foot's azimuth; the
-// endpoint match is certified by the caller (torusCylinderTrim) via PointAt(1) vs foot1.
+// previous one (from u0 at v0). Declines on a fold (g′→0), a branch jump (|Δu|>π/2 between adjacent slices,
+// which the linear v-map cannot cross without leaving the u(v)-graph), OR when the final slice did not land
+// on u1 (the second foot's azimuth) within weld — the point-space endpoint certificate, so a wrong-branch
+// continuation is caught at THIS layer, not only by the caller's PointAt(1) check.
 func buildTorusCylLadder(t Torus, cyl Cylinder, v0, u0, v1, u1, weld float64) ([]torusCylSample, bool) {
 	ladder := make([]torusCylSample, 0, torusCylLadderSteps+1)
 	u := u0
@@ -70,8 +71,19 @@ func buildTorusCylLadder(t Torus, cyl Cylinder, v0, u0, v1, u1, weld float64) ([
 		ladder = append(ladder, torusCylSample{v: v, u: un})
 		u = un
 	}
-	_ = u1
+	if !torusCylLandedOnFoot(t, v1, u, u1, weld) {
+		return nil, false // the continuation did not reach the second foot's azimuth: wrong branch, decline
+	}
 	return ladder, true
+}
+
+// torusCylLandedOnFoot certifies the continuation's final azimuth uEnd equals the foot azimuth u1 in point
+// space: the shortest wrapped angular gap turned through the local radius ρ(v1) must be within weld.
+func torusCylLandedOnFoot(t Torus, v1, uEnd, u1, weld float64) bool {
+	d := uEnd - u1
+	wrapped := stdmath.Atan2(stdmath.Sin(d), stdmath.Cos(d)) // shortest angular gap in (−π, π]
+	rho := stdmath.Abs(t.MajorRadius + t.MinorRadius*stdmath.Cos(v1))
+	return stdmath.Abs(wrapped)*rho <= weld
 }
 
 // solveTorusCylU Newton-solves g(u)=|E|²−(E·â₂)²−R₂²=0 at fixed v, seeded from uSeed, with the derivative

@@ -150,6 +150,43 @@ func TestCircleCylinderFoot_SkewQuarticMachineEps(t *testing.T) {
 	}
 }
 
+// TestCircleCylinderFootSkew_SelectsAndDeclines exercises the SKEW WRAPPER (not just its inner root-finder):
+// (1) with two crossings it returns the point NEAREST the far vertex (near-vertex selection), and its mirror
+// returns the OTHER root; (2) a cylinder the circle entirely clears yields no root → decline. Fixture: the
+// derivation's tilted cylinder (â₂∝(0.3,0,0.954)) against the a=20 circle ⊥ẑ.
+func TestCircleCylinderFootSkew_SelectsAndDeclines(t *testing.T) {
+	circle := skewFixtureCircle(t)
+	e1, e2 := circle.RefDir.AsVector(), circle.Normal.Cross(circle.RefDir)
+	cyl, err := geom.NewCylinder(math.P3(15, 0, 0), math.V3(0.3, 0, 0.954), 12)
+	if err != nil {
+		t.Fatalf("tilted cylinder: %v", err)
+	}
+	roots := bracketedTrigRoots(circleCylCoef(circle, cyl, e1, e2))
+	if len(roots) != 2 {
+		t.Fatalf("precondition: want 2 crossings, got %d", len(roots))
+	}
+	r0, r1 := circle.PointAt(roots[0]/(2*stdmath.Pi)), circle.PointAt(roots[1]/(2*stdmath.Pi))
+	got0, ok0 := circleCylinderFootSkew(circle, cyl, e1, e2, r0) // near = root0 ⇒ selects root0
+	got1, ok1 := circleCylinderFootSkew(circle, cyl, e1, e2, r1) // near = root1 ⇒ selects the OTHER root
+	if !ok0 || !ok1 {
+		t.Fatalf("skew wrapper declined a real crossing: %v %v", ok0, ok1)
+	}
+	if float64(got0.DistanceTo(r0)) > 1e-9 || float64(got1.DistanceTo(r1)) > 1e-9 {
+		t.Fatalf("near-vertex selection wrong: near r0→%v (want %v), near r1→%v (want %v)", got0, r0, got1, r1)
+	}
+	if got0.DistanceTo(got1) < 1 {
+		t.Fatal("the two nears must select the two DIFFERENT roots, not the same point")
+	}
+	// A cylinder the circle clears entirely: no crossing ⇒ decline (nearestCircleFootT returns false).
+	clear, err := geom.NewCylinder(math.P3(300, 0, 0), math.V3(0.3, 0, 0.954), 12)
+	if err != nil {
+		t.Fatalf("clear cylinder: %v", err)
+	}
+	if _, ok := circleCylinderFootSkew(circle, clear, e1, e2, math.P3(20, 0, 0)); ok {
+		t.Fatal("a circle that clears the capping cylinder must decline (no foot), not fabricate one")
+	}
+}
+
 // TestP5TorusArmFlowsToTorusCylinderArc is the NON-LATENT consumer gate: P5's torus arm, which used to
 // decline at armSprings, now flows armSprings(cyl-spring Circle R=50) → springCapFoot(the two DRAWEXE feet)
 // → torusCylinderTrim(a geom.TorusCylinderArc). The capping gets its first live consumer.

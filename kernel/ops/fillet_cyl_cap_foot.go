@@ -140,31 +140,3 @@ func nearestCircleFootT(c geom.Circle, ts []float64, near math.Point3) (math.Poi
 	}
 	return best, true
 }
-
-// lineCylinderFoot returns the foot where a ruling spring (a cylinder ARM's straight spring) crosses the
-// capping cylinder — the nearer root to the far vertex of the projected quadratic |u⊥ + t·d̂⊥|² = R₂²,
-// u = q₀ − O₂ (project ⊥ â₂). Declines when the ruling misses the cylinder (no real root).
-func lineCylinderFoot(l geom.Line, cyl geom.Cylinder, near math.Point3, res Resolution) (math.Point3, bool) {
-	a2 := cyl.AxisDir.AsVector()
-	u := cyl.Origin.VectorTo(l.Origin)
-	dir := l.Dir.AsVector()
-	uPerp := u.Sub(a2.Scale(math.Scalar(u.Dot(a2))))
-	dPerp := dir.Sub(a2.Scale(math.Scalar(dir.Dot(a2))))
-	qa := float64(dPerp.LengthSquared())
-	if qa < res.Weld()*res.Weld() {
-		return math.Point3{}, false // ruling ∥ the cylinder axis: no transverse crossing
-	}
-	qb := 2 * float64(uPerp.Dot(dPerp))
-	qc := float64(uPerp.LengthSquared()) - cyl.Radius*cyl.Radius
-	disc := qb*qb - 4*qa*qc
-	if disc < 0 {
-		return math.Point3{}, false // ruling misses the capping cylinder: no foot
-	}
-	root := stdmath.Sqrt(disc)
-	t0, t1 := (-qb-root)/(2*qa), (-qb+root)/(2*qa)
-	p0, p1 := l.PointAt(t0), l.PointAt(t1)
-	if p0.DistanceTo(near) <= p1.DistanceTo(near) {
-		return p0, true
-	}
-	return p1, true
-}
