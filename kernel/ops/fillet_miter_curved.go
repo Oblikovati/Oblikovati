@@ -222,17 +222,28 @@ func miterSeamTop(arms curvedMiterArms, center math.Point3, shared *topo.Face, r
 	return e2, true
 }
 
-// miterSeamBottom is sBot: the torus∩cylinder point on the TORUS arm's outer host (a plane, e.g. P5's
-// top plane z=150). Per curved-miter-closure §1b sBot is a tube∩tube∩outer-host vertex, NOT a second
-// mutual-tangency point: the torus is tangent to its outer plane along the contact circle (major circle
-// pushed minor·n̂_out onto the plane), and sBot is where that circle meets the cylinder arm, taking the
-// crossing nearer the corner vertex vp (the physical branch). ok=false when the outer host is not a
-// plane ⊥ the cylinder axis, or the contact circle misses the cylinder.
+// miterSeamBottom is sBot: the torus∩cylinder point on the TORUS arm's OUTER host, dispatched on that
+// host's surface type (curved-miter-closure §1b — sBot is a tube∩tube∩outer-host vertex, NOT a second
+// mutual-tangency point). A PLANE outer host is P5's convex top-rim case; a CYLINDER outer host is
+// M3/M9's concave base cove — the MIRROR of P5's roles (box-top shared / cyl-wall outer,
+// fillet_miter_curved_cylouter.go). Both take the crossing nearer the corner vertex vp (the physical
+// branch). ok=false for any other outer-host type (sphere/cone/torus/BSpline — outside the analytic scope).
 func miterSeamBottom(arms curvedMiterArms, torOuter *topo.Face, vp math.Point3, res Resolution) (math.Point3, bool) {
-	pl, ok := torOuter.Geometry().(geom.Plane)
-	if !ok {
+	switch g := torOuter.Geometry().(type) {
+	case geom.Plane:
+		return miterSeamBottomPlane(arms, torOuter, g, vp, res)
+	case geom.Cylinder:
+		return miterSeamBottomCyl(arms, g, vp, res)
+	default:
 		return math.Point3{}, false
 	}
+}
+
+// miterSeamBottomPlane is sBot for a PLANE torus-outer host (P5's convex top rim, e.g. z=150): the torus
+// is tangent to its outer plane along the contact circle (major circle pushed minor·n̂_out onto the
+// plane), and sBot is where that circle meets the cylinder arm, taking the crossing nearer vp. ok=false
+// when the cylinder axis is not ⊥ the outer plane, or the contact circle misses the cylinder.
+func miterSeamBottomPlane(arms curvedMiterArms, torOuter *topo.Face, pl geom.Plane, vp math.Point3, res Resolution) (math.Point3, bool) {
 	nOut := outwardPlaneNormal(torOuter, pl)
 	if stdmath.Abs(float64(arms.cyl.AxisDir.AsVector().Dot(nOut)))-1 < -res.Weld() {
 		return math.Point3{}, false // cylinder axis not ⊥ the outer plane — outside the analytic scope
