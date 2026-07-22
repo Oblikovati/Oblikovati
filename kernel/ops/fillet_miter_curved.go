@@ -62,7 +62,7 @@ func buildCurvedMiterArms(ps []filletPick, r float64, res Resolution) (curvedMit
 // circle-edge Cyl∧Plane rim, a geom.Cylinder for a Plane∧Plane line edge or an equal-radius
 // parallel-axis Cyl∧Cyl edge). It is convexity-AWARE (ClassifyEdgeConvexity is the discriminator):
 // a CONVEX edge takes the R−r arm, a CONCAVE (reentrant) edge the R+r/void-side arm
-// (fillet_miter_concave_arm.go — advances M3/M9/O2/P2/P3). ok=false for a tangent/smooth edge (no
+// (fillet_miter_concave.go — advances M3/M9/O2/P2/P3; NOT _arm.go, the GOARCH-suffix trap). ok=false for a tangent/smooth edge (no
 // corner to round) or any unsupported host pair — the honest-reject boundary.
 func miterEdgeArmSurface(e *topo.Edge, r float64, res Resolution) (geom.Surface, bool) {
 	conv := ClassifyEdgeConvexity(e)
