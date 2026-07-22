@@ -89,10 +89,11 @@ func assertCaseResult(t *testing.T, r Record, res []*topo.Body, filletOK bool, r
 }
 
 // caseProperties tessellates the single result body ONCE (Property quality) and returns its
-// volume+area+centroid, or ok=false when the fillet is unhealthy / not a single body. Both the
-// validity gate (Volume>0) and the area gate then read the SAME tessellation instead of running two
-// full passes — a wasteful ~2× that dominated N7 scoring before the canal tessellation fix
-// (n7-tessellation-diagnosis.md §5).
+// volume+area+centroid, or ok=false when the fillet is unhealthy / not a single body. The watertight
+// gate (isWatertightSolid — Volume>0 is one conjunct alongside ops.Validate's full Valid && Closed &&
+// Manifold && HolesContained && IsSolid bar) and the area gate then read the SAME tessellation instead
+// of running two full passes — a wasteful ~2× that dominated N7 scoring before the canal tessellation
+// fix (n7-tessellation-diagnosis.md §5).
 func caseProperties(res []*topo.Body, filletOK bool) (ops.GeometryProperties, bool) {
 	if !filletOK || len(res) != 1 || res[0] == nil {
 		return ops.GeometryProperties{}, false
