@@ -253,3 +253,80 @@ func TestSelectConcaveArmRoot_PicksFartherGatePasser(t *testing.T) {
 		t.Fatalf("selectConcaveArmRoot chose the nearer decoy over the farther gate-passing root (ok=%v)", ok)
 	}
 }
+
+// TestConcaveCurvedArmFillet_TorusArmH7 is the concave-torus-arm-derivation.md wiring regression: on
+// H7's real corpus circle edge (R=50 host, cap z=−50, r=10) concaveCurvedArmFillet now dispatches
+// armTorus to concaveTorusArmSurface instead of declining "later slice" — the UNIQUE R+r arm (no
+// plus/minus root selection, derivation §3), major = R+r = 60, centre = cap projection + r·outwardN =
+// (0,0,−40), matching DRAWEXE exactly (derivation §5, H7 row: OCCT arm torus (0,0,−40); ẑ; 60,10).
+func TestConcaveCurvedArmFillet_TorusArmH7(t *testing.T) {
+	body := corpusFixture(t, "simple/H7.step")
+	mid := math.P3(-35.35533906, 35.35533906, -50)
+	e := edgeNearestMidpoint(t, body, mid)
+	cyl, pl, ok := cylinderPlaneEdge(e)
+	if !ok {
+		t.Fatalf("H7: edge nearest %v is not a Cylinder∧Plane edge", mid)
+	}
+	res := ResolutionForBody(body)
+	if kind := classifyCurvedArm(cyl, pl, res); kind != armTorus {
+		t.Fatalf("H7 arm edge classified %d, want armTorus", kind)
+	}
+	if conv := ClassifyEdgeConvexity(e); conv != EdgeConcave {
+		t.Fatalf("H7 arm edge convexity = %v, want concave", conv)
+	}
+	p := filletPick{edge: e, r0: 10, r1: 10}
+	ef, built, err := concaveCurvedArmFillet(body, e, cyl, pl, p, res, FillConcaveOutward)
+	if err != nil || !built {
+		t.Fatalf("concaveCurvedArmFillet declined H7's torus arm edge: built=%v err=%v", built, err)
+	}
+	tor, ok := ef.armSurface.(geom.Torus)
+	if !ok {
+		t.Fatalf("H7 arm surface = %T, want geom.Torus", ef.armSurface)
+	}
+	if !ef.armConcave {
+		t.Fatalf("H7 arm edgeFillet.armConcave = false, want true (void-side cove)")
+	}
+	if !nearlyArm(tor.MajorRadius, 60) || !nearlyArm(tor.MinorRadius, 10) {
+		t.Fatalf("H7 arm torus radii = (%g, %g), want (60, 10) = R+r, r", tor.MajorRadius, tor.MinorRadius)
+	}
+	want := math.P3(0, 0, -40)
+	if d := float64(tor.Center.DistanceTo(want)); d > 1e-6 {
+		t.Fatalf("H7 arm torus centre = %v, want %v (dist %.9g)", tor.Center, want, d)
+	}
+}
+
+// TestConcaveCurvedArmFillet_LineArmByteIdentical is the do-no-harm regression for pulling the former
+// inline armCylinder body out into concaveCylinderArmEdge (to make room for the armTorus branch above
+// without pushing concaveCurvedArmFillet over funlen): it proves the dispatcher reproduces EXACTLY the
+// value the original inline sequence — planeHostNormal → concaveCylinderArmCandidates →
+// selectConcaveArmRoot — produces on N3's concave LINE arm edge (Group A).
+func TestConcaveCurvedArmFillet_LineArmByteIdentical(t *testing.T) {
+	s := concaveCorpusScene(t, "N3", math.P3(112.3726295, 61.41980247, 25), 5)
+	res := ResolutionForBody(s.body)
+	if kind := classifyCurvedArm(s.cyl, s.pl, res); kind != armCylinder {
+		t.Fatalf("N3 arm edge classified %d, want armCylinder", kind)
+	}
+	plus, minus, err := concaveCylinderArmCandidates(s.edge, s.cyl, s.pl, s.planeN, s.r, res)
+	if err != nil {
+		t.Fatalf("N3 candidate arms declined: %v", err)
+	}
+	want, ok := selectConcaveArmRoot(s.body, s.edge, s.cyl, s.pl, plus, minus, s.r, res)
+	if !ok {
+		t.Fatalf("N3 selectConcaveArmRoot declined despite a valid pair")
+	}
+	p := filletPick{edge: s.edge, r0: s.r, r1: s.r}
+	ef, built, err := concaveCurvedArmFillet(s.body, s.edge, s.cyl, s.pl, p, res, FillConcaveOutward)
+	if err != nil || !built {
+		t.Fatalf("concaveCurvedArmFillet declined N3's line arm edge: built=%v err=%v", built, err)
+	}
+	got, ok := ef.armSurface.(geom.Cylinder)
+	if !ok {
+		t.Fatalf("N3 arm surface = %T, want geom.Cylinder", ef.armSurface)
+	}
+	if got != want {
+		t.Fatalf("N3 line arm via the dispatcher = %+v, want byte-identical %+v (the original inline candidates+select)", got, want)
+	}
+	if !ef.armConcave {
+		t.Fatalf("N3 arm edgeFillet.armConcave = false, want true")
+	}
+}
