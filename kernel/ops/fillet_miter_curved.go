@@ -60,48 +60,54 @@ func buildCurvedMiterArms(ps []filletPick, r float64, res Resolution) (curvedMit
 
 // miterEdgeArmSurface builds one miter edge's exact rolling-ball arm surface (a geom.Torus for a
 // circle-edge Cyl∧Plane rim, a geom.Cylinder for a Plane∧Plane line edge or an equal-radius
-// parallel-axis Cyl∧Cyl edge). Convex-external only; ok=false for any other host pair or a concave
-// rim — the honest-reject boundary.
+// parallel-axis Cyl∧Cyl edge). It is convexity-AWARE (ClassifyEdgeConvexity is the discriminator):
+// a CONVEX edge takes the R−r arm, a CONCAVE (reentrant) edge the R+r/void-side arm
+// (fillet_miter_concave_arm.go — advances M3/M9/O2/P2/P3). ok=false for a tangent/smooth edge (no
+// corner to round) or any unsupported host pair — the honest-reject boundary.
 func miterEdgeArmSurface(e *topo.Edge, r float64, res Resolution) (geom.Surface, bool) {
-	if ClassifyEdgeConvexity(e) != EdgeConvex {
-		return nil, false
+	conv := ClassifyEdgeConvexity(e)
+	if conv != EdgeConvex && conv != EdgeConcave {
+		return nil, false // a tangent/smooth edge has no corner to round
 	}
 	if cyl, pl, ok := cylinderPlaneEdge(e); ok {
-		return cylinderPlaneMiterArm(e, cyl, pl, r, res)
+		return cylinderPlaneMiterArm(e, cyl, pl, r, res, conv)
 	}
 	if a, b, nA, nB, err := edgePlanarFaces(e); err == nil {
 		_, _ = a, b
-		return planarMiterArmCylinder(e, nA, nB, r)
+		return planarMiterArmCylinder(e, nA, nB, r, conv)
 	}
-	return equalParallelCylMiterArm(e, r, res)
+	return equalParallelCylMiterArm(e, r, res, conv)
 }
 
 // cylinderPlaneMiterArm builds the arm of a Cylinder∧Plane miter edge: an exact torus (axis ⊥ plane,
-// circle edge) or an exact cylinder (axis ∥ plane, line edge), reusing torusArmSurface /
-// cylinderArmSurface with the plane host's material-outward normal.
-func cylinderPlaneMiterArm(e *topo.Edge, cyl geom.Cylinder, pl geom.Plane, r float64, res Resolution) (geom.Surface, bool) {
+// circle edge) or an exact cylinder (axis ∥ plane, line edge), dispatched by convexity (conv) to the
+// convex R−r or concave R+r arm builder via curvedMiterTorusArm / curvedMiterCylinderArm, using the
+// plane host's material-outward normal.
+func cylinderPlaneMiterArm(e *topo.Edge, cyl geom.Cylinder, pl geom.Plane, r float64, res Resolution, conv EdgeConvexity) (geom.Surface, bool) {
 	outwardN, ok := planeHostNormal(e, pl)
 	if !ok {
 		return nil, false
 	}
 	switch classifyCurvedArm(cyl, pl, res) {
 	case armTorus:
-		if t, ok := torusArmSurface(cyl, pl, outwardN, r, res); ok {
-			return t, true
-		}
+		return curvedMiterTorusArm(cyl, pl, outwardN, r, res, conv)
 	case armCylinder:
-		if c, ok := cylinderArmSurface(e, cyl, pl, outwardN, r); ok {
-			return c, true
-		}
+		return curvedMiterCylinderArm(e, cyl, pl, outwardN, r, res, conv)
 	}
 	return nil, false
 }
 
 // planarMiterArmCylinder builds the rolling-ball cylinder arm of a Plane∧Plane miter edge: the
-// constant-r cylinder whose axis is the edge line offset into the material by offDir·r (the same
-// centre line the planar edge fillet's cyl uses), so the arm face and seam agree.
-func planarMiterArmCylinder(e *topo.Edge, nA, nB math.Vector3, r float64) (geom.Surface, bool) {
-	offDir := nA.Add(nB).Scale(math.Scalar(-1 / (1 + float64(nA.Dot(nB)))))
+// constant-r cylinder whose axis is the edge line offset by offDir·r (the same centre line the planar
+// edge fillet's cyl uses), so the arm face and seam agree. The offset SIGN is convexity-aware: a CONVEX
+// edge offsets INTO the material (−, along the interior bisector), a CONCAVE (reentrant) edge into the
+// VOID (+) so the fillet ADDS the valley wedge (M3/M9's Plane∧Plane arms).
+func planarMiterArmCylinder(e *topo.Edge, nA, nB math.Vector3, r float64, conv EdgeConvexity) (geom.Surface, bool) {
+	sign := -1.0 // convex: ball centre offset into the material along the interior bisector
+	if conv == EdgeConcave {
+		sign = 1.0 // concave (reentrant valley): ball centre into the VOID
+	}
+	offDir := nA.Add(nB).Scale(math.Scalar(sign / (1 + float64(nA.Dot(nB)))))
 	axis, err := math.UnitVector3FromVector(e.StartVertex().Point().VectorTo(e.EndVertex().Point()))
 	if err != nil {
 		return nil, false
