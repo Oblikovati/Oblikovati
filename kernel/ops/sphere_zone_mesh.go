@@ -93,17 +93,17 @@ func singleFullCircleRim(l *topo.Loop) (rim *topo.Edge, center math.Point3, norm
 // fullCircleRimGeom returns an edge's circle centre and plane normal when the edge is one closed full
 // circle — a geom.Circle, or a geom.Arc3d sweeping ~2π back to its own start vertex (an imported rim is
 // a full-sweep Arc3d). A plane∩sphere rim is always circular, so only circular geometry qualifies.
+// The closed-full-circle test itself is isClosedCircularEdge (fillet_rim.go) — the SAME predicate the
+// rim-fillet pick gate uses, so a full-sweep Arc3d classifies identically here and there.
 func fullCircleRimGeom(e *topo.Edge) (center math.Point3, normal math.Vector3, ok bool) {
-	if e.StartVertex() != e.EndVertex() {
+	if !isClosedCircularEdge(e) {
 		return math.Point3{}, math.Vector3{}, false
 	}
 	switch c := e.Geometry().(type) {
 	case geom.Circle:
 		return c.Center, c.Normal.AsVector(), true
 	case geom.Arc3d:
-		if stdmath.Abs(stdmath.Abs(c.SweepAngle)-2*stdmath.Pi) < zoneFullCircleTol {
-			return c.Center, c.Normal.AsVector(), true
-		}
+		return c.Center, c.Normal.AsVector(), true
 	}
 	return math.Point3{}, math.Vector3{}, false
 }

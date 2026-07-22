@@ -4,11 +4,33 @@ package ops
 
 import (
 	"fmt"
+	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
+
+// isClosedCircularEdge reports whether e is a full circular rim: closed (its start and end vertex are
+// the SAME vertex) AND its geometry is a geom.Circle, or a geom.Arc3d sweeping ~2π (within
+// zoneFullCircleTol) back to that shared vertex. The STEP importer never emits geom.Circle — every
+// imported full circle round-trips as a full-sweep Arc3d (0 geom.Circle construction sites in
+// kernel/exchange/**) — so both forms must count as "a closed circular rim". This is the SOLE such
+// predicate in the package: the rim-fillet pick gate (loneRimPick, resolveRim below) and the
+// sphere-zone cap fan's fullCircleRimGeom (sphere_zone_mesh.go) both call it, so a full-sweep Arc3d is
+// recognized identically everywhere a closed circular edge is classified.
+func isClosedCircularEdge(e *topo.Edge) bool {
+	if e.StartVertex() != e.EndVertex() {
+		return false
+	}
+	switch c := e.Geometry().(type) {
+	case geom.Circle:
+		return true
+	case geom.Arc3d:
+		return stdmath.Abs(stdmath.Abs(c.SweepAngle)-2*stdmath.Pi) < zoneFullCircleTol
+	}
+	return false
+}
 
 // FilletCylinderRim rounds a CONVEX circular rim — a closed circle edge where a cylinder face meets
 // a perpendicular planar cap (a boss/cylinder top, a counterbore lip) — into a toroidal band. It is
@@ -36,7 +58,7 @@ func loneRimPick(body *topo.Body, picks []EdgeFilletRadii) *EdgeFilletRadii {
 	if !ok {
 		return nil
 	}
-	if _, isCircle := e.Geometry().(geom.Circle); !isCircle || e.StartVertex() != e.EndVertex() {
+	if !isClosedCircularEdge(e) {
 		return nil
 	}
 	if _, _, _, _, err := rimFaces(e); err != nil {
@@ -71,7 +93,7 @@ func resolveRim(b *topo.Body, rimKey []byte, r float64) (*rimFillet, error) {
 	if !ok {
 		return nil, fmt.Errorf("fillet: rim edge reference lost: %x", rimKey)
 	}
-	if _, isCircle := e.Geometry().(geom.Circle); !isCircle || e.StartVertex() != e.EndVertex() {
+	if !isClosedCircularEdge(e) {
 		return nil, fmt.Errorf("fillet: a rim fillet needs a closed circular edge")
 	}
 	cylF, capF, cyl, pl, err := rimFaces(e)

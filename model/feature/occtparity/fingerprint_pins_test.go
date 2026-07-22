@@ -232,5 +232,17 @@ func byteIdentityPins() []fingerprintPin {
 		// rel 0.82%; sector plane recovered to 38270). Captured on THIS HEAD; it locks the subs-branch carry
 		// so any later planar-retrim slice that re-chords the rim fails loud. Same cross-platform-risk caveat.
 		{"I3", 980429.069826266, 19046, 0x35414382a0c5c37c, ""},
+		// I9 (simple): the rim-fillet pick gate widen (fillet_rim.go's isClosedCircularEdge) — a plain
+		// solid cylinder rim whose picked edge is a closed geom.Arc3d (SweepAngle≈2π), the shape every
+		// STEP-imported full circle actually has (kernel/exchange never emits geom.Circle). Before the
+		// widen, loneRimPick/resolveRim's geom.Circle-only gate rejected the edge, the pick fell through
+		// to loneArcPick, and cylSideEdgeAt declined the self-closed vertex — FAIL(faulty) "arc end is
+		// not a cylinder/side tangent vertex". The widen routes it to the SAME FilletCylinderRim band
+		// path a procedural geom.Circle rim already uses, greening I9 for the first time (area 61438.17,
+		// rel 0.0013%, deps 0.01). Captured on THIS HEAD; it locks the Arc3d-rim path through the closed-
+		// rim band assembly so any later slice that touches fillet_rim.go/sphere_zone_mesh.go's shared
+		// isClosedCircularEdge predicate fails loud if it perturbs the I9 body. Same cross-platform-risk
+		// caveat as above applies. See .superpowers/sdd/rim-arc3d-widen-report.md.
+		{"I9", 1171624.810038584052, 67580, 0xab1686e36b3b9396, ""},
 	}
 }
