@@ -40,8 +40,9 @@ func armRunoutFeet(ef edgeFillet, capping geom.Surface, near0, near1 math.Point3
 
 // springsForHosts maps the two springs armSprings returns onto the arm's host order (ef.a, ef.b). A canal
 // arm's springs come out [plane, cone] (canalArmSprings), so they are re-ordered by which host is the
-// geom.Plane; a torus arm's springs come out [sphere, plane] and are re-ordered by which host is the
-// sphere; a cylinder arm's springs preserve the (hostA=ef.a, hostB=ef.b) argument order.
+// geom.Plane; a torus arm's springs come out [non-plane, plane] (Sphere∧Plane or Cylinder∧Plane) and are
+// re-ordered by which host is the plane (springs[1]); a cylinder arm's springs preserve the (hostA=ef.a,
+// hostB=ef.b) argument order.
 func springsForHosts(ef edgeFillet, springs [2]geom.Curve3) (geom.Curve3, geom.Curve3) {
 	if ef.armCanalSpine != nil {
 		if _, aIsPlane := ef.a.Geometry().(geom.Plane); aIsPlane {
@@ -50,10 +51,10 @@ func springsForHosts(ef edgeFillet, springs [2]geom.Curve3) (geom.Curve3, geom.C
 		return springs[1], springs[0] // ef.a is the cone host → swap so the cone spring lands on ef.a
 	}
 	if _, isTorus := ef.armSurface.(geom.Torus); isTorus {
-		if _, aIsSphere := ef.a.Geometry().(geom.Sphere); aIsSphere {
-			return springs[0], springs[1] // ef.a is the sphere → springs[0] (sphere spring) is on ef.a
+		if _, aIsPlane := ef.a.Geometry().(geom.Plane); aIsPlane {
+			return springs[1], springs[0] // ef.a is the plane host → the plane spring (springs[1]) is on ef.a
 		}
-		return springs[1], springs[0] // ef.b is the sphere → swap so springA lands on ef.a (the plane)
+		return springs[0], springs[1] // ef.b is the plane host → springs[0] (non-plane spring) is on ef.a
 	}
 	return springs[0], springs[1]
 }

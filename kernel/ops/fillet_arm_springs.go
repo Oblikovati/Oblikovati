@@ -44,13 +44,23 @@ func armSprings(ef edgeFillet, hostA, hostB geom.Surface, r float64) ([2]geom.Cu
 	return [2]geom.Curve3{}, false
 }
 
-// torusArmSprings builds the sphere-host and plane-host latitude circles, ordered [sphere, plane] so their
-// feet come out sphere-first (the DRAWEXE far edge runs sphere foot → plane foot).
+// torusArmSprings builds a torus arm's two host-contact springs, ordered [non-plane, plane] so
+// springsForHosts can map them by which host is the plane. Two host pairings ship: Sphere∧Plane (the FR2
+// sphere slice) and Cylinder∧Plane (the P5 far-runout chain, Link 1). The non-plane spring is host-specific
+// (sphere latitude / cylinder equator); the plane spring is the shared v_P latitude circle.
 func torusArmSprings(t geom.Torus, hostA, hostB geom.Surface) ([2]geom.Curve3, bool) {
-	sp, pl, ok := spherePlaneHosts(hostA, hostB)
-	if !ok {
-		return [2]geom.Curve3{}, false
+	if sp, pl, ok := spherePlaneHosts(hostA, hostB); ok {
+		return torusSpherePlaneSprings(t, sp, pl)
 	}
+	if cyl, pl, ok := cylinderPlaneHosts(hostA, hostB); ok {
+		return torusCylinderPlaneSprings(t, cyl, pl)
+	}
+	return [2]geom.Curve3{}, false
+}
+
+// torusSpherePlaneSprings builds the [sphere, plane] latitude circles (the unchanged FR2 sphere-slice path):
+// the DRAWEXE far edge runs sphere foot → plane foot.
+func torusSpherePlaneSprings(t geom.Torus, sp geom.Sphere, pl geom.Plane) ([2]geom.Curve3, bool) {
 	tol := geom.ResolutionForPoints([]math.Point3{t.Center, sp.Center, pl.Origin}).Weld()
 	sphereSpring, ok1 := torusSphereSpring(t, sp, tol)
 	planeSpring, ok2 := torusPlaneSpring(t, pl, tol)
@@ -58,6 +68,63 @@ func torusArmSprings(t geom.Torus, hostA, hostB geom.Surface) ([2]geom.Curve3, b
 		return [2]geom.Curve3{}, false
 	}
 	return [2]geom.Curve3{sphereSpring, planeSpring}, true
+}
+
+// torusCylinderPlaneSprings builds the [cylinder, plane] latitude circles for a torus arm on a Cylinder∧
+// Plane pairing (Link 1, P5): the coaxial cylinder-host equator circle and the existing plane-host latitude
+// circle. On P5 OCCT emits these as Circle R=50=R_h (cylinder host) and Circle R=45=R′ (plane host).
+func torusCylinderPlaneSprings(t geom.Torus, cyl geom.Cylinder, pl geom.Plane) ([2]geom.Curve3, bool) {
+	tol := geom.ResolutionForPoints([]math.Point3{t.Center, cyl.Origin, pl.Origin}).Weld()
+	cylSpring, ok1 := torusCylinderSpring(t, cyl, tol)
+	planeSpring, ok2 := torusPlaneSpring(t, pl, tol)
+	if !ok1 || !ok2 {
+		return [2]geom.Curve3{}, false
+	}
+	return [2]geom.Curve3{cylSpring, planeSpring}, true
+}
+
+// cylinderPlaneHosts identifies which host is the cylinder and which the plane (order-independent), the
+// sibling of spherePlaneHosts for the torus-arm Cylinder∧Plane pairing.
+func cylinderPlaneHosts(a, b geom.Surface) (geom.Cylinder, geom.Plane, bool) {
+	if cyl, ok := a.(geom.Cylinder); ok {
+		if pl, ok2 := b.(geom.Plane); ok2 {
+			return cyl, pl, true
+		}
+	}
+	if cyl, ok := b.(geom.Cylinder); ok {
+		if pl, ok2 := a.(geom.Plane); ok2 {
+			return cyl, pl, true
+		}
+	}
+	return geom.Cylinder{}, geom.Plane{}, false
+}
+
+// torusCylinderSpring is the latitude circle where a coaxial torus arm touches its host cylinder (radius
+// R_h). A constant-radius rolling-ball torus arm has a CIRCULAR ball-spine, and a plane∩cylinder spine is a
+// circle only when coaxial — so the arm is coaxial with its host cylinder and tangency fixes cos v_C =
+// (R_h − R′)/r = ±1 EXACTLY: the spring is the tube-equator latitude circle (centre = torus centre since
+// sin v_C = 0, radius = R′±r = R_h, axis = torus axis; v_C=0 concave/bore R′=R_h−r, v_C=π convex/shaft
+// R′=R_h+r). HOST-vs-CAPPING guard (load-bearing): only a genuine tangent host (|cos v_C|=1 within tol) is
+// admitted — a cylinder with |cos v_C|<1 CUTS the tube in two latitude circles (a transversal capping, not a
+// host) and declines rather than fabricating a mid-tube circle (torus-cyl-springs-feet-derivation Link 1).
+func torusCylinderSpring(t geom.Torus, cyl geom.Cylinder, tol float64) (geom.Circle, bool) {
+	axis := t.AxisDir.AsVector()
+	hostAxis := cyl.AxisDir.AsVector()
+	if stdmath.Abs(float64(axis.Dot(hostAxis))) < 1-sinFloor {
+		return geom.Circle{}, false // host cylinder axis not ∥ torus axis: not a coaxial host
+	}
+	d := cyl.Origin.VectorTo(t.Center) // C − O_h
+	da := float64(d.Dot(hostAxis))
+	aPerp := float64(d.Sub(hostAxis.Scale(math.Scalar(da))).Length())
+	if aPerp > tol {
+		return geom.Circle{}, false // torus centre off the host axis (A⊥ > tol): no latitude-circle spring
+	}
+	off := cyl.Radius - t.MajorRadius // R_h − R′; a tangent host needs |R_h−R′| = r (i.e. |cos v_C| = 1)
+	if stdmath.Abs(stdmath.Abs(off)-t.MinorRadius) > tol {
+		return geom.Circle{}, false // |cos v_C| = |R_h−R′|/r ≠ 1: transversal capping cylinder, not a host
+	}
+	radius := t.MajorRadius + stdmath.Copysign(t.MinorRadius, off) // v_C=0 (off>0)→R+r, v_C=π (off<0)→R−r
+	return geom.Circle{Center: t.Center, Normal: t.AxisDir, RefDir: t.Ref, Radius: radius}, true
 }
 
 // spherePlaneHosts identifies which host is the sphere and which the plane (order-independent).
@@ -154,13 +221,22 @@ func cylinderPlaneRuling(c geom.Cylinder, pl geom.Plane) (geom.Line, bool) {
 }
 
 // springCapFoot returns the foot where a spring curve crosses the capping face — the nearer root to the far
-// vertex `near`. Circle∩plane (α·cos u + β·sin u = γ) and ruling∩plane (linear) ship; sphere/cone/cyl
-// cappings are the §5 follow-ons and decline.
+// vertex `near`. Plane cappings ship the FR2 sphere-slice forms (circle/ruling/canal); Cylinder cappings
+// ship the Link-2 forms (circle∩cylinder, ruling∩cylinder). Sphere/cone cappings are §5 follow-ons and
+// decline.
 func springCapFoot(spring geom.Curve3, capping geom.Surface, near math.Point3, res Resolution) (math.Point3, bool) {
-	pl, ok := capping.(geom.Plane)
-	if !ok {
-		return math.Point3{}, false
+	switch cap := capping.(type) {
+	case geom.Plane:
+		return springPlaneFoot(spring, cap, near, res)
+	case geom.Cylinder:
+		return springCylinderFoot(spring, cap, near, res)
 	}
+	return math.Point3{}, false
+}
+
+// springPlaneFoot crosses a spring with a capping PLANE (the unchanged FR2 sphere-slice path): circle∩plane
+// (α·cos u + β·sin u = γ), ruling∩plane (linear), and the cone-canal spring's own crossing.
+func springPlaneFoot(spring geom.Curve3, pl geom.Plane, near math.Point3, res Resolution) (math.Point3, bool) {
 	switch s := spring.(type) {
 	case geom.Circle:
 		return circlePlaneFoot(s, pl, near, res)
@@ -169,6 +245,19 @@ func springCapFoot(spring geom.Curve3, capping geom.Surface, near math.Point3, r
 	case coneCanalSpring:
 		p, ok, _ := s.canalCapFoot(pl, near, res) // reason surfaced via springCapFootReasoned
 		return p, ok
+	}
+	return math.Point3{}, false
+}
+
+// springCylinderFoot crosses a spring with a capping CYLINDER (O₂,â₂,R₂) — Link 2 of the torus∩cylinder
+// far-runout chain. A circle spring (torus-arm equator) → circleCylinderFoot; a ruling spring (cylinder-arm)
+// → lineCylinderFoot. Both keep the nearer root to the far vertex (the nearerRoot precedent).
+func springCylinderFoot(spring geom.Curve3, cyl geom.Cylinder, near math.Point3, res Resolution) (math.Point3, bool) {
+	switch s := spring.(type) {
+	case geom.Circle:
+		return circleCylinderFoot(s, cyl, near, res)
+	case geom.Line:
+		return lineCylinderFoot(s, cyl, near, res)
 	}
 	return math.Point3{}, false
 }

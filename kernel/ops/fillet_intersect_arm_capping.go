@@ -48,13 +48,56 @@ func intersectArmCapping(ef edgeFillet, capping geom.Surface, feet [2]math.Point
 	return nil, false // only torus/cylinder/canal arms carry a rolling-ball section
 }
 
-// torusCappingTrim routes a torus arm's capping. Only ∩Plane (the spiric) ships for the sphere slice;
-// ∩Sphere/∩Cone/∩Cylinder are the un-exercised §2/§4 follow-ons and clean-decline.
+// torusCappingTrim routes a torus arm's capping. ∩Plane (the spiric) and ∩Cylinder (the feet-bracketed
+// Newton section, Link 3 of the P5 far-runout chain) ship; ∩Sphere/∩Cone are the un-exercised §2/§4
+// follow-ons and clean-decline.
 func torusCappingTrim(t geom.Torus, capping geom.Surface, feet [2]math.Point3) (geom.Curve3, bool) {
 	if pl, ok := capping.(geom.Plane); ok {
 		return torusPlaneTrim(t, pl, feet)
 	}
+	if cyl, ok := capping.(geom.Cylinder); ok {
+		return torusCylinderTrim(t, cyl, feet)
+	}
 	return nil, false
+}
+
+// torusCylinderTrim is the P5 far-runout workhorse: the capping cylinder cuts the torus in a degree-4
+// section (no single-arccos u(v) form), so the trim is a geom.TorusCylinderArc — feet-bracketed Newton
+// continuation of g(u)=|E|²−(E·â₂)²−R₂²=0 across the feet's tube-angle interval (far-runout-port-math §4).
+// The feet are inverted onto the arm chart (§0) and certified on it; the branch through both feet is
+// certified by the endpoint match (PointAt(0/1) == foot0/foot1 within tol) — a continuation that jumped to a
+// different branch, folded, or diverged declines (do-no-harm). Analytic-on-the-arm by construction.
+func torusCylinderTrim(t geom.Torus, cyl geom.Cylinder, feet [2]math.Point3) (geom.Curve3, bool) {
+	tol := armCapTol(feet[0], feet[1], t.Center, cyl.Origin)
+	u0, v0, ok0 := torusChartUV(t, feet[0], tol)
+	u1, v1, ok1 := torusChartUV(t, feet[1], tol)
+	if !ok0 || !ok1 {
+		return nil, false // a foot not on the arm is an upstream bug (§0) — decline with do-no-harm
+	}
+	arc, ok := geom.NewTorusCylinderArc(t, cyl, v0, u0, v1, u1, tol)
+	if !ok {
+		return nil, false // fold / branch jump / non-convergence between the feet (§4 fold guard)
+	}
+	if float64(arc.PointAt(0).DistanceTo(feet[0])) > tol || float64(arc.PointAt(1).DistanceTo(feet[1])) > tol {
+		return nil, false // the continuation did not run foot0→foot1 on one branch: decline (§6.1)
+	}
+	return arc, true
+}
+
+// torusChartUV inverts a point onto the torus chart (far-runout-port-math §0) and returns both its azimuth u
+// and tube angle v, certifying |P(chart) − p| ≤ tol so a foot off the arm declines rather than snapping.
+func torusChartUV(t geom.Torus, p math.Point3, tol float64) (u, v float64, ok bool) {
+	axis := t.AxisDir.AsVector()
+	binormal := axis.Cross(t.Ref.AsVector())
+	q := t.Center.VectorTo(p)
+	za := float64(q.Dot(axis))
+	perp := q.Sub(axis.Scale(math.Scalar(za)))
+	u = stdmath.Atan2(float64(perp.Dot(binormal)), float64(perp.Dot(t.Ref.AsVector())))
+	v = stdmath.Atan2(za, float64(perp.Length())-t.MajorRadius)
+	if float64(t.PointAt(u, v).DistanceTo(p)) > tol {
+		return 0, 0, false
+	}
+	return u, v, true
 }
 
 // torusPlaneTrim is the D5 workhorse: the plane cuts the torus in a spiric of Perseus (geom.SpiricArc,
