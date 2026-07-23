@@ -15,29 +15,20 @@ import (
 //   - a CURVED filleted edge (its rolling ball sweeps a torus/canal band, not a cylinder — the wing
 //     split is invalid there; the S9 torus-band regression);
 //   - a DUAL-HOST edge where BOTH fillet faces carry a dipping obstacle (a column piercing the fillet
-//     CORNER — the patch would need a hole on both rails; the S1/S4/T1/T4 case, deferred to Phase 2);
+//     CORNER — the patch would need a hole on both rails). obstacleFacesFor's dualObstacleRoute sees
+//     this case via detectObstacles below and routes it to assembleDualObstacleSet — the U4 multi-rail
+//     corner-blend build (derivation §3.1/§3.3, #2007 Group C); its U4-0 slice is a stub that still
+//     honest-rejects, so this function's own qualifying!=1 gate is unchanged for now;
 //   - a non-planar "wall" (patch G1-tangent) neighbour.
 //
 // Deferred cases fall back to the existing fillet path unchanged (their protruding hole stays a
-// diagnostic tripwire, NOT folded into Valid, until the Phase-2 corner engine handles them).
+// diagnostic tripwire, NOT folded into Valid, until the dual-host rebuild lands, U4-1..U4-5).
 func detectObstacle(ef edgeFillet, res Resolution) (obstacleDetection, bool) {
-	if ef.varying || !straightFilletEdge(ef, res) {
-		return obstacleDetection{}, false // curved/variable spine ⇒ torus/canal band, not a cylinder blend
-	}
-	var found obstacleDetection
-	qualifying := 0
-	for _, hostIsA := range []bool{true, false} {
-		host := ef.b
-		if hostIsA {
-			host = ef.a
-		}
-		if d, ok := detectObstacleOnHost(ef, host, hostIsA, res); ok {
-			found, qualifying = d, qualifying+1
-		}
-	}
-	if qualifying != 1 { // 0 = no obstacle; 2 = dual-host corner pierce (Phase 2)
+	dets, ok := detectObstacles(ef, res)
+	if !ok || len(dets) != 1 { // 0 = no obstacle; 2 = dual-host (obstacleFacesFor's dualObstacleRoute)
 		return obstacleDetection{}, false
 	}
+	found := dets[0]
 	if _, ok := found.filletWall.Geometry().(geom.Plane); !ok {
 		return obstacleDetection{}, false // the patch's G1 wall neighbour must be a clean plane
 	}
@@ -45,6 +36,30 @@ func detectObstacle(ef edgeFillet, res Resolution) (obstacleDetection, bool) {
 		return obstacleDetection{}, false // the obstacle wall must be a tube wallSeamAndTop can split
 	}
 	return found, true
+}
+
+// detectObstacles runs the crossing/dip test (detectObstacleOnHost) against BOTH candidate hosts and
+// keeps EVERY qualifying detection, where detectObstacle above keeps only the winner of a "found,
+// qualifying" loop and then requires qualifying==1. Nothing new is DETECTED here — the two per-host
+// results already existed — this is purely a packaging change: it is the seam that lets
+// obstacleFacesFor's dualObstacleRoute see the qualifying==2 (dual-host) case, instead of it silently
+// collapsing at detectObstacle's own single-host gate (derivation §3.1, U4-0, #2007 Group C). ok=true
+// when at least one host qualifies (0 detections ⇒ ok=false, matching "no obstacle at all").
+func detectObstacles(ef edgeFillet, res Resolution) ([]obstacleDetection, bool) {
+	if ef.varying || !straightFilletEdge(ef, res) {
+		return nil, false // curved/variable spine ⇒ torus/canal band, not a cylinder blend
+	}
+	var dets []obstacleDetection
+	for _, hostIsA := range []bool{true, false} {
+		host := ef.b
+		if hostIsA {
+			host = ef.a
+		}
+		if d, ok := detectObstacleOnHost(ef, host, hostIsA, res); ok {
+			dets = append(dets, d)
+		}
+	}
+	return dets, len(dets) >= 1
 }
 
 // rebuildableTube reports whether the obstacle wall is one of the tube surfaces buildSplitObstacleWall

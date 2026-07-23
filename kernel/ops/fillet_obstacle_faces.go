@@ -128,10 +128,15 @@ func recordWallInserts(edgeInserts map[*topo.Face]map[uint64][]math.Point3, set 
 // rebuilds the local topology so the fillet band is notched around the obstacle and bridged by a
 // certified corner-blend patch (ADR-4). ok=false leaves the whole case on the existing path
 // (honest-reject, ADR-3): a partial rebuild — a wing without its patch, a notch without a wall
-// split — is a hole, forbidden. Only constant-radius fillets are handled this slice.
+// split — is a hole, forbidden. Only constant-radius fillets are handled this slice. A qualifying==2
+// (dual-host) edge routes to dualObstacleRoute instead of the single-host path below it (derivation
+// §3.3): single-host providers (bsplineObstacleProvider) stay untouched by that branch.
 func obstacleFacesFor(ef edgeFillet, res Resolution, maps filletRebuildMaps) (obstacleSet, bool) {
 	if ef.varying {
 		return obstacleSet{}, false
+	}
+	if set, dual, ok := dualObstacleRoute(ef, res); dual {
+		return set, ok
 	}
 	d, ok := detectObstacle(ef, res)
 	if !ok {
@@ -147,6 +152,21 @@ func obstacleFacesFor(ef edgeFillet, res Resolution, maps filletRebuildMaps) (ob
 		return obstacleSet{}, false // honest-reject the WHOLE obstacle (no wings-without-patch)
 	}
 	return assembleObstacleSet(ef, d, og, patch, maps)
+}
+
+// dualObstacleRoute reports whether ef is a qualifying==2 (dual-host) edge and, if so, is the FINAL
+// answer for it (dual=true): U4-0's assembleDualObstacleSet is a stub that always answers ok=false, so
+// a dual-host edge still lands on the do-no-harm baseline — corpus byte-identical — while the real
+// rebuild (notches/walls/wings/panels) lands in U4-1..U4-5 (derivation §4, #2007 Group C). dual=false
+// lets the caller fall through unchanged to detectObstacle/assembleObstacleSet for qualifying 0 or 1.
+func dualObstacleRoute(ef edgeFillet, res Resolution) (obstacleSet, bool, bool) {
+	dets, ok := detectObstacles(ef, res)
+	if !ok || len(dets) != 2 {
+		return obstacleSet{}, false, false
+	}
+	spans := partitionUnionStations(dets, ef)
+	set, ok := assembleDualObstacleSet(ef, dets, spans)
+	return set, true, ok
 }
 
 // assembleObstacleSet builds every rebuilt face once detection+patch succeeded: the notched host
