@@ -3,6 +3,7 @@
 package ops
 
 import (
+	stdmath "math"
 	"sort"
 
 	"oblikovati.org/kernel/geom"
@@ -94,15 +95,106 @@ func hostActiveAt(dets []obstacleDetection, ef edgeFillet, hostIsA bool, z float
 	return false
 }
 
+// dualClosure is U4-1's watertight-closure pieces for a qualifying==2 (dual-host) edge: both hosts'
+// notched planes (each absorbing its OWN footprint), both bosses' split walls (each kept intact, split
+// at its own two nodes), and the two wing faces welding to the union band's outermost stations
+// (derivation §3.2, §4-U4-1). It is the pre-panel foundation U4-3/U4-4 build the coons4 setback panels
+// against — U4-1 itself does not weld it into a body (assembleDualObstacleSet still honest-rejects).
+type dualClosure struct {
+	notchA, notchB filletFace
+	wallA, wallB   filletFace
+	wings          []filletFace
+}
+
+// buildDualClosure builds the dual-host watertight-closure pieces by REUSING the single-host closure
+// functions per host/boss (derivation §3.2 items 1-3), exactly as the single-host assembler
+// (assembleObstacleSet) already does for its one host/boss: buildNotchedHost for EACH host, and
+// buildSplitObstacleWall for EACH boss. The two hosts are two DIFFERENT body faces (host A = face16
+// y=-20, host B = face31 x=10) with two DIFFERENT obstacle walls behind their own hole rims, so the two
+// notch calls and the two wall-split calls touch entirely disjoint topology — no shared cut region, no
+// conflict, despite the slice plan's up-front "MEDIUM risk" caution (derivation §4). ok=false on any
+// piece's own honest-reject (ADR-3), so a partial closure never survives to a caller.
+func buildDualClosure(ef edgeFillet, dets []obstacleDetection, spans []panelSpan, maps filletRebuildMaps) (dualClosure, bool) {
+	if len(dets) != 2 {
+		return dualClosure{}, false
+	}
+	notchA, okA := buildNotchedHost(dets[0], maps)
+	notchB, okB := buildNotchedHost(dets[1], maps)
+	if !okA || !okB {
+		return dualClosure{}, false
+	}
+	wallA, okWA := buildSplitObstacleWall(dets[0])
+	wallB, okWB := buildSplitObstacleWall(dets[1])
+	if !okWA || !okWB {
+		return dualClosure{}, false
+	}
+	wings, ok := buildOuterWings(ef, dets, spans)
+	if !ok {
+		return dualClosure{}, false
+	}
+	return dualClosure{notchA: notchA, notchB: notchB, wallA: wallA, wallB: wallB, wings: wings}, true
+}
+
+// buildOuterWings builds the two wing faces (buildObstacleWings, REUSED unchanged) welding to the
+// union band's OUTERMOST stations, generalizing the single-host wing split (derivation §3.2 item 3):
+// the outer detection's own obstacleGeom section arcs ARE the true wing end-sections there, because
+// B's footprint fully brackets A's over the shared band (derivation §1.1 "B ⊃ A") — so no new wing
+// geometry is needed, only calling the existing function against whichever detection owns the outer
+// stations (outerDetection).
+func buildOuterWings(ef edgeFillet, dets []obstacleDetection, spans []panelSpan) ([]filletFace, bool) {
+	outer, ok := outerDetection(ef, dets, spans)
+	if !ok {
+		return nil, false
+	}
+	og, ok := computeObstacleGeom(ef, outer)
+	if !ok {
+		return nil, false
+	}
+	return buildObstacleWings(ef, outer, og), true
+}
+
+// outerDetection returns the detection among dets whose own two nodes ARE the union's outermost
+// stations (spans[0].zLo and the last span's zHi) — the host whose footprint fully brackets the
+// other's, so its own cylinder cross-sections are exactly the wing end-sections the whole union band
+// welds to (derivation §1.1/§3.2 item 3). exactTol is bit-identical-modulo-reordering tolerance, not a
+// model-relative one: axisParam is the SAME pure function partitionUnionStations already evaluated to
+// build these very station values, so a genuinely matching detection's recomputed value differs from
+// the station only by floating-point re-association, not by measurement (mirrors the sibling test
+// file's chainTol). ok=false when spans is empty or no detection's nodes match both outer stations — a
+// shape family this construction does not cover (report BLOCKED, do not guess a host).
+func outerDetection(ef edgeFillet, dets []obstacleDetection, spans []panelSpan) (obstacleDetection, bool) {
+	if len(spans) == 0 {
+		return obstacleDetection{}, false
+	}
+	outerLo, outerHi := spans[0].zLo, spans[len(spans)-1].zHi
+	const exactTol = 1e-9
+	for _, d := range dets {
+		lo, hi := axisParam(ef, d.pMinus), axisParam(ef, d.pPlus)
+		if lo > hi {
+			lo, hi = hi, lo
+		}
+		if stdmath.Abs(lo-outerLo) <= exactTol && stdmath.Abs(hi-outerHi) <= exactTol {
+			return d, true
+		}
+	}
+	return obstacleDetection{}, false
+}
+
 // assembleDualObstacleSet is the qualifying==2 (dual-host) counterpart to assembleObstacleSet:
-// obstacleFacesFor's dualObstacleRoute calls it instead of the single-host assembler. U4-0 is a data-
-// model + wiring SLICE only — this is a STUB that always honest-rejects (ADR-3), so a dual-host edge
-// still falls to the existing do-no-harm baseline exactly as before this change (corpus byte-
-// identical). The real rebuild — notched hosts, split walls, wings, and the setbackSection-bounded
-// coons4 panels per span — lands across U4-1..U4-5 (derivation §3.2/§4, #2007 Group C); dets and spans
-// are already the shape that build needs, so this stub's signature does not change out from under it.
+// obstacleFacesFor's dualObstacleRoute calls it instead of the single-host assembler. U4-1 builds the
+// watertight-closure pieces (buildDualClosure: both notches, both wall splits, the wings) but STILL
+// honest-rejects the whole edge (ADR-3): the coons4 setback panels bridging notch-to-notch (U4-3/U4-4)
+// do not exist yet, and welding a partial body (closure without panels) would leave a hole where the
+// panels belong — exactly the "wings-without-patch" mistake assembleObstacleSet's own docstring already
+// forbids for the single-host case. So a dual-host edge still falls to the existing do-no-harm baseline
+// — corpus byte-identical — while U4-1's unit tests exercise buildDualClosure directly to pin the
+// closure pieces' topology (both notches WIRE:1, both walls split+intact, wings welding to the outer
+// stations with no orphan seam, derivation §3.2 caveat).
 //
-//nolint:unparam // ef/dets/spans are the fixed signature U4-1..U4-5 build against; unused by the U4-0 stub.
-func assembleDualObstacleSet(ef edgeFillet, dets []obstacleDetection, spans []panelSpan) (obstacleSet, bool) {
-	return obstacleSet{}, false // U4-1..U4-5 build the real dual-host rebuild; U4-0 stops here
+// U4-3..U4-5 return the real welded set once the coons4 panels exist to fill it.
+//
+//nolint:unparam // result 0 is always the zero obstacleSet{} through U4-1 (still reject-gated, ADR-3);
+func assembleDualObstacleSet(ef edgeFillet, dets []obstacleDetection, spans []panelSpan, maps filletRebuildMaps) (obstacleSet, bool) {
+	_, _ = buildDualClosure(ef, dets, spans, maps) // exercised for do-no-harm parity; panels land U4-3/4
+	return obstacleSet{}, false                    // U4-3..U4-5 weld the real dual-host body; U4-1 stops here
 }

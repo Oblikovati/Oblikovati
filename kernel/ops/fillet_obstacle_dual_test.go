@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/exchange/step"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -39,11 +40,14 @@ func importU4(t *testing.T) *topo.Body {
 	return bodies[0]
 }
 
-// u4EdgeFillet solves the edgeFillet for U4's filleted edge (r=5) the same way FilletEdges does
-// internally (resolveFilletPicks → computeCorners → computeFillets), so the returned ef/Resolution
-// pair is exactly what obstacleFacesFor would see mid-rebuild — the qualifying==2 dual-host case this
-// slice wires up (derivation §0/§1.1).
-func u4EdgeFillet(t *testing.T) (edgeFillet, Resolution) {
+// u4Fillet solves U4's real fillet feature end to end (resolveFilletPicks → computeCorners →
+// computeFillets), the same sequence FilletEdges runs internally, and returns the imported body
+// alongside its resolved edgeFillet list (always len 1 for U4) and the shared Resolution — the common
+// precondition every U4 kernel/ops-level test builds on. Returning the body too (not just the
+// edgeFillet) matters for U4-1's buildDualClosure tests: filletRebuildMaps keys by *topo.Face pointer
+// identity, so maps and the edgeFillet/detections consuming them must come from the SAME body instance,
+// not a second independent importU4 call.
+func u4Fillet(t *testing.T) (*topo.Body, []edgeFillet, Resolution) {
 	t.Helper()
 	body := importU4(t)
 	edge := edgeAtMidpoint(body, u4EdgeMidpoint)
@@ -65,7 +69,15 @@ func u4EdgeFillet(t *testing.T) (edgeFillet, Resolution) {
 	if len(fils) != 1 {
 		t.Fatalf("U4: want 1 edgeFillet, got %d", len(fils))
 	}
-	return fils[0], ResolutionForBody(body)
+	return body, fils, ResolutionForBody(body)
+}
+
+// u4EdgeFillet is u4Fillet's single-edgeFillet convenience form — the shape the U4-0 unit tests need
+// (they never touch the body directly).
+func u4EdgeFillet(t *testing.T) (edgeFillet, Resolution) {
+	t.Helper()
+	_, fils, res := u4Fillet(t)
+	return fils[0], res
 }
 
 // TestDetectObstaclesU4ReturnsBothHosts pins the U4-0 extractor (derivation §3.1, item 1): U4's
@@ -164,4 +176,189 @@ func absDiff(a, b float64) float64 {
 		return b - a
 	}
 	return a - b
+}
+
+// u4ClosureFixture extends u4Fillet with U4's dual-host detections, their union spans, and the
+// filletRebuildMaps buildNotchedHost needs — the full precondition buildDualClosure's U4-1 tests below
+// drive it with. All returned values are built from the SAME body/edgeFillet (see u4Fillet's docstring
+// on why that identity matters for the maps lookup).
+func u4ClosureFixture(t *testing.T) (edgeFillet, []obstacleDetection, []panelSpan, filletRebuildMaps) {
+	t.Helper()
+	body, fils, res := u4Fillet(t)
+	ef := fils[0]
+	dets, ok := detectObstacles(ef, res)
+	if !ok || len(dets) != 2 {
+		t.Fatalf("fixture precondition: detectObstacles(U4) = (%d, %v), want (2, true)", len(dets), ok)
+	}
+	spans := partitionUnionStations(dets, ef)
+	maps, _ := filletBuildMaps(body, fils)
+	return ef, dets, spans, maps
+}
+
+// filletFaceArea tessellates a single filletFace and sums its triangle areas — the empirical way to
+// prove buildSplitObstacleWall's rim split does not change the wall's true surface area: assembleBody
+// welds one face's loop into real topo geometry (it does not require the input set to be watertight, so
+// a lone wall face builds fine), and TessellateFace/MeshArea then measure it exactly the way the corpus
+// oracle's own area gates do elsewhere in this package.
+func filletFaceArea(t *testing.T, f filletFace) float64 {
+	t.Helper()
+	faces := assembleBody([]filletFace{f}).Faces()
+	if len(faces) != 1 {
+		t.Fatalf("filletFaceArea: assembleBody produced %d faces, want 1", len(faces))
+	}
+	mesh := TessellateFace(faces[0], Quality{ChordTolerance: 1e-3})
+	return MeshArea(mesh)
+}
+
+// pointOnStraightLoopSegment reports whether p lies within tol of one of loop's STRAIGHT (curve==nil)
+// segments — the check U4-1's "no orphan seam" gate needs (derivation §3.2 caveat): a wing's far-
+// tangent point must land on the OTHER host's plain (un-notched) tangent-line edge, not merely
+// somewhere near the loop in aggregate, else a future edge-insert has no straight edge left to split.
+func pointOnStraightLoopSegment(loop filletLoop, p math.Point3, tol float64) bool {
+	n := len(loop.pts)
+	for i := 0; i < n; i++ {
+		if loop.curves[i] != nil {
+			continue
+		}
+		seg := geom.NewLineSegment(loop.pts[i], loop.pts[(i+1)%n])
+		if geom.DistancePointToSegment(seg, p) <= tol {
+			return true
+		}
+	}
+	return false
+}
+
+// otherNotch returns the closure notch that does NOT belong to outer's own host — the notch the wing's
+// far-tangent point (built on outer's OTHER face) must weld to.
+func otherNotch(dets []obstacleDetection, closure dualClosure, outer obstacleDetection) filletFace {
+	if outer.host == dets[0].host {
+		return closure.notchB
+	}
+	return closure.notchA
+}
+
+// TestBuildDualClosureU4BothNotchesAbsorbFootprint pins U4-1 item 1 (derivation §3.2): calling
+// buildNotchedHost per host (REUSED unchanged) absorbs EACH host's own footprint into a single WIRE:1
+// loop. The precondition that makes "absorbed" a meaningful claim (not vacuously true): each host's
+// ORIGINAL face carries a separate hole loop before the rebuild (>=2 loops, outer+hole) — mergeHoleInto-
+// Notch's whole job is collapsing that down to exactly 1.
+func TestBuildDualClosureU4BothNotchesAbsorbFootprint(t *testing.T) {
+	ef, dets, spans, maps := u4ClosureFixture(t)
+	if len(dets[0].host.Loops()) < 2 || len(dets[1].host.Loops()) < 2 {
+		t.Fatalf("fixture precondition: U4 hosts must carry a separate hole loop pre-rebuild, got %d/%d loops",
+			len(dets[0].host.Loops()), len(dets[1].host.Loops()))
+	}
+	closure, ok := buildDualClosure(ef, dets, spans, maps)
+	if !ok {
+		t.Fatalf("buildDualClosure(U4) = ok=false, want ok=true (both notches/walls/wings should build)")
+	}
+	for name, notch := range map[string]filletFace{"notchA": closure.notchA, "notchB": closure.notchB} {
+		if len(notch.loops) != 1 {
+			t.Errorf("%s: %d loops, want 1 (WIRE:1, footprint absorbed)", name, len(notch.loops))
+		}
+	}
+	weld := geom.ResolutionForPoints([]math.Point3{dets[0].pMinus, dets[0].pPlus}).Weld()
+	if !loopHasPointNear(closure.notchA.loops[0], dets[0].pMinus, weld) || !loopHasPointNear(closure.notchA.loops[0], dets[0].pPlus, weld) {
+		t.Errorf("notchA loop does not carry host A's own split nodes (P-=%v, P+=%v)", dets[0].pMinus, dets[0].pPlus)
+	}
+	if !loopHasPointNear(closure.notchB.loops[0], dets[1].pMinus, weld) || !loopHasPointNear(closure.notchB.loops[0], dets[1].pPlus, weld) {
+		t.Errorf("notchB loop does not carry host B's own split nodes (P-=%v, P+=%v)", dets[1].pMinus, dets[1].pPlus)
+	}
+}
+
+// TestBuildDualClosureU4BothWallsSplitIntact pins U4-1 item 2 (derivation §3.2): calling
+// buildSplitObstacleWall per boss (REUSED unchanged) splits EACH wall's rim at its own two nodes while
+// keeping the whole wall intact — its true surface area unchanged from the DRAWEXE oracle (A=502.655=
+// 2π·8·10, B=799.1, derivation §0 "Survivors intact (WIRE:1)").
+func TestBuildDualClosureU4BothWallsSplitIntact(t *testing.T) {
+	ef, dets, spans, maps := u4ClosureFixture(t)
+	closure, ok := buildDualClosure(ef, dets, spans, maps)
+	if !ok {
+		t.Fatalf("buildDualClosure(U4) = ok=false, want ok=true")
+	}
+	weldA := geom.ResolutionForPoints([]math.Point3{dets[0].pMinus, dets[0].pPlus}).Weld()
+	if !loopHasPointNear(closure.wallA.loops[0], dets[0].pMinus, weldA) || !loopHasPointNear(closure.wallA.loops[0], dets[0].pPlus, weldA) {
+		t.Errorf("wallA loop does not carry host A's own split nodes")
+	}
+	weldB := geom.ResolutionForPoints([]math.Point3{dets[1].pMinus, dets[1].pPlus}).Weld()
+	if !loopHasPointNear(closure.wallB.loops[0], dets[1].pMinus, weldB) || !loopHasPointNear(closure.wallB.loops[0], dets[1].pPlus, weldB) {
+		t.Errorf("wallB loop does not carry host B's own split nodes")
+	}
+	// 0.5% relative tolerance: TessellateFace's Quality{ChordTolerance:1e-3} facets the curved wall
+	// rather than integrating its exact analytic surface, so a small faceting deficit is expected —
+	// the corpus's own fingerprint gate uses a comparable relative band for tessellated areas.
+	const wantA, wantB = 502.655, 799.1
+	gotA := filletFaceArea(t, closure.wallA)
+	t.Logf("wallA area = %.4f (want %.4f)", gotA, wantA)
+	if absDiff(gotA, wantA) > 0.005*wantA {
+		t.Errorf("wallA area = %.3f, want %.3f (±0.5%%)", gotA, wantA)
+	}
+	gotB := filletFaceArea(t, closure.wallB)
+	t.Logf("wallB area = %.4f (want %.4f)", gotB, wantB)
+	if absDiff(gotB, wantB) > 0.005*wantB {
+		t.Errorf("wallB area = %.3f, want %.3f (±0.5%%)", gotB, wantB)
+	}
+}
+
+// TestBuildDualClosureU4WingsWeldNoOrphanSeam pins U4-1 item 3 AND resolves the derivation §3.2 caveat:
+// dual-host has no clean single filletWall (each host's "other" face IS the other host, notched by ITS
+// OWN footprint — packDetection sets filletWall=ef.b for host A, ef.a for host B, and both ef.a/ef.b ARE
+// the two hosts here), so the single-host set.wall/wallInserts seam mechanism cannot apply as-is. This
+// test empirically confirms the alternative U4-1 actually builds still welds with no orphan seam: each
+// wing's far-tangent point (on the OTHER host's plane) lands within weld tolerance on that other host's
+// OWN notch — specifically on one of its plain (un-notched) straight tangent-line segments, since the
+// wing's outer stations sit OUTSIDE the other host's own dip interval (B ⊃ A, derivation §1.1) — so a
+// future edge-insert has a real straight edge there to split, not a mid-air point.
+func TestBuildDualClosureU4WingsWeldNoOrphanSeam(t *testing.T) {
+	ef, dets, spans, maps := u4ClosureFixture(t)
+	closure, ok := buildDualClosure(ef, dets, spans, maps)
+	if !ok {
+		t.Fatalf("buildDualClosure(U4) = ok=false, want ok=true")
+	}
+	if len(closure.wings) != 2 {
+		t.Fatalf("buildDualClosure(U4): %d wings, want 2", len(closure.wings))
+	}
+	outer, ok := outerDetection(ef, dets, spans)
+	if !ok {
+		t.Fatalf("outerDetection(U4): ok=false — no detection's nodes match the union's outer stations")
+	}
+	og, ok := computeObstacleGeom(ef, outer)
+	if !ok {
+		t.Fatalf("computeObstacleGeom(outer detection): ok=false")
+	}
+	other := otherNotch(dets, closure, outer)
+	weld := geom.ResolutionForPoints([]math.Point3{outer.pMinus, outer.pPlus}).Weld()
+	for idx, wantOwnNode := range [2]math.Point3{outer.pMinus, outer.pPlus} {
+		cut := nodeSection(outer, og, idx)
+		ownPt, farPt := cut.nodeTa, cut.nodeTb
+		if wantOwnNode.DistanceTo(cut.nodeTa) > weld {
+			ownPt, farPt = cut.nodeTb, cut.nodeTa // whichever endpoint IS the outer detection's own node
+		}
+		if d := ownPt.DistanceTo(wantOwnNode); d > weld {
+			t.Errorf("node %d: own-side wing endpoint %v is %.6g from the outer detection's node %v, want <= %.6g",
+				idx, ownPt, d, wantOwnNode, weld)
+		}
+		if !anyWingHasPointNear(closure.wings, ownPt, weld) {
+			t.Errorf("node %d: no wing carries the own-side endpoint %v", idx, ownPt)
+		}
+		if !anyWingHasPointNear(closure.wings, farPt, weld) {
+			t.Errorf("node %d: no wing carries the far-tangent endpoint %v", idx, farPt)
+		}
+		if !pointOnStraightLoopSegment(other.loops[0], farPt, weld) {
+			t.Errorf("node %d: far-tangent endpoint %v is an ORPHAN SEAM — no straight segment of the "+
+				"other host's notch passes within %.6g of it", idx, farPt, weld)
+		}
+	}
+}
+
+// anyWingHasPointNear reports whether p appears (within tol) in any of the wing faces' loops.
+func anyWingHasPointNear(wings []filletFace, p math.Point3, tol float64) bool {
+	for _, w := range wings {
+		for _, l := range w.loops {
+			if loopHasPointNear(l, p, tol) {
+				return true
+			}
+		}
+	}
+	return false
 }

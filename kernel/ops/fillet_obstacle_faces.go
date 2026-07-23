@@ -135,7 +135,7 @@ func obstacleFacesFor(ef edgeFillet, res Resolution, maps filletRebuildMaps) (ob
 	if ef.varying {
 		return obstacleSet{}, false
 	}
-	if set, dual, ok := dualObstacleRoute(ef, res); dual {
+	if set, dual, ok := dualObstacleRoute(ef, res, maps); dual {
 		return set, ok
 	}
 	d, ok := detectObstacle(ef, res)
@@ -155,17 +155,18 @@ func obstacleFacesFor(ef edgeFillet, res Resolution, maps filletRebuildMaps) (ob
 }
 
 // dualObstacleRoute reports whether ef is a qualifying==2 (dual-host) edge and, if so, is the FINAL
-// answer for it (dual=true): U4-0's assembleDualObstacleSet is a stub that always answers ok=false, so
-// a dual-host edge still lands on the do-no-harm baseline — corpus byte-identical — while the real
-// rebuild (notches/walls/wings/panels) lands in U4-1..U4-5 (derivation §4, #2007 Group C). dual=false
+// answer for it (dual=true): assembleDualObstacleSet still honest-rejects every dual-host edge through
+// U4-1 (the closure pieces it builds internally are not yet welded into a body — panels land U4-3/4),
+// so a dual-host edge still lands on the do-no-harm baseline — corpus byte-identical — while the real
+// rebuild (notches/walls/wings/panels) lands across U4-1..U4-5 (derivation §4, #2007 Group C). dual=false
 // lets the caller fall through unchanged to detectObstacle/assembleObstacleSet for qualifying 0 or 1.
-func dualObstacleRoute(ef edgeFillet, res Resolution) (obstacleSet, bool, bool) {
+func dualObstacleRoute(ef edgeFillet, res Resolution, maps filletRebuildMaps) (obstacleSet, bool, bool) {
 	dets, ok := detectObstacles(ef, res)
 	if !ok || len(dets) != 2 {
 		return obstacleSet{}, false, false
 	}
 	spans := partitionUnionStations(dets, ef)
-	set, ok := assembleDualObstacleSet(ef, dets, spans)
+	set, ok := assembleDualObstacleSet(ef, dets, spans, maps)
 	return set, true, ok
 }
 
