@@ -18,11 +18,21 @@ import (
 // vertex) meeting the chordal tolerance. Endpoints are snapped to the edge's vertices
 // so adjacent edges share exact points. A healed (imported) edge returns its stored
 // on-surface polyline verbatim (M25 PBI-324) so both faces mesh the identical boundary.
+//
+// #2009: a straight/near-straight edge's 2-point result is then passed through
+// densifyStarvedRail (nurbs_pcurve_mesh.go), which extends it ONLY when the edge is shared by a
+// high-aspect B-spline face (aspectDensifyThreshold) — otherwise a no-op, so this stays the exact
+// 2-point straight-edge result for every other caller. Applying the extension HERE, inside the one
+// function every face already shares for an edge (see the package comment above), is what keeps
+// both sides of a shared rail in agreement: a lower-aspect or non-B-spline neighbour calling
+// discretizeEdge for the SAME edge gets the IDENTICAL denser polyline, not just a geometrically
+// coincident but topologically cracked one (see densifyStarvedRail's doc for the regression this
+// closes).
 func discretizeEdge(e *topo.Edge, q Quality) []math.Point3 {
 	if snapped := e.SnappedCurve(); snapped != nil {
-		return snapped
+		return densifyStarvedRail(e, snapped)
 	}
-	return sampleEdgeCurve(e, q)
+	return densifyStarvedRail(e, sampleEdgeCurve(e, q))
 }
 
 // sampleEdgeCurve samples an edge's curve into a chord polyline directly (ignoring any healing
