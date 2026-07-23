@@ -31,6 +31,9 @@ func buildSetbackFaces(set *runoutSet, ef edgeFillet, b setbackBands, loops []Ra
 	if !appendSetbackPatchFaces(set, ef, loops, res) {
 		return false
 	}
+	if len(b.bosses) == 1 {
+		return reclipSingleHost(set, ef, t, maps) // one host to re-clip; pInner is the plain non-boss face
+	}
 	return reclipSetbackHosts(set, ef, t, maps)
 }
 
@@ -83,16 +86,73 @@ func reclipSetbackHosts(set *runoutSet, ef edgeFillet, t setbackTiling, maps fil
 // footprint band-side (aCutLo→aSeamLo→aSeamHi→aCutHi) is owned by the three patches; the host detour
 // only re-traces the host-side arc (aCutHi→seam→aCutLo) into the outer loop, dropping the footprint hole.
 func reclipOuterHost(set *runoutSet, ef edgeFillet, t setbackTiling, maps filletRebuildMaps) bool {
-	if !subdivideBossWall(maps, t.outer, ef.cyl, t.aCutLo, t.aCutHi, []math.Point3{t.aSeamLo, t.aSeamHi}) {
+	return reclipHostNotch(set, ef, t.outer, maps, t.aCutLo, t.aCutHi,
+		[]math.Point3{t.aSeamLo, t.aSeamHi}, outerHostDetour(t.outer, ef.cyl, t))
+}
+
+// reclipSingleHost re-clips BOTH faces of the ONE-boss edge (#2007): the boss host plane (the footprint
+// opens into the cut) and the plain non-boss face (its receded fillet-contact edge is subdivided to match
+// the wings + central patch). Unlike the 2-boss case — where both faces carry a boss and both take a
+// footprint notch — here the non-boss face has no hole, only a contact edge that must be split at the
+// wing/patch stations or it stays a single segment the sub-chorded fill cannot weld to (the 9-open-edge
+// failure the plain-transformFace path leaves).
+func reclipSingleHost(set *runoutSet, ef edgeFillet, t setbackTiling, maps filletRebuildMaps) bool {
+	if !reclipHostNotch(set, ef, t.outer, maps, t.aCutLo, t.aCutHi, nil, outerHostDetour(t.outer, ef.cyl, t)) {
 		return false
 	}
-	hostIsA := t.outer.host == ef.a
+	return reclipPlainFace(set, ef, t, maps)
+}
+
+// reclipPlainFace re-clips the ONE-boss edge's plain (non-boss) face: it carries no footprint hole, so its
+// notch simply replaces the receded tangent segment with the subdivided fillet-contact detour
+// (plainContactDetour) — the two wing B-tangent segments plus the central patch's plain seam, sampled at
+// ringSegSamples so the fill welds point-for-point. buildHostNotch re-traces the rest of the outer loop.
+func reclipPlainFace(set *runoutSet, ef edgeFillet, t setbackTiling, maps filletRebuildMaps) bool {
+	plain := ef.b
+	if t.outer.host == ef.b {
+		plain = ef.a
+	}
+	hostIsA := plain == ef.a
 	tanA, tanB := hostTangent(ef.c0, hostIsA), hostTangent(ef.c1, hostIsA)
-	notch, ok := buildHostNotch(t.outer.host, maps, tanA, tanB, outerHostDetour(t.outer, ef.cyl, t))
+	notch, ok := buildHostNotch(plain, maps, tanA, tanB, plainContactDetour(t))
 	if !ok {
 		return false
 	}
-	set.replace[t.outer.host.ID()] = notch
+	set.replace[plain.ID()] = notch
+	return true
+}
+
+// plainContactDetour is the ONE-boss plain face's notch detour: from the receded tangent corner it enters
+// (from), a straight wing B-tangent survivor to the near cut station, the central patch's plain seam
+// (near→far) sampled at ringSegSamples (the SAME density the central patch tiles geom.NewLineSegment at, so
+// the two weld), and a straight wing survivor to the far corner (to). No boss arc — the plain face has no
+// footprint. The straight-uniform subdivision is direction-independent, so the notch and the patch share
+// the identical interior points whichever corner the notch is entered from.
+func plainContactDetour(t setbackTiling) func(from, to math.Point3) ([]notchSeg, bool) {
+	return func(from, to math.Point3) ([]notchSeg, bool) {
+		near, far := orderByNearer(from, t.bCutLo, t.bCutHi)
+		segs := appendArcSegs([]notchSeg{{pt: from}}, geom.NewLineSegment(near, far), ringSegSamples)
+		return append(segs, notchSeg{pt: far}), true
+	}
+}
+
+// reclipHostNotch subdivides a boss wall's footprint rim and re-clips its host plane to a single-loop
+// notch (dropping the footprint hole), keyed into set.replace by host ID. The band-side crossings
+// cross1/cross2 plus the interior bandInner seams (nil for the one-boss host and the two-boss inner host)
+// bound the opened notch; detour re-traces the host-side arc into the outer loop. Shared by the outer,
+// inner and single-boss host re-clips so all three trace the σ-partition host arc identically.
+func reclipHostNotch(set *runoutSet, ef edgeFillet, boss crossingBoss, maps filletRebuildMaps,
+	cross1, cross2 math.Point3, bandInner []math.Point3, detour func(from, to math.Point3) ([]notchSeg, bool)) bool {
+	if !subdivideBossWall(maps, boss, ef.cyl, cross1, cross2, bandInner) {
+		return false
+	}
+	hostIsA := boss.host == ef.a
+	tanA, tanB := hostTangent(ef.c0, hostIsA), hostTangent(ef.c1, hostIsA)
+	notch, ok := buildHostNotch(boss.host, maps, tanA, tanB, detour)
+	if !ok {
+		return false
+	}
+	set.replace[boss.host.ID()] = notch
 	return true
 }
 
@@ -100,17 +160,8 @@ func reclipOuterHost(set *runoutSet, ef edgeFillet, t setbackTiling, maps fillet
 // footprint band-side (bSeamLo→bSeamHi) is owned by the central patch; the host detour re-traces the two
 // flank plain-contact seams (bCut→bSeam, sampled to match the patch) and the host-side arc between them.
 func reclipInnerHost(set *runoutSet, ef edgeFillet, t setbackTiling, maps filletRebuildMaps) bool {
-	if !subdivideBossWall(maps, t.inner, ef.cyl, t.bSeamLo, t.bSeamHi, nil) {
-		return false
-	}
-	hostIsA := t.inner.host == ef.a
-	tanA, tanB := hostTangent(ef.c0, hostIsA), hostTangent(ef.c1, hostIsA)
-	notch, ok := buildHostNotch(t.inner.host, maps, tanA, tanB, innerHostDetour(t.inner, ef.cyl, t))
-	if !ok {
-		return false
-	}
-	set.replace[t.inner.host.ID()] = notch
-	return true
+	return reclipHostNotch(set, ef, t.inner, maps, t.bSeamLo, t.bSeamHi,
+		nil, innerHostDetour(t.inner, ef.cyl, t))
 }
 
 // outerHostDetour is the outer host's notch builder: from the receded tangent corner (from) a straight
@@ -136,7 +187,7 @@ func hostArcDetour(boss crossingBoss, cyl geom.Cylinder, from, near, far math.Po
 	if !ok {
 		return nil, false
 	}
-	segs := appendArcSegs([]notchSeg{{pt: from}}, arc1, torusHostArcChordCount(boss.wall, arc1))
+	segs := appendArcSegs([]notchSeg{{pt: from}}, arc1, torusHostArcChordCount(boss, arc1))
 	segs = appendSeamArc(segs, boss, arc2)
 	return append(segs, notchSeg{pt: far}), true
 }
@@ -168,7 +219,7 @@ func hostRimArcs(boss crossingBoss, cyl geom.Cylinder, from, seam, to math.Point
 func appendSeamArc(segs []notchSeg, boss crossingBoss, arc geom.Curve3) []notchSeg {
 	seamV := boss.footEdge.StartVertex()
 	segs = append(segs, notchSeg{pt: seamV.Point(), srcV: seamV.ID()})
-	tail := sampleCurveN(arc, torusHostArcChordCount(boss.wall, arc), false)
+	tail := sampleCurveN(arc, torusHostArcChordCount(boss, arc), false)
 	for _, p := range tail[1:] {
 		segs = append(segs, notchSeg{pt: p})
 	}
@@ -196,7 +247,7 @@ func innerHostSegs(boss crossingBoss, cyl geom.Cylinder, from, nearCut, nearSeam
 		return nil, false
 	}
 	segs := appendArcSegs([]notchSeg{{pt: from}}, geom.NewLineSegment(nearCut, nearSeam), ringSegSamples)
-	segs = appendArcSegs(segs, arc1, torusHostArcChordCount(boss.wall, arc1))
+	segs = appendArcSegs(segs, arc1, torusHostArcChordCount(boss, arc1))
 	segs = appendSeamArc(segs, boss, arc2)
 	segs = appendArcSegs(segs, geom.NewLineSegment(farSeam, farCut), ringSegSamples)
 	return append(segs, notchSeg{pt: farCut}), true
@@ -244,7 +295,7 @@ func bossRimRing(boss crossingBoss, cyl geom.Cylinder, seam, cross1, cross2 math
 	}
 	var ring []math.Point3
 	for i, a := range subs {
-		ring = append(ring, sampleCurveN(a, rimSubArcChordCount(boss.wall, a, i, len(subs)), false)...)
+		ring = append(ring, sampleCurveN(a, rimSubArcChordCount(boss, a, i, len(subs)), false)...)
 	}
 	return orientRingToEdge(ring, boss.footEdge), len(ring) > 0
 }
@@ -262,20 +313,22 @@ const torusRimChordAngle = 2 * stdmath.Pi / 48
 // arcs (i==0, i==total-1) of a TORUS wall densify — the host arcs weld to the flat host notch (never a
 // patch), and a coarse host arc on the doubly-curved torus band over-covers the chord-to-arc segment
 // (the 241.6° major arc at 6 chords lofted T1 +8.6%, m4-spike §CRITICAL). See torusHostArcChordCount.
-func rimSubArcChordCount(wall geom.Surface, arc geom.Curve3, i, total int) int {
+func rimSubArcChordCount(boss crossingBoss, arc geom.Curve3, i, total int) int {
 	if i != 0 && i != total-1 {
 		return ringSegSamples // band sub-arc: welds to the patches, keep the shared granularity
 	}
-	return torusHostArcChordCount(wall, arc)
+	return torusHostArcChordCount(boss, arc)
 }
 
 // torusHostArcChordCount is the chord count for a boss's host-side footprint arc: span-proportional
 // (≈torusRimChordAngle per chord, floored at ringSegSamples) for a TORUS wall so its band lofts accurately,
 // and exactly ringSegSamples for any RULED wall (cylinder/cone/elliptical-cylinder) so S1/S4/T7 stay byte-
-// identical. Both the wall rim and the host notch sample the SAME host arc through here, so they stay
-// weld-identical at whatever count the wall type sets (a non-arc curve floors at ringSegSamples).
-func torusHostArcChordCount(wall geom.Surface, arc geom.Curve3) int {
-	if _, isTorus := wall.(geom.Torus); !isTorus {
+// identical. A SPHERE wall densifies the SAME way but ONLY when boss.densifyHostArc is set — the single-boss
+// tiling (#2007) sets it so S6's whole-footprint host notch matches the analytic disc, while the 2-boss
+// sphere (S7) leaves it false and stays byte-identical on the coarse default. Both the wall rim and the host
+// notch sample the SAME host arc through here, so they stay weld-identical at whatever count the wall sets.
+func torusHostArcChordCount(boss crossingBoss, arc geom.Curve3) int {
+	if !hostArcDensifies(boss) {
 		return ringSegSamples
 	}
 	n := int(stdmath.Ceil(arcSweepAbs(arc) / torusRimChordAngle))
@@ -283,6 +336,20 @@ func torusHostArcChordCount(wall geom.Surface, arc geom.Curve3) int {
 		return ringSegSamples
 	}
 	return n
+}
+
+// hostArcDensifies reports whether a boss's host footprint arc is chorded span-proportionally: always for a
+// TORUS wall (its doubly-curved band over-covers a coarse host arc), and for a SPHERE wall only when the
+// single-boss tiling requested it (densifyHostArc). Every ruled wall stays coarse (byte-identical).
+func hostArcDensifies(boss crossingBoss) bool {
+	switch boss.wall.(type) {
+	case geom.Torus:
+		return true
+	case geom.Sphere:
+		return boss.densifyHostArc
+	default:
+		return false
+	}
 }
 
 // arcSweepAbs is the absolute swept angle of a footprint sub-arc (a geom.Arc3d circle arc or a

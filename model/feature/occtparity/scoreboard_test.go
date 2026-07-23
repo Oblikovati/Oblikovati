@@ -31,7 +31,9 @@ func TestScoreboardTally(t *testing.T) {
 // Hardened at the #2007 audit (green-gate-validate-audit-report.md): the area-only gate counted 5
 // malformed-hole-loop false greens (S6/S9/T3/U3/U4) as PASS; isWatertightSolid closes that gap and
 // quarantine.go holds them out. The honest rollup dropped 91→86 simple / 93→88 all-grid, and
-// SkipQuarantine rose 1→6 (H6 + the 5).
+// SkipQuarantine rose 1→6 (H6 + the 5). The single-boss setback tiling (#2007) then genuinely GREENED
+// S6/S9/T3 (watertight, footprint absorbed), restoring 86→89 simple / 88→91 all-grid and dropping
+// SkipQuarantine 6→3 (H6 + U3/U4, the two residual non-single-boss engine gaps).
 func TestOCCTBlendScoreboard(t *testing.T) {
 	dir := CorpusFixtureDir()
 	byGrid := map[string]map[Outcome]int{}
@@ -80,21 +82,22 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 	assertHardenedRollup(t, byGrid, passRollup, total[SkipQuarantine])
 }
 
-// assertHardenedRollup pins the honest post-#2007 rollup at the isWatertightSolid bar: 86 green in the
-// simple grid, 88 green across all grids, and SkipQuarantine=6 (H6 + the 5 malformed-hole-loop false
-// greens). A mismatch means either a 6th false green slipped through or a case was over-quarantined —
-// see harden-green-gate-brief.md's "STOP and report" instruction.
+// assertHardenedRollup pins the honest post-#2007 rollup at the isWatertightSolid bar: 89 green in the
+// simple grid, 91 green across all grids, and SkipQuarantine=3 (H6 + U3/U4). The single-boss setback
+// tiling greened S6/S9/T3 (86→89 / 88→91, SkipQuarantine 6→3); U3/U4 remain quarantined (their distinct
+// engine gaps). A mismatch means either a false green slipped through or a case was over/under-quarantined
+// — see harden-green-gate-brief.md's "STOP and report" instruction.
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 86 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 86 (post-#2007 hardened rollup)", simpleGreen)
+	if simpleGreen != 89 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 89 (post-#2007 single-boss setback rollup)", simpleGreen)
 	}
-	if allGridGreen != 88 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 88 (post-#2007 hardened rollup)", allGridGreen)
+	if allGridGreen != 91 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 91 (post-#2007 single-boss setback rollup)", allGridGreen)
 	}
-	if skipQuarantine != 6 {
-		t.Errorf("SkipQuarantine = %d, want 6 (H6 + S6/S9/T3/U3/U4, #2007)", skipQuarantine)
+	if skipQuarantine != 3 {
+		t.Errorf("SkipQuarantine = %d, want 3 (H6 + U3/U4, #2007)", skipQuarantine)
 	}
 }
 

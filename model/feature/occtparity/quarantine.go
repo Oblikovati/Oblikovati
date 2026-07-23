@@ -28,24 +28,23 @@ var quarantined = map[quarantineKey]string{
 		"fillet inverted (R−r not R+r), so H6 now honestly FAILS the area gate at −1.09%. Held to document " +
 		"the defect and guard against a future coincidental pass. Do NOT un-gate until resolveArcFillet is " +
 		"rebuilt for concave open-torus rims.",
-	// S6/S9/T3/U3/U4: the green-gate hardening audit (#2007, .superpowers/sdd/green-gate-validate-audit-
-	// report.md) found each result's ops.Validate().HolesContained == false — "hole loop protrudes outside
-	// the outer loop of planar face" (a malformed B-rep face the mid-span obstacle rebuild does not yet
-	// cover for these dual-host/torus configurations; T6's sibling defect, fillet_hole_containment_test.go).
-	// Each area was coincidentally inside the 1% Deps tolerance over the malformed face (S6 +0.275%, S9
-	// +0.788%, T3 +0.350%, U3 +0.502%, U4 +0.928%), so the OLD area-only gate counted them PASS. Held so a
-	// coincidental area match never again masks a real hole-containment defect. Do NOT un-gate until
+	// U3/U4: the green-gate hardening audit (#2007, .superpowers/sdd/green-gate-validate-audit-report.md)
+	// found each result's ops.Validate().HolesContained == false — "hole loop protrudes outside the outer
+	// loop of planar face" (a malformed B-rep face). S6/S9/T3 (Group A, one-boss sphere/torus) were freed
+	// by the single-boss setback tiling (fillet_setback_*.go: 2 flanks + one central run-out absorbs the
+	// footprint with a watertight fill, boss wall intact; #2007) — each now passes the full watertight bar
+	// (Valid && Closed && Manifold && HolesContained && IsSolid) at area S6 +0.074% / S9 +0.267% / T3 +0.114%
+	// and is pinned in fingerprint_pins_test.go. U3/U4 remain: they are DIFFERENT engine gaps (recon groups
+	// B/C) — U3 is the obstacle-path dipsPast mis-detection on an oblique elliptical footprint, U4 the
+	// dual-host multi-boss composition — neither of which the single-boss setback tiling reaches. Held so a
+	// coincidental area match never again masks the residual hole-containment defect. Do NOT un-gate until
 	// ops.Validate(result).HolesContained == true for each.
-	{grid: "simple", name: "S6"}: "malformed hole-loop (HolesContained=false); area +0.275% coincidentally " +
-		"inside 1% Deps; #2007.",
-	{grid: "simple", name: "S9"}: "malformed hole-loop (HolesContained=false); area +0.788% coincidentally " +
-		"inside 1% Deps; #2007.",
-	{grid: "simple", name: "T3"}: "malformed hole-loop (HolesContained=false); area +0.350% coincidentally " +
-		"inside 1% Deps; #2007.",
 	{grid: "simple", name: "U3"}: "malformed hole-loop (HolesContained=false); area +0.502% coincidentally " +
-		"inside 1% Deps; #2007.",
+		"inside 1% Deps; obstacle-path dipsPast mis-detection on an oblique elliptical footprint (recon " +
+		"Group B) — NOT reached by the single-boss setback tiling (that greened S6/S9/T3); #2007.",
 	{grid: "simple", name: "U4"}: "malformed hole-loop (HolesContained=false); area +0.928% coincidentally " +
-		"inside 1% Deps; #2007.",
+		"inside 1% Deps; dual-host multi-boss composition (recon Group C) — NOT reached by the single-boss " +
+		"setback tiling (that greened S6/S9/T3); #2007.",
 }
 
 // quarantineReason returns the hold reason for a case and whether it is quarantined.

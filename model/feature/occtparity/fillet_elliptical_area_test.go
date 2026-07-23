@@ -18,8 +18,9 @@ var leakGuardGreenedCases = []string{"S3", "S7", "S9", "T3", "T6", "U4", "X3"}
 // The leak-guard min-area re-mesh repaired their AREA number (no more constrained-Delaunay fill
 // inflation) — that fix stands, unregressed — but it never touched this independent topology defect.
 // The hardened gate (isWatertightSolid, watertight.go) correctly holds them at SkipQuarantine rather
-// than PASS; only S3/S7/T6/X3 are genuinely watertight. See green-gate-validate-audit-report.md.
-var leakGuardQuarantinedByHoleLoop = map[string]bool{"S9": true, "T3": true, "U4": true}
+// than PASS. S9/T3 have since been GREENED by the single-boss setback tiling (#2007, footprint absorbed
+// watertight), leaving only the dual-host U4 held; S3/S7/S9/T3/T6/X3 are now all genuinely watertight.
+var leakGuardQuarantinedByHoleLoop = map[string]bool{"U4": true}
 
 // TestLeakGuardedPlaneMeshGreensAreaCases pins the min-area conformance guard: each case must score
 // PASS — or, for the 3 that also carry the independent #2007 hole-loop defect, SkipQuarantine (never

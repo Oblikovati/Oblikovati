@@ -377,6 +377,71 @@ func TestFilletEdges_S7SphereIntact(t *testing.T) {
 	}
 }
 
+// assertSingleBossWatertight is the shared single-boss (#2007) closure gate: the wired FilletEdges result
+// must be a watertight, hole-contained solid whose EVERY face is WIRE:1 (the crossing boss footprint is
+// absorbed into the fillet cut, no surviving inner loop) — the malformed-B-rep poison pill the do-no-harm
+// baseline left (HolesContained=false) is exactly what this proves is fixed.
+func assertSingleBossWatertight(t *testing.T, body *topo.Body, name string) {
+	t.Helper()
+	if !body.IsSolid() {
+		t.Fatalf("%s single-boss setback shell is not a solid: %d open edges", name, len(openEdges(body)))
+	}
+	if r := Validate(body); !r.Valid || !r.HolesContained {
+		t.Fatalf("%s single-boss setback shell invalid: Valid=%v HolesContained=%v (baseline leaves the boss "+
+			"footprint piercing the host plane)", name, r.Valid, r.HolesContained)
+	}
+	for _, f := range body.Faces() {
+		if n := len(f.Loops()); n != 1 {
+			t.Fatalf("%s face %T has %d loops, want WIRE:1 (footprint opened into the cut)", name, f.Geometry(), n)
+		}
+	}
+}
+
+// TestFilletEdges_S6SphereSingleBoss is the SINGLE-BOSS setback closure proof for a SPHERE boss (S6, #2007):
+// a box + ONE crossing sphere boss (r13) whose footprint used to protrude past the shrunken host outer loop
+// (HolesContained=false). The single-boss tiling (2 plain wings + one central run-out patch that absorbs the
+// footprint, both edge faces re-clipped single-loop) must weld to a watertight, hole-contained SOLID whose
+// R=13 hemisphere stays ONE intact geom.Sphere face near 2πR²=1061.86. The sphere host footprint arc is
+// densified (densifyHostArc, one-boss only) so the whole-footprint host notch matches the analytic disc.
+func TestFilletEdges_S6SphereSingleBoss(t *testing.T) {
+	body := filletedCorpusEdge(t, "simple/S6", math.P3(0, -15, 0), 3)
+	assertSingleBossWatertight(t, body, "S6")
+	if got := countSurfaceFacesNear[geom.Sphere](body, 1061.86, 12); got != 1 {
+		t.Fatalf("wired S6: want ONE intact sphere cap near 1061.86 (single-boss setback), got %d", got)
+	}
+}
+
+// TestFilletEdges_S9TorusSingleBoss is TestFilletEdges_S6SphereSingleBoss for a TORUS boss (S9, #2007): a box
+// + ONE crossing Torus(20,5) boss. The single-boss tiling must weld watertight and keep the torus wall as
+// ONE intact chorded band near its area ≈1144 (NOT the full donut), footprint absorbed, every face WIRE:1.
+func TestFilletEdges_S9TorusSingleBoss(t *testing.T) {
+	body := filletedCorpusEdge(t, "simple/S9", math.P3(0, -30, 0), 10)
+	assertSingleBossWatertight(t, body, "S9")
+	if got := countSurfaceFacesNear[geom.Torus](body, 1144.04, 12); got != 1 {
+		t.Fatalf("wired S9: want ONE intact torus band near 1144.04 (single-boss setback), got %d", got)
+	}
+}
+
+// TestResolveSetbackTiling_TwoBossUnchanged pins the do-no-harm gate for the single-boss addition: the
+// 2-boss S1 shape still resolves to the S1 tiling (outer+inner bosses, both hosts distinct) and its sphere
+// sibling S7 keeps densifyHostArc FALSE — the flag is set ONLY by resolveSingleBossTiling, so the 2-boss
+// path (S1/S4/T1/T4/T7/S7) stays byte-identical (verified by the occtparity fingerprint pins).
+func TestResolveSetbackTiling_TwoBossUnchanged(t *testing.T) {
+	ef, res := runoutFixtureCrossingBoss(t)
+	b, ok := detectSetbackBands(ef, res)
+	if !ok || len(b.bosses) != 2 {
+		t.Fatalf("S1 fixture: want 2-boss bands, got ok=%v bosses=%d", ok, len(b.bosses))
+	}
+	for i, boss := range b.bosses {
+		if boss.densifyHostArc {
+			t.Fatalf("2-boss boss[%d] has densifyHostArc=true; the flag must be single-boss-only (S7 byte-identity)", i)
+		}
+	}
+	if _, ok := resolveSetbackTiling(b, ef); !ok {
+		t.Fatalf("resolveSetbackTiling rejected the 2-boss S1 shape")
+	}
+}
+
 // synthTorusSetbackBoss builds a crossingBoss mimicking T1's intact torus wall: the host-plane footprint
 // is a circle of radius r_f=25 centered at the origin in the z=0 plane, with its seam vertex at world
 // (25,0,0) (azimuth 0°). The fillet R=8 band runs along the box edge at y=-22 (contact line σ=0), so the

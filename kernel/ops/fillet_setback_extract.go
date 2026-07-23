@@ -27,8 +27,26 @@ func extractSetbackPatches(b setbackBands, ef edgeFillet, res Resolution) ([]Rai
 	if !ok {
 		return nil, false
 	}
-	loops := make([]RailLoop, 0, 3)
-	for _, build := range []func() (RailLoop, bool){t.leftFlank, t.central, t.rightFlank} {
+	return buildSetbackLoops(setbackLoopBuilders(b, t), res)
+}
+
+// setbackLoopBuilders selects the band-loop builders for the tiling: the SINGLE central run-out for a
+// one-boss body (S6/S9/T3, #2007) or the S1 three-loop flank/central/flank tiling for the two-boss body.
+// The one-boss central is the degenerate S1 shape — one footprint rail (the intact boss wall) closed off
+// by an arm arc at EACH cut station and the plain host-b contact seam, instead of two flanks joined by
+// internal seams.
+func setbackLoopBuilders(b setbackBands, t setbackTiling) []func() (RailLoop, bool) {
+	if len(b.bosses) == 1 {
+		return []func() (RailLoop, bool){t.singleCentral}
+	}
+	return []func() (RailLoop, bool){t.leftFlank, t.central, t.rightFlank}
+}
+
+// buildSetbackLoops runs each band builder and certifies it is a closed valence-4 RailLoop (the shape
+// resolveBlend accepts), honest-rejecting the WHOLE edge if any loop fails — never a partial tiling.
+func buildSetbackLoops(builders []func() (RailLoop, bool), res Resolution) ([]RailLoop, bool) {
+	loops := make([]RailLoop, 0, len(builders))
+	for _, build := range builders {
 		loop, ok := build()
 		if !ok || loop.Valence() != 4 || !loop.Closed(res.Weld()) {
 			return nil, false
@@ -59,6 +77,9 @@ type setbackTiling struct {
 // milestone tiles the S1 shape only). The seams arrive mirror-ordered ([mid+x, mid−x]) from Task 2's
 // bandsFromBosses, NOT monotone, so they MUST be sorted before use as band boundaries.
 func resolveSetbackTiling(b setbackBands, ef edgeFillet) (setbackTiling, bool) {
+	if len(b.bosses) == 1 && len(b.seams) == 0 {
+		return resolveSingleBossTiling(b, ef) // one boss → 2 flanks + one central run-out (#2007)
+	}
 	if len(b.bosses) != 2 || len(b.seams) != 2 {
 		return setbackTiling{}, false // 2-boss S1 shape only (2N−1 general bands: a later task)
 	}
@@ -103,6 +124,76 @@ func (t *setbackTiling) resolveCorners() bool {
 	t.aSeamHi, okHi = footprintPointAtStation(t.outer, t.cyl, t.seamHi)
 	t.aSeamLo, okLo = footprintPointAtStation(t.outer, t.cyl, t.seamLo)
 	return okHi && okLo
+}
+
+// resolveSingleBossTiling classifies the ONE-boss shape (S6 sphere / S9 torus / T3 oblique torus, #2007):
+// the boss sits on ONE fillet-edge host plane (pOuter here), the OTHER edge face (pInner) carries only the
+// plain fillet contact. The two cut stations cutLo/cutHi are where the footprint conic crosses the fillet
+// band boundary; there are NO interior seams. ok=false when the boss host is neither fillet face or a face
+// is not planar.
+func resolveSingleBossTiling(b setbackBands, ef edgeFillet) (setbackTiling, bool) {
+	boss := b.bosses[0]
+	pHost, pOther, ok := singleBossHostPlanes(boss, ef)
+	if !ok {
+		return setbackTiling{}, false
+	}
+	boss.densifyHostArc = true // one-boss sphere host arc: densify vs the coarse-chorded 2-boss default (S7)
+	t := setbackTiling{
+		cyl: ef.cyl, pOuter: pHost, pInner: pOther, outer: boss,
+		cutLo: b.cutLo, cutHi: b.cutHi,
+	}
+	t.resolveSingleCorners()
+	return t, true
+}
+
+// singleBossHostPlanes reads the boss's host plane (pHost, carrying the footprint) and the OTHER fillet-
+// edge face (pOther, plain contact only). The boss host MUST be one of ef.a/ef.b — a boss whose footprint
+// lands on some third face is not a fillet-edge host and honest-rejects. Both faces must be planar.
+func singleBossHostPlanes(boss crossingBoss, ef edgeFillet) (geom.Plane, geom.Plane, bool) {
+	var other *topo.Face
+	switch boss.host {
+	case ef.a:
+		other = ef.b
+	case ef.b:
+		other = ef.a
+	default:
+		return geom.Plane{}, geom.Plane{}, false // boss host is neither fillet face
+	}
+	ph, ok0 := boss.host.Geometry().(geom.Plane)
+	po, ok1 := other.Geometry().(geom.Plane)
+	return ph, po, ok0 && ok1
+}
+
+// resolveSingleCorners fills the four one-boss corners: at each cut station the fillet cross-section
+// contacts pOuter (aCut) and pInner (bCut). The aCut contacts lie EXACTLY on the footprint conic by
+// construction — the cut stations ARE where the footprint crosses the fillet contact line L, so
+// filletContact on the host plane at that station returns the footprint crossing point itself (verified
+// on S6/S9/T3: distance-from-rim = 0). No footprintPointAtStation is needed as it is for the 2-boss seams.
+func (t *setbackTiling) resolveSingleCorners() {
+	t.aCutHi, t.bCutHi = filletContact(t.cyl, t.pOuter, t.cutHi), filletContact(t.cyl, t.pInner, t.cutHi)
+	t.aCutLo, t.bCutLo = filletContact(t.cyl, t.pOuter, t.cutLo), filletContact(t.cyl, t.pInner, t.cutLo)
+}
+
+// singleCentral is the ONE-boss central run-out band [cutLo, cutHi] (#2007): the footprint band-side arc on
+// the host wall (aCutLo→aCutHi, G1→the INTACT boss wall), the arm cross-section arc at cutHi (aCutHi→bCutHi,
+// G1→fillet cyl), the plain host-b contact seam (bCutHi→bCutLo, G1→pInner), and the arm arc at cutLo
+// (bCutLo→aCutLo, G1→fillet cyl). It is the S1 flank shape closed off by a SECOND arm arc instead of an
+// internal seam — the footprint band-side arc IS the σ-partition band the wall rim tiles (footprintSubArc,
+// verified equal to the partition band on S6/S9/T3), so the patch welds to the subdivided wall rim.
+func (t setbackTiling) singleCentral() (RailLoop, bool) {
+	foot, ok0 := footprintSubArc(t.outer.footEdge, t.aCutLo, t.aCutHi)
+	armHi, ok1 := armSectionArc(t.cyl, t.pOuter, t.pInner, t.cutHi)
+	armLo, ok2 := armSectionArc(t.cyl, t.pInner, t.pOuter, t.cutLo)
+	if !ok0 || !ok1 || !ok2 {
+		return RailLoop{}, false
+	}
+	sides := []Side{
+		{Curve: foot, Adjacent: t.outer.wall, Cont: G1},
+		{Curve: armHi, Adjacent: t.cyl, Cont: G1},
+		{Curve: geom.NewLineSegment(t.bCutHi, t.bCutLo), Adjacent: t.pInner, Cont: G1},
+		{Curve: armLo, Adjacent: t.cyl, Cont: G1},
+	}
+	return RailLoop{Sides: sides, Provenance: topo.Lineage{}}, true
 }
 
 // rightFlank is the +x flank band [seamHi, cutHi], running out to the outer boss only. Its four sides:

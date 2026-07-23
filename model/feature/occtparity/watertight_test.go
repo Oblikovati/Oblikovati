@@ -10,21 +10,23 @@ import (
 	"oblikovati.org/kernel/topo"
 )
 
-// TestIsWatertightSolidRejectsHoleProtrusion pins the ROOT CAUSE the hardened gate closes (#2007): S6's
+// TestIsWatertightSolidRejectsHoleProtrusion pins the ROOT CAUSE the hardened gate closes (#2007): U3's
 // filleted result has props.Volume>0 and a coincidentally-in-tolerance area, so the OLD gate (ok &&
 // props.Volume>0) scored it PASS — but ops.Validate reports HolesContained=false (a hole loop protrudes
 // past its own outer loop, a malformed planar face that poisons the tessellator). isWatertightSolid must
-// reject it even though the legacy predicate would still accept it.
+// reject it even though the legacy predicate would still accept it. (S6 — the original #2007 exemplar — was
+// GREENED by the single-boss setback tiling; U3, an obstacle-path dip-detection gap, still carries the
+// defect and is the surviving guard for this predicate.)
 func TestIsWatertightSolidRejectsHoleProtrusion(t *testing.T) {
-	res, filletOK, props, ok := rawFilletResult(t, "S6")
+	res, filletOK, props, ok := rawFilletResult(t, "U3")
 	if !ok || props.Volume <= 0 {
-		t.Fatalf("S6: expected the legacy predicate (ok && Volume>0) to hold, got ok=%v volume=%v — audit premise changed", ok, props.Volume)
+		t.Fatalf("U3: expected the legacy predicate (ok && Volume>0) to hold, got ok=%v volume=%v — audit premise changed", ok, props.Volume)
 	}
 	if rep := ops.Validate(res[0]); rep.HolesContained {
-		t.Fatalf("S6: expected ops.Validate().HolesContained=false (the #2007 malformed hole-loop defect); got true — audit premise changed")
+		t.Fatalf("U3: expected ops.Validate().HolesContained=false (the #2007 malformed hole-loop defect); got true — audit premise changed")
 	}
 	if isWatertightSolid(res, filletOK, props, ok) {
-		t.Fatalf("S6: isWatertightSolid must reject a HolesContained=false result")
+		t.Fatalf("U3: isWatertightSolid must reject a HolesContained=false result")
 	}
 }
 
@@ -40,13 +42,14 @@ func TestIsWatertightSolidAcceptsGenuineSolid(t *testing.T) {
 	}
 }
 
-// TestQuarantinedFalseGreensReportSkipQuarantine pins the quarantine.go hold: S6/S9/T3/U3/U4 (#2007,
-// malformed hole-loop, area coincidentally within Deps) must report SkipQuarantine through the real
-// ScoreCase path — never Pass, and never surfaced as a new FailFaulty red either (the H6 precedent: held
-// out of the green count, not turned into a new failure).
+// TestQuarantinedFalseGreensReportSkipQuarantine pins the quarantine.go hold: U3/U4 (#2007, malformed
+// hole-loop, area coincidentally within Deps) must report SkipQuarantine through the real ScoreCase path —
+// never Pass, and never surfaced as a new FailFaulty red either (the H6 precedent: held out of the green
+// count, not turned into a new failure). S6/S9/T3 (the original held trio) were GREENED by the single-boss
+// setback tiling and are no longer quarantined; U3/U4 are the surviving distinct engine gaps.
 func TestQuarantinedFalseGreensReportSkipQuarantine(t *testing.T) {
 	dir := CorpusFixtureDir()
-	for _, c := range []string{"S6", "S9", "T3", "U3", "U4"} {
+	for _, c := range []string{"U3", "U4"} {
 		if got := ScoreCase(findCorpusRecord(t, "simple", c), dir); got != SkipQuarantine {
 			t.Errorf("simple/%s: ScoreCase = %v, want SkipQuarantine", c, got)
 		}

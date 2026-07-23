@@ -244,5 +244,18 @@ func byteIdentityPins() []fingerprintPin {
 		// isClosedCircularEdge predicate fails loud if it perturbs the I9 body. Same cross-platform-risk
 		// caveat as above applies. See .superpowers/sdd/rim-arc3d-widen-report.md.
 		{"I9", 1171624.810038584052, 67580, 0xab1686e36b3b9396, ""},
+		// S6/S9/T3 (simple): the Group-A one-boss setback greens (fillet_setback_extract.go /
+		// fillet_setback_close.go single-boss branch, #2007). Each is a box + ONE crossing boss whose
+		// footprint used to protrude past the shrunken host outer loop (HolesContained=false — the malformed
+		// B-rep poison pill the do-no-harm baseline left). The single-boss tiling (2 plain cyl wings + one
+		// central run-out patch that absorbs the footprint, boss WALL kept intact, both edge faces re-clipped
+		// single-loop) welds each to a watertight, hole-contained SOLID: S6 (Sphere r13, area +0.074%), S9
+		// (Torus(20,5), +0.267%), T3 (Torus(35,10) oblique, +0.114%). S6's sphere host footprint arc is
+		// densified span-proportionally (densifyHostArc — one-boss only, so the 2-boss sphere S7 stays byte-
+		// identical). Captured on THIS HEAD; they lock the single-boss setback so any later slice (Group B U3,
+		// Group C U4) fails loud if it perturbs an S6/S9/T3 body. Same cross-platform-risk caveat as above.
+		{"S6", 18044.769951207, 19602, 0x677c6f17793080c, ""},
+		{"S9", 116088.833852354, 85614, 0x93ef9087c21bf57a, ""},
+		{"T3", 130621.192627563, 91054, 0xfa008dbaf5dd4d2d, ""},
 	}
 }
