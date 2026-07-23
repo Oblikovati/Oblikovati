@@ -271,5 +271,17 @@ func byteIdentityPins() []fingerprintPin {
 		// a later slice (Group C U4, dual-host) fails loud if it perturbs the U3 body. Same cross-platform-
 		// risk caveat as above.
 		{"U3", 17894.503322426473, 9452, 0xc38f33331071f8ae, ""},
+		// U4 (simple): the Group-C dual-host multi-rail corner-blend green (kernel/ops/fillet_obstacle_dual*.go,
+		// #2007 Group C — the U4-5 weld). U4 is a box + TWO bosses (Cylinder r8 on y=−20, oblique
+		// EllipticalCylinder on x=10) whose footprints BOTH dip into ONE r=5 convex-edge fillet (qualifying==2),
+		// the dual-host composition neither the single-boss setback tiling (S6/S9/T3) nor the dipArcOrder
+		// obstacle fix (U3) reached. The dual assembler welds 2 notched hosts + 2 walls split at every panel
+		// seam + 2 cylinder wings + 4 corner-blend panels (2 coons4 slivers, 2 exact-station canal cores) into a
+		// watertight, hole-contained SOLID matching the DRAWEXE 16-FACE / every-face-WIRE:1 topology at whole-
+		// body area 6583.29 (rel 0.001%), every fillet panel tessellating fold-free to its per-face oracle
+		// (3.039 sliver / 30.334 core) in production. Captured on THIS HEAD (u4-5-report.md); bit-stable at
+		// 1e-9. Locks the dual-host weld so any later slice that perturbs the U4 body fails loud. Same
+		// cross-platform-risk caveat as above applies.
+		{"U4", 32647.755284293769, 23848, 0xf588dd3b13096eb9, ""},
 	}
 }

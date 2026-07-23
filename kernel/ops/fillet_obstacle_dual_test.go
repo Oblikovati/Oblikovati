@@ -148,12 +148,82 @@ func TestPartitionUnionStationsU4(t *testing.T) {
 	}
 }
 
-// TestObstacleFacesForU4DualHostStubRejectsToBaseline pins the U4-0 wiring end to end (derivation §3.3,
-// item 3): a qualifying==2 edge now ROUTES through dualObstacleRoute/assembleDualObstacleSet instead of
-// silently vanishing at detectObstacle's own gate, but the U4-0 stub still answers ok=false, so the
-// fillet feature falls to the SAME do-no-harm baseline it did before this change — U4 stays at
-// HolesContained=false (the #2007 dual-host defect, unresolved until U4-1..U4-5), not a new outcome.
-func TestObstacleFacesForU4DualHostStubRejectsToBaseline(t *testing.T) {
+// u4OracleAreas are the DRAWEXE per-face oracles for the FOUR B-spline fillet panels (derivation §0):
+// two slivers at 3.039 (result_5/result_9) and two split cores at 30.334 (result_13/result_14).
+var u4SliverOracle, u4CoreOracle = 3.039, 30.334
+
+// TestFilletU4DualHostWatertight is the U4-5 payoff gate (#2007 Group C): the whole dual-host pipeline ON.
+// FilletEdges on U4's convex edge (two bosses dipping into one r=5 fillet, qualifying==2) must now build
+// the full welded body — 2 notched hosts + 2 split walls + 2 wings + 4 corner-blend panels — that clears
+// the FULL hardened watertight bar (Valid && Closed && Manifold && HolesContained && IsSolid), matches the
+// DRAWEXE 16-FACE / every-face-WIRE:1 topology, and lands the whole-body surface area within the corpus's
+// 1% of the oracle 6583.29. This is the outcome the U4-0..U4-4b slices built toward, replacing the old
+// HolesContained=false do-no-harm baseline (the dual-host defect held in quarantine until this slice).
+func TestFilletU4DualHostWatertight(t *testing.T) {
+	res := filletU4Body(t)
+	rep := Validate(res)
+	watertight := rep.Valid && rep.Closed && rep.Manifold && rep.HolesContained && res.IsSolid()
+	if !watertight {
+		t.Fatalf("U4 must be watertight: Valid=%v Closed=%v Manifold=%v HolesContained=%v IsSolid=%v issues=%v",
+			rep.Valid, rep.Closed, rep.Manifold, rep.HolesContained, res.IsSolid(), rep.Issues)
+	}
+	if n := len(res.Faces()); n != 16 {
+		t.Errorf("U4: %d result faces, want 16 (DRAWEXE nbshapes)", n)
+	}
+	total := 0.0
+	for _, f := range res.Faces() {
+		if len(f.Loops()) != 1 {
+			t.Errorf("U4 face has %d loops, want 1 (every result face WIRE:1)", len(f.Loops()))
+		}
+		total += MeshArea(TessellateFace(f, Quality{ChordTolerance: 1e-3}))
+	}
+	const wholeBodyOracle, corpusDeps = 6583.29, 0.01
+	if rel := absDiff(total, wholeBodyOracle) / wholeBodyOracle; rel > corpusDeps {
+		t.Errorf("U4 whole-body area %.4f vs oracle %.4f (rel %.4f%% > %.1f%%)", total, wholeBodyOracle, rel*100, corpusDeps*100)
+	}
+}
+
+// TestFilletU4PerFaceProductionTessellation is the ★★ carried #2009/U4-4 gate: each of the FOUR B-spline
+// fillet panels must tessellate through the PRODUCTION path (TessellateFace → nurbsPcurveMesh) to its own
+// DRAWEXE oracle area — FOLD-FREE — not merely sum to the right whole-body total (which masks a bad panel
+// against a compensating one). The two cylinder wings (analytic, exact) round out the six fillet faces.
+// This is the real-U4 validation the #2009 aspect-aware starved-rail fix deferred: if a panel folds or
+// misses its oracle in production, the fix did NOT cover the real faces and the slice is BLOCKED.
+func TestFilletU4PerFaceProductionTessellation(t *testing.T) {
+	res := filletU4Body(t)
+	var slivers, cores int
+	for _, f := range res.Faces() {
+		if _, isBS := f.Geometry().(geom.BSplineSurface); !isBS {
+			continue
+		}
+		m := TessellateFace(f, Quality{ChordTolerance: 1e-3})
+		area := MeshArea(m)
+		if folds := FoldEdgeCount(m); folds != 0 {
+			t.Errorf("U4 fillet panel (prodArea %.4f): %d fold edges, want 0 — production tessellation folds", area, folds)
+		}
+		switch {
+		case within(area, u4SliverOracle, 0.01):
+			slivers++
+			t.Logf("sliver panel prodArea=%.4f (oracle %.3f, rel %.4f%%)", area, u4SliverOracle, absDiff(area, u4SliverOracle)/u4SliverOracle*100)
+		case within(area, u4CoreOracle, 0.01):
+			cores++
+			t.Logf("core panel prodArea=%.4f (oracle %.3f, rel %.4f%%)", area, u4CoreOracle, absDiff(area, u4CoreOracle)/u4CoreOracle*100)
+		default:
+			t.Errorf("U4 fillet panel prodArea %.4f matches neither sliver oracle %.3f nor core oracle %.3f within 1%%",
+				area, u4SliverOracle, u4CoreOracle)
+		}
+	}
+	if slivers != 2 || cores != 2 {
+		t.Errorf("U4 per-face: %d slivers + %d cores tessellated to oracle, want 2 + 2", slivers, cores)
+	}
+}
+
+// within reports whether a is within rel (relative) of want.
+func within(a, want, rel float64) bool { return absDiff(a, want)/want <= rel }
+
+// filletU4Body drives FilletEdges over U4's dual-host convex edge (the real feature path end to end).
+func filletU4Body(t *testing.T) *topo.Body {
+	t.Helper()
 	body := importU4(t)
 	edge := edgeAtMidpoint(body, u4EdgeMidpoint)
 	if edge == nil {
@@ -161,13 +231,9 @@ func TestObstacleFacesForU4DualHostStubRejectsToBaseline(t *testing.T) {
 	}
 	res, err := FilletEdges(body, [][]byte{edge.ReferenceKey()}, 5)
 	if err != nil {
-		t.Fatalf("FilletEdges(U4): %v (the do-no-harm baseline must still build a body)", err)
+		t.Fatalf("FilletEdges(U4): %v", err)
 	}
-	rep := Validate(res)
-	if rep.HolesContained {
-		t.Fatalf("U4: HolesContained=true — the dual-host stub must still land on the pre-existing " +
-			"do-no-harm baseline (#2007); did assembleDualObstacleSet start admitting the edge?")
-	}
+	return res
 }
 
 // absDiff avoids importing math.Abs's stdmath alias for a single call site.

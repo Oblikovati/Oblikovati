@@ -41,14 +41,14 @@ var quarantined = map[quarantineKey]string{
 	// to be the 53-of-64-sample BULGE arc for U3 instead of the true 11-sample dip arc that wraps through
 	// index 0; dipArcOrder now picks whichever of the two crossing-bounded arcs is actually shorter (the
 	// genuinely local mid-span excursion) before both the dip test and the downstream rebuild consume it.
-	// U3 now passes the full watertight bar at area +0.116%, pinned in fingerprint_pins_test.go. U4
-	// remains: a DIFFERENT engine gap (recon Group C) — the dual-host multi-boss composition, which
-	// neither the single-boss setback tiling nor the dipArcOrder fix reaches (detectObstacle's explicit
-	// qualifying==2 dual-host defer, Phase 2). Held so a coincidental area match never again masks the
-	// residual hole-containment defect. Do NOT un-gate until ops.Validate(result).HolesContained == true.
-	{grid: "simple", name: "U4"}: "malformed hole-loop (HolesContained=false); area +0.928% coincidentally " +
-		"inside 1% Deps; dual-host multi-boss composition (recon Group C) — NOT reached by the single-boss " +
-		"setback tiling (that greened S6/S9/T3) nor the dipArcOrder obstacle-path fix (that greened U3); #2007.",
+	// U3 now passes the full watertight bar at area +0.116%, pinned in fingerprint_pins_test.go. U4 was
+	// the residual dual-host multi-boss composition (recon Group C); it is now FREED by the U4-5 dual-host
+	// multi-rail weld (kernel/ops/fillet_obstacle_dual*.go: 2 notched hosts + 2 split walls + 2 wings + 4
+	// corner-blend panels — 2 coons4 slivers + 2 exact-station canal cores), which builds the full welded
+	// body that clears the watertight bar (Valid && Closed && Manifold && HolesContained && IsSolid) at
+	// whole-body area within 0.001% of the oracle, every result face WIRE:1, and every fillet panel
+	// tessellating fold-free to its per-face oracle in production (#2007 Group C). Pinned in
+	// fingerprint_pins_test.go; its per-case gates live in kernel/ops/fillet_obstacle_dual_test.go.
 }
 
 // quarantineReason returns the hold reason for a case and whether it is quarantined.

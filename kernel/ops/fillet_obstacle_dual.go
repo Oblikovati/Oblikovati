@@ -180,21 +180,88 @@ func outerDetection(ef edgeFillet, dets []obstacleDetection, spans []panelSpan) 
 	return obstacleDetection{}, false
 }
 
-// assembleDualObstacleSet is the qualifying==2 (dual-host) counterpart to assembleObstacleSet:
-// obstacleFacesFor's dualObstacleRoute calls it instead of the single-host assembler. U4-1 builds the
-// watertight-closure pieces (buildDualClosure: both notches, both wall splits, the wings) but STILL
-// honest-rejects the whole edge (ADR-3): the coons4 setback panels bridging notch-to-notch (U4-3/U4-4)
-// do not exist yet, and welding a partial body (closure without panels) would leave a hole where the
-// panels belong — exactly the "wings-without-patch" mistake assembleObstacleSet's own docstring already
-// forbids for the single-host case. So a dual-host edge still falls to the existing do-no-harm baseline
-// — corpus byte-identical — while U4-1's unit tests exercise buildDualClosure directly to pin the
-// closure pieces' topology (both notches WIRE:1, both walls split+intact, wings welding to the outer
-// stations with no orphan seam, derivation §3.2 caveat).
+// assembleDualObstacleSet is the qualifying==2 (dual-host) counterpart to assembleObstacleSet
+// (derivation §3.2/§3.3/§4-U4-5, #2007 Group C): obstacleFacesFor's dualObstacleRoute calls it instead
+// of the single-host assembler. U4-5 turns the whole dual-host pipeline ON — it welds the full watertight
+// body from the pieces U4-1..U4-4b built and verified: the two notched hosts (each absorbing its own
+// footprint), the two split obstacle walls (each rim split at its own nodes AND at every interior panel
+// seam so the wall welds edge-for-edge to the panels), the two outer cylinder wings, and the four
+// corner-blend panels (the two B-only slivers via coons4, the two dual-host cores via the exact-station
+// canal loft). The four panels partition the union band at the stations {±6.633 wing weld, ±6.240
+// sliver-core seam, 0 core-core seam}; every shared boundary is traced from the SAME node/dip-rim/seam
+// point both neighbours use (dualPanelBoundary), so the shell closes with no orphan seam (ADR-0042).
 //
-// U4-3..U4-5 return the real welded set once the coons4 panels exist to fill it.
+// Before building the host notches, the wing/sliver tangent-seam split points on host A's receded front
+// (the ±6.633 wing-tangent points, where the plain fillet cylinder gives way to the sliver — boss A does
+// not reach there but boss B does, derivation §1.1 "B ⊃ A") are injected into the shared edgeInserts map
+// so the notch front edge is subdivided there and the wing / sliver A-tangent lines each weld to a real
+// straight segment, not a mid-air point (the derivation §3.2 orphan-seam caveat, pinned by U4-1's
+// TestBuildDualClosureU4WingsWeldNoOrphanSeam).
 //
-//nolint:unparam // result 0 is always the zero obstacleSet{} through U4-1 (still reject-gated, ADR-3);
-func assembleDualObstacleSet(ef edgeFillet, dets []obstacleDetection, spans []panelSpan, maps filletRebuildMaps) (obstacleSet, bool) {
-	_, _ = buildDualClosure(ef, dets, spans, maps) // exercised for do-no-harm parity; panels land U4-3/4
-	return obstacleSet{}, false                    // U4-3..U4-5 weld the real dual-host body; U4-1 stops here
+// ok=false honest-rejects the WHOLE edge (ADR-3, never a wings-without-panels hole) when any piece
+// declines: a non-U4 dual-host shape the panel/closure construction does not cover, a panel loop that
+// does not resolve to a certified fill, or a degenerate section — the caller then falls to the existing
+// do-no-harm baseline, corpus byte-identical.
+func assembleDualObstacleSet(ef edgeFillet, dets []obstacleDetection, spans []panelSpan, maps filletRebuildMaps, res Resolution) (obstacleSet, bool) {
+	detA, detB, ok := hostDetections(dets)
+	if !ok {
+		return obstacleSet{}, false
+	}
+	panels := dualPanelSpans(spans)
+	if len(panels) != 4 {
+		return obstacleSet{}, false
+	}
+	// Build every piece that does NOT depend on the shared edgeInserts map FIRST — the four panels, the two
+	// split walls and the two wings. These fully validate the shape (all panels resolve to a certified
+	// fill, both obstacle walls are rebuildable tubes, both nodes bracket the wings), so a non-U4 dual-host
+	// edge that spuriously reaches here (e.g. a two-boss runout/setback body) honest-rejects BEFORE the
+	// front-seam inserts are injected — never leaving the shared map mutated for the path it falls back to
+	// (the S1/S7 do-no-harm regression the earlier speculative injection caused).
+	panelFaces, ok := buildDualPanelFaces(ef, dets, panels, res)
+	if !ok {
+		return obstacleSet{}, false
+	}
+	wallA, wallB, wings, ok := buildDualWallsAndWings(ef, dets, spans, panels, res)
+	if !ok {
+		return obstacleSet{}, false
+	}
+	return weldDualSet(ef, dets, detA, detB, wallA, wallB, wings, panelFaces, maps)
+}
+
+// weldDualSet finishes the confirmed U4-class assembly: it subdivides the inner host's front seam (only
+// now, the shape is confirmed), builds the two notches against it, and packs the obstacleSet (both notched
+// hosts + both split walls in `replace`, the two wings + four panels in `extra`). It rolls the front-seam
+// injection back if a notch declines, so a late failure still leaves the shared map pristine for the
+// edge's fallback path (do-no-harm).
+func weldDualSet(ef edgeFillet, dets []obstacleDetection, detA, detB obstacleDetection,
+	wallA, wallB filletFace, wings, panelFaces []filletFace, maps filletRebuildMaps) (obstacleSet, bool) {
+	injectWingTangentInserts(ef, dets, partitionUnionStations(dets, ef), maps)
+	notchA, okA := buildNotchedHost(detA, maps)
+	notchB, okB := buildNotchedHost(detB, maps)
+	if !okA || !okB {
+		clearWingTangentInserts(ef, dets, maps)
+		return obstacleSet{}, false
+	}
+	return obstacleSet{
+		replace: map[uint64]filletFace{
+			detA.host.ID(): notchA, detB.host.ID(): notchB,
+			detA.obstacleWall.ID(): wallA, detB.obstacleWall.ID(): wallB,
+		},
+		extra: append(append([]filletFace{}, wings...), panelFaces...),
+	}, true
+}
+
+// dualPanelSpans expands partitionUnionStations' three spans (sliver, core, sliver) into the FOUR panel
+// spans the welded body is built from by splitting the middle CORE span at z=0 (splitCoreSpan, the U4-4
+// core-core seam lever): [sliverLo, coreLo, coreHi, sliverHi]. nil (len!=4) when the input is not the
+// U4-shaped 3-span partition — an honest-reject signal for a dual-host shape this build does not cover.
+func dualPanelSpans(spans []panelSpan) []panelSpan {
+	if len(spans) != 3 {
+		return nil
+	}
+	halves, ok := splitCoreSpan(spans[1])
+	if !ok {
+		return nil
+	}
+	return []panelSpan{spans[0], halves[0], halves[1], spans[2]}
 }

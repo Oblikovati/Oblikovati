@@ -84,23 +84,24 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 	assertHardenedRollup(t, byGrid, passRollup, total[SkipQuarantine])
 }
 
-// assertHardenedRollup pins the honest post-#2007 rollup at the isWatertightSolid bar: 90 green in the
-// simple grid, 92 green across all grids, and SkipQuarantine=2 (H6 + U4). The single-boss setback tiling
+// assertHardenedRollup pins the honest post-#2007 rollup at the isWatertightSolid bar: 91 green in the
+// simple grid, 93 green across all grids, and SkipQuarantine=1 (H6 only). The single-boss setback tiling
 // greened S6/S9/T3 (86→89 / 88→91, SkipQuarantine 6→3); the dipArcOrder obstacle-path fix then greened
-// U3 (89→90 / 91→92, SkipQuarantine 3→2); U4 remains quarantined (dual-host, recon Group C). A mismatch
-// means either a false green slipped through or a case was over/under-quarantined — see
-// harden-green-gate-brief.md's "STOP and report" instruction.
+// U3 (89→90 / 91→92, SkipQuarantine 3→2); the U4-5 dual-host multi-rail weld then greened U4 (90→91 /
+// 92→93, SkipQuarantine 2→1), leaving only H6 (concave open-torus, ROOT 2) held. A mismatch means either
+// a false green slipped through or a case was over/under-quarantined — see harden-green-gate-brief.md's
+// "STOP and report" instruction.
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 90 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 90 (post-#2007 dipArcOrder rollup)", simpleGreen)
+	if simpleGreen != 91 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 91 (post-#2007 U4-5 dual-host rollup)", simpleGreen)
 	}
-	if allGridGreen != 92 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 92 (post-#2007 dipArcOrder rollup)", allGridGreen)
+	if allGridGreen != 93 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 93 (post-#2007 U4-5 dual-host rollup)", allGridGreen)
 	}
-	if skipQuarantine != 2 {
-		t.Errorf("SkipQuarantine = %d, want 2 (H6 + U4, #2007)", skipQuarantine)
+	if skipQuarantine != 1 {
+		t.Errorf("SkipQuarantine = %d, want 1 (H6 only, #2007 U4 freed by U4-5)", skipQuarantine)
 	}
 }
 

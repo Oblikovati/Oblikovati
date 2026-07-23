@@ -13,18 +13,19 @@ import "testing"
 // area (a defect only ever ADDS area, so the minimum is correct), which greens every case below.
 var leakGuardGreenedCases = []string{"S3", "S7", "S9", "T3", "T6", "U4", "X3"}
 
-// leakGuardQuarantinedByHoleLoop are leakGuardGreenedCases members whose result ALSO carries the
+// leakGuardQuarantinedByHoleLoop are leakGuardGreenedCases members whose result ALSO carried the
 // unrelated #2007 malformed hole-loop defect (ops.Validate().HolesContained == false; quarantine.go).
 // The leak-guard min-area re-mesh repaired their AREA number (no more constrained-Delaunay fill
 // inflation) — that fix stands, unregressed — but it never touched this independent topology defect.
-// The hardened gate (isWatertightSolid, watertight.go) correctly holds them at SkipQuarantine rather
-// than PASS. S9/T3 have since been GREENED by the single-boss setback tiling (#2007, footprint absorbed
-// watertight), leaving only the dual-host U4 held; S3/S7/S9/T3/T6/X3 are now all genuinely watertight.
-var leakGuardQuarantinedByHoleLoop = map[string]bool{"U4": true}
+// S9/T3 were GREENED by the single-boss setback tiling and U4 by the U4-5 dual-host multi-rail weld
+// (#2007, footprints absorbed watertight), so NONE of the leak-guard cases remain held: all seven are
+// now genuinely watertight and must score PASS. The map is kept (empty) as the seam a future held holed
+// case would re-enter through.
+var leakGuardQuarantinedByHoleLoop = map[string]bool{}
 
 // TestLeakGuardedPlaneMeshGreensAreaCases pins the min-area conformance guard: each case must score
-// PASS — or, for the 3 that also carry the independent #2007 hole-loop defect, SkipQuarantine (never
-// FailArea/FailFaulty) — proving the hole-filled re-mesh still does not inflate the planar face area.
+// PASS (or, for any that also carry the independent #2007 hole-loop defect, SkipQuarantine — none do
+// today), proving the hole-filled re-mesh still does not inflate the planar face area.
 func TestLeakGuardedPlaneMeshGreensAreaCases(t *testing.T) {
 	byCase := map[string]Record{}
 	for _, r := range Corpus() {

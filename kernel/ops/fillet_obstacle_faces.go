@@ -166,7 +166,7 @@ func dualObstacleRoute(ef edgeFillet, res Resolution, maps filletRebuildMaps) (o
 		return obstacleSet{}, false, false
 	}
 	spans := partitionUnionStations(dets, ef)
-	set, ok := assembleDualObstacleSet(ef, dets, spans, maps)
+	set, ok := assembleDualObstacleSet(ef, dets, spans, maps, res)
 	return set, true, ok
 }
 

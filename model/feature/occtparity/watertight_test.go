@@ -10,24 +10,23 @@ import (
 	"oblikovati.org/kernel/topo"
 )
 
-// TestIsWatertightSolidRejectsHoleProtrusion pins the ROOT CAUSE the hardened gate closes (#2007): U4's
-// filleted result has props.Volume>0 and a coincidentally-in-tolerance area, so the OLD gate (ok &&
-// props.Volume>0) scored it PASS — but ops.Validate reports HolesContained=false (a hole loop protrudes
-// past its own outer loop, a malformed planar face that poisons the tessellator). isWatertightSolid must
-// reject it even though the legacy predicate would still accept it. (S6 — the original #2007 exemplar —
-// was GREENED by the single-boss setback tiling; U3 was GREENED by the dipArcOrder obstacle-path fix
-// (u3-dipspast-report.md); U4, the dual-host multi-boss composition gap, still carries the defect and is
-// the surviving guard for this predicate.)
-func TestIsWatertightSolidRejectsHoleProtrusion(t *testing.T) {
+// TestU4DualHostWeldClearsWatertightBar pins the ROOT CAUSE the #2007 audit named, now FIXED: U4's
+// filleted result used to have props.Volume>0 and a coincidentally-in-tolerance area but
+// HolesContained=false (a hole loop protruding past its own outer loop — a malformed planar face) — the
+// last case for which the OLD gate (ok && props.Volume>0) diverged from the hardened isWatertightSolid.
+// The U4-5 dual-host multi-rail weld (kernel/ops/fillet_obstacle_dual*.go) rebuilds the corner watertight,
+// so U4 now reports HolesContained=true and isWatertightSolid ACCEPTS it — the exemplar flipped from the
+// surviving guard to a genuine solid, and this is its regression lock (U4 must STAY watertight).
+func TestU4DualHostWeldClearsWatertightBar(t *testing.T) {
 	res, filletOK, props, ok := rawFilletResult(t, "U4")
 	if !ok || props.Volume <= 0 {
-		t.Fatalf("U4: expected the legacy predicate (ok && Volume>0) to hold, got ok=%v volume=%v — audit premise changed", ok, props.Volume)
+		t.Fatalf("U4: expected the legacy predicate (ok && Volume>0) to hold, got ok=%v volume=%v", ok, props.Volume)
 	}
-	if rep := ops.Validate(res[0]); rep.HolesContained {
-		t.Fatalf("U4: expected ops.Validate().HolesContained=false (the #2007 malformed hole-loop defect); got true — audit premise changed")
+	if rep := ops.Validate(res[0]); !rep.HolesContained {
+		t.Fatalf("U4: expected ops.Validate().HolesContained=true after the U4-5 dual-host weld; got false — the fix regressed")
 	}
-	if isWatertightSolid(res, filletOK, props, ok) {
-		t.Fatalf("U4: isWatertightSolid must reject a HolesContained=false result")
+	if !isWatertightSolid(res, filletOK, props, ok) {
+		t.Fatalf("U4: isWatertightSolid must accept the welded dual-host solid")
 	}
 }
 
@@ -43,15 +42,14 @@ func TestIsWatertightSolidAcceptsGenuineSolid(t *testing.T) {
 	}
 }
 
-// TestQuarantinedFalseGreensReportSkipQuarantine pins the quarantine.go hold: U4 (#2007, malformed
-// hole-loop, area coincidentally within Deps) must report SkipQuarantine through the real ScoreCase path —
-// never Pass, and never surfaced as a new FailFaulty red either (the H6 precedent: held out of the green
-// count, not turned into a new failure). S6/S9/T3 (the original held trio) were GREENED by the single-boss
-// setback tiling; U3 was GREENED by the dipArcOrder obstacle-path fix (u3-dipspast-report.md); U4 is the
-// surviving distinct engine gap (dual-host multi-boss composition, recon Group C).
+// TestQuarantinedFalseGreensReportSkipQuarantine pins the quarantine.go hold: a held case must report
+// SkipQuarantine through the real ScoreCase path — never Pass, and never surfaced as a new FailFaulty red
+// either (held out of the green count, not turned into a new failure). S6/S9/T3 were GREENED by the
+// single-boss setback tiling; U3 by the dipArcOrder obstacle-path fix; U4 by the U4-5 dual-host multi-rail
+// weld — leaving H6 (concave open-torus fillet inverted, ROOT 2) as the surviving held case this guards.
 func TestQuarantinedFalseGreensReportSkipQuarantine(t *testing.T) {
 	dir := CorpusFixtureDir()
-	for _, c := range []string{"U4"} {
+	for _, c := range []string{"H6"} {
 		if got := ScoreCase(findCorpusRecord(t, "simple", c), dir); got != SkipQuarantine {
 			t.Errorf("simple/%s: ScoreCase = %v, want SkipQuarantine", c, got)
 		}
