@@ -79,6 +79,12 @@ func obstacleNodes(rim []math.Point2, b boundaryLine2, res Resolution) ([2]cross
 // tolerance here since arc length is an exact integer count, not a measured quantity.
 func dipArcOrder(nodes [2]crossing, n int) (c0, c1 crossing) {
 	arcLen := (nodes[1].I - nodes[0].I + n) % n
+	// TODO(#2008): the exact-tie case 2*arcLen == n (crossings diametrically opposite,
+	// reachable since obstacleRimSamples is even) falls back to ascending order here — the
+	// pre-fix behavior that mis-picked U3's wrap dip. Harmless for the current corpus, but a
+	// future opposite-crossing footprint with its true dip on the wrapping arc would reproduce
+	// the #2007 defect. Resolve the tie by the signed-distance excursion, not arc length, when a
+	// case demands it.
 	if 2*arcLen <= n {
 		return nodes[0], nodes[1]
 	}
