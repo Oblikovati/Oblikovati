@@ -69,10 +69,12 @@ const setbackNearZeroCoef = 64
 
 // detectSetbackBands finds every crossing boss on ef's runout edge (Task 1's detectRunouts,
 // unchanged — this reuses it rather than re-deriving boss detection), keeps each boss wall
-// INTACT, and computes the D1 setback stations + D2 band partition a later task tiles into
-// setback patches. NEW AND UNWIRED: no caller in runoutFacesFor yet (M3 Task 2,
-// .superpowers/sdd/task-2-brief.md) — the corpus stays byte-identical until a later task wires
-// this in.
+// INTACT, and computes the D1 setback stations + D2 band partition extractSetbackPatches tiles
+// into setback patches. WIRED: runoutFacesFor (fillet_runout_faces.go) calls this first, on
+// every constant-radius edge, before extractSetbackPatches/buildSetbackFaces run — ok=false here
+// leaves the whole edge on the pre-existing path (honest-reject, ADR-3). Feeds both the two-boss
+// corpus cases (S1/S4/T1/T4/T7/S7) and, via setbackBossFrom detecting a lone crossing boss, the
+// one-boss cases added for #2007 (S6/S9/T3).
 func detectSetbackBands(ef edgeFillet, res Resolution) (setbackBands, bool) {
 	bosses := make([]crossingBoss, 0, 2)
 	mids := make([]float64, 0, 2)

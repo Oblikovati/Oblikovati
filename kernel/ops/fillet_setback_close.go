@@ -19,7 +19,11 @@ import (
 // set.replace, and records the boss-wall footprint subdivisions on maps for transformedBodyFaces to
 // apply. ok=false honest-rejects the WHOLE edge (do-no-harm baseline) — never a partial fill.
 //
-// UNWIRED: no caller in runoutFacesFor yet (Task 5 wires it); the corpus stays byte-identical.
+// WIRED: runoutFacesFor (fillet_runout_faces.go) calls this after extractSetbackPatches resolves the
+// loops. Builds the setback-faithful runout bodies for the two-boss corpus cases (S1/S4/T1/T4/T7/S7) and,
+// via the len(b.bosses)==1 branch below (reclipSingleHost), the single-boss path added for #2007
+// (S6/S9/T3) — those greened only once this closed the watertight/HolesContained gap the do-no-harm
+// baseline left open.
 func buildSetbackFaces(set *runoutSet, ef edgeFillet, b setbackBands, loops []RailLoop, res Resolution, maps filletRebuildMaps) bool {
 	t, ok := resolveSetbackTiling(b, ef)
 	if !ok {

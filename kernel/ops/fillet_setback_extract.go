@@ -18,10 +18,12 @@ import (
 //
 // It tiles the 2-boss S1 shape (left flank / central / right flank → 3 loops): both flanks run out to
 // the OUTER boss only (plain on the other tangent side, a G1 host-plane contact seam), and the central
-// band runs out to BOTH boss walls (D2). N>2 bosses (2N−1 bands) is a later task — this milestone
-// honest-rejects (ok=false) anything but the two-boss dual-host case, and any loop that will not close
-// or is mis-tiled (a station outside a footprint, both bosses on one plane). UNWIRED: no caller in
-// runoutFacesFor yet, so the corpus stays byte-identical.
+// band runs out to BOTH boss walls (D2). It also tiles the 1-boss shape (single central run-out, #2007)
+// via setbackLoopBuilders. N>2 bosses (2N−1 bands) is a later task — this milestone honest-rejects
+// (ok=false) anything but the one-boss and two-boss dual-host cases, and any loop that will not close or
+// is mis-tiled (a station outside a footprint, both bosses on one plane). WIRED: runoutFacesFor
+// (fillet_runout_faces.go) calls this on every constant-radius edge with a detected setback band; it is
+// what greens the corpus's S1/S4/T1/T4/T7/S7 (two-boss) and S6/S9/T3 (one-boss) cases.
 func extractSetbackPatches(b setbackBands, ef edgeFillet, res Resolution) ([]RailLoop, bool) {
 	t, ok := resolveSetbackTiling(b, ef)
 	if !ok {

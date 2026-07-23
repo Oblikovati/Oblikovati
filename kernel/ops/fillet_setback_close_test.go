@@ -422,6 +422,21 @@ func TestFilletEdges_S9TorusSingleBoss(t *testing.T) {
 	}
 }
 
+// TestFilletEdges_T3TorusObliqueSingleBoss is TestFilletEdges_S9TorusSingleBoss for an OBLIQUE torus boss
+// (T3, #2007): a box + ONE crossing Torus(35,10) boss whose axis is NOT normal to the host plane (the
+// "oblique" corpus family, occtparity corpus.json's T3 pick: r=8, midpoint (-8.056074683, -25.47882455,
+// 13.63558433)). The single-boss tiling must weld watertight and keep the torus wall as ONE intact
+// chorded band, footprint absorbed, every face WIRE:1 — same shape as S6/S9, proving the closure gate
+// holds for a non-normal boss axis too. Torus band area (measured post-fillet via TessellateFace, the
+// same probe S6/S9's 1061.86/1144.04 constants came from) is ~2827.23.
+func TestFilletEdges_T3TorusObliqueSingleBoss(t *testing.T) {
+	body := filletedCorpusEdge(t, "simple/T3", math.P3(-8.056074683, -25.47882455, 13.63558433), 8)
+	assertSingleBossWatertight(t, body, "T3")
+	if got := countSurfaceFacesNear[geom.Torus](body, 2827.23, 28); got != 1 {
+		t.Fatalf("wired T3: want ONE intact torus band near 2827.23 (single-boss setback), got %d", got)
+	}
+}
+
 // TestResolveSetbackTiling_TwoBossUnchanged pins the do-no-harm gate for the single-boss addition: the
 // 2-boss S1 shape still resolves to the S1 tiling (outer+inner bosses, both hosts distinct) and its sphere
 // sibling S7 keeps densifyHostArc FALSE — the flag is set ONLY by resolveSingleBossTiling, so the 2-boss
