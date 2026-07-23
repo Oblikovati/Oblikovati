@@ -208,17 +208,22 @@ func TestExtractPanelLoopU4SliverBWeldsToWingArc(t *testing.T) {
 	}
 }
 
-// TestExtractPanelLoopRejectsCoreSpan pins the U4-3 scope boundary (derivation §4-U4-3 vs §4-U4-4):
-// a CORE span (both hosts active) honest-rejects — that shape is U4-4's, not built here.
-func TestExtractPanelLoopRejectsCoreSpan(t *testing.T) {
+// TestExtractPanelLoopBuildsCoreSpan pins the U4-3/U4-4 scope handoff (derivation §4-U4-3 vs §4-U4-4):
+// a CORE span (both hosts active) now builds a valid Valence-4 loop — that shape landed in U4-4
+// (fillet_obstacle_panel_core.go); the U4-4 report covers its area/fidelity gates in detail.
+func TestExtractPanelLoopBuildsCoreSpan(t *testing.T) {
 	ef, dets, _, res := u4SliverFixture(t)
 	spans := partitionUnionStations(dets, ef)
 	core := spans[1]
 	if !core.hostA || !core.hostB {
 		t.Fatalf("fixture precondition: spans[1] = %+v, want the core span (hostA=hostB=true)", core)
 	}
-	if _, ok := extractPanelLoop(core, dets, ef, res); ok {
-		t.Errorf("extractPanelLoop(core span) ok=true, want ok=false (U4-4 scope, not U4-3)")
+	loop, ok := extractPanelLoop(core, dets, ef, res)
+	if !ok {
+		t.Fatalf("extractPanelLoop(core span) ok=false, want ok=true (U4-4)")
+	}
+	if loop.Valence() != 4 {
+		t.Errorf("extractPanelLoop(core span): Valence() = %d, want 4", loop.Valence())
 	}
 }
 

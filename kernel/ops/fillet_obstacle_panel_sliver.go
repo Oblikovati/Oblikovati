@@ -11,21 +11,23 @@ import (
 )
 
 // extractPanelLoop assembles ONE panel's valence-4 RailLoop for a panelSpan (derivation §1.4/§3.1),
-// generalizing extractObstacle to the dual-host union band. Only the SLIVER shape (exactly one host
-// active — the single-host-B obstacle shape reused wholesale, derivation §1.5) is built this slice
-// (#2007 Group C, U4-3); a CORE span (both hosts active) honest-rejects (ok=false) — that is U4-4's
-// scope, not this one's. Every rail is either REUSED verbatim (wingSection's quarter arc,
-// setbackSection's seam) or built from EXACT corner points panelSide pins to those reused rails, so
-// the loop welds to its neighbours (the wing, and the future core panel at the seam station) with no
-// drift (ADR-0042).
+// generalizing extractObstacle to the dual-host union band. Two shapes: the SLIVER (exactly one host
+// active — the single-host-B obstacle shape reused wholesale, derivation §1.5, U4-3) and the CORE
+// (both hosts active — the genuinely new dual-host loop, derivation §1.3/§4-U4-4). Every rail is
+// either REUSED verbatim (wingSection's quarter arc, setbackSection's seam) or built from EXACT
+// corner points panelSide pins to those reused rails, so the loop welds to its neighbours (the wing,
+// and the neighbouring sliver/core panel at the shared seam station) with no drift (ADR-0042).
 func extractPanelLoop(span panelSpan, dets []obstacleDetection, ef edgeFillet, res Resolution) (RailLoop, bool) {
-	activeIsB, isSliver := sliverActiveHost(span)
-	if !isSliver {
-		return RailLoop{}, false // both/neither host active: a CORE span (U4-4) or malformed input
-	}
 	detA, detB, ok := hostDetections(dets)
 	if !ok {
 		return RailLoop{}, false
+	}
+	activeIsB, isSliver := sliverActiveHost(span)
+	if !isSliver {
+		if !span.hostA || !span.hostB {
+			return RailLoop{}, false // neither host active: malformed input, never a real panelSpan
+		}
+		return buildCoreLoop(ef, res, dets, detA, detB, span.zLo, span.zHi)
 	}
 	active, inactive := detA, detB
 	if activeIsB {
