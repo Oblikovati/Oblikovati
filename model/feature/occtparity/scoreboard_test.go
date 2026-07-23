@@ -33,7 +33,9 @@ func TestScoreboardTally(t *testing.T) {
 // quarantine.go holds them out. The honest rollup dropped 91→86 simple / 93→88 all-grid, and
 // SkipQuarantine rose 1→6 (H6 + the 5). The single-boss setback tiling (#2007) then genuinely GREENED
 // S6/S9/T3 (watertight, footprint absorbed), restoring 86→89 simple / 88→91 all-grid and dropping
-// SkipQuarantine 6→3 (H6 + U3/U4, the two residual non-single-boss engine gaps).
+// SkipQuarantine 6→3 (H6 + U3/U4). The dipArcOrder obstacle-path fix (u3-dipspast-report.md) then
+// GREENED U3 (dipsPast was testing the wrong of the two crossing-bounded arcs), restoring 89→90 simple /
+// 91→92 all-grid and dropping SkipQuarantine 3→2 (H6 + U4, the residual dual-host engine gap).
 func TestOCCTBlendScoreboard(t *testing.T) {
 	dir := CorpusFixtureDir()
 	byGrid := map[string]map[Outcome]int{}
@@ -82,22 +84,23 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 	assertHardenedRollup(t, byGrid, passRollup, total[SkipQuarantine])
 }
 
-// assertHardenedRollup pins the honest post-#2007 rollup at the isWatertightSolid bar: 89 green in the
-// simple grid, 91 green across all grids, and SkipQuarantine=3 (H6 + U3/U4). The single-boss setback
-// tiling greened S6/S9/T3 (86→89 / 88→91, SkipQuarantine 6→3); U3/U4 remain quarantined (their distinct
-// engine gaps). A mismatch means either a false green slipped through or a case was over/under-quarantined
-// — see harden-green-gate-brief.md's "STOP and report" instruction.
+// assertHardenedRollup pins the honest post-#2007 rollup at the isWatertightSolid bar: 90 green in the
+// simple grid, 92 green across all grids, and SkipQuarantine=2 (H6 + U4). The single-boss setback tiling
+// greened S6/S9/T3 (86→89 / 88→91, SkipQuarantine 6→3); the dipArcOrder obstacle-path fix then greened
+// U3 (89→90 / 91→92, SkipQuarantine 3→2); U4 remains quarantined (dual-host, recon Group C). A mismatch
+// means either a false green slipped through or a case was over/under-quarantined — see
+// harden-green-gate-brief.md's "STOP and report" instruction.
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 89 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 89 (post-#2007 single-boss setback rollup)", simpleGreen)
+	if simpleGreen != 90 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 90 (post-#2007 dipArcOrder rollup)", simpleGreen)
 	}
-	if allGridGreen != 91 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 91 (post-#2007 single-boss setback rollup)", allGridGreen)
+	if allGridGreen != 92 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 92 (post-#2007 dipArcOrder rollup)", allGridGreen)
 	}
-	if skipQuarantine != 3 {
-		t.Errorf("SkipQuarantine = %d, want 3 (H6 + U3/U4, #2007)", skipQuarantine)
+	if skipQuarantine != 2 {
+		t.Errorf("SkipQuarantine = %d, want 2 (H6 + U4, #2007)", skipQuarantine)
 	}
 }
 

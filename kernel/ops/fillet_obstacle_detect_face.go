@@ -115,9 +115,18 @@ func crossingDetection(ef edgeFillet, host *topo.Face, hostIsA bool, pl geom.Pla
 // onto the fillet side (a genuine crossing, not a rim bulging away). Both detectObstacle's mid-span
 // obstacle path (crossingDetection above) and detectRunouts' runout-imprint path (runoutOnHost,
 // fillet_runout_detect.go) need this identical sequence — planeFrame → boundaryFromTangents →
-// sampleHoleRim → project2D → obstacleNodes → filletBandSide → dipsPast; only their gating (dual-host
-// reject vs independent-host admit) and result packaging differ, so it is extracted once here
-// (CLAUDE.md: no duplication) and each caller adds its own gating around the ok=false/true result.
+// sampleHoleRim → project2D → obstacleNodes → filletBandSide → dipArcOrder → dipsPast; only their
+// gating (dual-host reject vs independent-host admit) and result packaging differ, so it is extracted
+// once here (CLAUDE.md: no duplication) and each caller adds its own gating around the ok=false/true
+// result. dipArcOrder picks which of the two crossings-bounded arcs is the true dip — the two crossings
+// split the closed rim, so testing the WRONG one is a silent false-reject (#2007 U3) — and REPLACES
+// nodes with that order before returning: every downstream consumer (packDetection's pMinus/pPlus,
+// buildObstacleFeature's wallA/wallD start/end arcs, buildNotchedHost, mergeObstacleRim's "Task 2
+// dip-range convention" dip=nodes[0].I+1..nodes[1].I) hard-codes nodes[0]→nodes[1] AS the dip arc, so
+// dipsPast's verdict and the rebuild's own notion of "the dip" must agree on the SAME arc, not just the
+// boolean (an earlier version of this fix reordered only the dipsPast call and left nodes ascending —
+// dipsPast then correctly said "yes, a dip", but the rebuild still notched around the ORIGINAL
+// (majority, non-dip) arc: watertight, but ~21% off area — a self-consistent but wrong rebuild).
 // It also returns the band line and its host/fillet side sign: the runout-imprint path (solveImprint,
 // fillet_runout_imprint.go) needs both to pick the true outboard sub-arc by a signed test, rather than
 // re-deriving (wrongly, for a deep dip) an arc-size heuristic — see outboardArc.
@@ -136,9 +145,11 @@ func bandCrossings(ef edgeFillet, hostIsA bool, pl geom.Plane, fp *topo.Edge, re
 	if !ok {
 		return filletLoop{}, [2]crossing{}, flat, back, boundary, side, false
 	}
-	if !dipsPast(rim2D, nodes[0], nodes[1], boundary, side) {
+	n0, n1 := dipArcOrder(nodes, len(rim2D))
+	if !dipsPast(rim2D, n0, n1, boundary, side) {
 		return filletLoop{}, [2]crossing{}, flat, back, boundary, side, false
 	}
+	nodes = [2]crossing{n0, n1}
 	return sampled, nodes, flat, back, boundary, side, true
 }
 

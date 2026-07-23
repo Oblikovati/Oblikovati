@@ -28,23 +28,27 @@ var quarantined = map[quarantineKey]string{
 		"fillet inverted (R−r not R+r), so H6 now honestly FAILS the area gate at −1.09%. Held to document " +
 		"the defect and guard against a future coincidental pass. Do NOT un-gate until resolveArcFillet is " +
 		"rebuilt for concave open-torus rims.",
-	// U3/U4: the green-gate hardening audit (#2007, .superpowers/sdd/green-gate-validate-audit-report.md)
-	// found each result's ops.Validate().HolesContained == false — "hole loop protrudes outside the outer
+	// U4: the green-gate hardening audit (#2007, .superpowers/sdd/green-gate-validate-audit-report.md)
+	// found its result's ops.Validate().HolesContained == false — "hole loop protrudes outside the outer
 	// loop of planar face" (a malformed B-rep face). S6/S9/T3 (Group A, one-boss sphere/torus) were freed
 	// by the single-boss setback tiling (fillet_setback_*.go: 2 flanks + one central run-out absorbs the
 	// footprint with a watertight fill, boss wall intact; #2007) — each now passes the full watertight bar
 	// (Valid && Closed && Manifold && HolesContained && IsSolid) at area S6 +0.074% / S9 +0.267% / T3 +0.114%
-	// and is pinned in fingerprint_pins_test.go. U3/U4 remain: they are DIFFERENT engine gaps (recon groups
-	// B/C) — U3 is the obstacle-path dipsPast mis-detection on an oblique elliptical footprint, U4 the
-	// dual-host multi-boss composition — neither of which the single-boss setback tiling reaches. Held so a
-	// coincidental area match never again masks the residual hole-containment defect. Do NOT un-gate until
-	// ops.Validate(result).HolesContained == true for each.
-	{grid: "simple", name: "U3"}: "malformed hole-loop (HolesContained=false); area +0.502% coincidentally " +
-		"inside 1% Deps; obstacle-path dipsPast mis-detection on an oblique elliptical footprint (recon " +
-		"Group B) — NOT reached by the single-boss setback tiling (that greened S6/S9/T3); #2007.",
+	// and is pinned in fingerprint_pins_test.go. U3 (Group B, obstacle-path dipsPast mis-detection on an
+	// oblique elliptical footprint) was freed by the dipArcOrder fix (fillet_obstacle_detect.go,
+	// u3-dipspast-report.md): dipsPast tested the ascending-index arc unconditionally, which — because rim
+	// sample 0 (the curve's t=0 seam point) is an arbitrary reference unrelated to the boundary — happened
+	// to be the 53-of-64-sample BULGE arc for U3 instead of the true 11-sample dip arc that wraps through
+	// index 0; dipArcOrder now picks whichever of the two crossing-bounded arcs is actually shorter (the
+	// genuinely local mid-span excursion) before both the dip test and the downstream rebuild consume it.
+	// U3 now passes the full watertight bar at area +0.116%, pinned in fingerprint_pins_test.go. U4
+	// remains: a DIFFERENT engine gap (recon Group C) — the dual-host multi-boss composition, which
+	// neither the single-boss setback tiling nor the dipArcOrder fix reaches (detectObstacle's explicit
+	// qualifying==2 dual-host defer, Phase 2). Held so a coincidental area match never again masks the
+	// residual hole-containment defect. Do NOT un-gate until ops.Validate(result).HolesContained == true.
 	{grid: "simple", name: "U4"}: "malformed hole-loop (HolesContained=false); area +0.928% coincidentally " +
 		"inside 1% Deps; dual-host multi-boss composition (recon Group C) — NOT reached by the single-boss " +
-		"setback tiling (that greened S6/S9/T3); #2007.",
+		"setback tiling (that greened S6/S9/T3) nor the dipArcOrder obstacle-path fix (that greened U3); #2007.",
 }
 
 // quarantineReason returns the hold reason for a case and whether it is quarantined.

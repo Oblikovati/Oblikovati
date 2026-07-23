@@ -63,13 +63,52 @@ func obstacleNodes(rim []math.Point2, b boundaryLine2, res Resolution) ([2]cross
 	return [2]crossing{cs[0], cs[1]}, true
 }
 
-// dipsPast reports whether the rim actually dips PAST the boundary between the two crossings (into the
-// fillet band), vs. bulging away — the mid-arc sample (the forward arc c0→c1, wrapping the array when
-// c0.I > c1.I) must be on the fillet side. side is +1 when the fillet band is on the
-// negative-signed-distance side of the boundary (signedDist: host +ve, fillet -ve). A genuine dip has
-// the mid sample in the fillet band, so side*signedDist(mid) is NEGATIVE — hence the `< 0` test (a
-// bulge keeps the mid on the host side, giving a positive product → false).
+// dipArcOrder returns the two crossings ordered so dipsPast's forward arc (c0→c1, wrapping through the
+// array end when needed) is the SHORTER of the two candidate arcs the crossings split the closed rim
+// into. A genuine mid-span obstacle is a LOCAL excursion — a short arc relative to the whole rim — while
+// the complementary arc is the footprint's bulk sitting comfortably on the host side (ADR-4's
+// single-dip case). Rim sample 0 (the curve's t=0 seam point, sampleHoleRim) is an arbitrary reference
+// with no relation to the boundary line, so naively trusting the crossings' ascending array-index order
+// — which, by construction, can never wrap through index 0, so the arc it selects always EXCLUDES index
+// 0 — silently tests the wrong (majority, bulge) arc whenever the seam happens to fall INSIDE the true
+// short dip arc instead. That is exactly what an oblique/non-uniformly-sampled elliptical footprint can
+// do (#2007 U3: the true dip was an 11-of-64-sample arc containing index 0; ascending order handed
+// dipsPast the 53-sample bulge arc instead, which is uniformly host-side and so can never test true
+// regardless of which sample within it is examined — the defect is the ARC choice, not the sample).
+// Ties (exactly half the rim either way) keep ascending order; model-relative geometry needs no
+// tolerance here since arc length is an exact integer count, not a measured quantity.
+func dipArcOrder(nodes [2]crossing, n int) (c0, c1 crossing) {
+	arcLen := (nodes[1].I - nodes[0].I + n) % n
+	if 2*arcLen <= n {
+		return nodes[0], nodes[1]
+	}
+	return nodes[1], nodes[0]
+}
+
+// dipsPast reports whether the GIVEN forward arc (c0→c1, wrapping the array when c0.I > c1.I — the
+// caller decides which of the two candidate arcs to hand in, dipArcOrder above) genuinely dips PAST the
+// boundary into the fillet band, vs. bulging away. It tests the arc's GEOMETRIC EXTREMAL sample — the
+// deepest excursion (max −side*signedDist) among every sample strictly between c0 and c1 — rather than a
+// single INDEX-midpoint sample: an INDEX-midpoint only coincides with the arc's geometric middle when
+// the rim is sampled at uniform arc length, which a non-uniformly-sampled (oblique/elongated elliptical)
+// footprint is not — a single fixed-index sample can land where local sampling noise or curve shape
+// gives a misleading value even though the SAME arc genuinely dips elsewhere. This function trusts
+// whatever arc it is handed (the diamond wrap-around case below deliberately calls it with both
+// orderings to pin that trust) — it does not itself decide which of the two candidate arcs is the
+// obstacle; that choice is dipArcOrder's job (#2007 U3: a wrong arc CHOICE, not a wrong SAMPLE, was the
+// root cause — a uniformly-signed arc gives the same verdict for every sample in it, extremal or not).
+// side is +1 when the fillet band is on the negative-signed-distance side of the boundary (signedDist:
+// host +ve, fillet -ve). A genuine dip has its deepest sample in the fillet band, so
+// side*signedDist(extremal) is NEGATIVE — hence the `< 0` test (a bulge keeps every sample on the host
+// side, so even the least-positive sample gives a positive product → false).
 func dipsPast(rim []math.Point2, c0, c1 crossing, b boundaryLine2, side float64) bool {
-	mid := rim[(c0.I+1+((c1.I-c0.I+len(rim))%len(rim))/2)%len(rim)]
-	return side*b.signedDist(mid) < 0
+	n := len(rim)
+	arcLen := (c1.I - c0.I + n) % n
+	extremal := side * b.signedDist(rim[(c0.I+1)%n])
+	for off := 2; off <= arcLen; off++ {
+		if d := side * b.signedDist(rim[(c0.I+off)%n]); d < extremal {
+			extremal = d
+		}
+	}
+	return extremal < 0
 }

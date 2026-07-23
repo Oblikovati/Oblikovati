@@ -257,5 +257,19 @@ func byteIdentityPins() []fingerprintPin {
 		{"S6", 18044.769951207, 19602, 0x677c6f17793080c, ""},
 		{"S9", 116088.833852354, 85614, 0x93ef9087c21bf57a, ""},
 		{"T3", 130621.192627563, 91054, 0xfa008dbaf5dd4d2d, ""},
+		// U3 (simple): the Group-B obstacle-path dip-detection green (fillet_obstacle_detect.go's
+		// dipArcOrder, #2007). U3 is a box + ONE oblique/y-elongated EllipticalCylinder mid-span boss — the
+		// SAME shape as the already-green T6 (oblique EllipticalCylinder) — but dipsPast was handed the
+		// crossings in unconditional ascending rim-index order, which happened to select the 53-of-64-sample
+		// BULGE arc instead of the true 11-sample dip arc (the one wrapping through rim sample 0, the curve's
+		// arbitrary t=0 seam point); dipArcOrder now picks whichever of the two crossing-bounded arcs is
+		// actually shorter — the genuinely local mid-span excursion — before both the dip test and the
+		// downstream rebuild (buildObstacleFeature/buildNotchedHost/mergeObstacleRim, all keyed on the SAME
+		// nodes[0]→nodes[1] "Task 2" dip-range convention) consume it. Routes through the already-proven T6
+		// obstacle rebuild (rebuildableTube already admits EllipticalCylinder): watertight, hole-contained
+		// SOLID at area +0.116%. Captured on THIS HEAD (u3-dipspast-report.md); locks the obstacle rebuild so
+		// a later slice (Group C U4, dual-host) fails loud if it perturbs the U3 body. Same cross-platform-
+		// risk caveat as above.
+		{"U3", 17894.503322426473, 9452, 0xc38f33331071f8ae, ""},
 	}
 }
