@@ -35,7 +35,12 @@ func TestScoreboardTally(t *testing.T) {
 // S6/S9/T3 (watertight, footprint absorbed), restoring 86→89 simple / 88→91 all-grid and dropping
 // SkipQuarantine 6→3 (H6 + U3/U4). The dipArcOrder obstacle-path fix (u3-dipspast-report.md) then
 // GREENED U3 (dipsPast was testing the wrong of the two crossing-bounded arcs), restoring 89→90 simple /
-// 91→92 all-grid and dropping SkipQuarantine 3→2 (H6 + U4, the residual dual-host engine gap).
+// 91→92 all-grid and dropping SkipQuarantine 3→2 (H6 + U4, the residual dual-host engine gap). The U4-5
+// dual-host multi-rail weld then GREENED U4, restoring 90→91 simple / 92→93 all-grid and dropping
+// SkipQuarantine 2→1 (H6 only). The concave bore-lip rim mirror (fillet_rim_concave.go's
+// rimWithCapOrientation) then GREENED K1 (a genuine bore lip, R+r) and Z1 (a plain convex rim whose cap
+// face is stored bottom-up — the SAME cap-orientation fix resolves it at R−r), restoring 91→93 simple /
+// 93→95 all-grid with SkipQuarantine unchanged at 1.
 func TestOCCTBlendScoreboard(t *testing.T) {
 	dir := CorpusFixtureDir()
 	byGrid := map[string]map[Outcome]int{}
@@ -84,21 +89,26 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 	assertHardenedRollup(t, byGrid, passRollup, total[SkipQuarantine])
 }
 
-// assertHardenedRollup pins the honest post-#2007 rollup at the isWatertightSolid bar: 91 green in the
-// simple grid, 93 green across all grids, and SkipQuarantine=1 (H6 only). The single-boss setback tiling
+// assertHardenedRollup pins the honest post-#2007 rollup at the isWatertightSolid bar: 93 green in the
+// simple grid, 95 green across all grids, and SkipQuarantine=1 (H6 only). The single-boss setback tiling
 // greened S6/S9/T3 (86→89 / 88→91, SkipQuarantine 6→3); the dipArcOrder obstacle-path fix then greened
 // U3 (89→90 / 91→92, SkipQuarantine 3→2); the U4-5 dual-host multi-rail weld then greened U4 (90→91 /
-// 92→93, SkipQuarantine 2→1), leaving only H6 (concave open-torus, ROOT 2) held. A mismatch means either
-// a false green slipped through or a case was over/under-quarantined — see harden-green-gate-brief.md's
-// "STOP and report" instruction.
+// 92→93, SkipQuarantine 2→1). The concave bore-lip rim mirror (fillet_rim_concave.go's
+// rimWithCapOrientation, K1/Z1) then greened both: K1 is a genuine bore lip (the R+r mirror, material
+// outside the bore) and Z1 turned out to be a plain CONVEX rim whose cap face happens to be stored
+// bottom-up (capF.Reversed()==true) — solveRim's raw pl.Normal() offset the torus centre to the wrong
+// side of the cap, failing its R−r probe for a reason unrelated to concavity; the same cap-orientation fix
+// resolves it at R−r, not R+r (91→93 / 93→95), leaving only H6 (concave open-torus, ROOT 2) held. A
+// mismatch means either a false green slipped through or a case was over/under-quarantined — see
+// harden-green-gate-brief.md's "STOP and report" instruction.
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 91 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 91 (post-#2007 U4-5 dual-host rollup)", simpleGreen)
+	if simpleGreen != 93 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 93 (post-#2007 concave-rim K1/Z1 rollup)", simpleGreen)
 	}
-	if allGridGreen != 93 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 93 (post-#2007 U4-5 dual-host rollup)", allGridGreen)
+	if allGridGreen != 95 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 95 (post-#2007 concave-rim K1/Z1 rollup)", allGridGreen)
 	}
 	if skipQuarantine != 1 {
 		t.Errorf("SkipQuarantine = %d, want 1 (H6 only, #2007 U4 freed by U4-5)", skipQuarantine)

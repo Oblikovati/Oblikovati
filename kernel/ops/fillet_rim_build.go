@@ -16,17 +16,21 @@ func rebuildWithRimFillet(b *topo.Body, rf *rimFillet) (*topo.Body, error) {
 	return rebuildRim(b, rf, false)
 }
 
-// rebuildWithConcaveRimFillet is the CONCAVE dual (S2/S5): the rebuild recedes the curved host UP its
-// bump and GROWS the plate hole out to the wider plane-contact circle. Two things differ from the convex
-// path, both gated on concave=true so the convex J1 band stays byte-identical: the re-aimed curved-host
-// seam stays on a SPHERE host as a meridian ARC (a cone/cylinder seam is still the straight ruling), and
-// the torus cove band winds the OTHER way so the added material fills the void and the signed volume
-// stays positive.
+// rebuildWithConcaveRimFillet is the CONCAVE dual, shared by two callers whose solvers both flag
+// rimFillet.concave=true: the sphere/cone-host cove band (S2/S5, fillet_curved_closed_rim_concave.go —
+// the rebuild recedes the curved host UP its bump and GROWS the plate hole out to the wider plane-contact
+// circle) and the cylinder-host bore-lip mirror (K1, fillet_rim_concave.go's rimWithCapOrientation — the
+// plate hole is ALREADY the wider R+r circle, so only the winding matters here). Two things differ from
+// the convex path, both gated on concave=true so the convex J1 band stays byte-identical: the re-aimed
+// curved-host seam stays on a SPHERE host as a meridian ARC (a cone/cylinder seam — K1 included — is
+// still the straight ruling), and the torus band winds the OTHER way so the added/receded material keeps
+// the signed volume positive.
 func rebuildWithConcaveRimFillet(b *topo.Body, rf *rimFillet) (*topo.Body, error) {
 	return rebuildRim(b, rf, true)
 }
 
-// rebuildRim is the shared rim-rebuild driver; concave selects the S2/S5 seam/winding variants.
+// rebuildRim is the shared rim-rebuild driver; concave selects the reversed seam/winding variants shared
+// by the S2/S5 sphere/cone cove band and the K1-style cylinder bore-lip mirror.
 func rebuildRim(b *topo.Body, rf *rimFillet, concave bool) (*topo.Body, error) {
 	g := &rimBuild{
 		rf: rf, concave: concave, bld: topo.NewBuilder(b.IsSolid(), b.Lineage()),
@@ -126,6 +130,12 @@ func (g *rimBuild) wallSeamCurve(bottom, vc math.Point3) geom.Curve3 {
 // quarterTube is v=π/4 — the tube midpoint between the cyl-tangent contact (v=0) and the cap-tangent
 // contact (v=π/2) of a convex rim, used as the seam arc's on-arc point.
 const quarterTube = 0.7853981633974483
+
+// threeQuarterTube is v=3π/4 — the tube midpoint between the cap-tangent contact (v=π/2, unchanged) and
+// the CONCAVE bore-lip's cyl-tangent contact (v=π, the mirror of the convex v=0 equator: Torus.PointAt's
+// Major+Minor·cos v term reaches the wall radius R at v=π when major=R+r), used as the concave rim's
+// seam arc on-arc point (rimWithCapOrientation, fillet_rim_concave.go).
+const threeQuarterTube = 2.356194490192345
 
 // copyFace copies one face, re-aiming the cylinder wall and the cap onto the new circles and leaving
 // every other face untouched.

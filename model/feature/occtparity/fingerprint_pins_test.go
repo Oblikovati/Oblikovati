@@ -283,5 +283,22 @@ func byteIdentityPins() []fingerprintPin {
 		// 1e-9. Locks the dual-host weld so any later slice that perturbs the U4 body fails loud. Same
 		// cross-platform-risk caveat as above applies.
 		{"U4", 32647.755284293769, 23848, 0xf588dd3b13096eb9, ""},
+		// K1/Z1 (simple): the CONCAVE bore-lip rim mirror (fillet_rim_concave.go's rimWithCapOrientation).
+		// K1 is a genuine bore lip (cylinder radius 30, r=5): the plate material sits OUTSIDE the bore, so
+		// the rolling ball is tangent to the wall from the material side at R+r=35 (torus major 35, pinned
+		// by TestConcaveRimBuildsRPlusRTorus below), not R−r — the CONCAVE mirror of solveRim's convex R−r.
+		// Z1 (cylinder radius 10, r=1) turned out NOT to be a bore lip at all: its rim is a plain CONVEX
+		// rim (material INSIDE the cylinder, like I9), but its cap face is stored bottom-up
+		// (capF.Reversed()==true — a tower standing on its base, not a boss capped from above), so
+		// solveRim's raw pl.Normal() (which every prior corpus convex rim happened to already read as
+		// outward) placed torusCenter on the WRONG side of the cap and failed the R−r probe for a reason
+		// unrelated to concavity. The SAME cap-orientation fix (outwardPlaneNormal, already used by the
+		// S2/S5 concave arm builder) resolves Z1 at R−r=9 (torus major 9), not R+r — see
+		// TestConvexRimReversedCapBuildsRMinusRTorus. Both were FAIL(faulty) "concave rim fillet (a bore
+		// lip) is not yet supported" before this fix. Captured on THIS HEAD; they lock the concave-rim
+		// weld + the cap-orientation retry so any later rim slice fails loud if it perturbs a K1/Z1 body.
+		// Same cross-platform-risk caveat as above applies.
+		{"K1", 716214.454630634282, 67600, 0xcb1edbf4a4562d86, ""},
+		{"Z1", 7840.004567698298, 34808, 0x84c49b798620dc55, ""},
 	}
 }
