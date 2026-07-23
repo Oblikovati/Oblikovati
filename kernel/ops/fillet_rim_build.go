@@ -28,7 +28,11 @@ func rebuildWithConcaveRimFillet(b *topo.Body, rf *rimFillet) (*topo.Body, error
 
 // rebuildRim is the shared rim-rebuild driver; concave selects the S2/S5 seam/winding variants.
 func rebuildRim(b *topo.Body, rf *rimFillet, concave bool) (*topo.Body, error) {
-	g := &rimBuild{rf: rf, concave: concave, bld: topo.NewBuilder(b.IsSolid(), b.Lineage()), verts: map[*topo.Vertex]*topo.Vertex{}, edges: map[*topo.Edge]*topo.Edge{}}
+	g := &rimBuild{
+		rf: rf, concave: concave, bld: topo.NewBuilder(b.IsSolid(), b.Lineage()),
+		verts: map[*topo.Vertex]*topo.Vertex{}, edges: map[*topo.Edge]*topo.Edge{},
+		capRimReversed: capRimEdgeReversed(rf.cap, rf.rimEdge),
+	}
 	g.copyVerts(b)
 	g.addRimVerts()
 	g.copyEdges(b)
@@ -53,6 +57,10 @@ type rimBuild struct {
 	capE    *topo.Edge   // cap-tangent circle
 	seamE   *topo.Edge   // torus seam arc vc→vt
 	wallE   *topo.Edge   // re-aimed wall seam bottom→vc
+	// capRimReversed is the ORIGINAL rim edge's Reversed flag as used by the cap face, captured before the
+	// rebuild starts (see rimReplacementUse / addTorusFace, #2006). It is the one piece of source-import
+	// direction the rebuild keeps verbatim.
+	capRimReversed bool
 }
 
 func (g *rimBuild) copyVerts(b *topo.Body) {
@@ -152,14 +160,50 @@ func (g *rimBuild) loopSpecsWithRim(f *topo.Face) []topo.LoopSpec {
 func (g *rimBuild) mapUse(f *topo.Face, u *topo.EdgeUse) topo.Use {
 	switch u.Edge() {
 	case g.rf.rimEdge:
-		if f == g.rf.cap {
-			return topo.Use{Edge: g.capE, Reversed: u.Reversed()}
-		}
-		return topo.Use{Edge: g.cylE, Reversed: u.Reversed()}
+		return g.rimReplacementUse(f)
 	case g.rf.seamEdge:
 		return topo.Use{Edge: g.wallE, Reversed: u.Reversed()}
 	}
 	return topo.Use{Edge: g.edges[u.Edge()], Reversed: u.Reversed()}
+}
+
+// capRimEdgeReversed finds the ORIGINAL rim edge's use on the cap face and returns its Reversed flag —
+// captured once, before the rebuild, so addTorusFace can mirror it (see rimReplacementUse). rimFaces
+// already guarantees rim borders cap directly, so the search always finds a hit.
+func capRimEdgeReversed(cap *topo.Face, rim *topo.Edge) bool {
+	for _, l := range cap.Loops() {
+		for _, u := range l.EdgeUses() {
+			if u.Edge() == rim {
+				return u.Reversed()
+			}
+		}
+	}
+	return false
+}
+
+// rimReplacementUse returns the correctly-oriented use of the rim edge's replacement — capE on the cap
+// face, cylE on the cylinder wall — for face f. capE/cylE are FRESH edges solveRim builds with their own
+// fixed parametrization (Center/RefDir=ref/Radius, framed off the picked rim vertex), unrelated to the
+// original STEP-imported rim curve's own direction.
+//
+// The two replacements behave differently, because their LOOP ROLE differs in how it can vary:
+//   - cylE always replaces the rim on the cylinder wall's own OUTER loop (a wall's top rim is never a
+//     hole in some larger face) — the cyl-side Reversed is a fixed function of concave/convex, mirroring
+//     whatever addTorusFace hard-codes for cylE, so Validate's 2-incidence rule (opposite Reversed on a
+//     manifold edge's two uses) holds by construction.
+//   - capE's cap-side ROLE does vary: on a lone cylinder cap (I9) the rim is the cap's OUTER boundary; on
+//     a boss-root rim (R8/W6/W8/W9, #2006) the "cap" is a bigger plate and the rim bounds a HOLE loop
+//     instead. A valid B-rep's hole and outer loops are, by construction, wound OPPOSITE to each other in
+//     the same absolute sense, and the ORIGINAL rim edge's Reversed flag already encodes that correct
+//     hole-vs-outer sense (forcing it to a role-blind constant, as cylE does, satisfies Validate but winds
+//     the cap's hole the wrong way and mistessellates its area — confirmed against the corpus's expected
+//     area, not just Validate). So capE keeps the cap face's original Reversed verbatim (capRimReversed),
+//     and it is addTorusFace's OWN capE winding that adapts to mirror it, not the other way around.
+func (g *rimBuild) rimReplacementUse(f *topo.Face) topo.Use {
+	if f == g.rf.cap {
+		return topo.Use{Edge: g.capE, Reversed: g.capRimReversed}
+	}
+	return topo.Use{Edge: g.cylE, Reversed: !g.concave} // mirrors addTorusFace's Reversed=concave on cylE
 }
 
 // addTorusFace adds the toroidal band: seam up the tube, around the cap-tangent circle (opposite the
@@ -167,13 +211,19 @@ func (g *rimBuild) mapUse(f *topo.Face, u *topo.EdgeUse) topo.Use {
 // pattern, so each circle is shared with its neighbour in the opposite orientation. The CONCAVE cove
 // band (S2/S5) reverses that loop: the added material is on the far side of the tube, so the band's
 // outward normal — and thus its winding — flips, keeping the signed volume positive.
+//
+// capE's use here is NOT a fixed Fwd/Rev constant like cylE's: it is pinned to the MIRROR of
+// capRimReversed, the cap face's own (role-preserving, see rimReplacementUse) use of capE, so the two
+// faces sharing capE always end up antiparallel regardless of whether the cap's rim is an outer boundary
+// (I9) or a hole (R8/W6/W8/W9, #2006) — the one degree of freedom the source topology actually varies.
 func (g *rimBuild) addTorusFace() {
 	lin := topo.NewLineage(topo.Tok("rimfillet", "torus", 0))
+	capUse := topo.Use{Edge: g.capE, Reversed: !g.capRimReversed}
 	if g.concave {
 		g.bld.AddFace(g.rf.torus, lin,
-			topo.OuterLoop(topo.Rev(g.cylE), topo.Fwd(g.seamE), topo.Fwd(g.capE), topo.Rev(g.seamE)))
+			topo.OuterLoop(topo.Rev(g.cylE), topo.Fwd(g.seamE), capUse, topo.Rev(g.seamE)))
 		return
 	}
 	g.bld.AddFace(g.rf.torus, lin,
-		topo.OuterLoop(topo.Fwd(g.seamE), topo.Rev(g.capE), topo.Rev(g.seamE), topo.Fwd(g.cylE)))
+		topo.OuterLoop(topo.Fwd(g.seamE), capUse, topo.Rev(g.seamE), topo.Fwd(g.cylE)))
 }
