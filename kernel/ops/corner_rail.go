@@ -79,6 +79,12 @@ type RailLoop struct {
 	// every non-canal loop. It is the ONLY channel from extractor to the canal provider (ADR-C1/
 	// ADR-C2, M6') — geom never reads it, and canalProvider.Fits keys on the pointer itself.
 	Canal *CanalCorner
+	// Stations, when non-nil, carries the EXACT rolling-ball cross-section stations (centre + both
+	// host feet per z) the canalStationProvider skins into the faithful dual-host CORE panel via
+	// geom.LoftCanalStations (U4-4b, #2007 Group C). It is the analogue of Canal for the closed-form
+	// station loft: nil for every non-core loop, so the provider declines and the corpus is
+	// unaffected — only buildCoreLoop sets it, and canalStationProvider.Fits keys on the pointer.
+	Stations *CanalStationFill
 }
 
 // Valence returns the number of sides in the loop (a triangle corner is 3, a

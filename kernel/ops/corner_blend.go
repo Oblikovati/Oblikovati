@@ -25,12 +25,13 @@ import (
 type CornerBlendKind string
 
 const (
-	BlendKindNone    CornerBlendKind = ""                 // no provider claimed / produced the patch
-	BlendKindBSpline CornerBlendKind = "bspline-general"  // the universal Coons+certify fallback tier
-	BlendKindSphere  CornerBlendKind = "analytic-sphere"  // exact corner sphere (equal-radius trihedral)
-	BlendKindCoons4  CornerBlendKind = "coons4-general"   // general 4-sided ribbon-G1 Coons fill over a RailLoop
-	BlendKindTri3    CornerBlendKind = "tri3-degenerate4" // 3-sided fill: a degenerate-4 Coons patch (one corner → a pole)
-	BlendKindCanal   CornerBlendKind = "canal-rolling"    // M6' rolling-ball canal fill for a tangent-degenerate valence-4 corner (RailLoop.Canal)
+	BlendKindNone         CornerBlendKind = ""                 // no provider claimed / produced the patch
+	BlendKindBSpline      CornerBlendKind = "bspline-general"  // the universal Coons+certify fallback tier
+	BlendKindSphere       CornerBlendKind = "analytic-sphere"  // exact corner sphere (equal-radius trihedral)
+	BlendKindCoons4       CornerBlendKind = "coons4-general"   // general 4-sided ribbon-G1 Coons fill over a RailLoop
+	BlendKindTri3         CornerBlendKind = "tri3-degenerate4" // 3-sided fill: a degenerate-4 Coons patch (one corner → a pole)
+	BlendKindCanal        CornerBlendKind = "canal-rolling"    // M6' rolling-ball canal fill for a tangent-degenerate valence-4 corner (RailLoop.Canal)
+	BlendKindCanalStation CornerBlendKind = "canal-station"    // U4-4b exact-station rolling-ball canal loft for a dual-host CORE panel (RailLoop.Stations)
 )
 
 // BlendArm is one fillet converging on the junction: its rolling-ball contact path (spine), the

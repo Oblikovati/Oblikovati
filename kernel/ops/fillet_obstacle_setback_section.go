@@ -49,6 +49,27 @@ func setbackSection(zStation float64, dets []obstacleDetection, ef edgeFillet, r
 	return radiusArcRail(pA, pB, ef, zStation), true
 }
 
+// setbackStation returns the EXACT rolling-ball cross-section station at axis-station z — the arc
+// CENTRE plus its two host feet — for skinning the faithful CORE panel canal loft (U4-4b). It REUSES
+// setbackSection verbatim (the section IS a radius-ef.cyl.Radius arc, U4-2) and reads the centre and
+// endpoints straight off that arc, so a station is bit-consistent with the seam RAIL at the same z:
+// footA/footB are setbackSection's own PointAt(0)/PointAt(1) — the same points buildCoreLoop pins the
+// rim sides between — so the loft's v-boundary corners weld bit-identically to the seam. ok=false when
+// setbackSection declines (a station outside a boss's active band) or the section degenerated to a
+// straight segment (radiusArcRail's collinear fallback — no canal station there, §2.4), never lofting a
+// non-arc.
+func coreSectionStation(z float64, dets []obstacleDetection, ef edgeFillet, res Resolution) (center, footA, footB math.Point3, ok bool) {
+	sec, secOK := setbackSection(z, dets, ef, res)
+	if !secOK {
+		return math.Point3{}, math.Point3{}, math.Point3{}, false
+	}
+	arc, isArc := sec.(geom.Arc3d)
+	if !isArc {
+		return math.Point3{}, math.Point3{}, math.Point3{}, false
+	}
+	return arc.Center, arc.PointAt(0), arc.PointAt(1), true
+}
+
 // hostDetections splits a dual-host detection pair into (host A, host B), keyed on hostIsA. ok=false
 // unless exactly one A and one B are present — setbackSection is only defined for the qualifying==2
 // dual-host case (derivation §3.1), never a lone or triplicated host.

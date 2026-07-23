@@ -68,15 +68,16 @@ func TestResolveBlendHonestReject(t *testing.T) {
 }
 
 // TestResolveBlendTiersOrder pins the ADR-0051 foundation tier order: analytic-known-part first
-// (exact sphere), then the M6' canal tier (Canal-payload-marked loops only), then the general fills
-// (4-sided coons4, 3-sided tri3). See TestCanalProviderFits (corner_provider_canal_test.go) for the
-// canal-specific coverage. Supersedes the plate tier this slot held before ADR-C3.
+// (exact sphere), then the M6' canal tier (Canal-payload-marked loops only), then the U4-4b
+// exact-station canal loft (Stations-payload-marked dual-host CORE panels only), then the general fills
+// (4-sided coons4, 3-sided tri3). See TestCanalProviderFits (corner_provider_canal_test.go) and the U4
+// core tests for the payload-specific coverage. Supersedes the plate tier this slot held before ADR-C3.
 func TestResolveBlendTiersOrder(t *testing.T) {
 	tiers := blendTiers()
-	if len(tiers) != 4 {
-		t.Fatalf("expected 4 tiers, got %d", len(tiers))
+	if len(tiers) != 5 {
+		t.Fatalf("expected 5 tiers, got %d", len(tiers))
 	}
-	want := []CornerBlendKind{BlendKindSphere, BlendKindCanal, BlendKindCoons4, BlendKindTri3}
+	want := []CornerBlendKind{BlendKindSphere, BlendKindCanal, BlendKindCanalStation, BlendKindCoons4, BlendKindTri3}
 	for i, k := range want {
 		if tiers[i].Name() != k {
 			t.Errorf("tier %d: expected %q, got %q", i, k, tiers[i].Name())

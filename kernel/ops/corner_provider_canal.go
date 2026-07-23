@@ -142,6 +142,16 @@ func canalBoundaryIsocurves(surf geom.BSplineSurface) ([]canalRingSide, error) {
 // ~0.28 off-surface) is an honest reject, not a silently malformed face. It errors carrying the max
 // off-surface distance and the weld bound so the reject is diagnosable.
 func assertLoopsOnCanal(surf geom.BSplineSurface, loops []filletLoop, weld float64) error {
+	if maxDev := maxLoopSurfaceDev(surf, loops); maxDev > weld {
+		return fmt.Errorf("canalPatchLoops: max loop-to-surface distance %g exceeds weld %g (loops not on the canal surface)", maxDev, weld)
+	}
+	return nil
+}
+
+// maxLoopSurfaceDev is the max nearest-point distance from any emitted loop vertex to surf — the G0
+// on-surface residual. Shared by assertLoopsOnCanal (the Build-time gate) and canalStationProvider's
+// certificate (its MaxDev field), so the measured deviation is computed once, not duplicated.
+func maxLoopSurfaceDev(surf geom.BSplineSurface, loops []filletLoop) float64 {
 	maxDev := 0.0
 	for _, l := range loops {
 		for _, p := range l.pts {
@@ -149,10 +159,7 @@ func assertLoopsOnCanal(surf geom.BSplineSurface, loops []filletLoop, weld float
 			maxDev = stdmath.Max(maxDev, float64(foot.DistanceTo(p)))
 		}
 	}
-	if maxDev > weld {
-		return fmt.Errorf("canalPatchLoops: max loop-to-surface distance %g exceeds weld %g (loops not on the canal surface)", maxDev, weld)
-	}
-	return nil
+	return maxDev
 }
 
 // canalCertSamples / canalFootSamples are the per-rail and per-foot-locus scan densities for the canal
