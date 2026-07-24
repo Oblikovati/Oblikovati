@@ -337,5 +337,21 @@ func byteIdentityPins() []fingerprintPin {
 		// THIS HEAD; it locks the mixed-sense curved corner weld so any later slice fails loud if it perturbs
 		// the M8 body. Same cross-platform-risk caveat as above applies.
 		{"M8", 1074028.429945154, 38194, 0x82d94d8c57eed140, ""},
+		// W6/W8 (simple) + A1 (bfuseblend): the CONCAVE BOSS-BASE rim family (fillet_rim_concave.go's
+		// solveConcaveBossRim). A boss/pin (a cylinder standing on a plate) filleted at its base, where the
+		// wall meets the plate in a REENTRANT corner. solveRim's convex R−r round built a watertight solid
+		// with the DRAWEXE-exact face count but the WRONG footprint (the round bit the corner INWARD: torus
+		// major R−r, plate hole shrinking, wall extended by r) — a STABLE over-size (W6 +3.8%, W8 +5.5%,
+		// Property==fine). OCCT builds the concave cove: torus major R+r (W6 25, W8 35, A1 110), the plate
+		// hole OPENING to R+r and the wall receding by r. solveConcaveBossRim detects the concave dihedral
+		// and offsets the tube centre AXIALLY toward the boss (the direction the wall rises — the one thing
+		// the K1 bore-lip mirror got backwards); a cap-fit gate keeps the deep #2012 spillers (R8/W9) on the
+		// unchanged solveRim ladder. Result areas now MATCH OCCT to −0.000%/−0.0002% (W6 60998.06 of
+		// 60998.1; W8 64789.23 of 64789.3; A1 451532.30 of 451533.0). Captured on THIS HEAD
+		// (area-sizing-report.md); they lock the boss-base cove so any later rim slice fails loud if it
+		// perturbs a W6/W8/A1 body. Same cross-platform-risk caveat as above applies.
+		{"W6", 1013278.147300069, 67596, 0x39c85597736e6fa1, ""},
+		{"W8", 1083723.369024332, 67852, 0x2e95a5402d3049f6, ""},
+		{"A1", 18223007.902061027, 135180, 0xd04c71795cfaf4cb, "bfuseblend"},
 	}
 }

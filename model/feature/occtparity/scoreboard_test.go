@@ -110,16 +110,22 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 // at a curved-host trihedral vertex: no single ball is tangent to the boss wall at both R−r and R+r, so
 // OCCT builds an analytic 2r-torus corner patch — this weld trims the three arm faces at the corner arcs,
 // retrims the five bitten hosts, and assembles the 14-face solid), restoring 95→96 simple / 97→98
-// all-grid, SkipQuarantine unchanged at 1. A mismatch means either a false green slipped through or a case
-// was over/under-quarantined — see harden-green-gate-brief.md's "STOP and report" instruction.
+// all-grid, SkipQuarantine unchanged at 1. The concave BOSS-BASE rim cove (fillet_rim_concave.go's
+// solveConcaveBossRim) then GREENED W6/W8 (simple) and A1 (bfuseblend): a boss filleted at its base built a
+// watertight, DRAWEXE-exact-face-count solid but with solveRim's convex R−r round biting the reentrant
+// corner INWARD (a STABLE +3.8%/+5.5% footprint over-size) instead of OCCT's concave R+r cove — the fix
+// offsets the tube centre toward the boss and opens the plate hole to R+r, matching OCCT to −0.000%; a
+// cap-fit gate leaves the deep #2012 spillers (R8/W9) on the unchanged ladder — restoring 96→98 simple /
+// 98→101 all-grid, SkipQuarantine unchanged at 1. A mismatch means either a false green slipped through or a
+// case was over/under-quarantined — see harden-green-gate-brief.md's "STOP and report" instruction.
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 96 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 96 (corner-blend-weld M8: mixed-sense 2r-torus curved corner)", simpleGreen)
+	if simpleGreen != 98 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 98 (concave boss-base rim W6/W8)", simpleGreen)
 	}
-	if allGridGreen != 98 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 98 (corner-blend-weld M8: mixed-sense 2r-torus curved corner)", allGridGreen)
+	if allGridGreen != 101 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 101 (concave boss-base rim W6/W8 + bfuseblend A1)", allGridGreen)
 	}
 	if skipQuarantine != 1 {
 		t.Errorf("SkipQuarantine = %d, want 1 (H6 only, #2007 U4 freed by U4-5)", skipQuarantine)

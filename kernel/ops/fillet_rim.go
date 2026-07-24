@@ -142,6 +142,9 @@ func resolveRim(b *topo.Body, rimKey []byte, r float64) (*rimFillet, error) {
 	if !pl.Normal().AsUnit().IsParallelTo(cyl.AxisDir, 1e-6) {
 		return nil, fmt.Errorf("fillet: rim cap plane must be perpendicular to the cylinder axis")
 	}
+	if rf, handled, err := concaveBossRim(e, cylF, capF, cyl, r); handled {
+		return rf, err
+	}
 	rf, err := solveRim(b, e, cylF, capF, cyl, pl, r)
 	if !errors.Is(err, errConvexRimProbeFailed) {
 		return rf, err // success, or a hard error unrelated to the material-side probe
