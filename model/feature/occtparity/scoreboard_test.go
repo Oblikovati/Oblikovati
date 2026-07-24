@@ -104,17 +104,22 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 // welds pass-through faces to their rebuilt neighbours), restoring 93→94 simple / 95→96 all-grid. The
 // bore far-cap OUTWARD extension (Piece 3) then GREENED L9 (box − r30 quarter-cylinder notch: the R+r
 // torus far cross-section reaches past the rim, growing the adjacent flat faces outward instead of
-// biting inward), restoring 94→95 simple / 96→97 all-grid, SkipQuarantine unchanged at 1. A mismatch
-// means either a false green slipped through or a case was over/under-quarantined — see
-// harden-green-gate-brief.md's "STOP and report" instruction.
+// biting inward), restoring 94→95 simple / 96→97 all-grid, SkipQuarantine unchanged at 1. The
+// mixed-sense curved-host 2r-torus corner WELD (corner-blend-weld Slice-1b, fillet_curved_mixed_weld.go)
+// then GREENED M8 (box + boss, one convex Cyl∧Plane arm + a concave cove torus arm + a planar arm meeting
+// at a curved-host trihedral vertex: no single ball is tangent to the boss wall at both R−r and R+r, so
+// OCCT builds an analytic 2r-torus corner patch — this weld trims the three arm faces at the corner arcs,
+// retrims the five bitten hosts, and assembles the 14-face solid), restoring 95→96 simple / 97→98
+// all-grid, SkipQuarantine unchanged at 1. A mismatch means either a false green slipped through or a case
+// was over/under-quarantined — see harden-green-gate-brief.md's "STOP and report" instruction.
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 95 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 95 (corner-blend-weld N1+L9: R+r bore-wall corners)", simpleGreen)
+	if simpleGreen != 96 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 96 (corner-blend-weld M8: mixed-sense 2r-torus curved corner)", simpleGreen)
 	}
-	if allGridGreen != 97 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 97 (corner-blend-weld N1+L9: R+r bore-wall corners)", allGridGreen)
+	if allGridGreen != 98 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 98 (corner-blend-weld M8: mixed-sense 2r-torus curved corner)", allGridGreen)
 	}
 	if skipQuarantine != 1 {
 		t.Errorf("SkipQuarantine = %d, want 1 (H6 only, #2007 U4 freed by U4-5)", skipQuarantine)

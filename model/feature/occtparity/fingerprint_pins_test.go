@@ -324,5 +324,18 @@ func byteIdentityPins() []fingerprintPin {
 		// 61832.36, rel 5.8e-7 of 61832.4). Captured on THIS HEAD; it locks the bore far-cap extension so any
 		// later piece fails loud if it perturbs the L9 body. Same cross-platform-risk caveat as above.
 		{"L9", 958250.799883365, 23018, 0x2eb42ba563f1966e, ""},
+		// M8 (simple): the mixed-sense curved-host 2r-torus corner WELD (corner-blend-weld Slice-1b,
+		// fillet_curved_mixed_weld.go). M8 is box + boss (R=25), r=5 fillet on 3 edges meeting at one curved-
+		// host trihedral vertex: ONE convex Cyl∧Plane arm + a concave cove torus arm (major R+r=30) + a planar
+		// Plane∧Plane arm. No single ball is tangent to the boss wall at both R−r (the convex arm) and R+r (the
+		// cove arm), so it is NOT a sphere corner — OCCT builds an analytic 2r-TORUS corner patch (axis = the
+		// convex fillet axis, major R=2r=10, minor r=5, C=(55,30.635,105), DRAWEXE-exact). The weld consumes the
+		// committed corner arcs (fillet_curved_corner_torus.go): it trims the three arm faces at arcs a/b/c,
+		// retrims the two walls (their rails meet at a triple point) + the top plane (closing around arc d), and
+		// grows/recedes the far-runout caps into a watertight 14-FACE solid matching the DRAWEXE oracle (area
+		// 67959.44, rel 8e-7 of 67959.5; corner-patch mesh 97.63 vs analytic U·r·(R·π/2−r)=97.65). Captured on
+		// THIS HEAD; it locks the mixed-sense curved corner weld so any later slice fails loud if it perturbs
+		// the M8 body. Same cross-platform-risk caveat as above applies.
+		{"M8", 1074028.429945154, 38194, 0x82d94d8c57eed140, ""},
 	}
 }

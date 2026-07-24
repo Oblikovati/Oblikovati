@@ -82,6 +82,9 @@ func trihedralCornerBody(body *topo.Body, fils []edgeFillet, blends map[uint64]*
 	if reason := declineUnconsumedPicks(fils, arms, vid); reason != "" {
 		return nil, reason // a pick outside the welded corner would be left unrounded — decline, don't ship a partial
 	}
+	if b, reason, took := curvedMixedCornerBody(body, arms, res); took {
+		return b, reason // M8-class mixed-sense curved-host 2r-torus corner (the sphere single-ball path below is UNTOUCHED)
+	}
 	if b, reason, took := canalArmBody(body, arms, blends, vid, res); took {
 		return b, reason // ADR-C4-1: tangent-degenerate valence-4 corner → sibling canal weld (single-ball path below is UNTOUCHED)
 	}
