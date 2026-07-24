@@ -903,9 +903,10 @@ type cornerBlend struct {
 //   - two filleted edges that share a face, the third edge staying sharp → a miter seam where
 //     the two rolling-ball cylinders mutually trim (miter).
 //
-// All edges meeting at a corner must use ONE constant radius — a variable edge's faceted end
-// chords cannot meet a corner watertight, and a blend/seam has a single radius — so those and
-// any other configuration error clearly.
+// Edges meeting at a corner may carry DIFFERENT radii: an equal-radius corner solves the sphere
+// blend / mirror-plane miter seam (solveCorner's uniform path), a mixed-radius corner (P9/V9 miter,
+// A4 trihedral) routes to solveAsymmetricCorner. A variable edge's faceted end chords still cannot
+// meet a corner watertight, so a varying pick at a mixed corner is rejected there.
 func computeCorners(body *topo.Body, picks []filletPick) (map[uint64]*cornerBlend, map[uint64]*cornerMiter, error) {
 	groups := map[uint64][]filletPick{}
 	for _, p := range picks {
@@ -936,6 +937,14 @@ func computeCorners(body *topo.Body, picks []filletPick) (map[uint64]*cornerBlen
 // (3 edges, trihedral vertex) or a miter seam (2 edges sharing a face), at the corner's one shared
 // radius. Exactly one of (blend, miter) is returned; any other configuration errors.
 func solveCorner(body *topo.Body, vid uint64, ps []filletPick) (*cornerBlend, *cornerMiter, error) {
+	if !uniformCornerRadii(vid, ps) {
+		// Edges meeting at a shared corner with DIFFERENT radii (P9/V9: a box top corner, r1
+		// on one arm, r0.5 on the other; A4: a trihedral corner, r10/r5/r5): the equal-radius
+		// sphere/mirror-seam no longer applies — each arm keeps its own rolling-ball radius and
+		// the corner reconciles them (the true cyl∩cyl seam for a 2-edge miter, a torus patch for
+		// a trihedral). Routed off the byte-identical equal-radius path so that path is untouched.
+		return solveAsymmetricCorner(body, vid, ps)
+	}
 	r, err := cornerRadius(vid, ps)
 	if err != nil {
 		return nil, nil, err
@@ -964,7 +973,9 @@ func solveCorner(body *topo.Body, vid uint64, ps []filletPick) (*cornerBlend, *c
 
 // cornerRadius returns the radius every pick carries AT the shared corner vertex vid — the radius of
 // the corner sphere. A variable edge is allowed (e.g. a setback's tapered third edge) as long as its
-// radius at this corner matches the others; only the far ends may differ.
+// radius at this corner matches the others; only the far ends may differ. Reached only on the
+// equal-radius path (solveCorner routes a mixed-radius corner to solveAsymmetricCorner first), so the
+// mismatch error is now a defensive backstop rather than the primary guard.
 func cornerRadius(vid uint64, ps []filletPick) (float64, error) {
 	r := radiusAtVertex(ps[0], vid)
 	for _, p := range ps {
@@ -973,6 +984,20 @@ func cornerRadius(vid uint64, ps []filletPick) (float64, error) {
 		}
 	}
 	return r, nil
+}
+
+// uniformCornerRadii reports whether every pick carries the SAME radius at the shared corner vid. The
+// equal-radius corner treatments (the sphere blend, the mirror-plane miter seam) require it; a corner
+// whose arms differ (P9/V9, A4) takes the asymmetric path. This is exactly cornerRadius's old guard
+// condition, split out so the equal-radius path stays byte-identical to before the asymmetric work.
+func uniformCornerRadii(vid uint64, ps []filletPick) bool {
+	r := radiusAtVertex(ps[0], vid)
+	for _, p := range ps {
+		if radiusAtVertex(p, vid) != r {
+			return false
+		}
+	}
+	return true
 }
 
 // closedRimPick reports whether the two picks grouped at a corner vertex are the SAME closed edge

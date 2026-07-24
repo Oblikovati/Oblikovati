@@ -146,7 +146,10 @@ func TestFilletCornerRadiusMismatchRejected(t *testing.T) {
 		{Key: keys[1], R0: 0.3, R1: 0.3},
 		{Key: keys[2], R0: 0.5, R1: 0.5},
 	}, ops.CornerMiter, ops.FillConcaveOutward)
-	if err == nil || !strings.Contains(err.Error(), "one radius") {
-		t.Fatalf("radius-mismatch err = %v, want the one-radius-at-corner rejection", err)
+	// A mixed-radius TRIHEDRAL corner (r0.3/0.3/0.5) needs a torus corner patch (A4) — still declined,
+	// now with the reason it defers rather than the old blanket "one radius" guard (which also rejected the
+	// 2-edge miter that P9/V9 now green). It must not silently build a wrong (equal-radius) sphere.
+	if err == nil || !strings.Contains(err.Error(), "torus corner patch") {
+		t.Fatalf("radius-mismatch err = %v, want the mixed-radius-trihedral (torus patch) decline", err)
 	}
 }

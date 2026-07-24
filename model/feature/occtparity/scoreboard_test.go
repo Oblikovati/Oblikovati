@@ -122,17 +122,25 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 // non-analytic canal — but on a STRAIGHT (∥-axis) edge the rolling-ball spine is a straight line, so the
 // fillet collapses to an EXACT right circular cylinder; it is built analytically and welded through the
 // existing single-arm curved runout with an ellipse-aware host retrim (fillet_curved_retrim_ellipse.go),
-// restoring 98→99 simple / 101→102 all-grid, SkipQuarantine unchanged at 1. A mismatch means either a false
-// green slipped through or a case was over/under-quarantined — see harden-green-gate-brief.md's "STOP and
-// report" instruction.
+// restoring 98→99 simple / 101→102 all-grid, SkipQuarantine unchanged at 1. The asymmetric planar-miter
+// seam (fillet_miter_asymmetric.go) then GREENED P9/V9 (simple): two filleted box-top edges of DIFFERENT
+// radii (r1/r0.5) sharing a face were guard-rejected ("must use one radius") because the equal-radius miter
+// samples cyl1 ∩ the nF1−nF2 mirror plane — a shortcut valid only when the two cylinders coincide there;
+// unequal cylinders do not, so the seam is now the TRUE cyl0 ∩ cyl1 intersection (every point on both
+// cylinders, welding the two arm faces watertight), matching OCCT's 8-face solid at −0.21%. The equal-radius
+// corner path is untouched (routed only when radii differ), so every fingerprint pin stays byte-identical.
+// This restored 99→101 simple / 102→104 all-grid, SkipQuarantine unchanged at 1. (The mixed-radius TRIHEDRAL
+// corner A4, r10/r5/r5, needs a torus corner patch — declined for now, a tracked follow-up.) A mismatch means
+// either a false green slipped through or a case was over/under-quarantined — see harden-green-gate-brief.md's
+// "STOP and report" instruction.
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 99 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 99 (elliptic-prism ruling fillet F4)", simpleGreen)
+	if simpleGreen != 101 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 101 (asymmetric planar-miter seam P9/V9)", simpleGreen)
 	}
-	if allGridGreen != 102 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 102 (elliptic-prism ruling fillet F4)", allGridGreen)
+	if allGridGreen != 104 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 104 (asymmetric planar-miter seam P9/V9)", allGridGreen)
 	}
 	if skipQuarantine != 1 {
 		t.Errorf("SkipQuarantine = %d, want 1 (H6 only, #2007 U4 freed by U4-5)", skipQuarantine)
