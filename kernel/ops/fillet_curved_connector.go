@@ -129,6 +129,9 @@ func spliceBite(segs []endSeg, bite endSeg, conns []cornerConnector, tol float64
 	if c, ok := extensionConnectorFor(conns, bite, tol); ok {
 		return extendLoopWithBite(segs, bite, c, tol)
 	}
+	if out, ok := boreExtendBite(segs, bite, tol); ok {
+		return out, true // corner-blend-weld Piece 3: a notch (R+r) far cap that grows the loop OUTWARD (L9)
+	}
 	return spliceCornerBite(segs, bite, tol)
 }
 

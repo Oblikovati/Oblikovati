@@ -89,8 +89,8 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 	assertHardenedRollup(t, byGrid, passRollup, total[SkipQuarantine])
 }
 
-// assertHardenedRollup pins the honest rollup at the isWatertightSolid bar: 94 green in the
-// simple grid, 96 green across all grids, and SkipQuarantine=1 (H6 only). The single-boss setback tiling
+// assertHardenedRollup pins the honest rollup at the isWatertightSolid bar: 95 green in the
+// simple grid, 97 green across all grids, and SkipQuarantine=1 (H6 only). The single-boss setback tiling
 // greened S6/S9/T3 (86→89 / 88→91, SkipQuarantine 6→3); the dipArcOrder obstacle-path fix then greened
 // U3 (89→90 / 91→92, SkipQuarantine 3→2); the U4-5 dual-host multi-rail weld then greened U4 (90→91 /
 // 92→93, SkipQuarantine 2→1). The concave bore-lip rim mirror (fillet_rim_concave.go's
@@ -101,17 +101,20 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 // resolves it at R−r, not R+r (91→93 / 93→95), leaving only H6 (concave open-torus, ROOT 2) held. The
 // R+r bore/notch-wall trihedral corner (corner-blend-weld Pieces 1+2) then GREENED N1 (box − r20
 // cylinder notch; the engine used to mirror the corner into the void at R−r, now solves at R+r and
-// welds pass-through faces to their rebuilt neighbours), restoring 93→94 simple / 95→96 all-grid,
-// SkipQuarantine unchanged at 1. A mismatch means either a false green slipped through or a case was
-// over/under-quarantined — see harden-green-gate-brief.md's "STOP and report" instruction.
+// welds pass-through faces to their rebuilt neighbours), restoring 93→94 simple / 95→96 all-grid. The
+// bore far-cap OUTWARD extension (Piece 3) then GREENED L9 (box − r30 quarter-cylinder notch: the R+r
+// torus far cross-section reaches past the rim, growing the adjacent flat faces outward instead of
+// biting inward), restoring 94→95 simple / 96→97 all-grid, SkipQuarantine unchanged at 1. A mismatch
+// means either a false green slipped through or a case was over/under-quarantined — see
+// harden-green-gate-brief.md's "STOP and report" instruction.
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 94 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 94 (corner-blend-weld N1: R+r bore-wall corner)", simpleGreen)
+	if simpleGreen != 95 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 95 (corner-blend-weld N1+L9: R+r bore-wall corners)", simpleGreen)
 	}
-	if allGridGreen != 96 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 96 (corner-blend-weld N1: R+r bore-wall corner)", allGridGreen)
+	if allGridGreen != 97 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 97 (corner-blend-weld N1+L9: R+r bore-wall corners)", allGridGreen)
 	}
 	if skipQuarantine != 1 {
 		t.Errorf("SkipQuarantine = %d, want 1 (H6 only, #2007 U4 freed by U4-5)", skipQuarantine)

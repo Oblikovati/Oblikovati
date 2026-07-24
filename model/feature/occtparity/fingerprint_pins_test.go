@@ -313,5 +313,16 @@ func byteIdentityPins() []fingerprintPin {
 		// retrim, the concave cluster) fails loud if it perturbs the N1 body. Same cross-platform-risk
 		// caveat as above applies.
 		{"N1", 967610.719379026, 23816, 0x5f18c6f4452d68a8, ""},
+		// L9 (simple): the SECOND R+r bore/notch-wall corner green (corner-blend-weld Piece 3). L9 is box
+		// − r30 QUARTER-cylinder notch, r=5 fillet on 3 edges. Its bore torus arm (major R+r=35) runs out
+		// against a flat RADIAL notch face, and — because the R+r cap contact reaches r PAST the rim — the
+		// fillet's far cross-section EXTENDS the adjacent flat faces OUTWARD past the rim ((50,20)→(50,25)),
+		// the opposite of a convex inward corner bite. Piece 3 adds that outward extension: the corner
+		// far-path grows a collinear survivor edge to the rail landing (extendStraightSegToLanding), and the
+		// far-runout bite grows the loop through the off-rim tip (boreExtendBite) — both no-ops for a convex
+		// green, so byte-identical. Result: a watertight 13-FACE solid matching the DRAWEXE oracle (area
+		// 61832.36, rel 5.8e-7 of 61832.4). Captured on THIS HEAD; it locks the bore far-cap extension so any
+		// later piece fails loud if it perturbs the L9 body. Same cross-platform-risk caveat as above.
+		{"L9", 958250.799883365, 23018, 0x2eb42ba563f1966e, ""},
 	}
 }
