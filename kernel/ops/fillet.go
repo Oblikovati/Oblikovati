@@ -431,6 +431,9 @@ func curvedHostArmEdge(body *topo.Body, e *topo.Edge, p filletPick, concave Conc
 	if ef, handled, err := coneArmEdge(body, e, p); handled {
 		return ef, handled, err // CN1: exact torus arm on a convex Cone∧Plane cap (circle) edge
 	}
+	if ef, handled := ellipticalCylinderArmEdge(body, e, p); handled {
+		return ef, true, nil // F4: exact circular-cylinder arm on a convex EllipticalCylinder∧Plane ruling edge
+	}
 	if ef, handled := cylCylMiterArmEdge(body, e, p); handled {
 		return ef, true, nil // family B: exact cylinder arm on an equal-parallel Cylinder∧Cylinder miter edge (P5)
 	}

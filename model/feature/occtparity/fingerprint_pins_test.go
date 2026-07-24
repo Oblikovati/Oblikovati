@@ -353,5 +353,13 @@ func byteIdentityPins() []fingerprintPin {
 		{"W6", 1013278.147300069, 67596, 0x39c85597736e6fa1, ""},
 		{"W8", 1083723.369024332, 67852, 0x2e95a5402d3049f6, ""},
 		{"A1", 18223007.902061027, 135180, 0xd04c71795cfaf4cb, "bfuseblend"},
+		// F4 (simple): the elliptic-prism vein tracer — a convex STRAIGHT RULING edge where a plane meets a
+		// right EllipticalCylinder wall (an oblique-prism side), filleted r=10. Its constant-radius rolling-
+		// ball fillet is an EXACT right circular cylinder (the straight spine collapses the canal to a
+		// cylinder; fillet_ellipticalarm.go), welded through the single-arm curved runout with the ellipse-
+		// aware host retrim (fillet_curved_retrim_ellipse.go). Was FLAT-REFUSED (curvedAdjacentError). Pinned
+		// on THIS HEAD so any later slice touching the elliptic arm / ellipse retrim fails loud if it perturbs
+		// the F4 body. Same cross-platform-risk caveat as above applies.
+		{"F4", 3104847.833035429008, 26988, 0xa242e8277723b567, ""},
 	}
 }

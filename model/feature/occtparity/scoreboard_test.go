@@ -116,16 +116,23 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 // corner INWARD (a STABLE +3.8%/+5.5% footprint over-size) instead of OCCT's concave R+r cove — the fix
 // offsets the tube centre toward the boss and opens the plate hole to R+r, matching OCCT to −0.000%; a
 // cap-fit gate leaves the deep #2012 spillers (R8/W9) on the unchanged ladder — restoring 96→98 simple /
-// 98→101 all-grid, SkipQuarantine unchanged at 1. A mismatch means either a false green slipped through or a
-// case was over/under-quarantined — see harden-green-gate-brief.md's "STOP and report" instruction.
+// 98→101 all-grid, SkipQuarantine unchanged at 1. The elliptic-prism ruling fillet (fillet_ellipticalarm.go)
+// then GREENED F4 (simple): a convex STRAIGHT ruling edge where a plane meets a right EllipticalCylinder
+// wall (an oblique-prism side) was FLAT-REFUSED (curvedAdjacentError) because an elliptic host offset is a
+// non-analytic canal — but on a STRAIGHT (∥-axis) edge the rolling-ball spine is a straight line, so the
+// fillet collapses to an EXACT right circular cylinder; it is built analytically and welded through the
+// existing single-arm curved runout with an ellipse-aware host retrim (fillet_curved_retrim_ellipse.go),
+// restoring 98→99 simple / 101→102 all-grid, SkipQuarantine unchanged at 1. A mismatch means either a false
+// green slipped through or a case was over/under-quarantined — see harden-green-gate-brief.md's "STOP and
+// report" instruction.
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 98 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 98 (concave boss-base rim W6/W8)", simpleGreen)
+	if simpleGreen != 99 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 99 (elliptic-prism ruling fillet F4)", simpleGreen)
 	}
-	if allGridGreen != 101 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 101 (concave boss-base rim W6/W8 + bfuseblend A1)", allGridGreen)
+	if allGridGreen != 102 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 102 (elliptic-prism ruling fillet F4)", allGridGreen)
 	}
 	if skipQuarantine != 1 {
 		t.Errorf("SkipQuarantine = %d, want 1 (H6 only, #2007 U4 freed by U4-5)", skipQuarantine)

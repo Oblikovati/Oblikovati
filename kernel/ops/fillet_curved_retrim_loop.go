@@ -124,8 +124,15 @@ func unchangedLoop(l *topo.Loop) filletLoop {
 // re-orientation and splitting) or leaving the curve nil for a straight edge.
 func endSegFromUse(u *topo.EdgeUse) endSeg {
 	from, to := useFromVertex(u).Point(), useToVertex(u).Point()
-	if arc, ok := survivorCurve(u).(geom.Arc3d); ok {
-		return endSeg{from: from, to: to, curve: arc, mid: arc.PointAt(0.5), arc: true}
+	switch c := survivorCurve(u).(type) {
+	case geom.Arc3d:
+		return endSeg{from: from, to: to, curve: c, mid: c.PointAt(0.5), arc: true}
+	case geom.EllipticalArc:
+		// A curved ELLIPSE survivor (the F4 elliptic-prism vein's cap arcs) is carried as a general
+		// curve (arc=false, so the circular-only rails/retrim paths ignore it), split/trimmed by the
+		// ellipse-aware segParam/subSeg. curve!=nil keeps loopFromSegs building it as an ellipse edge,
+		// never a chord (tessellation-first), so the retrimmed host and its shared cap weld crack-free.
+		return endSeg{from: from, to: to, curve: c, mid: c.PointAt(0.5)}
 	}
 	return endSeg{from: from, to: to}
 }
@@ -264,8 +271,8 @@ func growWalk(segs []endSeg, gi int, tip math.Point3, bite endSeg, tol float64) 
 // is the near one; the old rim corner it grows past is absorbed by the fillet. ok=false for an arc, a
 // non-collinear p, or a p between the endpoints (already handled by insertSplits).
 func grownStraightSeg(s endSeg, p math.Point3, tol float64) (endSeg, bool) {
-	if s.arc {
-		return endSeg{}, false
+	if s.arc || s.curve != nil {
+		return endSeg{}, false // never grow a circular or elliptic survivor edge — only straight lines extend
 	}
 	d := s.from.VectorTo(s.to)
 	l2 := float64(d.Dot(d))
@@ -334,10 +341,13 @@ func segParam(s endSeg, p math.Point3, tol float64) (float64, bool) {
 	if float64(p.DistanceTo(s.from)) <= tol || float64(p.DistanceTo(s.to)) <= tol {
 		return 0, false
 	}
-	if !s.arc {
-		return lineParam(s.from, s.to, p, tol)
+	if s.arc {
+		return arcParam(s.curve.(geom.Arc3d), p, tol)
 	}
-	return arcParam(s.curve.(geom.Arc3d), p, tol)
+	if ea, ok := s.curve.(geom.EllipticalArc); ok {
+		return ellipticArcParam(ea, p, tol)
+	}
+	return lineParam(s.from, s.to, p, tol)
 }
 
 // lineParam is p's parameter t∈(0,1) on segment a→b, ok only when p lies on the segment within tol.
@@ -395,6 +405,11 @@ func wrapToSweep(delta, sweep float64) float64 {
 // minor span keeps the verbatim shorter-arc re-fit (byte-identity for the whole convex corpus).
 func subSeg(s endSeg, from, to math.Point3) endSeg {
 	if !s.arc {
+		if ea, ok := s.curve.(geom.EllipticalArc); ok {
+			if sub, ok := ellipticSubArc(ea, from, to); ok {
+				return endSeg{from: from, to: to, curve: sub, mid: sub.PointAt(0.5)}
+			}
+		}
 		return endSeg{from: from, to: to}
 	}
 	arc := s.curve.(geom.Arc3d)

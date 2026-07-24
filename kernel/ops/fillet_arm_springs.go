@@ -188,19 +188,42 @@ func torusSphereSpring(t geom.Torus, sp geom.Sphere, tol float64) (geom.Circle, 
 	return geom.Circle{Center: center, Normal: t.AxisDir, RefDir: t.Ref, Radius: R + r*stdmath.Cos(v)}, true
 }
 
-// cylinderArmSprings builds the two axis rulings where the tube is tangent to each host plane.
+// cylinderArmSprings builds the two axis rulings where the tube is tangent to each host, in the
+// (hostA, hostB) order the caller maps back to (ef.a, ef.b). Each host contributes a straight ruling
+// ∥ the arm axis: a PLANE host via the closed-form azimuth (cylinderPlaneRuling) and an
+// EllipticalCylinder host (F4 vein) via the tangent foot ruling (cylinderEllipticRuling) — both are
+// geom.Line, so springCapFoot crosses them with the capping plane through the SAME linePlaneFoot.
 func cylinderArmSprings(c geom.Cylinder, hostA, hostB geom.Surface) ([2]geom.Curve3, bool) {
-	plA, okA := hostA.(geom.Plane)
-	plB, okB := hostB.(geom.Plane)
-	if !okA || !okB {
-		return [2]geom.Curve3{}, false
-	}
-	r0, ok0 := cylinderPlaneRuling(c, plA)
-	r1, ok1 := cylinderPlaneRuling(c, plB)
+	r0, ok0 := cylinderHostRuling(c, hostA)
+	r1, ok1 := cylinderHostRuling(c, hostB)
 	if !ok0 || !ok1 {
 		return [2]geom.Curve3{}, false
 	}
 	return [2]geom.Curve3{r0, r1}, true
+}
+
+// cylinderHostRuling is the straight contact ruling (∥ the arm axis) where the cylinder arm touches
+// one host. A PLANE host keeps the byte-identical closed-form azimuth ruling; an EllipticalCylinder
+// host (the elliptic-prism vein) returns the ruling through the arm↔wall tangent foot. Declines for
+// any other host so a non-plane/non-elliptic pairing still floors honestly (do-no-harm).
+func cylinderHostRuling(c geom.Cylinder, host geom.Surface) (geom.Curve3, bool) {
+	switch h := host.(type) {
+	case geom.Plane:
+		return cylinderPlaneRuling(c, h)
+	case geom.EllipticalCylinder:
+		return cylinderEllipticRuling(c, h)
+	}
+	return nil, false
+}
+
+// cylinderEllipticRuling is the straight ruling where the cylinder arm is tangent to the elliptic wall:
+// the arm and wall are coaxial-invariant translation surfaces (both ∥ the extrusion axis), so their
+// tangency is a line ∥ the arm axis through the foot of the arm axis on the wall (the SAME generic
+// point-inversion armRunoutFoot uses, so the spring rail and the contact rail land identically).
+func cylinderEllipticRuling(c geom.Cylinder, ec geom.EllipticalCylinder) (geom.Line, bool) {
+	_, _, foot := geom.ClosestPointOnSurface(ec, c.Origin)
+	ln, err := geom.NewLine(foot, c.AxisDir.AsVector())
+	return ln, err == nil
 }
 
 // cylinderPlaneRuling is the ruling where the cylinder touches host plane pl: azimuth θ = atan2(−n̂·b̂,
