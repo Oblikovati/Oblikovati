@@ -85,6 +85,9 @@ func trihedralCornerBody(body *topo.Body, fils []edgeFillet, blends map[uint64]*
 	if b, reason, took := curvedMixedCornerBody(body, arms, res); took {
 		return b, reason // M8-class mixed-sense curved-host 2r-torus corner (the sphere single-ball path below is UNTOUCHED)
 	}
+	if b, reason, took := n4MixedCornerBody(body, arms, res); took {
+		return b, reason // N4-class mixed-sense BSpline corner (concave-cyl + convex-torus + planar); sphere path below UNTOUCHED
+	}
 	if b, reason, took := canalArmBody(body, arms, blends, vid, res); took {
 		return b, reason // ADR-C4-1: tangent-degenerate valence-4 corner → sibling canal weld (single-ball path below is UNTOUCHED)
 	}
