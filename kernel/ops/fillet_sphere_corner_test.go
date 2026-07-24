@@ -81,7 +81,7 @@ func TestSphereHostCornerCentre(t *testing.T) {
 			v := vertexNearest(t, body, o.vertex)
 			faces := facesAtVertex(v)
 			assertSphereHostSet(t, faces)
-			cb, err := solveBlend(v, faces, 10)
+			cb, err := solveBlend(nil, v, faces, 10)
 			if err != nil {
 				t.Fatalf("%s: solveBlend declined the sphere-host corner: %v", o.name, err)
 			}
@@ -104,7 +104,7 @@ func TestSphereHostCornerSpindleRejects(t *testing.T) {
 	body := corpusFixture(t, sphereCornerOracles[0].step) // D5, host sphere R = 150
 	v := vertexNearest(t, body, sphereCornerOracles[0].vertex)
 	faces := facesAtVertex(v)
-	if _, err := solveBlend(v, faces, 200); err == nil || err.Error() != "fillet: corner face must be planar" {
+	if _, err := solveBlend(nil, v, faces, 200); err == nil || err.Error() != "fillet: corner face must be planar" {
 		t.Fatalf("spindle r=200 on a sphere-host corner: got err %v, want %q", err, "fillet: corner face must be planar")
 	}
 }
@@ -135,7 +135,7 @@ func concaveSphereCornerFixture(t *testing.T) (*topo.Vertex, []*topo.Face) {
 // build a wrong-side (ρ=R−r instead of R+r) ball instead of rejecting; this test pins the reject.
 func TestSphereHostCornerConcaveRejects(t *testing.T) {
 	v, faces := concaveSphereCornerFixture(t)
-	if _, err := solveBlend(v, faces, 10); err == nil || err.Error() != "fillet: corner face must be planar" {
+	if _, err := solveBlend(nil, v, faces, 10); err == nil || err.Error() != "fillet: corner face must be planar" {
 		t.Fatalf("concave sphere-host corner: got err %v, want %q", err, "fillet: corner face must be planar")
 	}
 }

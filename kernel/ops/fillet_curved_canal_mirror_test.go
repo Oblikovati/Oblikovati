@@ -34,7 +34,7 @@ func s10RealArm(t *testing.T) geom.Cylinder {
 	if err != nil {
 		t.Fatalf("resolveFilletPicks: %v", err)
 	}
-	blends, miters, err := computeCorners(edges)
+	blends, miters, err := computeCorners(body, edges)
 	if err != nil {
 		t.Fatalf("computeCorners: %v", err)
 	}

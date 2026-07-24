@@ -67,7 +67,7 @@ func m7SingleArmFillet(t *testing.T, body *topo.Body) edgeFillet {
 	if err != nil {
 		t.Fatalf("resolve M7 pick: %v", err)
 	}
-	blends, miters, err := computeCorners(edges)
+	blends, miters, err := computeCorners(body, edges)
 	if err != nil {
 		t.Fatalf("compute M7 corners: %v", err)
 	}

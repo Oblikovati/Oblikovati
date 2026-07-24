@@ -59,7 +59,7 @@ func weldConeCornerFixture(t *testing.T, fx coneWeldFixture) *topo.Body {
 	for _, e := range v.Edges() {
 		picks = append(picks, filletPick{edge: e, r0: coneArmR, r1: coneArmR})
 	}
-	blends, miters, err := computeCorners(picks)
+	blends, miters, err := computeCorners(body, picks)
 	if err != nil {
 		t.Fatalf("%s: computeCorners: %v", fx.name, err)
 	}

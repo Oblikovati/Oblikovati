@@ -34,7 +34,7 @@ func nearlyPt(got, want math.Point3) bool {
 func TestSolveBlend_B3CurvedCorner(t *testing.T) {
 	body := importCorpusSolid(t, "simple/B3")
 	picks := cornerEdgePicks(t, body, math.P3(0, -50, 100), 10)
-	blends, _, err := computeCorners(picks)
+	blends, _, err := computeCorners(body, picks)
 	if err != nil {
 		t.Fatalf("computeCorners on B3 curved corner errored (still rejecting curved host): %v", err)
 	}

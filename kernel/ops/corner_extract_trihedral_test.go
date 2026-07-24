@@ -85,7 +85,7 @@ func realTrihedralBlend(t *testing.T) *cornerBlend {
 		t.Fatalf("SolidBlock: %v", err)
 	}
 	picks := cornerEdgePicks(t, box, math.P3(0, 0, 0), 1)
-	blends, miters, err := computeCorners(picks)
+	blends, miters, err := computeCorners(box, picks)
 	if err != nil {
 		t.Fatalf("computeCorners: %v", err)
 	}

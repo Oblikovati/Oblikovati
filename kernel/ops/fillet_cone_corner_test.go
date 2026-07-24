@@ -101,7 +101,7 @@ func TestConeHostCornerCentre_Exact(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			v, faces := coneCornerExactFixture(t, c)
 			assertConeHostSet(t, faces)
-			cb, err := solveBlend(v, faces, coneCornerR)
+			cb, err := solveBlend(nil, v, faces, coneCornerR)
 			if err != nil {
 				t.Fatalf("%s: solveBlend declined the cone-host corner: %v", c.name, err)
 			}
@@ -128,7 +128,7 @@ func TestConeHostCornerCentre_Imported(t *testing.T) {
 			v := vertexNearest(t, body, c.vertex)
 			faces := facesAtVertex(v)
 			assertConeHostSet(t, faces)
-			cb, err := solveBlend(v, faces, coneCornerR)
+			cb, err := solveBlend(nil, v, faces, coneCornerR)
 			if err != nil {
 				t.Fatalf("%s: solveBlend declined the imported cone-host corner: %v", c.name, err)
 			}
@@ -346,7 +346,7 @@ func coneConcaveFixture(t *testing.T) (*topo.Vertex, []*topo.Face) {
 // witness: flipping the gate (sgn<=0 → sgn>=0) would let this fixture's sgn = −cos α through.
 func TestConeHostCornerConcaveRejects(t *testing.T) {
 	v, faces := coneConcaveFixture(t)
-	if _, err := solveBlend(v, faces, coneCornerR); err == nil || err.Error() != "fillet: corner face must be planar" {
+	if _, err := solveBlend(nil, v, faces, coneCornerR); err == nil || err.Error() != "fillet: corner face must be planar" {
 		t.Fatalf("concave cone-host corner: got err %v, want %q", err, "fillet: corner face must be planar")
 	}
 }
@@ -385,7 +385,7 @@ func TestConeHostCornerUnsupportedMixDeclines(t *testing.T) {
 	if _, _, _, ok := coneHostCorner(faces); ok {
 		t.Fatalf("coneHostCorner accepted a 2-cone + 1-plane host set; want ok=false")
 	}
-	if _, err := solveBlend(v, faces, coneCornerR); err == nil || err.Error() != "fillet: corner face must be planar" {
+	if _, err := solveBlend(nil, v, faces, coneCornerR); err == nil || err.Error() != "fillet: corner face must be planar" {
 		t.Fatalf("unsupported cone mix: got err %v, want %q", err, "fillet: corner face must be planar")
 	}
 }

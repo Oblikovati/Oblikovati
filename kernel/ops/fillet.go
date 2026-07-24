@@ -149,7 +149,7 @@ func filletResolvedEdges(body *topo.Body, edges []filletPick, concave ConcaveFil
 	if err := validateFilletRadii(edges, concave); err != nil {
 		return nil, err // #1800: reject an over-large radius before it self-intersects
 	}
-	blends, miters, err := computeCorners(edges)
+	blends, miters, err := computeCorners(body, edges)
 	if err != nil {
 		return nil, err
 	}
@@ -903,7 +903,7 @@ type cornerBlend struct {
 // All edges meeting at a corner must use ONE constant radius — a variable edge's faceted end
 // chords cannot meet a corner watertight, and a blend/seam has a single radius — so those and
 // any other configuration error clearly.
-func computeCorners(picks []filletPick) (map[uint64]*cornerBlend, map[uint64]*cornerMiter, error) {
+func computeCorners(body *topo.Body, picks []filletPick) (map[uint64]*cornerBlend, map[uint64]*cornerMiter, error) {
 	groups := map[uint64][]filletPick{}
 	for _, p := range picks {
 		groups[p.edge.StartVertex().ID()] = append(groups[p.edge.StartVertex().ID()], p)
@@ -915,7 +915,7 @@ func computeCorners(picks []filletPick) (map[uint64]*cornerBlend, map[uint64]*co
 		if len(ps) < 2 {
 			continue
 		}
-		cb, cm, err := solveCorner(vid, ps)
+		cb, cm, err := solveCorner(body, vid, ps)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -932,7 +932,7 @@ func computeCorners(picks []filletPick) (map[uint64]*cornerBlend, map[uint64]*co
 // solveCorner solves the corner treatment at vertex vid where the picks ps meet: a sphere blend
 // (3 edges, trihedral vertex) or a miter seam (2 edges sharing a face), at the corner's one shared
 // radius. Exactly one of (blend, miter) is returned; any other configuration errors.
-func solveCorner(vid uint64, ps []filletPick) (*cornerBlend, *cornerMiter, error) {
+func solveCorner(body *topo.Body, vid uint64, ps []filletPick) (*cornerBlend, *cornerMiter, error) {
 	r, err := cornerRadius(vid, ps)
 	if err != nil {
 		return nil, nil, err
@@ -941,7 +941,7 @@ func solveCorner(vid uint64, ps []filletPick) (*cornerBlend, *cornerMiter, error
 	faces := facesAtVertex(v)
 	switch {
 	case len(ps) == 3 && len(faces) == 3:
-		cb, err := solveBlend(v, faces, r)
+		cb, err := solveBlend(body, v, faces, r)
 		return cb, nil, err
 	case len(ps) == 2:
 		if closedRimPick(ps) {
@@ -1015,9 +1015,9 @@ func edgesOf(ps []filletPick) []*topo.Edge {
 // matching OCCT's equal-radius corner KPart (BREP surface code 4). A ONE sphere + two planes host set
 // solves the same analytic corner via sphereHostCorner (SP2). Any other host mix (two curved faces, a
 // cone/torus host, or ≥2 curved faces) still returns "corner face must be planar" (do-no-harm).
-func solveBlend(v *topo.Vertex, faces []*topo.Face, r float64) (*cornerBlend, error) {
+func solveBlend(body *topo.Body, v *topo.Vertex, faces []*topo.Face, r float64) (*cornerBlend, error) {
 	if cyl, planes, ok := cylinderHostCorner(faces); ok {
-		return solveCurvedBlend(v, faces, cyl, planes, r) // curved rim: analytic sphere corner
+		return solveCurvedBlend(body, v, faces, cyl, planes, r) // curved rim: analytic sphere corner
 	}
 	// SP2: a sphere host + two planes solves the analytic sphere corner too (sphere-host campaign).
 	// Ordered AFTER the untouched cylinderHostCorner and before solvePlanarBlend, so the cylinder (M5)

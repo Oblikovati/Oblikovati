@@ -58,7 +58,7 @@ func u4Fillet(t *testing.T) (*topo.Body, []edgeFillet, Resolution) {
 	if err != nil {
 		t.Fatalf("resolveFilletPicks(U4): %v", err)
 	}
-	blends, miters, err := computeCorners(picks)
+	blends, miters, err := computeCorners(body, picks)
 	if err != nil {
 		t.Fatalf("computeCorners(U4): %v", err)
 	}

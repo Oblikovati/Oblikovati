@@ -102,7 +102,7 @@ func t4RunoutFils(t *testing.T) (*topo.Body, []edgeFillet) {
 	if err != nil {
 		t.Fatalf("t4RunoutFils: resolveFilletPicks: %v", err)
 	}
-	blends, miters, err := computeCorners(edges)
+	blends, miters, err := computeCorners(body, edges)
 	if err != nil {
 		t.Fatalf("t4RunoutFils: computeCorners: %v", err)
 	}

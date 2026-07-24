@@ -201,7 +201,7 @@ func TestClassifyEndCornersExcludesKGreaterThanOne(t *testing.T) {
 	e2 := edgeBetween(t, b, v, vertexNear(t, b, math.P3(93.969262078591, -34.20201433256, 0)))
 	picks := []filletPick{{edge: e1, r0: 1, r1: 1}, {edge: e2, r0: 1, r1: 1}}
 
-	blends, miters, err := computeCorners(picks)
+	blends, miters, err := computeCorners(b, picks)
 	if err != nil {
 		t.Fatalf("computeCorners: %v", err)
 	}

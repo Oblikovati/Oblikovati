@@ -60,7 +60,7 @@ func d9CornerArms(t *testing.T, body *topo.Body) ([]edgeFillet, cornerWeld, Reso
 	if err != nil {
 		t.Fatalf("resolve D9 picks: %v", err)
 	}
-	blends, miters, err := computeCorners(edges)
+	blends, miters, err := computeCorners(body, edges)
 	if err != nil {
 		t.Fatalf("compute D9 corners: %v", err)
 	}

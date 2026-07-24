@@ -57,8 +57,15 @@ func cylinderHostCorner(faces []*topo.Face) (geom.Cylinder, [2]*topo.Face, bool)
 // (m5-curved-arm-derivation.md §D5, OCCT BREP code 4). Returns the "corner face must be planar" reject
 // (do-no-harm) when no equal-r ball fits (spindle R≤r, the plane-pair line misses the offset cylinder,
 // or the solved centre is inconsistent) — so a declined curved corner still errors exactly as before.
-func solveCurvedBlend(v *topo.Vertex, faces []*topo.Face, cyl geom.Cylinder, planes [2]*topo.Face, r float64) (*cornerBlend, error) {
+func solveCurvedBlend(body *topo.Body, v *topo.Vertex, faces []*topo.Face, cyl geom.Cylinder, planes [2]*topo.Face, r float64) (*cornerBlend, error) {
 	res := curvedCornerResolution(v, cyl, planes)
+	// corner-blend-weld Slice-1 Piece A: a MIXED concave trihedral corner (M5/L8/M8/N4/O1/H7) rolls its
+	// ball with PER-FACE tangency signs (M5: pl0 −r, pl1 +r, cylinder R−r → OCCT (45,14.49,45)), which a
+	// single wall-ε cannot place. Gated on a concave incident edge so every convex corner (B3 + N1/L9 +
+	// ~60 curved greens) keeps the untouched single-ε path below — byte-identical do-no-harm.
+	if cornerHasConcaveArm(v) {
+		return solveConcaveCurvedBlend(body, v, faces, cyl, planes, r, res)
+	}
 	eps := cornerWallRadialSign(faces, cyl, v.Point()) // +1 boss (R−r) / −1 bore/notch (R+r) — corner-blend-weld foundation
 	c, ok := curvedCornerCenter(cyl, planes, r, eps, v, res)
 	if !ok || !curvedCornerConsistent(c, cyl, planes, r, eps, res) {
@@ -251,13 +258,22 @@ func planeFootPoint(f *topo.Face, c math.Point3) math.Point3 {
 // inside — identical to the all-planar solve). A third row d·c = d·vertex fixes p0 at the vertex's
 // d-station so the downstream root pick is well-conditioned. ok=false when the planes are near-parallel.
 func planePairLine(planes [2]*topo.Face, r float64, vertex math.Point3) (math.Point3, math.Vector3, bool) {
+	return planePairLineSigned(planes, r, -1, -1, vertex) // legacy convex sense: both centres r INSIDE (−r)
+}
+
+// planePairLineSigned is planePairLine with a PER-PLANE offset sign s ∈ {−1,+1}: each plane contributes
+// n̂·c = n̂·origin + sᵢ·r, so a MIXED concave corner (M5: pl0 −r, pl1 +r) pins the centre r into MATERIAL
+// on the −1 plane and r into the VOID on the +1 plane (corner-blend-weld Slice-1 Piece A). s0=s1=−1
+// reduces byte-identically to the legacy all-inside solve (+(−1)·r ≡ −r in IEEE), so the convex path is
+// untouched. ok=false when the two planes are near-parallel (singular 3×3).
+func planePairLineSigned(planes [2]*topo.Face, r, s0, s1 float64, vertex math.Point3) (math.Point3, math.Vector3, bool) {
 	pl0, pl1 := planes[0].Geometry().(geom.Plane), planes[1].Geometry().(geom.Plane)
 	n0, n1 := outwardPlaneNormal(planes[0], pl0), outwardPlaneNormal(planes[1], pl1)
 	d := n0.Cross(n1)
 	a := [3][3]float64{{n0.X, n0.Y, n0.Z}, {n1.X, n1.Y, n1.Z}, {d.X, d.Y, d.Z}}
 	b := [3]float64{
-		n0.Dot(pl0.Origin.AsVector()) - r,
-		n1.Dot(pl1.Origin.AsVector()) - r,
+		n0.Dot(pl0.Origin.AsVector()) + s0*r,
+		n1.Dot(pl1.Origin.AsVector()) + s1*r,
 		d.Dot(vertex.AsVector()),
 	}
 	x, ok := solve3(a, b)
