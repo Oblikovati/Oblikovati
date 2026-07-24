@@ -25,7 +25,7 @@ import (
 func TestMiterTorusArmSideSelection(t *testing.T) {
 	res := testArmResolution()
 	cyl, pl, n := cylAxis(0, 0, 1, 50), planeAtZ(100), armOutward(0, 0, 1)
-	convex, ok := torusArmSurface(cyl, pl, n, 5, res)
+	convex, ok := torusArmSurface(cyl, pl, n, 5, 1, res)
 	if !ok {
 		t.Fatalf("torusArmSurface (convex) declined a valid rim")
 	}
@@ -51,7 +51,7 @@ func TestMiterTorusArmSideSelection(t *testing.T) {
 func TestMiterCylinderArmSideSelection(t *testing.T) {
 	res := testArmResolution()
 	e, cyl, pl, n := concaveBossFixture(t)
-	convex, ok := cylinderArmSurface(e, cyl, pl, n, 10)
+	convex, ok := cylinderArmSurface(e, cyl, pl, n, 10, 1)
 	if !ok {
 		t.Fatalf("cylinderArmSurface (convex) declined a valid boss edge")
 	}

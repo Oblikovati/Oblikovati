@@ -59,8 +59,9 @@ func cylinderHostCorner(faces []*topo.Face) (geom.Cylinder, [2]*topo.Face, bool)
 // or the solved centre is inconsistent) — so a declined curved corner still errors exactly as before.
 func solveCurvedBlend(v *topo.Vertex, faces []*topo.Face, cyl geom.Cylinder, planes [2]*topo.Face, r float64) (*cornerBlend, error) {
 	res := curvedCornerResolution(v, cyl, planes)
-	c, ok := curvedCornerCenter(cyl, planes, r, v, res)
-	if !ok || !curvedCornerConsistent(c, cyl, planes, r, res) {
+	eps := cornerWallRadialSign(faces, cyl, v.Point()) // +1 boss (R−r) / −1 bore/notch (R+r) — corner-blend-weld foundation
+	c, ok := curvedCornerCenter(cyl, planes, r, eps, v, res)
+	if !ok || !curvedCornerConsistent(c, cyl, planes, r, eps, res) {
 		return nil, fmt.Errorf("fillet: corner face must be planar")
 	}
 	sph, err := geom.NewSphere(c, r)
@@ -78,8 +79,8 @@ func solveCurvedBlend(v *topo.Vertex, faces []*topo.Face, cyl geom.Cylinder, pla
 // but on the wrong side of the corner — so selectCornerRoot re-picks by station domain (see below).
 // ok=false on a spindle (R−r collapses), parallel planes (no line), the line clearing the offset
 // cylinder, or an ambiguous corner where the station witness admits neither/both roots (do-no-harm).
-func curvedCornerCenter(cyl geom.Cylinder, planes [2]*topo.Face, r float64, v *topo.Vertex, res Resolution) (math.Point3, bool) {
-	rho := cyl.Radius - r
+func curvedCornerCenter(cyl geom.Cylinder, planes [2]*topo.Face, r, eps float64, v *topo.Vertex, res Resolution) (math.Point3, bool) {
+	rho := cyl.Radius - eps*r // boss ε=+1 → R−r (byte-identical); bore/notch ε=−1 → R+r
 	if rho < curvedCornerBandK*res.Weld() {
 		return math.Point3{}, false // spindle: the convex ball reaches the axis, no fillet
 	}
@@ -92,6 +93,29 @@ func curvedCornerCenter(cyl geom.Cylinder, planes [2]*topo.Face, r float64, v *t
 		return math.Point3{}, false
 	}
 	return selectCornerRoot(cyl, planes, r, v, p0.TranslateBy(d.Scale(t)), res)
+}
+
+// cornerWallRadialSign is ε ∈ {+1,−1} for the curved corner's cylinder host: +1 BOSS (material inside
+// the wall → corner sphere at R−r, the historical case) and −1 BORE/NOTCH (material OUTSIDE the wall →
+// R+r; corner-blend-weld foundation). It reads the cylinder host FACE's material-outward normal (n_C)
+// at the corner and compares it to the outward radial r̂ = unit(V − axis_foot): n_C·r̂ ≥ 0 is a boss. It
+// DEFAULTS to +1 when the cylinder face or radial is unreadable, so a boss stays byte-identical to the
+// prior code; a bore always has a well-defined radial normal.
+func cornerWallRadialSign(faces []*topo.Face, cyl geom.Cylinder, v math.Point3) float64 {
+	rhat, err := math.UnitVector3FromVector(cylinderBallCenter(cyl, v).VectorTo(v))
+	if err != nil {
+		return 1
+	}
+	for _, f := range faces {
+		if c, isCyl := f.Geometry().(geom.Cylinder); isCyl && c == cyl {
+			nC, ok := outwardFaceNormal(f, v)
+			if ok && nC.Dot(rhat.AsVector()) < 0 {
+				return -1
+			}
+			return 1
+		}
+	}
+	return 1
 }
 
 // selectCornerRoot re-roots the corner ball at a tangent/diametral dihedron (n7-runout-rederivation.md
@@ -148,7 +172,7 @@ func cornerCylinderArms(v *topo.Vertex, r float64, res Resolution) []cornerArm {
 		if !ok {
 			continue
 		}
-		spine, ok := cylinderArmSurface(e, wc, pl, outwardN, r)
+		spine, ok := cylinderArmSurface(e, wc, pl, outwardN, r, convexArmWallSign(e, wc))
 		if !ok {
 			continue
 		}
@@ -311,7 +335,7 @@ func cylinderWallPoint(cyl geom.Cylinder, c math.Point3) math.Point3 {
 // witness (selectCornerRoot); a material-inward-only test would wrongly reject it. A magnitude failure
 // (ill-conditioned solve, or a non-tangent centre) still makes solveCurvedBlend return the do-no-harm
 // reject rather than emit a bad corner.
-func curvedCornerConsistent(c math.Point3, cyl geom.Cylinder, planes [2]*topo.Face, r float64, res Resolution) bool {
+func curvedCornerConsistent(c math.Point3, cyl geom.Cylinder, planes [2]*topo.Face, r, eps float64, res Resolution) bool {
 	for _, f := range planes {
 		pl := f.Geometry().(geom.Plane)
 		n := outwardPlaneNormal(f, pl)
@@ -322,7 +346,7 @@ func curvedCornerConsistent(c math.Point3, cyl geom.Cylinder, planes [2]*topo.Fa
 	a := cyl.AxisDir.AsVector()
 	w := cyl.Origin.VectorTo(c)
 	dist := float64(w.Sub(a.Scale(w.Dot(a))).Length())
-	return stdmath.Abs(dist-(cyl.Radius-r)) < res.Weld()
+	return stdmath.Abs(dist-(cyl.Radius-eps*r)) < res.Weld() // boss ε=+1 → R−r; bore/notch ε=−1 → R+r
 }
 
 // curvedCornerResolution builds the model-relative weld tolerance for the corner from its own geometry

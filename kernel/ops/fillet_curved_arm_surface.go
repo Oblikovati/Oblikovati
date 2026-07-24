@@ -25,16 +25,20 @@ const armSpindleBand = 4
 
 // torusArmSurface builds the config-(i) exact torus arm (m5-curved-arm-derivation.md §D2): a
 // rolling-ball fillet of radius r on the CIRCLE edge where cylinder cyl meets plane pl with the axis
-// perpendicular to the plane. The tube minor radius is r; the major radius is R−r for the convex
-// external rim (the corpus case — a protruding boss cap), and the centre is the cylinder axis
-// projected onto the plane, offset r into the material (opposite the plane's outward normal). Built
-// via NewTorusWithRef so the u=0 seam aligns with the boss wall (Oblikovati#129). Returns false when
-// R−r collapses onto the axis (r ≥ R): a self-intersecting spindle torus is never emitted.
+// perpendicular to the plane. The tube minor radius is r; the major radius is R−ε·r where ε=+1 for a
+// BOSS wall (material inside the cylinder — the historical convex-external rim, major R−r) and ε=−1
+// for a BORE/NOTCH wall (material OUTSIDE the cylinder, so the tube contacts the wall at its inner
+// equator, major R+r; corner-blend-weld foundation, N1/L9). The centre is the cylinder axis projected
+// onto the plane, offset r into the material (opposite the plane's outward normal) — the SAME for both
+// senses (the torus is coaxial with the wall; only the major radius flips). Built via NewTorusWithRef
+// so the u=0 seam aligns with the boss wall (Oblikovati#129). Returns false when R−r collapses onto the
+// axis (r ≥ R, boss only): a self-intersecting spindle torus is never emitted. ε=+1 reproduces the
+// pre-foundation code byte-for-byte (R − (+1)·r = R−r).
 //
-// Example: torusArmSurface(bossWall{R:50}, topCap{z:100}, 10, res) → torus centre (0,0,90), axis ẑ,
-// major 40, minor 10 (the B3 top-rim arm, OCCT BREP `5 0 0 90 0 0 1 … 40 10`).
-func torusArmSurface(cyl geom.Cylinder, pl geom.Plane, outwardN math.UnitVector3, r float64, res Resolution) (geom.Torus, bool) {
-	majorR := cyl.Radius - r
+// Example: torusArmSurface(bossWall{R:50}, topCap{z:100}, …, 10, +1, res) → torus centre (0,0,90), axis
+// ẑ, major 40, minor 10 (the B3 top-rim arm, OCCT BREP `5 0 0 90 0 0 1 … 40 10`).
+func torusArmSurface(cyl geom.Cylinder, pl geom.Plane, outwardN math.UnitVector3, r, eps float64, res Resolution) (geom.Torus, bool) {
+	majorR := cyl.Radius - eps*r
 	if majorR < armSpindleBand*res.Weld() {
 		return geom.Torus{}, false
 	}
@@ -48,13 +52,16 @@ func torusArmSurface(cyl geom.Cylinder, pl geom.Plane, outwardN math.UnitVector3
 // cylinderArmSurface builds the config-(ii) exact cylinder arm (m5-curved-arm-derivation.md §D3): a
 // rolling-ball fillet of radius r on the LINE edge where cylinder cyl meets plane pl with the axis
 // parallel to the plane. The fillet cylinder's axis is the ruling of P_r∩C_ρ (the offset plane meets
-// the coaxial offset cylinder of radius ρ=R−r in a pair of rulings; edge selects the near one) and
-// its radius is r. Returns false when P_r clears C_ρ (no real ruling — the plane misses the wall).
+// the coaxial offset cylinder of radius ρ=R−ε·r in a pair of rulings; edge selects the near one) and
+// its radius is r. ε=+1 for a BOSS wall (material inside → ρ=R−r, the historical case) and ε=−1 for a
+// BORE/NOTCH wall (material OUTSIDE → ρ=R+r; corner-blend-weld foundation, N1/L9). ε=+1 reproduces the
+// pre-foundation code byte-for-byte. Returns false when P_r clears C_ρ (no real ruling — the plane
+// misses the offset cylinder).
 //
-// Example: cylinderArmSurface(wallEdge, bossWall{R:50}, radialPlane, 10) → radius-10 cylinder about
-// the wall ruling (the B3 vertical-wall arm, OCCT BREP `2 … 10`).
-func cylinderArmSurface(edge *topo.Edge, cyl geom.Cylinder, pl geom.Plane, outwardN math.UnitVector3, r float64) (geom.Cylinder, bool) {
-	rho := cyl.Radius - r
+// Example: cylinderArmSurface(wallEdge, bossWall{R:50}, radialPlane, …, 10, +1) → radius-10 cylinder
+// about the wall ruling (the B3 vertical-wall arm, OCCT BREP `2 … 10`).
+func cylinderArmSurface(edge *topo.Edge, cyl geom.Cylinder, pl geom.Plane, outwardN math.UnitVector3, r, eps float64) (geom.Cylinder, bool) {
+	rho := cyl.Radius - eps*r
 	if rho <= 0 {
 		return geom.Cylinder{}, false // convex spindle: the offset cylinder has collapsed
 	}

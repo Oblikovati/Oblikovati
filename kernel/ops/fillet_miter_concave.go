@@ -29,7 +29,7 @@ func curvedMiterTorusArm(cyl geom.Cylinder, pl geom.Plane, outwardN math.UnitVec
 		}
 		return nil, false
 	}
-	if t, ok := torusArmSurface(cyl, pl, outwardN, r, res); ok {
+	if t, ok := torusArmSurface(cyl, pl, outwardN, r, 1, res); ok { // ε=+1: the convex miter rim is a boss (R−r); bore-miter is a later slice
 		return t, true
 	}
 	return nil, false
@@ -45,7 +45,7 @@ func curvedMiterCylinderArm(e *topo.Edge, cyl geom.Cylinder, pl geom.Plane, outw
 		}
 		return nil, false
 	}
-	if c, ok := cylinderArmSurface(e, cyl, pl, outwardN, r); ok {
+	if c, ok := cylinderArmSurface(e, cyl, pl, outwardN, r, 1); ok { // ε=+1: the convex miter arm is a boss (R−r); bore-miter is a later slice
 		return c, true
 	}
 	return nil, false

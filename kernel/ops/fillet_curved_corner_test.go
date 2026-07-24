@@ -83,7 +83,7 @@ func cornerHostInputs(t *testing.T, rel string, p math.Point3, r float64) (geom.
 func TestCurvedCornerCenter_PicksInDomainRootAtTangentDihedron(t *testing.T) {
 	cyl, planes, v, r := n7CornerInputs(t)
 	res := curvedCornerResolution(v, cyl, planes)
-	c, ok := curvedCornerCenter(cyl, planes, r, v, res)
+	c, ok := curvedCornerCenter(cyl, planes, r, 1, v, res)
 	if !ok {
 		t.Fatalf("curvedCornerCenter declined the N7 tangent-dihedron corner")
 	}
@@ -98,7 +98,7 @@ func TestCurvedCornerCenter_PicksInDomainRootAtTangentDihedron(t *testing.T) {
 func TestCurvedCornerCenter_CleanOctantUnchanged(t *testing.T) {
 	cyl, planes, v, r := cleanOctantInputs(t)
 	res := curvedCornerResolution(v, cyl, planes)
-	c, ok := curvedCornerCenter(cyl, planes, r, v, res)
+	c, ok := curvedCornerCenter(cyl, planes, r, 1, v, res)
 	if !ok {
 		t.Fatalf("curvedCornerCenter declined the clean B3 octant")
 	}

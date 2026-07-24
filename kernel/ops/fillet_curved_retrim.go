@@ -155,9 +155,12 @@ func sphereContactCircle(sph geom.Sphere, tor geom.Torus, res Resolution) (math.
 	return center, k * tor.MajorRadius, true
 }
 
-// wallContactCircle is the torus↔wall contact: the torus outer equator (radius ρ+r) in the spine
-// plane, which on the exact geometry coincides with the wall (radius R, coaxial). Rejects a
-// non-coaxial or non-tangent wall (torus centre off the axis, or ρ+r ≠ R beyond the model tolerance).
+// wallContactCircle is the torus↔wall contact: the torus equator that coincides with the wall (radius R,
+// coaxial). For a BOSS-side arm (major R−r) that is the OUTER equator major+minor = R; for a BORE/NOTCH
+// arm (major R+r, corner-blend-weld foundation — the tube sits OUTSIDE the wall and touches it from the
+// material side) it is the INNER equator major−minor = R. Either equator lands the contact circle at
+// radius R on the axis, so the returned circle is the same; only the tangency test admits both. Rejects
+// a non-coaxial wall or one tangent to NEITHER equator.
 func wallContactCircle(cyl geom.Cylinder, tor geom.Torus, res Resolution) (math.Point3, float64, bool) {
 	if !cyl.AxisDir.IsParallelTo(tor.AxisDir, retrimAxisParallelTol) {
 		return math.Point3{}, 0, false // wall axis not parallel to the torus axis
@@ -167,8 +170,11 @@ func wallContactCircle(cyl geom.Cylinder, tor geom.Torus, res Resolution) (math.
 	if float64(foot.DistanceTo(tor.Center)) > res.Weld()*cyl.Radius {
 		return math.Point3{}, 0, false // torus centre off the wall axis — not coaxial
 	}
-	if stdmath.Abs((tor.MajorRadius+tor.MinorRadius)-cyl.Radius) > res.Weld()*cyl.Radius {
-		return math.Point3{}, 0, false // outer equator ρ+r ≠ wall R — not tangent
+	tol := res.Weld() * cyl.Radius
+	outer := stdmath.Abs((tor.MajorRadius+tor.MinorRadius)-cyl.Radius) <= tol // boss: outer equator on the wall
+	inner := stdmath.Abs((tor.MajorRadius-tor.MinorRadius)-cyl.Radius) <= tol // bore/notch: inner equator on the wall
+	if !outer && !inner {
+		return math.Point3{}, 0, false // neither equator ρ±r reaches wall R — not tangent
 	}
 	return tor.Center, cyl.Radius, true
 }

@@ -92,16 +92,32 @@ func curvedArmFillet(e *topo.Edge, cyl geom.Cylinder, pl geom.Plane, p filletPic
 	if !ok {
 		return edgeFillet{}, false // no readable plane host normal — cannot orient the arm into the material
 	}
+	eps := convexArmWallSign(e, cyl) // +1 boss (R−r) / −1 bore/notch (R+r) — corner-blend-weld foundation
 	switch classifyCurvedArm(cyl, pl, res) {
 	case armTorus:
-		tor, ok := torusArmSurface(cyl, pl, outwardN, p.r0, res)
+		tor, ok := torusArmSurface(cyl, pl, outwardN, p.r0, eps, res)
 		return curvedArmEdgeFillet(e, tor, ok)
 	case armCylinder:
-		arm, ok := cylinderArmSurface(e, cyl, pl, outwardN, p.r0)
+		arm, ok := cylinderArmSurface(e, cyl, pl, outwardN, p.r0, eps)
 		return curvedArmEdgeFillet(e, arm, ok)
 	default:
 		return edgeFillet{}, false // armRejected: oblique ellipse edge (config iii, Slice B)
 	}
+}
+
+// convexArmWallSign is ε ∈ {+1,−1} for a CONVEX Cylinder∧Plane arm: the sense that selects the arm
+// surface's offset radius R−ε·r. ε=+1 for a BOSS wall (material inside the cylinder — the historical
+// case, R−r) and ε=−1 for a BORE/NOTCH wall (material OUTSIDE the cylinder, R+r; corner-blend-weld
+// foundation — where OCCT places the corner at R+r but the pre-foundation code hard-coded R−r and
+// mirrored the corner into the void). It reuses cylinderHostRadialSign (the concave-arm engine's exact
+// ε=n_C·r̂ read) and DEFAULTS to +1 when the sign is unreadable (an on-axis edge), so a boss stays
+// byte-identical to the prior code — a bore always has a well-defined radial normal, so the default
+// never suppresses a real notch.
+func convexArmWallSign(e *topo.Edge, cyl geom.Cylinder) float64 {
+	if eps, ok := cylinderHostRadialSign(e, cyl); ok {
+		return eps
+	}
+	return 1
 }
 
 // planeHostNormal is the material-outward unit normal of the planar host face of a Cylinder∧Plane edge —
