@@ -28,7 +28,7 @@ import (
 // classical construction that reproduces a circular arc exactly for sweep < π (Piegl & Tiller §7.5):
 // weights (1, cos(sweep/2), 1) with the middle control point at the tangent intersection
 // r/cos(sweep/2).
-func cylindricalStripSurface(t *testing.T, r, sweep, h float64) geom.BSplineSurface {
+func cylindricalStripSurface(t testing.TB, r, sweep, h float64) geom.BSplineSurface {
 	return cylindricalStripSurfaceBunched(t, r, sweep, h, 1)
 }
 
@@ -44,7 +44,7 @@ func cylindricalStripSurface(t *testing.T, r, sweep, h float64) geom.BSplineSurf
 // where the interior grid's first off-boundary column lands — covers an anomalously LARGE 3D
 // distance: exactly the local-metric spike that forces discretizeEdge's starved 2-point rail against
 // a saturated interior grid into one giant off-chord triangle).
-func cylindricalStripSurfaceBunched(t *testing.T, r, sweep, h, bunch float64) geom.BSplineSurface {
+func cylindricalStripSurfaceBunched(t testing.TB, r, sweep, h, bunch float64) geom.BSplineSurface {
 	t.Helper()
 	if sweep <= 0 || sweep >= stdmath.Pi {
 		t.Fatalf("cylindricalStripSurfaceBunched: sweep=%g must be in (0, pi) for a single-span exact arc", sweep)
@@ -76,7 +76,16 @@ func cylindricalStripArea(r, sweep, h float64) float64 { return sweep * r * h }
 // just 2 points regardless of length); the two angular (v) edges are the surface's EXACT circular
 // arcs (geom.Arc3d — already sagitta-adaptive, never a densification candidate). Returns the face and
 // its two straight-rail edges (railV0 at v=0, railV1 at v=1) for the direct h-sweep test.
-func cylindricalStripFace(t *testing.T, s geom.BSplineSurface, r, sweep, h float64) (face *topo.Face, rails [2]*topo.Edge) {
+func cylindricalStripFace(t testing.TB, s geom.BSplineSurface, r, sweep, h float64) (face *topo.Face, rails [2]*topo.Edge) {
+	body, rails := cylindricalStripBody(t, s, r, sweep, h)
+	return body.Faces()[0], rails
+}
+
+// cylindricalStripBody builds the single-face strip body and returns it whole (plus its two straight
+// rails), the shared plumbing behind cylindricalStripFace. Split out so the #2010 pick benchmark can
+// drive body-level queries (ops.LocateUsingPoint → closerEdge → discretizeEdge → starvedEdgeTarget)
+// on the exact same fixture without duplicating the builder.
+func cylindricalStripBody(t testing.TB, s geom.BSplineSurface, r, sweep, h float64) (body *topo.Body, rails [2]*topo.Edge) {
 	t.Helper()
 	lin := topo.NewLineage(topo.Tok("test", "cylstrip", 0))
 	bld := topo.NewBuilder(false, lin)
@@ -102,7 +111,7 @@ func cylindricalStripFace(t *testing.T, s geom.BSplineSurface, r, sweep, h float
 
 	bld.AddFace(s, topo.NewLineage(topo.Tok("test", "face", 0)),
 		topo.OuterLoop(topo.Fwd(railV0), topo.Fwd(arcU1), topo.Fwd(railV1), topo.Rev(arcU0)))
-	return bld.Build().Faces()[0], [2]*topo.Edge{railV0, railV1}
+	return bld.Build(), [2]*topo.Edge{railV0, railV1}
 }
 
 // relErr is |got-want|/|want|, or |got| when want is 0.
