@@ -70,6 +70,62 @@ func extrusionProfileConic(g *part21.EntityGraph, ent *part21.RawEntity, id int,
 	}
 }
 
+// LinearExtrusionBSpline reports whether surface #id is a SURFACE_OF_LINEAR_EXTRUSION whose swept
+// profile is a B-spline curve, returning the profile and unit sweep direction when so. It exists so
+// the topology layer can build the extrusion as a bounded B-spline patch (it needs the backing face's
+// extent, which geommap does not see) — see NewExtrudedBSplineSurface. ok is false for a conic profile,
+// so the exact elliptical-cylinder path (linearExtrusionFromStep) is untouched: this only ADDS coverage
+// for the B-spline profile the importer used to skip, dropping the swept side face and leaving an open
+// shell (corpus resurvey 2026-07-24 §4: G3–H1 base bodies).
+func LinearExtrusionBSpline(g *part21.EntityGraph, id int, scale float64) (geom.BSplineCurve, math.Vector3, bool, error) {
+	ent, err := g.Lookup(id)
+	if err != nil {
+		return geom.BSplineCurve{}, math.Vector3{}, false, err
+	}
+	if ent.Keyword != "SURFACE_OF_LINEAR_EXTRUSION" {
+		return geom.BSplineCurve{}, math.Vector3{}, false, nil
+	}
+	ref, err := refParam(ent.Params, 1)
+	if err != nil {
+		return geom.BSplineCurve{}, math.Vector3{}, false, err
+	}
+	c, err := Curve(g, ref, scale)
+	if err != nil || c.Kind != CurveBSpline {
+		return geom.BSplineCurve{}, math.Vector3{}, false, err
+	}
+	dir, err := extrusionAxis(g, ent)
+	return c.BSpline, dir, err == nil, err
+}
+
+// NewExtrudedBSplineSurface represents a linear extrusion of a NURBS profile C(u) along the unit
+// direction d over the sweep range v∈[lo,hi] as the EXACT v-degree-1 tensor NURBS surface
+// S(u,v)=C(u)+v·d (Piegl & Tiller, "The NURBS Book" §8.3, extruded-surface construction: two control
+// rows, the profile and the profile translated by the sweep, weights repeated). The STEP surface is
+// infinite; the caller derives [lo,hi] from the backing face's extent along d so the bounded patch
+// covers the trimmed face (topomap.extrusionSweepRange). lo<hi is required.
+func NewExtrudedBSplineSurface(profile geom.BSplineCurve, d math.Vector3, lo, hi float64) (geom.Surface, error) {
+	if !(hi > lo) {
+		return nil, fmt.Errorf("geommap: extrusion sweep range [%g,%g] is not increasing", lo, hi)
+	}
+	n := len(profile.Ctrl)
+	ctrl := make([][]math.Point3, n)
+	weights := make([][]float64, n)
+	for i, p := range profile.Ctrl {
+		ctrl[i] = []math.Point3{p.TranslateBy(d.Scale(lo)), p.TranslateBy(d.Scale(hi))}
+		weights[i] = []float64{profileWeight(profile, i), profileWeight(profile, i)}
+	}
+	return geom.NewBSplineSurface(profile.Degree, 1, ctrl, weights, profile.Knots, []float64{lo, lo, hi, hi})
+}
+
+// profileWeight returns control point i's weight, defaulting to 1 for a non-rational profile whose
+// weight slice was left empty.
+func profileWeight(profile geom.BSplineCurve, i int) float64 {
+	if i < len(profile.Weights) {
+		return profile.Weights[i]
+	}
+	return 1
+}
+
 // extrusionAxis reads the extrusion VECTOR (parameter 2) and returns its orientation as a unit
 // vector — the sweep direction. The VECTOR's magnitude is irrelevant to the infinite cylinder's axis.
 func extrusionAxis(g *part21.EntityGraph, ent *part21.RawEntity) (math.Vector3, error) {

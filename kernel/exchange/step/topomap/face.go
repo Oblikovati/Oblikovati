@@ -24,6 +24,10 @@ func (a *assembler) addFace(faceID int) error {
 	if ent.Keyword != "ADVANCED_FACE" {
 		return fmt.Errorf("topomap: #%d is %s, want ADVANCED_FACE", faceID, ent.Keyword)
 	}
+	extruded, err := a.addExtrudedFace(ent)
+	if err != nil || extruded {
+		return err
+	}
 	surface, skipped, err := a.faceSurface(ent)
 	if err != nil || skipped {
 		return err
@@ -33,6 +37,82 @@ func (a *assembler) addFace(faceID int) error {
 		return err
 	}
 	return a.buildFaceLoops(ent, surface, sameSense)
+}
+
+// addExtrudedFace maps an ADVANCED_FACE whose surface is a SURFACE_OF_LINEAR_EXTRUSION of a B-spline
+// profile, returning handled=true when it did. The STEP extrusion surface is infinite, so the sweep
+// range is derived from the face's own extent along the sweep direction (extrusionSweepRange) to size
+// the bounded kernel B-spline patch. This recovers the swept side face the importer used to skip,
+// closing the open-shell import of the OCCT blend-parity base bodies G3–H1 (corpus resurvey §4). Any
+// other surface returns handled=false so the common path (faceSurface) is unchanged (do-no-harm).
+func (a *assembler) addExtrudedFace(ent *part21.RawEntity) (handled bool, err error) {
+	if len(ent.Params) < 4 {
+		return false, nil // malformed: let the common path (faceSurface) report the shape error
+	}
+	surfID, err := ent.Params[2].AsRef()
+	if err != nil {
+		return false, err
+	}
+	profile, dir, ok, err := geommap.LinearExtrusionBSpline(a.g, surfID, a.scale)
+	if err != nil || !ok {
+		return false, err
+	}
+	sameSense, err := faceSameSense(ent)
+	if err != nil {
+		return false, err
+	}
+	bounds, err := a.faceBounds(ent)
+	if err != nil {
+		return false, err
+	}
+	lo, hi := extrusionSweepRange(bounds, profile.Ctrl, dir)
+	surface, err := geommap.NewExtrudedBSplineSurface(profile, dir, lo, hi)
+	if err != nil {
+		a.warn("skipped extruded face #%d: %v", ent.ID, err)
+		return true, nil
+	}
+	a.emitFace(surface, sameSense, bounds)
+	return true, nil
+}
+
+// extrusionSweepRange bounds the interval [lo,hi] the face occupies along the unit sweep direction d,
+// so the finite B-spline patch covers the (3D-loop-trimmed) face. It over-covers deliberately — the
+// face is trimmed by its loops — using the profile's convex-hull bound: a boundary point is p=C(u)+v·d,
+// and C(u)·d lies within the profile control points' d-projections, so lo=min(p·d)−max(ctrl·d) and
+// hi=max(p·d)−min(ctrl·d) is a guaranteed superset of the true v-range (both rails and the sides).
+func extrusionSweepRange(bounds []boundLoop, ctrl []math.Point3, d math.Vector3) (lo, hi float64) {
+	pMin, pMax := projRange(loopPoints(bounds), d)
+	cMin, cMax := projRange(ctrl, d)
+	return pMin - cMax, pMax - cMin
+}
+
+// loopPoints collects the 3D endpoints of every edge in the face's bounds.
+func loopPoints(bounds []boundLoop) []math.Point3 {
+	var pts []math.Point3
+	for _, b := range bounds {
+		for _, u := range b.uses {
+			pts = append(pts, u.Edge.StartVertex().Point(), u.Edge.EndVertex().Point())
+		}
+	}
+	return pts
+}
+
+// projRange returns the min and max scalar projection of the points onto direction d.
+func projRange(pts []math.Point3, d math.Vector3) (min, max float64) {
+	if len(pts) == 0 {
+		return 0, 0
+	}
+	min, max = float64(pts[0].AsVector().Dot(d)), float64(pts[0].AsVector().Dot(d))
+	for _, p := range pts {
+		s := float64(p.AsVector().Dot(d))
+		if s < min {
+			min = s
+		}
+		if s > max {
+			max = s
+		}
+	}
+	return min, max
 }
 
 // faceSurface resolves an ADVANCED_FACE's surface (parameter 2). An unsupported
@@ -68,28 +148,45 @@ func faceSameSense(ent *part21.RawEntity) (bool, error) {
 // reversed when same_sense is false (its material side opposes the surface normal),
 // matching topo.AddReversedFace's contract.
 func (a *assembler) buildFaceLoops(ent *part21.RawEntity, surface geom.Surface, sameSense bool) error {
-	boundRefs, err := refListValues(ent.Params[1])
+	bounds, err := a.faceBounds(ent)
 	if err != nil {
 		return err
+	}
+	a.emitFace(surface, sameSense, bounds)
+	return nil
+}
+
+// faceBounds builds every FACE_(OUTER_)BOUND of an ADVANCED_FACE into boundLoops, sharing the
+// per-import edge/vertex maps (so the addExtrudedFace path can measure the loops before choosing the
+// surface without rebuilding topology).
+func (a *assembler) faceBounds(ent *part21.RawEntity) ([]boundLoop, error) {
+	boundRefs, err := refListValues(ent.Params[1])
+	if err != nil {
+		return nil, err
 	}
 	bounds := make([]boundLoop, 0, len(boundRefs))
 	for _, boundID := range boundRefs {
 		b, err := a.buildBound(boundID)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		bounds = append(bounds, b)
 	}
+	return bounds, nil
+}
+
+// emitFace finalizes the outer-loop choice (ensureOuterLoop) and adds the face, dropping degenerate
+// VERTEX_LOOP bounds (a pole/apex imposes no boundary).
+func (a *assembler) emitFace(surface geom.Surface, sameSense bool, bounds []boundLoop) {
 	ensureOuterLoop(bounds)
 	loops := make([]topo.LoopSpec, 0, len(bounds))
 	for _, b := range bounds {
 		if b.degenerate {
-			continue // VERTEX_LOOP pole/apex — imposes no boundary
+			continue
 		}
 		loops = append(loops, loopSpec(b.outer, b.uses))
 	}
 	a.addBuiltFace(surface, sameSense, loops)
-	return nil
 }
 
 // ensureOuterLoop guarantees the face has an outer loop flagged. STEP makes
