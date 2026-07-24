@@ -101,6 +101,10 @@ func curvedCornerCenter(cyl geom.Cylinder, planes [2]*topo.Face, r, eps float64,
 // at the corner and compares it to the outward radial r̂ = unit(V − axis_foot): n_C·r̂ ≥ 0 is a boss. It
 // DEFAULTS to +1 when the cylinder face or radial is unreadable, so a boss stays byte-identical to the
 // prior code; a bore always has a well-defined radial normal.
+//
+// TODO(vein-cleanup): share radialSignFromFace with cylinderHostRadialSign (fillet_arm_concave.go) —
+// both compute ε = sign(n_C·r̂); this face-keyed variant and the edge-keyed one should reduce to one
+// helper once the concave-corner vein settles (P1 review minor).
 func cornerWallRadialSign(faces []*topo.Face, cyl geom.Cylinder, v math.Point3) float64 {
 	rhat, err := math.UnitVector3FromVector(cylinderBallCenter(cyl, v).VectorTo(v))
 	if err != nil {

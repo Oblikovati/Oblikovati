@@ -317,20 +317,20 @@ func reversedWinding(m *Mesh) *Mesh {
 // relErrVol is the relative error |got−want|/|want| used by the volume gate (want ≠ 0 here).
 func relErrVol(got, want float64) float64 { return stdmath.Abs(got-want) / stdmath.Abs(want) }
 
-// TestFilletEdges_N1O1DeclineCleanly pins the do-no-harm floor for the two r=5 family corners the T5.5
-// investigation found are NOT the B3 wedge topology (their expected areas 58091.9/65104.9 are OCCT's).
-// N1's picked wall is a CONCAVE bore (radius 20, material OUTSIDE): the pre-M5 convex-external-only arm
-// builder and the planar corner solver place the arms and the corner sphere INSIDE the bore (the wrong
-// material side — the sphere centre lands outside the solid), so the station-coincidence gate correctly
-// declines (C is not on the vertical wall arm's spine). O1 carries a concave/oblique picked edge the
-// curved-arm classifier rejects even earlier ("edge borders a curved cylinder face not yet supported").
-// Either way the WHOLE op must honest-reject to the clean floor error — never panic, never a partial or
-// wrong-sign solid. This is the correct outcome for an unsupported case; it is NOT loosened to force a
-// green. See task-5.5-report.md for the full per-case verdict.
-func TestFilletEdges_N1O1DeclineCleanly(t *testing.T) {
-	for _, rel := range []string{"simple/N1", "simple/O1"} {
-		t.Run(rel, func(t *testing.T) { assertCurvedCornerDeclinesCleanly(t, rel, 5) })
-	}
+// TestFilletEdges_O1DeclinesCleanly pins the do-no-harm floor for O1, an r=5 concave corner still in
+// the ADR-0050 backlog. O1 carries a concave/oblique picked edge the curved-arm classifier rejects
+// ("edge borders a curved cylinder face not yet supported"), so the WHOLE op must honest-reject to the
+// clean floor error — never panic, never a partial or wrong-sign solid. It is NOT loosened to force a
+// green (its Gate-1 concave-corner fix is a later corner-blend-weld piece).
+//
+// N1 USED to be pinned here as the sibling decliner: its wall is a CONCAVE bore (radius 20, material
+// OUTSIDE) and the pre-M5 convex-external-only arm builder / planar corner solver placed the corner at
+// R−r (INSIDE the bore, wrong material side), so the station gate correctly declined. The
+// corner-blend-weld R+r bore-wall foundation (Pieces 1+2) now solves N1 at R+r and welds it into the
+// watertight 11-face solid the DRAWEXE oracle expects (area 58091.9), so N1 moved to the green gate
+// (TestOCCTBlendSimple/N1 + the N1 fingerprint pin); it is no longer a clean-decline case.
+func TestFilletEdges_O1DeclinesCleanly(t *testing.T) {
+	assertCurvedCornerDeclinesCleanly(t, "simple/O1", 5)
 }
 
 // assertCurvedCornerDeclinesCleanly requires FilletEdges to honest-reject rel at radius r: a non-nil

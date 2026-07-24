@@ -300,5 +300,18 @@ func byteIdentityPins() []fingerprintPin {
 		// Same cross-platform-risk caveat as above applies.
 		{"K1", 716214.454630634282, 67600, 0xcb1edbf4a4562d86, ""},
 		{"Z1", 7840.004567698298, 34808, 0x84c49b798620dc55, ""},
+		// N1 (simple): the FIRST R+r bore/notch-wall trihedral corner green (corner-blend-weld Pieces
+		// 1+2). N1 is box − r20 cylinder notch at a corner, r=5 fillet on 3 edges. The engine used to
+		// hard-code the rolling-ball offset at R−r (a convex boss cap) and mirrored the whole corner into
+		// the removed void — the cylinder arm's plane contact landed off the host face and the weld
+		// declined. Piece 1 added the ε-gated R+r sense (corner sphere (75.505,5,95), torus major 25 —
+		// OCCT-exact); Piece 2 fixed the assembly point-welder so a pass-through face welds to its rebuilt
+		// far-runout neighbours at unchanged corners (the fillet spreads onto the box's OWN faces, mixing
+		// ided pass-through corners with anonymous rebuilt ones — addID now adopts an anonymously-claimed
+		// cell). Result: a watertight 11-FACE solid matching the DRAWEXE oracle (area 58091.81, rel 1.5e-6
+		// of 58091.9). Captured on THIS HEAD; it locks the bore-corner weld so any later piece (L9 plane
+		// retrim, the concave cluster) fails loud if it perturbs the N1 body. Same cross-platform-risk
+		// caveat as above applies.
+		{"N1", 967610.719379026, 23816, 0x5f18c6f4452d68a8, ""},
 	}
 }
