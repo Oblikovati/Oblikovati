@@ -41,24 +41,47 @@ type mixedRoleArms struct {
 // convex pivot, the curved cove torus arm, and the planar band — or ok=false when the corner is not this
 // 1-convex + 1-cove-torus + 1-planar mixed config (every other valence/sense keeps the sphere path).
 func classifyMixedRoleArms(rawArms []edgeFillet) (mixedRoleArms, bool) {
+	if len(rawArms) != 3 {
+		return mixedRoleArms{}, false // this corner is exactly a 3-arm trihedral vertex; any other valence is a different class
+	}
 	var out mixedRoleArms
-	var haveCvx, haveCove, havePlanar bool
+	var seen [3]bool // [convex, cove, planar]
 	for _, ef := range rawArms {
-		switch {
-		case isCoveTorusArm(ef):
-			out.cove, haveCove = ef, true
-		case isConvexCylArm(ef):
-			out.convex, haveCvx = ef, true
-		case isPlanarBandArm(ef):
-			out.planar, havePlanar = ef, true
-		default:
-			return mixedRoleArms{}, false // an arm of no recognised mixed role — not this corner
+		if !assignMixedRole(&out, &seen, ef) {
+			return mixedRoleArms{}, false
 		}
 	}
-	if !haveCvx || !haveCove || !havePlanar {
+	if !seen[0] || !seen[1] || !seen[2] {
 		return mixedRoleArms{}, false
 	}
 	return out, true
+}
+
+// assignMixedRole files one arm into its role slot on out, rejecting (ok=false) an arm of no recognised
+// mixed role OR a second assignment to an already-filled role — the M8-review dup-role guard, so a corner
+// with two arms of the same role (never the 1-convex + 1-cove + 1-planar M8 config) declines. seen indexes
+// [convex, cove, planar].
+func assignMixedRole(out *mixedRoleArms, seen *[3]bool, ef edgeFillet) bool {
+	switch {
+	case isCoveTorusArm(ef):
+		if seen[1] {
+			return false
+		}
+		out.cove, seen[1] = ef, true
+	case isConvexCylArm(ef):
+		if seen[0] {
+			return false
+		}
+		out.convex, seen[0] = ef, true
+	case isPlanarBandArm(ef):
+		if seen[2] {
+			return false
+		}
+		out.planar, seen[2] = ef, true
+	default:
+		return false // an arm of no recognised mixed role — not this corner
+	}
+	return true
 }
 
 // isCoveTorusArm reports a concave cove arm: an exact geom.Torus arm surface built by the concave curved-
