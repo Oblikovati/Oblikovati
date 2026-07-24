@@ -31,9 +31,10 @@ func nurbsPcurveMesh(f *topo.Face, q Quality) *Mesh {
 	return foldDrivenPatch(s, su, sv, q, outer3D, outerUV, holes3D, holesUV)
 }
 
-// metricScaleMemo is the ops-owned payload of topo.Face.metricScaleMemo: the face surface's cached
-// per-axis (u,v) metric (√E,√G). See faceMetricScale.
-type metricScaleMemo struct{ su, sv float64 }
+// faceMetricScaleMemo is the ops-owned payload of topo.Face.metricScaleMemo: the face surface's cached
+// per-axis (u,v) metric (√E,√G). Distinct name from the topo field it backs, mirroring the
+// facePickTess/pickTess precedent. See faceMetricScale.
+type faceMetricScaleMemo struct{ su, sv float64 }
 
 // faceMetricScale returns metricScale of the face's surface, memoized on the face for its lifetime.
 // metricScale is a pure function of the immutable surface derivatives (~25 DerivativesAt evals per
@@ -41,11 +42,11 @@ type metricScaleMemo struct{ su, sv float64 }
 // #2010 per-frame cost the interactive edge pick paid via starvedEdgeTarget → metricScale (edge
 // picking is not covered by the pickTess whole-face memo). Mirrors pickFaceMesh (pick.go).
 func faceMetricScale(f *topo.Face) (su, sv float64) {
-	if c, ok := f.MetricScaleMemo().(metricScaleMemo); ok {
+	if c, ok := f.MetricScaleMemo().(faceMetricScaleMemo); ok {
 		return c.su, c.sv
 	}
 	su, sv = metricScale(f.Geometry())
-	f.SetMetricScaleMemo(metricScaleMemo{su: su, sv: sv})
+	f.SetMetricScaleMemo(faceMetricScaleMemo{su: su, sv: sv})
 	return su, sv
 }
 

@@ -249,10 +249,10 @@ func (f *Face) PickTess() any { return f.pickTess }
 func (f *Face) SetPickTess(v any) { f.pickTess = v }
 
 // MetricScaleMemo returns the opaque, ops-owned per-face surface-metric memo (nil until the
-// tessellation/pick path first computes it). See the metricScaleMemo field: it spares the interactive
-// edge pick a per-frame metricScale recompute (#2010). Written only by the single-threaded pick path.
-//
-// Example: if m, ok := f.MetricScaleMemo().(metricScaleMemo); ok { su, sv = m.su, m.sv }
+// tessellation/pick path first computes it). The payload is deliberately opaque to topo — only the
+// ops package defines and type-asserts it (see ops.faceMetricScale) — so there is no topo-writable
+// example, matching PickTess. It spares the interactive edge pick a per-frame metricScale recompute
+// (#2010). Written only by the single-threaded pick/tessellation path per body.
 func (f *Face) MetricScaleMemo() any { return f.metricScaleMemo }
 
 // SetMetricScaleMemo stores the ops-owned surface-metric memo for this face. The payload is opaque to
