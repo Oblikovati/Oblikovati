@@ -400,12 +400,16 @@ func byteIdentityPins() []fingerprintPin {
 		// continues tangentially), so the arm runs THROUGH it to the end of the tangent chain and splits into
 		// one face per host-face span. DRAWEXE 8.0.0 receipt (`restore CFI_e5678fil.rle s ; tscale s 0 0 0 10 ;
 		// explode s e ; blend result s 5 s_4 5 s_13 5 s_2`): valid SOLID, 14 faces / 14 wires, sprops area
-		// 64287.2, vprops volume 1.04694e6 — ours 14 faces, area 64292.3 (+0.008%), volume 1046910.4
-		// (−0.0028%). Per-face reconciliation against the oracle is exact to <0.01% on eleven of the fourteen
-		// faces; the remaining ±25 redistributes among the corner patch and its two neighbours because our
-		// coons4 fill is not bit-for-bit OCCT's rational patch (its four corner points agree to ≤0.05).
-		// Captured on THIS HEAD; it locks the layer so any later class builder (O1, H7, …) or executor change
-		// fails loud if it perturbs N4. Same cross-platform-risk caveat as above applies.
-		{"N4", 1046910.385015469277, 55856, 0x8df4717458b48c1d, ""},
+		// 64287.2, vprops volume 1.04694e6 — ours 14 faces, area 64287.18 (−0.000035%), volume 1046938.9
+		// (−0.000109%).
+		//
+		// RE-CAPTURED when the corner fill became the true rolling-ball CANAL (fillet_curved_mixed_canal.go).
+		// The previous pin (1046910.385015469277 / 55856 / 0x8df4717458b48c1d) belonged to the chord-projected
+		// coons4 fill, whose corner patch was 27% short of result_5 (59.273 vs 80.733) with the vertical plane
+		// over-reading by the near-opposite amount — the whole-body +0.008% was CANCELLATION, not agreement.
+		// Every face now reconciles individually: patch 80.875 (+0.18%), vplane 8674.80 (−0.0005%), both torus
+		// bands within 0.02%, volume 26× closer to vprops. It locks the layer so any later class builder
+		// (O1, H7, …) or executor change fails loud if it perturbs N4. Same cross-platform-risk caveat applies.
+		{"N4", 1046938.855499812000, 53496, 0xcee49118703be08, ""},
 	}
 }

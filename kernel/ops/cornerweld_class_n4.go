@@ -11,7 +11,7 @@ import (
 // The N4-class corner PLAN BUILDER — the first customer of the general corner-weld layer, and the shape
 // every later class (O1, H7, …) copies. It replaces the bespoke weld that used to live in
 // fillet_curved_mixed_bspline_weld.go: the geometry half of that file (classifyN4MixedArms, solveN4Corner,
-// the coons4 patch) is unchanged and still owns the solve; only the ORCHESTRATION — 200 lines that were
+// the corner patch) is unchanged and still owns the solve; only the ORCHESTRATION — 200 lines that were
 // ~60% a line-for-line copy of M8's — becomes the ~90 lines of declaration below.
 //
 // The class: a trihedral vertex where a CONCAVE cylinder arm (boss wall ∧ box wall) + a CONVEX torus arm
@@ -74,15 +74,17 @@ type n4PatchRailRing struct {
 	sides                        []railID
 }
 
-// n4PatchRing registers the coons4 patch's four sides — arc A→B (band cross-section), rail B→C (on the
-// torus arm), arc C→D (ccyl cross-section), rail D→A (on the vertical plane) — each as a SINGLE curve-seg,
-// never a sampled polyline (a sampled side would crack against the arm faces' single-seg curves).
+// n4PatchRing registers the canal patch's four sides — arc A→B (band cross-section), rail B→C (the ball's
+// contact locus on the torus arm), arc C→D (ccyl cross-section), rail D→A (its contact locus on the
+// vertical plane) — each as a SINGLE curve-seg, never a sampled polyline (a sampled side would crack
+// against the arm faces' single-seg curves). The two rails are the canal's own boundary isoparms, whose
+// chord-length knots make Domain() the only safe source for the mid witness.
 func n4PatchRing(led *cornerWeldLedger, c n4Corner) n4PatchRailRing {
 	p := c.pts
 	ab := led.add("n4/arcAB", endSeg{from: p.a, to: p.b, curve: p.arcAB, mid: p.arcAB.PointAt(0.5), arc: true})
-	bc := led.add("n4/railBC", endSeg{from: p.b, to: p.c, curve: c.railBC, mid: c.railBC.PointAt(0.5)})
+	bc := led.add("n4/railBC", endSeg{from: p.b, to: p.c, curve: c.railBC, mid: curveMidPoint(c.railBC)})
 	cd := led.add("n4/arcCD", endSeg{from: p.c, to: p.d, curve: p.arcCD, mid: p.arcCD.PointAt(0.5), arc: true})
-	da := led.add("n4/railDA", endSeg{from: p.d, to: p.a, curve: c.railDA, mid: c.railDA.PointAt(0.5)})
+	da := led.add("n4/railDA", endSeg{from: p.d, to: p.a, curve: c.railDA, mid: curveMidPoint(c.railDA)})
 	return n4PatchRailRing{arcAB: ab, railBC: bc, arcCD: cd, railDA: da, sides: []railID{ab, bc, cd, da}}
 }
 

@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // The per-case gate for OCCT tests/blend/simple/N4 — the first case welded by the GENERAL corner-weld layer
@@ -36,6 +37,13 @@ import (
 // (oracle 456.56) for a net +0.68% — inside deps. Span assertions cannot see it either, because at exactly
 // 180° BOTH halves span π and mesh to the same area. Only the per-face areas below discriminate, so every
 // new corner green must pin the faces the oracle's own `explode result f ; sprops result_i` reports.
+//
+// A SECOND live false-green was then found by the same reasoning, in the CORNER FILL: with the fill built by
+// projecting a straight chord onto each host, the corner patch measured 59.273 against result_5's 80.733
+// (−27%, Hausdorff to OCCT's own patch 1.03 ≈ 21% of r) while the vertical plane it rails on over-read by
+// +29.71 — and the two nearly cancelled into +0.008% whole-body, again inside deps. Proven by mutation:
+// reverting the fill to chord projection turns this test RED naming the 59.273 patch. Both faces are pinned
+// below, which is why the gate now covers five faces rather than three.
 
 // TestN4CornerWeldLayerWatertight is the whole-body gate: watertight, fold-free, OCCT's face count and area.
 func TestN4CornerWeldLayerWatertight(t *testing.T) {
@@ -51,18 +59,29 @@ func TestN4CornerWeldLayerWatertight(t *testing.T) {
 // result_9 = the boss wall's 180° sector, result_14 = its 90° sector (two distinct r=20 cylinders, both
 // receded from z=50 to z=45), result_11 = the boss top plane, the 270° pie receded to r=15. These three are
 // the faces the rim rail's HALF moves; the torus band's own spans do not move at all (see the ★ note above).
+//
+// result_5 (the CORNER PATCH) and result_1 (the vertical plane the corner's ball rolls on) are the two the
+// CORNER FILL moves, and they were the two the earlier gate did not pin — which is exactly how a corner
+// patch 27% short of the oracle survived as a green: the patch read 59.273 and the vplane 8704.54 (+29.71),
+// and those two errors mostly CANCELLED into a whole-body +0.008%, inside deps. Pinning them is what makes
+// the green mean the right corner surface rather than the right total.
 const (
 	n4OracleBossWall180 = 2827.43
 	n4OracleBossWall90  = 1232.49
 	n4OracleTopPlane    = 456.557
-	// 0.002 relative. Our worst per-face deviation is the top plane's 4e-5; the wrong-half body is off by
-	// 21% (wall) and 38% (top plane), so this separates them by two orders of magnitude on either side.
+	n4OracleCornerPatch = 80.7328
+	n4OracleVPlane      = 8674.84
+	// 0.002 relative. Our worst per-face deviation is the corner patch's 1.8e-3 (the rolling-ball canal's
+	// between-station interpolation residual against OCCT's own degree-8 approximation of the same surface);
+	// every other face is under 5e-5. The wrong-half body is off by 21% (wall) and 38% (top plane) and the
+	// superseded chord-projected fill by 27% (patch), so this separates them by an order of magnitude or more.
 	n4PerFaceRelTol = 0.002
 )
 
-// assertN4HostFacesMatchOraclePerFace pins the three HOST faces whose areas actually discriminate which half
-// of the contact circle the 180° rim rail runs along — the check the torus-span assertion is structurally
-// blind to. See the ★ note on this file's header for the wrong-half evidence.
+// assertN4HostFacesMatchOraclePerFace pins the five faces the two live false-green mechanisms move: the
+// three HOST faces that discriminate which half of the contact circle the 180° rim rail runs along (the
+// check the torus-span assertion is structurally blind to), plus the CORNER PATCH and the vertical plane
+// its rail rides, which discriminate the corner fill's SHAPE. See the ★ note on this file's header.
 func assertN4HostFacesMatchOraclePerFace(t *testing.T, body *topo.Body) {
 	t.Helper()
 	walls := n4BossWallSectorAreas(body)
@@ -73,6 +92,45 @@ func assertN4HostFacesMatchOraclePerFace(t *testing.T, body *topo.Body) {
 	assertFaceAreaAgainstOracle(t, "N4 boss wall, 90° sector (oracle result_14)", walls[1], n4OracleBossWall90)
 	assertFaceAreaAgainstOracle(t, "N4 boss top plane, 270° pie receded to r=15 (oracle result_11)",
 		n4BossTopPlaneArea(t, body), n4OracleTopPlane)
+	assertFaceAreaAgainstOracle(t, "N4 corner patch, the rolling-ball canal (oracle result_5)",
+		n4CornerPatchArea(t, body), n4OracleCornerPatch)
+	assertFaceAreaAgainstOracle(t, "N4 vertical plane the corner ball rolls on (oracle result_1)",
+		n4CornerVPlaneArea(t, body), n4OracleVPlane)
+}
+
+// n4CornerPatchArea returns the mesh area of the corner patch — the result's only BSpline face (every other
+// N4 face is an analytic plane, cylinder or torus, per the DRAWEXE face inventory).
+func n4CornerPatchArea(t *testing.T, body *topo.Body) float64 {
+	t.Helper()
+	var areas []float64
+	for _, f := range body.Faces() {
+		if _, ok := f.Geometry().(geom.BSplineSurface); ok {
+			areas = append(areas, faceMeshArea2(f))
+		}
+	}
+	if len(areas) != 1 {
+		t.Fatalf("N4 carries %d BSpline faces, want exactly 1 (the corner patch)", len(areas))
+	}
+	return areas[0]
+}
+
+// n4CornerVPlaneArea returns the mesh area of the box wall the corner ball rolls on: the wall the boss axis
+// lies in, identified geometrically as the vertical plane whose in-plane offset along its own normal is the
+// box's 100 (its opposite wall is at 0, and the other pair's normal points the other way).
+func n4CornerVPlaneArea(t *testing.T, body *topo.Body) float64 {
+	t.Helper()
+	want := math.V3(0.984807753012208, -0.17364817766693, 0)
+	for _, f := range body.Faces() {
+		pl, ok := f.Geometry().(geom.Plane)
+		if !ok || stdmath.Abs(float64(pl.Normal().Dot(want))) < 1-1e-9 {
+			continue
+		}
+		if stdmath.Abs(float64(pl.Origin.VectorTo(math.P3(0, 0, 0)).Dot(want))+100) < 1e-6 {
+			return faceMeshArea2(f)
+		}
+	}
+	t.Fatalf("N4 carries no corner vertical plane (the box wall at offset 100 along (0.9848,-0.1736,0))")
+	return 0
 }
 
 // n4BossWallSectorAreas returns the mesh areas of the boss wall's cylinder faces (the only radius-20

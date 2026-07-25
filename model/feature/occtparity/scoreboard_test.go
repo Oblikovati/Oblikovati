@@ -147,7 +147,7 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 // flag mis-classifies them). This restored 101→103 simple / 104→108 all-grid, SkipQuarantine unchanged at 1.
 // The GENERAL corner-weld layer (cornerweld_*.go) then GREENED N4 (simple): a full r20 cylinder standing on a
 // 100³ box's vertical corner, filleted r5 on three edges meeting at one trihedral vertex. Its geometry (the
-// four corner points, the two on-host rails, the NoFold-certified coons4 patch) had been committed and
+// four corner points, the two on-host rails, the NoFold-certified corner patch) had been committed and
 // DRAWEXE-validated for four prior pieces; what was missing was the WELD, and it needed two stage variants
 // that now live in the shared layer rather than in N4: (a) the convex cap-rim arm's far vertex is a G1 SEAM,
 // not a cap — only the 90° piece of the 270° rim was picked and the rim continues tangentially across the boss
@@ -155,9 +155,10 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 // (b) crossing that seam splits the band into one face per host-face span, which is the C4 split. OCCT's own
 // blend does exactly this (its oracle carries the band over all 270° as two faces, 76.3° + exactly 180°, and
 // recedes BOTH wall faces to z=45), so the "cap-less rim far termination" the recon predicted is really a
-// continuation. Ours: watertight 14-face solid, area 64292.3 vs OCCT 64287.2 (+0.008%), volume 1046910.4 vs
-// DRAWEXE vprops 1.04694e6 (−0.0028%). This restored 103→104 simple / 108→109 all-grid, SkipQuarantine
-// unchanged at 1. (The mixed-radius TRIHEDRAL
+// continuation. Ours: watertight 14-face solid, area 64287.18 vs OCCT 64287.2 (−0.000035%), volume 1046938.9
+// vs DRAWEXE vprops 1.04694e6 (−0.000109%) — and reconciled PER FACE, since the corner fill became the true
+// rolling-ball canal (the earlier +0.008% was two 27%/+29.7 face errors cancelling). This restored 103→104
+// simple / 108→109 all-grid, SkipQuarantine unchanged at 1. (The mixed-radius TRIHEDRAL
 // corner A4, r10/r5/r5, needs a torus corner patch — declined for now, a tracked follow-up.) A mismatch means
 // either a false green slipped through or a case was over/under-quarantined — see harden-green-gate-brief.md's
 // "STOP and report" instruction.
