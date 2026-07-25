@@ -244,11 +244,15 @@ func sweptContactRail(host *topo.Face, picked *topo.Edge, arm geom.Surface, foot
 	if !ok {
 		return endSeg{}, false
 	}
-	footMid, ok := linkMidContactFoot(host, picked, arm, radius, res)
+	footMid, ok := linkMidContactFoot(host, picked, arm, res)
 	if !ok {
 		return endSeg{}, false
 	}
-	tol := res.Weld() * radius
+	// Scale the tol on the ROLLING-BALL radius, as every other tol in the weld layer does
+	// (res.Weld()*plan.radius). Scaling it on the CONTACT-CIRCLE radius instead — 15 or 20 here against a
+	// fillet r of 5 — would make the one check that discriminates the rail's half 3–4× looser than the
+	// checks around it, which is backwards for the layer's single wrong-half guard.
+	tol := tangencyTol(tor.MinorRadius, res)
 	for _, sweep := range [2]float64{arc.SweepAngle, -arc.SweepAngle} {
 		parent, err := geom.NewArc3d(center, arc.Normal.AsVector(), center.VectorTo(foot0), radius, 0, sweep)
 		if err != nil || float64(parent.PointAt(1).DistanceTo(foot1)) > tol {
@@ -262,8 +266,9 @@ func sweptContactRail(host *topo.Face, picked *topo.Edge, arm geom.Surface, foot
 }
 
 // linkMidContactFoot is the arm ball's contact foot on host at the link edge's own midpoint — the witness
-// that fixes which half of the contact circle the rail runs along.
-func linkMidContactFoot(host *topo.Face, picked *topo.Edge, arm geom.Surface, radius float64, res Resolution) (math.Point3, bool) {
+// that fixes which half of the contact circle the rail runs along. Its tangency tol scales on the
+// rolling-ball radius, matching the rest of the weld layer (see sweptContactRail).
+func linkMidContactFoot(host *topo.Face, picked *topo.Edge, arm geom.Surface, res Resolution) (math.Point3, bool) {
 	ball, ok := armBallCenter(arm, picked.Geometry().PointAt(0.5))
 	if !ok {
 		return math.Point3{}, false
@@ -272,5 +277,5 @@ func linkMidContactFoot(host *topo.Face, picked *topo.Edge, arm geom.Surface, ra
 	if !ok {
 		return math.Point3{}, false
 	}
-	return armRunoutFoot(host, ball, r, res.Weld()*radius)
+	return armRunoutFoot(host, ball, r, tangencyTol(r, res))
 }

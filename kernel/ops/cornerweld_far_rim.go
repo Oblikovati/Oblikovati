@@ -119,29 +119,59 @@ func rimEdgesAreTangent(a, b *topo.Edge, v *topo.Vertex) bool {
 }
 
 // rimRoleHosts maps the continuation edge's two faces onto the arm's hostA/hostB roles: by FACE IDENTITY when
-// a host simply continues (N4's shared top plane), otherwise by surface type. ok=false when the pairing is
+// a host simply continues (N4's shared top plane), otherwise by surface KIND. ok=false when the pairing is
 // ambiguous or does not match the arm's host kinds.
 func rimRoleHosts(f0, f1 *topo.Face, cur cornerArmLink) (*topo.Face, *topo.Face, bool) {
-	for _, pair := range [2][2]*topo.Face{{f0, f1}, {f1, f0}} {
-		if pair[0] == cur.hostA && pair[1] != cur.hostB {
-			return pair[0], pair[1], true
-		}
-		if pair[1] == cur.hostB && pair[0] != cur.hostA {
-			return pair[0], pair[1], true
-		}
+	if f0 == f1 || cur.hostA == cur.hostB {
+		return nil, nil, false // a seam edge listing one face twice cannot fill two distinct roles
 	}
-	if sameSurfaceKind(f0, cur.hostA) && sameSurfaceKind(f1, cur.hostB) {
+	if a, b, ok := rimRoleHostsByIdentity(f0, f1, cur); ok {
+		return a, b, ok
+	}
+	return rimRoleHostsBySurfaceKind(f0, f1, cur)
+}
+
+// rimRoleHostsByIdentity resolves the roles from a host that simply CONTINUES across the seam (N4's shared
+// top plane). Face identity is ASYMMETRIC evidence, so it settles the pairing outright: with f0 ≠ f1 and
+// hostA ≠ hostB (rimRoleHosts' guard) at most one of the two orderings can match, so there is nothing to
+// guess between.
+func rimRoleHostsByIdentity(f0, f1 *topo.Face, cur cornerArmLink) (*topo.Face, *topo.Face, bool) {
+	if f0 == cur.hostA || f1 == cur.hostB {
 		return f0, f1, true
 	}
-	if sameSurfaceKind(f1, cur.hostA) && sameSurfaceKind(f0, cur.hostB) {
+	if f1 == cur.hostA || f0 == cur.hostB {
 		return f1, f0, true
 	}
 	return nil, nil, false
 }
 
-// sameSurfaceKind reports whether two faces carry the same surface TYPE (Plane/Cylinder/Torus/…).
+// rimRoleHostsBySurfaceKind is the fallback when neither face continues a host by identity: match the arm's
+// host surface KINDS. Kind is SYMMETRIC evidence, so it may only be trusted when exactly ONE ordering is
+// admissible. When BOTH are — a plane∧plane or cylinder∧cylinder rim, where the arm's two hosts carry the
+// same kind — the pairing is genuinely ambiguous: nothing downstream can recover from a swap either, since
+// rimBallStillTangent tests both hosts the same way, and a swapped hostA/hostB can still weld to a
+// watertight, in-tolerance, geometrically WRONG body (the wrong-half mechanism proved on N4, see
+// weld-integrity-fix-report.md). So DECLINE. A same-kind rim needs asymmetric evidence this layer does not
+// yet carry (slices 2–5 must supply it — e.g. matching each face against the near station's own feet).
+func rimRoleHostsBySurfaceKind(f0, f1 *topo.Face, cur cornerArmLink) (*topo.Face, *topo.Face, bool) {
+	forward := sameSurfaceKind(f0, cur.hostA) && sameSurfaceKind(f1, cur.hostB)
+	reversed := sameSurfaceKind(f1, cur.hostA) && sameSurfaceKind(f0, cur.hostB)
+	if forward == reversed {
+		return nil, nil, false // neither ordering matches the host kinds, or both do (ambiguous)
+	}
+	if forward {
+		return f0, f1, true
+	}
+	return f1, f0, true
+}
+
+// sameSurfaceKind reports whether two faces carry the same surface KIND, compared on geom's own
+// SurfaceKind enum rather than on a formatted type name. A face whose surface predates the enum
+// (no Kind method) matches nothing, so it declines rather than pairing on a coincidence.
 func sameSurfaceKind(x, y *topo.Face) bool {
-	return fmt.Sprintf("%T", x.Geometry()) == fmt.Sprintf("%T", y.Geometry())
+	kx, okX := x.Geometry().(geom.KindedSurface)
+	ky, okY := y.Geometry().(geom.KindedSurface)
+	return okX && okY && kx.Kind() == ky.Kind()
 }
 
 // rimBallStillTangent is the geometric admission test for a continuation: the arm's own rolling ball, placed

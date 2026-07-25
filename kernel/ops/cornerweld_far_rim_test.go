@@ -147,3 +147,64 @@ func TestRimContinuationDeclinesWhenTheBallLeavesAHost(t *testing.T) {
 		t.Fatal("a continuation whose hosts do not host the arm ball at radius r must decline")
 	}
 }
+
+// fixtureFacesOfKind collects the body's faces carrying one surface kind, in body order.
+func fixtureFacesOfKind(b *topo.Body, kind geom.SurfaceKind) []*topo.Face {
+	var out []*topo.Face
+	for _, f := range b.Faces() {
+		if k, ok := f.Geometry().(geom.KindedSurface); ok && k.Kind() == kind {
+			out = append(out, f)
+		}
+	}
+	return out
+}
+
+// TestRimRoleHostsDeclinesOnSameKindAmbiguity is the honest-decline gate for the host-role pairing. When the
+// arm's two hosts carry the SAME surface kind and neither continuation face continues a host by identity,
+// BOTH orderings match on kind — and rimBallStillTangent is symmetric, so nothing downstream can catch a
+// swap. A swapped hostA/hostB can weld to a watertight, in-tolerance, geometrically WRONG body (the N4
+// wrong-half mechanism), so the pairing must DECLINE rather than return the first ordering it tried.
+func TestRimRoleHostsDeclinesOnSameKindAmbiguity(t *testing.T) {
+	b := importCornerWeldFixture(t, "N4")
+	planes := fixtureFacesOfKind(b, geom.SurfacePlane)
+	if len(planes) < 4 {
+		t.Skipf("N4 carries %d planar faces, need 4 distinct ones for the ambiguity probe", len(planes))
+	}
+	cur := cornerArmLink{hostA: planes[0], hostB: planes[1]}
+	if a, bb, ok := rimRoleHosts(planes[2], planes[3], cur); ok {
+		t.Fatalf("a plane∧plane continuation was paired as hostA=%d hostB=%d; both orderings match on kind, so it must decline",
+			a.ID(), bb.ID())
+	}
+}
+
+// TestRimRoleHostsPairsDiscriminatedKinds is the other direction: when the arm's hosts carry DIFFERENT kinds,
+// exactly one ordering matches, so the pairing is discriminated and must be taken — including when the
+// continuation edge lists its faces in the opposite order.
+func TestRimRoleHostsPairsDiscriminatedKinds(t *testing.T) {
+	b := importCornerWeldFixture(t, "N4")
+	planes := fixtureFacesOfKind(b, geom.SurfacePlane)
+	cyls := fixtureFacesOfKind(b, geom.SurfaceCylinder)
+	if len(planes) < 2 || len(cyls) < 1 {
+		t.Skipf("N4 carries %d planar / %d cylindrical faces, need 2 / 1", len(planes), len(cyls))
+	}
+	cur := cornerArmLink{hostA: planes[0], hostB: cyls[0]}
+	gotA, gotB, ok := rimRoleHosts(cyls[0], planes[1], cur)
+	if !ok || gotA != planes[1] || gotB != cyls[0] {
+		t.Fatalf("plane∧cylinder pairing gave ok=%v hostA=%v hostB=%v, want the plane as hostA and the cylinder as hostB",
+			ok, gotA, gotB)
+	}
+}
+
+// TestRimRoleHostsRejectsASelfPairedEdge guards the degenerate input: a seam edge that lists ONE face twice
+// cannot fill two distinct host roles, and pairing it would put the same face on both sides of the arm.
+func TestRimRoleHostsRejectsASelfPairedEdge(t *testing.T) {
+	b := importCornerWeldFixture(t, "N4")
+	planes := fixtureFacesOfKind(b, geom.SurfacePlane)
+	if len(planes) < 2 {
+		t.Skipf("N4 carries %d planar faces, need 2", len(planes))
+	}
+	cur := cornerArmLink{hostA: planes[0], hostB: planes[1]}
+	if _, _, ok := rimRoleHosts(planes[0], planes[0], cur); ok {
+		t.Fatal("an edge listing one face twice must not be paired into two distinct host roles")
+	}
+}

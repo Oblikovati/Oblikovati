@@ -3,6 +3,8 @@
 package ops
 
 import (
+	"fmt"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -70,7 +72,10 @@ func weldCornerPlan(body *topo.Body, plan cornerWeldPlan, res Resolution) (*topo
 	if reason != "" {
 		return nil, reason
 	}
-	faces := cornerPlanBlendFaces(plan, welds)
+	faces, reason := cornerPlanBlendFaces(plan, welds)
+	if reason != "" {
+		return nil, reason
+	}
 	hostFaces, reason := cornerPlanHostFaces(body, plan, welds, res)
 	if reason != "" {
 		return nil, reason
@@ -97,25 +102,37 @@ func cornerArmWelds(plan cornerWeldPlan, res Resolution) ([]cornerArmWeld, strin
 
 // cornerPlanBlendFaces runs stage 4: the arm faces plus the corner patch, each side resolved from the
 // ledger. The patch is emitted as SINGLE curve-segs (never a sampled polyline), so the tessellator reads
-// each side identically on both faces.
-func cornerPlanBlendFaces(plan cornerWeldPlan, welds []cornerArmWeld) []filletFace {
-	out := make([]filletFace, 0, len(welds)+1)
+// each side identically on both faces. Each emitted face claims its sides under its OWN ordinal, so the
+// ledger's certificate counts distinct faces rather than raw references.
+func cornerPlanBlendFaces(plan cornerWeldPlan, welds []cornerArmWeld) ([]filletFace, string) {
+	rings := make([]cornerFaceRing, 0, len(welds)+1)
 	for _, w := range welds {
-		for _, ring := range w.faces {
-			out = append(out, cornerRingFace(plan.ledger, ring))
-		}
+		rings = append(rings, w.faces...)
 	}
-	patch := cornerFaceRing{surface: plan.patch.surface, sides: forwardRefs(plan.patch.sides)}
-	return append(out, cornerRingFace(plan.ledger, patch))
+	rings = append(rings, cornerFaceRing{surface: plan.patch.surface, sides: forwardRefs(plan.patch.sides)})
+	out := make([]filletFace, 0, len(rings))
+	for i, ring := range rings {
+		ff, ok := cornerRingFace(plan.ledger, ring, blendClaimant(i))
+		if !ok {
+			return nil, fmt.Sprintf("corner weld: blend face %d of %d claims an unregistered rail (an unset handle)", i, len(rings))
+		}
+		out = append(out, ff)
+	}
+	return out, ""
 }
 
-// cornerRingFace resolves a face ring's rail claims into one filletFace loop.
-func cornerRingFace(led *cornerWeldLedger, ring cornerFaceRing) filletFace {
+// cornerRingFace resolves a face ring's rail claims into one filletFace loop. ok=false when a side carries
+// an unset handle — a zero endSeg there would weld a degenerate segment into the loop.
+func cornerRingFace(led *cornerWeldLedger, ring cornerFaceRing, by railClaimant) (filletFace, bool) {
 	segs := make([]endSeg, 0, len(ring.sides))
 	for _, ref := range ring.sides {
-		segs = append(segs, led.seg(ref.id, ref.dir))
+		s, ok := led.seg(ref.id, ref.dir, by)
+		if !ok {
+			return filletFace{}, false
+		}
+		segs = append(segs, s)
 	}
-	return filletFace{surface: ring.surface, loops: []filletLoop{loopFromSegs(segs)}, parent: ring.parent}
+	return filletFace{surface: ring.surface, loops: []filletLoop{loopFromSegs(segs)}, parent: ring.parent}, true
 }
 
 // forwardRefs claims every rail in a chain in its registered direction.

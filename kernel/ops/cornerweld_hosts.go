@@ -28,6 +28,9 @@ func cornerPlanHostFaces(body *topo.Body, plan cornerWeldPlan, welds []cornerArm
 	}
 	for f, ff := range caps {
 		if _, dup := retrims[f]; dup {
+			// TODO(slice 3 — the multi-corner ring, N2/N8/O2/Y9): a ring's shared boss-base face IS both an
+			// arm host and another arm's far cap, so it needs ONE retrim carrying both the contact-rail
+			// splice and the cap bite. Declining honestly until that composition exists.
 			return nil, fmt.Sprintf("corner weld: face %d is both an arm host and a far cap (unsupported)", f.ID())
 		}
 		retrims[f] = ff
@@ -45,7 +48,10 @@ func cornerPlanHostFaces(body *topo.Body, plan cornerWeldPlan, welds []cornerArm
 
 // cornerHostRetrims re-clips each bitten host once, dispatching on how many arms bite it.
 func cornerHostRetrims(plan cornerWeldPlan, welds []cornerArmWeld, tol float64) (map[*topo.Face]filletFace, string) {
-	grouped := groupHostBites(plan, welds)
+	grouped, reason := groupHostBites(plan, welds)
+	if reason != "" {
+		return nil, reason
+	}
 	out := map[*topo.Face]filletFace{}
 	for _, g := range grouped {
 		ff, reason := cornerHostRetrim(plan, g, tol)
@@ -75,6 +81,9 @@ func cornerHostRetrim(plan cornerWeldPlan, g hostBiteGroup, tol float64) (fillet
 		}
 		return ff, ""
 	}
+	// TODO(slice 3 — rings/loops, M3/M9/Q2 and N2/N8/O2/Y9): a host wrapped by a closed pick loop takes
+	// THREE OR MORE bites in one retrim, which needs the splice generalized to an ordered set of runs
+	// rather than the 1-or-2 dispatch here. Honest decline until then.
 	return filletFace{}, fmt.Sprintf("corner weld: host %d is bitten by %d arms (want 1 or 2)", g.face.ID(), len(g.bites))
 }
 
@@ -94,33 +103,42 @@ type cornerHostChainBite struct {
 }
 
 // groupHostBites resolves every arm's host bites from the ledger and groups them by face, preserving
-// first-seen order so the retrim sequence is deterministic.
-func groupHostBites(plan cornerWeldPlan, welds []cornerArmWeld) []hostBiteGroup {
+// first-seen order so the retrim sequence is deterministic. Each bite is claimed under its HOST face, so
+// two arms biting one host read as one claimant per rail rather than two anonymous references.
+func groupHostBites(plan cornerWeldPlan, welds []cornerArmWeld) ([]hostBiteGroup, string) {
 	index := map[*topo.Face]int{}
 	var out []hostBiteGroup
 	for _, w := range welds {
 		for _, b := range w.hosts {
-			bite := cornerHostChainBite{rails: plan.ledger.chain(b.rails, railForward), consumed: b.consumed}
-			k, seen := index[b.face]
-			if !seen {
-				index[b.face] = len(out)
-				out = append(out, hostBiteGroup{face: b.face, bites: []cornerHostChainBite{bite}, mid: midRailsFor(plan, b.face)})
+			rails, ok := plan.ledger.chain(b.rails, railForward, hostClaimant(b.face))
+			if !ok {
+				return nil, fmt.Sprintf("corner weld: host %d bite claims an unregistered rail (an unset handle)", b.face.ID())
+			}
+			bite := cornerHostChainBite{rails: rails, consumed: b.consumed}
+			if k, seen := index[b.face]; seen {
+				out[k].bites = append(out[k].bites, bite)
 				continue
 			}
-			out[k].bites = append(out[k].bites, bite)
+			mid, ok := midRailsFor(plan, b.face)
+			if !ok {
+				return nil, fmt.Sprintf("corner weld: host %d patch rail claims an unregistered rail (an unset handle)", b.face.ID())
+			}
+			index[b.face] = len(out)
+			out = append(out, hostBiteGroup{face: b.face, bites: []cornerHostChainBite{bite}, mid: mid})
 		}
 	}
-	return out
+	return out, ""
 }
 
 // midRailsFor resolves the patch side that rides on this host (design Axis A3), or nil when none does.
-func midRailsFor(plan cornerWeldPlan, face *topo.Face) []endSeg {
+// ok=false only when a registered mid chain carries an unset handle.
+func midRailsFor(plan cornerWeldPlan, face *topo.Face) ([]endSeg, bool) {
 	for _, m := range plan.mids {
 		if m.face == face {
-			return plan.ledger.chain(m.rails, railForward)
+			return plan.ledger.chain(m.rails, railForward, hostClaimant(face))
 		}
 	}
-	return nil
+	return nil, true
 }
 
 // cornerCapRetrims accumulates every arm's far-cap bite onto its capping face: a convex arm's cap RECEDES
@@ -135,7 +153,11 @@ func cornerCapRetrims(plan cornerWeldPlan, welds []cornerArmWeld, tol float64) (
 		if _, seen := work[c.face]; !seen {
 			work[c.face] = segsFromLoop(outerHostLoop(c.face))
 		}
-		segs, reason := applyCapBite(work[c.face], plan.ledger.seg(c.trim, railForward), c, tol)
+		trim, ok := plan.ledger.seg(c.trim, railForward, hostClaimant(c.face))
+		if !ok {
+			return nil, fmt.Sprintf("corner weld: far-cap %d claims an unregistered runout trim (an unset handle)", c.face.ID())
+		}
+		segs, reason := applyCapBite(work[c.face], trim, c, tol)
 		if reason != "" {
 			return nil, reason
 		}
