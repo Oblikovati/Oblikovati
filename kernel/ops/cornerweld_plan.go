@@ -40,6 +40,11 @@ const (
 	// farCappedVertex (B1/B2) — the far vertex carries a unique transverse capping face; the shared
 	// far-runout engine (armFarRunout) dispatches perpendicular vs oblique itself.
 	farCappedVertex farTermKind = iota
+	// farRimContinuation (B3) — the far vertex is a G1 SEAM, not a cap: the rim continues past it on the same
+	// pair of host surfaces, so no transverse capping face exists there (armFarRunout's count==0 decline).
+	// The arm runs THROUGH the seam and terminates at the end of the tangent chain, splitting into one face
+	// per host-face span on the way. See cornerweld_far_rim.go.
+	farRimContinuation
 )
 
 // retrimSense is how a host/cap is re-clipped where the arm meets it (design Axis C): a convex arm bites

@@ -89,8 +89,8 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 	assertHardenedRollup(t, byGrid, passRollup, total[SkipQuarantine])
 }
 
-// assertHardenedRollup pins the honest rollup at the isWatertightSolid bar: 95 green in the
-// simple grid, 97 green across all grids, and SkipQuarantine=1 (H6 only). The single-boss setback tiling
+// assertHardenedRollup pins the honest rollup at the isWatertightSolid bar: 104 green in the
+// simple grid, 109 green across all grids, and SkipQuarantine=1 (H6 only). The single-boss setback tiling
 // greened S6/S9/T3 (86→89 / 88→91, SkipQuarantine 6→3); the dipArcOrder obstacle-path fix then greened
 // U3 (89→90 / 91→92, SkipQuarantine 3→2); the U4-5 dual-host multi-rail weld then greened U4 (90→91 /
 // 92→93, SkipQuarantine 2→1). The concave bore-lip rim mirror (fillet_rim_concave.go's
@@ -145,18 +145,30 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 // land on OCCT's own numbers at −0.041% / −0.020% with DRAWEXE-exact topology (9 faces / 11 vertices / 17
 // edges). They green only because the convexity gate reads the SOLID (the imported elliptic face's Reversed
 // flag mis-classifies them). This restored 101→103 simple / 104→108 all-grid, SkipQuarantine unchanged at 1.
-// (The mixed-radius TRIHEDRAL
+// The GENERAL corner-weld layer (cornerweld_*.go) then GREENED N4 (simple): a full r20 cylinder standing on a
+// 100³ box's vertical corner, filleted r5 on three edges meeting at one trihedral vertex. Its geometry (the
+// four corner points, the two on-host rails, the NoFold-certified coons4 patch) had been committed and
+// DRAWEXE-validated for four prior pieces; what was missing was the WELD, and it needed two stage variants
+// that now live in the shared layer rather than in N4: (a) the convex cap-rim arm's far vertex is a G1 SEAM,
+// not a cap — only the 90° piece of the 270° rim was picked and the rim continues tangentially across the boss
+// wall's second face, so the arm runs THROUGH the seam to the end of the tangent chain (farRimContinuation);
+// (b) crossing that seam splits the band into one face per host-face span, which is the C4 split. OCCT's own
+// blend does exactly this (its oracle carries the band over all 270° as two faces, 76.3° + exactly 180°, and
+// recedes BOTH wall faces to z=45), so the "cap-less rim far termination" the recon predicted is really a
+// continuation. Ours: watertight 14-face solid, area 64292.3 vs OCCT 64287.2 (+0.008%), volume 1046910.4 vs
+// DRAWEXE vprops 1.04694e6 (−0.0028%). This restored 103→104 simple / 108→109 all-grid, SkipQuarantine
+// unchanged at 1. (The mixed-radius TRIHEDRAL
 // corner A4, r10/r5/r5, needs a torus corner patch — declined for now, a tracked follow-up.) A mismatch means
 // either a false green slipped through or a case was over/under-quarantined — see harden-green-gate-brief.md's
 // "STOP and report" instruction.
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 103 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 103 (closed elliptic-rim canal band J6/J8)", simpleGreen)
+	if simpleGreen != 104 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 104 (general corner-weld layer + N4)", simpleGreen)
 	}
-	if allGridGreen != 108 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 108 (closed elliptic-rim canal band J6/J8 + concave A7/B1)", allGridGreen)
+	if allGridGreen != 109 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 109 (general corner-weld layer + N4)", allGridGreen)
 	}
 	if skipQuarantine != 1 {
 		t.Errorf("SkipQuarantine = %d, want 1 (H6 only, #2007 U4 freed by U4-5)", skipQuarantine)

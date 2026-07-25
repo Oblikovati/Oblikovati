@@ -57,17 +57,25 @@ func cornerHostRetrims(plan cornerWeldPlan, welds []cornerArmWeld, tol float64) 
 	return out, ""
 }
 
-// cornerHostRetrim dispatches one host. A two-arm corner host is the only shape this slice serves; any
-// other count is out of scope and floors honestly (do-no-harm).
+// cornerHostRetrim dispatches one host: two bites → the corner-host splice (the two picked edges at the
+// vertex), one bite → the single-arm splice (a host the arm merely runs across, which a rim continuation
+// reaches). Any other count is out of the layer's scope and floors honestly.
 func cornerHostRetrim(plan cornerWeldPlan, g hostBiteGroup, tol float64) (filletFace, string) {
-	if len(g.bites) != 2 {
-		return filletFace{}, fmt.Sprintf("corner weld: host %d is bitten by %d arms (want exactly 2)", g.face.ID(), len(g.bites))
+	if len(g.bites) == 2 {
+		ff, ok := cornerChainHostRetrim(g.face, g.bites[0], g.bites[1], g.mid, plan.vertex, tol)
+		if !ok {
+			return filletFace{}, fmt.Sprintf("corner weld: two-arm host %d retrim declined", g.face.ID())
+		}
+		return ff, ""
 	}
-	ff, ok := cornerChainHostRetrim(g.face, g.bites[0], g.bites[1], g.mid, plan.vertex, tol)
-	if !ok {
-		return filletFace{}, fmt.Sprintf("corner weld: two-arm host %d retrim declined", g.face.ID())
+	if len(g.bites) == 1 {
+		ff, ok := cornerSingleHostRetrim(g.face, g.bites[0], tol)
+		if !ok {
+			return filletFace{}, fmt.Sprintf("corner weld: single-arm host %d retrim declined", g.face.ID())
+		}
+		return ff, ""
 	}
-	return ff, ""
+	return filletFace{}, fmt.Sprintf("corner weld: host %d is bitten by %d arms (want 1 or 2)", g.face.ID(), len(g.bites))
 }
 
 // hostBiteGroup is one host face's resolved bites plus the patch rail chain riding on it (nil when the two
@@ -154,6 +162,69 @@ func applyCapBite(segs []endSeg, trim endSeg, c cornerCapBite, tol float64) ([]e
 		return nil, fmt.Sprintf("corner weld: far-cap %d grow declined at %v", c.face.ID(), c.far)
 	}
 	return grown, ""
+}
+
+// cornerSingleHostRetrim re-clips a host bitten by ONE arm: the consumed loop edges are replaced by the
+// arm's contact rail chain and the two flanking edges are re-terminated onto the chain's feet, each on its
+// own supporting line/circle. This is the shape concaveRetrimLoop has for a single picked edge, lifted to a
+// rail CHAIN over a contiguous RUN so a rim continuation can re-clip a host it merely crosses (N4's second
+// boss-wall face, receded over its whole 180° span). Declines when the consumed edges are not a contiguous
+// run or a foot leaves a flank's geometry — the do-no-harm floor.
+func cornerSingleHostRetrim(host *topo.Face, bite cornerHostChainBite, tol float64) (filletFace, bool) {
+	if len(bite.consumed) == 0 {
+		return filletFace{}, false
+	}
+	bitten := hostBittenLoop(host, bite.consumed[0].StartVertex().Point(), tol)
+	outer := outerHostLoop(host)
+	if bitten == nil || outer == nil {
+		return filletFace{}, false
+	}
+	segs := segsFromLoop(bitten)
+	run, ok := consumedRun(segs, bite.consumed, tol)
+	if !ok || len(segs) < 3 {
+		return filletFace{}, false
+	}
+	retrim, ok := spliceSingleRun(segs, run, bite.rails, tol)
+	if !ok {
+		return filletFace{}, false
+	}
+	return filletFace{surface: host.Geometry(), loops: hostLoopsWithRetrim(host, bitten, outer, retrim), parent: host.Lineage()}, true
+}
+
+// spliceSingleRun replaces the consumed run with the rail chain — oriented to the loop's own traversal by
+// matching each chain end to the flanking edge's supporting geometry — and re-terminates the two flanks.
+func spliceSingleRun(segs []endSeg, run segRun, rails []endSeg, tol float64) (filletLoop, bool) {
+	n := len(segs)
+	before, after := (run.lo-1+n)%n, (run.hi+1)%n
+	if before == after {
+		return filletLoop{}, false // one shared flank leaves nothing to re-terminate independently
+	}
+	chain, ok := orientChainToFlanks(segs[before], segs[after], rails, tol)
+	if !ok {
+		return filletLoop{}, false
+	}
+	prev, okp := reterminateSegTo(segs[before], chain[0].from, tol)
+	next, okn := reterminateSegFrom(segs[after], chain[len(chain)-1].to, tol)
+	if !okp || !okn {
+		return filletLoop{}, false
+	}
+	return loopFromSegs(rebuildChainRing(segs, run, segRun{lo: -1, hi: -1}, before, after, prev, chain, next)), true
+}
+
+// orientChainToFlanks returns the rail chain traversed so its FIRST foot lies on prev's supporting geometry
+// and its LAST on next's — the loop's own direction. ok=false when neither orientation matches.
+func orientChainToFlanks(prev, next endSeg, rails []endSeg, tol float64) ([]endSeg, bool) {
+	if len(rails) == 0 {
+		return nil, false
+	}
+	if segSupportsPoint(prev, rails[0].from, tol) && segSupportsPoint(next, rails[len(rails)-1].to, tol) {
+		return rails, true
+	}
+	rev := reverseEndSegs(rails)
+	if segSupportsPoint(prev, rev[0].from, tol) && segSupportsPoint(next, rev[len(rev)-1].to, tol) {
+		return rev, true
+	}
+	return nil, false
 }
 
 // consumedRun locates the CONTIGUOUS ring run of loop segments the bite's consumed edges occupy. A rim

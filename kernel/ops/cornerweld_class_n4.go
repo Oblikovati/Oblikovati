@@ -97,14 +97,22 @@ func n4TerminatingArm(role string, ef edgeFillet, arc geom.Arc3d, near railID) c
 	}
 }
 
-// n4LateralTorusArm declares the CONVEX torus arm (the boss cap-rim fillet): it runs PAST the corner, so its
-// near boundary is the general on-torus rail B→C rather than a cross-section arc (A2), and its far cap
-// RECEDES around the runout trim.
+// n4LateralTorusArm declares the CONVEX torus arm (the boss cap-rim fillet). Two things distinguish it from
+// a plain arm, and both are layer stage variants rather than N4 code:
+//   - it runs PAST the corner, so its near boundary is the general on-torus rail B→C rather than a
+//     cross-section arc (A2);
+//   - its far end is a G1 SEAM on the boss wall, not a cap: only the 90° piece of the 270° cap rim was
+//     picked, and the rim continues tangentially across the wall's second face. It therefore terminates by
+//     rim CONTINUATION (B3) — the arm runs through the seam to the end of the tangent chain, splitting into
+//     one face per host-face span (C4). OCCT's oracle confirms this is what a blend does here: its result
+//     carries the band over the whole 270° as two faces and recedes both wall faces.
+//
+// Its far cap RECEDES around the runout trim (a convex arm bites material away).
 func n4LateralTorusArm(ef edgeFillet, near railID) cornerArmSpec {
 	return cornerArmSpec{
 		role: "torus", ef: ef, surface: ef.armSurface,
 		nearKind: armPassesLaterally, near: []railID{near},
-		far: farCappedVertex, sense: biteInward,
+		far: farRimContinuation, sense: biteInward,
 	}
 }
 

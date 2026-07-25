@@ -62,7 +62,7 @@ func contiguousSegRun(idx []int, n int) (segRun, bool) {
 
 // rebuildChainRing rebuilds the ordered ring with runFirst+runSecond replaced by the chain and the two
 // outer flanks by their re-terminated forms. Ring positions are otherwise preserved, so closure holds by
-// construction.
+// construction. runSecond may be empty (the single-arm splice).
 func rebuildChainRing(segs []endSeg, runFirst, runSecond segRun, before, after int, flankBefore endSeg, chain []endSeg, flankAfter endSeg) []endSeg {
 	out := make([]endSeg, 0, len(segs)+len(chain))
 	for k := range segs {

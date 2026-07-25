@@ -230,15 +230,9 @@ func buildMixedArmBundle(ef edgeFillet, arm geom.Surface, cornerArc geom.Arc3d, 
 // endpoint on each host): the far foot is the arm ball's tangent point on the host at the far vertex. The
 // far→near orientation is what armFarRunout reads (h0.from is the far terminus). Declines on any obstruction.
 func mixedArmHostRails(ef edgeFillet, arm geom.Surface, nearA, nearB, vPoint math.Point3, r float64, res Resolution) (endSeg, endSeg, string) {
-	tol := res.Weld() * r
-	mBall, ok := armBallCenter(arm, farVertexNotVid2(ef.edge, vPoint, tol))
-	if !ok {
-		return endSeg{}, endSeg{}, "mixed arm: arm spine undefined at the far vertex"
-	}
-	farA, okA := armRunoutFoot(ef.a, mBall, r, tol)
-	farB, okB := armRunoutFoot(ef.b, mBall, r, tol)
-	if !okA || !okB {
-		return endSeg{}, endSeg{}, fmt.Sprintf("mixed arm: far ball not internally tangent to a host (a=%v b=%v)", okA, okB)
+	farA, farB, reason := mixedArmFarFeet(ef, arm, vPoint, r, res)
+	if reason != "" {
+		return endSeg{}, endSeg{}, reason
 	}
 	railA, okRA := armRunoutRail(ef.a, ef.edge, arm, farA, nearA, res)
 	railB, okRB := armRunoutRail(ef.b, ef.edge, arm, farB, nearB, res)
@@ -246,6 +240,25 @@ func mixedArmHostRails(ef edgeFillet, arm geom.Surface, nearA, nearB, vPoint mat
 		return endSeg{}, endSeg{}, "mixed arm: a host contact rail could not be built"
 	}
 	return railA, railB, ""
+}
+
+// mixedArmFarFeet is the rolling ball's two contact feet at the arm's far vertex — the outer ends both
+// mixedArmHostRails and the corner-weld layer's own rail builder land their rails on. Split out so the two
+// share the foot solve without sharing a rail construction (the layer needs a rail form the three-point fit
+// cannot express for a half-turn span). Declines when the spine is undefined there or the ball is not
+// internally tangent to a host at radius r.
+func mixedArmFarFeet(ef edgeFillet, arm geom.Surface, vPoint math.Point3, r float64, res Resolution) (math.Point3, math.Point3, string) {
+	tol := res.Weld() * r
+	mBall, ok := armBallCenter(arm, farVertexNotVid2(ef.edge, vPoint, tol))
+	if !ok {
+		return math.Point3{}, math.Point3{}, "mixed arm: arm spine undefined at the far vertex"
+	}
+	farA, okA := armRunoutFoot(ef.a, mBall, r, tol)
+	farB, okB := armRunoutFoot(ef.b, mBall, r, tol)
+	if !okA || !okB {
+		return math.Point3{}, math.Point3{}, fmt.Sprintf("mixed arm: far ball not internally tangent to a host (a=%v b=%v)", okA, okB)
+	}
+	return farA, farB, ""
 }
 
 // orientArcSeg wraps the corner arc as an endSeg oriented from the ef.a endpoint (nearA) to the ef.b one —

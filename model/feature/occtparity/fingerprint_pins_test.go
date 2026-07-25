@@ -393,5 +393,19 @@ func byteIdentityPins() []fingerprintPin {
 		// Re-captured with J6/J8 above for the same canal-band v-labelling fix — see that receipt.
 		{"A7", 36723071.024155125022, 110356, 0x988878689a64481e, "bfuseblend"},
 		{"B1", 14299454.139366334304, 133748, 0xfb85dc13f23feabb, "bfuseblend"},
+		// N4 (simple): the first case welded by the GENERAL corner-weld layer (cornerweld_*.go) — a full r20
+		// cylinder standing on a 100³ box's vertical corner, filleted r5 on three edges meeting at one
+		// trihedral vertex. It needed two layer stage variants: the CONVEX cap-rim arm's far vertex is a G1
+		// SEAM on the boss wall rather than a cap (only the 90° piece of the 270° rim was picked, and the rim
+		// continues tangentially), so the arm runs THROUGH it to the end of the tangent chain and splits into
+		// one face per host-face span. DRAWEXE 8.0.0 receipt (`restore CFI_e5678fil.rle s ; tscale s 0 0 0 10 ;
+		// explode s e ; blend result s 5 s_4 5 s_13 5 s_2`): valid SOLID, 14 faces / 14 wires, sprops area
+		// 64287.2, vprops volume 1.04694e6 — ours 14 faces, area 64292.3 (+0.008%), volume 1046910.4
+		// (−0.0028%). Per-face reconciliation against the oracle is exact to <0.01% on eleven of the fourteen
+		// faces; the remaining ±25 redistributes among the corner patch and its two neighbours because our
+		// coons4 fill is not bit-for-bit OCCT's rational patch (its four corner points agree to ≤0.05).
+		// Captured on THIS HEAD; it locks the layer so any later class builder (O1, H7, …) or executor change
+		// fails loud if it perturbs N4. Same cross-platform-risk caveat as above applies.
+		{"N4", 1046910.385015469277, 55856, 0x8df4717458b48c1d, ""},
 	}
 }
