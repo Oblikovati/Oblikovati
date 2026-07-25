@@ -25,7 +25,7 @@ import (
 // (S6/S9/T3) — those greened only once this closed the watertight/HolesContained gap the do-no-harm
 // baseline left open.
 func buildSetbackFaces(set *runoutSet, ef edgeFillet, b setbackBands, loops []RailLoop, res Resolution, maps filletRebuildMaps) bool {
-	t, ok := resolveSetbackTiling(b, ef)
+	t, ok := resolveSetbackTiling(b, ef, res)
 	if !ok {
 		return false
 	}
@@ -127,15 +127,20 @@ func reclipPlainFace(set *runoutSet, ef edgeFillet, t setbackTiling, maps fillet
 }
 
 // plainContactDetour is the ONE-boss plain face's notch detour: from the receded tangent corner it enters
-// (from), a straight wing B-tangent survivor to the near cut station, the central patch's plain seam
-// (near→far) sampled at ringSegSamples (the SAME density the central patch tiles geom.NewLineSegment at, so
-// the two weld), and a straight wing survivor to the far corner (to). No boss arc — the plain face has no
-// footprint. The straight-uniform subdivision is direction-independent, so the notch and the patch share
-// the identical interior points whichever corner the notch is entered from.
+// (from), a straight wing B-tangent survivor to the near cut station, the central patch's OWN tangency
+// CONTACT LOCUS (near→far) sampled at ringSegSamples, and a straight wing survivor to the far corner
+// (to). No boss arc — the plain face has no footprint. The locus replaces the straight segment this used
+// to draw at the PLAIN fillet's contact line: the run-out ball recedes from that line (up to 11% of this
+// face's area, coons4-audit.md §C.4's separable under-recession), so a straight seam left the host face
+// the wrong size AND left the patch boundary off its own surface. orientedLocus makes the polyline
+// direction-safe, so the notch and the patch still share identical interior points from either corner.
 func plainContactDetour(t setbackTiling) func(from, to math.Point3) ([]notchSeg, bool) {
 	return func(from, to math.Point3) ([]notchSeg, bool) {
+		if t.mid == nil {
+			return nil, false
+		}
 		near, far := orderByNearer(from, t.bCutLo, t.bCutHi)
-		segs := appendArcSegs([]notchSeg{{pt: from}}, geom.NewLineSegment(near, far), ringSegSamples)
+		segs := appendArcSegs([]notchSeg{{pt: from}}, orientedLocus(t.mid.railB, near, t.weld), ringSegSamples)
 		return append(segs, notchSeg{pt: far}), true
 	}
 }
@@ -231,29 +236,48 @@ func appendSeamArc(segs []notchSeg, boss crossingBoss, arc geom.Curve3) []notchS
 }
 
 // innerHostDetour is the inner host's notch builder: from the receded tangent corner a straight survivor
-// to the near flank cut station, the near plain-contact seam (bCut→bSeam, sampled to match the flank
-// patch), the boss host-side footprint arc (bSeam→seam→bSeam), the far plain seam, and a straight
-// survivor home. Every sub-curve is sampled identically to its patch/wall neighbour so all weld.
+// to the near flank cut station, the near flank's tangency CONTACT LOCUS (bCut→bSeam, the flank patch's
+// own rail object), the boss host-side footprint arc (bSeam→seam→bSeam), the far flank's locus, and a
+// straight survivor home. Every sub-curve is the very curve its patch/wall neighbour tiles, so all weld.
 func innerHostDetour(boss crossingBoss, cyl geom.Cylinder, t setbackTiling) func(from, to math.Point3) ([]notchSeg, bool) {
 	return func(from, to math.Point3) ([]notchSeg, bool) {
+		if t.left == nil || t.right == nil {
+			return nil, false
+		}
 		nearCut, farCut := orderByNearer(from, t.bCutLo, t.bCutHi)
 		nearSeam, farSeam := orderByNearer(from, t.bSeamLo, t.bSeamHi)
-		return innerHostSegs(boss, cyl, from, nearCut, nearSeam, farSeam, farCut)
+		return innerHostSegs(boss, cyl, from, t.flankLocusFrom(nearCut), t.flankLocusFrom(farSeam),
+			nearSeam, farSeam, farCut)
 	}
 }
 
+// flankLocusFrom returns whichever flank's tangency contact locus starts at p, traced from p — the
+// direction-safe accessor the inner host notch needs, since the two flanks own different loci and a
+// polyline is not direction-symmetric.
+func (t setbackTiling) flankLocusFrom(p math.Point3) geom.Curve3 {
+	for _, band := range []*runoutBand{t.left, t.right} {
+		for _, end := range []math.Point3{curveStart(band.railB), curveEnd(band.railB)} {
+			if float64(end.DistanceTo(p)) <= t.weld {
+				return orientedLocus(band.railB, p, t.weld)
+			}
+		}
+	}
+	return nil
+}
+
 // innerHostSegs assembles the inner host detour's notch segment chain (split from innerHostDetour to
-// keep the closure short): from→nearCut, the near plain seam, the host-side arc through the wall seam,
-// the far plain seam, farCut→to.
-func innerHostSegs(boss crossingBoss, cyl geom.Cylinder, from, nearCut, nearSeam, farSeam, farCut math.Point3) ([]notchSeg, bool) {
+// keep the closure short): from→nearCut via the near flank's contact locus, the host-side arc through
+// the wall seam, the far flank's locus back out, farCut→to.
+func innerHostSegs(boss crossingBoss, cyl geom.Cylinder, from math.Point3,
+	nearLocus, farLocus geom.Curve3, nearSeam, farSeam, farCut math.Point3) ([]notchSeg, bool) {
 	arc1, arc2, ok := hostRimArcs(boss, cyl, nearSeam, boss.footEdge.StartVertex().Point(), farSeam)
-	if !ok {
+	if !ok || nearLocus == nil || farLocus == nil {
 		return nil, false
 	}
-	segs := appendArcSegs([]notchSeg{{pt: from}}, geom.NewLineSegment(nearCut, nearSeam), ringSegSamples)
+	segs := appendArcSegs([]notchSeg{{pt: from}}, nearLocus, ringSegSamples)
 	segs = appendArcSegs(segs, arc1, torusHostArcChordCount(boss, arc1))
 	segs = appendSeamArc(segs, boss, arc2)
-	segs = appendArcSegs(segs, geom.NewLineSegment(farSeam, farCut), ringSegSamples)
+	segs = appendArcSegs(segs, farLocus, ringSegSamples)
 	return append(segs, notchSeg{pt: farCut}), true
 }
 
@@ -324,13 +348,10 @@ func rimSubArcChordCount(boss crossingBoss, arc geom.Curve3, i, total int) int {
 	return torusHostArcChordCount(boss, arc)
 }
 
-// torusHostArcChordCount is the chord count for a boss's host-side footprint arc: span-proportional
-// (≈torusRimChordAngle per chord, floored at ringSegSamples) for a TORUS wall so its band lofts accurately,
-// and exactly ringSegSamples for any RULED wall (cylinder/cone/elliptical-cylinder) so S1/S4/T7 stay byte-
-// identical. A SPHERE wall densifies the SAME way but ONLY when boss.densifyHostArc is set — the single-boss
-// tiling (#2007) sets it so S6's whole-footprint host notch matches the analytic disc, while the 2-boss
-// sphere (S7) leaves it false and stays byte-identical on the coarse default. Both the wall rim and the host
-// notch sample the SAME host arc through here, so they stay weld-identical at whatever count the wall sets.
+// torusHostArcChordCount is the chord count for a boss's host-side footprint arc: span-proportional,
+// ≈torusRimChordAngle per chord, floored at ringSegSamples. Both the wall rim and the host notch sample
+// the SAME host arc through here, so they stay weld-identical at whatever count it returns. See
+// hostArcDensifies for why every wall kind now densifies.
 func torusHostArcChordCount(boss crossingBoss, arc geom.Curve3) int {
 	if !hostArcDensifies(boss) {
 		return ringSegSamples
@@ -342,19 +363,17 @@ func torusHostArcChordCount(boss crossingBoss, arc geom.Curve3) int {
 	return n
 }
 
-// hostArcDensifies reports whether a boss's host footprint arc is chorded span-proportionally: always for a
-// TORUS wall (its doubly-curved band over-covers a coarse host arc), and for a SPHERE wall only when the
-// single-boss tiling requested it (densifyHostArc). Every ruled wall stays coarse (byte-identical).
-func hostArcDensifies(boss crossingBoss) bool {
-	switch boss.wall.(type) {
-	case geom.Torus:
-		return true
-	case geom.Sphere:
-		return boss.densifyHostArc
-	default:
-		return false
-	}
-}
+// hostArcDensifies reports whether a boss's host footprint arc is chorded span-proportionally. It is now
+// unconditional. The host-side arc is the LONG way round the footprint (240°–315° on the corpus bosses),
+// and chording it at the coarse ringSegSamples leaves the re-clipped host plane with the whole inscribed-
+// polygon deficit — Σ (r²/2)(θ−sinθ) over the chords — as SURPLUS face area, because the notch cuts
+// inside the true rim. That is exactly the "host plane recedes too little" defect coons4-audit.md §C.4
+// isolated and could not attribute: S7 +10.95% (a 6-chord 315° sphere rim), S4 +8.87%, T7 +6.18%,
+// S1 +6.07%. It was never a geometry error — the wall rim and the host notch trace the same arcs — it is
+// the polygonal approximation of those arcs, and the fix is to chord them at the span-proportional angle
+// the torus wall already used. The wall rim and the host notch both read their count through here, so
+// they stay weld-identical at whatever count this returns.
+func hostArcDensifies(_ crossingBoss) bool { return true }
 
 // arcSweepAbs is the absolute swept angle of a footprint sub-arc (a geom.Arc3d circle arc or a
 // geom.EllipticalArc), 0 for any other curve (a straight flank chord) — the ruler the torus host-arc chord

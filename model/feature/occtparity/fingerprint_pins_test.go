@@ -249,14 +249,21 @@ func byteIdentityPins() []fingerprintPin {
 		// footprint used to protrude past the shrunken host outer loop (HolesContained=false — the malformed
 		// B-rep poison pill the do-no-harm baseline left). The single-boss tiling (2 plain cyl wings + one
 		// central run-out patch that absorbs the footprint, boss WALL kept intact, both edge faces re-clipped
-		// single-loop) welds each to a watertight, hole-contained SOLID: S6 (Sphere r13, area +0.074%), S9
-		// (Torus(20,5), +0.267%), T3 (Torus(35,10) oblique, +0.114%). S6's sphere host footprint arc is
-		// densified span-proportionally (densifyHostArc — one-boss only, so the 2-boss sphere S7 stays byte-
-		// identical). Captured on THIS HEAD; they lock the single-boss setback so any later slice (Group B U3,
-		// Group C U4) fails loud if it perturbs an S6/S9/T3 body. Same cross-platform-risk caveat as above.
-		{"S6", 18044.769951207, 19602, 0x677c6f17793080c, ""},
-		{"S9", 116088.833852354, 85614, 0x93ef9087c21bf57a, ""},
-		{"T3", 130621.192627563, 91054, 0xfa008dbaf5dd4d2d, ""},
+		// single-loop) welds each to a watertight, hole-contained SOLID.
+		//
+		// RE-CAPTURED on the run-out envelope slice (.superpowers/sdd/runout-envelope-report.md), which
+		// legitimately CHANGED all three bodies. The run-out patch is now the exact rolling-ball envelope
+		// (an exact-station canal loft), not a Coons fill: coons4-audit.md measured that fill 9.0% of r
+		// (S6) / 11.6% (S9) / 9.7% (T3) away from OCCT's own surface on deep-interior samples, and it now
+		// reads 0.007% / 0.022% / 0.014%. The pInner rail is the receded tangency CONTACT LOCUS instead of
+		// a straight line at the plain fillet's contact (S6's front plane went 360.000 → 360.916 against
+		// OCCT's 360.919), and every boss's host-side footprint arc is chorded span-proportionally
+		// (hostArcDensifies, now unconditional). Whole-body area: S6 +0.074% → +0.039%, S9 +0.267% →
+		// +0.073%, T3 +0.114% → +0.043%. Re-captured ONLY after the per-face DRAWEXE reconciliation
+		// confirmed every face moved toward the oracle. Same cross-platform-risk caveat as above.
+		{"S6", 18039.724864028, 15982, 0x18a1d92e1931c91b, ""},
+		{"S9", 115876.963113864, 89826, 0x93b72952c31ab329, ""},
+		{"T3", 130529.141817073, 80716, 0x1ae414df7f42fdd8, ""},
 		// U3 (simple): the Group-B obstacle-path dip-detection green (fillet_obstacle_detect.go's
 		// dipArcOrder, #2007). U3 is a box + ONE oblique/y-elongated EllipticalCylinder mid-span boss — the
 		// SAME shape as the already-green T6 (oblique EllipticalCylinder) — but dipsPast was handed the

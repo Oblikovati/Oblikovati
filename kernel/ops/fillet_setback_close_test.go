@@ -438,21 +438,14 @@ func TestFilletEdges_T3TorusObliqueSingleBoss(t *testing.T) {
 }
 
 // TestResolveSetbackTiling_TwoBossUnchanged pins the do-no-harm gate for the single-boss addition: the
-// 2-boss S1 shape still resolves to the S1 tiling (outer+inner bosses, both hosts distinct) and its sphere
-// sibling S7 keeps densifyHostArc FALSE — the flag is set ONLY by resolveSingleBossTiling, so the 2-boss
-// path (S1/S4/T1/T4/T7/S7) stays byte-identical (verified by the occtparity fingerprint pins).
+// 2-boss S1 shape still resolves to the S1 tiling (outer+inner bosses, both hosts distinct).
 func TestResolveSetbackTiling_TwoBossUnchanged(t *testing.T) {
 	ef, res := runoutFixtureCrossingBoss(t)
 	b, ok := detectSetbackBands(ef, res)
 	if !ok || len(b.bosses) != 2 {
 		t.Fatalf("S1 fixture: want 2-boss bands, got ok=%v bosses=%d", ok, len(b.bosses))
 	}
-	for i, boss := range b.bosses {
-		if boss.densifyHostArc {
-			t.Fatalf("2-boss boss[%d] has densifyHostArc=true; the flag must be single-boss-only (S7 byte-identity)", i)
-		}
-	}
-	if _, ok := resolveSetbackTiling(b, ef); !ok {
+	if _, ok := resolveSetbackTiling(b, ef, res); !ok {
 		t.Fatalf("resolveSetbackTiling rejected the 2-boss S1 shape")
 	}
 }

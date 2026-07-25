@@ -32,8 +32,13 @@ var _ railProvider = coons4Provider{}
 // Name reports the provider's telemetry kind (never read by assembly; ADR-2 lineage invariance).
 func (coons4Provider) Name() CornerBlendKind { return BlendKindCoons4 }
 
-// Fits claims any 4-sided loop; Build's certificate is the real admissibility gate.
-func (coons4Provider) Fits(loop RailLoop) bool { return loop.Valence() == 4 }
+// Fits claims any 4-sided loop EXCEPT a SETBACK-CLOSE run-out band (RailLoop.Runout non-nil). A Coons
+// interpolant is the wrong MODEL for a rolling-ball run-out — measured 9–19% of r off OCCT's own
+// surface on nine corpus greens whose rails were already right to 1e-14 (coons4-audit.md §C) — so if
+// runoutCanalProvider declines to loft one, the honest outcome is to reject the edge, NOT to fall back
+// onto the fill this tier is known to get wrong. Build's certificate is the admissibility gate for
+// every other loop.
+func (coons4Provider) Fits(loop RailLoop) bool { return loop.Runout == nil && loop.Valence() == 4 }
 
 // Build fills the loop and certifies it, or declines (ok=false) so a later tier / honest-reject
 // handles it. It is the RailLoop-path sibling of bsplineObstacleProvider.Build.

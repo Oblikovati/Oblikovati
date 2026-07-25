@@ -85,6 +85,49 @@ type RailLoop struct {
 	// station loft: nil for every non-core loop, so the provider declines and the corpus is
 	// unaffected — only buildCoreLoop sets it, and canalStationProvider.Fits keys on the pointer.
 	Stations *CanalStationFill
+	// Runout, when non-nil, carries the exact SETBACK-CLOSE run-out stations (fillet_runout_band.go)
+	// the runoutCanalProvider lofts. Same nilable-payload discipline as Canal/Stations: only
+	// extractSetbackPatches sets it and only runoutCanalProvider.Fits keys on the pointer, so every
+	// other loop is byte-unaffected.
+	Runout *RunoutCanal
+	// Envelope, when non-nil, names what the rolling ball must stay at radius from — the extractor's
+	// own statement of the patch's defining property, which the certificate's interior residual
+	// measures against. It is deliberately EXTRACTOR-supplied: coons4-audit.md §B.4 measured a
+	// certify-time GUESS at the roll hosts reading 5–19% residual even on OCCT's own CORRECT patches,
+	// so a self-derived guess cannot be a gate.
+	Envelope *BallEnvelope
+}
+
+// BallEnvelope names the geometry a constant-radius rolling-ball patch is the envelope of: the
+// surfaces the ball stays TANGENT to and the restriction curves it passes THROUGH. A SETBACK-CLOSE
+// run-out needs both — its flank bands are tangent to one host plane and pass through the blocking
+// boss's footprint conic, which is why a tangent-surfaces-only payload cannot express them.
+type BallEnvelope struct {
+	// Radius is the rolling-ball radius r; every listed host/curve must sit exactly r from the centre.
+	Radius float64
+	// Tangents are the surfaces the ball rolls ON (dist(centre, surface) == Radius).
+	Tangents []geom.Surface
+	// Through are the restriction curves the ball passes THROUGH — the run-out ball's flank is TANGENT
+	// to a host plane and passes THROUGH the blocking boss's footprint conic, so a tangency-only
+	// payload cannot express it.
+	Through []geom.Curve3
+	// Spine is the unit normal of the ball's SECTION planes — the fillet spine direction.
+	Spine math.Vector3
+}
+
+// RunoutCanal carries one SETBACK-CLOSE run-out band's EXACT rolling-ball stations — centre plus both
+// contacts per spine station, every one closed-form (fillet_runout_envelope.go), so
+// geom.LoftCanalStations skins the true envelope instead of a Coons interpolant through the same four
+// rails. That substitution is the whole of commit A: coons4-audit.md measured the Coons interior at
+// 9–19% of r from OCCT's own surface on nine corpus greens whose RAILS were already right to 1e-14.
+type RunoutCanal struct {
+	// Centers are the ball centres c(s), one per station, ascending along the spine.
+	Centers []math.Point3
+	// FeetA / FeetB are the two contacts at each station, each algebraically at Radius from Centers
+	// (geom.LoftCanalStations asserts it, so a mis-derived station is declined rather than lofted).
+	FeetA, FeetB []math.Point3
+	// Envelope is what the ball rolls on / passes through, for the certificate's interior residual.
+	Envelope BallEnvelope
 }
 
 // Valence returns the number of sides in the loop (a triangle corner is 3, a

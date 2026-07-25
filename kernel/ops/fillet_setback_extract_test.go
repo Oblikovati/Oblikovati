@@ -13,8 +13,14 @@ import (
 // TestExtractSetbackPatches_S1IntactFootprintRibbon is the crux test: the S1 fixture (r8 top boss +
 // r6 front boss, filleted R=6) tiles into exactly three setback RailLoops (left flank / central /
 // right flank), each a closed valence-4 loop whose footprint rail carries the INTACT boss wall (a
-// full geom.Cylinder) as a G1 Adjacent — the D3 correction over the boss's whole, unsplit footprint
+// full geom.Cylinder) as its Adjacent — the D3 correction over the boss's whole, unsplit footprint
 // rail (never the split sub-arcs of the deleted boss-splitting path).
+//
+// The footprint side is G0, not G1. It was declared G1 while a Coons fill needed a tangency ribbon
+// there; the rolling-ball derivation shows the run-out ball passes THROUGH the footprint EDGE and is
+// NOT tangent to the boss wall (checked on S6: the surface normal at the mid-band footprint point is
+// (0,−1,2.828)/3 against the sphere's (0,−1,0)), so declaring G1 asserted a tangency OCCT's own blend
+// does not have. See .superpowers/sdd/runout-envelope-report.md.
 func TestExtractSetbackPatches_S1IntactFootprintRibbon(t *testing.T) {
 	ef, res := runoutFixtureCrossingBoss(t)
 	b, ok := detectSetbackBands(ef, res)
@@ -32,7 +38,7 @@ func TestExtractSetbackPatches_S1IntactFootprintRibbon(t *testing.T) {
 		if !lp.Closed(res.Weld()) {
 			t.Fatalf("loop %d not closed within weld=%v", i, res.Weld())
 		}
-		assertG1FootprintOnIntactWall(t, lp, ef)
+		assertFootprintOnIntactWall(t, lp, ef)
 	}
 	assertBothBossRadiiPresent(t, loops, ef)
 }
@@ -69,7 +75,7 @@ func TestExtractSetbackPatches_NonS1Rejected(t *testing.T) {
 // Adjacent is a boss cylinder — axis NOT parallel to the fillet spine, distinguishing it from the
 // fillet-end arc's own fillet-cylinder Adjacent) must be G1 and carry a full, intact geom.Cylinder
 // wall (r8 or r6), NOT a nil/G0 split sub-arc as the old split-boss tiler emitted.
-func assertG1FootprintOnIntactWall(t *testing.T, lp RailLoop, ef edgeFillet) {
+func assertFootprintOnIntactWall(t *testing.T, lp RailLoop, ef edgeFillet) {
 	t.Helper()
 	found := 0
 	for _, s := range lp.Sides {
@@ -78,15 +84,15 @@ func assertG1FootprintOnIntactWall(t *testing.T, lp RailLoop, ef edgeFillet) {
 			continue // nil/plane Adjacent, or the fillet-end arc's own fillet cylinder: not a footprint
 		}
 		found++
-		if s.Cont != G1 {
-			t.Errorf("footprint side (boss r=%v): Cont=%v, want G1", cyl.Radius, s.Cont)
+		if s.Cont != G0 {
+			t.Errorf("footprint side (boss r=%v): Cont=%v, want G0 (the ball passes THROUGH the footprint edge)", cyl.Radius, s.Cont)
 		}
 		if cyl.Radius != 8 && cyl.Radius != 6 {
 			t.Errorf("footprint Adjacent radius=%v, want an intact boss wall (r8 or r6)", cyl.Radius)
 		}
 	}
 	if found == 0 {
-		t.Errorf("loop has no G1 footprint side on an intact boss cylinder wall")
+		t.Errorf("loop has no footprint side on an intact boss cylinder wall")
 	}
 }
 

@@ -32,6 +32,7 @@ const (
 	BlendKindTri3         CornerBlendKind = "tri3-degenerate4" // 3-sided fill: a degenerate-4 Coons patch (one corner → a pole)
 	BlendKindCanal        CornerBlendKind = "canal-rolling"    // M6' rolling-ball canal fill for a tangent-degenerate valence-4 corner (RailLoop.Canal)
 	BlendKindCanalStation CornerBlendKind = "canal-station"    // U4-4b exact-station rolling-ball canal loft for a dual-host CORE panel (RailLoop.Stations)
+	BlendKindRunoutCanal  CornerBlendKind = "runout-canal"     // SETBACK-CLOSE run-out band as the exact rolling-ball envelope (RailLoop.Runout)
 )
 
 // BlendArm is one fillet converging on the junction: its rolling-ball contact path (spine), the

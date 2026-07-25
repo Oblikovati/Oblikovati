@@ -12,7 +12,8 @@ package ops
 // oracle-grounded. canalProvider took this slot from the now-retired plateProvider (ADR-C3): the
 // plate model was empirically overturned for N7's result_5 (blend-sweep-spike-report.md).
 func blendTiers() []railProvider {
-	return []railProvider{analyticSphereProvider{}, canalProvider{}, canalStationProvider{}, coons4Provider{}, tri3Provider{}}
+	return []railProvider{analyticSphereProvider{}, canalProvider{}, canalStationProvider{},
+		runoutCanalProvider{}, coons4Provider{}, tri3Provider{}}
 }
 
 // resolveBlend fills a RailLoop junction with the first tier whose provider Fits and returns a

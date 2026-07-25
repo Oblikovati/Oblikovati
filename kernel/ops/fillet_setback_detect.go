@@ -19,13 +19,6 @@ type crossingBoss struct {
 	footEdge *topo.Edge   // the footprint edge on the host plane (exact conic curve)
 	host     *topo.Face   // the support plane the boss exits
 	xSetback float64      // D1 setback reach |x_s| ≥ 0 — see setbackStation
-	// densifyHostArc requests span-proportional chording of a SPHERE wall's host-side footprint arc
-	// (torusHostArcChordCount), set ONLY by the single-boss tiling (#2007). A one-boss sphere's host
-	// notch spans the whole footprint on a small body (S6), where the default coarse ringSegSamples
-	// chording over-keeps the inscribed-polygon slivers (~0.7% of area) and pushes it past the gate;
-	// densifying the planar footprint arc matches the analytic disc. The 2-boss sphere (S7) leaves it
-	// false to stay byte-identical (its larger body absorbs the coarse chording within tolerance).
-	densifyHostArc bool
 }
 
 // setbackBands is the D2 band partition of a runout edge's interfered span: cutLo/cutHi and seams
