@@ -95,6 +95,14 @@ type RailLoop struct {
 	// measures against. It is deliberately EXTRACTOR-supplied: coons4-audit.md §B.4 measured a
 	// certify-time GUESS at the roll hosts reading 5–19% residual even on OCCT's own CORRECT patches,
 	// so a self-derived guess cannot be a gate.
+	//
+	// It is the SINGLE source of the envelope for every provider — Runout deliberately does NOT carry
+	// its own copy. It used to, and certifyRunoutCanalPatch read the tangency host from the copy while
+	// the interior residual read this pointer: a producer that populated Runout and forgot Envelope
+	// would have made maxBallDev abstain (0) while Valid still passed, silently degrading the
+	// certificate to the five boundary/structural fields this slice exists to replace. Now
+	// runoutCanalProvider.Build requires this pointer and reads the radius from it too, so a run-out
+	// band without an envelope cannot be lofted at all.
 	Envelope *BallEnvelope
 }
 
@@ -128,9 +136,10 @@ type RunoutCanal struct {
 	Centers []math.Point3
 	// FeetA / FeetB are the two contacts at each station, each algebraically at Radius from Centers
 	// (geom.LoftCanalStations asserts it, so a mis-derived station is declined rather than lofted).
+	//
+	// The envelope this band is the envelope OF lives in RailLoop.Envelope, never here — see the note
+	// on that field for why the pair must not be splittable.
 	FeetA, FeetB []math.Point3
-	// Envelope is what the ball rolls on / passes through, for the certificate's interior residual.
-	Envelope BallEnvelope
 }
 
 // Valence returns the number of sides in the loop (a triangle corner is 3, a

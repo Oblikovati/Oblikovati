@@ -11,10 +11,16 @@ import (
 )
 
 // runoutStationRefine is how many loft stations are placed per RAIL chord. The rail nodes themselves
-// are always stations (that is what makes the emitted boundary lie ON the lofted surface exactly, so
-// the certificate's G0 residual is a measurement and not a tautology); the refinement controls only
-// the v-interpolation error BETWEEN them. 4 puts ~25 exact stations under a ringSegSamples rail, which
-// drives the interior envelope residual (MaxBallDev) three orders under weld on every corpus band.
+// are always stations — that is what makes the emitted boundary lie ON the lofted surface exactly, and
+// therefore what makes the weld T-junction-free (it does NOT make the certificate's G0 residual a
+// measurement; see certifyRunoutCanalPatch). The refinement controls only the v-interpolation error
+// BETWEEN the nodes, which is exactly what MaxBallDev measures — so this constant sets that field's
+// headroom and cannot be lowered without re-measuring it.
+//
+// 12 puts 6·12+1 = 73 exact stations under a ringSegSamples (6-chord) rail. Measured on the S1 flank
+// against a 5.00e-08 weld, the interior residual runs 1.28e-07 (refine 4) → 6.61e-09 (8) → 3.42e-09
+// (12) → 7.46e-10 (16): at 4 the field would FAIL its own gate, at 12 it clears it by ~15x. The
+// convergence is the point — a value gated at a tolerance it cannot fail proves nothing.
 const runoutStationRefine = 12
 
 // runoutBand is one resolved run-out band of the SETBACK-CLOSE partition: its exact rolling-ball
@@ -38,13 +44,13 @@ func (b runoutBand) endStation(hi bool) runoutStation {
 
 // payload packs the band's exact stations into the provider payload. The three parallel rows are what
 // geom.LoftCanalStations consumes; it asserts every foot sits at Radius from its centre, so a station
-// this solver got wrong is DECLINED rather than lofted (do-no-harm).
-func (b runoutBand) payload(env BallEnvelope) *RunoutCanal {
+// this solver got wrong is DECLINED rather than lofted (do-no-harm). The envelope these stations were
+// solved from is attached ONCE, on the RailLoop (see RailLoop.Envelope) — never duplicated here.
+func (b runoutBand) payload() *RunoutCanal {
 	rc := &RunoutCanal{
-		Centers:  make([]math.Point3, len(b.stations)),
-		FeetA:    make([]math.Point3, len(b.stations)),
-		FeetB:    make([]math.Point3, len(b.stations)),
-		Envelope: env,
+		Centers: make([]math.Point3, len(b.stations)),
+		FeetA:   make([]math.Point3, len(b.stations)),
+		FeetB:   make([]math.Point3, len(b.stations)),
 	}
 	for i, st := range b.stations {
 		rc.Centers[i], rc.FeetA[i], rc.FeetB[i] = st.centre, st.footA, st.footB

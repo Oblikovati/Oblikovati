@@ -264,6 +264,28 @@ func byteIdentityPins() []fingerprintPin {
 		{"S6", 18039.724864028, 15982, 0x18a1d92e1931c91b, ""},
 		{"S9", 115876.963113864, 89826, 0x93b72952c31ab329, ""},
 		{"T3", 130529.141817073, 80716, 0x1ae414df7f42fdd8, ""},
+		// S1/S4/S7/T1/T4/T7 (simple): the TWO-boss members of the same setback family — a box with a boss
+		// on EACH of the picked edge's two host planes, tiled left flank / central / right flank
+		// (fillet_setback_extract.go). Their nine-case cohort S6/S9/T3 was pinned above from the day the
+		// single-boss branch greened; these six never were, and until this commit their ONLY guard was the
+		// corpus's 1% whole-body area gate — which coons4-audit.md proved is structurally blind to the
+		// defect they carried: S7's run-out patch was 18.5% of r wrong in SHAPE while its per-face area was
+		// 0.03% RIGHT, and the whole body read +0.73% by CANCELLATION. The run-out envelope slice
+		// (runout-envelope-report.md) made all six geometrically correct — deep-interior bidirectional
+		// Hausdorff against OCCT's own surface now 0.009–0.023% of r, down from 9–19%, with the cancellation
+		// gone (Σ|Δ| 0.038–0.060% of the body vs a 1% gate) — and these pins are what stop a later slice
+		// from silently undoing it. Captured on THIS HEAD, bit-stable across re-runs at 1e-9.
+		//
+		// They are the byte-identity half of a two-part guard; the geometric half is the DRAWEXE per-face
+		// oracle in kernel/ops/fillet_runout_oracle_test.go (spine stations, per-face `sprops` areas, and —
+		// the load-bearing one, because area alone would not have caught S7 — points DRAWEXE evaluated on
+		// OCCT's OWN patch surface asserted to lie on ours). Same cross-platform-risk caveat as above.
+		{"S1", 12592.747980190, 16736, 0x5c84e5aa40958cc0, ""},
+		{"S4", 36849.071699751, 22074, 0x3f6b0b102417caeb, ""},
+		{"S7", 33547.720796146, 19730, 0x101fa08e0055407c, ""},
+		{"T1", 117940.118357771, 92900, 0x38bee99c18da0066, ""},
+		{"T4", 133675.708363296, 89448, 0x6a0b4fe27fad8354, ""},
+		{"T7", 36264.495584457, 22564, 0x501caba9f0bd7c4e, ""},
 		// U3 (simple): the Group-B obstacle-path dip-detection green (fillet_obstacle_detect.go's
 		// dipArcOrder, #2007). U3 is a box + ONE oblique/y-elongated EllipticalCylinder mid-span boss — the
 		// SAME shape as the already-green T6 (oblique EllipticalCylinder) — but dipsPast was handed the

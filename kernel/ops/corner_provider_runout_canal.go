@@ -19,8 +19,10 @@ import (
 // rim, the re-clipped host notch and the plain fillet wing, all of which tile the extractor's
 // ANALYTIC rails at ringSegSamples. So this tier emits the received rails (railLoopToFilletLoops,
 // exactly as coons4 did, keeping the weld mechanism unchanged) and the station grid is built so every
-// one of those rail samples IS a station foot — which turns MaxDev from the tautology
-// coons4-audit.md §C.3 indicts into a genuine rail-vs-surface measurement.
+// one of those rail samples IS a station foot — which is what makes the emitted boundary lie exactly on
+// the lofted surface, and therefore what makes the weld T-junction-free. It does NOT upgrade MaxDev
+// into a rail-vs-surface measurement: the residual is ~1e-14 by that same construction. See
+// certifyRunoutCanalPatch for what each certificate field does and does not prove.
 //
 // It sits ahead of coons4 in blendTiers and keys on the RailLoop.Runout pointer alone, so every loop
 // that does not carry the payload falls through unchanged.
@@ -39,12 +41,17 @@ func (runoutCanalProvider) Fits(l RailLoop) bool { return l.Runout != nil && l.V
 // (an off-radius station, a degenerate section arc) or a rail that does not lie on the lofted surface
 // within weld is an honest reject (ok=false) → resolveBlend falls through, and the setback closer
 // then rejects the whole edge rather than shipping a wrong surface (ADR-3 do-no-harm).
+//
+// l.Envelope is REQUIRED, not optional: it is the single source of both the loft radius and the two
+// hosts the certificate's only interior condition is measured against. Declining without it is what
+// makes the pairing structural — a producer that supplies stations but no envelope gets an honest
+// reject here instead of a certificate whose interior condition has quietly abstained.
 func (runoutCanalProvider) Build(l RailLoop, res Resolution) (CornerBlendPatch, Certificate, bool) {
-	if l.Runout == nil || l.Valence() != 4 {
+	if l.Runout == nil || l.Envelope == nil || l.Valence() != 4 {
 		return CornerBlendPatch{}, Certificate{}, false
 	}
 	rc := l.Runout
-	surf, err := geom.LoftCanalStations(rc.Centers, rc.FeetA, rc.FeetB, rc.Envelope.Radius, res.Weld())
+	surf, err := geom.LoftCanalStations(rc.Centers, rc.FeetA, rc.FeetB, l.Envelope.Radius, res.Weld())
 	if err != nil {
 		return CornerBlendPatch{}, Certificate{}, false
 	}
@@ -76,13 +83,23 @@ func runoutPatchLoops(loop RailLoop) []filletLoop {
 	return []filletLoop{{pts: pts, curves: curves}}
 }
 
-// certifyRunoutCanalPatch proves the run-out canal. Unlike the coons4 certificate it indicts, every
-// field here measures geometry the surface does NOT own:
-//   - MaxDev is the extractor's ANALYTIC rails against the lofted surface (the rails are footprint
-//     conics and contact loci, not the surface's isoparms), so it can fail;
-//   - MaxAngleDev is the crease between the loft and each TANGENT host along the boundary isoparm
-//     that lies on it — the G1 the neighbouring host face actually needs;
-//   - MaxBallDev is the INTERIOR envelope residual against the extractor's own declared hosts;
+// certifyRunoutCanalPatch proves the run-out canal. What each field does and does NOT prove, stated
+// plainly — the certificate this replaces was believed because its fields were never spelled out:
+//
+//   - MaxDev is the emitted boundary SAMPLE POINTS against the lofted surface. It is ~1e-14 BY
+//     CONSTRUCTION and cannot be read as a rail-vs-surface measurement: maxLoopSurfaceDev samples only
+//     filletLoop.pts, buildRunoutBand makes every one of those rail nodes a loft STATION, and the loft
+//     interpolates its stations exactly (measured 6e-15…1e-12). What it genuinely catches is the
+//     boundary/surface pair coming APART — a rail swapped for another curve, a station grid that lost a
+//     node, a trim that no longer matches the loft — not the shape of the surface between them.
+//   - MaxAngleDev is the crease between the loft and each TANGENT host along the boundary isoparm that
+//     lies on it — the G1 the neighbouring host face actually needs. It is a real measurement, but it is
+//     defined only ON that boundary.
+//   - MaxBallDev is the only field that says anything about the patch INTERIOR. It is a
+//     SELF-CONSISTENCY measure (see Certificate.MaxBallDev): it bounds the v-interpolation error between
+//     exact stations, against the same BallEnvelope those stations were solved from. It does not prove
+//     the declared envelope is the right model of the geometry — the DRAWEXE per-face pins in
+//     fillet_runout_oracle_test.go are what prove that.
 //   - Closed/WeldsArms/NoFold are structural, as everywhere else.
 func certifyRunoutCanalPatch(surf geom.BSplineSurface, loop RailLoop, dev float64, res Resolution) Certificate {
 	return Certificate{
@@ -90,7 +107,7 @@ func certifyRunoutCanalPatch(surf geom.BSplineSurface, loop RailLoop, dev float6
 		WeldsArms:   true,
 		NoFold:      obstacleNoFold(surf, res),
 		MaxDev:      dev,
-		MaxAngleDev: tangentHostCrease(surf, loop.Runout.Envelope, res),
+		MaxAngleDev: tangentHostCrease(surf, *loop.Envelope, res),
 		MaxBallDev:  maxBallDev(surf, loop.Envelope),
 	}
 }

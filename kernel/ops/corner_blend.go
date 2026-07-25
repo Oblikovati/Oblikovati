@@ -78,12 +78,28 @@ type Certificate struct {
 	NoFold      bool    // the patch Jacobian keeps a consistent sign over the domain
 	MaxDev      float64 // G0 positional max deviation from the boundary curves (model units)
 	MaxAngleDev float64 // G1 angular tangent deviation vs the neighbour surfaces (radians)
-	// MaxBallDev is the INTERIOR rolling-ball envelope residual (model units): over a 12×12 interior
-	// grid, max |dist(p + r·n, host) − r| against the hosts the EXTRACTOR declared the ball rolls on /
+	// MaxBallDev is the INTERIOR rolling-ball envelope residual (model units), measured over a 12×12
+	// STRICTLY-INTERIOR parameter grid against the hosts the EXTRACTOR declared the ball rolls on /
 	// passes through (RailLoop.Envelope). It is the only field that says anything about the patch
 	// INTERIOR — every other one is a boundary or structural property, which is why nine corpus greens
-	// certified clean while their surface sat 9–19% of r off OCCT's (coons4-audit.md §C.3). 0 when the
-	// extractor supplied no envelope; see maxBallDev for why a certify-time guess is refused.
+	// certified clean while their surface sat 9–19% of r off OCCT's (coons4-audit.md §C.3).
+	//
+	// The measure is NORMAL-FREE. For each interior sample p, the ball centre is SOLVED in p's own
+	// section plane (through p, normal = the envelope spine) from p plus ONE declared host, and the
+	// residual is the OTHER declared host's own distance to that centre, minus r. The normal-based form
+	// `max |dist(p + r·n, host) − r|` that an earlier draft proposed is deliberately NOT what ships: it
+	// was measured UNUSABLE — the loft's station-to-station normal ripple (~0.013 rad) made it read 3.9%
+	// of r on an exactly-correct band, and it did not converge with station density (4→32 stations left
+	// it at 3.657% to seven digits), so it could not have separated the false greens from the true ones.
+	//
+	// It is a SELF-CONSISTENCY measure, and must be read as one: the surface interpolates stations that
+	// were solved from the very BallEnvelope the residual is taken against, so what it bounds is the
+	// v-interpolation error BETWEEN exact stations. It does not prove the declared envelope is the right
+	// model of the geometry — an extractor that declared a wrong-but-consistent envelope would still
+	// read ~0. Proving the model is the job of the DRAWEXE per-face oracle pins
+	// (kernel/ops/fillet_runout_oracle_test.go), not of this field.
+	//
+	// 0 when the extractor supplied no envelope; see maxBallDev for why a certify-time guess is refused.
 	MaxBallDev float64
 }
 

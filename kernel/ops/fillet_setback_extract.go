@@ -120,8 +120,11 @@ func (t *setbackTiling) resolveSeamStations() bool {
 	mid := 0.5 * (t.cutLo + t.cutHi)
 	hi, okHi := seamStation(t.env, t.pOuter, t.pInner, t.outer, t.inner, mid, t.cutHi, t.weld)
 	lo, okLo := seamStation(t.env, t.pOuter, t.pInner, t.outer, t.inner, mid, t.cutLo, t.weld)
+	if !okHi || !okLo {
+		return false // never write a declined solve's zeros into the tiling
+	}
 	t.seamLo, t.seamHi = stdmath.Min(lo, hi), stdmath.Max(lo, hi)
-	return okHi && okLo
+	return true
 }
 
 // setbackHostPlanes reads the two host support planes: pOuter carries the outer boss (bosses[0], which
@@ -351,10 +354,13 @@ func (t setbackTiling) centralBand() (RailLoop, bool) {
 	return t.loop(sides, t.mid, t.rstRstEnvelope()), true
 }
 
-// loop assembles one band's RailLoop with its exact-station payload and its envelope statement — the
-// single place the two provider-scoped payloads are attached, so no band can ship one without the other.
+// loop assembles one band's RailLoop with its exact-station payload and its envelope statement. The
+// envelope is stored ONCE, here, and the stations carry no copy of it — runoutCanalProvider.Build reads
+// the radius and both certificate hosts from this single field and declines without it, so a band can
+// no longer ship stations whose envelope went missing (which used to silently switch the certificate's
+// only interior condition off).
 func (t setbackTiling) loop(sides []Side, band *runoutBand, env BallEnvelope) RailLoop {
-	return RailLoop{Sides: sides, Provenance: topo.Lineage{}, Runout: band.payload(env), Envelope: &env}
+	return RailLoop{Sides: sides, Provenance: topo.Lineage{}, Runout: band.payload(), Envelope: &env}
 }
 
 // surfRstEnvelope states what a flank / one-boss-central ball is the envelope of: TANGENT to pInner and

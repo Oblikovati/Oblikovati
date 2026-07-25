@@ -142,7 +142,7 @@ func sampleCurve3Open(c geom.Curve3, rev bool) []math.Point3 {
 
 // sampleCurveN is sampleCurve3Open at an explicit chord count n (≥1) — the density lever the intact-boss
 // torus rim uses to sample its large host arcs finely enough that the doubly-curved band lofts within
-// tolerance (rimSubArcChordCount, fillet_setback_close.go), while every ruled boss/blend stays at
+// tolerance (rimSubArcChordCount, fillet_setback_rim.go), while every ruled boss/blend stays at
 // ringSegSamples. Excludes the far endpoint, like sampleCurve3Open, so consecutive spans concatenate.
 func sampleCurveN(c geom.Curve3, n int, rev bool) []math.Point3 {
 	lo, hi := c.Domain()

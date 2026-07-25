@@ -10,33 +10,10 @@ import (
 	"oblikovati.org/math"
 )
 
-// s1SeamHalfSpan is OCCT's OWN seam station for the S1 fixture, read straight off the DRAWEXE control
-// net: the flank patch result_8's poles run x ∈ [−6.92820323027551, −3.38093422681526] and the central
-// result_3's x ∈ [−3.38093422681526, +3.38093422681526]. The fixture's spine origin puts the band
-// midplane at 10, so the seam stations are 10 ∓ this. The tiling used to place them where the inner
-// footprint crosses the PLAIN fillet contact line, ±4.4721 — 32% out. See
-// .superpowers/sdd/runout-envelope-report.md §"Seam station".
-const s1SeamHalfSpan = 3.38093422681526
-
-// TestSeamStationMatchesOCCT pins the φ(s)=0 seam condition against DRAWEXE. It is the sharpest single
-// number in the run-out derivation: the seam is where the SURF-RST contact locus on the inner host
-// reaches the inner boss's footprint, not where that footprint crosses the plain fillet's contact line.
-func TestSeamStationMatchesOCCT(t *testing.T) {
-	tl := s1Tiling(t)
-	mid := 0.5 * (tl.cutLo + tl.cutHi)
-	for _, c := range []struct {
-		name string
-		got  float64
-		want float64
-	}{
-		{"seamLo", tl.seamLo, mid - s1SeamHalfSpan},
-		{"seamHi", tl.seamHi, mid + s1SeamHalfSpan},
-	} {
-		if d := stdmath.Abs(c.got - c.want); d > 1e-9 {
-			t.Errorf("%s = %.12f, OCCT %.12f (off by %g)", c.name, c.got, c.want, d)
-		}
-	}
-}
+// The S1-only seam pin that used to live here (s1SeamHalfSpan = 3.38093422681526, read off the DRAWEXE
+// control net) is SUPERSEDED by TestRunoutBandStationsMatchOCCT in fillet_runout_oracle_test.go, which
+// pins all four spine stations of ALL SIX two-boss cases off the oracle patch surfaces' own v-bounds —
+// the same number for S1, plus the five siblings that had no station protection at all.
 
 // TestSeamCornerLiesOnInnerFootprint proves the seam condition is what it claims: the surf-rst tangency
 // contact at the seam sits ON the inner boss's footprint conic (φ=0), which is why the flank and the
@@ -73,66 +50,10 @@ func TestRunoutBandsAreTheRollingBallEnvelope(t *testing.T) {
 	}
 }
 
-// s1FlankPatchArea / s1CentralPatchArea are DRAWEXE `sprops result_<i> 1.e-9` on the S1 oracle blend:
-// result_8 and result_11 (the flanks) read 26.5949 and result_3 (the central) 34.1915. They are the
-// per-face standard n4_cornerweld_layer_test.go set for a new corner green — reconcile the oracle PER
-// FACE, never on whole-body area alone.
-const (
-	s1FlankPatchArea   = 26.5949
-	s1CentralPatchArea = 34.1915
-)
-
-// TestRunoutPatchSurfaceMatchesOCCTPerFace reconciles the lofted SURFACE (integrated, not meshed — the
-// mesh carries its own boundary-chording bias) against OCCT's own per-face areas. It is what makes the
-// nine formerly-false greens honest: the Coons fill these bands used to get read 49.49 / 19.92 / 19.92
-// against the same 34.19 / 26.59 / 26.59, i.e. +44.7% / −25.1%.
-func TestRunoutPatchSurfaceMatchesOCCTPerFace(t *testing.T) {
-	tl := s1Tiling(t)
-	for _, c := range []struct {
-		name string
-		loop func() (RailLoop, bool)
-		want float64
-	}{
-		{"left flank", tl.leftFlank, s1FlankPatchArea},
-		{"central", tl.centralBand, s1CentralPatchArea},
-		{"right flank", tl.rightFlank, s1FlankPatchArea},
-	} {
-		lp, ok := c.loop()
-		if !ok {
-			t.Fatalf("%s: loop did not build", c.name)
-		}
-		patch, ok := resolveBlend(lp, s1Resolution(t))
-		if !ok {
-			t.Fatalf("%s: resolveBlend declined", c.name)
-		}
-		if patch.Kind != BlendKindRunoutCanal {
-			t.Fatalf("%s: kind %q, want %q (a run-out band must never fall back to a Coons fill)",
-				c.name, patch.Kind, BlendKindRunoutCanal)
-		}
-		got := integrateSurfaceArea(patch.Surface.(geom.BSplineSurface))
-		if rel := stdmath.Abs(got-c.want) / c.want; rel > 2e-3 {
-			t.Errorf("%s: surface area %.4f vs OCCT %.4f (rel %.4f%% > 0.2%%)", c.name, got, c.want, rel*100)
-		}
-	}
-}
-
-// integrateSurfaceArea is a midpoint quadrature of |S_u × S_v| over the patch domain — a like-for-like
-// comparison with DRAWEXE's `sprops`, which is itself a surface quadrature, and independent of the
-// tessellator's boundary chording (the trap n4_cornerweld_layer_test.go documents).
-func integrateSurfaceArea(s geom.BSplineSurface) float64 {
-	u0, u1 := s.UDomain()
-	v0, v1 := s.VDomain()
-	const n = 64
-	du, dv := (u1-u0)/n, (v1-v0)/n
-	sum := 0.0
-	for i := 0; i < n; i++ {
-		for j := 0; j < n; j++ {
-			su, sv := s.DerivativesAt(u0+(float64(i)+0.5)*du, v0+(float64(j)+0.5)*dv)
-			sum += float64(su.Cross(sv).Length()) * du * dv
-		}
-	}
-	return sum
-}
+// The S1-only per-face area pins (s1FlankPatchArea 26.5949 / s1CentralPatchArea 34.1915) and
+// integrateSurfaceArea now live in fillet_runout_oracle_test.go, where the same DRAWEXE `sprops` receipt
+// is taken for ALL SIX two-boss cases alongside the interior-surface point pins that make the per-face
+// claim load-bearing (an area-only assertion would not have caught S7 — see that file's header).
 
 // s1Tiling resolves the real S1 fixture's setback tiling — the shared arrangement of these tests.
 func s1Tiling(t *testing.T) setbackTiling {
@@ -147,13 +68,6 @@ func s1Tiling(t *testing.T) setbackTiling {
 		t.Fatalf("resolveSetbackTiling declined the S1 fixture")
 	}
 	return tl
-}
-
-// s1Resolution is the fixture's model-relative resolution (ADR-0042), needed by resolveBlend.
-func s1Resolution(t *testing.T) Resolution {
-	t.Helper()
-	_, res := runoutFixtureCrossingBoss(t)
-	return res
 }
 
 // TestSurfRstCentreDeclinesNearParallelHosts is the pitfall-5 guard: when the two hosts are

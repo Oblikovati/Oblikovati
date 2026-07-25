@@ -9,10 +9,21 @@ import (
 	"oblikovati.org/math"
 )
 
-// runoutSeamIters bounds the seam bisection. The bracket halves every step, so 200 steps drives the
-// interval to machine precision on any model scale — the loop exits on the relative-width test long
-// before, and the cap only guarantees termination on a pathological φ.
-const runoutSeamIters = 200
+// runoutSeamIters bounds the seam bisection, and runoutSeamTolFrac is how narrow the bracket is driven
+// — as a fraction of the model WELD, so the convergence is model-relative end to end (ADR-0042).
+//
+// The width test used to read 1e-13*(|cut|+|mid|+1). That mixes an ABSOLUTE +1 into an otherwise
+// model-relative expression: on any sub-millimetre model the +1 dominates, the tolerance stops tracking
+// the model and the loop exits tens of bits before double precision is spent. At corpus scale
+// (size ≈ 53) the new form is 5.3e-13, a little tighter than the 2.8e-12 it replaces.
+//
+// 64 iterations, not 200: each step halves the bracket, so bisection exhausts double precision in ~60
+// (2^-60 ≈ 9e-19 of the starting width) and no cap above that buys anything. The loop exits on the width
+// test at ~47; the cap only guarantees termination on a pathological φ.
+const (
+	runoutSeamIters   = 64
+	runoutSeamTolFrac = 1e-5
+)
 
 // seamStation solves the band boundary between the SURF-RST flank and the RST-RST central band:
 //
@@ -36,7 +47,8 @@ func seamStation(env runoutEnvelope, hostA, hostB geom.Plane, outer, inner cross
 		return 0, false
 	}
 	lo, hi := mid, cut
-	for i := 0; i < runoutSeamIters && stdmath.Abs(hi-lo) > 1e-13*(stdmath.Abs(cut)+stdmath.Abs(mid)+1); i++ {
+	tol := runoutSeamTolFrac * weld
+	for i := 0; i < runoutSeamIters && stdmath.Abs(hi-lo) > tol; i++ {
 		m := 0.5 * (lo + hi)
 		v, ok := phi(m)
 		if !ok {

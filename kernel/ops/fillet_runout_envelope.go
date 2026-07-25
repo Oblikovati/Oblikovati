@@ -32,6 +32,11 @@ type runoutEnvelope struct {
 }
 
 // newRunoutEnvelope frames a straight constant-radius fillet for the closed-form station solves.
+//
+// The straight-spine assumption every solve here rests on is enforced STRUCTURALLY upstream, so no
+// runtime guard is warranted: the only two callers are resolveSetbackTiling and resolveSingleBossTiling,
+// and both reach it only past setbackHostPlanes / singleBossHostPlanes, which require BOTH hosts to be
+// a geom.Plane. Two planes meet in a straight line, so cyl's axis is straight by construction.
 func newRunoutEnvelope(cyl geom.Cylinder) runoutEnvelope {
 	return runoutEnvelope{cyl: cyl, radius: cyl.Radius, spine: cyl.AxisDir.AsVector()}
 }

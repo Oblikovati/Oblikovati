@@ -3,7 +3,6 @@
 package ops
 
 import (
-	stdmath "math"
 	"testing"
 
 	"oblikovati.org/kernel/geom"
@@ -77,7 +76,7 @@ func s1FlankCanal(t *testing.T) (RailLoop, geom.BSplineSurface, Resolution) {
 	}
 	loop := loops[2] // the +x flank: one tangency host + one restriction curve
 	rc := loop.Runout
-	surf, err := geom.LoftCanalStations(rc.Centers, rc.FeetA, rc.FeetB, rc.Envelope.Radius, res.Weld())
+	surf, err := geom.LoftCanalStations(rc.Centers, rc.FeetA, rc.FeetB, loop.Envelope.Radius, res.Weld())
 	if err != nil {
 		t.Fatalf("LoftCanalStations: %v", err)
 	}
@@ -157,4 +156,21 @@ func TestSectionCurvePointDeclinesOffSpan(t *testing.T) {
 	}
 }
 
-var _ = stdmath.Abs
+// TestRunoutCanalDeclinesWithoutAnEnvelope pins the envelope as a REQUIREMENT of the run-out tier, not
+// an optional extra. The certificate's interior condition abstains (reads 0) on a missing envelope —
+// deliberately, see TestMaxBallDevIsZeroWithoutAnExtractorPayload — so a producer that supplied stations
+// and forgot the envelope would once have shipped a patch whose Certificate.Valid passed on the five
+// boundary/structural fields alone, i.e. the exact certificate this slice exists to replace. Build now
+// refuses the loop outright, which makes the pairing structural rather than a convention.
+func TestRunoutCanalDeclinesWithoutAnEnvelope(t *testing.T) {
+	loop, _, res := s1FlankCanal(t)
+	if _, cert, ok := (runoutCanalProvider{}).Build(loop, res); !ok || !cert.Valid(res) {
+		t.Fatalf("the intact S1 flank loop must build and certify: ok=%v cert=%+v", ok, cert)
+	}
+	orphan := loop
+	orphan.Envelope = nil
+	if _, cert, ok := (runoutCanalProvider{}).Build(orphan, res); ok {
+		t.Errorf("Build accepted a run-out loop with no envelope (cert %+v, MaxBallDev=%g); the interior "+
+			"condition would have abstained while Valid still passed", cert, cert.MaxBallDev)
+	}
+}
