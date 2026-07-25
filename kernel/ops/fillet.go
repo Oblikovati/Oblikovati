@@ -380,6 +380,12 @@ type edgeFillet struct {
 	// winds the arm band the other way (singleRunoutFaces). FALSE on every convex arm, keeping the convex
 	// single-arm runout greens (B6/C9/C1/M7/…) byte-identical.
 	armConcave bool
+	// armEllipticRim is the CLOSED elliptic-rim canal band payload (J6/J8, fillet_elliptic_rim_canal.go):
+	// the lofted canal surface plus its two closed contact rails and seam. It rides alongside armSurface
+	// (a geom.BSplineSurface, whose concrete type carries no rails) and is the SOLE dispatch key for the
+	// elliptic closed-rim weld — nothing else sets it, so no existing weld can be diverted there. Nil on
+	// every other arm, hence byte-invisible to all of them.
+	armEllipticRim *ellipticRimCanal
 }
 
 // computeEdgeFillet solves the rolling-ball geometry for one convex straight edge, using a
@@ -433,6 +439,9 @@ func curvedHostArmEdge(body *topo.Body, e *topo.Edge, p filletPick, concave Conc
 	}
 	if ef, handled := ellipticalCylinderArmEdge(body, e, p); handled {
 		return ef, true, nil // F4: exact circular-cylinder arm on a convex EllipticalCylinder∧Plane ruling edge
+	}
+	if ef, handled := ellipticClosedRimArmEdge(body, e, p); handled {
+		return ef, true, nil // J6/J8: canal band on a CLOSED EllipticalCylinder∧Plane rim (spine = a closed non-analytic curve)
 	}
 	if ef, handled := cylCylMiterArmEdge(body, e, p); handled {
 		return ef, true, nil // family B: exact cylinder arm on an equal-parallel Cylinder∧Cylinder miter edge (P5)

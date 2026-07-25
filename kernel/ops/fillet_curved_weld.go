@@ -52,6 +52,9 @@ func assembleCurvedArmBody(body *topo.Body, fils []edgeFillet, blends map[uint64
 	if len(curved) == 0 {
 		return nil, "no curved arm at this corner (nothing to weld)"
 	}
+	if ef, ok := ellipticClosedRimCanalArm(fils); ok {
+		return ellipticClosedRimCanalBody(body, ef) // J6/J8: one CLOSED elliptic rim → non-analytic canal band
+	}
 	if m := curvedMiterOf(fils, miters); m != nil {
 		return curvedMiterBody(body, m, res) // families B/C: 2-arm curved miter (torus + cylinder) mutual trim
 	}

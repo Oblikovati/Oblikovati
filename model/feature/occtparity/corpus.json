@@ -16099,6 +16099,11 @@
 		"deps": 0.01,
 		"todo": "",
 		"inputStep": "simple/J6.step",
+		"deviation": {
+			"exactArea": 77931.4291,
+			"occtArea": 79953.8,
+			"reason": "OCCT's expectedArea is its checkprops number, i.e. `sprops <shape> 1e-4`, which MIS-INTEGRATES the oblique-prism wall (a SurfaceOfLinearExtrusion face): the UN-BLENDED prism wall has the elementary exact area 48692.838, OCCT plain `sprops` reports 48694.2 (+0.003%) and OCCT `sprops 1e-4` reports 50976.8 (+4.69%). The blend SHAPE agrees: OCCT's own result measured with its accurate integrator is 77932.8 vs our exact 77931.429 (-0.002%), and face-by-face OCCT's canal band 7240.27 vs exact 7240.851 and its receded cap 11159.8 vs exact 11159.060. Exact whole-body = bottom cap 15707.963 + receded cap 11159.060 + receded wall 43823.554 + canal band 7240.851. Per-case exact-deviation of the ORACLE NUMBER, not the geometry - see occt-oracle-not-religion."
+		},
 		"picks": [
 			{
 				"radius": 10,
@@ -16165,6 +16170,11 @@
 		"deps": 0.01,
 		"todo": "",
 		"inputStep": "simple/J8.step",
+		"deviation": {
+			"exactArea": 51076.8047,
+			"occtArea": 51928.1,
+			"reason": "Same `sprops 1e-4` defect as J6 on the oblique-pipe wall (SurfaceOfLinearExtrusion): the UN-BLENDED wall is exactly 38201.978, OCCT plain `sprops` gives 38202.0 and `sprops 1e-4` gives 39104.4 (+2.36%, and non-convergent - 1e-8 gives 38344.2). OCCT's own blend measured accurately is 51078.3 vs our exact 51076.805 (-0.003%). OCCT's band is additionally ~0.2-0.45 off the true envelope here: at OCCT's own seam station (wall foot (10,10,50), centre (10,8.0388,40.194)) the ball is 9.7428 from the wall, not 10; ours is tangent to 1e-15. Exact whole-body = far cap 7853.982 + receded cap 4478.072 + receded wall 34381.780 + canal band 4362.971. Per-case exact-deviation - see occt-oracle-not-religion."
+		},
 		"picks": [
 			{
 				"radius": 10,

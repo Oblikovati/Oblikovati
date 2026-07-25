@@ -64,7 +64,7 @@ func assembleConcaveRimBand(ef edgeFillet, devF, capF *topo.Face, tor geom.Torus
 	}
 	return &rimFillet{
 		cyl: devF, cap: capF, rimEdge: ef.edge, seamEdge: seamEdge, rimV: rimV, bottomV: bottomV,
-		cylTan: devTan, capTan: capTan, torus: tor, r: tor.MinorRadius, seamMid: rimBandSeamMid(tor, devTan, capTan),
+		cylTan: devTan, capTan: capTan, band: tor, r: tor.MinorRadius, seamMid: rimBandSeamMid(tor, devTan, capTan),
 	}, ""
 }
 

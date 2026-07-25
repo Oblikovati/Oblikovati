@@ -190,7 +190,7 @@ func orientedRimFillet(cylF, capF *topo.Face, rim, seamEdge *topo.Edge, rimV, bo
 		cyl: cylF, cap: capF, rimEdge: rim, seamEdge: seamEdge, rimV: rimV, bottomV: bottomV,
 		cylTan: geom.Circle{Center: frame.torusCenter, Normal: cyl.AxisDir, RefDir: frame.ref, Radius: cyl.Radius},
 		capTan: geom.Circle{Center: frame.capCenter, Normal: cyl.AxisDir, RefDir: frame.ref, Radius: majorR},
-		torus:  tor, r: r, concave: concave,
+		band:   tor, r: r, concave: concave,
 		seamMid: tor.PointAt(0, seamV),
 	}
 }

@@ -56,7 +56,7 @@ func bossOnPlate(t *testing.T) (*topo.Body, []byte) {
 // TestFilletRimBossRootOrientationConsistent is the #2006 regression: rounding a boss-root rim (a
 // cylinder wall meeting a plate at a HOLE loop of the plate's own face, not the plate's outer boundary)
 // used to build a manifold-but-invalid solid — "inconsistent orientation" on the cyl-tangent and
-// cap-tangent replacement circles (fillet_rim_build.go's mapUse/addTorusFace blindly copied the
+// cap-tangent replacement circles (fillet_rim_build.go's mapUse/addBandFace blindly copied the
 // original rim edge's Reversed flag, which is only meaningful relative to the ORIGINAL rim curve's own
 // parametrization, not the fresh replacement circles solveRim builds). It must now build a genuinely
 // valid, manifold solid with every edge 2-incident and antiparallel — not just "no error returned".

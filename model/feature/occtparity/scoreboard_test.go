@@ -129,18 +129,34 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 // unequal cylinders do not, so the seam is now the TRUE cyl0 ∩ cyl1 intersection (every point on both
 // cylinders, welding the two arm faces watertight), matching OCCT's 8-face solid at −0.21%. The equal-radius
 // corner path is untouched (routed only when radii differ), so every fingerprint pin stays byte-identical.
-// This restored 99→101 simple / 102→104 all-grid, SkipQuarantine unchanged at 1. (The mixed-radius TRIHEDRAL
+// This restored 99→101 simple / 102→104 all-grid, SkipQuarantine unchanged at 1. The CLOSED elliptic-rim
+// canal band (fillet_elliptic_rim_canal.go) then GREENED J6/J8 (simple): a CLOSED rim where a plane meets an
+// oblique-extrusion EllipticalCylinder wall was FLAT-REFUSED, because — unlike F4's straight ruling, whose
+// spine is a line and whose fillet collapses to a right circular cylinder — a closed elliptic rim's
+// rolling-ball spine is a closed NON-ANALYTIC curve, so the envelope is a genuine variable-section canal.
+// It is built from the closed-form spine (exact centre + exact wall/plane feet per station), lofted with
+// geom.LoftCanalStations and assembled through the SAME host-agnostic rim rebuild the analytic torus bands
+// use. BOTH carry a per-case exact-deviation, so they score PassDeviation: OCCT's checkprops number comes
+// from `sprops <shape> 1e-4`, which mis-integrates a SurfaceOfLinearExtrusion face by +2.4..4.7% (receipt:
+// the UN-BLENDED J8 pipe wall is exactly 38201.978, OCCT plain sprops 38202.0, OCCT sprops 1e-4 39104.4) —
+// OCCT's OWN blend measured with its accurate integrator is 77932.8 (J6) / 51078.3 (J8) against our exact
+// 77931.429 / 51076.805. The SAME slice also greened bfuseblend A7/B1 outright (no deviation): they are the
+// CONCAVE members of the vein — T5/U2's two shapes on a plate wide enough that the foot ring FITS — and they
+// land on OCCT's own numbers at −0.041% / −0.020% with DRAWEXE-exact topology (9 faces / 11 vertices / 17
+// edges). They green only because the convexity gate reads the SOLID (the imported elliptic face's Reversed
+// flag mis-classifies them). This restored 101→103 simple / 104→108 all-grid, SkipQuarantine unchanged at 1.
+// (The mixed-radius TRIHEDRAL
 // corner A4, r10/r5/r5, needs a torus corner patch — declined for now, a tracked follow-up.) A mismatch means
 // either a false green slipped through or a case was over/under-quarantined — see harden-green-gate-brief.md's
 // "STOP and report" instruction.
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 101 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 101 (asymmetric planar-miter seam P9/V9)", simpleGreen)
+	if simpleGreen != 103 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 103 (closed elliptic-rim canal band J6/J8)", simpleGreen)
 	}
-	if allGridGreen != 104 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 104 (asymmetric planar-miter seam P9/V9)", allGridGreen)
+	if allGridGreen != 108 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 108 (closed elliptic-rim canal band J6/J8 + concave A7/B1)", allGridGreen)
 	}
 	if skipQuarantine != 1 {
 		t.Errorf("SkipQuarantine = %d, want 1 (H6 only, #2007 U4 freed by U4-5)", skipQuarantine)

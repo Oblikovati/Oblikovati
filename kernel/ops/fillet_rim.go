@@ -90,10 +90,18 @@ type rimFillet struct {
 	seamEdge *topo.Edge // the wall's seam edge meeting the rim vertex, re-aimed lower
 	rimV     *topo.Vertex
 	bottomV  *topo.Vertex // the seam's other end (kept)
-	cylTan   geom.Circle  // where the torus meets the developable host (cylinder Rc, or a cone contact circle)
-	capTan   geom.Circle  // where the torus meets the cap (radius Rc−r, at the cap)
-	torus    geom.Torus
-	r        float64
+	// cylTan/capTan are the two CLOSED contact rails the band is bounded by: where it meets the curved
+	// host and where it meets the cap. They are geom.Circle for every analytic-torus rim (the cylinder,
+	// cone and sphere hosts), and a closed interpolating BSpline for the ELLIPTIC rim, whose rolling-ball
+	// contact loci are non-analytic (fillet_elliptic_rim_canal.go) — hence geom.Curve3, not geom.Circle.
+	// The rebuild only ever reads PointAt(0) (the seam frame) and hands the curve to AddEdge verbatim, so
+	// widening the type leaves every analytic rim byte-identical.
+	cylTan geom.Curve3
+	capTan geom.Curve3
+	// band is the fillet surface between the two rails: a geom.Torus on every analytic rim, a canal
+	// geom.BSplineSurface on the elliptic rim. Widened for the same reason as the rails.
+	band geom.Surface
+	r    float64
 	// concave marks the CONCAVE bore-lip mirror (solveConcaveRim, R+r) so FilletCylinderRim dispatches
 	// the rebuild to rebuildWithConcaveRimFillet (the reversed cove-band winding) instead of the CONVEX
 	// rebuildWithRimFillet. Zero value (false) for every solveRim result, so the convex path never
@@ -202,7 +210,7 @@ func solveRim(b *topo.Body, e *topo.Edge, cylF, capF *topo.Face, cyl geom.Cylind
 		cyl: cylF, cap: capF, rimEdge: e, seamEdge: seamEdge, rimV: rimV, bottomV: bottomV,
 		cylTan: geom.Circle{Center: torusCenter, Normal: cyl.AxisDir, RefDir: ref, Radius: cyl.Radius},
 		capTan: geom.Circle{Center: capCenter, Normal: cyl.AxisDir, RefDir: ref, Radius: majorR},
-		torus:  tor, r: r,
+		band:   tor, r: r,
 		seamMid: tor.PointAt(0, quarterTube), // perpendicular rim: contacts at v=0 (equator) and v=π/2 (cap)
 	}, nil
 }

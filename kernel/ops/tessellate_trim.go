@@ -111,6 +111,12 @@ func splineFaceMesh(f *topo.Face, s geom.Surface, q Quality) *Mesh {
 	if _, isSpline := s.(geom.BSplineSurface); !isSpline {
 		return nil
 	}
+	// The CLOSED elliptic-rim canal band (two closed rails + a seam used twice) has no usable planar
+	// (u,v) trim, so it is lofted rail-to-rail instead. Gated on that exact loop shape, which no open
+	// canal arm or corner patch has.
+	if m, ok := canalRimBandMesh(f, s, q); ok {
+		return m
+	}
 	// A closed-in-u (periodic) B-spline face whose trim straddles the seam tangles the planar seam-cut
 	// loop; the covering-space periodic CDT un-seams it. It defers (nil,false) for the ordinary open patch.
 	if m, ok := periodicNurbsFaceMesh(f, q); ok {
