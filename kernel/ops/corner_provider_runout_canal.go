@@ -82,6 +82,7 @@ func runoutPatchLoops(loop RailLoop) []filletLoop {
 //     conics and contact loci, not the surface's isoparms), so it can fail;
 //   - MaxAngleDev is the crease between the loft and each TANGENT host along the boundary isoparm
 //     that lies on it — the G1 the neighbouring host face actually needs;
+//   - MaxBallDev is the INTERIOR envelope residual against the extractor's own declared hosts;
 //   - Closed/WeldsArms/NoFold are structural, as everywhere else.
 func certifyRunoutCanalPatch(surf geom.BSplineSurface, loop RailLoop, dev float64, res Resolution) Certificate {
 	return Certificate{
@@ -90,6 +91,7 @@ func certifyRunoutCanalPatch(surf geom.BSplineSurface, loop RailLoop, dev float6
 		NoFold:      obstacleNoFold(surf, res),
 		MaxDev:      dev,
 		MaxAngleDev: tangentHostCrease(surf, loop.Runout.Envelope, res),
+		MaxBallDev:  maxBallDev(surf, loop.Envelope),
 	}
 }
 

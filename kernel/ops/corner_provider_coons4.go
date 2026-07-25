@@ -230,7 +230,11 @@ func grevilleParam(c geom.BSplineCurve, i int) float64 {
 // certifyCoons4Patch proves the patch (ADR-3), reusing the obstacle certify generics: Closed from the
 // loop, WeldsArms structural (four spanned sides), NoFold from the anti-fold sweep, MaxDev the G0 rail
 // residual on every edge, MaxAngleDev the G1 crease over ONLY the G1 sides (G0 sides skipped, exactly
-// like the obstacle rim).
+// like the obstacle rim), and MaxBallDev the INTERIOR rolling-ball envelope residual when — and only
+// when — the extractor declared one. A Coons fill CAN be the right surface (U4's dual-host obstacle
+// slivers agree with OCCT's to 0.04% of r); what it could not do before was PROVE it, since every other
+// field is a boundary property. An extractor that knows its patch is a rolling-ball envelope should
+// declare it and let this measure it.
 func certifyCoons4Patch(fill geom.BSplineSurface, rails [4]geom.BSplineCurve, sides [4]geom.FillSide, loop RailLoop, scale Resolution) Certificate {
 	return Certificate{
 		Closed:      loop.Closed(scale.Weld()),
@@ -238,6 +242,7 @@ func certifyCoons4Patch(fill geom.BSplineSurface, rails [4]geom.BSplineCurve, si
 		NoFold:      obstacleNoFold(fill, scale),
 		MaxDev:      coons4MaxDev(fill, rails),
 		MaxAngleDev: coons4MaxAngleDev(fill, sides),
+		MaxBallDev:  maxBallDev(fill, loop.Envelope),
 	}
 }
 

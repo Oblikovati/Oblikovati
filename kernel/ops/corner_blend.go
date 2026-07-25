@@ -78,14 +78,23 @@ type Certificate struct {
 	NoFold      bool    // the patch Jacobian keeps a consistent sign over the domain
 	MaxDev      float64 // G0 positional max deviation from the boundary curves (model units)
 	MaxAngleDev float64 // G1 angular tangent deviation vs the neighbour surfaces (radians)
+	// MaxBallDev is the INTERIOR rolling-ball envelope residual (model units): over a 12×12 interior
+	// grid, max |dist(p + r·n, host) − r| against the hosts the EXTRACTOR declared the ball rolls on /
+	// passes through (RailLoop.Envelope). It is the only field that says anything about the patch
+	// INTERIOR — every other one is a boundary or structural property, which is why nine corpus greens
+	// certified clean while their surface sat 9–19% of r off OCCT's (coons4-audit.md §C.3). 0 when the
+	// extractor supplied no envelope; see maxBallDev for why a certify-time guess is refused.
+	MaxBallDev float64
 }
 
 // Valid reports whether the patch is admissible at the junction's model scale: structurally sound AND
 // within tolerance — G0 within the model weld (ADR-0042), G1 below seamAngularTol (a G0-tight but
-// tangent-kinked patch shades as a crease and is rejected). scale carries the model-relative weld.
+// tangent-kinked patch shades as a crease and is rejected), and the interior within the model weld of
+// the declared rolling-ball envelope. scale carries the model-relative weld. No tolerance here was
+// widened to admit MaxBallDev: it is gated at the SAME scale.Weld() MaxDev already used.
 func (c Certificate) Valid(scale Resolution) bool {
 	return c.Closed && c.WeldsArms && c.NoFold &&
-		c.MaxDev <= scale.Weld() && c.MaxAngleDev <= seamAngularTol
+		c.MaxDev <= scale.Weld() && c.MaxAngleDev <= seamAngularTol && c.MaxBallDev <= scale.Weld()
 }
 
 // CornerBlendProvider produces the corner/miter patch for one junction, or declines. Fits is a cheap

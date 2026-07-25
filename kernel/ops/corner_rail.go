@@ -107,11 +107,14 @@ type BallEnvelope struct {
 	Radius float64
 	// Tangents are the surfaces the ball rolls ON (dist(centre, surface) == Radius).
 	Tangents []geom.Surface
-	// Through are the restriction curves the ball passes THROUGH — the run-out ball's flank is TANGENT
-	// to a host plane and passes THROUGH the blocking boss's footprint conic, so a tangency-only
-	// payload cannot express it.
+	// Through are the restriction curves the ball passes THROUGH: the ball's own SECTION plane meets
+	// the curve at distance exactly Radius. Note this is NOT dist(centre, curve) == Radius — the ball
+	// crosses a restriction curve transversally (only at a symmetry station is it tangent to it), so a
+	// plain point-to-curve distance under-reads by up to 3.7% of r even on an exactly-correct band.
+	// The section plane is what makes the statement true, which is why Spine is part of this payload.
 	Through []geom.Curve3
-	// Spine is the unit normal of the ball's SECTION planes — the fillet spine direction.
+	// Spine is the unit normal of the ball's SECTION planes — the fillet spine direction. Required
+	// whenever Through is non-empty; unused for a pure-tangency envelope.
 	Spine math.Vector3
 }
 
