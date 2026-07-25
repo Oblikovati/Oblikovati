@@ -90,6 +90,13 @@ func ellipticCylinderArmSurface(e *topo.Edge, ec geom.EllipticalCylinder, pl geo
 	// unreliable Reversed flag (the STEP extrusion→EllipticalCylinder orientation defect), so the
 	// dihedral classifier mis-calls this convex edge concave. Convexity/material-side is instead read
 	// from the GEOM normal (insideEllipticCylinder, away-from-axis) when picking the spine branch.
+	//
+	// TODO(f4-convexity): that substitution is only HALF done — reading the material side off the geometric
+	// normal answers "which side of the wall is solid", not "is this dihedral convex or concave", so a
+	// genuinely CONCAVE ruling edge of the same wall would still be routed here as if it were convex (the
+	// doc above claims a concave pick is declined; nothing actually declines it). PRE-EXISTING, out of the
+	// canal band's scope. The sound fix is the same solid-probe the closed rim already uses —
+	// ellipticRimConvexitySide's quadrant probe (fillet_elliptic_rim_spine.go) — lifted to serve both.
 	if p.varying() {
 		return geom.Cylinder{}, false // constant-radius only
 	}

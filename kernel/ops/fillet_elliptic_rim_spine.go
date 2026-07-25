@@ -205,6 +205,13 @@ func (s ellipticRimSpine) tangencyError(center math.Point3) float64 {
 // CONVEX rim's ball is offset INWARD, so the inner offset — hence the fillet — exists only while r
 // stays under this; newEllipticRimSpine gates on it up front so an impossible radius declines at the
 // closed form instead of failing station by station. tangencyError remains the per-station certificate.
+//
+// TODO(bore-sigma): this bound assumes σ=+1, i.e. the material is INSIDE the wall, so "convex rim" means
+// the ball is offset toward the wall's CONCAVE side and the evolute limits it. On a BORE (σ=−1) a convex
+// rim's ball is offset toward the wall's CONVEX side, where the offset never degenerates and no such
+// bound applies — so the gate is over-restrictive there and declines radii that are in fact buildable.
+// It fails SAFE (an honest refusal, never a mis-built band), which is why it stands as-is; making it
+// σ-aware needs the offset-side analysis done properly, not a sign flipped on a hunch.
 func (s ellipticRimSpine) minSectionCurvatureRadius() float64 {
 	return s.ec.MinorRadius * s.ec.MinorRadius / s.ec.MajorRadius
 }

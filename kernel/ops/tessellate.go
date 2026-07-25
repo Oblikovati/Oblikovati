@@ -95,6 +95,16 @@ func (q Quality) angleTol() float64 {
 
 // TessellateEdge facets an edge into a polyline honoring the chordal and angular tolerances.
 func TessellateEdge(e *topo.Edge, q Quality) []math.Point3 {
+	pts, _ := tessellateEdgeWithParams(e, q)
+	return pts
+}
+
+// tessellateEdgeWithParams is [TessellateEdge] plus the CURVE PARAMETER each sample was taken at.
+// A mesher that has to label a tessellated edge with its position on the adjoining SURFACE needs that
+// parameter, not just the point: re-deriving it from chord length along the polyline is only correct
+// when the curve is parametrised by arc length, and a rolling-ball canal rail is not (it drifted the
+// canal band's v by 1.2e-2 and sheared every boundary strip — see canalRailRow).
+func tessellateEdgeWithParams(e *topo.Edge, q Quality) ([]math.Point3, []float64) {
 	c := e.Geometry()
 	lo, hi := c.Domain()
 	params := adaptiveParams(c.PointAt, lo, hi, q.tol(), q.angleTol())
@@ -102,7 +112,7 @@ func TessellateEdge(e *topo.Edge, q Quality) []math.Point3 {
 	for i, t := range params {
 		pts[i] = c.PointAt(t)
 	}
-	return pts
+	return pts, params
 }
 
 // TessellateBody facets every face into one mesh and every edge into a polyline. After the per-face

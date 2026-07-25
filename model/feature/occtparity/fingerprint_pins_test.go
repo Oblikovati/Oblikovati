@@ -367,19 +367,31 @@ func byteIdentityPins() []fingerprintPin {
 		// genuine variable-section canal (fillet_elliptic_rim_canal.go), lofted from exact stations and welded
 		// through the shared rim rebuild. Both were FLAT-REFUSED (curvedAdjacentError). Independent geometric
 		// receipt for these two values: DRAWEXE `vprops` on OCCT's OWN blend gives 1.56049e6 (J6) and 772435
-		// (J8) — ours are −0.0030% / −0.0059% off, i.e. the same solid. (Their AREA carries a documented
+		// (J8) — ours are −0.0029% / −0.0059% off, i.e. the same solid. (Their AREA carries a documented
 		// per-case deviation; see corpus.json — that is an oracle-NUMBER defect, not a geometry one.) Pinned on
 		// THIS HEAD so any later slice touching the canal band / rim rebuild fails loud if it perturbs them.
 		// Same cross-platform-risk caveat as above applies.
-		{"J6", 1560443.741964193, 108252, 0x5fa48b4f7700c056, ""},
-		{"J8", 772389.350532338, 84988, 0x94ad22b89f818605, ""},
+		//
+		// RE-CAPTURED once, for the canal band mesher's v-labelling fix (canalRailRow): the band's rail rows
+		// were labelled with a v re-derived from chord length ALONG THE RAIL instead of each sample's own
+		// (isocurve == surface-v) parameter, which sheared every boundary strip along the ring. Only the FOUR
+		// bodies carrying a canal band (J6/J8 here + A7/B1 below) moved; every other pin stayed byte-identical,
+		// and each of the four kept its EXACT triangle count (the mesh topology is unchanged — only the
+		// mislabelled vertices moved onto their true stations). Receipt: the meshed band area against the band
+		// SURFACE's own integral went J6 +0.2417%→−0.0035%, A7 +0.0223%→−0.0030%, J8 +0.0020%→−0.0055%,
+		// B1 −0.0034%→−0.0039% — i.e. all four now sit on the physically correct INSCRIBED side at the same
+		// ~0.004% faceting deficit, where before J6/A7 were inflated by the shear. All four volumes also moved
+		// CLOSER to the DRAWEXE vprops reference.
+		{"J6", 1560445.460018513724, 108252, 0x1350ffdad16d2295, ""},
+		{"J8", 772389.432451401255, 84988, 0x3294c0c986b48523, ""},
 		// A7/B1 (bfuseblend): the CONCAVE members of the same vein — the SAME two shapes as T5/U2 (an
 		// elliptic boss / an oblique pipe standing on a plate) but on a plate wide enough that the fillet's
 		// foot ring FITS, so the band stays a single closed piece. They green off the geometric convexity
 		// gate (fillet_elliptic_rim_spine.go's quadrant probe), which is load-bearing here: the imported
 		// elliptic face's Reversed flag mis-classifies these rims. Topology matches DRAWEXE exactly (9 faces
 		// / 11 vertices / 17 edges each) and volume to 1e-6 (A7 3.67231e7, B1 1.42995e7 vs 1.42994e7).
-		{"A7", 36723069.923069268, 110356, 0x3aa29d36b4812987, "bfuseblend"},
-		{"B1", 14299454.115927711, 133748, 0x75e6355cd170d479, "bfuseblend"},
+		// Re-captured with J6/J8 above for the same canal-band v-labelling fix — see that receipt.
+		{"A7", 36723071.024155125022, 110356, 0x988878689a64481e, "bfuseblend"},
+		{"B1", 14299454.139366334304, 133748, 0xfb85dc13f23feabb, "bfuseblend"},
 	}
 }

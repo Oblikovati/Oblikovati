@@ -186,13 +186,21 @@ const spineTangencyCoef = 1e-6
 // SOLID's outside, and if not that the station walk must be flipped. The band's outward direction is
 // −side·(Q − C)/r: on a CONVEX rim the ball is inside the material so the surface faces away from the
 // centre; on a CONCAVE rim the ball is in the void so it faces toward it.
+//
+// The decision is a dot of two UNIT vectors, so the degeneracy floor is dimensionless and needs no model
+// scale (ADR-0042). Normalising `want` is what makes that true: it is C→Q, of magnitude ~r, so dotting it
+// raw against the unit normal gave a LENGTH-scaled quantity whose effective threshold drifted with model
+// scale — a 1e-9 floor meant 1e-9 of a radian on a unit part but 1e-10 of one on a 10× part.
 func ellipticRimBandOutward(spine ellipticRimSpine, st ellipticRimStations, surf geom.BSplineSurface) (flip bool, ok bool) {
 	j := len(st.centers) / 2
 	vp := spineChordParams(st.centers)
 	q := surf.PointAt(0.5, vp[j])
-	want := st.centers[j].VectorTo(q).Scale(-spine.side)
+	want, err := math.UnitVector3FromVector(st.centers[j].VectorTo(q).Scale(-spine.side))
+	if err != nil {
+		return false, false // the probe point coincides with the ball centre — no outward direction
+	}
 	n := surf.NormalAt(0.5, vp[j])
-	dot := float64(n.Dot(want))
+	dot := float64(n.Dot(want.AsVector()))
 	if stdmath.Abs(dot) < ellipticRimAxisTiltTol {
 		return false, false // degenerate normal at the probe station — decline
 	}

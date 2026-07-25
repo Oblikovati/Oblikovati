@@ -228,6 +228,11 @@ func (g *rimBuild) rimReplacementUse(f *topo.Face) topo.Use {
 // faces sharing capE always end up antiparallel regardless of whether the cap's rim is an outer boundary
 // (I9) or a hole (R8/W6/W8/W9, #2006) — the one degree of freedom the source topology actually varies.
 func (g *rimBuild) addBandFace() {
+	// The "torus" token is KEPT DELIBERATELY even though the band may now be a canal BSpline (the elliptic
+	// rim, fillet_elliptic_rim_canal.go). It is a topological-naming token, not a description: it feeds the
+	// face's reference key (ADR-0043), so renaming it to something honest like "band" would perturb every
+	// rim-fillet refkey and break every rim fingerprint pin, for zero geometric gain. If a future slice
+	// ever does need to rename it, that is a refkey-migration change with pin re-capture, not a cleanup.
 	lin := topo.NewLineage(topo.Tok("rimfillet", "torus", 0))
 	capUse := topo.Use{Edge: g.capE, Reversed: !g.capRimReversed}
 	if g.concave {

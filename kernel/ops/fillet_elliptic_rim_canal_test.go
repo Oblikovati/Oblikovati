@@ -148,6 +148,48 @@ func TestEllipticRimConvexityIsReadFromTheSolidNotTheReversedFlag(t *testing.T) 
 	}
 }
 
+// TestEllipticRimConvexityDeclinesWhenTheMixedQuadrantsDisagree pins the quadrant probe's FAIL-SAFE
+// branch — the one that decides nothing rather than guessing. The probe classifies the dihedral by
+// stepping ¼·r into both MIXED quadrants (void on a convex rim, material on a concave one); if the two
+// disagree the configuration is not a clean dihedral at that scale and the rim must be DECLINED, because
+// a wrong side builds a wrong-sided band (which the Reversed flag cannot be consulted to double-check —
+// on this host it is unreliable, see the test above).
+//
+// T5's concave boss-base rim drives both branches off ONE real geometry, no synthetic stand-in: the boss
+// stands on a plate THINNER than a ¼·r step at large r, so the outward-and-down mixed probe punches
+// through the plate (void) while the inward-and-up one stays in the boss (material). At r=16 the step
+// still fits inside the plate and the rim resolves CONCAVE; at r=32 it does not and the probe declines.
+func TestEllipticRimConvexityDeclinesWhenTheMixedQuadrantsDisagree(t *testing.T) {
+	body := importEllipticFixture(t, "T5")
+	rim := closedEllipticRimNear(t, body, math.P3(0, 0, 0))
+	ec, pl, wallF, _, ok := ellipticalCylinderPlaneEdge(rim)
+	if !ok {
+		t.Fatal("T5's boss-base rim is not an EllipticalCylinder∧Plane edge")
+	}
+	nPl, ok := planeHostNormal(rim, pl)
+	if !ok {
+		t.Fatal("the T5 plate's material-outward normal is unreadable")
+	}
+	for _, tc := range []struct {
+		radius   float64
+		wantSide float64
+		wantOK   bool
+	}{
+		{16, +1, true}, // the ¼·r probe still fits the plate: a clean CONCAVE dihedral
+		{32, 0, false}, // it no longer does: the mixed quadrants disagree — decline, never guess
+	} {
+		sigma, ok := ellipticWallMaterialSign(body, rim, ec, wallF, tc.radius)
+		if !ok {
+			t.Fatalf("r=%g: the wall material sign is undecidable (premise changed)", tc.radius)
+		}
+		side, ok := ellipticRimConvexitySide(body, rim, ec, nPl, sigma, tc.radius)
+		if ok != tc.wantOK || side != tc.wantSide {
+			t.Errorf("ellipticRimConvexitySide(T5 rim, r=%g) = (%v, %v), want (%v, %v)",
+				tc.radius, side, ok, tc.wantSide, tc.wantOK)
+		}
+	}
+}
+
 // TestEllipticClosedRimDeclinesSpillingBand is the do-no-harm floor for T5/U2: their fillet foot ring
 // runs OFF the plate it stands on (OCCT answers with a clipped, multi-piece band — a different
 // construction), so the arm must return handled=false and let the edge fall through to the unchanged
@@ -222,6 +264,71 @@ func TestEllipticRimCanalBandMatchesTheExactEnvelopeArea(t *testing.T) {
 			}
 		})
 	}
+}
+
+// ellipticRimMeshAreaRelTol is how far the MESHED band area may sit from the exact envelope area. An
+// inscribed tessellation under-reports a curved area, and at PropertyQuality this band's deficit is
+// ~5.5e-5 — so this leaves ~5× headroom over honest faceting while still catching the v-labelling shear
+// canalRailRow used to introduce (2.4e-3 on J6, 8× this bound) by a wide margin.
+const ellipticRimMeshAreaRelTol = 3e-4
+
+// TestEllipticRimCanalBandMeshMatchesTheExactEnvelopeArea is the TESSELLATION half of the certificate
+// above, and the regression pin for the canal band mesher's v-labelling (canalRailRow). The
+// surface-integral test proves the SURFACE is the envelope; it says nothing about the MESH, which is what
+// mass properties, export, render and the corpus area gate actually consume — and the mesh was the broken
+// half: rail rows labelled with a chord-length v instead of their own isocurve parameter sheared every
+// boundary strip along the ring and inflated the meshed J6 band to 7258.36 (+0.24%) while the surface
+// integral stayed within +0.0001% of exact. So this asserts the tessellated area against the SAME exact
+// envelope numbers, at PropertyQuality (the tolerance every property readout uses).
+func TestEllipticRimCanalBandMeshMatchesTheExactEnvelopeArea(t *testing.T) {
+	for _, tc := range []struct {
+		name      string
+		rimAt     math.Point3
+		radius    float64
+		exactArea float64
+	}{
+		{"J6", math.P3(20, 0, 100), 10, 7240.851},
+		{"J8", math.P3(0, 0, 0), 10, 4362.971},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			body := importEllipticFixture(t, tc.name)
+			rim := closedEllipticRimNear(t, body, tc.rimAt)
+			band := weldedCanalBandFace(t, body, rim, tc.radius)
+			got := MeshArea(TessellateFace(band, PropertyQuality()))
+			if rel := stdmath.Abs(got-tc.exactArea) / tc.exactArea; rel > ellipticRimMeshAreaRelTol {
+				t.Errorf("%s MESHED band area = %.6g, want the exact envelope %.6g (rel %.3g > %.0e — a v-labelling "+
+					"shear inflates the mesh while leaving the surface exact)", tc.name, got, tc.exactArea, rel, ellipticRimMeshAreaRelTol)
+			}
+		})
+	}
+}
+
+// weldedCanalBandFace welds the rim into its canal band and returns the band FACE — the mesh-level tests
+// need the real welded face (its two rail edges and seam are what the mesher lofts), not just the surface.
+func weldedCanalBandFace(t *testing.T, body *topo.Body, rim *topo.Edge, radius float64) *topo.Face {
+	t.Helper()
+	ef, ok := ellipticClosedRimArmEdge(body, rim, filletPick{edge: rim, r0: radius, r1: radius})
+	if !ok {
+		t.Fatal("the elliptic closed-rim canal arm declined the rim")
+	}
+	welded, why := ellipticClosedRimCanalBody(body, ef)
+	if welded == nil {
+		t.Fatalf("the canal band weld declined: %s", why)
+	}
+	var band *topo.Face
+	for _, f := range welded.Faces() {
+		if _, isSpline := f.Geometry().(geom.BSplineSurface); !isSpline {
+			continue
+		}
+		if band != nil {
+			t.Fatal("the welded body carries more than one B-spline face — the band is no longer identifiable")
+		}
+		band = f
+	}
+	if band == nil {
+		t.Fatal("the welded body carries no B-spline band face")
+	}
+	return band
 }
 
 // parametricSurfaceArea integrates |∂P/∂u × ∂P/∂v| over the surface's full parameter box — the band's

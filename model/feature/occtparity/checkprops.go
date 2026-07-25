@@ -43,8 +43,20 @@ func areaWithin(got, expected, deps float64) bool {
 // flawed; occt-oracle-not-religion) — against OUR known-correct exact area, first logging the
 // forensic receipt (the OCCT area deviated from, the signed deviation, and the Reason). BOTH
 // branches gate at r.Deps, so a future regression of OUR geometry >Deps off the exact area still
-// FAILS — unlike a todo-skip, which would stop gating the case entirely. The global deps is never
-// widened: only C8/D1 carry a Deviation; every other case asserts OCCT's ExpectedArea unchanged.
+// FAILS — unlike a todo-skip, which would stop gating the case entirely.
+//
+// THE STANDARD for adding one (this comment is the deviation mechanism's human-readable audit trail —
+// keep it in step with corpus.json): a Deviation is always PER-CASE and RECEIPTED — the global deps is
+// never widened and no tolerance is ever loosened to absorb one. It is admissible only when OCCT's own
+// recorded number is demonstrably wrong (a geometry OCCT builds off-tangency, or a number its own
+// integrator mis-computes), the correct value is derived independently (closed-form/direct integration),
+// and the Reason string carries the forensic receipt. FOUR cases carry one today, all in `simple`:
+//   - C8 — OCCT's corner is a non-tangent 3-stripe BSpline sag;
+//   - D1 — OCCT's snout ruling arm is 3.5% under the true rolling-ball envelope;
+//   - J6, J8 — OCCT's `sprops <shape> 1e-4` MIS-INTEGRATES the oblique-prism/pipe wall (a
+//     SurfaceOfLinearExtrusion), so its recorded area is inflated while its GEOMETRY agrees with ours.
+//
+// Every other case asserts OCCT's ExpectedArea unchanged.
 func assertCaseArea(t testingT, name string, area float64, r Record) {
 	if d := r.Deviation; d != nil {
 		t.Logf("%s: per-case exact-deviation — asserting OUR exact area %.6g (%+.2f%% from OCCT %.6g): %s",
