@@ -44,6 +44,11 @@ import (
 // +29.71 — and the two nearly cancelled into +0.008% whole-body, again inside deps. Proven by mutation:
 // reverting the fill to chord projection turns this test RED naming the 59.273 patch. Both faces are pinned
 // below, which is why the gate now covers five faces rather than three.
+//
+// The patch is pinned by its INTEGRATED SURFACE area, not its mesh area: DRAWEXE's `sprops` is itself a
+// surface quadrature, and a mesh figure would spend two thirds of the tolerance budget on the tessellator's
+// own discretisation error, leaving 1.13× headroom instead of 3.6× (n4MeshSanityRelTol documents the
+// measurements). The mesh is still checked, loosely, so the full-domain-trim premise stays honest.
 
 // TestN4CornerWeldLayerWatertight is the whole-body gate: watertight, fold-free, OCCT's face count and area.
 func TestN4CornerWeldLayerWatertight(t *testing.T) {
@@ -71,11 +76,21 @@ const (
 	n4OracleTopPlane    = 456.557
 	n4OracleCornerPatch = 80.7328
 	n4OracleVPlane      = 8674.84
-	// 0.002 relative. Our worst per-face deviation is the corner patch's 1.8e-3 (the rolling-ball canal's
+	// 0.002 relative. Our worst per-face deviation is the corner patch's 5.6e-4 (the rolling-ball canal's
 	// between-station interpolation residual against OCCT's own degree-8 approximation of the same surface);
 	// every other face is under 5e-5. The wrong-half body is off by 21% (wall) and 38% (top plane) and the
 	// superseded chord-projected fill by 27% (patch), so this separates them by an order of magnitude or more.
 	n4PerFaceRelTol = 0.002
+	// The corner patch is pinned by its INTEGRATED SURFACE area, not by its mesh area, because the mesh
+	// carries the TESSELLATOR's discretisation error stacked on top of the surface's own. Measured: surface
+	// 80.7781 (rel 5.61e-4 — 3.6× headroom under n4PerFaceRelTol) versus mesh 80.8753 (rel 1.77e-3 — only
+	// 1.13× headroom), so ~⅔ of the mesh figure's budget is spent on mesh density, an actively-tuned
+	// heuristic in this repo. Pinning the mesh at 0.002 would therefore (a) turn N4 spuriously RED on any
+	// NURBS-tessellator density change and (b) leave no room to catch a real 0.2% SURFACE regression. The
+	// mesh area is still asserted, at this deliberately looser tolerance, as a coarse sanity check AND as
+	// the guard that the patch face is still trimmed to its whole parameter domain — which is the premise
+	// that makes the full-domain integral the FACE's area rather than the surface's.
+	n4MeshSanityRelTol = 0.01
 )
 
 // assertN4HostFacesMatchOraclePerFace pins the five faces the two live false-green mechanisms move: the
@@ -88,30 +103,83 @@ func assertN4HostFacesMatchOraclePerFace(t *testing.T, body *topo.Body) {
 	if len(walls) != 2 {
 		t.Fatalf("N4 has %d r=20 boss-wall cylinder faces, want 2 (the 180° and the 90° sector)", len(walls))
 	}
-	assertFaceAreaAgainstOracle(t, "N4 boss wall, 180° sector (oracle result_9)", walls[0], n4OracleBossWall180)
-	assertFaceAreaAgainstOracle(t, "N4 boss wall, 90° sector (oracle result_14)", walls[1], n4OracleBossWall90)
+	assertFaceAreaAgainstOracle(t, "N4 boss wall, 180° sector (oracle result_9)", walls[0], n4OracleBossWall180, n4PerFaceRelTol)
+	assertFaceAreaAgainstOracle(t, "N4 boss wall, 90° sector (oracle result_14)", walls[1], n4OracleBossWall90, n4PerFaceRelTol)
 	assertFaceAreaAgainstOracle(t, "N4 boss top plane, 270° pie receded to r=15 (oracle result_11)",
-		n4BossTopPlaneArea(t, body), n4OracleTopPlane)
-	assertFaceAreaAgainstOracle(t, "N4 corner patch, the rolling-ball canal (oracle result_5)",
-		n4CornerPatchArea(t, body), n4OracleCornerPatch)
+		n4BossTopPlaneArea(t, body), n4OracleTopPlane, n4PerFaceRelTol)
+	// ★ THE LOAD-BEARING corner-fill assertion. DRAWEXE's own `sprops result_5 1.e-9` is a Gauss-quadrature
+	// SURFACE integral (it reports relative error 0), so integrating our patch the same way compares like
+	// with like. It separates the superseded chord-projected fill by 133× — that fill's 59.2728 is 21.46
+	// absolute off a ±0.1615 band — where the vplane assertion below separates it by only 1.7×.
+	patch := n4CornerPatchFace(t, body)
+	assertFaceAreaAgainstOracle(t, "N4 corner patch SURFACE integral, the rolling-ball canal (oracle result_5)",
+		bsplinePatchSurfaceArea(patch), n4OracleCornerPatch, n4PerFaceRelTol)
+	assertFaceAreaAgainstOracle(t, "N4 corner patch MESH (loose sanity + full-domain-trim guard only)",
+		faceMeshArea2(patch), n4OracleCornerPatch, n4MeshSanityRelTol)
+	// Corroborating, NOT load-bearing: the chord-projected fill put +29.70 on this plane, which is only 1.7×
+	// the ±17.35 tolerance band, so on its own it is a thin guard. It is kept because it witnesses the OTHER
+	// half of the redistribution the two errors used to cancel across.
 	assertFaceAreaAgainstOracle(t, "N4 vertical plane the corner ball rolls on (oracle result_1)",
-		n4CornerVPlaneArea(t, body), n4OracleVPlane)
+		n4CornerVPlaneArea(t, body), n4OracleVPlane, n4PerFaceRelTol)
 }
 
-// n4CornerPatchArea returns the mesh area of the corner patch — the result's only BSpline face (every other
-// N4 face is an analytic plane, cylinder or torus, per the DRAWEXE face inventory).
-func n4CornerPatchArea(t *testing.T, body *topo.Body) float64 {
+// n4CornerPatchFace returns the corner patch — the result's only BSpline face (every other N4 face is an
+// analytic plane, cylinder or torus, per the DRAWEXE face inventory).
+func n4CornerPatchFace(t *testing.T, body *topo.Body) *topo.Face {
 	t.Helper()
-	var areas []float64
+	var found []*topo.Face
 	for _, f := range body.Faces() {
 		if _, ok := f.Geometry().(geom.BSplineSurface); ok {
-			areas = append(areas, faceMeshArea2(f))
+			found = append(found, f)
 		}
 	}
-	if len(areas) != 1 {
-		t.Fatalf("N4 carries %d BSpline faces, want exactly 1 (the corner patch)", len(areas))
+	if len(found) != 1 {
+		t.Fatalf("N4 carries %d BSpline faces, want exactly 1 (the corner patch)", len(found))
 	}
-	return areas[0]
+	return found[0]
+}
+
+// n4PatchAreaCells is the Gauss cell grid the corner patch's surface integral uses per parameter direction.
+// Converged on N4: 4×4 → 80.778102, 8×8 → 80.778102, 16×16 → 80.778102 (a 5-point rule is exact to degree
+// 9, and the patch is one Bézier span in u × a cubic-lofted v, so the rule resolves the integrand outright).
+const n4PatchAreaCells = 8
+
+// gauss5Nodes / gauss5Weights are the 5-point Gauss-Legendre rule on [−1,1].
+var (
+	gauss5Nodes   = [5]float64{-0.906179845938664, -0.5384693101056831, 0, 0.5384693101056831, 0.906179845938664}
+	gauss5Weights = [5]float64{0.2369268850561891, 0.4786286704993665, 0.5688888888888889, 0.4786286704993665, 0.2369268850561891}
+)
+
+// bsplinePatchSurfaceArea is the TRUE surface area of a BSpline face — ∫∫|S_u × S_v| du dv over the whole
+// parameter domain by a tensor Gauss-Legendre rule — carrying none of the tessellator's discretisation
+// error (see n4MeshSanityRelTol for why that distinction is the point). It integrates the FULL domain, which
+// is the face only while the face is trimmed to exactly its own boundary isoparms (the corner patch is, via
+// canalPatchLoops); the companion mesh-area assertion is what keeps that premise honest.
+func bsplinePatchSurfaceArea(f *topo.Face) float64 {
+	surf := f.Geometry().(geom.BSplineSurface)
+	u0, u1 := surf.UDomain()
+	v0, v1 := surf.VDomain()
+	hu, hv := (u1-u0)/n4PatchAreaCells, (v1-v0)/n4PatchAreaCells
+	area := 0.0
+	for i := 0; i < n4PatchAreaCells; i++ {
+		for j := 0; j < n4PatchAreaCells; j++ {
+			area += gaussCellArea(surf, u0+(float64(i)+0.5)*hu, v0+(float64(j)+0.5)*hv, hu, hv)
+		}
+	}
+	return area
+}
+
+// gaussCellArea is one cell's share of the area integral: the 5×5 Gauss-Legendre sum of the area element
+// |S_u × S_v| over the cell centred at (cu, cv) with sides (hu, hv).
+func gaussCellArea(surf geom.BSplineSurface, cu, cv, hu, hv float64) float64 {
+	sum := 0.0
+	for a, ua := range gauss5Nodes {
+		for b, vb := range gauss5Nodes {
+			su, sv := surf.DerivativesAt(cu+ua*hu/2, cv+vb*hv/2)
+			sum += gauss5Weights[a] * gauss5Weights[b] * float64(su.Cross(sv).Length())
+		}
+	}
+	return sum * hu * hv / 4
 }
 
 // n4CornerVPlaneArea returns the mesh area of the box wall the corner ball rolls on: the wall the boss axis
@@ -160,12 +228,14 @@ func n4BossTopPlaneArea(t *testing.T, body *topo.Body) float64 {
 	return 0
 }
 
-// assertFaceAreaAgainstOracle fails unless got matches the DRAWEXE per-face value within n4PerFaceRelTol.
-func assertFaceAreaAgainstOracle(t *testing.T, what string, got, want float64) {
+// assertFaceAreaAgainstOracle fails unless got matches the DRAWEXE per-face value within relTol. relTol is
+// per-assertion, not global, because the surface-integral and mesh-area measures of the SAME face carry
+// different error stacks (n4PerFaceRelTol vs n4MeshSanityRelTol).
+func assertFaceAreaAgainstOracle(t *testing.T, what string, got, want, relTol float64) {
 	t.Helper()
-	if rel := stdmath.Abs(got-want) / want; rel > n4PerFaceRelTol {
-		t.Fatalf("%s meshed to %.4f, want DRAWEXE %.4f within %.3f relative (rel %.6f)",
-			what, got, want, n4PerFaceRelTol, rel)
+	if rel := stdmath.Abs(got-want) / want; rel > relTol {
+		t.Fatalf("%s measured %.4f, want DRAWEXE %.4f within %.3f relative (rel %.6f)",
+			what, got, want, relTol, rel)
 	}
 }
 

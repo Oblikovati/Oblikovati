@@ -3,6 +3,7 @@
 package ops
 
 import (
+	"fmt"
 	stdmath "math"
 	"testing"
 
@@ -30,6 +31,22 @@ func n4TestArms(t *testing.T) []edgeFillet {
 		{armSurface: torus, a: tFace, b: bFace},
 		{armSurface: band, flip: true, a: vFace, b: tFace},
 	}
+}
+
+// n4TestCornerPts solves the N4 corner's four points, two terminating-arm arcs and two arm ball centres
+// from the exact arm/host surfaces n4TestArms carries (boss = the r=20 wall both curved arms share). Shared
+// by every N4 unit test that needs the corner's own derived INPUTS rather than the assembled patch.
+func n4TestCornerPts(t *testing.T, arms n4MixedArms) n4CornerPts {
+	t.Helper()
+	pts, ok := n4CornerPoints(
+		mustCylinder(t, math.P3(115.84559306791, 81.115957534528, 0), math.V3(0, 0, 1), 20),
+		arms.torus.armSurface.(geom.Torus), arms.ccyl.armSurface.(geom.Cylinder),
+		arms.band.armSurface.(geom.Cylinder), arms.band.a.Geometry().(geom.Plane),
+		arms.torus.a.Geometry().(geom.Plane), 5)
+	if !ok {
+		t.Fatal("n4CornerPoints declined the N4 corner")
+	}
+	return pts
 }
 
 // TestSolveN4CornerMatchesOracle is the core validation: from OUR arm surfaces the corner-point solver
@@ -116,42 +133,135 @@ func assertOnSurface(t *testing.T, tag string, surf geom.Surface, c geom.Curve3,
 // TestN4BallPathRollsOnPlaneAndTorusArm proves the derived ball-centre curve is what the canal reading
 // says it is: every station centre sits exactly r from the vertical plane and exactly 2r from the lateral
 // torus arm's spine circle (the ball rolling on that tube), and both host feet land at ball distance r.
+//
+// It covers the two PINNED end stations as well as the 63 derived ones. n4CanalSurface replaces stations 0
+// and N−1 with the corner points the terminating arms own (pts.ballBand / pts.ballCcyl with feet a,b / d,c),
+// so those two — the only stations whose cross-sections become the patch's welded v=0 / v=1 boundaries —
+// would otherwise be the two this test never reaches.
 func TestN4BallPathRollsOnPlaneAndTorusArm(t *testing.T) {
 	arms, _ := classifyN4MixedArms(n4TestArms(t))
 	torus := arms.torus.armSurface.(geom.Torus)
 	vplane := arms.band.a.Geometry().(geom.Plane)
-	pts, ok := n4CornerPoints(
-		mustCylinder(t, math.P3(115.84559306791, 81.115957534528, 0), math.V3(0, 0, 1), 20), torus,
-		arms.ccyl.armSurface.(geom.Cylinder), arms.band.armSurface.(geom.Cylinder),
-		vplane, arms.torus.a.Geometry().(geom.Plane), 5)
-	if !ok {
-		t.Fatal("n4CornerPoints declined")
-	}
+	pts := n4TestCornerPts(t, arms)
 	path, ok := n4CornerBallPath(torus, vplane, pts.ballBand, pts.ballCcyl, 1e-9)
 	if !ok {
 		t.Fatal("n4CornerBallPath declined the N4 corner")
 	}
 	for j, m := range path.centers {
-		_, _, foot := geom.ClosestPointOnSurface(vplane, m)
-		if d := stdmath.Abs(float64(foot.DistanceTo(m)) - 5); d > 1e-9 {
-			t.Fatalf("station %d centre is %.2e off distance r=5 from the vplane", j, d)
-		}
-		if d := stdmath.Abs(spineCircleDistance(torus, m) - 10); d > 1e-9 {
-			t.Fatalf("station %d centre is %.2e off distance 2r=10 from the torus arm's spine circle", j, d)
-		}
-		if d := stdmath.Abs(float64(path.feetTorus[j].DistanceTo(m)) - 5); d > 1e-9 {
-			t.Fatalf("station %d torus foot is %.2e off ball radius 5", j, d)
+		assertBallCentreRollsOnPlaneAndTube(t, fmt.Sprintf("derived station %d", j), torus, vplane, m, path.feetTorus[j])
+	}
+	assertBallCentreRollsOnPlaneAndTube(t, "PINNED band-arm end station", torus, vplane, pts.ballBand, pts.b)
+	assertBallCentreRollsOnPlaneAndTube(t, "PINNED ccyl-arm end station", torus, vplane, pts.ballCcyl, pts.c)
+	// The pinned stations' VPLANE feet are corner points A and D, the patch's two welded plane-side corners.
+	for _, w := range []struct {
+		tag          string
+		centre, foot math.Point3
+	}{{"A on the band-arm station", pts.ballBand, pts.a}, {"D on the ccyl-arm station", pts.ballCcyl, pts.d}} {
+		if d := stdmath.Abs(float64(w.foot.DistanceTo(w.centre)) - 5); d > 1e-9 {
+			t.Errorf("PINNED vplane foot %s is %.2e off ball radius 5", w.tag, d)
 		}
 	}
 }
 
-// spineCircleDistance is the distance from p to a torus's spine circle (its tube axis).
-func spineCircleDistance(tor geom.Torus, p math.Point3) float64 {
-	k := tor.AxisDir.AsVector()
-	rel := tor.Center.VectorTo(p)
-	h := float64(rel.Dot(k))
-	rho := float64(rel.Sub(k.Scale(math.Scalar(h))).Length())
-	return stdmath.Hypot(rho-tor.MajorRadius, h)
+// assertBallCentreRollsOnPlaneAndTube checks one ball-centre station against the canal reading: exactly r
+// from the vertical plane, exactly 2r from the lateral torus arm's spine circle (the ball riding that tube's
+// outside), and its torus foot at ball radius r.
+func assertBallCentreRollsOnPlaneAndTube(t *testing.T, tag string, torus geom.Torus, vplane geom.Plane, centre, footTorus math.Point3) {
+	t.Helper()
+	_, _, foot := geom.ClosestPointOnSurface(vplane, centre)
+	if d := stdmath.Abs(float64(foot.DistanceTo(centre)) - 5); d > 1e-9 {
+		t.Errorf("%s centre is %.2e off distance r=5 from the vplane", tag, d)
+	}
+	if d := stdmath.Abs(torusTubeMembership(torus, 10, centre)); d > 1e-9 {
+		t.Errorf("%s centre is %.2e off distance 2r=10 from the torus arm's spine circle", tag, d)
+	}
+	if d := stdmath.Abs(float64(footTorus.DistanceTo(centre)) - 5); d > 1e-9 {
+		t.Errorf("%s torus foot is %.2e off ball radius 5", tag, d)
+	}
+}
+
+// n4TestCanalCert certifies the real N4 canal patch against its received 4-cycle, applying `mutate` to that
+// 4-cycle first so a test can perturb what the certificate is measured AGAINST while leaving the surface
+// untouched. Returns the certificate and the Resolution its thresholds are read at.
+func n4TestCanalCert(t *testing.T, mutate func(*RailLoop)) (Certificate, Resolution) {
+	t.Helper()
+	arms, _ := classifyN4MixedArms(n4TestArms(t))
+	res := ResolutionForPoints([]math.Point3{math.P3(0, 0, 0), math.P3(200, 200, 60)})
+	corner, ok := solveN4Corner(arms, 5, res)
+	if !ok {
+		t.Fatal("solveN4Corner declined the N4 corner")
+	}
+	loop := RailLoop{Sides: []Side{
+		{Curve: corner.pts.arcAB, Adjacent: arms.band.armSurface, Cont: G1},
+		{Curve: corner.railBC, Adjacent: arms.torus.armSurface, Cont: G1},
+		{Curve: corner.pts.arcCD, Adjacent: arms.ccyl.armSurface, Cont: G1},
+		{Curve: corner.railDA, Adjacent: corner.vplane, Cont: G1},
+	}}
+	mutate(&loop)
+	hosts := []geom.Surface{corner.vplane, arms.torus.armSurface}
+	return certifyN4CanalPatch(corner.patch.Surface.(geom.BSplineSurface), loop, hosts, res), res
+}
+
+// TestN4CertificateMeasuresGeometryItDoesNotOwn falsifies certifyN4CanalPatch's G0 measure, which is the
+// only way to know it is a guard rather than a claim. MaxDev used to be maxLoopSurfaceDev of the patch's OWN
+// boundary isoparms — the surface measured against itself, reading ~4.4e-13 whatever the surface is — so a
+// regression in the end-pinning or in LoftCanalStations' parametrisation could lift the boundary clean off
+// pts.arcAB and still certify, shipping a cracked weld. It now measures the RECEIVED arm arcs against the
+// surface and the foot-loci against the two HOSTS, so lifting an arm arc off the surface must REJECT.
+func TestN4CertificateMeasuresGeometryItDoesNotOwn(t *testing.T) {
+	base, res := n4TestCanalCert(t, func(*RailLoop) {})
+	if !base.Valid(res) {
+		t.Fatalf("the unperturbed N4 canal patch does not certify: %+v (weld %.3e)", base, res.Weld())
+	}
+	// The self-referential floor is ~4.4e-13; the informative residuals are the foot-loci's ~1.8e-8. A MaxDev
+	// down at the floor means the certificate is reading the surface against itself again.
+	if base.MaxDev < 1e-11 {
+		t.Fatalf("MaxDev %.3e sits at the self-referential floor (~4.4e-13): the certificate is measuring the "+
+			"patch against its own boundary isoparms and so certifies nothing", base.MaxDev)
+	}
+	for _, lift := range []float64{1e-3, 1e-6} {
+		lifted, res := n4TestCanalCert(t, func(l *RailLoop) { l.Sides[0].Curve = bulgeArcOffSurface(t, l.Sides[0].Curve, lift) })
+		if lifted.MaxDev < lift/2 {
+			t.Fatalf("lifting the received band arc %.0e off the surface left MaxDev at %.3e — the G0 measure "+
+				"does not see the boundary come off the arc the arm face trims to", lift, lifted.MaxDev)
+		}
+		// MaxDev must be the SOLE catcher, or this proves nothing about MaxDev: the mutation keeps the arc's
+		// endpoints, so the 4-cycle still closes, and a mid-span radial bulge barely tilts the tangent plane.
+		if !lifted.Closed || lifted.MaxAngleDev > seamAngularTol {
+			t.Fatalf("the %.0e bulge also tripped Closed=%v / MaxAngleDev=%.3e, so it does not isolate the G0 "+
+				"axis — pick a mutation only MaxDev can see", lift, lifted.Closed, lifted.MaxAngleDev)
+		}
+		if lifted.Valid(res) {
+			t.Fatalf("a patch whose boundary is %.0e off the received band arc still certifies "+
+				"(MaxDev %.3e vs weld %.3e) — the corner would ship a cracked weld", lift, lifted.MaxDev, res.Weld())
+		}
+	}
+}
+
+// bulgeArcOffSurface returns an arc through the SAME two endpoints whose midpoint is pushed d radially
+// outward — so it diverges from the canal's end cross-section by d mid-span while still meeting it at both
+// corner points. That endpoint preservation is the point: it leaves Closed and MaxAngleDev untouched, so a
+// rejection can only have come from the G0 measure under test.
+//
+// Two more obvious mutations are traps. Translating the arc rigidly along its own normal slides it ALONG the
+// canal (that normal is the spine direction, i.e. the surface's own v-tangent) and measures ~0. Offsetting
+// the RADIUS moves the endpoints too, which breaks Closed and lets the certificate reject for a reason that
+// has nothing to do with MaxDev.
+func bulgeArcOffSurface(t *testing.T, c geom.Curve3, d float64) geom.Curve3 {
+	t.Helper()
+	arc, ok := c.(geom.Arc3d)
+	if !ok {
+		t.Fatalf("side curve is %T, want geom.Arc3d (the terminating-arm cross-section)", c)
+	}
+	lo, hi := arc.Domain()
+	mid := arc.PointAt((lo + hi) / 2)
+	out := arc.Center.VectorTo(mid)
+	bulged, err := geom.Arc3dByThreePoints(arc.PointAt(lo),
+		mid.TranslateBy(out.Scale(math.Scalar(d/float64(out.Length())))), arc.PointAt(hi))
+	if err != nil {
+		t.Fatalf("bulging the band arc by %g gave no arc through the three points: %v", d, err)
+	}
+	return bulged
 }
 
 // TestClassifyN4DeclinesM8Roles is do-no-harm: the N4 classifier must REJECT M8's roles (convex-cyl +

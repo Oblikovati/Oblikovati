@@ -161,17 +161,31 @@ func (f n4BallFrame) holdsStation(m math.Point3, psi, tol float64) bool {
 	return ok && float64(c.DistanceTo(m)) <= tol
 }
 
+// vplaneParallelToTorusAxis is the N4 CLASS test, n̂·k̂ = 0: the host plane must contain the torus axis
+// direction, because only then is the plane constraint n̂·(P−O) = a expressible as ρ(ψ)·cosθ = a — the step
+// the whole closed-form ball-centre curve rests on. A named predicate rather than an inline condition so the
+// branch can be exercised on its own (the O1-reuse safety story leans on it DECLINING, and O1's hosts are
+// cylinders). It is a SINE and is therefore thresholded by the layer's angular tolerance, never by a
+// model-scaled length (ADR-0042).
+func vplaneParallelToTorusAxis(torus geom.Torus, vplane geom.Plane) bool {
+	k := unit(torus.AxisDir.AsVector())
+	n := unit(vplane.Normal())
+	return stdmath.Abs(float64(n.Dot(k))) <= seamAngularTol
+}
+
 // newN4BallFrame builds the frame from the lateral torus arm, the shared vertical plane, and the two arm
 // ball centres, then self-checks it against both stations. The tube radius is 2·MinorRadius because the
 // rolling ball (radius r = the tube's own minor radius) rides on the OUTSIDE of that tube. tol is a
 // DISTANCE (the model-relative weld); the plane-parallel test is a sine and so takes the layer's angular
-// tolerance instead, never a length.
+// tolerance instead, never a length — and so does the meridian-SPAN degeneracy test below, which compares
+// two ψ ANGLES and must therefore never be thresholded by a model-scaled length (ADR-0042: mixing the two
+// makes the guard's trip point drift with the model's size).
 func newN4BallFrame(torus geom.Torus, vplane geom.Plane, m0, m1 math.Point3, tol float64) (n4BallFrame, bool) {
+	if !vplaneParallelToTorusAxis(torus, vplane) {
+		return n4BallFrame{}, false
+	}
 	k := unit(torus.AxisDir.AsVector())
 	n := unit(vplane.Normal())
-	if stdmath.Abs(float64(n.Dot(k))) > seamAngularTol {
-		return n4BallFrame{}, false // vplane not parallel to the torus axis: the plane constraint is not ρ·cosθ = a
-	}
 	f := n4BallFrame{
 		origin: torus.Center, axis: k, normal: n, binormal: k.Cross(n),
 		spine: torus.MajorRadius, tube: 2 * torus.MinorRadius,
@@ -179,7 +193,7 @@ func newN4BallFrame(torus geom.Torus, vplane geom.Plane, m0, m1 math.Point3, tol
 	}
 	psi0, sign0, ok0 := f.meridianOf(m0, tol)
 	psi1, sign1, ok1 := f.meridianOf(m1, tol)
-	if !ok0 || !ok1 || sign0 != sign1 || stdmath.Abs(psi1-psi0) <= tol {
+	if !ok0 || !ok1 || sign0 != sign1 || stdmath.Abs(psi1-psi0) <= seamAngularTol {
 		return n4BallFrame{}, false
 	}
 	f.sign, f.psi0, f.psi1 = sign0, psi0, psi1
@@ -195,12 +209,27 @@ func newN4BallFrame(torus geom.Torus, vplane geom.Plane, m0, m1 math.Point3, tol
 // radius, same two endpoints), so the patch's own boundary coincides with the arcs the arm faces trim to
 // rather than merely approximating them.
 func n4CanalSurface(path n4BallPath, pts n4CornerPts, r, weld float64) (geom.BSplineSurface, bool) {
-	last := len(path.centers) - 1
-	path.centers[0], path.centers[last] = pts.ballBand, pts.ballCcyl
-	path.feetVplane[0], path.feetVplane[last] = pts.a, pts.d
-	path.feetTorus[0], path.feetTorus[last] = pts.b, pts.c
-	surf, err := geom.LoftCanalStations(path.centers, path.feetVplane, path.feetTorus, r, weld)
+	n := len(path.centers)
+	if n < 2 || len(path.feetVplane) != n || len(path.feetTorus) != n {
+		return geom.BSplineSurface{}, false // a path whose three columns disagree has no end to pin
+	}
+	surf, err := geom.LoftCanalStations(
+		pinnedEndStations(path.centers, pts.ballBand, pts.ballCcyl),
+		pinnedEndStations(path.feetVplane, pts.a, pts.d),
+		pinnedEndStations(path.feetTorus, pts.b, pts.c),
+		r, weld)
 	return surf, err == nil
+}
+
+// pinnedEndStations copies a station column and replaces its two ends with the corner points the arms own.
+// The COPY is load-bearing: n4BallPath is passed by value but its three slices share their backing arrays
+// with the caller's path, so pinning in place would write THROUGH and silently overwrite the caller's
+// derived ball path — which would also make the two derived end stations unobservable to any caller (a
+// test included) that measures the path after lofting it.
+func pinnedEndStations(stations []math.Point3, first, last math.Point3) []math.Point3 {
+	out := append(make([]math.Point3, 0, len(stations)), stations...)
+	out[0], out[len(out)-1] = first, last
+	return out
 }
 
 // n4CanalRails extracts the canal's two on-host boundary isoparms — the ball's contact loci, which lie ON

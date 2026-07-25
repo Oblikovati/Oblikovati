@@ -153,7 +153,7 @@ func solveN4Corner(arms n4MixedArms, r float64, res Resolution) (n4Corner, bool)
 	if !ok {
 		return n4Corner{}, false
 	}
-	return assembleN4Corner(pts, arms, vplane, boss, res)
+	return assembleN4Corner(pts, arms, vplane, boss, r, res)
 }
 
 // n4CornerPoints solves the four corner points and the two terminating-arm cross-section arcs from the
@@ -264,13 +264,18 @@ func solveQuadratic(a, b, c float64) (float64, float64, bool) {
 }
 
 // assembleN4Corner builds the rolling-ball canal patch and reads its two on-host rails off the canal's own
-// boundary isoparms, once the four points + two arcs are solved. ok=false when the ball path does not hold
+// boundary isoparms, once the four points + two arcs are solved. r is the REQUESTED fillet radius threaded
+// down from solveN4Corner (never re-derived from the torus arm): the canal is the envelope of ONE ball of
+// radius r, so an arm tube of a different radius is a DIFFERENT envelope and gets an explicit decline here
+// rather than an opaque loft/certify failure further down. ok=false also when the ball path does not hold
 // (the corner is not really rolling on the lateral torus arm), when the loft or the isoparms fail, or when
 // the patch does not certify (do-no-harm floor — the corner keeps its prior declined path).
-func assembleN4Corner(pts n4CornerPts, arms n4MixedArms, vplane geom.Plane, boss geom.Cylinder, res Resolution) (n4Corner, bool) {
+func assembleN4Corner(pts n4CornerPts, arms n4MixedArms, vplane geom.Plane, boss geom.Cylinder, r float64, res Resolution) (n4Corner, bool) {
 	torus := arms.torus.armSurface.(geom.Torus)
-	r := torus.MinorRadius
 	tol := res.Weld() * r
+	if stdmath.Abs(torus.MinorRadius-r) > tol {
+		return n4Corner{}, false // mixed-radius corner: the lateral arm's tube is not the rolling ball
+	}
 	path, ok := n4CornerBallPath(torus, vplane, pts.ballBand, pts.ballCcyl, tol)
 	if !ok {
 		return n4Corner{}, false
@@ -307,31 +312,69 @@ func n4CornerPatch(surf geom.BSplineSurface, pts n4CornerPts, railBC, railDA geo
 	if err != nil {
 		return CornerBlendPatch{}, false
 	}
-	cert := certifyN4CanalPatch(surf, loop, maxLoopSurfaceDev(surf, loops), res)
+	// The emitted loops ARE the surface's own boundary isoparms, so this is a self-check, not a measure of
+	// fidelity — it is kept as an explicit GATE (exactly as canalProvider.Build does) so that a future
+	// change which emits anything else is an honest reject, and it is deliberately NOT the certificate's
+	// MaxDev, which must measure the patch against geometry it does not own.
+	if err := assertLoopsOnCanal(surf, loops, res.Weld()); err != nil {
+		return CornerBlendPatch{}, false
+	}
+	cert := certifyN4CanalPatch(surf, loop, []geom.Surface{vplane, arms.torus.armSurface}, res)
 	if !cert.Valid(res) {
 		return CornerBlendPatch{}, false
 	}
 	return CornerBlendPatch{Surface: surf, Loops: loops, Kind: BlendKindCanal}, true
 }
 
-// certifyN4CanalPatch proves the corner canal (ADR-3): Closed from the received 4-cycle, WeldsArms
-// structural, NoFold via the shared column sweep, MaxDev the measured loop-to-surface G0 residual, and
-// MaxAngleDev the worst G1 crease against all four neighbours (canalSideCrease, shared with canalProvider).
-// Unlike canalStationProvider's CORE panel — which has no analytic Adjacent and therefore reports
+// certifyN4CanalPatch proves the corner canal (ADR-3) against geometry the patch does NOT own, which is the
+// only kind of G0 residual that can falsify it: Closed from the received 4-cycle, WeldsArms structural,
+// NoFold via the shared column sweep, MaxDev the worse of (a) the two RECEIVED arm cross-section arcs
+// measured against the surface — the weld the arm faces trim to — and (b) the two foot-loci measured against
+// the two HOSTS (canalFootLoci, shared with certifyCanalPatch; hosts[0] is the u=u0 locus' host, hosts[1]
+// the u=u1 one). MaxAngleDev is the worst G1 crease against all four neighbours (canalSideCrease, also
+// shared). Unlike canalStationProvider's CORE panel — which has no analytic Adjacent and therefore reports
 // MaxAngleDev 0 — every N4 side DOES have one, so the tangency the canal construction guarantees is
 // measured rather than asserted.
-func certifyN4CanalPatch(surf geom.BSplineSurface, loop RailLoop, dev float64, res Resolution) Certificate {
+//
+// It deliberately does NOT report maxLoopSurfaceDev of its own boundary isoparms: that residual is
+// TAUTOLOGICAL (it reads ~4e-13 whatever the surface is) and so certifies nothing, which is the same
+// self-referential-residual defect coons4Provider's certificate carries on the G1 axis. With the informative
+// residuals in place MaxDev reads the foot-loci-on-host ~1.8e-8 against a weld of 2.9e-7, so an end-pinning
+// or parametrisation regression that lifts the boundary off the arm arcs now REJECTS instead of certifying a
+// cracked weld.
+func certifyN4CanalPatch(surf geom.BSplineSurface, loop RailLoop, hosts []geom.Surface, res Resolution) Certificate {
 	crease := 0.0
 	for _, s := range loop.Sides {
 		crease = stdmath.Max(crease, canalSideCrease(surf, s))
 	}
+	devFeet, _ := canalFootLoci(surf, hosts)
 	return Certificate{
 		Closed:      loop.Closed(res.Weld()),
 		WeldsArms:   true,
 		NoFold:      obstacleNoFold(surf, res),
-		MaxDev:      dev,
+		MaxDev:      stdmath.Max(n4ArmArcsOnSurface(surf, loop), devFeet),
 		MaxAngleDev: crease,
 	}
+}
+
+// n4ArmArcsOnSurface is the max G0 residual of the two TERMINATING-ARM cross-section arcs (the received
+// arcAB / arcCD — the curves the two arm faces actually trim to) measured against the canal surface. This
+// is the informative half of the weld measure: the arcs are inputs the patch does not own, so a boundary
+// that drifts off them shows up here. Returns +Inf unless EXACTLY the two arcs are present — the other two
+// sides are the lofted contact-locus rails, which are not geom.Arc3d — so a malformed 4-cycle rejects.
+func n4ArmArcsOnSurface(surf geom.BSplineSurface, loop RailLoop) float64 {
+	dev, n := 0.0, 0
+	for _, s := range loop.Sides {
+		if _, isArc := s.Curve.(geom.Arc3d); !isArc {
+			continue
+		}
+		n++
+		dev = stdmath.Max(dev, canalRailOnSurface(surf, s.Curve))
+	}
+	if n != 2 {
+		return stdmath.Inf(1)
+	}
+	return dev
 }
 
 // f64 narrows a math.Scalar to float64 for the quadratic-solve arithmetic.
