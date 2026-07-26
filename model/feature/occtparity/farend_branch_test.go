@@ -151,11 +151,31 @@ func assertBandTilesItsClosedFormArea(t *testing.T, body *topo.Body, band *topo.
 		p := bandPoint(bc, phi)
 		return length + overhang(bc, w1, p) + overhang(bc, w2, p)
 	}, lo, hi)
-	got := ops.MeshArea(ops.TessellateFace(band, ops.PropertyQuality()))
+	// Measured on the mesh the body actually SHIPS, not on the solo per-face tessellation. The two used
+	// to differ: the cross-face conformance repair adopted a boundary-only re-mesh of this band on a fold
+	// count alone, and that re-mesh — with no interior node between the band's two straight axial rulings
+	// — realised the full 90° arc as its chord, shipping 21339.8 for a face whose solo mesh (and closed
+	// form) is 23340. The solo assertion could not see it. See kernel/ops/conformance_adopt.go.
+	got := ops.MeshArea(shippedFaceMesh(t, body, band))
 	if rel := stdmath.Abs(got-want) / want; rel > 1e-4 {
 		t.Errorf("complex/D8 fillet band tiles %.6g, closed form %.6g (rel %+.4f%%) — the far-end trim took "+
-			"the wrong side of the stop wall", got, want, (got-want)/want*100)
+			"the wrong side of the stop wall, or the conformance repair under-tiled the band", got, want, (got-want)/want*100)
 	}
+}
+
+// shippedFaceMesh returns face f's mesh as the BODY tessellation pipeline produces it — the per-face
+// meshing plus the cross-face conformance repair's adoption decision — which is what every downstream
+// consumer sees, and is not the same thing as TessellateFace(f) on its own.
+func shippedFaceMesh(t *testing.T, body *topo.Body, f *topo.Face) *ops.Mesh {
+	t.Helper()
+	facets := ops.CalculateBodyFacets(body, ops.PropertyQuality())
+	for i, g := range facets.Faces {
+		if g == f {
+			return facets.FaceMeshes[i]
+		}
+	}
+	t.Fatalf("face %d is not in its own body's facet set", f.ID())
+	return nil
 }
 
 // bandRulingAngles returns the band's angular extent about its own axis, read off the midpoints of its two

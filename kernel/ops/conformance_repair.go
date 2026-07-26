@@ -19,6 +19,10 @@ import (
 // completely untouched — no regression on bodies the ear-clip already meshes correctly. It deliberately
 // does NOT re-mesh planes: re-triangulating a planar multi-hole face cascades new mismatches, so a crack
 // where the PLANE is the absorber is left to a future pass.
+//
+// Every re-mesh is offered to conformingMeshIsFaithful before it is adopted (conformance_adopt.go):
+// the repair may only ever trade a crack for a mesh that is at least as faithful to the face — no
+// extra folds AND no lost area. Refusing leaves the hairline T-junction, which is the lesser defect.
 func conformCylConeFaces(faces []*topo.Face, idx map[*topo.Face]int, fm []*Mesh, q Quality) {
 	if allBareTriangleFaces(faces) {
 		return // a pure faceted triangle soup (e.g. an imported STL body) has no near-collinear
@@ -31,14 +35,7 @@ func conformCylConeFaces(faces []*topo.Face, idx map[*topo.Face]int, fm []*Mesh,
 		return // watertight body: nothing to repair (and the hot path skips the weld below)
 	}
 	for j := range facesToFix(faces, idx, fm, free, w) {
-		// Do-no-harm: adopt the conforming re-mesh only when it does NOT ADD fold edges over the mesh it
-		// replaces. conformingPlaneMesh already refuses to REPLACE a good mesh with a collapsed one (its
-		// simpleLoop2D / leakGuardedTris guards); the cyl/cone metric-(u,v) CDT had no equivalent and could
-		// FOLD a partial cone whose crack-repair boundary it cannot triangulate cleanly — inflating a good
-		// fold-free wall into folded garbage (I3's two host cones: 30659 fold0 → 59056 fold4). The crack is
-		// better left as a hairline T-junction (the original mesh is geometrically correct) than papered over
-		// with a self-overlapping fold. A re-mesh that keeps or reduces folds is still adopted (its purpose).
-		if m := conformingMesh(faces[j], q); m != nil && FoldEdgeCount(m) <= FoldEdgeCount(fm[j]) {
+		if m := conformingMesh(faces[j], q); m != nil && conformingMeshIsFaithful(m, fm[j], faces[j], q) {
 			fm[j] = m
 		}
 	}

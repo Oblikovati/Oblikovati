@@ -219,7 +219,11 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 //   - The correct single-edge area is +3.52%, i.e. outside the 1% gate no matter what. Closed form for our
 //     own construction: band = 30∫₀^{π/2}(462.843 + 2√(576−(30cos φ − 6)²))dφ = 23340.06 (we mesh 23339.7),
 //     top plane 92175.2 (we mesh 92175.2, exact), corner cylinders 3769.911 − 464.006 = 3305.906 each →
-//     348183 total, vs OCCT's 336159.
+//     348183 total, vs OCCT's 336159. Those are the SOLO per-face meshes; the body used to SHIP 344843
+//     (−0.90%) because the conformance repair adopted three area-destroying re-meshes on a fold count
+//     alone, and it now ships 348296 (+0.03% of its own closed form) with the adoption criterion fixed
+//     (kernel/ops/conformance_adopt.go, conform-area-report.md). The case stays FAIL(area) either way:
+//     the gap to OCCT is the two different SOLIDS above, not the mesh.
 //   - The old +0.0437% was a four-face cancellation. The trim's zigzag station list made the band mesh
 //     6142.29 against its true 23340 (−74%) while the two corner cylinders over-read (4887.9 / 4664.51
 //     against 3769.89, on faces the fillet should have SHRUNK) and the top plane over-read by 2379 — and
