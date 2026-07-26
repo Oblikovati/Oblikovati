@@ -55,7 +55,7 @@ func TestSlideOntoWallHitsTheClosedFormCrossing(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, ok := slideOntoWall(tc.from, tc.axis, tc.wall, 200)
+			got, ok := slideOntoWall(tc.from, tc.wall, axialSlide{axis: tc.axis, reach: 200})
 			if !ok {
 				t.Fatalf("slideOntoWall(%v) declined", tc.from)
 			}
@@ -70,10 +70,10 @@ func TestSlideOntoWallHitsTheClosedFormCrossing(t *testing.T) {
 // (or one whose crossing lies outside the band's own axial span) must leave the section alone.
 func TestSlideOntoWallDeclinesWhenTheRulingMissesTheWall(t *testing.T) {
 	wall := b5Wall(t)
-	if _, ok := slideOntoWall(math.P3(0, 0, 0), math.V3(0, 0, 1), wall, 200); ok {
+	if _, ok := slideOntoWall(math.P3(0, 0, 0), wall, axialSlide{axis: math.V3(0, 0, 1), reach: 200}); ok {
 		t.Error("a ruling ALONG the cylinder axis has no crossing, want decline")
 	}
-	if _, ok := slideOntoWall(math.P3(50, 10, 100), math.V3(1, 0, 0), wall, 0.5); ok {
+	if _, ok := slideOntoWall(math.P3(50, 10, 100), wall, axialSlide{axis: math.V3(1, 0, 0), reach: 0.5}); ok {
 		t.Error("the crossing is 1.01 away but the band's span is 0.5, want decline")
 	}
 }

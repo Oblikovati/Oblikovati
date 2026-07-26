@@ -205,14 +205,35 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 // faithful, because the sphere-zone fan does not read the seam curve; the defect was a corrupt B-rep every
 // other consumer would inherit). A mismatch means either a false green slipped through or a case was
 // over/under-quarantined — see harden-green-gate-brief.md's "STOP and report" instruction.
+//
+// ★ complex/D8's green was RETIRED (all-grid 117 → 116, simple unchanged at 111) because it was never
+// parity: it was MANUFACTURED by the far-end trim's own arbitrary branch pick and is unreachable by any
+// correct single-edge fillet. Receipts, all measured (stopface-reversed-report.md):
+//   - OCCT builds a DIFFERENT SOLID. DRAWEXE 8.0.0 `blend result a 30 a_20` ships 18 faces / 40 edges, and
+//     every one of its `sprops` numbers decodes as a fillet of the WHOLE tangent-continuous closed top-edge
+//     loop (8 edges): two long walls at 462.843×70 = 32399, two short at 162.916×70 = 11404.1, FOUR corner
+//     cylinders at 37.699×70 = 2638.94, plus 2+2+4 band faces (21528.2 / 7394.46 / 1215.41) and the
+//     68039.2 top. We fillet the ONE picked edge and ship 11 faces, leaving the other three walls and all
+//     four corner cylinders at their full ×100 height (46284.3 / 16291.5 / 3769.89) — so the comparison is
+//     between two different bodies. Tangent-chain PROPAGATION is the missing capability.
+//   - The correct single-edge area is +3.52%, i.e. outside the 1% gate no matter what. Closed form for our
+//     own construction: band = 30∫₀^{π/2}(462.843 + 2√(576−(30cos φ − 6)²))dφ = 23340.06 (we mesh 23339.7),
+//     top plane 92175.2 (we mesh 92175.2, exact), corner cylinders 3769.911 − 464.006 = 3305.906 each →
+//     348183 total, vs OCCT's 336159.
+//   - The old +0.0437% was a four-face cancellation. The trim's zigzag station list made the band mesh
+//     6142.29 against its true 23340 (−74%) while the two corner cylinders over-read (4887.9 / 4664.51
+//     against 3769.89, on faces the fillet should have SHRUNK) and the top plane over-read by 2379 — and
+//     the four errors summed to +147 on a 336159 body. The far-end trim itself created that green
+//     (see the C7/D7/complex/D8 note above); it is now withdrawn.
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
 	if simpleGreen != 111 {
 		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 111 (rim-fillet host-seam carry greened J4)", simpleGreen)
 	}
-	if allGridGreen != 117 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 117 (rim-fillet host-seam carry greened J4)", allGridGreen)
+	if allGridGreen != 116 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 116 (111 simple + 5 bfuseblend; complex/D8's "+
+			"coincidental green retired by the far-end branch fix)", allGridGreen)
 	}
 	if skipQuarantine != 1 {
 		t.Errorf("SkipQuarantine = %d, want 1 (H6 only, #2007 U4 freed by U4-5)", skipQuarantine)

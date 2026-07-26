@@ -160,10 +160,11 @@ func offSurfaceDebtIndex() map[string]float64 {
 // any report. It was 52 entries; the far-end wall trim (fillet_farend_trim.go) retired 17 of them —
 // A5 A6 A8 B1 B5 B9 C4 C7 D3 D7 E1 E2 F2 F6 I3 M2 Q5 are now CLEAN — and shrank 5 more (N5 0.0216→0.000129,
 // V1 0.00451→0.000295, V3 0.00712→0.00199, V5 0.00145→0.000313, complex/D8 0.0461→0.037); the elliptic
-// survivor-rim carry (fillet_survivor_rim_ellipse.go) then retired F7 (35 → 34) and the rim-fillet HOST-SEAM
+// survivor-rim carry (fillet_survivor_rim_ellipse.go) then retired F7 (35 → 34), the rim-fillet HOST-SEAM
 // carry (fillet_rim_build.go's wallSeamCurve → retainedHostSeamCurve) retired J2 and J4 (34 → 32), which
-// also cut the table's CEILING 5.4× — 0.334 → complex/F2's 0.0616. The table must SHRINK, never widen. The
-// roots that remain, largest first (rimhost-carry-report.md §2):
+// also cut the table's CEILING 5.4× — 0.334 → complex/F2's 0.0616 — and the far-end trim's stop-face BRANCH
+// pick (fillet_farend_trim.go's slideOntoWall → nearestHitOnSide) retired complex/D8 (32 → 31). The table
+// must SHRINK, never widen. The roots that remain, largest first (stopface-reversed-report.md):
 //
 //   - CURVED-HOST RETRIM ARC off its own cylinder (complex/F2, 0.0616) — a `fillet:x` retrim edge, not a
 //     rim carry. (J2/J4's 0.334/0.165 CHORDED SEAM MERIDIAN entries are retired: the rim rebuild used to
@@ -174,8 +175,15 @@ func offSurfaceDebtIndex() map[string]float64 {
 //     that the entry these two carried before that also blamed the WRONG thing — "an imported base-face
 //     loop the fillet never touched" — which the input measurement falsified, both bodies importing clean
 //     to 1e-13.)
-//   - WRONG STOP FACE at a valence>3 vertex (complex/D8): endFaceAt picks the first face at the terminal
-//     vertex that is neither A nor B, so the far-end trim lands the section on a plausible-but-wrong wall.
+//     (complex/D8's 0.037 entry is retired too, and the reason recorded for it — "endFaceAt picks the first
+//     face at the terminal vertex that is neither A nor B, so the far-end trim lands the section on a
+//     plausible-but-wrong wall" — was MEASURED FALSE: both of D8's terminal vertices are valence-3 with
+//     exactly ONE non-A/B face, so endFaceAt had no choice to get wrong and picked the correct stop wall
+//     both times. The real root was the far-end slide's ±branch tie, fillet_farend_trim.go's
+//     slideOntoWall: on a stop wall symmetric about the section plane the two crossings are EXACTLY
+//     equidistant, so "nearest" was decided by the intersector's output order INDEPENDENTLY at each of the
+//     33 stations, and the station list alternated between the wall's two branches. The trim now picks the
+//     branch on the stop FACE's own side: 18.8877 → 2.3e-06, rel 0.0336 → 4.1e-09.)
 //     (F7's 0.29 entry, the ELLIPSE-rim chord, is retired: the elliptic survivor-rim carry
 //     — fillet_survivor_rim_ellipse.go — now re-derives that rim from the parent's own eccentric angles,
 //     taking F7's worst residual 89.4426 → 3.4e-14 and its per-face gross error vs DRAWEXE 40793 → 2.8.)
@@ -186,7 +194,7 @@ func offSurfaceDebtIndex() map[string]float64 {
 //     agree only to the fit's own residual (reverse-segment-fix-report.md §6 concern 2).
 func knownOffSurfaceDebt() []offSurfaceDebtEntry {
 	return []offSurfaceDebtEntry{
-		{"F2", "complex", 0.0616}, {"D8", "complex", 0.037}, {"C2", "simple", 0.0192},
+		{"F2", "complex", 0.0616}, {"C2", "simple", 0.0192},
 		{"V9", "simple", 0.017}, {"P9", "simple", 0.017}, {"X9", "simple", 0.00284},
 		{"T7", "simple", 0.00216}, {"V3", "simple", 0.00199}, {"S9", "simple", 0.00199},
 		{"T1", "simple", 0.00156}, {"C8", "simple", 0.00129}, {"S1", "simple", 0.00105},

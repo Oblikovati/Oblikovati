@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
@@ -80,7 +81,7 @@ func trimTerminalSection(c corner, in cornerInputs, maxSlide float64) corner {
 	if !sectionLeavesWall(arc, wall, in.weld) {
 		return c // already on the wall: keep the flat cap EXACTLY as solved
 	}
-	pts, ok := slideSectionOntoWall(arc, wall, in.axis, maxSlide)
+	pts, ok := slideSectionOntoWall(arc, wall, terminalSlide(c, in, maxSlide))
 	if !ok {
 		return c
 	}
@@ -91,6 +92,17 @@ func trimTerminalSection(c corner, in cornerInputs, maxSlide float64) corner {
 	c.ta, c.mid, c.tb = pts[0], pts[len(pts)/2], pts[len(pts)-1]
 	c.endCurve = curve
 	return c
+}
+
+// terminalSlide is c's slide configuration: the filleted edge's axis, the band's own axial span as the reach,
+// the model-relative coincidence tolerance, and the side of the section plane the stop face itself lies on.
+func terminalSlide(c corner, in cornerInputs, maxSlide float64) axialSlide {
+	return axialSlide{
+		axis:  in.axis,
+		reach: maxSlide,
+		side:  stopFaceAxialSide(c.endFace, c.vertex.Point(), in.axis, in.weld),
+		tol:   in.weld,
+	}
 }
 
 // plainWallStop reports whether c is a terminal corner rounded by a flat cap on a stop FACE — the only
@@ -128,15 +140,26 @@ func sectionLeavesWall(arc geom.Arc3d, wall geom.Surface, weld float64) bool {
 	return false
 }
 
+// axialSlide is one terminal section's slide configuration: the direction its points travel (the filleted
+// edge's axis), how far they may travel before the trim would invert the band onto its other end, which
+// side of the section plane the stop FACE's own extent lies on (0 = it straddles, so no preference), and
+// the model-relative coincidence tolerance that decides "on the plane" and "on that side".
+type axialSlide struct {
+	axis  math.Vector3
+	reach float64
+	side  int
+	tol   float64
+}
+
 // slideSectionOntoWall slides every station of the flat section cap along ±axis onto the wall, returning
 // the trim curve's interpolation points. It fails when any station has no landing inside the band's axial
 // span — the honest decline for a wall the band's rulings run parallel to or miss entirely.
-func slideSectionOntoWall(arc geom.Arc3d, wall geom.Surface, axis math.Vector3, maxSlide float64) ([]math.Point3, bool) {
+func slideSectionOntoWall(arc geom.Arc3d, wall geom.Surface, slide axialSlide) ([]math.Point3, bool) {
 	lo, hi := arc.Domain()
 	pts := make([]math.Point3, 0, farEndTrimStations+1)
 	for i := 0; i <= farEndTrimStations; i++ {
 		p := arc.PointAt(lo + (hi-lo)*float64(i)/float64(farEndTrimStations))
-		q, ok := slideOntoWall(p, axis, wall, maxSlide)
+		q, ok := slideOntoWall(p, wall, slide)
 		if !ok {
 			return nil, false
 		}
@@ -145,22 +168,102 @@ func slideSectionOntoWall(arc geom.Arc3d, wall geom.Surface, axis math.Vector3, 
 	return pts, true
 }
 
-// slideOntoWall returns p slid along ±axis to the NEAREST landing on wall within maxSlide, polished to
-// machine precision. Nearest is the right branch: the section point is off the wall by the run-on
-// residual only, so the wall crossing that bounds the band is the closest one — a sphere wall's second,
-// far-side crossing is a whole diameter away.
-func slideOntoWall(p math.Point3, axis math.Vector3, wall geom.Surface, maxSlide float64) (math.Point3, bool) {
-	seg := geom.NewLineSegment(p.TranslateBy(axis.Scale(-maxSlide)), p.TranslateBy(axis.Scale(maxSlide)))
-	best, found := p, false
-	for _, h := range geom.IntersectCurveSurface(seg, wall) {
-		if !found || h.DistanceTo(p) < best.DistanceTo(p) {
-			best, found = h, true
-		}
+// slideOntoWall returns p slid along ±axis to the landing on wall within slide.reach that is NEAREST p on
+// the stop face's OWN side of the section plane, polished to machine precision. Nearest is the right branch
+// whenever one crossing is closer: the section point is off the wall by the run-on residual only, so the
+// wall crossing that bounds the band is the closest one — a sphere wall's second, far-side crossing is a
+// whole diameter away.
+//
+// The side restriction settles the case where "nearest" cannot: when the wall is SYMMETRIC about the
+// section plane along the slide direction, the two crossings are EXACTLY equidistant and nearest-wins is
+// decided by geom.IntersectCurveSurface's output order — an arbitrary choice taken INDEPENDENTLY at every
+// station, so the station list zigzags between the wall's two branches and the B-spline fitted through it
+// is not a curve on either. That symmetry is a whole configuration class, not a fluke: it is exactly a stop
+// wall TANGENT to the filleted edge's own face at the terminal vertex (a rounded-rectangle corner, whose
+// corner cylinder's axis therefore lies IN the section plane) — complex/D8, whose 33 stations alternated
+// ±dy up to ±24 and whose fitted trim curve shipped 18.8877 off its own host cylinder. Restricting to the
+// stop face's side is what breaks the tie, because the trim curve is a boundary of that FACE and so cannot
+// cross to the far side of the vertex the face itself does not reach.
+func slideOntoWall(p math.Point3, wall geom.Surface, slide axialSlide) (math.Point3, bool) {
+	seg := geom.NewLineSegment(p.TranslateBy(slide.axis.Scale(-slide.reach)), p.TranslateBy(slide.axis.Scale(slide.reach)))
+	hits := geom.IntersectCurveSurface(seg, wall)
+	best, found := nearestHitOnSide(p, hits, slide)
+	if !found {
+		best, found = nearestHitOnSide(p, hits, axialSlide{axis: slide.axis, reach: slide.reach, tol: slide.tol})
 	}
 	if !found {
 		return p, false
 	}
-	return polishOntoWall(best, axis, wall), true
+	return polishOntoWall(best, slide.axis, wall), true
+}
+
+// nearestHitOnSide returns the hit closest to p whose axial offset from p is on slide.side (a hit ON the
+// section plane, within slide.tol, is always admissible — that is the tangency where the two branches
+// meet). slide.side == 0 admits every hit, which is both the straddling-face case and the fallback the
+// caller uses when the preferred side is empty, so a wall the face's side does not reach keeps the
+// pre-restriction landing rather than failing the trim.
+func nearestHitOnSide(p math.Point3, hits []math.Point3, slide axialSlide) (math.Point3, bool) {
+	best, found := p, false
+	for _, h := range hits {
+		if off := p.VectorTo(h).Dot(slide.axis); float64(slide.side)*off < -slide.tol {
+			continue
+		}
+		if !found || h.DistanceTo(p) < best.DistanceTo(p) {
+			best, found = h, true
+		}
+	}
+	return best, found
+}
+
+// stopFaceAxialSide reports which side of the terminal SECTION PLANE (through the terminal vertex, normal =
+// the filleted edge's axis) the stop face's own trimmed extent lies on: +1, −1, or 0 when the face reaches
+// both sides (or lies wholly in the plane), in which case slideOntoWall keeps its nearest landing. Measured
+// on the face's own boundary CURVES rather than only its vertices, so a boundary that bulges past its
+// endpoints is counted. tol is the model-relative coincidence tolerance: extent within it of the plane does
+// not count as reaching a side, which is what keeps a stop plane through the vertex (the overwhelming
+// majority of stops, and every case the trim leaves byte-identical) at side 0.
+func stopFaceAxialSide(f *topo.Face, vertex math.Point3, axis math.Vector3, tol float64) int {
+	lo, hi := 0.0, 0.0
+	for _, e := range faceBoundaryCurves(f) {
+		a, b := e.Domain()
+		for i := 0; i <= stopSideStations; i++ {
+			off := vertex.VectorTo(e.PointAt(a + (b-a)*float64(i)/float64(stopSideStations))).Dot(axis)
+			lo, hi = stdmath.Min(lo, off), stdmath.Max(hi, off)
+		}
+	}
+	if hi > tol && lo < -tol {
+		return 0 // the face reaches both sides: it cannot say which branch bounds the band
+	}
+	if hi > tol {
+		return 1
+	}
+	if lo < -tol {
+		return -1
+	}
+	return 0
+}
+
+// stopSideStations is how finely each stop-face boundary edge is sampled when measuring the face's axial
+// extent. 4 spans catch a boundary arc's mid-span bulge to within 3% of its sagitta, which is far finer
+// than the question being asked (a sign, against a coincidence tolerance).
+const stopSideStations = 4
+
+// faceBoundaryCurves returns the curve of each distinct boundary edge of f, skipping edges with no
+// geometry (a degenerate pole seam).
+func faceBoundaryCurves(f *topo.Face) []geom.Curve3 {
+	seen := map[uint64]bool{}
+	var out []geom.Curve3
+	for _, l := range f.Loops() {
+		for _, u := range l.EdgeUses() {
+			e := u.Edge()
+			if e == nil || seen[e.ID()] || e.Geometry() == nil {
+				continue
+			}
+			seen[e.ID()] = true
+			out = append(out, e.Geometry())
+		}
+	}
+	return out
 }
 
 // polishOntoWall Newton-refines q along axis onto the wall's zero set, using the wall's own normal for the
