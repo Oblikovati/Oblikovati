@@ -18,6 +18,11 @@ import (
 // answer. The face still validates as a watertight solid (the vertices weld, the loops close), which
 // is exactly why the scoreboard cannot see it.
 //
+// WHAT IT HAS ALREADY BOUGHT. The population it opened at — 17 loops on 11 cases — is down to 12 on 8: the
+// backwards-carried-curve root it exposed (simple/M4 N3 N9 and two of complex/F2's walls) took those four
+// cases' faces onto DRAWEXE's own per-face areas exactly, a defect no area gate could see because M4's
+// body was inside 0.2% and F2's two errors partly cancelled.
+//
 // WHAT IT COSTS, MEASURED. The pinched-off area is often TINY and the damage is not: complex/D8's two
 // MIRROR-IMAGE corner rounds pinch off the IDENTICAL 1.21187 out of a closed-form 3307.1168 (0.037%),
 // and the constrained Delaunay handed those two domains answers −0.048% and −38.941% purely because
@@ -83,12 +88,19 @@ func selfCrossDebtIndex() map[string]selfCrossDebtEntry {
 }
 
 // knownSelfCrossingLoops is the FULL measured population of shipped faces whose developed boundary
-// self-crosses: 17 loops on 11 cases, of 1144 faces across the scored corpus. Each ceiling is the
-// measured pinched-off area, in the surface's own metric chart, rounded UP a little so float noise
-// cannot fail it while a real growth does. Derived by an instrumented corpus-wide sweep at
+// self-crosses: 12 loops on 8 cases, of 1138 faces across the scored corpus (it was 17 on 11 of 1144).
+// Each ceiling is the measured pinched-off area, in the surface's own metric chart, rounded UP a little so
+// float noise cannot fail it while a real growth does. Derived by an instrumented corpus-wide sweep at
 // ops.PropertyQuality(), not from any report.
 //
-// The roots, largest first (selfcross-trim-report.md):
+// RETIRED: simple/M4, simple/N3, simple/N9 (whole cases) and 2 of complex/F2's 4 loops — all five were one
+// root, a loop segment whose carried CURVE ran backwards between its own two points, which discretizeEdge
+// then turned into a doubled-back polyline (planar-retrim-selfcross-report.md; the fix is in
+// matchArcFeet + orientedOpenSurvivor, and it also emptied knownEdgeSpanDebt). Their faces now rank-pair
+// EXACTLY against DRAWEXE: M4's cap 9752.18 → 9631.8 (oracle 9631.79), N3's 10955.6 → 10946.3 (10946.3),
+// N9's 1307.31 → 1298.6 (1298.57), and complex/F2's largest wall 6517.86 → 10366.6 (10366.6, exact).
+//
+// The roots that remain, largest first:
 //
 //   - FAR-END TRIM RUNS OFF ITS STOP FACE (complex/D8's two corner rounds, and the same shape on
 //     complex/F2 and simple/Q5). trimTerminalSection slides every station of the band's terminal
@@ -99,21 +111,26 @@ func selfCrossDebtIndex() map[string]selfCrossDebtEntry {
 //     lobe is closed form: R·∫₀^asin(0.25)(v_up(u)+100)du = 1.2111 against the wall's own 3307.1168,
 //     and BOTH mirror walls measure 1.21187. Fixing it needs the stop face's boundary RE-TRIMMED (the
 //     run-out consumes a whole rim edge and shortens the next ruling), which transformLoop's
-//     single-vertex substitution cannot express — see the report's §"what the fix needs".
+//     single-vertex substitution cannot express — see selfcross-trim-report.md §5.
+//   - THE SETBACK BAND OVERRUNS THE HOST FACE'S OWN BOUNDARY (simple/Y2 ×2, simple/Y4). The retrim moves
+//     the filleted edge's end VERTEX to its tangent point along the ADJACENT edge's supporting line, with
+//     no check that the tangent point lies within that edge's own span. Y2's r=15 setback on a face
+//     interrupted by a 10-deep slot lands 5 PAST the adjacent edge's end, so the rebuilt loop keeps the
+//     whole slot and the tangent line cuts across its wall. Closed form (confirmed face-for-face by
+//     DRAWEXE): Y2's host plane is 8450, the slot walls 998.587 / 991.421 / 953.128 and the band 2305.22
+//     — we ship 8475 / 1000 / 1000 / 964.027 / 2356.18, a +96.8 (+0.159%) body surplus hidden inside a
+//     1% PASS. The correct fix CLIPS the setback band against the host's own loop, which also shortens
+//     the slot's faces — i.e. the fillet must be LIMITED BY an obstacle, not vertex-substituted.
 //   - SPHERE-PATCH SEAM (simple/E4, simple/W1): a fillet corner sphere whose loop runs along the seam;
 //     W1's pinches off 0 area, i.e. the crossing is degenerate.
-//   - PLANAR HOST RETRIM (simple/M4 N3 N9 W2 Y2 Y4, and Q5's cap): a plane's own retrimmed loop
-//     crossing itself; W2's is 2.5e-13, i.e. float noise on an otherwise simple loop.
+//   - simple/W2's 2.5e-13 is float noise on an otherwise simple loop.
 func knownSelfCrossingLoops() []selfCrossDebtEntry {
 	return []selfCrossDebtEntry{
-		{"Q5", "simple", 2, 84913},   // f12758 (the r=2500 band's host wall) 84912.4, f12754 0.284334
-		{"F2", "complex", 4, 1105},   // 1104.69 / 28.1712 / 7.78603 / 7.16978
+		{"Q5", "simple", 2, 84913},   // f12723 (the r=2500 band's host wall) 84912.4, f12719 0.284334
+		{"F2", "complex", 2, 1105},   // 1104.69 / 7.16978 (was 4 loops: 28.1712 and 7.78603 retired)
 		{"E4", "simple", 1, 128.49},  // 128.489
-		{"M4", "simple", 1, 59.585},  // 59.5848
 		{"Y2", "simple", 2, 50.001},  // 50 / 1.41397
 		{"Y4", "simple", 1, 23.911},  // 23.9109
-		{"N3", "simple", 1, 4.5540},  // 4.55391
-		{"N9", "simple", 1, 4.1496},  // 4.14956
 		{"D8", "complex", 2, 1.2119}, // BOTH mirror corner rounds, identically 1.21187
 		{"W2", "simple", 1, 1e-12},   // 2.49967e-13 — a degenerate crossing, float noise
 		{"W1", "simple", 1, 1e-12},   // 0 — a degenerate seam crossing that pinches off nothing

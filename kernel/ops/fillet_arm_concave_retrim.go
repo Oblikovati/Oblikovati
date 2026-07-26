@@ -195,13 +195,15 @@ func concaveCapLoop(bitten *topo.Loop, arc endSeg, far math.Point3, tol float64)
 		return filletLoop{}, false
 	}
 	prevIdx := (j - 1 + n) % n
-	fFrom, fTo, ok := matchArcFeet(segs[prevIdx], segs[j], arc, tol)
-	prev, okp := reterminateSegTo(segs[prevIdx], fFrom, tol)
-	next, okn := reterminateSegFrom(segs[j], fTo, tol)
-	if !ok || !okp || !okn {
+	arcSeg, ok := matchArcFeet(segs[prevIdx], segs[j], arc, tol)
+	if !ok {
 		return filletLoop{}, false
 	}
-	arcSeg := endSeg{from: fFrom, to: fTo, curve: arc.curve, mid: arc.mid, arc: arc.arc}
+	prev, okp := reterminateSegTo(segs[prevIdx], arcSeg.from, tol)
+	next, okn := reterminateSegFrom(segs[j], arcSeg.to, tol)
+	if !okp || !okn {
+		return filletLoop{}, false
+	}
 	return loopFromSegs(spliceCapRing(segs, prevIdx, j, prev, arcSeg, next)), true
 }
 
@@ -216,17 +218,26 @@ func indexOfVertex(segs []endSeg, p math.Point3, tol float64) int {
 	return -1
 }
 
-// matchArcFeet assigns the cross-section arc's two endpoints to the two flanking cap edges: fFrom lands
-// on prev's supporting line/circle, fTo on next's (the arc runs prev-side → next-side). Tries both
-// endpoint orderings; ok=false when neither pairing lands each foot on its flanking edge.
-func matchArcFeet(prev, next, arc endSeg, tol float64) (fFrom, fTo math.Point3, ok bool) {
+// matchArcFeet orients the cross-section arc onto the two flanking cap edges: its `from` foot must land on
+// prev's supporting line/circle and its `to` foot on next's, so the returned segment runs prev-side →
+// next-side. Tries both endpoint orderings; ok=false when neither pairing lands each foot on its flanking
+// edge.
+//
+// The swapped pairing returns the arc REVERSED (reversedEndSeg), not merely its endpoints exchanged: it
+// used to hand back the two points while the caller re-wrapped `arc.curve` UNCHANGED, so the spliced
+// segment's curve ran to→from. discretizeEdge then forced that edge's polyline ends onto the edge's own
+// vertices and produced a doubled-back boundary whose developed loop self-crosses — simple/M4 (pinching off
+// 59.58 of its cap), simple/N3 (4.554) and simple/N9 (4.150), each of which also carried the corpus's worst
+// curve-vs-vertex gap for its case (17.3205 / 6.32456 / 8.16497, knownEdgeSpanDebt). Only the swapped branch
+// changes; the aligned pairing is returned untouched, so every aligned case stays byte-identical.
+func matchArcFeet(prev, next, arc endSeg, tol float64) (endSeg, bool) {
 	if segSupportsPoint(prev, arc.from, tol) && segSupportsPoint(next, arc.to, tol) {
-		return arc.from, arc.to, true
+		return arc, true
 	}
 	if segSupportsPoint(prev, arc.to, tol) && segSupportsPoint(next, arc.from, tol) {
-		return arc.to, arc.from, true
+		return reversedEndSeg(arc), true
 	}
-	return math.Point3{}, math.Point3{}, false
+	return endSeg{}, false
 }
 
 // segSupportsPoint reports whether p lies on segment s's supporting geometry — its infinite line

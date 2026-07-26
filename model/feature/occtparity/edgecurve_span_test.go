@@ -108,25 +108,33 @@ func edgeSpanDebtIndex() map[string]float64 {
 	return out
 }
 
-// knownEdgeSpanDebt is the FULL remaining population of cases whose shipped body still carries an edge whose
-// curve disagrees with its bounding vertices, each capped at 1.1× its measured value. It was 17 cases before
-// alignCarriedArcsToSegments and 5 after; the ELLIPTIC survivor-rim carry
-// (fillet_survivor_rim_ellipse.go) retires F6 outright and shrinks complex/F2 6× — 5 → 4 entries:
+// knownEdgeSpanDebt is down to ONE case. It was 17 before alignCarriedArcsToSegments, 5 after, then 4 once
+// the ELLIPTIC survivor-rim carry (fillet_survivor_rim_ellipse.go) retired F6 and shrank complex/F2 6×.
 //
-//   - complex/F2 (0.490 → 0.0809): its FOUR geom.EllipticalArc cap rims were each carried whole and
-//     backwards (the gap equalled the chord between the curve's own endpoints exactly: 86.3707, 14.09,
-//     10.91), because the parent's retained span could only be re-derived for a geom.Arc3d. All four are
-//     now rebuilt from the parent's own eccentric angles, in the LOOP's traversal order. What remains is a
-//     geom.BSplineCurve rail with the same disagreement (14.2602) — a different curve family, and one with
-//     no closed-form sub-span, so it needs the fitted-rail re-parameterisation, not this fix.
-//   - M4 (0.100), N9 (0.049) and N3 (0.031) carry an Arc3d on a loop the specialized obstacle / concave-arm
-//     rebuild paths assemble, which never reach transformLoop's carried-arc pass.
+// Three whole cases — simple/M4, simple/N9, simple/N3 — plus the LARGER half of complex/F2's residual were
+// one root, and it was a curve running BACKWARDS between its own vertices, not an overshoot
+// (planar-retrim-selfcross-report.md). Measured worst gaps, absolute: simple/M4 17.3205 → 6.2e-15,
+// simple/N9 8.16497 → 1.4e-14, simple/N3 6.32456 → 4.2e-12, complex/F2 14.2602 → 10.9131 (F2's remaining
+// offender is a different curve family, below).
+//
+//   - the CONCAVE-ARM CAP RETRIM (matchArcFeet) may pair a far cross-section arc's two feet onto the
+//     flanking cap edges the other way round; it used to hand back the swapped POINTS while the caller
+//     re-wrapped the arc's ORIGINAL curve, so the spliced segment ran to→from. It now returns the arc
+//     reversed (reversedEndSeg). That retires M4, N9 and N3, whose loops the concave-arm rebuild path
+//     assembles and which therefore never reach transformLoop's carried-arc pass.
+//   - transformLoop's `default` SURVIVOR arm carried a non-arc curved survivor unchanged, so a REVERSED
+//     use of an OPEN geom.BSplineCurve retrim curve ran end→start — complex/F2's 14.2602. The Arc3d arm
+//     had always flipped its sweep; the non-arc arm now does too (orientedOpenSurvivor).
+//
+// What remains on complex/F2 (0.089 → 0.068, a 1.31× tightening) is an OVERSHOOT, not a reversal: a
+// geom.EllipticalArc carried 10.9131 past its own loop vertex (rel 0.0618696, capped at 1.1× as the rest of
+// the table is). It needs the ellipse-aware retained-span algebra, not an orientation fix — the same
+// algebra that is why orientedOpenSurvivor deliberately leaves the elliptic family untouched.
 //
 // The table must SHRINK, never widen (ellipse-carry-report.md §7).
 func knownEdgeSpanDebt() []offSurfaceDebtEntry {
 	return []offSurfaceDebtEntry{
-		{"F2", "complex", 0.089}, {"M4", "simple", 0.11},
-		{"N9", "simple", 0.0542}, {"N3", "simple", 0.034},
+		{"F2", "complex", 0.068}, // 1.1 x the measured 0.0618696
 	}
 }
 

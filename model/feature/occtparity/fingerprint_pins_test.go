@@ -139,16 +139,37 @@ func byteIdentityPins() []fingerprintPin {
 		{"E7", 2027042.935824126238, 82754, 0x9a211786edd20722, ""},
 		// The CONCAVE Cylinder∧Plane single-arm runout (Group A / N3·M4·N9): a reentrant axis-parallel line
 		// edge whose fillet ADDS the fill wedge (fillet_arm_concave.go — void-side arm + concave GROW retrim
-		// of both hosts and both caps). Captured on this HEAD; they lock the concave arm surface, its
-		// void/foot root gate, and the concave grow retrim so any later concave slice (3-pick corners, torus
-		// arms) fails loud if it perturbs an N3/M4/N9 body. Same cross-platform-risk caveat as above applies.
-		{"N3", 1047315.289309623, 1808, 0x2f37905510c0ca77, ""},
-		{"N9", 1111539.398763901, 10024, 0x31a0f264cc6c4fba, ""},
+		// of both hosts and both caps). They lock the concave arm surface, its void/foot root gate, and the
+		// concave grow retrim so any later concave slice (3-pick corners, torus arms) fails loud if it
+		// perturbs an N3/M4/N9 body. Same cross-platform-risk caveat as above applies.
+		//
+		// RE-CAPTURED (planar-retrim-selfcross-report.md), and PROVEN improved, not merely different: all
+		// three carried the cap cross-section arc BACKWARDS between its own vertices (matchArcFeet swapped
+		// the feet without reversing the curve), so discretizeEdge tiled a doubled-back cap boundary. The
+		// TRIANGLE COUNTS are unchanged (1808 / 10024 / 788) — same topology, corrected positions — and each
+		// case's per-face areas now rank-pair EXACTLY against DRAWEXE's own blend of the same input:
+		//   N3 face#6 10955.6 → 10946.3 (oracle 10946.3), body +0.0143% → −0.00012%;
+		//   N9 face#5 1307.31 → 1298.6 (oracle 1298.57), restoring equality with its MIRROR face#4 (which
+		//     already read 1298.6 — the two must be equal by the body's own symmetry), body +0.0071% → −0.0063%;
+		//   M4 face#1 9752.18 → 9631.8 (oracle 9631.79), all ten faces exact, body +0.197% → −0.00011%.
+		{"N3", 1047315.289309629, 1808, 0x32d906d85cedf489, ""},
+		{"N9", 1111539.398763902, 10024, 0x9756a231d600c2f6, ""},
 		// M4 is the reentrant BORE (axis at (50,−10), plane through the axis): its result mesh is bit-exact
 		// (hash+tris pin it), but its whole-body signed-tetra volume sum is TessellateBody-order-sensitive
-		// at ~1e-4 (the off-origin bore's large cancellation, see volTolFor). So its raw volume is pinned to
-		// the mid-spread value with a loose 5e-4 tolerance; N3/N9 (centred) stay bit-stable at 1e-9.
-		{"M4", 1002658.6, 788, 0xd0bbc06232535594, ""},
+		// at ~1e-4 (the off-origin bore's large cancellation, see volTolFor), so its raw volume keeps the
+		// loose 5e-4 tolerance; N3/N9 (centred) stay bit-stable at 1e-9.
+		//
+		// Its volume moved 1002658.6 → 981589.896267823 (−2.10%), and CLOSED FORM says the new value is the
+		// right one: the input is the 1e6 box less the pocket the R=30 cylinder at (50,−10) cuts through
+		// z ∈ [0,50] (cross-section ∫_{21.7157}^{50}(−10+√(900−(x−50)²))dx = 412.510382, so 979374.4809),
+		// plus the concave fill wedge between the x=50 plane, that cylinder and the r=10 fillet arc
+		// (95.096189 − 61.418485 + 10.619449 = 44.297154 per unit length, ×50 = 2214.8577) — total
+		// 981589.338598. The new pin is +5.68e-07 of that; the OLD pin was +2.146e-02, i.e. it had been
+		// pinning a 21069-unit volume error. Note N3's and N9's volumes barely moved (rel ~6e-15) while
+		// their AREAS did: the doubled-back cap boundary's spurious triangles come in opposite-signed pairs,
+		// so they cancel in the SIGNED tetra volume and only add in UNSIGNED area — which is exactly why a
+		// volume pin could not see this defect and an area pin could.
+		{"M4", 981589.896267823, 788, 0x7c2683f742a4c291, ""},
 		// J2: the large spherical ZONE reaching an enclosed pole (psphere -90..45), filleted at r=10. Its
 		// sphere face used to mesh the WRONG (small north cap) region — whole-body area 8525 — because
 		// sphereCapFan's newellUnit axis is biased by the seam+pole samples of a pole-reaching zone;

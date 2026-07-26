@@ -311,8 +311,41 @@ func survivorCurve(u *topo.EdgeUse) geom.Curve3 {
 	case geom.LineSegment:
 		return nil // straight survivor: nil is identical and keeps the all-planar path a no-op
 	default:
-		return c // a non-arc curved survivor (closed-ellipse rim, B-spline): carry it, don't drop it
+		return orientedOpenSurvivor(c, u) // a non-arc curved survivor (B-spline, ellipse rim): carry it, don't drop it
 	}
+}
+
+// orientedOpenSurvivor returns a non-arc curved survivor's curve oriented to the loop's TRAVERSAL: reversed
+// for a reversed use of an OPEN edge, carried unchanged for a CLOSED rim seam (both endpoints on one vertex).
+//
+// The Arc3d arm above has always flipped its sweep for a reversed use; this arm returned the curve as-is,
+// so a REVERSED use of an open B-spline survivor handed the edge catalog a curve running end→start. The
+// catalog stores it against the first registering face's from→to vertices (assemble_curved.go), and
+// discretizeEdge then FORCES that polyline's ends onto those vertices — producing a boundary that leaps to
+// the far end, walks back and leaps again. complex/F2 shipped two such edges (28.52 / 28.18 of endpoint
+// mismatch), self-crossing two of its walls.
+//
+// A CLOSED rim seam must NOT be reversed: it has no distinct endpoints to orient by, the catalog forces the
+// second co-edge's parity itself, and the periodic mesher rebuilds from the surface (u,v) — reversing one
+// collapsed T6/T7/U4's oblique elliptical rim.
+//
+// A geom.EllipticalArc is deliberately left ALONE, so the elliptic paths stay byte-identical. It is the one
+// non-arc family the retrim dispatches on CONCRETELY (endSegFromUse recognises geom.Arc3d and
+// geom.EllipticalArc and drops anything else to a straight chord), and BOTH ways of orienting it were
+// measured harmful: wrapping it cost simple/F4's elliptic-vein cap arcs their curve and DECLINED its host
+// retrim outright, while flipping its own sweep in place left F4 shipping a boundary 95.8015 (rel 0.2819 of
+// its diagonal) off its own EllipticalCylinder — the ellipse-aware sub-span algebra (segParam/subSeg,
+// retainedEllipticRimCurve) is written for a forward span. No elliptic survivor edge on the corpus
+// currently violates the orientation invariant, so this arm has nothing to repair and is left for whoever
+// makes that algebra sign-agnostic.
+func orientedOpenSurvivor(c geom.Curve3, u *topo.EdgeUse) geom.Curve3 {
+	if !u.Reversed() || u.Edge().StartVertex() == u.Edge().EndVertex() {
+		return c
+	}
+	if _, elliptic := c.(geom.EllipticalArc); elliptic {
+		return c
+	}
+	return geom.ReverseCurve3(c)
 }
 
 // addEdgeInserts appends the mid tangent points along edge use u (oriented to the traversal direction),
@@ -483,18 +516,32 @@ func cornerEndSegs(c corner, caps map[uint64][]cornerPiece) []endSeg {
 func reverseEndSegs(segs []endSeg) []endSeg {
 	out := make([]endSeg, len(segs))
 	for i, s := range segs {
-		r := endSeg{from: s.to, to: s.from, mid: s.mid, arc: s.arc}
-		if s.arc {
-			r.curve, _ = geom.Arc3dByThreePoints(s.to, s.mid, s.from)
-		} else if s.curve != nil {
-			// A non-arc curved segment (a canal terminal SPIRIC section) has no by-endpoints
-			// reconstruction; wrap it reversed. The single-ball path has no such segment (its
-			// curved rails are all arcs, its straight rulings carry no curve), so it is byte-unchanged.
-			r.curve = geom.ReverseCurve3(s.curve)
-		}
-		out[len(segs)-1-i] = r
+		out[len(segs)-1-i] = reversedEndSeg(s)
 	}
 	return out
+}
+
+// reversedEndSeg returns ONE segment traversed backwards, with its carried curve reversed to match: an
+// ARC is re-derived through its own recorded midpoint (a circumcircle through three points of a circle IS
+// that circle, so this is exact), any other curve is wrapped (a canal terminal SPIRIC section has no
+// by-endpoints reconstruction). The single-ball path carries only arcs and curveless straight rulings, so
+// it is byte-unchanged by the wrap arm.
+//
+// A segment's curve MUST run from→to. discretizeEdge samples an edge's curve over its domain and then
+// FORCES the polyline's two ends onto the edge's own start/end vertices, so a curve pointing the other way
+// yields a polyline that leaps to the far end, walks back, and leaps again — a doubled-back boundary that
+// self-crosses (simple/M4 N3 N9; planar-retrim-selfcross-report.md). Extracted from reverseEndSegs so the
+// retrim splicers that may swap a bite's endpoints (matchArcFeet) reverse the curve through the same one
+// primitive instead of carrying it unchanged.
+func reversedEndSeg(s endSeg) endSeg {
+	r := endSeg{from: s.to, to: s.from, mid: s.mid, arc: s.arc}
+	switch {
+	case s.arc:
+		r.curve, _ = geom.Arc3dByThreePoints(s.to, s.mid, s.from)
+	case s.curve != nil:
+		r.curve = geom.ReverseCurve3(s.curve)
+	}
+	return r
 }
 
 // loopFromSegs flattens a closed chain of segments (each seg's to is the next seg's from) into a

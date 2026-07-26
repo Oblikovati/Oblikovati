@@ -66,12 +66,14 @@ func growCapArc(segs []endSeg, arc endSeg, far math.Point3, tol float64) ([]endS
 		return nil, false
 	}
 	prevIdx := (j - 1 + n) % n
-	fFrom, fTo, ok := matchArcFeet(segs[prevIdx], segs[j], arc, tol)
-	prev, okp := reterminateSegTo(segs[prevIdx], fFrom, tol)
-	next, okn := reterminateSegFrom(segs[j], fTo, tol)
-	if !ok || !okp || !okn {
+	arcSeg, ok := matchArcFeet(segs[prevIdx], segs[j], arc, tol)
+	if !ok {
 		return nil, false
 	}
-	arcSeg := endSeg{from: fFrom, to: fTo, curve: arc.curve, mid: arc.mid, arc: arc.arc}
+	prev, okp := reterminateSegTo(segs[prevIdx], arcSeg.from, tol)
+	next, okn := reterminateSegFrom(segs[j], arcSeg.to, tol)
+	if !okp || !okn {
+		return nil, false
+	}
 	return spliceCapRing(segs, prevIdx, j, prev, arcSeg, next), true
 }
