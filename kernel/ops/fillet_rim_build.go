@@ -101,30 +101,60 @@ func (g *rimBuild) addRimEdges() {
 }
 
 // wallSeamCurve is the re-aimed curved-host seam from the host's far vertex (bottom) to the receded
-// contact vertex vc. On a cone/cylinder host it is the straight ruling (byte-identical to the convex J1
-// / lone-rim path). On a concave SPHERE host it is the meridian ARC on the sphere (the host boundary must
-// stay on the sphere, so a line — which cuts through the sphere interior — is wrong): the great-circle
-// sub-arc through the on-sphere midpoint of bottom and vc.
+// contact vertex vc. The seam is a boundary of the HOST face, so it must STAY ON THE HOST — and the curve
+// that does so is already in hand: the ORIGINAL seam edge's own curve, of which the re-aimed seam is the
+// retained SUB-SPAN. So the seam is re-derived through the shared carry core (exactRetainedSpanOnParent,
+// fillet_survivor_rim.go) rather than rebuilt as a chord.
+//
+// That core is exactly the right tool here because vc is the rolling ball's contact point on the host,
+// framed at the RIM VERTEX azimuth (solveRim / assembleRimBand both build the contact rail with
+// RefDir=ref taken from the rim vertex): it therefore lies in the seam's own meridian plane AND on the
+// host surface, i.e. exactly on the seam parent — the core's on-parent precondition.
+//
+// On a cylinder / cone / elliptical-cylinder host the meridian IS a straight ruling, so its LineSegment
+// parent is not carriable, the core declines, and the rebuild ships the very line segment it always did —
+// which is why every other rim-fillet green stays byte-identical. On a SPHERE or TORUS host the meridian
+// is an ARC, and chording it put the shipped seam 28.44 off J2's sphere and 10.43 off J4's torus, tiling
+// J4's host face at +317% (rimhost-carry-report.md). The concave-sphere great-circle refit
+// (concaveSphereSeamArc) stays as the fallback for a concave host whose seam edge is not itself a
+// carriable meridian.
 func (g *rimBuild) wallSeamCurve(bottom, vc math.Point3) geom.Curve3 {
+	if sub := exactRetainedSpanOnParent(g.rf.seamEdge.Geometry(), bottom, vc); sub != nil {
+		return sub
+	}
+	if arc, ok := g.concaveSphereSeamArc(bottom, vc); ok {
+		return arc
+	}
+	return geom.NewLineSegment(bottom, vc)
+}
+
+// concaveSphereSeamArc is the FALLBACK re-aimed seam for a concave SPHERE host whose own seam edge is not
+// a carriable meridian (the shared carry core declined — a reversed or fitted seam curve): the
+// great-circle sub-arc from bottom to vc through the on-sphere midpoint of the two. A line would cut
+// through the sphere interior, so a refit arc is still better than the ruling. ok=false leaves the caller
+// with the ruling. No corpus case reaches it any more — bfuseblend/A3, the concave sphere cove band that
+// used to, now takes the carried sub-span and is byte-identical either way (its fingerprint pin holds
+// under both) — so this is a guard, not a live path.
+func (g *rimBuild) concaveSphereSeamArc(bottom, vc math.Point3) (geom.Curve3, bool) {
 	sph, isSphere := g.rf.cyl.Geometry().(geom.Sphere)
 	if !g.concave || !isSphere {
-		return geom.NewLineSegment(bottom, vc)
+		return nil, false
 	}
 	db, e1 := math.UnitVector3FromVector(sph.Center.VectorTo(bottom))
 	dc, e2 := math.UnitVector3FromVector(sph.Center.VectorTo(vc))
 	if e1 != nil || e2 != nil {
-		return geom.NewLineSegment(bottom, vc)
+		return nil, false
 	}
 	mid, err := math.UnitVector3FromVector(db.AsVector().Add(dc.AsVector()))
 	if err != nil {
-		return geom.NewLineSegment(bottom, vc) // antipodal degeneracy — fall back to the ruling
+		return nil, false // antipodal degeneracy — fall back to the ruling
 	}
 	onSphere := sph.Center.TranslateBy(mid.AsVector().Scale(sph.Radius))
 	arc, err := geom.Arc3dByThreePoints(bottom, onSphere, vc)
 	if err != nil {
-		return geom.NewLineSegment(bottom, vc)
+		return nil, false
 	}
-	return arc
+	return arc, true
 }
 
 // quarterTube is v=π/4 — the tube midpoint between the cyl-tangent contact (v=0) and the cap-tangent

@@ -159,18 +159,21 @@ func offSurfaceDebtIndex() map[string]float64 {
 // regression fires while an improvement is free. Derived by an instrumented corpus-wide sweep, not from
 // any report. It was 52 entries; the far-end wall trim (fillet_farend_trim.go) retired 17 of them —
 // A5 A6 A8 B1 B5 B9 C4 C7 D3 D7 E1 E2 F2 F6 I3 M2 Q5 are now CLEAN — and shrank 5 more (N5 0.0216→0.000129,
-// V1 0.00451→0.000295, V3 0.00712→0.00199, V5 0.00145→0.000313, complex/D8 0.0461→0.037), and the elliptic
-// survivor-rim carry (fillet_survivor_rim_ellipse.go) then retired F7 — 35 → 34 entries. The table must
-// SHRINK, never widen. The roots that remain, largest first (ellipse-carry-report.md §2):
+// V1 0.00451→0.000295, V3 0.00712→0.00199, V5 0.00145→0.000313, complex/D8 0.0461→0.037); the elliptic
+// survivor-rim carry (fillet_survivor_rim_ellipse.go) then retired F7 (35 → 34) and the rim-fillet HOST-SEAM
+// carry (fillet_rim_build.go's wallSeamCurve → retainedHostSeamCurve) retired J2 and J4 (34 → 32), which
+// also cut the table's CEILING 5.4× — 0.334 → complex/F2's 0.0616. The table must SHRINK, never widen. The
+// roots that remain, largest first (rimhost-carry-report.md §2):
 //
-//   - CHORDED SEAM MERIDIAN on the rim-fillet host rebuild (J2 J4). Previously recorded here as an
-//     "imported base-face loop the fillet never touched"; that attribution is FALSIFIED — both INPUT
-//     bodies measure clean (J2 5.4e-13, J4 1.6e-13 absolute, i.e. 5.8e-15 / 2.2e-15 relative), so the
-//     chord is fillet-created. J2's shipped hemisphere keeps its Arc3d SEAM meridian's two vertices but
-//     ships the edge between them as a 90.38-long geom.LineSegment, 28.44 off the sphere (J4: 61.24 long,
-//     10.43 off its torus). The parent IS a geom.Arc3d, so this is NOT the non-Arc3d carry above — it is
-//     the rim-fillet host rebuild (parent `rimfillet:torus#0`), which does not reach transformLoop's
-//     carried-arc passes at all. Now the largest fillet-owned off-surface root in the corpus.
+//   - CURVED-HOST RETRIM ARC off its own cylinder (complex/F2, 0.0616) — a `fillet:x` retrim edge, not a
+//     rim carry. (J2/J4's 0.334/0.165 CHORDED SEAM MERIDIAN entries are retired: the rim rebuild used to
+//     re-aim the host seam as a straight ruling, which is only the host's meridian on a cylinder / cone /
+//     elliptical-cylinder — on J2's SPHERE and J4's TORUS the meridian is an ARC, so they shipped a 90.38 /
+//     61.24-long chord 28.44 / 10.43 off their own host. The seam is now the retained sub-span of the
+//     host's own meridian: 2.7e-14 / 1.6e-13, and J4 GREENED from +70.2% body area. Note for the record
+//     that the entry these two carried before that also blamed the WRONG thing — "an imported base-face
+//     loop the fillet never touched" — which the input measurement falsified, both bodies importing clean
+//     to 1e-13.)
 //   - WRONG STOP FACE at a valence>3 vertex (complex/D8): endFaceAt picks the first face at the terminal
 //     vertex that is neither A nor B, so the far-end trim lands the section on a plausible-but-wrong wall.
 //     (F7's 0.29 entry, the ELLIPSE-rim chord, is retired: the elliptic survivor-rim carry
@@ -183,7 +186,6 @@ func offSurfaceDebtIndex() map[string]float64 {
 //     agree only to the fit's own residual (reverse-segment-fix-report.md §6 concern 2).
 func knownOffSurfaceDebt() []offSurfaceDebtEntry {
 	return []offSurfaceDebtEntry{
-		{"J2", "simple", 0.334}, {"J4", "simple", 0.165},
 		{"F2", "complex", 0.0616}, {"D8", "complex", 0.037}, {"C2", "simple", 0.0192},
 		{"V9", "simple", 0.017}, {"P9", "simple", 0.017}, {"X9", "simple", 0.00284},
 		{"T7", "simple", 0.00216}, {"V3", "simple", 0.00199}, {"S9", "simple", 0.00199},

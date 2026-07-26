@@ -193,17 +193,26 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 // against DRAWEXE's 31060.7 and its elliptic wall at 23469.8 against 39942.6 (+5.6762% body area, and a
 // volume 45% low); it now measures −0.0011% body area with every face inside 0.006% of DRAWEXE. The same
 // fix took already-green F7 from the corpus's WORST per-face gross error, 40793 (its 39896.5 elliptic wall
-// meshing 60210.7, its 27897.8 top plane meshing 7419) to 2.8, body area −0.1234% → −0.0006%. A mismatch means
-// either a false green slipped through or a case was over/under-quarantined — see harden-green-gate-brief.md's
-// "STOP and report" instruction.
+// meshing 60210.7, its 27897.8 top plane meshing 7419) to 2.8, body area −0.1234% → −0.0006%.
+// Carrying the rim-fillet HOST SEAM as the retained sub-span of the host's own meridian instead of chording
+// it to a straight ruling (fillet_rim_build.go's wallSeamCurve → retainedHostSeamCurve) then GREENED J4,
+// restoring 110→111 simple / 116→117 all-grid, SkipQuarantine unchanged at 1. The rebuild had assumed the
+// re-aimed host seam is always a straight ruling — true on a cylinder / cone / elliptical-cylinder host, but
+// a SPHERE or TORUS host's meridian is an ARC, so J4's torus host shipped a 61.24-long chord 10.43 off
+// itself and tiled 394781 against DRAWEXE's 94600.6 (+70.2% body area); it now measures −0.0002% with every
+// face inside 0.0004%. The same fix took already-green J2's sphere seam from a 90.38-long chord 28.44 off
+// its own sphere — the corpus's LARGEST off-surface residual, rel 0.303 — to 2.7e-14 (its mesh was already
+// faithful, because the sphere-zone fan does not read the seam curve; the defect was a corrupt B-rep every
+// other consumer would inherit). A mismatch means either a false green slipped through or a case was
+// over/under-quarantined — see harden-green-gate-brief.md's "STOP and report" instruction.
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 110 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 110 (elliptic survivor-rim carry greened F6)", simpleGreen)
+	if simpleGreen != 111 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 111 (rim-fillet host-seam carry greened J4)", simpleGreen)
 	}
-	if allGridGreen != 116 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 116 (elliptic survivor-rim carry greened F6)", allGridGreen)
+	if allGridGreen != 117 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 117 (rim-fillet host-seam carry greened J4)", allGridGreen)
 	}
 	if skipQuarantine != 1 {
 		t.Errorf("SkipQuarantine = %d, want 1 (H6 only, #2007 U4 freed by U4-5)", skipQuarantine)

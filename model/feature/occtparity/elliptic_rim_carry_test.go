@@ -3,12 +3,9 @@
 package occtparity
 
 import (
-	stdmath "math"
-	"sort"
 	"testing"
 
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -24,14 +21,6 @@ const ellipticRimPerFaceTol = 2e-4
 // entry: measured worst 5.8e-10 (F7's fitted-BSpline corner rail) and 1.1e-11 (F6). The chord it replaces
 // measures 0.2633 (F7's 89.4426 across its elliptic cylinder), three decades outside.
 const ellipticRimOnFaceTol = 1e-6
-
-// ellipticRimCase is one case whose survivor wall is an ELLIPTIC prism, with the per-face areas DRAWEXE
-// 8.0.0 reports (`explode result F` + `sprops result_i 1e-6`), sorted descending.
-type ellipticRimCase struct {
-	name      string
-	drawexe   []float64
-	totalArea float64 // DRAWEXE `sprops result 1e-6`
-}
 
 // TestEllipticSurvivorRimIsCarried is the oracle gate for the elliptic survivor-rim carry
 // (fillet_survivor_rim_ellipse.go).
@@ -61,12 +50,14 @@ func TestEllipticSurvivorRimIsCarried(t *testing.T) {
 }
 
 // ellipticRimCases is the pinned population: the corpus's two elliptic-prism blends whose survivor cap rim
-// is a geom.EllipticalArc the corner substitution re-trims.
-func ellipticRimCases() []ellipticRimCase {
-	return []ellipticRimCase{
-		{name: "F6", totalArea: 133725,
+// is a geom.EllipticalArc the corner substitution re-trims. Rank pairing is sound here because both bodies'
+// face areas are well separated (the closest pair differs by 1.4%), so a size-ordered pairing cannot
+// mis-associate two faces.
+func ellipticRimCases() []drawexeFaceCase {
+	return []drawexeFaceCase{
+		{name: "F6", totalArea: 133725, perFaceTol: ellipticRimPerFaceTol,
 			drawexe: []float64{39942.6, 31060.7, 31060.7, 15496.3, 15496.3, 668.339}},
-		{name: "F7", totalArea: 132309,
+		{name: "F7", totalArea: 132309, perFaceTol: ellipticRimPerFaceTol,
 			drawexe: []float64{39896.5, 31060.7, 27897.8, 14044.5, 13848.9, 2565.52, 2329.06, 601.505, 64.3501}},
 	}
 }
@@ -91,38 +82,4 @@ func assertNoChordOnEllipticWall(t *testing.T, name string, b *topo.Body) {
 			}
 		}
 	}
-}
-
-// assertPerFaceAgainstDrawexe fails when the body's face count differs from DRAWEXE's, when any
-// rank-paired face area is outside ellipticRimPerFaceTol, or when the summed area misses DRAWEXE's total.
-// Rank pairing is sound here because both bodies' face areas are well separated (the closest pair differs
-// by 1.4%), so a size-ordered pairing cannot mis-associate two faces.
-func assertPerFaceAgainstDrawexe(t *testing.T, tc ellipticRimCase, b *topo.Body) {
-	t.Helper()
-	got := sortedFaceMeshAreas(b)
-	if len(got) != len(tc.drawexe) {
-		t.Fatalf("%s: %d faces, DRAWEXE has %d", tc.name, len(got), len(tc.drawexe))
-	}
-	sum := 0.0
-	for i, want := range tc.drawexe {
-		sum += got[i]
-		if rel := stdmath.Abs(got[i]-want) / want; rel > ellipticRimPerFaceTol {
-			t.Errorf("%s: face #%d (by size) meshes %.6g, DRAWEXE %.6g (rel %+.4f%%, tol %.1g)",
-				tc.name, i+1, got[i], want, (got[i]-want)/want*100, ellipticRimPerFaceTol)
-		}
-	}
-	if rel := stdmath.Abs(sum-tc.totalArea) / tc.totalArea; rel > ellipticRimPerFaceTol {
-		t.Errorf("%s: summed face area %.6g, DRAWEXE %.6g (rel %+.4f%%)", tc.name, sum, tc.totalArea,
-			(sum-tc.totalArea)/tc.totalArea*100)
-	}
-}
-
-// sortedFaceMeshAreas returns the body's per-face mesh areas at PropertyQuality, largest first.
-func sortedFaceMeshAreas(b *topo.Body) []float64 {
-	out := make([]float64, 0, len(b.Faces()))
-	for _, f := range b.Faces() {
-		out = append(out, ops.MeshArea(ops.TessellateFace(f, ops.PropertyQuality())))
-	}
-	sort.Sort(sort.Reverse(sort.Float64Slice(out)))
-	return out
 }

@@ -60,6 +60,30 @@ func carriableRim(c geom.Curve3) (geom.Curve3, bool) {
 	return nil, false
 }
 
+// exactRetainedSpanOnParent is the GATE-FREE core of the carry: the carriable parent's own sub-span
+// between two points that already lie ON it, or nil when either point is off the parent (or the parent is
+// not carriable at all). No empirical chord-vs-arc argument — neither the ENDS branch's quadrant nor the
+// subs branch's erased-segment area — applies to an exact span, because if both endpoints ARE points of
+// the parent then the parent's sub-span IS the true boundary and a chord across it is simply off the
+// surface. Built from the parent's OWN parameters, so a MAJOR span stays major (the N7 whole-curve
+// sub-span lesson) and the result runs from→to in the caller's own order by construction.
+//
+// It is the piece the rim-fillet HOST REBUILD reuses (retainedHostSeamCurve, fillet_rim_build.go) so the
+// re-aimed host seam keeps its meridian instead of chording it; the survivor-rim carry reaches the same
+// algebra through its own gated wrappers (retainedSubArc / retainedRimCurve).
+func exactRetainedSpanOnParent(parent geom.Curve3, p0, p1 math.Point3) geom.Curve3 {
+	switch rim := parent.(type) {
+	case geom.Arc3d:
+		if !rimSpanIsExact(rim, p0, p1) {
+			return nil
+		}
+		return subArcOnParent(rim, projectOntoArcCircle(rim, p0), projectOntoArcCircle(rim, p1))
+	case geom.EllipticalArc:
+		return retainedEllipticRimCurve(rim, p0, p1) // already exactness-gated (ellipseSpanIsExact)
+	}
+	return nil
+}
+
 // subArcAreaFrac is the minimum fraction of the model's characteristic area (scale², scale = the body
 // bounding-box diagonal) that chording a carried survivor arc must ERASE for the arc to be worth carrying.
 // The ENDS branch gates on an ANGULAR span (retainedRimCurve's quadrant), which cannot separate the subs
