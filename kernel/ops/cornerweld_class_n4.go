@@ -56,7 +56,7 @@ func (n4CornerPlanBuilder) Plan(_ *topo.Body, arms []edgeFillet, res Resolution)
 // assembly left in it.
 func n4Plan(roles n4MixedArms, corner n4Corner, vFace *topo.Face, vertex math.Point3, r float64) cornerWeldPlan {
 	led := newCornerWeldLedger()
-	ring := cornerCanalRailRing(led, "n4", corner.pts, corner.railBC, corner.railDA, 1)
+	ring := cornerCanalRailRing(led, "n4", corner.pts, corner.railBC, corner.railDA)
 	return cornerWeldPlan{
 		ledger: led,
 		patch:  cornerPatchSpec{surface: corner.patch.Surface, sides: ring.sides},

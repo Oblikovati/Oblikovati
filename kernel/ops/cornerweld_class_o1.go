@@ -26,15 +26,6 @@ import (
 // eight plus three arm bands and the corner patch — no rim continuation and no host-seam split here, so the
 // layer's B3/C4 variants stay dormant and this case exercises the plain single-link path.
 
-// o1CanalRailPieces is how many sub-segs O1 registers each on-host canal rail as. It is > 1 because the
-// shell-orientation pass re-fits a FLIPPED face's loop segments through three points, which is exact for an
-// arc and replaces a canal isoparm with a circle — and O1's patch AND lateral-arm faces are both flipped
-// (N4's patch is not). Measured on this corner: a single seg lands the two rails 0.092 and 0.292 off their
-// own surface at r = 5 and the NURBS mesher folds on four edges; at 8 pieces the worst is 6.2e-4 (0.012% of
-// r, 3 orders below the weld tolerance) and the body is fold-free. See cornerCanalRailRing's `pieces` note —
-// this is the cure canalPatchLoops already applies to the N7 canal patch, whose sub-edges measure ≤1e-12.
-const o1CanalRailPieces = 8
-
 // o1CornerPlanBuilder recognises the O1 class and declares its plan. Nothing is mutated before took=true, so
 // a non-O1 corner falls through the ladder with no trace (layer invariant #5).
 type o1CornerPlanBuilder struct{}
@@ -65,7 +56,7 @@ func (o1CornerPlanBuilder) Plan(_ *topo.Body, arms []edgeFillet, res Resolution)
 // role, which far termination the lateral arm takes, and whether the mid host is a plane or a cylinder.
 func o1Plan(roles o1MixedArms, corner o1Corner, vertex math.Point3, r float64) cornerWeldPlan {
 	led := newCornerWeldLedger()
-	ring := cornerCanalRailRing(led, "o1", corner.pts, corner.railBC, corner.railDA, o1CanalRailPieces)
+	ring := cornerCanalRailRing(led, "o1", corner.pts, corner.railBC, corner.railDA)
 	return cornerWeldPlan{
 		ledger: led,
 		patch:  cornerPatchSpec{surface: corner.patch.Surface, sides: ring.sides},

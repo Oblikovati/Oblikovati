@@ -3,8 +3,6 @@
 package ops
 
 import (
-	"fmt"
-
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
@@ -27,8 +25,8 @@ import (
 
 // cornerPatchRailRing is a canal patch's four registered boundary handles plus the ordered ring the patch
 // reads. The two arcs are the terminating arms' cross-sections; the two rails are the canal's own boundary
-// isoparms (the ball's contact loci on the lateral arm and on the mid host), each a CHAIN so a class may
-// register them subdivided (see cornerCanalRailRing's pieces argument).
+// isoparms (the ball's contact loci on the lateral arm and on the mid host), each a one-element CHAIN
+// because the arm/mid specs take []railID (a rail is free to become a chain when a class needs one).
 type cornerPatchRailRing struct {
 	arcAB, arcCD   railID
 	railBC, railDA []railID
@@ -45,47 +43,29 @@ type cornerPatchRailRing struct {
 // Registering the ring ONCE here is what makes the patch and its three welded neighbours read the identical
 // curve objects (design Axis F), for every class rather than once per class.
 //
-// ★ `pieces` is how many sub-segs each RAIL is registered as (1 = one seg end to end). It exists because
-// the shell-orientation pass reverses a flipped face's loop by RE-FITTING each segment through three points
-// (reverseSegmentCurve, fillet_orient.go), which is exact for an arc and WRONG for a canal isoparm: it
-// replaces the exact contact locus with a circle. Measured on the O1 corner, whose patch and lateral-arm
-// faces are both flipped: a single-seg rail lands 0.092 and 0.292 off its own surface at r = 5, and the
-// NURBS mesher then tiles slivers against a boundary that is not on the patch and FOLDS. Subdividing makes
-// the three-point fit's error fall as h³ — it is the same cure canalPatchLoops applies to the N7 canal
-// patch, and N7's boundary sub-edges measure ≤1e-12 off their surface where O1's single segs measured 0.29.
-// A class that keeps pieces = 1 is byte-identical to the pre-subdivision ledger (N4 does, so its pin holds).
 // Example:
 //
-//	ring := cornerCanalRailRing(led, "o1", corner.pts, corner.railBC, corner.railDA, o1CanalRailPieces)
+//	ring := cornerCanalRailRing(led, "o1", corner.pts, corner.railBC, corner.railDA)
 //	plan.patch = cornerPatchSpec{surface: corner.patch.Surface, sides: ring.sides}
-func cornerCanalRailRing(led *cornerWeldLedger, class string, p cornerCanalPts, railBC, railDA geom.Curve3, pieces int) cornerPatchRailRing {
+func cornerCanalRailRing(led *cornerWeldLedger, class string, p cornerCanalPts, railBC, railDA geom.Curve3) cornerPatchRailRing {
 	ab := led.add(class+"/arcAB", endSeg{from: p.a, to: p.b, curve: p.arcAB, mid: p.arcAB.PointAt(0.5), arc: true})
-	bc := addRailChain(led, class+"/railBC", railBC, pieces)
+	bc := addOnHostRail(led, class+"/railBC", railBC)
 	cd := led.add(class+"/arcCD", endSeg{from: p.c, to: p.d, curve: p.arcCD, mid: p.arcCD.PointAt(0.5), arc: true})
-	da := addRailChain(led, class+"/railDA", railDA, pieces)
+	da := addOnHostRail(led, class+"/railDA", railDA)
 	sides := append([]railID{ab}, bc...)
 	sides = append(append(sides, cd), da...)
 	return cornerPatchRailRing{arcAB: ab, railBC: bc, arcCD: cd, railDA: da, sides: sides}
 }
 
-// addRailChain registers one on-host rail as `pieces` consecutive sub-segs, each carrying the rail
-// RESTRICTED to its own sub-span (a geom.TrimmedCurve3) so both faces sharing it read one curve object per
-// piece. pieces <= 1 registers the whole rail as one seg, which is byte-identical to the pre-subdivision
-// ledger.
-func addRailChain(led *cornerWeldLedger, name string, rail geom.Curve3, pieces int) []railID {
-	if pieces <= 1 {
-		return []railID{led.add(name, endSeg{from: curveStart(rail), to: curveEnd(rail), curve: rail, mid: curveMidPoint(rail)})}
-	}
-	lo, hi := rail.Domain()
-	out := make([]railID, 0, pieces)
-	at := func(k int) float64 { return lo + (hi-lo)*float64(k)/float64(pieces) }
-	for k := 0; k < pieces; k++ {
-		t0, t1 := at(k), at(k+1)
-		sub := geom.TrimmedCurve3{Base: rail, Lo: t0, Hi: t1}
-		out = append(out, led.add(fmt.Sprintf("%s[%d]", name, k),
-			endSeg{from: rail.PointAt(t0), to: rail.PointAt(t1), curve: sub, mid: rail.PointAt((t0 + t1) / 2)}))
-	}
-	return out
+// addOnHostRail registers one on-host canal rail as a SINGLE curve-seg, returned as the one-element chain
+// the arm/mid specs take. It is one seg because the shell-orientation pass now reverses a flipped face's
+// non-circular loop segment by RE-PARAMETERISING it (reverseCurveExactly, fillet_orient.go) instead of
+// re-fitting it through three points: O1 used to register these rails as 8 sub-segs so the re-fit's h³
+// error stayed under the weld tolerance (0.092/0.292 off its own surface at one seg → 6.2e-4 at eight), and
+// with the re-fit gone that subdivision is dead — a whole rail now measures ≤1.5e-8 off its surface after
+// reversal, i.e. its own construction residual.
+func addOnHostRail(led *cornerWeldLedger, name string, rail geom.Curve3) []railID {
+	return []railID{led.add(name, endSeg{from: curveStart(rail), to: curveEnd(rail), curve: rail, mid: curveMidPoint(rail)})}
 }
 
 // concaveTerminatingArmSpec declares a CONCAVE arm that ENDS at the corner on its radius-r cross-section arc

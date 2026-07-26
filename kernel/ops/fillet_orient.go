@@ -159,16 +159,28 @@ func reverseFilletLoop(loop filletLoop) filletLoop {
 	return out
 }
 
-// reverseSegmentCurve reverses one loop segment's curve for reverseFilletLoop. An OPEN arc is re-derived
-// through its recovered midpoint in the new direction (the historical path, byte-identical). A CLOSED
-// self-loop rim seam (from==to — a full-turn rim, e.g. an intact runout boss wall's top rim) cannot be
-// rebuilt from three points (two coincide → a degenerate zero Arc3d, the r8 cap→0 defect): a geom.Arc3d
-// reverses by flipping its ORIGINAL sweep, and any OTHER closed rim curve — a geom.EllipseFull top/bottom
-// rim of an oblique elliptical-cylinder wall (T7), a closed b-spline seam — is carried UNCHANGED, exactly
-// as survivorCurve does for a reversed edge use (the periodic mesher rebuilds it from the surface (u,v)
-// and never reads the rim's intrinsic direction, so no reversal is needed). Rebuilding such a closed rim
-// via Arc3dByThreePoints collapsed the elliptical wall to a degenerate arc through the ellipse centre,
-// meshing the whole boss as a cone/disk (T7 area 2381.68 → 450) — the same class as the r8 cap→0 defect.
+// reverseSegmentCurve reverses one loop segment's curve for reverseFilletLoop. A CLOSED self-loop rim seam
+// (from==to — a full-turn rim, e.g. an intact runout boss wall's top rim) cannot be rebuilt from three
+// points (two coincide → a degenerate zero Arc3d, the r8 cap→0 defect): a geom.Arc3d reverses by flipping
+// its ORIGINAL sweep, and any OTHER closed rim curve — a geom.EllipseFull top/bottom rim of an oblique
+// elliptical-cylinder wall (T7), a closed b-spline seam — is carried UNCHANGED, exactly as survivorCurve
+// does for a reversed edge use (the periodic mesher rebuilds it from the surface (u,v) and never reads the
+// rim's intrinsic direction, so no reversal is needed). Rebuilding such a closed rim via Arc3dByThreePoints
+// collapsed the elliptical wall to a degenerate arc through the ellipse centre, meshing the whole boss as a
+// cone/disk (T7 area 2381.68 → 450) — the same class as the r8 cap→0 defect.
+//
+// An OPEN segment is re-derived through its recovered midpoint ONLY when its locus is a CIRCLE, where a
+// three-point re-fit is exact (the historical path, byte-identical: a circumcircle through three points of
+// a circle IS that circle, swept through the midpoint so the short way is kept). Every other locus is
+// reversed WITHOUT re-deriving its shape — the re-fit replaced a canal isoparm, a spiric section, an
+// elliptical arc or a b-spline rail with a CIRCLE THROUGH ITS ENDPOINTS, i.e. it silently degraded the
+// exact contact geometry of every flipped canal face; measured on the corpus, N4's corner-patch rail landed
+// 0.0562 off its own torus (1.1% of r) and D4/D5/D9/E3/E4's spiric run-out rail 1.245 off its own torus,
+// while a nearly straight sub-rail made Arc3dByThreePoints FAIL outright (collinear) and the ignored error
+// installed a degenerate zero Arc3d at the ORIGIN (S1/S3/S4/S6/S7/S9/T1/T3/T4/T6/T7/R9 — up to 25 off the
+// face). The cone-canal SPRING and the ⊥-axis far-cap geom.Polyline (CN4b-2) took this generic path
+// already; it is now the rule rather than the two-type exception, and the O1 corner's
+// rail-subdivision workaround (o1CanalRailPieces) is retired with it.
 func reverseSegmentCurve(c geom.Curve3, from, mid, to math.Point3) geom.Curve3 {
 	if from == to {
 		if arc, ok := c.(geom.Arc3d); ok {
@@ -178,22 +190,38 @@ func reverseSegmentCurve(c geom.Curve3, from, mid, to math.Point3) geom.Curve3 {
 		}
 		return c // a closed non-arc rim seam (full-turn ellipse / b-spline): reversal is a no-op for the mesher
 	}
-	switch geom.InnerCurve(c).(type) {
-	case coneCanalSpring, geom.Polyline:
-		// A cone-ruling-canal rail with no by-endpoints reconstruction: the exact plane/cone-foot SPRING
-		// (coneCanalSpring), or the ⊥-axis far-cap trim, which is the ONLY geom.Polyline any fillet rail
-		// ever produces (anchoredTrimPolyline, fillet_cone_far.go — CN4b-2). Reverse it generically (as
-		// reverseEndSegs does with ReverseCurve3): a spring reverses exactly and a polyline reverses to the
-		// same polyline traversed backwards, so ReverseCurve3 is always faithful for BOTH — never re-fit
-		// either as an arc (which would replace the exact locus with a wrong circle). The geom.Polyline arm
-		// of this case is therefore effectively scoped to the cone-canal far-cap even though the type match
-		// is unqualified: no other fillet rail is a geom.Polyline. Crucially it does NOT match N7's
-		// BSpline/spiric canal-CORNER rails, which base reverses via Arc3dByThreePoints — the N7
-		// byte-identity gate; and a genuinely correct polyline reversal would be safe here regardless.
-		return geom.ReverseCurve3(c)
+	if isCircularLocus(c) {
+		if r, err := geom.Arc3dByThreePoints(from, mid, to); err == nil {
+			return r
+		}
 	}
-	r, _ := geom.Arc3dByThreePoints(from, mid, to) // an OPEN arc (or any pre-CN4b-2 rail): the historical path, byte-identical
-	return r
+	return reverseCurveExactly(c)
+}
+
+// isCircularLocus reports whether c's point set is a circle, so reversing it by a three-point re-fit
+// reproduces the SAME locus. It unwraps both wrappers a rail can arrive in — a build-time reversal
+// (geom.ReverseCurve3) and a sub-span restriction (geom.TrimmedCurve3, which is how a canal rail is
+// registered as a chain) — because neither changes the locus, only its parameterisation.
+func isCircularLocus(c geom.Curve3) bool {
+	switch inner := geom.InnerCurve(c).(type) {
+	case geom.Arc3d, geom.Circle:
+		return true
+	case geom.TrimmedCurve3:
+		return isCircularLocus(inner.Base)
+	}
+	return false
+}
+
+// reverseCurveExactly reverses a segment's curve by re-parameterising it, never by re-deriving its shape,
+// so the reversed segment stays EXACTLY on the surface it bounds. A geom.TrimmedCurve3 reverses in its own
+// terms — Lo/Hi swapped, which its contract defines as the reversed sub-span — so a canal sub-edge keeps
+// its concrete type (and with it every consumer that dispatches on it); anything else is wrapped by
+// geom.ReverseCurve3, which unwraps a build-time reversal back to the original object.
+func reverseCurveExactly(c geom.Curve3) geom.Curve3 {
+	if t, ok := c.(geom.TrimmedCurve3); ok {
+		return geom.TrimmedCurve3{Base: t.Base, Lo: t.Hi, Hi: t.Lo}
+	}
+	return geom.ReverseCurve3(c)
 }
 
 // reverseIntRing reverses a welded-index ring with the SAME anchor convention as reverseFilletLoop

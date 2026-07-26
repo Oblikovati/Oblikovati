@@ -82,12 +82,24 @@ func pinnedBody(t *testing.T, grid, name string) *topo.Body {
 func byteIdentityPins() []fingerprintPin {
 	return []fingerprintPin{
 		{"B3", 190756.470897506602, 31274, 0x2dff54b187389df4, ""},
-		{"N7", 963883.383205630700, 31472, 0x8bc99405bb8efa01, ""},
+		// ★ RE-CAPTURED by the reverseSegmentCurve locus fix (fillet_orient.go): the shell-orientation pass
+		// used to reverse a flipped face's loop segment by RE-FITTING it through three points, which is exact
+		// only for a circle and replaced every other rail with a CIRCLE THROUGH ITS ENDPOINTS. Eight pinned
+		// bodies carried the result. Measured off-surface residual of the shipped edge, before → after:
+		// D4/D5/D9/E4 1.245 → ≤8.2e-11 (the oblique spiric run-out rail, 24.9% of r off its own torus),
+		// N7 0.1269 → 2.1e-10, N4 0.0676 → 1.7e-8 (1.4% of r off its own corner patch), F4 0.0108 → 2.0e-11,
+		// O1 0.0012 → 1.5e-8. Every changed FACE moved CLOSER to its DRAWEXE per-face oracle — D5's cap plane
+		// +0.230% → −0.0008%, its torus arm +0.141% → −0.018%, E4's arm +0.102% → −0.031% (and its 2-edge
+		// fold, previously blamed on the CDT, is GONE), N7's torus arm +0.090% → −0.007%, N4's patch mesh
+		// +0.177% → +0.052% — so each body's GROSS per-face error dropped (D5 31.20 → 14.93, E4 62.21 →
+		// 47.89) even where the whole-body NET moved, which is cancellation unwinding, not a regression.
+		// See reverse-segment-fix-report.md. Same cross-platform-risk caveat as above applies.
+		{"N7", 963883.358200046350, 31476, 0x23551593d78be76d, ""},
 		{"C2", 510191.885601512506, 121529, 0x1b3bc10e4d60136e, ""},
 		{"C6", 1559718.455869767116, 121634, 0xe1e51a060a4c1b02, ""},
-		{"D5", 3432799.391629283316, 64666, 0x7ef4f7950c6a410d, ""},
-		{"D9", 10302524.214111814275, 81106, 0x2eecacfc3279f7d6, ""},
-		{"E4", 3460484.448986444157, 59660, 0xf9912504516fdf8a, ""},
+		{"D5", 3432790.553724467754, 64630, 0x35abf63d059df830, ""},
+		{"D9", 10302515.376436131075, 81070, 0xc170a9988bca8376, ""},
+		{"E4", 3460474.503685124684, 59628, 0x8c7c7d173df421cd, ""},
 		{"C8", 64858.504095408265, 39992, 0x66606a97c42af3b2, ""},
 		// The 8 single-arm curved-RUNOUT greens (R1 fb1b0ca4 · R2a ac0249e9 · R2b 3f09eafe · R3
 		// 455b9543): B6/C9/C1 perpendicular, M7 plane-host inner-loop, C5/D8 reflex 270° major-sector,
@@ -100,7 +112,7 @@ func byteIdentityPins() []fingerprintPin {
 		{"M7", 1070772.658316682, 1556, 0xbda4ca6e02f5e3fa, ""},
 		{"C5", 1565080.392898256, 67716, 0x481e407c7b323a88, ""},
 		{"D8", 10309699.178065298, 46272, 0x47fb6c5622612116, ""},
-		{"D4", 3434287.473928707, 23974, 0x34f745da81d00eaf, ""},
+		{"D4", 3434280.252745059319, 23940, 0xa77ed002139f572e, ""},
 		{"E3", 3478295.925438132, 52086, 0x8309a22efbfc928f, ""},
 		// The convex CLOSED cone-cap rim band (Miter-A1 / J1): a full torus band welded through the
 		// host-agnostic rim rebuild (fillet_curved_closed_rim.go). Captured on this HEAD; it locks the
@@ -389,7 +401,7 @@ func byteIdentityPins() []fingerprintPin {
 		// aware host retrim (fillet_curved_retrim_ellipse.go). Was FLAT-REFUSED (curvedAdjacentError). Pinned
 		// on THIS HEAD so any later slice touching the elliptic arm / ellipse retrim fails loud if it perturbs
 		// the F4 body. Same cross-platform-risk caveat as above applies.
-		{"F4", 3104847.833035429008, 26988, 0xa242e8277723b567, ""},
+		{"F4", 3104847.813129819464, 26988, 0x703c9f4f9e96a8d3, ""},
 		// J6/J8 (simple): the CLOSED elliptic-rim canal band — the elliptic vein's other half. F4's edge was a
 		// straight RULING (straight spine → exact right circular cylinder); these are CLOSED rims on the same
 		// oblique-extrusion wall, whose rolling-ball spine is a closed NON-ANALYTIC curve, so the fillet is a
@@ -439,7 +451,7 @@ func byteIdentityPins() []fingerprintPin {
 		// Every face now reconciles individually: patch 80.875 (+0.18%), vplane 8674.80 (−0.0005%), both torus
 		// bands within 0.02%, volume 26× closer to vprops. It locks the layer so any later class builder
 		// (O1, H7, …) or executor change fails loud if it perturbs N4. Same cross-platform-risk caveat applies.
-		{"N4", 1046938.855499812000, 53496, 0xcee49118703be08, ""},
+		{"N4", 1046938.850088385167, 53918, 0xe5fe9d9df624b52f, ""},
 		// O1 (simple): the SECOND case welded by the general corner-weld layer, and the layer's own
 		// falsification test — it cost one ~75-line plan CONFIGURATION (cornerweld_class_o1.go) plus its
 		// corner SOLVE, with no new executor stage. A r50×h130 cylinder fused to a 30×50×70 box that
@@ -458,10 +470,10 @@ func byteIdentityPins() []fingerprintPin {
 		// rolling ball misses tangency to the boss wall by 0.174. Pinned so any later class builder or
 		// executor change fails loud if it perturbs O1. Same cross-platform-risk caveat applies.
 		//
-		// The two on-host canal rails are registered as o1CanalRailPieces=8 sub-segs rather than one, because
-		// the shell-orientation pass re-fits a FLIPPED face's loop segments through three points and O1's patch
-		// and lateral-arm faces are both flipped: one seg put the rails 0.092/0.292 off their own surface and
-		// the mesher folded on four edges. This pin therefore encodes the subdivided ring.
-		{"O1", 1111281.885449531721, 29868, 0xa4d154289db6858, ""},
+		// The two on-host canal rails are registered as ONE seg each. They used to be 8 sub-segs
+		// (o1CanalRailPieces) purely to keep the three-point re-fit's h³ error small; with the re-fit gone
+		// that workaround is deleted, so this pin encodes the un-subdivided ring — which is also why O1's
+		// vertex/edge count drops 30/39 → 16/25, against the oracle's 18/27.
+		{"O1", 1111281.884319459088, 29866, 0x617cc8805bca3d1, ""},
 	}
 }
