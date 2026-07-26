@@ -159,16 +159,23 @@ func offSurfaceDebtIndex() map[string]float64 {
 // regression fires while an improvement is free. Derived by an instrumented corpus-wide sweep, not from
 // any report. It was 52 entries; the far-end wall trim (fillet_farend_trim.go) retired 17 of them —
 // A5 A6 A8 B1 B5 B9 C4 C7 D3 D7 E1 E2 F2 F6 I3 M2 Q5 are now CLEAN — and shrank 5 more (N5 0.0216→0.000129,
-// V1 0.00451→0.000295, V3 0.00712→0.00199, V5 0.00145→0.000313, complex/D8 0.0461→0.037). The table must
-// SHRINK, never widen. The roots that remain, largest first (farend-runon-report.md §2):
+// V1 0.00451→0.000295, V3 0.00712→0.00199, V5 0.00145→0.000313, complex/D8 0.0461→0.037), and the elliptic
+// survivor-rim carry (fillet_survivor_rim_ellipse.go) then retired F7 — 35 → 34 entries. The table must
+// SHRINK, never widen. The roots that remain, largest first (ellipse-carry-report.md §2):
 //
-//   - IMPORTED base-face loops (J2 J4): the residual sits on a face the fillet never touched — a
-//     STEP-imported sphere/torus face whose loop already carried an off-surface segment before the fillet
-//     ran. Not a fillet defect; measured here so it cannot hide.
-//   - NON-Arc3d curved rim carry (F7, complex/D8, complex/F2): the far-end trim now lands the band's
-//     terminal section exactly on the wall, but the wall's own retained rim is re-derived only when its
-//     parent curve is a geom.Arc3d — an ELLIPSE rim (F7's elliptic cylinder) or a wall whose stop face
-//     endFaceAt picked at a valence>3 vertex still ships a straight chord across it.
+//   - CHORDED SEAM MERIDIAN on the rim-fillet host rebuild (J2 J4). Previously recorded here as an
+//     "imported base-face loop the fillet never touched"; that attribution is FALSIFIED — both INPUT
+//     bodies measure clean (J2 5.4e-13, J4 1.6e-13 absolute, i.e. 5.8e-15 / 2.2e-15 relative), so the
+//     chord is fillet-created. J2's shipped hemisphere keeps its Arc3d SEAM meridian's two vertices but
+//     ships the edge between them as a 90.38-long geom.LineSegment, 28.44 off the sphere (J4: 61.24 long,
+//     10.43 off its torus). The parent IS a geom.Arc3d, so this is NOT the non-Arc3d carry above — it is
+//     the rim-fillet host rebuild (parent `rimfillet:torus#0`), which does not reach transformLoop's
+//     carried-arc passes at all. Now the largest fillet-owned off-surface root in the corpus.
+//   - WRONG STOP FACE at a valence>3 vertex (complex/D8): endFaceAt picks the first face at the terminal
+//     vertex that is neither A nor B, so the far-end trim lands the section on a plausible-but-wrong wall.
+//     (F7's 0.29 entry, the ELLIPSE-rim chord, is retired: the elliptic survivor-rim carry
+//     — fillet_survivor_rim_ellipse.go — now re-derives that rim from the parent's own eccentric angles,
+//     taking F7's worst residual 89.4426 → 3.4e-14 and its per-face gross error vs DRAWEXE 40793 → 2.8.)
 //   - SPREAD-FAN / oblique-plane chords (P8 P9 V8 V9 V1 V3 V5 X9 K7 L1 L7 N5): a run-out spread cap is
 //     tiled as a chord fan, so each chord sits a sagitta off the curved wall it spans.
 //   - CANAL / BSpline patch rails (C2 C6 C8 S1 S3 S4 S6 S7 S9 T1 T3 T4 T6 T7 U3 U4 X3 R9): the rail is
@@ -176,7 +183,7 @@ func offSurfaceDebtIndex() map[string]float64 {
 //     agree only to the fit's own residual (reverse-segment-fix-report.md §6 concern 2).
 func knownOffSurfaceDebt() []offSurfaceDebtEntry {
 	return []offSurfaceDebtEntry{
-		{"J2", "simple", 0.334}, {"F7", "simple", 0.29}, {"J4", "simple", 0.165},
+		{"J2", "simple", 0.334}, {"J4", "simple", 0.165},
 		{"F2", "complex", 0.0616}, {"D8", "complex", 0.037}, {"C2", "simple", 0.0192},
 		{"V9", "simple", 0.017}, {"P9", "simple", 0.017}, {"X9", "simple", 0.00284},
 		{"T7", "simple", 0.00216}, {"V3", "simple", 0.00199}, {"S9", "simple", 0.00199},

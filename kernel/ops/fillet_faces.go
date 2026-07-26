@@ -352,8 +352,8 @@ func orientedInserts(pts []math.Point3, reversed bool) []math.Point3 {
 func addCornerRound(fl *filletLoop, c corner, tIn, tOut math.Point3, outgoing geom.Curve3) bool {
 	if len(c.chords) == 0 {
 		fl.add(tIn, cornerSectionCurve(c, tIn, tOut))
-		if arc, curved := outgoing.(geom.Arc3d); curved {
-			fl.add(tOut, arc) // carry the curved wall's parent rim arc; trimCarriedRimArcs cuts it to the retained span
+		if rim, curved := carriableRim(outgoing); curved {
+			fl.add(tOut, rim) // carry the curved wall's parent rim; trimCarriedRimArcs cuts it to the retained span
 			return true
 		}
 		fl.add(tOut, nil)

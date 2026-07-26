@@ -185,17 +185,25 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 // parametric extreme, shipping +17.67% body area — it now measures −0.0022%, with its per-face gross error
 // vs DRAWEXE 2204.07 → 0.25. D7's −45.3% "host sphere-zone tessellation defect" turned out to be the
 // carried-arc overshoot, not the zone mesher: its body area goes −30.27% → −0.0795% and its per-face gross
-// error 83508.25 → 217.95. A mismatch means
+// error 83508.25 → 217.95.
+// Carrying an ELLIPTIC survivor rim through the corner/tangent-point substitution instead of chording it
+// (fillet_survivor_rim_ellipse.go — the circle-only subArcOnParent/arcFrac/projectOntoArcCircle got an
+// eccentric-angle sibling) then GREENED F6, restoring 109→110 simple / 115→116 all-grid, SkipQuarantine
+// unchanged at 1. F6's top cap rim had been shipping as a straight chord, tiling its top plane at 72422.5
+// against DRAWEXE's 31060.7 and its elliptic wall at 23469.8 against 39942.6 (+5.6762% body area, and a
+// volume 45% low); it now measures −0.0011% body area with every face inside 0.006% of DRAWEXE. The same
+// fix took already-green F7 from the corpus's WORST per-face gross error, 40793 (its 39896.5 elliptic wall
+// meshing 60210.7, its 27897.8 top plane meshing 7419) to 2.8, body area −0.1234% → −0.0006%. A mismatch means
 // either a false green slipped through or a case was over/under-quarantined — see harden-green-gate-brief.md's
 // "STOP and report" instruction.
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 109 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 109 (far-end wall trim greened C7 + D7)", simpleGreen)
+	if simpleGreen != 110 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 110 (elliptic survivor-rim carry greened F6)", simpleGreen)
 	}
-	if allGridGreen != 115 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 115 (far-end wall trim greened C7 + D7 + complex/D8)", allGridGreen)
+	if allGridGreen != 116 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 116 (elliptic survivor-rim carry greened F6)", allGridGreen)
 	}
 	if skipQuarantine != 1 {
 		t.Errorf("SkipQuarantine = %d, want 1 (H6 only, #2007 U4 freed by U4-5)", skipQuarantine)

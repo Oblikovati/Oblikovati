@@ -9,11 +9,12 @@ import (
 	"oblikovati.org/kernel/topo"
 )
 
-// edgeSpanTol is the budget for "an edge's curve runs between its own bounding vertices", relative to the
-// result body's bounding diagonal (scale-invariant, ADR-0042). A correctly built edge holds this to
-// 1e-16..1e-14 relative; the defect it catches is a carried rim arc sweeping PAST the loop's vertex, which
-// measures 0.023–0.19 — twelve decades out. 1e-9 therefore separates construction from arithmetic with no
-// tolerance to tune.
+// edgeSpanTol is the budget for "an edge's curve runs FROM its start vertex TO its end vertex", relative to
+// the result body's bounding diagonal (scale-invariant, ADR-0042). A correctly built edge holds this to
+// 1e-16..1e-14 relative. It catches two distinct construction defects: a carried rim arc sweeping PAST the
+// loop's vertex (0.023–0.19), and a carried rim whose curve runs BACKWARDS with respect to its vertices
+// (the gap is then the chord between the curve's own endpoints — F6's whole 300-long cap rim). 1e-9
+// therefore separates construction from arithmetic with no tolerance to tune.
 const edgeSpanTol = 1e-9
 
 // TestEveryEdgeCurveSpansItsVertices is the corpus-wide invariant that an edge's GEOMETRY agrees with its
@@ -50,13 +51,14 @@ func assertEdgeCurvesSpanTheirVertices(t *testing.T, r Record, body *topo.Body, 
 	}
 	worst, where := worstEdgeSpanGap(body)
 	if rel := worst / boundingDiag(body); rel > budget {
-		t.Errorf("%s/%s: edge curve overshoots its own vertices by %.6g (rel %.4g of the %.4g diagonal, budget %.4g) — %s",
+		t.Errorf("%s/%s: edge curve disagrees with its own vertices by %.6g (rel %.4g of the %.4g diagonal, budget %.4g) — %s",
 			r.Grid, r.Case, worst, rel, boundingDiag(body), budget, where)
 	}
 }
 
 // worstEdgeSpanGap returns the largest distance from a curve's domain endpoint to the vertex that bounds it,
-// over every DISTINCT edge of the body, plus a description of the offender.
+// over every DISTINCT edge of the body, plus a description of the offender. It is the same measure whether
+// the curve overshoots its vertex or runs backwards between the two.
 func worstEdgeSpanGap(b *topo.Body) (float64, string) {
 	worst, where := 0.0, "(none)"
 	seen := map[uint64]bool{}
@@ -107,18 +109,23 @@ func edgeSpanDebtIndex() map[string]float64 {
 }
 
 // knownEdgeSpanDebt is the FULL remaining population of cases whose shipped body still carries an edge whose
-// curve overshoots its bounding vertices, each capped at 1.1× its measured value. It was 17 cases before
-// alignCarriedArcsToSegments; five remain, and each is a curve family that pass does not re-trim:
+// curve disagrees with its bounding vertices, each capped at 1.1× its measured value. It was 17 cases before
+// alignCarriedArcsToSegments and 5 after; the ELLIPTIC survivor-rim carry
+// (fillet_survivor_rim_ellipse.go) retires F6 outright and shrinks complex/F2 6× — 5 → 4 entries:
 //
-//   - F6 (0.885) and complex/F2 (0.490) carry a geom.EllipticalArc, not a geom.Arc3d — an ellipse has no
-//     subArcOnParent equivalent, so its retained span cannot be re-derived from the parent's parameters.
+//   - complex/F2 (0.490 → 0.0809): its FOUR geom.EllipticalArc cap rims were each carried whole and
+//     backwards (the gap equalled the chord between the curve's own endpoints exactly: 86.3707, 14.09,
+//     10.91), because the parent's retained span could only be re-derived for a geom.Arc3d. All four are
+//     now rebuilt from the parent's own eccentric angles, in the LOOP's traversal order. What remains is a
+//     geom.BSplineCurve rail with the same disagreement (14.2602) — a different curve family, and one with
+//     no closed-form sub-span, so it needs the fitted-rail re-parameterisation, not this fix.
 //   - M4 (0.100), N9 (0.049) and N3 (0.031) carry an Arc3d on a loop the specialized obstacle / concave-arm
 //     rebuild paths assemble, which never reach transformLoop's carried-arc pass.
 //
-// The table must SHRINK, never widen (farend-runon-report.md concern 1).
+// The table must SHRINK, never widen (ellipse-carry-report.md §7).
 func knownEdgeSpanDebt() []offSurfaceDebtEntry {
 	return []offSurfaceDebtEntry{
-		{"F6", "simple", 0.974}, {"F2", "complex", 0.539}, {"M4", "simple", 0.11},
+		{"F2", "complex", 0.089}, {"M4", "simple", 0.11},
 		{"N9", "simple", 0.0542}, {"N3", "simple", 0.034},
 	}
 }

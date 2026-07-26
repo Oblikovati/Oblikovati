@@ -36,12 +36,28 @@ func addEndCorner(fl *filletLoop, f *topo.Face, ends map[uint64]corner, uses []*
 // next loop vertex. The pre-fix code hard-coded nil here, chording that outer arc to a straight line and
 // slicing ~24000 (−63%) off the sector, which then folded the adjacent cone (conformCylConeFaces).
 func addSubstVertex(fl *filletLoop, tan math.Point3, u *topo.EdgeUse) int {
-	if arc, curved := survivorCurve(u).(geom.Arc3d); curved {
-		fl.add(tan, arc) // carry the curved survivor rim; trimCarriedSubArcs cuts it to the retained span
+	if rim, curved := carriableRim(survivorCurve(u)); curved {
+		fl.add(tan, rim) // carry the curved survivor rim; trimCarriedSubArcs cuts it to the retained span
 		return len(fl.pts) - 1
 	}
 	fl.add(tan, nil) // straight survivor leaving edge: nil, byte-identical to the base planar path
 	return -1
+}
+
+// carriableRim reports whether a survivor rim curve is one the retained-span algebra can re-derive from
+// the parent's OWN parameters — a circular geom.Arc3d (subArcOnParent) or an elliptic geom.EllipticalArc
+// (retainedEllipticRimCurve, fillet_survivor_rim_ellipse.go). Every other kind (straight, closed conic
+// seam, B-spline) returns false and keeps the base straight chord, byte-identical to the pre-carry path.
+// This is the ONE place the carriable set is named, so the two carry sites (addSubstVertex and
+// addCornerRound) and the two trim passes cannot drift apart.
+func carriableRim(c geom.Curve3) (geom.Curve3, bool) {
+	switch rim := c.(type) {
+	case geom.Arc3d:
+		return rim, true
+	case geom.EllipticalArc:
+		return rim, true
+	}
+	return nil, false
 }
 
 // subArcAreaFrac is the minimum fraction of the model's characteristic area (scale², scale = the body
@@ -73,18 +89,25 @@ const subArcAreaFrac = 0.01
 func trimCarriedSubArcs(fl *filletLoop, idxs []int, modelScale float64) {
 	n := len(fl.pts)
 	for _, i := range idxs {
-		parent, ok := fl.curves[i].(geom.Arc3d)
-		if !ok {
-			continue // defensive: only a carried Arc3d parent is trimmable (never hit — addSubstVertex stamps only arcs)
-		}
 		p0, p1 := fl.pts[i], fl.pts[(i+1)%n]
-		from, to := projectOntoArcCircle(parent, p0), projectOntoArcCircle(parent, p1)
-		if !rimSpanIsExact(parent, p0, p1) && chordErasesMinorSegment(parent, from, to, modelScale) {
-			fl.curves[i] = nil // faithful chord (or carry disabled, scale 0): keep the base loop byte-identical
-			continue
+		switch parent := fl.curves[i].(type) {
+		case geom.Arc3d:
+			fl.curves[i] = retainedSubArc(parent, p0, p1, modelScale)
+		case geom.EllipticalArc:
+			fl.curves[i] = retainedEllipticRimCurve(parent, p0, p1)
 		}
-		fl.curves[i] = subArcOnParent(parent, from, to)
 	}
+}
+
+// retainedSubArc is the CIRCULAR sub-span to carry between a subs-branch segment's own endpoints, or nil
+// (the base straight chord) when chording it erases only a minor circular segment. Extracted verbatim
+// from trimCarriedSubArcs when the elliptic arm was added, so the circular path stays byte-identical.
+func retainedSubArc(parent geom.Arc3d, p0, p1 math.Point3, modelScale float64) geom.Curve3 {
+	from, to := projectOntoArcCircle(parent, p0), projectOntoArcCircle(parent, p1)
+	if !rimSpanIsExact(parent, p0, p1) && chordErasesMinorSegment(parent, from, to, modelScale) {
+		return nil // faithful chord (or carry disabled, scale 0): keep the base loop byte-identical
+	}
+	return subArcOnParent(parent, from, to)
 }
 
 // chordErasesMinorSegment reports whether chording the retained sub-arc from→to erases only a MINOR circular
@@ -150,17 +173,39 @@ func trimCarriedArcs(fl *filletLoop, rimCarries, subCarries []int, subArcScale f
 func alignCarriedArcsToSegments(fl *filletLoop) {
 	n := len(fl.pts)
 	for i := range fl.curves {
-		arc, ok := fl.curves[i].(geom.Arc3d)
-		if !ok {
-			continue
-		}
 		p0, p1 := fl.pts[i], fl.pts[(i+1)%n]
-		if arcSpansItsSegment(arc, p0, p1) || p0.DistanceTo(p1) <= 1e-9*arc.Radius {
-			continue
+		switch parent := fl.curves[i].(type) {
+		case geom.Arc3d:
+			alignCarriedArc(fl, i, parent, p0, p1)
+		case geom.EllipticalArc:
+			alignCarriedEllipse(fl, i, parent, p0, p1)
 		}
-		if sub := subArcOnParent(arc, projectOntoArcCircle(arc, p0), projectOntoArcCircle(arc, p1)); sub != nil {
-			fl.curves[i] = sub
-		}
+	}
+}
+
+// alignCarriedArc re-trims one carried CIRCULAR rim to its segment's own span (extracted from
+// alignCarriedArcsToSegments verbatim when the elliptic arm was added, so the circular path is
+// byte-identical). A closed seam (both points on one vertex) is skipped — its full circle IS the boundary.
+func alignCarriedArc(fl *filletLoop, i int, arc geom.Arc3d, p0, p1 math.Point3) {
+	if arcSpansItsSegment(arc, p0, p1) || p0.DistanceTo(p1) <= 1e-9*arc.Radius {
+		return
+	}
+	if sub := subArcOnParent(arc, projectOntoArcCircle(arc, p0), projectOntoArcCircle(arc, p1)); sub != nil {
+		fl.curves[i] = sub
+	}
+}
+
+// alignCarriedEllipse is the same consistency repair for a carried ELLIPTIC rim: the default
+// (untouched-survivor) branch carries the parent whole, which overshoots the loop's own vertex once the
+// segment's other end has been pulled back to a fillet tangent point. Only an on-parent span is
+// re-derivable (retainedEllipticRimCurve), so an inexact one keeps the parent rather than degrading to a
+// chord — the parent is at worst too long, a chord is off the surface entirely.
+func alignCarriedEllipse(fl *filletLoop, i int, ea geom.EllipticalArc, p0, p1 math.Point3) {
+	if ellipseSpansItsSegment(ea, p0, p1) || p0.DistanceTo(p1) <= 1e-9*ea.MajorRadius {
+		return
+	}
+	if sub := retainedEllipticRimCurve(ea, p0, p1); sub != nil {
+		fl.curves[i] = sub
 	}
 }
 
@@ -184,13 +229,14 @@ func arcSpansItsSegment(arc geom.Arc3d, p0, p1 math.Point3) bool {
 func trimCarriedRimArcs(fl *filletLoop, idxs []int) {
 	n := len(fl.pts)
 	for _, i := range idxs {
-		parent, ok := fl.curves[i].(geom.Arc3d)
-		if !ok {
-			continue // defensive: only a carried Arc3d parent is trimmable (never hit — addCornerRound stamps only arcs)
-		}
 		p0, p1 := fl.pts[i], fl.pts[(i+1)%n]
-		from, to := projectOntoArcCircle(parent, p0), projectOntoArcCircle(parent, p1)
-		fl.curves[i] = retainedRimCurve(parent, from, to, rimSpanIsExact(parent, p0, p1))
+		switch parent := fl.curves[i].(type) {
+		case geom.Arc3d:
+			from, to := projectOntoArcCircle(parent, p0), projectOntoArcCircle(parent, p1)
+			fl.curves[i] = retainedRimCurve(parent, from, to, rimSpanIsExact(parent, p0, p1))
+		case geom.EllipticalArc:
+			fl.curves[i] = retainedEllipticRimCurve(parent, p0, p1)
+		}
 	}
 }
 
