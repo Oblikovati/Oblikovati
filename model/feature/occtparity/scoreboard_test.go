@@ -158,18 +158,28 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 // continuation. Ours: watertight 14-face solid, area 64287.18 vs OCCT 64287.2 (−0.000035%), volume 1046938.9
 // vs DRAWEXE vprops 1.04694e6 (−0.000109%) — and reconciled PER FACE, since the corner fill became the true
 // rolling-ball canal (the earlier +0.008% was two 27%/+29.7 face errors cancelling). This restored 103→104
-// simple / 108→109 all-grid, SkipQuarantine unchanged at 1. (The mixed-radius TRIHEDRAL
+// simple / 108→109 all-grid, SkipQuarantine unchanged at 1. Slice 2 of the same layer then GREENED O1 — the
+// layer's own falsification test, and it passed as a pure CONFIGURATION (cornerweld_class_o1.go): a boss
+// cylinder fused to a box, filleted r=5 on three edges meeting at one trihedral vertex, whose two CONCAVE
+// arms (a cylinder arm and a cove torus arm, roll-sense regime R2 → R+r) terminate at the corner while the
+// CONVEX planar band runs past it, so the corner patch is the rolling-ball canal of a ball riding the boss
+// CYLINDER and rolling on the band's tube (the cylinder-on-cylinder sibling of N4's plane-on-torus frame).
+// Ours: watertight 12-face solid, area 65101.43 vs OCCT 65104.9 (−0.0053%), volume 1111282.0 vs DRAWEXE
+// vprops 1.11166e6 (−0.034%), reconciled per face — eight of twelve faces to ≤2.5e-5 relative, the three
+// around the corner carrying OCCT's OWN patch approximation (its interior sits 1.16% of r off the exact
+// envelope, and its implied rolling ball misses tangency to the boss wall by 0.174). This restored 104→105
+// simple / 109→110 all-grid, SkipQuarantine unchanged at 1. (The mixed-radius TRIHEDRAL
 // corner A4, r10/r5/r5, needs a torus corner patch — declined for now, a tracked follow-up.) A mismatch means
 // either a false green slipped through or a case was over/under-quarantined — see harden-green-gate-brief.md's
 // "STOP and report" instruction.
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 104 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 104 (general corner-weld layer + N4)", simpleGreen)
+	if simpleGreen != 105 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 105 (general corner-weld layer + N4 + O1)", simpleGreen)
 	}
-	if allGridGreen != 109 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 109 (general corner-weld layer + N4)", allGridGreen)
+	if allGridGreen != 110 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 110 (general corner-weld layer + N4 + O1)", allGridGreen)
 	}
 	if skipQuarantine != 1 {
 		t.Errorf("SkipQuarantine = %d, want 1 (H6 only, #2007 U4 freed by U4-5)", skipQuarantine)

@@ -125,5 +125,5 @@ func cornerWeldLayerBody(body *topo.Body, arms []edgeFillet, res Resolution) (*t
 // cornerPlanBuilders is the ordered ladder. Each recogniser must be DISJOINT from every prior class
 // (asserted by the class-disjointness tests), so order never changes a verdict.
 func cornerPlanBuilders() []cornerPlanBuilder {
-	return []cornerPlanBuilder{n4CornerPlanBuilder{}}
+	return []cornerPlanBuilder{n4CornerPlanBuilder{}, o1CornerPlanBuilder{}}
 }

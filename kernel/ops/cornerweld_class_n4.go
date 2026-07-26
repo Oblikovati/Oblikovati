@@ -3,7 +3,6 @@
 package ops
 
 import (
-	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -44,58 +43,34 @@ func (n4CornerPlanBuilder) Plan(_ *topo.Body, arms []edgeFillet, res Resolution)
 	if !ok {
 		return cornerWeldPlan{}, true, "n4 corner: the two concave arms share no vertical plane host"
 	}
-	return n4Plan(roles, corner, vFace, r, res), true, ""
+	vertex, ok := trihedralArmVertex(roles.ccyl, roles.torus, roles.band, res.Weld()*r)
+	if !ok {
+		return cornerWeldPlan{}, true, "n4 corner: the three arm edges do not meet at one vertex"
+	}
+	return n4Plan(roles, corner, vFace, vertex, r), true, ""
 }
 
-// n4Plan assembles the declarative plan: one ledger holding the four patch-ring rails, three arm specs, and
-// the one host mid rail. Registering the ring ONCE is what makes the patch and its three welded neighbours
-// read the identical curve objects (the property n4PatchFace used to maintain by hand).
-func n4Plan(roles n4MixedArms, corner n4Corner, vFace *topo.Face, r float64, res Resolution) cornerWeldPlan {
+// n4Plan assembles the declarative plan: one ledger holding the four patch-ring rails (registered by the
+// shared cornerCanalRailRing, so the patch and its three welded neighbours read the identical curve objects),
+// three arm specs, and the one host mid rail. Every line below is a role DECLARATION — there is no N4-specific
+// assembly left in it.
+func n4Plan(roles n4MixedArms, corner n4Corner, vFace *topo.Face, vertex math.Point3, r float64) cornerWeldPlan {
 	led := newCornerWeldLedger()
-	ring := n4PatchRing(led, corner)
+	ring := cornerCanalRailRing(led, "n4", corner.pts, corner.railBC, corner.railDA, 1)
 	return cornerWeldPlan{
 		ledger: led,
 		patch:  cornerPatchSpec{surface: corner.patch.Surface, sides: ring.sides},
 		arms: []cornerArmSpec{
-			n4TerminatingArm("ccyl", roles.ccyl, corner.pts.arcCD, ring.arcCD),
-			n4TerminatingArm("band", roles.band, corner.pts.arcAB, ring.arcAB),
+			// The two CONCAVE cylinder arms terminate at the corner and their caps GROW outward to the
+			// contact rail (a reentrant fillet ADDS material).
+			concaveTerminatingArmSpec("ccyl", roles.ccyl, corner.pts.arcCD, ring.arcCD),
+			concaveTerminatingArmSpec("band", roles.band, corner.pts.arcAB, ring.arcAB),
 			n4LateralTorusArm(roles.torus, ring.railBC),
 		},
-		mids:     []cornerHostMid{{face: vFace, rails: []railID{ring.railDA}}},
-		vertex:   n4CornerVertex(roles, res.Weld()*r),
+		mids:     []cornerHostMid{{face: vFace, rails: ring.railDA}},
+		vertex:   vertex,
 		radius:   r,
-		filleted: n4FilletedEdges(roles),
-	}
-}
-
-// n4PatchRailRing is the four registered patch-boundary handles plus the ordered ring the patch reads.
-type n4PatchRailRing struct {
-	arcAB, railBC, arcCD, railDA railID
-	sides                        []railID
-}
-
-// n4PatchRing registers the canal patch's four sides — arc A→B (band cross-section), rail B→C (the ball's
-// contact locus on the torus arm), arc C→D (ccyl cross-section), rail D→A (its contact locus on the
-// vertical plane) — each as a SINGLE curve-seg, never a sampled polyline (a sampled side would crack
-// against the arm faces' single-seg curves). The two rails are the canal's own boundary isoparms, whose
-// chord-length knots make Domain() the only safe source for the mid witness.
-func n4PatchRing(led *cornerWeldLedger, c n4Corner) n4PatchRailRing {
-	p := c.pts
-	ab := led.add("n4/arcAB", endSeg{from: p.a, to: p.b, curve: p.arcAB, mid: p.arcAB.PointAt(0.5), arc: true})
-	bc := led.add("n4/railBC", endSeg{from: p.b, to: p.c, curve: c.railBC, mid: curveMidPoint(c.railBC)})
-	cd := led.add("n4/arcCD", endSeg{from: p.c, to: p.d, curve: p.arcCD, mid: p.arcCD.PointAt(0.5), arc: true})
-	da := led.add("n4/railDA", endSeg{from: p.d, to: p.a, curve: c.railDA, mid: curveMidPoint(c.railDA)})
-	return n4PatchRailRing{arcAB: ab, railBC: bc, arcCD: cd, railDA: da, sides: []railID{ab, bc, cd, da}}
-}
-
-// n4TerminatingArm declares one of the two CONCAVE cylinder arms: it ends at the corner on its radius-r
-// cross-section arc (A1), runs out onto a plane cap at its far vertex (B1/B2), and its hosts GROW to its
-// contact rails (the reentrant fillet ADDS material).
-func n4TerminatingArm(role string, ef edgeFillet, arc geom.Arc3d, near railID) cornerArmSpec {
-	return cornerArmSpec{
-		role: role, ef: ef, surface: ef.armSurface,
-		nearKind: armTerminatesAtArc, nearArc: arc, near: []railID{near},
-		far: farCappedVertex, sense: growOutward,
+		filleted: filletedArmEdgeIDs(roles.ccyl, roles.torus, roles.band),
 	}
 }
 
@@ -110,28 +85,6 @@ func n4TerminatingArm(role string, ef edgeFillet, arc geom.Arc3d, near railID) c
 //     carries the band over the whole 270° as two faces and recedes both wall faces.
 //
 // Its far cap RECEDES around the runout trim (a convex arm bites material away).
-func n4LateralTorusArm(ef edgeFillet, near railID) cornerArmSpec {
-	return cornerArmSpec{
-		role: "torus", ef: ef, surface: ef.armSurface,
-		nearKind: armPassesLaterally, near: []railID{near},
-		far: farRimContinuation, sense: biteInward,
-	}
-}
-
-// n4FilletedEdges is the picked-edge id set at this corner — armFarRunout's fillet-fillet interference guard.
-func n4FilletedEdges(roles n4MixedArms) map[uint64]bool {
-	return map[uint64]bool{
-		roles.ccyl.edge.ID(): true, roles.torus.edge.ID(): true, roles.band.edge.ID(): true,
-	}
-}
-
-// n4CornerVertex returns the shared trihedral vertex point the three arm edges meet at.
-func n4CornerVertex(roles n4MixedArms, tol float64) math.Point3 {
-	e := roles.ccyl.edge
-	for _, p := range [2]math.Point3{e.StartVertex().Point(), e.EndVertex().Point()} {
-		if edgeHasEndpoint(roles.torus.edge, p, tol) && edgeHasEndpoint(roles.band.edge, p, tol) {
-			return p
-		}
-	}
-	return e.StartVertex().Point()
+func n4LateralTorusArm(ef edgeFillet, near []railID) cornerArmSpec {
+	return lateralArmSpec("torus", ef, near, farRimContinuation, biteInward)
 }

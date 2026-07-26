@@ -36,7 +36,7 @@ func n4TestArms(t *testing.T) []edgeFillet {
 // n4TestCornerPts solves the N4 corner's four points, two terminating-arm arcs and two arm ball centres
 // from the exact arm/host surfaces n4TestArms carries (boss = the r=20 wall both curved arms share). Shared
 // by every N4 unit test that needs the corner's own derived INPUTS rather than the assembled patch.
-func n4TestCornerPts(t *testing.T, arms n4MixedArms) n4CornerPts {
+func n4TestCornerPts(t *testing.T, arms n4MixedArms) cornerCanalPts {
 	t.Helper()
 	pts, ok := n4CornerPoints(
 		mustCylinder(t, math.P3(115.84559306791, 81.115957534528, 0), math.V3(0, 0, 1), 20),
@@ -134,8 +134,8 @@ func assertOnSurface(t *testing.T, tag string, surf geom.Surface, c geom.Curve3,
 // says it is: every station centre sits exactly r from the vertical plane and exactly 2r from the lateral
 // torus arm's spine circle (the ball rolling on that tube), and both host feet land at ball distance r.
 //
-// It covers the two PINNED end stations as well as the 63 derived ones. n4CanalSurface replaces stations 0
-// and N−1 with the corner points the terminating arms own (pts.ballBand / pts.ballCcyl with feet a,b / d,c),
+// It covers the two PINNED end stations as well as the 63 derived ones. cornerCanalSurface replaces stations 0
+// and N−1 with the corner points the terminating arms own (pts.ballAB / pts.ballCD with feet a,b / d,c),
 // so those two — the only stations whose cross-sections become the patch's welded v=0 / v=1 boundaries —
 // would otherwise be the two this test never reaches.
 func TestN4BallPathRollsOnPlaneAndTorusArm(t *testing.T) {
@@ -143,20 +143,20 @@ func TestN4BallPathRollsOnPlaneAndTorusArm(t *testing.T) {
 	torus := arms.torus.armSurface.(geom.Torus)
 	vplane := arms.band.a.Geometry().(geom.Plane)
 	pts := n4TestCornerPts(t, arms)
-	path, ok := n4CornerBallPath(torus, vplane, pts.ballBand, pts.ballCcyl, 1e-9)
+	path, ok := n4CornerBallPath(torus, vplane, pts.ballAB, pts.ballCD, 1e-9)
 	if !ok {
 		t.Fatal("n4CornerBallPath declined the N4 corner")
 	}
 	for j, m := range path.centers {
-		assertBallCentreRollsOnPlaneAndTube(t, fmt.Sprintf("derived station %d", j), torus, vplane, m, path.feetTorus[j])
+		assertBallCentreRollsOnPlaneAndTube(t, fmt.Sprintf("derived station %d", j), torus, vplane, m, path.feetLateral[j])
 	}
-	assertBallCentreRollsOnPlaneAndTube(t, "PINNED band-arm end station", torus, vplane, pts.ballBand, pts.b)
-	assertBallCentreRollsOnPlaneAndTube(t, "PINNED ccyl-arm end station", torus, vplane, pts.ballCcyl, pts.c)
+	assertBallCentreRollsOnPlaneAndTube(t, "PINNED band-arm end station", torus, vplane, pts.ballAB, pts.b)
+	assertBallCentreRollsOnPlaneAndTube(t, "PINNED ccyl-arm end station", torus, vplane, pts.ballCD, pts.c)
 	// The pinned stations' VPLANE feet are corner points A and D, the patch's two welded plane-side corners.
 	for _, w := range []struct {
 		tag          string
 		centre, foot math.Point3
-	}{{"A on the band-arm station", pts.ballBand, pts.a}, {"D on the ccyl-arm station", pts.ballCcyl, pts.d}} {
+	}{{"A on the band-arm station", pts.ballAB, pts.a}, {"D on the ccyl-arm station", pts.ballCD, pts.d}} {
 		if d := stdmath.Abs(float64(w.foot.DistanceTo(w.centre)) - 5); d > 1e-9 {
 			t.Errorf("PINNED vplane foot %s is %.2e off ball radius 5", w.tag, d)
 		}
@@ -199,10 +199,10 @@ func n4TestCanalCert(t *testing.T, mutate func(*RailLoop)) (Certificate, Resolut
 	}}
 	mutate(&loop)
 	hosts := []geom.Surface{corner.vplane, arms.torus.armSurface}
-	return certifyN4CanalPatch(corner.patch.Surface.(geom.BSplineSurface), loop, hosts, res), res
+	return certifyCornerCanalPatch(corner.patch.Surface.(geom.BSplineSurface), loop, hosts, res), res
 }
 
-// TestN4CertificateMeasuresGeometryItDoesNotOwn falsifies certifyN4CanalPatch's G0 measure, which is the
+// TestN4CertificateMeasuresGeometryItDoesNotOwn falsifies certifyCornerCanalPatch's G0 measure, which is the
 // only way to know it is a guard rather than a claim. MaxDev used to be maxLoopSurfaceDev of the patch's OWN
 // boundary isoparms — the surface measured against itself, reading ~4.4e-13 whatever the surface is — so a
 // regression in the end-pinning or in LoftCanalStations' parametrisation could lift the boundary clean off

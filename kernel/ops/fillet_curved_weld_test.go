@@ -317,20 +317,48 @@ func reversedWinding(m *Mesh) *Mesh {
 // relErrVol is the relative error |got−want|/|want| used by the volume gate (want ≠ 0 here).
 func relErrVol(got, want float64) float64 { return stdmath.Abs(got-want) / stdmath.Abs(want) }
 
-// TestFilletEdges_O1DeclinesCleanly pins the do-no-harm floor for O1, an r=5 concave corner still in
-// the ADR-0050 backlog. O1 carries a concave/oblique picked edge the curved-arm classifier rejects
-// ("edge borders a curved cylinder face not yet supported"), so the WHOLE op must honest-reject to the
-// clean floor error — never panic, never a partial or wrong-sign solid. It is NOT loosened to force a
-// green (its Gate-1 concave-corner fix is a later corner-blend-weld piece).
+// TestFilletEdges_O1WeldsIntoASolid replaces the clean-DECLINE pin this case used to carry. O1 was in the
+// ADR-0050 backlog as a Gate-1 concave-corner decliner ("edge borders a curved cylinder face not yet
+// supported"), and the pin existed to prove the whole op reached the do-no-harm floor rather than shipping a
+// partial solid. Slice 2 of the general corner-weld layer WELDS it (cornerweld_class_o1.go): a boss cylinder
+// fused to a protruding box, filleted r=5 on the three edges at (80,10,90) — two CONCAVE arms terminating at
+// the corner plus one CONVEX planar band running past it, closed by the rolling-ball canal of a ball riding
+// the boss wall at R+r and rolling on the band's tube at 2r.
 //
-// N1 USED to be pinned here as the sibling decliner: its wall is a CONCAVE bore (radius 20, material
+// So the assertion inverts: O1 must now produce a solid, and the per-case gate in
+// model/feature/occtparity/o1_cornerweld_layer_test.go is what pins its 12 faces, its 65104.9 area and its
+// twelve per-face reconciliations against DRAWEXE. Kept here (rather than deleted) because the decline path
+// this case used to exercise is still the floor for every corner the ladder does NOT recognise, and a
+// regression that re-declines O1 should read as "the O1 builder stopped recognising its class", not as a
+// silently-removed test.
+//
+// TestFilletEdges_M5DeclinesCleanly keeps that floor pinned on a case the ladder still does NOT recognise:
+// M5 is the concave-BORE (roll-sense regime R3, R−r) trihedral corner of the same Gate-1 cluster, tracked for
+// a later slice. It must honest-reject — never panic, never a partial or wrong-sign solid — and it doubles as
+// the guard that adding the O1 builder did not make a DIFFERENT concave corner accept wrongly (the
+// class-disjointness matrix in fillet_curved_mixed_o1_test.go proves that on role signatures; this proves it
+// end to end on a real body).
+func TestFilletEdges_M5DeclinesCleanly(t *testing.T) {
+	assertCurvedCornerDeclinesCleanly(t, "simple/M5", 5)
+}
+
+// N1 USED to be pinned alongside it as the sibling decliner: its wall is a CONCAVE bore (radius 20, material
 // OUTSIDE) and the pre-M5 convex-external-only arm builder / planar corner solver placed the corner at
 // R−r (INSIDE the bore, wrong material side), so the station gate correctly declined. The
 // corner-blend-weld R+r bore-wall foundation (Pieces 1+2) now solves N1 at R+r and welds it into the
 // watertight 11-face solid the DRAWEXE oracle expects (area 58091.9), so N1 moved to the green gate
 // (TestOCCTBlendSimple/N1 + the N1 fingerprint pin); it is no longer a clean-decline case.
-func TestFilletEdges_O1DeclinesCleanly(t *testing.T) {
-	assertCurvedCornerDeclinesCleanly(t, "simple/O1", 5)
+func TestFilletEdges_O1WeldsIntoASolid(t *testing.T) {
+	body, err := filletedCorpusEdges(t, "simple/O1", 5)
+	if err != nil {
+		t.Fatalf("simple/O1: FilletEdges declined (%v) — the O1 class builder no longer recognises its corner", err)
+	}
+	if body == nil {
+		t.Fatal("simple/O1: FilletEdges returned no error and no body")
+	}
+	if got := len(body.Faces()); got != 12 {
+		t.Fatalf("simple/O1 welded %d faces, want the DRAWEXE oracle's 12", got)
+	}
 }
 
 // assertCurvedCornerDeclinesCleanly requires FilletEdges to honest-reject rel at radius r: a non-nil

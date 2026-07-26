@@ -39,7 +39,7 @@ func n4AcceptedBallFrameInputs(t *testing.T) n4BallFrameInputs {
 	pts := n4TestCornerPts(t, arms)
 	in := n4BallFrameInputs{
 		torus: arms.torus.armSurface.(geom.Torus), vplane: arms.band.a.Geometry().(geom.Plane),
-		m0: pts.ballBand, m1: pts.ballCcyl, tol: res.Weld() * 5,
+		m0: pts.ballAB, m1: pts.ballCD, tol: res.Weld() * 5,
 	}
 	if _, ok := newN4BallFrame(in.torus, in.vplane, in.m0, in.m1, in.tol); !ok {
 		t.Fatal("newN4BallFrame declined the unperturbed N4 corner — the decline tests have no baseline")
@@ -185,7 +185,7 @@ func TestN4BallFrameDeclinesDegenerateMeridianSpan(t *testing.T) {
 }
 
 // TestN4CanalSurfaceDoesNotMutateTheCallerPath is the regression guard for the aliasing bug the pinning
-// introduced: n4BallPath is passed BY VALUE but its three slices share their backing arrays with the
+// introduced: cornerBallPath is passed BY VALUE but its three slices share their backing arrays with the
 // caller's, so pinning the end stations in place wrote THROUGH and destroyed the two derived end stations —
 // which is also what left them unverified by TestN4BallPathRollsOnPlaneAndTorusArm.
 func TestN4CanalSurfaceDoesNotMutateTheCallerPath(t *testing.T) {
@@ -193,18 +193,18 @@ func TestN4CanalSurfaceDoesNotMutateTheCallerPath(t *testing.T) {
 	res := ResolutionForPoints([]math.Point3{math.P3(0, 0, 0), math.P3(200, 200, 60)})
 	pts := n4TestCornerPts(t, arms)
 	path, ok := n4CornerBallPath(arms.torus.armSurface.(geom.Torus), arms.band.a.Geometry().(geom.Plane),
-		pts.ballBand, pts.ballCcyl, res.Weld()*5)
+		pts.ballAB, pts.ballCD, res.Weld()*5)
 	if !ok {
 		t.Fatal("n4CornerBallPath declined the N4 corner")
 	}
 	before := ballPathEnds(path)
-	if _, ok := n4CanalSurface(path, pts, 5, res.Weld()); !ok {
-		t.Fatal("n4CanalSurface declined the N4 corner")
+	if _, ok := cornerCanalSurface(path, pts, 5, res.Weld()); !ok {
+		t.Fatal("cornerCanalSurface declined the N4 corner")
 	}
-	for i, name := range [3]string{"centers", "feetVplane", "feetTorus"} {
+	for i, name := range [3]string{"centers", "feetMid", "feetLateral"} {
 		for j, was := range before[i] {
 			if d := was.DistanceTo(ballPathEnds(path)[i][j]); d != 0 {
-				t.Fatalf("n4CanalSurface moved path.%s end %d by %v — it must pin a COPY", name, j, d)
+				t.Fatalf("cornerCanalSurface moved path.%s end %d by %v — it must pin a COPY", name, j, d)
 			}
 		}
 	}
@@ -212,10 +212,10 @@ func TestN4CanalSurfaceDoesNotMutateTheCallerPath(t *testing.T) {
 
 // ballPathEnds snapshots the first and last entry of each of the path's three station columns — the six
 // entries end-pinning would overwrite if it wrote through the shared backing arrays.
-func ballPathEnds(path n4BallPath) [3][2]math.Point3 {
+func ballPathEnds(path cornerBallPath) [3][2]math.Point3 {
 	return [3][2]math.Point3{
 		{path.centers[0], path.centers[len(path.centers)-1]},
-		{path.feetVplane[0], path.feetVplane[len(path.feetVplane)-1]},
-		{path.feetTorus[0], path.feetTorus[len(path.feetTorus)-1]},
+		{path.feetMid[0], path.feetMid[len(path.feetMid)-1]},
+		{path.feetLateral[0], path.feetLateral[len(path.feetLateral)-1]},
 	}
 }

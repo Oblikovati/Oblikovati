@@ -64,10 +64,10 @@ func n4StationParam(i int) float64 {
 	return (1-n4CanalEndCluster)*x + n4CanalEndCluster*(1-stdmath.Cos(stdmath.Pi*x))/2
 }
 
-// n4BallPath is the corner's rolling-ball path: the exact ball-centre curve stations plus the ball's two
+// cornerBallPath is the corner's rolling-ball path: the exact ball-centre curve stations plus the ball's two
 // contact loci — vplane feet (the u=0 rail) and torus-arm feet (the u=1 rail) — one triple per station.
-type n4BallPath struct {
-	centers, feetVplane, feetTorus []math.Point3
+type cornerBallPath struct {
+	centers, feetMid, feetLateral []math.Point3
 }
 
 // n4CornerBallPath derives the corner's exact rolling-ball path from the two terminating arms' ball
@@ -87,22 +87,22 @@ type n4BallPath struct {
 // torus axis, when the offset plane misses the 2r-torus, when the azimuth degenerates, or when either
 // arm station does not actually lie on the derived curve — that last check is what proves the class
 // hypothesis instead of assuming it. tol is the model-relative weld distance (ADR-0042).
-func n4CornerBallPath(torus geom.Torus, vplane geom.Plane, m0, m1 math.Point3, tol float64) (n4BallPath, bool) {
+func n4CornerBallPath(torus geom.Torus, vplane geom.Plane, m0, m1 math.Point3, tol float64) (cornerBallPath, bool) {
 	f, ok := newN4BallFrame(torus, vplane, m0, m1, tol)
 	if !ok {
-		return n4BallPath{}, false
+		return cornerBallPath{}, false
 	}
-	path := n4BallPath{}
+	path := cornerBallPath{}
 	for i := 0; i < n4CanalStationCount; i++ {
 		c, ok := f.centerAt(f.psi0 + (f.psi1-f.psi0)*n4StationParam(i))
 		if !ok {
-			return n4BallPath{}, false
+			return cornerBallPath{}, false
 		}
 		_, _, fv := geom.ClosestPointOnSurface(vplane, c)
 		_, _, ft := geom.ClosestPointOnSurface(torus, c)
 		path.centers = append(path.centers, c)
-		path.feetVplane = append(path.feetVplane, fv)
-		path.feetTorus = append(path.feetTorus, ft)
+		path.feetMid = append(path.feetMid, fv)
+		path.feetLateral = append(path.feetLateral, ft)
 	}
 	return path, true
 }
@@ -203,26 +203,26 @@ func newN4BallFrame(torus geom.Torus, vplane geom.Plane, m0, m1 math.Point3, tol
 	return f, true
 }
 
-// n4CanalSurface lofts the rolling-ball path into the corner's canal BSpline, PINNING the two end
+// cornerCanalSurface lofts the rolling-ball path into the corner's canal BSpline, PINNING the two end
 // stations to the corner points the terminating arms already own. That pinning is the weld: the loft's
 // v=0 / v=1 cross-sections are then the byte-same circles as pts.arcAB / pts.arcCD (same centre, same
 // radius, same two endpoints), so the patch's own boundary coincides with the arcs the arm faces trim to
 // rather than merely approximating them.
-func n4CanalSurface(path n4BallPath, pts n4CornerPts, r, weld float64) (geom.BSplineSurface, bool) {
+func cornerCanalSurface(path cornerBallPath, pts cornerCanalPts, r, weld float64) (geom.BSplineSurface, bool) {
 	n := len(path.centers)
-	if n < 2 || len(path.feetVplane) != n || len(path.feetTorus) != n {
+	if n < 2 || len(path.feetMid) != n || len(path.feetLateral) != n {
 		return geom.BSplineSurface{}, false // a path whose three columns disagree has no end to pin
 	}
 	surf, err := geom.LoftCanalStations(
-		pinnedEndStations(path.centers, pts.ballBand, pts.ballCcyl),
-		pinnedEndStations(path.feetVplane, pts.a, pts.d),
-		pinnedEndStations(path.feetTorus, pts.b, pts.c),
+		pinnedEndStations(path.centers, pts.ballAB, pts.ballCD),
+		pinnedEndStations(path.feetMid, pts.a, pts.d),
+		pinnedEndStations(path.feetLateral, pts.b, pts.c),
 		r, weld)
 	return surf, err == nil
 }
 
 // pinnedEndStations copies a station column and replaces its two ends with the corner points the arms own.
-// The COPY is load-bearing: n4BallPath is passed by value but its three slices share their backing arrays
+// The COPY is load-bearing: cornerBallPath is passed by value but its three slices share their backing arrays
 // with the caller's path, so pinning in place would write THROUGH and silently overwrite the caller's
 // derived ball path — which would also make the two derived end stations unobservable to any caller (a
 // test included) that measures the path after lofting it.
@@ -232,12 +232,12 @@ func pinnedEndStations(stations []math.Point3, first, last math.Point3) []math.P
 	return out
 }
 
-// n4CanalRails extracts the canal's two on-host boundary isoparms — the ball's contact loci, which lie ON
+// cornerCanalRails extracts the canal's two on-host boundary isoparms — the ball's contact loci, which lie ON
 // their host by construction. u=u0 is the vplane locus A→D (returned REVERSED as the D→A rail the patch
 // ring wants); u=u1 is the torus-arm locus B→C. Replacing the old chord-projection rails with these is
 // the whole geometric fix: on a plane, projecting a straight chord returns the chord, so railDA came out
 // exactly linear where the true contact locus bows 3.00 units.
-func n4CanalRails(surf geom.BSplineSurface) (railBC, railDA geom.Curve3, ok bool) {
+func cornerCanalRails(surf geom.BSplineSurface) (railBC, railDA geom.Curve3, ok bool) {
 	u0, u1 := surf.UDomain()
 	locusV, err := geom.SurfaceIsoCurve(surf, true, u0)
 	if err != nil {

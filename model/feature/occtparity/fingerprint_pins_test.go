@@ -440,5 +440,28 @@ func byteIdentityPins() []fingerprintPin {
 		// bands within 0.02%, volume 26× closer to vprops. It locks the layer so any later class builder
 		// (O1, H7, …) or executor change fails loud if it perturbs N4. Same cross-platform-risk caveat applies.
 		{"N4", 1046938.855499812000, 53496, 0xcee49118703be08, ""},
+		// O1 (simple): the SECOND case welded by the general corner-weld layer, and the layer's own
+		// falsification test — it cost one ~75-line plan CONFIGURATION (cornerweld_class_o1.go) plus its
+		// corner SOLVE, with no new executor stage. A r50×h130 cylinder fused to a 30×50×70 box that
+		// protrudes from it, filleted r5 on the three edges meeting at (80,10,90): the concave
+		// wall∧cylinder ruling, the concave cove-torus arc where the box top meets the cylinder, and the
+		// CONVEX box top∧wall edge. The two concave arms terminate at the corner; the convex band runs past
+		// it, so the patch is the rolling-ball canal of a ball riding the boss cylinder at ρ=R+r=55 and
+		// rolling on the band's tube at 2r=10 (fillet_curved_mixed_canal_o1.go).
+		//
+		// DRAWEXE 8.0.0 receipt (`restore CFI_f5678fin.rle s ; tscale s 0 0 0 10 ; explode s e ;
+		// blend result s 5 s_7 5 s_6 5 s_14`): valid SOLID, 12 faces / 13 wires / 18 vertices / 27 edges,
+		// sprops area 65104.9, vprops volume 1.11166e6 — ours 12 faces, area 65101.43 (−0.0053%), volume
+		// 1111282.03 (−0.034%). The residual is OCCT's own corner-patch approximation, not ours: our patch is
+		// the exact envelope (G1 to all four analytic neighbours within 1e-6 rad, all four corners identical
+		// to DRAWEXE to 1e-10), while OCCT's interior sits up to 1.16% of r off that envelope and its implied
+		// rolling ball misses tangency to the boss wall by 0.174. Pinned so any later class builder or
+		// executor change fails loud if it perturbs O1. Same cross-platform-risk caveat applies.
+		//
+		// The two on-host canal rails are registered as o1CanalRailPieces=8 sub-segs rather than one, because
+		// the shell-orientation pass re-fits a FLIPPED face's loop segments through three points and O1's patch
+		// and lateral-arm faces are both flipped: one seg put the rails 0.092/0.292 off their own surface and
+		// the mesher folded on four edges. This pin therefore encodes the subdivided ring.
+		{"O1", 1111281.885449531721, 29868, 0xa4d154289db6858, ""},
 	}
 }

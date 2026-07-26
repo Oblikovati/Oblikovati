@@ -28,6 +28,14 @@ var curvedArmCorpusPicks = map[string][]math.Point3{
 		math.P3(65.8113883, 2.565835097, 90),
 		math.P3(80, -15, 90),
 	},
+	// M5 is the concave-BORE (roll-sense R3, R−r) trihedral corner of the same Gate-1 cluster as O1, still
+	// unbuilt: it is here only so TestFilletEdges_M5DeclinesCleanly can pin the do-no-harm FLOOR on a corner
+	// the ladder must not accept.
+	"simple/M5": {
+		math.P3(50, 20, 25),
+		math.P3(32.67949192, 14.49489743, 50),
+		math.P3(50, 10, 50),
+	},
 }
 
 // curvedArmEdgeAt returns the body edge whose curve midpoint OR chord midpoint is nearest mid

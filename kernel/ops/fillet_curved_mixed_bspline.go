@@ -38,19 +38,19 @@ type n4MixedArms struct {
 	band  edgeFillet // planar Plane∧Plane band; hosts = shared vertical plane + top plane
 }
 
-// n4CornerPts are the four corner points, the two terminating-arm cross-section arcs (band A→B, ccyl
+// cornerCanalPts are the four corner points, the two terminating-arm cross-section arcs (band A→B, ccyl
 // C→D), and the two arms' rolling-ball centres at those stations (the canal centre curve's endpoints).
 // Built ONCE so every welded neighbour reads the byte-identical curve.
-type n4CornerPts struct {
-	a, b, c, d         math.Point3
-	arcAB, arcCD       geom.Arc3d
-	ballBand, ballCcyl math.Point3
+type cornerCanalPts struct {
+	a, b, c, d     math.Point3
+	arcAB, arcCD   geom.Arc3d
+	ballAB, ballCD math.Point3
 }
 
 // n4Corner is the fully solved N4 corner: the points, the two arcs, the two on-host rails (torus B→C,
 // vplane D→A) read off the canal's own boundary isoparms, and the certified canal patch.
 type n4Corner struct {
-	pts    n4CornerPts
+	pts    cornerCanalPts
 	railBC geom.Curve3 // on-torus contact rail (the ball's torus-arm contact locus), oriented B→C
 	railDA geom.Curve3 // on-vplane contact rail (the ball's vplane contact locus), oriented D→A
 	patch  CornerBlendPatch
@@ -116,26 +116,27 @@ func assignN4Role(out *n4MixedArms, seen *[3]bool, ef edgeFillet) bool {
 	return true
 }
 
-// sharedCylinderHostFace returns the cylinder host surface both arms share by face identity — the boss
-// wall for the ccyl+torus pair. ok=false when they share no cylinder host.
-func sharedCylinderHostFace(x, y edgeFillet) (geom.Cylinder, bool) {
+// sharedCylinderHostFace returns the cylinder host FACE (and its surface) both arms share by face identity —
+// the boss wall for N4's ccyl+torus pair, and the mid host the O1 corner's ball rides. ok=false when they
+// share no cylinder host.
+func sharedCylinderHostFace(x, y edgeFillet) (*topo.Face, geom.Cylinder, bool) {
 	for _, fx := range [2]*topo.Face{x.a, x.b} {
 		cyl, ok := fx.Geometry().(geom.Cylinder)
 		if !ok {
 			continue
 		}
 		if fx == y.a || fx == y.b {
-			return cyl, true
+			return fx, cyl, true
 		}
 	}
-	return geom.Cylinder{}, false
+	return nil, geom.Cylinder{}, false
 }
 
 // solveN4Corner derives the full N4 corner (points, arcs, contact-locus rails, canal patch) from the
 // classified arms, or ok=false when a host is missing, a station has no real intersection, or the canal
 // patch fails to build/certify — the do-no-harm floor (the corner keeps its prior declined path).
 func solveN4Corner(arms n4MixedArms, r float64, res Resolution) (n4Corner, bool) {
-	boss, okH := sharedCylinderHostFace(arms.ccyl, arms.torus)
+	_, boss, okH := sharedCylinderHostFace(arms.ccyl, arms.torus)
 	vFace, okV := sharedPlaneHost(arms.ccyl, arms.band)
 	tFace, okT := sharedPlaneHost(arms.torus, arms.band)
 	if !okH || !okV || !okT {
@@ -158,28 +159,28 @@ func solveN4Corner(arms n4MixedArms, r float64, res Resolution) (n4Corner, bool)
 
 // n4CornerPoints solves the four corner points and the two terminating-arm cross-section arcs from the
 // arm/host geometry (the file comment's construction). ok=false on any degeneracy.
-func n4CornerPoints(boss geom.Cylinder, torus geom.Torus, ccylBall, bandBall geom.Cylinder, vplane, tplane geom.Plane, r float64) (n4CornerPts, bool) {
-	c, ballCcyl, ok := n4PointCAndStation(boss, torus, ccylBall)
+func n4CornerPoints(boss geom.Cylinder, torus geom.Torus, ccylBall, bandBall geom.Cylinder, vplane, tplane geom.Plane, r float64) (cornerCanalPts, bool) {
+	c, ballCD, ok := n4PointCAndStation(boss, torus, ccylBall)
 	if !ok {
-		return n4CornerPts{}, false
+		return cornerCanalPts{}, false
 	}
-	_, _, d := geom.ClosestPointOnSurface(vplane, ballCcyl)
-	arcCD, ok := arcThrough(ballCcyl, r, c, d)
+	_, _, d := geom.ClosestPointOnSurface(vplane, ballCD)
+	arcCD, ok := arcThrough(ballCD, r, c, d)
 	if !ok {
-		return n4CornerPts{}, false
+		return cornerCanalPts{}, false
 	}
-	b, ballBand, ok := n4PointBAndStation(bandBall, tplane, torus, c)
+	b, ballAB, ok := n4PointBAndStation(bandBall, tplane, torus, c)
 	if !ok {
-		return n4CornerPts{}, false
+		return cornerCanalPts{}, false
 	}
-	_, _, a := geom.ClosestPointOnSurface(vplane, ballBand)
-	arcAB, ok := arcThrough(ballBand, r, a, b)
+	_, _, a := geom.ClosestPointOnSurface(vplane, ballAB)
+	arcAB, ok := arcThrough(ballAB, r, a, b)
 	if !ok {
-		return n4CornerPts{}, false
+		return cornerCanalPts{}, false
 	}
-	return n4CornerPts{
+	return cornerCanalPts{
 		a: a, b: b, c: c, d: d, arcAB: arcAB, arcCD: arcCD,
-		ballBand: ballBand, ballCcyl: ballCcyl,
+		ballAB: ballAB, ballCD: ballCD,
 	}, true
 }
 
@@ -203,8 +204,8 @@ func n4PointCAndStation(boss geom.Cylinder, torus geom.Torus, ccylBall geom.Cyli
 		return math.Point3{}, math.Point3{}, false
 	}
 	c := obAtTorus.TranslateBy(dir.AsVector().Scale(math.Scalar(boss.Radius)))
-	ballCcyl := footOnLine(torus.Center, ccylBall.Origin, ccylBall.AxisDir.AsVector()) // ccyl ball at the torus height
-	return c, ballCcyl, true
+	ballCD := footOnLine(torus.Center, ccylBall.Origin, ccylBall.AxisDir.AsVector()) // ccyl ball at the torus height
+	return c, ballCD, true
 }
 
 // n4PointBAndStation is corner point B — where the planar-band arm's top-plane contact ruling meets the
@@ -226,8 +227,8 @@ func n4PointBAndStation(bandBall geom.Cylinder, tplane geom.Plane, torus geom.To
 		return math.Point3{}, math.Point3{}, false
 	}
 	b := f0.TranslateBy(fd.Scale(math.Scalar(t)))
-	ballBand := bandBall.Origin.TranslateBy(d.Scale(math.Scalar(t)))
-	return b, ballBand, true
+	ballAB := bandBall.Origin.TranslateBy(d.Scale(math.Scalar(t)))
+	return b, ballAB, true
 }
 
 // nearestQuadraticRoot solves qa·t²+qb·t+qc=0 and returns the root whose contact point f0+t·fd is nearest
@@ -270,43 +271,63 @@ func solveQuadratic(a, b, c float64) (float64, float64, bool) {
 // rather than an opaque loft/certify failure further down. ok=false also when the ball path does not hold
 // (the corner is not really rolling on the lateral torus arm), when the loft or the isoparms fail, or when
 // the patch does not certify (do-no-harm floor — the corner keeps its prior declined path).
-func assembleN4Corner(pts n4CornerPts, arms n4MixedArms, vplane geom.Plane, boss geom.Cylinder, r float64, res Resolution) (n4Corner, bool) {
+func assembleN4Corner(pts cornerCanalPts, arms n4MixedArms, vplane geom.Plane, boss geom.Cylinder, r float64, res Resolution) (n4Corner, bool) {
 	torus := arms.torus.armSurface.(geom.Torus)
 	tol := res.Weld() * r
 	if stdmath.Abs(torus.MinorRadius-r) > tol {
 		return n4Corner{}, false // mixed-radius corner: the lateral arm's tube is not the rolling ball
 	}
-	path, ok := n4CornerBallPath(torus, vplane, pts.ballBand, pts.ballCcyl, tol)
+	path, ok := n4CornerBallPath(torus, vplane, pts.ballAB, pts.ballCD, tol)
 	if !ok {
 		return n4Corner{}, false
 	}
-	surf, ok := n4CanalSurface(path, pts, r, res.Weld())
+	surf, ok := cornerCanalSurface(path, pts, r, res.Weld())
 	if !ok {
 		return n4Corner{}, false
 	}
-	railBC, railDA, ok := n4CanalRails(surf)
+	railBC, railDA, ok := cornerCanalRails(surf)
 	if !ok {
 		return n4Corner{}, false
 	}
-	patch, ok := n4CornerPatch(surf, pts, railBC, railDA, arms, vplane, res)
+	ring := cornerCanalRing{
+		armAB: arms.band.armSurface, lateral: arms.torus.armSurface,
+		armCD: arms.ccyl.armSurface, mid: vplane,
+	}
+	patch, ok := cornerCanalPatch(surf, pts, railBC, railDA, ring, res)
 	if !ok {
 		return n4Corner{}, false
 	}
 	return n4Corner{pts: pts, railBC: railBC, railDA: railDA, patch: patch, vplane: vplane, boss: boss}, true
 }
 
-// n4CornerPatch certifies the canal surface as the corner patch against the 4-cycle A→B→C→D→A it must
-// weld into: the two arm arcs (G1 to their arm surfaces) and the two contact-locus rails (G1 to the torus
-// arm / the vertical plane). It emits the canal's OWN boundary isoparms as the patch loops
+// cornerCanalRing names the four ADJACENT surfaces of a corner-canal 4-cycle A→B→C→D→A, in ring order:
+// the arm that terminates on arcAB, the LATERAL arm the ball rolls on (the u=u1 locus' host), the arm that
+// terminates on arcCD, and the MID host the ball rides (the u=u0 locus' host). Named as a struct rather
+// than four positional arguments because the two loci's hosts also feed the certificate, where swapping
+// them would silently measure each foot row against the wrong surface.
+type cornerCanalRing struct {
+	armAB   geom.Surface
+	lateral geom.Surface
+	armCD   geom.Surface
+	mid     geom.Surface
+}
+
+// cornerCanalPatch certifies a rolling-ball canal surface as the corner patch against the 4-cycle
+// A→B→C→D→A it must weld into: the two arm arcs (G1 to their arm surfaces) and the two contact-locus rails
+// (G1 to the lateral arm / the mid host). It emits the canal's OWN boundary isoparms as the patch loops
 // (canalPatchLoops, shared with canalProvider) so nothing off-surface can reach assembly, and rejects a
 // patch whose loops, folding, closure or G1 residual fail — the same certificate contract coons4's build
 // satisfied, just measured on a surface that is the true envelope rather than a transfinite fill.
-func n4CornerPatch(surf geom.BSplineSurface, pts n4CornerPts, railBC, railDA geom.Curve3, arms n4MixedArms, vplane geom.Plane, res Resolution) (CornerBlendPatch, bool) {
+//
+// Shared by the N4 class (lateral = a convex torus arm, mid = a plane) and the O1 class (lateral = a convex
+// planar band's cylinder, mid = the boss cylinder): the certificate is about the RING, not about which
+// surface types fill its four slots, so both classes certify through this one function.
+func cornerCanalPatch(surf geom.BSplineSurface, pts cornerCanalPts, railBC, railDA geom.Curve3, ring cornerCanalRing, res Resolution) (CornerBlendPatch, bool) {
 	loop := RailLoop{Sides: []Side{
-		{Curve: pts.arcAB, Adjacent: arms.band.armSurface, Cont: G1}, // s0: A→B
-		{Curve: railBC, Adjacent: arms.torus.armSurface, Cont: G1},   // s1: B→C
-		{Curve: pts.arcCD, Adjacent: arms.ccyl.armSurface, Cont: G1}, // s2: C→D
-		{Curve: railDA, Adjacent: vplane, Cont: G1},                  // s3: D→A
+		{Curve: pts.arcAB, Adjacent: ring.armAB, Cont: G1}, // s0: A→B
+		{Curve: railBC, Adjacent: ring.lateral, Cont: G1},  // s1: B→C
+		{Curve: pts.arcCD, Adjacent: ring.armCD, Cont: G1}, // s2: C→D
+		{Curve: railDA, Adjacent: ring.mid, Cont: G1},      // s3: D→A
 	}}
 	loops, err := canalPatchLoops(surf)
 	if err != nil {
@@ -319,14 +340,14 @@ func n4CornerPatch(surf geom.BSplineSurface, pts n4CornerPts, railBC, railDA geo
 	if err := assertLoopsOnCanal(surf, loops, res.Weld()); err != nil {
 		return CornerBlendPatch{}, false
 	}
-	cert := certifyN4CanalPatch(surf, loop, []geom.Surface{vplane, arms.torus.armSurface}, res)
+	cert := certifyCornerCanalPatch(surf, loop, []geom.Surface{ring.mid, ring.lateral}, res)
 	if !cert.Valid(res) {
 		return CornerBlendPatch{}, false
 	}
 	return CornerBlendPatch{Surface: surf, Loops: loops, Kind: BlendKindCanal}, true
 }
 
-// certifyN4CanalPatch proves the corner canal (ADR-3) against geometry the patch does NOT own, which is the
+// certifyCornerCanalPatch proves the corner canal (ADR-3) against geometry the patch does NOT own, which is the
 // only kind of G0 residual that can falsify it: Closed from the received 4-cycle, WeldsArms structural,
 // NoFold via the shared column sweep, MaxDev the worse of (a) the two RECEIVED arm cross-section arcs
 // measured against the surface — the weld the arm faces trim to — and (b) the two foot-loci measured against
@@ -342,7 +363,7 @@ func n4CornerPatch(surf geom.BSplineSurface, pts n4CornerPts, railBC, railDA geo
 // residuals in place MaxDev reads the foot-loci-on-host ~1.8e-8 against a weld of 2.9e-7, so an end-pinning
 // or parametrisation regression that lifts the boundary off the arm arcs now REJECTS instead of certifying a
 // cracked weld.
-func certifyN4CanalPatch(surf geom.BSplineSurface, loop RailLoop, hosts []geom.Surface, res Resolution) Certificate {
+func certifyCornerCanalPatch(surf geom.BSplineSurface, loop RailLoop, hosts []geom.Surface, res Resolution) Certificate {
 	crease := 0.0
 	for _, s := range loop.Sides {
 		crease = stdmath.Max(crease, canalSideCrease(surf, s))
@@ -352,17 +373,17 @@ func certifyN4CanalPatch(surf geom.BSplineSurface, loop RailLoop, hosts []geom.S
 		Closed:      loop.Closed(res.Weld()),
 		WeldsArms:   true,
 		NoFold:      obstacleNoFold(surf, res),
-		MaxDev:      stdmath.Max(n4ArmArcsOnSurface(surf, loop), devFeet),
+		MaxDev:      stdmath.Max(cornerCanalArmArcs(surf, loop), devFeet),
 		MaxAngleDev: crease,
 	}
 }
 
-// n4ArmArcsOnSurface is the max G0 residual of the two TERMINATING-ARM cross-section arcs (the received
+// cornerCanalArmArcs is the max G0 residual of the two TERMINATING-ARM cross-section arcs (the received
 // arcAB / arcCD — the curves the two arm faces actually trim to) measured against the canal surface. This
 // is the informative half of the weld measure: the arcs are inputs the patch does not own, so a boundary
 // that drifts off them shows up here. Returns +Inf unless EXACTLY the two arcs are present — the other two
 // sides are the lofted contact-locus rails, which are not geom.Arc3d — so a malformed 4-cycle rejects.
-func n4ArmArcsOnSurface(surf geom.BSplineSurface, loop RailLoop) float64 {
+func cornerCanalArmArcs(surf geom.BSplineSurface, loop RailLoop) float64 {
 	dev, n := 0.0, 0
 	for _, s := range loop.Sides {
 		if _, isArc := s.Curve.(geom.Arc3d); !isArc {

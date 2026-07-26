@@ -108,9 +108,13 @@ func cornerChainLoop(segs []endSeg, biteA, biteB cornerHostChainBite, mid []endS
 	if !okA || !okB || n < 3 {
 		return filletLoop{}, false
 	}
-	first, second, bFirst, bSecond, midSeq := orderChainPicks(segs, runA, runB, biteA, biteB, mid, vCorner, tol)
+	first, second, bFirst, bSecond := orderChainPicks(segs, runA, runB, biteA, biteB, vCorner, tol)
 	if first.lo < 0 || (second.hi+1)%n == first.lo {
 		return filletLoop{}, false // not adjacent at vCorner, or no flank left on either side
+	}
+	midSeq, ok := orientMidToChain(mid, bFirst.rails[len(bFirst.rails)-1].to, tol)
+	if !ok {
+		return filletLoop{}, false
 	}
 	chain := append(append([]endSeg{}, bFirst.rails...), midSeq...)
 	chain = append(chain, reverseEndSegs(bSecond.rails)...)
@@ -118,16 +122,37 @@ func cornerChainLoop(segs []endSeg, biteA, biteB cornerHostChainBite, mid []endS
 }
 
 // orderChainPicks assigns (first, second) so first's run ENDS at vCorner and second's STARTS there (first
-// before second in ring order), with their bites and the mid chain oriented to match. first.lo=−1 when
-// neither ordering holds.
-func orderChainPicks(segs []endSeg, runA, runB segRun, biteA, biteB cornerHostChainBite, mid []endSeg, vCorner math.Point3, tol float64) (segRun, segRun, cornerHostChainBite, cornerHostChainBite, []endSeg) {
+// before second in ring order), with their bites oriented to match. first.lo=−1 when neither ordering holds.
+func orderChainPicks(segs []endSeg, runA, runB segRun, biteA, biteB cornerHostChainBite, vCorner math.Point3, tol float64) (segRun, segRun, cornerHostChainBite, cornerHostChainBite) {
 	if float64(segs[runA.hi].to.DistanceTo(vCorner)) <= tol && float64(segs[runB.lo].from.DistanceTo(vCorner)) <= tol {
-		return runA, runB, biteA, biteB, mid
+		return runA, runB, biteA, biteB
 	}
 	if float64(segs[runB.hi].to.DistanceTo(vCorner)) <= tol && float64(segs[runA.lo].from.DistanceTo(vCorner)) <= tol {
-		return runB, runA, biteB, biteA, reverseEndSegs(mid)
+		return runB, runA, biteB, biteA
 	}
-	return segRun{lo: -1, hi: -1}, segRun{}, cornerHostChainBite{}, cornerHostChainBite{}, nil
+	return segRun{lo: -1, hi: -1}, segRun{}, cornerHostChainBite{}, cornerHostChainBite{}
+}
+
+// orientMidToChain returns the patch's on-host rail chain traversed so it CONTINUES from `head` — the near
+// foot the first bite's rail chain ends at. ★ Slice 2 (O1) found this: the orientation must be decided
+// GEOMETRICALLY, never by which bite happens to be registered first. A class builder is free to list its arms
+// in any order, and the mid rail is registered once in the patch RING's direction (D→A), so "reverse it iff
+// the second bite leads" only holds when the ring's D foot belongs to the first-listed arm. N4's does by
+// coincidence; O1's does not, and the mismatch produced a loop whose segments were shifted by one — a body
+// that was Valid ∧ Manifold with four 1-incident edges. ok=false when the chain reaches neither foot, which is
+// an inconsistent plan and must floor rather than weld a shifted ring.
+func orientMidToChain(mid []endSeg, head math.Point3, tol float64) ([]endSeg, bool) {
+	if len(mid) == 0 {
+		return nil, true // the two rails meet at a triple point; there is nothing to orient
+	}
+	if float64(mid[0].from.DistanceTo(head)) <= tol {
+		return mid, true
+	}
+	rev := reverseEndSegs(mid)
+	if float64(rev[0].from.DistanceTo(head)) <= tol {
+		return rev, true
+	}
+	return nil, false
 }
 
 // weldChainRuns splices the corner chain (far foot → … → far foot) into the ring in place of the two runs,
