@@ -64,6 +64,12 @@ const subArcAreaFrac = 0.01
 // rim (I3's outer arc trims 90°→~88°). Each endpoint is projected onto the parent's own circle first (the
 // tangent point sits ~0.17 OFF the rim by the pull-back), then the sub-arc is built from the parent's
 // parameters so its span stays faithful (subArcOnParent).
+//
+// The area gate is SKIPPED when both endpoints already lie exactly on the rim (rimSpanIsExact): the far-end
+// trim has then put the band's terminal section ON the wall (fillet_farend_trim.go), so the retained sub-arc
+// IS the wall's true boundary and no minor-segment argument can justify chording it. N5's boss rim is the
+// only corpus case this reaches, and it moves N5 the right way on both measures: its worst
+// boundary-off-its-own-face residual 4.17 -> 0.024 and its per-face gross error vs DRAWEXE 466.6 -> 348.1.
 func trimCarriedSubArcs(fl *filletLoop, idxs []int, modelScale float64) {
 	n := len(fl.pts)
 	for _, i := range idxs {
@@ -71,9 +77,9 @@ func trimCarriedSubArcs(fl *filletLoop, idxs []int, modelScale float64) {
 		if !ok {
 			continue // defensive: only a carried Arc3d parent is trimmable (never hit — addSubstVertex stamps only arcs)
 		}
-		from := projectOntoArcCircle(parent, fl.pts[i])
-		to := projectOntoArcCircle(parent, fl.pts[(i+1)%n])
-		if chordErasesMinorSegment(parent, from, to, modelScale) {
+		p0, p1 := fl.pts[i], fl.pts[(i+1)%n]
+		from, to := projectOntoArcCircle(parent, p0), projectOntoArcCircle(parent, p1)
+		if !rimSpanIsExact(parent, p0, p1) && chordErasesMinorSegment(parent, from, to, modelScale) {
 			fl.curves[i] = nil // faithful chord (or carry disabled, scale 0): keep the base loop byte-identical
 			continue
 		}
@@ -129,15 +135,52 @@ func subArcOnParent(parent geom.Arc3d, from, to math.Point3) geom.Curve3 {
 func trimCarriedArcs(fl *filletLoop, rimCarries, subCarries []int, subArcScale float64) {
 	trimCarriedRimArcs(fl, rimCarries)
 	trimCarriedSubArcs(fl, subCarries, subArcScale)
+	alignCarriedArcsToSegments(fl)
+}
+
+// alignCarriedArcsToSegments enforces the loop's own consistency invariant: a segment's carried curve must
+// run BETWEEN that segment's two points. The `default` survivor branch carries an untouched rim arc whole,
+// which is wrong whenever the segment's OTHER end was pulled back to a fillet tangent point — the arc then
+// sweeps PAST the loop's own vertex and the face tessellates a boundary that crosses its neighbours
+// (E1's meridian plane, 3 fold edges; the same overshoot is why E1/D3/D7/Q5/F6 carry a curve-domain-vs-vertex
+// gap). Re-trimming to the segment's own span is the arc-side counterpart of what trimCarriedRimArcs and
+// trimCarriedSubArcs already do for the two branches that record their indices. Segments whose arc already
+// ends at its points (every correctly-built loop) are left untouched, so this is byte-invisible to them, and
+// a CLOSED seam (both points on one vertex) is skipped — its full circle IS the boundary.
+func alignCarriedArcsToSegments(fl *filletLoop) {
+	n := len(fl.pts)
+	for i := range fl.curves {
+		arc, ok := fl.curves[i].(geom.Arc3d)
+		if !ok {
+			continue
+		}
+		p0, p1 := fl.pts[i], fl.pts[(i+1)%n]
+		if arcSpansItsSegment(arc, p0, p1) || p0.DistanceTo(p1) <= 1e-9*arc.Radius {
+			continue
+		}
+		if sub := subArcOnParent(arc, projectOntoArcCircle(arc, p0), projectOntoArcCircle(arc, p1)); sub != nil {
+			fl.curves[i] = sub
+		}
+	}
+}
+
+// arcSpansItsSegment reports whether arc already runs from p0 to p1, within 1e-9 of its own radius (the
+// rim's own scale, so the test is scale-invariant without threading a Resolution).
+func arcSpansItsSegment(arc geom.Arc3d, p0, p1 math.Point3) bool {
+	lo, hi := arc.Domain()
+	tol := 1e-9 * arc.Radius
+	return arc.PointAt(lo).DistanceTo(p0) <= tol && arc.PointAt(hi).DistanceTo(p1) <= tol
 }
 
 // trimCarriedRimArcs replaces each carried full parent arc (the whole rim, stamped on its tOut segment by
-// addCornerRound) with the sub-arc actually retained between that segment's own endpoints — but ONLY when
-// that sub-arc materially deviates from its chord (retainedRimCurve's quadrant gate); otherwise it restores
-// the base straight chord (nil). The corner tangent points sit on the fillet's CAP contact circle (radius
-// √(r²+R²), OFF the wall surface by the root-cause receipt), so each endpoint is first projected onto the
-// rim's own circle before the retained span is measured — else subArcMajor/arcFrac reject the off-circle
-// point and a major sub-arc silently degrades to its minor complement (a 270° rim would collapse back to 90°).
+// addCornerRound) with the sub-arc actually retained between that segment's own endpoints. When the retained
+// span's endpoints are EXACTLY on the rim (the far-end trim put the band's terminal section on the wall,
+// fillet_farend_trim.go) the sub-arc is always carried: it is then the true wall boundary. Otherwise the
+// endpoints still sit on the fillet's CAP contact circle (radius √(r²+R²), OFF the wall), and the empirical
+// quadrant gate decides between two imperfect approximations (retainedRimCurve). Either way each endpoint is
+// first projected onto the rim's own circle before the retained span is measured — else subArcMajor/arcFrac
+// reject an off-circle point and a major sub-arc silently degrades to its minor complement (a 270° rim would
+// collapse back to 90°).
 func trimCarriedRimArcs(fl *filletLoop, idxs []int) {
 	n := len(fl.pts)
 	for _, i := range idxs {
@@ -145,29 +188,39 @@ func trimCarriedRimArcs(fl *filletLoop, idxs []int) {
 		if !ok {
 			continue // defensive: only a carried Arc3d parent is trimmable (never hit — addCornerRound stamps only arcs)
 		}
-		from := projectOntoArcCircle(parent, fl.pts[i])
-		to := projectOntoArcCircle(parent, fl.pts[(i+1)%n])
-		fl.curves[i] = retainedRimCurve(parent, from, to)
+		p0, p1 := fl.pts[i], fl.pts[(i+1)%n]
+		from, to := projectOntoArcCircle(parent, p0), projectOntoArcCircle(parent, p1)
+		fl.curves[i] = retainedRimCurve(parent, from, to, rimSpanIsExact(parent, p0, p1))
 	}
 }
 
+// rimSpanIsExact reports whether both retained-span endpoints already lie ON the parent rim's own circle,
+// within 1e-9 of its radius (the rim's own scale, so it is scale-invariant without threading a Resolution).
+// True exactly when the far-end trim landed this corner's tangent points on the wall; false for a corner
+// whose flat section cap is still off it (an unsupported wall type, or a decline).
+func rimSpanIsExact(parent geom.Arc3d, a, b math.Point3) bool {
+	tol := 1e-9 * parent.Radius
+	return a.DistanceTo(projectOntoArcCircle(parent, a)) <= tol &&
+		b.DistanceTo(projectOntoArcCircle(parent, b)) <= tol
+}
+
 // retainedRimCurve is the sub-arc to carry for a curved survivor rim, or nil (the BASE straight chord) when
-// the retained span is at most a QUADRANT (π/2). WHY the gate: the fillet cap-contact tangent points are off
-// the wall (√(r²+R²)), so the re-fit sub-arc leaves a small corner notch; that notch is only worth paying
-// when the chord itself is badly wrong. A chord across a >π/2 rim deviates from the wall by more than
-// R(1−cos45°) ≈ 0.29·R — a collapsed curved face (B5/C4/D7's 242–255° rims) or a large lune off the adjacent
-// meridian plane (E1/E2's 144–146° sphere rims) — so the arc MUST be carried. For a ≤π/2 rim (B1/B9's
-// 62–67° sector rims) the off-surface tangent-point notch makes the re-fit arc LESS accurate than the base
-// chord, so keeping the chord is BOTH more faithful AND byte-identical to the planar corpus + pins. π/2 is
-// therefore an EMPIRICAL CROSSOVER between two imperfect approximations (chord vs off-surface arc), NOT a
-// first-principles law; it sits in the wide 67°→144° gap between the two carried clusters (62–67° vs
-// 144–255°). A mere >π (major-only) gate would wrongly drop E1/E2's minor sphere meridians and un-green them.
-// FOLLOW-UP: an on-surface tangent-point fix (project onto the wall) would make the arc exact and retire
-// this gate. The asymmetry is deliberately safe: a sub-π/2 rim that should carry merely stays red; only a
-// super-π/2 rim that should chord could drift — none exists in the corpus (B1/B9 are pinned to lock it).
-func retainedRimCurve(parent geom.Arc3d, from, to math.Point3) geom.Curve3 {
-	if retainedSpan(parent, from, to) <= stdmath.Pi/2 {
-		return nil // ≤ a quarter turn: the chord is faithful — keep the base loop byte-identical (B1/B9)
+// the retained span is at most a QUADRANT (π/2) AND the span's endpoints are not exactly on the rim.
+//
+// exact=true is the answer once the far-end trim has landed the band's terminal section ON the wall
+// (fillet_farend_trim.go): the retained sub-arc is then the wall's TRUE boundary, so it is carried whatever
+// its span. That retires the quadrant gate for every trimmed wall — B1/B9's 62–67° sector rims were shipping
+// a chord 8.26 / 5.24 off their own host, purely because the gate had been calibrated against off-surface
+// endpoints.
+//
+// exact=false keeps the historical EMPIRICAL CROSSOVER for a corner whose flat cap is still off the wall
+// (an unsupported wall type, or a declined trim): the cap-contact tangent points sit on radius √(r²+R²), so
+// the re-fit sub-arc leaves a corner notch that is only worth paying when the chord itself is badly wrong.
+// A chord across a >π/2 rim deviates by more than R(1−cos45°) ≈ 0.29·R — a collapsed curved face or a large
+// lune — so there the arc must still be carried.
+func retainedRimCurve(parent geom.Arc3d, from, to math.Point3, exact bool) geom.Curve3 {
+	if !exact && retainedSpan(parent, from, to) <= stdmath.Pi/2 {
+		return nil // ≤ a quarter turn off an off-surface corner: the chord is the less-wrong approximation
 	}
 	if sub, _, major := subArcMajor(parent, from, to); major {
 		return sub // > π: carry from the parent's own parameters so a >180° rim stays major (B5/C4/D7)

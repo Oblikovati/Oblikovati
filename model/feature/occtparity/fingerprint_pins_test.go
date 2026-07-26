@@ -79,6 +79,20 @@ func pinnedBody(t *testing.T, grid, name string) *topo.Body {
 // and flip a hash → a FALSE red off linux/amd64. Fine for the corpus's linux/amd64 runs. The pre-PR
 // pass must re-capture on arm64 and either confirm identical or widen the quantum / drop the hash pins
 // to the (rounding-robust) volume+triangle-count pins there. No arm64 re-capture is attempted here.
+//
+// RE-CAPTURED for the far-end wall trim + the loop-arc alignment pass (fillet_farend_trim.go and
+// fillet_survivor_rim.go's alignCarriedArcsToSegments; farend-runon-report.md §5): ten pins moved —
+// A6 A8 B1 B9 D3 E1 E2 I3 M2 N5 — because their fillet band's far end had been squared off at the flank's
+// parametric extreme instead of trimmed against the curved host wall, and because a carried rim arc could
+// sweep past the loop's own vertex. Every one was PROVEN improved against DRAWEXE 8.0.0 before re-capture.
+// Summed per-face |Δ| vs OCCT's own `sprops` receipts: B1 539.17→0.31, B9 1074.57→0.46, D3 2564.08→15.81,
+// E1 529.57→13.15, E2 2396.65→12.91, M2 2.29→0.12, A6 10.17→0.15, A8 55.83→0.14, I3 818.72→0.36,
+// N5 124.70→0.44. Whole-body area error: B1 −0.0071%→−0.0015%, B9 −0.349%→−0.0012%, D3 +0.290%→−0.0121%,
+// E1 +0.367%→−0.0097%, E2 +0.163%→−0.0091%, A8 −0.191%→−0.0004%, I3 +0.825%→−0.00002%. Mesh VOLUME vs
+// DRAWEXE `vprops` improved on nine — D3 −0.787%→−0.047%, N5 −0.115%→−0.0008%, A8 −0.256%→−0.001%,
+// I3 +0.075%→−0.002%, A6 −0.027%→−0.0006%, B9 −0.054%→−0.008%, B1 −0.027%→−0.006%, E1 −0.038%→−0.037%,
+// M2 flat at −0.000% — and moved from −0.0055% to −0.036% on E2 alone, whose per-face areas came 186×
+// closer (its worst face was +1201.79 before, now −12.50), so that one delta is mesh-side, not geometry.
 func byteIdentityPins() []fingerprintPin {
 	return []fingerprintPin{
 		{"B3", 190756.470897506602, 31274, 0x2dff54b187389df4, ""},
@@ -155,22 +169,22 @@ func byteIdentityPins() []fingerprintPin {
 		// rim to its retained sub-arc, greening both for the first time (E1 area drift 0.37%, E2 0.47%).
 		// Captured on THIS HEAD; they lock the survivor-arc carry so any later slice that perturbs the
 		// planar end-corner path fails loud. Same cross-platform-risk caveat as above applies.
-		{"E1", 3481520.754844990, 12276, 0x98e05724da9bfa49, ""},
-		{"E2", 3479438.313038055, 18196, 0xf2f6195ae0b5e804, ""},
+		{"E1", 3481552.975581085, 18230, 0xa7d5fafb5f32e523, ""},
+		{"E2", 3478368.847978603, 35058, 0x8d7407b3430ba5f3, ""},
 		// D3 (simple): a 270°-latitude/90°-longitude sphere-sector trihedral fillet, greened as a bonus by
 		// the quadrant-gated survivor-rim carry (E1/E2/D3 share the mechanism; its 118–146° sphere meridians
 		// are carried, its ≤π/2 rims stay chorded). Its mesh (hash+tris) is bit-stable, so the AREA gate is
 		// stable at 0.29%, but — like M4 — its raw signed-tetra VOLUME sum is TessellateBody-order-sensitive
 		// (~1e-3 swing, the host-sphere zone's near-degenerate winding); its volume is pinned to the mid-spread
 		// with the loosened volTolFor(D3) tolerance, the mesh pinned exactly. Same cross-platform caveat.
-		{"D3", 3407560.0, 17274, 0xe4772e04bfb33d22, ""},
+		{"D3", 3432999.395869759, 30260, 0x324ca51fd705af24, ""},
 		// B1/B9 (simple): already-green PLANAR corner fillets whose curved survivor rims are ≤π/2 (62–67°),
 		// so the survivor-rim carry (fillet_survivor_rim.go) keeps their base chord byte-for-byte. An earlier
 		// arc-carry (82a64cbb) silently drifted them WITHIN deps (B1 0.0071%→0.0499%, toward-wrong) — caught
 		// only by adversarial fingerprinting, not by the pass/fail gate. Pinned here to lock the exact victims
 		// so any future shared-planar-path edit that re-drifts them within tolerance fails loud.
-		{"B1", 192177.835243989, 30206, 0xa0cfc51a98aea8ab, ""},
-		{"B9", 517216.198381525, 16130, 0x92904b222d8b4115, ""},
+		{"B1", 192217.692717441, 42996, 0xae248343c3a6b2af, ""},
+		{"B9", 517453.599720627, 27120, 0x811bd3dea79d86bb, ""},
 		// L1/L7 (simple): the P1 dihedral corner-setback greens (fillet_corner_setback.go). L1 is the tracer
 		// (4 orthogonal concave dihedral miters on a box+boss); L7 is a 10°-rotated boss whose miter corners
 		// are still θ=90° in 3D, so the same orthogonal setback closes it. Both were RED (reflected-seam
@@ -187,7 +201,7 @@ func byteIdentityPins() []fingerprintPin {
 		// HEAD — captured base→HEAD-verified as the sole changed green across ALL SIX grids — locking the
 		// re-weld so a future shared-corner-path edit or a P2–P4 slice cannot silently re-drift it. Same
 		// cross-platform-risk caveat as above applies.
-		{"N5", 1046146.284621348, 56914, 0xb27cf1e52c17e2ee, ""},
+		{"N5", 1047341.372749311, 37558, 0x058a8f3407ef5143, ""},
 		// K6/L4 (simple): the P2 trihedral corner-setback greens (fillet_corner_setback.go). Each is a
 		// box − pocket whose single trihedral corner joins THREE CONCAVE fillets at three mutually-orthogonal
 		// planar faces; both were RED (K6 +1.19%, L4 +1.38%) because solvePlanarBlend placed the corner
@@ -209,7 +223,7 @@ func byteIdentityPins() []fingerprintPin {
 		// the P3 HEAD to lock the torus corner so any later corner slice (P4 non-orthogonal) fails loud if it
 		// perturbs a K9/M2 body. Same cross-platform-risk caveat as above applies.
 		{"K9", 1064212.575467, 8860, 0x8b7d80c80805b0fb, ""},
-		{"M2", 1028376.359922, 16636, 0x1b7133a8b9fdd976, ""},
+		{"M2", 1028376.990494292, 31120, 0xec9b614b4061faf0, ""},
 		// L6 (simple): the ONE previously-GREEN case the P3 pass legitimately RE-WELDS — a 10°-rotated box
 		// corner that is ALSO a mixed-sense trihedral (2 concave + 1 convex on 3 orthogonal planar faces),
 		// green ONLY by tolerance at base (sphere, area rel 0.9033%). The torus re-weld moves it EXACTLY onto
@@ -231,8 +245,8 @@ func byteIdentityPins() []fingerprintPin {
 		// the pass/fail gate (N5 lesson). Both are the ONLY real changed greens across ALL SIX grids vs base
 		// e544759a (D3/M4's volume-only diff is hash-identical TessellateBody summation-order noise). Pinned
 		// so a later corner slice fails loud if it perturbs an A8/A6 body. Same cross-platform-risk caveat.
-		{"A8", 191752.356135391, 12326, 0x5fdf710707588ca3, ""},
-		{"A6", 327951.529353541, 25000, 0xb8b3f0fc0125b58, ""},
+		{"A8", 192243.471620363, 12610, 0xaa941899bc75c45f, ""},
+		{"A6", 328037.934832836, 25096, 0xb8a7ec251964502d, ""},
 		// I3 (simple): a straight LineSegment fillet between a planar ANNULAR-SECTOR host and a triangular
 		// end-cap. transformLoop's `subs` branch (the A/B tangent-point pull-back) hard-coded the LEAVING
 		// survivor edge's curve to nil, CHORDING the sector's r=300 outer rim — slicing the host plane
@@ -243,7 +257,7 @@ func byteIdentityPins() []fingerprintPin {
 		// re-mesh ADD folds) stops the cone inflation — greening I3 for the first time (whole-body 100120,
 		// rel 0.82%; sector plane recovered to 38270). Captured on THIS HEAD; it locks the subs-branch carry
 		// so any later planar-retrim slice that re-chords the rim fails loud. Same cross-platform-risk caveat.
-		{"I3", 980429.069826266, 19046, 0x35414382a0c5c37c, ""},
+		{"I3", 979673.649152592, 24510, 0xa53bc1d42eac4d66, ""},
 		// I9 (simple): the rim-fillet pick gate widen (fillet_rim.go's isClosedCircularEdge) — a plain
 		// solid cylinder rim whose picked edge is a closed geom.Arc3d (SweepAngle≈2π), the shape every
 		// STEP-imported full circle actually has (kernel/exchange never emits geom.Circle). Before the

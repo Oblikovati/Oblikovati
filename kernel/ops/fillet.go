@@ -335,11 +335,16 @@ type corner struct {
 	crossW  float64       // exact CONIC cross-section only: the shoulder weight the end trim must carry
 	chords  []math.Point3 // variable fillet only: the end arc as chord samples ta…tb
 	endFace *topo.Face    // the flat end cap to arc (nil at a blend or miter corner)
-	vertex  *topo.Vertex
-	blend   bool
-	miter   bool          // two-fillet corner: the end is bounded by seam (no end face, no sphere)
-	seam    []math.Point3 // miter only: the seam chords from ta to tb, shared with the other cylinder
-	runout  bool          // variable fillet only: r=0 here, the blend collapses to an apex on the edge
+	// endCurve is the EXACT band∩wall trim of this terminal section when the stop face is not a plane
+	// perpendicular to the edge axis (fillet_farend_trim.go). Nil on every corner whose flat section cap
+	// already lies on its stop face, which keeps the whole planar corpus byte-identical; when set it
+	// replaces the section ARC on both the band's own far end and the wall's loop.
+	endCurve geom.Curve3
+	vertex   *topo.Vertex
+	blend    bool
+	miter    bool          // two-fillet corner: the end is bounded by seam (no end face, no sphere)
+	seam     []math.Point3 // miter only: the seam chords from ta to tb, shared with the other cylinder
+	runout   bool          // variable fillet only: r=0 here, the blend collapses to an apex on the edge
 }
 
 // tOf returns the tangent point on face f (a or b).
@@ -507,6 +512,9 @@ func solvedEdgeFillet(e *topo.Edge, p filletPick, in cornerInputs, blends map[ui
 	if err != nil {
 		return edgeFillet{}, err
 	}
+	// The band must END where the solid does: trim each terminal section against the wall it stops on
+	// instead of squaring it off in the section plane at the edge's end vertex (fillet_farend_trim.go).
+	trimBandEndsToWalls(&c0, &c1, in)
 	return edgeFillet{a: in.a, b: in.b, cyl: cyl, c0: c0, c1: c1, edge: e, flip: in.flip}, nil
 }
 

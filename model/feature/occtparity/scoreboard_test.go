@@ -176,17 +176,26 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 // solved r inside all three planes, which is the convex-only answer: on a 270°-sector corner it lands 2r
 // off the concave arm's spine, so that arm's own band boundary sat 12.36 (94% of r) off its own cylinder.
 // DRAWEXE 8.0.0 dumps the corner as geom.Torus(centre on the concave spine, axis = concave edge, R=2r, r)
-// — see offsurface-loopseg-report.md. A mismatch means
+// — see offsurface-loopseg-report.md.
+// Trimming a fillet band's FAR END against the wall it stops on, instead of squaring it off in the section
+// plane at the filleted edge's end vertex (fillet_farend_trim.go), plus enforcing that a carried rim arc
+// spans only its OWN loop segment (fillet_survivor_rim.go's alignCarriedArcsToSegments), then GREENED C7, D7
+// and complex/D8, restoring 107→109 simple / 112→115 all-grid, SkipQuarantine unchanged at 1. C7 was the
+// extreme run-on: a `pcone s 50 0 120 90` APEX cone whose single cap-edge band ran on to the flank's
+// parametric extreme, shipping +17.67% body area — it now measures −0.0022%, with its per-face gross error
+// vs DRAWEXE 2204.07 → 0.25. D7's −45.3% "host sphere-zone tessellation defect" turned out to be the
+// carried-arc overshoot, not the zone mesher: its body area goes −30.27% → −0.0795% and its per-face gross
+// error 83508.25 → 217.95. A mismatch means
 // either a false green slipped through or a case was over/under-quarantined — see harden-green-gate-brief.md's
 // "STOP and report" instruction.
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 107 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 107 (mixed-sense torus corner greened B5 + C4)", simpleGreen)
+	if simpleGreen != 109 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 109 (far-end wall trim greened C7 + D7)", simpleGreen)
 	}
-	if allGridGreen != 112 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 112 (mixed-sense torus corner greened B5 + C4)", allGridGreen)
+	if allGridGreen != 115 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 115 (far-end wall trim greened C7 + D7 + complex/D8)", allGridGreen)
 	}
 	if skipQuarantine != 1 {
 		t.Errorf("SkipQuarantine = %d, want 1 (H6 only, #2007 U4 freed by U4-5)", skipQuarantine)

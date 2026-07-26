@@ -157,38 +157,37 @@ func offSurfaceDebtIndex() map[string]float64 {
 // knownOffSurfaceDebt is the FULL population of cases whose shipped body still carries a boundary edge
 // off its own face, each capped at 1.1× its measured residual (relative to the bounding diagonal) so a
 // regression fires while an improvement is free. Derived by an instrumented corpus-wide sweep, not from
-// any report. The roots, largest first (offsurface-loopseg-report.md §2):
+// any report. It was 52 entries; the far-end wall trim (fillet_farend_trim.go) retired 17 of them —
+// A5 A6 A8 B1 B5 B9 C4 C7 D3 D7 E1 E2 F2 F6 I3 M2 Q5 are now CLEAN — and shrank 5 more (N5 0.0216→0.000129,
+// V1 0.00451→0.000295, V3 0.00712→0.00199, V5 0.00145→0.000313, complex/D8 0.0461→0.037). The table must
+// SHRINK, never widen. The roots that remain, largest first (farend-runon-report.md §2):
 //
-//   - HOST far-end run-on (B1 B9 D3 D7 E2 I3 C7 N5 A5 A6 A8 M2 X9 V1 V3 V5 P9 V9 P8 V8 K7 L1 L7 E1 F6
-//     complex/D8 complex/F2): a band's far end is squared off at the host's parametric extreme instead
-//     of trimmed against the curved host wall, so the host face's loop carries the band's cross-section
-//     arc / the receded plane's chord rather than the true host∩band curve.
-//   - IMPORTED base-face loops (J2 F7 F2 J4 Q5): the residual is on a face the fillet never touched —
-//     a STEP-imported sphere/torus/elliptic-prism face whose loop already carried an off-surface
-//     segment before the fillet ran. Not a fillet defect; measured here so it cannot hide.
+//   - IMPORTED base-face loops (J2 J4): the residual sits on a face the fillet never touched — a
+//     STEP-imported sphere/torus face whose loop already carried an off-surface segment before the fillet
+//     ran. Not a fillet defect; measured here so it cannot hide.
+//   - NON-Arc3d curved rim carry (F7, complex/D8, complex/F2): the far-end trim now lands the band's
+//     terminal section exactly on the wall, but the wall's own retained rim is re-derived only when its
+//     parent curve is a geom.Arc3d — an ELLIPSE rim (F7's elliptic cylinder) or a wall whose stop face
+//     endFaceAt picked at a valence>3 vertex still ships a straight chord across it.
+//   - SPREAD-FAN / oblique-plane chords (P8 P9 V8 V9 V1 V3 V5 X9 K7 L1 L7 N5): a run-out spread cap is
+//     tiled as a chord fan, so each chord sits a sagitta off the curved wall it spans.
 //   - CANAL / BSpline patch rails (C2 C6 C8 S1 S3 S4 S6 S7 S9 T1 T3 T4 T6 T7 U3 U4 X3 R9): the rail is
 //     built on the exact rolling-ball envelope while the patch is a fitted BSpline, so rail and patch
 //     agree only to the fit's own residual (reverse-segment-fix-report.md §6 concern 2).
 func knownOffSurfaceDebt() []offSurfaceDebtEntry {
 	return []offSurfaceDebtEntry{
-		{"J2", "simple", 0.334}, {"F7", "simple", 0.292}, {"J4", "simple", 0.165},
-		{"F2", "simple", 0.149}, {"C7", "simple", 0.079}, {"Q5", "simple", 0.0678},
-		{"B1", "simple", 0.0678}, {"F2", "complex", 0.0616}, {"D8", "complex", 0.0461},
-		{"D3", "simple", 0.0337}, {"D7", "simple", 0.033}, {"E2", "simple", 0.0316},
-		{"B9", "simple", 0.0246}, {"N5", "simple", 0.0216}, {"C2", "simple", 0.0192},
-		{"I3", "simple", 0.0183}, {"V9", "simple", 0.0171}, {"P9", "simple", 0.0171},
-		{"C4", "simple", 0.0169}, {"A8", "simple", 0.0145}, {"A5", "simple", 0.0143},
-		{"B5", "simple", 0.00831}, {"V3", "simple", 0.00712}, {"V1", "simple", 0.00451},
-		{"A6", "simple", 0.00333}, {"X9", "simple", 0.00285}, {"M2", "simple", 0.00229},
-		{"T7", "simple", 0.00217}, {"F6", "simple", 0.00205}, {"S9", "simple", 0.00199},
-		{"T1", "simple", 0.00157}, {"V5", "simple", 0.00145}, {"C8", "simple", 0.00129},
-		{"E1", "simple", 0.00123}, {"S1", "simple", 0.00106}, {"T4", "simple", 0.00105},
-		{"S4", "simple", 0.00102}, {"T3", "simple", 0.000795}, {"S6", "simple", 0.000641},
-		{"P8", "simple", 0.00061}, {"V8", "simple", 0.00061}, {"S7", "simple", 0.0005},
-		{"X3", "simple", 0.000334}, {"U3", "simple", 0.000323}, {"U4", "simple", 0.000246},
-		{"R9", "simple", 0.000236}, {"S3", "simple", 0.000234}, {"T6", "simple", 0.000231},
-		{"K7", "simple", 0.000153}, {"L1", "simple", 0.000133}, {"L7", "simple", 0.000129},
-		{"C6", "simple", 0.000122},
+		{"J2", "simple", 0.334}, {"F7", "simple", 0.29}, {"J4", "simple", 0.165},
+		{"F2", "complex", 0.0616}, {"D8", "complex", 0.037}, {"C2", "simple", 0.0192},
+		{"V9", "simple", 0.017}, {"P9", "simple", 0.017}, {"X9", "simple", 0.00284},
+		{"T7", "simple", 0.00216}, {"V3", "simple", 0.00199}, {"S9", "simple", 0.00199},
+		{"T1", "simple", 0.00156}, {"C8", "simple", 0.00129}, {"S1", "simple", 0.00105},
+		{"T4", "simple", 0.00104}, {"S4", "simple", 0.00102}, {"T3", "simple", 0.000794},
+		{"S6", "simple", 0.000641}, {"P8", "simple", 0.00061}, {"V8", "simple", 0.00061},
+		{"S7", "simple", 0.000499}, {"X3", "simple", 0.000333}, {"U3", "simple", 0.000323},
+		{"V5", "simple", 0.000313}, {"V1", "simple", 0.000295}, {"U4", "simple", 0.000246},
+		{"R9", "simple", 0.000236}, {"S3", "simple", 0.000233}, {"T6", "simple", 0.000231},
+		{"K7", "simple", 0.000152}, {"L1", "simple", 0.000133}, {"N5", "simple", 0.000129},
+		{"L7", "simple", 0.000128}, {"C6", "simple", 0.000121},
 	}
 }
 

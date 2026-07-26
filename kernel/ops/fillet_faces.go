@@ -469,6 +469,11 @@ func cornerEndSegs(c corner, caps map[uint64][]cornerPiece) []endSeg {
 		}
 		return segs
 	}
+	if c.endCurve != nil {
+		// The section was trimmed against a curved / oblique stop wall: the far end is the exact
+		// band∩wall curve, not a section arc (fillet_farend_trim.go).
+		return []endSeg{{from: c.ta, to: c.tb, curve: c.endCurve}}
+	}
 	arc, _ := geom.Arc3dByThreePoints(c.ta, c.mid, c.tb)
 	return []endSeg{{from: c.ta, to: c.tb, curve: arc, mid: c.mid, arc: true}}
 }
@@ -651,6 +656,9 @@ func arcMidpoints(loop filletLoop) []math.Point3 {
 // an arc profile, or the rational conic (shoulder weight crossW) for a conic profile — the same
 // geometry as the blend surface's end isoline, so the seam welds curve-for-curve (#1606).
 func cornerSectionCurve(c corner, tIn, tOut math.Point3) geom.Curve3 {
+	if c.endCurve != nil {
+		return orientedEndCurve(c, tIn) // the band∩wall trim, oriented to the loop's traversal
+	}
 	if c.crossW > 0 {
 		if conic, err := geom.NewConicSectionCurve(tIn, c.sh, tOut, c.crossW); err == nil {
 			return conic
@@ -658,6 +666,15 @@ func cornerSectionCurve(c corner, tIn, tOut math.Point3) geom.Curve3 {
 	}
 	arc, _ := geom.Arc3dByThreePoints(tIn, c.mid, tOut)
 	return arc
+}
+
+// orientedEndCurve returns the corner's band∩wall trim curve running from tIn: as built when tIn is the
+// A-side tangent point, reversed when the loop arrives from the B side.
+func orientedEndCurve(c corner, tIn math.Point3) geom.Curve3 {
+	if tIn.DistanceTo(c.ta) <= tIn.DistanceTo(c.tb) {
+		return c.endCurve
+	}
+	return geom.ReverseCurve3(c.endCurve)
 }
 
 // ruledBlendFaces emits a variable (or conic) fillet's blend as EXACT rational ruled faces —
