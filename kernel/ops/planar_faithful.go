@@ -126,9 +126,9 @@ func planarAreaMatches(tris [][3]int, outer2D []math.Point2, holes2D [][]math.Po
 	}
 	// Relative area bracket with a model-relative floor: the old absolute 1e-9 floor was
 	// ~10% of a µm-scale face's area, neutering the defect check exactly where cracks
-	// hurt most (#1610).
-	floor := geom.ResolutionForPoints2D(outer2D).Area()
-	return stdmath.Abs(got-want) <= 1e-6*want+floor // tol:numeric (relative area fraction)
+	// hurt most (#1610). The predicate itself is shared with the CDT's own coverage guard
+	// (cdt_coverage.go), so the two cannot drift apart.
+	return coverageAreaMatches(got, want, geom.ResolutionForPoints2D(outer2D).Area())
 }
 
 func triArea(a, b, c math.Point2) float64 {

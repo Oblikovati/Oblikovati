@@ -143,10 +143,11 @@ func isBareTriangleFace(f *topo.Face) bool {
 	return true
 }
 
-// conformingCylConeMesh re-meshes a non-rectangular cyl/cone trim with a boundary-only metric-(u,v)
-// constrained Delaunay, the conforming alternative to the plane ear-clip. nil if not applicable (the
-// trim is a full periodic band / apex cap / iso-rectangle handled watertight by other meshers, or its
-// (u,v) degenerates).
+// conformingCylConeMesh re-meshes a non-rectangular cyl/cone trim in metric (u,v), the conforming
+// alternative to the plane ear-clip: every boundary segment stays a hard constraint (so the face
+// conforms to its neighbour) and the exact 3D boundary points are kept (so it welds). nil if not
+// applicable — the trim is a full periodic band / apex cap / iso-rectangle handled watertight by
+// other meshers, or its (u,v) degenerates.
 func conformingCylConeMesh(f *topo.Face, q Quality) *Mesh {
 	s := f.Geometry()
 	outer3D := faceOuterBoundary(f, q)
@@ -161,17 +162,74 @@ func conformingCylConeMesh(f *topo.Face, q Quality) *Mesh {
 	if _, _, isRect := isoRectangleGrid(outerUV); isRect && len(holesUV) == 0 {
 		return nil // an iso-rectangle is already watertight via structuredGridMesh
 	}
+	return bestConformingPatch(s, q, outer3D, holes3D, outerUV, holesUV)
+}
+
+// bestConformingPatch returns the CERTIFIED conformance re-mesh: the interior-refined triangulation
+// when it demonstrably covers the (u,v) domain it was handed, else the historical boundary-only one.
+//
+// WHY INTERIOR NODES. A boundary-only triangulation has no node anywhere the boundary has none, so it
+// chords straight across the surface between distant boundary points. complex/D8's r=30 fillet band is
+// bounded on two sides by STRAIGHT axial rulings, which discretize to two points each, so a single
+// triangle spanned the band's full 90° arc and realised it as its chord — 2·sin45°/(π/2) = 0.9003,
+// i.e. −9.97% of that triangle's true area and −8.57% over the patch, which was the whole of
+// complex/D8's shipped-vs-closed-form area gap. A deflection-adaptive interior grid follows the
+// curvature instead, so the re-mesh becomes conforming AND faithful and the crack is CLOSED rather
+// than merely not made worse (21339.83 → 23339.47 against the closed form 23340.06).
+//
+// WHY THE COVERAGE CHECK CHOOSES rather than declines. Interior refinement is not free: a domain whose
+// (u,v) boundary polygon SELF-INTERSECTS has no correct triangulation at all, and there the extra nodes
+// move the CDT's extraction arbitrarily — measured over the corpus, every re-mesh that fails
+// cdtCoversLoops has a self-crossing (u,v) boundary and every one that passes it has a simple one,
+// 10 of 10 (see cdt-coverage-report.md §2; the CDT itself recovers every constraint on all of them,
+// so the mesher is innocent — its INPUT is malformed). Refusing outright was measured NET HARMFUL:
+// simple/Q5's fillet face is one of those, and its boundary-only re-mesh — incomplete though it is —
+// ships 7.6459e6 against DRAWEXE's 8.12117e6 (−5.85%) where the mesh it replaces is 6.5576e6 (−19.3%).
+// So the coverage certificate PROMOTES the refined candidate where it holds and is recorded as a
+// diagnostic where it does not; whether a non-covering re-mesh is worth adopting at all stays with
+// conformingMeshIsFaithful, which compares it to the mesh it would replace.
+func bestConformingPatch(s geom.Surface, q Quality, outer3D []math.Point3, holes3D [][]math.Point3, outerUV []math.Point2, holesUV [][]math.Point2) *Mesh {
+	b, loops := conformingPatchLoops(s, outer3D, holes3D, outerUV, holesUV)
+	nFrontier := len(b.scaled)
+	nodes, saturated := adaptiveInteriorNodes(s, outerUV, holesUV, q, 1, false)
+	for _, g := range nodes {
+		b.addInterior(g)
+	}
+	tris, _, _ := constrainedDelaunayRefinedChecked(b.scaled, loops, nFrontier)
+	if !cdtCoversLoops(b.scaled, loops, tris) {
+		return boundaryConformingPatch(s, outer3D, holes3D, outerUV, holesUV)
+	}
+	m := patchMeshFrom(b.pos, b.nrm, tris)
+	repairFolds(m, 8) // an interior node in an anisotropic metric can crease; flip the folding diagonals
+	recordCapSaturation(m, saturated, q)
+	return m
+}
+
+// boundaryConformingPatch is the boundary-only metric-(u,v) triangulation — the conformance re-mesh as
+// it stood before interior refinement, kept as the fallback for a trim the refined CDT cannot cover.
+// It records a diagnostic when it does not cover its own domain either, so the partial answer travels
+// with the mesh instead of being silent.
+func boundaryConformingPatch(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, outerUV []math.Point2, holesUV [][]math.Point2) *Mesh {
+	b, loops := conformingPatchLoops(s, outer3D, holes3D, outerUV, holesUV)
+	tris := constrainedDelaunay(b.scaled, loops)
+	if len(tris) == 0 {
+		return nil
+	}
+	m := patchMeshFrom(b.pos, b.nrm, tris)
+	recordUncoveredDomain(m, cdtCoversLoops(b.scaled, loops, tris))
+	return m
+}
+
+// conformingPatchLoops lays the face's exact 3D boundary points into metric (u,v) — outer loop first,
+// then each hole — returning the patch builder and the loops as CDT index sequences.
+func conformingPatchLoops(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, outerUV []math.Point2, holesUV [][]math.Point2) (*patchBuilder, [][]int) {
 	su, sv := metricScale(s)
 	b := newPatchBuilder(s, su, sv)
 	loops := [][]int{b.addLoop(outer3D, outerUV)}
 	for i := range holes3D {
 		loops = append(loops, b.addLoop(holes3D[i], holesUV[i]))
 	}
-	tris := constrainedDelaunay(b.scaled, loops)
-	if len(tris) == 0 {
-		return nil
-	}
-	return patchMeshFrom(b.pos, b.nrm, tris)
+	return b, loops
 }
 
 // conformingPlaneMesh re-meshes a planar absorber with the projected-plane constrained Delaunay,

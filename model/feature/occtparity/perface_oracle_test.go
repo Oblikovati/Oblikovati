@@ -62,3 +62,45 @@ func sortedFaceMeshAreas(b *topo.Body) []float64 {
 	sort.Sort(sort.Reverse(sort.Float64Slice(out)))
 	return out
 }
+
+// shippedFaceAreasDesc returns the body's per-face areas AS SHIPPED — through CalculateBodyFacets, so
+// the cross-face conformance repair's adoption decisions are included — largest first. The solo
+// variant (sortedFaceMeshAreas) is blind to the repair: a face whose solo mesh is fine but whose
+// SHIPPED mesh was swapped for a worse one reads clean there.
+func shippedFaceAreasDesc(b *topo.Body) []float64 {
+	facets := ops.CalculateBodyFacets(b, ops.PropertyQuality())
+	out := make([]float64, 0, len(facets.FaceMeshes))
+	for _, m := range facets.FaceMeshes {
+		out = append(out, ops.MeshArea(m))
+	}
+	sort.Sort(sort.Reverse(sort.Float64Slice(out)))
+	return out
+}
+
+// assertShippedPerFaceAgainstDrawexe is assertPerFaceAgainstDrawexe on the SHIPPED meshes, with a
+// per-RANK debt ceiling for faces that carry a measured, separately-rooted shortfall. debt[i] (0 =
+// none) is a RATCHET on rank i: it may shrink freely, must never grow, and every entry names its root
+// where it is declared. totalTol gates the summed area (a per-face debt necessarily shows there too).
+func assertShippedPerFaceAgainstDrawexe(t *testing.T, tc drawexeFaceCase, b *topo.Body, debt map[int]float64, totalTol float64) {
+	t.Helper()
+	got := shippedFaceAreasDesc(b)
+	if len(got) != len(tc.drawexe) {
+		t.Fatalf("%s: %d faces, DRAWEXE has %d", tc.name, len(got), len(tc.drawexe))
+	}
+	sum := 0.0
+	for i, want := range tc.drawexe {
+		sum += got[i]
+		budget := tc.perFaceTol
+		if d, ok := debt[i]; ok {
+			budget = d
+		}
+		if rel := stdmath.Abs(got[i]-want) / want; rel > budget {
+			t.Errorf("%s: SHIPPED face #%d (by size) meshes %.6g, DRAWEXE %.6g (rel %+.4f%%, budget %.3g)",
+				tc.name, i+1, got[i], want, (got[i]-want)/want*100, budget)
+		}
+	}
+	if rel := stdmath.Abs(sum-tc.totalArea) / tc.totalArea; rel > totalTol {
+		t.Errorf("%s: summed SHIPPED face area %.6g, DRAWEXE %.6g (rel %+.4f%%, budget %.3g)", tc.name, sum,
+			tc.totalArea, (sum-tc.totalArea)/tc.totalArea*100, totalTol)
+	}
+}
