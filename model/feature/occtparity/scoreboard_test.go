@@ -169,17 +169,24 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 // around the corner carrying OCCT's OWN patch approximation (its interior sits 1.16% of r off the exact
 // envelope, and its implied rolling ball misses tangency to the boss wall by 0.174). This restored 104→105
 // simple / 109→110 all-grid, SkipQuarantine unchanged at 1. (The mixed-radius TRIHEDRAL
-// corner A4, r10/r5/r5, needs a torus corner patch — declined for now, a tracked follow-up.) A mismatch means
+// corner A4, r10/r5/r5, needs a torus corner patch — declined for now, a tracked follow-up.)
+// Generalizing the MIXED-SENSE torus corner to its mirrored signature — 1 concave + 2 convex, where the
+// CONCAVE band pivots (fillet_corner_torus.go's splitMixedSense) — then GREENED B5 and C4, restoring
+// 105→107 simple / 110→112 all-grid, SkipQuarantine unchanged at 1. Both had been carrying a corner sphere
+// solved r inside all three planes, which is the convex-only answer: on a 270°-sector corner it lands 2r
+// off the concave arm's spine, so that arm's own band boundary sat 12.36 (94% of r) off its own cylinder.
+// DRAWEXE 8.0.0 dumps the corner as geom.Torus(centre on the concave spine, axis = concave edge, R=2r, r)
+// — see offsurface-loopseg-report.md. A mismatch means
 // either a false green slipped through or a case was over/under-quarantined — see harden-green-gate-brief.md's
 // "STOP and report" instruction.
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 105 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 105 (general corner-weld layer + N4 + O1)", simpleGreen)
+	if simpleGreen != 107 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 107 (mixed-sense torus corner greened B5 + C4)", simpleGreen)
 	}
-	if allGridGreen != 110 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 110 (general corner-weld layer + N4 + O1)", allGridGreen)
+	if allGridGreen != 112 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 112 (mixed-sense torus corner greened B5 + C4)", allGridGreen)
 	}
 	if skipQuarantine != 1 {
 		t.Errorf("SkipQuarantine = %d, want 1 (H6 only, #2007 U4 freed by U4-5)", skipQuarantine)

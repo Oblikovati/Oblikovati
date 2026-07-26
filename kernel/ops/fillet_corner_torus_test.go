@@ -82,28 +82,40 @@ func TestMixedSameSenseCornerStaysSphereNotTorus(t *testing.T) {
 	}
 }
 
-// TestMixedTorusGateBoundary pins the two predicates the P3 gate is built from: splitMixedSense (exactly
-// 2 concave + 1 convex) and orthogonalPlanarTriple (three mutually-perpendicular planar hosts). Together
-// they decline every non-K9 config — same-sense (all concave / all convex), a lone-concave inversion, a
-// wrong valence, a non-orthogonal (parallel) triple, and a curved host — so each keeps its baseline sphere.
+// TestMixedTorusGateBoundary pins the two predicates the P3 gate is built from: splitMixedSense (a MIXED
+// sense split, either way round, with the minority-sense band as the pivot) and orthogonalPlanarTriple
+// (three mutually-perpendicular planar hosts). Together they decline every non-mixed config — same-sense
+// (all concave / all convex), a wrong valence, a non-orthogonal (parallel) triple, and a curved host — so
+// each keeps its baseline sphere. Both mixed signatures are accepted and the pivot is asserted to be the
+// odd one out: 2cc+1cvx pivots on the convex band (K9/M2/L6), 1cc+2cvx on the concave one (B5/C4/D7).
 func TestMixedTorusGateBoundary(t *testing.T) {
 	fx, fy, fz := threeOrthogonalPlanarFaces(t)
 	for _, tc := range []struct {
-		name    string
-		senses  []bool // per-band concavity (true = concave)
-		wantMix bool
+		name        string
+		senses      []bool // per-band concavity (true = concave)
+		wantMix     bool
+		wantPivotCC bool // the pivot band's expected sense when wantMix
 	}{
-		{"mixed 2concave+1convex", []bool{true, true, false}, true},
-		{"same-sense all concave", []bool{true, true, true}, false},
-		{"same-sense all convex", []bool{false, false, false}, false},
-		{"lone-concave 2convex+1concave", []bool{true, false, false}, false},
-		{"wrong valence 2", []bool{true, false}, false},
-		{"wrong valence 4", []bool{true, true, false, false}, false},
+		{"mixed 2concave+1convex", []bool{true, true, false}, true, false},
+		{"mixed 2convex+1concave", []bool{true, false, false}, true, true},
+		{"same-sense all concave", []bool{true, true, true}, false, false},
+		{"same-sense all convex", []bool{false, false, false}, false, false},
+		{"wrong valence 2", []bool{true, false}, false, false},
+		{"wrong valence 4", []bool{true, true, false, false}, false, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			_, _, ok := splitMixedSense(bandsWithSenses(tc.senses))
+			pivot, pair, ok := splitMixedSense(bandsWithSenses(tc.senses))
 			if ok != tc.wantMix {
 				t.Fatalf("splitMixedSense ok=%v, want %v for %s", ok, tc.wantMix, tc.name)
+			}
+			if !ok {
+				return
+			}
+			if pivot.concave != tc.wantPivotCC {
+				t.Fatalf("pivot concave=%v, want %v (the pivot must be the MINORITY sense)", pivot.concave, tc.wantPivotCC)
+			}
+			if len(pair) != 2 || pair[0].concave != !tc.wantPivotCC || pair[1].concave != !tc.wantPivotCC {
+				t.Fatalf("pair senses %v, want both %v", pair, !tc.wantPivotCC)
 			}
 		})
 	}

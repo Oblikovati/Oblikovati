@@ -11,11 +11,11 @@ import (
 )
 
 // mixedGeom is the fully-solved geometry of one mixed-sense torus corner: the torus (center, axis,
-// major R, minor r), the shared host plane and its outward normal, and — per concave band — the wall
-// it shares with the convex pivot, its spine foot (F_i, the rolling-ball centre at the retracted
+// major R, minor r), the shared host plane and its outward normal, and — per PAIRED band — the wall
+// it shares with the pivot, its spine foot (F_i, the rolling-ball centre at the retracted
 // station) and its two contact points (on the host plane and on the wall). Every downstream point
 // (patch arcs, band cross-sections, host detour) is derived from these, so the four sub-arcs weld by
-// construction. Indices [0]/[1] follow the two concave bands cc[0]/cc[1].
+// construction. Indices [0]/[1] follow the two paired bands pair[0]/pair[1].
 type mixedGeom struct {
 	r, R      float64
 	center    math.Point3 // torus centre C (on the convex fillet axis, at the concave-spine level)
@@ -27,15 +27,15 @@ type mixedGeom struct {
 	spine     [2]math.Point3
 	pTop      [2]math.Point3
 	pWall     [2]math.Point3
-	ccBand    [2]cornerBand // the two concave bands' fils slots (for writing the retraction back)
+	pairBand  [2]cornerBand // the two paired bands' fils slots (for writing the retraction back)
 }
 
 // mixedCornerGeom solves the torus frame and every contact point. It finds the torus centre C as the
-// point on the convex fillet axis nearest the first concave spine (the common-perpendicular foot),
+// point on the PIVOT band's fillet axis nearest the first paired spine (the common-perpendicular foot),
 // verifies the pivot radius is the derived 2r, then fills each band's spine and tangent points. ok=false
 // on a non-planar host or a pivot radius off 2r (a non-orthogonal / curved mixed corner, out of scope).
-func mixedCornerGeom(cvx cornerBand, cc []cornerBand) (mixedGeom, bool) {
-	top, ok := sharedBandFace(cc[0], cc[1])
+func mixedCornerGeom(pivot cornerBand, pair []cornerBand) (mixedGeom, bool) {
+	top, ok := sharedBandFace(pair[0], pair[1])
 	if !ok {
 		return mixedGeom{}, false
 	}
@@ -43,35 +43,41 @@ func mixedCornerGeom(cvx cornerBand, cc []cornerBand) (mixedGeom, bool) {
 	if !ok {
 		return mixedGeom{}, false
 	}
-	axis := cvx.cyl.AxisDir.AsVector()
-	center, foot := closestPointsBetweenLines(cvx.cyl.Origin, axis, cc[0].cyl.Origin, cc[0].cyl.AxisDir.AsVector())
-	g := mixedGeom{r: cvx.cyl.Radius, R: center.DistanceTo(foot), center: center, axis: axis, top: top, nTop: nTop}
+	axis := pivot.cyl.AxisDir.AsVector()
+	center, foot := closestPointsBetweenLines(pivot.cyl.Origin, axis, pair[0].cyl.Origin, pair[0].cyl.AxisDir.AsVector())
+	g := mixedGeom{r: pivot.cyl.Radius, R: center.DistanceTo(foot), center: center, axis: axis, top: top, nTop: nTop}
 	if stdmath.Abs(g.R-2*g.r) > mixedTorusRadiusTol*g.r {
 		return mixedGeom{}, false // not the 2r rolling pivot — a non-orthogonal / curved mixed corner
 	}
 	g.centerTop = dropOntoPlane(center, top, nTop)
-	g.ccBand[0], g.ccBand[1] = cc[0], cc[1]
-	if !fillMixedTangents(&g, cc) {
+	g.pairBand[0], g.pairBand[1] = pair[0], pair[1]
+	if !fillMixedTangents(&g, pair) {
 		return mixedGeom{}, false
 	}
 	return g, true
 }
 
-// fillMixedTangents fills each concave band's spine foot and its two contact points. The spine F_i is
+// fillMixedTangents fills each paired band's spine foot and its two contact points. The spine F_i is
 // the rolling-ball centre on the band's axis at the retracted station (the axis point nearest C); the
-// contact point on any face is F_i pulled back r along that face's OUTWARD normal (the ball sits r off
-// the face on its outward side). ok=false when a band's wall is non-planar.
-func fillMixedTangents(g *mixedGeom, cc []cornerBand) bool {
+// contact point on any face is F_i PROJECTED onto that face's plane — the foot of the perpendicular,
+// which is the tangency point whichever SIDE the ball sits on. (The projection replaced a
+// `F_i − r·n_outward` translate: that hard-codes the ball being on the face's outward side, which holds
+// only for the 2-concave signature. For the 1-concave/2-convex corner the paired bands are CONVEX and
+// their spines sit r on the INWARD side, so the translate landed the contact 2r away — the 12.36
+// off-its-own-cylinder rail on B5/C4/D7. |F_i − face| is r by construction either way, so the
+// projection is the same point on the old signature and the correct one on the new.)
+// ok=false when a band's wall is non-planar.
+func fillMixedTangents(g *mixedGeom, pair []cornerBand) bool {
 	for i := 0; i < 2; i++ {
-		g.spine[i] = footOnLine(g.center, cc[i].cyl.Origin, cc[i].cyl.AxisDir.AsVector())
-		wall := otherBandFace(cc[i], g.top)
+		g.spine[i] = footOnLine(g.center, pair[i].cyl.Origin, pair[i].cyl.AxisDir.AsVector())
+		wall := otherBandFace(pair[i], g.top)
 		nW, ok := planeNormal(wall)
 		if !ok {
 			return false
 		}
 		g.wall[i] = wall
-		g.pTop[i] = g.spine[i].TranslateBy(g.nTop.Scale(-g.r))
-		g.pWall[i] = g.spine[i].TranslateBy(nW.Scale(-g.r))
+		g.pTop[i] = dropOntoPlane(g.spine[i], g.top, g.nTop)
+		g.pWall[i] = dropOntoPlane(g.spine[i], wall, nW)
 	}
 	return true
 }
@@ -92,8 +98,8 @@ func mixedTorusPatch(g mixedGeom) (filletFace, bool) {
 }
 
 // mixedPatchLoop chains the torus patch's four bounding arcs into a closed loop. Each arc is a 90°
-// quarter through its bisector midpoint: cc0's tube (radius r about spine0), the inner equator (radius
-// R−r about the axis, shared with the convex band), cc1's tube, and the top contact (radius R about the
+// quarter through its bisector midpoint: pair0's tube (radius r about spine0), the inner equator (radius
+// R−r about the axis, shared with the PIVOT band), pair1's tube, and the top contact (radius R about the
 // axis, shared with the host plane). orientFilletShell unifies the winding at assembly.
 func mixedPatchLoop(g mixedGeom) (filletLoop, bool) {
 	arcs := []cornerArcSpec{
@@ -123,8 +129,8 @@ type cornerArcSpec struct {
 
 // mixedTopCorner is the synthetic simple END corner injected into the host plane's re-trim so the
 // shared plane's receded vertex expands into the torus top-contact arc (radius R about the axis). Its
-// two face-tangent points are the concave bands' host-plane contacts, keyed so addEndCorner's tOf picks
-// the right one for either loop-traversal direction: ta on cc0's wall, tb on cc1's wall.
+// two face-tangent points are the paired bands' host-plane contacts, keyed so addEndCorner's tOf picks
+// the right one for either loop-traversal direction: ta on pair0's wall, tb on pair1's wall.
 func mixedTopCorner(g mixedGeom, v *topo.Vertex) corner {
 	return corner{
 		a: g.wall[0], b: g.wall[1],
@@ -134,14 +140,14 @@ func mixedTopCorner(g mixedGeom, v *topo.Vertex) corner {
 	}
 }
 
-// mixedBandRetracts builds the three bands' rewritten cross-sections: each concave band retracts to its
-// tube arc (host + wall contacts), the convex band retracts to the inner-equator arc (its two wall
+// mixedBandRetracts builds the three bands' rewritten cross-sections: each PAIRED band retracts to its
+// tube arc (host + wall contacts), the PIVOT band retracts to the inner-equator arc (its two wall
 // contacts) — the SAME four contact arcs the torus patch is bounded by, so band and patch weld.
-func mixedBandRetracts(g mixedGeom, cvx cornerBand) [3]bandRetract {
+func mixedBandRetracts(g mixedGeom, pivot cornerBand) [3]bandRetract {
 	return [3]bandRetract{
-		bandRetractFor(g.ccBand[0], pointByFace(g.top, g.pTop[0], g.wall[0], g.pWall[0]), arcMidOnCircle(g.spine[0], g.pTop[0], g.pWall[0], g.r)),
-		bandRetractFor(g.ccBand[1], pointByFace(g.top, g.pTop[1], g.wall[1], g.pWall[1]), arcMidOnCircle(g.spine[1], g.pTop[1], g.pWall[1], g.r)),
-		bandRetractFor(cvx, pointByFace(g.wall[0], g.pWall[0], g.wall[1], g.pWall[1]), arcMidOnCircle(g.center, g.pWall[0], g.pWall[1], g.R-g.r)),
+		bandRetractFor(g.pairBand[0], pointByFace(g.top, g.pTop[0], g.wall[0], g.pWall[0]), arcMidOnCircle(g.spine[0], g.pTop[0], g.pWall[0], g.r)),
+		bandRetractFor(g.pairBand[1], pointByFace(g.top, g.pTop[1], g.wall[1], g.pWall[1]), arcMidOnCircle(g.spine[1], g.pTop[1], g.pWall[1], g.r)),
+		bandRetractFor(pivot, pointByFace(g.wall[0], g.pWall[0], g.wall[1], g.pWall[1]), arcMidOnCircle(g.center, g.pWall[0], g.pWall[1], g.R-g.r)),
 	}
 }
 

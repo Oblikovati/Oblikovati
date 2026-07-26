@@ -11,13 +11,15 @@ import (
 // mixedTorusRadiusTol is the largest |R−2r|/r a mixed corner's pivot radius may deviate from the
 // derived 2r before the pass declines. R and r are both model lengths so the ratio is
 // DIMENSIONLESS and scale-invariant (needs no bbox factor). R=2r is the rolling-ball pivot of a
-// mixed-sense trihedral corner (the convex-edge fillet axis sits r inside each wall, the two
-// concave spines r outside → spine separation 2r, geometry-derivation §3). A pair that fails this
+// mixed-sense trihedral corner: at an orthogonal corner one arm's fillet axis sits r INSIDE a wall
+// and the odd-sense arm's r OUTSIDE it, so the two spines are 2r apart (geometry-derivation §3).
+// That holds for BOTH mixed signatures — 2-concave+1-convex and 1-concave+2-convex — because it is
+// a statement about the two senses, not about which is the majority. A pair that fails this
 // is not the box-corner torus the derivation covers (a non-orthogonal or curved mixed corner shifts
 // R off 2r) so it is left to the honest-reject baseline rather than mis-modelled.
 const mixedTorusRadiusTol = 1e-6
 
-// The mixed-sense trihedral (torus) corner treatment (OCCT tests/blend/simple K9/M2/L6) is accumulated
+// The mixed-sense trihedral (torus) corner treatment (OCCT tests/blend/simple K9/M2/L6 and B5/C4/D7) is accumulated
 // by the unified pass (fillet_corner_setback_unified.go): accumulateMixedTorus builds one corner's
 // torus via buildMixedTorusCorner and emits its band retracts (railWrites), the dropped sphere vertex,
 // the torus patch (extraPatches), and the synthetic host end-corner (hostEnds); weldMixedTorusFaces
@@ -63,22 +65,22 @@ func buildMixedTorusCorner(vid uint64, cb *cornerBlend, fils []edgeFillet) (mixe
 	if cb == nil || cb.vertex == nil {
 		return mixedTorusCorner{}, false
 	}
-	cvx, cc, ok := splitMixedSense(cornerBandsAt(vid, fils))
+	pivot, pair, ok := splitMixedSense(cornerBandsAt(vid, fils))
 	if !ok {
 		return mixedTorusCorner{}, false
 	}
-	faces := mixedCornerFaces(cvx, cc)
+	faces := mixedCornerFaces(pivot, pair)
 	if len(faces) != 3 || !orthogonalPlanarTriple(faces) {
 		return mixedTorusCorner{}, false
 	}
-	return solveMixedTorusCorner(vid, cb.vertex, cvx, cc)
+	return solveMixedTorusCorner(vid, cb.vertex, pivot, pair)
 }
 
 // solveMixedTorusCorner builds the torus geometry, patch face, host-plane re-trim corner and the three
 // band retractions once the gate has accepted the corner. ok=false on a degenerate torus frame or a
 // pivot radius off 2r (mixedCornerGeom's guard).
-func solveMixedTorusCorner(vid uint64, v *topo.Vertex, cvx cornerBand, cc []cornerBand) (mixedTorusCorner, bool) {
-	g, ok := mixedCornerGeom(cvx, cc)
+func solveMixedTorusCorner(vid uint64, v *topo.Vertex, pivot cornerBand, pair []cornerBand) (mixedTorusCorner, bool) {
+	g, ok := mixedCornerGeom(pivot, pair)
 	if !ok {
 		return mixedTorusCorner{}, false
 	}
@@ -88,7 +90,7 @@ func solveMixedTorusCorner(vid uint64, v *topo.Vertex, cvx cornerBand, cc []corn
 	}
 	return mixedTorusCorner{
 		vertexID: vid, topFace: g.top, topCorner: mixedTopCorner(g, v),
-		patch: patch, bands: mixedBandRetracts(g, cvx),
+		patch: patch, bands: mixedBandRetracts(g, pivot),
 	}, true
 }
 
@@ -110,10 +112,20 @@ func cornerBandsAt(vid uint64, fils []edgeFillet) []cornerBand {
 	return out
 }
 
-// splitMixedSense partitions three converging bands into the single CONVEX pivot band and the two
-// CONCAVE bands. ok=false for any valence other than 3 or any sense split other than 2 concave + 1
-// convex (a same-sense corner is a sphere, not a torus).
-func splitMixedSense(bands []cornerBand) (convex cornerBand, concaves []cornerBand, ok bool) {
+// splitMixedSense partitions three converging bands into the single MINORITY-sense PIVOT band and the
+// two majority-sense bands. Both mixed signatures are the same torus up to which sense is the odd one
+// out — the pivot always supplies the axis and the inner-equator contact, the pair always supplies the
+// two tube arcs and the shared plane the top-contact arc lies on:
+//
+//   - 2 concave + 1 convex (K9/M2/L6): the CONVEX band pivots, the two concave bands share the top plane;
+//   - 1 concave + 2 convex (B5/C4/D7, the 270°-sector corner): the CONCAVE band pivots, the two convex
+//     bands share the top plane. DRAWEXE 8.0.0 on `pcylinder s 50 100 270` + `blend 10 s_9 s_6 s_5`
+//     dumps this corner as exactly geom.Torus(centre on the concave spine, axis = concave edge, R=2r,
+//     r) — same surface, mirrored roles.
+//
+// ok=false for any valence other than 3 or a SAME-sense triple (3 concave = the void sphere octant,
+// 3 convex = the run-off clip — neither is a torus).
+func splitMixedSense(bands []cornerBand) (pivot cornerBand, pair []cornerBand, ok bool) {
 	if len(bands) != 3 {
 		return cornerBand{}, nil, false
 	}
@@ -125,16 +137,19 @@ func splitMixedSense(bands []cornerBand) (convex cornerBand, concaves []cornerBa
 			cvx = append(cvx, b)
 		}
 	}
-	if len(cvx) != 1 || len(cc) != 2 {
-		return cornerBand{}, nil, false
+	switch {
+	case len(cvx) == 1 && len(cc) == 2:
+		return cvx[0], cc, true
+	case len(cc) == 1 && len(cvx) == 2:
+		return cc[0], cvx, true
 	}
-	return cvx[0], cc, true
+	return cornerBand{}, nil, false
 }
 
 // mixedCornerFaces returns the distinct host faces of the three bands (the trihedral's three faces).
-func mixedCornerFaces(cvx cornerBand, cc []cornerBand) []*topo.Face {
+func mixedCornerFaces(pivot cornerBand, pair []cornerBand) []*topo.Face {
 	seen := map[uint64]*topo.Face{}
-	for _, b := range append([]cornerBand{cvx}, cc...) {
+	for _, b := range append([]cornerBand{pivot}, pair...) {
 		seen[b.a.ID()], seen[b.b.ID()] = b.a, b.b
 	}
 	out := make([]*topo.Face, 0, len(seen))
@@ -144,7 +159,7 @@ func mixedCornerFaces(cvx cornerBand, cc []cornerBand) []*topo.Face {
 	return out
 }
 
-// sharedBandFace returns the host face both bands touch (the shared plane the two concave bands' torus
+// sharedBandFace returns the host face both bands touch (the shared plane the pair's torus
 // top-contact arc lies on), or ok=false when they share none.
 func sharedBandFace(x, y cornerBand) (*topo.Face, bool) {
 	for _, fx := range []*topo.Face{x.a, x.b} {
@@ -155,7 +170,7 @@ func sharedBandFace(x, y cornerBand) (*topo.Face, bool) {
 	return nil, false
 }
 
-// otherBandFace returns the band's face that is not top (its wall — the face it shares with the convex
+// otherBandFace returns the band's face that is not top (its wall — the face it shares with the
 // pivot band).
 func otherBandFace(b cornerBand, top *topo.Face) *topo.Face {
 	if b.a == top {
@@ -165,10 +180,10 @@ func otherBandFace(b cornerBand, top *topo.Face) *topo.Face {
 }
 
 // closestPointsBetweenLines returns the mutually-nearest points of two lines (o1,d1) and (o2,d2), d1/d2
-// unit — the common-perpendicular feet. For the torus corner: the point on the convex fillet axis (p1 =
-// centre C) and on a concave spine (p2) closest to each other. Assumes the lines are not parallel (the
-// convex and concave fillet axes are orthogonal at a box corner); a parallel pair divides by ~0 and is
-// screened out upstream by the orthogonal-planar gate.
+// unit — the common-perpendicular feet. For the torus corner: the point on the PIVOT band's fillet axis
+// (p1 = centre C) and on one paired band's spine (p2) closest to each other. Assumes the lines are not
+// parallel (the pivot and paired fillet axes are orthogonal at a box corner); a parallel pair divides by
+// ~0 and is screened out upstream by the orthogonal-planar gate.
 func closestPointsBetweenLines(o1 math.Point3, d1 math.Vector3, o2 math.Point3, d2 math.Vector3) (p1, p2 math.Point3) {
 	w := o2.VectorTo(o1)
 	b := d1.Dot(d2)

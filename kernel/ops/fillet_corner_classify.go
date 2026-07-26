@@ -35,7 +35,7 @@ const (
 	treatDecline       cornerTreatment = iota
 	treatDihedralMiter                 // 2 concave orthogonal planar → seam setback, no patch (P1: L1/L7/N5)
 	treatConcaveSphere                 // 3 concave orthogonal planar → void-flipped sphere octant (P2: K6/L4)
-	treatMixedTorus                    // 2 concave + 1 convex orthogonal planar → torus R=2r (P3: K9/M2/L6)
+	treatMixedTorus                    // mixed-sense orthogonal planar → torus R=2r (2cc+1cvx: K9/M2/L6; 1cc+2cvx: B5/C4/D7)
 	treatConvexRunoff                  // 3 convex planar (body all-planar) → oblique run-off clip (P4: A8/A6)
 )
 
@@ -83,8 +83,8 @@ func classifyBlendCorner(vid uint64, ctx setbackCtx) cornerTreatment {
 		return treatDecline
 	}
 	bands := cornerBandsAt(vid, ctx.fils)
-	if cvx, cc, ok := splitMixedSense(bands); ok {
-		if faces := mixedCornerFaces(cvx, cc); len(faces) == 3 && orthogonalPlanarTriple(faces) {
+	if pivot, pair, ok := splitMixedSense(bands); ok {
+		if faces := mixedCornerFaces(pivot, pair); len(faces) == 3 && orthogonalPlanarTriple(faces) {
 			return treatMixedTorus
 		}
 	}
