@@ -67,6 +67,12 @@ func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 	if us, vs, isRect := isoRectangleGrid(outerUV); len(holesUV) == 0 && isRect {
 		return structuredGridMesh(s, us, vs) // cylinder/cone wall, fillet face: exact area
 	}
+	if us, vs, skip, isCells := isoRectilinearGrid(outerUV); len(holesUV) == 0 && isCells {
+		// A band the obstacle imprint notched (fillet_band_imprint.go): still bounded entirely by
+		// iso-lines, so it is a union of grid cells and needs no triangulator — see
+		// tessellate_rectilinear.go for what the generic CDT does with it instead.
+		return structuredGridMeshSkip(s, us, vs, skip)
+	}
 	return nonRectangularMesh(s, q, outer3D, holes3D, outerUV, holesUV)
 }
 
