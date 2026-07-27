@@ -79,69 +79,24 @@ func TestD8FarEndSplitIsAtomicAndHitsItsClosedForms(t *testing.T) {
 // round's triangulation did not tile the same boundary its neighbours did, and D8's welded body mesh
 // LEAKED — 36 free edges at property quality, 8 at default, on a body the scoreboard called healthy. The
 // split closes it to 0 at both. Fold-freeness held (0) throughout and must stay so.
+//
+// It measures through shippedMeshFreeEdges — the corpus-wide ratchet's own measurement
+// (welded_mesh_leak_test.go) — rather than the hand-rolled welder it used to carry, so D8's zero and the
+// ratchet's ceilings are read by ONE ruler, the production model-relative ops.FreeEdgeCount. D8 is
+// deliberately absent from knownMeshLeaks: its ceiling is this zero.
 func assertD8MeshIsWatertightAtEveryQuality(t *testing.T, body *topo.Body) {
 	t.Helper()
 	for _, gq := range gateQualities() {
-		facets := ops.CalculateBodyFacets(body, gq.q)
 		folds := 0
-		for _, m := range facets.FaceMeshes {
+		for _, m := range ops.CalculateBodyFacets(body, gq.q).FaceMeshes {
 			folds += ops.FoldEdgeCount(m)
 		}
-		free := weldedBodyMeshFreeEdges(facets.FaceMeshes, boundingDiag(body)*1e-9)
+		free := shippedMeshFreeEdges(body, gq.q)
 		if folds != 0 || free != 0 {
 			t.Errorf("complex/D8 body mesh at %s quality: %d fold edges, %d free edges; want 0 and 0",
 				gq.name, folds, free)
 		}
 	}
-}
-
-// weldedBodyMeshFreeEdges counts the triangle edges of a body's per-face meshes, welded across faces on a
-// model-relative quantum, that are not shared by exactly two triangles — the direct statement of "this
-// tessellation is a closed surface". Adjacent faces discretize a shared edge through the SAME edge curve,
-// so their boundary vertices are bit-identical and the quantum only has to survive that.
-func weldedBodyMeshFreeEdges(meshes []*ops.Mesh, quantum float64) int {
-	count := map[[2][3]int64]int{}
-	for _, m := range meshes {
-		tallyWeldedMeshEdges(m, quantum, count)
-	}
-	free := 0
-	for _, n := range count {
-		if n != 2 {
-			free++
-		}
-	}
-	return free
-}
-
-// tallyWeldedMeshEdges adds one mesh's triangle edges to the welded tally, each keyed by its two
-// quantised endpoints in a canonical order.
-func tallyWeldedMeshEdges(m *ops.Mesh, quantum float64, count map[[2][3]int64]int) {
-	key := func(i int) [3]int64 {
-		p := m.Positions[m.Indices[i]]
-		return [3]int64{quantise(float64(p.X), quantum), quantise(float64(p.Y), quantum), quantise(float64(p.Z), quantum)}
-	}
-	for i := 0; i+2 < len(m.Indices); i += 3 {
-		a, b, c := key(i), key(i+1), key(i+2)
-		for _, e := range [][2][3]int64{{a, b}, {b, c}, {c, a}} {
-			count[canonicalMeshEdge(e)]++
-		}
-	}
-}
-
-// quantise snaps a coordinate onto the weld lattice.
-func quantise(x, quantum float64) int64 { return int64(stdmath.Round(x / quantum)) }
-
-// canonicalMeshEdge orders an edge's two quantised endpoints so both incident triangles key it the same.
-func canonicalMeshEdge(e [2][3]int64) [2][3]int64 {
-	for i := 0; i < 3; i++ {
-		if e[0][i] != e[1][i] {
-			if e[0][i] > e[1][i] {
-				e[0], e[1] = e[1], e[0]
-			}
-			return e
-		}
-	}
-	return e
 }
 
 // d8PerFaceTol is mesh quantization only — the five faces measure −0.0016 %, −0.0016 %, −1.5e-5 %,
