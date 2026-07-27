@@ -630,7 +630,8 @@ func bracketPeriod(g []float64) []float64 {
 }
 
 // toUVLoops maps the boundary loops to parameter space, unwrapping periodic parameters so
-// a loop reads as a contiguous polygon; ok=false if a loop wraps the full seam.
+// a loop reads as a contiguous polygon; ok=false if a loop wraps the full seam — including
+// one that starts ON the seam and only leaps the period on its closing step (see [unwrap]).
 func toUVLoops(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3) (outer []math.Point2, holes [][]math.Point2, ok bool) {
 	uPer, vPer := isPeriodic(s.UDomain()), isPeriodic(s.VDomain())
 	if outer, ok = toUVLoop(s, outer3D, uPer, vPer); !ok {
@@ -672,24 +673,44 @@ func toUVLoop(s geom.Surface, loop []math.Point3, uPer, vPer bool) ([]math.Point
 	return out, true
 }
 
-// unwrap removes 2π jumps so a periodic parameter reads continuously; ok=false when the
-// total span reaches 2π (the loop wraps the seam and is not a simple polygon).
+// unwrap removes 2π jumps so a periodic parameter reads continuously around the CLOSED ring; ok=false
+// when the loop wraps the seam and so is not a simple polygon in this chart — either because it winds a
+// whole period about the periodic axis ([seamWindingLeap]) or because its developed span reaches 2π.
 func unwrap(a []float64) ([]float64, bool) {
 	out := make([]float64, len(a))
 	out[0] = a[0]
 	lo, hi := a[0], a[0]
 	for i := 1; i < len(a); i++ {
-		d := a[i] - a[i-1]
-		for d > stdmath.Pi {
-			d -= 2 * stdmath.Pi
-		}
-		for d <= -stdmath.Pi {
-			d += 2 * stdmath.Pi
-		}
-		out[i] = out[i-1] + d
+		out[i] = out[i-1] + wrapPi(a[i]-a[i-1])
 		lo, hi = stdmath.Min(lo, out[i]), stdmath.Max(hi, out[i])
 	}
+	if seamWindingLeap(a, out) {
+		return out, false
+	}
 	return out, hi-lo < 2*stdmath.Pi-1e-6 // tol:angular (radians)
+}
+
+// seamWindingLeap reports whether the loop's CLOSING step — last sample back to first, a polygon segment
+// like any other, and the one the open chain never measures — is drawn in the chart as a leap of a whole
+// period while the geometry takes the short way round.
+//
+// WHY THE OPEN CHAIN IS NOT ENOUGH. The span guard above sees only samples 0..n−1. A loop that STARTS on
+// the seam therefore passes it by ε — simple/W1's corner sphere reads 6.2586 against 2π, 0.024 rad of
+// margin — and then jumps from u ≈ 2π back to u = 0 on closure, developing a patch that encircles the
+// chart's pole as if it were a contractible polygon. The quantity here is the loop's total WINDING about
+// the periodic axis: Σ of the wrapped steps around the full cycle, which is 0 for every loop that has a
+// development and ±2πk for every loop that has none (retrace-detector-report.md §7.1).
+//
+// Rejecting is the honest answer, not a fallback: a loop with nonzero winding is an object on the
+// covering space, so it has no simple polygon in this chart to hand the triangulator. The caller routes
+// it to meshSeamCrossingFace, which is where seam-wrapping loops already go.
+func seamWindingLeap(a, out []float64) bool {
+	n := len(a)
+	if n < 2 {
+		return false
+	}
+	closing := wrapPi(a[0] - a[n-1])
+	return stdmath.Abs(out[0]-out[n-1]-closing) > seamAngularTol
 }
 
 // isPeriodic reports whether a [0, 2π] parameter domain wraps.

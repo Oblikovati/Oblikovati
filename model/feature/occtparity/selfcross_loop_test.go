@@ -88,8 +88,8 @@ func selfCrossDebtIndex() map[string]selfCrossDebtEntry {
 }
 
 // knownSelfCrossingLoops is the FULL measured population of shipped faces whose developed boundary
-// self-crosses: 9 loops on 6 cases, of 1138 faces across the scored corpus (it was 17 on 11 of 1144,
-// then 12 on 8).
+// self-crosses: 7 loops on 4 cases, of 1155 faces across the scored corpus (it was 17 on 11 of 1144,
+// then 12 on 8, then 9 on 6).
 // Each ceiling is the measured pinched-off area, in the surface's own metric chart, rounded UP a little so
 // float noise cannot fail it while a real growth does. Derived by an instrumented corpus-wide sweep at
 // ops.PropertyQuality(), not from any report.
@@ -110,6 +110,21 @@ func selfCrossDebtIndex() map[string]selfCrossDebtEntry {
 // NOT see and the closed forms could: Y4's LARGEST single error was +100 on the host plane, whose loop
 // back-tracked along a COLLINEAR sibling instead of crossing it, which simpleLoop2D scores as zero
 // crossings — the listed 23.9109 was a different face (the wall above the slot).
+//
+// RETIRED, third wave — as FALSE POSITIVES, not as fixed geometry: simple/E4 (1 loop, 128.489) and
+// simple/W1 (1 loop, 0). Both were the SPHERE-PATCH SEAM entry below, and both were measuring the CHART
+// rather than the boundary. Their loops start ON the sphere's (u,v) seam and wind a whole period about
+// it — the patch's own vertex is the chart's pole — so they have no development in that chart at all,
+// and unwrap's open-chain-only guard passed them by as little as 0.024 rad before leaping 2π on the
+// closing step (retrace-detector-report.md §7.1). The guard now covers the closing step
+// (kernel/ops/tessellate_trim.go), so developedFaceLoops SKIPS them, which is what it already promises
+// to do for a loop that wraps the seam. ★ THE SHRINK IS CAUSED BY A PRODUCTION FIX, NOT BY A DETECTOR
+// EDIT — loopSelfCrossing and developedFaceLoops are untouched — and it is NOT a geometry improvement:
+// those two faces' meshes are byte-identical before and after (they route through spherePatchMesh, not
+// the seam chart). What convicts the old entries is the rank-pair: E4's face meshes 171.8998 against
+// its exact spherical-excess closed form 171.9270, −0.0159 %, which a face genuinely pinching off
+// 128.489 of its own 171.93 could not do. Both are now gated on that closed form instead, by
+// TestSeamWindingSpherePatchMeshesToClosedForm.
 //
 // The roots that remain, largest first:
 //
@@ -132,17 +147,21 @@ func selfCrossDebtIndex() map[string]selfCrossDebtEntry {
 //     — we USED TO ship 8475 / 1000 / 1000 / 964.027 / 2356.18, a +96.8 (+0.159%) body surplus hidden
 //     inside a 1% PASS. The fix CLIPS the setback band against the host's own loop, which also shortens
 //     the slot's faces — i.e. the fillet is LIMITED BY the obstacle, not vertex-substituted. Done.
-//   - SPHERE-PATCH SEAM (simple/E4, simple/W1): a fillet corner sphere whose loop runs along the seam;
-//     W1's pinches off 0 area, i.e. the crossing is degenerate.
+//   - (RETIRED, as a false positive) SPHERE-PATCH SEAM (simple/E4, simple/W1): a fillet corner sphere
+//     whose loop starts on the seam and winds the period, so it has no development in that chart. See
+//     the third-wave note above.
 //   - simple/W2's 2.5e-13 is float noise on an otherwise simple loop.
+//
+// complex/F2's larger loop now measures 1098.03, not the 1104.69 its ceiling was set from. The ceiling
+// is deliberately left where it stood: 1098.03 is also what the BASE commit measures, so the drop
+// predates this slice, and re-setting a ceiling from a fresh measurement is the ratchet-measurement
+// correction that belongs in its own slice, not a side effect of a mesher fix.
 func knownSelfCrossingLoops() []selfCrossDebtEntry {
 	return []selfCrossDebtEntry{
 		{"Q5", "simple", 2, 84913},   // f12723 (the r=2500 band's host wall) 84912.4, f12719 0.284334
-		{"F2", "complex", 2, 1105},   // 1104.69 / 7.16978 (was 4 loops: 28.1712 and 7.78603 retired)
-		{"E4", "simple", 1, 128.49},  // 128.489
+		{"F2", "complex", 2, 1105},   // 1098.03 / 7.16978 (was 4 loops: 28.1712 and 7.78603 retired)
 		{"D8", "complex", 2, 1.2119}, // BOTH mirror corner rounds, identically 1.21187
 		{"W2", "simple", 1, 1e-12},   // 2.49967e-13 — a degenerate crossing, float noise
-		{"W1", "simple", 1, 1e-12},   // 0 — a degenerate seam crossing that pinches off nothing
 	}
 }
 
