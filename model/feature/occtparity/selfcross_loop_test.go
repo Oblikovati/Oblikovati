@@ -88,7 +88,8 @@ func selfCrossDebtIndex() map[string]selfCrossDebtEntry {
 }
 
 // knownSelfCrossingLoops is the FULL measured population of shipped faces whose developed boundary
-// self-crosses: 12 loops on 8 cases, of 1138 faces across the scored corpus (it was 17 on 11 of 1144).
+// self-crosses: 9 loops on 6 cases, of 1138 faces across the scored corpus (it was 17 on 11 of 1144,
+// then 12 on 8).
 // Each ceiling is the measured pinched-off area, in the surface's own metric chart, rounded UP a little so
 // float noise cannot fail it while a real growth does. Derived by an instrumented corpus-wide sweep at
 // ops.PropertyQuality(), not from any report.
@@ -99,6 +100,16 @@ func selfCrossDebtIndex() map[string]selfCrossDebtEntry {
 // matchArcFeet + orientedOpenSurvivor, and it also emptied knownEdgeSpanDebt). Their faces now rank-pair
 // EXACTLY against DRAWEXE: M4's cap 9752.18 → 9631.8 (oracle 9631.79), N3's 10955.6 → 10946.3 (10946.3),
 // N9's 1307.31 → 1298.6 (1298.57), and complex/F2's largest wall 6517.86 → 10366.6 (10366.6, exact).
+//
+// RETIRED, second wave: simple/Y2 (2 loops, 50 / 1.41397) and simple/Y4 (1 loop, 23.9109) — the
+// SETBACK-BAND-OVERRUN root below, closed by the band∩obstacle imprint walk
+// (kernel/ops/fillet_band_imprint.go). Their faces now match their own CLOSED FORMS rather than merely
+// stopping crossing: Y2's host plane 8475 → 8450, its band 2356.18 → 2305.2190 and the slot's three
+// walls 1000 / 1000 / 964.027 → 998.5870 / 991.4214 / 953.1276; Y4's host 7600 → 7500 and its six
+// neighbours likewise (model/feature/occtparity/slot_band_imprint_test.go). Note what the ratchet could
+// NOT see and the closed forms could: Y4's LARGEST single error was +100 on the host plane, whose loop
+// back-tracked along a COLLINEAR sibling instead of crossing it, which simpleLoop2D scores as zero
+// crossings — the listed 23.9109 was a different face (the wall above the slot).
 //
 // The roots that remain, largest first:
 //
@@ -112,15 +123,15 @@ func selfCrossDebtIndex() map[string]selfCrossDebtEntry {
 //     and BOTH mirror walls measure 1.21187. Fixing it needs the stop face's boundary RE-TRIMMED (the
 //     run-out consumes a whole rim edge and shortens the next ruling), which transformLoop's
 //     single-vertex substitution cannot express — see selfcross-trim-report.md §5.
-//   - THE SETBACK BAND OVERRUNS THE HOST FACE'S OWN BOUNDARY (simple/Y2 ×2, simple/Y4). The retrim moves
+//   - (RETIRED) THE SETBACK BAND OVERRUNS THE HOST FACE'S OWN BOUNDARY (simple/Y2 ×2, simple/Y4). The retrim moves
 //     the filleted edge's end VERTEX to its tangent point along the ADJACENT edge's supporting line, with
 //     no check that the tangent point lies within that edge's own span. Y2's r=15 setback on a face
 //     interrupted by a 10-deep slot lands 5 PAST the adjacent edge's end, so the rebuilt loop keeps the
 //     whole slot and the tangent line cuts across its wall. Closed form (confirmed face-for-face by
 //     DRAWEXE): Y2's host plane is 8450, the slot walls 998.587 / 991.421 / 953.128 and the band 2305.22
-//     — we ship 8475 / 1000 / 1000 / 964.027 / 2356.18, a +96.8 (+0.159%) body surplus hidden inside a
-//     1% PASS. The correct fix CLIPS the setback band against the host's own loop, which also shortens
-//     the slot's faces — i.e. the fillet must be LIMITED BY an obstacle, not vertex-substituted.
+//     — we USED TO ship 8475 / 1000 / 1000 / 964.027 / 2356.18, a +96.8 (+0.159%) body surplus hidden
+//     inside a 1% PASS. The fix CLIPS the setback band against the host's own loop, which also shortens
+//     the slot's faces — i.e. the fillet is LIMITED BY the obstacle, not vertex-substituted. Done.
 //   - SPHERE-PATCH SEAM (simple/E4, simple/W1): a fillet corner sphere whose loop runs along the seam;
 //     W1's pinches off 0 area, i.e. the crossing is degenerate.
 //   - simple/W2's 2.5e-13 is float noise on an otherwise simple loop.
@@ -129,8 +140,6 @@ func knownSelfCrossingLoops() []selfCrossDebtEntry {
 		{"Q5", "simple", 2, 84913},   // f12723 (the r=2500 band's host wall) 84912.4, f12719 0.284334
 		{"F2", "complex", 2, 1105},   // 1104.69 / 7.16978 (was 4 loops: 28.1712 and 7.78603 retired)
 		{"E4", "simple", 1, 128.49},  // 128.489
-		{"Y2", "simple", 2, 50.001},  // 50 / 1.41397
-		{"Y4", "simple", 1, 23.911},  // 23.9109
 		{"D8", "complex", 2, 1.2119}, // BOTH mirror corner rounds, identically 1.21187
 		{"W2", "simple", 1, 1e-12},   // 2.49967e-13 — a degenerate crossing, float noise
 		{"W1", "simple", 1, 1e-12},   // 0 — a degenerate seam crossing that pinches off nothing

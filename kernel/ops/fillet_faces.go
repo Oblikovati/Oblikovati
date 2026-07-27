@@ -20,7 +20,7 @@ func filletResultFaces(body *topo.Body, fils []edgeFillet, blends map[uint64]*co
 	maps, caps := filletBuildMaps(body, fils)
 	replace, extra, handled := map[uint64]filletFace{}, map[uint64][]filletFace{}, map[uint64]bool{}
 	if enableObstacles || enableRunout {
-		replace, extra, handled = collectRebuildFaces(body, fils, ResolutionForBody(body), maps, enableObstacles, enableRunout)
+		replace, extra, handled = collectRebuildFaces(body, fils, ResolutionForBody(body), maps, caps, enableObstacles, enableRunout)
 	}
 	out := transformedBodyFaces(body, maps, replace)
 	out = append(out, filletBlendFaces(fils, caps, handled, extra)...)
@@ -40,15 +40,17 @@ func filletBuildMaps(body *topo.Body, fils []edgeFillet) (filletRebuildMaps, map
 	return filletRebuildMaps{abSubst: abSubst, endCorner: endCorner, edgeInserts: edgeInserts, spreads: spreads}, caps
 }
 
-// collectRebuildFaces runs the ENABLED local fillet rebuild(s) — the mid-span obstacle notch (ADR-4)
-// and/or the double-interference runout tiling (ADR-5) — and merges their face substitutions, extra
-// faces and handled-edge sets into one lookup. The runout path skips any edge the obstacle path already
-// owns, so when both are enabled an edge is rebuilt by exactly one of them.
+// collectRebuildFaces runs the ENABLED local fillet rebuild(s) — the mid-span obstacle notch (ADR-4),
+// the band∩obstacle imprint walk (fillet_band_imprint.go) and/or the double-interference runout tiling
+// (ADR-5) — and merges their face substitutions, extra faces and handled-edge sets into one lookup.
+// Each later path skips any edge an earlier one already owns, so an edge is rebuilt by exactly one.
 func collectRebuildFaces(body *topo.Body, fils []edgeFillet, res Resolution, maps filletRebuildMaps,
-	enableObstacles, enableRunout bool) (map[uint64]filletFace, map[uint64][]filletFace, map[uint64]bool) {
+	caps map[uint64][]cornerPiece, enableObstacles, enableRunout bool) (
+	map[uint64]filletFace, map[uint64][]filletFace, map[uint64]bool) {
 	replace, extra, handled := map[uint64]filletFace{}, map[uint64][]filletFace{}, map[uint64]bool{}
 	if enableObstacles {
 		replace, extra, handled = collectObstacles(body, fils, res, maps)
+		replace, extra, handled = collectBandImprints(body, fils, maps, caps, replace, extra, handled)
 	}
 	if !enableRunout {
 		return replace, extra, handled

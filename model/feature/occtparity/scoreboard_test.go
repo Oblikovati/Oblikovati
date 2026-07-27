@@ -41,6 +41,13 @@ func TestScoreboardTally(t *testing.T) {
 // rimWithCapOrientation) then GREENED K1 (a genuine bore lip, R+r) and Z1 (a plain convex rim whose cap
 // face is stored bottom-up — the SAME cap-orientation fix resolves it at R−r), restoring 91→93 simple /
 // 93→95 all-grid with SkipQuarantine unchanged at 1.
+// The band∩obstacle imprint walk (kernel/ops/fillet_band_imprint.go) then GREENED Y3 (the 100³ box with a
+// 10×10 through-slot, filleted r=20 along the y=0 ∧ z=100 edge): the setback line lands on the slot's
+// FLOOR, so the receded host boundary ran through the slot's own profile and the assembled shell was
+// FAIL(faulty). The walk imprints the band on the slot's three walls and re-trims all five affected faces
+// together, restoring 111→112 simple / 116→117 all-grid, SkipQuarantine unchanged at 1. Y2 and Y4 were
+// already PASS and stay PASS — their +0.159 % / +0.645 % body-area errors were hidden INSIDE the 1 % gate,
+// and are now zero to their closed forms (slot_band_imprint_test.go).
 func TestOCCTBlendScoreboard(t *testing.T) {
 	dir := CorpusFixtureDir()
 	byGrid := map[string]map[Outcome]int{}
@@ -232,11 +239,11 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 111 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 111 (rim-fillet host-seam carry greened J4)", simpleGreen)
+	if simpleGreen != 112 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 112 (band∩obstacle imprint greened Y3)", simpleGreen)
 	}
-	if allGridGreen != 116 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 116 (111 simple + 5 bfuseblend; complex/D8's "+
+	if allGridGreen != 117 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 117 (112 simple + 5 bfuseblend; complex/D8's "+
 			"coincidental green retired by the far-end branch fix)", allGridGreen)
 	}
 	if skipQuarantine != 1 {
