@@ -88,8 +88,8 @@ func selfCrossDebtIndex() map[string]selfCrossDebtEntry {
 }
 
 // knownSelfCrossingLoops is the FULL measured population of shipped faces whose developed boundary
-// self-crosses: 7 loops on 4 cases, of 1155 faces across the scored corpus (it was 17 on 11 of 1144,
-// then 12 on 8, then 9 on 6).
+// self-crosses: 5 loops on 3 cases, of 1155 faces across the scored corpus (it was 17 on 11 of 1144,
+// then 12 on 8, then 9 on 6, then 7 on 4).
 // Each ceiling is the measured pinched-off area, in the surface's own metric chart, rounded UP a little so
 // float noise cannot fail it while a real growth does. Derived by an instrumented corpus-wide sweep at
 // ops.PropertyQuality(), not from any report.
@@ -128,16 +128,27 @@ func selfCrossDebtIndex() map[string]selfCrossDebtEntry {
 //
 // The roots that remain, largest first:
 //
-//   - FAR-END TRIM RUNS OFF ITS STOP FACE (complex/D8's two corner rounds, and the same shape on
-//     complex/F2 and simple/Q5). trimTerminalSection slides every station of the band's terminal
-//     section onto the stop face's EXTENDED implicit surface (extendableWall says so outright) with no
-//     check that the landing is on the FACE. complex/D8's r=30 band stops on a radius-24 quarter round
-//     that spans u ∈ [−π/2, 0] while its own section reaches u = +0.2527 — 6.064 of developed length
-//     onto the flat wall next door — so the round's loop carries a boundary edge that leaves it. The
-//     lobe is closed form: R·∫₀^asin(0.25)(v_up(u)+100)du = 1.2111 against the wall's own 3307.1168,
-//     and BOTH mirror walls measure 1.21187. Fixing it needs the stop face's boundary RE-TRIMMED (the
-//     run-out consumes a whole rim edge and shortens the next ruling), which transformLoop's
-//     single-vertex substitution cannot express — see selfcross-trim-report.md §5.
+//   - FAR-END TRIM RUNS OFF ITS STOP FACE (complex/F2 and simple/Q5; complex/D8 RETIRED, below).
+//     trimTerminalSection slides every station of the band's terminal section onto the stop face's
+//     EXTENDED implicit surface (extendableWall says so outright) with no check that the landing is on
+//     the FACE. The stop face's boundary then has to be RE-TRIMMED — the run-out consumes a whole rim
+//     edge and shortens the next ruling — which transformLoop's single-vertex substitution cannot
+//     express (selfcross-trim-report.md §5). F2 and Q5 still wait on the general form of that: F2's
+//     stop faces are not parameter-box patches and Q5 carries two fillets, both of which the
+//     multi-face split declines outright rather than guessing at.
+//
+// RETIRED, fourth wave: complex/D8 (2 loops, 1.21187 each) — the FAR-END TRIM root above, closed for this
+// configuration by the trim-side two-piece split (kernel/ops/fillet_farend_split.go) plus the atomic
+// chain rebuild of every host it touches (kernel/ops/fillet_farend_chain.go). D8's r=30 band stops on a
+// radius-24 quarter round spanning u ∈ [−π/2, 0] while its own section reached u = +0.2527 — 6.064 of
+// developed length onto the flat wall next door; it is now CUT at the analytic triple point
+// (223.39418029785, 35.093784332275, −20+√864) and each piece bounds the one face that carries it. As with
+// Y2/Y4 the faces now match their own CLOSED FORMS rather than merely stopping crossing: the two mirror
+// rounds 3332.57 / 3392.39 → 3307.06 / 3307.06 (closed form 3307.1168, and mirror-equal to 1.6e-5 where
+// they used to differ by 60), the two flat walls 16291.54 → 16290.33 (16290.3328), the top plane
+// 92175.22 → 92172.19 (92172.2083) and the band 23339.47 → 23342.65 (23343.0975). Gated on those closed
+// forms by TestD8FarEndSplitIsAtomicAndHitsItsClosedForms. ★ The shrink is caused by a PRODUCTION fix —
+// SelfCrossingFaceLoops, loopSelfCrossing and developedFaceLoops are untouched by that slice.
 //   - (RETIRED) THE SETBACK BAND OVERRUNS THE HOST FACE'S OWN BOUNDARY (simple/Y2 ×2, simple/Y4). The retrim moves
 //     the filleted edge's end VERTEX to its tangent point along the ADJACENT edge's supporting line, with
 //     no check that the tangent point lies within that edge's own span. Y2's r=15 setback on a face
@@ -158,10 +169,9 @@ func selfCrossDebtIndex() map[string]selfCrossDebtEntry {
 // correction that belongs in its own slice, not a side effect of a mesher fix.
 func knownSelfCrossingLoops() []selfCrossDebtEntry {
 	return []selfCrossDebtEntry{
-		{"Q5", "simple", 2, 84913},   // f12723 (the r=2500 band's host wall) 84912.4, f12719 0.284334
-		{"F2", "complex", 2, 1105},   // 1098.03 / 7.16978 (was 4 loops: 28.1712 and 7.78603 retired)
-		{"D8", "complex", 2, 1.2119}, // BOTH mirror corner rounds, identically 1.21187
-		{"W2", "simple", 1, 1e-12},   // 2.49967e-13 — a degenerate crossing, float noise
+		{"Q5", "simple", 2, 84913}, // f12723 (the r=2500 band's host wall) 84912.4, f12719 0.284334
+		{"F2", "complex", 2, 1105}, // 1098.03 / 7.16978 (was 4 loops: 28.1712 and 7.78603 retired)
+		{"W2", "simple", 1, 1e-12}, // 2.49967e-13 — a degenerate crossing, float noise
 	}
 }
 

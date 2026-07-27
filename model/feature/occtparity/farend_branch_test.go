@@ -38,6 +38,20 @@ import (
 // a different edge.
 const d8TrimLineagePrefix = "import:step#16:edge#1/fillet:cyl#0/fillet:x#0/import:step#16:face#"
 
+// d8BandBoundaryEdges is how many boundary edges the band carries under that prefix: the 2 axial rulings
+// (its contacts with the filleted edge's own two faces) plus each terminal trim's TWO pieces.
+//
+// ★ THIS PIN MOVED, 4 → 6, and the move is the point of the multi-face far-end trim
+// (fillet_farend_split.go). The band's terminal section does not stop on the corner round alone: it leaves
+// that round at the round's own u = 0 ruling and runs on to the flat wall tangent to it, so its cap is a
+// CHAIN of two pieces on two faces, not one curve made to bound both. What convicts the old 4 is not the
+// count but the geometry it forced: the round's boundary then carried an edge that left the round (the
+// developed loop self-crossed, pinching off 1.2111 of a 3307.1168 face, knownSelfCrossingLoops), its two
+// mirror copies shipped +0.77 % and +2.58 % of that closed form, and the top plane carried a 1.5144
+// detour per corner into territory the band had already removed. At 6 the two rounds ship 3307.0623 —
+// −0.0016 % of closed form, and mirror-equal to 1.6e-5 — and D8 self-crosses nowhere.
+const d8BandBoundaryEdges = 6
+
 // TestFarEndTrimCurveStaysOnOneWallBranch asserts each of complex/D8's two far-end trim curves lies on both
 // faces it bounds and does not cross back over its own section plane (the direct "one branch" statement),
 // and that the fillet band therefore tiles its closed-form area.
@@ -46,9 +60,9 @@ func TestFarEndTrimCurveStaysOnOneWallBranch(t *testing.T) {
 	body := gridCaseBody(t, rec)
 	band := faceByLineage(t, body, "import:step#16:edge#1/fillet:cyl#0")
 	bounds := boundaryEdgesWithLineagePrefix(band, d8TrimLineagePrefix)
-	if len(bounds) != 4 {
-		t.Fatalf("complex/D8: found %d band boundary edges under %q, want 4 (2 axial rulings + 2 far-end trims)",
-			len(bounds), d8TrimLineagePrefix)
+	if len(bounds) != d8BandBoundaryEdges {
+		t.Fatalf("complex/D8: found %d band boundary edges under %q, want %d (2 axial rulings + 2 far-end "+
+			"trims, each split at the round/flat-wall hand-off)", len(bounds), d8TrimLineagePrefix, d8BandBoundaryEdges)
 	}
 	axis := band.Geometry().(geom.Cylinder).AxisDir.AsVector()
 	trims := 0
@@ -218,15 +232,31 @@ func bandPoint(bc geom.Cylinder, phi float64) math.Point3 {
 		Add(w.Scale(math.Scalar(bc.Radius * stdmath.Sin(phi)))))
 }
 
-// overhang is how far past the terminal section plane the band's ruling through p reaches before it meets the
-// stop cylinder: √(R²−δ²) with δ the ruling's distance from that cylinder's axis, measured along the common
-// perpendicular of the two axes. 0 when the ruling misses the cylinder entirely.
+// overhang is how far past the terminal section plane the band's ruling through p reaches before it leaves
+// the SOLID.
+//
+// ★ THIS CLOSED FORM MOVED, 23340.0627 → 23343.0975, because the stop is not one surface: it is the
+// tangent-continuous CHAIN of the corner round and the flat wall tangent to it. While the ruling is
+// between the round's axis and the filleted wall (δ ≤ 0) the round carries it and it exits at √(R²−δ²);
+// PAST the round's axis the round's face is not there at all — the old form kept extending the round's
+// implicit cylinder into the flat wall's territory, which is precisely the defect — and the ruling runs to
+// that flat wall, which, being tangent to the round, stands at exactly R from the terminal vertex. δ is
+// p's offset from the round's axis along the two axes' common perpendicular, oriented toward the BAND's
+// own axis: the band lies r=30 inside the filleted wall and the round's axis only R=24, so the band's axis
+// is always on the far side, which fixes the sign without a hand-picked convention.
 func overhang(band, wall geom.Cylinder, p math.Point3) float64 {
 	perp, err := math.UnitVector3FromVector(band.AxisDir.AsVector().Cross(wall.AxisDir.AsVector()))
 	if err != nil {
 		return 0
 	}
-	delta := wall.Origin.VectorTo(p).Dot(perp.AsVector())
+	sign := 1.0
+	if wall.Origin.VectorTo(band.Origin).Dot(perp.AsVector()) < 0 {
+		sign = -1
+	}
+	delta := sign * float64(wall.Origin.VectorTo(p).Dot(perp.AsVector()))
+	if delta > 0 {
+		return wall.Radius // past the round's axis: the flat wall tangent to it, at exactly R
+	}
 	return stdmath.Sqrt(stdmath.Max(wall.Radius*wall.Radius-delta*delta, 0))
 }
 

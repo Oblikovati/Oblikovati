@@ -22,6 +22,12 @@ func filletResultFaces(body *topo.Body, fils []edgeFillet, blends map[uint64]*co
 	if enableObstacles || enableRunout {
 		replace, extra, handled = collectRebuildFaces(body, fils, ResolutionForBody(body), maps, caps, enableObstacles, enableRunout)
 	}
+	// The far-end multi-face trim (fillet_farend_chain.go) rebuilds every host its contact chain touches,
+	// from that host's ORIGINAL ring — so it must run after the obstacle/runout rebuilds have claimed
+	// theirs, and it declines outright on a collision rather than half-applying (an unclosed shell).
+	for id, ff := range commitFarEndSplits(body, fils, replace, handled) {
+		replace[id] = ff
+	}
 	out := transformedBodyFaces(body, maps, replace)
 	out = append(out, filletBlendFaces(fils, caps, handled, extra)...)
 	for _, cb := range blends {
@@ -458,10 +464,10 @@ func otherFace(e *topo.Edge, f *topo.Face) *topo.Face {
 // simple/blend corner, or the seam chords for a miter corner. The loop is wound so its normal
 // matches the cylinder's outward radial.
 func cylinderFace(ef edgeFillet, caps map[uint64][]cornerPiece) filletFace {
-	segs := []endSeg{{from: ef.c0.ta, to: ef.c1.ta}}                   // A-tangent line c0.ta → c1.ta
-	segs = append(segs, cornerEndSegs(ef.c1, caps)...)                 // rounded end 1: c1.ta → c1.tb
-	segs = append(segs, endSeg{from: ef.c1.tb, to: ef.c0.tb})          // B-tangent line c1.tb → c0.tb
-	segs = append(segs, reverseEndSegs(cornerEndSegs(ef.c0, caps))...) // rounded end 0: c0.tb → c0.ta
+	segs := []endSeg{{from: ef.c0.ta, to: ef.c1.ta}}                                 // A-tangent line c0.ta → c1.ta
+	segs = append(segs, cornerEndSegs(ef.c1, caps, ef.splitEnds)...)                 // rounded end 1: c1.ta → c1.tb
+	segs = append(segs, endSeg{from: ef.c1.tb, to: ef.c0.tb})                        // B-tangent line c1.tb → c0.tb
+	segs = append(segs, reverseEndSegs(cornerEndSegs(ef.c0, caps, ef.splitEnds))...) // rounded end 0: c0.tb → c0.ta
 	// A concave fillet's surface faces the cylinder CENTRE (material is on the far side), so its loop
 	// must wind against the cylinder's outward radial — invert the convex sense.
 	if cylinderSegsFlipped(ef, segs) != ef.flip {
@@ -491,7 +497,12 @@ type endSeg struct {
 // cornerEndSegs returns the segments rounding corner c from its ta to its tb: for a valence>3 runout
 // apex the ordered far-face pieces (so the cylinder cap splits at the same points the far faces weld
 // to), else the seam chords for a miter corner, otherwise a single arc through the corner's mid.
-func cornerEndSegs(c corner, caps map[uint64][]cornerPiece) []endSeg {
+// split is edgeFillet.splitEnds — the one switch that arms the far-end multi-face cap, so the band can
+// never claim a span its hosts did not adopt (fillet_farend_chain.go).
+func cornerEndSegs(c corner, caps map[uint64][]cornerPiece, split bool) []endSeg {
+	if split && len(c.endPieces) > 1 {
+		return splitEndSegs(c)
+	}
 	if c.vertex != nil {
 		if pieces, ok := caps[c.vertex.ID()]; ok {
 			return capEndSegs(pieces)

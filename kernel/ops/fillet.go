@@ -340,11 +340,16 @@ type corner struct {
 	// already lies on its stop face, which keeps the whole planar corpus byte-identical; when set it
 	// replaces the section ARC on both the band's own far end and the wall's loop.
 	endCurve geom.Curve3
-	vertex   *topo.Vertex
-	blend    bool
-	miter    bool          // two-fillet corner: the end is bounded by seam (no end face, no sphere)
-	seam     []math.Point3 // miter only: the seam chords from ta to tb, shared with the other cylinder
-	runout   bool          // variable fillet only: r=0 here, the blend collapses to an apex on the edge
+	// endPieces is the same terminal trim resolved across the CHAIN of faces it actually crosses, ta → tb
+	// (fillet_farend_split.go). It is set only when the section leaves the stop face, and it is a
+	// PROPOSAL: nothing reads it until commitFarEndSplits accepts the whole multi-face rebuild atomically
+	// and sets edgeFillet.splitEnds. On a decline the corner keeps endCurve and is byte-identical.
+	endPieces []endPiece
+	vertex    *topo.Vertex
+	blend     bool
+	miter     bool          // two-fillet corner: the end is bounded by seam (no end face, no sphere)
+	seam      []math.Point3 // miter only: the seam chords from ta to tb, shared with the other cylinder
+	runout    bool          // variable fillet only: r=0 here, the blend collapses to an apex on the edge
 }
 
 // tOf returns the tangent point on face f (a or b).
@@ -369,6 +374,11 @@ type edgeFillet struct {
 	// audit A10) instead of the C0 polyhedral strip; secW is the sections' shoulder weight.
 	exact bool
 	secW  float64
+	// splitEnds records that commitFarEndSplits ACCEPTED both terminal sections' multi-face split and
+	// rebuilt every host the chain touches. It is the one switch the band's own cap reads, so the band and
+	// the hosts can never disagree about where the trim runs (chain-retrim-report.md §5.2: a partial
+	// application is an unclosed shell).
+	splitEnds bool
 	// armSurface is the exact analytic rolling-ball arm on a CONVEX axis-aligned Plane∧Cylinder edge
 	// (M5 Slice A): a geom.Torus (axis ⊥ plane) or a geom.Cylinder (axis ∥ plane). Nil on the ordinary
 	// planar straight-edge fillet, whose surface is `cyl`. The corner engine (Task 4) reads it for the

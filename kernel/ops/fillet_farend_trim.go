@@ -89,6 +89,9 @@ func trimTerminalSection(c corner, in cornerInputs, maxSlide float64) corner {
 	if err != nil {
 		return c
 	}
+	// The multi-face split is resolved from the UNTRIMMED section (c.ta/mid/tb still describe the flat
+	// cap here), and is only a proposal: commitFarEndSplits decides whether the whole body can adopt it.
+	c.endPieces, _ = splitTerminalSection(c, in, maxSlide)
 	c.ta, c.mid, c.tb = pts[0], pts[len(pts)/2], pts[len(pts)-1]
 	c.endCurve = curve
 	return c

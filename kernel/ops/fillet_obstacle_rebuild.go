@@ -222,7 +222,7 @@ func leftWingSegs(ef edgeFillet, cut wingCut, cutSegs []endSeg) []endSeg {
 	segs := []endSeg{{from: ef.c0.ta, to: cut.nodeTa}}
 	segs = append(segs, cutSectionSegs(cut, cutSegs)...)
 	segs = append(segs, endSeg{from: cut.nodeTb, to: ef.c0.tb})
-	return append(segs, reverseEndSegs(cornerEndSegs(ef.c0, nil))...)
+	return append(segs, reverseEndSegs(cornerEndSegs(ef.c0, nil, ef.splitEnds))...)
 }
 
 // rightWingSegs is the node→c1 wing boundary: A-tangent nodeTa→c1.ta, the c1 rounded end, B-tangent
@@ -230,7 +230,7 @@ func leftWingSegs(ef edgeFillet, cut wingCut, cutSegs []endSeg) []endSeg {
 // replaced by the node cut.
 func rightWingSegs(ef edgeFillet, cut wingCut, cutSegs []endSeg) []endSeg {
 	segs := []endSeg{{from: cut.nodeTa, to: ef.c1.ta}}
-	segs = append(segs, cornerEndSegs(ef.c1, nil)...)
+	segs = append(segs, cornerEndSegs(ef.c1, nil, ef.splitEnds)...)
 	segs = append(segs, endSeg{from: ef.c1.tb, to: cut.nodeTb})
 	return append(segs, reverseEndSegs(cutSectionSegs(cut, cutSegs))...)
 }
