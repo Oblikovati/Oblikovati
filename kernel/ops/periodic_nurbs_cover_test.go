@@ -95,12 +95,20 @@ func TestCoveringPeriodicMeshCoversFullPeriod(t *testing.T) {
 	s := closedBSplineCylinder(t, 10, 8)
 	rims := []cylLoop{sampleRim(s, 0, 40), sampleRim(s, 1, 40)}
 	mouths := []cylLoop{sampleMouth(s, 0.5, 0.5, 0.08, 20)}
-	m := coveringPeriodicMesh(s, DefaultQuality(), 0, 1, rims, mouths)
+	for _, gq := range gateQualities() {
+		assertCoveringMeshSpansThePeriod(t, gq.name, coveringPeriodicMesh(s, gq.q, 0, 1, rims, mouths))
+	}
+}
+
+// assertCoveringMeshSpansThePeriod checks one covering mesh: non-empty, fold-free, reaching ±R in both
+// x and y (the #1510 bug was a half-strip), and open only along its own rim/mouth boundaries.
+func assertCoveringMeshSpansThePeriod(t *testing.T, quality string, m *Mesh) {
+	t.Helper()
 	if m == nil || m.TriangleCount() == 0 {
-		t.Fatalf("covering mesh is empty")
+		t.Fatalf("%s quality: covering mesh is empty", quality)
 	}
 	if folds := FoldEdgeCount(m); folds != 0 {
-		t.Errorf("covering mesh has %d fold edges; want 0", folds)
+		t.Errorf("%s quality: covering mesh has %d fold edges; want 0", quality, folds)
 	}
 	var xmin, xmax, ymin, ymax float64
 	for _, p := range m.Positions {
@@ -109,19 +117,40 @@ func TestCoveringPeriodicMeshCoversFullPeriod(t *testing.T) {
 	}
 	// The whole period must be present: reach near +R and −R in BOTH x and y, not just a strip.
 	if xmax < 9 || xmin > -9 || ymax < 9 || ymin > -9 {
-		t.Errorf("mesh does not span the full cylinder: x[%.1f,%.1f] y[%.1f,%.1f], want ±~10", xmin, xmax, ymin, ymax)
+		t.Errorf("%s quality: mesh does not span the full cylinder: x[%.1f,%.1f] y[%.1f,%.1f], want ±~10",
+			quality, xmin, xmax, ymin, ymax)
 	}
 	if free := freeEdgeCount(m); free > 110 {
-		t.Errorf("mesh has %d free edges; want ≈100 (the rim+mouth boundaries only, no interior crack)", free)
+		t.Errorf("%s quality: mesh has %d free edges; want ≈100 (the rim+mouth boundaries only, no interior crack)",
+			quality, free)
 	}
 }
 
-// TestInterpRimInterpolatesV pins the band-boundary interpolation v(u) used by the material test.
+// TestInterpRimInterpolatesV pins the band-boundary interpolation v(u) used by the material test —
+// including ACROSS THE SEAM. rimSamples folds a rim's u to canonical and sorts it, so the segment from
+// the last sample (0.9 here) back to the first (0.1) is not in the list; the interpolant must close it
+// over the period rather than clamp flat at both ends. The seam midpoint u = 0 ≡ u = 1 lies exactly
+// halfway between v = 3 and v = 1, so its exact value is 2 — a closed-form target, not a captured one.
 func TestInterpRimInterpolatesV(t *testing.T) {
-	f := interpRim([][2]float64{{0, 1}, {0.5, 2}, {1, 3}})
-	for _, c := range []struct{ u, want float64 }{{-0.2, 1}, {0.25, 1.5}, {0.75, 2.5}, {1.4, 3}} {
+	f := interpRim([][2]float64{{0.1, 1}, {0.5, 2}, {0.9, 3}}, 1)
+	for _, c := range []struct{ u, want float64 }{{0.3, 1.5}, {0.7, 2.5}, {0.0, 2}, {1.0, 2}, {0.05, 1.5}, {0.95, 2.5}} {
 		if got := f(c.u); stdmath.Abs(got-c.want) > 1e-9 {
 			t.Errorf("interpRim(%.2f) = %.4f, want %.4f", c.u, got, c.want)
+		}
+	}
+	if lo, hi := f(0.0), f(1.0); stdmath.Abs(lo-hi) > 1e-12 {
+		t.Errorf("the interpolant is not periodic: f(0) = %.12f but f(1) = %.12f", lo, hi)
+	}
+}
+
+// TestInterpRimIsFlatOnAConstantVRim pins the no-op case that the shipped population actually is: both of
+// cand_radial's rims are constant-v (measured vspan 1.9e-17 and 0), so closing the seam segment must
+// leave the interpolant identically flat — the receipt that this change moves no shipped mesh.
+func TestInterpRimIsFlatOnAConstantVRim(t *testing.T) {
+	f := interpRim([][2]float64{{0.1, 7}, {0.4, 7}, {0.8, 7}}, 1)
+	for _, u := range []float64{0, 0.05, 0.25, 0.6, 0.9, 1} {
+		if got := f(u); got != 7 {
+			t.Errorf("interpRim(%.2f) = %.15f on a constant-v rim; want exactly 7", u, got)
 		}
 	}
 }

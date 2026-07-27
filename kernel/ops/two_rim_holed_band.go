@@ -68,15 +68,16 @@ func splitWrappingHoles(s geom.Surface, holes3D [][]math.Point3) (rims, lenses [
 	return rims, lenses
 }
 
-// holeWrapsPeriod reports whether a hole loop spans essentially the full angular period (so it is a rim,
-// not a lens) — the same >2π−0.5 test holesIntoBranch uses to reject a seam-wrapping hole.
+// holeWrapsPeriod reports whether a hole loop encircles the axis (so it is a rim, not a lens) — the same
+// exact winding test holeUVInBranch uses to reject a seam-wrapping hole. It classifies on the loop's
+// quantised winding rather than its sampled u-range, so the verdict cannot turn on how finely the rim
+// happens to be faceted; see loopWinding.
 func holeWrapsPeriod(s geom.Surface, hole []math.Point3) bool {
 	us := make([]float64, len(hole))
 	for i, p := range hole {
 		us[i], _ = s.ParamAt(p)
 	}
-	lo, hi := minMax(cumulativeUnwrap(us))
-	return hi-lo > 2*stdmath.Pi-0.5
+	return loopEncirclesAxis(us)
 }
 
 // bridgeRimsAtSeam joins two full-wrap rims into one seam-wrapping outer loop by cutting each rim at a
