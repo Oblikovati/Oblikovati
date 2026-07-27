@@ -85,9 +85,11 @@ func assertWatertightCrossing(t *testing.T, got *topo.Body, r, dr float64) {
 	if n := len(got.Faces()); n != 3 {
 		t.Errorf("result has %d faces, want 3 (rod band + two lens caps)", n)
 	}
-	m, _ := TessellateBody(got, DefaultQuality())
-	if free := freeEdgeCount(m); free != 0 {
-		t.Errorf("R=%g dr=%g meshed with %d free edges; want 0 (watertight)", r, dr, free)
+	for _, gq := range gateQualities() {
+		m, _ := TessellateBody(got, gq.q)
+		if free := freeEdgeCount(m); free != 0 {
+			t.Errorf("R=%g dr=%g at %s quality meshed with %d free edges; want 0 (watertight)", r, dr, gq.name, free)
+		}
 	}
 	vol := BodyGeometryProperties(got, DefaultQuality()).Volume
 	want := nearPinchIntersectVolume(r, r+dr)
@@ -134,8 +136,10 @@ func assertWatertightSolid(t *testing.T, got *topo.Body) {
 	if v := Validate(got); !v.Valid || !v.Closed || !v.Manifold || !got.IsSolid() {
 		t.Fatalf("result not a valid closed manifold solid: %+v", v)
 	}
-	if m, _ := TessellateBody(got, DefaultQuality()); freeEdgeCount(m) != 0 {
-		t.Errorf("meshed with %d free edges; want 0 (watertight)", freeEdgeCount(m))
+	for _, gq := range gateQualities() {
+		if m, _ := TessellateBody(got, gq.q); freeEdgeCount(m) != 0 {
+			t.Errorf("%s quality: meshed with %d free edges; want 0 (watertight)", gq.name, freeEdgeCount(m))
+		}
 	}
 }
 

@@ -66,8 +66,10 @@ func TestFoldEdgeCountOnCleanCurvedSolid(t *testing.T) {
 	if err != nil {
 		t.Fatalf("build cylinder: %v", err)
 	}
-	mesh, _ := TessellateBody(cyl, DefaultQuality())
-	if got := FoldEdgeCount(mesh); got != 0 {
-		t.Errorf("clean cylinder tessellated with %d fold edges; want 0", got)
+	for _, gq := range gateQualities() {
+		mesh, _ := TessellateBody(cyl, gq.q)
+		if got := FoldEdgeCount(mesh); got != 0 {
+			t.Errorf("%s quality: clean cylinder tessellated with %d fold edges; want 0", gq.name, got)
+		}
 	}
 }

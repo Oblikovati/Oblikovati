@@ -27,8 +27,11 @@ func TestNearPinchSnapMeshWatertight(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Boolean(Intersect near-equal): %v", err)
 	}
-	m, _ := TessellateBody(res, DefaultQuality())
-	if free := freeEdgeCount(m); free != 0 {
-		t.Errorf("snapped near-equal bicylinder meshed with %d free edges; want 0 (watertight surface)", free)
+	for _, gq := range gateQualities() {
+		m, _ := TessellateBody(res, gq.q)
+		if free := freeEdgeCount(m); free != 0 {
+			t.Errorf("%s quality: snapped near-equal bicylinder meshed with %d free edges; want 0 (watertight surface)",
+				gq.name, free)
+		}
 	}
 }

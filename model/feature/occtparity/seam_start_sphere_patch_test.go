@@ -3,6 +3,7 @@
 package occtparity
 
 import (
+	"fmt"
 	stdmath "math"
 	"testing"
 
@@ -103,9 +104,7 @@ func assertSeamWindingPatchMeshes(t *testing.T, body *topo.Body) {
 		t.Errorf("face %d meshes %.10g against the exact spherical area %.10g (short by %.4g %%, budget %.4g %%)",
 			f.ID(), got, want, rel*100, spherePatchAreaTol*100)
 	}
-	if n := ops.FoldEdgeCount(m); n != 0 {
-		t.Errorf("face %d has %d folding mesh edges", f.ID(), n)
-	}
+	assertFaceFoldFreeAtEveryQuality(t, fmt.Sprintf("face %d", f.ID()), f, m)
 }
 
 // outerLoopSeamWinding is how many whole periods the face's outer loop winds about the sphere's polar

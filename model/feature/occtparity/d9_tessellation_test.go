@@ -63,9 +63,7 @@ func assertD9FaceSane(t *testing.T, f *topo.Face, m *ops.Mesh, area float64) {
 	if area <= 0 || stdmath.IsInf(area, 0) || stdmath.IsNaN(area) {
 		t.Fatalf("D9 %T face meshed to %.4f, want a finite positive area", f.Geometry(), area)
 	}
-	if n := ops.FoldEdgeCount(m); n != 0 {
-		t.Fatalf("D9 %T face (area %.2f) has %d fold edges — a tessellation defect on a reflex loop shape", f.Geometry(), area, n)
-	}
+	assertFaceFoldFreeAtEveryQuality(t, "D9", f, m)
 }
 
 // nearestD9Oracle returns the oracle label whose area is closest to the face's mesh area, failing when the

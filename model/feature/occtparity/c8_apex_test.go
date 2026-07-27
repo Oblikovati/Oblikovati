@@ -131,9 +131,7 @@ func assertC8CornerRoofCap(t *testing.T, body *topo.Body) {
 func assertC8FoldFree(t *testing.T, body *topo.Body) {
 	t.Helper()
 	for _, f := range body.Faces() {
-		if n := ops.FoldEdgeCount(ops.TessellateFace(f, ops.PropertyQuality())); n != 0 {
-			t.Fatalf("C8 %T face has %d fold edges (mesh over-counts its area)", f.Geometry(), n)
-		}
+		assertFaceFoldFreeAtEveryQuality(t, "C8", f, nil)
 	}
 }
 

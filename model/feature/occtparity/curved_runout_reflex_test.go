@@ -80,9 +80,7 @@ func assertReflexRunoutMesh(t *testing.T, name string, body *topo.Body, wantTota
 		if area <= 0 || stdmath.IsInf(area, 0) || stdmath.IsNaN(area) {
 			t.Fatalf("%s %T face meshed to %.4f, want a finite positive area", name, f.Geometry(), area)
 		}
-		if n := ops.FoldEdgeCount(m); n != 0 {
-			t.Fatalf("%s %T face (area %.2f) has %d fold edges — a tessellation defect on a reflex loop", name, f.Geometry(), area, n)
-		}
+		assertFaceFoldFreeAtEveryQuality(t, name, f, m)
 	}
 	if rel := stdmath.Abs(total-wantTotal) / wantTotal; rel > reflexRunoutDeps {
 		t.Fatalf("%s total mesh area %.2f, want OCCT %.1f within deps %.2f (rel %.4f)", name, total, wantTotal, reflexRunoutDeps, rel)

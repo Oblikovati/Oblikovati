@@ -57,12 +57,14 @@ func TestTwoCapCrossingCutIsWatertightAndValid(t *testing.T) {
 		t.Errorf("two-cap cut is not a valid solid: manifold=%v closed=%v orient=%v euler=%v issues=%v",
 			r.Manifold, r.Closed, r.OrientationOK, r.EulerConsistent, r.Issues)
 	}
-	mesh, _ := TessellateBody(res, capCertQuality())
-	if free := freeEdgeCount(mesh); free != 0 {
-		t.Errorf("two-cap cut tessellated with %d free edges; want 0 — a cross-face crack at a cap ellipse", free)
-	}
-	if folds := FoldEdgeCount(mesh); folds != 0 {
-		t.Errorf("two-cap cut mesh has %d fold edges; want 0", folds)
+	for _, gq := range certGateQualities() {
+		mesh, _ := TessellateBody(res, gq.q)
+		if free := freeEdgeCount(mesh); free != 0 {
+			t.Errorf("%s quality: two-cap cut tessellated with %d free edges; want 0 — a cross-face crack at a cap ellipse", gq.name, free)
+		}
+		if folds := FoldEdgeCount(mesh); folds != 0 {
+			t.Errorf("%s quality: two-cap cut mesh has %d fold edges; want 0", gq.name, folds)
+		}
 	}
 }
 

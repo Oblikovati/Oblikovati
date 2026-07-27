@@ -12,45 +12,12 @@ import (
 	"oblikovati.org/math"
 )
 
-// freeEdgeCount welds coincident vertices, then counts edges not shared by exactly two triangles —
-// the watertightness metric (0 = closed manifold). Welding is needed because TessellateBody copies
-// shared-edge vertices per face (mergeMesh offsets indices).
+// freeEdgeCount is the package's watertightness metric, delegating to the production FreeEdgeCount so
+// every gate in this package welds at the MODEL's own resolution. It used to carry its own fixed 1e-6
+// grid; that over-merges a model whose features are finer than 1e-6 and reports the over-merge as a free
+// edge (see FreeEdgeCount's receipt on the near-pinch crossing).
 func freeEdgeCount(m *Mesh) int {
-	q := func(x float64) int64 {
-		if x < 0 {
-			return int64(x*1e6 - 0.5)
-		}
-		return int64(x*1e6 + 0.5)
-	}
-	canon := map[[3]int64]int{}
-	weld := make([]int, len(m.Positions))
-	for i, p := range m.Positions {
-		k := [3]int64{q(float64(p.X)), q(float64(p.Y)), q(float64(p.Z))}
-		if c, ok := canon[k]; ok {
-			weld[i] = c
-		} else {
-			canon[k], weld[i] = i, i
-		}
-	}
-	type edge struct{ a, b int }
-	deg := map[edge]int{}
-	for t := 0; 3*t+2 < len(m.Indices); t++ {
-		v := [3]int{weld[m.Indices[3*t]], weld[m.Indices[3*t+1]], weld[m.Indices[3*t+2]]}
-		for k := 0; k < 3; k++ {
-			a, b := v[k], v[(k+1)%3]
-			if a > b {
-				a, b = b, a
-			}
-			deg[edge{a, b}]++
-		}
-	}
-	free := 0
-	for _, d := range deg {
-		if d != 2 {
-			free++
-		}
-	}
-	return free
+	return FreeEdgeCount(m)
 }
 
 // TestCleanCurvedSolidIsWatertight pins the invariant that a clean curved solid tessellates watertight
@@ -64,9 +31,11 @@ func TestCleanCurvedSolidIsWatertight(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
 	}
-	mesh, _ := TessellateBody(cyl, DefaultQuality())
-	if free := freeEdgeCount(mesh); free != 0 {
-		t.Errorf("clean cylinder solid tessellated with %d free edges; want 0 (watertight)", free)
+	for _, gq := range gateQualities() {
+		mesh, _ := TessellateBody(cyl, gq.q)
+		if free := freeEdgeCount(mesh); free != 0 {
+			t.Errorf("%s quality: clean cylinder solid tessellated with %d free edges; want 0 (watertight)", gq.name, free)
+		}
 	}
 }
 
@@ -94,18 +63,20 @@ func nurbsDuctSubject(t *testing.T) (bodies []*topo.Body, wantVolume float64, fo
 // watertight (total 0) — it regresses hard if any of those fixes is lost.
 func TestImportedNurbsDuctWatertight(t *testing.T) {
 	bodies, _, _ := nurbsDuctSubject(t)
-	total := 0
-	for i, body := range bodies {
-		mesh, _ := TessellateBody(body, DefaultQuality())
-		free := freeEdgeCount(mesh)
-		total += free
-		if free != 0 {
-			t.Errorf("imported body %d tessellated with %d free edges; want 0 "+
-				"(a pcurve-continuity, conformance, or planar-faithful regression cracks a body)", i, free)
+	for _, gq := range gateQualities() {
+		total := 0
+		for i, body := range bodies {
+			mesh, _ := TessellateBody(body, gq.q)
+			free := freeEdgeCount(mesh)
+			total += free
+			if free != 0 {
+				t.Errorf("%s quality: imported body %d tessellated with %d free edges; want 0 "+
+					"(a pcurve-continuity, conformance, or planar-faithful regression cracks a body)", gq.name, i, free)
+			}
 		}
-	}
-	if total != 0 {
-		t.Errorf("imported model total free edges = %d; want 0 (watertightness regression)", total)
+		if total != 0 {
+			t.Errorf("%s quality: imported model total free edges = %d; want 0 (watertightness regression)", gq.name, total)
+		}
 	}
 }
 
@@ -133,19 +104,21 @@ const (
 // its reference volume.
 func TestImportedNurbsDuctVolumeAndFolds(t *testing.T) {
 	bodies, wantVolume, foldCeiling := nurbsDuctSubject(t)
-	var volume float64
-	folds := 0
-	for _, body := range bodies {
-		mesh, _ := TessellateBody(body, DefaultQuality())
-		folds += FoldEdgeCount(mesh)
-		volume += BodyGeometryProperties(body, DefaultQuality()).Volume
-	}
-	if rel := stdmath.Abs(volume-wantVolume) / wantVolume; rel > edfVolumeTol {
-		t.Errorf("imported duct total volume %.4f vs OCC %.4f (rel %.4f > %.4f) — an over-enclosure regression",
-			volume, wantVolume, rel, edfVolumeTol)
-	}
-	if folds > foldCeiling {
-		t.Errorf("imported duct total fold edges = %d, want <= %d (the ceiling may only shrink as residual "+
-			"folds are fixed)", folds, foldCeiling)
+	for _, gq := range gateQualities() {
+		var volume float64
+		folds := 0
+		for _, body := range bodies {
+			mesh, _ := TessellateBody(body, gq.q)
+			folds += FoldEdgeCount(mesh)
+			volume += BodyGeometryProperties(body, gq.q).Volume
+		}
+		if rel := stdmath.Abs(volume-wantVolume) / wantVolume; rel > edfVolumeTol {
+			t.Errorf("%s quality: imported duct total volume %.4f vs OCC %.4f (rel %.4f > %.4f) — an over-enclosure regression",
+				gq.name, volume, wantVolume, rel, edfVolumeTol)
+		}
+		if folds > foldCeiling {
+			t.Errorf("%s quality: imported duct total fold edges = %d, want <= %d (the ceiling may only shrink as "+
+				"residual folds are fixed)", gq.name, folds, foldCeiling)
+		}
 	}
 }

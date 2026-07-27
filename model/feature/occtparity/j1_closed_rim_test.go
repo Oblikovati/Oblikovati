@@ -63,7 +63,5 @@ func assertJ1FaceSane(t *testing.T, f *topo.Face, m *ops.Mesh, area float64) {
 	if area <= 0 || stdmath.IsInf(area, 0) || stdmath.IsNaN(area) {
 		t.Fatalf("J1 %T face meshed to %.4f, want a finite positive area", f.Geometry(), area)
 	}
-	if n := ops.FoldEdgeCount(m); n != 0 {
-		t.Fatalf("J1 %T face (area %.2f) has %d fold edges — a tessellation defect on the closed band", f.Geometry(), area, n)
-	}
+	assertFaceFoldFreeAtEveryQuality(t, "J1", f, m)
 }

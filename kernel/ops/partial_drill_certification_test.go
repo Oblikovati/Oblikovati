@@ -76,9 +76,12 @@ func TestScallopVolumeMatchesAnalytic(t *testing.T) {
 // faces and partial wall must weld crack-free so the rendered notch shows no tear at the clipped edge.
 func TestScallopTessellationIsWatertight(t *testing.T) {
 	res := scallopPlate(t)
-	mesh, _ := TessellateBody(res, DefaultQuality())
-	if free := cornerMeshFreeEdges(mesh); free != 0 {
-		t.Errorf("scallop tessellation has %d free edges (want 0) — a visible crack at the clipped edge", free)
+	for _, gq := range gateQualities() {
+		mesh, _ := TessellateBody(res, gq.q)
+		if free := cornerMeshFreeEdges(mesh); free != 0 {
+			t.Errorf("%s quality: scallop tessellation has %d free edges (want 0) — a visible crack at the clipped edge",
+				gq.name, free)
+		}
 	}
 }
 
@@ -106,8 +109,10 @@ func TestScallopCutViaAnalyticDispatch(t *testing.T) {
 	if !hasCyl {
 		t.Error("cut kept no analytic cylinder face — the scallop wall was not preserved (CSG fallback)")
 	}
-	mesh, _ := TessellateBody(res, DefaultQuality())
-	if free := cornerMeshFreeEdges(mesh); free != 0 {
-		t.Errorf("dispatched scallop tessellation has %d free edges (want 0)", free)
+	for _, gq := range gateQualities() {
+		mesh, _ := TessellateBody(res, gq.q)
+		if free := cornerMeshFreeEdges(mesh); free != 0 {
+			t.Errorf("%s quality: dispatched scallop tessellation has %d free edges (want 0)", gq.name, free)
+		}
 	}
 }

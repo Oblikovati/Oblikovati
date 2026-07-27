@@ -93,8 +93,6 @@ func assertConcaveFaceSane(t *testing.T, name string, f *topo.Face, m *ops.Mesh)
 	if area <= 0 || stdmath.IsInf(area, 0) || stdmath.IsNaN(area) {
 		t.Fatalf("%s %T face meshed to %.4f, want a finite positive area", name, f.Geometry(), area)
 	}
-	if n := ops.FoldEdgeCount(m); n != 0 {
-		t.Fatalf("%s %T face (area %.2f) has %d fold edges — a concave-grow tessellation defect", name, f.Geometry(), area, n)
-	}
+	assertFaceFoldFreeAtEveryQuality(t, name, f, m)
 	return area
 }

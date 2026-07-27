@@ -70,6 +70,7 @@ func TestD5E4TessellationFoldGate(t *testing.T) {
 					foldingFaces++
 					assertNoFold(t, name, f, m, area)
 				}
+				assertFaceFoldFreeAtEveryQuality(t, name, f, m)
 				assertOraclePin(t, name, f, area)
 			}
 			assertFoldingFaceBudget(t, name, foldingFaces)

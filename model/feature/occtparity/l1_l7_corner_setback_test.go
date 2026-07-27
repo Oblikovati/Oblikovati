@@ -51,9 +51,12 @@ func TestL1L7CornerSetbackWatertight(t *testing.T) {
 // volume — a set-back seam that mis-welds two bands would fold here.
 func assertWholeBodyFoldFree(t *testing.T, name string, body *topo.Body) {
 	t.Helper()
-	mesh, _ := ops.TessellateBody(body, ops.PropertyQuality())
-	if f := ops.FoldEdgeCount(mesh); f != 0 {
-		t.Fatalf("%s tessellation has %d fold edges, want 0 (a set-back seam that mis-welds folds here)", name, f)
+	for _, gq := range gateQualities() {
+		mesh, _ := ops.TessellateBody(body, gq.q)
+		if f := ops.FoldEdgeCount(mesh); f != 0 {
+			t.Fatalf("%s tessellation has %d fold edges at %s quality, want 0 (a set-back seam that mis-welds folds here)",
+				name, f, gq.name)
+		}
 	}
 }
 

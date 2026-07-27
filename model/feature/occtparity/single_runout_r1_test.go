@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -47,9 +46,7 @@ func TestSingleArmRunoutR1(t *testing.T) {
 func assertNoFaceFolds(t *testing.T, name string, body *topo.Body) {
 	t.Helper()
 	for _, f := range body.Faces() {
-		if n := ops.FoldEdgeCount(ops.TessellateFace(f, ops.PropertyQuality())); n != 0 {
-			t.Fatalf("%s face %T meshed with %d fold edges, want 0", name, f.Geometry(), n)
-		}
+		assertFaceFoldFreeAtEveryQuality(t, name, f, nil)
 	}
 }
 

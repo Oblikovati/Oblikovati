@@ -93,47 +93,9 @@ func importCandRadial(t *testing.T) *topo.Body {
 	return bodies[0]
 }
 
-// openEdgeCount welds coincident vertices, then counts mesh edges not shared by exactly two triangles —
-// the watertightness metric (0 = closed manifold). It welds because TessellateBody copies shared-edge
-// vertices per face (mergeMesh offsets indices), mirroring kernel/ops' own freeEdgeCount helper.
+// openEdgeCount is this package's watertightness metric, delegating to ops.FreeEdgeCount so it welds at
+// the MODEL's own resolution (ADR-0042). It used to carry its own fixed 1e-6 grid, which over-merges any
+// model whose feature separation falls below it and reports the over-merge as a free edge.
 func openEdgeCount(m *ops.Mesh) int {
-	weld := weldIndices(m)
-	deg := map[[2]int]int{}
-	for t := 0; 3*t+2 < len(m.Indices); t++ {
-		v := [3]int{weld[m.Indices[3*t]], weld[m.Indices[3*t+1]], weld[m.Indices[3*t+2]]}
-		for k := 0; k < 3; k++ {
-			deg[orderedPair(v[k], v[(k+1)%3])]++
-		}
-	}
-	free := 0
-	for _, d := range deg {
-		if d != 2 {
-			free++
-		}
-	}
-	return free
-}
-
-// orderedPair canonicalises a mesh edge's endpoint pair so the two triangles that share it hash alike.
-func orderedPair(a, b int) [2]int {
-	if a > b {
-		a, b = b, a
-	}
-	return [2]int{a, b}
-}
-
-// weldIndices maps each mesh vertex to a canonical index for coincident 3D positions.
-func weldIndices(m *ops.Mesh) []int {
-	q := func(x float64) int64 { return int64(x*1e6 + 0.5) }
-	canon := map[[3]int64]int{}
-	weld := make([]int, len(m.Positions))
-	for i, p := range m.Positions {
-		k := [3]int64{q(float64(p.X)), q(float64(p.Y)), q(float64(p.Z))}
-		if c, ok := canon[k]; ok {
-			weld[i] = c
-		} else {
-			canon[k], weld[i] = i, i
-		}
-	}
-	return weld
+	return ops.FreeEdgeCount(m)
 }

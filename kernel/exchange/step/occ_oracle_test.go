@@ -85,12 +85,21 @@ func checkOracle(t *testing.T, dir, name string, want oracleEntry) {
 		}
 		// A folded tessellation can be watertight yet over-enclose (wrong mass). Guard 0 folds so
 		// the volume match below reflects faithful geometry, not luck-of-cancellation (#584).
-		mesh, _ := ops.TessellateBody(b, ops.DefaultQuality())
-		switch folds := ops.FoldEdgeCount(mesh); {
-		case folds != 0 && !knownFolds[name]:
-			t.Errorf("%s: body %d tessellated with %d fold edges; want 0 (over-enclosure)", name, i, folds)
-		case folds == 0 && knownFolds[name]:
-			t.Errorf("%s: body %d is now fold-free — delete it from knownFolds (#1011)", name, i)
+		// Fold-freeness is exact and sampling-independent, so it is swept over BOTH qualities: a
+		// one-quality mesh gate tests one faceting, not the mesher (#1510). The volume budget below
+		// stays at DefaultQuality, where oracleTolerance's chord-faceting deficits are calibrated.
+		for _, q := range []struct {
+			name string
+			q    ops.Quality
+		}{{"default", ops.DefaultQuality()}, {"property", ops.PropertyQuality()}} {
+			mesh, _ := ops.TessellateBody(b, q.q)
+			switch folds := ops.FoldEdgeCount(mesh); {
+			case folds != 0 && !knownFolds[name]:
+				t.Errorf("%s: body %d at %s quality tessellated with %d fold edges; want 0 (over-enclosure)",
+					name, i, q.name, folds)
+			case folds == 0 && knownFolds[name] && q.name == "default":
+				t.Errorf("%s: body %d is now fold-free — delete it from knownFolds (#1011)", name, i)
+			}
 		}
 		got += ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
 	}

@@ -53,9 +53,7 @@ func assertE7FacesFoldFree(t *testing.T, body *topo.Body) float64 {
 		if area <= 0 || stdmath.IsInf(area, 0) || stdmath.IsNaN(area) {
 			t.Fatalf("E7 %T face meshed to %.4f, want a finite positive area", f.Geometry(), area)
 		}
-		if n := ops.FoldEdgeCount(m); n != 0 {
-			t.Fatalf("E7 %T face (area %.2f) has %d fold edges, want 0 (a tessellation defect)", f.Geometry(), area, n)
-		}
+		assertFaceFoldFreeAtEveryQuality(t, "E7", f, m)
 		total += area
 	}
 	return total

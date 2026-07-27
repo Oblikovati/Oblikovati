@@ -93,37 +93,41 @@ func TestStarvedRailNoCrackAgainstNeighbourFace(t *testing.T) {
 	faceB := bld.AddFace(plane, topo.NewLineage(topo.Tok("test", "faceB", 0)),
 		topo.OuterLoop(topo.Fwd(railV0), topo.Fwd(eB1), topo.Fwd(eB2), topo.Fwd(eB3)))
 
-	q := DefaultQuality()
-	canonical := discretizeEdge(railV0, q)
-	if len(canonical) <= 2 {
-		t.Fatalf("shared rail did not densify (len=%d); high-aspect neighbour faceA should have triggered it", len(canonical))
-	}
-
-	meshA := TessellateFace(faceA, q)
-	meshB := TessellateFace(faceB, q)
-	if meshA == nil || meshB == nil {
-		t.Fatalf("TessellateFace returned nil (faceA=%v faceB=%v)", meshA == nil, meshB == nil)
-	}
-	for i, p := range canonical {
-		if !meshContainsPoint(meshB, p, 1e-6*r) {
-			t.Errorf("neighbour plane's own mesh is missing shared-rail vertex %d (%v) — a T-junction crack", i, p)
+	for _, gq := range gateQualities() {
+		canonical := discretizeEdge(railV0, gq.q)
+		if len(canonical) <= 2 {
+			t.Fatalf("%s quality: shared rail did not densify (len=%d); high-aspect neighbour faceA should have "+
+				"triggered it", gq.name, len(canonical))
 		}
-		if !meshContainsPoint(meshA, p, 1e-6*r) {
-			t.Errorf("panel's own mesh is missing shared-rail vertex %d (%v)", i, p)
-		}
-	}
 
-	// A whole-mesh freeEdgeCount is the WRONG bar here: this synthetic 2-face body is deliberately
-	// open (faceA's arc sides and faceB's other 3 sides have no third/fourth face closing them, so
-	// they are LEGITIMATELY free — not a crack). The targeted check is per-triangle-edge
-	// conformance ALONG THE SHARED RAIL specifically: each of its N-1 segments must be used by
-	// EXACTLY 2 triangles (one from meshA, one from meshB) after welding.
-	merged := &Mesh{}
-	mergeMesh(merged, meshA)
-	mergeMesh(merged, meshB)
-	for i, deg := range railEdgeDegrees(t, merged, canonical) {
-		if deg != 2 {
-			t.Errorf("rail segment %d (%v→%v) has %d incident triangles, want 2 — a crack", i, canonical[i], canonical[i+1], deg)
+		meshA := TessellateFace(faceA, gq.q)
+		meshB := TessellateFace(faceB, gq.q)
+		if meshA == nil || meshB == nil {
+			t.Fatalf("%s quality: TessellateFace returned nil (faceA=%v faceB=%v)", gq.name, meshA == nil, meshB == nil)
+		}
+		for i, p := range canonical {
+			if !meshContainsPoint(meshB, p, 1e-6*r) {
+				t.Errorf("%s quality: neighbour plane's own mesh is missing shared-rail vertex %d (%v) — a T-junction crack",
+					gq.name, i, p)
+			}
+			if !meshContainsPoint(meshA, p, 1e-6*r) {
+				t.Errorf("%s quality: panel's own mesh is missing shared-rail vertex %d (%v)", gq.name, i, p)
+			}
+		}
+
+		// A whole-mesh freeEdgeCount is the WRONG bar here: this synthetic 2-face body is deliberately
+		// open (faceA's arc sides and faceB's other 3 sides have no third/fourth face closing them, so
+		// they are LEGITIMATELY free — not a crack). The targeted check is per-triangle-edge
+		// conformance ALONG THE SHARED RAIL specifically: each of its N-1 segments must be used by
+		// EXACTLY 2 triangles (one from meshA, one from meshB) after welding.
+		merged := &Mesh{}
+		mergeMesh(merged, meshA)
+		mergeMesh(merged, meshB)
+		for i, deg := range railEdgeDegrees(t, merged, canonical) {
+			if deg != 2 {
+				t.Errorf("%s quality: rail segment %d (%v→%v) has %d incident triangles, want 2 — a crack",
+					gq.name, i, canonical[i], canonical[i+1], deg)
+			}
 		}
 	}
 }

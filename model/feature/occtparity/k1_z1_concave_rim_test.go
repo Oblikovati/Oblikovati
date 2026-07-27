@@ -83,9 +83,7 @@ func TestK1Z1TessellationFoldGate(t *testing.T) {
 				if area <= 0 || stdmath.IsInf(area, 0) || stdmath.IsNaN(area) {
 					t.Fatalf("%s %T face meshed to %.4f, want a finite positive area", tc.name, f.Geometry(), area)
 				}
-				if n := ops.FoldEdgeCount(m); n != 0 {
-					t.Fatalf("%s %T face (area %.2f) has %d fold edges", tc.name, f.Geometry(), area, n)
-				}
+				assertFaceFoldFreeAtEveryQuality(t, tc.name, f, m)
 			}
 			if rel := stdmath.Abs(meshTotal-tc.want) / tc.want; rel > k1z1Deps {
 				t.Fatalf("%s total mesh area %.4f, want OCCT %.2f within deps %.2f (rel %.6f)", tc.name, meshTotal, tc.want, k1z1Deps, rel)

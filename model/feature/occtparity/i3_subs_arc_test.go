@@ -63,9 +63,7 @@ func TestI3ConeFoldFree(t *testing.T) {
 		if a := ops.MeshArea(m); a <= 0 || stdmath.IsInf(a, 0) || stdmath.IsNaN(a) {
 			t.Fatalf("I3 cone face meshed to %.4f, want a finite positive area", a)
 		}
-		if n := ops.FoldEdgeCount(m); n != 0 {
-			t.Fatalf("I3 cone face has %d fold edges — the shared rim disagreement returned", n)
-		}
+		assertFaceFoldFreeAtEveryQuality(t, "I3 cone", f, m)
 	}
 	if cones != 2 {
 		t.Fatalf("I3 has %d cone faces, want 2", cones)

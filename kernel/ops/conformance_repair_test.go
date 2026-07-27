@@ -95,12 +95,14 @@ func TestBareTriangleSoupTessellatesWatertight(t *testing.T) {
 	if !allBareTriangleFaces(body.Faces()) {
 		t.Fatal("tetra should be a bare-triangle soup (the skip path)")
 	}
-	mesh, _ := TessellateBody(body, DefaultQuality())
-	if got := weldedFreeEdgeCount(mesh); got != 0 {
-		t.Errorf("tessellated tetra has %d free edges, want 0 (watertight)", got)
-	}
-	if mesh.TriangleCount() != 4 {
-		t.Errorf("tetra tessellated to %d triangles, want 4 (one per face)", mesh.TriangleCount())
+	for _, gq := range gateQualities() {
+		mesh, _ := TessellateBody(body, gq.q)
+		if got := weldedFreeEdgeCount(mesh); got != 0 {
+			t.Errorf("%s quality: tessellated tetra has %d free edges, want 0 (watertight)", gq.name, got)
+		}
+		if mesh.TriangleCount() != 4 {
+			t.Errorf("%s quality: tetra tessellated to %d triangles, want 4 (one per face)", gq.name, mesh.TriangleCount())
+		}
 	}
 }
 
