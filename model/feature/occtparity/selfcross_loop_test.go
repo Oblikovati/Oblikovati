@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
 )
 
 // TestNoFaceLoopSelfCrossesOnItsSurface is the corpus-wide RATCHET on a defect class that until now
@@ -61,13 +62,82 @@ func assertSelfCrossingWithinDebt(t *testing.T, r Record, bad []ops.SelfCrossing
 	}
 }
 
-// describeSelfCrossing names each offending face, its surface and the area it pinches off.
+// describeSelfCrossing names each offending face, its surface, the area it pinches off and how
+// faithfully its own crossing pair developed — because an unfaithful pair's "area" is a chart quantity,
+// not an area on the surface, and reading one as the other is the category error §8.5 warned about.
 func describeSelfCrossing(bad []ops.SelfCrossingLoop) string {
 	out := ""
 	for _, b := range bad {
-		out += fmt.Sprintf(" [%T face %d loop %d pinches %.6g]", b.Face.Geometry(), b.Face.ID(), b.Loop, b.Area)
+		out += fmt.Sprintf(" [%T face %d loop %d pinches %.6g chart/chord %.4g]",
+			b.Face.Geometry(), b.Face.ID(), b.Loop, b.Area, b.ChartChordRatio)
 	}
 	return out
+}
+
+// selfCrossOffSurfaceFloor is the residual, relative to the body's bounding diagonal, above which a
+// boundary has demonstrably left the face it bounds. It is loopSegOnFaceTol — the SAME ruler
+// TestEveryLoopSegmentLiesOnItsFace gates on, so the two guards cannot disagree about what "off its own
+// surface" means.
+const selfCrossOffSurfaceFloor = loopSegOnFaceTol
+
+// TestEverySelfCrossDebtEntryIsARealDefect is the ratchet's ANTI-LAUNDERING guard, and the reason the
+// entries below can be trusted to be geometry rather than bookkeeping.
+//
+// WHY IT EXISTS. Two of this table's former entries — simple/W1 and simple/E4 — turned out to be
+// artefacts of the DEVELOPMENT, not defects of the boundary: their loops started on a sphere's (u,v)
+// seam and wound a whole period about it, so the chart they were measured in did not represent the
+// surface at all. They were retired only after being PROVEN artefacts (their faces mesh to an exact
+// spherical-excess closed form), and by a production fix to unwrap rather than by an edit to the
+// detector. Nothing, however, stopped the next such entry from being quietly dropped on suspicion —
+// and "we do not launder ratchet shrinkages by quietly altering the detector" is the standing rule.
+//
+// WHAT IT ASSERTS. Every recorded crossing must be convictable on its own evidence, one of two ways:
+// its crossing pair developed FAITHFULLY (ChartChordRatio inside the half-turn cut), so the chart
+// measured the surface and the crossing is real on it; OR the pair developed unfaithfully AND the
+// body's boundary is measurably OFF the face it bounds, so the unfaithfulness is caused by geometry
+// that is itself wrong. An entry that is neither is a chart artefact and must be retired with its
+// receipt — not left to inflate the table, and not dropped silently.
+//
+// ★ IT IS ALSO THE PROOF THAT THE OBVIOUS "CORRECTION" WOULD HAVE BEEN WRONG. complex/F2's two
+// crossings measure 2.771 and 77.06 — the second is the 77× that stood recorded as a suspected chart
+// artefact. It is not one: the crossing pair's own boundary points lie 9.125 and 9.818 off the
+// radius-10 cylinder they bound, and the body's worst boundary-off-its-own-face residual is 9.87026 —
+// 0.05596 of its 176.4 diagonal, under knownOffSurfaceDebt's complex/F2 ceiling of 0.0616 — on FACE 243
+// itself, the very face carrying the 1098.03 crossing. The same defect, two rulers. Filtering the
+// detector on the ratio, the mirror of the retrace detector's corroboratedIn3D, would have retired both
+// as artefacts: measured, it drops complex/F2 from 2 reported loops to 0 while every gate in this
+// harness stays green.
+func TestEverySelfCrossDebtEntryIsARealDefect(t *testing.T) {
+	dir := CorpusFixtureDir()
+	q := ops.PropertyQuality()
+	for _, d := range knownSelfCrossingLoops() {
+		r := corpusRecord(t, d.grid, d.name)
+		body, ok := shippedCaseBody(r, dir)
+		if !ok {
+			t.Errorf("%s/%s is in knownSelfCrossingLoops but ships no healthy body to convict it on", d.grid, d.name)
+			continue
+		}
+		assertSelfCrossingsAreConvicted(t, r, body, ops.SelfCrossingFaceLoops(body, q))
+	}
+}
+
+// assertSelfCrossingsAreConvicted fails for any reported crossing that is neither faithfully developed
+// nor accompanied by a boundary that has left its own face.
+func assertSelfCrossingsAreConvicted(t *testing.T, r Record, body *topo.Body, bad []ops.SelfCrossingLoop) {
+	t.Helper()
+	worst, where := worstLoopSegmentOffFace(body)
+	offSurface := worst/boundingDiag(body) > selfCrossOffSurfaceFloor
+	for _, b := range bad {
+		if b.ChartFaithful() || offSurface {
+			continue
+		}
+		t.Errorf("%s/%s: face %d loop %d crosses at chart/chord %.4g — its development does not represent "+
+			"the surface — yet the body's worst boundary-off-its-own-face residual is only %.6g (rel %.4g "+
+			"of the %.4g diagonal, floor %.4g) at %s. That is a CHART ARTEFACT, not a defect: retire the "+
+			"entry with its receipt rather than carrying it",
+			r.Grid, r.Case, b.Face.ID(), b.Loop, b.ChartChordRatio, worst, worst/boundingDiag(body),
+			boundingDiag(body), selfCrossOffSurfaceFloor, where)
+	}
 }
 
 // selfCrossDebtEntry is one case's measured self-crossing debt: how many of its loops cross, and the
@@ -167,11 +237,37 @@ func selfCrossDebtIndex() map[string]selfCrossDebtEntry {
 // is deliberately left where it stood: 1098.03 is also what the BASE commit measures, so the drop
 // predates this slice, and re-setting a ceiling from a fresh measurement is the ratchet-measurement
 // correction that belongs in its own slice, not a side effect of a mesher fix.
+// ★ MEASUREMENT CORRECTION (this slice), NOT a geometry change and NOT a shrink. Every entry below was
+// re-examined against the ONE open suspicion the detector's own report left on the record — that some of
+// these numbers measure the CHART rather than the GEOMETRY — and each was convicted on its own evidence.
+// Nothing left the table; no ceiling moved; SelfCrossingFaceLoops reports exactly the loops and areas it
+// reported before. What changed is that each report now carries the fidelity of ITS OWN crossing pair
+// (SelfCrossingLoop.ChartChordRatio), so the numbers can no longer be misread, and
+// TestEverySelfCrossDebtEntryIsARealDefect makes the conviction a standing guard.
+//
+// The verdicts, with the measured pair fidelity (chart length ÷ 3D chord over the two segments that
+// actually cross, ops.PropertyQuality()):
+//
+//   - simple/Q5, both loops — 1.000000 and 1.000000. The development is exact on both pairs (the
+//     crossing segments are a plane's and a cylinder's axial rulings). REAL, stays.
+//   - complex/F2, both loops — 2.771 and 77.06. ★ The 77.06 is the ratio that stood recorded as a
+//     SUSPECTED chart artefact, and it is NOT one. Its crossing pair's own boundary points sit 9.125 and
+//     9.818 off the radius-10 cylinder they bound, and the body's worst boundary-off-its-own-face
+//     residual — 9.87026, 0.05596 of its 176.4 diagonal, under knownOffSurfaceDebt's 0.0616 ceiling —
+//     is on FACE 243, the very face carrying the 1098.03 crossing. The chart is unfaithful BECAUSE the
+//     geometry is wrong, so the two ratchets are reading one defect with two rulers. REAL, stays — and
+//     this is the receipt that filtering the detector on the ratio would have laundered them away.
+//   - simple/W2, one loop — 1.000000. A plane's development is exact by construction; the 2.5e-13 is
+//     float noise thrown off by the retracing spike on the same face (knownRetracingLoops). REAL, stays.
+//
+// Also corrected on the record: the two entries this table's prose still lists as SUSPECTS — simple/W1's
+// "Area 0" and simple/E4's 128.489 — were already RETIRED, as false positives, by the unwrap fix in the
+// third wave above. The suspicion that opened this correction was, for them, already acted on.
 func knownSelfCrossingLoops() []selfCrossDebtEntry {
 	return []selfCrossDebtEntry{
-		{"Q5", "simple", 2, 84913}, // f12723 (the r=2500 band's host wall) 84912.4, f12719 0.284334
-		{"F2", "complex", 2, 1105}, // 1098.03 / 7.16978 (was 4 loops: 28.1712 and 7.78603 retired)
-		{"W2", "simple", 1, 1e-12}, // 2.49967e-13 — a degenerate crossing, float noise
+		{"Q5", "simple", 2, 84913}, // f12723 (the r=2500 band's host wall) 84912.4, f12719 0.284334; pairs 1.000000
+		{"F2", "complex", 2, 1105}, // 1098.03 / 7.16978 (was 4 loops); pairs 77.06 / 2.771 — see the verdicts above
+		{"W2", "simple", 1, 1e-12}, // 2.49967e-13 — a degenerate crossing, float noise; pair 1.000000
 	}
 }
 

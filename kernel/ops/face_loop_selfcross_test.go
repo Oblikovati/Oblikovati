@@ -84,3 +84,48 @@ func lobedBandEdge(t *testing.T, cyl geom.Cylinder, a, b [2]float64) geom.Curve3
 	}
 	return arc
 }
+
+// TestSelfCrossingFaceLoopsMeasuresTheCrossingPairsOwnFidelity is the ADDED measurement's own guard,
+// gated on a CLOSED FORM. On the lobed band the crossing pair is the u = 0 closing ruling (chart length
+// = chord exactly) and the slant that overshoots it, which spans Δu = (w+d)/r about the cylinder while
+// rising h: chart hypot(w+d, h), 3D chord hypot(2r·sin(Δu/2), h). The worse of the two is the slant's,
+// 1.0948765… — well inside the half-turn cut, so the crossing IS measured on the surface and its Area
+// may be quoted as one.
+//
+// Falsify by measuring the ratio against the loop's chart diagonal, or against a segment index other
+// than the crossing pair's: the value stops matching this closed form.
+func TestSelfCrossingFaceLoopsMeasuresTheCrossingPairsOwnFidelity(t *testing.T) {
+	const r, w, l, h, d = 24.0, 30.0, 100.0, 8.0, 6.0
+	bad := SelfCrossingFaceLoops(lobedBandBody(t, r, w, l, h, d), PropertyQuality())
+	if len(bad) != 1 {
+		t.Fatalf("a band whose boundary crosses its own ruling must report exactly one loop, got %d", len(bad))
+	}
+	du := (w + d) / r
+	want := stdmath.Hypot(w+d, h) / stdmath.Hypot(2*r*stdmath.Sin(du/2), h)
+	if rel := stdmath.Abs(bad[0].ChartChordRatio-want) / want; rel > 1e-9 { // tol:numeric (ratio)
+		t.Errorf("crossing pair chart/chord %.12g, closed form %.12g (rel %.4g)", bad[0].ChartChordRatio, want, rel)
+	}
+	if !bad[0].ChartFaithful() {
+		t.Errorf("a %.6g ratio is inside the half-turn cut %.6g and must read faithful",
+			bad[0].ChartChordRatio, selfCrossChartFaithfulRatio)
+	}
+}
+
+// TestChartFaithfulCutIsTheHalfTurn pins selfCrossChartFaithfulRatio on its DERIVATION rather than on
+// the corpus numbers it happens to separate: the ratio θ/(2 sin(θ/2)) of a segment spanning angle θ
+// about a periodic direction equals the constant exactly at θ = π, the span past which the 3D chord
+// starts shrinking while the chart keeps growing. Falsify by re-tuning the constant to fit the corpus
+// and this goes RED, which is the point — it is a closed form, not a calibration.
+func TestChartFaithfulCutIsTheHalfTurn(t *testing.T) {
+	atHalfTurn := stdmath.Pi / (2 * stdmath.Sin(stdmath.Pi/2))
+	if stdmath.Abs(selfCrossChartFaithfulRatio-atHalfTurn) > 1e-15 { // tol:numeric (ratio)
+		t.Errorf("selfCrossChartFaithfulRatio is %.17g, the half-turn ratio θ/(2 sin(θ/2)) at θ=π is %.17g",
+			selfCrossChartFaithfulRatio, atHalfTurn)
+	}
+	for _, theta := range []float64{4.42, 6.20} { // complex/F2's two measured spans
+		if got := theta / (2 * stdmath.Sin(theta/2)); got <= selfCrossChartFaithfulRatio {
+			t.Errorf("a %.2f rad segment measures ratio %.4g, which must exceed the half-turn cut %.4g",
+				theta, got, selfCrossChartFaithfulRatio)
+		}
+	}
+}
