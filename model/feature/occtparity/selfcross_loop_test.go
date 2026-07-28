@@ -277,6 +277,14 @@ func selfCrossDebtIndex() map[string]selfCrossDebtEntry {
 //     this is the receipt that filtering the detector on the ratio would have laundered them away.
 //   - simple/W2, one loop — 1.000000. A plane's development is exact by construction; the 2.5e-13 is
 //     float noise thrown off by the retracing spike on the same face (knownRetracingLoops). REAL, stays.
+//     ★ AND IT IS INDEPENDENT OF THAT SPIKE, measured: the arc path's material-side probe plus the R+r
+//     concave tier (.superpowers/sdd/voidside-band-report.md) takes W2's retracing loops 2 → 0 and leaves
+//     this crossing at exactly 1 loop, unchanged. So the attribution "thrown off by the retracing spike"
+//     is NOT confirmed and the entry stands on its own measurement, not on that explanation.
+//     ★ NOTE FOR ANY FUTURE ARC-ENGINE SLICE: TestEverySelfCrossDebtEntryIsARealDefect below fails with
+//     "ships no healthy body to convict it on" the moment simple/W2 stops building. That is deliberate —
+//     it refuses to let this ratchet quietly stop being enforced — so a change that honestly DECLINES to
+//     fillet W2 must land together with whatever retires this entry on a receipt, never before it.
 //
 // Also corrected on the record: the two entries this table's prose still lists as SUSPECTS — simple/W1's
 // "Area 0" and simple/E4's 128.489 — were already RETIRED, as false positives, by the unwrap fix in the

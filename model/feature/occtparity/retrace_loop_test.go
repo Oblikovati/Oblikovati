@@ -155,10 +155,26 @@ func retraceDebtIndex() map[string]retraceDebtEntry {
 //     against a rim point at z=1). Merging a merely NEAR-coplanar cap would put the absorbed cross-section
 //     arc ~2e-5 (7e-6 of the diagonal) off the side face's own surface, which TestEveryLoopSegmentLiesOnItsFace
 //     forbids at 1e-6 — so it declines. ★ W2 also carries a SEPARATE, larger defect the merge does not
-//     touch and must not be confused with this one: resolveArcFillet takes the cap plane's STORED normal
-//     as the outward one, so W2's rolling-ball centre is placed on the VOID side (y = −0.2 where the
-//     solid is y ∈ [0,1]). solveRim, the closed-rim sibling, guards exactly this with a PointInsideBody
-//     probe; the arc path has no such guard. That is its own slice. This case is FAIL(area) already.
+//     touch and must not be confused with this one: its whole band is built on the VOID side (rolling-ball
+//     centre at y = −0.2 where the solid is y ∈ [0,1]; measured with PointInsideBody on the pre-fillet
+//     body at every tube-centre sample). This case is FAIL(area) already.
+//     ★★ ATTRIBUTION CORRECTED (.superpowers/sdd/voidside-band-report.md). That void-side placement was
+//     recorded here as "resolveArcFillet takes the cap plane's STORED normal as the outward one", and
+//     that is only HALF of it. resolveArcFillet makes TWO unprobed assumptions, and W2 violates both:
+//     the stored normal (its cap face is Reversed, so pl.Normal() points INTO the material) AND the
+//     radial sense (its cylinder is a GROOVE — material lies outside it — so the rolling ball rides at
+//     R+r, not solveRim's convex R−r). DRAWEXE 8.0.0 convicts both independently on W2's own script:
+//     it recedes the cylinder to y = +0.2 (area 1.2454 = 1.5567 × 0.8, the full arc span) and puts the
+//     cap-tangent circle at 1.2 = R+r (its receded cap face reaches x = 2.33652 = 3 − √(1.2²−0.9999²),
+//     and loses ∫₀¹[√(1.44−u²)−√(1−u²)]du = 0.2559 of area — a convex R−r round would have made it
+//     LARGER). Adding the PointInsideBody probe alone therefore does NOT fix this case: it correctly
+//     rejects both axial sides at R−r. Adding the R+r tier as well DOES put the band on the material
+//     side (area +12.47 % → +1.58 %, and these two retracing loops go to ZERO), but the R+r cove then
+//     SPILLS through the cap face — vt₁ lands 0.19998 = r below the bottom plane z = 0 — and this case's
+//     knownMeshLeaks row widens 3/3 → 8/29, every new free edge on the spilled arc. OCCT instead stops
+//     the cap-tangent arc AT the cap face boundary and covers the corner with a run-out lobe worth
+//     0.0861. So W2 needs the CONCAVE OPEN-TORUS ARC BAND WITH A RUN-OUT — the same root simple/H6 is
+//     quarantined for — not a probe. Do not re-open this as a stored-normal slice.
 func knownRetracingLoops() []retraceDebtEntry {
 	return []retraceDebtEntry{
 		{"Y1", "simple", 1, 10.001},  // 10 = r = the slot width; see the caveat above

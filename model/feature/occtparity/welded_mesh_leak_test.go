@@ -185,6 +185,12 @@ func meshDebtIndex(table []meshDebtEntry) map[string]meshDebtEntry {
 //     change touches the mesher or the welder; the leaks were the retrace, exactly as predicted here.
 //     N6 still carries one retracing loop (its non-radial end) and leaks nothing, which bounds the
 //     claim honestly: a retrace is sufficient to leak, not necessary.
+//     ★ AND SO IS simple/W2's 3/3, MEASURED: putting its band on the material side (the arc path's
+//     material-side probe plus the R+r concave tier, .superpowers/sdd/voidside-band-report.md) takes its
+//     retracing loops 2 → 0 and does NOT take these three with them — they are replaced by 8 default /
+//     29 property free edges of a different origin, all on the plane y = 0 along a cap-tangent arc that
+//     spills 0.2 = r below the bottom plane. So for W2 the retrace and the leak are NOT one defect, and
+//     the prediction above holds for B2/N6 but not here.
 //   - simple/Z1 (3/3) is the only leaking case in NO other ratchet: a geom.Cylinder / geom.Plane rim at
 //     z = 20 where three edges around one 0.245431 arc step fail to pair. Unattributed, and smallest.
 //   - simple/T9 (60 / 10) and simple/U6 (12 / 13) are not green and are not tracked anywhere else. U6 is
