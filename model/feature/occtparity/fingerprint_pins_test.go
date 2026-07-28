@@ -132,7 +132,19 @@ func byteIdentityPins() []fingerprintPin {
 		// host-agnostic rim rebuild (fillet_curved_closed_rim.go). Captured on this HEAD; it locks the
 		// closed-band assembly so any later slice that touches the demux or the rim rebuild fails loud if
 		// it perturbs the J1 body. Same cross-platform-risk caveat as above applies.
-		{"J1", 3661547.474067254923, 69116, 0x33544bb82303b62c, ""},
+		//
+		// RE-CAPTURED (rim-station-report.md), and PROVEN improved, not merely different: its cone face
+		// spans rims of r=99.999929 (1024 stations) and r=51.893513 (512), and the seam-bridged band GRID
+		// tiled BOTH at 1024 — so the 512-station rim it shares with the torus band cracked the whole way
+		// round. Its welded mesh leaked 1536 free edges at PropertyQuality (ops.FreeEdgeCount over
+		// CalculateBodyFacets(body,q).Mesh) and now leaks ZERO at BOTH gate qualities. The cone is lofted
+		// rim-to-rim instead, so tris drop by exactly 512 (2048 → 1536 on that face, 69116 → 68604 on the
+		// body — the arithmetic of one grid row lost, and nothing else moved). Its cone mesh area moves
+		// 94648.882214885 → 94648.777612282 against the EXACT frustum closed form π(r1+r2)(L1−L2) =
+		// 94649.056895806, i.e. an inscribed deficit of 1.845e-06 → 2.951e-06 — the unavoidable price of
+		// honouring the coarser rim's own chords, and 34× inside PropertyQuality's own ~1e-4 promise. The
+		// body volume is unchanged to 2.3e-14 (3661547.474067255 → 3661547.474067171).
+		{"J1", 3661547.474067171, 68604, 0x4769bd2a8f5353fe, ""},
 		// E7: the convex latitude-cut Torus∧Plane rim welded through the single-arm runout (torusArmEdge /
 		// fillet_torusarm.go). Captured on this HEAD; it locks the E7 arm+host-torus retrim so any later slice
 		// that perturbs the torus-host arm or its contact circle fails loud. Same cross-platform-risk caveat.
@@ -182,7 +194,16 @@ func byteIdentityPins() []fingerprintPin {
 		// contact circles, winding-flipped band, outward-growing plate hole). Captured on THIS HEAD; they
 		// lock the concave cove-band assembly so any later concave slice (the S2/S5 cove-onto-sidewall
 		// follow-up) fails loud if it perturbs an A2/A3 body. Same cross-platform-risk caveat as above.
-		{"A2", 17169519.448758263141, 134668, 0x172eb5eb3a475c53, "bfuseblend"},
+		//
+		// A2 RE-CAPTURED (rim-station-report.md), and PROVEN improved, not merely different — the same
+		// defect and the same repair as J1 above: its cone spans rims of r=49.999857 (512 stations) and
+		// r=98.081269 (1024), the band grid tiled both at 1024, and the 512-station rim it shares with the
+		// plane cap leaked 1536 free edges at PropertyQuality → now ZERO at BOTH gate qualities. tris
+		// 134668 → 134156, again exactly −512. Cone mesh area 92225.372724545 → 92225.270652647 against the
+		// exact frustum 92225.542932716 (deficit 1.845e-06 → 2.952e-06). Its VOLUME rises
+		// 17169519.448758263 → 17169519.822057653 (+2.2e-08): a signed-tetra sum over a mesh that was not a
+		// closed surface had no well-defined value, and the closed one is the one to pin.
+		{"A2", 17169519.822057653, 134156, 0x567be90454112343, "bfuseblend"},
 		{"A3", 15606148.623794555664, 305166, 0xf29512989e349b62, "bfuseblend"},
 		// E1/E2 (simple): the 90° sphere-sector corner fillets whose CURVED survivor wall (a sphere
 		// meridian rim) was chorded by transformLoop's ENDS branch, collapsing the sphere face ~in half

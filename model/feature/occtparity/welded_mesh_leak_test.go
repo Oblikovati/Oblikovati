@@ -19,7 +19,8 @@ import (
 // TOPOLOGICAL watertightness is not MESH watertightness: two faces can share an edge in the B-rep and
 // still tile that edge with different vertices, and only the welded triangle soup says so. D8 passed
 // eleven slices of scrutiny in that state, and the sweep that opened this ratchet found it was never
-// unique — TWELVE of the 124 measurable cases leak, NINE of them scored fully green.
+// unique — TWELVE of the 124 measurable cases leaked, NINE of them scored fully green. Ten and seven
+// today: the two largest (bfuseblend/A2, simple/J1) were closed by band_rim_stations.go.
 //
 // WHY THE MESH MATTERS AT ALL. The user only ever sees the mesh (CLAUDE.md's first priority). A leaking
 // mesh renders with cracks, exports an unprintable STL, and hands the next boolean a non-closed operand
@@ -30,9 +31,10 @@ import (
 // edges not used by exactly two triangles. The weld ruler is deliberately NOT an absolute quantum: a
 // fixed grid over-merges whenever the model's own feature separation drops below it and then reports the
 // over-merge as a crack (FreeEdgeCount's own receipt on the #1818 near-pinch). Run at EVERY
-// gateQualities() entry, because a leak can be quality-dependent in either direction: bfuseblend/A2 and
-// simple/J1 are CLEAN at default and leak 1536 at property, while simple/U6 leaks 13 at default and 12
-// at property.
+// gateQualities() entry, because a leak can be quality-dependent in either direction: simple/B2 and
+// simple/C2 are CLEAN at default and leak 3 at property (and the retired A2/J1 were clean at default and
+// leaked 1536 at property — the whole reason a Default-only gate could not have found them), while
+// simple/U6 leaks 13 at default and 12 at property.
 //
 // It also gates FOLD edges, the sibling half of the same invariant and the same measurement pass (a
 // mesh must be free-edge-free to be a closed surface and fold-free to bound a well-defined volume —
@@ -131,14 +133,19 @@ func meshDebtIndex(table []meshDebtEntry) map[string]meshDebtEntry {
 }
 
 // knownMeshLeaks is the FULL measured population of shipped bodies whose WELDED tessellation is not a
-// closed surface: 12 cases of the 124 the corpus can measure, derived by an instrumented corpus-wide
+// closed surface: 10 cases of the 124 the corpus can measure, derived by an instrumented corpus-wide
 // sweep at both gateQualities() entries, not from any report. The sweep reproduces byte-for-byte across
 // runs, so these ceilings are exact rather than sampled.
 //
-// ★ EVERY ENTRY HERE IS NEWLY DETECTED, NOT NEWLY CAUSED. The slice that landed this ratchet added no
-// geometry and touched no production file: the scoreboard is byte-identical (112 simple / 117 all-grid)
-// and the other four ratchets are untouched. Every count below is what base 2f7115f9 already shipped —
-// this table is simply the first instrument able to read it.
+// ★ EVERY ENTRY HERE IS DETECTED, NOT CAUSED. The slice that landed this ratchet added no geometry and
+// touched no production file: the scoreboard is byte-identical (112 simple / 117 all-grid) and the other
+// four ratchets are untouched. Every count below is what base 2f7115f9 already shipped — this table is
+// simply the first instrument able to read it.
+//
+// ★ TWO ENTRIES HAVE BEEN RETIRED, not re-ceilinged: bfuseblend/A2 and simple/J1 (1536 free edges each at
+// property quality, 3072 of the corpus's 4146 — 74 % of all its leakage) now measure ZERO at BOTH
+// qualities. Their root was the seam-bridged band grid imposing one station count on rims that discretize
+// into two (band_rim_stations.go); they are gated at zero here by this table's silence.
 //
 // complex/D8 is deliberately ABSENT: its leak (8 default / 36 property) was closed by the far-end split
 // and is gated at ZERO both by this table's silence and by
@@ -146,24 +153,12 @@ func meshDebtIndex(table []meshDebtEntry) map[string]meshDebtEntry {
 // longer exists — and disabling that split makes this very test report D8's 8 and 36 again, which is the
 // ratchet's own falsification.
 //
-// ★ NINE OF THE TWELVE ARE SCORED GREEN (PASS): bfuseblend/A2, simple/B2 C2 J1 N6 Q5 U4 Y1 Z1. That is
-// the D8 situation exactly, nine times over — an area gate cannot see a torn rim, because tearing a rim
-// removes no area. Two more are FAIL(area) (U6, W2) and one FAIL(faulty) (T9).
+// ★ SEVEN OF THE TEN ARE SCORED GREEN (PASS): simple/B2 C2 N6 Q5 U4 Y1 Z1. That is the D8 situation
+// exactly, seven times over — an area gate cannot see a torn rim, because tearing a rim removes no area.
+// Two more are FAIL(area) (U6, W2) and one FAIL(faulty) (T9).
 //
 // The roots, largest first — each is a SEPARATE follow-up slice, none is fixed here:
 //
-//   - SHARED-RIM STATION-COUNT MISMATCH (bfuseblend/A2 and simple/J1, 1536 each at property, 0 at
-//     default). The single largest leak in the corpus, and the cleanest. Every one of the 1536 edges is
-//     1-incident and every one belongs to ONE face: on A2, 1024 on the geom.Cone and 512 on the
-//     geom.Plane it meets, ALL at z = 199.9, on the SAME circle of radius 50 (measured chords 0.306796 =
-//     2·50·sin(π/1024) and 0.613588 = 2·50·sin(π/512)). The two faces sharing that rim discretize it into
-//     a DIFFERENT number of stations, so not one triangle edge along it pairs. J1 is identical in form —
-//     1024 on its geom.Cone against 512 on its geom.Torus, all at z = 192.42535625036462, chords
-//     0.318415 / 0.636827. Both rims are closed full circles, and both cases are CLEAN at default
-//     quality, which is what says this is a per-face station count and not a geometry error: at the
-//     coarse sampling the two sides happen to land on the same count. Suspected producer: a face whose
-//     boundary is re-sampled from its own surface parameterisation instead of through the shared edge
-//     curve's discretization, so the two sides only agree when both saturate the same limit.
 //   - FAR-END TRIM RUNNING OFF ITS STOP FACE (simple/Q5, 937 property / 160 default). Q5 is one of the
 //     two cases still in knownSelfCrossingLoops for exactly this root (84912.4 pinched off its r=2500
 //     band's host wall), and the multi-face split that closed complex/D8 DECLINES it because Q5 carries
@@ -185,18 +180,16 @@ func meshDebtIndex(table []meshDebtEntry) map[string]meshDebtEntry {
 //     the only case whose leak SHRINKS as the sampling refines, which rules out a fixed station count.
 func knownMeshLeaks() []meshDebtEntry {
 	return []meshDebtEntry{
-		{"A2", "bfuseblend", 0, 1536}, // PASS — cone 1024 vs plane 512 stations on the same r=50 rim
-		{"J1", "simple", 0, 1536},     // PASS — cone 1024 vs torus 512 stations on the same rim
-		{"Q5", "simple", 160, 937},    // PASS — the far-end-trim root the D8 split declines to take
-		{"T9", "simple", 10, 60},      // FAIL(faulty) — one BSpline face; also the corpus's worst folds
-		{"U4", "simple", 44, 44},      // PASS — canal patch rails vs their elliptical-cylinder host
-		{"U6", "simple", 13, 12},      // FAIL(area) — cylinder/torus rim; note it SHRINKS with quality
-		{"N6", "simple", 6, 6},        // PASS — knownRetracingLoops, 3 loops
-		{"B2", "simple", 0, 3},        // PASS — knownRetracingLoops, 1 loop
-		{"C2", "simple", 0, 3},        // PASS — knownOffSurfaceDebt 0.0192, BSpline/plane seam
-		{"W2", "simple", 3, 3},        // FAIL(area) — knownRetracingLoops, 2 loops
-		{"Y1", "simple", 3, 3},        // PASS — knownRetracingLoops, 1 loop
-		{"Z1", "simple", 3, 3},        // PASS — unattributed, in no other ratchet
+		{"Q5", "simple", 160, 937}, // PASS — the far-end-trim root the D8 split declines to take
+		{"T9", "simple", 10, 60},   // FAIL(faulty) — one BSpline face; also the corpus's worst folds
+		{"U4", "simple", 44, 44},   // PASS — canal patch rails vs their elliptical-cylinder host
+		{"U6", "simple", 13, 12},   // FAIL(area) — cylinder/torus rim; note it SHRINKS with quality
+		{"N6", "simple", 6, 6},     // PASS — knownRetracingLoops, 3 loops
+		{"B2", "simple", 0, 3},     // PASS — knownRetracingLoops, 1 loop
+		{"C2", "simple", 0, 3},     // PASS — knownOffSurfaceDebt 0.0192, BSpline/plane seam
+		{"W2", "simple", 3, 3},     // FAIL(area) — knownRetracingLoops, 2 loops
+		{"Y1", "simple", 3, 3},     // PASS — knownRetracingLoops, 1 loop
+		{"Z1", "simple", 3, 3},     // PASS — unattributed, in no other ratchet
 	}
 }
 

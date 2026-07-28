@@ -137,6 +137,10 @@ func splineFaceMesh(f *topo.Face, s geom.Surface, q Quality) *Mesh {
 // (the full-domain grid tears there); a doubly-periodic torus we can't reduce keeps the full-domain grid.
 func meshSeamCrossingFace(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) *Mesh {
 	if us, vs, isBand := periodicBandGrid(s, outer3D, holes3D); isBand {
+		if m, ok := unequalRimBandMesh(f, s, bandGridStations(s, us, vs), q); ok {
+			return m // rims at DIFFERENT station counts: loft rim-to-rim so each keeps its own shared-edge
+			// discretization — the one grid would re-tile the coarser rim and crack it (band_rim_stations.go)
+		}
 		return closedDomainMesh(s, us, vs) // full cylinder/cone side with circular rims: grid the period
 	}
 	if m, ok := holedConicWallMesh(s, outer3D, holes3D, q); ok {
