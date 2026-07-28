@@ -10,23 +10,33 @@ import (
 // TestQ5ShippedFacesAgainstDrawexe rank-pairs simple/Q5's SHIPPED per-face mesh areas against DRAWEXE
 // 8.0.0's own `explode result F` + `sprops result_i 1e-6`.
 //
-// WHY THIS CASE, AND WHY THE SHIPPED MESH. simple/Q5 is GREEN on whole-body area (−0.0918% of
-// DRAWEXE's 3.46388e8, well inside its 1% deps), and the whole-body gate is structurally blind to what
-// is actually happening inside it: ONE face — the r=2500 fillet band — is 5.85% short, and two others
-// over-read by +0.15% / +0.18% on a much larger base, so the errors partly cancel. That is the
-// compensating-pair class this file exists for.
+// WHY THIS CASE, AND WHY THE SHIPPED MESH. simple/Q5 used to be GREEN on whole-body area (−0.0918% of
+// DRAWEXE's 3.46388e8, well inside its 1% deps) while the whole-body gate was structurally blind to what
+// was happening inside it: ONE face was 5.85% short and two others over-read by +0.147% / +0.181% on a
+// much larger base, so the errors partly cancelled. That is the compensating-pair class this file exists
+// for, and this is the case that showed it can hide a 937-free-edge mesh leak as well as an area error.
 //
-// The shortfall's root is NOT the tessellator: the band's boundary, developed onto its own cylinder,
-// SELF-INTERSECTS, so its (u,v) trim has no well-defined area and no correct triangulation exists.
-// What the mesher can do is pick the better of its candidates, and it does — the cross-face conformance
-// re-mesh ships 7.6459e6 where the plain per-face mesh would ship 6.5576e6 (−19.3%). That is why the
-// coverage certificate in kernel/ops/cdt_coverage.go CHOOSES rather than vetoes, and this test is the
-// gate on that decision: make the certificate refuse a non-covering re-mesh outright, or promote an
-// uncertified one, and rank 10 falls to −19% and this fails loud.
+// ★ TWO INHERITED ATTRIBUTIONS IN THIS FILE'S OWN COMMENT WERE FALSIFIED BY MEASUREMENT, and both are
+// corrected here rather than deleted, because the correction is the finding:
+//
+//  1. Rank 10 is NOT "the r=2500 fillet band". It is a piece of the radius-3000 host WALL — the face the
+//     band's terminal section stops on — lineage import:step#16:face#5. The band itself is rank 8
+//     (import:step#16:edge#15/fillet:cyl#0, 1.28376e7) and measured −0.00082% of its own closed form
+//     throughout, before and after. Nothing was ever wrong with the band.
+//  2. The shortfall's root was the FAR-END TRIM, not the tessellator's choice among candidates. The
+//     multi-face split (kernel/ops/fillet_farend_chain.go) used to require BOTH of a fillet's terminal
+//     sections to split; Q5's splits at one end only, so the whole split was declined, nine of the
+//     section's 33 stations were slid past the small wall face's own ruling, and that face's developed
+//     boundary self-crossed — which is why no correct triangulation of it existed. With the split
+//     admitted, the boundary is a simple polygon again and rank 10 goes 7645850.16 → 8121160.60 against
+//     a closed form of 8121170.18 (−5.85% → −0.00012%). The whole body goes to −0.000194%.
+//
+// TestQ5FarEndSplitIsAtomicAndHitsItsClosedForms carries the closed forms and the atomicity statement;
+// this test is the independent DRAWEXE-side check on the same four faces.
 //
 // RANK PAIRING IS SOUND HERE: DRAWEXE's ten face areas are separated by ≥4.3% (the tightest adjacent
-// pair is 4.93687e7 / 4.7039e7), which is wider than every per-face error except rank 10's — and rank
-// 10 is the smallest face by 29%, so nothing can be mistaken for it.
+// pair is 4.93687e7 / 4.7039e7), which is far wider than every per-face error, all of which are now
+// inside 0.0014%.
 func TestQ5ShippedFacesAgainstDrawexe(t *testing.T) {
 	tc := drawexeFaceCase{
 		name: "simple/Q5",
@@ -37,17 +47,19 @@ func TestQ5ShippedFacesAgainstDrawexe(t *testing.T) {
 			3.46587e7, 1.8e7, 1.28376e7, 1.05e7, 8.12117e6,
 		},
 		totalArea: 3.46388e8,
-		// Mesh quantization only: nine of the ten faces sit inside 0.18%.
-		perFaceTol: 0.0025,
+		// Mesh quantization only. ALL TEN faces now sit inside 0.0014% (the worst is rank 4's −0.00135%
+		// on the big wall piece), so this is a ~20x margin over the measurement rather than the 0.25% it
+		// needed while one face was 5.85% short. TIGHTENED from 0.0025 — never widened.
+		perFaceTol: 0.0003,
 	}
-	// Rank 10 (the r=2500 fillet band) carries a measured 5.85% shortfall whose root is its
-	// self-intersecting developed boundary, not the mesher. Ratchet at 1.11x — it may shrink freely.
-	debt := map[int]float64{9: 0.065}
+	// ★ THE PER-RANK DEBT IS RETIRED, not re-ceilinged. Rank 10 carried {9: 0.065} for a measured 5.85%
+	// shortfall; it now measures −0.00012% and is gated by perFaceTol like every other face. The total
+	// budget is tightened with it, 0.002 → 0.00005 against a measured −0.000194%.
 	body, ok := shippedCaseBody(q5Record(t), CorpusFixtureDir())
 	if !ok {
 		t.Fatal("simple/Q5 produced no shipped body")
 	}
-	assertShippedPerFaceAgainstDrawexe(t, tc, body, debt, 0.002)
+	assertShippedPerFaceAgainstDrawexe(t, tc, body, nil, 0.00005)
 }
 
 // q5Record is the corpus record for simple/Q5.

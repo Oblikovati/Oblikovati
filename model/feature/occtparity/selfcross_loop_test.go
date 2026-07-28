@@ -19,7 +19,7 @@ import (
 // answer. The face still validates as a watertight solid (the vertices weld, the loops close), which
 // is exactly why the scoreboard cannot see it.
 //
-// WHAT IT HAS ALREADY BOUGHT. The population it opened at — 17 loops on 11 cases — is down to 12 on 8: the
+// WHAT IT HAS ALREADY BOUGHT. The population it opened at — 17 loops on 11 cases — is down to 3 on 2: the
 // backwards-carried-curve root it exposed (simple/M4 N3 N9 and two of complex/F2's walls) took those four
 // cases' faces onto DRAWEXE's own per-face areas exactly, a defect no area gate could see because M4's
 // body was inside 0.2% and F2's two errors partly cancelled.
@@ -198,14 +198,31 @@ func selfCrossDebtIndex() map[string]selfCrossDebtEntry {
 //
 // The roots that remain, largest first:
 //
-//   - FAR-END TRIM RUNS OFF ITS STOP FACE (complex/F2 and simple/Q5; complex/D8 RETIRED, below).
+//   - FAR-END TRIM RUNS OFF ITS STOP FACE (complex/F2; complex/D8 and simple/Q5 RETIRED, below).
 //     trimTerminalSection slides every station of the band's terminal section onto the stop face's
 //     EXTENDED implicit surface (extendableWall says so outright) with no check that the landing is on
 //     the FACE. The stop face's boundary then has to be RE-TRIMMED — the run-out consumes a whole rim
 //     edge and shortens the next ruling — which transformLoop's single-vertex substitution cannot
-//     express (selfcross-trim-report.md §5). F2 and Q5 still wait on the general form of that: F2's
-//     stop faces are not parameter-box patches and Q5 carries two fillets, both of which the
-//     multi-face split declines outright rather than guessing at.
+//     express (selfcross-trim-report.md §5).
+//     ★ complex/F2 is NOT blocked by the multi-face split's own gates, as was believed and recorded
+//     here: an instrumented corpus-wide sweep shows F2 never reaches splitTerminalSection at all —
+//     trimTerminalSection declines EARLIER, at slideSectionOntoWall, at BOTH of its corners, so its
+//     section has no landing inside the band's own axial span to classify. Its box-patch stop faces are
+//     never evaluated. F2 waits on that decline, not on the split's narrowing.
+//
+// RETIRED, fifth wave: simple/Q5 (2 loops — 84912.4 off the small radius-3000 host-wall face and
+// 0.284334 off the z=6000 top plane) — the FAR-END TRIM root above, closed by GENERALISING the split's
+// own gate rather than by any new geometry. It used to require BOTH of a fillet's terminal sections to
+// resolve into a two-piece chain; Q5 splits at ONE end only (its high-x end stops on a plane
+// perpendicular to the band's axis and needs no trim at all), so the whole split was declined and nine
+// of its 33 stations were slid past the small wall face's own ruling. With splitEndCount admitting a
+// one-ended split, Q5's four touched faces land on their closed forms — the small wall piece
+// 7645850.16 → 8121160.60 (form 8121170.18, was −5.85 %), the big wall piece 47123886.60 → 47038364.82
+// (form 47038978.00, was +0.181 %), the top plane 49441243.96 → 49368723.87 (form 49368722.08, was
+// +0.147 %) — its body goes −0.0918 % → −0.000194 % of DRAWEXE's 3.46388e8, and its welded mesh stops
+// leaking 937 free edges. Gated by TestQ5FarEndSplitIsAtomicAndHitsItsClosedForms. ★ The shrink is
+// caused by a PRODUCTION fix — SelfCrossingFaceLoops, loopSelfCrossing and developedFaceLoops are
+// untouched by that slice.
 //
 // RETIRED, fourth wave: complex/D8 (2 loops, 1.21187 each) — the FAR-END TRIM root above, closed for this
 // configuration by the trim-side two-piece split (kernel/ops/fillet_farend_split.go) plus the atomic
@@ -248,8 +265,9 @@ func selfCrossDebtIndex() map[string]selfCrossDebtEntry {
 // The verdicts, with the measured pair fidelity (chart length ÷ 3D chord over the two segments that
 // actually cross, ops.PropertyQuality()):
 //
-//   - simple/Q5, both loops — 1.000000 and 1.000000. The development is exact on both pairs (the
-//     crossing segments are a plane's and a cylinder's axial rulings). REAL, stays.
+//   - simple/Q5, both loops — 1.000000 and 1.000000. The development was exact on both pairs (the
+//     crossing segments are a plane's and a cylinder's axial rulings), i.e. the 84912.4 was REAL.
+//     ★ RETIRED, fifth wave, by the ONE-ENDED far-end split (see below): 2 loops → 0.
 //   - complex/F2, both loops — 2.771 and 77.06. ★ The 77.06 is the ratio that stood recorded as a
 //     SUSPECTED chart artefact, and it is NOT one. Its crossing pair's own boundary points sit 9.125 and
 //     9.818 off the radius-10 cylinder they bound, and the body's worst boundary-off-its-own-face
@@ -265,7 +283,6 @@ func selfCrossDebtIndex() map[string]selfCrossDebtEntry {
 // third wave above. The suspicion that opened this correction was, for them, already acted on.
 func knownSelfCrossingLoops() []selfCrossDebtEntry {
 	return []selfCrossDebtEntry{
-		{"Q5", "simple", 2, 84913}, // f12723 (the r=2500 band's host wall) 84912.4, f12719 0.284334; pairs 1.000000
 		{"F2", "complex", 2, 1105}, // 1098.03 / 7.16978 (was 4 loops); pairs 77.06 / 2.771 — see the verdicts above
 		{"W2", "simple", 1, 1e-12}, // 2.49967e-13 — a degenerate crossing, float noise; pair 1.000000
 	}
