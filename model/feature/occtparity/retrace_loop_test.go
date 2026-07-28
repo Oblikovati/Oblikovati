@@ -86,60 +86,83 @@ func retraceDebtIndex() map[string]retraceDebtEntry {
 }
 
 // knownRetracingLoops is the FULL measured population of shipped faces whose developed boundary runs
-// back over ground it already covered: 7 loops on 4 cases, of 1155 faces on the 124 healthy shipped
-// bodies of the scored corpus.
+// back over ground it already covered: 4 loops on 3 cases, of the healthy shipped bodies of the scored
+// corpus (it opened at 7 loops on 4 cases).
 //
-// ★ NEWLY DETECTED, NOT NEWLY CAUSED. This table opens at the population the detector found on the
+// ★ NEWLY DETECTED, NOT NEWLY CAUSED. This table opened at the population the detector found on the
 // SHIPPED body of the base tree; nothing in the slice that added it changed one line of production
 // geometry. It is pre-existing debt becoming visible for the first time.
+//
+// RETIRED, first wave: simple/B2 (1 loop, 10) and 2 of simple/N6's 3 (5 each) — the ARC-fillet setback
+// end-cap merge (kernel/ops/fillet_arc_endcap.go). rebuildWithArcFillet closed each end of its torus
+// band with a flat setback triangle in the RADIAL plane through that end; on a sector solid the cut wall
+// IS that plane, so the triangle was emitted as a second, coincident face while the wall kept its own
+// un-receded corner and the cap face's loop was routed out to that corner and straight back. The rim
+// vertex is now SUPERSEDED by the cap-tangent point: the side face absorbs the cap, the cap∩side edge is
+// re-ended on the tangent point, and no separate cap face (and no rim vertex) is built. As with every
+// earlier wave the faces now match their own CLOSED FORMS rather than merely stopping retracing: B2's
+// two sector walls 5000 → 4978.5319 (closed form 4978.5398, DRAWEXE 4978.54) and its whole body 8 faces
+// → the 6 DRAWEXE ships, retiring a +85.84 (+0.401 %) surplus that sat inside a 1 % PASS; N6's x = 50
+// wall 2100 → 2105.3670 (closed form 2105.3650, DRAWEXE 2105.37). Gated on those closed forms by
+// TestB2ArcFilletMergesItsSetbackCapsIntoTheSectorWalls and TestN6ArcFilletMergesOnlyTheRadialEnd.
+// ★ Both cases also went WATERTIGHT — B2 3 → 0 free edges at property quality, N6 6 → 0 at both
+// qualities — so their knownMeshLeaks rows went with them, which is the correspondence that table
+// predicted ("closing the retracing root should retire these four").
 //
 // MEASURING FUNCTION: ops.RetracingFaceLoops on faceOuterBoundary+faceHoleBoundaries developed by
 // toUVLoops into the surface's metric chart, QUALITY ops.PropertyQuality() (the parity path). The
 // quantity is a LENGTH in that chart — a retrace encloses zero area, so there is no area to quote.
 //
 // ★ AND EVERY ONE OF THEM HAS A CLOSED-FORM TARGET: the retraced length is the SETBACK the blend
-// applies to that face, i.e. the fillet radius. simple/B2 r=10 → 10 (its top face should recede from
-// radius 50 to 40), simple/N6 r=5 → 5 (all three faces), simple/W2 r=0.2 → 0.2. Measured against those
-// radii the worst residual is 2.2e-16 relative — double-precision exact, not a captured number.
+// applies to that face, i.e. the fillet radius. simple/N6 r=5 → 5, simple/W2 r=0.2 → 0.2. Measured
+// against those radii the worst residual is 2.2e-16 relative — double-precision exact, not a captured
+// number.
 // ★ simple/Y1's 10 is NOT independent confirmation: that fixture's slot is also 10 wide and its spike
 // runs along the slot's roof, so radius and slot width coincide. It is quoted as a measurement, not as
 // a derivation.
 //
-// THE ROOT, in one sentence: the host retrim ADDS the setback point without REMOVING what that point
+// THE ROOT, in one sentence: the retrim ADDS the setback point without REMOVING what that point
 // supersedes, so the rebuilt loop runs out to the superseded geometry and straight back. Two variants,
-// both here: the un-receded VERTEX is kept alongside its own tangent point (B2's (0,−50,100) beside
-// (0,−40,100); N6's (50,0,10) beside (50,5,10); W2's y=−0.2 beside y=0), or the setback LINE is drawn
-// across an obstacle it should stop at (Y1's z=90 run over the slot at x ∈ [90,100]). It is the same
-// SETBACK-BAND-OVERRUN root knownSelfCrossingLoops records for simple/Y2 and simple/Y4, and the
-// band∩obstacle imprint walk (kernel/ops/fillet_band_imprint.go) closed it for those two; the walk's own
-// gate (bandImprintQualifies) declines all four cases here — Y1 explicitly, on the measured grounds
-// that its area was already right — so the root survives in its DEGENERATE form, where the overshoot
-// lands COLLINEAR with what it overshoots instead of transverse to it. That is why it produces a
-// zero-area spike rather than a crossing, and why no area gate can see it.
+// both still here: the un-receded VERTEX is kept alongside its own tangent point (N6's (80,10,10) beside
+// (80,10,5); W2's y=0 beside y=−0.2), or the setback LINE is drawn across an obstacle it should stop at
+// (Y1's z=90 run over the slot at x ∈ [90,100]). It is the same SETBACK-BAND-OVERRUN root
+// knownSelfCrossingLoops records for simple/Y2 and simple/Y4, and the band∩obstacle imprint walk
+// (kernel/ops/fillet_band_imprint.go) closed it for those two; the walk's own gate
+// (bandImprintQualifies) declines every case here — Y1 explicitly, on the measured grounds that its
+// area was already right — so the root survives in its DEGENERATE form, where the overshoot lands
+// COLLINEAR with what it overshoots instead of transverse to it. That is why it produces a zero-area
+// spike rather than a crossing, and why no area gate can see it.
 //
-// ★ THREE OF THE FOUR CASES ARE CURRENTLY GREEN — simple/B2, simple/Y1 and simple/N6 are PASS, carrying
-// 5 of the 7 loops. simple/Y1 is the sharpest: the band-imprint walk deliberately DECLINES it (r=10 puts
+// ★ TWO OF THE THREE REMAINING CASES ARE GREEN — simple/Y1 and simple/N6 are PASS. simple/Y1 is the
+// sharpest instance the corpus has produced: the band-imprint walk deliberately DECLINES it (r=10 puts
 // the contact line exactly on the slot's roof, so no cut falls strictly inside the box) on the measured
 // grounds that its body area was already right — 61327.876 against OCCT's 61327.9 — and it is: the spike
 // contributes nothing to the shoelace. Only simple/W2 is FAIL(area), and for an unrelated reason.
 //
 // Largest first:
 //
-//   - simple/B2 (r=10) — host plane z=100, TWO spikes of 10 on one loop, one along each axis: the
-//     boundary runs (0,0,100) → (0,−50,100) → back out to (0,−40,100), and (40,0,100) → (50,0,100) →
-//     back to (0,0,100). 10 is also 14.1 % of that loop's own chart diagonal, the largest share of any.
 //   - simple/Y1 (r=10) — host plane y=0, the r=10 member of the Y slot family: (90,0,90) → (100,0,90) →
 //     (0,0,90), i.e. out to the box's own corner and straight back along z=90.
-//   - simple/N6 (r=5) — three host planes, each a consecutive-segment spike of 5: x=50 at
-//     (50,0,80)→(50,0,5)→(50,0,10); z=10 at (50,30,10)→(50,0,10)→(50,5,10); x=80 at
-//     (80,10,10)→(80,10,5)→(80,10,80).
+//   - simple/N6 (r=5) — the x=80 host plane, a consecutive-segment spike of 5:
+//     (80,10,10)→(80,10,5)→(80,10,80). This is the arc fillet's SECOND end, the one whose radial setback
+//     plane is 0.6435 rad off that wall, so the end-cap merge that retired N6's other two declines it:
+//     the cap there is a real face, and the wall genuinely keeps a corner the cyl-tangent point runs 5
+//     past. Closing it needs the band's terminal section trimmed against the wall, not a merge.
 //   - simple/W2 (r=0.2) — two host planes, spikes of 0.2 at (2.9859,1,0)→(2.9859,−0.2,0)→(2.9859,0,0)
-//     and (2,0,1)→(2,−0.2,1)→(2,1,1). This case is FAIL(area) already.
+//     and (2,0,1)→(2,−0.2,1)→(2,1,1). Also an arc fillet, and its ends decline the merge for a DIFFERENT
+//     reason worth recording: the imported cylinder's ref direction is not exact, so each setback plane
+//     sits 1.0e-4 rad off the side face it would merge into (atan(1e-4 / 1) from a centre at z=0.9999
+//     against a rim point at z=1). Merging a merely NEAR-coplanar cap would put the absorbed cross-section
+//     arc ~2e-5 (7e-6 of the diagonal) off the side face's own surface, which TestEveryLoopSegmentLiesOnItsFace
+//     forbids at 1e-6 — so it declines. ★ W2 also carries a SEPARATE, larger defect the merge does not
+//     touch and must not be confused with this one: resolveArcFillet takes the cap plane's STORED normal
+//     as the outward one, so W2's rolling-ball centre is placed on the VOID side (y = −0.2 where the
+//     solid is y ∈ [0,1]). solveRim, the closed-rim sibling, guards exactly this with a PointInsideBody
+//     probe; the arc path has no such guard. That is its own slice. This case is FAIL(area) already.
 func knownRetracingLoops() []retraceDebtEntry {
 	return []retraceDebtEntry{
-		{"B2", "simple", 1, 10.001},  // 10 = r exactly (TWO spikes on this loop; the longest is reported)
 		{"Y1", "simple", 1, 10.001},  // 10 = r = the slot width; see the caveat above
-		{"N6", "simple", 3, 5.001},   // 5 = r exactly, on all three faces
+		{"N6", "simple", 1, 5.001},   // 5 = r exactly, on the declined (non-radial) end only
 		{"W2", "simple", 2, 0.20001}, // 0.2 = r, to 2.2e-16 relative
 	}
 }

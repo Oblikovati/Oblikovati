@@ -31,10 +31,10 @@ import (
 // edges not used by exactly two triangles. The weld ruler is deliberately NOT an absolute quantum: a
 // fixed grid over-merges whenever the model's own feature separation drops below it and then reports the
 // over-merge as a crack (FreeEdgeCount's own receipt on the #1818 near-pinch). Run at EVERY
-// gateQualities() entry, because a leak can be quality-dependent in either direction: simple/B2 and
-// simple/C2 are CLEAN at default and leak 3 at property (and the retired A2/J1 were clean at default and
-// leaked 1536 at property — the whole reason a Default-only gate could not have found them), while
-// simple/U6 leaks 13 at default and 12 at property.
+// gateQualities() entry, because a leak can be quality-dependent in either direction: simple/C2 is CLEAN
+// at default and leaks 3 at property (and the retired A2/J1 were clean at default and leaked 1536 at
+// property — the whole reason a Default-only gate could not have found them), while simple/U6 leaks 13 at
+// default and 12 at property.
 //
 // It also gates FOLD edges, the sibling half of the same invariant and the same measurement pass (a
 // mesh must be free-edge-free to be a closed surface and fold-free to bound a well-defined volume —
@@ -133,8 +133,8 @@ func meshDebtIndex(table []meshDebtEntry) map[string]meshDebtEntry {
 }
 
 // knownMeshLeaks is the FULL measured population of shipped bodies whose WELDED tessellation is not a
-// closed surface: 10 cases of the 124 the corpus can measure, derived by an instrumented corpus-wide
-// sweep at both gateQualities() entries, not from any report. The sweep reproduces byte-for-byte across
+// closed surface: 8 cases of the 124 the corpus can measure (it opened at 10), derived by an
+// instrumented corpus-wide sweep at both gateQualities() entries, not from any report. The sweep reproduces byte-for-byte across
 // runs, so these ceilings are exact rather than sampled.
 //
 // ★ EVERY ENTRY HERE IS DETECTED, NOT CAUSED. The slice that landed this ratchet added no geometry and
@@ -169,11 +169,16 @@ func meshDebtIndex(table []meshDebtEntry) map[string]meshDebtEntry {
 //     (0.0220470 vs 0.0220538) — a fitted patch rail and its host tiling the same seam from different
 //     curves. Both cases already carry a knownOffSurfaceDebt entry (U4 0.000246, C2 0.0192); this is that
 //     same debt, seen downstream in the mesh.
-//   - RETRACING FACE LOOP (simple/N6 6/6, simple/Y1 3/3, simple/W2 3/3, simple/B2 3 at property). All
-//     four are the ENTIRE membership of knownRetracingLoops, and the correspondence is exact. A loop that
-//     runs out along a spike and straight back is not a simple polygon, so that face's triangulation does
-//     not tile the boundary its neighbours tile: the free edges are whole boundary segments (N6's are 30,
-//     25, 5, 5, 75 and 70 long), not slivers. Closing the retracing root should retire these four.
+//   - RETRACING FACE LOOP (simple/Y1 3/3, simple/W2 3/3). Both are in knownRetracingLoops, and the
+//     correspondence is exact. A loop that runs out along a spike and straight back is not a simple
+//     polygon, so that face's triangulation does not tile the boundary its neighbours tile: the free
+//     edges are whole boundary segments, not slivers.
+//     ★ RETIRED, and it is the receipt for that attribution: simple/B2 (0/3) and simple/N6 (6/6) both
+//     went to 0/0 — fully watertight at BOTH gate qualities — when the arc fillet stopped emitting a
+//     setback end-cap coplanar with its own side face (kernel/ops/fillet_arc_endcap.go). Nothing in that
+//     change touches the mesher or the welder; the leaks were the retrace, exactly as predicted here.
+//     N6 still carries one retracing loop (its non-radial end) and leaks nothing, which bounds the
+//     claim honestly: a retrace is sufficient to leak, not necessary.
 //   - simple/Z1 (3/3) is the only leaking case in NO other ratchet: a geom.Cylinder / geom.Plane rim at
 //     z = 20 where three edges around one 0.245431 arc step fail to pair. Unattributed, and smallest.
 //   - simple/T9 (60 / 10) and simple/U6 (12 / 13) are not green and are not tracked anywhere else. U6 is
@@ -184,8 +189,6 @@ func knownMeshLeaks() []meshDebtEntry {
 		{"T9", "simple", 10, 60},   // FAIL(faulty) — one BSpline face; also the corpus's worst folds
 		{"U4", "simple", 44, 44},   // PASS — canal patch rails vs their elliptical-cylinder host
 		{"U6", "simple", 13, 12},   // FAIL(area) — cylinder/torus rim; note it SHRINKS with quality
-		{"N6", "simple", 6, 6},     // PASS — knownRetracingLoops, 3 loops
-		{"B2", "simple", 0, 3},     // PASS — knownRetracingLoops, 1 loop
 		{"C2", "simple", 0, 3},     // PASS — knownOffSurfaceDebt 0.0192, BSpline/plane seam
 		{"W2", "simple", 3, 3},     // FAIL(area) — knownRetracingLoops, 2 loops
 		{"Y1", "simple", 3, 3},     // PASS — knownRetracingLoops, 1 loop
