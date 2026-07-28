@@ -72,10 +72,20 @@ func imprintChain(b canalArmBundle, tol float64) []endSeg {
 }
 
 // orientedTerminal returns the terminal endSeg oriented to START at startAt, KEEPING its concrete curve
-// object (never wrapping it in a reversedCurve3, which would erase a SpiricArc's type and defeat the
-// chain area sampler's sample-not-chord). Watertightness does not need the reversal baked into the curve:
-// the shared far edge's curve comes from the arm face (welded first, ADR-C4-2), and the area sampler reads
-// PointAt directionlessly — so swapping the endpoints while threading the SAME object suffices (§7.1).
+// object rather than reversing it through reversedEndSeg like every other reversal in this layer.
+//
+// ★ THIS IS THE SAME BUG CLASS reversedEndSeg fixes, and it is left standing DELIBERATELY, with its cost
+// measured rather than assumed. Reversing here is a one-line change and it goes red immediately:
+// TestCanalImprint_X80SpiricExtension requires the spliced loop to carry a bare geom.SpiricArc, because
+// three consumers dispatch on that CONCRETE type — spiricBandMesh's twoOvalEdges (the tessellator's own
+// two-oval band path), curved_stitch's newEdge and curved_halfspace_torus_uv's sectionUV. A reversedCurve3
+// wrapper hides the type from all three, and the fix for that is to unwrap with geom.InnerCurve at each —
+// a change to the TESSELLATION dispatch, not to this splice, and one that has to be measured on its own.
+//
+// What the exposure is, measured: the swap branch fires on ONE corpus case (simple/N7's s_5 torus arm),
+// and its terminal is the SpiricArc the sampler reads directionlessly (curve3InteriorPoints orients itself
+// from `from`). It is not free — a consumer that trims this segment BY PARAMETER would keep the wrong half
+// — but nothing does today, and the far-end split path that does (rebuildSplitHosts) never reaches here.
 func orientedTerminal(far endSeg, startAt math.Point3, tol float64) endSeg {
 	if float64(far.from.DistanceTo(startAt)) <= tol {
 		return far
@@ -105,17 +115,7 @@ func spliceCornerBiteChain(host geom.Surface, segs []endSeg, chain []endSeg, tol
 	if chainBiteArea(host, fwd, chain) <= chainBiteArea(host, bwd, chain) {
 		return append(bwd, chain...), true // remove the smaller fwd corner; close p0→p1
 	}
-	return append(fwd, reverseChainSegs(chain)...), true // remove the smaller bwd corner
-}
-
-// reverseChainSegs reverses a chain of segments (order + each seg, curve-preserving via reverseChainSeg),
-// so a p0→p1 bite chain can close a p1→p0 span.
-func reverseChainSegs(chain []endSeg) []endSeg {
-	out := make([]endSeg, len(chain))
-	for i, s := range chain {
-		out[len(chain)-1-i] = reverseChainSeg(s)
-	}
-	return out
+	return append(fwd, reverseEndSegs(chain)...), true // remove the smaller bwd corner
 }
 
 // chainBiteArea is the area of the region a loop span encloses when closed by the bite CHAIN — the corner

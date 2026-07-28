@@ -145,17 +145,33 @@ func TestPieceSegKeepsAnExactArcAndFitsAnythingElse(t *testing.T) {
 	}
 }
 
-// TestAlignSegCurvesTurnsABackwardsCurveRoundIsTheGuardOnReverseChainSeg. spliceCornerBiteChain may
-// reverse a chain to close the kept span, and reverseChainSeg deliberately keeps a NON-ARC curve's
-// concrete object while swapping its endpoints — so the spliced segment's curve then runs the wrong way
-// and discretizeEdge draws a boundary that leaps to the far end, walks back and leaps again. On
-// complex/D8 that costs the mirror corner round 3307.06 → 3080.99 and inflates the band 23342.7 → 30752.
-func TestAlignSegCurvesTurnsABackwardsCurveRound(t *testing.T) {
+// ★ TestAReversedChainSegmentTrimsToTheCorrectHalf is the FALSIFICATION of the endpoint-only reversal.
+//
+// spliceCornerBiteChain reverses a chain to close the kept span, and the reversal used to swap a non-arc
+// segment's endpoints while leaving its curve object pointing the ORIGINAL way. A reversed segment was
+// then SELF-INCONSISTENT, and both readers of a segment's parameter got it wrong:
+//
+//   - a trim by parameter (segToParam, the far-end clip's own operation) kept the half adjacent to the
+//     ORIGINAL start — the half the caller meant to DROP;
+//   - discretizeEdge drew a boundary that leapt to the far end, walked back and leapt again (how
+//     simple/M4 N3 N9 came to self-cross), costing complex/D8's mirror round −6.8 % and its band +31.7 %.
+//
+// This pins the first directly, on D8's own trim curve: take the FIRST half of the reversed segment and
+// require its carried curve's own midpoint to be at parameter 0.75 of the original curve (the half next
+// to the reversed segment's `from`). The endpoint-only reversal puts it at 0.25 — the wrong half —
+// which is the assertion below going red.
+func TestAReversedChainSegmentTrimsToTheCorrectHalf(t *testing.T) {
 	c := d8TrimCurve{lo: -stdmath.Pi / 2, hi: 0}
-	backwards := endSeg{from: c.PointAt(1), to: c.PointAt(0), curve: c}
-	got := alignSegCurves([]endSeg{backwards})
-	lo, _ := got[0].curve.Domain()
-	if d := got[0].curve.PointAt(lo).DistanceTo(got[0].from); float64(d) > 1e-9 {
-		t.Errorf("aligned segment's curve still starts %.6g from its own `from`", d)
+	fwd := endSeg{from: c.PointAt(0), to: c.PointAt(1), curve: c, mid: c.PointAt(0.5)}
+	rev := reversedEndSeg(fwd)
+	if d := rev.curve.PointAt(0).DistanceTo(rev.from); float64(d) > 1e-12 {
+		t.Errorf("a reversed segment's curve must start at its own `from`; it starts %.6g away", d)
+	}
+	half := segToParam(rev, 0.5, segPointAt(rev, 0.5))
+	lo, hi := half.curve.Domain()
+	got := half.curve.PointAt((lo + hi) / 2)
+	if d := got.DistanceTo(c.PointAt(0.75)); float64(d) > 1e-12 {
+		t.Errorf("the kept half is centred %.6g from c(0.75); it is %.6g from c(0.25) — the WRONG half",
+			d, float64(got.DistanceTo(c.PointAt(0.25))))
 	}
 }

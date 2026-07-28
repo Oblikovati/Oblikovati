@@ -3,7 +3,6 @@
 package ops
 
 import (
-	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -122,36 +121,20 @@ func rebuildSplitHosts(chains map[*topo.Face][]endSeg, tol float64) (map[uint64]
 		if !ok {
 			return nil, false
 		}
-		loops := append([]filletLoop{loopFromSegs(alignSegCurves(segs))}, innerHostLoops(f)...)
+		loops := append([]filletLoop{loopFromSegs(segs)}, innerHostLoops(f)...)
 		out[f.ID()] = filletFace{surface: f.Geometry(), loops: loops, parent: f.Lineage()}
 	}
 	return out, true
 }
 
-// alignSegCurves enforces the loop invariant a splice can break: a segment's carried curve must run
-// from→to. spliceCornerBiteChain may reverse the chain to close the kept span, and reverseChainSeg
-// deliberately keeps a NON-ARC curve's concrete object while swapping the endpoints (it must, so a canal
-// SpiricArc survives) — so a reversed b-spline trim piece would be discretized as a boundary that leaps
-// to the far end, walks back and leaps again, which is precisely how simple/M4 N3 N9 came to self-cross.
-// Repaired here rather than in reverseChainSeg so the canal imprint's spliced geometry does not move.
-func alignSegCurves(segs []endSeg) []endSeg {
-	out := make([]endSeg, len(segs))
-	for i, s := range segs {
-		out[i] = s
-		if s.curve == nil || s.arc || curveRunsForward(s) {
-			continue
-		}
-		out[i].curve = geom.ReverseCurve3(s.curve)
-	}
-	return out
-}
-
-// curveRunsForward reports whether a segment's curve starts nearer its from than its to.
-func curveRunsForward(s endSeg) bool {
-	lo, hi := s.curve.Domain()
-	return s.curve.PointAt(lo).DistanceTo(s.from) <= s.curve.PointAt(hi).DistanceTo(s.from) &&
-		s.curve.PointAt(lo).DistanceTo(s.from) <= s.curve.PointAt(lo).DistanceTo(s.to)
-}
+// The local from→to curve repair this rebuild used to carry (alignSegCurves) is GONE. It existed because
+// spliceCornerBiteChain reversed a chain with a primitive that swapped a non-arc segment's endpoints and
+// left its curve pointing the ORIGINAL way, so exactly one of complex/D8's two mirror rounds (whichever
+// the ring orientation reversed) shipped a boundary that leapt to the far end and walked back — −6.8 % on
+// the round and +31.7 % on the band. reversedEndSeg now reverses the curve with the endpoints, so the
+// repair had nothing left to do: instrumented over the whole corpus it flipped 0 curves on 124 shipped
+// bodies, against 2 (both D8's) with the old reversal. The invariant is now held by the primitive that
+// creates the segment rather than patched by every consumer that reads one.
 
 // adoptSplitTangents moves the fillet's own tangent points onto the split's chain extremes and arms the
 // band's cap. Called only after every host rebuild has succeeded.

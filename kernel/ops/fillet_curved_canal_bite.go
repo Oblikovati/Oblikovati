@@ -262,7 +262,8 @@ func chainBiteSegs(segs []endSeg, tol float64) ([]endSeg, string) {
 
 // attachChainSeg attaches one unused segment to whichever free end of the chain it meets within tol
 // (appending at the tail or prepending at the head, oriented to stay continuous), marking it used. A
-// reversed segment keeps its curve (reverseChainSeg), so a foot-locus bridge never loses its BSpline.
+// reversed segment keeps its curve, reversed to match (reversedEndSeg), so a foot-locus bridge neither
+// loses its BSpline nor carries one that runs against its own from→to.
 func attachChainSeg(chain, segs []endSeg, used []bool, tol float64) ([]endSeg, bool) {
 	tail, head := chain[len(chain)-1].to, chain[0].from
 	for i, s := range segs {
@@ -275,33 +276,32 @@ func attachChainSeg(chain, segs []endSeg, used []bool, tol float64) ([]endSeg, b
 		}
 		if oriented, ok := orientChainSeg(s, head, tol); ok {
 			used[i] = true
-			return append([]endSeg{reverseChainSeg(oriented)}, chain...), true
+			return append([]endSeg{reversedEndSeg(oriented)}, chain...), true
 		}
 	}
 	return chain, false
 }
 
-// orientChainSeg returns s (or its curve-preserving reverse) oriented to START at p, or ok=false when
+// orientChainSeg returns s (or its reverse, curve INCLUDED) oriented to START at p, or ok=false when
 // neither end of s is within tol of p.
+//
+// The reversal is reversedEndSeg — the layer's one segment-reversal primitive, which re-derives an arc
+// through its own midpoint and wraps any other curve with geom.ReverseCurve3. It replaced a local
+// reverseChainSeg that swapped the endpoints and kept the curve object pointing the ORIGINAL way. That
+// left a reversed segment SELF-INCONSISTENT, and the two consumers of a segment's parameter both read it
+// wrong: a trim by parameter (segFromParam / segToParam) kept the WRONG HALF (−3.43 % on complex/D8's
+// stop wall), and discretizeEdge drew a boundary that leapt to the far end, walked back and leapt again
+// (how simple/M4 N3 N9 came to self-cross). geom.ReverseCurve3 unwraps a double reversal, so orienting an
+// already-reversed segment returns the original object rather than nesting wrappers, and geom.InnerCurve
+// recovers the concrete type for a consumer that dispatches on it.
 func orientChainSeg(s endSeg, p math.Point3, tol float64) (endSeg, bool) {
 	if float64(s.from.DistanceTo(p)) <= tol {
 		return s, true
 	}
 	if float64(s.to.DistanceTo(p)) <= tol {
-		return reverseChainSeg(s), true
+		return reversedEndSeg(s), true
 	}
 	return endSeg{}, false
-}
-
-// reverseChainSeg reverses one segment for chaining while PRESERVING its curve: an arc is re-derived
-// through its midpoint (reverseEndSegs), a general curve (a foot-locus BSpline) keeps its curve object
-// with endpoints swapped, and a straight seg just swaps ends — so no chained edge loses its geometry
-// (reverseEndSegs alone drops a non-arc curve, which would strip a reversed foot-locus).
-func reverseChainSeg(s endSeg) endSeg {
-	if s.arc {
-		return reverseEndSegs([]endSeg{s})[0]
-	}
-	return endSeg{from: s.to, to: s.from, curve: s.curve}
 }
 
 // chainBiteDeclineReason names the first unattached segment and its nearest gap to either free chain end — the

@@ -194,7 +194,7 @@ func prependExtension(ext endSeg, ring []endSeg) []endSeg {
 	if ext.curve == nil && ext.from == ext.to {
 		return ring
 	}
-	return append([]endSeg{reverseChainSeg(ext)}, ring...)
+	return append([]endSeg{reversedEndSeg(ext)}, ring...)
 }
 
 // appendExtension appends the far span with the qA→outerA traversal of ext (stored qA→outerA, used as-is);

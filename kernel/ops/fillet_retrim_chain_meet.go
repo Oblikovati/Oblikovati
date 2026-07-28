@@ -120,10 +120,10 @@ func distToSampledSeg(s endSeg, p math.Point3) float64 {
 // ringMeetOnSeg returns the parameter along chain segment s at which the chain reaches the ring, the
 // meeting point, and whether one was found within tol. fromHead scans t ascending (the meeting that
 // ends a LEADING overrun); otherwise it scans descending (the one that begins a TRAILING overrun) — so
-// one search serves both ends of the clip and neither has to reverse the segment. That matters: a
-// chain segment's carried curve is not reversible in general (reverseChainSeg deliberately keeps a
-// non-arc curve's concrete object and only swaps the endpoints), so a reverse-clip-reverse round trip
-// would trim the WRONG sub-span of it.
+// one search serves both ends of the clip and neither has to reverse the segment. That was once a
+// CORRECTNESS requirement — the layer's chain reversal swapped a non-arc segment's endpoints and left
+// its curve pointing the original way, so a reverse-clip-reverse round trip trimmed the WRONG sub-span
+// — and is now simply the cheaper and more direct form, the defect having been fixed in reversedEndSeg.
 func ringMeetOnSeg(ring []endSeg, s endSeg, tol float64, fromHead bool) (float64, math.Point3, bool) {
 	d := sampledRingDistances(ring, s)
 	for k := range d {

@@ -285,12 +285,23 @@ func assertClosedImprint(t *testing.T, ff filletFace, name string) {
 // a reversedCurve3 wrapper that would erase its concrete type).
 func assertSpiricInLoop(t *testing.T, ff filletFace, name string) {
 	t.Helper()
-	for _, c := range ff.loops[0].curves {
-		if _, ok := c.(geom.SpiricArc); ok {
-			return
+	for i, c := range ff.loops[0].curves {
+		if c == nil {
+			continue
 		}
+		if _, ok := geom.InnerCurve(c).(geom.SpiricArc); !ok {
+			continue
+		}
+		lo, _ := c.Domain()
+		from, to := ff.loops[0].pts[i], ff.loops[0].pts[(i+1)%len(ff.loops[0].pts)]
+		if d := float64(c.PointAt(lo).DistanceTo(from)); d > 1e-9 {
+			t.Fatalf("%s loop's spiric bite runs BACKWARDS: its curve starts %.6g from the segment's own "+
+				"`from` (and %.6g from its `to`)", name, d, float64(c.PointAt(lo).DistanceTo(to)))
+		}
+		return
 	}
-	t.Fatalf("%s loop must carry the unreversed geom.SpiricArc bite; none found among %d curves", name, len(ff.loops[0].curves))
+	t.Fatalf("%s loop must carry the spiric bite's own curve (never a chord); none found among %d curves",
+		name, len(ff.loops[0].curves))
 }
 
 // stripExtensions returns a copy of the bundles with every far-end extension removed (the mutation).

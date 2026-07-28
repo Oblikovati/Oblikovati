@@ -106,11 +106,14 @@ func clipChainHead(ring, chain []endSeg, tol float64) ([]endSeg, bool) {
 	return nil, false // the overrun never returns to the boundary — nothing to splice onto
 }
 
-// clipChainTail is clipChainHead's mirror, walking the chain from its last segment backwards. It is a
-// separate walk rather than a reversal because a chain segment's carried curve is not reversible in
-// general — reverseChainSeg keeps a non-arc curve's concrete object and only swaps the endpoints
-// (fillet_curved_canal_bite.go, so a SpiricArc survives the type switch) — so a reversed segment's
-// parameter still runs the ORIGINAL way and trimming it would keep the overrun instead of dropping it.
+// clipChainTail is clipChainHead's mirror, walking the chain from its last segment backwards.
+//
+// It is a separate walk rather than a reverse-clip-reverse round trip. ADR-B's original reason for that
+// (a chain segment's carried curve was NOT reversible: the reversal swapped the endpoints and left the
+// curve pointing the original way, so trimming by parameter kept the overrun) has since been retired at
+// the source — reversedEndSeg reverses the curve too. The two walks stay because they are the honest
+// shape of the operation: each end is clipped in its own direction, on the producer's own curve object,
+// with no reversal wrappers created and discarded around a trim.
 func clipChainTail(ring, chain []endSeg, tol float64) ([]endSeg, bool) {
 	if pointOnRing(ring, chain[len(chain)-1].to, tol) {
 		return chain, true
