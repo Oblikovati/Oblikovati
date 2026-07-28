@@ -257,9 +257,10 @@ func TestChainBiteArea_SpiricSampledNotChorded(t *testing.T) {
 	if !ok {
 		t.Fatalf("s_5 terminal is %T, want geom.SpiricArc", b.far.curve)
 	}
+	host := h.farFaceOf(t, i).Geometry()               // the arm's terminating face — the plane the bite lands on
 	span := []endSeg{{from: b.far.to, to: b.far.from}} // the chord span closing the spiric bite
-	sampled := chainBiteArea(span, []endSeg{b.far})
-	chord := chainBiteArea(span, []endSeg{{from: b.far.from, to: b.far.to}}) // strip the curve → chord
+	sampled := chainBiteArea(host, span, []endSeg{b.far})
+	chord := chainBiteArea(host, span, []endSeg{{from: b.far.from, to: b.far.to}}) // strip the curve → chord
 	if stdmath.Abs(sampled-chord) < 1e-3 {
 		t.Fatalf("spiric area (%.6f) must differ from its chord (%.6f) — sampling is not engaged", sampled, chord)
 	}

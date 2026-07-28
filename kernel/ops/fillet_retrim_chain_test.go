@@ -64,7 +64,7 @@ func chainLineRing(p []math.Point3) []endSeg {
 // form 100·85 − 10·5 = 8450. transformLoop ships 8475 for exactly this face.
 func TestChainRetrimLoopRebuildsY2HostPlaneThroughItsNotch(t *testing.T) {
 	chain := []endSeg{{from: math.P3(100, 0, 85), to: math.P3(0, 0, 85)}}
-	got, ok := chainRetrimLoop(yHostRing(), chain, retrimChainTol)
+	got, ok := chainRetrimLoop(chainPlaneThrough(math.P3(0, 0, 0), math.V3(0, 1, 0)), yHostRing(), chain, retrimChainTol)
 	if !ok {
 		t.Fatal("chainRetrimLoop declined the Y2 host plane")
 	}
@@ -79,7 +79,7 @@ func TestChainRetrimLoopRebuildsY2HostPlaneThroughItsNotch(t *testing.T) {
 // is why the self-crossing ratchet cannot see this one at all.
 func TestChainRetrimLoopRebuildsY4HostPlaneConsumingTheWholeNotch(t *testing.T) {
 	chain := []endSeg{{from: math.P3(100, 0, 75), to: math.P3(0, 0, 75)}}
-	got, ok := chainRetrimLoop(yHostRing(), chain, retrimChainTol)
+	got, ok := chainRetrimLoop(chainPlaneThrough(math.P3(0, 0, 0), math.V3(0, 1, 0)), yHostRing(), chain, retrimChainTol)
 	if !ok {
 		t.Fatal("chainRetrimLoop declined the Y4 host plane")
 	}
@@ -99,7 +99,7 @@ func TestChainRetrimLoopBitesTheY2NotchWall(t *testing.T) {
 	ring := chainLineRing([]math.Point3{
 		math.P3(90, 100, 80), math.P3(90, 100, 90), math.P3(90, 0, 90), math.P3(90, 0, 80),
 	})
-	got, ok := chainRetrimLoop(ring, []endSeg{y2NotchWallArc()}, retrimChainTol)
+	got, ok := chainRetrimLoop(chainPlaneThrough(math.P3(90, 0, 0), math.V3(1, 0, 0)), ring, []endSeg{y2NotchWallArc()}, retrimChainTol)
 	if !ok {
 		t.Fatal("chainRetrimLoop declined the Y2 notch wall")
 	}
@@ -121,7 +121,7 @@ func TestChainRetrimLoopBitesTheY2NotchTop(t *testing.T) {
 	})
 	y := 15 - stdmath.Sqrt(200)
 	chain := []endSeg{{from: math.P3(90, math.Scalar(y), 90), to: math.P3(100, math.Scalar(y), 90)}}
-	got, ok := chainRetrimLoop(ring, chain, retrimChainTol)
+	got, ok := chainRetrimLoop(chainPlaneThrough(math.P3(0, 0, 90), math.V3(0, 0, 1)), ring, chain, retrimChainTol)
 	if !ok {
 		t.Fatal("chainRetrimLoop declined the Y2 notch top")
 	}
@@ -138,7 +138,7 @@ func TestClipChainToRingTrimsTheY2WallAboveTheNotch(t *testing.T) {
 		math.P3(100, 0, 90), math.P3(100, 100, 90), math.P3(100, 100, 100), math.P3(100, 0, 100),
 	})
 	chain := []endSeg{chainCircleSeg(math.P3(100, 15, 85), math.V3(0, 0, 1), math.V3(0, -1, 0), 15, 0, stdmath.Pi/2)}
-	got, ok := chainRetrimLoop(ring, chain, retrimChainTol)
+	got, ok := chainRetrimLoop(chainPlaneThrough(math.P3(100, 0, 0), math.V3(1, 0, 0)), ring, chain, retrimChainTol)
 	if !ok {
 		t.Fatal("chainRetrimLoop declined the Y2 wall above the notch")
 	}
@@ -166,7 +166,7 @@ func TestChainRetrimLoopInterruptsTheY2Band(t *testing.T) {
 		y2NotchWallArc(),
 		{from: math.P3(90, math.Scalar(y), 90), to: math.P3(100, math.Scalar(y), 90)},
 	}
-	got, ok := chainRetrimLoop(ring, chain, retrimChainTol)
+	got, ok := chainRetrimLoop(y2BandCylinder(), ring, chain, retrimChainTol)
 	if !ok {
 		t.Fatal("chainRetrimLoop declined the Y2 band")
 	}
@@ -241,7 +241,7 @@ func d8RoundRing() []endSeg {
 // shoelace (3305.9057) misses by the 1.2111 lobe it pinches off.
 func TestChainRetrimLoopStopsD8sFarEndTrimOnItsOwnFace(t *testing.T) {
 	chain := []endSeg{d8TrimSeg()}
-	got, ok := chainRetrimLoop(d8RoundRing(), chain, 1e-6)
+	got, ok := chainRetrimLoop(d8RoundCylinder(), d8RoundRing(), chain, 1e-6)
 	if !ok {
 		t.Fatal("chainRetrimLoop declined D8's corner round")
 	}
@@ -310,11 +310,12 @@ func chainSimpson(f func(float64) float64, a, b float64, n int) float64 {
 // primitive therefore cannot move a corpus green; only a genuinely overrunning chain takes the new path.
 func TestChainRetrimLoopIsTheExistingSpliceWhenNothingOverruns(t *testing.T) {
 	chain := []endSeg{{from: math.P3(100, 0, 75), to: math.P3(0, 0, 75)}}
-	want, ok := spliceCornerBiteChain(yHostRing(), chain, retrimChainTol)
+	host := chainPlaneThrough(math.P3(0, 0, 0), math.V3(0, 1, 0))
+	want, ok := spliceCornerBiteChain(host, yHostRing(), chain, retrimChainTol)
 	if !ok {
 		t.Fatal("spliceCornerBiteChain declined the reference case")
 	}
-	got, ok := chainRetrimLoop(yHostRing(), chain, retrimChainTol)
+	got, ok := chainRetrimLoop(host, yHostRing(), chain, retrimChainTol)
 	if !ok {
 		t.Fatal("chainRetrimLoop declined the reference case")
 	}
@@ -409,4 +410,34 @@ func assertSameChainRing(t *testing.T, got, want []endSeg) {
 			t.Errorf("segment %d: got %+v→%+v, want %+v→%+v", i, got[i].from, got[i].to, want[i].from, want[i].to)
 		}
 	}
+}
+
+// chainPlaneThrough is the host surface of a planar acceptance case — the face's own plane, so the
+// splice's smaller-span pick is measured where the face actually lives. On a plane the developed
+// measure IS the Newell one, so these cases are unchanged by the criterion.
+func chainPlaneThrough(origin math.Point3, normal math.Vector3) geom.Plane {
+	pl, err := geom.NewPlane(origin, normal)
+	if err != nil {
+		panic(err)
+	}
+	return pl
+}
+
+// y2BandCylinder is the Y2 fillet band's own surface: radius 15 about the line y = 15, z = 85 along x.
+func y2BandCylinder() geom.Cylinder {
+	c, err := geom.NewCylinder(math.P3(0, 15, 85), math.V3(1, 0, 0), 15)
+	if err != nil {
+		panic(err)
+	}
+	return c
+}
+
+// d8RoundCylinder is complex/D8's radius-24 corner round — the CURVED host whose span pick the
+// developed criterion exists for.
+func d8RoundCylinder() geom.Cylinder {
+	c, err := geom.NewCylinder(math.P3(d8CX, d8CY, 0), math.V3(0, 0, 1), d8CR)
+	if err != nil {
+		panic(err)
+	}
+	return c
 }

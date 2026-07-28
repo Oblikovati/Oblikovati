@@ -34,7 +34,7 @@ func canalImprintFace(f *topo.Face, bundles []canalArmBundle, tol float64) (fill
 		return filletFace{}, fmt.Sprintf("canal imprint (%T): host loop has %d edges, need ≥3", f.Geometry(), len(segs))
 	}
 	for _, chain := range chains {
-		spliced, ok := spliceCornerBiteChain(segs, chain, tol)
+		spliced, ok := spliceCornerBiteChain(f.Geometry(), segs, chain, tol)
 		if !ok {
 			return filletFace{}, fmt.Sprintf("canal imprint (%T): bite chain (%d segs) will not splice onto the loop (tol %.3e)", f.Geometry(), len(chain), tol)
 		}
@@ -89,7 +89,11 @@ func orientedTerminal(far endSeg, startAt math.Point3, tol float64) endSeg {
 // the kept span with the chain, oriented to keep the ring continuous. Enclosed AREA (chainBiteArea) — not
 // segment count — is the criterion, so it picks the small corner independent of edge subdivision; a wrong
 // pick cracks the shell to the do-no-harm floor, never a silent wrong solid.
-func spliceCornerBiteChain(segs []endSeg, chain []endSeg, tol float64) ([]endSeg, bool) {
+//
+// host is the surface the loop lives on: the area is measured in ITS metric, so the pick is the developed
+// one on a curved host rather than the projected shadow (fillet_chain_span_area.go). Pass nil only when
+// the caller genuinely has no surface — that falls back to the planar (Newell) measure.
+func spliceCornerBiteChain(host geom.Surface, segs []endSeg, chain []endSeg, tol float64) ([]endSeg, bool) {
 	p0, p1 := chain[0].from, chain[len(chain)-1].to
 	ring := insertSplits(segs, []math.Point3{p0, p1}, tol)
 	i, j := indexOfSegFrom(ring, p0, tol), indexOfSegFrom(ring, p1, tol)
@@ -98,7 +102,7 @@ func spliceCornerBiteChain(segs []endSeg, chain []endSeg, tol float64) ([]endSeg
 	}
 	fwd := segsForward(ring, i, j) // p0 → p1
 	bwd := segsForward(ring, j, i) // p1 → p0
-	if chainBiteArea(fwd, chain) <= chainBiteArea(bwd, chain) {
+	if chainBiteArea(host, fwd, chain) <= chainBiteArea(host, bwd, chain) {
 		return append(bwd, chain...), true // remove the smaller fwd corner; close p0→p1
 	}
 	return append(fwd, reverseChainSegs(chain)...), true // remove the smaller bwd corner
@@ -117,9 +121,10 @@ func reverseChainSegs(chain []endSeg) []endSeg {
 // chainBiteArea is the area of the region a loop span encloses when closed by the bite CHAIN — the corner
 // spliceCornerBiteChain removes if it drops that span. The span and the chain's bulge are sampled into a
 // point ring (each curved edge — arc OR spiric — contributes its true curvature via PointAt, not a chord),
-// and the area is the Newell area-vector magnitude, exact on the planar imprint host. Generalises
-// cornerBiteArea from a single arc bite to the multi-edge extension+terminal chain.
-func chainBiteArea(span []endSeg, chain []endSeg) float64 {
+// and that ring is measured in the HOST's own metric (developedSpanArea): the Newell area-vector magnitude
+// on a plane, the developed chart area on a curved host, where the Newell one is only the projected
+// shadow. Generalises cornerBiteArea from a single arc bite to the multi-edge extension+terminal chain.
+func chainBiteArea(host geom.Surface, span []endSeg, chain []endSeg) float64 {
 	if len(span) == 0 {
 		return 0
 	}
@@ -127,7 +132,7 @@ func chainBiteArea(span []endSeg, chain []endSeg) float64 {
 	end := span[len(span)-1].to                    // the span's far chain endpoint
 	ring = append(ring, end)                       // close the span's own last vertex explicitly
 	ring = append(ring, chainBulge(chain, end)...) // the chain's curvature from `end` back toward ring[0]
-	return float64(newellNormal(ring).Length()) / 2
+	return developedSpanArea(host, ring)
 }
 
 // chainBulge samples the bite chain's interior + junction points, ordered from `from` (one chain extreme)

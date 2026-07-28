@@ -26,8 +26,10 @@ import (
 //   - tangent-chain propagation, whose whole premise is that one blend spans a chain of faces.
 // Each was blocked on the same missing sentence, which the retrim layer can now say.
 //
-// THE SEAM. chainRetrimLoop is pure and topo-free: it speaks only the retrim layer's own value type
-// (endSeg) and knows nothing about fillets, corners, faces or surfaces. Producing the CONTACT CHAIN is
+// THE SEAM. chainRetrimLoop is pure and topo-free: it speaks the retrim layer's own value type (endSeg)
+// plus the geom.Surface the ring lives on, and knows nothing about fillets, corners or faces. The
+// surface is there for ONE reason — the smaller-span pick is an AREA, and an area on a curved host is
+// only meaningful in that host's own metric (fillet_chain_span_area.go). Producing the CONTACT CHAIN is
 // the consumer's job — the far-end trim builds it from the band∩wall section, an obstacle-limited
 // setback from the band∩obstacle imprint — and absorbing it into the host's boundary is this file's.
 // Nothing here is wired into transformLoop: the existing callers keep their own splices verbatim, so a
@@ -44,12 +46,12 @@ import (
 //
 // Example: the Y2 host plane's ring plus the setback line (100,0,85)→(0,0,85), which runs past the
 // host's own slot wall, rebuilds as the 6-edge loop of closed-form area 8450.
-func chainRetrimLoop(ring, chain []endSeg, tol float64) ([]endSeg, bool) {
+func chainRetrimLoop(host geom.Surface, ring, chain []endSeg, tol float64) ([]endSeg, bool) {
 	clipped, ok := clipChainToRing(ring, chain, tol)
 	if !ok {
 		return nil, false
 	}
-	return spliceCornerBiteChain(ring, clipped, tol)
+	return spliceCornerBiteChain(host, ring, clipped, tol)
 }
 
 // clipChainToRing trims a retrim chain's OVERRUN — the leading and trailing runs that lie past the host

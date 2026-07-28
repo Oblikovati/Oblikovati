@@ -118,7 +118,7 @@ func chainsCollide(chains map[*topo.Face][]endSeg, taken map[uint64]filletFace) 
 func rebuildSplitHosts(chains map[*topo.Face][]endSeg, tol float64) (map[uint64]filletFace, bool) {
 	out := make(map[uint64]filletFace, len(chains))
 	for f, chain := range chains {
-		segs, ok := chainRetrimLoop(originalHostSegs(f), chain, tol)
+		segs, ok := chainRetrimLoop(f.Geometry(), originalHostSegs(f), chain, tol)
 		if !ok {
 			return nil, false
 		}

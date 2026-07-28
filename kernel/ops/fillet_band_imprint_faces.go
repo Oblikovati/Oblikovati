@@ -215,7 +215,7 @@ func bandRetrimmedFace(f *topo.Face, run endSeg, maps filletRebuildMaps,
 	if len(ring) < 3 {
 		return filletFace{}, false, false
 	}
-	spliced, ok := chainRetrimLoop(ring, []endSeg{run}, res.Weld())
+	spliced, ok := chainRetrimLoop(f.Geometry(), ring, []endSeg{run}, res.Weld())
 	if !ok {
 		return filletFace{}, false, false
 	}
