@@ -138,9 +138,13 @@ func capTangentCircleFits(capF *topo.Face, capCenter math.Point3, axis, ref math
 }
 
 // rimWithCapOrientation is solveRim's shared tail, resolved through the cap-orientation-corrected
-// solveRimCapFrame instead of solveRim's raw pl.Normal(). resolveRim calls this ONLY after solveRim's own
-// R−r probe has already failed (errConvexRimProbeFailed), so it never runs on any rim solveRim already
-// builds and the convex I9/J1 path stays byte-identical. Two retry tiers share this ONE fix:
+// solveRimCapFrame. resolveRim calls this ONLY after solveRim has declined (errConvexRimProbeFailed), so
+// it never runs on any rim solveRim already builds and the convex I9/J1 path stays byte-identical. Since
+// solveRim's seat became SIGNED (fillet_rim_cap_side.go) that set includes the concave-but-spilling boss
+// roots simple/R8 and simple/W9, whose ball sits in the material where their convexity says void: tier 1
+// declines them and this tier rebuilds the very same convex R−r round they always shipped — the frame is
+// identical because on an un-Reversed cap solveRimCapFrame's outward normal IS pl.Normal(). Two retry
+// tiers share this ONE fix:
 //   - majorR = R−r, concave = false: the SAME convex geometry as solveRim, just cap-orientation-corrected
 //     (Z1: a plain convex rim, not actually a bore lip — its cap is simply stored bottom-up).
 //   - majorR = R+r, concave = true: the CONCAVE bore-lip mirror (K1: the plate material genuinely sits

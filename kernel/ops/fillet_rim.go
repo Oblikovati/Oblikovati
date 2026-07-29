@@ -12,12 +12,14 @@ import (
 	"oblikovati.org/math"
 )
 
-// errConvexRimProbeFailed marks solveRim's material-side probe (R−r) landing outside the body. Every
-// convex rim the corpus exercised before K1/Z1 (I9, J1, R8, W6, W8, W9, U6) carries an un-reversed cap
-// face, so solveRim's raw pl.Normal() already IS the outward-from-material normal and this only ever
-// fires on a genuine bore lip. resolveRim catches it via errors.Is to retry with the cap's TRUE
-// (Reversed-aware) outward normal via rimWithCapOrientation — first at the SAME R−r (concave=false), then
-// at the CONCAVE R+r mirror (concave=true) — instead of rejecting outright.
+// errConvexRimProbeFailed marks solveRim declining the CONVEX R−r tier: its SIGNED seat probe
+// (rimBallCapSeat, fillet_rim_cap_side.go) could not verify a ball centre on the side the picked edge's
+// convexity requires, or verified one on the VOID side, which is the R+r mirror's business and not this
+// tier's. resolveRim catches it via errors.Is and retries with the cap's TRUE (Reversed-aware) outward
+// normal via rimWithCapOrientation — first at the SAME R−r (concave=false), then at the CONCAVE R+r
+// mirror (concave=true) — instead of rejecting outright. Live corpus rims that take that route: simple/R8
+// and simple/W9 (concave boss roots whose R+r cove spills, so the convex round is where they still
+// build) and simple/K1 (a bore lip no R−r seat can hold).
 var errConvexRimProbeFailed = errors.New("fillet: convex rim material-side probe (R−r) landed outside the body")
 
 // isClosedCircularEdge reports whether e is a full circular rim: closed (its start and end vertex are
@@ -118,17 +120,18 @@ type rimFillet struct {
 }
 
 // resolveRim validates the picked edge is a cylinder/cap rim and solves the fillet geometry, trying three
-// tiers in order and stopping at the first that lands its material-side probe inside the body:
-//  1. solveRim — the CONVEX R−r rim, UNCHANGED (byte-identical for every case that already builds: I9,
-//     J1, R8, W6, W8, W9, U6).
-//  2. rimWithCapOrientation(..., R−r, concave=false) — the SAME convex R−r geometry, but resolved with
-//     the cap's TRUE Reversed-aware outward normal. solveRim's raw pl.Normal() coincidentally already IS
-//     that normal on every rim tier 1 handles, so this tier only ever differs on a rim whose cap face
-//     carries capF.Reversed()==true (Z1: a plain convex rim stored bottom-up) — solveRim's un-aware
-//     torusCenter places the probe on the wrong side of the cap entirely, failing for a reason that has
-//     nothing to do with which radius (R−r or R+r) is tried.
+// tiers in order and stopping at the first whose seat is verified against the solid:
+//  1. solveRim — the CONVEX R−r rim, seated on the side its SIGNED probe verifies (fillet_rim_cap_side.go)
+//     rather than on the stored cap normal. It takes I9, U6, U7, complex/B2 (un-Reversed caps, the seat
+//     the stored normal happened to agree with) and simple/Z1 (a plain convex rim stored bottom-up, which
+//     before the guard failed here and was rebuilt identically by tier 2).
+//  2. rimWithCapOrientation(..., R−r, concave=false) — the SAME convex R−r geometry, resolved through the
+//     cap's TRUE Reversed-aware outward normal. It now takes the CONCAVE rims tier 1 declines because
+//     their ball sits in the material where their convexity says void, yet whose R+r cove SPILLS
+//     (simple/R8, simple/W9 — the deep #2012 boss-root weld); the geometry it builds for them is the same
+//     convex round tier 1 used to build.
 //  3. rimWithCapOrientation(..., R+r, concave=true) — the CONCAVE bore-lip mirror (K1: the plate material
-//     is genuinely OUTSIDE the bore, so even the orientation-corrected R−r probe lands in the hole void).
+//     is genuinely OUTSIDE the bore, so no R−r seat on either side of the cap holds the ball).
 //
 // If all three fail, the rim needs more than either mirror (e.g. a non-perpendicular cap) and tier 3's
 // honest reject is returned.
@@ -180,25 +183,32 @@ func rimFaces(e *topo.Edge) (cylF, capF *topo.Face, cyl geom.Cylinder, pl geom.P
 }
 
 // solveRim computes the tangent circles, torus, and seam re-aim for a convex rim. The rolling-ball
-// centre is r inside the cap (along −capNormal) and at radius Rc−r (inside the cylinder); the band is
-// framed so angle 0 sits at the rim vertex, lining the seam up with the wall's existing seam.
+// centre is r off the cap on the side the SIGNED seat probe verifies (rimBallCapSeat — never the stored
+// plane normal, see fillet_rim_cap_side.go) and at radius Rc−r (inside the cylinder); the band is framed
+// so angle 0 sits at the rim vertex, lining the seam up with the wall's existing seam.
 func solveRim(b *topo.Body, e *topo.Edge, cylF, capF *topo.Face, cyl geom.Cylinder, pl geom.Plane, r float64) (*rimFillet, error) {
 	rimV := e.StartVertex()
 	capCenter := projectOntoAxis(rimV.Point(), cyl.Origin, cyl.AxisDir)
-	inward := pl.Normal().AsUnit().Negate().AsVector() // into the solid, along the axis
-	torusCenter := capCenter.TranslateBy(inward.Scale(r))
 	majorR := cyl.Radius - r
 	ref, err := math.UnitVector3FromVector(perpComponent(capCenter.VectorTo(rimV.Point()), cyl.AxisDir))
 	if err != nil {
 		return nil, fmt.Errorf("fillet: degenerate rim frame")
 	}
-	probe := torusCenter.TranslateBy(ref.AsVector().Scale(majorR))
-	if !PointInsideBody(b, probe) {
+	seat, err := rimBallCapSeat(b, e, capF, pl, capCenter, ref, majorR, r)
+	if err != nil {
+		return nil, err // errConvexRimProbeFailed-wrapped: resolveRim's cap-orientation ladder takes it
+	}
+	if !seat.inMaterial {
+		// Tier 1 is the CONVEX tier: R−r and the quarterTube seam are the convex derivation, so a seat the
+		// probe verifies on the VOID side belongs to the ladder's R+r mirror, not here. This subsumes the
+		// old unsigned PointInsideBody probe exactly — it asked the SAME point of the SAME tessellation,
+		// and rimBallCapSeat has already established the point's side — at one tessellation instead of two.
 		return nil, errConvexRimProbeFailed // resolveRim falls back to the CONCAVE R+r mirror
 	}
+	torusCenter := capCenter.TranslateBy(seat.toCentre.Scale(r))
 	// The torus axis points OUTWARD along the cap normal, so the tube's v runs cyl-tangent (v=0, the
 	// equator) → cap-tangent (v=π/2, toward the cap) regardless of which way the cylinder axis is stored.
-	tor, err := geom.NewTorusWithRef(torusCenter, pl.Normal(), ref.AsVector(), majorR, r)
+	tor, err := geom.NewTorusWithRef(torusCenter, seat.bandAxis, ref.AsVector(), majorR, r)
 	if err != nil {
 		return nil, err
 	}
