@@ -38,30 +38,42 @@ import (
 // TestEveryLoopSegmentLiesOnItsFace exists to forbid — so near-coplanar declines and keeps its triangle.
 const endCapCoplanarTol = 1e-9
 
-// resolveEndCapMerges decides, per end, whether the flat setback cap lies in the side face's own plane
-// (so the side face absorbs it and the rim vertex is superseded) and records the cap∩side edge the
-// merge re-ends. An end that declines keeps the pre-existing separate-triangle topology verbatim.
+// resolveEndCapMerges decides, per end, whether the side face ABSORBS the band's terminal cross-section
+// (so the rim vertex is superseded) and records the cap∩side edge that absorption re-ends. An end that
+// declines keeps the pre-existing separate-triangle topology verbatim.
 func (g *arcBuild) resolveEndCapMerges() {
 	for i := 0; i < 2; i++ {
-		g.capSide[i], g.merged[i] = mergeableEndCap(g.af, i)
+		g.capSide[i], g.merged[i] = absorbableEndCap(g.af, i)
 	}
 }
 
-// mergeableEndCap reports whether end i's setback cap is coplanar with that end's side face, returning
-// the cap∩side edge the merge shortens. It declines unless the rim vertex carries EXACTLY the three
-// edges the merge knows how to retire — the filleted arc, the cyl∩side smooth line, and one straight
-// cap∩side edge — because superseding a vertex is only safe when every edge reaching it is rebuilt.
-func mergeableEndCap(af *arcFillet, i int) (*topo.Edge, bool) {
+// absorbed reports whether end i's terminal cross-section belongs to the side face rather than to a
+// setback triangle of its own. TWO constructions land here and they share every topological consequence
+// — the rim vertex is superseded, the cap∩side edge is re-ended on the cap-tangent point, the side face
+// carries the terminal curve, and no end-cap face is emitted: the exact coplanar MERGE (a wall through
+// the axis) and the RUN-OUT (the band terminated on the side plane, fillet_arc_runout.go).
+func (g *arcBuild) absorbed(i int) bool { return g.merged[i] }
+
+// absorbableEndCap reports whether end i is absorbed by its side face, returning the cap∩side edge that
+// absorption shortens. It declines unless the rim vertex carries EXACTLY the three edges the rebuild
+// knows how to retire — the filleted arc, the cyl∩side smooth line, and one straight cap∩side edge —
+// because superseding a vertex is only safe when every edge reaching it is rebuilt.
+func absorbableEndCap(af *arcFillet, i int) (*topo.Edge, bool) {
 	end := af.ends[i]
-	side, ok := end.sideF.Geometry().(geom.Plane)
-	if !ok {
+	side, isPlane := end.sideF.Geometry().(geom.Plane)
+	if !isPlane {
 		return nil, false
 	}
-	capN, err := math.UnitVector3FromVector(endCapNormal(af, i))
-	if err != nil || !side.Normal().AsUnit().IsParallelTo(capN, endCapCoplanarTol) {
+	if end.runout == nil && !endCapLiesInSide(af, i, side) {
 		return nil, false
 	}
 	return soleCapSideEdge(end, af.arcEdge, af.capF)
+}
+
+// endCapLiesInSide reports whether end i's setback cap is exactly coplanar with that end's side face.
+func endCapLiesInSide(af *arcFillet, i int, side geom.Plane) bool {
+	capN, err := math.UnitVector3FromVector(endCapNormal(af, i))
+	return err == nil && side.Normal().AsUnit().IsParallelTo(capN, endCapCoplanarTol)
 }
 
 // soleCapSideEdge returns the one straight cap∩side edge at the end's rim vertex, or ok=false when the
@@ -114,7 +126,7 @@ func (g *arcBuild) mergedEnd(v *topo.Vertex, i int) *topo.Vertex {
 // the rebuilt body — no edge of the result reaches it).
 func (g *arcBuild) supersededRimVertex(v *topo.Vertex) bool {
 	for i := 0; i < 2; i++ {
-		if g.merged[i] && v == g.af.ends[i].rimV {
+		if g.absorbed(i) && v == g.af.ends[i].rimV {
 			return true
 		}
 	}
@@ -129,13 +141,13 @@ func (g *arcBuild) replacedEdge(e *topo.Edge) bool {
 	if e == af.arcEdge || e == af.ends[0].smoothLine || e == af.ends[1].smoothLine {
 		return true
 	}
-	return (g.merged[0] && e == g.capSide[0]) || (g.merged[1] && e == g.capSide[1])
+	return (g.absorbed(0) && e == g.capSide[0]) || (g.absorbed(1) && e == g.capSide[1])
 }
 
 // capSideIndex returns the end whose cap∩side edge e is (and whether the merge owns it).
 func (g *arcBuild) capSideIndex(e *topo.Edge) (int, bool) {
 	for i := 0; i < 2; i++ {
-		if g.merged[i] && e == g.capSide[i] {
+		if g.absorbed(i) && e == g.capSide[i] {
 			return i, true
 		}
 	}
@@ -149,11 +161,11 @@ func (g *arcBuild) capSideIndex(e *topo.Edge) (int, bool) {
 func (g *arcBuild) arcChainOnCap() []chainEdge {
 	af := g.af
 	chain := make([]chainEdge, 0, 3)
-	if !g.merged[0] {
+	if !g.absorbed(0) {
 		chain = append(chain, chainEdge{g.capLn[0], g.verts[af.ends[0].rimV], g.vt[0]})
 	}
 	chain = append(chain, chainEdge{g.capTan, g.vt[0], g.vt[1]})
-	if !g.merged[1] {
+	if !g.absorbed(1) {
 		chain = append(chain, chainEdge{g.capLn[1], g.vt[1], g.verts[af.ends[1].rimV]})
 	}
 	return chain
@@ -168,7 +180,7 @@ func (g *arcBuild) arcChainOnCap() []chainEdge {
 func (g *arcBuild) smoothChainOnSide(i int) []chainEdge {
 	af := g.af
 	bottom := g.verts[af.ends[i].bottomV]
-	if !g.merged[i] {
+	if !g.absorbed(i) {
 		return []chainEdge{{g.upper[i], g.verts[af.ends[i].rimV], g.vc[i]}, {g.lower[i], g.vc[i], bottom}}
 	}
 	return []chainEdge{{g.endArc[i], g.vt[i], g.vc[i]}, {g.lower[i], g.vc[i], bottom}}
