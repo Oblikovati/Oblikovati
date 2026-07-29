@@ -47,8 +47,14 @@ type spiricEdge struct {
 	arc  geom.SpiricArc
 }
 
-// twoOvalEdges returns the face's two spiric oval edges, the +1 branch as plus and the −1 as minus. ok=false
-// unless exactly two spiric edges are present (the two-oval band's boundary).
+// twoOvalEdges returns the face's two spiric OVAL edges, the +1 branch as plus and the −1 as minus.
+// ok=false unless exactly two spiric edges are present AND they are the two arccos roots of ONE section.
+//
+// ★ "of one section" is load-bearing, not tidiness. A torus face can carry two spiric edges that bound no
+// oval band at all: an ARC FILLET run out on a side plane at each END (fillet_arc_runout.go) carries one
+// quarter-tube section per end, cut by two DIFFERENT planes, and is closed by its two tangent circles.
+// Lofting between those sweeps the whole tube instead of the patch — measured on simple/W2, whose 0.418
+// band read 4.9146 (52% of the entire torus) until this guard.
 func twoOvalEdges(f *topo.Face) (plus, minus spiricEdge, ok bool) {
 	var arcs []spiricEdge
 	for _, e := range f.Edges() {
@@ -56,7 +62,7 @@ func twoOvalEdges(f *topo.Face) (plus, minus spiricEdge, ok bool) {
 			arcs = append(arcs, spiricEdge{edge: e, arc: a})
 		}
 	}
-	if len(arcs) != 2 {
+	if len(arcs) != 2 || !oppositeRootsOfOneSection(arcs[0].arc, arcs[1].arc) {
 		return plus, minus, false
 	}
 	plus, minus = arcs[0], arcs[1]
@@ -64,6 +70,18 @@ func twoOvalEdges(f *topo.Face) (plus, minus spiricEdge, ok bool) {
 		plus, minus = minus, plus
 	}
 	return plus, minus, true
+}
+
+// oppositeRootsOfOneSection reports whether two spiric arcs are the +1 and −1 arccos roots of the SAME
+// plane's section of the SAME torus — the pair that closes one spiric loop, and the only pair the band
+// loft is defined between.
+func oppositeRootsOfOneSection(a, b geom.SpiricArc) bool {
+	if a.Branch*b.Branch >= 0 {
+		return false
+	}
+	scale := stdmath.Max(1, a.Torus.MajorRadius)
+	return stdmath.Abs(a.Phi-b.Phi) < 1e-9 && stdmath.Abs(a.M-b.M) < 1e-9 &&
+		stdmath.Abs(a.C-b.C) < 1e-9 && stdmath.Abs(a.K-b.K) < 1e-9*scale
 }
 
 // spiricRow adds a band row from exact 3D boundary points, keyed by each point's tube parameter v (so the
