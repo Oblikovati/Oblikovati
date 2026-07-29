@@ -78,21 +78,57 @@ func TestB2ArcFilletMergesItsSetbackCapsIntoTheSectorWalls(t *testing.T) {
 	}
 }
 
-// TestN6ArcFilletMergesOnlyTheRadialEnd is the merge's DECLINE half, on the one corpus case that has one
-// of each end. simple/N6's r=5 band starts on a radial cut wall (x=50 — the setback cap's own plane, so
-// it merges) and stops on a wall the radial plane crosses at 0.6435 rad (x=80 — where the setback
-// triangle is a real face and must stay). The merged wall lands on its closed form, 30 × 70 PLUS the
-// corner the blend adds back, which is DRAWEXE's own 2105.37 for that face; the declined end keeps its
-// cap and its retrace, and is recorded as such in knownRetracingLoops.
-func TestN6ArcFilletMergesOnlyTheRadialEnd(t *testing.T) {
+// TestN6ArcFilletTerminatesBothEndsOnTheirWalls is the DECLINE half of the coplanar merge — on the one
+// corpus case that has one end of each kind — and, since the run-out landed, the guard that a declined
+// merge is NOT the same thing as a shipped setback triangle.
+//
+// simple/N6's r=5 band starts on a radial cut wall (x=50 — the setback cap's own plane, so it merges) and
+// stops on a wall the radial plane crosses at 0.6435 rad (x=80, which declines). This test used to assert
+// that the declined end ships a setback cap of its own. It does not, and DRAWEXE says so: `blend result s
+// 5 s_5` ships NINE faces, not ten, and the tenth we used to ship was drawn into the void — the setback
+// cap's tip lands at (77,14,10), inside the box the cut REMOVED (x∈[50,80], y∈[0,30], z∈[10,80]). The
+// band is instead terminated on that wall's own spiric section (kernel/ops/fillet_arc_runout.go), which
+// reproduces OCCT face for face. Reinstate the setback triangle and the face count, the wall, the pocket
+// floor and the band areas all move at once.
+func TestN6ArcFilletTerminatesBothEndsOnTheirWalls(t *testing.T) {
 	body := gridCaseBody(t, corpusRecord(t, "simple", "N6"))
-	if n := countLineagePrefix(body, "arcfillet:endcap"); n != 1 {
-		t.Errorf("simple/N6 ships %d separate setback end-cap face(s), want exactly 1 (its second end's "+
-			"radial plane is 0.6435 rad off that wall, so that cap is a face of its own)", n)
+	if n := len(body.Faces()); n != 9 {
+		t.Errorf("simple/N6 ships %d faces, want the 9 DRAWEXE ships (neither end is a face of its own: "+
+			"one merges into its radial wall, the other runs out on x=80)", n)
+	}
+	if n := countLineagePrefix(body, "arcfillet:endcap"); n != 0 {
+		t.Errorf("simple/N6 ships %d separate setback end-cap face(s), want 0 — the declined end RUNS OUT "+
+			"on its wall; a setback triangle there reaches (77,14,10), inside the removed pocket", n)
 	}
 	const r = 5.0
-	want := 30*70 + (r*r - stdmath.Pi*r*r/4) // 2105.3650…, DRAWEXE 2105.37
-	assertFaceMeshesToClosedForm(t, body, "simple/N6", "import:step#16:face#3", want)
+	// The MERGED end's wall: 30 × 70 plus the corner the blend adds back. 2105.3650…, DRAWEXE 2105.37.
+	assertFaceMeshesToClosedForm(t, body, "simple/N6", "import:step#16:face#3", 30*70+(r*r-stdmath.Pi*r*r/4))
+	// The RUN-OUT end's three faces, against DRAWEXE 8.0.0 `explode result F` + `sprops _ 1.e-9`. They have
+	// no closed form (the run-out boundary is a spiric quartic), so the oracle is OCCT's own number.
+	for _, tc := range []struct {
+		lineage string
+		drawexe float64
+	}{
+		{"import:step#16:face#6", 1406.8},  // the x=80 wall the band runs out on (was 1400 with the cap)
+		{"import:step#16:face#4", 641.965}, // the pocket floor, receded by the run-out (was 651.53)
+		{"arcfillet:torus#0", 254.441},     // the band itself (was 243.51 over the un-terminated span)
+	} {
+		assertFaceMeshesToDrawexe(t, body, "simple/N6", tc.lineage, tc.drawexe, 1e-4)
+	}
+	if bad := ops.RetracingFaceLoops(body, ops.PropertyQuality()); len(bad) != 0 {
+		t.Errorf("simple/N6 still retraces on %d face loop(s): %s", len(bad), describeRetracing(bad))
+	}
+}
+
+// assertFaceMeshesToDrawexe compares one face's SHIPPED mesh area against DRAWEXE's own sprops number at
+// a relative budget — the oracle to use where no closed form exists.
+func assertFaceMeshesToDrawexe(t *testing.T, body *topo.Body, name, lineage string, drawexe, tol float64) {
+	t.Helper()
+	got := ops.MeshArea(shippedFaceMesh(t, body, faceByLineage(t, body, lineage)))
+	if rel := stdmath.Abs(got-drawexe) / drawexe; rel > tol {
+		t.Errorf("%s face %s meshes %.6g, DRAWEXE %.6g (rel %+.4f%%, tol %.1g)",
+			name, lineage, got, drawexe, (got-drawexe)/drawexe*100, tol)
+	}
 }
 
 // assertFaceMeshesToClosedForm compares one face's SHIPPED mesh area against its closed form.

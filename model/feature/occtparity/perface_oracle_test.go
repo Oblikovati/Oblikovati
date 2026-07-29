@@ -18,6 +18,27 @@ import (
 // corner patch was 27% short with the vertical plane over-reading by nearly the same amount). Ranking
 // our per-face mesh areas against OCCT's own `explode result F` + `sprops result_i 1e-6` numbers is what
 // actually sees that class, so the oracle gates for individual roots share these helpers.
+//
+// ★★ CAPTURING THE ORACLE — IDENTIFY A FACE BY AREA AND CLOSED FORM, NEVER BY `bounding`.
+//
+// DRAWEXE's `bounding <face>` on a TRIMMED face does NOT return a tight box of the trimmed region. It
+// returns the box of the underlying surface's POLE NET (its control hull / natural parametric extent),
+// which for a trimmed analytic face can be dramatically larger than the face itself, and for a periodic
+// surface can extend to the whole revolution. It is a fast reject box, not a measurement, and reading it
+// as one has already nearly caused a mis-attribution here: simple/W2's blend band reports
+// z ∈ [−0.29884, 1.00003] from `bounding` while its true z extent is a small fraction of that, which read
+// as OCCT terminating the band somewhere it does not.
+//
+// So when you run a case and have to say WHICH result_i is which face, use:
+//   - `sprops result_i 1.e-9` — the area, matched against the closed form of the face you expect; and
+//   - `mksurface s result_i ; dump s` — the exact surface (plane origin/axis, cylinder radius, torus
+//     Origin/Axis/Radii), which is what actually names the face; and
+//   - `dump result_i` for the wire — its edges' UV points on BOTH pcurves give the trim endpoints exactly,
+//     which is how simple/W2's run-out boundary was read off OCCT (torus (0.98506, π/2) → (1.55675, π),
+//     plane z=0 (2.33652, 0) → (2.98586, 0.2)).
+//
+// `-b -f` does not interleave `sprops` output with `puts`; wrap the script body in `dlog on` / `dlog get`
+// so the two streams come back in order. The environment is `test-utilities/occt-blend/oracle/drawenv.sh`.
 type drawexeFaceCase struct {
 	name string
 	// drawexe are DRAWEXE 8.0.0's per-face `sprops result_i 1e-6` areas, sorted DESCENDING (rank-paired

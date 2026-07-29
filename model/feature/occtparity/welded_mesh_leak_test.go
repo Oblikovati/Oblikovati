@@ -163,9 +163,9 @@ func meshDebtIndex(table []meshDebtEntry) map[string]meshDebtEntry {
 // longer exists — and disabling that split makes this very test report D8's 8 and 36 again, which is the
 // ratchet's own falsification.
 //
-// ★ FOUR OF THE SEVEN ARE SCORED GREEN (PASS): simple/C2 U4 Y1 Z1. That is the D8 situation exactly,
-// four times over — an area gate cannot see a torn rim, because tearing a rim removes no area. Two more
-// are FAIL(area) (U6, W2) and one FAIL(faulty) (T9).
+// ★ FOUR OF THE SIX ARE SCORED GREEN (PASS): simple/C2 U4 Y1 Z1. That is the D8 situation exactly, four
+// times over — an area gate cannot see a torn rim, because tearing a rim removes no area. One more is
+// FAIL(area) (U6) and one FAIL(faulty) (T9).
 //
 // The roots, largest first — each is a SEPARATE follow-up slice, none is fixed here:
 //
@@ -185,12 +185,15 @@ func meshDebtIndex(table []meshDebtEntry) map[string]meshDebtEntry {
 //     change touches the mesher or the welder; the leaks were the retrace, exactly as predicted here.
 //     N6 still carries one retracing loop (its non-radial end) and leaks nothing, which bounds the
 //     claim honestly: a retrace is sufficient to leak, not necessary.
-//     ★ AND SO IS simple/W2's 3/3, MEASURED: putting its band on the material side (the arc path's
-//     material-side probe plus the R+r concave tier, .superpowers/sdd/voidside-band-report.md) takes its
-//     retracing loops 2 → 0 and does NOT take these three with them — they are replaced by 8 default /
-//     29 property free edges of a different origin, all on the plane y = 0 along a cap-tangent arc that
-//     spills 0.2 = r below the bottom plane. So for W2 the retrace and the leak are NOT one defect, and
-//     the prediction above holds for B2/N6 but not here.
+//     ★ simple/W2's 3/3 IS ALSO RETIRED — and the route there is the receipt for the correction this
+//     table used to carry. Putting W2's band on the material side ALONE (the rolling-ball seat, i.e. the
+//     Reversed cap normal plus the cylR+r groove tier) takes its retracing loops 2 → 0 but does NOT take
+//     these three with them: they are replaced by 8 default / 29 property free edges of a DIFFERENT
+//     origin, all on the plane y = 0 along a cap-tangent arc that spills 0.2 = r below the bottom plane.
+//     Only the RUN-OUT termination (fillet_arc_runout.go — the band terminated on the side plane's own
+//     spiric section, OCCT's own construction) closes both at once: W2 now measures 0 default / 0
+//     property, 0 retraces, 0 self-crossings, and 11.766423 against DRAWEXE's 11.76665. So the retrace
+//     and the leak were the SAME defect here after all, but neither half of the fix reaches it alone.
 //   - simple/Z1 (3/3) is the only leaking case in NO other ratchet: a geom.Cylinder / geom.Plane rim at
 //     z = 20 where three edges around one 0.245431 arc step fail to pair. Unattributed, and smallest.
 //   - simple/T9 (60 / 10) and simple/U6 (12 / 13) are not green and are not tracked anywhere else. U6 is
@@ -201,7 +204,6 @@ func knownMeshLeaks() []meshDebtEntry {
 		{"U4", "simple", 44, 44}, // PASS — canal patch rails vs their elliptical-cylinder host
 		{"U6", "simple", 13, 12}, // FAIL(area) — cylinder/torus rim; note it SHRINKS with quality
 		{"C2", "simple", 0, 3},   // PASS — knownOffSurfaceDebt 0.0192, BSpline/plane seam
-		{"W2", "simple", 3, 3},   // FAIL(area) — knownRetracingLoops, 2 loops
 		{"Y1", "simple", 3, 3},   // PASS — knownRetracingLoops, 1 loop
 		{"Z1", "simple", 3, 3},   // PASS — unattributed, in no other ratchet
 	}

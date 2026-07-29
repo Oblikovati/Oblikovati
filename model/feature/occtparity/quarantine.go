@@ -18,16 +18,14 @@ type quarantineKey struct {
 	name string
 }
 
-// quarantined maps each held case to the reason it is held. H6: ROOT 1 (the cone-sector tessellation
-// over-area on BOTH congruent host cones) is now fixed, which UNMASKED a second, independent defect —
-// ROOT 2, resolveArcFillet builds the concave open-torus fillet on the wrong side (R−r not R+r). H6 is
-// held so this red never later reads as parity by coincidence if the geometry shifts.
+// quarantined maps each held case to the reason it is held. IT IS NOW EMPTY, and that is the point: the
+// last hold — simple/H6 — was retired by the arc band's rolling-ball SEAT and RUN-OUT termination
+// (kernel/ops/fillet_arc_seat.go, fillet_arc_runout.go). H6 was held because resolveArcFillet built its
+// concave open-torus band inverted (cylR−r, on the void side of the cap); it now builds OCCT's own torus
+// — centre (0,0,−40), R = 60, r = 10 — and the whole body lands on 555913.3 against DRAWEXE's 555915
+// (−0.00031%), every face on its own oracle, with 642 → 0 free edges and 2 → 0 self-crossing loops.
+// The mechanism stays: a case that needs holding again gets an entry here with its forensic reason.
 var quarantined = map[quarantineKey]string{
-	{grid: "simple", name: "H6"}: "ROOT 1 cone-sector tessellation fixed (both congruent host cones now " +
-		"133286, was ×1.26 inflated); that UNMASKED ROOT 2 — resolveArcFillet builds the concave open-torus " +
-		"fillet inverted (R−r not R+r), so H6 now honestly FAILS the area gate at −1.09%. Held to document " +
-		"the defect and guard against a future coincidental pass. Do NOT un-gate until resolveArcFillet is " +
-		"rebuilt for concave open-torus rims.",
 	// U4: the green-gate hardening audit (#2007, .superpowers/sdd/green-gate-validate-audit-report.md)
 	// found its result's ops.Validate().HolesContained == false — "hole loop protrudes outside the outer
 	// loop of planar face" (a malformed B-rep face). S6/S9/T3 (Group A, one-boss sphere/torus) were freed

@@ -143,43 +143,31 @@ func retraceDebtIndex() map[string]retraceDebtEntry {
 //
 //   - simple/Y1 (r=10) — host plane y=0, the r=10 member of the Y slot family: (90,0,90) → (100,0,90) →
 //     (0,0,90), i.e. out to the box's own corner and straight back along z=90.
-//   - simple/N6 (r=5) — the x=80 host plane, a consecutive-segment spike of 5:
-//     (80,10,10)→(80,10,5)→(80,10,80). This is the arc fillet's SECOND end, the one whose radial setback
-//     plane is 0.6435 rad off that wall, so the end-cap merge that retired N6's other two declines it:
-//     the cap there is a real face, and the wall genuinely keeps a corner the cyl-tangent point runs 5
-//     past. Closing it needs the band's terminal section trimmed against the wall, not a merge.
-//   - simple/W2 (r=0.2) — two host planes, spikes of 0.2 at (2.9859,1,0)→(2.9859,−0.2,0)→(2.9859,0,0)
-//     and (2,0,1)→(2,−0.2,1)→(2,1,1). Also an arc fillet, and its ends decline the merge for a DIFFERENT
-//     reason worth recording: the imported cylinder's ref direction is not exact, so each setback plane
-//     sits 1.0e-4 rad off the side face it would merge into (atan(1e-4 / 1) from a centre at z=0.9999
-//     against a rim point at z=1). Merging a merely NEAR-coplanar cap would put the absorbed cross-section
-//     arc ~2e-5 (7e-6 of the diagonal) off the side face's own surface, which TestEveryLoopSegmentLiesOnItsFace
-//     forbids at 1e-6 — so it declines. ★ W2 also carries a SEPARATE, larger defect the merge does not
-//     touch and must not be confused with this one: its whole band is built on the VOID side (rolling-ball
-//     centre at y = −0.2 where the solid is y ∈ [0,1]; measured with PointInsideBody on the pre-fillet
-//     body at every tube-centre sample). This case is FAIL(area) already.
-//     ★★ ATTRIBUTION CORRECTED (.superpowers/sdd/voidside-band-report.md). That void-side placement was
-//     recorded here as "resolveArcFillet takes the cap plane's STORED normal as the outward one", and
-//     that is only HALF of it. resolveArcFillet makes TWO unprobed assumptions, and W2 violates both:
-//     the stored normal (its cap face is Reversed, so pl.Normal() points INTO the material) AND the
-//     radial sense (its cylinder is a GROOVE — material lies outside it — so the rolling ball rides at
-//     R+r, not solveRim's convex R−r). DRAWEXE 8.0.0 convicts both independently on W2's own script:
-//     it recedes the cylinder to y = +0.2 (area 1.2454 = 1.5567 × 0.8, the full arc span) and puts the
-//     cap-tangent circle at 1.2 = R+r (its receded cap face reaches x = 2.33652 = 3 − √(1.2²−0.9999²),
-//     and loses ∫₀¹[√(1.44−u²)−√(1−u²)]du = 0.2559 of area — a convex R−r round would have made it
-//     LARGER). Adding the PointInsideBody probe alone therefore does NOT fix this case: it correctly
-//     rejects both axial sides at R−r. Adding the R+r tier as well DOES put the band on the material
-//     side (area +12.47 % → +1.58 %, and these two retracing loops go to ZERO), but the R+r cove then
-//     SPILLS through the cap face — vt₁ lands 0.19998 = r below the bottom plane z = 0 — and this case's
-//     knownMeshLeaks row widens 3/3 → 8/29, every new free edge on the spilled arc. OCCT instead stops
-//     the cap-tangent arc AT the cap face boundary and covers the corner with a run-out lobe worth
-//     0.0861. So W2 needs the CONCAVE OPEN-TORUS ARC BAND WITH A RUN-OUT — the same root simple/H6 is
-//     quarantined for — not a probe. Do not re-open this as a stored-normal slice.
+//   - simple/N6 (r=5) and simple/W2 (r=0.2) are ★ RETIRED, both by the arc band's RUN-OUT termination
+//     (kernel/ops/fillet_arc_runout.go), and their history is worth keeping because it corrects what this
+//     table used to say about them.
+//     N6's spike was (80,10,10)→(80,10,5)→(80,10,80) on the x=80 host plane — the arc fillet's SECOND
+//     end, whose radial setback plane is 0.6435 rad off that wall, so the coplanar end-cap merge declines
+//     it. This entry said "closing it needs the band's terminal section trimmed against the wall, not a
+//     merge", and that is exactly what landed: the setback cap's tip lands at (77,14,10), which is inside
+//     the POCKET (removed material), so the cap was drawn into the void and the wall kept a corner the
+//     cyl-tangent point ran r past. Terminating the band on the wall's own spiric section instead ships
+//     DRAWEXE's own nine faces — x=80 at 1406.80 against 1406.8, the pocket floor at 641.95 against
+//     641.965, the band at 254.43 against 254.441 — and no retrace.
+//     W2's two spikes were 0.2 at (2.9859,1,0)→(2.9859,−0.2,0)→(2.9859,0,0) and (2,0,1)→(2,−0.2,1)→
+//     (2,1,1). Its ends decline the coplanar merge for a different reason: the imported cylinder's ref
+//     direction is not exact, so each setback plane sits 1.0e-4 rad off the side face (atan(1e-4/1) from
+//     a centre at z=0.9999 against a rim point at z=1). ★★ The larger defect this entry recorded — the
+//     whole band built on the VOID side — was ATTRIBUTED HALF-RIGHT and is now settled by DRAWEXE: it
+//     took BOTH the Reversed cap normal (pl.Normal() points into the material) AND the groove radial
+//     sense (material lies outside that cylinder, so the ball rides at cylR+r = 1.2, not cylR−r = 0.8),
+//     and even both together only move the band to the material side — the cylR+r cove then spills
+//     0.19998 = r below the bottom plane and W2's mesh leak widens 3/3 → 8/29. The run-out is what closes
+//     it: OCCT terminates the band on the bottom plane's spiric section, and W2 now ships DRAWEXE's seven
+//     faces at 11.766423 against 11.76665 with 0 retraces, 0 leaks and 0 self-crossings.
 func knownRetracingLoops() []retraceDebtEntry {
 	return []retraceDebtEntry{
-		{"Y1", "simple", 1, 10.001},  // 10 = r = the slot width; see the caveat above
-		{"N6", "simple", 1, 5.001},   // 5 = r exactly, on the declined (non-radial) end only
-		{"W2", "simple", 2, 0.20001}, // 0.2 = r, to 2.2e-16 relative
+		{"Y1", "simple", 1, 10.001}, // 10 = r = the slot width; see the caveat above
 	}
 }
 

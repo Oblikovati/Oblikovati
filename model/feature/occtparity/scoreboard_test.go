@@ -213,6 +213,20 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 // other consumer would inherit). A mismatch means either a false green slipped through or a case was
 // over/under-quarantined — see harden-green-gate-brief.md's "STOP and report" instruction.
 //
+// ★ THE LAST QUARANTINE IS GONE (112→114 simple / 117→119 all-grid, SkipQuarantine 1→0). The arc band's
+// rolling-ball SEAT (kernel/ops/fillet_arc_seat.go — the seat is solved from the picked edge's convexity
+// and the faces' OUTWARD normals, where it used to be hard-coded to the convex-shaft cylR−r on the stored
+// plane normal) plus the RUN-OUT TERMINATION (fillet_arc_runout.go — the band terminated on the side
+// plane's own spiric section, which is what OCCT does) GREENED simple/W2 and freed simple/H6, the corpus's
+// last held case. Both are one root: a cylR+r band that the old code seated at cylR−r on the wrong side of
+// the cap. Measured against DRAWEXE 8.0.0, face for face: W2 ships OCCT's SEVEN faces at 11.766423 vs
+// 11.76665 (−0.0015%, was +12.47% on nine faces), H6 ships OCCT's EIGHT at 555913.3 vs 555915 (−0.00031%,
+// was +3.65%). The same termination also took already-green simple/N6 from ten faces to DRAWEXE's NINE
+// (−0.0113% → −0.0068%), retiring a setback triangle whose tip stood inside the pocket the cut removed.
+// Ratchets: knownMeshLeaks 7 → 6 cases (W2's 3/3 retired; H6 enters the sweep at 0/0 where it hid 642),
+// knownRetracingLoops 4 loops/3 cases → 1/1 (W2's 2 and N6's 1 retired), knownSelfCrossingLoops 3 loops/2
+// cases → 2/1 (W2's retired; H6 enters at 0 where it hid 2).
+//
 // ★ complex/D8's green was RETIRED (all-grid 117 → 116, simple unchanged at 111) because it was never
 // parity: it was MANUFACTURED by the far-end trim's own arbitrary branch pick and is unreachable by any
 // correct single-edge fillet. Receipts, all measured (stopface-reversed-report.md):
@@ -239,15 +253,17 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 112 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 112 (band∩obstacle imprint greened Y3)", simpleGreen)
+	if simpleGreen != 114 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 114 (the arc band's rolling-ball seat + "+
+			"run-out termination greened W2 and freed H6 from the last quarantine)", simpleGreen)
 	}
-	if allGridGreen != 117 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 117 (112 simple + 5 bfuseblend; complex/D8's "+
+	if allGridGreen != 119 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 119 (114 simple + 5 bfuseblend; complex/D8's "+
 			"coincidental green retired by the far-end branch fix)", allGridGreen)
 	}
-	if skipQuarantine != 1 {
-		t.Errorf("SkipQuarantine = %d, want 1 (H6 only, #2007 U4 freed by U4-5)", skipQuarantine)
+	if skipQuarantine != 0 {
+		t.Errorf("SkipQuarantine = %d, want 0 — the corpus holds NO case; every one of the 475 records is "+
+			"now scored on its own merit (quarantine.go, TestTheCorpusHoldsNoCase)", skipQuarantine)
 	}
 }
 

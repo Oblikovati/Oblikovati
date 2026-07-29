@@ -275,16 +275,19 @@ func selfCrossDebtIndex() map[string]selfCrossDebtEntry {
 //     is on FACE 243, the very face carrying the 1098.03 crossing. The chart is unfaithful BECAUSE the
 //     geometry is wrong, so the two ratchets are reading one defect with two rulers. REAL, stays — and
 //     this is the receipt that filtering the detector on the ratio would have laundered them away.
-//   - simple/W2, one loop — 1.000000. A plane's development is exact by construction; the 2.5e-13 is
-//     float noise thrown off by the retracing spike on the same face (knownRetracingLoops). REAL, stays.
-//     ★ AND IT IS INDEPENDENT OF THAT SPIKE, measured: the arc path's material-side probe plus the R+r
-//     concave tier (.superpowers/sdd/voidside-band-report.md) takes W2's retracing loops 2 → 0 and leaves
-//     this crossing at exactly 1 loop, unchanged. So the attribution "thrown off by the retracing spike"
-//     is NOT confirmed and the entry stands on its own measurement, not on that explanation.
+//   - simple/W2, one loop — 1.000000, area 2.49967e-13. ★ RETIRED, sixth wave, and the two-step route is
+//     the receipt. Its development was exact (a plane's is, by construction), so the crossing was REAL,
+//     but the attribution "thrown off by the retracing spike on the same face" was NOT confirmed: the
+//     rolling-ball SEAT alone (the Reversed cap normal + the cylR+r groove tier) takes W2's retracing
+//     loops 2 → 0 and leaves this crossing at exactly 1 loop, unchanged. The RUN-OUT termination
+//     (kernel/ops/fillet_arc_runout.go) is what retires it — with the band terminated on the bottom
+//     plane's own spiric section, W2 ships DRAWEXE's seven faces and measures 0 crossings at
+//     ops.PropertyQuality(). Retired on a measurement of the healthy body it still ships, which is the
+//     one way this table is allowed to shrink.
 //     ★ NOTE FOR ANY FUTURE ARC-ENGINE SLICE: TestEverySelfCrossDebtEntryIsARealDefect below fails with
-//     "ships no healthy body to convict it on" the moment simple/W2 stops building. That is deliberate —
-//     it refuses to let this ratchet quietly stop being enforced — so a change that honestly DECLINES to
-//     fillet W2 must land together with whatever retires this entry on a receipt, never before it.
+//     "ships no healthy body to convict it on" the moment a listed case stops building. That is
+//     deliberate — it refuses to let this ratchet quietly stop being enforced — so a change that honestly
+//     DECLINES to fillet a listed case must land together with whatever retires its entry on a receipt.
 //
 // Also corrected on the record: the two entries this table's prose still lists as SUSPECTS — simple/W1's
 // "Area 0" and simple/E4's 128.489 — were already RETIRED, as false positives, by the unwrap fix in the
@@ -292,7 +295,6 @@ func selfCrossDebtIndex() map[string]selfCrossDebtEntry {
 func knownSelfCrossingLoops() []selfCrossDebtEntry {
 	return []selfCrossDebtEntry{
 		{"F2", "complex", 2, 1105}, // 1098.03 / 7.16978 (was 4 loops); pairs 77.06 / 2.771 — see the verdicts above
-		{"W2", "simple", 1, 1e-12}, // 2.49967e-13 — a degenerate crossing, float noise; pair 1.000000
 	}
 }
 

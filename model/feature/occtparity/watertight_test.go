@@ -42,17 +42,39 @@ func TestIsWatertightSolidAcceptsGenuineSolid(t *testing.T) {
 	}
 }
 
-// TestQuarantinedFalseGreensReportSkipQuarantine pins the quarantine.go hold: a held case must report
-// SkipQuarantine through the real ScoreCase path — never Pass, and never surfaced as a new FailFaulty red
-// either (held out of the green count, not turned into a new failure). S6/S9/T3 were GREENED by the
-// single-boss setback tiling; U3 by the dipArcOrder obstacle-path fix; U4 by the U4-5 dual-host multi-rail
-// weld — leaving H6 (concave open-torus fillet inverted, ROOT 2) as the surviving held case this guards.
-func TestQuarantinedFalseGreensReportSkipQuarantine(t *testing.T) {
-	dir := CorpusFixtureDir()
-	for _, c := range []string{"H6"} {
-		if got := ScoreCase(findCorpusRecord(t, "simple", c), dir); got != SkipQuarantine {
-			t.Errorf("simple/%s: ScoreCase = %v, want SkipQuarantine", c, got)
-		}
+// TestTheCorpusHoldsNoCase pins the quarantine list EMPTY — the corpus's last blind spot, closed.
+//
+// WHY THIS IS THE ASSERTION NOW. A quarantined case is SKIPPED by RunCase before it ever builds, so it is
+// invisible not just to the area gate but to every corpus-wide invariant this harness owns — watertightness,
+// retracing loops, self-crossing loops, tangent-chain debt. Holding one buys honesty about a known defect at
+// the price of blinding everything else about that case (the D8 precedent: an honest FAIL was preferred to a
+// hold for exactly this reason). simple/H6 was the last hold; the arc band's rolling-ball seat + run-out
+// termination retired it, and H6 now scores on its own merit — Pass at −0.00031% against DRAWEXE, and
+// carrying 0 free edges where it used to hide 642.
+//
+// The MECHANISM is guarded alongside, so re-holding a case stays a one-line change that works: a synthetic
+// key must still report held with its reason, and a key that is not on the list must not.
+func TestTheCorpusHoldsNoCase(t *testing.T) {
+	for k, reason := range quarantined {
+		t.Errorf("%s/%s is still quarantined (%q) — a held case is SKIPPED, so every other corpus invariant "+
+			"is blind to it; score it honestly instead", k.grid, k.name, reason)
+	}
+	if _, held := quarantineReason(Record{Grid: "simple", Case: "H6"}); held {
+		t.Errorf("simple/H6 still reads as quarantined")
+	}
+}
+
+// TestQuarantineMechanismStillHolds keeps quarantine.go's lookup honest while its list is empty, so the
+// next case that needs holding is one map entry away rather than a rediscovery.
+func TestQuarantineMechanismStillHolds(t *testing.T) {
+	key := quarantineKey{grid: "zz", name: "ZZ"}
+	quarantined[key] = "synthetic hold"
+	defer delete(quarantined, key)
+	if reason, held := quarantineReason(Record{Grid: "zz", Case: "ZZ"}); !held || reason != "synthetic hold" {
+		t.Errorf("quarantineReason on a held key = (%q, %v), want (\"synthetic hold\", true)", reason, held)
+	}
+	if _, held := quarantineReason(Record{Grid: "zz", Case: "OTHER"}); held {
+		t.Errorf("quarantineReason reported an unlisted case as held")
 	}
 }
 
