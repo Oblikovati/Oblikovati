@@ -19,10 +19,11 @@ import (
 // TOPOLOGICAL watertightness is not MESH watertightness: two faces can share an edge in the B-rep and
 // still tile that edge with different vertices, and only the welded triangle soup says so. D8 passed
 // eleven slices of scrutiny in that state, and the sweep that opened this ratchet found it was never
-// unique — TWELVE of the 124 measurable cases leaked, NINE of them scored fully green. SEVEN and FOUR
+// unique — TWELVE of the 124 measurable cases leaked, NINE of them scored fully green. FIVE and THREE
 // today: the two largest (bfuseblend/A2, simple/J1) were closed by band_rim_stations.go, two more
-// (simple/B2, simple/N6) by fillet_arc_endcap.go, and the largest that was left — simple/Q5's 937 —
-// by admitting a ONE-ENDED far-end split (fillet_farend_chain.go's splitEndCount).
+// (simple/B2, simple/N6) by fillet_arc_endcap.go, the largest that was left — simple/Q5's 937 — by
+// admitting a ONE-ENDED far-end split (fillet_farend_chain.go's splitEndCount), and simple/U4's 44 by
+// routing saddleBandLoftMesh's rim read through discretizeEdge (saddle_band_loft.go).
 //
 // WHY THE MESH MATTERS AT ALL. The user only ever sees the mesh (CLAUDE.md's first priority). A leaking
 // mesh renders with cracks, exports an unprintable STL, and hands the next boolean a non-closed operand
@@ -135,7 +136,7 @@ func meshDebtIndex(table []meshDebtEntry) map[string]meshDebtEntry {
 }
 
 // knownMeshLeaks is the FULL measured population of shipped bodies whose WELDED tessellation is not a
-// closed surface: 7 cases of the 124 the corpus can measure (it opened at 12), derived by an
+// closed surface: 5 cases of the 125 the corpus can measure (it opened at 12), derived by an
 // instrumented corpus-wide sweep at both gateQualities() entries, not from any report. The sweep reproduces byte-for-byte across
 // runs, so these ceilings are exact rather than sampled.
 //
@@ -145,10 +146,10 @@ func meshDebtIndex(table []meshDebtEntry) map[string]meshDebtEntry {
 // simply the first instrument able to read it. Every subsequent change to it has been a RETIREMENT
 // caused by a production fix, never a re-ceilinging: no entry has ever grown.
 //
-// Remaining corpus leakage, both qualities: 76 free edges at default and 128 at property, over these
-// seven cases. It opened at 251 / 4146 over twelve.
+// Remaining corpus leakage, both qualities: **29** free edges at default and **81** at property, over
+// these FIVE cases. It opened at 251 / 4146 over twelve.
 //
-// ★ THREE ENTRIES HAVE BEEN RETIRED, not re-ceilinged. bfuseblend/A2 and simple/J1 (1536 free edges each
+// ★ FOUR ENTRIES HAVE BEEN RETIRED, not re-ceilinged. bfuseblend/A2 and simple/J1 (1536 free edges each
 // at property quality, 3072 of the corpus's 4146 — 74 % of all its leakage) now measure ZERO at BOTH
 // qualities; their root was the seam-bridged band grid imposing one station count on rims that discretize
 // into two (band_rim_stations.go). simple/Q5 (937 property / 160 default — 88 % of what was left) now
@@ -163,18 +164,28 @@ func meshDebtIndex(table []meshDebtEntry) map[string]meshDebtEntry {
 // longer exists — and disabling that split makes this very test report D8's 8 and 36 again, which is the
 // ratchet's own falsification.
 //
-// ★ FOUR OF THE SIX ARE SCORED GREEN (PASS): simple/C2 U4 Y1 Z1. That is the D8 situation exactly, four
+// ★ THREE OF THE FIVE ARE SCORED GREEN (PASS): simple/C2 Y1 Z1. That is the D8 situation exactly, four
 // times over — an area gate cannot see a torn rim, because tearing a rim removes no area. One more is
 // FAIL(area) (U6) and one FAIL(faulty) (T9).
 //
 // The roots, largest first — each is a SEPARATE follow-up slice, none is fixed here:
 //
-//   - CANAL PATCH RAIL vs HOST (simple/U4, 44 at BOTH qualities; simple/C2, 3 at property). U4's leak is
-//     21 edges on each of two geom.BSplineSurface corner patches plus 2 on the geom.EllipticalCylinder
-//     they meet, all in the x = 10 plane, with the two sides' chords differing in the 5th digit
-//     (0.0220470 vs 0.0220538) — a fitted patch rail and its host tiling the same seam from different
-//     curves. Both cases already carry a knownOffSurfaceDebt entry (U4 0.000246, C2 0.0192); this is that
-//     same debt, seen downstream in the mesh.
+//   - CANAL PATCH RAIL vs HOST (simple/C2, 3 at property) — it still carries a knownOffSurfaceDebt entry
+//     (0.0192), and this may be that debt seen downstream in the mesh. Unverified: read U4's retirement
+//     below before trusting the attribution.
+//     ★ simple/U4's 44-at-BOTH-qualities entry IS RETIRED, and it is the receipt for how wrong this row's
+//     reasoning was. The entry blamed "a fitted patch rail and its host tiling the same seam from
+//     different curves", evidenced by chords differing in the 5th digit (0.0220470 vs 0.0220538). Swept by
+//     provenance, those are not two sides of one seam at all — they are the two MIRROR sliver panels' own
+//     chords, at opposite ends of the body. The real pairing was one geom.LineSegment edge (edge 440,
+//     shared, same two vertices, exactly collinear polyline) tiled with 21 chords by the high-aspect
+//     B-spline sliver and with ONE by the geom.EllipticalCylinder boss wall: a station COUNT mismatch, not
+//     a curve mismatch, so no change of the panel's fill surface could ever have closed it. Root: the boss
+//     wall is a notched two-rim band, and saddleBandLoftMesh's bandWrapRings read its rims through the raw
+//     TessellateEdge sampler instead of discretizeEdge — silently opting out of the #2009 densification's
+//     caller-INDEPENDENCE, the one property that makes it safe. Reading the ring through discretizeEdge
+//     takes U4 to 0 / 0 with every per-face area unchanged to 2e-6. Gated at zero by this table's silence
+//     and by TestU4DualHostMeshIsClosedAtEveryQuality.
 //   - RETRACING FACE LOOP (simple/Y1 3/3, simple/W2 3/3). Both are in knownRetracingLoops, and the
 //     correspondence is exact. A loop that runs out along a spike and straight back is not a simple
 //     polygon, so that face's triangulation does not tile the boundary its neighbours tile: the free
@@ -201,7 +212,6 @@ func meshDebtIndex(table []meshDebtEntry) map[string]meshDebtEntry {
 func knownMeshLeaks() []meshDebtEntry {
 	return []meshDebtEntry{
 		{"T9", "simple", 10, 60}, // FAIL(faulty) — one BSpline face; also the corpus's worst folds
-		{"U4", "simple", 44, 44}, // PASS — canal patch rails vs their elliptical-cylinder host
 		{"U6", "simple", 13, 12}, // FAIL(area) — cylinder/torus rim; note it SHRINKS with quality
 		{"C2", "simple", 0, 3},   // PASS — knownOffSurfaceDebt 0.0192, BSpline/plane seam
 		{"Y1", "simple", 3, 3},   // PASS — knownRetracingLoops, 1 loop

@@ -376,10 +376,18 @@ func byteIdentityPins() []fingerprintPin {
 		// seam + 2 cylinder wings + 4 corner-blend panels (2 coons4 slivers, 2 exact-station canal cores) into a
 		// watertight, hole-contained SOLID matching the DRAWEXE 16-FACE / every-face-WIRE:1 topology at whole-
 		// body area 6583.29 (rel 0.001%), every fillet panel tessellating fold-free to its per-face oracle
-		// (3.039 sliver / 30.334 core) in production. Captured on THIS HEAD (u4-5-report.md); bit-stable at
-		// 1e-9. Locks the dual-host weld so any later slice that perturbs the U4 body fails loud. Same
-		// cross-platform-risk caveat as above applies.
-		{"U4", 32647.755284293769, 23848, 0xf588dd3b13096eb9, ""},
+		// (3.039 sliver / 30.334 core) in production. Locks the dual-host weld so any later slice that
+		// perturbs the U4 body fails loud. Same cross-platform-risk caveat as above applies.
+		// ★ RE-CAPTURED (u4-canal-report.md), and the move is PROVEN an improvement, not merely a
+		// difference: the previous pin (32647.755284293769, 23848 tris, 0xf588dd3b13096eb9) was taken on a
+		// body whose welded mesh LEAKED 44 free edges at BOTH gate qualities — it was not a closed surface.
+		// Routing saddleBandLoftMesh's rim read through discretizeEdge takes that to 0/0. The deltas are
+		// exactly what that repair must produce and nothing more: +40 triangles = 2 x 20, the vertices the
+		// boss wall's band loft gains on the two straight rails it shares with the sliver panels (which
+		// already carried 21 chords each); all sixteen per-face areas unchanged to 2e-6 and the whole-body
+		// area unchanged at 6583.287851 (property quality, ops.MeshArea over CalculateBodyFacets); the raw
+		// volume moves 7.8e-8 relative, 340x smaller than the standing 2.6e-5 gap to DRAWEXE's 32648.6.
+		{"U4", 32647.752737870436, 23888, 0xe25096f65d2a269f, ""},
 		// K1/Z1 (simple): the CONCAVE bore-lip rim mirror (fillet_rim_concave.go's rimWithCapOrientation).
 		// K1 is a genuine bore lip (cylinder radius 30, r=5): the plate material sits OUTSIDE the bore, so
 		// the rolling ball is tangent to the wall from the material side at R+r=35 (torus major 35, pinned

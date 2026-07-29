@@ -95,3 +95,50 @@ func TestSaddleBandLoftDeclinesNonBand(t *testing.T) {
 		t.Error("a planar face is not a periodic band; saddleBandLoftMesh should decline")
 	}
 }
+
+// TestBandWrapRingsReadsTheSharedEdgeDiscretization is the regression gate for the ring-read bypass
+// that leaked simple/U4's 44 free edges: bandWrapRings must read each rim through discretizeEdge — the
+// ONE polyline every other face of that edge already uses (edge_discretize.go's package doc) — not
+// through the raw TessellateEdge curve sampler.
+//
+// The two differ on exactly two inputs, and both are inputs a band rim really carries: a HEALED edge
+// (M25, whose stored on-surface polyline discretizeEdge returns verbatim) and a straight edge under the
+// #2009 starved-rail densification. This test drives the healed case, because it is hermetic — one
+// SetSnappedCurve on a fixture rim — while the densification case needs a whole high-aspect B-spline
+// neighbour; U4 itself gates that one end to end (TestU4DualHostMeshIsClosedAtEveryQuality).
+//
+// Falsification: restore `TessellateEdge(e, q)` in bandWrapRings and this fails, because the raw
+// sampler re-samples the rim's own curve and never sees the stored polyline.
+func TestBandWrapRingsReadsTheSharedEdgeDiscretization(t *testing.T) {
+	face := rodInsideFatBand(t, 48)
+	var healed *topo.Edge
+	for _, e := range face.Edges() {
+		if e.StartVertex() == e.EndVertex() {
+			healed = e
+			break
+		}
+	}
+	if healed == nil {
+		t.Fatal("fixture precondition: the band has no closed rim edge to heal")
+	}
+	snapped := []math.Point3{}
+	for i := 0; i <= 7; i++ {
+		snapped = append(snapped, healed.Geometry().PointAt(float64(i)/7))
+	}
+	healed.SetSnappedCurve(snapped, 0)
+	want := dropClosingDup(discretizeEdge(healed, DefaultQuality()))
+	for _, ring := range bandWrapRings(face, DefaultQuality()) {
+		if len(ring) != len(want) {
+			continue
+		}
+		for i := range ring {
+			if ring[i] != want[i] {
+				t.Fatalf("ring point %d = %v, want the shared discretizeEdge point %v — bandWrapRings is "+
+					"not reading the edge's shared polyline", i, ring[i], want[i])
+			}
+		}
+		return
+	}
+	t.Fatalf("no bandWrapRings ring matched the healed rim's %d-point shared discretization — the loft "+
+		"re-sampled the rim instead of reading discretizeEdge", len(want))
+}

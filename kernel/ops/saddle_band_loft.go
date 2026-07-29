@@ -139,6 +139,17 @@ func saddleBandLoftMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
 // together form one saddle rim (e.g. an equal-radius Steinmetz band whose saddle rim is two ellipse arcs
 // meeting at the pinch points), so their points are pooled into a single ring (orderedRing later sorts them
 // by angle). Coincident points where arcs meet are de-duplicated.
+//
+// ★ Each rim edge is read through discretizeEdge — the ONE function every other face of that edge already
+// shares (edge_discretize.go's package doc) — NOT through the raw TessellateEdge sampler. The two differ on
+// exactly the case simple/U4 leaked on: TessellateEdge returns the bare chord-sagitta sampling of the curve,
+// while discretizeEdge additionally (a) returns a healed edge's stored on-surface polyline and (b) applies
+// the #2009 starved-rail densification (densifyStarvedRail), whose whole correctness argument is that it is
+// caller-INDEPENDENT. Reading the ring raw silently opted this mesher out of that argument: U4's oblique-hole
+// wall is a notched band, so it tiled the straight rim edge it shares with the high-aspect fillet sliver with
+// ONE chord while the sliver's CDT tiled the SAME topological edge with 21 — 21 + 21 + 2 = 44 free edges at
+// BOTH gate qualities, on a body every other gate scored green. The endpoints matched exactly; only the
+// station counts differed, which is why no area, off-surface or loop gate could see it.
 func bandWrapRings(f *topo.Face, q Quality) [][]math.Point3 {
 	seam := seamEdgesOf(f)
 	var rings [][]math.Point3
@@ -147,7 +158,7 @@ func bandWrapRings(f *topo.Face, q Quality) [][]math.Point3 {
 		if seam[e] {
 			continue
 		}
-		pts := dropClosingDup(TessellateEdge(e, q))
+		pts := dropClosingDup(discretizeEdge(e, q))
 		if e.StartVertex() == e.EndVertex() {
 			rings = append(rings, pts)
 		} else {
