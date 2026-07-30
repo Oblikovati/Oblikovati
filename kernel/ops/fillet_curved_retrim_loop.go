@@ -426,15 +426,22 @@ func subSeg(s endSeg, from, to math.Point3) endSeg {
 
 // subArcMajor carries the kept sub-span of parent between from and to as a genuine sub-arc of the PARENT
 // circle — same centre/axis/radius, StartAngle at from's parent-offset, SweepAngle = to.offset − from.offset
-// — ONLY when that span is MAJOR (>π along the parent's own sweep). It fires only for D9's 270° rim splits;
-// a minor span returns ok=false so the caller keeps the byte-identical shorter-arc re-fit. Building the
-// sub-arc from the parent's parameters (not a three-point re-fit, which is ill-conditioned past a
-// semicircle — it silently snaps to the minor complement) keeps a >180° kept span faithfully major (the
-// N7 whole-curve-sub-span lesson).
+// — when that span is MAJOR (>π along the parent's own sweep) OR EXACTLY a semicircle. It fires for D9's
+// 270° rim splits; a strictly minor span returns ok=false so the caller keeps the byte-identical
+// shorter-arc re-fit. Building the sub-arc from the parent's parameters (not a three-point re-fit, which
+// is ill-conditioned past a semicircle — it silently snaps to the minor complement) keeps a >180° kept
+// span faithfully major (the N7 whole-curve-sub-span lesson).
+//
+// ★ EXACTLY π is included deliberately, and it is this guard's own edge. The shorter-arc re-fit below it
+// has no answer there at all: arcMidBetween bisects from̂+tô, which is the NULL vector for an antipodal
+// pair, so it degrades to the chord midpoint — the circle's centre — and Arc3dByThreePoints then sees
+// three collinear points and errors, making the whole re-termination decline a span it could carry
+// exactly. The parent's own parameters are unambiguous at π (the parent says which half), so the
+// semicircle belongs on this arm.
 func subArcMajor(parent geom.Arc3d, from, to math.Point3) (geom.Arc3d, math.Point3, bool) {
 	tf, okf := arcFrac(parent, from)
 	tt, okt := arcFrac(parent, to)
-	if !okf || !okt || stdmath.Abs((tt-tf)*parent.SweepAngle) <= stdmath.Pi {
+	if !okf || !okt || stdmath.Abs((tt-tf)*parent.SweepAngle) < stdmath.Pi {
 		return geom.Arc3d{}, math.Point3{}, false
 	}
 	sub := geom.Arc3d{

@@ -104,3 +104,31 @@ func pointOnRimAtAngle(parent geom.Arc3d, angle float64) m.Point3 {
 		Add(bin.Scale(m.Scalar(parent.Radius * stdmath.Sin(angle))))
 	return parent.Center.TranslateBy(off)
 }
+
+// TestReterminatedRimSegCarriesAnExactSemicircle pins π — the major-span guard's OWN edge, and the one
+// span the shorter-arc re-fit underneath it cannot build at all.
+//
+// At exactly a semicircle the two endpoints are antipodal, so arcMidBetween's bisector from̂+tô is the
+// null vector; it degrades to the chord midpoint, which is the circle's CENTRE, and Arc3dByThreePoints
+// then sees three collinear points and errors — the whole re-termination declines a span the parent
+// could carry exactly. subArcMajor therefore takes >= π, not > π. The three spans below bracket the
+// edge: a hair under (the minor re-fit), exactly π, and a hair over (the major parent-parameter trim).
+func TestReterminatedRimSegCarriesAnExactSemicircle(t *testing.T) {
+	parent := m8BossRimParent() // r=25 at (60,50,150), sweeping 1.5π from angle 0
+	tol := 1e-9 * parent.Radius
+	seg := endSeg{from: parent.PointAt(0), to: parent.PointAt(1), curve: parent, arc: true}
+	for _, want := range []float64{stdmath.Pi - 1e-6, stdmath.Pi, stdmath.Pi + 1e-6} {
+		out, ok := reterminateSegTo(seg, pointOnRimAtAngle(parent, want), tol)
+		if !ok {
+			t.Fatalf("re-termination declined a %.9f rad span of the parent's own circle — both endpoints "+
+				"are exactly on it, and at π the three-point re-fit's bisector midpoint is undefined", want)
+		}
+		arc, isArc := out.curve.(geom.Arc3d)
+		if !isArc {
+			t.Fatalf("%.9f rad span carries %T, want a geom.Arc3d sub-arc", want, out.curve)
+		}
+		if got := stdmath.Abs(arc.SweepAngle); stdmath.Abs(got-want) > 1e-6 {
+			t.Errorf("sub-arc sweeps %.9f rad, want %.9f (%.9f is its COMPLEMENT)", got, want, 2*stdmath.Pi-want)
+		}
+	}
+}
