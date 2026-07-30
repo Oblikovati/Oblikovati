@@ -380,3 +380,45 @@ func assertEveryWallRimSegmentCovered(t *testing.T, d obstacleDetection, wall fi
 		}
 	}
 }
+
+// TestSpliceRimPointKeepsTheSplitSegmentsConic is the regression for the DUAL path's interior-station
+// insert (the single-host gates above cannot see it): splitting a rim segment must TRIM that segment's
+// own conic, not discard it.
+//
+// spliceRimPoint used to hand nil for BOTH halves. On U4 that discarded two of the four trimmed node
+// sub-arcs insertNodesIntoRim had just built — the segments terminating exactly on the receded boundary
+// y = −15 — plus an interior rim arc, which is why the whole rim-trim slice measured as CANCELLED on that
+// case: U4's fingerprint was byte-identical base↔HEAD while every single-host body moved. It drives boss
+// B's real detection (host A's coupled node is not refined onto its rim, so it legitimately has no conic
+// to trim there) and splits each node-adjacent segment at a point on its own arc.
+func TestSpliceRimPointKeepsTheSplitSegmentsConic(t *testing.T) {
+	_, dets, _, _ := u4ClosureFixture(t)
+	_, detB, ok := hostDetections(dets)
+	if !ok {
+		t.Fatalf("U4 fixture: want one host-A and one host-B detection, got %d dets", len(dets))
+	}
+	rim := detB.holeEdge.Geometry()
+	loop := insertNodesIntoRim(detB)
+	segs := nodeAdjacentSegments(t, detB, loop)
+	bars := interiorRimBars(loop, rim, segs)
+	for _, seg := range segs {
+		assertSplitKeepsTheConic(t, detB, loop, seg, rim, bars)
+	}
+}
+
+// assertSplitKeepsTheConic splices a station taken from segment seg's OWN arc into the rim and requires
+// both halves to come back as rim sub-arcs (present, pinned to their own vertices, on the rim, short).
+func assertSplitKeepsTheConic(t *testing.T, d obstacleDetection, loop filletLoop, seg int, rim geom.Curve3, bars rimSubArcBars) {
+	t.Helper()
+	parent := curveAt(loop.curves, seg)
+	if parent == nil {
+		t.Fatalf("fixture precondition: boss B's node-adjacent rim segment %d carries no conic to split", seg)
+	}
+	weld := ResolutionForPoints(d.holeSampled.pts).Weld()
+	split, ok := spliceRimPoint(loop, rim, parent.PointAt(domainMid(parent)), d.holeEdge.ID(), weld)
+	if !ok {
+		t.Fatalf("spliceRimPoint declined the midpoint of rim segment %d", seg)
+	}
+	assertSegmentIsRimSubArc(t, split, seg, rim, bars)
+	assertSegmentIsRimSubArc(t, split, seg+1, rim, bars)
+}

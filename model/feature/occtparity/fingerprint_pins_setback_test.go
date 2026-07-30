@@ -142,7 +142,34 @@ func setbackObstaclePins() []fingerprintPin {
 		// host A's node, which is NOT refined (coupledNodeStation — see fillet_obstacle_detect_face.go).
 		// Summed per-face |Δ| vs DRAWEXE 1.49116 → 1.39527; raw volume 32647.752737870436 →
 		// 32647.756822102991, moving TOWARD DRAWEXE's vprops 32648.6 (−0.0025952 % → −0.0025827 %).
-		{"U4", 32647.756822102991, 23888, 0x532f17737e4068c2, ""},
+		// ★ RE-CAPTURED AGAIN (rim-node-chord fix wave, finding I4), and PROVEN improved on the body's own
+		// MIRROR SYMMETRY. spliceRimPoint — the dual path's interior-station insert — dropped the split
+		// segment's curve on BOTH halves, which on U4 discarded two of the four trimmed node sub-arcs
+		// insertNodesIntoRim had just built (the segments terminating exactly on the receded boundary
+		// y = −15) plus an interior rim arc, leaving U4 byte-identical across the whole rim-trim slice. The
+		// split now trims the segment's own conic at the station (splitRimSegmentCurve), and exactly TWO of
+		// the sixteen faces move. U4's solid is mirror-symmetric about z=0 and DRAWEXE's own face list says so
+		// (869.635/869.635, 65.7123/65.7123, 30.3344/30.3344, 3.03906/3.03903) — and the +z CORE panel had been
+		// the ONE pair member out of step: 30.351289547 against its −z twin's 30.340810010, a 1.048e-02 split
+		// (3.5e-04 relative) where every other mirror pair on this body agrees to 3e-07…7e-06. It now reads
+		// 30.340891604, agreeing with its twin to 8.2e-05 — 128× closer — and against DRAWEXE's own
+		// tolerance-STABLE 30.3344 (identical at 1e-9 and 1e-12) it goes +0.0557 % → +0.0214 %, landing on the
+		// twin's own +0.0211 %. Off-surface residual (worstLoopSegmentOffFace/boundingDiag, the gate's own
+		// function) 2.233973e-04 → 1.493883e-04, and its ceiling ratchets down with it. Raw volume
+		// 32647.756822103 → 32647.827612193, TOWARD DRAWEXE vprops 32648.6 (−0.0025827 % → −0.0023658 %).
+		// Triangles 23888 → 23894: the six stations the mesher needs to follow the recovered arcs. Free edges 0
+		// and folds 0 at BOTH gate qualities, face count still 16.
+		//
+		// The one face moving the other way is the oblique `geom.EllipticalCylinder` pipe wall,
+		// 799.083600483 → 799.080823847 (−3.5e-06 relative) against DRAWEXE's 799.138 @1e-12 — a move 120×
+		// SMALLER than that face's own `sprops` quadrature spread (799.473 @1e-9 vs 799.138 @1e-12), i.e. the
+		// trimmed-oblique-quadric class perface_oracle_test.go's ★★ note describes, not adjudicable by
+		// DRAWEXE. Its boundary is now ON the surface it bounds instead of 9.6e-03 off it.
+		//
+		// Still out of scope and unchanged: host A's COUPLED node is not refined onto its rim
+		// (coupledNodeStation), so its r=8 boss rim keeps the honest straight chords — they are U4's new worst
+		// off-surface offender at 9.623665e-03, both endpoints on x²+z²=64 at y=−20.
+		{"U4", 32647.827612193, 23894, 0x5968770cc5c3ce64, ""},
 		// K1/Z1 (simple): the CONCAVE bore-lip rim mirror (fillet_rim_concave.go's rimWithCapOrientation).
 		// K1 is a genuine bore lip (cylinder radius 30, r=5): the plate material sits OUTSIDE the bore, so
 		// the rolling ball is tangent to the wall from the material side at R+r=35 (torus major 35, pinned

@@ -221,7 +221,7 @@ func buildDualSplitWall(d obstacleDetection, ef edgeFillet, stations []float64, 
 		if !okP {
 			return filletFace{}, false
 		}
-		loop, ok = spliceRimPoint(loop, ps, d.holeEdge.ID(), weld)
+		loop, ok = spliceRimPoint(loop, d.holeEdge.Geometry(), ps, d.holeEdge.ID(), weld)
 		if !ok {
 			return filletFace{}, false
 		}
@@ -232,13 +232,18 @@ func buildDualSplitWall(d obstacleDetection, ef edgeFillet, stations []float64, 
 	return filletFace{surface: d.obstacleWall.Geometry(), loops: []filletLoop{loop}, parent: d.obstacleWall.Lineage()}, true
 }
 
-// spliceRimPoint inserts the exact station point ps into the rim polyline on whichever chord it lies
+// spliceRimPoint inserts the exact station point ps into the rim polyline on whichever segment it lies
 // (nearest by point-to-segment distance — ps is on the true rim, the bracketing chord is its own secant),
-// replacing that chord with two straight sub-chords carrying the rim's srcE. The panels' rim sides use
-// the SAME station endpoint (dipRimPointAtStation) and the SAME interior samples, so the wall's two new
-// sub-chords weld chord-for-chord to them. A ps already at a chord endpoint (already split there) is left
-// untouched.
-func spliceRimPoint(loop filletLoop, ps math.Point3, srcE uint64, weld float64) (filletLoop, bool) {
+// replacing that segment with two sub-segments carrying the rim's srcE. The panels' rim sides use the
+// SAME station endpoint (dipRimPointAtStation) and the SAME interior samples, so the wall's two new
+// sub-segments weld station-for-station to them. A ps already at a segment endpoint (already split there)
+// is left untouched.
+//
+// The split segment's CURVE is now split with it (splitRimSegmentCurve) rather than dropped. Dropping it
+// silently discarded, on U4, two of the four trimmed node sub-arcs insertNodesIntoRim had just built —
+// segments terminating exactly on the receded boundary y = −15 — plus an interior rim arc, which is why
+// the rim-trim slice measured as fully cancelled on that case.
+func spliceRimPoint(loop filletLoop, rim geom.Curve3, ps math.Point3, srcE uint64, weld float64) (filletLoop, bool) {
 	n := len(loop.pts)
 	best, bestD := -1, stdmath.Inf(1)
 	for i := 0; i < n; i++ {
@@ -254,15 +259,57 @@ func spliceRimPoint(loop filletLoop, ps math.Point3, srcE uint64, weld float64) 
 		return loop, true // already effectively split at this chord's endpoint
 	}
 	var out filletLoop
+	in, off := splitRimSegmentCurve(rim, curveAt(loop.curves, best), loop.pts[best], ps, loop.pts[(best+1)%n], weld)
 	for i := 0; i < n; i++ {
 		if i == best {
-			out.addID(loop.pts[i], nil, loop.srcV[i], srcE)
-			out.addID(ps, nil, 0, srcE)
+			out.addID(loop.pts[i], in, loop.srcV[i], srcE)
+			out.addID(ps, off, 0, srcE)
 			continue
 		}
 		out.addID(loop.pts[i], loop.curves[i], loop.srcV[i], loop.srcE[i])
 	}
 	return out, true
+}
+
+// splitRimSegmentCurve trims a rim segment at the interior station ps into the two sub-arcs a→ps and
+// ps→b. It is the identical construction nodeSubArcs applies at a boundary node — a three-point fit
+// through each half's own midpoint ON THE RIM — with the split parameter recovered from the segment's own
+// conic by inversion (CurveParamAtPoint3 is exact for an Arc3d) instead of read off the node solve.
+//
+// The two midpoints are snapped onto the rim curve (onRimNear) rather than taken from the parent conic:
+// on U4's imported rim the parent per-segment fit is itself 1.8e-07 off the rim, and halves fitted through
+// ITS midpoints inherit that and come out marginally WORSE than the interior segments they weld to
+// (measured 1.87e-07/1.99e-07 against the rim's own 1.77e-07 bar). Fitted through the rim's own points a
+// shorter span is strictly better, which is the same argument that makes a node's trimmed sub-arc sound.
+//
+// nil in ⇒ nil out, and a station the inversion cannot place ON the parent conic to within the model weld
+// keeps the straight chords this used to give unconditionally: the honest answer when the station and the
+// segment's own fit are not the same curve.
+func splitRimSegmentCurve(rim, c geom.Curve3, a, ps, b math.Point3, weld float64) (geom.Curve3, geom.Curve3) {
+	if c == nil {
+		return nil, nil
+	}
+	lo, hi := c.Domain()
+	t, nature := geom.CurveParamAtPoint3(c, ps)
+	if nature != geom.UniqueSolution || t <= lo || t >= hi || c.PointAt(t).DistanceTo(ps) > weld {
+		return nil, nil
+	}
+	return rimArcThrough(a, onRimNear(rim, c.PointAt((lo+t)/2)), ps),
+		rimArcThrough(ps, onRimNear(rim, c.PointAt((t+hi)/2)), b)
+}
+
+// onRimNear projects q onto the rim curve, falling back to q itself when the rim carries no curve or the
+// inversion has no single answer — a fallback that is never worse than the parent-conic midpoint it
+// replaces.
+func onRimNear(rim geom.Curve3, q math.Point3) math.Point3 {
+	if rim == nil {
+		return q
+	}
+	t, nature := geom.CurveParamAtPoint3(rim, q)
+	if nature != geom.UniqueSolution {
+		return q
+	}
+	return rim.PointAt(t)
 }
 
 // buildDualPanelFaces resolves each of the four panels' fill surface (extractPanelLoop → resolveBlend:

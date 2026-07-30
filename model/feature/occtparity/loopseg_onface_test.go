@@ -212,6 +212,13 @@ func offSurfaceDebtIndex() map[string]float64 {
 //     4.21e-04 — the wall-foot station polyline vs the surface it is a station list of), and T6 the
 //     ELLIPTIC rim's own per-segment circular fit (1.224210e-04 off its EllipticalCylinder, rimSegmentArc
 //     over a 1/64 span of an a=15,b=10 ellipse).
+//   - ★ U4 (the DUAL-host case) carried the same node-chord root one level down and now shrinks with it:
+//     spliceRimPoint dropped a split segment's curve on both halves, discarding two of the four trimmed
+//     node sub-arcs the rim had just gained. splitRimSegmentCurve trims the segment's own conic at the
+//     station instead, taking U4 from 2.233973e-04 to 1.493883e-04 and its ceiling 0.000246 → 0.000165.
+//     What dominates U4 now is host A's COUPLED node, which analyticNode does not refine onto the rim
+//     (coupledNodeStation), so its r=8 boss rim keeps the honest straight chord — 9.623665e-03, both
+//     endpoints on x²+z²=64 at y=−20. That solve is the queued dual-host item, not this root.
 func knownOffSurfaceDebt() []offSurfaceDebtEntry {
 	return []offSurfaceDebtEntry{
 		{"F2", "complex", 0.0616}, {"C2", "simple", 0.0192},
@@ -221,7 +228,7 @@ func knownOffSurfaceDebt() []offSurfaceDebtEntry {
 		{"T4", "simple", 0.00104}, {"S4", "simple", 0.00102}, {"T3", "simple", 0.000794},
 		{"S6", "simple", 0.000641}, {"P8", "simple", 0.00061}, {"V8", "simple", 0.00061},
 		{"S7", "simple", 0.000499}, {"V5", "simple", 0.000313}, {"V1", "simple", 0.000295},
-		{"U4", "simple", 0.000246}, {"K7", "simple", 0.000152}, {"L1", "simple", 0.000133},
+		{"K7", "simple", 0.000152}, {"L1", "simple", 0.000133}, {"U4", "simple", 0.000165},
 		{"N5", "simple", 0.000129}, {"L7", "simple", 0.000128}, {"C6", "simple", 0.000121},
 		// The five mid-span obstacle cases, each re-capped at 1.1x its post-sub-arc measurement (above).
 		{"X3", "simple", 0.0000025}, {"U3", "simple", 0.00000219}, {"T6", "simple", 0.00000196},
