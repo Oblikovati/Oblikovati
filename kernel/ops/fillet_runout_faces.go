@@ -127,25 +127,29 @@ func setbackBossesFaithful(b setbackBands) bool {
 	return true
 }
 
-// sampledArcSegs chops arc into ringSegSamples straight sub-chords oriented start→end, pinning the two
-// ends to the wing's exact node points (start/end) while taking every interior vertex from arc.PointAt at
-// i/n — the SAME points sampleCurve3Open hands the flank patch, so the two share every welded vertex. The
-// count is fixed at ringSegSamples (the one ring granularity every blend boundary shares); a parameter
-// would only ever receive it (unparam), and a mismatch here would open the wing↔patch weld.
+// sampledArcSegs chops arc into ringSegSamples sub-segments oriented start→end, pinning the two ends
+// to the wing's exact node points (start/end) while taking every interior vertex from arc.PointAt at
+// i/n — the SAME points sampleCurve3Open hands the flank patch, so the two share every welded vertex.
+// Each segment carries the arm arc RESTRICTED to its own sub-span (sampleCurveNTrimmed, the N7 rule) —
+// the identical value the flank patch's loop offers for the shared edge — so the wing's own loop model
+// bounds the true arc and the weld is a two-sided value agreement instead of the nil-vs-curve adoption
+// this family used to ride (12 records per setback case; wing-arm-arcs-report.md). The count is fixed
+// at ringSegSamples (the one ring granularity every blend boundary shares); a parameter would only
+// ever receive it (unparam), and a mismatch here would open the wing↔patch weld.
 func sampledArcSegs(arc geom.Curve3, start, end math.Point3) []endSeg {
 	n := ringSegSamples
 	lo, hi := arc.Domain()
-	pts := make([]math.Point3, n+1)
-	for i := 0; i <= n; i++ {
-		pts[i] = arc.PointAt(lo + float64(i)/float64(n)*(hi-lo))
+	rev := arc.PointAt(lo).DistanceTo(start) > arc.PointAt(hi).DistanceTo(start)
+	pts, curves := sampleCurveNTrimmed(arc, n, rev)
+	far := arc.PointAt(hi)
+	if rev {
+		far = arc.PointAt(lo)
 	}
-	if pts[0].DistanceTo(start) > pts[n].DistanceTo(start) {
-		pts = reversePts(pts)
-	}
+	pts = append(pts, far)
 	pts[0], pts[n] = start, end // pin to the wing's node points (weld-identical to the arc ends)
 	segs := make([]endSeg, n)
 	for i := 0; i < n; i++ {
-		segs[i] = endSeg{from: pts[i], to: pts[i+1]}
+		segs[i] = endSeg{from: pts[i], to: pts[i+1], curve: curves[i]}
 	}
 	return segs
 }

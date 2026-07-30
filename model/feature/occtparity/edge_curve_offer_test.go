@@ -36,10 +36,12 @@ type nilCurveOfferDebt struct {
 //     (rebuildArcSeg's major-span arm).
 //   - CodeAssembleCurveNilOffer — one consumer offering a curve, the other nil — is a RATCHET at the
 //     exact measured population below. The curve is ADOPTED (reversed onto the edge's own stored
-//     sense when the offering consumer walks it backwards, which is all 108 of the adopted ones;
-//     the other 2 of the 110 records are complex/F2's curve-FIRST pair, kept, and 0 are declined);
-//     the entry records that a consumer still declines to carry a boundary it shares with a curved
-//     neighbour, and the table shrinks as those consumers are fixed. It may never grow.
+//     sense when the offering consumer walks it backwards); the entry records that a consumer still
+//     declines to carry a boundary it shares with a curved neighbour, and the table shrinks as those
+//     consumers are fixed. It may never grow. The remaining population is complex/F2's curve-FIRST
+//     pair alone (2 kept, 0 adopted, 0 declined): the wing arm-arc carry (sampledArcSegs,
+//     kernel/ops/fillet_runout_faces.go) retired the last adoption family — the nine setback cases'
+//     wing faces now offer the same trimmed arm-arc sub-spans their patches do.
 //
 // ★ COVERAGE, and the blind spot, asserted rather than assumed. An EMPTY build report has two
 // meanings — "the catalog reported nothing" and "this body never went through the catalog" — and
@@ -58,7 +60,8 @@ type nilCurveOfferDebt struct {
 // case's shipped body at HEAD. Note it is the SHIPPED count — the assembler builds up to four
 // do-no-harm candidate bodies per case (fillet.go rebuildCandidates) and the discarded ones carry
 // their own, larger reports (698 over all passes and 13 cases at the adoption HEAD; the footprint-rim
-// curve carry shrank the shipped count 272 → 110 over the same 10 bodies).
+// curve carry shrank the shipped count 272 → 110 over the same 10 bodies, and the wing arm-arc carry
+// 110 → 2 — complex/F2 alone).
 func TestNoShippedBuildResolvesACurveDisagreementByBuildOrder(t *testing.T) {
 	dir := CorpusFixtureDir()
 	got, blind := map[string]int{}, []string{}
@@ -160,16 +163,25 @@ func nilCurveOfferDebtIndex() map[string]int {
 }
 
 // knownNilCurveOfferDebt is the FULL population of shipped bodies assembled with at least one welded
-// edge where one consumer offered a curve and the other offered nil — 110 edges over 10 cases,
+// edge where one consumer offered a curve and the other offered nil — 2 edges over 1 case,
 // measured by an instrumented sweep of every scored case at HEAD, not quoted from any report.
+//
+// 110 → 2 by the wing arm-arc carry (wing-arm-arcs-report.md): the nine setback cases each carried
+// 12 records, one family — the fillet's own r=R arm cross-section arcs (geom.Arc3d sweep π/12 per
+// sub-edge, the quarter arc at ringSegSamples), where the WING face's cut section (sampledArcSegs,
+// kernel/ops/fillet_runout_faces.go) tiled plain chords while the setback patch offered its exact
+// trimmed sub-spans (runoutPatchLoops → sampleCurve3OpenTrimmed, re-derived as Arc3d by
+// reverseSegmentCurve when the shell orientation flips the patch loop). The wing now carries the
+// SAME sampleCurveNTrimmed sub-spans, so every one of those edges is a two-sided VALUE AGREEMENT —
+// silent by the weld rule — and the shipped meshes are BIT-IDENTICAL (all nine fingerprint pins
+// unchanged; the adoption had already repaired the edge, the debt was the consumer's loop model).
+// What remains is complex/F2's curve-FIRST pair (EllipticalArc, departure 2.92426 against a
+// 1.76388e-07 weld), retained by prior adjudication (finding m-1).
 //
 // 272 → 110 by the footprint-rim curve carry (t3-plane-sliver-report.md): the intact boss wall's
 // subdivided rim segments now OFFER their own exact sub-spans of the footprint conic
 // (subdivideBossWall → maps.insertCurves), so every band-side rim edge the setback patches used to
 // repair by adoption is now a two-sided VALUE AGREEMENT and never presents as a nil offer at all.
-// The 12 that remain on each of the nine setback cases are one family: the fillet's own r=R
-// arm/wing cross-section arcs (sweep 0.2618–0.3886 rad), where the WING face still declines the
-// curve the patch offers — the next consumer to retire.
 //
 // 362 → 272 in one step, and the 90 that left were never debt: they were offers departing their own
 // chord by 4.4e-16…2.0e-15 (exactly 25 % of every case: 12 of 48, 6 of 24), three orders below every
@@ -183,24 +195,15 @@ func nilCurveOfferDebtIndex() map[string]int {
 // records are complex/F2's two, departing 2.92426 against a 1.76388e-07 weld, seven orders above —
 // and TestCurveFirstKeepUsesTheSameWeldThreshold (kernel/ops) gates that arm both ways too.
 //
-// What remains is real: the offered curves are the blend patch's own boundary rails (r=8 / r=25 rim
-// arcs on T3, 0.068 / 0.085 off the chord). The catalog now ADOPTS every one of them — measured
-// improvement, not an override: T3's blend torus 2827.227365 → 2826.791716 and its two mirror-twin
-// blend cylinders 227.809448 / 227.851401 → 227.764913 / 227.764925, off-surface residual
-// 7.220e-04 → 3.973e-04, rollup unchanged at 114 simple / 119 all-grid. The entry that remains is
-// the CONSUMER still declining to carry the boundary; retire each at that consumer.
+// (Historical, the adoption slice: the offered curves were the blend patch's own boundary rails —
+// r=8 / r=25 rim arcs on T3, 0.068 / 0.085 off the chord — and the catalog ADOPTED every one:
+// T3's blend torus 2827.227365 → 2826.791716 and its two mirror-twin blend cylinders
+// 227.809448 / 227.851401 → 227.764913 / 227.764925, off-surface residual 7.220e-04 → 3.973e-04,
+// rollup unchanged at 114 simple / 119 all-grid. Each family since was then retired at its
+// declining CONSUMER; F2's pair is retained, not declining — the curve won at first writing.)
 func knownNilCurveOfferDebt() []nilCurveOfferDebt {
 	return []nilCurveOfferDebt{
 		{"complex", "F2", 2},
-		{"simple", "S1", 12},
-		{"simple", "S4", 12},
-		{"simple", "S6", 12},
-		{"simple", "S7", 12},
-		{"simple", "S9", 12},
-		{"simple", "T1", 12},
-		{"simple", "T3", 12},
-		{"simple", "T4", 12},
-		{"simple", "T7", 12},
 	}
 }
 
