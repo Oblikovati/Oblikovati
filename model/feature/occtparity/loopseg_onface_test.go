@@ -219,6 +219,17 @@ func offSurfaceDebtIndex() map[string]float64 {
 //     What dominates U4 now is host A's COUPLED node, which analyticNode does not refine onto the rim
 //     (coupledNodeStation), so its r=8 boss rim keeps the honest straight chord — 9.623665e-03, both
 //     endpoints on x²+z²=64 at y=−20. That solve is the queued dual-host item, not this root.
+//     ★ U4's ceiling therefore HOLDS at 0.000165 through the dual dip-rim slice (headroom 1.105×), and
+//     that is the honest outcome, not an oversight: the DUAL path's own rim defect was live but SECOND.
+//     splitRimSegmentCurve recovered the split parameter off the SEGMENT's per-segment circular fit rather
+//     than off the rim, and on U4's imported b-spline rim that fit is ~1e-7 out while the station is exact
+//     to ~1e-12, so the weld test rejected (8.723146e-08 vs 3.394e-08) and four of boss B's rim halves
+//     shipped as chords — 5.002371e-03 / 4.967703e-03 / 2.675363e-03 / 2.674992e-03 off the panels and
+//     4.301259e-03 / 4.275629e-03 / 2.080290e-03 / 2.079314e-03 off the obstacle wall. They now trace the
+//     rim (rimSubArcBetween) at 5.09e-05 and below, but they were never U4's WORST offender, so the
+//     ceiling cannot move until the coupled node is solved. No other case in the 475 is touched: the
+//     construction is reached only through spliceRimPoint / the dual panels, and five of the six dual
+//     cases honest-reject.
 func knownOffSurfaceDebt() []offSurfaceDebtEntry {
 	return []offSurfaceDebtEntry{
 		{"F2", "complex", 0.0616}, {"C2", "simple", 0.0192},

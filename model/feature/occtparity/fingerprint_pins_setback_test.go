@@ -169,7 +169,45 @@ func setbackObstaclePins() []fingerprintPin {
 		// Still out of scope and unchanged: host A's COUPLED node is not refined onto its rim
 		// (coupledNodeStation), so its r=8 boss rim keeps the honest straight chords — they are U4's new worst
 		// off-surface offender at 9.623665e-03, both endpoints on x²+z²=64 at y=−20.
-		{"U4", 32647.827612193, 23894, 0x5968770cc5c3ce64, ""},
+		// ★ RE-CAPTURED ONCE MORE (dual dip-rim slice), and proven improved on that SAME mirror symmetry.
+		// The fix wave above did not in fact reach U4's shipped rim: splitRimSegmentCurve recovered the
+		// split parameter by inverting the station onto the SEGMENT's own conic and then required that conic
+		// to reproduce the station within the model weld. U4's boss-B rim is an imported b-spline whose
+		// per-segment circular fit sits ~1e-7 off it while the station is solved on the exact rim to ~1e-12,
+		// so the inversion measured 8.723146e-08 against a 3.394e-08 weld and BOTH halves fell back to
+		// chords. Four of boss B's rim halves therefore shipped straight: 5.002371e-03 / 4.967703e-03 /
+		// 2.675363e-03 / 2.674992e-03 off the corner-blend PANELS they bound and 4.301259e-03 /
+		// 4.275629e-03 / 2.080290e-03 / 2.079314e-03 off the obstacle WALL — the same four chords against
+		// two different faces, which is what makes them the chords' own defect and not either surface's.
+		// The trim now reads the RIM's parameterisation (rimSubArcBetween), the one construction
+		// rimSegmentArc and nodeSubArcs already use, and the panels' rim sides read the SAME pure function
+		// of the same two endpoint values instead of handing all-nil (they were discarded 28 times per
+		// build only because the walls REPLACE body faces and so reach the first-writer-wins edge catalog
+		// first). Five of the sixteen faces move; eleven are bit-identical.
+		//
+		// Proven on the mirror twins at CONVERGED tessellation (TessellateFace, ChordTolerance 1e-5, where
+		// PropertyQuality's own chordal deficit no longer dominates): the two CORE panels are exact mirror
+		// images about z=0 (DRAWEXE 30.3344/30.3344) and their split goes 1.856e-05 → 1.035e-06, 17.9×,
+		// from 1.9× the wings' own pair split (2.1012e-05 on 65.712, rel 3.198e-07) to 9.4× BELOW it. The
+		// asymmetry was the CHORDS' own: the rim's 64 samples are not mirror-symmetric (the +z neighbour
+		// sample sits at z=5.656289770, the −z one at z=−5.658082312), so a chord tiling reads differently
+		// on the two sides while the exact rim arc reads the same. Raw volume 32647.827612193 →
+		// 32647.857558403 against DRAWEXE vprops 32648.6 (stable at 1e-9 and 1e-12): both readings are
+		// BELOW the oracle's 6-s.f. band [32648.55, 32648.65], so "closer" is unambiguous — −0.0023658 % →
+		// −0.0022741 %. Triangles 23894 → 23830 (the mesher's aspect-aware densification, #2009, needs
+		// fewer stations on a boundary that is on the surface). Free edges 0 and folds 0 at BOTH gate
+		// qualities, face count still 16.
+		//
+		// NOT improved, and stated rather than claimed: at the same converged quality the two core panels go
+		// 30.335400037/30.335418597 → 30.333320307/30.333319272 against DRAWEXE's 30.3344 — +1.00e-03/
+		// +1.02e-03 to −1.08e-03/−1.08e-03, i.e. the same distance on the other side, so per-face DRAWEXE
+		// does NOT adjudicate them (what dominates that residual is the queued coupled node, whose own node
+		// point is 4.04e-03 off host A's rim). The two SLIVERS do improve, 3.046316780/3.046337374 →
+		// 3.045616229/3.045636721 against 3.03906/3.03903 (+0.2387 % → +0.2157 %). The oblique
+		// EllipticalCylinder pipe wall goes 799.101070069 → 799.099981639 against 799.138 @1e-12, a move
+		// 308× smaller than that face's own sprops quadrature spread (799.473 @1e-9 vs 799.138 @1e-12) —
+		// the trimmed-oblique-quadric class perface_oracle_test.go's ★★ note describes, not adjudicable.
+		{"U4", 32647.857558403, 23830, 0x65b96c41502bab5b, ""},
 		// K1/Z1 (simple): the CONCAVE bore-lip rim mirror (fillet_rim_concave.go's rimWithCapOrientation).
 		// K1 is a genuine bore lip (cylinder radius 30, r=5): the plate material sits OUTSIDE the bore, so
 		// the rolling ball is tangent to the wall from the material side at R+r=35 (torus major 35, pinned
