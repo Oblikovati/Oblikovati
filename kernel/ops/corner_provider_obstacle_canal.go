@@ -83,7 +83,7 @@ func obstacleCanalPatchLoops(of *ObstacleFeature) []filletLoop {
 //   - MaxBallDev is the only field that says anything about the patch INTERIOR, and it is exactly the
 //     condition a Coons fill through these rails cannot pass. Measured on the five corpus cases with the
 //     SAME declared envelope, the Coons obstacle patch reads 2.95 / 7.59 / 6.10 / 5.28 / 23.90 model units
-//     (R9/S3/T6/U3/X3) — 0.96 r … 0.98 r, a categorical reject rather than a small deviation, because the
+//     (R9/S3/T6/U3/X3) — 0.95 r … 1.06 r, a categorical reject rather than a small deviation, because the
 //     section-plane centre solve is near-tangential and amplifies the interior displacement — against
 //     6.16e-09 … 1.10e-08 for this loft, inside every one of those cases' welds. Note the obstacle patch
 //     is a FULL-WIDTH band, so it reads far worse here than the 1.06e-02 U4's Coons SLIVER read.

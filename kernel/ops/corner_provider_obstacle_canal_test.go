@@ -224,6 +224,33 @@ func TestObstacleCanalProviderDeclinesWithoutPayload(t *testing.T) {
 	}
 }
 
+// TestObstacleCanalRimFeetChecksItsPreconditionsBeforeSolving pins both of obstacleCanalRimFeet's
+// PRECONDITION declines — too few rim samples to loft, and a dip that re-enters the band — and pins that
+// each is checked BEFORE any interior rim solve runs: the zero-value obstacleDetection/edgeFillet handed
+// in here carry no rim curve at all, so a single dipRimPointAtStation call would panic rather than return.
+// Both must decline with a NIL row, like every other decline path in this file.
+func TestObstacleCanalRimFeetChecksItsPreconditionsBeforeSolving(t *testing.T) {
+	cyl, _, _, _ := t6ObstacleEnvelopeGeom(t)
+	env := newRunoutEnvelope(cyl)
+	for _, tc := range []struct {
+		what   string
+		mangle func(*ObstacleFeature)
+	}{
+		{"a 3-sample dip (too coarse for the cubic v-interpolant)", func(of *ObstacleFeature) { of.RimArcPts = of.RimArcPts[:3] }},
+		{"a dip that re-enters the band", func(of *ObstacleFeature) { of.RimArcPts[4] = of.RimArcPts[1] }},
+	} {
+		of := newT6Obstacle(t)
+		tc.mangle(of)
+		feet, ok := obstacleCanalRimFeet(env, of, obstacleDetection{}, edgeFillet{})
+		if ok {
+			t.Errorf("%s must decline", tc.what)
+		}
+		if feet != nil {
+			t.Errorf("%s declined with a %d-point row, want nil (a decline must never hand back a partial payload)", tc.what, len(feet))
+		}
+	}
+}
+
 // TestObstacleCanalInteriorConvergesLikeTheCubicItIs is the guard on the K choice itself
 // (obstacleCanalSubdiv), and it is driven BY that constant: the ladder is K/4 → K/2 → K, so changing the
 // constant moves this test. It asserts four things, and each has a distinct job:

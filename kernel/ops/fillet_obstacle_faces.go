@@ -219,9 +219,14 @@ func assembleObstacleSet(ef edgeFillet, d obstacleDetection, og obstacleGeom, of
 // With the exact surf-rst canal the front is NOT the straight seam A→D: the ball is pushed off the plain
 // fillet axis by the obstacle rim, so its wall tangency foot traces a bulge — measured against live
 // DRAWEXE, the whole of R9's 0.717 / S3's 4.625 / T6's 9.477 / U3's 2.998 / X3's 147.35 of wall-face area
-// the straight seam was missing. The polyline is of.Canal.wallFront(), the SAME slice the patch's wall rail
-// is traced from (patchBoundaryLoop), so the shared front is one list of points, not two agreeing
-// computations. Without the payload (the Coons tier) it degenerates to the original two split points A,D.
+// the straight seam was missing. The point VALUES are of.Canal.wallFront()'s, the same list the patch's
+// wall rail is traced from (patchBoundaryLoop), so the shared front is one computation, not two agreeing
+// ones. Without the payload (the Coons tier) it degenerates to the original two split points A,D.
+//
+// BOTH branches hand back a FRESH slice, never the canal's own FeetWall backing array. The result is
+// stored in the shared edgeInserts map and read by transformFace; that is far enough downstream that no
+// consumer should hold a writable alias of live payload state. Only the VALUES are shared, which is all
+// the weld needs.
 func orderedWallInserts(ef edgeFillet, og obstacleGeom, of *ObstacleFeature) []math.Point3 {
 	front := []math.Point3{og.wallA, og.wallD}
 	if of.Canal != nil {
@@ -229,7 +234,7 @@ func orderedWallInserts(ef edgeFillet, og obstacleGeom, of *ObstacleFeature) []m
 	}
 	start := ef.edge.StartVertex().Point()
 	if start.DistanceTo(front[0]) > start.DistanceTo(front[len(front)-1]) {
-		return reversedPoints(front) // a fresh slice: the front is shared with the patch's own rail
+		return reversedPoints(front)
 	}
-	return front
+	return append([]math.Point3(nil), front...)
 }

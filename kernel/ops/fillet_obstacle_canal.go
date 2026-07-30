@@ -45,8 +45,9 @@ type obstacleCanal struct {
 	Envelope BallEnvelope  // {Tangents: [wall plane], Through: [rim curve], Spine, Radius}
 }
 
-// wallFront returns the patch's wall-side boundary polyline A→D — the SAME slice the wall face's own front
-// is subdivided at (recordWallInserts), so the two cannot disagree.
+// wallFront returns the patch's wall-side boundary polyline A→D — the same POINT VALUES the wall face's
+// own front is subdivided at (recordWallInserts hands out a copy, orderedWallInserts), so the two cannot
+// disagree.
 //
 // It uses EVERY station, not just the rim-sample ones, because unlike the rim this front is private to the
 // patch/wall PAIR: no third face tiles it, so densifying it cannot introduce a T-junction. It is worth
@@ -106,7 +107,7 @@ func buildObstacleCanal(ef edgeFillet, d obstacleDetection, og obstacleGeom, of 
 	if !ok {
 		return nil
 	}
-	pinObstacleCanalEnds(rows, og, of)
+	pinObstacleCanalEnds(&rows, og, of)
 	return &obstacleCanal{
 		Centres: rows.centres, FeetRim: rows.feetRim, FeetWall: rows.feetWall,
 		Envelope: BallEnvelope{
@@ -123,9 +124,15 @@ func buildObstacleCanal(ef edgeFillet, d obstacleDetection, og obstacleGeom, of 
 // (dipRimPointAtStation — the same closed-form rim∩section-plane solver the dual-host section endpoints
 // use, not the 64-chord polyline). Keeping every rim SAMPLE a station is what makes the patch's rim
 // boundary — which must stay at the notch's and the obstacle wall's granularity — lie exactly on the
-// lofted surface. ok=false when the samples are not strictly monotone along the spine, or when an interior
-// solve declines.
+// lofted surface. ok=false — with a NIL row, like every other decline path here — when the dip carries
+// too few rim samples to loft (geom.LoftCanalStations needs 4 for its cubic v-interpolant), when the
+// samples are not strictly monotone along the spine, or when an interior solve declines. Both
+// PRECONDITIONS are checked before any solve runs: a decline must not pay for 7·(n−1) interior solves
+// first.
 func obstacleCanalRimFeet(env runoutEnvelope, of *ObstacleFeature, d obstacleDetection, ef edgeFillet) ([]math.Point3, bool) {
+	if len(of.RimArcPts) < 4 {
+		return nil, false // too coarse a dip to loft (a sliver obstacle: the Coons tier's case)
+	}
 	ss := make([]float64, len(of.RimArcPts))
 	for i, q := range of.RimArcPts {
 		ss[i] = float64(env.cyl.Origin.VectorTo(q).Dot(env.spine))
@@ -143,7 +150,7 @@ func obstacleCanalRimFeet(env runoutEnvelope, of *ObstacleFeature, d obstacleDet
 		feet = append(feet, mid...)
 		feet = append(feet, of.RimArcPts[i])
 	}
-	return feet, len(of.RimArcPts) >= 4
+	return feet, true
 }
 
 // obstacleCanalGapFeet solves the interior rim feet of one rim-sample gap, at the spine stations
@@ -186,14 +193,17 @@ func obstacleCanalStations(env runoutEnvelope, wall, host geom.Plane, feet []mat
 	return out, len(out.centres) >= 4
 }
 
-// pinObstacleCanalEnds replaces the two END stations with the WING SECTIONS' own centre / node / wall
+// pinObstacleCanalEnds OVERWRITES the two END stations with the WING SECTIONS' own centre / node / wall
 // point. At a node the surf-rst offset t is algebraically 0 (there the rim sample IS the plain host
 // contact, so w = r·d and the discriminant is r²), so the closed form already lands on the wing section
 // to rounding — but the patch's v=0/v=1 boundary arcs must weld to the wing faces BY VALUE, not merely
 // within weld, and og/of carry the very values the wing faces use. The by-value weld is asserted on the
 // real pipeline output, on every single-host obstacle case, by
 // TestObstacleCanalEndStationsWeldToTheWingsBitForBit.
-func pinObstacleCanalEnds(rows obstacleCanalRows, og obstacleGeom, of *ObstacleFeature) {
+//
+// It takes *obstacleCanalRows because it MUTATES the rows: the by-value form worked only through the
+// shared slice backing and read as non-mutating.
+func pinObstacleCanalEnds(rows *obstacleCanalRows, og obstacleGeom, of *ObstacleFeature) {
 	last := len(rows.centres) - 1
 	rows.feetRim[0], rows.feetRim[last] = of.Nodes[0], of.Nodes[1]
 	rows.feetWall[0], rows.feetWall[last] = og.wallA, og.wallD
