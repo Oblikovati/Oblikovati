@@ -76,6 +76,12 @@ func (c *obstacleCanal) wallFront() []math.Point3 { return c.FeetWall }
 // subdiv 4 misses on EVERY one of them, and 8's tightest margin is 7.1x (U3). Their per-face AREA, by
 // contrast, is already inside 0.04 % of the closed form at subdiv 1: that is the saturation this constant
 // must not be chosen on.
+//
+// "First value inside the weld" is the claim, so it is what the gate asserts:
+// TestObstacleCanalInteriorConvergesLikeTheCubicItIs derives its whole ladder from THIS constant (K/4,
+// K/2, K) and requires K inside the weld and K/2 outside it. Changing the constant therefore moves the
+// test — 4 fails for being uncertified, 16 for spending 7 extra rim solves per gap the weld never asked
+// for — and re-justifying a new value means re-measuring there, not editing this table.
 const obstacleCanalSubdiv = 8
 
 // buildObstacleCanal solves the surf-rst station triple for the dip. It returns nil — never a partial or
@@ -83,7 +89,9 @@ const obstacleCanalSubdiv = 8
 // near-parallel host pair), or when the dip's rim samples are not strictly monotone along the spine (a rim
 // that re-enters the band: outside this slice's single-dip model). A nil payload makes the WHOLE obstacle
 // fall back to the straight-seam Coons model, wall front included, so the patch and the wall can never
-// disagree about where their shared front runs.
+// disagree about where their shared front runs. That fallback is exercised end to end by
+// TestFilletSlabObliqueColumnFallsBackToCoons, whose fixture's dip genuinely re-enters the band — no
+// corpus case does, so without it the ADR-3 tier would have no body-level coverage at all.
 func buildObstacleCanal(ef edgeFillet, d obstacleDetection, og obstacleGeom, of *ObstacleFeature, res Resolution) *obstacleCanal {
 	wall, isPlane := d.filletWall.Geometry().(geom.Plane)
 	if !isPlane {
@@ -182,7 +190,9 @@ func obstacleCanalStations(env runoutEnvelope, wall, host geom.Plane, feet []mat
 // point. At a node the surf-rst offset t is algebraically 0 (there the rim sample IS the plain host
 // contact, so w = r·d and the discriminant is r²), so the closed form already lands on the wing section
 // to rounding — but the patch's v=0/v=1 boundary arcs must weld to the wing faces BY VALUE, not merely
-// within weld, and og/of carry the very values the wing faces use.
+// within weld, and og/of carry the very values the wing faces use. The by-value weld is asserted on the
+// real pipeline output, on every single-host obstacle case, by
+// TestObstacleCanalEndStationsWeldToTheWingsBitForBit.
 func pinObstacleCanalEnds(rows obstacleCanalRows, og obstacleGeom, of *ObstacleFeature) {
 	last := len(rows.centres) - 1
 	rows.feetRim[0], rows.feetRim[last] = of.Nodes[0], of.Nodes[1]

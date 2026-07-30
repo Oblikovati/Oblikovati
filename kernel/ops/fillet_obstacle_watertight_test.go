@@ -3,12 +3,9 @@
 package ops
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
 
-	"oblikovati.org/kernel/exchange"
-	"oblikovati.org/kernel/exchange/step"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -38,21 +35,91 @@ func TestFilletSlabColumnWatertight(t *testing.T) {
 	}
 }
 
+// TestFilletSlabObliqueColumnFallsBackToCoons is the ADR-3 do-no-harm fallback's END-TO-END gate. Since
+// the surf-rst canal tier landed, EVERY obstacle in the parity corpus certifies as a canal — measured, 25
+// canal builds and 0 Coons builds across all 475 corpus cases — so bsplineObstacleProvider and its four
+// rails have unit tests but nothing exercising them through to a BODY. This case restores that coverage
+// without touching the corpus and without a production toggle: it is the same slab-with-column shape, with
+// the column's footprint rotated 45° (semi-axes 10.5/4.2 about y=-4), which puts the ellipse's
+// spine-extremal point INSIDE the dip. The dip's rim then RE-ENTERS the band — its samples are not
+// strictly monotone along the spine — which is exactly the honest decline obstacleCanalRimFeet documents,
+// so the canal drops its payload and the straight-seam Coons model must carry the rebuild alone and still
+// produce a watertight, hole-contained solid.
+//
+// All three legs are asserted, premise first, so the test cannot quietly stop testing the fallback: the
+// dip must be non-monotone, the payload must be nil, and the patch that gets built must be the Coons tier.
+func TestFilletSlabObliqueColumnFallsBackToCoons(t *testing.T) {
+	body := slabWithObliqueColumn(t)
+	ef, of, _, res := obstacleFeatureFor(t, body, "oblique column", math.P3(0, -13, 0), 6)
+	assertDipReEntersTheBand(t, ef, of)
+	if of.Canal != nil {
+		t.Fatalf("the canal tier must DECLINE on a re-entrant dip; it built %d stations", len(of.Canal.Centres))
+	}
+	patch, ok := resolveObstaclePatch(of, res)
+	if !ok {
+		t.Fatal("the Coons obstacle tier must carry the rebuild when the canal declines (ADR-3 do-no-harm)")
+	}
+	if patch.Kind != BlendKindBSpline {
+		t.Errorf("patch Kind = %q, want the Coons tier %q", patch.Kind, BlendKindBSpline)
+	}
+	assertObstacleFilletIsASolid(t, body, "oblique column")
+}
+
+// assertDipReEntersTheBand pins the fixture's PREMISE: the dip's rim samples must fold back along the
+// spine, which is what makes the canal decline. Without this the test would still pass if the fixture
+// drifted into a monotone dip — and would then be gating the canal tier a second time, not the fallback.
+func assertDipReEntersTheBand(t *testing.T, ef edgeFillet, of *ObstacleFeature) {
+	t.Helper()
+	ss := dipSpineStations(ef, of)
+	if strictlyMonotone(ss) {
+		t.Fatalf("the oblique-column dip is strictly monotone along the spine over its %d rim samples, so the canal would not decline and this test would not reach the Coons tier", len(ss))
+	}
+	t.Logf("dip re-enters the band: %d rim samples, spine span %.6f, first fold at sample %d",
+		len(ss), ss[len(ss)-1]-ss[0], firstSpineFold(ss))
+}
+
+// firstSpineFold returns the index of the first rim sample whose spine coordinate reverses direction.
+func firstSpineFold(ss []float64) int {
+	for i := 2; i < len(ss); i++ {
+		if (ss[i] > ss[i-1]) != (ss[1] > ss[0]) {
+			return i
+		}
+	}
+	return -1
+}
+
+// assertObstacleFilletIsASolid drives the real fillet feature on an obstacle body and requires a single
+// watertight, hole-contained solid — the crux body-level condition of the whole obstacle rebuild.
+func assertObstacleFilletIsASolid(t *testing.T, body *topo.Body, name string) {
+	t.Helper()
+	res, ok, reason := filletFrontTopEdge(body, 6)
+	if !ok {
+		t.Fatalf("%s: fillet failed: %s", name, reason)
+	}
+	rep := Validate(res)
+	if !rep.Valid || !rep.HolesContained || !res.IsSolid() {
+		t.Errorf("%s: filleted body must be a valid, hole-contained, single closed solid (valid=%v holes=%v solid=%v): %v",
+			name, rep.Valid, rep.HolesContained, res.IsSolid(), rep.Issues)
+	}
+}
+
 // slabWithColumn imports the slab-with-elliptical-column fixture (an elliptical tube rising from a
 // hole in a box top — the canonical mid-span obstacle shape). Built via STEP import, mirroring the
 // other ops fillet fixtures (importPrismCylBorder / importNotchedPrism), so the topology is a real
 // imported B-rep, not a hand-welded stub.
 func slabWithColumn(t *testing.T) *topo.Body {
 	t.Helper()
-	data, err := os.ReadFile(filepath.Join("testdata", "obstacle_slab_column.step"))
-	if err != nil {
-		t.Fatalf("read fixture: %v", err)
-	}
-	bodies, _, err := step.Reader{}.ImportSolids(data, exchange.TranslationOptions{TargetUnitMM: 1})
-	if err != nil || len(bodies) != 1 {
-		t.Fatalf("import: %v (n=%d)", err, len(bodies))
-	}
-	return bodies[0]
+	return importStepSolid(t, filepath.Join("testdata", "obstacle_slab_column.step"))
+}
+
+// slabWithObliqueColumn imports the same slab+column shape with the column's elliptical footprint turned
+// 45° to the filleted edge (semi-axes 10.5 / 4.2, centred at y=-4), the one difference that makes the dip
+// re-enter the band. Derived from obstacle_slab_column.step by rotating and resizing its three ELLIPSE
+// entities and their seam vertices; everything else — the slab, the extrusion lean, the pick — is
+// identical, so the two fixtures differ in exactly the property under test.
+func slabWithObliqueColumn(t *testing.T) *topo.Body {
+	t.Helper()
+	return importStepSolid(t, filepath.Join("testdata", "obstacle_slab_oblique_column.step"))
 }
 
 // filletFrontTopEdge drives the real fillet feature over the slab's front-top edge (midpoint

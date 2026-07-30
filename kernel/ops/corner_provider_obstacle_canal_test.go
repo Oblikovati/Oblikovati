@@ -59,27 +59,88 @@ func t6ObstacleCanal(t *testing.T, of *ObstacleFeature, stations int) *obstacleC
 	}
 }
 
-// TestObstacleCanalStationsAreOnTheEnvelope proves the closed form before any surface is built: every
-// solved station's BOTH feet sit at exactly the ball radius from its centre, its wall foot lies ON the
-// wall plane, and its rim foot is the supplied rim point unchanged. A station that fails this is a
-// non-envelope station and geom.LoftCanalStations refuses to loft it.
+// TestObstacleCanalStationsAreOnTheEnvelope checks every solved station against the surf-rst definition.
+// Which assertions are EVIDENCE and which are construction invariants matters, so they are labelled:
+//
+//	|FeetRim − centre| = r   EVIDENCE. The only quantity surfRstCentre actually solves for; it is the
+//	                        "passes THROUGH the rim point" half of surf-rst.
+//	centre ⟂ its station    EVIDENCE. The centre must lie in the rim foot's OWN section plane. A station
+//	                        solved at the wrong spine coordinate fails here and nowhere else.
+//	centre on the near root EVIDENCE. surfRstCentre picks one of TWO roots on L_B, both at radius r from
+//	                        the rim point, so no radius test can tell them apart. The wrong (far) root
+//	                        lands about 2r away from the plain axis and on the far side of the host
+//	                        plane; the physical ball is displaced only by the rim's intrusion, which is
+//	                        bounded by r. This is the assertion a branch-sign regression trips.
+//	FeetRim identity        EVIDENCE (cheap): the rim row must still BE the supplied rim points, in
+//	                        order — the weld the patch's u=0 boundary rests on.
+//	|FeetWall − centre| = r  CONSTRUCTION INVARIANT: FeetWall is defined as centre − r·n̂ with n̂ unit.
+//	FeetWall on the wall     CONSTRUCTION INVARIANT (restated tangency): n̂ is the wall's own normal and
+//	                        the centre sits on L_B, r from the wall, by construction. Kept because it is
+//	                        what geom.LoftCanalStations itself re-checks, not because it can fail here.
 func TestObstacleCanalStationsAreOnTheEnvelope(t *testing.T) {
 	of := newT6Obstacle(t)
+	feet := ellipseLowerArcSamples(of.Nodes[0], of.Nodes[1], 15, 10, 41)
 	c := t6ObstacleCanal(t, of, 41)
-	_, wall, _, _ := t6ObstacleEnvelopeGeom(t)
+	cyl, wall, host, _ := t6ObstacleEnvelopeGeom(t)
 	for j := range c.Centres {
-		for _, f := range []struct {
-			name string
-			p    math.Point3
-		}{{"rim", c.FeetRim[j]}, {"wall", c.FeetWall[j]}} {
-			if d := stdmath.Abs(float64(f.p.DistanceTo(c.Centres[j])) - 6); d > 1e-12 {
-				t.Fatalf("station %d %s foot is %.3e off the ball radius 6", j, f.name, d)
-			}
+		assertStationFeetAtRadius(t, c, j)
+		assertStationInItsOwnSection(t, c, j, cyl)
+		assertStationOnTheNearRoot(t, c, j, cyl, host)
+		if c.FeetRim[j] != feet[j] {
+			t.Errorf("station %d rim foot = %v, want the supplied rim point %v unchanged", j, c.FeetRim[j], feet[j])
 		}
 		if d := stdmath.Abs(float64(wall.Normal().Dot(wall.Origin.VectorTo(c.FeetWall[j])))); d > 1e-12 {
 			t.Errorf("station %d wall foot is %.3e off the wall plane (tangency is not a tangency)", j, d)
 		}
 	}
+}
+
+// assertStationFeetAtRadius checks both feet sit at the ball radius from the centre. The RIM foot is the
+// evidence (surfRstCentre solved it); the WALL foot is a construction invariant.
+func assertStationFeetAtRadius(t *testing.T, c *obstacleCanal, j int) {
+	t.Helper()
+	for _, f := range []struct {
+		name string
+		p    math.Point3
+	}{{"rim", c.FeetRim[j]}, {"wall", c.FeetWall[j]}} {
+		if d := stdmath.Abs(float64(f.p.DistanceTo(c.Centres[j])) - 6); d > 1e-12 {
+			t.Fatalf("station %d %s foot is %.3e off the ball radius 6", j, f.name, d)
+		}
+	}
+}
+
+// assertStationInItsOwnSection checks the centre lies in the section plane Π(s) of ITS OWN rim foot — the
+// plane normal to the spine through that foot. This is what makes the emitted rim boundary the station's
+// contact rather than some neighbour's.
+func assertStationInItsOwnSection(t *testing.T, c *obstacleCanal, j int, cyl geom.Cylinder) {
+	t.Helper()
+	e := cyl.AxisDir.AsVector()
+	if d := stdmath.Abs(float64(c.FeetRim[j].VectorTo(c.Centres[j]).Dot(e))); d > 1e-12 {
+		t.Errorf("station %d centre is %.3e off its rim foot's own section plane — it was solved at the wrong spine station", j, d)
+	}
+}
+
+// assertStationOnTheNearRoot rejects the far surf-rst root: the centre must stay within one ball radius
+// of the plain fillet axis and on the SAME side of the host plane as that axis. The far root satisfies
+// every radius/tangency test and violates both of these (it lands ~2r off the axis, across the host).
+func assertStationOnTheNearRoot(t *testing.T, c *obstacleCanal, j int, cyl geom.Cylinder, host geom.Plane) {
+	t.Helper()
+	axis := axisPointNearest(cyl, c.Centres[j])
+	if off := float64(axis.DistanceTo(c.Centres[j])); off > 6 {
+		t.Errorf("station %d centre is %.6f from the plain fillet axis, past the ball radius 6 — this is the FAR surf-rst root", j, off)
+	}
+	sideC := float64(host.Normal().Dot(host.Origin.VectorTo(c.Centres[j])))
+	sideA := float64(host.Normal().Dot(host.Origin.VectorTo(cyl.Origin)))
+	if sideC*sideA <= 0 {
+		t.Errorf("station %d centre sits %.6f from the host plane, on the opposite side from the plain axis (%.6f) — this is the FAR surf-rst root", j, sideC, sideA)
+	}
+}
+
+// axisPointNearest projects p onto the plain fillet axis — the point A(s) the surf-rst offset t is
+// measured from.
+func axisPointNearest(cyl geom.Cylinder, p math.Point3) math.Point3 {
+	e := cyl.AxisDir.AsVector()
+	return cyl.Origin.TranslateBy(e.Scale(cyl.Origin.VectorTo(p).Dot(e)))
 }
 
 // TestObstacleCanalWallFootLeavesThePlainSeam is the geometric heart of the change, asserted without any
@@ -164,33 +225,87 @@ func TestObstacleCanalProviderDeclinesWithoutPayload(t *testing.T) {
 }
 
 // TestObstacleCanalInteriorConvergesLikeTheCubicItIs is the guard on the K choice itself
-// (obstacleCanalSubdiv): the interior residual must FALL as stations are added, and fall like the h^4 of
-// a cubic v-interpolant. This is what makes the constant a measured value rather than a lucky one, and it
-// is deliberately asserted on the INTERIOR condition — the patch's AREA is saturated across this whole
-// range and would have said nothing (the U4 core-panel trap, u4-canal-report.md concern 3).
+// (obstacleCanalSubdiv), and it is driven BY that constant: the ladder is K/4 → K/2 → K, so changing the
+// constant moves this test. It asserts four things, and each has a distinct job:
+//
+//   - the interior residual FALLS like the h^4 of a cubic v-interpolant (≥8x per doubling) — the
+//     PROPERTY that makes K a measured value rather than a lucky one;
+//   - the patch AREA does NOT move across the ladder — the premise that area is blind here, and would
+//     have said nothing (the U4 core-panel trap, u4-canal-report.md concern 3);
+//   - at K the residual is INSIDE the model weld — K is sufficient;
+//   - at K/2 it is OUTSIDE — K is the FIRST value inside, which is the report's actual claim and what
+//     makes an over-refined K (whose ~7 extra rim solves per gap per case are then unpaid-for) fail too.
+//
+// So the constant is gated from BOTH sides here: K=4 fails the sufficiency assertion, K=16 fails the
+// first-inside assertion. Neither is a matter of taste — 4 leaves the interior uncertified on all five
+// shipped cases, and 16 spends solves the weld does not ask for. If a future weld genuinely demands 16,
+// this test is the place that must be re-measured, loudly, rather than drifting.
 func TestObstacleCanalInteriorConvergesLikeTheCubicItIs(t *testing.T) {
 	of := newT6Obstacle(t)
 	res := ResolutionForSize(50)
+	devs := make([]float64, 0, 3)
 	prev, prevArea := 0.0, 0.0
-	for _, n := range []int{13, 25, 49} {
-		c := t6ObstacleCanal(t, of, n)
-		surf, err := geom.LoftCanalStations(c.Centres, c.FeetRim, c.FeetWall, c.Envelope.Radius, res.Weld())
-		if err != nil {
-			t.Fatalf("%d stations: loft: %v", n, err)
-		}
-		dev := maxBallDev(surf, &c.Envelope)
-		area := surfacePatchArea(surf)
+	for _, k := range obstacleCanalSubdivLadder(t) {
+		n := k*(len(of.RimArcPts)-1) + 1 // the station count buildObstacleCanal produces at subdiv k
+		dev, area := t6ObstacleCanalInterior(t, of, n, res)
 		if prev > 0 {
-			if ratio := prev / dev; ratio < 8 {
-				t.Errorf("%d stations: interior residual %.3e only %.1fx better than the half-density %.3e; a cubic interpolant must gain ~16x per doubling", n, dev, ratio, prev)
-			}
-			if rel := stdmath.Abs(area-prevArea) / prevArea; rel > 1e-4 {
-				t.Errorf("%d stations: area moved %.3e relative — the premise that AREA is saturated (and therefore blind) no longer holds, so the constant's justification must be revisited", n, rel)
-			}
+			assertCanalCubicFalloff(t, n, dev, prev, area, prevArea)
 		}
-		t.Logf("%3d stations: MaxBallDev %.6e   area %.9f", n, dev, area)
-		prev, prevArea = dev, area
+		t.Logf("subdiv %2d (%3d stations): MaxBallDev %.6e   area %.9f", k, n, dev, area)
+		devs, prev, prevArea = append(devs, dev), dev, area
 	}
+	assertShippedSubdivIsFirstInsideTheWeld(t, devs, res.Weld())
+}
+
+// obstacleCanalSubdivLadder is the shipped constant's own halving ladder K/4, K/2, K — so a mutated
+// constant measures a different ladder. K < 4 cannot be measured this way at all and is rejected here:
+// two doublings are the minimum that can show an h^4 falloff.
+func obstacleCanalSubdivLadder(t *testing.T) []int {
+	t.Helper()
+	if obstacleCanalSubdiv < 4 {
+		t.Fatalf("obstacleCanalSubdiv = %d: too small for a two-doubling convergence ladder, so the constant cannot be justified by measurement at all", obstacleCanalSubdiv)
+	}
+	return []int{obstacleCanalSubdiv / 4, obstacleCanalSubdiv / 2, obstacleCanalSubdiv}
+}
+
+// t6ObstacleCanalInterior lofts the synthetic T6 canal at n stations and returns its interior residual
+// and its patch area — the two quantities the K ladder compares.
+func t6ObstacleCanalInterior(t *testing.T, of *ObstacleFeature, n int, res Resolution) (float64, float64) {
+	t.Helper()
+	c := t6ObstacleCanal(t, of, n)
+	surf, err := geom.LoftCanalStations(c.Centres, c.FeetRim, c.FeetWall, c.Envelope.Radius, res.Weld())
+	if err != nil {
+		t.Fatalf("%d stations: loft: %v", n, err)
+	}
+	return maxBallDev(surf, &c.Envelope), surfacePatchArea(surf)
+}
+
+// assertCanalCubicFalloff is the anti-K=9-trap pair: the residual must gain like a cubic interpolant's
+// h^4 while the area stays put, so the ladder is read on the INTERIOR and never on area.
+func assertCanalCubicFalloff(t *testing.T, n int, dev, prev, area, prevArea float64) {
+	t.Helper()
+	if ratio := prev / dev; ratio < 8 {
+		t.Errorf("%d stations: interior residual %.3e only %.1fx better than the half-density %.3e; a cubic interpolant must gain ~16x per doubling", n, dev, ratio, prev)
+	}
+	if rel := stdmath.Abs(area-prevArea) / prevArea; rel > 1e-4 {
+		t.Errorf("%d stations: area moved %.3e relative — the premise that AREA is saturated (and therefore blind) no longer holds, so the constant's justification must be revisited", n, rel)
+	}
+}
+
+// assertShippedSubdivIsFirstInsideTheWeld pins the constant's VALUE, not just its convergence: the
+// shipped K must certify the interior and K/2 must not.
+func assertShippedSubdivIsFirstInsideTheWeld(t *testing.T, devs []float64, weld float64) {
+	t.Helper()
+	shipped, half := devs[len(devs)-1], devs[len(devs)-2]
+	if shipped > weld {
+		t.Errorf("obstacleCanalSubdiv = %d leaves the interior residual at %.3e, OUTSIDE the %.3e model weld — the patch would not certify", obstacleCanalSubdiv, shipped, weld)
+	}
+	if half <= weld {
+		t.Errorf("obstacleCanalSubdiv = %d is over-refined: half of it already reads %.3e, inside the %.3e model weld, so the extra %d rim solves per dip gap buy nothing",
+			obstacleCanalSubdiv, half, weld, obstacleCanalSubdiv/2)
+	}
+	t.Logf("model weld %.3e: subdiv %d reads %.6e (%.1fx the weld), subdiv %d reads %.6e (%.1fx)",
+		weld, obstacleCanalSubdiv, shipped, shipped/weld, obstacleCanalSubdiv/2, half, half/weld)
 }
 
 // surfacePatchArea integrates |S_u x S_v| over the patch domain on a Gauss-free uniform grid — enough to
