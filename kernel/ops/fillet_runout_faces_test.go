@@ -114,8 +114,8 @@ func t4RunoutFils(t *testing.T) (*topo.Body, []edgeFillet) {
 	return body, fils
 }
 
-// t4FragileRunoutFils adds the same filletRebuildMaps filletResultFaces builds (fillet_faces.go:
-// 17-22) on top of t4RunoutFils's edgeFillet. This is real production input, not a zero-value
+// t4FragileRunoutFils adds the same filletRebuildMaps filletResultFaces builds (filletBuildMaps,
+// fillet_faces.go) on top of t4RunoutFils's edgeFillet. This is real production input, not a zero-value
 // filletRebuildMaps, so TestCollectRunouts_TorusFiresOnRunoutPath actually exercises collectRunouts
 // end-to-end: T4's torus survivor no longer trips runoutDefersBody, so the intact-boss runout builds.
 // Named so the test can assert directly against collectRunouts's real production inputs.

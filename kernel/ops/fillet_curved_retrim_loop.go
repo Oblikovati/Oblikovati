@@ -110,7 +110,7 @@ func loopsExcept(host *topo.Face, keep *topo.Loop) []filletLoop {
 
 // unchangedLoop copies a topo loop into a filletLoop with no modification, preserving each vertex's
 // source identity and the source edge leaving it (mirrors transformLoop's "unchanged survivor" case,
-// fillet_faces.go) so the assembler's welder keeps the loop's original topo provenance.
+// fillet_face_transform.go) so the assembler's welder keeps the loop's original topo provenance.
 func unchangedLoop(l *topo.Loop) filletLoop {
 	var fl filletLoop
 	for _, u := range l.EdgeUses() {

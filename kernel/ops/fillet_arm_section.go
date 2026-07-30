@@ -11,7 +11,7 @@ import (
 // fillet cylinder from its contact with plane `first` to its contact with plane `second`, through
 // the 45° bisector point. The contacts are the feet of the perpendiculars from the cross-section's
 // axis point to each host plane (each at distance = Radius, since the fillet is tangent to both) —
-// the same Arc3dByThreePoints construction fillet_faces.go uses at the corner arcs, re-stationed.
+// the same Arc3dByThreePoints construction fillet_blend_faces.go uses at the corner arcs, re-stationed.
 // Swapping first/second yields the arc in the reverse orientation (used by the two flank patches).
 func armSectionArc(cyl geom.Cylinder, first, second geom.Plane, spine float64) (geom.Arc3d, bool) {
 	axisPt := cyl.Origin.TranslateBy(cyl.AxisDir.AsVector().Scale(spine))

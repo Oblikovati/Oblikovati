@@ -134,8 +134,7 @@ func wallIntoDir(ef edgeFillet, d obstacleDetection, og obstacleGeom) (math.Vect
 // Task 5) — the outer boundary detours up around the host-side rim arc, the dip-side rim goes to the
 // patch, and the two meet only at the new split vertices P±. ok=false honest-rejects a malformed merge.
 func buildNotchedHost(d obstacleDetection, maps filletRebuildMaps) (filletFace, bool) {
-	base := transformFace(d.host, maps.abSubst[d.host], maps.endCorner[d.host],
-		maps.edgeInserts[d.host], maps.insertCurves[d.host], maps.spreads[d.host], 0)
+	base := transformFace(d.host, maps.forFace(d.host, 0))
 	outerIdx, ok := outerLoopIndex(d.host)
 	if !ok {
 		return filletFace{}, false

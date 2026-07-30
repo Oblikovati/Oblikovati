@@ -33,7 +33,7 @@ type apexCase struct {
 // quadric lateral face along ARC edges; rebuilding those faces, transformLoop dropped the arc
 // curve (nil), and because both faces sharing each arc are transformed the shared edge collapsed
 // to a straight chord — grossly deforming the sector and its measured volume. survivorCurve
-// (fillet_faces.go) now carries the arc, correctly oriented to the loop traversal, so A9/B4/B8/C3/
+// (fillet_face_transform.go) now carries the arc, correctly oriented to the loop traversal, so A9/B4/B8/C3/
 // D2/D6 all match OCCT. (This also explains why M1 stayed correct: its shared arcs were oriented
 // such that straightening barely moved the area.) Must never be made green by loosening it.
 func TestApexFilletMatchesOCCT(t *testing.T) {
