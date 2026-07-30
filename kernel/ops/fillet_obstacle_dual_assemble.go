@@ -272,44 +272,37 @@ func spliceRimPoint(loop filletLoop, rim geom.Curve3, ps math.Point3, srcE uint6
 }
 
 // splitRimSegmentCurve trims a rim segment at the interior station ps into the two sub-arcs a→ps and
-// ps→b. It is the identical construction nodeSubArcs applies at a boundary node — a three-point fit
-// through each half's own midpoint ON THE RIM — with the split parameter recovered from the segment's own
-// conic by inversion (CurveParamAtPoint3 is exact for an Arc3d) instead of read off the node solve.
+// ps→b, each read off the RIM's own parameterisation (rimSubArcBetween) — the identical construction
+// nodeSubArcs applies at a boundary node and rimSegmentArc gives every untouched interior segment.
 //
-// The two midpoints are snapped onto the rim curve (onRimNear) rather than taken from the parent conic:
-// on U4's imported rim the parent per-segment fit is itself 1.8e-07 off the rim, and halves fitted through
-// ITS midpoints inherit that and come out marginally WORSE than the interior segments they weld to
-// (measured 1.87e-07/1.99e-07 against the rim's own 1.77e-07 bar). Fitted through the rim's own points a
-// shorter span is strictly better, which is the same argument that makes a node's trimmed sub-arc sound.
+// It used to recover the split parameter by inverting ps onto the SEGMENT's own conic and then require
+// that conic to reproduce ps to within the model weld. On the only path that ships it that test can never
+// pass: U4's boss-B rim is an imported b-spline whose per-segment circular fit sits ~1e-7 off it, while
+// the station is solved on the exact rim to ~1e-12, so the inversion measured 8.723146e-08 against a
+// 3.394e-08 weld and BOTH halves fell back to straight chords — the rim-trim slice's own fix, cancelled
+// on U4's four node-adjacent halves exactly as spliceRimPoint had cancelled the slice before it. (The
+// regression test that was supposed to cover this split each segment at a point ON ITS ARC, which is the
+// one input for which the old inversion could succeed and the shipped path never supplies.)
 //
-// nil in ⇒ nil out, and a station the inversion cannot place ON the parent conic to within the model weld
-// keeps the straight chords this used to give unconditionally: the honest answer when the station and the
-// segment's own fit are not the same curve.
+// nil in ⇒ nil out — a segment with no curve (an unrefined node's honest chord) splits into two chords —
+// and so does a station that is not strictly inside its own rim span (rimStationSplitsSpan).
 func splitRimSegmentCurve(rim, c geom.Curve3, a, ps, b math.Point3, weld float64) (geom.Curve3, geom.Curve3) {
-	if c == nil {
+	if c == nil || !rimStationSplitsSpan(rim, a, ps, b, weld) {
 		return nil, nil
 	}
-	lo, hi := c.Domain()
-	t, nature := geom.CurveParamAtPoint3(c, ps)
-	if nature != geom.UniqueSolution || t <= lo || t >= hi || c.PointAt(t).DistanceTo(ps) > weld {
-		return nil, nil
-	}
-	return rimArcThrough(a, onRimNear(rim, c.PointAt((lo+t)/2)), ps),
-		rimArcThrough(ps, onRimNear(rim, c.PointAt((t+hi)/2)), b)
+	return rimSubArcBetween(rim, a, ps, weld), rimSubArcBetween(rim, ps, b, weld)
 }
 
-// onRimNear projects q onto the rim curve, falling back to q itself when the rim carries no curve or the
-// inversion has no single answer — a fallback that is never worse than the parent-conic midpoint it
-// replaces.
-func onRimNear(rim geom.Curve3, q math.Point3) math.Point3 {
-	if rim == nil {
-		return q
+// dipRimSideCurves returns the rim sub-arc of every segment of a traced dip-rim side. Each is
+// rimSubArcBetween of that segment's OWN two endpoints — the same pure function of the same two values
+// the split obstacle wall reads for the same segment — so the shared dip-rim edge carries one
+// parameterisation instead of whichever face the first-writer-wins edge catalog happened to reach first.
+func dipRimSideCurves(rim geom.Curve3, pts []math.Point3, weld float64) []geom.Curve3 {
+	out := make([]geom.Curve3, len(pts)-1)
+	for i := range out {
+		out[i] = rimSubArcBetween(rim, pts[i], pts[i+1], weld)
 	}
-	t, nature := geom.CurveParamAtPoint3(rim, q)
-	if nature != geom.UniqueSolution {
-		return q
-	}
-	return rim.PointAt(t)
+	return out
 }
 
 // buildDualPanelFaces resolves each of the four panels' fill surface (extractPanelLoop → resolveBlend:
@@ -380,7 +373,7 @@ func panelASideSeg(span panelSpan, detA, detB obstacleDetection, ef edgeFillet, 
 		if !ok {
 			return ringSeg{}, false
 		}
-		return ringSeg{pts: pts, curves: make([]geom.Curve3, len(pts)-1), srcE: detA.holeEdge.ID()}, true
+		return ringSeg{pts: pts, curves: dipRimSideCurves(detA.holeEdge.Geometry(), pts, res.Weld()), srcE: detA.holeEdge.ID()}, true
 	}
 	a0, ok := aCornerInactive(detA, detB, ef, span.zLo)
 	if !ok {
@@ -401,7 +394,7 @@ func panelBSideSeg(span panelSpan, detB obstacleDetection, ef edgeFillet, res Re
 	if !ok {
 		return ringSeg{}, false
 	}
-	return ringSeg{pts: pts, curves: make([]geom.Curve3, len(pts)-1), srcE: detB.holeEdge.ID()}, true
+	return ringSeg{pts: pts, curves: dipRimSideCurves(detB.holeEdge.Geometry(), pts, res.Weld()), srcE: detB.holeEdge.ID()}, true
 }
 
 // panelEndSeg builds a z-end rail (A-corner→B-corner at station z): the full fillet quarter arc when z is

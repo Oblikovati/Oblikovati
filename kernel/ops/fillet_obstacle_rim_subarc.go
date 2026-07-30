@@ -66,6 +66,94 @@ func rimArcThrough(a, mid, b math.Point3) geom.Curve3 {
 	return arc
 }
 
+// rimSubArcBetween returns the rim's OWN arc from a to b: the three-point fit through the rim curve's
+// midpoint of that sub-span — the identical construction rimSegmentArc gives an interior segment and
+// nodeSubArcs gives a node's half. Both endpoints are inverted onto the rim, so the span is read off the
+// RIM's parameterisation and never off a per-segment fit that only approximates it.
+//
+//	arc := rimSubArcBetween(d.holeEdge.Geometry(), rimSample, seamStation) // one dip-rim segment
+//
+// It is the ONE parameterisation every dual dip-rim consumer reads — the split wall's spliced halves
+// (splitRimSegmentCurve) and both panels' traced rim sides (dipRimSideCurves) — which is what makes the
+// shared segment's curve a pure function of its own two endpoint VALUES rather than of which face reaches
+// the edge catalog first (edgeCatalog.use is first-writer-wins and silently discards every later curve).
+//
+// nil when the rim carries no curve, when either endpoint does not invert uniquely onto it, or when the
+// three points are too collinear to define an arc — the straight chord is the honest answer in each.
+func rimSubArcBetween(rim geom.Curve3, a, b math.Point3, weld float64) geom.Curve3 {
+	ta, tb, ok := rimParamsOf(rim, a, b, weld)
+	if !ok {
+		return nil
+	}
+	lo, hi := rim.Domain()
+	return rimArcThrough(a, rim.PointAt(wrapRimParam(ta+foldRimStep(tb-ta, hi-lo)/2, lo, hi)), b)
+}
+
+// rimStationSplitsSpan reports whether ps lies strictly INSIDE the rim span a→b, both steps measured the
+// short way round from a. It is the extent guard a trim needs on a CLOSED rim: "both endpoints on the rim"
+// alone also admits the complementary arc the long way round, and a station outside its own bracket would
+// produce two sub-arcs that do not tile the segment they replace.
+func rimStationSplitsSpan(rim geom.Curve3, a, ps, b math.Point3, weld float64) bool {
+	ta, tps, okP := rimParamsOf(rim, a, ps, weld)
+	_, tb, okB := rimParamsOf(rim, a, b, weld)
+	if !okP || !okB {
+		return false
+	}
+	lo, hi := rim.Domain()
+	dps, db := foldRimStep(tps-ta, hi-lo), foldRimStep(tb-ta, hi-lo)
+	return db != 0 && dps/db > 0 && dps/db < 1
+}
+
+// rimParamsOf inverts both endpoints onto the rim curve, ok=false unless BOTH lie on it (onRimParam).
+func rimParamsOf(rim geom.Curve3, a, b math.Point3, weld float64) (float64, float64, bool) {
+	if rim == nil {
+		return 0, 0, false
+	}
+	ta, oka := onRimParam(rim, a, weld)
+	tb, okb := onRimParam(rim, b, weld)
+	return ta, tb, oka && okb
+}
+
+// onRimParam returns p's parameter on the rim, ok=false unless the inversion is unique AND the rim
+// reproduces p there to within the model weld. An endpoint that is not ON the rim has no rim sub-arc and
+// must keep the straight chord: U4's coupled host-A node is 4.04e-03 off its own r=8 rim circle
+// (x²+z² = 63.935, not 64) because analyticNode never refined it, and the split wall honestly carries a
+// chord on both of its segments — so every other consumer of those two segments must carry one too.
+func onRimParam(rim geom.Curve3, p math.Point3, weld float64) (float64, bool) {
+	t, nature := geom.CurveParamAtPoint3(rim, p)
+	if nature != geom.UniqueSolution || rim.PointAt(t).DistanceTo(p) > weld {
+		return 0, false
+	}
+	return t, true
+}
+
+// foldRimStep folds a parameter step on a CLOSED rim of the given period to the short way round, so a
+// sub-span straddling the rim's seam (parameter 0) stays its own short arc.
+func foldRimStep(d, period float64) float64 {
+	if period <= 0 {
+		return d
+	}
+	switch {
+	case d > period/2:
+		return d - period
+	case d < -period/2:
+		return d + period
+	}
+	return d
+}
+
+// wrapRimParam folds a parameter back into the rim's own [lo,hi) domain (foldRimStep can walk one step
+// past either end).
+func wrapRimParam(t, lo, hi float64) float64 {
+	switch {
+	case t < lo:
+		return t + (hi - lo)
+	case t >= hi:
+		return t - (hi - lo)
+	}
+	return t
+}
+
 // reversedArcThroughMid re-derives an arc in the OPPOSITE direction through its own recovered midpoint,
 // so a consumer traversing a shared segment backwards hands the edge catalog the same trimmed conic the
 // forward consumer does (reverseOpenArc's and reverseRingSeg's convention). nil in ⇒ nil out: a straight
