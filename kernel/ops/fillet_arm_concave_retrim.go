@@ -133,11 +133,22 @@ func reterminateSegFrom(s endSeg, newFrom math.Point3, tol float64) (endSeg, boo
 }
 
 // rebuildArcSeg builds the sub-arc of arc's own circle between from and to (both required on that
-// circle within tol) through the shorter-arc midpoint — the arc analogue of extending a straight rim
-// edge to the foot. Declines when either endpoint is off the circle or the three-point fit fails.
+// circle within tol) — the arc analogue of extending a straight rim edge to the foot. A MAJOR (>π)
+// span is carried from the PARENT's own parameters (subArcMajor); only a minor span uses the
+// shorter-arc three-point re-fit. Declines when either endpoint is off the circle or the fit fails.
+//
+// ★ The major arm is the fix for the M8 complementary-arc defect: the shorter-arc midpoint below
+// makes Arc3dByThreePoints return the COMPLEMENTARY MINOR arc whenever the retained span exceeds a
+// semicircle (the N7 whole-curve-sub-span lesson). M8's boss rim is a 270° arc trimmed to 255.52° by
+// the fillet setback, and this function handed the edge catalog its 104.48° complement — a curve
+// 22.01 away from the one the top plane offered for the SAME welded edge, arbitrated only by build
+// order. subSeg and retainedRimCurve already guarded this way; this call site never got the guard.
 func rebuildArcSeg(arc geom.Arc3d, from, to math.Point3, tol float64) (endSeg, bool) {
 	if !onCircle(arc, from, tol) || !onCircle(arc, to, tol) {
 		return endSeg{}, false
+	}
+	if sub, mid, major := subArcMajor(arc, from, to); major {
+		return endSeg{from: from, to: to, curve: sub, mid: mid, arc: true}, true
 	}
 	mid := arcMidBetween(arc.Center, arc.Radius, from, to)
 	sub, err := geom.Arc3dByThreePoints(from, mid, to)
