@@ -15,10 +15,11 @@ import (
 // It is computed ONCE per detection (analyticNodeDetection) and read by all three consumers — the notched
 // host (hostSideSubArc), the split obstacle wall (insertNodesIntoRim) and the corner-blend patch
 // (patchBoundaryLoop). That single computation is the by-value agreement the weld needs: assembleBody's
-// edge catalog is FIRST-WRITER-WINS (edgeCatalog.use keeps the curve of whichever face reaches the
-// segment first and silently discards the others), so two consumers agreeing "within tolerance", or
-// agreeing only because of face build order, is not agreement at all — it is a latent T-junction of
-// exactly the class that produced the A2/J1, canal-band, bandWrapRings and canalRailRow leaks.
+// edge catalog cannot arbitrate two DIFFERENT curves (edgeCatalog.use keeps the first and records a
+// Defect; it only adopts a later curve over an earlier nil), so two consumers agreeing "within
+// tolerance", or agreeing only because of face build order, is not agreement at all — it is a latent
+// T-junction of exactly the class that produced the A2/J1, canal-band, bandWrapRings and canalRailRow
+// leaks.
 type rimNodeTrims struct {
 	in, out [2]geom.Curve3
 }
@@ -76,7 +77,8 @@ func rimArcThrough(a, mid, b math.Point3) geom.Curve3 {
 // It is the ONE parameterisation every dual dip-rim consumer reads — the split wall's spliced halves
 // (splitRimSegmentCurve) and both panels' traced rim sides (dipRimSideCurves) — which is what makes the
 // shared segment's curve a pure function of its own two endpoint VALUES rather than of which face reaches
-// the edge catalog first (edgeCatalog.use is first-writer-wins and silently discards every later curve).
+// the edge catalog first (edgeCatalog.use keeps the first of two DIFFERENT curves and records a Defect;
+// only a later curve over an earlier nil is adopted, and that adoption is itself recorded as debt).
 //
 // nil when the rim carries no curve, when either endpoint does not invert uniquely onto it, or when the
 // three points are too collinear to define an arc — the straight chord is the honest answer in each.

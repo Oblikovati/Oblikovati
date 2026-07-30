@@ -50,9 +50,10 @@ func patchBoundaryLoop(d obstacleDetection, og obstacleGeom, of *ObstacleFeature
 // recovered midpoint.
 //
 // The patch used to hand nil — a chord — for every dip-rim segment, and the interior segments still came
-// out as arcs only because edgeCatalog.use is first-writer-wins and the wall face happens to be built
-// first (it REPLACES a body face; the patch is appended as an extra). Agreement by build order is not
-// agreement: reorder the two and the whole dip rim silently reverts to chords. Handing the same curve
+// out as arcs only because edgeCatalog.use took the wall face's curve and the wall face happens to be
+// built first (it REPLACES a body face; the patch is appended as an extra). Agreement by build order is
+// not agreement — even now that the catalog ADOPTS a later curve over an earlier nil, that adoption is
+// a repair recorded as debt, not the design. Handing the same curve
 // by value makes the shared segment's geometry independent of who reaches it first.
 //
 // A dip of exactly two points (both nodes bracketed by ONE rim segment) has no unambiguous forward

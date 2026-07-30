@@ -61,9 +61,10 @@ func collectLoopPoints(faces []filletFace) []math.Point3 {
 const filletAssemblyTag = "fillet"
 
 // assembleBody welds the faces' loop points into a watertight body: one shared edge per
-// undirected vertex pair (carrying the curve the first user supplied, oriented its way), and
-// a face per surface. A closed result (every edge used twice) is a solid. Curves let a face
-// carry arc edges (a fillet's end arcs) alongside straight ones.
+// undirected vertex pair, carrying the best curve its two users offered (the first offer, oriented
+// its way; a later curve replaces an earlier nil — see resolveCurveOffer), and a face per surface.
+// A closed result (every edge used twice) is a solid. Curves let a face carry arc edges (a fillet's
+// end arcs) alongside straight ones.
 func assembleBody(faces []filletFace) *topo.Body {
 	tag := filletAssemblyTag
 	pts := collectLoopPoints(faces)
@@ -79,6 +80,7 @@ func assembleBody(faces []filletFace) *topo.Body {
 	}
 	ec := &edgeCatalog{bld: bld, verts: w.points, tv: tv, edges: map[seamEdgeKey]edgeRec{}, classes: classes, tag: tag, weld: weld}
 	provByFace := addCurvedFaces(bld, faces, rings, ec)
+	ec.diagnoseCatalogUse() // positive marker: this body IS the catalog's own output (I2/I4)
 	body := bld.Build()
 	// Provenance naming (ADR-0043): once the faces are named by their parents, the edges and
 	// vertices are renamed by their bordering faces' provenance, replacing the build-order counter
@@ -199,10 +201,11 @@ type edgeCatalog struct {
 // use returns the loop use for the directed segment a→b with the given curve (nil ⇒ a line) and
 // source-edge id, creating the shared edge for its identity class the first time in its a→b
 // direction. Two coincident seam edges (distinct ids at a >=2-id pair) get distinct edges.
+// A second use offering geometry the edge does not yet carry upgrades it (resolveCurveOffer).
 func (c *edgeCatalog) use(a, b int, curve geom.Curve3, srcE uint64) topo.Use {
 	key := seamEdgeKey{canon2(a, b), edgeClassOf(a, b, srcE, c.classes)}
 	if rec, ok := c.edges[key]; ok {
-		c.recordCurveOffer(a, b, rec, curve)
+		c.resolveCurveOffer(key, a, b, rec, curve)
 		// A closed seam edge welds both endpoints to one vertex, so rec.from!=a is false for
 		// BOTH uses — the welded vertex order can't encode the traversal sense. The two coedges
 		// of a manifold edge are antiparallel, so the 2nd use flips. Parity-only + tessellation-

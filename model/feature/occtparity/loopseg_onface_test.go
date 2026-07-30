@@ -164,7 +164,16 @@ func offSurfaceDebtIndex() map[string]float64 {
 // carry (fillet_rim_build.go's wallSeamCurve → retainedHostSeamCurve) retired J2 and J4 (34 → 32), which
 // also cut the table's CEILING 5.4× — 0.334 → complex/F2's 0.0616 — and the far-end trim's stop-face BRANCH
 // pick (fillet_farend_trim.go's slideOntoWall → nearestHitOnSide) retired complex/D8 (32 → 31). The table
-// must SHRINK, never widen. The roots that remain, largest first (stopface-reversed-report.md):
+// must SHRINK, never widen.
+//
+// ★ NINE ceilings re-capped at 1.1× a NEW measurement by the edge catalog's nil-vs-curve adoption
+// (kernel/ops/assemble_curve_agreement.go): a consumer that HAS the boundary curve now supplies it to
+// the shared edge instead of losing it to the neighbour's straight chord, so the residual these entries
+// measure is the residual of the chord that no longer ships. Measured with the gate's own function
+// (worstLoopSegmentOffFace / boundingDiag), base → HEAD: T7 0.00196→0.000429, S9 0.00181→0.000793,
+// T1 0.00142→0.000497, S1 0.000958→0.000320, S4 0.000926→0.000334, T4 0.000904→0.000491,
+// T3 0.000722→0.000397, S6 0.000583→0.000545, S7 0.000454→0.000420. Entry count unchanged at 31 —
+// every one is smaller, none retired. The roots that remain, largest first (stopface-reversed-report.md):
 //
 //   - CURVED-HOST RETRIM ARC off its own cylinder (complex/F2, 0.0616) — a `fillet:x` retrim edge, not a
 //     rim carry. (J2/J4's 0.334/0.165 CHORDED SEAM MERIDIAN entries are retired: the rim rebuild used to
@@ -244,11 +253,11 @@ func knownOffSurfaceDebt() []offSurfaceDebtEntry {
 	return []offSurfaceDebtEntry{
 		{"F2", "complex", 0.0616}, {"C2", "simple", 0.0192},
 		{"V9", "simple", 0.017}, {"P9", "simple", 0.017}, {"X9", "simple", 0.00284},
-		{"T7", "simple", 0.00216}, {"V3", "simple", 0.00199}, {"S9", "simple", 0.00199},
-		{"T1", "simple", 0.00156}, {"C8", "simple", 0.00129}, {"S1", "simple", 0.00105},
-		{"T4", "simple", 0.00104}, {"S4", "simple", 0.00102}, {"T3", "simple", 0.000794},
-		{"S6", "simple", 0.000641}, {"P8", "simple", 0.00061}, {"V8", "simple", 0.00061},
-		{"S7", "simple", 0.000499}, {"V5", "simple", 0.000313}, {"V1", "simple", 0.000295},
+		{"V3", "simple", 0.00199}, {"C8", "simple", 0.00129}, {"S9", "simple", 0.000872},
+		{"P8", "simple", 0.00061}, {"V8", "simple", 0.00061}, {"S6", "simple", 0.0006},
+		{"T1", "simple", 0.000548}, {"T4", "simple", 0.000541}, {"T7", "simple", 0.000472},
+		{"S7", "simple", 0.000463}, {"T3", "simple", 0.000438}, {"S4", "simple", 0.000368},
+		{"S1", "simple", 0.000352}, {"V5", "simple", 0.000313}, {"V1", "simple", 0.000295},
 		{"K7", "simple", 0.000152}, {"L1", "simple", 0.000133}, {"U4", "simple", 0.000165},
 		{"N5", "simple", 0.000129}, {"L7", "simple", 0.000128}, {"C6", "simple", 0.000121},
 		// The five mid-span obstacle cases, each re-capped at 1.1x its post-sub-arc measurement (above).

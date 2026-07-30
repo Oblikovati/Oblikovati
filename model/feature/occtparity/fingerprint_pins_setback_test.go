@@ -25,9 +25,12 @@ func setbackObstaclePins() []fingerprintPin {
 		// (hostArcDensifies, now unconditional). Whole-body area: S6 +0.074% → +0.039%, S9 +0.267% →
 		// +0.073%, T3 +0.114% → +0.043%. Re-captured ONLY after the per-face DRAWEXE reconciliation
 		// confirmed every face moved toward the oracle. Same cross-platform-risk caveat as above.
-		{"S6", 18039.724864028, 15982, 0x18a1d92e1931c91b, ""},
-		{"S9", 115876.963113864, 89826, 0x93b72952c31ab329, ""},
-		{"T3", 130529.141817073, 80716, 0x1ae414df7f42fdd8, ""},
+		// ★ RE-CAPTURED with S1/S4/S7/T1/T4/T7 below — see the NIL-CURVE-OFFER ADOPTION receipt at the
+		// bottom of this file. These nine are the whole population the edge catalog's nil-vs-curve
+		// adoption moves, and every one is PROVEN improved per-face against live DRAWEXE 8.0.0.
+		{"S6", 18039.238279760, 16292, 0x6a1c3475f4697bae, ""},
+		{"S9", 115877.633872810, 90366, 0xc6487a5cc1a6f0c5, ""},
+		{"T3", 130529.632368156, 81256, 0xf22027c50f378b81, ""},
 		// S1/S4/S7/T1/T4/T7 (simple): the TWO-boss members of the same setback family — a box with a boss
 		// on EACH of the picked edge's two host planes, tiled left flank / central / right flank
 		// (fillet_setback_extract.go). Their nine-case cohort S6/S9/T3 was pinned above from the day the
@@ -44,12 +47,13 @@ func setbackObstaclePins() []fingerprintPin {
 		// oracle in kernel/ops/fillet_runout_oracle_test.go (spine stations, per-face `sprops` areas, and —
 		// the load-bearing one, because area alone would not have caught S7 — points DRAWEXE evaluated on
 		// OCCT's OWN patch surface asserted to lie on ours). Same cross-platform-risk caveat as above.
-		{"S1", 12592.747980190, 16736, 0x5c84e5aa40958cc0, ""},
-		{"S4", 36849.071699751, 22074, 0x3f6b0b102417caeb, ""},
-		{"S7", 33547.720796146, 19730, 0x101fa08e0055407c, ""},
-		{"T1", 117940.118357771, 92900, 0x38bee99c18da0066, ""},
-		{"T4", 133675.708363296, 89448, 0x6a0b4fe27fad8354, ""},
-		{"T7", 36264.495584457, 22564, 0x501caba9f0bd7c4e, ""},
+		// ★ RE-CAPTURED with S6/S9/T3 above — NIL-CURVE-OFFER ADOPTION receipt at the bottom of this file.
+		{"S1", 12595.501472741, 17144, 0xb7b695fd2b6721ca, ""},
+		{"S4", 36853.861302685, 22770, 0x1a793294ff6e2f08, ""},
+		{"S7", 33547.700513286, 20052, 0xb7e6bfe83effd506, ""},
+		{"T1", 117950.363024610, 93596, 0xf64469fb6ae1b453, ""},
+		{"T4", 133680.910978887, 90144, 0x9ff14e461d806c8f, ""},
+		{"T7", 36278.796710477, 23068, 0x211eab265438be21, ""},
 		// U3 (simple): the Group-B obstacle-path dip-detection green (fillet_obstacle_detect.go's
 		// dipArcOrder, #2007). U3 is a box + ONE oblique/y-elongated EllipticalCylinder mid-span boss — the
 		// SAME shape as the already-green T6 (oblique EllipticalCylinder) — but dipsPast was handed the
@@ -378,3 +382,59 @@ func setbackObstaclePins() []fingerprintPin {
 		{"O1", 1111281.884319459088, 29866, 0x617cc8805bca3d1, ""},
 	}
 }
+
+// ═══ NIL-CURVE-OFFER ADOPTION: the shared re-capture receipt for the NINE pins it moved ═══
+//
+// S1 S4 S6 S7 S9 T1 T3 T4 T7. Recorded once, here, instead of nine times above.
+//
+// WHAT CHANGED. `edgeCatalog.use` welds one shared edge per vertex pair from the FIRST consumer to
+// reach it. When that consumer had no curve, the edge shipped a straight CHORD and the second
+// consumer's real boundary curve was thrown away — 272 shipped edges over ten cases. The catalog now
+// adopts the later curve, REVERSED onto the edge's own stored sense when the offering consumer walks
+// it backwards (which is all 272 of them). A previous slice built this without the reversal, measured
+// T3's blend torus inflating 2827.227365 → 13816.882599 and the rollup falling 114 → 110, and recorded
+// the policy as refuted; the reversal is the whole difference, and removing it reproduces those
+// numbers exactly.
+//
+// PROVEN IMPROVED, four independent measures, none of them our own number. Whole-body mesh area
+// (Σ ops.MeshArea ∘ ops.TessellateFace at PropertyQuality) against OCCT's own checkprops reference —
+// confirmed this session as live DRAWEXE 8.0.0 `sprops result 1.e-12`, relative error of mass
+// computation ≤ 9e-16 on every case:
+//
+//	S1 +2.451e-04→+6.396e-05 (3.83×)   S4 +2.346e-04→+9.129e-05 (2.57×)   S6 +2.371e-04→+1.682e-04
+//	S7 +2.004e-04→+1.434e-04           S9 +7.332e-04→+3.608e-04 (2.03×)   T1 +4.462e-04→+3.745e-04
+//	T3 +3.739e-04→+2.653e-04 (1.41×)   T4 +3.526e-04→+2.816e-04 (1.25×)   T7 +2.193e-04→+6.075e-05 (3.61×)
+//
+// ★ PER-FACE against live DRAWEXE `sprops <face> 1.e-12`, faces rank-paired by area (never by
+// `bounding`). Summed per-face |Δ| falls on every case measured: S1 1.9743→1.0003, S4 4.3199→2.7362,
+// S6 2.0950→1.9655, S7 2.8441→2.6327, S9 11.0587→5.6612, T1 8.4104→6.0841, T3 7.3596→5.3449,
+// T4 7.8348→6.1115. (T7 is excluded: OCCT's own blend there has 11 faces to our 15, a pre-existing
+// topology divergence, so there is nothing to rank-pair.) The faces that move are exactly the ones
+// bounded by an adopted curve; every other face is bit-identical. On T3, the case the previous slice
+// used to refute the policy: blend torus 2827.227365 → 2826.791716 against 2826.04, BSpline patch
+// 251.184828 → 249.700452 against 249.664 (42× closer), and NO cap saturation (65072 → 65162
+// triangles, three decades below the 262144 cap the un-reversed build saturated).
+//
+// ★ MIRROR TWINS — the strongest of the four, because it needs no oracle at all. Each of these
+// fixtures is symmetric, so its two blend flank faces must have equal area. They did not: on T1/T3/T4
+// the pair read 227.809448 / 227.851401, 4.2e-02 apart (1.8e-04 relative). They now read
+// 227.764913 / 227.764925, 1.2e-05 apart — 3500× tighter, and both land on DRAWEXE's 227.774. Same on
+// every case: S1 29.099278/29.114950 → 28.950601/28.950604, S4 51.033265/51.128363 →
+// 50.837314/50.837321, S7 5.331584/5.342248 → 5.308848/5.308849, S9 235.796757/235.836658 →
+// 235.613052/235.613056, T7 33.275269/33.337713 → 33.210881/33.210883. The chord that used to ship was
+// not mirror-symmetric; the rim arc is.
+//
+// MESH VOLUME against live DRAWEXE `vprops … 1.e-12` — an axis independent of area — improves on
+// seven: T1 −1.09e-04→−2.24e-05 (4.9×), T3 −6.58e-06→−2.82e-06, T4 −6.95e-05→−3.06e-05, S9
+// −1.76e-05→−1.18e-05, S1 −6.71e-04→−4.52e-04, S4 −5.24e-04→−3.94e-04, T7 −2.54e-03→−2.15e-03.
+// ★ NOT improved, stated rather than claimed: S6 moves −3.31e-04→−3.58e-04 and S7 is flat at
+// −2.83e-04 (a 2.0e-05 absolute move on 33557, below the oracle's own 6-s.f. resolution). S6's is a
+// real 0.027 % step the wrong way, on the case whose per-face sum improves least (1.07×) and whose
+// only worsening face is the host SPHERE (1061.302202 → 1061.235258 against 1061.86, −0.053 %→
+// −0.059 %). The pin rests on area, per-face and the mirror twins, which agree; volume dissents on
+// one case and is recorded, not hidden.
+//
+// Off-surface residual (worstLoopSegmentOffFace / boundingDiag, the gate's own function) falls on all
+// nine, 1.07–4.58×, and every one of the nine knownOffSurfaceDebt ceilings ratchets down with it.
+// Free edges 0 and folds 0 at BOTH gate qualities; face counts unchanged; the whole-corpus DRAWEXE
+// face-count join is unchanged. Same arm64 cross-platform-risk caveat as every other pin here.
