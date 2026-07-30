@@ -317,7 +317,7 @@ func TestCanalHostFaces_FarRunoutVerbatim(t *testing.T) {
 	if reason != "" {
 		t.Fatalf("canalHostFaces declined the untouched host: %s", reason)
 	}
-	assertSameLoopPoints(t, gotPlain[0], transformFace(plain, nil, nil, nil, nil, 0), "pass-through")
+	assertSameLoopPoints(t, gotPlain[0], transformFace(plain, nil, nil, nil, nil, nil, 0), "pass-through")
 }
 
 // --- helpers ---------------------------------------------------------------

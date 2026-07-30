@@ -28,9 +28,10 @@ func setbackObstaclePins() []fingerprintPin {
 		// ★ RE-CAPTURED with S1/S4/S7/T1/T4/T7 below — see the NIL-CURVE-OFFER ADOPTION receipt at the
 		// bottom of this file. These nine are the whole population the edge catalog's nil-vs-curve
 		// adoption moves, and every one is PROVEN improved per-face against live DRAWEXE 8.0.0.
-		{"S6", 18039.238279760, 16292, 0x6a1c3475f4697bae, ""},
-		{"S9", 115877.633872810, 90366, 0xc6487a5cc1a6f0c5, ""},
-		{"T3", 130529.632368156, 81256, 0xf22027c50f378b81, ""},
+		// ★ RE-CAPTURED AGAIN by the FOOTPRINT-RIM CURVE CARRY — second receipt at the bottom.
+		{"S6", 18039.887625432, 16880, 0xc933d0219258ba58, ""},
+		{"S9", 115877.941026099, 90926, 0xe9284cadf9dfb60c, ""},
+		{"T3", 130530.295512353, 81844, 0xc136cf277281e5a9, ""},
 		// S1/S4/S7/T1/T4/T7 (simple): the TWO-boss members of the same setback family — a box with a boss
 		// on EACH of the picked edge's two host planes, tiled left flank / central / right flank
 		// (fillet_setback_extract.go). Their nine-case cohort S6/S9/T3 was pinned above from the day the
@@ -48,12 +49,13 @@ func setbackObstaclePins() []fingerprintPin {
 		// the load-bearing one, because area alone would not have caught S7 — points DRAWEXE evaluated on
 		// OCCT's OWN patch surface asserted to lie on ours). Same cross-platform-risk caveat as above.
 		// ★ RE-CAPTURED with S6/S9/T3 above — NIL-CURVE-OFFER ADOPTION receipt at the bottom of this file.
-		{"S1", 12595.501472741, 17144, 0xb7b695fd2b6721ca, ""},
-		{"S4", 36853.861302685, 22770, 0x1a793294ff6e2f08, ""},
-		{"S7", 33547.700513286, 20052, 0xb7e6bfe83effd506, ""},
-		{"T1", 117950.363024610, 93596, 0xf64469fb6ae1b453, ""},
-		{"T4", 133680.910978887, 90144, 0x9ff14e461d806c8f, ""},
-		{"T7", 36278.796710477, 23068, 0x211eab265438be21, ""},
+		// ★ RE-CAPTURED AGAIN by the FOOTPRINT-RIM CURVE CARRY — second receipt at the bottom.
+		{"S1", 12600.722380874, 17812, 0x7eed214601d0017e, ""},
+		{"S4", 36867.737407145, 23800, 0x947385a47f38f56b, ""},
+		{"S7", 33551.258529992, 21204, 0xedf0b8c7a8f23af6, ""},
+		{"T1", 117952.135225479, 94364, 0xc6ca2452f696c14e, ""},
+		{"T4", 133685.219456012, 91264, 0x2ade575b99dd8980, ""},
+		{"T7", 36298.954772446, 24014, 0xb2cc229639fa8d8f, ""},
 		// U3 (simple): the Group-B obstacle-path dip-detection green (fillet_obstacle_detect.go's
 		// dipArcOrder, #2007). U3 is a box + ONE oblique/y-elongated EllipticalCylinder mid-span boss — the
 		// SAME shape as the already-green T6 (oblique EllipticalCylinder) — but dipsPast was handed the
@@ -457,3 +459,46 @@ func setbackObstaclePins() []fingerprintPin {
 // nine, 1.07–4.58×, and every one of the nine knownOffSurfaceDebt ceilings ratchets down with it.
 // Free edges 0 and folds 0 at BOTH gate qualities; face counts unchanged; the whole-corpus DRAWEXE
 // face-count join is unchanged. Same arm64 cross-platform-risk caveat as every other pin here.
+//
+// ═══ FOOTPRINT-RIM CURVE CARRY: the shared re-capture receipt for the same NINE pins ═══
+//
+// S1 S4 S6 S7 S9 T1 T3 T4 T7 — re-captured again by the t3-plane-sliver slice
+// (.superpowers/sdd/t3-plane-sliver-report.md). WHAT CHANGED: the intact-boss footprint rim's
+// subdivided segments — wall side (subdivideBossWall → maps.insertCurves) AND host-notch side
+// (appendTrimmedArcSegs / appendSeamArc) — now carry each segment's exact sub-span of the footprint
+// conic (geom.TrimmedCurve3) instead of shipping a straight chord, so the re-clipped host plane and
+// the intact wall bound the TRUE rim. The defect this closes was measured in closed form: T3's host
+// plane read 1208.987870 against the fixture-derived 60·52 − (π·25² − (625·acos(22/25) − 22·√141)) =
+// 1204.602895 and live DRAWEXE 8.0.0 `sprops result_5 1.e-12` = 1204.6, and the +4.384975 excess
+// equals Σ (r²/2)(θ−sinθ) over its 42 rim chords to SEVEN digits (4.38498) — pure inscribed-polygon
+// surplus, a trim-loop region defect on a plane that cannot be wrong as a surface.
+//
+// PROVEN IMPROVED, every case, two oracle axes measured this session (functions and qualities named):
+// whole-body mesh area (Σ ops.MeshArea ∘ ops.TessellateFace at PropertyQuality) against OCCT's
+// checkprops reference, adoption HEAD → this HEAD:
+//
+//	S1 +6.396e-05→−1.047e-05 (6.1×)   S4 +9.129e-05→−7.068e-06 (12.9×)  S6 +1.682e-04→−1.594e-04 (1.06×)
+//	S7 +1.434e-04→−1.051e-04 (1.36×)  S9 +3.608e-04→+1.196e-06 (302×)   T1 +3.745e-04→−2.378e-06 (157×)
+//	T3 +2.653e-04→−7.484e-06 (35×)    T4 +2.816e-04→−6.112e-06 (46×)    T7 +6.075e-05→−6.228e-06 (9.8×)
+//
+// and mesh volume (ops.BodyGeometryProperties at PropertyQuality) against live DRAWEXE `vprops … 1.e-12`
+// re-read this session (6-s.f. print resolution, so ±~4e-6 relative): S1 −4.522e-04→−3.790e-05,
+// S4 −3.943e-04→−1.797e-05, S6 −3.581e-04→−3.221e-04, S7 −2.831e-04→−1.771e-04, S9 −1.179e-05→−9.139e-06,
+// T1 −2.236e-05→−7.332e-06, T3 −2.816e-06→+2.264e-06 (flat at the oracle's resolution), T4
+// −3.059e-05→+1.642e-06, T7 −5.841e-04→−2.879e-05. Per-face against `sprops <face> 1.e-12` re-derived
+// live for T1/T3/T4: Σ|Δ| T1 6.0841→0.2660, T3 5.3449→0.3592, T4 6.1115→0.3549, no face regressing;
+// the 1204.6 plane itself: 1208.987870 → 1204.671464 on all three (the +0.0686 that remains is the
+// PropertyQuality mesh inscribing the now-exact arc boundary, not the B-rep: the shoelace area of the
+// shipped loop equals the closed form + chord deficit identity above). T7 re-ranked against its
+// nexplode oracle: front host 399.537566→399.192709 (DRAWEXE 399.178), top host 334.081647→333.101499
+// (333.086), elliptic wall 2380.950144→2381.645098 against the ∮|C′×v| closed form 2381.677340 —
+// the wall gap the adoption could not close was these rim chords. ★ The S6/S7 sphere-notch dissent
+// above KEEPS its true extent: S6's sphere face reads 1061.197485 here (further below the untrimmed
+// 2π·13² = 1061.858347; S7's reads 1061.193720, slightly toward it) — the notch is still the queued
+// slice, and both bodies improve on whole-body area AND volume regardless.
+//
+// Off-surface residual (worstLoopSegmentOffFace/boundingDiag): S7 3.8e-10, T4 4.6e-9, T7 4.1e-8
+// (entries DELETED from knownOffSurfaceDebt), T1 5.96e-6, S1 4.16e-5, S4 8.10e-5, S6 1.75e-4,
+// T3 2.39e-4, S9 7.93e-4 (holds). knownNilCurveOfferDebt 272 → 110 (the band-side rim records are
+// now two-sided value agreements). Free edges 0 and folds 0 at BOTH gate qualities; face counts
+// unchanged; rollup unchanged at 114 simple / 119 all-grid, SkipQuarantine 0.

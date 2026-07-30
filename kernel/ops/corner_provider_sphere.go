@@ -164,12 +164,21 @@ func sampleCurveN(c geom.Curve3, n int, rev bool) []math.Point3 {
 // like sampleCurve3Open) but IS the Hi of the last sub-curve, so consecutive sides still concatenate
 // without duplicating the shared corner.
 func sampleCurve3OpenTrimmed(c geom.Curve3, rev bool) ([]math.Point3, []geom.Curve3) {
+	return sampleCurveNTrimmed(c, ringSegSamples, rev)
+}
+
+// sampleCurveNTrimmed is sampleCurve3OpenTrimmed at an explicit chord count n — the same density lever
+// sampleCurveN is to sampleCurve3Open. The intact-boss footprint rim uses it to carry each host-side
+// rim segment's own sub-span of the footprint conic (fillet_setback_rim.go): a segment that keeps its
+// exact sub-arc bounds the TRUE rim, where a nil (chord) leaves the re-clipped host plane the whole
+// inscribed-polygon surplus Σ (r²/2)(θ−sinθ) — the T1/T3/T4 +0.36% plane defect (t3-plane-sliver-brief).
+func sampleCurveNTrimmed(c geom.Curve3, n int, rev bool) ([]math.Point3, []geom.Curve3) {
 	lo, hi := c.Domain()
-	pts := make([]math.Point3, ringSegSamples)
-	curves := make([]geom.Curve3, ringSegSamples)
-	for i := 0; i < ringSegSamples; i++ {
-		a := openSampleParam(lo, hi, i, ringSegSamples, rev)   // this sub-edge's own start vertex param
-		b := openSampleParam(lo, hi, i+1, ringSegSamples, rev) // its end vertex param (far endpoint at i+1==n)
+	pts := make([]math.Point3, n)
+	curves := make([]geom.Curve3, n)
+	for i := 0; i < n; i++ {
+		a := openSampleParam(lo, hi, i, n, rev)   // this sub-edge's own start vertex param
+		b := openSampleParam(lo, hi, i+1, n, rev) // its end vertex param (far endpoint at i+1==n)
 		pts[i] = c.PointAt(a)
 		curves[i] = geom.TrimmedCurve3{Base: c, Lo: a, Hi: b}
 	}

@@ -179,7 +179,16 @@ func offSurfaceDebtIndex() map[string]float64 {
 // 1.1× the new measurement clears the old one), so this gate does NOT fire on S6/S7 if the
 // adoption is reverted — it fires on the other SEVEN of the nine. They are honest re-measurements,
 // not regression gates; S6/S7's adoption regression cover is their fingerprint pins and
-// t7_adoption_perface_test.go's family of per-face evidence. The roots that remain, largest first (stopface-reversed-report.md):
+// t7_adoption_perface_test.go's family of per-face evidence.
+//
+// ★ Re-capped AGAIN by the footprint-rim curve carry (t3-plane-sliver-report.md): the setback family's
+// residual was the rim CHORD itself (a LineSegment between two on-rim points sits a sagitta off the
+// doubly-curved wall it bounds), and those segments now carry exact sub-spans of the footprint conic.
+// Measured (same function), adoption HEAD → this HEAD: S7 4.202e-4→3.8e-10, T4 4.910e-4→4.6e-9,
+// T7 4.289e-4→4.1e-8 (all three now BELOW the default budget — entries DELETED, count 31 → 28),
+// T1 4.974e-4→5.963e-6, S1 3.197e-4→4.157e-5, S4 3.340e-4→8.097e-5, S6 5.451e-4→1.748e-4,
+// T3 3.973e-4→2.393e-4; S9 7.927e-4 unchanged (its worst residual is not a rim chord) and holds.
+// The roots that remain, largest first (stopface-reversed-report.md):
 //
 //   - CURVED-HOST RETRIM ARC off its own cylinder (complex/F2, 0.0616) — a `fillet:x` retrim edge, not a
 //     rim carry. (J2/J4's 0.334/0.165 CHORDED SEAM MERIDIAN entries are retired: the rim rebuild used to
@@ -260,12 +269,17 @@ func knownOffSurfaceDebt() []offSurfaceDebtEntry {
 		{"F2", "complex", 0.0616}, {"C2", "simple", 0.0192},
 		{"V9", "simple", 0.017}, {"P9", "simple", 0.017}, {"X9", "simple", 0.00284},
 		{"V3", "simple", 0.00199}, {"C8", "simple", 0.00129}, {"S9", "simple", 0.000872},
-		{"P8", "simple", 0.00061}, {"V8", "simple", 0.00061}, {"S6", "simple", 0.0006},
-		{"T1", "simple", 0.000548}, {"T4", "simple", 0.000541}, {"T7", "simple", 0.000472},
-		{"S7", "simple", 0.000463}, {"T3", "simple", 0.000438}, {"S4", "simple", 0.000368},
-		{"S1", "simple", 0.000352}, {"V5", "simple", 0.000313}, {"V1", "simple", 0.000295},
-		{"K7", "simple", 0.000152}, {"L1", "simple", 0.000133}, {"U4", "simple", 0.000165},
-		{"N5", "simple", 0.000129}, {"L7", "simple", 0.000128}, {"C6", "simple", 0.000121},
+		{"P8", "simple", 0.00061}, {"V8", "simple", 0.00061},
+		// Six setback-family ceilings re-capped at 1.1x their post-FOOTPRINT-RIM-CURVE measurement
+		// (worstLoopSegmentOffFace/boundingDiag; the rim sub-edges now carry exact conic sub-spans, so
+		// the chords that used to dominate these cases' residuals are gone — t3-plane-sliver-report.md):
+		// T3 2.393e-4, S6 1.748e-4, S4 8.10e-5, S1 4.16e-5, T1 5.96e-6. S7 (3.8e-10), T4 (4.6e-9) and
+		// T7 (4.1e-8) fell BELOW the default budget and are deleted per TestOffSurfaceDebtIsWellFormed.
+		{"V5", "simple", 0.000313}, {"V1", "simple", 0.000295}, {"T3", "simple", 0.000263},
+		{"S6", "simple", 0.000192}, {"U4", "simple", 0.000165}, {"K7", "simple", 0.000152},
+		{"L1", "simple", 0.000133}, {"N5", "simple", 0.000129}, {"L7", "simple", 0.000128},
+		{"C6", "simple", 0.000121}, {"S4", "simple", 0.0000891}, {"S1", "simple", 0.0000457},
+		{"T1", "simple", 0.00000656},
 		// The five mid-span obstacle cases, each re-capped at 1.1x its post-sub-arc measurement (above).
 		{"X3", "simple", 0.0000025}, {"U3", "simple", 0.00000219}, {"T6", "simple", 0.00000196},
 		{"S3", "simple", 0.00000151}, {"R9", "simple", 0.00000129},

@@ -43,7 +43,8 @@ func filletBuildMaps(body *topo.Body, fils []edgeFillet) (filletRebuildMaps, map
 	fans, fanV := classifyEndCorners(fils)
 	spreads, caps := buildSpreadMaps(fans, body)
 	pruneEndCorners(endCorner, fanV) // a fan vertex is rounded by the spread arm alone, never as a trihedral end
-	return filletRebuildMaps{abSubst: abSubst, endCorner: endCorner, edgeInserts: edgeInserts, spreads: spreads}, caps
+	return filletRebuildMaps{abSubst: abSubst, endCorner: endCorner, edgeInserts: edgeInserts,
+		insertCurves: map[*topo.Face]map[uint64][]geom.Curve3{}, spreads: spreads}, caps
 }
 
 // collectRebuildFaces runs the ENABLED local fillet rebuild(s) — the mid-span obstacle notch (ADR-4),
@@ -92,7 +93,7 @@ func transformedBodyFaces(body *topo.Body, maps filletRebuildMaps, obReplace map
 			out = append(out, notched) // host notch / split obstacle wall replaces the default transform
 			continue
 		}
-		out = append(out, transformFace(f, maps.abSubst[f], maps.endCorner[f], maps.edgeInserts[f], maps.spreads[f], scale))
+		out = append(out, transformFace(f, maps.abSubst[f], maps.endCorner[f], maps.edgeInserts[f], maps.insertCurves[f], maps.spreads[f], scale))
 	}
 	return out
 }
@@ -233,17 +234,17 @@ func putEdgeInserts(inserts map[*topo.Face]map[uint64][]math.Point3, ef edgeFill
 // subArcScale is the model scale (body bounding-box diagonal) the subs-branch survivor-arc carry gates on;
 // 0 DISABLES the carry (the specialized obstacle/runout/canal rebuild callers pass 0, staying byte-identical
 // to the pre-carry planar path — only the main transformedBodyFaces path activates the I3 carry).
-func transformFace(f *topo.Face, subs map[uint64]math.Point3, ends map[uint64]corner, inserts map[uint64][]math.Point3, spread map[uint64]facePiece, subArcScale float64) filletFace {
+func transformFace(f *topo.Face, subs map[uint64]math.Point3, ends map[uint64]corner, inserts map[uint64][]math.Point3, insertCurves map[uint64][]geom.Curve3, spread map[uint64]facePiece, subArcScale float64) filletFace {
 	ff := filletFace{surface: f.Geometry(), parent: f.Lineage()} // provenance: the original face (ADR-0043)
 	for _, l := range f.Loops() {
-		ff.loops = append(ff.loops, transformLoop(f, l, subs, ends, inserts, spread, subArcScale))
+		ff.loops = append(ff.loops, transformLoop(f, l, subs, ends, inserts, insertCurves, spread, subArcScale))
 	}
 	return ff
 }
 
 // transformLoop walks a loop's edge uses and applies the per-vertex fillet substitutions, then
 // subdivides the filleted edge at any intermediate tangent points (variable fillets, #695).
-func transformLoop(f *topo.Face, l *topo.Loop, subs map[uint64]math.Point3, ends map[uint64]corner, inserts map[uint64][]math.Point3, spread map[uint64]facePiece, subArcScale float64) filletLoop {
+func transformLoop(f *topo.Face, l *topo.Loop, subs map[uint64]math.Point3, ends map[uint64]corner, inserts map[uint64][]math.Point3, insertCurves map[uint64][]geom.Curve3, spread map[uint64]facePiece, subArcScale float64) filletLoop {
 	uses := l.EdgeUses()
 	n := len(uses)
 	var fl filletLoop
@@ -270,20 +271,52 @@ func transformLoop(f *topo.Face, l *topo.Loop, subs map[uint64]math.Point3, ends
 			// so if both dropped the curve (nil) the shared edge would collapse to a straight
 			// LineSegment (ec.use), bulging a planar face that borders a cylinder — the Q1 area
 			// defect. A straight edge stays nil (a LineSegment curve is identical to nil there).
-			fl.addID(v.Point(), subdividedSurvivorCurve(u, inserts), v.ID(), u.Edge().ID())
+			fl.addID(v.Point(), ringOrSurvivorCurve(u, inserts, insertCurves), v.ID(), u.Edge().ID())
 		}
-		addEdgeInserts(&fl, inserts, u)
+		addEdgeInserts(&fl, inserts, insertCurves, u)
 	}
 	trimCarriedArcs(&fl, rimCarries, subCarries, subArcScale) // both survivor-arc branches: parent arc → the retained sub-arc
 	return fl
+}
+
+// ringOrSurvivorCurve returns the curve of the segment LEAVING a survivor vertex. When the edge's
+// subdivided footprint rim carries a leaving-curve chain (subdivideBossWall's insertCurves), the seam
+// takes its own chain entry — the exact sub-span of the footprint conic, oriented to the traversal —
+// so the intact wall and (through the edge catalog's value agreement) the re-clipped host bound the
+// TRUE rim. Without a chain it falls through to subdividedSurvivorCurve's nil/carry rule unchanged.
+func ringOrSurvivorCurve(u *topo.EdgeUse, inserts map[uint64][]math.Point3, insertCurves map[uint64][]geom.Curve3) geom.Curve3 {
+	if chain, ok := insertCurves[u.Edge().ID()]; ok {
+		return ringLeavingCurve(chain, 0, u.Reversed())
+	}
+	return subdividedSurvivorCurve(u, inserts)
+}
+
+// ringLeavingCurve returns the leaving curve of the k-th VISITED point of a subdivided rim ring under
+// the use's traversal direction: forward, chain[k]; reversed, the reverse of the curve that ARRIVES at
+// that point in forward order (rev(chain[(n-1-k) mod n]) — the one-slot shift orientedInserts' point
+// reversal implies). nil chain entries (band chords) stay nil.
+func ringLeavingCurve(chain []geom.Curve3, k int, rev bool) geom.Curve3 {
+	n := len(chain)
+	if n == 0 {
+		return nil
+	}
+	if !rev {
+		return chain[k%n]
+	}
+	if c := chain[((n-1-k)%n+n)%n]; c != nil {
+		return geom.ReverseCurve3(c)
+	}
+	return nil
 }
 
 // subdividedSurvivorCurve returns the survivor's carried curve, EXCEPT it drops a CLOSED-conic rim edge
 // (start vertex == end vertex, e.g. an intact runout boss wall's footprint circle) to nil when that edge
 // has inserts: the inserts (Task 4, subdivideBossWall) re-trace the rim as straight chords that weld to
 // the setback patches/re-clipped host, so carrying the full-circle curve on the first chord would make
-// that one edge tessellate the WHOLE circle and self-cross the loop. Corpus-neutral: variable-fillet
-// inserts (the only inserts today) live on OPEN straight tangent edges, so this branch never fires there.
+// that one edge tessellate the WHOLE circle and self-cross the loop. (When the rim carries a leaving-
+// curve chain, ringOrSurvivorCurve takes the exact sub-span instead and never reaches here.)
+// Corpus-neutral: variable-fillet inserts (the only inserts today) live on OPEN straight tangent edges,
+// so this branch never fires there.
 func subdividedSurvivorCurve(u *topo.EdgeUse, inserts map[uint64][]math.Point3) geom.Curve3 {
 	if inserts != nil && u.Edge().StartVertex() == u.Edge().EndVertex() {
 		if _, ok := inserts[u.Edge().ID()]; ok {
@@ -358,7 +391,10 @@ func orientedOpenSurvivor(c geom.Curve3, u *topo.EdgeUse) geom.Curve3 {
 
 // addEdgeInserts appends the mid tangent points along edge use u (oriented to the traversal direction),
 // subdividing a variable fillet's tangent line so the adjacent face welds to the ruling strips (#695).
-func addEdgeInserts(fl *filletLoop, inserts map[uint64][]math.Point3, u *topo.EdgeUse) {
+// A subdivided footprint rim's inserts also take their own leaving sub-arcs from the insertCurves chain
+// (insert j is the ring's visited point j+1 — the seam is visited first); every other insert stays a
+// straight chord (nil chain ⇒ nil curve, byte-identical to the pre-chain path).
+func addEdgeInserts(fl *filletLoop, inserts map[uint64][]math.Point3, insertCurves map[uint64][]geom.Curve3, u *topo.EdgeUse) {
 	if inserts == nil {
 		return
 	}
@@ -366,8 +402,9 @@ func addEdgeInserts(fl *filletLoop, inserts map[uint64][]math.Point3, u *topo.Ed
 	if !ok {
 		return
 	}
-	for _, p := range orientedInserts(pts, u.Reversed()) {
-		fl.add(p, nil)
+	chain := insertCurves[u.Edge().ID()]
+	for j, p := range orientedInserts(pts, u.Reversed()) {
+		fl.add(p, ringLeavingCurve(chain, j+1, u.Reversed()))
 	}
 }
 

@@ -57,7 +57,12 @@ type filletRebuildMaps struct {
 	abSubst     map[*topo.Face]map[uint64]math.Point3
 	endCorner   map[*topo.Face]map[uint64]corner
 	edgeInserts map[*topo.Face]map[uint64][]math.Point3
-	spreads     map[*topo.Face]map[uint64]facePiece
+	// insertCurves is the LEAVING-curve chain of a subdivided closed-conic footprint rim, aligned to
+	// (seam + edgeInserts): entry 0 is the seam's leaving segment, entry i the i-th insert's. Written
+	// only by subdivideBossWall (the intact-boss rim); every other insert producer leaves it empty, so
+	// their segments stay straight chords exactly as before. See t3-plane-sliver-report.md.
+	insertCurves map[*topo.Face]map[uint64][]geom.Curve3
+	spreads      map[*topo.Face]map[uint64]facePiece
 }
 
 // obstacleSet is the fully-built obstacle rebuild for one filleted edge (ADR-4, Task 6): the faces

@@ -46,13 +46,28 @@ func appendArcSegs(segs []notchSeg, arc geom.Curve3, n int) []notchSeg {
 	return segs
 }
 
+// appendTrimmedArcSegs is appendArcSegs for a boss's host-side FOOTPRINT arc: each sample also carries
+// its own sub-span of the arc (geom.TrimmedCurve3) as the segment's leaving curve, so the notch bounds
+// the TRUE rim instead of its inscribed chords — the chords left the re-clipped host plane the whole
+// inscribed-polygon surplus Σ (r²/2)(θ−sinθ) (T3's plane +4.38498, t3-plane-sliver-report.md). The
+// per-segment restriction (never the full arc on a sub-edge) is the same N7 rule sampleCurve3OpenTrimmed
+// states; the points are byte-identical to appendArcSegs', so every weld partner still matches. Contact
+// LOCI keep appendArcSegs' nil chords — their neighbours (the patches) tile the chord stations.
+func appendTrimmedArcSegs(segs []notchSeg, arc geom.Curve3, n int) []notchSeg {
+	pts, curves := sampleCurveNTrimmed(arc, n, false)
+	for i, p := range pts {
+		segs = append(segs, notchSeg{pt: p, curve: curves[i]})
+	}
+	return segs
+}
+
 // buildHostNotch rebuilds a host plane by transformFace (its receded outer loop, identical to the non-
 // obstacle path) and then replaces the straight receded-tangent segment (the one between the two host
 // tangent points tanA,tanB) with the detour, dropping every inner loop (the boss footprint hole is now
 // merged into the outer boundary). ok=false honest-rejects a host whose tangent segment is not found.
 func buildHostNotch(host *topo.Face, maps filletRebuildMaps, tanA, tanB math.Point3,
 	detour func(from, to math.Point3) ([]notchSeg, bool)) (filletFace, bool) {
-	base := transformFace(host, maps.abSubst[host], maps.endCorner[host], maps.edgeInserts[host], maps.spreads[host], 0)
+	base := transformFace(host, maps.abSubst[host], maps.endCorner[host], maps.edgeInserts[host], maps.insertCurves[host], maps.spreads[host], 0)
 	oi, ok := outerLoopIndex(host)
 	if !ok {
 		return filletFace{}, false

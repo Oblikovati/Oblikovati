@@ -6,6 +6,7 @@ import (
 	"sort"
 	"testing"
 
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -125,7 +126,8 @@ func t4FragileRunoutFils(t *testing.T) (*topo.Body, []edgeFillet, filletRebuildM
 	fans, fanV := classifyEndCorners(fils)
 	spreads, _ := buildSpreadMaps(fans, body)
 	pruneEndCorners(endCorner, fanV)
-	maps := filletRebuildMaps{abSubst: abSubst, endCorner: endCorner, edgeInserts: edgeInserts, spreads: spreads}
+	maps := filletRebuildMaps{abSubst: abSubst, endCorner: endCorner, edgeInserts: edgeInserts,
+		insertCurves: map[*topo.Face]map[uint64][]geom.Curve3{}, spreads: spreads}
 	return body, fils, maps
 }
 

@@ -21,15 +21,19 @@ import (
 // subdivideBossWall records, on maps.edgeInserts, the sampled footprint-rim points that transformFace
 // must insert into the INTACT boss wall's footprint edge so its rim welds to the re-clipped host (host-
 // side arc) and the setback patches (band-side arcs). The wall stays ONE face at full area — only its
-// rim gains vertices (the closed-conic curve is dropped to straight chords by transformFace, matching
-// the neighbours' chords). ok=false when the wall or a rim sub-arc is malformed.
+// rim gains vertices. Each rim segment's own sub-span of the footprint conic goes to maps.insertCurves
+// (the leaving-curve chain, seam entry first): a segment that keeps its exact sub-arc bounds the TRUE
+// rim, where the chords this used to drop to left the re-clipped host the whole inscribed-polygon
+// surplus — T3's plane read 1208.987870 against the closed form 1204.602895, and the missing 4.38498
+// is EXACTLY Σ (r²/2)(θ−sinθ) over these chords (t3-plane-sliver-report.md §1). ok=false when the
+// wall or a rim sub-arc is malformed.
 func subdivideBossWall(maps filletRebuildMaps, boss crossingBoss, cyl geom.Cylinder, cross1, cross2 math.Point3, bandInner []math.Point3) bool {
 	wall := otherFace(boss.footEdge, boss.host)
 	if wall == nil {
 		return false
 	}
 	seam := boss.footEdge.StartVertex().Point()
-	ring, ok := bossRimRing(boss, cyl, seam, cross1, cross2, bandInner)
+	ring, leaving, ok := bossRimRing(boss, cyl, seam, cross1, cross2, bandInner)
 	if !ok || len(ring) < 2 {
 		return false
 	}
@@ -37,23 +41,40 @@ func subdivideBossWall(maps filletRebuildMaps, boss crossingBoss, cyl geom.Cylin
 		maps.edgeInserts[wall] = map[uint64][]math.Point3{}
 	}
 	maps.edgeInserts[wall][boss.footEdge.ID()] = ring[1:] // transformFace adds seam (survivor); these follow
+	recordRingChain(maps, wall, boss.footEdge.ID(), leaving)
 	return true
+}
+
+// recordRingChain stores a subdivided footprint rim's leaving-curve chain (aligned to the ring: entry 0
+// is the seam's leaving segment) for transformFace/addEdgeInserts to hang on the rim's sub-edges.
+func recordRingChain(maps filletRebuildMaps, wall *topo.Face, edgeID uint64, leaving []geom.Curve3) {
+	if maps.insertCurves[wall] == nil {
+		maps.insertCurves[wall] = map[uint64][]geom.Curve3{}
+	}
+	maps.insertCurves[wall][edgeID] = leaving
 }
 
 // bossRimRing samples the full footprint rim, ordered from the wall seam all the way around: the host-side
 // sub-arc seam→cross1, the band-side sub-arcs cross1→…→cross2 (shared with the patches), the host-side
-// sub-arc cross2→seam. Each sub-arc is sampled open (sampleCurve3Open), so consecutive sub-arcs
+// sub-arc cross2→seam. Each sub-arc is sampled open (sampleCurveNTrimmed), so consecutive sub-arcs
 // concatenate without a duplicate vertex and every point matches the neighbour that tiles the same curve.
-func bossRimRing(boss crossingBoss, cyl geom.Cylinder, seam, cross1, cross2 math.Point3, bandInner []math.Point3) ([]math.Point3, bool) {
+// The second return is the per-point LEAVING-curve chain: point i's segment to point i+1 (mod n) carries
+// its exact sub-span of the footprint conic, so the wall's rim — and, through the edge catalog's value
+// agreement, the host notch and patch rails welded to the same edges — bounds the true rim, not chords.
+func bossRimRing(boss crossingBoss, cyl geom.Cylinder, seam, cross1, cross2 math.Point3, bandInner []math.Point3) ([]math.Point3, []geom.Curve3, bool) {
 	subs, ok := bossRimSubArcs(boss, cyl, seam, cross1, cross2, bandInner)
 	if !ok {
-		return nil, false
+		return nil, nil, false
 	}
 	var ring []math.Point3
+	var leaving []geom.Curve3
 	for i, a := range subs {
-		ring = append(ring, sampleCurveN(a, rimSubArcChordCount(a, i, len(subs)), false)...)
+		pts, curves := sampleCurveNTrimmed(a, rimSubArcChordCount(a, i, len(subs)), false)
+		ring = append(ring, pts...)
+		leaving = append(leaving, curves...)
 	}
-	return orientRingToEdge(ring, boss.footEdge), len(ring) > 0
+	ring, leaving = orientRingChainToEdge(ring, leaving, boss.footEdge)
+	return ring, leaving, len(ring) > 0
 }
 
 // torusRimChordAngle is the maximum swept angle per straight chord (≈7.5°) a TORUS boss's host rim arc is
@@ -111,21 +132,37 @@ func arcSweepAbs(c geom.Curve3) float64 {
 	}
 }
 
-// orientRingToEdge reverses the rim ring (keeping the seam point first) when it winds AGAINST the
+// orientRingChainToEdge reverses the rim ring (keeping the seam point first) when it winds AGAINST the
 // footprint edge's own native parametrization. transformFace applies the edge use's Reversed() flag to
 // the inserts (orientedInserts) assuming they follow the edge's native direction; a ring built the other
 // way then winds the wall loop's footprint rim the SAME sense as its top rim (a figure-8 in cylinder u),
 // which assembleBody's shell-orient corrupts into a zero-curve top rim (the r8 cap→0 defect). Aligning to
-// the edge's native direction keeps the two rims opposite, so the loop is a simple band.
-func orientRingToEdge(ring []math.Point3, footEdge *topo.Edge) []math.Point3 {
+// the edge's native direction keeps the two rims opposite, so the loop is a simple band. The leaving-curve
+// chain is re-indexed alongside (reverseLeavingChain), so each point still leaves along its own segment.
+func orientRingChainToEdge(ring []math.Point3, leaving []geom.Curve3, footEdge *topo.Edge) ([]math.Point3, []geom.Curve3) {
 	fwd, ok := footEdgeNativeForward(footEdge)
 	if !ok || len(ring) < 3 {
-		return ring
+		return ring, leaving
 	}
 	if ring[1].DistanceTo(fwd) <= ring[len(ring)-1].DistanceTo(fwd) {
-		return ring
+		return ring, leaving
 	}
 	out := append([]math.Point3{ring[0]}, reversePts(ring[1:])...)
+	return out, reverseLeavingChain(leaving)
+}
+
+// reverseLeavingChain re-indexes a ring's leaving-curve chain for the reversed traversal: the point
+// visited k-th then leaves along the REVERSE of the curve that ARRIVED at it in forward order,
+// leaving'[k] = rev(leaving[(n-1-k) mod n]) — the same one-slot shift orientedInserts' point
+// reversal implies, kept here so store-time orientation and consume-time reversal stay one rule.
+func reverseLeavingChain(leaving []geom.Curve3) []geom.Curve3 {
+	n := len(leaving)
+	out := make([]geom.Curve3, n)
+	for k := 0; k < n; k++ {
+		if c := leaving[(n-1-k)%n]; c != nil {
+			out[k] = geom.ReverseCurve3(c)
+		}
+	}
 	return out
 }
 

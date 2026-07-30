@@ -36,8 +36,8 @@ type nilCurveOfferDebt struct {
 //     (rebuildArcSeg's major-span arm).
 //   - CodeAssembleCurveNilOffer — one consumer offering a curve, the other nil — is a RATCHET at the
 //     exact measured population below. The curve is ADOPTED (reversed onto the edge's own stored
-//     sense when the offering consumer walks it backwards, which is all 270 of the adopted ones;
-//     the other 2 of the 272 records are complex/F2's curve-FIRST pair, kept, and 0 are declined);
+//     sense when the offering consumer walks it backwards, which is all 108 of the adopted ones;
+//     the other 2 of the 110 records are complex/F2's curve-FIRST pair, kept, and 0 are declined);
 //     the entry records that a consumer still declines to carry a boundary it shares with a curved
 //     neighbour, and the table shrinks as those consumers are fixed. It may never grow.
 //
@@ -57,7 +57,8 @@ type nilCurveOfferDebt struct {
 // The population is measured, not quoted from any report: an instrumented sweep of every scored
 // case's shipped body at HEAD. Note it is the SHIPPED count — the assembler builds up to four
 // do-no-harm candidate bodies per case (fillet.go rebuildCandidates) and the discarded ones carry
-// their own, larger reports (698 over all passes and 13 cases, vs 272 over 10 shipped bodies).
+// their own, larger reports (698 over all passes and 13 cases at the adoption HEAD; the footprint-rim
+// curve carry shrank the shipped count 272 → 110 over the same 10 bodies).
 func TestNoShippedBuildResolvesACurveDisagreementByBuildOrder(t *testing.T) {
 	dir := CorpusFixtureDir()
 	got, blind := map[string]int{}, []string{}
@@ -159,8 +160,16 @@ func nilCurveOfferDebtIndex() map[string]int {
 }
 
 // knownNilCurveOfferDebt is the FULL population of shipped bodies assembled with at least one welded
-// edge where one consumer offered a curve and the other offered nil — 272 edges over 10 cases,
+// edge where one consumer offered a curve and the other offered nil — 110 edges over 10 cases,
 // measured by an instrumented sweep of every scored case at HEAD, not quoted from any report.
+//
+// 272 → 110 by the footprint-rim curve carry (t3-plane-sliver-report.md): the intact boss wall's
+// subdivided rim segments now OFFER their own exact sub-spans of the footprint conic
+// (subdivideBossWall → maps.insertCurves), so every band-side rim edge the setback patches used to
+// repair by adoption is now a two-sided VALUE AGREEMENT and never presents as a nil offer at all.
+// The 12 that remain on each of the nine setback cases are one family: the fillet's own r=R
+// arm/wing cross-section arcs (sweep 0.2618–0.3886 rad), where the WING face still declines the
+// curve the patch offers — the next consumer to retire.
 //
 // 362 → 272 in one step, and the 90 that left were never debt: they were offers departing their own
 // chord by 4.4e-16…2.0e-15 (exactly 25 % of every case: 12 of 48, 6 of 24), three orders below every
@@ -183,15 +192,15 @@ func nilCurveOfferDebtIndex() map[string]int {
 func knownNilCurveOfferDebt() []nilCurveOfferDebt {
 	return []nilCurveOfferDebt{
 		{"complex", "F2", 2},
-		{"simple", "S1", 36},
-		{"simple", "S4", 36},
-		{"simple", "S6", 18},
-		{"simple", "S7", 36},
-		{"simple", "S9", 18},
-		{"simple", "T1", 36},
-		{"simple", "T3", 18},
-		{"simple", "T4", 36},
-		{"simple", "T7", 36},
+		{"simple", "S1", 12},
+		{"simple", "S4", 12},
+		{"simple", "S6", 12},
+		{"simple", "S7", 12},
+		{"simple", "S9", 12},
+		{"simple", "T1", 12},
+		{"simple", "T3", 12},
+		{"simple", "T4", 12},
+		{"simple", "T7", 12},
 	}
 }
 

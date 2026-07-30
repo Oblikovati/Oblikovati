@@ -27,7 +27,7 @@ import (
 func canalImprintFace(f *topo.Face, bundles []canalArmBundle, tol float64) (filletFace, string) {
 	chains := imprintBiteChains(f, bundles, tol)
 	if len(chains) == 0 {
-		return transformFace(f, nil, nil, nil, nil, 0), "" // untouched by the corner — carried through verbatim
+		return transformFace(f, nil, nil, nil, nil, nil, 0), "" // untouched by the corner — carried through verbatim
 	}
 	segs := originalHostSegs(f)
 	if len(segs) < 3 {

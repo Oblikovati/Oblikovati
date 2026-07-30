@@ -49,7 +49,7 @@ func curvedHostFace(f *topo.Face, corner map[*topo.Face]bool, arms []edgeFillet,
 	}
 	bites := farArcsBiting(f, bundles, tol)
 	if len(bites) == 0 {
-		return transformFace(f, nil, nil, nil, nil, 0), "" // untouched by the corner — carried through verbatim
+		return transformFace(f, nil, nil, nil, nil, nil, 0), "" // untouched by the corner — carried through verbatim
 	}
 	ff, ok := farRunoutFace(f, bites, conns, tol)
 	if !ok {

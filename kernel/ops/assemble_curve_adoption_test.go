@@ -19,8 +19,10 @@ import (
 // curve in ITS OWN direction (survivorCurve's from→to convention). The edge, however, was welded
 // once, from→to of whichever consumer reached the catalog first. So a second consumer's curve is
 // backwards relative to the edge it is being hung on whenever rec.from != a — which is the case for
-// EVERY one of the corpus's 270 ADOPTED records (the sweep is 272 records: 270 adopted + 2 kept
-// curve-first on complex/F2 + 0 declined). Adopting it without that reversal hands the
+// EVERY one of the corpus's ADOPTED records (272 at the adoption slice: 270 adopted + 2 kept
+// curve-first on complex/F2 + 0 declined; the footprint-rim curve carry then turned the band-side
+// rim records into two-sided value agreements, leaving 110: 108 adopted + F2's 2 kept —
+// occtparity's knownNilCurveOfferDebt). Adopting it without that reversal hands the
 // receiving face a boundary that runs the wrong way round, its loop walk then bounds a different
 // REGION, and simple/T3's blend torus inflates 2827.227365 → 13816.882599 (mesh area at
 // PropertyQuality). Adopted the right way round the same face reads 2826.791716, a 0.015 %

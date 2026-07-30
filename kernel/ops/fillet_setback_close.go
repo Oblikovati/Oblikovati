@@ -193,7 +193,7 @@ func hostArcDetour(boss crossingBoss, cyl geom.Cylinder, from, near, far math.Po
 	if !ok {
 		return nil, false
 	}
-	segs := appendArcSegs([]notchSeg{{pt: from}}, arc1, hostArcChordCount(arc1))
+	segs := appendTrimmedArcSegs([]notchSeg{{pt: from}}, arc1, hostArcChordCount(arc1))
 	segs = appendSeamArc(segs, boss, arc2)
 	return append(segs, notchSeg{pt: far}), true
 }
@@ -221,13 +221,14 @@ func hostRimArcs(boss crossingBoss, cyl geom.Cylinder, from, seam, to math.Point
 // so spliceNotch welds the notch to the kept wall's seam vertex) followed by arc's samples EXCLUDING its
 // first — arc STARTS at the seam (hostRimArcs' seam→to arc), so its point[0] IS the seam and would
 // double it under id 0. Emitting the seam once, id-pinned, is exactly what closes the wall↔host weld
-// that addID's distinct-id rule (#1600) otherwise splits (S4 cone/cyl runout).
+// that addID's distinct-id rule (#1600) otherwise splits (S4 cone/cyl runout). Every segment carries its
+// own sub-span of the footprint arc (appendTrimmedArcSegs' rule), so the notch bounds the true rim.
 func appendSeamArc(segs []notchSeg, boss crossingBoss, arc geom.Curve3) []notchSeg {
 	seamV := boss.footEdge.StartVertex()
-	segs = append(segs, notchSeg{pt: seamV.Point(), srcV: seamV.ID()})
-	tail := sampleCurveN(arc, hostArcChordCount(arc), false)
-	for _, p := range tail[1:] {
-		segs = append(segs, notchSeg{pt: p})
+	pts, curves := sampleCurveNTrimmed(arc, hostArcChordCount(arc), false)
+	segs = append(segs, notchSeg{pt: seamV.Point(), srcV: seamV.ID(), curve: curves[0]})
+	for i := 1; i < len(pts); i++ {
+		segs = append(segs, notchSeg{pt: pts[i], curve: curves[i]})
 	}
 	return segs
 }
@@ -272,7 +273,7 @@ func innerHostSegs(boss crossingBoss, cyl geom.Cylinder, from math.Point3,
 		return nil, false
 	}
 	segs := appendArcSegs([]notchSeg{{pt: from}}, nearLocus, ringSegSamples)
-	segs = appendArcSegs(segs, arc1, hostArcChordCount(arc1))
+	segs = appendTrimmedArcSegs(segs, arc1, hostArcChordCount(arc1))
 	segs = appendSeamArc(segs, boss, arc2)
 	segs = appendArcSegs(segs, farLocus, ringSegSamples)
 	return append(segs, notchSeg{pt: farCut}), true

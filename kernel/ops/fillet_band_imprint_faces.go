@@ -230,7 +230,7 @@ func bandRetrimmedFace(f *topo.Face, run endSeg, maps filletRebuildMaps,
 // bandExistingLoop is the outer loop the default path would build for this face — what the rebuild
 // must differ from before it is allowed to replace it.
 func bandExistingLoop(f *topo.Face, maps filletRebuildMaps, scale float64) filletLoop {
-	ff := transformFace(f, maps.abSubst[f], maps.endCorner[f], maps.edgeInserts[f], maps.spreads[f], scale)
+	ff := transformFace(f, maps.abSubst[f], maps.endCorner[f], maps.edgeInserts[f], maps.insertCurves[f], maps.spreads[f], scale)
 	if len(ff.loops) == 0 {
 		return filletLoop{}
 	}

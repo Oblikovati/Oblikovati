@@ -77,7 +77,8 @@ func s1RebuildMaps(body *topo.Body, ef edgeFillet) filletRebuildMaps {
 	fans, fanV := classifyEndCorners([]edgeFillet{ef})
 	spreads, _ := buildSpreadMaps(fans, body)
 	pruneEndCorners(endCorner, fanV)
-	return filletRebuildMaps{abSubst: abSubst, endCorner: endCorner, edgeInserts: edgeInserts, spreads: spreads}
+	return filletRebuildMaps{abSubst: abSubst, endCorner: endCorner, edgeInserts: edgeInserts,
+		insertCurves: map[*topo.Face]map[uint64][]geom.Curve3{}, spreads: spreads}
 }
 
 // TestBuildSetbackFaces_S1Watertight is the closure gate: the assembled intact-boss S1 body must be a
