@@ -59,7 +59,66 @@ func detectObstacles(ef edgeFillet, res Resolution) ([]obstacleDetection, bool) 
 			dets = append(dets, d)
 		}
 	}
-	return dets, len(dets) >= 1
+	return analyticNodeDetections(dets, ef), len(dets) >= 1
+}
+
+// analyticNodeDetections re-solves every detection's two boundary nodes on its own EXACT rim curve
+// (analyticNode) and re-lifts pMinus/pPlus from them. It runs HERE, once both hosts have been detected,
+// rather than inside crossingDetection, because whether a node's exact answer is the fixed-tangent
+// crossing at all depends on the OTHER host (coupledNodeStation). Detections are read from the input
+// slice and written to a fresh one so a node's classification never sees a partially refined pair.
+func analyticNodeDetections(dets []obstacleDetection, ef edgeFillet) []obstacleDetection {
+	out := make([]obstacleDetection, len(dets))
+	for i := range dets {
+		out[i] = analyticNodeDetection(dets[i], otherHostDetection(dets, i), ef)
+	}
+	return out
+}
+
+// analyticNodeDetection re-solves one detection's nodes, skipping any node whose station the other
+// host's boss already governs, and re-lifts the two 3D nodes through the host plane's exact inverse.
+func analyticNodeDetection(d obstacleDetection, other *obstacleDetection, ef edgeFillet) obstacleDetection {
+	boundary, ok := boundaryFromTangents(ef, d.hostIsA, d.flat)
+	if !ok {
+		return d // the tangent pair degenerated; keep the sampled nodes rather than guess
+	}
+	for i := range d.nodes {
+		if coupledNodeStation(other, ef, d.back(d.nodes[i].P)) {
+			continue
+		}
+		d.nodes[i] = analyticNode(d.nodes[i], d.holeEdge.Geometry(), len(d.holeSampled.pts), d.flat, boundary)
+	}
+	d.pMinus, d.pPlus = d.back(d.nodes[0].P), d.back(d.nodes[1].P)
+	return d
+}
+
+// otherHostDetection returns the OTHER host's detection of a dual-host pair, or nil when this filleted
+// edge has only one qualifying host (then no node can be coupled — the ball is tangent to the other
+// host all along the span).
+func otherHostDetection(dets []obstacleDetection, i int) *obstacleDetection {
+	if len(dets) != 2 {
+		return nil
+	}
+	return &dets[1-i]
+}
+
+// coupledNodeStation reports whether the OTHER host's boss is ALREADY setting the rolling ball back at
+// this node's axis station. Where it is, the node is NOT this rim's crossing of the fillet's own FIXED
+// tangent line: the ball centre has migrated off the plain fillet axis under the other boss's setback,
+// so the true node is where this rim meets the MIGRATING tangency foot — a coupled solve this slice does
+// not model. U4's host-A node is the live instance: its exact coupled station is z = −6.2399856
+// (DRAWEXE 8.0.0's own sliver pole (5.00625411, −20, −6.23998556) lies on boss A's r=8 rim to 1.4e-05),
+// while the fixed-tangent closed form is −√39 = −6.2449980. Refining that node would move it 5.0e-03
+// AWAY from the truth, so it is left exactly as the sampled polyline had it (do-no-harm) and the coupled
+// solve stays a tracked follow-up — the honest-reject discipline the rest of this path uses (ADR-3).
+// U4's host-B node is NOT coupled (at z = ±√44 boss A's rim has not yet reached the A-tangent), so it
+// IS refined, and lands on OCCT's own patch end to 1.2e-11.
+func coupledNodeStation(other *obstacleDetection, ef edgeFillet, node math.Point3) bool {
+	if other == nil {
+		return false
+	}
+	_, active := activeDipRimAt(*other, ef, axisParam(ef, node))
+	return active
 }
 
 // rebuildableTube reports whether the obstacle wall is one of the tube surfaces buildSplitObstacleWall
@@ -115,7 +174,9 @@ func detectObstacleOnHost(ef edgeFillet, host *topo.Face, hostIsA bool, res Reso
 // crossingDetection runs the shared band-crossing test (bandCrossings) against holeEdge already
 // confirmed as host's single closed hole rim, then packages the obstacle only when it passes. The
 // obstacle path has no use for the band line/side bandCrossings now also returns (that's the
-// runout-imprint path's concern, fillet_runout_detect.go), so it discards them here.
+// runout-imprint path's concern, fillet_runout_detect.go), so it discards them here. The two crossings
+// are still the SAMPLED polyline's brackets at this point; detectObstacles re-solves them on the exact
+// rim once both hosts are known (analyticNodeDetections).
 func crossingDetection(ef edgeFillet, host *topo.Face, hostIsA bool, pl geom.Plane,
 	holeEdge *topo.Edge, res Resolution) (obstacleDetection, bool) {
 	sampled, nodes, flat, back, _, _, ok := bandCrossings(ef, hostIsA, pl, holeEdge, res)

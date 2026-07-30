@@ -277,14 +277,38 @@ func TestPanelSideActiveHostIsG0RimSubArc(t *testing.T) {
 	if side.Cont != G0 {
 		t.Errorf("active panelSide.Cont = %v, want G0", side.Cont)
 	}
-	if _, isBS := side.Curve.(geom.BSplineCurve); !isBS {
+	bs, isBS := side.Curve.(geom.BSplineCurve)
+	if !isBS {
 		t.Errorf("active panelSide.Curve = %T, want geom.BSplineCurve (a fitted rim sub-arc)", side.Curve)
+		return
 	}
-	if d := side.Curve.PointAt(0).DistanceTo(from); d != 0 {
-		t.Errorf("active panelSide start drifted %.3e from the pinned endpoint", d)
+	// The pin lives on the CLAMPED END POLES, and it is exact: panelRimSubArc hands from/to to the
+	// least-squares fit as its first and last data points and geom.NewApproximatedBSplineCurve clamps
+	// them, so Ctrl[0]/Ctrl[n−1] ARE those points bit-for-bit. Asserting through PointAt instead would
+	// gate the fitted pin on the RATIONAL BASIS RECONSTRUCTION at the domain ends — Σ N_i(t)·w_i·P_i
+	// renormalised — which is a weighted sum whose rounding depends on the coordinates' magnitudes, not
+	// on whether the curve is pinned. It read exactly 0 while host B's node sat on the 64-chord sampled
+	// rim and reads 1.986e-15 (one ulp at |P| ≈ 19) now that the node is solved on the rim CURVE
+	// (analyticNode); the pin itself never moved. So the pole equality below is the invariant, asserted
+	// exactly, and the evaluation is gated separately at panelPinEvalFloor.
+	last := len(bs.Ctrl) - 1
+	if d := bs.Ctrl[0].DistanceTo(from); d != 0 {
+		t.Errorf("active panelSide start pole drifted %.3e from the pinned endpoint", d)
+	}
+	if d := bs.Ctrl[last].DistanceTo(to); d != 0 {
+		t.Errorf("active panelSide end pole drifted %.3e from the pinned endpoint", d)
 	}
 	_, hi := side.Curve.Domain()
-	if d := side.Curve.PointAt(hi).DistanceTo(to); d > 0 {
-		t.Errorf("active panelSide end drifted %.3e from the pinned endpoint", d)
+	if d := side.Curve.PointAt(0).DistanceTo(from); d > panelPinEvalFloor {
+		t.Errorf("active panelSide start evaluates %.3e from its own clamped pole, above the reconstruction floor", d)
+	}
+	if d := side.Curve.PointAt(hi).DistanceTo(to); d > panelPinEvalFloor {
+		t.Errorf("active panelSide end evaluates %.3e from its own clamped pole, above the reconstruction floor", d)
 	}
 }
+
+// panelPinEvalFloor bounds the rational-basis reconstruction error when a clamped B-spline is
+// EVALUATED at a domain end, as distinct from the pin itself (asserted exactly on the poles above).
+// Measured 1.986e-15 on this fixture, whose points are ~19 from the origin — one ulp; 1e-12 leaves
+// ~500x margin and is still ~1e5 tighter than the model weld, so a real endpoint drift cannot hide here.
+const panelPinEvalFloor = 1e-12

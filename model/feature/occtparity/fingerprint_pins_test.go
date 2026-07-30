@@ -367,7 +367,18 @@ func byteIdentityPins() []fingerprintPin {
 		// SOLID at area +0.116%. Captured on THIS HEAD (u3-dipspast-report.md); locks the obstacle rebuild so
 		// a later slice (Group C U4, dual-host) fails loud if it perturbs the U3 body. Same cross-platform-
 		// risk caveat as above.
-		{"U3", 17894.503322426473, 9452, 0xc38f33331071f8ae, ""},
+		// ★ RE-CAPTURED (rimcrossings-report.md), and PROVEN improved, not merely different: its two
+		// boundary nodes were solved on the 64-CHORD SAMPLED rim, landing 3.719953e-03 off the exact
+		// rim∩band crossing; analyticNode re-solves them on the rim CURVE and both now sit on the closed
+		// form z = ±√44 = ±6.633249580711 to 3.6e-15 (measured against lineCircleRoots, the runout path's
+		// OWN independent exact solver, not this slice's bisection). The TRIANGLE COUNT is unchanged (9452)
+		// — same topology, corrected positions — and the two faces the nodes bound, the cylinder wings, move
+		// 65.739870 → 65.710655 against DRAWEXE 8.0.0's own sprops 65.7123, i.e. +0.0420 % → −0.0025 %, 16.6×
+		// closer and now at the inscribed-mesh floor. The other faces move ≤6e-04 absolute as the complement
+		// of that, inside U3's own pre-existing +9.5 % corner-patch error (ours 94.11 vs OCCT's 42.9587×2),
+		// which this change neither creates nor addresses. Volume 17894.503322426473 → 17894.523018369215
+		// (+1.1e-09 relative, against a standing +0.112 % gap to DRAWEXE's vprops 17874.5).
+		{"U3", 17894.523018369215, 9452, 0xc89a710516d8681e, ""},
 		// U4 (simple): the Group-C dual-host multi-rail corner-blend green (kernel/ops/fillet_obstacle_dual*.go,
 		// #2007 Group C — the U4-5 weld). U4 is a box + TWO bosses (Cylinder r8 on y=−20, oblique
 		// EllipticalCylinder on x=10) whose footprints BOTH dip into ONE r=5 convex-edge fillet (qualifying==2),
@@ -387,7 +398,21 @@ func byteIdentityPins() []fingerprintPin {
 		// already carried 21 chords each); all sixteen per-face areas unchanged to 2e-6 and the whole-body
 		// area unchanged at 6583.287851 (property quality, ops.MeshArea over CalculateBodyFacets); the raw
 		// volume moves 7.8e-8 relative, 340x smaller than the standing 2.6e-5 gap to DRAWEXE's 32648.6.
-		{"U4", 32647.752737870436, 23888, 0xe25096f65d2a269f, ""},
+		// ★ RE-CAPTURED AGAIN (rimcrossings-report.md), and PROVEN improved: its boss-B node was solved on
+		// the 64-chord sampled rim at z = −6.629434364090, 3.815216e-03 short of the exact ±√44 =
+		// ±6.633249580711 that boss B's r=12 mouth circle and the fillet's y=−15 B-tangent give in closed
+		// form. analyticNode re-solves it on the rim CURVE: it now reads −6.633249142265, which is 4.4e-07
+		// from √44 and 1.2e-11 from DRAWEXE 8.0.0's OWN patch end (−6.63324914227121) — i.e. at the oracle's
+		// own floor. The TRIANGLE COUNT is unchanged (23888) — same topology, corrected positions — and every
+		// one of the sixteen faces is better or bit-identical, none worse (ops.MeshArea over
+		// CalculateBodyFacets(body, PropertyQuality()), rank-paired against DRAWEXE sprops 1e-6):
+		// the two SLIVERS −0.8484 %/−0.8064 % → +0.1156 %/+0.1153 % (7.3× closer, the −0.93 % z-span deficit
+		// the node caused is gone), the two WINGS +0.0411 %/+0.0431 % → −0.0025 % (16× closer, at the mesh
+		// floor), the boss wall +0.15265 % → +0.15259 %; the two CORES are bit-identical because their bound is
+		// host A's node, which is NOT refined (coupledNodeStation — see fillet_obstacle_detect_face.go).
+		// Summed per-face |Δ| vs DRAWEXE 1.49116 → 1.39527; raw volume 32647.752737870436 →
+		// 32647.756822102991, moving TOWARD DRAWEXE's vprops 32648.6 (−0.0025952 % → −0.0025827 %).
+		{"U4", 32647.756822102991, 23888, 0x532f17737e4068c2, ""},
 		// K1/Z1 (simple): the CONCAVE bore-lip rim mirror (fillet_rim_concave.go's rimWithCapOrientation).
 		// K1 is a genuine bore lip (cylinder radius 30, r=5): the plate material sits OUTSIDE the bore, so
 		// the rolling ball is tangent to the wall from the material side at R+r=35 (torus major 35, pinned

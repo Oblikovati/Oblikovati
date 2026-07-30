@@ -2,6 +2,7 @@
 package ops
 
 import (
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
 
@@ -48,6 +49,42 @@ func rimCrossings(rim []math.Point2, b boundaryLine2, res Resolution) []crossing
 func lerpAtZero(a, c math.Point2, da, dc float64) math.Point2 {
 	t := da / (da - dc)
 	return a.Lerp(c, t) // Point2.Lerp: stable single-eval, exact at t=0/1 (#1654)
+}
+
+// analyticNode re-solves a bracketed boundary node on the obstacle's EXACT rim curve. rimCrossings can
+// only BRACKET a node: it runs on the obstacleRimSamples-chord polyline, so what it returns is the
+// CHORD's zero of the signed distance — a full sagitta inside the CURVE's. Measured across the corpus's
+// eleven obstacle-detecting cases, the node sat 3.05e-03 … 3.74e-02 off the exact closed-form rim∩band
+// crossing (U4's boss-B node landed 3.815e-03 short of its exact ±√44, which alone cost each U4 sliver
+// face ~0.9 % against DRAWEXE). Rim sample i IS the rim curve at parameter i/n (sampleHoleRim), so the
+// crossing segment [I, I+1] is exactly the parameter bracket [I/n, (I+1)/n]; bisecting the signed
+// distance there ON THE CURVE — with bisectRimParam, the same analytic solver dipRimPointAtStation
+// already uses for the section endpoints — lands the node on the rim at the parametric floor (measured
+// ≤1.8e-14 against the closed form, from ~1e-2). Only .P moves: the polyline index .I is untouched,
+// since every downstream consumer's dip range is expressed in polyline indices (mergeObstacleRim's
+// "dip = nodes[0].I+1..nodes[1].I") and the refined point stays inside its own bracket.
+//
+// It works in the host plane's own 2D frame (the frame rimCrossings works in), so the result drops
+// straight into crossing.P and packDetection's lift is unchanged. It KEEPS the chord's lerped point when
+// the curve does not strictly straddle the boundary across the sample's own parameter bracket — a sample
+// sitting exactly on the line, or a rim whose chord sign change is not the curve's — so the refinement
+// can only sharpen a node the polyline already found, never move it to a different root.
+//
+// It is applied on the OBSTACLE path only (analyticNodeDetections) and NOT to the runout-imprint path
+// that shares bandCrossings: there the node pair is consumed solely by bandLineFromNodes to REBUILD the
+// band line, and a chord-lerped point sits on that line exactly by construction (signedDist == 0 to the
+// last bit) where a curve-solved one sits on it only to the bisection floor. That path then re-solves its
+// own crossing analytically anyway (lineCircleRoots / solveConicLevel), so it has nothing to gain here
+// and a rounding-level tilt of its own band line to lose.
+func analyticNode(c crossing, rim geom.Curve3, n int,
+	flat func(math.Point3) math.Point2, b boundaryLine2) crossing {
+	f := func(t float64) float64 { return b.signedDist(flat(rim.PointAt(t))) }
+	t0, t1 := float64(c.I)/float64(n), float64(c.I+1)/float64(n)
+	f0, f1 := f(t0), f(t1)
+	if f0 == 0 || f1 == 0 || (f0 < 0) == (f1 < 0) {
+		return c
+	}
+	return crossing{I: c.I, P: flat(rim.PointAt(bisectRimParam(f, t0, t1)))}
 }
 
 // obstacleNodes returns the two rim crossing indices bracketing the dip past the boundary, or

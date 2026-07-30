@@ -5,6 +5,7 @@ import (
 	"math"
 	"testing"
 
+	"oblikovati.org/kernel/geom"
 	m "oblikovati.org/math"
 )
 
@@ -211,5 +212,79 @@ func TestDipsPastExtremalIgnoresMisleadingMidSample(t *testing.T) {
 
 	if !dipsPast(rim, c0, c1, boundary, side) {
 		t.Errorf("extremal scan must find the deep dip (idx 1-3, 5-6) despite the misleading midpoint sample at idx 4")
+	}
+}
+
+// TestAnalyticNodeSolvesOnTheRimCurveNotItsChords is the node-solver regression. rimCrossings works on
+// the obstacleRimSamples-chord polyline, so the crossing it returns is the CHORD's zero of the signed
+// distance — a full sagitta inside the CURVE's. This fixture is the exact shape of U4's boss-B mouth: a
+// radius-12 circle crossed by a band line 10 from its centre, whose crossings are therefore x = ±√44 in
+// closed form. The test asserts BOTH directions of the claim: that the raw polyline crossing really is
+// ~1e-2 off (so the premise cannot silently evaporate), and that analyticNode lands on √44 at the
+// parametric floor.
+func TestAnalyticNodeSolvesOnTheRimCurveNotItsChords(t *testing.T) {
+	rim, err := geom.NewCircle(m.P3(0, 0, 0), m.V3(0, 0, 1), 12)
+	if err != nil {
+		t.Fatalf("fixture circle: %v", err)
+	}
+	flat := func(p m.Point3) m.Point2 { return m.P2(p.X, p.Y) }
+	boundary := boundaryLine2{origin: m.P2(0, -10), dir: m.V2(1, 0)} // the band line y = −10
+	pts := make([]m.Point2, obstacleRimSamples)
+	for i := range pts {
+		pts[i] = flat(rim.PointAt(float64(i) / obstacleRimSamples))
+	}
+	cs := rimCrossings(pts, boundary, ResolutionForSize(50))
+	if len(cs) != 2 {
+		t.Fatalf("fixture: circle ∩ y=−10 must cross twice, got %d", len(cs))
+	}
+	want := math.Sqrt(44)
+	for _, c := range cs {
+		sampled := math.Abs(math.Abs(c.P.X) - want)
+		if sampled < 1e-3 {
+			t.Fatalf("fixture precondition: the SAMPLED crossing x=%.12f is already within %.3e of ±√44 — the sagitta this solver removes is gone, so the test proves nothing", c.P.X, sampled)
+		}
+		got := analyticNode(c, rim, obstacleRimSamples, flat, boundary)
+		if got.I != c.I {
+			t.Errorf("analyticNode moved the polyline index %d -> %d; the dip-range convention downstream is expressed in indices", c.I, got.I)
+		}
+		if d := math.Abs(math.Abs(got.P.X) - want); d > 1e-12 {
+			t.Errorf("analyticNode x=%.15f is %.3e off the closed form ±√44=%.15f (sampled was %.3e off) — the node is not on the rim curve", got.P.X, d, want, sampled)
+		}
+	}
+}
+
+// TestAnalyticNodeKeepsTheChordWhenTheCurveDoesNotStraddle pins the solver's honest-reject: when the rim
+// curve does not strictly change sign across the sample's own parameter bracket, the chord's crossing is
+// kept unchanged rather than bisected to some other root.
+func TestAnalyticNodeKeepsTheChordWhenTheCurveDoesNotStraddle(t *testing.T) {
+	rim, err := geom.NewCircle(m.P3(0, 0, 0), m.V3(0, 0, 1), 12)
+	if err != nil {
+		t.Fatalf("fixture circle: %v", err)
+	}
+	flat := func(p m.Point3) m.Point2 { return m.P2(p.X, p.Y) }
+	// A band line far outside the circle: no bracket of the rim curve straddles it.
+	boundary := boundaryLine2{origin: m.P2(0, -50), dir: m.V2(1, 0)}
+	c := crossing{I: 3, P: m.P2(1, 2)}
+	if got := analyticNode(c, rim, obstacleRimSamples, flat, boundary); got != c {
+		t.Errorf("analyticNode invented a node %+v where the curve never crosses; want the chord's %+v unchanged", got, c)
+	}
+}
+
+// TestOtherHostDetectionOnlyPairsDualHost pins the coupled-station guard's pairing: only a qualifying==2
+// (dual-host) edge has an "other" host whose boss can already be setting the ball back at a node.
+func TestOtherHostDetectionOnlyPairsDualHost(t *testing.T) {
+	one := []obstacleDetection{{hostIsA: true}}
+	if got := otherHostDetection(one, 0); got != nil {
+		t.Errorf("a single-host edge must have no other detection, got %+v", got)
+	}
+	two := []obstacleDetection{{hostIsA: true}, {hostIsA: false}}
+	if got := otherHostDetection(two, 0); got == nil || got.hostIsA {
+		t.Errorf("otherHostDetection(dual, 0) must return host B's detection, got %+v", got)
+	}
+	if got := otherHostDetection(two, 1); got == nil || !got.hostIsA {
+		t.Errorf("otherHostDetection(dual, 1) must return host A's detection, got %+v", got)
+	}
+	if coupledNodeStation(nil, edgeFillet{}, m.P3(0, 0, 0)) {
+		t.Error("with no other host, no node station can be coupled")
 	}
 }

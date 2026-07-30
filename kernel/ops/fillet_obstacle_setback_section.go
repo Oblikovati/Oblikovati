@@ -96,12 +96,25 @@ func hostDetections(dets []obstacleDetection) (detA, detB obstacleDetection, ok 
 // the same radial the wing sections use. It always yields a point (the A-tangent is the guaranteed
 // fallback), so there is no failure mode to report.
 func sectionEndA(detA obstacleDetection, ef edgeFillet, z float64) math.Point3 {
-	hostRadial, wallRadial, _ := cornerRadials(ef, true)
-	aTangent := filletAxisAt(ef, z).TranslateBy(hostRadial)
-	if rim, ok := dipRimPointAtStation(detA, ef, z); ok && aTangent.VectorTo(rim).Dot(wallRadial) > 0 {
+	if rim, active := activeDipRimAt(detA, ef, z); active {
 		return rim
 	}
-	return aTangent
+	hostRadial, _, _ := cornerRadials(ef, true)
+	return filletAxisAt(ef, z).TranslateBy(hostRadial)
+}
+
+// activeDipRimAt returns a boss's dip-rim point at axis-station z together with whether that boss is
+// ACTIVE there — its rim has dipped PAST the fillet's tangent line on its own host, so at this station
+// it is what sets the rolling ball back. The test is geometric and runs on the EXACT rim
+// (dipRimPointAtStation), never on the approximate sampled-node interval, so it stays right at the node
+// station itself where the sampled interval is a sagitta-width off. Shared by sectionEndA (which needs
+// host A's own activity to choose its rail endpoint) and by the node solver's coupled-station guard
+// (analyticNodeDetection), which needs the OTHER host's activity.
+func activeDipRimAt(d obstacleDetection, ef edgeFillet, z float64) (math.Point3, bool) {
+	hostRadial, wallRadial, _ := cornerRadials(ef, d.hostIsA)
+	tangent := filletAxisAt(ef, z).TranslateBy(hostRadial)
+	rim, ok := dipRimPointAtStation(d, ef, z)
+	return rim, ok && tangent.VectorTo(rim).Dot(wallRadial) > 0
 }
 
 // radiusArcRail builds the section rail as the radius-ef.cyl.Radius circular arc through pA and pB,
