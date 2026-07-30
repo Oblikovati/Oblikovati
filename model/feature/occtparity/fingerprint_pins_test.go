@@ -378,7 +378,24 @@ func byteIdentityPins() []fingerprintPin {
 		// of that, inside U3's own pre-existing +9.5 % corner-patch error (ours 94.11 vs OCCT's 42.9587×2),
 		// which this change neither creates nor addresses. Volume 17894.503322426473 → 17894.523018369215
 		// (+1.1e-09 relative, against a standing +0.112 % gap to DRAWEXE's vprops 17874.5).
-		{"U3", 17894.523018369215, 9452, 0xc89a710516d8681e, ""},
+		// ★ RE-CAPTURED AGAIN (obstacle-canal-report.md) — and this is the slice that closed the +9.5 %
+		// corner-patch error the paragraph above names as untouched. The obstacle patch is no longer a Coons
+		// FillSurface but the exact SURF-RST rolling-ball canal (ball tangent to the fillet wall, through the
+		// boss rim), and the wall face's front is no longer the straight tangent seam but the ball's own
+		// tangency-foot locus. PROVEN improved on four independent measures, none of them our own number:
+		//   - the patch face 94.109908 → 85.941735 against its CLOSED FORM 85.917424 (= DRAWEXE's own
+		//     42.9587 x 2), i.e. +9.539 % → +0.0283 %, 337x closer;
+		//   - the wall face 300.000000 → 302.998177, recovering a tangency bulge whose closed form is
+		//     2.998261 and which the straight seam was missing ENTIRELY (−100 % → −0.0028 %);
+		//   - the whole-body volume 17894.523018369215 → 17873.835060138 against DRAWEXE's own vprops
+		//     17874.5: +0.1120 % → −0.0037 %, 30x closer;
+		//   - the patch's INTERIOR now certifies: MaxBallDev 3.14e-05 (uncertified before — the Coons tier
+		//     never populated the field at all) → 7.55e-09, inside the 5.38e-08 model weld.
+		// The triangle count FALLS, 9452 → 5850, and that is the leaner mesh of a more faithful surface, not
+		// a loss: the canal is degree-2-RATIONAL in u (one exact arc, a 3 x 97 net) where the Coons fill was
+		// a degree-3 28 x 28 net, so the same chordal tolerance is met with far fewer u-columns. Face count
+		// (11), free edges (0) and folds (0) are unchanged at BOTH gate qualities.
+		{"U3", 17873.835060138, 5850, 0xc50e72118603dbb9, ""},
 		// U4 (simple): the Group-C dual-host multi-rail corner-blend green (kernel/ops/fillet_obstacle_dual*.go,
 		// #2007 Group C — the U4-5 weld). U4 is a box + TWO bosses (Cylinder r8 on y=−20, oblique
 		// EllipticalCylinder on x=10) whose footprints BOTH dip into ONE r=5 convex-edge fillet (qualifying==2),

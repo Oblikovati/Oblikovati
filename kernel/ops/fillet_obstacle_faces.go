@@ -40,6 +40,10 @@ type obstacleGeom struct {
 	endArc       geom.Arc3d  // cylinder section at nodes[1], oriented wall(D)->top(pPlus)
 	startMid     math.Point3 // startArc midpoint (the cylinder bulge point at nodes[0])
 	endMid       math.Point3 // endArc midpoint at nodes[1]
+	// startCen/endCen are the section arcs' own ball centres (the plain fillet's axis point at each
+	// node's station). The obstacle CANAL pins its two end stations to these so the patch's v-boundary
+	// arc is built from the same centre the wing face's arc is — weld by value, not within tolerance.
+	startCen, endCen math.Point3
 }
 
 // filletRebuildMaps bundles the per-face substitution/insert/spread maps filletResultFaces already
@@ -142,16 +146,31 @@ func obstacleFacesFor(ef edgeFillet, res Resolution, maps filletRebuildMaps) (ob
 	if !ok {
 		return obstacleSet{}, false
 	}
-	of, og, geomOK := buildObstacleFeature(ef, d)
+	of, og, geomOK := buildObstacleFeature(ef, d, res)
 	if !geomOK {
 		return obstacleSet{}, false
 	}
-	patch, patchOK := resolveCornerBlend(CornerBlendRequest{ObstacleFeature: of, Setback: res},
-		[]CornerBlendProvider{bsplineObstacleProvider{}})
+	patch, patchOK := resolveObstaclePatch(of, res)
 	if !patchOK {
 		return obstacleSet{}, false // honest-reject the WHOLE obstacle (no wings-without-patch)
 	}
-	return assembleObstacleSet(ef, d, og, patch, maps)
+	return assembleObstacleSet(ef, d, og, of, patch, maps)
+}
+
+// resolveObstaclePatch runs the obstacle tier ladder, and DROPS the surf-rst payload when the canal does
+// not certify. Dropping it is what makes the choice structural rather than a label read downstream: the
+// wall face's front is subdivided from of.Canal.wallFront() and the patch's own wall rail comes from the
+// same slice, so a canal that certified and a wall front that bulges are the same fact, and a canal that
+// declined takes the straight seam back with it. Without this the two could disagree and tear the weld.
+func resolveObstaclePatch(of *ObstacleFeature, res Resolution) (CornerBlendPatch, bool) {
+	req := CornerBlendRequest{ObstacleFeature: of, Setback: res}
+	if of.Canal != nil {
+		if patch, ok := resolveCornerBlend(req, []CornerBlendProvider{obstacleCanalProvider{}}); ok {
+			return patch, true
+		}
+		of.Canal = nil
+	}
+	return resolveCornerBlend(req, []CornerBlendProvider{bsplineObstacleProvider{}})
 }
 
 // dualObstacleRoute reports whether ef is a qualifying==2 (dual-host) edge and, if so, is the FINAL
@@ -172,7 +191,7 @@ func dualObstacleRoute(ef edgeFillet, res Resolution, maps filletRebuildMaps) (o
 
 // assembleObstacleSet builds every rebuilt face once detection+patch succeeded: the notched host
 // plane, the two cylinder wings, the patch face, and the split-rim obstacle wall.
-func assembleObstacleSet(ef edgeFillet, d obstacleDetection, og obstacleGeom,
+func assembleObstacleSet(ef edgeFillet, d obstacleDetection, og obstacleGeom, of *ObstacleFeature,
 	patch CornerBlendPatch, maps filletRebuildMaps) (obstacleSet, bool) {
 	notch, ok := buildNotchedHost(d, maps)
 	if !ok {
@@ -183,23 +202,34 @@ func assembleObstacleSet(ef edgeFillet, d obstacleDetection, og obstacleGeom,
 		return obstacleSet{}, false
 	}
 	wings := buildObstacleWings(ef, d, og)
-	patchFace := buildPatchFace(ef, d, og, patch)
+	patchFace := buildPatchFace(ef, d, og, of, patch)
 	set := obstacleSet{
 		replace:     map[uint64]filletFace{d.host.ID(): notch, d.obstacleWall.ID(): tube},
 		extra:       append(wings, patchFace),
 		wall:        d.filletWall,
 		wallEdge:    ef.edge.ID(),
-		wallInserts: orderedWallInserts(ef, og),
+		wallInserts: orderedWallInserts(ef, og, of),
 	}
 	return set, true
 }
 
-// orderedWallInserts returns the two wall split points A,D ordered from the filleted edge's start
-// vertex, so addEdgeInserts places them in the wall face's tangent seam in traversal order.
-func orderedWallInserts(ef edgeFillet, og obstacleGeom) []math.Point3 {
-	start := ef.edge.StartVertex().Point()
-	if start.DistanceTo(og.wallA) > start.DistanceTo(og.wallD) {
-		return []math.Point3{og.wallD, og.wallA}
+// orderedWallInserts returns the wall face's front over the dip, ordered from the filleted edge's start
+// vertex so addEdgeInserts places it in the wall's tangent seam in traversal order.
+//
+// With the exact surf-rst canal the front is NOT the straight seam A→D: the ball is pushed off the plain
+// fillet axis by the obstacle rim, so its wall tangency foot traces a bulge — measured against live
+// DRAWEXE, the whole of R9's 0.717 / S3's 4.625 / T6's 9.477 / U3's 2.998 / X3's 147.35 of wall-face area
+// the straight seam was missing. The polyline is of.Canal.wallFront(), the SAME slice the patch's wall rail
+// is traced from (patchBoundaryLoop), so the shared front is one list of points, not two agreeing
+// computations. Without the payload (the Coons tier) it degenerates to the original two split points A,D.
+func orderedWallInserts(ef edgeFillet, og obstacleGeom, of *ObstacleFeature) []math.Point3 {
+	front := []math.Point3{og.wallA, og.wallD}
+	if of.Canal != nil {
+		front = of.Canal.wallFront()
 	}
-	return []math.Point3{og.wallA, og.wallD}
+	start := ef.edge.StartVertex().Point()
+	if start.DistanceTo(front[0]) > start.DistanceTo(front[len(front)-1]) {
+		return reversedPoints(front) // a fresh slice: the front is shared with the patch's own rail
+	}
+	return front
 }

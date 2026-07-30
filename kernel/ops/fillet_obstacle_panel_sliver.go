@@ -126,12 +126,12 @@ func buildSliverLoop(ef edgeFillet, res Resolution, dets []obstacleDetection,
 func sliverWingEnd(ef edgeFillet, active obstacleDetection, wingEnd float64) (arc geom.Arc3d, cyl geom.Cylinder, wallP, node math.Point3, ok bool) {
 	hostRadial, wallRadial, midRadial := cornerRadials(ef, active.hostIsA)
 	node = activeNodeAt(active, ef, wingEnd)
-	arc, wallP, _, ok0 := wingSection(node, hostRadial, wallRadial, midRadial)
+	arc, sec, ok0 := wingSection(node, hostRadial, wallRadial, midRadial)
 	if !ok0 {
 		return geom.Arc3d{}, geom.Cylinder{}, math.Point3{}, math.Point3{}, false
 	}
 	cyl, ok1 := wingCylinder(arc, ef.cyl.AxisDir.AsVector())
-	return arc, cyl, wallP, node, ok1
+	return arc, cyl, sec.wall, node, ok1
 }
 
 // activeNodeAt returns active's own node (pMinus or pPlus) at axis station z — precondition:

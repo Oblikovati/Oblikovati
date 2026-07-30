@@ -192,6 +192,19 @@ func offSurfaceDebtIndex() map[string]float64 {
 //   - CANAL / BSpline patch rails (C2 C6 C8 S1 S3 S4 S6 S7 S9 T1 T3 T4 T6 T7 U3 U4 X3 R9): the rail is
 //     built on the exact rolling-ball envelope while the patch is a fitted BSpline, so rail and patch
 //     agree only to the fit's own residual (reverse-segment-fix-report.md §6 concern 2).
+//     ★ For the five MID-SPAN OBSTACLE cases (R9 S3 T6 U3 X3) that root is now WRONG and the real one is
+//     narrower: since obstacle-canal-report.md their patch IS the exact envelope, and every one of their
+//     worst residuals is a straight RIM CHORD — the obstacle rim is tiled as 64 chords and the two
+//     node-adjacent ones deliberately carry NO curve at all (insertNodesIntoRim: "a straight truncated
+//     chord"), so a chord sits its own sagitta off whatever face bounds it. The same chord is independently
+//     visible off the UNTOUCHED obstacle-wall face (U3: 1.1966e-02 off its EllipticalCylinder), which is
+//     what makes this the chord's error and not the patch's. Measured, base faef61ad → the canal:
+//     R9 1.550764e-04 (bit-identical), T6 1.693403e-04 (bit-identical), S3 1.726588e-04 → 1.708003e-04,
+//     X3 2.962564e-04 → 1.595493e-04 (−46 %), U3 2.851799e-04 → 3.170438e-04. U3 is the one that GREW, and
+//     it grew because the face became correct while the chord did not move: the Coons rail it used to be
+//     measured against sagged ~1.6e-03 toward the chord and hid that much of it. No ceiling was touched.
+//     Giving those two truncated chords their exact rim sub-arc is the fix, and it is the largest single
+//     off-surface residual left in the obstacle class.
 func knownOffSurfaceDebt() []offSurfaceDebtEntry {
 	return []offSurfaceDebtEntry{
 		{"F2", "complex", 0.0616}, {"C2", "simple", 0.0192},

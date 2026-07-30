@@ -13,7 +13,7 @@ import (
 // BY VALUE. The wing section arcs are the true fillet-cylinder cross-sections at the two nodes, so
 // they weld to the wing faces by identity; the two nodes are the exact rim∩boundary crossings, shared
 // with RimArcPts' endpoints to machine precision (spec §3, the corner-weld invariant, ADR-0042).
-func buildObstacleFeature(ef edgeFillet, d obstacleDetection) (*ObstacleFeature, obstacleGeom, bool) {
+func buildObstacleFeature(ef edgeFillet, d obstacleDetection, res Resolution) (*ObstacleFeature, obstacleGeom, bool) {
 	og, ok := computeObstacleGeom(ef, d)
 	if !ok {
 		return nil, obstacleGeom{}, false
@@ -34,6 +34,7 @@ func buildObstacleFeature(ef edgeFillet, d obstacleDetection) (*ObstacleFeature,
 		BlendAxis: ef.cyl.AxisDir.AsVector(),
 		WallInto:  wallInto,
 	}
+	of.Canal = buildObstacleCanal(ef, d, og, of, res) // nil ⇒ the straight-seam Coons model, wall front included
 	return of, og, true
 }
 
@@ -44,14 +45,15 @@ func buildObstacleFeature(ef edgeFillet, d obstacleDetection) (*ObstacleFeature,
 // so it is bit-identical to the notch/patch node (the weld invariant).
 func computeObstacleGeom(ef edgeFillet, d obstacleDetection) (obstacleGeom, bool) {
 	hostRadial, wallRadial, midRadial := cornerRadials(ef, d.hostIsA)
-	startArc, wallA, startMid, ok0 := wingSection(d.pMinus, hostRadial, wallRadial, midRadial)
-	endArc, wallD, endMid, ok1 := wingSection(d.pPlus, hostRadial, wallRadial, midRadial)
+	startArc, start, ok0 := wingSection(d.pMinus, hostRadial, wallRadial, midRadial)
+	endArc, end, ok1 := wingSection(d.pPlus, hostRadial, wallRadial, midRadial)
 	if !ok0 || !ok1 {
 		return obstacleGeom{}, false
 	}
 	return obstacleGeom{
-		wallA: wallA, wallD: wallD,
-		startArc: startArc, endArc: endArc, startMid: startMid, endMid: endMid,
+		wallA: start.wall, wallD: end.wall,
+		startArc: startArc, endArc: endArc, startMid: start.mid, endMid: end.mid,
+		startCen: start.cen, endCen: end.cen,
 	}, true
 }
 
@@ -67,16 +69,21 @@ func cornerRadials(ef edgeFillet, hostIsA bool) (hostRadial, wallRadial, midRadi
 	return c.cen.VectorTo(hostTan), c.cen.VectorTo(wallTan), c.cen.VectorTo(c.mid)
 }
 
+// wingSectionPts is one node's cylinder cross-section: its ball centre on the fillet axis, the
+// wall-tangent point, and the arc midpoint.
+type wingSectionPts struct {
+	cen, wall, mid math.Point3
+}
+
 // wingSection places the cylinder cross-section at a node: the axis centre is node−hostRadial, from
 // which the wall-tangent point and arc midpoint follow by the constant radials. The section is the
 // wall→top quarter arc (Arc3dByThreePoints through the midpoint), matching Task 3's WingStart
 // convention (its wall point → top point).
-func wingSection(node math.Point3, hostRadial, wallRadial, midRadial math.Vector3) (geom.Arc3d, math.Point3, math.Point3, bool) {
+func wingSection(node math.Point3, hostRadial, wallRadial, midRadial math.Vector3) (geom.Arc3d, wingSectionPts, bool) {
 	cen := node.TranslateBy(hostRadial.Scale(-1))
-	wallP := cen.TranslateBy(wallRadial)
-	mid := cen.TranslateBy(midRadial)
-	arc, err := geom.Arc3dByThreePoints(wallP, mid, node)
-	return arc, wallP, mid, err == nil
+	pts := wingSectionPts{cen: cen, wall: cen.TranslateBy(wallRadial), mid: cen.TranslateBy(midRadial)}
+	arc, err := geom.Arc3dByThreePoints(pts.wall, pts.mid, node)
+	return arc, pts, err == nil
 }
 
 // dipRimSamples returns the obstacle rim's DIP-side arc from P− to P+ inclusive (the samples between

@@ -13,22 +13,28 @@ import (
 // neighbour carries: the wall line A→D (shared with the split wall seam), the two wing section arcs
 // (shared with the wing faces), and the dip-side rim samples (shared with the split obstacle wall).
 // This is what makes the four-sided patch weld with no T-junction (spec §3, Task 6 weld).
-func buildPatchFace(ef edgeFillet, d obstacleDetection, og obstacleGeom, patch CornerBlendPatch) filletFace {
+func buildPatchFace(ef edgeFillet, d obstacleDetection, og obstacleGeom, of *ObstacleFeature, patch CornerBlendPatch) filletFace {
 	return filletFace{
 		surface: patch.Surface,
-		loops:   []filletLoop{patchBoundaryLoop(d, og)},
+		loops:   []filletLoop{patchBoundaryLoop(d, og, of)},
 		parent:  filletEdgeProvenance(ef.edge),
 	}
 }
 
-// patchBoundaryLoop traces the patch boundary A→D→P+→(dip rim)→P-→A: the wall line, the WingEnd arc,
-// the dip-side rim (reversed, so it runs P+→P- antiparallel to the obstacle wall's forward rim), and
-// the WingStart arc reversed. The rim segments carry the hole edge's source id so they share one
-// identity with the split wall; the wing arcs are shared by value with the wing faces.
-func patchBoundaryLoop(d obstacleDetection, og obstacleGeom) filletLoop {
+// patchBoundaryLoop traces the patch boundary A→(wall front)→D→P+→(dip rim)→P-→A: the wall front, the
+// WingEnd arc, the dip-side rim (reversed, so it runs P+→P- antiparallel to the obstacle wall's forward
+// rim), and the WingStart arc reversed. The rim segments carry the hole edge's source id so they share
+// one identity with the split wall; the wing arcs are shared by value with the wing faces.
+//
+// The wall front is of.Canal.wallFront() when the exact surf-rst canal was accepted — the SAME slice
+// orderedWallInserts subdivides the wall face's own tangent seam with, so the shared front is one list of
+// points rather than two agreeing computations — and the bare straight A→D seam otherwise.
+func patchBoundaryLoop(d obstacleDetection, og obstacleGeom, of *ObstacleFeature) filletLoop {
 	dip := dipRimSamples(d) // [P-, interior..., P+]
 	var loop filletLoop
-	loop.addID(og.wallA, nil, 0, 0)       // A -> D (wall seam)
+	for _, p := range wallFrontInterior(og, of) { // A, interior wall-foot stations...
+		loop.addID(p, nil, 0, 0)
+	}
 	loop.addID(og.wallD, og.endArc, 0, 0) // D -> P+ (WingEnd, wall->top)
 	for i := len(dip) - 1; i >= 1; i-- {  // P+, interior... (down to, excluding, P-)
 		loop.addID(dip[i], nil, 0, d.holeEdge.ID())
@@ -36,6 +42,17 @@ func patchBoundaryLoop(d obstacleDetection, og obstacleGeom) filletLoop {
 	startRev, _ := geom.Arc3dByThreePoints(d.pMinus, og.startMid, og.wallA)
 	loop.addID(d.pMinus, startRev, 0, 0) // P- -> A (WingStart reversed) closes the ring
 	return loop
+}
+
+// wallFrontInterior returns the wall front from A up to (excluding) D — the points patchBoundaryLoop adds
+// before it reaches D, so a straight seam contributes A alone and a canal contributes A plus every
+// interior wall-foot station.
+func wallFrontInterior(og obstacleGeom, of *ObstacleFeature) []math.Point3 {
+	if of.Canal == nil {
+		return []math.Point3{og.wallA}
+	}
+	front := of.Canal.wallFront()
+	return front[:len(front)-1]
 }
 
 // buildSplitObstacleWall rebuilds the face behind the hole rim (e.g. the elliptical tube wall) with

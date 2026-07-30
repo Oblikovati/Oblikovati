@@ -33,6 +33,9 @@ const (
 	BlendKindCanal        CornerBlendKind = "canal-rolling"    // M6' rolling-ball canal fill for a tangent-degenerate valence-4 corner (RailLoop.Canal)
 	BlendKindCanalStation CornerBlendKind = "canal-station"    // U4-4b exact-station rolling-ball canal loft for a dual-host CORE panel (RailLoop.Stations)
 	BlendKindRunoutCanal  CornerBlendKind = "runout-canal"     // SETBACK-CLOSE run-out band as the exact rolling-ball envelope (RailLoop.Runout)
+	// BlendKindObstacleCanal is a MID-SPAN OBSTACLE band as the exact surf-rst rolling-ball envelope
+	// (ObstacleFeature.Canal) — the ball tangent to the fillet wall, through the obstacle rim.
+	BlendKindObstacleCanal CornerBlendKind = "obstacle-canal"
 )
 
 // BlendArm is one fillet converging on the junction: its rolling-ball contact path (spine), the

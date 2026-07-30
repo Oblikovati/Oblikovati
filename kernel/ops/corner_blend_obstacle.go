@@ -28,6 +28,12 @@ type ObstacleFeature struct {
 	Radius    float64      // rolling-ball blend radius → G1-ribbon length
 	BlendAxis math.Vector3 // unit fillet-cylinder axis (wings extrude ±along it)
 	WallInto  math.Vector3 // unit, in the wall plane ⟂ the bottom rail, into the wall
+	// Canal, when non-nil, is the EXACT surf-rst rolling-ball model of this band (fillet_obstacle_canal.go):
+	// the ball tangent to the fillet WALL and passing THROUGH the obstacle rim. It is the only signal
+	// obstacleCanalProvider keys on, and the same payload the wall face's own front is subdivided from —
+	// so a declined canal takes the wall front back to the straight seam with it, and the two can never
+	// describe different geometry for the edge they share.
+	Canal *obstacleCanal
 }
 
 // bsplineObstacleProvider is the obstacle-variant tier of the corner-blend engine: a single Coons
