@@ -3,11 +3,8 @@
 package ops
 
 import (
-	"os"
 	"testing"
 
-	"oblikovati.org/kernel/exchange"
-	"oblikovati.org/kernel/exchange/step"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -29,15 +26,7 @@ var u4EdgeMidpoint = math.P3(10, -20, 0)
 // (fillet_obstacle_watertight_test.go) so the topology under test is a real imported B-rep.
 func importU4(t *testing.T) *topo.Body {
 	t.Helper()
-	data, err := os.ReadFile(u4StepPath)
-	if err != nil {
-		t.Fatalf("read U4 fixture: %v", err)
-	}
-	bodies, _, err := step.Reader{}.ImportSolids(data, exchange.TranslationOptions{TargetUnitMM: 1})
-	if err != nil || len(bodies) != 1 {
-		t.Fatalf("import U4: %v (n=%d)", err, len(bodies))
-	}
-	return bodies[0]
+	return importStepSolid(t, u4StepPath)
 }
 
 // u4Fillet solves U4's real fillet feature end to end (resolveFilletPicks → computeCorners →
@@ -50,27 +39,12 @@ func importU4(t *testing.T) *topo.Body {
 func u4Fillet(t *testing.T) (*topo.Body, []edgeFillet, Resolution) {
 	t.Helper()
 	body := importU4(t)
-	edge := edgeAtMidpoint(body, u4EdgeMidpoint)
-	if edge == nil {
-		t.Fatalf("U4 fixture: filleted edge (midpoint %v) not found", u4EdgeMidpoint)
-	}
-	picks, err := resolveFilletPicks(body, filletPicksFor([][]byte{edge.ReferenceKey()}, 5))
-	if err != nil {
-		t.Fatalf("resolveFilletPicks(U4): %v", err)
-	}
-	blends, miters, err := computeCorners(body, picks)
-	if err != nil {
-		t.Fatalf("computeCorners(U4): %v", err)
-	}
-	fils, err := computeFillets(body, picks, blends, miters, FillConcaveOutward, nil)
-	if err != nil {
-		t.Fatalf("computeFillets(U4): %v", err)
-	}
-	if len(fils) != 1 {
-		t.Fatalf("U4: want 1 edgeFillet, got %d", len(fils))
-	}
-	return body, fils, ResolutionForBody(body)
+	ef, res := singleEdgeFillet(t, body, "U4", u4EdgeMidpoint, u4FilletRadius)
+	return body, []edgeFillet{ef}, res
 }
+
+// u4FilletRadius is the corpus.json "U4" record's own pick radius.
+const u4FilletRadius = 5
 
 // u4EdgeFillet is u4Fillet's single-edgeFillet convenience form — the shape the U4-0 unit tests need
 // (they never touch the body directly).

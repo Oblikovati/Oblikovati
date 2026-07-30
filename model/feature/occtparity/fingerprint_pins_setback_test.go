@@ -174,8 +174,12 @@ func setbackObstaclePins() []fingerprintPin {
 		// split parameter by inverting the station onto the SEGMENT's own conic and then required that conic
 		// to reproduce the station within the model weld. U4's boss-B rim is an imported b-spline whose
 		// per-segment circular fit sits ~1e-7 off it while the station is solved on the exact rim to ~1e-12,
-		// so the inversion measured 8.723146e-08 against a 3.394e-08 weld and BOTH halves fell back to
-		// chords. Four of boss B's rim halves therefore shipped straight: 5.002371e-03 / 4.967703e-03 /
+		// so a per-segment FIT RESIDUAL was being compared against a WHOLE-MODEL weld: measured on the
+		// shipped path, res.Weld() = 6.442049363e-08 (boundingDiag 64.420493634) and the two inversions read
+		// 8.723146033e-08 (1.354x) and 7.634559529e-08 (1.185x), so BOTH halves fell back to chords. (The
+		// 3.394e-08 an earlier revision of this note quoted was the deleted regression test's own
+		// ResolutionForPoints(holeSampled.pts).Weld(), not the shipped res.Weld().)
+		// Four of boss B's rim halves therefore shipped straight: 5.002371e-03 / 4.967703e-03 /
 		// 2.675363e-03 / 2.674992e-03 off the corner-blend PANELS they bound and 4.301259e-03 /
 		// 4.275629e-03 / 2.080290e-03 / 2.079314e-03 off the obstacle WALL — the same four chords against
 		// two different faces, which is what makes them the chords' own defect and not either surface's.
@@ -185,8 +189,16 @@ func setbackObstaclePins() []fingerprintPin {
 		// build only because the walls REPLACE body faces and so reach the first-writer-wins edge catalog
 		// first). Five of the sixteen faces move; eleven are bit-identical.
 		//
-		// Proven on the mirror twins at CONVERGED tessellation (TessellateFace, ChordTolerance 1e-5, where
-		// PropertyQuality's own chordal deficit no longer dominates): the two CORE panels are exact mirror
+		// Proven on the mirror twins at SMOOTH tessellation (TessellateFace, ChordTolerance 1e-5, where
+		// PropertyQuality's own chordal deficit no longer dominates). ★ 1e-5 is smooth, NOT converged: at
+		// ct=1e-6 the mesher emits "tessellate.cap-saturated: interior refinement saturated the 64-cell
+		// floor still above chord tol 1e-06" on ALL FOUR BSpline panels, and one core panel's area then
+		// jumps ~6.4e-03 (base 30.335378318 @3e-6 → 30.329024770 @1e-6; HEAD 30.333277446 → 30.326923524).
+		// That saturation is present IDENTICALLY at base f633c0ce, so it is pre-existing and not caused
+		// here, but no reading at or below ct=3e-6 on these panels should be called converged until it is
+		// understood (tessellator defect vs legitimate refinement branch — queued). The twins below are
+		// mirror images measured at the SAME quality, so their SPLIT is unaffected by it.
+		// The two CORE panels are exact mirror
 		// images about z=0 (DRAWEXE 30.3344/30.3344) and their split goes 1.856e-05 → 1.035e-06, 17.9×,
 		// from 1.9× the wings' own pair split (2.1012e-05 on 65.712, rel 3.198e-07) to 9.4× BELOW it. The
 		// asymmetry was the CHORDS' own: the rim's 64 samples are not mirror-symmetric (the +z neighbour
@@ -198,11 +210,16 @@ func setbackObstaclePins() []fingerprintPin {
 		// fewer stations on a boundary that is on the surface). Free edges 0 and folds 0 at BOTH gate
 		// qualities, face count still 16.
 		//
-		// NOT improved, and stated rather than claimed: at the same converged quality the two core panels go
+		// NOT improved, and stated rather than claimed: at the same smooth quality the two core panels go
 		// 30.335400037/30.335418597 → 30.333320307/30.333319272 against DRAWEXE's 30.3344 — +1.00e-03/
-		// +1.02e-03 to −1.08e-03/−1.08e-03, i.e. the same distance on the other side, so per-face DRAWEXE
-		// does NOT adjudicate them (what dominates that residual is the queued coupled node, whose own node
-		// point is 4.04e-03 off host A's rim). The two SLIVERS do improve, 3.046316780/3.046337374 →
+		// +1.02e-03 to −1.08e-03/−1.08e-03, i.e. across the oracle and slightly FURTHER from it. Pushed to
+		// ct=1e-7 the smooth twin reads base 30.335346521 (+9.47e-04) → HEAD 30.333264763 (−1.14e-03): the
+		// magnitude GROWS ~19 %, so the per-face DRAWEXE reading marginally DISFAVOURS this change on the
+		// two core panels. It is not the adjudicating measure here — what dominates that residual is the
+		// queued coupled node, whose own node point is 4.04e-03 off host A's rim and whose chord is
+		// 9.62e-03 off the panel, both an order above anything this slice moved; the pin rests on the
+		// mirror twins and on volume. What WOULD adjudicate it is a closed form for these panels, which
+		// does not exist yet. The two SLIVERS do improve, 3.046316780/3.046337374 →
 		// 3.045616229/3.045636721 against 3.03906/3.03903 (+0.2387 % → +0.2157 %). The oblique
 		// EllipticalCylinder pipe wall goes 799.101070069 → 799.099981639 against 799.138 @1e-12, a move
 		// 308× smaller than that face's own sprops quadrature spread (799.473 @1e-9 vs 799.138 @1e-12) —

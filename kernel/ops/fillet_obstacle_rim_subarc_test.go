@@ -3,6 +3,7 @@
 package ops
 
 import (
+	"fmt"
 	stdmath "math"
 	"testing"
 
@@ -96,10 +97,11 @@ func TestObstacleRimConsumersAgreeByValue(t *testing.T) {
 			wall := insertNodesIntoRim(r.d)
 			notch := shippedNotchLoop(t, c.name, r)
 			patch := patchBoundaryLoop(r.d, r.og, r.of)
-			covered := map[int]int{}
-			matchRimSegments(t, "notch", notch, len(notch.pts), wall, covered)
-			matchRimSegments(t, "patch", patch, len(patch.pts), wall, covered)
-			assertEveryWallRimSegmentCovered(t, r.d, wall, covered)
+			cov := newRimCoverage()
+			matchRimSegments(t, "notch", notch, len(notch.pts), wall, cov)
+			matchRimSegments(t, "patch", patch, len(patch.pts), wall, cov)
+			assertRimTJunctionCount(t, c.name, cov, 0)
+			assertEveryWallRimSegmentCovered(t, r.d, wall, cov.covered)
 		})
 	}
 }
@@ -287,30 +289,70 @@ func distanceToCurve(p math.Point3, ref geom.Curve3) float64 {
 	return best
 }
 
-// matchRimSegments requires every one of loop's first segCount consecutive point pairs that lies on the
-// rim (matched by exact point value against wall's ring) to be a segment of that ring, and records which
-// wall segment each covered. A pair whose two points are not adjacent on the wall ring is a T-junction.
-func matchRimSegments(t *testing.T, who string, loop filletLoop, segCount int, wall filletLoop, covered map[int]int) {
+// rimCoverage accumulates what a wall's rim ring received from the consumers that share it: how many
+// times each ring segment was presented, and one description per presented pair whose two points are NOT
+// adjacent on the ring — a T-junction. The T-junctions are COLLECTED rather than failed on the spot so a
+// caller with recorded pre-existing debt (dualRimCases' boss A on S4/T7) can assert the exact count
+// instead of the gate being unable to run at all.
+type rimCoverage struct {
+	covered    map[int]int
+	tJunctions []string
+}
+
+// newRimCoverage starts an empty coverage tally.
+func newRimCoverage() *rimCoverage {
+	return &rimCoverage{covered: map[int]int{}}
+}
+
+// matchRimSegments matches every one of loop's first segCount consecutive point pairs that lies on the
+// rim (by exact point value against wall's ring) to a segment of that ring, records which one each
+// covered, and checks the two consumers' curves for that segment coincide.
+func matchRimSegments(t *testing.T, who string, loop filletLoop, segCount int, wall filletLoop, cov *rimCoverage) {
 	t.Helper()
 	index := map[math.Point3]int{}
 	for i, p := range wall.pts {
 		index[p] = i
 	}
 	for i := 0; i < segCount; i++ {
-		a, b := loop.pts[i], loop.pts[(i+1)%len(loop.pts)]
-		ia, oka := index[a]
-		ib, okb := index[b]
-		if !oka || !okb {
-			continue // not a rim segment (a wall-front or wing-arc side of the patch loop)
-		}
-		seg, ok := wallSegmentBetween(ia, ib, len(wall.pts))
-		if !ok {
-			t.Errorf("%s: rim pair %v->%v is not a segment of the wall's rim ring (indices %d,%d) — T-junction", who, a, b, ia, ib)
-			continue
-		}
-		covered[seg]++
-		assertCurvesCoincide(t, who, seg, curveAt(loop.curves, i), curveAt(wall.curves, seg), a, b)
+		matchOneRimPair(t, who, loop, i, wall, index, cov)
 	}
+}
+
+// matchOneRimPair folds a single consumer pair into the coverage: skipped when it is not a rim pair at
+// all, recorded as a T-junction when its two rim points are not adjacent on the ring, otherwise counted
+// and curve-compared against the wall's own curve for that segment.
+func matchOneRimPair(t *testing.T, who string, loop filletLoop, i int, wall filletLoop,
+	index map[math.Point3]int, cov *rimCoverage) {
+	t.Helper()
+	a, b := loop.pts[i], loop.pts[(i+1)%len(loop.pts)]
+	ia, oka := index[a]
+	ib, okb := index[b]
+	if !oka || !okb {
+		return // not a rim segment (a wall-front or wing-arc side of the patch loop)
+	}
+	seg, ok := wallSegmentBetween(ia, ib, len(wall.pts))
+	if !ok {
+		cov.tJunctions = append(cov.tJunctions,
+			fmt.Sprintf("%s: rim pair %v->%v is not a segment of the wall's rim ring (indices %d,%d) — T-junction", who, a, b, ia, ib))
+		return
+	}
+	cov.covered[seg]++
+	assertCurvesCoincide(t, who, seg, curveAt(loop.curves, i), curveAt(wall.curves, seg), a, b)
+}
+
+// assertRimTJunctionCount requires the collected T-junctions to be exactly the recorded population. It is
+// a ratchet in BOTH directions: a new one fails, and so does a retired one, because retiring a recorded
+// defect must land with the measurement that retires it.
+func assertRimTJunctionCount(t *testing.T, who string, cov *rimCoverage, want int) {
+	t.Helper()
+	if len(cov.tJunctions) == want {
+		return
+	}
+	for _, msg := range cov.tJunctions {
+		t.Log(msg)
+	}
+	t.Errorf("%s: the consumers present %d rim pairs that are not segments of the wall's ring, want %d (see the log above)",
+		who, len(cov.tJunctions), want)
 }
 
 // wallSegmentBetween returns the wall ring segment index joining adjacent indices ia,ib (either

@@ -223,13 +223,23 @@ func offSurfaceDebtIndex() map[string]float64 {
 //     that is the honest outcome, not an oversight: the DUAL path's own rim defect was live but SECOND.
 //     splitRimSegmentCurve recovered the split parameter off the SEGMENT's per-segment circular fit rather
 //     than off the rim, and on U4's imported b-spline rim that fit is ~1e-7 out while the station is exact
-//     to ~1e-12, so the weld test rejected (8.723146e-08 vs 3.394e-08) and four of boss B's rim halves
-//     shipped as chords — 5.002371e-03 / 4.967703e-03 / 2.675363e-03 / 2.674992e-03 off the panels and
-//     4.301259e-03 / 4.275629e-03 / 2.080290e-03 / 2.079314e-03 off the obstacle wall. They now trace the
-//     rim (rimSubArcBetween) at 5.09e-05 and below, but they were never U4's WORST offender, so the
-//     ceiling cannot move until the coupled node is solved. No other case in the 475 is touched: the
-//     construction is reached only through spliceRimPoint / the dual panels, and five of the six dual
-//     cases honest-reject.
+//     to ~1e-12 — a per-segment FIT RESIDUAL tested against a WHOLE-MODEL weld. On the shipped path that
+//     weld is res.Weld() = 6.442049363e-08 (U4 boundingDiag 64.420493634), and the two inversions read
+//     8.723146033e-08 (1.354x) and 7.634559529e-08 (1.185x), so both rejected and four of boss B's rim
+//     halves shipped as chords — 5.002371e-03 / 4.967703e-03 / 2.675363e-03 / 2.674992e-03 off the panels
+//     and 4.301259e-03 / 4.275629e-03 / 2.080290e-03 / 2.079314e-03 off the obstacle wall. (The 3.394e-08
+//     an earlier revision quoted was the deleted regression test's ResolutionForPoints(holeSampled).Weld()
+//     = 3.39411225647e-08, not the shipped weld; the margins were 1.19-1.35x, not 2.25-2.57x.) They now
+//     trace the rim (rimSubArcBetween) at 5.09e-05 and below, but they were never U4's WORST offender, so
+//     the ceiling cannot move until the coupled node is solved.
+//     ★ No other case in the 475 changes RESULT — but three cases run the construction, not one. An
+//     instrumented edgeCatalog.use census over a full FilletEdges shows simple/S4 (124→48) and simple/T7
+//     (116→48) nil-mismatch counts moving base→HEAD, i.e. both execute buildDualPanelFaces and both hand
+//     the catalog different curves than they did at base. Their shipped bodies are byte-identical (their
+//     fingerprint pins never moved) only because every dip-rim curve they hand is discarded, and each
+//     still carries 48 residual nil-mismatches from OTHER shared-curve families. "Byte-identical results"
+//     is not "untouched construction", so kernel/ops' dualRimCases now drives the by-value and trace-the-rim
+//     gates on S4 and T7 as well as U4.
 func knownOffSurfaceDebt() []offSurfaceDebtEntry {
 	return []offSurfaceDebtEntry{
 		{"F2", "complex", 0.0616}, {"C2", "simple", 0.0192},
