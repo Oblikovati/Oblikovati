@@ -189,22 +189,29 @@ func offSurfaceDebtIndex() map[string]float64 {
 //     taking F7's worst residual 89.4426 → 3.4e-14 and its per-face gross error vs DRAWEXE 40793 → 2.8.)
 //   - SPREAD-FAN / oblique-plane chords (P8 P9 V8 V9 V1 V3 V5 X9 K7 L1 L7 N5): a run-out spread cap is
 //     tiled as a chord fan, so each chord sits a sagitta off the curved wall it spans.
-//   - CANAL / BSpline patch rails (C2 C6 C8 S1 S3 S4 S6 S7 S9 T1 T3 T4 T6 T7 U3 U4 X3 R9): the rail is
+//   - CANAL / BSpline patch rails (C2 C6 C8 S1 S4 S6 S7 S9 T1 T3 T4 T7 U4): the rail is
 //     built on the exact rolling-ball envelope while the patch is a fitted BSpline, so rail and patch
 //     agree only to the fit's own residual (reverse-segment-fix-report.md §6 concern 2).
-//     ★ For the five MID-SPAN OBSTACLE cases (R9 S3 T6 U3 X3) that root is now WRONG and the real one is
-//     narrower: since obstacle-canal-report.md their patch IS the exact envelope, and every one of their
-//     worst residuals is a straight RIM CHORD — the obstacle rim is tiled as 64 chords and the two
-//     node-adjacent ones deliberately carry NO curve at all (insertNodesIntoRim: "a straight truncated
-//     chord"), so a chord sits its own sagitta off whatever face bounds it. The same chord is independently
-//     visible off the UNTOUCHED obstacle-wall face (U3: 1.1966e-02 off its EllipticalCylinder), which is
-//     what makes this the chord's error and not the patch's. Measured, base faef61ad → the canal:
-//     R9 1.550764e-04 (bit-identical), T6 1.693403e-04 (bit-identical), S3 1.726588e-04 → 1.708003e-04,
-//     X3 2.962564e-04 → 1.595493e-04 (−46 %), U3 2.851799e-04 → 3.170438e-04. U3 is the one that GREW, and
-//     it grew because the face became correct while the chord did not move: the Coons rail it used to be
-//     measured against sagged ~1.6e-03 toward the chord and hid that much of it. No ceiling was touched.
-//     Giving those two truncated chords their exact rim sub-arc is the fix, and it is the largest single
-//     off-surface residual left in the obstacle class.
+//   - ★ The five MID-SPAN OBSTACLE cases (R9 S3 T6 U3 X3) are now two decades below that, and their root
+//     has changed twice. It was read as the fitted-BSpline patch; obstacle-canal-report.md made the patch
+//     the EXACT envelope and the residual survived, which re-rooted it on the two straight RIM CHORDS the
+//     node split left with NO curve at all (insertNodesIntoRim: "a straight truncated chord"). Confirmed
+//     on the shipped bodies by closed form — the residual WAS that chord's own sagitta to a few tenths of
+//     a percent (R9 6.978437e-03 vs 8(1−cos(Δθ/2)) = 6.997e-03 off its r=8 boss cylinder; S3 9.394e-03
+//     with the cone's own 0.9701 normal projection; U3/X3 1.561e-02 / 2.959e-02 off the patch AND
+//     1.197e-02 / 1.601e-02 off the UNTOUCHED obstacle wall, the same chord against two different faces).
+//     Those four segments now carry the rim conic TRIMMED at the node's own rim parameter, and every one
+//     of the five improved 70×–159×:
+//     R9 1.550764e-04 → 1.174647e-06   S3 1.708003e-04 → 1.375036e-06   T6 1.693403e-04 → 1.780964e-06
+//     U3 3.170438e-04 → 1.987829e-06   X3 1.595493e-04 → 2.268098e-06
+//     (Note for the record that the adversarial review's reading of R9's 6.978437e-03 as a "wing-tangent
+//     chord" was itself wrong: both its endpoints lie on x²+y²=64 at z=10, one of them the node on the
+//     receded tangent line y=−7 and the other rim sample 42 — it was the node RIM chord all along.)
+//     What DOMINATES each case now is a different, narrower root, newly VISIBLE rather than newly caused:
+//     R9/S3/U3/X3 the canal WALL-FRONT chord against the patch (5.29e-05 / 7.56e-05 / 9.79e-05 /
+//     4.21e-04 — the wall-foot station polyline vs the surface it is a station list of), and T6 the
+//     ELLIPTIC rim's own per-segment circular fit (1.224210e-04 off its EllipticalCylinder, rimSegmentArc
+//     over a 1/64 span of an a=15,b=10 ellipse).
 func knownOffSurfaceDebt() []offSurfaceDebtEntry {
 	return []offSurfaceDebtEntry{
 		{"F2", "complex", 0.0616}, {"C2", "simple", 0.0192},
@@ -213,11 +220,12 @@ func knownOffSurfaceDebt() []offSurfaceDebtEntry {
 		{"T1", "simple", 0.00156}, {"C8", "simple", 0.00129}, {"S1", "simple", 0.00105},
 		{"T4", "simple", 0.00104}, {"S4", "simple", 0.00102}, {"T3", "simple", 0.000794},
 		{"S6", "simple", 0.000641}, {"P8", "simple", 0.00061}, {"V8", "simple", 0.00061},
-		{"S7", "simple", 0.000499}, {"X3", "simple", 0.000333}, {"U3", "simple", 0.000323},
-		{"V5", "simple", 0.000313}, {"V1", "simple", 0.000295}, {"U4", "simple", 0.000246},
-		{"R9", "simple", 0.000236}, {"S3", "simple", 0.000233}, {"T6", "simple", 0.000231},
-		{"K7", "simple", 0.000152}, {"L1", "simple", 0.000133}, {"N5", "simple", 0.000129},
-		{"L7", "simple", 0.000128}, {"C6", "simple", 0.000121},
+		{"S7", "simple", 0.000499}, {"V5", "simple", 0.000313}, {"V1", "simple", 0.000295},
+		{"U4", "simple", 0.000246}, {"K7", "simple", 0.000152}, {"L1", "simple", 0.000133},
+		{"N5", "simple", 0.000129}, {"L7", "simple", 0.000128}, {"C6", "simple", 0.000121},
+		// The five mid-span obstacle cases, each re-capped at 1.1x its post-sub-arc measurement (above).
+		{"X3", "simple", 0.0000025}, {"U3", "simple", 0.00000219}, {"T6", "simple", 0.00000196},
+		{"S3", "simple", 0.00000151}, {"R9", "simple", 0.00000129},
 	}
 }
 

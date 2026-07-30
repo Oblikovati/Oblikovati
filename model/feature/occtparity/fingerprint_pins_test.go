@@ -395,7 +395,24 @@ func byteIdentityPins() []fingerprintPin {
 		// a loss: the canal is degree-2-RATIONAL in u (one exact arc, a 3 x 97 net) where the Coons fill was
 		// a degree-3 28 x 28 net, so the same chordal tolerance is met with far fewer u-columns. Face count
 		// (11), free edges (0) and folds (0) are unchanged at BOTH gate qualities.
-		{"U3", 17873.835060138, 5850, 0xc50e72118603dbb9, ""},
+		// ★ RE-CAPTURED AGAIN (rim-node-chord-report.md), and PROVEN improved on four independent measures.
+		// The four rim segments the two boundary nodes split used to carry NO curve at all — a straight
+		// truncated chord — and on U3 that chord read 1.561e-02 off the corner-blend patch AND 1.197e-02 off
+		// the UNTOUCHED obstacle wall, the same chord against two different faces. They now carry the rim
+		// conic TRIMMED at the node's own rim parameter (rimNodeTrimsOf), which for U3's circular rim is the
+		// EXACT trimmed arc (3.97e-15 off the rim curve, measured):
+		//   - worstLoopSegmentOffFace/boundingDiag — the off-surface gate's OWN function — 3.170438e-04 →
+		//     1.987829e-06, 159x better, and the debt ceiling shrinks 0.000323 → 0.00000219 with it;
+		//   - the patch face 85.941735200 → 85.922547692 against its CLOSED FORM 85.917424 (= DRAWEXE's own
+		//     42.9587 x 2): +0.0283 % → +0.00596 %, 4.7x closer;
+		//   - the obstacle wall (EllipticalCylinder) 916.819041982 → 916.824497356 — an inscribed rim
+		//     polyline under-reports a tube, so replacing chords by arcs must and does ADD area;
+		//   - the whole-body volume 17873.835060138 → 17873.945817788 against DRAWEXE's own vprops 17874.5:
+		//     −0.00372 % → −0.00310 %, an INDEPENDENT measure from area.
+		// The triangle count rises 5850 → 5862, the 12 stations the mesher needs to follow four arcs it used
+		// to walk as straight lines. Face count (11), free edges (0) and folds (0) unchanged at BOTH gate
+		// qualities. No other case in the corpus changes by a single triangle.
+		{"U3", 17873.945817788, 5862, 0x718c0ef4145587bc, ""},
 		// U4 (simple): the Group-C dual-host multi-rail corner-blend green (kernel/ops/fillet_obstacle_dual*.go,
 		// #2007 Group C — the U4-5 weld). U4 is a box + TWO bosses (Cylinder r8 on y=−20, oblique
 		// EllipticalCylinder on x=10) whose footprints BOTH dip into ONE r=5 convex-edge fillet (qualifying==2),
