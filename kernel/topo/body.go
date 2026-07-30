@@ -5,6 +5,7 @@ package topo
 import (
 	"sync"
 
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/math"
 )
 
@@ -48,6 +49,22 @@ type Body struct {
 	// sweep runs once, not once per orbit frame (~87% of frame time before this).
 	rangeBoxOnce sync.Once
 	rangeBox     math.Box
+
+	// buildDiags is the BUILD REPORT of the assembly that produced this body: what the assembler
+	// could not do ideally and how it resolved it — recorded instead of silently swallowed
+	// (kernel/diag). It describes THIS assembly only; a downstream operation builds a new body and
+	// starts a new report. Written by [Builder.Diagnose] before Build, read-only afterward.
+	buildDiags []diag.Diagnostic
+}
+
+// BuildDiagnostics returns a copy of the diagnostics recorded while this body was assembled, in
+// emission order. Empty for a body whose assembler recorded none.
+//
+// Example:
+//
+//	for _, d := range body.BuildDiagnostics() { t.Log(d) }
+func (b *Body) BuildDiagnostics() []diag.Diagnostic {
+	return append([]diag.Diagnostic(nil), b.buildDiags...)
 }
 
 // edgeKeyIndex returns the edge reference-key index, building it once. See the index

@@ -3,6 +3,7 @@
 package topo
 
 import (
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
@@ -39,6 +40,11 @@ func (bld *Builder) AddEdge(curve geom.Curve3, start, end *Vertex, lineage Linea
 	}
 	return e
 }
+
+// Diagnose records d on the body under construction, so what the assembler could not do ideally
+// travels WITH the body it produced instead of being swallowed (see [Body.BuildDiagnostics]).
+// Legal only before [Builder.Build].
+func (bld *Builder) Diagnose(d diag.Diagnostic) { bld.body.buildDiags = append(bld.body.buildDiags, d) }
 
 // Use is an oriented edge use within a loop (reversed = traversed end→start).
 type Use struct {

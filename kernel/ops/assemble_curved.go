@@ -39,7 +39,8 @@ type filletFace struct {
 type edgeRec struct {
 	edge     *topo.Edge
 	from, to int
-	closed   bool // a==b full-circle seam: the 2nd coedge is antiparallel by the manifold invariant
+	closed   bool        // a==b full-circle seam: the 2nd coedge is antiparallel by the manifold invariant
+	curve    geom.Curve3 // the OFFER this edge was built from (nil = the offering consumer had none)
 }
 
 // collectLoopPoints gathers every loop point across all faces — the cloud the point-welder
@@ -201,6 +202,7 @@ type edgeCatalog struct {
 func (c *edgeCatalog) use(a, b int, curve geom.Curve3, srcE uint64) topo.Use {
 	key := seamEdgeKey{canon2(a, b), edgeClassOf(a, b, srcE, c.classes)}
 	if rec, ok := c.edges[key]; ok {
+		c.recordCurveOffer(a, b, rec, curve)
 		// A closed seam edge welds both endpoints to one vertex, so rec.from!=a is false for
 		// BOTH uses — the welded vertex order can't encode the traversal sense. The two coedges
 		// of a manifold edge are antiparallel, so the 2nd use flips. Parity-only + tessellation-
@@ -212,11 +214,12 @@ func (c *edgeCatalog) use(a, b int, curve geom.Curve3, srcE uint64) topo.Use {
 		return topo.Use{Edge: rec.edge, Reversed: rec.from != a}
 	}
 	closed := isClosedSeam(a, b, curve, c.weld)
-	if curve == nil {
-		curve = geom.NewLineSegment(c.verts[a], c.verts[b])
+	built := curve
+	if built == nil {
+		built = geom.NewLineSegment(c.verts[a], c.verts[b])
 	}
-	e := c.bld.AddEdge(curve, c.tv[a], c.tv[b], topo.NewLineage(topo.Tok(c.tag, "e", len(c.edges))))
-	c.edges[key] = edgeRec{edge: e, from: a, to: b, closed: closed}
+	e := c.bld.AddEdge(built, c.tv[a], c.tv[b], topo.NewLineage(topo.Tok(c.tag, "e", len(c.edges))))
+	c.edges[key] = edgeRec{edge: e, from: a, to: b, closed: closed, curve: curve}
 	return topo.Use{Edge: e, Reversed: false}
 }
 
