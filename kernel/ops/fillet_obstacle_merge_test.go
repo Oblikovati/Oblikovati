@@ -114,7 +114,7 @@ func TestMergeHoleIntoNotchT6(t *testing.T) {
 	nodes := nodesForT6(t)
 	flat, back := zPlaneProjector()
 
-	notch, ok := mergeHoleIntoNotch(outer, hole, nodes, flat, back)
+	notch, ok := mergeHoleIntoNotch(outer, hole, nodes, flat, back, rimNodeTrims{})
 	if !ok {
 		t.Fatal("merge failed")
 	}
@@ -155,35 +155,111 @@ func TestMergeHoleIntoNotchNativeOrientation(t *testing.T) {
 	if nearerNode(outer, 0, nodes, flat) != 1 {
 		t.Fatalf("fixture must select the NATIVE branch (nearerNode==1); got %d", nearerNode(outer, 0, nodes, flat))
 	}
-	notch, ok := mergeHoleIntoNotch(outer, hole, nodes, flat, back)
+	notch, ok := mergeHoleIntoNotch(outer, hole, nodes, flat, back, rimNodeTrims{})
 	if !ok {
 		t.Fatal("merge failed on the native-orientation fixture")
 	}
 	assertT6Notch(t, notch, flat)
 }
 
-// TestMergeHoleIntoNotchBoundarySegmentFidelity is the regression guard for the stale-curve fix: the
-// two host-arc segments that touch the truncation crossings P± must carry NO domain-mismatched curve.
-// It samples each boundary segment exactly as the mesher would (nil ⇒ straight chord; non-nil ⇒
-// curve.PointAt over [0,1]) and requires every sample within the model weld of the segment's OWN
-// (truncated) chord. The stale original-segment curve — whose small-t samples fall in the DISCARDED
-// span beyond the crossing — lands a full sample-spacing off that chord, so this fails loudly if the
-// curve is ever reintroduced.
+// TestMergeHoleIntoNotchBoundarySegmentFidelity is the regression guard for the stale-curve fix AND
+// for the node sub-arc that replaced the straight chord. The two host-arc segments that touch the
+// truncation crossings P± must never carry the DOMAIN-MISMATCHED original segment curve, whose small-t
+// samples fall in the DISCARDED span beyond the crossing. Two branches, both asserted:
+//
+//   - no trims (a node the rim solve could not refine): the segment carries nil, and sampling it as the
+//     mesher would — a straight chord — must stay within the model weld of its own truncated chord;
+//   - real trims (rimNodeTrimsOf's construction, here from T6's own ellipse and its refined nodes): the
+//     segment carries a sub-arc whose ENDPOINTS are exactly the truncated segment's own two points, and
+//     whose interior samples lie ON THE RIM ELLIPSE to 4.53e-08 (measured; capped at 1e-7) — which the
+//     stale full-span curve cannot do (its endpoints are the PRE-truncation samples), and which the
+//     straight chord it replaced cannot do either (1.6e-04 over the same sub-span, 3500x worse).
 func TestMergeHoleIntoNotchBoundarySegmentFidelity(t *testing.T) {
 	hole := ellipseHoleT6()
 	nodes := nodesForT6(t)
 	_, back := zPlaneProjector()
-	arc := hostSideSubArc(hole, nodes, back)
-	weld := ResolutionForPoints(arc.pts).Weld()
-	for _, seg := range []int{0, len(arc.pts) - 2} { // P+ leg and P- leg
-		if arc.curves[seg] != nil {
-			t.Errorf("boundary segment %d must not carry the stale original-segment curve", seg)
+	bare := hostSideSubArc(hole, nodes, back, rimNodeTrims{})
+	weld := ResolutionForPoints(bare.pts).Weld()
+	for _, seg := range []int{0, len(bare.pts) - 2} { // P+ leg and P- leg
+		if bare.curves[seg] != nil {
+			t.Errorf("without a rim parameter, boundary segment %d must fall back to the straight chord", seg)
 		}
-		dev := maxSegmentChordDeviation(arc.pts[seg], arc.pts[seg+1], arc.curves[seg])
-		if dev > weld {
+		if dev := maxSegmentChordDeviation(bare.pts[seg], bare.pts[seg+1], bare.curves[seg]); dev > weld {
 			t.Errorf("boundary segment %d samples %.3g off its truncated chord (weld %.3g) — stale span", seg, dev, weld)
 		}
 	}
+	assertTrimmedBoundarySegmentsOnRim(t, hole, nodes, back)
+}
+
+// assertTrimmedBoundarySegmentsOnRim is the trimmed-sub-arc half of the fidelity guard: with the real
+// trims the two boundary segments must be arcs pinned to their own endpoints and lying on the T6 ellipse.
+func assertTrimmedBoundarySegmentsOnRim(t *testing.T, hole filletLoop, nodes [2]crossing, back func(m.Point2) m.Point3) {
+	t.Helper()
+	rim, refined := refinedT6RimAndNodes(t, nodes)
+	trims := rimNodeTrims{}
+	trims.in[0], trims.out[0] = nodeSubArcs(rim, ellipseHoleSamplesT6, refined[0], back(refined[0].P))
+	trims.in[1], trims.out[1] = nodeSubArcs(rim, ellipseHoleSamplesT6, refined[1], back(refined[1].P))
+	arc := hostSideSubArc(hole, refined, back, trims)
+	for _, seg := range []int{0, len(arc.pts) - 2} {
+		c := arc.curves[seg]
+		if c == nil {
+			t.Fatalf("boundary segment %d must carry its trimmed rim sub-arc", seg)
+		}
+		lo, hi := c.Domain()
+		if d := c.PointAt(lo).DistanceTo(arc.pts[seg]); d > 1e-12 {
+			t.Errorf("boundary segment %d sub-arc starts %.3g off its own vertex", seg, d)
+		}
+		if d := c.PointAt(hi).DistanceTo(arc.pts[seg+1]); d > 1e-12 {
+			t.Errorf("boundary segment %d sub-arc ends %.3g off its own vertex", seg, d)
+		}
+		if d := maxDeviationFromT6Ellipse(c); d > 1e-7 {
+			t.Errorf("boundary segment %d sub-arc leaves the rim ellipse by %.3g", seg, d)
+		}
+	}
+}
+
+// refinedT6RimAndNodes returns T6's full rim ellipse and its two nodes re-solved ON that curve
+// (analyticNode), so the crossings carry the rim parameter rimNodeTrimsOf trims at.
+func refinedT6RimAndNodes(t *testing.T, nodes [2]crossing) (geom.Curve3, [2]crossing) {
+	t.Helper()
+	rim, err := geom.NewEllipseFull(m.P3(0, 0, 0), m.V3(0, 0, 1), m.V3(1, 0, 0), 15, 10)
+	if err != nil {
+		t.Fatalf("T6 rim ellipse: %v", err)
+	}
+	flat, _ := zPlaneProjector()
+	boundary := boundaryLine2{origin: m.P2(0, -7), dir: m.V2(1, 0)}
+	out := nodes
+	for i := range out {
+		out[i] = analyticNode(out[i], rim, ellipseHoleSamplesT6, flat, boundary)
+		if !out[i].onRim {
+			t.Fatalf("node %d must refine onto the rim curve", i)
+		}
+	}
+	return rim, out
+}
+
+// maxDeviationFromT6Ellipse is the largest distance from 17 samples of c to the a=15,b=10 ellipse in
+// z=0 — the implicit residual scaled to a length, which separates a trimmed on-rim sub-arc (4.5e-08 over
+// a 1/720 sub-span) from a chord across it (1.6e-04) by three and a half decades.
+func maxDeviationFromT6Ellipse(c geom.Curve3) float64 {
+	lo, hi := c.Domain()
+	worst := 0.0
+	for i := 0; i <= 17; i++ {
+		p := c.PointAt(lo + (hi-lo)*float64(i)/17)
+		if d := t6EllipseDistance(p); d > worst {
+			worst = d
+		}
+	}
+	return worst
+}
+
+// t6EllipseDistance is the distance from p to the a=15,b=10 ellipse in z=0, as the implicit residual
+// normalised by its own gradient — first-order exact, and unlike a sampled nearest-point search it has
+// no resolution floor of its own to hide a sub-arc's error behind.
+func t6EllipseDistance(p m.Point3) float64 {
+	f := p.X*p.X/225 + p.Y*p.Y/100 - 1
+	grad := stdmath.Hypot(2*p.X/225, 2*p.Y/100)
+	return stdmath.Abs(f)/grad + stdmath.Abs(p.Z)
 }
 
 // TestMergeHoleIntoNotchAmbiguousEdgeRejected covers frontEdgeSegment's hits>1 honest-reject: an
@@ -199,7 +275,7 @@ func TestMergeHoleIntoNotchAmbiguousEdgeRejected(t *testing.T) {
 	hole := ellipseHoleT6()
 	nodes := nodesForT6(t)
 	flat, back := zPlaneProjector()
-	if _, ok := mergeHoleIntoNotch(outer, hole, nodes, flat, back); ok {
+	if _, ok := mergeHoleIntoNotch(outer, hole, nodes, flat, back, rimNodeTrims{}); ok {
 		t.Error("an outer loop with two front-edge candidates must be rejected as ambiguous")
 	}
 }
@@ -253,10 +329,10 @@ func TestMergeHoleIntoNotchEmptyLoopsRejected(t *testing.T) {
 	outer, hole := recededTopOuterT6(), ellipseHoleT6()
 	nodes := nodesForT6(t)
 	flat, back := zPlaneProjector()
-	if _, ok := mergeHoleIntoNotch(filletLoop{}, hole, nodes, flat, back); ok {
+	if _, ok := mergeHoleIntoNotch(filletLoop{}, hole, nodes, flat, back, rimNodeTrims{}); ok {
 		t.Error("empty outer loop must be rejected")
 	}
-	if _, ok := mergeHoleIntoNotch(outer, filletLoop{}, nodes, flat, back); ok {
+	if _, ok := mergeHoleIntoNotch(outer, filletLoop{}, nodes, flat, back, rimNodeTrims{}); ok {
 		t.Error("empty hole loop must be rejected")
 	}
 }
@@ -273,7 +349,7 @@ func TestMergeHoleIntoNotchNoFrontEdgeRejected(t *testing.T) {
 	hole := ellipseHoleT6()
 	nodes := nodesForT6(t)
 	flat, back := zPlaneProjector()
-	if _, ok := mergeHoleIntoNotch(outer, hole, nodes, flat, back); ok {
+	if _, ok := mergeHoleIntoNotch(outer, hole, nodes, flat, back, rimNodeTrims{}); ok {
 		t.Error("an outer loop with no edge spanning both Nodes must be rejected")
 	}
 }

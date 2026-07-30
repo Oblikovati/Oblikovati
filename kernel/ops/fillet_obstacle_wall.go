@@ -37,11 +37,39 @@ func patchBoundaryLoop(d obstacleDetection, og obstacleGeom, of *ObstacleFeature
 	}
 	loop.addID(og.wallD, og.endArc, 0, 0) // D -> P+ (WingEnd, wall->top)
 	for i := len(dip) - 1; i >= 1; i-- {  // P+, interior... (down to, excluding, P-)
-		loop.addID(dip[i], nil, 0, d.holeEdge.ID())
+		loop.addID(dip[i], dipRimReverseCurve(d, dip, i), 0, d.holeEdge.ID())
 	}
 	startRev, _ := geom.Arc3dByThreePoints(d.pMinus, og.startMid, og.wallA)
 	loop.addID(d.pMinus, startRev, 0, 0) // P- -> A (WingStart reversed) closes the ring
 	return loop
+}
+
+// dipRimReverseCurve returns the curve for the patch boundary's REVERSED dip-rim segment dip[i]→dip[i-1]:
+// whatever the split obstacle wall traces on that same segment forwards (a trimmed node sub-arc at the
+// two ends, the rim's per-segment arc in between), re-derived in the reverse direction through its own
+// recovered midpoint.
+//
+// The patch used to hand nil — a chord — for every dip-rim segment, and the interior segments still came
+// out as arcs only because edgeCatalog.use is first-writer-wins and the wall face happens to be built
+// first (it REPLACES a body face; the patch is appended as an extra). Agreement by build order is not
+// agreement: reorder the two and the whole dip rim silently reverts to chords. Handing the same curve
+// by value makes the shared segment's geometry independent of who reaches it first.
+//
+// A dip of exactly two points (both nodes bracketed by ONE rim segment) has no unambiguous forward
+// segment to mirror, so it keeps the straight chord — the same answer insertNodesIntoRim gives that rim.
+func dipRimReverseCurve(d obstacleDetection, dip []math.Point3, i int) geom.Curve3 {
+	if len(dip) < 3 {
+		return nil
+	}
+	n := len(d.holeSampled.pts)
+	fwd := curveAt(d.holeSampled.curves, (d.nodes[0].I+i-1)%n)
+	switch i {
+	case len(dip) - 1:
+		fwd = d.rimTrims.in[1] // sample nodes[1].I -> P+
+	case 1:
+		fwd = d.rimTrims.out[0] // P- -> sample nodes[0].I+1
+	}
+	return reversedArcThroughMid(fwd, dip[i], dip[i-1])
 }
 
 // wallFrontInterior returns the wall front from A up to (excluding) D — the points patchBoundaryLoop adds
@@ -127,17 +155,24 @@ func cylinderWallSeam(wall *topo.Face, holeEdge *topo.Edge) (obstacleWallSeam, b
 }
 
 // insertNodesIntoRim traces the obstacle wall's bottom rim from seam sample 0 forward through every
-// rim sample, splitting the two crossing segments by inserting the exact nodes P±. The two chord
-// segments touching each inserted node carry NO curve (a straight truncated chord, matching the notch
-// and patch there); the untouched interior segments keep their exact per-segment ellipse arc. Every
-// segment carries the rim's source-edge id so the split arcs share one identity across faces.
+// rim sample, splitting the two crossing segments by inserting the exact nodes P±. Each of the four
+// chord segments touching an inserted node carries its TRIMMED sub-arc of that segment's own conic
+// (d.rimTrims, the node's rim parameter as the trim point) — the untouched interior segments keep their
+// exact per-segment arc, so the whole rim is traced on the rim. Every segment carries the rim's
+// source-edge id so the split arcs share one identity across faces.
+//
+// Those four segments used to carry NO curve at all — a straight truncated chord — and that was the
+// largest single off-surface residual in the obstacle class: measured on the shipped bodies, the chord
+// sat its own sagitta off the very faces it bounds (R9 7.00e-03 off its r=8 boss cylinder, S3 9.43e-03
+// off its cone, T6 1.17e-02 off its elliptical cylinder, U3 1.56e-02 / X3 2.96e-02 off the corner-blend
+// patch), each matching the closed-form chord sagitta to a few tenths of a percent.
 func insertNodesIntoRim(d obstacleDetection) filletLoop {
 	var out filletLoop
 	for i := 0; i < len(d.holeSampled.pts); i++ {
 		p := d.holeSampled.pts[i]
 		if node, split := insertedNodeAt(d, i); split {
-			out.addID(p, nil, 0, d.holeEdge.ID())
-			out.addID(node, nil, 0, d.holeEdge.ID())
+			out.addID(p, node.in, 0, d.holeEdge.ID())
+			out.addID(node.p, node.out, 0, d.holeEdge.ID())
 			continue
 		}
 		out.addID(p, curveAt(d.holeSampled.curves, i), 0, d.holeEdge.ID())
@@ -145,14 +180,23 @@ func insertNodesIntoRim(d obstacleDetection) filletLoop {
 	return out
 }
 
+// insertedRimNode is one boundary node as the rim tracers consume it: the exact node point plus the two
+// trimmed sub-arcs of the single rim segment it splits (in = sample→node, out = node→next sample).
+type insertedRimNode struct {
+	p       math.Point3
+	in, out geom.Curve3
+}
+
 // insertedNodeAt reports whether rim sample i's outgoing segment carries a boundary crossing and, if
-// so, which node (P− at nodes[0].I, P+ at nodes[1].I) must be inserted after it.
-func insertedNodeAt(d obstacleDetection, i int) (math.Point3, bool) {
+// so, which node (P− at nodes[0].I, P+ at nodes[1].I) must be inserted after it, with that segment's
+// two trimmed sub-arcs. nodes[0] wins a tie (both nodes bracketed by ONE segment), preserving the
+// single-insert behaviour this function has always had for that degenerate rim.
+func insertedNodeAt(d obstacleDetection, i int) (insertedRimNode, bool) {
 	switch i {
 	case d.nodes[0].I:
-		return d.pMinus, true
+		return insertedRimNode{p: d.pMinus, in: d.rimTrims.in[0], out: d.rimTrims.out[0]}, true
 	case d.nodes[1].I:
-		return d.pPlus, true
+		return insertedRimNode{p: d.pPlus, in: d.rimTrims.in[1], out: d.rimTrims.out[1]}, true
 	}
-	return math.Point3{}, false
+	return insertedRimNode{}, false
 }

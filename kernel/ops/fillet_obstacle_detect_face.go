@@ -89,6 +89,7 @@ func analyticNodeDetection(d obstacleDetection, other *obstacleDetection, ef edg
 		d.nodes[i] = analyticNode(d.nodes[i], d.holeEdge.Geometry(), len(d.holeSampled.pts), d.flat, boundary)
 	}
 	d.pMinus, d.pPlus = d.back(d.nodes[0].P), d.back(d.nodes[1].P)
+	d.rimTrims = rimNodeTrimsOf(d) // one trim, three consumers — see rimNodeTrims
 	return d
 }
 
@@ -339,11 +340,8 @@ func sampleHoleRim(rim geom.Curve3, edgeID uint64) filletLoop {
 
 // rimSegmentArc fits the arc of rim segment [t0,t1] through its start, midpoint and end — exact for a
 // circular rim, and a faithful per-segment approximation of an elliptical rim over a small span. nil
-// (a straight chord) when the three points are too collinear to define an arc.
+// (a straight chord) when the three points are too collinear to define an arc. nodeSubArcs applies the
+// same construction to a SUB-span of one segment, with the node pinned as an endpoint.
 func rimSegmentArc(rim geom.Curve3, t0, t1 float64) geom.Curve3 {
-	arc, err := geom.Arc3dByThreePoints(rim.PointAt(t0), rim.PointAt((t0+t1)/2), rim.PointAt(t1))
-	if err != nil {
-		return nil
-	}
-	return arc
+	return rimArcThrough(rim.PointAt(t0), rim.PointAt((t0+t1)/2), rim.PointAt(t1))
 }

@@ -12,7 +12,8 @@ import (
 // dip/patch arc Task 2/3/4 use for the FillSurface rim rail — producing the single notched face
 // loop OCCT calls result_8 (outer minus the part of the hole above the boundary). ok=false on a
 // malformed input: an empty loop, or an outer loop with no single edge spanning both Nodes.
-func mergeHoleIntoNotch(outer, hole filletLoop, nodes [2]crossing, flat func(math.Point3) math.Point2, back func(math.Point2) math.Point3) (filletLoop, bool) {
+func mergeHoleIntoNotch(outer, hole filletLoop, nodes [2]crossing,
+	flat func(math.Point3) math.Point2, back func(math.Point2) math.Point3, trims rimNodeTrims) (filletLoop, bool) {
 	if len(outer.pts) == 0 || len(hole.pts) == 0 {
 		return filletLoop{}, false
 	}
@@ -20,7 +21,7 @@ func mergeHoleIntoNotch(outer, hole filletLoop, nodes [2]crossing, flat func(mat
 	if !ok {
 		return filletLoop{}, false
 	}
-	notch := spliceSubArc(outer, seg, orientedHostArc(outer, seg, hole, nodes, flat, back))
+	notch := spliceSubArc(outer, seg, orientedHostArc(outer, seg, hole, nodes, flat, back, trims))
 	if selfCrosses(notch, flat) {
 		return filletLoop{}, false // malformed input: even the near/far-paired splice is not simple
 	}
@@ -40,8 +41,9 @@ func mergeHoleIntoNotch(outer, hole filletLoop, nodes [2]crossing, flat func(mat
 // silently produces a self-consistent but semantically inverted loop (area 760+426.9 instead of
 // 760-426.9, confirmed while debugging RED→GREEN, see task-5-report.md). The near/far pairing below
 // is exact and sidesteps the blind spot entirely; selfCrosses stays as the final honest-reject net.)
-func orientedHostArc(outer filletLoop, seg int, hole filletLoop, nodes [2]crossing, flat func(math.Point3) math.Point2, back func(math.Point2) math.Point3) filletLoop {
-	native := hostSideSubArc(hole, nodes, back)
+func orientedHostArc(outer filletLoop, seg int, hole filletLoop, nodes [2]crossing,
+	flat func(math.Point3) math.Point2, back func(math.Point2) math.Point3, trims rimNodeTrims) filletLoop {
+	native := hostSideSubArc(hole, nodes, back, trims)
 	if nearerNode(outer, seg, nodes, flat) == 0 {
 		return reverseOpenArc(native)
 	}
@@ -96,21 +98,22 @@ func onSegment2D(a, b, p math.Point2, tol float64) bool {
 // the exact P- crossing (native forward order). Interior segments carry the rim's per-segment curves
 // so the mesher still samples the true rim curve there, not a chord.
 //
-// The TWO segments touching the truncation crossings P± carry a NIL curve (a straight chord): the
-// crossing sits INSIDE the original hole segment (nodes[1].I leaving P+, nodes[0].I arriving at P-),
-// so the original untrimmed segment curve is domain-mismatched there — its PointAt(0)/PointAt(1) are
-// the ORIGINAL pre-truncation samples, not the crossing, so a mesher sampling its [0,1] domain would
-// walk across the DISCARDED span and kink exactly at the joint Task 6's topo weld must match. srcE is
-// still carried on those partial segments so the weld can share the hole-rim edge identity; only the
-// stale GEOMETRY is dropped (a straight chord over the tiny truncated remainder is faithful to the
-// model weld, see TestMergeHoleIntoNotchBoundarySegmentFidelity).
-func hostSideSubArc(hole filletLoop, nodes [2]crossing, back func(math.Point2) math.Point3) filletLoop {
+// The TWO segments touching the truncation crossings P± cannot carry the ORIGINAL untrimmed segment
+// curve: the crossing sits INSIDE that segment (nodes[1].I leaving P+, nodes[0].I arriving at P-), so
+// the stored curve is domain-mismatched there — its PointAt(0)/PointAt(1) are the ORIGINAL
+// pre-truncation samples, not the crossing, so a mesher sampling its [0,1] domain would walk across the
+// DISCARDED span and kink exactly at the joint Task 6's topo weld must match. They therefore carry the
+// TRIMMED sub-arc of that same conic instead (trims, from the node's own rim parameter): the truncated
+// remainder traced on the rim rather than across it. srcE is carried on those partial segments so the
+// weld can share the hole-rim edge identity. An all-nil trims (a node the rim solve could not refine)
+// falls back to the straight chord this function used to give unconditionally.
+func hostSideSubArc(hole filletLoop, nodes [2]crossing, back func(math.Point2) math.Point3, trims rimNodeTrims) filletLoop {
 	n := len(hole.pts)
 	var arc filletLoop
-	arc.addID(back(nodes[1].P), nil, 0, srcIDAt(hole.srcE, nodes[1].I)) // P+ leg: truncated → nil curve
+	arc.addID(back(nodes[1].P), trims.out[1], 0, srcIDAt(hole.srcE, nodes[1].I)) // P+ leg: node -> sample
 	for i := (nodes[1].I + 1) % n; ; i = (i + 1) % n {
 		if i == nodes[0].I {
-			arc.addID(hole.pts[i], nil, srcIDAt(hole.srcV, i), srcIDAt(hole.srcE, i)) // P- leg: truncated → nil
+			arc.addID(hole.pts[i], trims.in[0], srcIDAt(hole.srcV, i), srcIDAt(hole.srcE, i)) // P- leg
 			break
 		}
 		arc.addID(hole.pts[i], curveAt(hole.curves, i), srcIDAt(hole.srcV, i), srcIDAt(hole.srcE, i))

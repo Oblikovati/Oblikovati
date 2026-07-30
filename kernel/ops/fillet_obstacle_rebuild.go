@@ -131,7 +131,7 @@ func buildNotchedHost(d obstacleDetection, maps filletRebuildMaps) (filletFace, 
 	if !ok {
 		return filletFace{}, false
 	}
-	notch, ok := mergeHoleIntoNotch(base.loops[outerIdx], d.holeSampled, d.nodes, d.flat, d.back)
+	notch, ok := mergeHoleIntoNotch(base.loops[outerIdx], d.holeSampled, d.nodes, d.flat, d.back, d.rimTrims)
 	if !ok {
 		return filletFace{}, false
 	}

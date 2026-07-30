@@ -21,10 +21,16 @@ func (b boundaryLine2) signedDist(p math.Point2) float64 {
 }
 
 // crossing is one intersection of the obstacle rim (as a sampled polyline) with the receded boundary
-// line: the rim index just before it and the intersection point in host-plane 2D.
+// line: the rim index just before it, the intersection point in host-plane 2D, and — once analyticNode
+// has re-solved it ON the rim curve — that curve's own parameter there. T/onRim is what lets the two
+// rim segments the node splits be TRIMMED sub-arcs of the rim's own conic (rimNodeTrimsOf) instead of
+// straight truncated chords; a crossing that was only ever bracketed on the polyline has no such
+// parameter and keeps onRim false.
 type crossing struct {
-	I int         // rim polyline index whose segment [I, I+1] crosses the boundary
-	P math.Point2 // the crossing point
+	I     int         // rim polyline index whose segment [I, I+1] crosses the boundary
+	P     math.Point2 // the crossing point
+	T     float64     // the rim curve's parameter at P, valid only when onRim
+	onRim bool        // P == rim.PointAt(T): the crossing was solved on the curve, not lerped on a chord
 }
 
 // rimCrossings returns the boundary crossings of the closed rim polyline, ordered as they appear along
@@ -60,9 +66,12 @@ func lerpAtZero(a, c math.Point2, da, dc float64) math.Point2 {
 // crossing segment [I, I+1] is exactly the parameter bracket [I/n, (I+1)/n]; bisecting the signed
 // distance there ON THE CURVE — with bisectRimParam, the same analytic solver dipRimPointAtStation
 // already uses for the section endpoints — lands the node on the rim at the parametric floor (measured
-// ≤1.8e-14 against the closed form, from ~1e-2). Only .P moves: the polyline index .I is untouched,
-// since every downstream consumer's dip range is expressed in polyline indices (mergeObstacleRim's
-// "dip = nodes[0].I+1..nodes[1].I") and the refined point stays inside its own bracket.
+// ≤1.8e-14 against the closed form, from ~1e-2). The polyline index .I is untouched, since every
+// downstream consumer's dip range is expressed in polyline indices (mergeObstacleRim's
+// "dip = nodes[0].I+1..nodes[1].I") and the refined point stays inside its own bracket. It also RECORDS
+// the parameter it solved at (.T/.onRim): the node's two adjacent rim segments are then trimmed sub-arcs
+// of the rim's own conic (rimNodeTrimsOf) rather than straight chords, which is the same solve read for
+// geometry instead of for a point.
 //
 // It works in the host plane's own 2D frame (the frame rimCrossings works in), so the result drops
 // straight into crossing.P and packDetection's lift is unchanged. It KEEPS the chord's lerped point when
@@ -84,7 +93,8 @@ func analyticNode(c crossing, rim geom.Curve3, n int,
 	if f0 == 0 || f1 == 0 || (f0 < 0) == (f1 < 0) {
 		return c
 	}
-	return crossing{I: c.I, P: flat(rim.PointAt(bisectRimParam(f, t0, t1)))}
+	t := bisectRimParam(f, t0, t1)
+	return crossing{I: c.I, P: flat(rim.PointAt(t)), T: t, onRim: true}
 }
 
 // obstacleNodes returns the two rim crossing indices bracketing the dip past the boundary, or

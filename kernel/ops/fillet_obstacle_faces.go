@@ -29,6 +29,10 @@ type obstacleDetection struct {
 	pMinus, pPlus math.Point3 // nodes[0]/nodes[1] lifted onto the host plane (back(crossing.P))
 	flat          func(math.Point3) math.Point2
 	back          func(math.Point2) math.Point3
+	// rimTrims holds the four node-adjacent rim sub-arcs, trimmed ONCE (analyticNodeDetection) so the
+	// notch, the split obstacle wall and the patch trace the same curve there by VALUE (rimNodeTrims).
+	// The zero value is all-nil, i.e. the straight truncated chords this path carried before.
+	rimTrims rimNodeTrims
 }
 
 // obstacleGeom is the fillet-cylinder cross-section geometry the wings, patch and wall split share
