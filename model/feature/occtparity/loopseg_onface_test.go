@@ -173,7 +173,13 @@ func offSurfaceDebtIndex() map[string]float64 {
 // (worstLoopSegmentOffFace / boundingDiag), base → HEAD: T7 0.00196→0.000429, S9 0.00181→0.000793,
 // T1 0.00142→0.000497, S1 0.000958→0.000320, S4 0.000926→0.000334, T4 0.000904→0.000491,
 // T3 0.000722→0.000397, S6 0.000583→0.000545, S7 0.000454→0.000420. Entry count unchanged at 31 —
-// every one is smaller, none retired. The roots that remain, largest first (stopface-reversed-report.md):
+// every one is smaller, none retired. ★ A limitation to read before trusting these as adoption
+// gates (adversarial-review finding m-2): S6's 0.0006 and S7's 0.000463 ceilings sit ABOVE those
+// cases' own BASE residuals (5.826e-4 / 4.537e-4 — their adoption gain was only 1.07×/1.08×, so
+// 1.1× the new measurement clears the old one), so this gate does NOT fire on S6/S7 if the
+// adoption is reverted — it fires on the other SEVEN of the nine. They are honest re-measurements,
+// not regression gates; S6/S7's adoption regression cover is their fingerprint pins and
+// t7_adoption_perface_test.go's family of per-face evidence. The roots that remain, largest first (stopface-reversed-report.md):
 //
 //   - CURVED-HOST RETRIM ARC off its own cylinder (complex/F2, 0.0616) — a `fillet:x` retrim edge, not a
 //     rim carry. (J2/J4's 0.334/0.165 CHORDED SEAM MERIDIAN entries are retired: the rim rebuild used to

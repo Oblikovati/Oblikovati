@@ -391,7 +391,8 @@ func setbackObstaclePins() []fingerprintPin {
 // reach it. When that consumer had no curve, the edge shipped a straight CHORD and the second
 // consumer's real boundary curve was thrown away — 272 shipped edges over ten cases. The catalog now
 // adopts the later curve, REVERSED onto the edge's own stored sense when the offering consumer walks
-// it backwards (which is all 272 of them). A previous slice built this without the reversal, measured
+// it backwards (which is all 270 of the ADOPTED records; the other 2 of the 272 are complex/F2's
+// curve-FIRST pair, kept, and 0 are declined). A previous slice built this without the reversal, measured
 // T3's blend torus inflating 2827.227365 → 13816.882599 and the rollup falling 114 → 110, and recorded
 // the policy as refuted; the reversal is the whole difference, and removing it reproduces those
 // numbers exactly.
@@ -406,10 +407,16 @@ func setbackObstaclePins() []fingerprintPin {
 //	T3 +3.739e-04→+2.653e-04 (1.41×)   T4 +3.526e-04→+2.816e-04 (1.25×)   T7 +2.193e-04→+6.075e-05 (3.61×)
 //
 // ★ PER-FACE against live DRAWEXE `sprops <face> 1.e-12`, faces rank-paired by area (never by
-// `bounding`). Summed per-face |Δ| falls on every case measured: S1 1.9743→1.0003, S4 4.3199→2.7362,
+// `bounding`). Summed per-face |Δ| falls on EVERY one of the nine: S1 1.9743→1.0003, S4 4.3199→2.7362,
 // S6 2.0950→1.9655, S7 2.8441→2.6327, S9 11.0587→5.6612, T1 8.4104→6.0841, T3 7.3596→5.3449,
-// T4 7.8348→6.1115. (T7 is excluded: OCCT's own blend there has 11 faces to our 15, a pre-existing
-// topology divergence, so there is nothing to rank-pair.) The faces that move are exactly the ones
+// T4 7.8348→6.1115, T7 7.0374→4.7997 (1.47×, no face regressing — the standing gate is
+// t7_adoption_perface_test.go). ★ An earlier revision of this receipt EXCLUDED T7 as "a pre-existing
+// topology divergence, 11 faces to our 15, nothing to rank-pair" — that was a MIS-RUN oracle, not a
+// divergence: the T7 fixture picks its edge with `nexplode s E` and the slice ran `explode s E`, which
+// silently renumbers the pick and blends a different edge (the 11-face / 7507.53 body). With the
+// fixture's own `nexplode`, OCCT's blend is a valid 15-face solid, `sprops 1.e-12` = 7482.15 (rel err
+// 9.3e-16), and T7 rank-pairs 15-to-15 (perface_oracle_test.go's ★★ explode-variant note is the durable
+// trap record). The faces that move are exactly the ones
 // bounded by an adopted curve; every other face is bit-identical. On T3, the case the previous slice
 // used to refute the policy: blend torus 2827.227365 → 2826.791716 against 2826.04, BSpline patch
 // 251.184828 → 249.700452 against 249.664 (42× closer), and NO cap saturation (65072 → 65162
@@ -427,12 +434,24 @@ func setbackObstaclePins() []fingerprintPin {
 // MESH VOLUME against live DRAWEXE `vprops … 1.e-12` — an axis independent of area — improves on
 // seven: T1 −1.09e-04→−2.24e-05 (4.9×), T3 −6.58e-06→−2.82e-06, T4 −6.95e-05→−3.06e-05, S9
 // −1.76e-05→−1.18e-05, S1 −6.71e-04→−4.52e-04, S4 −5.24e-04→−3.94e-04, T7 −2.54e-03→−2.15e-03.
-// ★ NOT improved, stated rather than claimed: S6 moves −3.31e-04→−3.58e-04 and S7 is flat at
-// −2.83e-04 (a 2.0e-05 absolute move on 33557, below the oracle's own 6-s.f. resolution). S6's is a
-// real 0.027 % step the wrong way, on the case whose per-face sum improves least (1.07×) and whose
-// only worsening face is the host SPHERE (1061.302202 → 1061.235258 against 1061.86, −0.053 %→
-// −0.059 %). The pin rests on area, per-face and the mirror twins, which agree; volume dissents on
-// one case and is recorded, not hidden.
+// ★ NOT improved, stated with its TRUE extent (an earlier revision of this receipt half-disclosed
+// it as an S6-only VOLUME dissent; the adversarial review measured it as a TWO-case AREA
+// regression, and that is what it is): the regression is the SPHERE-HOST ARM, on BOTH sphere
+// cases, S6 AND S7, on the host geom.Sphere face itself. OCCT does not trim that sphere at all —
+// verified against the closed hemisphere 2π·13² = 1061.858347 by area, CoG z = R/2 AND inertia —
+// while we NOTCH it: S6's shipped sphere boundary loop runs 50 edge-uses / 118.39 summed chord
+// against the equator's 2π·13 = 81.68 (measured here on the shipped topo loop). Sphere-face area
+// at PropertyQuality, base → HEAD (ops.MeshArea ∘ ops.TessellateFace, measured here): S6
+// 1061.302202 → 1061.235258, S7 1061.291184 → 1061.179147; at the review's CONVERGED tessellation
+// limit: S6 1061.313591 → 1061.273914 (−0.5448 → −0.5844 vs the closed form) and S7 1061.301549 →
+// 1061.264052 (−0.5568 → −0.5943). HEAD has MORE triangles and LESS area, so it is a REGION
+// change, not mesh noise, sitting on the pre-existing ~0.55 notch defect — the notch is its own
+// queued slice (curve-adoption-report.md, concerns), NOT re-fixed under adoption. S6's vprops
+// dissent above (−3.31e-04→−3.58e-04) is this same regression seen through volume; S7's volume
+// merely masks it (flat at −2.83e-04, a 2.0e-05 absolute move below the oracle's 6-s.f.
+// resolution). The pins stand because BOTH bodies improve on every other measure — converged
+// cylinders 60× closer, S7's BSplines 323×/640×, twins 1.30e-02 → 4e-06 (review's convergence
+// measurements) — and the dissenting face is named, not averaged away.
 //
 // Off-surface residual (worstLoopSegmentOffFace / boundingDiag, the gate's own function) falls on all
 // nine, 1.07–4.58×, and every one of the nine knownOffSurfaceDebt ceilings ratchets down with it.

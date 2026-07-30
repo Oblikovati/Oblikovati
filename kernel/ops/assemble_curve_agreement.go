@@ -36,10 +36,15 @@ import (
 //     before the cylinder (fixed at source in rebuildArcSeg). The standing corpus gate holds this
 //     class at ZERO.
 //   - two offers within the model weld of each other → not a disagreement at all; silent. This
-//     applies to the nil branch too: a "curve" that departs its own chord by less than the weld IS
-//     the chord, so it is neither adopted (which would churn bytes for nothing) nor recorded
-//     (which would report float noise as consumer-side debt — 90 of the corpus's 362 records were
-//     offers 4.4e-16…2.0e-15 off their own chord, three orders below any model weld here).
+//     applies to BOTH nil branches — nil-then-curve AND curve-then-nil: a curve that departs its
+//     own chord by less than the weld IS the chord, so it is neither adopted (which would churn
+//     bytes for nothing) nor recorded (which would report float noise as consumer-side debt — 90
+//     of the corpus's 362 records were offers 4.4e-16…2.0e-15 off their own chord, three orders
+//     below any model weld here). The curve-then-nil arm first shipped WITHOUT the threshold while
+//     this docstring already claimed it (adversarial-review finding m-1); it was latent — the
+//     corpus's only curve-first records are complex/F2's two, 2.92426 off their chord against a
+//     1.76388e-07 weld, which the threshold keeps — and is now the same rule, gated both ways by
+//     TestCurveFirstKeepUsesTheSameWeldThreshold.
 
 // CodeAssembleCurveConflict marks a welded edge two consumers offered geometrically DIFFERENT
 // curves for. It is a Defect: the shipped geometry was chosen by build order, not by any rule.
@@ -118,7 +123,11 @@ func (c *edgeCatalog) resolveCurveOffer(key seamEdgeKey, a, b int, rec edgeRec, 
 	case rec.curve == nil:
 		c.adoptOfferedCurve(key, a, b, rec, offered)
 	case offered == nil:
-		c.diagnoseNilOffer(a, b, rec.curve, "kept (it was the first offer)")
+		// The same weld threshold adoptOfferedCurve applies (file rule above): a kept curve within
+		// the weld of its own chord IS the chord, so the later nil offer AGREES with it — silence.
+		if curveChordDeparture(rec.curve) > c.weld {
+			c.diagnoseNilOffer(a, b, rec.curve, "kept (it was the first offer)")
+		}
 	default:
 		if dev := curveOfferDeviation(rec.curve, offered); dev > c.weld {
 			c.diagnoseCurveConflict(a, b, rec.curve, offered, dev)

@@ -74,9 +74,16 @@ func TestReplaceEdgeCurveSwapsGeometryBeforeBuild(t *testing.T) {
 	e := bld.AddEdge(chord, a, b, NewLineage(Tok("t", "e", 0)))
 
 	bow := geom.NewLineSegment(math.P3(10, 0, 0), math.P3(0, 0, 0)) // any other curve
+	e.SetSnappedCurve([]math.Point3{math.P3(0, 0, 0), math.P3(5, 1, 0), math.P3(10, 0, 0)}, 0.5)
 	bld.ReplaceEdgeCurve(e, bow)
 	if got := e.Geometry().PointAt(0); got.DistanceTo(math.P3(10, 0, 0)) > 1e-12 {
 		t.Errorf("edge still starts at %v after ReplaceEdgeCurve, want the replacement's own start", got)
+	}
+	// A snapped polyline is a discretization of the OLD curve and outranks Geometry() in
+	// tessellation, so a stale one would silently ship the replaced geometry (m-8).
+	if e.SnappedCurve() != nil || e.Tolerance() != 0 {
+		t.Errorf("ReplaceEdgeCurve left a stale snapped polyline (%d points, tol %g) describing the OLD curve — "+
+			"it must clear it, or the new curve is never tessellated", len(e.SnappedCurve()), e.Tolerance())
 	}
 	assertPanics(t, "ReplaceEdgeCurve(e, nil)", func() { bld.ReplaceEdgeCurve(e, nil) })
 	assertPanics(t, "ReplaceEdgeCurve(nil, curve)", func() { bld.ReplaceEdgeCurve(nil, bow) })

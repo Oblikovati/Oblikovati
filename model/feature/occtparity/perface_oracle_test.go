@@ -58,6 +58,24 @@ import (
 // another tolerance. A flat analytic face (plane, right cylinder, cone, sphere) is stable at any of them
 // and needs no ceremony; a trimmed oblique/swept quadric does.
 //
+// ★★ USE THE FIXTURE'S OWN EXPLODE VARIANT — `nexplode` WHERE THE SCRIPT SAYS SO, NEVER `explode`.
+//
+// An OCCT fixture's edge numbering comes from its own script's explode command, and `nexplode` is NOT
+// `explode` with a different name: it sorts the sub-shapes by centre-of-mass/extent hash, so `s_8` under
+// `nexplode s E` is a DIFFERENT EDGE than `s_8` under `explode s E`. Running `explode` on a fixture whose
+// script says `nexplode` silently renumbers the picks and can blend different edges entirely — the result
+// still builds, `checkshape` still passes, and every number downstream is an oracle for the WRONG model.
+// Measured live on simple/T7 (`restore CFI_6_f56fhc.rle ; tscale 1 ; … ; blend result s 6 s_8`):
+//
+//	nexplode (the script's own):  FACE=15   checkshape ok   sprops 1.e-12 = 7482.15
+//	explode  (the mis-run):       FACE=11                   sprops 1.e-12 = 7507.53
+//
+// The mis-run's 11-face body was committed as doctrine for one slice ("T7 has a pre-existing topology
+// divergence, nothing to rank-pair" — falsified by the adversarial review; T7 rank-pairs 15-to-15, see
+// t7_adoption_perface_test.go). 19 of the corpus's blend fixtures use `nexplode` (simple K2 K3 T7 Y9;
+// complex B4 B9 C1–C9 D3 D4 D8 D9); every other committed receipt in this tree was checked against its
+// fixture's own variant in the fix wave and only T7's was wrong.
+//
 // `-b -f` DOES interleave `sprops` output with `puts` markers, and MANY `sprops` calls in one process are
 // fine — all eleven of T6's faces above were read at three tolerances each in a SINGLE invocation, and
 // `dlog reset` / `dlog on` / `dlog get` captures the full blocks, not merely the command echo. (An earlier

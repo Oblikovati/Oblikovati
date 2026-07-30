@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	m "oblikovati.org/math"
 )
@@ -18,7 +19,8 @@ import (
 // curve in ITS OWN direction (survivorCurve's from→to convention). The edge, however, was welded
 // once, from→to of whichever consumer reached the catalog first. So a second consumer's curve is
 // backwards relative to the edge it is being hung on whenever rec.from != a — which is the case for
-// EVERY one of the 272 adoptions in the corpus. Adopting it without that reversal hands the
+// EVERY one of the corpus's 270 ADOPTED records (the sweep is 272 records: 270 adopted + 2 kept
+// curve-first on complex/F2 + 0 declined). Adopting it without that reversal hands the
 // receiving face a boundary that runs the wrong way round, its loop walk then bounds a different
 // REGION, and simple/T3's blend torus inflates 2827.227365 → 13816.882599 (mesh area at
 // PropertyQuality). Adopted the right way round the same face reads 2826.791716, a 0.015 %
@@ -27,6 +29,11 @@ import (
 //
 // The rule is CONDITIONAL, so both arms are driven: an offer that runs WITH the stored sense must
 // be adopted untouched. A mutation that reverses unconditionally fails the second subtest.
+// The corpus-side semantic backstop is TestEveryEdgeCurveSpansItsVertices (occtparity): every
+// edge's curve must START and END at the edge's own vertices within 1e-9 of the bounding diagonal,
+// so the deleted reversal reads rel 0.020–0.058 on all nine adoption cases and even a SINGLE
+// mis-oriented adopted edge fires it — which is what makes unconditional-reversal corpus-green
+// impossible, not merely unlikely.
 func TestAdoptedCurveRunsTheStoredEdgeSense(t *testing.T) {
 	_, major := complementaryArcPair()
 	p0, p1 := major.PointAt(0), major.PointAt(1)
@@ -116,6 +123,50 @@ func TestOfferWithinTheWeldIsNeitherAdoptedNorRecorded(t *testing.T) {
 					tc.sagitta, got, tc.wantRecord)
 			}
 		})
+	}
+}
+
+// TestCurveFirstKeepUsesTheSameWeldThreshold completes the weld contract on the CURVE-FIRST branch
+// (adversarial-review finding m-1): resolveCurveOffer's offered==nil arm recorded unconditionally
+// while the file docstring claimed the weld rule applied to both nil branches. A curve-first offer
+// within the weld of its own chord IS the chord, so the later nil AGREES with it — silence; one
+// above the weld is the real consumer-side gap the record names. The corpus's only curve-first
+// records — complex/F2's two, departing 2.92426 against a 1.76388e-07 weld — are the above-weld
+// shape and stay recorded. Both arms are driven so the completed detector can be neither reverted
+// (below arm) nor mutated into blanket suppression (above arm).
+func TestCurveFirstKeepUsesTheSameWeldThreshold(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		sagitta    float64
+		wantRecord bool
+	}{
+		{"a hair below the weld: the kept curve IS the chord", 1e-4, false},
+		{"a hair above the weld: a real curve-first gap, still recorded", 2e-3, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			bow := bowedArcOverUnitChord(t, tc.sagitta)
+			ec := newSeamCatalog([]m.Point3{bow.PointAt(0), bow.PointAt(1)}) // weld 1e-3
+			ec.use(0, 1, bow, 0)                                             // the consumer WITH the curve welds the edge first
+			u := ec.use(1, 0, nil, 0)                                        // the second consumer offers nil
+			if _, stillStraight := u.Edge.Geometry().(geom.LineSegment); stillStraight {
+				t.Errorf("sagitta %.6g: the FIRST offer's curve was dropped from the edge — the threshold "+
+					"governs the record, never the first writer's geometry", tc.sagitta)
+			}
+			assertCurveFirstRecord(t, ec.bld.Build().BuildDiagnostics(), tc.sagitta, tc.wantRecord)
+		})
+	}
+}
+
+// assertCurveFirstRecord requires the curve-first keep to be recorded exactly when the kept curve
+// departs its chord beyond the weld, and the record to name the keep.
+func assertCurveFirstRecord(t *testing.T, got []diag.Diagnostic, sagitta float64, wantRecord bool) {
+	t.Helper()
+	if (len(got) > 0) != wantRecord {
+		t.Fatalf("sagitta %.6g (weld 1e-3): recorded %v, want recorded=%v — the curve-first branch must use "+
+			"the SAME weld threshold the other branches do, and must still fire on a real gap", sagitta, got, wantRecord)
+	}
+	if wantRecord && !strings.Contains(got[0].Detail, "kept (it was the first offer)") {
+		t.Errorf("sagitta %.6g: record %q does not name the curve-first keep", sagitta, got[0].Detail)
 	}
 }
 

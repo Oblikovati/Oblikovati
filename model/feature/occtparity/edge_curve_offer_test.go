@@ -3,6 +3,7 @@
 package occtparity
 
 import (
+	"slices"
 	"sort"
 	"testing"
 
@@ -35,9 +36,10 @@ type nilCurveOfferDebt struct {
 //     (rebuildArcSeg's major-span arm).
 //   - CodeAssembleCurveNilOffer — one consumer offering a curve, the other nil — is a RATCHET at the
 //     exact measured population below. The curve is ADOPTED (reversed onto the edge's own stored
-//     sense when the offering consumer walks it backwards, which is all 272 of them); the entry
-//     records that a consumer still declines to carry a boundary it shares with a curved neighbour,
-//     and the table shrinks as those consumers are fixed. It may never grow.
+//     sense when the offering consumer walks it backwards, which is all 270 of the adopted ones;
+//     the other 2 of the 272 records are complex/F2's curve-FIRST pair, kept, and 0 are declined);
+//     the entry records that a consumer still declines to carry a boundary it shares with a curved
+//     neighbour, and the table shrinks as those consumers are fixed. It may never grow.
 //
 // ★ COVERAGE, and the blind spot, asserted rather than assumed. An EMPTY build report has two
 // meanings — "the catalog reported nothing" and "this body never went through the catalog" — and
@@ -113,22 +115,12 @@ func assertCatalogBlindSpot(t *testing.T, got []string) {
 	t.Helper()
 	sort.Strings(got)
 	want := catalogBlindCases()
-	if len(got) == len(want) && equalStrings(got, want) {
+	if slices.Equal(got, want) {
 		return
 	}
 	t.Errorf("shipped bodies not assembled through the edge catalog: %d %v, want %d %v — a case that LEFT the "+
 		"catalog is outside every assertion in this file (and a case that joined it is an improvement to record)",
 		len(got), got, len(want), want)
-}
-
-// equalStrings reports whether two sorted string slices of equal length hold the same values.
-func equalStrings(a, b []string) bool {
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
 }
 
 // catalogBlindCases are the shipped corpus bodies the edge catalog never sees, measured by sweeping
@@ -176,7 +168,11 @@ func nilCurveOfferDebtIndex() map[string]int {
 // branch used the model weld; it now uses the same one, which is a correctness fix to the detector's
 // own contract, not a laundered shrink — TestOfferWithinTheWeldIsNeitherAdoptedNorRecorded
 // (kernel/ops) drives an offer a hair each side of the weld and requires the low one silent and the
-// high one still recorded AND adopted.
+// high one still recorded AND adopted. The CURVE-FIRST arm was completed in the adversarial-review
+// fix wave (finding m-1: resolveCurveOffer's offered==nil branch recorded with no threshold while
+// the file docstring claimed the rule); the population is unchanged by it — the only curve-first
+// records are complex/F2's two, departing 2.92426 against a 1.76388e-07 weld, seven orders above —
+// and TestCurveFirstKeepUsesTheSameWeldThreshold (kernel/ops) gates that arm both ways too.
 //
 // What remains is real: the offered curves are the blend patch's own boundary rails (r=8 / r=25 rim
 // arcs on T3, 0.068 / 0.085 off the chord). The catalog now ADOPTS every one of them — measured

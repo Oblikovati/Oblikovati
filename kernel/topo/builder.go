@@ -63,6 +63,12 @@ func (bld *Builder) ReplaceEdgeCurve(e *Edge, curve geom.Curve3) {
 		panic(fmt.Sprintf("topo: ReplaceEdgeCurve(edge=%v, curve=%v): both must be non-nil", e, curve))
 	}
 	e.curve = curve
+	// A healed polyline (SetSnappedCurve, import healing M25) is a discretization of the OLD curve
+	// and OUTRANKS e.curve in tessellation, so a stale one would silently ship the replaced
+	// geometry. Unreachable today (nothing snaps an edge before Build), cleared defensively with
+	// its residual so the invariant "snapped describes curve" survives any future caller
+	// (adversarial-review finding m-8).
+	e.snapped, e.tolerance = nil, 0
 }
 
 // Diagnose records d on the body under construction, so what the assembler could not do ideally
