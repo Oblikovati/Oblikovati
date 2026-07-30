@@ -170,9 +170,20 @@ func meshDebtIndex(table []meshDebtEntry) map[string]meshDebtEntry {
 //
 // The roots, largest first — each is a SEPARATE follow-up slice, none is fixed here:
 //
-//   - CANAL PATCH RAIL vs HOST (simple/C2, 3 at property) — it still carries a knownOffSurfaceDebt entry
-//     (0.0192), and this may be that debt seen downstream in the mesh. Unverified: read U4's retirement
-//     below before trusting the attribution.
+//   - ★ simple/C2 (0 default / 3 property) — STATION-COUNT MISMATCH ON A SHARED STRAIGHT BOUNDARY, the
+//     SAME class as U4 below. The inherited attribution ("canal patch rail vs host", i.e. two curves, and
+//     possibly its knownOffSurfaceDebt 0.0192 seen downstream) is FALSIFIED by provenance, measured this
+//     way: weld the shipped property-quality body mesh at the model's own grid (1.929301e-07), collect
+//     every edge whose incidence != 2, then search each FaceMesh for that edge. All three are degree 1 and
+//     all three lie between the SAME two points, (27.709873121, 0, 150) and (29.202254427, 0, 145.776225):
+//     the geom.Plane face (id 76) tiles that segment with TWO chords (2.236965899 + 2.242708693 =
+//     4.479674592) through the interior station (28.456063774, 0, 147.891157677), while the
+//     geom.BSplineSurface face (id 52) tiles it with ONE chord of 4.479674132 between the same endpoints.
+//     The two sides are the same straight line to 4.6e-07 — 2.4x the weld grid, which is exactly why the
+//     interior station does not weld away. So this is one extra STATION on one side, not two different
+//     curves, and no change to the patch rail's SURFACE can close it. Still a separate follow-up slice:
+//     which of the two sides is wrong (the plane's discretizeEdge densification, or the B-spline face's
+//     own boundary read skipping it) is not settled here.
 //     ★ simple/U4's 44-at-BOTH-qualities entry IS RETIRED, and it is the receipt for how wrong this row's
 //     reasoning was. The entry blamed "a fitted patch rail and its host tiling the same seam from
 //     different curves", evidenced by chords differing in the 5th digit (0.0220470 vs 0.0220538). Swept by
@@ -213,7 +224,7 @@ func knownMeshLeaks() []meshDebtEntry {
 	return []meshDebtEntry{
 		{"T9", "simple", 10, 60}, // FAIL(faulty) — one BSpline face; also the corpus's worst folds
 		{"U6", "simple", 13, 12}, // FAIL(area) — cylinder/torus rim; note it SHRINKS with quality
-		{"C2", "simple", 0, 3},   // PASS — knownOffSurfaceDebt 0.0192, BSpline/plane seam
+		{"C2", "simple", 0, 3},   // PASS — 2-vs-1 stations on one shared straight segment (see above)
 		{"Y1", "simple", 3, 3},   // PASS — knownRetracingLoops, 1 loop
 		{"Z1", "simple", 3, 3},   // PASS — unattributed, in no other ratchet
 	}

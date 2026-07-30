@@ -166,6 +166,18 @@ func appendDistinctEdge(list []*topo.Edge, e *topo.Edge) []*topo.Edge {
 // came out 7258.36 against the exact envelope area 7240.851 (+0.24%), while J8's near-circular rail —
 // whose two distributions nearly agree — was 100x closer. Tessellation correctness outranks features
 // (CLAUDE.md), and the meshed area is what mass properties, export and render all consume.
+// ★ RECORDED HAZARD, measured not fixed (rimcrossings-report.md §sweep). This is the one remaining
+// read of a SHARED face boundary that does not go through discretizeEdge: the two rails are closed
+// edges with two uses each, so the neighbour on the other side tiles them through discretizeEdge while
+// this loft tiles them from the raw sampler. It cannot simply be swapped, because the row NEEDS each
+// sample's own curve PARAMETER (the surface's v, see above) and discretizeEdge returns points only — a
+// healed edge's stored on-surface polyline (M25) has no curve parameters at all, and densifyStarvedRail
+// inserts points with none. MEASURED on every canal band the corpus builds (simple/J4·J6·J8,
+// bfuseblend/A3·A7·B1 — 16 rail reads): the two agree EXACTLY today, identical sample counts (109…1025)
+// and worst point deviation 0.000e+00, because no canal rail is healed (SnappedCurve nil on all 16) and
+// none is straight enough for the #2009 densification to fire. So this is a LATENT hazard, not a live
+// crack: it becomes one the day a canal band's rail arrives healed from an import or gains a
+// high-aspect B-spline neighbour. Closing it properly needs a parameter-carrying shared discretization.
 func canalRailRow(s geom.Surface, e *topo.Edge, uIso float64, q Quality) ([]math.Point3, []float64, bool) {
 	pts, vs := tessellateEdgeWithParams(e, q)
 	pts, vs = dropClosingDupWithParams(pts, vs)

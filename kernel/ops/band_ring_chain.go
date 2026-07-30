@@ -63,7 +63,7 @@ func torusBandRingsAndSeam(f *topo.Face, tor geom.Torus, q Quality) (rings [][]m
 	if !ok || len(rings) != 2 {
 		return nil, nil, false
 	}
-	seamPts = TessellateEdge(seam, q)
+	seamPts = discretizeEdge(seam, q) // the SHARED discretization, as orientedEdgePolylines below
 	return rings, seamPts, len(seamPts) >= 2
 }
 
@@ -94,7 +94,10 @@ func edgeTubeVSpan(tor geom.Torus, e *topo.Edge) float64 {
 }
 
 // faceBoundaryWeld is the model-relative weld length (ADR-0042) of the face's whole boundary — the
-// length scale the seam-v-span and range-congruence angular tolerances are derived from.
+// length scale the seam-v-span and range-congruence angular tolerances are derived from. This is the one
+// boundary read here that legitimately uses the raw sampler: it derives a SIZE (ResolutionForPoints
+// folds the points into a bounding box), never a tiling, so no neighbour has to agree with it
+// point-for-point — the caller-independence rule applies to what gets MESHED.
 func faceBoundaryWeld(f *topo.Face, q Quality) float64 {
 	var pts []math.Point3
 	for _, e := range f.Edges() {

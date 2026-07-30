@@ -67,18 +67,30 @@ func wrapPi(a float64) float64 {
 // bandRingsAndSeam reads the band face's boundary edges: each closed circle (with its closing
 // duplicate dropped) is a ring; seamN is the largest arc-edge sample count (the tube subdivision) and
 // seamMid that arc's midpoint (whose tube parameter picks which arc the band spans). ok=false with no seam.
+//
+// Every read goes through discretizeEdge, the SHARED edge discretization every other face of the same
+// edge uses (edge_discretize.go's package doc) — never the raw TessellateEdge sampler. These rings ARE
+// the band's shared rims, and closedBandLoftMesh's own promise is that "each boundary ring is the EXACT
+// tessellation of its own circle edge, so it matches whatever neighbour shares that edge": that promise
+// is only true of discretizeEdge, which alone snaps endpoints to the edge's vertices, returns a healed
+// edge's stored on-surface polyline (M25) and carries the #2009 starved-rail densification. The raw
+// sampler has now been the root of three separate mesh leaks (A2/J1's 1024-vs-512 rim stations, the
+// canal band's v-labelling, simple/U4's 44 free edges); measured over all 125 corpus bodies at BOTH gate
+// qualities this substitution changes nothing at all — identical per-face areas to 9 decimals, identical
+// triangle/free-edge/fold counts, every byte-identity fingerprint pin unmoved — so it costs nothing and
+// removes the standing hazard.
 func bandRingsAndSeam(f *topo.Face, q Quality) (rings [][]math.Point3, seamN int, seamMid math.Point3, ok bool) {
 	for _, e := range f.Edges() {
 		switch g := e.Geometry().(type) {
 		case geom.Circle:
-			rings = append(rings, dropClosingDup(TessellateEdge(e, q)))
+			rings = append(rings, dropClosingDup(discretizeEdge(e, q)))
 		case geom.Arc3d:
 			// A full-circle Arc3d (|sweep|≈2π) is a closed rim minted as an arc — the fillet re-weld
 			// represents a full-circle rim this way (build_edge.go circleEdge), so it is a RING, not the
 			// tube seam. Only the partial arc (|sweep|<2π) is the seam that sets the tube subdivision.
 			if isFullCircleArc(g) {
-				rings = append(rings, dropClosingDup(TessellateEdge(e, q)))
-			} else if pts := TessellateEdge(e, q); len(pts) > seamN {
+				rings = append(rings, dropClosingDup(discretizeEdge(e, q)))
+			} else if pts := discretizeEdge(e, q); len(pts) > seamN {
 				seamN, seamMid, ok = len(pts), pts[len(pts)/2], true
 			}
 		}
