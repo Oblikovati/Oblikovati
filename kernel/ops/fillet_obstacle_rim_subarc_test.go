@@ -10,12 +10,30 @@ import (
 	"oblikovati.org/math"
 )
 
-// rimSubArcOnRimTol is the ABSOLUTE ceiling on how far a node-adjacent rim segment's curve may sit off
-// the exact rim: the scale of the rim's OWN 1/64 per-segment discretization. It exists only to separate a
-// sub-arc from a CHORD — the straight chords this replaced measure 7.0e-03 … 3.0e-02, at least 70x above
-// it. The real, non-tunable bar is the comparative one below (no worse than the rim's own interior
-// segments), which is what a self-calibrating gate needs; this constant cannot be loosened into a pass.
-const rimSubArcOnRimTol = 1e-4
+// rimSubArcChordFraction is the sub-arc/CHORD separator, expressed as a fraction of the very chord
+// deviation it replaced rather than as an absolute distance: a node sub-arc must sit at least 10x closer
+// to the rim than this rim's OWN interior per-segment chords do. It replaced an absolute 1e-4, which is
+// a fixed length in a project whose tolerances are model-relative (ADR-0042, Resolution/scale.Weld) —
+// the residual it separates scales with the model (the same 1/64 chord measures 9.6e-03 on R9's r=8 rim
+// and 3.6e-02 on X3's r=30 one), so the bar must scale with it too. Measured headroom at 0.1: R9 9.60e-04
+// vs 3.2e-15, S3 1.20e-03 vs 4.8e-15, T6 1.80e-03 vs 7.86e-05 (23x), U3 1.44e-03 vs 5.7e-15,
+// X3 3.60e-03 vs 1.5e-14. The real, non-tunable bar is the comparative one below (no worse than the rim's
+// own interior segments), which is what a self-calibrating gate needs.
+const rimSubArcChordFraction = 0.1
+
+// rimSubArcExtentFactor is the ceiling on a node sub-arc's LENGTH, as a multiple of the rim's own longest
+// interior per-segment arc — the EXTENT half of the gate. Without it, on a circular rim the complementary
+// MAJOR arc (same conic, same two endpoints, exactly on the rim, the long way round) is caught only by
+// conditioning noise: the adversarial review's M5 mutation measured 1.477e-12 against a 1.004e-12 bar,
+// i.e. it passed on 2 of 4 segments. A node sub-arc is a sub-span of ONE 1/64 segment, so it is always
+// shorter than the longest of them (worst measured ratio 0.966, U3); the complementary arc is ~63/64 of
+// the whole rim, 42x above this ceiling. 1.5 keeps 55 % headroom over the worst legitimate ratio.
+const rimSubArcExtentFactor = 1.5
+
+// rimSubArcPinTol is how far a shared segment's curve may start/end from that segment's own two
+// vertices. Measured worst on the SHIPPED loops (buildNotchedHost's reversed splice included): 9.72e-15
+// on X3, two decades below this.
+const rimSubArcPinTol = 1e-12
 
 // rimSubArcSlack is the rounding floor added to the comparative bar (a node sub-arc must be no worse than
 // the worst INTERIOR per-segment arc of the same rim). On the four circular rims both sit at ~1.3e-14, so
@@ -42,13 +60,13 @@ const rimSubArcAgreeTol = 1e-12
 func TestObstacleRimNodeSegmentsAreTrimmedSubArcs(t *testing.T) {
 	for _, c := range singleHostObstacleCorpus {
 		t.Run(c.name, func(t *testing.T) {
-			d := singleHostDetection(t, c)
+			d := runSingleHostCase(t, c).d
 			rim := d.holeEdge.Geometry()
 			wall := insertNodesIntoRim(d)
 			nodeSegs := nodeAdjacentSegments(t, d, wall)
-			bar := worstInteriorRimArcDeviation(wall, rim, nodeSegs) + rimSubArcSlack
+			bars := interiorRimBars(wall, rim, nodeSegs)
 			for _, seg := range nodeSegs {
-				assertSegmentIsRimSubArc(t, wall, seg, rim, bar)
+				assertSegmentIsRimSubArc(t, wall, seg, rim, bars)
 			}
 		})
 	}
@@ -65,26 +83,41 @@ func TestObstacleRimNodeSegmentsAreTrimmedSubArcs(t *testing.T) {
 //     cover every one of the wall's rim segments exactly once. A station count mismatch in either
 //     direction (the discretizeEdge invariant this project has broken four times, each time a T-junction
 //     mesh leak) fails here rather than downstream in a free-edge count.
-//   - CURVE AGREEMENT: for each matched pair the two consumers' curves must trace the same point set,
-//     forward or reversed, to rimSubArcAgreeTol.
+//   - CURVE AGREEMENT: for each matched pair the two consumers' curves must span the segment's own two
+//     vertices and trace the same point set, forward or reversed, to rimSubArcAgreeTol — measured in
+//     BOTH directions (see assertCurvesCoincide).
+//
+// ★ It drives the notch through buildNotchedHost — the REAL shipping path — not through hostSideSubArc:
+// see shippedNotchLoop.
 func TestObstacleRimConsumersAgreeByValue(t *testing.T) {
 	for _, c := range singleHostObstacleCorpus {
 		t.Run(c.name, func(t *testing.T) {
-			d := singleHostDetection(t, c)
-			_, of, og, _ := obstacleFeatureFor(t, importCorpusBody(t, c.step), c.name, c.mid, c.radius)
-			wall := insertNodesIntoRim(d)
-			notch := hostSideSubArc(d.holeSampled, d.nodes, d.back, d.rimTrims)
-			patch := patchBoundaryLoop(d, og, of)
+			r := runSingleHostCase(t, c)
+			wall := insertNodesIntoRim(r.d)
+			notch := shippedNotchLoop(t, c.name, r)
+			patch := patchBoundaryLoop(r.d, r.og, r.of)
 			covered := map[int]int{}
-			matchRimSegments(t, "notch", notch, len(notch.pts)-1, wall, covered)
+			matchRimSegments(t, "notch", notch, len(notch.pts), wall, covered)
 			matchRimSegments(t, "patch", patch, len(patch.pts), wall, covered)
-			assertEveryWallRimSegmentCovered(t, d, wall, covered)
+			assertEveryWallRimSegmentCovered(t, r.d, wall, covered)
 		})
 	}
 }
 
-// singleHostDetection runs the real pipeline up to detectObstacle for one corpus obstacle case.
-func singleHostDetection(t *testing.T, c singleHostObstacleCase) obstacleDetection {
+// singleHostRun is one corpus obstacle case driven ONCE through the real pipeline: the detection, the
+// obstacle feature the patch reads, and the filletRebuildMaps buildNotchedHost consumes. All four come
+// from the SAME body and the SAME edgeFillet, which is what lets the maps lookup (keyed on face
+// identity) resolve and the three consumers' points compare by exact value.
+type singleHostRun struct {
+	d    obstacleDetection
+	og   obstacleGeom
+	of   *ObstacleFeature
+	maps filletRebuildMaps
+}
+
+// runSingleHostCase runs resolveFilletPicks → computeCorners → computeFillets → detectObstacle →
+// buildObstacleFeature on one corpus obstacle case and bundles what the rim gates read.
+func runSingleHostCase(t *testing.T, c singleHostObstacleCase) singleHostRun {
 	t.Helper()
 	body := importCorpusBody(t, c.step)
 	ef, res := singleEdgeFillet(t, body, c.name, c.mid, c.radius)
@@ -92,7 +125,29 @@ func singleHostDetection(t *testing.T, c singleHostObstacleCase) obstacleDetecti
 	if !ok {
 		t.Fatalf("%s: detectObstacle found no single-host obstacle", c.name)
 	}
-	return d
+	of, og, ok := buildObstacleFeature(ef, d, res)
+	if !ok {
+		t.Fatalf("%s: buildObstacleFeature declined", c.name)
+	}
+	maps, _ := filletBuildMaps(body, []edgeFillet{ef})
+	return singleHostRun{d: d, og: og, of: of, maps: maps}
+}
+
+// shippedNotchLoop returns the notched host face's boundary loop AS SHIPPED: buildNotchedHost →
+// mergeHoleIntoNotch → orientedHostArc → (reverseOpenArc) → spliceSubArc.
+//
+// Calling hostSideSubArc directly instead bypasses the REVERSAL, and that is the branch four of the five
+// bodies actually take (orientedHostArc reverses whenever nodes[0] is the nearer one). Proven by the
+// adversarial review's M10 mutation: gutting reverseOpenArc's curve propagation — every reversed segment
+// handed nil — left the by-value gate GREEN while only the leak census noticed. The gate exists so a
+// T-junction or a dropped curve is caught by a GATE, so the reversal has to be inside it.
+func shippedNotchLoop(t *testing.T, name string, r singleHostRun) filletLoop {
+	t.Helper()
+	face, ok := buildNotchedHost(r.d, r.maps)
+	if !ok {
+		t.Fatalf("%s: buildNotchedHost declined — the gate cannot see the shipped notch", name)
+	}
+	return face.loops[0]
 }
 
 // nodeAdjacentSegments returns the four indices of wall's rim ring whose segment touches an inserted
@@ -113,9 +168,9 @@ func nodeAdjacentSegments(t *testing.T, d obstacleDetection, wall filletLoop) []
 	return out
 }
 
-// assertSegmentIsRimSubArc checks one segment's curve: present, pinned to its own two vertices, and on
-// the rim curve.
-func assertSegmentIsRimSubArc(t *testing.T, loop filletLoop, seg int, rim geom.Curve3, bar float64) {
+// assertSegmentIsRimSubArc checks one segment's curve: present, pinned to its own two vertices, ON the
+// rim curve, and no LONGER than the span it is a sub-arc of.
+func assertSegmentIsRimSubArc(t *testing.T, loop filletLoop, seg int, rim geom.Curve3, bars rimSubArcBars) {
 	t.Helper()
 	c := curveAt(loop.curves, seg)
 	if c == nil {
@@ -123,38 +178,75 @@ func assertSegmentIsRimSubArc(t *testing.T, loop filletLoop, seg int, rim geom.C
 		return
 	}
 	a, b := loop.pts[seg], loop.pts[(seg+1)%len(loop.pts)]
-	lo, hi := c.Domain()
-	if da, db := c.PointAt(lo).DistanceTo(a), c.PointAt(hi).DistanceTo(b); da > 1e-12 || db > 1e-12 {
-		t.Errorf("rim segment %d sub-arc endpoints drift %.3e / %.3e from its own vertices", seg, da, db)
-	}
-	dev := maxCurveDeviationFrom(c, rim)
-	if dev > rimSubArcOnRimTol {
-		t.Errorf("rim segment %d curve leaves the exact rim by %.3e — that is chord-scale, not sub-arc scale (ceiling %.3e)", seg, dev, rimSubArcOnRimTol)
-	}
-	if dev > bar {
-		t.Errorf("rim segment %d trimmed sub-arc is %.3e off the rim, WORSE than the rim's own interior per-segment arcs (bar %.3e)", seg, dev, bar)
+	assertCurveSpansSegment(t, "wall", seg, c, a, b)
+	assertSubArcOnRim(t, seg, maxCurveDeviationFrom(c, rim), bars)
+	if l := curveSampledLength(c); l > bars.extent {
+		t.Errorf("rim segment %d sub-arc is %.6g long, past the rim's own per-segment span (ceiling %.6g) — endpoints and rim alone also admit the COMPLEMENTARY arc, the long way round",
+			seg, l, bars.extent)
 	}
 }
 
-// worstInteriorRimArcDeviation is the largest off-rim deviation among the rim's UNTOUCHED interior
-// per-segment arcs (rimSegmentArc over a full 1/64 span) — the discretization the node sub-arcs belong to,
-// and therefore the bar they must not be worse than. It is measured from the same loop on the same rim, so
-// the bar calibrates itself per case: ~1.3e-14 on a circular rim, 1.2e-04 on T6's ellipse.
-func worstInteriorRimArcDeviation(wall filletLoop, rim geom.Curve3, exclude []int) float64 {
+// assertSubArcOnRim applies the two off-rim ceilings: chord-scale separation and the comparative bar.
+func assertSubArcOnRim(t *testing.T, seg int, dev float64, bars rimSubArcBars) {
+	t.Helper()
+	if dev > bars.onRim {
+		t.Errorf("rim segment %d curve leaves the exact rim by %.3e — that is chord-scale, not sub-arc scale (ceiling %.3e, a tenth of this rim's own chord deviation)", seg, dev, bars.onRim)
+	}
+	if dev > bars.arc {
+		t.Errorf("rim segment %d trimmed sub-arc is %.3e off the rim, WORSE than the rim's own interior per-segment arcs (bar %.3e)", seg, dev, bars.arc)
+	}
+}
+
+// rimSubArcBars are the three ceilings one rim sets for its OWN node sub-arcs. All three are measured
+// from the same loop on the same rim, so every one of them calibrates itself per case and none is a
+// tuned absolute: onRim is a tenth of the CHORD deviation the sub-arcs replaced, arc is "no worse than
+// the rim's untouched interior per-segment arcs", extent is "no longer than its longest one".
+type rimSubArcBars struct {
+	onRim, arc, extent float64
+}
+
+// interiorRimBars measures the three bars over the rim's UNTOUCHED interior per-segment arcs (the
+// discretization the node sub-arcs belong to) and applies each bar's factor. Measured per case (chord /
+// arc / length): R9 9.60e-03 / 3.77e-15 / 0.785, S3 1.20e-02 / 5.02e-15 / 0.982, T6 1.80e-02 / 1.23e-04 /
+// 1.471, U3 1.44e-02 / 6.22e-15 / 1.178, X3 3.60e-02 / 1.78e-14 / 2.945.
+func interiorRimBars(wall filletLoop, rim geom.Curve3, exclude []int) rimSubArcBars {
 	skip := map[int]bool{}
 	for _, s := range exclude {
 		skip[s] = true
 	}
-	worst := 0.0
+	var raw rimSubArcBars
 	for seg := range wall.curves {
 		if skip[seg] || curveAt(wall.curves, seg) == nil {
 			continue
 		}
-		if d := maxCurveDeviationFrom(wall.curves[seg], rim); d > worst {
-			worst = d
-		}
+		raw = widenRimBars(raw, wall, seg, rim)
 	}
-	return worst
+	return rimSubArcBars{onRim: raw.onRim * rimSubArcChordFraction, arc: raw.arc + rimSubArcSlack,
+		extent: raw.extent * rimSubArcExtentFactor}
+}
+
+// widenRimBars folds one interior segment's three measurements into the running maxima: its straight
+// CHORD's deviation from the rim (what a node segment used to carry), its per-segment ARC's deviation
+// (what it carries now), and that arc's length (the span a node sub-arc must fit inside).
+func widenRimBars(raw rimSubArcBars, wall filletLoop, seg int, rim geom.Curve3) rimSubArcBars {
+	chord := geom.NewLineSegment(wall.pts[seg], wall.pts[(seg+1)%len(wall.pts)])
+	return rimSubArcBars{
+		onRim:  stdmath.Max(raw.onRim, maxCurveDeviationFrom(chord, rim)),
+		arc:    stdmath.Max(raw.arc, maxCurveDeviationFrom(wall.curves[seg], rim)),
+		extent: stdmath.Max(raw.extent, curveSampledLength(wall.curves[seg])),
+	}
+}
+
+// curveSampledLength is c's polyline length over 64 stations — a LOWER bound on the true arc length,
+// which is the safe side for a ceiling that rejects a curve for being too LONG.
+func curveSampledLength(c geom.Curve3) float64 {
+	lo, hi := c.Domain()
+	total, prev := 0.0, c.PointAt(lo)
+	for i := 1; i <= 64; i++ {
+		p := c.PointAt(lo + (hi-lo)*float64(i)/64)
+		total, prev = total+prev.DistanceTo(p), p
+	}
+	return total
 }
 
 // maxCurveDeviationFrom is the largest distance from 17 samples of c to the closest point on ref, found
@@ -246,9 +338,31 @@ func assertCurvesCoincide(t *testing.T, who string, seg int, mine, theirs geom.C
 	if mine == nil {
 		return
 	}
-	dev := maxCurveDeviationFrom(mine, theirs)
+	assertCurveSpansSegment(t, who, seg, mine, a, b)
+	assertCurveSpansSegment(t, who+"/wall", seg, theirs, a, b)
+	dev := stdmath.Max(maxCurveDeviationFrom(mine, theirs), maxCurveDeviationFrom(theirs, mine))
 	if dev > rimSubArcAgreeTol {
 		t.Errorf("%s: rim segment %d curves disagree by %.3e (tol %.3e)", who, seg, dev, rimSubArcAgreeTol)
+	}
+}
+
+// assertCurveSpansSegment requires c to START and END on the segment's own two vertices (either
+// traversal direction) — the EXTENT half of curve agreement.
+//
+// maxCurveDeviationFrom is ONE-SIDED: it samples the first curve and measures each sample to the nearest
+// point ANYWHERE on the second, so a proper SUB-ARC of the shared segment — right conic, right start,
+// stopping halfway — reads 0. Proven by the adversarial review's M9 mutation: a consumer handing a
+// half-length sub-arc of a shared segment passed AgreeByValue, the loop-segment gate AND the watertight
+// gate, all three silent. Pinning both endpoints makes the extent explicit, and the deviation above is
+// now measured in both directions as well.
+func assertCurveSpansSegment(t *testing.T, who string, seg int, c geom.Curve3, a, b math.Point3) {
+	t.Helper()
+	lo, hi := c.Domain()
+	p, q := c.PointAt(lo), c.PointAt(hi)
+	drift := stdmath.Min(p.DistanceTo(a)+q.DistanceTo(b), p.DistanceTo(b)+q.DistanceTo(a))
+	if drift > rimSubArcPinTol {
+		t.Errorf("%s: rim segment %d curve runs %v->%v, not between its own vertices %v->%v (endpoint drift %.3e, tol %.3e) — a sub-arc of the shared segment reads ZERO deviation",
+			who, seg, p, q, a, b, drift, rimSubArcPinTol)
 	}
 }
 

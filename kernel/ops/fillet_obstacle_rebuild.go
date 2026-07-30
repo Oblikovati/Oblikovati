@@ -98,6 +98,15 @@ func dipRimSamples(d obstacleDetection) []math.Point3 {
 	return append(pts, d.pPlus)
 }
 
+// dipRimSampleIndex maps an INTERIOR dipRimSamples position (1 <= i <= len(dip)-2) back to the rim sample
+// it came from. dipRimSamples' start convention — dip[1] is rim sample nodes[0].I+1 — is written down
+// HERE and read from here (dipRimForwardCurve), rather than re-derived at each reader: an independently
+// re-derived copy of an index convention is the shape of defect that has already cost this vein four
+// T-junction leaks.
+func dipRimSampleIndex(d obstacleDetection, i int) int {
+	return (d.nodes[0].I + i) % len(d.holeSampled.pts)
+}
+
 // wallIntoDir returns the unit WallInto vector: in the fillet wall's plane, perpendicular to the
 // blend axis (the seam), pointing AWAY from the host plane into the wall material. The sign is anchored
 // to the wall-tangent point's signed offset from the host plane, so it is robust to whichever way the

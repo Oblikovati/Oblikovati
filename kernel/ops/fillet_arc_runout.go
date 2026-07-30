@@ -30,6 +30,13 @@ import (
 // separate face at all: it is the part of the SAME torus patch between the clipped rectangle and this
 // section curve, worth 0.418101 − r·U·((R+r)·π/2 − r) = 0.0861.
 //
+// ★ READING DRAWEXE: identify a face by area + closed form, never by `bounding` (on a trimmed face that
+// returns the underlying surface's POLE box, not the trimmed region), and read a per-face `sprops` area
+// at `1.e-12` or tighter — its tolerance argument is a QUADRATURE target, and on a trimmed oblique
+// quadric it moves the answer by up to 1.6 % (simple/T6's obstacle wall reads 2355.61 / 2393.32 / 2384.17
+// at 1e-6 / 1e-9 / 1e-12 and emits NOTHING at 1e-13). Both caveats, with the receipts, are in
+// model/feature/occtparity/perface_oracle_test.go.
+//
 // ★ The construction GENERALISES the flat cross-section rather than special-casing it. For a wall that
 // contains the axis the section coefficients collapse to K = C = 0, w(v) ≡ 0, and u(v) ≡ Phi ± π/2 — a
 // constant azimuth, i.e. the radial-plane tube arc itself. So a diametral end and a run-out end are the

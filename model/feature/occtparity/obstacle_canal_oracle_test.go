@@ -22,8 +22,10 @@ import (
 // ★ THE ORACLE HERE IS A CLOSED FORM, not a recorded total. Each case's patch area and wall bulge are
 // integrated analytically from the solid's own dimensions (the geometry is named per case below), and each
 // closed form was checked against a LIVE DRAWEXE 8.0.0 run of the same case (`restore <rle> s ;
-// tscale s 0 0 0 1 ; explode s E ; blend result s <r> s_<i> ; explode result F ; sprops result_i 1.e-6`,
-// each call wrapped in dlog reset/get — `-b -f` does not interleave sprops with puts):
+// tscale s 0 0 0 1 ; explode s E ; blend result s <r> s_<i> ; explode result F ; sprops result_i 1.e-6`).
+// Every face in the table below re-reads IDENTICALLY at 1.e-9 and 1.e-12, so 1e-6 is sound for these ten;
+// it is NOT sound in general — see perface_oracle_test.go's ★★ note on `sprops` quadrature tolerance
+// before adding a row:
 //
 //	case  patch closed form   live DRAWEXE   wall bulge closed form   live DRAWEXE wall
 //	R9      31.215583           31.2156        0.717167                340.717  (= 340  + 0.717)
@@ -34,9 +36,12 @@ import (
 //
 // Every one agrees to OCCT's own 6-figure printing precision, so these constants are an INDEPENDENT
 // oracle, not a transcription of a golden master — which matters here, because two of these cases'
-// whole-body totals do NOT reconcile with a live DRAWEXE run (T6's live `sprops result` is 6845.395 against
-// the corpus's recorded 6871.45, and the entire 26.02 gap is its elliptical prism wall, a face this patch
-// does not touch). A whole-body pin would have been measuring that instead.
+// whole-body totals do NOT reconcile with a live DRAWEXE run. T6's live `sprops result` reads 6845.4 at
+// 1.e-6 against the corpus's recorded 6871.45, and the whole 26.05 gap sits on ONE face, its elliptical
+// prism wall — but that face is exactly the tolerance-sensitive one: the same face reads 2355.61 / 2393.32
+// / 2384.17 at 1e-6 / 1e-9 / 1e-12 against a closed form of 2381.677340, so the "gap" is DRAWEXE's own
+// unconverged quadrature and NOT a defect of ours (ours is 2381.639771, −0.0016 %). The lesson stands
+// either way: a whole-body pin would have been measuring that face instead of this patch.
 //
 // WHAT IT MEASURES. ops.MeshArea over ops.CalculateBodyFacets(body, ops.PropertyQuality()).FaceMeshes on
 // the shipped body (ops-driven feature recompute via shippedCaseBody). The patch face is identified as the

@@ -37,8 +37,33 @@ import (
 //     which is how simple/W2's run-out boundary was read off OCCT (torus (0.98506, π/2) → (1.55675, π),
 //     plane z=0 (2.33652, 0) → (2.98586, 0.2)).
 //
-// `-b -f` does not interleave `sprops` output with `puts`; wrap the script body in `dlog on` / `dlog get`
-// so the two streams come back in order. The environment is `test-utilities/occt-blend/oracle/drawenv.sh`.
+// ★★ AND READ A PER-FACE AREA AT `1.e-12` OR TIGHTER, THEN CHECK IT AGAINST A CLOSED FORM.
+//
+// `sprops`'s second argument is not a print precision — it is the target relative error of DRAWEXE's own
+// adaptive QUADRATURE, and on a trimmed oblique quadric that quadrature is UNCONVERGED at the 1e-6 this
+// harness used for years. Measured live on simple/T6's obstacle wall (`blend result s 6 s_7`,
+// `explode result F`), the SAME face `result_10`:
+//
+//	1.e-6  -> 2355.61     1.e-9  -> 2393.32     1.e-12 -> 2384.17     1.e-13 -> (no output at all)
+//
+// a 1.6 % spread, straddling the closed form 2381.677340 (right-section perimeter 79.213410 x axial
+// extent sqrt(904) = 30.066593) from both sides. Every one of T6's other ten faces reads IDENTICALLY at
+// all three tolerances — the sensitivity is the trimmed oblique elliptical cylinder alone — so the
+// whole-body number inherits it: `sprops result` reads 6845.4 / 6883.11 / 6873.96 at the same three.
+// Two reports and one oracle comment in this tree each recorded one of those three as "the live OCCT
+// value" and drew opposite conclusions about who was right.
+//
+// So: read per-face areas at >= 1.e-12 (tighter emits nothing, silently), state the tolerance with the
+// number, and adjudicate a disagreement against a CLOSED FORM rather than against another DRAWEXE run at
+// another tolerance. A flat analytic face (plane, right cylinder, cone, sphere) is stable at any of them
+// and needs no ceremony; a trimmed oblique/swept quadric does.
+//
+// `-b -f` DOES interleave `sprops` output with `puts` markers, and MANY `sprops` calls in one process are
+// fine — all eleven of T6's faces above were read at three tolerances each in a SINGLE invocation, and
+// `dlog reset` / `dlog on` / `dlog get` captures the full blocks, not merely the command echo. (An earlier
+// report recorded the opposite on all three counts and prescribed one process per face; it is wrong.)
+// `CSF_TestDataPath` must be exported by hand — `drawenv.sh` does not set it — and `dprecision` does not
+// exist. The environment is `test-utilities/occt-blend/oracle/drawenv.sh`.
 type drawexeFaceCase struct {
 	name string
 	// drawexe are DRAWEXE 8.0.0's per-face `sprops result_i 1e-6` areas, sorted DESCENDING (rank-paired

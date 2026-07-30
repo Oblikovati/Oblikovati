@@ -61,15 +61,21 @@ func dipRimReverseCurve(d obstacleDetection, dip []math.Point3, i int) geom.Curv
 	if len(dip) < 3 {
 		return nil
 	}
-	n := len(d.holeSampled.pts)
-	fwd := curveAt(d.holeSampled.curves, (d.nodes[0].I+i-1)%n)
+	return reversedArcThroughMid(dipRimForwardCurve(d, len(dip), i), dip[i], dip[i-1])
+}
+
+// dipRimForwardCurve is the curve the split obstacle wall traces FORWARD on the dip segment
+// dip[i-1] → dip[i]: a node's trimmed sub-arc at either end of the dip, and the rim's own per-segment arc
+// in between. The interior branch reads dipRimSampleIndex rather than re-deriving dipRimSamples' start
+// convention here — the segment leaving dip[i-1] is the rim segment leaving dip[i-1]'s own sample.
+func dipRimForwardCurve(d obstacleDetection, dipLen, i int) geom.Curve3 {
 	switch i {
-	case len(dip) - 1:
-		fwd = d.rimTrims.in[1] // sample nodes[1].I -> P+
+	case dipLen - 1:
+		return d.rimTrims.in[1] // sample nodes[1].I -> P+
 	case 1:
-		fwd = d.rimTrims.out[0] // P- -> sample nodes[0].I+1
+		return d.rimTrims.out[0] // P- -> sample nodes[0].I+1
 	}
-	return reversedArcThroughMid(fwd, dip[i], dip[i-1])
+	return curveAt(d.holeSampled.curves, dipRimSampleIndex(d, i-1))
 }
 
 // wallFrontInterior returns the wall front from A up to (excluding) D — the points patchBoundaryLoop adds
