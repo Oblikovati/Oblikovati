@@ -253,5 +253,18 @@ func curvedWeldPins() []fingerprintPin {
 		// THIS HEAD; it locks the ε=−1 cove + all-concave sphere-corner weld so a later concave-arm or
 		// corner slice fails loud if it perturbs the M5 body. Same cross-platform-risk caveat as above.
 		{"M5", 980008.933761107619, 24756, 0x6718a941b785974b, ""},
+		// B3 (bfuseblend): the multi-rim weld (fillet_curved_multirim.go, W-DH capability wave). A
+		// through-cylinder fused to a box leaves TWO closed concave Cylinder∧Plane rims (one per exit
+		// face, y=0 and y=100); the multi-pick op used to floor at "trihedral corner needs 3 arms" —
+		// there is no corner, the rims never touch. Both rims now route through the proven single-rim
+		// band rebuild SEQUENTIALLY (the second rim's ReferenceKey resolves on the intermediate body
+		// because the rim rebuild carries untouched Lineage verbatim — ADR-0043 doing the composition).
+		// Reconciled per face vs DRAWEXE sprops 1e-12 on all 12 faces (4×10000 · 2×6151.65/6151.55 ·
+		// 2×8482.25/8482.3 · 2×2827.36/2827.43 · 2×1570.04/1570.1, worst +0.0016%); volume
+		// 1284834.85 vs vprops 1.28484e6. The −0.998% against the corpus number 78849.6 is the
+		// HISTORIC reference's drift: our body reads 78062.6 vs local DRAWEXE 8.0's own 78062.8
+		// (−0.0003%). Captured on THIS HEAD; locks the sequential-rim composition so a later rim or
+		// key-continuity slice fails loud if it perturbs the B3 body. Same cross-platform caveat.
+		{"B3", 1284834.848345890874, 135180, 0xac0646576d972b5d, "bfuseblend"},
 	}
 }
