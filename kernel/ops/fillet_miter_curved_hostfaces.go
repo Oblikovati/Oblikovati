@@ -178,10 +178,15 @@ func miterHostBiteChains(m *cornerMiter, tor, cyl miterArmSide, tol float64) (ma
 }
 
 // miterTrimChain builds one arm's far-cap bite chain: the far cross-section trim, preceded by a
-// bridge along shared ∩ capping when the trim's shared-side foot is a mid-face fresh cut on the
-// capping face (P5's pocket floor: the cut the fillet itself makes at (48.148, 0.034, 60) is not
-// on any original floor edge, so the floor grows to it through the far vertex). The consumed
-// marker is the far vertex only when it is NOT the bridge anchor itself.
+// bridge CONFINED TO THE CAPPING FACE'S OWN SURFACE when the trim's shared-side foot is a mid-face
+// fresh cut on the capping face (P4/P5's pocket floor: the cut the fillet itself makes at
+// (48.148, 0.034, 60) is not on any original floor edge, so the floor grows to it through the far
+// vertex). The bridge is built against s.run.capping — the face this chain retrims — never m.shared:
+// simple/W3, W4's boss-notch corner is the first case where the two differ (the trim's off-loop foot
+// sits on the capping PLANE, nowhere near the shared CYLINDER, so a shared-cylinder latitude arc
+// through it does not exist and always declined; the fresh cut IS confined to the capping face by
+// construction, so miterChainEndBridgeSeg's dispatch on the capping face's own geometry always has an
+// answer there). The consumed marker is the far vertex only when it is NOT the bridge anchor itself.
 func miterTrimChain(m *cornerMiter, s miterArmSide, tol float64) (miterHostChain, bool) {
 	far := farVertexNotVid(s.edge, m.vertex.ID())
 	fromOn := miterCapPointOnLoops(s.run.capping, s.run.trim.from, tol)
@@ -196,7 +201,7 @@ func miterTrimChain(m *cornerMiter, s miterArmSide, tol float64) (miterHostChain
 	if !toOn {
 		trim, off = reverseEndSegs([]endSeg{s.run.trim})[0], s.run.trim.to
 	}
-	bridge, ok := miterChainEndBridgeSeg(m.shared.Geometry(), off, far, tol)
+	bridge, ok := miterChainEndBridgeSeg(s.run.capping.Geometry(), off, far, tol)
 	if !ok {
 		return miterHostChain{}, false
 	}
