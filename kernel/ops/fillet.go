@@ -251,10 +251,16 @@ func addRebuildCandidate(cands map[rebuildChoice]*topo.Body, choice rebuildChoic
 	}
 }
 
-// assembleFilletFaces builds and assembles one rebuild composition's faces in a single call.
+// assembleFilletFaces builds and assembles one rebuild composition's faces in a single call. It goes
+// through assembleCornerBlendBody (not bare assembleBody) because the planar trihedral path emits the
+// same absolute-winding-sensitive corner sphere patch the curved path does: orientFilletShell only
+// unifies RELATIVE windings, so a VOID-side corner ball (K6/L4's concave pocket corner) landed wound
+// so the sphere-patch mesher filled the 7/8 COMPLEMENT (Ω = 7π/2, area 274.35 vs OCCT's octant
+// 39.2699 = 25π/2) at every quality — a +235 area / +522 (= 4πr³/3·mesh) volume mis-measure the 1%
+// corpus deps absorbed silently (patchgridcap-report.md §region).
 func assembleFilletFaces(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend, enableObstacles, enableRunout bool) *topo.Body {
 	faces, _ := filletResultFaces(body, fils, blends, enableObstacles, enableRunout)
-	return assembleBody(faces)
+	return assembleCornerBlendBody(body, faces)
 }
 
 // obstacleImprovedSolid reports whether an obstacle-rebuilt body is a watertight, hole-contained solid —

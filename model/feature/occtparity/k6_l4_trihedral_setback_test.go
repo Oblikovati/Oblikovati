@@ -3,6 +3,7 @@
 package occtparity
 
 import (
+	stdmath "math"
 	"testing"
 
 	"oblikovati.org/kernel/geom"
@@ -59,8 +60,40 @@ func assertVoidCornerSphere(t *testing.T, name string, body *topo.Body, want mat
 			t.Fatalf("%s corner sphere centre %v, want void-side %v (off by %.4f — sphere re-reflected to the material side?)",
 				name, sph.Center, want, d)
 		}
+		assertVoidOctantMeshed(t, name, f, sph)
 	}
 	if found != 1 {
 		t.Fatalf("%s has %d corner spheres, want exactly 1 void-side octant patch", name, found)
+	}
+}
+
+// The void corner sphere's MESH region + resolution gate (patchgridcap-report.md §region). The B-rep
+// octant was right all along, but the sphere-patch mesher picks its region from the loop's ABSOLUTE
+// winding, which orientFilletShell leaves arbitrary on the planar path — so K6/L4's corner ball meshed
+// the 7/8 COMPLEMENT (Ω = 7π/2, area 274.35 = 7/8·4πr² − clamp deficit; DRAWEXE 8.0.0 `sprops … 1.e-12`
+// says 39.2699, and the swept complement mesh converges to 274.889 = 7/8·4π·25 exactly). The 1% corpus
+// deps swallowed the +235.08 whole. assembleFilletFaces now routes through assembleCornerBlendBody
+// (the curved path's complement detector); this pins both truths so neither regresses:
+//   - REGION: signed solid angle at the centre = π/2 (the octant, covered exactly once);
+//   - RESOLUTION: mesh area within voidOctantAreaCeil of the closed form 25π/2 = 39.269908.
+const (
+	voidOctantAreaCeil   = 0.0063 // 1.1× the measured post-fix deficit (K6 0.0054, L4 0.0057), abs units²
+	voidOctantSolidAngle = 1e-6   // rel bound on |ΣΩ − π/2| (measured < 1e-12)
+)
+
+// assertVoidOctantMeshed pins the corner ball's MESH to the octant: area against 25π/2 and solid
+// angle π/2 — the complement mesh reads ~274 area / 7π/2 and fails both, loud.
+func assertVoidOctantMeshed(t *testing.T, name string, f *topo.Face, sph geom.Sphere) {
+	t.Helper()
+	mesh := ops.TessellateFace(f, ops.PropertyQuality())
+	closed := stdmath.Pi * sph.Radius * sph.Radius / 2 // octant: 4πr²/8
+	if got := ops.MeshArea(mesh); stdmath.Abs(got-closed) > voidOctantAreaCeil {
+		t.Errorf("%s: corner sphere meshes %.6f vs octant closed form πr²/2=%.6f (|Δ|=%.4f > %.4f) — the complement region is back",
+			name, got, closed, stdmath.Abs(got-closed), voidOctantAreaCeil)
+	}
+	omega := meshSolidAngleAt(mesh, sph.Center)
+	if rel := stdmath.Abs(omega-stdmath.Pi/2) / (stdmath.Pi / 2); rel > voidOctantSolidAngle {
+		t.Errorf("%s: corner sphere mesh covers solid angle %.9f, want π/2=%.9f (rel %.3g) — wrong region or a fold/overlap",
+			name, omega, stdmath.Pi/2, rel)
 	}
 }

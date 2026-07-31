@@ -166,8 +166,21 @@ func curvedWeldPins() []fingerprintPin {
 		// changes across ALL SIX grids (base 4687de4e → P2 HEAD; verified sweep — no green→green re-weld this
 		// slice, unlike P1's N5). Pinned here to lock the void-sphere flip so any later corner slice (P3
 		// torus, P4 non-orthogonal) fails loud if it perturbs a K6/L4 body. Same cross-platform-risk caveat.
-		{"K6", 959144.890948543, 9898, 0xfb501e5efc54048e, ""},
-		{"L4", 945198.518972720, 9676, 0x6852a95e3f8b3508, ""},
+		//
+		// ★ RE-CAPTURED (patchgridcap slice, §region): the void corner ball's B-rep octant was right, but
+		// its MESH covered the 7/8 COMPLEMENT — the sphere-patch mesher picks its region from the loop's
+		// ABSOLUTE winding, which orientFilletShell leaves arbitrary on the planar path (the same defect
+		// assembleCornerBlendBody already fixed on the curved path; assembleFilletFaces now routes through
+		// it). PROVEN improved on four axes, each vs live DRAWEXE 8.0.0 at `1.e-12`: corner-sphere face
+		// 274.350377/274.337703 → 39.264523/39.264226 vs `sprops` 39.2699 (= 25π/2, the octant closed form;
+		// the old mesh swept to 274.8868 = 7/8·4π·25, the complement's own closed form); mesh solid angle at
+		// the ball centre 7π/2 → π/2 exactly; whole-body mesh area K6 63968.63 → 63733.54 vs DRAWEXE
+		// 63733.6, L4 59968.62 → 59733.55 vs 59733.6 (the +235.08 = 274.889−39.270 complement excess gone);
+		// raw volume K6 959144.890948543 → 958623.105106086 vs `vprops` 958623, L4 945198.518972720 →
+		// 944676.776286043 vs 944677 (the +521.7 ≈ 4π·5³/3 = 523.6 ball-cover excess, less inscription,
+		// gone). Triangle drop is the 7/8→octant fan alone. Captured twice, bit-stable.
+		{"K6", 958623.105106086, 7036, 0xcae068509b9db2e3, ""},
+		{"L4", 944676.776286043, 6716, 0x91c3116ec2191b75, ""},
 		// K9/M2 (simple): the P3 mixed-sense trihedral corner-setback greens (fillet_corner_torus.go). Each
 		// is a box+boss (K9) / box+cyl (M2) whose single trihedral corner joins 2 CONCAVE + 1 CONVEX fillets
 		// at three mutually-orthogonal planar faces; both were RED (K9 +1.17%, M2 +1.02%) because solveBlend
