@@ -144,26 +144,11 @@ func fullRoundArmSpinesConcurrent(v *topo.Vertex, ps []filletPick, s math.Point3
 
 // armSpineConcurrent reports whether s is within weld of pick p's own arm spine at v: the line
 // through v's frame-derived rolling-ball centre (offset r along the arm's OWN 2-face bisector, the
-// same offDir formula edgePlanarFaces/filletFrame use) in the direction of the edge's axis.
+// same offDir formula edgePlanarFaces/filletFrame use) in the direction of the edge's axis. The
+// distance itself (shared with the partial-corner decline diagnostics, fillet_corner_partial.go) is
+// armSpinePerpDistance; this just applies the weld cutoff.
 func armSpineConcurrent(v *topo.Vertex, p filletPick, s math.Point3, r, weld float64) bool {
-	faces := p.edge.Faces()
-	if len(faces) != 2 {
-		return false
-	}
-	pa, okA := faces[0].Geometry().(geom.Plane)
-	pb, okB := faces[1].Geometry().(geom.Plane)
-	if !okA || !okB {
-		return false
-	}
-	nA, nB := outwardPlaneNormal(faces[0], pa), outwardPlaneNormal(faces[1], pb)
-	axis, err := math.UnitVector3FromVector(p.edge.StartVertex().Point().VectorTo(p.edge.EndVertex().Point()))
-	if err != nil {
-		return false
-	}
-	frame := v.Point().TranslateBy(nA.Add(nB).Scale(-r / (1 + nA.Dot(nB))))
-	d := frame.VectorTo(s)
-	perp := d.Sub(axis.AsVector().Scale(d.Dot(axis.AsVector())))
-	return perp.Length() <= weld
+	return armSpinePerpDistance(v, p, s, r) <= weld
 }
 
 // fullRoundArmsSupported gates the full-round solve to the configuration the sphere expresses:
