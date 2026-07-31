@@ -253,13 +253,14 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 114 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 114 (the arc band's rolling-ball seat + "+
-			"run-out termination greened W2 and freed H6 from the last quarantine)", simpleGreen)
+	if simpleGreen != 118 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 118 (the Cylinder∧Cylinder SSI-seam "+
+			"canal engine — fillet_cylcyl_seam*.go — greened K2/K3/K4 closed loops + P1's parallel valley "+
+			"line, 114→118; per-face DRAWEXE receipts in cylcyl_seam_perface_test.go)", simpleGreen)
 	}
-	if allGridGreen != 119 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 119 (114 simple + 5 bfuseblend; complex/D8's "+
-			"coincidental green retired by the far-end branch fix)", allGridGreen)
+	if allGridGreen != 125 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 125 (118 simple + 7 bfuseblend; the closed "+
+			"cyl∧cyl seam canal greened bfuseblend/B4+B5 alongside simple/K2-K4+P1, 119→125)", allGridGreen)
 	}
 	if skipQuarantine != 0 {
 		t.Errorf("SkipQuarantine = %d, want 0 — the corpus holds NO case; every one of the 475 records is "+

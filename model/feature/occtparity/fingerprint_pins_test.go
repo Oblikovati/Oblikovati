@@ -122,5 +122,6 @@ func pinnedBody(t *testing.T, grid, name string) *topo.Body {
 // (CLAUDE.md's 500-line rule): curvedWeldPins (fingerprint_pins_curved_test.go) and setbackObstaclePins
 // (fingerprint_pins_setback_test.go). The two lists are disjoint and their union is the pin set.
 func byteIdentityPins() []fingerprintPin {
-	return append(curvedWeldPins(), setbackObstaclePins()...)
+	pins := append(curvedWeldPins(), setbackObstaclePins()...)
+	return append(pins, cylCylSeamPins()...)
 }

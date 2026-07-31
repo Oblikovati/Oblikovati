@@ -133,12 +133,21 @@ func assertCatalogBlindSpot(t *testing.T, got []string) {
 // circular rim pick, a lone arc pick, and a tangent stripe. 22 of 125 shipped bodies, 17.6 %. Every
 // assertion in this file is silent about them BY CONSTRUCTION, which is why the set is pinned here
 // instead of being left to an empty build report that reads like coverage.
+//
+// Cluster-B addition (bfuseblend/B4 B5, simple/K2 K3 K4): the Cylinder∧Cylinder closed-loop SSI-seam
+// canal (fillet_cylcyl_seam*.go) welds through the SAME rebuildRim (fillet_rim_build.go) the analytic
+// torus/elliptic rim families already use — it is not a new bypass, it is a new CALLER of the
+// existing pinned one, so these five join the blind set for the identical architectural reason as
+// the pre-existing 22 rather than growing it as a genuine regression (measured, not assumed: the
+// simple/K2 K3 K4 seam ends still route through cylinderArmEdge → rebuildWithRimFillet /
+// rebuildWithConcaveRimFillet, verified by reading rebuildRim's own topo.NewBuilder call).
 func catalogBlindCases() []string {
 	return []string{
 		"bfuseblend/A1", "bfuseblend/A2", "bfuseblend/A3", "bfuseblend/A7", "bfuseblend/B1",
+		"bfuseblend/B4", "bfuseblend/B5",
 		"simple/B2", "simple/H6", "simple/I9", "simple/J1", "simple/J2", "simple/J4", "simple/J6",
-		"simple/J8", "simple/K1", "simple/N6", "simple/R8", "simple/U6", "simple/W2", "simple/W6",
-		"simple/W8", "simple/W9", "simple/Z1",
+		"simple/J8", "simple/K1", "simple/K2", "simple/K3", "simple/K4", "simple/N6", "simple/R8",
+		"simple/U6", "simple/W2", "simple/W6", "simple/W8", "simple/W9", "simple/Z1",
 	}
 }
 
