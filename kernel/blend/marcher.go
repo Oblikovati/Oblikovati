@@ -189,9 +189,13 @@ func (m *Marcher) outwardNormal(s geom.Surface, p math.Point3) math.Vector3 {
 	return n
 }
 
-// distPointToCurve is the distance from p to curve cv — closed-form for an unbounded line, else the
-// minimum over a dense domain sampling (all other analytic centre curves — circle, ellipse — are
-// bounded). It ranks the offset-intersection branches so centreCurve picks the one through the anchor.
+// distPointToCurve is the distance from p to curve cv — closed-form for an unbounded line and a
+// circle, else a dense domain sampling REFINED by ternary search around the best sample. The
+// refinement is load-bearing (simple/Y9): centreCurve gates the branch match at the weld tolerance
+// (~1e-7·size), and a raw 64-sample minimum on a radius-46 circle is ~2 even for a point exactly ON
+// the curve, so every on-curve anchor at a non-sample parameter read as "off the curve" and the
+// march died with start-section-failed. It ranks the offset-intersection branches so centreCurve
+// picks the one through the anchor.
 func distPointToCurve(cv geom.Curve3, p math.Point3) float64 {
 	lo, hi := cv.Domain()
 	if stdmath.IsInf(lo, 0) || stdmath.IsInf(hi, 0) {
@@ -200,14 +204,46 @@ func distPointToCurve(cv geom.Curve3, p math.Point3) float64 {
 		w := o.VectorTo(p)
 		return float64(w.Sub(d.Scale(w.Dot(d))).Length())
 	}
-	best := stdmath.Inf(1)
+	if c, isCircle := cv.(geom.Circle); isCircle {
+		return distPointToCircle(c, p)
+	}
+	return refineSampledCurveDistance(cv, p, lo, hi)
+}
+
+// distPointToCircle is the exact point-to-circle distance: hypot of the axial offset and the
+// in-plane radial offset from the circle ring.
+func distPointToCircle(c geom.Circle, p math.Point3) float64 {
+	v := c.Center.VectorTo(p)
+	axial := v.Dot(c.Normal.AsVector())
+	radial := float64(v.Sub(c.Normal.AsVector().Scale(axial)).Length())
+	return stdmath.Hypot(radial-c.Radius, float64(axial))
+}
+
+// refineSampledCurveDistance seeds on the best of 64 samples, then ternary-searches the distance
+// over the two neighbouring sample intervals down to parameter exhaustion — the general bounded
+// centre curves (ellipse, fitted NURBS) are smooth, so the local minimum near the best sample is
+// the global one at the sampling density used.
+func refineSampledCurveDistance(cv geom.Curve3, p math.Point3, lo, hi float64) float64 {
 	const n = 64
+	bestI, best := 0, stdmath.Inf(1)
 	for i := 0; i <= n; i++ {
 		if d := float64(cv.PointAt(lo + (hi-lo)*float64(i)/n).DistanceTo(p)); d < best {
-			best = d
+			bestI, best = i, d
 		}
 	}
-	return best
+	step := (hi - lo) / n
+	a := stdmath.Max(lo, lo+float64(bestI-1)*step)
+	b := stdmath.Min(hi, lo+float64(bestI+1)*step)
+	f := func(t float64) float64 { return float64(cv.PointAt(t).DistanceTo(p)) }
+	for iter := 0; iter < 100 && b-a > 1e-14*(hi-lo); iter++ {
+		m1, m2 := a+(b-a)/3, b-(b-a)/3
+		if f(m1) <= f(m2) {
+			b = m2
+		} else {
+			a = m1
+		}
+	}
+	return f((a + b) / 2)
 }
 
 // offsetPrimitive returns the exact offset of a primitive support by signed distance d — the plane
