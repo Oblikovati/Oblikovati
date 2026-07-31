@@ -1178,6 +1178,21 @@ func solveBlend(body *topo.Body, v *topo.Vertex, faces []*topo.Face, r float64) 
 	if co, coneFace, planes, ok := coneHostCorner(faces); ok {
 		return solveConeBlend(v, faces, co, coneFace, planes, r)
 	}
+	// R4: TWO parallel-axis cylinder hosts + one plane perpendicular to the shared axis (simple/O9 P7,
+	// the cyl∧cyl corner unblocked once the cylinder∧cylinder seam band landed) reduces to the same
+	// analytic sphere corner via a 2D circle∩circle closed form (fillet_twocyl_corner.go). Ordered AFTER
+	// every 1-curved-host recognizer (each requires exactly 1 cylinder, so a 2-cylinder corner is
+	// unreachable there) and before solvePlanarBlend, so every other corner stays byte-identical.
+	if cylFaces, planeFace, ok := twoParallelCylinderHostCorner(faces); ok {
+		return solveTwoCylinderBlend(v, cylFaces, planeFace, r)
+	}
+	// R4: a TORUS host + two planes (simple/E6 E8 F1 F3) solves the same analytic sphere corner via
+	// the line-vs-offset-torus tangency quartic (fillet_torus_corner.go). Ordered AFTER every other
+	// recognizer (none of which match a torus face) and before solvePlanarBlend, so every other
+	// corner stays byte-identical.
+	if tor, torusFace, planes, ok := torusHostCorner(faces); ok {
+		return solveTorusBlend(v, faces, tor, torusFace, planes, r)
+	}
 	return solvePlanarBlend(v, faces, r)
 }
 
