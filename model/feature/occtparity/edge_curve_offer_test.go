@@ -173,8 +173,12 @@ func nilCurveOfferDebtIndex() map[string]int {
 // trimmed sub-spans (runoutPatchLoops → sampleCurve3OpenTrimmed, re-derived as Arc3d by
 // reverseSegmentCurve when the shell orientation flips the patch loop). The wing now carries the
 // SAME sampleCurveNTrimmed sub-spans, so every one of those edges is a two-sided VALUE AGREEMENT —
-// silent by the weld rule — and the shipped meshes are BIT-IDENTICAL (all nine fingerprint pins
-// unchanged; the adoption had already repaired the edge, the debt was the consumer's loop model).
+// silent by the weld rule — and the shipped meshes are identical at the pins' 1e-6·boundingDiag
+// quantization (all nine fingerprint pins unchanged). The RAW mesh does drift ≤7.6e-12 (T3: 521 of
+// 81,844 triangles) because the mesher resamples the stored edge curve (edge_discretize.go's
+// sampleEdgeCurve → e.Geometry().PointAt) and the replacement curves agree only to ≲1e-13 — four
+// decades below the pins' quantum, which is WHY the pins hold. The adoption had already repaired
+// the edge; the debt was the consumer's loop model.
 // What remains is complex/F2's curve-FIRST pair (EllipticalArc, departure 2.92426 against a
 // 1.76388e-07 weld), retained by prior adjudication (finding m-1).
 //

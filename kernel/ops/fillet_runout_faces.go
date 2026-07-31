@@ -141,12 +141,8 @@ func sampledArcSegs(arc geom.Curve3, start, end math.Point3) []endSeg {
 	lo, hi := arc.Domain()
 	rev := arc.PointAt(lo).DistanceTo(start) > arc.PointAt(hi).DistanceTo(start)
 	pts, curves := sampleCurveNTrimmed(arc, n, rev)
-	far := arc.PointAt(hi)
-	if rev {
-		far = arc.PointAt(lo)
-	}
-	pts = append(pts, far)
-	pts[0], pts[n] = start, end // pin to the wing's node points (weld-identical to the arc ends)
+	pts = append(pts, end)
+	pts[0] = start // pin to the wing's node points (weld-identical to the arc ends)
 	segs := make([]endSeg, n)
 	for i := 0; i < n; i++ {
 		segs[i] = endSeg{from: pts[i], to: pts[i+1], curve: curves[i]}
