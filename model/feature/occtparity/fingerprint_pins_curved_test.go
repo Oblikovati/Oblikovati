@@ -241,5 +241,17 @@ func curvedWeldPins() []fingerprintPin {
 		// isClosedCircularEdge predicate fails loud if it perturbs the I9 body. Same cross-platform-risk
 		// caveat as above applies. See .superpowers/sdd/rim-arc3d-widen-report.md.
 		{"I9", 1171624.810038584052, 67580, 0xab1686e36b3b9396, ""},
+		// Wave-E torus-rim greens (torus_rim_spiric_gate_test.go carries their DRAWEXE per-face tables):
+		// J5/A5/A6 = the concave closed-rim cove band on a TORUS host with a latitude cap
+		// (fillet_torusarm_concave.go — external a+r for J5/A5, internal a−r for A6); J3/A4 = the
+		// SPIRIC closed-rim canal on a meridian cap (fillet_spiric_spine.go / fillet_spiric_rim.go +
+		// the torusTubeBandLoftMesh tube-wrapping host loft). Captured on THIS HEAD; they lock the
+		// concave torus arm, the spiric station loft, the closed-rim weld routing, and the tube-band
+		// mesher, so any later slice touching those fails loud. Same cross-platform-risk caveat.
+		{"J5", 6757909.464672484435, 1181692, 0x21f4472585f96261, ""},
+		{"J3", 7395592.451696694829, 1115132, 0x60907356101f946a, ""},
+		{"A4", 15409136.952526209876, 1180684, 0xee50b6c93f5cf261, "bfuseblend"},
+		{"A5", 117038179.720218241215, 788492, 0xcd9879937ec3c456, "bfuseblend"},
+		{"A6", 113037851.868033841252, 526348, 0xb5bf46a9e57af953, "bfuseblend"},
 	}
 }

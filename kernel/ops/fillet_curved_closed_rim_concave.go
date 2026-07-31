@@ -124,6 +124,7 @@ func isConcaveClosedRimArm(fils []edgeFillet) bool {
 }
 
 // concaveCurvedRimArmEdge dispatches a CONCAVE CLOSED circular Sphere∧Plane / Cone∧Plane cap rim (S5/S2)
+// — and, since the wave-E slice, a latitude-cut Torus∧Plane rim (J5/A5/A6, concaveTorusRimArmEdge) —
 // to the concave (external-tangency) torus-arm builder, marking the edgeFillet armConcave so
 // assembleCurvedArmBody routes it to the concave cove band. handled=true means this branch OWNED the
 // edge (computeEdgeFillet returns its result); handled=false leaves every convex rim, open runout,
@@ -147,7 +148,9 @@ func concaveCurvedRimArmEdge(body *topo.Body, e *topo.Edge, p filletPick, concav
 			return tor, reason == coneArmBuilt, coneArmError(reason, e, co, coneFace, p.r0)
 		})
 	}
-	return edgeFillet{}, false, nil
+	// J5/A5/A6: a latitude-cut torus-host rim takes the void-side tube arm (external or internal
+	// tangency by material side); a meridian cut falls through to the spiric dispatch unchanged.
+	return concaveTorusRimArmEdge(e, p, res)
 }
 
 // buildConcaveRimArm resolves the cap plane's material-outward normal and runs the caller's concave arm

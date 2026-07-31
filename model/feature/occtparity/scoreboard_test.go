@@ -253,13 +253,16 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 114 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 114 (the arc band's rolling-ball seat + "+
-			"run-out termination greened W2 and freed H6 from the last quarantine)", simpleGreen)
+	// Wave-E (torus_rim_spiric_gate_test.go) greened J5+J3 in simple and A4/A5/A6 in bfuseblend:
+	// the concave torus-host closed-rim cove band (fillet_torusarm_concave.go) and the spiric
+	// closed-rim canal (fillet_spiric_*.go), 114→116 simple / 119→124 all-grid.
+	if simpleGreen != 116 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 116 (the concave torus-rim cove band "+
+			"greened J5 and the spiric closed-rim canal greened J3)", simpleGreen)
 	}
-	if allGridGreen != 119 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 119 (114 simple + 5 bfuseblend; complex/D8's "+
-			"coincidental green retired by the far-end branch fix)", allGridGreen)
+	if allGridGreen != 124 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 124 (116 simple + 8 bfuseblend: the wave-E "+
+			"torus-rim slice greened A4/A5/A6 alongside J5/J3)", allGridGreen)
 	}
 	if skipQuarantine != 0 {
 		t.Errorf("SkipQuarantine = %d, want 0 — the corpus holds NO case; every one of the 475 records is "+
