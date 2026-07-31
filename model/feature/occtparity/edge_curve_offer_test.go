@@ -140,13 +140,20 @@ func assertCatalogBlindSpot(t *testing.T, got []string) {
 // no CodeAssembleEdgeCatalog diagnostic to read a curve-offer report from. simple/M5 (W-DH's other
 // new green) is NOT blind: its corner weld goes through the general assembler and was checked clean
 // by this file's other assertions (no CodeAssembleCurveConflict, no CodeAssembleCurveNilOffer growth).
+//
+// bfuseblend/B4 B5 and simple/K2 K3 K4 JOINED for the same architectural reason (W-B, Cylinder∧Cylinder
+// closed-loop SSI-seam canal, fillet_cylcyl_seam*.go): the canal welds through the SAME rebuildRim
+// (fillet_rim_build.go) the analytic torus/elliptic rim families already use — a new CALLER of the
+// existing pinned bypass, not a new bypass (measured: the K2/K3/K4 seam ends route through
+// cylinderArmEdge → rebuildWithRimFillet / rebuildWithConcaveRimFillet, verified against rebuildRim's
+// own topo.NewBuilder call).
 func catalogBlindCases() []string {
 	return []string{
 		"bfuseblend/A1", "bfuseblend/A2", "bfuseblend/A3", "bfuseblend/A7", "bfuseblend/B1",
-		"bfuseblend/B3",
+		"bfuseblend/B3", "bfuseblend/B4", "bfuseblend/B5",
 		"simple/B2", "simple/H6", "simple/I9", "simple/J1", "simple/J2", "simple/J4", "simple/J6",
-		"simple/J8", "simple/K1", "simple/N6", "simple/R8", "simple/U6", "simple/W2", "simple/W6",
-		"simple/W8", "simple/W9", "simple/Z1",
+		"simple/J8", "simple/K1", "simple/K2", "simple/K3", "simple/K4", "simple/N6", "simple/R8",
+		"simple/U6", "simple/W2", "simple/W6", "simple/W8", "simple/W9", "simple/Z1",
 	}
 }
 
