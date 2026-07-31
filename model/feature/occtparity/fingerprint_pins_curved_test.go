@@ -266,5 +266,25 @@ func curvedWeldPins() []fingerprintPin {
 		// (−0.0003%). Captured on THIS HEAD; locks the sequential-rim composition so a later rim or
 		// key-continuity slice fails loud if it perturbs the B3 body. Same cross-platform caveat.
 		{"B3", 1284834.848345890874, 135180, 0xac0646576d972b5d, "bfuseblend"},
+		// I1 (simple, W-K capability wave): the CONCAVE-BORE Cone∧Plane cap arm. A conical bore rim
+		// (material outside the cone) is a genuinely CONVEX edge — the ball rolls in the material exactly
+		// like the boss (s=+1) case, do-no-harm comment above coneArmFillet — so coneArmFilletConcave
+		// reuses coneArmSurface with the apex shift flipped to s=−1 (A′ = A − r/sinα·â) but the SAME
+		// material-side plane offset. The single-arm runout's host contact rail (armRunoutRail) needed the
+		// bore's EXTERNAL tangency equator (h·sinα−R_s·cosα=−r) alongside the boss's INTERNAL one (=+r,
+		// torusContactCircle/coneContactCircle) — but that shared predicate stays convex-only ON PURPOSE
+		// (TestConvexContactCircleRejectsConcaveTorus: the equation alone cannot tell I1's edge-convex bore
+		// torus apart from S2's edge-concave cove torus), so the external reading lives in a new
+		// runout-scoped fallback, coneBoreRunoutContactCircle (fillet_curved_single_runout.go). Reconciled
+		// per face vs DRAWEXE 8.0.0
+		// sprops on all 6 faces (worst −0.0015%, the torus band): 2×2376.38/2376.39 end caps, 31227.6/
+		// 31227.7 bottom plate, 30544.8/30544.8 outer cone (exact, untouched), 17083.0/17083.1 inner bore
+		// cone, 8027.46/8027.58 torus band (centre(-200,0,10) major 224.142135623731=200+10(1+√2) minor
+		// 10, matching OCCT's own closed form exactly — a naive BOTH-flipped construction, the genuinely
+		// edge-concave concaveConeArmSurface, gives centre z=-10 major 204.14214 instead, short by exactly
+		// 2r; see TestConeArm_ConcaveBoreBuilds's mutation witness). Captured on THIS HEAD; locks the
+		// concave-bore cone arm + contact-rail widen so a later cone-host slice fails loud if it perturbs
+		// the I1 body. Same cross-platform-risk caveat as above.
+		{"I1", 940827.412981069414, 134402, 0xec749a145f537673, ""},
 	}
 }
