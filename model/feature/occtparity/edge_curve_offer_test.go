@@ -161,6 +161,20 @@ func assertCatalogBlindSpot(t *testing.T, got []string) {
 // families already use — a new CALLER of the already-pinned bypass, not a new bypass (measured:
 // concaveTorusRimArmEdge / spiricClosedRimArmEdge both terminate in rebuildWithConcaveRimFillet /
 // rebuildRim's own topo.NewBuilder call, never the general assembler's edge catalog).
+// bfuseblend/B2 and simple/J9 do NOT join this set (W-G, BSpline-host CLOSED-rim canal): they were
+// briefly greened through the SAME rebuildRim bypass as B4/B5/K2/K3/K4 above
+// (bsplineHostClosedRimBody → rebuildRim), which is why they appeared here for one commit — but the
+// mesher path that made their receded wall tessellate correctly (periodicNurbsFaceMesh's covering
+// CDT, admitted by a "the face carries no healed pcurve" gate) turned out to be UNSAFE in general: it
+// also fired on the committed bulged_duct fixture, a completely ordinary import never touched by any
+// fillet, whose periodic rim/seam ALSO carries no pcurve by construction — routing it through the
+// covering CDT it never needed and costing it −1.18% volume (Oblikovati#585 regression,
+// TestImportedNurbsDuctVolumeAndFolds). Reverting that gate is correct (tessellation correctness
+// preempts feature work), but it leaves the CLOSED B-spline-host rim with no safe tessellation path,
+// so buildBsplineHostCanal (fillet_bspline_host_band.go) now declines closed specs outright — B2/J9
+// are back to FAIL(faulty), never reach rebuildRim, and are NOT in this list. The OPEN-edge
+// B-spline-host runouts G5/G7/G9/I5/I7/V6 are unaffected (they weld through the general assembler,
+// not this bypass) and stay green.
 func catalogBlindCases() []string {
 	return []string{
 		"bfuseblend/A1", "bfuseblend/A2", "bfuseblend/A3", "bfuseblend/A4", "bfuseblend/A5",

@@ -307,6 +307,11 @@ func knownOffSurfaceDebt() []offSurfaceDebtEntry {
 		// The five mid-span obstacle cases, each re-capped at 1.1x its post-sub-arc measurement (above).
 		{"X3", "simple", 0.0000025}, {"U3", "simple", 0.00000219}, {"T6", "simple", 0.00000196},
 		{"S3", "simple", 0.00000151}, {"R9", "simple", 0.00000129},
+		// Wave-G's two CLOSED B-spline-host rims (J9, bfuseblend/B2) briefly carried an entry here
+		// (a chorded-seam-meridian residual on a general swept B-spline wall) but no longer do: the
+		// closed-rim weld itself was withdrawn (buildBsplineHostCanal declines closed specs — see
+		// kernel/ops/fillet_bspline_host_band.go, Oblikovati#585). Neither case ships a body anymore,
+		// so there is nothing here to measure a debt against.
 	}
 }
 

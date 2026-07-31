@@ -57,6 +57,18 @@ func periodicNurbsFaceMesh(f *topo.Face, q Quality) (*Mesh, bool) {
 		// The covering CDT is only NEEDED when a trim straddles the seam (the planar seam-cut loop is
 		// then non-simple). A closed B-spline whose trims clear the seam — a smooth duct, a bore away
 		// from the seam — meshes fine and more finely through nurbsPcurveMesh, so defer to it.
+		//
+		// wave-G TRIED widening this to `|| faceLacksLoopPcurves(f)` on the theory that an op-rebuilt
+		// closed band (no healed pcurve on its new rim) needed the covering CDT even without a
+		// straddling mouth. REVERTED (Oblikovati#585 regression, TestImportedNurbsDuctVolumeAndFolds):
+		// measured on the committed bulged_duct fixture, a completely ordinary imported periodic-in-u
+		// face — plain rim+seam, zero mouths, never touched by any fillet — ALSO has no pcurve on any
+		// of its boundary edge-uses (rim edges AND the seam edge, both directions): STEP import
+		// healing does not attach pcurves to a periodic surface's own natural rim/seam boundary in
+		// general, so "lacks a pcurve" is not a reliable signal of "this is an op-rebuilt band" at
+		// all — it is the NORMAL state of this whole face class. The widened gate routed that face
+		// through the covering CDT it never needed, landing its volume at −1.18% (was −0.37%; ceiling
+		// is 1%). See fillet_bspline_host_rim.go for how J9/B2 now certify without this gate.
 		return nil, false
 	}
 	m := coveringPeriodicMesh(s, q, ulo, uhi, rims, mouths)

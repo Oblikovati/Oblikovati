@@ -125,5 +125,6 @@ func pinnedBody(t *testing.T, grid, name string) *topo.Body {
 func byteIdentityPins() []fingerprintPin {
 	pins := append(curvedWeldPins(), setbackObstaclePins()...)
 	pins = append(pins, cylCylSeamPins()...)
-	return append(pins, stripeSpinePins()...)
+	pins = append(pins, stripeSpinePins()...)
+	return append(pins, bsplineHostPins()...)
 }

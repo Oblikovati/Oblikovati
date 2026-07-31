@@ -28,6 +28,13 @@ import (
 // guard declines), so the 3-arm weld path — where every prior curved green lives — is never reached by
 // this branch. Gated to cylinder/torus arms (armBallCenter's domain); a canal BSpline arm stays flooring.
 func isSingleArmRunout(fils []edgeFillet) bool {
+	// Wave-G additive dispatch arm: a single pick carrying the B-spline-host canal payload
+	// (open OR closed) is routed here so singleArmRunoutBody can hand it to the wave-G body
+	// builders — the router (assembleCurvedArmBody, frozen this wave) reaches this predicate
+	// before its closed-rim classifiers. Nothing else sets that payload (do-no-harm).
+	if len(fils) == 1 && bsplineHostCanalOf(fils[0]) != nil {
+		return true
+	}
 	// Cluster-B routing prefix (merge-train seam: lift into assembleCurvedArmBody once the router
 	// file unfreezes): an op whose EVERY fillet carries the cyl∧cyl seam payload is claimed here —
 	// before the single-pick gate, because a multi-seam op (bfuseblend/B4) is legal — and the full
@@ -106,6 +113,15 @@ func armTubeRadius(arm geom.Surface) (float64, bool) {
 // EMPTY reason means the returned body is the weld; a non-empty reason names the exact obstruction (with
 // offending values) and the body is nil — the caller keeps the clean do-no-harm floor (never a partial body).
 func singleArmRunoutBody(body *topo.Body, ef edgeFillet, res Resolution) (*topo.Body, string) {
+	// Wave-G additive dispatch arm (see isSingleArmRunout): the B-spline-host canal pick
+	// takes its own body builders — closed rims through the host-agnostic rim rebuild, open
+	// arms through the canal runout weld — leaving every analytic runout byte-identical.
+	if canal := bsplineHostCanalOf(ef); canal != nil {
+		if canal.closed {
+			return bsplineHostClosedRimBody(body, ef, canal)
+		}
+		return bsplineHostRunoutBody(body, ef, canal, res)
+	}
 	// Cluster-B routing prefix (pairs with isSingleArmRunout's payload claim): a cyl∧cyl seam
 	// payload takes the sequential closed-band weld; every other arm proceeds unchanged.
 	if band, ok := ef.armSurface.(*cylCylSeamBand); ok {

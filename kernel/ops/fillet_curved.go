@@ -63,6 +63,15 @@ func curvedFilletError(e *topo.Edge, cyl geom.Cylinder, pl geom.Plane, res Resol
 // (the sibling of sphereArmEdge) to keep computeEdgeFillet within funlen; behavior is identical to the
 // former inline branch.
 func cylinderArmEdge(body *topo.Body, e *topo.Edge, p filletPick, concave ConcaveFill) (edgeFillet, bool, error) {
+	// Wave-G additive dispatch arm — B-SPLINE-HOST edges (the fillet_curved.go:159 refusal
+	// class). It sits here, ahead of the cylinder∧plane classifier, because this is the
+	// first fillet_curved.go hook computeEdgeFillet's frozen chain reaches for every edge;
+	// it fires ONLY when a geom.BSplineSurface borders the edge AND the canal built, so
+	// every other host mix — including this function's own cylinder∧plane class — falls
+	// through byte-identically (do-no-harm; see fillet_bspline_host.go).
+	if ef, handled := bsplineHostArmEdge(body, e, p); handled {
+		return ef, true, nil
+	}
 	// Cluster-B additive arm ABOVE the curvedAdjacentError decline (the agreed wave seam): a CLOSED
 	// Cylinder∧Cylinder SSI-seam loop builds its exact-station canal band (fillet_cylcyl_seam.go)
 	// instead of flat-refusing. Parallel-axis pairs are excluded inside the classifier, so the

@@ -272,37 +272,25 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 // Reconciled per face vs DRAWEXE on all 12 faces (worst +0.0016%); the −0.998% vs the corpus number is
 // the historic reference's drift — our 78062.6 vs local DRAWEXE 8.0's own 78062.8 (−0.0003%). This
 // restored 120→121 all-grid (simple unchanged at 115), SkipQuarantine unchanged at 0.
-// W-C's curved-miter chain retrim (fillet_miter_chain_retrim.go) GREENED simple/O8: a bitten
-// TWO-ARC "lens" loop (the cap shared by two intersecting cylinders, blend/simple's two-offset-cylinder
-// family) is a legitimate bitten wire — retrimBittenLoop's segment-count guard was the only blocker,
-// loosened from ≥3 to ≥2; the existing far-path-split machinery anchors on it exactly as on a many-segment
-// loop, so the splice stays byte-identical for every non-lens case. Reconciled per face vs DRAWEXE 8.0's
-// own `sprops 1.e-12` on all 5 faces (worst-face wall 11932.3, within 5e-3 rel; summed area 26420.65 vs
-// 26420.7, within 1e-3 rel), watertight at both qualities. simple/P4 and P5, the sibling cases in the
-// same fixture family, do NOT green — their raw STEP-imported base solid carries a pre-existing
-// degenerate (zero-length) edge on the wall's own loop, present before any fillet runs (an import defect,
-// not a curved-miter capability gap); ringHasRepeatedPoint / sharedRetrimIsSound now decline them
-// honestly instead of certifying the ~10.6%-short, non-watertight solid the chain splice would otherwise
-// silently produce (falsification proof in wave-report-C.md / wave-report-R5.md).
-//
 // Union of every merged wave capability on top of the 114/119 base (d8d55a26).
-// simple +11: M5 (W-DH notch-wall concave cove sign ε=−1), K2/K3/K4/P1 (W-B cyl∧cyl SSI-seam
-// canal), Y9 (W-T stripe-junction crossings), A4 (W-A mixed-radius torus corner), O8 (W-C
-// chain-capable host retrim), J5/J3 (W-E concave torus-host closed-rim cove + spiric canal),
-// I1 (W-K concave cone bore — a bore rim is edge-CONVEX, ball in material).
-// bfuseblend +6: B3 (multi-rim weld), B4/B5 (cyl∧cyl canal), A4/A5/A6 (spiric + closed-rim).
-// tolblend_simple +5: A1/D4 (planar corners), B4/B8/C3 (EllipticalCylinder∧Cone pinched canal).
-// simple/X8 stays an HONEST DECLINE — TestEveryLoopSegmentLiesOnItsFace caught a real B-rep
-// defect on its asymmetric pyramid that the symmetric tolblend_simple/A1 does not carry.
+// simple +17: M5 (W-DH), K2/K3/K4/P1 (W-B cyl∧cyl SSI-seam canal), Y9 (W-T tangent chains),
+// A4 (W-A mixed-radius torus corner), O8 (W-C chain retrim), J5/J3 (W-E closed-rim + spiric),
+// I1 (W-K concave cone bore — a bore rim is edge-CONVEX), G5/G7/G9/I5/I7/V6 (W-G BSpline-host
+// canal, OPEN-edge runouts only).
+// bfuseblend +6: B3, B4/B5, A4/A5/A6.  tolblend_simple +5: A1/D4, B4/B8/C3.
+// simple/J9 + bfuseblend/B2 were WITHDRAWN — they greened only via a periodicNurbsFaceMesh gate
+// whose premise was false, costing the bulged_duct import −1.18% volume; without it they measure
+// 21–62 folds and 113–698 free edges. Tessellation correctness preempts feature work.
+// simple/X8 stays an HONEST DECLINE on a real B-rep defect its symmetric twin does not carry.
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 125 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 125 (114 base + 11 wave greens)", simpleGreen)
+	if simpleGreen != 131 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 131 (114 base + 17 wave greens)", simpleGreen)
 	}
-	if allGridGreen != 141 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 141 (125 simple + 11 bfuseblend-only "+
-			"+ 5 tolblend_simple; complex/D8's coincidental green stays retired; 119→141)", allGridGreen)
+	if allGridGreen != 147 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 147 (131 simple + 11 bfuseblend-only "+
+			"+ 5 tolblend_simple; complex/D8's coincidental green stays retired; 119→147)", allGridGreen)
 	}
 	if skipQuarantine != 0 {
 		t.Errorf("SkipQuarantine = %d, want 0 — the corpus holds NO case; every one of the 475 records is "+
