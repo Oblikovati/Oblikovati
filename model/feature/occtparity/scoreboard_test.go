@@ -253,13 +253,13 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 114 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 114 (the arc band's rolling-ball seat + "+
-			"run-out termination greened W2 and freed H6 from the last quarantine)", simpleGreen)
+	if simpleGreen != 116 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 116 (cluster-A planar corners greened X8 — "+
+			"the full-round 4-arm common-tangent-sphere corner — and A4 — the mixed-radius [10,5,5] torus corner)", simpleGreen)
 	}
-	if allGridGreen != 119 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 119 (114 simple + 5 bfuseblend; complex/D8's "+
-			"coincidental green retired by the far-end branch fix)", allGridGreen)
+	if allGridGreen != 123 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 123 (116 simple + 5 bfuseblend + 2 tolblend_simple: "+
+			"A1 = the full-round 4-arm pyramid apex, D4 = the vertex-only miter of two arms sharing no face)", allGridGreen)
 	}
 	if skipQuarantine != 0 {
 		t.Errorf("SkipQuarantine = %d, want 0 — the corpus holds NO case; every one of the 475 records is "+

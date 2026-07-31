@@ -112,6 +112,11 @@ func specialCurvedMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, hole
 	if m, isBand := twoRimHoledBandMesh(s, outer3D, holes3D, q); isBand {
 		return m, true // a two-rim band (a notched rim + an intact rim) carrying lens holes: bridge the seam, unroll
 	}
+	if m, isWedge := wedgeBandLoftMesh(f, s, q); isWedge {
+		return m, true // an OPEN oblique-ended cylinder wedge band (pyramid slant fillet, A1/D4): one exact
+		// zipped strip between the two end chains — the generic CDT's flat end slivers double-cover the
+		// neighbour plane and collide on its ear diagonals (deg-4 mesh edges), see tessellate_wedge_band.go
+	}
 	return nil, false
 }
 
