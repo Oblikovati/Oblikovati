@@ -256,6 +256,15 @@ func projectPatchBoundary(sph geom.Sphere, chart sphereChart, outer3D []math.Poi
 // ~20 µs per laid node (zz cost probe: 2.8 M nodes = 60 s), so 2^18 cells keeps the worst single face
 // at a few seconds. When it binds, BOTH axes scale by the same factor (minimal, even degradation) and
 // the mesh carries tessellate.cap-saturated stating requested-vs-granted — never a silent floor.
+//
+// SWEEP DOCTRINE (for the next sweep-runner; patchgridcap-report.md fix wave I3): a budget-BOUND
+// sweep DRIFTS as the chord tolerance tightens — the boundary sampling keeps refining under a fixed
+// interior grid — it does NOT sit at a labeled plateau (measured, D2's R=150 host: −0.211 → −0.246
+// area vs DRAWEXE across the bound band). And the budget-HONOURED band is not monotone either: D2
+// reads −0.022 at ct 8e-3 but −0.191 at 4e-3, both honoured, no diagnostic (different grid/boundary
+// phase, both inside their own chord contracts). So never read a step like −0.02 → −0.19 as a
+// regression: check tessellate.cap-saturated and the requested-vs-laid record before interpreting
+// any sweep step.
 const patchGridCellBudget = 1 << 18
 
 // addPatchInterior lays a grid of Steiner points across the chart bbox at the chart's spacing, keeps
@@ -271,18 +280,26 @@ func addPatchInterior(chart sphereChart, uv *[][2]float64, pos *[]math.Point3, n
 	clamp := budgetGridSteps(umax-umin, vmax-vmin, h)
 	scan := newTrimScan(loops2D[0], loops2D[1:], h*0.25)
 	for i := 1; i < clamp.laidU; i++ {
-		for j := 1; j < clamp.laidV; j++ {
-			p := [2]float64{umin + (umax-umin)*float64(i)/float64(clamp.laidU), vmin + (vmax-vmin)*float64(j)/float64(clamp.laidV)}
-			if !scan.clear(p) {
-				continue
-			}
-			pt, n := chart.lift(p[0], p[1])
-			*uv = append(*uv, p)
-			*pos = append(*pos, pt)
-			*nrm = append(*nrm, n)
-		}
+		u := umin + (umax-umin)*float64(i)/float64(clamp.laidU)
+		layPatchGridColumn(chart, scan, clamp, u, vmin, vmax, uv, pos, nrm)
 	}
 	return clamp
+}
+
+// layPatchGridColumn lays one constant-u column of the interior grid: each candidate strictly clear
+// of the trim is lifted to the sphere and appended. The u ordinate is the same expression the fused
+// loop computed (bit-identical positions; extraction is the fix-wave m5 nesting flatten).
+func layPatchGridColumn(chart sphereChart, scan *trimScan, clamp patchGridClamp, u, vmin, vmax float64, uv *[][2]float64, pos *[]math.Point3, nrm *[]math.Vector3) {
+	for j := 1; j < clamp.laidV; j++ {
+		p := [2]float64{u, vmin + (vmax-vmin)*float64(j)/float64(clamp.laidV)}
+		if !scan.clear(p) {
+			continue
+		}
+		pt, n := chart.lift(p[0], p[1])
+		*uv = append(*uv, p)
+		*pos = append(*pos, pt)
+		*nrm = append(*nrm, n)
+	}
 }
 
 // budgetGridSteps sizes the interior grid: the tolerance-derived intervals per axis, scaled down

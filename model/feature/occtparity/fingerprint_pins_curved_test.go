@@ -175,7 +175,10 @@ func curvedWeldPins() []fingerprintPin {
 		// 274.350377/274.337703 → 39.264523/39.264226 vs `sprops` 39.2699 (= 25π/2, the octant closed form;
 		// the old mesh swept to 274.8868 = 7/8·4π·25, the complement's own closed form); mesh solid angle at
 		// the ball centre 7π/2 → π/2 exactly; whole-body mesh area K6 63968.63 → 63733.54 vs DRAWEXE
-		// 63733.6, L4 59968.62 → 59733.55 vs 59733.6 (the +235.08 = 274.889−39.270 complement excess gone);
+		// 63733.6, L4 59968.62 → 59733.55 vs 59733.6 — the complement excess gone. That excess is +235.083
+		// at the MESH level (clamped complement 274.350377 − honest octant 39.267264), which is the delta
+		// this whole-body reconciliation uses; at the B-rep/DRAWEXE level it is +235.619 (274.889 − 39.2699,
+		// visible only once the clamp lifts). The two differ by the clamp deficit — do not conflate them;
 		// raw volume K6 959144.890948543 → 958623.105106086 vs `vprops` 958623, L4 945198.518972720 →
 		// 944676.776286043 vs 944677 (the +521.7 ≈ 4π·5³/3 = 523.6 ball-cover excess, less inscription,
 		// gone). Triangle drop is the 7/8→octant fan alone. Captured twice, bit-stable.
