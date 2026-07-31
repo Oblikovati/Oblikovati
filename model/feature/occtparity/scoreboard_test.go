@@ -253,12 +253,12 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 114 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 114 (the arc band's rolling-ball seat + "+
-			"run-out termination greened W2 and freed H6 from the last quarantine)", simpleGreen)
+	if simpleGreen != 115 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 115 (stripe junction crossings + the "+
+			"exact centre-curve anchor distance greened Y9, 7/7 faces rank-paired to DRAWEXE)", simpleGreen)
 	}
-	if allGridGreen != 119 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 119 (114 simple + 5 bfuseblend; complex/D8's "+
+	if allGridGreen != 120 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 120 (115 simple + 5 bfuseblend; complex/D8's "+
 			"coincidental green retired by the far-end branch fix)", allGridGreen)
 	}
 	if skipQuarantine != 0 {

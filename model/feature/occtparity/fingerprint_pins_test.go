@@ -118,9 +118,10 @@ func pinnedBody(t *testing.T, grid, name string) *topo.Body {
 // Triangle growth is the saturated faces' densification alone (e.g. D5 64630→481302: its two
 // saturated faces' honest grids).
 //
-// It is assembled from two per-family records, split out so no single file carries the whole ledger
-// (CLAUDE.md's 500-line rule): curvedWeldPins (fingerprint_pins_curved_test.go) and setbackObstaclePins
-// (fingerprint_pins_setback_test.go). The two lists are disjoint and their union is the pin set.
+// It is assembled from per-family records, split out so no single file carries the whole ledger
+// (CLAUDE.md's 500-line rule): curvedWeldPins (fingerprint_pins_curved_test.go), setbackObstaclePins
+// (fingerprint_pins_setback_test.go), and stripeSpinePins (y9_stripe_perface_test.go). The lists are
+// disjoint and their union is the pin set.
 func byteIdentityPins() []fingerprintPin {
-	return append(curvedWeldPins(), setbackObstaclePins()...)
+	return append(append(curvedWeldPins(), setbackObstaclePins()...), stripeSpinePins()...)
 }
