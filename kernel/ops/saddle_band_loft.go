@@ -128,9 +128,30 @@ func saddleBandLoftMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
 	if len(lo) < 3 || len(hi) < 3 {
 		return nil, false
 	}
+	if !ringSingleValuedInAngle(s, lo) || !ringSingleValuedInAngle(s, hi) {
+		return nil, false // a rim with a vertical step (two axial stations at one angle) is no v(u) loft rim
+	}
 	m := &Mesh{}
 	stitchBandRows(m, addRow(m, s, lo, ringAngles(s, lo)), addRow(m, s, hi, ringAngles(s, hi)))
 	return m, true
+}
+
+// ringSingleValuedInAngle reports whether the rim ring is a genuine v(u) graph: no two ring points
+// share the same periodic angle while sitting at distinct axial stations. The loft stitches rows by
+// angle order, so a rim carrying a VERTICAL segment — a miter rail, a seam-line remnant, a bridge
+// riser (blend/simple P5's retrimmed wall) — has an arbitrary order among its same-angle points and
+// the loft would cross-stitch them into a bowtie crack. Such a face is not a two-rim band; declining
+// here sends it to the general trimmed-CDT path. Genuine saddle/notched rims (Steinmetz, #1374's
+// fading frustum flat, U4's oblique hole wall) are strictly monotone in angle and pass untouched.
+func ringSingleValuedInAngle(s geom.Surface, ring []math.Point3) bool {
+	angles := ringAngles(s, ring)
+	weld := ResolutionForPoints(ring).Weld()
+	for i := 1; i < len(angles); i++ {
+		if angles[i]-angles[i-1] < seamAngularTol && ring[i].DistanceTo(ring[i-1]) > weld {
+			return false // two distinct stations at one angle: a vertical step, not a v(u) rim
+		}
+	}
+	return true
 }
 
 // bandWrapRings reads the band's rim rings by topology rather than curve type (a rim may be a circle or a

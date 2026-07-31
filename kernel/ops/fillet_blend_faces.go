@@ -157,11 +157,29 @@ func reversedEndSeg(s endSeg) endSeg {
 	r := endSeg{from: s.to, to: s.from, mid: s.mid, arc: s.arc}
 	switch {
 	case s.arc:
+		// A CLOSED seam arc (full-circle rim, from==to) cannot be re-fit by three points — the
+		// coincident endpoints make Arc3dByThreePoints error, its discarded zero Arc3d then reads
+		// as a dead curve and collapseDeadLoop silently drops the rim, cracking the shell (P5's
+		// bottom rim through the shared-face far path, W-C wave). Reverse it exactly from the
+		// parent's own parameters instead.
+		if arc, isArc := s.curve.(geom.Arc3d); isArc && s.from == s.to {
+			r.curve = reversedWholeArc(arc)
+			return r
+		}
 		r.curve, _ = geom.Arc3dByThreePoints(s.to, s.mid, s.from)
 	case s.curve != nil:
 		r.curve = geom.ReverseCurve3(s.curve)
 	}
 	return r
+}
+
+// reversedWholeArc reverses an Arc3d in its OWN parameters — start moved to the far end, sweep
+// negated — so a closed (2π) seam keeps its exact circle through a reversal, where a three-point
+// re-fit is ill-posed. PointAt(0)/PointAt(1) swap and the point set is unchanged.
+func reversedWholeArc(a geom.Arc3d) geom.Arc3d {
+	a.StartAngle += a.SweepAngle
+	a.SweepAngle = -a.SweepAngle
+	return a
 }
 
 // loopFromSegs flattens a closed chain of segments (each seg's to is the next seg's from) into a
