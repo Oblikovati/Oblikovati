@@ -241,5 +241,17 @@ func curvedWeldPins() []fingerprintPin {
 		// isClosedCircularEdge predicate fails loud if it perturbs the I9 body. Same cross-platform-risk
 		// caveat as above applies. See .superpowers/sdd/rim-arc3d-widen-report.md.
 		{"I9", 1171624.810038584052, 67580, 0xab1686e36b3b9396, ""},
+		// M5 (simple): the notch-wall concave cove sign (W-DH capability wave). A box − quarter-cylinder
+		// notch filleted r5 on three ALL-CONCAVE edges at one trihedral vertex: the concave circle-edge
+		// cove arm (concaveTorusArmSurface) hardcoded major = R+r (the boss convention), but a notch's
+		// material sits OUTSIDE the wall — the ball rolls INSIDE it, maj = R−r = 25 (DRAWEXE ground truth,
+		// cove torus centre (50,−10,45)), and the corner is a plain r-sphere ON that spine at
+		// (45,14.4949,45). ε now comes from cylinderHostRadialSign (concaveTorusWallSign), the same n_C·r̂
+		// read the concave LINE arm always used; every boss cove (ε=+1) is byte-identical (full-corpus
+		// sweep: exactly one verdict change, zero area drift elsewhere). Reconciled per face vs DRAWEXE
+		// sprops 1e-12 on all 13 faces (worst −0.008%); volume 980008.93 vs vprops 980008. Captured on
+		// THIS HEAD; it locks the ε=−1 cove + all-concave sphere-corner weld so a later concave-arm or
+		// corner slice fails loud if it perturbs the M5 body. Same cross-platform-risk caveat as above.
+		{"M5", 980008.933761107619, 24756, 0x6718a941b785974b, ""},
 	}
 }
