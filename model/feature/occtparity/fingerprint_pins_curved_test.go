@@ -23,11 +23,11 @@ func curvedWeldPins() []fingerprintPin {
 		// See reverse-segment-fix-report.md. Same cross-platform-risk caveat as above applies.
 		{"N7", 963883.358200046350, 31476, 0x23551593d78be76d, ""},
 		{"C2", 510191.885601512506, 121529, 0x1b3bc10e4d60136e, ""},
-		{"C6", 1559718.455869767116, 121634, 0xe1e51a060a4c1b02, ""},
-		{"D5", 3432790.553724467754, 64630, 0x35abf63d059df830, ""},
-		{"D9", 10302515.376436131075, 81070, 0xc170a9988bca8376, ""},
-		{"E4", 3460474.503685124684, 59628, 0x8c7c7d173df421cd, ""},
-		{"C8", 64858.504095408265, 39992, 0x66606a97c42af3b2, ""},
+		{"C6", 1559718.567225983134, 139844, 0x613415837489e018, ""},
+		{"D5", 3434184.031168804504, 481302, 0x3996c779fd9029cf, ""},
+		{"D9", 10320424.304559277371, 458676, 0xe77fec118a9d9098, ""},
+		{"E4", 3464194.722067414317, 368074, 0x2db0d8bfb5ab2752, ""},
+		{"C8", 64859.163480644333, 103176, 0x2fb676739745a2a0, ""},
 		// The 8 single-arm curved-RUNOUT greens (R1 fb1b0ca4 · R2a ac0249e9 · R2b 3f09eafe · R3
 		// 455b9543): B6/C9/C1 perpendicular, M7 plane-host inner-loop, C5/D8 reflex 270° major-sector,
 		// D4/E3 oblique cap. Captured on the R3 HEAD 455b9543; they lock the whole single-arm runout
@@ -38,9 +38,9 @@ func curvedWeldPins() []fingerprintPin {
 		{"C1", 516328.521818100, 91108, 0x367226063c9789b0, ""},
 		{"M7", 1070772.658316682, 1556, 0xbda4ca6e02f5e3fa, ""},
 		{"C5", 1565080.392898256, 67716, 0x481e407c7b323a88, ""},
-		{"D8", 10309699.178065298, 46272, 0x47fb6c5622612116, ""},
-		{"D4", 3434280.252745059319, 23940, 0xa77ed002139f572e, ""},
-		{"E3", 3478295.925438132, 52086, 0x8309a22efbfc928f, ""},
+		{"D8", 10329479.872831704095, 420310, 0x99a3fe794df55d67, ""},
+		{"D4", 3435725.927260315977, 437186, 0xed8148b42b860ccd, ""},
+		{"E3", 3479448.946229149587, 430000, 0xa042a580a37de75, ""},
 		// The convex CLOSED cone-cap rim band (Miter-A1 / J1): a full torus band welded through the
 		// host-agnostic rim rebuild (fillet_curved_closed_rim.go). Captured on this HEAD; it locks the
 		// closed-band assembly so any later slice that touches the demux or the rim rebuild fails loud if
@@ -124,22 +124,22 @@ func curvedWeldPins() []fingerprintPin {
 		// rim to its retained sub-arc, greening both for the first time (E1 area drift 0.37%, E2 0.47%).
 		// Captured on THIS HEAD; they lock the survivor-arc carry so any later slice that perturbs the
 		// planar end-corner path fails loud. Same cross-platform-risk caveat as above applies.
-		{"E1", 3481552.975581085, 18230, 0xa7d5fafb5f32e523, ""},
-		{"E2", 3478368.847978603, 35058, 0x8d7407b3430ba5f3, ""},
+		{"E1", 3482804.688278918155, 403430, 0x35d1edf3df93b025, ""},
+		{"E2", 3479597.279921139590, 440986, 0x91f20e3fc5921b91, ""},
 		// D3 (simple): a 270°-latitude/90°-longitude sphere-sector trihedral fillet, greened as a bonus by
 		// the quadrant-gated survivor-rim carry (E1/E2/D3 share the mechanism; its 118–146° sphere meridians
 		// are carried, its ≤π/2 rims stay chorded). Its mesh (hash+tris) is bit-stable, so the AREA gate is
 		// stable at 0.29%, but — like M4 — its raw signed-tetra VOLUME sum is TessellateBody-order-sensitive
 		// (~1e-3 swing, the host-sphere zone's near-degenerate winding); its volume is pinned to the mid-spread
 		// with the loosened volTolFor(D3) tolerance, the mesh pinned exactly. Same cross-platform caveat.
-		{"D3", 3432999.395869759, 30260, 0x324ca51fd705af24, ""},
+		{"D3", 3434569.497398118954, 456966, 0xad9d1470e61bae54, ""},
 		// B1/B9 (simple): already-green PLANAR corner fillets whose curved survivor rims are ≤π/2 (62–67°),
 		// so the survivor-rim carry (fillet_survivor_rim.go) keeps their base chord byte-for-byte. An earlier
 		// arc-carry (82a64cbb) silently drifted them WITHIN deps (B1 0.0071%→0.0499%, toward-wrong) — caught
 		// only by adversarial fingerprinting, not by the pass/fail gate. Pinned here to lock the exact victims
 		// so any future shared-planar-path edit that re-drifts them within tolerance fails loud.
-		{"B1", 192217.692717441, 42996, 0xae248343c3a6b2af, ""},
-		{"B9", 517453.599720627, 27120, 0x811bd3dea79d86bb, ""},
+		{"B1", 192217.801964343031, 62382, 0x3af571d015487e6d, ""},
+		{"B9", 517453.708967529470, 46506, 0x36779eafffa7208b, ""},
 		// L1/L7 (simple): the P1 dihedral corner-setback greens (fillet_corner_setback.go). L1 is the tracer
 		// (4 orthogonal concave dihedral miters on a box+boss); L7 is a 10°-rotated boss whose miter corners
 		// are still θ=90° in 3D, so the same orthogonal setback closes it. Both were RED (reflected-seam
@@ -179,8 +179,8 @@ func curvedWeldPins() []fingerprintPin {
 		// raw volume K6 959144.890948543 → 958623.105106086 vs `vprops` 958623, L4 945198.518972720 →
 		// 944676.776286043 vs 944677 (the +521.7 ≈ 4π·5³/3 = 523.6 ball-cover excess, less inscription,
 		// gone). Triangle drop is the 7/8→octant fan alone. Captured twice, bit-stable.
-		{"K6", 958623.105106086, 7036, 0xcae068509b9db2e3, ""},
-		{"L4", 944676.776286043, 6716, 0x91c3116ec2191b75, ""},
+		{"K6", 958623.095907601411, 13500, 0x9f571a346bbcbe79, ""},
+		{"L4", 944676.766143134912, 13460, 0xbe4dc64eb7a2440c, ""},
 		// K9/M2 (simple): the P3 mixed-sense trihedral corner-setback greens (fillet_corner_torus.go). Each
 		// is a box+boss (K9) / box+cyl (M2) whose single trihedral corner joins 2 CONCAVE + 1 CONVEX fillets
 		// at three mutually-orthogonal planar faces; both were RED (K9 +1.17%, M2 +1.02%) because solveBlend
@@ -213,8 +213,8 @@ func curvedWeldPins() []fingerprintPin {
 		// the pass/fail gate (N5 lesson). Both are the ONLY real changed greens across ALL SIX grids vs base
 		// e544759a (D3/M4's volume-only diff is hash-identical TessellateBody summation-order noise). Pinned
 		// so a later corner slice fails loud if it perturbs an A8/A6 body. Same cross-platform-risk caveat.
-		{"A8", 192243.471620363, 12610, 0xaa941899bc75c45f, ""},
-		{"A6", 328037.934832836, 25096, 0xb8a7ec251964502d, ""},
+		{"A8", 192243.676911436545, 46266, 0x9116c7b73631849c, ""},
+		{"A6", 328038.064438616973, 46102, 0x70a6582da86f44cc, ""},
 		// I3 (simple): a straight LineSegment fillet between a planar ANNULAR-SECTOR host and a triangular
 		// end-cap. transformLoop's `subs` branch (the A/B tangent-point pull-back) hard-coded the LEAVING
 		// survivor edge's curve to nil, CHORDING the sector's r=300 outer rim — slicing the host plane

@@ -93,6 +93,31 @@ func pinnedBody(t *testing.T, grid, name string) *topo.Body {
 // I3 +0.075%→−0.002%, A6 −0.027%→−0.0006%, B9 −0.054%→−0.008%, B1 −0.027%→−0.006%, E1 −0.038%→−0.037%,
 // M2 flat at −0.000% — and moved from −0.0055% to −0.036% on E2 alone, whose per-face areas came 186×
 // closer (its worst face was +1201.79 before, now −12.50), so that one delta is mesh-side, not geometry.
+// ★ RE-CAPTURED for the patchGridCap density fix (patchgridcap-report.md): spherePatchMesh's silent
+// 80-steps-per-axis grid clamp floored 25 shipped simple-grid cases at PropertyQuality; the grid now
+// honours the chord tolerance up to the diagnosed patchGridCellBudget. NINETEEN pins moved — exactly
+// the pinned ∩ saturated set (A6 A8 B1 B9 C6 C8 D3 D4 D5 D8 D9 E1 E2 E3 E4 K6 L4 L9 N1; every other
+// pin bit-identical, which also proves the trimScan filter's bit-equivalence). Each was PROVEN
+// improved against live DRAWEXE 8.0.0 (`sprops <face>/result` and `vprops result` at `1.e-12`) before
+// re-capture; captured twice, bit-stable. Saturated sphere-face mesh area, clamped → honest, vs the
+// DRAWEXE face row: A6 157.055→157.0745 (157.08), A8 195.094→195.1246 (195.13), B1/B9
+// 157.058→157.0744 (157.08), D3 61118.28→61133.48 (61133.7) + corner→157.0744, D4 57830.73→57844.76
+// (57845), D5 57523.39→57536.92 (57537.1) + 55.784→55.7868 (55.7891), D8 182430.71→182628.46
+// (182633), D9 179109.48→179288.47 (179292), E1 65916.57→65929.07 (65929.3), E2 65834.80→65847.07
+// (65847.3), E3 61729.18→61740.69 (61740.9), E4 57609.34→57645.61 (57646), L9 28.1939→28.1950
+// (28.1971), N1 34.2318→34.2335 (34.236), K6/L4 39.2645→39.26726 (39.2699 = 25π/2, on top of the
+// §region octant fix). Raw volume vs `vprops`, relative: D3 −4.7e-4→−8.9e-6, D4 −4.4e-4→−1.6e-5,
+// D5 −4.2e-4→−1.0e-5, D8 −1.96e-3→−4.1e-5, D9 −1.79e-3→−3.6e-5, E1 −3.7e-4→−7.3e-6, E2
+// −3.6e-4→−9.4e-6, E3 −3.4e-4→−1.2e-5, E4 −1.1e-3→−2.2e-5, A6/A8/B1/B9/L9/N1/K6/L4 toward vprops
+// likewise. C6's corner ball (cone-host, OCCT ships a BSpline 145.583 approximation where ours is the
+// exact sphere) moves toward ITS converged form 144.288→144.304; its body area 89364.91 vs sprops
+// 89366.1 and volume −1.3e-4→−6.2e-5 corroborate. C8/D1 are the documented deviation cases (OCCT's
+// own result flawed): D1's corner cap lands 238.479 on the exact ~238.5 spherical triangle and its
+// body area 10078.811 on the recorded ExactArea 10078.8; C8's body area reads 9781.544 vs ExactArea
+// 9781.45 (the recorded constant carries the old clamped sphere term — see the report's concerns).
+// Triangle growth is the saturated faces' densification alone (e.g. D5 64630→481302: its two
+// saturated faces' honest grids).
+//
 // It is assembled from two per-family records, split out so no single file carries the whole ledger
 // (CLAUDE.md's 500-line rule): curvedWeldPins (fingerprint_pins_curved_test.go) and setbackObstaclePins
 // (fingerprint_pins_setback_test.go). The two lists are disjoint and their union is the pin set.

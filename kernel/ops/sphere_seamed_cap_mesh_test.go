@@ -158,36 +158,39 @@ func slitRimFace(t *testing.T, radius float64) *topo.Face {
 	return bld.Build().Faces()[0]
 }
 
-// TestSpherePatchGridClampIsDiagnosed: when patchGridCap denies the interior Steiner grid the spacing
-// the chord tolerance asked for, the mesh must carry CodeTessellateCapSaturated (Oblikovati#1412's
-// honest-degradation rule) — the silent clamp is what let a hemisphere under-report its area at every
-// swept tolerance and read as a trim defect for two review waves. A tolerance the cap can honour must
-// stay diagnostic-free.
+// TestSpherePatchGridClampIsDiagnosed: when patchGridCellBudget denies the interior Steiner grid the
+// spacing the chord tolerance asked for, the mesh must carry CodeTessellateCapSaturated
+// (Oblikovati#1412's honest-degradation rule) — the old silent per-axis clamp is what let a
+// hemisphere under-report its area at every swept tolerance and read as a trim defect for two review
+// waves. A tolerance the budget can honour must stay diagnostic-free. The fixture is a giant patch
+// (R=150, 120°-polar cap rim: stereo chart, bbox ≈ 520): PropertyQuality asks ~1897² ≈ 3.6M cells,
+// 13.7× over the 2^18 budget; the old R=13/60° fixture (78k cells) is honoured now and moved to the
+// coarse (cry-wolf) arm's family of honoured grids.
 func TestSpherePatchGridClampIsDiagnosed(t *testing.T) {
-	const radius = 13.0
+	const radius = 150.0
 	sph, err := geom.NewSphere(math.P3(0, 0, 0), radius)
 	if err != nil {
 		t.Fatalf("NewSphere: %v", err)
 	}
-	ring := make([]math.Point3, 64)
-	for i := range ring { // a 60°-polar-angle cap rim: gnomonic chart, bbox ≈ 45 — clamps at fine tol
+	ring := make([]math.Point3, 256)
+	for i := range ring { // a 120°-polar-angle cap rim: stereo chart, bbox ≈ 520 — over budget at fine tol
 		phi := 2 * stdmath.Pi * float64(i) / float64(len(ring))
 		s, c := stdmath.Sincos(phi)
-		ring[i] = math.P3(math.Scalar(radius*stdmath.Sin(stdmath.Pi/3)*c),
-			math.Scalar(radius*stdmath.Sin(stdmath.Pi/3)*s), math.Scalar(radius*stdmath.Cos(stdmath.Pi/3)))
+		ring[i] = math.P3(math.Scalar(radius*stdmath.Sin(2*stdmath.Pi/3)*c),
+			math.Scalar(radius*stdmath.Sin(2*stdmath.Pi/3)*s), math.Scalar(radius*stdmath.Cos(2*stdmath.Pi/3)))
 	}
 	fine, ok := spherePatchMesh(sph, ring, nil, Quality{ChordTolerance: 1e-3, AngleTolerance: stdmath.Pi / 180})
 	if !ok {
-		t.Fatal("spherePatchMesh declined the 60° cap rim")
+		t.Fatal("spherePatchMesh declined the 120° cap rim")
 	}
 	if !hasDiag(fine.Diagnostics, CodeTessellateCapSaturated) {
-		t.Fatalf("grid clamped below chord tol 1e-3 but no %s diagnostic on the mesh", CodeTessellateCapSaturated)
+		t.Fatalf("grid budget-scaled below chord tol 1e-3 but no %s diagnostic on the mesh", CodeTessellateCapSaturated)
 	}
 	coarse, ok := spherePatchMesh(sph, ring, nil, Quality{ChordTolerance: 0.5, AngleTolerance: stdmath.Pi / 180})
 	if !ok {
-		t.Fatal("spherePatchMesh declined the 60° cap rim at the coarse tolerance")
+		t.Fatal("spherePatchMesh declined the 120° cap rim at the coarse tolerance")
 	}
 	if hasDiag(coarse.Diagnostics, CodeTessellateCapSaturated) {
-		t.Fatal("cap honoured the coarse tolerance yet still reported saturation — the diagnostic would cry wolf")
+		t.Fatal("budget honoured the coarse tolerance yet still reported saturation — the diagnostic would cry wolf")
 	}
 }

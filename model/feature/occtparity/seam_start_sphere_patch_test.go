@@ -28,6 +28,14 @@ import (
 // u axis, each leaping exactly ±2π on the CLOSING step while its OPEN chain reads 6.067–6.263 rad —
 // inside the old open-chain-only guard's 2π−1e-6 threshold by as little as 0.024 rad.
 //
+// ★ POPULATION RE-MEASURED (patchgridcap slice, §region): K6 LEFT the population when the void-corner
+// region fix (assembleFilletFaces → assembleCornerBlendBody) uniform-flipped its shell — the corner
+// loop's traversal reversed and its closing step no longer leaps a period (measured: 0 seam-winding
+// sphere faces on the fixed K6 body at both gate qualities). Its corner ball — which this test's own
+// doc records as "the 7/8 complement", i.e. the WRONG meshed region the flip corrected — is now
+// pinned by the stricter octant gate (k6_l4_trihedral_setback_test.go: area 25π/2 + solid angle π/2,
+// both against closed forms). The population here is the remaining FOUR.
+//
 // WHY THE MESH IS NEVERTHELESS RIGHT, AND WHY THIS TEST EXISTS ANYWAY. All five are intercepted by
 // spherePatchMesh, which charts the patch on its OWN axis (gnomonic/stereographic) and never asks for
 // the seam development — so the leap costs no triangle today; instrumenting both mesher call sites
@@ -47,7 +55,7 @@ import (
 // 10 significant figures.
 func TestSeamWindingSpherePatchMeshesToClosedForm(t *testing.T) {
 	dir := CorpusFixtureDir()
-	for _, name := range []string{"A6", "C8", "E4", "K6", "W1"} {
+	for _, name := range []string{"A6", "C8", "E4", "W1"} {
 		t.Run(name, func(t *testing.T) {
 			body, ok := shippedCaseBody(caseRecord(t, "simple", name), dir)
 			if !ok {
@@ -71,8 +79,9 @@ func caseRecord(t *testing.T, grid, name string) Record {
 }
 
 // spherePatchAreaTol is how far the chordal mesh may fall short of the exact spherical area. A mesh
-// INSCRIBED in a sphere always under-reports; the measured worst of the five is 0.196 % (K6, whose patch
-// is 7/8 of its sphere), so 0.5 % separates chordal deficit from a development defect by ~2.5×. The
+// INSCRIBED in a sphere always under-reports; the measured worst of the population was 0.196 % (K6's
+// then-7/8 patch, since removed — see the ★ population note; the density fix shrank the remaining
+// four's deficits further), so 0.5 % separates chordal deficit from a development defect. The
 // upper bound is not a tolerance at all: an inscribed triangulation cannot exceed the true area, so
 // anything above it is a fold or a self-overlap.
 const spherePatchAreaTol = 0.005

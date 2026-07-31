@@ -77,8 +77,9 @@ func assertVoidCornerSphere(t *testing.T, name string, body *topo.Body, want mat
 //   - REGION: signed solid angle at the centre = π/2 (the octant, covered exactly once);
 //   - RESOLUTION: mesh area within voidOctantAreaCeil of the closed form 25π/2 = 39.269908.
 const (
-	voidOctantAreaCeil   = 0.0063 // 1.1× the measured post-fix deficit (K6 0.0054, L4 0.0057), abs units²
-	voidOctantSolidAngle = 1e-6   // rel bound on |ΣΩ − π/2| (measured < 1e-12)
+	voidOctantAreaCeil = 0.0032 // 1.2× the measured deficit (K6/L4 0.00264/0.00266 once the density
+	// budget honours the octant's grid; 0.0054/0.0057 at the old 80-step clamp), abs units² — down-only
+	voidOctantSolidAngle = 1e-6 // rel bound on |ΣΩ − π/2| (measured < 1e-12)
 )
 
 // assertVoidOctantMeshed pins the corner ball's MESH to the octant: area against 25π/2 and solid

@@ -264,7 +264,7 @@ func setbackObstaclePins() []fingerprintPin {
 		// of 58091.9). Captured on THIS HEAD; it locks the bore-corner weld so any later piece (L9 plane
 		// retrim, the concave cluster) fails loud if it perturbs the N1 body. Same cross-platform-risk
 		// caveat as above applies.
-		{"N1", 967610.719379026, 23816, 0x5f18c6f4452d68a8, ""},
+		{"N1", 967610.725083335536, 27848, 0xf57cfc9e0b667e5, ""},
 		// L9 (simple): the SECOND R+r bore/notch-wall corner green (corner-blend-weld Piece 3). L9 is box
 		// − r30 QUARTER-cylinder notch, r=5 fillet on 3 edges. Its bore torus arm (major R+r=35) runs out
 		// against a flat RADIAL notch face, and — because the R+r cap contact reaches r PAST the rim — the
@@ -275,7 +275,7 @@ func setbackObstaclePins() []fingerprintPin {
 		// green, so byte-identical. Result: a watertight 13-FACE solid matching the DRAWEXE oracle (area
 		// 61832.36, rel 5.8e-7 of 61832.4). Captured on THIS HEAD; it locks the bore far-cap extension so any
 		// later piece fails loud if it perturbs the L9 body. Same cross-platform-risk caveat as above.
-		{"L9", 958250.799883365, 23018, 0x2eb42ba563f1966e, ""},
+		{"L9", 958250.803734047571, 25560, 0x5330935ec963f029, ""},
 		// M8 (simple): the mixed-sense curved-host 2r-torus corner WELD (corner-blend-weld Slice-1b,
 		// fillet_curved_mixed_weld.go). M8 is box + boss (R=25), r=5 fillet on 3 edges meeting at one curved-
 		// host trihedral vertex: ONE convex Cyl∧Plane arm + a concave cove torus arm (major R+r=30) + a planar
