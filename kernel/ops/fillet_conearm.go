@@ -185,11 +185,20 @@ func coneArmSurface(co geom.Cone, pl geom.Plane, outwardN math.UnitVector3, s, r
 	return coneOffsetTorus(co, apexPrime, pOff, r, res)          // shared spine/major/torus tail (dedup with the concave builder)
 }
 
-// coneArmFillet builds the exact torus arm on a CONVEX-EXTERNAL Cone∧Plane CAP-plane edge — the sibling
-// of sphereArmFillet for the cone host, carried in the same edgeFillet the straight-edge path emits.
-// Returns a non-coneArmBuilt reason — so the caller honest-rejects via coneArmError (do-no-harm) — for a
-// varying radius, the ruling edge (canal, CN2), an oblique plane, a concave bore (material outside the
-// cone; coneHostMaterialSign), or any surface decline (α bands, clearance, grazing).
+// coneArmFillet builds the exact torus arm on a Cone∧Plane CAP-plane edge — the sibling of
+// sphereArmFillet for the cone host, carried in the same edgeFillet the straight-edge path emits.
+// Dispatches on the host material sign (coneHostMaterialSign): convex-external (material inside the
+// cone, s>0) and the CONCAVE BORE (material outside, s≤0) are BOTH edge-CONVEX — a bore rim is a
+// genuinely convex edge, the ball rolling in the MATERIAL exactly like the boss case (do-no-harm
+// comment above this function's old reject, confirmed by I1: OCCT's own torus for a 45°-bore rim,
+// apex(-200,0,-200) â=+ẑ r=10, is centre(-200,0,+10) major 224.142135623731 — the SAME
+// coneArmSurface(...,s=−1,...) plane-into-MATERIAL convention the boss case uses, only the apex shift
+// flips). The genuinely edge-CONCAVE cove (a bump meeting a plate, ball in the VOID, BOTH the apex shift
+// AND the plane offset flip) is a different construction entirely — concaveConeArmSurface, reached only
+// through the CLOSED-rim dispatcher (concaveCurvedRimArmEdge, gated on ClassifyEdgeConvexity==EdgeConcave)
+// — never through this cap-edge path. Returns a non-coneArmBuilt reason — so the caller honest-rejects via
+// coneArmError (do-no-harm) — for a varying radius, the ruling edge (canal, CN2), an oblique plane, or any
+// surface decline (α bands, clearance, grazing, degenerate frame).
 func coneArmFillet(e *topo.Edge, co geom.Cone, pl geom.Plane, coneFace, planeFace *topo.Face, p filletPick, res Resolution) (edgeFillet, coneArmReject) {
 	if p.varying() {
 		return edgeFillet{}, coneArmVaryingRadius
@@ -200,14 +209,43 @@ func coneArmFillet(e *topo.Edge, co geom.Cone, pl geom.Plane, coneFace, planeFac
 	case coneClassOblique:
 		return edgeFillet{}, coneArmOblique
 	}
-	if sgn, ok := coneHostMaterialSign(e, co, coneFace); !ok || sgn <= 0 {
-		return edgeFillet{}, coneArmConcaveBore // material outside the cone: A′ = A − r/sinα·â is a follow-on slice
-	}
 	n, err := math.UnitVector3FromVector(outwardPlaneNormal(planeFace, pl))
 	if err != nil {
 		return edgeFillet{}, coneArmDegenerate // degenerate plane normal — no offset direction
 	}
-	tor, reason := coneArmSurface(co, pl, n, +1, p.r0, res)
+	sgn, ok := coneHostMaterialSign(e, co, coneFace)
+	if !ok {
+		return edgeFillet{}, coneArmDegenerate // apex-adjacent edge: no readable radial direction
+	}
+	if sgn > 0 {
+		return coneArmFilletConvex(e, co, pl, n, p.r0, res)
+	}
+	return coneArmFilletConcave(e, co, pl, n, p.r0, res)
+}
+
+// coneArmFilletConvex builds the CONVEX-EXTERNAL torus arm (material inside the cone, s=+1) and packs it
+// into an edgeFillet — extracted from coneArmFillet to keep it within funlen once the concave sibling was
+// added.
+func coneArmFilletConvex(e *topo.Edge, co geom.Cone, pl geom.Plane, n math.UnitVector3, r float64, res Resolution) (edgeFillet, coneArmReject) {
+	tor, reason := coneArmSurface(co, pl, n, +1, r, res)
+	if reason != coneArmBuilt {
+		return edgeFillet{}, reason
+	}
+	if ef, ok := curvedArmEdgeFillet(e, tor, true); ok {
+		return ef, coneArmBuilt
+	}
+	return edgeFillet{}, coneArmDegenerate
+}
+
+// coneArmFilletConcave builds the torus arm on a CONCAVE-BORE Cone∧Plane cap edge (material outside the
+// cone, s≤0). The edge itself is CONVEX (ball rolls in the material, do-no-harm comment above
+// coneArmFillet), so it reuses coneArmSurface verbatim with the apex shift flipped to s=−1 — the SAME
+// plane-into-material offset the boss case uses, only the offset cone widens instead of narrowing. NOT
+// armConcave: that flag is reserved for the genuinely edge-concave void-side arm (fillet_arm_concave.go's
+// cylinder cove, and the closed-rim sphere/cone cove), which winds the band the opposite way; this arm
+// welds through the ordinary single-arm runout exactly like the convex boss cap arm.
+func coneArmFilletConcave(e *topo.Edge, co geom.Cone, pl geom.Plane, n math.UnitVector3, r float64, res Resolution) (edgeFillet, coneArmReject) {
+	tor, reason := coneArmSurface(co, pl, n, -1, r, res)
 	if reason != coneArmBuilt {
 		return edgeFillet{}, reason
 	}

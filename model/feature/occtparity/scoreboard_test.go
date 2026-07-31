@@ -272,7 +272,7 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 // Reconciled per face vs DRAWEXE on all 12 faces (worst +0.0016%); the −0.998% vs the corpus number is
 // the historic reference's drift — our 78062.6 vs local DRAWEXE 8.0's own 78062.8 (−0.0003%). This
 // restored 120→121 all-grid (simple unchanged at 115), SkipQuarantine unchanged at 0.
-// W-C's curved-miter chain retrim (fillet_miter_chain_retrim.go) then GREENED simple/O8: a bitten
+// W-C's curved-miter chain retrim (fillet_miter_chain_retrim.go) GREENED simple/O8: a bitten
 // TWO-ARC "lens" loop (the cap shared by two intersecting cylinders, blend/simple's two-offset-cylinder
 // family) is a legitimate bitten wire — retrimBittenLoop's segment-count guard was the only blocker,
 // loosened from ≥3 to ≥2; the existing far-path-split machinery anchors on it exactly as on a many-segment
@@ -283,21 +283,26 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 // degenerate (zero-length) edge on the wall's own loop, present before any fillet runs (an import defect,
 // not a curved-miter capability gap); ringHasRepeatedPoint / sharedRetrimIsSound now decline them
 // honestly instead of certifying the ~10.6%-short, non-watertight solid the chain splice would otherwise
-// silently produce (falsification proof in wave-report-C.md). This restored 120→121 simple and
-// 128→129 all-grid, SkipQuarantine unchanged at 0.
+// silently produce (falsification proof in wave-report-C.md / wave-report-R5.md).
+//
+// Union of every merged wave capability on top of the 114/119 base (d8d55a26).
+// simple +11: M5 (W-DH notch-wall concave cove sign ε=−1), K2/K3/K4/P1 (W-B cyl∧cyl SSI-seam
+// canal), Y9 (W-T stripe-junction crossings), A4 (W-A mixed-radius torus corner), O8 (W-C
+// chain-capable host retrim), J5/J3 (W-E concave torus-host closed-rim cove + spiric canal),
+// I1 (W-K concave cone bore — a bore rim is edge-CONVEX, ball in material).
+// bfuseblend +6: B3 (multi-rim weld), B4/B5 (cyl∧cyl canal), A4/A5/A6 (spiric + closed-rim).
+// tolblend_simple +5: A1/D4 (planar corners), B4/B8/C3 (EllipticalCylinder∧Cone pinched canal).
+// simple/X8 stays an HONEST DECLINE — TestEveryLoopSegmentLiesOnItsFace caught a real B-rep
+// defect on its asymmetric pyramid that the symmetric tolblend_simple/A1 does not carry.
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 121 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 121 (W-DH's notch-wall concave cove "+
-			"sign ε=−1 greened M5; W-B's Cylinder∧Cylinder SSI-seam canal engine greened K2/K3/K4 + P1; "+
-			"W-T's stripe-junction crossings + exact anchor distance greened Y9; W-C's lens-cap bitten-loop "+
-			"fix greened O8; 114→121)", simpleGreen)
+	if simpleGreen != 125 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 125 (114 base + 11 wave greens)", simpleGreen)
 	}
-	if allGridGreen != 129 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 129 (121 simple + 8 bfuseblend; the multi-rim "+
-			"weld greened bfuseblend/B3 and the closed cyl∧cyl seam canal greened B4+B5; complex/D8's "+
-			"coincidental green stays retired; 119→129)", allGridGreen)
+	if allGridGreen != 141 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 141 (125 simple + 11 bfuseblend-only "+
+			"+ 5 tolblend_simple; complex/D8's coincidental green stays retired; 119→141)", allGridGreen)
 	}
 	if skipQuarantine != 0 {
 		t.Errorf("SkipQuarantine = %d, want 0 — the corpus holds NO case; every one of the 475 records is "+

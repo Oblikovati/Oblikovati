@@ -32,7 +32,10 @@ func cloneBlendResetArcs(cb *cornerBlend) *cornerBlend {
 	for k, v := range cb.tan {
 		tan[k] = v
 	}
-	return &cornerBlend{vertex: cb.vertex, center: cb.center, sphere: cb.sphere, tan: tan}
+	// radiusTorus rides the clone: a body with BOTH a void-sphere corner and a mixed-radius torus
+	// corner re-solves its bands against the same transient blend, and the classifier must still
+	// route the torus vertex to accumulateRadiusTorus after the re-solve.
+	return &cornerBlend{vertex: cb.vertex, center: cb.center, sphere: cb.sphere, tan: tan, radiusTorus: cb.radiusTorus}
 }
 
 // concaveTrihedralCornerFaces returns the three faces of the corner at vid and ok=true when it is the

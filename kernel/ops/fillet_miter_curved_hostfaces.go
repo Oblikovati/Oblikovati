@@ -196,7 +196,7 @@ func miterTrimChain(m *cornerMiter, s miterArmSide, tol float64) (miterHostChain
 	if !toOn {
 		trim, off = reverseEndSegs([]endSeg{s.run.trim})[0], s.run.trim.to
 	}
-	bridge, ok := runoutEndBridgeSeg(m.shared.Geometry(), off, far, tol)
+	bridge, ok := miterChainEndBridgeSeg(m.shared.Geometry(), off, far, tol)
 	if !ok {
 		return miterHostChain{}, false
 	}

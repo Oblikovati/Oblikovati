@@ -69,6 +69,8 @@ func accumulateCorner(ref cornerRef, ctx setbackCtx, data *setbackData, seenBand
 		accumulateMixedTorus(ref.vid, ctx, data)
 	case treatConvexRunoff:
 		accumulateConvexRunoff(ref.vid, ctx, data, seenBands)
+	case treatRadiusTorus:
+		accumulateRadiusTorus(ref.vid, ctx, data)
 	}
 }
 

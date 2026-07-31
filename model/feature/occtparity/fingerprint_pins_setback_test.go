@@ -312,7 +312,10 @@ func setbackObstaclePins() []fingerprintPin {
 		// aware host retrim (fillet_curved_retrim_ellipse.go). Was FLAT-REFUSED (curvedAdjacentError). Pinned
 		// on THIS HEAD so any later slice touching the elliptic arm / ellipse retrim fails loud if it perturbs
 		// the F4 body. Same cross-platform-risk caveat as above applies.
-		{"F4", 3104847.813129819464, 26988, 0x703c9f4f9e96a8d3, ""},
+		// ★ RE-CAPTURED (cluster-A wave, wedgeAlignChainBranches — same TESSELLATION-only re-capture as
+		// fingerprint_pins_curved_test.go's N7..I3 block; see that file for the mechanism). Watertight both
+		// qualities, Valid+IsSolid, volume moved 5.9e-8 rel.
+		{"F4", 3104847.997849513777, 22626, 0x3f07d136062197a8, ""},
 		// J6/J8 (simple): the CLOSED elliptic-rim canal band — the elliptic vein's other half. F4's edge was a
 		// straight RULING (straight spine → exact right circular cylinder); these are CLOSED rims on the same
 		// oblique-extrusion wall, whose rolling-ball spine is a closed NON-ANALYTIC curve, so the fillet is a
@@ -385,6 +388,9 @@ func setbackObstaclePins() []fingerprintPin {
 		// (o1CanalRailPieces) purely to keep the three-point re-fit's h³ error small; with the re-fit gone
 		// that workaround is deleted, so this pin encodes the un-subdivided ring — which is also why O1's
 		// vertex/edge count drops 30/39 → 16/25, against the oracle's 18/27.
-		{"O1", 1111281.884319459088, 29866, 0x617cc8805bca3d1, ""},
+		// ★ RE-CAPTURED (cluster-A wave, wedgeAlignChainBranches — same TESSELLATION-only re-capture as
+		// fingerprint_pins_curved_test.go's N7..I3 block; see that file for the mechanism). Watertight both
+		// qualities, Valid+IsSolid, volume moved 1.1e-7 rel.
+		{"O1", 1111282.009709320031, 27160, 0x68f9b0c2a18ccd36, ""},
 	}
 }

@@ -114,7 +114,12 @@ func torusContactCircle(host geom.Surface, tor geom.Torus, res Resolution) (math
 // with s* = h·cosα + R_s·sinα. The result circle lies in a plane ⊥ â (the same frame as the torus, so
 // curvedHostArc's [0→φ*] sweep — including D9's reflex unwrap for C6's 270° edge — lands the pinch at
 // PointAt(1)). Rejects a torus not coaxial with the cone or whose tube is not internally tangent
-// (h·sinα − R_s·cosα ≠ r).
+// (h·sinα − R_s·cosα ≠ r) — CONVEX-external only (the do-no-harm firewall
+// TestConvexContactCircleRejectsConcaveTorus pins this: a genuinely edge-concave cove torus (S2's
+// concaveConeArmSurface, external tangency) must NEVER be accepted here, since the tangency equation
+// alone cannot distinguish it from I1's edge-convex bore torus — that disambiguation needs the CALLER's
+// context, not a widened shared predicate; see coneBoreContactCircle in
+// fillet_curved_single_runout.go for I1's scoped external-tangency reading).
 func coneContactCircle(co geom.Cone, tor geom.Torus, res Resolution) (math.Point3, float64, bool) {
 	if !co.AxisDir.IsParallelTo(tor.AxisDir, retrimAxisParallelTol) {
 		return math.Point3{}, 0, false // torus axis not coaxial with the cone axis

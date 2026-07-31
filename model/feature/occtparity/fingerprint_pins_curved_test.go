@@ -21,7 +21,7 @@ func curvedWeldPins() []fingerprintPin {
 		// +0.177% → +0.052% — so each body's GROSS per-face error dropped (D5 31.20 → 14.93, E4 62.21 →
 		// 47.89) even where the whole-body NET moved, which is cancellation unwinding, not a regression.
 		// See reverse-segment-fix-report.md. Same cross-platform-risk caveat as above applies.
-		{"N7", 963883.358200046350, 31476, 0x23551593d78be76d, ""},
+		{"N7", 963883.308666080586, 28626, 0x7bee702cffdf1d17, ""},
 		{"C2", 510191.885601512506, 121529, 0x1b3bc10e4d60136e, ""},
 		{"C6", 1559718.567225983134, 139844, 0x613415837489e018, ""},
 		{"D5", 3434184.031168804504, 481302, 0x3996c779fd9029cf, ""},
@@ -118,36 +118,50 @@ func curvedWeldPins() []fingerprintPin {
 		// closed surface had no well-defined value, and the closed one is the one to pin.
 		{"A2", 17169519.822057653, 134156, 0x567be90454112343, "bfuseblend"},
 		{"A3", 15606148.623794555664, 305166, 0xf29512989e349b62, "bfuseblend"},
+		// ★ RE-CAPTURED (cluster-A wave, wedgeAlignChainBranches / tessellate_wedge_band.go): every pin
+		// below through I3 changed ONLY its TESSELLATION, never its B-rep. The oblique-wedge-band mesher
+		// (tessellate_wedge_band.go) compares its two end chains' angular stations on cyl.ParamAt's raw
+		// principal branch; a band whose ends sit a whole 2π apart on that branch (common — most fillet
+		// bands are NOT near the 0/2π seam by luck, they just happen to land on it) measured a bogus
+		// ~2π half-turn span and fell through to the generic per-triangle CDT instead of the exact ruled
+		// zip strip. wedgeAlignChainBranches re-anchors the second chain onto the first's branch before
+		// the span check, so every ALREADY-oblique-2-rail band across the WHOLE corpus (not just cluster
+		// A's own cases) now correctly takes the exact mesher — fewer, larger, RULED-EXACT triangles
+		// (L1 10084→92, L7 10174→336: a cylinder is ruled along its axis, so the zip needs no interior
+		// subdivision there; area/volume do not need it either). Verified per case: watertight (0 free
+		// edges / 0 folds, both qualities) + Validate().Valid + IsSolid(), and raw volume moves ONLY at
+		// re-tessellation-noise scale (worst B1 3.3e-5 rel, most ≤2e-5, several ≤1e-7) — the SAME
+		// geometry, a cleaner mesh of it. No case's TestEveryLoopSegmentLiesOnItsFace budget changed.
 		// E1/E2 (simple): the 90° sphere-sector corner fillets whose CURVED survivor wall (a sphere
 		// meridian rim) was chorded by transformLoop's ENDS branch, collapsing the sphere face ~in half
 		// (curved-host-collapse-rootcause.md). The survivor-rim carry (fillet_survivor_rim.go) trims the
 		// rim to its retained sub-arc, greening both for the first time (E1 area drift 0.37%, E2 0.47%).
 		// Captured on THIS HEAD; they lock the survivor-arc carry so any later slice that perturbs the
 		// planar end-corner path fails loud. Same cross-platform-risk caveat as above applies.
-		{"E1", 3482804.688278918155, 403430, 0x35d1edf3df93b025, ""},
-		{"E2", 3479597.279921139590, 440986, 0x91f20e3fc5921b91, ""},
+		{"E1", 3482804.768453035504, 397652, 0x9f6fe823369a1b3, ""},
+		{"E2", 3479597.771035097074, 425008, 0x217ec41034e59105, ""},
 		// D3 (simple): a 270°-latitude/90°-longitude sphere-sector trihedral fillet, greened as a bonus by
 		// the quadrant-gated survivor-rim carry (E1/E2/D3 share the mechanism; its 118–146° sphere meridians
 		// are carried, its ≤π/2 rims stay chorded). Its mesh (hash+tris) is bit-stable, so the AREA gate is
 		// stable at 0.29%, but — like M4 — its raw signed-tetra VOLUME sum is TessellateBody-order-sensitive
 		// (~1e-3 swing, the host-sphere zone's near-degenerate winding); its volume is pinned to the mid-spread
 		// with the loosened volTolFor(D3) tolerance, the mesh pinned exactly. Same cross-platform caveat.
-		{"D3", 3434569.497398118954, 456966, 0xad9d1470e61bae54, ""},
+		{"D3", 3434569.911204192322, 446766, 0xb4f6529dd1c2b534, ""},
 		// B1/B9 (simple): already-green PLANAR corner fillets whose curved survivor rims are ≤π/2 (62–67°),
 		// so the survivor-rim carry (fillet_survivor_rim.go) keeps their base chord byte-for-byte. An earlier
 		// arc-carry (82a64cbb) silently drifted them WITHIN deps (B1 0.0071%→0.0499%, toward-wrong) — caught
 		// only by adversarial fingerprinting, not by the pass/fail gate. Pinned here to lock the exact victims
 		// so any future shared-planar-path edit that re-drifts them within tolerance fails loud.
-		{"B1", 192217.801964343031, 62382, 0x3af571d015487e6d, ""},
-		{"B9", 517453.708967529470, 46506, 0x36779eafffa7208b, ""},
+		{"B1", 192224.093991277128, 26910, 0x3a2c34ead12afb22, ""},
+		{"B9", 517453.772719542321, 35770, 0x18798f541b2619dd, ""},
 		// L1/L7 (simple): the P1 dihedral corner-setback greens (fillet_corner_setback.go). L1 is the tracer
 		// (4 orthogonal concave dihedral miters on a box+boss); L7 is a 10°-rotated boss whose miter corners
 		// are still θ=90° in 3D, so the same orthogonal setback closes it. Both were RED (reflected-seam
 		// over-keep) before P1 and are pinned here on the P1 HEAD to lock the concave-miter seam re-sample +
 		// host re-trim so any later corner slice (P2 sphere octant, P3 torus, P4 non-orthogonal) fails loud if
 		// it perturbs an L1/L7 body. Same cross-platform-risk caveat as above applies.
-		{"L1", 1064907.332517385, 10084, 0xfc5957778e077e81, ""},
-		{"L7", 1064002.621311044, 10174, 0x8c0079d3d630ccb5, ""},
+		{"L1", 1064928.324439743767, 92, 0x19c83b8b590339fa, ""},
+		{"L7", 1064018.876598088769, 336, 0x74757cedc68d107e, ""},
 		// N5 (simple): the ONE previously-GREEN case the P1 pass legitimately RE-WELDS — a rotated boss with
 		// two orthogonal (dot=0) concave dihedral miters (L7's family), green ONLY by tolerance at base (area
 		// rel 0.3337%, reflected-seam over-keep). The setback moves it TOWARD OCCT (rel 0.1043%) and it stays
@@ -156,7 +170,7 @@ func curvedWeldPins() []fingerprintPin {
 		// HEAD — captured base→HEAD-verified as the sole changed green across ALL SIX grids — locking the
 		// re-weld so a future shared-corner-path edit or a P2–P4 slice cannot silently re-drift it. Same
 		// cross-platform-risk caveat as above applies.
-		{"N5", 1047341.372749311, 37558, 0x058a8f3407ef5143, ""},
+		{"N5", 1047345.095502940007, 15696, 0xe05aaad0fcac491d, ""},
 		// K6/L4 (simple): the P2 trihedral corner-setback greens (fillet_corner_setback.go). Each is a
 		// box − pocket whose single trihedral corner joins THREE CONCAVE fillets at three mutually-orthogonal
 		// planar faces; both were RED (K6 +1.19%, L4 +1.38%) because solvePlanarBlend placed the corner
@@ -194,7 +208,7 @@ func curvedWeldPins() []fingerprintPin {
 		// the P3 HEAD to lock the torus corner so any later corner slice (P4 non-orthogonal) fails loud if it
 		// perturbs a K9/M2 body. Same cross-platform-risk caveat as above applies.
 		{"K9", 1064212.575467, 8860, 0x8b7d80c80805b0fb, ""},
-		{"M2", 1028376.990494292, 31120, 0xec9b614b4061faf0, ""},
+		{"M2", 1028376.882582639810, 25420, 0xc406efcc1854a7cb, ""},
 		// L6 (simple): the ONE previously-GREEN case the P3 pass legitimately RE-WELDS — a 10°-rotated box
 		// corner that is ALSO a mixed-sense trihedral (2 concave + 1 convex on 3 orthogonal planar faces),
 		// green ONLY by tolerance at base (sphere, area rel 0.9033%). The torus re-weld moves it EXACTLY onto
@@ -216,8 +230,8 @@ func curvedWeldPins() []fingerprintPin {
 		// the pass/fail gate (N5 lesson). Both are the ONLY real changed greens across ALL SIX grids vs base
 		// e544759a (D3/M4's volume-only diff is hash-identical TessellateBody summation-order noise). Pinned
 		// so a later corner slice fails loud if it perturbs an A8/A6 body. Same cross-platform-risk caveat.
-		{"A8", 192243.676911436545, 46266, 0x9116c7b73631849c, ""},
-		{"A6", 328038.064438616973, 46102, 0x70a6582da86f44cc, ""},
+		{"A8", 192244.011017527722, 41048, 0xbc8a8c2c2c60e16c, ""},
+		{"A6", 328038.551746976795, 28326, 0xddd951936c8a21bd, ""},
 		// I3 (simple): a straight LineSegment fillet between a planar ANNULAR-SECTOR host and a triangular
 		// end-cap. transformLoop's `subs` branch (the A/B tangent-point pull-back) hard-coded the LEAVING
 		// survivor edge's curve to nil, CHORDING the sector's r=300 outer rim — slicing the host plane
@@ -228,7 +242,7 @@ func curvedWeldPins() []fingerprintPin {
 		// re-mesh ADD folds) stops the cone inflation — greening I3 for the first time (whole-body 100120,
 		// rel 0.82%; sector plane recovered to 38270). Captured on THIS HEAD; it locks the subs-branch carry
 		// so any later planar-retrim slice that re-chords the rim fails loud. Same cross-platform-risk caveat.
-		{"I3", 979673.649152592, 24510, 0xa53bc1d42eac4d66, ""},
+		{"I3", 979674.027941293549, 19144, 0x563d94572ec9541b, ""},
 		// I9 (simple): the rim-fillet pick gate widen (fillet_rim.go's isClosedCircularEdge) — a plain
 		// solid cylinder rim whose picked edge is a closed geom.Arc3d (SweepAngle≈2π), the shape every
 		// STEP-imported full circle actually has (kernel/exchange never emits geom.Circle). Before the
@@ -241,6 +255,18 @@ func curvedWeldPins() []fingerprintPin {
 		// isClosedCircularEdge predicate fails loud if it perturbs the I9 body. Same cross-platform-risk
 		// caveat as above applies. See .superpowers/sdd/rim-arc3d-widen-report.md.
 		{"I9", 1171624.810038584052, 67580, 0xab1686e36b3b9396, ""},
+		// Wave-E torus-rim greens (torus_rim_spiric_gate_test.go carries their DRAWEXE per-face tables):
+		// J5/A5/A6 = the concave closed-rim cove band on a TORUS host with a latitude cap
+		// (fillet_torusarm_concave.go — external a+r for J5/A5, internal a−r for A6); J3/A4 = the
+		// SPIRIC closed-rim canal on a meridian cap (fillet_spiric_spine.go / fillet_spiric_rim.go +
+		// the torusTubeBandLoftMesh tube-wrapping host loft). Captured on THIS HEAD; they lock the
+		// concave torus arm, the spiric station loft, the closed-rim weld routing, and the tube-band
+		// mesher, so any later slice touching those fails loud. Same cross-platform-risk caveat.
+		{"J5", 6757909.464672484435, 1181692, 0x21f4472585f96261, ""},
+		{"J3", 7395592.451696694829, 1115132, 0x60907356101f946a, ""},
+		{"A4", 15409136.952526209876, 1180684, 0xee50b6c93f5cf261, "bfuseblend"},
+		{"A5", 117038179.720218241215, 788492, 0xcd9879937ec3c456, "bfuseblend"},
+		{"A6", 113037851.868033841252, 526348, 0xb5bf46a9e57af953, "bfuseblend"},
 		// M5 (simple): the notch-wall concave cove sign (W-DH capability wave). A box − quarter-cylinder
 		// notch filleted r5 on three ALL-CONCAVE edges at one trihedral vertex: the concave circle-edge
 		// cove arm (concaveTorusArmSurface) hardcoded major = R+r (the boss convention), but a notch's
@@ -266,5 +292,25 @@ func curvedWeldPins() []fingerprintPin {
 		// (−0.0003%). Captured on THIS HEAD; locks the sequential-rim composition so a later rim or
 		// key-continuity slice fails loud if it perturbs the B3 body. Same cross-platform caveat.
 		{"B3", 1284834.848345890874, 135180, 0xac0646576d972b5d, "bfuseblend"},
+		// I1 (simple, W-K capability wave): the CONCAVE-BORE Cone∧Plane cap arm. A conical bore rim
+		// (material outside the cone) is a genuinely CONVEX edge — the ball rolls in the material exactly
+		// like the boss (s=+1) case, do-no-harm comment above coneArmFillet — so coneArmFilletConcave
+		// reuses coneArmSurface with the apex shift flipped to s=−1 (A′ = A − r/sinα·â) but the SAME
+		// material-side plane offset. The single-arm runout's host contact rail (armRunoutRail) needed the
+		// bore's EXTERNAL tangency equator (h·sinα−R_s·cosα=−r) alongside the boss's INTERNAL one (=+r,
+		// torusContactCircle/coneContactCircle) — but that shared predicate stays convex-only ON PURPOSE
+		// (TestConvexContactCircleRejectsConcaveTorus: the equation alone cannot tell I1's edge-convex bore
+		// torus apart from S2's edge-concave cove torus), so the external reading lives in a new
+		// runout-scoped fallback, coneBoreRunoutContactCircle (fillet_curved_single_runout.go). Reconciled
+		// per face vs DRAWEXE 8.0.0
+		// sprops on all 6 faces (worst −0.0015%, the torus band): 2×2376.38/2376.39 end caps, 31227.6/
+		// 31227.7 bottom plate, 30544.8/30544.8 outer cone (exact, untouched), 17083.0/17083.1 inner bore
+		// cone, 8027.46/8027.58 torus band (centre(-200,0,10) major 224.142135623731=200+10(1+√2) minor
+		// 10, matching OCCT's own closed form exactly — a naive BOTH-flipped construction, the genuinely
+		// edge-concave concaveConeArmSurface, gives centre z=-10 major 204.14214 instead, short by exactly
+		// 2r; see TestConeArm_ConcaveBoreBuilds's mutation witness). Captured on THIS HEAD; locks the
+		// concave-bore cone arm + contact-rail widen so a later cone-host slice fails loud if it perturbs
+		// the I1 body. Same cross-platform-risk caveat as above.
+		{"I1", 940827.412981069414, 134402, 0xec749a145f537673, ""},
 	}
 }

@@ -29,9 +29,12 @@ func solveAsymmetricCorner(_ *topo.Body, vid uint64, ps []filletPick) (*cornerBl
 		return nil, cm, err
 	case len(ps) == 3 && len(faces) == 3:
 		// A4 (r10/r5/r5): OCCT builds a TORUS corner patch tangent to the large-radius arm along its
-		// outer equator and to the small-radius arms along tube circles — not a sphere. That patch and
-		// its planar-host weld is a tracked follow-up; decline with the exact radii so the case reports
-		// its gate rather than a false green.
+		// outer equator and to the small-radius arms along tube circles — not a sphere. The orthogonal
+		// [rB, rS, rS] pattern is solved exactly (fillet_corner_radiustorus.go); anything else (three
+		// distinct radii, the big pair sharing the top, a skewed corner) still declines with the radii.
+		if cb, ok := solveRadiusTorusCorner(vertexByID(edgesOf(ps), vid), vid, ps); ok {
+			return cb, nil, nil
+		}
 		return nil, nil, fmt.Errorf("fillet: mixed-radius trihedral corner (%d faces, radii %v) needs a torus corner patch — not yet supported", len(faces), cornerRadiiAt(vid, ps))
 	default:
 		return nil, nil, fmt.Errorf("fillet: mixed-radius corner where %d filleted edges meet a %d-face vertex is not a supported blend (need 2 edges sharing a face, or 3 edges at a trihedral vertex)", len(ps), len(faces))

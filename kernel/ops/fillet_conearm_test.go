@@ -4,7 +4,6 @@ package ops
 
 import (
 	stdmath "math"
-	"strings"
 	"testing"
 
 	"oblikovati.org/kernel/geom"
@@ -172,26 +171,46 @@ func TestConeArmEdge_Dispatches(t *testing.T) {
 	}
 }
 
-// TestConeArm_ConcaveBoreRejects is the material-side gate (mirror of the sphere dimple regression): a
-// conical BORE rim — the cone face is Reversed (material OUTSIDE the cone) — is a CONVEX edge, so a naked
-// convexity guard would let coneArmSurface build a wrong-side torus (A′ on the apex-far side, major
-// 97.2075 for C2 geometry). coneHostMaterialSign must HONEST-REJECT it (s ≤ 0), naming the concave bore.
-func TestConeArm_ConcaveBoreRejects(t *testing.T) {
+// TestConeArm_ConcaveBoreBuilds is the material-side dispatch gate: a conical BORE rim — the cone face is
+// Reversed (material OUTSIDE the cone) — is a genuinely CONVEX edge (do-no-harm comment above
+// coneArmFillet), so coneHostMaterialSign (s≤0) routes it to coneArmSurface with the apex shift flipped
+// to s=−1 (A′ = A − r/sinα·â) but the SAME plane-into-material offset the boss (s=+1) case uses — NOT the
+// closed-rim concaveConeArmSurface, which is for a different, genuinely edge-CONCAVE construction (a bump
+// meeting a plate, ball in the void, both offsets flipped). Pinned against OCCT's own I1 oracle number
+// (DRAWEXE `blend result s 10 s_4` on the bore rim: apex(-200,0,-200) â=(0,0,1) tanα=1, r=10) — the
+// verified-correct torus is centre(-200,0,10), major 224.142135623731 = 200+10(1+√2), minor 10; a naive
+// BOTH-flipped (concaveConeArmSurface) construction gives centre(-200,0,-10), major 204.142 instead,
+// 20 (=2r) short — the mutation witness below.
+func TestConeArm_ConcaveBoreBuilds(t *testing.T) {
 	e, co, pl := conePlaneFixtureEdge(t, true) // reversed cone face → concave bore
 	coneFace, planeFace := boreFaces(e)
 	res := ResolutionForSize(300)
-	// Mutation witness: the UNGATED surface builder WOULD build the wrong-side major (s=−1) torus.
 	nOut, _ := math.UnitVector3FromVector(outwardPlaneNormal(planeFace, pl))
-	if tor, reason := coneArmSurface(co, pl, nOut, -1, 10, res); reason != coneArmBuilt || tor.MajorRadius < 90 {
-		t.Fatalf("mutation witness broken: ungated s=−1 surface gave reason %d major %.4f, want built major ≈97.2", reason, tor.MajorRadius)
+	ef, reason := coneArmFillet(e, co, pl, coneFace, planeFace, filletPick{edge: e, r0: 10, r1: 10}, res)
+	if reason != coneArmBuilt {
+		t.Fatalf("concave bore was rejected: reason %d, want built (I1's follow-on)", reason)
 	}
-	// The gate rejects with the concave-bore reason — no arm is built.
-	if _, reason := coneArmFillet(e, co, pl, coneFace, planeFace, filletPick{edge: e, r0: 10, r1: 10}, res); reason != coneArmConcaveBore {
-		t.Fatalf("concave bore was NOT rejected as concave: reason %d (a wrong-side torus would be built)", reason)
+	if ef.armConcave {
+		t.Fatalf("concave bore arm must NOT be armConcave — the edge is convex, the ball rolls in the " +
+			"material, and the ordinary (non-void) single-arm runout weld must handle it")
 	}
-	_, _, err := coneArmEdge(nil, e, filletPick{edge: e, r0: 10, r1: 10})
-	if err == nil || !strings.Contains(err.Error(), "CONCAVE") {
-		t.Fatalf("reject message does not name the concave bore: %v", err)
+	tor, ok := ef.armSurface.(geom.Torus)
+	if !ok {
+		t.Fatalf("concave bore arm is %T, want geom.Torus", ef.armSurface)
+	}
+	// Mutation witness: the genuinely-edge-concave (both-flipped) construction gives a DIFFERENT torus —
+	// proof coneArmFilletConcave must call coneArmSurface(s=-1), not concaveConeArmSurface.
+	if wrongTor, wrongReason := concaveConeArmSurface(co, pl, nOut, 10, res); wrongReason == coneArmBuilt &&
+		tor.Center == wrongTor.Center && tor.MajorRadius == wrongTor.MajorRadius {
+		t.Fatalf("concave bore arm %+v matches the both-flipped concaveConeArmSurface construction — "+
+			"coneArmFilletConcave must use coneArmSurface(s=-1), the material-side plane offset", tor)
+	}
+	wantTor, wantReason := coneArmSurface(co, pl, nOut, -1, 10, res)
+	if wantReason != coneArmBuilt || tor.Center != wantTor.Center || tor.MajorRadius != wantTor.MajorRadius {
+		t.Fatalf("coneArmFillet's concave-bore arm %+v does not match coneArmSurface(s=-1) directly %+v", tor, wantTor)
+	}
+	if _, _, err := coneArmEdge(nil, e, filletPick{edge: e, r0: 10, r1: 10}); err != nil {
+		t.Fatalf("concave bore should build without error via coneArmEdge, got: %v", err)
 	}
 }
 

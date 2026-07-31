@@ -152,13 +152,27 @@ func assertCatalogBlindSpot(t *testing.T, got []string) {
 // kernel/ops/fillet_stripe_junction.go): its shipped body is a tangentStripe build
 // (filletTangentStripe), exactly like every other stripe case already on this list — nothing about
 // the catalog's own arbitration changed.
+//
+// simple/J5, bfuseblend/A5, bfuseblend/A6 (W-E, concave torus-host closed-rim cove band,
+// fillet_torusarm_concave.go) and simple/J3, bfuseblend/A4 (W-E, spiric closed-rim canal,
+// fillet_spiric_rim.go) JOINED for the SAME architectural reason as the K2/K3/K4/B4/B5 group above:
+// both engines package their band as the existing armEllipticRim payload and weld through the SAME
+// rebuildRim / rebuildWithConcaveRimFillet (fillet_rim_build.go) the elliptic and torus-arm rim
+// families already use — a new CALLER of the already-pinned bypass, not a new bypass (measured:
+// concaveTorusRimArmEdge / spiricClosedRimArmEdge both terminate in rebuildWithConcaveRimFillet /
+// rebuildRim's own topo.NewBuilder call, never the general assembler's edge catalog).
 func catalogBlindCases() []string {
 	return []string{
-		"bfuseblend/A1", "bfuseblend/A2", "bfuseblend/A3", "bfuseblend/A7", "bfuseblend/B1",
+		"bfuseblend/A1", "bfuseblend/A2", "bfuseblend/A3", "bfuseblend/A4", "bfuseblend/A5",
+		"bfuseblend/A6", "bfuseblend/A7", "bfuseblend/B1",
 		"bfuseblend/B3", "bfuseblend/B4", "bfuseblend/B5",
-		"simple/B2", "simple/H6", "simple/I9", "simple/J1", "simple/J2", "simple/J4", "simple/J6",
+		"simple/B2", "simple/H6", "simple/I9", "simple/J1", "simple/J2", "simple/J3", "simple/J4",
+		"simple/J5", "simple/J6",
 		"simple/J8", "simple/K1", "simple/K2", "simple/K3", "simple/K4", "simple/N6", "simple/R8",
 		"simple/U6", "simple/W2", "simple/W6", "simple/W8", "simple/W9", "simple/Y9", "simple/Z1",
+		// W-F's EllipticalCylinder∧Cone pinched canal welds through the same already-pinned rebuildRim
+		// bypass as the elliptic/cyl∧cyl rim families — a new CALLER, not a new bypass.
+		"tolblend_simple/B4", "tolblend_simple/B8", "tolblend_simple/C3",
 	}
 }
 

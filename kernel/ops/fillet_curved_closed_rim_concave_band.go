@@ -82,6 +82,8 @@ func concaveTorusContactCircle(host geom.Surface, tor geom.Torus, res Resolution
 		return concaveSphereContactCircle(h, tor, res)
 	case geom.Cone:
 		return concaveConeContactCircle(h, tor, res)
+	case geom.Torus:
+		return concaveTorusHostTubeContact(h, tor, res) // J5/A5/A6: void ball on the host tube, either tangency branch
 	default:
 		return math.Point3{}, 0, false
 	}
@@ -146,10 +148,53 @@ func contactCircleFitsFace(f *topo.Face, center math.Point3, radius float64) (bo
 	c2, extent := uv(center), stdmath.Inf(1)
 	for _, l := range f.Loops() {
 		if l.IsOuter() {
-			extent = minDistToPolygon(c2, loopUVPolygon(l, uv))
+			extent = minDistToLoopBoundary(c2, l, uv)
 		}
 	}
 	return radius <= extent, extent
+}
+
+// minDistToLoopBoundary is the minimum in-plane distance from q to the loop's boundary, exact on
+// circular segments. A cap face bounded by ONE closed circle (J5's crater-floor disc) defeats the
+// polygon fallback — its two sample points are antipodal, so the chord passes through the centre and
+// the measured extent collapses to 0 — hence the exact |R_e − d| branch per circular segment.
+func minDistToLoopBoundary(q math.Point2, l *topo.Loop, uv func(math.Point3) math.Point2) float64 {
+	best := stdmath.Inf(1)
+	for _, s := range segsFromLoop(l) {
+		if d, ok := distToCircularSeg(q, s, uv); ok {
+			best = stdmath.Min(best, d)
+			continue
+		}
+		best = stdmath.Min(best, minDistToPolygon(q, segSamplePolygon(s, uv)))
+	}
+	return best
+}
+
+// distToCircularSeg is the exact in-plane distance from q to a FULL-circle segment's circle:
+// |R_e − |q − centre||. ok=false for a non-circular or open segment (the polygon fallback covers it —
+// an open arc's nearest point may lie outside its span, so the exact circle distance would under-read).
+func distToCircularSeg(q math.Point2, s endSeg, uv func(math.Point3) math.Point2) (float64, bool) {
+	closed := float64(s.from.DistanceTo(s.to)) == 0
+	if !closed {
+		return 0, false
+	}
+	switch c := s.curve.(type) {
+	case geom.Circle:
+		return stdmath.Abs(c.Radius - float64(q.DistanceTo(uv(c.Center)))), true
+	case geom.Arc3d:
+		return stdmath.Abs(c.Radius - float64(q.DistanceTo(uv(c.Center)))), true
+	default:
+		return 0, false
+	}
+}
+
+// segSamplePolygon is one segment's from/mid(arc)/to sample chain — the same sampling loopUVPolygon
+// takes, kept per segment so the exact circular branch can bypass it.
+func segSamplePolygon(s endSeg, uv func(math.Point3) math.Point2) []math.Point2 {
+	if s.arc {
+		return []math.Point2{uv(s.from), uv(s.mid), uv(s.to)}
+	}
+	return []math.Point2{uv(s.from), uv(s.to)}
 }
 
 // minDistToPolygon is the minimum distance from point q to the closed polygon poly (its edges).
