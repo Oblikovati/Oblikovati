@@ -152,13 +152,23 @@ func assertCatalogBlindSpot(t *testing.T, got []string) {
 // kernel/ops/fillet_stripe_junction.go): its shipped body is a tangentStripe build
 // (filletTangentStripe), exactly like every other stripe case already on this list — nothing about
 // the catalog's own arbitration changed.
+//
+// bfuseblend/B2 and simple/J9 JOINED for the SAME rebuildRim bypass as B4/B5/K2/K3/K4 above (W-G,
+// BSpline-host CLOSED-rim canal, fillet_bspline_host_rim.go): bsplineHostClosedRimBody calls
+// rebuildRim(body, rf, canal.concave) directly — the identical entry point the analytic and
+// cyl∧cyl-seam rim families already use — so this is a fourth CALLER of the existing pinned
+// bypass, not a new one (verified: the closed-rim weld's own topo.Builder never touches the edge
+// catalog; the OPEN-edge B-spline-host runouts G5/G7/G9/I5/I7/V6 do NOT bypass — they weld through
+// the general assembler via bsplineHostRunoutFaces/assembleBody and are checked clean by this
+// file's other assertions).
 func catalogBlindCases() []string {
 	return []string{
 		"bfuseblend/A1", "bfuseblend/A2", "bfuseblend/A3", "bfuseblend/A7", "bfuseblend/B1",
-		"bfuseblend/B3", "bfuseblend/B4", "bfuseblend/B5",
+		"bfuseblend/B2", "bfuseblend/B3", "bfuseblend/B4", "bfuseblend/B5",
 		"simple/B2", "simple/H6", "simple/I9", "simple/J1", "simple/J2", "simple/J4", "simple/J6",
-		"simple/J8", "simple/K1", "simple/K2", "simple/K3", "simple/K4", "simple/N6", "simple/R8",
-		"simple/U6", "simple/W2", "simple/W6", "simple/W8", "simple/W9", "simple/Y9", "simple/Z1",
+		"simple/J8", "simple/J9", "simple/K1", "simple/K2", "simple/K3", "simple/K4", "simple/N6",
+		"simple/R8", "simple/U6", "simple/W2", "simple/W6", "simple/W8", "simple/W9", "simple/Y9",
+		"simple/Z1",
 	}
 }
 
