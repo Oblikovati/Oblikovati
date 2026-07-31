@@ -199,7 +199,8 @@ func offSurfaceDebtIndex() map[string]float64 {
 // T3 2.393473e-4→4.900577e-10, S6 1.748055e-4→1.834108e-10, S4 8.097143e-5→6.279003e-10,
 // S1 4.157203e-5→1.072957e-9, T1 5.963266e-6→2.172440e-7 — ALL SIX below the default budget, so
 // their entries are DELETED per TestOffSurfaceDebtIsWellFormed (count 28 → 22). Each case's worst
-// residual is now a DIFFERENT family (S1/T1 the reversedCurve3 arm-vs-cylinder fit, S9 the torus
+// residual is now a DIFFERENT family (S1/T1 the reversedCurve3 arm vs the BSpline WING PATCH —
+// wing-arm fit family, T1 face 4098 geom.BSplineSurface/edge 4037, S1 face 443/edge 274; S9 the torus
 // rim TrimmedCurve3 at 3.2e-9, all measured in railb-locus-report.md §4); the CANAL-rail taxonomy
 // bullet below predates this carry for the S/T setback cases.
 // The roots that remain, largest first (stopface-reversed-report.md):

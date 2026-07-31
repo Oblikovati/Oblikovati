@@ -158,10 +158,13 @@ package occtparity
 // 0.3592→0.2871, S4 0.1953→0.1265, S1 0.1114→0.0984, T1 0.2660→0.2473, T4 0.3549→0.3451, S6
 // 0.7015→0.6960, T7 2.6507→2.6406 (T7's residual is dominated by its rank-1 oracle-quadrature
 // entry, t7_adoption_perface_test.go; its own per-face gate PASSES at the 1.24e-5 whole-body
-// budget). S7's movers are +1.6e-9 absolute — below the oracle's print resolution on every row —
-// its pin moved only because sub-quantum vertex drift crossed 1e-6·boundingDiag rounding
-// boundaries and its boundary samples slid ALONG the (unchanged to 2.5e-8) locus; its per-face
-// areas reproduce to ≤2e-9. Whole-body mesh area and raw volume move ≤6e-8 relative on every case
+// budget). S7's per-mover magnitudes are ~1.6e-6 absolute — pInner plane +1.608e-6
+// (614.205553186→614.205554794), flanks −8.05e-7 each — with a NET sum of ~−2e-9 (an earlier
+// revision of this receipt printed the net as the per-mover figure; corrected by the adversarial
+// fix wave). Every row is still far below DRAWEXE's 6-s.f. print resolution and sub-quantum vs
+// the 1e-6·boundingDiag pin quantization: S7's pin moved only because that sub-quantum vertex
+// drift crossed rounding boundaries and its boundary samples slid ALONG the (unchanged to
+// 2.5e-8) locus. Whole-body mesh area and raw volume move ≤6e-8 relative on every case
 // — flat at the oracle's 6-s.f. resolution (the movers are complementary by construction); the
 // adjudicating measure is per-face + off-surface, and both improve. Triangle counts rise S1 +48,
 // S4 +76, S6 +36, S9 +112, T1 +16, T3 +68, T4 +12, T7 +16, S7 +0 — the stations the mesher needs
