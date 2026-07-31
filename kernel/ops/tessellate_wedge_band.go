@@ -71,52 +71,90 @@ func wedgeBandEndChains(f *topo.Face, cyl geom.Cylinder, q Quality) ([2]wedgeEnd
 		}
 		chains = append(chains, ch)
 	}
+	wedgeAlignChainBranches(chains)
 	if !wedgeSpanBelowHalfTurn(chains) || !wedgeEndsOblique(cyl, chains) {
 		return [2]wedgeEndChain{}, false
 	}
 	return [2]wedgeEndChain{chains[0], chains[1]}, true
 }
 
+// wedgeAlignChainBranches re-anchors chains[1]'s angles onto chains[0]'s periodic branch (shifts by
+// the nearest multiple of 2π), in place. Each chain unwraps monotone WITHIN itself
+// (wedgeChainAngles), but cyl.ParamAt's principal value gives no cross-chain phase continuity: on
+// a band whose two ends sit at the SAME physical angular window (A1/D4's corner band, both ends an
+// arc of a K-gon rim), one end's raw stations can land a whole 2π above the other's (measured: near
+// end [2π, 2π+1.226], far end [0, 1.226] — same 1.226-radian span, different branch). Unaligned, the
+// half-turn span check sees a bogus ~7.5-radian range and declines, and — worse — zipOpenRows'
+// a.ang/b.ang comparisons would silently misorder without this, since they assume one shared axis.
+func wedgeAlignChainBranches(chains []wedgeEndChain) {
+	shift := 2 * stdmath.Pi * stdmath.Round((chains[0].ang[0]-chains[1].ang[0])/(2*stdmath.Pi))
+	if shift == 0 {
+		return
+	}
+	for i := range chains[1].ang {
+		chains[1].ang[i] += shift
+	}
+}
+
 // wedgeChainRuns walks the outer loop splitting it at rail edges (straight, axis-parallel, tiled at
 // their 2 endpoints), pooling consecutive non-rail edges' discretized points into end-chain runs.
 // ok=false unless there are exactly 2 rails and every rail conforms (2 stations).
 func wedgeChainRuns(f *topo.Face, cyl geom.Cylinder, q Quality) ([][]math.Point3, bool) {
-	loops := f.Loops()
-	uses := loops[0].EdgeUses()
-	rails := 0
-	var runs [][]math.Point3
-	var cur []math.Point3
+	runs, cur, rails, ok := wedgeChainWalkLoop(cyl, f.Loops()[0].EdgeUses(), q)
+	if !ok {
+		return nil, false
+	}
+	return wedgeChainCloseTrailingRun(runs, cur, rails), rails == 2
+}
+
+// wedgeChainWalkLoop is wedgeChainRuns' per-edge pass: classify each use as a rail (splits the
+// current run) or a chain point run (accumulates), in loop order.
+func wedgeChainWalkLoop(cyl geom.Cylinder, uses []*topo.EdgeUse, q Quality) (runs [][]math.Point3, cur []math.Point3, rails int, ok bool) {
 	for _, u := range uses {
-		pts := discretizeEdge(u.Edge(), q)
-		if len(pts) < 2 {
-			return nil, false
+		pts, okPts := wedgeChainUsePoints(u, q)
+		if !okPts {
+			return nil, nil, 0, false
 		}
-		if u.Reversed() {
-			pts = append([]math.Point3(nil), pts...)
-			reversePointsInPlace(pts) // walk every chain segment in LOOP order so runs concatenate
-		}
-		if wedgeRailEdge(cyl, pts) {
-			if len(pts) != 2 {
-				return nil, false // a densified rail cannot tile as one segment against its host
-			}
-			rails++
-			if len(cur) > 0 {
-				runs = append(runs, cur)
-				cur = nil
-			}
+		if !wedgeRailEdge(cyl, pts) {
+			cur = appendChainPoints(cur, pts)
 			continue
 		}
-		cur = appendChainPoints(cur, pts)
-	}
-	if len(cur) > 0 {
-		// The loop may start mid-chain: merge the trailing run into the first if no rail separates them.
-		if len(runs) > 0 && rails == 2 && len(runs) == 2 {
-			runs[0] = appendChainPoints(cur, runs[0])
-		} else {
-			runs = append(runs, cur)
+		if len(pts) != 2 {
+			return nil, nil, 0, false // a densified rail cannot tile as one segment against its host
+		}
+		rails++
+		if len(cur) > 0 {
+			runs, cur = append(runs, cur), nil
 		}
 	}
-	return runs, rails == 2
+	return runs, cur, rails, true
+}
+
+// wedgeChainUsePoints discretizes one loop use in LOOP-WALK order (reversed if the use is reversed)
+// so consecutive runs' points concatenate directly.
+func wedgeChainUsePoints(u *topo.EdgeUse, q Quality) ([]math.Point3, bool) {
+	pts := discretizeEdge(u.Edge(), q)
+	if len(pts) < 2 {
+		return nil, false
+	}
+	if u.Reversed() {
+		pts = append([]math.Point3(nil), pts...)
+		reversePointsInPlace(pts)
+	}
+	return pts, true
+}
+
+// wedgeChainCloseTrailingRun folds a trailing accumulator into runs: merged into the first run when
+// the loop started mid-chain (both rails already closed a run pair), else appended as its own run.
+func wedgeChainCloseTrailingRun(runs [][]math.Point3, cur []math.Point3, rails int) [][]math.Point3 {
+	if len(cur) == 0 {
+		return runs
+	}
+	if len(runs) == 2 && rails == 2 {
+		runs[0] = appendChainPoints(cur, runs[0])
+		return runs
+	}
+	return append(runs, cur)
 }
 
 // appendChainPoints concatenates a chain segment's points onto run, dropping a duplicated joint.

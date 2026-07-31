@@ -81,43 +81,48 @@ func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 // and a periodic developable side with one full-circle rim plus a notched rim (a band loft). It returns
 // (mesh, true) on the first that applies, or (nil, false) so the caller falls through to toUVLoops.
 func specialCurvedMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) (*Mesh, bool) {
-	if m, isApex := coneApexMesh(f, s, outer3D, holes3D); isApex {
-		return m, true // a cone apex CAP (a drill point / oblique apex cut) or an apex-collapsed SECTOR (a
-		// partial sweep): both fan the developable cone from its apex for exact, orientation-independent area
-		// — see coneApexMesh. A holed cone face is never an apex topology (its inner rim is the hole).
-	}
-	if m, isCap := sphereCapFan(s, outer3D, q); isCap {
-		return m, true // a sphere cut by one plane (a cap): rings from the rim to the enclosed pole
-	}
-	if m, isZone := sphereZoneCapFan(f, s, q); isZone {
-		return m, true // a large sphere zone reaching an enclosed pole (one off-centre plane cut, seam to
-		// the pole): fan on the rim CIRCLE's exact normal, not the seam-biased newellUnit (J2)
-	}
-	if m, isCap := sphereSeamedCapFan(f, s, q); isCap {
-		return m, true // a seamed cap: coplanar MULTI-ARC rim (a subdivided boss equator) + one doubled
-		// seam edge to the pole (S6/S7's hemisphere): latitude-ring fan, not the density-capped stereo CDT
-	}
-	if m, isPatch := spherePatchMesh(s, outer3D, holes3D, q); isPatch {
-		return m, true // a sphere bounded by several arcs (a box cut): gnomonic CDT, pole/seam-safe
-	}
-	if m, isBand := notchedRimBandMesh(f, s, q); isBand {
-		return m, true // a periodic side with one full-circle rim and one notched rim (a frustum flat that fades): loft
-	}
-	if m, isBand := twoClosedRimBandMesh(f, s, q); isBand {
-		return m, true // a developable side with two CLOSED full-wrap rims (e.g. a circle + an oblique-cut ellipse): loft
-	}
-	if m, isBand := spiricBandMesh(f, s, q); isBand {
-		return m, true // a torus cut through the hole: a tube-wrapping band between two spiric ovals (#1375)
-	}
-	if m, isBand := twoRimHoledBandMesh(s, outer3D, holes3D, q); isBand {
-		return m, true // a two-rim band (a notched rim + an intact rim) carrying lens holes: bridge the seam, unroll
-	}
-	if m, isWedge := wedgeBandLoftMesh(f, s, q); isWedge {
-		return m, true // an OPEN oblique-ended cylinder wedge band (pyramid slant fillet, A1/D4): one exact
-		// zipped strip between the two end chains — the generic CDT's flat end slivers double-cover the
-		// neighbour plane and collide on its ear diagonals (deg-4 mesh edges), see tessellate_wedge_band.go
+	// Each entry is one surface-specific mesher, tried in order; the WHY for each shape lives beside
+	// its case. Collapsed into a table (rather than a chain of ifs) so this dispatcher stays under
+	// the function-length budget as the special-case roster grows — see tessellate_wedge_band.go's
+	// entry for the newest one (A1/D4's oblique wedge band).
+	for _, try := range specialCurvedMeshers(f, s, outer3D, holes3D, q) {
+		if m, ok := try(); ok {
+			return m, true
+		}
 	}
 	return nil, false
+}
+
+// specialCurvedMeshers lists the surface-specific meshers specialCurvedMesh tries, in priority order.
+func specialCurvedMeshers(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) []func() (*Mesh, bool) {
+	return []func() (*Mesh, bool){
+		// a cone apex CAP (a drill point / oblique apex cut) or an apex-collapsed SECTOR (a partial
+		// sweep): both fan the developable cone from its apex for exact, orientation-independent area
+		// — see coneApexMesh. A holed cone face is never an apex topology (its inner rim is the hole).
+		func() (*Mesh, bool) { return coneApexMesh(f, s, outer3D, holes3D) },
+		// a sphere cut by one plane (a cap): rings from the rim to the enclosed pole
+		func() (*Mesh, bool) { return sphereCapFan(s, outer3D, q) },
+		// a large sphere zone reaching an enclosed pole (one off-centre plane cut, seam to the pole):
+		// fan on the rim CIRCLE's exact normal, not the seam-biased newellUnit (J2)
+		func() (*Mesh, bool) { return sphereZoneCapFan(f, s, q) },
+		// a seamed cap: coplanar MULTI-ARC rim (a subdivided boss equator) + one doubled seam edge to
+		// the pole (S6/S7's hemisphere): latitude-ring fan, not the density-capped stereo CDT
+		func() (*Mesh, bool) { return sphereSeamedCapFan(f, s, q) },
+		// a sphere bounded by several arcs (a box cut): gnomonic CDT, pole/seam-safe
+		func() (*Mesh, bool) { return spherePatchMesh(s, outer3D, holes3D, q) },
+		// a periodic side with one full-circle rim and one notched rim (a frustum flat that fades): loft
+		func() (*Mesh, bool) { return notchedRimBandMesh(f, s, q) },
+		// a developable side with two CLOSED full-wrap rims (e.g. a circle + an oblique-cut ellipse): loft
+		func() (*Mesh, bool) { return twoClosedRimBandMesh(f, s, q) },
+		// a torus cut through the hole: a tube-wrapping band between two spiric ovals (#1375)
+		func() (*Mesh, bool) { return spiricBandMesh(f, s, q) },
+		// a two-rim band (a notched rim + an intact rim) carrying lens holes: bridge the seam, unroll
+		func() (*Mesh, bool) { return twoRimHoledBandMesh(s, outer3D, holes3D, q) },
+		// an OPEN oblique-ended cylinder wedge band (pyramid slant fillet, A1/D4): one exact zipped
+		// strip between the two end chains — the generic CDT's flat end slivers double-cover the
+		// neighbour plane and collide on its ear diagonals (deg-4 mesh edges), see tessellate_wedge_band.go
+		func() (*Mesh, bool) { return wedgeBandLoftMesh(f, s, q) },
+	}
 }
 
 // splineFaceMesh meshes a B-spline face through the metric-aware (u,v) triangulation (M25), or nil when
