@@ -193,6 +193,13 @@ func torusArmEdge(body *topo.Body, e *topo.Edge, p filletPick) (edgeFillet, bool
 	if reason == torusArmBuilt {
 		return ef, true, nil // exact torus arm on a convex latitude-cut Torus∧Plane rim (E7)
 	}
+	if reason == torusArmMeridian {
+		// J3/A4: a CLOSED meridian-cut rim has no exact-torus arm, but its ball-centre spine is a
+		// closed-form spiric loop — the canal engine owns it; any spiric decline restores this reject.
+		if canal, ok := spiricClosedRimArmEdge(body, e, p); ok {
+			return canal, true, nil
+		}
+	}
 	return edgeFillet{}, true, torusArmError(reason, e, host, p.r0) // do-no-harm, cause-specific reject
 }
 

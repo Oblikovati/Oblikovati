@@ -174,6 +174,9 @@ func meshSeamCrossingFace(f *topo.Face, s geom.Surface, outer3D []math.Point3, h
 		if m, ok := closedBandLoftMesh(f, s, q); ok {
 			return m // torus rim-fillet band: loft so each edge ring keeps its own (differing) tessellation
 		}
+		if m, ok := torusTubeBandLoftMesh(f, s, q); ok {
+			return m // spiric closed-rim HOST (J3/A4): a TUBE-wrapping band (meridian circle + canal rail + seam)
+		}
 		return fullDomainGridMesh(s, q) // shouldn't reach: a doubly-periodic band that isn't two circles + a seam
 	}
 	if isPeriodic(s.UDomain()) != isPeriodic(s.VDomain()) {

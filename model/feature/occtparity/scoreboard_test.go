@@ -292,22 +292,20 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 122 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 121 (W-DH's notch-wall concave cove sign "+
-			"ε=−1 greened M5; W-B's Cylinder∧Cylinder SSI-seam canal engine greened K2/K3/K4 + P1; W-T's "+
-			"stripe-junction crossings greened Y9; W-A's mixed-radius [10,5,5] torus corner greened A4. "+
-			"simple/X8 uses the SAME full-round 4-arm common-tangent-sphere mechanism as tolblend_simple/A1 "+
-			"but stays an HONEST DECLINE: TestEveryLoopSegmentLiesOnItsFace caught a real B-rep defect on its "+
-			"asymmetric pyramid that the symmetric A1 does not carry — see cluster_a_planar_corner_test.go. "+
-			"W-C's chain-capable host retrim greened O8; 114→122)", simpleGreen)
+	// Union of every merged wave capability on top of the 114/119 base (d8d55a26).
+	// simple +10: M5 (W-DH notch-wall concave cove sign ε=−1), K2/K3/K4/P1 (W-B cyl∧cyl SSI-seam
+	// canal), Y9 (W-T stripe-junction crossings), A4 (W-A mixed-radius torus corner), O8 (W-C
+	// chain-capable host retrim), J5/J3 (W-E concave torus-host closed-rim cove + spiric canal).
+	// bfuseblend +6: B3 (multi-rim weld), B4/B5 (cyl∧cyl canal), A4/A5/A6 (spiric + closed-rim).
+	// tolblend_simple +5: A1/D4 (planar corners), B4/B8/C3 (EllipticalCylinder∧Cone pinched canal).
+	// simple/X8 stays an HONEST DECLINE — TestEveryLoopSegmentLiesOnItsFace caught a real B-rep
+	// defect on its asymmetric pyramid that the symmetric tolblend_simple/A1 does not carry.
+	if simpleGreen != 124 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 124 (114 base + 10 wave greens)", simpleGreen)
 	}
-	if allGridGreen != 135 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 135 (121 simple + 8 bfuseblend + 5 "+
-			"tolblend_simple + 1 complex-grid-adjacent O8; the multi-rim weld greened bfuseblend/B3, the "+
-			"closed cyl∧cyl seam canal greened B4+B5, cluster A greened tolblend_simple/A1+D4, W-F's "+
-			"EllipticalCylinder∧Cone pinched canal greened tolblend_simple/B4+B8+C3 (B7/C2 honestly decline "+
-			"— see closedEllipticConeSpan), and W-C's chain-capable host retrim greened simple/O8; "+
-			"complex/D8's coincidental green stays retired; 119→135)", allGridGreen)
+	if allGridGreen != 140 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 140 (124 simple + 11 bfuseblend-only "+
+			"+ 5 tolblend_simple; complex/D8's coincidental green stays retired; 119→140)", allGridGreen)
 	}
 	if skipQuarantine != 0 {
 		t.Errorf("SkipQuarantine = %d, want 0 — the corpus holds NO case; every one of the 475 records is "+
