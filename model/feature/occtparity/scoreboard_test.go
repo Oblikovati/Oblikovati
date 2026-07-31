@@ -292,14 +292,14 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 121 {
+	if simpleGreen != 122 {
 		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 121 (W-DH's notch-wall concave cove sign "+
 			"ε=−1 greened M5; W-B's Cylinder∧Cylinder SSI-seam canal engine greened K2/K3/K4 + P1; W-T's "+
 			"stripe-junction crossings greened Y9; W-A's mixed-radius [10,5,5] torus corner greened A4. "+
 			"simple/X8 uses the SAME full-round 4-arm common-tangent-sphere mechanism as tolblend_simple/A1 "+
 			"but stays an HONEST DECLINE: TestEveryLoopSegmentLiesOnItsFace caught a real B-rep defect on its "+
-			"asymmetric pyramid that the symmetric A1 does not carry — see cluster_a_planar_corner_test.go; "+
-			"114→121)", simpleGreen)
+			"asymmetric pyramid that the symmetric A1 does not carry — see cluster_a_planar_corner_test.go. "+
+			"W-C's chain-capable host retrim greened O8; 114→122)", simpleGreen)
 	}
 	if allGridGreen != 135 {
 		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 135 (121 simple + 8 bfuseblend + 5 "+

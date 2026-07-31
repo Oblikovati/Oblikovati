@@ -159,6 +159,9 @@ func catalogBlindCases() []string {
 		"simple/B2", "simple/H6", "simple/I9", "simple/J1", "simple/J2", "simple/J4", "simple/J6",
 		"simple/J8", "simple/K1", "simple/K2", "simple/K3", "simple/K4", "simple/N6", "simple/R8",
 		"simple/U6", "simple/W2", "simple/W6", "simple/W8", "simple/W9", "simple/Y9", "simple/Z1",
+		// W-F's EllipticalCylinder∧Cone pinched canal welds through the same already-pinned rebuildRim
+		// bypass as the elliptic/cyl∧cyl rim families — a new CALLER, not a new bypass.
+		"tolblend_simple/B4", "tolblend_simple/B8", "tolblend_simple/C3",
 	}
 }
 
