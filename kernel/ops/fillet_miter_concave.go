@@ -19,28 +19,39 @@ import (
 // stage (curved seam → multi-corner weld → piece-B shared-face retrim), where they still floor.
 
 // curvedMiterTorusArm builds the torus arm of a Cylinder∧Plane miter edge on the correct material side:
-// the convex R−r torusArmSurface (a boss-cap rim) or the concave R+r concaveTorusArmSurface (a reentrant
-// base cove). conv is the discriminator, so the convex corpus (P2/P3's top rim, B3) keeps the
-// byte-identical R−r arm and only a concave rim (M3/M9/O2) takes R+r.
-func curvedMiterTorusArm(cyl geom.Cylinder, pl geom.Plane, outwardN math.UnitVector3, r float64, res Resolution, conv EdgeConvexity) (geom.Surface, bool) {
+// torusArmSurface's R−ε·r (a boss-cap rim, ε=+1) or concaveTorusArmSurface's R+ε·r (a reentrant cove),
+// with ε from cylinderHostRadialSign(e, cyl) — the SAME per-wall boss/notch sign the W-DH wave wired into
+// the plain concave rim arm (M5: ε=+1 boss cove byte-identical, ε=−1 notch cove). Earlier this arm ALWAYS
+// took the boss sign (ε=+1 hardcoded on both branches, "bore-miter is a later slice"), which is wrong on
+// simple/W3, W4's boss-NOTCH corner (a slot cut INTO a cylindrical boss, not a boss-base cove): DRAWEXE's
+// own torus arm there is Radii 1.2/0.2 = R+r on host R=1, i.e. ε=−1, while the hardcoded-ε=+1 build shipped
+// R−r=0.8 — a wrong analytic surface that still tessellated and welded (watertight, silently ~5% short in
+// AREA). conv is still the convex/concave discriminator; ε is orthogonal to it (a concave-classified EDGE
+// can sit on a boss OR a notch wall, and so can a convex one — cylinderHostRadialSign reads the wall, not
+// the edge). ok=false when ε cannot be read (a degenerate edge midpoint/normal) — the do-no-harm floor.
+func curvedMiterTorusArm(e *topo.Edge, cyl geom.Cylinder, pl geom.Plane, outwardN math.UnitVector3, r float64, res Resolution, conv EdgeConvexity) (geom.Surface, bool) {
+	eps, ok := cylinderHostRadialSign(e, cyl)
+	if !ok {
+		return nil, false
+	}
 	if conv == EdgeConcave {
-		// ε=+1: the concave miter rim seen here is a boss-base cove (M3/M9/O2); a notch-wall concave
-		// miter needs the edge for cylinderHostRadialSign and is a later slice (same caveat as the
-		// convex bore-miter below).
-		if t, ok := concaveTorusArmSurface(cyl, pl, outwardN, r, 1, res); ok {
+		if t, ok := concaveTorusArmSurface(cyl, pl, outwardN, r, eps, res); ok {
 			return t, true
 		}
 		return nil, false
 	}
-	if t, ok := torusArmSurface(cyl, pl, outwardN, r, 1, res); ok { // ε=+1: the convex miter rim is a boss (R−r); bore-miter is a later slice
+	if t, ok := torusArmSurface(cyl, pl, outwardN, r, eps, res); ok {
 		return t, true
 	}
 	return nil, false
 }
 
 // curvedMiterCylinderArm builds the cylinder arm of an axis-parallel Cylinder∧Plane miter LINE edge
-// (config ii) on the correct material side: the convex R−r cylinderArmSurface or the concave R+ε·r
-// concaveCylinderArmSurface (O2's two arms on the receded shared cylinder). conv is the discriminator.
+// (config ii) on the correct material side: the concave branch already reads ε off the wall via
+// concaveArmOffsetRadius/cylinderHostRadialSign (O2's two arms on the receded shared cylinder); the
+// convex branch now does too (cylinderArmSurface's R−ε·r), the same boss/notch generalization
+// curvedMiterTorusArm above carries — a convex LINE edge on a notch wall needs ρ=R+r exactly as the
+// circle-edge torus arm does. conv is the convex/concave discriminator; ok=false when ε cannot be read.
 func curvedMiterCylinderArm(e *topo.Edge, cyl geom.Cylinder, pl geom.Plane, outwardN math.UnitVector3, r float64, res Resolution, conv EdgeConvexity) (geom.Surface, bool) {
 	if conv == EdgeConcave {
 		if c, ok := concaveCylinderArmSurface(e, cyl, pl, outwardN, r, res); ok {
@@ -48,7 +59,11 @@ func curvedMiterCylinderArm(e *topo.Edge, cyl geom.Cylinder, pl geom.Plane, outw
 		}
 		return nil, false
 	}
-	if c, ok := cylinderArmSurface(e, cyl, pl, outwardN, r, 1); ok { // ε=+1: the convex miter arm is a boss (R−r); bore-miter is a later slice
+	eps, ok := cylinderHostRadialSign(e, cyl)
+	if !ok {
+		return nil, false
+	}
+	if c, ok := cylinderArmSurface(e, cyl, pl, outwardN, r, eps); ok {
 		return c, true
 	}
 	return nil, false

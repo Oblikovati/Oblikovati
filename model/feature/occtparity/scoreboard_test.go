@@ -272,6 +272,19 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 // Reconciled per face vs DRAWEXE on all 12 faces (worst +0.0016%); the −0.998% vs the corpus number is
 // the historic reference's drift — our 78062.6 vs local DRAWEXE 8.0's own 78062.8 (−0.0003%). This
 // restored 120→121 all-grid (simple unchanged at 115), SkipQuarantine unchanged at 0.
+// W-C's curved-miter chain retrim (fillet_miter_chain_retrim.go) GREENED simple/O8: a bitten
+// TWO-ARC "lens" loop (the cap shared by two intersecting cylinders, blend/simple's two-offset-cylinder
+// family) is a legitimate bitten wire — retrimBittenLoop's segment-count guard was the only blocker,
+// loosened from ≥3 to ≥2; the existing far-path-split machinery anchors on it exactly as on a many-segment
+// loop, so the splice stays byte-identical for every non-lens case. Reconciled per face vs DRAWEXE 8.0's
+// own `sprops 1.e-12` on all 5 faces (worst-face wall 11932.3, within 5e-3 rel; summed area 26420.65 vs
+// 26420.7, within 1e-3 rel), watertight at both qualities. simple/P4 and P5, the sibling cases in the
+// same fixture family, do NOT green — their raw STEP-imported base solid carries a pre-existing
+// degenerate (zero-length) edge on the wall's own loop, present before any fillet runs (an import defect,
+// not a curved-miter capability gap); ringHasRepeatedPoint / sharedRetrimIsSound now decline them
+// honestly instead of certifying the ~10.6%-short, non-watertight solid the chain splice would otherwise
+// silently produce (falsification proof in wave-report-C.md / wave-report-R5.md).
+//
 // Union of every merged wave capability on top of the 114/119 base (d8d55a26).
 // simple +11: M5 (W-DH notch-wall concave cove sign ε=−1), K2/K3/K4/P1 (W-B cyl∧cyl SSI-seam
 // canal), Y9 (W-T stripe-junction crossings), A4 (W-A mixed-radius torus corner), O8 (W-C

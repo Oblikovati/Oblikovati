@@ -80,7 +80,35 @@ func curvedMiterBody(body *topo.Body, m *cornerMiter, res Resolution) (*topo.Bod
 	if reason != "" {
 		return nil, reason
 	}
-	return assembleBody(faces), ""
+	built := assembleBody(faces)
+	if reason := miterWeldMeshDefect(built); reason != "" {
+		return nil, reason
+	}
+	return built, ""
+}
+
+// miterWeldMeshDefect is the miter weld's own do-no-harm floor against a defect the B-rep-level checks
+// (edge-use counts, Euler characteristic — weldCurvedArmOrFloor's Validate call) cannot see: a bridge
+// segment built from an INDEPENDENTLY-converged near-boundary point (sharedFaceBridgeSeg /
+// miterChainEndBridgeSeg's straight-line case, simple/W3, W4) can land a few×1e-5 off the point it was
+// meant to coincide with — the B-rep still welds edge-for-edge (every edge used by exactly two faces,
+// opposite orientation), but the TESSELLATED loop it produces self-crosses or retraces a sliver at that
+// residual (measured on simple/W4 pre-guard: face self-crossing pinches 1.5168 — essentially the WHOLE
+// shared face — and a sibling face retraces exactly r=0.2, both invisible to Validate). Per this
+// project's own priority ("tessellation correctness is the highest priority… never ship a feature on
+// top of a known-bad mesh"), this checks the SAME two detectors the corpus's own watertightness gate
+// uses (SelfCrossingFaceLoops / RetracingFaceLoops) at PropertyQuality and declines honestly rather than
+// certify a silently-wrong mesh. ok cases (the residual-free/on-loop path, every existing green) pay one
+// extra tessellation pass; a future exact-point fix upstream (closing the ~1e-5 residual at its source)
+// would make this guard permanently silent, not remove its correctness.
+func miterWeldMeshDefect(b *topo.Body) string {
+	if len(SelfCrossingFaceLoops(b, PropertyQuality())) > 0 {
+		return "curved miter: assembled weld self-crosses at a bridged shared/capping loop (a pre-existing near-boundary residual, not a fresh capability gap)"
+	}
+	if len(RetracingFaceLoops(b, PropertyQuality())) > 0 {
+		return "curved miter: assembled weld retraces at a bridged shared/capping loop (a pre-existing near-boundary residual, not a fresh capability gap)"
+	}
+	return ""
 }
 
 // buildMiterArmSide solves one arm's two host contact rails and its far cross-section runout: the far
@@ -248,20 +276,23 @@ func sharedRetrimSegs(tor, cyl miterArmSide, cylBridge, far, torBridge []endSeg)
 }
 
 // sharedRailAnchor resolves where one arm's shared-face contact rail re-enters the host's original loop,
-// plus any cap-bridge arc needed to reach it. When the rail's far foot already lies on the original loop
-// (a vertex or interior to an edge — the torus side of P5 and every planar host), the anchor IS the foot
-// and there is no bridge (byte-identical). When the foot is an interior fresh cut the fillet itself makes
-// on a CURVED shared face (P5's cyl side, mid-wall at (48.148,0.034,60)), the far path cannot begin there;
-// the anchor is the arm's FAR VERTEX (an original-loop vertex = shared ∩ the arm's far capping plane) and
-// a single Arc3d on the shared cylinder bridges foot→farVertex. false only when the foot is off-loop AND
-// no exact bridge closes (a non-cylinder shared face or a degenerate span) — the do-no-harm floor.
+// plus any cap-bridge segment needed to reach it. When the rail's far foot already lies on the original
+// loop (a vertex or interior to an edge — the torus side of P5 and every planar host), the anchor IS the
+// foot and there is no bridge (byte-identical). When the foot is an interior fresh cut the fillet itself
+// makes mid-face on the shared face (P5's CURVED cyl side, mid-wall at (48.148,0.034,60); W4's PLANAR
+// shared side, simple/W4's boss-notch corner — both foot and farVtx are guaranteed ON the shared face by
+// construction: foot is the rail's own contact point, farVtx is a vertex of the arm's own edge, which is
+// incident to the shared face), the far path cannot begin there; the anchor is the arm's FAR VERTEX (an
+// original-loop vertex = shared ∩ the arm's far capping plane) and sharedFaceBridgeSeg bridges
+// foot→farVertex confined to the shared face's own surface. false only when the foot is off-loop AND no
+// exact bridge closes (an unsupported shared-face type or a degenerate span) — the do-no-harm floor.
 func sharedRailAnchor(shared *topo.Face, side miterArmSide, vid uint64, segs []endSeg, tol float64) (math.Point3, []endSeg, bool) {
 	foot := side.railSh.from
 	if pointOnLoop(segs, foot, tol) {
 		return foot, nil, true // already on the original loop — no bridge (byte-identical)
 	}
 	farVtx := farVertexNotVid(side.edge, vid)
-	bridge, ok := capBridgeArc(shared.Geometry(), foot, farVtx, tol)
+	bridge, ok := sharedFaceBridgeSeg(shared.Geometry(), foot, farVtx, tol)
 	if !ok {
 		return math.Point3{}, nil, false
 	}
@@ -273,6 +304,23 @@ func sharedRailAnchor(shared *topo.Face, side miterArmSide, vid uint64, segs []e
 // is never mis-routed through a spurious cap-bridge (and an interior fresh-cut foot is always caught).
 func pointOnLoop(segs []endSeg, p math.Point3, tol float64) bool {
 	return indexOfSegFrom(insertSplits(segs, []math.Point3{p}, tol), p, tol) >= 0
+}
+
+// sharedFaceBridgeSeg builds sharedRailAnchor's cap-bridge on WHATEVER surface the shared face carries: a
+// straight segment when it is a Plane (any two points known to lie in a plane are joined by a segment that
+// lies in it too — foot is the rail's own shared-face contact point and farVtx is a vertex of the arm's
+// own edge, which is incident to the shared face, so both ARE in-plane by construction; simple/W4's boss-
+// notch corner is the first case that exercises this branch), or capBridgeArc's exact latitude Arc3d when
+// it is a Cylinder (P5's curved shared wall). ok=false for any other shared-face type — the do-no-harm
+// floor capBridgeArc already applies to the cylinder case, extended rather than loosened.
+func sharedFaceBridgeSeg(shared geom.Surface, foot, farVtx math.Point3, tol float64) (endSeg, bool) {
+	switch shared.(type) {
+	case geom.Plane:
+		return endSeg{from: foot, to: farVtx}, true
+	case geom.Cylinder:
+		return capBridgeArc(shared, foot, farVtx, tol)
+	}
+	return endSeg{}, false
 }
 
 // capBridgeArc builds the cap-bridge: the single exact Arc3d on the shared cylinder from an arm's interior
