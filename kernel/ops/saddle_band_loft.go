@@ -143,12 +143,34 @@ func saddleBandLoftMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
 // the loft would cross-stitch them into a bowtie crack. Such a face is not a two-rim band; declining
 // here sends it to the general trimmed-CDT path. Genuine saddle/notched rims (Steinmetz, #1374's
 // fading frustum flat, U4's oblique hole wall) are strictly monotone in angle and pass untouched.
+//
+// ★ #near-pinch regression: the original test compared the raw angle gap against a BARE radians
+// constant (seamAngularTol), which is not model-relative (ADR-0042) — it ignores the ring's local
+// RADIUS, so it silently changes meaning with scale. A near-pinch crossing's saddle rim is sampled
+// very densely right where curvature peaks (chord-height-driven refinement, #2009's whole argument),
+// so two ADJACENT sorted samples can land a sliver of a radian apart there while still moving a
+// perfectly ordinary, non-degenerate distance along the curve — that tripped the bare-radians test at
+// R=3/30 (dAngle~1e-6..1e-7 rad, comfortably under the old 1e-6 constant) even though the two points
+// are ~300x the weld tolerance apart once the local radius is folded in. A genuine vertical step has
+// TWO points at the exact SAME u (to float noise, dAngle≈0) while v moves a real distance — so instead
+// of an angle threshold, convert the angular gap to a LENGTH via the surface's own |∂P/∂u| (the
+// tangential speed, i.e. the local radius for a cylinder/cone) and compare that arc length against the
+// ring's own weld tolerance. This is scale-free by construction: it asks "did this step move a
+// negligible (sub-weld) distance in u", not "is the raw radian gap below some fixed number".
 func ringSingleValuedInAngle(s geom.Surface, ring []math.Point3) bool {
 	angles := ringAngles(s, ring)
 	weld := ResolutionForPoints(ring).Weld()
 	for i := 1; i < len(angles); i++ {
-		if angles[i]-angles[i-1] < seamAngularTol && ring[i].DistanceTo(ring[i-1]) > weld {
-			return false // two distinct stations at one angle: a vertical step, not a v(u) rim
+		dist := ring[i].DistanceTo(ring[i-1])
+		if dist <= weld {
+			continue // coincident within weld: not two distinct stations either way
+		}
+		_, v := s.ParamAt(ring[i-1])
+		du, _ := s.DerivativesAt(angles[i-1], v)
+		if arc := du.Length() * (angles[i] - angles[i-1]); arc < weld {
+			return false // angular movement is sub-weld while the points are genuinely distinct:
+			// a true vertical step (same station, different axial position), not a v(u) rim collapsed
+			// there by dense curvature sampling.
 		}
 	}
 	return true

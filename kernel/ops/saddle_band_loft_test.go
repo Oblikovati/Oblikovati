@@ -109,6 +109,70 @@ func TestSaddleBandLoftDeclinesNonBand(t *testing.T) {
 //
 // Falsification: restore `TessellateEdge(e, q)` in bandWrapRings and this fails, because the raw
 // sampler re-samples the rim's own curve and never sees the stored polyline.
+// densePinchRing builds a smooth, genuinely single-valued v(u) ring on a radius-R cylinder — N points
+// evenly spaced in angle around the full 2π, on the continuous curve v = R + amplitude·cos(u) — PLUS one
+// extra sample spliced in at an infinitesimal angular offset from an existing station. That extra sample
+// mimics what curvature-driven chord/sagitta refinement does near a near-pinch crossing (#2009's whole
+// argument): it packs extra points in tight where the curve bends hardest, so two ADJACENT sorted
+// samples can land a sliver of a radian apart even on an ordinary, nowhere-vertical curve.
+func densePinchRing(cyl geom.Cylinder, n int, tinyGap float64) []math.Point3 {
+	v := func(u float64) float64 { return cyl.Radius + 0.02*cyl.Radius*stdmath.Cos(u) }
+	pts := make([]math.Point3, 0, n+1)
+	for i := 0; i < n; i++ {
+		u := 2 * stdmath.Pi * float64(i) / float64(n)
+		pts = append(pts, cyl.PointAt(u, v(u)))
+	}
+	uExtra := 2*stdmath.Pi*float64(n/2)/float64(n) + tinyGap // one sliver-close neighbour of an existing station
+	pts = append(pts, cyl.PointAt(uExtra, v(uExtra)))
+	return pts
+}
+
+// TestRingSingleValuedInAngleAcceptsDenseNearPinchSampling is the regression gate for the near-pinch
+// tessellation defect (Oblikovati/Oblikovati, 2026-07-31): ringSingleValuedInAngle used to compare the
+// raw angle gap between adjacent sorted samples against a BARE radians constant (seamAngularTol),
+// which is not model-relative (ADR-0042) — it ignores the ring's local radius, so "how close is too
+// close" silently changed meaning with scale and with sampling density. A near-pinch crossing's saddle
+// rim is sampled very densely right where curvature peaks, so two adjacent sorted samples land under
+// that fixed 1e-6 rad constant while still moving ~300x the model's own weld tolerance once the local
+// radius is folded in — the guard declined a perfectly good v(u) rim, saddleBandLoftMesh fell through to
+// the general trimmed-CDT path, and TestNearPinchCutJoinWatertight regressed to 109-244 free edges.
+//
+// Falsification: reintroduce the bare-epsilon comparison (`angles[i]-angles[i-1] < seamAngularTol`) and
+// this fails, because densePinchRing's spliced-in sample sits at a sub-radian gap that trips it even
+// though the ring is genuinely single-valued.
+func TestRingSingleValuedInAngleAcceptsDenseNearPinchSampling(t *testing.T) {
+	cyl, err := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3.0)
+	if err != nil {
+		t.Fatalf("NewCylinder: %v", err)
+	}
+	ring := orderedRing(cyl, densePinchRing(cyl, 400, 8e-7))
+	if !ringSingleValuedInAngle(cyl, ring) {
+		t.Error("ringSingleValuedInAngle declined a densely-sampled but genuinely single-valued ring — " +
+			"the near-pinch regression (spurious vertical-step flag on curvature-dense sampling)")
+	}
+}
+
+// TestRingSingleValuedInAngleDeclinesGenuineVerticalStep is the mutation-proof companion to the test
+// above: it pins the guard's ORIGINAL purpose (commit e729cfe5, "closed seam-arc reversal keeps its own
+// parameters; saddle-loft declines a vertical-step rim") by building a rim that carries a REAL vertical
+// segment — two points at the SAME angle (to float noise) but a macroscopic axial (v) jump, the pattern
+// a miter rail / seam-line remnant / bridge riser leaves in a rim. The scale-aware rewrite must still
+// decline this, or the near-pinch fix would just be reverting the guard rather than sharpening it.
+func TestRingSingleValuedInAngleDeclinesGenuineVerticalStep(t *testing.T) {
+	cyl, err := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3.0)
+	if err != nil {
+		t.Fatalf("NewCylinder: %v", err)
+	}
+	pts := densePinchRing(cyl, 400, 8e-7)
+	const uStep, vJump = stdmath.Pi, 1.5 // a real vertical run: same angle, half-radius axial jump
+	pts = append(pts, cyl.PointAt(uStep, cyl.Radius), cyl.PointAt(uStep, cyl.Radius+vJump))
+	ring := orderedRing(cyl, pts)
+	if ringSingleValuedInAngle(cyl, ring) {
+		t.Error("ringSingleValuedInAngle accepted a rim carrying a genuine vertical step — the scale-aware " +
+			"rewrite must still decline this (it is what e729cfe5 was protecting against)")
+	}
+}
+
 func TestBandWrapRingsReadsTheSharedEdgeDiscretization(t *testing.T) {
 	face := rodInsideFatBand(t, 48)
 	var healed *topo.Edge
