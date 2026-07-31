@@ -332,14 +332,32 @@ func relErrVol(got, want float64) float64 { return stdmath.Abs(got-want) / stdma
 // regression that re-declines O1 should read as "the O1 builder stopped recognising its class", not as a
 // silently-removed test.
 //
-// TestFilletEdges_M5DeclinesCleanly keeps that floor pinned on a case the ladder still does NOT recognise:
-// M5 is the concave-BORE (roll-sense regime R3, R−r) trihedral corner of the same Gate-1 cluster, tracked for
-// a later slice. It must honest-reject — never panic, never a partial or wrong-sign solid — and it doubles as
-// the guard that adding the O1 builder did not make a DIFFERENT concave corner accept wrongly (the
-// class-disjointness matrix in fillet_curved_mixed_o1_test.go proves that on role signatures; this proves it
-// end to end on a real body).
-func TestFilletEdges_M5DeclinesCleanly(t *testing.T) {
-	assertCurvedCornerDeclinesCleanly(t, "simple/M5", 5)
+// TestFilletEdges_M5WeldsIntoASolid is the SAME inversion, one slice later, on the case this file used to
+// pin as the surviving decliner. M5 is the concave-NOTCH trihedral corner (all three picks concave), and the
+// old comment here already named its regime correctly: R−r. That was exactly the defect — the corner BALL was
+// always right (C=(45,14.4949,45), all three host tangency residuals ≡ r to 1e-15, OCCT's own point), but the
+// cove ARM was built at R+r, the BOSS convention, putting it 2r off the ball's spine so the station gate
+// honest-declined. concaveTorusArmSurface now takes ε from cylinderHostRadialSign (concaveTorusWallSign): a
+// notch's material is OUTSIDE the wall, the ball rolls INSIDE it, maj = R−r = 25 — DRAWEXE's own cove torus.
+//
+// So the assertion inverts: M5 must now produce the DRAWEXE oracle's 13-face solid, and the per-case gate in
+// model/feature/occtparity (TestOCCTBlendSimple/M5 + the M5 fingerprint pin) pins its 61187.1 area, its
+// 980008.93 volume and its thirteen per-face reconciliations. Kept here rather than deleted, for the same
+// reason O1's was: a regression that re-declines M5 must read as "the notch-cove sign stopped being read",
+// not as a silently-removed test. The do-no-harm floor itself stays pinned by
+// TestFilletEdges_B3UnconsumedPickDeclines and the class-disjointness matrix in
+// fillet_curved_mixed_o1_test.go.
+func TestFilletEdges_M5WeldsIntoASolid(t *testing.T) {
+	body, err := filletedCorpusEdges(t, "simple/M5", 5)
+	if err != nil {
+		t.Fatalf("simple/M5: FilletEdges declined (%v) — the notch-wall cove sign is no longer being read", err)
+	}
+	if body == nil {
+		t.Fatal("simple/M5: FilletEdges returned no error and no body")
+	}
+	if got := len(body.Faces()); got != 13 {
+		t.Fatalf("simple/M5 welded %d faces, want the DRAWEXE oracle's 13", got)
+	}
 }
 
 // N1 USED to be pinned alongside it as the sibling decliner: its wall is a CONCAVE bore (radius 20, material
@@ -359,6 +377,18 @@ func TestFilletEdges_O1WeldsIntoASolid(t *testing.T) {
 	if got := len(body.Faces()); got != 12 {
 		t.Fatalf("simple/O1 welded %d faces, want the DRAWEXE oracle's 12", got)
 	}
+}
+
+// TestFilletEdges_L8DeclinesCleanly inherits the do-no-harm FLOOR pin M5 used to carry, on the corner class
+// that genuinely still declines. L8 is the MIXED trihedral corner (one concave cylinder arm + two convex
+// arms) whose corner face DRAWEXE 8.0 builds as an analytic torus — maj=2r=10, min=r=5, centred
+// (45,14.4949,95) ON the concave arm's LINE spine, with both convex spines passing at exactly 2r from that
+// centre. That is the DUAL of the shipped M8 role set (M8 pivots on the CONVEX arm's axis; L8 on the
+// concave one), and its weld assembly is unbuilt. Until it is, the whole op must honest-reject — never
+// panic, never a partial or wrong-sign solid — and this doubles as the guard that the notch-cove sign
+// (which greened M5) did not make a DIFFERENT concave-arm corner accept wrongly.
+func TestFilletEdges_L8DeclinesCleanly(t *testing.T) {
+	assertCurvedCornerDeclinesCleanly(t, "simple/L8", 5)
 }
 
 // assertCurvedCornerDeclinesCleanly requires FilletEdges to honest-reject rel at radius r: a non-nil

@@ -250,16 +250,38 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 //     against 3769.89, on faces the fillet should have SHRUNK) and the top plane over-read by 2379 — and
 //     the four errors summed to +147 on a 336159 body. The far-end trim itself created that green
 //     (see the C7/D7/complex/D8 note above); it is now withdrawn.
+//
+// The NOTCH-WALL concave cove sign (concaveTorusArmSurface's ε, W-DH capability wave) then GREENED M5
+// (simple, box − quarter-cylinder notch, three all-concave r5 edges at one trihedral vertex): the concave
+// circle-edge cove arm hardcoded major = R+r (the boss convention), but on a notch the material sits
+// OUTSIDE the wall and the ball rolls INSIDE it — DRAWEXE ships the cove as maj = R−r = 25 with a plain
+// r-sphere corner ON that spine at (45,14.4949,45), while our R+r arm put the corner ball 2r off its own
+// spine and the corner solve honest-declined. ε now comes from cylinderHostRadialSign (the SAME n_C·r̂
+// read the concave LINE arm has always used), so every boss cove (ε=+1: M8/O1/N4/B5/C4) is byte-identical
+// — the full-corpus sweep shows exactly ONE verdict change (M5 FAIL(faulty)→PASS) and zero area drift
+// elsewhere. M5 reconciles per face against DRAWEXE `sprops 1e-12` on all 13 faces (sphere corner
+// 44.301 vs 44.3039, cove torus 222.800 vs 222.817, worst face −0.008% — tessellation quadrature), body
+// area −0.000% of 61187.1, volume 980008.93 vs vprops 980008, watertight at the full bar. This restored
+// 114→115 simple / 119→120 all-grid, SkipQuarantine unchanged at 0.
+// The MULTI-RIM weld (fillet_curved_multirim.go, same wave) then GREENED bfuseblend/B3: a
+// through-cylinder fused to a box leaves TWO closed concave Cylinder∧Plane rims (one per exit face),
+// each individually the proven A1-class boss cove — but the multi-pick op fell through to the trihedral
+// weld and floored on "needs 3 arms (got 1)". There is no corner (the rims never touch); ≥2 pairwise
+// face-disjoint closed rims now route through the single-rim band rebuild SEQUENTIALLY, the next rim's
+// ReferenceKey resolving on the intermediate body (the rim rebuild carries untouched Lineage verbatim).
+// Reconciled per face vs DRAWEXE on all 12 faces (worst +0.0016%); the −0.998% vs the corpus number is
+// the historic reference's drift — our 78062.6 vs local DRAWEXE 8.0's own 78062.8 (−0.0003%). This
+// restored 120→121 all-grid (simple unchanged at 115), SkipQuarantine unchanged at 0.
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 114 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 114 (the arc band's rolling-ball seat + "+
-			"run-out termination greened W2 and freed H6 from the last quarantine)", simpleGreen)
+	if simpleGreen != 115 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 115 (the notch-wall concave cove sign "+
+			"ε=−1 → maj R−r greened M5 on top of W2/H6's 114)", simpleGreen)
 	}
-	if allGridGreen != 119 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 119 (114 simple + 5 bfuseblend; complex/D8's "+
-			"coincidental green retired by the far-end branch fix)", allGridGreen)
+	if allGridGreen != 121 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 121 (115 simple + 6 bfuseblend; the multi-rim "+
+			"weld greened bfuseblend/B3; complex/D8's coincidental green stays retired)", allGridGreen)
 	}
 	if skipQuarantine != 0 {
 		t.Errorf("SkipQuarantine = %d, want 0 — the corpus holds NO case; every one of the 475 records is "+

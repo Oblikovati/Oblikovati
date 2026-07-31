@@ -24,7 +24,10 @@ import (
 // byte-identical R−r arm and only a concave rim (M3/M9/O2) takes R+r.
 func curvedMiterTorusArm(cyl geom.Cylinder, pl geom.Plane, outwardN math.UnitVector3, r float64, res Resolution, conv EdgeConvexity) (geom.Surface, bool) {
 	if conv == EdgeConcave {
-		if t, ok := concaveTorusArmSurface(cyl, pl, outwardN, r, res); ok {
+		// ε=+1: the concave miter rim seen here is a boss-base cove (M3/M9/O2); a notch-wall concave
+		// miter needs the edge for cylinderHostRadialSign and is a later slice (same caveat as the
+		// convex bore-miter below).
+		if t, ok := concaveTorusArmSurface(cyl, pl, outwardN, r, 1, res); ok {
 			return t, true
 		}
 		return nil, false
@@ -54,17 +57,21 @@ func curvedMiterCylinderArm(e *topo.Edge, cyl geom.Cylinder, pl geom.Plane, outw
 // concaveTorusArmSurface builds the exact torus arm of a rolling-ball fillet of radius r on a CONCAVE
 // (reentrant) circle edge where cylinder cyl meets plane pl with the axis ⊥ the plane — the concave dual
 // of torusArmSurface (concave-sphere-cone-arm-derivation.md sign convention). BOTH offsets flip vs the
-// convex builder: the major radius R−r → R+r (the ball centre recedes AWAY from the axis, into the void
-// outside the wall) and the plane offset −n̂·r → +n̂·r (the ball sits r into the VOID, so the fillet ADDS
-// the cove). The minor radius stays r and the NewTorusWithRef frame is byte-identical in form. Returns
-// false only for a degenerate torus frame (R+r > 0 always holds, so there is no spindle reject).
+// convex builder: the major radius R−r → R+ε·r (the ball centre recedes into the void — AWAY from the
+// axis on a BOSS wall, ε=+1, or TOWARD it inside a NOTCH/BORE wall, ε=−1) and the plane offset
+// −n̂·r → +n̂·r (the ball sits r into the VOID, so the fillet ADDS the cove). ε is cylinderHostRadialSign's
+// n_C·r̂ read — the SAME per-wall sign the concave line arm (concaveArmOffsetRadius) has always used; the
+// boss case (ε=+1) is byte-identical to the historical R+r arm. The minor radius stays r and the
+// NewTorusWithRef frame is byte-identical in form. Returns false for a degenerate torus frame or a notch
+// spindle (ε=−1 with r ≥ R: the ball-centre circle collapses onto the axis — DRAWEXE M5 ground truth:
+// the notch-ceiling cove arm is maj=R−r=25, the corner a plain r-sphere on that spine).
 //
-// Example: concaveTorusArmSurface(bossWall{R:50}, basePlane{z:0,n̂:+ẑ}, +ẑ, 5, res) → torus centre
+// Example: concaveTorusArmSurface(bossWall{R:50}, basePlane{z:0,n̂:+ẑ}, +ẑ, 5, +1, res) → torus centre
 // (0,0,5), axis ẑ, major 55, minor 5 (the O2 base-rim arm, OCCT Radii 55 5 = R+r).
-func concaveTorusArmSurface(cyl geom.Cylinder, pl geom.Plane, outwardN math.UnitVector3, r float64, res Resolution) (geom.Torus, bool) {
-	majorR := cyl.Radius + r // offset the ball AWAY from the axis, into the void (convex builder: R − r)
+func concaveTorusArmSurface(cyl geom.Cylinder, pl geom.Plane, outwardN math.UnitVector3, r, eps float64, res Resolution) (geom.Torus, bool) {
+	majorR := cyl.Radius + eps*r // ball centre r into the void: outside a boss wall (+r), inside a notch wall (−r)
 	if majorR < armSpindleBand*res.Weld() {
-		return geom.Torus{}, false // defensive: R+r > 0 always, but keep the frame guard
+		return geom.Torus{}, false // notch spindle (R−r reaches the axis) or degenerate frame guard
 	}
 	n := outwardN
 	outward := n.AsVector()

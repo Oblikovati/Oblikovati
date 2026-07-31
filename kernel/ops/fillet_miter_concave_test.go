@@ -33,13 +33,21 @@ func TestMiterTorusArmSideSelection(t *testing.T) {
 		t.Fatalf("convex torus arm major=%.6f cz=%.6f, want R−r=45 and cz=95 (ball INTO material)",
 			convex.MajorRadius, convex.Center.Z)
 	}
-	concave, ok := concaveTorusArmSurface(cyl, pl, n, 5, res)
+	concave, ok := concaveTorusArmSurface(cyl, pl, n, 5, 1, res)
 	if !ok {
 		t.Fatalf("concaveTorusArmSurface declined a valid reentrant rim")
 	}
 	if !nearlyArm(concave.MajorRadius, 55) || !nearlyArm(concave.Center.Z, 105) {
 		t.Fatalf("concave torus arm major=%.6f cz=%.6f, want R+r=55 (O2) and cz=105 (ball into VOID)",
 			concave.MajorRadius, concave.Center.Z)
+	}
+	notch, ok := concaveTorusArmSurface(cyl, pl, n, 5, -1, res)
+	if !ok {
+		t.Fatalf("concaveTorusArmSurface declined a valid notch-wall cove (eps=-1)")
+	}
+	if !nearlyArm(notch.MajorRadius, 45) || !nearlyArm(notch.Center.Z, 105) {
+		t.Fatalf("notch cove torus arm major=%.6f cz=%.6f, want R−r=45 (DRAWEXE M5 maj=R−r) and cz=105 (ball into VOID)",
+			notch.MajorRadius, notch.Center.Z)
 	}
 }
 

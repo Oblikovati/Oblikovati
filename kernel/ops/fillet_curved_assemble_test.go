@@ -28,13 +28,23 @@ var curvedArmCorpusPicks = map[string][]math.Point3{
 		math.P3(65.8113883, 2.565835097, 90),
 		math.P3(80, -15, 90),
 	},
-	// M5 is the concave-BORE (roll-sense R3, R−r) trihedral corner of the same Gate-1 cluster as O1, still
-	// unbuilt: it is here only so TestFilletEdges_M5DeclinesCleanly can pin the do-no-harm FLOOR on a corner
-	// the ladder must not accept.
+	// M5 is the concave-NOTCH (R−r cove) trihedral corner of the same Gate-1 cluster as O1. It was here to
+	// pin the do-no-harm FLOOR while unbuilt; the notch-wall cove sign (concaveTorusWallSign) now WELDS it,
+	// so it pins the built 13-face solid instead (TestFilletEdges_M5WeldsIntoASolid).
 	"simple/M5": {
 		math.P3(50, 20, 25),
 		math.P3(32.67949192, 14.49489743, 50),
 		math.P3(50, 10, 50),
+	},
+	// L8 is the surviving decliner of the cluster and carries the FLOOR pin
+	// (TestFilletEdges_L8DeclinesCleanly): a MIXED corner (one concave cylinder arm + two convex arms)
+	// whose corner face DRAWEXE builds as an analytic torus maj=2r=10 min=r=5 centred (45,14.4949,95) ON
+	// the concave arm's line spine — the dual of the shipped M8 role set (convex pivot), unbuilt. Until it
+	// is, the whole op must honest-reject rather than ship a wrong-sign or partial solid.
+	"simple/L8": {
+		math.P3(32.67949192, 14.49489743, 100),
+		math.P3(50, 20, 50),
+		math.P3(50, 10, 100),
 	},
 }
 
