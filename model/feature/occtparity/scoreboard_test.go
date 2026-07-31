@@ -272,6 +272,23 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 // Reconciled per face vs DRAWEXE on all 12 faces (worst +0.0016%); the −0.998% vs the corpus number is
 // the historic reference's drift — our 78062.6 vs local DRAWEXE 8.0's own 78062.8 (−0.0003%). This
 // restored 120→121 all-grid (simple unchanged at 115), SkipQuarantine unchanged at 0.
+//
+// The EllipticalCylinder∧Cone pinched canal (fillet_elliptic_cone_*.go, W-F capability wave) then
+// GREENED tolblend_simple/B4, B8, C3: a circle extruded obliquely glued to a cone of the SAME slope,
+// so the two hosts are tangent along one ruling and the constant-radius fillet's cross-section
+// collapses to a point there (a teardrop canal, geom.LoftPinchedCanalStations). B4/B8 are the OPEN-arc
+// runout (the band tapers from a planar side-face imprint to the pinch, which coincides with the arc's
+// own end vertex); C3 is the CLOSED rim whose pinch happens to sit exactly at the host seam azimuth (no
+// rail split needed). Reconciled per face vs DRAWEXE 8.0.0 (`nexplode`+`sprops 1.e-12`): 11 of the 12
+// rank pairs across all three within 0.04%, the one outlier (B4/B8's smallest face, the imprinted
+// runout lens, at the degenerate teardrop limit) at 0.58% — every case's face count matches DRAWEXE
+// exactly and all three checkshape valid. The OFF-seam sub-case (B7/C2: pinch away from the seam,
+// needing a rail split) was built too but the SAME reconciliation FALSIFIED it — the band measured
+// ~3.9x oversized (109109 vs DRAWEXE's own two-patch 27933.6) — so it honestly declines instead of
+// shipping a wrong body; see closedEllipticConeSpan's doc comment for the full receipt and the leading
+// root-cause hypothesis (a near-duplicate-knot interpolation artifact, unproven). This restored
+// 128→131 all-grid (simple unchanged at 120; tolblend_simple is neither "simple" nor "bfuseblend"),
+// SkipQuarantine unchanged at 0.
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
@@ -280,10 +297,12 @@ func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGr
 			"sign ε=−1 greened M5; W-B's Cylinder∧Cylinder SSI-seam canal engine greened K2/K3/K4 + P1; "+
 			"W-T's stripe-junction crossings + exact anchor distance greened Y9; 114→120)", simpleGreen)
 	}
-	if allGridGreen != 128 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 128 (120 simple + 8 bfuseblend; the multi-rim "+
-			"weld greened bfuseblend/B3 and the closed cyl∧cyl seam canal greened B4+B5; complex/D8's "+
-			"coincidental green stays retired; 119→128)", allGridGreen)
+	if allGridGreen != 131 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 131 (120 simple + 8 bfuseblend + 3 "+
+			"tolblend_simple; the multi-rim weld greened bfuseblend/B3 and the closed cyl∧cyl seam canal "+
+			"greened B4+B5; the EllipticalCylinder∧Cone pinched canal greened tolblend_simple/B4+B8+C3 "+
+			"(B7/C2 honestly decline — see closedEllipticConeSpan); complex/D8's coincidental green stays "+
+			"retired; 128→131)", allGridGreen)
 	}
 	if skipQuarantine != 0 {
 		t.Errorf("SkipQuarantine = %d, want 0 — the corpus holds NO case; every one of the 475 records is "+
