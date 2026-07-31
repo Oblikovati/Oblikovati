@@ -332,6 +332,11 @@ func singleRunoutHostFaces(body *topo.Body, ef edgeFillet, railA, railB endSeg, 
 		}
 		ff, ok := runoutHostRetrim(f, ef, bite, avoid[f], tol)
 		if !ok {
+			// P4-class capped end: a bite foot is a mid-face fresh cut — bridge it back to the
+			// picked edge's end vertex along wall ∩ cap and splice the chain (do-no-harm on decline).
+			ff, ok = bridgedRunoutHostFace(f, ef, bite, tol)
+		}
+		if !ok {
 			return nil, fmt.Sprintf("single-arm runout: host %T retrim declined (bite %v→%v)", f.Geometry(), bite.from, bite.to)
 		}
 		out = append(out, ff)
@@ -392,7 +397,11 @@ func singleRunoutHostFace(host *topo.Face, bite endSeg, avoid math.Point3, tol f
 // the loop is too small or a foot is off it. loopFromSegs drops source ids (coordinate weld) as before.
 func retrimBittenLoop(bitten *topo.Loop, bite endSeg, avoid math.Point3, tol float64) (filletLoop, bool) {
 	segs := segsFromLoop(bitten)
-	if len(segs) < 3 {
+	// ≥2, not ≥3: a two-arc "lens" loop (two intersecting-cylinder caps, e.g. blend/simple/O8's
+	// top cap) is a legitimate bitten wire — farPathSegs splits it at the bite feet and the far
+	// path closes exactly as on a many-seg loop. Only a single-seg (whole-circle) wire, which the
+	// split machinery cannot anchor on, stays declined.
+	if len(segs) < 2 {
 		return filletLoop{}, false
 	}
 	far, ok := farPathSegs(segs, bite.to, bite.from, avoid, tol)
