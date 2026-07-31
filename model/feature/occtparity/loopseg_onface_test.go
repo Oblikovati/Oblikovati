@@ -228,6 +228,15 @@ func offSurfaceDebtIndex() map[string]float64 {
 //     taking F7's worst residual 89.4426 → 3.4e-14 and its per-face gross error vs DRAWEXE 40793 → 2.8.)
 //   - SPREAD-FAN / oblique-plane chords (P8 P9 V8 V9 V1 V3 V5 X9 K7 L1 L7 N5): a run-out spread cap is
 //     tiled as a chord fan, so each chord sits a sagitta off the curved wall it spans.
+//   - ★ tolblend_simple/D4 (cluster-A wave, fillet_miter_vertexonly.go) joins this SAME bucket: the
+//     vertex-only miter's seam (two arms sharing no face, D4's opposite pyramid edges) is sampled as a
+//     chord polyline between cylA∩cylB stations (sampleVertexOnlySeam, the sampleAsymmetricMiterSeam
+//     pattern P9/V9 already ship at the SAME chord density — seamChordCount uses cornerChordCount's own
+//     filletChordsPerTurn sizing), so each chord sits a sagitta off the two rolling-ball cylinders it
+//     bridges — precisely the P9/V9/L1/L7 phenomenon, not a new defect. Measured worst residual
+//     0.00954937213852904 (rel 0.000121573042616998 of the 78.5484342002792 diagonal, face 72/74
+//     Cylinder bounded by edge 68 LineSegment) — landing between C6's 0.000121 and L7's 0.000128, the
+//     same order as its bucket-mates. Capped at 1.1× the measurement.
 //   - CANAL / BSpline patch rails (C2 C6 C8 S1 S4 S6 S7 S9 T1 T3 T4 T7 U4): the rail is
 //     built on the exact rolling-ball envelope while the patch is a fitted BSpline, so rail and patch
 //     agree only to the fit's own residual (reverse-segment-fix-report.md §6 concern 2).
@@ -294,7 +303,7 @@ func knownOffSurfaceDebt() []offSurfaceDebtEntry {
 		{"V5", "simple", 0.000313}, {"V1", "simple", 0.000295},
 		{"U4", "simple", 0.000165}, {"K7", "simple", 0.000152},
 		{"L1", "simple", 0.000133}, {"N5", "simple", 0.000129}, {"L7", "simple", 0.000128},
-		{"C6", "simple", 0.000121},
+		{"D4", "tolblend_simple", 0.0001337}, {"C6", "simple", 0.000121},
 		// The five mid-span obstacle cases, each re-capped at 1.1x its post-sub-arc measurement (above).
 		{"X3", "simple", 0.0000025}, {"U3", "simple", 0.00000219}, {"T6", "simple", 0.00000196},
 		{"S3", "simple", 0.00000151}, {"R9", "simple", 0.00000129},

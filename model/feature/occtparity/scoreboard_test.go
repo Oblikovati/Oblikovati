@@ -253,12 +253,15 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 116 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 116 (cluster-A planar corners greened X8 — "+
-			"the full-round 4-arm common-tangent-sphere corner — and A4 — the mixed-radius [10,5,5] torus corner)", simpleGreen)
+	if simpleGreen != 115 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 115 (cluster-A planar corners greened A4 — "+
+			"the mixed-radius [10,5,5] torus corner. simple/X8 uses the SAME full-round 4-arm common-tangent-"+
+			"sphere mechanism as tolblend_simple/A1 below but stays a HONEST DECLINE: "+
+			"TestEveryLoopSegmentLiesOnItsFace caught a real B-rep defect on its asymmetric pyramid that the "+
+			"symmetric A1 does not carry — see cluster_a_planar_corner_test.go's doc comment)", simpleGreen)
 	}
-	if allGridGreen != 123 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 123 (116 simple + 5 bfuseblend + 2 tolblend_simple: "+
+	if allGridGreen != 122 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 122 (115 simple + 5 bfuseblend + 2 tolblend_simple: "+
 			"A1 = the full-round 4-arm pyramid apex, D4 = the vertex-only miter of two arms sharing no face)", allGridGreen)
 	}
 	if skipQuarantine != 0 {
