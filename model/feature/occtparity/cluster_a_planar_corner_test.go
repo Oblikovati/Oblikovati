@@ -193,19 +193,27 @@ func TestClusterAHonestDeclines(t *testing.T) {
 		// X5/B3: 6-valent alternating convex/concave — outside the all-convex full-round scope.
 		{"simple", "X5", "requires all-convex arms"},
 		{"tolblend_simple", "B3", "requires all-convex arms"},
-		// D5: 2-of-4 edges miter at the pyramid apex — REGRESSION FOUND AND FIXED: an earlier WIP
-		// pass pre-empted this with a blanket "K>3-edge vertex" guard in solveMiter, which ALSO
-		// broke a genuine production case (TestClassifyEndCornersExcludesKGreaterThanOne, simple/V3's
-		// legitimate 2-edge shared-face miter at a 5-valent vertex — went RED under `go test
-		// ./kernel/ops/... -race`). The guard was too broad: valence alone does not distinguish D5's
-		// genuinely-unbuildable apex from V3's ordinary miter. Removed; D5 now reaches the same
-		// downstream Validate() rejection it had BEFORE the WIP touched this file (verified: the
-		// mirror-seam construction runs but the welded body fails IsSolid — an honest, un-preempted
-		// decline, not a capability this wave forced or removed).
+		// D5: 2-of-4 edges filleted at a pyramid apex (2 ADJACENT apex edges, sharing one face). R2
+		// wave: TRIED routing this into the partial-corner touched-face test too (the same mechanism
+		// that now catches D3/E6/E7/E8 below), reasoning the ordinary miter's mirror-plane/cyl∩cyl
+		// seam assumes exactly 3 faces at the vertex. FALSIFIED by the full -race suite:
+		// TestClassifyEndCornersExcludesKGreaterThanOne (simple/V3, a genuine 2-edge shared-face
+		// miter at its OWN 5-valent vertex) proved the ordinary miter is LOCAL to the two picked
+		// edges and their 3 relevant faces — it does not need the vertex's total valence at all, and
+		// works correctly at valence>3 in general. So D5's invalidity is a genuine, case-specific
+		// seam defect on ITS geometry (not a missing valence-awareness), reached the SAME way it was
+		// before this wave touched the file: solveMiter runs, the welded body fails IsSolid. Not
+		// forced through the new mechanism — reverted to the pre-wave dispatch, unchanged.
 		{"tolblend_simple", "D5", "result is not a valid solid"},
-		// D3/E7: partial corners (a sharp edge survives at the vertex) — plate class.
-		{"tolblend_simple", "D3", "is not a supported blend"},
-		{"tolblend_simple", "E7", "is not a supported blend"},
+		// D3/E6/E7/E8: partial corners (a sharp edge survives at the vertex) — 3+ edges filleted,
+		// unlike D5's 2, so len(ps)>=3 routes them to fillet_corner_partial.go's touched-face test
+		// WITHOUT touching the ps==2 ordinary-miter path V3 depends on. Declines with a specific,
+		// measured reason (the structural loop-closure check) instead of the generic default
+		// "not a supported blend" fallthrough.
+		{"tolblend_simple", "D3", "boundary-assembly capability is not yet built"},
+		{"tolblend_simple", "E6", "boundary-assembly capability is not yet built"},
+		{"tolblend_simple", "E7", "boundary-assembly capability is not yet built"},
+		{"tolblend_simple", "E8", "boundary-assembly capability is not yet built"},
 		// A2: mixed-radius 4-arm apex — no common tangent sphere exists at four distinct radii.
 		{"tolblend_simple", "A2", "mixed-radius corner where 4 filleted edges"},
 		// E3: drafted slab — its [19,7,7]/[14,7,7] corners are ~3° off orthogonal (elliptic-spine
@@ -217,11 +225,6 @@ func TestClusterAHonestDeclines(t *testing.T) {
 		// dispatch generalization does not reach it and must not (scope boundary), so it stays
 		// declining with its own unrelated message rather than being forced into a corner reason.
 		{"tolblend_simple", "C4", "no single crossing on far edge"},
-		// E6/E8: same CFI_5_e12fgj.rle base as D3/E7 (a depouille-drafted wedge glued to a prism), a
-		// DIFFERENT subset of the 5-face vertex's edges filleted each time — every one of the family
-		// is the partial-corner (a sharp face survives) plate class, verified by the SAME signature.
-		{"tolblend_simple", "E6", "is not a supported blend"},
-		{"tolblend_simple", "E8", "is not a supported blend"},
 		// A9/B2/C2: K-valent (K=faces=5/6/6) but MIXED radii with no [rB,rS,rS] bipartition (A9: 5
 		// distinct radii; B2: 3 distinct with uneven multiplicity; C2: 3 distinct AND alternating
 		// convex/concave, a saddle not a pyramid apex) — no common tangent sphere/torus closed form

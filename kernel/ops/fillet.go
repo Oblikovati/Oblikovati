@@ -1057,6 +1057,18 @@ func solveCorner(body *topo.Body, vid uint64, ps []filletPick) (*cornerBlend, *c
 		return cb, nil, err
 	case len(ps) == 2:
 		return solveTwoEdgeCorner(v, ps, r)
+	case len(ps) >= 3 && len(ps) < len(faces):
+		// Partial corner (D3/E6/E7/E8): 3+ edges filleted at a higher-than-trihedral-valence vertex,
+		// with at least one edge left sharp. Never reached by the ordinary ps==2 or ps==3&&faces==3
+		// cases above (disjoint by construction), so those stay byte-identical. Scoped to ps>=3 ONLY
+		// — an earlier attempt to also intercept ps==2 (D5) here broke simple/V3's legitimate 2-edge
+		// shared-face miter at its own 5-valent vertex (TestClassifyEndCornersExcludesKGreaterThanOne):
+		// the ordinary miter's cyl∩cyl seam is LOCAL to the two picked edges and their 3 relevant
+		// faces (shared + 2 outers) and does not, in general, need the vertex's total valence — so
+		// D5's specific invalidity is a genuine seam defect on ITS geometry, not a valence-3
+		// assumption, and is NOT this wave's to force through this mechanism. See
+		// fillet_corner_partial.go for the derivation of why the ps>=3 case IS safe to route here.
+		return solvePartialCorner(body, v, faces, ps, r)
 	case len(ps) >= 4 && len(faces) == len(ps):
 		// Full-round K-arm corner (X8/A1): every edge at a K-valent planar vertex filleted at one
 		// radius, closed by the exact common-tangent-sphere K-gon (fillet_corner_fullround.go).
