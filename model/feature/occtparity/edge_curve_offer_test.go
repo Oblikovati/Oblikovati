@@ -46,8 +46,8 @@ type nilCurveOfferDebt struct {
 // ★ COVERAGE, and the blind spot, asserted rather than assumed. An EMPTY build report has two
 // meanings — "the catalog reported nothing" and "this body never went through the catalog" — and
 // nothing in the report itself separates them, so a gate reading only the absence of a code reads as
-// coverage it does not have. Measured: 103 of the 125 shipped corpus bodies go through the catalog;
-// the other 22 do NOT, because fillet.go's three early returns (FilletCylinderRim,
+// coverage it does not have. Measured: 103 of the 126 shipped corpus bodies go through the catalog;
+// the other 23 do NOT, because fillet.go's three early returns (FilletCylinderRim,
 // FilletCylinderArc, filletTangentStripe) assemble on their own topo.Builder and never touch it.
 // Each covered body is therefore required to carry CodeAssembleEdgeCatalog, and the blind set is
 // pinned exactly (catalogBlindCases) so it can neither grow silently nor shrink unrecorded. The same
@@ -130,15 +130,21 @@ func assertCatalogBlindSpot(t *testing.T, got []string) {
 // catalogBlindCases are the shipped corpus bodies the edge catalog never sees, measured by sweeping
 // every scored case for CodeAssembleEdgeCatalog: fillet.go's three early returns build them on their
 // own topo.NewBuilder (fillet_rim_build.go, fillet_arc_build.go, fillet_stripe_build.go) — a lone
-// circular rim pick, a lone arc pick, and a tangent stripe. 22 of 125 shipped bodies, 17.6 %. Every
+// circular rim pick, a lone arc pick, and a tangent stripe. 23 of 126 shipped bodies, 18.3 %. Every
 // assertion in this file is silent about them BY CONSTRUCTION, which is why the set is pinned here
 // instead of being left to an empty build report that reads like coverage.
+//
+// simple/Y9 JOINED this set (22 → 23) when it went FAIL(faulty) → PASS via the stripe-junction-
+// crossing capability (kernel/ops/fillet_stripe_junction.go): its shipped body is a tangentStripe
+// build (filletTangentStripe), the third of the three catalog-bypassing paths named above, exactly
+// like every other stripe/arc/rim case already on this list — nothing about the catalog's own
+// arbitration changed.
 func catalogBlindCases() []string {
 	return []string{
 		"bfuseblend/A1", "bfuseblend/A2", "bfuseblend/A3", "bfuseblend/A7", "bfuseblend/B1",
 		"simple/B2", "simple/H6", "simple/I9", "simple/J1", "simple/J2", "simple/J4", "simple/J6",
 		"simple/J8", "simple/K1", "simple/N6", "simple/R8", "simple/U6", "simple/W2", "simple/W6",
-		"simple/W8", "simple/W9", "simple/Z1",
+		"simple/W8", "simple/W9", "simple/Y9", "simple/Z1",
 	}
 }
 
