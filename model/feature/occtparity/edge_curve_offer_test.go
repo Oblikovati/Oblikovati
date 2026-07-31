@@ -46,8 +46,8 @@ type nilCurveOfferDebt struct {
 // ★ COVERAGE, and the blind spot, asserted rather than assumed. An EMPTY build report has two
 // meanings — "the catalog reported nothing" and "this body never went through the catalog" — and
 // nothing in the report itself separates them, so a gate reading only the absence of a code reads as
-// coverage it does not have. Measured: 103 of the 125 shipped corpus bodies go through the catalog;
-// the other 22 do NOT, because fillet.go's three early returns (FilletCylinderRim,
+// coverage it does not have. Measured: 104 of the 128 shipped corpus bodies go through the catalog;
+// the other 23 do NOT, because fillet.go's three early returns (FilletCylinderRim,
 // FilletCylinderArc, filletTangentStripe) assemble on their own topo.Builder and never touch it.
 // Each covered body is therefore required to carry CodeAssembleEdgeCatalog, and the blind set is
 // pinned exactly (catalogBlindCases) so it can neither grow silently nor shrink unrecorded. The same
@@ -130,15 +130,35 @@ func assertCatalogBlindSpot(t *testing.T, got []string) {
 // catalogBlindCases are the shipped corpus bodies the edge catalog never sees, measured by sweeping
 // every scored case for CodeAssembleEdgeCatalog: fillet.go's three early returns build them on their
 // own topo.NewBuilder (fillet_rim_build.go, fillet_arc_build.go, fillet_stripe_build.go) — a lone
-// circular rim pick, a lone arc pick, and a tangent stripe. 22 of 125 shipped bodies, 17.6 %. Every
+// circular rim pick, a lone arc pick, and a tangent stripe. 24 of 128 shipped bodies, 18.8 %. Every
 // assertion in this file is silent about them BY CONSTRUCTION, which is why the set is pinned here
 // instead of being left to an empty build report that reads like coverage.
+//
+// bfuseblend/B3 JOINED this set when it greened (W-DH, independent-closed-rims weld): its two
+// pairwise-disjoint Cylinder∧Plane rims are each rebuilt sequentially through FilletCylinderRim, the
+// same A1/W6/W8 cove-class early return — never through the edge catalog, so B3's welded edges carry
+// no CodeAssembleEdgeCatalog diagnostic to read a curve-offer report from. simple/M5 (W-DH's other
+// new green) is NOT blind: its corner weld goes through the general assembler and was checked clean
+// by this file's other assertions (no CodeAssembleCurveConflict, no CodeAssembleCurveNilOffer growth).
+//
+// bfuseblend/B4 B5 and simple/K2 K3 K4 JOINED for the same architectural reason (W-B, Cylinder∧Cylinder
+// closed-loop SSI-seam canal, fillet_cylcyl_seam*.go): the canal welds through the SAME rebuildRim
+// (fillet_rim_build.go) the analytic torus/elliptic rim families already use — a new CALLER of the
+// existing pinned bypass, not a new bypass (measured: the K2/K3/K4 seam ends route through
+// cylinderArmEdge → rebuildWithRimFillet / rebuildWithConcaveRimFillet, verified against rebuildRim's
+// own topo.NewBuilder call).
+//
+// simple/Y9 JOINED for the third of those paths (W-T, stripe-junction crossings,
+// kernel/ops/fillet_stripe_junction.go): its shipped body is a tangentStripe build
+// (filletTangentStripe), exactly like every other stripe case already on this list — nothing about
+// the catalog's own arbitration changed.
 func catalogBlindCases() []string {
 	return []string{
 		"bfuseblend/A1", "bfuseblend/A2", "bfuseblend/A3", "bfuseblend/A7", "bfuseblend/B1",
+		"bfuseblend/B3", "bfuseblend/B4", "bfuseblend/B5",
 		"simple/B2", "simple/H6", "simple/I9", "simple/J1", "simple/J2", "simple/J4", "simple/J6",
-		"simple/J8", "simple/K1", "simple/N6", "simple/R8", "simple/U6", "simple/W2", "simple/W6",
-		"simple/W8", "simple/W9", "simple/Z1",
+		"simple/J8", "simple/K1", "simple/K2", "simple/K3", "simple/K4", "simple/N6", "simple/R8",
+		"simple/U6", "simple/W2", "simple/W6", "simple/W8", "simple/W9", "simple/Y9", "simple/Z1",
 	}
 }
 

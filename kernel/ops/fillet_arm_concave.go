@@ -62,12 +62,25 @@ func concaveTorusArmEdge(e *topo.Edge, cyl geom.Cylinder, pl geom.Plane, r float
 	if !ok {
 		return edgeFillet{}, false, nil // no readable plane host normal — cannot offset the ball into the void
 	}
-	tor, ok := concaveTorusArmSurface(cyl, pl, outwardN, r, res)
+	tor, ok := concaveTorusArmSurface(cyl, pl, outwardN, r, concaveTorusWallSign(e, cyl), res)
 	if !ok {
-		return edgeFillet{}, false, nil // degenerate torus frame (axis ∥ ref) — do-no-harm
+		return edgeFillet{}, false, nil // degenerate torus frame (axis ∥ ref) or a notch spindle — do-no-harm
 	}
 	faces := e.Faces()
 	return edgeFillet{a: faces[0], b: faces[1], edge: e, armSurface: tor, armConcave: true}, true, nil
+}
+
+// concaveTorusWallSign is ε ∈ {+1,−1} for a concave circle Cylinder∧Plane edge's cove torus: +1 BOSS
+// (material inside the wall, ball-centre circle at R+r outside it — the historical M8/O1/N4 cove) and
+// −1 NOTCH/BORE (material outside the wall, ball rolls INSIDE it at R−r — DRAWEXE M5 ground truth,
+// oracle cove torus maj=25=R−r on the notch ceiling). Reuses cylinderHostRadialSign (the concave line
+// arm's exact n_C·r̂ read) and DEFAULTS to +1 on an unreadable sign (an on-axis edge), so every boss
+// cove stays byte-identical — the sibling of convexArmWallSign for the concave circle edge.
+func concaveTorusWallSign(e *topo.Edge, cyl geom.Cylinder) float64 {
+	if eps, ok := cylinderHostRadialSign(e, cyl); ok {
+		return eps
+	}
+	return 1
 }
 
 // concaveCylinderArmEdge builds the exact concave LINE arm (N3/M4/N9) via planeHostNormal →

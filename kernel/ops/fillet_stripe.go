@@ -41,8 +41,11 @@ type tangentStripe struct {
 	segs     []stripeSeg    // one per chain edge
 	apex     []math.Point3  // apex[j] = tube apex of the section circle at junction j (entry of seg j)
 	junction []*topo.Vertex // junction[j] = the original top vertex where segs[j-1] meets segs[j]; nil at an open terminal
-	down     []*topo.Edge   // down[j] = the vertical smooth edge below junction[j], split at depth r; nil at a terminal
-	term     [2]stripeTerm  // (open only) the two run-out terminals: [0]=entry of seg 0, [1]=exit of the last seg
+	down     []*topo.Edge   // down[j] = the descending smooth edge consumed below junction[j]; nil at a terminal
+	// cutOnShared[j]: down[j] lies on the SHARED face, so its remnant reattaches at the shared-side
+	// foot (vS1); false = the wall side (vW). Resolved with the crossing station (simple/Y9).
+	cutOnShared []bool
+	term        [2]stripeTerm // (open only) the two run-out terminals: [0]=entry of seg 0, [1]=exit of the last seg
 }
 
 // stripeTerm is one run-out end of an OPEN stripe — the tube's flat setback cap. The cap is the quarter
@@ -204,10 +207,13 @@ func solveTangentStripe(body *topo.Body, edges []*topo.Edge, closed bool, r floa
 	if err := st.solveApices(sp, m, r); err != nil {
 		return nil, err
 	}
-	st.reseatSurfaces()
 	if err := st.solveJunctions(); err != nil {
 		return nil, err
 	}
+	if err := st.resolveJunctionCrossings(sp, m); err != nil {
+		return nil, err
+	}
+	st.reseatSurfaces()
 	return st, nil
 }
 

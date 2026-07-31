@@ -28,6 +28,16 @@ import (
 // guard declines), so the 3-arm weld path — where every prior curved green lives — is never reached by
 // this branch. Gated to cylinder/torus arms (armBallCenter's domain); a canal BSpline arm stays flooring.
 func isSingleArmRunout(fils []edgeFillet) bool {
+	// Cluster-B routing prefix (merge-train seam: lift into assembleCurvedArmBody once the router
+	// file unfreezes): an op whose EVERY fillet carries the cyl∧cyl seam payload is claimed here —
+	// before the single-pick gate, because a multi-seam op (bfuseblend/B4) is legal — and the full
+	// pick group is stashed on fils[0]'s payload for the sequential weld, since the router hands
+	// singleArmRunoutBody only fils[0]. Nothing else sets that payload type, so every existing
+	// runout keeps its classifier byte-identically.
+	if band, ok := fils[0].armSurface.(*cylCylSeamBand); ok {
+		band.group = cylCylSeamGroupOf(fils)
+		return band.group != nil
+	}
 	if len(fils) != 1 {
 		return false // a runout is a single pick; a trihedral corner or any multi-pick is not
 	}
@@ -96,6 +106,11 @@ func armTubeRadius(arm geom.Surface) (float64, bool) {
 // EMPTY reason means the returned body is the weld; a non-empty reason names the exact obstruction (with
 // offending values) and the body is nil — the caller keeps the clean do-no-harm floor (never a partial body).
 func singleArmRunoutBody(body *topo.Body, ef edgeFillet, res Resolution) (*topo.Body, string) {
+	// Cluster-B routing prefix (pairs with isSingleArmRunout's payload claim): a cyl∧cyl seam
+	// payload takes the sequential closed-band weld; every other arm proceeds unchanged.
+	if band, ok := ef.armSurface.(*cylCylSeamBand); ok {
+		return cylCylSeamGroupBody(body, band, res)
+	}
 	arm := ef.armSurface
 	r, ok := armTubeRadius(arm)
 	if !ok {

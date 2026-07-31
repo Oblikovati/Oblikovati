@@ -250,19 +250,47 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 //     against 3769.89, on faces the fillet should have SHRUNK) and the top plane over-read by 2379 — and
 //     the four errors summed to +147 on a 336159 body. The far-end trim itself created that green
 //     (see the C7/D7/complex/D8 note above); it is now withdrawn.
+//
+// The NOTCH-WALL concave cove sign (concaveTorusArmSurface's ε, W-DH capability wave) then GREENED M5
+// (simple, box − quarter-cylinder notch, three all-concave r5 edges at one trihedral vertex): the concave
+// circle-edge cove arm hardcoded major = R+r (the boss convention), but on a notch the material sits
+// OUTSIDE the wall and the ball rolls INSIDE it — DRAWEXE ships the cove as maj = R−r = 25 with a plain
+// r-sphere corner ON that spine at (45,14.4949,45), while our R+r arm put the corner ball 2r off its own
+// spine and the corner solve honest-declined. ε now comes from cylinderHostRadialSign (the SAME n_C·r̂
+// read the concave LINE arm has always used), so every boss cove (ε=+1: M8/O1/N4/B5/C4) is byte-identical
+// — the full-corpus sweep shows exactly ONE verdict change (M5 FAIL(faulty)→PASS) and zero area drift
+// elsewhere. M5 reconciles per face against DRAWEXE `sprops 1e-12` on all 13 faces (sphere corner
+// 44.301 vs 44.3039, cove torus 222.800 vs 222.817, worst face −0.008% — tessellation quadrature), body
+// area −0.000% of 61187.1, volume 980008.93 vs vprops 980008, watertight at the full bar. This restored
+// 114→115 simple / 119→120 all-grid, SkipQuarantine unchanged at 0.
+// The MULTI-RIM weld (fillet_curved_multirim.go, same wave) then GREENED bfuseblend/B3: a
+// through-cylinder fused to a box leaves TWO closed concave Cylinder∧Plane rims (one per exit face),
+// each individually the proven A1-class boss cove — but the multi-pick op fell through to the trihedral
+// weld and floored on "needs 3 arms (got 1)". There is no corner (the rims never touch); ≥2 pairwise
+// face-disjoint closed rims now route through the single-rim band rebuild SEQUENTIALLY, the next rim's
+// ReferenceKey resolving on the intermediate body (the rim rebuild carries untouched Lineage verbatim).
+// Reconciled per face vs DRAWEXE on all 12 faces (worst +0.0016%); the −0.998% vs the corpus number is
+// the historic reference's drift — our 78062.6 vs local DRAWEXE 8.0's own 78062.8 (−0.0003%). This
+// restored 120→121 all-grid (simple unchanged at 115), SkipQuarantine unchanged at 0.
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	// Wave-E (torus_rim_spiric_gate_test.go) greened J5+J3 in simple and A4/A5/A6 in bfuseblend:
+	// Union of two merged capability waves on top of the 114/119 base (d8d55a26):
+	// Wave-E (torus_rim_spiric_gate_test.go) greened J5+J3 in simple and A4/A5/A6 in bfuseblend —
 	// the concave torus-host closed-rim cove band (fillet_torusarm_concave.go) and the spiric
-	// closed-rim canal (fillet_spiric_*.go), 114→116 simple / 119→124 all-grid.
-	if simpleGreen != 116 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 116 (the concave torus-rim cove band "+
-			"greened J5 and the spiric closed-rim canal greened J3)", simpleGreen)
+	// closed-rim canal (fillet_spiric_*.go), +2 simple / +3 bfuseblend-only.
+	// W-DH's notch-wall concave cove sign ε=−1 greened M5; W-B's Cylinder∧Cylinder SSI-seam canal
+	// engine greened K2/K3/K4 + P1; W-T's stripe-junction crossings + exact anchor distance greened
+	// Y9; the multi-rim weld greened bfuseblend/B3 and the closed cyl∧cyl seam canal greened B4+B5 —
+	// +6 simple / +3 bfuseblend-only. Combined: 114+2+6=122 simple, 119+5+9=133 all-grid.
+	if simpleGreen != 122 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 122 (114 base + wave-E's J5/J3 (+2) "+
+			"+ W-DH/W-B/W-T's M5/K2/K3/K4/P1/Y9 (+6))", simpleGreen)
 	}
-	if allGridGreen != 124 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 124 (116 simple + 8 bfuseblend: the wave-E "+
-			"torus-rim slice greened A4/A5/A6 alongside J5/J3)", allGridGreen)
+	if allGridGreen != 133 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 133 (122 simple + 11 bfuseblend-only: "+
+			"wave-E's A4/A5/A6 (+3) + W-DH/W-B's B3/B4/B5 (+3) + the pre-existing 5 base bfuseblend-only "+
+			"greens)", allGridGreen)
 	}
 	if skipQuarantine != 0 {
 		t.Errorf("SkipQuarantine = %d, want 0 — the corpus holds NO case; every one of the 475 records is "+
