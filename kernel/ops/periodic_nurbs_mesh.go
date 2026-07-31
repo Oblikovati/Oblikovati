@@ -53,15 +53,22 @@ func periodicNurbsFaceMesh(f *topo.Face, q Quality) (*Mesh, bool) {
 		return nil, false
 	}
 	rims, mouths := classifyCylinderLoops(loops, period)
-	if len(rims) != 2 || !(anyMouthStraddlesSeam(mouths, ulo, period) || faceLacksLoopPcurves(f)) {
+	if len(rims) != 2 || !anyMouthStraddlesSeam(mouths, ulo, period) {
 		// The covering CDT is only NEEDED when a trim straddles the seam (the planar seam-cut loop is
 		// then non-simple). A closed B-spline whose trims clear the seam — a smooth duct, a bore away
 		// from the seam — meshes fine and more finely through nurbsPcurveMesh, so defer to it.
-		// Wave-G additive gate: an OP-REBUILT closed band (a B-spline-host rim fillet's receded wall)
-		// carries NO healed pcurves, and nurbsPcurveMesh's projection fallback CLAMPS at the seam —
-		// the pcurve piles up there and the trim folds (J9 measured a 45% wall-area collapse). Such a
-		// face must take the covering CDT even with no seam-straddling mouth; imported faces (which
-		// all carry healed pcurves) keep the byte-identical defer.
+		//
+		// wave-G TRIED widening this to `|| faceLacksLoopPcurves(f)` on the theory that an op-rebuilt
+		// closed band (no healed pcurve on its new rim) needed the covering CDT even without a
+		// straddling mouth. REVERTED (Oblikovati#585 regression, TestImportedNurbsDuctVolumeAndFolds):
+		// measured on the committed bulged_duct fixture, a completely ordinary imported periodic-in-u
+		// face — plain rim+seam, zero mouths, never touched by any fillet — ALSO has no pcurve on any
+		// of its boundary edge-uses (rim edges AND the seam edge, both directions): STEP import
+		// healing does not attach pcurves to a periodic surface's own natural rim/seam boundary in
+		// general, so "lacks a pcurve" is not a reliable signal of "this is an op-rebuilt band" at
+		// all — it is the NORMAL state of this whole face class. The widened gate routed that face
+		// through the covering CDT it never needed, landing its volume at −1.18% (was −0.37%; ceiling
+		// is 1%). See fillet_bspline_host_rim.go for how J9/B2 now certify without this gate.
 		return nil, false
 	}
 	m := coveringPeriodicMesh(s, q, ulo, uhi, rims, mouths)

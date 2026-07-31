@@ -153,22 +153,27 @@ func assertCatalogBlindSpot(t *testing.T, got []string) {
 // (filletTangentStripe), exactly like every other stripe case already on this list — nothing about
 // the catalog's own arbitration changed.
 //
-// bfuseblend/B2 and simple/J9 JOINED for the SAME rebuildRim bypass as B4/B5/K2/K3/K4 above (W-G,
-// BSpline-host CLOSED-rim canal, fillet_bspline_host_rim.go): bsplineHostClosedRimBody calls
-// rebuildRim(body, rf, canal.concave) directly — the identical entry point the analytic and
-// cyl∧cyl-seam rim families already use — so this is a fourth CALLER of the existing pinned
-// bypass, not a new one (verified: the closed-rim weld's own topo.Builder never touches the edge
-// catalog; the OPEN-edge B-spline-host runouts G5/G7/G9/I5/I7/V6 do NOT bypass — they weld through
-// the general assembler via bsplineHostRunoutFaces/assembleBody and are checked clean by this
-// file's other assertions).
+// bfuseblend/B2 and simple/J9 do NOT join this set (W-G, BSpline-host CLOSED-rim canal): they were
+// briefly greened through the SAME rebuildRim bypass as B4/B5/K2/K3/K4 above
+// (bsplineHostClosedRimBody → rebuildRim), which is why they appeared here for one commit — but the
+// mesher path that made their receded wall tessellate correctly (periodicNurbsFaceMesh's covering
+// CDT, admitted by a "the face carries no healed pcurve" gate) turned out to be UNSAFE in general: it
+// also fired on the committed bulged_duct fixture, a completely ordinary import never touched by any
+// fillet, whose periodic rim/seam ALSO carries no pcurve by construction — routing it through the
+// covering CDT it never needed and costing it −1.18% volume (Oblikovati#585 regression,
+// TestImportedNurbsDuctVolumeAndFolds). Reverting that gate is correct (tessellation correctness
+// preempts feature work), but it leaves the CLOSED B-spline-host rim with no safe tessellation path,
+// so buildBsplineHostCanal (fillet_bspline_host_band.go) now declines closed specs outright — B2/J9
+// are back to FAIL(faulty), never reach rebuildRim, and are NOT in this list. The OPEN-edge
+// B-spline-host runouts G5/G7/G9/I5/I7/V6 are unaffected (they weld through the general assembler,
+// not this bypass) and stay green.
 func catalogBlindCases() []string {
 	return []string{
 		"bfuseblend/A1", "bfuseblend/A2", "bfuseblend/A3", "bfuseblend/A7", "bfuseblend/B1",
-		"bfuseblend/B2", "bfuseblend/B3", "bfuseblend/B4", "bfuseblend/B5",
+		"bfuseblend/B3", "bfuseblend/B4", "bfuseblend/B5",
 		"simple/B2", "simple/H6", "simple/I9", "simple/J1", "simple/J2", "simple/J4", "simple/J6",
-		"simple/J8", "simple/J9", "simple/K1", "simple/K2", "simple/K3", "simple/K4", "simple/N6",
-		"simple/R8", "simple/U6", "simple/W2", "simple/W6", "simple/W8", "simple/W9", "simple/Y9",
-		"simple/Z1",
+		"simple/J8", "simple/K1", "simple/K2", "simple/K3", "simple/K4", "simple/N6", "simple/R8",
+		"simple/U6", "simple/W2", "simple/W6", "simple/W8", "simple/W9", "simple/Y9", "simple/Z1",
 	}
 }
 

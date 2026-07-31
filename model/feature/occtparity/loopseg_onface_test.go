@@ -298,21 +298,11 @@ func knownOffSurfaceDebt() []offSurfaceDebtEntry {
 		// The five mid-span obstacle cases, each re-capped at 1.1x its post-sub-arc measurement (above).
 		{"X3", "simple", 0.0000025}, {"U3", "simple", 0.00000219}, {"T6", "simple", 0.00000196},
 		{"S3", "simple", 0.00000151}, {"R9", "simple", 0.00000129},
-		// Wave-G's two CLOSED B-spline-host rims (kernel/ops/fillet_bspline_host_rim.go), each
-		// capped at 1.1x its measured residual. Same CHORDED SEAM MERIDIAN class J2/J4 carried
-		// before the host-seam carry retired them (exactRetainedSpanOnParent's B-spline arm,
-		// retainedBsplineSpan) — but here the carry's own on-parent gate (bsplineParamOn) correctly
-		// DECLINES: on J2/J4's sphere/torus the rolling ball's contact point is guaranteed by
-		// surface-of-revolution symmetry to sit at the SAME azimuth as the rim vertex, so the exact
-		// sub-span is always available; a general SWEPT B-spline wall (J9/B2's pipe) has no such
-		// guarantee — the numerically marched contact point can land at a genuinely different
-		// azimuth than the wall's own pre-existing structural seam edge, so re-aiming the seam
-		// through it is off that ORIGINAL curve by construction, not by march error (measured:
-		// J9 0.43 absolute on a wall swept along a non-planar bezier path, B2 similarly on its
-		// pipe-through-box weld). The carry's do-no-harm chord fallback is the correct, honest
-		// behaviour here; re-deriving a genuine re-aimed meridian ON the B-spline surface (a new
-		// projected iso-curve, not a sub-span of the old one) is future work, not this wave's scope.
-		{"J9", "simple", 0.00942}, {"B2", "bfuseblend", 0.00382},
+		// Wave-G's two CLOSED B-spline-host rims (J9, bfuseblend/B2) briefly carried an entry here
+		// (a chorded-seam-meridian residual on a general swept B-spline wall) but no longer do: the
+		// closed-rim weld itself was withdrawn (buildBsplineHostCanal declines closed specs — see
+		// kernel/ops/fillet_bspline_host_band.go, Oblikovati#585). Neither case ships a body anymore,
+		// so there is nothing here to measure a debt against.
 	}
 }
 

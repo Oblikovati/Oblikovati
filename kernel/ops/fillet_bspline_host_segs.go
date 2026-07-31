@@ -85,18 +85,3 @@ func wgPassthroughFace(f *topo.Face) filletFace {
 	}
 	return filletFace{surface: f.Geometry(), loops: loops, parent: f.Lineage()}
 }
-
-// faceLacksLoopPcurves reports a face with at least one boundary edge use carrying no
-// healed pcurve — the signature of an OP-REBUILT face (import healing pcurves every
-// imported use). periodicNurbsFaceMesh admits such a closed band to the covering CDT,
-// because the projection fallback clamps at the seam (wave-G additive gate).
-func faceLacksLoopPcurves(f *topo.Face) bool {
-	for _, l := range f.Loops() {
-		for _, u := range l.EdgeUses() {
-			if len(u.Pcurve()) == 0 {
-				return true
-			}
-		}
-	}
-	return false
-}

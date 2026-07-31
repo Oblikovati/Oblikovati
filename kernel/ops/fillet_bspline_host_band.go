@@ -47,6 +47,26 @@ func buildBsplineHostCanal(body *topo.Body, e *topo.Edge, aF, bF *topo.Face, r f
 	if !ok {
 		return nil, false
 	}
+	if spec.closed {
+		// CLOSED B-spline-host rims are declined here, not built (Oblikovati#585 regression:
+		// TestImportedNurbsDuctVolumeAndFolds). The closed-rim weld's receded wall is a
+		// periodic-in-u face whose new rim carries no pcurve, and the ONLY mesher path proven
+		// to tessellate that correctly (periodicNurbsFaceMesh's covering CDT, admitted via a
+		// "lacks a pcurve" gate) turned out to be UNSAFE in general: measured on the committed
+		// bulged_duct fixture, an ordinary imported periodic face — never touched by any
+		// fillet — has the SAME "no pcurve on its rim/seam" shape (STEP healing does not
+		// attach pcurves to a periodic surface's own natural boundary), so that gate routed a
+		// perfectly good import through the covering CDT and cost it −1.18% volume (ceiling
+		// 1%). Reverting the gate (periodic_nurbs_mesh.go) fixes the import but leaves this
+		// closed-rim weld with no safe tessellation path — measured directly: without the
+		// gate, J9 folds 21 edges / 113-289 free edges, B2 folds 62 / 302-698 free edges, both
+		// far from watertight. Tessellation correctness preempts feature work (CLAUDE.md), so
+		// the honest choice is to decline here — the SAME flat "cannot round an edge bordering
+		// a curved face" refusal a closed rim always got before this engine — rather than ship
+		// a body that renders wrong. Re-deriving a genuine safe periodic mesh path for an
+		// op-rebuilt rim (distinct from "any pcurve-less periodic face") is future work.
+		return nil, false
+	}
 	trial, err := bsplineHostCanalDir(spec, 1, bsplineHostStationsMin, res)
 	if err != nil {
 		wgBsplineDebug("trial march", err)
