@@ -53,8 +53,13 @@ type miterArmSide struct {
 	edge    *topo.Edge
 	outer   *topo.Face
 	railSh  endSeg // shared-face contact rail: farShared → sTop
-	railOut endSeg // outer-face contact rail: farOuter → sBot
+	railOut endSeg // outer-face contact rail: farOuter → sBot (or → the cap junction, see transit)
 	run     armRunout
+	// transit is non-nil when sBot lies on the OTHER arm's outer host rather than on this arm's
+	// own outer face (P5's cylinder arm, sBot on the top cap): the rail then ends at the arm
+	// tube's junction with that host's plane, and transit — the tube∩plane cross-section arc —
+	// carries the arm boundary from the junction to sBot. nil on every pure two-host miter.
+	transit *endSeg
 }
 
 // curvedMiterBody welds the 2-arm curved miter into a watertight solid, or returns a do-no-harm reason.
@@ -105,8 +110,9 @@ func buildMiterArmSide(m *cornerMiter, arm geom.Surface, edge *topo.Edge, r floa
 // one arm, given its far feet. Split from buildMiterArmSide to stay within funlen.
 func assembleMiterArmSide(m *cornerMiter, arm geom.Surface, edge *topo.Edge, outer *topo.Face, farShared, farOuter math.Point3, r float64, res Resolution) (miterArmSide, string) {
 	sTop, sBot := m.seam[0], m.seam[len(m.seam)-1]
+	tol := res.Weld() * r
 	railSh, okA := armRunoutRail(m.shared, edge, arm, farShared, sTop, res)
-	railOut, okB := armRunoutRail(outer, edge, arm, farOuter, sBot, res)
+	railOut, transit, okB := miterOuterRail(m, arm, edge, outer, farOuter, sBot, r, res)
 	if !okA || !okB {
 		return miterArmSide{}, fmt.Sprintf("curved miter: a host contact rail could not be built on edge %d (shared=%v outer=%v)", edge.ID(), okA, okB)
 	}
@@ -116,68 +122,71 @@ func assembleMiterArmSide(m *cornerMiter, arm geom.Surface, edge *topo.Edge, out
 	if !ok {
 		return miterArmSide{}, fmt.Sprintf("curved miter: far runout declined on edge %d: %s", edge.ID(), reason)
 	}
-	return miterArmSide{surface: arm, edge: edge, outer: outer, railSh: railSh, railOut: railOut, run: run}, ""
-}
-
-// curvedMiterFaces builds every result face: the two trimmed arm faces, the twice-bitten shared face,
-// each arm's receded outer host and far cap, and every untouched face carried through verbatim.
-func curvedMiterFaces(body *topo.Body, m *cornerMiter, tor, cyl miterArmSide, r float64, res Resolution) ([]filletFace, string) {
-	tol := res.Weld() * r
-	shared, ok := sharedMiterRetrim(m, tor, cyl, tol)
+	railOut, ok = reconcileOuterRailWithTrim(railOut, run, edge, arm, outer, tol, res)
 	if !ok {
-		return nil, "curved miter: shared-face two-rail retrim declined"
+		return miterArmSide{}, fmt.Sprintf("curved miter: outer rail does not meet the far trim on edge %d", edge.ID())
 	}
-	bites := miterHostBites(m, tor, cyl)
-	out := []filletFace{miterArmFace(tor, m.seam), miterArmFace(cyl, m.seam), shared}
-	for _, f := range body.Faces() {
-		if f == m.shared {
-			continue // replaced by the twice-bitten retrim
-		}
-		bite, bitten := bites[f]
-		if !bitten {
-			out = append(out, passthroughFace(f))
-			continue
-		}
-		ff, ok := singleRunoutHostFace(f, bite.seg, bite.avoid, tol)
-		if !ok {
-			return nil, fmt.Sprintf("curved miter: host %T retrim declined", f.Geometry())
-		}
-		out = append(out, ff)
-	}
-	return out, ""
+	return miterArmSide{surface: arm, edge: edge, outer: outer, railSh: railSh, railOut: railOut, run: run, transit: transit}, ""
 }
 
-// miterHostBite is one bitten host's recede rail and the removed-span anchor vertex.
-type miterHostBite struct {
-	seg   endSeg
-	avoid math.Point3
-}
-
-// miterHostBites maps each arm's outer host and far cap to its recede bite (the contact rail on an
-// outer face, the far cross-section trim on a cap) plus the vertex the removed span carries.
-func miterHostBites(m *cornerMiter, tor, cyl miterArmSide) map[*topo.Face]miterHostBite {
-	v := m.vertex.Point()
-	bites := map[*topo.Face]miterHostBite{}
-	for _, s := range []miterArmSide{tor, cyl} {
-		far := farVertexNotVid(s.edge, m.vertex.ID())
-		bites[s.outer] = miterHostBite{seg: reverseEndSegs([]endSeg{s.railOut})[0], avoid: v} // outer host recedes along sBot→farOuter
-		if s.run.capping != nil {
-			bites[s.run.capping] = miterHostBite{seg: s.run.trim, avoid: far}
-		}
+// miterOuterRail builds one arm's outer-host contact rail. When the seam endpoint sBot lies ON the
+// arm's own outer host (every pure two-host miter — byte-identical legacy path) the rail runs
+// farOuter→sBot exactly as before. When sBot lies on the OTHER arm's outer plane instead (P5's
+// cylinder arm: sBot on the top cap), the rail can only reach the arm tube's junction with that
+// plane; the returned transit arc (tube ∩ plane) carries the boundary junction→sBot from there.
+func miterOuterRail(m *cornerMiter, arm geom.Surface, edge *topo.Edge, outer *topo.Face, farOuter, sBot math.Point3, r float64, res Resolution) (endSeg, *endSeg, bool) {
+	tol := res.Weld() * r
+	if distanceToSurface(outer, sBot) <= tol {
+		rail, ok := armRunoutRail(outer, edge, arm, farOuter, sBot, res)
+		return rail, nil, ok // legacy: sBot is on this arm's own outer host
 	}
-	return bites
+	cylArm, isCyl := arm.(geom.Cylinder)
+	capFace := otherFace(otherMiterEdge(m, edge), m.shared)
+	if !isCyl || capFace == nil {
+		return endSeg{}, nil, false
+	}
+	capPl, isPl := capFace.Geometry().(geom.Plane)
+	if !isPl {
+		return endSeg{}, nil, false // sBot off both outer hosts — outside the analytic transit scope
+	}
+	spineAtCap, junction, ok := cylArmCapJunction(outer, cylArm, capPl, r, tol)
+	if !ok {
+		return endSeg{}, nil, false
+	}
+	transit, ok := tubeCapTransitArc(spineAtCap, r, junction, sBot, tol)
+	if !ok {
+		return endSeg{}, nil, false
+	}
+	rail, ok := armRunoutRail(outer, edge, arm, farOuter, junction, res)
+	return rail, &transit, ok
 }
 
-// miterArmFace emits one trimmed arm face: the shared-face rail (farShared→sTop), the seam
-// (sTop→sBot, the chord list SHARED with the other arm so the weld is watertight), the outer-face
-// rail reversed (sBot→farOuter), and the far cross-section trim reversed (farOuter→farShared).
-func miterArmFace(side miterArmSide, seam []math.Point3) filletFace {
-	segs := []endSeg{side.railSh}
-	segs = append(segs, seamEndSegs(seam)...)
-	segs = append(segs, reverseEndSegs([]endSeg{side.railOut})...)
-	segs = append(segs, reverseEndSegs([]endSeg{side.run.trim})...)
-	return filletFace{surface: side.surface, loops: []filletLoop{loopFromSegs(segs)}, parent: filletEdgeProvenance(side.edge)}
+// otherMiterEdge is the miter's OTHER picked edge (the sibling arm's edge).
+func otherMiterEdge(m *cornerMiter, edge *topo.Edge) *topo.Edge {
+	if m.curved.torEdge == edge {
+		return m.curved.cylEdge
+	}
+	return m.curved.torEdge
 }
+
+// reconcileOuterRailWithTrim rebuilds the outer rail to end at the far trim's actual foot on the
+// outer host when the two disagree — the curved-capping case (P5's torus arm, capped by the pocket
+// wall): the trim = arm ∩ capping-cylinder ends at the true triple point on the outer host, while
+// the rail was seeded from the far BALL's tangency foot, a point r-ish away that is no vertex of
+// the final solid. A plane-capped (perpendicular) runout has the two coincide, so this is a no-op
+// there and every prior green is byte-identical.
+func reconcileOuterRailWithTrim(railOut endSeg, run armRunout, edge *topo.Edge, arm geom.Surface, outer *topo.Face, tol float64, res Resolution) (endSeg, bool) {
+	trimFoot := trimEndNearerSurface(run.trim, outer)
+	if float64(trimFoot.DistanceTo(railOut.from)) <= tol || distanceToSurface(outer, trimFoot) > tol {
+		return railOut, true // coincident (legacy) or the trim never lands on the outer host
+	}
+	return armRunoutRail(outer, edge, arm, trimFoot, railOut.to, res)
+}
+
+// curvedMiterFaces (result-face assembly), curvedMiterHostFaces, the passthrough/shared soundness
+// guards, miterHostRetrim/miterHostBiteChains/miterTrimChain, and miterArmFace all live in
+// fillet_miter_curved_hostfaces.go — split out to keep this file under the 500-line/one-responsibility
+// rule (this file owns the arm-side solve + the shared-face two-rail retrim).
 
 // seamEndSegs turns the seam polyline into straight chord segments sTop→sBot.
 func seamEndSegs(seam []math.Point3) []endSeg {
