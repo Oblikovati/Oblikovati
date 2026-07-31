@@ -125,11 +125,13 @@ func reclipPlainFace(set *runoutSet, ef edgeFillet, t setbackTiling, maps fillet
 
 // plainContactDetour is the ONE-boss plain face's notch detour: from the receded tangent corner it enters
 // (from), a straight wing B-tangent survivor to the near cut station, the central patch's OWN tangency
-// CONTACT LOCUS (near→far) sampled at ringSegSamples, and a straight wing survivor to the far corner
+// CONTACT LOCUS (near→far) sampled at ringSegSamples with each segment carrying its own locus sub-span
+// (appendTrimmedArcSegs — the same TrimmedCurve3 value the patch's loop offers, so the shared edge
+// carries the interpolated locus instead of its chords), and a straight wing survivor to the far corner
 // (to). No boss arc — the plain face has no footprint. The locus replaces the straight segment this used
 // to draw at the PLAIN fillet's contact line: the run-out ball recedes from that line (up to 11% of this
 // face's area, coons4-audit.md §C.4's separable under-recession), so a straight seam left the host face
-// the wrong size AND left the patch boundary off its own surface. orientedLocus makes the polyline
+// the wrong size AND left the patch boundary off its own surface. orientedLocus makes the locus
 // direction-safe, so the notch and the patch still share identical interior points from either corner.
 func plainContactDetour(t setbackTiling) func(from, to math.Point3) ([]notchSeg, bool) {
 	return func(from, to math.Point3) ([]notchSeg, bool) {
@@ -137,7 +139,7 @@ func plainContactDetour(t setbackTiling) func(from, to math.Point3) ([]notchSeg,
 			return nil, false
 		}
 		near, far := orderByNearer(from, t.bCutLo, t.bCutHi)
-		segs := appendArcSegs([]notchSeg{{pt: from}}, orientedLocus(t.mid.railB, near, t.weld), ringSegSamples)
+		segs := appendTrimmedArcSegs([]notchSeg{{pt: from}}, orientedLocus(t.mid.railB, near, t.weld), ringSegSamples)
 		return append(segs, notchSeg{pt: far}), true
 	}
 }
@@ -265,17 +267,19 @@ func (t setbackTiling) flankLocusFrom(p math.Point3) geom.Curve3 {
 
 // innerHostSegs assembles the inner host detour's notch segment chain (split from innerHostDetour to
 // keep the closure short): from→nearCut via the near flank's contact locus, the host-side arc through
-// the wall seam, the far flank's locus back out, farCut→to.
+// the wall seam, the far flank's locus back out, farCut→to. Both loci carry their per-segment
+// sub-spans (appendTrimmedArcSegs) — the same TrimmedCurve3 values the flank patches' loops offer —
+// so the shared edges carry the interpolated locus instead of its chords.
 func innerHostSegs(boss crossingBoss, cyl geom.Cylinder, from math.Point3,
 	nearLocus, farLocus geom.Curve3, nearSeam, farSeam, farCut math.Point3) ([]notchSeg, bool) {
 	arc1, arc2, ok := hostRimArcs(boss, cyl, nearSeam, boss.footEdge.StartVertex().Point(), farSeam)
 	if !ok || nearLocus == nil || farLocus == nil {
 		return nil, false
 	}
-	segs := appendArcSegs([]notchSeg{{pt: from}}, nearLocus, ringSegSamples)
+	segs := appendTrimmedArcSegs([]notchSeg{{pt: from}}, nearLocus, ringSegSamples)
 	segs = appendTrimmedArcSegs(segs, arc1, hostArcChordCount(arc1))
 	segs = appendSeamArc(segs, boss, arc2)
-	segs = appendArcSegs(segs, farLocus, ringSegSamples)
+	segs = appendTrimmedArcSegs(segs, farLocus, ringSegSamples)
 	return append(segs, notchSeg{pt: farCut}), true
 }
 

@@ -33,26 +33,20 @@ func hostTangent(c corner, hostIsA bool) math.Point3 {
 	return c.tb
 }
 
-// appendArcSegs appends arc's open samples (excluding the far endpoint) as STRAIGHT chords (curve nil), at
-// chord count n. The samples are the same points the neighbour (wall rim/patch) tiles from the identical
-// arc AT THE SAME COUNT, so the faces weld; a nil curve keeps each welded edge a LineSegment between two
-// on-surface points — sampleEdgeCurve would otherwise re-trace the FULL arc over each sub-edge and
-// self-cross the boundary. n lets a torus host arc densify (rimSubArcChordCount) while lines/ruled arcs
-// stay at ringSegSamples.
-func appendArcSegs(segs []notchSeg, arc geom.Curve3, n int) []notchSeg {
-	for _, p := range sampleCurveN(arc, n, false) {
-		segs = append(segs, notchSeg{pt: p})
-	}
-	return segs
-}
-
-// appendTrimmedArcSegs is appendArcSegs for a boss's host-side FOOTPRINT arc: each sample also carries
-// its own sub-span of the arc (geom.TrimmedCurve3) as the segment's leaving curve, so the notch bounds
+// appendTrimmedArcSegs appends a detour curve's open samples (excluding the far endpoint) at chord
+// count n, each sample carrying its own sub-span of the curve (geom.TrimmedCurve3) as the segment's
+// leaving curve. The samples are the same points the neighbour (wall rim/patch) tiles from the
+// identical curve AT THE SAME COUNT (sampleCurveNTrimmed's pts are byte-identical to sampleCurveN's),
+// so the faces weld; n lets a torus host arc densify (rimSubArcChordCount) while lines/ruled arcs stay
+// at ringSegSamples. For a boss's host-side FOOTPRINT arc the carried sub-span makes the notch bound
 // the TRUE rim instead of its inscribed chords — the chords left the re-clipped host plane the whole
 // inscribed-polygon surplus Σ (r²/2)(θ−sinθ) (T3's plane +4.38498, t3-plane-sliver-report.md). The
-// per-segment restriction (never the full arc on a sub-edge) is the same N7 rule sampleCurve3OpenTrimmed
-// states; the points are byte-identical to appendArcSegs', so every weld partner still matches. Contact
-// LOCI keep appendArcSegs' nil chords — their neighbours (the patches) tile the chord stations.
+// per-segment restriction (never the full curve on a sub-edge) is the same N7 rule
+// sampleCurve3OpenTrimmed states — a full curve per sub-edge would make sampleEdgeCurve re-trace it
+// once per segment and self-cross the boundary. Contact LOCI ride the same rule since the railB
+// interpolated-locus carry (railb-locus-report.md): their segments carry sub-spans of the locus rail —
+// the very TrimmedCurve3 values the patch loop offers — where the old degree-1 locus (whose straight
+// sub-spans made a nil chord equivalent) sat a sagitta off the patch.
 func appendTrimmedArcSegs(segs []notchSeg, arc geom.Curve3, n int) []notchSeg {
 	pts, curves := sampleCurveNTrimmed(arc, n, false)
 	for i, p := range pts {

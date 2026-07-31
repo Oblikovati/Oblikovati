@@ -188,6 +188,20 @@ func offSurfaceDebtIndex() map[string]float64 {
 // T7 4.289e-4→4.1e-8 (all three now BELOW the default budget — entries DELETED, count 31 → 28),
 // T1 4.974e-4→5.963e-6, S1 3.197e-4→4.157e-5, S4 3.340e-4→8.097e-5, S6 5.451e-4→1.748e-4,
 // T3 3.973e-4→2.393e-4; S9 7.927e-4 unchanged (its worst residual is not a rim chord) and holds.
+//
+// ★ Re-capped a THIRD time by the railB interpolated contact-locus carry (railb-locus-report.md):
+// what remained on the six setback survivors was the railB contact-locus POLYLINE — degree-1 chords
+// through the 7 node contacts, lying IN the pInner host plane (partner residual ~1e-15) but off the
+// lofted patch by the chord sagitta. contactLocusRail now interpolates EVERY solved station contact
+// into the loft's own boundary row (geom.CanalFootLocusRail), and both consumers (patch loop + host
+// notch detour) carry its per-segment sub-spans by value. Measured (same function,
+// worstLoopSegmentOffFace/boundingDiag), previous HEAD → this HEAD: S9 7.927231e-4→3.198130e-9,
+// T3 2.393473e-4→4.900577e-10, S6 1.748055e-4→1.834108e-10, S4 8.097143e-5→6.279003e-10,
+// S1 4.157203e-5→1.072957e-9, T1 5.963266e-6→2.172440e-7 — ALL SIX below the default budget, so
+// their entries are DELETED per TestOffSurfaceDebtIsWellFormed (count 28 → 22). Each case's worst
+// residual is now a DIFFERENT family (S1/T1 the reversedCurve3 arm-vs-cylinder fit, S9 the torus
+// rim TrimmedCurve3 at 3.2e-9, all measured in railb-locus-report.md §4); the CANAL-rail taxonomy
+// bullet below predates this carry for the S/T setback cases.
 // The roots that remain, largest first (stopface-reversed-report.md):
 //
 //   - CURVED-HOST RETRIM ARC off its own cylinder (complex/F2, 0.0616) — a `fillet:x` retrim edge, not a
@@ -268,18 +282,18 @@ func knownOffSurfaceDebt() []offSurfaceDebtEntry {
 	return []offSurfaceDebtEntry{
 		{"F2", "complex", 0.0616}, {"C2", "simple", 0.0192},
 		{"V9", "simple", 0.017}, {"P9", "simple", 0.017}, {"X9", "simple", 0.00284},
-		{"V3", "simple", 0.00199}, {"C8", "simple", 0.00129}, {"S9", "simple", 0.000872},
+		{"V3", "simple", 0.00199}, {"C8", "simple", 0.00129},
 		{"P8", "simple", 0.00061}, {"V8", "simple", 0.00061},
-		// Six setback-family ceilings re-capped at 1.1x their post-FOOTPRINT-RIM-CURVE measurement
-		// (worstLoopSegmentOffFace/boundingDiag; the rim sub-edges now carry exact conic sub-spans, so
-		// the chords that used to dominate these cases' residuals are gone — t3-plane-sliver-report.md):
-		// T3 2.393e-4, S6 1.748e-4, S4 8.10e-5, S1 4.16e-5, T1 5.96e-6. S7 (3.8e-10), T4 (4.6e-9) and
-		// T7 (4.1e-8) fell BELOW the default budget and are deleted per TestOffSurfaceDebtIsWellFormed.
-		{"V5", "simple", 0.000313}, {"V1", "simple", 0.000295}, {"T3", "simple", 0.000263},
-		{"S6", "simple", 0.000192}, {"U4", "simple", 0.000165}, {"K7", "simple", 0.000152},
+		// The railB interpolated contact-locus carry (railb-locus-report.md) took ALL NINE setback
+		// entries' family below the default budget — the six survivors measured S9 3.198130e-9,
+		// T3 4.900577e-10, S6 1.834108e-10, S4 6.279003e-10, S1 1.072957e-9, T1 2.172440e-7
+		// (worstLoopSegmentOffFace/boundingDiag) — so S9/T3/S6/S4/S1/T1 are deleted per
+		// TestOffSurfaceDebtIsWellFormed (28 → 22), joining S7/T4/T7 which the footprint-rim carry
+		// (t3-plane-sliver-report.md) had already retired at 3.8e-10 / 4.6e-9 / 4.1e-8.
+		{"V5", "simple", 0.000313}, {"V1", "simple", 0.000295},
+		{"U4", "simple", 0.000165}, {"K7", "simple", 0.000152},
 		{"L1", "simple", 0.000133}, {"N5", "simple", 0.000129}, {"L7", "simple", 0.000128},
-		{"C6", "simple", 0.000121}, {"S4", "simple", 0.0000891}, {"S1", "simple", 0.0000457},
-		{"T1", "simple", 0.00000656},
+		{"C6", "simple", 0.000121},
 		// The five mid-span obstacle cases, each re-capped at 1.1x its post-sub-arc measurement (above).
 		{"X3", "simple", 0.0000025}, {"U3", "simple", 0.00000219}, {"T6", "simple", 0.00000196},
 		{"S3", "simple", 0.00000151}, {"R9", "simple", 0.00000129},

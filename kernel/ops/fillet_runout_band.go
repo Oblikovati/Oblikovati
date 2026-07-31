@@ -11,7 +11,8 @@ import (
 )
 
 // runoutStationRefine is how many loft stations are placed per RAIL chord. The rail nodes themselves
-// are always stations — that is what makes the emitted boundary lie ON the lofted surface exactly, and
+// are always stations — that is what makes the emitted boundary lie ON the lofted surface exactly
+// (railA by node-as-station; railB is the loft's own boundary row, contactLocusRail), and
 // therefore what makes the weld T-junction-free (it does NOT make the certificate's G0 residual a
 // measurement; see certifyRunoutCanalPatch). The refinement controls only the v-interpolation error
 // BETWEEN the nodes, which is exactly what MaxBallDev measures — so this constant sets that field's
@@ -100,9 +101,10 @@ func rstRstFeet(env runoutEnvelope, inner crossingBoss, weld float64) runoutStat
 // footprint sub-arc (the EXACT intact-footprint curve the wall rim also tiles); its ringSegSamples
 // nodes fix the station grid, refined runoutStationRefine-fold. railBNodes, when non-nil, is the
 // B-side rail's OWN node curve (the second footprint sub-arc of a rst-rst band) whose nodes are added
-// to the grid so its samples are station feet too; when nil the B rail is synthesised as the polyline
-// through the computed contacts at railA's nodes. ok=false on any station that will not solve — the
-// whole band declines, never a partial fill (do-no-harm).
+// to the grid so its samples are station feet too; when nil the B rail is synthesised as the
+// interpolated contact locus through EVERY solved station's contact (contactLocusRail — the loft's
+// own boundary row, so the shipped rail lies on the patch). ok=false on any station that will not
+// solve — the whole band declines, never a partial fill (do-no-harm).
 func buildRunoutBand(env runoutEnvelope, railA geom.Curve3, railBNodes geom.Curve3, boss crossingBoss,
 	feet runoutStationFeet) (runoutBand, bool) {
 	nodesA, ok := railNodePoints(railA)
@@ -125,7 +127,7 @@ func buildRunoutBand(env runoutEnvelope, railA geom.Curve3, railBNodes geom.Curv
 	}
 	railB := railBNodes
 	if railB == nil {
-		if railB, ok = contactLocusRail(sts, len(nodesA)-1); !ok {
+		if railB, ok = contactLocusRail(sts); !ok {
 			return runoutBand{}, false
 		}
 	}
@@ -248,24 +250,28 @@ func nearestGridIndex(grid []float64, s float64) int {
 	return best
 }
 
-// contactLocusRail is the B-side rail of a surf-rst band: the degree-1 (polyline) B-spline through the
-// EXACT tangency contacts at the rail's node stations. Degree 1 with uniform interior knots makes
-// PointAt(k/n) return control point k exactly, so sampleCurveN(rail, ringSegSamples) reproduces the
-// station feet bit-identically — which is what lets the patch, the re-clipped host notch and the wing
-// weld point-for-point while every one of those points sits on the true envelope (the straight
-// LineSegment it replaces sat on the host plane but at the PLAIN fillet's contact, up to 11% of the
-// host face's area away — the separable under-recession coons4-audit.md §C.4 isolated).
-func contactLocusRail(sts []runoutStation, chords int) (geom.BSplineCurve, bool) {
-	if chords < 1 || len(sts) < chords+1 {
-		return geom.BSplineCurve{}, false
+// contactLocusRail is the B-side rail of a surf-rst band: the interpolated tangency contact LOCUS
+// through the EXACT ball-contact feet at EVERY solved station (73 under runoutStationRefine=12),
+// built by geom.CanalFootLocusRail — the very interpolation LoftCanalStations lofts the patch's
+// B-side boundary from, so the rail IS the patch's own boundary isoparm (on-surface to evaluation
+// noise) and, the contacts all lying in hostB's plane, the rail stays in that plane too (each
+// control point is an affine combination of the contacts) — BOTH consumers of the shipped edge are
+// exact. The degree-1 polyline through the 7 NODE feet it replaces was the sharpest off-surface
+// residual family on the setback corpus: its chords lay in the pInner plane but off the lofted
+// patch by the chord sagitta (S9 7.927e-04·boundingDiag; railb-locus-report.md). Its predecessor,
+// the straight LineSegment at the PLAIN fillet's contact, sat up to 11% of the host face's area
+// away (the separable under-recession coons4-audit.md §C.4 isolated).
+func contactLocusRail(sts []runoutStation) (geom.Curve3, bool) {
+	centers := make([]math.Point3, len(sts))
+	feet := make([]math.Point3, len(sts))
+	for i, st := range sts {
+		centers[i], feet[i] = st.centre, st.footB
 	}
-	step := (len(sts) - 1) / chords
-	ctrl := make([]math.Point3, 0, chords+1)
-	for k := 0; k <= chords; k++ {
-		ctrl = append(ctrl, sts[k*step].footB)
+	c, err := geom.CanalFootLocusRail(centers, feet)
+	if err != nil {
+		return nil, false
 	}
-	c, err := geom.NewBSplineCurveUniformWeights(1, ctrl, polylineKnots(len(ctrl)))
-	return c, err == nil
+	return c, true
 }
 
 // polylineKnots is the clamped degree-1 knot vector [0,0,1/n,…,(n-1)/n,1,1] for n+1 control points —
@@ -281,14 +287,21 @@ func polylineKnots(count int) []float64 {
 }
 
 // reverseCurve3 returns a curve tracing c backwards. A polyline (degree-1 B-spline) is reversed
-// EXACTLY by reversing its control points — no coordinate arithmetic — so a host notch entering the
-// contact locus from the far corner samples the identical point set the patch does. Any other curve
-// kind is returned unchanged: every such rail in this path (Arc3d / EllipticalArc) already samples
-// order-independently under sampleCurveN.
+// EXACTLY by reversing its control points — no coordinate arithmetic — so a host notch entering
+// such a rail from the far corner samples the identical point set the patch does. The interpolated
+// contact-locus rail (degree > 1, non-uniform knots — contactLocusRail) has no bit-exact
+// control-point reversal, so it is wrapped by geom.ReverseCurve3 instead: the wrapper mirrors the
+// parameterisation (PointAt(t) = base.PointAt(lo+hi−t)) WITHOUT re-fitting, so both traversal
+// directions read the same curve by value and their samples agree to evaluation noise, far under
+// the point-welder's model weld. Any other curve kind is returned unchanged: every such rail in
+// this path (Arc3d / EllipticalArc) already samples order-independently under sampleCurveN.
 func reverseCurve3(c geom.Curve3) geom.Curve3 {
 	bs, ok := c.(geom.BSplineCurve)
-	if !ok || bs.Degree != 1 {
+	if !ok {
 		return c
+	}
+	if bs.Degree != 1 {
+		return geom.ReverseCurve3(c)
 	}
 	ctrl := make([]math.Point3, len(bs.Ctrl))
 	for i, p := range bs.Ctrl {
@@ -302,7 +315,7 @@ func reverseCurve3(c geom.Curve3) geom.Curve3 {
 }
 
 // orientedLocus returns the contact-locus rail traced from `from` — the direction-safe accessor every
-// host detour uses, since a polyline (unlike a straight segment) is NOT direction-symmetric.
+// host detour uses, since an interpolated locus (unlike a straight segment) is NOT direction-symmetric.
 func orientedLocus(rail geom.Curve3, from math.Point3, weld float64) geom.Curve3 {
 	if float64(curveStart(rail).DistanceTo(from)) <= weld {
 		return rail
