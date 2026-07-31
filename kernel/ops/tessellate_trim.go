@@ -93,6 +93,10 @@ func specialCurvedMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, hole
 		return m, true // a large sphere zone reaching an enclosed pole (one off-centre plane cut, seam to
 		// the pole): fan on the rim CIRCLE's exact normal, not the seam-biased newellUnit (J2)
 	}
+	if m, isCap := sphereSeamedCapFan(f, s, q); isCap {
+		return m, true // a seamed cap: coplanar MULTI-ARC rim (a subdivided boss equator) + one doubled
+		// seam edge to the pole (S6/S7's hemisphere): latitude-ring fan, not the density-capped stereo CDT
+	}
 	if m, isPatch := spherePatchMesh(s, outer3D, holes3D, q); isPatch {
 		return m, true // a sphere bounded by several arcs (a box cut): gnomonic CDT, pole/seam-safe
 	}

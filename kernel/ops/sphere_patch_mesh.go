@@ -3,8 +3,10 @@
 package ops
 
 import (
+	"fmt"
 	stdmath "math"
 
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
@@ -40,14 +42,33 @@ func spherePatchMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Poi
 		return nil, false
 	}
 	uv, pos, nrm, loops, loops2D := projectPatchBoundary(sph, chart, outer3D, holes3D)
-	addPatchInterior(chart, &uv, &pos, &nrm, loops2D, q)
+	saturated := addPatchInterior(chart, &uv, &pos, &nrm, loops2D, q)
 	tris := constrainedDelaunay(uv, loops)
 	if len(tris) == 0 {
 		return nil, false
 	}
 	m := patchMeshFrom(pos, nrm, tris)
 	repairFolds(m, 8)
+	diagnosePatchGridClamp(m, saturated, q)
 	return m, true
+}
+
+// diagnosePatchGridClamp records the patchGridCap clamp on the mesh when the interior Steiner grid
+// was denied the spacing the chord tolerance asked for — the same honest degradation record the NURBS
+// interior refinement emits (CodeTessellateCapSaturated, Oblikovati#1412). Before this the clamp was
+// SILENT, and a large sphere patch (a hemisphere is the worst case: chart bbox 2R × 2R) under-reported
+// its area at every swept tolerance with nothing to see — the S6/S7 "sphere notch" that never was
+// (sphere-notch-report.md).
+func diagnosePatchGridClamp(m *Mesh, saturated bool, q Quality) {
+	if !saturated {
+		return
+	}
+	m.Diagnose(diag.Diagnostic{
+		Code:     CodeTessellateCapSaturated,
+		Severity: diag.Warning,
+		Detail: fmt.Sprintf("sphere-patch interior grid clamped at %d steps per axis still above chord tol %g",
+			patchGridCap, q.tol()),
+	})
 }
 
 // sphereChart projects a sphere point to a 2D chart and lifts a 2D point back to the sphere (point +
@@ -220,12 +241,13 @@ const patchGridCap = 80
 
 // addPatchInterior lays a grid of Steiner points across the chart bbox at the chart's spacing, keeps
 // those strictly inside the trim, and lifts each to the sphere — the interior curvature the boundary
-// alone would chord flat.
-func addPatchInterior(chart sphereChart, uv *[][2]float64, pos *[]math.Point3, nrm *[]math.Vector3, loops2D [][]math.Point2, q Quality) {
+// alone would chord flat. Returns whether either axis SATURATED patchGridCap (the grid is then coarser
+// than the chord tolerance asked, and the caller must say so on the mesh).
+func addPatchInterior(chart sphereChart, uv *[][2]float64, pos *[]math.Point3, nrm *[]math.Vector3, loops2D [][]math.Point2, q Quality) bool {
 	umin, umax, vmin, vmax := bounds2D(loops2D[0])
 	h := chart.gridSpacing(q)
 	if h <= 0 {
-		return
+		return false
 	}
 	nu, nv := gridSteps(umax-umin, h), gridSteps(vmax-vmin, h)
 	holes2D := loops2D[1:]
@@ -241,6 +263,13 @@ func addPatchInterior(chart sphereChart, uv *[][2]float64, pos *[]math.Point3, n
 			*nrm = append(*nrm, n)
 		}
 	}
+	return gridSaturated(umax-umin, h) || gridSaturated(vmax-vmin, h)
+}
+
+// gridSaturated reports whether spanning extent at spacing h would exceed patchGridCap intervals —
+// i.e. gridSteps clamped and the laid grid is coarser than the tolerance-derived spacing.
+func gridSaturated(extent, h float64) bool {
+	return int(extent/h) > patchGridCap
 }
 
 // gridSteps returns the number of grid intervals to span extent at spacing h, clamped to patchGridCap.
