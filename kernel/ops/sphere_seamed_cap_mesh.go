@@ -32,26 +32,35 @@ func sphereSeamedCapFan(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
 	if !ok || len(f.Loops()) != 1 {
 		return nil, false
 	}
-	loop := outerLoopOf(f)
-	if loop == nil {
-		return nil, false
-	}
-	seam, ok := loneDoubledLoopEdge(loop)
+	rim, axis, ok := recognizeSeamedCapRim(f, sph, q)
 	if !ok {
-		return nil, false
-	}
-	rim, ok := seamlessRimRing(loop, seam, q)
-	if !ok || len(rim) < 3 {
-		return nil, false
-	}
-	axis, ok := capAxis(sph, rim)
-	if !ok {
-		return nil, false
-	}
-	if !seamEndsAtPole(seam, sph, axis) {
 		return nil, false
 	}
 	return buildSphereCap(sph, rim, axis, q), true
+}
+
+// recognizeSeamedCapRim runs the recognizer chain: exactly one doubled (opposite-sense) loop edge —
+// the seam — whose far vertex sits on the cap pole, with the remaining uses chaining into a closed
+// coplanar rim ring validated through the SAME capAxis the plain cap uses. ok=false on any miss, so
+// the caller declines and the face keeps its existing mesh path.
+func recognizeSeamedCapRim(f *topo.Face, sph geom.Sphere, q Quality) ([]math.Point3, math.Vector3, bool) {
+	loop := outerLoopOf(f)
+	if loop == nil {
+		return nil, math.Vector3{}, false
+	}
+	seam, ok := loneDoubledLoopEdge(loop)
+	if !ok {
+		return nil, math.Vector3{}, false
+	}
+	rim, ok := seamlessRimRing(loop, seam, q)
+	if !ok || len(rim) < 3 {
+		return nil, math.Vector3{}, false
+	}
+	axis, ok := capAxis(sph, rim)
+	if !ok || !seamEndsAtPole(seam, sph, axis) {
+		return nil, math.Vector3{}, false
+	}
+	return rim, axis, true
 }
 
 // loneDoubledLoopEdge returns the loop's single edge that is used exactly TWICE, in OPPOSITE senses —

@@ -64,12 +64,17 @@ package occtparity
 // CoG z = R/2 AND inertia. Sphere-face area at PropertyQuality, base → HEAD (ops.MeshArea ∘
 // ops.TessellateFace, measured here): S6 1061.302202 → 1061.235258, S7 1061.291184 → 1061.179147;
 // at the review's CONVERGED tessellation limit: S6 1061.313591 → 1061.273914 and S7 1061.301549 →
-// 1061.264052, against the closed 1061.858347.
+// 1061.264052, against the closed 1061.858347. (★★ fix wave: those "CONVERGED" figures were never
+// converged limits — they are readings of spherePatchMesh's patchGridCap-clamped PLATEAU under that
+// review's sweep protocol; the clamped grid stayed flat at every chord tolerance, and the closed
+// form's true digits are 338π = 1061.858317. See the re-adjudication below and
+// sphere-notch-report.md §8.3.)
 // ★★ RE-ADJUDICATED by the seamed-hemisphere slice (fourth receipt below; sphere-notch-report.md):
 // this receipt's "we NOTCH it: 50 edge-uses / 118.39 summed chord against the equator's 81.68" was
-// a MIS-READING — the 36.71 of "extra" chord is exactly the parametric SEAM meridian counted twice
-// (2×18.3848), and the loop is in fact the FULL equator + doubled seam, OCCT's own topology. The
-// ~0.55 deficit was never a REGION defect: it was spherePatchMesh's patchGridCap-clamped interior
+// a MIS-READING — the 36.71 of "extra" chord is the parametric SEAM meridian counted twice
+// (2×18.3848 = 36.77, less 0.058 of chord inscription on the equator arcs, which sum 81.62 against
+// the exact 2πR = 81.68), and the loop is in fact the FULL equator + doubled seam, OCCT's own
+// topology. The ~0.55 deficit was never a REGION defect: it was spherePatchMesh's patchGridCap-clamped interior
 // density (flat at every chord tolerance, mesh solid-angle coverage exactly 2π throughout), and the
 // adoption-era area moves here were CDT jitter under that saturated grid, not a region change.
 // S6's vprops dissent above (−3.31e-04→−3.58e-04) is the same resolution deficit seen through
@@ -193,11 +198,11 @@ package occtparity
 // now routes the seamed cap to the same latitude-ring fan the plain cap uses.
 //
 // PROVEN IMPROVED, all measured this session:
-//   - Sphere face vs the closed form 2π·13² = 1061.858347 (= live DRAWEXE 8.0.0 `sprops 1.e-12` on
+//   - Sphere face vs the closed form 2π·13² = 338π = 1061.858317 (= live DRAWEXE 8.0.0 `sprops 1.e-12` on
 //     BOTH cases' oracle bodies, re-verified): PropertyQuality S6 1061.197485 → 1061.795078
 //     (−0.6608 → −0.0632, 10.5×), S7 1061.193720 → 1061.796084 (−0.6646 → −0.0622, 10.7×). Chord
 //     sweep to 1e-6 (angle 1°): S6 1061.199055 → 1061.817861, S7 1061.194564 → 1061.817859
-//     (−0.659 → −0.040, 16.5×; the residual is the fixed 1° meridian ring step, Rθ²/8-shaped —
+//     (−0.659 → −0.040, 16.3×; the residual is the fixed 1° meridian ring step, Rθ²/8-shaped —
 //     the deficit now CONVERGES with quality instead of flatlining).
 //   - Whole-body mesh area vs `sprops result 1.e-12` (S6 4089.28, S7 6392.3): S6 → 4089.225780
 //     (−1.3e-5 rel), S7 → 6392.230572 (−1.1e-5 rel).

@@ -20,7 +20,9 @@ import (
 // ALWAYS matched that: the sphere face's loop is the full equator (subdivided by the runout
 // terminations at (±5,−12,0), the exact contact-line crossings OCCT also has) plus the parametric
 // seam doubled — the "~0.55 notch" two review waves recorded was a MIS-READING: the loop's summed
-// chord exceeds 2πR by exactly the seam counted twice (2×18.3848), and the missing area was
+// chord (118.39) is 81.62 of equator-arc chords (inscribing 2πR = 81.68) + 36.77 of the seam counted
+// twice (2×18.3848); the excess over 2πR (36.711) is that doubled seam less the arcs' 0.058 of
+// chord inscription. The missing area was
 // spherePatchMesh's patchGridCap-clamped interior density, flat at every chord tolerance
 // (a RESOLUTION defect, not a REGION defect). This gate pins both truths separately so neither
 // regresses silently again:
@@ -29,7 +31,7 @@ import (
 //     the equator circle), and the PropertyQuality mesh covers the hemisphere EXACTLY once — its
 //     summed signed solid angle at the centre is 2π (a notch, hole, fold or double-cover moves it).
 //   - RESOLUTION: the mesh area meets PropertyQuality's own documented ~0.01% contract against the
-//     closed form 2π·13² = 1061.858347 (ceiling 1.1× the measured post-fix deficit; the clamped
+//     closed form 2π·13² = 338π = 1061.858317 (ceiling 1.1× the measured post-fix deficit; the clamped
 //     stereo-CDT path read −0.66, 6× outside contract, and fails this loud).
 const (
 	sphereHostAreaCeil   = 0.07 // 1.1× the measured fan deficit (S6 0.0632, S7 0.0622) — abs, model units²
