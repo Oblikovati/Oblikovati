@@ -127,13 +127,13 @@ func chainBittenLoop(host *topo.Face, c miterHostChain, tol float64) *topo.Loop 
 	return outerHostLoop(host)
 }
 
-// runoutEndBridgeSeg is the fresh edge that carries a mid-face rail/trim foot back to the boundary
+// miterChainEndBridgeSeg is the fresh edge that carries a mid-face rail/trim foot back to the boundary
 // at a capped arm end: the sub-curve of wall ∩ (cap plane through both points) from the picked
 // edge's end vertex vEnd to the foot. On a CYLINDER wall it is the capBridgeArc latitude arc (the
 // same constructor the shared-face retrim uses, so the wall-side and cap-side splices carry the
 // SAME curve and weld watertight); on a PLANE wall it is the straight segment. ok=false for any
 // other wall geometry — the do-no-harm floor.
-func runoutEndBridgeSeg(wall geom.Surface, foot, vEnd math.Point3, tol float64) (endSeg, bool) {
+func miterChainEndBridgeSeg(wall geom.Surface, foot, vEnd math.Point3, tol float64) (endSeg, bool) {
 	switch wall.(type) {
 	case geom.Cylinder:
 		seg, ok := capBridgeArc(wall, foot, vEnd, tol)
@@ -200,12 +200,12 @@ func bridgedRunoutHostFace(f *topo.Face, ef edgeFillet, bite endSeg, tol float64
 	if !ok {
 		return filletFace{}, false
 	}
-	vEnd, vOther := runoutEndVertices(ef, foot)
+	vEnd, vOther := miterChainEndVertices(ef, foot)
 	wall, ok := runoutBridgeWall(f, ef, foot, tol)
 	if !ok {
 		return filletFace{}, false
 	}
-	bridge, ok := runoutEndBridgeSeg(wall, foot, vEnd, tol)
+	bridge, ok := miterChainEndBridgeSeg(wall, foot, vEnd, tol)
 	if !ok {
 		return filletFace{}, false
 	}
@@ -228,10 +228,10 @@ func runoutBiteOffFoot(f *topo.Face, bite endSeg, tol float64) (endSeg, math.Poi
 	return reverseEndSegs([]endSeg{bite})[0], bite.to, true
 }
 
-// runoutEndVertices splits the picked edge's two end vertices by the off-loop foot: vEnd is the
+// miterChainEndVertices splits the picked edge's two end vertices by the off-loop foot: vEnd is the
 // bridge anchor (the vertex at the foot's own capped end), vOther the far one — the vertex the
 // splice must consume when it lies on the bitten ring (the wrong-span guard).
-func runoutEndVertices(ef edgeFillet, foot math.Point3) (vEnd, vOther math.Point3) {
+func miterChainEndVertices(ef edgeFillet, foot math.Point3) (vEnd, vOther math.Point3) {
 	v0, v1 := ef.edge.StartVertex().Point(), ef.edge.EndVertex().Point()
 	if float64(foot.DistanceTo(v0)) <= float64(foot.DistanceTo(v1)) {
 		return v0, v1

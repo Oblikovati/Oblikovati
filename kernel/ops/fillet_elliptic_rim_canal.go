@@ -53,6 +53,12 @@ type ellipticRimCanal struct {
 	seamMid   math.Point3
 	concave   bool
 	r         float64
+	// coneCap discriminates the EllipticalCylinder∧CONE pinched-canal vein (tolblend B4..C3,
+	// fillet_elliptic_cone_canal.go): non-nil ONLY when that builder produced the payload, in
+	// which case the rails/seamMid above are unused and ellipticClosedRimCanalBody routes to the
+	// cone-cap rebuild instead of rebuildRim. Nil on every plane-cap band (J6/J8) — byte-invisible
+	// to them.
+	coneCap *ellipticConeCanal
 }
 
 // ellipticClosedRimArmEdge dispatches a CLOSED rim edge bounded by one geom.EllipticalCylinder wall
@@ -60,8 +66,14 @@ type ellipticRimCanal struct {
 // decline falls through to the byte-identical curvedAdjacentError refusal (do-no-harm). The sibling of
 // ellipticalCylinderArmEdge, which owns the OPEN straight-ruling edge of the same host (F4).
 func ellipticClosedRimArmEdge(body *topo.Body, e *topo.Edge, p filletPick) (edgeFillet, bool) {
-	if p.varying() || e.StartVertex() != e.EndVertex() {
-		return edgeFillet{}, false // constant radius, CLOSED rim only
+	if p.varying() {
+		return edgeFillet{}, false // constant radius only
+	}
+	if ef, handled := ellipticConeRimArmEdge(body, e, p); handled {
+		return ef, true // tolblend B4..C3: EllipticalCylinder∧Cone pinched canal (closed or open arc)
+	}
+	if e.StartVertex() != e.EndVertex() {
+		return edgeFillet{}, false // the plane-cap band below is CLOSED rim only
 	}
 	ec, pl, wallF, capF, ok := ellipticalCylinderPlaneEdge(e)
 	if !ok {
@@ -280,6 +292,9 @@ func ellipticClosedRimCanalArm(fils []edgeFillet) (edgeFillet, bool) {
 func ellipticClosedRimCanalBody(body *topo.Body, ef edgeFillet) (*topo.Body, string) {
 	canal := ef.armEllipticRim
 	e := ef.edge
+	if canal.coneCap != nil {
+		return ellipticConeCanalBody(body, e, canal.coneCap) // cone-cap pinched canal (tolblend B4..C3)
+	}
 	wallF, capF, ok := rimBandHosts(e)
 	if !ok {
 		return nil, fmt.Sprintf("elliptic rim canal: edge %d must border one elliptic wall and one cap plane", e.ID())

@@ -137,6 +137,13 @@ func splineFaceMesh(f *topo.Face, s geom.Surface, q Quality) *Mesh {
 	if m, ok := canalRimBandMesh(f, s, q); ok {
 		return m
 	}
+	// The PINCHED canal band (EllipticalCylinder∧Cone host tangency, tolblend B4..C3): its
+	// cross-section collapses to a point, so the trim/pcurve paths degenerate there; it is lofted
+	// rail-to-rail with a shared pinch vertex instead (W-F, pinched_band_loft.go). Gated on the
+	// zero-width v-end column + all-iso boundary — no other B-spline face has that shape.
+	if m, ok := pinchedCanalBandMesh(f, s, q); ok {
+		return m
+	}
 	// A closed-in-u (periodic) B-spline face whose trim straddles the seam tangles the planar seam-cut
 	// loop; the covering-space periodic CDT un-seams it. It defers (nil,false) for the ordinary open patch.
 	if m, ok := periodicNurbsFaceMesh(f, q); ok {
