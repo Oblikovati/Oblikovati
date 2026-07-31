@@ -275,15 +275,15 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 119 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 119 (W-DH's notch-wall concave cove "+
-			"sign ε=−1 → maj R−r greened M5; W-B's Cylinder∧Cylinder SSI-seam canal engine — "+
-			"fillet_cylcyl_seam*.go — greened K2/K3/K4 closed loops + P1's parallel valley line; 114→119)", simpleGreen)
+	if simpleGreen != 120 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 120 (W-DH's notch-wall concave cove "+
+			"sign ε=−1 greened M5; W-B's Cylinder∧Cylinder SSI-seam canal engine greened K2/K3/K4 + P1; "+
+			"W-T's stripe-junction crossings + exact anchor distance greened Y9; 114→120)", simpleGreen)
 	}
-	if allGridGreen != 127 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 127 (119 simple + 8 bfuseblend; the multi-rim "+
+	if allGridGreen != 128 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 128 (120 simple + 8 bfuseblend; the multi-rim "+
 			"weld greened bfuseblend/B3 and the closed cyl∧cyl seam canal greened B4+B5; complex/D8's "+
-			"coincidental green stays retired; 119→127)", allGridGreen)
+			"coincidental green stays retired; 119→128)", allGridGreen)
 	}
 	if skipQuarantine != 0 {
 		t.Errorf("SkipQuarantine = %d, want 0 — the corpus holds NO case; every one of the 475 records is "+
