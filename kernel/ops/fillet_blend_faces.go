@@ -99,6 +99,12 @@ type endSeg struct {
 	curve    geom.Curve3
 	mid      math.Point3
 	arc      bool
+	// srcEdge is the SOURCE topo edge this segment survives from (0 = op-generated). Wave-G
+	// additive: the B-spline-host retrim carries it into filletLoop.srcE so two coincident
+	// survivor edges sharing both endpoints (a prism's bezier + its closing chord) keep
+	// separate edge classes through the weld (#1600 method C). Zero everywhere else, so every
+	// existing endSeg constructor and consumer is byte-identical.
+	srcEdge uint64
 }
 
 // cornerEndSegs returns the segments rounding corner c from its ta to its tb: for a valence>3 runout

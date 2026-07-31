@@ -124,17 +124,27 @@ func unchangedLoop(l *topo.Loop) filletLoop {
 // re-orientation and splitting) or leaving the curve nil for a straight edge.
 func endSegFromUse(u *topo.EdgeUse) endSeg {
 	from, to := useFromVertex(u).Point(), useToVertex(u).Point()
+	src := u.Edge().ID() // wave-G: survivor identity for the coincident-edge classes (#1600)
+	// Wave-G additive arm: a B-SPLINE survivor edge (a swept wall's cap meridian) keeps its
+	// curve through the retrim, so splitting and rebuilding it stays on the surface — leaving
+	// it nil chorded the meridian (the J2/J4 off-surface lesson). Taken from the EDGE geometry
+	// (not survivorCurve) because a reversed open survivor comes back as the opaque reversed
+	// wrapper, which the exact sub-span algebra cannot split; the concrete reversal keeps it
+	// splittable. arc=false keeps every circular-only rail/retrim path ignoring it.
+	if bs, ok := bsplineSurvivorConcrete(u); ok {
+		return endSeg{from: from, to: to, curve: bs, mid: bs.PointAt(midDomainParam(bs)), srcEdge: src}
+	}
 	switch c := survivorCurve(u).(type) {
 	case geom.Arc3d:
-		return endSeg{from: from, to: to, curve: c, mid: c.PointAt(0.5), arc: true}
+		return endSeg{from: from, to: to, curve: c, mid: c.PointAt(0.5), arc: true, srcEdge: src}
 	case geom.EllipticalArc:
 		// A curved ELLIPSE survivor (the F4 elliptic-prism vein's cap arcs) is carried as a general
 		// curve (arc=false, so the circular-only rails/retrim paths ignore it), split/trimmed by the
 		// ellipse-aware segParam/subSeg. curve!=nil keeps loopFromSegs building it as an ellipse edge,
 		// never a chord (tessellation-first), so the retrimmed host and its shared cap weld crack-free.
-		return endSeg{from: from, to: to, curve: c, mid: c.PointAt(0.5)}
+		return endSeg{from: from, to: to, curve: c, mid: c.PointAt(0.5), srcEdge: src}
 	}
-	return endSeg{from: from, to: to}
+	return endSeg{from: from, to: to, srcEdge: src}
 }
 
 // useToVertex returns the to-vertex of an edge use (honouring reversal) — the sibling of
@@ -234,7 +244,30 @@ func segParam(s endSeg, p math.Point3, tol float64) (float64, bool) {
 	if ea, ok := s.curve.(geom.EllipticalArc); ok {
 		return ellipticArcParam(ea, p, tol)
 	}
+	if bs, ok := s.curve.(geom.BSplineCurve); ok {
+		// Wave-G additive arm: a B-SPLINE loop edge (a swept wall's cap meridian) splits at a
+		// landing on the curve itself, never on its chord (fillet_bspline_host_runout.go).
+		return bsplineSegParam(bs, p, tol)
+	}
 	return lineParam(s.from, s.to, p, tol)
+}
+
+// bsplineSegParam is p's fractional parameter on a B-spline edge within (0,1), ok only when
+// p lies ON the curve within tol (the same interior-only contract as lineParam/arcParam).
+func bsplineSegParam(bs geom.BSplineCurve, p math.Point3, tol float64) (float64, bool) {
+	t, _ := geom.CurveParamAtPoint3(bs, p)
+	lo, hi := bs.Domain()
+	if !(hi > lo) {
+		return 0, false
+	}
+	frac := (t - lo) / (hi - lo)
+	if frac <= 0 || frac >= 1 {
+		return 0, false
+	}
+	if float64(bs.PointAt(t).DistanceTo(p)) > tol {
+		return 0, false
+	}
+	return frac, true
 }
 
 // lineParam is p's parameter t∈(0,1) on segment a→b, ok only when p lies on the segment within tol.
@@ -291,24 +324,33 @@ func wrapToSweep(delta, sweep float64) float64 {
 // sub-span is carried as a genuine sub-arc of the parent circle (subArcMajor) so it stays major; every
 // minor span keeps the verbatim shorter-arc re-fit (byte-identity for the whole convex corpus).
 func subSeg(s endSeg, from, to math.Point3) endSeg {
+	// A sub-span keeps its parent's SOURCE identity (srcEdge — zero when op-generated), so
+	// the coincident-edge classes survive splitting (#1600, wave-G).
 	if !s.arc {
 		if ea, ok := s.curve.(geom.EllipticalArc); ok {
 			if sub, ok := ellipticSubArc(ea, from, to); ok {
-				return endSeg{from: from, to: to, curve: sub, mid: sub.PointAt(0.5)}
+				return endSeg{from: from, to: to, curve: sub, mid: sub.PointAt(0.5), srcEdge: s.srcEdge}
 			}
 		}
-		return endSeg{from: from, to: to}
+		if bs, ok := s.curve.(geom.BSplineCurve); ok {
+			// Wave-G additive arm: the retained span of a B-spline edge is the parent's own
+			// exact sub-curve (knot-insertion split), never a chord across it.
+			if sub, ok := bsplineSubSeg(bs, from, to); ok {
+				return endSeg{from: from, to: to, curve: sub, mid: sub.PointAt(midDomainParam(sub)), srcEdge: s.srcEdge}
+			}
+		}
+		return endSeg{from: from, to: to, srcEdge: s.srcEdge}
 	}
 	arc := s.curve.(geom.Arc3d)
 	if sub, mid, ok := subArcMajor(arc, from, to); ok {
-		return endSeg{from: from, to: to, curve: sub, mid: mid, arc: true}
+		return endSeg{from: from, to: to, curve: sub, mid: mid, arc: true, srcEdge: s.srcEdge}
 	}
 	mid := arcMidBetween(arc.Center, arc.Radius, from, to)
 	sub, err := geom.Arc3dByThreePoints(from, mid, to)
 	if err != nil {
-		return endSeg{from: from, to: to}
+		return endSeg{from: from, to: to, srcEdge: s.srcEdge}
 	}
-	return endSeg{from: from, to: to, curve: sub, mid: mid, arc: true}
+	return endSeg{from: from, to: to, curve: sub, mid: mid, arc: true, srcEdge: s.srcEdge}
 }
 
 // subArcMajor carries the kept sub-span of parent between from and to as a genuine sub-arc of the PARENT

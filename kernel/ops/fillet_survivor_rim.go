@@ -80,6 +80,12 @@ func exactRetainedSpanOnParent(parent geom.Curve3, p0, p1 math.Point3) geom.Curv
 		return subArcOnParent(rim, projectOntoArcCircle(rim, p0), projectOntoArcCircle(rim, p1))
 	case geom.EllipticalArc:
 		return retainedEllipticRimCurve(rim, p0, p1) // already exactness-gated (ellipseSpanIsExact)
+	case geom.BSplineCurve:
+		// Wave-G additive arm: a B-SPLINE parent (a swept pipe wall's curved seam meridian)
+		// carries its own exact sub-span (fillet_bspline_host_rim.go). Exactness-gated inside
+		// (both points must lie ON the parent), so any caller whose points are off the curve
+		// still gets nil — the byte-identical base chord it always shipped.
+		return retainedBsplineSpan(rim, p0, p1)
 	}
 	return nil
 }
