@@ -57,8 +57,8 @@ func coneHostCorner(faces []*topo.Face) (geom.Cone, *topo.Face, [2]*topo.Face, b
 // corner errors exactly as before. Mirrors solveSphereBlend for the cone host.
 func solveConeBlend(v *topo.Vertex, faces []*topo.Face, co geom.Cone, coneFace *topo.Face, planes [2]*topo.Face, r float64) (*cornerBlend, error) {
 	res := coneCornerResolution(v, co, planes)
-	c, ok := coneHostCornerCenter(co, coneFace, planes, r, v, res)
-	if !ok || !coneCornerConsistent(c, co, planes, r, res) {
+	c, s, ok := coneHostCornerCenter(co, coneFace, planes, r, v, res)
+	if !ok || !coneCornerConsistent(c, co, planes, r, s, res) {
 		return nil, fmt.Errorf("fillet: corner face must be planar")
 	}
 	corner, err := geom.NewSphere(c, r)
@@ -68,34 +68,41 @@ func solveConeBlend(v *topo.Vertex, faces []*topo.Face, co geom.Cone, coneFace *
 	return &cornerBlend{vertex: v, center: c, sphere: corner, tan: coneCornerTangents(faces, co, c)}, nil
 }
 
-// coneHostCornerCenter solves the ball centre tangent to the two planes and the host cone. The two plane
-// constraints pin c to a line (planePairLine); the host tangency c on the offset cone A′ becomes the
-// cos²α-scaled quadratic qa·t²+qb·t+qc = 0 in the line parameter (coneQuadCoeffs), whose roots pass the
-// nappe filter then the nearer-vertex pick (coneCornerParam). ok=false on a concave bore (material
-// outside), a near-cylinder / near-plane cone (α bands), parallel planes (no line), or the line
-// clearing/grazing the offset cone. coneCornerRoot then reduces the reflected pair to the material-outward
-// seed c0 (no cylinder arms witness a cone-host corner — derivation §"Reflected roots").
-func coneHostCornerCenter(co geom.Cone, coneFace *topo.Face, planes [2]*topo.Face, r float64, v *topo.Vertex, res Resolution) (math.Point3, bool) {
-	if sgn, ok := coneCornerMaterialSign(co, coneFace); !ok || sgn <= 0 {
-		return math.Point3{}, false // concave bore (material outside): A′ = A − r/sinα·â is a follow-on slice
+// coneHostCornerCenter solves the ball centre tangent to the two planes and the host cone, for EITHER
+// sense: convex boss (material inside the cone, s=+1, the original CN3 slice) or concave bore (material
+// outside, s=−1, the I4-class CN5 follow-on the file's old comment flagged: "A′ = A − r/sinα·â is a
+// follow-on slice"). The two plane constraints pin c to a line (planePairLine); the host tangency c on the
+// offset cone A′ = A + s·(r/sinα)·â becomes the cos²α-scaled quadratic qa·t²+qb·t+qc = 0 in the line
+// parameter (coneQuadCoeffs), whose roots pass the nappe filter then the nearer-vertex pick
+// (coneCornerParam). ok=false when the material sign is unreadable, a near-cylinder / near-plane cone (α
+// bands), parallel planes (no line), or the line clearing/grazing the offset cone. coneCornerRoot then
+// reduces the reflected pair to the material-outward seed c0 (no cylinder arms witness a cone-host corner
+// — derivation §"Reflected roots"). Returns the sign s alongside c so the caller's consistency check knows
+// which offset (ρ = r toward material vs away from it) the centre was solved against.
+func coneHostCornerCenter(co geom.Cone, coneFace *topo.Face, planes [2]*topo.Face, r float64, v *topo.Vertex, res Resolution) (math.Point3, float64, bool) {
+	s, ok := coneCornerMaterialSign(co, coneFace)
+	if !ok || s == 0 {
+		return math.Point3{}, 0, false // unreadable normal or an exactly-tangent (degenerate) probe
 	}
+	sign := stdmath.Copysign(1, s)
 	p0, d, ok := planePairLine(planes, r, v.Point())
 	if !ok {
-		return math.Point3{}, false
+		return math.Point3{}, 0, false
 	}
 	sinA, cosA := stdmath.Sincos(co.HalfAngle)
 	if !coneAlphaInBand(co, p0, sinA, cosA, res) {
-		return math.Point3{}, false // near-cylinder (r/sinα blows up) or near-plane cone (α→π/2)
+		return math.Point3{}, 0, false // near-cylinder (r/sinα blows up) or near-plane cone (α→π/2)
 	}
 	ahat := co.AxisDir.AsVector()
-	apexPrime := co.Apex.TranslateBy(ahat.Scale(r / sinA)) // A′ = A + s·(r/sinα)·â, s = +1 convex-external
-	u := apexPrime.VectorTo(p0)                            // u = p₀ − A′
+	apexPrime := co.Apex.TranslateBy(ahat.Scale(sign * r / sinA)) // A′ = A + s·(r/sinα)·â
+	u := apexPrime.VectorTo(p0)                                   // u = p₀ − A′
 	qa, qb, qc := coneQuadCoeffs(u, d, ahat, cosA*cosA)
 	t, ok := coneCornerParam(qa, qb, qc, u, d, ahat, p0, v.Point(), res)
 	if !ok {
-		return math.Point3{}, false
+		return math.Point3{}, 0, false
 	}
-	return coneCornerRoot(v, r, res, p0.TranslateBy(d.Scale(t)))
+	c, ok := coneCornerRoot(v, r, res, p0.TranslateBy(d.Scale(t)))
+	return c, sign, ok
 }
 
 // coneCornerMaterialSign is the apex-safe host material-side test that fixes whether this slice may solve
@@ -219,10 +226,11 @@ func coneCornerRoot(v *topo.Vertex, r float64, res Resolution, c0 math.Point3) (
 }
 
 // coneCornerConsistent verifies the solved centre truly sits r from both planes (two-sided |dist| = r,
-// per the N7 reflected-root lesson) and r from the host cone wall (the exact signed cone distance
-// coneSignedDistance = r). A magnitude failure makes solveConeBlend return the do-no-harm reject rather
-// than emit a bad corner. Sibling of sphereCornerConsistent.
-func coneCornerConsistent(c math.Point3, co geom.Cone, planes [2]*topo.Face, r float64, res Resolution) bool {
+// per the N7 reflected-root lesson) and r from the host cone wall on the s-side (coneSignedDistance = s·r:
+// +r toward material for the convex boss, −r away from it for the concave bore). A magnitude failure
+// makes solveConeBlend return the do-no-harm reject rather than emit a bad corner. Sibling of
+// sphereCornerConsistent.
+func coneCornerConsistent(c math.Point3, co geom.Cone, planes [2]*topo.Face, r, s float64, res Resolution) bool {
 	for _, f := range planes {
 		pl := f.Geometry().(geom.Plane)
 		n := outwardPlaneNormal(f, pl)
@@ -230,7 +238,7 @@ func coneCornerConsistent(c math.Point3, co geom.Cone, planes [2]*topo.Face, r f
 			return false // not at distance r from this plane (either side)
 		}
 	}
-	return stdmath.Abs(coneSignedDistance(co, c)-r) < res.Weld()
+	return stdmath.Abs(coneSignedDistance(co, c)-s*r) < res.Weld()
 }
 
 // coneSignedDistance is the exact signed distance from point c to the host cone wall, POSITIVE INSIDE the

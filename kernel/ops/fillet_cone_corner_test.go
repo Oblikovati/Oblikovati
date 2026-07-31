@@ -183,15 +183,15 @@ func coneCornerCertFixture(t *testing.T) (math.Point3, geom.Cone, [2]*topo.Face,
 // witness: forcing coneCornerConsistent → true fails the two reject arms.
 func TestConeCornerConsistent_RejectsPerturbedCentre(t *testing.T) {
 	center, co, planes, res := coneCornerCertFixture(t)
-	if !coneCornerConsistent(center, co, planes, coneCornerR, res) {
+	if !coneCornerConsistent(center, co, planes, coneCornerR, 1, res) {
 		t.Fatalf("certified C8 centre %v rejected by the certificate; want accept", center)
 	}
 	offPlane := center.TranslateBy(math.V3(1, 0, 0).Scale(1e-3)) // along plane-0's normal: breaks a plane distance
-	if coneCornerConsistent(offPlane, co, planes, coneCornerR, res) {
+	if coneCornerConsistent(offPlane, co, planes, coneCornerR, 1, res) {
 		t.Fatalf("centre %v nudged 1e-3 off plane-0 accepted by the certificate; want reject", offPlane)
 	}
 	offCone := center.TranslateBy(math.V3(0, 0, 1).Scale(1e-3)) // parallel to both planes: breaks only the cone distance
-	if coneCornerConsistent(offCone, co, planes, coneCornerR, res) {
+	if coneCornerConsistent(offCone, co, planes, coneCornerR, 1, res) {
 		t.Fatalf("centre %v nudged 1e-3 off the host cone accepted by the certificate; want reject", offCone)
 	}
 }
@@ -327,7 +327,7 @@ func TestConeRealRoots_GrazingRejects(t *testing.T) {
 }
 
 // coneConcaveFixture wires C2's geometry but with the cone face REVERSED — material OUTSIDE the cone, a
-// concave conical bore (s = −1). solveBlend must honest-reject it (A′ = A − r/sinα·â is a follow-on slice).
+// concave conical bore (s = −1, the CN5 follow-on this R4-wave change adds: A′ = A − r/sinα·â).
 func coneConcaveFixture(t *testing.T) (*topo.Vertex, []*topo.Face) {
 	t.Helper()
 	c := caseByName(t, "C2")
@@ -340,14 +340,78 @@ func coneConcaveFixture(t *testing.T) (*topo.Vertex, []*topo.Face) {
 	return v, []*topo.Face{coneFace, plane0, plane1}
 }
 
-// TestConeHostCornerConcaveRejects is the do-no-harm regression for the concave bore: a Reversed cone face
-// (material outside, s = −1) must honest-reject with the EXACT historical string via the material-sign gate
-// in coneHostCornerCenter (sgn = ±cos α ≤ 0), not solve a wrong-side (A′ = A − r/sinα·â) ball. Mutation
-// witness: flipping the gate (sgn<=0 → sgn>=0) would let this fixture's sgn = −cos α through.
-func TestConeHostCornerConcaveRejects(t *testing.T) {
+// TestConeHostCornerConcave_Solves is the CN5 regression (R4 wave, simple/I4): a Reversed cone face
+// (material outside, s = −1) now SOLVES via A′ = A − r/sinα·â instead of honest-rejecting. The
+// centre is checked against an INDEPENDENT hand computation (not solveBlend's own machinery): both
+// plane distances must be exactly r, and the (radial, axial) decomposition about the TRUE apex must
+// satisfy the 45°-cone identity radial = axial·tanα directly from the C2 case's tanα = 1/3 (mirrored
+// here — coneConcaveFixture reuses C2's tanα).
+func TestConeHostCornerConcave_Solves(t *testing.T) {
 	v, faces := coneConcaveFixture(t)
-	if _, err := solveBlend(nil, v, faces, coneCornerR); err == nil || err.Error() != "fillet: corner face must be planar" {
-		t.Fatalf("concave cone-host corner: got err %v, want %q", err, "fillet: corner face must be planar")
+	cb, err := solveBlend(nil, v, faces, coneCornerR)
+	if err != nil {
+		t.Fatalf("concave cone-host corner declined: %v, want a solved sphere (CN5)", err)
+	}
+	c := caseByName(t, "C2")
+	assertConcaveConeCentreIndependent(t, cb.center, coneOf(t, c), c)
+}
+
+// assertConcaveConeCentreIndependent recomputes, WITHOUT calling coneHostCornerCenter/
+// coneCornerConsistent, the two invariants a valid concave (s=−1) corner centre must satisfy:
+// |dist| = r from both host planes, and the perpendicular point-to-line distance from
+// (axial,radial) — the centre's meridian-plane coordinates about the TRUE apex — to the cone's
+// generator line (through the origin at angle α) equals −r. Point-to-line-through-origin distance
+// is the standard 2D identity |x·sinθ − y·cosθ| (independently re-derived here, not copied from
+// coneSignedDistance): with x=axial, y=radial, θ=α, the SIGNED form is axial·sinα − radial·cosα.
+func assertConcaveConeCentreIndependent(t *testing.T, centre math.Point3, co geom.Cone, c coneCornerCase) {
+	t.Helper()
+	for _, pl := range []struct {
+		origin math.Point3
+		out    math.Vector3
+	}{{c.p0Origin, c.p0Out}, {c.p1Origin, c.p1Out}} {
+		d := float64(pl.origin.VectorTo(centre).Dot(pl.out))
+		if stdmath.Abs(stdmath.Abs(d)-coneCornerR) > coneCornerExactTol {
+			t.Fatalf("plane distance = %.9f, want |±%g|", d, coneCornerR)
+		}
+	}
+	assertConeMeridianDistance(t, centre, co, -coneCornerR)
+}
+
+// assertConeMeridianDistance is the shared independent (point-to-generator-line) check: the SIGNED
+// distance axial·sinα−radial·cosα from centre to the cone's true generator, about the TRUE apex,
+// must equal wantSigned (+r convex / −r concave).
+func assertConeMeridianDistance(t *testing.T, centre math.Point3, co geom.Cone, wantSigned float64) {
+	t.Helper()
+	w := co.Apex.VectorTo(centre)
+	axial := float64(w.Dot(co.AxisDir.AsVector()))
+	radial := stdmath.Sqrt(float64(w.Dot(w)) - axial*axial)
+	sinA, cosA := stdmath.Sincos(co.HalfAngle)
+	if got := axial*sinA - radial*cosA; stdmath.Abs(got-wantSigned) > 1e-6 {
+		t.Fatalf("meridian signed distance = %.9f, want %.9f (centre %v)", got, wantSigned, centre)
+	}
+}
+
+// TestConeCornerConsistent_SignSensitive is the mutation witness for coneCornerConsistent's sign
+// parameter (the CN5 addition): the true concave (s=−1) centre must PASS its own certificate and
+// FAIL the certificate checked at the wrong sign (s=+1) — proving the s·r term is load-bearing, not
+// a no-op (a mutant that drops the sign, e.g. hardcoding +r, would accept both and this test would
+// catch it).
+func TestConeCornerConsistent_SignSensitive(t *testing.T) {
+	v, faces := coneConcaveFixture(t)
+	cb, err := solveBlend(nil, v, faces, coneCornerR)
+	if err != nil {
+		t.Fatalf("concave cone-host corner declined: %v", err)
+	}
+	co, _, planes, ok := coneHostCorner(faces)
+	if !ok {
+		t.Fatalf("coneConcaveFixture is not a [cone,plane,plane] host set")
+	}
+	res := coneCornerResolution(v, co, planes)
+	if !coneCornerConsistent(cb.center, co, planes, coneCornerR, -1, res) {
+		t.Fatalf("true concave centre %v rejected at its own sign s=-1", cb.center)
+	}
+	if coneCornerConsistent(cb.center, co, planes, coneCornerR, 1, res) {
+		t.Fatalf("concave centre %v accepted at the WRONG sign s=+1; want reject", cb.center)
 	}
 }
 
@@ -388,4 +452,36 @@ func TestConeHostCornerUnsupportedMixDeclines(t *testing.T) {
 	if _, err := solveBlend(nil, v, faces, coneCornerR); err == nil || err.Error() != "fillet: corner face must be planar" {
 		t.Fatalf("unsupported cone mix: got err %v, want %q", err, "fillet: corner face must be planar")
 	}
+}
+
+// TestConeHostCornerConcave_I4Imported drives the REAL imported simple/I4 fixture (R4 wave, radius
+// 10) through the real solveBlend→coneHostCorner→solveConeBlend path — the corpus's actual concave
+// conical-bore corner, not a synthetic mirror — and checks the centre with the SAME independent
+// (radial=axial·tanα, |plane dist|=r) identity assertConcaveConeCentreIndependent uses for C2.
+// I4's corner still declines end-to-end in the corpus scoreboard (fillet_conearm.go's concave-cone
+// ARM guard is a separate, unowned file — see the R4 wave report) — this test certifies the CORNER
+// PATCH capability this file owns, independent of that companion gap.
+func TestConeHostCornerConcave_I4Imported(t *testing.T) {
+	body := corpusFixture(t, "simple/I4.step")
+	v := vertexNearest(t, body, math.P3(-200, 250, 0))
+	faces := facesAtVertex(v)
+	co, coneFace, planes, ok := coneHostCorner(faces)
+	if !ok {
+		t.Fatalf("I4 corner is not a [cone,plane,plane] host set: %d faces", len(faces))
+	}
+	if sgn, ok := coneCornerMaterialSign(co, coneFace); !ok || sgn >= 0 {
+		t.Fatalf("I4 material sign = %v (ok=%v), want a genuine concave (<0) fixture", sgn, ok)
+	}
+	cb, err := solveBlend(nil, v, faces, 10)
+	if err != nil {
+		t.Fatalf("I4 concave cone-host corner declined: %v", err)
+	}
+	for _, f := range planes {
+		pl := f.Geometry().(geom.Plane)
+		d := stdmath.Abs(float64(pl.Origin.VectorTo(cb.center).Dot(outwardPlaneNormal(f, pl))))
+		if stdmath.Abs(d-10) > 1e-6 {
+			t.Fatalf("I4 centre %v is %.9f from a host plane, want 10", cb.center, d)
+		}
+	}
+	assertConeMeridianDistance(t, cb.center, co, -10)
 }
