@@ -225,6 +225,9 @@ func armRunoutRail(host *topo.Face, picked *topo.Edge, arm geom.Surface, foot0, 
 	case geom.Torus:
 		center, radius, ok := torusContactCircle(host.Geometry(), a, res)
 		if !ok {
+			center, radius, ok = coneBoreRunoutContactCircle(host.Geometry(), a, res)
+		}
+		if !ok {
 			return endSeg{}, false // this host carries no torus contact circle
 		}
 		if seg, ok := reflexContactRail(picked, center, radius, foot0, foot1); ok {
@@ -242,6 +245,37 @@ func armRunoutRail(host *topo.Face, picked *topo.Edge, arm geom.Surface, foot0, 
 	default:
 		return endSeg{}, false
 	}
+}
+
+// coneBoreRunoutContactCircle is the single-arm runout's SCOPED fallback for I1's concave-BORE cone arm
+// (coneArmFilletConcave, fillet_conearm.go): coneContactCircle (fillet_curved_retrim.go, shared with the
+// trihedral corner weld) validates only the CONVEX-external internal tangency (h·sinα−R_s·cosα=+r) and
+// must stay that way — TestConvexContactCircleRejectsConcaveTorus pins it as a do-no-harm firewall,
+// because the tangency equation alone cannot distinguish I1's edge-CONVEX bore torus from S2's
+// genuinely edge-CONCAVE cove torus (concaveConeArmSurface), which needs to keep going through its own
+// closed-rim engine. Scoping the external-tangency (h·sinα−R_s·cosα=−r) reading to THIS runout-only
+// helper is safe because a genuinely armConcave cone arm never reaches singleArmRunoutBody today (the
+// only concave-arm dispatch that can, fillet_arm_concave.go's concaveCurvedArmFillet, handles Cylinder
+// hosts only; S2/S5's concave cone/sphere arms are CLOSED rims, routed by isConcaveClosedRimArm before
+// isSingleArmRunout is ever tried) — ok=false for any non-Cone host or a genuinely non-coaxial/non-tangent
+// torus, so every existing (non-cone, non-bore) runout stays byte-identical.
+func coneBoreRunoutContactCircle(host geom.Surface, tor geom.Torus, res Resolution) (math.Point3, float64, bool) {
+	co, isCone := host.(geom.Cone)
+	if !isCone || !co.AxisDir.IsParallelTo(tor.AxisDir, retrimAxisParallelTol) {
+		return math.Point3{}, 0, false
+	}
+	a := co.AxisDir.AsVector()
+	h := float64(co.Apex.VectorTo(tor.Center).Dot(a))
+	band := res.Weld() * (tor.MajorRadius + tor.MinorRadius)
+	if float64(co.Apex.TranslateBy(a.Scale(h)).DistanceTo(tor.Center)) > band {
+		return math.Point3{}, 0, false // torus centre off the cone axis — not coaxial
+	}
+	sinA, cosA := stdmath.Sincos(co.HalfAngle)
+	if stdmath.Abs(h*sinA-tor.MajorRadius*cosA+tor.MinorRadius) > band {
+		return math.Point3{}, 0, false // tube not externally tangent to the cone (h·sinα − R_s·cosα ≠ −r)
+	}
+	star := h*cosA + tor.MajorRadius*sinA
+	return co.Apex.TranslateBy(a.Scale(star * cosA)), star * sinA, true
 }
 
 // reflexContactRail builds the torus arm's host contact rail as the MAJOR sub-arc of the contact circle

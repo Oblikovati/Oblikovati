@@ -272,40 +272,24 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 // Reconciled per face vs DRAWEXE on all 12 faces (worst +0.0016%); the −0.998% vs the corpus number is
 // the historic reference's drift — our 78062.6 vs local DRAWEXE 8.0's own 78062.8 (−0.0003%). This
 // restored 120→121 all-grid (simple unchanged at 115), SkipQuarantine unchanged at 0.
-//
-// The EllipticalCylinder∧Cone pinched canal (fillet_elliptic_cone_*.go, W-F capability wave) then
-// GREENED tolblend_simple/B4, B8, C3: a circle extruded obliquely glued to a cone of the SAME slope,
-// so the two hosts are tangent along one ruling and the constant-radius fillet's cross-section
-// collapses to a point there (a teardrop canal, geom.LoftPinchedCanalStations). B4/B8 are the OPEN-arc
-// runout (the band tapers from a planar side-face imprint to the pinch, which coincides with the arc's
-// own end vertex); C3 is the CLOSED rim whose pinch happens to sit exactly at the host seam azimuth (no
-// rail split needed). Reconciled per face vs DRAWEXE 8.0.0 (`nexplode`+`sprops 1.e-12`): 11 of the 12
-// rank pairs across all three within 0.04%, the one outlier (B4/B8's smallest face, the imprinted
-// runout lens, at the degenerate teardrop limit) at 0.58% — every case's face count matches DRAWEXE
-// exactly and all three checkshape valid. The OFF-seam sub-case (B7/C2: pinch away from the seam,
-// needing a rail split) was built too but the SAME reconciliation FALSIFIED it — the band measured
-// ~3.9x oversized (109109 vs DRAWEXE's own two-patch 27933.6) — so it honestly declines instead of
-// shipping a wrong body; see closedEllipticConeSpan's doc comment for the full receipt and the leading
-// root-cause hypothesis (a near-duplicate-knot interpolation artifact, unproven). This restored
-// 128→131 all-grid (simple unchanged at 120; tolblend_simple is neither "simple" nor "bfuseblend"),
-// SkipQuarantine unchanged at 0.
+// Union of every merged wave capability on top of the 114/119 base (d8d55a26).
+// simple +11: M5 (W-DH notch-wall concave cove sign ε=−1), K2/K3/K4/P1 (W-B cyl∧cyl SSI-seam
+// canal), Y9 (W-T stripe-junction crossings), A4 (W-A mixed-radius torus corner), O8 (W-C
+// chain-capable host retrim), J5/J3 (W-E concave torus-host closed-rim cove + spiric canal),
+// I1 (W-K concave cone bore — a bore rim is edge-CONVEX, ball in material).
+// bfuseblend +6: B3 (multi-rim weld), B4/B5 (cyl∧cyl canal), A4/A5/A6 (spiric + closed-rim).
+// tolblend_simple +5: A1/D4 (planar corners), B4/B8/C3 (EllipticalCylinder∧Cone pinched canal).
+// simple/X8 stays an HONEST DECLINE — TestEveryLoopSegmentLiesOnItsFace caught a real B-rep
+// defect on its asymmetric pyramid that the symmetric tolblend_simple/A1 does not carry.
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	// Union of every merged wave capability on top of the 114/119 base (d8d55a26).
-	// simple +10: M5 (W-DH notch-wall concave cove sign ε=−1), K2/K3/K4/P1 (W-B cyl∧cyl SSI-seam
-	// canal), Y9 (W-T stripe-junction crossings), A4 (W-A mixed-radius torus corner), O8 (W-C
-	// chain-capable host retrim), J5/J3 (W-E concave torus-host closed-rim cove + spiric canal).
-	// bfuseblend +6: B3 (multi-rim weld), B4/B5 (cyl∧cyl canal), A4/A5/A6 (spiric + closed-rim).
-	// tolblend_simple +5: A1/D4 (planar corners), B4/B8/C3 (EllipticalCylinder∧Cone pinched canal).
-	// simple/X8 stays an HONEST DECLINE — TestEveryLoopSegmentLiesOnItsFace caught a real B-rep
-	// defect on its asymmetric pyramid that the symmetric tolblend_simple/A1 does not carry.
-	if simpleGreen != 124 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 124 (114 base + 10 wave greens)", simpleGreen)
+	if simpleGreen != 125 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 125 (114 base + 11 wave greens)", simpleGreen)
 	}
-	if allGridGreen != 140 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 140 (124 simple + 11 bfuseblend-only "+
-			"+ 5 tolblend_simple; complex/D8's coincidental green stays retired; 119→140)", allGridGreen)
+	if allGridGreen != 141 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 141 (125 simple + 11 bfuseblend-only "+
+			"+ 5 tolblend_simple; complex/D8's coincidental green stays retired; 119→141)", allGridGreen)
 	}
 	if skipQuarantine != 0 {
 		t.Errorf("SkipQuarantine = %d, want 0 — the corpus holds NO case; every one of the 475 records is "+
