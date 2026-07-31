@@ -29,7 +29,7 @@ func bsplineHostRunoutBody(body *topo.Body, ef edgeFillet, canal *bsplineHostCan
 	if reason != "" {
 		return nil, reason
 	}
-	railA, railB, reason := bsplineHostRailSpans(canal, end0, end1)
+	railA, railB, reason := bsplineHostRailSpans(canal, end0, end1, ef.edge.ID())
 	if reason != "" {
 		return nil, reason
 	}
@@ -97,7 +97,7 @@ func bsplineHostLowSideIsStart(ef edgeFillet, canal *bsplineHostCanal) bool {
 
 // bsplineHostEndWindowArcSpan bounds the cap-crossing search around one edge end, as a
 // multiple of r: an oblique cap's crossing sits within ~r·tanθ of the end on either side.
-const bsplineHostEndWindowArcSpan = 1.5
+const bsplineHostEndWindowArcSpan = 3.0
 
 // bsplineHostEndWindow is the station-index search window around one edge-end station:
 // every station within bsplineHostEndWindowArcSpan·r of that end's arc coordinate.
@@ -171,20 +171,31 @@ func bsplineHostEndCrossings(end *bsplineHostEndTrim, ef edgeFillet, canal *bspl
 }
 
 // bsplineHostRailSpans extracts both rails' exact sub-spans between the two end
-// crossings, oriented start→end and snapped onto the landings.
-func bsplineHostRailSpans(canal *bsplineHostCanal, end0, end1 bsplineHostEndTrim) (railA, railB endSeg, reason string) {
-	railA, reason = bsplineHostRailSpanSeg(canal.railA, end0.vA, end1.vA, end0.pA, end1.pA)
+// crossings, oriented start→end and snapped onto the landings. pickedID marks both rails
+// with the picked edge's OWN id as their srcEdge identity (see bsplineHostRailSpanSeg).
+func bsplineHostRailSpans(canal *bsplineHostCanal, end0, end1 bsplineHostEndTrim, pickedID uint64) (railA, railB endSeg, reason string) {
+	railA, reason = bsplineHostRailSpanSeg(canal.railA, end0.vA, end1.vA, end0.pA, end1.pA, pickedID)
 	if reason != "" {
 		return railA, railB, reason
 	}
-	railB, reason = bsplineHostRailSpanSeg(canal.railB, end0.vB, end1.vB, end0.pB, end1.pB)
+	railB, reason = bsplineHostRailSpanSeg(canal.railB, end0.vB, end1.vB, end0.pB, end1.pB, pickedID)
 	return railA, railB, reason
 }
 
 // bsplineHostRailSpanSeg is one rail's sub-span vFrom→vTo with its terminal control
 // points snapped onto the (host-boundary) landing points — an envelope-bound-sized end
 // adjustment that makes the loop splice exact while leaving the interior curve untouched.
-func bsplineHostRailSpanSeg(rail geom.Curve3, vFrom, vTo float64, pFrom, pTo math.Point3) (endSeg, string) {
+// srcEdge is stamped with the PICKED edge's own id (never 0): the landing points are
+// SNAPPED onto the host boundary edge (snapLandingToHostEdge), so a rail's endpoints can
+// coincide exactly with the endpoints of a RETAINED sub-span of that same boundary edge —
+// a bigon host (G9/G5: the picked edge's only two boundary edges are itself and a closing
+// chord) then has two DISTINCT edges (the new rail and the chord's kept middle) sharing
+// both endpoints. Without a nonzero identity here, pairEdgeClasses never sees a second
+// candidate id at that vertex pair (an op-generated 0 never counts, assemble_curved.go)
+// and the catalog silently fuses the rail into the chord's edge — a 3-face non-manifold
+// weld. Reusing the SAME picked-edge id for both rails is safe: it never collides with a
+// real host-boundary edge id, and the two rails never touch the same vertex pair.
+func bsplineHostRailSpanSeg(rail geom.Curve3, vFrom, vTo float64, pFrom, pTo math.Point3, pickedID uint64) (endSeg, string) {
 	bs, ok := rail.(geom.BSplineCurve)
 	if !ok {
 		return endSeg{}, fmt.Sprintf("bspline-host runout: rail is %T, not a B-spline isocurve", rail)
@@ -197,7 +208,7 @@ func bsplineHostRailSpanSeg(rail geom.Curve3, vFrom, vTo float64, pFrom, pTo mat
 	if err != nil {
 		return endSeg{}, fmt.Sprintf("bspline-host runout: rail end snap failed: %v", err)
 	}
-	return endSeg{from: pFrom, to: pTo, curve: snapped}, ""
+	return endSeg{from: pFrom, to: pTo, curve: snapped, srcEdge: pickedID}, ""
 }
 
 // orientedSubSpan is the exact sub-span from→to, reversing when the parameters descend.
@@ -234,7 +245,11 @@ type hostBite struct {
 func bsplineHostRunoutFaces(body *topo.Body, ef edgeFillet, canal *bsplineHostCanal, railA, railB endSeg, end0, end1 bsplineHostEndTrim, res Resolution) ([]filletFace, string) {
 	loop := append([]endSeg{railA, end1.trim}, reverseEndSegs([]endSeg{railB})...)
 	loop = append(loop, reverseEndSegs([]endSeg{end0.trim})...)
-	bandFace := filletFace{surface: canal.surf, loops: []filletLoop{loopFromSegs(loop)}, parent: filletEdgeProvenance(ef.edge)}
+	// wgLoopFromSegs (not the plain loopFromSegs): the band's own loop carries railA/railB, whose
+	// srcEdge is the picked-edge identity stamp (bsplineHostRailSpanSeg) — dropping it here would
+	// silently discard the very identity the bigon-host fix above depends on, since the catalog
+	// only disambiguates a vertex pair when BOTH sides of a shared edge offer a nonzero id.
+	bandFace := filletFace{surface: canal.surf, loops: []filletLoop{wgLoopFromSegs(loop)}, parent: filletEdgeProvenance(ef.edge)}
 	bites := bsplineHostBiteMap(ef, railA, railB, end0, end1)
 	out := make([]filletFace, 0, len(body.Faces())+1)
 	tol := res.Weld() * stdmath.Max(canal.r, 1)

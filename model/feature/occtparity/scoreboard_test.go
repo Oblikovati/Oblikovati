@@ -272,18 +272,36 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 // Reconciled per face vs DRAWEXE on all 12 faces (worst +0.0016%); the −0.998% vs the corpus number is
 // the historic reference's drift — our 78062.6 vs local DRAWEXE 8.0's own 78062.8 (−0.0003%). This
 // restored 120→121 all-grid (simple unchanged at 115), SkipQuarantine unchanged at 0.
+// W-G's BSpline-host fillet engine (kernel/ops/fillet_bspline_host*.go — the edge-anchored
+// section-plane Newton march) greened seven simple cases (G5 G7 G9 I5 I7 J9 V6) and one
+// bfuseblend case (B2, a bezier pipe fused to a box): 120→127 simple, 128→136 all-grid. G5/G9
+// needed one shared-code fix first — fillet_blend_faces.go's reversedEndSeg dropped a segment's
+// srcEdge identity on reversal, which farPathSegs' "other way" branch runs on every retained
+// segment of a double-bite capping face (both ends of an open runout landing on ONE side wall);
+// without it the assembler's edge catalog fused the retained portion of a bigon host's straight
+// closing chord with an unrelated new rail sharing its endpoints into one non-manifold edge.
+// Every other new green built clean. I6 (a 3-pick op combining two independent single-arm
+// runouts that share a host face with a genuine 2-arm corner) and T8 (concave closed rim; the
+// cap's hole loop protrudes past its outer boundary, fillet_rim_build.go, Cluster K's simple/T9
+// territory) stay FAIL(faulty), declining into shared dispatch/build code outside this
+// cluster's owned files — reported as merge-train seams, not built around. C6/C8 stay
+// FAIL(faulty) too: their far vertex touches TWO non-host transverse faces (cappingFaceAtFarVertex,
+// fillet_far_runout.go), a genuine multi-face corner termination this wave's single-flat-cap
+// Newton engine does not attempt. encoderegularity/A1+A4 remain DEFERRED per the wave brief
+// (integration-last, need C+T+D-class welds at 11/51 picks).
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 120 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 120 (W-DH's notch-wall concave cove "+
+	if simpleGreen != 127 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 127 (W-DH's notch-wall concave cove "+
 			"sign ε=−1 greened M5; W-B's Cylinder∧Cylinder SSI-seam canal engine greened K2/K3/K4 + P1; "+
-			"W-T's stripe-junction crossings + exact anchor distance greened Y9; 114→120)", simpleGreen)
+			"W-T's stripe-junction crossings + exact anchor distance greened Y9; W-G's BSpline-host "+
+			"engine greened G5 G7 G9 I5 I7 J9 V6; 114→120→127)", simpleGreen)
 	}
-	if allGridGreen != 128 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 128 (120 simple + 8 bfuseblend; the multi-rim "+
-			"weld greened bfuseblend/B3 and the closed cyl∧cyl seam canal greened B4+B5; complex/D8's "+
-			"coincidental green stays retired; 119→128)", allGridGreen)
+	if allGridGreen != 136 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 136 (127 simple + 9 bfuseblend; the multi-rim "+
+			"weld greened bfuseblend/B3, the closed cyl∧cyl seam canal greened B4+B5, and W-G's BSpline-host "+
+			"engine greened bfuseblend/B2; complex/D8's coincidental green stays retired; 119→128→136)", allGridGreen)
 	}
 	if skipQuarantine != 0 {
 		t.Errorf("SkipQuarantine = %d, want 0 — the corpus holds NO case; every one of the 475 records is "+

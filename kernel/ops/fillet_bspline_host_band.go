@@ -47,7 +47,7 @@ func buildBsplineHostCanal(body *topo.Body, e *topo.Edge, aF, bF *topo.Face, r f
 	if !ok {
 		return nil, false
 	}
-	trial, err, _ := bsplineHostCanalDir(spec, 1, bsplineHostStationsMin, res)
+	trial, err := bsplineHostCanalDir(spec, 1, bsplineHostStationsMin, res)
 	if err != nil {
 		wgBsplineDebug("trial march", err)
 		return nil, false
@@ -56,18 +56,35 @@ func buildBsplineHostCanal(body *topo.Body, e *topo.Edge, aF, bF *topo.Face, r f
 	if !ok {
 		return nil, false
 	}
-	if !spec.closed {
-		// Two-phase (open): the trial band doubles as the PROBE that locates the cap-plane
-		// crossings; the FINAL band is rebuilt over just the retained cut window, so the
-		// hosts' wild deep-extension feet can never pollute the loft's on-edge interpolation
-		// (the cubic v-interpolation is quasi-local — a wild prolong station bleeds ~3 knot
-		// spans inward, which is exactly what the G5 rail-off-host plateau measured).
-		cut, ok := bsplineHostProbeCut(trial, spec)
-		if !ok {
-			return nil, false
-		}
-		spec.cut = cut
+	if spec, ok = bsplineHostRetainedCut(spec, trial); !ok {
+		return nil, false
 	}
+	return bsplineHostRefineDensity(spec, dir, res)
+}
+
+// bsplineHostRetainedCut resolves an OPEN spec's retained cut window from the trial (PROBE)
+// band: the trial doubles as the crossing locator, and the FINAL band is rebuilt over just the
+// retained arc window, so the hosts' wild deep-extension feet can never pollute the loft's
+// on-edge interpolation (the cubic v-interpolation is quasi-local — a wild prolong station
+// bleeds ~3 knot spans inward, which is exactly what the G5 rail-off-host plateau measured). A
+// CLOSED spec has no cut to resolve and passes through unchanged (byte-identical).
+func bsplineHostRetainedCut(spec bsplineHostMarchSpec, trial *bsplineHostCanal) (bsplineHostMarchSpec, bool) {
+	if spec.closed {
+		return spec, true
+	}
+	cut, ok := bsplineHostProbeCut(trial, spec)
+	if !ok {
+		return spec, false
+	}
+	spec.cut = cut
+	return spec, true
+}
+
+// bsplineHostRefineDensity doubles the station density until the measured envelope error is
+// under the model-relative bound (or the density cap is reached), returning the first sound,
+// resolved band. ok=false (fall through to the existing refusal) on any march/loft decline or an
+// envelope error still over bound at the station cap.
+func bsplineHostRefineDensity(spec bsplineHostMarchSpec, dir float64, res Resolution) (*bsplineHostCanal, bool) {
 	for n := bsplineHostStationsMin; n <= bsplineHostStationsMax; n *= 2 {
 		canal, err, over := bsplineHostCanalAt(spec, dir, n, res)
 		if err == nil && !over {
@@ -85,7 +102,7 @@ func buildBsplineHostCanal(body *topo.Body, e *topo.Edge, aF, bF *topo.Face, r f
 // wgBsplineDebug is a temporary stderr trace of band declines, active only under
 // WG_BSPLINE_DEBUG=1 (removed before the wave lands — never a shipped log path).
 func wgBsplineDebug(msg string, err error) {
-	if os.Getenv("WG_BSPLINE_DEBUG") != "1" {
+	if !wgBsplineDebugOn() {
 		return
 	}
 	fmt.Fprintf(os.Stderr, "WG_BSPLINE: %s", msg)
@@ -94,6 +111,9 @@ func wgBsplineDebug(msg string, err error) {
 	}
 	fmt.Fprintln(os.Stderr)
 }
+
+// wgBsplineDebugOn reports whether the temporary WG_BSPLINE_DEBUG trace is armed.
+func wgBsplineDebugOn() bool { return os.Getenv("WG_BSPLINE_DEBUG") == "1" }
 
 // bsplineHostMarchSpec is the resolved march input for one edge: hosts, seed, anchors
 // source and classification. For an OPEN edge, cap0/cap1 are the capping planes at the
@@ -224,7 +244,7 @@ func probeArcAtV(probe *bsplineHostCanal, vp []float64, v float64) float64 {
 // bsplineHostCanalAt builds the band at one station density and measures its envelope
 // error: over=true means the band is sound but under-resolved (the caller doubles).
 func bsplineHostCanalAt(spec bsplineHostMarchSpec, dir float64, n int, res Resolution) (*bsplineHostCanal, error, bool) {
-	canal, err, _ := bsplineHostCanalDir(spec, dir, n, res)
+	canal, err := bsplineHostCanalDir(spec, dir, n, res)
 	if err != nil {
 		return nil, err, false
 	}
@@ -239,19 +259,19 @@ func bsplineHostCanalAt(spec bsplineHostMarchSpec, dir float64, n int, res Resol
 // The march is SEEDED at the edge-start station (never a prolong tip — the hosts'
 // polynomial extension there makes the global inversion and the two-plane seed
 // unreliable) and continues outward both ways.
-func bsplineHostCanalDir(spec bsplineHostMarchSpec, dir float64, n int, res Resolution) (*bsplineHostCanal, error, bool) {
+func bsplineHostCanalDir(spec bsplineHostMarchSpec, dir float64, n int, res Resolution) (*bsplineHostCanal, error) {
 	plan := newBsplineHostAnchorPlan(spec, dir, n)
 	c0, ok := bsplineHostSeedCentre(spec.e, spec.aF, spec.bF, plan.anchors[plan.iEdge0].P, spec.r)
 	if !ok {
-		return nil, errBsplineHostSeed, false
+		return nil, errBsplineHostSeed
 	}
 	stations, err := geom.MarchCanalEdgeStationsSeeded(spec.hostA, spec.hostB, spec.r, plan.anchors, plan.iEdge0, c0, res.Weld())
 	if err != nil {
-		return nil, err, false
+		return nil, err
 	}
 	if spec.closed {
 		if err := snapClosedStationLoop(stations, spec, res.Weld()); err != nil {
-			return nil, err, false
+			return nil, err
 		}
 	}
 	return loftBsplineHostCanal(spec, stations, plan, res)
@@ -287,29 +307,29 @@ func snapClosedStationLoop(stations []geom.CanalEdgeStation, spec bsplineHostMar
 }
 
 // loftBsplineHostCanal lofts the stations and packages the band with its isocurve rails.
-func loftBsplineHostCanal(spec bsplineHostMarchSpec, stations []geom.CanalEdgeStation, plan bsplineHostAnchorPlan, res Resolution) (*bsplineHostCanal, error, bool) {
+func loftBsplineHostCanal(spec bsplineHostMarchSpec, stations []geom.CanalEdgeStation, plan bsplineHostAnchorPlan, res Resolution) (*bsplineHostCanal, error) {
 	centers, feetA, feetB := stationRows(stations)
 	surf, err := geom.LoftCanalStations(centers, feetA, feetB, spec.r, res.Weld())
 	if err != nil {
-		return nil, err, false
+		return nil, err
 	}
 	railA, err := geom.SurfaceIsoCurve(surf, true, 0)
 	if err != nil {
-		return nil, err, false
+		return nil, err
 	}
 	railB, err := geom.SurfaceIsoCurve(surf, true, 1)
 	if err != nil {
-		return nil, err, false
+		return nil, err
 	}
 	seamMid, ok := bsplineHostSeamMid(stations[0], spec.r)
 	if !ok {
-		return nil, errBspline("bspline-host canal: station-0 feet antipodal — no seam midpoint"), false
+		return nil, errBspline("bspline-host canal: station-0 feet antipodal — no seam midpoint")
 	}
 	return &bsplineHostCanal{
 		surf: surf, stations: stations, railA: railA, railB: railB, seamMid: seamMid,
 		r: spec.r, concave: spec.concave, closed: spec.closed, plan: plan,
 		hostA: spec.aF, hostB: spec.bF,
-	}, nil, false
+	}, nil
 }
 
 // stationRows splits the stations into the three loft rows.

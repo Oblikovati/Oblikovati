@@ -160,7 +160,14 @@ func reverseEndSegs(segs []endSeg) []endSeg {
 // retrim splicers that may swap a bite's endpoints (matchArcFeet) reverse the curve through the same one
 // primitive instead of carrying it unchanged.
 func reversedEndSeg(s endSeg) endSeg {
-	r := endSeg{from: s.to, to: s.from, mid: s.mid, arc: s.arc}
+	// srcEdge MUST survive the reversal (wave-G, #1600 method C): farPathSegs' "other way" branch
+	// (fillet_curved_retrim_loop.go) runs every kept segment through this reversal, and a dropped
+	// srcEdge there made a shared boundary edge un-recognizable as the SAME source edge on its two
+	// bordering faces — the retrim built it TWICE as distinct op-generated (srcEdge=0) segments
+	// instead of once as the shared survivor, which the assembler's edgeCatalog then welded into a
+	// non-manifold multi-use edge (G5/G9: a double-bite capping face reversed one of its two far
+	// paths). Every existing single-bite caller keeps srcEdge=0 either way (nothing regresses).
+	r := endSeg{from: s.to, to: s.from, mid: s.mid, arc: s.arc, srcEdge: s.srcEdge}
 	switch {
 	case s.arc:
 		r.curve, _ = geom.Arc3dByThreePoints(s.to, s.mid, s.from)

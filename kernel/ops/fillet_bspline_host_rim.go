@@ -11,11 +11,18 @@ import (
 )
 
 // CLOSED-rim body builder for the B-spline-host canal (J9-class convex pipe-cap rim,
-// T8/B2-class concave pipe-through-plane weld ring): the marched canal band welds through
-// the SAME host-agnostic rim rebuild the analytic and elliptic bands use (rebuildRim),
-// with the band's two closed rails as the wall/cap contact curves. The wall's re-aimed
-// seam keeps its own curved meridian via the B-spline span carry (retainedBsplineSpan) —
-// a chord there would sit off the pipe surface (the J2/J4 rimhost-carry lesson).
+// B2-class pipe-through-box weld ring; T8's CONCAVE variant declines separately — see
+// bsplineHostRunoutBody's open-edge sibling, and fillet_rim_build.go's own cap hole-loop
+// gap for the closed case): the marched canal band welds through the SAME host-agnostic
+// rim rebuild the analytic and elliptic bands use (rebuildRim), with the band's two closed
+// rails as the wall/cap contact curves. The re-aimed wall seam TRIES to keep its own curved
+// meridian via the B-spline span carry (retainedBsplineSpan, exactRetainedSpanOnParent's
+// B-spline arm) — a chord there sits off the pipe surface (the J2/J4 rimhost-carry lesson,
+// retired for their axisymmetric sphere/torus hosts). On a GENERAL swept B-spline wall the
+// carry's on-parent gate can genuinely decline (the numerically marched contact point has no
+// guarantee of landing on the wall's own pre-existing structural seam, unlike an axisymmetric
+// host) and falls back to the honest chord — a small, measured, ratcheted residual carried in
+// knownOffSurfaceDebt (loopseg_onface_test.go), not silently absorbed.
 
 // bsplineHostClosedRimBody welds one CLOSED B-spline-host rim pick. An empty reason means
 // the returned body is the weld; a non-empty one names the obstruction and the body is nil
@@ -44,6 +51,7 @@ func bsplineHostClosedRimBody(body *topo.Body, ef edgeFillet, canal *bsplineHost
 	if err != nil {
 		return nil, fmt.Sprintf("bspline-host rim rebuild declined: %v", err)
 	}
+	wgBsplineRunoutValidateDebug(b)
 	return b, ""
 }
 
@@ -114,17 +122,4 @@ func bsplinePolylineLength(c geom.BSplineCurve) float64 {
 		prev = next
 	}
 	return total
-}
-
-// bsplineHostSeamOnRail asserts the closed band's station-0 wall foot sits on the wall
-// seam meridian the rebuild re-aims — the anchoring invariant that lets the seam carry
-// (retainedBsplineSpan) land vc ON the seam curve. Returns the offending gap when not.
-func bsplineHostSeamOnRail(canal *bsplineHostCanal, seamEdge *topo.Edge, wallIsA bool, tol float64) (float64, bool) {
-	foot := canal.stations[0].FootA.P
-	if !wallIsA {
-		foot = canal.stations[0].FootB.P
-	}
-	t, _ := geom.CurveParamAtPoint3(seamEdge.Geometry(), foot)
-	gap := float64(seamEdge.Geometry().PointAt(t).DistanceTo(foot))
-	return gap, gap <= tol
 }

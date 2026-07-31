@@ -140,7 +140,7 @@ func solveCanalStation(a, b *canalMarchHostState, r float64, an CanalEdgeAnchor,
 		return CanalEdgeStation{}, err
 	}
 	c := projectIntoSectionPlane(seed, an, p, q)
-	c, fa, fb, err := newtonCanalCentre(a, b, r, an, p, q, c, weld)
+	c, fa, fb, err := newtonCanalCentre(a, b, r, p, q, c, weld)
 	if err != nil {
 		return CanalEdgeStation{}, err
 	}
@@ -184,7 +184,7 @@ func projectIntoSectionPlane(seed math.Point3, an CanalEdgeAnchor, p, q math.Vec
 // newtonCanalCentre is the damped 2×2 Newton on the in-plane centre: residuals are the two
 // |C−foot|−r distances, Jacobian rows the unit foot normals projected into (p, q) — the
 // envelope-theorem gradient of the distance-to-surface function.
-func newtonCanalCentre(a, b *canalMarchHostState, r float64, an CanalEdgeAnchor, p, q math.Vector3, c math.Point3, weld float64) (math.Point3, CanalFoot, CanalFoot, error) {
+func newtonCanalCentre(a, b *canalMarchHostState, r float64, p, q math.Vector3, c math.Point3, weld float64) (math.Point3, CanalFoot, CanalFoot, error) {
 	tol := 0.25 * weld
 	for i := 0; i < canalMarchMaxNewton; i++ {
 		fa, fb, g1, g2, err := canalStationResiduals(a, b, c, r)
