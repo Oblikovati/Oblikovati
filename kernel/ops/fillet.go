@@ -222,8 +222,17 @@ func assemblePlanarFilletBody(body *topo.Body, edges []filletPick, fils []edgeFi
 	if err := validateRunoutFans(fils); err != nil {
 		return nil, err // n-valent analogue of #1800: reject a self-intersecting/over-radius runout before it silently drops to an open shell
 	}
-	res := assembleFilletBody(body, fils, blends)
+	var res *topo.Body
+	if !blendsCarryRadiusTorus(blends) {
+		// A mixed-radius torus corner's transient band ends are not weldable, so its baseline body is
+		// never built: the setback pass either certifies the torus composition or the nil baseline
+		// falls through to the honest decline below (never a garbage fallback).
+		res = assembleFilletBody(body, fils, blends)
+	}
 	res = adoptCornerSetback(body, edges, fils, blends, miters, concave, res) // corner setback (dihedral+trihedral), do-no-harm floor
+	if res == nil {
+		return nil, fmt.Errorf("fillet: mixed-radius torus corner did not compose into a certified solid")
+	}
 	rep := Validate(res)
 	if rep.Valid && res.IsSolid() {
 		return res, nil
@@ -920,6 +929,9 @@ func registerBlendArc(blend *cornerBlend, c corner, in cornerInputs, variable bo
 // the miter — reversed for the edge whose A face is the outer one — so the two cylinders weld
 // along it watertight.
 func miterTangents(in cornerInputs, m *cornerMiter) (ta, tb math.Point3, seam []math.Point3) {
+	if m.shared == nil {
+		return vertexOnlyMiterTangents(in, m) // D4: no shared face — orient by which sharp edge bounds in.a
+	}
 	if in.a == m.shared {
 		return m.seam[0], m.sBot, m.seam
 	}
@@ -977,6 +989,11 @@ type cornerBlend struct {
 	sphere geom.Sphere
 	tan    map[uint64]math.Point3
 	arcs   []blendArc
+	// radiusTorus marks a mixed-radius trihedral TORUS corner (A4: rB on the wall∧wall edge, equal
+	// rS on the two top edges): the bands build against this transient blend and the unified setback
+	// pass retracts them onto the solved torus (fillet_corner_radiustorus.go). Nil everywhere else,
+	// so every equal-radius corner path is untouched.
+	radiusTorus *radiusTorusCornerGeom
 }
 
 // computeCorners finds the shared corners of the filleted edge set and solves a corner
@@ -1039,19 +1056,39 @@ func solveCorner(body *topo.Body, vid uint64, ps []filletPick) (*cornerBlend, *c
 		cb, err := solveBlend(body, v, faces, r)
 		return cb, nil, err
 	case len(ps) == 2:
-		if closedRimPick(ps) {
-			return nil, nil, nil // a CLOSED rim (one edge counted twice: StartVertex==EndVertex) is not a
-			// 2-edge miter corner — it has no second edge and no shared face, so it takes no corner treatment
-			// and reaches the closed-band arm assembly (fillet_curved_closed_rim.go) instead of solveMiter (J1).
-		}
-		if p := varyingPick(ps); p != nil {
-			return nil, nil, fmt.Errorf("fillet: a variable-radius edge (radii %g→%g) cannot share a 2-edge miter corner (its cone has no seam with a cylinder); round the third edge for a setback instead", p.r0, p.r1)
-		}
-		cm, err := solveMiter(v, ps, r)
-		return nil, cm, err
+		return solveTwoEdgeCorner(v, ps, r)
+	case len(ps) >= 4 && len(faces) == len(ps):
+		// Full-round K-arm corner (X8/A1): every edge at a K-valent planar vertex filleted at one
+		// radius, closed by the exact common-tangent-sphere K-gon (fillet_corner_fullround.go).
+		cb, err := solveFullRoundCorner(body, v, faces, ps, r)
+		return cb, nil, err
 	default:
 		return nil, nil, fmt.Errorf("fillet: corner where %d filleted edges meet a %d-face vertex is not a supported blend (need 3 edges at a trihedral vertex, or 2 edges sharing a face)", len(ps), len(faces))
 	}
+}
+
+// solveTwoEdgeCorner dispatches the 2-edge corner: a CLOSED rim takes no corner treatment, a
+// variable-radius edge cannot miter, and the miter itself is either the ordinary shared-face seam
+// or — when the two edges share NO face (D4: opposite pyramid arms) — the vertex-only seam whose
+// ends lie on the corner's surviving sharp edges instead.
+func solveTwoEdgeCorner(v *topo.Vertex, ps []filletPick, r float64) (*cornerBlend, *cornerMiter, error) {
+	if closedRimPick(ps) {
+		return nil, nil, nil // a CLOSED rim (one edge counted twice: StartVertex==EndVertex) is not a
+		// 2-edge miter corner — it has no second edge and no shared face, so it takes no corner treatment
+		// and reaches the closed-band arm assembly (fillet_curved_closed_rim.go) instead of solveMiter (J1).
+	}
+	if p := varyingPick(ps); p != nil {
+		return nil, nil, fmt.Errorf("fillet: a variable-radius edge (radii %g→%g) cannot share a 2-edge miter corner (its cone has no seam with a cylinder); round the third edge for a setback instead", p.r0, p.r1)
+	}
+	if sharedFace(ps[0].edge, ps[1].edge) == nil {
+		// D4: two filleted edges meeting ONLY at the vertex (opposite pyramid arms). The rolling-
+		// ball cylinders still mutually trim — the seam is cylA∩cylB with both ends on the corner's
+		// sharp edges (fillet_miter_vertexonly.go), matching DRAWEXE's D4 band boundary exactly.
+		cm, err := solveVertexOnlyMiter(v, ps, r)
+		return nil, cm, err
+	}
+	cm, err := solveMiter(v, ps, r)
+	return nil, cm, err
 }
 
 // cornerRadius returns the radius every pick carries AT the shared corner vertex vid — the radius of

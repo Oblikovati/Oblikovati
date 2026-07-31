@@ -37,6 +37,7 @@ const (
 	treatConcaveSphere                 // 3 concave orthogonal planar → void-flipped sphere octant (P2: K6/L4)
 	treatMixedTorus                    // mixed-sense orthogonal planar → torus R=2r (2cc+1cvx: K9/M2/L6; 1cc+2cvx: B5/C4/D7)
 	treatConvexRunoff                  // 3 convex planar (body all-planar) → oblique run-off clip (P4: A8/A6)
+	treatRadiusTorus                   // mixed-RADIUS convex orthogonal planar → torus R=rB−rS (A4/E3, fillet_corner_radiustorus.go)
 )
 
 // setbackCtx bundles the read-only inputs classifyCorner and accumulate consume: the already-solved
@@ -81,6 +82,11 @@ func classifyBlendCorner(vid uint64, ctx setbackCtx) cornerTreatment {
 	cb := ctx.blends[vid]
 	if cb == nil || cb.vertex == nil {
 		return treatDecline
+	}
+	if cb.radiusTorus != nil {
+		// The mixed-radius torus corner was matched and solved eagerly at computeCorners time;
+		// its transient blend is the routing marker (never a real sphere corner).
+		return treatRadiusTorus
 	}
 	bands := cornerBandsAt(vid, ctx.fils)
 	if pivot, pair, ok := splitMixedSense(bands); ok {

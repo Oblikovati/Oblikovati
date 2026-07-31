@@ -275,15 +275,20 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 120 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 120 (W-DH's notch-wall concave cove "+
-			"sign ε=−1 greened M5; W-B's Cylinder∧Cylinder SSI-seam canal engine greened K2/K3/K4 + P1; "+
-			"W-T's stripe-junction crossings + exact anchor distance greened Y9; 114→120)", simpleGreen)
+	if simpleGreen != 121 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 121 (W-DH's notch-wall concave cove sign "+
+			"ε=−1 greened M5; W-B's Cylinder∧Cylinder SSI-seam canal engine greened K2/K3/K4 + P1; W-T's "+
+			"stripe-junction crossings greened Y9; W-A's mixed-radius [10,5,5] torus corner greened A4. "+
+			"simple/X8 uses the SAME full-round 4-arm common-tangent-sphere mechanism as tolblend_simple/A1 "+
+			"but stays an HONEST DECLINE: TestEveryLoopSegmentLiesOnItsFace caught a real B-rep defect on its "+
+			"asymmetric pyramid that the symmetric A1 does not carry — see cluster_a_planar_corner_test.go; "+
+			"114→121)", simpleGreen)
 	}
-	if allGridGreen != 128 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 128 (120 simple + 8 bfuseblend; the multi-rim "+
-			"weld greened bfuseblend/B3 and the closed cyl∧cyl seam canal greened B4+B5; complex/D8's "+
-			"coincidental green stays retired; 119→128)", allGridGreen)
+	if allGridGreen != 131 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 131 (121 simple + 8 bfuseblend + 2 tolblend_simple; "+
+			"the multi-rim weld greened bfuseblend/B3, the closed cyl∧cyl seam canal greened B4+B5, and cluster A "+
+			"greened tolblend_simple/A1 = the full-round 4-arm pyramid apex and D4 = the vertex-only miter of two "+
+			"arms sharing no face; complex/D8's coincidental green stays retired; 119→131)", allGridGreen)
 	}
 	if skipQuarantine != 0 {
 		t.Errorf("SkipQuarantine = %d, want 0 — the corpus holds NO case; every one of the 475 records is "+
