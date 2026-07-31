@@ -30,7 +30,8 @@ func setbackObstaclePins() []fingerprintPin {
 		// adoption moves, and every one is PROVEN improved per-face against live DRAWEXE 8.0.0.
 		// ★ RE-CAPTURED AGAIN by the FOOTPRINT-RIM CURVE CARRY — second receipt at the bottom.
 		// ★ RE-CAPTURED AGAIN by the RAILB INTERPOLATED CONTACT-LOCUS CARRY — third receipt at the bottom.
-		{"S6", 18039.887376411, 16916, 0xd2d45e80d09eadd5, ""},
+		// ★ S6 RE-CAPTURED by the SEAMED-HEMISPHERE FAN (S7 likewise below) — fourth receipt at the bottom.
+		{"S6", 18045.059768575302, 75892, 0xf1c8432538a974db, ""},
 		{"S9", 115877.940047587, 91038, 0xd00e3e98fa29ff0f, ""},
 		{"T3", 130530.294821448, 81912, 0xa3f811576623f115, ""},
 		// S1/S4/S7/T1/T4/T7 (simple): the TWO-boss members of the same setback family — a box with a boss
@@ -52,9 +53,10 @@ func setbackObstaclePins() []fingerprintPin {
 		// ★ RE-CAPTURED with S6/S9/T3 above — NIL-CURVE-OFFER ADOPTION receipt at the bottom of this file.
 		// ★ RE-CAPTURED AGAIN by the FOOTPRINT-RIM CURVE CARRY — second receipt at the bottom.
 		// ★ RE-CAPTURED AGAIN by the RAILB INTERPOLATED CONTACT-LOCUS CARRY — third receipt at the bottom.
+		// ★ S7 RE-CAPTURED by the SEAMED-HEMISPHERE FAN — fourth receipt at the bottom.
 		{"S1", 12600.722307530, 17860, 0xb7dc3ef1f27195db, ""},
 		{"S4", 36867.737085472, 23876, 0x354e6a2fd0f2bd82, ""},
-		{"S7", 33551.258529994, 21204, 0xee0c073cc7d8242e, ""},
+		{"S7", 33556.479778390363, 82336, 0x866f930209ec3af4, ""},
 		{"T1", 117952.135172349, 94380, 0xcf2da8c5249e448e, ""},
 		{"T4", 133685.219453094, 91276, 0xa27ecd7a098fc1e2, ""},
 		{"T7", 36298.954767941, 24030, 0x40806423fdb12488, ""},

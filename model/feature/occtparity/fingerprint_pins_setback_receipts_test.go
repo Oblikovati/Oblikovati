@@ -59,22 +59,23 @@ package occtparity
 // −1.76e-05→−1.18e-05, S1 −6.71e-04→−4.52e-04, S4 −5.24e-04→−3.94e-04, T7 −2.54e-03→−2.15e-03.
 // ★ NOT improved, stated with its TRUE extent (an earlier revision of this receipt half-disclosed
 // it as an S6-only VOLUME dissent; the adversarial review measured it as a TWO-case AREA
-// regression, and that is what it is): the regression is the SPHERE-HOST ARM, on BOTH sphere
-// cases, S6 AND S7, on the host geom.Sphere face itself. OCCT does not trim that sphere at all —
-// verified against the closed hemisphere 2π·13² = 1061.858347 by area, CoG z = R/2 AND inertia —
-// while we NOTCH it: S6's shipped sphere boundary loop runs 50 edge-uses / 118.39 summed chord
-// against the equator's 2π·13 = 81.68 (measured here on the shipped topo loop). Sphere-face area
-// at PropertyQuality, base → HEAD (ops.MeshArea ∘ ops.TessellateFace, measured here): S6
-// 1061.302202 → 1061.235258, S7 1061.291184 → 1061.179147; at the review's CONVERGED tessellation
-// limit: S6 1061.313591 → 1061.273914 (−0.5448 → −0.5844 vs the closed form) and S7 1061.301549 →
-// 1061.264052 (−0.5568 → −0.5943). HEAD has MORE triangles and LESS area, so it is a REGION
-// change, not mesh noise, sitting on the pre-existing ~0.55 notch defect — the notch is its own
-// queued slice (curve-adoption-report.md, concerns), NOT re-fixed under adoption. S6's vprops
-// dissent above (−3.31e-04→−3.58e-04) is this same regression seen through volume; S7's volume
-// merely masks it (flat at −2.83e-04, a 2.0e-05 absolute move below the oracle's 6-s.f.
-// resolution). The pins stand because BOTH bodies improve on every other measure — converged
-// cylinders 60× closer, S7's BSplines 323×/640×, twins 1.30e-02 → 4e-06 (review's convergence
-// measurements) — and the dissenting face is named, not averaged away.
+// regression): the dissent is the SPHERE-HOST face, on BOTH sphere cases, S6 AND S7. OCCT does not
+// trim that sphere at all — verified against the closed hemisphere 2π·13² = 1061.858347 by area,
+// CoG z = R/2 AND inertia. Sphere-face area at PropertyQuality, base → HEAD (ops.MeshArea ∘
+// ops.TessellateFace, measured here): S6 1061.302202 → 1061.235258, S7 1061.291184 → 1061.179147;
+// at the review's CONVERGED tessellation limit: S6 1061.313591 → 1061.273914 and S7 1061.301549 →
+// 1061.264052, against the closed 1061.858347.
+// ★★ RE-ADJUDICATED by the seamed-hemisphere slice (fourth receipt below; sphere-notch-report.md):
+// this receipt's "we NOTCH it: 50 edge-uses / 118.39 summed chord against the equator's 81.68" was
+// a MIS-READING — the 36.71 of "extra" chord is exactly the parametric SEAM meridian counted twice
+// (2×18.3848), and the loop is in fact the FULL equator + doubled seam, OCCT's own topology. The
+// ~0.55 deficit was never a REGION defect: it was spherePatchMesh's patchGridCap-clamped interior
+// density (flat at every chord tolerance, mesh solid-angle coverage exactly 2π throughout), and the
+// adoption-era area moves here were CDT jitter under that saturated grid, not a region change.
+// S6's vprops dissent above (−3.31e-04→−3.58e-04) is the same resolution deficit seen through
+// volume. The pins stood because BOTH bodies improve on every other measure — converged cylinders
+// 60× closer, S7's BSplines 323×/640×, twins 1.30e-02 → 4e-06 — and the dissenting face is named,
+// not averaged away.
 //
 // Off-surface residual (worstLoopSegmentOffFace / boundingDiag, the gate's own function) falls on all
 // nine, 1.07–4.58×, and every one of the nine knownOffSurfaceDebt ceilings ratchets down with it.
@@ -113,10 +114,10 @@ package occtparity
 // shipped loop equals the closed form + chord deficit identity above). T7 re-ranked against its
 // nexplode oracle: front host 399.537566→399.192709 (DRAWEXE 399.178), top host 334.081647→333.101499
 // (333.086), elliptic wall 2380.950144→2381.645098 against the ∮|C′×v| closed form 2381.677340 —
-// the wall gap the adoption could not close was these rim chords. ★ The S6/S7 sphere-notch dissent
-// above KEEPS its true extent: S6's sphere face reads 1061.197485 here (further below the untrimmed
-// 2π·13² = 1061.858347; S7's reads 1061.193720, slightly toward it) — the notch is still the queued
-// slice, and both bodies improve on whole-body area AND volume regardless.
+// the wall gap the adoption could not close was these rim chords. ★ The S6/S7 sphere dissent above
+// KEPT its extent here: S6's sphere face read 1061.197485, S7's 1061.193720, below the untrimmed
+// 2π·13² = 1061.858347 — resolved by the seamed-hemisphere slice (fourth receipt below): a mesher
+// density clamp, never a notch. Both bodies improved on whole-body area AND volume regardless.
 //
 // Off-surface residual (worstLoopSegmentOffFace/boundingDiag): S7 3.8e-10, T4 4.6e-9, T7 4.1e-8
 // (entries DELETED from knownOffSurfaceDebt), T1 5.96e-6, S1 4.16e-5, S4 8.10e-5, S6 1.75e-4,
@@ -178,3 +179,35 @@ package occtparity
 // agreements, no adoption). Free edges 0 and folds 0 at BOTH gate qualities; face counts
 // unchanged; the whole-corpus DRAWEXE face-count join unchanged; rollup unchanged at 114 simple /
 // 119 all-grid, SkipQuarantine 0. Same arm64 cross-platform-risk caveat as every other pin here.
+
+// ═══ SEAMED-HEMISPHERE FAN: the S6/S7 re-capture receipt (sphere-notch-report.md) ═══
+//
+// S6 and S7 ONLY — every other pin is bit-identical (verified: the pins gate failed on exactly these
+// two under the change). WHAT CHANGED: nothing in the B-rep — the shipped topology already matched
+// OCCT's (sphere face = full equator, subdivided at the runout contacts (±5,−12,0), + doubled seam;
+// the patches terminate ON the footprint rim exactly as OCCT's do, per-edge off-sphere ≤ 3.6e-15).
+// The boss hemisphere's MESH used to fall through to spherePatchMesh, whose patchGridCap (80/axis)
+// clamps a hemisphere's stereographic chart (bbox 2R×2R needs 322 steps at PropertyQuality) to ~1/4
+// the density the chord tolerance asks — a FLAT −0.66 area deficit at every swept tolerance that two
+// review waves mis-read as a trim notch. sphereSeamedCapFan (kernel/ops/sphere_seamed_cap_mesh.go)
+// now routes the seamed cap to the same latitude-ring fan the plain cap uses.
+//
+// PROVEN IMPROVED, all measured this session:
+//   - Sphere face vs the closed form 2π·13² = 1061.858347 (= live DRAWEXE 8.0.0 `sprops 1.e-12` on
+//     BOTH cases' oracle bodies, re-verified): PropertyQuality S6 1061.197485 → 1061.795078
+//     (−0.6608 → −0.0632, 10.5×), S7 1061.193720 → 1061.796084 (−0.6646 → −0.0622, 10.7×). Chord
+//     sweep to 1e-6 (angle 1°): S6 1061.199055 → 1061.817861, S7 1061.194564 → 1061.817859
+//     (−0.659 → −0.040, 16.5×; the residual is the fixed 1° meridian ring step, Rθ²/8-shaped —
+//     the deficit now CONVERGES with quality instead of flatlining).
+//   - Whole-body mesh area vs `sprops result 1.e-12` (S6 4089.28, S7 6392.3): S6 → 4089.225780
+//     (−1.3e-5 rel), S7 → 6392.230572 (−1.1e-5 rel).
+//   - Raw pin volume vs `vprops result 1.e-12` (S6 18045.7, S7 33557.2): S6 18039.887376411 →
+//     18045.059768575 (rel −3.22e-4 → −3.55e-5, 9.1×), S7 33551.258529994 → 33556.479778390
+//     (rel −1.77e-4 → −2.15e-5, 8.2×).
+//   - Region unchanged and now GATED: mesh signed solid angle at the centre = 2π to ≤2e-10 before
+//     AND after (the region never had a notch); sphere_host_hemisphere_test.go pins region and
+//     resolution separately. Off-surface residuals and face counts unchanged (B-rep untouched);
+//     watertight/fold gates PASS at both qualities; rollup unchanged 114 simple / 119 all-grid.
+// Triangle deltas are the fan's density doing its job: S6 16916 → 75892, S7 21204 → 82336 (the
+// sphere face 10528 → 69504 / 10544 → 71676; every other face bit-identical). Captured twice,
+// bit-stable. Same arm64 cross-platform-risk caveat as every other pin here.
