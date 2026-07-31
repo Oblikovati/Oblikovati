@@ -17,30 +17,51 @@ import (
 // (a planar cut of the fillet surface) and reuses the same idiom as our arc-fillet setback end-caps.
 
 // addCapFaces adds the two flat setback cap faces of an open run — the quarter-disk pocket between each
-// end section arc (topFoot→apex→wallFoot) and the surviving corner vertex. It is wound to face OUTWARD
-// along the tube axis (away from the tube interior), the same geometric-winding discipline addBlendFaces
-// uses, so the mass-properties integral reads material on the correct side.
+// end section arc (topFoot→apex→wallFoot) and the surviving corner vertex. Like addBlendFaces, the loop
+// DIRECTION is topological — the cap walks its section arc opposite to the blend band's use of it, which
+// also pairs both corner connectors against their host-face retrims — and only the face's Reversed flag
+// comes from the winding-vs-normal test.
 func (g *stripeBuild) addCapFaces() {
 	feet := [2][2]*topo.Vertex{{g.vS1[0], g.vW[0]}, {g.vEndS1, g.vEndW}}
 	lin := func(t int) topo.Lineage { return topo.NewLineage(topo.Tok("stripe", "cap", t)) }
 	for t := 0; t < 2; t++ {
 		tm := g.st.term[t]
-		vtx := g.verts[tm.vertex]
 		out := g.capOutward(t)
 		plane, err := geom.NewPlane(tm.vertex.Point(), out)
 		if err != nil {
 			continue // a degenerate section plane; Validate rejects the incomplete solid downstream
 		}
-		loop := []topo.Use{
-			dirUse(g.connTop[t], vtx),         // corner → shared-face foot
-			dirUse(g.cap[t], feet[t][0]),      // shared-face foot → wall foot (the section arc)
-			dirUse(g.connWall[t], feet[t][1]), // wall foot → corner
-		}
-		if capFaceFlipped([]math.Point3{tm.vertex.Point(), tm.topA, tm.wallA}, out) {
-			loop = reverseLoop(loop)
+		loop, ring := g.capLoop(t, feet[t])
+		if capFaceFlipped(ring, out) {
+			g.bld.AddReversedFace(plane, lin(t), topo.OuterLoop(loop...))
+			continue
 		}
 		g.bld.AddFace(plane, lin(t), topo.OuterLoop(loop...))
 	}
+}
+
+// capLoop is terminal t's triangular cap boundary, walked so its section arc opposes the blend band's
+// use of that arc (band 0 enters cap 0, band n−1 exits cap 1 — see blendLoop's sharedFwd branches).
+func (g *stripeBuild) capLoop(t int, feet [2]*topo.Vertex) ([]topo.Use, []math.Point3) {
+	vtx := g.verts[g.st.term[t].vertex]
+	startS1 := !g.sharedFwd[0]
+	if t == 1 {
+		startS1 = g.sharedFwd[len(g.st.segs)-1]
+	}
+	if startS1 {
+		loop := []topo.Use{
+			dirUse(g.connTop[t], vtx),      // corner → shared-face foot
+			dirUse(g.cap[t], feet[0]),      // shared-face foot → wall foot (the section arc)
+			dirUse(g.connWall[t], feet[1]), // wall foot → corner
+		}
+		return loop, []math.Point3{vtx.Point(), feet[0].Point(), feet[1].Point()}
+	}
+	loop := []topo.Use{
+		dirUse(g.connWall[t], vtx),    // corner → wall foot
+		dirUse(g.cap[t], feet[1]),     // wall foot → shared-face foot
+		dirUse(g.connTop[t], feet[0]), // shared-face foot → corner
+	}
+	return loop, []math.Point3{vtx.Point(), feet[1].Point(), feet[0].Point()}
 }
 
 // capOutward is terminal t's cap-face outward normal — the spine-axis direction that makes the flat cap

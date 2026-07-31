@@ -72,6 +72,14 @@ func cylinderArmEdge(body *topo.Body, e *topo.Edge, p filletPick, concave Concav
 	if ef, handled := bsplineHostArmEdge(body, e, p); handled {
 		return ef, true, nil
 	}
+	// Cluster-B additive arm ABOVE the curvedAdjacentError decline (the agreed wave seam): a CLOSED
+	// Cylinder∧Cylinder SSI-seam loop builds its exact-station canal band (fillet_cylcyl_seam.go)
+	// instead of flat-refusing. Parallel-axis pairs are excluded inside the classifier, so the
+	// equal-parallel miter arm (P5, cylCylMiterArmEdge) is never shadowed; every decline falls
+	// through to the byte-identical refusal.
+	if ef, handled := cylCylSeamArmEdge(body, e, p); handled {
+		return ef, true, nil
+	}
 	cyl, pl, ok := cylinderPlaneEdge(e)
 	if !ok {
 		return edgeFillet{}, false, nil
