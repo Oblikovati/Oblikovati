@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"go/format"
 	"io"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -44,6 +45,15 @@ var caseNamePattern = regexp.MustCompile(`^[A-Z][0-9]+$`)
 const oracleTimeout = 120 * time.Second
 
 func main() {
+	if err := run(); err != nil {
+		fmt.Fprintf(os.Stderr, "gen: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+// run generates the corpus, returning an error rather than exiting so the deferred oracle temp-dir
+// cleanup actually runs — os.Exit skips defers, which leaked a temp dir on every error path.
+func run() error {
 	occtDir := flag.String("occt", "../OCCT/tests/blend", "OCCT tests/blend root")
 	oraclePath := flag.String("oracle", "test-utilities/occt-blend/oracle/occt_blend_oracle", "oracle wrapper path")
 	outDir := flag.String("out", "model/feature/occtparity", "output package dir")
@@ -51,28 +61,23 @@ func main() {
 
 	cases, err := collectCases(*occtDir)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "gen: collect cases: %v\n", err)
-		os.Exit(1)
+		return fmt.Errorf("collect cases: %w", err)
 	}
-
 	tmpDir, err := os.MkdirTemp("", "occt-blend-oracle-")
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "gen: mkdir temp: %v\n", err)
-		os.Exit(1)
+		return fmt.Errorf("mkdir temp: %w", err)
 	}
 	defer os.RemoveAll(tmpDir)
 
 	records := make([]record, 0, len(cases))
 	for _, c := range cases {
-		r := runOneCase(*oraclePath, *outDir, tmpDir, c)
-		records = append(records, r)
+		records = append(records, runOneCase(*oraclePath, *outDir, tmpDir, c))
 	}
-
 	if err := writeCorpus(*outDir, records); err != nil {
-		fmt.Fprintf(os.Stderr, "gen: write corpus: %v\n", err)
-		os.Exit(1)
+		return fmt.Errorf("write corpus: %w", err)
 	}
-	printSummary(records)
+	logSummary(records)
+	return nil
 }
 
 // caseRef identifies one OCCT tests/blend case by its grid and case name plus the path to
@@ -242,23 +247,25 @@ func tail(b []byte, n int) string {
 	return "…" + s[len(s)-n:]
 }
 
-func printSummary(records []record) {
-	total := len(records)
+// logSummary reports the generated corpus's shape — the counts a regeneration is checked against
+// (a jump in unparsed or empty-inputStep means the OCCT script parser has drifted).
+func logSummary(records []record) {
 	var unparsed, multiBlend, todoOther, emptyInputStep int
 	for _, r := range records {
-		if strings.HasPrefix(r.TODO, "unparsed:") {
+		switch {
+		case strings.HasPrefix(r.TODO, "unparsed:"):
 			unparsed++
-		} else if strings.Contains(r.TODO, "multi-blend") {
+		case strings.Contains(r.TODO, "multi-blend"):
 			multiBlend++
-		} else if r.TODO != "" {
+		case r.TODO != "":
 			todoOther++
 		}
 		if r.InputStep == "" {
 			emptyInputStep++
 		}
 	}
-	fmt.Printf("gen: total=%d todo(OCCT)=%d multi-blend=%d unparsed=%d empty-inputStep=%d\n",
-		total, todoOther, multiBlend, unparsed, emptyInputStep)
+	slog.Info("corpus generated", "total", len(records), "todoOCCT", todoOther,
+		"multiBlend", multiBlend, "unparsed", unparsed, "emptyInputStep", emptyInputStep)
 }
 
 // locator/pick/record mirror model/feature/occtparity/record.go's JSON shape exactly (same
@@ -305,9 +312,9 @@ func writeCorpus(outDir string, records []record) error {
 	return writeCorpusGo(outDir)
 }
 
-// writeCorpusGo emits the static, gofmt'ed corpus.go accessor for the embedded corpus.json.
-func writeCorpusGo(outDir string) error {
-	src := `// SPDX-License-Identifier: GPL-2.0-only
+// corpusGoTemplate is the generated corpus.go accessor source, hoisted out of writeCorpusGo so
+// that function stays readable (the template is data, not logic).
+const corpusGoTemplate = `// SPDX-License-Identifier: GPL-2.0-only
 
 package occtparity
 
@@ -343,6 +350,11 @@ func Corpus() []Record {
 // InputStep.
 func CorpusFixtureDir() string { return "fixtures" }
 `
+
+// writeCorpusGo emits the static, gofmt'ed corpus.go accessor for the embedded corpus.json.
+// writeCorpusGo emits the package's corpus.go accessor (gofmt-formatted) beside corpus.json.
+func writeCorpusGo(outDir string) error {
+	src := corpusGoTemplate
 	formatted, err := format.Source([]byte(src))
 	if err != nil {
 		return fmt.Errorf("writeCorpusGo: gofmt generated source: %w", err)
