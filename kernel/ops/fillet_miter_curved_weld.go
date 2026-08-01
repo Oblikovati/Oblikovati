@@ -67,12 +67,12 @@ type miterArmSide struct {
 // receded outer/cap hosts, and assembles + certifies via the caller.
 func curvedMiterBody(body *topo.Body, m *cornerMiter, res Resolution) (*topo.Body, string) {
 	c := m.curved
-	r := c.arms.tor.MinorRadius
-	torSide, reason := buildMiterArmSide(m, c.arms.tor, c.torEdge, r, res)
+	r := c.radius()
+	torSide, reason := buildMiterArmSide(m, c.armA(), c.torEdge, r, res)
 	if reason != "" {
 		return nil, reason
 	}
-	cylSide, reason := buildMiterArmSide(m, c.arms.cyl, c.cylEdge, r, res)
+	cylSide, reason := buildMiterArmSide(m, c.armB(), c.cylEdge, r, res)
 	if reason != "" {
 		return nil, reason
 	}
