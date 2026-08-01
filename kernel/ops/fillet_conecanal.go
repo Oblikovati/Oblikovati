@@ -14,14 +14,25 @@ import (
 // Cone-host RULING-edge arm — the cone-host trihedral-corner campaign, Slice CN2 (the crux;
 // cone-host-corner-derivation.md §2 "Arm B"). Rounding the convex edge where a radial plane (one that
 // CONTAINS the cone axis) meets the host cone is NOT a torus: the r-offset plane is parallel to the axis,
-// so the ball-centre locus {offset plane} ∩ {offset cone A′=A+r/sinα·â} is a HYPERBOLA branch, and the
+// so the ball-centre locus {offset plane} ∩ {offset cone A′=A±r/sinα·â} is a HYPERBOLA branch, and the
 // constant-radius canal over it is a genuine canal surface (the first non-analytic — BSpline — arm through
 // the fillet engine, what N7's "T9" was dropped for). It is built EXACTLY, with no SSI marching and no
 // BSpline approximation (user directive 2026-07-19): closed-form hyperbola stations, exact plane/cone
 // characteristic-circle feet, lofted homogeneously via the shared geom canal stack (geom.LoftCanalStations).
-// The corner solve (CN3) still declines these cone cases at "corner face must be planar" — which fires
-// BEFORE arm building (computeCorners precedes computeFillets) — so CN2 greens nothing and the arm is
-// exercised only by direct construction/tests, never yet through a completed fillet.
+//
+// Handles BOTH host material sides (A2 wave, re-landed from a reverted session — see coneCanalSpine.
+// apexSign): convex-external (material INSIDE the cone, A′ = A + r/sinα·â) and the concave BORE (material
+// OUTSIDE, A′ = A − r/sinα·â — simple/I4's ruling). A bore ruling edge is edge-CONVEX (the ball rolls in
+// the material exactly as on a boss), mirroring the sign the CAP-plane arm (coneArmFillet) already carries
+// — the same insight the I1 cap-plane bore case greened. Derived from first principles (ball tangent to
+// the cone from the OUTWARD normal n̂_out = −sinα·â + cosα·ê_r instead of the boss's INWARD
+// n̂_in = sinα·â − cosα·ê_r) and cross-checked by re-deriving the shipped convex ζ(x_f) formula
+// bit-for-bit from that same construction (geometry-math-advisor consultation, A2 wave).
+//
+// The corner solve (CN3/torus-corner) declines the SPHERE-corner cases at "corner face must be planar" —
+// which fires BEFORE arm building (computeCorners precedes computeFillets) — for hosts that campaign has
+// not yet built; I4's cone-host corner (CN5, R4 wave) already handles the concave sign, so I4 is exercised
+// through a completed fillet, not just direct construction/tests.
 
 const (
 	// canalArmStationsMin floors the ADAPTIVE station count: the refinement starts here and doubles
@@ -66,13 +77,25 @@ type coneCanalSpine struct {
 	axis, ePerp, nOut math.Vector3 // {â, ê, n̂}: unit axis, unit in-plane transverse, unit plane material-outward normal
 	radius            float64
 	sinA, cosA, tanA  float64
+	// apexSign is the material-side sign the CAP-plane torus arm (coneArmSurface) already carries: +1
+	// convex-external (material INSIDE the cone, offset apex A′ = A + r/sinα·â) or −1 concave BORE
+	// (material OUTSIDE, A′ = A − r/sinα·â). Re-landed from the reverted ring-machinery session (wave
+	// round4-armlayer.md): derived from first principles (a ball tangent to the cone from the bore side,
+	// offset along the OUTWARD normal n̂_out = −sinα·â + cosα·ê_r instead of the boss's INWARD
+	// n̂_in = sinα·â − cosα·ê_r) and cross-checked by reproducing the shipped convex ζ(x_f) formula
+	// bit-for-bit from that derivation. Only the ζ apex-shift term and the endpoint-inversion's r·cosα
+	// term carry the sign; coneFoot's projection direction ĝ, planeFoot, rhoAt and the curvature formulas
+	// are UNCHANGED (ĝ is perpendicular to both n̂_in and n̂_out by construction, and the curvature only
+	// depends on ρ(x_f), whose apexSign-independent form cancels the constant ζ shift in ζ′, ζ″).
+	apexSign float64
 }
 
 // newConeCanalSpine builds the offset-plane frame and the trigonometric constants of the spine, or
 // reports a near-cylinder (sinα below band: apex shift r/sinα blows up — a true cylinder host takes M5)
 // or near-plane (cosα below band) cone, or a degenerate frame (plane normal parallel to the axis, i.e.
 // not actually a ruling — unreachable once classifyConeArm has passed). Bands are model-relative (ADR-0042).
-func newConeCanalSpine(co geom.Cone, nOut math.UnitVector3, r float64, res Resolution) (coneCanalSpine, coneArmReject) {
+// apexSign is the material-side sign (+1 convex-external / −1 concave bore, see coneCanalSpine.apexSign).
+func newConeCanalSpine(co geom.Cone, nOut math.UnitVector3, apexSign, r float64, res Resolution) (coneCanalSpine, coneArmReject) {
 	sinA, cosA := stdmath.Sincos(co.HalfAngle)
 	aband := coneAlphaBandCoef * res.Weld() / stdmath.Max(res.Size(), res.Weld())
 	if sinA < aband {
@@ -88,15 +111,19 @@ func newConeCanalSpine(co geom.Cone, nOut math.UnitVector3, r float64, res Resol
 	}
 	return coneCanalSpine{
 		apex: co.Apex, axis: axis, ePerp: ePerp.AsVector(), nOut: nOut.AsVector(),
-		radius: r, sinA: sinA, cosA: cosA, tanA: sinA / cosA,
+		radius: r, sinA: sinA, cosA: cosA, tanA: sinA / cosA, apexSign: apexSign,
 	}, coneArmBuilt
 }
 
-// rhoAt is the ball-centre's perpendicular distance to the axis at station x_f: √(x_f²+r²).
+// rhoAt is the ball-centre's perpendicular distance to the axis at station x_f: √(x_f²+r²) — the SAME
+// form for both the convex and concave-bore hosts (apexSign-independent: derived below).
 func (s coneCanalSpine) rhoAt(xf float64) float64 { return stdmath.Hypot(xf, s.radius) }
 
-// zetaAt is the ball-centre's axial height above the apex A at station x_f: r/sinα + ρ/tanα.
-func (s coneCanalSpine) zetaAt(xf float64) float64 { return s.radius/s.sinA + s.rhoAt(xf)/s.tanA }
+// zetaAt is the ball-centre's axial height above the apex A at station x_f: apexSign·r/sinα + ρ/tanα
+// (+r/sinα convex-external, −r/sinα concave bore — see coneCanalSpine.apexSign).
+func (s coneCanalSpine) zetaAt(xf float64) float64 {
+	return s.apexSign*s.radius/s.sinA + s.rhoAt(xf)/s.tanA
+}
 
 // center is the exact ball-centre m(x_f) on the hyperbola spine (in the r-offset plane, distance r from
 // the radial plane on the material side).
@@ -162,8 +189,8 @@ func (s coneCanalSpine) stationOf(c math.Point3, scale, weld float64) (float64, 
 // plane/cone feet) and the band arc is fold-guarded; the only inter-station approximation is the cubic
 // v-interpolation, whose envelope error resolveStations ADAPTIVELY refines to ≤ res.Weld() (curvature-weighted
 // station placement + doubling, CN2 review) — NO marching, NO uncontrolled gap.
-func buildConeCanalArm(e *topo.Edge, co geom.Cone, nOut math.UnitVector3, r float64, res Resolution) (geom.BSplineSurface, coneCanalSpine, coneArmReject) {
-	spine, reason := newConeCanalSpine(co, nOut, r, res)
+func buildConeCanalArm(e *topo.Edge, co geom.Cone, nOut math.UnitVector3, apexSign, r float64, res Resolution) (geom.BSplineSurface, coneCanalSpine, coneArmReject) {
+	spine, reason := newConeCanalSpine(co, nOut, apexSign, r, res)
 	if reason != coneArmBuilt {
 		return geom.BSplineSurface{}, coneCanalSpine{}, reason
 	}
@@ -202,12 +229,14 @@ func (s coneCanalSpine) edgeXfSpan(e *topo.Edge, res Resolution) (lo, hi float64
 }
 
 // xfAtEndpoint inverts the cone-foot axial height to the ball-centre station x_f for an edge endpoint at
-// axial height h above the apex: ρ = h·tanα − r·cosα (the ball's axis distance), x_f = √(ρ² − r²). fits
-// is false when ρ < r (the endpoint is past the vertex, the ball cannot fit there) — the caller clamps
-// that end to the vertex x_f = 0.
+// axial height h above the apex: ρ = h·tanα − apexSign·r·cosα (the ball's axis distance; the CONVEX
+// tangent point sits on the near/apex side of the ball centre, −r·cosα, while the CONCAVE-bore tangent
+// point sits on the far side, +r·cosα — apexSign carries the flip, see coneCanalSpine.apexSign),
+// x_f = √(ρ² − r²). fits is false when ρ < r (the endpoint is past the vertex, the ball cannot fit
+// there) — the caller clamps that end to the vertex x_f = 0.
 func (s coneCanalSpine) xfAtEndpoint(p math.Point3) (float64, bool) {
 	h := float64(s.apex.VectorTo(p).Dot(s.axis))
-	rhoNeed := h*s.tanA - s.radius*s.cosA
+	rhoNeed := h*s.tanA - s.apexSign*s.radius*s.cosA
 	if rhoNeed < s.radius {
 		return 0, false
 	}
@@ -437,20 +466,29 @@ func slerpUnit(a, b math.Vector3, t float64) math.Vector3 {
 	return a.Scale(stdmath.Sin((1-t)*w) / sw).Add(b.Scale(stdmath.Sin(t*w) / sw))
 }
 
-// coneCanalArmFillet builds the exact canal arm on a convex-external Cone∧Plane RULING edge, carried in
-// the same edgeFillet the straight-edge/torus paths emit plus the hyperbola spine descriptor (armCanalSpine)
-// the corner weld reads. It honest-rejects a concave conical bore (material outside the cone; the ruling
-// of a bore is convex yet needs A′ = A − r/sinα·â — a follow-on slice) or any build decline (α bands, no
-// fit, fold), so coneArmEdge reports the cause via coneArmError (do-no-harm).
+// coneCanalArmFillet builds the exact canal arm on a Cone∧Plane RULING edge, carried in the same
+// edgeFillet the straight-edge/torus paths emit plus the hyperbola spine descriptor (armCanalSpine) the
+// corner weld reads. Handles BOTH host material sides — convex-external (material inside the cone,
+// coneHostMaterialSign>0, apexSign=+1) and the concave BORE (material outside, sign≤0, apexSign=−1) — by
+// threading apexSign into the spine exactly as coneArmFillet's cap-plane sibling already does
+// (coneArmFilletConvex/coneArmFilletConcave): a bore ruling is edge-CONVEX, the ball rolling in the
+// material precisely as it does on a boss (the I1 insight, re-landed here for I4). Only an unreadable
+// material sign (apex-adjacent edge) or a build decline (α bands, no fit, fold) still honest-rejects, so
+// coneArmEdge reports the cause via coneArmError (do-no-harm).
 func coneCanalArmFillet(e *topo.Edge, co geom.Cone, pl geom.Plane, coneFace, planeFace *topo.Face, r float64, res Resolution) (edgeFillet, coneArmReject) {
-	if sgn, ok := coneHostMaterialSign(e, co, coneFace); !ok || sgn <= 0 {
-		return edgeFillet{}, coneArmConcaveBore
+	sgn, ok := coneHostMaterialSign(e, co, coneFace)
+	if !ok {
+		return edgeFillet{}, coneArmDegenerate // apex-adjacent edge: no readable radial direction
+	}
+	apexSign := 1.0
+	if sgn <= 0 {
+		apexSign = -1.0
 	}
 	nOut, err := math.UnitVector3FromVector(outwardPlaneNormal(planeFace, pl))
 	if err != nil {
 		return edgeFillet{}, coneArmDegenerate
 	}
-	surf, spine, reason := buildConeCanalArm(e, co, nOut, r, res)
+	surf, spine, reason := buildConeCanalArm(e, co, nOut, apexSign, r, res)
 	if reason != coneArmBuilt {
 		return edgeFillet{}, reason
 	}

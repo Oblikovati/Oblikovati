@@ -55,7 +55,7 @@ func coneCanalSpineFor(t *testing.T, c coneCanalCase) coneCanalSpine {
 	if err != nil {
 		t.Fatalf("%s nOut: %v", c.name, err)
 	}
-	spine, reason := newConeCanalSpine(co, nOut, coneArmR, ResolutionForSize(300))
+	spine, reason := newConeCanalSpine(co, nOut, 1, coneArmR, ResolutionForSize(300))
 	if reason != coneArmBuilt {
 		t.Fatalf("%s newConeCanalSpine declined a valid spine (reason %d)", c.name, reason)
 	}
@@ -104,10 +104,11 @@ func assertOnOffsetPlane(t *testing.T, name string, s coneCanalSpine, m math.Poi
 	}
 }
 
-// assertOnHyperbola checks the spine's defining relation x_f² = tan²α·(ζ − r/sinα)² − r².
+// assertOnHyperbola checks the spine's defining relation x_f² = tan²α·(ζ − apexSign·r/sinα)² − r² (the
+// apexSign generalizes the convex-only "− r/sinα" to also cover the concave-bore "+ r/sinα" spine).
 func assertOnHyperbola(t *testing.T, name string, s coneCanalSpine, xf float64) {
 	t.Helper()
-	delta := s.zetaAt(xf) - s.radius/s.sinA
+	delta := s.zetaAt(xf) - s.apexSign*s.radius/s.sinA
 	want := s.tanA*s.tanA*delta*delta - s.radius*s.radius
 	if d := stdmath.Abs(xf*xf - want); d > coneCanalExactTol {
 		t.Fatalf("%s x_f=%g off the hyperbola by %g", name, xf, d)
@@ -283,7 +284,7 @@ func realConeCanalSpine(t *testing.T, name string) (coneCanalSpine, *topo.Edge, 
 	if err != nil {
 		t.Fatalf("%s outward plane normal: %v", name, err)
 	}
-	spine, reason := newConeCanalSpine(co, nOut, coneArmR, res)
+	spine, reason := newConeCanalSpine(co, nOut, 1, coneArmR, res)
 	if reason != coneArmBuilt {
 		t.Fatalf("%s newConeCanalSpine declined (reason %d)", name, reason)
 	}

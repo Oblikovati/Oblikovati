@@ -54,7 +54,6 @@ type coneArmReject uint8
 const (
 	coneArmBuilt            coneArmReject = iota // the arm (torus or canal) was built — not a reject
 	coneArmVaryingRadius                         // r0≠r1: the cone arm is constant-radius only
-	coneArmConcaveBore                           // material OUTSIDE the cone (bore, s=−1) — a follow-on slice
 	coneArmOblique                               // the plane is neither ⊥ nor ∥ the axis (oblique) — out of slice
 	coneArmNearCylinder                          // sinα below band: apex shift r/sinα blows up (a true cylinder host)
 	coneArmNearPlane                             // cosα below band: near-plane cone (α→π/2)
@@ -269,17 +268,17 @@ func coneArmEdge(body *topo.Body, e *topo.Edge, p filletPick) (edgeFillet, bool,
 	if reason == coneArmBuilt {
 		return ef, true, nil // exact torus arm on a convex-external Cone∧Plane cap (circle) edge (cone-host campaign)
 	}
-	return edgeFillet{}, true, coneArmError(reason, e, co, coneFace, p.r0) // do-no-harm, cause-specific reject
+	return edgeFillet{}, true, coneArmError(reason, co, p.r0) // do-no-harm, cause-specific reject
 }
 
 // coneArmError reports why a Cone∧Plane edge could not be rounded when coneArmFillet declined, each
 // message naming the ACTUAL cause and its offending value — mirroring sphereArmError. Split into the
 // classify/material rejects (recognizer stage) and the surface-construction rejects (α bands, clearance,
 // grazing) so each helper stays within funlen.
-func coneArmError(reason coneArmReject, e *topo.Edge, co geom.Cone, coneFace *topo.Face, r float64) error {
+func coneArmError(reason coneArmReject, co geom.Cone, r float64) error {
 	switch reason {
-	case coneArmConcaveBore, coneArmOblique, coneArmVaryingRadius:
-		return coneArmClassifyError(reason, e, co, coneFace, r)
+	case coneArmOblique, coneArmVaryingRadius:
+		return coneArmClassifyError(reason, co, r)
 	case coneArmRulingNoFit, coneArmRulingSpan, coneArmRulingFold, coneArmRulingUnresolved:
 		return coneCanalArmError(reason, co, r) // the ruling-edge canal build declines (CN2)
 	default:
@@ -287,16 +286,11 @@ func coneArmError(reason coneArmReject, e *topo.Edge, co geom.Cone, coneFace *to
 	}
 }
 
-// coneArmClassifyError names the recognizer-stage rejects: a concave bore host (material outside the
-// cone, recomputing the measured material-side sign s as provenance), an oblique plane, or a
-// varying-radius pick. (The ruling edge no longer rejects here — CN2 builds its canal arm.)
-func coneArmClassifyError(reason coneArmReject, e *topo.Edge, co geom.Cone, coneFace *topo.Face, r float64) error {
+// coneArmClassifyError names the recognizer-stage rejects: an oblique plane or a varying-radius pick.
+// (Neither the cap-plane host material sign nor the ruling edge reject here any more — both convex and
+// concave-bore hosts now build their arm on either configuration, coneArmFillet/coneCanalArmFillet.)
+func coneArmClassifyError(reason coneArmReject, co geom.Cone, r float64) error {
 	switch reason {
-	case coneArmConcaveBore:
-		s, _ := coneHostMaterialSign(e, co, coneFace)
-		return fmt.Errorf("fillet: cannot round this Cone∧Plane edge with radius %g — the host is a CONCAVE cone "+
-			"(material OUTSIDE the cone; material-side sign s=%g ≤ 0), which needs A′ = A − r/sinα·â; the concave "+
-			"conical bore is a follow-on slice", r, s)
 	case coneArmOblique:
 		return fmt.Errorf("fillet: cannot round this Cone∧Plane edge with radius %g — the plane is neither ⊥ nor ∥ the "+
 			"cone axis (oblique, half-angle %g); an oblique cone∧plane arm is out of slice", r, co.HalfAngle)
