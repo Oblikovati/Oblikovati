@@ -158,7 +158,7 @@ func TestCurvedMiterSeamEquidistant(t *testing.T) {
 		}
 		e1 := center.TranslateBy(n.AsVector().Scale(fx.r))
 		e2 := center.TranslateBy(n.AsVector().Scale(-fx.r))
-		seam, ok := walkCurvedSeam(fx.arms, fx.r, center, e1, e2, fx.vertex, res)
+		seam, ok := walkCurvedSeam(fx.arms, fx.r, center, e1, e2, res)
 		if !ok {
 			t.Fatalf("%s: seam sampling declined", fx.name)
 		}

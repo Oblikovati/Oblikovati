@@ -18,22 +18,27 @@ import (
 // STEP-import defect; see wave-report-C.md).
 
 // curvedMiterFaces builds every result face: the two trimmed arm faces, the twice-bitten shared face,
-// each arm's receded outer host and far cap, and every untouched face carried through verbatim.
+// each arm's receded outer host and far cap, and every untouched face carried through verbatim. snapTol
+// (res.Sew(), the project's own established "close a gap between independently-derived geometry"
+// tolerance) is passed to sharedMiterRetrim SEPARATELY from tol: it governs only whether an arm's
+// analytically-derived far foot is close enough to the shared face's ORIGINAL loop to be treated as
+// already on it, a coarser question than the weld-scale coincidence tol answers elsewhere (see
+// sharedRailAnchor).
 func curvedMiterFaces(body *topo.Body, m *cornerMiter, tor, cyl miterArmSide, r float64, res Resolution) ([]filletFace, string) {
-	tol := res.Weld() * r
-	shared, ok := sharedMiterRetrim(m, tor, cyl, tol)
+	tol, snapTol := res.Weld()*r, res.Sew()
+	shared, ok := sharedMiterRetrim(m, tor, cyl, tol, snapTol)
 	if !ok {
 		return nil, "curved miter: shared-face two-rail retrim declined"
 	}
 	if !sharedRetrimIsSound(shared, tol) {
 		return nil, fmt.Sprintf("curved miter: shared host %T's own boundary is degenerate (pre-existing defect, not a fillet gap)", m.shared.Geometry())
 	}
-	bites, ok := miterHostBiteChains(m, tor, cyl, tol)
+	bites, ok := miterHostBiteChains(m, tor, cyl, tol, snapTol)
 	if !ok {
 		return nil, "curved miter: a host bite chain could not be assembled"
 	}
 	out := []filletFace{miterArmFace(tor, m.seam), miterArmFace(cyl, m.seam), shared}
-	rest, reason := curvedMiterHostFaces(body, m, tor, cyl, bites, tol)
+	rest, reason := curvedMiterHostFaces(body, m, tor, cyl, bites, tol, snapTol)
 	if reason != "" {
 		return nil, reason
 	}
@@ -43,7 +48,7 @@ func curvedMiterFaces(body *topo.Body, m *cornerMiter, tor, cyl miterArmSide, r 
 // curvedMiterHostFaces builds every OTHER result face: each bitten host's retrim, and every untouched
 // face carried through verbatim (guarded — passthroughGuardHosts — against certifying over a contact
 // host whose own boundary is already degenerate). Split from curvedMiterFaces to stay within funlen.
-func curvedMiterHostFaces(body *topo.Body, m *cornerMiter, tor, cyl miterArmSide, bites map[*topo.Face][]miterHostChain, tol float64) ([]filletFace, string) {
+func curvedMiterHostFaces(body *topo.Body, m *cornerMiter, tor, cyl miterArmSide, bites map[*topo.Face][]miterHostChain, tol, snapTol float64) ([]filletFace, string) {
 	guardHosts := passthroughGuardHosts(tor, cyl)
 	var out []filletFace
 	for _, f := range body.Faces() {
@@ -58,7 +63,7 @@ func curvedMiterHostFaces(body *topo.Body, m *cornerMiter, tor, cyl miterArmSide
 			out = append(out, passthroughFace(f))
 			continue
 		}
-		ff, ok := miterHostRetrim(f, chains, tol)
+		ff, ok := miterHostRetrim(f, chains, tol, snapTol)
 		if !ok {
 			return nil, fmt.Sprintf("curved miter: host %T retrim declined", f.Geometry())
 		}
@@ -129,14 +134,16 @@ func sharedRetrimIsSound(shared filletFace, tol float64) bool {
 }
 
 // miterHostRetrim re-clips one bitten host. A single one-segment chain whose feet both lie on the
-// host's bitten loop keeps the pre-chain splice VERBATIM (singleRunoutHostFace — every prior curved-
-// miter green is byte-identical through it); a transit-extended, bridged, or double-bitten host goes
-// through the sequential chain splice (chainedHostRetrim).
-func miterHostRetrim(f *topo.Face, chains []miterHostChain, tol float64) (filletFace, bool) {
+// host's bitten loop (at TIGHT tol) keeps the pre-chain splice VERBATIM (singleRunoutHostFace — every
+// prior curved-miter green is byte-identical through it); everything else — a transit-extended,
+// bridged, or double-bitten host, AND a single-segment chain whose feet miss the ring by more than tol
+// but land within the model's own construction gap (snapTol; W3/W4's torus-arm far-cap chain) — goes
+// through the sequential chain splice (chainedHostRetrim), which carries snapTol to its own landing test.
+func miterHostRetrim(f *topo.Face, chains []miterHostChain, tol, snapTol float64) (filletFace, bool) {
 	if len(chains) == 1 && len(chains[0].chain) == 1 && legacyBiteOnLoop(f, chains[0], tol) {
 		return singleRunoutHostFace(f, chains[0].chain[0], chains[0].consumed, tol)
 	}
-	return chainedHostRetrim(f, chains, tol)
+	return chainedHostRetrim(f, chains, tol, snapTol)
 }
 
 // legacyBiteOnLoop reports whether a single-segment bite has both feet on the loop the old splice
@@ -155,7 +162,7 @@ func legacyBiteOnLoop(f *topo.Face, c miterHostChain, tol float64) bool {
 // old single-bite map silently overwrote one). The outer-host chain absorbs the sibling arm's
 // transit arc when the seam's sBot lives on this host; a far trim whose shared-side foot is a
 // mid-face fresh cut is bridged back to the picked edge's far vertex along shared ∩ capping.
-func miterHostBiteChains(m *cornerMiter, tor, cyl miterArmSide, tol float64) (map[*topo.Face][]miterHostChain, bool) {
+func miterHostBiteChains(m *cornerMiter, tor, cyl miterArmSide, tol, snapTol float64) (map[*topo.Face][]miterHostChain, bool) {
 	v := m.vertex.Point()
 	bites := map[*topo.Face][]miterHostChain{}
 	for _, pair := range [2][2]miterArmSide{{tor, cyl}, {cyl, tor}} {
@@ -168,7 +175,7 @@ func miterHostBiteChains(m *cornerMiter, tor, cyl miterArmSide, tol float64) (ma
 		if s.run.capping == nil {
 			continue
 		}
-		trimChain, ok := miterTrimChain(m, s, tol)
+		trimChain, ok := miterTrimChain(m, s, tol, snapTol)
 		if !ok {
 			return nil, false
 		}
@@ -187,10 +194,14 @@ func miterHostBiteChains(m *cornerMiter, tor, cyl miterArmSide, tol float64) (ma
 // through it does not exist and always declined; the fresh cut IS confined to the capping face by
 // construction, so miterChainEndBridgeSeg's dispatch on the capping face's own geometry always has an
 // answer there). The consumed marker is the far vertex only when it is NOT the bridge anchor itself.
-func miterTrimChain(m *cornerMiter, s miterArmSide, tol float64) (miterHostChain, bool) {
+// fromOn/toOn use snapTol: the SAME "already on the original loop, within the model's own construction
+// gap" test sharedRailAnchor runs on the shared-face side of the identical arm (W3/W4's torus foot
+// sits ~2e-5 off both the shared face's AND the capping face's original loop — one root, two sides).
+// miterChainEndBridgeSeg keeps tol for its own bridge-curve exactness certificate.
+func miterTrimChain(m *cornerMiter, s miterArmSide, tol, snapTol float64) (miterHostChain, bool) {
 	far := farVertexNotVid(s.edge, m.vertex.ID())
-	fromOn := miterCapPointOnLoops(s.run.capping, s.run.trim.from, tol)
-	toOn := miterCapPointOnLoops(s.run.capping, s.run.trim.to, tol)
+	fromOn := miterCapPointOnLoops(s.run.capping, s.run.trim.from, snapTol)
+	toOn := miterCapPointOnLoops(s.run.capping, s.run.trim.to, snapTol)
 	if fromOn && toOn {
 		return miterHostChain{chain: []endSeg{s.run.trim}, consumed: far, hasConsumed: true}, true
 	}

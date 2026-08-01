@@ -183,7 +183,7 @@ func sampleCurvedMiterSeam(arms curvedMiterArms, shared, torOuter *topo.Face, v 
 	if !ok {
 		return nil, math.Point3{}, false
 	}
-	seam, ok := walkCurvedSeam(arms, r, center, sTop, sBot, v.Point(), res)
+	seam, ok := walkCurvedSeam(arms, r, center, sTop, sBot, res)
 	return seam, center, ok
 }
 
@@ -193,6 +193,13 @@ func sampleCurvedMiterSeam(arms curvedMiterArms, shared, torOuter *topo.Face, v 
 // normals coincide), sBot the tube∩tube∩(torus-outer-host) vertex where the seam exits through the
 // torus arm's outer plane (P5: sTop=(48.148,0.034,145) on the shared wall, sBot=(53.332,5.124,150) on
 // the top plane). ok=false when either endpoint declines.
+//
+// ★ vp (not sTop) stays miterSeamBottom's branch-selection reference. A same-shaped fix was tried here
+// (seed from sTop, matching walkCurvedSeam's own continuity fix) and REVERTED: on simple/W4 it picks a
+// DIFFERENT contact-circle crossing that is not the one miterOuterRail/curvedHostArc can build a
+// contact rail to ("host contact rail could not be built... outer=false") — a second, deeper defect in
+// code this fix does not own (miterSeamBottomCyl / nearestCircleRoot, fillet_miter_curved_cylouter.go)
+// that needs its own dedicated investigation, not a rushed one-line swap. See wave-report-A1.md.
 func curvedSeamEndpoints(arms curvedMiterArms, center math.Point3, shared, torOuter *topo.Face, vp math.Point3, r float64, res Resolution) (math.Point3, math.Point3, bool) {
 	sTop, ok := miterSeamTop(arms, center, shared, r)
 	if !ok {
@@ -281,23 +288,38 @@ func distanceToSurface(f *topo.Face, p math.Point3) float64 {
 }
 
 // walkCurvedSeam emits k+1 seam points from sTop to sBot: the two exact tangential endpoints plus
-// interior stations. Each interior seed is the straight lerp sTop→sBot nudged toward the corner
-// vertex vp (biasing onto the PHYSICAL branch — the torus∩cylinder quartic has two arcs joining the
-// endpoints, and the material seam is the one wrapping the removed corner), then projected onto the
-// seam. k follows the planar sampler (the sTop→sBot wedge over the chords-per-turn budget, ≥4).
-func walkCurvedSeam(arms curvedMiterArms, r float64, center, sTop, sBot, vp math.Point3, res Resolution) ([]math.Point3, bool) {
+// interior stations. k follows the planar sampler (the sTop→sBot wedge over the chords-per-turn
+// budget, ≥4).
+//
+// Each interior station's branch bias is the LAST ACCEPTED seam point, not the fixed corner vertex vp
+// — a continuation-method fix (A1, simple/W4). seamAxialRoot's "nearest to the bias point" choice
+// between the quartic's two petals is only a reliable physical-branch discriminant NEAR vp (both
+// endpoints sTop/sBot are literally defined by proximity to vp); away from it, along a corner whose
+// second pick spans nearly the model's full extent (W4: sBot ~3 units from vp), the "wrong" petal can
+// become the nearer one to the FIXED vp mid-walk even though the "right" petal is still the physically
+// continuous, connected one — the walk then jumps petals for exactly one station, producing a chord
+// wildly off both tube surfaces (measured: 0.17 off a torus of major 1.2/minor 0.2, an X-coordinate
+// discontinuity between adjacent samples that is otherwise smooth in Y/Z). Seeding each station's bias
+// from the PREVIOUS sample (sTop for the first) is the standard predictor-corrector continuation fix:
+// the true seam moves continuously, so the physical petal is — by construction of a fine enough
+// angular step — always the one nearest wherever the walk already is, never a fixed faraway point.
+// Falsified by mutation (this bias reverted to the fixed vp): the W4 seam's station 5 jumps to
+// (2.044…, 0.0586…, 0.0586…) from station 4's (2.404…, 0.0337…, 0.0889…), a 0.36 X-axis discontinuity
+// invisible to the endpoint-only sTop/sBot checks, caught by TestEveryLoopSegmentLiesOnItsFace.
+func walkCurvedSeam(arms curvedMiterArms, r float64, center, sTop, sBot math.Point3, res Resolution) ([]math.Point3, bool) {
 	k := curvedSeamChordCount(center, sTop, sBot)
 	thetaTop := cylinderAngleOf(arms.cyl, sTop)
 	thetaBot := seamUnwrapAngle(cylinderAngleOf(arms.cyl, sBot), thetaTop)
 	out := make([]math.Point3, k+1)
 	out[0], out[k] = sTop, sBot
+	bias := sTop
 	for j := 1; j < k; j++ {
 		theta := thetaTop + (thetaBot-thetaTop)*float64(j)/float64(k)
-		p, ok := seamPointAtCylAngle(arms, r, theta, center, vp, res)
+		p, ok := seamPointAtCylAngle(arms, r, theta, center, bias, res)
 		if !ok {
 			return nil, false
 		}
-		out[j] = p
+		out[j], bias = p, p
 	}
 	return out, true
 }

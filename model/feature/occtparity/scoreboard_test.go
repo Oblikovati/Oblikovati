@@ -282,15 +282,48 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 // whose premise was false, costing the bulged_duct import −1.18% volume; without it they measure
 // 21–62 folds and 113–698 free edges. Tessellation correctness preempts feature work.
 // simple/X8 stays an HONEST DECLINE on a real B-rep defect its symmetric twin does not carry.
+//
+// A1's near-boundary reconciliation (kernel/ops/fillet_miter_curved_weld.go, fillet_miter_curved_hostfaces.go,
+// fillet_miter_chain_retrim.go) then GREENED simple/W3 — R5's own W3/W4 mesh-defect guard
+// (miterWeldMeshDefect) was diagnosed as blocked on "the far cross-section runout's own foot" in
+// fillet_far_runout.go; measurement (the STEP source itself, CARTESIAN_POINT #133/#249 vs #86) showed
+// the ~2e-5 residual is NOT a computation bug there — cyl.Origin.z=0.9999 (the boss cylinder's own
+// stored axis) and the corner vertex's z=1 are two independently-stored, genuinely ~1e-4-apart values
+// in the SOURCE file, and every step from that input to the torus arm's ball-tangent foot
+// (armBallCenter → armRunoutFoot → the far cross-section arc) is closed-form and exact GIVEN it. The
+// actual defect was sharedRailAnchor/miterTrimChain/chainedHostRetrim's own reconciliation: they used
+// the tight weld-scale tol (float-noise coincidence) to decide whether that foot was "already on the
+// original loop," so a foot 2e-5 off (not 2e-10 off) failed the test and built a spurious bridge/chain
+// past a near-coincident point instead — the torus arm's own contact arc then re-crossed back through
+// the segment the bridge skipped, self-crossing (W4) or retracing (W3). Both now reconcile at snapTol
+// (res.Sew(), this project's OWN "close a gap between independently-derived geometry" tolerance) —
+// recognizing the foot as genuinely on-loop, so NO bridge/chain is built there at all, byte-identical
+// in shape to every other on-loop torus-arm case. Per-face DRAWEXE reconciliation (perface_a1_test.go):
+// W3 rank-pairs 8-for-8 at ≤0.19% worst face, watertight at both gate qualities.
+//
+// ★ W4 does NOT flip. Fixing the reconciliation lets it reach a fully-assembled body for the first
+// time, which surfaces a SECOND, unrelated defect: miterSeamBottomCyl/nearestCircleRoot
+// (fillet_miter_curved_cylouter.go) picks the wrong one of up to four torus∩cylinder contact-circle
+// crossings for this corner's unusually long second edge, so the sampled seam's last chord lands 0.85·r
+// off the torus surface — a genuine fold, invisible to Validate/miterWeldMeshDefect, caught by a NEW
+// do-no-harm floor this session added (curvedMiterSeamOffSurface, fillet_miter_seam_offsurface.go) so
+// W4 declines HONESTLY instead of shipping it. walkCurvedSeam also picked up an independent, genuine
+// continuation-method fix (branch bias seeded from the previous accepted sample instead of the fixed
+// corner vertex) that removes a discontinuous MID-walk jump; it does not by itself resolve W4 (the
+// dominant defect is the LAST chord, in miterSeamBottomCyl, not the walk), but regresses nothing and is
+// kept as a real improvement. tolblend_simple/C6, C8 (R1's independent hit on the same file,
+// "multi-face-far-vertex") do NOT flip either: measured, their own decline persists unchanged (a
+// DIFFERENT root — see perface_a1_test.go's decline notes). simple 131→132, all-grid 147→148,
+// SkipQuarantine unchanged at 0.
 func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGridGreen, skipQuarantine int) {
 	t.Helper()
 	simpleGreen := byGrid["simple"][Pass] + byGrid["simple"][PassDeviation]
-	if simpleGreen != 131 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 131 (114 base + 17 wave greens)", simpleGreen)
+	if simpleGreen != 132 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 132 (114 base + 17 wave greens + W3)", simpleGreen)
 	}
-	if allGridGreen != 147 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 147 (131 simple + 11 bfuseblend-only "+
-			"+ 5 tolblend_simple; complex/D8's coincidental green stays retired; 119→147)", allGridGreen)
+	if allGridGreen != 148 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 148 (132 simple + 11 bfuseblend-only "+
+			"+ 5 tolblend_simple; complex/D8's coincidental green stays retired; 119→148)", allGridGreen)
 	}
 	if skipQuarantine != 0 {
 		t.Errorf("SkipQuarantine = %d, want 0 — the corpus holds NO case; every one of the 475 records is "+

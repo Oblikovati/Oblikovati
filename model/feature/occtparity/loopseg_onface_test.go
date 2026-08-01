@@ -304,6 +304,13 @@ func knownOffSurfaceDebt() []offSurfaceDebtEntry {
 		{"U4", "simple", 0.000165}, {"K7", "simple", 0.000152},
 		{"L1", "simple", 0.000133}, {"N5", "simple", 0.000129}, {"L7", "simple", 0.000128},
 		{"D4", "tolblend_simple", 0.0001337}, {"C6", "simple", 0.000121},
+		// A1 (simple/W3): a healthy chord-sampled curved-miter seam necessarily misses the true
+		// torus∩cylinder quartic BETWEEN walkCurvedSeam's sample stations by a small, chord-count-
+		// bounded sagitta (0.0046·r on this corner, r=0.2) — capped at 1.1x the measured 0.0003416.
+		// See curvedMiterSeamOffSurfaceBand (fillet_miter_seam_offsurface.go) for the SEPARATE,
+		// order-of-magnitude-larger band that catches a genuine seam-bottom branch-selection defect
+		// (simple/W4, which declines rather than ships) instead of a legitimate sagitta like this one.
+		{"W3", "simple", 0.000376},
 		// The five mid-span obstacle cases, each re-capped at 1.1x its post-sub-arc measurement (above).
 		{"X3", "simple", 0.0000025}, {"U3", "simple", 0.00000219}, {"T6", "simple", 0.00000196},
 		{"S3", "simple", 0.00000151}, {"R9", "simple", 0.00000129},
