@@ -3,6 +3,8 @@
 package ops
 
 import (
+	stdmath "math"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -29,12 +31,13 @@ func buildSpreadMaps(fans []endCornerFan, body *topo.Body) (map[*topo.Face]map[u
 	spreads := map[*topo.Face]map[uint64]facePiece{}
 	caps := map[uint64][]cornerPiece{}
 	faceByID := indexFaces(body)
+	res := ResolutionForBody(body)
 	for _, fan := range fans {
 		sp, err := solveRunoutSpread(fan)
 		if err != nil {
 			continue
 		}
-		vid, ok := vertexIDForApex(body, fan.apex)
+		vid, ok := vertexIDForApex(body, fan.apex, res)
 		if !ok {
 			continue // apex has no coincident body vertex — skip rather than mis-key under id 0
 		}
@@ -57,13 +60,25 @@ func indexFaces(body *topo.Body) map[uint64]*topo.Face {
 // topology-free — it carries the apex point, not the vertex — so the rebuild re-locates it here).
 // ok=false when no vertex matches: silently keying the fan under id 0 would mis-key it onto whatever
 // spread the caller keeps at 0, so the caller must skip the fan on a miss instead.
-func vertexIDForApex(body *topo.Body, apex math.Point3) (uint64, bool) {
+//
+// The apex is SOLVED by the run-out spread while the vertex is STORED on the body — two
+// INDEPENDENTLY DERIVED quantities — so they reconcile at Sew() (ADR-0042 model-relative), never at
+// a bare absolute epsilon. It also takes the NEAREST vertex rather than the first under a threshold,
+// so a rounding difference cannot flip which vertex wins.
+//
+// The previous `< 1e-9` absolute test made this a knife-edge, and the edge was live: on arm64 — where
+// the Go compiler contracts x*y+z into FMA and on amd64 it does not — the apex landed just outside
+// 1e-9, every fan was skipped, and TestFilletRunOutToZero left 177 open edges on macOS CI while
+// passing on linux/amd64 (PR #2013). Same defect class as the ringSingleValuedInAngle regression
+// earlier in this effort: an absolute constant standing in for a model-relative tolerance.
+func vertexIDForApex(body *topo.Body, apex math.Point3, res Resolution) (uint64, bool) {
+	bestID, best := uint64(0), stdmath.Inf(1)
 	for _, v := range body.Vertices() {
-		if v.Point().DistanceTo(apex) < 1e-9 {
-			return v.ID(), true
+		if d := float64(v.Point().DistanceTo(apex)); d < best {
+			bestID, best = v.ID(), d
 		}
 	}
-	return 0, false
+	return bestID, best <= res.Sew()
 }
 
 // addFanSpread records each far face's arc piece under the apex vertex id, tagged with the far edges
