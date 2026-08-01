@@ -44,7 +44,7 @@ func spiricClosedRimArmEdge(body *topo.Body, e *topo.Edge, p filletPick) (edgeFi
 	if !ok {
 		return edgeFillet{}, false
 	}
-	spine, ok := newSpiricRimSpine(body, e, host, pl, hostFace, planeFace, p.r0)
+	spine, ok := newSpiricRimSpine(body, e, host, pl, hostFace, planeFace, p.r0, true) // CLOSED rim: require the full-loop existence guard
 	if !ok {
 		return edgeFillet{}, false
 	}

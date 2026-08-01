@@ -142,10 +142,10 @@ func concaveCurvedRimArmEdge(body *topo.Body, e *topo.Edge, p filletPick, concav
 			return tor, reason == sphereArmBuilt, sphereArmError(reason, e, sp, nil, p.r0)
 		})
 	}
-	if co, pl, coneFace, planeFace, ok := conePlaneEdge(e); ok {
+	if co, pl, _, planeFace, ok := conePlaneEdge(e); ok {
 		return buildConcaveRimArm(e, pl, planeFace, func(n math.UnitVector3) (geom.Torus, bool, error) {
 			tor, reason := concaveConeArmSurface(co, pl, n, p.r0, res)
-			return tor, reason == coneArmBuilt, coneArmError(reason, e, co, coneFace, p.r0)
+			return tor, reason == coneArmBuilt, coneArmError(reason, co, p.r0)
 		})
 	}
 	// J5/A5/A6: a latitude-cut torus-host rim takes the void-side tube arm (external or internal

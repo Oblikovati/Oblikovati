@@ -52,12 +52,16 @@ func spiricMeridianCut(nDotZ, rhoRim float64, res Resolution) bool {
 	return stdmath.Abs(nDotZ) < epsAng
 }
 
-// newSpiricRimSpine resolves the spiric frame for a CLOSED meridian-cut Torus∧Plane rim. ok=false
-// (fall through to the existing reject) when the plane is not a meridian cut, the plane misses the
-// axis, the rim circle centre is unreadable, the tube material side is unreadable, the offset tube
-// collapses (b ≤ 0), or the offset plane exits the offset torus (R − b ≤ |w|: the spine would not be
-// a single closed loop around the tube).
-func newSpiricRimSpine(body *topo.Body, e *topo.Edge, host geom.Torus, pl geom.Plane, hostFace, planeFace *topo.Face, r float64) (spiricRimSpine, bool) {
+// newSpiricRimSpine resolves the spiric frame for a meridian-cut Torus∧Plane rim, CLOSED (a full
+// spiric loop, J3/A4) or OPEN (a torus SECTOR's bounded meridian arc, E6/E8/F1/F3 — A2 wave):
+// requireClosedLoop selects which existence guard applies (see assembleSpiricSpine) — the closed
+// caller passes true (byte-identical to the pre-A2 behavior), the open-arc caller passes false, since
+// a bounded ψ walk only needs each VISITED station to exist (spine.station's own per-ψ xiSq check),
+// never the full 2π loop. ok=false (fall through to the existing reject) when the plane is not a
+// meridian cut, the plane misses the axis, the rim circle centre is unreadable, the tube material
+// side is unreadable, the offset tube collapses (b ≤ 0), or (requireClosedLoop only) the offset plane
+// exits the offset torus somewhere around the FULL loop (R − b ≤ |w|).
+func newSpiricRimSpine(body *topo.Body, e *topo.Edge, host geom.Torus, pl geom.Plane, hostFace, planeFace *topo.Face, r float64, requireClosedLoop bool) (spiricRimSpine, bool) {
 	res := ResolutionForBody(body)
 	n, err := math.UnitVector3FromVector(outwardPlaneNormal(planeFace, pl))
 	if err != nil {
@@ -71,12 +75,13 @@ func newSpiricRimSpine(body *topo.Body, e *topo.Edge, host geom.Torus, pl geom.P
 	if stdmath.Abs(float64(capD)) > spiricParallelCoef*res.Weld()*host.MajorRadius {
 		return spiricRimSpine{}, false // cap plane off the axis — the rim is not a meridian circle
 	}
-	return assembleSpiricSpine(e, host, hostFace, n, float64(capD), r, res)
+	return assembleSpiricSpine(e, host, hostFace, n, float64(capD), r, res, requireClosedLoop)
 }
 
 // assembleSpiricSpine finishes the frame: σ from the rim dihedral, s from the tube material side,
-// m̂ from the rim-circle centre, then the closed-loop existence guards.
-func assembleSpiricSpine(e *topo.Edge, host geom.Torus, hostFace *topo.Face, n math.UnitVector3, capD, r float64, res Resolution) (spiricRimSpine, bool) {
+// m̂ from the rim-circle centre, then (requireClosedLoop only) the closed-loop existence guard — an
+// open arc's own bounded stations are validated later, one ψ at a time, by spine.station itself.
+func assembleSpiricSpine(e *topo.Edge, host geom.Torus, hostFace *topo.Face, n math.UnitVector3, capD, r float64, res Resolution, requireClosedLoop bool) (spiricRimSpine, bool) {
 	side := -1.0 // convex: ball centre on the material side of the cap
 	if ClassifyEdgeConvexity(e) == EdgeConcave {
 		side = +1.0 // concave: ball in the void
@@ -96,8 +101,11 @@ func assembleSpiricSpine(e *topo.Edge, host geom.Torus, hostFace *topo.Face, n m
 	sp := spiricRimSpine{host: host, nHat: n, mHat: m, capD: capD, w: capD + side*r,
 		b: host.MinorRadius + side*s*r, side: side, r: r}
 	band := armSpindleBand * res.Weld()
-	if sp.b < band || host.MajorRadius-sp.b <= stdmath.Abs(sp.w)+band {
-		return spiricRimSpine{}, false // tube consumed, or the spine is not one closed loop
+	if sp.b < band {
+		return spiricRimSpine{}, false // tube consumed (b ≤ 0)
+	}
+	if requireClosedLoop && host.MajorRadius-sp.b <= stdmath.Abs(sp.w)+band {
+		return spiricRimSpine{}, false // the offset plane exits the offset torus — not a single closed loop
 	}
 	return sp, true
 }
