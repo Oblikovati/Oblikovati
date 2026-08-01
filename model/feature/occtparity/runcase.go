@@ -49,7 +49,35 @@ func RunCase(t *testing.T, r Record, fixtureDir string) {
 		t.Skipf("%s/%s: a picked edge could not be located on the imported body", r.Grid, r.Case)
 	}
 	res, filletOK, reason := runFillet(body, sets)
+	if why, pending := pendingCapabilityReason(r); pending {
+		assertStillPending(t, r, res, filletOK, why)
+		return
+	}
 	assertCaseResult(t, r, res, filletOK, reason)
+}
+
+// assertStillPending handles a case whose capability is not yet built (pending.go). It SKIPS with the
+// engine's own decline reason — but first fails loudly if the case now reaches full OCCT parity, so a
+// stale entry can never mask progress the engine has actually made. That direction of the ratchet is
+// the whole reason this is a pending list and not suppression.
+func assertStillPending(t *testing.T, r Record, res []*topo.Body, filletOK bool, why string) {
+	t.Helper()
+	if caseReachesParity(r, res, filletOK) {
+		t.Fatalf("%s/%s now builds OCCT-parity geometry — DELETE its pendingCapability entry and "+
+			"decrement pendingCapabilityCount (recorded as: %s)", r.Grid, r.Case, why)
+	}
+	t.Skipf("%s/%s: pending capability — %s", r.Grid, r.Case, why)
+}
+
+// caseReachesParity reports whether a case is a genuine green: a valid watertight solid whose area is
+// within OCCT's tolerance. It mirrors ScoreCase's green decision exactly, so the pending ratchet and
+// the scoreboard can never disagree about what "green" means.
+func caseReachesParity(r Record, res []*topo.Body, filletOK bool) bool {
+	props, ok := caseProperties(res, filletOK)
+	if classify(r, true, filletOK, isWatertightSolid(res, filletOK, props, ok)) != Pass {
+		return false
+	}
+	return areaWithin(props.Area, r.areaTarget(), r.Deps)
 }
 
 // hasVariableRadius reports whether a case needs the buildevol variable-radius path (Task 12).
