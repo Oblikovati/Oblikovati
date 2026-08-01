@@ -3,6 +3,8 @@
 package occtparity
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	"oblikovati.org/kernel/ops"
@@ -52,7 +54,59 @@ func assertFaceFoldFreeAtEveryQuality(t *testing.T, name string, f *topo.Face, p
 		}
 		if n := ops.FoldEdgeCount(m); n != 0 {
 			t.Fatalf("%s %T face has %d fold edges at %s quality; want 0 — a fold is exact and "+
-				"sampling-independent, so it must be absent at every faceting", name, f.Geometry(), n, gq.name)
+				"sampling-independent, so it must be absent at every faceting%s",
+				name, f.Geometry(), n, gq.name, foldDiagnostics(m))
 		}
 	}
+}
+
+// foldDiagnostics describes each folding edge and the RELATIVE area of the two triangles meeting
+// there, so a failure says WHICH kind of fold it is rather than only that one exists.
+//
+// The distinction it exists to settle: a fold between two well-formed triangles is a real geometry
+// defect, but a fold reported against a near-degenerate SLIVER is a measurement artefact — such a
+// triangle's normal direction is dominated by rounding, so "opposed" carries no information.
+// ops.FoldEdgeCount cannot tell them apart (normalsOppose rejects only an EXACTLY zero normal, while
+// the repair path beside it uses a real degenerateNormal predicate). This was added because
+// TestK1Z1TessellationFoldGate/Z1 reports one fold on macOS/arm64 and none on amd64 (PR #2013), and
+// no arm64 hardware was available to inspect it directly — the diagnostic makes CI itself the
+// instrument. DO NOT relax the gate on the strength of a guess: read this output first.
+func foldDiagnostics(m *ops.Mesh) string {
+	edges := ops.FoldEdges(m)
+	if len(edges) == 0 {
+		return ""
+	}
+	total := ops.MeshArea(m)
+	var b strings.Builder
+	for _, e := range edges {
+		fmt.Fprintf(&b, "\n  fold edge v%d-v%d at %v..%v", e[0], e[1], m.Positions[e[0]], m.Positions[e[1]])
+		for ti, t := range trianglesOnEdge(m, e) {
+			a := triangleArea(m, t)
+			fmt.Fprintf(&b, "\n    tri%d area=%.6g (%.3g%% of face %.6g)", ti, a, 100*a/total, total)
+		}
+	}
+	return b.String()
+}
+
+// trianglesOnEdge returns the indices of the triangles incident to a mesh edge.
+func trianglesOnEdge(m *ops.Mesh, e [2]int) []int {
+	var out []int
+	for t := 0; t+2 < len(m.Indices); t += 3 {
+		hits := 0
+		for k := 0; k < 3; k++ {
+			if v := m.Indices[t+k]; v == e[0] || v == e[1] {
+				hits++
+			}
+		}
+		if hits == 2 {
+			out = append(out, t/3)
+		}
+	}
+	return out
+}
+
+// triangleArea is triangle t's area (half the cross-product magnitude of two of its edges).
+func triangleArea(m *ops.Mesh, t int) float64 {
+	p0, p1, p2 := m.Positions[m.Indices[3*t]], m.Positions[m.Indices[3*t+1]], m.Positions[m.Indices[3*t+2]]
+	return 0.5 * float64(p0.VectorTo(p1).Cross(p0.VectorTo(p2)).Length())
 }

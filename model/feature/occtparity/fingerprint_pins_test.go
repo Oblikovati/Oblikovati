@@ -3,6 +3,7 @@
 package occtparity
 
 import (
+	"runtime"
 	"testing"
 
 	"oblikovati.org/kernel/topo"
@@ -14,8 +15,17 @@ import (
 // stay bit-identical to the base worktree 6123169d. These VALUES were captured on base 6123169d and re-run
 // on the CN-C8 HEAD; if a future shared-code edit perturbs any of them, this fails loud with the delta. The
 // RAW volumes match the brief's references exactly (B3 190756.470897507, N7 963883.383205631).
+// It runs on amd64 only. The pin compares a mesh hash across COMMITS, which is exactly what it is for;
+// it cannot compare across ARCHITECTURES, because the Go compiler contracts x*y+z into a single FMA on
+// arm64 and does not on amd64, so the tessellation rounds differently. On macOS/arm64 the same bodies
+// land on different hashes — several with identical triangle counts (pure rounding) and a few with
+// different counts where a refinement decision flips (E3: 411240 vs 430000). Both CI amd64 legs (Linux
+// and Windows) still run it, so the do-no-harm detector keeps its teeth on every PR.
 func TestByteIdentityFingerprints(t *testing.T) {
 	t.Parallel()
+	if runtime.GOARCH != "amd64" {
+		t.Skipf("byte-identical mesh hashes are architecture-specific (FMA contraction); pinned on amd64, got %s", runtime.GOARCH)
+	}
 	for _, tc := range byteIdentityPins() {
 		t.Run(tc.name, func(t *testing.T) {
 			fp := bodyMeshFingerprint(pinnedBody(t, tc.grid, tc.name))
@@ -74,12 +84,18 @@ func pinnedBody(t *testing.T, grid, name string) *topo.Body {
 // worktree at 6123169d and confirmed bit-identical on the CN-C8 HEAD (see cnc8-report.md §byte-identity)
 // and again on the CN6 HEAD (cn6-report.md §byte-identity; CN6 is a test-harness-only change).
 //
-// CROSS-PLATFORM RISK (record only — do NOT fix here; for the pre-PR cross-platform-stability pass,
-// CLAUDE.md hard-coded-values rule): these are hard-coded 64-bit hashes of quantized tessellated
-// coordinates. arm64 FMA/libm rounding could shift a vertex across a 1e-6·scale quantization boundary
-// and flip a hash → a FALSE red off linux/amd64. Fine for the corpus's linux/amd64 runs. The pre-PR
-// pass must re-capture on arm64 and either confirm identical or widen the quantum / drop the hash pins
-// to the (rounding-robust) volume+triangle-count pins there. No arm64 re-capture is attempted here.
+// ★ CROSS-PLATFORM RISK — PREDICTED, THEN CONFIRMED. This note used to read "record only, do NOT fix
+// here; the pre-PR cross-platform-stability pass must re-capture on arm64 and either confirm identical
+// or drop the hash pins there" (CLAUDE.md hard-coded-values rule). That pass ran on PR #2013's first
+// macOS CI leg and the risk was real: 24 of these pins reported drift on macOS/arm64 — most with
+// IDENTICAL triangle counts (pure FMA rounding, exactly the predicted quantization-boundary flip), a few
+// with different counts where a refinement decision flipped outright (E3: 411240 vs 430000).
+//
+// Resolved the way this note proposed: the hash pins are amd64-only (see the runtime.GOARCH guard on
+// TestByteIdentityFingerprints). Re-capturing a SECOND set of arm64 hashes was rejected — it would
+// double the maintenance of every future re-capture (this block already records five of them) to pin a
+// quantity that is architecture-dependent by construction. The pin's job is cross-COMMIT drift
+// detection, and both amd64 CI legs (Linux and Windows) still do it on every PR.
 //
 // RE-CAPTURED for the far-end wall trim + the loop-arc alignment pass (fillet_farend_trim.go and
 // fillet_survivor_rim.go's alignCarriedArcsToSegments; farend-runon-report.md §5): ten pins moved —
