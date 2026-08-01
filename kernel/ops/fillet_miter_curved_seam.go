@@ -36,7 +36,7 @@ func sampleCurvedMiterSeam(arms curvedMiterArms, shared, torOuter *topo.Face, v 
 	if !ok {
 		return nil, math.Point3{}, false
 	}
-	seam, ok := walkCurvedSeam(arms, r, center, sTop, sBot, v.Point(), res)
+	seam, ok := walkCurvedSeam(arms, r, center, sTop, sBot, res)
 	return seam, center, ok
 }
 
@@ -148,9 +148,10 @@ func distanceToSurface(f *topo.Face, p math.Point3) float64 {
 // from the PREVIOUS sample (sTop for the first) is the standard predictor-corrector continuation fix:
 // the true seam moves continuously, so at a fine enough angular step the physical petal is always the
 // one nearest wherever the walk already is, never a fixed faraway point. Falsified by mutation (bias
-// reverted to vp): W4's station 5 jumps 0.36 along X from station 4 — invisible to the endpoint-only
-// sTop/sBot checks, caught by TestEveryLoopSegmentLiesOnItsFace.
-func walkCurvedSeam(arms curvedMiterArms, r float64, center, sTop, sBot, vp math.Point3, res Resolution) ([]math.Point3, bool) {
+// reverted to the corner vertex, which is what this walk used to take as a parameter): W4's station 5
+// jumps 0.36 along X from station 4 — invisible to the endpoint-only sTop/sBot checks, caught by
+// TestEveryLoopSegmentLiesOnItsFace.
+func walkCurvedSeam(arms curvedMiterArms, r float64, center, sTop, sBot math.Point3, res Resolution) ([]math.Point3, bool) {
 	k := curvedSeamChordCount(center, sTop, sBot)
 	thetaTop := cylinderAngleOf(arms.cyl, sTop)
 	thetaBot := seamUnwrapAngle(cylinderAngleOf(arms.cyl, sBot), thetaTop)
