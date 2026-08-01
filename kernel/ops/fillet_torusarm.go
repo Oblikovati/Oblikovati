@@ -199,6 +199,12 @@ func torusArmEdge(body *topo.Body, e *topo.Edge, p filletPick) (edgeFillet, bool
 		if canal, ok := spiricClosedRimArmEdge(body, e, p); ok {
 			return canal, true, nil
 		}
+		// E6/E8/F1/F3 (A2 wave): a torus SECTOR's meridian rim is an OPEN arc between two corner
+		// vertices instead — spiricOpenArcArmEdge's sibling engine (same closed-form station, a
+		// bounded ψ walk instead of a full loop); any decline restores this reject unchanged.
+		if canal, ok := spiricOpenArcArmEdge(body, e, p); ok {
+			return canal, true, nil
+		}
 	}
 	return edgeFillet{}, true, torusArmError(reason, e, host, p.r0) // do-no-harm, cause-specific reject
 }
