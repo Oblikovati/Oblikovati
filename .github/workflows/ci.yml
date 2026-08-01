@@ -116,8 +116,13 @@ jobs:
         with:
           modules: . model/exchange/translators/solidworks model/exchange/translators/inventor
       - run: go install gotest.tools/gotestsum
+      # -timeout 60m overrides `go test`'s 10m PER-PACKAGE default, which was never a deliberate
+      # policy — just the default nobody had hit yet. The OCCT blend-parity corpus (475 records,
+      # model/feature/occtparity) and kernel/ops both run well past 10m on a CI runner once coverage
+      # instrumentation is added, and `app` was already at 388s under race. A timed-out package
+      # reports as a FAILURE indistinguishable from a real one, so this must stay generous.
       - name: Test
-        run: gotestsum --junitfile test-results-${{ matrix.os }}.xml -- -coverprofile=coverage.out -covermode=count ./...
+        run: gotestsum --junitfile test-results-${{ matrix.os }}.xml -- -coverprofile=coverage.out -covermode=count -timeout 60m ./...
       # The SolidWorks/Inventor translators are separate go.work modules, so the root `./...`
       # above never runs their tests — leaving SonarCloud to see ~0% coverage on new code that
       # is in fact 74–85% covered. Run each nested module's tests (Linux, the leg that feeds
@@ -152,7 +157,16 @@ jobs:
           go-version-file: go.mod
           cache: false
       - uses: ./.github/actions/api-contract
-      - run: go test -race -skip 'TestNop.*CSG' ./...
+      # The OCCT blend-parity corpus is excluded here, NOT because it is unverified under the race
+      # detector but because instrumenting it on a CI runner buys no signal for hours of compute: it
+      # is deterministic geometry whose only concurrency is t.Parallel() between independent test
+      # functions. It is race-verified directly — `go test -race -parallel 16 ./model/feature/occtparity`
+      # reports 0 data races (2071s on 32 cores). On a 2-4 core runner that parallel win collapses and
+      # the same run costs multiple hours, so it would only ever time out. Re-run it locally when
+      # touching the corpus harness; every other package still races here.
+      - run: |
+          go test -race -timeout 60m -skip 'TestNop.*CSG' \
+            $(go list ./... | grep -v '/model/feature/occtparity$')
 
   # cgo GUI head (Vulkan + Dear ImGui). The PR test/race/build jobs above run `./...`
   # on the ROOT module only and with CGO_ENABLED=0, so the head module was previously
