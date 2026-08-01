@@ -31,6 +31,7 @@ import (
 // tolerance, so it scales with the model (ADR-0042), and it is nowhere near tight: every faithful
 // adoption in the corpus sits ≥10 decades inside it while every defective one exceeded it by 70×–5000×.
 func TestConformanceRepairNeverLosesFaceArea(t *testing.T) {
+	t.Parallel()
 	dir := CorpusFixtureDir()
 	q := ops.PropertyQuality()
 	for _, r := range Corpus() {

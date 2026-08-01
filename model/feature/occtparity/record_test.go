@@ -6,6 +6,7 @@ import "testing"
 
 // A constant-radius record straight from the oracle (simple/A1: box 100³, one edge, r=10).
 func TestParseOracleRecordGolden(t *testing.T) {
+	t.Parallel()
 	r, err := parseRecord([]byte(`{"grid":"simple","case":"A1","verb":"blend","expectedArea":59527.9,"deps":0.01,"todo":"","inputStep":"A1.step","picks":[{"radius":10,"locator":{"midpoint":[100,0,50],"direction":[0,0,1]},"law":null}]}`))
 	if err != nil {
 		t.Fatalf("parse: %v", err)
@@ -29,6 +30,7 @@ func TestParseOracleRecordGolden(t *testing.T) {
 
 // A variable-radius record (buildevol/A1: law parses into (parameter, radius) pairs).
 func TestParseOracleRecordBuildevolLaw(t *testing.T) {
+	t.Parallel()
 	r, err := parseRecord([]byte(`{"grid":"buildevol","case":"A1","verb":"buildevol","expectedArea":23985.2,"deps":0.01,"todo":"","inputStep":"buildevol_A1.step","picks":[{"radius":0,"locator":{"midpoint":[50,0,10],"direction":[1,0,0]},"law":[[0,2],[1,4],[2,2]]}]}`))
 	if err != nil {
 		t.Fatalf("parse: %v", err)
@@ -52,6 +54,7 @@ func TestParseOracleRecordBuildevolLaw(t *testing.T) {
 // receipt; a record without the key defaults to nil (every genuine-parity case). areaTarget then
 // picks OUR exact area for a deviation case and OCCT's ExpectedArea otherwise.
 func TestParseOracleRecordDeviation(t *testing.T) {
+	t.Parallel()
 	r, err := parseRecord([]byte(`{"grid":"simple","case":"C8","verb":"blend","expectedArea":9640.68,"deps":0.01,"todo":"","inputStep":"simple/C8.step","deviation":{"exactArea":9781.45,"occtArea":9640.68,"reason":"OCCT sag"},"picks":[]}`))
 	if err != nil {
 		t.Fatalf("parse: %v", err)
@@ -76,6 +79,7 @@ func TestParseOracleRecordDeviation(t *testing.T) {
 
 // A malformed record surfaces the offending input in the error (CLAUDE.md exception rule).
 func TestParseOracleRecordRejectsGarbage(t *testing.T) {
+	t.Parallel()
 	_, err := parseRecord([]byte(`{"grid":`))
 	if err == nil {
 		t.Fatal("expected error on truncated JSON")

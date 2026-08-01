@@ -34,6 +34,7 @@ const (
 // edge 2-incident, valid + closed + holes-contained + IsSolid — with the oracle's 8 faces, and that its
 // torus band's major radius is R+r=35 (cylinder radius 30, r=5), the CONCAVE mirror of solveRim's R−r.
 func TestK1ConcaveBoreLipWatertight(t *testing.T) {
+	t.Parallel()
 	body := caseResultBody(t, "K1")
 	assertWatertight(t, "K1", body, 8)
 	assertRimTorusMajor(t, "K1", body, 35)
@@ -43,6 +44,7 @@ func TestK1ConcaveBoreLipWatertight(t *testing.T) {
 // watertight manifold solid with the oracle's 6 faces, and that its torus band's major radius is
 // R−r=9 (cylinder radius 10, r=1) — Z1 is not actually a bore lip, so this must NOT be R+r=11.
 func TestZ1ConvexReversedCapWatertight(t *testing.T) {
+	t.Parallel()
 	body := caseResultBody(t, "Z1")
 	assertWatertight(t, "Z1", body, 6)
 	assertRimTorusMajor(t, "Z1", body, 9)
@@ -69,6 +71,7 @@ func assertRimTorusMajor(t *testing.T, name string, body *topo.Body, wantMajor f
 // area, and that the summed mesh area equals OCCT's whole-result area within the corpus deps — mirroring
 // TestI9Arc3dRimTessellationFoldGate / TestJ1ClosedRimTessellationFoldGate for the same rim-band assembly.
 func TestK1Z1TessellationFoldGate(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name string
 		want float64

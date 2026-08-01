@@ -49,6 +49,7 @@ import (
 // float noise for a margin to absorb, and any increase at all is a regression. Both tables must shrink,
 // never widen.
 func TestEveryShippedMeshIsWatertight(t *testing.T) {
+	t.Parallel()
 	dir := CorpusFixtureDir()
 	leaks, folds := meshDebtIndex(knownMeshLeaks()), meshDebtIndex(knownFoldedMeshes())
 	for _, r := range Corpus() {
@@ -252,6 +253,7 @@ func knownFoldedMeshes() []meshDebtEntry {
 // is not updated, every ceiling there reads 0 and the ratchet gets STRICTER, which is the safe
 // direction; this test makes that deliberate rather than accidental.
 func TestMeshDebtTablesAreWellFormed(t *testing.T) {
+	t.Parallel()
 	for _, table := range [][]meshDebtEntry{knownMeshLeaks(), knownFoldedMeshes()} {
 		seen := map[string]bool{}
 		for _, d := range table {

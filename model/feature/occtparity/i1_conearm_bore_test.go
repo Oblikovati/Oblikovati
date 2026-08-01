@@ -60,6 +60,7 @@ const (
 // (2 trimmed end caps, the trimmed bottom plate, the untouched outer cone, the trimmed inner bore cone,
 // and the new torus band) — every edge 2-incident, valid + closed + holes-contained + IsSolid.
 func TestI1ConcaveBoreWatertight(t *testing.T) {
+	t.Parallel()
 	assertWatertight(t, "I1", caseResultBody(t, "I1"), 6)
 }
 
@@ -69,6 +70,7 @@ func TestI1ConcaveBoreWatertight(t *testing.T) {
 // significant figures, not carried to full precision) and the whole-body area against OCCT's own
 // checkprops number.
 func TestI1ConcaveBoreFoldGate(t *testing.T) {
+	t.Parallel()
 	body := caseResultBody(t, "I1")
 	meshTotal, torusBands := 0.0, 0
 	for _, f := range body.Faces() {

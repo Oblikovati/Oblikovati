@@ -65,6 +65,7 @@ const (
 // the band AND to every face its chain touches, or to none of them, and each rebuilt face lands on the
 // area its own material actually covers.
 func TestQ5FarEndSplitIsAtomicAndHitsItsClosedForms(t *testing.T) {
+	t.Parallel()
 	body := gridCaseBody(t, corpusRecord(t, "simple", "Q5"))
 	assertQ5SurfacesMatchTheConstants(t, body)
 	assertQ5JunctionIsSharedByAllThreeFaces(t, body)

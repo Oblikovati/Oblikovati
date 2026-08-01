@@ -38,6 +38,7 @@ import (
 // pair is 4.93687e7 / 4.7039e7), which is far wider than every per-face error, all of which are now
 // inside 0.0014%.
 func TestQ5ShippedFacesAgainstDrawexe(t *testing.T) {
+	t.Parallel()
 	tc := drawexeFaceCase{
 		name: "simple/Q5",
 		// DRAWEXE 8.0.0, descending: `restore 4_G1(test22).draw s; tscale s 0 0 0 1000; explode s E;

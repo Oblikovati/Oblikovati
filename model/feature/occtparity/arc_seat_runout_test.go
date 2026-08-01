@@ -40,6 +40,7 @@ const arcOraclePerFaceTol = 2e-3
 // half — the convex-shaft seat, or the radial setback in place of the run-out — and this fails on the
 // face count first, then on every area.
 func TestW2ArcBandRunsOutOnItsBottomPlane(t *testing.T) {
+	t.Parallel()
 	body := gridCaseBody(t, corpusRecord(t, "simple", "W2"))
 	assertShippedPerFaceAgainstDrawexe(t, drawexeFaceCase{
 		name: "simple/W2",
@@ -64,6 +65,7 @@ func TestW2ArcBandRunsOutOnItsBottomPlane(t *testing.T) {
 // faces DRAWEXE ships, and on the closed forms behind them. H6 needs no run-out (both its ends are the
 // 270° revolve's own walls, which contain the axis), so it isolates the SEAT half of the root.
 func TestH6ArcBandSeatsOnTheConcaveSide(t *testing.T) {
+	t.Parallel()
 	body := gridCaseBody(t, corpusRecord(t, "simple", "H6"))
 	assertShippedPerFaceAgainstDrawexe(t, drawexeFaceCase{
 		name: "simple/H6",

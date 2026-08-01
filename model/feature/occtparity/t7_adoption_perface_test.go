@@ -34,6 +34,7 @@ import "testing"
 // family's unconverged quadrature, perface_oracle_test.go). The whole-body budget tightened 3.06e-4 →
 // 1.24e-5 against the closed-form-adjudicated total (t7NexplodeFaceCase).
 func TestT7PerFaceRankPairsAgainstNexplodeOracle(t *testing.T) {
+	t.Parallel()
 	body := pinnedBody(t, "simple", "T7")
 	assertShippedPerFaceAgainstDrawexe(t, t7NexplodeFaceCase(), body, t7PerFaceDebt(), 1.24e-5)
 }

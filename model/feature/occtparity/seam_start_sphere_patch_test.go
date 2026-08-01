@@ -54,6 +54,7 @@ import (
 // 448.387; simple/W1 and A6 land on a spherical OCTANT (π/2·r²) and K6 on its 7/8 complement, both to
 // 10 significant figures.
 func TestSeamWindingSpherePatchMeshesToClosedForm(t *testing.T) {
+	t.Parallel()
 	dir := CorpusFixtureDir()
 	for _, name := range []string{"A6", "C8", "E4", "W1"} {
 		t.Run(name, func(t *testing.T) {

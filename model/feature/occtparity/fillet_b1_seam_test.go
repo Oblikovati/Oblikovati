@@ -28,6 +28,7 @@ var b1SeamCases = map[string]bool{
 // TestB1ClosedSeamValidSolid is the regression gate for the closed-seam orientation fix: every
 // listed B1 case must fillet to a single valid solid (positive volume, healthy feature).
 func TestB1ClosedSeamValidSolid(t *testing.T) {
+	t.Parallel()
 	fixtureDir := CorpusFixtureDir()
 	seen := 0
 	for _, r := range Corpus() {

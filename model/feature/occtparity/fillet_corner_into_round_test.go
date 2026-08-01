@@ -25,6 +25,7 @@ var cornerIntoRoundCases = map[string]string{
 // frozen P1 curved-fillet gap (asserted by the scoreboard) — here we assert only that the corner
 // closes into a sound solid.
 func TestCornerIntoRoundBuildsValidSolid(t *testing.T) {
+	t.Parallel()
 	fixtureDir := CorpusFixtureDir()
 	seen := 0
 	for _, r := range Corpus() {

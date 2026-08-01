@@ -32,6 +32,7 @@ var groupAConcaveCases = []struct {
 // 2-incident, valid + closed + holes-contained + IsSolid) with a POSITIVE signed volume — the winding gate
 // that would catch an un-flipped (inside-out) concave arm band laundered into a self-intersecting shell.
 func TestGroupAConcaveWatertight(t *testing.T) {
+	t.Parallel()
 	for _, tc := range groupAConcaveCases {
 		t.Run(tc.name, func(t *testing.T) {
 			body := caseResultBody(t, tc.name)
@@ -44,6 +45,7 @@ func TestGroupAConcaveWatertight(t *testing.T) {
 // TestGroupAConcaveFoldFreeArea meshes every result face, asserts it is fold-free with a finite positive
 // area, and that the summed area equals OCCT's whole-body oracle within the corpus deps (0.01).
 func TestGroupAConcaveFoldFreeArea(t *testing.T) {
+	t.Parallel()
 	for _, tc := range groupAConcaveCases {
 		t.Run(tc.name, func(t *testing.T) {
 			body := caseResultBody(t, tc.name)

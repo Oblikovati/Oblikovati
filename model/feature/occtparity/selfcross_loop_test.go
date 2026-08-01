@@ -34,6 +34,7 @@ import (
 // count and pinched-off area, so a listed case may improve freely while a new one — or a listed one
 // growing — fails loud. The table must shrink and must never be widened to accommodate a regression.
 func TestNoFaceLoopSelfCrossesOnItsSurface(t *testing.T) {
+	t.Parallel()
 	dir := CorpusFixtureDir()
 	q := ops.PropertyQuality()
 	debt := selfCrossDebtIndex()
@@ -108,6 +109,7 @@ const selfCrossOffSurfaceFloor = loopSegOnFaceTol
 // as artefacts: measured, it drops complex/F2 from 2 reported loops to 0 while every gate in this
 // harness stays green.
 func TestEverySelfCrossDebtEntryIsARealDefect(t *testing.T) {
+	t.Parallel()
 	dir := CorpusFixtureDir()
 	q := ops.PropertyQuality()
 	for _, d := range knownSelfCrossingLoops() {
@@ -301,6 +303,7 @@ func knownSelfCrossingLoops() []selfCrossDebtEntry {
 // TestSelfCrossDebtIsWellFormed keeps the debt table honest: no duplicate key, and every entry
 // claiming at least one crossing loop (a zero entry would be dead weight hiding nothing).
 func TestSelfCrossDebtIsWellFormed(t *testing.T) {
+	t.Parallel()
 	seen := map[string]bool{}
 	for _, d := range knownSelfCrossingLoops() {
 		key := d.grid + "/" + d.name

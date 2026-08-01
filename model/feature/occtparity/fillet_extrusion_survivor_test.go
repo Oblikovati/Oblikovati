@@ -22,6 +22,7 @@ var extrusionFilletFixtures = []string{"F6", "T6", "T7", "U3", "U4"}
 // fixture's located fillet must build a VALID, CLOSED, MANIFOLD solid enclosing a positive volume —
 // proving the closed elliptical rims survived the host-face copy (no collapsed zero-length stubs).
 func TestExtrusionFixturesFilletToValidSolid(t *testing.T) {
+	t.Parallel()
 	fixtureDir := CorpusFixtureDir()
 	byCase := map[string]Record{}
 	for _, r := range Corpus() {

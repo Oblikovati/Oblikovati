@@ -15,6 +15,7 @@ import (
 // on the CN-C8 HEAD; if a future shared-code edit perturbs any of them, this fails loud with the delta. The
 // RAW volumes match the brief's references exactly (B3 190756.470897507, N7 963883.383205631).
 func TestByteIdentityFingerprints(t *testing.T) {
+	t.Parallel()
 	for _, tc := range byteIdentityPins() {
 		t.Run(tc.name, func(t *testing.T) {
 			fp := bodyMeshFingerprint(pinnedBody(t, tc.grid, tc.name))

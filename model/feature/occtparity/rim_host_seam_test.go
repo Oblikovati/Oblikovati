@@ -38,6 +38,7 @@ const rimHostSeamPerFaceTol = 2e-4
 // Fixtures are OCCT's own `psphere s 5 -90 45` (J2 — a spherical zone reaching an enclosed pole) and
 // `ptorus s 20 5 0 90` (J4 — a quarter torus), both `tscale SCALE1=10` and blended r=10 on one rim.
 func TestRimHostSeamStaysOnItsHost(t *testing.T) {
+	t.Parallel()
 	for _, tc := range rimHostSeamCases() {
 		t.Run(tc.name, func(t *testing.T) {
 			body := pinnedBody(t, "simple", tc.name)

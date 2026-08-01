@@ -23,6 +23,7 @@ import (
 // HolesContained) rather than through Valid. The dual-host/torus cases are honest-rejected by the
 // detection gate and stay on the baseline path.
 func TestFilletSingleHostObstacleWatertight(t *testing.T) {
+	t.Parallel()
 	fixtureDir := CorpusFixtureDir()
 	var rec Record
 	for _, r := range Corpus() {

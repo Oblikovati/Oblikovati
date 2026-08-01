@@ -39,6 +39,7 @@ const ellipticRimOnFaceTol = 1e-6
 // OBLIQUE elliptic prism (major 150, minor 100, extruded along (20,0,100)) blended at r=10 — F6 on one
 // edge, F7 on three.
 func TestEllipticSurvivorRimIsCarried(t *testing.T) {
+	t.Parallel()
 	for _, tc := range ellipticRimCases() {
 		t.Run(tc.name, func(t *testing.T) {
 			body := pinnedBody(t, "simple", tc.name)

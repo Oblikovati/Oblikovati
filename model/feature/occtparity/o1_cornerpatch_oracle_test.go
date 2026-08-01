@@ -112,6 +112,7 @@ const (
 // TestO1CornerPatchIsTheExactRollingBallEnvelope is the tight half (see this file's header): our corner patch
 // must satisfy the rolling-ball definition of the blend, which OCCT's approximation does not.
 func TestO1CornerPatchIsTheExactRollingBallEnvelope(t *testing.T) {
+	t.Parallel()
 	body := caseResultBody(t, "O1")
 	patch := o1CornerPatchFace(t, body)
 	surf := patch.Geometry().(geom.BSplineSurface)
@@ -138,6 +139,7 @@ func TestO1CornerPatchIsTheExactRollingBallEnvelope(t *testing.T) {
 // TestO1CornerPatchMatchesOCCTSurfacePoints is the oracle half: DRAWEXE's own interior surface points, and its
 // four corner points, asserted onto our patch.
 func TestO1CornerPatchMatchesOCCTSurfacePoints(t *testing.T) {
+	t.Parallel()
 	body := caseResultBody(t, "O1")
 	surf := o1CornerPatchFace(t, body).Geometry().(geom.BSplineSurface)
 	u0, u1 := surf.UDomain()

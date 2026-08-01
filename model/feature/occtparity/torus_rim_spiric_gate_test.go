@@ -85,6 +85,7 @@ func weTorusRimCases() []weTorusRimCase {
 // TestWaveETorusRimPerFaceAgainstDrawexe rank-pairs each wave-E green's SHIPPED per-face mesh areas
 // against DRAWEXE and requires the face-count join, per-face agreement, and the summed total.
 func TestWaveETorusRimPerFaceAgainstDrawexe(t *testing.T) {
+	t.Parallel()
 	for _, c := range weTorusRimCases() {
 		t.Run(c.tc.name, func(t *testing.T) {
 			body := weTorusRimBody(t, c.grid, c.tc.name)
@@ -96,6 +97,7 @@ func TestWaveETorusRimPerFaceAgainstDrawexe(t *testing.T) {
 // TestWaveETorusRimWatertight requires each wave-E green to be a watertight manifold solid at
 // DRAWEXE's exact face count, with positive volume and ZERO free edges at BOTH gate qualities.
 func TestWaveETorusRimWatertight(t *testing.T) {
+	t.Parallel()
 	for _, c := range weTorusRimCases() {
 		t.Run(c.tc.name, func(t *testing.T) {
 			body := weTorusRimBody(t, c.grid, c.tc.name)

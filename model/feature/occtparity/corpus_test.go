@@ -19,6 +19,7 @@ const wantCorpusSize = 475
 // reference area and at least one pick, and that any committed STEP fixture a record points at
 // actually exists on disk.
 func TestCorpusIsComplete(t *testing.T) {
+	t.Parallel()
 	c := Corpus()
 	if len(c) != wantCorpusSize {
 		t.Fatalf("corpus has %d cases, want %d", len(c), wantCorpusSize)

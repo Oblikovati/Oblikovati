@@ -8,6 +8,7 @@ import (
 )
 
 func TestImportInputBoxArea(t *testing.T) {
+	t.Parallel()
 	b, err := importInput(filepath.Join("testdata", "A1.step"))
 	if err != nil {
 		t.Fatalf("import: %v", err)

@@ -49,6 +49,7 @@ const (
 // TestD8FarEndSplitIsAtomicAndHitsItsClosedForms is the routing invariant's guard: the split is applied to
 // the band AND to every host it touches, or to none of them.
 func TestD8FarEndSplitIsAtomicAndHitsItsClosedForms(t *testing.T) {
+	t.Parallel()
 	body := gridCaseBody(t, corpusRecord(t, "complex", "D8"))
 	assertD8SurfacesMatchTheConstants(t, body)
 	assertD8JunctionIsSharedByAllThreeFaces(t, body)

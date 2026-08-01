@@ -26,6 +26,7 @@ const j1CorpusDeps = 0.01    // the J1 corpus record's deps tolerance
 // edge 2-incident, valid + closed + holes-contained + IsSolid — WITHOUT tessellating (a cracked band seam
 // or a mis-receded host would fail here loud and fast). Reuses the shared assertWatertight harness.
 func TestJ1ClosedRimWatertight(t *testing.T) {
+	t.Parallel()
 	assertWatertight(t, "J1", caseResultBody(t, "J1"), 4)
 }
 
@@ -34,6 +35,7 @@ func TestJ1ClosedRimWatertight(t *testing.T) {
 // OCCT's whole-result area within deps — the fold-free / correct-region total (a full-donut fallback mesh on
 // the torus band, or a folded receded host, would inflate it well past the 1% bound).
 func TestJ1ClosedRimTessellationFoldGate(t *testing.T) {
+	t.Parallel()
 	body := caseResultBody(t, "J1")
 	meshTotal, torusBands := 0.0, 0
 	for _, f := range body.Faces() {

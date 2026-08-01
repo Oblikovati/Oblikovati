@@ -29,6 +29,7 @@ const w6w8Deps = 0.01 // the W6/W8/A1 corpus records' deps tolerance
 // TestW6ConcaveBossBaseRim asserts W6 (cylinder radius 20, r=5) builds a watertight 9-face solid whose
 // torus band major radius is R+r=25 (the concave cove), NOT solveRim's convex R−r=15.
 func TestW6ConcaveBossBaseRim(t *testing.T) {
+	t.Parallel()
 	body := caseResultBody(t, "W6")
 	assertWatertight(t, "W6", body, 9)
 	assertRimTorusMajor(t, "W6", body, 25)
@@ -37,6 +38,7 @@ func TestW6ConcaveBossBaseRim(t *testing.T) {
 // TestW8ConcaveBossBaseRim asserts W8 (cylinder radius 30, r=5) builds a watertight 10-face solid whose
 // torus band major radius is R+r=35.
 func TestW8ConcaveBossBaseRim(t *testing.T) {
+	t.Parallel()
 	body := caseResultBody(t, "W8")
 	assertWatertight(t, "W8", body, 10)
 	assertRimTorusMajor(t, "W8", body, 35)
@@ -45,6 +47,7 @@ func TestW8ConcaveBossBaseRim(t *testing.T) {
 // TestA1ConcaveBossBaseRim asserts the bfuseblend-grid sibling A1 (cylinder radius 100, r=10) builds a
 // watertight 9-face solid whose torus band major radius is R+r=110 — the same fix across grids.
 func TestA1ConcaveBossBaseRim(t *testing.T) {
+	t.Parallel()
 	body := bfuseblendResultBody(t, "A1")
 	assertWatertight(t, "A1", body, 9)
 	assertRimTorusMajor(t, "A1", body, 110)
@@ -54,6 +57,7 @@ func TestA1ConcaveBossBaseRim(t *testing.T) {
 // area, and that the summed mesh area equals OCCT's whole-result area within the corpus deps — the
 // footprint now MATCHES OCCT (the whole point of the fix), mirroring TestK1Z1TessellationFoldGate.
 func TestConcaveBossBaseRimArea(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name string
 		want float64
@@ -82,6 +86,7 @@ func TestConcaveBossBaseRimArea(t *testing.T) {
 // solveConcaveBossRim's cap-fit gate: they must remain FAIL(area) on the unchanged solveRim ladder, not
 // silently regress to FAIL(faulty) or a false green.
 func TestSpillingConcaveRimsStayDeep(t *testing.T) {
+	t.Parallel()
 	byCase := map[string]Record{}
 	for _, r := range Corpus() {
 		if r.Grid == "simple" {

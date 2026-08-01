@@ -39,6 +39,7 @@ const d9AreaRelTol = 0.005 // per-face property-mesh vs OCCT oracle: every D9 fa
 // area matching its OCCT per-face oracle, that every oracle face is realized exactly once, and that the
 // summed mesh area equals OCCT's 274895.5 within the corpus deps (0.01).
 func TestD9TessellationFoldGate(t *testing.T) {
+	t.Parallel()
 	body := caseResultBody(t, "D9")
 	if got := len(body.Faces()); got != 9 {
 		t.Fatalf("D9 result has %d faces, want the oracle's 9", got)
@@ -110,5 +111,6 @@ func assertD9MeshTotal(t *testing.T, meshTotal float64) {
 // (the new connector edge shared by the top cap and the extended lon-0 face, the far trim shared by the
 // cyl arm and lon-0) must each weld 2-incident; a cracked splice fails here loud (reuses assertWatertight).
 func TestD9WholeBodyWatertight(t *testing.T) {
+	t.Parallel()
 	assertWatertight(t, "D9", caseResultBody(t, "D9"), 9)
 }

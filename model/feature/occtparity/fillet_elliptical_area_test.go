@@ -27,6 +27,7 @@ var leakGuardQuarantinedByHoleLoop = map[string]bool{}
 // PASS (or, for any that also carry the independent #2007 hole-loop defect, SkipQuarantine — none do
 // today), proving the hole-filled re-mesh still does not inflate the planar face area.
 func TestLeakGuardedPlaneMeshGreensAreaCases(t *testing.T) {
+	t.Parallel()
 	byCase := map[string]Record{}
 	for _, r := range Corpus() {
 		if r.Grid == "simple" {

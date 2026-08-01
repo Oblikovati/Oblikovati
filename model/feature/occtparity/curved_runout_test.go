@@ -32,6 +32,7 @@ const m7AreaRelTol = 0.01 // matches the corpus deps gate (1%)
 // gate), the host-sphere face carries the corner-bite region (not its ~4× complement), and the whole-body
 // mesh area equals OCCT's DRAWEXE oracle within deps 0.01. Oracle: .superpowers/sdd/curved-runout-forensic.md §1–2.
 func TestObliqueRunoutD4E3WholeBody(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name       string
 		faces      int
@@ -68,12 +69,14 @@ func assertWholeBodyMeshArea(t *testing.T, name string, body *topo.Body, want fl
 // edge 2-incident, valid + closed + holes-contained + IsSolid — the flush-cut-cap retrim's crux (a cracked
 // or mis-classified inner-loop retrim fails here loud).
 func TestM7WholeBodyWatertight(t *testing.T) {
+	t.Parallel()
 	assertWatertight(t, "M7", caseResultBody(t, "M7"), 11)
 }
 
 // TestM7FilletFaceArea pins the ONE added fillet face — the exact CylindricalSurface r=10 — to OCCT's
 // area 1150.26. A wrong-region or folded fillet strip reads far off.
 func TestM7FilletFaceArea(t *testing.T) {
+	t.Parallel()
 	f := m7FaceByCylinderRadius(t, caseResultBody(t, "M7"), 10)
 	assertM7FaceArea(t, "fillet cylinder r=10", faceMeshArea2(f), 1150.26)
 }
@@ -81,6 +84,7 @@ func TestM7FilletFaceArea(t *testing.T) {
 // TestM7HostCylinderReceded pins the receded host wall (Cyl r=25) to OCCT's 4978.33 — the runout removed
 // ~half the wall, so a wrong-side retrim (the "smaller corner" heuristic) would read the complement.
 func TestM7HostCylinderReceded(t *testing.T) {
+	t.Parallel()
 	f := m7FaceByCylinderRadius(t, caseResultBody(t, "M7"), 25)
 	assertM7FaceArea(t, "receded host cylinder r=25", faceMeshArea2(f), 4978.33)
 }
@@ -89,6 +93,7 @@ func TestM7HostCylinderReceded(t *testing.T) {
 // as a still-2-wire planar face at OCCT's area 8584.49 (forensic §2: "one unrelated 2-wire face survives").
 // The earlier retrim declined here; a retrim that erased or mis-wound the hole fails this assertion.
 func TestM7FootprintHoleSurvives(t *testing.T) {
+	t.Parallel()
 	f := m7TwoWirePlanarFace(t, caseResultBody(t, "M7"))
 	assertM7FaceArea(t, "footprint-hole cap (2 wires)", faceMeshArea2(f), 8584.49)
 }
@@ -96,6 +101,7 @@ func TestM7FootprintHoleSurvives(t *testing.T) {
 // TestM7TessellationFoldGate meshes every M7 face and asserts each is fold-free with a finite positive area,
 // and that the summed mesh area equals OCCT's whole-result area (corpus 67937.6) within the deps tol.
 func TestM7TessellationFoldGate(t *testing.T) {
+	t.Parallel()
 	body := caseResultBody(t, "M7")
 	total := 0.0
 	for _, f := range body.Faces() {

@@ -56,6 +56,7 @@ const d8BandBoundaryEdges = 6
 // faces it bounds and does not cross back over its own section plane (the direct "one branch" statement),
 // and that the fillet band therefore tiles its closed-form area.
 func TestFarEndTrimCurveStaysOnOneWallBranch(t *testing.T) {
+	t.Parallel()
 	rec := corpusRecord(t, "complex", "D8")
 	body := gridCaseBody(t, rec)
 	band := faceByLineage(t, body, "import:step#16:edge#1/fillet:cyl#0")

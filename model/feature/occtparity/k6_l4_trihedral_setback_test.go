@@ -22,6 +22,7 @@ import (
 // result is a watertight fold-free solid with the void sphere-octant patch and the retracted corner
 // station, so a regression that drops the setback (or re-reflects the sphere) fails loud here.
 func TestK6L4TrihedralSetbackWatertight(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name      string
 		faces     int

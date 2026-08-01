@@ -40,6 +40,7 @@ const (
 )
 
 func TestC8ApexStripTopology(t *testing.T) {
+	t.Parallel()
 	body := caseResultBody(t, "C8")
 	assertWatertight(t, "C8", body, c8Faces)
 	assertC8FaceInventory(t, body)

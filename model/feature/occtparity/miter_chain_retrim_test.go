@@ -48,6 +48,7 @@ const miterChainPerFaceTol = 5e-3
 // pocket wall, the two lens caps (equal 2904.39 — the full-height cut makes top and bottom congruent),
 // and the seam-line arm band.
 func TestO8LensCapSingleArmRunout(t *testing.T) {
+	t.Parallel()
 	body := gridCaseBody(t, corpusRecord(t, "simple", "O8"))
 	assertShippedPerFaceAgainstDrawexe(t, drawexeFaceCase{
 		name: "simple/O8",
@@ -67,6 +68,7 @@ func TestO8LensCapSingleArmRunout(t *testing.T) {
 // removed, this case flips from FAIL(faulty) to a WRONG PASS at area 57417.4 vs the DRAWEXE 61058.6
 // target (-5.96%) and 10-28 free edges in the weld.
 func TestP4DeclinesOnPreexistingDegenerateHost(t *testing.T) {
+	t.Parallel()
 	assertMiterHonestlyDeclines(t, "simple", "P4", "single-arm runout: host geom.Cylinder retrim declined")
 }
 
@@ -77,6 +79,7 @@ func TestP4DeclinesOnPreexistingDegenerateHost(t *testing.T) {
 // flips from FAIL(faulty) to a WRONG PASS at area 57165.7 vs the DRAWEXE 60665.6 target (-5.77%) and
 // 12-18 free edges in the weld.
 func TestP5DeclinesOnPreexistingDegenerateHost(t *testing.T) {
+	t.Parallel()
 	assertMiterHonestlyDeclines(t, "simple", "P5", "shared host geom.Cylinder's own boundary is degenerate")
 }
 

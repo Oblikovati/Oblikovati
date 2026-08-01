@@ -11,6 +11,7 @@ import (
 
 // A box edge round-trips through the centroid+length locator (straight edge: centroid == mid).
 func TestLocateEdgePicksUniqueBoxEdge(t *testing.T) {
+	t.Parallel()
 	box, err := brep.SolidBlock(math.P3(0, 0, 0), math.P3(100, 100, 100), "box")
 	if err != nil {
 		t.Fatalf("box: %v", err)
@@ -31,6 +32,7 @@ func TestLocateEdgePicksUniqueBoxEdge(t *testing.T) {
 // length must not match a co-located edge of a very different length. On a 100³ box every edge
 // has length 100, so we assert the positive path plus that a wrong length is rejected.
 func TestLocateEdgeLengthDisambiguates(t *testing.T) {
+	t.Parallel()
 	box, err := brep.SolidBlock(math.P3(0, 0, 0), math.P3(100, 100, 100), "box")
 	if err != nil {
 		t.Fatalf("box: %v", err)

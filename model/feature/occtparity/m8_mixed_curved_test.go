@@ -18,6 +18,7 @@ import (
 // the area-only scoreboard — that the result is a watertight 14-face solid carrying exactly that 2r-torus
 // corner (a regression to the sphere path, or a cracked weld, fails loud here) plus OCCT's whole-body area.
 func TestM8MixedCurvedCornerWatertight(t *testing.T) {
+	t.Parallel()
 	body := caseResultBody(t, "M8")
 	assertWatertight(t, "M8", body, 14)
 	assertWholeBodyFoldFree(t, "M8", body)

@@ -52,6 +52,7 @@ import (
 
 // TestN4CornerWeldLayerWatertight is the whole-body gate: watertight, fold-free, OCCT's face count and area.
 func TestN4CornerWeldLayerWatertight(t *testing.T) {
+	t.Parallel()
 	body := caseResultBody(t, "N4")
 	assertWatertight(t, "N4", body, 14)
 	assertWholeBodyFoldFree(t, "N4", body)

@@ -25,6 +25,7 @@ const (
 )
 
 func TestE7WholeBodyWatertightFoldFree(t *testing.T) {
+	t.Parallel()
 	body := caseResultBody(t, "E7")
 	assertWatertight(t, "E7", body, e7Faces)
 	assertE7VolumePositive(t, body)

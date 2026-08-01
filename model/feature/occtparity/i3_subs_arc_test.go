@@ -20,6 +20,7 @@ import (
 // conformance do-no-harm guard green it: a watertight fold-free solid whose whole-body area matches OCCT
 // within deps AND whose annular-sector host plane has RECOVERED its area (≈38270, not the chorded ≈14084).
 func TestI3SubsArcGreen(t *testing.T) {
+	t.Parallel()
 	body := caseResultBody(t, "I3")
 	assertWatertight(t, "I3", body, 6)
 	assertFoldFreeFaces(t, "I3", body)
@@ -52,6 +53,7 @@ func assertSectorPlaneRecovered(t *testing.T, body *topo.Body) {
 // (30514→41730, fold=1); the crude arc-carry made it worse (fold=4). The carry restores the shared rim AND
 // the conformance guard keeps each cone's fold-free mesh, so every cone here meshes fold-free and positive.
 func TestI3ConeFoldFree(t *testing.T) {
+	t.Parallel()
 	body := caseResultBody(t, "I3")
 	cones := 0
 	for _, f := range body.Faces() {

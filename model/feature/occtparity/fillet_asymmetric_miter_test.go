@@ -17,6 +17,7 @@ import "testing"
 //	box s 0 0 0 5 5 5 ; explode s e ; blend result s 1 s_6 0.5 s_10 ; nbshapes ; sprops
 //	→ FACE 8, valid solid, Mass 146.393.
 func TestAsymmetricMiterGreens(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name     string
 		faces    int

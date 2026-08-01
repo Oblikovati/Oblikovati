@@ -38,6 +38,7 @@ var n7PerFaceGates = []perFaceGate{
 // signature that the self-overlapping boundary is gone. RED at HEAD a5bfe089 (patch 176/diverging,
 // s_4 273); GREEN after the canal sub-edges present their trimmed sub-span geometry.
 func TestN7PerFaceAreas(t *testing.T) {
+	t.Parallel()
 	faces := n7ResultBody(t).Faces()
 	for _, g := range n7PerFaceGates {
 		f := findN7Face(t, faces, g)

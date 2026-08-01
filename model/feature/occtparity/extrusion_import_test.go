@@ -18,6 +18,7 @@ var extrusionSolidFixtures = []string{"F6", "T6", "T7", "U3", "U4"}
 // TestExtrusionFixturesImportClosedSolid pins the import fix: each fixture must come in as a genuinely
 // closed B-rep solid — every edge used by two faces, no boundary edges — not merely flagged solid.
 func TestExtrusionFixturesImportClosedSolid(t *testing.T) {
+	t.Parallel()
 	for _, id := range extrusionSolidFixtures {
 		b, err := importInput("fixtures/simple/" + id + ".step")
 		if err != nil {
@@ -37,6 +38,7 @@ func TestExtrusionFixturesImportClosedSolid(t *testing.T) {
 // triangles — and integrate to a positive, quality-stable volume. Guards CLAUDE.md's tessellation
 // priority for the newly-wired elliptical-cylinder mesh paths.
 func TestExtrusionFixturesTessellateWatertight(t *testing.T) {
+	t.Parallel()
 	for _, id := range extrusionSolidFixtures {
 		b, err := importInput("fixtures/simple/" + id + ".step")
 		if err != nil {

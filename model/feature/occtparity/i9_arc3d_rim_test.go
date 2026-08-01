@@ -28,6 +28,7 @@ const i9CorpusDeps = 0.01   // the I9 corpus record's deps tolerance
 // builds a watertight manifold solid with the oracle's 4 faces (receded cylinder, both caps, torus
 // band) — every edge 2-incident, valid + closed + holes-contained + IsSolid.
 func TestI9Arc3dRimWatertight(t *testing.T) {
+	t.Parallel()
 	assertWatertight(t, "I9", caseResultBody(t, "I9"), 4)
 }
 
@@ -35,6 +36,7 @@ func TestI9Arc3dRimWatertight(t *testing.T) {
 // positive area, that exactly one face is the geom.Torus band (not a fallback mesh), and that the
 // summed mesh area equals OCCT's whole-result area within deps.
 func TestI9Arc3dRimTessellationFoldGate(t *testing.T) {
+	t.Parallel()
 	body := caseResultBody(t, "I9")
 	meshTotal, torusBands := 0.0, 0
 	for _, f := range body.Faces() {

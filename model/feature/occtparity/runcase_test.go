@@ -20,6 +20,7 @@ func a1PickedEdgeLocator() Locator {
 // asserts OCCT's reference area (59527.9) within its 1% tolerance. A failure here is a real
 // parity signal for the greening backlog — the assertion must never be loosened.
 func TestRunCaseSimpleA1(t *testing.T) {
+	t.Parallel()
 	r := Record{
 		Grid: "simple", Case: "A1", Verb: "blend", ExpectedArea: 59527.9, Deps: 0.01,
 		InputStep: "A1.step",

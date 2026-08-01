@@ -10,6 +10,7 @@ func (f *fakeT) Errorf(s string, a ...any) { f.errs = append(f.errs, s) }
 func (f *fakeT) Logf(s string, a ...any)   { f.logs = append(f.logs, s) }
 
 func TestAssertAreaTolerance(t *testing.T) {
+	t.Parallel()
 	// within 1% => no error; >0.1% => a drift warning
 	f := &fakeT{}
 	assertArea(f, "c", 100.5, 100.0, 0.01) // 0.5% off: pass, warn
@@ -46,6 +47,7 @@ func c8Deviation() Record {
 // matches OUR exact area (and the receipt is logged); it FAILS at OCCT's flawed area; and a >1%
 // nudge of the exact area FAILS — a todo-skip would gate none of these.
 func TestAssertCaseAreaDeviation(t *testing.T) {
+	t.Parallel()
 	dev := c8Deviation()
 
 	f := &fakeT{} // built == OUR exact area: PASS, receipt logged
@@ -77,6 +79,7 @@ func TestAssertCaseAreaDeviation(t *testing.T) {
 // TestAssertCaseAreaPlain confirms a case WITHOUT a deviation still asserts OCCT's ExpectedArea
 // (every non-C8/D1 case is unchanged) and logs no deviation receipt.
 func TestAssertCaseAreaPlain(t *testing.T) {
+	t.Parallel()
 	plain := Record{Grid: "simple", Case: "A1", ExpectedArea: 100, Deps: 0.01}
 
 	fp := &fakeT{}

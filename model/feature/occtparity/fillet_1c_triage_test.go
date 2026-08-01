@@ -25,6 +25,7 @@ import (
 //     the first read "planar run-out bug" was wrong: the real defect was a curved SURVIVOR edge on
 //     the end-cap face (bordering the solid's cylinder) being straightened. Now matches OCCT.
 func TestG1Cluster1cTriage(t *testing.T) {
+	t.Parallel()
 	dir := CorpusFixtureDir()
 
 	t.Run("W2_H6_curved_neighbour_to_G6", func(t *testing.T) {

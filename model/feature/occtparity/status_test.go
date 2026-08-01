@@ -5,6 +5,7 @@ package occtparity
 import "testing"
 
 func TestClassifyMirrorsOCCT(t *testing.T) {
+	t.Parallel()
 	todo := Record{TODO: "TODO OCC22817 All:TEST INCOMPLETE"}
 	if classify(todo, true, false, false) != SkipTODO {
 		t.Fatal("TODO case must skip")
@@ -24,6 +25,7 @@ func TestClassifyMirrorsOCCT(t *testing.T) {
 // TestPassDeviationRollsUp checks the documented per-case deviation outcome names itself distinctly
 // yet rolls into the pass tally (Pass and PassDeviation both count as a pass; failures/skips do not).
 func TestPassDeviationRollsUp(t *testing.T) {
+	t.Parallel()
 	if PassDeviation.String() != "PASS(deviation)" {
 		t.Fatalf("PassDeviation String = %q", PassDeviation.String())
 	}

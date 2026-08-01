@@ -33,6 +33,7 @@ import "testing"
 // discretizeEdge closes it: 44 -> 0 at BOTH qualities, with every one of U4's sixteen per-face areas
 // unchanged to 2e-6 and the whole-body area unchanged at 6583.287851 (property quality).
 func TestU4DualHostMeshIsClosedAtEveryQuality(t *testing.T) {
+	t.Parallel()
 	body, ok := shippedCaseBody(caseRecord(t, "simple", "U4"), CorpusFixtureDir())
 	if !ok {
 		t.Fatal("simple/U4 ships no healthy body")

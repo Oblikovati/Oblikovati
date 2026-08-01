@@ -36,6 +36,7 @@ const stlZoneVolTol = 3e-3
 // TestJ2ZoneStlStepVolumeParity is the reusable STL-vs-STEP volume oracle instantiated for J2: it
 // asserts the STEP-import tessellated volume, the OCCT STL mesh volume, and OCCT vprops all agree.
 func TestJ2ZoneStlStepVolumeParity(t *testing.T) {
+	t.Parallel()
 	stepVol := stepImportVolume(t, "simple/J2.step")
 	stlVol := stlMeshVolume(t, "simple/J2_input.stl")
 	t.Logf("J2 input zone volume — OCCT vprops=%.1f  STEP-import=%.1f  STL-import=%.1f", occtVpropsJ2Input, stepVol, stlVol)

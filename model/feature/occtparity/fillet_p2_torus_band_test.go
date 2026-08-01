@@ -20,6 +20,7 @@ var p2TorusBandCases = map[string]bool{"S9": true, "T1": true, "T3": true, "T4":
 // (now 0.7–3.6%) from the pre-fix gross fallback (>20%); the residual 1–3% is the shared curved-
 // fillet accuracy gap (P1), asserted elsewhere, not here.
 func TestP2TorusBandNotFullDomain(t *testing.T) {
+	t.Parallel()
 	fixtureDir := CorpusFixtureDir()
 	const grossFallbackBound = 0.05
 	seen := 0

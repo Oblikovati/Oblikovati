@@ -18,6 +18,7 @@ import (
 // so U4 now reports HolesContained=true and isWatertightSolid ACCEPTS it — the exemplar flipped from the
 // surviving guard to a genuine solid, and this is its regression lock (U4 must STAY watertight).
 func TestU4DualHostWeldClearsWatertightBar(t *testing.T) {
+	t.Parallel()
 	res, filletOK, props, ok := rawFilletResult(t, "U4")
 	if !ok || props.Volume <= 0 {
 		t.Fatalf("U4: expected the legacy predicate (ok && Volume>0) to hold, got ok=%v volume=%v", ok, props.Volume)
@@ -34,6 +35,7 @@ func TestU4DualHostWeldClearsWatertightBar(t *testing.T) {
 // watertight solid: B3 (planar corner, do-no-harm fingerprint pin) and I9 (rim-fillet Arc3d path) both
 // have HolesContained=true and must still pass.
 func TestIsWatertightSolidAcceptsGenuineSolid(t *testing.T) {
+	t.Parallel()
 	for _, name := range []string{"B3", "I9"} {
 		res, filletOK, props, ok := rawFilletResult(t, name)
 		if !isWatertightSolid(res, filletOK, props, ok) {
@@ -55,6 +57,7 @@ func TestIsWatertightSolidAcceptsGenuineSolid(t *testing.T) {
 // The MECHANISM is guarded alongside, so re-holding a case stays a one-line change that works: a synthetic
 // key must still report held with its reason, and a key that is not on the list must not.
 func TestTheCorpusHoldsNoCase(t *testing.T) {
+	t.Parallel()
 	for k, reason := range quarantined {
 		t.Errorf("%s/%s is still quarantined (%q) — a held case is SKIPPED, so every other corpus invariant "+
 			"is blind to it; score it honestly instead", k.grid, k.name, reason)
@@ -67,6 +70,7 @@ func TestTheCorpusHoldsNoCase(t *testing.T) {
 // TestQuarantineMechanismStillHolds keeps quarantine.go's lookup honest while its list is empty, so the
 // next case that needs holding is one map entry away rather than a rediscovery.
 func TestQuarantineMechanismStillHolds(t *testing.T) {
+	t.Parallel()
 	key := quarantineKey{grid: "zz", name: "ZZ"}
 	quarantined[key] = "synthetic hold"
 	defer delete(quarantined, key)

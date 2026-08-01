@@ -40,6 +40,7 @@ const (
 )
 
 func TestSphereHostHemisphereStaysFullAndMeshesToItsArea(t *testing.T) {
+	t.Parallel()
 	dir := CorpusFixtureDir()
 	for _, r := range Corpus() {
 		if r.Grid != "simple" || (r.Case != "S6" && r.Case != "S7") {

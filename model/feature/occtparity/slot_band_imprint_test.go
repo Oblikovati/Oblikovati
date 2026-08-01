@@ -39,6 +39,7 @@ const slotAreaTol = 1e-6
 // TestSlotFamilyFacesMatchTheirClosedForms is the acceptance: every face the imprint touches, on the
 // SHIPPED body of each case, against the closed form its geometry has.
 func TestSlotFamilyFacesMatchTheirClosedForms(t *testing.T) {
+	t.Parallel()
 	for _, c := range slotCases() {
 		body := slotShippedBody(t, c.name)
 		for lineage, want := range c.faces {
@@ -59,6 +60,7 @@ func TestSlotFamilyFacesMatchTheirClosedForms(t *testing.T) {
 // OPEN, and an open shell is what the imprint must never ship. The face count is the oracle's own —
 // the imprint re-trims faces, it never adds or removes one.
 func TestSlotFamilyBodiesAreWatertightAndWholeAtTheOracleFaceCount(t *testing.T) {
+	t.Parallel()
 	for _, c := range slotCases() {
 		body := slotShippedBody(t, c.name)
 		rep := ops.Validate(body)
@@ -75,6 +77,7 @@ func TestSlotFamilyBodiesAreWatertightAndWholeAtTheOracleFaceCount(t *testing.T)
 // TestSlotFamilyBodyAreaMatchesOCCT closes the loop on the oracle: the closed forms sum to OCCT's own
 // reference area for each case, so the per-face targets above are not a private theory.
 func TestSlotFamilyBodyAreaMatchesOCCT(t *testing.T) {
+	t.Parallel()
 	for _, c := range slotCases() {
 		body := slotShippedBody(t, c.name)
 		total := 0.0

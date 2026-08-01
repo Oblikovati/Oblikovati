@@ -102,6 +102,7 @@ func clusterAPins() []fingerprintPin {
 // rebuilds to its pinned fingerprint and its welded mesh carries 0 free edges and 0 folds at BOTH
 // gate qualities.
 func TestClusterACornerGreensPinnedAndWatertight(t *testing.T) {
+	t.Parallel()
 	for _, tc := range clusterAPins() {
 		t.Run(tc.grid+"/"+tc.name, func(t *testing.T) {
 			body := clusterAResultBody(t, tc.grid, tc.name)
@@ -136,6 +137,7 @@ func assertClusterAWatertight(t *testing.T, body *topo.Body) {
 // reads 12.9388 — the documented divergence), A4's torus quarter rS·(π/2)·(R·(π/2)+rS)=100.9556,
 // and D4's two DRAWEXE-exact bands at 148.148.
 func TestClusterACornerPatchClosedForms(t *testing.T) {
+	t.Parallel()
 	quarterPi := stdmath.Pi / 2
 	assertUniqueKindFaceArea(t, clusterAResultBody(t, "tolblend_simple", "A1"), "Sphere", 6.25*2.07168, 1e-3)
 	assertUniqueKindFaceArea(t, clusterAResultBody(t, "simple", "A4"), "Torus", 5*quarterPi*(5*quarterPi+5), 1e-3)
@@ -187,6 +189,7 @@ func surfaceKindName(f *topo.Face) string {
 // zeroing the common-sphere residual or loosening the torus orthogonality certificate) flips one
 // of these reasons and fails loud.
 func TestClusterAHonestDeclines(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct{ grid, name, want string }{
 		// B1: glued drafted wedges — measured plane residual 0.263 (weld 8.3e-8): NOT a common sphere.
 		{"tolblend_simple", "B1", "has no common tangent sphere"},

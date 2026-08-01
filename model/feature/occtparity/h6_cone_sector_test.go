@@ -24,6 +24,7 @@ const occtH6ConeArea = 133286.0
 // the apex, so both now equal the OCCT oracle. This asserts the DRAWEXE-proven per-face defect
 // directly (not just the whole-body area, which H6's inverted fillet — ROOT 2 — still corrupts).
 func TestH6HostConesTessellateToOCCTArea(t *testing.T) {
+	t.Parallel()
 	body, err := importInput(filepath.Join(CorpusFixtureDir(), "simple", "H6.step"))
 	if err != nil {
 		t.Fatalf("import H6: %v", err)

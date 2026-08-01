@@ -25,21 +25,25 @@ const reflexRunoutDeps = 0.01 // corpus whole-body deps gate (1%)
 
 // TestC5WholeBodyWatertight asserts the reflex cone-host runout welds a watertight 6-face manifold solid.
 func TestC5WholeBodyWatertight(t *testing.T) {
+	t.Parallel()
 	assertWatertight(t, "C5", caseResultBody(t, "C5"), 6)
 }
 
 // TestD8WholeBodyWatertight asserts the reflex sphere-host runout welds a watertight 6-face manifold solid.
 func TestD8WholeBodyWatertight(t *testing.T) {
+	t.Parallel()
 	assertWatertight(t, "D8", caseResultBody(t, "D8"), 6)
 }
 
 // TestC5TessellationFoldGate meshes every C5 face fold-free and pins the summed area to OCCT's 90385.8.
 func TestC5TessellationFoldGate(t *testing.T) {
+	t.Parallel()
 	assertReflexRunoutMesh(t, "C5", caseResultBody(t, "C5"), 90385.8)
 }
 
 // TestD8TessellationFoldGate meshes every D8 face fold-free and pins the summed area to OCCT's 276716.
 func TestD8TessellationFoldGate(t *testing.T) {
+	t.Parallel()
 	assertReflexRunoutMesh(t, "D8", caseResultBody(t, "D8"), 276716)
 }
 
@@ -47,6 +51,7 @@ func TestD8TessellationFoldGate(t *testing.T) {
 // REMOVE area, so the host must mesh strictly LESS than the full un-receded 270° frustum lateral sector
 // (48433); the minor-rail bug wound a self-overlapping region reading 62711 (> the full sector) — caught here.
 func TestC5ConeHostMajorSector(t *testing.T) {
+	t.Parallel()
 	f := singleSurfaceFace[geom.Cone](t, caseResultBody(t, "C5"), "cone host")
 	const fullSector270 = 48433.0 // π·(90+40)·√(150²+50²)·(270/360)
 	if a := faceMeshArea2(f); a <= 0.5*fullSector270 || a >= fullSector270 {
@@ -60,6 +65,7 @@ func TestC5ConeHostMajorSector(t *testing.T) {
 // material zone exceeds it, the complement falls below it — so a winding regression (orientRunoutSphereHost)
 // that filled the complement fails loud here.
 func TestD8SphereHostMaterialZone(t *testing.T) {
+	t.Parallel()
 	f := singleSurfaceFace[geom.Sphere](t, caseResultBody(t, "D8"), "sphere host")
 	sph := f.Geometry().(geom.Sphere)
 	hemisphere := 2 * stdmath.Pi * sph.Radius * sph.Radius

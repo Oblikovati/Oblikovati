@@ -20,6 +20,7 @@ import (
 // that its whole-body tessellated area matches OCCT within the corpus deps — the exact regression a
 // re-chorded rim (or a wrong-span sub-arc) would fail loud.
 func TestSurvivorRimGreens(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name     string
 		faces    int

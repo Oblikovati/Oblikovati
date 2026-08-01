@@ -33,6 +33,7 @@ const cylCylSeamPerFaceTol = 2e-3
 
 // TestCylCylSeamPerFaceParity is the oracle gate for the closed cyl∧cyl seam canal family.
 func TestCylCylSeamPerFaceParity(t *testing.T) {
+	t.Parallel()
 	for _, tc := range cylCylSeamPerFaceCases() {
 		t.Run(tc.grid+"/"+tc.name, func(t *testing.T) {
 			body := cylCylSeamResultBody(t, tc.grid, tc.name)
@@ -112,6 +113,7 @@ func cylCylSeamResultBody(t *testing.T, grid, name string) *topo.Body {
 // no retracing/self-crossing loops at BOTH gate qualities, and every face fold-free at both
 // (a wrong-winding or gapped band cannot pass any of these).
 func TestCylCylSeamWatertight(t *testing.T) {
+	t.Parallel()
 	for _, tc := range cylCylSeamPerFaceCases() {
 		t.Run(tc.grid+"/"+tc.name, func(t *testing.T) {
 			body := cylCylSeamResultBody(t, tc.grid, tc.name)

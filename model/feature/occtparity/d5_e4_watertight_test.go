@@ -20,6 +20,7 @@ import (
 // bite, not its ~5×-larger complement. A regression that mis-winds the host sphere (the pre-FR4 decline,
 // or the sphere-patch mesher filling the complement) fails the host-sphere-area assertion loud and fast.
 func TestD5E4WholeBodyWatertight(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name         string
 		faces        int

@@ -34,6 +34,7 @@ const loopSegOnFaceTol = 1e-6
 // a real, separately-rooted defect (see offsurface-loopseg-report.md §2 for the taxonomy); the table
 // shrinks as those roots are fixed and must never be widened to accommodate a regression.
 func TestEveryLoopSegmentLiesOnItsFace(t *testing.T) {
+	t.Parallel()
 	dir := CorpusFixtureDir()
 	debt := offSurfaceDebtIndex()
 	for _, r := range Corpus() {
@@ -325,6 +326,7 @@ func knownOffSurfaceDebt() []offSurfaceDebtEntry {
 // TestOffSurfaceDebtIsWellFormed keeps the debt table honest: no duplicate key, and every ceiling
 // LOOSER than the default budget (an entry at or below it would be dead weight hiding nothing).
 func TestOffSurfaceDebtIsWellFormed(t *testing.T) {
+	t.Parallel()
 	seen := map[string]bool{}
 	for _, d := range knownOffSurfaceDebt() {
 		key := d.grid + "/" + d.name

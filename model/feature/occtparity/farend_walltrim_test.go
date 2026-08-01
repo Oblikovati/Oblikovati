@@ -42,6 +42,7 @@ type farEndWallCase struct {
 // cylinder / cone / sphere walls, and every far-end vertex below is DRAWEXE's own — e.g. B5's cap band ends
 // at x = √(50²−10²) = 48.9897948556636, not at the flank extreme x = 50.
 func TestFilletBandFarEndLandsOnTheWall(t *testing.T) {
+	t.Parallel()
 	for _, tc := range farEndWallCases() {
 		t.Run(tc.name, func(t *testing.T) {
 			body := pinnedBody(t, "simple", tc.name)

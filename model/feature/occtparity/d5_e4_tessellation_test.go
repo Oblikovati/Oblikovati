@@ -56,6 +56,7 @@ const (
 var oracleCapPlane = map[string]float64{"D5": 4367.31, "E4": 4295.29}
 
 func TestD5E4TessellationFoldGate(t *testing.T) {
+	t.Parallel()
 	for _, name := range []string{"D5", "E4"} {
 		t.Run(name, func(t *testing.T) {
 			body := caseResultBody(t, name)

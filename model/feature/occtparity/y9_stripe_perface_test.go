@@ -24,6 +24,7 @@ import (
 // 852.995 band, −0.0041%) — pure mesh-inscription deficit. Rank pairing is sound: the closest
 // distinct pair (852.995 vs 704.962) is 21% apart, three decades above the residuals.
 func TestY9PerFaceRankPairsAgainstDrawexe(t *testing.T) {
+	t.Parallel()
 	body := pinnedBody(t, "simple", "Y9")
 	assertShippedPerFaceAgainstDrawexe(t, y9StripeFaceCase(), body, nil, 3e-4)
 }
@@ -43,6 +44,7 @@ func y9StripeFaceCase() drawexeFaceCase {
 // junction-crossing regression (a section rebuilt at the chain vertex instead of the crossing, or a
 // contact sliver routed to the wrong top face) breaks 2-incidence here loud and fast.
 func TestY9WholeBodyWatertight(t *testing.T) {
+	t.Parallel()
 	body := pinnedBody(t, "simple", "Y9")
 	if got := len(body.Faces()); got != 7 {
 		t.Fatalf("Y9 result has %d faces, want DRAWEXE's 7", got)

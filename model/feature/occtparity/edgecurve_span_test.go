@@ -31,6 +31,7 @@ const edgeSpanTol = 1e-9
 // listed case may improve freely, growing past its ceiling — or ANY unlisted case exceeding edgeSpanTol —
 // fails loud. The table must shrink, never widen.
 func TestEveryEdgeCurveSpansItsVertices(t *testing.T) {
+	t.Parallel()
 	dir := CorpusFixtureDir()
 	debt := edgeSpanDebtIndex()
 	for _, r := range Corpus() {
@@ -141,6 +142,7 @@ func knownEdgeSpanDebt() []offSurfaceDebtEntry {
 // TestEdgeSpanDebtIsWellFormed keeps that table honest: no duplicate key, and every ceiling LOOSER than the
 // default budget (an entry at or below it would be dead weight hiding nothing).
 func TestEdgeSpanDebtIsWellFormed(t *testing.T) {
+	t.Parallel()
 	seen := map[string]bool{}
 	for _, d := range knownEdgeSpanDebt() {
 		key := d.grid + "/" + d.name

@@ -9,6 +9,7 @@ import (
 
 // Scoreboard tallies a fake evaluator's verdicts.
 func TestScoreboardTally(t *testing.T) {
+	t.Parallel()
 	recs := []Record{{Grid: "simple"}, {Grid: "simple"}, {Grid: "simple", TODO: "x"}}
 	got := Scoreboard(recs, func(r Record) Outcome {
 		if r.TODO != "" {
@@ -49,6 +50,7 @@ func TestScoreboardTally(t *testing.T) {
 // already PASS and stay PASS — their +0.159 % / +0.645 % body-area errors were hidden INSIDE the 1 % gate,
 // and are now zero to their closed forms (slot_band_imprint_test.go).
 func TestOCCTBlendScoreboard(t *testing.T) {
+	t.Parallel()
 	dir := CorpusFixtureDir()
 	byGrid := map[string]map[Outcome]int{}
 	for _, r := range Corpus() {
@@ -96,8 +98,14 @@ func TestOCCTBlendScoreboard(t *testing.T) {
 	assertHardenedRollup(t, byGrid, passRollup, total[SkipQuarantine])
 }
 
-// assertHardenedRollup pins the honest rollup at the isWatertightSolid bar: 104 green in the
-// simple grid, 109 green across all grids, and SkipQuarantine=1 (H6 only). The single-boss setback tiling
+// assertHardenedRollup pins the honest rollup at the isWatertightSolid bar. The live figures are the
+// ones asserted in the body below — 132 green in the simple grid, 148 across all grids,
+// SkipQuarantine=0 — measured at feat/occt-blend-parity-corpus tip 09a9b2d1 (2026-08-01); see
+// architecture/audits/fillet-occt-parity-audit-2026-08.md. Keep the ladder that follows: each rung
+// names the fix that moved the count, which is the provenance for every green. Update the rung list
+// AND the asserted constants together — a rung whose numbers disagree with the body is a stale
+// comment, and this opening sentence has drifted before (it long read "104 / 109 / SkipQuarantine=1
+// (H6 only)" while the body asserted far more). The single-boss setback tiling
 // greened S6/S9/T3 (86→89 / 88→91, SkipQuarantine 6→3); the dipArcOrder obstacle-path fix then greened
 // U3 (89→90 / 91→92, SkipQuarantine 3→2); the U4-5 dual-host multi-rail weld then greened U4 (90→91 /
 // 92→93, SkipQuarantine 2→1). The concave bore-lip rim mirror (fillet_rim_concave.go's

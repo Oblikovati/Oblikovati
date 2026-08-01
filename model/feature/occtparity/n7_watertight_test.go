@@ -18,6 +18,7 @@ import (
 // the oracle's 12 faces. A regression that cracks a seam (e.g. the wall foot-locus sampled differently
 // from the corner patch, F3's reconciliation #1) fails the 2-incidence assertion here loud and fast.
 func TestN7WholeBodyWatertight(t *testing.T) {
+	t.Parallel()
 	body := n7ResultBody(t)
 	if got := len(body.Faces()); got != 12 {
 		t.Fatalf("N7 result has %d faces, want the oracle's 12", got)

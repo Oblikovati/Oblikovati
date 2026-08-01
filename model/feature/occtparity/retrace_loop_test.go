@@ -31,6 +31,7 @@ import (
 // and retraced length, so a listed case may improve freely while a new one — or a listed one growing —
 // fails loud. The table must shrink and must never be widened to accommodate a regression.
 func TestNoFaceLoopRetracesItself(t *testing.T) {
+	t.Parallel()
 	dir := CorpusFixtureDir()
 	q := ops.PropertyQuality()
 	debt := retraceDebtIndex()
@@ -174,6 +175,7 @@ func knownRetracingLoops() []retraceDebtEntry {
 // TestRetraceDebtIsWellFormed keeps the debt table honest: no duplicate key, and every entry claiming
 // at least one retracing loop (a zero entry would be dead weight hiding nothing).
 func TestRetraceDebtIsWellFormed(t *testing.T) {
+	t.Parallel()
 	seen := map[string]bool{}
 	for _, d := range knownRetracingLoops() {
 		key := d.grid + "/" + d.name

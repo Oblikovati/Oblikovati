@@ -52,6 +52,7 @@ func b2BandArea() float64 {
 // DRAWEXE ships. It is the regression guard for the merge: reinstate the separate end-cap face and the
 // two walls go back to 5000, two surplus faces reappear, and the face count assertion fails first.
 func TestB2ArcFilletMergesItsSetbackCapsIntoTheSectorWalls(t *testing.T) {
+	t.Parallel()
 	body := gridCaseBody(t, corpusRecord(t, "simple", "B2"))
 	if n := len(body.Faces()); n != 6 {
 		t.Errorf("simple/B2 ships %d faces, want the 6 DRAWEXE ships (a coplanar setback cap is part of "+
@@ -91,6 +92,7 @@ func TestB2ArcFilletMergesItsSetbackCapsIntoTheSectorWalls(t *testing.T) {
 // reproduces OCCT face for face. Reinstate the setback triangle and the face count, the wall, the pocket
 // floor and the band areas all move at once.
 func TestN6ArcFilletTerminatesBothEndsOnTheirWalls(t *testing.T) {
+	t.Parallel()
 	body := gridCaseBody(t, corpusRecord(t, "simple", "N6"))
 	if n := len(body.Faces()); n != 9 {
 		t.Errorf("simple/N6 ships %d faces, want the 9 DRAWEXE ships (neither end is a face of its own: "+

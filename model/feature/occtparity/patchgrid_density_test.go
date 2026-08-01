@@ -33,6 +33,7 @@ const (
 )
 
 func TestCornerOctantDeficitConverges(t *testing.T) {
+	t.Parallel()
 	body, ok := shippedCaseBody(caseRecord(t, "simple", "A2"), CorpusFixtureDir())
 	if !ok {
 		t.Fatal("A2: no shipped body")
@@ -55,6 +56,7 @@ func TestCornerOctantDeficitConverges(t *testing.T) {
 }
 
 func TestHostSphereD2MeshesWithinBudgetCeil(t *testing.T) {
+	t.Parallel()
 	body, ok := shippedCaseBody(caseRecord(t, "simple", "D2"), CorpusFixtureDir())
 	if !ok {
 		t.Fatal("D2: no shipped body")

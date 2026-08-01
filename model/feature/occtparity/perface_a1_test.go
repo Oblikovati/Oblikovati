@@ -95,6 +95,7 @@ const a1ArmPerFaceTol = 3e-3
 // wall and the flat end cap (1, 0.583773), and the two arm faces (0.438968 cylinder, 0.284221 torus
 // Radii 1.2/0.2 — R+r on host R=1, the notch-wall sign R5 fixed).
 func TestW3TorusArmMiterPerFace(t *testing.T) {
+	t.Parallel()
 	body := gridCaseBody(t, corpusRecord(t, "simple", "W3"))
 	assertShippedPerFaceAgainstDrawexe(t, drawexeFaceCase{
 		name:       "simple/W3",
@@ -110,6 +111,7 @@ func TestW3TorusArmMiterPerFace(t *testing.T) {
 // silent), but curvedMiterSeamOffSurface catches the SEPARATE, unresolved seam-bottom branch-selection
 // defect (see file doc) and declines before a folded torus face ships.
 func TestW4DeclinesOnSeamOffSurfaceDefect(t *testing.T) {
+	t.Parallel()
 	assertMiterHonestlyDeclines(t, "simple", "W4", "off its own face's surface")
 }
 
@@ -119,6 +121,7 @@ func TestW4DeclinesOnSeamOffSurfaceDefect(t *testing.T) {
 // A1 near-boundary reconciliation does not touch. Confirms the A1 fix's scope: it greens W3 exactly,
 // nothing else in the corpus (the scoreboard's tolblend_simple PASS count is unchanged at 5).
 func TestC6C8DeclineForAnUnrelatedReason(t *testing.T) {
+	t.Parallel()
 	for _, name := range []string{"C6", "C8"} {
 		r := corpusRecord(t, "tolblend_simple", name)
 		body, err := importInput(filepath.Join(CorpusFixtureDir(), r.InputStep))

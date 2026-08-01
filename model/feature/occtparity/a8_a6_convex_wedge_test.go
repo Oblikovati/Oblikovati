@@ -23,6 +23,7 @@ import (
 // material-side corner sphere of radius r and OCCT's whole-body area (a regression that re-introduces
 // the run-off tab jumps the area and fails loud here).
 func TestConvexWedgeSetbackWatertight(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name       string
 		faces      int

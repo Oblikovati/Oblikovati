@@ -76,6 +76,7 @@ const obstacleCanalBulgeTol = 0.005
 // TestObstacleCanalMatchesItsClosedForm pins both faces the surf-rst model decides, on every corpus case
 // that reaches a single-host obstacle rebuild.
 func TestObstacleCanalMatchesItsClosedForm(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []obstacleCanalCase{
 		// R9 — 20-cube, r=8 boss on z=10, fillet r=3 on y=−10 ∧ z=10. Wall = y=−10 (20x20 − 20x3 = 340).
 		{"R9", 31.215583, 340, 0.717167, math.P3(0, 1, 0), math.P3(0, -10, 0)},

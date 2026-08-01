@@ -30,6 +30,7 @@ type concaveRimCase struct {
 }
 
 func TestA2A3ConcaveClosedRimWatertight(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []concaveRimCase{
 		{"A2", 9, 432086},
 		{"A3", 8, 389033},

@@ -63,6 +63,7 @@ type nilCurveOfferDebt struct {
 // curve carry shrank the shipped count 272 → 110 over the same 10 bodies, and the wing arm-arc carry
 // 110 → 2 — complex/F2 alone).
 func TestNoShippedBuildResolvesACurveDisagreementByBuildOrder(t *testing.T) {
+	t.Parallel()
 	dir := CorpusFixtureDir()
 	got, blind := map[string]int{}, []string{}
 	for _, r := range Corpus() {
@@ -262,6 +263,7 @@ func knownNilCurveOfferDebt() []nilCurveOfferDebt {
 // TestNilCurveOfferDebtIsWellFormed keeps the population table honest: no duplicate key and no
 // zero-count entry (which would record no debt at all while still exempting a case from growth).
 func TestNilCurveOfferDebtIsWellFormed(t *testing.T) {
+	t.Parallel()
 	seen := map[string]bool{}
 	for _, d := range knownNilCurveOfferDebt() {
 		key := d.grid + "/" + d.name

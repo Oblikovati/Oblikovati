@@ -18,6 +18,7 @@ import (
 // C9 ToroidalSurface 1298.13), and EVERY face meshes FOLD-FREE (FoldEdgeCount 0) — the highest-priority
 // tessellation gate. RED at base 4e7f0d6c ("trihedral corner needs 3 arms"); GREEN after the R1 dispatch.
 func TestSingleArmRunoutR1(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name       string
 		faces      int

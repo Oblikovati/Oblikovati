@@ -51,6 +51,7 @@ func ellipticConeCanalCases() []cylCylSeamCase {
 // TestEllipticConeCanalPerFaceParity is the oracle gate for the EllipticalCylinder∧Cone pinched
 // canal family.
 func TestEllipticConeCanalPerFaceParity(t *testing.T) {
+	t.Parallel()
 	for _, tc := range ellipticConeCanalCases() {
 		t.Run(tc.grid+"/"+tc.name, func(t *testing.T) {
 			body := cylCylSeamResultBody(t, tc.grid, tc.name)
@@ -70,6 +71,7 @@ const ellipticConeOnFaceTol = 1e-6
 // face-count join: every edge exactly 2-incident, 0 free edges, no retracing/self-crossing loops
 // at BOTH gate qualities, and every face fold-free at both.
 func TestEllipticConeCanalWatertight(t *testing.T) {
+	t.Parallel()
 	for _, tc := range ellipticConeCanalCases() {
 		t.Run(tc.grid+"/"+tc.name, func(t *testing.T) {
 			body := cylCylSeamResultBody(t, tc.grid, tc.name)
@@ -89,6 +91,7 @@ func TestEllipticConeCanalWatertight(t *testing.T) {
 // guard flips B7/C2 to filletOK=true with a ~3.9x oversized band, exactly the defect this refusal
 // prevents).
 func TestEllipticConeCanalOffSeamDeclines(t *testing.T) {
+	t.Parallel()
 	for _, name := range []string{"B7", "C2"} {
 		t.Run(name, func(t *testing.T) {
 			var rec Record

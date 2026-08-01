@@ -32,6 +32,7 @@ import (
 // EVERY case is gated at zero unblended spine edges. Any walker regression or any new unpropagated
 // spine fails loud; the counts are exact integers, so there is no float noise for a margin to absorb.
 func TestEveryPickBlendsItsWholeTangentChain(t *testing.T) {
+	t.Parallel()
 	dir := CorpusFixtureDir()
 	debt := tangentChainDebtIndex()
 	for _, r := range Corpus() {
@@ -115,6 +116,7 @@ func locatedPickEdges(body *topo.Body, r Record) []*topo.Edge {
 // mutating ops.TangentEdgeChain's turn-back gate back to the 1° antiparallel band fails this loud
 // on complex/C5's shortened chains.
 func TestProductSpineWalkerMatchesOraclePerPick(t *testing.T) {
+	t.Parallel()
 	dir := CorpusFixtureDir()
 	for _, r := range Corpus() {
 		body, err := importInput(filepath.Join(dir, r.InputStep))
@@ -185,6 +187,7 @@ func knownTangentChainDebt() []tangentChainDebt {
 // TestTangentChainDebtTableIsWellFormed keeps the table honest: no duplicate key and no zero entry
 // (one would be dead weight hiding nothing, since an unlisted case is already gated at zero).
 func TestTangentChainDebtTableIsWellFormed(t *testing.T) {
+	t.Parallel()
 	seen := map[string]bool{}
 	for _, d := range knownTangentChainDebt() {
 		key := d.grid + "/" + d.name
@@ -209,6 +212,7 @@ func TestTangentChainDebtTableIsWellFormed(t *testing.T) {
 // control a walker that returned "everything" would pass the positive one, and the whole population
 // would be an artefact.
 func TestOCCTTangentChainDetectsAndDoesNotOverDetect(t *testing.T) {
+	t.Parallel()
 	dir := CorpusFixtureDir()
 	for _, r := range Corpus() {
 		switch r.Grid + "/" + r.Case {

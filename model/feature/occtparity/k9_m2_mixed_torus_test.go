@@ -21,6 +21,7 @@ import (
 // solid carrying exactly one R=2r torus corner of area ≈84.10 (a regression that re-forces the sphere,
 // or drops the setback, fails loud here) and OCCT's whole-body area.
 func TestMixedTorusCornerWatertight(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name  string
 		faces int

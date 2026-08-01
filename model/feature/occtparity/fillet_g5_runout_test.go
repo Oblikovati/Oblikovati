@@ -18,6 +18,7 @@ import "testing"
 //     each into OCCT's area tolerance while leaving the runout interior (the near-root splits)
 //     untouched. See .superpowers/sdd/v5-setback-characterization.md and task-3-report.md.
 func TestG5RunoutCasesPass(t *testing.T) {
+	t.Parallel()
 	dir := CorpusFixtureDir()
 	for _, c := range []string{"V1", "V3", "V5"} {
 		if got := ScoreCase(findCorpusRecord(t, "simple", c), dir); got != Pass {

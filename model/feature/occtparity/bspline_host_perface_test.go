@@ -60,6 +60,7 @@ func bsplineHostPerFaceCases() []cylCylSeamCase {
 // loft's own iso-curve and every trim is the band's own marched crossing, so boundary and
 // surface agree by construction).
 func TestBsplineHostPerFaceParity(t *testing.T) {
+	t.Parallel()
 	debt := offSurfaceDebtIndex()
 	for _, tc := range bsplineHostPerFaceCases() {
 		t.Run(tc.grid+"/"+tc.name, func(t *testing.T) {
@@ -75,6 +76,7 @@ func TestBsplineHostPerFaceParity(t *testing.T) {
 // edges + no retracing/self-crossing loops at BOTH gate qualities, and every face fold-free at
 // both (a wrong-winding or gapped band cannot pass any of these).
 func TestBsplineHostWatertight(t *testing.T) {
+	t.Parallel()
 	for _, tc := range bsplineHostPerFaceCases() {
 		t.Run(tc.grid+"/"+tc.name, func(t *testing.T) {
 			body := pinnedBody(t, tc.grid, tc.name)

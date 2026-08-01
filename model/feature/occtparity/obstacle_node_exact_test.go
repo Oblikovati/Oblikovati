@@ -45,6 +45,7 @@ const obstacleNodeTol = 1e-5
 //     (10, −15, ±√44). DRAWEXE 8.0.0's own sliver patch ends at −6.63324914227121, 4.4e-07 from that
 //     closed form — its tolerance — and we now land 1.2e-11 from OCCT's value.
 func TestObstacleNodesLandOnTheirClosedForm(t *testing.T) {
+	t.Parallel()
 	sqrt15, sqrt44 := stdmath.Sqrt(15), stdmath.Sqrt(44)
 	for _, tc := range []struct {
 		name  string
@@ -85,6 +86,7 @@ func TestObstacleNodesLandOnTheirClosedForm(t *testing.T) {
 // and is deliberately not gated here: the STATION is what partitions the sliver/core panels and scales
 // their areas, and it is the only thing the node solver decides.
 func TestU4HostANodeKeepsItsCoupledStation(t *testing.T) {
+	t.Parallel()
 	body, ok := shippedCaseBody(caseRecord(t, "simple", "U4"), CorpusFixtureDir())
 	if !ok {
 		t.Fatal("simple/U4: no shipped body")

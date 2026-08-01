@@ -48,6 +48,7 @@ const occtMixedCornerFaceCount = 9
 // analytic torus centred ON the concave spine with major R=2r, minor r; this asserts exactly that
 // surface, its DRAWEXE area, and the DRAWEXE areas of the three faces the corner reshapes.
 func TestMixedSenseCornerIsTheDRAWEXETorus(t *testing.T) {
+	t.Parallel()
 	for _, tc := range mixedTorusCases() {
 		t.Run(tc.name, func(t *testing.T) {
 			body := caseResultBody(t, tc.name)

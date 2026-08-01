@@ -23,6 +23,7 @@ var b2WindingCases = map[string]bool{
 // normalization did not leave an inside-out patch. (Area parity against OCCT is the separate, frozen
 // P1 curved-fillet gap and is asserted by the scoreboard, not here.)
 func TestB2WindingProducesOutwardSolid(t *testing.T) {
+	t.Parallel()
 	fixtureDir := CorpusFixtureDir()
 	seen := 0
 	for _, r := range Corpus() {

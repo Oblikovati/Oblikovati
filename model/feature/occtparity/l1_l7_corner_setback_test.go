@@ -22,6 +22,7 @@ import (
 // (the pre-P1 reflected-seam body over-kept +3200 of host material: top 9100 vs 7500, walls 1800 vs
 // 1400). A regression that drops the setback, or mis-sides the seam, fails one of these loud.
 func TestL1L7CornerSetbackWatertight(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name     string
 		faces    int
