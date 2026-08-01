@@ -40,8 +40,12 @@ type miterHostChain struct {
 // sequentially through chainRetrimLoop. The bitten loop is the one carrying the first chain's ring
 // landing; every other loop is carried through unchanged with the outer loop kept at index 0
 // (assembleBody keys outer-ness on that). Declines honestly when any splice fails or a consumed-
-// vertex guard is violated — never a partial or wrong-span solid.
-func chainedHostRetrim(host *topo.Face, chains []miterHostChain, tol float64) (filletFace, bool) {
+// vertex guard is violated — never a partial or wrong-span solid. snapTol is the coarser
+// reconciliation tolerance (see sharedRailAnchor) passed to chainRetrimLoop's OWN landing test — a
+// chain foot from an independently-stored host surface (W3/W4's torus arm) can miss the ring by more
+// than float noise while genuinely being incident to it; every other check here (loop selection,
+// the consumed-vertex/repeated-point guards) stays on tol, unchanged.
+func chainedHostRetrim(host *topo.Face, chains []miterHostChain, tol, snapTol float64) (filletFace, bool) {
 	if len(chains) == 0 {
 		return filletFace{}, false
 	}
@@ -50,7 +54,7 @@ func chainedHostRetrim(host *topo.Face, chains []miterHostChain, tol float64) (f
 	if bitten == nil || outer == nil {
 		return filletFace{}, false
 	}
-	ring, ok := splicedChainRing(host.Geometry(), segsFromLoop(bitten), chains, tol)
+	ring, ok := splicedChainRing(host.Geometry(), segsFromLoop(bitten), chains, tol, snapTol)
 	if !ok || ringHasRepeatedPoint(ring, tol) {
 		return filletFace{}, false
 	}
@@ -92,14 +96,16 @@ func pointsHaveDuplicate(pts []math.Point3, tol float64) bool {
 
 // splicedChainRing applies each bite chain to the ring in turn, enforcing every chain's consumed-
 // vertex guard: after all splices, a vertex a chain marked consumed must be GONE from the ring —
-// the smaller-area pick removed the intended span, not its complement.
-func splicedChainRing(surf geom.Surface, ring []endSeg, chains []miterHostChain, tol float64) ([]endSeg, bool) {
+// the smaller-area pick removed the intended span, not its complement. snapTol governs the pre-split
+// and chainRetrimLoop's own landing test (see chainedHostRetrim); the consumed-vertex guard afterwards
+// stays on the tight tol.
+func splicedChainRing(surf geom.Surface, ring []endSeg, chains []miterHostChain, tol, snapTol float64) ([]endSeg, bool) {
 	for _, c := range chains {
 		// Pre-split the ring at the chain's landings: a two-arc "lens" ring (intersecting-cylinder
 		// caps, P5/O8) is a legitimate bitten wire but chainRetrimLoop guards on len(ring) ≥ 3;
 		// splitting at interior landings makes the wire explicit without touching the primitive.
-		ring = insertSplits(ring, []math.Point3{c.chain[0].from, c.chain[len(c.chain)-1].to}, tol)
-		next, ok := chainRetrimLoop(surf, ring, c.chain, tol)
+		ring = insertSplits(ring, []math.Point3{c.chain[0].from, c.chain[len(c.chain)-1].to}, snapTol)
+		next, ok := chainRetrimLoop(surf, ring, c.chain, snapTol)
 		if !ok {
 			return nil, false
 		}
@@ -210,7 +216,7 @@ func bridgedRunoutHostFace(f *topo.Face, ef edgeFillet, bite endSeg, tol float64
 		return filletFace{}, false
 	}
 	chain := miterHostChain{chain: []endSeg{bridge, oriented}, consumed: vOther, hasConsumed: true}
-	return chainedHostRetrim(f, []miterHostChain{chain}, tol)
+	return chainedHostRetrim(f, []miterHostChain{chain}, tol, tol) // no near-boundary reconciliation needed here — snapTol==tol keeps this fallback byte-identical
 }
 
 // runoutBiteOffFoot finds the bite's single mid-face foot on host f and returns the bite oriented

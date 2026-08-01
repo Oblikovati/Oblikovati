@@ -64,7 +64,9 @@ type miterArmSide struct {
 
 // curvedMiterBody welds the 2-arm curved miter into a watertight solid, or returns a do-no-harm reason.
 // It builds each arm's rails + far runout, then the arm faces, the twice-bitten shared face, and the
-// receded outer/cap hosts, and assembles + certifies via the caller.
+// receded outer/cap hosts, and assembles + certifies via the caller — TWO do-no-harm floors beyond
+// assembleBody's own edge-use/Euler checks: miterWeldMeshDefect (a bridged loop self-crosses/retraces)
+// and curvedMiterSeamOffSurface (a boundary edge strays off the face it bounds — fillet_miter_seam_offsurface.go).
 func curvedMiterBody(body *topo.Body, m *cornerMiter, res Resolution) (*topo.Body, string) {
 	c := m.curved
 	r := c.radius()
@@ -84,23 +86,33 @@ func curvedMiterBody(body *topo.Body, m *cornerMiter, res Resolution) (*topo.Bod
 	if reason := miterWeldMeshDefect(built); reason != "" {
 		return nil, reason
 	}
+	if reason := curvedMiterSeamOffSurface(built, r); reason != "" {
+		return nil, reason
+	}
 	return built, ""
 }
 
 // miterWeldMeshDefect is the miter weld's own do-no-harm floor against a defect the B-rep-level checks
-// (edge-use counts, Euler characteristic — weldCurvedArmOrFloor's Validate call) cannot see: a bridge
-// segment built from an INDEPENDENTLY-converged near-boundary point (sharedFaceBridgeSeg /
-// miterChainEndBridgeSeg's straight-line case, simple/W3, W4) can land a few×1e-5 off the point it was
-// meant to coincide with — the B-rep still welds edge-for-edge (every edge used by exactly two faces,
-// opposite orientation), but the TESSELLATED loop it produces self-crosses or retraces a sliver at that
-// residual (measured on simple/W4 pre-guard: face self-crossing pinches 1.5168 — essentially the WHOLE
-// shared face — and a sibling face retraces exactly r=0.2, both invisible to Validate). Per this
-// project's own priority ("tessellation correctness is the highest priority… never ship a feature on
-// top of a known-bad mesh"), this checks the SAME two detectors the corpus's own watertightness gate
-// uses (SelfCrossingFaceLoops / RetracingFaceLoops) at PropertyQuality and declines honestly rather than
-// certify a silently-wrong mesh. ok cases (the residual-free/on-loop path, every existing green) pay one
-// extra tessellation pass; a future exact-point fix upstream (closing the ~1e-5 residual at its source)
-// would make this guard permanently silent, not remove its correctness.
+// (edge-use counts, Euler characteristic — weldCurvedArmOrFloor's Validate call) cannot see. It ROOT-
+// CAUSED to a shared-boundary identity bug (A1 investigation, simple/W3, W4): an arm's far-runout foot
+// (armRunoutFoot, a closed-form ball-tangent projection) and the SAME physical corner's pre-existing
+// topology (the picked edge's own far vertex / the host's own boundary loop) are two INDEPENDENTLY
+// computed representations of the same point — exact GIVEN their own inputs, but the inputs themselves
+// (a face's stored axis parameters vs. a vertex's stored coordinates) come from the SAME STEP file yet
+// need only agree to the file's own construction precision, not to float noise (measured on
+// simple/W4.step: the boss cylinder's axis sits at z=0.9999, CARTESIAN_POINT #133/#249, while the
+// corner vertex it must weld against sits at z=1 exactly, #86 — a genuine ~1e-4 gap baked into the
+// SOURCE geometry). Every downstream construction step (armBallCenter, armRunoutFoot, the torus contact
+// arc) is closed-form and exact GIVEN that gap, so it projects through to a foot ~2e-5 off the original
+// loop it is genuinely incident to — just past the tight weld-scale tol (res.Weld()·r, calibrated for
+// float noise) but comfortably inside snapTol (res.Sew(), this project's OWN "close a gap between
+// independently-derived geometry" tolerance). sharedRailAnchor / miterTrimChain / chainedHostRetrim now
+// reconcile the foot against the original loop at snapTol — the SAME "shared boundary, one canonical
+// value" identity this project's discretizeEdge invariant already enforces elsewhere — so W3/W4 never
+// build a spurious bridge/chain past the near-coincident point in the first place. This function remains
+// as the do-no-harm floor for any FUTURE case whose foot is genuinely off-loop (a real defect, not a
+// Sew-scale artifact of independently-stored geometry): the SAME two detectors the corpus's own
+// watertightness gate uses (SelfCrossingFaceLoops / RetracingFaceLoops) at PropertyQuality.
 func miterWeldMeshDefect(b *topo.Body) string {
 	if len(SelfCrossingFaceLoops(b, PropertyQuality())) > 0 {
 		return "curved miter: assembled weld self-crosses at a bridged shared/capping loop (a pre-existing near-boundary residual, not a fresh capability gap)"
@@ -230,15 +242,17 @@ func seamEndSegs(seam []math.Point3) []endSeg {
 // recedes to the two rails joined at their common tangent point. On a CURVED shared face (P5's cylinder)
 // an arm's far shared foot can be an INTERIOR fresh cut the fillet itself makes (mid-wall, not on any
 // original edge); sharedMiterLoop then bridges it to the arm's far vertex with one cap-bridge arc so the
-// far path can anchor on the original loop. The all-on-loop case stays byte-identical (no bridge).
-func sharedMiterRetrim(m *cornerMiter, tor, cyl miterArmSide, tol float64) (filletFace, bool) {
+// far path can anchor on the original loop. The all-on-loop case stays byte-identical (no bridge). snapTol
+// is the SEPARATE, coarser reconciliation tolerance (see sharedRailAnchor) — never tol, which stays the
+// tight per-corner weld scale for the loop-selection test (hostBittenLoop) this function also runs.
+func sharedMiterRetrim(m *cornerMiter, tor, cyl miterArmSide, tol, snapTol float64) (filletFace, bool) {
 	shared, v := m.shared, m.vertex.Point()
 	bitten := hostBittenLoop(shared, v, tol)
 	outer := outerHostLoop(shared)
 	if bitten == nil || outer == nil {
 		return filletFace{}, false
 	}
-	retrim, ok := sharedMiterLoop(m, tor, cyl, segsFromLoop(bitten), tol)
+	retrim, ok := sharedMiterLoop(m, tor, cyl, segsFromLoop(bitten), tol, snapTol)
 	if !ok {
 		return filletFace{}, false
 	}
@@ -250,14 +264,19 @@ func sharedMiterRetrim(m *cornerMiter, tor, cyl miterArmSide, tol float64) (fill
 // →sTop→farShared_cyl), each arm's cap-bridge to its far vertex when its far foot is an off-loop fresh cut
 // (P5's cyl side; empty on the on-loop torus side → byte-identical), and the surviving original-loop far
 // path between the two anchors that avoids the miter vertex. false on any anchor / far-path decline.
-func sharedMiterLoop(m *cornerMiter, tor, cyl miterArmSide, segs []endSeg, tol float64) (filletLoop, bool) {
+// snapTol is the coarser reconciliation tolerance (see sharedRailAnchor) for the on-loop TEST and the
+// far-path lookup of whichever anchor that test accepted — both must agree on the same tolerance for the
+// same points, or a foot sharedRailAnchor accepts as on-loop becomes unlocatable here and the corner
+// spuriously declines (simple/W3, W4: torAnchor sits 2e-5 off the segment it is genuinely incident to).
+// tol stays the tight per-corner weld scale for the bridge's own co-latitude/exactness certificate.
+func sharedMiterLoop(m *cornerMiter, tor, cyl miterArmSide, segs []endSeg, tol, snapTol float64) (filletLoop, bool) {
 	vid, v := m.vertex.ID(), m.vertex.Point()
-	torAnchor, torBridge, okT := sharedRailAnchor(m.shared, tor, vid, segs, tol)
-	cylAnchor, cylBridge, okC := sharedRailAnchor(m.shared, cyl, vid, segs, tol)
+	torAnchor, torBridge, okT := sharedRailAnchor(m.shared, tor, vid, segs, tol, snapTol)
+	cylAnchor, cylBridge, okC := sharedRailAnchor(m.shared, cyl, vid, segs, tol, snapTol)
 	if !okT || !okC {
 		return filletLoop{}, false
 	}
-	far, ok := farPathSegs(segs, cylAnchor, torAnchor, v, tol)
+	far, ok := farPathSegs(segs, cylAnchor, torAnchor, v, snapTol)
 	if !ok {
 		return filletLoop{}, false
 	}
@@ -286,10 +305,32 @@ func sharedRetrimSegs(tor, cyl miterArmSide, cylBridge, far, torBridge []endSeg)
 // original-loop vertex = shared ∩ the arm's far capping plane) and sharedFaceBridgeSeg bridges
 // foot→farVertex confined to the shared face's own surface. false only when the foot is off-loop AND no
 // exact bridge closes (an unsupported shared-face type or a degenerate span) — the do-no-harm floor.
-func sharedRailAnchor(shared *topo.Face, side miterArmSide, vid uint64, segs []endSeg, tol float64) (math.Point3, []endSeg, bool) {
+//
+// snapTol (not tol) gates the on-loop test. WHY THE SPLIT: a picked edge's own analytic host geometry
+// (a face's stored surface parameters) and its own topology vertices are two INDEPENDENT pieces of a
+// STEP-imported B-rep — they need only agree to the file's own construction precision, not to float
+// noise. simple/W3, W4's fixture is measured proof: the boss cylinder's axis is stored at z=0.9999
+// (CCV_1_c12gsf.rle / simple/W4.step, CARTESIAN_POINT #133/#249) while the corner vertex it must weld
+// against sits at z=1 exactly (#86) — a genuine ~1e-4 gap baked into the SOURCE file, not a computation
+// bug (every step from that cylinder to the torus arm's ball-tangent foot is closed-form and exact GIVEN
+// that input). Projected through the arm's ball-tangent construction this ~1e-4 host/vertex disagreement
+// lands the foot ~2e-5 off the ORIGINAL edge it is genuinely incident to (armBallCenter's radial term
+// picks up the axis's own z-offset) — just past tol (res.Weld()·r, calibrated for float-noise
+// coincidence, ~1e-9 relative) but comfortably inside snapTol (res.Sew(), THIS project's existing,
+// purpose-built "close a gap between independently-derived geometry" tolerance — see resolution.go; the
+// same job the Sew op already does, reused rather than a new fudge constant). Below snapTol, pointOnLoop
+// correctly recognizes the foot as interior to the SAME segment the far path already walks, so no bridge
+// is built at all (byte-identical to every other on-loop case) — above it (P4/P5's genuinely mid-face
+// cuts, ~50 units from any vertex) the bridge still fires exactly as before. Un-fixed, the bridge foot→
+// farVtx instead ran ALONGSIDE that near-coincident original segment, and the torus arm's own contact arc
+// (which must reach the SAME foot) crossed back through it — miterWeldMeshDefect's self-cross/retrace,
+// not a defect tol could ever safely paper over (tol stays tight for the bridge's own exactness
+// certificate, sharedFaceBridgeSeg/capBridgeArc, which is a different question: IS this bridge curve
+// exact, not IS this foot already part of the original loop).
+func sharedRailAnchor(shared *topo.Face, side miterArmSide, vid uint64, segs []endSeg, tol, snapTol float64) (math.Point3, []endSeg, bool) {
 	foot := side.railSh.from
-	if pointOnLoop(segs, foot, tol) {
-		return foot, nil, true // already on the original loop — no bridge (byte-identical)
+	if pointOnLoop(segs, foot, snapTol) {
+		return foot, nil, true // already on the original loop (within the model's own construction gap) — no bridge
 	}
 	farVtx := farVertexNotVid(side.edge, vid)
 	bridge, ok := sharedFaceBridgeSeg(shared.Geometry(), foot, farVtx, tol)
