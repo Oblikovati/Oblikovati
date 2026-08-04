@@ -73,7 +73,7 @@ type DimensionConstraint struct {
 	refs           []Entity            // the dimensioned geometry (points/lines/arcs), for editing + serialization
 	farSide        bool                // tangentDistance only: dimension to the far tangent point (#152)
 	orientation    DistanceOrientation // distance only: aligned (Euclidean) / horizontal (Δx) / vertical (Δy) (#1869)
-	textPoint      *math.Point2        // annotation-text placement; nil ⇒ unset (Inventor TextPoint, #1875)
+	textOffset     *math.Vector2       // annotation-text placement in the dimension's own frame; nil ⇒ derived (#1875, #2017)
 	linearDiameter bool                // offset/tangentDistance only: value reads as a diameter, 2× the distance (#1875)
 }
 
@@ -129,18 +129,6 @@ func (d *DimensionConstraint) FarSide() bool { return d.farSide }
 // LinearDiameter reports whether an offset/tangent-distance dimension reads as a diameter —
 // its value is 2× the measured linear distance (Inventor bool LinearDiameter, #1875).
 func (d *DimensionConstraint) LinearDiameter() bool { return d.linearDiameter }
-
-// TextPoint returns the dimension's annotation-text placement and whether one is stored
-// (Inventor Point2d TextPoint, #1875).
-func (d *DimensionConstraint) TextPoint() (math.Point2, bool) {
-	if d.textPoint == nil {
-		return math.Point2{}, false
-	}
-	return *d.textPoint, true
-}
-
-// SetTextPoint records the dimension's annotation-text placement (#1875).
-func (d *DimensionConstraint) SetTextPoint(p math.Point2) { d.textPoint = &p }
 
 // Refs returns the geometry the dimension measures (points for a distance, the line
 // pair for an angle, the circle for a radius, …). It is what serialization records so

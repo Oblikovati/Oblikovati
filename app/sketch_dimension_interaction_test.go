@@ -3,6 +3,7 @@
 package app
 
 import (
+	stdmath "math"
 	"testing"
 
 	"oblikovati.org/math"
@@ -200,5 +201,88 @@ func TestCancelDimensionDragRestoresTheLabel(t *testing.T) {
 	s.CancelDimensionDrag()
 	if got := labelOf(t, s, d); got != from {
 		t.Fatalf("cancelled drag left the label at %v, want %v", got, from)
+	}
+}
+
+// The placement was originally stored as a plain sketch point, so dragging the measured line left
+// the text behind: the dimension's offset from its geometry silently changed, and a line dragged
+// far enough flipped the glyph to the other side of itself. The placement is relative now.
+
+// dimensionOffset returns the SIGNED PERPENDICULAR distance from the measured line to the
+// dimension line — the invariant a relative placement preserves. Measuring it in x or y instead
+// would only hold while the line keeps its original direction.
+func dimensionOffset(t *testing.T, s *Session, d *sketch.DimensionConstraint, l *sketch.Line) float64 {
+	t.Helper()
+	a, b := l.A.Position(), l.B.Position()
+	dir := normalize(a.VectorTo(b))
+	perp := math.V2(-dir.Y, dir.X)
+	return float64(a.VectorTo(viewOf(t, s, d).Segments[2][0]).Dot(perp))
+}
+
+// nearlyEqual compares offsets that are recomputed through different float paths.
+func nearlyEqual(a, b float64) bool { return stdmath.Abs(a-b) < 1e-9 }
+
+// TestPlacedDimensionFollowsAMovedLine is the reported bug: the label stayed at its old sketch
+// position while the line moved out from under it, so the dimension's own offset silently changed.
+func TestPlacedDimensionFollowsAMovedLine(t *testing.T) {
+	s, sk, d := dimensionedSketch(t)
+	l := sk.Lines().Item(0)
+	d.SetTextPoint(math.P2(2, 3)) // dragged 3 above the line
+	before := dimensionOffset(t, s, d, l)
+
+	l.A.SetPosition(math.P2(0, 5))
+	l.B.SetPosition(math.P2(4, 5))
+
+	if got := dimensionOffset(t, s, d, l); !nearlyEqual(got, before) {
+		t.Fatalf("dimension offset changed %v→%v when the line moved; the glyph warped", before, got)
+	}
+	if got := labelOf(t, s, d); !nearlyEqual(float64(got.Y), 8) {
+		t.Fatalf("label at %v after moving the line +5, want it carried to y=8", got)
+	}
+}
+
+// TestPlacedDimensionFollowsARotatedLine: the placement lives in the dimension's own frame, so it
+// rotates with the geometry and stays on the same side of it, instead of being left crossing it.
+func TestPlacedDimensionFollowsARotatedLine(t *testing.T) {
+	s, sk, d := dimensionedSketch(t)
+	l := sk.Lines().Item(0)
+	d.SetTextPoint(math.P2(2, 3))
+	before := dimensionOffset(t, s, d, l)
+
+	l.B.SetPosition(math.P2(0, 4)) // swing the far end: the line is now vertical
+
+	if got := dimensionOffset(t, s, d, l); !nearlyEqual(got, before) {
+		t.Fatalf("offset after rotation = %v, want the placed %v carried around", got, before)
+	}
+}
+
+// TestUnplacedDimensionStillUsesItsDefault: a dimension nobody dragged keeps the derived anchor,
+// so the relative model did not change how an untouched dimension looks.
+func TestUnplacedDimensionStillUsesItsDefault(t *testing.T) {
+	s, sk, d := dimensionedSketch(t)
+	if _, placed := d.TextPoint(); placed {
+		t.Fatal("a fresh dimension reports a user placement")
+	}
+	l := sk.Lines().Item(0)
+	before := dimensionOffset(t, s, d, l)
+	l.A.SetPosition(math.P2(0, 5))
+	l.B.SetPosition(math.P2(4, 5))
+	if got := dimensionOffset(t, s, d, l); !nearlyEqual(got, before) {
+		t.Fatalf("default offset changed %v→%v when the line moved", before, got)
+	}
+}
+
+// TestTextPointReportsWhereTheTextActuallyIs: the absolute accessor is derived from live geometry,
+// so a caller reading it back after the geometry moved gets the current position, not the stale one
+// it was set with.
+func TestTextPointReportsWhereTheTextActuallyIs(t *testing.T) {
+	_, sk, d := dimensionedSketch(t)
+	l := sk.Lines().Item(0)
+	d.SetTextPoint(math.P2(2, 3))
+	l.A.SetPosition(math.P2(0, 5))
+	l.B.SetPosition(math.P2(4, 5))
+	tp, ok := d.TextPoint()
+	if !ok || !nearlyEqual(float64(tp.Y), 8) {
+		t.Fatalf("TextPoint = (%v, %v) after the line moved +5, want y=8", tp, ok)
 	}
 }
