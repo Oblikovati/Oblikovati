@@ -2,7 +2,11 @@
 
 package sketch
 
-import "oblikovati.org/api/types"
+import (
+	"fmt"
+
+	"oblikovati.org/api/types"
+)
 
 // Per-entity format overrides (#2015): the line type, colour and line weight the Format panel's
 // three lists set on selected geometry, and the values a DWG import carries in from the file's
@@ -84,4 +88,47 @@ func (target *Sketch) carryEntityFormats(from *Sketch, m map[Entity]Entity) {
 		}
 		target.SetEntityFormat(dst.EntityID(), f)
 	}
+}
+
+// --- persistence -----------------------------------------------------------
+//
+// Format is stored per entity in the .obk record rather than as its own block, so a styled
+// entity carries its overrides next to its geometry and an unstyled one costs no bytes. The
+// colour is a "#RRGGBB" string, matching the sketch-level colour field: its presence is what
+// marks an override, so there is no separate source flag to keep in step.
+
+// writeEntityFormat copies an entity's overrides onto its serialized record.
+func (s *Sketch) writeEntityFormat(ed *EntityData, id ID) {
+	f, ok := s.EntityFormat(id)
+	if !ok {
+		return
+	}
+	ed.FormatLine, ed.FormatWeight = f.LineType, f.LineWeight
+	if f.Color.IsOverride() {
+		ed.FormatColor = formatColorHex(f.Color)
+	}
+}
+
+// readEntityFormat restores an entity's overrides from its serialized record.
+func (s *Sketch) readEntityFormat(ed EntityData, id ID) {
+	f := EntityFormat{LineType: ed.FormatLine, LineWeight: ed.FormatWeight}
+	if c, ok := parseFormatColorHex(ed.FormatColor); ok {
+		f.Color = c
+	}
+	s.SetEntityFormat(id, f) // a format that overrides nothing stores nothing
+}
+
+// formatColorHex renders a colour as "#RRGGBB".
+func formatColorHex(c types.Color) string {
+	return fmt.Sprintf("#%02X%02X%02X", c.R, c.G, c.B)
+}
+
+// parseFormatColorHex reads a "#RRGGBB" colour back, reporting false for an absent or malformed
+// value so a damaged record degrades to Default rather than to black.
+func parseFormatColorHex(s string) (types.Color, bool) {
+	var r, g, b uint8
+	if _, err := fmt.Sscanf(s, "#%02X%02X%02X", &r, &g, &b); err != nil {
+		return types.Color{}, false
+	}
+	return types.NewColor(r, g, b), true
 }

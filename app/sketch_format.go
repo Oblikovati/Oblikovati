@@ -21,8 +21,21 @@ type formatButton struct {
 	in3D    bool
 }
 
-// formatButtons is the panel's toggles in ribbon order.
+// formatButtons is the panel's toggles in ribbon order. The four that convert-or-arm come first,
+// then the display toggle.
 func formatButtons() []formatButton {
+	return append(formatConvertButtons(), formatButton{
+		id: "ShowFormat", name: "Show Format", icon: "show-format",
+		tooltip: "Show Format — display the sketch with default attributes, hiding per-entity " +
+			"line type, colour and thickness overrides.",
+		run: func(s *Session) { s.ToggleShowFormat() }, in3D: true,
+	})
+}
+
+// formatConvertButtons is the four toggles that convert a selection or arm a creation mode.
+// Centerline and Center Point are 2D-only: a revolve/mirror axis and a hole-centre marker are
+// planar-sketch concepts with no meaning in a 3D sketch.
+func formatConvertButtons() []formatButton {
 	return []formatButton{
 		{
 			id: "Construction", name: "Construction", icon: "construction",
@@ -47,12 +60,6 @@ func formatButtons() []formatButton {
 			tooltip: "Center Point — convert the selected point(s) to hole-centre markers, or with " +
 				"nothing selected place new points as centre points.",
 			run: func(s *Session) { s.ToggleCenterPoint() },
-		},
-		{
-			id: "ShowFormat", name: "Show Format", icon: "show-format",
-			tooltip: "Show Format — display the sketch with default attributes, hiding per-entity " +
-				"line type, colour and thickness overrides.",
-			run: func(s *Session) { s.ToggleShowFormat() }, in3D: true,
 		},
 	}
 }

@@ -136,6 +136,7 @@ func (r *sketchRestorer) restorePoints(points []PointData) {
 func (r *sketchRestorer) restorePoint(pd PointData) *Point {
 	pos := math.P2(pd.X, pd.Y)
 	p := r.newPointFor(pd.Standalone, pos)
+	p.SetCenterPoint(pd.CenterPoint) // hole-centre marker (#2015)
 	r.pin(p, pd.ID)
 	return p
 }
@@ -167,6 +168,7 @@ func (r *sketchRestorer) restoreEntities(entities []EntityData) error {
 		if ic, ok := e.(idCarrier); ok {
 			r.pin(ic, ed.ID)
 		}
+		r.s.readEntityFormat(ed, e.EntityID()) // per-entity format overrides (#2015)
 		r.entityMap[ed.ID] = e
 	}
 	return nil
