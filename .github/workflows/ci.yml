@@ -121,8 +121,39 @@ jobs:
       # model/feature/occtparity) and kernel/ops both run well past 10m on a CI runner once coverage
       # instrumentation is added, and `app` was already at 388s under race. A timed-out package
       # reports as a FAILURE indistinguishable from a real one, so this must stay generous.
+      # -coverpkg credits a package's code to the tests that ACTUALLY exercise it, wherever they
+      # live. Without it `go test` credits each test binary only to its own package, so the OCCT
+      # blend-parity corpus (475 records in model/feature/occtparity — the primary exercise of the
+      # fillet engine) credited kernel/ops NOTHING, and whole files read 0% while being driven hard
+      # (fillet_elliptic_cone_runout.go: 181/181 "uncovered"). That understated coverage on new code
+      # by ~13 points and failed SonarCloud's 80% gate on a measurement artefact, not a test gap.
+      #
+      # Scoped to the three trees whose code is cross-exercised, NOT `./...`: instrumenting every
+      # package into every test binary costs >30min on model/feature/occtparity alone, while this
+      # scope measured 373s against 303s uninstrumented (+23%) for that package.
+      #
+      # Ubuntu-only because that is the single leg whose profile feeds the `sonar` job (see the
+      # upload step below); the macOS/Windows legs keep the uninstrumented command so the slowest
+      # matrix legs pay nothing for a profile that is then discarded.
       - name: Test
-        run: gotestsum --junitfile test-results-${{ matrix.os }}.xml -- -coverprofile=coverage.out -covermode=count -timeout 60m ./...
+        run: |
+          COVERPKG=""
+          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+            COVERPKG="-coverpkg=./kernel/...,./model/...,./app/..."
+          fi
+          gotestsum --junitfile test-results-${{ matrix.os }}.xml -- \
+            -coverprofile=coverage.out -covermode=count $COVERPKG -timeout 60m ./...
+      # -coverpkg makes EVERY test binary emit a profile for EVERY instrumented package, so the
+      # same block is repeated once per binary: measured 390 MB / 6.6M lines, far too large to
+      # upload as an artifact and hand to the scanner. Collapsing duplicate blocks (summing their
+      # counts, which is exactly `count` mode's semantics) yields 3.7 MB / 60k lines with
+      # BIT-IDENTICAL results — verified per package (kernel/ops 92.4%, kernel/geom 91.9%,
+      # model/feature 87.9%) and accepted by `go tool cover -func` (88.2% total).
+      - name: Collapse duplicate coverage blocks
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          awk 'NR==1 && /^mode:/ {print; next} {n[$1]=$2; c[$1]+=$3} END {for (k in n) print k, n[k], c[k]}' \
+            coverage.out > coverage.merged && mv coverage.merged coverage.out
       # The SolidWorks/Inventor translators are separate go.work modules, so the root `./...`
       # above never runs their tests — leaving SonarCloud to see ~0% coverage on new code that
       # is in fact 74–85% covered. Run each nested module's tests (Linux, the leg that feeds
