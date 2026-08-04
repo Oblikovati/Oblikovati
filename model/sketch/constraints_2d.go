@@ -329,25 +329,70 @@ func (c *EqualRadiusConstraint) Variables() []*math.Scalar {
 	return append(c.C1.circularVars(), c.C2.circularVars()...)
 }
 
-// TangentConstraint forces a line to be tangent to a circular curve (circle or arc):
-// the unsigned perpendicular distance from the curve's center to the line equals the
-// radius.
+// TangentConstraint forces a line to be tangent to a circular curve (circle or arc).
+//
+// It has two formulations, chosen at creation, because the obvious one is degenerate in a
+// common case (#2014). Normally the touch point is free and tangency is "the perpendicular
+// distance from the centre to the line equals the radius". But when a line endpoint P is
+// ALSO one of the curve's defining points — a slot's side meeting its cap arc, a fillet
+// meeting its neighbour — the curve's radius is structurally |centre − P|, so that residual
+// reduces to R(|sin φ| − 1) for φ the angle between line and radius. |sin φ| peaks at the
+// φ = 90° solution, so the residual has a DOUBLE root: it is exactly zero there and its
+// derivative is exactly zero too. The Jacobian row vanishes, the constraint contributes no
+// rank, and the solver neither enforces nor reports it. (Dropping the Abs does not help —
+// sin is stationary at 90° as well.)
+//
+// With P pinned, tangency is stated instead as the line being perpendicular to the radius
+// at P: (B−A)·(centre−P) = 0. That has a simple root with gradient ≈ R, and it needs no
+// sign or branch choice because the touch point cannot migrate.
 type TangentConstraint struct {
 	constraintBase
 	L *Line
 	C CircularCurve
+	// touchAtB records the pinned formulation: nil-free when the line and curve share no
+	// point, otherwise which line endpoint is the touch point.
+	pinned   bool
+	touchAtB bool
 }
 
-// AddTangent constrains line l to be tangent to circular curve c.
+// AddTangent constrains line l to be tangent to circular curve c. It picks the
+// perpendicular-radius formulation when l and c share a defining point (see
+// [TangentConstraint]); the choice is topological, so it never flips mid-solve.
 func (g *GeometricConstraints) AddTangent(l *Line, c CircularCurve) *TangentConstraint {
 	t := &TangentConstraint{constraintBase: newConstraint(), L: l, C: c}
+	t.pinned, t.touchAtB = lineTouchesCurve(l, c)
 	g.add(t)
 	return t
 }
 
-// residualAD: v = [L.A.X, L.A.Y, L.B.X, L.B.Y, <C circularVars>]. The unsigned
-// perpendicular distance from the center to the infinite line equals the radius at
-// tangency (the center may lie on either side, hence Abs).
+// lineTouchesCurve reports whether a line endpoint is one of the curve's defining points,
+// and if so whether it is the line's B end. Identity is by pointer, so the test is exact.
+func lineTouchesCurve(l *Line, c CircularCurve) (pinned, atB bool) {
+	pts := curveDefiningPoints(c)
+	for _, p := range pts {
+		if p == l.A {
+			return true, false
+		}
+		if p == l.B {
+			return true, true
+		}
+	}
+	return false, false
+}
+
+// curveDefiningPoints returns the points that structurally fix a curve's radius. An arc's
+// radius is |centre − start| and its end is held on the circle by its circularity relation,
+// so both endpoints count. A full circle carries an independent radius scalar, so no point
+// pins it and the free formulation always applies.
+func curveDefiningPoints(c CircularCurve) []*Point {
+	a, ok := c.(*Arc)
+	if !ok {
+		return nil
+	}
+	return []*Point{a.Start, a.End}
+}
+
+// residualAD: v = [L.A.X, L.A.Y, L.B.X, L.B.Y, <C circularVars>].
 func (t *TangentConstraint) residualAD(v []ad.Number) []ad.Number {
 	a, b := ad.V2(v[0], v[1]), ad.V2(v[2], v[3])
 	center, radius, _ := t.C.circularFrameAD(v, 4)
@@ -356,8 +401,23 @@ func (t *TangentConstraint) residualAD(v []ad.Number) []ad.Number {
 	if length.Val() == 0 {
 		return []ad.Number{radius} // degenerate line: cannot be tangent
 	}
+	if t.pinned {
+		return []ad.Number{perpendicularRadiusResidual(a, b, center, dir, length, t.touchAtB)}
+	}
 	signed := dir.Cross(center.Sub(a)).Div(length)
 	return []ad.Number{signed.Abs().Sub(radius)}
+}
+
+// perpendicularRadiusResidual is (B−A)·(centre−P) normalised by |B−A|, so the residual is a
+// length comparable with the distance-based constraints it shares a system with. Without the
+// normalisation the residual would be an area, and a long line would silently outweigh a
+// short one.
+func perpendicularRadiusResidual(a, b, center, dir ad.Vec2, length ad.Number, touchAtB bool) ad.Number {
+	touch := a
+	if touchAtB {
+		touch = b
+	}
+	return dir.Dot(center.Sub(touch)).Div(length)
 }
 func (t *TangentConstraint) Residuals() []float64  { return adResiduals(t.Variables(), t.residualAD) }
 func (t *TangentConstraint) Partials() [][]float64 { return adPartials(t.Variables(), t.residualAD) }
@@ -372,18 +432,42 @@ func (t *TangentConstraint) Variables() []*math.Scalar {
 // creation from the curves' current placement — whichever target the centers are
 // already closer to — so the solver moves the geometry the least, matching how Inventor
 // preserves the picked configuration.
+// When the two curves share their touch point P, the centre-distance form is degenerate for
+// the same reason [TangentConstraint]'s is: the triangle inequality gives |C1−C2| ≤ |C1−P| +
+// |P−C2| = r1+r2 with equality exactly at tangency, so the residual reaches a MAXIMUM of zero
+// there and its derivative vanishes. Tangency is then stated as collinearity of C1, P and C2,
+// which has a simple root (#2014).
 type CircularTangentConstraint struct {
 	constraintBase
 	C1, C2   CircularCurve
 	internal bool
+	// touch is the point both curves are pinned to, or nil when they share none.
+	touch *Point
 }
 
-// AddCircularTangent constrains circular curves c1 and c2 to be tangent.
+// AddCircularTangent constrains circular curves c1 and c2 to be tangent. It picks the
+// collinear formulation when the curves share a defining point; the choice is topological, so
+// it never flips mid-solve.
 func (g *GeometricConstraints) AddCircularTangent(c1, c2 CircularCurve) *CircularTangentConstraint {
 	t := &CircularTangentConstraint{constraintBase: newConstraint(), C1: c1, C2: c2}
+	t.touch = sharedCurvePoint(c1, c2)
 	t.internal = t.preferInternal()
 	g.add(t)
 	return t
+}
+
+// sharedCurvePoint returns the defining point two circular curves have in common, or nil.
+// Identity is by pointer, so the test is exact and stable under solving.
+func sharedCurvePoint(c1, c2 CircularCurve) *Point {
+	second := curveDefiningPoints(c2)
+	for _, p := range curveDefiningPoints(c1) {
+		for _, q := range second {
+			if p == q {
+				return p
+			}
+		}
+	}
+	return nil
 }
 
 // preferInternal reports whether internal tangency (|r1−r2|) is closer to the current
@@ -403,12 +487,28 @@ func (t *CircularTangentConstraint) centerDistance() float64 {
 // The mode was fixed at creation, so only the target form differs.
 func (t *CircularTangentConstraint) residualAD(v []ad.Number) []ad.Number {
 	c1, r1, n := t.C1.circularFrameAD(v, 0)
-	c2, r2, _ := t.C2.circularFrameAD(v, n)
+	c2, r2, m := t.C2.circularFrameAD(v, n)
+	if t.touch != nil {
+		return []ad.Number{collinearCentresResidual(c1, c2, ad.V2(v[n+m], v[n+m+1]))}
+	}
 	target := r1.Add(r2)
 	if t.internal {
 		target = r1.Sub(r2).Abs()
 	}
 	return []ad.Number{c1.Sub(c2).Length().Sub(target)}
+}
+
+// collinearCentresResidual states tangency at a shared touch point as "C1, P and C2 are
+// collinear", normalised by |P−C1| so the residual is a length rather than an area. It does
+// not distinguish internal from external tangency, which is correct here: with P pinned the
+// touch point cannot migrate, so there is no branch to choose.
+func collinearCentresResidual(c1, c2, p ad.Vec2) ad.Number {
+	from := p.Sub(c1)
+	length := from.Length()
+	if length.Val() == 0 {
+		return c2.Sub(p).Length() // degenerate: the touch point sits on the centre
+	}
+	return from.Cross(c2.Sub(p)).Div(length)
 }
 func (t *CircularTangentConstraint) Residuals() []float64 {
 	return adResiduals(t.Variables(), t.residualAD)
@@ -417,8 +517,16 @@ func (t *CircularTangentConstraint) Partials() [][]float64 {
 	return adPartials(t.Variables(), t.residualAD)
 }
 
+// Variables lists both curves' scalars, plus the shared touch point's when the collinear
+// formulation is in use. The touch point may already appear among the curves' own variables;
+// duplicate entries are harmless because the solver accumulates a column's contributions
+// (scatterRow), which is exactly the chain rule for a repeated scalar.
 func (t *CircularTangentConstraint) Variables() []*math.Scalar {
-	return append(t.C1.circularVars(), t.C2.circularVars()...)
+	vars := append(t.C1.circularVars(), t.C2.circularVars()...)
+	if t.touch == nil {
+		return vars
+	}
+	return append(vars, &t.touch.X, &t.touch.Y)
 }
 
 // SymmetryConstraint forces two points to mirror across a line: their midpoint lies
