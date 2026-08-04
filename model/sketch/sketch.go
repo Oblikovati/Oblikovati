@@ -162,6 +162,7 @@ type Sketch struct {
 	hostWorkRef string
 	ents        []Entity
 	formats     map[ID]EntityFormat   // per-entity format overrides (#2015); absent ⇒ sketch defaults
+	formatRev   uint64                // bumped on every format edit, so a drawing cache can see one (#2015)
 	pts         []*Point              // every constrainable point (endpoints, centers, standalone) — the solver's variables
 	refPts      []*Point              // fixed reference points (projected anchors): constrainable but not solved
 	cloudPts    []*cloudAnchoredPoint // sketch points anchored on scan points (datum-cloud provenance, #645)

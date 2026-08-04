@@ -54,10 +54,20 @@ func (s *Sketch) SetEntityFormat(id ID, f EntityFormat) {
 		s.formats = map[ID]EntityFormat{}
 	}
 	s.formats[id] = f
+	s.formatRev++
 }
 
 // ClearEntityFormat returns an entity to the sketch defaults.
-func (s *Sketch) ClearEntityFormat(id ID) { delete(s.formats, id) }
+func (s *Sketch) ClearEntityFormat(id ID) {
+	delete(s.formats, id)
+	s.formatRev++
+}
+
+// FormatRevision counts the format edits this sketch has seen. Recolouring an entity changes
+// neither the geometry version nor the entity count, so a viewport that caches drawn sketch
+// geometry has nothing else to notice a format change by and would show stale colours (#2015).
+// It counts edits rather than hashing the table so the check stays O(1).
+func (s *Sketch) FormatRevision() uint64 { return s.formatRev }
 
 // EntityFormatCount reports how many entities carry overrides — what persistence writes and what
 // the prune tests assert against.
