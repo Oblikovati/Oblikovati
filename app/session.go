@@ -64,6 +64,7 @@ type Session struct {
 	constrainedOrbit          bool                  // the Constrained Orbit tool is active: left-drag turntables (#913 N10)
 	steeringWheel             bool                  // the SteeringWheels radial nav menu is shown at the cursor (#913 N26)
 	entityDrag                sketchDrag            // the in-progress direct drag of sketch entities, if any
+	dimensionDrag             dimensionDrag         // the in-progress drag of a sketch dimension's label (#2017)
 	placement                 sketchPlacement       // the in-progress drag-to-create press (#2014)
 	placementFields           placementFieldState   // in-place dimension input for the shape being placed (#2014)
 	formatModes               sketchFormatModes     // Format-panel creation modes (#2015)
