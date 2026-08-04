@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
 )
 
 // Sketch tools place 2D geometry by clicking in the active sketch's plane: a click
@@ -67,13 +68,13 @@ func (t *RectangleTool) PendingReferencePoint() (math.Point2, bool) {
 }
 
 // Commit adds the rigid rectangle: four lines over shared corners, squared by a horizontal and
-// a vertical constraint per edge so that dragging a corner cannot shear it (#2014).
+// a vertical constraint per edge so that dragging a corner cannot shear it. Any in-place input
+// field the user typed into also becomes a driving dimension (#2014).
 func (t *RectangleTool) Commit(s *Session) error {
 	if s.activeSketch == nil {
 		return errors.New("rectangle: no active sketch")
 	}
-	_, err := s.activeSketch.AddConstrainedRectangle(t.corners[0], t.corners[1])
-	return err
+	return s.commitRecipe(sketch.RectangleRecipe(t.corners[0], t.corners[1]))
 }
 
 // Cancel discards the in-progress rectangle.

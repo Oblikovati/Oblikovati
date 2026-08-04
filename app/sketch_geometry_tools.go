@@ -7,6 +7,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
 )
 
 // The sketch geometry tools — Inventor's Sketch tab "Create" panel. Each is an
@@ -283,8 +284,7 @@ func (t *PolygonTool) Commit(s *Session) error {
 	if s.activeSketch == nil {
 		return errNoSketch("polygon")
 	}
-	_, err := s.activeSketch.AddConstrainedPolygon(t.pts[0], t.pts[1], t.Sides, true)
-	return err
+	return s.commitRecipe(sketch.PolygonRecipe(t.pts[0], t.pts[1], t.Sides, true))
 }
 
 // Prompt guides center then a vertex.

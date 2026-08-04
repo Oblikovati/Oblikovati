@@ -4,6 +4,7 @@ package app
 
 import (
 	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
 )
 
 // The variant geometry tools — the entries of the Sketch tab's split-button dropdowns
@@ -36,8 +37,7 @@ func (t *ThreePointRectangleTool) Commit(s *Session) error {
 	if sk == nil {
 		return errNoSketch("three point rectangle")
 	}
-	_, err := sk.AddConstrainedThreePointRectangle(t.pts[0], t.pts[1], t.pts[2])
-	return err
+	return s.commitRecipe(sketch.ThreePointRectangleRecipe(t.pts[0], t.pts[1], t.pts[2]))
 }
 
 // Prompt guides the base edge then the width (Inventor's status-bar prompts).
@@ -76,8 +76,7 @@ func (t *CenterRectangleTool) Commit(s *Session) error {
 	if sk == nil {
 		return errNoSketch("center rectangle")
 	}
-	_, err := sk.AddConstrainedCenterRectangle(t.pts[0], t.pts[1])
-	return err
+	return s.commitRecipe(sketch.CenterRectangleRecipe(t.pts[0], t.pts[1]))
 }
 
 // Prompt guides the center then a corner.

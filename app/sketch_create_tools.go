@@ -95,8 +95,7 @@ func (t *SketchSlotTool) Commit(s *Session) error {
 	if sk == nil {
 		return errors.New("slot: no active sketch")
 	}
-	_, err := sk.AddConstrainedStraightSlot(t.pts[0], t.pts[1], t.width)
-	return err
+	return s.commitRecipe(sketch.StraightSlotRecipe(t.pts[0], t.pts[1], t.width))
 }
 
 // CenterPointArcSlotTool draws an arc-shaped slot whose centre line is an arc given by its
@@ -128,8 +127,7 @@ func (t *CenterPointArcSlotTool) Commit(s *Session) error {
 		return errNoSketch("center point arc slot")
 	}
 	center, start, end := t.pts[0], t.pts[1], t.pts[2]
-	_, err := sk.AddConstrainedArcSlot(center, start, end, t.width, leftTurn(center, start, end))
-	return err
+	return s.commitRecipe(sketch.ArcSlotRecipe(center, start, end, t.width, leftTurn(center, start, end)))
 }
 
 // Prompt guides the center, start and end of the slot's arc.
@@ -183,8 +181,7 @@ func (t *ThreePointArcSlotTool) Commit(s *Session) error {
 	if !ok {
 		return errors.New("three point arc slot: the three points are collinear")
 	}
-	_, err := sk.AddConstrainedArcSlot(center, start, end, t.width, leftTurn(start, through, end))
-	return err
+	return s.commitRecipe(sketch.ArcSlotRecipe(center, start, end, t.width, leftTurn(start, through, end)))
 }
 
 // Prompt guides the start, a point on the arc, then the end.
