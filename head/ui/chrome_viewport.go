@@ -35,7 +35,8 @@ func drawViewportPanel(win *native.Window, s *app.Session) {
 		icons = newIconCache(win)
 	}
 	win.SetViewportNormalDebug(normalDebugOn || s.NormalDebug()) // Tools ▸ Normal Debug, or viewport.setNormalDebug
-	if native.Begin("Viewport") {
+	// BeginNoScroll: the wheel is camera zoom and must never become window scrolling (#2027).
+	if native.BeginNoScroll("Viewport") {
 		drawDocumentTabs(s)
 		// A drawing document shows a 2D sheet canvas, not the 3D viewport (M14-F01).
 		if dc, err := app.ActiveDrawing(s); err == nil {

@@ -60,8 +60,8 @@ func drawDimensionLabels(cx, cy float32, cam scene.Camera, plane sketch.Plane, v
 	var hit *sketch.DimensionConstraint
 	for _, v := range views {
 		sx, sy, ok := renderer.Project(cam, viewportNear, viewportFar, plane.ToModel(v.LabelAt))
-		if !ok {
-			continue
+		if !ok || !onScreen(sx, sy, cam) {
+			continue // off-screen labels would grow the ImGui content rect and steal the wheel (#2027)
 		}
 		native.SetCursorPos(cx+float32(sx), cy+float32(sy))
 		native.Text(v.Label)
