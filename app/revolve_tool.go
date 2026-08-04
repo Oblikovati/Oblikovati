@@ -50,11 +50,8 @@ func preselectCenterline(profileSketch *sketch.Sketch, sketches []*sketch.Sketch
 type RevolveTool struct {
 	featureEditMode // set ⇒ this panel re-edits a committed revolve (see editRevolveTool)
 	profile         *ProfileHandle
-	axis            feature.WorkRef // origin axis (X/Y/Z) or a user work axis (fallback)
-	useCenterln     bool            // revolve about the sketch's own (single) centerline
-	centerline      *sketch.Line    // a specific centerline picked/pre-selected as the axis
-	centerlineSk    *sketch.Sketch  // the centerline's sketch
-	angle           float64         // swept angle in radians; 0 ⇒ full revolution
+	axis            revolveAxisChoice // the axis of revolution as a selection (#2018)
+	angle           float64           // swept angle in radians; 0 ⇒ full revolution
 	operation       ops.PartFeatureOperation
 	added           *feature.PartFeature
 }
@@ -62,7 +59,7 @@ type RevolveTool struct {
 // NewRevolveTool returns a revolve tool defaulting to a full revolution about the Y
 // origin axis that creates a new body.
 func NewRevolveTool() *RevolveTool {
-	return &RevolveTool{axis: feature.OriginYAxis, operation: ops.NewBody}
+	return &RevolveTool{axis: revolveAxisChoice{ref: feature.OriginYAxis}, operation: ops.NewBody}
 }
 
 // Name implements [Tool].
@@ -72,49 +69,57 @@ func (t *RevolveTool) Name() string { return "Revolve" }
 func (t *RevolveTool) Start(*Session) {}
 
 // AcceptedKinds declares revolve's two steps: pick the region (profile), then — once a profile is
-// set — pick the centerline axis (a sketch entity). The engine re-derives this after each pick.
+// set — pick the axis of revolution. The axis step accepts a sketch line (the usual centerline)
+// or a work axis, which is how the origin axes are picked from the browser (#2018). The engine
+// re-derives this after each pick.
 func (t *RevolveTool) AcceptedKinds() []SelectionKind {
 	if t.profile == nil {
 		return []SelectionKind{SelectProfile}
 	}
-	return []SelectionKind{SelectSketchEntity}
+	return []SelectionKind{SelectSketchEntity, SelectWorkAxis}
 }
 
-// Picks reports the picked region and centerline for the unified highlight.
+// Picks reports the picked region and axis for the unified highlight.
 func (t *RevolveTool) Picks() []Selectable {
 	var picks []Selectable
 	if t.profile != nil {
 		picks = append(picks, *t.profile)
 	}
-	if t.centerline != nil {
-		picks = append(picks, SketchEntityHandle{Entity: t.centerline})
+	if t.axis.line != nil {
+		picks = append(picks, SketchEntityHandle{Entity: t.axis.line})
+	}
+	if t.axis.work != nil {
+		picks = append(picks, WorkAxisHandle{Axis: t.axis.work})
 	}
 	return picks
 }
 
-// Pick captures the region (then auto-advances to the centerline axis, pre-selecting one per
-// Inventor's rules) or, once a profile is set, a centerline the user clicks to override it.
+// Pick captures the region (then auto-advances to the axis, pre-selecting a centerline per
+// Inventor's rules) or, once a profile is set, the axis the user clicks to override it.
 func (t *RevolveTool) Pick(s *Session, sel Selectable) {
 	switch h := sel.(type) {
 	case ProfileHandle:
 		pc := h
 		t.profile = &pc
-		t.advanceToCenterline(s)
+		t.advanceToAxis(s)
 	case SketchEntityHandle:
-		if l, ok := h.Entity.(*sketch.Line); ok && l.IsCenterline() {
-			t.centerline, t.centerlineSk = l, sketchOfLine(s, l)
+		if l, ok := h.Entity.(*sketch.Line); ok {
+			t.axis.pickLine(l, sketchOfLine(s, l))
 		}
+	case WorkAxisHandle:
+		t.axis.pickWork(h.Axis)
 	}
 }
 
-// advanceToCenterline moves the selection from the profile to the axis: it pre-selects a
-// centerline (if the rules resolve one) and filters selection to sketch entities so the user can
-// pick a different centerline.
-func (t *RevolveTool) advanceToCenterline(s *Session) {
+// advanceToAxis moves the selection from the profile to the axis: it pre-selects a centerline (if
+// the rules resolve one) and filters selection to the axis kinds so the user can pick another.
+// A centerline pre-selected here already outranked the panel's origin axis before #2018; what
+// changed is that the panel now SAYS so.
+func (t *RevolveTool) advanceToAxis(s *Session) {
 	if sk, line, ok := preselectCenterline(t.profile.Sketch, visiblePartSketches(s)); ok {
-		t.centerline, t.centerlineSk = line, sk
+		t.axis.pickLine(line, sk)
 	}
-	// The engine re-derives the filter (now SketchEntity) from AcceptedKinds after this pick.
+	// The engine re-derives the filter (now the axis kinds) from AcceptedKinds after this pick.
 }
 
 // visiblePartSketches returns the active part's visible 2D sketches (the centerline candidates).
@@ -145,11 +150,25 @@ func sketchOfLine(s *Session, line *sketch.Line) *sketch.Sketch {
 }
 
 // The options the property window drives: the revolution axis, the swept angle, and the
-// boolean operation.
-func (t *RevolveTool) SetAxis(ref feature.WorkRef) { t.axis = ref }
-func (t *RevolveTool) Axis() feature.WorkRef       { return t.axis }
+// boolean operation. SetAxis writes the origin-axis quick-pick, which a picked axis overrides.
+func (t *RevolveTool) SetAxis(ref feature.WorkRef) { t.axis.ref = ref }
+func (t *RevolveTool) Axis() feature.WorkRef       { return t.axis.ref }
 func (t *RevolveTool) SetAngle(radians float64)    { t.angle = radians }
 func (t *RevolveTool) Angle() float64              { return t.angle }
+
+// AxisName is the axis chip's caption: the axis this revolve will ACTUALLY spin about — the
+// picked centerline or sketch line, the picked work axis, the sketch's own centerline, or the
+// origin axis the quick-pick names (#2018).
+//
+//	rv.AxisName() // "Centerline" once a profile with one is picked
+func (t *RevolveTool) AxisName() string { return t.axis.name() }
+
+// AxisPicked reports whether a selection overrides the origin-axis quick-pick — the chip is
+// filled and clearable, and the quick-pick is greyed.
+func (t *RevolveTool) AxisPicked() bool { return t.axis.selected() }
+
+// ClearAxis drops the picked axis (the chip's ×), returning the revolve to the origin axis.
+func (t *RevolveTool) ClearAxis() { t.axis.clear() }
 
 // SubmitToken accepts a typed swept angle in DEGREES from the command line (M26 F02
 // follow-up); the region (and any non-default axis) are picked in the viewport. With no
@@ -164,22 +183,32 @@ func (t *RevolveTool) SubmitToken(_ *Session, tok CommandToken) error {
 func (t *RevolveTool) SetOperation(op ops.PartFeatureOperation) { t.operation = op }
 func (t *RevolveTool) Operation() ops.PartFeatureOperation      { return t.operation }
 
-// SetUseCenterline/UseCenterline choose to revolve about the sketch's own centerline (ignoring
-// the axis selection) — the common Inventor flow when the profile sketch carries a centerline.
-func (t *RevolveTool) SetUseCenterline(v bool) { t.useCenterln = v }
-func (t *RevolveTool) UseCenterline() bool     { return t.useCenterln }
+// SetUseCenterline/UseCenterline choose to revolve about the sketch's own centerline, resolved at
+// recompute — the mode a revolve authored through the API (aboutCenterline) or saved before #2018
+// carries. Picking a concrete centerline is the panel's flow and supersedes it.
+func (t *RevolveTool) SetUseCenterline(v bool) {
+	if v {
+		t.axis.setAuto()
+		return
+	}
+	if t.axis.auto {
+		t.axis.clear()
+	}
+}
+func (t *RevolveTool) UseCenterline() bool { return t.axis.auto }
 
-// Centerline returns the picked/pre-selected centerline axis (and true), or false when the axis
-// is not a centerline yet — the head highlights it on hover and shows it as the chosen axis.
-func (t *RevolveTool) Centerline() (*sketch.Line, bool) { return t.centerline, t.centerline != nil }
+// Centerline returns the picked/pre-selected sketch-line axis (and true), or false when the axis
+// is not a sketch line — the head highlights it on hover and shows it as the chosen axis.
+func (t *RevolveTool) Centerline() (*sketch.Line, bool) { return t.axis.line, t.axis.line != nil }
 
-// CenterlineOutline returns the chosen centerline's 2D endpoints and its sketch plane, for the
-// head to draw the selected axis (like a profile outline). False when no centerline is chosen.
-func (t *RevolveTool) CenterlineOutline() ([]math.Point2, sketch.Plane, bool) {
-	if t.centerline == nil || t.centerlineSk == nil {
+// AxisLineOutline returns the chosen sketch-line axis's 2D endpoints and its sketch plane, for the
+// head to draw the selected axis (like a profile outline). False when the axis is not a sketch
+// line.
+func (t *RevolveTool) AxisLineOutline() ([]math.Point2, sketch.Plane, bool) {
+	if t.axis.line == nil || t.axis.lineSk == nil {
 		return nil, sketch.Plane{}, false
 	}
-	return lineOutline2D(t.centerline), t.centerlineSk.Plane(), true
+	return lineOutline2D(t.axis.line), t.axis.lineSk.Plane(), true
 }
 
 // lineOutline2D returns a line's two endpoints as a 2D polyline.
@@ -187,27 +216,12 @@ func lineOutline2D(l *sketch.Line) []math.Point2 {
 	return []math.Point2{l.StartPoint().Position(), l.EndPoint().Position()}
 }
 
-// HoveredCenterlineOutline returns the 2D outline + plane of a centerline under the cursor while
-// a revolve tool is choosing its axis (a profile is picked), for the head to highlight the
-// candidate axis. ok=false otherwise.
-func (s *Session) HoveredCenterlineOutline(px, py float64) ([]math.Point2, sketch.Plane, bool) {
-	rv := s.ActiveRevolve()
-	if rv == nil {
-		return nil, sketch.Plane{}, false
-	}
-	if _, picked := rv.PickedProfile(); !picked {
-		return nil, sketch.Plane{}, false
-	}
-	sel, found := s.PickAt(px, py, NewSelectionFilter(SelectSketchEntity))
-	if !found {
-		return nil, sketch.Plane{}, false
-	}
-	h, isEnt := sel.(SketchEntityHandle)
-	if !isEnt {
-		return nil, sketch.Plane{}, false
-	}
-	l, isLine := h.Entity.(*sketch.Line)
-	if !isLine || !l.IsCenterline() {
+// HoveredAxisLineOutline returns the 2D outline + plane of a sketch line under the cursor while a
+// revolve tool is choosing its axis (a profile is picked), for the head to highlight the candidate
+// axis. ok=false otherwise.
+func (s *Session) HoveredAxisLineOutline(px, py float64) ([]math.Point2, sketch.Plane, bool) {
+	l, ok := s.hoveredRevolveAxisLine(px, py)
+	if !ok {
 		return nil, sketch.Plane{}, false
 	}
 	sk := sketchOfLine(s, l)
@@ -215,6 +229,29 @@ func (s *Session) HoveredCenterlineOutline(px, py float64) ([]math.Point2, sketc
 		return nil, sketch.Plane{}, false
 	}
 	return lineOutline2D(l), sk.Plane(), true
+}
+
+// hoveredRevolveAxisLine resolves the sketch line the cursor is over while a revolve is choosing
+// its axis. Any line qualifies, as it does for the pick itself — the model revolves about a plain
+// sketch line just as it does about a centerline (#2018).
+func (s *Session) hoveredRevolveAxisLine(px, py float64) (*sketch.Line, bool) {
+	rv := s.ActiveRevolve()
+	if rv == nil {
+		return nil, false
+	}
+	if _, picked := rv.PickedProfile(); !picked {
+		return nil, false
+	}
+	sel, found := s.PickAt(px, py, NewSelectionFilter(SelectSketchEntity))
+	if !found {
+		return nil, false
+	}
+	h, isEnt := sel.(SketchEntityHandle)
+	if !isEnt {
+		return nil, false
+	}
+	l, isLine := h.Entity.(*sketch.Line)
+	return l, isLine
 }
 
 // SetFullRevolution sets the angle to a full turn (0, the model's "full" sentinel).
@@ -239,8 +276,7 @@ func (t *RevolveTool) CanCommit() bool { return t.profile != nil }
 // select-a-region step.
 func (t *RevolveTool) ClearProfile() {
 	t.profile = nil
-	t.centerline = nil
-	t.centerlineSk = nil
+	t.axis.clear()
 }
 
 // SourceSketchName returns the sketch the picked profile comes from, for the property
@@ -292,17 +328,17 @@ func (t *RevolveTool) commitEdit(s *Session) error {
 func (t *RevolveTool) writeEditAxis(s *Session, def *feature.RevolveDefinition) error {
 	def.Axis, def.AxisCenterline, def.AxisCenterlineSketch = nil, nil, nil
 	switch {
-	case t.centerline != nil:
-		def.AxisCenterline, def.AxisCenterlineSketch = t.centerline, t.centerlineSk
-	case t.useCenterln: // the definition's auto case: all three axis fields nil
+	case t.axis.line != nil:
+		def.AxisCenterline, def.AxisCenterlineSketch = t.axis.line, t.axis.lineSk
+	case t.axis.auto: // the definition's auto case: all three axis fields nil
 	default:
 		part, err := activePart(s)
 		if err != nil {
 			return err
 		}
-		axis, ok := part.WorkGeometry().AxisByRef(t.axis)
+		axis, ok := t.axis.resolve(part)
 		if !ok {
-			return errors.New("revolve edit: axis " + string(t.axis) + " not found")
+			return errors.New("revolve edit: axis " + string(t.axis.ref) + " not found")
 		}
 		def.Axis = axis
 	}
@@ -315,14 +351,14 @@ func (t *RevolveTool) addRevolve(part *compdef.PartComponentDefinition, fs *feat
 	angle := func() float64 { return t.angle }
 	revolves := feature.NewRevolveFeatures(fs)
 	switch {
-	case t.centerline != nil: // a specific picked/pre-selected centerline
-		return revolves.AddAboutCenterlineLine(t.profile.Sketch, t.profile.ProfileIndex, t.centerlineSk, t.centerline, angle, t.operation), nil
-	case t.useCenterln: // "about the sketch's own centerline" (auto, single)
+	case t.axis.line != nil: // a specific picked/pre-selected sketch line
+		return revolves.AddAboutCenterlineLine(t.profile.Sketch, t.profile.ProfileIndex, t.axis.lineSk, t.axis.line, angle, t.operation), nil
+	case t.axis.auto: // "about the sketch's own centerline" (auto, single)
 		return revolves.AddAboutCenterline(t.profile.Sketch, t.profile.ProfileIndex, angle, t.operation), nil
 	default:
-		axis, ok := part.WorkGeometry().AxisByRef(t.axis)
+		axis, ok := t.axis.resolve(part)
 		if !ok {
-			return nil, errors.New("revolve: axis " + string(t.axis) + " not found")
+			return nil, errors.New("revolve: axis " + string(t.axis.ref) + " not found")
 		}
 		return revolves.Add(t.profile.Sketch, t.profile.ProfileIndex, axis, angle, t.operation), nil
 	}

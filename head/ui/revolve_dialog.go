@@ -9,7 +9,6 @@ import (
 
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
-	"oblikovati.org/model/feature"
 )
 
 // The Revolve flow in the head: while the Revolve tool runs, a modeless property panel
@@ -19,16 +18,13 @@ import (
 // The picked region is outlined in the viewport by the tool's preview. The angle is
 // shown in degrees.
 var revolveUI = struct {
-	angleDeg   float32
-	centerline bool
-	seeded     *app.RevolveTool // the tool the fields were seeded from (nil = none)
+	angleDeg float32
+	seeded   *app.RevolveTool // the tool the fields were seeded from (nil = none)
 }{angleDeg: 360}
 
-// revolveAxes names each origin axis for the axis combo, paired with its work reference.
-var revolveAxes = []struct {
-	label string
-	ref   feature.WorkRef
-}{{"X Axis", feature.OriginXAxis}, {"Y Axis", feature.OriginYAxis}, {"Z Axis", feature.OriginZAxis}}
+// revolveAxes names each origin axis for the axis combo. The list comes from the app so the
+// combo and the axis chip's caption never name the same axis two different ways (#2018).
+var revolveAxes = app.OriginAxisChoices()
 
 // drawRevolveDialog shows the Revolve property panel while the Revolve tool is active,
 // syncing every control with the tool each frame; OK commits, Cancel aborts.
@@ -40,7 +36,6 @@ func drawRevolveDialog(s *app.Session) {
 	}
 	if revolveUI.seeded != rv {
 		revolveUI.angleDeg = seedRevolveAngle(rv)
-		revolveUI.centerline = rv.UseCenterline()
 		revolveUI.seeded = rv
 	}
 	dialogSizeOnce(340, 360)
@@ -69,8 +64,8 @@ func seedRevolveAngle(rv *app.RevolveTool) float32 {
 }
 
 // drawRevolveInputGeometry is the Input Geometry section: the required Profiles chip
-// and the Axis row (origin-axis combo, swapped for the sketch's centerline when that
-// toggle is on).
+// and the Axis row — a selection chip naming the axis the revolve will actually spin
+// about, over the origin-axis quick-pick it falls back to.
 func drawRevolveInputGeometry(rv *app.RevolveTool) {
 	if !propertySection("Input Geometry") {
 		return
@@ -85,30 +80,34 @@ func drawRevolveInputGeometry(rv *app.RevolveTool) {
 	drawRevolveAxisControls(rv)
 }
 
-// drawRevolveAxisControls renders the axis combo (greyed while the centerline drives
-// the revolution) with the about-centerline toggle beneath it, aligned to the control
-// column.
+// drawRevolveAxisControls renders the axis selection chip with the origin-axis quick-pick
+// beneath it, aligned to the control column. The chip is the truth: before #2018 the panel
+// showed only this combo, so a pre-selected centerline — which outranks it — left the panel
+// naming an axis the feature ignored. The combo is greyed while a pick overrides it, and the
+// chip's × drops the pick to hand the axis back to the combo.
 func drawRevolveAxisControls(rv *app.RevolveTool) {
-	native.BeginDisabled(revolveUI.centerline)
+	if propertySelectorChip("revolve-axis-pick", rv.AxisName(), rv.AxisPicked(), false) {
+		rv.ClearAxis()
+	}
+	native.SetItemTooltip("Click a centerline, sketch line or work axis (origin axes are in the browser)")
+	propertyRow("")
+	native.BeginDisabled(rv.AxisPicked())
 	native.SetNextItemWidth(propertyFieldWidth)
 	revolveAxisCombo(rv)
 	native.EndDisabled()
-	propertyRow("")
-	native.Checkbox("About sketch centerline", &revolveUI.centerline)
-	rv.SetUseCenterline(revolveUI.centerline)
 }
 
 func revolveAxisCombo(rv *app.RevolveTool) {
 	preview := "Y Axis"
 	for _, a := range revolveAxes {
-		if a.ref == rv.Axis() {
-			preview = a.label
+		if a.Ref == rv.Axis() {
+			preview = a.Label
 		}
 	}
 	if native.BeginCombo("##revolve-axis", preview) {
 		for _, a := range revolveAxes {
-			if native.Selectable(a.label, a.ref == rv.Axis()) {
-				rv.SetAxis(a.ref)
+			if native.Selectable(a.Label, a.Ref == rv.Axis()) {
+				rv.SetAxis(a.Ref)
 			}
 		}
 		native.EndCombo()

@@ -104,14 +104,14 @@ func drawCoilInputGeometry(c *app.CoilTool) {
 func coilAxisCombo(c *app.CoilTool) {
 	preview := "Y Axis"
 	for _, a := range revolveAxes {
-		if a.ref == c.Axis() {
-			preview = a.label
+		if a.Ref == c.Axis() {
+			preview = a.Label
 		}
 	}
 	if native.BeginCombo("##coil-axis", preview) {
 		for _, a := range revolveAxes {
-			if native.Selectable(a.label, a.ref == c.Axis()) {
-				c.SetAxis(a.ref)
+			if native.Selectable(a.Label, a.Ref == c.Axis()) {
+				c.SetAxis(a.Ref)
 			}
 		}
 		native.EndCombo()
