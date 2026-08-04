@@ -3,6 +3,8 @@
 package app
 
 import (
+	"fmt"
+
 	"oblikovati.org/api/types"
 	"oblikovati.org/event"
 	"oblikovati.org/model/doc"
@@ -43,17 +45,67 @@ func (s *Session) applyNewWindowProjection(d *doc.Document) {
 	}
 }
 
+// ViewProjection reports how a document's active view projects (id 0 = the active document), as
+// the wire enum. A client capturing a viewport needs this to know whether what it sees is
+// foreshortened; before it existed the projection was reachable only as the global new-window
+// default.
+//
+//	proj, err := s.ViewProjection(0) // types.OrthographicProjection for a new part
+func (s *Session) ViewProjection(docID uint64) (types.ProjectionTypeEnum, error) {
+	d, err := s.DocumentByID(docID)
+	if err != nil {
+		return 0, err
+	}
+	return projectionTypeOf(d.Views().Active().Projection), nil
+}
+
+// SetViewProjection changes how a document's active view projects (id 0 = the active document).
+func (s *Session) SetViewProjection(docID uint64, proj types.ProjectionTypeEnum) error {
+	d, err := s.DocumentByID(docID)
+	if err != nil {
+		return err
+	}
+	mode, ok := projectionModeOf(proj)
+	if !ok {
+		return fmt.Errorf("app: %d is not a projection type (want orthographic %d, perspective %d or perspective-with-ortho-faces %d)",
+			proj, types.OrthographicProjection, types.PerspectiveProjection, types.PerspectiveWithOrthoFacesProjection)
+	}
+	d.Views().Active().Projection = mode
+	return nil
+}
+
+// projectionTypeOf and projectionModeOf translate between the wire enum and the document's mode.
+// They are the only place the two vocabularies meet, so a new mode is added once.
+func projectionTypeOf(m doc.ProjectionMode) types.ProjectionTypeEnum {
+	switch m {
+	case doc.ProjOrthographic:
+		return types.OrthographicProjection
+	case doc.ProjPerspectiveOrthoFaces:
+		return types.PerspectiveWithOrthoFacesProjection
+	default:
+		return types.PerspectiveProjection
+	}
+}
+
+func projectionModeOf(p types.ProjectionTypeEnum) (doc.ProjectionMode, bool) {
+	switch p {
+	case types.OrthographicProjection:
+		return doc.ProjOrthographic, true
+	case types.PerspectiveProjection:
+		return doc.ProjPerspective, true
+	case types.PerspectiveWithOrthoFacesProjection:
+		return doc.ProjPerspectiveOrthoFaces, true
+	}
+	return 0, false
+}
+
 // newViewProjection is the projection mode a view the session creates starts in, translated from
 // the Application Options ▸ Display setting.
 //
 //	s.newViewProjection() // doc.ProjOrthographic with the shipped default
 func (s *Session) newViewProjection() doc.ProjectionMode {
-	switch s.displayOptions.NewWindowProjection {
-	case types.PerspectiveProjection:
-		return doc.ProjPerspective
-	case types.PerspectiveWithOrthoFacesProjection:
-		return doc.ProjPerspectiveOrthoFaces
-	default:
-		return doc.ProjOrthographic
+	if mode, ok := projectionModeOf(s.displayOptions.NewWindowProjection); ok {
+		return mode
 	}
+	return doc.ProjOrthographic // an unset or unknown option keeps the shipped parallel default
 }

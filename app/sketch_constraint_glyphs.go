@@ -71,9 +71,13 @@ func (s *Session) SketchConstraintGlyphs() []ConstraintGlyphView {
 }
 
 // fannedGlyphAnchor offsets the nth marker sharing an anchor, so co-located markers sit in a row
-// above the geometry rather than on top of one another.
+// beside the geometry rather than on top of one another.
+//
+// The offset is DIAGONAL, not straight up: a vertical tick drawn on a vertical line, or a
+// horizontal dash on a horizontal line, is invisible — it disappears into the very edge it
+// annotates, which is exactly where axis-aligned constraints land.
 func fannedGlyphAnchor(at math.Point2, n int, step float64) math.Point2 {
-	return math.P2(at.X+math.Scalar(float64(n)*step), at.Y+math.Scalar(step))
+	return math.P2(at.X+math.Scalar(float64(n+1)*step), at.Y+math.Scalar(step))
 }
 
 // selectedConstraintSet indexes the selection's constraints for the per-glyph Selected flag.

@@ -3,6 +3,7 @@
 package app
 
 import (
+	"strings"
 	"testing"
 
 	"oblikovati.org/api/types"
@@ -93,5 +94,43 @@ func TestOpenedDocumentKeepsItsSavedProjection(t *testing.T) {
 	s.applyNewWindowProjection(nil) // a nil document must be a no-op, not a panic
 	if got := s.ActiveViewProjection(); got != doc.ProjPerspective {
 		t.Errorf("projection = %v, want the explicitly chosen ProjPerspective to survive", got)
+	}
+}
+
+// TestViewProjectionRoundTripsOverTheWireEnum: a client capturing a viewport has to be able to
+// tell whether what it sees is foreshortened, and to change it. Before this the projection was
+// reachable only as the global new-window default.
+func TestViewProjectionRoundTripsOverTheWireEnum(t *testing.T) {
+	s := newDocSession(t)
+
+	got, err := s.ViewProjection(0)
+	if err != nil {
+		t.Fatalf("ViewProjection: %v", err)
+	}
+	if got != types.OrthographicProjection {
+		t.Errorf("projection = %v, want OrthographicProjection", got)
+	}
+	if err := s.SetViewProjection(0, types.PerspectiveProjection); err != nil {
+		t.Fatalf("SetViewProjection: %v", err)
+	}
+	if got, _ := s.ViewProjection(0); got != types.PerspectiveProjection {
+		t.Errorf("after setting perspective, projection = %v", got)
+	}
+	if s.Camera().Orthographic {
+		t.Error("the rendered camera did not follow the projection change")
+	}
+}
+
+// TestSetViewProjectionRejectsAnUnknownEnum: an out-of-vocabulary value must be reported with the
+// offending value and the values it could have been, not silently coerced to a default.
+func TestSetViewProjectionRejectsAnUnknownEnum(t *testing.T) {
+	s := newDocSession(t)
+
+	err := s.SetViewProjection(0, types.ProjectionTypeEnum(42))
+	if err == nil {
+		t.Fatal("an unknown projection enum should be rejected")
+	}
+	if !strings.Contains(err.Error(), "42") || !strings.Contains(err.Error(), "86273") {
+		t.Errorf("error %q should name the offending value and the accepted ones", err)
 	}
 }

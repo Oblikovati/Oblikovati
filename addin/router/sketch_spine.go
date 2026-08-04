@@ -30,24 +30,33 @@ func getSketch(_ *app.Session, part *compdef.PartComponentDefinition, in wire.Sk
 }
 
 // editSketch enters edit mode; exitEditSketch leaves it.
-func editSketch(_ *app.Session, part *compdef.PartComponentDefinition, in wire.SketchArgs) (wire.EditSketchResult, error) {
-	return setSketchEdit(part, in, true)
+//
+// Both go through the SESSION rather than flipping the sketch's own flag. Marking the sketch alone
+// left the session outside the sketch environment while the reply said "editing": every
+// sketch-environment command stayed disabled, so an add-in that opened a sketch over the wire could
+// not then drive Dimension, Finish Sketch or any constraint tool. Entering through the session is
+// what the UI's own path does.
+func editSketch(s *app.Session, part *compdef.PartComponentDefinition, in wire.SketchArgs) (wire.EditSketchResult, error) {
+	return setSketchEdit(s, part, in, true)
 }
 
-func exitEditSketch(_ *app.Session, part *compdef.PartComponentDefinition, in wire.SketchArgs) (wire.EditSketchResult, error) {
-	return setSketchEdit(part, in, false)
+func exitEditSketch(s *app.Session, part *compdef.PartComponentDefinition, in wire.SketchArgs) (wire.EditSketchResult, error) {
+	return setSketchEdit(s, part, in, false)
 }
 
-// setSketchEdit toggles a sketch's edit mode and echoes the resulting state.
-func setSketchEdit(part *compdef.PartComponentDefinition, in wire.SketchArgs, edit bool) (wire.EditSketchResult, error) {
+// setSketchEdit opens or closes a sketch for editing and echoes the resulting state.
+func setSketchEdit(s *app.Session, part *compdef.PartComponentDefinition, in wire.SketchArgs, edit bool) (wire.EditSketchResult, error) {
 	sk, err := sketchAtIndex(part, in.SketchIndex)
 	if err != nil {
 		return wire.EditSketchResult{}, err
 	}
-	if edit {
-		sk.Edit()
-	} else {
-		sk.ExitEdit()
+	switch {
+	case edit:
+		s.EnterSketch(sk)
+	case s.ActiveSketch() == sk:
+		s.ExitSketch()
+	default:
+		sk.ExitEdit() // a sketch marked edited without being the session's active one
 	}
 	return wire.EditSketchResult{SketchIndex: in.SketchIndex, Editing: sk.IsEditing()}, nil
 }

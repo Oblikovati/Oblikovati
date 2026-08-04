@@ -19,7 +19,7 @@ func getCamera(s *app.Session, a wire.GetCameraArgs) (wire.CameraView, error) {
 	if err != nil {
 		return wire.CameraView{}, err
 	}
-	return cameraView(cam), nil
+	return cameraViewOf(s, a.Document, cam)
 }
 
 // setCamera moves a document's active-view camera to the requested look-at frame, keeping
@@ -41,11 +41,30 @@ func setCamera(s *app.Session, a wire.SetCameraArgs) (wire.CameraView, error) {
 	if err := s.SetViewCamera(a.Document, cam); err != nil {
 		return wire.CameraView{}, err
 	}
+	// A zero Projection means "leave it": moving the camera must not silently reset how the view
+	// projects just because the caller did not restate it.
+	if a.Projection != 0 {
+		if err := s.SetViewProjection(a.Document, a.Projection); err != nil {
+			return wire.CameraView{}, err
+		}
+	}
 	out, err := s.ViewCamera(a.Document)
 	if err != nil {
 		return wire.CameraView{}, err
 	}
-	return cameraView(out), nil
+	return cameraViewOf(s, a.Document, out)
+}
+
+// cameraViewOf is cameraView with the view's projection attached — the projection lives on the
+// view, not on the look-at frame, so it is read separately.
+func cameraViewOf(s *app.Session, docID uint64, c app.CameraFrame) (wire.CameraView, error) {
+	proj, err := s.ViewProjection(docID)
+	if err != nil {
+		return wire.CameraView{}, err
+	}
+	v := cameraView(c)
+	v.Projection = proj
+	return v, nil
 }
 
 // cameraView projects an app camera frame onto the wire look-at DTO.

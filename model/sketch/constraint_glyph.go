@@ -81,16 +81,20 @@ func userDeletable(c Constraint) bool {
 	return !marked || nd.Deletable()
 }
 
-// variableOwners maps every point coordinate in the sketch to its point. Only coordinates are
-// mapped, and that is enough: a circular operand exposes its centre alongside its radius
-// (Circle.circularVars), and an ellipse-axis operand exposes its centre alongside its orientation,
-// so every relation in the vocabulary reaches at least one point. Mapping radii and angles to
-// their centres as well was written first and proved to change no anchor — the tests that were
-// supposed to need it passed with it removed — so it is not carried.
+// variableOwners maps every point coordinate in the sketch to its point.
+//
+// It walks s.pts — every point the sketch has allocated — NOT the Points() collection. Those are
+// different sets: Points().Add registers a standalone point, while Lines().AddByTwoPoints (how
+// every tool and the wire actually draw a line) allocates its endpoints without registering them.
+// Walking the collection therefore found the endpoints of hand-built test fixtures and none of a
+// real sketch's, so every marker was silently dropped in the running app while the tests passed.
+//
+// Only coordinates are mapped, and that is enough: a circular operand exposes its centre alongside
+// its radius (Circle.circularVars), and an ellipse-axis operand its centre alongside its
+// orientation, so every relation in the vocabulary reaches at least one point.
 func (s *Sketch) variableOwners() map[*math.Scalar]*Point {
-	owners := make(map[*math.Scalar]*Point, s.points.Count()*2)
-	for i := 0; i < s.points.Count(); i++ {
-		p := s.points.Item(i)
+	owners := make(map[*math.Scalar]*Point, len(s.pts)*2)
+	for _, p := range s.pts {
 		owners[&p.X], owners[&p.Y] = p, p
 	}
 	return owners

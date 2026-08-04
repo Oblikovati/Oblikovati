@@ -145,3 +145,28 @@ func TestEveryUserConstraintGetsExactlyOneGlyph(t *testing.T) {
 		t.Errorf("got %d glyphs for 3 user constraints", got)
 	}
 }
+
+// TestGlyphsForGeometryBuiltTheWayToolsBuildIt is the regression for the defect the live app
+// exposed while every test above passed: the tests hand-built fixtures with Points().Add, but a
+// line tool — and the wire — draw with Lines().AddByTwoPoints, which allocates endpoints WITHOUT
+// registering them in the Points collection. Walking the collection therefore found the fixtures'
+// points and none of a real sketch's, so no marker was drawn in the running app.
+func TestGlyphsForGeometryBuiltTheWayToolsBuildIt(t *testing.T) {
+	sk := NewSketches().Add(XYPlane())
+	bottom := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(8, 0))
+	right := sk.Lines().AddByTwoPoints(math.P2(8, 0), math.P2(8, 5))
+	g := sk.GeometricConstraints()
+	g.AddLineHorizontal(bottom)
+	g.AddPerpendicular(bottom, right)
+
+	glyphs := sk.ConstraintGlyphs()
+	if len(glyphs) != 2 {
+		t.Fatalf("got %d markers for 2 constraints on AddByTwoPoints geometry, want 2", len(glyphs))
+	}
+	// The horizontal acts on the bottom line's two endpoints, so its marker is their midpoint.
+	for _, gl := range glyphs {
+		if gl.Kind == SingleLineHorizontalKind && !closeTo(gl.At, math.P2(4, 0)) {
+			t.Errorf("horizontal marker at %v, want the bottom edge's midpoint {4 0}", gl.At)
+		}
+	}
+}
