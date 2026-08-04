@@ -4,8 +4,10 @@ package sketch
 
 import (
 	"fmt"
+	stdmath "math"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/math"
 )
 
 // Applying a [Recipe]: mint its shared points, build its entities, apply its constraints, and
@@ -27,6 +29,9 @@ func (s *Sketch) Apply(r Recipe, behavior types.OverConstrainedDimensionBehavior
 // field i's parameter expression (e.g. "10 mm"); an empty string leaves that field
 // undimensioned, which is the contract for a field that merely tracked the cursor.
 func (s *Sketch) ApplyWithFields(r Recipe, locked []string, behavior types.OverConstrainedDimensionBehavior) ([]Entity, []*Point, error) {
+	if err := checkRecipeFinite(r); err != nil {
+		return nil, nil, err
+	}
 	pts := s.mintRecipePoints(r)
 	ents, err := s.buildRecipeEntities(r, pts)
 	if err != nil {
@@ -50,6 +55,35 @@ func (s *Sketch) rollbackRecipe(ents []Entity, pts []*Point, err error) ([]Entit
 	s.dropConstraintsOnVars(droppedPointVars(s.pruneOrphanPoints()))
 	return nil, nil, err
 }
+
+// checkRecipeFinite rejects a recipe whose geometry came out non-finite. It is the single guard
+// for every degenerate input a shape builder can be handed — coincident slot centres, a
+// zero-radius circle, a collinear three-point arc — each of which divides by a zero length and
+// so produces ±Inf or NaN coordinates rather than failing outright.
+func checkRecipeFinite(r Recipe) error {
+	for i, p := range r.Points {
+		if isFinitePoint(p) {
+			continue
+		}
+		return fmt.Errorf("recipe point %d is (%v,%v), want finite coordinates: the shape's "+
+			"defining points are degenerate (coincident, collinear or zero-sized)", i, p.X, p.Y)
+	}
+	for i, e := range r.Entities {
+		if e.Radius < 0 || math.IsNearZero(float64(e.Radius), math.DefaultTolerance) && needsRadius(e.Kind) {
+			return fmt.Errorf("recipe entity %d has radius %v, want a positive radius", i, e.Radius)
+		}
+	}
+	return nil
+}
+
+// isFinitePoint reports whether both coordinates are finite.
+func isFinitePoint(p math.Point2) bool {
+	return !stdmath.IsNaN(float64(p.X)) && !stdmath.IsInf(float64(p.X), 0) &&
+		!stdmath.IsNaN(float64(p.Y)) && !stdmath.IsInf(float64(p.Y), 0)
+}
+
+// needsRadius reports whether a kind is sized by its Radius field.
+func needsRadius(k RecipeEntityKind) bool { return k == RecipeCircle || k == RecipeEllipse }
 
 // mintRecipePoints creates one constrainable point per recipe position, in index order. It
 // uses newPoint rather than Points().Add because these are curve endpoints and centres, not
