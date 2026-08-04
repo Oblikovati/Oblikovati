@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/api/types"
+	dwgdrawing "oblikovati.org/kernel/exchange/drawing"
 	gmath "oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/param"
@@ -76,5 +77,41 @@ func TestUnstyledSketchRoundTripsClean(t *testing.T) {
 	}
 	if got := part.Sketches().Item(0).EntityFormatCount(); got != 0 {
 		t.Errorf("format entries = %d, want 0", got)
+	}
+}
+
+// A DWG carries formatting as per-entity styles with no layer table — its decoder records the
+// colour and weight each entity states for itself. Those must reach the sketch the same way a
+// DXF's do, since the resolution is shared (#2015).
+func TestDWGStyleShapeReachesTheSketch(t *testing.T) {
+	part := compdef.NewPartComponentDefinition()
+	dr := &dwgdrawing.Drawing{
+		Entities: []dwgdrawing.Entity{
+			&dwgdrawing.Line{Handle: 42, Start: [3]float64{0, 0, 0}, End: [3]float64{10, 0, 0}},
+			&dwgdrawing.Line{Handle: 43, Start: [3]float64{0, 5, 0}, End: [3]float64{10, 5, 0}},
+		},
+	}
+	// Handle 42 states blue explicitly at 0.5 mm; 43 states nothing and inherits.
+	dr.SetStyle(42, dwgdrawing.Style{Color: 5, LineWeight: 50, LineType: ""})
+
+	res := importDrawing(part, dr, sketch.XYPlane())
+	if res.entityCount != 2 {
+		t.Fatalf("imported %d entities, want 2", res.entityCount)
+	}
+	sk := part.Sketches().Item(0)
+	if got := sk.EntityFormatCount(); got != 1 {
+		t.Fatalf("format entries = %d, want exactly the one styled line", got)
+	}
+	for i := 0; i < sk.Lines().Count(); i++ {
+		f, ok := sk.EntityFormat(sk.Lines().Item(i).EntityID())
+		if !ok {
+			continue
+		}
+		if !f.Color.IsOverride() || f.Color.B != 255 {
+			t.Errorf("colour = %+v, want blue as an override", f.Color)
+		}
+		if f.LineWeight != 0.5 {
+			t.Errorf("weight = %v, want 0.5 mm from the 50-hundredths code", f.LineWeight)
+		}
 	}
 }

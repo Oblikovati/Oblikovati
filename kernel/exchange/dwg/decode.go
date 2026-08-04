@@ -51,7 +51,7 @@ func DecodeWithProgress(data []byte, opts exchange.TranslationOptions) (*Drawing
 	if err != nil {
 		return nil, warns, err
 	}
-	dr := &Drawing{Entities: c.resolve()}
+	dr := &Drawing{Entities: c.resolve(), Styles: c.styles}
 	return dr, applyHeaderUnits(dr, h, data, warns), nil
 }
 
@@ -83,6 +83,10 @@ type collector struct {
 	blockEntities map[uint64][]Entity // by owning BLOCK_HEADER handle
 	blockInserts  map[uint64][]*Insert
 	paperCurves   int // paper-space curve entities skipped (for classification accounting)
+	// styles is each entity's own formatting, keyed by its handle (#2015). The decoder always
+	// read the colour and line weight to keep the bit stream aligned and threw them away; they
+	// are what an imported drawing needs to keep its appearance.
+	styles map[uint64]drawing.Style
 	// Readers reused across the per-object loop so each object does not allocate a fresh
 	// *BitReader: geomReader walks the data stream (held by the cursor), handleReader the
 	// handle stream. The loop fully decodes one object before the next, so reuse is safe.
@@ -146,6 +150,7 @@ func (c *collector) addObject(cur *entityCursor, hdr ObjectHeader) string {
 		}
 		return ""
 	}
+	c.recordStyle(hdr.Handle, cur.common) // per-entity colour / line weight (#2015)
 	e, err := decodeEntity(cur.geom, hdr, c.version)
 	if err != nil {
 		return err.Error()
@@ -203,4 +208,31 @@ func (c *collector) expand(in *Insert, parent drawing.Affine, out []Entity, visi
 	}
 	delete(visiting, in.BlockHeader)
 	return out
+}
+
+// recordStyle files one entity's own formatting under its handle. An entity that inherits
+// everything is not recorded, so a drawing of ordinary geometry carries no style table at all.
+func (c *collector) recordStyle(handle uint64, ce commonEntity) {
+	s := drawing.Style{
+		Color:      ce.colorIndex,
+		LineWeight: ce.lineWeight,
+		LineType:   dwgLineTypeName(ce.ltypeFlags),
+	}
+	if s.Color == dwgColorByLayer && s.LineWeight == dwgLineWeightByLayer && s.LineType == "" {
+		return
+	}
+	if c.styles == nil {
+		c.styles = map[uint64]drawing.Style{}
+	}
+	c.styles[handle] = s
+}
+
+// dwgLineTypeName maps the two-bit line-type flag onto a record name. Flag 3 names a line-type
+// object by handle, which needs the LTYPE records this decoder does not read yet, so it inherits
+// rather than guessing a pattern.
+func dwgLineTypeName(flags int) string {
+	if flags == 2 {
+		return "CONTINUOUS"
+	}
+	return ""
 }
