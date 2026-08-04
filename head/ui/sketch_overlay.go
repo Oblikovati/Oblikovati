@@ -393,15 +393,17 @@ func addEllipticalArcs(pick accumFor, plane sketch.Plane, sk *sketch.Sketch) {
 	}
 }
 
+// addSplines draws each spline along its true NURBS curve, via the same faceting entry point
+// region detection and picking use. Joining the defining points directly drew the CONTROL
+// POLYGON instead — a 4-point spline rendered as 3 straight chords deviating up to 0.44 cm
+// from the curve that was actually modelled and extruded, so the sketch contradicted the solid
+// built from it (#2026).
 func addSplines(pick accumFor, plane sketch.Plane, sk *sketch.Sketch) {
 	for i := 0; i < sk.Splines().Count(); i++ {
 		sp := sk.Splines().Item(i)
-		pts := make([]math.Point2, sp.PointCount())
-		for j, p := range sp.Points {
-			pts[j] = p.Position()
-		}
+		pts, closed := sketch.EntityPolyline(sp)
 		acc, pat := pick(sp)
-		acc.patterned(plane, pts, sp.Closed, pat)
+		acc.patterned(plane, pts, closed, pat)
 	}
 }
 

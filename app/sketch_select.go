@@ -121,29 +121,44 @@ func (s *Session) nearestEntityPoint(p math.Point2, tol float64) (sketch.Entity,
 	return best, true
 }
 
-// nearestEntityCurve returns the line/circle/arc whose outline is nearest p within tol.
+// nearestEntityCurve returns the curve whose outline is nearest p within tol.
+//
+// It walks every entity through [sketch.EntityPolyline], the shared faceting entry point, so a
+// curve is hit-tested along the same discretization region detection and the renderer use.
+// Enumerating three collections by hand instead left splines, ellipses and elliptical arcs
+// unpickable: clicking a spline selected nothing, and only its fit points could be grabbed,
+// which is what made it feel like a polyline (#2026).
 func (s *Session) nearestEntityCurve(p math.Point2, tol float64) (sketch.Entity, bool) {
 	var best sketch.Entity
 	bestD := tol
-	consider := func(ent sketch.Entity, d float64) {
-		if d <= bestD {
-			best, bestD = ent, d
+	for _, e := range s.activeSketch.Entities() {
+		d, ok := curveDistance(p, e)
+		if ok && d <= bestD {
+			best, bestD = e, d
 		}
 	}
-	sk := s.activeSketch
-	for i := 0; i < sk.Lines().Count(); i++ {
-		l := sk.Lines().Item(i)
-		consider(l, segmentDistance(p, l.A.Position(), l.B.Position()))
-	}
-	for i := 0; i < sk.Circles().Count(); i++ {
-		c := sk.Circles().Item(i)
-		consider(c, circleOutlineDistance(p, c.Center.Position(), c.Radius))
-	}
-	for i := 0; i < sk.Arcs().Count(); i++ {
-		a := sk.Arcs().Item(i)
-		consider(a, circleOutlineDistance(p, a.Center.Position(), a.Radius()))
-	}
 	return best, best != nil
+}
+
+// curveDistance is the distance from p to entity e's faceted outline, false for an entity that
+// is not a curve (a bare point, which nearestEntityPoint owns).
+func curveDistance(p math.Point2, e sketch.Entity) (float64, bool) {
+	pts, closed := sketch.EntityPolyline(e)
+	if len(pts) < 2 {
+		return 0, false
+	}
+	best := segmentDistance(p, pts[0], pts[1])
+	for i := 1; i+1 < len(pts); i++ {
+		if d := segmentDistance(p, pts[i], pts[i+1]); d < best {
+			best = d
+		}
+	}
+	if closed {
+		if d := segmentDistance(p, pts[len(pts)-1], pts[0]); d < best {
+			best = d
+		}
+	}
+	return best, true
 }
 
 // segmentDistance returns the distance from p to the segment a–b.

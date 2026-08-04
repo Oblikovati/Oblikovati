@@ -170,12 +170,6 @@ func segmentClosestPoint(p, a, b math.Point2) math.Point2 {
 	return a.TranslateBy(ab.Scale(t))
 }
 
-// circleOutlineDistance returns the unsigned distance from p to a circle's outline (used
-// to pick circles and arcs, which both measure distance to their full circle).
-func circleOutlineDistance(p, center math.Point2, r float64) float64 {
-	return stdmath.Abs(p.DistanceTo(center) - r)
-}
-
 // circleClosestPoint returns the point on a circle's outline nearest p (center when p is
 // at the center).
 func circleClosestPoint(p, center math.Point2, r float64) math.Point2 {
