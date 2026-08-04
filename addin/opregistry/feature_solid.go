@@ -30,6 +30,7 @@ const revolveSchema = `{
     "aboutCenterline": {"type": "boolean", "default": false, "description": "Revolve about the sketch's single centerline (an internal, tilted axis) instead of axisRef; the sketch must have exactly one centerline."},
     "angle": {"type": "string", "description": "Revolve angle with units, e.g. \"360 deg\"."},
     "angle2": {"type": "string", "description": "Optional second-direction sweep (opposite sense), e.g. \"30 deg\" — the two-directional revolve."},
+    "direction": {"type": "string", "enum": ["positive", "negative", "symmetric"], "default": "positive", "description": "Which side of the profile the angle sweeps to: positive (forward), negative (the same sweep the other way), or symmetric (half each way). Ignored when angle2 is set, and unobservable on a full revolution."},
     "operation": {"type": "string", "enum": ["new", "join", "cut", "intersect", "surface"], "default": "new", "description": "Boolean against existing bodies, or \"surface\" to revolve the profile into an open surface-of-revolution (sheet) body — Inventor's kSurfaceOperation."},
     "profileSeed": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2, "description": "Select the revolved region by an interior seed point [x,y] (sketch 2-D cm) instead of profileIndex — resolved by containment on the solved sketch every recompute; wins over profileIndex."}
   },
@@ -62,8 +63,7 @@ func applyRevolve(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 			return nil, errors.New("revolve: aboutCenterline does not support a second-direction angle2")
 		}
 		pf := feature.NewRevolveFeatures(part.Features()).AddAboutCenterline(sk, in.ProfileIndex, angle, op)
-		setRevolveProfileSeed(pf, in.ProfileSeed)
-		return recomputeResult(part, pf)
+		return finishRevolve(part, pf, in)
 	}
 	axis, err := axisFromRef(part, in.AxisRef)
 	if err != nil {
@@ -75,10 +75,17 @@ func applyRevolve(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 			return nil, err
 		}
 		pf := feature.NewRevolveFeatures(part.Features()).AddTwoDirectional(sk, in.ProfileIndex, axis, angle, angle2, op)
-		setRevolveProfileSeed(pf, in.ProfileSeed)
-		return recomputeResult(part, pf)
+		return finishRevolve(part, pf, in)
 	}
 	pf := feature.NewRevolveFeatures(part.Features()).Add(sk, in.ProfileIndex, axis, angle, op)
+	return finishRevolve(part, pf, in)
+}
+
+// finishRevolve applies the axis-independent options — the sweep direction and the region seed —
+// and recomputes. Every construction path ends here so a "direction" can never be honoured on one
+// axis and dropped on another (#2019).
+func finishRevolve(part *compdef.PartComponentDefinition, pf *feature.PartFeature, in featureargs.Revolve) (json.RawMessage, error) {
+	pf.Definition().(*feature.RevolveFeature).Definition().Direction = parseExtentDirection(in.Direction)
 	setRevolveProfileSeed(pf, in.ProfileSeed)
 	return recomputeResult(part, pf)
 }

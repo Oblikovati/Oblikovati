@@ -52,6 +52,9 @@ type RevolveTool struct {
 	profile         *ProfileHandle
 	axis            revolveAxisChoice // the axis of revolution as a selection (#2018)
 	angle           float64           // swept angle in radians; 0 ⇒ full revolution
+	direction       feature.ExtentDirection
+	asymmetric      bool    // a separate angle each way; angle2 is then the second one (#2019)
+	angle2          float64 // second-direction sweep in radians, used while asymmetric
 	operation       ops.PartFeatureOperation
 	added           *feature.PartFeature
 }
@@ -169,6 +172,29 @@ func (t *RevolveTool) AxisPicked() bool { return t.axis.selected() }
 
 // ClearAxis drops the picked axis (the chip's ×), returning the revolve to the origin axis.
 func (t *RevolveTool) ClearAxis() { t.axis.clear() }
+
+// The Behavior panel's Direction row (#2019): which side of the profile the swept angle grows on,
+// and — while asymmetric — the separate angle for the other side.
+//
+//	rv.SetDirection(feature.NegativeDir) // sweep Angle A backwards instead
+func (t *RevolveTool) SetDirection(d feature.ExtentDirection) { t.direction = d }
+func (t *RevolveTool) Direction() feature.ExtentDirection     { return t.direction }
+func (t *RevolveTool) SetAsymmetric(on bool)                  { t.asymmetric = on }
+func (t *RevolveTool) Asymmetric() bool                       { return t.asymmetric }
+func (t *RevolveTool) SetSecondAngle(radians float64)         { t.angle2 = radians }
+func (t *RevolveTool) SecondAngle() float64                   { return t.angle2 }
+
+// applySweepDirection writes the panel's direction choice onto a revolve the tool just built. The
+// second angle is carried only while asymmetric, since it is what makes a revolve asymmetric —
+// leaving a stale one behind would silently widen the sweep after switching back.
+func (t *RevolveTool) applySweepDirection(pf *feature.PartFeature) {
+	def := pf.Definition().(*feature.RevolveFeature).Definition()
+	def.Direction, def.Angle2 = t.direction, nil
+	if t.asymmetric {
+		second := t.angle2
+		def.Angle2 = func() float64 { return second }
+	}
+}
 
 // SubmitToken accepts a typed swept angle in DEGREES from the command line (M26 F02
 // follow-up); the region (and any non-default axis) are picked in the viewport. With no
@@ -318,6 +344,7 @@ func (t *RevolveTool) commitEdit(s *Session) error {
 	angle := t.angle
 	def.Angle = func() float64 { return angle }
 	def.Operation = t.operation
+	t.applySweepDirection(t.target)
 	if err := t.writeEditAxis(s, def); err != nil {
 		return err
 	}
@@ -349,6 +376,17 @@ func (t *RevolveTool) writeEditAxis(s *Session, def *feature.RevolveDefinition) 
 // the sketch's own centerline, or a named work axis.
 func (t *RevolveTool) addRevolve(part *compdef.PartComponentDefinition, fs *feature.PartFeatures) (*feature.PartFeature, error) {
 	angle := func() float64 { return t.angle }
+	pf, err := t.addRevolveAboutItsAxis(part, fs, angle)
+	if err != nil {
+		return nil, err
+	}
+	t.applySweepDirection(pf)
+	return pf, nil
+}
+
+// addRevolveAboutItsAxis picks the constructor for the chosen axis: a specific sketch line, the
+// profile sketch's own centerline, or a work axis.
+func (t *RevolveTool) addRevolveAboutItsAxis(part *compdef.PartComponentDefinition, fs *feature.PartFeatures, angle func() float64) (*feature.PartFeature, error) {
 	revolves := feature.NewRevolveFeatures(fs)
 	switch {
 	case t.axis.line != nil: // a specific picked/pre-selected sketch line

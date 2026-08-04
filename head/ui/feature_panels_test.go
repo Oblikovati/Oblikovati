@@ -134,3 +134,19 @@ func TestLoftListHeight(t *testing.T) {
 		t.Errorf("50-row height = %v, want it clamped to %d rows", h, loftListMaxVisibleRows)
 	}
 }
+
+// TestRevolveDirectionToggleRoundTrip locks the Direction row's mapping (#2019): applying toggle i
+// reads back as active index i, and the asymmetric toggle is the only one that turns the two-angle
+// mode on — a single-direction toggle must clear it, or Angle B would keep widening the sweep.
+func TestRevolveDirectionToggleRoundTrip(t *testing.T) {
+	rv := app.NewRevolveTool()
+	for i := 0; i < 4; i++ {
+		applyRevolveDirection(rv, i)
+		if got := revolveDirectionIndex(rv); got != i {
+			t.Errorf("after applyRevolveDirection(%d), index = %d, want %d", i, got, i)
+		}
+		if rv.Asymmetric() != (i == 3) {
+			t.Errorf("toggle %d left asymmetric = %v, want %v", i, rv.Asymmetric(), i == 3)
+		}
+	}
+}

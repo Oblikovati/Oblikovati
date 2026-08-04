@@ -112,13 +112,18 @@ func snapshotExtrudeDef(def *feature.ExtrudeDefinition) func() {
 }
 
 // editRevolveTool seeds a RevolveTool from a committed revolve: profile, axis (work
-// axis, specific centerline, or the sketch's own), angle and operation.
+// axis, specific centerline, or the sketch's own), the swept angle with its direction
+// and any second angle, and the operation.
 func editRevolveTool(f *feature.PartFeature, rv *feature.RevolveFeature) *RevolveTool {
 	def := rv.Definition()
 	t := NewRevolveTool()
 	t.profile = &ProfileHandle{Sketch: def.Sketch, ProfileIndex: def.ProfileIndex}
 	t.angle = callOrZeroFn(def.Angle)
 	t.operation = def.Operation
+	t.direction = def.Direction
+	if def.Angle2 != nil {
+		t.asymmetric, t.angle2 = true, def.Angle2()
+	}
 	seedRevolveAxis(t, def)
 	t.bindEdit(f, snapshotRevolveDef(def))
 	return t

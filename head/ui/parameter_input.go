@@ -56,7 +56,7 @@ func paramFieldBuffer(id string) (buf []byte, fresh bool) {
 // can compose it (e.g. a greyed field beside a toggle row). It shows *v with its unit, evaluates the
 // typed text through the parameter parser on every edit, and writes the resolved value back to *v in
 // the document's preferred unit. Returns true on the frame *v changed. Width is set by the caller.
-func parameterField(s *app.Session, id, unit string, precision int, kind paramFieldKind, v *float32) bool {
+func parameterField(s paramFieldEvaluator, id, unit string, precision int, kind paramFieldKind, v *float32) bool {
 	buf, fresh := paramFieldBuffer(id)
 	if fresh {
 		setBuf(buf, formatParamValue(float64(*v), unit, precision))
@@ -101,10 +101,22 @@ func paramFieldUnit(s *app.Session, kind paramFieldKind) (string, int) {
 	}
 }
 
+// paramFieldEvaluator is the slice of the session a parameter field needs to turn typed text into a
+// value: the active part's parameter parser, per field kind. Taking this instead of the whole
+// *app.Session is the audit-I5 consumer-interface pattern — a field evaluates an expression and
+// does nothing else, and the signature now says so.
+type paramFieldEvaluator interface {
+	EvalLengthDisplay(text string) (float64, bool)
+	EvalAngleDisplay(text string) (float64, bool)
+	EvalUnitless(text string) (float64, bool)
+}
+
+var _ paramFieldEvaluator = (*app.Session)(nil)
+
 // evalParamField evaluates a field's text to a value in the document's preferred unit for its kind,
 // using the active part's parameter parser (so formulas referencing parameters resolve). ok is false
 // while the text does not yet resolve, so the caller keeps the last good value.
-func evalParamField(s *app.Session, text string, kind paramFieldKind) (float64, bool) {
+func evalParamField(s paramFieldEvaluator, text string, kind paramFieldKind) (float64, bool) {
 	switch kind {
 	case paramLength:
 		return s.EvalLengthDisplay(text)

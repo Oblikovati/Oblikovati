@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/app"
+	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 )
 
@@ -277,5 +278,31 @@ func assertNoPanic(t *testing.T, op string, s *app.Session, args map[string]any)
 	}()
 	if _, err := applyMap(t, s, op, args); err != nil && err.Error() == "" {
 		t.Fatalf("operation %q returned an empty error", op)
+	}
+}
+
+// TestRevolveDirectionReachesTheDefinition covers the #2019 add_feature branch: a "direction" in
+// the request lands on the definition on EVERY axis path, including the centerline one that
+// restores and builds through its own constructor.
+func TestRevolveDirectionReachesTheDefinition(t *testing.T) {
+	for _, c := range []struct {
+		name, args string
+		want       feature.ExtentDirection
+	}{
+		{"flipped about a work axis", `{"sketchIndex":0,"angle":"90 deg","direction":"negative"}`, feature.NegativeDir},
+		{"symmetric about a work axis", `{"sketchIndex":0,"angle":"90 deg","direction":"symmetric"}`, feature.SymmetricDir},
+		{"absent defaults to forward", `{"sketchIndex":0,"angle":"90 deg"}`, feature.PositiveDir},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			s := profiledPart(t)
+			if _, err := apply(t, s, "revolve", c.args); err != nil {
+				t.Fatalf("apply: %v", err)
+			}
+			part := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
+			last := part.Features().Item(part.Features().Count() - 1)
+			if got := last.Definition().(*feature.RevolveFeature).Definition().Direction; got != c.want {
+				t.Errorf("direction = %v, want %v", got, c.want)
+			}
+		})
 	}
 }
