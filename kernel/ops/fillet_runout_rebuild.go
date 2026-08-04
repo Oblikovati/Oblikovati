@@ -66,11 +66,16 @@ func indexFaces(body *topo.Body) map[uint64]*topo.Face {
 // a bare absolute epsilon. It also takes the NEAREST vertex rather than the first under a threshold,
 // so a rounding difference cannot flip which vertex wins.
 //
-// The previous `< 1e-9` absolute test made this a knife-edge, and the edge was live: on arm64 — where
-// the Go compiler contracts x*y+z into FMA and on amd64 it does not — the apex landed just outside
-// 1e-9, every fan was skipped, and TestFilletRunOutToZero left 177 open edges on macOS CI while
-// passing on linux/amd64 (PR #2013). Same defect class as the ringSingleValuedInAngle regression
-// earlier in this effort: an absolute constant standing in for a model-relative tolerance.
+// The previous test was a bare absolute `< 1e-9`, the same defect class as the ringSingleValuedInAngle
+// regression earlier in this effort: an absolute constant standing in for a model-relative tolerance.
+//
+// HONESTY NOTE (PR #2013): this was changed while hunting TestFilletRunOutToZero's 177 open edges on
+// macOS/arm64, on the hypothesis that a skipped fan caused them. That hypothesis was WRONG — the
+// failure survives this fix, and the real divergence is in the run-out face's TESSELLATION, not its
+// topology (the B-rep is bit-identical across architectures; only the BSplineSurface face's mesh
+// differs — 570 tris/area 0.464846 on amd64 vs 337/0.469288 on arm64). This change is kept purely on
+// its own merits as ADR-0042 hardening, proven do-no-harm by bit-identical amd64 fingerprints. It
+// fixes no known failure. Do not cite it as the cure for the run-out divergence.
 func vertexIDForApex(body *topo.Body, apex math.Point3, res Resolution) (uint64, bool) {
 	bestID, best := uint64(0), stdmath.Inf(1)
 	for _, v := range body.Vertices() {
