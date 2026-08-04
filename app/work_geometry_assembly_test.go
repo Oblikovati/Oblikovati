@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/feature"
 )
 
 // activeAssemblySession returns a session with a fresh, empty assembly active — its origin frame
@@ -75,8 +76,23 @@ func TestPickableWorkAxesFollowsVisibilityInAssembly(t *testing.T) {
 // TestPickableWorkPointsIncludesAssemblyOrigin: an assembly's origin centre point is a snap target.
 func TestPickableWorkPointsIncludesAssemblyOrigin(t *testing.T) {
 	s := activeAssemblySession(t)
+	// The origin centre starts hidden, and what the overlays do not draw must not be clickable —
+	// otherwise a click near the origin snaps to a point nothing shows (#2016). Showing it is
+	// what makes it a pick target, so the assembly's origin point is reachable either way.
+	if got := len(s.PickableWorkPoints()); got != 0 {
+		t.Errorf("assembly PickableWorkPoints = %d while the origin centre is hidden, want 0", got)
+	}
+	wg, ok := s.ActiveWorkGeometry()
+	if !ok {
+		t.Fatal("assembly has no work geometry")
+	}
+	center, ok := wg.WorkPointByRef(feature.OriginCenter)
+	if !ok {
+		t.Fatal("assembly has no origin centre point")
+	}
+	center.SetVisible(true)
 	if got := len(s.PickableWorkPoints()); got != 1 {
-		t.Errorf("assembly PickableWorkPoints = %d, want 1 origin centre point", got)
+		t.Errorf("assembly PickableWorkPoints = %d once shown, want 1 origin centre point", got)
 	}
 }
 

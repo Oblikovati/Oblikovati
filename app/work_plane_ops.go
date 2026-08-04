@@ -117,9 +117,12 @@ func (s *Session) PickableWorkAxes() []*feature.WorkAxis {
 	return out
 }
 
-// PickableWorkPoints returns the datum points (origin center and user) the viewport hit-test should
-// snap to, for a part or an assembly. Points have no overlay symbol but are snap targets; scope-
-// hidden ones are excluded to match the other datums.
+// PickableWorkPoints returns the datum points (origin center and user) the viewport hit-test
+// should snap to, for a part or an assembly — every visible point not hidden by the active edit
+// scope. It gates on the point's own Visible flag, mirroring pointsDatumOverlay exactly as
+// PickableWorkAxes mirrors axesOverlay: geometry the overlays do not draw must not be clickable.
+// Points used to be the exception, so a click near the origin snapped to a Center Point nothing
+// had drawn — the invisible-snap defect #1520 fixed for planes (#2016).
 func (s *Session) PickableWorkPoints() []*feature.WorkPoint {
 	if !s.objectVisibility.WorkPoints { // hidden kinds are not pickable (M05-F12)
 		return nil
@@ -131,7 +134,7 @@ func (s *Session) PickableWorkPoints() []*feature.WorkPoint {
 	points := wg.WorkPoints()
 	out := make([]*feature.WorkPoint, 0, points.Count())
 	for i := 0; i < points.Count(); i++ {
-		if pt := points.Item(i); !s.EditScopeHides(pt.Seq()) {
+		if pt := points.Item(i); pt.Visible() && !s.EditScopeHides(pt.Seq()) {
 			out = append(out, pt)
 		}
 	}
@@ -174,10 +177,12 @@ func canMidplaneWorkPlane(s *Session) bool {
 	return !s.InSketch() && len(s.SelectedWorkPlanes()) >= 2
 }
 
-// ToggleSelectedWorkPlaneVisibility flips the Visible flag of every selected work plane —
-// the action behind the browser's Visibility menu item and the V keyboard shortcut. The
+// ToggleSelectedWorkPlaneVisibility flips the Visible flag of every selected work plane. The
 // viewport rebuilds from live state each frame, so the change shows immediately with no
 // recompute (visibility is display-only).
+//
+// The V shortcut and the browser menu use [Session.ToggleSelectedDatumVisibility] instead,
+// which covers axes and points as well; this stays for callers that mean planes specifically.
 func (s *Session) ToggleSelectedWorkPlaneVisibility() {
 	for _, wp := range s.SelectedWorkPlanes() {
 		wp.SetVisible(!wp.Visible())
