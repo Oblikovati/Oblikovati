@@ -60,6 +60,7 @@ var allowedPlainStartTools = map[string]struct{}{
 	"DatumFeatureTool":         {},
 	"DetailViewTool":           {},
 	"DimensionSetTool":         {},
+	"DimensionTool":            {}, // the sketch general dimension tool (#2022)
 	"DraftViewTool":            {},
 	"DraftingStandardTool":     {},
 	"EllipseTool":              {},

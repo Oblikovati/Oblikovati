@@ -21,11 +21,11 @@ func sketchTabCommands() []*CommandDefinition {
 	// Constrain panel (reference order): Dimension, Auto Dimension, then the constraint
 	// tools — there is no separate "Dimension" panel in the reference Sketch tab.
 	cmds = append(cmds, NewCommand("Sketch.Dimension", "Dimension", "Constrain", func(s *Session) error {
-		s.StartTool(newDimensionTool())
+		s.StartTool(NewDimensionTool())
 		return nil
 	}).WithTab("Sketch").WithEnvironment(SketchEnvironment).WithAlias("D").WithDefaultChord("Shift+D").WithEnable(inSketch).
 		WithIcon("dimension").WithButtonStyle(SmallIconButton).
-		WithTooltip("Dimension — then pick points/a line/a circle/two lines to dimension."))
+		WithTooltip("Dimension — pick points/a line/a circle/two lines, then click to place it."))
 	cmds = append(cmds, NewCommand("Sketch.AutoDimension", "Auto Dimension", "Constrain", func(s *Session) error {
 		sk := s.ActiveSketch()
 		if sk == nil {

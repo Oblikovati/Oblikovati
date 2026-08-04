@@ -195,14 +195,6 @@ func readySmooth(ents []sketch.Entity) bool {
 	return len(curves) >= 2 && sketch.HasSplineCurve(curves)
 }
 
-func readyDimension(ents []sketch.Entity) bool {
-	if len(filterCircles(ents)) >= 1 || len(filterLines(ents)) >= 2 {
-		return true
-	}
-	_, _, ok := pointPairFrom(ents)
-	return ok
-}
-
 // constraintToolDefs is the table of constraint/dimension tools (ribbon order).
 var constraintToolDefs = []struct {
 	id, name, tooltip, prompt string
@@ -282,10 +274,5 @@ var constraintToolDefs = []struct {
 	},
 }
 
-// newDimensionTool builds the dimension tool (distance/length, radius, or angle).
-func newDimensionTool() *ConstraintTool {
-	return &ConstraintTool{
-		name: "Dimension", prompt: "Select points, a line, a circle, or two lines",
-		accepts: acceptDimensionable, ready: readyDimension, apply: entityApply(applyDimension),
-	}
-}
+// The general dimension tool is NOT one of these: it needs a placement click after its picks,
+// which the auto-commit-on-ready flow above cannot express. See [DimensionTool] (#2022).
