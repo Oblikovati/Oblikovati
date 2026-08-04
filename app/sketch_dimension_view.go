@@ -20,13 +20,25 @@ func (s *Session) SketchDimensions() []DimensionView {
 		return nil
 	}
 	units := s.DocumentUnits()
+	selected := s.selectedDimensionSet()
 	var out []DimensionView
 	for _, d := range s.activeSketch.DimensionConstraints().All() {
 		if v, ok := dimensionView(d, units); ok {
+			v.Selected = selected[d]
 			out = append(out, v)
 		}
 	}
 	return out
+}
+
+// selectedDimensionSet indexes the selected dimensions for the per-dimension lookup the view
+// build does, so marking N dimensions against a selection of M is not N×M.
+func (s *Session) selectedDimensionSet() map[*sketch.DimensionConstraint]bool {
+	set := map[*sketch.DimensionConstraint]bool{}
+	for _, d := range s.SelectedSketchDimensions() {
+		set[d] = true
+	}
+	return set
 }
 
 // DimensionView is one dimension ready to draw: its lines (sketch-plane point pairs),
@@ -38,6 +50,9 @@ type DimensionView struct {
 	Label    string
 	LabelAt  math.Point2
 	Driven   bool
+	// Selected drives the highlight colour. Without it a click on a dimension had no visible
+	// effect, so selection looked broken even once it worked (#2017).
+	Selected bool
 }
 
 const (
@@ -92,10 +107,25 @@ func angleLabel(units param.UnitsOfMeasure, radians float64) string {
 // gap, with a witness line back to each measured point, and labels it at the midpoint.
 func distanceView(d *sketch.DimensionConstraint, a, b math.Point2, label string) DimensionView {
 	dir := normalize(a.VectorTo(b))
-	off := math.V2(-dir.Y, dir.X).Scale(dimGap(a.DistanceTo(b)))
+	perp := math.V2(-dir.Y, dir.X)
+	off, labelAt := distancePlacement(d, a, b, perp)
 	a2, b2 := a.TranslateBy(off), b.TranslateBy(off)
 	segs := [][2]math.Point2{{a, a2}, {b, b2}, {a2, b2}}
-	return DimensionView{Dim: d, Segments: segs, Label: label, LabelAt: a2.Midpoint(b2), Driven: d.Driven()}
+	return DimensionView{Dim: d, Segments: segs, Label: label, LabelAt: labelAt, Driven: d.Driven()}
+}
+
+// distancePlacement returns the dimension line's perpendicular offset off the measured segment
+// and the label anchor. A stored TextPoint wins: the line is moved to pass through it, so a
+// dragged dimension keeps its whole glyph where the user dropped it rather than leaving the text
+// stranded off its line (#2017). Only the perpendicular component displaces the line — sliding
+// the text ALONG the line must not shorten or rotate it — while the label itself sits exactly on
+// the stored point, which is what gives the drag its second degree of freedom.
+func distancePlacement(d *sketch.DimensionConstraint, a, b math.Point2, perp math.Vector2) (math.Vector2, math.Point2) {
+	if tp, ok := d.TextPoint(); ok {
+		return perp.Scale(a.VectorTo(tp).Dot(perp)), tp
+	}
+	off := perp.Scale(dimGap(a.DistanceTo(b)))
+	return off, a.TranslateBy(off).Midpoint(b.TranslateBy(off))
 }
 
 // circleView draws a radial leader (radius) or an across-the-circle line (diameter),
@@ -106,14 +136,26 @@ func circleView(d *sketch.DimensionConstraint, refs []sketch.Entity, label strin
 		return DimensionView{}, false
 	}
 	center, r := c.Center.Position(), c.Radius
-	dir := math.V2(stdmath.Sqrt2/2, stdmath.Sqrt2/2) // 45° leader
-	out := center.TranslateBy(dir.Scale(r + dimGap(r)))
+	dir, out := leaderToward(d, center, math.V2(stdmath.Sqrt2/2, stdmath.Sqrt2/2), r+dimGap(r))
 	near := center
 	if diameter {
 		near = center.TranslateBy(dir.Scale(-r))
 	}
 	segs := [][2]math.Point2{{near, out}}
 	return DimensionView{Dim: d, Segments: segs, Label: label, LabelAt: out, Driven: d.Driven()}, true
+}
+
+// leaderToward aims a radial leader at the dimension's stored TextPoint, returning the leader
+// direction and its outer end. Without a stored point it falls back to the derived direction and
+// length. Swinging the leader to follow the text is what keeps a dragged radius dimension
+// attached to its circle instead of trailing a line to nowhere (#2017); a text point dropped
+// exactly on the centre has no direction, so the default is kept.
+func leaderToward(d *sketch.DimensionConstraint, center math.Point2, fallbackDir math.Vector2, length math.Scalar) (math.Vector2, math.Point2) {
+	tp, ok := d.TextPoint()
+	if !ok || center.DistanceTo(tp) < math.DefaultTolerance {
+		return fallbackDir, center.TranslateBy(fallbackDir.Scale(length))
+	}
+	return normalize(center.VectorTo(tp)), tp
 }
 
 // angleView draws an arc between the two lines about their intersection, labeled at the
@@ -132,8 +174,12 @@ func angleView(d *sketch.DimensionConstraint, refs []sketch.Entity, label string
 	// Size the arc by the shorter line's far-end span (its near end may sit on the
 	// vertex, which would otherwise collapse the radius to the minimum gap).
 	r := dimGap(stdmath.Min(v.DistanceTo(farthestEnd(v, l1)), v.DistanceTo(farthestEnd(v, l2))))
-	segs := arcSegments(v, r, startA, endA)
 	labelAt := v.TranslateBy(dirVec((startA + endA) / 2).Scale(r))
+	if tp, ok := d.TextPoint(); ok {
+		// Grow the arc out to the dragged text so the two stay visually joined (#2017).
+		r, labelAt = stdmath.Max(v.DistanceTo(tp), dimMinGap), tp
+	}
+	segs := arcSegments(v, r, startA, endA)
 	return DimensionView{Dim: d, Segments: segs, Label: label, LabelAt: labelAt, Driven: d.Driven()}, true
 }
 
@@ -147,6 +193,9 @@ func arcLengthView(d *sketch.DimensionConstraint, refs []sketch.Entity, label st
 	mid := arcMidAngle(a)
 	on := c.TranslateBy(dirVec(mid).Scale(r))
 	out := c.TranslateBy(dirVec(mid).Scale(r + dimGap(r)))
+	if tp, ok := d.TextPoint(); ok {
+		out = tp // the leader keeps its foot on the arc and follows the text (#2017)
+	}
 	return DimensionView{Dim: d, Segments: [][2]math.Point2{{on, out}}, Label: label, LabelAt: out, Driven: d.Driven()}, true
 }
 
