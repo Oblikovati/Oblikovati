@@ -41,7 +41,11 @@ type RevolveDefinition struct {
 	Angle                func() float64 // 0 ⇒ full revolution
 	// Angle2 is the second-direction sweep (radians, opposite sense), the
 	// reference two-directional revolve (M08 PBI-093, #313). nil/0 ⇒ one-way.
-	Angle2    func() float64
+	Angle2 func() float64
+	// Direction is the side Angle sweeps to: default forward, flipped backward, or symmetric
+	// (half each way) — Inventor's revolve Direction (#2019). Ignored once Angle2 is set, which
+	// is the asymmetric mode and names both sides itself. See revolveSpan.
+	Direction ExtentDirection
 	Operation ops.PartFeatureOperation
 }
 
@@ -226,26 +230,8 @@ func arcAndLine(e0, e1 sketch.Entity) (*sketch.Arc, *sketch.Line) {
 	return nil, nil
 }
 
-// revolveSpan resolves the total swept angle and its start offset: a
-// two-directional revolve spans [-angle2, +angle1]. A combined span reaching a
-// full turn collapses to the full revolution (start irrelevant — the solid is
-// rotationally complete).
-func revolveSpan(def *RevolveDefinition) (total, start float64) {
-	a1, a2 := callOrZero(def.Angle), callOrZero(def.Angle2)
-	if a2 <= 0 {
-		return a1, 0
-	}
-	if a1 <= 0 { // full + a second direction is still just full
-		return 0, 0
-	}
-	if a1+a2 >= 2*stdmath.Pi-1e-9 {
-		return 0, 0
-	}
-	return a1 + a2, -a2
-}
-
-// fullRevolution reports whether an angle is a complete turn (0 ⇒ full, like revolveSections).
-func fullRevolution(angle float64) bool { return angle <= 0 || angle >= 2*stdmath.Pi-1e-9 }
+// revolveSpan and fullRevolution — which way and how far a revolve sweeps — live in
+// revolve_span.go (#2019).
 
 // meridianVertsFromProfile walks the profile's outer loop into brep.RevolveVertex meridian vertices in
 // the axis's (radius, height) half-plane — radius = perpendicular distance from the axis, height =

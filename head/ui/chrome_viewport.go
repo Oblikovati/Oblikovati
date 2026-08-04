@@ -35,7 +35,8 @@ func drawViewportPanel(win *native.Window, s *app.Session) {
 		icons = newIconCache(win)
 	}
 	win.SetViewportNormalDebug(normalDebugOn || s.NormalDebug()) // Tools ▸ Normal Debug, or viewport.setNormalDebug
-	if native.Begin("Viewport") {
+	// BeginNoScroll: the wheel is camera zoom and must never become window scrolling (#2027).
+	if native.BeginNoScroll("Viewport") {
 		drawDocumentTabs(s)
 		// A drawing document shows a 2D sheet canvas, not the 3D viewport (M14-F01).
 		if dc, err := app.ActiveDrawing(s); err == nil {
@@ -343,6 +344,9 @@ func drawViewportOverlays(s *app.Session, cam scene.Camera, sketchPlane sketch.P
 			s.BeginEditDimension(d) // double-clicked a dimension's value
 		}
 	}
+	if s.InSketch() {
+		drawPlacementFieldBoxes(s, cam, ox, oy) // in-place dimension input (#2014)
+	}
 }
 
 // updateViewportCamera sizes the camera to the panel and either advances the active camera
@@ -516,6 +520,8 @@ func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene
 		m.HidVerts, m.HidVCount, m.HidIndices,
 		m.TopTriVerts, m.TopTriVCount, m.TopTriIndices,
 		m.TopLineVerts, m.TopLineVCount, m.TopLineIndices,
+		m.WideLineVerts, m.WideLineVCount, m.WideLineIndices,
+		m.TopWideLineVerts, m.TopWideLineVCount, m.TopWideLineIndices,
 		m.TriBiasFirst, m.TopTriSolidFirst, s.ActiveSectionClip(), // section-plane clip (M12-F04); #1489 solid-glyph split
 		mats, recs, geomKey) // instanced draw (ADR-0038); geomKey gates the geometry re-upload (#1422)
 	frameStats.gpuNs = time.Since(tg).Nanoseconds()
@@ -537,16 +543,17 @@ func sketchOverlays(s *app.Session, cam scene.Camera, list renderer.DrawList) (r
 	if g := s.Grid(); g.Visible {
 		list.Items = append(gridOverlay(plane, g.SpacingModel(), g.MajorEvery), list.Items...)
 	}
-	list.Items = append(list.Items, onTop(sketchOverlay(s.ActiveSketch(), s.IsSelectedEntity, hoverCandidate(s)))...)
+	list.Items = append(list.Items, onTop(sketchOverlay(s.ActiveSketch(), s.IsSelectedEntity, hoverCandidate(s), s.ShowFormat()))...)
 	list.Items = append(list.Items, onTop(projectedCurveOverlay(s.ActiveSketch()))...)
 	dims := s.SketchDimensions()
 	list.Items = append(list.Items, onTop(dimensionLines(plane, dims))...)
 	if item, ok := pointsOverlay(plane, s.ActiveSketch(), pointMarkerPixels*cam.WorldPerPixel()); ok {
 		list.Items = append(list.Items, onTopItem(item))
 	}
-	if item, ok := toolPreview(s); ok {
-		list.Items = append(list.Items, onTopItem(item))
+	if items, ok := toolPreview(s); ok {
+		list.Items = append(list.Items, onTop(items)...)
 	}
+	list.Items = append(list.Items, onTop(constraintGlyphOverlay(s, plane, constraintGlyphPixels*cam.WorldPerPixel()))...)
 	if item, ok := inferenceGlyphs(s, plane, glyphPixels*cam.WorldPerPixel()); ok {
 		list.Items = append(list.Items, onTopItem(item))
 	}
@@ -574,15 +581,8 @@ func onTopItem(item renderer.DrawItem) renderer.DrawItem {
 // modelOverlays appends the 3D-model overlays (work planes, part sketches, selected edges, and
 // the extrude / active-tool previews) to list.
 func modelOverlays(s *app.Session, cam scene.Camera, hovered *feature.WorkPlane, list renderer.DrawList) renderer.DrawList {
-	wg, hasWG := s.ActiveWorkGeometry() // a part OR an assembly's origin frame + datums (#769 parity)
-	hidden := s.EditScopeHides          // hide datums created after the node being edited (issue #132)
-	vis := s.ObjectVisibility()         // View ▸ Object visibility (M05-F12): hidden kinds neither draw nor pick
-	if hasWG && vis.WorkPlanes {
-		list.Items = append(list.Items, planesOverlay(wg.WorkPlanes(), s.SelectedWorkPlane(), hovered, hidden, s.RevealSketchHostDatums())...)
-	}
-	if hasWG && vis.WorkAxes {
-		list.Items = append(list.Items, axesOverlay(wg.WorkAxes(), selectedWorkAxis(s), hidden)...)
-	}
+	vis := s.ObjectVisibility() // View ▸ Object visibility (M05-F12): hidden kinds neither draw nor pick
+	list.Items = append(list.Items, datumOverlays(s, cam, hovered, vis)...)
 	if vis.Sketches {
 		list.Items = append(list.Items, cachedPartSketchOverlays(s)...)
 		list.Items = append(list.Items, partSketchPoints(s, pointMarkerPixels*cam.WorldPerPixel())...)
@@ -696,24 +696,21 @@ func snapMarker(s *app.Session, plane sketch.Plane, worldPerPixel float64) (rend
 	return snapGlyph(plane, r, snapGlyphPixels*worldPerPixel)
 }
 
-// toolPreview returns the active geometry tool's rubber-band preview at the cursor (the
-// provisional shape from the placed clicks through the current mouse position).
-func toolPreview(s *app.Session) (renderer.DrawItem, bool) {
+// toolPreview returns the active geometry tool's rubber-band preview at the cursor: the
+// provisional shape from the placed clicks through the current mouse position, drawn solid for
+// real geometry, dashed for construction geometry, and with a dotted witness line under each
+// in-place dimension box (#2014).
+func toolPreview(s *app.Session) ([]renderer.DrawItem, bool) {
 	if !native.IsItemHovered() || s.ActiveTool() == nil {
-		return renderer.DrawItem{}, false
+		return nil, false
 	}
 	cx, cy := viewportCursor()
 	cur, ok := s.CursorSketchPoint(cx, cy)
 	if !ok {
-		return renderer.DrawItem{}, false
+		return nil, false
 	}
-	pts, closed := s.ActiveToolPreview(cur)
-	if len(pts) == 0 {
-		return renderer.DrawItem{}, false
-	}
-	acc := &segAccum{}
-	acc.polyline(s.ActiveSketch().Plane(), pts, closed)
-	return renderer.DrawItem{Primitive: renderer.Lines, Positions: acc.pos, Indices: acc.idx, Color: chromeTheme.previewColor}, true
+	items := placementOverlayItems(s, s.ActiveSketch().Plane(), cur)
+	return items, len(items) > 0
 }
 
 const (

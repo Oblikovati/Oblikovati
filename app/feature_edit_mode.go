@@ -112,38 +112,35 @@ func snapshotExtrudeDef(def *feature.ExtrudeDefinition) func() {
 }
 
 // editRevolveTool seeds a RevolveTool from a committed revolve: profile, axis (work
-// axis, specific centerline, or the sketch's own), angle and operation.
-func editRevolveTool(s *Session, f *feature.PartFeature, rv *feature.RevolveFeature) *RevolveTool {
+// axis, specific centerline, or the sketch's own), the swept angle with its direction
+// and any second angle, and the operation.
+func editRevolveTool(f *feature.PartFeature, rv *feature.RevolveFeature) *RevolveTool {
 	def := rv.Definition()
 	t := NewRevolveTool()
 	t.profile = &ProfileHandle{Sketch: def.Sketch, ProfileIndex: def.ProfileIndex}
 	t.angle = callOrZeroFn(def.Angle)
 	t.operation = def.Operation
-	seedRevolveAxis(s, t, def)
+	t.direction = def.Direction
+	if def.Angle2 != nil {
+		t.asymmetric, t.angle2 = true, def.Angle2()
+	}
+	seedRevolveAxis(t, def)
 	t.bindEdit(f, snapshotRevolveDef(def))
 	return t
 }
 
 // seedRevolveAxis maps the definition's axis precedence back onto the tool: a specific
-// centerline, an origin work axis (matched by identity), or the sketch's own centerline.
-func seedRevolveAxis(s *Session, t *RevolveTool, def *feature.RevolveDefinition) {
-	if def.AxisCenterline != nil {
-		t.centerline, t.centerlineSk = def.AxisCenterline, def.AxisCenterlineSketch
-		return
-	}
-	if def.Axis == nil {
-		t.useCenterln = true
-		return
-	}
-	part, err := activePart(s)
-	if err != nil {
-		return
-	}
-	for _, ref := range []feature.WorkRef{feature.OriginXAxis, feature.OriginYAxis, feature.OriginZAxis} {
-		if a, ok := part.WorkGeometry().AxisByRef(ref); ok && a == def.Axis {
-			t.axis = ref
-			return
-		}
+// centerline, the work axis it spins about, or the sketch's own centerline. The work axis is
+// carried by pointer rather than matched against the three origin refs — matching dropped a USER
+// work axis on the floor, so re-opening such a revolve silently reset it to Y (#2018).
+func seedRevolveAxis(t *RevolveTool, def *feature.RevolveDefinition) {
+	switch {
+	case def.AxisCenterline != nil:
+		t.axis.pickLine(def.AxisCenterline, def.AxisCenterlineSketch)
+	case def.Axis == nil:
+		t.axis.setAuto()
+	default:
+		t.axis.pickWork(def.Axis)
 	}
 }
 

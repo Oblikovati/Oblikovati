@@ -17,7 +17,18 @@ type Point struct {
 	id ID
 	X  math.Scalar
 	Y  math.Scalar
+	// centerPoint marks a hole-centre marker rather than a plain sketch point (#2015). A single
+	// bool, deliberately not an entityBase: Point is arena-allocated to stay small because point
+	// count dominates a large DWG import, and a centre point needs no construction/centerline
+	// state to go with it.
+	centerPoint bool
 }
+
+// IsCenterPoint reports whether the point is a hole-centre marker rather than a plain point.
+func (p *Point) IsCenterPoint() bool { return p.centerPoint }
+
+// SetCenterPoint marks the point as a hole-centre marker, or clears it back to a plain point.
+func (p *Point) SetCenterPoint(c bool) { p.centerPoint = c }
 
 // EntityID implements [Entity].
 func (p *Point) EntityID() ID { return p.id }

@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
 )
 
 // Sketch tools place 2D geometry by clicking in the active sketch's plane: a click
@@ -66,24 +67,14 @@ func (t *RectangleTool) PendingReferencePoint() (math.Point2, bool) {
 	return t.corners[len(t.corners)-1], true
 }
 
-// Commit adds the four rectangle lines (sharing corner points) to the active sketch.
+// Commit adds the rigid rectangle: four lines over shared corners, squared by a horizontal and
+// a vertical constraint per edge so that dragging a corner cannot shear it. Any in-place input
+// field the user typed into also becomes a driving dimension (#2014).
 func (t *RectangleTool) Commit(s *Session) error {
 	if s.activeSketch == nil {
 		return errors.New("rectangle: no active sketch")
 	}
-	a, c := t.corners[0], t.corners[1]
-	b := math.P2(c.X, a.Y)
-	d := math.P2(a.X, c.Y)
-	sk := s.activeSketch
-	p0 := sk.Points().Add(a)
-	p1 := sk.Points().Add(b)
-	p2 := sk.Points().Add(c)
-	p3 := sk.Points().Add(d)
-	sk.Lines().Add(p0, p1)
-	sk.Lines().Add(p1, p2)
-	sk.Lines().Add(p2, p3)
-	sk.Lines().Add(p3, p0)
-	return nil
+	return s.commitRecipe(sketch.RectangleRecipe(t.corners[0], t.corners[1]))
 }
 
 // Cancel discards the in-progress rectangle.
@@ -104,24 +95,31 @@ func (t *RectangleTool) Prompt(*Session) string {
 	}
 }
 
-// LineTool draws lines between clicked points. By default (the viewport) it is a single
-// two-point line that auto-commits on the second click. Started from the command line it
-// runs continuous (EnableContinuous): point after point becomes a connected chain with
-// [Close/Undo] options, ended by Enter or Close — AutoCAD's LINE (M26 F02 follow-up).
+// LineTool draws a connected chain of lines: point after point becomes a segment sharing its
+// endpoint with the previous one, with [Close/Undo] options, ended by Enter, Escape or Close.
+// This is Inventor's Line tool and AutoCAD's LINE (M26 F02 follow-up).
+//
+// Chaining used to be reachable only from the command line — the viewport armed the tool in a
+// single two-point mode that auto-committed on the second click, so drawing a closed profile
+// meant re-activating the tool for every edge and the segments did not share endpoints
+// (#2024). Continuous is now the default; EnableContinuous is kept for the command line, which
+// asks for it explicitly.
 type LineTool struct {
 	dialogTool
 	points     []math.Point2
-	continuous bool // command-line polyline mode: chain segments until Enter/Close
+	continuous bool // polyline mode: chain segments until Enter/Escape/Close
 	closed     bool // a Close keyword was given: connect the last point back to the first
 }
 
-// NewLineTool returns a two-point line tool.
-func NewLineTool() *LineTool { return &LineTool{} }
+// NewLineTool returns the continuous line tool.
+//
+// Example: s.StartTool(NewLineTool()) — click each vertex, then press Enter to finish.
+func NewLineTool() *LineTool { return &LineTool{continuous: true} }
 
 func (t *LineTool) Name() string { return "Line" }
 
-// EnableContinuous switches the tool to AutoCAD-style continuous-polyline mode (the command
-// line calls this when it starts a LINE). The viewport path leaves it off.
+// EnableContinuous switches the tool to continuous-polyline mode. It is the default; the
+// command line still calls this so its intent stays explicit at the call site.
 func (t *LineTool) EnableContinuous() { t.continuous = true }
 
 // ClickAt records a line endpoint from a clicked pixel (snapped to points/grid).
@@ -151,19 +149,32 @@ func (t *LineTool) Commit(s *Session) error {
 	sk := s.activeSketch
 	prev := sk.Points().Add(t.points[0])
 	first := prev
+	var made []sketch.Entity
 	for i := 1; i < len(t.points); i++ {
 		cur := sk.Points().Add(t.points[i])
-		sk.ApplyLineInference(sk.Lines().Add(prev, cur), s.SketchInferenceOptions())
+		l := sk.Lines().Add(prev, cur)
+		sk.ApplyLineInference(l, s.SketchInferenceOptions())
+		made = append(made, l)
 		prev = cur
 	}
 	if t.closed && len(t.points) >= 3 {
-		sk.ApplyLineInference(sk.Lines().Add(prev, first), s.SketchInferenceOptions())
+		l := sk.Lines().Add(prev, first)
+		sk.ApplyLineInference(l, s.SketchInferenceOptions())
+		made = append(made, l)
 	}
+	s.applyFormatModes(made) // Format-panel creation modes (#2015)
 	return nil
 }
 
 // Cancel discards the in-progress line.
 func (t *LineTool) Cancel(*Session) { t.points = nil }
+
+// FinishesOnCancel makes Escape END a chain that has already drawn segments, keeping them,
+// instead of throwing the whole chain away. Escape is how CAD users say "done" mid-polyline
+// (AutoCAD and Inventor both keep the placed geometry), and losing eight placed segments to a
+// reflex keypress is far worse than committing a chain the user could undo with Ctrl+Z.
+// With fewer than two points there is no segment yet, so Escape abandons as usual.
+func (t *LineTool) FinishesOnCancel() bool { return t.continuous && len(t.points) >= 2 }
 
 // PendingReferencePoint returns the last placed endpoint so the dynamic-input HUD shows the
 // next segment's Length/Angle (#790); false before the first click.

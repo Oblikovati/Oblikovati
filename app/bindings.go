@@ -133,8 +133,11 @@ func dispatchCommit(s *Session) error {
 	return nil
 }
 
+// dispatchToggleVisibility is the V key: it flips every selected datum's visibility. It covers
+// axes and points as well as planes — it used to reach planes only, so pressing V on a selected
+// origin axis or the Center Point did nothing at all (#2016).
 func dispatchToggleVisibility(s *Session) error {
-	s.ToggleSelectedWorkPlaneVisibility()
+	s.ToggleSelectedDatumVisibility()
 	return nil
 }
 

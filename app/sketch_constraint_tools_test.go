@@ -113,9 +113,12 @@ func TestEveryConstraintToolAppliesViaPicks(t *testing.T) {
 
 func TestDimensionToolApplies(t *testing.T) {
 	s, sk := sketchSession(t)
-	s.StartTool(newDimensionTool())
+	s.StartTool(NewDimensionTool())
 	s.feedPick(SketchEntityHandle{Entity: sk.Points().Add(math.P2(0, 0))})
 	s.feedPick(SketchEntityHandle{Entity: sk.Points().Add(math.P2(3, 0))})
+	if err := s.OK(); err != nil { // the dimension tool finishes on placement or OK (#2022)
+		t.Fatalf("OK after two point picks: %v", err)
+	}
 	if s.ActiveTool() != nil || sk.DimensionConstraints().Count() != 1 {
 		t.Errorf("dimension tool: active=%v dims=%d, want inactive / 1",
 			s.ActiveTool() != nil, sk.DimensionConstraints().Count())

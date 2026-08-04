@@ -59,6 +59,13 @@ type Drawing struct {
 	Entities []Entity
 	// Units is the $INSUNITS code (0 = unitless); use MetersPerUnit to convert.
 	Units int
+	// Layers is the drawing's layer table — the formatting entities inherit (#2015).
+	Layers []Layer
+	// Styles is each entity's explicit formatting, keyed by entity handle. Absent means the
+	// entity inherits everything from its layer, which is the common case; see [Style].
+	Styles map[uint64]Style
+	// EntityLayers is which layer each entity sits on, keyed by entity handle.
+	EntityLayers map[uint64]string
 }
 
 // Line is a straight segment between two 3D points.

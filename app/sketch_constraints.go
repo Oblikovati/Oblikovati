@@ -7,6 +7,7 @@ import (
 	"fmt"
 	stdmath "math"
 
+	"oblikovati.org/math"
 	"oblikovati.org/model/param"
 	"oblikovati.org/model/sketch"
 )
@@ -261,7 +262,18 @@ func applyDimension(s *Session, ents []sketch.Entity) error {
 // addDimensionFor creates the dimension implied by the picked entities — a circle's
 // radius, the angle between two lines, or a distance between two points (or a line's
 // length) — at the current measured value in the document's units.
+//
+// It places the dimension at its derived default position; use [addPlacedDimensionFor] when the
+// user clicked a placement, which also decides an aligned/horizontal/vertical distance (#2025).
 func addDimensionFor(dims *sketch.DimensionConstraints, units param.UnitsOfMeasure, ents []sketch.Entity) (*sketch.DimensionConstraint, error) {
+	return addPlacedDimensionFor(dims, units, ents, math.Point2{}, false)
+}
+
+// addPlacedDimensionFor is addDimensionFor for a dimension the user placed. The placement sets
+// the text position and, for a two-point distance, selects the orientation: dragging the label
+// off a diagonal at right angles measures along it, straight up measures its ΔX, sideways its ΔY.
+func addPlacedDimensionFor(dims *sketch.DimensionConstraints, units param.UnitsOfMeasure, ents []sketch.Entity,
+	at math.Point2, placed bool) (*sketch.DimensionConstraint, error) {
 	switch {
 	case len(filterCircles(ents)) >= 1:
 		c := filterCircles(ents)[0]
@@ -274,7 +286,26 @@ func addDimensionFor(dims *sketch.DimensionConstraints, units param.UnitsOfMeasu
 		if !ok {
 			return nil, errNeed("dimension", "points, a line, a circle, or two lines")
 		}
-		return dims.AddDistance(a, b, lengthExpr(units, a.Position().DistanceTo(b.Position())))
+		o := sketch.AlignedDistance
+		if placed {
+			o = orientationForPlacement(a.Position(), b.Position(), at)
+		}
+		return dims.AddDistanceOriented(a, b, orientedLengthExpr(units, a, b, o), o)
+	}
+}
+
+// orientedLengthExpr is the seed value for a distance dimension: the separation the chosen
+// orientation actually measures, so a horizontal dimension seeds ΔX rather than the full
+// Euclidean length it does not constrain.
+func orientedLengthExpr(units param.UnitsOfMeasure, a, b *sketch.Point, o sketch.DistanceOrientation) string {
+	pa, pb := a.Position(), b.Position()
+	switch o {
+	case sketch.HorizontalDistance:
+		return lengthExpr(units, stdmath.Abs(pb.X-pa.X))
+	case sketch.VerticalDistance:
+		return lengthExpr(units, stdmath.Abs(pb.Y-pa.Y))
+	default:
+		return lengthExpr(units, pa.DistanceTo(pb))
 	}
 }
 

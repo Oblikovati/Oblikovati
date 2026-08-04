@@ -88,7 +88,7 @@ func (r featureEditorSet) registerSolidFeatureEditors() {
 		return editExtrudeTool(f, f.Definition().(*feature.ExtrudeFeature)), true
 	})
 	r.register("revolve", func(s *Session, f *feature.PartFeature) (Tool, bool) {
-		return editRevolveTool(s, f, f.Definition().(*feature.RevolveFeature)), true
+		return editRevolveTool(f, f.Definition().(*feature.RevolveFeature)), true
 	})
 	r.register("coil", func(s *Session, f *feature.PartFeature) (Tool, bool) {
 		return editCoilTool(s, f, f.Definition().(*feature.CoilFeature)), true

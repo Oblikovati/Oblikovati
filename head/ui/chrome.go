@@ -181,10 +181,10 @@ func handleKeyboard(s *app.Session) {
 		_ = s.DisplayHelpTopic("", "")
 	}
 	mods := heldModifiers()
-	// While the sketch dynamic-input HUD has a started entry it owns plain keyboard (#790):
+	// While either sketch entry surface has a started entry it owns plain keyboard (#790, #2014):
 	// Enter/Esc/Backspace/typing are processed in the viewport (handleSketchHUD), so skip the
 	// tool-level Esc/shortcut handling here. Ctrl/Alt chords still fire so Ctrl+S works mid-entry.
-	if s.HUDEngaged() && !mods.Has(app.CtrlMod) && !mods.Has(app.AltMod) {
+	if sketchEntryEngaged(s) && !mods.Has(app.CtrlMod) && !mods.Has(app.AltMod) {
 		return
 	}
 	if native.EscapePressed() {

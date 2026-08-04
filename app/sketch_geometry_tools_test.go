@@ -140,12 +140,14 @@ func TestGeometryToolsNeedActiveSketch(t *testing.T) {
 
 func TestSketchToolAutoCommitsAndDeactivates(t *testing.T) {
 	s, sk := sketchSession(t)
-	// A line completes on its second click with no OK, then the tool deactivates.
-	s.StartTool(NewLineTool())
+	// A circle completes on its second click with no OK, then the tool deactivates.
+	// (The line tool is deliberately NOT the example here: it chains until the user
+	// finishes the polyline — see TestLineToolChainsSegments, #2024.)
+	s.StartTool(NewCircleTool())
 	s.Click(40, 40)
 	s.Click(80, 40)
-	if sk.Lines().Count() != 1 {
-		t.Errorf("auto-commit drew %d lines, want 1", sk.Lines().Count())
+	if sk.Circles().Count() != 1 {
+		t.Errorf("auto-commit drew %d circles, want 1", sk.Circles().Count())
 	}
 	if s.ActiveTool() != nil {
 		t.Error("the tool should deactivate after creating one shape")
@@ -154,8 +156,8 @@ func TestSketchToolAutoCommitsAndDeactivates(t *testing.T) {
 	s.StartTool(NewCircleTool())
 	s.Click(100, 100)
 	s.Click(140, 100)
-	if sk.Circles().Count() != 1 || s.ActiveTool() != nil {
-		t.Errorf("second tool: %d circles, active=%v, want 1 / inactive",
+	if sk.Circles().Count() != 2 || s.ActiveTool() != nil {
+		t.Errorf("second tool: %d circles, active=%v, want 2 / inactive",
 			sk.Circles().Count(), s.ActiveTool() != nil)
 	}
 }

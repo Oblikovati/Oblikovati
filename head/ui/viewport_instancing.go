@@ -35,8 +35,12 @@ type instStream struct {
 	idx    func(*viewport.Mesh) []uint32
 }
 
-// instStreams is the six streams in the native's concatenation order (see obk_viewport_render's
+// instStreams is the eight streams in the native's concatenation order (see obk_viewport_render's
 // occBase/triBase/… and the kStream* ids).
+// numInstStreams is how many streams the native concatenation carries; the fixed-size
+// per-stream arrays below are sized by it, so adding a stream is one edit.
+const numInstStreams = 8
+
 var instStreams = []instStream{
 	{0, func(m *viewport.Mesh) []float32 { return m.OccVerts }, func(m *viewport.Mesh) int { return m.OccVCount }, func(m *viewport.Mesh) []uint32 { return m.OccIndices }},
 	{1, func(m *viewport.Mesh) []float32 { return m.TriVerts }, func(m *viewport.Mesh) int { return m.TriVCount }, func(m *viewport.Mesh) []uint32 { return m.TriIndices }},
@@ -44,6 +48,8 @@ var instStreams = []instStream{
 	{3, func(m *viewport.Mesh) []float32 { return m.HidVerts }, func(m *viewport.Mesh) int { return m.HidVCount }, func(m *viewport.Mesh) []uint32 { return m.HidIndices }},
 	{4, func(m *viewport.Mesh) []float32 { return m.TopTriVerts }, func(m *viewport.Mesh) int { return m.TopTriVCount }, func(m *viewport.Mesh) []uint32 { return m.TopTriIndices }},
 	{5, func(m *viewport.Mesh) []float32 { return m.TopLineVerts }, func(m *viewport.Mesh) int { return m.TopLineVCount }, func(m *viewport.Mesh) []uint32 { return m.TopLineIndices }},
+	{6, func(m *viewport.Mesh) []float32 { return m.WideLineVerts }, func(m *viewport.Mesh) int { return m.WideLineVCount }, func(m *viewport.Mesh) []uint32 { return m.WideLineIndices }},
+	{7, func(m *viewport.Mesh) []float32 { return m.TopWideLineVerts }, func(m *viewport.Mesh) int { return m.TopWideLineVCount }, func(m *viewport.Mesh) []uint32 { return m.TopWideLineIndices }},
 }
 
 // instanceBuilder accumulates the per-stream vertices/indices of every SOURCE mesh plus, per source
@@ -53,8 +59,8 @@ var instStreams = []instStream{
 // no longer re-concatenates the vertex/index streams every frame — the F1 appendStream cost that
 // was ~53% of orbit allocation (M34-F1b).
 type instanceBuilder struct {
-	streamVerts [6][]float32
-	streamIdx   [6][]uint32
+	streamVerts [numInstStreams][]float32
+	streamIdx   [numInstStreams][]uint32
 	recs        [][5]int32 // template: stream, firstIndex(local), indexCount, vertexOffset(local), biased
 	regions     []atlasRegion
 }
@@ -123,7 +129,7 @@ func streamFlagSplit(id int32, mesh *viewport.Mesh) int {
 // template's firstIndex/vertexOffset to that concatenation, and returns the retained atlas (merged
 // mesh + absolute templates + regions). key identifies the geometry+overlay state it was built for.
 func (b *instanceBuilder) finishAtlas(key string) frameAtlas {
-	var vbase, ibase [6]int32 // absolute base of each stream in the concatenated vert/index buffers
+	var vbase, ibase [numInstStreams]int32 // absolute base of each stream in the concatenated vert/index buffers
 	var vAcc, iAcc int32
 	for _, st := range instStreams {
 		vbase[st.id], ibase[st.id] = vAcc, iAcc
@@ -222,14 +228,18 @@ func (b *instanceBuilder) mergedMesh() viewport.Mesh {
 	m.HidVerts, m.HidIndices, m.HidVCount = b.streamVerts[3], b.streamIdx[3], len(b.streamVerts[3])/16
 	m.TopTriVerts, m.TopTriIndices, m.TopTriVCount = b.streamVerts[4], b.streamIdx[4], len(b.streamVerts[4])/16
 	m.TopLineVerts, m.TopLineIndices, m.TopLineVCount = b.streamVerts[5], b.streamIdx[5], len(b.streamVerts[5])/16
+	m.WideLineVerts, m.WideLineIndices, m.WideLineVCount = b.streamVerts[6], b.streamIdx[6], len(b.streamVerts[6])/16
+	m.TopWideLineVerts, m.TopWideLineIndices, m.TopWideLineVCount = b.streamVerts[7], b.streamIdx[7], len(b.streamVerts[7])/16
 	return m
 }
 
 // sortRecsInto returns the records grouped by stream id (stable), so the native binds each stream's
-// pipeline once. A simple bucket sort over the six fixed streams, reusing *out across frames (#1423).
+// pipeline once. A simple bucket sort over the fixed streams, reusing *out across frames (#1423).
+// The bound is numInstStreams, not a literal: a stream missing from this loop is silently dropped
+// from the instanced path while still rendering on the legacy one, which is close to undebuggable.
 func sortRecsInto(out *[][7]int32, recs [][7]int32) [][7]int32 {
 	o := (*out)[:0]
-	for s := int32(0); s <= 5; s++ {
+	for s := int32(0); s < numInstStreams; s++ {
 		for _, r := range recs {
 			if r[0] == s {
 				o = append(o, r)
@@ -335,7 +345,8 @@ var overlayHasher = fnv.New64a()
 func overlayHash(m viewport.Mesh) uint64 {
 	h := overlayHasher
 	h.Reset()
-	for _, s := range [][]float32{m.TriVerts, m.OccVerts, m.LineVerts, m.HidVerts, m.TopTriVerts, m.TopLineVerts} {
+	for _, s := range [][]float32{m.TriVerts, m.OccVerts, m.LineVerts, m.HidVerts, m.TopTriVerts, m.TopLineVerts,
+		m.WideLineVerts, m.TopWideLineVerts} {
 		hashFloat32s(h, s)
 	}
 	for _, s := range [][]uint32{m.TriIndices, m.OccIndices, m.LineIndices, m.HidIndices, m.TopTriIndices, m.TopLineIndices} {

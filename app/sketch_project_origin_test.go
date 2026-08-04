@@ -76,9 +76,11 @@ func TestProjectGeometryToolProjectsDatums(t *testing.T) {
 			curves++
 		}
 	}
-	// 2 points = auto-projected origin (CreateSketch) + the explicitly projected centre point;
+	// 1 point = the origin centre, projected once: CreateSketch already auto-projected it, and
+	// picking it again reuses that projection instead of stacking a second reference point on
+	// the same spot (#2016);
 	// 2 curves = the projected origin X axis + the XZ-plane∩sketch intersection line.
-	if points != 2 || curves != 2 {
-		t.Fatalf("projected %d points / %d curves, want 2 / 2", points, curves)
+	if points != 1 || curves != 2 {
+		t.Fatalf("projected %d points / %d curves, want 1 / 2", points, curves)
 	}
 }

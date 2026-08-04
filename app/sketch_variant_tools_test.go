@@ -19,7 +19,8 @@ func TestThreePointRectangleTool(t *testing.T) {
 	}
 }
 
-// Two Point Center Rectangle: a center then a corner, producing four lines.
+// Two Point Center Rectangle: a center then a corner, producing four edges plus the two
+// construction diagonals that pin the centre (#2014).
 func TestCenterRectangleTool(t *testing.T) {
 	s, sk := sketchSession(t)
 	s.StartTool(NewCenterRectangleTool())
@@ -28,8 +29,19 @@ func TestCenterRectangleTool(t *testing.T) {
 	if s.ActiveTool() != nil {
 		t.Fatal("center rectangle should deactivate after two clicks")
 	}
-	if sk.Lines().Count() != 4 {
-		t.Fatalf("center rectangle made %d lines, want 4", sk.Lines().Count())
+	if sk.Lines().Count() != 6 {
+		t.Fatalf("center rectangle made %d lines, want 6 (4 edges + 2 construction diagonals)", sk.Lines().Count())
+	}
+	edges, diagonals := 0, 0
+	for i := 0; i < sk.Lines().Count(); i++ {
+		if sk.Lines().Item(i).IsConstruction() {
+			diagonals++
+			continue
+		}
+		edges++
+	}
+	if edges != 4 || diagonals != 2 {
+		t.Errorf("edges = %d, construction diagonals = %d, want 4 and 2", edges, diagonals)
 	}
 }
 

@@ -42,6 +42,16 @@ func readResolvedHandle(r *BitReader, own uint64) uint64 {
 //
 //nolint:funlen,gocyclo // sequential flag-gated handle reads in spec order; length/branches are the format.
 func commonEntityHandles(r *BitReader, data []byte, cur *entityCursor, version Version) (owner uint64) {
+	owner, _ = commonEntityRefs(r, data, cur, version)
+	return owner
+}
+
+// commonEntityRefs is commonEntityHandles that also returns the entity's layer handle, which the
+// walker always read and discarded. Resolving it against the drawing's LAYER records is what lets
+// an imported entity keep the colour, line type and weight it inherited (#2015).
+//
+//nolint:funlen,gocyclo // sequential flag-gated handle reads in spec order; length/branches are the format.
+func commonEntityRefs(r *BitReader, data []byte, cur *entityCursor, version Version) (owner, layer uint64) {
 	r.Reset(data, cur.handleStart)
 	ce := cur.common
 	own := cur.ownHandle
@@ -65,7 +75,7 @@ func commonEntityHandles(r *BitReader, data []byte, cur *entityCursor, version V
 		readResolvedHandle(r, own) // prev_entity
 		readResolvedHandle(r, own) // next_entity
 	}
-	readResolvedHandle(r, own) // layer (always present R2000+)
+	layer = readResolvedHandle(r, own) // layer (always present R2000+)
 	if ce.ltypeFlags == 3 {
 		readResolvedHandle(r, own) // ltype
 	}
@@ -91,5 +101,5 @@ func commonEntityHandles(r *BitReader, data []byte, cur *entityCursor, version V
 			readResolvedHandle(r, own)
 		}
 	}
-	return owner
+	return owner, layer
 }

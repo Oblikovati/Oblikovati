@@ -12,9 +12,14 @@ import (
 // placeDistanceDim drives the Dimension tool over two points and returns the sketch.
 func placeDistanceDim(t *testing.T, s *Session, sk *sketch.Sketch, a, b math.Point2) {
 	t.Helper()
-	s.StartTool(newDimensionTool())
+	s.StartTool(NewDimensionTool())
 	s.feedPick(SketchEntityHandle{Entity: sk.Points().Add(a)})
 	s.feedPick(SketchEntityHandle{Entity: sk.Points().Add(b)})
+	// The dimension tool finishes on a placement click or on OK/Enter (#2022); these tests
+	// exercise the value-entry that follows, so take the OK path at the default position.
+	if err := s.OK(); err != nil {
+		t.Fatalf("OK after two point picks: %v", err)
+	}
 }
 
 func TestPlacingDimensionMakesItPending(t *testing.T) {
@@ -32,9 +37,12 @@ func TestCommitPendingDimensionDrivesGeometry(t *testing.T) {
 	s, sk := sketchSession(t)
 	a := sk.Points().Add(math.P2(0, 0))
 	b := sk.Points().Add(math.P2(3, 0)) // 3 cm apart
-	s.StartTool(newDimensionTool())
+	s.StartTool(NewDimensionTool())
 	s.feedPick(SketchEntityHandle{Entity: a})
 	s.feedPick(SketchEntityHandle{Entity: b})
+	if err := s.OK(); err != nil {
+		t.Fatalf("OK after two point picks: %v", err)
+	}
 	if err := s.CommitPendingDimension("50 mm"); err != nil {
 		t.Fatalf("CommitPendingDimension: %v", err)
 	}
@@ -54,9 +62,12 @@ func TestCommitBareNumberUsesDocumentUnit(t *testing.T) {
 	s, sk := sketchSession(t)
 	a := sk.Points().Add(math.P2(0, 0))
 	b := sk.Points().Add(math.P2(3, 0)) // 3 cm apart
-	s.StartTool(newDimensionTool())
+	s.StartTool(NewDimensionTool())
 	s.feedPick(SketchEntityHandle{Entity: a})
 	s.feedPick(SketchEntityHandle{Entity: b})
+	if err := s.OK(); err != nil {
+		t.Fatalf("OK after two point picks: %v", err)
+	}
 	if err := s.CommitPendingDimension("7"); err != nil { // bare "7" → 7 mm, not 7 cm
 		t.Fatalf("CommitPendingDimension(\"7\"): %v", err)
 	}

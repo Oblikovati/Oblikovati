@@ -88,7 +88,7 @@ func ribbonBandHeight() float32 {
 // (button columns + name strip) separated by a full-height vertical divider. Every
 // panel pins its name at the same band-bottom Y (labelY), which both matches the
 // reference ribbon's footer strip and makes the dividers span the full band.
-func drawTabPanels(s pointCloudControlHost, panels []app.RibbonPanel) string {
+func drawTabPanels(s ribbonControlHost, panels []app.RibbonPanel) string {
 	m := native.Metrics()
 	_, gridTop := native.GetCursorScreenPos()
 	labelY := gridTop + ribbonGridHeight(m) + m.ItemSpacingY
@@ -157,7 +157,7 @@ func packPanelColumns(buttons []app.RibbonButton) [][]app.RibbonButton {
 // columns with the panel name centered beneath in the band's footer strip — so the
 // whole panel is one narrow, horizontally-placeable unit. Returns the id of a clicked
 // command, or "".
-func drawPanel(s pointCloudControlHost, panel app.RibbonPanel, labelY float32) string {
+func drawPanel(s ribbonControlHost, panel app.RibbonPanel, labelY float32) string {
 	if panel.Name == app.PanelPointCloud {
 		return drawPointCloudPanel(s, panel, labelY)
 	}
@@ -165,7 +165,7 @@ func drawPanel(s pointCloudControlHost, panel app.RibbonPanel, labelY float32) s
 		return drawSelectorPanel(panel, labelY)
 	}
 	native.BeginGroup()
-	activated := drawPanelColumns(packPanelColumns(panel.Buttons))
+	activated := drawPanelColumns(s, packPanelColumns(panel.Buttons))
 	drawPanelName(panel.Name, labelY)
 	native.EndGroup()
 	return activated
@@ -189,6 +189,16 @@ type pointCloudControlHost interface {
 
 var _ pointCloudControlHost = (*app.Session)(nil)
 
+// ribbonControlHost is what a panel needs to draw its stateful controls: the point-cloud sliders
+// and the Format panel's selection lists. It composes the two narrow surfaces rather than taking
+// the whole session, per the audit I5 consumer-interface rule.
+type ribbonControlHost interface {
+	pointCloudControlHost
+	formatListHost
+}
+
+var _ ribbonControlHost = (*app.Session)(nil)
+
 // drawPointCloudPanel renders the consolidated Point Cloud panel as one compact 3-column grid:
 // Import (a small labeled-icon button, matching Move/Crop) heads the first column over the stacked
 // "Size" and "Density" sliders, Move / Work Point sit over the display-mode selector in column two,
@@ -196,10 +206,10 @@ var _ pointCloudControlHost = (*app.Session)(nil)
 // and the intensity ramp clear of the panel-name footer. The intensity ramp spans the full width
 // beneath, but only when the target cloud is in Intensity mode (the app leaves IntensityRamp nil
 // otherwise). Returns the id of a clicked tool or a chosen display mode, or "".
-func drawPointCloudPanel(s pointCloudControlHost, panel app.RibbonPanel, labelY float32) string {
+func drawPointCloudPanel(s ribbonControlHost, panel app.RibbonPanel, labelY float32) string {
 	var activated string
 	pick := func(id string) {
-		if got := drawPointCloudButton(panel, id); got != "" {
+		if got := drawPointCloudButton(s, panel, id); got != "" {
 			activated = got
 		}
 	}
@@ -244,10 +254,10 @@ func drawPointCloudPanel(s pointCloudControlHost, panel app.RibbonPanel, labelY 
 // drawPointCloudButton draws the one panel button with the given command id in place, so the grid
 // can seat each tool in its designated cell rather than the generic column-packing order. Returns
 // the command id if clicked, else "".
-func drawPointCloudButton(panel app.RibbonPanel, id string) string {
+func drawPointCloudButton(s formatListHost, panel app.RibbonPanel, id string) string {
 	for _, btn := range panel.Buttons {
 		if btn.Command.ID() == id {
-			return drawRibbonButton(btn)
+			return drawRibbonButton(s, btn)
 		}
 	}
 	return ""
@@ -298,7 +308,7 @@ func drawPointCloudSelector(panel app.RibbonPanel) string {
 // drawPanelColumns draws the packed columns side by side, each column a vertical group
 // of its buttons, and leaves the whole block as the last item so the caller can measure
 // it (ItemRectMin/Max) to center the panel name.
-func drawPanelColumns(cols [][]app.RibbonButton) string {
+func drawPanelColumns(s formatListHost, cols [][]app.RibbonButton) string {
 	var activated string
 	native.BeginGroup()
 	for i, col := range cols {
@@ -307,7 +317,7 @@ func drawPanelColumns(cols [][]app.RibbonButton) string {
 		}
 		native.BeginGroup()
 		for _, btn := range col {
-			if id := drawRibbonButton(btn); id != "" {
+			if id := drawRibbonButton(s, btn); id != "" {
 				activated = id
 			}
 		}
@@ -467,7 +477,13 @@ func lerpChartColor(a, b [4]float32, t float32) [4]float32 {
 // A command with variants renders as a split button: the head control plus a dropdown
 // arrow listing the variant tools (the variant flyout). It returns the id of the
 // command (head or chosen variant) clicked this frame, else "".
-func drawRibbonButton(btn app.RibbonButton) string {
+func drawRibbonButton(s formatListHost, btn app.RibbonButton) string {
+	if kind, ok := btn.Command.SelectionList(); ok {
+		native.BeginDisabled(!btn.Enabled)
+		drawSelectionList(s, kind, "##"+btn.Command.ID())
+		native.EndDisabled()
+		return "" // a list applies a value; it runs no command
+	}
 	if btn.Command.Kind() == app.PopupControl {
 		return drawPopupMenuButton(btn)
 	}

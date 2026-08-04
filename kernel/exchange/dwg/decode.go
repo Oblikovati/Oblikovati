@@ -47,11 +47,12 @@ func DecodeWithProgress(data []byte, opts exchange.TranslationOptions) (*Drawing
 		return nil, nil, err
 	}
 	c := &collector{data: od, version: h.Version, blockEntities: map[uint64][]Entity{}, blockInserts: map[uint64][]*Insert{}}
+	c.collectLayers(refs) // the LAYER table, so a BYLAYER entity resolves as it is read (#2015)
 	warns, err := c.collect(refs, opts)
 	if err != nil {
 		return nil, warns, err
 	}
-	dr := &Drawing{Entities: c.resolve()}
+	dr := &Drawing{Entities: c.resolve(), Styles: c.styles}
 	return dr, applyHeaderUnits(dr, h, data, warns), nil
 }
 
@@ -83,6 +84,14 @@ type collector struct {
 	blockEntities map[uint64][]Entity // by owning BLOCK_HEADER handle
 	blockInserts  map[uint64][]*Insert
 	paperCurves   int // paper-space curve entities skipped (for classification accounting)
+	// styles is each entity's own formatting, keyed by its handle (#2015). The decoder always
+	// read the colour and line weight to keep the bit stream aligned and threw them away; they
+	// are what an imported drawing needs to keep its appearance.
+	styles map[uint64]drawing.Style
+	// layers is the LAYER table keyed by handle, collected in a pass before the entities so a
+	// BYLAYER entity can be resolved as it is read (#2015). Empty on R2007+, where the record
+	// layout is not understood — see layerrecord.go.
+	layers map[uint64]layerRecord
 	// Readers reused across the per-object loop so each object does not allocate a fresh
 	// *BitReader: geomReader walks the data stream (held by the cursor), handleReader the
 	// handle stream. The loop fully decodes one object before the next, so reuse is safe.
@@ -146,6 +155,8 @@ func (c *collector) addObject(cur *entityCursor, hdr ObjectHeader) string {
 		}
 		return ""
 	}
+	_, layerHandle := commonEntityRefs(&c.handleReader, c.data, cur, c.version)
+	c.recordStyle(hdr.Handle, cur.common, layerHandle) // colour / line weight, BYLAYER resolved (#2015)
 	e, err := decodeEntity(cur.geom, hdr, c.version)
 	if err != nil {
 		return err.Error()
@@ -203,4 +214,64 @@ func (c *collector) expand(in *Insert, parent drawing.Affine, out []Entity, visi
 	}
 	delete(visiting, in.BlockHeader)
 	return out
+}
+
+// recordStyle files one entity's own formatting under its handle. An entity that inherits
+// everything is not recorded, so a drawing of ordinary geometry carries no style table at all.
+func (c *collector) recordStyle(handle uint64, ce commonEntity, layerHandle uint64) {
+	s := drawing.Style{
+		Color:      ce.colorIndex,
+		LineWeight: ce.lineWeight,
+		LineType:   dwgLineTypeName(ce.ltypeFlags),
+	}
+	// Fold the layer's values in where the entity inherits, so what is recorded is the entity's
+	// resolved appearance. Layers are absent on R2007+, where inheritance falls through to the
+	// drawing's own defaults instead.
+	if l, ok := c.layers[layerHandle]; ok {
+		if s.Color == dwgColorByLayer {
+			s.Color = l.color
+		}
+		if s.LineWeight == dwgLineWeightByLayer {
+			s.LineWeight = l.lineWeight
+		}
+	}
+	if s.Color == dwgColorByLayer && s.LineWeight == dwgLineWeightByLayer && s.LineType == "" {
+		return
+	}
+	if c.styles == nil {
+		c.styles = map[uint64]drawing.Style{}
+	}
+	c.styles[handle] = s
+}
+
+// dwgLineTypeName maps the two-bit line-type flag onto a record name. Flag 3 names a line-type
+// object by handle, which needs the LTYPE records this decoder does not read yet, so it inherits
+// rather than guessing a pattern.
+func dwgLineTypeName(flags int) string {
+	if flags == 2 {
+		return "CONTINUOUS"
+	}
+	return ""
+}
+
+// collectLayers reads the LAYER table before the entity pass, so an entity's BYLAYER colour and
+// weight can be resolved as it is decoded. A record that fails to decode is skipped: a missing
+// layer means its entities inherit the drawing defaults, which is the same outcome as the
+// pre-#2015 behaviour rather than a wrong colour.
+func (c *collector) collectLayers(refs []ObjectRef) {
+	var r BitReader
+	for _, ref := range refs {
+		hdr, err := decodeObjectHeader(c.data, ref, c.version)
+		if err != nil || hdr.Type != TypeLayer {
+			continue
+		}
+		rec, err := decodeLayerRecord(&r, c.data, ref, c.version)
+		if err != nil {
+			continue
+		}
+		if c.layers == nil {
+			c.layers = map[uint64]layerRecord{}
+		}
+		c.layers[hdr.Handle] = rec
+	}
 }

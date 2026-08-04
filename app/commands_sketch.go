@@ -21,11 +21,11 @@ func sketchTabCommands() []*CommandDefinition {
 	// Constrain panel (reference order): Dimension, Auto Dimension, then the constraint
 	// tools — there is no separate "Dimension" panel in the reference Sketch tab.
 	cmds = append(cmds, NewCommand("Sketch.Dimension", "Dimension", "Constrain", func(s *Session) error {
-		s.StartTool(newDimensionTool())
+		s.StartTool(NewDimensionTool())
 		return nil
 	}).WithTab("Sketch").WithEnvironment(SketchEnvironment).WithAlias("D").WithDefaultChord("Shift+D").WithEnable(inSketch).
 		WithIcon("dimension").WithButtonStyle(SmallIconButton).
-		WithTooltip("Dimension — then pick points/a line/a circle/two lines to dimension."))
+		WithTooltip("Dimension — pick points/a line/a circle/two lines, then click to place it."))
 	cmds = append(cmds, NewCommand("Sketch.AutoDimension", "Auto Dimension", "Constrain", func(s *Session) error {
 		sk := s.ActiveSketch()
 		if sk == nil {
@@ -37,6 +37,7 @@ func sketchTabCommands() []*CommandDefinition {
 		WithIcon("auto-dimension").WithButtonStyle(SmallIconButton).
 		WithTooltip("Auto Dimension — fully constrain the sketch with dimensions and grounds."))
 	cmds = append(cmds, constrainCommands()...)
+	cmds = append(cmds, showConstraintsCommand())
 	// Project Geometry lives in Create as a large button (the canonical ribbon has no
 	// "Draw" panel — see architecture/mapping/inventor-ribbon-structure.md). Project Scan Point
 	// rides under it as a split-button variant (the two are both "project onto the sketch plane").
@@ -64,6 +65,20 @@ func sketchTabCommands() []*CommandDefinition {
 		c.WithRibbons(PartRibbon, AssemblyRibbon)
 	}
 	return cmds
+}
+
+// showConstraintsCommand is the Constrain panel's Show/Hide Constraints toggle (Inventor's F8/F9
+// pair, one button here): it draws a marker for every geometric constraint in the sketch, which is
+// the only way to select one — and therefore the only way to delete a relation without undoing
+// back past it.
+func showConstraintsCommand() *CommandDefinition {
+	return NewCommand("Sketch.ShowConstraints", "Show Constraints", "Constrain", func(s *Session) error {
+		s.ToggleSketchConstraints()
+		return nil
+	}).WithTab("Sketch").WithEnvironment(SketchEnvironment).WithDefaultChord("F8").WithEnable(inSketch).
+		WithActive(func(s *Session) bool { return s.ShowSketchConstraints() }).
+		WithIcon("show-constraints").WithButtonStyle(SmallIconButton).
+		WithTooltip("Show Constraints — mark every constraint in the sketch; click a marker and press Delete to remove it.")
 }
 
 // sketchToolEntry is one tool-launching command (id/label/alias/tooltip + factory).
@@ -154,7 +169,7 @@ func sketchPatternCommands() []*CommandDefinition {
 // which the reference UI places in Create, not Modify).
 func createCommands() []*CommandDefinition {
 	return buildToolCommands("Create", []sketchToolEntry{
-		{id: "Sketch.Line", name: "Line", alias: "L", chord: "Shift+L", large: true, tip: "Line — draw a line between two points.", start: func() Tool { return NewLineTool() }},
+		{id: "Sketch.Line", name: "Line", alias: "L", chord: "Shift+L", large: true, tip: "Line — draw a connected chain of lines; Enter or Escape finishes.", start: func() Tool { return NewLineTool() }},
 		{id: "Sketch.Rectangle", name: "Rectangle", alias: "REC", large: true, tip: "Rectangle — draw a two-corner rectangle.", start: func() Tool { return NewRectangleTool() }, variants: []sketchToolEntry{
 			{id: "Sketch.Rectangle.ThreePoint", name: "Three Point Rectangle", tip: "Three Point Rectangle — base edge then width.", start: func() Tool { return NewThreePointRectangleTool() }},
 			{id: "Sketch.Rectangle.Center", name: "Two Point Center Rectangle", tip: "Two Point Center Rectangle — center then a corner.", start: func() Tool { return NewCenterRectangleTool() }},
@@ -162,12 +177,12 @@ func createCommands() []*CommandDefinition {
 		{id: "Sketch.Circle", name: "Circle", alias: "C", chord: "Shift+C", large: true, tip: "Circle — draw a circle from its center and radius.", start: func() Tool { return NewCircleTool() }, variants: []sketchToolEntry{
 			{id: "Sketch.Circle.ThreePoint", name: "Three Point Circle", tip: "Three Point Circle — the circle through three points.", start: func() Tool { return NewThreePointCircleTool() }},
 		}},
-		{id: "Sketch.Arc", name: "Arc", alias: "A", chord: "Shift+A", large: true, tip: "Arc — draw a three-point arc.", start: func() Tool { return NewArcTool() }, variants: []sketchToolEntry{
+		{id: "Sketch.Arc", name: "Arc", alias: "A", chord: "Shift+A", large: true, tip: "Arc — draw a three-point arc: start, end, then a point on the arc.", start: func() Tool { return NewArcTool() }, variants: []sketchToolEntry{
 			{id: "Sketch.Arc.CenterPoint", name: "Center Point Arc", tip: "Center Point Arc — center, start, then end.", start: func() Tool { return NewCenterPointArcTool() }},
 		}},
 		{id: "Sketch.Slot", name: "Slot", tip: "Slot — click two centre points for a straight slot.", start: func() Tool { return NewSketchSlotTool(1) }, variants: []sketchToolEntry{
 			{id: "Sketch.Slot.CenterArc", name: "Center Point Arc Slot", tip: "Center Point Arc Slot — center, start, then end.", start: func() Tool { return NewCenterPointArcSlotTool(1) }},
-			{id: "Sketch.Slot.ThreePointArc", name: "Three Point Arc Slot", tip: "Three Point Arc Slot — start, a point on the arc, then end.", start: func() Tool { return NewThreePointArcSlotTool(1) }},
+			{id: "Sketch.Slot.ThreePointArc", name: "Three Point Arc Slot", tip: "Three Point Arc Slot — start, end, then a point on the arc.", start: func() Tool { return NewThreePointArcSlotTool(1) }},
 		}},
 		{id: "Sketch.Spline", name: "Spline", alias: "SPL", tip: "Spline — draw an interpolated curve through fit points.", start: func() Tool { return NewSplineTool() }, variants: []sketchToolEntry{
 			{id: "Sketch.Spline.ControlVertex", name: "Control Vertex Spline", tip: "Control Vertex Spline — draw a curve from its control polygon.", start: func() Tool { return NewControlVertexSplineTool() }},

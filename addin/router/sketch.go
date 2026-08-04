@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/depend"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/param"
@@ -44,7 +45,7 @@ type sketchHost interface {
 
 // createSketch adds a sketch on an origin or work plane of the active sketch host (part
 // or assembly) and returns its index (for sketch.rectangle / features.add).
-func createSketch(_ *app.Session, host sketchHost, in wire.CreateSketchArgs) (wire.CreateSketchResult, error) {
+func createSketch(s *app.Session, host sketchHost, in wire.CreateSketchArgs) (wire.CreateSketchResult, error) {
 	base, name, wp, err := sketchCreatePlane(host, in)
 	if err != nil {
 		return wire.CreateSketchResult{}, err
@@ -64,6 +65,11 @@ func createSketch(_ *app.Session, host sketchHost, in wire.CreateSketchArgs) (wi
 	// sketch keeps an isolated param store and "od/2" resolves to 0, collapsing
 	// the geometry.
 	sk.SetParameters(host.Parameters())
+	// Give it the same projected origin the interactive Create 2D Sketch gives, so a sketch made
+	// over the wire opens with the same (0,0) anchor as one drawn by hand (#2016).
+	if part, ok := host.(*compdef.PartComponentDefinition); ok {
+		s.AutoProjectOriginInto(part, sk)
+	}
 	// On a work plane, track it so the sketch follows when the plane moves, and fold the
 	// plane's offset parameter into the sketch's footprint so an offset edit targets this
 	// sketch's features instead of forcing a wholesale rebuild (ADR-0044).

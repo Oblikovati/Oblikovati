@@ -68,6 +68,8 @@ type PointData struct {
 	X          float64 `yaml:"x"`
 	Y          float64 `yaml:"y"`
 	Standalone bool    `yaml:"standalone,omitempty"`
+	// CenterPoint marks a hole-centre marker rather than a plain point (#2015).
+	CenterPoint bool `yaml:"centerPoint,omitempty"`
 }
 
 // EntityData is one curve entity. Points lists the curve's defining point ids in a
@@ -87,7 +89,11 @@ type EntityData struct {
 	Closed       bool      `yaml:"closed,omitempty"`
 	Fit          bool      `yaml:"fit,omitempty"`
 	Construction bool      `yaml:"construction,omitempty"`
-	Centerline   bool      `yaml:"centerline,omitempty"`   // line only: an axis
+	Centerline   bool      `yaml:"centerline,omitempty"`     // line only: an axis
+	CenterPoint  bool      `yaml:"centerPoint,omitempty"`    // point only: a hole-centre marker (#2015)
+	FormatLine   string    `yaml:"formatLineType,omitempty"` // per-entity format overrides (#2015)
+	FormatColor  string    `yaml:"formatColor,omitempty"`    // "#RRGGBB"; absent ⇒ inherit
+	FormatWeight float64   `yaml:"formatLineWeight,omitempty"`
 	Source       string    `yaml:"source,omitempty"`       // projected*: the source's SourceID
 	SourceKind   string    `yaml:"sourceKind,omitempty"`   // projected*: vertex|edge|workPoint|workAxis|workPlane
 	ImageRef     string    `yaml:"imageRef,omitempty"`     // image only
@@ -204,7 +210,10 @@ func serializeSketch(s *Sketch) (SketchData, error) {
 		if handleEnds[p.id] {
 			continue // handle ends persist inside their spline's record and are re-minted on restore
 		}
-		sd.Points = append(sd.Points, PointData{ID: int(p.id), X: float64(p.X), Y: float64(p.Y), Standalone: standalone[p.id]})
+		sd.Points = append(sd.Points, PointData{
+			ID: int(p.id), X: float64(p.X), Y: float64(p.Y),
+			Standalone: standalone[p.id], CenterPoint: p.centerPoint,
+		})
 	}
 	for _, e := range s.ents {
 		if _, isPoint := e.(*Point); isPoint {
@@ -217,6 +226,7 @@ func serializeSketch(s *Sketch) (SketchData, error) {
 		if err != nil {
 			return SketchData{}, err
 		}
+		s.writeEntityFormat(&ed, e.EntityID()) // format lives on the sketch, not the entity (#2015)
 		sd.Entities = append(sd.Entities, ed)
 	}
 	for _, c := range s.geomCons.All() {

@@ -14,6 +14,7 @@ void obk_ig_end_menu(void);
 int  obk_ig_menu_item(const char* label);
 int  obk_ig_menu_item_ex(const char* label, const char* shortcut, int enabled);
 int  obk_ig_begin(const char* name);
+int  obk_ig_begin_no_scroll(const char* name);
 int  obk_ig_begin_closable(const char* name, int* open);
 void obk_ig_end(void);
 void obk_ig_text(const char* s);
@@ -240,6 +241,16 @@ func Begin(name string) bool {
 	defer free()
 	return C.obk_ig_begin(c) != 0
 }
+
+// BeginNoScroll is Begin for a window that owns its own mouse wheel: no scrollbar, and the
+// wheel is never consumed by ImGui scrolling. The viewport uses it so camera zoom cannot be
+// taken over by content that overflows the panel (#2027). Pair with End like Begin.
+func BeginNoScroll(name string) bool {
+	c, free := cstr(name)
+	defer free()
+	return C.obk_ig_begin_no_scroll(c) != 0
+}
+
 func End() { C.obk_ig_end() }
 
 // BeginClosable is Begin with ImGui's title-bar close button: it reports whether

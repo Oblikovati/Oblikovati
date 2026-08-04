@@ -37,6 +37,12 @@ void obk_ig_set_next_window_size_first_use(float w, float h) {
     ImGui::SetNextWindowSize(ImVec2(w, h), ImGuiCond_FirstUseEver);
 }
 int  obk_ig_begin(const char* name)          { return ImGui::Begin(name) ? 1 : 0; }
+// The viewport must never hand its mouse wheel to ImGui scrolling: the wheel is camera zoom,
+// and an overlay placed off-panel used to make the window scrollable and steal it (#2027).
+int  obk_ig_begin_no_scroll(const char* name) {
+    return ImGui::Begin(name, nullptr,
+        ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse) ? 1 : 0;
+}
 int  obk_ig_begin_closable(const char* name, int* open) {
     bool p_open = (*open != 0);
     int visible = ImGui::Begin(name, &p_open) ? 1 : 0;

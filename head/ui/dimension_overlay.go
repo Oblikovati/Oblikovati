@@ -21,14 +21,13 @@ import (
 // geometry + labels come pre-computed from app.Session.SketchDimensions (headless).
 
 // dimensionLines accumulates every dimension's segments (mapped plane→model through the
-// sketch plane) into colored line items, driving and driven dimensions kept apart.
+// sketch plane) into colored line items, driving, driven and selected dimensions kept apart.
+// A selected dimension takes the selection colour whether it drives or not, so clicking one
+// gives the same feedback as clicking any other pickable thing (#2017).
 func dimensionLines(plane sketch.Plane, views []app.DimensionView) []renderer.DrawItem {
-	driving, driven := &segAccum{}, &segAccum{}
+	driving, driven, selected := &segAccum{}, &segAccum{}, &segAccum{}
 	for _, v := range views {
-		acc := driving
-		if v.Driven {
-			acc = driven
-		}
+		acc := dimensionAccum(v, driving, driven, selected)
 		for _, s := range v.Segments {
 			acc.seg(plane, s[0], s[1])
 		}
@@ -36,7 +35,19 @@ func dimensionLines(plane sketch.Plane, views []app.DimensionView) []renderer.Dr
 	var items []renderer.DrawItem
 	items = appendGrid(items, driving, chromeTheme.dimensionColor)
 	items = appendGrid(items, driven, chromeTheme.dimensionDrivenColor)
+	items = appendGrid(items, selected, chromeTheme.selectedPlaneColor)
 	return items
+}
+
+// dimensionAccum picks the colour bucket a dimension's segments belong in.
+func dimensionAccum(v app.DimensionView, driving, driven, selected *segAccum) *segAccum {
+	if v.Selected {
+		return selected
+	}
+	if v.Driven {
+		return driven
+	}
+	return driving
 }
 
 // drawDimensionLabels overlays each dimension's value text at its projected anchor (the
@@ -49,8 +60,8 @@ func drawDimensionLabels(cx, cy float32, cam scene.Camera, plane sketch.Plane, v
 	var hit *sketch.DimensionConstraint
 	for _, v := range views {
 		sx, sy, ok := renderer.Project(cam, viewportNear, viewportFar, plane.ToModel(v.LabelAt))
-		if !ok {
-			continue
+		if !ok || !onScreen(sx, sy, cam) {
+			continue // off-screen labels would grow the ImGui content rect and steal the wheel (#2027)
 		}
 		native.SetCursorPos(cx+float32(sx), cy+float32(sy))
 		native.Text(v.Label)

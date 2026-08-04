@@ -35,7 +35,9 @@ func TestViewportGeomUploadDirtySkip(t *testing.T) {
 		mvp := renderer.ViewProjection(cam, 0.1, 100)
 		w.BeginFrame()
 		w.RenderViewport(0, pw, ph, mvp[:], eye, verts, len(verts)/16, idx,
-			nil, 0, nil, nil, 0, nil, nil, 0, nil, nil, 0, nil, nil, 0, nil, len(idx), 0, nil, nil, nil, geomKey)
+			nil, 0, nil, nil, 0, nil, nil, 0, nil, nil, 0, nil, nil, 0, nil,
+			nil, 0, nil, nil, 0, nil, // stroked-line streams (#2015)
+			len(idx), 0, nil, nil, nil, geomKey)
 		w.EndFrame(0.10, 0.10, 0.12)
 	}
 

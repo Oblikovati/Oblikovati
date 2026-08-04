@@ -13,6 +13,7 @@ import (
 	"oblikovati.org/clientgraphics"
 	"oblikovati.org/command"
 	"oblikovati.org/event"
+	"oblikovati.org/math"
 	"oblikovati.org/model/bodyapi"
 	"oblikovati.org/model/bom"
 	"oblikovati.org/model/colorscheme"
@@ -63,6 +64,11 @@ type Session struct {
 	constrainedOrbit          bool                  // the Constrained Orbit tool is active: left-drag turntables (#913 N10)
 	steeringWheel             bool                  // the SteeringWheels radial nav menu is shown at the cursor (#913 N26)
 	entityDrag                sketchDrag            // the in-progress direct drag of sketch entities, if any
+	dimensionDrag             dimensionDrag         // the in-progress drag of a sketch dimension's label (#2017)
+	placement                 sketchPlacement       // the in-progress drag-to-create press (#2014)
+	placementFields           placementFieldState   // in-place dimension input for the shape being placed (#2014)
+	formatModes               sketchFormatModes     // Format-panel creation modes (#2015)
+	lastCursorSketchPoint     math.Point2           // last cursor position mapped into the sketch plane
 	cloudMove                 cloudMoveDrag         // the in-progress interactive drag of a point cloud, if any (#645)
 	cvEdit                    cvEditDrag            // the in-progress NURBS control-point drag, if any (M36-F03)
 	relaxMode                 bool                  // Relax Mode: drag over/fully-constrained sketch geometry (#791)
@@ -79,6 +85,7 @@ type Session struct {
 	driveAnim                 driveAnimation
 	sketchReturnCam           scene.Camera
 	activeSketch              *sketch.Sketch
+	showSketchConstraints     bool // Show/Hide Constraints: draw a marker per geometric constraint
 	activeSketch3D            *sketch.Sketch3D
 	pendingDim                *sketch.DimensionConstraint
 	overlays                  []renderer.DrawItem
@@ -272,6 +279,7 @@ func (s *Session) wireDocumentWatchers() {
 	s.watchDocumentCloses()
 	s.watchDocumentSwitches() // #1105: drop the prior document's selection when a different one is activated
 	s.watchDocumentInterests()
+	s.watchNewDocumentProjection()      // a new document opens in the configured projection (#camera-ortho)
 	s.watchDocumentIdentityCollisions() // open-time identity-GUID clash → reassign + notify
 	s.watchTransactions()               // append-only transaction log for bug reports
 	s.watchDrawingExport()              // Drawing tab Export DXF: write the sheet when its file dialog is answered

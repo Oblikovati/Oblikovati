@@ -494,6 +494,7 @@ type RevolveData struct {
 	AxisLine   int     `yaml:"axisLine,omitempty"`   // that centerline's line index
 	Angle      float64 `yaml:"angle,omitempty"`      // 0 ⇒ full revolution
 	Angle2     float64 `yaml:"angle2,omitempty"`     // second-direction sweep (#313)
+	Direction  string  `yaml:"direction,omitempty"`  // which way Angle sweeps (#2019); empty ⇒ positive
 	Operation  string  `yaml:"operation"`
 	// ProfilePoint selects the revolved region by an interior seed point (sketch 2-D cm) rather
 	// than by index, since an external author cannot predict the reader's region ordering. When
@@ -510,7 +511,10 @@ func serializeRevolve(def *RevolveDefinition, sk SketchIndexer) (*RevolveData, e
 	if err != nil {
 		return nil, err
 	}
-	d := &RevolveData{Sketch: idx, Profile: def.ProfileIndex, Angle: evalFloat(def.Angle), Angle2: evalFloat(def.Angle2), Operation: op}
+	d := &RevolveData{
+		Sketch: idx, Profile: def.ProfileIndex, Angle: evalFloat(def.Angle), Angle2: evalFloat(def.Angle2),
+		Direction: directionNames[def.Direction], Operation: op,
+	}
 	switch {
 	case def.Axis != nil:
 		d.Axis = string(def.Axis.Key())
@@ -538,6 +542,18 @@ func restoreRevolve(fs *PartFeatures, d *RevolveData, sk SketchIndexer, work *Wo
 	if d == nil {
 		return nil, fmt.Errorf("revolve feature is missing its payload")
 	}
+	pf, err := restoreRevolveAboutItsAxis(fs, d, sk, work)
+	if err != nil {
+		return nil, err
+	}
+	// The sweep (second angle, direction) and the region seed are axis-independent, so they are
+	// applied once here rather than repeated down every axis branch.
+	return withProfileSeed(restoreRevolveDirection(restoreSecondAngle(pf, d.Angle2), d.Direction), d.ProfilePoint), nil
+}
+
+// restoreRevolveAboutItsAxis rebuilds the revolve on whichever axis the recipe names: a specific
+// centerline, the profile sketch's own centerline, or a work axis.
+func restoreRevolveAboutItsAxis(fs *PartFeatures, d *RevolveData, sk SketchIndexer, work *WorkGeometry) (*PartFeature, error) {
 	skt, ok := sk.At(d.Sketch)
 	if !ok {
 		return nil, fmt.Errorf("revolve references sketch index %d, which does not exist", d.Sketch)
@@ -552,19 +568,14 @@ func restoreRevolve(fs *PartFeatures, d *RevolveData, sk SketchIndexer, work *Wo
 	// sketch re-solves between load and recompute and reorders its regions (#region-seed).
 	profile := resolveSeed(skt, d.ProfilePoint, d.Profile)
 	if d.AxisSketch > 0 { // a specific centerline (1-based index)
-		axisSk, ok := sk.At(d.AxisSketch - 1)
-		if !ok {
-			return nil, fmt.Errorf("revolve axis centerline references sketch index %d, which does not exist", d.AxisSketch-1)
+		line, err := restoredAxisCenterline(d, sk)
+		if err != nil {
+			return nil, err
 		}
-		if d.AxisLine < 0 || d.AxisLine >= axisSk.Lines().Count() {
-			return nil, fmt.Errorf("revolve axis centerline references line %d out of range", d.AxisLine)
-		}
-		pf := NewRevolveFeatures(fs).AddAboutCenterlineLine(skt, profile, axisSk, axisSk.Lines().Item(d.AxisLine), func() float64 { return angle }, op)
-		return withProfileSeed(restoreSecondAngle(pf, d.Angle2), d.ProfilePoint), nil
+		return NewRevolveFeatures(fs).AddAboutCenterlineLine(skt, profile, line.sketch, line.line, func() float64 { return angle }, op), nil
 	}
 	if d.Axis == "" { // revolve about the profile sketch's own (single) centerline
-		pf := NewRevolveFeatures(fs).AddAboutCenterline(skt, profile, func() float64 { return angle }, op)
-		return withProfileSeed(restoreSecondAngle(pf, d.Angle2), d.ProfilePoint), nil
+		return NewRevolveFeatures(fs).AddAboutCenterline(skt, profile, func() float64 { return angle }, op), nil
 	}
 	if work == nil {
 		return nil, fmt.Errorf("revolve needs the part's work geometry to resolve its axis")
@@ -573,12 +584,26 @@ func restoreRevolve(fs *PartFeatures, d *RevolveData, sk SketchIndexer, work *Wo
 	if err != nil {
 		return nil, fmt.Errorf("revolve axis: %w", err)
 	}
-	if d.Angle2 > 0 {
-		angle2 := d.Angle2
-		return withProfileSeed(NewRevolveFeatures(fs).AddTwoDirectional(skt, profile, axis,
-			func() float64 { return angle }, func() float64 { return angle2 }, op), d.ProfilePoint), nil
+	return NewRevolveFeatures(fs).Add(skt, profile, axis, func() float64 { return angle }, op), nil
+}
+
+// restoredCenterline is a revolve axis recovered from its 1-based sketch index and line index.
+type restoredCenterline struct {
+	sketch *sketch.Sketch
+	line   *sketch.Line
+}
+
+// restoredAxisCenterline resolves the recipe's axis centerline, reporting the offending index and
+// the range it had to fall in when it does not.
+func restoredAxisCenterline(d *RevolveData, sk SketchIndexer) (restoredCenterline, error) {
+	axisSk, ok := sk.At(d.AxisSketch - 1)
+	if !ok {
+		return restoredCenterline{}, fmt.Errorf("revolve axis centerline references sketch index %d, which does not exist", d.AxisSketch-1)
 	}
-	return withProfileSeed(NewRevolveFeatures(fs).Add(skt, profile, axis, func() float64 { return angle }, op), d.ProfilePoint), nil
+	if d.AxisLine < 0 || d.AxisLine >= axisSk.Lines().Count() {
+		return restoredCenterline{}, fmt.Errorf("revolve axis centerline references line %d, outside the sketch's %d lines", d.AxisLine, axisSk.Lines().Count())
+	}
+	return restoredCenterline{sketch: axisSk, line: axisSk.Lines().Item(d.AxisLine)}, nil
 }
 
 // withProfileSeed records the interior seed point on a restored revolve so its region is
@@ -600,6 +625,16 @@ func restoreSecondAngle(pf *PartFeature, angle2 float64) *PartFeature {
 	}
 	if rf, ok := pf.feature.(*RevolveFeature); ok {
 		rf.def.Angle2 = func() float64 { return angle2 }
+	}
+	return pf
+}
+
+// restoreRevolveDirection puts the saved sweep direction back on a restored revolve (#2019). It is
+// applied on EVERY axis path — a flipped revolve about a centerline is as real as one about a work
+// axis — so it sits outside the axis branches rather than inside one of them.
+func restoreRevolveDirection(pf *PartFeature, name string) *PartFeature {
+	if rf, ok := pf.feature.(*RevolveFeature); ok {
+		rf.def.Direction = parseDirectionName(name)
 	}
 	return pf
 }

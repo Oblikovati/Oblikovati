@@ -10,11 +10,16 @@ import "fmt"
 // (see handlestream.go) to reach the owner block (entmode 0) and an INSERT's
 // block_header handle.
 type commonEntity struct {
-	entmode        int  // 0 = owned by a block (owner handle present), 1 = paper space, 2 = model space
-	numReactors    int  // count of reactor handles in the handle stream
-	xdicMissing    bool // R2004+: no xdicobjhandle in the stream when true (pre-R2004 always present)
-	noLinks        bool // <=R2000: prev/next entity handles present when false
-	colorByHandle  bool // colour given as a handle (ENC flag 0x40) → a leading colour handle
+	entmode       int  // 0 = owned by a block (owner handle present), 1 = paper space, 2 = model space
+	numReactors   int  // count of reactor handles in the handle stream
+	xdicMissing   bool // R2004+: no xdicobjhandle in the stream when true (pre-R2004 always present)
+	noLinks       bool // <=R2000: prev/next entity handles present when false
+	colorByHandle bool // colour given as a handle (ENC flag 0x40) → a leading colour handle
+	// colorIndex and lineWeight are the entity's own formatting (#2015). They were read and
+	// discarded before — only the flags mattered for walking the handle stream — but they are
+	// what an imported drawing needs to keep its appearance.
+	colorIndex     int
+	lineWeight     int
 	ltypeFlags     int
 	plotstyleFlags int
 	materialFlags  int  // R2007+
@@ -117,7 +122,7 @@ func readCommonEntityData(r *BitReader, version Version) commonEntity {
 	if version >= R2013 {
 		r.ReadBit() // has_ds_data
 	}
-	ce.colorByHandle = readEntityColor(r, version)
+	ce.colorByHandle, ce.colorIndex = readEntityColor(r, version)
 	r.ReadBD() // ltype_scale
 	if version >= R2000 {
 		ce.ltypeFlags = int(r.ReadBits(2))
@@ -133,19 +138,23 @@ func readCommonEntityData(r *BitReader, version Version) commonEntity {
 		ce.hasEdgeVS = r.ReadBit() == 1
 	}
 	r.ReadBS() // invisible
+	ce.lineWeight = dwgLineWeightByLayer
 	if version >= R2000 {
-		r.ReadRC() // linewt
+		ce.lineWeight = dwgLineWeightValue(r.ReadRC())
 	}
 	return ce
 }
 
-// readEntityColor consumes the entity colour and reports whether the colour is given
-// as a handle (ENC flag 0x40), which adds a leading handle to the handle stream. A CMC
-// BitShort index before R2004 carries no handle.
-func readEntityColor(r *BitReader, version Version) (byHandle bool) {
+// readEntityColor consumes the entity colour, reporting whether it is given as a handle (ENC
+// flag 0x40 — which adds a leading handle to the handle stream) and the colour index itself. A
+// CMC BitShort index before R2004 carries no handle.
+//
+// The index is the low byte of the raw value; the high byte is the ENC flag set. An entity whose
+// colour comes from a handle or an explicit RGB has no index, and reports BYLAYER so it inherits
+// rather than resolving to a wrong ACI (#2015).
+func readEntityColor(r *BitReader, version Version) (byHandle bool, index int) {
 	if version < R2004 {
-		r.ReadBS() // CMC color index
-		return false
+		return false, int(uint16(r.ReadBS()) & 0xFF) // CMC colour index
 	}
 	raw := r.ReadBS()
 	flags := raw >> 8
@@ -156,10 +165,37 @@ func readEntityColor(r *BitReader, version Version) (byHandle bool) {
 	// wins: when set, the colour is a handle in the handle stream and NO RGB long is
 	// read here (#commit colour-ENC-desync fix).
 	if flags&0x40 != 0 {
-		return true
+		return true, dwgColorByLayer
 	}
 	if flags&0x80 != 0 {
 		r.ReadBL() // explicit RGB
+		return false, dwgColorByLayer
 	}
-	return false
+	return false, int(uint16(raw) & 0xFF)
+}
+
+// Colour and line-weight sentinels in the DWG entity encoding.
+const (
+	// dwgColorByLayer is the colour index meaning "inherit from the layer".
+	dwgColorByLayer = 256
+	// dwgLineWeightByLayer is the line-weight code meaning "inherit from the layer".
+	dwgLineWeightByLayer = -1
+)
+
+// dwgLineWeightValue maps the one-byte line-weight code onto hundredths of a millimetre. Codes
+// 0x1C–0x1F are the BYLAYER/BYBLOCK/BYLWDEFAULT sentinels and every one of them inherits; a
+// value above the standard range is not a weight and inherits too rather than becoming a
+// nonsensical stroke.
+func dwgLineWeightValue(code byte) int {
+	if code >= 0x1C {
+		return dwgLineWeightByLayer
+	}
+	return dwgLineWeightTable[code]
+}
+
+// dwgLineWeightTable is the standard plotted widths, in hundredths of a millimetre, indexed by
+// their one-byte code (ODA lineweight enum).
+var dwgLineWeightTable = [0x1C]int{
+	0, 5, 9, 13, 15, 18, 20, 25, 30, 35, 40, 50, 53, 60,
+	70, 80, 90, 100, 106, 120, 140, 158, 200, 211, 0, 0, 0, 0,
 }

@@ -28,7 +28,7 @@ func Encode(dr *drawing.Drawing, version Version) ([]byte, error) {
 	writeClasses(w, version)
 	writeTables(w, h, layers)
 	writeBlocks(w, h)
-	writeEntitiesSection(w, dr.Entities, h)
+	writeEntitiesSection(w, dr, dr.Entities, h)
 	writeObjects(w, h)
 	w.tag(0, "EOF")
 	return []byte(w.string()), nil
@@ -64,12 +64,12 @@ func writeHeader(w *tagWriter, version Version, insunits int, handseed uint64) {
 
 // writeEntitiesSection emits the ENTITIES section: every model-space entity, owned by the
 // *Model_Space block record. Entity handles are drawn from the reserved range in order.
-func writeEntitiesSection(w *tagWriter, entities []drawing.Entity, h *encHandles) {
+func writeEntitiesSection(w *tagWriter, dr *drawing.Drawing, entities []drawing.Entity, h *encHandles) {
 	w.tag(0, "SECTION")
 	w.tag(2, "ENTITIES")
 	handle := h.entityBase
 	for _, e := range entities {
-		encodeEntity(w, e, handle, h.modelSpaceBR)
+		encodeEntity(w, dr, e, handle, h.modelSpaceBR)
 		handle++
 	}
 	w.tag(0, "ENDSEC")

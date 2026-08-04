@@ -177,6 +177,7 @@ func (s *Sketch) cloneEntitiesFull(ents []Entity, a affine2) ([]Entity, map[*Poi
 			out = append(out, c)
 		}
 	}
+	s.carryEntityFormats(s, emap) // formatting travels with a pattern/mirror copy (#2015)
 	return out, pmap, emap
 }
 

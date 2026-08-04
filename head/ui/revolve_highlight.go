@@ -10,9 +10,10 @@ import (
 	"oblikovati.org/renderer"
 )
 
-// revolveCenterlineHighlight draws the Revolve axis centerline — a sketch line, which the generic
-// tool highlight (drawSelectable, B-rep only) does not cover. The chosen centerline shows in the
-// selection colour; a centerline under the cursor while choosing the axis shows as a candidate.
+// revolveCenterlineHighlight draws the Revolve axis when it is a sketch line, which the generic
+// tool highlight (drawSelectable, B-rep only) does not cover. The chosen line shows in the
+// selection colour; a sketch line under the cursor while choosing the axis shows as a candidate
+// (any line, not only a centerline — the model revolves about either, #2018).
 // (The profile itself is highlighted by the generic toolHoverHighlight/toolSelectedHighlight.)
 func revolveCenterlineHighlight(s *app.Session) []renderer.DrawItem {
 	rv := s.ActiveRevolve()
@@ -20,14 +21,14 @@ func revolveCenterlineHighlight(s *app.Session) []renderer.DrawItem {
 		return nil
 	}
 	var items []renderer.DrawItem
-	if pts, plane, ok := rv.CenterlineOutline(); ok {
+	if pts, plane, ok := rv.AxisLineOutline(); ok {
 		acc := &segAccum{}
 		acc.polyline(plane, pts, false)
 		items = appendGrid(items, acc, chromeTheme.sketchSelectedColor)
 	}
 	if native.IsItemHovered() {
 		x, y := viewportCursor()
-		if pts, plane, ok := s.HoveredCenterlineOutline(x, y); ok {
+		if pts, plane, ok := s.HoveredAxisLineOutline(x, y); ok {
 			acc := &segAccum{}
 			acc.polyline(plane, pts, false)
 			items = appendGrid(items, acc, chromeTheme.sketchCandidateColor)

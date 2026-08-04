@@ -48,6 +48,7 @@ func optionGroupView(s *app.Session, group string) (wire.OptionGroupView, error)
 		view.Sketch = &wire.SketchOptionsView{
 			GridSpacingCm: o.GridSpacingCm, GridVisible: o.GridVisible,
 			GridMajorEvery: o.GridMajorEvery, SnapToPoints: o.SnapToPoints, SnapToGrid: o.SnapToGrid,
+			AutoProjectOrigin: o.AutoProjectOrigin,
 		}
 	case wire.OptionGroupPart:
 		view.Part = &wire.PartOptionsView{ChamferFlatCorners: s.Options().Part.ChamferFlatCorners}
@@ -93,13 +94,9 @@ func applyOptionGroup(s *app.Session, req wire.OptionGroupView) error {
 	case req.Group == wire.OptionGroupDisplay && req.Display != nil:
 		return applyDisplayOptions(s, *req.Display)
 	case req.Group == wire.OptionGroupSketch && req.Sketch != nil:
-		return s.SetSketchOptions(options.Sketch{
-			GridSpacingCm: req.Sketch.GridSpacingCm, GridVisible: req.Sketch.GridVisible,
-			GridMajorEvery: req.Sketch.GridMajorEvery, SnapToPoints: req.Sketch.SnapToPoints,
-			SnapToGrid: req.Sketch.SnapToGrid,
-		})
+		return s.SetSketchOptions(mergeSketchOptions(s.Options().Sketch, *req.Sketch))
 	case req.Group == wire.OptionGroupPart && req.Part != nil:
-		return s.SetPartOptions(options.Part{ChamferFlatCorners: req.Part.ChamferFlatCorners})
+		return s.SetPartOptions(mergePartOptions(s.Options().Part, *req.Part))
 	case req.Group == wire.OptionGroupSave && req.Save != nil:
 		return s.SetSaveOptions(options.Save{
 			Thumbnail:         req.Save.Thumbnail,
@@ -109,6 +106,28 @@ func applyOptionGroup(s *app.Session, req wire.OptionGroupView) error {
 	default:
 		return fmt.Errorf("option group %q carries no matching payload (set exactly the named group's field)", req.Group)
 	}
+}
+
+// mergeSketchOptions overlays the wire-exposed sketch options onto the ones the session already
+// holds. It must MERGE rather than build a fresh options.Sketch: the wire view carries five of
+// the group's fields, so constructing from it zeroed the rest — an add-in that set only the grid
+// spacing switched the whole heads-up display (#2014) and the Format-panel toggle (#2015) off,
+// and SetSketchOptions persisted that (#2016).
+func mergeSketchOptions(cur options.Sketch, v wire.SketchOptionsView) options.Sketch {
+	cur.GridSpacingCm = v.GridSpacingCm
+	cur.GridVisible = v.GridVisible
+	cur.GridMajorEvery = v.GridMajorEvery
+	cur.SnapToPoints = v.SnapToPoints
+	cur.SnapToGrid = v.SnapToGrid
+	cur.AutoProjectOrigin = v.AutoProjectOrigin
+	return cur
+}
+
+// mergePartOptions overlays the wire-exposed part options onto the current ones, keeping
+// TangentChainSelect — which the view does not carry and which defaults on (#2016).
+func mergePartOptions(cur options.Part, v wire.PartOptionsView) options.Part {
+	cur.ChamferFlatCorners = v.ChamferFlatCorners
+	return cur
 }
 
 // applyDisplayOptions writes the display proxies: the theme by name, the ViewCube

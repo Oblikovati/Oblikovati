@@ -34,12 +34,15 @@ func DecodeWithProgress(data []byte, opts exchange.TranslationOptions) (*drawing
 	if hdr, ok := sections["HEADER"]; ok {
 		dr.Units = headerInsunits(hdr)
 	}
+	if tables, ok := sections["TABLES"]; ok {
+		dr.Layers = decodeLayerTable(tables) // the formatting entities inherit (#2015)
+	}
 	bs := newBlockSet()
 	if blk, ok := sections["BLOCKS"]; ok {
 		bs = decodeBlocks(blk)
 	}
 	if ents, ok := sections["ENTITIES"]; ok {
-		geometry, inserts, w, derr := decodeModelEntities(ents, bs, opts)
+		geometry, inserts, w, derr := decodeModelEntities(dr, ents, bs, opts)
 		if derr != nil {
 			return nil, w, derr
 		}

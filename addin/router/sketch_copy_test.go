@@ -21,8 +21,12 @@ func TestSketchCopyToCopiesGeometry(t *testing.T) {
 
 	var res wire.CopySketchResult
 	call(t, r, s, "sketch.copyTo", `{"sourceIndex":0,"targetIndex":1}`, &res)
-	if res.Count != len(srcEnts.Entities) || res.Count == 0 {
-		t.Errorf("copyTo created %d entities, want %d (every source entity)", res.Count, len(srcEnts.Entities))
+	// The projected origin every sketch is created with (#2016) is associative reference
+	// geometry bound to the part, not copyable geometry — the target resolves its own — so the
+	// copy carries every source entity except it.
+	want := len(srcEnts.Entities) - countKind(srcEnts.Entities, "projectedPoint")
+	if res.Count != want || res.Count == 0 {
+		t.Errorf("copyTo created %d entities, want %d (every copyable source entity)", res.Count, want)
 	}
 
 	var prof wire.ListProfilesResult
@@ -56,8 +60,10 @@ func TestSketchCopyToOffsetAndSubset(t *testing.T) {
 
 	var ents wire.EnumerateEntitiesResult
 	call(t, r, s, "sketch.entities", `{"sketchIndex":1}`, &ents)
-	if len(ents.Entities) != 1 || ents.Entities[0].Kind != "line" {
-		t.Errorf("target entities = %+v, want one line", ents.Entities)
+	// Beside the origin the target projected on creation (#2016), the copy is the line alone —
+	// the circle stayed behind.
+	if countKind(ents.Entities, "line") != 1 || countKind(ents.Entities, "circle") != 0 {
+		t.Errorf("target entities = %+v, want one line and no circle", ents.Entities)
 	}
 }
 

@@ -20,13 +20,25 @@ func (s *Session) SketchDimensions() []DimensionView {
 		return nil
 	}
 	units := s.DocumentUnits()
+	selected := s.selectedDimensionSet()
 	var out []DimensionView
 	for _, d := range s.activeSketch.DimensionConstraints().All() {
 		if v, ok := dimensionView(d, units); ok {
+			v.Selected = selected[d]
 			out = append(out, v)
 		}
 	}
 	return out
+}
+
+// selectedDimensionSet indexes the selected dimensions for the per-dimension lookup the view
+// build does, so marking N dimensions against a selection of M is not N×M.
+func (s *Session) selectedDimensionSet() map[*sketch.DimensionConstraint]bool {
+	set := map[*sketch.DimensionConstraint]bool{}
+	for _, d := range s.SelectedSketchDimensions() {
+		set[d] = true
+	}
+	return set
 }
 
 // DimensionView is one dimension ready to draw: its lines (sketch-plane point pairs),
@@ -38,6 +50,9 @@ type DimensionView struct {
 	Label    string
 	LabelAt  math.Point2
 	Driven   bool
+	// Selected drives the highlight colour. Without it a click on a dimension had no visible
+	// effect, so selection looked broken even once it worked (#2017).
+	Selected bool
 }
 
 const (
@@ -45,10 +60,10 @@ const (
 	// label; the leader geometry (radial vs across-circle) also distinguishes them.
 	radiusPrefix   = "R"
 	diameterPrefix = "D"
-	// dimGapFactor offsets the dimension line off the geometry as a fraction of the
-	// measured size; dimMinGap (db units, cm) keeps tiny dimensions legible.
-	dimGapFactor = 0.15
-	dimMinGap    = 0.5
+	// dimMinGap (db units, cm) floors the angle arc's radius so a label dropped on the vertex
+	// still leaves a readable arc. The default anchors themselves live with the dimension now
+	// (model/sketch), so they travel with the geometry they annotate (#2017).
+	dimMinGap = 0.5
 	// angleArcSegments samples the angle dimension's arc.
 	angleArcSegments = 16
 )
@@ -88,14 +103,28 @@ func angleLabel(units param.UnitsOfMeasure, radians float64) string {
 	return units.FormatDisplay(param.Quantity{Value: radians, Unit: param.Angle})
 }
 
-// distanceView offsets the dimension line off the measured segment by a perpendicular
-// gap, with a witness line back to each measured point, and labels it at the midpoint.
+// distanceView draws the dimension line through the label, with a witness line back to each
+// measured point, and labels it at the anchor.
+//
+// The line runs along the ORIENTATION's direction, not always along the measured segment: a
+// horizontal dimension's line is horizontal and spans only ΔX, a vertical one spans only ΔY
+// (#2025). Projecting each measured point onto that line makes the drawn span equal the value
+// the constraint actually measures, so the glyph cannot claim a length the solver is not holding.
+//
+// The dimension line passes through the label, so the whole glyph moves as one when the label is
+// dragged. Only the label's PERPENDICULAR component displaces the line — sliding the text along
+// its own line must not shorten or rotate it — which is the drag's second degree of freedom.
 func distanceView(d *sketch.DimensionConstraint, a, b math.Point2, label string) DimensionView {
-	dir := normalize(a.VectorTo(b))
-	off := math.V2(-dir.Y, dir.X).Scale(dimGap(a.DistanceTo(b)))
-	a2, b2 := a.TranslateBy(off), b.TranslateBy(off)
+	labelAt, ok := d.LabelAnchor()
+	if !ok {
+		return DimensionView{}
+	}
+	dir := d.DistanceLineDirection(a, b)
+	perp := math.V2(-dir.Y, dir.X)
+	a2 := a.TranslateBy(perp.Scale(a.VectorTo(labelAt).Dot(perp)))
+	b2 := b.TranslateBy(perp.Scale(b.VectorTo(labelAt).Dot(perp)))
 	segs := [][2]math.Point2{{a, a2}, {b, b2}, {a2, b2}}
-	return DimensionView{Dim: d, Segments: segs, Label: label, LabelAt: a2.Midpoint(b2), Driven: d.Driven()}
+	return DimensionView{Dim: d, Segments: segs, Label: label, LabelAt: labelAt, Driven: d.Driven()}
 }
 
 // circleView draws a radial leader (radius) or an across-the-circle line (diameter),
@@ -105,9 +134,18 @@ func circleView(d *sketch.DimensionConstraint, refs []sketch.Entity, label strin
 	if !ok {
 		return DimensionView{}, false
 	}
+	out, ok := d.LabelAnchor()
+	if !ok {
+		return DimensionView{}, false
+	}
+	// The leader runs from the circle to wherever the label sits, so a dragged radius dimension
+	// stays attached instead of trailing a line to nowhere (#2017). A label dropped exactly on the
+	// centre has no direction to run along, so the default 45° leader is kept.
 	center, r := c.Center.Position(), c.Radius
-	dir := math.V2(stdmath.Sqrt2/2, stdmath.Sqrt2/2) // 45° leader
-	out := center.TranslateBy(dir.Scale(r + dimGap(r)))
+	dir := math.V2(stdmath.Sqrt2/2, stdmath.Sqrt2/2)
+	if center.DistanceTo(out) >= math.DefaultTolerance {
+		dir = normalize(center.VectorTo(out))
+	}
 	near := center
 	if diameter {
 		near = center.TranslateBy(dir.Scale(-r))
@@ -127,13 +165,16 @@ func angleView(d *sketch.DimensionConstraint, refs []sketch.Entity, label string
 	if !ok {
 		return DimensionView{}, false
 	}
+	labelAt, ok := d.LabelAnchor()
+	if !ok {
+		return DimensionView{}, false
+	}
 	startA := angleAwayFrom(v, l1)
 	endA := startA + shortDelta(startA, angleAwayFrom(v, l2))
-	// Size the arc by the shorter line's far-end span (its near end may sit on the
-	// vertex, which would otherwise collapse the radius to the minimum gap).
-	r := dimGap(stdmath.Min(v.DistanceTo(farthestEnd(v, l1)), v.DistanceTo(farthestEnd(v, l2))))
+	// The arc reaches out to the label so the two stay visually joined (#2017), floored so a label
+	// dropped on the vertex still leaves a readable arc.
+	r := stdmath.Max(v.DistanceTo(labelAt), dimMinGap)
 	segs := arcSegments(v, r, startA, endA)
-	labelAt := v.TranslateBy(dirVec((startA + endA) / 2).Scale(r))
 	return DimensionView{Dim: d, Segments: segs, Label: label, LabelAt: labelAt, Driven: d.Driven()}, true
 }
 
@@ -143,10 +184,13 @@ func arcLengthView(d *sketch.DimensionConstraint, refs []sketch.Entity, label st
 	if !ok {
 		return DimensionView{}, false
 	}
+	out, ok := d.LabelAnchor()
+	if !ok {
+		return DimensionView{}, false
+	}
+	// The leader keeps its foot on the arc and its head at the label (#2017).
 	c, r := a.Center.Position(), a.Radius()
-	mid := arcMidAngle(a)
-	on := c.TranslateBy(dirVec(mid).Scale(r))
-	out := c.TranslateBy(dirVec(mid).Scale(r + dimGap(r)))
+	on := c.TranslateBy(dirVec(arcMidAngle(a)).Scale(r))
 	return DimensionView{Dim: d, Segments: [][2]math.Point2{{on, out}}, Label: label, LabelAt: out, Driven: d.Driven()}, true
 }
 
@@ -174,14 +218,6 @@ func normalize(v math.Vector2) math.Vector2 {
 		return math.V2(1, 0)
 	}
 	return v.Scale(1 / l)
-}
-
-// dimGap is the dimension-line offset for a measured size (a fraction, floored).
-func dimGap(size math.Scalar) math.Scalar {
-	if g := size * dimGapFactor; g > dimMinGap {
-		return g
-	}
-	return dimMinGap
 }
 
 // dirVec is the unit vector at angle a (radians).

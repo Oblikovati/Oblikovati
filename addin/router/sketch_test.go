@@ -68,8 +68,9 @@ func TestSketchSpineEnumerateEditSolveDelete(t *testing.T) {
 		t.Fatalf("sketch.list = %d sketches, want 1", len(list.Sketches))
 	}
 	got := list.Sketches[0]
-	if got.Plane != "XY" || got.Name == "" || got.EntityCount != 8 {
-		t.Fatalf("sketch info = %+v, want plane XY, a name, 8 entities (4 lines + 4 points)", got)
+	// 4 lines + 4 points + the origin centre every new sketch projects (#2016).
+	if got.Plane != "XY" || got.Name == "" || got.EntityCount != 9 {
+		t.Fatalf("sketch info = %+v, want plane XY, a name, 9 entities (4 lines + 4 points + projected origin)", got)
 	}
 	if got.DOF != 8 {
 		t.Fatalf("DOF = %d, want 8 (unconstrained rectangle: 4 points × 2)", got.DOF)

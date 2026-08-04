@@ -60,6 +60,8 @@ func partNodeMenu(s *Session, n BrowserNode) []BrowserMenuItem {
 		return workPlaneMenu(n.Select)
 	case "workaxis":
 		return workAxisMenu(n.Select)
+	case "workpoint":
+		return workPointMenu(n.Select)
 	case "body":
 		return bodyMenu(n.Select)
 	case "pointCloud":
@@ -273,22 +275,37 @@ func workPlaneMenu(sel Selectable) []BrowserMenuItem {
 			_, err := s.CreateSketch(h.Plane.Plane())
 			return err
 		}},
-		{Label: "Visibility", Enabled: true, Invoke: func(*Session) error {
-			h.Plane.SetVisible(!h.Plane.Visible())
-			return nil
-		}},
+		datumVisibilityItem(h.Plane),
 	}
 }
 
+// workAxisMenu offers a Visibility toggle for a datum axis.
 func workAxisMenu(sel Selectable) []BrowserMenuItem {
 	h, ok := sel.(WorkAxisHandle)
 	if !ok {
 		return nil
 	}
-	return []BrowserMenuItem{{Label: "Visibility", Enabled: true, Invoke: func(*Session) error {
-		h.Axis.SetVisible(!h.Axis.Visible())
+	return []BrowserMenuItem{datumVisibilityItem(h.Axis)}
+}
+
+// workPointMenu offers a Visibility toggle for a datum point, including the origin Center
+// Point. Without it the Center Point's right-click menu was empty — it is not renameable
+// either — so there was no way to show it and pick it in the 3D view (#2016).
+func workPointMenu(sel Selectable) []BrowserMenuItem {
+	h, ok := sel.(WorkPointHandle)
+	if !ok {
 		return nil
-	}}}
+	}
+	return []BrowserMenuItem{datumVisibilityItem(h.Point)}
+}
+
+// datumVisibilityItem is the Visibility toggle every datum node shares — the browser's half of
+// the flip the V shortcut does.
+func datumVisibilityItem(d VisibleDatum) BrowserMenuItem {
+	return BrowserMenuItem{Label: "Visibility", Enabled: true, Invoke: func(*Session) error {
+		d.SetVisible(!d.Visible())
+		return nil
+	}}
 }
 
 func bodyMenu(sel Selectable) []BrowserMenuItem {

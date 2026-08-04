@@ -6,7 +6,10 @@
 // the result to the GPU.
 package viewport
 
-import "oblikovati.org/renderer"
+import (
+	"oblikovati.org/math"
+	"oblikovati.org/renderer"
+)
 
 // VertexFloats is the per-vertex layout the mesh pipeline expects: position (xyz),
 // normal (xyz), color/albedo (rgba), metallic, roughness, emissive (rgb), and the shading
@@ -52,6 +55,17 @@ type Mesh struct {
 	TopLineVerts     []float32
 	TopLineVCount    int
 	TopLineIndices   []uint32
+	// The wide-line streams carry stroked lines (DrawItem.Width > 1) as TRIANGLES: each segment
+	// becomes a quad the vertex shader expands in screen space, so the stroke stays a constant
+	// pixel width at any zoom. They are separate streams because they need triangle topology and
+	// the expanding shader, while hairlines keep the cheaper line pipeline. WideLine is
+	// depth-tested; TopWideLine ignores depth, mirroring Line/TopLine. #2015.
+	WideLineVerts      []float32
+	WideLineVCount     int
+	WideLineIndices    []uint32
+	TopWideLineVerts   []float32
+	TopWideLineVCount  int
+	TopWideLineIndices []uint32
 }
 
 // Flatten splits a draw list into the viewport streams, interleaving each vertex as
@@ -110,23 +124,42 @@ func isOpaqueItem(item renderer.DrawItem) bool {
 // routeItem appends one draw item to the stream its flags select, returning the (possibly grown)
 // list of biased items, which are held back and appended to the triangle stream's tail by Flatten.
 func routeItem(m *Mesh, item renderer.DrawItem, biased []renderer.DrawItem) []renderer.DrawItem {
+	if item.Primitive != renderer.Triangles {
+		routeLineItem(m, item)
+		return biased
+	}
 	switch {
-	case item.OnTop && item.Primitive == renderer.Triangles:
+	case item.OnTop:
 		m.TopTriVCount = appendItem(&m.TopTriVerts, &m.TopTriIndices, m.TopTriVCount, item)
+	case item.Occluder:
+		m.OccVCount = appendItem(&m.OccVerts, &m.OccIndices, m.OccVCount, item)
+	case item.Biased:
+		biased = append(biased, item) // appended after the opaque triangles (depth-biased tail)
+	default:
+		m.TriVCount = appendItem(&m.TriVerts, &m.TriIndices, m.TriVCount, item)
+	}
+	return biased
+}
+
+// routeLineItem picks the lane for a line item. OnTop is matched first, keeping the precedence the
+// single switch had before the stroked lanes existed. Hidden then beats width: the hidden lane's
+// whole purpose is its reversed depth test and there is no stroked equivalent, so letting width win
+// would draw an occluded edge as a plainly visible one — a wrong picture is worse than a thin one.
+// Below those, a stroked line must take the expanding lane, since falling through to the hairline
+// lane would silently drop its width.
+func routeLineItem(m *Mesh, item renderer.DrawItem) {
+	switch {
+	case item.OnTop && item.IsWideLine():
+		m.TopWideLineVCount = appendWideLineItem(&m.TopWideLineVerts, &m.TopWideLineIndices, m.TopWideLineVCount, item)
 	case item.OnTop:
 		m.TopLineVCount = appendItem(&m.TopLineVerts, &m.TopLineIndices, m.TopLineVCount, item)
-	case item.Primitive == renderer.Triangles && item.Occluder:
-		m.OccVCount = appendItem(&m.OccVerts, &m.OccIndices, m.OccVCount, item)
-	case item.Primitive == renderer.Triangles && item.Biased:
-		biased = append(biased, item) // appended after the opaque triangles (depth-biased tail)
-	case item.Primitive == renderer.Triangles:
-		m.TriVCount = appendItem(&m.TriVerts, &m.TriIndices, m.TriVCount, item)
 	case item.Hidden:
 		m.HidVCount = appendItem(&m.HidVerts, &m.HidIndices, m.HidVCount, item)
+	case item.IsWideLine():
+		m.WideLineVCount = appendWideLineItem(&m.WideLineVerts, &m.WideLineIndices, m.WideLineVCount, item)
 	default:
 		m.LineVCount = appendItem(&m.LineVerts, &m.LineIndices, m.LineVCount, item)
 	}
-	return biased
 }
 
 // appendItem appends one item's interleaved vertices and rebased indices, returning
@@ -152,6 +185,60 @@ func appendItem(verts *[]float32, idx *[]uint32, base int, item renderer.DrawIte
 		*idx = append(*idx, uint32(base+i))
 	}
 	return base + len(item.Positions)
+}
+
+// Wide-line encoding. The stroke must be a constant width in PIXELS, so the quad corners can only
+// be placed once the camera is known — and they must not be placed on the CPU: the merged geometry
+// is content-keyed and its GPU upload is deliberately skipped while that key holds across an orbit
+// (#1422), so camera-dependent vertices would either go stale or force a full re-upload every
+// frame. The expansion therefore happens in the vertex shader, and each vertex carries what the
+// shader needs to do it.
+//
+// The vertex layout is the standard 16-float mesh vertex, with three slots repurposed for the
+// wide-line streams only — they are dead there, since a line is drawn flat/unlit and takes no
+// material. This function is the only writer of that encoding and shaders/wideline.vert the only
+// reader; the two must be changed together.
+//
+//	normal.xyz ← the segment's OTHER endpoint, in the same space as position
+//	metallic   ← the side of the stroke this corner sits on (+1 / -1)
+//	roughness  ← the stroke width in pixels
+
+// appendWideLineItem expands each of the item's line segments into a quad (4 vertices, 6 indices)
+// and appends it, returning the new running vertex count. The item's Indices are read in pairs,
+// matching the line list the hairline path would have drawn.
+//
+// Each corner records its own endpoint, the opposite endpoint and a side sign. The shader derives
+// the screen-space direction from the two endpoints, so the OTHER end's corners must flip their
+// side to offset the same way round — otherwise the quad comes out as a bow tie.
+func appendWideLineItem(verts *[]float32, idx *[]uint32, base int, item renderer.DrawItem) int {
+	n := base
+	for i := 0; i+1 < len(item.Indices); i += 2 {
+		a, b := item.Indices[i], item.Indices[i+1]
+		if a >= len(item.Positions) || b >= len(item.Positions) {
+			continue // a malformed item must not panic the render loop
+		}
+		pa, pb := item.Positions[a], item.Positions[b]
+		ca, cb := vertexColor(item, a), vertexColor(item, b)
+		appendWideLineVertex(verts, pa, pb, ca, +1, item)
+		appendWideLineVertex(verts, pa, pb, ca, -1, item)
+		appendWideLineVertex(verts, pb, pa, cb, +1, item) // opposite end ⇒ mirrored side
+		appendWideLineVertex(verts, pb, pa, cb, -1, item)
+		*idx = append(*idx, uint32(n), uint32(n+1), uint32(n+2), uint32(n), uint32(n+2), uint32(n+3))
+		n += 4
+	}
+	return n
+}
+
+// appendWideLineVertex writes one expanded corner in the layout documented above.
+func appendWideLineVertex(verts *[]float32, at, other math.Point3, c [4]float32, side float32, item renderer.DrawItem) {
+	*verts = append(*verts,
+		float32(at.X), float32(at.Y), float32(at.Z),
+		float32(other.X), float32(other.Y), float32(other.Z), // the other endpoint
+		c[0], c[1], c[2], c[3],
+		side,       // which side of the stroke
+		item.Width, // stroke width in pixels
+		0, 0, 0,    // emissive: unused by a flat stroke
+		float32(item.Shading))
 }
 
 // vertexColor returns vertex i's color: the per-vertex DrawItem.Colors entry when present

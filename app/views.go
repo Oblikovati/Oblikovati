@@ -361,6 +361,7 @@ func (s *Session) SetViewLayout(l types.ViewLayout) error {
 		cur := vs.Active()
 		nv := doc.DefaultView(fmt.Sprintf("View %d", vs.Count()+1))
 		nv.Eye, nv.Target, nv.Up, nv.FOV, nv.Framed = cur.Eye, cur.Target, cur.Up, cur.FOV, cur.Framed
+		nv.Projection = cur.Projection // a tile of the same document matches the view it was split from
 		vs.Add(nv)
 	}
 	return nil
@@ -416,9 +417,11 @@ func (s *Session) AddView(docID uint64, name string, copyActiveCamera bool) (int
 		name = fmt.Sprintf("View %d", vs.Count()+1)
 	}
 	nv := doc.DefaultView(name)
+	nv.Projection = s.newViewProjection()
 	if copyActiveCamera {
 		cur := vs.Active()
 		nv.Eye, nv.Target, nv.Up, nv.FOV, nv.Framed = cur.Eye, cur.Target, cur.Up, cur.FOV, cur.Framed
+		nv.Projection = cur.Projection // "same camera" includes how it projects
 	}
 	return vs.Add(nv), nil
 }

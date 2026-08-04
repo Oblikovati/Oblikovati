@@ -67,7 +67,7 @@ func importDrawing(part *compdef.PartComponentDefinition, dr *drawing.Drawing, p
 		dr.Entities, recenter = shifted, []string{recenterWarning(offset)}
 	}
 	if _, planar := dr.Planar(planarTolerance); planar {
-		n, w := add2DEntities(part.Sketches().Add(plane), dr.Entities)
+		n, w := add2DEntities(part.Sketches().Add(plane), dr, dr.Entities)
 		return drawingImport{entityCount: n, warnings: append(recenter, w...)}
 	}
 	n, w := add3DEntities(part.Sketches3D().Add(), dr.Entities)
@@ -92,15 +92,20 @@ func drawingToDocumentScale(insunits int, units param.UnitsOfMeasure) float64 {
 
 // add2DEntities maps each decoded entity onto a 2D sketch, returning the count added and
 // warnings for any it could not place.
-func add2DEntities(sk *sketch.Sketch, entities []drawing.Entity) (int, []string) {
+func add2DEntities(sk *sketch.Sketch, dr *drawing.Drawing, entities []drawing.Entity) (int, []string) {
 	var warns []string
 	added := 0
 	for _, e := range entities {
-		if add2DEntity(sk, e) {
-			added++
-		} else {
+		before := len(sk.Entities())
+		if !add2DEntity(sk, e) {
 			warns = append(warns, fmt.Sprintf("import: skipped %s handle %d (no 2D mapping)", e.Kind().String(), e.EntityHandle()))
+			continue
 		}
+		added++
+		// The dispatch above is a one-case-per-type conversion that returns no entities, so the
+		// ones it created are the tail of the sketch — the same before-mark the driven-dimension
+		// mode uses, and cheaper than threading a return through every case.
+		applyImportedFormat(sk, dr, e, sk.Entities()[before:]) // formatting from the file (#2015)
 	}
 	return added, warns
 }

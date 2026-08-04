@@ -102,8 +102,12 @@ func TestReadEntityColorBranches(t *testing.T) {
 	// Pre-R2004: a plain BitShort index, never by-handle.
 	w := NewBitWriter()
 	w.WriteBS(7)
-	if readEntityColor(NewBitReader(w.Bytes()), R2000) {
+	byHandle, index := readEntityColor(NewBitReader(w.Bytes()), R2000)
+	if byHandle {
 		t.Error("pre-R2004 colour reported by-handle")
+	}
+	if index != 7 {
+		t.Errorf("pre-R2004 colour index = %d, want 7 — the value must be captured, not discarded (#2015)", index)
 	}
 	// R2004+ ENC: the high byte of the BitShort carries the flags.
 	cases := []struct {
@@ -122,7 +126,7 @@ func TestReadEntityColorBranches(t *testing.T) {
 		if c.extra != nil {
 			c.extra(w)
 		}
-		if got := readEntityColor(NewBitReader(w.Bytes()), R2018); got != c.byHandle {
+		if got, _ := readEntityColor(NewBitReader(w.Bytes()), R2018); got != c.byHandle {
 			t.Errorf("ENC case %d byHandle = %v, want %v", i, got, c.byHandle)
 		}
 	}

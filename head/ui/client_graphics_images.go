@@ -43,8 +43,8 @@ func drawClientGraphicsImages(cx, cy float32, cam scene.Camera, images []clientg
 			continue
 		}
 		sx, sy, vis := renderer.Project(cam, viewportNear, viewportFar, im.Anchor)
-		if !vis {
-			continue
+		if !vis || !onScreen(sx, sy, cam) {
+			continue // see onScreen: an off-screen anchor makes the viewport scrollable (#2027)
 		}
 		w, h := billboardPixels(im, wpp)
 		native.SetCursorPos(cx+float32(sx)-w/2, cy+float32(sy)-h/2)

@@ -31,8 +31,8 @@ func clientGraphicsOverlay(s *app.Session, cam scene.Camera, list renderer.DrawL
 func drawClientGraphicsLabels(cx, cy float32, cam scene.Camera, labels []clientgraphics.Label) {
 	for _, l := range labels {
 		sx, sy, ok := renderer.Project(cam, viewportNear, viewportFar, l.Anchor)
-		if !ok {
-			continue
+		if !ok || !onScreen(sx, sy, cam) {
+			continue // see onScreen: an off-screen anchor makes the viewport scrollable (#2027)
 		}
 		native.SetCursorPos(cx+float32(sx), cy+float32(sy))
 		native.Text(l.Text)

@@ -25,6 +25,15 @@ var pointVertSPV []byte
 //go:embed shaders/point.frag.spv
 var pointFragSPV []byte
 
+// Wide-line pipeline SPIR-V (#2015): expands a stroked segment into a screen-space quad, so a line
+// weight renders at a constant pixel width without the non-portable wideLines Vulkan feature.
+//
+//go:embed shaders/wideline.vert.spv
+var wideLineVertSPV []byte
+
+//go:embed shaders/wideline.frag.spv
+var wideLineFragSPV []byte
+
 //go:embed shaders/skybox.vert.spv
 var skyboxVertSPV []byte
 

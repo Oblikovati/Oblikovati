@@ -126,7 +126,7 @@ func (t *ArcTool) Prompt(*Session) string {
 	case 1:
 		return "Click the arc end point"
 	case 2:
-		return "Click a point on the arc"
+		return "Click a point on the arc (sets the bulge)"
 	default:
 		return "Click OK to create the arc"
 	}
@@ -152,9 +152,11 @@ func (t *PointTool) Commit(s *Session) error {
 	if s.activeSketch == nil {
 		return errNoSketch("point")
 	}
+	made := make([]sketch.Entity, 0, len(t.pts))
 	for _, p := range t.pts {
-		s.activeSketch.Points().Add(p)
+		made = append(made, s.activeSketch.Points().Add(p))
 	}
+	s.applyFormatModes(made) // Format-panel creation modes (#2015)
 	return nil
 }
 
@@ -276,22 +278,15 @@ func (t *PolygonTool) Cancel(*Session)   { t.reset() }
 func (t *PolygonTool) CanCommit() bool   { return len(t.pts) == 2 }
 func (t *PolygonTool) AutoCommits() bool { return true }
 
-// Commit builds the Sides-gon inscribed in the circle through the vertex click,
-// connecting consecutive vertices with lines sharing their corner points.
+// Commit builds the rigid Sides-gon inscribed in the circle through the vertex click. It routes
+// through the shared recipe rather than rebuilding the vertex ring here: the local rebuild
+// applied no constraints, so the committed polygon was a ring of free points (DOF 12 for a
+// hexagon) while the identical shape created over the API came out rigid (#2014).
 func (t *PolygonTool) Commit(s *Session) error {
 	if s.activeSketch == nil {
 		return errNoSketch("polygon")
 	}
-	verts := polygonVertices(t.pts[0], t.pts[1], t.Sides)
-	sk := s.activeSketch
-	pts := make([]*sketch.Point, len(verts))
-	for i, v := range verts {
-		pts[i] = sk.Points().Add(v)
-	}
-	for i := range pts {
-		sk.Lines().Add(pts[i], pts[(i+1)%len(pts)])
-	}
-	return nil
+	return s.commitRecipe(sketch.PolygonRecipe(t.pts[0], t.pts[1], t.Sides, true))
 }
 
 // Prompt guides center then a vertex.
@@ -304,19 +299,6 @@ func (t *PolygonTool) Prompt(*Session) string {
 	default:
 		return "Click OK to create the polygon"
 	}
-}
-
-// polygonVertices returns the n vertices of a regular polygon centered at center with
-// its first vertex at vertex.
-func polygonVertices(center, vertex math.Point2, n int) []math.Point2 {
-	r := center.DistanceTo(vertex)
-	base := stdmath.Atan2(vertex.Y-center.Y, vertex.X-center.X)
-	out := make([]math.Point2, n)
-	for i := 0; i < n; i++ {
-		a := base + 2*stdmath.Pi*float64(i)/float64(n)
-		out[i] = math.P2(center.X+r*stdmath.Cos(a), center.Y+r*stdmath.Sin(a))
-	}
-	return out
 }
 
 // circumcenter returns the center of the circle through three points, false if they

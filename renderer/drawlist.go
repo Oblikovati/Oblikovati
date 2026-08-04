@@ -56,8 +56,20 @@ type DrawItem struct {
 	// render with a small depth bias, so where it is coplanar with solid geometry the solid wins
 	// the depth test instead of z-fighting. Display only; routed to the biased tail of the
 	// triangle stream (see viewport.Flatten).
-	Biased   bool
+	Biased bool
+	// Width is a line item's stroke width in PIXELS — a display attribute, constant on screen at
+	// any zoom, which is what a CAD line weight means (a 0.5 mm weight must not vanish when you
+	// zoom out or swell when you zoom in). 0 or 1 means a hairline and keeps the item on the cheap
+	// one-vertex-per-endpoint line pipeline; above 1 the viewport expands each segment into a
+	// screen-space quad on the GPU. Ignored for triangle items. #2015.
+	Width    float32
 	ObjectID uint64
+}
+
+// IsWideLine reports whether a line item asks for a stroke wider than a hairline, so the viewport
+// routes it to the expanding pipeline. Triangles never qualify — Width is a stroke attribute.
+func (d DrawItem) IsWideLine() bool {
+	return d.Primitive == Lines && d.Width > 1
 }
 
 // Surface is a resolved PBR appearance for one body — what [SurfaceLookup] returns. It is

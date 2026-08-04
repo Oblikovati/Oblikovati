@@ -79,6 +79,10 @@ func drawItemsBounds(items []renderer.DrawItem) (min, max [3]float32, ok bool) {
 // (it recolours) and each sketch's seq, visibility, edit state, edit-scope hiding
 // and entity count — which together change on import (new sketch, new count), the
 // edit cycle (IsEditing flips on Finish), and add/remove.
+//
+// It also folds in Show Format and each sketch's format revision, because recolouring an entity
+// changes neither the geometry version nor the entity count: without them a finished sketch would
+// keep its old colours until something unrelated happened to change the key (#2015).
 func sketchOverlayKey(s *app.Session) (string, bool) {
 	version, ok := activeModelGeometryVersion(s)
 	if !ok {
@@ -90,11 +94,11 @@ func sketchOverlayKey(s *app.Session) (string, bool) {
 	}
 	var b strings.Builder
 	b.WriteString(version)
-	fmt.Fprintf(&b, "|sel=%p", selectedSketch(s))
+	fmt.Fprintf(&b, "|sel=%p|fmt=%t", selectedSketch(s), s.ShowFormat())
 	for i := 0; i < part.Sketches().Count(); i++ {
 		sk := part.Sketches().Item(i)
-		fmt.Fprintf(&b, "|%d:%t%t%t:%d", sk.Seq(), sk.Visible(), sk.IsEditing(),
-			s.EditScopeHides(sk.Seq()), sketchEntityCount(sk))
+		fmt.Fprintf(&b, "|%d:%t%t%t:%d:%d", sk.Seq(), sk.Visible(), sk.IsEditing(),
+			s.EditScopeHides(sk.Seq()), sketchEntityCount(sk), sk.FormatRevision())
 	}
 	return b.String(), true
 }
@@ -122,7 +126,7 @@ func partSketchOverlays(s *app.Session) []renderer.DrawItem {
 		if !sk.Visible() || sk.IsEditing() || s.EditScopeHides(sk.Seq()) {
 			continue
 		}
-		items = append(items, sketchOverlay(sk, allEntitiesWhenSelected(sk, selected), nil)...)
+		items = append(items, sketchOverlay(sk, allEntitiesWhenSelected(sk, selected), nil, s.ShowFormat())...)
 		items = append(items, projectedCurveOverlay(sk)...)
 	}
 	return items
@@ -171,12 +175,13 @@ func allEntitiesWhenSelected(sk, selected *sketch.Sketch) func(sketch.Entity) bo
 // the viewport, so the user sees what they draw in the sketch environment. Curves are
 // sampled into polylines; everything is mapped from sketch 2D to model 3D through the
 // sketch plane. Returns nil when there is nothing to draw.
-func sketchOverlay(sk *sketch.Sketch, selected func(sketch.Entity) bool, candidate sketch.Entity) []renderer.DrawItem {
+// suppress is the Show Format toggle: when set, per-entity overrides are ignored and every entity
+// draws with default attributes (the button's documented, name-inverted behaviour).
+func sketchOverlay(sk *sketch.Sketch, selected func(sketch.Entity) bool, candidate sketch.Entity, suppress bool) []renderer.DrawItem {
 	if sk == nil {
 		return nil
 	}
-	normal, sel, cand := sketchSegmentsFor(sk, selected, candidate)
-	return sketchItems(normal, sel, cand)
+	return sketchItems(sketchSegmentsFor(sk, selected, candidate, suppress))
 }
 
 // projectedCurveOverlay draws a sketch's projected reference curves — the lines projected from
@@ -197,20 +202,24 @@ func projectedCurveOverlay(sk *sketch.Sketch) []renderer.DrawItem {
 	return appendGrid(nil, acc, chromeTheme.sketchColor)
 }
 
-func sketchSegmentsFor(sk *sketch.Sketch, selected func(sketch.Entity) bool, candidate sketch.Entity) (*segAccum, *segAccum, *segAccum) {
-	normal, sel, cand := &segAccum{}, &segAccum{}, &segAccum{}
+func sketchSegmentsFor(sk *sketch.Sketch, selected func(sketch.Entity) bool, candidate sketch.Entity, suppress bool) *sketchStyleBuckets {
+	b := newSketchStyleBuckets()
 	plane := sk.Plane()
-	// Selected/candidate geometry stays solid so picks read clearly; normal-state
-	// geometry carries its line type (construction dashed, centerlines center
-	// pattern, sketch override otherwise — issue #161).
+	// Every entity keeps its line type in every state — construction dashed, centerlines the
+	// centre pattern, per-entity or sketch-level override otherwise (#161). Selection used to
+	// force geometry solid, which made a selected centerline indistinguishable from a selected
+	// normal line: the dash pattern is what identifies it, so dropping it hid what was picked.
+	// Colour still marks state, since the user must be able to see what is selected.
 	pick := func(e sketch.Entity) (*segAccum, []float64) {
+		style := app.SketchEntityStyle(sk, e, suppress)
+		w := sketchStrokeWidth(style)
 		switch {
-		case candidate != nil && e == candidate:
-			return cand, nil // the geometry the active constraint tool would accept on hover
+		case candidate != nil && e == candidate: // what the active constraint tool would accept on hover
+			return b.cand.forStroke(strokeKey{chromeTheme.sketchCandidateColor, w}), style.Pattern
 		case selected != nil && selected(e):
-			return sel, nil
+			return b.sel.forStroke(strokeKey{chromeTheme.sketchSelectedColor, w}), style.Pattern
 		default:
-			return normal, app.SketchEntityPattern(sk, e)
+			return b.normal.forStroke(strokeKey{sketchEntityColor(style), w}), style.Pattern
 		}
 	}
 	addLines(pick, plane, sk)
@@ -220,7 +229,89 @@ func sketchSegmentsFor(sk *sketch.Sketch, selected func(sketch.Entity) bool, can
 	addEllipticalArcs(pick, plane, sk)
 	addSplines(pick, plane, sk)
 	addBlockInstances(pick, plane, sk)
-	return normal, sel, cand
+	return b
+}
+
+// strokeKey is what makes two entities shareable in one draw item: same colour, same stroke width.
+// A DrawItem carries a single colour and width, so anything that differs in either must be its own
+// item.
+type strokeKey struct {
+	color [4]float32
+	width float32
+}
+
+// strokeLane accumulates segments per stroke within one draw-order layer.
+type strokeLane struct {
+	byStroke map[strokeKey]*segAccum
+	order    []strokeKey // first-seen, so the draw list is deterministic frame to frame
+}
+
+func newStrokeLane() strokeLane { return strokeLane{byStroke: map[strokeKey]*segAccum{}} }
+
+// forStroke returns the accumulator for one colour+width, creating it on first use.
+func (l *strokeLane) forStroke(k strokeKey) *segAccum {
+	acc, ok := l.byStroke[k]
+	if !ok {
+		acc = &segAccum{}
+		l.byStroke[k] = acc
+		l.order = append(l.order, k)
+	}
+	return acc
+}
+
+// appendTo emits this lane's accumulators as draw items, in first-seen order.
+func (l *strokeLane) appendTo(items []renderer.DrawItem) []renderer.DrawItem {
+	for _, k := range l.order {
+		items = appendStroke(items, l.byStroke[k], k.color, k.width)
+	}
+	return items
+}
+
+// sketchStyleBuckets groups a sketch's segments by stroke, in three draw-order layers. Normal-state
+// geometry is bucketed by its resolved colour and line weight so per-entity overrides render
+// (#2015 shipped the model, persistence and panel for these, but the overlay only ever asked for
+// the dash pattern, so neither a colour nor a weight set in the Format panel reached the screen).
+// Selection and hover are separate layers so they draw last and win the overlap; they take the
+// state colour, which must override the entity's, but keep its WIDTH — a selected heavy line that
+// snapped back to a hairline would look like the selection had changed the geometry.
+type sketchStyleBuckets struct {
+	normal, sel, cand strokeLane
+}
+
+func newSketchStyleBuckets() *sketchStyleBuckets {
+	return &sketchStyleBuckets{normal: newStrokeLane(), sel: newStrokeLane(), cand: newStrokeLane()}
+}
+
+// sketchEntityColor is the colour an entity draws in: its per-entity override, or the theme's
+// sketch colour when it inherits.
+func sketchEntityColor(style app.EntityStyle) [4]float32 {
+	if style.Color.IsOverride() {
+		return style.Color.Rgba().Array()
+	}
+	return chromeTheme.sketchColor
+}
+
+const (
+	// pixelsPerMillimetre converts a line weight to its on-screen stroke. A line weight is a PLOT
+	// width, so it is shown at a fixed screen scale rather than scaled with zoom — the reference
+	// CSS pixel density (96 dpi) puts a 0.5 mm weight at roughly 2 px, close to how the reference
+	// application draws it.
+	pixelsPerMillimetre = 96.0 / 25.4
+	// maxSketchStrokePixels caps the stroke so a mis-typed or badly imported weight (a DWG layer
+	// table can carry anything) cannot paint over the whole viewport.
+	maxSketchStrokePixels = 16
+)
+
+// sketchStrokeWidth converts an entity's line weight in millimetres to the stroke width in pixels
+// the viewport expands it to. 0 (inherit) stays 0, which keeps the entity on the hairline path.
+func sketchStrokeWidth(style app.EntityStyle) float32 {
+	if style.LineWeight <= 0 {
+		return 0
+	}
+	if px := style.LineWeight * pixelsPerMillimetre; px < maxSketchStrokePixels {
+		return float32(px)
+	}
+	return maxSketchStrokePixels
 }
 
 // addBlockInstances draws every placed block instance's realized geometry —
@@ -237,12 +328,13 @@ func addBlockInstances(pick accumFor, plane sketch.Plane, sk *sketch.Sketch) {
 	}
 }
 
-func sketchItems(normal, sel, cand *segAccum) []renderer.DrawItem {
+// sketchItems flattens the buckets into draw items: one per distinct stroke, normal-state geometry
+// first so the selection and hover lanes draw over it.
+func sketchItems(b *sketchStyleBuckets) []renderer.DrawItem {
 	var items []renderer.DrawItem
-	items = appendGrid(items, normal, chromeTheme.sketchColor)
-	items = appendGrid(items, sel, chromeTheme.sketchSelectedColor)
-	items = appendGrid(items, cand, chromeTheme.sketchCandidateColor)
-	return items
+	items = b.normal.appendTo(items)
+	items = b.sel.appendTo(items)
+	return b.cand.appendTo(items)
 }
 
 // sketchSegments is the polyline resolution for sampling sketch curves.
@@ -301,15 +393,17 @@ func addEllipticalArcs(pick accumFor, plane sketch.Plane, sk *sketch.Sketch) {
 	}
 }
 
+// addSplines draws each spline along its true NURBS curve, via the same faceting entry point
+// region detection and picking use. Joining the defining points directly drew the CONTROL
+// POLYGON instead — a 4-point spline rendered as 3 straight chords deviating up to 0.44 cm
+// from the curve that was actually modelled and extruded, so the sketch contradicted the solid
+// built from it (#2026).
 func addSplines(pick accumFor, plane sketch.Plane, sk *sketch.Sketch) {
 	for i := 0; i < sk.Splines().Count(); i++ {
 		sp := sk.Splines().Item(i)
-		pts := make([]math.Point2, sp.PointCount())
-		for j, p := range sp.Points {
-			pts[j] = p.Position()
-		}
+		pts, closed := sketch.EntityPolyline(sp)
 		acc, pat := pick(sp)
-		acc.patterned(plane, pts, sp.Closed, pat)
+		acc.patterned(plane, pts, closed, pat)
 	}
 }
 

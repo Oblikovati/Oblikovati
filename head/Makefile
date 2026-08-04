@@ -40,6 +40,8 @@ shaders:
 		glslangValidator -V mesh.frag -o mesh.frag.spv && \
 		glslangValidator -V point.vert -o point.vert.spv && \
 		glslangValidator -V point.frag -o point.frag.spv && \
+		glslangValidator -V wideline.vert -o wideline.vert.spv && \
+		glslangValidator -V wideline.frag -o wideline.frag.spv && \
 		glslangValidator -V skybox.vert -o skybox.vert.spv && \
 		glslangValidator -V skybox.frag -o skybox.frag.spv
 

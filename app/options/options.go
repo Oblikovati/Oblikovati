@@ -32,6 +32,29 @@ type Sketch struct {
 	SnapToGrid     bool    `yaml:"snapToGrid"`
 	HeadsUpDisplay bool    `yaml:"headsUpDisplay"`
 	RelaxMode      bool    `yaml:"relaxMode"`
+
+	// The in-canvas input surfaces the heads-up display offers while geometry is placed
+	// (#2014). PointerInput is the coordinate entry for a shape's first point; DimensionInput
+	// is the boxes that size the shape being placed; the Cartesian flags pick X/Y and
+	// width/height over length and angle. CreateDimensionsOnValueInput makes a typed value a
+	// persistent driving dimension on commit. Absent keys keep their defaults because Load
+	// starts from Defaults(), so an existing options file gains them switched on.
+	PointerInput                 bool `yaml:"pointerInput"`
+	PointerInputCartesian        bool `yaml:"pointerInputCartesian"`
+	DimensionInput               bool `yaml:"dimensionInput"`
+	DimensionInputCartesian      bool `yaml:"dimensionInputCartesian"`
+	CreateDimensionsOnValueInput bool `yaml:"createDimensionsOnValueInput"`
+
+	// AutoProjectOrigin projects the part origin's centre point into every new sketch, so the
+	// sketch opens with an anchor to constrain against at (0,0) — Inventor's "Autoproject part
+	// origin on sketch create", on by default. Load merges over Defaults(), so an options file
+	// written before this key keeps the default rather than reading as off (#2016).
+	AutoProjectOrigin bool `yaml:"autoProjectOrigin"`
+
+	// SuppressFormatOverrides is the Format panel's Show Format toggle (#2015). On means the
+	// sketch draws with DEFAULT attributes, hiding per-entity line type, colour and thickness —
+	// the documented behaviour, which is the inverse of what the button's label suggests.
+	SuppressFormatOverrides bool `yaml:"suppressFormatOverrides"`
 }
 
 // Part is the part-modeling defaults, applied live to the session.
@@ -94,8 +117,12 @@ type All struct {
 // launch, 100% UI scale) so a fresh install behaves exactly as before this file existed.
 func Defaults() All {
 	return All{
-		General:   General{StartupAction: types.StartupNewPart},
-		Sketch:    Sketch{GridSpacingCm: 1, GridVisible: true, GridMajorEvery: 5, SnapToPoints: true, SnapToGrid: true, HeadsUpDisplay: true},
+		General: General{StartupAction: types.StartupNewPart},
+		Sketch: Sketch{
+			GridSpacingCm: 1, GridVisible: true, GridMajorEvery: 5, SnapToPoints: true, SnapToGrid: true,
+			HeadsUpDisplay: true, PointerInput: true, PointerInputCartesian: true,
+			DimensionInput: true, CreateDimensionsOnValueInput: true, AutoProjectOrigin: true,
+		},
 		Part:      Part{ChamferFlatCorners: true, TangentChainSelect: true},
 		Save:      Save{Thumbnail: types.ThumbnailNone},
 		Updates:   Updates{CheckOnStartup: true},

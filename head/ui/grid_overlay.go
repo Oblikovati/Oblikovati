@@ -57,6 +57,17 @@ func gridLineAccum(i, major int, minor, maj, xAxis, yAxis *segAccum) (uAcc, vAcc
 }
 
 // appendGrid adds a colored line item for a non-empty accumulator.
+// appendStroke is appendGrid with a stroke width in pixels (#2015): above a hairline the viewport
+// expands the segments into screen-space quads, so a line weight holds its width at any zoom.
+func appendStroke(items []renderer.DrawItem, acc *segAccum, color [4]float32, width float32) []renderer.DrawItem {
+	if len(acc.pos) == 0 {
+		return items
+	}
+	return append(items, renderer.DrawItem{
+		Primitive: renderer.Lines, Positions: acc.pos, Indices: acc.idx, Color: color, Width: width,
+	})
+}
+
 func appendGrid(items []renderer.DrawItem, acc *segAccum, color [4]float32) []renderer.DrawItem {
 	if len(acc.pos) == 0 {
 		return items

@@ -22,7 +22,7 @@ import (
 // at the cursor (the same preview feed toolPreview uses).
 func inferenceGlyphs(s *app.Session, plane sketch.Plane, hWorld float64) (renderer.DrawItem, bool) {
 	sk := s.ActiveSketch()
-	if sk == nil || s.ActiveTool() == nil {
+	if sk == nil || s.ActiveTool() == nil || !s.ShowConstraintsOnCreation() {
 		return renderer.DrawItem{}, false
 	}
 	cx, cy := viewportCursor()

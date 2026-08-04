@@ -60,11 +60,13 @@ func (t *SketchChamferTool) Commit(s *Session) error {
 	return err
 }
 
-// SketchSlotTool draws a straight slot from two centre-axis clicks and a width.
+// SketchSlotTool draws a straight slot from two centre-axis clicks and a width. It embeds
+// collectClicks like every sibling geometry tool, which also makes it command-line drivable —
+// it was the one Create tool that kept its own point slice and so accepted no typed coordinate.
 type SketchSlotTool struct {
 	dialogTool
-	points []math.Point2
-	width  math.Scalar
+	collectClicks
+	width math.Scalar
 }
 
 // NewSketchSlotTool makes a slot tool with the given default width.
@@ -73,34 +75,27 @@ func NewSketchSlotTool(width float64) *SketchSlotTool {
 }
 
 func (t *SketchSlotTool) Name() string      { return "Slot" }
-func (t *SketchSlotTool) Cancel(*Session)   { t.points = nil }
+func (t *SketchSlotTool) Cancel(*Session)   { t.reset() }
 func (t *SketchSlotTool) AutoCommits() bool { return true }
-func (t *SketchSlotTool) CanCommit() bool   { return len(t.points) == 2 }
+func (t *SketchSlotTool) CanCommit() bool   { return len(t.pts) == 2 }
 func (t *SketchSlotTool) Prompt(*Session) string {
-	if len(t.points) == 0 {
+	if len(t.pts) == 0 {
 		return "Click the slot's first centre point."
 	}
 	return "Click the slot's second centre point."
 }
 
-// ClickAt records a centre-axis endpoint from a clicked pixel (snapped).
-func (t *SketchSlotTool) ClickAt(s *Session, px, py float64) {
-	if p, ok := s.sketchClickPoint(px, py); ok {
-		t.points = append(t.points, p)
-	}
-}
-
 // SetWidth sets the slot width.
 func (t *SketchSlotTool) SetWidth(w float64) { t.width = math.Scalar(w) }
 
-// Commit creates the straight slot.
+// Commit creates the rigid straight slot: the caps are held tangent to the sides and share a
+// radius, plus a construction centreline that carries the length dimension (#2014).
 func (t *SketchSlotTool) Commit(s *Session) error {
 	sk := s.ActiveSketch()
 	if sk == nil {
 		return errors.New("slot: no active sketch")
 	}
-	_, err := sk.AddStraightSlot(t.points[0], t.points[1], t.width)
-	return err
+	return s.commitRecipe(sketch.StraightSlotRecipe(t.pts[0], t.pts[1], t.width))
 }
 
 // CenterPointArcSlotTool draws an arc-shaped slot whose centre line is an arc given by its
@@ -132,8 +127,7 @@ func (t *CenterPointArcSlotTool) Commit(s *Session) error {
 		return errNoSketch("center point arc slot")
 	}
 	center, start, end := t.pts[0], t.pts[1], t.pts[2]
-	_, err := sk.AddArcSlot(center, start, end, t.width, leftTurn(center, start, end))
-	return err
+	return s.commitRecipe(sketch.ArcSlotRecipe(center, start, end, t.width, leftTurn(center, start, end)))
 }
 
 // Prompt guides the center, start and end of the slot's arc.
@@ -155,7 +149,11 @@ func (t *CenterPointArcSlotTool) Params() ToolParams {
 }
 
 // ThreePointArcSlotTool draws an arc-shaped slot whose centre line is the arc through three
-// clicked points — start, a point on the arc, then end (Inventor's Three Point Arc Slot).
+// clicked points — start, end, then a point on the arc (Inventor's Three Point Arc Slot).
+//
+// The pick order matches [ArcTool]. The two three-point arc tools used to disagree — this one
+// took start, through, end while the plain arc took start, end, through — so the same gesture
+// meant different things depending on which tool was armed (#2028).
 type ThreePointArcSlotTool struct {
 	dialogTool
 	collectClicks
@@ -182,24 +180,23 @@ func (t *ThreePointArcSlotTool) Commit(s *Session) error {
 	if sk == nil {
 		return errNoSketch("three point arc slot")
 	}
-	start, through, end := t.pts[0], t.pts[1], t.pts[2]
+	start, end, through := t.pts[0], t.pts[1], t.pts[2]
 	center, ok := circumcenter(start, through, end)
 	if !ok {
 		return errors.New("three point arc slot: the three points are collinear")
 	}
-	_, err := sk.AddArcSlot(center, start, end, t.width, leftTurn(start, through, end))
-	return err
+	return s.commitRecipe(sketch.ArcSlotRecipe(center, start, end, t.width, leftTurn(start, through, end)))
 }
 
-// Prompt guides the start, a point on the arc, then the end.
+// Prompt guides the start, the end, then a point on the arc — the same order as [ArcTool].
 func (t *ThreePointArcSlotTool) Prompt(*Session) string {
 	switch len(t.pts) {
 	case 0:
-		return "Click the slot's first centre point"
+		return "Click the slot's arc start point"
 	case 1:
-		return "Click a point on the slot's arc"
+		return "Click the slot's arc end point"
 	case 2:
-		return "Click the slot's second centre point"
+		return "Click a point on the slot's arc"
 	default:
 		return "Click OK to create the slot"
 	}

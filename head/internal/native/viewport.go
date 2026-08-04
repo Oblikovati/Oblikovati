@@ -9,6 +9,7 @@ package native
 
 void     obk_viewport_init(void* h, const uint32_t* vert, int vlen, const uint32_t* frag, int flen,
                            const uint32_t* pointVert, int pointVLen, const uint32_t* pointFrag, int pointFLen,
+                           const uint32_t* wideVert, int wideVLen, const uint32_t* wideFrag, int wideFLen,
                            const uint32_t* skyVert, int skyVLen, const uint32_t* skyFrag, int skyFLen);
 void     obk_viewport_upload_points(void* h, const float* verts, int count, uint64_t key, float sizePx);
 uint64_t obk_viewport_point_uploads(void* h);
@@ -22,6 +23,8 @@ void     obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp,
                              const float* hidV, int hidVC, const uint32_t* hidIdx, int hidIC,
                              const float* topTriV, int topTriVC, const uint32_t* topTriIdx, int topTriIC,
                              const float* topLineV, int topLineVC, const uint32_t* topLineIdx, int topLineIC,
+                             const float* wideV, int wideVC, const uint32_t* wideIdx, int wideIC,
+                             const float* topWideV, int topWideVC, const uint32_t* topWideIdx, int topWideIC,
                              int triBiasFirst, int topTriSolidFirst, const float* clip,
                              const float* mats, int matCount, const int32_t* recs, int recCount,
                              uint64_t geomKey);
@@ -50,6 +53,8 @@ func (w *Window) InitViewport() {
 		(*C.uint32_t)(unsafe.Pointer(&meshFragSPV[0])), C.int(len(meshFragSPV)),
 		(*C.uint32_t)(unsafe.Pointer(&pointVertSPV[0])), C.int(len(pointVertSPV)),
 		(*C.uint32_t)(unsafe.Pointer(&pointFragSPV[0])), C.int(len(pointFragSPV)),
+		(*C.uint32_t)(unsafe.Pointer(&wideLineVertSPV[0])), C.int(len(wideLineVertSPV)),
+		(*C.uint32_t)(unsafe.Pointer(&wideLineFragSPV[0])), C.int(len(wideLineFragSPV)),
 		(*C.uint32_t)(unsafe.Pointer(&skyboxVertSPV[0])), C.int(len(skyboxVertSPV)),
 		(*C.uint32_t)(unsafe.Pointer(&skyboxFragSPV[0])), C.int(len(skyboxFragSPV)))
 }
@@ -91,7 +96,9 @@ func (w *Window) SetViewportSkybox(invVP []float32, show bool) {
 // vector. Triangle and line vertices are interleaved as 16 floats [pos.xyz, normal.xyz,
 // color.rgba, metallic, roughness, emissive.rgb, mode]; indices are 0-based within their own
 // vertex array. The topTri/topLine streams are drawn last with the depth test disabled, so
-// client-graphics overlay/burn-through geometry stays visible over the model (PBI-067).
+// client-graphics overlay/burn-through geometry stays visible over the model (PBI-067). The
+// wide/topWide streams carry stroked lines (#2015) as pre-built quads that the wide-line vertex
+// shader widens in screen space, so a line weight holds its pixel width at any zoom.
 // slot selects which offscreen tile target to render into (0 for the single view; 0..3
 // for the tiled layouts). Each slot keeps its own image, so tiles show distinct cameras.
 func (win *Window) RenderViewport(slot, w, h int, mvp []float32, camPos []float32,
@@ -101,6 +108,8 @@ func (win *Window) RenderViewport(slot, w, h int, mvp []float32, camPos []float3
 	hidVerts []float32, hidVCount int, hidIdx []uint32,
 	topTriVerts []float32, topTriVCount int, topTriIdx []uint32,
 	topLineVerts []float32, topLineVCount int, topLineIdx []uint32,
+	wideVerts []float32, wideVCount int, wideIdx []uint32,
+	topWideVerts []float32, topWideVCount int, topWideIdx []uint32,
 	triBiasFirst, topTriSolidFirst int, clip []float32,
 	mats []float32, recs []int32, geomKey uint64,
 ) {
@@ -112,6 +121,8 @@ func (win *Window) RenderViewport(slot, w, h int, mvp []float32, camPos []float3
 		floatPtr(hidVerts), C.int(hidVCount), uint32Ptr(hidIdx), C.int(len(hidIdx)),
 		floatPtr(topTriVerts), C.int(topTriVCount), uint32Ptr(topTriIdx), C.int(len(topTriIdx)),
 		floatPtr(topLineVerts), C.int(topLineVCount), uint32Ptr(topLineIdx), C.int(len(topLineIdx)),
+		floatPtr(wideVerts), C.int(wideVCount), uint32Ptr(wideIdx), C.int(len(wideIdx)),
+		floatPtr(topWideVerts), C.int(topWideVCount), uint32Ptr(topWideIdx), C.int(len(topWideIdx)),
 		C.int(triBiasFirst), C.int(topTriSolidFirst), floatPtr(clip),
 		floatPtr(mats), C.int(len(mats)/16), int32Ptr(recs), C.int(len(recs)/recDrawInts),
 		C.uint64_t(geomKey))

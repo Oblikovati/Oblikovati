@@ -113,7 +113,8 @@ func TestLineToolAndCancel(t *testing.T) {
 	if line.CanCommit() {
 		t.Error("line ready after a single click")
 	}
-	s.Click(150, 70) // second click auto-commits the line and restarts the tool
+	s.Click(150, 70)
+	_ = s.PressKey(KeyEvent{Key: "Escape"}) // Escape ends the chain, keeping the segment (#2024)
 	if sk.Lines().Count() != 1 {
 		t.Errorf("line tool added %d lines, want 1", sk.Lines().Count())
 	}
