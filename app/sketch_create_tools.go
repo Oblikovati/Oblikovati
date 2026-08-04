@@ -60,11 +60,13 @@ func (t *SketchChamferTool) Commit(s *Session) error {
 	return err
 }
 
-// SketchSlotTool draws a straight slot from two centre-axis clicks and a width.
+// SketchSlotTool draws a straight slot from two centre-axis clicks and a width. It embeds
+// collectClicks like every sibling geometry tool, which also makes it command-line drivable —
+// it was the one Create tool that kept its own point slice and so accepted no typed coordinate.
 type SketchSlotTool struct {
 	dialogTool
-	points []math.Point2
-	width  math.Scalar
+	collectClicks
+	width math.Scalar
 }
 
 // NewSketchSlotTool makes a slot tool with the given default width.
@@ -73,21 +75,14 @@ func NewSketchSlotTool(width float64) *SketchSlotTool {
 }
 
 func (t *SketchSlotTool) Name() string      { return "Slot" }
-func (t *SketchSlotTool) Cancel(*Session)   { t.points = nil }
+func (t *SketchSlotTool) Cancel(*Session)   { t.reset() }
 func (t *SketchSlotTool) AutoCommits() bool { return true }
-func (t *SketchSlotTool) CanCommit() bool   { return len(t.points) == 2 }
+func (t *SketchSlotTool) CanCommit() bool   { return len(t.pts) == 2 }
 func (t *SketchSlotTool) Prompt(*Session) string {
-	if len(t.points) == 0 {
+	if len(t.pts) == 0 {
 		return "Click the slot's first centre point."
 	}
 	return "Click the slot's second centre point."
-}
-
-// ClickAt records a centre-axis endpoint from a clicked pixel (snapped).
-func (t *SketchSlotTool) ClickAt(s *Session, px, py float64) {
-	if p, ok := s.sketchClickPoint(px, py); ok {
-		t.points = append(t.points, p)
-	}
 }
 
 // SetWidth sets the slot width.
@@ -100,7 +95,7 @@ func (t *SketchSlotTool) Commit(s *Session) error {
 	if sk == nil {
 		return errors.New("slot: no active sketch")
 	}
-	_, err := sk.AddConstrainedStraightSlot(t.points[0], t.points[1], t.width)
+	_, err := sk.AddConstrainedStraightSlot(t.pts[0], t.pts[1], t.width)
 	return err
 }
 

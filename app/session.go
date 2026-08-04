@@ -13,6 +13,7 @@ import (
 	"oblikovati.org/clientgraphics"
 	"oblikovati.org/command"
 	"oblikovati.org/event"
+	"oblikovati.org/math"
 	"oblikovati.org/model/bodyapi"
 	"oblikovati.org/model/bom"
 	"oblikovati.org/model/colorscheme"
@@ -63,6 +64,9 @@ type Session struct {
 	constrainedOrbit          bool                  // the Constrained Orbit tool is active: left-drag turntables (#913 N10)
 	steeringWheel             bool                  // the SteeringWheels radial nav menu is shown at the cursor (#913 N26)
 	entityDrag                sketchDrag            // the in-progress direct drag of sketch entities, if any
+	placement                 sketchPlacement       // the in-progress drag-to-create press (#2014)
+	placementFields           placementFieldState   // in-place dimension input for the shape being placed (#2014)
+	lastCursorSketchPoint     math.Point2           // last cursor position mapped into the sketch plane
 	cloudMove                 cloudMoveDrag         // the in-progress interactive drag of a point cloud, if any (#645)
 	cvEdit                    cvEditDrag            // the in-progress NURBS control-point drag, if any (M36-F03)
 	relaxMode                 bool                  // Relax Mode: drag over/fully-constrained sketch geometry (#791)

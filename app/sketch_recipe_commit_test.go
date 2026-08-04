@@ -41,7 +41,7 @@ func TestToolCommitsAreRigid(t *testing.T) {
 		}},
 		{"slot", 5, func(s *Session) error {
 			tool := NewSketchSlotTool(2)
-			tool.points = []math.Point2{math.P2(0, 0), math.P2(10, 0)}
+			tool.pts = []math.Point2{math.P2(0, 0), math.P2(10, 0)}
 			return tool.Commit(s)
 		}},
 		{"centre-point arc slot", 6, func(s *Session) error {
