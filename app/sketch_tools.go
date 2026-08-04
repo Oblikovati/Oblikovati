@@ -142,14 +142,20 @@ func (t *LineTool) Commit(s *Session) error {
 	sk := s.activeSketch
 	prev := sk.Points().Add(t.points[0])
 	first := prev
+	var made []sketch.Entity
 	for i := 1; i < len(t.points); i++ {
 		cur := sk.Points().Add(t.points[i])
-		sk.ApplyLineInference(sk.Lines().Add(prev, cur), s.SketchInferenceOptions())
+		l := sk.Lines().Add(prev, cur)
+		sk.ApplyLineInference(l, s.SketchInferenceOptions())
+		made = append(made, l)
 		prev = cur
 	}
 	if t.closed && len(t.points) >= 3 {
-		sk.ApplyLineInference(sk.Lines().Add(prev, first), s.SketchInferenceOptions())
+		l := sk.Lines().Add(prev, first)
+		sk.ApplyLineInference(l, s.SketchInferenceOptions())
+		made = append(made, l)
 	}
+	s.applyFormatModes(made) // Format-panel creation modes (#2015)
 	return nil
 }
 

@@ -152,9 +152,11 @@ func (t *PointTool) Commit(s *Session) error {
 	if s.activeSketch == nil {
 		return errNoSketch("point")
 	}
+	made := make([]sketch.Entity, 0, len(t.pts))
 	for _, p := range t.pts {
-		s.activeSketch.Points().Add(p)
+		made = append(made, s.activeSketch.Points().Add(p))
 	}
+	s.applyFormatModes(made) // Format-panel creation modes (#2015)
 	return nil
 }
 

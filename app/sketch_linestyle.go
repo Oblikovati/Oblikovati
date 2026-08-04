@@ -35,3 +35,35 @@ func sketchOverridePattern(sk *sketch.Sketch) []float64 {
 	}
 	return nil
 }
+
+// EntityStyle is how one sketch entity draws: its dash pattern, colour and stroke width. The
+// colour and weight are zero when the entity takes the sketch defaults, which is the common case.
+type EntityStyle struct {
+	Pattern    []float64
+	Color      types.Color
+	LineWeight float64
+}
+
+// SketchEntityStyle resolves an entity's draw style, applying its per-entity format overrides on
+// top of the sketch-level pattern (#2015).
+//
+// suppress is the Show Format toggle: when set, the overrides are ignored and the entity draws
+// with default attributes. That is the documented behaviour of the button, whose "on" state shows
+// the DEFAULT format rather than the user's.
+//
+//	style := app.SketchEntityStyle(sk, entity, s.ShowFormat())
+func SketchEntityStyle(sk *sketch.Sketch, e sketch.Entity, suppress bool) EntityStyle {
+	style := EntityStyle{Pattern: SketchEntityPattern(sk, e)}
+	if suppress {
+		return style
+	}
+	f, ok := sk.EntityFormat(e.EntityID())
+	if !ok {
+		return style
+	}
+	if f.LineType != "" {
+		style.Pattern = linetype.Builtin(types.SketchLineType(f.LineType))
+	}
+	style.Color, style.LineWeight = f.Color, f.LineWeight
+	return style
+}

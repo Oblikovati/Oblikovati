@@ -19,6 +19,8 @@ const (
 	SmallIconButton   = types.SmallIconButton
 	LargeIconButton   = types.LargeIconButton
 	CompactIconButton = types.CompactIconButton
+	// SelectionListButton is a value picker with a preview — the Format panel's lists (#2015).
+	SelectionListButton = types.SelectionListButton
 )
 
 // ControlKind is the UI control a command presents as — the ControlDefinition
@@ -64,6 +66,8 @@ type CommandDefinition struct {
 	run              func(*Session) error
 	variants         []*CommandDefinition // split-button dropdown entries (Inventor's variant flyout)
 	isVariant        bool                 // true ⇒ reachable only via a head command's dropdown, never its own panel button
+	listKind         FormatListKind       // which Format-panel list this command drives (#2015)
+	hasList          bool                 // true ⇒ a value picker, not an action: choosing a row applies a value
 	popupItems       []string             // for PopupControl: ids of the registered commands its menu lists (M05-F03)
 }
 
@@ -190,6 +194,18 @@ func (c *CommandDefinition) WithVariants(variants ...*CommandDefinition) *Comman
 	c.variants = variants
 	return c
 }
+
+// WithSelectionList marks this command a value picker rather than an action: it renders as a
+// dropdown showing the selection's current value with a preview, and choosing a row applies that
+// value instead of running the command's action (#2015). kind names which of the Format panel's
+// three lists it drives.
+func (c *CommandDefinition) WithSelectionList(kind FormatListKind) *CommandDefinition {
+	c.listKind, c.hasList = kind, true
+	return c
+}
+
+// SelectionList reports which list this command drives, and whether it is one at all.
+func (c *CommandDefinition) SelectionList() (FormatListKind, bool) { return c.listKind, c.hasList }
 
 // Variants returns this command's split-button dropdown entries (nil if it is a plain
 // button). The slice is the live backing array; callers must not mutate it.

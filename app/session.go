@@ -66,6 +66,7 @@ type Session struct {
 	entityDrag                sketchDrag            // the in-progress direct drag of sketch entities, if any
 	placement                 sketchPlacement       // the in-progress drag-to-create press (#2014)
 	placementFields           placementFieldState   // in-place dimension input for the shape being placed (#2014)
+	formatModes               sketchFormatModes     // Format-panel creation modes (#2015)
 	lastCursorSketchPoint     math.Point2           // last cursor position mapped into the sketch plane
 	cloudMove                 cloudMoveDrag         // the in-progress interactive drag of a point cloud, if any (#645)
 	cvEdit                    cvEditDrag            // the in-progress NURBS control-point drag, if any (M36-F03)

@@ -58,7 +58,8 @@ const (
 	SelectDrawingView
 	SelectPointCloud
 	SelectPointCloudPoint
-	SelectMeshFace // a facet of a placed mesh reference (#1776)
+	SelectMeshFace        // a facet of a placed mesh reference (#1776)
+	SelectSketchDimension // a 2D-sketch dimension, selected by its value label (#2015)
 )
 
 // Selectable is anything the selection set can hold. Concrete handles wrap the
@@ -111,6 +112,13 @@ func (PathHandle) SelectionKind() SelectionKind { return SelectPath }
 type SketchEntityHandle struct{ Entity sketch.Entity }
 
 func (SketchEntityHandle) SelectionKind() SelectionKind { return SelectSketchEntity }
+
+// SketchDimensionHandle wraps a picked sketch dimension. Dimensions are selected by clicking
+// their value label, which is the only part of a dimension with a hit area — the head already
+// hit-tests it to open the value editor on a double-click (#2015).
+type SketchDimensionHandle struct{ Dim *sketch.DimensionConstraint }
+
+func (SketchDimensionHandle) SelectionKind() SelectionKind { return SelectSketchDimension }
 
 // OccurrenceHandle wraps a placed component occurrence (selected in the assembly browser or, once
 // viewport occurrence picking lands in #769, by clicking its body). It is the input the assembly

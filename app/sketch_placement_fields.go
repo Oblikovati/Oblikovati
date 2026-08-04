@@ -201,7 +201,10 @@ func (s *Session) commitRecipe(r sketch.Recipe) error {
 	if s.activeSketch == nil {
 		return errors.New("sketch: no active sketch")
 	}
-	_, _, err := s.activeSketch.ApplyWithFields(r, s.lockedFieldExpressions(r), s.overConstrainedBehavior())
+	before := s.dimensionCount()
+	ents, _, err := s.activeSketch.ApplyWithFields(r, s.lockedFieldExpressions(r), s.overConstrainedBehavior())
+	s.applyFormatModes(ents)           // Format-panel creation modes (#2015)
+	s.applyDrivenDimensionMode(before) // …including driven dimensions
 	s.placementFields = placementFieldState{}
 	return err
 }

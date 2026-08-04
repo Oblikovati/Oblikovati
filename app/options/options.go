@@ -44,6 +44,11 @@ type Sketch struct {
 	DimensionInput               bool `yaml:"dimensionInput"`
 	DimensionInputCartesian      bool `yaml:"dimensionInputCartesian"`
 	CreateDimensionsOnValueInput bool `yaml:"createDimensionsOnValueInput"`
+
+	// SuppressFormatOverrides is the Format panel's Show Format toggle (#2015). On means the
+	// sketch draws with DEFAULT attributes, hiding per-entity line type, colour and thickness —
+	// the documented behaviour, which is the inverse of what the button's label suggests.
+	SuppressFormatOverrides bool `yaml:"suppressFormatOverrides"`
 }
 
 // Part is the part-modeling defaults, applied live to the session.
