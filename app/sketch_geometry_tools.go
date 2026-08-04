@@ -299,19 +299,6 @@ func (t *PolygonTool) Prompt(*Session) string {
 	}
 }
 
-// polygonVertices returns the n vertices of a regular polygon centered at center with
-// its first vertex at vertex.
-func polygonVertices(center, vertex math.Point2, n int) []math.Point2 {
-	r := center.DistanceTo(vertex)
-	base := stdmath.Atan2(vertex.Y-center.Y, vertex.X-center.X)
-	out := make([]math.Point2, n)
-	for i := 0; i < n; i++ {
-		a := base + 2*stdmath.Pi*float64(i)/float64(n)
-		out[i] = math.P2(center.X+r*stdmath.Cos(a), center.Y+r*stdmath.Sin(a))
-	}
-	return out
-}
-
 // circumcenter returns the center of the circle through three points, false if they
 // are collinear.
 func circumcenter(a, b, c math.Point2) (math.Point2, bool) {

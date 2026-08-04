@@ -51,16 +51,10 @@ func handleViewportSelection(s *app.Session) {
 		}
 		return // the Select Other cycle owns viewport picking until it ends
 	}
-	if updateSketchPlacement(s) {
-		return
-	}
-	if updateSketchDrag(s) {
-		return
-	}
-	if updateCloudDrag(s) {
-		return
-	}
-	if updateControlPointDrag(s) {
+	// The direct-manipulation machines are mutually exclusive by construction — each is gated
+	// on its own tool or mode being active — so they share one guard: place new sketch
+	// geometry, drag existing geometry, move a point cloud, or slide a NURBS control vertex.
+	if updateSketchPlacement(s) || updateSketchDrag(s) || updateCloudDrag(s) || updateControlPointDrag(s) {
 		return
 	}
 	if updateBoxSelect(s) {

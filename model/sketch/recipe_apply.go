@@ -35,13 +35,13 @@ func (s *Sketch) ApplyWithFields(r Recipe, locked []string, behavior types.OverC
 	pts := s.mintRecipePoints(r)
 	ents, err := s.buildRecipeEntities(r, pts)
 	if err != nil {
-		return s.rollbackRecipe(ents, pts, err)
+		return s.rollbackRecipe(ents, err)
 	}
 	if err := s.applyRecipeConstraints(r, ents, pts); err != nil {
-		return s.rollbackRecipe(ents, pts, err)
+		return s.rollbackRecipe(ents, err)
 	}
 	if err := s.applyRecipeFields(r, ents, pts, locked, behavior); err != nil {
-		return s.rollbackRecipe(ents, pts, err)
+		return s.rollbackRecipe(ents, err)
 	}
 	return ents, pts, nil
 }
@@ -50,7 +50,7 @@ func (s *Sketch) ApplyWithFields(r Recipe, locked []string, behavior types.OverC
 // minted points explicitly as well as the entities: a recipe that fails before it builds any
 // geometry has already minted its points, and a stray constrainable point would keep inflating
 // the sketch's degrees of freedom for ever after.
-func (s *Sketch) rollbackRecipe(ents []Entity, pts []*Point, err error) ([]Entity, []*Point, error) {
+func (s *Sketch) rollbackRecipe(ents []Entity, err error) ([]Entity, []*Point, error) {
 	s.DeleteEntities(ents)
 	s.dropConstraintsOnVars(droppedPointVars(s.pruneOrphanPoints()))
 	return nil, nil, err
