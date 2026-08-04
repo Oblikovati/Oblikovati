@@ -126,7 +126,7 @@ func (t *ArcTool) Prompt(*Session) string {
 	case 1:
 		return "Click the arc end point"
 	case 2:
-		return "Click a point on the arc"
+		return "Click a point on the arc (sets the bulge)"
 	default:
 		return "Click OK to create the arc"
 	}

@@ -162,12 +162,12 @@ func createCommands() []*CommandDefinition {
 		{id: "Sketch.Circle", name: "Circle", alias: "C", chord: "Shift+C", large: true, tip: "Circle — draw a circle from its center and radius.", start: func() Tool { return NewCircleTool() }, variants: []sketchToolEntry{
 			{id: "Sketch.Circle.ThreePoint", name: "Three Point Circle", tip: "Three Point Circle — the circle through three points.", start: func() Tool { return NewThreePointCircleTool() }},
 		}},
-		{id: "Sketch.Arc", name: "Arc", alias: "A", chord: "Shift+A", large: true, tip: "Arc — draw a three-point arc.", start: func() Tool { return NewArcTool() }, variants: []sketchToolEntry{
+		{id: "Sketch.Arc", name: "Arc", alias: "A", chord: "Shift+A", large: true, tip: "Arc — draw a three-point arc: start, end, then a point on the arc.", start: func() Tool { return NewArcTool() }, variants: []sketchToolEntry{
 			{id: "Sketch.Arc.CenterPoint", name: "Center Point Arc", tip: "Center Point Arc — center, start, then end.", start: func() Tool { return NewCenterPointArcTool() }},
 		}},
 		{id: "Sketch.Slot", name: "Slot", tip: "Slot — click two centre points for a straight slot.", start: func() Tool { return NewSketchSlotTool(1) }, variants: []sketchToolEntry{
 			{id: "Sketch.Slot.CenterArc", name: "Center Point Arc Slot", tip: "Center Point Arc Slot — center, start, then end.", start: func() Tool { return NewCenterPointArcSlotTool(1) }},
-			{id: "Sketch.Slot.ThreePointArc", name: "Three Point Arc Slot", tip: "Three Point Arc Slot — start, a point on the arc, then end.", start: func() Tool { return NewThreePointArcSlotTool(1) }},
+			{id: "Sketch.Slot.ThreePointArc", name: "Three Point Arc Slot", tip: "Three Point Arc Slot — start, end, then a point on the arc.", start: func() Tool { return NewThreePointArcSlotTool(1) }},
 		}},
 		{id: "Sketch.Spline", name: "Spline", alias: "SPL", tip: "Spline — draw an interpolated curve through fit points.", start: func() Tool { return NewSplineTool() }, variants: []sketchToolEntry{
 			{id: "Sketch.Spline.ControlVertex", name: "Control Vertex Spline", tip: "Control Vertex Spline — draw a curve from its control polygon.", start: func() Tool { return NewControlVertexSplineTool() }},

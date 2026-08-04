@@ -149,7 +149,11 @@ func (t *CenterPointArcSlotTool) Params() ToolParams {
 }
 
 // ThreePointArcSlotTool draws an arc-shaped slot whose centre line is the arc through three
-// clicked points — start, a point on the arc, then end (Inventor's Three Point Arc Slot).
+// clicked points — start, end, then a point on the arc (Inventor's Three Point Arc Slot).
+//
+// The pick order matches [ArcTool]. The two three-point arc tools used to disagree — this one
+// took start, through, end while the plain arc took start, end, through — so the same gesture
+// meant different things depending on which tool was armed (#2028).
 type ThreePointArcSlotTool struct {
 	dialogTool
 	collectClicks
@@ -176,7 +180,7 @@ func (t *ThreePointArcSlotTool) Commit(s *Session) error {
 	if sk == nil {
 		return errNoSketch("three point arc slot")
 	}
-	start, through, end := t.pts[0], t.pts[1], t.pts[2]
+	start, end, through := t.pts[0], t.pts[1], t.pts[2]
 	center, ok := circumcenter(start, through, end)
 	if !ok {
 		return errors.New("three point arc slot: the three points are collinear")
@@ -184,15 +188,15 @@ func (t *ThreePointArcSlotTool) Commit(s *Session) error {
 	return s.commitRecipe(sketch.ArcSlotRecipe(center, start, end, t.width, leftTurn(start, through, end)))
 }
 
-// Prompt guides the start, a point on the arc, then the end.
+// Prompt guides the start, the end, then a point on the arc — the same order as [ArcTool].
 func (t *ThreePointArcSlotTool) Prompt(*Session) string {
 	switch len(t.pts) {
 	case 0:
-		return "Click the slot's first centre point"
+		return "Click the slot's arc start point"
 	case 1:
-		return "Click a point on the slot's arc"
+		return "Click the slot's arc end point"
 	case 2:
-		return "Click the slot's second centre point"
+		return "Click a point on the slot's arc"
 	default:
 		return "Click OK to create the slot"
 	}

@@ -205,17 +205,18 @@ func (t *CenterPointArcSlotTool) PendingRecipe(_ *Session, cursor math.Point2, _
 	return sketch.ArcSlotRecipe(center, start, cursor, t.width, leftTurn(center, start, cursor)), true
 }
 
-// PendingRecipe previews the three-point arc slot once its start and a mid point are placed.
+// PendingRecipe previews the three-point arc slot once its endpoints are placed; the cursor is
+// the point the arc passes through (the same order as ArcTool's preview — #2028).
 func (t *ThreePointArcSlotTool) PendingRecipe(_ *Session, cursor math.Point2, _ []string) (sketch.Recipe, bool) {
 	if len(t.pts) != 2 {
 		return sketch.Recipe{}, false
 	}
-	start, through := t.pts[0], t.pts[1]
-	center, ok := circumcenter(start, through, cursor)
+	start, end := t.pts[0], t.pts[1]
+	center, ok := circumcenter(start, cursor, end)
 	if !ok {
 		return sketch.Recipe{}, false
 	}
-	return sketch.ArcSlotRecipe(center, start, cursor, t.width, leftTurn(start, through, cursor)), true
+	return sketch.ArcSlotRecipe(center, start, end, t.width, leftTurn(start, cursor, end)), true
 }
 
 // PendingRecipe previews the spline through its placed fit points and the cursor.
