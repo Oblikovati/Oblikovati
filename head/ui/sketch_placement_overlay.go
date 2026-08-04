@@ -24,9 +24,18 @@ import (
 // boxes — finer than the construction dash so the two read as different things.
 var placementWitnessPattern = []float64{0.08, 0.12}
 
+// placementSession is the session surface the placement overlay reads (audit I5, the
+// arrowSession pattern): the shape being placed and the input boxes describing it.
+type placementSession interface {
+	ActiveToolPreviewCurves(cursor math.Point2) []sketch.PreviewCurve
+	PlacementFields() []app.PlacementFieldView
+}
+
+var _ placementSession = (*app.Session)(nil)
+
 // placementOverlayItems returns the draw items for the shape being placed: solid geometry,
 // dashed construction geometry, and dotted witness lines to the input boxes.
-func placementOverlayItems(s *app.Session, plane sketch.Plane, cursor math.Point2) []renderer.DrawItem {
+func placementOverlayItems(s placementSession, plane sketch.Plane, cursor math.Point2) []renderer.DrawItem {
 	curves := s.ActiveToolPreviewCurves(cursor)
 	if len(curves) == 0 {
 		return nil
@@ -50,7 +59,7 @@ func accumulatePlacementCurve(plane sketch.Plane, c sketch.PreviewCurve, solid, 
 }
 
 // placementWitnessSegments accumulates the dotted extension line under each input box.
-func placementWitnessSegments(s *app.Session, plane sketch.Plane) *segAccum {
+func placementWitnessSegments(s placementSession, plane sketch.Plane) *segAccum {
 	acc := &segAccum{}
 	for _, f := range s.PlacementFields() {
 		acc.patterned(plane, []math.Point2{f.Witness[0], f.Witness[1]}, false, placementWitnessPattern)

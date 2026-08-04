@@ -117,13 +117,25 @@ func updateCloudDrag(s *app.Session) bool {
 	return s.BeginCloudDrag(lx, ly)
 }
 
+// placementInputSession is the session surface drag-to-create drives (audit I5, the
+// arrowSession pattern): the sketch-environment gate plus the placement state machine.
+type placementInputSession interface {
+	InSketch() bool
+	PlacementActive() bool
+	BeginPlacement(px, py float64) bool
+	UpdatePlacement(px, py float64)
+	EndPlacement(px, py float64)
+}
+
+var _ placementInputSession = (*app.Session)(nil)
+
 // updateSketchPlacement drives drag-to-create for sketch geometry tools and reports whether it
 // consumed this frame's left input: a press places the first point, the cursor rubber-bands the
 // shape, and release places the second point and commits it (#2014). A press and release without
 // movement falls back to the click-click flow, so both gestures work and produce the same
 // geometry. It runs before updateSketchDrag, which only moves already-committed entities and
 // stands down while a tool is active anyway.
-func updateSketchPlacement(s *app.Session) bool {
+func updateSketchPlacement(s placementInputSession) bool {
 	if !s.InSketch() {
 		return false
 	}
@@ -138,7 +150,7 @@ func updateSketchPlacement(s *app.Session) bool {
 }
 
 // advanceSketchPlacement tracks the held cursor and finishes the placement on release.
-func advanceSketchPlacement(s *app.Session, lx, ly float64) bool {
+func advanceSketchPlacement(s placementInputSession, lx, ly float64) bool {
 	if native.MouseDown(native.MouseLeft) {
 		s.UpdatePlacement(lx, ly)
 		return true

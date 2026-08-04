@@ -62,15 +62,16 @@ func (s *Session) SetPartOptions(p options.Part) error {
 // so the Preferences window keeps its direct-edit style and still persists.
 func (s *Session) PersistLiveOptions() error {
 	g := s.Grid()
-	s.appOptions.Sketch = options.Sketch{
+	// The in-canvas input flags are carried through rather than rebuilt: they are edited via
+	// SetHUDOptions, not by the Preferences tab's direct-edit widgets (#2014).
+	s.appOptions.Sketch = sketchOptionsFromHUD(s.HUDOptions(), options.Sketch{
 		GridSpacingCm:  g.SpacingModel(),
 		GridVisible:    g.Visible,
 		GridMajorEvery: g.MajorEvery,
 		SnapToPoints:   g.SnapToPoints,
 		SnapToGrid:     g.SnapToGrid,
-		HeadsUpDisplay: s.hudEnabled,
 		RelaxMode:      s.relaxMode,
-	}
+	})
 	s.appOptions.Part = options.Part{ChamferFlatCorners: s.chamferFlatCorners, TangentChainSelect: s.tangentChainSelect}
 	return s.saveOptions()
 }

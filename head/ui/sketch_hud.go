@@ -61,9 +61,42 @@ func handleSketchHUD(s *app.Session, bx, by float32, viewportHovered bool) {
 	drawSketchHUDPanel(view, mx, my)
 }
 
+// sketchEntrySession and placementKeySession are the session surfaces the two entry surfaces
+// need (audit I5, the arrowSession pattern), so each router is testable with a small fake.
+type sketchEntrySession interface {
+	PlacementFieldEngaged() bool
+	HUDEngaged() bool
+}
+
+// pointerInputSession is the coordinate panel's surface — the six methods that edit and
+// commit a first-point entry.
+type pointerInputSession interface {
+	HUDInputRune(r rune)
+	HUDTab()
+	HUDBackspace()
+	HUDEngaged() bool
+	HUDCommit(px, py float64) error
+	HUDCancel()
+}
+
+type placementKeySession interface {
+	PlacementFieldInput(r rune)
+	PlacementFieldTab()
+	PlacementFieldBackspace()
+	PlacementFieldEngaged() bool
+	PlacementFieldCommit(px, py float64) error
+	PlacementFieldCancel()
+}
+
+var (
+	_ sketchEntrySession  = (*app.Session)(nil)
+	_ placementKeySession = (*app.Session)(nil)
+	_ pointerInputSession = (*app.Session)(nil)
+)
+
 // sketchEntryEngaged reports whether either entry surface has typed text, so the head keeps the
 // keystrokes rather than letting them fall through to the viewport's shortcuts.
-func sketchEntryEngaged(s *app.Session) bool {
+func sketchEntryEngaged(s sketchEntrySession) bool {
 	return s.PlacementFieldEngaged() || s.HUDEngaged()
 }
 
@@ -82,7 +115,7 @@ func routeSketchHUDKeys(s *app.Session, cx, cy float64) {
 
 // routePlacementFieldKeys drives the in-place dimension boxes: typing fills the active box, Tab
 // locks it and moves on, Enter finishes the shape, Esc clears a started entry.
-func routePlacementFieldKeys(s *app.Session, cx, cy float64) {
+func routePlacementFieldKeys(s placementKeySession, cx, cy float64) {
 	for _, r := range native.InputChars() {
 		s.PlacementFieldInput(r)
 	}
@@ -104,7 +137,7 @@ func routePlacementFieldKeys(s *app.Session, cx, cy float64) {
 // routePointerInputKeys drives the coordinate panel for a shape's first point. Enter commits the
 // resolved point; Esc clears a started entry (an un-started panel lets Esc fall through to
 // cancel the tool); Tab cycles fields; Backspace edits the active field.
-func routePointerInputKeys(s *app.Session, cx, cy float64) {
+func routePointerInputKeys(s pointerInputSession, cx, cy float64) {
 	for _, r := range native.InputChars() {
 		s.HUDInputRune(r)
 	}

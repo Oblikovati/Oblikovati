@@ -8,6 +8,7 @@ import (
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
 	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
 	"oblikovati.org/renderer"
 	"oblikovati.org/scene"
 )
@@ -16,6 +17,15 @@ import (
 // shape being placed, sitting at the midpoint of its dotted witness line. The active box is
 // filled and takes keystrokes; a box whose value the user locked with Tab carries a padlock, and
 // that value becomes a driving dimension when the shape commits.
+
+// placementBoxSession is the session surface the boxes read (audit I5, the arrowSession
+// pattern): the sketch they are drawn on and the fields to draw.
+type placementBoxSession interface {
+	ActiveSketch() *sketch.Sketch
+	PlacementFields() []app.PlacementFieldView
+}
+
+var _ placementBoxSession = (*app.Session)(nil)
 
 // box geometry and colours.
 const (
@@ -37,7 +47,7 @@ var (
 // drawPlacementFieldBoxes paints the in-place dimension boxes over the rendered viewport, each
 // at its witness line's projected midpoint. bx,by is the viewport image's top-left in screen
 // pixels. A no-op when no shape is being placed.
-func drawPlacementFieldBoxes(s *app.Session, cam scene.Camera, bx, by float32) {
+func drawPlacementFieldBoxes(s placementBoxSession, cam scene.Camera, bx, by float32) {
 	sk := s.ActiveSketch()
 	if sk == nil {
 		return

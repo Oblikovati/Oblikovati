@@ -63,7 +63,7 @@ func (s *Session) placementFieldValues() []string {
 // positioned from the active tool's recipe. It is empty when no shape is in progress.
 func (s *Session) PlacementFields() []PlacementFieldView {
 	r, ok := s.ActiveToolRecipe(s.lastCursorSketchPoint)
-	if !ok {
+	if !ok || !s.DimensionInputEnabled() {
 		s.placementFields = placementFieldState{}
 		return nil
 	}
@@ -80,7 +80,7 @@ func (s *Session) PlacementFields() []PlacementFieldView {
 // a side effect of painting, and a keystroke arriving first would be silently dropped.
 func (s *Session) ensurePlacementFields() {
 	r, ok := s.ActiveToolRecipe(s.lastCursorSketchPoint)
-	if !ok {
+	if !ok || !s.DimensionInputEnabled() {
 		return
 	}
 	s.syncPlacementFieldCount(len(r.Fields))
@@ -210,6 +210,9 @@ func (s *Session) commitRecipe(r sketch.Recipe) error {
 // leaves untouched fields empty so they create no dimension.
 func (s *Session) lockedFieldExpressions(r sketch.Recipe) []string {
 	out := make([]string, len(r.Fields))
+	if !s.CreateDimensionsOnValueInput() {
+		return out // typed values still size the shape, but state nothing afterwards
+	}
 	for i, f := range r.Fields {
 		if st := s.placementFieldAt(i); st.locked {
 			out[i] = s.placementFieldExpression(st.typed, f.Unit)
