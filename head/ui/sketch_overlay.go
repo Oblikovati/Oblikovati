@@ -212,13 +212,14 @@ func sketchSegmentsFor(sk *sketch.Sketch, selected func(sketch.Entity) bool, can
 	// Colour still marks state, since the user must be able to see what is selected.
 	pick := func(e sketch.Entity) (*segAccum, []float64) {
 		style := app.SketchEntityStyle(sk, e, suppress)
+		w := sketchStrokeWidth(style)
 		switch {
-		case candidate != nil && e == candidate:
-			return b.cand, style.Pattern // the geometry the active constraint tool would accept on hover
+		case candidate != nil && e == candidate: // what the active constraint tool would accept on hover
+			return b.cand.forStroke(strokeKey{chromeTheme.sketchCandidateColor, w}), style.Pattern
 		case selected != nil && selected(e):
-			return b.sel, style.Pattern
+			return b.sel.forStroke(strokeKey{chromeTheme.sketchSelectedColor, w}), style.Pattern
 		default:
-			return b.forColor(sketchEntityColor(style)), style.Pattern
+			return b.normal.forStroke(strokeKey{sketchEntityColor(style), w}), style.Pattern
 		}
 	}
 	addLines(pick, plane, sk)
@@ -231,30 +232,54 @@ func sketchSegmentsFor(sk *sketch.Sketch, selected func(sketch.Entity) bool, can
 	return b
 }
 
-// sketchStyleBuckets groups a sketch's segments into one accumulator per draw colour. Normal-state
-// geometry is bucketed by its resolved colour so per-entity overrides render (#2015 shipped the
-// model, persistence and panel for these but the overlay only ever asked for the dash pattern, so
-// a colour set in the Format panel never reached the screen); selection and hover keep their own
-// state colours, which must win so the user can see what is picked.
+// strokeKey is what makes two entities shareable in one draw item: same colour, same stroke width.
+// A DrawItem carries a single colour and width, so anything that differs in either must be its own
+// item.
+type strokeKey struct {
+	color [4]float32
+	width float32
+}
+
+// strokeLane accumulates segments per stroke within one draw-order layer.
+type strokeLane struct {
+	byStroke map[strokeKey]*segAccum
+	order    []strokeKey // first-seen, so the draw list is deterministic frame to frame
+}
+
+func newStrokeLane() strokeLane { return strokeLane{byStroke: map[strokeKey]*segAccum{}} }
+
+// forStroke returns the accumulator for one colour+width, creating it on first use.
+func (l *strokeLane) forStroke(k strokeKey) *segAccum {
+	acc, ok := l.byStroke[k]
+	if !ok {
+		acc = &segAccum{}
+		l.byStroke[k] = acc
+		l.order = append(l.order, k)
+	}
+	return acc
+}
+
+// appendTo emits this lane's accumulators as draw items, in first-seen order.
+func (l *strokeLane) appendTo(items []renderer.DrawItem) []renderer.DrawItem {
+	for _, k := range l.order {
+		items = appendStroke(items, l.byStroke[k], k.color, k.width)
+	}
+	return items
+}
+
+// sketchStyleBuckets groups a sketch's segments by stroke, in three draw-order layers. Normal-state
+// geometry is bucketed by its resolved colour and line weight so per-entity overrides render
+// (#2015 shipped the model, persistence and panel for these, but the overlay only ever asked for
+// the dash pattern, so neither a colour nor a weight set in the Format panel reached the screen).
+// Selection and hover are separate layers so they draw last and win the overlap; they take the
+// state colour, which must override the entity's, but keep its WIDTH — a selected heavy line that
+// snapped back to a hairline would look like the selection had changed the geometry.
 type sketchStyleBuckets struct {
-	byColor   map[[4]float32]*segAccum
-	order     [][4]float32 // first-seen order, so the draw list is deterministic frame to frame
-	sel, cand *segAccum
+	normal, sel, cand strokeLane
 }
 
 func newSketchStyleBuckets() *sketchStyleBuckets {
-	return &sketchStyleBuckets{byColor: map[[4]float32]*segAccum{}, sel: &segAccum{}, cand: &segAccum{}}
-}
-
-// forColor returns the accumulator for c, creating it on first use.
-func (b *sketchStyleBuckets) forColor(c [4]float32) *segAccum {
-	acc, ok := b.byColor[c]
-	if !ok {
-		acc = &segAccum{}
-		b.byColor[c] = acc
-		b.order = append(b.order, c)
-	}
-	return acc
+	return &sketchStyleBuckets{normal: newStrokeLane(), sel: newStrokeLane(), cand: newStrokeLane()}
 }
 
 // sketchEntityColor is the colour an entity draws in: its per-entity override, or the theme's
@@ -264,6 +289,29 @@ func sketchEntityColor(style app.EntityStyle) [4]float32 {
 		return style.Color.Rgba().Array()
 	}
 	return chromeTheme.sketchColor
+}
+
+const (
+	// pixelsPerMillimetre converts a line weight to its on-screen stroke. A line weight is a PLOT
+	// width, so it is shown at a fixed screen scale rather than scaled with zoom — the reference
+	// CSS pixel density (96 dpi) puts a 0.5 mm weight at roughly 2 px, close to how the reference
+	// application draws it.
+	pixelsPerMillimetre = 96.0 / 25.4
+	// maxSketchStrokePixels caps the stroke so a mis-typed or badly imported weight (a DWG layer
+	// table can carry anything) cannot paint over the whole viewport.
+	maxSketchStrokePixels = 16
+)
+
+// sketchStrokeWidth converts an entity's line weight in millimetres to the stroke width in pixels
+// the viewport expands it to. 0 (inherit) stays 0, which keeps the entity on the hairline path.
+func sketchStrokeWidth(style app.EntityStyle) float32 {
+	if style.LineWeight <= 0 {
+		return 0
+	}
+	if px := style.LineWeight * pixelsPerMillimetre; px < maxSketchStrokePixels {
+		return float32(px)
+	}
+	return maxSketchStrokePixels
 }
 
 // addBlockInstances draws every placed block instance's realized geometry —
@@ -280,16 +328,13 @@ func addBlockInstances(pick accumFor, plane sketch.Plane, sk *sketch.Sketch) {
 	}
 }
 
-// sketchItems flattens the buckets into draw items: one per distinct normal-state colour, in
-// first-seen order, then the selection and hover lanes on top.
+// sketchItems flattens the buckets into draw items: one per distinct stroke, normal-state geometry
+// first so the selection and hover lanes draw over it.
 func sketchItems(b *sketchStyleBuckets) []renderer.DrawItem {
 	var items []renderer.DrawItem
-	for _, c := range b.order {
-		items = appendGrid(items, b.byColor[c], c)
-	}
-	items = appendGrid(items, b.sel, chromeTheme.sketchSelectedColor)
-	items = appendGrid(items, b.cand, chromeTheme.sketchCandidateColor)
-	return items
+	items = b.normal.appendTo(items)
+	items = b.sel.appendTo(items)
+	return b.cand.appendTo(items)
 }
 
 // sketchSegments is the polyline resolution for sampling sketch curves.

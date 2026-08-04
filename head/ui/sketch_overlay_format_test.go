@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/app"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 	"oblikovati.org/renderer"
@@ -143,6 +144,80 @@ func TestSketchOverlayKeyChangesOnShowFormat(t *testing.T) {
 	s.ToggleShowFormat()
 	if after, _ := sketchOverlayKey(s); after == before {
 		t.Fatal("key unchanged after toggling Show Format; the cache would ignore it")
+	}
+}
+
+// TestLineWeightReachesTheDrawItems is the third way the Format panel did nothing: a line weight
+// was stored and persisted but the viewport had no width to put it in, so every line drew as a
+// hairline whatever the panel said.
+func TestLineWeightReachesTheDrawItems(t *testing.T) {
+	sk, _, plain := formattedSketch(t)
+	sk.SetEntityFormat(plain.EntityID(), sketch.EntityFormat{LineWeight: 2}) // 2 mm
+
+	var widest float32
+	for _, it := range sketchOverlay(sk, nil, nil, false) {
+		if it.Width > widest {
+			widest = it.Width
+		}
+	}
+	if widest <= 1 {
+		t.Fatalf("widest stroke = %v; a 2 mm line weight still draws as a hairline", widest)
+	}
+}
+
+// TestLineWeightSplitsFromUnweightedGeometry: one draw item carries one width, so a weighted entity
+// cannot share an item with an unweighted one.
+func TestLineWeightSplitsFromUnweightedGeometry(t *testing.T) {
+	sk, _, plain := formattedSketch(t)
+	sk.SetEntityFormat(plain.EntityID(), sketch.EntityFormat{LineWeight: 2})
+	items := sketchOverlay(sk, nil, nil, false)
+	if len(items) < 2 {
+		t.Fatalf("got %d draw items; the weighted line was batched with the hairline one", len(items))
+	}
+}
+
+// TestSelectedWeightedLineKeepsItsWeight: selection recolours, it must not restyle. A heavy line
+// that thinned on selection would read as the selection having changed the geometry.
+func TestSelectedWeightedLineKeepsItsWeight(t *testing.T) {
+	sk, _, plain := formattedSketch(t)
+	sk.SetEntityFormat(plain.EntityID(), sketch.EntityFormat{LineWeight: 2})
+	only := func(e sketch.Entity) bool { return e == plain }
+
+	var got float32
+	for _, it := range sketchOverlay(sk, only, nil, false) {
+		if it.Color == chromeTheme.sketchSelectedColor && it.Width > got {
+			got = it.Width
+		}
+	}
+	if got <= 1 {
+		t.Fatalf("selected weighted line drew at width %v, want its 2 mm stroke kept", got)
+	}
+}
+
+// TestSketchStrokeWidthConvertsAndClamps: a weight becomes a pixel stroke, an unset weight stays on
+// the hairline path, and an absurd weight (a DWG layer table can carry anything) is capped rather
+// than painting over the viewport.
+func TestSketchStrokeWidthConvertsAndClamps(t *testing.T) {
+	if w := sketchStrokeWidth(app.EntityStyle{}); w != 0 {
+		t.Errorf("unset weight gave width %v, want 0 (hairline path)", w)
+	}
+	w := sketchStrokeWidth(app.EntityStyle{LineWeight: 1})
+	if w <= 1 || w > 8 {
+		t.Errorf("1 mm gave %v px, want a small multi-pixel stroke", w)
+	}
+	if w := sketchStrokeWidth(app.EntityStyle{LineWeight: 1e6}); w != maxSketchStrokePixels {
+		t.Errorf("absurd weight gave %v, want the %v cap", w, float32(maxSketchStrokePixels))
+	}
+}
+
+// TestShowFormatSuppressesTheLineWeight: the toggle hides weight along with colour and line type.
+func TestShowFormatSuppressesTheLineWeight(t *testing.T) {
+	sk, _, plain := formattedSketch(t)
+	sk.SetEntityFormat(plain.EntityID(), sketch.EntityFormat{LineWeight: 2})
+	for _, it := range sketchOverlay(sk, nil, nil, true) {
+		if it.Width > 1 {
+			t.Fatalf("Show Format did not suppress the line weight (width %v)", it.Width)
+		}
 	}
 }
 
