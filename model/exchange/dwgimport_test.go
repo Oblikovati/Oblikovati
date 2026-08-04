@@ -44,7 +44,7 @@ func TestAdd2DEntitiesMapsEachType(t *testing.T) {
 		// open polyline: (0,0)->(1,0) straight, (1,0)->(1,1) bulged -> one line + one arc
 		&dwg.LwPolyline{Points: [][2]float64{{0, 0}, {1, 0}, {1, 1}}, Bulges: []float64{0, 0.5, 0}},
 	}
-	added, warns := add2DEntities(sk, entities)
+	added, warns := add2DEntities(sk, &dwg.Drawing{Entities: entities}, entities)
 	if len(warns) != 0 {
 		t.Fatalf("unexpected warnings: %v", warns)
 	}

@@ -19,17 +19,42 @@ func sketchToDrawing(sk *sketch.Sketch) []drawing.Entity {
 	var out []drawing.Entity
 	for i := 0; i < sk.Lines().Count(); i++ {
 		l := sk.Lines().Item(i)
-		out = append(out, &drawing.Line{Start: sketchPt(l.StartPoint()), End: sketchPt(l.EndPoint())})
+		out = append(out, &drawing.Line{
+			Handle: uint64(l.EntityID()),
+			Start:  sketchPt(l.StartPoint()), End: sketchPt(l.EndPoint()),
+		})
 	}
 	for i := 0; i < sk.Circles().Count(); i++ {
 		c := sk.Circles().Item(i)
-		out = append(out, &drawing.Circle{Center: sketchPt(c.CenterPoint()), Radius: float64(c.Radius), Normal: [3]float64{0, 0, 1}})
+		out = append(out, &drawing.Circle{
+			Handle: uint64(c.EntityID()),
+			Center: sketchPt(c.CenterPoint()), Radius: float64(c.Radius), Normal: [3]float64{0, 0, 1},
+		})
 	}
 	for i := 0; i < sk.Arcs().Count(); i++ {
 		out = append(out, arcToDrawing(sk.Arcs().Item(i)))
 	}
 	for i := 0; i < sk.Splines().Count(); i++ {
 		out = append(out, splineToDrawing(sk.Splines().Item(i)))
+	}
+	return out
+}
+
+// sketchDrawingStyles renders the sketch's per-entity format overrides as drawing styles, keyed
+// by the entity id the converters put in each drawing entity's Handle. The encoder allocates its
+// own file handles, so this key is the SOURCE identity, not the written one (#2015).
+func sketchDrawingStyles(sk *sketch.Sketch) map[uint64]drawing.Style {
+	out := map[uint64]drawing.Style{}
+	for _, e := range sk.Entities() {
+		f, ok := sk.EntityFormat(e.EntityID())
+		if !ok {
+			continue
+		}
+		out[uint64(e.EntityID())] = drawing.Style{
+			Color:      aciIndexFor(f.Color),
+			LineType:   drawingLineTypeName(f.LineType),
+			LineWeight: lineWeightHundredths(f.LineWeight),
+		}
 	}
 	return out
 }

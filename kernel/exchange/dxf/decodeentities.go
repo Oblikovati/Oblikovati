@@ -12,7 +12,7 @@ import (
 // block set). Paper-space entities (code 67 = 1) are skipped, matching the DWG importer which
 // brings in model space only. A type with no decoder is skipped; a decode error is collected
 // as a warning so the rest of the drawing survives.
-func decodeModelEntities(pairs []pair, bs *blockSet, opts exchange.TranslationOptions) ([]drawing.Entity, []*drawing.Insert, []string, error) {
+func decodeModelEntities(dr *drawing.Drawing, pairs []pair, bs *blockSet, opts exchange.TranslationOptions) ([]drawing.Entity, []*drawing.Insert, []string, error) {
 	var geometry []drawing.Entity
 	var inserts []*drawing.Insert
 	var warns []string
@@ -34,9 +34,7 @@ func decodeModelEntities(pairs []pair, bs *blockSet, opts exchange.TranslationOp
 			warns = append(warns, err.Error())
 			continue
 		}
-		if e != nil {
-			geometry = append(geometry, e)
-		}
+		geometry = appendDecodedEntity(dr, geometry, e, m)
 	}
 	return geometry, inserts, warns, nil
 }
@@ -357,4 +355,14 @@ func normalOf(m map[int]pair) [3]float64 {
 		return [3]float64{0, 0, 1}
 	}
 	return n
+}
+
+// appendDecodedEntity adds a decoded entity to the geometry, recording the formatting it carried
+// in the file (#2015). A nil entity is a type with no decoder and is skipped.
+func appendDecodedEntity(dr *drawing.Drawing, geometry []drawing.Entity, e drawing.Entity, m map[int]pair) []drawing.Entity {
+	if e == nil {
+		return geometry
+	}
+	recordEntityStyle(dr, e, m)
+	return append(geometry, e)
 }

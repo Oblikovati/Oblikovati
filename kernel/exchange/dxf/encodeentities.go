@@ -2,30 +2,35 @@
 
 package dxf
 
-import "oblikovati.org/kernel/exchange/drawing"
+import (
+	"strconv"
+
+	"oblikovati.org/kernel/exchange/drawing"
+)
 
 // encodeEntity writes one entity's ENTITIES record. A type with no encoder is skipped
 // silently (it never reaches here from sketchToDrawing, but block expansion may produce a
 // broader set later).
 //
 //nolint:funlen // one-case-per-entity-type encode dispatch (inverse of decodeEntity).
-func encodeEntity(w *tagWriter, e drawing.Entity, handle, owner uint64) {
+func encodeEntity(w *tagWriter, dr *drawing.Drawing, e drawing.Entity, handle, owner uint64) {
 	layer := layerOf(e)
+	style := dr.Styles[e.EntityHandle()]
 	switch g := e.(type) {
 	case *drawing.Line:
-		entityHead(w, "LINE", handle, owner, "AcDbLine", layer)
+		entityHead(w, "LINE", handle, owner, "AcDbLine", layer, style)
 		w.coord(10, g.Start)
 		w.coord(11, g.End)
 	case *drawing.Circle:
-		entityHead(w, "CIRCLE", handle, owner, "AcDbCircle", layer)
+		entityHead(w, "CIRCLE", handle, owner, "AcDbCircle", layer, style)
 		w.coord(10, g.Center)
 		w.real(40, g.Radius)
 	case *drawing.Point:
-		entityHead(w, "POINT", handle, owner, "AcDbPoint", layer)
+		entityHead(w, "POINT", handle, owner, "AcDbPoint", layer, style)
 		w.coord(10, g.Position)
 	case *drawing.Arc:
 		// ARC carries two subclass markers (AcDbCircle then AcDbArc); angles are DEGREES.
-		entityHead(w, "ARC", handle, owner, "AcDbCircle", layer)
+		entityHead(w, "ARC", handle, owner, "AcDbCircle", layer, style)
 		w.coord(10, g.Center)
 		w.real(40, g.Radius)
 		w.tag(100, "AcDbArc")
@@ -33,7 +38,7 @@ func encodeEntity(w *tagWriter, e drawing.Entity, handle, owner uint64) {
 		w.real(51, radToDeg(g.EndAngle))
 	case *drawing.Ellipse:
 		// ELLIPSE start/end parameters are RADIANS — written unconverted, unlike ARC.
-		entityHead(w, "ELLIPSE", handle, owner, "AcDbEllipse", layer)
+		entityHead(w, "ELLIPSE", handle, owner, "AcDbEllipse", layer, style)
 		w.coord(10, g.Center)
 		w.coord(11, g.MajorAxis)
 		w.coord(210, normalOrZ(g.Normal))
@@ -41,18 +46,18 @@ func encodeEntity(w *tagWriter, e drawing.Entity, handle, owner uint64) {
 		w.real(41, g.StartAngle)
 		w.real(42, g.EndAngle)
 	case *drawing.LwPolyline:
-		encodeLwPolyline(w, g, handle, owner, layer)
+		encodeLwPolyline(w, g, handle, owner, layer, style)
 	case *drawing.Spline:
-		encodeSpline(w, g, handle, owner, layer)
+		encodeSpline(w, g, handle, owner, layer, style)
 	case *drawing.Text:
-		encodeText(w, g, handle, owner, layer)
+		encodeText(w, g, handle, owner, layer, style)
 	}
 }
 
 // encodeLwPolyline writes an LWPOLYLINE: vertex count, closed flag, optional elevation, then
 // each vertex with its trailing bulge (0 = straight to the next).
-func encodeLwPolyline(w *tagWriter, g *drawing.LwPolyline, handle, owner uint64, layer string) {
-	entityHead(w, "LWPOLYLINE", handle, owner, "AcDbPolyline", layer)
+func encodeLwPolyline(w *tagWriter, g *drawing.LwPolyline, handle, owner uint64, layer string, style drawing.Style) {
+	entityHead(w, "LWPOLYLINE", handle, owner, "AcDbPolyline", layer, style)
 	w.integer(90, len(g.Points))
 	w.integer(70, closedFlag(g.Closed))
 	if g.Elevation != 0 {
@@ -70,8 +75,8 @@ func encodeLwPolyline(w *tagWriter, g *drawing.LwPolyline, handle, owner uint64,
 // encodeText writes a single-line TEXT label. It repeats the AcDbText subclass after the
 // geometry (the second marker is the alignment block); a minimal label needs only the
 // insertion point, height and string.
-func encodeText(w *tagWriter, g *drawing.Text, handle, owner uint64, layer string) {
-	entityHead(w, "TEXT", handle, owner, "AcDbText", layer)
+func encodeText(w *tagWriter, g *drawing.Text, handle, owner uint64, layer string, style drawing.Style) {
+	entityHead(w, "TEXT", handle, owner, "AcDbText", layer, style)
 	w.coord(10, g.Position)
 	w.real(40, g.Height)
 	w.tag(1, g.Value)
@@ -119,8 +124,8 @@ func closedFlag(closed bool) int {
 // AutoCAD accepts rather than a knot-less spline.
 //
 //nolint:funlen // sequential SPLINE field writes across header, knots, control and fit points.
-func encodeSpline(w *tagWriter, s *drawing.Spline, handle, owner uint64, layer string) {
-	entityHead(w, "SPLINE", handle, owner, "AcDbSpline", layer)
+func encodeSpline(w *tagWriter, s *drawing.Spline, handle, owner uint64, layer string, style drawing.Style) {
+	entityHead(w, "SPLINE", handle, owner, "AcDbSpline", layer, style)
 	degree := splineDegree(s)
 	knots := s.Knots
 	if len(knots) == 0 && len(s.ControlPoints) >= 2 {
@@ -197,13 +202,30 @@ func normalOrZ(n [3]float64) [3]float64 {
 // entityHead writes the common ENTITIES preamble shared by every entity: the type marker,
 // the handle, the owner (the *Model_Space block record), the AcDbEntity subclass, the layer
 // (the entity's named layer, or "0" when it carries none), and the type-specific subclass.
-func entityHead(w *tagWriter, typ string, handle, owner uint64, subclass, layer string) {
+func entityHead(w *tagWriter, typ string, handle, owner uint64, subclass, layer string, style drawing.Style) {
 	w.tag(0, typ)
 	w.handle(5, handle)
 	w.handle(330, owner)
 	w.tag(100, "AcDbEntity")
 	w.tag(8, layerOr0(layer))
+	writeEntityStyle(w, style)
 	w.tag(100, subclass)
+}
+
+// writeEntityStyle emits the entity's formatting overrides inside the AcDbEntity block, where the
+// DXF reference places them (#2015). A field left at its inherit sentinel is omitted rather than
+// written as BYLAYER: omission is what an unformatted entity looks like in every file AutoCAD
+// writes, so an unstyled export stays byte-identical to what it produced before.
+func writeEntityStyle(w *tagWriter, style drawing.Style) {
+	if style.Color != drawing.ColorByLayer && style.Color != drawing.ColorByBlock {
+		w.tag(62, strconv.Itoa(style.Color))
+	}
+	if style.LineType != "" {
+		w.tag(6, style.LineType)
+	}
+	if style.LineWeight != drawing.LineWeightByLayer && style.LineWeight != 0 {
+		w.tag(370, strconv.Itoa(style.LineWeight))
+	}
 }
 
 // layerOr0 returns the layer name, or the default "0" layer when empty.
