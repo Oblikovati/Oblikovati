@@ -140,7 +140,9 @@ func (s *Sketch) buildRecipeEntity(re RecipeEntity, pts []*Point) (Entity, error
 	case RecipeSpline:
 		return s.Splines().AddWithPoints(recipePointsAt(pts, re.Points), re.Closed, re.FitPoints), nil
 	case RecipePoint:
-		return s.listStandalonePoint(pts[re.Points[0]]), nil
+		p := s.listStandalonePoint(pts[re.Points[0]])
+		p.SetCenterPoint(re.CenterPoint)
+		return p, nil
 	default:
 		return nil, fmt.Errorf("unknown entity kind %d (want RecipeLine..RecipePoint)", re.Kind)
 	}

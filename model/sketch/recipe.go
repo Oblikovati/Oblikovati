@@ -63,6 +63,8 @@ type RecipeEntity struct {
 	// control polygon; Closed joins its last point back to its first.
 	FitPoints bool
 	Closed    bool
+	// CenterPoint makes a [RecipePoint] a hole-centre marker rather than a plain point (#2015).
+	CenterPoint bool
 }
 
 // RecipeConstraint is one geometric relation, naming its operands by index into
