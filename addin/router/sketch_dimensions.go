@@ -85,6 +85,38 @@ func applyDimensionEdit(part *compdef.PartComponentDefinition, dim *sketch.Dimen
 	return wire.OKResult{OK: true}, nil
 }
 
+// deleteDimension removes a dimension and reports the sketch's resulting degrees of freedom. The
+// dimension owns its backing parameter, which goes with it (#2017).
+func deleteDimension(_ *app.Session, part *compdef.PartComponentDefinition, in wire.DeleteSketchDimensionArgs) (wire.DeleteSketchDimensionResult, error) {
+	sk, err := sketchAtIndex(part, in.SketchIndex)
+	if err != nil {
+		return wire.DeleteSketchDimensionResult{}, err
+	}
+	dim, err := dimensionAt(part, in.SketchIndex, in.DimensionIndex)
+	if err != nil {
+		return wire.DeleteSketchDimensionResult{}, err
+	}
+	if !sk.DimensionConstraints().Delete(dim) {
+		return wire.DeleteSketchDimensionResult{}, fmt.Errorf("sketch.deleteDimension: dimension %d was not in the sketch's collection", in.DimensionIndex)
+	}
+	return wire.DeleteSketchDimensionResult{DOF: sk.DegreesOfFreedom()}, nil
+}
+
+// moveDimension places a dimension's annotation text. It touches only the annotation — the
+// measured geometry and the sketch's DOF are untouched — so it is the wire twin of dragging the
+// label in the sketch editor (#2017).
+func moveDimension(_ *app.Session, part *compdef.PartComponentDefinition, in wire.MoveSketchDimensionArgs) (wire.OKResult, error) {
+	if len(in.TextPoint) != 2 {
+		return wire.OKResult{}, fmt.Errorf("sketch.moveDimension: textPoint needs [x,y], got %d values", len(in.TextPoint))
+	}
+	dim, err := dimensionAt(part, in.SketchIndex, in.DimensionIndex)
+	if err != nil {
+		return wire.OKResult{}, err
+	}
+	dim.SetTextPoint(math.P2(math.Scalar(in.TextPoint[0]), math.Scalar(in.TextPoint[1])))
+	return wire.OKResult{OK: true}, nil
+}
+
 // buildDimension resolves references and applies the matching model dimension factory. orientation
 // applies only to the distance kind (aligned/horizontal/vertical); other kinds ignore it.
 func buildDimension(sk *sketch.Sketch, kind types.DimensionConstraintKind, refs []uint64, expr string, farSide, linearDiameter bool, orientation sketch.DistanceOrientation) (*sketch.DimensionConstraint, error) {
@@ -256,7 +288,9 @@ func arcLengthDimension(sk *sketch.Sketch, refs []uint64, expr string) (*sketch.
 	return sk.DimensionConstraints().AddArcLength(a, expr)
 }
 
-// dimensionAt returns the dimensional constraint at (sketchIndex, dimIndex).
+// dimensionAt returns the dimensional constraint at (sketchIndex, dimIndex). Shared by the
+// drive/delete/move methods, so its error names the index and the collection size rather than
+// any one calling method.
 func dimensionAt(part *compdef.PartComponentDefinition, sketchIndex, dimIndex int) (*sketch.DimensionConstraint, error) {
 	sk, err := sketchAtIndex(part, sketchIndex)
 	if err != nil {
@@ -264,7 +298,7 @@ func dimensionAt(part *compdef.PartComponentDefinition, sketchIndex, dimIndex in
 	}
 	dc := sk.DimensionConstraints()
 	if dimIndex < 0 || dimIndex >= dc.Count() {
-		return nil, fmt.Errorf("sketch.driveDimension: index %d out of range (%d dimensions)", dimIndex, dc.Count())
+		return nil, fmt.Errorf("dimensionIndex %d out of range (sketch %d has %d dimensions)", dimIndex, sketchIndex, dc.Count())
 	}
 	return dc.Item(dimIndex), nil
 }

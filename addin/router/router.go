@@ -410,6 +410,8 @@ func (r *Router) registerSketchAuthoringHandlers() {
 	r.mutating(wire.MethodSketchDeleteConstraint, "Delete Constraint", typedPart(deleteConstraint))
 	r.mutating(wire.MethodSketchAddDimension, "Add Dimension", typedPart(addDimension))
 	r.mutating(wire.MethodSketchDriveDimension, "Edit Dimension", typedPart(driveDimension))
+	r.mutating(wire.MethodSketchDeleteDimension, "Delete Dimension", typedPart(deleteDimension))
+	r.mutating(wire.MethodSketchMoveDimension, "Move Dimension", typedPart(moveDimension))
 	r.mutating(wire.MethodSketchTransform, "Transform Sketch", typedPart(transformSketch))
 	r.readOnly(wire.MethodSketchCopyTo, typedPart(sketchCopyTo))
 	r.mutating(wire.MethodSketchAddPattern, "Sketch Pattern", typedPart(addSketchPattern))
