@@ -278,6 +278,7 @@ func (s *Session) wireDocumentWatchers() {
 	s.watchDocumentCloses()
 	s.watchDocumentSwitches() // #1105: drop the prior document's selection when a different one is activated
 	s.watchDocumentInterests()
+	s.watchNewDocumentProjection()      // a new document opens in the configured projection (#camera-ortho)
 	s.watchDocumentIdentityCollisions() // open-time identity-GUID clash → reassign + notify
 	s.watchTransactions()               // append-only transaction log for bug reports
 	s.watchDrawingExport()              // Drawing tab Export DXF: write the sheet when its file dialog is answered

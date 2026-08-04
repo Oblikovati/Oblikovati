@@ -93,8 +93,13 @@ func TestFitViewEmptyModelIsNoOp(t *testing.T) {
 	cam := scene.NewCamera(640, 480)
 	s.SetCamera(cam)
 	s.FitView()
-	if s.Camera() != cam {
-		t.Error("Zoom All on an empty model should leave the camera unchanged")
+	// Compare the FRAMING, not the whole camera: Orthographic is derived from the view's
+	// projection rather than stored on the camera, so a camera round-tripped through
+	// SetCamera/Camera differs in that one field on an orthographic view — which every new
+	// document now is. FitView's contract is about where the camera looks from.
+	if got := s.Camera(); got.Eye != cam.Eye || got.Target != cam.Target || got.Up != cam.Up || got.FOV != cam.FOV {
+		t.Errorf("Zoom All on an empty model moved the camera to eye %v target %v up %v fov %v",
+			got.Eye, got.Target, got.Up, got.FOV)
 	}
 }
 
