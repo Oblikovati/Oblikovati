@@ -59,7 +59,7 @@ func (s *Session) CreateSketch(plane sketch.Plane) (*sketch.Sketch, error) {
 	s.EnsureActiveEditBaseline() // capture the pre-sketch state so "Create Sketch" is its own step (#1270)
 	sk := host.Sketches().Add(plane)
 	sk.SetParameters(host.Parameters()) // dimension expressions resolve in the host's table
-	autoProjectOrigin(host, sk)
+	s.autoProjectOrigin(host, sk)
 	s.EnterSketch(sk)
 	// Creating the sketch is its own undo step, so the baseline for the in-sketch operations that
 	// follow is the empty sketch — undoing them reverts each op without removing the sketch (#1270).
@@ -67,14 +67,26 @@ func (s *Session) CreateSketch(plane sketch.Plane) (*sketch.Sketch, error) {
 	return sk, nil
 }
 
-// autoProjectOrigin projects the part's origin centre point into a freshly created sketch, so
-// every new sketch carries the projected origin as a constrainable reference at (0,0) — the
-// Inventor default the bug report (#1262) asked for. It is a no-op for hosts without an origin
-// centre point (an assembly), and the projection is associative like any other (it re-derives
+// autoProjectOrigin projects the origin centre into a freshly created sketch, for a host that
+// owns one. An assembly does not, so it is a no-op there.
+func (s *Session) autoProjectOrigin(host sketchHost, sk *sketch.Sketch) {
+	if part, ok := host.(*compdef.PartComponentDefinition); ok {
+		s.AutoProjectOriginInto(part, sk)
+	}
+}
+
+// AutoProjectOriginInto projects the part's origin centre point into a freshly created sketch, so
+// the sketch carries the origin as a constrainable reference at (0,0) — the Inventor default the
+// bug report (#1262) asked for. The projection is associative like any other (it re-derives
 // through recompute via the [feature.OriginCenter] reference).
-func autoProjectOrigin(host sketchHost, sk *sketch.Sketch) {
-	part, ok := host.(*compdef.PartComponentDefinition)
-	if !ok {
+//
+//	s.AutoProjectOriginInto(part, sk)
+//
+// It honours Application Options ▸ Sketch ▸ Autoproject part origin, which is on by default, and
+// is exported so the wire path (sketch.create) applies the same rule as the interactive one: a
+// sketch an add-in creates gets the same anchor as one drawn by hand (#2016).
+func (s *Session) AutoProjectOriginInto(part *compdef.PartComponentDefinition, sk *sketch.Sketch) {
+	if !s.appOptions.Sketch.AutoProjectOrigin {
 		return
 	}
 	sk.ProjectPoint(compdef.NewWorkPointRefSource(part, feature.OriginCenter))

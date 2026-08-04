@@ -45,6 +45,12 @@ type Sketch struct {
 	DimensionInputCartesian      bool `yaml:"dimensionInputCartesian"`
 	CreateDimensionsOnValueInput bool `yaml:"createDimensionsOnValueInput"`
 
+	// AutoProjectOrigin projects the part origin's centre point into every new sketch, so the
+	// sketch opens with an anchor to constrain against at (0,0) — Inventor's "Autoproject part
+	// origin on sketch create", on by default. Load merges over Defaults(), so an options file
+	// written before this key keeps the default rather than reading as off (#2016).
+	AutoProjectOrigin bool `yaml:"autoProjectOrigin"`
+
 	// SuppressFormatOverrides is the Format panel's Show Format toggle (#2015). On means the
 	// sketch draws with DEFAULT attributes, hiding per-entity line type, colour and thickness —
 	// the documented behaviour, which is the inverse of what the button's label suggests.
@@ -115,7 +121,7 @@ func Defaults() All {
 		Sketch: Sketch{
 			GridSpacingCm: 1, GridVisible: true, GridMajorEvery: 5, SnapToPoints: true, SnapToGrid: true,
 			HeadsUpDisplay: true, PointerInput: true, PointerInputCartesian: true,
-			DimensionInput: true, CreateDimensionsOnValueInput: true,
+			DimensionInput: true, CreateDimensionsOnValueInput: true, AutoProjectOrigin: true,
 		},
 		Part:      Part{ChamferFlatCorners: true, TangentChainSelect: true},
 		Save:      Save{Thumbnail: types.ThumbnailNone},
