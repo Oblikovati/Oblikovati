@@ -51,6 +51,9 @@ func handleViewportSelection(s *app.Session) {
 		}
 		return // the Select Other cycle owns viewport picking until it ends
 	}
+	if updateSketchPlacement(s) {
+		return
+	}
 	if updateSketchDrag(s) {
 		return
 	}
@@ -112,6 +115,36 @@ func updateCloudDrag(s *app.Session) bool {
 	}
 	lx, ly := viewportCursor()
 	return s.BeginCloudDrag(lx, ly)
+}
+
+// updateSketchPlacement drives drag-to-create for sketch geometry tools and reports whether it
+// consumed this frame's left input: a press places the first point, the cursor rubber-bands the
+// shape, and release places the second point and commits it (#2014). A press and release without
+// movement falls back to the click-click flow, so both gestures work and produce the same
+// geometry. It runs before updateSketchDrag, which only moves already-committed entities and
+// stands down while a tool is active anyway.
+func updateSketchPlacement(s *app.Session) bool {
+	if !s.InSketch() {
+		return false
+	}
+	lx, ly := viewportCursor()
+	if s.PlacementActive() {
+		return advanceSketchPlacement(s, lx, ly)
+	}
+	if !native.IsItemClicked(native.MouseLeft) {
+		return false
+	}
+	return s.BeginPlacement(lx, ly)
+}
+
+// advanceSketchPlacement tracks the held cursor and finishes the placement on release.
+func advanceSketchPlacement(s *app.Session, lx, ly float64) bool {
+	if native.MouseDown(native.MouseLeft) {
+		s.UpdatePlacement(lx, ly)
+		return true
+	}
+	s.EndPlacement(lx, ly)
+	return true
 }
 
 // updateSketchDrag advances direct drag-to-move of sketch entities and reports whether it
