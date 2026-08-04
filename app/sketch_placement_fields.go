@@ -218,6 +218,17 @@ func (s *Session) lockedFieldExpressions(r sketch.Recipe) []string {
 	return out
 }
 
+// ShowConstraintsOnCreation reports whether the inference glyphs should be drawn beside the
+// cursor while geometry is being placed — the active document's DisplayConstraintsOnCreation
+// setting, which was declared and persisted but read by nothing before #2014.
+func (s *Session) ShowConstraintsOnCreation() bool {
+	settings, err := s.DocumentSketchSettings(0)
+	if err != nil {
+		return types.DefaultSketchSettings().DisplayConstraintsOnCreation
+	}
+	return settings.DisplayConstraintsOnCreation
+}
+
 // overConstrainedBehavior is the active document's preference for a dimension that would make
 // the sketch redundant, defaulting to adding it as driven when no document is open.
 func (s *Session) overConstrainedBehavior() types.OverConstrainedDimensionBehavior {

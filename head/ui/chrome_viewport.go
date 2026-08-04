@@ -343,6 +343,9 @@ func drawViewportOverlays(s *app.Session, cam scene.Camera, sketchPlane sketch.P
 			s.BeginEditDimension(d) // double-clicked a dimension's value
 		}
 	}
+	if s.InSketch() {
+		drawPlacementFieldBoxes(s, cam, ox, oy) // in-place dimension input (#2014)
+	}
 }
 
 // updateViewportCamera sizes the camera to the panel and either advances the active camera
@@ -544,8 +547,8 @@ func sketchOverlays(s *app.Session, cam scene.Camera, list renderer.DrawList) (r
 	if item, ok := pointsOverlay(plane, s.ActiveSketch(), pointMarkerPixels*cam.WorldPerPixel()); ok {
 		list.Items = append(list.Items, onTopItem(item))
 	}
-	if item, ok := toolPreview(s); ok {
-		list.Items = append(list.Items, onTopItem(item))
+	if items, ok := toolPreview(s); ok {
+		list.Items = append(list.Items, onTop(items)...)
 	}
 	if item, ok := inferenceGlyphs(s, plane, glyphPixels*cam.WorldPerPixel()); ok {
 		list.Items = append(list.Items, onTopItem(item))
@@ -696,24 +699,21 @@ func snapMarker(s *app.Session, plane sketch.Plane, worldPerPixel float64) (rend
 	return snapGlyph(plane, r, snapGlyphPixels*worldPerPixel)
 }
 
-// toolPreview returns the active geometry tool's rubber-band preview at the cursor (the
-// provisional shape from the placed clicks through the current mouse position).
-func toolPreview(s *app.Session) (renderer.DrawItem, bool) {
+// toolPreview returns the active geometry tool's rubber-band preview at the cursor: the
+// provisional shape from the placed clicks through the current mouse position, drawn solid for
+// real geometry, dashed for construction geometry, and with a dotted witness line under each
+// in-place dimension box (#2014).
+func toolPreview(s *app.Session) ([]renderer.DrawItem, bool) {
 	if !native.IsItemHovered() || s.ActiveTool() == nil {
-		return renderer.DrawItem{}, false
+		return nil, false
 	}
 	cx, cy := viewportCursor()
 	cur, ok := s.CursorSketchPoint(cx, cy)
 	if !ok {
-		return renderer.DrawItem{}, false
+		return nil, false
 	}
-	pts, closed := s.ActiveToolPreview(cur)
-	if len(pts) == 0 {
-		return renderer.DrawItem{}, false
-	}
-	acc := &segAccum{}
-	acc.polyline(s.ActiveSketch().Plane(), pts, closed)
-	return renderer.DrawItem{Primitive: renderer.Lines, Positions: acc.pos, Indices: acc.idx, Color: chromeTheme.previewColor}, true
+	items := placementOverlayItems(s, s.ActiveSketch().Plane(), cur)
+	return items, len(items) > 0
 }
 
 const (
