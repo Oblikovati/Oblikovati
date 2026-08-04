@@ -126,9 +126,30 @@ func (s *Session) finishToolCommit() {
 	s.dropCommandGizmos()           // and the command-bound triad/manipulators (M05-F13)
 }
 
-// CancelTool abandons the active tool (Inventor's Escape / Cancel).
+// chainingTool is a tool whose Escape ENDS an in-progress chain — keeping the geometry already
+// placed — rather than abandoning it. The continuous line tool is the case (#2024).
+type chainingTool interface {
+	FinishesOnCancel() bool
+}
+
+// activeChainingTool returns the active tool when it ends its chain on Escape.
+func (s *Session) activeChainingTool() (chainingTool, bool) {
+	if s.tool == nil {
+		return nil, false
+	}
+	ct, ok := s.tool.tool.(chainingTool)
+	return ct, ok
+}
+
+// CancelTool abandons the active tool (Inventor's Escape / Cancel), except for a chaining tool
+// mid-chain, which finishes instead. That path goes through OK so the commit is recorded as an
+// undo step and the tool is torn down exactly as a normal finish would be.
 func (s *Session) CancelTool() {
 	s.notice = ""
+	if ct, ok := s.activeChainingTool(); ok && ct.FinishesOnCancel() && s.tool.tool.CanCommit() {
+		_ = s.OK()
+		return
+	}
 	if s.tool != nil {
 		s.tool.tool.Cancel(s)
 		s.tool = nil

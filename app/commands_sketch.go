@@ -154,7 +154,7 @@ func sketchPatternCommands() []*CommandDefinition {
 // which the reference UI places in Create, not Modify).
 func createCommands() []*CommandDefinition {
 	return buildToolCommands("Create", []sketchToolEntry{
-		{id: "Sketch.Line", name: "Line", alias: "L", chord: "Shift+L", large: true, tip: "Line — draw a line between two points.", start: func() Tool { return NewLineTool() }},
+		{id: "Sketch.Line", name: "Line", alias: "L", chord: "Shift+L", large: true, tip: "Line — draw a connected chain of lines; Enter or Escape finishes.", start: func() Tool { return NewLineTool() }},
 		{id: "Sketch.Rectangle", name: "Rectangle", alias: "REC", large: true, tip: "Rectangle — draw a two-corner rectangle.", start: func() Tool { return NewRectangleTool() }, variants: []sketchToolEntry{
 			{id: "Sketch.Rectangle.ThreePoint", name: "Three Point Rectangle", tip: "Three Point Rectangle — base edge then width.", start: func() Tool { return NewThreePointRectangleTool() }},
 			{id: "Sketch.Rectangle.Center", name: "Two Point Center Rectangle", tip: "Two Point Center Rectangle — center then a corner.", start: func() Tool { return NewCenterRectangleTool() }},

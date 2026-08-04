@@ -74,12 +74,16 @@ func (s *Session) ActiveToolPreview(cursor math.Point2) (pts []math.Point2, clos
 // I making? Everything else — preview, glyphs, input fields, and the commit itself — follows
 // from that one answer.
 
-// PendingRecipe previews the line from its placed endpoint to the cursor.
+// PendingRecipe previews the next segment, running from the last placed endpoint to the
+// cursor. It tracks the LAST point rather than the first so the rubber band survives a
+// continuous chain — anchoring it to points[0] left every segment after the first with no
+// preview at all (#2024).
 func (t *LineTool) PendingRecipe(_ *Session, cursor math.Point2, _ []string) (sketch.Recipe, bool) {
-	if len(t.points) != 1 {
+	last, ok := t.PendingReferencePoint()
+	if !ok {
 		return sketch.Recipe{}, false
 	}
-	return sketch.LineRecipe(t.points[0], cursor), true
+	return sketch.LineRecipe(last, cursor), true
 }
 
 // PendingRecipe previews the rectangle from its placed corner through the cursor, with any

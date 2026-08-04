@@ -24,6 +24,7 @@ func TestLineToolInfersHorizontalOnCommit(t *testing.T) {
 	// over 30 units is well inside the 3° inference tolerance.
 	s.Click(60, 100)
 	s.Click(90, 100.2)
+	_ = s.PressKey(KeyEvent{Key: "Escape"}) // finish the chain (#2024)
 	if sk.Lines().Count() != 1 {
 		t.Fatalf("lines = %d, want the committed line", sk.Lines().Count())
 	}
