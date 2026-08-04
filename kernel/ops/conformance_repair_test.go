@@ -95,12 +95,14 @@ func TestBareTriangleSoupTessellatesWatertight(t *testing.T) {
 	if !allBareTriangleFaces(body.Faces()) {
 		t.Fatal("tetra should be a bare-triangle soup (the skip path)")
 	}
-	mesh, _ := TessellateBody(body, DefaultQuality())
-	if got := weldedFreeEdgeCount(mesh); got != 0 {
-		t.Errorf("tessellated tetra has %d free edges, want 0 (watertight)", got)
-	}
-	if mesh.TriangleCount() != 4 {
-		t.Errorf("tetra tessellated to %d triangles, want 4 (one per face)", mesh.TriangleCount())
+	for _, gq := range gateQualities() {
+		mesh, _ := TessellateBody(body, gq.q)
+		if got := weldedFreeEdgeCount(mesh); got != 0 {
+			t.Errorf("%s quality: tessellated tetra has %d free edges, want 0 (watertight)", gq.name, got)
+		}
+		if mesh.TriangleCount() != 4 {
+			t.Errorf("%s quality: tetra tessellated to %d triangles, want 4 (one per face)", gq.name, mesh.TriangleCount())
+		}
 	}
 }
 
@@ -108,23 +110,7 @@ func TestBareTriangleSoupTessellatesWatertight(t *testing.T) {
 // edge — the fixture for the plane-conformance tests.
 func planarFaceFromLoop(t *testing.T, loop []math.Point3) *topo.Face {
 	t.Helper()
-	bld := topo.NewBuilder(false, topo.NewLineage(topo.Tok("c", "body", 0)))
-	lin := topo.NewLineage(topo.Tok("c", "x", 0))
-	pl, err := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
-	if err != nil {
-		t.Fatalf("NewPlane: %v", err)
-	}
-	verts := make([]*topo.Vertex, len(loop))
-	for i, p := range loop {
-		verts[i] = bld.AddVertex(p, lin)
-	}
-	uses := make([]topo.Use, len(loop))
-	for i := range loop {
-		j := (i + 1) % len(loop)
-		uses[i] = topo.Fwd(bld.AddEdge(geom.NewLineSegment(loop[i], loop[j]), verts[i], verts[j], lin))
-	}
-	bld.AddFace(pl, lin, topo.OuterLoop(uses...))
-	return bld.Build().Faces()[0]
+	return planarLoopBody(t, math.P3(0, 0, 0), math.V3(0, 0, 1), loop).Faces()[0]
 }
 
 // meshHasSegment reports whether some triangle of m has an edge between a and b (within weld tol).

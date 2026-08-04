@@ -137,16 +137,46 @@ func TestFilletRunOutBothEndsZeroRejected(t *testing.T) {
 }
 
 // TestFilletCornerRadiusMismatchRejected: at a shared corner every edge must carry the SAME radius
-// there (the corner sphere has one radius) — differing corner radii are a precise error.
+// there (the corner sphere has one radius) — differing corner radii are a precise error, UNLESS the
+// radii fit the [rB, rS, rS] torus-corner closed form (fillet_corner_radiustorus.go, cluster-A wave):
+// three FULLY DISTINCT radii have no common sphere AND no common torus, so they stay the guard's
+// target. (r0.3/0.3/0.5 — this test's fixture before the torus corner shipped — now legitimately
+// BUILDS instead of declining; see TestFilletCornerRadiusTorusBuilds for that positive case.)
 func TestFilletCornerRadiusMismatchRejected(t *testing.T) {
 	box := shellBox(2, 2, 2)
 	keys := cornerEdgeKeys(t, box)
 	_, err := ops.FilletEdgesCorner(box, []ops.EdgeFilletRadii{
 		{Key: keys[0], R0: 0.3, R1: 0.3},
+		{Key: keys[1], R0: 0.4, R1: 0.4},
+		{Key: keys[2], R0: 0.5, R1: 0.5},
+	}, ops.CornerMiter, ops.FillConcaveOutward)
+	// A mixed-radius TRIHEDRAL corner with three DISTINCT radii (r0.3/0.4/0.5) has no common sphere
+	// and no [rB,rS,rS] torus pattern (no two radii are equal) — still declined. It must not silently
+	// build a wrong (equal-radius) sphere.
+	if err == nil || !strings.Contains(err.Error(), "torus corner patch") {
+		t.Fatalf("radius-mismatch err = %v, want the mixed-radius-trihedral (torus patch) decline", err)
+	}
+}
+
+// TestFilletCornerRadiusTorusBuilds is the positive twin of TestFilletCornerRadiusMismatchRejected:
+// on a plain orthogonal box corner, r0.3/0.3/0.5 (the [rB,rS,rS] pattern — one strictly-larger
+// radius on the edge joining two walls, equal smaller radii on the two arms sharing the third face)
+// now builds a valid watertight solid with an analytic torus corner patch (major R=rB−rS=0.2, minor
+// rS=0.3), independent of the OCCT corpus fixtures — a minimal, kernel-only proof this generalizes
+// beyond simple/A4's specific dimensions.
+func TestFilletCornerRadiusTorusBuilds(t *testing.T) {
+	box := shellBox(2, 2, 2)
+	keys := cornerEdgeKeys(t, box)
+	res, err := ops.FilletEdgesCorner(box, []ops.EdgeFilletRadii{
+		{Key: keys[0], R0: 0.3, R1: 0.3},
 		{Key: keys[1], R0: 0.3, R1: 0.3},
 		{Key: keys[2], R0: 0.5, R1: 0.5},
 	}, ops.CornerMiter, ops.FillConcaveOutward)
-	if err == nil || !strings.Contains(err.Error(), "one radius") {
-		t.Fatalf("radius-mismatch err = %v, want the one-radius-at-corner rejection", err)
+	if err != nil {
+		t.Fatalf("radius-torus corner: %v", err)
 	}
+	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
+		t.Fatalf("radius-torus corner not a valid solid: %+v", r)
+	}
+	assertWatertight(t, res, "radius-torus")
 }

@@ -23,7 +23,12 @@ type ValidationReport struct {
 	// an odd or too-large χ catches where the volume guard cannot (Oblikovati#1407).
 	EulerCharacteristic int
 	EulerConsistent     bool
-	Issues              []string
+	// HolesContained reports whether every planar face's hole loops lie strictly inside their outer loop
+	// (the B-rep invariant that a hole is an interior void). It is a diagnostic flag, NOT folded into Valid
+	// yet: a malformed protruding-hole face is invisible to the per-edge manifold/closed checks but poisons
+	// the tessellator. See checkHoleContainment.
+	HolesContained bool
+	Issues         []string
 }
 
 // Validate checks a body's topology: every edge of a manifold solid must be used by
@@ -32,7 +37,7 @@ type ValidationReport struct {
 // solid. It reports each offending edge precisely (PBI-084) — a surface body is
 // allowed to be open.
 func Validate(b *topo.Body) ValidationReport {
-	r := ValidationReport{Manifold: true, Closed: true, OrientationOK: true, EulerConsistent: true}
+	r := ValidationReport{Manifold: true, Closed: true, OrientationOK: true, EulerConsistent: true, HolesContained: true}
 	for _, e := range b.Edges() {
 		switch uses := e.Uses(); {
 		case len(uses) < 2:
@@ -51,6 +56,10 @@ func Validate(b *topo.Body) ValidationReport {
 		}
 	}
 	r.checkEuler(b)
+	r.checkHoleContainment(b)
+	// HolesContained is intentionally NOT folded into Valid yet — the fillet trim that stops producing
+	// protruding-hole faces must land first, or existing valid-solid assertions would flip red. It is a
+	// tripwire flag until then.
 	r.Valid = r.Manifold && r.OrientationOK && (!b.IsSolid() || (r.Closed && r.EulerConsistent))
 	return r
 }

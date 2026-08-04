@@ -447,3 +447,4 @@ add-in/**/build/
 add-in/**/*.so
 add-in/**/*.dll
 add-in/**/*.dylib
+.claude/worktrees/

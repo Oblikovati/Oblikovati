@@ -66,8 +66,46 @@ func TestFoldEdgeCountOnCleanCurvedSolid(t *testing.T) {
 	if err != nil {
 		t.Fatalf("build cylinder: %v", err)
 	}
-	mesh, _ := TessellateBody(cyl, DefaultQuality())
-	if got := FoldEdgeCount(mesh); got != 0 {
-		t.Errorf("clean cylinder tessellated with %d fold edges; want 0", got)
+	for _, gq := range gateQualities() {
+		mesh, _ := TessellateBody(cyl, gq.q)
+		if got := FoldEdgeCount(mesh); got != 0 {
+			t.Errorf("%s quality: clean cylinder tessellated with %d fold edges; want 0", gq.name, got)
+		}
+	}
+}
+
+// TestFoldDetectorIgnoresNullSliver pins BOTH directions of the degenerate-normal guard added for the
+// macOS/arm64 Z1 failure (PR #2013): a null sliver beside a real triangle is not a fold, while two
+// well-formed opposed triangles still are. Reproduces the measured arm64 geometry — a 1.24e-17-area
+// triangle adjacent to a 0.0937-area one on a face of 234 — so the guard cannot be widened into a
+// blanket "ignore small triangles" without this failing.
+func TestFoldDetectorIgnoresNullSliver(t *testing.T) {
+	sliver := &Mesh{
+		Positions: []gm.Point3{
+			gm.P3(9.807852804032304, 1.9509032201612806, 20),
+			gm.P3(9.903926402016152, 0.9754516100806394, 20),
+			gm.P3(9.5, 1.5, 20),
+			// Collinear with the shared edge to the last bit: area ~1e-17, normal direction is noise.
+			gm.P3(9.855889603024228, 1.46317741512096, 20),
+		},
+		Normals: []gm.Vector3{gm.V3(0, 0, 1), gm.V3(0, 0, 1), gm.V3(0, 0, 1), gm.V3(0, 0, 1)},
+		Indices: []int{0, 1, 2, 0, 3, 1},
+	}
+	if n := FoldEdgeCount(sliver); n != 0 {
+		t.Fatalf("null sliver counted as %d fold edge(s); a triangle of ~1e-17 area has no orientation "+
+			"to oppose with — its normal is decided by the last ulp", n)
+	}
+
+	// Two well-formed triangles folded about the shared edge: the guard must NOT hide this.
+	folded := &Mesh{
+		Positions: []gm.Point3{
+			gm.P3(0, 0, 0), gm.P3(1, 0, 0), gm.P3(0.5, 1, 0), gm.P3(0.5, 1, 0.05),
+		},
+		Normals: []gm.Vector3{gm.V3(0, 0, 1), gm.V3(0, 0, 1), gm.V3(0, 0, 1), gm.V3(0, 0, 1)},
+		Indices: []int{0, 1, 2, 1, 0, 3},
+	}
+	if FoldEdgeCount(folded) == 0 {
+		t.Fatal("a genuine fold between two well-formed triangles was not detected — the degenerate-normal " +
+			"guard must narrow what counts as EVIDENCE, never narrow the gate itself")
 	}
 }

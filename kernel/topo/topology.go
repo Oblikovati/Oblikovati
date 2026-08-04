@@ -219,6 +219,15 @@ type Face struct {
 	// and no stale geometry) and opaque to topo — the ops package owns the payload type and only the
 	// single-threaded pick path writes it (mirrors the render loop's bodyGeometryCache assumption).
 	pickTess any
+	// metricScaleMemo memoizes the ops-owned per-axis (u,v) metric of this face's surface (√E,√G of
+	// the first fundamental form — see ops.metricScale), a PURE function of the immutable surface
+	// derivatives. It exists for #2010: the interactive hover-pick's discretizeEdge → starvedEdgeTarget
+	// path (edge picking is NOT covered by the pickTess whole-face memo) re-ran metricScale — ~25
+	// DerivativesAt evals per incident B-spline face — every frame on a B-spline-heavy model. Same
+	// contract as pickTess: opaque to topo (ops owns the payload type), face-lifetime (dies with the
+	// face on recompute, so no leak and no stale geometry), and written only by the single-threaded
+	// pick/tessellation path per body.
+	metricScaleMemo any
 }
 
 func (f *Face) ID() uint64           { return f.id }
@@ -238,6 +247,18 @@ func (f *Face) PickTess() any { return f.pickTess }
 // topo (the ops package defines and type-asserts it), keeping the tessellator out of the topology
 // layer while giving the memo the face's lifetime.
 func (f *Face) SetPickTess(v any) { f.pickTess = v }
+
+// MetricScaleMemo returns the opaque, ops-owned per-face surface-metric memo (nil until the
+// tessellation/pick path first computes it). The payload is deliberately opaque to topo — only the
+// ops package defines and type-asserts it (see ops.faceMetricScale) — so there is no topo-writable
+// example, matching PickTess. It spares the interactive edge pick a per-frame metricScale recompute
+// (#2010). Written only by the single-threaded pick/tessellation path per body.
+func (f *Face) MetricScaleMemo() any { return f.metricScaleMemo }
+
+// SetMetricScaleMemo stores the ops-owned surface-metric memo for this face. The payload is opaque to
+// topo (the ops package defines and type-asserts it), keeping the metric computation out of the
+// topology layer while giving the memo the face's lifetime.
+func (f *Face) SetMetricScaleMemo(v any) { f.metricScaleMemo = v }
 
 // Reversed reports whether the face's outward (material) side is OPPOSITE its surface
 // normal — true for the cut wall a Difference carves, where the surface (e.g. a cylinder's

@@ -67,6 +67,12 @@ func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 	if us, vs, isRect := isoRectangleGrid(outerUV); len(holesUV) == 0 && isRect {
 		return structuredGridMesh(s, us, vs) // cylinder/cone wall, fillet face: exact area
 	}
+	if us, vs, skip, isCells := isoRectilinearGrid(outerUV); len(holesUV) == 0 && isCells {
+		// A band the obstacle imprint notched (fillet_band_imprint.go): still bounded entirely by
+		// iso-lines, so it is a union of grid cells and needs no triangulator — see
+		// tessellate_rectilinear.go for what the generic CDT does with it instead.
+		return structuredGridMeshSkip(s, us, vs, skip)
+	}
 	return nonRectangularMesh(s, q, outer3D, holes3D, outerUV, holesUV)
 }
 
@@ -75,32 +81,48 @@ func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 // and a periodic developable side with one full-circle rim plus a notched rim (a band loft). It returns
 // (mesh, true) on the first that applies, or (nil, false) so the caller falls through to toUVLoops.
 func specialCurvedMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) (*Mesh, bool) {
-	if len(holes3D) == 0 && faceIsConeApexCap(f, s) {
-		if m, isFan := coneApexFan(s, outer3D); isFan {
-			return m, true // a cone closing to its apex (a drill point or an oblique apex cap): a fan from
-			// the apex to the rim. A holed face is never an apex cap — it is a band whose inner rim is the
-			// hole; a stub (saddle-bounded) is rejected by faceIsConeApexCap, not fanned to a far-off apex.
+	// Each entry is one surface-specific mesher, tried in order; the WHY for each shape lives beside
+	// its case. Collapsed into a table (rather than a chain of ifs) so this dispatcher stays under
+	// the function-length budget as the special-case roster grows — see tessellate_wedge_band.go's
+	// entry for the newest one (A1/D4's oblique wedge band).
+	for _, try := range specialCurvedMeshers(f, s, outer3D, holes3D, q) {
+		if m, ok := try(); ok {
+			return m, true
 		}
 	}
-	if m, isCap := sphereCapFan(s, outer3D, q); isCap {
-		return m, true // a sphere cut by one plane (a cap): rings from the rim to the enclosed pole
-	}
-	if m, isPatch := spherePatchMesh(s, outer3D, holes3D, q); isPatch {
-		return m, true // a sphere bounded by several arcs (a box cut): gnomonic CDT, pole/seam-safe
-	}
-	if m, isBand := notchedRimBandMesh(f, s, q); isBand {
-		return m, true // a periodic side with one full-circle rim and one notched rim (a frustum flat that fades): loft
-	}
-	if m, isBand := twoClosedRimBandMesh(f, s, q); isBand {
-		return m, true // a developable side with two CLOSED full-wrap rims (e.g. a circle + an oblique-cut ellipse): loft
-	}
-	if m, isBand := spiricBandMesh(f, s, q); isBand {
-		return m, true // a torus cut through the hole: a tube-wrapping band between two spiric ovals (#1375)
-	}
-	if m, isBand := twoRimHoledBandMesh(s, outer3D, holes3D, q); isBand {
-		return m, true // a two-rim band (a notched rim + an intact rim) carrying lens holes: bridge the seam, unroll
-	}
 	return nil, false
+}
+
+// specialCurvedMeshers lists the surface-specific meshers specialCurvedMesh tries, in priority order.
+func specialCurvedMeshers(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) []func() (*Mesh, bool) {
+	return []func() (*Mesh, bool){
+		// a cone apex CAP (a drill point / oblique apex cut) or an apex-collapsed SECTOR (a partial
+		// sweep): both fan the developable cone from its apex for exact, orientation-independent area
+		// — see coneApexMesh. A holed cone face is never an apex topology (its inner rim is the hole).
+		func() (*Mesh, bool) { return coneApexMesh(f, s, outer3D, holes3D) },
+		// a sphere cut by one plane (a cap): rings from the rim to the enclosed pole
+		func() (*Mesh, bool) { return sphereCapFan(s, outer3D, q) },
+		// a large sphere zone reaching an enclosed pole (one off-centre plane cut, seam to the pole):
+		// fan on the rim CIRCLE's exact normal, not the seam-biased newellUnit (J2)
+		func() (*Mesh, bool) { return sphereZoneCapFan(f, s, q) },
+		// a seamed cap: coplanar MULTI-ARC rim (a subdivided boss equator) + one doubled seam edge to
+		// the pole (S6/S7's hemisphere): latitude-ring fan, not the density-capped stereo CDT
+		func() (*Mesh, bool) { return sphereSeamedCapFan(f, s, q) },
+		// a sphere bounded by several arcs (a box cut): gnomonic CDT, pole/seam-safe
+		func() (*Mesh, bool) { return spherePatchMesh(s, outer3D, holes3D, q) },
+		// a periodic side with one full-circle rim and one notched rim (a frustum flat that fades): loft
+		func() (*Mesh, bool) { return notchedRimBandMesh(f, s, q) },
+		// a developable side with two CLOSED full-wrap rims (e.g. a circle + an oblique-cut ellipse): loft
+		func() (*Mesh, bool) { return twoClosedRimBandMesh(f, s, q) },
+		// a torus cut through the hole: a tube-wrapping band between two spiric ovals (#1375)
+		func() (*Mesh, bool) { return spiricBandMesh(f, s, q) },
+		// a two-rim band (a notched rim + an intact rim) carrying lens holes: bridge the seam, unroll
+		func() (*Mesh, bool) { return twoRimHoledBandMesh(s, outer3D, holes3D, q) },
+		// an OPEN oblique-ended cylinder wedge band (pyramid slant fillet, A1/D4): one exact zipped
+		// strip between the two end chains — the generic CDT's flat end slivers double-cover the
+		// neighbour plane and collide on its ear diagonals (deg-4 mesh edges), see tessellate_wedge_band.go
+		func() (*Mesh, bool) { return wedgeBandLoftMesh(f, s, q) },
+	}
 }
 
 // splineFaceMesh meshes a B-spline face through the metric-aware (u,v) triangulation (M25), or nil when
@@ -108,6 +130,19 @@ func specialCurvedMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, hole
 func splineFaceMesh(f *topo.Face, s geom.Surface, q Quality) *Mesh {
 	if _, isSpline := s.(geom.BSplineSurface); !isSpline {
 		return nil
+	}
+	// The CLOSED elliptic-rim canal band (two closed rails + a seam used twice) has no usable planar
+	// (u,v) trim, so it is lofted rail-to-rail instead. Gated on that exact loop shape, which no open
+	// canal arm or corner patch has.
+	if m, ok := canalRimBandMesh(f, s, q); ok {
+		return m
+	}
+	// The PINCHED canal band (EllipticalCylinder∧Cone host tangency, tolblend B4..C3): its
+	// cross-section collapses to a point, so the trim/pcurve paths degenerate there; it is lofted
+	// rail-to-rail with a shared pinch vertex instead (W-F, pinched_band_loft.go). Gated on the
+	// zero-width v-end column + all-iso boundary — no other B-spline face has that shape.
+	if m, ok := pinchedCanalBandMesh(f, s, q); ok {
+		return m
 	}
 	// A closed-in-u (periodic) B-spline face whose trim straddles the seam tangles the planar seam-cut
 	// loop; the covering-space periodic CDT un-seams it. It defers (nil,false) for the ordinary open patch.
@@ -123,6 +158,10 @@ func splineFaceMesh(f *topo.Face, s geom.Surface, q Quality) *Mesh {
 // (the full-domain grid tears there); a doubly-periodic torus we can't reduce keeps the full-domain grid.
 func meshSeamCrossingFace(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) *Mesh {
 	if us, vs, isBand := periodicBandGrid(s, outer3D, holes3D); isBand {
+		if m, ok := unequalRimBandMesh(f, s, bandGridStations(s, us, vs), q); ok {
+			return m // rims at DIFFERENT station counts: loft rim-to-rim so each keeps its own shared-edge
+			// discretization — the one grid would re-tile the coarser rim and crack it (band_rim_stations.go)
+		}
 		return closedDomainMesh(s, us, vs) // full cylinder/cone side with circular rims: grid the period
 	}
 	if m, ok := holedConicWallMesh(s, outer3D, holes3D, q); ok {
@@ -134,6 +173,9 @@ func meshSeamCrossingFace(f *topo.Face, s geom.Surface, outer3D []math.Point3, h
 	if _, _, isBand := doublyPeriodicBandGrid(s, outer3D, holes3D); isBand {
 		if m, ok := closedBandLoftMesh(f, s, q); ok {
 			return m // torus rim-fillet band: loft so each edge ring keeps its own (differing) tessellation
+		}
+		if m, ok := torusTubeBandLoftMesh(f, s, q); ok {
+			return m // spiric closed-rim HOST (J3/A4): a TUBE-wrapping band (meridian circle + canal rail + seam)
 		}
 		return fullDomainGridMesh(s, q) // shouldn't reach: a doubly-periodic band that isn't two circles + a seam
 	}
@@ -150,7 +192,7 @@ func meshSeamCrossingFace(f *topo.Face, s geom.Surface, outer3D []math.Point3, h
 // Anything else keeps the best-fit-plane ear-clip (boundaryPatchMesh).
 func nonRectangularMesh(s geom.Surface, q Quality, outer3D []math.Point3, holes3D [][]math.Point3, outerUV []math.Point2, holesUV [][]math.Point2) *Mesh {
 	switch s.(type) {
-	case geom.Torus, geom.Sphere, geom.Cylinder, geom.Cone, geom.BSplineSurface:
+	case geom.Torus, geom.Sphere, geom.Cylinder, geom.EllipticalCylinder, geom.Cone, geom.BSplineSurface:
 		// These trims fold when flattened to a best-fit plane (boundaryPatchMesh) or meshed over a plain
 		// anisotropic (u,v) (gridPatchMesh): a torus's ring-vs-tube, a sphere near its poles, a trimmed
 		// cyl/cone, a freeform B-spline. metricPatchMesh triangulates in a TRIM-LOCAL metric-scaled (u,v)
@@ -490,6 +532,91 @@ func coneApexFan(s geom.Surface, outer3D []math.Point3) (*Mesh, bool) {
 	return m, true
 }
 
+// coneApexMesh handles the two seam-free cone-apex topologies that precede the generic (u,v) trim
+// path: a closed conic apex CAP (a drill point or an oblique apex cut — coneApexFan) and an
+// apex-collapsed SECTOR (a partial angular sweep — coneApexSectorMesh). Both exploit that a cone is
+// developable, so a triangle fan from the apex gives exact area. A holed cone face is never an apex
+// topology (its inner rim is the hole, not a fan); returns (nil,false) so the caller falls through.
+func coneApexMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3) (*Mesh, bool) {
+	if _, isCone := s.(geom.Cone); !isCone || len(holes3D) != 0 {
+		return nil, false
+	}
+	if faceIsConeApexCap(f, s) {
+		if m, isFan := coneApexFan(s, outer3D); isFan {
+			return m, true // a stub (saddle-bounded) is rejected by faceIsConeApexCap, not fanned to a far apex
+		}
+	}
+	return coneApexSectorMesh(f, s, outer3D)
+}
+
+// coneApexSectorMesh meshes an apex-collapsed cone SECTOR — a partial angular sweep of a cone whose
+// boundary is one base arc plus two meridian rulings meeting at the apex (NOT a full closed conic cap,
+// which faceIsConeApexCap/coneApexFan handle). Because a cone is developable, a triangle fan from the
+// apex to the base-arc discretization reproduces the sector's EXACT area (OCCT H6 270° sector: 133286),
+// orientation-independently. The generic (u,v) trim path mis-meshes it: the apex row collapses u, so
+// ParamAt's degenerate apex angle spuriously reads a 270° sector's loop as seam-crossing on ONE
+// orientation (top vs bottom cone), routing it to the full-period band grid (closedDomainMesh) which
+// over-covers the partial sweep as if it were a full 2π cone (H6 top cone 167927, ×1.26 — the tape
+// measure). Returns (nil,false) for any cone face that is NOT an apex-reaching sector (a frustum band,
+// a saddle-bounded stub, or a closed conic cap), so every other cone face keeps its existing path.
+func coneApexSectorMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3) (*Mesh, bool) {
+	cone, ok := s.(geom.Cone)
+	if !ok || len(f.Loops()) != 1 || faceIsConeApexCap(f, s) {
+		return nil, false
+	}
+	rim := rimExcludingApex(outer3D, cone.Apex, ResolutionForPoints(outer3D).Weld())
+	if len(rim) == len(outer3D) || len(rim) < 2 {
+		return nil, false // no apex vertex on the loop (a frustum/stub), or too few rim points for a fan
+	}
+	return coneSectorFan(cone, rim), true
+}
+
+// rimExcludingApex returns the boundary points with the apex vertex removed, re-ordered to start
+// immediately AFTER the apex so the remaining points read as the open base-arc path (one meridian
+// base → base arc → the other meridian base) rather than a loop closing across the sector's void.
+// tol is the model-relative coincidence scale (ResolutionForPoints.Weld). Empty when no apex is found.
+func rimExcludingApex(loop []math.Point3, apex math.Point3, tol float64) []math.Point3 {
+	k := -1
+	for i, p := range loop {
+		if p.DistanceTo(apex) <= tol {
+			k = i
+			break
+		}
+	}
+	if k < 0 {
+		return nil
+	}
+	rim := make([]math.Point3, 0, len(loop))
+	for off := 1; off <= len(loop); off++ {
+		if p := loop[(k+off)%len(loop)]; p.DistanceTo(apex) > tol {
+			rim = append(rim, p)
+		}
+	}
+	return rim
+}
+
+// coneSectorFan builds the apex→rim triangle fan for a cone sector (rim in base-arc order, apex
+// excluded), each triangle wound to agree with the cone's outward normal. No wrap-around triangle is
+// emitted, so the fan spans only the real sector — its free boundary is the base arc plus the two
+// meridian rulings, watertight with the sector's neighbour cap and ring faces (shared discretization).
+func coneSectorFan(cone geom.Cone, rim []math.Point3) *Mesh {
+	m := &Mesh{}
+	apex := m.addVertex(cone.Apex, cone.AxisDir.AsVector().Scale(-1)) // axial normal at the pole
+	idx := make([]int, len(rim))
+	for i, p := range rim {
+		u, v := cone.ParamAt(p)
+		idx[i] = m.addVertex(p, cone.NormalAt(u, v))
+	}
+	for i := 0; i+1 < len(rim); i++ {
+		b, c := idx[i], idx[i+1]
+		if triangleFlipped(cone, cone.Apex, rim[i], rim[i+1]) {
+			b, c = c, b
+		}
+		m.addTriangle(apex, b, c)
+	}
+	return m
+}
+
 // faceIsConeApexCap reports whether a cone face is a SEAM-FREE apex cap — a single loop that is one closed
 // conic rim (a circle or an oblique-cut ellipse) encircling the axis, so an apex fan tiles it cleanly. This
 // is the brep drill point and the oblique apex cut (Oblikovati#1375). A SEAMED apex face (an imported cone
@@ -531,7 +658,8 @@ func bracketPeriod(g []float64) []float64 {
 }
 
 // toUVLoops maps the boundary loops to parameter space, unwrapping periodic parameters so
-// a loop reads as a contiguous polygon; ok=false if a loop wraps the full seam.
+// a loop reads as a contiguous polygon; ok=false if a loop wraps the full seam — including
+// one that starts ON the seam and only leaps the period on its closing step (see [unwrap]).
 func toUVLoops(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3) (outer []math.Point2, holes [][]math.Point2, ok bool) {
 	uPer, vPer := isPeriodic(s.UDomain()), isPeriodic(s.VDomain())
 	if outer, ok = toUVLoop(s, outer3D, uPer, vPer); !ok {
@@ -573,24 +701,44 @@ func toUVLoop(s geom.Surface, loop []math.Point3, uPer, vPer bool) ([]math.Point
 	return out, true
 }
 
-// unwrap removes 2π jumps so a periodic parameter reads continuously; ok=false when the
-// total span reaches 2π (the loop wraps the seam and is not a simple polygon).
+// unwrap removes 2π jumps so a periodic parameter reads continuously around the CLOSED ring; ok=false
+// when the loop wraps the seam and so is not a simple polygon in this chart — either because it winds a
+// whole period about the periodic axis ([seamWindingLeap]) or because its developed span reaches 2π.
 func unwrap(a []float64) ([]float64, bool) {
 	out := make([]float64, len(a))
 	out[0] = a[0]
 	lo, hi := a[0], a[0]
 	for i := 1; i < len(a); i++ {
-		d := a[i] - a[i-1]
-		for d > stdmath.Pi {
-			d -= 2 * stdmath.Pi
-		}
-		for d <= -stdmath.Pi {
-			d += 2 * stdmath.Pi
-		}
-		out[i] = out[i-1] + d
+		out[i] = out[i-1] + wrapPi(a[i]-a[i-1])
 		lo, hi = stdmath.Min(lo, out[i]), stdmath.Max(hi, out[i])
 	}
+	if seamWindingLeap(a, out) {
+		return out, false
+	}
 	return out, hi-lo < 2*stdmath.Pi-1e-6 // tol:angular (radians)
+}
+
+// seamWindingLeap reports whether the loop's CLOSING step — last sample back to first, a polygon segment
+// like any other, and the one the open chain never measures — is drawn in the chart as a leap of a whole
+// period while the geometry takes the short way round.
+//
+// WHY THE OPEN CHAIN IS NOT ENOUGH. The span guard above sees only samples 0..n−1. A loop that STARTS on
+// the seam therefore passes it by ε — simple/W1's corner sphere reads 6.2586 against 2π, 0.024 rad of
+// margin — and then jumps from u ≈ 2π back to u = 0 on closure, developing a patch that encircles the
+// chart's pole as if it were a contractible polygon. The quantity here is the loop's total WINDING about
+// the periodic axis: Σ of the wrapped steps around the full cycle, which is 0 for every loop that has a
+// development and ±2πk for every loop that has none (retrace-detector-report.md §7.1).
+//
+// Rejecting is the honest answer, not a fallback: a loop with nonzero winding is an object on the
+// covering space, so it has no simple polygon in this chart to hand the triangulator. The caller routes
+// it to meshSeamCrossingFace, which is where seam-wrapping loops already go.
+func seamWindingLeap(a, out []float64) bool {
+	n := len(a)
+	if n < 2 {
+		return false
+	}
+	closing := wrapPi(a[0] - a[n-1])
+	return stdmath.Abs(out[0]-out[n-1]-closing) > seamAngularTol
 }
 
 // isPeriodic reports whether a [0, 2π] parameter domain wraps.

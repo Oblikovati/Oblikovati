@@ -1,0 +1,114 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+// Throwaway scout probe (overlay-mounted; never in the git tree): dumps one TSV line per
+// corpus record with outcome, per-pick edge signature, and the fillet decline reason.
+package occtparity
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/model/feature"
+)
+
+func TestZZScoutFaultyProbe(t *testing.T) {
+	outPath := os.Getenv("SCOUT_OUT")
+	if outPath == "" {
+		t.Skip("SCOUT_OUT not set")
+	}
+	f, err := os.Create(outPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	dir := CorpusFixtureDir()
+	for _, r := range Corpus() {
+		if o, decided := preRunOutcome(r); decided {
+			fmt.Fprintf(f, "%s\t%s\t%s\t%d\t\t\t\t\n", r.Grid, r.Case, o.String(), len(r.Picks))
+			continue
+		}
+		probeOne(f, r, dir)
+	}
+}
+
+func probeOne(f *os.File, r Record, dir string) {
+	body, err := importInput(filepath.Join(dir, r.InputStep))
+	if err != nil {
+		fmt.Fprintf(f, "%s\t%s\tSKIP(import)\t%d\t\timport: %v\t\t\n", r.Grid, r.Case, len(r.Picks), err)
+		return
+	}
+	tol := importTol(body)
+	var infos []string
+	var sets []feature.FilletEdgeSet
+	locOK := true
+	for _, p := range r.Picks {
+		e, lerr := locateEdge(body, p.Locator, tol)
+		if lerr != nil {
+			locOK = false
+			infos = append(infos, fmt.Sprintf("r%g:LOCFAIL", p.Radius))
+			continue
+		}
+		var fk []string
+		for _, fc := range e.Faces() {
+			fk = append(fk, kindName(fmt.Sprintf("%T", fc.Geometry())))
+		}
+		closed := ""
+		if e.StartVertex() == e.EndVertex() {
+			closed = "|CLOSED"
+		}
+		radius := p.Radius
+		infos = append(infos, fmt.Sprintf("r%g:%s/%s/%s%s", p.Radius,
+			kindName(fmt.Sprintf("%T", e.Geometry())),
+			ops.ClassifyEdgeConvexity(e), strings.Join(fk, "^"), closed))
+		sets = append(sets, feature.FilletEdgeSet{EdgeKeys: [][]byte{e.ReferenceKey()}, Radius: func() float64 { return radius }})
+	}
+	edgeCol := strings.Join(infos, " ; ")
+	if !locOK {
+		fmt.Fprintf(f, "%s\t%s\tSKIP(import)\t%d\t%s\tlocate failed\t\t\n", r.Grid, r.Case, len(r.Picks), edgeCol)
+		return
+	}
+	res, filletOK, reason := runFillet(body, sets)
+	props, pok := caseProperties(res, filletOK)
+	wt := isWatertightSolid(res, filletOK, props, pok)
+	o := classify(r, true, filletOK, wt)
+	dArea := ""
+	if pok && r.areaTarget() > 0 {
+		dArea = fmt.Sprintf("%+.3f%%", 100*(props.Area-r.areaTarget())/r.areaTarget())
+	}
+	if o == Pass && pok {
+		if !areaWithin(props.Area, r.areaTarget(), r.Deps) {
+			o = FailArea
+		} else if r.Deviation != nil {
+			o = PassDeviation
+		}
+	}
+	extra := ""
+	if o == FailFaulty && reason == "" && len(res) == 1 && res[0] != nil {
+		rep := ops.Validate(res[0])
+		extra = fmt.Sprintf("nbodies=1 valid=%t closed=%t manifold=%t orient=%t euler=%t holes=%t vol+=%t issues=%d first=%q",
+			rep.Valid, rep.Closed, rep.Manifold, rep.OrientationOK, rep.EulerConsistent,
+			rep.HolesContained, props.Volume > 0, len(rep.Issues), firstIssue(rep.Issues))
+	}
+	if o == FailFaulty && reason == "" && len(res) != 1 {
+		extra = fmt.Sprintf("nbodies=%d", len(res))
+	}
+	fmt.Fprintf(f, "%s\t%s\t%s\t%d\t%s\t%s\t%s\t%s\n", r.Grid, r.Case, o.String(), len(r.Picks), edgeCol, reason, dArea, extra)
+}
+
+func firstIssue(is []string) string {
+	if len(is) == 0 {
+		return ""
+	}
+	return is[0]
+}
+
+func kindName(t string) string {
+	if i := strings.LastIndex(t, "."); i >= 0 {
+		return t[i+1:]
+	}
+	return t
+}

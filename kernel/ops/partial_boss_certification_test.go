@@ -72,9 +72,12 @@ func TestPartialBossVolumeMatchesAnalytic(t *testing.T) {
 // tear where the base conic crosses the plate edge.
 func TestPartialBossTessellationIsWatertight(t *testing.T) {
 	res := straddlingBoss(t)
-	mesh, _ := TessellateBody(res, DefaultQuality())
-	if free := cornerMeshFreeEdges(mesh); free != 0 {
-		t.Errorf("straddling boss tessellation has %d free edges (want 0) — a visible crack at the clipped seat", free)
+	for _, gq := range gateQualities() {
+		mesh, _ := TessellateBody(res, gq.q)
+		if free := cornerMeshFreeEdges(mesh); free != 0 {
+			t.Errorf("%s quality: straddling boss tessellation has %d free edges (want 0) — a visible crack at the "+
+				"clipped seat", gq.name, free)
+		}
 	}
 }
 
@@ -103,9 +106,11 @@ func TestPartialBossJoinsViaAnalyticDispatch(t *testing.T) {
 	if !hasCyl {
 		t.Error("union kept no analytic cylinder face — the boss wall was not preserved (CSG fallback)")
 	}
-	mesh, _ := TessellateBody(res, DefaultQuality())
-	if free := cornerMeshFreeEdges(mesh); free != 0 {
-		t.Errorf("dispatched union tessellation has %d free edges (want 0)", free)
+	for _, gq := range gateQualities() {
+		mesh, _ := TessellateBody(res, gq.q)
+		if free := cornerMeshFreeEdges(mesh); free != 0 {
+			t.Errorf("%s quality: dispatched union tessellation has %d free edges (want 0)", gq.name, free)
+		}
 	}
 	want := 200 + 12*stdmath.Pi
 	if got := BodyGeometryProperties(res, DefaultQuality()).Volume; stdmath.Abs(got-want)/want > 0.01 {

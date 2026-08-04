@@ -1,0 +1,76 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package occtparity
+
+// Outcome is one case's verdict, in OCCT's own vocabulary (parse.rules), so our scoreboard
+// reads the same way OCCT's own test-summary does.
+type Outcome int
+
+const (
+	Pass                 Outcome = iota
+	PassDeviation                // valid solid at OUR documented exact area (OCCT's own result is flawed; occt-oracle-not-religion)
+	FailFaulty                   // result not a valid solid (OCCT \bFaulty\b)
+	FailArea                     // valid but area outside tolerance (asserted separately)
+	Incomplete                   // OCCT tolerance-ang IGNORE analogue
+	SkipTODO                     // OCCT TODO/INCOMPLETE marker present
+	SkipImportDivergence         // STEP input did not import faithfully — not a fillet defect
+	SkipQuarantine               // held out of the green count: a coincidental area pass masks a real defect
+)
+
+// IsPass reports whether the outcome counts as a pass — genuine parity (Pass) OR a documented
+// per-case exact-deviation (PassDeviation) — so scoreboard summaries roll the two documented
+// deviations into the pass tally while still listing them in their own column.
+func (o Outcome) IsPass() bool { return o == Pass || o == PassDeviation }
+
+// String names an outcome for the scoreboard table.
+func (o Outcome) String() string {
+	switch o {
+	case Pass:
+		return "PASS"
+	case PassDeviation:
+		return "PASS(deviation)"
+	case FailFaulty:
+		return "FAIL(faulty)"
+	case FailArea:
+		return "FAIL(area)"
+	case Incomplete:
+		return "SKIP(varradius)"
+	case SkipTODO:
+		return "SKIP(todo)"
+	case SkipImportDivergence:
+		return "SKIP(import)"
+	case SkipQuarantine:
+		return "SKIP(quarantine)"
+	default:
+		return "UNKNOWN"
+	}
+}
+
+// classify maps one case's run facts to OCCT's verdict semantics. A quarantined case is held out of
+// the green count first (its area — pass or fail — is not trustworthy parity); TODO wins next (we never
+// claim to be stricter than OCCT); import divergence is separated from fillet defects so a STEP
+// round-trip gap never gets blamed on the fillet engine; an invalid result is Faulty.
+//
+// Example:
+//
+//	classify(r, true, true, true) // == Pass
+func classify(r Record, importOK, filletOK, valid bool) Outcome {
+	switch {
+	case isQuarantined(r):
+		return SkipQuarantine
+	case r.TODO != "":
+		return SkipTODO
+	case !importOK:
+		return SkipImportDivergence
+	case !filletOK || !valid:
+		return FailFaulty
+	default:
+		return Pass
+	}
+}
+
+// isQuarantined reports whether the case is on the corpus hold list (see quarantine.go).
+func isQuarantined(r Record) bool {
+	_, held := quarantineReason(r)
+	return held
+}

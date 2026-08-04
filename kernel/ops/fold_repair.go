@@ -132,9 +132,35 @@ func trianglesFold(m *Mesh, t0, t1 int) bool {
 	return normalsOppose(triGeomNormal(m, t0), triGeomNormal(m, t1))
 }
 
+// slantNormalRatio is how much smaller one triangle's geometric normal may be than its neighbour's
+// before the pair carries no usable orientation. It is a RATIO, not a length, so it holds at any model
+// scale — an absolute area floor would misjudge a micro-scale part (ADR-0042).
+//
+// A cross product's magnitude is twice the triangle's area, so this admits a neighbour up to a billion
+// times smaller before declining to judge. Anything beyond that is a null sliver whose normal
+// DIRECTION is pure rounding: the vertices are collinear to the last bit, and the direction it points
+// is decided by which way the final ulp fell.
+const slantNormalRatio = 1e-9
+
+// normalsOppose reports whether two adjacent triangles' geometric normals point against each other
+// (a fold). It declines to judge when either normal is degenerate NEXT TO the other's, because an
+// orientation read off a null triangle is noise, not evidence.
+//
+// Found on macOS/arm64 (PR #2013): simple/Z1's planar face meshed a 1.24e-17-area triangle beside a
+// 0.0937-area one — 5.29e-18% of the face, three decades below representable noise at that scale —
+// and its rounding-decided normal read as "opposed", failing the Z1 fold gate on arm64 while amd64
+// stayed clean. The repair path beside this (attemptFlip) already refuses to act on a degenerate
+// normal; the DETECTOR did not, so it reported a fold the repair could never have caused or fixed.
+//
+// This narrows what counts as evidence of a fold; it does not narrow the gate. A fold between two
+// well-formed triangles still fails exactly as before — see TestFoldDetectorIgnoresNullSliver, which
+// pins both directions.
 func normalsOppose(n0, n1 math.Vector3) bool {
 	l0, l1 := stdmath.Sqrt(float64(n0.Dot(n0))), stdmath.Sqrt(float64(n1.Dot(n1)))
 	if l0 == 0 || l1 == 0 {
+		return false
+	}
+	if l0 < slantNormalRatio*l1 || l1 < slantNormalRatio*l0 {
 		return false
 	}
 	return float64(n0.Dot(n1))/(l0*l1) < -foldDihedralTol

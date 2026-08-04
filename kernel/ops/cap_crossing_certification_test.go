@@ -61,13 +61,15 @@ func TestCapCrossingCutIsWatertightAndFoldFree(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Boolean(Cut): %v", err)
 	}
-	mesh, _ := TessellateBody(res, capCertQuality())
-	if free := freeEdgeCount(mesh); free != 0 {
-		t.Errorf("cap-crossing cut tessellated with %d free edges; want 0 — a cross-face T-junction crack "+
-			"(regression of the by-value ellipse imprint fix, #1724)", free)
-	}
-	if folds := FoldEdgeCount(mesh); folds != 0 {
-		t.Errorf("cap-crossing cut mesh has %d fold edges; want 0 (no self-overlap)", folds)
+	for _, gq := range certGateQualities() {
+		mesh, _ := TessellateBody(res, gq.q)
+		if free := freeEdgeCount(mesh); free != 0 {
+			t.Errorf("%s quality: cap-crossing cut tessellated with %d free edges; want 0 — a cross-face T-junction crack "+
+				"(regression of the by-value ellipse imprint fix, #1724)", gq.name, free)
+		}
+		if folds := FoldEdgeCount(mesh); folds != 0 {
+			t.Errorf("%s quality: cap-crossing cut mesh has %d fold edges; want 0 (no self-overlap)", gq.name, folds)
+		}
 	}
 }
 

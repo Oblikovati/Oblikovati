@@ -91,6 +91,14 @@ func TestNoUnjustifiedAbsoluteEpsilons(t *testing.T) {
 		"../ops/closed_band_loft.go",
 		"../ops/saddle_band_loft.go",
 		"../ops/nurbs_pcurve_mesh.go",
+		// ops: the mid-span obstacle fillet-blend slice — rail-corner weld, obstacle feature,
+		// and the rim/boundary crossing detector (ADR-0042; the rail-corner weld must stay
+		// model-relative, not a bare cm-anchored epsilon).
+		"../ops/corner_blend_obstacle_rails.go",
+		"../ops/corner_blend_obstacle.go",
+		"../ops/corner_blend_obstacle_certify.go",
+		"../ops/fillet_obstacle_detect.go",
+		"../ops/fillet_obstacle_merge.go",
 		// ops: self-intersection, section, stitch, and the degeneracy/weld helpers.
 		"../ops/self_intersect.go",
 		"../ops/section_plane.go",

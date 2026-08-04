@@ -3,6 +3,9 @@
 package topo
 
 import (
+	"fmt"
+
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
@@ -39,6 +42,39 @@ func (bld *Builder) AddEdge(curve geom.Curve3, start, end *Vertex, lineage Linea
 	}
 	return e
 }
+
+// ReplaceEdgeCurve swaps the geometry of an edge still under construction. It exists for the one
+// case where an edge's best geometry is not known when the edge is created: a shared edge welded
+// from the first of its two faces, where that face had no curve to offer and the second one does
+// (ops.edgeCatalog). A nil offer is an absence of information, not an assertion of straightness, so
+// the later curve replaces the straight chord — oriented by the caller to the edge's own start→end
+// sense, which this method cannot know.
+//
+// Example:
+//
+//	bld.ReplaceEdgeCurve(e, geom.ReverseCurve3(offered)) // the second face traverses e backwards
+//
+// Legal ONLY before [Builder.Build]: afterwards a body's geometry is immutable and its derived
+// caches (RangeBox, key indices, tessellation memos) are already memoized against the old curve.
+// A nil curve is rejected — dropping geometry is never an improvement, and the caller that has
+// nothing to offer must simply not call.
+func (bld *Builder) ReplaceEdgeCurve(e *Edge, curve geom.Curve3) {
+	if e == nil || curve == nil {
+		panic(fmt.Sprintf("topo: ReplaceEdgeCurve(edge=%v, curve=%v): both must be non-nil", e, curve))
+	}
+	e.curve = curve
+	// A healed polyline (SetSnappedCurve, import healing M25) is a discretization of the OLD curve
+	// and OUTRANKS e.curve in tessellation, so a stale one would silently ship the replaced
+	// geometry. Unreachable today (nothing snaps an edge before Build), cleared defensively with
+	// its residual so the invariant "snapped describes curve" survives any future caller
+	// (adversarial-review finding m-8).
+	e.snapped, e.tolerance = nil, 0
+}
+
+// Diagnose records d on the body under construction, so what the assembler could not do ideally
+// travels WITH the body it produced instead of being swallowed (see [Body.BuildDiagnostics]).
+// Legal only before [Builder.Build].
+func (bld *Builder) Diagnose(d diag.Diagnostic) { bld.body.buildDiags = append(bld.body.buildDiags, d) }
 
 // Use is an oriented edge use within a loop (reversed = traversed end→start).
 type Use struct {

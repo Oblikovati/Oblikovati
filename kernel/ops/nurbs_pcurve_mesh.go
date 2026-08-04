@@ -3,6 +3,8 @@
 package ops
 
 import (
+	stdmath "math"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -25,8 +27,164 @@ func nurbsPcurveMesh(f *topo.Face, q Quality) *Mesh {
 	if len(outer3D) < 3 {
 		return nil
 	}
-	su, sv := metricScale(s)
+	su, sv := faceMetricScale(f) // #2010: memoized off the per-pick hot path (metricScale is pure in the surface)
 	return foldDrivenPatch(s, su, sv, q, outer3D, outerUV, holes3D, holesUV)
+}
+
+// faceMetricScaleMemo is the ops-owned payload of topo.Face.metricScaleMemo: the face surface's cached
+// per-axis (u,v) metric (√E,√G). Distinct name from the topo field it backs, mirroring the
+// facePickTess/pickTess precedent. See faceMetricScale.
+type faceMetricScaleMemo struct{ su, sv float64 }
+
+// faceMetricScale returns metricScale of the face's surface, memoized on the face for its lifetime.
+// metricScale is a pure function of the immutable surface derivatives (~25 DerivativesAt evals per
+// call), so caching it is do-no-harm by construction (byte-identical su,sv) while removing the
+// #2010 per-frame cost the interactive edge pick paid via starvedEdgeTarget → metricScale (edge
+// picking is not covered by the pickTess whole-face memo). Mirrors pickFaceMesh (pick.go).
+func faceMetricScale(f *topo.Face) (su, sv float64) {
+	if c, ok := f.MetricScaleMemo().(faceMetricScaleMemo); ok {
+		return c.su, c.sv
+	}
+	su, sv = metricScale(f.Geometry())
+	f.SetMetricScaleMemo(faceMetricScaleMemo{su: su, sv: sv})
+	return su, sv
+}
+
+// aspectDensifyThreshold gates the #2009 starved-rail densification (densifyStarvedRail,
+// edge_discretize.go) to strongly anisotropic panels only: the model-relative face aspect
+// A = max(len_u,len_v)/min(len_u,len_v), where len_u/len_v are metric-scaled (metricScale × domain
+// span) — the SAME per-axis 3D scale the CDT already triangulates in. Below this, starvedEdgeTarget
+// returns h=0 and discretizeEdge is byte-identical to the pre-#2009 path. Recon's do-no-harm
+// discriminant (aspect-mesh-recon-report.md §4): T6's obstacle patch measures A=2.13 (stays off);
+// the U4 sliver that motivated this fix measures A=15.19 (fires). 4 sits with comfortable margin on
+// both sides.
+const aspectDensifyThreshold = 4.0
+
+// kBoundaryCells ties a densified rail's target segment length h to the interior grid's own cell
+// budget (maxInteriorCells, nurbs_interior.go): h = min(len_u,len_v)/kBoundaryCells makes a
+// densified rail's segments comparable in size to an interior grid cell, so the metric CDT sees a
+// well-graded point set instead of a 2-vertex rail forced against a saturated interior column
+// (root cause, recon §2: a giant off-chord "fan" triangle spanning the whole starved rail).
+const kBoundaryCells = 20.0
+
+// starvedRailTarget returns the target segment length h for densifying a high-aspect panel's
+// starved straight rails (#2009), or 0 when the face's aspect is at/below aspectDensifyThreshold —
+// the do-no-harm gate.
+func starvedRailTarget(s geom.Surface, su, sv float64) float64 {
+	if faceAspect(s, su, sv) <= aspectDensifyThreshold {
+		return 0
+	}
+	lenU, lenV := axisExtents(s, su, sv)
+	return stdmath.Min(lenU, lenV) / kBoundaryCells
+}
+
+// faceAspect returns the model-relative aspect ratio of a surface's (clamped) domain, judged in
+// METRIC-SCALED 3D extents (su,sv from metricScale × domain span) rather than raw parameter units —
+// so a cone's angular u (which spans a small raw range but a large 3D circumference) is compared
+// fairly against its axial v.
+func faceAspect(s geom.Surface, su, sv float64) float64 {
+	lenU, lenV := axisExtents(s, su, sv)
+	if lenU <= 0 || lenV <= 0 {
+		return 1
+	}
+	if lenU > lenV {
+		return lenU / lenV
+	}
+	return lenV / lenU
+}
+
+// axisExtents returns the metric-scaled 3D length of the surface's (clamped) u and v domain spans:
+// su/sv (mean |∂P/∂u|, |∂P/∂v|, from metricScale) times the domain's parameter extent.
+func axisExtents(s geom.Surface, su, sv float64) (lenU, lenV float64) {
+	ulo, uhi := clampSpan(s.UDomain())
+	vlo, vhi := clampSpan(s.VDomain())
+	return su * (uhi - ulo), sv * (vhi - vlo)
+}
+
+// densifyStarvedRail extends discretizeEdge's chord-sagitta output for an edge that is (a) reduced
+// to just its two endpoints — the documented contract for a straight/near-straight curve
+// (edge_discretize.go: "A straight edge yields just its two endpoints") — and (b) shared by a
+// high-aspect B-spline face (#2009): such a face's metric CDT would otherwise be forced to fan ONE
+// giant off-chord triangle across the starved rail against its saturated interior grid (root cause,
+// aspect-mesh-recon-report.md §2: +216% area on the U4 sliver, never converging as tolerance
+// tightens because the missing vertices are on the CONSTRAINED BOUNDARY). An edge discretizeEdge
+// already sampled to >2 points (curved, already sagitta-adaptive) is returned UNCHANGED.
+//
+// CALLER-INDEPENDENCE (the watertightness proof). This is a pure function of the edge's own
+// topology (starvedEdgeTarget scans e.Faces(), never a caller-supplied face), so EVERY caller of
+// discretizeEdge — the high-aspect B-spline face's own concatLoopPcurve AND any lower-aspect or
+// even non-B-spline (cone/cylinder/plane) NEIGHBOUR face's loopBoundary — computes the IDENTICAL
+// denser polyline for this edge. Both sides of a shared rail therefore stay in TRUE
+// per-triangle-edge conformance (meshOpenEdges/freeEdgeCount, the codebase's existing strict
+// watertightness bar — watertight_test.go, fillet_test.go's assertWatertight — stay at 0 free
+// edges), not merely a geometric "no gap" argument.
+//
+// An earlier draft densified only inside the B-spline face's OWN loop assembly (a face-local
+// post-step, gated on that face's own aspect) and argued "watertight by collinearity" — the
+// inserted points lie exactly on the straight line a coarser neighbour already chords. That
+// argument is geometrically true but insufficient: TestFilletRunOutToZero's meshOpenEdges gate
+// (a plain box+run-out-fillet solid whose taper closes via a high-aspect B-spline cap, A=8.76)
+// caught it directly — 177 open (non-2-incident) mesh edges, because the cap's cone/plane
+// neighbours never saw the extra vertices. Routing the decision through discretizeEdge itself (so
+// it is truly caller-independent) closes that gap; see aspect-mesh-fix-report.md for the full
+// investigation.
+func densifyStarvedRail(e *topo.Edge, pts []math.Point3) []math.Point3 {
+	if len(pts) != 2 {
+		return pts // curved: discretizeEdge already sampled it finer, never a candidate
+	}
+	h := starvedEdgeTarget(e)
+	if h <= 0 {
+		return pts
+	}
+	dense := densifyStraightEdgeCurve(e, h)
+	if len(dense) <= len(pts) {
+		return pts // too short to need subdivision at this h
+	}
+	return dense
+}
+
+// starvedEdgeTarget returns edge e's #2009 densification target h, or 0 if none of e's faces is a
+// high-aspect B-spline panel (aspectDensifyThreshold). When more than one qualifying face shares
+// the edge, the SMALLEST (densest) target wins, so every qualifying face's CDT gets at least the
+// resolution it needs. Scanning e.Faces() — not a caller-supplied face — is what makes
+// densifyStarvedRail's decision independent of which face happens to be calling discretizeEdge.
+func starvedEdgeTarget(e *topo.Edge) float64 {
+	var h float64
+	for _, f := range e.Faces() {
+		s, ok := f.Geometry().(geom.BSplineSurface)
+		if !ok {
+			continue
+		}
+		su, sv := faceMetricScale(f) // #2010: THE per-pick hot site — memoize per face, don't re-evaluate every frame
+		if fh := starvedRailTarget(s, su, sv); fh > 0 && (h == 0 || fh < h) {
+			h = fh
+		}
+	}
+	return h
+}
+
+// densifyStraightEdgeCurve samples edge e's own curve into ⌈L3d/h⌉+1 evenly-parameterized points,
+// start vertex → end vertex (discretizeEdge's natural order) — called only when e is already known
+// to be (near-)straight (densifyStarvedRail's len(pts)==2 gate: discretizeEdge's own chord-sagitta
+// test already proved it flat to within q.tol()). Endpoints are the edge's own vertices, exactly
+// matching discretizeEdge, so every inserted point sits on the SAME edge curve every caller — on
+// either side of the shared boundary — already agrees on.
+func densifyStraightEdgeCurve(e *topo.Edge, h float64) []math.Point3 {
+	p0, p1 := e.StartVertex().Point(), e.EndVertex().Point()
+	l3d := float64(p0.DistanceTo(p1))
+	pieces := int(stdmath.Ceil(l3d / h))
+	if pieces < 2 {
+		return []math.Point3{p0, p1}
+	}
+	c := e.Geometry()
+	lo, hi := c.Domain()
+	pts := make([]math.Point3, 0, pieces+1)
+	pts = append(pts, p0)
+	for k := 1; k < pieces; k++ {
+		t := lo + (hi-lo)*float64(k)/float64(pieces)
+		pts = append(pts, c.PointAt(t))
+	}
+	return append(pts, p1)
 }
 
 // nurbsRefineFactors are the interior-grid density multipliers the fold-driven loop tries in turn
@@ -41,21 +199,43 @@ var nurbsRefineFactors = []float64{1, 0.5, 0.25}
 // metric-scaled CDT of the SAME exact boundary loops (so neighbouring faces still stitch watertight,
 // whatever density wins) plus a denser interior node set — built by the shared metricCDTPatch.
 func foldDrivenPatch(s geom.BSplineSurface, su, sv float64, q Quality, outer3D []math.Point3, outerUV []math.Point2, holes3D [][]math.Point3, holesUV [][]math.Point2) *Mesh {
-	var best *Mesh
-	bestFolds := 1 << 30
+	want := boundaryEdgeCount(outer3D, holes3D)
+	var best, bestAny *Mesh
+	bestFolds, bestAnyFolds := 1<<30, 1<<30
 	for _, refine := range nurbsRefineFactors {
 		m, _ := metricCDTPatch(s, su, sv, q, outer3D, outerUV, holes3D, holesUV, refine)
 		if m == nil {
 			continue
 		}
-		if folds := FoldEdgeCount(m); folds < bestFolds {
+		folds := FoldEdgeCount(m)
+		if folds < bestAnyFolds {
+			bestAny, bestAnyFolds = m, folds
+		}
+		if FreeEdgeCount(m) != want {
+			continue // does not cover its own boundary — a partial triangulation, not a candidate
+		}
+		if folds < bestFolds {
 			best, bestFolds = m, folds
 		}
 		if bestFolds == 0 {
 			break
 		}
 	}
-	return best
+	if best != nil {
+		return best
+	}
+	return bestAny
+}
+
+// boundaryEdgeCount is how many free edges a patch covering exactly this trim must have: every loop is
+// closed, so it contributes one edge per point. A conformant triangulation's free edges ARE its
+// boundary — more means an interior hole, fewer means it never reached the trim's rim.
+func boundaryEdgeCount(outer3D []math.Point3, holes3D [][]math.Point3) int {
+	n := len(outer3D)
+	for _, h := range holes3D {
+		n += len(h)
+	}
+	return n
 }
 
 // metricScale returns the mean 3D length of a unit step in u and in v (√E, √G of the first
@@ -140,14 +320,14 @@ func facePcurveLoops(f *topo.Face, q Quality) (outerUV []math.Point2, outer3D []
 func concatLoopPcurve(s geom.Surface, l *topo.Loop, q Quality) (uv []math.Point2, p3 []math.Point3) {
 	needProject := false
 	for _, u := range l.EdgeUses() {
-		pts := discretizeEdge(u.Edge(), q)
+		pts := discretizeEdge(u.Edge(), q) // #2009: may already carry starved-rail densification (edge-level, both faces see it)
 		if u.Reversed() {
 			pts = reverse3(pts)
 		}
 		pc := u.Pcurve()
 		if len(pc) != len(pts) {
 			needProject = true
-			pc = geom.ProjectCurveToSurface(s, pts) // no/stale pcurve: reconstruct on the fly
+			pc = geom.ProjectCurveToSurface(s, pts) // no/stale pcurve, OR a densified rail: reconstruct on the fly
 		}
 		if len(p3) > 0 {
 			pc, pts = pc[1:], pts[1:] // drop the point shared with the previous edge

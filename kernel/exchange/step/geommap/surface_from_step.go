@@ -36,7 +36,8 @@ func Surface(g *part21.EntityGraph, id int, scale float64) (geom.Surface, error)
 	return surfaceByKeyword(g, ent, id, scale)
 }
 
-// surfaceByKeyword dispatches a simple (non-complex-instance) surface entity by its keyword.
+// surfaceByKeyword dispatches a simple (non-complex-instance) surface entity by its keyword: the five
+// analytic quadrics here, everything else via freeformSurface.
 func surfaceByKeyword(g *part21.EntityGraph, ent *part21.RawEntity, id int, scale float64) (geom.Surface, error) {
 	switch ent.Keyword {
 	case "PLANE":
@@ -49,14 +50,24 @@ func surfaceByKeyword(g *part21.EntityGraph, ent *part21.RawEntity, id int, scal
 		return sphereFromStep(g, ent, scale)
 	case "TOROIDAL_SURFACE":
 		return torusFromStep(g, ent, scale)
+	}
+	return freeformSurface(g, ent, id, scale)
+}
+
+// freeformSurface maps the non-quadric surfaces: the B-spline families, the carrier (trimmed /
+// curve-bounded) surfaces whose real geometry is their basis surface at parameter 1, and the swept
+// elliptical cylinder (an oblique extrusion of a conic is an exact right elliptical cylinder). Any
+// other keyword returns ErrUnsupportedSurface so the caller skips the face and keeps importing.
+func freeformSurface(g *part21.EntityGraph, ent *part21.RawEntity, id int, scale float64) (geom.Surface, error) {
+	switch ent.Keyword {
 	case "B_SPLINE_SURFACE_WITH_KNOTS":
 		return bsplineSurfaceFromStep(g, ent, scale)
 	case "B_SPLINE_SURFACE", "BEZIER_SURFACE", "UNIFORM_SURFACE", "QUASI_UNIFORM_SURFACE":
 		return plainBSplineSurfaceFromStep(g, ent, scale)
 	case "RECTANGULAR_TRIMMED_SURFACE", "CURVE_BOUNDED_SURFACE":
-		// Carrier surfaces: the real geometry is the basis surface at parameter 1;
-		// the face's boundary loops do the trimming.
 		return wrappedSurface(g, ent, 1, scale)
+	case "SURFACE_OF_LINEAR_EXTRUSION":
+		return linearExtrusionFromStep(g, ent, id, scale)
 	default:
 		return nil, ErrUnsupportedSurface{Keyword: ent.Keyword, ID: id}
 	}

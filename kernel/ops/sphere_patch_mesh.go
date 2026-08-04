@@ -3,8 +3,10 @@
 package ops
 
 import (
+	"fmt"
 	stdmath "math"
 
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
@@ -40,14 +42,46 @@ func spherePatchMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Poi
 		return nil, false
 	}
 	uv, pos, nrm, loops, loops2D := projectPatchBoundary(sph, chart, outer3D, holes3D)
-	addPatchInterior(chart, &uv, &pos, &nrm, loops2D, q)
+	clamp := addPatchInterior(chart, &uv, &pos, &nrm, loops2D, q)
 	tris := constrainedDelaunay(uv, loops)
 	if len(tris) == 0 {
 		return nil, false
 	}
 	m := patchMeshFrom(pos, nrm, tris)
 	repairFolds(m, 8)
+	diagnosePatchGridClamp(m, clamp, q)
 	return m, true
+}
+
+// patchGridClamp records what the chart's chord-tolerance spacing ASKED for versus what
+// patchGridCellBudget GRANTED, so the saturation diagnostic can state the deficit factor instead of a
+// bare flag — a census/debug consumer needs requested-vs-laid to judge how far below tolerance the
+// mesh sits (patchgridcap-report.md §1: 25 shipped cases rode the old silent clamp).
+type patchGridClamp struct {
+	reqU, reqV   int // intervals the tolerance-derived spacing asked for, per chart axis
+	laidU, laidV int // intervals actually laid after the budget
+}
+
+func (c patchGridClamp) capped() bool {
+	return c.laidU < c.reqU || c.laidV < c.reqV
+}
+
+// diagnosePatchGridClamp records the budget scaling on the mesh when the interior Steiner grid was
+// denied the spacing the chord tolerance asked for — the same honest degradation record the NURBS
+// interior refinement emits (CodeTessellateCapSaturated, Oblikovati#1412). Before this the clamp was
+// SILENT, and a large sphere patch (a hemisphere is the worst case: chart bbox 2R × 2R) under-reported
+// its area at every swept tolerance with nothing to see — the S6/S7 "sphere notch" that never was
+// (sphere-notch-report.md).
+func diagnosePatchGridClamp(m *Mesh, c patchGridClamp, q Quality) {
+	if !c.capped() {
+		return
+	}
+	m.Diagnose(diag.Diagnostic{
+		Code:     CodeTessellateCapSaturated,
+		Severity: diag.Warning,
+		Detail: fmt.Sprintf("sphere-patch interior grid clamped to %dx%d of the %dx%d steps chord tol %g asked",
+			c.laidU, c.laidV, c.reqU, c.reqV, q.tol()),
+	})
 }
 
 // sphereChart projects a sphere point to a 2D chart and lifts a 2D point back to the sphere (point +
@@ -214,42 +248,71 @@ func projectPatchBoundary(sph geom.Sphere, chart sphereChart, outer3D []math.Poi
 	return uv, pos, nrm, loops, loops2D
 }
 
-// patchGridCap bounds the interior Steiner grid per axis so a large/fine patch cannot explode the node
-// count; beyond it the chord tolerance is met by the cap density rather than the exact spacing.
-const patchGridCap = 80
+// patchGridCellBudget bounds the interior Steiner grid's TOTAL candidate count (nu·nv), replacing the
+// silent per-axis patchGridCap=80 (introduced 65a4b0e21 at 60, raised aa08a7d2c — never
+// tolerance-derived) that floored 25 shipped corpus faces at PropertyQuality with deficits up to −200
+// area on simple/D6's R=150 host sphere, 6–70× outside PropertyQuality's own ~0.01% contract
+// (patchgridcap-report.md). The budget is a COST bound, not a quality bound: the CDT pipeline measures
+// ~20 µs per laid node (zz cost probe: 2.8 M nodes = 60 s), so 2^18 cells keeps the worst single face
+// at a few seconds. When it binds, BOTH axes scale by the same factor (minimal, even degradation) and
+// the mesh carries tessellate.cap-saturated stating requested-vs-granted — never a silent floor.
+//
+// SWEEP DOCTRINE (for the next sweep-runner; patchgridcap-report.md fix wave I3): a budget-BOUND
+// sweep DRIFTS as the chord tolerance tightens — the boundary sampling keeps refining under a fixed
+// interior grid — it does NOT sit at a labeled plateau (measured, D2's R=150 host: −0.211 → −0.246
+// area vs DRAWEXE across the bound band). And the budget-HONOURED band is not monotone either: D2
+// reads −0.022 at ct 8e-3 but −0.191 at 4e-3, both honoured, no diagnostic (different grid/boundary
+// phase, both inside their own chord contracts). So never read a step like −0.02 → −0.19 as a
+// regression: check tessellate.cap-saturated and the requested-vs-laid record before interpreting
+// any sweep step.
+const patchGridCellBudget = 1 << 18
 
 // addPatchInterior lays a grid of Steiner points across the chart bbox at the chart's spacing, keeps
 // those strictly inside the trim, and lifts each to the sphere — the interior curvature the boundary
-// alone would chord flat.
-func addPatchInterior(chart sphereChart, uv *[][2]float64, pos *[]math.Point3, nrm *[]math.Vector3, loops2D [][]math.Point2, q Quality) {
+// alone would chord flat. Returns the requested-vs-laid grid record so the caller can diagnose a
+// budget-scaled (coarser-than-tolerance) grid on the mesh.
+func addPatchInterior(chart sphereChart, uv *[][2]float64, pos *[]math.Point3, nrm *[]math.Vector3, loops2D [][]math.Point2, q Quality) patchGridClamp {
 	umin, umax, vmin, vmax := bounds2D(loops2D[0])
 	h := chart.gridSpacing(q)
 	if h <= 0 {
-		return
+		return patchGridClamp{}
 	}
-	nu, nv := gridSteps(umax-umin, h), gridSteps(vmax-vmin, h)
-	holes2D := loops2D[1:]
-	for i := 1; i < nu; i++ {
-		for j := 1; j < nv; j++ {
-			p := [2]float64{umin + (umax-umin)*float64(i)/float64(nu), vmin + (vmax-vmin)*float64(j)/float64(nv)}
-			if !clearOfTrim(loops2D[0], holes2D, p, h*0.25) {
-				continue
-			}
-			pt, n := chart.lift(p[0], p[1])
-			*uv = append(*uv, p)
-			*pos = append(*pos, pt)
-			*nrm = append(*nrm, n)
+	clamp := budgetGridSteps(umax-umin, vmax-vmin, h)
+	scan := newTrimScan(loops2D[0], loops2D[1:], h*0.25)
+	for i := 1; i < clamp.laidU; i++ {
+		u := umin + (umax-umin)*float64(i)/float64(clamp.laidU)
+		layPatchGridColumn(chart, scan, clamp, u, vmin, vmax, uv, pos, nrm)
+	}
+	return clamp
+}
+
+// layPatchGridColumn lays one constant-u column of the interior grid: each candidate strictly clear
+// of the trim is lifted to the sphere and appended. The u ordinate is the same expression the fused
+// loop computed (bit-identical positions; extraction is the fix-wave m5 nesting flatten).
+func layPatchGridColumn(chart sphereChart, scan *trimScan, clamp patchGridClamp, u, vmin, vmax float64, uv *[][2]float64, pos *[]math.Point3, nrm *[]math.Vector3) {
+	for j := 1; j < clamp.laidV; j++ {
+		p := [2]float64{u, vmin + (vmax-vmin)*float64(j)/float64(clamp.laidV)}
+		if !scan.clear(p) {
+			continue
 		}
+		pt, n := chart.lift(p[0], p[1])
+		*uv = append(*uv, p)
+		*pos = append(*pos, pt)
+		*nrm = append(*nrm, n)
 	}
 }
 
-// gridSteps returns the number of grid intervals to span extent at spacing h, clamped to patchGridCap.
-func gridSteps(extent, h float64) int {
-	n := int(extent / h)
-	if n > patchGridCap {
-		return patchGridCap
+// budgetGridSteps sizes the interior grid: the tolerance-derived intervals per axis, scaled down
+// EVENLY only when their product exceeds patchGridCellBudget — so the chord tolerance is honoured
+// whenever the budget allows, and degradation (diagnosed by the caller) is minimal and isotropic.
+func budgetGridSteps(uExt, vExt, h float64) patchGridClamp {
+	reqU, reqV := int(uExt/h), int(vExt/h)
+	c := patchGridClamp{reqU: reqU, reqV: reqV, laidU: reqU, laidV: reqV}
+	if cells := float64(reqU) * float64(reqV); cells > patchGridCellBudget {
+		scale := stdmath.Sqrt(cells / patchGridCellBudget)
+		c.laidU, c.laidV = int(float64(reqU)/scale), int(float64(reqV)/scale)
 	}
-	return n
+	return c
 }
 
 // sphereDir returns the outward unit direction from the sphere centre to a point on it.

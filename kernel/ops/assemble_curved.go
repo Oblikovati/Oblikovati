@@ -39,34 +39,48 @@ type filletFace struct {
 type edgeRec struct {
 	edge     *topo.Edge
 	from, to int
+	closed   bool        // a==b full-circle seam: the 2nd coedge is antiparallel by the manifold invariant
+	curve    geom.Curve3 // the OFFER this edge was built from (nil = the offering consumer had none)
 }
 
-// assembleBody welds the faces' loop points into a watertight body: one shared edge per
-// undirected vertex pair (carrying the curve the first user supplied, oriented its way), and
-// a face per surface. A closed result (every edge used twice) is a solid. Curves let a face
-// carry arc edges (a fillet's end arcs) alongside straight ones.
-func assembleBody(faces []filletFace, tag string) *topo.Body {
+// collectLoopPoints gathers every loop point across all faces — the cloud the point-welder
+// resolves into shared vertices.
+func collectLoopPoints(faces []filletFace) []math.Point3 {
 	var pts []math.Point3
 	for _, f := range faces {
 		for _, l := range f.loops {
 			pts = append(pts, l.pts...)
 		}
 	}
-	w := newPointWelder(ResolutionForPoints(pts).Weld())
-	rings := make([][][]int, len(faces))
-	for i, f := range faces {
-		for _, l := range f.loops {
-			rings[i] = append(rings[i], w.weldRingID(l.pts, l.srcV)) // identity-preserving weld (#1600)
-		}
-	}
+	return pts
+}
+
+// filletAssemblyTag is the lineage token namespace every fillet result body is built under (its body,
+// op-generated vertices, edges, and un-provenanced faces). A single constant — the tag is invariant
+// across all assembleBody call sites, so it is not a per-call parameter.
+const filletAssemblyTag = "fillet"
+
+// assembleBody welds the faces' loop points into a watertight body: one shared edge per
+// undirected vertex pair, carrying the best curve its two users offered (the first offer, oriented
+// its way; a later curve replaces an earlier nil — see resolveCurveOffer), and a face per surface.
+// A closed result (every edge used twice) is a solid. Curves let a face carry arc edges (a fillet's
+// end arcs) alongside straight ones.
+func assembleBody(faces []filletFace) *topo.Body {
+	tag := filletAssemblyTag
+	pts := collectLoopPoints(faces)
+	weld := ResolutionForPoints(pts).Weld()
+	w := newPointWelder(weld)
+	rings := weldRings(faces, w, weld)
 	classes := pairEdgeClasses(faces, rings)
+	orientFilletShell(faces, rings, classes) // B2: unify loop windings before the catalog builds co-edges
 	bld := topo.NewBuilder(curvedSolid(faces, rings, classes), topo.NewLineage(topo.Tok(tag, "body", 0)))
 	tv := make([]*topo.Vertex, len(w.points))
 	for i, p := range w.points {
 		tv[i] = bld.AddVertex(p, topo.NewLineage(topo.Tok(tag, "v", i)))
 	}
-	ec := &edgeCatalog{bld: bld, verts: w.points, tv: tv, edges: map[seamEdgeKey]edgeRec{}, classes: classes, tag: tag}
-	provByFace := addCurvedFaces(bld, faces, rings, ec, tag)
+	ec := &edgeCatalog{bld: bld, verts: w.points, tv: tv, edges: map[seamEdgeKey]edgeRec{}, classes: classes, tag: tag, weld: weld}
+	provByFace := addCurvedFaces(bld, faces, rings, ec)
+	ec.diagnoseCatalogUse() // positive marker: this body IS the catalog's own output (I2/I4)
 	body := bld.Build()
 	// Provenance naming (ADR-0043): once the faces are named by their parents, the edges and
 	// vertices are renamed by their bordering faces' provenance, replacing the build-order counter
@@ -81,7 +95,7 @@ func assembleBody(faces []filletFace, tag string) *topo.Body {
 // parent when it has one (a transformed original face, a blend cylinder), else a build-order
 // ordinal under tag (e.g. a variable-fillet ruling strip, not yet provenanced). Returns the
 // provenanced faces so the caller can rename their edges/vertices by provenance (ADR-0043).
-func addCurvedFaces(bld *topo.Builder, faces []filletFace, rings [][][]int, ec *edgeCatalog, tag string) map[*topo.Face]topo.Lineage {
+func addCurvedFaces(bld *topo.Builder, faces []filletFace, rings [][][]int, ec *edgeCatalog) map[*topo.Face]topo.Lineage {
 	provByFace := map[*topo.Face]topo.Lineage{}
 	for fi, f := range faces {
 		specs := make([]topo.LoopSpec, len(f.loops))
@@ -90,7 +104,7 @@ func addCurvedFaces(bld *topo.Builder, faces []filletFace, rings [][][]int, ec *
 		}
 		lin := f.parent
 		if len(lin.Key()) == 0 {
-			lin = topo.NewLineage(topo.Tok(tag, "f", fi))
+			lin = topo.NewLineage(topo.Tok(filletAssemblyTag, "f", fi))
 		}
 		face := bld.AddFace(f.surface, lin, specs...)
 		if len(f.parent.Key()) > 0 {
@@ -181,22 +195,49 @@ type edgeCatalog struct {
 	edges   map[seamEdgeKey]edgeRec
 	classes map[[2]int]int
 	tag     string
+	weld    float64 // model-relative closure tolerance for isClosedSeam (ADR-0042)
 }
 
 // use returns the loop use for the directed segment a→b with the given curve (nil ⇒ a line) and
 // source-edge id, creating the shared edge for its identity class the first time in its a→b
 // direction. Two coincident seam edges (distinct ids at a >=2-id pair) get distinct edges.
+// A second use offering geometry the edge does not yet carry upgrades it (resolveCurveOffer).
 func (c *edgeCatalog) use(a, b int, curve geom.Curve3, srcE uint64) topo.Use {
 	key := seamEdgeKey{canon2(a, b), edgeClassOf(a, b, srcE, c.classes)}
 	if rec, ok := c.edges[key]; ok {
+		c.resolveCurveOffer(key, a, b, rec, curve)
+		// A closed seam edge welds both endpoints to one vertex, so rec.from!=a is false for
+		// BOTH uses — the welded vertex order can't encode the traversal sense. The two coedges
+		// of a manifold edge are antiparallel, so the 2nd use flips. Parity-only + tessellation-
+		// safe: the periodic mesher rebuilds from the surface (u,v) domain and never reads this
+		// flag (geometry-math consult 2026-07-12). Open edges keep the vertex-order derivation.
+		if rec.closed {
+			return topo.Use{Edge: rec.edge, Reversed: true}
+		}
 		return topo.Use{Edge: rec.edge, Reversed: rec.from != a}
 	}
-	if curve == nil {
-		curve = geom.NewLineSegment(c.verts[a], c.verts[b])
+	closed := isClosedSeam(a, b, curve, c.weld)
+	built := curve
+	if built == nil {
+		built = geom.NewLineSegment(c.verts[a], c.verts[b])
 	}
-	e := c.bld.AddEdge(curve, c.tv[a], c.tv[b], topo.NewLineage(topo.Tok(c.tag, "e", len(c.edges))))
-	c.edges[key] = edgeRec{edge: e, from: a, to: b}
+	e := c.bld.AddEdge(built, c.tv[a], c.tv[b], topo.NewLineage(topo.Tok(c.tag, "e", len(c.edges))))
+	c.edges[key] = edgeRec{edge: e, from: a, to: b, closed: closed, curve: curve}
 	return topo.Use{Edge: e, Reversed: false}
+}
+
+// isClosedSeam reports whether a→b is a genuine closed seam edge: both endpoints weld to one
+// vertex (a==b) AND the curve returns to its start over its full domain (within the model-
+// relative weld tolerance). The geometric corroboration rejects a spuriously-welded micro-arc,
+// so a real point-welder defect fails Validate loud rather than being laundered into a valid-
+// looking topological ghost. A straight (nil-curve) a==b segment is a true zero-length
+// degeneracy and is never a seam.
+func isClosedSeam(a, b int, curve geom.Curve3, weld float64) bool {
+	if a != b || curve == nil {
+		return false
+	}
+	lo, hi := curve.Domain()
+	return curve.PointAt(lo).DistanceTo(curve.PointAt(hi)) < weld
 }
 
 // curvedLoopSpec builds a face loop from a ring of welded indices, the per-segment curves and the

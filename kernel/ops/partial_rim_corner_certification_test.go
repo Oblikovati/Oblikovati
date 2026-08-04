@@ -63,53 +63,11 @@ func TestPartialRimCornerCutMomentsMatchOCC(t *testing.T) {
 	}
 }
 
-// cornerMeshFreeEdges welds the tessellation's coincident vertices onto a grid, then counts triangle edges
-// used by other than exactly two triangles. A watertight surface mesh has ZERO such edges; any free edge is
-// a visible crack the user would see. Grid = 1e-6 cm is far below the shared-edge discretization coincidence
-// (faces meshing a common B-rep edge emit identical vertices to ~1e-9) and far above float round-off.
+// cornerMeshFreeEdges is the corner-certification watertightness metric, delegating to the production
+// FreeEdgeCount so it welds at the MODEL's own resolution rather than a fixed 1e-6 grid — a fixed grid
+// over-merges any model finer than itself and reports the over-merge as a free edge.
 func cornerMeshFreeEdges(m *Mesh) int {
-	weld := weldMeshVertices(m.Positions, 1e-6)
-	edgeUse := map[[2]int]int{}
-	for t := 0; t+2 < len(m.Indices); t += 3 {
-		a, b, c := weld[m.Indices[t]], weld[m.Indices[t+1]], weld[m.Indices[t+2]]
-		for _, e := range [][2]int{{a, b}, {b, c}, {c, a}} {
-			if e[0] > e[1] {
-				e[0], e[1] = e[1], e[0]
-			}
-			edgeUse[e]++
-		}
-	}
-	free := 0
-	for _, used := range edgeUse {
-		if used != 2 {
-			free++
-		}
-	}
-	return free
-}
-
-// weldMeshVertices maps each vertex index to the index of the first vertex sharing its rounded grid cell, so
-// faces tessellated independently but meeting on a shared B-rep edge collapse to one topological vertex.
-func weldMeshVertices(pts []math.Point3, grid float64) []int {
-	cell := func(p math.Point3) [3]int64 {
-		return [3]int64{
-			int64(stdmath.Round(float64(p.X) / grid)),
-			int64(stdmath.Round(float64(p.Y) / grid)),
-			int64(stdmath.Round(float64(p.Z) / grid)),
-		}
-	}
-	first := map[[3]int64]int{}
-	weld := make([]int, len(pts))
-	for i, p := range pts {
-		k := cell(p)
-		if j, ok := first[k]; ok {
-			weld[i] = j
-			continue
-		}
-		first[k] = i
-		weld[i] = i
-	}
-	return weld
+	return FreeEdgeCount(m)
 }
 
 // TestPartialRimCornerCutTessellationIsWatertight is the top-priority tessellation gate (CLAUDE.md: the user
@@ -121,9 +79,12 @@ func TestPartialRimCornerCutTessellationIsWatertight(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Boolean(Cut): %v", err)
 	}
-	mesh, _ := TessellateBody(res, DefaultQuality())
-	if free := cornerMeshFreeEdges(mesh); free != 0 {
-		t.Errorf("corner-junction tessellation has %d free edges (want 0) — a visible crack in the rendered mesh", free)
+	for _, gq := range gateQualities() {
+		mesh, _ := TessellateBody(res, gq.q)
+		if free := cornerMeshFreeEdges(mesh); free != 0 {
+			t.Errorf("%s quality: corner-junction tessellation has %d free edges (want 0) — a visible crack in the "+
+				"rendered mesh", gq.name, free)
+		}
 	}
 }
 

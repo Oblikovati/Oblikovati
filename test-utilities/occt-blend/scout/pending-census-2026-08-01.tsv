@@ -1,0 +1,475 @@
+bfuseblend	A1	PASS	1	r10:Arc3d/concave/Cylinder^Plane|CLOSED		-0.000%	
+bfuseblend	A2	PASS	1	r10:Arc3d/concave/Cone^Plane|CLOSED		-0.000%	
+bfuseblend	A3	PASS	1	r10:Arc3d/concave/Plane^Sphere|CLOSED		-0.000%	
+bfuseblend	A4	PASS	1	r10:Arc3d/concave/Plane^Torus|CLOSED		-0.001%	
+bfuseblend	A5	PASS	1	r10:Arc3d/concave/Plane^Torus|CLOSED		+0.000%	
+bfuseblend	A6	PASS	1	r30:Arc3d/concave/Plane^Torus|CLOSED		+0.001%	
+bfuseblend	A7	PASS	1	r10:EllipseFull/convex/Plane^EllipticalCylinder|CLOSED		-0.042%	
+bfuseblend	A8	FAIL(faulty)	1	r10:BSplineCurve/unknown/Plane|CLOSED	fillet: edge bounds 1 faces, need 2		
+bfuseblend	A9	FAIL(faulty)	1	r10:Arc3d/concave/Cone^Plane|CLOSED	fillet: curved (torus-arm) Plane∧Cylinder edge 704 could not be welded into the solid: assembled weld did not certify as a valid solid		
+bfuseblend	B1	PASS	1	r10:Arc3d/concave/Plane^EllipticalCylinder|CLOSED		-0.020%	
+bfuseblend	B2	FAIL(faulty)	1	r10:BSplineCurve/concave/Plane^BSplineSurface|CLOSED	fillet: cannot round an edge bordering a curved (geom.BSplineSurface) face — rounding a filleted or otherwise curved edge is not yet supported		
+bfuseblend	B3	PASS	2	r5:Arc3d/concave/Plane^Cylinder|CLOSED ; r5:Arc3d/concave/Plane^Cylinder|CLOSED		-0.998%	
+bfuseblend	B4	PASS	2	r5:BSplineCurve/concave/Cylinder^Cylinder|CLOSED ; r5:BSplineCurve/concave/Cylinder^Cylinder|CLOSED		+0.256%	
+bfuseblend	B5	PASS	1	r5:BSplineCurve/concave/Cylinder^Cylinder|CLOSED		-0.696%	
+bfuseblend	B6	FAIL(faulty)	6	r10:EllipticalArc/concave/Cylinder^Cylinder ; r10:EllipticalArc/concave/Cylinder^Cylinder ; r10:EllipticalArc/concave/Cylinder^Cylinder ; r10:EllipticalArc/concave/Cylinder^Cylinder ; r10:EllipticalArc/concave/Cylinder^Cylinder ; r10:EllipticalArc/concave/Cylinder^Cylinder	fillet: curved miter arms unsupported at vertex 1333 (need one torus + one cylinder equal-r arm, or two coaxial tori; radius 10)		
+bfuseblend	B7	FAIL(faulty)	2	r10:BSplineCurve/concave/Cylinder^Cylinder ; r10:BSplineCurve/concave/Cylinder^Cylinder	fillet: curved miter arms unsupported at vertex 1374 (need one torus + one cylinder equal-r arm, or two coaxial tori; radius 10)		
+buildevol	A1	SKIP(varradius)	1				
+buildevol	A2	SKIP(varradius)	1				
+buildevol	A3	SKIP(varradius)	1				
+buildevol	A4	SKIP(varradius)	1				
+buildevol	A5	SKIP(varradius)	1				
+buildevol	A6	SKIP(varradius)	1				
+buildevol	A7	SKIP(varradius)	1				
+buildevol	A8	SKIP(varradius)	1				
+buildevol	A9	SKIP(varradius)	1				
+buildevol	B1	SKIP(varradius)	1				
+buildevol	B2	SKIP(varradius)	1				
+buildevol	B3	SKIP(varradius)	1				
+buildevol	B4	SKIP(varradius)	1				
+buildevol	B5	SKIP(varradius)	1				
+buildevol	B6	SKIP(varradius)	1				
+buildevol	B7	SKIP(varradius)	1				
+buildevol	B8	SKIP(varradius)	1				
+buildevol	B9	SKIP(varradius)	1				
+buildevol	C1	SKIP(varradius)	1				
+buildevol	C2	SKIP(varradius)	1				
+buildevol	C3	SKIP(varradius)	1				
+buildevol	C4	SKIP(varradius)	1				
+buildevol	C5	SKIP(varradius)	1				
+buildevol	C6	SKIP(varradius)	1				
+buildevol	C7	SKIP(varradius)	1				
+buildevol	C8	SKIP(varradius)	1				
+buildevol	C9	SKIP(varradius)	1				
+buildevol	D1	SKIP(varradius)	1				
+buildevol	D2	SKIP(varradius)	1				
+buildevol	D3	SKIP(varradius)	1				
+buildevol	D4	SKIP(varradius)	1				
+buildevol	D5	SKIP(varradius)	1				
+buildevol	D6	SKIP(varradius)	1				
+buildevol	D7	SKIP(varradius)	1				
+buildevol	D8	SKIP(todo)	1				
+buildevol	D9	SKIP(varradius)	1				
+buildevol	E1	SKIP(varradius)	1				
+buildevol	E2	SKIP(varradius)	1				
+buildevol	E3	SKIP(varradius)	1				
+buildevol	E4	SKIP(varradius)	1				
+buildevol	E5	SKIP(varradius)	1				
+buildevol	E6	SKIP(varradius)	1				
+buildevol	E7	SKIP(varradius)	1				
+buildevol	E8	SKIP(varradius)	1				
+buildevol	E9	SKIP(varradius)	1				
+buildevol	F1	SKIP(varradius)	1				
+buildevol	F2	SKIP(varradius)	1				
+buildevol	F3	SKIP(varradius)	1				
+buildevol	F4	SKIP(varradius)	1				
+buildevol	F5	SKIP(varradius)	1				
+buildevol	F6	SKIP(varradius)	1				
+buildevol	F7	SKIP(varradius)	1				
+buildevol	F8	SKIP(varradius)	1				
+buildevol	F9	SKIP(varradius)	1				
+buildevol	G1	SKIP(varradius)	1				
+buildevol	G2	SKIP(varradius)	1				
+buildevol	G3	SKIP(varradius)	1				
+buildevol	G4	SKIP(varradius)	1				
+buildevol	G5	SKIP(varradius)	1				
+buildevol	G6	SKIP(varradius)	1				
+buildevol	G7	SKIP(varradius)	1				
+buildevol	G8	SKIP(varradius)	1				
+buildevol	G9	SKIP(varradius)	1				
+buildevol	H1	SKIP(varradius)	1				
+buildevol	H2	SKIP(varradius)	1				
+buildevol	H3	SKIP(varradius)	1				
+buildevol	H4	SKIP(varradius)	1				
+buildevol	H5	SKIP(varradius)	1				
+buildevol	H6	SKIP(varradius)	1				
+buildevol	H7	SKIP(varradius)	1				
+buildevol	H8	SKIP(varradius)	1				
+buildevol	H9	SKIP(varradius)	1				
+buildevol	I1	SKIP(varradius)	1				
+buildevol	I2	SKIP(varradius)	1				
+buildevol	I3	SKIP(varradius)	1				
+buildevol	I4	SKIP(varradius)	1				
+buildevol	I5	SKIP(varradius)	1				
+buildevol	I6	SKIP(varradius)	1				
+buildevol	I7	SKIP(varradius)	1				
+buildevol	I8	SKIP(varradius)	1				
+buildevol	I9	SKIP(varradius)	1				
+buildevol	J1	SKIP(varradius)	1				
+buildevol	J2	SKIP(varradius)	1				
+buildevol	J3	SKIP(varradius)	1				
+buildevol	J4	SKIP(varradius)	1				
+buildevol	J5	SKIP(varradius)	1				
+buildevol	J6	SKIP(varradius)	1				
+buildevol	J7	SKIP(varradius)	1				
+buildevol	J8	SKIP(varradius)	1				
+buildevol	J9	SKIP(varradius)	1				
+buildevol	K1	SKIP(varradius)	1				
+buildevol	K2	SKIP(todo)	1				
+buildevol	K3	SKIP(varradius)	1				
+buildevol	K4	SKIP(varradius)	1				
+buildevol	K5	SKIP(varradius)	1				
+buildevol	K6	SKIP(varradius)	1				
+buildevol	K7	SKIP(varradius)	1				
+buildevol	K8	SKIP(varradius)	1				
+complex	A1	SKIP(todo)	3				
+complex	A2	SKIP(import)	1		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/complex/A2.step produced 0 bodies, want 1		
+complex	A3	SKIP(import)	1		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/complex/A3.step produced 0 bodies, want 1		
+complex	A4	SKIP(import)	1		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/complex/A4.step produced 0 bodies, want 1		
+complex	A5	SKIP(import)	1		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/complex/A5.step produced 0 bodies, want 1		
+complex	A6	SKIP(todo)	5				
+complex	A7	SKIP(todo)	2				
+complex	A8	SKIP(todo)	0				
+complex	A9	SKIP(todo)	0				
+complex	B1	SKIP(todo)	0				
+complex	B2	SKIP(todo)	1				
+complex	B3	SKIP(import)	2		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/complex/B3.step produced 0 bodies, want 1		
+complex	B4	SKIP(import)	1		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/complex/B4.step produced 0 bodies, want 1		
+complex	B5	SKIP(import)	2		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/complex/B5.step produced 0 bodies, want 1		
+complex	B6	SKIP(todo)	0				
+complex	B7	SKIP(todo)	0				
+complex	B8	SKIP(todo)	0				
+complex	B9	FAIL(faulty)	1	r2:LineSegment/convex/Plane^Plane	fillet: edge endpoint has no end face to round		
+complex	C1	FAIL(faulty)	1	r2:EllipticalArc/convex/Plane^Cylinder	fillet: rounding an edge that borders a curved (cylinder) face is not yet supported		
+complex	C2	FAIL(faulty)	6	r0.01:LineSegment/convex/Plane^Plane ; r0.02:LineSegment/concave/Plane^Plane ; r0.03:LineSegment/convex/Plane^Plane ; r0.01:LineSegment/concave/Plane^Plane ; r0.02:LineSegment/convex/Plane^Plane ; r0.03:LineSegment/concave/Plane^Plane	fillet: mixed-radius corner where 6 filleted edges meet a 6-face vertex is not a supported blend (need 2 edges sharing a face, or 3 edges at a trihedral vertex)		
+complex	C3	SKIP(todo)	0				
+complex	C4	SKIP(todo)	0				
+complex	C5	FAIL(faulty)	4	r10:BSplineCurve/convex/Plane^BSplineSurface ; r10:LineSegment/convex/Plane^Plane ; r10:BSplineCurve/convex/BSplineSurface^Cylinder ; r10:EllipticalArc/convex/Plane^Cylinder	fillet: curved miter arms unsupported at vertex 1638 (need one torus + one cylinder equal-r arm, or two coaxial tori; radius 10)		
+complex	C6	FAIL(faulty)	3	r12:LineSegment/concave/Plane^Cylinder ; r12:Arc3d/concave/Cylinder^Plane ; r12:LineSegment/concave/Cylinder^Plane	fillet: curved (cylinder-arm) Plane∧Cylinder edge 1697 could not be welded into the solid: curved arms do not meet at one shared trihedral vertex		
+complex	C7	SKIP(todo)	0				
+complex	C8	SKIP(todo)	0				
+complex	C9	SKIP(todo)	0				
+complex	D1	SKIP(todo)	0				
+complex	D2	FAIL(faulty)	10	r10:LineSegment/convex/Plane^Plane ; r5:LineSegment/convex/Plane^Plane ; r10:LineSegment/convex/Plane^Plane ; r5:LineSegment/concave/Plane^Plane ; r5:LineSegment/concave/Plane^Plane ; r10:LineSegment/concave/Plane^Plane ; r5:LineSegment/concave/Plane^Plane ; r10:LineSegment/concave/Plane^Plane ; r5:Arc3d/convex/Cylinder^Plane ; r5:Arc3d/convex/Cylinder^Plane	fillet: mixed-radius trihedral corner (3 faces, radii [10 5 5]) needs a torus corner patch — not yet supported		
+complex	D3	SKIP(todo)	0				
+complex	D4	SKIP(todo)	0				
+complex	D5	SKIP(todo)	0				
+complex	D6	FAIL(faulty)	1	r59:Arc3d/concave/Plane^Cylinder|CLOSED	fillet: rim radius 59 must be in (0, cylinder radius 20)		
+complex	D8	FAIL(area)	1	r30:LineSegment/convex/Plane^Plane		+3.577%	
+complex	D9	SKIP(todo)	0				
+complex	E1	SKIP(varradius)	1				
+complex	E2	SKIP(varradius)	1				
+complex	E3	FAIL(faulty)	18	r19:LineSegment/convex/Plane^Plane ; r14:LineSegment/convex/Plane^Plane ; r14:LineSegment/convex/Plane^Plane ; r14:LineSegment/convex/Plane^Plane ; r16:LineSegment/concave/Plane^Plane ; r34:LineSegment/convex/Plane^Plane ; r7:LineSegment/convex/Plane^Plane ; r19:LineSegment/convex/Plane^Plane ; r19:LineSegment/convex/Plane^Plane ; r7:LineSegment/convex/Plane^Plane ; r7:LineSegment/convex/Plane^Plane ; r7:LineSegment/convex/Plane^Plane ; r7:LineSegment/convex/Plane^Plane ; r7:LineSegment/convex/Plane^Plane ; r7:LineSegment/convex/Plane^Plane ; r7:LineSegment/convex/Plane^Plane ; r7:LineSegment/convex/Plane^Plane ; r7:LineSegment/convex/Plane^Plane	fillet: mixed-radius trihedral corner (3 faces, radii [14 7 7]) needs a torus corner patch — not yet supported		
+complex	E4	SKIP(todo)	0				
+complex	E5	FAIL(faulty)	4	r20:Arc3d/convex/Plane^Cylinder ; r20:LineSegment/convex/Cylinder^Plane ; r20:Arc3d/convex/Plane^Cylinder ; r20:LineSegment/convex/Cylinder^Plane	fillet: curved (torus-arm) Plane∧Cylinder edge 2083 could not be welded into the solid: curved arms do not meet at one shared trihedral vertex		
+complex	E6	SKIP(todo)	0				
+complex	E7	FAIL(faulty)	1	r3:LineSegment/convex/Plane^Cylinder	fillet: edge between a cylinder and a tangent plane is smooth (no corner to round)		
+complex	E8	FAIL(faulty)	2	r10:LineSegment/concave/Cylinder^Cylinder ; r10:LineSegment/concave/Cylinder^Cylinder	fillet: cannot round an edge bordering a curved (cylinder) face — rounding a filleted or otherwise curved edge is not yet supported		
+complex	E9	SKIP(todo)	0				
+complex	F1	FAIL(faulty)	1	r10:EllipticalArc/convex/Cylinder^Plane	fillet: rounding an edge that borders a curved (cylinder) face is not yet supported		
+complex	F2	FAIL(area)	1	r10:LineSegment/convex/Plane^Plane		+4.682%	
+complex	F3	SKIP(todo)	3				
+complex	F4	FAIL(faulty)	5	r10:LineSegment/convex/Plane^Plane ; r10:Arc3d/convex/Cylinder^Plane ; r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/convex/Plane^Plane	fillet: curved miter seam did not close at vertex 2454 (radius 10)		
+complex	F5	SKIP(todo)	0				
+complex	F6	SKIP(todo)	0				
+complex	F7	FAIL(faulty)	4	r10:Arc3d/convex/Cylinder^Plane ; r10:Arc3d/convex/Plane^Cylinder ; r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/convex/Plane^Plane	fillet: curved (torus-arm) Plane∧Cylinder edge 2479 could not be welded into the solid: curved arms do not meet at one shared trihedral vertex		
+complex	F8	SKIP(todo)	0				
+complex	F9	SKIP(todo)	0				
+complex	G1	FAIL(faulty)	9	r3:LineSegment/convex/Plane^Plane ; r3:LineSegment/convex/Plane^Plane ; r3:LineSegment/convex/Plane^Plane ; r3:Arc3d/convex/Plane^Cylinder ; r3:Arc3d/convex/Plane^Cylinder ; r3:LineSegment/convex/Plane^Plane ; r3:LineSegment/convex/Plane^Plane ; r3:LineSegment/convex/Plane^Plane ; r3:Arc3d/convex/Plane^Cylinder	fillet: torus∧torus miter seam did not close at vertex 2517 (radius 3)		
+complex	G2	FAIL(faulty)	4	r5:Arc3d/convex/Plane^Cylinder ; r5:LineSegment/convex/Plane^Plane ; r5:LineSegment/convex/Plane^Plane ; r5:LineSegment/convex/Plane^Plane	fillet: curved (torus-arm) Plane∧Cylinder edge 2589 could not be welded into the solid: trihedral corner needs 3 arms (got 2 at vertex 2588)		
+complex	G3	SKIP(varradius)	1				
+complex	G4	SKIP(todo)	0				
+complex	G5	SKIP(todo)	0				
+complex	G6	SKIP(todo)	0				
+complex	G7	SKIP(todo)	0				
+complex	G8	SKIP(todo)	3				
+complex	G9	SKIP(todo)	2				
+complex	H3	SKIP(todo)	0				
+complex	H4	SKIP(todo)	2				
+encoderegularity	A1	FAIL(faulty)	11	r3:BSplineCurve/convex/BSplineSurface^BSplineSurface ; r3:BSplineCurve/convex/BSplineSurface^BSplineSurface ; r3:BSplineCurve/convex/BSplineSurface^BSplineSurface ; r3:BSplineCurve/convex/BSplineSurface^BSplineSurface ; r3:BSplineCurve/convex/BSplineSurface^BSplineSurface ; r3:BSplineCurve/convex/BSplineSurface^BSplineSurface ; r3:BSplineCurve/convex/BSplineSurface^BSplineSurface ; r3:BSplineCurve/convex/BSplineSurface^BSplineSurface ; r3:BSplineCurve/convex/BSplineSurface^BSplineSurface ; r3:BSplineCurve/convex/BSplineSurface^BSplineSurface ; r3:BSplineCurve/convex/BSplineSurface^BSplineSurface	fillet: curved miter arms unsupported at vertex 2629 (need one torus + one cylinder equal-r arm, or two coaxial tori; radius 3)		
+encoderegularity	A2	SKIP(import)	14		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/encoderegularity/A2.step produced 0 bodies, want 1		
+encoderegularity	A3	SKIP(import)	14		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/encoderegularity/A3.step produced 0 bodies, want 1		
+encoderegularity	A4	FAIL(faulty)	51	r3:BSplineCurve/convex/BSplineSurface^BSplineSurface ; r3:BSplineCurve/convex/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/tangent/BSplineSurface^BSplineSurface ; r3:BSplineCurve/tangent/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/convex/BSplineSurface^BSplineSurface ; r3:BSplineCurve/convex/BSplineSurface^BSplineSurface ; r3:BSplineCurve/convex/BSplineSurface^BSplineSurface ; r3:BSplineCurve/convex/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/convex/BSplineSurface^BSplineSurface ; r3:BSplineCurve/convex/BSplineSurface^BSplineSurface ; r3:BSplineCurve/convex/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/convex/BSplineSurface^BSplineSurface ; r3:BSplineCurve/convex/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/convex/BSplineSurface^BSplineSurface ; r3:BSplineCurve/convex/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/convex/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/concave/BSplineSurface^BSplineSurface ; r3:BSplineCurve/tangent/BSplineSurface^BSplineSurface ; r3:BSplineCurve/convex/BSplineSurface^BSplineSurface ; r3:BSplineCurve/tangent/BSplineSurface^BSplineSurface ; r3:BSplineCurve/convex/BSplineSurface^BSplineSurface	fillet: corner face must be planar		
+encoderegularity	A5	SKIP(todo)	17				
+encoderegularity	A6	SKIP(import)	18		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/encoderegularity/A6.step produced 0 bodies, want 1		
+encoderegularity	A7	SKIP(import)	17		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/encoderegularity/A7.step produced 0 bodies, want 1		
+simple	A1	PASS	1	r10:LineSegment/convex/Plane^Plane		-0.000%	
+simple	A2	PASS	3	r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/convex/Plane^Plane		-0.000%	
+simple	A3	PASS	1	r10:LineSegment/convex/Plane^Plane		-0.000%	
+simple	A4	PASS	3	r10:LineSegment/convex/Plane^Plane ; r5:LineSegment/convex/Plane^Plane ; r5:LineSegment/convex/Plane^Plane		-0.000%	
+simple	A5	PASS	1	r10:LineSegment/convex/Plane^Plane		+0.000%	
+simple	A6	PASS	3	r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/convex/Plane^Plane		-0.000%	
+simple	A7	PASS	1	r10:LineSegment/convex/Plane^Plane		-0.000%	
+simple	A8	PASS	3	r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/convex/Plane^Plane		-0.000%	
+simple	A9	PASS	1	r10:LineSegment/convex/Plane^Plane		-0.001%	
+simple	B1	PASS	3	r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/convex/Plane^Plane		-0.001%	
+simple	B2	PASS	1	r10:Arc3d/convex/Cylinder^Plane		-0.001%	
+simple	B3	PASS	3	r10:Arc3d/convex/Cylinder^Plane ; r10:LineSegment/convex/Cylinder^Plane ; r10:LineSegment/convex/Plane^Plane		-0.001%	
+simple	B4	PASS	1	r10:LineSegment/concave/Plane^Plane		-0.001%	
+simple	B5	PASS	3	r10:LineSegment/concave/Plane^Plane ; r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/convex/Plane^Plane		-0.003%	
+simple	B6	PASS	1	r10:LineSegment/convex/Cylinder^Plane		-0.000%	
+simple	B7	PASS	3	r10:LineSegment/convex/Cylinder^Plane ; r10:Arc3d/convex/Cylinder^Plane ; r10:LineSegment/convex/Plane^Plane		-0.001%	
+simple	B8	PASS	1	r10:LineSegment/convex/Plane^Plane		-0.001%	
+simple	B9	PASS	3	r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/convex/Plane^Plane		-0.001%	
+simple	C1	PASS	1	r10:Arc3d/convex/Cone^Plane		-0.001%	
+simple	C2	PASS	3	r10:Arc3d/convex/Cone^Plane ; r10:LineSegment/convex/Cone^Plane ; r10:LineSegment/convex/Plane^Plane		+0.006%	
+simple	C3	PASS	1	r10:LineSegment/concave/Plane^Plane		-0.001%	
+simple	C4	PASS	3	r10:LineSegment/concave/Plane^Plane ; r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/convex/Plane^Plane		-0.002%	
+simple	C5	PASS	1	r10:Arc3d/convex/Cone^Plane		-0.001%	
+simple	C6	PASS	3	r10:Arc3d/convex/Cone^Plane ; r10:LineSegment/convex/Cone^Plane ; r10:LineSegment/convex/Plane^Plane		-0.001%	
+simple	C7	PASS	1	r10:LineSegment/convex/Plane^Plane		-0.002%	
+simple	C8	PASS(deviation)	3	r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/convex/Cone^Plane ; r10:LineSegment/convex/Cone^Plane		+0.001%	
+simple	C9	PASS	1	r10:Arc3d/convex/Cone^Plane		-0.001%	
+simple	D1	PASS(deviation)	3	r10:Arc3d/convex/Cone^Plane ; r10:LineSegment/convex/Cone^Plane ; r10:LineSegment/convex/Plane^Plane		+0.000%	
+simple	D2	PASS	1	r10:LineSegment/convex/Plane^Plane		-0.000%	
+simple	D3	PASS	3	r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/convex/Plane^Plane		-0.001%	
+simple	D4	PASS	1	r10:Arc3d/convex/Sphere^Plane		-0.001%	
+simple	D5	PASS	3	r10:Arc3d/convex/Sphere^Plane ; r10:Arc3d/convex/Sphere^Plane ; r10:LineSegment/convex/Plane^Plane		-0.000%	
+simple	D6	PASS	1	r10:LineSegment/concave/Plane^Plane		-0.002%	
+simple	D7	PASS	3	r10:LineSegment/concave/Plane^Plane ; r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/convex/Plane^Plane		-0.002%	
+simple	D8	PASS	1	r10:Arc3d/convex/Sphere^Plane		-0.002%	
+simple	D9	PASS	3	r10:Arc3d/convex/Sphere^Plane ; r10:LineSegment/convex/Plane^Plane ; r10:Arc3d/convex/Sphere^Plane		-0.002%	
+simple	E1	PASS	1	r10:LineSegment/convex/Plane^Plane		-0.001%	
+simple	E2	PASS	3	r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/convex/Plane^Plane		-0.000%	
+simple	E3	PASS	1	r10:Arc3d/convex/Sphere^Plane		-0.000%	
+simple	E4	PASS	3	r10:Arc3d/convex/Sphere^Plane ; r10:LineSegment/convex/Plane^Plane ; r10:Arc3d/convex/Sphere^Plane		-0.002%	
+simple	E5	FAIL(faulty)	1	r10:Arc3d/convex/Torus^Plane	fillet: curved (geom.BSplineSurface-arm) Plane∧Cylinder edge 5941 could not be welded into the solid: trihedral corner needs 3 arms (got 1 at vertex 5940)		
+simple	E6	FAIL(faulty)	3	r10:Arc3d/convex/Torus^Plane ; r10:LineSegment/convex/Plane^Plane ; r10:Arc3d/convex/Torus^Plane	fillet: curved (geom.BSplineSurface-arm) Plane∧Cylinder edge 5969 could not be welded into the solid: corner solve declined (station gap / host non-tangency / closure failure)		
+simple	E7	PASS	1	r10:Arc3d/convex/Torus^Plane		-0.000%	
+simple	E8	FAIL(faulty)	3	r10:Arc3d/convex/Torus^Plane ; r10:Arc3d/convex/Torus^Plane ; r10:LineSegment/convex/Plane^Plane	fillet: curved (torus-arm) Plane∧Cylinder edge 6058 could not be welded into the solid: corner solve declined (station gap / host non-tangency / closure failure)		
+simple	E9	FAIL(faulty)	1	r10:Arc3d/convex/Torus^Plane	fillet: curved (geom.BSplineSurface-arm) Plane∧Cylinder edge 6088 could not be welded into the solid: trihedral corner needs 3 arms (got 1 at vertex 6087)		
+simple	F1	FAIL(faulty)	3	r10:Arc3d/convex/Torus^Plane ; r10:Arc3d/concave/Torus^Plane ; r10:LineSegment/convex/Plane^Plane	fillet: curved (geom.BSplineSurface-arm) Plane∧Cylinder edge 6116 could not be welded into the solid: corner solve declined (station gap / host non-tangency / closure failure)		
+simple	F2	PASS	1	r10:LineSegment/convex/Plane^Plane		-0.006%	
+simple	F3	FAIL(faulty)	3	r10:LineSegment/convex/Plane^Plane ; r10:Arc3d/convex/Torus^Plane ; r10:Arc3d/convex/Torus^Plane	fillet: curved (geom.BSplineSurface-arm) Plane∧Cylinder edge 6207 could not be welded into the solid: corner solve declined (station gap / host non-tangency / closure failure)		
+simple	F4	PASS	1	r10:LineSegment/concave/EllipticalCylinder^Plane		-0.001%	
+simple	F5	FAIL(faulty)	3	r10:LineSegment/concave/EllipticalCylinder^Plane ; r10:EllipticalArc/concave/EllipticalCylinder^Plane ; r10:LineSegment/convex/Plane^Plane	fillet: corner face must be planar		
+simple	F6	PASS	1	r10:LineSegment/convex/Plane^Plane		-0.001%	
+simple	F7	PASS	3	r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/convex/Plane^Plane		-0.001%	
+simple	F8	SKIP(import)	1		import: importInput: import /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/simple/F8.step: geommap: unsupported curve PARABOLA (#33)		
+simple	F9	SKIP(import)	2		import: importInput: import /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/simple/F9.step: geommap: unsupported curve PARABOLA (#33)		
+simple	G1	SKIP(import)	1		import: importInput: import /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/simple/G1.step: geommap: unsupported curve PARABOLA (#33)		
+simple	G2	SKIP(import)	3		import: importInput: import /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/simple/G2.step: geommap: unsupported curve PARABOLA (#33)		
+simple	G3	FAIL(faulty)	1	r10:LineSegment/convex/Plane^Plane	fillet: cannot round edge 6481 — it runs into an existing rounded (geom.BSplineSurface) face at its end; fillet these edges BEFORE the adjacent rounds, or select them together		
+simple	G4	FAIL(faulty)	2	r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/convex/BSplineSurface^Plane	fillet: curved miter arms unsupported at vertex 6547 (need one torus + one cylinder equal-r arm, or two coaxial tori; radius 10)		
+simple	G5	PASS	1	r10:BSplineCurve/convex/BSplineSurface^Plane		-0.004%	
+simple	G6	FAIL(faulty)	3	r10:BSplineCurve/convex/BSplineSurface^Plane ; r10:LineSegment/convex/BSplineSurface^Plane ; r10:LineSegment/convex/Plane^Plane	fillet: corner face must be planar		
+simple	G7	PASS	1	r5:LineSegment/convex/BSplineSurface^Plane		-0.002%	
+simple	G8	FAIL(faulty)	2	r5:LineSegment/convex/BSplineSurface^Plane ; r5:LineSegment/convex/Plane^Plane	fillet: curved miter arms unsupported at vertex 6687 (need one torus + one cylinder equal-r arm, or two coaxial tori; radius 5)		
+simple	G9	PASS	1	r5:BSplineCurve/convex/BSplineSurface^Plane		-0.010%	
+simple	H1	FAIL(faulty)	3	r5:BSplineCurve/convex/BSplineSurface^Plane ; r5:LineSegment/convex/Plane^Plane ; r5:LineSegment/convex/BSplineSurface^Plane	fillet: curved miter arms unsupported at vertex 6757 (need one torus + one cylinder equal-r arm, or two coaxial tori; radius 5)		
+simple	H2	FAIL(faulty)	1	r10:Arc3d/unknown/Cone	fillet: cannot round an edge bordering a curved (cone) face — rounding a filleted or otherwise curved edge is not yet supported		
+simple	H3	FAIL(faulty)	3	r10:Arc3d/unknown/Cone ; r10:EllipticalArc/unknown/Plane ; r10:LineSegment/convex/Cone^Plane	fillet: corner where 3 filleted edges meet a 2-face vertex is not a supported blend (need 3 edges at a trihedral vertex, or 2 edges sharing a face)		
+simple	H4	FAIL(faulty)	1	r10:LineSegment/concave/Plane^Plane	fillet: edge endpoint has no end face to round		
+simple	H5	FAIL(faulty)	3	r10:LineSegment/concave/Plane^Plane ; r10:EllipticalArc/unknown/Plane ; r10:EllipticalArc/unknown/Plane	fillet: corner where 3 filleted edges meet a 2-face vertex is not a supported blend (need 3 edges at a trihedral vertex, or 2 edges sharing a face)		
+simple	H6	PASS	1	r10:Arc3d/concave/Cylinder^Plane		-0.000%	
+simple	H7	FAIL(faulty)	3	r10:Arc3d/concave/Cylinder^Plane ; r10:LineSegment/convex/Cylinder^Plane ; r10:LineSegment/convex/Plane^Plane	fillet: curved (torus-arm) Plane∧Cylinder edge 6990 could not be welded into the solid: corner solve declined (station gap / host non-tangency / closure failure)		
+simple	H8	SKIP(todo)	1				
+simple	H9	FAIL(faulty)	3	r10:LineSegment/convex/Cone^Plane ; r10:Arc3d/convex/Cone^Plane ; r10:LineSegment/convex/Plane^Plane	fillet: curved (geom.BSplineSurface-arm) Plane∧Cylinder edge 7016 could not be welded into the solid: arm rail bundle declined (geom.Cylinder): oblique runout: a host spring does not cross the capping face (spring∩cap foot declined)		
+simple	I1	PASS	1	r10:Arc3d/convex/Plane^Cone		-0.000%	
+simple	I2	FAIL(faulty)	3	r10:Arc3d/convex/Plane^Cone ; r10:LineSegment/convex/Plane^Cone ; r10:LineSegment/convex/Plane^Plane	fillet: curved miter arms unsupported at vertex 7119 (need one torus + one cylinder equal-r arm, or two coaxial tori; radius 10)		
+simple	I3	PASS	1	r10:LineSegment/convex/Plane^Plane		+0.000%	
+simple	I4	FAIL(faulty)	3	r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/convex/Cone^Plane ; r10:Arc3d/convex/Plane^Cone	fillet: curved (geom.BSplineSurface-arm) Plane∧Cylinder edge 7230 could not be welded into the solid: corner solve declined (station gap / host non-tangency / closure failure)		
+simple	I5	PASS	1	r10:BSplineCurve/convex/Plane^BSplineSurface		-0.000%	
+simple	I6	FAIL(faulty)	3	r10:BSplineCurve/convex/Plane^BSplineSurface ; r10:BSplineCurve/convex/Plane^BSplineSurface ; r10:BSplineCurve/convex/Plane^BSplineSurface	fillet: curved (ops.bsplineHostArmSurface-arm) Plane∧Cylinder edge 7326 could not be welded into the solid: curved arms do not meet at one shared trihedral vertex		
+simple	I7	PASS	1	r10:BSplineCurve/convex/Plane^BSplineSurface		-0.000%	
+simple	I8	FAIL(faulty)	3	r10:BSplineCurve/convex/Plane^BSplineSurface ; r10:BSplineCurve/convex/BSplineSurface^Plane ; r10:BSplineCurve/convex/Plane^Plane	fillet: curved miter arms unsupported at vertex 7437 (need one torus + one cylinder equal-r arm, or two coaxial tori; radius 10)		
+simple	I9	PASS	1	r10:Arc3d/convex/Cylinder^Plane|CLOSED		-0.001%	
+simple	J1	PASS	1	r10:Arc3d/convex/Cone^Plane|CLOSED		-0.000%	
+simple	J2	PASS	1	r10:Arc3d/convex/Sphere^Plane|CLOSED		-0.004%	
+simple	J3	PASS	1	r10:Arc3d/convex/Torus^Plane|CLOSED		-0.002%	
+simple	J4	PASS	1	r10:Arc3d/convex/Torus^Plane|CLOSED		+0.001%	
+simple	J5	PASS	1	r10:Arc3d/concave/Torus^Plane|CLOSED		+0.000%	
+simple	J6	PASS(deviation)	1	r10:EllipseFull/concave/EllipticalCylinder^Plane|CLOSED		-0.001%	
+simple	J7	SKIP(import)	1		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/simple/J7.step produced 0 bodies, want 1		
+simple	J8	PASS(deviation)	1	r10:Arc3d/convex/Plane^EllipticalCylinder|CLOSED		-0.001%	
+simple	J9	FAIL(faulty)	1	r10:BSplineCurve/convex/Plane^BSplineSurface|CLOSED	fillet: cannot round an edge bordering a curved (geom.BSplineSurface) face — rounding a filleted or otherwise curved edge is not yet supported		
+simple	K1	PASS	1	r5:Arc3d/convex/Plane^Cylinder|CLOSED		-0.000%	
+simple	K2	PASS	1	r5:BSplineCurve/convex/Cylinder^Cylinder|CLOSED		+0.328%	
+simple	K3	PASS	1	r5:BSplineCurve/convex/Cylinder^Cylinder|CLOSED		+0.499%	
+simple	K4	PASS	1	r5:BSplineCurve/convex/Cylinder^Cylinder|CLOSED		+0.272%	
+simple	K5	PASS	1	r10:LineSegment/concave/Plane^Plane		-0.000%	
+simple	K6	PASS	3	r5:LineSegment/concave/Plane^Plane ; r5:LineSegment/concave/Plane^Plane ; r5:LineSegment/concave/Plane^Plane		-0.000%	
+simple	K7	PASS	4	r5:LineSegment/convex/Plane^Plane ; r5:LineSegment/convex/Plane^Plane ; r5:LineSegment/convex/Plane^Plane ; r5:LineSegment/convex/Plane^Plane		-0.003%	
+simple	K8	PASS	1	r10:LineSegment/convex/Plane^Plane		+0.000%	
+simple	K9	PASS	3	r5:LineSegment/convex/Plane^Plane ; r5:LineSegment/concave/Plane^Plane ; r5:LineSegment/concave/Plane^Plane		-0.000%	
+simple	L1	PASS	4	r5:LineSegment/concave/Plane^Plane ; r5:LineSegment/concave/Plane^Plane ; r5:LineSegment/concave/Plane^Plane ; r5:LineSegment/concave/Plane^Plane		-0.002%	
+simple	L2	PASS	1	r10:LineSegment/convex/Plane^Plane		-0.000%	
+simple	L3	PASS	3	r5:LineSegment/convex/Plane^Plane ; r5:LineSegment/convex/Plane^Plane ; r5:LineSegment/concave/Plane^Plane		-0.000%	
+simple	L4	PASS	3	r5:LineSegment/concave/Plane^Plane ; r5:LineSegment/concave/Plane^Plane ; r5:LineSegment/concave/Plane^Plane		-0.000%	
+simple	L5	PASS	1	r10:LineSegment/concave/Plane^Plane		-0.000%	
+simple	L6	PASS	3	r5:LineSegment/concave/Plane^Plane ; r5:LineSegment/convex/Plane^Plane ; r5:LineSegment/concave/Plane^Plane		-0.000%	
+simple	L7	PASS	4	r5:LineSegment/concave/Plane^Plane ; r5:LineSegment/concave/Plane^Plane ; r5:LineSegment/concave/Plane^Plane ; r5:LineSegment/concave/Plane^Plane		-0.002%	
+simple	L8	FAIL(faulty)	3	r5:Arc3d/convex/Cylinder^Plane ; r5:LineSegment/concave/Cylinder^Plane ; r5:LineSegment/convex/Plane^Plane	fillet: curved (torus-arm) Plane∧Cylinder edge 11018 could not be welded into the solid: corner solve declined (station gap / host non-tangency / closure failure)		
+simple	L9	PASS	3	r5:LineSegment/convex/Plane^Plane ; r5:LineSegment/convex/Plane^Cylinder ; r5:Arc3d/convex/Cylinder^Plane		-0.000%	
+simple	M1	PASS	1	r10:LineSegment/convex/Plane^Plane		-0.000%	
+simple	M2	PASS	3	r5:LineSegment/convex/Plane^Plane ; r5:LineSegment/concave/Plane^Plane ; r5:LineSegment/concave/Plane^Plane		-0.000%	
+simple	M3	FAIL(faulty)	3	r5:Arc3d/concave/Cylinder^Plane ; r5:LineSegment/concave/Plane^Plane ; r5:LineSegment/concave/Plane^Plane	fillet: curved (torus-arm) Plane∧Cylinder edge 11619 could not be welded into the solid: trihedral corner needs 3 arms (got 2 at vertex 11618)		
+simple	M4	PASS	1	r10:LineSegment/concave/Cylinder^Plane		-0.000%	
+simple	M5	PASS	3	r5:LineSegment/concave/Cylinder^Plane ; r5:Arc3d/concave/Cylinder^Plane ; r5:LineSegment/concave/Plane^Plane		-0.000%	
+simple	M6	FAIL(faulty)	3	r5:LineSegment/convex/Plane^Cylinder ; r5:LineSegment/convex/Plane^Plane ; r5:LineSegment/convex/Plane^Plane	fillet: curved miter arms unsupported at vertex 11938 (need one torus + one cylinder equal-r arm, or two coaxial tori; radius 5)		
+simple	M7	PASS	1	r10:LineSegment/convex/Cylinder^Plane		-0.000%	
+simple	M8	PASS	3	r5:LineSegment/convex/Cylinder^Plane ; r5:Arc3d/concave/Plane^Cylinder ; r5:LineSegment/concave/Plane^Plane		-0.000%	
+simple	M9	FAIL(faulty)	3	r5:LineSegment/concave/Plane^Plane ; r5:Arc3d/concave/Plane^Cylinder ; r5:LineSegment/concave/Plane^Plane	fillet: curved (torus-arm) Plane∧Cylinder edge 12258 could not be welded into the solid: trihedral corner needs 3 arms (got 2 at vertex 12256)		
+simple	N1	PASS	3	r5:Arc3d/convex/Plane^Cylinder ; r5:LineSegment/convex/Plane^Plane ; r5:LineSegment/convex/Cylinder^Plane		-0.000%	
+simple	N2	FAIL(faulty)	4	r5:Arc3d/convex/Plane^Cylinder ; r5:Arc3d/convex/Cylinder^Plane ; r5:LineSegment/convex/Cylinder^Plane ; r5:LineSegment/convex/Plane^Cylinder	fillet: curved (torus-arm) Plane∧Cylinder edge 12429 could not be welded into the solid: curved arms do not meet at one shared trihedral vertex		
+simple	N3	PASS	1	r5:LineSegment/concave/Plane^Cylinder		-0.000%	
+simple	N4	PASS	3	r5:LineSegment/concave/Plane^Cylinder ; r5:Arc3d/convex/Plane^Cylinder ; r5:LineSegment/concave/Plane^Plane		-0.000%	
+simple	N5	PASS	2	r5:LineSegment/concave/Plane^Plane ; r5:LineSegment/concave/Plane^Plane		-0.001%	
+simple	N6	PASS	1	r5:Arc3d/convex/Cylinder^Plane		-0.007%	
+simple	N7	PASS	3	r5:Arc3d/convex/Cylinder^Plane ; r5:LineSegment/convex/Cylinder^Plane ; r5:LineSegment/concave/Plane^Plane		-0.007%	
+simple	N8	FAIL(faulty)	4	r5:Arc3d/convex/Cylinder^Plane ; r5:LineSegment/convex/Cylinder^Plane ; r5:Arc3d/convex/Cylinder^Plane ; r5:LineSegment/convex/Cylinder^Plane	fillet: curved (torus-arm) Plane∧Cylinder edge 13202 could not be welded into the solid: curved arms do not meet at one shared trihedral vertex		
+simple	N9	PASS	1	r10:LineSegment/concave/Cylinder^Plane		-0.006%	
+simple	O1	PASS	3	r5:LineSegment/concave/Cylinder^Plane ; r5:Arc3d/concave/Cylinder^Plane ; r5:LineSegment/convex/Plane^Plane		-0.007%	
+simple	O2	FAIL(faulty)	4	r5:LineSegment/concave/Cylinder^Plane ; r5:Arc3d/concave/Cylinder^Plane ; r5:Arc3d/concave/Cylinder^Plane ; r5:LineSegment/concave/Cylinder^Plane	fillet: curved (cylinder-arm) Plane∧Cylinder edge 13453 could not be welded into the solid: curved arms do not meet at one shared trihedral vertex		
+simple	O3	FAIL(faulty)	1	r5:BSplineCurve/convex/Cylinder^Cylinder	fillet: cannot round an edge bordering a curved (cylinder) face — rounding a filleted or otherwise curved edge is not yet supported		
+simple	O4	FAIL(faulty)	3	r5:BSplineCurve/convex/Cylinder^Cylinder ; r5:LineSegment/convex/Cylinder^Plane ; r5:LineSegment/concave/Plane^Cylinder	fillet: corner face must be planar		
+simple	O5	FAIL(faulty)	3	r5:BSplineCurve/convex/Cylinder^Cylinder ; r5:LineSegment/convex/Cylinder^Plane ; r5:Arc3d/convex/Cylinder^Plane	fillet: curved miter arms unsupported at vertex 13573 (need one torus + one cylinder equal-r arm, or two coaxial tori; radius 5)		
+simple	O6	FAIL(faulty)	1	r5:BSplineCurve/concave/Cylinder^Cylinder	fillet: cannot round an edge bordering a curved (cylinder) face — rounding a filleted or otherwise curved edge is not yet supported		
+simple	O7	FAIL(faulty)	3	r5:BSplineCurve/concave/Cylinder^Cylinder ; r5:LineSegment/concave/Cylinder^Plane ; r5:LineSegment/convex/Plane^Plane	fillet: curved miter arms unsupported at vertex 13651 (need one torus + one cylinder equal-r arm, or two coaxial tori; radius 5)		
+simple	O8	PASS	1	r5:LineSegment/convex/Cylinder^Cylinder		-0.000%	
+simple	O9	FAIL(faulty)	3	r5:LineSegment/convex/Cylinder^Cylinder ; r5:Arc3d/convex/Cylinder^Plane ; r5:Arc3d/convex/Plane^Cylinder	fillet: curved (cylinder-arm) Plane∧Cylinder edge 13737 could not be welded into the solid: arm rail bundle declined (geom.Torus): far vertex 13730: a second filleted edge 13740 also ends here (fillet-fillet interference / setback regime, out of scope)		
+simple	P1	PASS	1	r5:LineSegment/concave/Cylinder^Cylinder		-0.001%	
+simple	P2	FAIL(faulty)	2	r5:LineSegment/concave/Cylinder^Cylinder ; r5:Arc3d/convex/Cylinder^Plane	fillet: curved miter seam did not close at vertex 13815 (radius 5)		
+simple	P3	FAIL(faulty)	4	r5:LineSegment/concave/Cylinder^Cylinder ; r5:Arc3d/convex/Cylinder^Plane ; r5:Arc3d/convex/Plane^Cylinder ; r5:LineSegment/concave/Cylinder^Cylinder	fillet: curved miter seam did not close at vertex 13843 (radius 5)		
+simple	P4	FAIL(faulty)	1	r5:LineSegment/convex/Cylinder^Cylinder	fillet: curved (cylinder-arm) Plane∧Cylinder edge 13882 could not be welded into the solid: single-arm runout: host geom.Cylinder retrim declined (bite {48.14814814814814 0.03430532136280817 60}→{48.14814814814814 0.03430532136280817 150})		
+simple	P5	FAIL(faulty)	2	r5:LineSegment/convex/Cylinder^Cylinder ; r5:Arc3d/convex/Cylinder^Plane	fillet: curved (cylinder-arm) Plane∧Cylinder edge 13910 could not be welded into the solid: curved miter: shared host geom.Cylinder's own boundary is degenerate (pre-existing defect, not a fillet gap)		
+simple	P6	FAIL(faulty)	1	r5:LineSegment/concave/Cylinder^Cylinder	fillet: cannot round an edge bordering a curved (cylinder) face — rounding a filleted or otherwise curved edge is not yet supported		
+simple	P7	FAIL(faulty)	3	r5:LineSegment/concave/Cylinder^Cylinder ; r5:Arc3d/concave/Cylinder^Plane ; r5:Arc3d/convex/Cylinder^Plane	fillet: cannot round an edge bordering a curved (cylinder) face — rounding a filleted or otherwise curved edge is not yet supported		
+simple	P8	PASS	2	r1:LineSegment/convex/Plane^Plane ; r1:LineSegment/convex/Plane^Plane		-0.013%	
+simple	P9	PASS	2	r1:LineSegment/convex/Plane^Plane ; r0.5:LineSegment/convex/Plane^Plane		-0.209%	
+simple	Q1	PASS	1	r0.2:LineSegment/convex/Plane^Plane		+0.001%	
+simple	Q2	FAIL(faulty)	3	r0.2:LineSegment/convex/Plane^Plane ; r0.2:LineSegment/convex/Plane^Plane ; r0.2:Arc3d/convex/Plane^Cylinder	fillet: curved (torus-arm) Plane∧Cylinder edge 14289 could not be welded into the solid: trihedral corner needs 3 arms (got 1 at vertex 14287)		
+simple	Q3	SKIP(todo)	1				
+simple	Q4	SKIP(todo)	2				
+simple	Q5	PASS	1	r2500:LineSegment/convex/Plane^Plane		+0.000%	
+simple	Q6	FAIL(faulty)	1	r2000:Arc3d/concave/Plane^Cylinder|CLOSED	fillet: rim radius 2000 must be in (0, cylinder radius 1000)		
+simple	Q7	SKIP(todo)	2				
+simple	Q8	SKIP(todo)	1				
+simple	Q9	SKIP(import)	1		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/simple/Q9.step produced 0 bodies, want 1		
+simple	R1	SKIP(import)	3		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/simple/R1.step produced 0 bodies, want 1		
+simple	R2	SKIP(import)	1		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/simple/R2.step produced 0 bodies, want 1		
+simple	R3	SKIP(import)	1		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/simple/R3.step produced 0 bodies, want 1		
+simple	R4	SKIP(import)	1		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/simple/R4.step produced 0 bodies, want 1		
+simple	R5	SKIP(import)	1		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/simple/R5.step produced 0 bodies, want 1		
+simple	R6	SKIP(import)	1		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/simple/R6.step produced 0 bodies, want 1		
+simple	R7	FAIL(faulty)	16	r1:LineSegment/convex/Cylinder^Plane ; r1:EllipticalArc/convex/Cylinder^Plane ; r1:LineSegment/convex/Cylinder^Plane ; r1:EllipticalArc/convex/Cylinder^Plane ; r1:EllipticalArc/concave/Plane^Cylinder ; r1:LineSegment/concave/Plane^Cylinder ; r1:EllipticalArc/concave/Cylinder^Plane ; r1:LineSegment/concave/Cylinder^Plane ; r1:LineSegment/convex/Plane^Plane ; r1:LineSegment/concave/Plane^Plane ; r1:LineSegment/convex/Plane^Plane ; r1:LineSegment/concave/Plane^Plane ; r1:LineSegment/concave/Plane^Plane ; r1:LineSegment/convex/Plane^Plane ; r1:LineSegment/concave/Plane^Plane ; r1:LineSegment/convex/Plane^Plane	fillet: rounding an edge that borders a curved (cylinder) face is not yet supported		
+simple	R8	FAIL(area)	1	r3:Arc3d/concave/Plane^Cylinder|CLOSED		+17.324%	
+simple	R9	PASS	1	r3:LineSegment/convex/Plane^Plane		-0.001%	
+simple	S1	PASS	1	r6:LineSegment/convex/Plane^Plane		-0.001%	
+simple	S2	FAIL(faulty)	1	r8:Arc3d/concave/Cone^Plane|CLOSED	fillet: curved (torus-arm) Plane∧Cylinder edge 16473 could not be welded into the solid: concave closed-rim band: plane-contact radius 16.2462 exceeds the cap face half-extent 15 — the cove spills off the plate onto the adjacent walls (a multi-face concave interaction is a follow-on slice)		
+simple	S3	PASS	1	r8:LineSegment/convex/Plane^Plane		-0.000%	
+simple	S4	PASS	1	r8:LineSegment/convex/Plane^Plane		-0.001%	
+simple	S5	FAIL(faulty)	1	r3:Arc3d/concave/Plane^Sphere|CLOSED	fillet: curved (torus-arm) Plane∧Cylinder edge 18898 could not be welded into the solid: concave closed-rim band: plane-contact radius 15.7162 exceeds the cap face half-extent 15 — the cove spills off the plate onto the adjacent walls (a multi-face concave interaction is a follow-on slice)		
+simple	S6	PASS	1	r3:LineSegment/convex/Plane^Plane		-0.001%	
+simple	S7	PASS	1	r3:LineSegment/convex/Plane^Plane		-0.001%	
+simple	S8	FAIL(faulty)	1	r10:Arc3d/concave/Plane^Torus|CLOSED	fillet: curved (torus-arm) Plane∧Cylinder edge 20202 could not be welded into the solid: concave closed-rim band: plane-contact radius 31.1803 exceeds the cap face half-extent 30 — the cove spills off the plate onto the adjacent walls (a multi-face concave interaction is a follow-on slice)		
+simple	S9	PASS	1	r10:LineSegment/convex/Plane^Plane		+0.000%	
+simple	T1	PASS	1	r8:LineSegment/convex/Plane^Plane		-0.000%	
+simple	T2	FAIL(faulty)	1	r4:Arc3d/concave/Plane^Torus|CLOSED	fillet: curved (torus-arm) Plane∧Cylinder edge 21508 could not be welded into the solid: concave closed-rim band: plane-contact radius 30.5279 exceeds the cap face half-extent 30 — the cove spills off the plate onto the adjacent walls (a multi-face concave interaction is a follow-on slice)		
+simple	T3	PASS	1	r8:LineSegment/convex/Plane^Plane		-0.001%	
+simple	T4	PASS	1	r8:LineSegment/convex/Plane^Plane		-0.001%	
+simple	T5	FAIL(faulty)	1	r4:EllipseFull/convex/Plane^EllipticalCylinder|CLOSED	fillet: cannot round an edge bordering a curved (geom.EllipticalCylinder) face — rounding a filleted or otherwise curved edge is not yet supported		
+simple	T6	PASS	1	r6:LineSegment/convex/Plane^Plane		-0.001%	
+simple	T7	PASS	1	r6:LineSegment/convex/Plane^Plane		-0.001%	
+simple	T8	FAIL(faulty)	1	r6:Arc3d/concave/Plane^BSplineSurface|CLOSED	fillet: cannot round an edge bordering a curved (geom.BSplineSurface) face — rounding a filleted or otherwise curved edge is not yet supported		
+simple	T9	FAIL(faulty)	1	r10:LineSegment/convex/Plane^Plane		+1.644%	nbodies=1 valid=true closed=true manifold=true orient=true euler=true holes=false vol+=true issues=1 first="hole loop 25330 protrudes outside the outer loop of planar face 25328 (malformed B-rep face)"
+simple	U1	SKIP(todo)	1				
+simple	U2	FAIL(faulty)	1	r5:Arc3d/concave/Plane^EllipticalCylinder|CLOSED	fillet: cannot round an edge bordering a curved (geom.EllipticalCylinder) face — rounding a filleted or otherwise curved edge is not yet supported		
+simple	U3	PASS	1	r5:LineSegment/convex/Plane^Plane		-0.001%	
+simple	U4	PASS	1	r5:LineSegment/convex/Plane^Plane		-0.000%	
+simple	U5	FAIL(faulty)	1	r2.5:BSplineCurve/concave/Cylinder^Cylinder	fillet: cannot round an edge bordering a curved (cylinder) face — rounding a filleted or otherwise curved edge is not yet supported		
+simple	U6	FAIL(area)	1	r3:Arc3d/convex/Cylinder^Plane|CLOSED		+2.041%	
+simple	U7	SKIP(todo)	1				
+simple	U8	PASS	1	r10:LineSegment/convex/Plane^Plane		-0.000%	
+simple	U9	SKIP(import)	1		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/simple/U9.step produced 0 bodies, want 1		
+simple	V1	PASS	1	r5:LineSegment/convex/Plane^Plane		+0.002%	
+simple	V2	SKIP(import)	1		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/simple/V2.step produced 0 bodies, want 1		
+simple	V3	PASS	1	r5:LineSegment/convex/Plane^Plane		+0.015%	
+simple	V4	SKIP(import)	1		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/simple/V4.step produced 0 bodies, want 1		
+simple	V5	PASS	1	r5:LineSegment/convex/Plane^Plane		+0.000%	
+simple	V6	PASS	1	r20:BSplineCurve/convex/BSplineSurface^BSplineSurface		-0.004%	
+simple	V7	SKIP(import)	1		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/simple/V7.step produced 0 bodies, want 1		
+simple	V8	PASS	2	r1:LineSegment/convex/Plane^Plane ; r1:LineSegment/convex/Plane^Plane		-0.013%	
+simple	V9	PASS	2	r1:LineSegment/convex/Plane^Plane ; r0.5:LineSegment/convex/Plane^Plane		-0.209%	
+simple	W1	PASS	3	r1:LineSegment/convex/Plane^Plane ; r1:LineSegment/convex/Plane^Plane ; r1:LineSegment/convex/Plane^Plane		-0.001%	
+simple	W2	PASS	1	r0.2:Arc3d/convex/Plane^Cylinder		-0.002%	
+simple	W3	PASS	2	r0.2:Arc3d/convex/Plane^Cylinder ; r0.2:LineSegment/convex/Plane^Cylinder		-0.007%	
+simple	W4	FAIL(faulty)	2	r0.2:Arc3d/convex/Plane^Cylinder ; r0.2:LineSegment/convex/Plane^Plane	fillet: curved (torus-arm) Plane∧Cylinder edge 27996 could not be welded into the solid: curved miter: assembled weld carries a boundary edge 0.1701 off its own face's surface (85.06% of the fillet radius, budget 10%; face 28053 (geom.Torus) bounded by edge 28050 (geom.LineSegment)) — a seam-sampling defect, not the near-boundary residual this weld already reconciles		
+simple	W5	FAIL(faulty)	3	r0.2:Arc3d/convex/Plane^Cylinder ; r0.2:LineSegment/convex/Plane^Plane ; r0.2:LineSegment/convex/Plane^Cylinder	fillet: curved (torus-arm) Plane∧Cylinder edge 28153 could not be welded into the solid: arm rail bundle declined (geom.Torus): far vertex 28147: a second filleted edge 28148 also ends here (fillet-fillet interference / setback regime, out of scope)		
+simple	W6	PASS	1	r5:Arc3d/concave/Plane^Cylinder|CLOSED		-0.000%	
+simple	W7	SKIP(todo)	1				
+simple	W8	PASS	1	r5:Arc3d/concave/Plane^Cylinder|CLOSED		-0.000%	
+simple	W9	FAIL(area)	1	r15:Arc3d/concave/Plane^Cylinder|CLOSED		+15.120%	
+simple	X1	SKIP(todo)	2				
+simple	X2	FAIL(faulty)	1	r20.5:LineSegment/concave/Plane^Plane	fillet: radius 20.5 exceeds geometric maximum 19.999999999999996 on edge 28520 (available in-face width 20 on face 28523, dihedral 90.0°); reduce the radius or use a smaller value		
+simple	X3	PASS	1	r25:LineSegment/convex/Plane^Plane		+0.001%	
+simple	X4	SKIP(todo)	1				
+simple	X5	FAIL(faulty)	6	r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/concave/Plane^Plane ; r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/concave/Plane^Plane ; r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/concave/Plane^Plane	fillet: full-round 6-arm corner requires all-convex arms (edge 29785 is not convex)		
+simple	X6	SKIP(todo)	3				
+simple	X7	FAIL(faulty)	1	r10:LineSegment/convex/Plane^Plane	fillet: cannot round edge 29861 — it runs into an existing rounded (cylinder) face at its end; fillet these edges BEFORE the adjacent rounds, or select them together		
+simple	X8	FAIL(faulty)	4	r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/convex/Plane^Plane	fillet: corner where 4 filleted edges meet a 4-face vertex has unequal dihedral angles between adjacent arms — the full-round K-gon patch is only certified for a dihedrally-symmetric corner (radius 10) — the free-form corner filling is not yet supported		
+simple	X9	PASS	1	r10:LineSegment/convex/Plane^Plane		+0.015%	
+simple	Y1	PASS	1	r10:LineSegment/convex/Plane^Plane		-0.000%	
+simple	Y2	PASS	1	r15:LineSegment/convex/Plane^Plane		-0.000%	
+simple	Y3	PASS	1	r20:LineSegment/convex/Plane^Plane		-0.000%	
+simple	Y4	PASS	1	r25:LineSegment/convex/Plane^Plane		-0.000%	
+simple	Y5	SKIP(todo)	4				
+simple	Y6	SKIP(todo)	4				
+simple	Y7	SKIP(todo)	1				
+simple	Y8	SKIP(todo)	0				
+simple	Y9	PASS	3	r4:Arc3d/convex/Plane^Cylinder ; r4:Arc3d/convex/Cylinder^Plane ; r4:Arc3d/convex/Plane^Cylinder		-0.002%	
+simple	Z1	PASS	1	r1:Arc3d/convex/Cylinder^Plane|CLOSED		-0.004%	
+tolblend_buildvol	A1	SKIP(varradius)	1				
+tolblend_buildvol	A2	SKIP(varradius)	1				
+tolblend_buildvol	A3	SKIP(varradius)	2				
+tolblend_buildvol	A4	SKIP(varradius)	1				
+tolblend_buildvol	A5	SKIP(varradius)	1				
+tolblend_buildvol	A6	SKIP(varradius)	1				
+tolblend_buildvol	A7	SKIP(varradius)	2				
+tolblend_buildvol	A8	SKIP(varradius)	1				
+tolblend_buildvol	A9	SKIP(varradius)	1				
+tolblend_simple	A1	PASS	4	r2.5:LineSegment/convex/Plane^Plane ; r2.5:LineSegment/convex/Plane^Plane ; r2.5:LineSegment/convex/Plane^Plane ; r2.5:LineSegment/convex/Plane^Plane		-0.000%	
+tolblend_simple	A2	FAIL(faulty)	4	r1:LineSegment/convex/Plane^Plane ; r1.5:LineSegment/convex/Plane^Plane ; r2:LineSegment/convex/Plane^Plane ; r2.5:LineSegment/convex/Plane^Plane	fillet: mixed-radius corner where 4 filleted edges meet a 4-face vertex is not a supported blend (need 2 edges sharing a face, or 3 edges at a trihedral vertex)		
+tolblend_simple	A3	SKIP(import)	4		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/A3.step produced 0 bodies, want 1		
+tolblend_simple	A4	SKIP(import)	4		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/A4.step produced 0 bodies, want 1		
+tolblend_simple	A5	SKIP(import)	4		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/A5.step produced 0 bodies, want 1		
+tolblend_simple	A6	SKIP(import)	4		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/A6.step produced 0 bodies, want 1		
+tolblend_simple	A7	SKIP(import)	4		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/A7.step produced 0 bodies, want 1		
+tolblend_simple	A8	SKIP(import)	4		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/A8.step produced 0 bodies, want 1		
+tolblend_simple	A9	FAIL(faulty)	5	r6:LineSegment/convex/Plane^Plane ; r7:LineSegment/convex/Plane^Plane ; r30:LineSegment/convex/Plane^Plane ; r5:LineSegment/convex/Plane^Plane ; r25:LineSegment/convex/Plane^Plane	fillet: mixed-radius corner where 5 filleted edges meet a 5-face vertex is not a supported blend (need 2 edges sharing a face, or 3 edges at a trihedral vertex)		
+tolblend_simple	B1	FAIL(faulty)	6	r2.5:LineSegment/convex/Plane^Plane ; r2.5:LineSegment/convex/Plane^Plane ; r2.5:LineSegment/convex/Plane^Plane ; r2.5:LineSegment/convex/Plane^Plane ; r2.5:LineSegment/convex/Plane^Plane ; r2.5:LineSegment/convex/Plane^Plane	fillet: corner where 6 filleted edges meet a 6-face vertex has no common tangent sphere (radius 2.5, plane residual 0.26317759250014205 > weld 8.325916698020573e-08) — the free-form corner filling is not yet supported		
+tolblend_simple	B2	FAIL(faulty)	6	r0.75:LineSegment/convex/Plane^Plane ; r1.5:LineSegment/convex/Plane^Plane ; r1.5:LineSegment/convex/Plane^Plane ; r0.75:LineSegment/convex/Plane^Plane ; r1.25:LineSegment/convex/Plane^Plane ; r1.5:LineSegment/convex/Plane^Plane	fillet: mixed-radius corner where 6 filleted edges meet a 6-face vertex is not a supported blend (need 2 edges sharing a face, or 3 edges at a trihedral vertex)		
+tolblend_simple	B3	FAIL(faulty)	6	r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/concave/Plane^Plane ; r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/concave/Plane^Plane ; r10:LineSegment/convex/Plane^Plane ; r10:LineSegment/concave/Plane^Plane	fillet: full-round 6-arm corner requires all-convex arms (edge 31496 is not convex)		
+tolblend_simple	B4	PASS	1	r75:Arc3d/concave/EllipticalCylinder^Cone		-0.001%	
+tolblend_simple	B5	SKIP(import)	1		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/B5.step produced 0 bodies, want 1		
+tolblend_simple	B6	SKIP(import)	2		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/B6.step produced 0 bodies, want 1		
+tolblend_simple	B7	FAIL(faulty)	1	r75:Arc3d/concave/EllipticalCylinder^Cone|CLOSED	fillet: cannot round an edge bordering a curved (geom.EllipticalCylinder) face — rounding a filleted or otherwise curved edge is not yet supported		
+tolblend_simple	B8	PASS	1	r75:Arc3d/concave/EllipticalCylinder^Cone		-0.002%	
+tolblend_simple	B9	SKIP(import)	1		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/B9.step produced 0 bodies, want 1		
+tolblend_simple	C1	SKIP(import)	2		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/C1.step produced 0 bodies, want 1		
+tolblend_simple	C2	FAIL(faulty)	1	r75:Arc3d/concave/EllipticalCylinder^Cone|CLOSED	fillet: cannot round an edge bordering a curved (geom.EllipticalCylinder) face — rounding a filleted or otherwise curved edge is not yet supported		
+tolblend_simple	C3	PASS	1	r25:Arc3d/concave/EllipticalCylinder^Cone|CLOSED		-0.005%	
+tolblend_simple	C4	FAIL(faulty)	1	r10:LineSegment/concave/Plane^Plane	fillet: cannot round edge 31801 at a 4-valent runout vertex {25 0 0} — no single crossing on far edge (edge 31787); reduce the radius or fillet the neighbours first		
+tolblend_simple	C5	SKIP(import)	1		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/C5.step produced 0 bodies, want 1		
+tolblend_simple	C6	FAIL(faulty)	1	r250:BSplineCurve/convex/BSplineSurface^BSplineSurface	fillet: cannot round an edge bordering a curved (geom.BSplineSurface) face — rounding a filleted or otherwise curved edge is not yet supported		
+tolblend_simple	C7	FAIL(faulty)	1	r40:LineSegment/convex/Plane^Cylinder	fillet: curved (cylinder-arm) Plane∧Cylinder edge 31873 could not be welded into the solid: trihedral corner needs 3 arms (got 1 at vertex 31871)		
+tolblend_simple	C8	FAIL(faulty)	1	r100:LineSegment/convex/BSplineSurface^Plane	fillet: cannot round an edge bordering a curved (geom.BSplineSurface) face — rounding a filleted or otherwise curved edge is not yet supported		
+tolblend_simple	C9	SKIP(import)	1		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/C9.step produced 0 bodies, want 1		
+tolblend_simple	D1	SKIP(import)	1		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/D1.step produced 0 bodies, want 1		
+tolblend_simple	D2	SKIP(import)	1		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/D2.step produced 0 bodies, want 1		
+tolblend_simple	D3	FAIL(faulty)	3	r2.5:LineSegment/convex/Plane^Plane ; r2.5:LineSegment/convex/Plane^Plane ; r2.5:LineSegment/convex/Plane^Plane	fillet: partial corner where 3 of 4 edges at the vertex are filleted needs its patch boundary closed through 2 gap face(s) bordering the surviving sharp edges at the vertex — that boundary-assembly capability is not yet built (the free-form/N-sided corner filling epic)		
+tolblend_simple	D4	PASS	2	r2.5:LineSegment/convex/Plane^Plane ; r2.5:LineSegment/convex/Plane^Plane		-0.003%	
+tolblend_simple	D5	FAIL(faulty)	2	r2.5:LineSegment/convex/Plane^Plane ; r2.5:LineSegment/convex/Plane^Plane	fillet: result is not a valid solid []		
+tolblend_simple	D6	SKIP(import)	3		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/D6.step produced 0 bodies, want 1		
+tolblend_simple	D7	SKIP(import)	2		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/D7.step produced 0 bodies, want 1		
+tolblend_simple	D8	SKIP(import)	2		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/D8.step produced 0 bodies, want 1		
+tolblend_simple	D9	SKIP(import)	3		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/D9.step produced 0 bodies, want 1		
+tolblend_simple	E1	SKIP(import)	2		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/E1.step produced 0 bodies, want 1		
+tolblend_simple	E2	SKIP(import)	2		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/E2.step produced 0 bodies, want 1		
+tolblend_simple	E3	SKIP(import)	3		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/E3.step produced 0 bodies, want 1		
+tolblend_simple	E4	SKIP(import)	2		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/E4.step produced 0 bodies, want 1		
+tolblend_simple	E5	SKIP(import)	2		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/E5.step produced 0 bodies, want 1		
+tolblend_simple	E6	FAIL(faulty)	4	r2.5:LineSegment/convex/Plane^Plane ; r2.5:LineSegment/convex/Plane^Plane ; r2.5:LineSegment/convex/Plane^Plane ; r2.5:LineSegment/convex/Plane^Plane	fillet: partial corner where 4 of 5 edges at the vertex are filleted needs its patch boundary closed through 2 gap face(s) bordering the surviving sharp edges at the vertex — that boundary-assembly capability is not yet built (the free-form/N-sided corner filling epic)		
+tolblend_simple	E7	FAIL(faulty)	3	r2.5:LineSegment/convex/Plane^Plane ; r2.5:LineSegment/convex/Plane^Plane ; r2.5:LineSegment/convex/Plane^Plane	fillet: partial corner where 3 of 5 edges at the vertex are filleted needs its patch boundary closed through 4 gap face(s) bordering the surviving sharp edges at the vertex — that boundary-assembly capability is not yet built (the free-form/N-sided corner filling epic)		
+tolblend_simple	E8	FAIL(faulty)	3	r2.5:LineSegment/convex/Plane^Plane ; r2.5:LineSegment/convex/Plane^Plane ; r2.5:LineSegment/convex/Plane^Plane	fillet: partial corner where 3 of 5 edges at the vertex are filleted needs its patch boundary closed through 2 gap face(s) bordering the surviving sharp edges at the vertex — that boundary-assembly capability is not yet built (the free-form/N-sided corner filling epic)		
+tolblend_simple	E9	SKIP(import)	3		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/E9.step produced 0 bodies, want 1		
+tolblend_simple	F1	SKIP(import)	3		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/F1.step produced 0 bodies, want 1		
+tolblend_simple	F2	SKIP(import)	2		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/F2.step produced 0 bodies, want 1		
+tolblend_simple	F3	SKIP(import)	3		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/F3.step produced 0 bodies, want 1		
+tolblend_simple	F4	SKIP(import)	2		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/F4.step produced 0 bodies, want 1		
+tolblend_simple	F5	SKIP(import)	4		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/F5.step produced 0 bodies, want 1		
+tolblend_simple	F6	SKIP(import)	3		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/F6.step produced 0 bodies, want 1		
+tolblend_simple	F7	SKIP(import)	4		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/F7.step produced 0 bodies, want 1		
+tolblend_simple	F8	SKIP(import)	3		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/F8.step produced 0 bodies, want 1		
+tolblend_simple	F9	SKIP(import)	4		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/F9.step produced 0 bodies, want 1		
+tolblend_simple	G1	SKIP(import)	3		import: importInput: /home/vmiguel/git/oblikovati-workspace/Oblikovati/model/feature/occtparity/fixtures/tolblend_simple/G1.step produced 0 bodies, want 1		

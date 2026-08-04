@@ -116,6 +116,7 @@ const (
 	CurveHelix
 	CurveVariableHelix
 	CurveSpiric
+	CurveTorusCyl
 	// curveKindCount is the sentinel one past the last real kind.
 	curveKindCount
 )
@@ -142,6 +143,7 @@ var curveKindNames = [...]string{
 	CurveHelix:         "Helix3d",
 	CurveVariableHelix: "VariableHelix3d",
 	CurveSpiric:        "SpiricArc",
+	CurveTorusCyl:      "TorusCylinderArc",
 }
 
 // CurveKinds returns every CurveKind in declaration order (see SurfaceKinds).
@@ -159,19 +161,20 @@ type KindedCurve interface {
 	Kind() CurveKind
 }
 
-func (l Line) Kind() CurveKind            { return CurveLine }
-func (s LineSegment) Kind() CurveKind     { return CurveLineSegment }
-func (p Polyline) Kind() CurveKind        { return CurvePolyline }
-func (c Circle) Kind() CurveKind          { return CurveCircle }
-func (a Arc3d) Kind() CurveKind           { return CurveArc }
-func (e EllipseFull) Kind() CurveKind     { return CurveEllipse }
-func (e EllipticalArc) Kind() CurveKind   { return CurveEllipticalArc }
-func (h HyperbolicArc) Kind() CurveKind   { return CurveHyperbolicArc }
-func (p Parabola) Kind() CurveKind        { return CurveParabola }
-func (c BSplineCurve) Kind() CurveKind    { return CurveBSpline }
-func (h Helix3d) Kind() CurveKind         { return CurveHelix }
-func (h VariableHelix3d) Kind() CurveKind { return CurveVariableHelix }
-func (s SpiricArc) Kind() CurveKind       { return CurveSpiric }
+func (l Line) Kind() CurveKind             { return CurveLine }
+func (s LineSegment) Kind() CurveKind      { return CurveLineSegment }
+func (p Polyline) Kind() CurveKind         { return CurvePolyline }
+func (c Circle) Kind() CurveKind           { return CurveCircle }
+func (a Arc3d) Kind() CurveKind            { return CurveArc }
+func (e EllipseFull) Kind() CurveKind      { return CurveEllipse }
+func (e EllipticalArc) Kind() CurveKind    { return CurveEllipticalArc }
+func (h HyperbolicArc) Kind() CurveKind    { return CurveHyperbolicArc }
+func (p Parabola) Kind() CurveKind         { return CurveParabola }
+func (c BSplineCurve) Kind() CurveKind     { return CurveBSpline }
+func (h Helix3d) Kind() CurveKind          { return CurveHelix }
+func (h VariableHelix3d) Kind() CurveKind  { return CurveVariableHelix }
+func (s SpiricArc) Kind() CurveKind        { return CurveSpiric }
+func (a TorusCylinderArc) Kind() CurveKind { return CurveTorusCyl }
 
 var (
 	_ KindedCurve = Line{}
@@ -187,4 +190,5 @@ var (
 	_ KindedCurve = Helix3d{}
 	_ KindedCurve = VariableHelix3d{}
 	_ KindedCurve = SpiricArc{}
+	_ KindedCurve = TorusCylinderArc{}
 )

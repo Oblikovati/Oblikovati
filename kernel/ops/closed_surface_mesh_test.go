@@ -32,10 +32,12 @@ func TestClosedDomainMeshSphereWatertight(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewSphere: %v", err)
 	}
-	us, vs := sphereGrid(s, DefaultQuality())
-	m := closedDomainMesh(s, us, vs)
-	if free := freeEdgeCount(m); free != 0 {
-		t.Errorf("sphere meshed with %d free edges; want 0 (watertight)", free)
+	for _, gq := range gateQualities() {
+		us, vs := sphereGrid(s, gq.q)
+		m := closedDomainMesh(s, us, vs)
+		if free := freeEdgeCount(m); free != 0 {
+			t.Errorf("%s quality: sphere meshed with %d free edges; want 0 (watertight)", gq.name, free)
+		}
 	}
 }
 
@@ -76,13 +78,15 @@ func TestImportedAnalyticPrimitivesWatertight(t *testing.T) {
 		if err != nil || len(bodies) == 0 {
 			t.Fatalf("import %s.step: %v (n=%d)", name, err, len(bodies))
 		}
-		total := 0
-		for _, b := range bodies {
-			mesh, _ := TessellateBody(b, DefaultQuality())
-			total += freeEdgeCount(mesh)
-		}
-		if total != 0 {
-			t.Errorf("%s tessellated with %d free edges; want 0 (watertight)", name, total)
+		for _, gq := range gateQualities() {
+			total := 0
+			for _, b := range bodies {
+				mesh, _ := TessellateBody(b, gq.q)
+				total += freeEdgeCount(mesh)
+			}
+			if total != 0 {
+				t.Errorf("%s at %s quality tessellated with %d free edges; want 0 (watertight)", name, gq.name, total)
+			}
 		}
 	}
 }

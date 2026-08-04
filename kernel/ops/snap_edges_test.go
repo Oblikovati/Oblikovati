@@ -69,9 +69,12 @@ func TestSnapEdgesLeavesCleanSolidUnchanged(t *testing.T) {
 			t.Errorf("clean edge %d was snapped (residual %g); want left native (already on its surfaces)", e.ID(), e.Tolerance())
 		}
 	}
-	mesh, _ := TessellateBody(cyl, DefaultQuality())
-	if free := freeEdgeCount(mesh); free != 0 {
-		t.Errorf("snapped clean cylinder tessellated with %d free edges; want 0 (still watertight)", free)
+	for _, gq := range gateQualities() {
+		mesh, _ := TessellateBody(cyl, gq.q)
+		if free := freeEdgeCount(mesh); free != 0 {
+			t.Errorf("%s quality: snapped clean cylinder tessellated with %d free edges; want 0 (still watertight)",
+				gq.name, free)
+		}
 	}
 }
 
@@ -117,9 +120,11 @@ func TestSnapEdgesMakesOffSurfaceWatertight(t *testing.T) {
 		t.Fatal("off-surface body was already watertight; the fixture must leak to exercise the snap")
 	}
 	SnapEdgesToSurfaces(body, DefaultQuality())
-	after, _ := TessellateBody(body, DefaultQuality())
-	if free := freeEdgeCount(after); free != 0 {
-		t.Errorf("snapped off-surface body has %d free edges; want 0 (watertight)", free)
+	for _, gq := range gateQualities() {
+		after, _ := TessellateBody(body, gq.q)
+		if free := freeEdgeCount(after); free != 0 {
+			t.Errorf("%s quality: snapped off-surface body has %d free edges; want 0 (watertight)", gq.name, free)
+		}
 	}
 }
 

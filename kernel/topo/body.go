@@ -5,6 +5,7 @@ package topo
 import (
 	"sync"
 
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/math"
 )
 
@@ -48,6 +49,34 @@ type Body struct {
 	// sweep runs once, not once per orbit frame (~87% of frame time before this).
 	rangeBoxOnce sync.Once
 	rangeBox     math.Box
+
+	// buildDiags is the BUILD REPORT of the assembly that produced this body: what the assembler
+	// could not do ideally and how it resolved it — recorded instead of silently swallowed
+	// (kernel/diag). It describes THIS assembly only. ★ It is NOT merged forward: every body-
+	// rebuilding path ([BodyFromShells], [MergeBodies], and every other [NewBuilder] — boolean,
+	// transform, delete-face) constructs a fresh Body, so a downstream operation does not "start a
+	// new report", it DROPS this one. See [Body.BuildDiagnostics] for what that means for a reader.
+	// Written by [Builder.Diagnose] before Build, read-only afterward.
+	buildDiags []diag.Diagnostic
+}
+
+// BuildDiagnostics returns a copy of the diagnostics recorded while this body was assembled, in
+// emission order. Empty for a body whose assembler recorded none.
+//
+// Example:
+//
+//	for _, d := range body.BuildDiagnostics() { t.Log(d) }
+//
+// ★ An empty report has TWO meanings and they are not distinguishable from the slice alone: the
+// assembler recorded nothing, OR this body is not the assembler's own output. The report does not
+// survive a rebuild — [BodyFromShells], [MergeBodies] and every downstream [NewBuilder] produce a
+// fresh Body with an empty report — so one boolean, transform or face deletion between an assembler
+// and a reader silently zeroes everything the assembler said. A gate that asserts "no body reports
+// X" must therefore also assert that the bodies it reads DID come from the assembler it means; the
+// fillet's edge catalog does this with a positive marker (ops.CodeAssembleEdgeCatalog) rather than
+// trusting an empty slice.
+func (b *Body) BuildDiagnostics() []diag.Diagnostic {
+	return append([]diag.Diagnostic(nil), b.buildDiags...)
 }
 
 // edgeKeyIndex returns the edge reference-key index, building it once. See the index
@@ -263,6 +292,9 @@ func (b *Body) FindVertexByKey(key []byte) (*Vertex, bool) {
 // void shells to fill internal cavities (ops.FillInternalVoids, M11-F06 shrinkwrap).
 // The donor shells must not be reused afterward, as their owning body is rewritten.
 //
+// The donors' build reports are NOT carried over — the result's BuildDiagnostics is empty, because
+// no assembler wrote it. See the buildDiags field comment on [Body].
+//
 // Example: solid := BodyFromShells(b.Lineage(), b.IsSolid(), outerShellsOf(b)...)
 func BodyFromShells(lineage Lineage, solid bool, shells ...*Shell) *Body {
 	body := &Body{id: nextID(), solid: solid, lineage: lineage}
@@ -276,7 +308,8 @@ func BodyFromShells(lineage Lineage, solid bool, shells ...*Shell) *Body {
 
 // MergeBodies combines the shells of several bodies into one (a multi-lump body),
 // re-parenting each shell. Used by a boolean Join of non-touching bodies
-// (kernel/ops). The input bodies should not be used afterward.
+// (kernel/ops). The input bodies should not be used afterward. Their build reports are NOT merged
+// into the result — see the buildDiags field comment on [Body].
 func MergeBodies(lineage Lineage, solid bool, bodies ...*Body) *Body {
 	merged := &Body{id: nextID(), solid: solid, lineage: lineage}
 	for _, b := range bodies {

@@ -20,7 +20,9 @@ func rebuildWithStripe(b *topo.Body, st *tangentStripe) (*topo.Body, error) {
 		st: st, bld: topo.NewBuilder(b.IsSolid(), b.Lineage()),
 		verts: map[*topo.Vertex]*topo.Vertex{}, edges: map[*topo.Edge]*topo.Edge{},
 		chainIdx: map[*topo.Edge]int{}, downIdx: map[*topo.Edge]int{},
-		junIdx: map[*topo.Vertex]int{},
+		junIdx:    map[*topo.Vertex]int{},
+		weld:      float64(geom.ResolutionForBox(b.RangeBox()).Weld()),
+		sharedFwd: make([]bool, len(st.segs)),
 	}
 	g.index()
 	g.copySurvivingVertices(b)
@@ -81,6 +83,11 @@ type stripeBuild struct {
 	cap           [2]*topo.Edge // [0]=start terminal cap arc, [1]=end terminal cap arc
 	connTop       [2]*topo.Edge // corner vertex → shared-face foot
 	connWall      [2]*topo.Edge // corner vertex → wall foot
+	weld          float64       // model-relative coincidence tolerance (descending-edge remnant guard)
+	// sharedFwd[i]: the SHARED face's retrim walks segment i's contact entry→exit. Recorded while
+	// copying the shared face so the blend face can take the topologically OPPOSITE direction —
+	// edge-use pairing is decided by topology, and only the face's Reversed flag by geometry.
+	sharedFwd []bool
 }
 
 // index builds the lookup maps from the solved stripe: chain edges → segment, down edges → junction,
@@ -141,9 +148,41 @@ func (g *stripeBuild) addSectionsAndRemnants(lin func(string, int) topo.Lineage)
 			return fmt.Errorf("fillet: cannot build the section circle at stripe junction %d: %w", j, err)
 		}
 		g.section[j] = g.bld.AddEdge(arc, g.vS1[j], g.vW[j], lin("sec", j))
-		bottom := otherVertex(g.st.down[j], g.st.junction[j])
-		g.lowerE[j] = g.bld.AddEdge(geom.NewLineSegment(g.st.segs[j].wallA, bottom.Point()),
-			g.vW[j], g.verts[bottom], lin("lower", j))
+		if err := g.addDownRemnant(j, lin); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// addDownRemnant adds the surviving remnant of junction j's descending edge, cut at the crossing
+// foot on whichever side (shared or wall) the edge lies. The remnant is rebuilt as a line, so a
+// curved descending edge whose remnant would leave that line is refused rather than misdrawn.
+func (g *stripeBuild) addDownRemnant(j int, lin func(string, int) topo.Lineage) error {
+	cutPt, cutV := g.st.segs[j].wallA, g.vW[j]
+	if g.st.cutOnShared[j] {
+		cutPt, cutV = g.st.segs[j].topA, g.vS1[j]
+	}
+	bottom := otherVertex(g.st.down[j], g.st.junction[j])
+	if err := g.assertStraightRemnant(j, cutPt, bottom.Point()); err != nil {
+		return err
+	}
+	g.lowerE[j] = g.bld.AddEdge(geom.NewLineSegment(cutPt, bottom.Point()), cutV, g.verts[bottom], lin("lower", j))
+	return nil
+}
+
+// assertStraightRemnant verifies the descending edge's curve actually runs along the straight
+// remnant chord (its curve point midway between the cut and the far end lies on the chord) —
+// the honest refusal for a curved descending edge the line rebuild would misrepresent.
+func (g *stripeBuild) assertStraightRemnant(j int, cutPt, bottom math.Point3) error {
+	d := g.st.down[j].Geometry()
+	tCut, _ := geom.CurveParamAtPoint3(d, cutPt)
+	tBot, _ := geom.CurveParamAtPoint3(d, bottom)
+	mid := d.PointAt((tCut + tBot) / 2)
+	chordMid := centroidPts([]math.Point3{cutPt, bottom})
+	if float64(mid.DistanceTo(chordMid)) > 10*g.weld {
+		return fmt.Errorf("fillet: stripe junction %d: descending edge is curved (chord gap %.3g) — "+
+			"its remnant cannot be rebuilt as a line", j, float64(mid.DistanceTo(chordMid)))
 	}
 	return nil
 }
@@ -222,6 +261,9 @@ func (g *stripeBuild) mapUse(f *topo.Face, u *topo.EdgeUse) []topo.Use {
 		fromV := g.verts[from]
 		if from == g.st.junction[j] {
 			fromV = g.vW[j]
+			if g.st.cutOnShared[j] {
+				fromV = g.vS1[j] // the descending edge lies on the shared face — cut at the shared foot
+			}
 		}
 		return []topo.Use{dirUse(g.lowerE[j], fromV)}
 	}
@@ -246,7 +288,11 @@ func (g *stripeBuild) mapChainUse(f *topo.Face, u *topo.EdgeUse, i int) []topo.U
 	if !g.st.closed && i == n-1 {
 		fwd = append(fwd, dirPiece{endConn, exitFoot, g.verts[g.st.term[1].vertex]})
 	}
-	if useFromVertex(u) == g.entryVertex(i) {
+	forward := useFromVertex(u) == g.entryVertex(i)
+	if f == g.st.shared {
+		g.sharedFwd[i] = forward // the blend face must walk this contact the OPPOSITE way
+	}
+	if forward {
 		return forwardPieces(fwd)
 	}
 	return reversePieces(fwd)
@@ -290,29 +336,48 @@ func dirUse(e *topo.Edge, from *topo.Vertex) topo.Use {
 	return topo.Use{Edge: e, Reversed: e.StartVertex() != from}
 }
 
-// addBlendFaces adds one blend face per segment: the quad topE[i] · exitSection · wallE[i] · entrySection,
-// wound so the loop normal matches the blend surface's outward radial (a convex fillet's surface faces
-// AWAY from the material, toward the rounded-off corner). A purely topological anchor is not enough —
-// it keeps every edge used twice but can still leave the surface geometrically inside-out, which the
-// mass-properties integral then reads as material on the wrong side of the tube. An interior boundary is
+// addBlendFaces adds one blend face per segment: the quad topE[i] · section · wallE[i] · section. The
+// LOOP DIRECTION is decided topologically — the blend walks the shared-face contact OPPOSITE to the
+// shared face's own retrimmed use of it (sharedFwd), which forces correct edge-use pairing all around
+// the quad (the wall contact and the junction sections then pair with THEIR other users by the same
+// global consistency). Only the face's Reversed flag comes from geometry: when the forced loop winds
+// against the blend surface's normal, the face is ADDED REVERSED rather than the loop re-wound — the
+// old geometric re-winding kept the surface outward but silently broke pairing whenever the shared
+// face sat on the other side of the tube (simple/Y9, shared = the drum wall). An interior boundary is
 // a junction section circle; an open run's two ends are terminal cap arcs (see entry/exitSecEdge).
 func (g *stripeBuild) addBlendFaces() {
 	n := len(g.st.segs)
 	lin := func(i int) topo.Lineage { return topo.NewLineage(topo.Tok("stripe", "blend", i)) }
 	for i := 0; i < n; i++ {
-		es1, ew := g.exitFootS1(i), g.exitFootW(i)
-		ring := []math.Point3{g.vS1[i].Point(), es1.Point(), ew.Point(), g.vW[i].Point()}
-		loop := []topo.Use{
-			dirUse(g.topE[i], g.vS1[i]),
-			dirUse(g.exitSecEdge(i), es1),
-			dirUse(g.wallE[i], ew),
-			dirUse(g.entrySecEdge(i), g.vW[i]),
-		}
+		loop, ring := g.blendLoop(i)
 		if blendRingFlipped(g.st.segs[i].surf, ring) {
-			loop = reverseLoop(loop)
+			g.bld.AddReversedFace(g.st.segs[i].surf, lin(i), topo.OuterLoop(loop...))
+			continue
 		}
 		g.bld.AddFace(g.st.segs[i].surf, lin(i), topo.OuterLoop(loop...))
 	}
+}
+
+// blendLoop is segment i's blend-face boundary walked opposite to the shared face's use of the
+// contact, with the ring corners in the same traversal order (for the Reversed-flag winding test).
+func (g *stripeBuild) blendLoop(i int) ([]topo.Use, []math.Point3) {
+	es1, ew := g.exitFootS1(i), g.exitFootW(i)
+	if g.sharedFwd[i] {
+		loop := []topo.Use{
+			dirUse(g.topE[i], es1),
+			dirUse(g.entrySecEdge(i), g.vS1[i]),
+			dirUse(g.wallE[i], g.vW[i]),
+			dirUse(g.exitSecEdge(i), ew),
+		}
+		return loop, []math.Point3{es1.Point(), g.vS1[i].Point(), g.vW[i].Point(), ew.Point()}
+	}
+	loop := []topo.Use{
+		dirUse(g.topE[i], g.vS1[i]),
+		dirUse(g.exitSecEdge(i), es1),
+		dirUse(g.wallE[i], ew),
+		dirUse(g.entrySecEdge(i), g.vW[i]),
+	}
+	return loop, []math.Point3{g.vS1[i].Point(), es1.Point(), ew.Point(), g.vW[i].Point()}
 }
 
 // entrySecEdge / exitSecEdge return the section arc bounding segment i at its entry / exit — an interior

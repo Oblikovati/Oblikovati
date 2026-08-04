@@ -89,6 +89,37 @@ func TestMarcherCentreCurvePlanePlane(t *testing.T) {
 	}
 }
 
+// TestMarcherCentreCurveAnchorOffSampleGrid is the simple/Y9 head: the centre-curve branch match
+// must hold for an anchor at ANY angle of a circular centre curve, not only at its parameter
+// origin. The old distPointToCurve ranked branches by a 64-point SAMPLED minimum against the weld
+// tolerance (~1e-7·size), so an on-circle anchor at a non-sample angle (here 33°) read as "off the
+// curve" and the march died with start-section-failed on geometry whose blend is an exact torus.
+func TestMarcherCentreCurveAnchorOffSampleGrid(t *testing.T) {
+	plane, _ := geom.NewPlane(math.P3(0, 0, 20), math.V3(0, 0, 1))
+	cyl, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 50)
+	inside := func(p math.Point3) bool { // the solid: inside the drum wall AND below the cap
+		return float64(p.Z) < 20 && stdmath.Hypot(float64(p.X), float64(p.Y)) < 50
+	}
+	m := &Marcher{Inside: inside, Res: geom.ResolutionForSize(100)}
+	ang := 33.0 * stdmath.Pi / 180 // any non-sample angle; 64 samples land on multiples of 5.625°
+	guide := math.P3(50*stdmath.Cos(ang), 50*stdmath.Sin(ang), 20)
+	anchor, ok := m.expectedCentre(guide, plane, cyl, 4)
+	if !ok {
+		t.Fatal("no seed section at the 33° guide station")
+	}
+	centre, ok := m.centreCurve(plane, cyl, 4, anchor)
+	if !ok {
+		t.Fatal("centre curve not found for an anchor at a non-sample angle (the Y9 regression)")
+	}
+	circ, isCircle := centre.(geom.Circle)
+	if !isCircle {
+		t.Fatalf("centre curve is %T, want a circle", centre)
+	}
+	if stdmath.Abs(circ.Radius-46) > 1e-9 || stdmath.Abs(float64(circ.Center.Z)-16) > 1e-9 {
+		t.Errorf("centre circle radius=%g centreZ=%g, want 46 / 16", circ.Radius, circ.Center.Z)
+	}
+}
+
 // assertBlendTangent samples the torus tube's extreme point on each principal direction: its top
 // must reach the cap plane and its outer equator the cylinder radius.
 func assertBlendTangent(t *testing.T, tor geom.Torus, capZ, cylR float64) {

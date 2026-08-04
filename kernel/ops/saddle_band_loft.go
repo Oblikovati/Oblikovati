@@ -128,9 +128,52 @@ func saddleBandLoftMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
 	if len(lo) < 3 || len(hi) < 3 {
 		return nil, false
 	}
+	if !ringSingleValuedInAngle(s, lo) || !ringSingleValuedInAngle(s, hi) {
+		return nil, false // a rim with a vertical step (two axial stations at one angle) is no v(u) loft rim
+	}
 	m := &Mesh{}
 	stitchBandRows(m, addRow(m, s, lo, ringAngles(s, lo)), addRow(m, s, hi, ringAngles(s, hi)))
 	return m, true
+}
+
+// ringSingleValuedInAngle reports whether the rim ring is a genuine v(u) graph: no two ring points
+// share the same periodic angle while sitting at distinct axial stations. The loft stitches rows by
+// angle order, so a rim carrying a VERTICAL segment — a miter rail, a seam-line remnant, a bridge
+// riser (blend/simple P5's retrimmed wall) — has an arbitrary order among its same-angle points and
+// the loft would cross-stitch them into a bowtie crack. Such a face is not a two-rim band; declining
+// here sends it to the general trimmed-CDT path. Genuine saddle/notched rims (Steinmetz, #1374's
+// fading frustum flat, U4's oblique hole wall) are strictly monotone in angle and pass untouched.
+//
+// ★ #near-pinch regression: the original test compared the raw angle gap against a BARE radians
+// constant (seamAngularTol), which is not model-relative (ADR-0042) — it ignores the ring's local
+// RADIUS, so it silently changes meaning with scale. A near-pinch crossing's saddle rim is sampled
+// very densely right where curvature peaks (chord-height-driven refinement, #2009's whole argument),
+// so two ADJACENT sorted samples can land a sliver of a radian apart there while still moving a
+// perfectly ordinary, non-degenerate distance along the curve — that tripped the bare-radians test at
+// R=3/30 (dAngle~1e-6..1e-7 rad, comfortably under the old 1e-6 constant) even though the two points
+// are ~300x the weld tolerance apart once the local radius is folded in. A genuine vertical step has
+// TWO points at the exact SAME u (to float noise, dAngle≈0) while v moves a real distance — so instead
+// of an angle threshold, convert the angular gap to a LENGTH via the surface's own |∂P/∂u| (the
+// tangential speed, i.e. the local radius for a cylinder/cone) and compare that arc length against the
+// ring's own weld tolerance. This is scale-free by construction: it asks "did this step move a
+// negligible (sub-weld) distance in u", not "is the raw radian gap below some fixed number".
+func ringSingleValuedInAngle(s geom.Surface, ring []math.Point3) bool {
+	angles := ringAngles(s, ring)
+	weld := ResolutionForPoints(ring).Weld()
+	for i := 1; i < len(angles); i++ {
+		dist := ring[i].DistanceTo(ring[i-1])
+		if dist <= weld {
+			continue // coincident within weld: not two distinct stations either way
+		}
+		_, v := s.ParamAt(ring[i-1])
+		du, _ := s.DerivativesAt(angles[i-1], v)
+		if du.Length()*(angles[i]-angles[i-1]) < weld {
+			return false // angular movement is sub-weld while the points are genuinely distinct:
+			// a true vertical step (same station, different axial position), not a v(u) rim collapsed
+			// there by dense curvature sampling.
+		}
+	}
+	return true
 }
 
 // bandWrapRings reads the band's rim rings by topology rather than curve type (a rim may be a circle or a
@@ -139,6 +182,17 @@ func saddleBandLoftMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
 // together form one saddle rim (e.g. an equal-radius Steinmetz band whose saddle rim is two ellipse arcs
 // meeting at the pinch points), so their points are pooled into a single ring (orderedRing later sorts them
 // by angle). Coincident points where arcs meet are de-duplicated.
+//
+// ★ Each rim edge is read through discretizeEdge — the ONE function every other face of that edge already
+// shares (edge_discretize.go's package doc) — NOT through the raw TessellateEdge sampler. The two differ on
+// exactly the case simple/U4 leaked on: TessellateEdge returns the bare chord-sagitta sampling of the curve,
+// while discretizeEdge additionally (a) returns a healed edge's stored on-surface polyline and (b) applies
+// the #2009 starved-rail densification (densifyStarvedRail), whose whole correctness argument is that it is
+// caller-INDEPENDENT. Reading the ring raw silently opted this mesher out of that argument: U4's oblique-hole
+// wall is a notched band, so it tiled the straight rim edge it shares with the high-aspect fillet sliver with
+// ONE chord while the sliver's CDT tiled the SAME topological edge with 21 — 21 + 21 + 2 = 44 free edges at
+// BOTH gate qualities, on a body every other gate scored green. The endpoints matched exactly; only the
+// station counts differed, which is why no area, off-surface or loop gate could see it.
 func bandWrapRings(f *topo.Face, q Quality) [][]math.Point3 {
 	seam := seamEdgesOf(f)
 	var rings [][]math.Point3
@@ -147,7 +201,7 @@ func bandWrapRings(f *topo.Face, q Quality) [][]math.Point3 {
 		if seam[e] {
 			continue
 		}
-		pts := dropClosingDup(TessellateEdge(e, q))
+		pts := dropClosingDup(discretizeEdge(e, q))
 		if e.StartVertex() == e.EndVertex() {
 			rings = append(rings, pts)
 		} else {

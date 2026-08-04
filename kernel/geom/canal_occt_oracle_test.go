@@ -1,0 +1,72 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package geom
+
+import (
+	stdmath "math"
+	"testing"
+
+	"oblikovati.org/math"
+)
+
+// occtResult5Surface reconstructs OCCT's own N7 corner face result_5 as a BSplineSurface from the
+// exact 3×10 rational pole net in .superpowers/sdd/result5-poles.txt (degrees 2×9, single Bézier
+// segment each way, u-rational). It is the SHAPE oracle: our emergent canal patch must coincide with
+// it (parametrization-free nearest-point). Transcribed verbatim from the poles file — provenance,
+// not a fit, so no tuning leaks into the comparison. Ctrl[u][v]: u-row 0 = wall foot-locus (weight 1),
+// u-row 1 = shoulder (weight cos β, varying), u-row 2 = s_10 foot-locus (weight 1).
+func occtResult5Surface(t *testing.T) BSplineSurface {
+	t.Helper()
+	ctrl := [][]math.Point3{
+		{
+			math.P3(55.5555555555556, 0.309600500004677, 5),
+			math.P3(53.8210333997431, 0.115675027560832, 4.99999999999999),
+			math.P3(52.0791905997372, -0.0101897864332736, 5.2700654559041),
+			math.P3(50.3554079144844, -0.0645150446694336, 5.81434945934649),
+			math.P3(48.6924698835885, -0.0499857967967534, 6.65873890567615),
+			math.P3(47.1326974339141, 0.0288262711051703, 7.82049107690348),
+			math.P3(45.81876986326, 0.156639967331227, 9.35224537212542),
+			math.P3(44.9033546036372, 0.258178534150312, 11.1453885792316),
+			math.P3(44.4444444444444, 0.30960050000468, 13.0727531602083),
+			math.P3(44.4444444444445, 0.30960050000467, 15),
+		},
+		{
+			math.P3(55.5555555555556, 0.309600500004678, 10),
+			math.P3(54.6964718541276, 0.213552022266939, 9.90571032545302),
+			math.P3(53.7867160656691, 0.11189028183877, 9.97612736532609),
+			math.P3(52.8653749275279, 0.0136288127611306, 10.2372481172897),
+			math.P3(51.9842467751608, -0.0739495036866882, 10.6983776979265),
+			math.P3(51.2126554470126, -0.152712281063047, 11.366815391235),
+			math.P3(50.622230401134, -0.229016990786574, 12.1647965095108),
+			math.P3(50.2098697227113, -0.28337481141892, 13.062491899871),
+			math.P3(50, -0.311529493745261, 14.0243312873554),
+			math.P3(50, -0.311529493745269, 15),
+		},
+		{
+			math.P3(55, 5.27864045000421, 10),
+			math.P3(54.1433152767024, 5.0870799223463, 9.99999999999999),
+			math.P3(53.2790833893779, 4.96275276195102, 10.1650617670601),
+			math.P3(52.4411178336395, 4.91357799380416, 10.5007337539676),
+			math.P3(51.6687659856807, 4.9366840953439, 11.0031140793215),
+			math.P3(51.008999720644, 5.02378892562784, 11.6638408662873),
+			math.P3(50.5080584132363, 5.14026437263541, 12.4317801200321),
+			math.P3(50.1691706216651, 5.23232158895919, 13.2654303028643),
+			math.P3(50, 5.27864045000421, 14.1327389220938),
+			math.P3(50, 5.2786404500042, 15),
+		},
+	}
+	w2 := []float64{
+		0.707106781186548, 0.713837532044128, 0.715718038588587, 0.71258975328307,
+		0.705152485437339, 0.693672035264326, 0.680949392734954, 0.671457935819885,
+		0.666666666666677, 0.666666666666667,
+	}
+	weights := [][]float64{onesRow(10), w2, onesRow(10)}
+	q := stdmath.Pi / 2
+	uKnots := []float64{0, 0, 0, q, q, q}
+	vKnots := []float64{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, q, q, q, q, q, q, q, q, q, q}
+	surf, err := NewBSplineSurface(2, 9, ctrl, weights, uKnots, vKnots)
+	if err != nil {
+		t.Fatalf("occtResult5Surface: %v", err)
+	}
+	return surf
+}

@@ -23,6 +23,50 @@ type cornerMiter struct {
 	shared *topo.Face
 	sBot   math.Point3
 	seam   []math.Point3
+	// curved is non-nil for a CURVED-contact miter (a cylinder shared or outer face, families B/C/D):
+	// its two arms mutually trim along their arm∩arm seam, and the body is welded by curvedMiterBody
+	// rather than the planar face path. nil for the planar (all-planar) miter, which stays byte-identical.
+	curved *curvedMiterCorner
+}
+
+// curvedMiterCorner carries a curved-contact miter's assembly data: the topo edge each arm belongs to,
+// the shared face, and the corner ball centre, plus EXACTLY ONE of two family payloads — arms (B/C: one
+// torus + one cylinder) or torusPair (D: two coaxial tori, fillet_miter_curved_torustorus.go). The
+// weld layer (curvedMiterBody) reads the two arm surfaces through armA/armB/radius below rather than
+// poking .arms.tor/.arms.cyl directly, so family D needs no special-casing there — torEdge/cylEdge are
+// genuinely family-agnostic names by this point (edgeA/edgeB in family D's own terms).
+type curvedMiterCorner struct {
+	arms      curvedMiterArms       // family B/C payload; zero value when torusPair is set
+	torusPair *curvedMiterTorusPair // family D payload; nil for B/C
+	torEdge   *topo.Edge
+	cylEdge   *topo.Edge
+	shared    *topo.Face
+	center    math.Point3
+}
+
+// armA is this corner's first arm surface, regardless of family (the torus+cylinder pair's torus, or
+// family D's torus A).
+func (c *curvedMiterCorner) armA() geom.Surface {
+	if c.torusPair != nil {
+		return c.torusPair.torA
+	}
+	return c.arms.tor
+}
+
+// armB is this corner's second arm surface (the torus+cylinder pair's cylinder, or family D's torus B).
+func (c *curvedMiterCorner) armB() geom.Surface {
+	if c.torusPair != nil {
+		return c.torusPair.torB
+	}
+	return c.arms.cyl
+}
+
+// radius is the corner's shared rolling-ball radius, read from whichever family is populated.
+func (c *curvedMiterCorner) radius() float64 {
+	if c.torusPair != nil {
+		return c.torusPair.torA.MinorRadius
+	}
+	return c.arms.tor.MinorRadius
 }
 
 // miterArm is one filleted edge's rolling-ball data at a miter corner: the cylinder centre at
@@ -41,6 +85,9 @@ func solveMiter(v *topo.Vertex, ps []filletPick, r float64) (*cornerMiter, error
 	shared := sharedFace(ps[0].edge, ps[1].edge)
 	if shared == nil {
 		return nil, fmt.Errorf("fillet: two filleted edges meeting at a vertex must share a face to miter (none shared)")
+	}
+	if miterHasCurvedContact(ps, shared) {
+		return solveCurvedMiter(v, ps, shared, r) // families B/C: a cylinder shared or outer face
 	}
 	nS, ok := planeNormal(shared)
 	if !ok {
@@ -131,11 +178,14 @@ func sharedFace(e1, e2 *topo.Edge) *topo.Face {
 	return nil
 }
 
-// planeNormal returns f's unit normal and ok=true when f is planar.
+// planeNormal returns f's material-OUTWARD unit normal and ok=true when f is planar. It must
+// respect face.Reversed() (STEP-imported faces carry an inward plane normal): the miter arm's
+// offDir and seam plane are built from these normals, so a raw plane normal flips one arm on an
+// imported solid — the corner-path analogue of the edgePlanarFaces fix (commit dbd28339).
 func planeNormal(f *topo.Face) (math.Vector3, bool) {
 	pl, ok := f.Geometry().(geom.Plane)
 	if !ok {
 		return math.Vector3{}, false
 	}
-	return pl.Normal(), true
+	return outwardPlaneNormal(f, pl), true
 }

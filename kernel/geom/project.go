@@ -32,7 +32,7 @@ const (
 func ClosestPointOnSurface(s Surface, p math.Point3) (u, v float64, foot math.Point3) {
 	u, v = s.ParamAt(p)
 	u, v = clampToSurface(s, u, v)
-	u, v, _ = refineSurfaceParam(s, p, u, v, projectMaxIter)
+	u, v, _, _ = refineSurfaceParam(s, p, u, v, projectMaxIter)
 	return u, v, s.PointAt(u, v)
 }
 
@@ -44,8 +44,17 @@ func ClosestPointOnSurface(s Surface, p math.Point3) (u, v float64, foot math.Po
 // paths (Oblikovati/Oblikovati#1401). The per-axis projection it replaced ignored the Su·Sv
 // cross-term and never tested convergence, so it crawled on a skewed/folding
 // parameterisation and burned every iteration even after converging. Returns the refined
-// (u, v) and the iterations actually run (< maxIter once converged).
-func refineSurfaceParam(s Surface, q math.Point3, u, v float64, maxIter int) (float64, float64, int) {
+// (u, v), the iterations actually run (< maxIter once converged), and whether it gave up at a
+// DEGENERATE FRAME.
+//
+// That last return distinguishes the loop's two failure exits, which are not equivalent. At a
+// numerical floor (!moved) the line search tried and found nothing better: the foot is a genuine
+// local minimum of the distance, so returning it is an answer. At a degenerate frame (!ok) no step
+// direction exists at all, so the loop returns the SEED IT WAS HANDED, untouched — not a computed
+// foot. Only the latter can propagate: a caller that marches (see [BSplineSurface.ParamNear])
+// re-seeds the next point from this result, so one degenerate frame pins every subsequent point to
+// the same parameter (#2020).
+func refineSurfaceParam(s Surface, q math.Point3, u, v float64, maxIter int) (float64, float64, int, bool) {
 	i := 0
 	for ; i < maxIter; i++ {
 		f := s.PointAt(u, v)
@@ -57,7 +66,7 @@ func refineSurfaceParam(s Surface, q math.Point3, u, v float64, maxIter int) (fl
 		}
 		ddu, ddv, ok := gaussNewtonStep(du, dv, gu, gv)
 		if !ok {
-			break // degenerate tangent frame (pole/apex): keep the seed
+			return u, v, i, true // degenerate frame (pole/apex): no step exists — this is the SEED, not a foot
 		}
 		nu, nv, moved := lineSearchToward(s, q, u, v, ddu, ddv, float64(r.LengthSquared()))
 		if !moved {
@@ -65,7 +74,7 @@ func refineSurfaceParam(s Surface, q math.Point3, u, v float64, maxIter int) (fl
 		}
 		u, v = nu, nv
 	}
-	return u, v, i
+	return u, v, i, false
 }
 
 // surfaceFootConverged applies the Piegl & Tiller §6.1 stopping tests: point coincidence

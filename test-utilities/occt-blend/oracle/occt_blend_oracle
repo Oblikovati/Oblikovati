@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# occt_blend_oracle — run one OCCT tests/blend case through the locally-built DRAWEXE and
+# emit <out>/<case>.step (OCCT's input solid) + <out>/<case>.json (picks + reference area).
+#
+# Usage: occt_blend_oracle <path-to-case-tcl> <out-dir>
+#   e.g. occt_blend_oracle ../OCCT/tests/blend/simple/A1 /tmp/oracle-out
+#
+# The case's grid `begin` file (sibling of the case dir's parent) is sourced first so grid
+# variables (SCALE, SCALE1, …) and TOPTEST are set exactly as the OCCT test harness sets them.
+set -euo pipefail
+
+if [ "$#" -ne 2 ]; then
+    echo "usage: $0 <case-tcl-path> <out-dir>" >&2
+    exit 2
+fi
+
+CASE_PATH=$(readlink -f "$1")
+OUT_DIR=$(readlink -f "$2" 2>/dev/null || { mkdir -p "$2" && readlink -f "$2"; })
+mkdir -p "$OUT_DIR"
+
+HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+# shellcheck source=drawenv.sh
+source "$HERE/drawenv.sh"
+
+CASE_DIR=$(dirname "$CASE_PATH")   # .../tests/blend/<grid>
+GRID_DIR=$(dirname "$CASE_DIR")    # .../tests/blend
+GRID_NAME=$(basename "$CASE_DIR")
+CASE_NAME=$(basename "$CASE_PATH")
+BEGIN_PATH="$CASE_DIR/begin"
+[ -f "$BEGIN_PATH" ] || BEGIN_PATH="$GRID_DIR/begin"
+
+export ORACLE_CASE="$CASE_PATH"
+export ORACLE_BEGIN="$BEGIN_PATH"
+export ORACLE_OUT="$OUT_DIR"
+export ORACLE_GRID="$GRID_NAME"
+export ORACLE_NAME="$CASE_NAME"
+# OCCT cases reference locate_data_file; point it at the vendored fixtures if present.
+export CSF_TestDataPath="${CSF_TestDataPath:-$HERE/../data}"
+
+printf 'source %s/oracle.tcl\nexit\n' "$HERE" | "$DRAWEXE" -b

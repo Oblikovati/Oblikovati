@@ -1,0 +1,106 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package ops
+
+import (
+	stdmath "math"
+
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+)
+
+// M5 Slice A (m5-curved-arm-derivation.md §D2/§D3/§D5): the exact analytic arm surfaces that
+// classifyCurvedArm dispatches to. A Plane∧Cylinder rolling-ball fillet is a TORUS when the axis is
+// ⊥ the plane (config i, circle edge) and a CYLINDER when the axis is ∥ the plane (config ii, line
+// edge) — both closed-form primitives, no canal surface — plus the cross-section quarter-arc the
+// corner engine consumes. Wired into nothing here (Task 3 does that); unit-pinned to the OCCT B3
+// BREP oracle (`5 … 40 10` torus, `2 … 10` cylinder).
+
+// armSpindleBand is k in the existence guard R−r < k·res.Weld() (§Numerical pitfalls): a length band,
+// scaled to the model (ADR-0042), below which the convex torus tube reaches the axis and the surface
+// self-intersects (spindle/horn torus). k=4 sits at the top of the derivation's k≈2..4 so we reject
+// generously rather than emit a near-degenerate torus. Not a bare 1e-6.
+const armSpindleBand = 4
+
+// torusArmSurface builds the config-(i) exact torus arm (m5-curved-arm-derivation.md §D2): a
+// rolling-ball fillet of radius r on the CIRCLE edge where cylinder cyl meets plane pl with the axis
+// perpendicular to the plane. The tube minor radius is r; the major radius is R−ε·r where ε=+1 for a
+// BOSS wall (material inside the cylinder — the historical convex-external rim, major R−r) and ε=−1
+// for a BORE/NOTCH wall (material OUTSIDE the cylinder, so the tube contacts the wall at its inner
+// equator, major R+r; corner-blend-weld foundation, N1/L9). The centre is the cylinder axis projected
+// onto the plane, offset r into the material (opposite the plane's outward normal) — the SAME for both
+// senses (the torus is coaxial with the wall; only the major radius flips). Built via NewTorusWithRef
+// so the u=0 seam aligns with the boss wall (Oblikovati#129). Returns false when R−r collapses onto the
+// axis (r ≥ R, boss only): a self-intersecting spindle torus is never emitted. ε=+1 reproduces the
+// pre-foundation code byte-for-byte (R − (+1)·r = R−r).
+//
+// Example: torusArmSurface(bossWall{R:50}, topCap{z:100}, …, 10, +1, res) → torus centre (0,0,90), axis
+// ẑ, major 40, minor 10 (the B3 top-rim arm, OCCT BREP `5 0 0 90 0 0 1 … 40 10`).
+func torusArmSurface(cyl geom.Cylinder, pl geom.Plane, outwardN math.UnitVector3, r, eps float64, res Resolution) (geom.Torus, bool) {
+	majorR := cyl.Radius - eps*r
+	if majorR < armSpindleBand*res.Weld() {
+		return geom.Torus{}, false
+	}
+	n := outwardN                   // the plane FACE's material-outward normal (Reversed-aware) — NOT the raw
+	inward := n.Negate().AsVector() // geom normal, which on an imported cap can point into the material (B6-class)
+	center := projectOntoPlane(cyl.Origin, pl).TranslateBy(inward.Scale(r))
+	tor, err := geom.NewTorusWithRef(center, n.AsVector(), cyl.Ref.AsVector(), majorR, r)
+	return tor, err == nil
+}
+
+// cylinderArmSurface builds the config-(ii) exact cylinder arm (m5-curved-arm-derivation.md §D3): a
+// rolling-ball fillet of radius r on the LINE edge where cylinder cyl meets plane pl with the axis
+// parallel to the plane. The fillet cylinder's axis is the ruling of P_r∩C_ρ (the offset plane meets
+// the coaxial offset cylinder of radius ρ=R−ε·r in a pair of rulings; edge selects the near one) and
+// its radius is r. ε=+1 for a BOSS wall (material inside → ρ=R−r, the historical case) and ε=−1 for a
+// BORE/NOTCH wall (material OUTSIDE → ρ=R+r; corner-blend-weld foundation, N1/L9). ε=+1 reproduces the
+// pre-foundation code byte-for-byte. Returns false when P_r clears C_ρ (no real ruling — the plane
+// misses the offset cylinder).
+//
+// Example: cylinderArmSurface(wallEdge, bossWall{R:50}, radialPlane, …, 10, +1) → radius-10 cylinder
+// about the wall ruling (the B3 vertical-wall arm, OCCT BREP `2 … 10`).
+func cylinderArmSurface(edge *topo.Edge, cyl geom.Cylinder, pl geom.Plane, outwardN math.UnitVector3, r, eps float64) (geom.Cylinder, bool) {
+	rho := cyl.Radius - eps*r
+	if rho <= 0 {
+		return geom.Cylinder{}, false // convex spindle: the offset cylinder has collapsed
+	}
+	n := outwardN                                       // the plane FACE's material-outward normal (Reversed-aware): armRulingBase offsets the
+	base, ok := armRulingBase(edge, cyl, pl, n, rho, r) // ruling −r into the MATERIAL, so its sign must be right
+	if !ok {
+		return geom.Cylinder{}, false
+	}
+	arm, err := geom.NewCylinderWithRef(base, cyl.AxisDir.AsVector(), n.AsVector(), r)
+	return arm, err == nil
+}
+
+// armRulingBase returns a point on the selected ruling of P_r∩C_ρ (m5-curved-arm-derivation.md §D3).
+// In the axis frame a ruling centre w satisfies |w|=ρ and w·n̂ = −r − (A−p_P)·n̂ (the offset plane at
+// signed distance −r into the material); the two solutions w = m·n̂ ± √(ρ²−m²)·(â×n̂) are the two
+// rulings, and the edge midpoint picks the near one. Returns false when the radicand is non-positive
+// (P_r grazes or clears C_ρ — no real intersection).
+func armRulingBase(edge *topo.Edge, cyl geom.Cylinder, pl geom.Plane, n math.UnitVector3, rho, r float64) (math.Point3, bool) {
+	a := cyl.AxisDir.AsVector()
+	b := a.Cross(n.AsVector()) // ⟂ both axis and normal (config ii: n̂ ⟂ â), unit length
+	m := -r - pl.Origin.VectorTo(cyl.Origin).Dot(n.AsVector())
+	disc := rho*rho - m*m
+	if disc <= 0 {
+		return math.Point3{}, false
+	}
+	t := stdmath.Sqrt(disc)
+	off := n.AsVector().Scale(m)
+	plus := cyl.Origin.TranslateBy(off.Add(b.Scale(t)))
+	minus := cyl.Origin.TranslateBy(off.Sub(b.Scale(t)))
+	return nearerRuling(edge, plus, minus), true
+}
+
+// nearerRuling returns whichever ruling base lies closer to the picked edge's midpoint — the physical
+// disambiguation of the two P_r∩C_ρ rulings (the edge sits on exactly one of them).
+func nearerRuling(edge *topo.Edge, plus, minus math.Point3) math.Point3 {
+	lo, hi := edge.StartVertex().Point(), edge.EndVertex().Point()
+	mid := lo.TranslateBy(lo.VectorTo(hi).Scale(0.5))
+	if float64(mid.DistanceTo(plus)) <= float64(mid.DistanceTo(minus)) {
+		return plus
+	}
+	return minus
+}

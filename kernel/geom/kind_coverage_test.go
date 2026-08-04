@@ -55,6 +55,7 @@ var curveKindProbes = map[CurveKind]KindedCurve{
 	CurveHelix:         Helix3d{},
 	CurveVariableHelix: VariableHelix3d{},
 	CurveSpiric:        SpiricArc{},
+	CurveTorusCyl:      TorusCylinderArc{},
 }
 
 func TestCurveKindCoverage(t *testing.T) {

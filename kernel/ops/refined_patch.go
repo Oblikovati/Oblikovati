@@ -53,6 +53,24 @@ func patchIsManifold(m *Mesh, loops [][]int) bool {
 	return weldedFreeEdgeCount(m) <= want
 }
 
+// FreeEdgeCount welds coincident vertices at the MODEL's own resolution and counts mesh edges not used
+// by exactly two triangles — the watertightness metric (0 = a closed manifold surface). It is
+// FoldEdgeCount's sibling: a mesh must be free-edge-free to be closed and fold-free to bound a
+// well-defined volume.
+//
+// The weld grid is model-relative (ADR-0042), and that is load-bearing rather than stylistic. A fixed
+// absolute grid — the 1e-6 several test-local copies used to carry — over-merges whenever the model's
+// own feature separation drops below it, and an over-merge reports as a free edge just like a crack
+// does: on the #1818 near-pinch crossing (R=3, |Δr|=2e-5) at PropertyQuality the fixed grid collapsed
+// pairs of distinct neck vertices measured 6.3e-7 apart and produced EIGHT 4-incident edges, every one
+// of degree 4 (an over-merge) and none of degree 1 (a crack). At the model's own weld resolution
+// (1.039e-8 there) not one edge is anything but 2-incident: that mesh is watertight.
+//
+// Example: FreeEdgeCount(mesh) == 0 is required for a tessellation to be a closed surface.
+func FreeEdgeCount(m *Mesh) int {
+	return weldedFreeEdgeCount(m)
+}
+
 // weldedFreeEdgeCount welds coincident vertices (by [weldKey]) and counts edges not shared by exactly
 // two triangles — the watertightness metric for a single mesh.
 func weldedFreeEdgeCount(m *Mesh) int {

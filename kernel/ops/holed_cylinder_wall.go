@@ -45,11 +45,12 @@ func holedConicWallMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.
 	return unrolledWallCDT(s, q, outer3D, holes3D, outerUV, holesUV), true
 }
 
-// isDevelopableSide reports whether the surface is a cylinder or a cone — the developable (zero
-// Gaussian-curvature) sides whose walls unroll, so a holed wall on them meshes through the unrolled CDT.
+// isDevelopableSide reports whether the surface is a cylinder (circular or elliptical) or a cone — the
+// developable (zero Gaussian-curvature) sides whose walls unroll, so a holed wall on them meshes
+// through the unrolled CDT.
 func isDevelopableSide(s geom.Surface) bool {
 	switch s.(type) {
-	case geom.Cylinder, geom.Cone:
+	case geom.Cylinder, geom.EllipticalCylinder, geom.Cone:
 		return true
 	default:
 		return false
@@ -217,11 +218,11 @@ func holeUVInBranch(s geom.Surface, hole []math.Point3, umin, umax float64) ([]m
 	for i, p := range hole {
 		us[i], vs[i] = s.ParamAt(p)
 	}
+	if loopEncirclesAxis(us) {
+		return nil, false // a hole that itself wraps the seam (an exact ±2π winding, not a sampled span)
+	}
 	cu := cumulativeUnwrap(us)
 	lo, hi := minMax(cu)
-	if hi-lo > 2*stdmath.Pi-0.5 {
-		return nil, false // a hole that itself wraps the seam
-	}
 	shift := branchShift((lo+hi)/2, umin, umax)
 	if lo+shift < umin-seamAngularTol || hi+shift > umax+seamAngularTol {
 		return nil, false // straddles a seam edge even after shifting (u is radians)
@@ -231,6 +232,45 @@ func holeUVInBranch(s geom.Surface, hole []math.Point3, umin, umax float64) ([]m
 		uv[i] = math.P2(math.Scalar(cu[i]+shift), math.Scalar(vs[i]))
 	}
 	return uv, true
+}
+
+// loopWinding returns a CLOSED loop's total winding about the periodic axis: every step folded into
+// (−π, π] and summed, INCLUDING the CLOSING step from the last sample back to the first — the one
+// segment an open-chain accumulation such as cumulativeUnwrap never measures.
+//
+// It is EXACTLY quantised: the raw steps around a closed ring telescope to zero and each fold adds a
+// whole period, so the sum is 2π·k for an integer k — 0 for a contractible lens hole, ±2π for a rim
+// that encircles the axis. Measured over the whole shipped population (1166 loops across the OCCT blend
+// corpus and the kernel suite) the residual |W − 2πk| is 0.000e+00 on every one; there is no grey band.
+//
+// WHY THIS AND NOT THE SAMPLED u-RANGE (the classifier it replaced). For a rim traversed once, the
+// cumulative range hi−lo is 2π minus the loop's UN-TRAVERSED closing step, so "hi−lo > 2π − 0.5" is
+// really "is this loop's single largest angular sampling gap under 0.5 rad" — a sampling-density test
+// wearing a topology test's clothes, and the same un-measured-closing-step blind spot that made
+// unwrap() unsafe (.superpowers/sdd/unwrapperiod-report.md §2). Its tightest measured headroom on the
+// shipped population was 0.0516 rad — four times SMALLER than one sampling step of the very loop it was
+// classifying — so a slightly coarser faceting flips a rim to a lens and drops the wall to the flat
+// best-fit-plane CDT (#1724: an inside-out band, ~140 free edges). The winding instead has a full π of
+// headroom either side, which is the fold's OWN bound; the largest wrapped step measured anywhere in
+// the tree is 0.211·π, a 4.7× margin.
+//
+// Example: loopWinding([]float64{0, 2, 4, 6}) ≈ 2π (a rim); loopWinding([]float64{0, .1, .2}) == 0.
+func loopWinding(us []float64) float64 {
+	if len(us) < 2 {
+		return 0
+	}
+	w := wrapPi(us[0] - us[len(us)-1]) // the CLOSING step, the one an open chain never forms
+	for i := 1; i < len(us); i++ {
+		w += wrapPi(us[i] - us[i-1])
+	}
+	return w
+}
+
+// loopEncirclesAxis reports whether a closed loop of periodic surface parameters winds around the axis
+// — a rim — rather than being a contractible lens hole. |W| > π separates 0 from ±2π with half a period
+// of headroom on each side; see loopWinding for why that bound is structural and 2π − 0.5 was not.
+func loopEncirclesAxis(us []float64) bool {
+	return stdmath.Abs(loopWinding(us)) > stdmath.Pi
 }
 
 // cumulativeUnwrap makes a periodic parameter contiguous by accumulating per-step deltas (each jump

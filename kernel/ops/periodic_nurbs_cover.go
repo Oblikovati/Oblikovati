@@ -159,7 +159,7 @@ func rimBand(rims []cylLoop, ulo, period float64) (vBot, vTop rimFunc, vmin, vma
 	if meanV(rims[0]) > meanV(rims[1]) {
 		a, b = b, a
 	}
-	vBot, vTop = interpRim(a), interpRim(b)
+	vBot, vTop = interpRim(a, period), interpRim(b, period)
 	vmin, vmax = stdmath.Inf(1), stdmath.Inf(-1)
 	for _, l := range rims {
 		for _, v := range l.v {
@@ -179,27 +179,39 @@ func rimSamples(l cylLoop, ulo, period float64) [][2]float64 {
 	return pts
 }
 
-// interpRim builds a clamped linear interpolant v(u) over the sorted rim samples.
-func interpRim(pts [][2]float64) rimFunc {
+// interpRim builds a PERIODIC linear interpolant v(u) over the sorted rim samples.
+//
+// rimSamples folds every rim point to canonical u and sorts it, so the segment from the LAST sample
+// (u ≈ ulo + period − δ) back to the FIRST (u ≈ ulo + ε) crosses the seam and is not in the sorted list.
+// Clamping flat there — what this did before — misplaces a cap-cut rim's band boundary near the seam by
+// up to the rim's v-variation over one discretization step. That is a latent defect, not an observed
+// one: on the single face in the tree that reaches this path (cand_radial's B-spline barrel, #1510) BOTH
+// rims are constant-v — measured vspan 1.9e-17 and 0 — so the flat clamp was exact there and closing the
+// wrap changes no shipped mesh. It is closed because a cap-cut rim would expose it silently.
+func interpRim(pts [][2]float64, period float64) rimFunc {
 	return func(u float64) float64 {
 		if len(pts) == 0 {
 			return 0
 		}
-		if u <= pts[0][0] {
-			return pts[0][1]
+		last := len(pts) - 1
+		if u <= pts[0][0] { // the seam segment, approached from below: last sample − period → first
+			return lerpV(u, pts[last][0]-period, pts[last][1], pts[0][0], pts[0][1])
 		}
-		for i := 0; i+1 < len(pts); i++ {
+		for i := 0; i < last; i++ {
 			if u <= pts[i+1][0] {
-				u0, v0 := pts[i][0], pts[i][1]
-				u1, v1 := pts[i+1][0], pts[i+1][1]
-				if u1 == u0 {
-					return v0
-				}
-				return v0 + (v1-v0)*(u-u0)/(u1-u0)
+				return lerpV(u, pts[i][0], pts[i][1], pts[i+1][0], pts[i+1][1])
 			}
 		}
-		return pts[len(pts)-1][1]
+		return lerpV(u, pts[last][0], pts[last][1], pts[0][0]+period, pts[0][1]) // the same seam segment, from above
 	}
+}
+
+// lerpV linearly interpolates v between two rim samples, returning v0 for a degenerate u-interval.
+func lerpV(u, u0, v0, u1, v1 float64) float64 {
+	if u1 == u0 {
+		return v0
+	}
+	return v0 + (v1-v0)*(u-u0)/(u1-u0)
 }
 
 // materialPoint reports whether (u,v) at canonical u is inside the band and outside every mouth, with an

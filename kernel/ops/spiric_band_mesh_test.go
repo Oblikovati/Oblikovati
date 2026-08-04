@@ -39,3 +39,23 @@ func TestSpiricBandColumns(t *testing.T) {
 		t.Errorf("spiricBandColumns coarse=%d should be < fine=%d", coarse, fine)
 	}
 }
+
+// oppositeRootsOfOneSection must accept the two arccos roots of one plane's section and reject two
+// sections of DIFFERENT planes — the arc band's two run-out terminations, which are not an oval pair.
+func TestOppositeRootsOfOneSection(t *testing.T) {
+	tor, _ := geom.NewTorusWithRef(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 5, 2)
+	plus := geom.SpiricArc{Torus: tor, Phi: 1, M: 1, K: -3, C: 0, Branch: +1, V0: 0, V1: 2 * stdmath.Pi}
+	minus := plus
+	minus.Branch = -1
+	if !oppositeRootsOfOneSection(plus, minus) {
+		t.Errorf("oppositeRootsOfOneSection rejected the two roots of one section")
+	}
+	if oppositeRootsOfOneSection(plus, plus) {
+		t.Errorf("oppositeRootsOfOneSection accepted two copies of the SAME root")
+	}
+	other := minus
+	other.K = 1 // a different plane's section
+	if oppositeRootsOfOneSection(plus, other) {
+		t.Errorf("oppositeRootsOfOneSection accepted sections of two different planes")
+	}
+}
