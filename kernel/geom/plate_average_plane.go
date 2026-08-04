@@ -238,7 +238,7 @@ func frobeniusNormSquared(a [3][3]float64) float64 {
 // jacobiSweep applies one cyclic sweep — rotations zeroing the (0,1),(0,2),(1,2)
 // off-diagonal pairs in turn — and returns the resulting sum of squared off-diagonal
 // entries (the convergence residual jacobiEigen3 checks against its Frobenius-relative floor).
-func jacobiSweep(a *[3][3]float64, v *[3][3]float64) float64 {
+func jacobiSweep(a, v *[3][3]float64) float64 {
 	pairs := [3][2]int{{0, 1}, {0, 2}, {1, 2}}
 	for _, pq := range pairs {
 		jacobiRotate(a, v, pq[0], pq[1])

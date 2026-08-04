@@ -257,6 +257,8 @@ func segParam(s endSeg, p math.Point3, tol float64) (float64, bool) {
 func bsplineSegParam(bs geom.BSplineCurve, p math.Point3, tol float64) (float64, bool) {
 	t, _ := geom.CurveParamAtPoint3(bs, p)
 	lo, hi := bs.Domain()
+	// NaN-REJECTING form, deliberate: every comparison with NaN is false, so `!(a > b)` fires on a
+	// NaN operand while `a <= b` stays silent and lets it through. Do not "simplify" (sonar go:S1940).
 	if !(hi > lo) {
 		return 0, false
 	}

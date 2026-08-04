@@ -158,7 +158,7 @@ func wedgeChainCloseTrailingRun(runs [][]math.Point3, cur []math.Point3, rails i
 }
 
 // appendChainPoints concatenates a chain segment's points onto run, dropping a duplicated joint.
-func appendChainPoints(run []math.Point3, pts []math.Point3) []math.Point3 {
+func appendChainPoints(run, pts []math.Point3) []math.Point3 {
 	for _, p := range pts {
 		if n := len(run); n > 0 && run[n-1].DistanceTo(p) < 1e-9 {
 			continue

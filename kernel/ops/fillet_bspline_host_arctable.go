@@ -27,6 +27,8 @@ const edgeArcTableSamples = 2048
 // or a degenerate (zero-length) edge.
 func newEdgeArcTable(c geom.Curve3) (*edgeArcTable, bool) {
 	lo, hi := c.Domain()
+	// NaN-REJECTING form, deliberate: every comparison with NaN is false, so `!(a > b)` fires on a
+	// NaN operand while `a <= b` stays silent and lets it through. Do not "simplify" (sonar go:S1940).
 	if stdmath.IsInf(lo, 0) || stdmath.IsInf(hi, 0) || !(hi > lo) {
 		return nil, false
 	}

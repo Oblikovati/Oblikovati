@@ -172,7 +172,7 @@ func assertBandTilesItsClosedFormArea(t *testing.T, body *topo.Body, band *topo.
 	// — realised the full 90° arc as its chord, shipping 21339.8 for a face whose solo mesh (and closed
 	// form) is 23340. The solo assertion could not see it. See kernel/ops/conformance_adopt.go.
 	got := ops.MeshArea(shippedFaceMesh(t, body, band))
-	if rel := stdmath.Abs(got-want) / want; rel > 1e-4 {
+	if stdmath.Abs(got-want)/want > 1e-4 {
 		t.Errorf("complex/D8 fillet band tiles %.6g, closed form %.6g (rel %+.4f%%) — the far-end trim took "+
 			"the wrong side of the stop wall, or the conformance repair under-tiled the band", got, want, (got-want)/want*100)
 	}

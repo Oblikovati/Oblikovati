@@ -22,6 +22,8 @@ import (
 //	sub, err := geom.SubSpanBSplineCurve(seam, 0.2, 0.8)
 func SubSpanBSplineCurve(c BSplineCurve, t0, t1 float64) (BSplineCurve, error) {
 	lo, hi := c.Domain()
+	// NaN-REJECTING form, deliberate: every comparison with NaN is false, so `!(a > b)` fires on a
+	// NaN operand while `a <= b` stays silent and lets it through. Do not "simplify" (sonar go:S1940).
 	if !(t0 < t1) || t0 < lo-knotEps || t1 > hi+knotEps {
 		return BSplineCurve{}, fmt.Errorf("SubSpanBSplineCurve: span [%g, %g] not increasing inside domain [%g, %g]", t0, t1, lo, hi)
 	}

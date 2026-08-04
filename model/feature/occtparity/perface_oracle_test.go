@@ -106,12 +106,12 @@ func assertPerFaceAgainstDrawexe(t *testing.T, tc drawexeFaceCase, b *topo.Body)
 	sum := 0.0
 	for i, want := range tc.drawexe {
 		sum += got[i]
-		if rel := stdmath.Abs(got[i]-want) / want; rel > tc.perFaceTol {
+		if stdmath.Abs(got[i]-want)/want > tc.perFaceTol {
 			t.Errorf("%s: face #%d (by size) meshes %.6g, DRAWEXE %.6g (rel %+.4f%%, tol %.1g)",
 				tc.name, i+1, got[i], want, (got[i]-want)/want*100, tc.perFaceTol)
 		}
 	}
-	if rel := stdmath.Abs(sum-tc.totalArea) / tc.totalArea; rel > tc.perFaceTol {
+	if stdmath.Abs(sum-tc.totalArea)/tc.totalArea > tc.perFaceTol {
 		t.Errorf("%s: summed face area %.6g, DRAWEXE %.6g (rel %+.4f%%)", tc.name, sum, tc.totalArea,
 			(sum-tc.totalArea)/tc.totalArea*100)
 	}
@@ -158,12 +158,12 @@ func assertShippedPerFaceAgainstDrawexe(t *testing.T, tc drawexeFaceCase, b *top
 		if d, ok := debt[i]; ok {
 			budget = d
 		}
-		if rel := stdmath.Abs(got[i]-want) / want; rel > budget {
+		if stdmath.Abs(got[i]-want)/want > budget {
 			t.Errorf("%s: SHIPPED face #%d (by size) meshes %.6g, DRAWEXE %.6g (rel %+.4f%%, budget %.3g)",
 				tc.name, i+1, got[i], want, (got[i]-want)/want*100, budget)
 		}
 	}
-	if rel := stdmath.Abs(sum-tc.totalArea) / tc.totalArea; rel > totalTol {
+	if stdmath.Abs(sum-tc.totalArea)/tc.totalArea > totalTol {
 		t.Errorf("%s: summed SHIPPED face area %.6g, DRAWEXE %.6g (rel %+.4f%%, budget %.3g)", tc.name, sum,
 			tc.totalArea, (sum-tc.totalArea)/tc.totalArea*100, totalTol)
 	}

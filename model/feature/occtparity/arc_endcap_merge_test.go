@@ -127,7 +127,7 @@ func TestN6ArcFilletTerminatesBothEndsOnTheirWalls(t *testing.T) {
 func assertFaceMeshesToDrawexe(t *testing.T, body *topo.Body, name, lineage string, drawexe, tol float64) {
 	t.Helper()
 	got := ops.MeshArea(shippedFaceMesh(t, body, faceByLineage(t, body, lineage)))
-	if rel := stdmath.Abs(got-drawexe) / drawexe; rel > tol {
+	if stdmath.Abs(got-drawexe)/drawexe > tol {
 		t.Errorf("%s face %s meshes %.6g, DRAWEXE %.6g (rel %+.4f%%, tol %.1g)",
 			name, lineage, got, drawexe, (got-drawexe)/drawexe*100, tol)
 	}
@@ -137,7 +137,7 @@ func assertFaceMeshesToDrawexe(t *testing.T, body *topo.Body, name, lineage stri
 func assertFaceMeshesToClosedForm(t *testing.T, body *topo.Body, name, lineage string, want float64) {
 	t.Helper()
 	got := ops.MeshArea(shippedFaceMesh(t, body, faceByLineage(t, body, lineage)))
-	if rel := stdmath.Abs(got-want) / want; rel > arcEndCapPerFaceTol {
+	if stdmath.Abs(got-want)/want > arcEndCapPerFaceTol {
 		t.Errorf("%s %s meshes %.8g, closed form %.8g (rel %+.6f%%, budget %.1g)",
 			name, lineage, got, want, (got-want)/want*100, arcEndCapPerFaceTol)
 	}

@@ -30,7 +30,7 @@ HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 DATA_DIR="$HERE/data"
 mkdir -p "$DATA_DIR"
 
-if [ ! -f "$NEEDED_LIST" ]; then
+if [[ ! -f "$NEEDED_LIST" ]]; then
     echo "fetch-data.sh: needed-fixtures list not found at $NEEDED_LIST" >&2
     exit 1
 fi
@@ -38,15 +38,17 @@ fi
 mkdir -p "$CACHE_DIR"
 ARCHIVE_PATH="$CACHE_DIR/$ARCHIVE_NAME"
 
-if [ ! -f "$ARCHIVE_PATH" ]; then
+if [[ ! -f "$ARCHIVE_PATH" ]]; then
     echo "fetch-data.sh: downloading $ARCHIVE_URL"
-    curl -sL -o "$ARCHIVE_PATH" "$ARCHIVE_URL"
+    # --proto/--proto-redir pin BOTH the initial request and every redirect hop to https, so a
+    # redirect cannot silently downgrade this fixture download to plaintext (sonar shell:S6506).
+    curl -sL --proto '=https' --proto-redir '=https' --tlsv1.2 -o "$ARCHIVE_PATH" "$ARCHIVE_URL"
 else
     echo "fetch-data.sh: reusing already-downloaded $ARCHIVE_PATH"
 fi
 
 EXTRACT_DIR="$CACHE_DIR/extracted"
-if [ ! -d "$EXTRACT_DIR" ]; then
+if [[ ! -d "$EXTRACT_DIR" ]]; then
     echo "fetch-data.sh: extracting $ARCHIVE_PATH into $EXTRACT_DIR"
     mkdir -p "$EXTRACT_DIR"
     tar -xzf "$ARCHIVE_PATH" -C "$EXTRACT_DIR"
@@ -59,12 +61,12 @@ copied=0
 missing=()
 
 while IFS= read -r name; do
-    [ -z "$name" ] && continue
+    [[ -z "$name" ]] && continue
     requested=$((requested + 1))
     # -print -quit: first match wins; the archive keeps every fixture under a single
     # flat category dir (brep/, geom/, step/, ...) so duplicates are not expected.
     match=$(find "$EXTRACT_DIR" -type f -name "$name" -print -quit)
-    if [ -z "$match" ]; then
+    if [[ -z "$match" ]]; then
         missing+=("$name")
         continue
     fi
@@ -73,7 +75,7 @@ while IFS= read -r name; do
 done < "$NEEDED_LIST"
 
 echo "fetch-data.sh: copied $copied / $requested fixtures into $DATA_DIR"
-if [ "${#missing[@]}" -gt 0 ]; then
+if [[ "${#missing[@]}" -gt 0 ]]; then
     echo "fetch-data.sh: ${#missing[@]} fixture(s) NOT resolved (not present in the public dataset archive — see SOURCES.md):" >&2
     printf '  %s\n' "${missing[@]}" >&2
 fi

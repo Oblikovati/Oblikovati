@@ -104,7 +104,7 @@ func TestFoldDetectorIgnoresNullSliver(t *testing.T) {
 		Normals: []gm.Vector3{gm.V3(0, 0, 1), gm.V3(0, 0, 1), gm.V3(0, 0, 1), gm.V3(0, 0, 1)},
 		Indices: []int{0, 1, 2, 1, 0, 3},
 	}
-	if n := FoldEdgeCount(folded); n == 0 {
+	if FoldEdgeCount(folded) == 0 {
 		t.Fatal("a genuine fold between two well-formed triangles was not detected — the degenerate-normal " +
 			"guard must narrow what counts as EVIDENCE, never narrow the gate itself")
 	}

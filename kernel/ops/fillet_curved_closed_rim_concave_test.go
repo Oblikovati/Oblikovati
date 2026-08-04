@@ -141,7 +141,7 @@ func TestConcaveBandSpillGate(t *testing.T) {
 		if fits != tc.fits {
 			t.Fatalf("%s: contactCircleFitsFace fits=%v, want %v (extent %.4f)", tc.name, fits, tc.fits, extent)
 		}
-		if d := stdmath.Abs(extent - 15); d > concaveArmEps {
+		if stdmath.Abs(extent-15) > concaveArmEps {
 			t.Fatalf("%s: reported plate half-extent %.6f, want 15 (the ±15 plate half-width)", tc.name, extent)
 		}
 	}
@@ -150,7 +150,7 @@ func TestConcaveBandSpillGate(t *testing.T) {
 func assertTorus(t *testing.T, name string, tor geom.Torus, center math.Point3, axis math.Vector3, major, minor float64) {
 	t.Helper()
 	assertPoint(t, name+" centre", tor.Center, center)
-	if d := stdmath.Abs(stdmath.Abs(float64(tor.AxisDir.AsVector().Dot(axis.AsUnit().AsVector()))) - 1); d > concaveArmEps {
+	if stdmath.Abs(stdmath.Abs(float64(tor.AxisDir.AsVector().Dot(axis.AsUnit().AsVector())))-1) > concaveArmEps {
 		t.Fatalf("%s axis %v, want ±%v", name, tor.AxisDir, axis)
 	}
 	assertScalar(t, name+" major", tor.MajorRadius, major)

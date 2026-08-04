@@ -154,7 +154,7 @@ func TestObstacleCanalWallFootLeavesThePlainSeam(t *testing.T) {
 	c := t6ObstacleCanal(t, of, 41)
 	last := len(c.FeetWall) - 1
 	for _, j := range []int{0, last} {
-		if d := stdmath.Abs(float64(c.FeetWall[j].Z) + 6); d > 1e-6 {
+		if stdmath.Abs(float64(c.FeetWall[j].Z)+6) > 1e-6 {
 			t.Errorf("node station %d wall foot z = %.9f, want the plain seam -6 (offset must vanish at a node)", j, c.FeetWall[j].Z)
 		}
 	}

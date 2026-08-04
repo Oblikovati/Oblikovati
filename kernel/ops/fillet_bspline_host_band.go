@@ -314,8 +314,9 @@ func (e errBspline) Error() string { return string(e) }
 // seam with un-lifted values (the T8 +Inf-seed regression).
 func snapClosedStationLoop(stations []geom.CanalEdgeStation, spec bsplineHostMarchSpec, weld float64) error {
 	last := len(stations) - 1
-	if d := float64(stations[last].Center.DistanceTo(stations[0].Center)); d > 10*weld {
-		return errBspline("bspline-host canal: closed loop does not close: gap over closure tolerance")
+	if gap := float64(stations[last].Center.DistanceTo(stations[0].Center)); gap > 10*weld {
+		return errBspline(fmt.Sprintf("bspline-host canal: closed loop does not close: first/last station centres "+
+			"are %.6g apart, over the %.6g closure tolerance (10x weld %.6g)", gap, 10*weld, weld))
 	}
 	dirA := stdmath.Copysign(1, stations[last].FootA.U-stations[0].FootA.U)
 	dirB := stdmath.Copysign(1, stations[last].FootB.U-stations[0].FootB.U)

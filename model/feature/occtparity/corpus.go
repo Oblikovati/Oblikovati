@@ -3,6 +3,8 @@
 package occtparity
 
 import (
+	// embed is imported for its side effect only: the //go:embed directive on the corpus JSON
+	// below requires the package to be linked in, but nothing here references it by name.
 	_ "embed"
 	"encoding/json"
 	"fmt"

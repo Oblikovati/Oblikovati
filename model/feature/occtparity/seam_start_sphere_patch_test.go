@@ -237,7 +237,7 @@ func assertGreatCircleEdge(t *testing.T, f *topo.Face, e *topo.Edge, sph geom.Sp
 	if d := float64(center.DistanceTo(sph.Center)); d > tol {
 		t.Fatalf("face %d edge %d is a SMALL circle: its centre is %.6g off the sphere's (tol %.3g)", f.ID(), e.ID(), d, tol)
 	}
-	if d := stdmath.Abs(radius - sph.Radius); d > tol {
+	if stdmath.Abs(radius-sph.Radius) > tol {
 		t.Fatalf("face %d edge %d radius %.10g against the sphere's %.10g (tol %.3g)", f.ID(), e.ID(), radius, sph.Radius, tol)
 	}
 }

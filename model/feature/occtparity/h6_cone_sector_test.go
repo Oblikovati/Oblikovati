@@ -45,7 +45,7 @@ func TestH6HostConesTessellateToOCCTArea(t *testing.T) {
 				i, a, occtH6ConeArea, 100*rel)
 		}
 	}
-	if rel := stdmath.Abs(areas[0]-areas[1]) / occtH6ConeArea; rel > 1e-6 {
+	if stdmath.Abs(areas[0]-areas[1])/occtH6ConeArea > 1e-6 {
 		t.Errorf("H6's two congruent cones tessellate to different areas %.3f vs %.3f (orientation-dependent)",
 			areas[0], areas[1])
 	}

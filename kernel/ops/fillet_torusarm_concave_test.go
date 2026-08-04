@@ -53,7 +53,7 @@ func TestConcaveTorusHostArmSurfaceInternal(t *testing.T) {
 	if d := stdmath.Abs(arm.MajorRadius - wantMajor); d > 1e-9 {
 		t.Fatalf("A6 arm major %.9f, want %.9f (Δ %.3g)", arm.MajorRadius, wantMajor, d)
 	}
-	if d := float64(arm.Center.DistanceTo(math.P3(0, 0, 30))); d > 1e-9 {
+	if float64(arm.Center.DistanceTo(math.P3(0, 0, 30))) > 1e-9 {
 		t.Fatalf("A6 arm centre %v, want (0,0,30)", arm.Center)
 	}
 }
@@ -97,11 +97,11 @@ func TestConcaveTorusHostTubeContact(t *testing.T) {
 	if !ok {
 		t.Fatal("J5 contact circle unresolved")
 	}
-	if d := float64(center.DistanceTo(math.P3(0, 0, 35.0*50/60))); d > 1e-6 {
+	if float64(center.DistanceTo(math.P3(0, 0, 35.0*50/60))) > 1e-6 {
 		t.Fatalf("contact centre %v, want (0,0,29.1667)", center)
 	}
 	want := 200 + (50.0/60)*(200-stdmath.Sqrt(2375)-200)
-	if d := stdmath.Abs(radius - want); d > 1e-6 {
+	if stdmath.Abs(radius-want) > 1e-6 {
 		t.Fatalf("contact radius %.9f, want %.9f (DRAWEXE 159.388356896629)", radius, want)
 	}
 }

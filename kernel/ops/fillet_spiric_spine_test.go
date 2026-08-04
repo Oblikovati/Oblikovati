@@ -41,10 +41,10 @@ func TestSpiricStationExactness(t *testing.T) {
 		if d := stdmath.Abs(weTubeCentreDist(sp, c) - sp.b); d > 1e-9 {
 			t.Fatalf("ψ=%.3f: centre off the offset tube by %.3g", psi, d)
 		}
-		if d := stdmath.Abs(float64(c.DistanceTo(tubeFoot)) - sp.r); d > 1e-9 {
+		if stdmath.Abs(float64(c.DistanceTo(tubeFoot))-sp.r) > 1e-9 {
 			t.Fatalf("ψ=%.3f: tube foot at %.9f from the centre, want r=%g", psi, float64(c.DistanceTo(tubeFoot)), sp.r)
 		}
-		if d := stdmath.Abs(float64(c.DistanceTo(capFoot)) - sp.r); d > 1e-9 {
+		if stdmath.Abs(float64(c.DistanceTo(capFoot))-sp.r) > 1e-9 {
 			t.Fatalf("ψ=%.3f: cap foot at %.9f from the centre, want r=%g", psi, float64(c.DistanceTo(capFoot)), sp.r)
 		}
 		if d := stdmath.Abs(weTubeCentreDist(sp, tubeFoot) - sp.host.MinorRadius); d > 1e-9 {

@@ -78,7 +78,7 @@ func assertSetbackRail(t *testing.T, w cornerWeld, a armSetback, wantEnds [2]mat
 	if d := rail.Center.DistanceTo(w.center); d > tol {
 		t.Fatalf("rail centre off C by %.3e (want ≤%.1e) — not a great circle", d, tol)
 	}
-	if e := stdmath.Abs(rail.Radius - w.radius); e > tol {
+	if stdmath.Abs(rail.Radius-w.radius) > tol {
 		t.Fatalf("rail radius = %.9f, want r=%.9f ±%.1e", rail.Radius, w.radius, tol)
 	}
 	// (No separate "plane through C" check: |（C−rail.Center)·n̂| ≤ ‖C−rail.Center‖ by Cauchy–Schwarz
@@ -526,10 +526,10 @@ func assertHostArc(t *testing.T, arc geom.Arc3d, center math.Point3, radius floa
 	if d := arc.Center.DistanceTo(center); float64(d) > 1e-6 {
 		t.Fatalf("arc centre %v off %v by %.3e", arc.Center, center, d)
 	}
-	if e := stdmath.Abs(arc.Radius - radius); e > 1e-6 {
+	if stdmath.Abs(arc.Radius-radius) > 1e-6 {
 		t.Fatalf("arc radius = %.9f, want %.9f", arc.Radius, radius)
 	}
-	if z := stdmath.Abs(float64(arc.Normal.Z()) - 1); z > 1e-9 {
+	if stdmath.Abs(float64(arc.Normal.Z())-1) > 1e-9 {
 		t.Fatalf("arc normal %v not ±ẑ (arc not in a constant-z plane)", arc.Normal)
 	}
 	if d := arc.PointAt(0).DistanceTo(far); float64(d) > 1e-4 {

@@ -79,7 +79,7 @@ func TestQ5FarEndSplitIsAtomicAndHitsItsClosedForms(t *testing.T) {
 		{q5BandKey, q5BandArea()},
 	} {
 		got := ops.MeshArea(shippedFaceMesh(t, body, faceByLineage(t, body, tc.lineage)))
-		if rel := stdmath.Abs(got-tc.want) / tc.want; rel > q5PerFaceTol {
+		if stdmath.Abs(got-tc.want)/tc.want > q5PerFaceTol {
 			t.Errorf("simple/Q5 %s meshes %.10g, closed form %.10g (rel %+.5f%%, budget %.1g)",
 				tc.lineage, got, tc.want, (got-tc.want)/tc.want*100, q5PerFaceTol)
 		}

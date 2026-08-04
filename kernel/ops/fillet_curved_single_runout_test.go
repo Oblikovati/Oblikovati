@@ -53,7 +53,7 @@ func TestHostBittenLoopRoutesToInnerFootprint(t *testing.T) {
 	if got := hostBittenLoop(cap0, math.P3(60, 25, 100), tol); got != inner {
 		t.Fatalf("hostBittenLoop for the picked vertex (60,25,100) returned %v, want the inner footprint loop", got == outer)
 	}
-	if got := hostBittenLoop(cap0, math.P3(0, 0, 100), tol); got != outer {
+	if hostBittenLoop(cap0, math.P3(0, 0, 100), tol) != outer {
 		t.Fatalf("hostBittenLoop for an outer-box vertex (0,0,100) returned the inner loop, want the outer box loop")
 	}
 }

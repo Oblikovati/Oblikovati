@@ -104,6 +104,8 @@ func LinearExtrusionBSpline(g *part21.EntityGraph, id int, scale float64) (geom.
 // infinite; the caller derives [lo,hi] from the backing face's extent along d so the bounded patch
 // covers the trimmed face (topomap.extrusionSweepRange). lo<hi is required.
 func NewExtrudedBSplineSurface(profile geom.BSplineCurve, d math.Vector3, lo, hi float64) (geom.Surface, error) {
+	// NaN-REJECTING form, deliberate: every comparison with NaN is false, so `!(a > b)` fires on a
+	// NaN operand while `a <= b` stays silent and lets it through. Do not "simplify" (sonar go:S1940).
 	if !(hi > lo) {
 		return nil, fmt.Errorf("geommap: extrusion sweep range [%g,%g] is not increasing", lo, hi)
 	}

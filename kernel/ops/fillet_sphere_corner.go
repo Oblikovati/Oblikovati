@@ -100,7 +100,7 @@ func sphereCornerRho(sph geom.Sphere, sphereFace *topo.Face, v *topo.Vertex, r f
 	if !ok {
 		return 0, false
 	}
-	if s := float64(sph.Center.VectorTo(v.Point()).Dot(n)); s <= 0 {
+	if float64(sph.Center.VectorTo(v.Point()).Dot(n)) <= 0 {
 		return 0, false // concave bore (material outside the sphere): ρ = R+r is out of this slice
 	}
 	rho := sph.Radius - r

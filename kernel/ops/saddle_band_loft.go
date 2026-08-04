@@ -167,7 +167,7 @@ func ringSingleValuedInAngle(s geom.Surface, ring []math.Point3) bool {
 		}
 		_, v := s.ParamAt(ring[i-1])
 		du, _ := s.DerivativesAt(angles[i-1], v)
-		if arc := du.Length() * (angles[i] - angles[i-1]); arc < weld {
+		if du.Length()*(angles[i]-angles[i-1]) < weld {
 			return false // angular movement is sub-weld while the points are genuinely distinct:
 			// a true vertical step (same station, different axial position), not a v(u) rim collapsed
 			// there by dense curvature sampling.

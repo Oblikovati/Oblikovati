@@ -64,7 +64,7 @@ func TestD8FarEndSplitIsAtomicAndHitsItsClosedForms(t *testing.T) {
 		{"import:step#16:face#9", d8TopPlaneArea()},
 	} {
 		got := ops.MeshArea(shippedFaceMesh(t, body, faceByLineage(t, body, tc.lineage)))
-		if rel := stdmath.Abs(got-tc.want) / tc.want; rel > d8PerFaceTol {
+		if stdmath.Abs(got-tc.want)/tc.want > d8PerFaceTol {
 			t.Errorf("complex/D8 %s meshes %.7g, closed form %.7g (rel %+.5f%%, budget %.1g)",
 				tc.lineage, got, tc.want, (got-tc.want)/tc.want*100, d8PerFaceTol)
 		}
