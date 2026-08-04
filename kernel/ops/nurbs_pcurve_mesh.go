@@ -199,21 +199,43 @@ var nurbsRefineFactors = []float64{1, 0.5, 0.25}
 // metric-scaled CDT of the SAME exact boundary loops (so neighbouring faces still stitch watertight,
 // whatever density wins) plus a denser interior node set — built by the shared metricCDTPatch.
 func foldDrivenPatch(s geom.BSplineSurface, su, sv float64, q Quality, outer3D []math.Point3, outerUV []math.Point2, holes3D [][]math.Point3, holesUV [][]math.Point2) *Mesh {
-	var best *Mesh
-	bestFolds := 1 << 30
+	want := boundaryEdgeCount(outer3D, holes3D)
+	var best, bestAny *Mesh
+	bestFolds, bestAnyFolds := 1<<30, 1<<30
 	for _, refine := range nurbsRefineFactors {
 		m, _ := metricCDTPatch(s, su, sv, q, outer3D, outerUV, holes3D, holesUV, refine)
 		if m == nil {
 			continue
 		}
-		if folds := FoldEdgeCount(m); folds < bestFolds {
+		folds := FoldEdgeCount(m)
+		if folds < bestAnyFolds {
+			bestAny, bestAnyFolds = m, folds
+		}
+		if FreeEdgeCount(m) != want {
+			continue // does not cover its own boundary — a partial triangulation, not a candidate
+		}
+		if folds < bestFolds {
 			best, bestFolds = m, folds
 		}
 		if bestFolds == 0 {
 			break
 		}
 	}
-	return best
+	if best != nil {
+		return best
+	}
+	return bestAny
+}
+
+// boundaryEdgeCount is how many free edges a patch covering exactly this trim must have: every loop is
+// closed, so it contributes one edge per point. A conformant triangulation's free edges ARE its
+// boundary — more means an interior hole, fewer means it never reached the trim's rim.
+func boundaryEdgeCount(outer3D []math.Point3, holes3D [][]math.Point3) int {
+	n := len(outer3D)
+	for _, h := range holes3D {
+		n += len(h)
+	}
+	return n
 }
 
 // metricScale returns the mean 3D length of a unit step in u and in v (√E, √G of the first
