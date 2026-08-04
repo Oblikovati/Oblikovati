@@ -91,7 +91,7 @@ const offsetInvertIters = 40
 func (o OffsetSurface) ParamAt(p math.Point3) (u, v float64) {
 	bu, bv := o.Base.ParamAt(p) // seed from the base inversion
 	u, v = clampToSurface(o, bu, bv)
-	u, v, _ = refineSurfaceParam(o, p, u, v, offsetInvertIters)
+	u, v, _, _ = refineSurfaceParam(o, p, u, v, offsetInvertIters)
 	return u, v
 }
 

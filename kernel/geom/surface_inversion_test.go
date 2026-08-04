@@ -67,7 +67,7 @@ func TestGaussNewtonConvergesWherePerAxisStalls(t *testing.T) {
 	q := foot.TranslateBy(s.NormalAt(0.3, 0.7).Scale(0.3))
 
 	const budget = 40
-	gu, gv, iters := refineSurfaceParam(s, q, 0.5, 0.5, budget)
+	gu, gv, iters, _ := refineSurfaceParam(s, q, 0.5, 0.5, budget)
 	gnCos := perpCosine(s, q, gu, gv)
 	if gnCos > 1e-7 {
 		t.Errorf("Gauss–Newton did not converge: residual %g", gnCos)
@@ -103,7 +103,7 @@ func TestParamAtConvergesAndStopsEarly(t *testing.T) {
 	}
 	// Re-run the refinement from ParamAt's knot-span seed to observe the iteration count.
 	su, sv := nearestSeed(s, q, knotSpanSeedParams(s.UKnots, s.UDegree), knotSpanSeedParams(s.VKnots, s.VDegree))
-	_, _, iters := refineSurfaceParam(s, q, su, sv, surfaceInvertMaxIter)
+	_, _, iters, _ := refineSurfaceParam(s, q, su, sv, surfaceInvertMaxIter)
 	if iters >= surfaceInvertMaxIter {
 		t.Errorf("ParamAt refinement ran the full %d iterations — early exit not working", surfaceInvertMaxIter)
 	}
