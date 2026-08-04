@@ -79,6 +79,10 @@ func drawItemsBounds(items []renderer.DrawItem) (min, max [3]float32, ok bool) {
 // (it recolours) and each sketch's seq, visibility, edit state, edit-scope hiding
 // and entity count — which together change on import (new sketch, new count), the
 // edit cycle (IsEditing flips on Finish), and add/remove.
+//
+// It also folds in Show Format and each sketch's format revision, because recolouring an entity
+// changes neither the geometry version nor the entity count: without them a finished sketch would
+// keep its old colours until something unrelated happened to change the key (#2015).
 func sketchOverlayKey(s *app.Session) (string, bool) {
 	version, ok := activeModelGeometryVersion(s)
 	if !ok {
@@ -90,11 +94,11 @@ func sketchOverlayKey(s *app.Session) (string, bool) {
 	}
 	var b strings.Builder
 	b.WriteString(version)
-	fmt.Fprintf(&b, "|sel=%p", selectedSketch(s))
+	fmt.Fprintf(&b, "|sel=%p|fmt=%t", selectedSketch(s), s.ShowFormat())
 	for i := 0; i < part.Sketches().Count(); i++ {
 		sk := part.Sketches().Item(i)
-		fmt.Fprintf(&b, "|%d:%t%t%t:%d", sk.Seq(), sk.Visible(), sk.IsEditing(),
-			s.EditScopeHides(sk.Seq()), sketchEntityCount(sk))
+		fmt.Fprintf(&b, "|%d:%t%t%t:%d:%d", sk.Seq(), sk.Visible(), sk.IsEditing(),
+			s.EditScopeHides(sk.Seq()), sketchEntityCount(sk), sk.FormatRevision())
 	}
 	return b.String(), true
 }
@@ -122,7 +126,7 @@ func partSketchOverlays(s *app.Session) []renderer.DrawItem {
 		if !sk.Visible() || sk.IsEditing() || s.EditScopeHides(sk.Seq()) {
 			continue
 		}
-		items = append(items, sketchOverlay(sk, allEntitiesWhenSelected(sk, selected), nil)...)
+		items = append(items, sketchOverlay(sk, allEntitiesWhenSelected(sk, selected), nil, s.ShowFormat())...)
 		items = append(items, projectedCurveOverlay(sk)...)
 	}
 	return items
@@ -171,12 +175,13 @@ func allEntitiesWhenSelected(sk, selected *sketch.Sketch) func(sketch.Entity) bo
 // the viewport, so the user sees what they draw in the sketch environment. Curves are
 // sampled into polylines; everything is mapped from sketch 2D to model 3D through the
 // sketch plane. Returns nil when there is nothing to draw.
-func sketchOverlay(sk *sketch.Sketch, selected func(sketch.Entity) bool, candidate sketch.Entity) []renderer.DrawItem {
+// suppress is the Show Format toggle: when set, per-entity overrides are ignored and every entity
+// draws with default attributes (the button's documented, name-inverted behaviour).
+func sketchOverlay(sk *sketch.Sketch, selected func(sketch.Entity) bool, candidate sketch.Entity, suppress bool) []renderer.DrawItem {
 	if sk == nil {
 		return nil
 	}
-	normal, sel, cand := sketchSegmentsFor(sk, selected, candidate)
-	return sketchItems(normal, sel, cand)
+	return sketchItems(sketchSegmentsFor(sk, selected, candidate, suppress))
 }
 
 // projectedCurveOverlay draws a sketch's projected reference curves — the lines projected from
@@ -197,20 +202,23 @@ func projectedCurveOverlay(sk *sketch.Sketch) []renderer.DrawItem {
 	return appendGrid(nil, acc, chromeTheme.sketchColor)
 }
 
-func sketchSegmentsFor(sk *sketch.Sketch, selected func(sketch.Entity) bool, candidate sketch.Entity) (*segAccum, *segAccum, *segAccum) {
-	normal, sel, cand := &segAccum{}, &segAccum{}, &segAccum{}
+func sketchSegmentsFor(sk *sketch.Sketch, selected func(sketch.Entity) bool, candidate sketch.Entity, suppress bool) *sketchStyleBuckets {
+	b := newSketchStyleBuckets()
 	plane := sk.Plane()
-	// Selected/candidate geometry stays solid so picks read clearly; normal-state
-	// geometry carries its line type (construction dashed, centerlines center
-	// pattern, sketch override otherwise — issue #161).
+	// Every entity keeps its line type in every state — construction dashed, centerlines the
+	// centre pattern, per-entity or sketch-level override otherwise (#161). Selection used to
+	// force geometry solid, which made a selected centerline indistinguishable from a selected
+	// normal line: the dash pattern is what identifies it, so dropping it hid what was picked.
+	// Colour still marks state, since the user must be able to see what is selected.
 	pick := func(e sketch.Entity) (*segAccum, []float64) {
+		style := app.SketchEntityStyle(sk, e, suppress)
 		switch {
 		case candidate != nil && e == candidate:
-			return cand, nil // the geometry the active constraint tool would accept on hover
+			return b.cand, style.Pattern // the geometry the active constraint tool would accept on hover
 		case selected != nil && selected(e):
-			return sel, nil
+			return b.sel, style.Pattern
 		default:
-			return normal, app.SketchEntityPattern(sk, e)
+			return b.forColor(sketchEntityColor(style)), style.Pattern
 		}
 	}
 	addLines(pick, plane, sk)
@@ -220,7 +228,42 @@ func sketchSegmentsFor(sk *sketch.Sketch, selected func(sketch.Entity) bool, can
 	addEllipticalArcs(pick, plane, sk)
 	addSplines(pick, plane, sk)
 	addBlockInstances(pick, plane, sk)
-	return normal, sel, cand
+	return b
+}
+
+// sketchStyleBuckets groups a sketch's segments into one accumulator per draw colour. Normal-state
+// geometry is bucketed by its resolved colour so per-entity overrides render (#2015 shipped the
+// model, persistence and panel for these but the overlay only ever asked for the dash pattern, so
+// a colour set in the Format panel never reached the screen); selection and hover keep their own
+// state colours, which must win so the user can see what is picked.
+type sketchStyleBuckets struct {
+	byColor   map[[4]float32]*segAccum
+	order     [][4]float32 // first-seen order, so the draw list is deterministic frame to frame
+	sel, cand *segAccum
+}
+
+func newSketchStyleBuckets() *sketchStyleBuckets {
+	return &sketchStyleBuckets{byColor: map[[4]float32]*segAccum{}, sel: &segAccum{}, cand: &segAccum{}}
+}
+
+// forColor returns the accumulator for c, creating it on first use.
+func (b *sketchStyleBuckets) forColor(c [4]float32) *segAccum {
+	acc, ok := b.byColor[c]
+	if !ok {
+		acc = &segAccum{}
+		b.byColor[c] = acc
+		b.order = append(b.order, c)
+	}
+	return acc
+}
+
+// sketchEntityColor is the colour an entity draws in: its per-entity override, or the theme's
+// sketch colour when it inherits.
+func sketchEntityColor(style app.EntityStyle) [4]float32 {
+	if style.Color.IsOverride() {
+		return style.Color.Rgba().Array()
+	}
+	return chromeTheme.sketchColor
 }
 
 // addBlockInstances draws every placed block instance's realized geometry —
@@ -237,11 +280,15 @@ func addBlockInstances(pick accumFor, plane sketch.Plane, sk *sketch.Sketch) {
 	}
 }
 
-func sketchItems(normal, sel, cand *segAccum) []renderer.DrawItem {
+// sketchItems flattens the buckets into draw items: one per distinct normal-state colour, in
+// first-seen order, then the selection and hover lanes on top.
+func sketchItems(b *sketchStyleBuckets) []renderer.DrawItem {
 	var items []renderer.DrawItem
-	items = appendGrid(items, normal, chromeTheme.sketchColor)
-	items = appendGrid(items, sel, chromeTheme.sketchSelectedColor)
-	items = appendGrid(items, cand, chromeTheme.sketchCandidateColor)
+	for _, c := range b.order {
+		items = appendGrid(items, b.byColor[c], c)
+	}
+	items = appendGrid(items, b.sel, chromeTheme.sketchSelectedColor)
+	items = appendGrid(items, b.cand, chromeTheme.sketchCandidateColor)
 	return items
 }
 

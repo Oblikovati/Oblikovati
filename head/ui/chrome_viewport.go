@@ -540,7 +540,7 @@ func sketchOverlays(s *app.Session, cam scene.Camera, list renderer.DrawList) (r
 	if g := s.Grid(); g.Visible {
 		list.Items = append(gridOverlay(plane, g.SpacingModel(), g.MajorEvery), list.Items...)
 	}
-	list.Items = append(list.Items, onTop(sketchOverlay(s.ActiveSketch(), s.IsSelectedEntity, hoverCandidate(s)))...)
+	list.Items = append(list.Items, onTop(sketchOverlay(s.ActiveSketch(), s.IsSelectedEntity, hoverCandidate(s), s.ShowFormat()))...)
 	list.Items = append(list.Items, onTop(projectedCurveOverlay(s.ActiveSketch()))...)
 	dims := s.SketchDimensions()
 	list.Items = append(list.Items, onTop(dimensionLines(plane, dims))...)
