@@ -66,24 +66,14 @@ func (t *RectangleTool) PendingReferencePoint() (math.Point2, bool) {
 	return t.corners[len(t.corners)-1], true
 }
 
-// Commit adds the four rectangle lines (sharing corner points) to the active sketch.
+// Commit adds the rigid rectangle: four lines over shared corners, squared by a horizontal and
+// a vertical constraint per edge so that dragging a corner cannot shear it (#2014).
 func (t *RectangleTool) Commit(s *Session) error {
 	if s.activeSketch == nil {
 		return errors.New("rectangle: no active sketch")
 	}
-	a, c := t.corners[0], t.corners[1]
-	b := math.P2(c.X, a.Y)
-	d := math.P2(a.X, c.Y)
-	sk := s.activeSketch
-	p0 := sk.Points().Add(a)
-	p1 := sk.Points().Add(b)
-	p2 := sk.Points().Add(c)
-	p3 := sk.Points().Add(d)
-	sk.Lines().Add(p0, p1)
-	sk.Lines().Add(p1, p2)
-	sk.Lines().Add(p2, p3)
-	sk.Lines().Add(p3, p0)
-	return nil
+	_, err := s.activeSketch.AddConstrainedRectangle(t.corners[0], t.corners[1])
+	return err
 }
 
 // Cancel discards the in-progress rectangle.

@@ -29,13 +29,14 @@ func (t *ThreePointRectangleTool) Cancel(*Session)   { t.reset() }
 func (t *ThreePointRectangleTool) CanCommit() bool   { return len(t.pts) == 3 }
 func (t *ThreePointRectangleTool) AutoCommits() bool { return true }
 
-// Commit adds the rectangle's four lines from the three clicked corners.
+// Commit adds the rigid rotated rectangle from the three clicked corners: three perpendicular
+// constraints round the loop keep it square under a later drag (#2014).
 func (t *ThreePointRectangleTool) Commit(s *Session) error {
 	sk := s.ActiveSketch()
 	if sk == nil {
 		return errNoSketch("three point rectangle")
 	}
-	_, err := sk.AddRectangleByThreePoints(t.pts[0], t.pts[1], t.pts[2])
+	_, err := sk.AddConstrainedThreePointRectangle(t.pts[0], t.pts[1], t.pts[2])
 	return err
 }
 
@@ -68,14 +69,15 @@ func (t *CenterRectangleTool) Cancel(*Session)   { t.reset() }
 func (t *CenterRectangleTool) CanCommit() bool   { return len(t.pts) == 2 }
 func (t *CenterRectangleTool) AutoCommits() bool { return true }
 
-// Commit adds the rectangle's four lines centered on the first click.
+// Commit adds the rigid centre-out rectangle: squared by horizontal/vertical constraints, with
+// the centre pinned as the midpoint of a construction diagonal (#2014).
 func (t *CenterRectangleTool) Commit(s *Session) error {
 	sk := s.ActiveSketch()
 	if sk == nil {
 		return errNoSketch("center rectangle")
 	}
-	sk.AddRectangleByCenter(t.pts[0], t.pts[1])
-	return nil
+	_, err := sk.AddConstrainedCenterRectangle(t.pts[0], t.pts[1])
+	return err
 }
 
 // Prompt guides the center then a corner.

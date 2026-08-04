@@ -7,7 +7,6 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/math"
-	"oblikovati.org/model/sketch"
 )
 
 // The sketch geometry tools — Inventor's Sketch tab "Create" panel. Each is an
@@ -276,22 +275,16 @@ func (t *PolygonTool) Cancel(*Session)   { t.reset() }
 func (t *PolygonTool) CanCommit() bool   { return len(t.pts) == 2 }
 func (t *PolygonTool) AutoCommits() bool { return true }
 
-// Commit builds the Sides-gon inscribed in the circle through the vertex click,
-// connecting consecutive vertices with lines sharing their corner points.
+// Commit builds the rigid Sides-gon inscribed in the circle through the vertex click. It routes
+// through the shared recipe rather than rebuilding the vertex ring here: the local rebuild
+// applied no constraints, so the committed polygon was a ring of free points (DOF 12 for a
+// hexagon) while the identical shape created over the API came out rigid (#2014).
 func (t *PolygonTool) Commit(s *Session) error {
 	if s.activeSketch == nil {
 		return errNoSketch("polygon")
 	}
-	verts := polygonVertices(t.pts[0], t.pts[1], t.Sides)
-	sk := s.activeSketch
-	pts := make([]*sketch.Point, len(verts))
-	for i, v := range verts {
-		pts[i] = sk.Points().Add(v)
-	}
-	for i := range pts {
-		sk.Lines().Add(pts[i], pts[(i+1)%len(pts)])
-	}
-	return nil
+	_, err := s.activeSketch.AddConstrainedPolygon(t.pts[0], t.pts[1], t.Sides, true)
+	return err
 }
 
 // Prompt guides center then a vertex.

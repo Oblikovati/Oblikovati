@@ -93,13 +93,14 @@ func (t *SketchSlotTool) ClickAt(s *Session, px, py float64) {
 // SetWidth sets the slot width.
 func (t *SketchSlotTool) SetWidth(w float64) { t.width = math.Scalar(w) }
 
-// Commit creates the straight slot.
+// Commit creates the rigid straight slot: the caps are held tangent to the sides and share a
+// radius, plus a construction centreline that carries the length dimension (#2014).
 func (t *SketchSlotTool) Commit(s *Session) error {
 	sk := s.ActiveSketch()
 	if sk == nil {
 		return errors.New("slot: no active sketch")
 	}
-	_, err := sk.AddStraightSlot(t.points[0], t.points[1], t.width)
+	_, err := sk.AddConstrainedStraightSlot(t.points[0], t.points[1], t.width)
 	return err
 }
 
@@ -132,7 +133,7 @@ func (t *CenterPointArcSlotTool) Commit(s *Session) error {
 		return errNoSketch("center point arc slot")
 	}
 	center, start, end := t.pts[0], t.pts[1], t.pts[2]
-	_, err := sk.AddArcSlot(center, start, end, t.width, leftTurn(center, start, end))
+	_, err := sk.AddConstrainedArcSlot(center, start, end, t.width, leftTurn(center, start, end))
 	return err
 }
 
@@ -187,7 +188,7 @@ func (t *ThreePointArcSlotTool) Commit(s *Session) error {
 	if !ok {
 		return errors.New("three point arc slot: the three points are collinear")
 	}
-	_, err := sk.AddArcSlot(center, start, end, t.width, leftTurn(start, through, end))
+	_, err := sk.AddConstrainedArcSlot(center, start, end, t.width, leftTurn(start, through, end))
 	return err
 }
 
