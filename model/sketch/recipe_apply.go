@@ -137,11 +137,22 @@ func (s *Sketch) buildRecipeEntity(re RecipeEntity, pts []*Point) (Entity, error
 		return s.Circles().Add(pts[re.Points[0]], re.Radius), nil
 	case RecipeEllipse:
 		return s.Ellipses().AddWithCenter(pts[re.Points[0]], re.MajorAxis, re.Radius, re.MinorRadius), nil
+	case RecipeSpline:
+		return s.Splines().AddWithPoints(recipePointsAt(pts, re.Points), re.Closed, re.FitPoints), nil
 	case RecipePoint:
 		return s.listStandalonePoint(pts[re.Points[0]]), nil
 	default:
 		return nil, fmt.Errorf("unknown entity kind %d (want RecipeLine..RecipePoint)", re.Kind)
 	}
+}
+
+// recipePointsAt gathers the minted points an entity names, in the order it names them.
+func recipePointsAt(pts []*Point, idx []int) []*Point {
+	out := make([]*Point, len(idx))
+	for i, j := range idx {
+		out[i] = pts[j]
+	}
+	return out
 }
 
 // listStandalonePoint promotes an already-minted point to a listed sketch entity, which is what

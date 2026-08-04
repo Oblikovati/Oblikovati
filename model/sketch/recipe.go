@@ -59,6 +59,10 @@ type RecipeEntity struct {
 	Radius      math.Scalar
 	MinorRadius math.Scalar
 	MajorAxis   math.Vector2
+	// FitPoints makes a [RecipeSpline] interpolate its points rather than treat them as a
+	// control polygon; Closed joins its last point back to its first.
+	FitPoints bool
+	Closed    bool
 }
 
 // RecipeConstraint is one geometric relation, naming its operands by index into
