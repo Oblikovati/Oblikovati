@@ -3,6 +3,9 @@
 package app
 
 import (
+	"errors"
+	"fmt"
+
 	"oblikovati.org/api/types"
 	"oblikovati.org/model/sketch"
 )
@@ -83,4 +86,68 @@ func commonFormat(a, b sketch.EntityFormat) sketch.EntityFormat {
 		out.LineWeight = a.LineWeight
 	}
 	return out
+}
+
+// --- API seam ---------------------------------------------------------------
+
+// EntityFormatOf returns one entity's formatting overrides, or ok=false when it inherits
+// everything. It is the in-proc form of what the api/wire sketch.getEntityFormat serves.
+func (s *Session) EntityFormatOf(id sketch.ID) (types.SketchEntityFormat, bool) {
+	sk := s.ActiveSketch()
+	if sk == nil {
+		return types.SketchEntityFormat{}, false
+	}
+	f, ok := sk.EntityFormat(id)
+	if !ok {
+		return types.SketchEntityFormat{}, false
+	}
+	return types.SketchEntityFormat{
+		LineType:      types.SketchLineType(f.LineType),
+		OverrideColor: f.Color,
+		LineWeight:    f.LineWeight,
+	}, true
+}
+
+// SetEntityFormatOf sets one entity's formatting overrides; a format that overrides nothing
+// clears them. It errors when no sketch is open or the id names no entity in it.
+func (s *Session) SetEntityFormatOf(id sketch.ID, f types.SketchEntityFormat) error {
+	sk := s.ActiveSketch()
+	if sk == nil {
+		return errors.New("sketch format: no active sketch")
+	}
+	if _, ok := sk.EntityByID(id); !ok {
+		return fmt.Errorf("sketch format: entity %d is not in the active sketch", id)
+	}
+	sk.SetEntityFormat(id, sketch.EntityFormat{
+		LineType:   string(f.LineType),
+		Color:      f.OverrideColor,
+		LineWeight: f.LineWeight,
+	})
+	return nil
+}
+
+// FormatModes returns the Format panel's armed creation modes.
+func (s *Session) FormatModes() types.SketchFormatModes {
+	return types.SketchFormatModes{
+		Construction:            s.formatModes.construction,
+		Centerline:              s.formatModes.centerline,
+		CenterPoint:             s.formatModes.centerPoint,
+		DrivenDimension:         s.formatModes.drivenDim,
+		SuppressFormatOverrides: s.ShowFormat(),
+	}
+}
+
+// SetFormatModes replaces the armed creation modes and persists the Show Format toggle, which
+// lives with the other sketch application options rather than in session-only state.
+func (s *Session) SetFormatModes(m types.SketchFormatModes) error {
+	s.formatModes = sketchFormatModes{
+		construction: m.Construction,
+		centerline:   m.Centerline,
+		centerPoint:  m.CenterPoint,
+		drivenDim:    m.DrivenDimension,
+	}
+	if s.ShowFormat() != m.SuppressFormatOverrides {
+		s.ToggleShowFormat()
+	}
+	return nil
 }

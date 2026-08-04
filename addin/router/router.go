@@ -359,6 +359,7 @@ func (r *Router) registerSketchHandlers() {
 	r.mutating(wire.MethodSketch3DEditHelix, "Edit Helix", typedPart(sketch3DEditHelix))
 	r.mutating(wire.MethodSketchSetInferenceOptions, "", typed(setInferenceOptions))
 	r.readOnly(wire.MethodSketchGetInferenceOptions, getInferenceOptions)
+	r.registerSketchFormatHandlers()
 	r.registerSketchAuthoringHandlers()
 	r.registerSketch3DHandlers()
 }
