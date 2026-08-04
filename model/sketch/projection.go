@@ -141,8 +141,13 @@ func (c *ProjectedCurve) Update() {
 func (c *ProjectedCurve) BreakLink() { c.linked = false }
 
 // ProjectPoint projects a model vertex into the sketch as a fixed, constrainable reference
-// point and returns the associative projected point.
+// point and returns the associative projected point. Projecting a source the sketch already
+// carries returns that projection instead of stacking a second, coincident reference on top of
+// it — so projecting the origin centre by hand does not double the auto-projected one (#2016).
 func (s *Sketch) ProjectPoint(src PointSource) *ProjectedPoint {
+	if p, ok := s.projectionOfSource(pointSourceKind(src), src.SourceID()); ok {
+		return p
+	}
 	pos, _ := src.Position() // resolved now; a later lost reference freezes via Update
 	p := &ProjectedPoint{
 		source: src, plane: s.plane, anchor: s.newRefPoint(s.plane.ToSketch(pos)), linked: true,
@@ -153,8 +158,44 @@ func (s *Sketch) ProjectPoint(src PointSource) *ProjectedPoint {
 	return p
 }
 
-// ProjectCurve projects a model edge into the sketch as reference geometry.
+// projectionOfSource finds an existing projected point built from the same source. Identity is
+// the (kind, id) pair persistence rebinds through, so two projections that would rebind to one
+// source ARE one projection. A source with no stable identity — either half empty, as an
+// anonymous or frozen source has — never matches: distinct unnamed sources must not collapse
+// into each other.
+func (s *Sketch) projectionOfSource(kind, id string) (*ProjectedPoint, bool) {
+	if kind == "" || id == "" {
+		return nil, false
+	}
+	for _, e := range s.ents {
+		if p, ok := e.(*ProjectedPoint); ok && p.srcKind == kind && p.srcID == id {
+			return p, true
+		}
+	}
+	return nil, false
+}
+
+// curveProjectionOfSource is [Sketch.projectionOfSource] for projected curves, with the same
+// identity rule.
+func (s *Sketch) curveProjectionOfSource(kind, id string) (*ProjectedCurve, bool) {
+	if kind == "" || id == "" {
+		return nil, false
+	}
+	for _, e := range s.ents {
+		if c, ok := e.(*ProjectedCurve); ok && c.srcKind == kind && c.srcID == id {
+			return c, true
+		}
+	}
+	return nil, false
+}
+
+// ProjectCurve projects a model edge into the sketch as reference geometry. Like
+// [Sketch.ProjectPoint] it returns an existing projection of the same source rather than
+// duplicating it (#2016).
 func (s *Sketch) ProjectCurve(src CurveSource) *ProjectedCurve {
+	if c, ok := s.curveProjectionOfSource(curveSourceKind(src), src.SourceID()); ok {
+		return c
+	}
 	c := &ProjectedCurve{
 		id: nextID(), source: src, plane: s.plane, linked: true,
 		srcKind: curveSourceKind(src), srcID: src.SourceID(),
