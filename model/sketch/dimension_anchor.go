@@ -82,7 +82,7 @@ func (d *DimensionConstraint) labelFrame() (math.Point2, math.Vector2, math.Vect
 	refs := d.Refs()
 	switch d.Kind() {
 	case DistanceDim:
-		return distanceFrame(refs)
+		return distanceFrame(d, refs)
 	case RadiusDim, DiameterDim:
 		return circleFrame(refs)
 	case AngleDim:
@@ -93,16 +93,33 @@ func (d *DimensionConstraint) labelFrame() (math.Point2, math.Vector2, math.Vect
 	return math.Point2{}, math.Vector2{}, math.Vector2{}, false
 }
 
-// distanceFrame anchors at the midpoint of the offset dimension line, with x along the measured
-// segment and y across it. Rotating the segment rotates the frame, so a label placed above a
-// horizontal line stays above it once the line is vertical.
-func distanceFrame(refs []Entity) (math.Point2, math.Vector2, math.Vector2, bool) {
+// DistanceLineDirection is the direction this distance dimension's line runs: along the measured
+// segment when aligned, along X when horizontal, along Y when vertical (#2025). The label frame
+// and the renderer share it, so the drawn dimension line and the text always agree.
+//
+//	dir := dim.DistanceLineDirection(a, b) // {1,0} for a horizontal dimension
+func (d *DimensionConstraint) DistanceLineDirection(a, b math.Point2) math.Vector2 {
+	switch d.orientation {
+	case HorizontalDistance:
+		return math.V2(1, 0)
+	case VerticalDistance:
+		return math.V2(0, 1)
+	default:
+		return unitOr(a.VectorTo(b), math.V2(1, 0))
+	}
+}
+
+// distanceFrame anchors at the midpoint of the offset dimension line, with x along that line and
+// y across it. Rotating the segment rotates an ALIGNED frame, so a label placed above a
+// horizontal line stays above it once the line is vertical; a horizontal or vertical dimension
+// keeps its axis instead, because that is the direction it measures along.
+func distanceFrame(d *DimensionConstraint, refs []Entity) (math.Point2, math.Vector2, math.Vector2, bool) {
 	a, b := refPoint(refs, 0), refPoint(refs, 1)
 	if a == nil || b == nil {
 		return math.Point2{}, math.Vector2{}, math.Vector2{}, false
 	}
 	pa, pb := a.Position(), b.Position()
-	dir := unitOr(pa.VectorTo(pb), math.V2(1, 0))
+	dir := d.DistanceLineDirection(pa, pb)
 	perp := math.V2(-dir.Y, dir.X)
 	origin := pa.Midpoint(pb).TranslateBy(perp.Scale(dimGap(pa.DistanceTo(pb))))
 	return origin, dir, perp, true

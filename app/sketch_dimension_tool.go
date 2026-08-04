@@ -108,7 +108,8 @@ func (t *DimensionTool) Commit(s *Session) error {
 	if s.activeSketch == nil {
 		return errors.New("dimension: no active sketch")
 	}
-	created, err := addDimensionFor(s.activeSketch.DimensionConstraints(), s.DocumentUnits(), t.Picked())
+	created, err := addPlacedDimensionFor(s.activeSketch.DimensionConstraints(), s.DocumentUnits(),
+		t.Picked(), t.placement, t.placed)
 	if err != nil {
 		return err
 	}

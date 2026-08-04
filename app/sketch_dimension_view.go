@@ -103,8 +103,13 @@ func angleLabel(units param.UnitsOfMeasure, radians float64) string {
 	return units.FormatDisplay(param.Quantity{Value: radians, Unit: param.Angle})
 }
 
-// distanceView offsets the dimension line off the measured segment by a perpendicular
-// gap, with a witness line back to each measured point, and labels it at the anchor.
+// distanceView draws the dimension line through the label, with a witness line back to each
+// measured point, and labels it at the anchor.
+//
+// The line runs along the ORIENTATION's direction, not always along the measured segment: a
+// horizontal dimension's line is horizontal and spans only ΔX, a vertical one spans only ΔY
+// (#2025). Projecting each measured point onto that line makes the drawn span equal the value
+// the constraint actually measures, so the glyph cannot claim a length the solver is not holding.
 //
 // The dimension line passes through the label, so the whole glyph moves as one when the label is
 // dragged. Only the label's PERPENDICULAR component displaces the line — sliding the text along
@@ -114,10 +119,10 @@ func distanceView(d *sketch.DimensionConstraint, a, b math.Point2, label string)
 	if !ok {
 		return DimensionView{}
 	}
-	dir := normalize(a.VectorTo(b))
+	dir := d.DistanceLineDirection(a, b)
 	perp := math.V2(-dir.Y, dir.X)
-	off := perp.Scale(a.VectorTo(labelAt).Dot(perp))
-	a2, b2 := a.TranslateBy(off), b.TranslateBy(off)
+	a2 := a.TranslateBy(perp.Scale(a.VectorTo(labelAt).Dot(perp)))
+	b2 := b.TranslateBy(perp.Scale(b.VectorTo(labelAt).Dot(perp)))
 	segs := [][2]math.Point2{{a, a2}, {b, b2}, {a2, b2}}
 	return DimensionView{Dim: d, Segments: segs, Label: label, LabelAt: labelAt, Driven: d.Driven()}
 }
