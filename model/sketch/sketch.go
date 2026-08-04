@@ -161,6 +161,7 @@ type Sketch struct {
 	// sketches consume a construction work plane and auto-delete it with its last consumer (#1849).
 	hostWorkRef string
 	ents        []Entity
+	formats     map[ID]EntityFormat   // per-entity format overrides (#2015); absent ⇒ sketch defaults
 	pts         []*Point              // every constrainable point (endpoints, centers, standalone) — the solver's variables
 	refPts      []*Point              // fixed reference points (projected anchors): constrainable but not solved
 	cloudPts    []*cloudAnchoredPoint // sketch points anchored on scan points (datum-cloud provenance, #645)
@@ -392,6 +393,7 @@ func (s *Sketch) removeEntity(e Entity) {
 func (s *Sketch) deleteEntity(e Entity) {
 	s.removeEntity(e)
 	s.dropFromCollection(e)
+	s.ClearEntityFormat(e.EntityID()) // the format dies with its entity (#2015)
 }
 
 // dropFromCollection removes e from its typed collection (the deleteEntity

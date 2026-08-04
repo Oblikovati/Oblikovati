@@ -93,6 +93,7 @@ func (m *cloneMap) smoothCurve(c SmoothCurve) (SmoothCurve, bool) {
 func (target *Sketch) CopyEntitiesWithConstraints(source *Sketch, ents []Entity, v math.Vector2) ([]Entity, []string) {
 	clones, pmap, emap := target.cloneEntitiesFull(ents, translation(v))
 	m := &cloneMap{points: pmap, entities: emap}
+	target.carryEntityFormats(source, emap) // the source sketch owns the originals' formats (#2015)
 	requested := requestedEntitySet(ents)
 	var warnings []string
 	for _, c := range source.geomCons.All() {
