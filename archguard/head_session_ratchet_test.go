@@ -20,7 +20,7 @@ import (
 // the compile-time interface assertions that PROVE a consumer interface, and doc comments
 // that merely mention the type). Lower it when a conversion removes references; never raise
 // it — a raise means a new widget took the whole session instead of a slim interface.
-const headSessionParamPin = 492
+const headSessionParamPin = 491
 
 func TestHeadSessionCouplingRatchet(t *testing.T) {
 	got := countSessionCoupling(t)

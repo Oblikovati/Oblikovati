@@ -7,8 +7,10 @@ import (
 	"oblikovati.org/model/feature"
 )
 
-func selectedWorkAxis(s *app.Session) *feature.WorkAxis {
-	for _, item := range s.Selection().Items() {
+// selectedWorkAxis returns the first selected datum axis, or nil. It takes the selection rather
+// than the whole session — the overlay only ever needed to read what is selected (audit I5).
+func selectedWorkAxis(sel *app.Selection) *feature.WorkAxis {
+	for _, item := range sel.Items() {
 		if h, ok := item.(app.WorkAxisHandle); ok {
 			return h.Axis
 		}
