@@ -58,8 +58,9 @@ const (
 	SelectDrawingView
 	SelectPointCloud
 	SelectPointCloudPoint
-	SelectMeshFace        // a facet of a placed mesh reference (#1776)
-	SelectSketchDimension // a 2D-sketch dimension, selected by its value label (#2015)
+	SelectMeshFace         // a facet of a placed mesh reference (#1776)
+	SelectSketchDimension  // a 2D-sketch dimension, selected by its value label (#2015)
+	SelectSketchConstraint // a 2D-sketch geometric constraint, selected by its Show-Constraints marker
 )
 
 // Selectable is anything the selection set can hold. Concrete handles wrap the
@@ -119,6 +120,13 @@ func (SketchEntityHandle) SelectionKind() SelectionKind { return SelectSketchEnt
 type SketchDimensionHandle struct{ Dim *sketch.DimensionConstraint }
 
 func (SketchDimensionHandle) SelectionKind() SelectionKind { return SelectSketchDimension }
+
+// SketchConstraintHandle wraps a picked geometric constraint. Constraints are selected by clicking
+// the marker Show Constraints draws for them, never by clicking the geometry they relate — that
+// selects the curve.
+type SketchConstraintHandle struct{ Constraint sketch.Constraint }
+
+func (SketchConstraintHandle) SelectionKind() SelectionKind { return SelectSketchConstraint }
 
 // OccurrenceHandle wraps a placed component occurrence (selected in the assembly browser or, once
 // viewport occurrence picking lands in #769, by clicking its body). It is the input the assembly

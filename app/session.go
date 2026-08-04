@@ -85,6 +85,7 @@ type Session struct {
 	driveAnim                 driveAnimation
 	sketchReturnCam           scene.Camera
 	activeSketch              *sketch.Sketch
+	showSketchConstraints     bool // Show/Hide Constraints: draw a marker per geometric constraint
 	activeSketch3D            *sketch.Sketch3D
 	pendingDim                *sketch.DimensionConstraint
 	overlays                  []renderer.DrawItem

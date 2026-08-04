@@ -73,6 +73,11 @@ func (s *Session) sketchEntityPointer(e PointerEvent) {
 		}
 		return
 	}
+	// A constraint marker is drawn ON the geometry it relates, so it has to be tested first or the
+	// curve underneath would always win and the marker would be unclickable (Show Constraints).
+	if s.SelectSketchConstraintAt(e.X, e.Y, e.Mods) {
+		return
+	}
 	additive := e.Mods.Has(ShiftMod) || e.Mods.Has(CtrlMod)
 	if !found {
 		if !additive {

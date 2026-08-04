@@ -37,6 +37,7 @@ func sketchTabCommands() []*CommandDefinition {
 		WithIcon("auto-dimension").WithButtonStyle(SmallIconButton).
 		WithTooltip("Auto Dimension — fully constrain the sketch with dimensions and grounds."))
 	cmds = append(cmds, constrainCommands()...)
+	cmds = append(cmds, showConstraintsCommand())
 	// Project Geometry lives in Create as a large button (the canonical ribbon has no
 	// "Draw" panel — see architecture/mapping/inventor-ribbon-structure.md). Project Scan Point
 	// rides under it as a split-button variant (the two are both "project onto the sketch plane").
@@ -64,6 +65,20 @@ func sketchTabCommands() []*CommandDefinition {
 		c.WithRibbons(PartRibbon, AssemblyRibbon)
 	}
 	return cmds
+}
+
+// showConstraintsCommand is the Constrain panel's Show/Hide Constraints toggle (Inventor's F8/F9
+// pair, one button here): it draws a marker for every geometric constraint in the sketch, which is
+// the only way to select one — and therefore the only way to delete a relation without undoing
+// back past it.
+func showConstraintsCommand() *CommandDefinition {
+	return NewCommand("Sketch.ShowConstraints", "Show Constraints", "Constrain", func(s *Session) error {
+		s.ToggleSketchConstraints()
+		return nil
+	}).WithTab("Sketch").WithEnvironment(SketchEnvironment).WithDefaultChord("F8").WithEnable(inSketch).
+		WithActive(func(s *Session) bool { return s.ShowSketchConstraints() }).
+		WithIcon("show-constraints").WithButtonStyle(SmallIconButton).
+		WithTooltip("Show Constraints — mark every constraint in the sketch; click a marker and press Delete to remove it.")
 }
 
 // sketchToolEntry is one tool-launching command (id/label/alias/tooltip + factory).

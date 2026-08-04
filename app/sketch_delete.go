@@ -17,27 +17,44 @@ import (
 //
 // Dimensions were originally left out because nothing could select one (#2017): the handle
 // existed but no pick produced it, so a selected-dimension branch here would have been dead
-// code. Both halves landed together.
+// code. Both halves landed together. Geometric constraints joined on the same terms once Show
+// Constraints gave them a marker to click.
 func (s *Session) DeleteSelectedSketchEntities() error {
 	if s.activeSketch == nil || s.tool != nil {
 		return nil
 	}
-	ents, dims := s.selectedSketchEntities(), s.SelectedSketchDimensions()
-	if len(ents) == 0 && len(dims) == 0 {
+	ents, dims, cons := s.selectedSketchEntities(), s.SelectedSketchDimensions(), s.SelectedSketchConstraints()
+	if len(ents) == 0 && len(dims) == 0 && len(cons) == 0 {
 		return nil
 	}
 	part, err := activePart(s)
 	if err != nil {
 		return err
 	}
-	if s.activeSketch.DeleteEntities(ents)+s.deleteSketchDimensions(dims) == 0 {
+	if s.activeSketch.DeleteEntities(ents)+s.deleteSketchDimensions(dims)+s.deleteSketchConstraints(cons) == 0 {
 		return nil
 	}
 	s.selection.Clear()
 	event.Emit(s.bus, event.After, SelectionChanged{Count: 0})
 	part.Recompute()
-	s.recordEdit(part, deleteEditName(ents, dims))
+	s.recordEdit(part, deleteEditName(ents, dims, cons))
 	return nil
+}
+
+// deleteSketchConstraints drops each selected geometric constraint, returning how many were
+// removed. It goes through DeleteAllowed rather than Delete so a system-owned relation is refused
+// even if one somehow reached the selection — Show Constraints already declines to draw those, and
+// this keeps the two halves from drifting. Removing a constraint frees the degrees of freedom it
+// held, which is why the caller re-solves.
+func (s *Session) deleteSketchConstraints(cons []sketch.Constraint) int {
+	gc := s.activeSketch.GeometricConstraints()
+	n := 0
+	for _, c := range cons {
+		if err := gc.DeleteAllowed(c); err == nil {
+			n++
+		}
+	}
+	return n
 }
 
 // deleteSketchDimensions drops each selected dimension from the active sketch, returning how many
@@ -56,12 +73,14 @@ func (s *Session) deleteSketchDimensions(dims []*sketch.DimensionConstraint) int
 }
 
 // deleteEditName names the undo step for what was actually deleted, so the undo stack reads
-// truthfully when only dimensions were selected.
-func deleteEditName(ents []sketch.Entity, dims []*sketch.DimensionConstraint) string {
-	if len(ents) == 0 {
+// truthfully when only dimensions or only constraints were selected.
+func deleteEditName(ents []sketch.Entity, dims []*sketch.DimensionConstraint, cons []sketch.Constraint) string {
+	switch {
+	case len(ents) == 0 && len(dims) == 0:
+		return "Delete Sketch Constraints"
+	case len(ents) == 0 && len(cons) == 0:
 		return "Delete Sketch Dimensions"
-	}
-	if len(dims) == 0 {
+	case len(dims) == 0 && len(cons) == 0:
 		return "Delete Sketch Entities"
 	}
 	return "Delete Sketch Geometry"

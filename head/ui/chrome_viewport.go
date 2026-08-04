@@ -553,6 +553,7 @@ func sketchOverlays(s *app.Session, cam scene.Camera, list renderer.DrawList) (r
 	if items, ok := toolPreview(s); ok {
 		list.Items = append(list.Items, onTop(items)...)
 	}
+	list.Items = append(list.Items, onTop(constraintGlyphOverlay(s, plane, constraintGlyphPixels*cam.WorldPerPixel()))...)
 	if item, ok := inferenceGlyphs(s, plane, glyphPixels*cam.WorldPerPixel()); ok {
 		list.Items = append(list.Items, onTopItem(item))
 	}
