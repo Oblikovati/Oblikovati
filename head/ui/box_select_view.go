@@ -161,6 +161,9 @@ func updateSketchDrag(s *app.Session) bool {
 	if !s.InSketch() {
 		return false
 	}
+	if updateDimensionDrag(s) {
+		return true
+	}
 	if s.EntityDragActive() {
 		lx, ly := viewportCursor()
 		if native.MouseDown(native.MouseLeft) {
