@@ -38,6 +38,7 @@ func TestViewportPointUploadRetained(t *testing.T) {
 		w.UploadPoints(pts, nPts, key, 3.0)
 		w.RenderViewport(0, 640, 480, mvp[:], eye,
 			nil, 0, nil, nil, 0, nil, nil, 0, nil, nil, 0, nil, nil, 0, nil, nil, 0, nil,
+			nil, 0, nil, nil, 0, nil, // stroked-line streams (#2015)
 			0, 0, nil, nil, nil, 0)
 		w.EndFrame(0.10, 0.10, 0.12)
 	}
@@ -106,6 +107,7 @@ func TestViewportPointUploadScale(t *testing.T) {
 		w.UploadPoints(pts, nPts, key, 2.0)
 		w.RenderViewport(0, 640, 480, mvp[:], eye,
 			nil, 0, nil, nil, 0, nil, nil, 0, nil, nil, 0, nil, nil, 0, nil, nil, 0, nil,
+			nil, 0, nil, nil, 0, nil, // stroked-line streams (#2015)
 			0, 0, nil, nil, nil, 0)
 		w.EndFrame(0.10, 0.10, 0.12)
 	}

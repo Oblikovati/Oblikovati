@@ -25,7 +25,8 @@ constexpr uint32_t kPointFloats = 7;
 // overlay fill. Records are ordered by stream so the pipeline binds change minimally.
 constexpr int kDrawRecInts = 7;
 constexpr int32_t kStreamOcc = 0, kStreamTri = 1, kStreamLine = 2, kStreamHid = 3,
-                  kStreamTopTri = 4, kStreamTopLine = 5;
+                  kStreamTopTri = 4, kStreamTopLine = 5,
+                  kStreamWideLine = 6, kStreamTopWideLine = 7; // stroked lines (#2015)
 constexpr VkFormat kDepthFormat = VK_FORMAT_D32_SFLOAT;
 
 // Scene UBO layout in floats (std140), matching the Scene block in mesh.frag:
@@ -48,6 +49,10 @@ struct PushConstants {
     float mvp[16];
     float camPosLit[4];
     float clip[4]; // section plane (M12-F04): xyz = world normal (0 ⇒ none), w = offset d
+    // viewport.xy = framebuffer size in pixels, which the wide-line shader needs to turn a stroke
+    // width in pixels into a clip-space offset (#2015). Shaders that do not use it declare a
+    // shorter block; a pipeline layout range may exceed what a shader reads.
+    float viewport[4];
 };
 
 struct GpuBuffer {
@@ -115,6 +120,10 @@ struct Viewport {
     VkPipeline      pointPipeline = VK_NULL_HANDLE;    // point clouds: GL points, depth-tested (#645)
     VkShaderModule  vertModule = VK_NULL_HANDLE;
     VkShaderModule  fragModule = VK_NULL_HANDLE;
+    VkPipeline      wideLinePipeline = VK_NULL_HANDLE;    // stroked lines, depth-tested (#2015)
+    VkPipeline      topWideLinePipeline = VK_NULL_HANDLE; // stroked lines, on top (#2015)
+    VkShaderModule  wideLineVertModule = VK_NULL_HANDLE;
+    VkShaderModule  wideLineFragModule = VK_NULL_HANDLE;
     VkShaderModule  pointVertModule = VK_NULL_HANDLE;
     VkShaderModule  pointFragModule = VK_NULL_HANDLE;
     VkShaderModule  skyVertModule = VK_NULL_HANDLE;
@@ -314,17 +323,20 @@ void fill_instanced_vertex_input(VkVertexInputBindingDescription binds[2],
     vi.pVertexAttributeDescriptions = attrs;
 }
 
+// vs/fs override the default mesh shader pair — the wide-line pipelines swap in the expanding
+// vertex shader while keeping this pipeline's vertex input, blending and depth setup (#2015).
 VkPipeline create_pipeline(HeadContext* c, Viewport* v, VkPrimitiveTopology topo,
                            VkPolygonMode poly, VkBool32 colorWrite, VkCompareOp depthOp,
-                           VkBool32 depthWrite) {
+                           VkBool32 depthWrite,
+                           VkShaderModule vs = VK_NULL_HANDLE, VkShaderModule fs = VK_NULL_HANDLE) {
     VkPipelineShaderStageCreateInfo stages[2]{};
     stages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-    stages[0].module = v->vertModule;
+    stages[0].module = vs ? vs : v->vertModule;
     stages[0].pName = "main";
     stages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    stages[1].module = v->fragModule;
+    stages[1].module = fs ? fs : v->fragModule;
     stages[1].pName = "main";
 
     VkVertexInputBindingDescription binds[2];
@@ -1118,6 +1130,7 @@ extern "C" {
 
 void obk_viewport_init(void* h, const uint32_t* vert, int vlen, const uint32_t* frag, int flen,
                        const uint32_t* pointVert, int pointVLen, const uint32_t* pointFrag, int pointFLen,
+                       const uint32_t* wideVert, int wideVLen, const uint32_t* wideFrag, int wideFLen,
                        const uint32_t* skyVert, int skyVLen, const uint32_t* skyFrag,
                        int skyFLen) {
     HeadContext* c = (HeadContext*)h;
@@ -1126,6 +1139,8 @@ void obk_viewport_init(void* h, const uint32_t* vert, int vlen, const uint32_t* 
     v->colorFormat = c->window_data.SurfaceFormat.format;
     v->vertModule = make_module(c->device, vert, vlen);
     v->fragModule = make_module(c->device, frag, flen);
+    v->wideLineVertModule = make_module(c->device, wideVert, wideVLen);
+    v->wideLineFragModule = make_module(c->device, wideFrag, wideFLen);
     v->pointVertModule = make_module(c->device, pointVert, pointVLen);
     v->pointFragModule = make_module(c->device, pointFrag, pointFLen);
     v->skyVertModule = make_module(c->device, skyVert, skyVLen);
@@ -1163,6 +1178,15 @@ void obk_viewport_init(void* h, const uint32_t* vert, int vlen, const uint32_t* 
                                         VK_POLYGON_MODE_FILL, VK_TRUE, VK_COMPARE_OP_ALWAYS, VK_FALSE);
     v->topLinePipeline = create_pipeline(c, v, VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
                                          VK_POLYGON_MODE_FILL, VK_TRUE, VK_COMPARE_OP_ALWAYS, VK_FALSE);
+    // Stroked lines (#2015): TRIANGLE topology, because each segment arrives as a quad the
+    // wide-line vertex shader offsets in screen space. Depth setup mirrors the hairline lanes so a
+    // stroked line occludes and is occluded exactly as its hairline equivalent would be.
+    v->wideLinePipeline = create_pipeline(c, v, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+                                          VK_POLYGON_MODE_FILL, VK_TRUE, VK_COMPARE_OP_LESS_OR_EQUAL, VK_TRUE,
+                                          v->wideLineVertModule, v->wideLineFragModule);
+    v->topWideLinePipeline = create_pipeline(c, v, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+                                             VK_POLYGON_MODE_FILL, VK_TRUE, VK_COMPARE_OP_ALWAYS, VK_FALSE,
+                                             v->wideLineVertModule, v->wideLineFragModule);
     v->skyboxPipeline = create_skybox_pipeline(c, v);
     v->pointPipeline = create_point_pipeline(c, v); // point clouds (#645)
     create_shadow_resources(c, v);
@@ -1234,6 +1258,8 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
                          const float* hidV, int hidVC, const uint32_t* hidIdx, int hidIC,
                          const float* topTriV, int topTriVC, const uint32_t* topTriIdx, int topTriIC,
                          const float* topLineV, int topLineVC, const uint32_t* topLineIdx, int topLineIC,
+                         const float* wideV, int wideVC, const uint32_t* wideIdx, int wideIC,
+                         const float* topWideV, int topWideVC, const uint32_t* topWideIdx, int topWideIC,
                          int triBiasFirst, int topTriSolidFirst, const float* clip,
                          const float* mats, int matCount, const int32_t* recs, int recCount,
                          uint64_t geomKey) {
@@ -1254,11 +1280,14 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
     // vertexOffset (the stream's vertex base) and firstIndex (its offset in the index buffer).
     const int occBase = 0, triBase = occVC, lineBase = occVC + triVC, hidBase = occVC + triVC + lineVC;
     const int topTriBase = hidBase + hidVC, topLineBase = topTriBase + topTriVC;
+    // The stroked-line streams are concatenated last, so adding them left every base above unmoved.
+    const int wideBase = topLineBase + topLineVC, topWideBase = wideBase + wideVC;
     const int occFirst = 0, triFirst = occIC, lineFirst = occIC + triIC, hidFirst = occIC + triIC + lineIC;
     const int topTriFirst = hidFirst + hidIC, topLineFirst = topTriFirst + topTriIC;
+    const int wideFirst = topLineFirst + topLineIC, topWideFirst = wideFirst + wideIC;
     // Whether there is any geometry to draw this frame, independent of whether it was (re)uploaded —
     // a skipped upload (#1422) still draws the resident buffer, so the draw gate must use the counts.
-    const bool haveGeometry = (occVC + triVC + lineVC + hidVC + topTriVC + topLineVC) > 0;
+    const bool haveGeometry = (occVC + triVC + lineVC + hidVC + topTriVC + topLineVC + wideVC + topWideVC) > 0;
 
     // Concatenate the six streams into one vertex + one index buffer and upload them — but ONLY when
     // the geometry actually changed. geomKey identifies the merged mesh (from the Go atlas cache); when
@@ -1277,21 +1306,25 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
         // keeps the shared geometry safe under frames-in-flight (#1421).
         vkWaitForFences(c->device, kFramesInFlight, v->frameFence, VK_TRUE, UINT64_MAX);
         std::vector<float> verts;
-        verts.reserve((size_t)(occVC + triVC + lineVC + hidVC + topTriVC + topLineVC) * kVertexFloats);
+        verts.reserve((size_t)(occVC + triVC + lineVC + hidVC + topTriVC + topLineVC + wideVC + topWideVC) * kVertexFloats);
         verts.insert(verts.end(), occV, occV + (size_t)occVC * kVertexFloats);
         verts.insert(verts.end(), triV, triV + (size_t)triVC * kVertexFloats);
         verts.insert(verts.end(), lineV, lineV + (size_t)lineVC * kVertexFloats);
         verts.insert(verts.end(), hidV, hidV + (size_t)hidVC * kVertexFloats);
         verts.insert(verts.end(), topTriV, topTriV + (size_t)topTriVC * kVertexFloats);
         verts.insert(verts.end(), topLineV, topLineV + (size_t)topLineVC * kVertexFloats);
+        verts.insert(verts.end(), wideV, wideV + (size_t)wideVC * kVertexFloats);
+        verts.insert(verts.end(), topWideV, topWideV + (size_t)topWideVC * kVertexFloats);
         std::vector<uint32_t> idx;
-        idx.reserve((size_t)(occIC + triIC + lineIC + hidIC + topTriIC + topLineIC));
+        idx.reserve((size_t)(occIC + triIC + lineIC + hidIC + topTriIC + topLineIC + wideIC + topWideIC));
         idx.insert(idx.end(), occIdx, occIdx + occIC);
         idx.insert(idx.end(), triIdx, triIdx + triIC);
         idx.insert(idx.end(), lineIdx, lineIdx + lineIC);
         idx.insert(idx.end(), hidIdx, hidIdx + hidIC);
         idx.insert(idx.end(), topTriIdx, topTriIdx + topTriIC);
         idx.insert(idx.end(), topLineIdx, topLineIdx + topLineIC);
+        idx.insert(idx.end(), wideIdx, wideIdx + wideIC);
+        idx.insert(idx.end(), topWideIdx, topWideIdx + topWideIC);
         upload_geom(c, &v->vbuf, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, verts.data(), verts.size() * sizeof(float));
         upload_geom(c, &v->ibuf, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, idx.data(), idx.size() * sizeof(uint32_t));
         v->geomKey = geomKey; // what is now resident (0 stays 0 ⇒ legacy path never skips)
@@ -1413,6 +1446,11 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
         push.camPosLit[1] = camPos ? camPos[1] : 0.0f;
         push.camPosLit[2] = camPos ? camPos[2] : 0.0f;
         for (int i = 0; i < 4; i++) push.clip[i] = clip ? clip[i] : 0.0f; // section plane (M12-F04)
+        // The stroked-line shader turns a pixel width into a clip-space offset, so it needs the
+        // target size; every other pipeline ignores this slot (#2015).
+        push.viewport[0] = (float)w;
+        push.viewport[1] = (float)hh;
+        push.viewport[2] = push.viewport[3] = 0.0f;
         auto pushLit = [&](float lit) {
             push.camPosLit[3] = lit;
             vkCmdPushConstants(cmd, v->layout,
@@ -1422,14 +1460,15 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
             // Instanced (ADR-0038): one draw per (source stream × its instances), records ordered
             // by stream so the pipeline + lit flag change once per stream. Stream picks the same
             // pipeline/lit/bias the legacy per-stream path below uses.
-            VkPipeline pipes[6] = {v->occluderPipeline, v->triPipeline, v->linePipeline,
-                                   v->hiddenPipeline, v->topTriPipeline, v->topLinePipeline};
+            VkPipeline pipes[8] = {v->occluderPipeline, v->triPipeline, v->linePipeline,
+                                   v->hiddenPipeline, v->topTriPipeline, v->topLinePipeline,
+                                   v->wideLinePipeline, v->topWideLinePipeline};
             int curStream = -1;
             bool topSolidCleared = false;
             for (int r = 0; r < recCount; r++) {
                 const int32_t* rec = recs + (size_t)r * kDrawRecInts;
                 int stream = rec[0];
-                if (stream < 0 || stream > 5 || rec[2] <= 0 || rec[5] <= 0) continue;
+                if (stream < 0 || stream > 7 || rec[2] <= 0 || rec[5] <= 0) continue;
                 // On-top SOLID tail (stream 4, flag rec[6]==1): the opaque client-graphics glyphs.
                 // Clear depth once so they sit on top of the model, then draw them depth-tested +
                 // lit through the shaded-tri pipeline so each self-occludes as a real solid (#1489).
@@ -1450,7 +1489,7 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
                     curStream = stream;
                 }
                 float bias = 0.0f;
-                if (stream == kStreamLine) bias = -1.0f;              // edges win the z-fight vs faces
+                if (stream == kStreamLine || stream == kStreamWideLine) bias = -1.0f; // edges win the z-fight vs faces
                 else if (stream == kStreamTri && rec[6]) bias = 2.0f; // overlay fill pushed back
                 vkCmdSetDepthBias(cmd, bias, 0.0f, bias);
                 vkCmdDrawIndexed(cmd, (uint32_t)rec[2], (uint32_t)rec[5],
@@ -1530,6 +1569,20 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
             pushLit(0.0f);
             vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->topLinePipeline);
             vkCmdDrawIndexed(cmd, (uint32_t)topLineIC, 1, (uint32_t)topLineFirst, topLineBase, 0);
+        }
+        // 7) stroked lines (#2015) — quads the wide-line shader widens in screen space. Each draws
+        //    after its hairline counterpart so a stroked overlay sits where a hairline one would.
+        if (wideIC > 0) {
+            pushLit(0.0f);
+            vkCmdSetDepthBias(cmd, -1.0f, 0.0f, -1.0f); // same z-fight relief the solid edges take
+            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->wideLinePipeline);
+            vkCmdDrawIndexed(cmd, (uint32_t)wideIC, 1, (uint32_t)wideFirst, wideBase, 0);
+            vkCmdSetDepthBias(cmd, 0.0f, 0.0f, 0.0f);
+        }
+        if (topWideIC > 0) {
+            pushLit(0.0f);
+            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->topWideLinePipeline);
+            vkCmdDrawIndexed(cmd, (uint32_t)topWideIC, 1, (uint32_t)topWideFirst, topWideBase, 0);
         }
         } // end legacy (non-instanced) draws
     }
@@ -1954,6 +2007,8 @@ void obk_viewport_destroy(HeadContext* c) {
     vkDestroySampler(c->device, v->sampler, nullptr);
     vkDestroyPipeline(c->device, v->triPipeline, nullptr);
     vkDestroyPipeline(c->device, v->linePipeline, nullptr);
+    vkDestroyPipeline(c->device, v->wideLinePipeline, nullptr);
+    vkDestroyPipeline(c->device, v->topWideLinePipeline, nullptr);
     vkDestroyPipeline(c->device, v->occluderPipeline, nullptr);
     vkDestroyPipeline(c->device, v->hiddenPipeline, nullptr);
     vkDestroyPipeline(c->device, v->topTriPipeline, nullptr);
@@ -1964,6 +2019,8 @@ void obk_viewport_destroy(HeadContext* c) {
     vkDestroyRenderPass(c->device, v->renderPass, nullptr);
     vkDestroyShaderModule(c->device, v->vertModule, nullptr);
     vkDestroyShaderModule(c->device, v->fragModule, nullptr);
+    vkDestroyShaderModule(c->device, v->wideLineVertModule, nullptr);
+    vkDestroyShaderModule(c->device, v->wideLineFragModule, nullptr);
     vkDestroyShaderModule(c->device, v->pointVertModule, nullptr);
     vkDestroyShaderModule(c->device, v->pointFragModule, nullptr);
     vkDestroyShaderModule(c->device, v->skyVertModule, nullptr);
