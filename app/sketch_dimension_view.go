@@ -306,7 +306,7 @@ const dimArrowSpread = 0.35
 //
 // A committed dimension drew bare lines with no heads, so it read as construction geometry rather
 // than a dimension — and it changed appearance the moment the in-place dimension it grew out of
-// committed (#2032). The heads point INWARD along the line, the drafting convention for a
+// committed (#2034). The heads point INWARD along the line, the drafting convention for a
 // dimension measuring between its own extension lines.
 func withArrowheads(segs [][2]math.Point2, a2, b2 math.Point2) [][2]math.Point2 {
 	segs = append(segs, arrowheadSegs(a2, a2.VectorTo(b2))...)

@@ -56,7 +56,7 @@ func (s *Session) BeginCommandTyping(seed string) {
 	// keyboard away from the placement's own entry surfaces, and the head then stops routing keys
 	// to them entirely (a focused text widget owns typing) — so the FIRST digit typed into an
 	// in-place dimension box both filled it and focused the command line, and every digit after
-	// it, plus Tab, went to the command line instead. One keystroke, then a dead box (#2031).
+	// it, plus Tab, went to the command line instead. One keystroke, then a dead box (#2033).
 	if s.PlacingGeometry() {
 		s.typeIntoPlacement(seed) // the shape being placed OWNS the keystroke; it is not discarded
 		return

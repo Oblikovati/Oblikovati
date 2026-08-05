@@ -68,7 +68,7 @@ func (s *Sketch) ApplyLineInference(l *Line, opts InferenceOptions) ([]AppliedIn
 // Every shape needs this, not just the line. Point inference used to be reachable only through
 // [Sketch.ApplyLineInference], so a rectangle or an arc started ON an existing point was merely
 // drawn there: the click snapped its coordinates, no constraint recorded why, and dragging the
-// other geometry tore the two apart (#2030). Recipe-built shapes route their created points
+// other geometry tore the two apart (#2032). Recipe-built shapes route their created points
 // through here so they behave like a line does.
 //
 //	sk.ApplyPointInference(created, sk.DefaultInferenceOptions())

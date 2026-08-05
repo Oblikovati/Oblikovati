@@ -56,7 +56,7 @@ func placementOverlayItems(s placementSession, plane sketch.Plane, cursor math.P
 //
 // The dimension stands OFF the geometry along the field's outward direction. It used to be drawn
 // straight along the witness segment — which for a rectangle IS an edge — so the whole annotation
-// lay on the shape it measured (#2032).
+// lay on the shape it measured (#2034).
 func placementDimensionSegments(s placementSession, plane sketch.Plane, gap float64) *segAccum {
 	acc := &segAccum{}
 	for _, f := range s.PlacementFields() {

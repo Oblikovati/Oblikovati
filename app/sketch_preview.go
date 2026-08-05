@@ -79,7 +79,7 @@ func (s *Session) ActiveToolPreview(cursor math.Point2) (pts []math.Point2, clos
 // It used to describe only the segment being rubber-banded, so in a continuous chain every
 // segment already placed was invisible until the command finished: the tool holds its points and
 // creates all the lines at once in Commit, so nothing existed in the sketch to draw, and the
-// preview — the only thing that could have shown them — drew just the last one (#2030). The
+// preview — the only thing that could have shown them — drew just the last one (#2032). The
 // preview's contract is the shape the commit would create, and for a chain that is all of it.
 func (t *LineTool) PendingRecipe(_ *Session, cursor math.Point2, _ []string) (sketch.Recipe, bool) {
 	if len(t.points) == 0 {

@@ -16,7 +16,7 @@ import (
 // Every other method on this router edits the model. That cannot reach the behaviour that only
 // exists in the input path — the constraints a tool infers from where the click landed, what it
 // previews between clicks, how a multi-click chain accumulates — so a client could neither
-// automate nor test it. Two bugs in exactly that path (#2030) had no way to be reproduced over the
+// automate nor test it. Two bugs in exactly that path (#2032) had no way to be reproduced over the
 // API, which is why this exists.
 
 // clickViewport delivers a pointer click at a viewport pixel, or at a model point the host

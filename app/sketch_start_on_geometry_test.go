@@ -12,7 +12,7 @@ import (
 // Starting a shape ON existing geometry must JOIN it, not merely land on it. Point inference was
 // reachable only through the line path, so a rectangle or an arc begun on an existing point had
 // its coordinates snapped and nothing recorded why: drag the other geometry and the two came
-// apart. Every creation tool routes through the shared recipe commit now, which infers (#2030).
+// apart. Every creation tool routes through the shared recipe commit now, which infers (#2032).
 
 // existingCornerSession returns a session editing a sketch that already holds one line, plus the
 // screen position of that line's far endpoint — the point a new shape will be started on.

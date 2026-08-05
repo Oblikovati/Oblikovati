@@ -12,7 +12,7 @@ import (
 
 // viewport.click / viewport.key exist so a client can drive the INPUT path. Creating geometry
 // through sketch.addEntity never takes it, so no client could reach — or test — what happens on
-// the way in: inferred constraints, previews, multi-click chains (#2030).
+// the way in: inferred constraints, previews, multi-click chains (#2032).
 
 // sketchClickSession returns a router and a session editing a sketch on the XY plane, framed so
 // the plane's origin projects into the viewport.

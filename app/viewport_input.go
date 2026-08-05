@@ -16,7 +16,7 @@ import (
 // behaviour that only exists on the way IN: the constraints a tool infers from where the click
 // landed, what a command previews between clicks, how a multi-click chain accumulates. Those bugs
 // are invisible to a client that creates geometry by calling the model, because such a client
-// never takes the path they live on (#2030).
+// never takes the path they live on (#2032).
 
 // ProjectToViewport maps a model-space point to its viewport pixel, reporting false when the point
 // falls outside the view frustum (behind the camera, or clipped).
@@ -92,7 +92,7 @@ func ModifierFor(shift, ctrl, alt bool) Modifier {
 //
 // The head reaches the boxes through its own per-frame editing-key read, so this is the wire's
 // equivalent — without it a client could type a value (which BeginCommandTyping hands to the
-// boxes) but never LOCK it, since Tab resolves as a chord and dies unbound (#2032). It lives on
+// boxes) but never LOCK it, since Tab resolves as a chord and dies unbound (#2034). It lives on
 // the wire-only entry point deliberately: routing it inside PressKey would double-apply against
 // the head, which already reads Tab itself.
 func (s *Session) placementEditKey(key string) bool {

@@ -129,7 +129,7 @@ type Session struct {
 	cmdInput                  commandInput                                     // command-alias input box state (M05-F17)
 	cmdLine                   *CommandLine                                     // Command Window REPL engine (M26)
 	commandWindowHidden       bool                                             // Command Window docked panel hidden? (M26; inverted so zero ⇒ visible)
-	placementStartedByClick   bool                                             // a geometry tool has its first MOUSE-placed point down (#2031)
+	placementStartedByClick   bool                                             // a geometry tool has its first MOUSE-placed point down (#2033)
 	commandFocusWanted        bool                                             // a cancel/ESC asked to refocus the command input (M26; head clears it)
 	commandTypeSeed           string                                           // char to seed the command input with when a bare key begins typing (#1751 S2; head clears it)
 	grid                      *GridSettings

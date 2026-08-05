@@ -110,7 +110,7 @@ func (s *Sketch) addRecipeAngleDim(dc *DimensionConstraints, dim RecipeDim, ents
 
 // dimensionStandoff is how far a recipe-created dimension is placed from the geometry it
 // measures, in database units (cm). It matches what the in-place preview showed, so the
-// annotation does not jump when the shape commits (#2032).
+// annotation does not jump when the shape commits (#2034).
 const dimensionStandoff = 0.6
 
 // FieldOutward is the unit direction a field's dimension stands off in: the normal of its

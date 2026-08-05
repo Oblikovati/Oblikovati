@@ -47,7 +47,7 @@ type PlacementFieldView struct {
 	Witness [2]math.Point2
 
 	// Outward is the unit direction the dimension stands off in — away from the shape, so its
-	// line, arrows and value never sit on the geometry they measure (#2032).
+	// line, arrows and value never sit on the geometry they measure (#2034).
 	Outward math.Vector2
 }
 
@@ -216,13 +216,13 @@ func (s *Session) commitRecipeEntities(r sketch.Recipe) ([]sketch.Entity, error)
 	before := s.dimensionCount()
 	ents, pts, err := s.activeSketch.ApplyWithFields(r, s.lockedFieldExpressions(r), s.overConstrainedBehavior())
 	// A shape started ON existing geometry joins to it, exactly as a line does. Without this the
-	// click merely snapped the coordinates and nothing recorded why they matched (#2030).
+	// click merely snapped the coordinates and nothing recorded why they matched (#2032).
 	s.activeSketch.ApplyPointInference(pts, s.SketchInferenceOptions())
 	s.applyFormatModes(ents)           // Format-panel creation modes (#2015)
 	s.applyDrivenDimensionMode(before) // …including driven dimensions
 	// A locked value must SHAPE what it just created: without this the rectangle committed at
 	// whatever the cursor last said (44.85 mm) while carrying a dimension that claimed 50 mm, and
-	// stayed that way until something else re-solved the sketch (#2032). The constraint tools
+	// stayed that way until something else re-solved the sketch (#2034). The constraint tools
 	// solve on the same footing (sketch_constraints.go).
 	if err == nil {
 		s.activeSketch.Solve()

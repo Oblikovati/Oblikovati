@@ -8,7 +8,7 @@ import (
 	"oblikovati.org/model/sketch"
 )
 
-// Typing a value into the in-place dimension boxes broke after ONE digit (#2031). A bare
+// Typing a value into the in-place dimension boxes broke after ONE digit (#2033). A bare
 // alphanumeric key means "start typing a command" (#1751 S2), which hands focus to the Command
 // Window — so the first digit both filled the box AND focused the command line, and from the next
 // frame on the head skipped the HUD router because a text widget owned the keyboard. The second
@@ -197,7 +197,7 @@ func TestKeystrokeReachesTheBoxesNotNowhere(t *testing.T) {
 
 // TestLockedValueShapesTheCommittedGeometry: a value the user locked must DRIVE the shape it
 // creates. The commit created the dimension but never re-solved, so the rectangle kept the size the
-// cursor happened to be at while its dimension claimed the typed one (#2032).
+// cursor happened to be at while its dimension claimed the typed one (#2034).
 func TestLockedValueShapesTheCommittedGeometry(t *testing.T) {
 	s, sk := sketchSession(t)
 	s.StartTool(NewRectangleTool())
@@ -222,7 +222,7 @@ func TestLockedValueShapesTheCommittedGeometry(t *testing.T) {
 // TestBothLockedValuesShapeTheCommittedRectangle is the reported flow: type a width, Tab, type a
 // height, Tab, then click. Both values must shape the rectangle at once — it committed at the
 // cursor's size (23.1 x 24.6 mm) carrying dimensions that said 10 x 30, and only snapped to them
-// when the user dragged the geometry and forced a re-solve (#2032).
+// when the user dragged the geometry and forced a re-solve (#2034).
 func TestBothLockedValuesShapeTheCommittedRectangle(t *testing.T) {
 	s, sk := sketchSession(t)
 	s.StartTool(NewRectangleTool())

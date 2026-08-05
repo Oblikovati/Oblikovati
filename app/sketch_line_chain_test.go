@@ -117,7 +117,7 @@ func TestChainPreviewFollowsTheLastPoint(t *testing.T) {
 // TestChainPreviewsEverySegmentPlaced is the reported defect: mid-command the sketch holds no
 // geometry — the tool creates every line at once in Commit — so the preview is the ONLY thing
 // that can show the segments already placed. It showed just the one at the cursor, leaving the
-// rest of the chain invisible until the command finished (#2030).
+// rest of the chain invisible until the command finished (#2032).
 func TestChainPreviewsEverySegmentPlaced(t *testing.T) {
 	s, sk := sketchSession(t)
 	tool := NewLineTool()

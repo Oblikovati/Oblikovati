@@ -51,7 +51,7 @@ func TestDerivedBasesAreDirect(t *testing.T) {
 
 // TestPickedBindingsIgnoreTheFile: a picked token resolves to its product colour for EVERY theme,
 // including a custom one saved before the token existed — deriving it from an unrelated Blender
-// field instead made such a theme paint it whatever that field happened to hold (#2032). The
+// field instead made such a theme paint it whatever that field happened to hold (#2034). The
 // shade follows the viewport background, so the two shipped themes must NOT agree on it.
 func TestPickedBindingsIgnoreTheFile(t *testing.T) {
 	seen := map[Rgba]string{}

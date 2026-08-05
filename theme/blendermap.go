@@ -115,7 +115,7 @@ var derivedBindings = map[Token]derivedBinding{
 	types.TokenGridAxis:            {base: types.TokenGridMinor, alphaScale: 3},
 	// The in-place dimension is drafting green in every CAD package, and Blender has no slot
 	// that means it. Deriving it from an unrelated Blender field made an EXISTING custom theme
-	// resolve it to whatever that field happened to hold (a near-black brown, #2032) — a token
+	// resolve it to whatever that field happened to hold (a near-black brown, #2034) — a token
 	// snapshot only carries the tokens that existed when it was saved.
 	types.TokenDimensionSketch: {pick: sketchDimensionGreen},
 }

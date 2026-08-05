@@ -10,7 +10,7 @@ import (
 )
 
 // An in-place dimension was drawn ON its witness segment, which for a rectangle IS an edge of the
-// shape — so the value box sat on the geometry, often inside it (#2032). Each field now carries
+// shape — so the value box sat on the geometry, often inside it (#2034). Each field now carries
 // the direction its dimension stands off in, away from the shape.
 
 // TestEveryFieldPointsAwayFromTheShape is the regression: whichever edge a rectangle's dimension
@@ -95,7 +95,7 @@ func TestOpenShapeStillGetsADirection(t *testing.T) {
 
 // TestCommittedDimensionStandsOutsideTheShape is the reported defect: the in-place dimension
 // stood off the rectangle correctly, then the dimension the commit created appeared INSIDE it —
-// the annotation jumped the moment the shape was made (#2032).
+// the annotation jumped the moment the shape was made (#2034).
 func TestCommittedDimensionStandsOutsideTheShape(t *testing.T) {
 	// BOTH drag directions. The default anchor offsets by a fixed perpendicular handedness, so
 	// which side it lands on depends on which way the rectangle was dragged — one direction was

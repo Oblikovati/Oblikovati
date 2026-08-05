@@ -34,7 +34,7 @@ func dimensionLines(plane sketch.Plane, views []app.DimensionView) []renderer.Dr
 	}
 	var items []renderer.DrawItem
 	// A committed driving dimension is the SAME annotation the in-place one was, so it keeps the
-	// same colour: the style must not change the moment a shape commits (#2032). Driven
+	// same colour: the style must not change the moment a shape commits (#2034). Driven
 	// dimensions and the selection keep their own colours — those are real distinctions.
 	items = appendGrid(items, driving, chromeTheme.dimensionSketchColor)
 	items = appendGrid(items, driven, chromeTheme.dimensionDrivenColor)
@@ -67,7 +67,7 @@ func drawDimensionLabels(cam scene.Camera, plane sketch.Plane, views []app.Dimen
 			continue // off-screen labels would grow the ImGui content rect and steal the wheel (#2027)
 		}
 		// Drawn with the dimension's own colour rather than as plain ImGui text, so the value
-		// reads as part of the annotation its line and arrowheads belong to (#2032).
+		// reads as part of the annotation its line and arrowheads belong to (#2034).
 		native.DrawText(ox+float32(sx), oy+float32(sy), v.Label, dimensionLabelColor(v))
 		if dbl && labelHit(mx-ox, my-oy, float32(sx), float32(sy)) {
 			hit = v.Dim
