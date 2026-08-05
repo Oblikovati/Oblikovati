@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/exchange"
@@ -71,7 +72,7 @@ func Export(part *compdef.PartComponentDefinition, path string, format types.Exc
 	if !ok || route.exportBodies == nil {
 		return ExportResult{}, fmt.Errorf("export: unsupported format %q (want stl|obj|3mf|step)", format)
 	}
-	data, tris, warns, err := route.exportBodies(bodies, res, exportUnits(part))
+	data, tris, warns, err := route.exportBodies(bodies, res, exportOptions(part, path))
 	if err != nil {
 		return ExportResult{}, fmt.Errorf("export %q: %w", path, err)
 	}
@@ -79,6 +80,15 @@ func Export(part *compdef.PartComponentDefinition, path string, format types.Exc
 		return ExportResult{}, fmt.Errorf("export: write %q: %w", path, err)
 	}
 	return ExportResult{TriangleCount: tris, Warnings: warns}, nil
+}
+
+// exportOptions is exportUnits plus the product name a format that carries one writes. The name
+// comes from the destination file's base name — the part definition carries none, and a reader's
+// model tree showing "plate" beats a constant placeholder (#2055).
+func exportOptions(part *compdef.PartComponentDefinition, path string) exchange.TranslationOptions {
+	opts := exportUnits(part)
+	opts.Name = strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+	return opts
 }
 
 // exportUnits builds the translation options for an export: the kernel works in
