@@ -358,3 +358,15 @@ func (dc *DimensionConstraints) nextName() string {
 		}
 	}
 }
+
+// drivable reports whether this dimension can drive the geometry: its parameter must have
+// evaluated to a real value.
+//
+// An expression that names something undefined evaluates to ZERO while it stays unbound — which
+// is legitimate and temporary, since a parameter may be referenced before it is created and binds
+// the moment it appears. Feeding that zero to the solver, though, is not: it collapsed the
+// dimensioned geometry to a point (a mistyped "widht" drove a 40 mm line to 4.6e-12) and the solve
+// reported success. A sick dimension simply does not constrain until it is healthy again.
+func (d *DimensionConstraint) drivable() bool {
+	return d.param != nil && d.param.Health().OK()
+}
