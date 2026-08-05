@@ -10,6 +10,7 @@ import (
 
 	"oblikovati.org/app"
 	"oblikovati.org/math"
+	"oblikovati.org/model/linetype"
 	"oblikovati.org/model/sketch"
 	"oblikovati.org/renderer"
 )
@@ -26,7 +27,7 @@ import (
 // The render loop is single-threaded, so a package-level cache is safe.
 var sketch3DOverlayCache struct {
 	key                  string
-	curves               []renderer.DrawItem // all visible curve segments, normal colour
+	curves               []renderer.DrawItem // all visible curve segments, styled per entity
 	points               []math.Point3       // standalone-point positions (cross drawn per frame)
 	boundsMin, boundsMax [3]float32
 	hasBounds            bool
@@ -88,8 +89,11 @@ func cachedSketch3DBounds(s *app.Session) (min, max [3]float32, ok bool) {
 }
 
 // sketch3DOverlayKey fingerprints the 3D-sketch geometry (model version + each sketch's seq /
-// visibility / entity count), which changes on import and on add/remove/edit — but NOT on a
-// camera move or a pick, so the cached curve bulk survives both.
+// visibility / entity count / format revision), which changes on import and on add/remove/edit —
+// but NOT on a camera move or a pick, so the cached curve bulk survives both. The Show Format
+// toggle and the format revision are in the key because recolouring an entity changes neither
+// the geometry version nor the entity count, so the cache would otherwise show stale styling
+// (the planar overlay keys on the same two, #2015/#2039).
 func sketch3DOverlayKey(s *app.Session) (string, bool) {
 	version, ok := activeModelGeometryVersion(s)
 	if !ok {
@@ -101,9 +105,10 @@ func sketch3DOverlayKey(s *app.Session) (string, bool) {
 	}
 	var b strings.Builder
 	b.WriteString(version)
+	fmt.Fprintf(&b, "|fmt=%t", s.ShowFormat())
 	for i := 0; i < part.Sketches3D().Count(); i++ {
 		sk := part.Sketches3D().Item(i)
-		fmt.Fprintf(&b, "|%d:%t:%d", sk.Seq(), sk.Visible(), sk.EntityCount())
+		fmt.Fprintf(&b, "|%d:%t:%d:%d", sk.Seq(), sk.Visible(), sk.EntityCount(), sk.FormatRevision())
 	}
 	return b.String(), true
 }
@@ -145,11 +150,13 @@ func cachePointsFor(s *app.Session) []math.Point3 {
 	return points
 }
 
-// highlightPickedSketch3D adds the active pick-driven tool's gathered entities to sel — curves
+// highlightPickedSketch3D adds the entities to draw in the selected colour to sel — curves
 // re-sampled (the set is small) and standalone points as crosses — so they highlight over the
-// cached normal curves. A no-op when no such tool is active or nothing is picked.
+// cached normal curves. That is the active pick-driven tool's gathered entities, plus the
+// ambient selection: with no tool running, a picked 3D curve had no highlight at all, so
+// selecting geometry for the Format panel gave no sign anything was selected (#2039).
 func highlightPickedSketch3D(s *app.Session, sel *segAccum, h float64) {
-	for e := range pickedSketchEntities(s) {
+	for e := range highlightedSketch3DEntities(s) {
 		pts := sketch.SamplePolyline3D(e, sketchSegments)
 		if len(pts) == 1 {
 			accumPointCross3D(sel, pts[0], h)
@@ -161,22 +168,22 @@ func highlightPickedSketch3D(s *app.Session, sel *segAccum, h float64) {
 	}
 }
 
-// buildSketch3DCurves samples every visible 3D sketch once, returning the normal-colour curve
-// overlay items and the standalone-point positions. This is the cached (geometry-keyed) build.
+// buildSketch3DCurves samples every visible 3D sketch once, returning the styled curve overlay
+// items and the standalone-point positions. This is the cached (geometry-keyed) build.
 func buildSketch3DCurves(s *app.Session) (curves []renderer.DrawItem, points []math.Point3) {
 	part := activePart(s)
 	if part == nil {
 		return nil, nil
 	}
-	acc := &segAccum{}
+	lane := newStrokeLane()
 	for i := 0; i < part.Sketches3D().Count(); i++ {
 		sk := part.Sketches3D().Item(i)
 		if !sk.Visible() {
 			continue
 		}
-		points = accumSketch3DCurves(sk, acc, points)
+		points = accumSketch3DCurves(sk, &lane, s.ShowFormat(), points)
 	}
-	return appendGrid(nil, acc, chromeTheme.sketchColor), points
+	return lane.appendTo(nil), points
 }
 
 // buildSketch3DCurvesOnly is buildSketch3DCurves discarding the points — the un-keyed bounds
@@ -186,20 +193,54 @@ func buildSketch3DCurvesOnly(s *app.Session) []renderer.DrawItem {
 	return curves
 }
 
-// accumSketch3DCurves accumulates one 3D sketch's curve segments into acc and appends its
-// standalone-point positions to points (single-sample entities are lone points, not curves).
-func accumSketch3DCurves(sk *sketch.Sketch3D, acc *segAccum, points []math.Point3) []math.Point3 {
+// accumSketch3DCurves accumulates one 3D sketch's curve segments into the stroke lane and
+// appends its standalone-point positions to points (single-sample entities are lone points, not
+// curves). Each curve is bucketed by its resolved colour and stroke width and dashed by its line
+// type, so a construction curve reads as construction and a Format-panel override reaches the
+// screen — until #2039 every 3D curve drew identically in the plain sketch colour.
+//
+// suppress is the Show Format toggle: it draws every entity with default attributes.
+func accumSketch3DCurves(sk *sketch.Sketch3D, lane *strokeLane, suppress bool, points []math.Point3) []math.Point3 {
 	for _, e := range sk.Entities() {
 		pts := sketch.SamplePolyline3D(e, sketchSegments)
 		if len(pts) == 1 {
 			points = append(points, pts[0])
 			continue
 		}
-		for i := 0; i+1 < len(pts); i++ {
-			acc.addSegment(pts[i], pts[i+1])
-		}
+		style := app.SketchEntityStyle(sk, e, suppress)
+		acc := lane.forStroke(strokeKey{sketchEntityColor(style), sketchStrokeWidth(style)})
+		accumPatterned3D(acc, pts, style.Pattern)
 	}
 	return points
+}
+
+// accumPatterned3D adds a sampled model-space curve either solid or split into its line-type
+// dashes; a nil or degenerate pattern falls back to the solid polyline.
+func accumPatterned3D(acc *segAccum, pts []math.Point3, pattern []float64) {
+	if segs := linetype.DashPolyline3D(pts, false, pattern); segs != nil {
+		for _, s := range segs {
+			acc.addSegment(s[0], s[1])
+		}
+		return
+	}
+	for i := 0; i+1 < len(pts); i++ {
+		acc.addSegment(pts[i], pts[i+1])
+	}
+}
+
+// highlightedSketch3DEntities is every sketch entity that should draw selected: the active
+// pick-driven tool's gathered set, or — with no such tool — the ambient selection.
+func highlightedSketch3DEntities(s *app.Session) map[sketch.Entity]bool {
+	if picked := pickedSketchEntities(s); len(picked) > 0 {
+		return picked
+	}
+	set := map[sketch.Entity]bool{}
+	for _, it := range s.Selection().Items() {
+		if h, ok := it.(app.SketchEntityHandle); ok {
+			set[h.Entity] = true
+		}
+	}
+	return set
 }
 
 // pickedSketchEntities returns the entities the active pick-driven tool has gathered

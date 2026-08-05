@@ -68,6 +68,13 @@ type base struct {
 	// the source file path is kept only for reporting.
 	customLineType     *linetype.Definition
 	customLineTypeFile string
+
+	// Per-entity format overrides (#2015). They live on the shared base rather than on Sketch
+	// because a 3D sketch carries the same overrides — its Format panel was registered from the
+	// same list while only the planar half had storage, so every list on the 3D tab edited
+	// nothing (#2039).
+	formats   map[ID]EntityFormat // absent ⇒ sketch defaults
+	formatRev uint64              // bumped on every format edit, so a drawing cache can see one
 }
 
 func newBase(name string) base {
@@ -161,8 +168,6 @@ type Sketch struct {
 	// sketches consume a construction work plane and auto-delete it with its last consumer (#1849).
 	hostWorkRef string
 	ents        []Entity
-	formats     map[ID]EntityFormat   // per-entity format overrides (#2015); absent ⇒ sketch defaults
-	formatRev   uint64                // bumped on every format edit, so a drawing cache can see one (#2015)
 	pts         []*Point              // every constrainable point (endpoints, centers, standalone) — the solver's variables
 	refPts      []*Point              // fixed reference points (projected anchors): constrainable but not solved
 	cloudPts    []*cloudAnchoredPoint // sketch points anchored on scan points (datum-cloud provenance, #645)

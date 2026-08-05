@@ -8,13 +8,23 @@ import (
 	"oblikovati.org/model/sketch"
 )
 
+// FormattedSketch is what an entity's draw style resolves against: the sketch-level line type
+// and the per-entity override table. Both [sketch.Sketch] and [sketch.Sketch3D] satisfy it —
+// the overrides live on their shared base — so one resolver serves the planar and the 3D
+// overlay instead of the 3D one drawing every entity identically (#2039).
+type FormattedSketch interface {
+	LineType() string
+	CustomLineType() (linetype.Definition, string, bool)
+	EntityFormat(id sketch.ID) (sketch.EntityFormat, bool)
+}
+
 // SketchEntityPattern picks the .lin dash pattern a sketch entity renders with
 // (issue #161): centerlines use the center style, construction geometry the dashed
 // style, and normal geometry the sketch's line-type override (built-in or loaded
 // custom). nil means draw solid.
 //
 //	pattern := app.SketchEntityPattern(sk, entity)
-func SketchEntityPattern(sk *sketch.Sketch, e sketch.Entity) []float64 {
+func SketchEntityPattern(sk FormattedSketch, e sketch.Entity) []float64 {
 	if l, ok := e.(*sketch.Line); ok && l.IsCenterline() {
 		return linetype.Builtin(types.SketchLineCenter)
 	}
@@ -25,7 +35,7 @@ func SketchEntityPattern(sk *sketch.Sketch, e sketch.Entity) []float64 {
 }
 
 // sketchOverridePattern resolves the sketch-level line-type override into a pattern.
-func sketchOverridePattern(sk *sketch.Sketch) []float64 {
+func sketchOverridePattern(sk FormattedSketch) []float64 {
 	t := types.SketchLineType(sk.LineType())
 	if t != types.SketchLineCustom {
 		return linetype.Builtin(t)
@@ -52,7 +62,7 @@ type EntityStyle struct {
 // the DEFAULT format rather than the user's.
 //
 //	style := app.SketchEntityStyle(sk, entity, s.ShowFormat())
-func SketchEntityStyle(sk *sketch.Sketch, e sketch.Entity, suppress bool) EntityStyle {
+func SketchEntityStyle(sk FormattedSketch, e sketch.Entity, suppress bool) EntityStyle {
 	style := EntityStyle{Pattern: SketchEntityPattern(sk, e)}
 	if suppress {
 		return style

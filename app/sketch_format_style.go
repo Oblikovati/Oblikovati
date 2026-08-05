@@ -35,11 +35,32 @@ func (s *Session) SetSelectionLineWeight(w float64) int {
 	return s.editSelectionFormat(func(f *sketch.EntityFormat) { f.LineWeight = w })
 }
 
+// formatTarget is the sketch the Format lists edit: the planar sketch or the 3D one. Both keep
+// their per-entity overrides in the same side table on the shared base, so the lists work in
+// either environment — resolving only the 2D sketch left every list on the 3D Sketch tab
+// editing nothing (#2039).
+type formatTarget interface {
+	EntityFormat(id sketch.ID) (sketch.EntityFormat, bool)
+	SetEntityFormat(id sketch.ID, f sketch.EntityFormat)
+	EntityByID(id sketch.ID) (sketch.Entity, bool)
+}
+
+// activeFormatTarget returns the sketch being edited, 2D or 3D, or ok=false outside a sketch.
+func (s *Session) activeFormatTarget() (formatTarget, bool) {
+	if s.activeSketch != nil {
+		return s.activeSketch, true
+	}
+	if s.activeSketch3D != nil {
+		return s.activeSketch3D, true
+	}
+	return nil, false
+}
+
 // editSelectionFormat applies edit to each selected entity's format, reading the current value
 // first so the three lists compose rather than overwrite one another.
 func (s *Session) editSelectionFormat(edit func(*sketch.EntityFormat)) int {
-	sk := s.ActiveSketch()
-	if sk == nil {
+	sk, ok := s.activeFormatTarget()
+	if !ok {
 		return 0
 	}
 	n := 0
@@ -56,8 +77,8 @@ func (s *Session) editSelectionFormat(edit func(*sketch.EntityFormat)) int {
 // Fields that differ across the selection read as Default, so a list never claims a value the
 // selection does not uniformly have.
 func (s *Session) SelectionFormat() sketch.EntityFormat {
-	sk := s.ActiveSketch()
-	if sk == nil {
+	sk, ok := s.activeFormatTarget()
+	if !ok {
 		return sketch.EntityFormat{}
 	}
 	ents := s.selectedSketchEntities()
@@ -93,8 +114,8 @@ func commonFormat(a, b sketch.EntityFormat) sketch.EntityFormat {
 // EntityFormatOf returns one entity's formatting overrides, or ok=false when it inherits
 // everything. It is the in-proc form of what the api/wire sketch.getEntityFormat serves.
 func (s *Session) EntityFormatOf(id sketch.ID) (types.SketchEntityFormat, bool) {
-	sk := s.ActiveSketch()
-	if sk == nil {
+	sk, inSketch := s.activeFormatTarget()
+	if !inSketch {
 		return types.SketchEntityFormat{}, false
 	}
 	f, ok := sk.EntityFormat(id)
@@ -111,8 +132,8 @@ func (s *Session) EntityFormatOf(id sketch.ID) (types.SketchEntityFormat, bool) 
 // SetEntityFormatOf sets one entity's formatting overrides; a format that overrides nothing
 // clears them. It errors when no sketch is open or the id names no entity in it.
 func (s *Session) SetEntityFormatOf(id sketch.ID, f types.SketchEntityFormat) error {
-	sk := s.ActiveSketch()
-	if sk == nil {
+	sk, ok := s.activeFormatTarget()
+	if !ok {
 		return errors.New("sketch format: no active sketch")
 	}
 	if _, ok := sk.EntityByID(id); !ok {

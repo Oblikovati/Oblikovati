@@ -99,10 +99,12 @@ func (s *Session) OK() error {
 		return errors.New(reason)
 	}
 	toolName := s.tool.tool.Name()
+	mark := s.markSketch3DCreation() // what the 3D sketch held before the tool ran (#2039)
 	if err := s.tool.tool.Commit(s); err != nil {
 		s.notice = err.Error() // surface why (the status bar shows it); keep the tool open
 		return err
 	}
+	s.applyFormatModes3D(mark) // an armed Format mode marks what this commit just drew
 	if fp, ok := s.tool.tool.(featureProducer); ok {
 		s.EmitFeatureLifecycle(FeatureAdded, fp.AddedFeature()) // featureAdded for UI-driven creation (#1085)
 	}
