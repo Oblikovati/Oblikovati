@@ -18,7 +18,11 @@ type formatButton struct {
 	icon    string
 	tooltip string
 	run     func(*Session)
-	in3D    bool
+	// active reports the toggle's current state so the ribbon draws it highlighted. Without it
+	// an armed creation mode looked identical to a disarmed one and nothing on screen said the
+	// next line would be construction geometry (#2041).
+	active func(*Session) bool
+	in3D   bool
 }
 
 // formatButtons is the panel's toggles in ribbon order. The four that convert-or-arm come first,
@@ -28,7 +32,7 @@ func formatButtons() []formatButton {
 		id: "ShowFormat", name: "Show Format", icon: "show-format",
 		tooltip: "Show Format — display the sketch with default attributes, hiding per-entity " +
 			"line type, colour and thickness overrides.",
-		run: func(s *Session) { s.ToggleShowFormat() }, in3D: true,
+		run: func(s *Session) { s.ToggleShowFormat() }, active: (*Session).ShowFormat, in3D: true,
 	})
 }
 
@@ -41,25 +45,25 @@ func formatConvertButtons() []formatButton {
 			id: "Construction", name: "Construction", icon: "construction",
 			tooltip: "Construction — convert the selected geometry to construction, or with nothing " +
 				"selected draw new geometry as construction (excluded from profiles).",
-			run: func(s *Session) { s.ToggleConstruction() }, in3D: true,
+			run: func(s *Session) { s.ToggleConstruction() }, active: (*Session).ConstructionMode, in3D: true,
 		},
 		{
 			id: "DrivenDimension", name: "Driven Dimension", icon: "driven-dimension",
 			tooltip: "Driven Dimension — switch the selected dimension between driving the geometry " +
 				"and being driven by it, or with nothing selected create new dimensions driven.",
-			run: func(s *Session) { s.ToggleDrivenDimension() }, in3D: true,
+			run: func(s *Session) { s.ToggleDrivenDimension() }, active: (*Session).DrivenDimensionMode, in3D: true,
 		},
 		{
 			id: "Centerline", name: "Centerline", icon: "centerline",
 			tooltip: "Centerline — convert the selected line(s) to a centerline axis (revolve/mirror), " +
 				"or with nothing selected draw new lines as centerlines.",
-			run: func(s *Session) { s.ToggleCenterline() },
+			run: func(s *Session) { s.ToggleCenterline() }, active: (*Session).CenterlineMode,
 		},
 		{
 			id: "CenterPoint", name: "Center Point", icon: "center-point",
 			tooltip: "Center Point — convert the selected point(s) to hole-centre markers, or with " +
 				"nothing selected place new points as centre points.",
-			run: func(s *Session) { s.ToggleCenterPoint() },
+			run: func(s *Session) { s.ToggleCenterPoint() }, active: (*Session).CenterPointMode,
 		},
 	}
 }
@@ -83,6 +87,6 @@ func formatCommand(b formatButton, id, tab string, env Environment, enable func(
 	return NewCommand(id, b.name, "Format", func(s *Session) error {
 		run(s)
 		return nil
-	}).WithTab(tab).WithEnvironment(env).WithEnable(enable).
+	}).WithTab(tab).WithEnvironment(env).WithEnable(enable).WithActive(b.active).
 		WithIcon(b.icon).WithButtonStyle(SmallIconButton).WithTooltip(b.tooltip)
 }
