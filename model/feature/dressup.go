@@ -352,14 +352,21 @@ func (c *DressUpFeatures) AddFillet(edgeKeys [][]byte, radius func() float64) *P
 // AddFilletCorner rounds the given edges to radius with an explicit shared-corner treatment.
 // Concave edges fill outward (the default); use [AddFilletConcave] to round a recess inward.
 func (c *DressUpFeatures) AddFilletCorner(edgeKeys [][]byte, radius func() float64, corner FilletCornerType) *PartFeature {
-	return c.authorEdgeFillet(&FilletDefinition{EdgeKeys: edgeKeys, Radius: radius, CornerType: corner})
+	return c.AddFilletDef(&FilletDefinition{EdgeKeys: edgeKeys, Radius: radius, CornerType: corner})
 }
 
-// authorEdgeFillet captures mint-time edge anchors (ADR-0043 P6b) against the running body, then
-// registers an edge-key fillet. Every PUBLIC edge-key fillet builder funnels through it so each
-// authoring path records the geometric-recovery witness; the recipe restore uses addFillet, which
-// preserves the persisted anchors and never recaptures.
-func (c *DressUpFeatures) authorEdgeFillet(def *FilletDefinition) *PartFeature {
+// AddFilletDef adds a fillet from a full definition — edge keys or edge sets, with the corner
+// treatment, concave strategy and cross-section the caller wants — capturing mint-time edge
+// anchors (ADR-0043 P6b) against the running body. It is the one authoring seam every other
+// public builder funnels through; the recipe restore uses addFillet, which preserves the
+// persisted anchors and never recaptures.
+//
+// It is exported because the cross-section and concave-strategy fields have no other builder:
+// the Fillet tool used to create a plain fillet and then reach into the returned definition to
+// set them, which meant the shipped path was not the one the unit tests exercised (#2052).
+//
+//	pf := dress.AddFilletDef(&feature.FilletDefinition{EdgeKeys: keys, Radius: r, CornerType: types.FilletCornerMiter})
+func (c *DressUpFeatures) AddFilletDef(def *FilletDefinition) *PartFeature {
 	if len(def.EdgeAnchors) == 0 {
 		def.EdgeAnchors = captureEdgeAnchors(c.tipBody(), def.EdgeKeys)
 	}
@@ -371,27 +378,6 @@ func (c *DressUpFeatures) authorEdgeFillet(def *FilletDefinition) *PartFeature {
 // the persisted anchors themselves).
 func (c *DressUpFeatures) addFillet(def *FilletDefinition) *PartFeature {
 	return c.engine.Add(&FilletFeature{def: def})
-}
-
-// AddFilletCross rounds the given edges to radius with a chosen cross-section shape (M36-F08): arc
-// (G1, the default), G2 (curvature-continuous), or conic with fullness rho. Shared corners miter.
-func (c *DressUpFeatures) AddFilletCross(edgeKeys [][]byte, radius func() float64, cross FilletCrossSection, rho float64) *PartFeature {
-	return c.authorEdgeFillet(&FilletDefinition{
-		EdgeKeys: edgeKeys, Radius: radius, CornerType: types.FilletCornerMiter, CrossSection: cross, Rho: rho,
-	})
-}
-
-// AddFilletConcave rounds the given edges to radius with an explicit concave-edge strategy: outward
-// fills the inside corner with material (the default), inward rounds a recess into it. Convex edges
-// are unaffected by the strategy. Shared corners miter.
-func (c *DressUpFeatures) AddFilletConcave(edgeKeys [][]byte, radius func() float64, concave types.FilletConcaveStrategy) *PartFeature {
-	return c.authorEdgeFillet(&FilletDefinition{EdgeKeys: edgeKeys, Radius: radius, CornerType: types.FilletCornerMiter, ConcaveStrategy: concave})
-}
-
-// AddFilletSets rounds any mix of constant and variable radius edge sets in one feature
-// (the reference's FilletDefinition edge-set model, #323), mitering shared corners.
-func (c *DressUpFeatures) AddFilletSets(sets []FilletEdgeSet) *PartFeature {
-	return c.AddFilletSetsCorner(sets, types.FilletCornerMiter)
 }
 
 // AddFilletSetsCorner rounds the edge sets with an explicit shared-corner treatment.
@@ -503,12 +489,6 @@ func (c *DressUpFeatures) addShell(def *ShellDefinition) *PartFeature {
 
 func (c *DressUpFeatures) addFaceDraft(def *FaceDraftDefinition) *PartFeature {
 	return c.engine.Add(&FaceDraftFeature{def: def})
-}
-
-// AddThread tags a cylindrical face with thread data; cut=true models a real (cut) thread,
-// cut=false a cosmetic one.
-func (c *DressUpFeatures) AddThread(faceKey []byte, designation string, cut bool) *PartFeature {
-	return c.AddThreadDef(&ThreadDefinition{FaceKey: faceKey, Designation: designation, Cut: cut})
 }
 
 // AddThreadDef adds a thread from a full definition (class / tapered / model diameter, #325). It

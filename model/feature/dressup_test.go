@@ -375,7 +375,7 @@ func TestThreadRejectsPlanarFaceAndShellLostFace(t *testing.T) {
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(body)
 	du := NewDressUpFeatures(fs)
-	th := du.AddThread(face, "M6x1", false)
+	th := du.AddThreadDef(&ThreadDefinition{FaceKey: face, Designation: "M6x1", Cut: false})
 	fs.Recompute()
 	if th.Health().Status != health.Sick {
 		t.Errorf("thread on a planar face = %v, want sick", th.Health().Status)

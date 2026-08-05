@@ -285,20 +285,30 @@ func (t *FilletTool) Cancel(s *Session) {
 // addFillet appends the picked edges in the active mode: the legacy constant-radius
 // form, or one variable set per edge.
 func (t *FilletTool) addFillet(dress *feature.DressUpFeatures) *feature.PartFeature {
-	var pf *feature.PartFeature
-	if t.variable {
-		pf = dress.AddFilletSetsCorner(t.variableSets(t.selectedEdgeKeys()), t.cornerType)
-	} else {
-		r := t.radius
-		pf = dress.AddFilletCorner(t.selectedEdgeKeys(), func() float64 { return r }, t.cornerType)
+	// One definition, one builder. The tool used to create a plain fillet and then reach into
+	// the returned definition to set the concave strategy and cross-section, which left those
+	// two fields with no authoring path of their own (#2052). Mint-time anchors are captured by
+	// AddFilletDef against the running body (ADR-0043 P6b), as on every other authoring path.
+	return dress.AddFilletDef(t.filletDefinition())
+}
+
+// filletDefinition is the definition the tool's current panel state describes: one variable set
+// per edge in variable mode, otherwise a constant radius over all picked edges.
+func (t *FilletTool) filletDefinition() *feature.FilletDefinition {
+	def := &feature.FilletDefinition{
+		CornerType:      t.cornerType,
+		ConcaveStrategy: t.concaveStrategy,
+		CrossSection:    t.crossSection,
+		Rho:             t.rho,
 	}
-	def := pf.Definition().(*feature.FilletFeature).Definition()
-	def.ConcaveStrategy = t.concaveStrategy
-	def.CrossSection = t.crossSection
-	def.Rho = t.rho
-	// Mint-time anchors are captured by the AddFillet* builder against the running body (ADR-0043
-	// P6b), uniformly with every other authoring path — no per-tool capture needed here.
-	return pf
+	if t.variable {
+		def.EdgeSets = t.variableSets(t.selectedEdgeKeys())
+		return def
+	}
+	r := t.radius
+	def.EdgeKeys = t.selectedEdgeKeys()
+	def.Radius = func() float64 { return r }
+	return def
 }
 
 // commitEdit writes the panel state back into the committed fillet's definition: the

@@ -22,7 +22,7 @@ func rad(deg float64) float64 { return deg * stdmath.Pi / 180 }
 func conditionedLoft(t *testing.T, sections []LoftSection, closed bool, first, last LoftEnd) *topo.Body {
 	t.Helper()
 	fs := NewPartFeatures(nil)
-	pf := NewLoftFeatures(fs).AddConditioned(sections, closed, ops.NewBody, first, last)
+	pf := NewLoftFeatures(fs).addConditioned(sections, closed, ops.NewBody, first, last)
 	fs.Recompute()
 	if !pf.Health().OK() {
 		t.Fatalf("conditioned loft went sick: %+v", pf.Health())

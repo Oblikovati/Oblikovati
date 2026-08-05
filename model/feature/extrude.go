@@ -219,12 +219,12 @@ func NewExtrudeFeatures(engine *PartFeatures) *ExtrudeFeatures {
 // AddByDistanceExtent adds an extrude of a single sketch region, growing distance (a
 // closure, typically a parameter) under the given operation.
 func (c *ExtrudeFeatures) AddByDistanceExtent(skt *sketch.Sketch, profileIndex int, op ops.PartFeatureOperation, distance func() float64) *PartFeature {
-	return c.AddByDistanceExtentProfiles(skt, []int{profileIndex}, op, distance)
+	return c.addByDistanceExtentProfiles(skt, []int{profileIndex}, op, distance)
 }
 
-// AddByDistanceExtentProfiles adds an extrude of one or more sketch regions, merged
+// addByDistanceExtentProfiles adds an extrude of one or more sketch regions, merged
 // into one body — the multi-region selection the Extrude tool gathers with Ctrl+click.
-func (c *ExtrudeFeatures) AddByDistanceExtentProfiles(skt *sketch.Sketch, profileIndices []int, op ops.PartFeatureOperation, distance func() float64) *PartFeature {
+func (c *ExtrudeFeatures) addByDistanceExtentProfiles(skt *sketch.Sketch, profileIndices []int, op ops.PartFeatureOperation, distance func() float64) *PartFeature {
 	return c.AddExtrude(skt, profileIndices, op, Extent{Type: DistanceExtent, Distance: distance}, 0)
 }
 

@@ -116,7 +116,7 @@ func TestCoreCavitySplitsBlock(t *testing.T) {
 	fs := NewPartFeatures(nil)
 	// A 10×10×10 tooling block.
 	NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(10), 0, ops.NewBody, func() float64 { return 10 })
-	pf := NewCoreCavityFeatures(fs).AddByPartingPlane(PartingZ, 4, 0.02)
+	pf := NewCoreCavityFeatures(fs).AddByPartingPlaneFn(PartingZ, constFloat(4), 0.02)
 	fs.Recompute()
 	if !pf.Health().OK() {
 		t.Fatalf("core-cavity unhealthy: %+v", pf.Health())
@@ -144,7 +144,7 @@ func TestCoreCavitySplitsBlock(t *testing.T) {
 func TestCoreCavityGoesSickWhenPartingOutsideBlock(t *testing.T) {
 	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(10), 0, ops.NewBody, func() float64 { return 10 })
-	pf := NewCoreCavityFeatures(fs).AddByPartingPlane(PartingZ, 20, 0)
+	pf := NewCoreCavityFeatures(fs).AddByPartingPlaneFn(PartingZ, constFloat(20), 0)
 	fs.Recompute()
 	if pf.Health().Status != health.Sick {
 		t.Errorf("parting outside the block = %v, want sick", pf.Health().Status)
@@ -153,7 +153,7 @@ func TestCoreCavityGoesSickWhenPartingOutsideBlock(t *testing.T) {
 
 func TestCoreCavityShrinkageRecorded(t *testing.T) {
 	fs := NewPartFeatures(nil)
-	pf := NewCoreCavityFeatures(fs).AddByPartingPlane(PartingX, 1, 0.025)
+	pf := NewCoreCavityFeatures(fs).AddByPartingPlaneFn(PartingX, constFloat(1), 0.025)
 	if d := pf.Definition().(*CoreCavityFeature).Definition(); d.Shrinkage != 0.025 || d.Axis != PartingX {
 		t.Errorf("recipe = %+v, want shrinkage 0.025 on X", d)
 	}

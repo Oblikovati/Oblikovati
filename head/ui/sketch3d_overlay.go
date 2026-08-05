@@ -228,9 +228,19 @@ func accumPatterned3D(acc *segAccum, pts []math.Point3, pattern []float64) {
 	}
 }
 
+// sketch3DHighlightSession is what deciding the 3D overlay's highlight needs: the running tool,
+// whose gathered picks win, and the ambient selection behind it. A consumer-side interface rather
+// than the whole *app.Session (audit I5, the arrowSession pattern).
+type sketch3DHighlightSession interface {
+	ActiveTool() *app.ToolInstance
+	Selection() *app.Selection
+}
+
+var _ sketch3DHighlightSession = (*app.Session)(nil)
+
 // highlightedSketch3DEntities is every sketch entity that should draw selected: the active
 // pick-driven tool's gathered set, or — with no such tool — the ambient selection.
-func highlightedSketch3DEntities(s *app.Session) map[sketch.Entity]bool {
+func highlightedSketch3DEntities(s sketch3DHighlightSession) map[sketch.Entity]bool {
 	if picked := pickedSketchEntities(s); len(picked) > 0 {
 		return picked
 	}
@@ -245,7 +255,7 @@ func highlightedSketch3DEntities(s *app.Session) map[sketch.Entity]bool {
 
 // pickedSketchEntities returns the entities the active pick-driven tool has gathered
 // (so they highlight), or nil when no such tool is active.
-func pickedSketchEntities(s *app.Session) map[sketch.Entity]bool {
+func pickedSketchEntities(s sketch3DHighlightSession) map[sketch.Entity]bool {
 	at := s.ActiveTool()
 	if at == nil {
 		return nil

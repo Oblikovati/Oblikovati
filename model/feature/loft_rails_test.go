@@ -29,7 +29,7 @@ func railedCircles(t *testing.T, rails []func() []math.Point3) *topo.Body {
 	t.Helper()
 	fs := NewPartFeatures(nil)
 	secs := []LoftSection{sec(circleOn(sketch.XYPlane(), 2)), sec(circleOn(planeAtZ(4), 2))}
-	pf := NewLoftFeatures(fs).AddRailed(secs, false, ops.NewBody, LoftEnd{}, LoftEnd{}, rails)
+	pf := NewLoftFeatures(fs).AddGuided(secs, false, ops.NewBody, LoftEnd{}, LoftEnd{}, LoftGuideSet{Rails: rails})
 	fs.Recompute()
 	if !pf.Health().OK() {
 		t.Fatalf("railed loft went sick: %+v", pf.Health())
@@ -86,9 +86,10 @@ func TestLoftRailRoundTrip(t *testing.T) {
 	top := circleOn(planeAtZ(4), 2)
 	idx := sketchList{sks: []*sketch.Sketch{bottom, top}}
 	fs := NewPartFeatures(nil)
-	NewLoftFeatures(fs).AddRailed(
+	NewLoftFeatures(fs).AddGuided(
 		[]LoftSection{{Sketch: bottom, ProfileIndex: 0}, {Sketch: top, ProfileIndex: 0}},
-		false, ops.NewBody, LoftEnd{}, LoftEnd{}, []func() []math.Point3{railThroughX(3.5)},
+		false, ops.NewBody, LoftEnd{}, LoftEnd{},
+		LoftGuideSet{Rails: []func() []math.Point3{railThroughX(3.5)}},
 	)
 	data, err := fs.MarshalRecipe(idx)
 	if err != nil {

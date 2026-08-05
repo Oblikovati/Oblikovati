@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/math"
 	"oblikovati.org/model/health"
@@ -38,10 +39,10 @@ func boxAndVerticalEdges(t *testing.T) (*PartFeatures, [][]byte) {
 // radii via two constant sets in one feature — the cylinder-exact volume.
 func TestFilletSetsMixedConstantRadii(t *testing.T) {
 	fs, keys := boxAndVerticalEdges(t)
-	pf := NewDressUpFeatures(fs).AddFilletSets([]FilletEdgeSet{
+	pf := NewDressUpFeatures(fs).AddFilletSetsCorner([]FilletEdgeSet{
 		{EdgeKeys: [][]byte{keys[0]}, Radius: angleConst(0.3)},
 		{EdgeKeys: [][]byte{keys[1]}, Radius: angleConst(0.6)},
-	})
+	}, types.FilletCornerMiter)
 	fs.Recompute()
 	if !pf.Health().OK() {
 		t.Fatalf("mixed-set fillet sick: %+v", pf.Health())
@@ -62,9 +63,9 @@ func TestFilletSetsMixedConstantRadii(t *testing.T) {
 // surface (#1606; the pre-A10 planar strips followed the chord integral instead).
 func TestFilletVariableSetThroughEngine(t *testing.T) {
 	fs, keys := boxAndVerticalEdges(t)
-	pf := NewDressUpFeatures(fs).AddFilletSets([]FilletEdgeSet{
+	pf := NewDressUpFeatures(fs).AddFilletSetsCorner([]FilletEdgeSet{
 		{EdgeKeys: [][]byte{keys[0]}, StartRadius: angleConst(0.3), EndRadius: angleConst(0.6)},
-	})
+	}, types.FilletCornerMiter)
 	fs.Recompute()
 	if !pf.Health().OK() {
 		t.Fatalf("variable fillet sick: %+v", pf.Health())
@@ -85,12 +86,12 @@ func TestFilletVariableSetThroughEngine(t *testing.T) {
 // smooth-blend volume (#695, exact spans since #1606).
 func TestFilletRadiusPointsThroughEngine(t *testing.T) {
 	fs, keys := boxAndVerticalEdges(t)
-	pf := NewDressUpFeatures(fs).AddFilletSets([]FilletEdgeSet{{
+	pf := NewDressUpFeatures(fs).AddFilletSetsCorner([]FilletEdgeSet{{
 		EdgeKeys:     [][]byte{keys[0]},
 		StartRadius:  angleConst(0.3),
 		EndRadius:    angleConst(0.4),
 		RadiusPoints: []FilletRadiusPoint{{T: 0.5, Radius: angleConst(0.7)}},
-	}})
+	}}, types.FilletCornerMiter)
 	fs.Recompute()
 	if !pf.Health().OK() {
 		t.Fatalf("radius-points fillet sick: %+v", pf.Health())
@@ -117,9 +118,9 @@ func fineFilletQuality() ops.Quality {
 // precise Sick, not a broken body.
 func TestFilletVariableSetNeedsOneEdge(t *testing.T) {
 	fs, keys := boxAndVerticalEdges(t)
-	pf := NewDressUpFeatures(fs).AddFilletSets([]FilletEdgeSet{
+	pf := NewDressUpFeatures(fs).AddFilletSetsCorner([]FilletEdgeSet{
 		{EdgeKeys: [][]byte{keys[0], keys[1]}, StartRadius: angleConst(0.2), EndRadius: angleConst(0.4)},
-	})
+	}, types.FilletCornerMiter)
 	fs.Recompute()
 	if pf.Health().Status != health.Sick {
 		t.Errorf("two-edge variable set = %v, want Sick", pf.Health().Status)
@@ -129,10 +130,10 @@ func TestFilletVariableSetNeedsOneEdge(t *testing.T) {
 // TestFilletSetsLostEdgeSick: any lost key in any set makes the feature Sick.
 func TestFilletSetsLostEdgeSick(t *testing.T) {
 	fs, keys := boxAndVerticalEdges(t)
-	pf := NewDressUpFeatures(fs).AddFilletSets([]FilletEdgeSet{
+	pf := NewDressUpFeatures(fs).AddFilletSetsCorner([]FilletEdgeSet{
 		{EdgeKeys: [][]byte{keys[0]}, Radius: angleConst(0.3)},
 		{EdgeKeys: [][]byte{[]byte("gone")}, Radius: angleConst(0.2)},
-	})
+	}, types.FilletCornerMiter)
 	fs.Recompute()
 	if pf.Health().Status != health.Sick {
 		t.Errorf("lost-edge set = %v, want Sick", pf.Health().Status)

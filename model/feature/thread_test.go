@@ -61,7 +61,7 @@ func TestThreadCosmeticOnCylinder(t *testing.T) {
 	before := ops.BodyGeometryProperties(cyl, ops.DefaultQuality()).Volume
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(cyl)
-	th := NewDressUpFeatures(fs).AddThread(cylinderFaceKey(t, cyl), "M8x1.25", false)
+	th := NewDressUpFeatures(fs).AddThreadDef(&ThreadDefinition{FaceKey: cylinderFaceKey(t, cyl), Designation: "M8x1.25", Cut: false})
 	fs.Recompute()
 
 	if !th.Health().OK() {
@@ -81,7 +81,7 @@ func TestThreadSickOnPlanarFace(t *testing.T) {
 	box := prismBody() // a unit prism: every face is planar
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
-	th := NewDressUpFeatures(fs).AddThread(box.Faces()[0].ReferenceKey(), "M8x1.25", false)
+	th := NewDressUpFeatures(fs).AddThreadDef(&ThreadDefinition{FaceKey: box.Faces()[0].ReferenceKey(), Designation: "M8x1.25", Cut: false})
 	fs.Recompute()
 	if th.Health().Status != health.Sick {
 		t.Errorf("thread on a planar face should be Sick, got %v", th.Health().Status)
@@ -93,7 +93,7 @@ func TestThreadSickOnBadDesignation(t *testing.T) {
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 0.4, 3)
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(cyl)
-	th := NewDressUpFeatures(fs).AddThread(cylinderFaceKey(t, cyl), "garbage", false)
+	th := NewDressUpFeatures(fs).AddThreadDef(&ThreadDefinition{FaceKey: cylinderFaceKey(t, cyl), Designation: "garbage", Cut: false})
 	fs.Recompute()
 	if th.Health().Status != health.Sick {
 		t.Errorf("bad designation should be Sick, got %v", th.Health().Status)
@@ -106,7 +106,7 @@ func TestThreadDisplayHelixOnSurface(t *testing.T) {
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 0.4, 1.0)
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(cyl)
-	NewDressUpFeatures(fs).AddThread(cylinderFaceKey(t, cyl), "M8x1.25", false)
+	NewDressUpFeatures(fs).AddThreadDef(&ThreadDefinition{FaceKey: cylinderFaceKey(t, cyl), Designation: "M8x1.25", Cut: false})
 	fs.Recompute()
 
 	curves := ThreadDisplayCurves(fs)
@@ -161,7 +161,7 @@ func TestThreadCutModelsRealThreadFast(t *testing.T) {
 	before := ops.BodyGeometryProperties(cyl, ops.DefaultQuality()).Volume
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(cyl)
-	th := NewDressUpFeatures(fs).AddThread(cylinderFaceKey(t, cyl), "M8x1.25", true)
+	th := NewDressUpFeatures(fs).AddThreadDef(&ThreadDefinition{FaceKey: cylinderFaceKey(t, cyl), Designation: "M8x1.25", Cut: true})
 
 	start := time.Now()
 	fs.Recompute()

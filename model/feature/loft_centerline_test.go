@@ -29,7 +29,7 @@ func centerlinedCircles(t *testing.T, cl func() []math.Point3) *topo.Body {
 	t.Helper()
 	fs := NewPartFeatures(nil)
 	secs := []LoftSection{sec(circleOn(sketch.XYPlane(), 2)), sec(circleOn(planeAtZ(4), 2))}
-	pf := NewLoftFeatures(fs).AddCenterlined(secs, false, ops.NewBody, LoftEnd{}, LoftEnd{}, cl)
+	pf := NewLoftFeatures(fs).AddGuided(secs, false, ops.NewBody, LoftEnd{}, LoftEnd{}, LoftGuideSet{Centerline: cl})
 	fs.Recompute()
 	if !pf.Health().OK() {
 		t.Fatalf("centerlined loft went sick: %+v", pf.Health())
@@ -80,9 +80,10 @@ func TestLoftCenterlineRoundTrip(t *testing.T) {
 	top := circleOn(planeAtZ(4), 2)
 	idx := sketchList{sks: []*sketch.Sketch{bottom, top}}
 	fs := NewPartFeatures(nil)
-	NewLoftFeatures(fs).AddCenterlined(
+	NewLoftFeatures(fs).AddGuided(
 		[]LoftSection{{Sketch: bottom, ProfileIndex: 0}, {Sketch: top, ProfileIndex: 0}},
-		false, ops.NewBody, LoftEnd{}, LoftEnd{}, centerlineThroughX(2),
+		false, ops.NewBody, LoftEnd{}, LoftEnd{},
+		LoftGuideSet{Centerline: centerlineThroughX(2)},
 	)
 	data, err := fs.MarshalRecipe(idx)
 	if err != nil {

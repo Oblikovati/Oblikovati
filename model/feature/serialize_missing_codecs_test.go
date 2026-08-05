@@ -59,7 +59,7 @@ func TestDirectModelCodecsRoundTrip(t *testing.T) {
 	ff.Definition().(*FreeformFeature).FreeformBody().CreaseEdges([][2]int{{0, 1}}, 0.5)
 	NewAliasFreeformFeatures(fs).AddFromCage([]math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(1, 1, 0), math.P3(0, 1, 0)}, [][]int{{0, 1, 2, 3}}, 2)
 	NewHullFeatures(fs).Add()
-	NewCoreCavityFeatures(fs).AddByPartingPlane(PartingY, 3.5, 0.02)
+	NewCoreCavityFeatures(fs).AddByPartingPlaneFn(PartingY, constFloat(3.5), 0.02)
 
 	fresh := marshalRestore(t, fs)
 

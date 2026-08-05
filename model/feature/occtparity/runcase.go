@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -98,7 +99,9 @@ func hasVariableRadius(r Record) bool {
 func runFillet(body *topo.Body, sets []feature.FilletEdgeSet) ([]*topo.Body, bool, string) {
 	fs := feature.NewPartFeatures(nil)
 	feature.NewBaseFeatures(fs).AddBase(body)
-	pf := feature.NewDressUpFeatures(fs).AddFilletSets(sets)
+	// Author through the builder the Fillet tool and the API use, so the parity corpus
+	// exercises the shipped path rather than a convenience wrapper of its own (#2052).
+	pf := feature.NewDressUpFeatures(fs).AddFilletSetsCorner(sets, types.FilletCornerMiter)
 	fs.Recompute()
 	return fs.Result(), pf.Health().OK(), pf.Health().Reason
 }

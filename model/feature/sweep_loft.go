@@ -200,7 +200,7 @@ func NewSweepFeatures(engine *PartFeatures) *SweepFeatures { return &SweepFeatur
 
 // Add adds a sweep of the profile along path with the given total twist and operation.
 func (c *SweepFeatures) Add(skt *sketch.Sketch, profileIndex int, path *sketch.Path3D, twist func() float64, op ops.PartFeatureOperation) *PartFeature {
-	return c.AddLive(skt, profileIndex, func() *sketch.Path3D { return path }, twist, op)
+	return c.addLiveSweep(skt, profileIndex, func() *sketch.Path3D { return path }, twist, op)
 }
 
 // AddDefinition adds a sweep from a fully-populated definition — the union
@@ -213,10 +213,10 @@ func (c *SweepFeatures) AddDefinition(def *SweepDefinition) *PartFeature {
 	return pf
 }
 
-// AddLive is Add with a live path provider, re-derived on every recompute, so a
+// addLiveSweep is Add with a live path provider, re-derived on every recompute, so a
 // parameter that drives the path sketch reshapes the sweep (the static Add snapshots
 // the path and does not track edits).
-func (c *SweepFeatures) AddLive(skt *sketch.Sketch, profileIndex int, path func() *sketch.Path3D, twist func() float64, op ops.PartFeatureOperation) *PartFeature {
+func (c *SweepFeatures) addLiveSweep(skt *sketch.Sketch, profileIndex int, path func() *sketch.Path3D, twist func() float64, op ops.PartFeatureOperation) *PartFeature {
 	def := &SweepDefinition{Sketch: skt, ProfileIndex: profileIndex, Path: path, Twist: twist, Operation: op}
 	sf := &SweepFeature{def: def}
 	pf := c.engine.Add(sf)
@@ -697,20 +697,14 @@ func NewLoftFeatures(engine *PartFeatures) *LoftFeatures { return &LoftFeatures{
 // Add adds a loft blending through the sections (optionally closed) under op, with Free end
 // conditions (a two-section loft is ruled).
 func (c *LoftFeatures) Add(sections []LoftSection, closed bool, op ops.PartFeatureOperation) *PartFeature {
-	return c.AddConditioned(sections, closed, op, LoftEnd{}, LoftEnd{})
+	return c.addConditioned(sections, closed, op, LoftEnd{}, LoftEnd{})
 }
 
-// AddConditioned adds a loft with explicit start/end conditions, so the surface can curve away
+// addConditioned adds a loft with explicit start/end conditions, so the surface can curve away
 // from a flat ruled blend (e.g. an Angle takeoff on a two-section loft). The conditions are
 // ignored when closed (a closed loft has no end sections).
-func (c *LoftFeatures) AddConditioned(sections []LoftSection, closed bool, op ops.PartFeatureOperation, first, last LoftEnd) *PartFeature {
+func (c *LoftFeatures) addConditioned(sections []LoftSection, closed bool, op ops.PartFeatureOperation, first, last LoftEnd) *PartFeature {
 	return c.add(&LoftDefinition{Sections: append([]LoftSection(nil), sections...), Closed: closed, Operation: op, First: first, Last: last})
-}
-
-// AddConditionedLive is AddConditioned with a live end-condition provider, re-read on every
-// recompute, so an end angle/impact driven by a parameter reshapes the loft.
-func (c *LoftFeatures) AddConditionedLive(sections []LoftSection, closed bool, op ops.PartFeatureOperation, liveEnds func() (first, last LoftEnd)) *PartFeature {
-	return c.AddConditionedLiveGuided(sections, closed, op, liveEnds, LoftGuideSet{})
 }
 
 // LoftGuideSet bundles every optional loft guide so the general constructors take one argument
@@ -733,19 +727,6 @@ func (c *LoftFeatures) AddConditionedLiveGuided(sections []LoftSection, closed b
 // and tests use; AddRailed/AddCenterlined are thin wrappers for the single-guide cases.
 func (c *LoftFeatures) AddGuided(sections []LoftSection, closed bool, op ops.PartFeatureOperation, first, last LoftEnd, g LoftGuideSet) *PartFeature {
 	return c.add(&LoftDefinition{Sections: append([]LoftSection(nil), sections...), Closed: closed, Operation: op, First: first, Last: last, Rails: g.Rails, Centerline: g.Centerline, AreaGraph: g.AreaGraph, MapCurves: g.MapCurves})
-}
-
-// AddRailed is AddConditioned plus guide rails (the kLoftWithRails mode): each rail is a live
-// provider of a model-space polyline that touches the end sections; the loft's outer surface is
-// pulled to follow them.
-func (c *LoftFeatures) AddRailed(sections []LoftSection, closed bool, op ops.PartFeatureOperation, first, last LoftEnd, rails []func() []math.Point3) *PartFeature {
-	return c.AddGuided(sections, closed, op, first, last, LoftGuideSet{Rails: rails})
-}
-
-// AddCenterlined is AddConditioned plus a centerline spine (the kLoftWithCenterline mode): a live
-// provider of a model-space polyline the section centroids follow, so the loft bends along it.
-func (c *LoftFeatures) AddCenterlined(sections []LoftSection, closed bool, op ops.PartFeatureOperation, first, last LoftEnd, centerline func() []math.Point3) *PartFeature {
-	return c.AddGuided(sections, closed, op, first, last, LoftGuideSet{Centerline: centerline})
 }
 
 func (c *LoftFeatures) add(def *LoftDefinition) *PartFeature {

@@ -172,7 +172,7 @@ func TestExtrudeMultipleRegionsMergeIntoOneBody(t *testing.T) {
 		t.Fatalf("sketch has %d regions, want 2", n)
 	}
 	fs := NewPartFeatures(nil)
-	pf := NewExtrudeFeatures(fs).AddByDistanceExtentProfiles(sk, []int{0, 1}, ops.NewBody, func() float64 { return h })
+	pf := NewExtrudeFeatures(fs).addByDistanceExtentProfiles(sk, []int{0, 1}, ops.NewBody, func() float64 { return h })
 	fs.Recompute()
 	if !pf.Health().OK() {
 		t.Fatalf("multi-region extrude went sick: %+v", pf.Health())
@@ -198,7 +198,7 @@ func TestExtrudeSplitRegionsRebuildWholeShape(t *testing.T) {
 		t.Fatalf("split rectangle has %d regions, want 2", n)
 	}
 	fs := NewPartFeatures(nil)
-	NewExtrudeFeatures(fs).AddByDistanceExtentProfiles(sk, []int{0, 1}, ops.NewBody, func() float64 { return h })
+	NewExtrudeFeatures(fs).addByDistanceExtentProfiles(sk, []int{0, 1}, ops.NewBody, func() float64 { return h })
 	fs.Recompute()
 	b := fs.Result()[0]
 	assertWatertightSolid(t, b)
