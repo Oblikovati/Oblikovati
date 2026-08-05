@@ -79,6 +79,7 @@ var allowedPlainStartTools = map[string]struct{}{
 	"ModelReferenceTool":       {},
 	"NoteTool":                 {},
 	"AngleWorkPlaneTool":       {}, // datum plane, not a part feature (#2044)
+	"FreeformCageEditTool":     {}, // drag-driven cage editing, commits per drag not per OK (#2048)
 	"OffsetWorkPlaneTool":      {},
 	"OrdinateDimensionTool":    {},
 	"PartsListTool":            {},

@@ -375,7 +375,9 @@ func moldFeatureCommands() []*CommandDefinition {
 }
 
 // freeformFeatureCommands are the Surfaces & Mesh tab's Freeform panel: the sub-D primitives
-// (M10-F03, #698). Cage editing on the placed feature is the freeform.* wire surface.
+// (M10-F03, #698) plus Edit Cage, the drag-driven editor for a placed one (#2048). Before that
+// the primitives could be placed and then never shaped — cage editing was the freeform.* wire
+// surface only.
 func freeformFeatureCommands() []*CommandDefinition {
 	prims := []struct {
 		id, name, icon, tip string
@@ -394,7 +396,18 @@ func freeformFeatureCommands() []*CommandDefinition {
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).WithTooltip(d.tip).
 			WithIcon(d.icon).WithButtonStyle(SmallIconButton)
 	}
-	return cmds
+	return append(cmds, editFreeformCageCommand())
+}
+
+// editFreeformCageCommand arms the cage editor on the running free-form body. It is enabled only
+// when the part holds one, so it never starts a tool with nothing to draw.
+func editFreeformCageCommand() *CommandDefinition {
+	return NewCommand("Freeform.EditCage", "Edit Cage", "Freeform", func(s *Session) error {
+		s.StartTool(NewFreeformCageEditTool()) // drag-driven: no commit gate to satisfy
+		return nil
+	}).WithTab(tabSurfacesMesh).WithEnable((*Session).CanEditFreeformCage).
+		WithIcon("freeform-cage").WithButtonStyle(SmallIconButton).
+		WithTooltip("Edit Cage — drag the free-form body's cage handles, set its subdivision level, and crease its edges.")
 }
 
 // surfaceFeatureCommands are the Surfaces & Mesh tab's Surface panel (canonical: Patch, Stitch, Sculpt,

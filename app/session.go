@@ -71,6 +71,7 @@ type Session struct {
 	lastCursorSketchPoint     math.Point2           // last cursor position mapped into the sketch plane
 	cloudMove                 cloudMoveDrag         // the in-progress interactive drag of a point cloud, if any (#645)
 	cvEdit                    cvEditDrag            // the in-progress NURBS control-point drag, if any (M36-F03)
+	cageEdit                  cageEditDrag          // the in-progress free-form cage-vertex drag, if any (#2048)
 	relaxMode                 bool                  // Relax Mode: drag over/fully-constrained sketch geometry (#791)
 	hudEnabled                bool                  // the 2D-sketch dynamic-input HUD is enabled (#790)
 	sketchHUD                 sketchHUD             // the dynamic-input HUD's live typing state (#790)
