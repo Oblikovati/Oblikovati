@@ -69,10 +69,11 @@ func TestMovedDistanceDimensionKeepsItsLineAttached(t *testing.T) {
 	s, _, d := dimensionedSketch(t)
 	d.SetTextPoint(math.P2(2, 5))
 	segs := viewOf(t, s, d).Segments
-	if len(segs) != 3 {
-		t.Fatalf("want 3 segments (two witness + one dimension line), got %d", len(segs))
+	// Two witness lines, the dimension line, then two barbs per arrowhead.
+	if len(segs) != 7 {
+		t.Fatalf("want 7 segments (two witness + one dimension line + two arrowheads), got %d", len(segs))
 	}
-	dimLine := segs[2]
+	dimLine := segs[dimLineIndex]
 	if dimLine[0].Y != 5 || dimLine[1].Y != 5 {
 		t.Fatalf("dimension line did not follow the text to y=5: %v", dimLine)
 	}

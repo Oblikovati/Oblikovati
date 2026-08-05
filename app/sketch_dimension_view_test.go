@@ -31,8 +31,8 @@ func TestDistanceDimensionView(t *testing.T) {
 	if !strings.Contains(v.Label, "30") {
 		t.Errorf("distance label = %q, want it to show 30 mm", v.Label)
 	}
-	if len(v.Segments) != 3 { // two witness lines + the dimension line
-		t.Errorf("distance dimension has %d segments, want 3", len(v.Segments))
+	if len(v.Segments) != 7 { // two witness lines + the dimension line + two arrowheads
+		t.Errorf("distance dimension has %d segments, want 7", len(v.Segments))
 	}
 }
 

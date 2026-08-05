@@ -34,8 +34,9 @@ type placementSession interface {
 var _ placementSession = (*app.Session)(nil)
 
 // placementOverlayItems returns the draw items for the shape being placed: solid geometry,
-// dashed construction geometry, and dotted witness lines to the input boxes.
-func placementOverlayItems(s placementSession, plane sketch.Plane, cursor math.Point2) []renderer.DrawItem {
+// dashed construction geometry, and a dimension — extension lines, an arrowed dimension line and
+// its value — standing off each measured edge. gap is the stand-off distance in model units.
+func placementOverlayItems(s placementSession, plane sketch.Plane, cursor math.Point2, gap float64) []renderer.DrawItem {
 	curves := s.ActiveToolPreviewCurves(cursor)
 	if len(curves) == 0 {
 		return nil
@@ -46,7 +47,52 @@ func placementOverlayItems(s placementSession, plane sketch.Plane, cursor math.P
 	}
 	items := appendPlacementItem(nil, solid, chromeTheme.previewColor)
 	items = appendPlacementItem(items, construction, chromeTheme.previewColor)
-	return appendPlacementItem(items, placementWitnessSegments(s, plane), chromeTheme.previewColor)
+	return appendPlacementItem(items, placementDimensionSegments(s, plane, gap), chromeTheme.dimensionSketchColor)
+}
+
+// placementDimensionSegments accumulates each in-place dimension: two extension lines running from
+// the measured edge out past the dimension line, the dimension line itself, and an arrowhead at
+// each of its ends.
+//
+// The dimension stands OFF the geometry along the field's outward direction. It used to be drawn
+// straight along the witness segment — which for a rectangle IS an edge — so the whole annotation
+// lay on the shape it measured (#2032).
+func placementDimensionSegments(s placementSession, plane sketch.Plane, gap float64) *segAccum {
+	acc := &segAccum{}
+	for _, f := range s.PlacementFields() {
+		off := f.Outward.Scale(math.Scalar(gap))
+		a, b := f.Witness[0].TranslateBy(off), f.Witness[1].TranslateBy(off)
+		acc.patterned(plane, []math.Point2{f.Witness[0], a.TranslateBy(f.Outward.Scale(math.Scalar(gap * extensionOvershoot)))}, false, placementWitnessPattern)
+		acc.patterned(plane, []math.Point2{f.Witness[1], b.TranslateBy(f.Outward.Scale(math.Scalar(gap * extensionOvershoot)))}, false, placementWitnessPattern)
+		acc.seg(plane, a, b)
+		appendArrowhead(acc, plane, a, a.VectorTo(b), gap)
+		appendArrowhead(acc, plane, b, b.VectorTo(a), gap)
+	}
+	return acc
+}
+
+// extensionOvershoot is how far an extension line runs PAST the dimension line, as a fraction of
+// the stand-off gap — the small tick beyond the arrow that drafting convention uses.
+const extensionOvershoot = 0.25
+
+// arrowheadSpread is the half-angle of an arrowhead's barbs, as a fraction of the head's length
+// measured across the dimension line.
+const arrowheadSpread = 0.35
+
+// appendArrowhead adds the two barbs of an arrowhead at tip, opening along dir (which points back
+// down the dimension line). Its size follows the stand-off gap, so the arrow keeps its proportion
+// at every zoom level.
+func appendArrowhead(acc *segAccum, plane sketch.Plane, tip math.Point2, dir math.Vector2, gap float64) {
+	if dir.Length() == 0 {
+		return
+	}
+	u := dir.Scale(1 / dir.Length())
+	perp := math.V2(-u.Y, u.X)
+	length := math.Scalar(gap * 0.6)
+	base := tip.TranslateBy(u.Scale(length))
+	half := perp.Scale(length * arrowheadSpread)
+	acc.seg(plane, tip, base.TranslateBy(half))
+	acc.seg(plane, tip, base.TranslateBy(half.Scale(-1)))
 }
 
 // accumulatePlacementCurve adds one preview curve to whichever accumulator matches its style.
@@ -56,15 +102,6 @@ func accumulatePlacementCurve(plane sketch.Plane, c sketch.PreviewCurve, solid, 
 		return
 	}
 	solid.polyline(plane, c.Points, c.Closed)
-}
-
-// placementWitnessSegments accumulates the dotted extension line under each input box.
-func placementWitnessSegments(s placementSession, plane sketch.Plane) *segAccum {
-	acc := &segAccum{}
-	for _, f := range s.PlacementFields() {
-		acc.patterned(plane, []math.Point2{f.Witness[0], f.Witness[1]}, false, placementWitnessPattern)
-	}
-	return acc
 }
 
 // appendPlacementItem appends the accumulator's lines as one draw item, skipping empties.

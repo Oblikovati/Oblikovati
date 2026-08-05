@@ -31,7 +31,7 @@ func TestSelectedDimensionDrawsInTheSelectionColour(t *testing.T) {
 	if byColor[chromeTheme.selectedPlaneColor] == 0 {
 		t.Fatalf("no segments drawn in the selection colour; got %v", byColor)
 	}
-	if byColor[chromeTheme.dimensionColor] == 0 || byColor[chromeTheme.dimensionDrivenColor] == 0 {
+	if byColor[chromeTheme.dimensionSketchColor] == 0 || byColor[chromeTheme.dimensionDrivenColor] == 0 {
 		t.Fatalf("selection bucket swallowed the driving/driven ones; got %v", byColor)
 	}
 }
