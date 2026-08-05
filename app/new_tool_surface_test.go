@@ -194,6 +194,15 @@ func TestModelToleranceToolAccessors(t *testing.T) {
 	if tool.Datums() != "A" {
 		t.Errorf("Datums = %q, want A", tool.Datums())
 	}
+	tool.SetValue(0.25)
+	if tool.Value() != 0.25 {
+		t.Errorf("Value = %g, want 0.25", tool.Value())
+	}
+	datum := NewModelDatumTool()
+	datum.SetLabel(" B ")
+	if datum.Label() != "B" {
+		t.Errorf("Label = %q, want the trimmed B", datum.Label())
+	}
 	tool.ClearGeometry()
 	if tool.GeometryPicked() {
 		t.Error("ClearGeometry left the reference behind")
@@ -220,7 +229,13 @@ func TestUnwrapAndSimplifyAccessors(t *testing.T) {
 
 	sp := NewSimplifyTool()
 	s.StartTool(sp)
+	if len(sp.Picks()) != 0 || sp.FillVoids() {
+		t.Error("a fresh simplify reports picks or void filling")
+	}
 	sp.Pick(s, FaceHandle{Face: face, Body: body})
+	if len(sp.Picks()) != 1 {
+		t.Errorf("simplify reports %d picks for the unified highlight, want 1", len(sp.Picks()))
+	}
 	sp.Pick(s, FaceHandle{Face: face, Body: body}) // a duplicate is ignored
 	if sp.FaceCount() != 1 || len(sp.Faces()) != 1 {
 		t.Errorf("simplify holds %d faces, want 1", sp.FaceCount())

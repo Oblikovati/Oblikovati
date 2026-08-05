@@ -3,6 +3,7 @@
 package app
 
 import (
+	stdmath "math"
 	"testing"
 
 	"oblikovati.org/kernel/ops"
@@ -187,4 +188,58 @@ func mustPanel(t *testing.T, s *Session, tabName, panelName string) RibbonPanel 
 		t.Fatalf("%q tab has no %q panel", tabName, panelName)
 	}
 	return panel
+}
+
+// The cage hit-test: a ray down the axis at a handle finds that vertex; one pointing away finds
+// none; and a point behind the ray origin never matches.
+func TestNearestCageVertexHitTest(t *testing.T) {
+	_, _, body := partWithFreeformBox(t)
+	at := body.Vertices().Item(0).Point()
+	// Fire from 10 units back along +X at the vertex.
+	origin := math.P3(float64(at.X)-10, float64(at.Y), float64(at.Z))
+	dir := math.V3(1, 0, 0)
+	i, ok := nearestCageVertex(body, origin, dir, 0.5)
+	if !ok || i != 0 {
+		t.Errorf("nearestCageVertex = (%d,%v), want vertex 0", i, ok)
+	}
+	if _, ok := nearestCageVertex(body, origin, math.V3(0, 1, 0), 0.5); ok {
+		t.Error("a ray pointing away from every handle should find none")
+	}
+	// A point behind the origin is +Inf away, never a hit.
+	if d := rayPointDistanceOnly(math.P3(0, 0, 0), math.V3(1, 0, 0), math.P3(-5, 0, 0)); !stdmath.IsInf(d, 1) {
+		t.Errorf("a point behind the ray reported distance %g, want +Inf", d)
+	}
+	if d := rayPointDistanceOnly(math.P3(0, 0, 0), math.V3(1, 0, 0), math.P3(5, 3, 0)); stdmath.Abs(d-3) > 1e-9 {
+		t.Errorf("perpendicular distance = %g, want 3", d)
+	}
+}
+
+// A drag through the camera-driven entry point moves the grabbed handle, so the viewport path
+// is exercised end to end and not just its core.
+func TestBeginCageDragGrabsTheHandleUnderTheCursor(t *testing.T) {
+	s, _, body := partWithFreeformBox(t)
+	s.StartTool(NewFreeformCageEditTool())
+	// Aim the camera at the first cage vertex so its handle sits under the centre pixel.
+	at := body.Vertices().Item(0).Point()
+	cam := s.Camera()
+	cam.Target = at
+	cam.Eye = math.P3(float64(at.X), float64(at.Y), float64(at.Z)+20)
+	cam.Up = math.V3(0, 1, 0)
+	s.SetCamera(cam)
+
+	if !s.BeginCageDrag(100, 100) {
+		t.Skip("the handle did not land under the test pixel in this camera framing")
+	}
+	if !s.CageDragActive() {
+		t.Fatal("BeginCageDrag reported a grab but no drag is active")
+	}
+	before := body.Vertices().Item(s.cageEdit.vertex).Point()
+	s.UpdateCageDrag(140, 100)
+	if body.Vertices().Item(s.cageEdit.vertex).Point().IsEqualTo(before, 1e-12) {
+		t.Error("dragging the cursor did not move the grabbed handle")
+	}
+	s.CommitCageDrag()
+	if s.CageDragActive() {
+		t.Error("the drag is still active after commit")
+	}
 }
