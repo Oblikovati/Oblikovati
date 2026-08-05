@@ -36,12 +36,34 @@ func TestDirectBindingPathsUnique(t *testing.T) {
 }
 
 // Derived tokens must chain off direct ones only — a derived base would make resolve
-// order matter.
+// order matter. A PICKED binding names no base: it is a colour the product decides, so there is
+// nothing to resolve and nothing to order.
 func TestDerivedBasesAreDirect(t *testing.T) {
 	for tok, d := range derivedBindings {
+		if d.pick != nil {
+			continue
+		}
 		if _, ok := directBindings[d.base]; !ok {
 			t.Errorf("derived token %q has non-direct base %q", tok, d.base)
 		}
+	}
+}
+
+// TestPickedBindingsIgnoreTheFile: a picked token resolves to its product colour for EVERY theme,
+// including a custom one saved before the token existed — deriving it from an unrelated Blender
+// field instead made such a theme paint it whatever that field happened to hold (#2034). The
+// shade follows the viewport background, so the two shipped themes must NOT agree on it.
+func TestPickedBindingsIgnoreTheFile(t *testing.T) {
+	seen := map[Rgba]string{}
+	for _, th := range Builtins() {
+		got := th.Color(types.TokenDimensionSketch)
+		if got != sketchDimensionGreen(th.Palette()) {
+			t.Errorf("%s theme resolved the sketch dimension to %v, want the picked colour", th.Name(), got)
+		}
+		if other, dup := seen[got]; dup {
+			t.Errorf("%s and %s got the same shade %v — the pick is ignoring the background", th.Name(), other, got)
+		}
+		seen[got] = th.Name()
 	}
 }
 

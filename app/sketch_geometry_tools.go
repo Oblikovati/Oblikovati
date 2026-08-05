@@ -67,13 +67,13 @@ func (t *CircleTool) Cancel(*Session)   { t.reset() }
 func (t *CircleTool) CanCommit() bool   { return len(t.pts) == 2 }
 func (t *CircleTool) AutoCommits() bool { return true }
 
-// Commit adds a circle centered at the first click with radius to the second.
+// Commit adds a circle centered at the first click with radius to the second, through the same
+// recipe its preview draws (see PolygonTool.Commit for why every tool routes here — #2014).
 func (t *CircleTool) Commit(s *Session) error {
 	if s.activeSketch == nil {
 		return errNoSketch("circle")
 	}
-	s.activeSketch.Circles().AddByCenterRadius(t.pts[0], t.pts[0].DistanceTo(t.pts[1]))
-	return nil
+	return s.commitRecipe(sketch.CircleRecipe(t.pts[0], t.pts[0].DistanceTo(t.pts[1])))
 }
 
 // Prompt guides center then radius.
@@ -113,9 +113,7 @@ func (t *ArcTool) Commit(s *Session) error {
 	if !ok {
 		return errors.New("arc: the three points are collinear")
 	}
-	ccw := leftTurn(start, through, end)
-	s.activeSketch.Arcs().AddByCenterStartEnd(center, start, end, ccw)
-	return nil
+	return s.commitRecipe(sketch.ArcRecipe(center, start, end, leftTurn(start, through, end)))
 }
 
 // Prompt guides start, end, then a point on the arc.
@@ -152,11 +150,11 @@ func (t *PointTool) Commit(s *Session) error {
 	if s.activeSketch == nil {
 		return errNoSketch("point")
 	}
-	made := make([]sketch.Entity, 0, len(t.pts))
 	for _, p := range t.pts {
-		made = append(made, s.activeSketch.Points().Add(p))
+		if err := s.commitRecipe(sketch.PointRecipe(p)); err != nil {
+			return err
+		}
 	}
-	s.applyFormatModes(made) // Format-panel creation modes (#2015)
 	return nil
 }
 
@@ -191,10 +189,30 @@ func (t *SplineTool) Commit(s *Session) error {
 	if s.activeSketch == nil {
 		return errNoSketch("spline")
 	}
-	sp := s.activeSketch.Splines().AddByPoints(append([]math.Point2(nil), t.pts...), false)
-	if !t.withHandles {
-		return nil
+	ents, err := s.commitRecipeEntities(sketch.SplineRecipe(t.pts, true))
+	if err != nil || !t.withHandles {
+		return err
 	}
+	return s.activateSplineHandles(ents)
+}
+
+// activateSplineHandles turns on the tangency handle at every fit point of the splines just
+// created, ready for interactive shaping (M06-F11, #626).
+func (s *Session) activateSplineHandles(ents []sketch.Entity) error {
+	for _, e := range ents {
+		sp, ok := e.(*sketch.Spline)
+		if !ok {
+			continue
+		}
+		if err := s.activateEveryFitHandle(sp); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// activateEveryFitHandle activates the handle on each of one spline's points.
+func (s *Session) activateEveryFitHandle(sp *sketch.Spline) error {
 	for i := range sp.Points {
 		if _, err := s.activeSketch.SplineHandles().Activate(sp, i); err != nil {
 			return err
@@ -239,8 +257,7 @@ func (t *EllipseTool) Commit(s *Session) error {
 		return errors.New("ellipse: major radius is zero")
 	}
 	minorR := perpDistance(t.pts[2], center, major)
-	s.activeSketch.Ellipses().Add(center, major, majorR, minorR)
-	return nil
+	return s.commitRecipe(sketch.EllipseRecipe(center, major.Scale(1/majorR), majorR, minorR))
 }
 
 // Prompt guides center, major axis, then minor radius.

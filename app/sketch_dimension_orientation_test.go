@@ -106,7 +106,7 @@ func TestHorizontalDimensionLineIsDrawnHorizontal(t *testing.T) {
 	if len(views) != 1 {
 		t.Fatalf("got %d views, want 1", len(views))
 	}
-	dimLine := views[0].Segments[len(views[0].Segments)-1] // the dimension line is drawn last
+	dimLine := views[0].Segments[dimLineIndex] // witness, witness, THEN the dimension line
 	if dy := stdmath.Abs(dimLine[1].Y - dimLine[0].Y); dy > 1e-6 {
 		t.Errorf("the dimension line rises %v; a horizontal dimension must be drawn horizontal", dy)
 	}

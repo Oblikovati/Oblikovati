@@ -94,3 +94,45 @@ func TestCircleRecipeRejectsZeroRadius(t *testing.T) {
 		t.Fatal("a zero-radius circle must be rejected")
 	}
 }
+
+// TestLineChainRecipeConnectsEverySegment: the continuous line tool previews its whole chain
+// through this, so the segments must share endpoints — a chain of separate two-point lines would
+// preview as a dashed-looking run of disconnected pieces and commit as unjoined geometry.
+func TestLineChainRecipeConnectsEverySegment(t *testing.T) {
+	r := LineChainRecipe([]math.Point2{math.P2(0, 0), math.P2(10, 0), math.P2(10, 5), math.P2(0, 5)})
+
+	if len(r.Entities) != 3 {
+		t.Fatalf("got %d segments for 4 points, want 3", len(r.Entities))
+	}
+	for i, e := range r.Entities {
+		if want := []int{i, i + 1}; e.Points[0] != want[0] || e.Points[1] != want[1] {
+			t.Errorf("segment %d joins points %v, want %v — consecutive segments must share an endpoint", i, e.Points, want)
+		}
+	}
+}
+
+// TestLineChainFieldsDescribeTheSegmentBeingDrawn: the dynamic-input Length/Angle steer the
+// segment at the cursor. Measuring the chain's FIRST segment instead would show the user a length
+// they already committed and could no longer change.
+func TestLineChainFieldsDescribeTheSegmentBeingDrawn(t *testing.T) {
+	// Two segments: a long one already placed, then a short one at the cursor.
+	r := LineChainRecipe([]math.Point2{math.P2(0, 0), math.P2(10, 0), math.P2(10, 3)})
+
+	if len(r.Fields) == 0 {
+		t.Fatal("a chain must still offer its Length/Angle input")
+	}
+	if got := r.Fields[0].Value; got != 3 {
+		t.Errorf("Length field = %v, want 3 — the field measures the segment at the cursor, not the first one", got)
+	}
+	if got := r.Fields[0].Dim.Points; got != [2]int{1, 2} {
+		t.Errorf("Length dimension spans points %v, want the last segment {1 2}", got)
+	}
+}
+
+// TestLineChainRecipeNeedsTwoPoints: one click is not a segment, and a recipe built from it would
+// name a line with a single endpoint.
+func TestLineChainRecipeNeedsTwoPoints(t *testing.T) {
+	if r := LineChainRecipe([]math.Point2{math.P2(1, 1)}); len(r.Entities) != 0 {
+		t.Errorf("a one-point chain produced %d entities, want none", len(r.Entities))
+	}
+}

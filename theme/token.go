@@ -79,6 +79,7 @@ var tokenInfos = map[Token]TokenInfo{
 	types.TokenSketchCandidate:      {types.TokenSketchCandidate, "Sketch (candidate)", GroupViewport},
 	types.TokenSketchPreview:        {types.TokenSketchPreview, "Sketch preview", GroupViewport},
 	types.TokenDimensionDriving:     {types.TokenDimensionDriving, "Dimension (driving)", GroupViewport},
+	types.TokenDimensionSketch:      {types.TokenDimensionSketch, "Dimension (sketch)", GroupViewport},
 	types.TokenDimensionDriven:      {types.TokenDimensionDriven, "Dimension (driven)", GroupViewport},
 	types.TokenSnapGlyph:            {types.TokenSnapGlyph, "Snap glyph", GroupViewport},
 	types.TokenViewportActiveBorder: {types.TokenViewportActiveBorder, "Active view border", GroupViewport},

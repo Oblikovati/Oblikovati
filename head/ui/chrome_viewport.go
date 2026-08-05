@@ -340,7 +340,7 @@ func drawViewportOverlays(s *app.Session, cam scene.Camera, sketchPlane sketch.P
 	drawClientGraphicsImages(cx, cy, cam, images)
 	drawMiniToolbars(s, cam, ox, oy) // in-canvas mini-toolbars (M05-F07)
 	if s.InSketch() && len(dims) > 0 {
-		if d := drawDimensionLabels(cx, cy, cam, sketchPlane, dims); d != nil {
+		if d := drawDimensionLabels(cam, sketchPlane, dims); d != nil {
 			s.BeginEditDimension(d) // double-clicked a dimension's value
 		}
 	}
@@ -550,7 +550,7 @@ func sketchOverlays(s *app.Session, cam scene.Camera, list renderer.DrawList) (r
 	if item, ok := pointsOverlay(plane, s.ActiveSketch(), pointMarkerPixels*cam.WorldPerPixel()); ok {
 		list.Items = append(list.Items, onTopItem(item))
 	}
-	if items, ok := toolPreview(s); ok {
+	if items, ok := toolPreview(s, placementDimGapPixels*cam.WorldPerPixel()); ok {
 		list.Items = append(list.Items, onTop(items)...)
 	}
 	list.Items = append(list.Items, onTop(constraintGlyphOverlay(s, plane, constraintGlyphPixels*cam.WorldPerPixel()))...)
@@ -700,7 +700,7 @@ func snapMarker(s *app.Session, plane sketch.Plane, worldPerPixel float64) (rend
 // provisional shape from the placed clicks through the current mouse position, drawn solid for
 // real geometry, dashed for construction geometry, and with a dotted witness line under each
 // in-place dimension box (#2014).
-func toolPreview(s *app.Session) ([]renderer.DrawItem, bool) {
+func toolPreview(s *app.Session, gap float64) ([]renderer.DrawItem, bool) {
 	if !native.IsItemHovered() || s.ActiveTool() == nil {
 		return nil, false
 	}
@@ -709,7 +709,7 @@ func toolPreview(s *app.Session) ([]renderer.DrawItem, bool) {
 	if !ok {
 		return nil, false
 	}
-	items := placementOverlayItems(s, s.ActiveSketch().Plane(), cur)
+	items := placementOverlayItems(s, s.ActiveSketch().Plane(), cur, gap)
 	return items, len(items) > 0
 }
 

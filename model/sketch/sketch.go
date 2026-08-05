@@ -367,7 +367,7 @@ func (s *Sketch) Constraints() []Constraint {
 		}
 	}
 	for _, d := range s.dimCons.items {
-		if !d.driven {
+		if !d.driven && d.drivable() {
 			out = append(out, d)
 		}
 	}

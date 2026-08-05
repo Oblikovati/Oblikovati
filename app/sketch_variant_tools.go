@@ -3,7 +3,8 @@
 package app
 
 import (
-	"oblikovati.org/math"
+	"errors"
+
 	"oblikovati.org/model/sketch"
 )
 
@@ -108,8 +109,11 @@ func (t *ThreePointCircleTool) Commit(s *Session) error {
 	if sk == nil {
 		return errNoSketch("three point circle")
 	}
-	_, err := sk.Circles().AddByThreePoints(t.pts[0], t.pts[1], t.pts[2])
-	return err
+	center, ok := circumcenter(t.pts[0], t.pts[1], t.pts[2])
+	if !ok {
+		return errors.New("three point circle: the three points are collinear")
+	}
+	return s.commitRecipe(sketch.CircleRecipe(center, center.DistanceTo(t.pts[0])))
 }
 
 // Prompt guides the three points the circle passes through.
@@ -149,8 +153,7 @@ func (t *CenterPointArcTool) Commit(s *Session) error {
 		return errNoSketch("center point arc")
 	}
 	center, start, end := t.pts[0], t.pts[1], t.pts[2]
-	sk.Arcs().AddByCenterStartEnd(center, start, end, leftTurn(center, start, end))
-	return nil
+	return s.commitRecipe(sketch.ArcRecipe(center, start, end, leftTurn(center, start, end)))
 }
 
 // Prompt guides the center, start and end of the arc.
@@ -188,8 +191,7 @@ func (t *ControlVertexSplineTool) Commit(s *Session) error {
 	if sk == nil {
 		return errNoSketch("control vertex spline")
 	}
-	sk.Splines().AddByControlPoints(append([]math.Point2(nil), t.pts...), false)
-	return nil
+	return s.commitRecipe(sketch.SplineRecipe(t.pts, false))
 }
 
 // Prompt guides successive control vertices.

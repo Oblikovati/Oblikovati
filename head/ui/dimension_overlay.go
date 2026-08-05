@@ -33,7 +33,10 @@ func dimensionLines(plane sketch.Plane, views []app.DimensionView) []renderer.Dr
 		}
 	}
 	var items []renderer.DrawItem
-	items = appendGrid(items, driving, chromeTheme.dimensionColor)
+	// A committed driving dimension is the SAME annotation the in-place one was, so it keeps the
+	// same colour: the style must not change the moment a shape commits (#2034). Driven
+	// dimensions and the selection keep their own colours — those are real distinctions.
+	items = appendGrid(items, driving, chromeTheme.dimensionSketchColor)
 	items = appendGrid(items, driven, chromeTheme.dimensionDrivenColor)
 	items = appendGrid(items, selected, chromeTheme.selectedPlaneColor)
 	return items
@@ -50,10 +53,10 @@ func dimensionAccum(v app.DimensionView, driving, driven, selected *segAccum) *s
 	return driving
 }
 
-// drawDimensionLabels overlays each dimension's value text at its projected anchor (the
-// image has already been drawn at window-local cx,cy). Returns the dimension whose label
-// was double-clicked this frame, or nil — the caller re-opens it for editing.
-func drawDimensionLabels(cx, cy float32, cam scene.Camera, plane sketch.Plane, views []app.DimensionView) *sketch.DimensionConstraint {
+// drawDimensionLabels overlays each dimension's value text at its projected anchor, in the
+// dimension's own colour. Returns the dimension whose label was double-clicked this frame, or
+// nil — the caller re-opens it for editing.
+func drawDimensionLabels(cam scene.Camera, plane sketch.Plane, views []app.DimensionView) *sketch.DimensionConstraint {
 	mx, my := native.MousePos()
 	ox, oy := native.ItemRectMin()
 	dbl := native.IsMouseDoubleClicked(native.MouseLeft)
@@ -63,13 +66,26 @@ func drawDimensionLabels(cx, cy float32, cam scene.Camera, plane sketch.Plane, v
 		if !ok || !onScreen(sx, sy, cam) {
 			continue // off-screen labels would grow the ImGui content rect and steal the wheel (#2027)
 		}
-		native.SetCursorPos(cx+float32(sx), cy+float32(sy))
-		native.Text(v.Label)
+		// Drawn with the dimension's own colour rather than as plain ImGui text, so the value
+		// reads as part of the annotation its line and arrowheads belong to (#2034).
+		native.DrawText(ox+float32(sx), oy+float32(sy), v.Label, dimensionLabelColor(v))
 		if dbl && labelHit(mx-ox, my-oy, float32(sx), float32(sy)) {
 			hit = v.Dim
 		}
 	}
 	return hit
+}
+
+// dimensionLabelColor matches a label to its line: the selection colour when picked, the driven
+// colour when it only reports, otherwise the sketch-dimension colour.
+func dimensionLabelColor(v app.DimensionView) [4]float32 {
+	switch {
+	case v.Selected:
+		return chromeTheme.selectedPlaneColor
+	case v.Driven:
+		return chromeTheme.dimensionDrivenColor
+	}
+	return chromeTheme.dimensionSketchColor
 }
 
 // labelHit reports whether the (viewport-local) cursor is within a label's rough text

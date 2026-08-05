@@ -66,6 +66,9 @@ const (
 	dimMinGap = 0.5
 	// angleArcSegments samples the angle dimension's arc.
 	angleArcSegments = 16
+	// dimLineIndex is where the dimension line sits in a distance view's segments: the two
+	// witness lines come first, then the line, then the arrowheads.
+	dimLineIndex = 2
 )
 
 // dimensionView builds the view for one dimension, or false for an unhandled shape.
@@ -123,7 +126,7 @@ func distanceView(d *sketch.DimensionConstraint, a, b math.Point2, label string)
 	perp := math.V2(-dir.Y, dir.X)
 	a2 := a.TranslateBy(perp.Scale(a.VectorTo(labelAt).Dot(perp)))
 	b2 := b.TranslateBy(perp.Scale(b.VectorTo(labelAt).Dot(perp)))
-	segs := [][2]math.Point2{{a, a2}, {b, b2}, {a2, b2}}
+	segs := withArrowheads([][2]math.Point2{{a, a2}, {b, b2}, {a2, b2}}, a2, b2)
 	return DimensionView{Dim: d, Segments: segs, Label: label, LabelAt: labelAt, Driven: d.Driven()}
 }
 
@@ -289,4 +292,38 @@ func arcMidAngle(a *sketch.Arc) float64 {
 		ea -= 2 * stdmath.Pi
 	}
 	return (sa + ea) / 2
+}
+
+// dimArrowLength is an arrowhead's length in database units (cm). A committed dimension's
+// geometry is built without a camera, so the head cannot be asked for a pixel size here; this is
+// the drafting-conventional head size at the scale sketches are drawn in.
+const dimArrowLength = 0.22
+
+// dimArrowSpread is the half-width of an arrowhead's barbs as a fraction of its length.
+const dimArrowSpread = 0.35
+
+// withArrowheads appends an arrowhead at each end of the dimension line running a2→b2.
+//
+// A committed dimension drew bare lines with no heads, so it read as construction geometry rather
+// than a dimension — and it changed appearance the moment the in-place dimension it grew out of
+// committed (#2034). The heads point INWARD along the line, the drafting convention for a
+// dimension measuring between its own extension lines.
+func withArrowheads(segs [][2]math.Point2, a2, b2 math.Point2) [][2]math.Point2 {
+	segs = append(segs, arrowheadSegs(a2, a2.VectorTo(b2))...)
+	return append(segs, arrowheadSegs(b2, b2.VectorTo(a2))...)
+}
+
+// arrowheadSegs are the two barbs of one arrowhead at tip, opening back along dir.
+func arrowheadSegs(tip math.Point2, dir math.Vector2) [][2]math.Point2 {
+	if dir.Length() == 0 {
+		return nil
+	}
+	u := dir.Scale(1 / dir.Length())
+	perp := math.V2(-u.Y, u.X)
+	base := tip.TranslateBy(u.Scale(dimArrowLength))
+	half := perp.Scale(dimArrowLength * dimArrowSpread)
+	return [][2]math.Point2{
+		{tip, base.TranslateBy(half)},
+		{tip, base.TranslateBy(half.Scale(-1))},
+	}
 }

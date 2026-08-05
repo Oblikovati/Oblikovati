@@ -29,15 +29,14 @@ var _ placementBoxSession = (*app.Session)(nil)
 
 // box geometry and colours.
 const (
-	placementBoxPadX    = 5 // horizontal text padding inside a box
-	placementBoxPadY    = 2 // vertical text padding inside a box
-	placementBoxLockGap = 3 // gap between the value text and the padlock
-	placementBoxOffsetY = 6 // lift above the witness-line midpoint (px)
+	placementBoxPadX      = 5  // horizontal text padding inside a box
+	placementBoxPadY      = 2  // vertical text padding inside a box
+	placementBoxLockGap   = 3  // gap between the value text and the padlock
+	placementDimGapPixels = 22 // how far a dimension stands off the geometry it measures (px)
 )
 
 var (
-	placementBoxFill       = [4]float32{0.96, 0.96, 0.98, 0.95}
-	placementBoxText       = [4]float32{0.08, 0.09, 0.12, 1}
+	placementBoxFill       = [4]float32{0.10, 0.12, 0.15, 0.92}
 	placementBoxActiveFill = [4]float32{0.16, 0.34, 0.72, 0.95}
 	placementBoxActiveText = [4]float32{1, 1, 1, 1}
 	placementBoxBorder     = [4]float32{0.55, 0.58, 0.66, 0.9}
@@ -53,13 +52,14 @@ func drawPlacementFieldBoxes(s placementBoxSession, cam scene.Camera, bx, by flo
 		return
 	}
 	plane := sk.Plane()
+	gap := placementDimGapPixels * cam.WorldPerPixel()
 	for _, f := range s.PlacementFields() {
-		mid := witnessMidpoint(f)
+		mid := witnessMidpoint(f).TranslateBy(f.Outward.Scale(math.Scalar(gap)))
 		x, y, ok := renderer.Project(cam, viewportNear, viewportFar, plane.ToModel(mid))
 		if !ok {
 			continue
 		}
-		drawPlacementFieldBox(f, bx+float32(x), by+float32(y)-placementBoxOffsetY)
+		drawPlacementFieldBox(f, bx+float32(x), by+float32(y))
 	}
 }
 
@@ -78,8 +78,11 @@ func drawPlacementFieldBox(f app.PlacementFieldView, x, y float32) {
 		w += native.TextLineHeight()*0.55 + placementBoxLockGap
 	}
 	h := native.TextLineHeight() + 2*placementBoxPadY
-	x0, y0 := x-w/2, y-h
-	fill, text := placementBoxFill, placementBoxText
+	// Centre the box ON the dimension line rather than hanging it above the geometry.
+	x0, y0 := x-w/2, y-h/2
+	// The theme is applied at runtime, so the colour is read HERE, not into a package var at
+	// init — that would freeze the zero value (transparent black) before any theme loaded.
+	fill, text := placementBoxFill, chromeTheme.dimensionSketchColor
 	if f.Active {
 		fill, text = placementBoxActiveFill, placementBoxActiveText
 	}

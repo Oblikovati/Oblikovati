@@ -29,7 +29,7 @@ type themePalette struct {
 	gridMinorColor, gridMajorColor                         [4]float32
 	sketchColor, sketchSelectedColor, sketchCandidateColor [4]float32
 	previewColor                                           [4]float32 // rubber-band preview
-	dimensionColor, dimensionDrivenColor                   [4]float32
+	dimensionDrivenColor, dimensionSketchColor             [4]float32
 	snapGlyphColor, pointMarkerColor                       [4]float32
 	activeViewportBorderColor                              [4]float32 // focused split-view tile outline
 	faintPlaneColor, hoverPlaneColor, selectedPlaneColor   [4]float32
@@ -113,8 +113,8 @@ func (p *themePalette) sketchThemeColors(arr func(types.ThemeToken) [4]float32) 
 	p.sketchSelectedColor = arr(types.TokenSketchSelected)
 	p.sketchCandidateColor = arr(types.TokenSketchCandidate)
 	p.previewColor = arr(types.TokenSketchPreview)
-	p.dimensionColor = arr(types.TokenDimensionDriving)
 	p.dimensionDrivenColor = arr(types.TokenDimensionDriven)
+	p.dimensionSketchColor = arr(types.TokenDimensionSketch)
 	p.snapGlyphColor = arr(types.TokenSnapGlyph)
 	p.activeViewportBorderColor = arr(types.TokenViewportActiveBorder)
 	p.pointMarkerColor = p.sketchColor // placed points match the sketch wireframe

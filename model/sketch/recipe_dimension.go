@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/math"
 )
 
 // Dimensions from locked input fields (#2014). The contract from the reference behaviour: a
@@ -32,6 +33,7 @@ func (s *Sketch) applyRecipeFields(r Recipe, ents []Entity, pts []*Point, locked
 		if err != nil {
 			return fmt.Errorf("field %q: %w", f.Label, err)
 		}
+		d.SetTextPoint(standoffAnchor(r, f)) // where the in-place dimension already stood
 		s.resolveRedundantDim(d, before, behavior)
 	}
 	return nil
@@ -104,4 +106,56 @@ func (s *Sketch) addRecipeAngleDim(dc *DimensionConstraints, dim RecipeDim, ents
 		return nil, err
 	}
 	return dc.AddAngle(l1, l2, expression)
+}
+
+// dimensionStandoff is how far a recipe-created dimension is placed from the geometry it
+// measures, in database units (cm). It matches what the in-place preview showed, so the
+// annotation does not jump when the shape commits (#2034).
+const dimensionStandoff = 0.6
+
+// FieldOutward is the unit direction a field's dimension stands off in: the normal of its
+// witness segment pointing AWAY from the shape.
+//
+// It is shared by the interactive preview and by the dimension the commit creates, so both put
+// the annotation on the same side. A rectangle's witness segment IS one of its edges, so without
+// this the dimension lands on — and reads as inside — the shape it measures.
+//
+//	out := sketch.FieldOutward(r, r.Fields[0]) // away from the rectangle
+func FieldOutward(r Recipe, f RecipeField) math.Vector2 {
+	a, b := f.Witness[0], f.Witness[1]
+	edge := a.VectorTo(b)
+	if edge.Length() == 0 {
+		return math.V2(0, 1) // a degenerate witness still needs a side to stand on
+	}
+	n := math.V2(-edge.Y, edge.X).Scale(1 / edge.Length())
+	centroid, enclosed := recipeCentroid(r)
+	if !enclosed {
+		return n // an open shape has no inside to point away from
+	}
+	mid := math.P2((a.X+b.X)/2, (a.Y+b.Y)/2)
+	if centroid.VectorTo(mid).Dot(n) < 0 {
+		return n.Scale(-1) // the normal pointed into the shape
+	}
+	return n
+}
+
+// recipeCentroid averages a recipe's real outline points, reporting false when it encloses
+// nothing (a bare point, a single rubber-banding segment).
+func recipeCentroid(r Recipe) (math.Point2, bool) {
+	pts, _ := RecipeOutline(r)
+	if len(pts) < 3 {
+		return math.Point2{}, false
+	}
+	var sum math.Vector2
+	for _, p := range pts {
+		sum = sum.Add(math.V2(p.X, p.Y))
+	}
+	return math.P2(0, 0).TranslateBy(sum.Scale(1 / float64(len(pts)))), true
+}
+
+// standoffAnchor is where a recipe-created dimension's label sits: the middle of what it measures,
+// pushed clear of the shape.
+func standoffAnchor(r Recipe, f RecipeField) math.Point2 {
+	mid := math.P2((f.Witness[0].X+f.Witness[1].X)/2, (f.Witness[0].Y+f.Witness[1].Y)/2)
+	return mid.TranslateBy(FieldOutward(r, f).Scale(dimensionStandoff))
 }

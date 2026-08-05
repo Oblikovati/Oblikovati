@@ -222,6 +222,11 @@ func (r *Router) registerStandardHandlers() {
 	r.readOnly(wire.MethodViewportCaptureWindow, typed(captureWindow))
 	r.readOnly(wire.MethodViewportSetNormalDebug, typed(setNormalDebug))
 	r.readOnly(wire.MethodViewportSetMeshColors, typed(setMeshColors))
+	// Synthesised input is readOnly for the same reason commands.execute and commandLine.submit
+	// are: the tool the click drives records its own undo step when it commits, so recording one
+	// here as well would make every click of a multi-click command its own Ctrl+Z.
+	r.readOnly(wire.MethodViewportClick, typed(clickViewport))
+	r.readOnly(wire.MethodViewportKey, typed(pressKey))
 	r.readOnly(wire.MethodInteractionState, interactionState)
 	r.readOnly(wire.MethodInteractionSetNotice, interactionSetNotice)
 	r.readOnly(wire.MethodViewsList, typed(listViews))

@@ -4,6 +4,7 @@ package theme
 
 import (
 	"fmt"
+	stdmath "math"
 	"strings"
 
 	"oblikovati.org/api/types"
@@ -62,14 +63,16 @@ var directBindings = map[Token]directBinding{
 	// Blender document authors (wcol_state's `error` is a dark fill, not a text/outline).
 	types.TokenChromeDanger: {[]string{"Theme", "console", "ThemeConsole"}, "line_error", true},
 	// Viewport 2D ← view_3d editor slots (sketch == Blender edit-mode geometry).
-	types.TokenViewportBg:           {append(append([]string(nil), pathV3Space...), "gradients", "ThemeGradientColors"), "high_gradient", true},
-	types.TokenGridMinor:            {pathView3D, "grid", false},
-	types.TokenSketchGeometry:       {pathView3D, "wire_edit", false},
-	types.TokenSketchSelected:       {pathView3D, "edge_select", false},
-	types.TokenSketchCandidate:      {pathView3D, "editmesh_active", false},
-	types.TokenSketchPreview:        {pathView3D, "transform", false},
-	types.TokenSnapGlyph:            {pathView3D, "vertex_select", false},
-	types.TokenDimensionDriving:     {pathV3Space, "text", false},
+	types.TokenViewportBg:       {append(append([]string(nil), pathV3Space...), "gradients", "ThemeGradientColors"), "high_gradient", true},
+	types.TokenGridMinor:        {pathView3D, "grid", false},
+	types.TokenSketchGeometry:   {pathView3D, "wire_edit", false},
+	types.TokenSketchSelected:   {pathView3D, "edge_select", false},
+	types.TokenSketchCandidate:  {pathView3D, "editmesh_active", false},
+	types.TokenSketchPreview:    {pathView3D, "transform", false},
+	types.TokenSnapGlyph:        {pathView3D, "vertex_select", false},
+	types.TokenDimensionDriving: {pathV3Space, "text", false},
+	// Blender's edge-length measurement colour: the same job — a length read off the geometry
+	// while you work — so a theme recoloured in Blender carries the intent across.
 	types.TokenDimensionDriven:      {append(append([]string(nil), pathUI...), "wcol_state", "ThemeWidgetStateColors"), "inner_driven", false},
 	types.TokenViewportActiveBorder: {pathUI, "editor_outline_active", false},
 	// Gizmos 3D ← Blender's gizmo and object-state slots.
@@ -96,6 +99,9 @@ type derivedBinding struct {
 	base       Token
 	mix        float32
 	alphaScale float32
+	// pick computes the colour from the already-resolved direct tokens. It is for a colour the
+	// PRODUCT decides rather than the theme file — one Blender has no slot that means.
+	pick func(Palette) Rgba
 }
 
 // derivedBindings lists every token Blender has no storage slot for, in dependency
@@ -107,6 +113,36 @@ var derivedBindings = map[Token]derivedBinding{
 	types.TokenChromeButtonHover:   {base: types.TokenChromeButton, mix: 0.10},
 	types.TokenGridMajor:           {base: types.TokenGridMinor, alphaScale: 2},
 	types.TokenGridAxis:            {base: types.TokenGridMinor, alphaScale: 3},
+	// The in-place dimension is drafting green in every CAD package, and Blender has no slot
+	// that means it. Deriving it from an unrelated Blender field made an EXISTING custom theme
+	// resolve it to whatever that field happened to hold (a near-black brown, #2034) — a token
+	// snapshot only carries the tokens that existed when it was saved.
+	types.TokenDimensionSketch: {pick: sketchDimensionGreen},
+}
+
+// sketchDimensionGreen is the sketch-dimension colour: drafting green, in the shade that stays
+// legible on the viewport background it will be drawn over.
+//
+// ONE fixed green cannot serve both shipped themes — bright enough for the dark viewport is
+// 1.31:1 on the light one, which the contrast guard rejects outright. So the shade follows the
+// background, which is what makes it a derived token rather than a constant.
+func sketchDimensionGreen(p Palette) Rgba {
+	if relativeLuminance(p.Color(types.TokenViewportBg)) > 0.2 {
+		return Rgba{R: 0.02, G: 0.36, B: 0.13, A: 1} // dark green, for a light viewport
+	}
+	return Rgba{R: 0.24, G: 0.85, B: 0.40, A: 1} // bright green, for a dark viewport
+}
+
+// relativeLuminance is WCAG 2.1's L on straight sRGB — how light a colour reads, which is what
+// decides which shade contrasts against it.
+func relativeLuminance(c Rgba) float64 {
+	lin := func(v float64) float64 {
+		if v <= 0.03928 {
+			return v / 12.92
+		}
+		return stdmath.Pow((v+0.055)/1.055, 2.4)
+	}
+	return 0.2126*lin(float64(c.R)) + 0.7152*lin(float64(c.G)) + 0.0722*lin(float64(c.B))
 }
 
 // resolvePalette extracts a complete palette from a Blender theme document: direct
@@ -155,6 +191,9 @@ func resolveDirect(doc *blenderxml.Node, b directBinding) (Rgba, error) {
 
 // derive computes the binding's color from the resolved direct tokens.
 func (d derivedBinding) derive(p Palette) Rgba {
+	if d.pick != nil {
+		return d.pick(p)
+	}
 	c := p.Color(d.base)
 	if d.alphaScale != 0 {
 		c.A = clamp01(c.A * d.alphaScale)

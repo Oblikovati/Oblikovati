@@ -34,6 +34,7 @@ var viewportContrastFloors = []contrastFloor{
 	{types.TokenSketchCandidate, 3.0, "hover/candidate feedback"},
 	{types.TokenSnapGlyph, 3.0, "snap glyphs"},
 	{types.TokenDimensionDriving, 4.5, "driving dimension text"},
+	{types.TokenDimensionSketch, 4.5, "sketch dimension annotation"},
 	{types.TokenDimensionDriven, 4.5, "driven dimension text"},
 }
 
@@ -64,19 +65,6 @@ func TestSketchGeometryHasHeadroom(t *testing.T) {
 			t.Errorf("%s theme: sketch geometry is %.2f:1, want >= %.1f:1 for the primary linework", th.Name(), got, want)
 		}
 	}
-}
-
-// relativeLuminance is WCAG 2.1's L, on straight (non-premultiplied) sRGB. Alpha is ignored:
-// these tokens are drawn over the background, so the opaque colour is the legibility ceiling —
-// a translucent one can only be worse, never better.
-func relativeLuminance(c Rgba) float64 {
-	lin := func(v float64) float64 {
-		if v <= 0.03928 {
-			return v / 12.92
-		}
-		return stdmath.Pow((v+0.055)/1.055, 2.4)
-	}
-	return 0.2126*lin(float64(c.R)) + 0.7152*lin(float64(c.G)) + 0.0722*lin(float64(c.B))
 }
 
 // contrastRatio is WCAG 2.1's (L1+0.05)/(L2+0.05), lighter colour first.
