@@ -16,11 +16,16 @@ import (
 // groundAlbedo is the neutral matte grey of the shadow-catching ground plane.
 var groundAlbedo = [4]float32{0.55, 0.55, 0.57, 1}
 
-// wantGround reports whether to draw the ground plane: the Ground Shadows toggle is on, the
-// document's display-settings keep the ground plane visible (M16-F07 #643), and the active
-// style shades faces (a wireframe style has no surfaces to receive a shadow).
+// wantGround reports whether to draw the ground plane: the document's display-settings keep it
+// visible (M16-F07 #643) and the active style shades faces (a wireframe style has no surfaces to
+// draw it on).
+//
+// It deliberately does NOT consult Ground Shadows. That toggle controls whether the ground
+// RECEIVES the cast shadow — applyShadow's castDirect — not whether the ground exists. Gating
+// both on it made View ▸ Ground Plane a no-op in either direction on a fresh part, where ground
+// shadows are off (#2042), while its tooltip promised it shows and hides the ground.
 func wantGround(s *app.Session) bool {
-	if !s.ShadowSettings().GroundShadows || !displayGroundVisible(s) {
+	if !displayGroundVisible(s) {
 		return false
 	}
 	return renderer.PassSetFor(s.VisualStyle()).Faces != renderer.ShadeNone

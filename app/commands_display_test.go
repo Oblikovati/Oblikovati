@@ -47,19 +47,19 @@ func TestDisplaySettingsCommandOpensPanel(t *testing.T) {
 // document's display-settings ground visibility, end to end through the ribbon command.
 func TestGroundPlaneToggleCommand(t *testing.T) {
 	s := registeredSession(t)
-	if !s.GroundPlaneVisible() {
-		t.Fatal("ground plane should start visible by default")
+	if s.GroundPlaneVisible() {
+		t.Fatal("ground plane should start hidden by default (#2042)")
 	}
 	if err := s.Execute("View.GroundPlane"); err != nil {
 		t.Fatalf("View.GroundPlane: %v", err)
 	}
-	if s.GroundPlaneVisible() {
-		t.Error("ground plane should be hidden after one toggle")
+	if !s.GroundPlaneVisible() {
+		t.Error("ground plane should be visible after one toggle")
 	}
 	if err := s.Execute("View.GroundPlane"); err != nil {
-		t.Fatalf("View.GroundPlane (back on): %v", err)
+		t.Fatalf("View.GroundPlane (back off): %v", err)
 	}
-	if !s.GroundPlaneVisible() {
-		t.Error("ground plane should be visible again after the second toggle")
+	if s.GroundPlaneVisible() {
+		t.Error("ground plane should be hidden again after the second toggle")
 	}
 }

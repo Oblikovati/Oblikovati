@@ -27,7 +27,8 @@ func TestDefaultSettingsAreValid(t *testing.T) {
 	if !s.DisplayModeSource.IsValid() {
 		t.Errorf("default DisplayModeSource %v invalid", s.DisplayModeSource)
 	}
-	if !s.GroundPlane.Visible {
-		t.Error("default ground plane should be visible")
+	// Opt-in, so the ribbon toggle's reported state matches what a fresh part shows (#2042).
+	if s.GroundPlane.Visible {
+		t.Error("default ground plane should be hidden")
 	}
 }

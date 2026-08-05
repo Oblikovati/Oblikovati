@@ -48,8 +48,13 @@ func DefaultSettings() Settings {
 		NewWindowDisplayMode:     types.ShadedWithEdgesRendering,
 		DisplayModeSource:        types.DefaultDisplayModeSource,
 		NewWindowProjection:      types.OrthographicProjection,
+		// The ground plane is opt-in. It used to default visible while a second, independent
+		// flag (the lighting rig's ground shadows, off by default) decided whether it was
+		// actually drawn — so View ▸ Ground Plane reported "on" and showed nothing. Now this
+		// flag alone decides, which only reads honestly if its default matches what a fresh
+		// part shows: no ground (#2042).
 		GroundPlane: GroundPlaneSettings{
-			Visible: true, Color: types.NewColor(120, 120, 128), HeightOffset: 0,
+			Visible: false, Color: types.NewColor(120, 120, 128), HeightOffset: 0,
 			DisplayGridLines: true, MinorGridLineSpacing: 1, MinorLinesPerMajorGridLine: 10,
 			Opacity: 0.6, Reflectivity: 0.2,
 		},
