@@ -54,6 +54,7 @@ func (s *Session) StartTool(t Tool) {
 	}
 	s.notice = ""
 	s.tool = &ToolInstance{tool: t}
+	s.placementStartedByClick = false // a fresh command may still take its first point by typing
 	t.Start(s)
 	s.installToolFilter() // derive the filter from the tool's declared AcceptedKinds (engine)
 }
@@ -120,6 +121,7 @@ func (s *Session) OK() error {
 func (s *Session) finishToolCommit() {
 	s.notice = ""
 	s.tool = nil
+	s.placementStartedByClick = false
 	s.restoreSelectionFilter()      // hand selection back to the ambient filter (engine)
 	s.Graphics().ClearInteraction() // a committed command's transient preview vanishes
 	s.dropCommandMiniToolbars()     // command-bound mini-toolbars die with the tool (M05-F07)
@@ -153,6 +155,7 @@ func (s *Session) CancelTool() {
 	if s.tool != nil {
 		s.tool.tool.Cancel(s)
 		s.tool = nil
+		s.placementStartedByClick = false
 		s.restoreSelectionFilter()      // hand selection back to the ambient filter (engine)
 		s.Graphics().ClearInteraction() // a cancelled command's transient preview vanishes
 		s.dropCommandMiniToolbars()     // command-bound mini-toolbars die with the tool (M05-F07)

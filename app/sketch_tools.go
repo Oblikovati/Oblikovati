@@ -275,6 +275,26 @@ type AutoCommitTool interface {
 	AutoCommits() bool
 }
 
+// PlacingGeometry reports whether a geometry placement is under way — a tool that consumes
+// plane-point clicks is running AND the user has put its first point down with the mouse.
+//
+// While that is true the keyboard belongs to the placement's own entry surfaces (the coordinate
+// HUD and the in-place dimension boxes) rather than the Command Window: see
+// [Session.BeginCommandTyping].
+//
+// The first mouse click is the trigger, not the tool starting, because a command that has been
+// started but not yet clicked is exactly when a user may want to TYPE the first point's
+// coordinates into the Command Window instead.
+//
+//	if s.PlacingGeometry() { /* the shape being placed owns typed keys */ }
+func (s *Session) PlacingGeometry() bool {
+	if s.tool == nil || !s.placementStartedByClick {
+		return false
+	}
+	_, placing := s.tool.tool.(PlaneClickTool)
+	return placing
+}
+
 // sketchClick routes a sketch-plane click to the active tool when it consumes plane
 // points, returning true if it handled the click (so it is not treated as a pick). When
 // the tool is an [AutoCommitTool] and now has enough input, the geometry is created
@@ -288,6 +308,10 @@ func (s *Session) sketchClick(px, py float64) bool {
 		return false
 	}
 	ct.ClickAt(s, px, py)
+	// From the first MOUSE-placed point the shape's own entry surfaces own the keyboard (see
+	// PlacingGeometry). It is deliberately NOT set when the tool merely starts: until a point is
+	// down, the Command Window is still how a user types the first point's coordinates.
+	s.placementStartedByClick = true
 	s.autoCommitSketchTool()
 	return true
 }
