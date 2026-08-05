@@ -395,6 +395,12 @@ func surfaceFeatureCommands() []*CommandDefinition {
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("patch").WithButtonStyle(LargeIconButton).
 			WithTooltip("Patch — fill a closed sketch boundary with a surface."),
+		NewCommand("Surface.Unwrap", "Unwrap", "Surface", func(s *Session) error {
+			s.StartFeatureTool(NewUnwrapTool())
+			return nil
+		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
+			WithIcon("unwrap").WithButtonStyle(SmallIconButton).
+			WithTooltip("Unwrap — flatten a cylindrical face into its planar development, appended as a sheet."),
 		NewCommand("Surface.Trim", "Trim", "Surface", func(s *Session) error {
 			s.StartFeatureTool(NewSurfaceTrimTool())
 			return nil

@@ -120,6 +120,7 @@ func registerSurfaceToolDialogs(s *toolDialogSet) {
 	s.registerToolDialog(drawDeleteFaceDialog, "DeleteFaceTool")
 	s.registerToolDialog(drawReplaceFaceDialog, "ReplaceFaceTool")
 	s.registerToolDialog(drawThickenDialog, "ThickenTool")
+	s.registerToolDialog(drawUnwrapDialog, "UnwrapTool")
 }
 
 // registerSheetMetalToolDialogs adds the one Sheet Metal router, which serves all seventeen
