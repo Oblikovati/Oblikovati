@@ -46,6 +46,9 @@ type TranslationOptions struct {
 	// "m", "in" or "ft". Empty ⇒ millimetres. It is ignored on import, where the
 	// unit is read from the file.
 	FileUnit string
+	// Name labels the exported product — what a reader shows in its model tree. Empty ⇒ the
+	// writer's own default. It is ignored on import, where the name is read from the file.
+	Name string
 	// ChordTolerance bounds curve/surface faceting used by validation/mass props.
 	ChordTolerance float64
 	// Progress, when non-nil, receives incremental progress and can cancel a long import (S13,

@@ -36,22 +36,44 @@ func (Writer) ExportSolids(bodies []*topo.Body, opts exchange.TranslationOptions
 	}
 	w := part21.NewWriter()
 	emit := geommap.NewEmitter(w, opts.ExportScale()) // database-unit (cm) → file unit
-	emitUnitContext(w, opts.FileUnit)
+	// The product structure comes first so the file reads top-down, and because the geometric
+	// representation context it emits carries the unit declaration the geometry is expressed in.
+	ps := emitProductStructure(w, opts.Name, opts.FileUnit)
+	shapes := make([]int, 0, len(bodies))
+	solids := true
 	for _, body := range bodies {
-		if _, err := topomap.BodyToStep(emit, body); err != nil {
+		id, err := topomap.BodyToStep(emit, body)
+		if err != nil {
 			return nil, nil, err
 		}
+		shapes = append(shapes, id)
+		solids = solids && body.IsSolid()
 	}
-	return w.Emit(ap203Header()), nil, nil
+	// Without this the DATA section is unreachable geometry: a conformant reader enters at
+	// SHAPE_DEFINITION_REPRESENTATION and would find nothing to show (#2055).
+	emitShapeRepresentation(w, ps, shapes, solids)
+	return w.Emit(ap203Header()), mixedBodyWarnings(bodies), nil
 }
 
-// emitUnitContext emits the file's SI (mm/cm/m) or conversion-based (in/ft) length
-// unit plus a unit-assigned context, so the file's lengths are unambiguous on
-// re-import. An empty unit defaults to millimetres. The reader locates the unit by
-// scanning for GLOBAL_UNIT_ASSIGNED_CONTEXT (units.go), so the context id needs no
-// further reference here.
-func emitUnitContext(w *part21.Writer, fileUnit string) {
-	w.Add("GLOBAL_UNIT_ASSIGNED_CONTEXT", part21.FormatList(part21.Ref(lengthUnitRef(w, fileUnit))))
+// mixedBodyWarnings reports a body set that mixes solids and open shells. One shape
+// representation cannot hold both — ADVANCED_BREP_SHAPE_REPRESENTATION takes solid b-reps and
+// MANIFOLD_SURFACE_SHAPE_REPRESENTATION takes surface models — so the file declares the surface
+// form, which readers accept for both, and the user is told the distinction was flattened.
+func mixedBodyWarnings(bodies []*topo.Body) []string {
+	solids, shells := 0, 0
+	for _, b := range bodies {
+		if b.IsSolid() {
+			solids++
+			continue
+		}
+		shells++
+	}
+	if solids > 0 && shells > 0 {
+		return []string{fmt.Sprintf(
+			"step export: %d solid and %d surface bodies share one shape representation; "+
+				"the file declares the surface form, which readers accept for both", solids, shells)}
+	}
+	return nil
 }
 
 // lengthUnitRef emits the LENGTH_UNIT entity for fileUnit and returns its id.
