@@ -139,7 +139,10 @@ func FormatListPattern(e FormatListEntry) []float64 {
 }
 
 // sketchFormatListCommands registers the three lists on the Sketch and 3D Sketch tabs. They apply
-// in both environments: a 3D sketch carries the same per-entity overrides.
+// in both environments: a 3D sketch carries the same per-entity overrides — the side table lives
+// on the sketch base both types embed, and the 3D overlay resolves each curve's style through it
+// (#2039; before that the table existed only on the planar sketch, so the 3D lists edited
+// nothing and the comment here claimed the opposite).
 func sketchFormatListCommands() []*CommandDefinition {
 	var cmds []*CommandDefinition
 	for _, l := range []struct {

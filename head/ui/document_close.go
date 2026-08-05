@@ -11,7 +11,7 @@ import (
 )
 
 func closeDocumentNow(s *app.Session, d *doc.Document, skipSave bool) {
-	if err := s.Workspace().Close(d, skipSave); err != nil {
+	if err := s.CloseDocument(d, skipSave); err != nil {
 		fmt.Fprintf(os.Stderr, "close %q: %v\n", d.FullDocumentName(), err)
 	}
 }

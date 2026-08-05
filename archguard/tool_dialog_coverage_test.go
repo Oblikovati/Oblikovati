@@ -73,19 +73,46 @@ var (
 	paramsMethodRe     = regexp.MustCompile(`func \(\w+ \*(\w+Tool)\) Params\(\) ToolParams`)
 	registerDialogRe   = regexp.MustCompile(`(?s)registerToolDialog\(([^)]*)\)`)
 	toolLiteralRe      = regexp.MustCompile(`"(\w+Tool)"`)
+	toolConstructorRe  = regexp.MustCompile(`func (New\w+)\([^)]*\) \*(\w+Tool) \{`)
 )
 
-// featureToolConstructors collects every part-feature tool activated through
+// featureToolConstructors collects every part-feature TOOL TYPE activated through
 // StartFeatureTool (directly or via a func() PartFeatureTool flyout thunk).
+//
+// It resolves each constructor to the type it returns rather than assuming NewXTool builds an
+// XTool. One tool type may have several constructors — ModelToleranceTool has NewModelFrameTool
+// and NewModelDatumTool for its two modes (#2049) — and the naming assumption reported both as
+// tools with no dialog while the one dialog serving them was registered under the real type.
 func featureToolConstructors(t *testing.T) map[string]struct{} {
 	t.Helper()
-	out := map[string]struct{}{}
+	names := map[string]struct{}{}
 	for _, src := range readGoSources(t, "../app/commands_*.go") {
-		collectMatches(startFeatureToolRe, src, out)
-		collectMatches(partFeatureThunkRe, src, out)
+		collectMatches(startFeatureToolRe, src, names)
+		collectMatches(partFeatureThunkRe, src, names)
 	}
-	if len(out) == 0 {
+	if len(names) == 0 {
 		t.Fatal("no feature-tool constructors found — the StartFeatureTool scan is broken")
+	}
+	returns := toolConstructorReturns(t)
+	out := make(map[string]struct{}, len(names))
+	for name := range names {
+		if typ, ok := returns["New"+name]; ok {
+			out[typ] = struct{}{}
+			continue
+		}
+		out[name] = struct{}{} // no declaration found: fall back to the constructor's own name
+	}
+	return out
+}
+
+// toolConstructorReturns maps each New*Tool constructor to the tool type it returns.
+func toolConstructorReturns(t *testing.T) map[string]string {
+	t.Helper()
+	out := map[string]string{}
+	for _, src := range readGoSources(t, "../app/*.go") {
+		for _, m := range toolConstructorRe.FindAllStringSubmatch(src, -1) {
+			out[m[1]] = m[2]
+		}
 	}
 	return out
 }

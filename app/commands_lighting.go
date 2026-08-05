@@ -78,7 +78,7 @@ func shadowCommands() []*CommandDefinition {
 			func(sh *ShadowRig) { sh.ObjectShadows = !sh.ObjectShadows },
 			func(sh ShadowRig) bool { return sh.ObjectShadows }),
 		shadowToggle("View.GroundShadows", "Ground Shadows", "shadow-ground",
-			"Ground Shadows — shadows cast onto the ground plane.",
+			"Ground Shadows — shadows cast onto the ground plane (show the floor with View ▸ Ground Plane).",
 			func(sh *ShadowRig) { sh.GroundShadows = !sh.GroundShadows },
 			func(sh ShadowRig) bool { return sh.GroundShadows }),
 		shadowToggle("View.AmbientShadows", "Ambient Shadows", "shadow-ambient",

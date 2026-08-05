@@ -56,6 +56,12 @@ type Point3DData struct {
 	Y          float64 `yaml:"y"`
 	Z          float64 `yaml:"z"`
 	Standalone bool    `yaml:"standalone,omitempty"`
+
+	// Per-entity format overrides of a STANDALONE point (#2039); a defining point of a curve
+	// carries none. Same three fields as EntityData, spelled the same way in the file.
+	FormatLine   string  `yaml:"formatLineType,omitempty"`
+	FormatColor  string  `yaml:"formatColor,omitempty"` // "#RRGGBB"; absent ⇒ inherit
+	FormatWeight float64 `yaml:"formatLineWeight,omitempty"`
 }
 
 // Entity3DData is one 3D curve entity. Points lists the curve's defining point ids in a
@@ -63,8 +69,12 @@ type Point3DData struct {
 // circle's plane normal. Standalone points are captured in Points, not here. Unused
 // fields stay zero/omitted per kind.
 type Entity3DData struct {
-	ID           int        `yaml:"id"`
-	Kind         string     `yaml:"kind"`
+	ID   int    `yaml:"id"`
+	Kind string `yaml:"kind"`
+	// Per-entity format overrides (#2039), the same three fields the planar EntityData carries.
+	FormatLine   string     `yaml:"formatLineType,omitempty"`
+	FormatColor  string     `yaml:"formatColor,omitempty"` // "#RRGGBB"; absent ⇒ inherit
+	FormatWeight float64    `yaml:"formatLineWeight,omitempty"`
 	Points       []int      `yaml:"points,omitempty"`
 	Radius       float64    `yaml:"radius,omitempty"`
 	Axis         [3]float64 `yaml:"axis,omitempty"` // circle/helix axis (plane normal / winding axis)
@@ -170,9 +180,11 @@ func serializeSketch3D(s *Sketch3D) (SketchData3D, error) {
 	}
 	for _, p := range s.pts {
 		_, standalone := s.byID[p.id]
-		sd.Points = append(sd.Points, Point3DData{
+		pd := Point3DData{
 			ID: int(p.id), X: float64(p.X), Y: float64(p.Y), Z: float64(p.Z), Standalone: standalone,
-		})
+		}
+		pd.FormatLine, pd.FormatColor, pd.FormatWeight = s.encodeEntityFormat(p.id)
+		sd.Points = append(sd.Points, pd)
 	}
 	for _, e := range s.ents {
 		if _, isPoint := e.(*Point3D); isPoint {
@@ -185,6 +197,7 @@ func serializeSketch3D(s *Sketch3D) (SketchData3D, error) {
 		if err != nil {
 			return SketchData3D{}, err
 		}
+		ed.FormatLine, ed.FormatColor, ed.FormatWeight = s.encodeEntityFormat(e.EntityID())
 		sd.Entities = append(sd.Entities, ed)
 	}
 	for _, con := range s.geomCons.All() {
@@ -364,6 +377,7 @@ func restorePoints3D(s *Sketch3D, points []Point3DData) (map[int]*Point3D, uint6
 	for _, pd := range points {
 		p := restorePoint3D(s, pd)
 		s.pinEntityID3D(p, pd.ID)
+		s.decodeEntityFormat(p.EntityID(), pd.FormatLine, pd.FormatColor, pd.FormatWeight)
 		idmap[pd.ID] = p
 		if uint64(pd.ID) > maxID {
 			maxID = uint64(pd.ID)
@@ -392,6 +406,7 @@ func restoreEntities3D(s *Sketch3D, entities []Entity3DData, idmap map[int]*Poin
 			return nil, 0, err
 		}
 		s.pinEntityID3D(e, ed.ID)
+		s.decodeEntityFormat(e.EntityID(), ed.FormatLine, ed.FormatColor, ed.FormatWeight)
 		entmap[ed.ID] = e
 		if uint64(ed.ID) > maxID {
 			maxID = uint64(ed.ID)

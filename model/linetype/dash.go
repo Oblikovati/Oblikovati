@@ -12,23 +12,43 @@ const dotLength = 0.02 // cm
 // would otherwise loop forever along an edge.
 const minCycle = 1e-6
 
+// dashable is a point a pattern can be walked along: planar or in model space. The dashing is
+// pure arc-length arithmetic, so the 2D and 3D forms differ only in the point type (#2039).
+type dashable[P any] interface {
+	DistanceTo(P) math.Scalar
+	Lerp(P, math.Scalar) P
+}
+
 // DashPolyline splits a polyline into the pen-down segments of a .lin pattern,
 // flowing the pattern continuously across vertices. A nil/degenerate pattern
 // returns nil — the caller draws the polyline solid.
 //
 //	segs := linetype.DashPolyline(pts, false, linetype.Builtin(types.SketchLineCenter))
 func DashPolyline(pts []math.Point2, closed bool, pattern []float64) [][2]math.Point2 {
+	return dashPolyline(pts, closed, pattern)
+}
+
+// DashPolyline3D is DashPolyline for a model-space polyline — what the 3D-sketch overlay dashes
+// a construction curve or a line-type override with.
+//
+//	segs := linetype.DashPolyline3D(sketch.SamplePolyline3D(e, 64), false, pattern)
+func DashPolyline3D(pts []math.Point3, closed bool, pattern []float64) [][2]math.Point3 {
+	return dashPolyline(pts, closed, pattern)
+}
+
+// dashPolyline walks the pattern along a polyline of either dimension.
+func dashPolyline[P dashable[P]](pts []P, closed bool, pattern []float64) [][2]P {
 	steps, cycle := penSteps(pattern)
 	if len(pts) < 2 || cycle < minCycle {
 		return nil
 	}
 	if closed {
-		pts = append(append([]math.Point2{}, pts...), pts[0])
+		pts = append(append([]P{}, pts...), pts[0])
 	}
-	segs := [][2]math.Point2{}
+	segs := [][2]P{}
 	cur := dashCursor{steps: steps, rem: steps[0].length}
 	for i := 1; i < len(pts); i++ {
-		segs = cur.walkEdge(segs, pts[i-1], pts[i])
+		segs = walkEdge(&cur, segs, pts[i-1], pts[i])
 	}
 	return segs
 }
@@ -67,7 +87,7 @@ type dashCursor struct {
 
 // walkEdge appends the pen-down sub-segments of one polyline edge, advancing the
 // pattern cursor so the pattern continues seamlessly onto the next edge.
-func (c *dashCursor) walkEdge(segs [][2]math.Point2, p, q math.Point2) [][2]math.Point2 {
+func walkEdge[P dashable[P]](c *dashCursor, segs [][2]P, p, q P) [][2]P {
 	total := float64(p.DistanceTo(q))
 	for at := 0.0; total-at > minCycle; {
 		step := c.rem
@@ -75,7 +95,9 @@ func (c *dashCursor) walkEdge(segs [][2]math.Point2, p, q math.Point2) [][2]math
 			step = left
 		}
 		if c.steps[c.i].down {
-			segs = append(segs, [2]math.Point2{p.Lerp(q, at/total), p.Lerp(q, (at+step)/total)})
+			segs = append(segs, [2]P{
+				p.Lerp(q, math.Scalar(at/total)), p.Lerp(q, math.Scalar((at+step)/total)),
+			})
 		}
 		at += step
 		c.advance(step)

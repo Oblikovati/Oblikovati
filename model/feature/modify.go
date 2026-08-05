@@ -376,15 +376,6 @@ func (c *ModifyFeatures) AddMoveFaceRotate(faceKeys [][]byte, axisPoint math.Poi
 	})
 }
 
-func (c *ModifyFeatures) AddFaceOffset(faceKeys [][]byte, distance float64) *PartFeature {
-	return c.AddFaceOffsetFn(faceKeys, constFloat(distance))
-}
-
-// AddFaceOffsetFn is AddFaceOffset with a live (parameter-driven) distance.
-func (c *ModifyFeatures) AddFaceOffsetFn(faceKeys [][]byte, distance func() float64) *PartFeature {
-	return c.engine.Add(&FaceOffsetFeature{faceEditFeature: faceEditFeature{kind: "face-offset", faceKeys: faceKeys}, distance: distance})
-}
-
 // AddFaceOffsetApprox is AddFaceOffsetFn carrying the #331 approximation request (the kernel
 // computes the exact offset, which satisfies every approximation bound).
 func (c *ModifyFeatures) AddFaceOffsetApprox(faceKeys [][]byte, distance func() float64, approx types.FeatureApproximationType) *PartFeature {

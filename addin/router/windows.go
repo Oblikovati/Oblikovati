@@ -59,7 +59,7 @@ func activateViewTab(s *app.Session, in wire.ActivateViewTabArgs) (wire.OKResult
 func closeViewTab(s *app.Session, in wire.CloseViewTabArgs) (wire.OKResult, error) {
 	for _, d := range s.Workspace().Documents() {
 		if uint64(d.ID()) == in.Document {
-			if err := s.Workspace().Close(d, in.Force); err != nil {
+			if err := s.CloseDocument(d, in.Force); err != nil {
 				return wire.OKResult{}, err
 			}
 			return wire.OKResult{OK: true}, nil

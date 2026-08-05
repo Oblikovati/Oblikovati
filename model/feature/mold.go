@@ -73,11 +73,6 @@ func NewCoreCavityFeatures(engine *PartFeatures) *CoreCavityFeatures {
 	return &CoreCavityFeatures{engine: engine}
 }
 
-// AddByPartingPlane splits the running block at position along axis, with shrinkage.
-func (c *CoreCavityFeatures) AddByPartingPlane(axis PartingAxis, position, shrinkage float64) *PartFeature {
-	return c.AddByPartingPlaneFn(axis, constFloat(position), shrinkage)
-}
-
 // AddByPartingPlaneFn is AddByPartingPlane with a live (parameter-driven) position.
 func (c *CoreCavityFeatures) AddByPartingPlaneFn(axis PartingAxis, position func() float64, shrinkage float64) *PartFeature {
 	def := &CoreCavityDefinition{Axis: axis, Position: position, Shrinkage: shrinkage}

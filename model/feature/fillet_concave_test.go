@@ -19,7 +19,7 @@ func filletConcaved(t *testing.T, r float64, strategy types.FilletConcaveStrateg
 	body, edge := lExtrude(t)
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(body)
-	fl := NewDressUpFeatures(fs).AddFilletConcave([][]byte{edge}, func() float64 { return r }, strategy)
+	fl := NewDressUpFeatures(fs).AddFilletDef(&FilletDefinition{EdgeKeys: [][]byte{edge}, Radius: func() float64 { return r }, CornerType: types.FilletCornerMiter, ConcaveStrategy: strategy})
 	fs.Recompute()
 	if !fl.Health().OK() {
 		t.Fatalf("concave fillet (%v) sick: %+v", strategy, fl.Health())
@@ -57,7 +57,7 @@ func TestFilletConcaveInwardDegenerate(t *testing.T) {
 	body, edge := lExtrude(t)
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(body)
-	fl := NewDressUpFeatures(fs).AddFilletConcave([][]byte{edge}, func() float64 { return 0.6 }, types.FilletConcaveInward)
+	fl := NewDressUpFeatures(fs).AddFilletDef(&FilletDefinition{EdgeKeys: [][]byte{edge}, Radius: func() float64 { return 0.6 }, CornerType: types.FilletCornerMiter, ConcaveStrategy: types.FilletConcaveInward})
 	fs.Recompute()
 	if fl.Health().OK() {
 		t.Error("inward fillet of this L should be sick (recess tangents fall off the bounded faces)")

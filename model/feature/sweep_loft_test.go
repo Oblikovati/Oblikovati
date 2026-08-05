@@ -407,7 +407,7 @@ func TestLoftConditionsRoundTrip(t *testing.T) {
 	fs := NewPartFeatures(nil)
 	first := LoftEnd{Condition: LoftAngle, Angle: 0.6, Impact: 1.5}
 	last := LoftEnd{Condition: LoftDirection, Angle: 0.3, Impact: 2, Reversed: true}
-	NewLoftFeatures(fs).AddConditioned([]LoftSection{{Sketch: bottom, ProfileIndex: 0}, {Sketch: top, ProfileIndex: 0}}, false, ops.NewBody, first, last)
+	NewLoftFeatures(fs).addConditioned([]LoftSection{{Sketch: bottom, ProfileIndex: 0}, {Sketch: top, ProfileIndex: 0}}, false, ops.NewBody, first, last)
 
 	data, err := fs.MarshalRecipe(idx)
 	if err != nil {

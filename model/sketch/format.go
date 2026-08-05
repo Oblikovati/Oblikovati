@@ -38,14 +38,14 @@ func (f EntityFormat) IsDefault() bool {
 }
 
 // EntityFormat returns the entity's overrides, or ok=false when it takes the sketch defaults.
-func (s *Sketch) EntityFormat(id ID) (EntityFormat, bool) {
+func (s *base) EntityFormat(id ID) (EntityFormat, bool) {
 	f, ok := s.formats[id]
 	return f, ok
 }
 
 // SetEntityFormat stores an entity's overrides. A format that overrides nothing clears the entry
 // instead of storing an empty one, so "no overrides" has exactly one representation.
-func (s *Sketch) SetEntityFormat(id ID, f EntityFormat) {
+func (s *base) SetEntityFormat(id ID, f EntityFormat) {
 	if f.IsDefault() {
 		s.ClearEntityFormat(id)
 		return
@@ -58,7 +58,7 @@ func (s *Sketch) SetEntityFormat(id ID, f EntityFormat) {
 }
 
 // ClearEntityFormat returns an entity to the sketch defaults.
-func (s *Sketch) ClearEntityFormat(id ID) {
+func (s *base) ClearEntityFormat(id ID) {
 	delete(s.formats, id)
 	s.formatRev++
 }
@@ -67,15 +67,15 @@ func (s *Sketch) ClearEntityFormat(id ID) {
 // neither the geometry version nor the entity count, so a viewport that caches drawn sketch
 // geometry has nothing else to notice a format change by and would show stale colours (#2015).
 // It counts edits rather than hashing the table so the check stays O(1).
-func (s *Sketch) FormatRevision() uint64 { return s.formatRev }
+func (s *base) FormatRevision() uint64 { return s.formatRev }
 
 // EntityFormatCount reports how many entities carry overrides — what persistence writes and what
 // the prune tests assert against.
-func (s *Sketch) EntityFormatCount() int { return len(s.formats) }
+func (s *base) EntityFormatCount() int { return len(s.formats) }
 
 // CopyEntityFormat carries one entity's overrides onto another, for the pattern, mirror and
 // block-instance copies. Copying from an unstyled entity stores nothing.
-func (s *Sketch) CopyEntityFormat(from, to ID) {
+func (s *base) CopyEntityFormat(from, to ID) {
 	f, ok := s.formats[from]
 	if !ok {
 		return
@@ -107,25 +107,37 @@ func (target *Sketch) carryEntityFormats(from *Sketch, m map[Entity]Entity) {
 // colour is a "#RRGGBB" string, matching the sketch-level colour field: its presence is what
 // marks an override, so there is no separate source flag to keep in step.
 
-// writeEntityFormat copies an entity's overrides onto its serialized record.
-func (s *Sketch) writeEntityFormat(ed *EntityData, id ID) {
+// encodeEntityFormat renders an entity's overrides as the three serialized fields, empty when it
+// overrides nothing. Split out of writeEntityFormat because the planar and the 3D entity records
+// are different structs carrying the same three fields (#2039).
+func (s *base) encodeEntityFormat(id ID) (lineType, color string, weight float64) {
 	f, ok := s.EntityFormat(id)
 	if !ok {
-		return
+		return "", "", 0
 	}
-	ed.FormatLine, ed.FormatWeight = f.LineType, f.LineWeight
 	if f.Color.IsOverride() {
-		ed.FormatColor = formatColorHex(f.Color)
+		color = formatColorHex(f.Color)
 	}
+	return f.LineType, color, f.LineWeight
 }
 
-// readEntityFormat restores an entity's overrides from its serialized record.
-func (s *Sketch) readEntityFormat(ed EntityData, id ID) {
-	f := EntityFormat{LineType: ed.FormatLine, LineWeight: ed.FormatWeight}
-	if c, ok := parseFormatColorHex(ed.FormatColor); ok {
+// decodeEntityFormat restores an entity's overrides from the three serialized fields.
+func (s *base) decodeEntityFormat(id ID, lineType, color string, weight float64) {
+	f := EntityFormat{LineType: lineType, LineWeight: weight}
+	if c, ok := parseFormatColorHex(color); ok {
 		f.Color = c
 	}
 	s.SetEntityFormat(id, f) // a format that overrides nothing stores nothing
+}
+
+// writeEntityFormat copies an entity's overrides onto its serialized record.
+func (s *base) writeEntityFormat(ed *EntityData, id ID) {
+	ed.FormatLine, ed.FormatColor, ed.FormatWeight = s.encodeEntityFormat(id)
+}
+
+// readEntityFormat restores an entity's overrides from its serialized record.
+func (s *base) readEntityFormat(ed EntityData, id ID) {
+	s.decodeEntityFormat(id, ed.FormatLine, ed.FormatColor, ed.FormatWeight)
 }
 
 // formatColorHex renders a colour as "#RRGGBB".

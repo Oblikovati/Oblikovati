@@ -37,23 +37,33 @@ func getSketch3D(_ *app.Session, part *compdef.PartComponentDefinition, in wire.
 }
 
 // editSketch3D enters edit mode; exitEditSketch3D leaves it.
-func editSketch3D(_ *app.Session, part *compdef.PartComponentDefinition, in wire.Sketch3DArgs) (wire.EditSketch3DResult, error) {
-	return setSketch3DEdit(part, in, true)
+func editSketch3D(s *app.Session, part *compdef.PartComponentDefinition, in wire.Sketch3DArgs) (wire.EditSketch3DResult, error) {
+	return setSketch3DEdit(s, part, in, true)
 }
 
-func exitEditSketch3D(_ *app.Session, part *compdef.PartComponentDefinition, in wire.Sketch3DArgs) (wire.EditSketch3DResult, error) {
-	return setSketch3DEdit(part, in, false)
+func exitEditSketch3D(s *app.Session, part *compdef.PartComponentDefinition, in wire.Sketch3DArgs) (wire.EditSketch3DResult, error) {
+	return setSketch3DEdit(s, part, in, false)
 }
 
-func setSketch3DEdit(part *compdef.PartComponentDefinition, in wire.Sketch3DArgs, edit bool) (wire.EditSketch3DResult, error) {
+// setSketch3DEdit opens or closes a 3D sketch for editing and echoes the resulting state.
+//
+// It goes through the SESSION, mirroring the planar setSketchEdit. Marking the sketch object
+// edited without entering the environment answered {"editing": true} while InSketch3D stayed
+// false — so the contextual 3D Sketch tab never appeared and every command gated on it stayed
+// disabled, which is what made the 3D sketch undriveable over the API and made a live sweep read
+// its whole ribbon as inert.
+func setSketch3DEdit(s *app.Session, part *compdef.PartComponentDefinition, in wire.Sketch3DArgs, edit bool) (wire.EditSketch3DResult, error) {
 	sk, err := sketch3DAtIndex(part, in.SketchIndex)
 	if err != nil {
 		return wire.EditSketch3DResult{}, err
 	}
-	if edit {
-		sk.Edit()
-	} else {
-		sk.ExitEdit()
+	switch {
+	case edit:
+		s.EnterSketch3D(sk)
+	case s.ActiveSketch3D() == sk:
+		s.ExitSketch3D()
+	default:
+		sk.ExitEdit() // a sketch marked edited without being the session's active one
 	}
 	return wire.EditSketch3DResult{SketchIndex: in.SketchIndex, Editing: sk.IsEditing()}, nil
 }

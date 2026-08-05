@@ -53,8 +53,10 @@ func handleViewportSelection(s *app.Session) {
 	}
 	// The direct-manipulation machines are mutually exclusive by construction — each is gated
 	// on its own tool or mode being active — so they share one guard: place new sketch
-	// geometry, drag existing geometry, move a point cloud, or slide a NURBS control vertex.
-	if updateSketchPlacement(s) || updateSketchDrag(s) || updateCloudDrag(s) || updateControlPointDrag(s) {
+	// geometry, drag existing geometry, move a point cloud, slide a NURBS control vertex, or
+	// slide a free-form cage vertex.
+	if updateSketchPlacement(s) || updateSketchDrag(s) || updateCloudDrag(s) ||
+		updateControlPointDrag(s) || updateFreeformCageDrag(s) {
 		return
 	}
 	if updateBoxSelect(s) {
@@ -85,6 +87,42 @@ func updateControlPointDrag(s *app.Session) bool {
 	}
 	lx, ly := viewportCursor()
 	return s.BeginCVDrag(lx, ly)
+}
+
+// cageDragSession is the drag machine the cage editor needs — five methods, not the whole
+// session (audit I5).
+type cageDragSession interface {
+	CageEditActive() bool
+	CageDragActive() bool
+	BeginCageDrag(px, py float64) bool
+	UpdateCageDrag(px, py float64)
+	CommitCageDrag()
+}
+
+var _ cageDragSession = (*app.Session)(nil)
+
+// updateFreeformCageDrag advances interactive free-form cage editing and reports whether it
+// consumed this frame's left input. While the Edit Freeform Cage tool is active, a left press on
+// a cage handle begins the drag, the cursor slides it (the body re-subdivides live), and release
+// commits the edit as one undo step (#2048). Mirrors updateControlPointDrag.
+func updateFreeformCageDrag(s cageDragSession) bool {
+	if !s.CageEditActive() {
+		return false
+	}
+	if s.CageDragActive() {
+		lx, ly := viewportCursor()
+		if native.MouseDown(native.MouseLeft) {
+			s.UpdateCageDrag(lx, ly)
+		} else {
+			s.CommitCageDrag()
+		}
+		return true
+	}
+	if !native.IsItemClicked(native.MouseLeft) {
+		return false
+	}
+	lx, ly := viewportCursor()
+	return s.BeginCageDrag(lx, ly)
 }
 
 // updateCloudDrag advances the interactive Move of a point cloud and reports whether it consumed

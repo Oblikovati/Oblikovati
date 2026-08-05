@@ -53,7 +53,10 @@ func TestChamferTwoDistancesAsymmetric(t *testing.T) {
 	box, edge := box2(t)
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
-	ch := NewDressUpFeatures(fs).AddChamferTwoDistances([][]byte{edge}, func() float64 { return 0.3 }, func() float64 { return 0.6 })
+	ch := NewDressUpFeatures(fs).AddChamferDef(&ChamferDefinition{
+		EdgeKeys: [][]byte{edge}, Distance: func() float64 { return 0.3 },
+		Distance2: func() float64 { return 0.6 }, Type: types.ChamferTwoDistances, FlatCorners: true,
+	})
 	fs.Recompute()
 
 	if !ch.Health().OK() {
@@ -80,7 +83,10 @@ func TestChamferDistanceAngle(t *testing.T) {
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(box)
 	const d, angle = 0.4, stdmath.Pi / 6 // 30° ⇒ d2 = 0.4·tan30°
-	ch := NewDressUpFeatures(fs).AddChamferDistanceAngle([][]byte{edge}, func() float64 { return d }, func() float64 { return angle })
+	ch := NewDressUpFeatures(fs).AddChamferDef(&ChamferDefinition{
+		EdgeKeys: [][]byte{edge}, Distance: func() float64 { return d },
+		Angle: func() float64 { return angle }, Type: types.ChamferDistanceAndAngle, FlatCorners: true,
+	})
 	fs.Recompute()
 
 	if !ch.Health().OK() {
@@ -103,7 +109,10 @@ func TestChamferTwoDistancesRoundTrip(t *testing.T) {
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	fs := NewPartFeatures(nil)
 	NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 1 })
-	NewDressUpFeatures(fs).AddChamferTwoDistances([][]byte{[]byte("e0")}, func() float64 { return 0.3 }, func() float64 { return 0.6 })
+	NewDressUpFeatures(fs).AddChamferDef(&ChamferDefinition{
+		EdgeKeys: [][]byte{[]byte("e0")}, Distance: func() float64 { return 0.3 },
+		Distance2: func() float64 { return 0.6 }, Type: types.ChamferTwoDistances, FlatCorners: true,
+	})
 
 	data, err := fs.MarshalRecipe(oneSketch{sk})
 	if err != nil {

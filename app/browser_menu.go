@@ -308,13 +308,22 @@ func datumVisibilityItem(d VisibleDatum) BrowserMenuItem {
 	}}
 }
 
+// bodyMenu offers a Visibility toggle and Delete on a solid-body node. Delete appends a Delete
+// Body feature rather than dropping the body destructively, so it is undoable, suppressible and
+// reorderable like any other node — the browser is the natural place to remove a body of a
+// multi-body part, and there was no way to do it from the UI at all (#2046).
 func bodyMenu(sel Selectable) []BrowserMenuItem {
 	h, ok := sel.(BodyHandle)
 	if !ok {
 		return nil
 	}
-	return []BrowserMenuItem{{Label: "Visibility", Enabled: true, Invoke: func(s *Session) error {
-		s.ToggleBodyVisibility(h.Body)
-		return nil
-	}}}
+	return []BrowserMenuItem{
+		{Label: "Visibility", Enabled: true, Invoke: func(s *Session) error {
+			s.ToggleBodyVisibility(h.Body)
+			return nil
+		}},
+		{Label: "Delete", Enabled: true, Invoke: func(s *Session) error {
+			return s.DeleteBody(h.Body)
+		}},
+	}
 }

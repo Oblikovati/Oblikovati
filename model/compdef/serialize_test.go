@@ -702,10 +702,10 @@ func TestFilletEdgeSetsSurviveReopen(t *testing.T) {
 	if len(vertical) < 2 {
 		t.Fatalf("found %d vertical edges, want ≥2", len(vertical))
 	}
-	pf := feature.NewDressUpFeatures(def.Features()).AddFilletSets([]feature.FilletEdgeSet{
+	pf := feature.NewDressUpFeatures(def.Features()).AddFilletSetsCorner([]feature.FilletEdgeSet{
 		{EdgeKeys: [][]byte{vertical[0]}, Radius: func() float64 { return 0.4 }},
 		{EdgeKeys: [][]byte{vertical[1]}, StartRadius: func() float64 { return 0.2 }, EndRadius: func() float64 { return 0.7 }},
-	})
+	}, types.FilletCornerMiter)
 	def.Recompute()
 	if !pf.Health().OK() {
 		t.Fatalf("edge-set fillet before save = %v, want OK", pf.Health())

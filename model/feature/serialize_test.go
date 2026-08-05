@@ -63,7 +63,7 @@ func TestDressUpFeaturesRoundTrip(t *testing.T) {
 	du.AddChamfer([][]byte{[]byte("edge-c")}, func() float64 { return 0.3 })
 	du.AddShell([][]byte{[]byte("face-a")}, func() float64 { return 2 })
 	du.AddDraft([][]byte{[]byte("face-b")}, func() float64 { return 0.1 })
-	du.AddThread([]byte("face-c"), "M6x1", false)
+	du.AddThreadDef(&ThreadDefinition{FaceKey: []byte("face-c"), Designation: "M6x1", Cut: false})
 
 	data, err := fs.MarshalRecipe(oneSketch{})
 	if err != nil {
@@ -145,12 +145,12 @@ func TestDraftPullNeutralRoundTrip(t *testing.T) {
 // recipe round trip (#695).
 func TestFilletRadiusPointsRoundTrip(t *testing.T) {
 	fs := NewPartFeatures(nil)
-	NewDressUpFeatures(fs).AddFilletSets([]FilletEdgeSet{{
+	NewDressUpFeatures(fs).AddFilletSetsCorner([]FilletEdgeSet{{
 		EdgeKeys:     [][]byte{[]byte("edge-v")},
 		StartRadius:  func() float64 { return 0.3 },
 		EndRadius:    func() float64 { return 0.4 },
 		RadiusPoints: []FilletRadiusPoint{{T: 0.5, Radius: func() float64 { return 0.7 }}},
-	}})
+	}}, types.FilletCornerMiter)
 	data, err := fs.MarshalRecipe(oneSketch{})
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
@@ -596,7 +596,7 @@ func TestFaceEditFeaturesRoundTrip(t *testing.T) {
 	m := NewModifyFeatures(fs)
 	m.AddSplit([][]byte{[]byte("f-split")})
 	m.AddMoveFace([][]byte{[]byte("f-move")}, math.V3(1, 2, 3))
-	m.AddFaceOffset([][]byte{[]byte("f-off")}, 0.5)
+	m.AddFaceOffsetApprox([][]byte{[]byte("f-off")}, constFloat(0.5), types.NoApproximation)
 	m.AddDeleteFace([][]byte{[]byte("f-del")}, true)
 	m.AddReplaceFace([][]byte{[]byte("f-rep")}, []byte("f-target"))
 	m.AddThicken(0.5)

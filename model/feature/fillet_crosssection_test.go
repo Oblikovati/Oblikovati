@@ -5,6 +5,7 @@ package feature
 import (
 	"testing"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
 )
 
@@ -12,7 +13,7 @@ import (
 // edge into a watertight solid.
 func TestFilletCrossG2BuildsValidSolid(t *testing.T) {
 	fs, keys := boxAndVerticalEdges(t)
-	pf := NewDressUpFeatures(fs).AddFilletCross([][]byte{keys[0]}, angleConst(0.5), FilletG2, 0)
+	pf := NewDressUpFeatures(fs).AddFilletDef(&FilletDefinition{EdgeKeys: [][]byte{keys[0]}, Radius: angleConst(0.5), CornerType: types.FilletCornerMiter, CrossSection: FilletG2})
 	fs.Recompute()
 	if !pf.Health().OK() {
 		t.Fatalf("G2 fillet sick: %+v", pf.Health())
@@ -27,7 +28,7 @@ func TestFilletCrossG2BuildsValidSolid(t *testing.T) {
 func TestFilletCrossConicFullness(t *testing.T) {
 	vol := func(rho float64) float64 {
 		fs, keys := boxAndVerticalEdges(t)
-		NewDressUpFeatures(fs).AddFilletCross([][]byte{keys[0]}, angleConst(0.5), FilletConic, rho)
+		NewDressUpFeatures(fs).AddFilletDef(&FilletDefinition{EdgeKeys: [][]byte{keys[0]}, Radius: angleConst(0.5), CornerType: types.FilletCornerMiter, CrossSection: FilletConic, Rho: rho})
 		fs.Recompute()
 		return ops.BodyGeometryProperties(fs.Result()[0], ops.Quality{ChordTolerance: 1e-3}).Volume
 	}
@@ -39,7 +40,7 @@ func TestFilletCrossConicFullness(t *testing.T) {
 // TestFilletCrossRoundTrip: the cross-section and rho survive a recipe save/restore.
 func TestFilletCrossRoundTrip(t *testing.T) {
 	fs := NewPartFeatures(nil)
-	NewDressUpFeatures(fs).AddFilletCross([][]byte{[]byte("edge/x")}, angleConst(0.5), FilletConic, 0.65)
+	NewDressUpFeatures(fs).AddFilletDef(&FilletDefinition{EdgeKeys: [][]byte{[]byte("edge/x")}, Radius: angleConst(0.5), CornerType: types.FilletCornerMiter, CrossSection: FilletConic, Rho: 0.65})
 	data, err := fs.MarshalRecipe(oneSketch{})
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)

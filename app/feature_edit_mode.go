@@ -307,7 +307,16 @@ func editChamferTool(f *feature.PartFeature, c *feature.ChamferFeature) *Chamfer
 	def := c.Definition()
 	t := NewChamferTool()
 	t.seededEdgeKeys = cloneKeys(def.EdgeKeys)
+	t.chamferType = def.Type
 	t.distance = callOrZeroFn(def.Distance)
+	// A mode's second input is absent on a chamfer of another mode; keep the tool's default so
+	// switching modes mid-edit starts from a committable value rather than zero (#2045).
+	if d2 := callOrZeroFn(def.Distance2); d2 > 0 {
+		t.distance2 = d2
+	}
+	if a := callOrZeroFn(def.Angle); a > 0 {
+		t.angle = a
+	}
 	t.flatCorners = def.FlatCorners
 	t.concaveStrategy = def.ConcaveStrategy
 	t.bindEdit(f, snapshotChamferDef(def))

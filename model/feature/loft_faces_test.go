@@ -45,7 +45,7 @@ func loftFromCylinderTop(t *testing.T, faceEnd LoftEnd) *topo.Body {
 	fs.Recompute()
 	key := topPlanarFaceKey(t, fs.Result()[0])
 
-	pf := NewLoftFeatures(fs).AddConditioned(
+	pf := NewLoftFeatures(fs).addConditioned(
 		[]LoftSection{{FaceKey: key}, sec(circleOn(planeAtZ(6), 1))},
 		false, ops.NewBody, faceEnd, LoftEnd{},
 	)
@@ -108,7 +108,7 @@ func TestLoftFaceSectionRoundTrip(t *testing.T) {
 	idx := sketchList{sks: []*sketch.Sketch{top}}
 	fs := NewPartFeatures(nil)
 	key := []byte("face/abc123")
-	NewLoftFeatures(fs).AddConditioned(
+	NewLoftFeatures(fs).addConditioned(
 		[]LoftSection{{FaceKey: key}, {Sketch: top, ProfileIndex: 0}},
 		false, ops.NewBody, LoftEnd{Condition: LoftTangent, Impact: 1.5}, LoftEnd{},
 	)
@@ -132,7 +132,7 @@ func TestLoftFaceSectionRoundTrip(t *testing.T) {
 // TestLoftFaceLostReference: a face key that no body carries fails cleanly (not a panic).
 func TestLoftFaceLostReference(t *testing.T) {
 	fs := NewPartFeatures(nil)
-	pf := NewLoftFeatures(fs).AddConditioned(
+	pf := NewLoftFeatures(fs).addConditioned(
 		[]LoftSection{{FaceKey: []byte("does-not-exist")}, sec(circleOn(planeAtZ(6), 1))},
 		false, ops.NewBody, LoftEnd{Condition: LoftTangent}, LoftEnd{},
 	)

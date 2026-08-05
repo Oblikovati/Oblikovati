@@ -2,112 +2,86 @@
 
 package app
 
-import "oblikovati.org/model/feature"
+// The work-plane flavours of the guided-pick datum tool (see DatumPickTool). Six were reachable
+// from the ribbon; the model implements seventeen and api/wire exposed them all, so everything
+// past Offset / Midplane / Three Points / Tangent / Normal-to-Axis was API-only (#2044).
 
-// WorkPlaneTool is the guided-pick interaction behind every Work Features ribbon button:
-// activated with nothing pre-selected, it restricts the selection filter to the kinds the
-// constructor needs, prompts the user, collects picks (in the 3D view or browser) into the
-// selection, and auto-commits the moment enough are gathered — mirroring Create 2D Sketch.
-// It reuses the Session's Create*WorkPlane methods (which read the selection) for the
-// commit, so the interactive and pre-selected paths build the datum the same way.
-type WorkPlaneTool struct {
-	name   string
-	prompt string
-	filter *SelectionFilter
-	ready  func(*Session) bool                        // enough picked to build?
-	create func(*Session) (*feature.WorkPlane, error) // build from the current selection
-	prev   *SelectionFilter
-	sess   *Session
-}
-
-// Name implements [Tool].
-func (t *WorkPlaneTool) Name() string { return t.name }
-
-// Start restricts selection to the tool's kinds and clears any prior picks so the tool
-// gathers a fresh set.
-func (t *WorkPlaneTool) Start(s *Session) {
-	t.sess = s
-	t.prev = s.Selection().Filter()
-	s.Selection().Clear()
-	s.Selection().SetFilter(t.filter)
-}
-
-// Pick adds the clicked entity to the selection (the constructor reads it on commit).
-func (t *WorkPlaneTool) Pick(s *Session, sel Selectable) { s.Selection().Add(sel) }
-
-// CanCommit is true once the selection satisfies the constructor.
-func (t *WorkPlaneTool) CanCommit() bool { return t.sess != nil && t.ready(t.sess) }
-
-// AutoCommitOnPick finishes the tool as soon as the last needed pick lands.
-func (t *WorkPlaneTool) AutoCommitOnPick() bool { return true }
-
-// Commit restores the prior filter and builds the datum from the gathered picks.
-func (t *WorkPlaneTool) Commit(s *Session) error {
-	s.Selection().SetFilter(t.prev)
-	_, err := t.create(s)
-	return err
-}
-
-// Cancel restores the prior filter with no change.
-func (t *WorkPlaneTool) Cancel(s *Session) { s.Selection().SetFilter(t.prev) }
-
-// Prompt is the status-bar guidance shown while the tool gathers its picks.
-func (t *WorkPlaneTool) Prompt(*Session) string { return t.prompt }
-
-func newMidplaneWorkPlaneTool() *WorkPlaneTool {
-	return &WorkPlaneTool{
+func newMidplaneWorkPlaneTool() *DatumPickTool {
+	return &DatumPickTool{
 		name: "Midplane", prompt: "Select two planes to bisect",
 		filter: NewSelectionFilter(SelectWorkPlane),
-		ready:  canMidplaneWorkPlane, create: (*Session).CreateMidplaneWorkPlane,
+		ready:  canMidplaneWorkPlane, create: discardResult((*Session).CreateMidplaneWorkPlane),
 	}
 }
 
-func newThreePointWorkPlaneTool() *WorkPlaneTool {
-	return &WorkPlaneTool{
+func newThreePointWorkPlaneTool() *DatumPickTool {
+	return &DatumPickTool{
 		name: "Three Points", prompt: "Select three points or model vertices",
 		filter: NewSelectionFilter(SelectWorkPoint, SelectVertex),
-		ready:  canThreePointWorkPlane, create: (*Session).CreateThreePointWorkPlane,
+		ready:  canThreePointWorkPlane, create: discardResult((*Session).CreateThreePointWorkPlane),
 	}
 }
 
-func newTangentWorkPlaneTool() *WorkPlaneTool {
-	return &WorkPlaneTool{
+func newTangentWorkPlaneTool() *DatumPickTool {
+	return &DatumPickTool{
 		name: "Tangent to Face", prompt: "Select a plane, then a cylindrical/spherical face",
 		filter: NewSelectionFilter(SelectWorkPlane, SelectFace),
-		ready:  canTangentWorkPlane, create: (*Session).CreateTangentWorkPlane,
+		ready:  canTangentWorkPlane, create: discardResult((*Session).CreateTangentWorkPlane),
 	}
 }
 
-func newNormalToAxisWorkPlaneTool() *WorkPlaneTool {
-	return &WorkPlaneTool{
+func newNormalToAxisWorkPlaneTool() *DatumPickTool {
+	return &DatumPickTool{
 		name: "Normal to Axis", prompt: "Select an axis, then a point on it",
 		filter: NewSelectionFilter(SelectWorkAxis, SelectWorkPoint, SelectVertex),
-		ready:  canNormalToAxisWorkPlane, create: (*Session).CreateNormalToAxisWorkPlane,
+		ready:  canNormalToAxisWorkPlane, create: discardResult((*Session).CreateNormalToAxisWorkPlane),
 	}
 }
 
-// startWorkPlane is a Work Features command action: build the datum immediately when the
-// current selection already satisfies the constructor, otherwise start the guided tool so
-// the click always does something (the fix for an inert, pre-selection-gated button).
-func startWorkPlane(makeTool func() *WorkPlaneTool) func(*Session) error {
-	return func(s *Session) error {
-		t := makeTool()
-		if t.ready(s) {
-			_, err := t.create(s)
-			return err
-		}
-		s.StartTool(t)
-		return nil
+func newParallelThroughPointWorkPlaneTool() *DatumPickTool {
+	return &DatumPickTool{
+		name: "Parallel to Plane through Point", prompt: "Select a plane, then a point or vertex",
+		filter: NewSelectionFilter(SelectWorkPlane, SelectWorkPoint, SelectVertex),
+		ready:  canParallelThroughPointWorkPlane, create: discardResult((*Session).CreateParallelThroughPointWorkPlane),
 	}
 }
 
-// canStartWorkPlane enables the Work Features buttons whenever a part is active and no
-// sketch is open — the buttons are always live (like Create 2D Sketch) and guide the pick
-// when nothing is pre-selected, rather than greying out.
-func canStartWorkPlane(s *Session) bool {
-	if s.InSketch() {
-		return false
+func newLineAndPointWorkPlaneTool() *DatumPickTool {
+	return &DatumPickTool{
+		name: "Through Axis and Point", prompt: "Select an axis, then a point or vertex not on it",
+		filter: NewSelectionFilter(SelectWorkAxis, SelectWorkPoint, SelectVertex),
+		ready:  canLineAndPointWorkPlane, create: discardResult((*Session).CreateLineAndPointWorkPlane),
 	}
-	_, err := activePart(s)
-	return err == nil
+}
+
+func newTwoLinesWorkPlaneTool() *DatumPickTool {
+	return &DatumPickTool{
+		name: "Through Two Axes", prompt: "Select two axes lying in one plane",
+		filter: NewSelectionFilter(SelectWorkAxis),
+		ready:  canTwoLinesWorkPlane, create: discardResult((*Session).CreateTwoLinesWorkPlane),
+	}
+}
+
+func newPointAndTangentWorkPlaneTool() *DatumPickTool {
+	return &DatumPickTool{
+		name: "Tangent to Face through Point", prompt: "Select a cylindrical/spherical face, then a point",
+		filter: NewSelectionFilter(SelectFace, SelectWorkPoint, SelectVertex),
+		ready:  canPointAndTangentWorkPlane, create: discardResult((*Session).CreatePointAndTangentWorkPlane),
+	}
+}
+
+func newLineAndTangentWorkPlaneTool() *DatumPickTool {
+	return &DatumPickTool{
+		name: "Tangent to Face through Axis", prompt: "Select a cylindrical/spherical face, then an axis",
+		filter: NewSelectionFilter(SelectFace, SelectWorkAxis),
+		ready:  canLineAndTangentWorkPlane, create: discardResult((*Session).CreateLineAndTangentWorkPlane),
+	}
+}
+
+func newTorusMidPlaneWorkPlaneTool() *DatumPickTool {
+	return &DatumPickTool{
+		name: "Torus Midplane", prompt: "Select a toroidal face",
+		filter: NewSelectionFilter(SelectFace),
+		ready:  canTorusMidPlaneWorkPlane, create: discardResult((*Session).CreateTorusMidPlaneWorkPlane),
+	}
 }

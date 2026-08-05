@@ -5,21 +5,62 @@ package app
 import (
 	"errors"
 
+	"oblikovati.org/kernel/ops"
 	"oblikovati.org/model/feature"
 )
 
 // ThickenTool is the interactive Thicken command: with a surface (sheet) body active, set
 // the wall thickness in the property window and OK to turn it into a solid slab. It takes no
 // face picks — it thickens the running surface body.
+// The #1876 options — which side to offset toward, whether to join/cut/intersect the result
+// into the running solid, and whether to leave it as a surface — were carried by the definition
+// and set by the wire handler, but the tool set none of them, so the ribbon could only ever
+// build the symmetric, joined, solid thicken (#2050).
 type ThickenTool struct {
 	dialogTool
 	thickness float64
 	approxIdx int // index into ApproximationOptions (#331; 0 = exact)
+	dirIdx    int // index into ThickenDirectionOptions (0 = symmetric)
+	opIdx     int // index into ThickenOperationOptions (0 = join)
+	asSurface bool
 	added     *feature.PartFeature
 }
 
-// NewThickenTool returns a thicken tool with a default 1-unit thickness.
+// NewThickenTool returns a thicken tool with a default 1-unit thickness, offsetting
+// symmetrically and joining the result — the pre-#1876 behaviour, kept as the default.
 func NewThickenTool() *ThickenTool { return &ThickenTool{thickness: 1} }
+
+// thickenDirections maps the direction combo index to the kernel enum.
+var thickenDirections = []ops.ThickenDirection{ops.ThickenSymmetric, ops.ThickenPositive, ops.ThickenNegative}
+
+// ThickenDirectionOptions labels the direction combo, in index order.
+func ThickenDirectionOptions() []string {
+	return []string{"Symmetric", "Positive (+normal)", "Negative (−normal)"}
+}
+
+// thickenOperations maps the operation combo index to the boolean the result takes with the
+// running solid.
+var thickenOperations = []ops.PartFeatureOperation{ops.Join, ops.Cut, ops.Intersect, ops.NewBody}
+
+// ThickenOperationOptions labels the operation combo, in index order.
+func ThickenOperationOptions() []string { return []string{"Join", "Cut", "Intersect", "New body"} }
+
+// DirectionIndex / SetDirectionIndex select which side the thicken offsets toward.
+func (t *ThickenTool) DirectionIndex() int { return t.dirIdx }
+func (t *ThickenTool) SetDirectionIndex(i int) {
+	t.dirIdx = clampRange(i, len(thickenDirections))
+}
+
+// OperationIndex / SetOperationIndex select the boolean the result takes with the running solid.
+func (t *ThickenTool) OperationIndex() int { return t.opIdx }
+func (t *ThickenTool) SetOperationIndex(i int) {
+	t.opIdx = clampRange(i, len(thickenOperations))
+}
+
+// AsSurface / SetAsSurface choose whether the result stays an offset SURFACE rather than
+// becoming a solid slab.
+func (t *ThickenTool) AsSurface() bool      { return t.asSurface }
+func (t *ThickenTool) SetAsSurface(on bool) { t.asSurface = on }
 
 // Name implements [Tool].
 func (t *ThickenTool) Name() string { return "Thicken" }
@@ -65,7 +106,11 @@ func (t *ThickenTool) Commit(s *Session) error {
 // addThicken builds the thicken feature into engine fs — shared by Commit and the preview.
 func (t *ThickenTool) addThicken(fs *feature.PartFeatures) *feature.PartFeature {
 	pf := feature.NewModifyFeatures(fs).AddThicken(t.thickness)
-	pf.Definition().(*feature.ThickenFeature).SetApproximation(approximationAt(t.approxIdx))
+	def := pf.Definition().(*feature.ThickenFeature)
+	def.SetApproximation(approximationAt(t.approxIdx))
+	// nil faceKeys thickens the whole body; walls/chain/blend keep their documented defaults,
+	// which the recipe restore also uses.
+	def.SetThickenOptions(thickenDirections[t.dirIdx], thickenOperations[t.opIdx], t.asSurface, nil, true, false, false)
 	return pf
 }
 

@@ -39,12 +39,17 @@ func drawReplaceFaceDialog(s *app.Session) {
 func drawReplaceFacePicks(r *app.ReplaceFaceTool) {
 	drawPickChipRow("Faces", "replace-faces", countChipText(len(r.Faces()), "Face", "Select Faces"),
 		len(r.Faces()) > 0, "Click the faces to replace", r.ClearFaces)
-	_, hasTarget := r.PickedTarget()
-	drawPickChipRow("Target", "replace-target", pickChipText(hasTarget, "1 Face", "Select Face"),
+	// The target may be a face or a work plane (#2050), so the chip names what was picked.
+	label := "1 Face"
+	if _, onPlane := r.TargetPlane(); onPlane {
+		label = "1 Plane"
+	}
+	hasTarget := r.TargetPicked()
+	drawPickChipRow("Target", "replace-target", pickChipText(hasTarget, label, "Select Face or Plane"),
 		hasTarget, "The face the picked set is replaced with", r.ClearTarget)
 	propertyRow("")
 	pickTarget := r.PickingTarget()
-	if native.Checkbox("Pick target face", &pickTarget) {
+	if native.Checkbox("Pick target face or plane", &pickTarget) {
 		r.SetPickingTarget(pickTarget)
 	}
 }
