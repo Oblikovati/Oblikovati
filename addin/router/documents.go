@@ -116,7 +116,7 @@ func activateDocument(s *app.Session, in wire.ActivateDocumentArgs) (wire.OKResu
 func closeDocument(s *app.Session, in wire.CloseDocumentArgs) (wire.CloseDocumentsResult, error) {
 	for _, d := range s.Workspace().Documents() {
 		if uint64(d.ID()) == in.ID {
-			if err := s.Workspace().Close(d, in.Force); err != nil {
+			if err := s.CloseDocument(d, in.Force); err != nil {
 				return wire.CloseDocumentsResult{}, err
 			}
 			return wire.CloseDocumentsResult{Closed: 1}, nil
@@ -131,7 +131,7 @@ func closeDocument(s *app.Session, in wire.CloseDocumentArgs) (wire.CloseDocumen
 func closeAllDocuments(s *app.Session, in wire.CloseAllDocumentsArgs) (wire.CloseDocumentsResult, error) {
 	closed := 0
 	for _, d := range s.Workspace().Documents() {
-		if err := s.Workspace().Close(d, in.Force); err != nil {
+		if err := s.CloseDocument(d, in.Force); err != nil {
 			return wire.CloseDocumentsResult{}, fmt.Errorf("documents.closeAll: closing %d: %w", d.ID(), err)
 		}
 		closed++

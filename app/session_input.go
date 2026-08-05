@@ -152,15 +152,25 @@ func (s *Session) CancelTool() {
 		_ = s.OK()
 		return
 	}
-	if s.tool != nil {
-		s.tool.tool.Cancel(s)
-		s.tool = nil
-		s.placementStartedByClick = false
-		s.restoreSelectionFilter()      // hand selection back to the ambient filter (engine)
-		s.Graphics().ClearInteraction() // a cancelled command's transient preview vanishes
-		s.dropCommandMiniToolbars()     // command-bound mini-toolbars die with the tool (M05-F07)
-		s.dropCommandGizmos()           // and the command-bound triad/manipulators (M05-F13)
+	s.abandonTool()
+}
+
+// abandonTool drops the active tool and its transient UI without giving it any chance to
+// commit — the teardown CancelTool and a document close share. A close must never take the
+// chaining-tool finish branch: the geometry it would commit belongs to the document that is
+// going away (#2040).
+func (s *Session) abandonTool() {
+	if s.tool == nil {
+		return
 	}
+	s.notice = ""
+	s.tool.tool.Cancel(s)
+	s.tool = nil
+	s.placementStartedByClick = false
+	s.restoreSelectionFilter()      // hand selection back to the ambient filter (engine)
+	s.Graphics().ClearInteraction() // a cancelled command's transient preview vanishes
+	s.dropCommandMiniToolbars()     // command-bound mini-toolbars die with the tool (M05-F07)
+	s.dropCommandGizmos()           // and the command-bound triad/manipulators (M05-F13)
 }
 
 // autoCommitter is a Tool that should finish as soon as a pick makes it ready, rather
