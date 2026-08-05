@@ -27,6 +27,39 @@ func LineRecipe(a, b math.Point2) Recipe {
 	}
 }
 
+// LineChainRecipe is a run of connected segments through pts, consecutive segments sharing an
+// endpoint — what the continuous line tool builds.
+//
+// Its input fields describe the LAST segment, the one still at the cursor, so the dynamic input
+// steers the segment being drawn while the whole chain is described. Fewer than two points is
+// not a chain yet and yields an empty recipe.
+//
+//	r := LineChainRecipe([]math.Point2{a, b, c}) // two segments, sharing b
+func LineChainRecipe(pts []math.Point2) Recipe {
+	if len(pts) < 2 {
+		return Recipe{}
+	}
+	ents := make([]RecipeEntity, len(pts)-1)
+	for i := range ents {
+		ents[i] = RecipeEntity{Kind: RecipeLine, Points: []int{i, i + 1}}
+	}
+	return Recipe{
+		Points:   append([]math.Point2(nil), pts...),
+		Entities: ents,
+		Fields:   chainTailFields(pts),
+	}
+}
+
+// chainTailFields is the Length/Angle pair for the chain's last segment, with the dimension's
+// point indices moved onto that segment — the fields belong to the segment being drawn, not to
+// the first one the chain happens to start with.
+func chainTailFields(pts []math.Point2) []RecipeField {
+	last := len(pts) - 1
+	fields := lineFields(pts[last-1], pts[last])
+	fields[0].Dim.Points = [2]int{last - 1, last}
+	return fields
+}
+
 // lineFields is the Length/Angle pair measured from the line's start.
 func lineFields(a, b math.Point2) []RecipeField {
 	v := a.VectorTo(b)

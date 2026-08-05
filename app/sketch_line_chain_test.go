@@ -87,7 +87,8 @@ func TestEscapeBeforeAnySegmentStillCancels(t *testing.T) {
 }
 
 // TestChainPreviewFollowsTheLastPoint: the rubber band anchored to the FIRST point, so every
-// segment after the first previewed from the wrong end (or not at all).
+// segment after the first previewed from the wrong end (or not at all) — #2024. The chain is
+// previewed whole now, so the guarantee is on its LAST segment: that is the one at the cursor.
 func TestChainPreviewFollowsTheLastPoint(t *testing.T) {
 	s, _ := sketchSession(t)
 	tool := NewLineTool()
@@ -104,8 +105,41 @@ func TestChainPreviewFollowsTheLastPoint(t *testing.T) {
 	if !ok {
 		t.Fatal("no preview mid-chain — the rubber band vanishes after the first segment")
 	}
-	if got := r.Points[0]; got.DistanceTo(last) > 1e-9 {
-		t.Errorf("preview starts at %v, want the last placed point %v", got, last)
+	tail := r.Points[len(r.Points)-2]
+	if tail.DistanceTo(last) > 1e-9 {
+		t.Errorf("the segment at the cursor starts at %v, want the last placed point %v", tail, last)
+	}
+	if end := r.Points[len(r.Points)-1]; end.DistanceTo(cursor) > 1e-9 {
+		t.Errorf("the segment at the cursor ends at %v, want the cursor %v", end, cursor)
+	}
+}
+
+// TestChainPreviewsEverySegmentPlaced is the reported defect: mid-command the sketch holds no
+// geometry — the tool creates every line at once in Commit — so the preview is the ONLY thing
+// that can show the segments already placed. It showed just the one at the cursor, leaving the
+// rest of the chain invisible until the command finished (#2030).
+func TestChainPreviewsEverySegmentPlaced(t *testing.T) {
+	s, sk := sketchSession(t)
+	tool := NewLineTool()
+	s.StartTool(tool)
+	s.Click(40, 40)
+	s.Click(80, 40)
+	s.Click(80, 80)
+	if sk.Lines().Count() != 0 {
+		t.Fatal("premise broken: the tool created geometry mid-chain, so the preview is not the only source")
+	}
+
+	r, ok := tool.PendingRecipe(s, math.P2(0, 0), nil)
+	if !ok {
+		t.Fatal("no preview mid-chain")
+	}
+	// Three clicks plus the cursor: three segments, two placed and one rubber-banding.
+	if len(r.Entities) != 3 {
+		t.Errorf("preview describes %d segments, want 3 — the placed ones are invisible", len(r.Entities))
+	}
+	curves := sketch.RecipeCurves(r)
+	if len(curves) != 3 {
+		t.Errorf("preview draws %d curves, want 3", len(curves))
 	}
 }
 
