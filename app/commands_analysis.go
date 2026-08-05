@@ -24,6 +24,18 @@ func analysisCommands() []*CommandDefinition {
 			WithTab("Inspect").WithRibbons(PartRibbon).WithEnable(hasActivePart).
 			WithIcon("physical-properties").WithButtonStyle(LargeIconButton).
 			WithTooltip("Compute the part's volume, surface area, centre of mass and mass, and show them in the status bar."),
+		NewCommand("Inspect.ModelFrame", "Feature Control Frame", "Annotate", func(s *Session) error {
+			s.StartFeatureTool(NewModelFrameTool())
+			return nil
+		}).WithTab("Inspect").WithRibbons(PartRibbon).WithEnable(hasActivePart).
+			WithIcon("model-tolerance").WithButtonStyle(LargeIconButton).
+			WithTooltip("Feature Control Frame — annotate a model face or edge with a geometric tolerance (MBD; the Drawing tab's frame annotates a view instead)."),
+		NewCommand("Inspect.ModelDatum", "Datum Feature", "Annotate", func(s *Session) error {
+			s.StartFeatureTool(NewModelDatumTool())
+			return nil
+		}).WithTab("Inspect").WithRibbons(PartRibbon).WithEnable(hasActivePart).
+			WithIcon("model-datum").WithButtonStyle(LargeIconButton).
+			WithTooltip("Datum Feature — label a model face or edge as datum A, B, … for feature-control frames to reference."),
 		NewCommand("Inspect.ModelHealth", "Model Health", "Validate", modelHealth).
 			WithTab("Inspect").WithRibbons(PartRibbon).WithEnable(hasActivePart).
 			WithIcon("model-health").WithButtonStyle(LargeIconButton).
