@@ -7,7 +7,9 @@ package ui
 import (
 	"math"
 
+	"oblikovati.org/api/contract"
 	"oblikovati.org/app"
+	"oblikovati.org/model/doc"
 	"oblikovati.org/renderer"
 
 	gmath "oblikovati.org/math"
@@ -15,6 +17,17 @@ import (
 
 // groundAlbedo is the neutral matte grey of the shadow-catching ground plane.
 var groundAlbedo = [4]float32{0.55, 0.55, 0.57, 1}
+
+// groundPlaneSession is what drawing the ground needs: the active document's display settings
+// and the visual style. A consumer-side interface rather than the whole *app.Session (audit I5,
+// the arrowSession pattern).
+type groundPlaneSession interface {
+	ActiveDocument() *doc.Document
+	DocumentDisplaySettings(id doc.ID) contract.DisplaySettings
+	VisualStyle() renderer.VisualStyle
+}
+
+var _ groundPlaneSession = (*app.Session)(nil)
 
 // wantGround reports whether to draw the ground plane: the document's display-settings keep it
 // visible (M16-F07 #643) and the active style shades faces (a wireframe style has no surfaces to
@@ -24,7 +37,7 @@ var groundAlbedo = [4]float32{0.55, 0.55, 0.57, 1}
 // RECEIVES the cast shadow — applyShadow's castDirect — not whether the ground exists. Gating
 // both on it made View ▸ Ground Plane a no-op in either direction on a fresh part, where ground
 // shadows are off (#2042), while its tooltip promised it shows and hides the ground.
-func wantGround(s *app.Session) bool {
+func wantGround(s groundPlaneSession) bool {
 	if !displayGroundVisible(s) {
 		return false
 	}
@@ -33,7 +46,7 @@ func wantGround(s *app.Session) bool {
 
 // displayGroundVisible reports the active document's display-settings ground-plane visibility
 // (defaulting to visible when there is no active document).
-func displayGroundVisible(s *app.Session) bool {
+func displayGroundVisible(s groundPlaneSession) bool {
 	if s.ActiveDocument() == nil {
 		return true
 	}
@@ -42,7 +55,7 @@ func displayGroundVisible(s *app.Session) bool {
 
 // displayGroundColor is the active document's display-settings ground-plane color as an rgba
 // float array, falling back to the neutral grey when there is no active document.
-func displayGroundColor(s *app.Session) [4]float32 {
+func displayGroundColor(s groundPlaneSession) [4]float32 {
 	if s.ActiveDocument() == nil {
 		return groundAlbedo
 	}
