@@ -19,9 +19,9 @@ import (
 // panel set on a 3D sketch could reach the screen — a construction curve was indistinguishable
 // from a normal one (#2039).
 
-// sketch3DOverlaySession returns a session whose active part holds one 3D sketch with a single
+// sketch3DOverlayFixture returns a session whose active part holds one 3D sketch with a single
 // line, and clears the package overlay cache so each case builds fresh.
-func sketch3DOverlaySession(t *testing.T) (*app.Session, *sketch.Sketch3D, *sketch.Line3D) {
+func sketch3DOverlayFixture(t *testing.T) (*app.Session, *sketch.Sketch3D, *sketch.Line3D) {
 	t.Helper()
 	sketch3DOverlayCache.key = ""
 	s := app.NewSession()
@@ -47,7 +47,7 @@ func overlayColors(items []renderer.DrawItem) map[[4]float32]bool {
 // TestSketch3DConstructionCurveIsDashed: a construction 3D curve is split into dashes, so it
 // yields more vertices than the same curve drawn solid.
 func TestSketch3DConstructionCurveIsDashed(t *testing.T) {
-	s, _, l := sketch3DOverlaySession(t)
+	s, _, l := sketch3DOverlayFixture(t)
 	solid := vertexCount(buildSketch3DCurvesOnly(s))
 
 	l.SetConstruction(true)
@@ -62,7 +62,7 @@ func TestSketch3DConstructionCurveIsDashed(t *testing.T) {
 // TestSketch3DEntityColourOverrideReachesTheDrawItems: a colour set through the Format panel's
 // list is the colour the 3D overlay draws the curve in.
 func TestSketch3DEntityColourOverrideReachesTheDrawItems(t *testing.T) {
-	s, sk, l := sketch3DOverlaySession(t)
+	s, sk, l := sketch3DOverlayFixture(t)
 	red := types.NewColor(220, 20, 20)
 	sk.SetEntityFormat(l.EntityID(), sketch.EntityFormat{Color: red})
 
@@ -74,7 +74,7 @@ func TestSketch3DEntityColourOverrideReachesTheDrawItems(t *testing.T) {
 
 // Show Format draws with default attributes, so the override must NOT reach the draw items.
 func TestSketch3DShowFormatSuppressesTheOverride(t *testing.T) {
-	s, sk, l := sketch3DOverlaySession(t)
+	s, sk, l := sketch3DOverlayFixture(t)
 	red := types.NewColor(220, 20, 20)
 	sk.SetEntityFormat(l.EntityID(), sketch.EntityFormat{Color: red})
 	s.ToggleShowFormat()
@@ -89,7 +89,7 @@ func TestSketch3DShowFormatSuppressesTheOverride(t *testing.T) {
 // The overlay cache keys on the format revision, so recolouring an entity — which changes
 // neither the geometry version nor the entity count — still redraws.
 func TestSketch3DOverlayCacheSeesAFormatEdit(t *testing.T) {
-	s, sk, l := sketch3DOverlaySession(t)
+	s, sk, l := sketch3DOverlayFixture(t)
 	before, ok := sketch3DOverlayKey(s)
 	if !ok {
 		t.Fatal("the 3D overlay cache key should be resolvable for an active part")

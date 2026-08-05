@@ -36,7 +36,7 @@ var sketch3DOverlayCache struct {
 // cachedSketch3DCurves returns the cached normal-colour curve overlay, rebuilding it only when
 // the 3D-sketch geometry changes. The returned slice is a shallow copy so the caller's appends
 // never mutate the cached list. With no part to key on it falls back to an uncached build.
-func cachedSketch3DCurves(s *app.Session) []renderer.DrawItem {
+func cachedSketch3DCurves(s sketch3DOverlaySession) []renderer.DrawItem {
 	key, ok := sketch3DOverlayKey(s)
 	if !ok {
 		curves, _ := buildSketch3DCurves(s)
@@ -80,7 +80,7 @@ func sketch3DCacheBounds() (min, max [3]float32, ok bool) {
 // the last cache rebuild, so the viewport far plane encloses a non-planar DWG import (large
 // coordinates, all line primitives) without rescanning every segment each frame. ok is false
 // when there is no 3D-sketch line work. Reading the cache first builds it if the key changed.
-func cachedSketch3DBounds(s *app.Session) (min, max [3]float32, ok bool) {
+func cachedSketch3DBounds(s sketch3DOverlaySession) (min, max [3]float32, ok bool) {
 	if _, keyed := sketch3DOverlayKey(s); !keyed {
 		return drawItemsBounds(buildSketch3DCurvesOnly(s))
 	}
@@ -94,7 +94,7 @@ func cachedSketch3DBounds(s *app.Session) (min, max [3]float32, ok bool) {
 // toggle and the format revision are in the key because recolouring an entity changes neither
 // the geometry version nor the entity count, so the cache would otherwise show stale styling
 // (the planar overlay keys on the same two, #2015/#2039).
-func sketch3DOverlayKey(s *app.Session) (string, bool) {
+func sketch3DOverlayKey(s sketch3DOverlaySession) (string, bool) {
 	version, ok := activeModelGeometryVersion(s)
 	if !ok {
 		return "", false
@@ -119,7 +119,7 @@ func sketch3DOverlayKey(s *app.Session) (string, bool) {
 // (issue #142). The curve bulk comes from the geometry-keyed cache; the small per-frame tail
 // is the standalone-point crosses (sized by hPoint) and the highlight for entities the active
 // pick-driven tool has gathered, drawn over the cached normal curves.
-func sketch3DOverlays(s *app.Session, hPoint float64) []renderer.DrawItem {
+func sketch3DOverlays(s sketch3DOverlaySession, hPoint float64) []renderer.DrawItem {
 	items := cachedSketch3DCurves(s)
 	return append(items, sketch3DLiveOverlay(s, hPoint)...)
 }
@@ -128,7 +128,7 @@ func sketch3DOverlays(s *app.Session, hPoint float64) []renderer.DrawItem {
 // point crosses at the current screen-constant size, plus the pick highlight. It draws the
 // cached points (positions are camera-independent) and re-samples only the small picked set,
 // so it never re-samples the curve bulk.
-func sketch3DLiveOverlay(s *app.Session, h float64) []renderer.DrawItem {
+func sketch3DLiveOverlay(s sketch3DOverlaySession, h float64) []renderer.DrawItem {
 	normal, sel := &segAccum{}, &segAccum{}
 	for _, p := range cachePointsFor(s) {
 		accumPointCross3D(normal, p, h)
@@ -142,7 +142,7 @@ func sketch3DLiveOverlay(s *app.Session, h float64) []renderer.DrawItem {
 
 // cachePointsFor returns the standalone-point positions for the active part, from the cache
 // when it is keyed (the common path) or a fresh scan when it is not.
-func cachePointsFor(s *app.Session) []math.Point3 {
+func cachePointsFor(s sketch3DOverlaySession) []math.Point3 {
 	if _, ok := sketch3DOverlayKey(s); ok {
 		return sketch3DOverlayCache.points
 	}
@@ -155,7 +155,7 @@ func cachePointsFor(s *app.Session) []math.Point3 {
 // cached normal curves. That is the active pick-driven tool's gathered entities, plus the
 // ambient selection: with no tool running, a picked 3D curve had no highlight at all, so
 // selecting geometry for the Format panel gave no sign anything was selected (#2039).
-func highlightPickedSketch3D(s *app.Session, sel *segAccum, h float64) {
+func highlightPickedSketch3D(s sketch3DHighlightSession, sel *segAccum, h float64) {
 	for e := range highlightedSketch3DEntities(s) {
 		pts := sketch.SamplePolyline3D(e, sketchSegments)
 		if len(pts) == 1 {
@@ -170,7 +170,7 @@ func highlightPickedSketch3D(s *app.Session, sel *segAccum, h float64) {
 
 // buildSketch3DCurves samples every visible 3D sketch once, returning the styled curve overlay
 // items and the standalone-point positions. This is the cached (geometry-keyed) build.
-func buildSketch3DCurves(s *app.Session) (curves []renderer.DrawItem, points []math.Point3) {
+func buildSketch3DCurves(s sketch3DOverlaySession) (curves []renderer.DrawItem, points []math.Point3) {
 	part := activePart(s)
 	if part == nil {
 		return nil, nil
@@ -188,7 +188,7 @@ func buildSketch3DCurves(s *app.Session) (curves []renderer.DrawItem, points []m
 
 // buildSketch3DCurvesOnly is buildSketch3DCurves discarding the points — the un-keyed bounds
 // fallback only needs the curve extent.
-func buildSketch3DCurvesOnly(s *app.Session) []renderer.DrawItem {
+func buildSketch3DCurvesOnly(s sketch3DOverlaySession) []renderer.DrawItem {
 	curves, _ := buildSketch3DCurves(s)
 	return curves
 }
@@ -236,7 +236,15 @@ type sketch3DHighlightSession interface {
 	Selection() *app.Selection
 }
 
-var _ sketch3DHighlightSession = (*app.Session)(nil)
+// sketch3DOverlaySession is everything the 3D-sketch overlay reads: the active document (for the
+// part and its geometry version), the Show Format toggle, and the highlight inputs above.
+type sketch3DOverlaySession interface {
+	sketch3DHighlightSession
+	activeDocumentSource
+	ShowFormat() bool
+}
+
+var _ sketch3DOverlaySession = (*app.Session)(nil)
 
 // highlightedSketch3DEntities is every sketch entity that should draw selected: the active
 // pick-driven tool's gathered set, or — with no such tool — the ambient selection.

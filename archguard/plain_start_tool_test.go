@@ -78,6 +78,7 @@ var allowedPlainStartTools = map[string]struct{}{
 	"MeasureTool":              {},
 	"ModelReferenceTool":       {},
 	"NoteTool":                 {},
+	"AngleWorkPlaneTool":       {}, // datum plane, not a part feature (#2044)
 	"OffsetWorkPlaneTool":      {},
 	"OrdinateDimensionTool":    {},
 	"PartsListTool":            {},

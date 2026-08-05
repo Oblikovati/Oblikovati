@@ -279,7 +279,9 @@ func activeBodies(s *app.Session) []*topo.Body {
 }
 
 // activePart returns the active document's part component definition, or nil.
-func activePart(s *app.Session) *compdef.PartComponentDefinition {
+// It takes the document source rather than the whole session (audit I5): every caller only
+// needs the active document, and the narrower parameter keeps new call sites honest.
+func activePart(s activeDocumentSource) *compdef.PartComponentDefinition {
 	d := s.ActiveDocument()
 	if d == nil {
 		return nil

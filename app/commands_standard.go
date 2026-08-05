@@ -154,36 +154,94 @@ func hasActiveParameterHolder(s *Session) bool {
 	return err == nil
 }
 
-// workFeatureCommands are the Create & Modify tab's Work Features panel: the datum-plane
-// constructors. Each button is always live in the part environment (Inventor's Work Plane
-// behavior) — click it and, if the right geometry is already selected it builds the datum
-// at once, otherwise it starts a guided pick that prompts for the inputs and commits when
-// they are gathered. So a click is never inert, whether or not anything was pre-selected.
+// workFeatureCommands are the Create & Modify tab's Work Features panel: one split button per
+// datum kind — Work Plane, Work Axis, Work Point — each carrying its constructor flavours in its
+// flyout. Every entry is always live in the part environment (Inventor's Work Plane behavior):
+// click it and, if the right geometry is already selected it builds the datum at once, otherwise
+// it starts a guided pick that prompts for the inputs and commits when they are gathered. So a
+// click is never inert, whether or not anything was pre-selected.
+//
+// The panel used to be five flat buttons, ALL work planes: there was no Work Axis command
+// anywhere and no general Work Point one (#2043), and eleven of the seventeen plane
+// constructors were API-only (#2044). Folding each kind into one split button carries all
+// twenty-two flavours in LESS ribbon width than the five buttons took.
 func workFeatureCommands() []*CommandDefinition {
+	return []*CommandDefinition{workPlaneCommand(), workAxisCommand(), workPointCommand()}
+}
+
+// datumVariant builds one flyout entry of a Work Features split button.
+func datumVariant(id, name, tip string, makeTool func() *DatumPickTool) *CommandDefinition {
+	return NewCommand(id, name, panelWorkFeatures, startDatum(makeTool)).
+		WithTab(tabCreateModify).WithEnable(canStartWorkFeature).WithTooltip(tip)
+}
+
+// workPlaneCommand is the Work Plane split button: Offset on the button, the other constructors
+// in its flyout.
+func workPlaneCommand() *CommandDefinition {
+	return NewCommand("WorkPlane.Offset", "Work Plane", panelWorkFeatures, func(s *Session) error {
+		s.StartTool(NewOffsetWorkPlaneTool()) // always opens the distance dialog (Inventor's flow)
+		return nil
+	}).WithTab(tabCreateModify).WithEnable(canStartWorkFeature).
+		WithIcon("work-plane-offset").WithButtonStyle(LargeIconButton).
+		WithTooltip("Work Plane — a datum plane. Offset from a plane by a distance; the flyout carries the other constructors.").
+		WithVariants(workPlaneVariants()...)
+}
+
+// workPlaneVariants are the plane constructors behind the split button.
+func workPlaneVariants() []*CommandDefinition {
+	angle := NewCommand("WorkPlane.Angle", "At Angle to Plane", panelWorkFeatures, func(s *Session) error {
+		s.StartTool(NewAngleWorkPlaneTool()) // gathers the angle before committing
+		return nil
+	}).WithTab(tabCreateModify).WithEnable(canStartWorkFeature).
+		WithTooltip("At Angle to Plane — a plane rotated about an axis by an angle from a base plane.")
 	return []*CommandDefinition{
-		NewCommand("WorkPlane.Offset", "Offset Plane", panelWorkFeatures, func(s *Session) error {
-			s.StartTool(NewOffsetWorkPlaneTool()) // always opens the distance dialog (Inventor's flow)
-			return nil
-		}).WithTab(tabCreateModify).WithEnable(canStartWorkPlane).
-			WithIcon("work-plane-offset").WithButtonStyle(LargeIconButton).
-			WithTooltip("Offset Plane — a work plane parallel to a plane, offset by a distance. Pick a plane, then enter the offset."),
-		NewCommand("WorkPlane.Midplane", "Midplane", panelWorkFeatures, startWorkPlane(newMidplaneWorkPlaneTool)).
-			WithTab(tabCreateModify).WithEnable(canStartWorkPlane).
-			WithIcon("work-plane-midplane").WithButtonStyle(SmallIconButton).
-			WithTooltip("Midplane — a work plane bisecting two planes. Pick two planes when prompted."),
-		NewCommand("WorkPlane.ThreePoints", "Three Points", panelWorkFeatures, startWorkPlane(newThreePointWorkPlaneTool)).
-			WithTab(tabCreateModify).WithEnable(canStartWorkPlane).
-			WithIcon("work-plane-3pt").WithButtonStyle(SmallIconButton).
-			WithTooltip("Three Points — a work plane through three points or model vertices. Pick three when prompted."),
-		NewCommand("WorkPlane.Tangent", "Tangent to Face", panelWorkFeatures, startWorkPlane(newTangentWorkPlaneTool)).
-			WithTab(tabCreateModify).WithEnable(canStartWorkPlane).
-			WithIcon("work-plane-tangent").WithButtonStyle(SmallIconButton).
-			WithTooltip("Tangent to Face — a work plane parallel to a plane and tangent to a cylindrical/spherical face. Pick a plane then a face."),
-		NewCommand("WorkPlane.NormalToAxis", "Normal to Axis", panelWorkFeatures, startWorkPlane(newNormalToAxisWorkPlaneTool)).
-			WithTab(tabCreateModify).WithEnable(canStartWorkPlane).
-			WithIcon("work-plane-normal").WithButtonStyle(SmallIconButton).
-			WithTooltip("Normal to Axis — a work plane through a point, normal to an axis. Pick an axis then a point."),
+		datumVariant("WorkPlane.Midplane", "Midplane", "Midplane — a plane bisecting two planes.", newMidplaneWorkPlaneTool),
+		datumVariant("WorkPlane.ThreePoints", "Three Points", "Three Points — a plane through three points or model vertices.", newThreePointWorkPlaneTool),
+		datumVariant("WorkPlane.ParallelPoint", "Parallel through Point", "Parallel through Point — a plane parallel to a plane, through a point.", newParallelThroughPointWorkPlaneTool),
+		datumVariant("WorkPlane.AxisAndPoint", "Through Axis and Point", "Through Axis and Point — a plane containing an axis and a point.", newLineAndPointWorkPlaneTool),
+		datumVariant("WorkPlane.TwoAxes", "Through Two Axes", "Through Two Axes — a plane containing two coplanar axes.", newTwoLinesWorkPlaneTool),
+		angle,
+		datumVariant("WorkPlane.Tangent", "Tangent to Face", "Tangent to Face — a plane parallel to a plane and tangent to a curved face.", newTangentWorkPlaneTool),
+		datumVariant("WorkPlane.TangentPoint", "Tangent through Point", "Tangent through Point — a plane tangent to a curved face at a point.", newPointAndTangentWorkPlaneTool),
+		datumVariant("WorkPlane.TangentAxis", "Tangent through Axis", "Tangent through Axis — a plane tangent to a curved face and containing an axis.", newLineAndTangentWorkPlaneTool),
+		datumVariant("WorkPlane.NormalToAxis", "Normal to Axis", "Normal to Axis — a plane through a point, normal to an axis.", newNormalToAxisWorkPlaneTool),
+		datumVariant("WorkPlane.TorusMidPlane", "Torus Midplane", "Torus Midplane — the midplane of a toroidal face.", newTorusMidPlaneWorkPlaneTool),
 	}
+}
+
+// workAxisCommand is the Work Axis split button: on an edge by default, the rest in its flyout.
+func workAxisCommand() *CommandDefinition {
+	return NewCommand("WorkAxis.OnEdge", "Work Axis", panelWorkFeatures, startDatum(newEdgeWorkAxisTool)).
+		WithTab(tabCreateModify).WithEnable(canStartWorkFeature).
+		WithIcon("work-axis").WithButtonStyle(LargeIconButton).
+		WithTooltip("Work Axis — a datum axis. Along a linear edge; the flyout carries the other constructors.").
+		WithVariants(
+			datumVariant("WorkAxis.TwoPoints", "Through Two Points", "Through Two Points — an axis through two points or vertices.", newTwoPointWorkAxisTool),
+			datumVariant("WorkAxis.RevolvedFace", "Of Revolved Face", "Of Revolved Face — the axis of a cylinder, cone, sphere or torus.", newRevolvedFaceWorkAxisTool),
+			datumVariant("WorkAxis.PlaneIntersection", "At Two Planes", "At Two Planes — the axis where two planes intersect.", newPlaneIntersectionWorkAxisTool),
+			datumVariant("WorkAxis.NormalToPlane", "Normal to Plane", "Normal to Plane — an axis through a point, normal to a plane.", newNormalToPlaneWorkAxisTool),
+			datumVariant("WorkAxis.ParallelToAxis", "Parallel through Point", "Parallel through Point — an axis parallel to an axis, through a point.", newParallelToAxisWorkAxisTool),
+			datumVariant("WorkAxis.OnPlane", "Projected to Plane", "Projected to Plane — an axis projected onto a plane along its normal.", newAxisOnPlaneWorkAxisTool),
+		)
+}
+
+// workPointCommand is the Work Point split button: at a vertex by default, the rest in its
+// flyout. Point on Scan keeps its own entry because it snaps to point-cloud data rather than
+// model topology (#645).
+func workPointCommand() *CommandDefinition {
+	return NewCommand("WorkPoint.AtVertex", "Work Point", panelWorkFeatures, startDatum(newVertexWorkPointTool)).
+		WithTab(tabCreateModify).WithEnable(canStartWorkFeature).
+		WithIcon("work-point").WithButtonStyle(LargeIconButton).
+		WithTooltip("Work Point — a datum point. At a vertex; the flyout carries the other constructors.").
+		WithVariants(
+			datumVariant("WorkPoint.EdgeMidpoint", "At Edge Midpoint", "At Edge Midpoint — a point halfway along an edge.", newMidpointWorkPointTool),
+			datumVariant("WorkPoint.Centroid", "At Centroid", "At Centroid — the length-weighted centroid of the selected edges.", newCentroidWorkPointTool),
+			datumVariant("WorkPoint.FaceCenter", "At Face Centre", "At Face Centre — the centre of a spherical or toroidal face.", newFaceCenterWorkPointTool),
+			datumVariant("WorkPoint.ThreePlanes", "At Three Planes", "At Three Planes — the point where three planes meet.", newThreePlaneWorkPointTool),
+			datumVariant("WorkPoint.TwoAxes", "At Two Axes", "At Two Axes — the point where two axes intersect.", newTwoAxisWorkPointTool),
+			datumVariant("WorkPoint.PlaneAndAxis", "At Plane and Axis", "At Plane and Axis — the point where an axis pierces a plane.", newPlaneAndAxisWorkPointTool),
+			datumVariant("WorkPoint.CurveAndSurface", "At Curve and Surface", "At Curve and Surface — the point where an edge crosses a plane or face.", newCurveAndEntityWorkPointTool),
+		)
 }
 
 // modelTabCommands are the Create & Modify tab: starting a sketch and the solid features.
