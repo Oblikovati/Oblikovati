@@ -62,32 +62,68 @@ func (s *Sketch) ApplyLineInference(l *Line, opts InferenceOptions) ([]AppliedIn
 	return constraints, points
 }
 
+// ApplyPointInference snaps freshly created points onto the existing points they were placed
+// over, adding the coincidence that makes the join survive a later edit.
+//
+// Every shape needs this, not just the line. Point inference used to be reachable only through
+// [Sketch.ApplyLineInference], so a rectangle or an arc started ON an existing point was merely
+// drawn there: the click snapped its coordinates, no constraint recorded why, and dragging the
+// other geometry tore the two apart (#2030). Recipe-built shapes route their created points
+// through here so they behave like a line does.
+//
+//	sk.ApplyPointInference(created, sk.DefaultInferenceOptions())
+func (s *Sketch) ApplyPointInference(created []*Point, opts InferenceOptions) []AppliedPointInference {
+	if !opts.InferEnabled {
+		return nil
+	}
+	return s.snapNewPoints(created, NewInference(), opts)
+}
+
 // inferSnapPoints snaps the line's endpoints onto nearby existing points.
 func (s *Sketch) inferSnapPoints(l *Line, engine *Inference, opts InferenceOptions) []AppliedPointInference {
+	return s.snapNewPoints([]*Point{l.A, l.B}, engine, opts)
+}
+
+// snapNewPoints snaps each created point onto the nearest existing point within the engine's
+// snap distance. The candidates are fixed before any snapping, so the new points can never snap
+// onto each other — a rectangle's four fresh corners are not each other's targets.
+func (s *Sketch) snapNewPoints(created []*Point, engine *Inference, opts InferenceOptions) []AppliedPointInference {
+	candidates := s.pointsExcept(created)
 	var out []AppliedPointInference
-	candidates := s.snapCandidates(l)
-	for _, end := range []*Point{l.A, l.B} {
-		suggestions := engine.InferSnap(end.Position(), candidates)
-		if len(suggestions) == 0 || suggestions[0].Target == nil {
-			continue
+	for _, p := range created {
+		if rec, ok := s.snapOntoExisting(p, candidates, engine, opts); ok {
+			out = append(out, rec)
 		}
-		target := suggestions[0].Target
-		if opts.ConstrainEnabled {
-			end.SetPosition(target.Position())
-			s.geomCons.AddCoincident(end, target)
-		}
-		out = append(out, AppliedPointInference{
-			Kind: types.SketchInferenceOnPoint, Point: end, Entities: []Entity{target},
-		})
 	}
 	return out
 }
 
-// snapCandidates are every sketch point except the line's own endpoints.
-func (s *Sketch) snapCandidates(l *Line) []*Point {
+// snapOntoExisting moves one new point onto the existing point it was placed over and records
+// the coincidence, reporting false when nothing is near enough.
+func (s *Sketch) snapOntoExisting(p *Point, candidates []*Point, engine *Inference, opts InferenceOptions) (AppliedPointInference, bool) {
+	suggestions := engine.InferSnap(p.Position(), candidates)
+	if len(suggestions) == 0 || suggestions[0].Target == nil {
+		return AppliedPointInference{}, false
+	}
+	target := suggestions[0].Target
+	if opts.ConstrainEnabled {
+		p.SetPosition(target.Position())
+		s.geomCons.AddCoincident(p, target)
+	}
+	return AppliedPointInference{
+		Kind: types.SketchInferenceOnPoint, Point: p, Entities: []Entity{target},
+	}, true
+}
+
+// pointsExcept is every point in the sketch that is not one of exclude.
+func (s *Sketch) pointsExcept(exclude []*Point) []*Point {
+	skip := make(map[*Point]bool, len(exclude))
+	for _, p := range exclude {
+		skip[p] = true
+	}
 	out := make([]*Point, 0, len(s.pts))
 	for _, p := range s.pts {
-		if p != l.A && p != l.B {
+		if !skip[p] {
 			out = append(out, p)
 		}
 	}

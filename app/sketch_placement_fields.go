@@ -45,6 +45,10 @@ type PlacementFieldView struct {
 	Active  bool
 	Locked  bool
 	Witness [2]math.Point2
+
+	// Outward is the unit direction the dimension stands off in — away from the shape, so its
+	// line, arrows and value never sit on the geometry they measure (#2032).
+	Outward math.Vector2
 }
 
 // placementFieldValues returns each field's typed override ("" ⇒ tracks the cursor), which the
@@ -71,6 +75,7 @@ func (s *Session) PlacementFields() []PlacementFieldView {
 	views := make([]PlacementFieldView, len(r.Fields))
 	for i, f := range r.Fields {
 		views[i] = s.placementFieldView(i, f)
+		views[i].Outward = sketch.FieldOutward(r, f) // the same side the commit will place it on
 	}
 	return views
 }
@@ -198,15 +203,32 @@ func (s *Session) PlacementFieldCommit(px, py float64) error {
 // commitRecipe applies a tool's recipe with a dimension for every locked field, under the
 // document's over-constrained behaviour, then clears the input strip for the next shape.
 func (s *Session) commitRecipe(r sketch.Recipe) error {
+	_, err := s.commitRecipeEntities(r)
+	return err
+}
+
+// commitRecipeEntities is [Session.commitRecipe] for a caller that needs what was created — the
+// spline tools, which activate a handle on each fit point of the spline they just made.
+func (s *Session) commitRecipeEntities(r sketch.Recipe) ([]sketch.Entity, error) {
 	if s.activeSketch == nil {
-		return errors.New("sketch: no active sketch")
+		return nil, errors.New("sketch: no active sketch")
 	}
 	before := s.dimensionCount()
-	ents, _, err := s.activeSketch.ApplyWithFields(r, s.lockedFieldExpressions(r), s.overConstrainedBehavior())
+	ents, pts, err := s.activeSketch.ApplyWithFields(r, s.lockedFieldExpressions(r), s.overConstrainedBehavior())
+	// A shape started ON existing geometry joins to it, exactly as a line does. Without this the
+	// click merely snapped the coordinates and nothing recorded why they matched (#2030).
+	s.activeSketch.ApplyPointInference(pts, s.SketchInferenceOptions())
 	s.applyFormatModes(ents)           // Format-panel creation modes (#2015)
 	s.applyDrivenDimensionMode(before) // …including driven dimensions
+	// A locked value must SHAPE what it just created: without this the rectangle committed at
+	// whatever the cursor last said (44.85 mm) while carrying a dimension that claimed 50 mm, and
+	// stayed that way until something else re-solved the sketch (#2032). The constraint tools
+	// solve on the same footing (sketch_constraints.go).
+	if err == nil {
+		s.activeSketch.Solve()
+	}
 	s.placementFields = placementFieldState{}
-	return err
+	return ents, err
 }
 
 // lockedFieldExpressions renders each locked field as a unit-carrying parameter expression, and
@@ -295,4 +317,16 @@ func (s *Session) placementFieldExpression(typed string, u sketch.FieldUnit) str
 		return typed + " deg"
 	}
 	return typed + " " + s.DocumentUnits().PreferredName(param.Length)
+}
+
+// typeIntoPlacement feeds a keystroke the Command Window was denied to the in-place dimension
+// boxes, so the character lands where the user is looking rather than nowhere.
+//
+// The head reaches the boxes through its own character queue, so this changes nothing there. It
+// matters for every OTHER caller of [Session.PressKey] — the wire's viewport.key, the command
+// line, a script — which would otherwise find digits silently swallowed during a placement.
+func (s *Session) typeIntoPlacement(seed string) {
+	for _, r := range seed {
+		s.PlacementFieldInput(r)
+	}
 }
