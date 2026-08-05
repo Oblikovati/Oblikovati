@@ -5,15 +5,21 @@ package app
 import (
 	"errors"
 
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/model/feature"
 )
 
 // ReplaceFaceTool is the interactive Replace Face command: click the faces to replace, then
-// switch to target mode and click the face whose plane they should take, and OK. The picked
-// faces move onto the target's plane and the neighbours retrim.
+// switch to target mode and click the face — or the WORK PLANE — whose plane they should take,
+// and OK. The picked faces move onto the target's plane and the neighbours retrim.
+//
+// AddReplaceFacePlanes (targets frozen as planes rather than as a face reference, #1886) was
+// implemented and routed over the API but the tool only ever called AddReplaceFace, so replacing
+// onto a work plane was API-only (#2050).
 type ReplaceFaceTool struct {
 	faces         []FaceHandle
 	target        *FaceHandle
+	targetPlane   *feature.WorkPlane
 	pickingTarget bool
 	added         *feature.PartFeature
 }
@@ -27,8 +33,11 @@ func (t *ReplaceFaceTool) Name() string { return "Replace Face" }
 // Start is a no-op; the engine installs the filter from AcceptedKinds.
 func (t *ReplaceFaceTool) Start(*Session) {}
 
-// AcceptedKinds declares replace-face picks faces (the faces to replace, then the target face).
-func (t *ReplaceFaceTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
+// AcceptedKinds declares replace-face picks faces (the faces to replace) and, for the target,
+// a face or a work plane.
+func (t *ReplaceFaceTool) AcceptedKinds() []SelectionKind {
+	return []SelectionKind{SelectFace, SelectWorkPlane}
+}
 
 // Picks reports the faces to replace plus the target face for the unified highlight.
 func (t *ReplaceFaceTool) Picks() []Selectable {
@@ -37,13 +46,19 @@ func (t *ReplaceFaceTool) Picks() []Selectable {
 
 // Pick routes a click to the target slot when in target mode, else appends a face to replace.
 func (t *ReplaceFaceTool) Pick(_ *Session, sel Selectable) {
+	if wp, ok := sel.(WorkPlaneHandle); ok {
+		if t.pickingTarget { // a work plane is only ever a target, never a face to replace
+			t.targetPlane, t.target = wp.Plane, nil
+		}
+		return
+	}
 	f, ok := sel.(FaceHandle)
 	if !ok {
 		return
 	}
 	if t.pickingTarget {
 		fc := f
-		t.target = &fc
+		t.target, t.targetPlane = &fc, nil
 		return
 	}
 	if !t.hasFace(f) {
@@ -77,8 +92,16 @@ func (t *ReplaceFaceTool) PickedTarget() (FaceHandle, bool) {
 	return *t.target, true
 }
 
+// TargetPlane reports the target work plane if one has been chosen instead of a face.
+func (t *ReplaceFaceTool) TargetPlane() (*feature.WorkPlane, bool) {
+	return t.targetPlane, t.targetPlane != nil
+}
+
+// TargetPicked reports whether a target — a face or a work plane — has been chosen.
+func (t *ReplaceFaceTool) TargetPicked() bool { return t.target != nil || t.targetPlane != nil }
+
 // CanCommit reports whether at least one face and a target are picked.
-func (t *ReplaceFaceTool) CanCommit() bool { return len(t.faces) > 0 && t.target != nil }
+func (t *ReplaceFaceTool) CanCommit() bool { return len(t.faces) > 0 && t.TargetPicked() }
 
 // Commit replaces the picked faces with the target's plane on the active part and
 // recomputes; a sick feature keeps the tool open by returning an error.
@@ -98,7 +121,25 @@ func (t *ReplaceFaceTool) Commit(s *Session) error {
 
 // addReplaceFace builds the replace-face feature into engine fs — shared by Commit and preview.
 func (t *ReplaceFaceTool) addReplaceFace(fs *feature.PartFeatures) *feature.PartFeature {
-	return feature.NewModifyFeatures(fs).AddReplaceFace(faceKeys(t.faces), t.target.Face.ReferenceKey())
+	mods := feature.NewModifyFeatures(fs)
+	if pl, ok := t.targetGeomPlane(); ok {
+		// A work plane's geometry is frozen into the definition: unlike a face it carries no
+		// lineage key the recompute could rebind, which is what AddReplaceFacePlanes is for.
+		return mods.AddReplaceFacePlanes(faceKeys(t.faces), []geom.Plane{pl})
+	}
+	return mods.AddReplaceFace(faceKeys(t.faces), t.target.Face.ReferenceKey())
+}
+
+// targetGeomPlane converts the picked work plane to the kernel plane the definition freezes.
+// A degenerate plane reports false, so the commit falls back to the face path and errors there
+// rather than freezing a garbage target.
+func (t *ReplaceFaceTool) targetGeomPlane() (geom.Plane, bool) {
+	if t.targetPlane == nil {
+		return geom.Plane{}, false
+	}
+	p := t.targetPlane.Plane()
+	pl, err := geom.NewPlane(p.Origin(), p.Normal().AsVector())
+	return pl, err == nil
 }
 
 // AddedFeature returns the feature created on commit (for inspection/tests).

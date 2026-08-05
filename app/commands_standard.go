@@ -110,6 +110,7 @@ func manageTabCommands() []*CommandDefinition {
 		scriptConsoleCommand(),
 		deriveAssemblyCommand(),
 		shrinkwrapCommand(),
+		simplifyCommand(),
 	}
 }
 
@@ -124,6 +125,17 @@ func deriveAssemblyCommand() *CommandDefinition {
 	}).WithTab("Manage").WithEnable(canDeriveAssembly).
 		WithIcon("derive").WithButtonStyle(LargeIconButton).
 		WithTooltip("Derive Assembly — merge an open assembly into this part as one base body, linked to the source.")
+}
+
+// simplifyCommand is the reduction itself, beside Derive and Shrinkwrap on the Simplify panel:
+// remove faces and/or fill internal voids to produce a lighter body (#2050).
+func simplifyCommand() *CommandDefinition {
+	return NewCommand("Manage.Simplify", "Simplify", "Simplify", func(s *Session) error {
+		s.StartFeatureTool(NewSimplifyTool())
+		return nil
+	}).WithTab("Manage").WithEnable(hasActivePart).
+		WithIcon("simplify").WithButtonStyle(LargeIconButton).
+		WithTooltip("Simplify — remove picked faces and/or fill internal voids for a lighter body.")
 }
 
 func shrinkwrapCommand() *CommandDefinition {

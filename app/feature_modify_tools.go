@@ -30,14 +30,20 @@ func bodyIndexOf(part *compdef.PartComponentDefinition, b *topo.Body) int {
 
 // --- Move Face ------------------------------------------------------------
 
-// MoveFaceTool translates one or more picked faces by a vector, retopologizing the solid.
+// MoveFaceTool moves one or more picked faces, retopologizing the solid: by a translation
+// vector, or — in rotate mode — about an axis through a point by an angle. AddMoveFaceRotate was
+// implemented and routed over the API but the tool only ever called AddMoveFace, so rotating a
+// face was API-only (#2050).
 type MoveFaceTool struct {
-	faces      []FaceHandle
-	dx, dy, dz float64
-	added      *feature.PartFeature
+	faces         []FaceHandle
+	rotate        bool
+	dx, dy, dz    float64 // translate mode: the move vector; rotate mode: the axis point
+	axX, axY, axZ float64 // rotate mode: the axis direction (defaults to +Z)
+	angle         float64 // rotate mode: the sweep, radians
+	added         *feature.PartFeature
 }
 
-func NewMoveFaceTool() *MoveFaceTool   { return &MoveFaceTool{} }
+func NewMoveFaceTool() *MoveFaceTool   { return &MoveFaceTool{axZ: 1} }
 func (t *MoveFaceTool) Name() string   { return "Move Face" }
 func (t *MoveFaceTool) Start(*Session) {}
 
@@ -64,11 +70,20 @@ func (t *MoveFaceTool) Prompt(*Session) string {
 	if len(t.faces) == 0 {
 		return "Click the faces to move."
 	}
+	if t.rotate {
+		return "Set the axis and angle, then OK."
+	}
 	return "Set the move vector, then OK."
 }
 
 func (t *MoveFaceTool) CanCommit() bool {
-	return len(t.faces) > 0 && (t.dx != 0 || t.dy != 0 || t.dz != 0)
+	if len(t.faces) == 0 {
+		return false
+	}
+	if t.rotate { // a zero angle or a degenerate axis would move nothing
+		return t.angle != 0 && (t.axX != 0 || t.axY != 0 || t.axZ != 0)
+	}
+	return t.dx != 0 || t.dy != 0 || t.dz != 0
 }
 
 func (t *MoveFaceTool) Commit(s *Session) error {
@@ -92,6 +107,12 @@ func (t *MoveFaceTool) addMoveFace(mods *feature.ModifyFeatures) *feature.PartFe
 	for i, f := range t.faces {
 		keys[i] = f.Face.ReferenceKey()
 	}
+	if t.rotate {
+		a := t.angle
+		return mods.AddMoveFaceRotate(keys,
+			math.P3(t.dx, t.dy, t.dz), math.V3(math.Scalar(t.axX), math.Scalar(t.axY), math.Scalar(t.axZ)),
+			func() float64 { return a })
+	}
 	return mods.AddMoveFace(keys, math.V3(math.Scalar(t.dx), math.Scalar(t.dy), math.Scalar(t.dz)))
 }
 
@@ -108,11 +129,39 @@ func (t *MoveFaceTool) DraftFeature(*Session) (feature.Feature, bool) {
 }
 
 func (t *MoveFaceTool) Params() ToolParams {
-	return ToolParams{Floats: []FloatParam{
-		{"Δ X", func() float64 { return t.dx }, func(v float64) { t.dx = v }},
-		{"Δ Y", func() float64 { return t.dy }, func(v float64) { t.dy = v }},
-		{"Δ Z", func() float64 { return t.dz }, func(v float64) { t.dz = v }},
-	}}
+	if t.rotate {
+		return t.rotateParams()
+	}
+	return ToolParams{
+		Bools: t.modeParam(),
+		Floats: []FloatParam{
+			{"Δ X", func() float64 { return t.dx }, func(v float64) { t.dx = v }},
+			{"Δ Y", func() float64 { return t.dy }, func(v float64) { t.dy = v }},
+			{"Δ Z", func() float64 { return t.dz }, func(v float64) { t.dz = v }},
+		},
+	}
+}
+
+// modeParam is the Rotate toggle both parameter sets share.
+func (t *MoveFaceTool) modeParam() []BoolParam {
+	return []BoolParam{{"Rotate", func() bool { return t.rotate }, func(v bool) { t.rotate = v }}}
+}
+
+// rotateParams are the rotate mode's inputs: the axis point (reusing the vector fields, which
+// mean a position here), the axis direction, and the sweep in degrees.
+func (t *MoveFaceTool) rotateParams() ToolParams {
+	return ToolParams{
+		Bools: t.modeParam(),
+		Floats: []FloatParam{
+			{"Axis X", func() float64 { return t.dx }, func(v float64) { t.dx = v }},
+			{"Axis Y", func() float64 { return t.dy }, func(v float64) { t.dy = v }},
+			{"Axis Z", func() float64 { return t.dz }, func(v float64) { t.dz = v }},
+			{"Dir X", func() float64 { return t.axX }, func(v float64) { t.axX = v }},
+			{"Dir Y", func() float64 { return t.axY }, func(v float64) { t.axY = v }},
+			{"Dir Z", func() float64 { return t.axZ }, func(v float64) { t.axZ = v }},
+			{"Angle°", func() float64 { return degFromRad(t.angle) }, func(v float64) { t.angle = v * radPerDeg }},
+		},
+	}
 }
 
 // --- Combine --------------------------------------------------------------

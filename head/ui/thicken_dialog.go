@@ -28,7 +28,7 @@ func drawThickenDialog(s *app.Session) {
 		thickenUI.thickness = float32(th.Thickness())
 		thickenUI.open = true
 	}
-	dialogSizeOnce(340, 170)
+	dialogSizeOnce(340, 260)
 	if native.Begin("Thicken") {
 		drawFeatureBreadcrumb("Thicken", "")
 		if propertySection("Behavior") {
@@ -37,9 +37,27 @@ func drawThickenDialog(s *app.Session) {
 			if i := propertyComboRow("Approximation", "thicken-approx", app.ApproximationOptions(), th.ApproximationIndex()); i >= 0 {
 				th.SetApproximationIndex(i)
 			}
+			drawThickenOptionRows(th)
 		}
 		native.Separator()
 		drawCommitCancelButtons(s, th.CanCommit())
 	}
 	native.End()
+}
+
+// drawThickenOptionRows renders the #1876 options the tool used to set none of (#2050): which
+// side to offset toward, what boolean the result takes with the running solid, and whether it
+// stays a surface rather than becoming a solid slab.
+func drawThickenOptionRows(th *app.ThickenTool) {
+	if i := propertyComboRow("Direction", "thicken-direction", app.ThickenDirectionOptions(), th.DirectionIndex()); i >= 0 {
+		th.SetDirectionIndex(i)
+	}
+	if i := propertyComboRow("Operation", "thicken-operation", app.ThickenOperationOptions(), th.OperationIndex()); i >= 0 {
+		th.SetOperationIndex(i)
+	}
+	propertyRow("")
+	asSurface := th.AsSurface()
+	if native.Checkbox("Keep as surface", &asSurface) {
+		th.SetAsSurface(asSurface)
+	}
 }
