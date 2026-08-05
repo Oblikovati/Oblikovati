@@ -77,38 +77,61 @@ func sortAround(pts []math.Point2, hes []halfEdge) (map[int][]int, []int) {
 	return outgoing, pos
 }
 
-// nestFaces keeps the counter-clockwise cycles as face outer loops and assigns each
-// directly-enclosing relationship: a CCW cycle nested one level inside another becomes a
-// hole of it (and remains a face in its own right — the arrangement of disjoint loops).
+// nestFaces turns the traced cycles into faces: every COUNTER-CLOCKWISE cycle bounds a face,
+// and every CLOCKWISE cycle is an INNER boundary — it becomes a hole of the face it encloses.
+//
+// The holes must come from the clockwise cycles, not from re-nesting the counter-clockwise ones by
+// containment (Oblikovati#2030). Both describe the same nesting only while the regions inside a
+// face are pairwise DISJOINT. When two of them are ADJACENT — they share an edge, so the
+// complement component they form is one connected region — containment nesting makes BOTH a hole
+// of the parent, and the boundary they share is then emitted twice, once per hole loop. Downstream
+// that lands as an edge whose two uses are on the SAME face: the face is no longer a disk-with-
+// holes, so its χ = V−E+2F−L is off by one per shared edge and the solid is rejected as
+// topologically inadmissible (a camera PCB whose mounting hole straddled the footprint of a block
+// joined on top of it: 31 doubled edges, χ = −31).
+//
+// The half-edge walk already answers this exactly. A face lies to the LEFT of every half-edge on
+// its boundary, so its outer boundary traces counter-clockwise and each of its inner boundaries
+// traces CLOCKWISE — and an inner boundary that runs around several adjacent regions is traced as
+// the ONE cycle it is. Taking the clockwise cycles as the holes therefore yields ∂(A∪B) once
+// instead of ∂A and ∂B twice, and is identical to the old behaviour on disjoint nesting.
 func nestFaces(cycles [][]math.Point2) []Face2D {
-	var ccw [][]math.Point2
+	var ccw, cw [][]math.Point2
 	for _, c := range cycles {
-		if len(c) >= 3 && signedArea2D(c) > arrTol {
+		switch a := signedArea2D(c); {
+		case len(c) < 3:
+		case a > arrTol:
 			ccw = append(ccw, c)
+		case a < -arrTol:
+			cw = append(cw, c)
 		}
 	}
 	faces := make([]Face2D, len(ccw))
 	for i, c := range ccw {
 		faces[i] = Face2D{Outer: c}
 	}
-	for i, inner := range ccw {
-		if p := smallestContainer(ccw, i); p >= 0 {
-			faces[p].Holes = append(faces[p].Holes, reversedLoop(inner))
+	for _, hole := range cw {
+		if p := enclosingFace(ccw, hole); p >= 0 {
+			faces[p].Holes = append(faces[p].Holes, hole)
 		}
 	}
 	return faces
 }
 
-// smallestContainer returns the index of the smallest CCW cycle strictly containing
-// cycle i (its direct parent in the nesting), or −1 if it is top-level. The probe sits
-// just inside cycle i's boundary (an edge midpoint nudged inward), so it is in cycle i's
-// own region — not at a shared-boundary vertex (ambiguous) and not near the centre where a
-// concentric inner cycle would swallow it (which made a frame look nested in its own hole).
-func smallestContainer(ccw [][]math.Point2, i int) int {
-	probe := probeJustInside(ccw[i])
+// enclosingFace returns the index of the smallest counter-clockwise cycle containing the clockwise
+// cycle `hole` — the face `hole` is an inner boundary of — or −1 when there is none (the
+// arrangement's outermost clockwise cycle, which bounds the unbounded region).
+//
+// The probe sits just to the LEFT of the hole's first edge. A face lies to the left of its boundary
+// half-edges, so for a clockwise inner boundary that is a point in the enclosing face itself —
+// OUTSIDE the area the hole encloses. That is what makes the containment test unambiguous: it never
+// samples a shared-boundary vertex, and never lands inside the hole where a nested cycle could
+// swallow it.
+func enclosingFace(ccw [][]math.Point2, hole []math.Point2) int {
+	probe := probeLeftOfFirstEdge(hole)
 	best, bestArea := -1, stdmath.Inf(1)
 	for j, c := range ccw {
-		if j == i || !pointInPolygon2D(probe, c) {
+		if !pointInPolygon2D(probe, c) {
 			continue
 		}
 		if a := signedArea2D(c); a < bestArea {
@@ -118,20 +141,13 @@ func smallestContainer(ccw [][]math.Point2, i int) int {
 	return best
 }
 
-// probeJustInside returns a point just inside a CCW loop near its first edge: the edge
-// midpoint nudged along the inward (left) normal by a small fraction of the edge length.
-func probeJustInside(loop []math.Point2) math.Point2 {
+// probeLeftOfFirstEdge returns a point just to the left of a loop's first edge: the edge midpoint
+// nudged along the left normal by a small fraction of the edge length. "Left" is the face side of
+// any boundary half-edge — the loop's interior for a CCW loop, its exterior for a CW one.
+func probeLeftOfFirstEdge(loop []math.Point2) math.Point2 {
 	a, b := loop[0], loop[1]
 	e := a.VectorTo(b)
 	mid := math.P2((a.X+b.X)/2, (a.Y+b.Y)/2)
-	left := math.V2(-e.Y, e.X)               // interior side of a CCW loop
+	left := math.V2(-e.Y, e.X)               // face side of a boundary half-edge
 	return mid.TranslateBy(left.Scale(1e-4)) // tol:calibrated — interior-probe nudge (see arrange2d arrTol)
-}
-
-func reversedLoop(loop []math.Point2) []math.Point2 {
-	out := make([]math.Point2, len(loop))
-	for i, p := range loop {
-		out[len(loop)-1-i] = p
-	}
-	return out
 }
