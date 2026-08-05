@@ -407,35 +407,21 @@ func (c *DressUpFeatures) AddChamfer(edgeKeys [][]byte, distance func() float64)
 // three-edge corner is blended into a flat triangular face (true) or left pointy (false).
 // Concave edges fill outward (the default); use [AddChamferConcave] to relieve them inward.
 func (c *DressUpFeatures) AddChamferCorners(edgeKeys [][]byte, distance func() float64, flatCorners bool) *PartFeature {
-	return c.authorChamfer(&ChamferDefinition{EdgeKeys: edgeKeys, Distance: distance, Type: types.ChamferDistance, FlatCorners: flatCorners})
+	return c.AddChamferDef(&ChamferDefinition{EdgeKeys: edgeKeys, Distance: distance, Type: types.ChamferDistance, FlatCorners: flatCorners})
 }
 
-// AddChamferConcave bevels the given edges by distance with an explicit concave-edge strategy:
-// outward fills the inside corner with material (the default), inward cuts a recessed relief
-// groove. Convex edges are unaffected by the strategy. Three-edge corners blend flat.
-func (c *DressUpFeatures) AddChamferConcave(edgeKeys [][]byte, distance func() float64, flatCorners bool, strategy ChamferConcaveStrategy) *PartFeature {
-	return c.authorChamfer(&ChamferDefinition{EdgeKeys: edgeKeys, Distance: distance, Type: types.ChamferDistance, FlatCorners: flatCorners, ConcaveStrategy: strategy})
-}
-
-// AddChamferTwoDistances bevels the given edges with independent setbacks on the two adjacent
-// faces (an asymmetric chamfer, M20-F03). Three-edge corners blend flat by default, like the
-// equal-distance mode.
-func (c *DressUpFeatures) AddChamferTwoDistances(edgeKeys [][]byte, distance, distance2 func() float64) *PartFeature {
-	return c.authorChamfer(&ChamferDefinition{EdgeKeys: edgeKeys, Distance: distance, Distance2: distance2, Type: types.ChamferTwoDistances, FlatCorners: true})
-}
-
-// AddChamferDistanceAngle bevels the given edges by a setback on the first face and the
-// chamfer-face angle (radians), M20-F03. Three-edge corners blend flat by default, like the
-// equal-distance mode.
-func (c *DressUpFeatures) AddChamferDistanceAngle(edgeKeys [][]byte, distance, angle func() float64) *PartFeature {
-	return c.authorChamfer(&ChamferDefinition{EdgeKeys: edgeKeys, Distance: distance, Angle: angle, Type: types.ChamferDistanceAndAngle, FlatCorners: true})
-}
-
-// authorChamfer captures mint-time edge anchors (ADR-0043 P6b) against the running body, then
-// registers the chamfer. Every PUBLIC chamfer builder funnels through it so each authoring path
-// (GUI, wire API, assembly, programmatic) records the geometric-recovery witness; the recipe
-// restore calls addChamfer directly so reopening a document never recaptures or rewrites anchors.
-func (c *DressUpFeatures) authorChamfer(def *ChamferDefinition) *PartFeature {
+// AddChamferDef adds a chamfer from a full definition — the setback mode with its second input,
+// the corner treatment and the concave-edge strategy — capturing mint-time edge anchors
+// (ADR-0043 P6b) against the running body. It is the one authoring seam every chamfer path uses;
+// the recipe restore calls addChamfer directly so reopening a document never recaptures or
+// rewrites anchors.
+//
+// It is exported because no per-mode builder carried every field: the Chamfer tool and the wire
+// handler each created a chamfer and then reached into the returned definition to finish it, so
+// the shipped path was not the one the builders described (#2045).
+//
+//	pf := dress.AddChamferDef(&feature.ChamferDefinition{EdgeKeys: keys, Distance: d, Type: types.ChamferDistance})
+func (c *DressUpFeatures) AddChamferDef(def *ChamferDefinition) *PartFeature {
 	if len(def.EdgeAnchors) == 0 {
 		def.EdgeAnchors = captureEdgeAnchors(c.tipBody(), def.EdgeKeys)
 	}

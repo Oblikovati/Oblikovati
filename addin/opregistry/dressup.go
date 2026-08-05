@@ -362,12 +362,12 @@ func buildChamfer(part *compdef.PartComponentDefinition, in featureargs.Chamfer)
 	if err != nil {
 		return nil, err
 	}
-	pf, err := applyChamferMode(part, refKeys(in.EdgeRefs), d, ct, in)
-	if err != nil {
+	def := &feature.ChamferDefinition{
+		EdgeKeys: refKeys(in.EdgeRefs), Distance: d, Type: ct, FlatCorners: true, ConcaveStrategy: cs,
+	}
+	if err := setChamferModeInput(part, def, in); err != nil {
 		return nil, err
 	}
-	def := pf.Definition().(*feature.ChamferFeature).Definition()
-	def.ConcaveStrategy = cs
 	if len(in.EdgesGeom) > 0 {
 		// Bind the chamfered edges by geometry when authored geometrically (survives recompute).
 		refs, err := geomEdgeRefs(in.EdgesGeom)
@@ -376,7 +376,7 @@ func buildChamfer(part *compdef.PartComponentDefinition, in featureargs.Chamfer)
 		}
 		def.GeomEdges = refs
 	}
-	return pf, nil
+	return feature.NewDressUpFeatures(part.Features()).AddChamferDef(def), nil
 }
 
 // chamferTypeOf resolves the chamfer mode spelling, defaulting to equal-distance.
@@ -403,26 +403,24 @@ func chamferConcaveStrategyOf(spelling string) (types.ChamferConcaveStrategy, er
 	return v, nil
 }
 
-// applyChamferMode places the chamfer feature for the resolved mode, resolving the second
-// input (distance2 or angle) for the asymmetric modes.
-func applyChamferMode(part *compdef.PartComponentDefinition, keys [][]byte, d func() float64, ct types.ChamferType, in featureargs.Chamfer) (*feature.PartFeature, error) {
-	du := feature.NewDressUpFeatures(part.Features())
-	switch ct {
+// setChamferModeInput resolves the second input the asymmetric modes take (distance2 or angle)
+// onto the definition. The equal-distance mode takes none.
+func setChamferModeInput(part *compdef.PartComponentDefinition, def *feature.ChamferDefinition, in featureargs.Chamfer) error {
+	switch def.Type {
 	case types.ChamferTwoDistances:
 		d2, err := lengthClosure(part, in.Distance2, "chamfer: distance2")
 		if err != nil {
-			return nil, err
+			return err
 		}
-		return du.AddChamferTwoDistances(keys, d, d2), nil
+		def.Distance2 = d2
 	case types.ChamferDistanceAndAngle:
 		a, err := angleClosure(part, in.Angle, "chamfer: angle")
 		if err != nil {
-			return nil, err
+			return err
 		}
-		return du.AddChamferDistanceAngle(keys, d, a), nil
-	default:
-		return du.AddChamfer(keys, d), nil
+		def.Angle = a
 	}
+	return nil
 }
 
 const shellSchema = `{

@@ -4,6 +4,7 @@ package app
 
 import (
 	"errors"
+	stdmath "math"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/model/feature"
@@ -16,7 +17,10 @@ type ChamferTool struct {
 	featureEditMode // set ⇒ this panel re-edits a committed chamfer (see editChamferTool)
 	edges           []EdgeHandle
 	seededEdgeKeys  [][]byte // edit mode: the feature's existing edge keys (their edges are consumed, so no live handles exist)
+	chamferType     types.ChamferType
 	distance        float64
+	distance2       float64 // two-distance mode: the setback on the second face
+	angle           float64 // distance-and-angle mode: the chamfer-face angle, radians
 	flatCorners     bool
 	concaveStrategy types.ChamferConcaveStrategy // concave edges: outward fill (default) or inward relief
 	tangentChain    bool                         // a plain pick selects the whole tangent chain (#1947)
@@ -24,10 +28,53 @@ type ChamferTool struct {
 }
 
 // NewChamferTool returns a chamfer tool with a default 1-unit setback, flat three-edge corners,
-// and outward concave fill (all overridden from the session preferences in Start).
+// and outward concave fill (all overridden from the session preferences in Start). It starts in
+// the equal-distance mode; the two asymmetric modes seed a matching second setback / 45° so
+// switching to one is immediately committable.
 func NewChamferTool() *ChamferTool {
-	return &ChamferTool{distance: 1, flatCorners: true, concaveStrategy: types.ChamferConcaveOutward}
+	return &ChamferTool{
+		chamferType: types.ChamferDistance, distance: 1, distance2: 1, angle: stdmath.Pi / 4,
+		flatCorners: true, concaveStrategy: types.ChamferConcaveOutward,
+	}
 }
+
+// chamferTypeOrder maps the UI option index to the setback mode.
+var chamferTypeOrder = []types.ChamferType{
+	types.ChamferDistance, types.ChamferTwoDistances, types.ChamferDistanceAndAngle,
+}
+
+// ChamferTypeNames labels the setback-mode combo, in index order.
+func ChamferTypeNames() []string {
+	return []string{"Distance", "Two distances", "Distance and angle"}
+}
+
+// ChamferTypeIndex / SetChamferTypeIndex expose the setback mode as a [ChamferTypeNames] index.
+// Until #2045 the tool could only ever author the equal-distance mode, though the definition and
+// the wire API carried all three.
+func (t *ChamferTool) ChamferTypeIndex() int {
+	for i, ct := range chamferTypeOrder {
+		if ct == t.chamferType {
+			return i
+		}
+	}
+	return 0
+}
+
+// SetChamferTypeIndex selects the setback mode from a combo index; out of range is ignored.
+func (t *ChamferTool) SetChamferTypeIndex(i int) {
+	if i >= 0 && i < len(chamferTypeOrder) {
+		t.chamferType = chamferTypeOrder[i]
+	}
+}
+
+// SetDistance2/Distance2 set the second face's setback (two-distance mode).
+func (t *ChamferTool) SetDistance2(d float64) { t.distance2 = d }
+func (t *ChamferTool) Distance2() float64     { return t.distance2 }
+
+// SetAngleDegrees/AngleDegrees set the chamfer-face angle (distance-and-angle mode) in degrees,
+// which is how the panel edits it; the definition stores radians.
+func (t *ChamferTool) SetAngleDegrees(deg float64) { t.angle = deg * stdmath.Pi / 180 }
+func (t *ChamferTool) AngleDegrees() float64       { return t.angle * 180 / stdmath.Pi }
 
 // Name implements [Tool].
 func (t *ChamferTool) Name() string { return "Chamfer" }
@@ -138,8 +185,22 @@ func (t *ChamferTool) selectedEdgeKeys() [][]byte {
 	return keys
 }
 
-// CanCommit reports whether at least one edge is selected and the distance is positive.
-func (t *ChamferTool) CanCommit() bool { return t.EdgeCount() > 0 && t.distance > 0 }
+// CanCommit reports whether at least one edge is selected, the setback is positive, and the
+// mode's second input is usable — a zero second distance or a degenerate angle would build a
+// chamfer with no face.
+func (t *ChamferTool) CanCommit() bool {
+	if t.EdgeCount() == 0 || t.distance <= 0 {
+		return false
+	}
+	switch t.chamferType {
+	case types.ChamferTwoDistances:
+		return t.distance2 > 0
+	case types.ChamferDistanceAndAngle:
+		return t.angle > 0 && t.angle < stdmath.Pi/2
+	default:
+		return true
+	}
+}
 
 // Commit finishes the tool: an in-place edit writes back through the session, a fresh
 // chamfer goes through the host-driven create path (CommitFeature).
@@ -170,10 +231,30 @@ func (t *ChamferTool) CommitFeature(h ToolHost) error {
 // addChamfer builds the chamfer feature into collection dress — the shared constructor used by
 // both Commit (the part's engine) and DraftFeature (a scratch engine).
 func (t *ChamferTool) addChamfer(dress *feature.DressUpFeatures) *feature.PartFeature {
-	d := t.distance
-	// Mint-time anchors are captured by AddChamferConcave against the running body (ADR-0043 P6b),
+	// Mint-time anchors are captured by AddChamferDef against the running body (ADR-0043 P6b),
 	// uniformly with every other authoring path — no per-tool capture needed here.
-	return dress.AddChamferConcave(t.selectedEdgeKeys(), func() float64 { return d }, t.flatCorners, t.concaveStrategy)
+	return dress.AddChamferDef(t.chamferDefinition())
+}
+
+// chamferDefinition is the definition the tool's current panel state describes. Only the
+// equal-distance mode takes the flat-corner treatment: an asymmetric chamfer leaves the corner
+// planes to meet at a point, so the toggle has nothing to blend there.
+func (t *ChamferTool) chamferDefinition() *feature.ChamferDefinition {
+	d, d2, a := t.distance, t.distance2, t.angle
+	def := &feature.ChamferDefinition{
+		EdgeKeys:        t.selectedEdgeKeys(),
+		Distance:        func() float64 { return d },
+		Type:            t.chamferType,
+		FlatCorners:     t.flatCorners,
+		ConcaveStrategy: t.concaveStrategy,
+	}
+	switch t.chamferType {
+	case types.ChamferTwoDistances:
+		def.Distance2, def.FlatCorners = func() float64 { return d2 }, true
+	case types.ChamferDistanceAndAngle:
+		def.Angle, def.FlatCorners = func() float64 { return a }, true
+	}
+	return def
 }
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
@@ -210,11 +291,10 @@ func (t *ChamferTool) Cancel(s *Session) {
 // commitEdit writes the panel state back into the committed chamfer's definition.
 func (t *ChamferTool) commitEdit(s *Session) error {
 	def := t.target.Definition().(*feature.ChamferFeature).Definition()
-	def.EdgeKeys = t.selectedEdgeKeys()
-	def.EdgeAnchors = edgeHandleAnchors(t.edges)
-	def.Distance = konst(t.distance)
-	def.FlatCorners = t.flatCorners
-	def.ConcaveStrategy = t.concaveStrategy
+	edited := t.chamferDefinition()
+	edited.EdgeAnchors = edgeHandleAnchors(t.edges)
+	edited.GeomEdges = def.GeomEdges // an externally-authored edge set is not the panel's to rewrite
+	*def = *edited
 	return commitFeatureEdit(s, t.target)
 }
 

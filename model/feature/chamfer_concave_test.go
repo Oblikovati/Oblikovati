@@ -39,7 +39,10 @@ func chamferedConcave(t *testing.T, d float64, strategy types.ChamferConcaveStra
 	body, edge := lExtrude(t)
 	fs := NewPartFeatures(nil)
 	NewBaseFeatures(fs).AddBase(body)
-	ch := NewDressUpFeatures(fs).AddChamferConcave([][]byte{edge}, func() float64 { return d }, true, strategy)
+	ch := NewDressUpFeatures(fs).AddChamferDef(&ChamferDefinition{
+		EdgeKeys: [][]byte{edge}, Distance: func() float64 { return d },
+		Type: types.ChamferDistance, FlatCorners: true, ConcaveStrategy: strategy,
+	})
 	fs.Recompute()
 	if !ch.Health().OK() {
 		t.Fatalf("concave chamfer (%v) sick: %+v", strategy, ch.Health())
