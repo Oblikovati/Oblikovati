@@ -48,38 +48,39 @@ func TestCoincidenceGlyphSitsOnThePointsItJoins(t *testing.T) {
 	}
 }
 
-// TestLineRelationGlyphAveragesEachOperandOnce is why the anchor de-duplicates points: a relation
-// between two lines exposes four coordinates per line, and counting a point once per coordinate
-// would still average correctly here — but a shared endpoint would be counted twice and drag the
-// marker onto the busier operand.
-func TestLineRelationGlyphAveragesEachOperandOnce(t *testing.T) {
+// TestPerpendicularMarksTheCornerTheLinesShare: a relation between two lines used to be drawn at
+// the centroid of both, which for lines meeting at a corner is out in the middle of the quadrant
+// they enclose. It belongs on the corner — the place the relation is actually about.
+func TestPerpendicularMarksTheCornerTheLinesShare(t *testing.T) {
 	sk := NewSketches().Add(XYPlane())
-	// Two lines sharing the point (0,0): l1 runs to (4,0), l2 to (0,4). The three DISTINCT points
-	// average to (4/3, 4/3); double-counting the shared corner would pull it to (1,1).
 	shared := sk.Points().Add(math.P2(0, 0))
 	l1 := sk.Lines().Add(shared, sk.Points().Add(math.P2(4, 0)))
 	l2 := sk.Lines().Add(shared, sk.Points().Add(math.P2(0, 4)))
 	sk.GeometricConstraints().AddPerpendicular(l1, l2)
 
 	g := glyphOfKind(t, sk, PerpendicularKind)
-	if want := math.P2(4.0/3.0, 4.0/3.0); !closeTo(g.At, want) {
-		t.Errorf("perpendicular glyph at %v, want %v — the shared corner was counted twice", g.At, want)
+	if want := math.P2(0, 0); !closeTo(g.At, want) {
+		t.Errorf("perpendicular glyph at %v, want the shared corner %v", g.At, want)
 	}
 }
 
-// TestRadiusRelationGlyphSitsAtTheCentres: an equal-radius constraint reads two radii, but its
-// operands expose their centres alongside them, so the marker lands between the circles. This is
-// the case that proved the anchor needs no special handling for scalar DOFs — mapping radii to
-// their centres changed nothing.
-func TestRadiusRelationGlyphSitsAtTheCentres(t *testing.T) {
+// TestRadiusRelationMarksEachCircumference: two circles held to an equal radius have no shared
+// place at all, and the marker used to sit at the midpoint of their centres — on neither circle,
+// and arbitrarily far from both as they move apart. Each circle carries its own marker instead,
+// on its own curve, facing the other.
+func TestRadiusRelationMarksEachCircumference(t *testing.T) {
 	sk := NewSketches().Add(XYPlane())
 	c1 := sk.Circles().Add(sk.Points().Add(math.P2(0, 0)), 1)
 	c2 := sk.Circles().Add(sk.Points().Add(math.P2(6, 0)), 2)
 	sk.GeometricConstraints().AddEqualRadius(c1, c2)
 
-	g := glyphOfKind(t, sk, EqualRadiusKind)
-	if want := math.P2(3, 0); !closeTo(g.At, want) {
-		t.Errorf("equal-radius glyph at %v, want the centres' midpoint %v", g.At, want)
+	ats := anchorsOfKind(sk, EqualRadiusKind)
+	if len(ats) != 2 {
+		t.Fatalf("got %d equal-radius markers, want one per circle", len(ats))
+	}
+	// The near side of each circle: 1 unit right of the origin, 2 units left of (6,0).
+	if !closeTo(ats[0], math.P2(1, 0)) || !closeTo(ats[1], math.P2(4, 0)) {
+		t.Errorf("markers at %v and %v, want the facing points %v and %v", ats[0], ats[1], math.P2(1, 0), math.P2(4, 0))
 	}
 }
 
@@ -128,22 +129,38 @@ func TestRecordsWithNoGeometryGetNoGlyph(t *testing.T) {
 	}
 }
 
-// TestEveryUserConstraintGetsExactlyOneGlyph: the count has to match, or Show Constraints would
-// quietly hide relations the user placed.
-func TestEveryUserConstraintGetsExactlyOneGlyph(t *testing.T) {
+// TestEveryUserConstraintIsMarked: every relation the user placed must be reachable, or Show
+// Constraints would quietly hide one. A relation may carry more than one marker — one per curve it
+// spans — so this pins the set of constraints marked, not the marker count.
+func TestEveryUserConstraintIsMarked(t *testing.T) {
 	sk := NewSketches().Add(XYPlane())
 	a := sk.Points().Add(math.P2(0, 0))
 	b := sk.Points().Add(math.P2(4, 0))
 	l1 := sk.Lines().Add(a, b)
 	l2 := sk.Lines().Add(sk.Points().Add(math.P2(0, 3)), sk.Points().Add(math.P2(4, 3)))
 	g := sk.GeometricConstraints()
-	g.AddHorizontal(a, b)
-	g.AddParallel(l1, l2)
-	g.AddEqualLength(l1, l2)
+	placed := []Constraint{g.AddHorizontal(a, b), g.AddParallel(l1, l2), g.AddEqualLength(l1, l2)}
 
-	if got := len(sk.ConstraintGlyphs()); got != 3 {
-		t.Errorf("got %d glyphs for 3 user constraints", got)
+	marked := map[Constraint]bool{}
+	for _, gl := range sk.ConstraintGlyphs() {
+		marked[gl.Constraint] = true
 	}
+	for i, c := range placed {
+		if !marked[c] {
+			t.Errorf("constraint %d (%T) has no marker — Show Constraints would hide it", i, c)
+		}
+	}
+}
+
+// anchorsOfKind returns the anchors of every marker of a kind, in the order they are produced.
+func anchorsOfKind(sk *Sketch, kind ConstraintKind) []math.Point2 {
+	var ats []math.Point2
+	for _, g := range sk.ConstraintGlyphs() {
+		if g.Kind == kind {
+			ats = append(ats, g.At)
+		}
+	}
+	return ats
 }
 
 // TestGlyphsForGeometryBuiltTheWayToolsBuildIt is the regression for the defect the live app
