@@ -118,6 +118,22 @@ var allowedPlainStartTools = map[string]struct{}{
 	"SurfaceTextureTool":       {},
 	"ThreePointCircleTool":     {},
 	"ThreePointRectangleTool":  {},
+
+	// Surfaced when the scan widened past commands_*.go and past argument-free constructors
+	// (#2051): each is a sketch, assembly or display tool, none a part feature.
+	"AssemblyConstraintTool":  {}, // assembly constraint — outside the part commit gate
+	"AssemblyFeatureEditTool": {}, // re-opens a committed assembly feature; not a part feature
+	"AssemblyJointTool":       {}, // assembly joint — outside the part commit gate
+	"CenterPointArcSlotTool":  {}, // sketch geometry
+	"CloudMoveTool":           {}, // drag-driven point-cloud move; commits per drag, not per OK (#645)
+	"CropBoxTool":             {}, // point-cloud crop box; display-scoped, no part feature
+	"PolygonTool":             {}, // sketch geometry (constructor takes the side count)
+	"SketchChamferTool":       {}, // sketch geometry
+	"SketchFilletTool":        {}, // sketch geometry
+	"SketchOffsetTool":        {}, // sketch geometry
+	"SketchPlaceBlockTool":    {}, // sketch geometry (constructor takes the block)
+	"SketchSlotTool":          {}, // sketch geometry
+	"ThreePointArcSlotTool":   {}, // sketch geometry
 }
 
 // The 41 pre-#1626 part-feature tools that once reached the plain StartTool
@@ -125,11 +141,11 @@ var allowedPlainStartTools = map[string]struct{}{
 // converted — do NOT reintroduce a bypass list; a new part-feature tool
 // implements DraftFeature and activates via StartFeatureTool, full stop.
 
-// plainStartPatterns match the two ways a commands file feeds a constructor to
-// the plain StartTool: directly, or through a func() Tool flyout-table thunk.
+// plainStartPatterns match the ways a source feeds a constructor to the plain StartTool:
+// directly (with or without arguments), or through a func() Tool flyout-table thunk.
 var plainStartPatterns = []*regexp.Regexp{
-	regexp.MustCompile(`s\.StartTool\(New(\w+Tool)\(\)\)`),
-	regexp.MustCompile(`func\(\) Tool \{ return New(\w+Tool)\(\) \}`),
+	regexp.MustCompile(`s\.StartTool\(New(\w+Tool)\(`),
+	regexp.MustCompile(`func\(\) Tool \{ return New(\w+Tool)\(`),
 }
 
 func TestPlainStartToolReservedForNonFeatureTools(t *testing.T) {
@@ -150,9 +166,12 @@ func TestPlainStartToolReservedForNonFeatureTools(t *testing.T) {
 // StartTool across the app's command builders.
 func plainStartedToolConstructors(t *testing.T) map[string]struct{} {
 	t.Helper()
-	files, err := filepath.Glob("../app/commands_*.go")
+	// EVERY app source, not just the command builders: a tool started from a browser action, an
+	// edit-mode re-open or an input handler is as much an activation site as a ribbon command,
+	// and the narrower scan left those outside the seam entirely (#2051).
+	files, err := filepath.Glob("../app/*.go")
 	if err != nil || len(files) == 0 {
-		t.Fatalf("globbing app command files: %v (found %d)", err, len(files))
+		t.Fatalf("globbing app sources: %v (found %d)", err, len(files))
 	}
 	out := map[string]struct{}{}
 	for _, f := range files {
