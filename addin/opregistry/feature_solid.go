@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
@@ -32,9 +33,14 @@ const revolveSchema = `{
     "angle2": {"type": "string", "description": "Optional second-direction sweep (opposite sense), e.g. \"30 deg\" — the two-directional revolve."},
     "direction": {"type": "string", "enum": ["positive", "negative", "symmetric"], "default": "positive", "description": "Which side of the profile the angle sweeps to: positive (forward), negative (the same sweep the other way), or symmetric (half each way). Ignored when angle2 is set, and unobservable on a full revolution."},
     "operation": {"type": "string", "enum": ["new", "join", "cut", "intersect", "surface"], "default": "new", "description": "Boolean against existing bodies, or \"surface\" to revolve the profile into an open surface-of-revolution (sheet) body — Inventor's kSurfaceOperation."},
+    "extent": {"type": "string", "enum": ["angle", "to-face", "from-to", "to-next"], "default": "angle", "description": "How the revolve terminates. \"angle\" sweeps the given angle; \"to-face\" sweeps until it reaches toFace; \"from-to\" bounds the wedge by fromFace and toFace; \"to-next\" stops at the next material met. The geometric extents ignore angle/angle2 and measure their own sweep."},
+    "toFace": {"type": "string", "description": "Stop target for the to-face / from-to (end) extents: a planar face reference key, a work plane (\"plane/N\"), or an origin plane (\"origin/plane/xy\"). It must CONTAIN the revolve axis — only a radial face meets the sweep at one constant angle."},
+    "toFaceGeom": {"type": "object", "description": "The toFace target named by GEOMETRY (a planar face's centroid + normal) instead of toFace — for an author that cannot mint a face key. Wins over toFace.", "properties": {"centroid": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}, "normal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}}, "required": ["centroid", "normal"]},
+    "fromFace": {"type": "string", "description": "Start target for the from-to extent, named like toFace and likewise containing the axis. The wedge runs backwards from the profile to fromFace and forwards to toFace, so it always contains the profile."},
+    "fromFaceGeom": {"type": "object", "description": "The fromFace start target named by GEOMETRY (centroid + normal) instead of fromFace. Wins over fromFace.", "properties": {"centroid": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}, "normal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}}, "required": ["centroid", "normal"]},
     "profileSeed": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2, "description": "Select the revolved region by an interior seed point [x,y] (sketch 2-D cm) instead of profileIndex — resolved by containment on the solved sketch every recompute; wins over profileIndex."}
   },
-  "required": ["sketchIndex", "angle"]
+  "required": ["sketchIndex"]
 }`
 
 func revolveDescriptor() *OperationDescriptor {
@@ -50,7 +56,11 @@ func applyRevolve(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	if err != nil {
 		return nil, err
 	}
-	angle, err := angleClosure(part, in.Angle, "revolve: angle")
+	extent, err := parseRevolveExtent(in)
+	if err != nil {
+		return nil, err
+	}
+	angle, err := revolveAngleFor(part, in, extent)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +73,7 @@ func applyRevolve(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 			return nil, errors.New("revolve: aboutCenterline does not support a second-direction angle2")
 		}
 		pf := feature.NewRevolveFeatures(part.Features()).AddAboutCenterline(sk, in.ProfileIndex, angle, op)
-		return finishRevolve(part, pf, in)
+		return finishRevolve(part, pf, in, extent)
 	}
 	axis, err := axisFromRef(part, in.AxisRef)
 	if err != nil {
@@ -75,19 +85,87 @@ func applyRevolve(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 			return nil, err
 		}
 		pf := feature.NewRevolveFeatures(part.Features()).AddTwoDirectional(sk, in.ProfileIndex, axis, angle, angle2, op)
-		return finishRevolve(part, pf, in)
+		return finishRevolve(part, pf, in, extent)
 	}
 	pf := feature.NewRevolveFeatures(part.Features()).Add(sk, in.ProfileIndex, axis, angle, op)
-	return finishRevolve(part, pf, in)
+	return finishRevolve(part, pf, in, extent)
+}
+
+// parseRevolveExtent maps the revolve's extent spelling onto the model member, rejecting the
+// combinations that would silently drop one of the caller's inputs (#1860). "angle" is spelled
+// DistanceExtent in the model: a revolve's "distance" IS its angle (Inventor's kAngleExtent).
+func parseRevolveExtent(in featureargs.Revolve) (feature.ExtentType, error) {
+	extent, err := revolveExtentType(in.Extent)
+	if err != nil || extent == feature.DistanceExtent {
+		return extent, err
+	}
+	if in.Angle2 != "" {
+		return 0, fmt.Errorf("revolve: extent %q measures its own sweep, so it cannot also take angle2 "+
+			"(the asymmetric two-angle mode); drop one", in.Extent)
+	}
+	return extent, nil
+}
+
+// revolveExtentType is the extent-spelling lookup on its own.
+func revolveExtentType(spelling string) (feature.ExtentType, error) {
+	switch strings.TrimSpace(spelling) {
+	case "", "angle":
+		return feature.DistanceExtent, nil
+	case "to-face":
+		return feature.ToFaceExtent, nil
+	case "from-to":
+		return feature.FromToExtent, nil
+	case "to-next":
+		return feature.ToNextExtent, nil
+	default:
+		return 0, fmt.Errorf("revolve: unknown extent %q (want angle, to-face, from-to or to-next)", spelling)
+	}
+}
+
+// revolveAngleFor resolves the sweep the angle extent reads. The geometric extents measure their
+// own, so they accept a missing angle rather than demanding a number the model will ignore.
+func revolveAngleFor(part *compdef.PartComponentDefinition, in featureargs.Revolve,
+	extent feature.ExtentType) (func() float64, error) {
+	if extent != feature.DistanceExtent {
+		return optionalAngleClosure(part, in.Angle, "revolve: angle")
+	}
+	if strings.TrimSpace(in.Angle) == "" {
+		return nil, errors.New(`revolve: the angle extent needs "angle" (e.g. "360 deg"); ` +
+			`the to-face / from-to / to-next extents measure their own sweep`)
+	}
+	return angleClosure(part, in.Angle, "revolve: angle")
 }
 
 // finishRevolve applies the axis-independent options — the sweep direction and the region seed —
 // and recomputes. Every construction path ends here so a "direction" can never be honoured on one
 // axis and dropped on another (#2019).
-func finishRevolve(part *compdef.PartComponentDefinition, pf *feature.PartFeature, in featureargs.Revolve) (json.RawMessage, error) {
-	pf.Definition().(*feature.RevolveFeature).Definition().Direction = parseExtentDirection(in.Direction)
+func finishRevolve(part *compdef.PartComponentDefinition, pf *feature.PartFeature,
+	in featureargs.Revolve, extent feature.ExtentType) (json.RawMessage, error) {
+	def := pf.Definition().(*feature.RevolveFeature).Definition()
+	def.Direction = parseExtentDirection(in.Direction)
+	if err := bindRevolveExtent(part, def, in, extent); err != nil {
+		return nil, err
+	}
 	setRevolveProfileSeed(pf, in.ProfileSeed)
 	return recomputeResult(part, pf)
+}
+
+// bindRevolveExtent records the extent and resolves whichever terminator plane(s) it needs. to-next
+// binds nothing: it finds its own stop against the running bodies at recompute time.
+func bindRevolveExtent(part *compdef.PartComponentDefinition, def *feature.RevolveDefinition,
+	in featureargs.Revolve, extent feature.ExtentType) error {
+	def.Extent = extent
+	var err error
+	switch extent {
+	case feature.FromToExtent:
+		if def.FromPlane, err = extentTargetPlane(part, "revolve", "fromFace", in.FromFace, in.FromFaceGeom); err != nil {
+			return err
+		}
+		fallthrough // from-to's END is named exactly like to-face's stop
+	case feature.ToFaceExtent:
+		def.ToPlane, err = extentTargetPlane(part, "revolve", "toFace", in.ToFace, in.ToFaceGeom)
+	}
+	return err
 }
 
 // setRevolveProfileSeed records an interior seed point on the revolve so its region resolves by

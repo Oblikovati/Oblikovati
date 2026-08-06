@@ -46,6 +46,14 @@ type RevolveDefinition struct {
 	// (half each way) — Inventor's revolve Direction (#2019). Ignored once Angle2 is set, which
 	// is the asymmetric mode and names both sides itself. See revolveSpan.
 	Direction ExtentDirection
+	// Extent is how the revolve terminates (#1860). The zero value, DistanceExtent, is the ANGLE
+	// extent — a revolve's "distance" is its Angle (Inventor's kAngleExtent) — and the geometric
+	// members terminate on ToPlane/FromPlane or on the next material instead. See revolveExtentSpan.
+	Extent ExtentType
+	// ToPlane is the to-face stop (and the "to" of from-to); FromPlane is the "from". Both must
+	// contain the revolve axis — see radialHalfPlaneDir. Unused by the angle and to-next extents.
+	ToPlane   *WorkPlane
+	FromPlane *WorkPlane
 	Operation ops.PartFeatureOperation
 }
 
@@ -81,7 +89,7 @@ func (r *RevolveFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	r.tool, err = r.buildRevolveTool(prof, axis)
+	r.tool, err = r.buildRevolveTool(prof, axis, in.Bodies)
 	if err != nil {
 		return Output{}, err
 	}
@@ -96,8 +104,12 @@ func (r *RevolveFeature) Recompute(in Input) (Output, error) {
 // definition. For the Surface operation (kSurfaceOperation, #1858) it revolves the profile
 // boundary into an OPEN surface of revolution (a sheet); otherwise it builds the solid of
 // revolution via the shared [buildRevolveSolid] (the assembly-context revolve, #735, reuses it).
-func (r *RevolveFeature) buildRevolveTool(prof *sketch.Profile, axis *WorkAxis) (*topo.Body, error) {
-	angle, start := revolveSpan(r.def)
+func (r *RevolveFeature) buildRevolveTool(prof *sketch.Profile, axis *WorkAxis,
+	bodies []*topo.Body) (*topo.Body, error) {
+	angle, start, err := r.resolveRevolveSpan(prof, axis, bodies)
+	if err != nil {
+		return nil, err
+	}
 	plane, feat := r.def.Sketch.Plane(), featOr(r.featName, "revolve")
 	if r.def.Operation == ops.Surface {
 		return buildRevolveSheet(prof, plane, axis, angle, start, feat)
