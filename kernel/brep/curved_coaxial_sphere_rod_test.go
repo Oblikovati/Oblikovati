@@ -72,20 +72,23 @@ func TestCoaxialSphereCircleOffsetDeclinesWhatOCCTDeclines(t *testing.T) {
 	}
 }
 
-// TestCoaxialRodOfDeclinesOutOfScopeExtents guards the documented scope. A rod's caps must each clear
-// the ball cleanly — both strictly inside, both strictly outside, or one of each; a cap landing in the
-// annular band between the seam plane and the pole is a different construction and must decline, so
-// kernel/ops keeps its guarded fallback rather than shipping a solid this file cannot describe.
-func TestCoaxialRodOfDeclinesOutOfScopeExtents(t *testing.T) {
+// TestCoaxialRodOfDeclinesDegenerateExtents guards the gate. Every extent is buildable — the rod may end
+// inside the ball, clear it entirely, or stop part way through its shoulder — EXCEPT the ones whose
+// result would carry a face of zero size: a cap sitting on a seam station (a zero-width band) or on a
+// pole (a zero-radius disc), and a rod that never reaches the ball at all.
+func TestCoaxialRodOfDeclinesDegenerateExtents(t *testing.T) {
+	const R, rc = 0.5, 0.3
+	d := stdmath.Sqrt(R*R - rc*rc) // 0.4
 	for _, c := range []struct {
 		name        string
 		y0, length  float64
 		explanation string
 	}{
-		{"shoulder stop", 0, 0.45, "the far cap lands between the seam plane and the pole"},
-		{"buried rod", -0.2, 0.4, "both caps inside: the union is the ball alone"},
+		{"cap on the seam station", d, 1.0, "the wall band from the seam to that cap is zero-width"},
+		{"cap on the pole", 0, R, "the end disc shrinks to the pole"},
+		{"rod short of the ball", 2.0, 1.0, "the pair does not meet"},
 	} {
-		ball, rod := ballAndRod(t, 0.5, 0.3, c.y0, c.length)
+		ball, rod := ballAndRod(t, R, rc, c.y0, c.length)
 		if _, ok := coaxialRodOf(ball, rod); ok {
 			t.Errorf("%s accepted; want a decline (%s)", c.name, c.explanation)
 		}
@@ -100,57 +103,121 @@ func TestCoaxialRodOfAcceptsEitherArgumentOrder(t *testing.T) {
 	if !okF || !okR {
 		t.Fatalf("ball-first ok=%v, rod-first ok=%v; want both", okF, okR)
 	}
-	if forward.hiSeam.Center != reverse.hiSeam.Center || forward.hiSeam.Radius != reverse.hiSeam.Radius {
-		t.Errorf("argument order changed the seam: %v vs %v", forward.hiSeam, reverse.hiSeam)
+	if forward.sLo != reverse.sLo || forward.sHi != reverse.sHi {
+		t.Errorf("argument order changed the rod's stations: [%g,%g] vs [%g,%g]",
+			forward.sLo, forward.sHi, reverse.sLo, reverse.sHi)
 	}
 }
 
-// TestCoaxialRodOfRecognisesTheThroughExtent: a rod that clears the ball at BOTH ends has two real seam
-// circles, and both must land on the sphere at ±√(R²−r²) with the rod's own radius.
-func TestCoaxialRodOfRecognisesTheThroughExtent(t *testing.T) {
-	ball, rod := ballAndRod(t, 0.5, 0.3, -1.0, 2.5)
-	r, ok := coaxialRodOf(ball, rod)
-	if !ok {
-		t.Fatal("a rod passing right through the ball was declined")
-	}
-	if !r.through {
-		t.Fatal("the through extent was recognised as a rod ending inside the ball")
-	}
+// TestCoaxialRodOfRecordsTheSeamOffset: the seam offset is OCCT's √(R²−r_c²), and the rod's stations are
+// measured from the ball centre along `out`, which always runs lo→hi.
+func TestCoaxialRodOfRecordsTheSeamOffset(t *testing.T) {
 	for _, c := range []struct {
-		name  string
-		seam  geom.Circle
-		wantY float64
-	}{{"hi", r.hiSeam, 0.4}, {"lo", r.loSeam, -0.4}} {
-		if stdmath.Abs(float64(c.seam.Center.Y)-c.wantY) > 1e-12 {
-			t.Errorf("%s seam at y=%g, want %g", c.name, float64(c.seam.Center.Y), c.wantY)
-		}
-		if stdmath.Abs(c.seam.Radius-0.3) > 1e-12 {
-			t.Errorf("%s seam radius %g, want the rod's 0.3", c.name, c.seam.Radius)
-		}
-	}
-}
-
-// TestCoaxialRodOfOrientsTheAxisFromTheBuriedEnd: `out` must run from the buried cap toward the free
-// one whichever way the rod was modelled, since every face's side is named against it.
-func TestCoaxialRodOfOrientsTheAxisFromTheBuriedEnd(t *testing.T) {
-	for _, c := range []struct {
-		name       string
-		y0, length float64
-		wantY      float64
+		name           string
+		y0, length     float64
+		wantLo, wantHi float64
 	}{
-		{"rod built along +Y", 0, 1.5, 1},
-		{"rod built along -Y", -1.5, 1.5, -1},
+		{"rod built along +Y", 0, 1.5, 0, 1.5},
+		{"rod built along -Y", -1.5, 1.5, -1.5, 0},
+		{"through rod", -1.0, 2.5, -1.0, 1.5},
 	} {
 		ball, rod := ballAndRod(t, 0.5, 0.3, c.y0, c.length)
 		r, ok := coaxialRodOf(ball, rod)
 		if !ok {
 			t.Fatalf("%s: declined", c.name)
 		}
-		if got := float64(r.out.Y); stdmath.Abs(got-c.wantY) > 1e-12 {
-			t.Errorf("%s: out.Y = %g, want %g (buried cap → free cap)", c.name, got, c.wantY)
+		if stdmath.Abs(r.seamOffset-0.4) > 1e-12 {
+			t.Errorf("%s: seam offset %g, want 0.4", c.name, r.seamOffset)
 		}
-		if float64(r.hiSeam.Center.Y)*c.wantY <= 0 {
-			t.Errorf("%s: seam at y=%g is on the buried side", c.name, float64(r.hiSeam.Center.Y))
+		if stdmath.Abs(r.sLo-c.wantLo) > 1e-12 || stdmath.Abs(r.sHi-c.wantHi) > 1e-12 {
+			t.Errorf("%s: stations [%g,%g], want [%g,%g]", c.name, r.sLo, r.sHi, c.wantLo, c.wantHi)
+		}
+		if r.sLo >= r.sHi {
+			t.Errorf("%s: stations are not ordered lo→hi: [%g,%g]", c.name, r.sLo, r.sHi)
+		}
+	}
+}
+
+// TestBallSpansSplitAtEverySeamAndCap pins the one-dimensional classification the whole family rests on:
+// the ball's surface, walked pole to pole, changes membership in the rod only at the seam stations and
+// at a rod cap that lands between the poles — and adjacent runs of the same verdict merge, so a cut that
+// changes nothing leaves no spurious face boundary.
+func TestBallSpansSplitAtEverySeamAndCap(t *testing.T) {
+	for _, c := range []struct {
+		name       string
+		y0, length float64
+		want       []coaxialSpan
+	}{
+		{"rod ends inside the ball", 0, 1.5, []coaxialSpan{
+			{-0.5, 0.4, false}, {0.4, 0.5, true}}},
+		{"rod passes through", -1.0, 2.5, []coaxialSpan{
+			{-0.5, -0.4, true}, {-0.4, 0.4, false}, {0.4, 0.5, true}}},
+		{"rod stops in the shoulder", 0, 0.45, []coaxialSpan{
+			{-0.5, 0.4, false}, {0.4, 0.45, true}, {0.45, 0.5, false}}},
+	} {
+		ball, rod := ballAndRod(t, 0.5, 0.3, c.y0, c.length)
+		r, ok := coaxialRodOf(ball, rod)
+		if !ok {
+			t.Fatalf("%s: declined", c.name)
+		}
+		assertSpans(t, c.name, r.ballSpans(), c.want)
+	}
+}
+
+// TestWallSpansSplitAtTheSeams is the same for the rod's own side: it crosses the ball's surface only at
+// the seam stations, and only where those fall inside its own extent.
+func TestWallSpansSplitAtTheSeams(t *testing.T) {
+	for _, c := range []struct {
+		name       string
+		y0, length float64
+		want       []coaxialSpan
+	}{
+		{"rod ends inside the ball", 0, 1.5, []coaxialSpan{{0, 0.4, true}, {0.4, 1.5, false}}},
+		{"rod passes through", -1.0, 2.5, []coaxialSpan{
+			{-1.0, -0.4, false}, {-0.4, 0.4, true}, {0.4, 1.5, false}}},
+		{"rod stops in the shoulder", 0, 0.45, []coaxialSpan{{0, 0.4, true}, {0.4, 0.45, false}}},
+	} {
+		ball, rod := ballAndRod(t, 0.5, 0.3, c.y0, c.length)
+		r, ok := coaxialRodOf(ball, rod)
+		if !ok {
+			t.Fatalf("%s: declined", c.name)
+		}
+		assertSpans(t, c.name, r.wallSpans(), c.want)
+	}
+}
+
+// TestCapSpansSplitWhereTheBallCrossesTheCap: a rod cap inside the ball is wholly inside, one outside is
+// wholly outside, and one landing in the shoulder is split at the ball's own circle there.
+func TestCapSpansSplitWhereTheBallCrossesTheCap(t *testing.T) {
+	ball, rod := ballAndRod(t, 0.5, 0.3, 0, 0.45)
+	r, ok := coaxialRodOf(ball, rod)
+	if !ok {
+		t.Fatal("shoulder-stop rod declined")
+	}
+	if got := r.capSpans(r.sLo); len(got) != 1 || !got[0].inside {
+		t.Errorf("the buried cap splits into %v, want one wholly-inside run", got)
+	}
+	rho := stdmath.Sqrt(0.25 - 0.45*0.45) // the ball's radius at the shoulder cap
+	got := r.capSpans(r.sHi)
+	if len(got) != 2 || !got[0].inside || got[1].inside {
+		t.Fatalf("the shoulder cap splits into %v, want inside then outside", got)
+	}
+	if stdmath.Abs(got[0].hi-rho) > 1e-12 {
+		t.Errorf("the shoulder cap splits at radius %g, want the ball's own %g there", got[0].hi, rho)
+	}
+}
+
+// assertSpans compares a run decomposition against the expected one.
+func assertSpans(t *testing.T, name string, got, want []coaxialSpan) {
+	t.Helper()
+	if len(got) != len(want) {
+		t.Errorf("%s: %d spans %v, want %d %v", name, len(got), got, len(want), want)
+		return
+	}
+	for i := range got {
+		if stdmath.Abs(got[i].lo-want[i].lo) > 1e-9 || stdmath.Abs(got[i].hi-want[i].hi) > 1e-9 ||
+			got[i].inside != want[i].inside {
+			t.Errorf("%s: span %d = %v, want %v", name, i, got[i], want[i])
 		}
 	}
 }
@@ -211,6 +278,121 @@ func sameCensus(got, want map[string]int) bool {
 		}
 	}
 	return true
+}
+
+// TestShoulderExtentsAssembleAnalyticSolids: a rod stopping PART WAY through the ball's shoulder is the
+// extent where a plane∩sphere circle joins the seam circle, so the ball survives in two pieces and the
+// rod's end cap survives as an ANNULUS. All three shoulder configurations are driven — one shoulder cap,
+// two, and one paired with a free cap.
+func TestShoulderExtentsAssembleAnalyticSolids(t *testing.T) {
+	shoulder := func(y0, length float64) (*topo.Body, *topo.Body) { return ballAndRod(t, 0.5, 0.3, y0, length) }
+	oneBall, oneRod := shoulder(0, 0.45)    // buried cap → shoulder cap
+	biBall, biRod := shoulder(-0.45, 0.9)   // a shoulder cap at each end
+	studBall, studRod := shoulder(-0.45, 2) // shoulder cap → free cap
+	for _, c := range []struct {
+		name  string
+		build func() (*topo.Body, bool)
+		want  map[string]int
+	}{
+		{"ball ∪ shoulder rod", func() (*topo.Body, bool) { return CoaxialSphereRodJoin(oneBall, oneRod) },
+			map[string]int{"sphere": 2, "cylinder": 1, "plane": 1}},
+		{"ball − shoulder rod", func() (*topo.Body, bool) { return CoaxialSphereRodCut(oneBall, oneRod) },
+			map[string]int{"sphere": 2, "cylinder": 1, "plane": 2}},
+		{"shoulder rod − ball", func() (*topo.Body, bool) { return CoaxialSphereRodCut(oneRod, oneBall) },
+			map[string]int{"sphere": 1, "cylinder": 1, "plane": 1}},
+		{"ball ∩ shoulder rod", func() (*topo.Body, bool) { return CoaxialSphereRodIntersect(oneBall, oneRod) },
+			map[string]int{"sphere": 1, "cylinder": 1, "plane": 2}},
+		// three ball pieces: a tip beyond each shoulder cap, and the belt between the two seams
+		{"ball ∪ bi-shoulder rod", func() (*topo.Body, bool) { return CoaxialSphereRodJoin(biBall, biRod) },
+			map[string]int{"sphere": 3, "cylinder": 2, "plane": 2}},
+		{"bi-shoulder rod − ball", func() (*topo.Body, bool) { return CoaxialSphereRodCut(biRod, biBall) },
+			map[string]int{"sphere": 2, "cylinder": 2, "plane": 2}},
+		{"ball ∪ shoulder stud", func() (*topo.Body, bool) { return CoaxialSphereRodJoin(studBall, studRod) },
+			map[string]int{"sphere": 2, "cylinder": 2, "plane": 2}},
+		{"ball ∩ shoulder stud", func() (*topo.Body, bool) { return CoaxialSphereRodIntersect(studBall, studRod) },
+			map[string]int{"sphere": 2, "cylinder": 1, "plane": 1}},
+	} {
+		res, ok := c.build()
+		if !ok {
+			t.Errorf("%s declined", c.name)
+			continue
+		}
+		assertWatertight(t, res)
+		got := map[string]int{}
+		for _, f := range res.Faces() {
+			got[surfaceKind(f)]++
+		}
+		if !sameCensus(got, c.want) {
+			t.Errorf("%s built faces %v, want %v", c.name, got, c.want)
+		}
+	}
+}
+
+// TestSettleWindingsDeclinesAnUnsatisfiableChain guards the escape hatch. The propagation cannot bend a
+// spherical cap — its direction names which cap survives — so a chain whose two caps demand opposite
+// parities has no solution, and the assembly must DECLINE rather than emit a body that measures right
+// and fails ops.Validate's orientation check. The chain here is hand-built with the parity broken,
+// because the geometry never produces one: an orientable surface always admits a consistent walk.
+func TestSettleWindingsDeclinesAnUnsatisfiableChain(t *testing.T) {
+	cap := func(forward bool) coaxialPiece {
+		return coaxialPiece{fixed: true, rims: []coaxialRim{{0, 1, forward}},
+			build: func(bool) (curvedFace, bool) { return curvedFace{}, true }}
+	}
+	if _, ok := settleWindings([]coaxialPiece{cap(true), cap(false)}); !ok {
+		t.Error("two caps walking one rim opposite ways were rejected; that pair is consistent")
+	}
+	if _, ok := settleWindings([]coaxialPiece{cap(true), cap(true)}); ok {
+		t.Error("two caps walking one rim the SAME way were accepted; neither can flip, so decline")
+	}
+	if _, ok := settleWindings([]coaxialPiece{cap(true)}); ok {
+		t.Error("a lone rim, walked by ONE piece, was accepted; that is an open boundary, not a solid")
+	}
+}
+
+// TestFullyBuriedRodIsAWholeBallOrAVoid: a rod that ends inside the ball at BOTH ends removes nothing of
+// the ball's surface, so the union is the untouched sphere — one boundary-less face — and the cut is that
+// same sphere with the rod as an interior VOID, a second shell facing into the cavity.
+func TestFullyBuriedRodIsAWholeBallOrAVoid(t *testing.T) {
+	ball, rod := ballAndRod(t, 0.5, 0.3, -0.2, 0.4) // both caps at |s| = 0.2, well inside the seam at 0.4
+	union, ok := CoaxialSphereRodJoin(ball, rod)
+	if !ok {
+		t.Fatal("ball ∪ buried rod declined")
+	}
+	if n := len(union.Faces()); n != 1 || surfaceKind(union.Faces()[0]) != "sphere" {
+		t.Errorf("ball ∪ buried rod has %d faces, want the untouched sphere alone", n)
+	}
+	if n := len(union.Faces()[0].Loops()); n != 0 {
+		t.Errorf("the untouched sphere carries %d loops, want none", n)
+	}
+	bored, ok := CoaxialSphereRodCut(ball, rod)
+	if !ok {
+		t.Fatal("ball − buried rod declined")
+	}
+	assertWatertight(t, bored)
+	if n := len(bored.Shells()); n != 2 {
+		t.Errorf("ball − buried rod is %d shell(s), want 2 (the ball plus the void the rod leaves)", n)
+	}
+}
+
+// TestShoulderCapLeavesAnAnnulus is the shoulder extent's signature: the rod's end disc is crossed by the
+// ball's own surface, so the face that survives on it carries a HOLE — an annulus, not a disc. Nothing in
+// the other two extents produces one.
+func TestShoulderCapLeavesAnAnnulus(t *testing.T) {
+	ball, rod := ballAndRod(t, 0.5, 0.3, 0, 0.45)
+	res, ok := CoaxialSphereRodJoin(ball, rod)
+	if !ok {
+		t.Fatal("ball ∪ shoulder rod declined")
+	}
+	for _, f := range res.Faces() {
+		if surfaceKind(f) != "plane" {
+			continue
+		}
+		if n := len(f.Loops()); n != 2 {
+			t.Errorf("the shoulder cap's face has %d loops, want 2 (the rod's rim and the ball's circle)", n)
+		}
+		return
+	}
+	t.Fatal("the shoulder union has no planar face")
 }
 
 // TestBeadKeepsTheBallsBeltAndNothingElse: cutting a through rod out of the ball must leave the ball's

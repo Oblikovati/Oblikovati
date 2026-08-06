@@ -119,6 +119,90 @@ func TestThroughRodBooleansStayAnalytic(t *testing.T) {
 	})
 }
 
+// TestShoulderRodBooleansStayAnalytic is the third extent: the rod stops PART WAY through the ball's
+// shoulder, so its end cap is neither inside nor outside — the ball's own surface crosses it, leaving an
+// ANNULUS. That is the one contact in this family that is not just the seam circle: a plane∩sphere
+// circle enters alongside it, and the ball's surviving surface comes in two pieces (a big cap below the
+// seam and a small cap beyond the rod's end) instead of one.
+func TestShoulderRodBooleansStayAnalytic(t *testing.T) {
+	const stop = 0.45 // between the seam plane at 0.4 and the pole at 0.5
+	ball, rod := ballOf(t), rodOf(t, 0, stop)
+	R, rc, d := ballStudR, ballStudRod, ballStudSeam
+	rho := stdmath.Sqrt(R*R - stop*stop) // the ball's own radius where the rod's cap lands
+	vRod := stdmath.Pi * rc * rc * stop
+	vShared := shoulderSharedVolume(R, rc, stop)
+	bigCap, tipCap := sphereZoneArea(R, R+d), sphereZoneArea(R, R-stop)
+	shoulderBelt := sphereZoneArea(R, stop-d)
+	wall := func(length float64) float64 { return 2 * stdmath.Pi * rc * length }
+	disc, annulus := stdmath.Pi*rc*rc, stdmath.Pi*(rc*rc-rho*rho)
+	innerDisc := stdmath.Pi * rho * rho
+
+	runCoaxialCases(t, []coaxialCase{
+		{"ball ∪ shoulder rod", Join, ball, rod, ballVolume(R) + vRod - vShared,
+			bigCap + tipCap + wall(stop-d) + annulus,
+			map[string]int{"sphere": 2, "cylinder": 1, "plane": 1}},
+		{"ball − shoulder rod", Cut, ball, rod, ballVolume(R) - vShared,
+			bigCap + tipCap + wall(d) + disc + innerDisc,
+			map[string]int{"sphere": 2, "cylinder": 1, "plane": 2}},
+		{"shoulder rod − ball", Cut, rod, ball, vRod - vShared,
+			shoulderBelt + wall(stop-d) + annulus,
+			map[string]int{"sphere": 1, "cylinder": 1, "plane": 1}},
+		{"ball ∩ shoulder rod", Intersect, ball, rod, vShared,
+			shoulderBelt + wall(d) + disc + innerDisc,
+			map[string]int{"sphere": 1, "cylinder": 1, "plane": 2}},
+	})
+}
+
+// shoulderSharedVolume is the material a rod running from the ball centre to station `stop` shares with
+// the ball, where stop lands in the shoulder band (d < stop < R). Inside the ball's own circle at that
+// station the rod's cap is what limits the solid; outside it the ball's surface is:
+//
+//	V = π·ρ²·stop + (2π/3)·((R²−ρ²)^{3/2} − (R²−r_c²)^{3/2}),   ρ = √(R²−stop²)
+func shoulderSharedVolume(ballR, rodR, stop float64) float64 {
+	rho2 := ballR*ballR - stop*stop
+	return stdmath.Pi*rho2*stop +
+		(2*stdmath.Pi/3)*(stdmath.Pow(ballR*ballR-rho2, 1.5)-stdmath.Pow(ballR*ballR-rodR*rodR, 1.5))
+}
+
+// TestShoulderRodVolumeMatchesNumericIntegration pins the closed form above against a direct numeric
+// integration of the same region, so a slip in it cannot quietly move what the boolean is measured
+// against.
+func TestShoulderRodVolumeMatchesNumericIntegration(t *testing.T) {
+	const R, rc, stop, n = ballStudR, ballStudRod, 0.45, 400000
+	numeric := 0.0
+	for i := 0; i < n; i++ {
+		r := rc * (float64(i) + 0.5) / n
+		numeric += 2 * stdmath.Pi * r * stdmath.Min(stop, stdmath.Sqrt(R*R-r*r)) * (rc / n)
+	}
+	if got := shoulderSharedVolume(R, rc, stop); stdmath.Abs(got-numeric)/numeric > 1e-6 {
+		t.Errorf("shoulderSharedVolume = %.8f, numeric integration = %.8f", got, numeric)
+	}
+}
+
+// TestBuriedRodLeavesAnInteriorVoid: a rod ending inside the ball at BOTH ends removes nothing of the
+// ball's surface, so cutting it away leaves a sealed cavity — one body of two shells whose volume is the
+// ball less the rod. The union is the untouched ball.
+func TestBuriedRodLeavesAnInteriorVoid(t *testing.T) {
+	ball, rod := ballOf(t), rodOf(t, -0.2, 0.4)
+	vBall := ballVolume(ballStudR)
+	vRod := stdmath.Pi * ballStudRod * ballStudRod * 0.4
+	bored, err := Boolean(Cut, ball, rod)
+	if err != nil {
+		t.Fatalf("ball − buried rod: %v", err)
+	}
+	if n := len(bored.Shells()); n != 2 {
+		t.Errorf("ball − buried rod is %d shell(s), want 2 (the ball plus the void)", n)
+	}
+	assertWithin(t, "ball − buried rod volume",
+		BodyGeometryProperties(bored, PropertyQuality()).Volume, vBall-vRod)
+	union, err := Boolean(Join, ball, rod)
+	if err != nil {
+		t.Fatalf("ball ∪ buried rod: %v", err)
+	}
+	assertWithin(t, "ball ∪ buried rod volume",
+		BodyGeometryProperties(union, PropertyQuality()).Volume, vBall)
+}
+
 // TestBeadIsGenusOne pins the bead's topology, which no volume or area check can see: a ball with a
 // bore right through it is a solid of genus 1, so its Euler characteristic is 2−2·1 = 0. A result that
 // closed the bore off, or kept an extra shell, would still measure a plausible volume.

@@ -159,6 +159,22 @@ fan sweeps its rim straight to the pole, so a face carrying HOLES must decline r
 them. Both the bead (`ball − axle`, a genus-1 solid of two faces, χ = 0) and the severed axle (two
 shells) now come out exact.
 
-A cap landing in the annular band *between* the seam plane and the pole — a rod stopping part way
-through the ball's shoulder — still declines: its result carries an annular cap bounded by a plane∩sphere
-circle, which is a different construction rather than a different mesh.
+**And why the family needed no case table in the end.** A cap landing in the annular band *between* the
+seam plane and the pole — a rod stopping part way through the ball's shoulder — was the last extent left,
+and it is the one where a *plane*∩sphere circle joins the seam circle: the ball survives in two pieces
+and the rod's end cap survives as an annulus. Enumerating it alongside the others would have meant a
+fourth and fifth assembly recipe per operation. It did not, because the classification here is
+**one-dimensional**. Both operands are surfaces of revolution about the same axis, so a point's
+membership in the other solid depends on nothing but its axial station (or, on a rod cap, its radius):
+a ball-surface point is inside the rod exactly when |s| > d and the rod spans s; a rod-wall point is
+inside the ball exactly when |s| < d. Every face of every result is one maximal run of constant
+membership, so the whole thing reduces to two scalar predicates and a sort, and the standard boolean
+face selection (keep the target's runs outside the tool, plus the tool's runs inside it, inverted) does
+the rest.
+
+The one thing spans do not settle is WINDING, and that is genuinely non-local: a face walks all of its
+own rims one way or the other together, so one choice propagates down the chain. The spherical caps are
+the fixed points — their direction names which cap survives — so the assembly seeds from them and
+propagates, declining a chain it cannot satisfy rather than emitting a solid that measures right and
+fails `ops.Validate`'s orientation check. Only a rod cap landing exactly ON a seam station or a pole
+still declines, because those produce a face of no size.

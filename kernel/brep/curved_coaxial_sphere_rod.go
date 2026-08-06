@@ -25,27 +25,18 @@ import (
 // construction, so there is nothing for a cell classifier to decide: naming which cap survives IS the
 // split (compare DrillThroughHole, where "the circle is an inner loop" is likewise the whole answer).
 //
-// SCOPE — both extents in which the rod's caps clear the seam cleanly:
+// SCOPE — every extent of the rod, because the classification is one-dimensional (see
+// curved_coaxial_sphere_rod_spans.go) and so needs no case table:
 //
-//	the rod ENDS inside the ball (one seam circle):
-//	  ∪  ball + protruding stub          (the ball stud / rod end)
-//	  −  ball − rod  = a blind spherical bore with a flat bottom (a socket)
-//	  −  rod − ball  = the free stub with a spherical dimple in its base
-//	  ∩  the plug: the buried length of the rod, domed by the ball
+//	the rod ENDS inside the ball          ∪ the ball stud · − a blind bore or a dimpled stub · ∩ the plug
+//	the rod passes THROUGH                ∪ a ball on an axle · − a bead (genus 1) or two severed stubs
+//	a cap stops in the ball's SHOULDER    the ball survives in two pieces and the rod's end cap as an
+//	                                      ANNULUS, since a plane∩sphere circle joins the seam circle
+//	the rod is BURIED entirely            ∪ the untouched ball · − the ball with the rod as an interior void
 //
-//	the rod passes THROUGH (two seam circles):
-//	  ∪  a ball on an axle: the belt between the seams + a stub each side
-//	  −  ball − rod  = a bead — the belt plus one open bore, a genus-1 solid (χ = 0)
-//	  −  rod − ball  = two separate stubs, each dimpled by the ball
-//	  ∩  the core: the rod between the seams, domed at both ends
-//
-// The through case waited on kernel/ops (#2061): its ball face is a spherical ZONE straddling the
-// equator of its own band axis, and until sphereZoneBandFan that shape tessellated to a quarter of its
-// area, so shipping it would have meant shipping a silently-short mesh.
-//
-// What still declines is a cap landing in the annular band BETWEEN the seam plane and the pole — the rod
-// stopping part way through the ball's shoulder. Its result carries an annular cap face bounded by a
-// plane∩sphere circle, a different construction, so those keep the guarded fallback.
+// What still declines is only what would produce a face of no size: a rod cap sitting ON a seam station
+// (a zero-width band) or ON a pole (a zero-radius disc), and a rod that never reaches the ball. Those
+// keep the guarded fallback.
 
 // coaxialSphereCircleOffset returns the axial distance from the sphere centre to each circle in which
 // an INFINITE cylinder cuts the sphere, when the cylinder's axis passes through that centre. It is the
@@ -142,24 +133,21 @@ func rodFaceLineages(faces []curvedFace, base math.Point3) (wall, baseCap, topCa
 	return wall, caps[1].lineage, caps[0].lineage
 }
 
-// coaxialRod is a recognised ball + coaxial rod, with the rod's two ends resolved. The axis `out` runs
-// from the LO end to the HI end, and every rim carries the seam circle's angle-0 frame so the wall
-// seams weld. Two extents reach here — a rod that ENDS inside the ball (one seam circle) and a rod that
-// clears it at both ends (two) — and `through` is which.
+// coaxialRod is a recognised ball + coaxial rod, reduced to the axial numbers every result is built
+// from: the rod's two cap stations measured from the ball centre along `out`, and OCCT's seam offset.
+// `out` runs from the LO cap to the HI one, so sLo < sHi always.
 type coaxialRod struct {
-	ball, rod *topo.Body
-	sph       geom.Sphere
-	cyl       geom.Cylinder
-	out       math.Vector3 // unit rod axis, lo end → hi end
-	through   bool         // the rod clears the ball at BOTH ends, so both seam circles are real
-	loEnd     geom.Circle  // the rod's own rim at the −out end (buried in the ball unless `through`)
-	hiEnd     geom.Circle  // the rod's own rim at the +out end, always outside the ball
-	loSeam    geom.Circle  // cylinder ∩ sphere at −d; meaningful only when `through`
-	hiSeam    geom.Circle  // cylinder ∩ sphere at +d — OCCT's IntAna_Circle
-	ballLin   topo.Lineage
-	wallLin   topo.Lineage
-	loLin     topo.Lineage
-	hiLin     topo.Lineage
+	ball, rod  *topo.Body
+	sph        geom.Sphere
+	cyl        geom.Cylinder
+	out        math.Vector3 // unit rod axis, lo cap → hi cap
+	sLo, sHi   float64      // the rod's cap stations, from the ball centre along out
+	seamOffset float64      // ±this is where the rod's wall crosses the ball — OCCT's √(R²−r_c²)
+	frame      geom.Circle  // the angle-0 reference every rim copies, so the wall seams weld
+	ballLin    topo.Lineage
+	wallLin    topo.Lineage
+	loLin      topo.Lineage
+	hiLin      topo.Lineage
 }
 
 // coaxialRodOf resolves either argument order into a coaxialRod, so a caller never has to know which
@@ -182,50 +170,60 @@ func coaxialRodOrdered(ball, rod *topo.Body) (coaxialRod, bool) {
 	if !okD {
 		return coaxialRod{}, false
 	}
-	return coaxialRodEnds(coaxialRod{ball: ball, rod: rod, sph: sph, cyl: rs.cyl, ballLin: ballLin,
-		wallLin: rs.wall}, rs, d)
+	return coaxialRodEnds(coaxialRod{ball: ball, rod: rod, sph: sph, cyl: rs.cyl, seamOffset: d,
+		ballLin: ballLin, wallLin: rs.wall}, rs)
 }
 
-// coaxialRodEnds orients the rod and classifies its extent, declining anything outside the two families
-// this file builds. A cap counts as BURIED only when its whole disc is inside the ball (|s| < d, since
-// the disc's far edge sits at √(s²+R_c²)) and FREE only when its whole disc is outside (|s| > R_s). A
-// cap landing in the band BETWEEN those — the rod stopping part way through the ball's shoulder — would
-// leave an annular cap bounded by a plane∩sphere circle, a different solid this file does not build.
-func coaxialRodEnds(r coaxialRod, rs rodSolid, d float64) (coaxialRod, bool) {
+// coaxialRodEnds orients the rod lo→hi and records its cap stations, declining the extents whose result
+// would carry a degenerate face. A cap sitting ON a seam station leaves a zero-width band; a cap ON a
+// pole leaves a zero-radius disc; a rod that does not reach the ball at all has no boolean to do here.
+// Everything else is buildable — the rod may end inside the ball, clear it entirely, or stop part way
+// through its shoulder, and the span arithmetic in curved_coaxial_sphere_rod_spans.go handles all of
+// them without a case table.
+func coaxialRodEnds(r coaxialRod, rs rodSolid) (coaxialRod, bool) {
 	axis := rs.cyl.AxisDir.AsVector()
-	tol := geom.ResolutionForSize(r.sph.Radius).Plane()
-	sBase, sTop := axialCoord(r.sph.Center, rs.base, axis), axialCoord(r.sph.Center, rs.top, axis)
-	buried := func(s float64) bool { return stdmath.Abs(s) < d-tol }
-	free := func(s float64) bool { return stdmath.Abs(s) > r.sph.Radius+tol }
-	switch {
-	case buried(sBase) && free(sTop):
-		return r.withEnds(rs.base, rs.top, rs.baseCap, rs.topCapLin, d, false)
-	case buried(sTop) && free(sBase):
-		return r.withEnds(rs.top, rs.base, rs.topCapLin, rs.baseCap, d, false)
-	case free(sBase) && free(sTop) && sBase*sTop < 0:
-		return r.withEnds(rs.base, rs.top, rs.baseCap, rs.topCapLin, d, true)
+	sBase := axialCoord(r.sph.Center, rs.base, axis)
+	sTop := axialCoord(r.sph.Center, rs.top, axis)
+	if sBase > sTop {
+		return r.withEnds(rs.top, rs.base, rs.topCapLin, rs.baseCap, sTop, sBase)
 	}
-	return coaxialRod{}, false
+	return r.withEnds(rs.base, rs.top, rs.baseCap, rs.topCapLin, sBase, sTop)
 }
 
-// withEnds completes the frame: the seam circle(s) at OCCT's offset, and one circle per rod rim sharing
-// the seam's angle-0 reference direction so every rim's PointAt(0) lands on a single ruling — what lets
-// the wall seams weld. lo→hi fixes `out`, so the hi seam always sits at +d and the lo seam at −d.
-func (r coaxialRod) withEnds(lo, hi math.Point3, loLin, hiLin topo.Lineage, d float64, through bool) (coaxialRod, bool) {
-	r.out, r.through = unit(lo.VectorTo(hi)), through
-	seam, err := geom.NewCircle(r.sph.Center.TranslateBy(r.out.Scale(math.Scalar(d))), r.out, r.cyl.Radius)
-	if err != nil {
+// withEnds completes the frame and runs the degeneracy gate.
+func (r coaxialRod) withEnds(lo, hi math.Point3, loLin, hiLin topo.Lineage, sLo, sHi float64) (coaxialRod, bool) {
+	r.out = unit(lo.VectorTo(hi))
+	r.sLo, r.sHi, r.loLin, r.hiLin = sLo, sHi, loLin, hiLin
+	frame, err := geom.NewCircle(r.sph.Center, r.out, r.cyl.Radius)
+	if err != nil || !r.capStationsClear() {
 		return coaxialRod{}, false
 	}
-	r.hiSeam = seam
-	r.loSeam = coaxialCircleAt(seam, r.sph.Center.TranslateBy(r.out.Scale(math.Scalar(-d))))
-	r.loEnd, r.hiEnd = coaxialCircleAt(seam, lo), coaxialCircleAt(seam, hi)
-	r.loLin, r.hiLin = loLin, hiLin
+	r.frame = frame
 	return r, true
 }
 
-// coaxialCircleAt copies a circle's whole frame (normal, angle-0 reference, radius) to another centre
-// on its axis, so both circles' PointAt(t) agree in azimuth.
-func coaxialCircleAt(base geom.Circle, center math.Point3) geom.Circle {
-	return geom.Circle{Center: center, Normal: base.Normal, RefDir: base.RefDir, Radius: base.Radius}
+// capStationsClear reports whether both rod caps sit clear of every station that would make a face
+// degenerate — the seam stations ±d and the poles ±R — and whether the rod reaches the ball at all.
+func (r coaxialRod) capStationsClear() bool {
+	tol := r.stationTol()
+	R := r.sph.Radius
+	if r.sHi <= -R+tol || r.sLo >= R-tol {
+		return false // the rod stops short of the ball entirely: no boolean of this family
+	}
+	for _, s := range []float64{r.sLo, r.sHi} {
+		for _, bad := range []float64{-r.seamOffset, r.seamOffset, -R, R} {
+			if stdmath.Abs(s-bad) <= tol {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// circleAt is a rim of the result: the circle at the given axial station and radius, carrying the
+// frame's angle-0 reference so every rim's PointAt(0) lands on one ruling — what lets the wall seams
+// weld. Its normal is always +out, so a "forward" walk means the same thing on every rim.
+func (r coaxialRod) circleAt(station, radius float64) geom.Circle {
+	return geom.Circle{Center: r.stationPoint(station), Normal: r.frame.Normal,
+		RefDir: r.frame.RefDir, Radius: radius}
 }
