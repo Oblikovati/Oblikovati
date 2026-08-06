@@ -64,7 +64,7 @@ arrangement. The taxonomy is the deliverable, not a forced merge into one functi
 | **Curved-on-planar (interior)** | one closed conic **strictly inside** a planar face, added as an inner loop | degenerate (no band to subdivide) | build the pierced face + wall + cap and `curvedStitch` | drill through-hole, cylinder boss |
 | **Curved-on-planar (partial)** | the imprint conic **CLIPS** the planar face boundary (pierced but not clean) | degenerate | trim the pierced face(s) through a bounded non-periodic `planeUV` `(u,v)` arrangement + assemble the partial wall/cap (ADR-0049) | edge scallop (partial drill), straddling boss |
 | **Degenerate overlap** | 2-D region of **coincident** surfaces | no | simplify to the merged analytic solid | coaxial cylinder union |
-| **Transversal, split by construction** | 1-D curve that is one **planar conic bisecting a closed surface** — the surface has no rims or seam to subdivide | yes, in closed form | name which of the two regions survives and `curvedStitch` | coaxial ball ∪/−/∩ rod (the ball stud), ADR-0045 addendum below |
+| **Transversal, split by construction** | 1-D curve that is one **planar conic bisecting a closed surface** — the surface has no rims or seam to subdivide | yes, in closed form | name which of the two regions survives and `curvedStitch` | coaxial ball ∪/−/∩ rod: the ball stud, the bead, the plug — addendum below |
 
 Concretely:
 
@@ -112,7 +112,7 @@ Concretely:
   gated list already declines cleanly and logs its CSG fallback; a classifier would be ceremony
   isolating no new invariant.
 
-## Addendum — 2026-08-06: a transversal crossing that is still not an arrangement (#2036)
+## Addendum — 2026-08-06: a transversal crossing that is still not an arrangement (#2036, #2061)
 
 `ops.Boolean` had no entry for **sphere ∪ cylinder**, so a ball stud (a ball head on a coaxial shank)
 fell through to triangle-soup CSG and shipped an inscribed polyhedron 1.3% under volume. Closing that
@@ -144,8 +144,21 @@ Two consequences worth recording:
   backwards costs nothing at build time and yields a closed, manifold solid of the RIGHT volume that
   `Validate` rejects only on orientation.
 
-**Scope left open.** A rod passing right THROUGH the ball meets it in *two* circles, and the surviving
-ball face is then the belt between them — a spherical zone straddling the equator of its own band axis.
-`kernel/ops` has no analytic mesh for that shape (measured: ~75% of its area goes missing), which is why
-`revolution.go`'s `sphereZoneAnalytic` also gates equator-crossing zones out. That configuration keeps
-the faceted CSG fallback until the zone mesh exists.
+**The through-rod extent, and why it was a mesh problem.** A rod passing right THROUGH the ball meets it
+in *two* circles, and the surviving ball face is then the belt between them — a spherical zone straddling
+the equator of its own band axis. That shipped one release later (#2061) because it was blocked on
+tessellation, not on the boolean: `kernel/ops` had no mesher for such a belt, and the gnomonic chart it
+fell to covers less than a hemisphere, so the face came out ~75% short in area — the exact class of
+silent defect this project ranks above any feature. `sphereZoneBandFan` sweeps latitude rings about the
+rims' own axis instead, meshing a belt exactly whether or not it crosses its equator and whether the two
+rims arrive as separate loops (what the boolean builds) or bridged by a doubled seam (what
+`revolution.go` builds). Two things followed from it beyond the boolean: `revolution.go`'s
+`sphereZoneAnalytic` no longer has to refuse an equator-crossing meridian arc, so a barrel/bead profile
+revolves analytically instead of facetting; and `sphereCapFan` gained the guard it always needed — a cap
+fan sweeps its rim straight to the pole, so a face carrying HOLES must decline rather than pave over
+them. Both the bead (`ball − axle`, a genus-1 solid of two faces, χ = 0) and the severed axle (two
+shells) now come out exact.
+
+A cap landing in the annular band *between* the seam plane and the pole — a rod stopping part way
+through the ball's shoulder — still declines: its result carries an annular cap bounded by a plane∩sphere
+circle, which is a different construction rather than a different mesh.

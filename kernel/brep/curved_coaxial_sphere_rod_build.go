@@ -8,27 +8,30 @@ import (
 	"oblikovati.org/math"
 )
 
-// The four solids a coaxial ball-and-rod pair bounds (Oblikovati#2036). Every one of them is THREE
-// analytic faces off the frame curved_coaxial_sphere_rod.go recognised — a spherical cap, a
-// cylindrical band, and a planar disc — because the single seam circle splits each operand's surface
-// in two and the boolean is only a choice of which halves to keep:
+// The solids a coaxial ball-and-rod pair bounds (Oblikovati#2036, #2061). Each is assembled from four
+// analytic face constructors — a spherical CAP, a spherical BELT, a cylindrical BAND and a planar DISC —
+// because the seam circles split each operand's surface and the boolean is only a choice of which parts
+// to keep:
 //
-//	           ball cap kept | rod band       | disc          | inverted faces
-//	∪ join     far  (−out)   | seam → free    | free,  +out   | none
-//	− ball−rod far  (−out)   | buried → seam  | buried, +out  | the band, turned into the bore
-//	− rod−ball near (+out)   | seam → free    | free,  +out   | the ball cap, turned into a dimple
-//	∩ intersect near (+out)  | buried → seam  | buried, −out  | none
+//	                     rod ENDS in the ball (one seam)     rod passes THROUGH (two seams)
+//	∪ join     the ball stud: far cap + stub + tip     belt + a stub and tip at each end
+//	− ball−rod a blind spherical bore: far cap +       a bead: belt + the bore wall between
+//	           inverted wall + flat pocket bottom      the seams, inverted
+//	− rod−ball the dimpled stub: near cap inverted     two separate stubs, one per end, each
+//	           + stub + tip                            with its own dimple
+//	∩          the plug: near cap + wall + bottom      the core: a cap at each end + the wall
 //
-// WINDING. The seam circle is shared by the ball cap and the band, and the rod rim by the band and the
-// disc, so one decision fixes all three: ops.Validate requires an edge's two uses to run opposite ways.
-// Only the ball cap's direction carries meaning — on a sphere the loop is what NAMES which cap survives
-// and the tessellator reads exactly that (capAxis) — while a cylindrical band and a planar disc cover
-// the same region either way. So the cap chooses, the other two follow, and which side holds material
-// is carried by the face sense alone. Getting this backwards costs nothing at build time and produces a
-// closed, manifold solid of the right volume that ops.Validate rejects on orientation.
+// WINDING. Every shared circle is walked by exactly two of these faces, and ops.Validate requires them
+// to walk it opposite ways. Only the spherical CAP's direction carries meaning — on a sphere the loop is
+// what NAMES which of the two caps survives, and the tessellator reads exactly that (capAxis). A BELT
+// needs no such naming: two distinct coaxial circles bound exactly one connected region, since the
+// complement is two disjoint caps. So the sphere face fixes the seam directions and the bands and discs
+// follow, carrying their material side in the face sense alone. Getting it backwards costs nothing at
+// build time and produces a closed, manifold solid of the right volume that ops.Validate rejects on
+// orientation.
 
-// CoaxialSphereRodJoin returns a ∪ b for a ball and a coaxial rod that ends inside it — the ball stud.
-// The result is the ball minus the cap the rod covers, the rod's free stub, and the stub's end cap.
+// CoaxialSphereRodJoin returns a ∪ b for a ball and a coaxial rod — the ball stud when the rod ends
+// inside the ball, a ball on a through axle when it clears both sides.
 //
 // Example:
 //
@@ -40,73 +43,133 @@ func CoaxialSphereRodJoin(a, b *topo.Body) (*topo.Body, bool) {
 	if !ok {
 		return nil, false
 	}
-	return r.assemble(rodResult{keepNearCap: false, rim: r.free, rimLin: r.freeLin, outward: r.out})
+	if r.through {
+		return r.stitch(r.belt(false), r.hiStub(true), r.loStub())
+	}
+	// The far cap walks the hi seam backwards, so the stub's wall takes it forwards.
+	return r.stitch([]curvedFace{r.cap(r.hiSeam, r.out.Scale(-1), false)}, r.hiStub(false))
 }
 
-// CoaxialSphereRodCut returns target − tool for a ball and a coaxial rod that ends inside it: a blind
-// spherical bore when the ball is the target, the dimpled free stub when the rod is.
+// CoaxialSphereRodCut returns target − tool: the ball bored by the rod when the ball is the target, the
+// rod's free length hollowed by the ball when the rod is.
 func CoaxialSphereRodCut(target, tool *topo.Body) (*topo.Body, bool) {
 	r, ok := coaxialRodOf(target, tool)
 	if !ok {
 		return nil, false
 	}
 	if r.ball == target {
-		// ball − rod: the ball's surface outside the rod, the rod's buried wall turned inward as the
-		// bore, and the rod's buried cap as the flat pocket bottom — whose outward normal points along
-		// +out, into the material that was removed.
-		return r.assemble(rodResult{rim: r.buried, rimLin: r.buriedLin, outward: r.out, bandInverted: true})
+		return r.boredBall()
 	}
-	// rod − ball: the free stub, its base hollowed by the ball's own surface. The ball cap is the NEAR
-	// one and inverted — the material now sits outside the ball, so the sphere's outward radial normal
-	// points into the solid.
-	return r.assemble(rodResult{keepNearCap: true, capInverted: true,
-		rim: r.free, rimLin: r.freeLin, outward: r.out})
+	return r.freeStubs()
 }
 
-// CoaxialSphereRodIntersect returns a ∩ b: the plug, the buried length of the rod capped by the ball's
-// own dome. Unlike a full crossing's intersect it carries the rod's PLANAR buried cap, which lies
-// inside the ball and so survives into the common material.
+// boredBall is ball − rod: the ball's surface outside the rod, plus the rod's buried wall turned inward
+// as the cavity. A rod that ENDS inside also contributes its buried cap as the flat pocket bottom, whose
+// outward normal points along +out into the material that was removed; a rod passing THROUGH leaves an
+// open bore at both ends and contributes no cap at all.
+func (r coaxialRod) boredBall() (*topo.Body, bool) {
+	if r.through {
+		return r.stitch(r.belt(false), []curvedFace{r.band(r.loSeam, r.hiSeam, true)})
+	}
+	bottom, ok := discFace(r.loEnd, true, r.out, r.loLin)
+	if !ok {
+		return nil, false
+	}
+	// The far cap walks the hi seam backwards, so the bore wall takes it forwards.
+	return r.stitch([]curvedFace{r.cap(r.hiSeam, r.out.Scale(-1), false)},
+		[]curvedFace{r.band(r.hiSeam, r.loEnd, true), bottom})
+}
+
+// freeStubs is rod − ball: the rod's length outside the ball, its base hollowed by the ball's own
+// surface. The cap is INVERTED — the material now sits outside the ball, so the sphere's outward radial
+// normal points into the solid. A rod passing through leaves two separate stubs, one per end.
+func (r coaxialRod) freeStubs() (*topo.Body, bool) {
+	hi := r.hiStub(true)
+	hi = append(hi, r.cap(r.hiSeam, r.out, true))
+	if !r.through {
+		return r.stitch(hi)
+	}
+	lo := r.loStub()
+	return r.stitch(hi, append(lo, r.cap(r.loSeam, r.out.Scale(-1), true)))
+}
+
+// CoaxialSphereRodIntersect returns a ∩ b: the material the two share. For a rod that ends inside the
+// ball that is the plug — the buried length capped by the ball's dome, carrying the rod's own PLANAR
+// buried cap. For a rod passing through it is the core between the two seams, domed at both ends.
 func CoaxialSphereRodIntersect(a, b *topo.Body) (*topo.Body, bool) {
 	r, ok := coaxialRodOf(a, b)
 	if !ok {
 		return nil, false
 	}
-	return r.assemble(rodResult{keepNearCap: true,
-		rim: r.buried, rimLin: r.buriedLin, outward: r.out.Scale(-1)})
-}
-
-// rodResult is one of the four results as a choice of halves: which ball cap survives, which rod rim
-// the band runs to, which way that rim's disc faces, and which of the two faces is inverted (its
-// material on the far side of its own surface).
-type rodResult struct {
-	keepNearCap  bool         // keep the small cap the stub protrudes toward, not the rest of the ball
-	capInverted  bool         // the ball cap is a dimple: material outside the ball
-	bandInverted bool         // the rod wall is a bore: material outside the cylinder
-	rim          geom.Circle  // the rod rim the band runs to from the seam
-	rimLin       topo.Lineage // that rim's cap face, so its reference key survives (ADR-0043 K1a)
-	outward      math.Vector3 // which way the disc closing rim faces out of the solid
-}
-
-// assemble welds the three faces. capForward is the pivot: it is the direction the ball cap walks the
-// seam circle, so the band must take the seam the other way (hence the near/far swap), and the disc
-// must in turn oppose the band on the rim — which lands on capForward again, since the band walks its
-// near circle forward and its far circle backward.
-func (r coaxialRod) assemble(res rodResult) (*topo.Body, bool) {
-	keep := r.out
-	if !res.keepNearCap {
-		keep = r.out.Scale(-1)
+	if r.through {
+		return r.stitch([]curvedFace{
+			r.cap(r.hiSeam, r.out, false),
+			r.cap(r.loSeam, r.out.Scale(-1), false),
+			r.band(r.loSeam, r.hiSeam, false),
+		})
 	}
-	near, far := r.seam, res.rim
-	if res.keepNearCap { // the cap already walked the seam forward
-		near, far = res.rim, r.seam
-	}
-	disc, ok := discFace(res.rim, !res.keepNearCap, res.outward, res.rimLin)
+	bottom, ok := discFace(r.loEnd, false, r.out.Scale(-1), r.loLin)
 	if !ok {
 		return nil, false
 	}
-	return curvedStitch([]curvedFace{
-		sphereCapFace(r.sph, r.seam, keep, res.capInverted, r.ballLin),
-		cylinderBandFace(r.cyl, near, far, res.bandInverted, r.wallLin),
-		disc,
-	}), true
+	// The near cap walks the hi seam forwards, so the plug's band takes it backwards.
+	return r.stitch([]curvedFace{r.cap(r.hiSeam, r.out, false), r.band(r.loEnd, r.hiSeam, false), bottom})
+}
+
+// hiStub is the rod's free length beyond the hi seam: the wall and its end disc. capForward says which
+// way the SPHERE face on the other side of that seam walks it; the wall takes the opposite direction,
+// and the disc in turn opposes the wall on the rod's own rim. That one bit is the whole winding chain.
+func (r coaxialRod) hiStub(capForward bool) []curvedFace {
+	near, far := r.hiEnd, r.hiSeam // the cap walked the seam forwards: the wall walks it backwards
+	if !capForward {
+		near, far = r.hiSeam, r.hiEnd
+	}
+	tip, ok := discFace(r.hiEnd, !capForward, r.out, r.hiLin)
+	if !ok {
+		return nil
+	}
+	return []curvedFace{r.band(near, far, false), tip}
+}
+
+// loStub is the mirror at the −out end, present only when the rod passes through the ball. Every sphere
+// face that meets the lo seam walks it backwards (the belt by convention, a dimple because it keeps the
+// −out cap), so the wall's direction here is fixed and needs no parameter.
+func (r coaxialRod) loStub() []curvedFace {
+	tip, ok := discFace(r.loEnd, true, r.out.Scale(-1), r.loLin)
+	if !ok {
+		return nil
+	}
+	return []curvedFace{r.band(r.loSeam, r.loEnd, false), tip}
+}
+
+// belt is the ball's surviving surface when the rod passes through: the zone between the two seams,
+// walking the hi seam forwards and the lo seam backwards — the directions every neighbour opposes.
+func (r coaxialRod) belt(inverted bool) []curvedFace {
+	return []curvedFace{sphereBeltFace(r.sph, r.hiSeam, r.loSeam, inverted, r.ballLin)}
+}
+
+// cap is the ball's surviving surface on one side of a seam: the cap toward keep, inverted into a
+// dimple when the result's material lies outside the ball.
+func (r coaxialRod) cap(seam geom.Circle, keep math.Vector3, inverted bool) curvedFace {
+	return sphereCapFace(r.sph, seam, keep, inverted, r.ballLin)
+}
+
+// band is the rod's cylindrical wall between two of its coaxial circles. near is walked forwards and far
+// backwards (cylinderBandFace's convention), which is how a caller picks the winding a neighbour leaves
+// it; inverted turns the wall into a bore.
+func (r coaxialRod) band(near, far geom.Circle, inverted bool) curvedFace {
+	return cylinderBandFace(r.cyl, near, far, inverted, r.wallLin)
+}
+
+// stitch welds the given face groups into one body, declining when any group came back empty — a
+// constructor that failed rather than a result with nothing to contribute.
+func (r coaxialRod) stitch(groups ...[]curvedFace) (*topo.Body, bool) {
+	var faces []curvedFace
+	for _, g := range groups {
+		if len(g) == 0 {
+			return nil, false
+		}
+		faces = append(faces, g...)
+	}
+	return curvedStitch(faces), true
 }

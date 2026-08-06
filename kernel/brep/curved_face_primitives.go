@@ -59,6 +59,18 @@ func sphereCapFace(sph geom.Sphere, rim geom.Circle, keep math.Vector3, reversed
 		loops: []curvedLoop{{edges: []loopEdge{orientedCircle(rim, keep)}}}}
 }
 
+// sphereBeltFace builds the sphere face BETWEEN two coaxial circles on it — the belt a rod passing right
+// through a ball leaves. Unlike a cap it needs no winding to name its region: two distinct coaxial
+// circles bound exactly one connected region, since the complement is two disjoint caps and those cannot
+// be one face. So the directions here are fixed by convention (outer forwards, inner backwards) and it
+// is the neighbours sharing each rim that adapt. inverted turns the belt inward.
+func sphereBeltFace(sph geom.Sphere, outer, inner geom.Circle, inverted bool, lin topo.Lineage) curvedFace {
+	return curvedFace{surface: sph, reversed: inverted, lineage: lin, loops: []curvedLoop{
+		{edges: []loopEdge{{curve: outer, t0: 0, t1: 1}}},
+		{edges: []loopEdge{{curve: inner, t0: 1, t1: 0}}},
+	}}
+}
+
 // orientedCircle walks a circle forward when its normal agrees with want, backward otherwise.
 func orientedCircle(c geom.Circle, want math.Vector3) loopEdge {
 	if c.Normal.AsVector().Dot(want) < 0 {

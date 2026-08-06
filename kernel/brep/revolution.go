@@ -61,8 +61,8 @@ type RevolveVertex struct {
 // endpoint on the axis) revolves to a spherical CAP (a domed end). The meridian is auto-oriented to
 // counter-clockwise in (r,z) so each face's right-hand normal points out of the solid. Returns
 // (nil,nil) for fewer than 3 vertices OR when an arc revolves to a surface not yet built analytically
-// (a sphere ZONE with both endpoints off-axis, or a pole-to-pole meridian) — the caller then keeps the
-// faceted revolve.
+// (a pole-to-pole meridian — a whole sphere, which SolidSphere builds instead) — the caller then keeps
+// the faceted revolve.
 func SolidOfRevolutionMeridian(axisOrigin math.Point3, axisDir math.Vector3, verts []RevolveVertex, feat string) (*topo.Body, error) {
 	if len(verts) < 3 {
 		return nil, nil
@@ -136,11 +136,10 @@ func arcCenterOnAxis(center math.Point2, axisTol float64) bool {
 // revolveArcsAnalytic reports whether every ARC edge of the meridian revolves to a surface this
 // builder emits analytically: a torus (centre off-axis), a spherical CAP (centre on-axis, EXACTLY one
 // endpoint on the axis — a rim latitude to the pole), or a spherical ZONE (centre on-axis, BOTH
-// endpoints off-axis on the same side of the equator — a latitude band, addRevolutionSphereZone). It
-// still declines two on-axis cases that have no single-sphere-patch parameterization: a pole-to-pole
-// meridian (both endpoints on the axis — a whole sphere; SolidSphere is that route) and a zone whose
-// endpoints STRADDLE the equator (r not monotone in colatitude); both return false so the caller keeps
-// the faceted revolve.
+// endpoints off-axis — a latitude band, addRevolutionSphereZone; since #2061 the band may cross the
+// equator, because sphereZoneBandFan meshes either kind). The one on-axis case it still declines is a
+// pole-to-pole meridian (both endpoints on the axis — a whole sphere; SolidSphere is that route), which
+// returns false so the caller keeps the faceted revolve.
 func revolveArcsAnalytic(verts []RevolveVertex, axisTol float64) bool {
 	n := len(verts)
 	for i := range verts {
@@ -165,18 +164,20 @@ func revolveArcsAnalytic(verts []RevolveVertex, axisTol float64) bool {
 }
 
 // sphereZoneAnalytic reports whether an on-axis-centre arc between two OFF-axis endpoints revolves to a
-// single analytic spherical ZONE the builder emits (addRevolutionSphereZone). The zone is well defined
-// only when both rims sit on the SAME side of the equator (the latitude plane z=centre.Y): colatitude is
-// then monotone along the arc and each rim is a proper latitude circle. Endpoints straddling the equator
-// (opposite signs) or a rim ON it (|Δz| ≤ axisTol, radius = sphere radius, a tangent equator) fall back to
-// the faceted revolve. axisTol is the meridian-relative coincidence scale (res.Plane()).
+// single analytic spherical ZONE the builder emits (addRevolutionSphereZone). Each endpoint must be a
+// proper latitude circle, which fails only when a rim sits ON the equator (|Δz| ≤ axisTol): its radius
+// is then the sphere's own, so the zone is tangent to whatever cylinder adjoins it there and the shared
+// rim is degenerate. axisTol is the meridian-relative coincidence scale (res.Plane()).
+//
+// It used to ALSO require both rims on the same side of the equator, because an equator-crossing band
+// had no analytic mesh — kernel/ops had no zone mesher and the gnomonic patch chart cannot cover a belt
+// spanning both hemispheres, so such a face came out ~75% short in area. sphereZoneBandFan now sweeps
+// latitude rings about the rims' own axis and meshes either kind exactly, so the restriction is gone
+// and a barrel/bead meridian revolves analytically instead of facetting (#2061).
 func sphereZoneAnalytic(prev, cur, center math.Point2, axisTol float64) bool {
 	dzPrev := float64(prev.Y - center.Y)
 	dzCur := float64(cur.Y - center.Y)
-	if stdmath.Abs(dzPrev) <= axisTol || stdmath.Abs(dzCur) <= axisTol {
-		return false // a rim on the equator: tangent to the neighbouring cylinder, degenerate latitude
-	}
-	return (dzPrev > 0) == (dzCur > 0) // both above OR both below the equator: same-side band
+	return stdmath.Abs(dzPrev) > axisTol && stdmath.Abs(dzCur) > axisTol
 }
 
 // revNode is one meridian vertex realized in 3D: the circle of revolution it traces (nil when the
@@ -400,8 +401,9 @@ func addRevolutionSphereCap(bld *topo.Builder, ni, nj revNode, arcCenter math.Po
 // centred at the revolved arc centre (radius = the arc radius). Topologically it is the torus case — two
 // shared rim circles bridged by the arc seam traversed twice — but on a geom.Sphere, so the sphere-zone
 // tessellator sweeps latitude rings between the two rims with the sphere's true bulge. This is the sphere
-// analogue of addRevolutionTorus; caller guarantees a same-side (non-equator-crossing) zone via
-// sphereZoneAnalytic. (self-aligning thrust seat #54; #129 curved-meridian follow-up.)
+// analogue of addRevolutionTorus; caller guarantees both rims are off the equator via sphereZoneAnalytic
+// (a band MAY cross it since #2061 — sphereZoneBandFan meshes either kind).
+// (self-aligning thrust seat #54; #129 curved-meridian follow-up.)
 func addRevolutionSphereZone(bld *topo.Builder, ni, nj revNode, arcCenter math.Point2, axisOrigin math.Point3, a, ref math.UnitVector3, feat string, i int) {
 	rc, zc := float64(arcCenter.X), float64(arcCenter.Y)
 	zi := float64(axisOrigin.VectorTo(ni.center).Dot(a.AsVector()))

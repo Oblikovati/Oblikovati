@@ -94,12 +94,14 @@ func TestSolidOfRevolutionSphereCapAutoOrients(t *testing.T) {
 	}
 }
 
-// TestSolidOfRevolutionSphereZoneFallsBack pins the analytic boundary: an on-axis arc whose BOTH
-// endpoints are off the axis revolves to a sphere ZONE (a barrel), which needs a framed sphere
-// parameterization not yet built, so the builder returns (nil,nil) — the signal for the caller to keep
-// the faceted revolve. r0=2, H=4, centre (0,2) radius √8.
-func TestSolidOfRevolutionSphereZoneFallsBack(t *testing.T) {
-	c := math.P2(0, 2) // on the axis, but both arc endpoints are at r=2 (off-axis) → a zone, not a cap
+// TestSolidOfRevolutionEquatorCrossingZone: an on-axis-centre arc whose two endpoints straddle the
+// sphere's own equator revolves to ONE analytic geom.Sphere ZONE — a barrel/bead. This used to fall back
+// to the faceted revolve, not because the B-rep was hard but because kernel/ops had no mesh for such a
+// belt: the gnomonic patch chart covers less than a hemisphere, so an equator-crossing zone came out
+// ~75% short in area. sphereZoneBandFan sweeps latitude rings about the rims' own axis and meshes it
+// exactly, so the restriction is gone (#2061). Sphere centre (0,2) radius √8; the band runs z∈[0,4].
+func TestSolidOfRevolutionEquatorCrossingZone(t *testing.T) {
+	c := math.P2(0, 2) // on the axis, both arc endpoints at r=2 and on OPPOSITE sides of the equator z=2
 	zone := []brep.RevolveVertex{
 		{P: math.P2(0, 0)},
 		{P: math.P2(2, 0)},
@@ -107,18 +109,27 @@ func TestSolidOfRevolutionSphereZoneFallsBack(t *testing.T) {
 		{P: math.P2(0, 4)},
 	}
 	body, err := brep.SolidOfRevolutionMeridian(math.P3(0, 0, 0), math.V3(0, 0, 1), zone, "zone")
-	if err != nil {
-		t.Fatalf("SolidOfRevolutionMeridian(zone) error = %v, want nil (a clean fallback signal)", err)
+	if err != nil || body == nil {
+		t.Fatalf("SolidOfRevolutionMeridian(equator-crossing zone) = (%v, %v), want an analytic solid", body, err)
 	}
-	if body != nil {
-		t.Fatalf("SolidOfRevolutionMeridian(sphere zone) built %d faces, want nil (fall back to faceted)", len(body.Faces()))
+	if got := sphereFaces(body); got != 1 {
+		t.Fatalf("equator-crossing zone has %d sphere faces, want 1", got)
+	}
+	if res := ops.Validate(body); !res.Valid || !body.IsSolid() {
+		t.Fatalf("equator-crossing zone is not a valid solid: %+v", res.Issues)
+	}
+	// A sphere segment of height 4 centred on the equator of a radius-√8 sphere:
+	// V = π∫₀⁴ (8 − (z−2)²) dz = π(32 − 16/3).
+	want := stdmath.Pi * (32 - 16.0/3.0)
+	if got := vol(body); relErrF(got, want) > 0.02 {
+		t.Errorf("equator-crossing zone volume = %g, want ≈%g", got, want)
 	}
 }
 
 // TestSolidOfRevolutionSphereZoneConvex is the same-side spherical ZONE the self-aligning thrust seat
 // (#54) needs: an on-axis-centre arc whose BOTH endpoints are off the axis and on the SAME side of the
-// equator revolves to ONE analytic geom.Sphere band (addRevolutionSphereZone) — NOT the equator-
-// straddling zone that still falls back (TestSolidOfRevolutionSphereZoneFallsBack). Sphere centre (0,0)
+// equator revolves to ONE analytic geom.Sphere band (addRevolutionSphereZone). Its equator-straddling
+// sibling is TestSolidOfRevolutionEquatorCrossingZone, analytic since #2061. Sphere centre (0,0)
 // radius 5; the band runs z∈[1,3] (both above the equator), so the arc bulges OUTWARD (dz>0 ⇒ AddFace).
 // The revolved region is {0≤r≤√(25−z²), 1≤z≤3}, volume π∫₁³(25−z²)dz.
 func TestSolidOfRevolutionSphereZoneConvex(t *testing.T) {
