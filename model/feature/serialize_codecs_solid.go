@@ -135,13 +135,13 @@ func (r featureCodecSet) registerSolidCodecs() {
 		},
 	})
 	r.register("hole", featureCodec{
-		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
-			h, err := serializeHole(f.(*HoleFeature).def)
+		encode: func(fd *FeatureData, f Feature, sk SketchIndexer, _ map[ID]int) error {
+			h, err := serializeHole(f.(*HoleFeature).def, sk)
 			fd.Hole = h
 			return err
 		},
 		decode: func(rc *restoreContext, fd FeatureData) (*PartFeature, error) {
-			return restoreHole(rc.fs, fd.Hole)
+			return restoreHole(rc.fs, fd.Hole, rc.sk, rc.work)
 		},
 	})
 	r.register("boss", featureCodec{

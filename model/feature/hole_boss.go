@@ -29,15 +29,33 @@ import (
 type HoleTapInfo struct {
 	Tapped      bool
 	Designation string
+	// Tapered marks a taper thread (NPT and friends) rather than a straight one — Inventor's
+	// TaperedThreadInfo, a distinct tap function rather than a variant of the designation.
+	Tapered bool
+	// Class is the fit class the thread is cut to, e.g. "6H" (metric) or "2B" (unified).
+	Class string
+	// LeftHanded reverses the thread's sense. Named for the LEFT hand, not Inventor's RightHanded,
+	// because a zero-valued HoleTapInfo must mean the ordinary right-hand thread — several call
+	// sites build a definition as a literal, and a RightHanded bool would default them all to a
+	// left-hand thread. The op layer maps Inventor's spelling onto this one.
+	LeftHanded bool
 }
 
-// HoleType is the hole's bottom/profile style.
+// HoleType is the hole's SEAT: the recess (if any) the bore opens into at the placement face.
+// It is orthogonal to the tap — a counterbored tapped hole is an ordinary thing — which is why the
+// tap lives in its own field rather than as another member here (#1862).
 type HoleType uint8
 
 const (
 	DrilledHole HoleType = iota
 	CounterboreHole
 	CountersinkHole
+	// SpotFaceHole is a shallow facing recess: a flat-bottomed cylindrical seat that squares up a
+	// cast or curved surface for a fastener head to sit on. Geometrically it is the counterbore's
+	// recess — a flat-bottomed cylinder — so it is cut by the same builder; it is a distinct member
+	// because the DISTINCTION is real to everything downstream (callouts, hole notes, CAM), and
+	// collapsing it into a counterbore on import would lose it.
+	SpotFaceHole
 )
 
 // HoleDefinition is the recipe for a hole: a placement face, diameter and depth,
@@ -57,6 +75,19 @@ type HoleDefinition struct {
 	PointAngle      func() float64 // drilled blind-hole point: included angle, radians (0 = flat)
 	Type            HoleType
 	Tap             HoleTapInfo
+	// Placement is the rule locating the bores, re-resolved every recompute (#1861): a sketch's
+	// centre points, an offset pair, a concentric circle, or a work point. nil ⇒ the single bore on
+	// PlacementFaceKey/GeomFace at Center, which is itself the face placement.
+	Placement HolePlacement
+	// Termination is where the bore stops (#1863): the zero value is the plain Depth, and the
+	// geometric members bottom it on ToPlane / between FromPlane and ToPlane instead. ThroughAll
+	// still spells the through-everything case.
+	Termination ExtentType
+	ToPlane     *WorkPlane
+	FromPlane   *WorkPlane
+	// Clearance sizes the bore from a fastener table instead of Diameter (#1862), keeping the
+	// fastener → hole link live: change the fastener and the bore follows. Zero ⇒ use Diameter.
+	Clearance HoleClearanceInfo
 }
 
 // HoleFeature drills a hole into the running solid.
@@ -90,28 +121,85 @@ func (h *HoleFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	face, ok := resolveHoleFace(body, h.def)
-	if !ok {
-		return Output{}, fmt.Errorf("hole: placement face reference lost")
+	sites, err := h.sites(body)
+	if err != nil {
+		return Output{}, err
 	}
-	r, depth := callOrZero(h.def.Diameter)/2, callOrZero(h.def.Depth)
+	dia, err := h.boreDiameter()
+	if err != nil {
+		return Output{}, err
+	}
+	r, depth := dia/2, callOrZero(h.def.Depth)
 	if r <= 0 {
 		return Output{}, fmt.Errorf("hole: diameter %g must be > 0", 2*r)
 	}
-	if !h.def.ThroughAll && depth <= 0 {
-		return Output{}, fmt.Errorf("hole: depth %g must be > 0 (or set ThroughAll)", depth)
+	// A geometric termination measures its own depth (#1863), so only a plain-distance bore needs
+	// one typed in — demanding it there too would force a meaningless number alongside the target.
+	if !h.def.ThroughAll && h.def.Termination == DistanceExtent && depth <= 0 {
+		return Output{}, fmt.Errorf("hole: depth %g must be > 0 (or set ThroughAll, or terminate on a face)", depth)
 	}
-	into, err := math.UnitVector3FromVector(face.Geometry().NormalAt(0, 0).Scale(-1))
-	if err != nil {
-		return Output{}, fmt.Errorf("hole: placement face has no normal")
-	}
-	center := holeCenter(h.def, face)
-	h.tool = h.buildTool(body, center, into, r, depth)
-	res, err := h.drill(body, center, into, r, depth, in.Diag)
+	res, err := h.drillEvery(body, sites, r, depth, in.Diag)
 	if err != nil {
 		return Output{}, err
 	}
 	return Output{Bodies: replaceBody(in.Bodies, body, res)}, nil
+}
+
+// sites is where this hole drills: the placement's rule when one is set (#1861), else the historic
+// single bore on the picked face — which is itself just the face placement, kept as its own path so
+// every recipe already on disk resolves exactly as before.
+func (h *HoleFeature) sites(body *topo.Body) (HoleSites, error) {
+	if h.def.Placement != nil {
+		return h.def.Placement.Sites(body)
+	}
+	face, ok := resolveHoleFace(body, h.def.faceRef(), h.def.Center)
+	if !ok {
+		return HoleSites{}, fmt.Errorf("hole: placement face reference lost")
+	}
+	into, err := math.UnitVector3FromVector(face.Geometry().NormalAt(0, 0).Scale(-1))
+	if err != nil {
+		return HoleSites{}, fmt.Errorf("hole: placement face has no normal")
+	}
+	return HoleSites{Centers: []math.Point3{holeCenter(h.def, face)}, Into: into}, nil
+}
+
+// faceRef is the definition's placement face, as the reference every placement resolves through.
+func (d *HoleDefinition) faceRef() HoleFaceRef {
+	return HoleFaceRef{Key: d.PlacementFaceKey, Geom: d.GeomFace}
+}
+
+// boreDiameter is the bore's diameter in model cm. A CLEARANCE hole takes it from the fastener
+// table every recompute (#1862), so the fastener stays the thing being edited and the hole follows;
+// every other hole reads the authored Diameter.
+func (h *HoleFeature) boreDiameter() (float64, error) {
+	if h.def.Clearance.isSet() {
+		return h.def.Clearance.ClearanceDiameter()
+	}
+	return callOrZero(h.def.Diameter), nil
+}
+
+// drillEvery cuts one bore per site, feeding each cut's result to the next so a sketch of centre
+// points comes out as one body with N holes. The FIRST bore is kept as the pattern tool: a pattern
+// of a multi-hole feature replicates a representative bore, which is what its single ToolBody can
+// carry (see [HoleFeature.ToolBody]).
+func (h *HoleFeature) drillEvery(body *topo.Body, sites HoleSites, r, depth float64,
+	rec *diag.Recorder) (*topo.Body, error) {
+	for i, centre := range sites.Centers {
+		bore, err := h.resolveBore(centre, sites.Into, depth)
+		if err != nil {
+			return nil, err
+		}
+		bore.entry = boreEntryOverhang(body, bore.start)
+		if i == 0 {
+			h.tool = h.buildTool(body, bore, sites.Into, r)
+		}
+		res, err := h.drill(body, bore, sites.Into, r, rec)
+		if err != nil {
+			return nil, fmt.Errorf("hole %d of %d: %w", i+1, len(sites.Centers), err)
+		}
+		body = res
+	}
+	return body, nil
 }
 
 // holeCenter is the drill start point: an explicit center (projected onto the placement face's
@@ -139,40 +227,44 @@ func projectOntoFacePlane(p math.Point3, face *topo.Face) math.Point3 {
 // inward normal, spanning the body for a through hole or the requested depth for a blind one.
 // It mirrors the cut the brep cutters apply (a counterbore's recess is omitted — the bore is
 // the dominant geometry), so a pattern of the hole reproduces a sensible bore at each spot.
-func (h *HoleFeature) buildTool(body *topo.Body, center math.Point3, into math.UnitVector3, r, depth float64) *topo.Body {
+func (h *HoleFeature) buildTool(body *topo.Body, bore holeBore, into math.UnitVector3, r float64) *topo.Body {
+	depth := bore.depth
 	if h.def.ThroughAll {
-		depth = throughDepth(body, center, into)
+		depth = throughDepth(body, bore.start, into)
 	}
-	return drillTool(center, into, r, depth, featOr(h.featName, "hole"))
+	return drillToolFrom(bore.start, into, r, depth, bore.entry, featOr(h.featName, "hole"))
 }
 
 // drill cuts the hole by its type: a counterbore is a shallow recess plus the bore, anything
 // else a single cylinder. rec collects the faceted-fallback cuts' boolean diagnostics (#1601;
 // nil discards; the exact-only countersink path never booleans, so it takes no recorder).
-func (h *HoleFeature) drill(body *topo.Body, center math.Point3, into math.UnitVector3, r, depth float64, rec *diag.Recorder) (*topo.Body, error) {
+func (h *HoleFeature) drill(body *topo.Body, bore holeBore, into math.UnitVector3, r float64, rec *diag.Recorder) (*topo.Body, error) {
+	center, depth, entry := bore.start, bore.depth, bore.entry
 	switch h.def.Type {
-	case CounterboreHole:
-		return h.cutCounterbore(body, center, into, r, depth, rec)
+	// A spotface IS a counterbore's recess — a flat-bottomed cylindrical seat — so it is cut by the
+	// same builder; the seats stay distinct types because the distinction is real downstream (#1862).
+	case CounterboreHole, SpotFaceHole:
+		return h.cutCounterbore(body, center, into, r, depth, entry, rec)
 	case CountersinkHole:
 		return h.cutCountersink(body, center, into, r, depth)
 	default:
-		return h.cutDrilled(body, center, into, r, depth, rec)
+		return h.cutDrilled(body, center, into, r, depth, entry, rec)
 	}
 }
 
 // cutDrilled cuts a plain drilled hole: through, or blind with either a conical drill point
 // (PointAngle > 0) or a flat bottom. A conical point that the part can't fit falls back to the
 // flat/faceted blind cut.
-func (h *HoleFeature) cutDrilled(body *topo.Body, center math.Point3, into math.UnitVector3, r, depth float64, rec *diag.Recorder) (*topo.Body, error) {
+func (h *HoleFeature) cutDrilled(body *topo.Body, center math.Point3, into math.UnitVector3, r, depth, entry float64, rec *diag.Recorder) (*topo.Body, error) {
 	if h.def.ThroughAll {
-		return h.cutCylinder(body, center, into, r, depth, true, rec)
+		return h.cutCylinder(body, center, into, r, depth, entry, true, rec)
 	}
 	if angle := callOrZero(h.def.PointAngle); angle > 0 {
 		if res, err := brep.CutBlindConicalHole(body, center, into.AsVector(), r, depth, angle/2); err == nil {
 			return res, nil
 		}
 	}
-	return h.cutCylinder(body, center, into, r, depth, false, rec)
+	return h.cutCylinder(body, center, into, r, depth, entry, false, rec)
 }
 
 // cutCountersink drills a conical countersink (recess widening to the sink diameter at the
@@ -199,7 +291,7 @@ func (h *HoleFeature) cutCountersink(body *topo.Body, center math.Point3, into m
 // an annular shoulder — from the planar slab; it does NOT chain two curved cuts (the second
 // would feed a curved body to the planar-only boolean). The faceted fallback cuts the recess
 // then the bore as sequential planar prisms (each stays planar, so it chains fine).
-func (h *HoleFeature) cutCounterbore(body *topo.Body, center math.Point3, into math.UnitVector3, r, depth float64, rec *diag.Recorder) (*topo.Body, error) {
+func (h *HoleFeature) cutCounterbore(body *topo.Body, center math.Point3, into math.UnitVector3, r, depth, entry float64, rec *diag.Recorder) (*topo.Body, error) {
 	cr, cd := callOrZero(h.def.CounterDiameter)/2, callOrZero(h.def.CounterDepth)
 	if cr <= r {
 		return nil, fmt.Errorf("counterbore: recess Ø %g must exceed bore Ø %g", 2*cr, 2*r)
@@ -210,13 +302,13 @@ func (h *HoleFeature) cutCounterbore(body *topo.Body, center math.Point3, into m
 	if res, err := brep.CutCounterboreHole(body, center, into.AsVector(), r, depth-cd, cr, cd, h.def.ThroughAll); err == nil {
 		return res, nil
 	}
-	return h.facetedCounterbore(body, center, into, r, depth, cr, cd, rec)
+	return h.facetedCounterbore(body, center, into, r, depth, cr, cd, entry, rec)
 }
 
 // facetedCounterbore is the fallback for shapes the exact builder rejects: cut the recess prism,
 // then the bore prism from the shoulder (both planar cuts, so they chain through the boolean).
-func (h *HoleFeature) facetedCounterbore(body *topo.Body, center math.Point3, into math.UnitVector3, r, depth, cr, cd float64, rec *diag.Recorder) (*topo.Body, error) {
-	stepped, err := ops.BooleanWithDiagnostics(ops.Cut, body, drillTool(center, into, cr, cd, featOr(h.featName, "hole")), rec)
+func (h *HoleFeature) facetedCounterbore(body *topo.Body, center math.Point3, into math.UnitVector3, r, depth, cr, cd, entry float64, rec *diag.Recorder) (*topo.Body, error) {
+	stepped, err := ops.BooleanWithDiagnostics(ops.Cut, body, drillToolFrom(center, into, cr, cd, entry, featOr(h.featName, "hole")), rec)
 	if err != nil {
 		return nil, err
 	}
@@ -233,7 +325,7 @@ func (h *HoleFeature) facetedCounterbore(body *topo.Body, center math.Point3, in
 // (wall + flat bottom). When the part shape isn't supported (the bore clips a face, or a blind
 // depth would exit), it falls back to the faceted boolean — a through-cut when `through`, the
 // requested depth otherwise.
-func (h *HoleFeature) cutCylinder(body *topo.Body, center math.Point3, into math.UnitVector3, r, depth float64, through bool, rec *diag.Recorder) (*topo.Body, error) {
+func (h *HoleFeature) cutCylinder(body *topo.Body, center math.Point3, into math.UnitVector3, r, depth, entry float64, through bool, rec *diag.Recorder) (*topo.Body, error) {
 	// A blind hole whose bottom reaches (or passes) the part's far extent along the axis IS a
 	// through hole: the flush-bottom "blind" cut would leave a zero-thickness membrane for a
 	// floor, which the exact blind drill rightly rejects — and the rejection used to fall to the
@@ -251,66 +343,9 @@ func (h *HoleFeature) cutCylinder(body *topo.Body, center math.Point3, into math
 	} else if res, err := brep.CutBlindCylindricalHole(body, center, into.AsVector(), r, depth); err == nil {
 		return res, nil
 	}
-	tool := drillTool(center, into, r, depth, featOr(h.featName, "hole"))
+	tool := drillToolFrom(center, into, r, depth, entry, featOr(h.featName, "hole"))
 	return ops.BooleanWithDiagnostics(ops.Cut, body, tool, rec)
 }
-
-// BossDefinition is the recipe for a boss: a raised cylinder on a placement face.
-type BossDefinition struct {
-	PlacementFaceKey []byte
-	Diameter         func() float64
-	Height           func() float64
-	// FaceAnchors maps the placement face key to its mint-time centroid for the geometric
-	// recovery tier (ADR-0043 P6 / #1579); see FilletDefinition.EdgeAnchors.
-	FaceAnchors map[string]math.Point3
-}
-
-// BossFeature adds a cylindrical boss to the running solid.
-type BossFeature struct {
-	def      *BossDefinition
-	featName string
-	tool     *topo.Body // the boss cylinder of the last recompute, for pattern replication
-}
-
-func (b *BossFeature) Definition() *BossDefinition { return b.def }
-func (b *BossFeature) Kind() string                { return "boss" }
-
-// Recompute resolves the placement face and raises the boss cylinder from its centroid along
-// the outward normal, joining it to the running body. The tool's small entry overhang sits
-// INSIDE the body (drillTool's near span), so the union always overlaps cleanly.
-func (b *BossFeature) Recompute(in Input) (Output, error) {
-	body, err := runningBody(in)
-	if err != nil {
-		return Output{}, err
-	}
-	face, mt, err := bindFace(body, b.def.PlacementFaceKey, anchorFor(b.def.PlacementFaceKey, b.def.FaceAnchors))
-	if err != nil {
-		return Output{}, fmt.Errorf("boss: %w", err)
-	}
-	r, h := callOrZero(b.def.Diameter)/2, callOrZero(b.def.Height)
-	if r <= 0 || h <= 0 {
-		return Output{}, fmt.Errorf("boss: diameter %g and height %g must be > 0", 2*r, h)
-	}
-	out, err := math.UnitVector3FromVector(face.Geometry().NormalAt(0, 0))
-	if err != nil {
-		return Output{}, fmt.Errorf("boss: placement face has no normal")
-	}
-	b.tool = drillTool(centroidOf(faceVertexPoints(face)), out, r, h, featOr(b.featName, "boss"))
-	res, err := ops.BooleanWithDiagnostics(ops.Join, body, b.tool, in.Diag)
-	if err != nil {
-		return Output{}, fmt.Errorf("boss: %w", err)
-	}
-	return Output{Bodies: replaceBody(in.Bodies, body, res), Heals: faceHeal(b.def.PlacementFaceKey, mt)}, nil
-}
-
-// Operation reports that a boss adds material, so a pattern of a boss unions its raised
-// cylinder at each occurrence (one body with N studs) instead of copying the whole solid.
-// Implements [OperationalFeature].
-func (b *BossFeature) Operation() ops.PartFeatureOperation { return ops.Join }
-
-// ToolBody returns the boss cylinder the last recompute joined, so a pattern replicates a
-// clean stud at each occurrence. Implements [ToolFeature].
-func (b *BossFeature) ToolBody() *topo.Body { return b.tool }
 
 // HoleFeatures and BossFeatures add hole/boss features into the engine.
 type (
@@ -361,11 +396,13 @@ func (c *HoleFeatures) AddTapped(faceKey []byte, diameter, depth func() float64,
 // a stable, distinct lineage.
 // resolveHoleFace finds the hole's placement face: by lineage key when present, else by a
 // geometric descriptor (the externally-authored path, ADR-0040), else lost.
-func resolveHoleFace(body *topo.Body, def *HoleDefinition) (*topo.Face, bool) {
-	if len(def.PlacementFaceKey) > 0 {
-		return body.FindFaceByKey(def.PlacementFaceKey)
+// centre, when given, is the drill point, used only as a fallback probe for a geometric selector
+// that no longer matches exactly.
+func resolveHoleFace(body *topo.Body, ref HoleFaceRef, centre *math.Point3) (*topo.Face, bool) {
+	if len(ref.Key) > 0 {
+		return body.FindFaceByKey(ref.Key)
 	}
-	if def.GeomFace != nil {
+	if ref.Geom != nil {
 		// Prefer the precise centroid+normal match. When it drifts past geomEdgeBindTol (an exporter
 		// computing the centroid differently, a centroid shifted by later history, or an annular face
 		// whose vertex-mean sits off the material), fall back to binding by a point on the placement
@@ -375,15 +412,15 @@ func resolveHoleFace(body *topo.Body, def *HoleDefinition) (*topo.Face, bool) {
 		//   - the recorded face CENTROID, which is coplanar with the placement face even when it
 		//     falls just outside the face boundary (FindPlanarFaceThrough uses perpendicular distance
 		//     to the plane, so an in-plane offset does not matter).
-		if f, ok := body.FindFaceByGeometry(*def.GeomFace, geomEdgeBindTol); ok {
+		if f, ok := body.FindFaceByGeometry(*ref.Geom, geomEdgeBindTol); ok {
 			return f, true
 		}
-		if def.Center != nil {
-			if f, ok := body.FindPlanarFaceThrough(*def.Center, def.GeomFace.Normal, holeFaceThroughTol); ok {
+		if centre != nil {
+			if f, ok := body.FindPlanarFaceThrough(*centre, ref.Geom.Normal, holeFaceThroughTol); ok {
 				return f, true
 			}
 		}
-		return body.FindPlanarFaceThrough(def.GeomFace.Centroid, def.GeomFace.Normal, holeFaceThroughTol)
+		return body.FindPlanarFaceThrough(ref.Geom.Centroid, ref.Geom.Normal, holeFaceThroughTol)
 	}
 	return nil, false
 }
