@@ -97,7 +97,7 @@ func (f *SheetMetalCornerFeature) chamferCorners(in Input, body *topo.Body, setb
 		return Output{}, err
 	}
 	work, edges := planarizeForEdges(body, edges, f.featName)
-	tools, err := chamferWedges(edges, setback, setback, f.featName)
+	tools, err := chamferWedges(edges, setback, setback, chamferRun{}, f.featName)
 	if err != nil {
 		return Output{}, fmt.Errorf("sheet-metal corner chamfer: %w", err)
 	}

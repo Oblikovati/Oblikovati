@@ -55,6 +55,9 @@ const chamferSchema = `{
     "chamferType": {"type": "string", "enum": ["distance", "distanceAndAngle", "twoDistances"], "default": "distance", "description": "Setback mode."},
     "distance2": {"type": "string", "description": "twoDistances: setback on the second face, e.g. \"4 mm\"."},
     "angle": {"type": "string", "description": "distanceAndAngle: chamfer-face angle, e.g. \"30 deg\"."},
+    "referenceFace": {"type": "string", "description": "Face the \"distance\" is measured on for the asymmetric modes (reference key). Without it the assignment falls to the edge's face order, a topology artefact that can put the larger setback on the wrong face of mirrored geometry."},
+    "partialStart": {"type": "string", "description": "Where the bevel starts along each edge, measured from its start vertex, e.g. \"5 mm\" (default 0)."},
+    "partialLength": {"type": "string", "description": "How much of each edge the bevel covers, e.g. \"20 mm\". Omit for the whole edge — Inventor's partial chamfer."},
     "concaveStrategy": {"type": "string", "enum": ["outward", "inward"], "default": "outward", "description": "Concave (internal) edge handling: outward fills the inside corner with material (default), inward cuts a recessed relief groove. Convex edges ignore this."},
     "edgesGeom": {"type": "array", "description": "Select the bevelled edges by GEOMETRY instead of edgeRefs, so the binding survives recompute. Give either this or edgeRefs.", "items": {"type": "object", "properties": {"midpoint": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Edge midpoint [x,y,z] cm."}, "direction": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Unit tangent [x,y,z]."}}, "required": ["midpoint", "direction"]}}
   },
@@ -381,6 +384,9 @@ func buildChamfer(part *compdef.PartComponentDefinition, in featureargs.Chamfer)
 	if err := setChamferModeInput(part, def, in); err != nil {
 		return nil, err
 	}
+	if err := setChamferRun(part, def, in); err != nil {
+		return nil, err
+	}
 	if len(in.EdgesGeom) > 0 {
 		// Bind the chamfered edges by geometry when authored geometrically (survives recompute).
 		refs, err := geomEdgeRefs(in.EdgesGeom)
@@ -600,4 +606,25 @@ func applyLip(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	}
 	pf := feature.NewDressUpFeatures(part.Features()).AddLip(refKeys(in.EdgeRefs), w, h, in.Groove)
 	return recomputeResult(part, pf)
+}
+
+// setChamferRun records which face the first setback is measured on and how much of each edge the
+// bevel covers (#1888). Both are optional; absent, the chamfer runs the whole edge with the
+// setbacks in the edge's own face order, exactly as before.
+func setChamferRun(part *compdef.PartComponentDefinition, def *feature.ChamferDefinition,
+	in featureargs.Chamfer) error {
+	def.ReferenceFace = []byte(in.ReferenceFace)
+	if strings.TrimSpace(in.PartialLength) == "" {
+		return nil
+	}
+	length, err := lengthClosure(part, in.PartialLength, "chamfer: partialLength")
+	if err != nil {
+		return err
+	}
+	start, err := optionalLengthClosure(part, in.PartialStart, "chamfer: partialStart")
+	if err != nil {
+		return err
+	}
+	def.PartialStart, def.PartialLength = start, length
+	return nil
 }

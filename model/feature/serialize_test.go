@@ -721,3 +721,34 @@ func TestFaceFilletWidthRoundTrips(t *testing.T) {
 		t.Errorf("restored width = %v, want the 0.42 chord back", got)
 	}
 }
+
+// TestChamferRunRoundTrips (#1888): the reference face and the partial span must survive a save,
+// or a reopened part silently reverts to a whole-edge chamfer with the setbacks assigned by
+// topology order — which is exactly the non-determinism the reference face was added to remove.
+func TestChamferRunRoundTrips(t *testing.T) {
+	fs := NewPartFeatures(nil)
+	NewDressUpFeatures(fs).AddChamferDef(&ChamferDefinition{
+		EdgeKeys: [][]byte{[]byte("e")}, Distance: func() float64 { return 0.3 },
+		Distance2: func() float64 { return 0.6 }, Type: types.ChamferTwoDistances,
+		ReferenceFace: []byte("faceB"),
+		PartialStart:  func() float64 { return 0.5 }, PartialLength: func() float64 { return 1.25 },
+	})
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	fresh := NewPartFeatures(nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	back := fresh.Item(0).Definition().(*ChamferFeature).Definition()
+	if string(back.ReferenceFace) != "faceB" {
+		t.Errorf("restored reference face = %q, want \"faceB\"", back.ReferenceFace)
+	}
+	if back.PartialLength == nil || back.PartialStart == nil {
+		t.Fatal("restored chamfer lost its partial span; it reverted to the whole edge")
+	}
+	if got, at := back.PartialLength(), back.PartialStart(); got != 1.25 || at != 0.5 {
+		t.Errorf("restored span = %g long from %g, want 1.25 from 0.5", got, at)
+	}
+}

@@ -81,6 +81,11 @@ type EdgeDressData struct {
 	// the geometric recovery tier (ADR-0043 P6b). Omitted for an older recipe, which then
 	// recovers a lost reference by exact/ancestral binding only.
 	EdgeAnchors []EdgeAnchorData `yaml:"edgeAnchors,omitempty"`
+	// Chamfer-only (#1888): the face Value is measured on for the asymmetric modes, and the span of
+	// each edge the bevel covers. Absent ⇒ the edge's own face order and the whole edge.
+	ReferenceFace string  `yaml:"referenceFace,omitempty"`
+	PartialStart  float64 `yaml:"partialStart,omitempty"`
+	PartialLength float64 `yaml:"partialLength,omitempty"`
 }
 
 // EdgeAnchorData is the serialized mint-time anchor of one picked edge: its reference key

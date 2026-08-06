@@ -130,3 +130,98 @@ func TestChamferTwoDistancesRoundTrip(t *testing.T) {
 		t.Errorf("restored setbacks = (%g, %g), want (0.3, 0.6)", def.Distance(), def.Distance2())
 	}
 }
+
+// TestChamferReferenceFaceDecidesWhichSetbackGoesWhere (#1888): an asymmetric chamfer is only
+// meaningful once you say which face the first distance is measured on. Without a reference the
+// answer came from edge.Faces() order — a topology artefact — so naming each of the edge's two
+// faces in turn must SWAP where the big setback lands, and reach the same volume either way.
+func TestChamferReferenceFaceDecidesWhichSetbackGoesWhere(t *testing.T) {
+	box, edge := box2(t)
+	faces := edgeFacesOf(t, box, edge)
+	first := chamferSetbackOnFace(t, box, edge, faces[0], faces[0])
+	second := chamferSetbackOnFace(t, box, edge, faces[1], faces[0])
+	if stdmath.Abs(first-0.3) > 1e-6 {
+		t.Errorf("with the reference on face 0 its setback = %g, want the FIRST distance 0.3", first)
+	}
+	if stdmath.Abs(second-0.6) > 1e-6 {
+		t.Errorf("with the reference on face 1, face 0's setback = %g, want the SECOND distance 0.6", second)
+	}
+}
+
+// chamferSetbackOnFace chamfers the edge 0.3/0.6 with the reference on referenceFace, and returns
+// how far the cut set back along measureFace.
+func chamferSetbackOnFace(t *testing.T, box *topo.Body, edge []byte, referenceFace, measureFace *topo.Face) float64 {
+	t.Helper()
+	fs := NewPartFeatures(nil)
+	NewBaseFeatures(fs).AddBase(box)
+	ch := NewDressUpFeatures(fs).AddChamferDef(&ChamferDefinition{
+		EdgeKeys: [][]byte{edge}, Distance: func() float64 { return 0.3 },
+		Distance2: func() float64 { return 0.6 }, Type: types.ChamferTwoDistances, FlatCorners: true,
+		ReferenceFace: referenceFace.ReferenceKey(),
+	})
+	fs.Recompute()
+	if !ch.Health().OK() {
+		t.Fatalf("referenced chamfer sick: %+v", ch.Health())
+	}
+	return setbackAlong(fs.Result()[0], measureFace)
+}
+
+// setbackAlong measures how far the chamfer cut back along a face, as the shortest distance from
+// the original corner (2,2,0) to a new bottom vertex lying in that face's plane.
+func setbackAlong(body *topo.Body, face *topo.Face) float64 {
+	n := face.Geometry().NormalAt(0, 0)
+	origin := centroidOf(faceVertexPoints(face))
+	best := stdmath.Inf(1)
+	for _, v := range body.Vertices() {
+		p := v.Point()
+		if stdmath.Abs(float64(p.Z)) > 1e-6 {
+			continue
+		}
+		if off := origin.VectorTo(p).Dot(n); stdmath.Abs(float64(off)) > 1e-6 {
+			continue // not on this face's plane
+		}
+		if d := float64(p.DistanceTo(math.P3(2, 2, 0))); d > 0.05 && d < best {
+			best = d
+		}
+	}
+	return best
+}
+
+// edgeFacesOf returns the two faces of the named edge.
+func edgeFacesOf(t *testing.T, body *topo.Body, key []byte) []*topo.Face {
+	t.Helper()
+	e, ok := body.FindEdgeByKey(key)
+	if !ok {
+		t.Fatal("edge key did not resolve")
+	}
+	if f := e.Faces(); len(f) == 2 {
+		return f
+	}
+	t.Fatal("edge does not bound exactly two faces")
+	return nil
+}
+
+// TestPartialChamferBevelsOnlyItsSpan (#1888): a partial chamfer runs along part of the edge, so it
+// removes proportionally less. The tool must also NOT overhang its interior ends, or it would bevel
+// a little more edge than was asked for — the same rule a from-to hole's entry follows.
+func TestPartialChamferBevelsOnlyItsSpan(t *testing.T) {
+	box, edge := box2(t)
+	fs := NewPartFeatures(nil)
+	NewBaseFeatures(fs).AddBase(box)
+	ch := NewDressUpFeatures(fs).AddChamferDef(&ChamferDefinition{
+		EdgeKeys: [][]byte{edge}, Distance: func() float64 { return 0.4 },
+		PartialStart: func() float64 { return 0.5 }, PartialLength: func() float64 { return 1.0 },
+	})
+	fs.Recompute()
+	if !ch.Health().OK() {
+		t.Fatalf("partial chamfer sick: %+v", ch.Health())
+	}
+	res := fs.Result()[0]
+	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
+		t.Fatalf("partial chamfer not a valid solid: %+v", r)
+	}
+	want := 8 - 0.5*0.4*0.4*1.0 // the wedge over ONE cm of the 2 cm edge, not the whole of it
+	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
+		t.Errorf("partial chamfer volume = %g, want %g (the span, exactly — no overhang past it)", got, want)
+	}
+}

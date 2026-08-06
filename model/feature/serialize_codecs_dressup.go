@@ -35,6 +35,8 @@ func (r featureCodecSet) registerDressUpCodecs() {
 				Edges: encodeKeys(cf.def.EdgeKeys), Value: evalFloat(cf.def.Distance), FlatCorners: &flat,
 				ChamferType: int32(cf.def.Type), Value2: evalFloat(cf.def.Distance2), Angle: evalFloat(cf.def.Angle),
 				GeomEdges: encodeGeomEdges(cf.def.GeomEdges), EdgeAnchors: encodeEdgeAnchors(cf.def.EdgeAnchors),
+				ReferenceFace: encodeKey(cf.def.ReferenceFace),
+				PartialStart:  evalFloat(cf.def.PartialStart), PartialLength: evalFloat(cf.def.PartialLength),
 			}
 			return nil
 		},
@@ -160,7 +162,23 @@ func decodeChamfer(rc *restoreContext, fd FeatureData) (*PartFeature, error) {
 	case types.ChamferDistanceAndAngle:
 		def.Angle = constFloat(fd.Chamfer.Angle)
 	}
+	if err := restoreChamferRun(def, fd.Chamfer); err != nil {
+		return nil, err
+	}
 	return NewDressUpFeatures(rc.fs).addChamfer(def), nil
+}
+
+// restoreChamferRun puts back the persisted reference face and partial span (#1888).
+func restoreChamferRun(def *ChamferDefinition, d *EdgeDressData) error {
+	ref, err := decodeKey(d.ReferenceFace)
+	if err != nil {
+		return err
+	}
+	def.ReferenceFace = ref
+	if d.PartialLength > 0 {
+		def.PartialStart, def.PartialLength = constFloat(d.PartialStart), constFloat(d.PartialLength)
+	}
+	return nil
 }
 
 // decodeFaceFillet rebuilds a two-face-set variable fillet, re-binding both face sets by key.

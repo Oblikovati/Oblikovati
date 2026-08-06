@@ -141,6 +141,14 @@ type ChamferDefinition struct {
 	// EdgeAnchors maps an EdgeKeys entry to its mint-time midpoint for the geometric recovery
 	// tier (ADR-0043 P6b); see FilletDefinition.EdgeAnchors.
 	EdgeAnchors map[string]math.Point3
+	// ReferenceFace is the face Distance is measured on for the asymmetric modes (#1888). Empty
+	// leaves the assignment to the edge's own face order, which is a topology artefact — on
+	// mirrored geometry that can put the larger setback on the wrong face. See orderedSetbacks.
+	ReferenceFace []byte
+	// PartialStart and PartialLength bevel only a SPAN of each edge, measured from its start vertex
+	// (#1888). PartialLength 0 ⇒ the whole edge. See wedgeSpan.
+	PartialStart  func() float64
+	PartialLength func() float64
 }
 
 // ChamferFeature bevels selected edges (equal-distance, two-distance, or distance-and-angle).
@@ -165,7 +173,8 @@ func (c *ChamferFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	return chamferEdges(in, keys, d1, d2, featOr(c.featName, "chamfer"), c.def.FlatCorners, c.def.ConcaveStrategy, c.def.EdgeAnchors)
+	return chamferEdges(in, keys, d1, d2, featOr(c.featName, "chamfer"), c.def.FlatCorners,
+		c.def.ConcaveStrategy, c.def.runOf(), c.def.EdgeAnchors)
 }
 
 // ShellDefinition hollows a body, removing the selected faces, to a wall thickness.
