@@ -72,8 +72,9 @@ func TestCoaxialSphereCircleOffsetDeclinesWhatOCCTDeclines(t *testing.T) {
 	}
 }
 
-// TestCoaxialRodOfDeclinesOutOfScopeExtents guards the documented scope. Only a rod with ONE cap
-// strictly inside the ball and one strictly outside is built here; the others must decline so
+// TestCoaxialRodOfDeclinesOutOfScopeExtents guards the documented scope. A rod's caps must each clear
+// the ball cleanly — both strictly inside, both strictly outside, or one of each; a cap landing in the
+// annular band between the seam plane and the pole is a different construction and must decline, so
 // kernel/ops keeps its guarded fallback rather than shipping a solid this file cannot describe.
 func TestCoaxialRodOfDeclinesOutOfScopeExtents(t *testing.T) {
 	for _, c := range []struct {
@@ -81,7 +82,6 @@ func TestCoaxialRodOfDeclinesOutOfScopeExtents(t *testing.T) {
 		y0, length  float64
 		explanation string
 	}{
-		{"through rod", -1.5, 3, "clears both sides: two seam circles, needing a spherical zone face"},
 		{"shoulder stop", 0, 0.45, "the far cap lands between the seam plane and the pole"},
 		{"buried rod", -0.2, 0.4, "both caps inside: the union is the ball alone"},
 	} {
@@ -100,8 +100,33 @@ func TestCoaxialRodOfAcceptsEitherArgumentOrder(t *testing.T) {
 	if !okF || !okR {
 		t.Fatalf("ball-first ok=%v, rod-first ok=%v; want both", okF, okR)
 	}
-	if forward.seam.Center != reverse.seam.Center || forward.seam.Radius != reverse.seam.Radius {
-		t.Errorf("argument order changed the seam: %v vs %v", forward.seam, reverse.seam)
+	if forward.hiSeam.Center != reverse.hiSeam.Center || forward.hiSeam.Radius != reverse.hiSeam.Radius {
+		t.Errorf("argument order changed the seam: %v vs %v", forward.hiSeam, reverse.hiSeam)
+	}
+}
+
+// TestCoaxialRodOfRecognisesTheThroughExtent: a rod that clears the ball at BOTH ends has two real seam
+// circles, and both must land on the sphere at ±√(R²−r²) with the rod's own radius.
+func TestCoaxialRodOfRecognisesTheThroughExtent(t *testing.T) {
+	ball, rod := ballAndRod(t, 0.5, 0.3, -1.0, 2.5)
+	r, ok := coaxialRodOf(ball, rod)
+	if !ok {
+		t.Fatal("a rod passing right through the ball was declined")
+	}
+	if !r.through {
+		t.Fatal("the through extent was recognised as a rod ending inside the ball")
+	}
+	for _, c := range []struct {
+		name  string
+		seam  geom.Circle
+		wantY float64
+	}{{"hi", r.hiSeam, 0.4}, {"lo", r.loSeam, -0.4}} {
+		if stdmath.Abs(float64(c.seam.Center.Y)-c.wantY) > 1e-12 {
+			t.Errorf("%s seam at y=%g, want %g", c.name, float64(c.seam.Center.Y), c.wantY)
+		}
+		if stdmath.Abs(c.seam.Radius-0.3) > 1e-12 {
+			t.Errorf("%s seam radius %g, want the rod's 0.3", c.name, c.seam.Radius)
+		}
 	}
 }
 
@@ -124,26 +149,40 @@ func TestCoaxialRodOfOrientsTheAxisFromTheBuriedEnd(t *testing.T) {
 		if got := float64(r.out.Y); stdmath.Abs(got-c.wantY) > 1e-12 {
 			t.Errorf("%s: out.Y = %g, want %g (buried cap → free cap)", c.name, got, c.wantY)
 		}
-		if float64(r.seam.Center.Y)*c.wantY <= 0 {
-			t.Errorf("%s: seam at y=%g is on the buried side", c.name, float64(r.seam.Center.Y))
+		if float64(r.hiSeam.Center.Y)*c.wantY <= 0 {
+			t.Errorf("%s: seam at y=%g is on the buried side", c.name, float64(r.hiSeam.Center.Y))
 		}
 	}
 }
 
-// TestCoaxialSphereRodBuildersAssembleThreeAnalyticFaces walks the whole family at the builder level:
-// every result is one watertight solid of exactly one sphere, one cylinder and one plane. The volumes
+// TestCoaxialSphereRodBuildersAssembleAnalyticSolids walks the whole family at the builder level, in
+// both extents: every result is a watertight solid of exactly the expected analytic faces. The volumes
 // are asserted where the boolean runs (kernel/ops, against the OCC oracle); what belongs here is the
 // SHAPE, because an assembly that keeps the wrong halves still stitches into a plausible-looking body.
-func TestCoaxialSphereRodBuildersAssembleThreeAnalyticFaces(t *testing.T) {
-	ball, rod := ballAndRod(t, 0.5, 0.3, 0, 1.5)
+func TestCoaxialSphereRodBuildersAssembleAnalyticSolids(t *testing.T) {
+	blindBall, blindRod := ballAndRod(t, 0.5, 0.3, 0, 1.5)
+	thruBall, thruRod := ballAndRod(t, 0.5, 0.3, -1.0, 2.5)
 	for _, c := range []struct {
 		name  string
 		build func() (*topo.Body, bool)
+		want  map[string]int
 	}{
-		{"ball ∪ rod", func() (*topo.Body, bool) { return CoaxialSphereRodJoin(ball, rod) }},
-		{"ball − rod", func() (*topo.Body, bool) { return CoaxialSphereRodCut(ball, rod) }},
-		{"rod − ball", func() (*topo.Body, bool) { return CoaxialSphereRodCut(rod, ball) }},
-		{"ball ∩ rod", func() (*topo.Body, bool) { return CoaxialSphereRodIntersect(ball, rod) }},
+		{"ball ∪ rod", func() (*topo.Body, bool) { return CoaxialSphereRodJoin(blindBall, blindRod) },
+			map[string]int{"sphere": 1, "cylinder": 1, "plane": 1}},
+		{"ball − rod", func() (*topo.Body, bool) { return CoaxialSphereRodCut(blindBall, blindRod) },
+			map[string]int{"sphere": 1, "cylinder": 1, "plane": 1}},
+		{"rod − ball", func() (*topo.Body, bool) { return CoaxialSphereRodCut(blindRod, blindBall) },
+			map[string]int{"sphere": 1, "cylinder": 1, "plane": 1}},
+		{"ball ∩ rod", func() (*topo.Body, bool) { return CoaxialSphereRodIntersect(blindBall, blindRod) },
+			map[string]int{"sphere": 1, "cylinder": 1, "plane": 1}},
+		{"ball ∪ axle", func() (*topo.Body, bool) { return CoaxialSphereRodJoin(thruBall, thruRod) },
+			map[string]int{"sphere": 1, "cylinder": 2, "plane": 2}},
+		{"ball − axle (bead)", func() (*topo.Body, bool) { return CoaxialSphereRodCut(thruBall, thruRod) },
+			map[string]int{"sphere": 1, "cylinder": 1}},
+		{"axle − ball (two stubs)", func() (*topo.Body, bool) { return CoaxialSphereRodCut(thruRod, thruBall) },
+			map[string]int{"sphere": 2, "cylinder": 2, "plane": 2}},
+		{"ball ∩ axle (core)", func() (*topo.Body, bool) { return CoaxialSphereRodIntersect(thruBall, thruRod) },
+			map[string]int{"sphere": 2, "cylinder": 1}},
 	} {
 		res, ok := c.build()
 		if !ok {
@@ -151,15 +190,48 @@ func TestCoaxialSphereRodBuildersAssembleThreeAnalyticFaces(t *testing.T) {
 			continue
 		}
 		assertWatertight(t, res)
-		kinds := map[string]int{}
+		got := map[string]int{}
 		for _, f := range res.Faces() {
-			kinds[surfaceKind(f)]++
+			got[surfaceKind(f)]++
 		}
-		if len(res.Faces()) != 3 || kinds["sphere"] != 1 || kinds["cylinder"] != 1 || kinds["plane"] != 1 {
-			t.Errorf("%s built %d faces %v, want one sphere + one cylinder + one plane",
-				c.name, len(res.Faces()), kinds)
+		if !sameCensus(got, c.want) {
+			t.Errorf("%s built faces %v, want %v", c.name, got, c.want)
 		}
 	}
+}
+
+// sameCensus compares two face-kind tallies.
+func sameCensus(got, want map[string]int) bool {
+	if len(got) != len(want) {
+		return false
+	}
+	for k, n := range want {
+		if got[k] != n {
+			return false
+		}
+	}
+	return true
+}
+
+// TestBeadKeepsTheBallsBeltAndNothingElse: cutting a through rod out of the ball must leave the ball's
+// belt (one sphere face bounded by BOTH seam circles) and the open bore — not a cap that quietly closed
+// one end off. The two loops on that face are what say so.
+func TestBeadKeepsTheBallsBeltAndNothingElse(t *testing.T) {
+	ball, rod := ballAndRod(t, 0.5, 0.3, -1.0, 2.5)
+	bead, ok := CoaxialSphereRodCut(ball, rod)
+	if !ok {
+		t.Fatal("ball − axle declined")
+	}
+	for _, f := range bead.Faces() {
+		if surfaceKind(f) != "sphere" {
+			continue
+		}
+		if n := len(f.Loops()); n != 2 {
+			t.Errorf("the bead's spherical face has %d loops, want 2 (a belt is bounded by both seams)", n)
+		}
+		return
+	}
+	t.Fatal("the bead has no spherical face")
 }
 
 // TestCoaxialSphereRodCutFacesTheRightWay: which operand is the target decides which cap survives and

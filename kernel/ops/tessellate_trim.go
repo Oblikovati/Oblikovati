@@ -101,13 +101,18 @@ func specialCurvedMeshers(f *topo.Face, s geom.Surface, outer3D []math.Point3, h
 		// — see coneApexMesh. A holed cone face is never an apex topology (its inner rim is the hole).
 		func() (*Mesh, bool) { return coneApexMesh(f, s, outer3D, holes3D) },
 		// a sphere cut by one plane (a cap): rings from the rim to the enclosed pole
-		func() (*Mesh, bool) { return sphereCapFan(s, outer3D, q) },
+		func() (*Mesh, bool) { return sphereCapFan(s, outer3D, holes3D, q) },
 		// a large sphere zone reaching an enclosed pole (one off-centre plane cut, seam to the pole):
 		// fan on the rim CIRCLE's exact normal, not the seam-biased newellUnit (J2)
 		func() (*Mesh, bool) { return sphereZoneCapFan(f, s, q) },
 		// a seamed cap: coplanar MULTI-ARC rim (a subdivided boss equator) + one doubled seam edge to
 		// the pole (S6/S7's hemisphere): latitude-ring fan, not the density-capped stereo CDT
 		func() (*Mesh, bool) { return sphereSeamedCapFan(f, s, q) },
+		// a BELT between two coaxial full-circle rims (a ball an axle passes through, a revolved
+		// meridian arc off the axis at both ends): latitude rings about the RIMS' axis. It must precede
+		// the gnomonic patch, whose chart covers less than a hemisphere and so cannot hold a belt that
+		// straddles its own equator (#2061)
+		func() (*Mesh, bool) { return sphereZoneBandFan(f, s, q) },
 		// a sphere bounded by several arcs (a box cut): gnomonic CDT, pole/seam-safe
 		func() (*Mesh, bool) { return spherePatchMesh(s, outer3D, holes3D, q) },
 		// a periodic side with one full-circle rim and one notched rim (a frustum flat that fades): loft

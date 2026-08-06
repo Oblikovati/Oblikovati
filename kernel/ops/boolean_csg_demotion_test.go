@@ -123,6 +123,10 @@ func curvedExactCases() []curvedExactCase {
 		{"coaxial ball − rod (blind spherical bore)", ops.Cut, demoBallAndRod},
 		{"coaxial rod − ball (dimpled stub)", ops.Cut, demoRodAndBall},
 		{"coaxial ball ∩ rod (plug)", ops.Intersect, demoBallAndRod},
+		{"coaxial ball ∪ axle (through)", ops.Join, demoBallAndAxle},
+		{"coaxial ball − axle (bead)", ops.Cut, demoBallAndAxle},
+		{"coaxial axle − ball (two stubs)", ops.Cut, demoAxleAndBall},
+		{"coaxial ball ∩ axle (core)", ops.Intersect, demoBallAndAxle},
 		{"cone ∩ box (axis-∥ flat)", ops.Intersect, coneFlatBox},
 		{"cone − box (axis-∥ flat)", ops.Cut, coneFlatBox},
 		{"cone ∩ box (vertex-inside flat)", ops.Intersect, coneVertexInsideFlatBox},
@@ -378,6 +382,20 @@ func demoCyl(t *testing.T, base math.Point3, axis math.Vector3, r, h float64) *t
 func demoBallAndRod(t *testing.T) (*topo.Body, *topo.Body) {
 	t.Helper()
 	return demoSphere(t, math.P3(0, 0, 0), 5), demoCyl(t, math.P3(0, 0, 0), math.V3(0, 1, 0), 3, 15)
+}
+
+// demoBallAndAxle is the #2061 through-rod extent: the same Ø10 ball, with the Ø6 rod running right
+// past it on both sides so the two surfaces meet in TWO circles.
+func demoBallAndAxle(t *testing.T) (*topo.Body, *topo.Body) {
+	t.Helper()
+	return demoSphere(t, math.P3(0, 0, 0), 5), demoCyl(t, math.P3(0, -10, 0), math.V3(0, 1, 0), 3, 25)
+}
+
+// demoAxleAndBall is the same pair with the axle as the target, for axle − ball.
+func demoAxleAndBall(t *testing.T) (*topo.Body, *topo.Body) {
+	t.Helper()
+	ball, axle := demoBallAndAxle(t)
+	return axle, ball
 }
 
 // demoRodAndBall is the same pair with the rod as the target, for rod − ball.

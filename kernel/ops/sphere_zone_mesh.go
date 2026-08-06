@@ -40,8 +40,8 @@ const zoneFullCircleTol = 1e-6
 // watertight fan of area 2πR·h from rim to pole, not the small north cap capAxis would have meshed.
 func sphereZoneCapFan(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
 	sph, ok := s.(geom.Sphere)
-	if !ok {
-		return nil, false
+	if !ok || len(f.Loops()) != 1 {
+		return nil, false // a holed face is not a pole-reaching zone; the fan would pave over the hole
 	}
 	rim, axis, ok := zoneRimAxis(f, sph, q)
 	if !ok || len(rim) < 3 {
