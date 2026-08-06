@@ -23,6 +23,11 @@ type FaceFilletDefinition struct {
 	FaceKeysA [][]byte
 	FaceKeysB [][]byte
 	Radius    func() float64
+	// Width drives the blend by the CHORD it spans instead of by the rolling ball's radius —
+	// Inventor's chordal alternative, and what a machinist measures on the part (#1887). When set it
+	// wins over Radius, resolving to a radius from the dihedral the faces meet at. See
+	// faceFilletRadiusForWidth.
+	Width func() float64
 }
 
 // FaceFilletFeature is a face fillet between two face sets.
@@ -43,7 +48,24 @@ func (f *FaceFilletFeature) FilletType() types.FilletType { return types.FaceFil
 
 // Recompute rounds the edges shared by the two face sets against the running body.
 func (f *FaceFilletFeature) Recompute(in Input) (Output, error) {
-	return faceFilletBody(in, f.def.FaceKeysA, f.def.FaceKeysB, callOrZero(f.def.Radius), "face-fillet")
+	radius, err := f.blendRadius(in)
+	if err != nil {
+		return Output{}, err
+	}
+	return faceFilletBody(in, f.def.FaceKeysA, f.def.FaceKeysB, radius, "face-fillet")
+}
+
+// blendRadius is the rolling-ball radius this blend runs at: the authored Width resolved against
+// the dihedral the faces meet at (#1887), or the authored Radius when no width is given.
+func (f *FaceFilletFeature) blendRadius(in Input) (float64, error) {
+	if f.def.Width == nil {
+		return callOrZero(f.def.Radius), nil
+	}
+	body, err := runningBody(in)
+	if err != nil {
+		return 0, err
+	}
+	return faceFilletRadiusForWidth(body, f.def.FaceKeysA, f.def.FaceKeysB, f.def.Width(), "face-fillet")
 }
 
 // faceFilletBody rounds the edges between the two face sets with the constant-radius edge fillet.

@@ -43,7 +43,8 @@ func (r featureCodecSet) registerDressUpCodecs() {
 	r.register("face-fillet", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			ff := f.(*FaceFilletFeature)
-			fd.FaceFillet = &FaceFilletData{FacesA: encodeKeys(ff.def.FaceKeysA), FacesB: encodeKeys(ff.def.FaceKeysB), Value: evalFloat(ff.def.Radius)}
+			fd.FaceFillet = &FaceFilletData{FacesA: encodeKeys(ff.def.FaceKeysA), FacesB: encodeKeys(ff.def.FaceKeysB),
+				Value: evalFloat(ff.def.Radius), Width: evalFloat(ff.def.Width)}
 			return nil
 		},
 		decode: decodeFaceFillet,
@@ -175,7 +176,11 @@ func decodeFaceFillet(rc *restoreContext, fd FeatureData) (*PartFeature, error) 
 	if err != nil {
 		return nil, err
 	}
-	return NewDressUpFeatures(rc.fs).AddFaceFillet(a, b, constFloat(fd.FaceFillet.Value)), nil
+	pf := NewDressUpFeatures(rc.fs).AddFaceFillet(a, b, constFloat(fd.FaceFillet.Value))
+	if w := fd.FaceFillet.Width; w > 0 {
+		pf.Definition().(*FaceFilletFeature).Definition().Width = constFloat(w)
+	}
+	return pf, nil
 }
 
 // decodeFullRound rebuilds a full-round fillet from its three face-set keys.

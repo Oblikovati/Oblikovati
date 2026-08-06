@@ -244,6 +244,10 @@ type FaceFilletData struct {
 	FacesA []string `yaml:"facesA"`
 	FacesB []string `yaml:"facesB"`
 	Value  float64  `yaml:"value"`
+	// Width sizes the blend by its CHORD instead of by Value, the rolling ball's radius (#1887).
+	// Persisted separately so a reopened part still resolves the width against the angle its faces
+	// meet at, rather than freezing whatever radius that came to on the day it was authored.
+	Width float64 `yaml:"width,omitempty"`
 }
 
 // RuleFilletData persists a rule fillet (#486): the dihedral rule (wire spelling) and the radius.

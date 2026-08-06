@@ -25,8 +25,9 @@ const filletSchema = `{
   "type": "object",
   "properties": {
     "edgeRefs": {"type": "array", "items": {"type": "string"}, "minItems": 1, "description": "Reference keys of the edges to round (from get_reference_keys). Flat form: one constant radius over these edges."},
+    "width": {"type": "string", "description": "Face-fillet form: size the blend by the CHORD it spans instead of by the rolling ball's radius, e.g. \"4 mm\" — Inventor's chordal alternative, and what is measured on the part. Resolved against the angle the two face sets meet at, so they must share an edge and be planar. Wins over radius."},
     "radius": {"type": "string", "description": "Fillet radius with units, e.g. \"3 mm\" (flat and face-fillet forms)."},
-    "faceRefsA": {"type": "array", "items": {"type": "string"}, "description": "Face-fillet form (#694): first face set (reference keys). With faceRefsB + radius, rounds the edges the two sets share — pick by face instead of by edge. Adjacent faces only for now."},
+    "faceRefsA": {"type": "array", "items": {"type": "string"}, "description": "Face-fillet form (#694): first face set (reference keys). With faceRefsB and a radius (or width), rounds the edges the two sets share — pick by face instead of by edge. Sets that share NO edge are healed to the virtual edge their planes define and rounded there (#694)."},
     "faceRefsB": {"type": "array", "items": {"type": "string"}, "description": "Face-fillet form: second face set."},
     "edgeSets": {"type": "array", "minItems": 1, "description": "Edge-set form (takes precedence over edgeRefs): any mix of constant and variable radius sets.", "items": {"type": "object", "properties": {
       "edgeRefs": {"type": "array", "items": {"type": "string"}, "minItems": 1},
@@ -38,7 +39,7 @@ const filletSchema = `{
         "radius": {"type": "string", "description": "Radius at this stop, e.g. \"4 mm\"."}
       }, "required": ["t", "radius"]}}
     }, "required": ["edgeRefs"]}},
-    "cornerType": {"type": "string", "enum": ["miter", "setback", "round"], "default": "miter", "description": "How a vertex where two filleted edges meet (third edge sharp) is treated: miter (exact crease), round (fillets the third edge into a smooth sphere). setback is reserved."},
+    "cornerType": {"type": "string", "enum": ["miter", "setback", "round"], "default": "miter", "description": "How a vertex where two filleted edges meet (third edge sharp) is treated: miter (exact crease), round (fillets the third edge into a smooth sphere). setback tapers the third edge to a run-out, giving a smooth set-back sphere."},
     "crossSection": {"type": "string", "enum": ["arc", "g2", "conic"], "default": "arc", "description": "Blend cross-section shape (#1284): arc = circular rolling-ball (G1, default), g2 = curvature-continuous (no highlight break at the tangency lines), conic = rho-controlled. G2/conic apply to planar-walled edge fillets."},
     "rho": {"type": "number", "minimum": 0.1, "maximum": 0.9, "description": "Conic fullness when crossSection=conic: 0.5 = parabola, lower = flatter, higher = fuller."},
     "concaveStrategy": {"type": "string", "enum": ["outward", "inward"], "default": "outward", "description": "Concave (internal) edge handling: outward fills the inside corner with an exact rolling-ball cylinder (default). inward rounds a recess into the corner and is only valid where the faces extend into the material (e.g. a pocket). Convex edges ignore this."},
@@ -186,16 +187,28 @@ func applyFullRound(s *app.Session, raw json.RawMessage) (json.RawMessage, error
 }
 
 // applyFaceFillet rounds the edges shared between two face sets (#694, adjacent-faces case): both
-// faceRefsA and faceRefsB plus a radius are required.
+// faceRefsA and faceRefsB plus a radius (or a chordal width) are required.
 func applyFaceFillet(part *compdef.PartComponentDefinition, in featureargs.Fillet) (json.RawMessage, error) {
 	if len(in.FaceRefsA) == 0 || len(in.FaceRefsB) == 0 {
 		return nil, errors.New("face fillet: both faceRefsA and faceRefsB are required")
 	}
-	r, err := lengthClosure(part, in.Radius, fieldFilletRadius)
+	if strings.TrimSpace(in.Radius) == "" && strings.TrimSpace(in.Width) == "" {
+		return nil, errors.New("face fillet: needs \"radius\", or \"width\" to size the blend by its chord")
+	}
+	r, err := optionalLengthClosure(part, in.Radius, fieldFilletRadius)
 	if err != nil {
 		return nil, err
 	}
 	pf := feature.NewDressUpFeatures(part.Features()).AddFaceFillet(refKeys(in.FaceRefsA), refKeys(in.FaceRefsB), r)
+	// A width is the CHORD across the blend (#1887); the model resolves it to a radius against the
+	// angle the two face sets meet at, so it wins over any radius also given.
+	if strings.TrimSpace(in.Width) != "" {
+		w, err := lengthClosure(part, in.Width, "fillet: width")
+		if err != nil {
+			return nil, err
+		}
+		pf.Definition().(*feature.FaceFilletFeature).Definition().Width = w
+	}
 	return recomputeResult(part, pf)
 }
 

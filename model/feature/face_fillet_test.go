@@ -4,6 +4,7 @@ package feature
 
 import (
 	stdmath "math"
+	"strings"
 	"testing"
 
 	"oblikovati.org/kernel/geom"
@@ -135,4 +136,64 @@ func hasCylinderFace(b *topo.Body) bool {
 		}
 	}
 	return false
+}
+
+// TestFaceFilletWidthResolvesToTheChordRadius (#1887): a width-driven blend is specified by the
+// chord it spans, which is what gets measured on the part. On the box's 90° edge the chord across a
+// quarter round of radius r is r·√2, so asking for that width must reproduce EXACTLY the radius-
+// driven blend — same volume, to the last figure.
+func TestFaceFilletWidthResolvesToTheChordRadius(t *testing.T) {
+	const r = 0.3
+	byRadius := faceFilletVolume(t, func(d *FaceFilletDefinition) { d.Radius = func() float64 { return r } })
+	byWidth := faceFilletVolume(t, func(d *FaceFilletDefinition) {
+		d.Width = func() float64 { return r * stdmath.Sqrt2 }
+	})
+	if relErr(byWidth, byRadius) > 1e-9 {
+		t.Errorf("width-driven volume = %g, radius-driven = %g — a chord of r√2 on a 90° edge IS radius r",
+			byWidth, byRadius)
+	}
+}
+
+// TestFaceFilletWidthWinsOverRadius: giving both must not silently keep the radius, or an author
+// who switched to a width would get a blend of the wrong size with no complaint.
+func TestFaceFilletWidthWinsOverRadius(t *testing.T) {
+	both := faceFilletVolume(t, func(d *FaceFilletDefinition) {
+		d.Radius = func() float64 { return 0.9 }
+		d.Width = func() float64 { return 0.3 * stdmath.Sqrt2 }
+	})
+	want := faceFilletVolume(t, func(d *FaceFilletDefinition) { d.Radius = func() float64 { return 0.3 } })
+	if relErr(both, want) > 1e-9 {
+		t.Errorf("volume with both set = %g, want the WIDTH's %g", both, want)
+	}
+}
+
+// TestFaceFilletWidthNeedsASharedAngle: a width is measured across the angle the faces meet at, so
+// two face sets that share no edge give it nothing to be measured against. Falling back to some
+// default angle would produce a blend of the wrong size that looks right.
+func TestFaceFilletWidthNeedsASharedAngle(t *testing.T) {
+	fs, face := boxAndPlanarFace(t)
+	top, bottom := face('z', 2), face('z', 0)
+	pf := NewDressUpFeatures(fs).AddFaceFillet([][]byte{top}, [][]byte{bottom}, nil)
+	pf.Definition().(*FaceFilletFeature).Definition().Width = func() float64 { return 0.5 }
+	fs.Recompute()
+	if pf.Health().OK() {
+		t.Fatal("a width-driven blend between faces sharing no edge succeeded; it has no angle to measure across")
+	}
+	if reason := pf.Health().Reason; !strings.Contains(reason, "share an edge") {
+		t.Errorf("reason = %q, want it to say the two sets share no edge", reason)
+	}
+}
+
+// faceFilletVolume builds the top/side face fillet on the standard box under the given definition
+// tweak and returns the resulting volume.
+func faceFilletVolume(t *testing.T, set func(*FaceFilletDefinition)) float64 {
+	t.Helper()
+	fs, face := boxAndPlanarFace(t)
+	pf := NewDressUpFeatures(fs).AddFaceFillet([][]byte{face('z', 2)}, [][]byte{face('x', 2)}, nil)
+	set(pf.Definition().(*FaceFilletFeature).Definition())
+	fs.Recompute()
+	if !pf.Health().OK() {
+		t.Fatalf("face fillet sick: %+v", pf.Health())
+	}
+	return ops.BodyGeometryProperties(fs.Result()[0], ops.Quality{ChordTolerance: 1e-4}).Volume
 }

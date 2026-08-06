@@ -693,3 +693,31 @@ func TestThreadParityFieldsRoundTrip(t *testing.T) {
 		t.Errorf("legacy thread restored with non-defaults: %+v", d)
 	}
 }
+
+// TestFaceFilletWidthRoundTrips (#1887): the WIDTH must survive a save/load, not be flattened into
+// whatever radius it resolved to on the day it was authored — otherwise a reopened part stops
+// re-resolving the chord against the angle its faces meet at.
+func TestFaceFilletWidthRoundTrips(t *testing.T) {
+	fs := NewPartFeatures(nil)
+	pf := NewDressUpFeatures(fs).AddFaceFillet([][]byte{[]byte("a")}, [][]byte{[]byte("b")}, nil)
+	pf.Definition().(*FaceFilletFeature).Definition().Width = func() float64 { return 0.42 }
+
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	if got := data[0].FaceFillet.Width; got != 0.42 {
+		t.Fatalf("saved width = %v, want 0.42", got)
+	}
+	fresh := NewPartFeatures(nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	back := fresh.Item(0).Definition().(*FaceFilletFeature).Definition()
+	if back.Width == nil {
+		t.Fatal("restored face fillet has no width; it was flattened into a radius")
+	}
+	if got := back.Width(); got != 0.42 {
+		t.Errorf("restored width = %v, want the 0.42 chord back", got)
+	}
+}
