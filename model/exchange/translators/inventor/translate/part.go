@@ -115,7 +115,12 @@ func buildPart(ws *doc.Workspace, outPath string, d *ipt.Document, meshFallback 
 	// thing it carries. So when nothing parametric decoded, import its body unconditionally, turning
 	// an empty translation into the real shape (31 of the corpus's ThirdParty + base-plate parts).
 	noParametric := def.Sketches().Count() == 0 && def.Features().Count() == 0
-	if (meshFallback || noParametric) && (!built || !hasSolidBody(def)) {
+	// A baseless extrude chain (extrudes exist but all cut/join, no New-Body — see
+	// buildExtrudeFeatures) also can't rebuild parametrically, so its real shape must come from the
+	// imported body too.
+	ex := ipt.DecodeExtrudes(d)
+	noBase := len(ex) > 0 && !hasBaseExtrude(ex)
+	if (meshFallback || noParametric || noBase) && (!built || !hasSolidBody(def)) {
 		warns = append(warns, addBodyIfPresent(def, d)...)
 		def.Recompute()
 	}
@@ -438,10 +443,30 @@ func buildRevolve(def *compdef.PartComponentDefinition, seg []byte, placed []pla
 // consumes the sketch at its index, then a hole cuts the base, then a pattern/mirror replicates
 // the last extrude. Each stage that is decoded but can't be built appends a note and is skipped;
 // whatever built stays. Returns whether any feature built.
+// hasBaseExtrude reports whether any extrude starts a body (New-Body). Without one the extrude chain
+// is all cut/join with nothing to act on, so it cannot rebuild a solid — its base is a feature type
+// this decoder does not produce.
+func hasBaseExtrude(extrudes []ipt.Extrude) bool {
+	for _, e := range extrudes {
+		if e.Operation == ipt.OpNewBody {
+			return true
+		}
+	}
+	return false
+}
+
 func buildExtrudeFeatures(def *compdef.PartComponentDefinition, d *ipt.Document, seg []byte, placed []placedSketch, emitted []emittedSketch) (bool, []string) {
 	built := false
 	var notes []string
 	extrudes := ipt.DecodeExtrudes(d)
+	// A part whose extrudes are ALL cut/join/intersect has no base body to apply them to: its base
+	// is a feature this decoder does not produce (a sheet-metal face on MainBaseSheet, say). Applying
+	// cuts to nothing builds a garbage sliver — 1% of the true volume — so build no extrude and leave
+	// the sketches standing; buildPart then imports the real body. Only a New-Body extrude starts a
+	// solid, so its absence means the whole extrude chain is baseless.
+	if len(extrudes) > 0 && !hasBaseExtrude(extrudes) {
+		return false, []string{fmt.Sprintf("%d extrude(s) but none starts a body — no parametric base; imported body used", len(extrudes))}
+	}
 	// Each extrude names the profile it consumes (see ipt.ExtrudeProfiles); "extrude i uses sketch
 	// i" only ever held for the generated corpus.
 	profiles := ipt.ExtrudeProfiles(d)

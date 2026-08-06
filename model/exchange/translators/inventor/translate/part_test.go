@@ -349,6 +349,24 @@ func TestEmitDroppedCurveSketchesKeepsSplines(t *testing.T) {
 	}
 }
 
+// TestHasBaseExtrude guards the base-detection that keeps a baseless extrude chain (all cut/join,
+// no New-Body — MainBaseSheet, whose base plate is a sheet-metal face this decoder doesn't produce)
+// from building a garbage sliver: without a New-Body extrude the chain has nothing to cut, so the
+// caller imports the real body instead.
+func TestHasBaseExtrude(t *testing.T) {
+	allCuts := []ipt.Extrude{{Operation: ipt.OpCut}, {Operation: ipt.OpJoin}, {Operation: ipt.OpCut}}
+	if hasBaseExtrude(allCuts) {
+		t.Error("an all-cut/join chain has no base and must report false")
+	}
+	withBase := []ipt.Extrude{{Operation: ipt.OpNewBody}, {Operation: ipt.OpCut}}
+	if !hasBaseExtrude(withBase) {
+		t.Error("a chain containing a New-Body extrude must report true")
+	}
+	if hasBaseExtrude(nil) {
+		t.Error("no extrudes must report false")
+	}
+}
+
 // reopenPart translates an .ipt through the full pipeline and reopens it, returning the definition.
 func reopenPart(t *testing.T, file string) *compdef.PartComponentDefinition {
 	t.Helper()
