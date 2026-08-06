@@ -96,8 +96,12 @@ func assembleBoss(faces []curvedFace, seat int, near, far math.Point3, radius fl
 		}
 		out = append(out, f)
 	}
-	out = append(out, bossWallFace(near, axis, radius, nearCirc, farCirc), bossTopCapFace(far, axis, farCirc))
-	return curvedStitch(out)
+	wall, okW := bossWallFace(near, axis, radius, nearCirc, farCirc)
+	topCap, okC := discFace(farCirc, true, axis, topo.NewLineage(topo.Tok("brep", "bosscap", 0)))
+	if !okW || !okC {
+		return nil
+	}
+	return curvedStitch(append(out, wall, topCap))
 }
 
 // capWithHoleReversed appends the circle to a face as an inner loop wound REVERSED — opposite to
@@ -110,26 +114,14 @@ func capWithHoleReversed(f curvedFace, circ geom.Circle) curvedFace {
 }
 
 // bossWallFace builds the boss side as an OUTWARD cylinder face (material toward the axis, a solid boss —
-// AddFace, not the reversed hole wall) with the same seamed loop SolidCylinder's side uses (seam up, far
-// circle reversed, seam down, near circle forward), so it welds to the seat-face hole and the top cap
-// along the shared circle edges.
-func bossWallFace(baseCenter math.Point3, axis math.Vector3, radius float64, nearCirc, farCirc geom.Circle) curvedFace {
-	cyl, _ := geom.NewCylinder(baseCenter, axis, radius)
-	seam := geom.NewLineSegment(nearCirc.PointAt(0), farCirc.PointAt(0))
-	loop := curvedLoop{edges: []loopEdge{
-		{curve: seam, t0: 0, t1: 1},
-		{curve: farCirc, t0: 1, t1: 0},
-		{curve: seam, t0: 1, t1: 0},
-		{curve: nearCirc, t0: 0, t1: 1},
-	}}
-	return curvedFace{surface: cyl, reversed: false, loops: []curvedLoop{loop}, lineage: topo.NewLineage(topo.Tok("brep", "bosswall", 0))}
-}
-
-// bossTopCapFace builds the boss's outer cap disk (outward normal along the axis, away from the seat).
-func bossTopCapFace(center math.Point3, axis math.Vector3, farCirc geom.Circle) curvedFace {
-	pl, _ := geom.NewPlane(center, axis)
-	loop := curvedLoop{edges: []loopEdge{{curve: farCirc, t0: 0, t1: 1}}}
-	return curvedFace{surface: pl, reversed: false, loops: []curvedLoop{loop}, lineage: topo.NewLineage(topo.Tok("brep", "bosscap", 0))}
+// AddFace, not the reversed hole wall), so it welds to the seat-face hole and the top cap along the
+// shared circle edges.
+func bossWallFace(baseCenter math.Point3, axis math.Vector3, radius float64, nearCirc, farCirc geom.Circle) (curvedFace, bool) {
+	cyl, err := geom.NewCylinder(baseCenter, axis, radius)
+	if err != nil {
+		return curvedFace{}, false
+	}
+	return cylinderBandFace(cyl, nearCirc, farCirc, false, topo.NewLineage(topo.Tok("brep", "bosswall", 0))), true
 }
 
 // faceOutwardNormal returns a face's true outward normal: the plane normal, flipped when the face was

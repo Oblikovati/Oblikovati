@@ -52,11 +52,12 @@ func withoutRecorder(build func(target, tool *topo.Body) (*topo.Body, bool)) rul
 // handles. Most are the TRANSVERSAL-crossing KIND (ADR-0045): the general SSI→trim→classify→stitch pipeline
 // (#1403/#1476) builds every ruled pair, and the whole equal-radius Steinmetz family — intersect, cut AND
 // join — now rides it (#1403), its self-intersecting imprint split at the analytic pinches into four open
-// arcs so the arrangement never sees the crossing (brep.Steinmetz*General). The remaining three are the
-// other two KINDs, which are NOT transversal SSI and correctly do NOT ride the (u,v) arrangement: the drill
-// through-hole and the cylinder boss are CURVED-ON-PLANAR (a tool cylinder crossing a planar face in a
-// strictly-interior circle), and the coaxial union is a DEGENERATE OVERLAP (coincident side surfaces, no SSI
-// curve). See ADR-0045 for why each stays a distinct analytic handler rather than folding into the pipeline.
+// arcs so the arrangement never sees the crossing (brep.Steinmetz*General). The rest correctly do NOT ride
+// the (u,v) arrangement: the drill through-hole and the cylinder boss are CURVED-ON-PLANAR (a tool cylinder
+// crossing a planar face in a strictly-interior circle), the coaxial cylinder union is a DEGENERATE OVERLAP
+// (coincident side surfaces, no SSI curve), and the coaxial ball-and-rod family is transversal but meets in
+// one PLANAR circle on a surface that is not a rim-bounded band, so the split is by construction (#2036).
+// See ADR-0045 for why each stays a distinct analytic handler rather than folding into the pipeline.
 var (
 	// Intersect — the band of the thin operand plus the fat operand's two lens caps.
 	curvedCrossingIntersect     = gatedCurved(Intersect, brep.CrossingCylinderIntersectGeneral) // two crossing cylinders
@@ -64,6 +65,7 @@ var (
 	curvedConeCylinderIntersect = gatedCurved(Intersect, brep.ConeCylinderIntersectGeneral)     // cone ∩ cylinder
 	curvedConeConeIntersect     = gatedCurved(Intersect, brep.ConeConeIntersectGeneral)         // cone ∩ fatter cone
 	curvedPartialIntersect      = gatedCurved(Intersect, brep.PartialPenetrationIntersectGeneral)
+	curvedBallRodIntersect      = gatedCurved(Intersect, withoutRecorder(brep.CoaxialSphereRodIntersect)) // coaxial ball ∩ rod: the plug
 
 	// Cut — drilling the target with the tool (through, blind, or two stubs of tool − target).
 	curvedCylindricalHoleCut  = gatedCurved(Cut, withoutRecorder(brep.DrillThroughHole)) // straight cylinder through a planar slab, hole strictly interior
@@ -73,15 +75,17 @@ var (
 	curvedConeCylinderCut     = gatedCurved(Cut, brep.ConeCylinderCutGeneral)
 	curvedConeConeCut         = gatedCurved(Cut, brep.ConeConeCutGeneral)
 	curvedCrossingCut         = gatedCurved(Cut, brep.CrossingCylinderCutGeneral)
-	curvedCapCrossCut         = gatedCurved(Cut, brep.CapCrossingCutGeneral)      // oblique tool exits one cap, ellipse inside rim (#1724)
-	curvedRimCrossCut         = gatedCurved(Cut, brep.RimCrossingCutGeneral)      // oblique tool exits one cap, ellipse crosses rim (#1724 slice 2)
-	curvedTwoCapCrossCut      = gatedCurved(Cut, brep.TwoCapCrossingCutGeneral)   // steep tool exits BOTH caps, wall intact (#1724)
-	curvedConeCapCrossCut     = gatedCurved(Cut, brep.ConeCapCrossingCutGeneral)  // oblique CONE tool exits one cap, ellipse inside rim (#1724)
-	curvedPartialRimCut       = gatedCurved(Cut, brep.PartialRimCutGeneral)       // second cut on an already-notched cylinder side, disjoint from the notch (#1732)
-	curvedPartialRimCornerCut = gatedCurved(Cut, brep.PartialRimCornerCutGeneral) // second cut whose imprint CROSSES the notch — the coupled corner-junction (#1738, ADR-0048)
+	curvedCapCrossCut         = gatedCurved(Cut, brep.CapCrossingCutGeneral)                // oblique tool exits one cap, ellipse inside rim (#1724)
+	curvedRimCrossCut         = gatedCurved(Cut, brep.RimCrossingCutGeneral)                // oblique tool exits one cap, ellipse crosses rim (#1724 slice 2)
+	curvedTwoCapCrossCut      = gatedCurved(Cut, brep.TwoCapCrossingCutGeneral)             // steep tool exits BOTH caps, wall intact (#1724)
+	curvedConeCapCrossCut     = gatedCurved(Cut, brep.ConeCapCrossingCutGeneral)            // oblique CONE tool exits one cap, ellipse inside rim (#1724)
+	curvedPartialRimCut       = gatedCurved(Cut, brep.PartialRimCutGeneral)                 // second cut on an already-notched cylinder side, disjoint from the notch (#1732)
+	curvedPartialRimCornerCut = gatedCurved(Cut, brep.PartialRimCornerCutGeneral)           // second cut whose imprint CROSSES the notch — the coupled corner-junction (#1738, ADR-0048)
+	curvedBallRodCut          = gatedCurved(Cut, withoutRecorder(brep.CoaxialSphereRodCut)) // coaxial ball − rod (a blind spherical bore) and rod − ball (a dimpled stub), #2036
 
 	// Join — the union, keeping the analytic wall where the operands' faces are coincident or breached.
 	curvedCoaxialJoin      = gatedCurved(Join, withoutRecorder(brep.CoaxialCylinderUnion)) // coaxial equal-radius cylinders
+	curvedBallRodJoin      = gatedCurved(Join, withoutRecorder(brep.CoaxialSphereRodJoin)) // coaxial ball ∪ rod: the ball stud, #2036
 	curvedCylinderBossJoin = gatedCurved(Join, withoutRecorder(brep.JoinCylindricalBoss))  // cylinder seated flush on a face, base strictly interior
 	curvedPartialBossJoin  = gatedCurved(Join, withoutRecorder(brep.JoinPartialBoss))      // cylinder boss whose base circle straddles the seat edge (#1591)
 	curvedPartialJoin      = gatedCurved(Join, brep.PartialPenetrationJoinGeneral)         // fat + entry stub

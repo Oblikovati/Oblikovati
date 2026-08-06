@@ -119,6 +119,10 @@ func curvedExactCases() []curvedExactCase {
 		{"cylinder boss ∪", ops.Join, func(t *testing.T) (*topo.Body, *topo.Body) {
 			return demoBlock(t, math.P3(-5, -5, 0), math.P3(5, 5, 2)), demoCyl(t, math.P3(0, 0, 2), math.V3(0, 0, 1), 1.5, 3)
 		}},
+		{"coaxial ball ∪ rod (ball stud)", ops.Join, demoBallAndRod},
+		{"coaxial ball − rod (blind spherical bore)", ops.Cut, demoBallAndRod},
+		{"coaxial rod − ball (dimpled stub)", ops.Cut, demoRodAndBall},
+		{"coaxial ball ∩ rod (plug)", ops.Intersect, demoBallAndRod},
 		{"cone ∩ box (axis-∥ flat)", ops.Intersect, coneFlatBox},
 		{"cone − box (axis-∥ flat)", ops.Cut, coneFlatBox},
 		{"cone ∩ box (vertex-inside flat)", ops.Intersect, coneVertexInsideFlatBox},
@@ -365,6 +369,29 @@ func demoCyl(t *testing.T, base math.Point3, axis math.Vector3, r, h float64) *t
 	b, err := brep.SolidCylinder(base, axis, r, h)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
+	}
+	return b
+}
+
+// demoBallAndRod is the #2036 ball stud: a Ø10 ball at the origin with a coaxial Ø6 shank running from
+// the centre out to 15 mm, so one shank cap is buried in the ball and the other clears it.
+func demoBallAndRod(t *testing.T) (*topo.Body, *topo.Body) {
+	t.Helper()
+	return demoSphere(t, math.P3(0, 0, 0), 5), demoCyl(t, math.P3(0, 0, 0), math.V3(0, 1, 0), 3, 15)
+}
+
+// demoRodAndBall is the same pair with the rod as the target, for rod − ball.
+func demoRodAndBall(t *testing.T) (*topo.Body, *topo.Body) {
+	t.Helper()
+	ball, rod := demoBallAndRod(t)
+	return rod, ball
+}
+
+func demoSphere(t *testing.T, center math.Point3, r float64) *topo.Body {
+	t.Helper()
+	b, err := brep.SolidSphere(center, r, "ball")
+	if err != nil {
+		t.Fatalf("SolidSphere: %v", err)
 	}
 	return b
 }

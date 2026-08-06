@@ -11,6 +11,14 @@
   "partial penetration ∩": 20.52055473,
   "coaxial cylinders ∪": 87.9645943,
   "cylinder boss ∪": 221.2057504,
+  "cap-crossing cylinder − (exits top cap)": 266.6720995,
+  "rim-crossing cylinder − (exit ellipse crosses top rim)": 263.6617744,
+  "two-cap-exit cylinder − (steep tool exits both caps)": 266.3615948,
+  "cone-cap-crossing − (oblique cone tool exits top cap)": 271.6205285,
+  "coaxial ball ∪ rod (ball stud)": 819.955685,
+  "coaxial ball − rod (blind spherical bore)": 395.8406792,
+  "coaxial rod − ball (dimpled stub)": 296.3569065,
+  "coaxial ball ∩ rod (plug)": 127.758099,
   "cone ∩ box (axis-∥ flat)": 156.27698,
   "cone − box (axis-∥ flat)": 503.4574773,
   "cone ∩ box (vertex-inside flat)": 31.78157847,
@@ -46,9 +54,5 @@
   "torus − box (two oblique ovals)": 219.4483228,
   "torus ∩ box (oblique figure-eight)": 151.898735,
   "torus − box (oblique figure-eight)": 242.8854496,
-  "torus − box (axis-∥ near-pinch large oval)": 280.2555295,
-  "cap-crossing cylinder − (exits top cap)": 266.6720995,
-  "rim-crossing cylinder − (exit ellipse crosses top rim)": 263.6617744,
-  "two-cap-exit cylinder − (steep tool exits both caps)": 266.3615948,
-  "cone-cap-crossing − (oblique cone tool exits top cap)": 271.6205285
+  "torus − box (axis-∥ near-pinch large oval)": 280.2555295
 }
