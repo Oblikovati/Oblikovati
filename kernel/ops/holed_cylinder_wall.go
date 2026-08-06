@@ -25,8 +25,9 @@ import (
 
 // holedConicWallMesh meshes a full-period cylinder or cone side carrying holes by unrolling it to a
 // contiguous (u,v) rectangle and delegating to the metric-scaled CDT. ok=false unless the surface is a
-// developable side (cylinder/cone) with at least one hole and a genuinely seam-wrapping outer loop (a hole
-// straddling the seam also defers — the builder seams the wall clear of its holes, so that should not arise).
+// developable side (cylinder/cone) with at least one hole and a genuinely seam-wrapping outer loop.
+// A hole straddling the wall's own seam no longer defers: the seam is re-cut clear of the holes
+// (wall_seam_recut.go), because no builder can be relied on to have placed it clear (#2038).
 func holedConicWallMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) (*Mesh, bool) {
 	if !isDevelopableSide(s) {
 		return nil, false // only a cylinder/cone unrolls (developable: zero Gaussian curvature)
@@ -34,15 +35,34 @@ func holedConicWallMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.
 	if len(holes3D) == 0 || isPeriodic(s.UDomain()) == isPeriodic(s.VDomain()) {
 		return nil, false // need a holed, singly-periodic side
 	}
-	outerUV, umin, umax, ok := wrappedWallUV(s, outer3D)
+	br, holesUV, ok := wallBranchClearOfHoles(s, outer3D, holes3D)
 	if !ok {
 		return nil, false
 	}
-	holesUV, ok := holesIntoBranch(s, holes3D, umin, umax)
+	return unrolledWallCDT(s, q, br.loop, holes3D, br.uv, holesUV), true
+}
+
+// wallBranchClearOfHoles unrolls the wall into a branch every hole fits inside, with the holes already
+// mapped into it. It tries the branch the wall's OWN seam defines first, and only when a hole straddles
+// that seam — so no whole-period shift brings it inside — re-cuts the seam into the widest hole-free
+// gap and unrolls again (#2038).
+func wallBranchClearOfHoles(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3) (wallBranch, [][]math.Point2, bool) {
+	br, ok := unrollWall(s, outer3D)
 	if !ok {
-		return nil, false
+		return wallBranch{}, nil, false
 	}
-	return unrolledWallCDT(s, q, outer3D, holes3D, outerUV, holesUV), true
+	if holesUV, fits := holesIntoBranch(s, holes3D, br.umin, br.umax); fits {
+		return br, holesUV, true
+	}
+	wrap, ok := rebridgedWallLoop(s, outer3D, holes3D)
+	if !ok {
+		return wallBranch{}, nil, false
+	}
+	if br, ok = unrollWall(s, wrap); !ok {
+		return wallBranch{}, nil, false
+	}
+	holesUV, fits := holesIntoBranch(s, holes3D, br.umin, br.umax)
+	return br, holesUV, fits
 }
 
 // isDevelopableSide reports whether the surface is a cylinder (circular or elliptical) or a cone — the

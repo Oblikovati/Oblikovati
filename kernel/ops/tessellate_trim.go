@@ -180,7 +180,9 @@ func meshSeamCrossingFace(f *topo.Face, s geom.Surface, outer3D []math.Point3, h
 		return fullDomainGridMesh(s, q) // shouldn't reach: a doubly-periodic band that isn't two circles + a seam
 	}
 	if isPeriodic(s.UDomain()) != isPeriodic(s.VDomain()) {
-		return trimmedPatchMesh(s, outer3D, holes3D) // sphere cap on the pole: CDT in the best-fit plane
+		m := trimmedPatchMesh(s, outer3D, holes3D) // sphere cap on the pole: CDT in the best-fit plane
+		recordUnmeshedWallWrap(m, s, outer3D, len(holes3D))
+		return m
 	}
 	return fullDomainGridMesh(s, q) // doubly-periodic / aperiodic seam face we can't reduce
 }
