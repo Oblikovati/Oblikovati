@@ -159,7 +159,10 @@ func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.L
 //	  - two crossing cylinders ∩/−/∪ (rod band + fat-wall lens caps) (#1335);
 //	  - a cone crossing a cylinder, and a cone crossing a fatter cone, ∩/−/∪ (#1335);
 //	  - two EQUAL-radius perpendicular cylinders ∩/−/∪ (the Steinmetz bicylinder, imprint split at its pinches) (#1403);
-//	  - a thin rod ending inside a fatter solid ∩/−/∪ (a partial penetration: plug, blind hole, one-sided stub) (#1335).
+//	  - a thin rod ending inside a fatter solid ∩/−/∪ (a partial penetration: plug, blind hole, one-sided stub) (#1335);
+//	  - a rod COAXIAL with a ball, ending inside it ∩/−/∪ (the ball stud, its blind spherical bore, its plug) —
+//	    transversal, but the contact is one PLANAR circle and a sphere is not a rim-bounded band, so the split is
+//	    by construction and no arrangement runs; OCCT special-cases the same pair in closed form (#2036).
 //
 //	CURVED-ON-PLANAR (contact = one closed conic STRICTLY INSIDE a planar face, added as an inner loop; no
 //	SSI arrangement — the periodic (u,v) machinery does not apply to a flat bounded face, ADR-0045):
@@ -243,11 +246,11 @@ var curvedExactPaths = []func(PartFeatureOperation, *topo.Body, *topo.Body, *dia
 	// Intersect — all [T] transversal (curved∩convex-planar half-space, then ruled crossings).
 	curvedConvexIntersect, curvedConvexSubtract,
 	curvedCrossingIntersect, curvedSteinmetzIntersect, curvedConeCylinderIntersect, curvedConeConeIntersect,
-	curvedPartialIntersect,
+	curvedPartialIntersect, curvedBallRodIntersect,
 	// Cut — [P] the drill through-hole and the edge scallop (curved-on-planar), the rest [T] transversal.
-	curvedCylindricalHoleCut, curvedEdgeScallopCut, curvedFlatSubtract, curvedPartialCut, curvedSteinmetzCut, curvedConeCylinderCut, curvedConeConeCut, curvedCapCrossCut, curvedRimCrossCut, curvedTwoCapCrossCut, curvedConeCapCrossCut, curvedPartialRimCut, curvedPartialRimCornerCut, curvedCrossingCut,
+	curvedCylindricalHoleCut, curvedEdgeScallopCut, curvedFlatSubtract, curvedPartialCut, curvedSteinmetzCut, curvedConeCylinderCut, curvedConeConeCut, curvedCapCrossCut, curvedRimCrossCut, curvedTwoCapCrossCut, curvedConeCapCrossCut, curvedPartialRimCut, curvedPartialRimCornerCut, curvedCrossingCut, curvedBallRodCut,
 	// Join — [D] coaxial (degenerate overlap), [P] boss interior then straddling (curved-on-planar), the rest [T] transversal.
-	curvedCoaxialJoin, curvedCylinderBossJoin, curvedPartialBossJoin, curvedPartialJoin, curvedConeCylinderJoin, curvedConeConeJoin, curvedCrossingJoin, curvedSteinmetzJoin,
+	curvedCoaxialJoin, curvedCylinderBossJoin, curvedPartialBossJoin, curvedPartialJoin, curvedConeCylinderJoin, curvedConeConeJoin, curvedCrossingJoin, curvedSteinmetzJoin, curvedBallRodJoin,
 }
 
 func shouldFallbackBoolean(op PartFeatureOperation, target, tool, body *topo.Body) bool {
