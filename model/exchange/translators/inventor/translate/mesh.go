@@ -52,6 +52,25 @@ func SoupFromMesh(mesh ipt.Mesh) meshio.RawMesh {
 	return raw
 }
 
+// meshIsSpatial reports whether a triangle soup has a genuinely three-dimensional extent. It
+// rejects the FLAT footprint placeholder Inventor stores as the graphics mesh for some imported
+// parts — e.g. MBK_Keycap's 6-triangle 192×181×0 quad, whose real body lives only in the SAB. Such
+// a placeholder facets to a wrong flat sheet, so importing it would be worse than leaving the part
+// with no body. spatialEps is in cm; any real solid clears it in every axis (the thinnest corpus
+// import, a light pipe, is ~2.9 mm thick).
+func meshIsSpatial(raw meshio.RawMesh) bool {
+	if len(raw.Verts) == 0 {
+		return false
+	}
+	const spatialEps = 1e-4 // cm (1 micron)
+	lo, hi := raw.Verts[0], raw.Verts[0]
+	for _, v := range raw.Verts {
+		lo = m.P3(math.Min(lo.X, v.X), math.Min(lo.Y, v.Y), math.Min(lo.Z, v.Z))
+		hi = m.P3(math.Max(hi.X, v.X), math.Max(hi.Y, v.Y), math.Max(hi.Z, v.Z))
+	}
+	return hi.X-lo.X > spatialEps && hi.Y-lo.Y > spatialEps && hi.Z-lo.Z > spatialEps
+}
+
 // BodyFromBrep facets the B-rep and welds it into a watertight solid via
 // meshio.SolidOrSurface (which fixes inside-out winding). Used for in-memory validation.
 func BodyFromBrep(b ipt.Brep, feat string) (*topo.Body, []string, error) {

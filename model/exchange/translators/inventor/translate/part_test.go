@@ -14,6 +14,7 @@ import (
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
+	"oblikovati.org/model/exchange/translators/inventor/ipt"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/sketch"
 	"oblikovati.org/persistence"
@@ -300,6 +301,51 @@ func TestEllipseTranslationRoundTrips(t *testing.T) {
 	}
 	if math.Abs(e.Center.X-10) > 1e-9 || math.Abs(e.Center.Y-5) > 1e-9 {
 		t.Errorf("centre = (%.4g,%.4g), want (10,5)", e.Center.X, e.Center.Y)
+	}
+}
+
+// TestSplineTranslationRoundTrips checks the reopened .opd carries a native Oblikovati fit spline
+// with the four fit points ke_spline declares — the SketchSpline (0xF9372FD4) decode/emit path.
+func TestSplineTranslationRoundTrips(t *testing.T) {
+	def := reopenPart(t, "ke_spline.ipt")
+	if def.Sketches().Count() != 1 {
+		t.Fatalf("got %d sketches, want 1", def.Sketches().Count())
+	}
+	sk := def.Sketches().Item(0)
+	if n := sk.Splines().Count(); n != 1 {
+		t.Fatalf("got %d splines, want 1", n)
+	}
+	sp := sk.Splines().Item(0)
+	if !sp.IsFitType() {
+		t.Error("spline is not a fit (interpolating) type")
+	}
+	if n := sp.PointCount(); n != 4 {
+		t.Errorf("spline has %d fit points, want 4", n)
+	}
+}
+
+// TestEmitDroppedCurveSketchesKeepsSplines guards that the freeform-curve rescue (used by the
+// revolve/sweep/loft paths, whose line-only profile extraction drops splines and ellipses) emits a
+// spline-bearing sketch's spline. Without it a revolve part like Hose-Screen-Adapter loses every
+// sketch spline it carries. Uses ke_spline (one fit spline) driven through the rescue directly.
+func TestEmitDroppedCurveSketchesKeepsSplines(t *testing.T) {
+	d, err := ipt.Open(readCorpus(t, "ke_spline.ipt"))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
+	document, err := compdef.AddPart(ws, filepath.Join(t.TempDir(), "p.opd"), true)
+	if err != nil {
+		t.Fatalf("AddPart: %v", err)
+	}
+	def := document.Content().(*compdef.PartComponentDefinition)
+	emitDroppedCurveSketches(def, d)
+	splines := 0
+	for k := 0; k < def.Sketches().Count(); k++ {
+		splines += def.Sketches().Item(k).Splines().Count()
+	}
+	if splines != 1 {
+		t.Errorf("rescue emitted %d splines, want 1 (the curve a line-only profile decode would drop)", splines)
 	}
 }
 

@@ -9,10 +9,36 @@ import (
 	"testing"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/exchange/meshio"
 	"oblikovati.org/kernel/topo"
+	m "oblikovati.org/math"
 	"oblikovati.org/model/analysis"
 	"oblikovati.org/model/exchange/translators/inventor/ipt"
 )
+
+// TestMeshIsSpatial guards the gate that keeps a body-only .ipt's import faithful: Inventor stores a
+// FLAT footprint placeholder as the graphics mesh for some parts (e.g. MBK_Keycap: a 6-triangle
+// 192×181×0 quad) whose real body lives in the SAB. Importing that would give a wrong flat sheet, so
+// a degenerate (non-3-D) mesh must be rejected while a real thin body is kept.
+func TestMeshIsSpatial(t *testing.T) {
+	flat := meshio.RawMesh{ // a 20×18×0 quad, two triangles — the placeholder shape
+		Verts: []m.Point3{m.P3(0, 0, 0), m.P3(2, 0, 0), m.P3(2, 1.8, 0), m.P3(0, 1.8, 0)},
+		Tris:  [][3]int{{0, 1, 2}, {0, 2, 3}},
+	}
+	if meshIsSpatial(flat) {
+		t.Error("flat placeholder mesh accepted; a z=0 footprint must be rejected")
+	}
+	thin := meshio.RawMesh{ // a real but thin body (0.29 cm deep, like the light pipe)
+		Verts: []m.Point3{m.P3(0, 0, 0), m.P3(2, 0, 0), m.P3(2, 1.8, 0.29), m.P3(0, 1.8, 0.29)},
+		Tris:  [][3]int{{0, 1, 2}, {0, 2, 3}},
+	}
+	if !meshIsSpatial(thin) {
+		t.Error("real thin body rejected; a mesh with 3-D extent must be kept")
+	}
+	if meshIsSpatial(meshio.RawMesh{}) {
+		t.Error("empty mesh accepted")
+	}
+}
 
 // TestSoupFromMesh checks that Inventor's decoded display tessellation adapts to a RawMesh
 // keeping vertex positions (cm) and triangle indices — the input to the graphics-mesh body

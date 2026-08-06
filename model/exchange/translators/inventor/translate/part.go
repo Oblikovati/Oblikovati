@@ -108,9 +108,14 @@ func buildPart(ws *doc.Workspace, outPath string, d *ipt.Document, meshFallback 
 			built = false
 		}
 	}
-	// Inventor's display mesh hides the sketch/feature history behind a single imported body,
-	// so it is imported ONLY on explicit opt-in — otherwise the partial parametric tree stands.
-	if meshFallback && (!built || !hasSolidBody(def)) {
+	// Inventor's display mesh hides the sketch/feature history behind a single imported body, so for
+	// a part that DID decode a partial parametric tree it is imported only on explicit opt-in — the
+	// tree stands. But a body-only .ipt (a derived/imported solid, or a downloaded vendor part) has
+	// NO sketches and NO features: there is no history to mask, and leaving it EMPTY discards the one
+	// thing it carries. So when nothing parametric decoded, import its body unconditionally, turning
+	// an empty translation into the real shape (31 of the corpus's ThirdParty + base-plate parts).
+	noParametric := def.Sketches().Count() == 0 && def.Features().Count() == 0
+	if (meshFallback || noParametric) && (!built || !hasSolidBody(def)) {
 		warns = append(warns, addBodyIfPresent(def, d)...)
 		def.Recompute()
 	}
@@ -269,11 +274,13 @@ func addFeatures(def *compdef.PartComponentDefinition, d *ipt.Document) (bool, [
 	sketches := ipt.DecodeSketches(seg)
 	if heights, ok := ipt.LoftSectionHeights(seg, len(sketches)); ok {
 		if addLoft(def, sketches, heights) {
+			emitDroppedCurveSketches(def, d) // keep splines/ellipses the line-only loft profile drops
 			return true, nil
 		}
 	}
 	if sw, ok := ipt.DecodeSweep(seg); ok {
 		if addSweep(def, sw) {
+			emitDroppedCurveSketches(def, d) // keep splines/ellipses the line-only sweep profile drops
 			return true, nil
 		}
 	}
@@ -281,7 +288,9 @@ func addFeatures(def *compdef.PartComponentDefinition, d *ipt.Document) (bool, [
 	placed := extractSketches(d, seg)
 	emitted := emitSketches(def, placed)
 	if ipt.HasRevolve(seg) {
-		return buildRevolve(def, seg, placed, emitted)
+		built, notes := buildRevolve(def, seg, placed, emitted)
+		emitDroppedCurveSketches(def, d) // keep splines/ellipses the line-only revolve profile drops
+		return built, notes
 	}
 	return buildExtrudeFeatures(def, d, seg, placed, emitted)
 }
@@ -297,7 +306,8 @@ func extractSketches(d *ipt.Document, seg []byte) []placedSketch {
 	// the byte-offset clustering, which both splits one sketch (Linkage1: 1 sketch decoded as 3)
 	// and loses most of the geometry (BigChunkyPlate: 2143 entities decoded as 19). Scoped to the
 	// extrude path: a revolve profile still goes through the incidence reconstruction below, whose
-	// closed-loop gate the revolve build depends on.
+	// closed-loop gate the revolve build depends on (RevolveProfile needs the centreline SPLIT into
+	// its own sketch, which the graph decode keeps in the profile sketch — see buildRevolve).
 	//
 	// Taken only when it actually decoded entities: some parts hold Sketch2D nodes whose entities
 	// this layout can't read (an older save generation, presumably), and an empty graph result must
@@ -356,6 +366,28 @@ func planeOf(pl ipt.SketchPlacement) (sketch.Plane, bool) {
 		return sketch.Plane{}, false
 	}
 	return p, true
+}
+
+// emitDroppedCurveSketches re-emits the freeform curves — splines and ellipses — that a whole-part
+// feature build (revolve, sweep, loft) drops because its profile extraction is line-only. Those
+// features replace the emitted set with a reconstructed line profile, silently discarding every
+// spline/ellipse the part also carries (Hose-Screen-Adapter, a revolve, lost all 3 of its sketch
+// splines this way). Only the curves are emitted — never the co-resident lines — so nothing can
+// duplicate the feature's profile: a revolve/loft profile is line-only and never holds a spline or
+// ellipse, so these sketches are disjoint from it. The extrude path already emits the full graph
+// set, so this is called ONLY on the whole-part feature branches.
+func emitDroppedCurveSketches(def *compdef.PartComponentDefinition, d *ipt.Document) {
+	for _, s := range ipt.GraphSketches(d) {
+		if len(s.Splines) == 0 && len(s.Ellipses) == 0 {
+			continue
+		}
+		curves := ipt.Sketch{
+			Splines: s.Splines, SplineConstruction: s.SplineConstruction,
+			Ellipses: s.Ellipses,
+			Plane:    s.Plane, PlaneOK: s.PlaneOK,
+		}
+		emitSketchOn(def, curves, sketchPlaneOf(curves))
+	}
 }
 
 // emitSketches adds every extracted sketch to the document and returns the handles in the same
@@ -616,7 +648,7 @@ func emitSketch(def *compdef.PartComponentDefinition, s ipt.Sketch) *sketch.Sket
 // per line (AddByTwoPoints) — gives the rebuilt sketch the same degrees of freedom as the original
 // (a closed N-gon: 2N free DOF, not 4N).
 func emitSketchOn(def *compdef.PartComponentDefinition, s ipt.Sketch, plane sketch.Plane) (*sketch.Sketch, []*sketch.Line) {
-	if len(s.Points) == 0 && len(s.Lines) == 0 && len(s.Circles) == 0 && len(s.Arcs) == 0 && len(s.Ellipses) == 0 {
+	if len(s.Points) == 0 && len(s.Lines) == 0 && len(s.Circles) == 0 && len(s.Arcs) == 0 && len(s.Ellipses) == 0 && len(s.Splines) == 0 {
 		return nil, nil
 	}
 	sk := def.Sketches().Add(plane)
@@ -646,6 +678,15 @@ func emitSketchOn(def *compdef.PartComponentDefinition, s ipt.Sketch, plane sket
 		// Share the centre with any coincident corner (pointAt), matching how Inventor stores an
 		// ellipse's centre by reference. The major-axis direction and both semi-axes are verbatim.
 		sk.Ellipses().AddWithCenter(pointAt(e.Center), m.V2(e.MajorAxis.X, e.MajorAxis.Y), m.Scalar(e.MajorR), m.Scalar(e.MinorR))
+	}
+	for i, sp := range s.Splines {
+		// Share the fit points with any coincident corner (pointAt), matching how Inventor references
+		// them. fit=true: Inventor's sketch spline interpolates these points rather than approximating.
+		pts := make([]*sketch.Point, len(sp.Points))
+		for j, p := range sp.Points {
+			pts[j] = pointAt(p)
+		}
+		sk.Splines().AddWithPoints(pts, sp.Closed, true).SetConstruction(s.SplineIsConstruction(i))
 	}
 	return sk, lines
 }
@@ -1327,7 +1368,10 @@ func operationOf(op int) ops.PartFeatureOperation {
 // tessellation (PmGraphicsSegment: curved faces and holes already meshed), and falls back to
 // the analytic ACIS planar reconstruction when the graphics mesh is absent/degenerate.
 func addBodyIfPresent(def *compdef.PartComponentDefinition, d *ipt.Document) []string {
-	if raw := SoupFromMesh(ipt.GraphicsMesh(d)); raw.TriangleCount() >= 4 {
+	// Prefer Inventor's display tessellation, but only when it is a real 3-D body — some parts store
+	// a flat footprint placeholder there and keep the true body in the SAB, so a degenerate mesh
+	// falls through to the B-rep (or to no body) rather than importing a wrong flat sheet.
+	if raw := SoupFromMesh(ipt.GraphicsMesh(d)); raw.TriangleCount() >= 4 && meshIsSpatial(raw) {
 		return importSoup(def, raw)
 	}
 	seg, ok := d.Segment("PmBRepSegment")
@@ -1401,7 +1445,7 @@ func profileIndex(profiles []int, i int) int {
 func sketchEntityCount(sketches []ipt.Sketch) int {
 	n := 0
 	for _, s := range sketches {
-		n += len(s.Points) + len(s.Lines) + len(s.Circles) + len(s.Arcs) + len(s.Ellipses)
+		n += len(s.Points) + len(s.Lines) + len(s.Circles) + len(s.Arcs) + len(s.Ellipses) + len(s.Splines)
 	}
 	return n
 }

@@ -76,6 +76,7 @@ type Sketch struct {
 	Circles  []Circle
 	Arcs     []Arc
 	Ellipses []Ellipse
+	Splines  []Spline
 	// Resolved is true when the curve endpoints were reconstructed exactly from their entity
 	// references (a faithful loop), false when the convex-ordering fallback guessed the
 	// connectivity — which mangles a non-convex profile. Revolve gates on this: a scrambled
@@ -94,6 +95,15 @@ type Sketch struct {
 	LineConstruction   []bool
 	CircleConstruction []bool
 	ArcConstruction    []bool
+	SplineConstruction []bool
+}
+
+// Spline is a decoded 2D sketch spline: its fit points in order, and whether the curve closes
+// back to the first. Inventor stores an interpolating (fit) spline through these points, so the
+// points lie ON the curve (they are not off-curve control vertices).
+type Spline struct {
+	Points []Point2D
+	Closed bool
 }
 
 // LineIsConstruction reports whether line i is construction geometry, tolerating an absent flag
@@ -105,6 +115,9 @@ func (s Sketch) CircleIsConstruction(i int) bool { return flagAt(s.CircleConstru
 
 // ArcIsConstruction reports whether arc i is construction geometry.
 func (s Sketch) ArcIsConstruction(i int) bool { return flagAt(s.ArcConstruction, i) }
+
+// SplineIsConstruction reports whether spline i is construction geometry.
+func (s Sketch) SplineIsConstruction(i int) bool { return flagAt(s.SplineConstruction, i) }
 
 func flagAt(flags []bool, i int) bool { return i < len(flags) && flags[i] }
 
