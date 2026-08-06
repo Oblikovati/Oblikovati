@@ -26,14 +26,11 @@ const eopAll = -1
 // the clean prefix, isolates failures as feature health, and supports
 // reorder/rename/suppression and the end-of-part marker (ADR-0010).
 type PartFeatures struct {
-	items  []*PartFeature
-	byID   map[ID]*PartFeature
-	params *param.Parameters
-	eop    int
-	result []*topo.Body
-	// resultDiags is what each body in result CARRIES (its build report, its mesh report), kept
-	// keyed on body identity so an unchanged body is judged once and not re-meshed (#2058).
-	resultDiags  map[*topo.Body][]diag.Diagnostic
+	items        []*PartFeature
+	byID         map[ID]*PartFeature
+	params       *param.Parameters
+	eop          int
+	result       []*topo.Body
 	resources    ResourceStore
 	fonts        text.FontResolver
 	workingScale func() float64 // ADR-0042 Phase 2: live working scale (cm per working unit) for re-import
@@ -186,7 +183,7 @@ func (fs *PartFeatures) Recompute() {
 	} else {
 		fs.result = fs.evaluateFrom(start, end)
 	}
-	fs.diagnoseResultBodies(end) // what the surviving bodies CARRY, not just what the calls reported (#2058)
+	fs.fileResultBodies(end) // whose body is whose, so Diagnostics() can report what it CARRIES (#2058)
 }
 
 // evaluateFrom replays the program from the first dirty feature to the cutoff, threading the running

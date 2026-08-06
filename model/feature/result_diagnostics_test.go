@@ -123,7 +123,29 @@ func TestRepeatedRecomputesDoNotAccumulateDiagnostics(t *testing.T) {
 	}
 }
 
-// TestDeletedGeometryStopsBeingReported: the drain reads the RESULT, so a defect a later feature cut
+// TestRecomputeDoesNotReadTheBodiesUntilAsked pins what the first cut of #2058 got wrong: reading a
+// body's report means MESHING it, which can cost far more than building it — the modeled thread
+// retypes one face in ~400 µs and meshes in ~11 ms, and doing that on every recompute made
+// TestThreadCutModelsRealThreadFast's no-boolean budget fail by 2x on CI. The price belongs to the
+// caller who wants the answer. The memo must also survive a recompute that changed nothing.
+func TestRecomputeDoesNotReadTheBodiesUntilAsked(t *testing.T) {
+	fs := NewPartFeatures(nil)
+	pf := fs.Add(crossedTrimFeature{})
+	fs.Recompute()
+	if pf.resultRead {
+		t.Fatalf("recompute meshed the result body; the report must wait until it is asked for")
+	}
+	pf.Diagnostics()
+	if !pf.resultRead {
+		t.Fatalf("asking for the diagnostics did not read the body")
+	}
+	fs.Recompute() // nothing dirty: the same bodies survive, so the verdict cannot have changed
+	if !pf.resultRead {
+		t.Errorf("a recompute that changed nothing threw the memoized report away")
+	}
+}
+
+// TestDeletedGeometryStopsBeingReported: the report reads the RESULT, so a defect a later feature cut
 // away must disappear from the report — the model no longer has it, and a stale alarm is as bad as a
 // missing one.
 func TestDeletedGeometryStopsBeingReported(t *testing.T) {
