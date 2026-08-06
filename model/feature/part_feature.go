@@ -23,8 +23,12 @@ type PartFeature struct {
 	dirty      bool
 	recomputes int
 	cached     []*topo.Body
-	diags      []diag.Diagnostic // kernel diagnostics from the last evaluation (#1601)
-	seq        uint64            // global creation stamp; see model/seq
+	diags      []diag.Diagnostic // kernel diagnostics the OPERATIONS reported last evaluation (#1601)
+	// resultDiags is what the body this feature produced CARRIES, as of the last recompute: the
+	// assembler's build report and the tessellator's. Held apart from diags because it is refreshed
+	// per recompute against the surviving result, not per evaluation (#2058).
+	resultDiags []diag.Diagnostic
+	seq         uint64 // global creation stamp; see model/seq
 
 	// paramReads is the model parameters this feature read DIRECTLY during its last
 	// evaluation — a sheet-metal thickness, a suppression condition (NOT the
@@ -49,10 +53,17 @@ func (f *PartFeature) SetName(n string) { f.name = n }
 // Kind returns the wrapped feature's type name.
 func (f *PartFeature) Kind() string { return f.feature.Kind() }
 
-// Diagnostics returns the kernel diagnostics recorded during this feature's last evaluation —
-// degradations that did not sicken it (a boolean faceting analytic surfaces, a CSG fallback) but
-// that users and add-ins must be able to SEE rather than discover downstream (#1601).
-func (f *PartFeature) Diagnostics() []diag.Diagnostic { return f.diags }
+// Diagnostics returns the kernel diagnostics for this feature's current state — degradations that did
+// not sicken it but that users and add-ins must be able to SEE rather than discover downstream. It is
+// what the OPERATIONS reported while it rebuilt (a boolean faceting analytic surfaces, a CSG fallback
+// — #1601), followed by what the body it produced CARRIES (the assembler's build report, the
+// tessellator's — #2058).
+func (f *PartFeature) Diagnostics() []diag.Diagnostic {
+	if len(f.resultDiags) == 0 {
+		return f.diags
+	}
+	return append(append([]diag.Diagnostic(nil), f.diags...), f.resultDiags...)
+}
 
 // Definition returns the wrapped feature recipe.
 func (f *PartFeature) Definition() Feature { return f.feature }

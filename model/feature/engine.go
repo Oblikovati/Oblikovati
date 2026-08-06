@@ -26,11 +26,14 @@ const eopAll = -1
 // the clean prefix, isolates failures as feature health, and supports
 // reorder/rename/suppression and the end-of-part marker (ADR-0010).
 type PartFeatures struct {
-	items        []*PartFeature
-	byID         map[ID]*PartFeature
-	params       *param.Parameters
-	eop          int
-	result       []*topo.Body
+	items  []*PartFeature
+	byID   map[ID]*PartFeature
+	params *param.Parameters
+	eop    int
+	result []*topo.Body
+	// resultDiags is what each body in result CARRIES (its build report, its mesh report), kept
+	// keyed on body identity so an unchanged body is judged once and not re-meshed (#2058).
+	resultDiags  map[*topo.Body][]diag.Diagnostic
 	resources    ResourceStore
 	fonts        text.FontResolver
 	workingScale func() float64 // ADR-0042 Phase 2: live working scale (cm per working unit) for re-import
@@ -175,20 +178,26 @@ func (fs *PartFeatures) MarkAllDirty() {
 // aborts.
 func (fs *PartFeatures) Recompute() {
 	end := fs.effectiveEnd()
-	start := fs.earliestDirty(end)
-	if start < 0 {
+	if start := fs.earliestDirty(end); start < 0 {
 		// Nothing dirty: the result is the cached body state at the cutoff. Re-deriving
 		// it (rather than leaving fs.result untouched) keeps the result correct after a
 		// Remove that shortened the program — the deleted tail no longer contributes.
 		fs.result = fs.prefixBodies(end)
-		return
+	} else {
+		fs.result = fs.evaluateFrom(start, end)
 	}
+	fs.diagnoseResultBodies(end) // what the surviving bodies CARRY, not just what the calls reported (#2058)
+}
+
+// evaluateFrom replays the program from the first dirty feature to the cutoff, threading the running
+// body state through each and poisoning the dependents of any that sickens.
+func (fs *PartFeatures) evaluateFrom(start, end int) []*topo.Body {
 	bodies := fs.prefixBodies(start)
 	sick := fs.sickBefore(start)
 	for i := start; i < end; i++ {
 		bodies = fs.evaluate(fs.items[i], bodies, sick)
 	}
-	fs.result = bodies
+	return bodies
 }
 
 // PreviewResult evaluates a candidate feature as if it were appended at the end-of-part
