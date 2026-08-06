@@ -127,6 +127,18 @@ func curvedExactCases() []curvedExactCase {
 		{"coaxial ball − axle (bead)", ops.Cut, demoBallAndAxle},
 		{"coaxial axle − ball (two stubs)", ops.Cut, demoAxleAndBall},
 		{"coaxial ball ∩ axle (core)", ops.Intersect, demoBallAndAxle},
+		{"coaxial ball ∪ shoulder rod", ops.Join, demoBallAndShoulderRod},
+		{"coaxial ball − shoulder rod", ops.Cut, demoBallAndShoulderRod},
+		{"coaxial shoulder rod − ball", ops.Cut, demoShoulderRodAndBall},
+		{"coaxial ball ∩ shoulder rod", ops.Intersect, demoBallAndShoulderRod},
+		{"coaxial ball ∪ bi-shoulder rod", ops.Join, demoBallAndBiShoulderRod},
+		{"coaxial ball − bi-shoulder rod", ops.Cut, demoBallAndBiShoulderRod},
+		{"coaxial bi-shoulder rod − ball", ops.Cut, demoBiShoulderRodAndBall},
+		{"coaxial ball ∩ bi-shoulder rod", ops.Intersect, demoBallAndBiShoulderRod},
+		{"coaxial ball ∪ shoulder stud", ops.Join, demoBallAndShoulderStud},
+		{"coaxial ball − shoulder stud", ops.Cut, demoBallAndShoulderStud},
+		{"coaxial shoulder stud − ball", ops.Cut, demoShoulderStudAndBall},
+		{"coaxial ball ∩ shoulder stud", ops.Intersect, demoBallAndShoulderStud},
 		{"cone ∩ box (axis-∥ flat)", ops.Intersect, coneFlatBox},
 		{"cone − box (axis-∥ flat)", ops.Cut, coneFlatBox},
 		{"cone ∩ box (vertex-inside flat)", ops.Intersect, coneVertexInsideFlatBox},
@@ -389,6 +401,41 @@ func demoBallAndRod(t *testing.T) (*topo.Body, *topo.Body) {
 func demoBallAndAxle(t *testing.T) (*topo.Body, *topo.Body) {
 	t.Helper()
 	return demoSphere(t, math.P3(0, 0, 0), 5), demoCyl(t, math.P3(0, -10, 0), math.V3(0, 1, 0), 3, 25)
+}
+
+// The SHOULDER extents: a rod cap landing between the seam plane (y=4) and the pole (y=5), where the
+// ball's own surface crosses the rod's end disc and leaves an annulus rather than a whole one.
+func demoBallAndShoulderRod(t *testing.T) (*topo.Body, *topo.Body) { // buried cap → shoulder cap
+	t.Helper()
+	return demoSphere(t, math.P3(0, 0, 0), 5), demoCyl(t, math.P3(0, 0, 0), math.V3(0, 1, 0), 3, 4.5)
+}
+
+func demoBallAndBiShoulderRod(t *testing.T) (*topo.Body, *topo.Body) { // a shoulder cap at each end
+	t.Helper()
+	return demoSphere(t, math.P3(0, 0, 0), 5), demoCyl(t, math.P3(0, -4.5, 0), math.V3(0, 1, 0), 3, 9)
+}
+
+func demoBallAndShoulderStud(t *testing.T) (*topo.Body, *topo.Body) { // shoulder cap → free cap
+	t.Helper()
+	return demoSphere(t, math.P3(0, 0, 0), 5), demoCyl(t, math.P3(0, -4.5, 0), math.V3(0, 1, 0), 3, 19.5)
+}
+
+func demoShoulderRodAndBall(t *testing.T) (*topo.Body, *topo.Body) {
+	t.Helper()
+	ball, rod := demoBallAndShoulderRod(t)
+	return rod, ball
+}
+
+func demoBiShoulderRodAndBall(t *testing.T) (*topo.Body, *topo.Body) {
+	t.Helper()
+	ball, rod := demoBallAndBiShoulderRod(t)
+	return rod, ball
+}
+
+func demoShoulderStudAndBall(t *testing.T) (*topo.Body, *topo.Body) {
+	t.Helper()
+	ball, rod := demoBallAndShoulderStud(t)
+	return rod, ball
 }
 
 // demoAxleAndBall is the same pair with the axle as the target, for axle − ball.

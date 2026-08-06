@@ -59,6 +59,23 @@ func sphereCapFace(sph geom.Sphere, rim geom.Circle, keep math.Vector3, reversed
 		loops: []curvedLoop{{edges: []loopEdge{orientedCircle(rim, keep)}}}}
 }
 
+// annulusFace builds the planar ring between two coaxial circles in one plane — what is left of a rod's
+// end cap when the ball's own surface crosses it. outerForward is the direction the loop must walk the
+// outer rim (its neighbour on that rim walks the other way); the plane's normal follows that walk, the
+// hole is wound against it as a hole must be, and the face sense places the material.
+func annulusFace(outer, inner geom.Circle, outerForward bool, outward math.Vector3, lin topo.Lineage) (curvedFace, bool) {
+	f, ok := discFace(outer, outerForward, outward, lin)
+	if !ok {
+		return curvedFace{}, false
+	}
+	hole := orientedCircle(inner, outer.Normal.AsVector().Scale(-1))
+	if !outerForward {
+		hole = orientedCircle(inner, outer.Normal.AsVector())
+	}
+	f.loops = append(f.loops, curvedLoop{edges: []loopEdge{hole}})
+	return f, true
+}
+
 // sphereBeltFace builds the sphere face BETWEEN two coaxial circles on it — the belt a rod passing right
 // through a ball leaves. Unlike a cap it needs no winding to name its region: two distinct coaxial
 // circles bound exactly one connected region, since the complement is two disjoint caps and those cannot
