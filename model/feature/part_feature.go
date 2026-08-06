@@ -23,8 +23,14 @@ type PartFeature struct {
 	dirty      bool
 	recomputes int
 	cached     []*topo.Body
-	diags      []diag.Diagnostic // kernel diagnostics from the last evaluation (#1601)
-	seq        uint64            // global creation stamp; see model/seq
+	diags      []diag.Diagnostic // kernel diagnostics the OPERATIONS reported last evaluation (#1601)
+	// resultBodies are the bodies this feature produced that survived into the current result, and
+	// resultDiags is what they CARRY (the assembler's build report, the tessellator's) — computed on
+	// first ask, because reading it means meshing them, and memoized until the bodies change (#2058).
+	resultBodies []*topo.Body
+	resultDiags  []diag.Diagnostic
+	resultRead   bool
+	seq          uint64 // global creation stamp; see model/seq
 
 	// paramReads is the model parameters this feature read DIRECTLY during its last
 	// evaluation — a sheet-metal thickness, a suppression condition (NOT the
@@ -49,10 +55,35 @@ func (f *PartFeature) SetName(n string) { f.name = n }
 // Kind returns the wrapped feature's type name.
 func (f *PartFeature) Kind() string { return f.feature.Kind() }
 
-// Diagnostics returns the kernel diagnostics recorded during this feature's last evaluation —
-// degradations that did not sicken it (a boolean faceting analytic surfaces, a CSG fallback) but
-// that users and add-ins must be able to SEE rather than discover downstream (#1601).
-func (f *PartFeature) Diagnostics() []diag.Diagnostic { return f.diags }
+// Diagnostics returns the kernel diagnostics for this feature's current state — degradations that did
+// not sicken it but that users and add-ins must be able to SEE rather than discover downstream. It is
+// what the OPERATIONS reported while it rebuilt (a boolean faceting analytic surfaces, a CSG fallback
+// — #1601), followed by what the body it produced CARRIES (the assembler's build report, the
+// tessellator's — #2058).
+//
+// The second half is computed HERE, on the first ask after a recompute, and memoized until the
+// feature's surviving bodies change: reading it means meshing them, which can cost far more than
+// building them, so the price falls on the caller who wants the answer rather than on every rebuild.
+// Call it from the goroutine that drives the model, like the rest of the recompute engine.
+func (f *PartFeature) Diagnostics() []diag.Diagnostic {
+	if !f.resultRead {
+		f.resultDiags, f.resultRead = bodyDegradations(f.resultBodies), true
+	}
+	if len(f.resultDiags) == 0 {
+		return f.diags
+	}
+	return append(append([]diag.Diagnostic(nil), f.diags...), f.resultDiags...)
+}
+
+// setResultBodies records the bodies this feature produced that survived the recompute, invalidating
+// the memoized report only when they actually changed — an unchanged body's verdict cannot have,
+// since a built body's geometry is immutable.
+func (f *PartFeature) setResultBodies(bodies []*topo.Body) {
+	if sameBodies(f.resultBodies, bodies) {
+		return
+	}
+	f.resultBodies, f.resultDiags, f.resultRead = bodies, nil, false
+}
 
 // Definition returns the wrapped feature recipe.
 func (f *PartFeature) Definition() Feature { return f.feature }

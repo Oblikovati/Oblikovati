@@ -175,20 +175,26 @@ func (fs *PartFeatures) MarkAllDirty() {
 // aborts.
 func (fs *PartFeatures) Recompute() {
 	end := fs.effectiveEnd()
-	start := fs.earliestDirty(end)
-	if start < 0 {
+	if start := fs.earliestDirty(end); start < 0 {
 		// Nothing dirty: the result is the cached body state at the cutoff. Re-deriving
 		// it (rather than leaving fs.result untouched) keeps the result correct after a
 		// Remove that shortened the program — the deleted tail no longer contributes.
 		fs.result = fs.prefixBodies(end)
-		return
+	} else {
+		fs.result = fs.evaluateFrom(start, end)
 	}
+	fs.fileResultBodies(end) // whose body is whose, so Diagnostics() can report what it CARRIES (#2058)
+}
+
+// evaluateFrom replays the program from the first dirty feature to the cutoff, threading the running
+// body state through each and poisoning the dependents of any that sickens.
+func (fs *PartFeatures) evaluateFrom(start, end int) []*topo.Body {
 	bodies := fs.prefixBodies(start)
 	sick := fs.sickBefore(start)
 	for i := start; i < end; i++ {
 		bodies = fs.evaluate(fs.items[i], bodies, sick)
 	}
-	fs.result = bodies
+	return bodies
 }
 
 // PreviewResult evaluates a candidate feature as if it were appended at the end-of-part
