@@ -120,7 +120,12 @@ func buildPart(ws *doc.Workspace, outPath string, d *ipt.Document, meshFallback 
 	// imported body too.
 	ex := ipt.DecodeExtrudes(d)
 	noBase := len(ex) > 0 && !hasBaseExtrude(ex)
-	if (meshFallback || noParametric || noBase) && (!built || !hasSolidBody(def)) {
+	// A parametric attempt that produced NO body at all — every extrude declined, or a revolve/
+	// loft/sweep base didn't reconstruct — leaves the def empty just like a body-only part. There is
+	// no partial parametric body to mask, so import the real shape rather than ship an empty part
+	// (HeadShield, CapstainFrontBody, MagneticShieldBlock and other decode-but-build-nothing parts).
+	noBody := len(def.SurfaceBodies().All()) == 0
+	if (meshFallback || noParametric || noBase || noBody) && (!built || !hasSolidBody(def)) {
 		warns = append(warns, addBodyIfPresent(def, d)...)
 		def.Recompute()
 	}
@@ -471,7 +476,12 @@ func buildExtrudeFeatures(def *compdef.PartComponentDefinition, d *ipt.Document,
 	// i" only ever held for the generated corpus.
 	profiles := ipt.ExtrudeProfiles(d)
 	regions := ipt.ExtrudeRegions(d)
-	var lastExtrude *feature.PartFeature
+	// patternSource is the last feature a pattern/mirror may legitimately replicate: a cut or a
+	// secondary boss (join), NEVER the base solid. Inventor's PatternFeature always references a
+	// feature placed AFTER the base; replicating the base itself only stamps coincident duplicates
+	// of the whole body — a centred base disk rotated about its own axis stacks N identical copies,
+	// inflating the volume N× (SmartKnobConnectingPlate: a Ø46 plate patterned 5× → 5×2098 mm³).
+	var patternSource *feature.PartFeature
 	for i, ex := range extrudes {
 		p := profileIndex(profiles, i)
 		if p < 0 || p >= len(emitted) || emitted[p].sk == nil {
@@ -486,8 +496,11 @@ func buildExtrudeFeatures(def *compdef.PartComponentDefinition, d *ipt.Document,
 			notes = append(notes, fmt.Sprintf("extrude %d: could not match its region (%d loops) to any rebuilt profile — skipped", i, len(region)))
 			continue
 		}
-		lastExtrude = feature.NewExtrudeFeatures(def.Features()).AddExtrude(
+		fx := feature.NewExtrudeFeatures(def.Features()).AddExtrude(
 			emitted[p].sk, idx, operationOf(ex.Operation), extentOf(ex), 0)
+		if ex.Operation != ipt.OpNewBody {
+			patternSource = fx // only a cut/join extrude is a valid pattern target
+		}
 		built = true
 	}
 	// A drilled hole cuts the base solid: place it on the extrude's top face (analytic), drilling
@@ -501,25 +514,27 @@ func buildExtrudeFeatures(def *compdef.PartComponentDefinition, d *ipt.Document,
 			notes = append(notes, "hole decoded but no base extrude to cut — skipped")
 		}
 	}
-	// A pattern or mirror replicates the last feature; it must run after the source feature so its
-	// occurrences re-cut the running body. Rectangular / circular / mirror are mutually exclusive.
+	// A pattern or mirror replicates a cut/boss feature; it must run after that source so its
+	// occurrences re-cut the running body. When the only feature built is the base solid,
+	// patternSource is nil and the pattern is skipped rather than stamping N coincident bodies.
+	// Rectangular / circular / mirror are mutually exclusive.
 	if rp, ok := ipt.DecodeRectPattern(d); ok {
-		if lastExtrude != nil {
-			addRectPattern(def, lastExtrude, rp)
+		if patternSource != nil {
+			addRectPattern(def, patternSource, rp)
 			built = true
 		} else {
-			notes = append(notes, "rectangular pattern decoded but no source feature — skipped")
+			notes = append(notes, "rectangular pattern decoded but only a base solid to replicate — skipped")
 		}
 	} else if cp, ok := ipt.DecodeCircPattern(d); ok {
-		if lastExtrude != nil {
-			addCircPattern(def, lastExtrude, cp)
+		if patternSource != nil {
+			addCircPattern(def, patternSource, cp)
 			built = true
 		} else {
-			notes = append(notes, "circular pattern decoded but no source feature — skipped")
+			notes = append(notes, "circular pattern decoded but only a base solid to replicate — skipped")
 		}
 	} else if mir, ok := ipt.DecodeMirror(d); ok {
-		if lastExtrude != nil {
-			addMirror(def, lastExtrude, mir)
+		if patternSource != nil {
+			addMirror(def, patternSource, mir)
 			built = true
 		} else {
 			notes = append(notes, "mirror decoded but no source feature — skipped")

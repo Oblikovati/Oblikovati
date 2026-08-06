@@ -4,6 +4,7 @@ package translate
 
 import (
 	"math"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -239,6 +240,45 @@ func TestCircPatternTranslationRebuildsSolid(t *testing.T) {
 	want := (math.Pi*9 - 6*math.Pi*0.25) * 1000 // mm^3
 	if math.Abs(mp.VolumeMm3-want) > 0.02*want {
 		t.Errorf("circular-patterned volume = %.1f mm^3, want ~%.1f (within 2%%)", mp.VolumeMm3, want)
+	}
+}
+
+// TestCircPatternDoesNotReplicateBaseSolid guards the pattern-on-base fix: a Ø46 plate whose
+// only feature is the base extrude, with a circular pattern authored to replicate its bolt-hole
+// (already baked into the profile's inner loops), must NOT stamp the whole plate 5× — a centred
+// base disk rotated about its own axis makes 5 coincident copies, inflating the volume to 5×2098.
+// The pattern's source must be a cut/join, never the base, so with no such feature the pattern is
+// skipped and one plate stands (~2098 mm³ vs Inventor's 2122). Corpus-gated: this exact geometry
+// only exists in the real part (no generated fixture reproduces the centred-disk degeneracy), so
+// the test skips where the corpus is absent (CI) and runs on a dev checkout of the ReelToReel set.
+// Point IPT_CORPUS at the Mechanical directory to enable it.
+func TestCircPatternDoesNotReplicateBaseSolid(t *testing.T) {
+	dir := os.Getenv("IPT_CORPUS")
+	if dir == "" {
+		dir = `P:\ReelToReel\Mechanical`
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "SmartKnobConnectingPlate.ipt"))
+	if err != nil {
+		t.Skipf("corpus part not available (%v); set IPT_CORPUS to the ReelToReel Mechanical dir", err)
+	}
+	out := filepath.Join(t.TempDir(), "plate.opd")
+	if _, err := FromInventor(data, out); err != nil {
+		t.Fatalf("FromInventor: %v", err)
+	}
+	ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
+	reopened, err := ws.Open(out, true)
+	if err != nil {
+		t.Fatalf("reopen: %v", err)
+	}
+	def := reopened.Content().(*compdef.PartComponentDefinition)
+	bodies := def.SurfaceBodies().All()
+	if len(bodies) != 1 {
+		t.Fatalf("built %d bodies, want 1 (a circular pattern must not replicate the base solid)", len(bodies))
+	}
+	mp := analysis.MassPropertiesOf(bodies, 1, types.MassPropertiesLow)
+	const oracle = 2122.0 // Inventor STL volume, mm^3
+	if math.Abs(mp.VolumeMm3-oracle) > 0.05*oracle {
+		t.Errorf("plate volume = %.0f mm^3, want ~%.0f (within 5%%)", mp.VolumeMm3, oracle)
 	}
 }
 
