@@ -333,7 +333,19 @@ func extractSketches(d *ipt.Document, seg []byte) []placedSketch {
 		if profiles := ipt.LineProfiles(seg); len(profiles) > 0 {
 			// Reunite a separate vertical centreline into the profile sketch (as Inventor authored
 			// it) so the revolve's radius dimensions can bind to the profile in one sketch.
-			decoded = ipt.ReuniteRevolveAxis(profiles)
+			lineSet := ipt.ReuniteRevolveAxis(profiles)
+			decoded = lineSet
+			// Incidence sometimes SPLITS the profile into isolated single-line sketches (EncoderWheel:
+			// a 13-line profile decoded as three 1-line sketches, none closed), so no revolve binds and
+			// the part falls back to its non-manifold display mesh. The node GRAPH keeps that profile
+			// whole; when the fragmented line set forms no valid revolve but the graph does (a vertical
+			// in-profile centreline, case A), revolve the graph instead. Preferring the line set first
+			// keeps every currently-building revolve — and the horizontal-axis test fixtures — unchanged.
+			if !revolveBinds(lineSet) {
+				if graph := ipt.GraphSketches(d); sketchEntityCount(graph) > 0 && revolveBinds(graph) {
+					decoded = graph
+				}
+			}
 		}
 	}
 	placed := make([]placedSketch, len(decoded))
@@ -341,6 +353,13 @@ func extractSketches(d *ipt.Document, seg []byte) []placedSketch {
 		placed[i] = placedSketch{geom: decoded[i], plane: sketchPlaneOf(decoded[i])}
 	}
 	return placed
+}
+
+// revolveBinds reports whether RevolveProfile finds a valid closed profile + axis in this sketch
+// set — the gate that decides whether a revolve can be built from it at all.
+func revolveBinds(sketches []ipt.Sketch) bool {
+	_, ok := ipt.RevolveProfile(sketches)
+	return ok
 }
 
 // sketchPlaneOf places a sketch where the file says it lives. A sketch's entity coordinates are 2D
