@@ -365,17 +365,35 @@ func revolveBinds(sketches []ipt.Sketch) bool {
 // verticalLine reports whether a decoded line is vertical (a revolve centreline is drawn upright).
 func verticalLine(l ipt.Line) bool { return math.Abs(l.A.X-l.B.X) < 1e-4 }
 
+// revolveAxisIndex returns the centreline's index in s.Lines. It prefers the isolated line
+// RevolveAxisLine finds (both endpoints shared with no other line — the clean shaft encoding); when
+// that is ambiguous — a real INTERNAL edge whose ends land on other edges' interiors also reads as
+// isolated (PressureRoller's x=0.8 splitter) — it falls back to the single VERTICAL CONSTRUCTION
+// line, which a revolve draws as its centreline. ok=false when neither names one unambiguous axis.
+func revolveAxisIndex(s ipt.Sketch) (int, bool) {
+	if ai, ok := ipt.RevolveAxisLine(s); ok && ai < len(s.Lines) && verticalLine(s.Lines[ai]) {
+		return ai, true
+	}
+	axis, n := -1, 0
+	for i, l := range s.Lines {
+		if s.LineIsConstruction(i) && verticalLine(l) {
+			axis, n = i, n+1
+		}
+	}
+	return axis, n == 1
+}
+
 // graphRevolveCandidate reports whether the node-graph sketches hold a plausible revolve the ipt
 // line-ring gate can't confirm: a vertical centreline inside a many-line profile. Such a profile
-// (a shaft with a keyway/notch) is a valid CLOSED region the KERNEL arranges — splitting the edge a
-// notch's mouth lands on — but ipt.isClosedRing, a naive head-to-tail line walk, rejects it. When
-// this holds, extractSketches keeps the graph so buildRevolve's kernel fallback can try it.
+// (a shaft with a keyway/notch, or a stepped roller split by an internal edge) is a valid region the
+// KERNEL arranges but ipt.isClosedRing (a naive head-to-tail line walk) rejects. When this holds,
+// extractSketches keeps the graph so buildRevolve's kernel fallback can try it.
 func graphRevolveCandidate(sketches []ipt.Sketch) bool {
 	for _, s := range sketches {
 		if !s.Resolved || len(s.Lines) < 4 {
 			continue
 		}
-		if ai, ok := ipt.RevolveAxisLine(s); ok && ai < len(s.Lines) && verticalLine(s.Lines[ai]) {
+		if _, ok := revolveAxisIndex(s); ok {
 			return true
 		}
 	}
@@ -411,35 +429,64 @@ func profileOneSideOfAxis(lines []ipt.Line, axisIdx int) bool {
 	return sign != 0
 }
 
-// tryKernelRevolve builds a revolve the ipt gate declined by trusting the KERNEL's arranged profile
+// tryKernelRevolve builds a revolve the ipt gate declined by trusting the KERNEL's arranged profiles
 // instead of the line-ring walk. It fires only after RevolveProfile fails, so no currently-building
-// revolve reaches it. Guards keep it honest: a vertical in-profile centreline, EXACTLY ONE closed
-// arranged profile (unambiguous), and that profile wholly one side of the axis. A wrong result is
-// still caught downstream — buildPart's gateBodyAgainstMesh drops a body that escapes Inventor's own
-// tessellation. Returns the built feature, or nil when no sketch qualifies.
-func tryKernelRevolve(def *compdef.PartComponentDefinition, seg []byte, placed []placedSketch, emitted []emittedSketch) *feature.PartFeature {
+// revolve reaches it. Guards keep it honest: an unambiguous vertical centreline (see
+// revolveAxisIndex), at least one CLOSED arranged profile, and the profile geometry wholly one side
+// of the axis. Every closed profile one side of the axis is revolved and unioned (a stepped roller's
+// internal edge splits one region into two, both part of the same solid). Returns the ids of the
+// features it added (empty when no sketch qualifies) so the caller can drop them if they don't close
+// to a solid.
+func tryKernelRevolve(def *compdef.PartComponentDefinition, seg []byte, placed []placedSketch, emitted []emittedSketch) []feature.ID {
 	for i := range emitted {
 		if emitted[i].sk == nil || i >= len(placed) {
 			continue
 		}
 		s := placed[i].geom
-		ai, ok := ipt.RevolveAxisLine(s)
-		if !ok || ai >= len(emitted[i].lines) || emitted[i].lines[ai] == nil || !verticalLine(s.Lines[ai]) {
+		ai, ok := revolveAxisIndex(s)
+		if !ok || ai >= len(emitted[i].lines) || emitted[i].lines[ai] == nil {
 			continue
 		}
-		if profs := emitted[i].sk.Profiles(); profs.Count() != 1 || !profs.Item(0).IsClosed() {
+		closed := closedProfileIndices(emitted[i].sk)
+		if len(closed) == 0 || !profileOneSideOfAxis(s.Lines, ai) {
 			continue
 		}
-		if !profileOneSideOfAxis(s.Lines, ai) {
-			continue
+		return revolveClosedProfiles(def, emitted[i], ai, closed, revolveAngleFn(seg))
+	}
+	return nil
+}
+
+// closedProfileIndices returns the indices of the sketch's closed arranged profiles.
+func closedProfileIndices(sk *sketch.Sketch) []int {
+	var out []int
+	profs := sk.Profiles()
+	for p := 0; p < profs.Count(); p++ {
+		if profs.Item(p).IsClosed() {
+			out = append(out, p)
 		}
-		var angle func() float64
-		if a, ok := ipt.RevolveAngle(seg); ok {
-			a := a
-			angle = func() float64 { return a }
+	}
+	return out
+}
+
+// revolveClosedProfiles turns each closed profile about the axis, the first starting the body and
+// the rest joining it (adjacent regions of one solid of revolution). Returns the added feature ids.
+func revolveClosedProfiles(def *compdef.PartComponentDefinition, e emittedSketch, axisLine int, closed []int, angle func() float64) []feature.ID {
+	var ids []feature.ID
+	for k, pi := range closed {
+		op := ops.NewBody
+		if k > 0 {
+			op = ops.Join
 		}
-		return feature.NewRevolveFeatures(def.Features()).AddAboutCenterlineLine(
-			emitted[i].sk, 0, emitted[i].sk, emitted[i].lines[ai], angle, ops.NewBody)
+		f := feature.NewRevolveFeatures(def.Features()).AddAboutCenterlineLine(e.sk, pi, e.sk, e.lines[axisLine], angle, op)
+		ids = append(ids, f.ID())
+	}
+	return ids
+}
+
+// revolveAngleFn returns the swept-angle accessor for a partial revolve, or nil for a full turn.
+func revolveAngleFn(seg []byte) func() float64 {
+	if a, ok := ipt.RevolveAngle(seg); ok {
+		return func() float64 { return a }
 	}
 	return nil
 }
@@ -528,9 +575,19 @@ func buildRevolve(def *compdef.PartComponentDefinition, seg []byte, placed []pla
 	if !ok {
 		// The line-ring gate declined. A profile with a notch/keyway (a curve whose end lands on
 		// another edge's interior) is a valid closed region the kernel arranges but that walk can't
-		// close — try the kernel's own profile before falling back to the mesh.
-		if tryKernelRevolve(def, seg, placed, emitted) != nil {
-			return true, nil
+		// close — try the kernel's own profile before falling back to the mesh. Keep the result ONLY
+		// if it closes to a solid: an open/self-intersecting revolve means a mis-decoded profile or
+		// axis, and the faithful display mesh is better than a wrong parametric body (a pre-2023
+		// PressureRoller copy built a half-open partial roller that way).
+		if ids := tryKernelRevolve(def, seg, placed, emitted); len(ids) > 0 {
+			def.Recompute()
+			if firstBodyIsSolid(def) {
+				return true, nil
+			}
+			for _, id := range ids {
+				def.Features().Remove(id)
+			}
+			return false, []string{"revolve: kernel profile did not close to a solid — imported body used"}
 		}
 		return false, []string{"revolve: no unambiguous closed profile + axis — sketches emitted, revolve not built"}
 	}
