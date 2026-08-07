@@ -151,6 +151,12 @@ func loopChains(l ipt.RegionLoop) (chains [][]math.Point2, whole [][]math.Point2
 			chains = append(chains, arcPolyline(e.Arc))
 		case ipt.EdgeCircle:
 			whole = append(whole, sampleWholeCircle(e.Circle))
+		case ipt.EdgeEllipse:
+			if e.Ellipse.Start == (ipt.Point2D{}) && e.Ellipse.End == (ipt.Point2D{}) {
+				whole = append(whole, ellipseArcPolyline(e.Ellipse)) // a whole ellipse stands alone, like a bore
+			} else {
+				chains = append(chains, ellipseArcPolyline(e.Ellipse))
+			}
 		}
 	}
 	return chains, whole
