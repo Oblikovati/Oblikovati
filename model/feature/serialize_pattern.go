@@ -24,6 +24,11 @@ type RectPatternData struct {
 	StepX   []float64           `yaml:"stepX"`
 	StepY   []float64           `yaml:"stepY"`
 	Options *PatternOptionsData `yaml:"options,omitempty"`
+	// MidPlaneX/MidPlaneY straddle the seed in that direction (#1889); Suppressed drops
+	// occurrences by index. Both omitted when unused, so older recipes round-trip unchanged.
+	MidPlaneX  bool  `yaml:"midPlaneX,omitempty"`
+	MidPlaneY  bool  `yaml:"midPlaneY,omitempty"`
+	Suppressed []int `yaml:"suppressed,omitempty"`
 }
 
 // CircPatternData replicates source features around an axis.
@@ -34,6 +39,9 @@ type CircPatternData struct {
 	AxisPoint []float64           `yaml:"axisPoint"`
 	AxisDir   []float64           `yaml:"axisDir"`
 	Options   *PatternOptionsData `yaml:"options,omitempty"`
+	// MidPlane straddles the seed (#1889); Suppressed drops occurrences by index.
+	MidPlane   bool  `yaml:"midPlane,omitempty"`
+	Suppressed []int `yaml:"suppressed,omitempty"`
 }
 
 // PatternOptionsData is the serialized M20-F18 option block (omitted entirely when the
@@ -201,6 +209,10 @@ func restoreRectPattern(fs *PartFeatures, d *RectPatternData, restored []*PartFe
 		return nil, err
 	}
 	f.Definition().Options = opts
+	f.Definition().MidPlaneX, f.Definition().MidPlaneY = d.MidPlaneX, d.MidPlaneY
+	if err := f.SuppressElements(d.Suppressed); err != nil {
+		return nil, err
+	}
 	return lastFeature(fs), nil
 }
 
@@ -218,6 +230,10 @@ func restoreCircPattern(fs *PartFeatures, d *CircPatternData, restored []*PartFe
 		return nil, err
 	}
 	f.Definition().Options = opts
+	f.Definition().MidPlane = d.MidPlane
+	if err := f.SuppressElements(d.Suppressed); err != nil {
+		return nil, err
+	}
 	return lastFeature(fs), nil
 }
 

@@ -237,7 +237,11 @@ type RectangularPatternDefinition struct {
 	CountY         func() int
 	StepX          math.Vector3
 	StepY          math.Vector3
-	Options        PatternOptions // spacing/compute/orientation/positioning + boundary (M20-F18)
+	// MidPlaneX/MidPlaneY straddle the seed in that direction instead of running one way
+	// from it (#1889). See [patternIndexShift].
+	MidPlaneX bool
+	MidPlaneY bool
+	Options   PatternOptions // spacing/compute/orientation/positioning + boundary (M20-F18)
 }
 
 // RectangularPatternFeature is a 2D grid pattern.
@@ -254,23 +258,11 @@ func (r *RectangularPatternFeature) Recompute(in Input) (Output, error) {
 	r.rebuild(nx * ny)
 	stepX := r.def.Options.rectStep(r.def.StepX, nx)
 	stepY := r.def.Options.rectStep(r.def.StepY, ny)
-	transforms := rectTransforms(nx, ny, stepX, stepY)
+	transforms := rectTransforms(nx, ny, stepX, stepY,
+		patternIndexShift(nx, r.def.MidPlaneX), patternIndexShift(ny, r.def.MidPlaneY))
 	seed, ok := seedCentre(in.Bodies)
 	r.clipped = r.def.Options.clippedOccurrences(transforms, seed, ok)
 	return r.replicate(in, r.def.SourceFeatures, transforms, "rect-pattern")
-}
-
-// rectTransforms returns the grid of occurrence transforms in row-major (ix + iy·nx)
-// order; element 0 is the identity (the original occurrence).
-func rectTransforms(nx, ny int, stepX, stepY math.Vector3) []math.Matrix4 {
-	out := make([]math.Matrix4, 0, nx*ny)
-	for iy := 0; iy < ny; iy++ {
-		for ix := 0; ix < nx; ix++ {
-			offset := stepX.Scale(float64(ix)).Add(stepY.Scale(float64(iy)))
-			out = append(out, math.Translation4(offset))
-		}
-	}
-	return out
 }
 
 // CircularPatternDefinition replicates the running solid about an axis; Count
@@ -281,7 +273,9 @@ type CircularPatternDefinition struct {
 	Angle          func() float64
 	AxisPoint      math.Point3
 	AxisDir        math.Vector3
-	Options        PatternOptions // spacing/compute/orientation/positioning + boundary (M20-F18)
+	// MidPlane sweeps to both sides of the seed rather than all one way (#1889).
+	MidPlane bool
+	Options  PatternOptions // spacing/compute/orientation/positioning + boundary (M20-F18)
 }
 
 // CircularPatternFeature is a circular pattern.
@@ -297,28 +291,14 @@ func (c *CircularPatternFeature) Recompute(in Input) (Output, error) {
 	count := callOr1(c.def.Count)
 	c.rebuild(count)
 	inc := c.def.Options.circIncrement(callOrZero(c.def.Angle), count)
-	transforms, err := circTransforms(count, inc, c.def.AxisPoint, c.def.AxisDir)
+	transforms, err := circTransforms(count, inc, c.def.AxisPoint, c.def.AxisDir,
+		patternIndexShift(count, c.def.MidPlane))
 	if err != nil {
 		return Output{}, err
 	}
 	seed, ok := seedCentre(in.Bodies)
 	c.clipped = c.def.Options.clippedOccurrences(transforms, seed, ok)
 	return c.replicate(in, c.def.SourceFeatures, transforms, "circ-pattern")
-}
-
-// circTransforms returns count occurrence rotations about the axis stepping by inc radians
-// per occurrence; element 0 is the identity. The increment is chosen by the spacing type
-// ([PatternOptions.circIncrement]).
-func circTransforms(count int, inc float64, axisPoint math.Point3, axisDir math.Vector3) ([]math.Matrix4, error) {
-	dir, err := math.UnitVector3FromVector(axisDir)
-	if err != nil {
-		return nil, err
-	}
-	out := make([]math.Matrix4, count)
-	for k := 0; k < count; k++ {
-		out[k] = math.Rotation4(inc*float64(k), dir, axisPoint)
-	}
-	return out, nil
 }
 
 // SketchDrivenPatternDefinition places one occurrence per sketch point. Points are the
@@ -377,7 +357,7 @@ func (m *MirrorFeature) Definition() *MirrorDefinition { return m.def }
 func (m *MirrorFeature) Kind() string                  { return "mirror" }
 
 func (m *MirrorFeature) Recompute(in Input) (Output, error) {
-	m.rebuild(1) // a mirror produces a single reflected occurrence
+	m.rebuild(2) // the seed and its reflection — element 1 is the mirrored occurrence
 	normal, err := math.UnitVector3FromVector(m.def.Normal)
 	if err != nil {
 		return Output{}, err

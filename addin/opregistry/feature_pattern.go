@@ -30,6 +30,9 @@ const rectPatternSchema = `{
     "countYExpr": {"type": "string", "description": "Parameter-expression form of countY; when set it supersedes countY."},
     "stepX": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Spacing vector for the first direction [x,y,z] in cm."},
     "stepY": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Spacing vector for the second direction [x,y,z] in cm."},
+    "midPlaneX": {"type": "boolean", "description": "Spread the first direction's occurrences to BOTH sides of the seed instead of running one way from it. The seed does not move; with an even count the extra occurrence goes on the step's own side (reverse stepX to swap it)."},
+    "midPlaneY": {"type": "boolean", "description": "As midPlaneX, for the second direction."},
+    "suppressedElements": {"type": "array", "items": {"type": "integer", "minimum": 1}, "description": "Occurrence indices to drop from the pattern. Element 0 is the seed \u2014 the source features' own material, applied before the pattern ran \u2014 and cannot be suppressed; suppress the source feature instead."},
     "spacingType": {"type": "string", "enum": ["spacing", "fitted", "fitToPathLength"], "description": "How a step is read: 'spacing' = gap between occurrences (default); 'fitted' = total span divided across the count."},
     "computeType": {"type": "string", "enum": ["identical", "adjustToModel", "optimized"], "description": "How each occurrence is computed."},
     "orientation": {"type": "string", "enum": ["identical", "direction1", "direction2"], "description": "How each occurrence is oriented."},
@@ -53,6 +56,8 @@ const circPatternSchema = `{
     "angle": {"type": "string", "description": "Total sweep angle, e.g. \"360 deg\"."},
     "axisPoint": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "A point on the rotation axis [x,y,z] (default origin)."},
     "axisDir": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Rotation axis direction [x,y,z] (default +Z)."},
+    "midPlane": {"type": "boolean", "description": "Sweep the occurrences to both sides of the seed rather than all one way round the axis. The seed does not move; with an even count the extra occurrence goes on the +angle side."},
+    "suppressedElements": {"type": "array", "items": {"type": "integer", "minimum": 1}, "description": "Occurrence indices to drop from the pattern. Element 0 is the seed \u2014 the source features' own material, applied before the pattern ran \u2014 and cannot be suppressed; suppress the source feature instead."},
     "spacingType": {"type": "string", "enum": ["spacing", "fitted", "fitToPathLength"], "description": "How 'angle' is read: 'spacing' = per-occurrence increment; 'fitted' = spread count across the angle inclusive; default = angle divided by count (full sweep)."},
     "computeType": {"type": "string", "enum": ["identical", "adjustToModel", "optimized"], "description": "How each occurrence is computed."},
     "orientation": {"type": "string", "enum": ["identical", "direction1", "direction2"], "description": "How each occurrence is oriented."},
@@ -111,7 +116,9 @@ func applyRectPattern(s *app.Session, raw json.RawMessage) (json.RawMessage, err
 		return nil, err
 	}
 	f := feature.NewPatternFeatures(part.Features()).AddRectangular(ids, countX, countY, stepX, stepY)
-	f.Definition().Options = opts
+	if err := configureRectPattern(f, in, opts); err != nil {
+		return nil, err
+	}
 	return lastFeatureResult(part)
 }
 
@@ -164,8 +171,27 @@ func applyCircPattern(s *app.Session, raw json.RawMessage) (json.RawMessage, err
 		return nil, err
 	}
 	f := feature.NewPatternFeatures(part.Features()).AddCircular(ids, count, angle, originOr(in.AxisPoint), zAxisOr(in.AxisDir))
-	f.Definition().Options = opts
+	if err := configureCircPattern(f, in, opts); err != nil {
+		return nil, err
+	}
 	return lastFeatureResult(part)
+}
+
+// configureRectPattern applies the placement options plus the #1889 mid-plane and per-element
+// suppression fields to a freshly added grid pattern.
+func configureRectPattern(f *feature.RectangularPatternFeature, in featureargs.PatternRectangular,
+	opts feature.PatternOptions) error {
+	f.Definition().Options = opts
+	f.Definition().MidPlaneX, f.Definition().MidPlaneY = in.MidPlaneX, in.MidPlaneY
+	return f.SuppressElements(in.SuppressedElements)
+}
+
+// configureCircPattern is [configureRectPattern] for a circular array.
+func configureCircPattern(f *feature.CircularPatternFeature, in featureargs.PatternCircular,
+	opts feature.PatternOptions) error {
+	f.Definition().Options = opts
+	f.Definition().MidPlane = in.MidPlane
+	return f.SuppressElements(in.SuppressedElements)
 }
 
 // patternOptions resolves the M20-F18 option fields (spacing/compute/orientation/
