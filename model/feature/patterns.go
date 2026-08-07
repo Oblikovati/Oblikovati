@@ -345,6 +345,12 @@ type MirrorDefinition struct {
 	MirrorPlaneKey []byte
 	Origin         math.Point3
 	Normal         math.Vector3
+	// OfBody reflects the whole running solid instead of the source features (#1890).
+	// RemoveOriginal and JoinToOriginal are body-mode only, as they are in Inventor; see
+	// [ValidateMirrorMode].
+	OfBody         bool
+	RemoveOriginal bool
+	JoinToOriginal bool
 }
 
 // MirrorFeature mirrors the running solid across a plane.
@@ -358,11 +364,18 @@ func (m *MirrorFeature) Kind() string                  { return "mirror" }
 
 func (m *MirrorFeature) Recompute(in Input) (Output, error) {
 	m.rebuild(2) // the seed and its reflection — element 1 is the mirrored occurrence
+	if err := ValidateMirrorMode(m.def.OfBody, m.def.RemoveOriginal, m.def.JoinToOriginal); err != nil {
+		return Output{}, err
+	}
 	normal, err := math.UnitVector3FromVector(m.def.Normal)
 	if err != nil {
 		return Output{}, err
 	}
-	transforms := []math.Matrix4{math.Identity4(), math.Reflection4(m.def.Origin, normal)}
+	reflection := math.Reflection4(m.def.Origin, normal)
+	if m.def.OfBody {
+		return m.mirrorBodies(in, reflection)
+	}
+	transforms := []math.Matrix4{math.Identity4(), reflection}
 	return m.replicate(in, m.def.SourceFeatures, transforms, "mirror")
 }
 

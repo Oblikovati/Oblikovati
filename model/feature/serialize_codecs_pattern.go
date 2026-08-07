@@ -73,6 +73,9 @@ func (r featureCodecSet) registerPatternCodecs() {
 			fd.Mirror = &MirrorData{
 				Source: src, Plane: encodeKey(p.def.MirrorPlaneKey),
 				Origin: encodePoint3(p.def.Origin), Normal: encodeVec3(p.def.Normal),
+				OfBody:         p.def.OfBody,
+				RemoveOriginal: p.def.RemoveOriginal,
+				JoinToOriginal: p.def.JoinToOriginal,
 			}
 			return nil
 		},

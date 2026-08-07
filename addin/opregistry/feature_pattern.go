@@ -77,7 +77,10 @@ const mirrorSchema = `{
   "properties": {
     "sourceFeatures": {"type": "array", "items": {"type": "string"}, "minItems": 1, "description": "Names of the features to mirror (see model.tree)."},
     "origin": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "A point on the mirror plane [x,y,z] (default origin)."},
-    "normal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Mirror-plane normal [x,y,z], e.g. [1,0,0] for the YZ plane."}
+    "normal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Mirror-plane normal [x,y,z], e.g. [1,0,0] for the YZ plane."},
+    "mode": {"type": "string", "enum": ["features", "body"], "description": "What is reflected: 'features' (default) re-applies the source features' tools on the far side; 'body' reflects the whole running solid, which is how a symmetric part is usually built."},
+    "removeOriginal": {"type": "boolean", "description": "Keep only the reflected half, discarding the source \u2014 how a handed variant is made. Body mode only."},
+    "operation": {"type": "string", "enum": ["newBody", "join"], "description": "How the reflection joins the model: 'newBody' (default) leaves it a separate solid, 'join' unions it with the original. Body mode only."}
   },
   "required": ["sourceFeatures", "normal"]
 }`
@@ -91,7 +94,7 @@ func circPatternDescriptor() *OperationDescriptor {
 }
 
 func mirrorDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: featureargs.KindMirror, Summary: "Mirror features across a plane.", Schema: json.RawMessage(mirrorSchema), Apply: applyMirror}
+	return &OperationDescriptor{Name: featureargs.KindMirror, Summary: "Mirror features or a whole solid body across a plane.", Schema: json.RawMessage(mirrorSchema), Apply: applyMirror}
 }
 
 func applyRectPattern(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -272,8 +275,54 @@ func applyMirror(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 		return nil, errors.New("mirror: normal needs 3 components [x,y,z]")
 	}
 	normal, _ := vec3(in.Normal, "mirror: normal")
-	feature.NewPatternFeatures(part.Features()).AddMirror(ids, nil, originOr(in.Origin), normal)
+	f := feature.NewPatternFeatures(part.Features()).AddMirror(ids, nil, originOr(in.Origin), normal)
+	if err := configureMirror(f, in); err != nil {
+		return nil, err
+	}
 	return lastFeatureResult(part)
+}
+
+// configureMirror applies the #1890 mode and the two body-only options. The model refuses a
+// body-only option in feature mode at recompute; parsing them here means an unknown mode or
+// operation is named at the point the caller wrote it.
+func configureMirror(f *feature.MirrorFeature, in featureargs.Mirror) error {
+	ofBody, err := mirrorOfBody(in.Mode)
+	if err != nil {
+		return err
+	}
+	join, err := mirrorJoins(in.Operation)
+	if err != nil {
+		return err
+	}
+	f.Definition().OfBody, f.Definition().RemoveOriginal, f.Definition().JoinToOriginal =
+		ofBody, in.RemoveOriginal, join
+	return feature.ValidateMirrorMode(ofBody, in.RemoveOriginal, join)
+}
+
+// mirrorOfBody reads the mirror mode; Inventor carries the same choice as MirrorOfBody, so there
+// are exactly two ("faces" is not one of them — Inventor's mirror has no face mode).
+func mirrorOfBody(mode string) (bool, error) {
+	switch strings.TrimSpace(mode) {
+	case "", "features":
+		return false, nil
+	case "body":
+		return true, nil
+	default:
+		return false, fmt.Errorf("mirror: unknown mode %q (want \"features\" or \"body\")", mode)
+	}
+}
+
+// mirrorJoins reads the body-mode operation. Inventor allows only kNewBodyOperation and
+// kJoinOperation here.
+func mirrorJoins(op string) (bool, error) {
+	switch strings.TrimSpace(op) {
+	case "", "newBody":
+		return false, nil
+	case "join":
+		return true, nil
+	default:
+		return false, fmt.Errorf("mirror: unknown operation %q (want \"newBody\" or \"join\")", op)
+	}
 }
 
 func defaultInt(v, def int) int {
