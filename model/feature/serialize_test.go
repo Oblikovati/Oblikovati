@@ -463,7 +463,7 @@ func TestRibRoundTrip(t *testing.T) {
 func TestEmbossRoundTrip(t *testing.T) {
 	sk := squareSketch(4)
 	fs := NewPartFeatures(nil)
-	NewEmbossFeatures(fs).Add(sk, []int{0}, func() float64 { return 0.8 }, true, 0.1)
+	NewEmbossFeatures(fs).Add(sk, []int{0}, func() float64 { return 0.8 }, EngraveFromFace, 0.1)
 
 	data, err := fs.MarshalRecipe(oneSketch{s: sk})
 	if err != nil {
@@ -474,9 +474,9 @@ func TestEmbossRoundTrip(t *testing.T) {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
 	e := fresh.Item(0).Definition().(*EmbossFeature).Definition()
-	if !e.Engrave || e.Depth() != 0.8 || len(e.ProfileIndices) != 1 || e.Taper != 0.1 {
-		t.Errorf("restored emboss = engrave %v depth %v profiles %v taper %v, want true 0.8 [0] 0.1",
-			e.Engrave, e.Depth(), e.ProfileIndices, e.Taper)
+	if e.Type != EngraveFromFace || e.Depth() != 0.8 || len(e.ProfileIndices) != 1 || e.Taper != 0.1 {
+		t.Errorf("restored emboss = type %v depth %v profiles %v taper %v, want EngraveFromFace 0.8 [0] 0.1",
+			e.Type, e.Depth(), e.ProfileIndices, e.Taper)
 	}
 }
 
