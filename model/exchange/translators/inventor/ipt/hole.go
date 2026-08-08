@@ -35,6 +35,7 @@ const (
 	holePropCounterDiameter = 3
 	holePropCounterDepth    = 4 // counterbore
 	holePropCounterAngle    = 5 // countersink, radians
+	holePropPlacement       = 8 // 0x90874D18 Transformation: the drill point + axis in model space
 	holePropExtent          = 9 // 0x92637D29 PartFeatureExtentEnum
 )
 
@@ -65,6 +66,13 @@ type Hole struct {
 	CounterAngle    float64 // countersink, radians
 	Tapped          bool    // a threaded (tapped) hole — the bore is the tap-drill cylinder
 	Designation     string  // thread callout (e.g. "M6x1"), tapped holes only
+	// Center and Axis are the drill point and its axis in MODEL space, from the hole's own placement
+	// transform (prop[8]). Placed is false when the file states none this layout reads. Without it a
+	// hole on a non-XY face drilled in the wrong place — CapstainNut's bore sits at the origin with a
+	// +X axis, not on the assumed XY face.
+	Center [3]float64
+	Axis   [3]float64
+	Placed bool
 }
 
 // DecodeHole reports the part's hole, if present, reading its bore from the HoleFeature node's own
@@ -121,7 +129,33 @@ func holeFromNode(nodes []dcNode, props []int, kind dcNode) Hole {
 		h.CounterDiameter = featureParameter(nodes, props, holePropCounterDiameter)
 		h.CounterAngle = featureParameter(nodes, props, holePropCounterAngle)
 	}
+	if c, a, ok := holePlacement(nodes, props); ok {
+		h.Center, h.Axis, h.Placed = c, a, true
+	}
 	return h
+}
+
+// holePlacement reads the hole's drill point and axis from its placement transform (prop[8]): the
+// transform's translation is the point, and its Z axis (xAxis × yAxis) is the drill direction — the
+// outward normal of the face the hole is bored on. ok=false when the file states none this layout
+// reads, so the caller keeps the profile-centroid fallback.
+func holePlacement(nodes []dcNode, props []int) (center, axis [3]float64, ok bool) {
+	if holePropPlacement >= len(props) {
+		return center, axis, false
+	}
+	n, ok := nodeAt(nodes, props[holePropPlacement])
+	if !ok || n.typ != transformNodeType {
+		return center, axis, false
+	}
+	m, ok := transformMatrix(n.payload, transformMatrixOffset)
+	if !ok || !isRigidPlacement(m) {
+		return center, axis, false
+	}
+	center = [3]float64{m[0][3], m[1][3], m[2][3]}
+	x := [3]float64{m[0][0], m[1][0], m[2][0]}
+	y := [3]float64{m[0][1], m[1][1], m[2][1]}
+	axis = [3]float64{x[1]*y[2] - x[2]*y[1], x[2]*y[0] - x[0]*y[2], x[0]*y[1] - x[1]*y[0]}
+	return center, axis, true
 }
 
 // threadTypeKeywords mark a thread-type string (e.g. "ANSI Metric M Profile", "ANSI Unified

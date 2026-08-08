@@ -865,3 +865,42 @@ func TestImportRoundTripsThroughOPD(t *testing.T) {
 		t.Errorf("reopened box volume = %.3f mm^3, want 8000", mp.VolumeMm3)
 	}
 }
+
+// TestCapstainNutBoreIsDrilledOnItsOwnFace pins the hole-placement fix: CapstainNut's hex is
+// extruded along +X, so addHole's top-face fallback (XY-plane assumption) drilled in empty space and
+// the Ø1.7 bore removed nothing (a solid nut, 3663 mm³ = 1.62x). Using the hole's own placement
+// (its transform's point + axis) as the GeomFace AND the drill Center bores it correctly — 2420 mm³
+// vs Inventor's 2261 (1.07x; the residual is the two 45° chamfers this decoder does not build).
+// Corpus-gated: the non-XY-face bore only exists in the real part; skips without IPT_CORPUS.
+func TestCapstainNutBoreIsDrilledOnItsOwnFace(t *testing.T) {
+	dir := os.Getenv("IPT_CORPUS")
+	if dir == "" {
+		dir = `P:\ReelToReel\Mechanical`
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "CapstainNut.ipt"))
+	if err != nil {
+		t.Skipf("corpus part not available (%v); set IPT_CORPUS", err)
+	}
+	out := filepath.Join(t.TempDir(), "nut.opd")
+	if _, err := FromInventor(data, out); err != nil {
+		t.Fatalf("FromInventor: %v", err)
+	}
+	ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
+	reopened, err := ws.Open(out, true)
+	if err != nil {
+		t.Fatalf("reopen: %v", err)
+	}
+	def := reopened.Content().(*compdef.PartComponentDefinition)
+	bodies := def.SurfaceBodies().All()
+	if len(bodies) == 0 {
+		t.Fatalf("no body built")
+	}
+	vol := analysis.MassPropertiesOf(bodies, 1, types.MassPropertiesLow).VolumeMm3
+	const oracle = 2261.0 // Inventor STL volume, mm³
+	if vol > 1.2*oracle {
+		t.Errorf("CapstainNut volume = %.0f mm³, want <= %.0f (the bore must be drilled, not missing)", vol, 1.2*oracle)
+	}
+	if math.Abs(vol-oracle) > 0.12*oracle {
+		t.Errorf("CapstainNut volume = %.0f mm³, want within 12%% of Inventor's %.0f", vol, oracle)
+	}
+}

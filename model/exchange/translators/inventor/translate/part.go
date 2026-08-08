@@ -672,7 +672,7 @@ func buildExtrudeFeatures(def *compdef.PartComponentDefinition, d *ipt.Document,
 	if h, ok := ipt.DecodeHole(d); ok {
 		if len(extrudes) > 0 && len(placed) > 0 && len(emitted) > 0 && emitted[0].sk != nil {
 			cx, cy := profileCentroid(placed[0].geom)
-			addHole(def, h, cx, cy, extrudes[0].Distance)
+			addHole(def, h, placed[0].plane, cx, cy, extrudes[0].Distance)
 			built = true
 		} else {
 			notes = append(notes, "hole decoded but no base extrude to cut — skipped")
@@ -747,7 +747,7 @@ func addCircPattern(def *compdef.PartComponentDefinition, source *feature.PartFe
 // recompute (the externally-authored placement path, ADR-0040). Drilled, counterbore, and
 // countersink holes are built; v1 drills at the face centroid (explicit off-centre placement
 // is future work).
-func addHole(def *compdef.PartComponentDefinition, h ipt.Hole, cx, cy, thickness float64) {
+func addHole(def *compdef.PartComponentDefinition, h ipt.Hole, plane sketch.Plane, cx, cy, thickness float64) {
 	holes := feature.NewHoleFeatures(def.Features())
 	dia, depth := constF(h.Diameter), constF(h.Depth)
 	var pf *feature.PartFeature
@@ -765,7 +765,40 @@ func addHole(def *compdef.PartComponentDefinition, h ipt.Hole, cx, cy, thickness
 	}
 	hd := pf.Definition().(*feature.HoleFeature).Definition()
 	hd.ThroughAll = h.ThroughAll
-	hd.GeomFace = &topo.GeometricFaceRef{Centroid: m.P3(m.Scalar(cx), m.Scalar(cy), m.Scalar(thickness)), Normal: m.Vector3{X: 0, Y: 0, Z: 1}}
+	// A PLAIN drilled hole uses its OWN placement (its transform, decoded into h.Center/Axis): GeomFace
+	// finds the bored face and Center pins the exact drill point on it, so the bore lands where the
+	// file put it even when it is not centred on the base profile (CapstainNut's Ø1.7 bore sits at the
+	// origin with a +X axis, off the hex centroid — the profile-centroid guess missed it entirely). A
+	// plain bore is symmetric about its axis, so which face the placement resolves to is immaterial.
+	//
+	// The placement transform's translation is the hole's own coordinate-system ORIGIN, which equals
+	// the drill point only when the hole is centred there (as CapstainNut's is); on a hole offset from
+	// that datum (the generated box fixtures place a centred bore whose datum sits at a corner) it is
+	// NOT the bore centre. So the placement is used only where the top-face fallback is itself
+	// unreliable — a base sketch that is NOT the XY plane, the one case (CapstainNut, a hex extruded
+	// along +X) the fallback cannot place. XY-base holes (every fixture, MainFrame, WheelSlider) keep
+	// the fallback, which matches Inventor there. A plain bore is symmetric about its axis, so which
+	// face the placement resolves to is immaterial; a directional counterbore/countersink is excluded.
+	if h.Placed && h.Type == ipt.DrilledHole && !planeIsXY(plane) {
+		center := m.P3(m.Scalar(h.Center[0]), m.Scalar(h.Center[1]), m.Scalar(h.Center[2]))
+		hd.GeomFace = &topo.GeometricFaceRef{Centroid: center, Normal: m.Vector3{X: m.Scalar(h.Axis[0]), Y: m.Scalar(h.Axis[1]), Z: m.Scalar(h.Axis[2])}}
+		hd.Center = &center
+		return
+	}
+	// Fallback: drill on the base extrude's top face — the sketch-plane point (cx,cy) lifted into 3D
+	// and advanced along the plane normal by the extrude thickness. Hardcoding z=thickness / +Z drilled
+	// in empty space on any base sketch that was not the XY plane; this reduces to those old values on
+	// an XY sketch.
+	normal := plane.Normal()
+	top := plane.ToModel(m.P2(m.Scalar(cx), m.Scalar(cy)))
+	center := top.TranslateBy(normal.AsVector().Scale(m.Scalar(thickness)))
+	hd.GeomFace = &topo.GeometricFaceRef{Centroid: center, Normal: normal.AsVector()}
+}
+
+// planeIsXY reports whether a sketch plane is the world XY plane (its normal is ±Z), the case where
+// addHole's top-face fallback places a hole correctly.
+func planeIsXY(p sketch.Plane) bool {
+	return math.Abs(float64(p.Normal().AsVector().Z)) > 0.999
 }
 
 // constF returns a closure yielding the fixed value v — the func() float64 hole/pattern
