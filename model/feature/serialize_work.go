@@ -705,6 +705,10 @@ type CoilData struct {
 	PitchRows []CoilPitchRowData `yaml:"pitchRows,omitempty"`
 	StartEnd  *CoilEndData       `yaml:"startEnd,omitempty"`
 	EndEnd    *CoilEndData       `yaml:"endEnd,omitempty"`
+	// Handedness and the flat-spiral flavour (#1883). LeftHanded is persisted as a flag rather
+	// than the enum so an existing document (no key) reads back as right-handed, the old default.
+	LeftHanded bool `yaml:"leftHanded,omitempty"`
+	Spiral     bool `yaml:"spiral,omitempty"`
 }
 
 // CoilPitchRowData is one persisted pitch station.
@@ -735,6 +739,7 @@ func serializeCoil(def *CoilDefinition, sk SketchIndexer) (*CoilData, error) {
 		Sketch: idx, Profile: def.ProfileIndex, Axis: string(def.Axis.Key()),
 		Pitch: evalFloat(def.Pitch), Revolutions: evalFloat(def.Revolutions),
 		Height: evalFloat(def.Height), Taper: def.Taper, Operation: op,
+		LeftHanded: def.Handedness == LeftHandedCoil, Spiral: def.Spiral,
 	}
 	for _, r := range def.PitchRows {
 		d.PitchRows = append(d.PitchRows, CoilPitchRowData(r))
@@ -775,6 +780,7 @@ func restoreCoil(fs *PartFeatures, d *CoilData, sk SketchIndexer, work *WorkGeom
 		Sketch: skt, ProfileIndex: d.Profile, Axis: axis,
 		Pitch: constFloat(d.Pitch), Revolutions: constFloat(d.Revolutions),
 		Height: constFloat(d.Height), Taper: d.Taper, Operation: op,
+		Handedness: coilHandednessFromData(d.LeftHanded), Spiral: d.Spiral,
 	}
 	pf := NewCoilFeatures(fs).AddDefinition(def)
 	for _, r := range d.PitchRows {
@@ -783,6 +789,14 @@ func restoreCoil(fs *PartFeatures, d *CoilData, sk SketchIndexer, work *WorkGeom
 	def.StartEnd = coilEndFromData(d.StartEnd)
 	def.EndEnd = coilEndFromData(d.EndEnd)
 	return pf, nil
+}
+
+// coilHandednessFromData rebuilds the winding sense from the persisted flag (#1883).
+func coilHandednessFromData(left bool) CoilHandedness {
+	if left {
+		return LeftHandedCoil
+	}
+	return RightHandedCoil
 }
 
 // coilEndFromData rebuilds a persisted flat end (nil stays natural).
