@@ -100,6 +100,7 @@ func dcNodes(d *Document) []dcNode {
 //     realigns 14→18.
 //   - A SketchEntityRef carries the gap at 18, so its associative id realigns 18→22 (and its
 //     later point/sketch refs 30/42/50/51→34/46/54/55).
+//
 // Inserting a uniform gap breaks this: at 22 the Loop/EntityRef fields below 22 never move (no
 // region resolves); lower than 14 shifts a Loop's operation off its correct offset.
 func contentHeaderGapFor(typ uint32) int {
@@ -246,6 +247,29 @@ func featureBoolean(nodes []dcNode, props []int, i int) bool {
 	}
 	v, ok := booleanValue(n.payload)
 	return ok && v
+}
+
+// enumValueOf reads a node's 16-bit enum value (an operation, extent, or hole-kind enum), and whether
+// the payload is long enough to hold one.
+func enumValueOf(n dcNode) (uint16, bool) {
+	if len(n.payload) < enumValueOffset+2 {
+		return 0, false
+	}
+	return binary.LittleEndian.Uint16(n.payload[enumValueOffset:]), true
+}
+
+// featureEnum reads the enum value the feature's i-th property names, and whether that property
+// resolves to a node carrying one — the generic form of extrudeExtentEnum for any property slot
+// (a hole's extent sits at a different index than an extrude's).
+func featureEnum(nodes []dcNode, props []int, i int) (uint16, bool) {
+	if i >= len(props) {
+		return 0, false
+	}
+	n, ok := nodeAt(nodes, props[i])
+	if !ok {
+		return 0, false
+	}
+	return enumValueOf(n)
 }
 
 // extrudeDirection reads the unit direction the feature's DirectionAxis names, and whether it read

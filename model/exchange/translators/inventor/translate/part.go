@@ -669,7 +669,7 @@ func buildExtrudeFeatures(def *compdef.PartComponentDefinition, d *ipt.Document,
 	}
 	// A drilled hole cuts the base solid: place it on the extrude's top face (analytic), drilling
 	// at the profile centroid. Needs the base extrude to have built the body first.
-	if h, ok := ipt.DecodeHole(seg); ok {
+	if h, ok := ipt.DecodeHole(d); ok {
 		if len(extrudes) > 0 && len(placed) > 0 && len(emitted) > 0 && emitted[0].sk != nil {
 			cx, cy := profileCentroid(placed[0].geom)
 			addHole(def, h, cx, cy, extrudes[0].Distance)

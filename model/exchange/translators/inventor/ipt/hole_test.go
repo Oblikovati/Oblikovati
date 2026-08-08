@@ -2,7 +2,11 @@
 
 package ipt
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
 
 // TestDecodeHole checks the two drilled-hole corpus parts decode to the right bore: both a
 // Ø1 cm bore, one Through All (depth reaches the 2 cm slab) and one blind at depth 1 cm.
@@ -17,11 +21,7 @@ func TestDecodeHole(t *testing.T) {
 	}
 	for _, tc := range cases {
 		d := openDoc(t, tc.file)
-		seg, ok := d.Segment("PmDCSegment")
-		if !ok {
-			t.Fatalf("%s: no PmDCSegment", tc.file)
-		}
-		h, ok := DecodeHole(seg)
+		h, ok := DecodeHole(d)
 		if !ok {
 			t.Fatalf("%s: no hole decoded", tc.file)
 		}
@@ -85,8 +85,7 @@ func TestDecodeTappedHole(t *testing.T) {
 func mustHole(t *testing.T, file string) Hole {
 	t.Helper()
 	d := openDoc(t, file)
-	seg, _ := d.Segment("PmDCSegment")
-	h, ok := DecodeHole(seg)
+	h, ok := DecodeHole(d)
 	if !ok {
 		t.Fatalf("%s: no hole decoded", file)
 	}
@@ -97,9 +96,37 @@ func mustHole(t *testing.T, file string) Hole {
 func TestDecodeHoleAbsentOnPlainParts(t *testing.T) {
 	for _, file := range []string{"10_box.ipt", "15_cylinder.ipt", "17_box_cut.ipt"} {
 		d := openDoc(t, file)
-		seg, _ := d.Segment("PmDCSegment")
-		if _, ok := DecodeHole(seg); ok {
+		if _, ok := DecodeHole(d); ok {
 			t.Errorf("%s: decoded a hole where there is none", file)
 		}
+	}
+}
+
+// TestDecodeHoleReadsRealPartBore pins the node-graph decode on a real corpus part: CapstainNut's
+// bore is Ø1.719 cm (its HoleFeature node's prop[1] parameter), a through hole. The predecessor
+// model-param-order scan read Ø0.55 (the extrude thickness) with depth π/4 (a chamfer angle), so the
+// nut built with no bore (1.62x). Corpus-gated: skips without IPT_CORPUS.
+func TestDecodeHoleReadsRealPartBore(t *testing.T) {
+	dir := os.Getenv("IPT_CORPUS")
+	if dir == "" {
+		dir = `P:\ReelToReel\Mechanical`
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "CapstainNut.ipt"))
+	if err != nil {
+		t.Skipf("corpus part not available (%v); set IPT_CORPUS", err)
+	}
+	d, err := Open(data)
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	h, ok := DecodeHole(d)
+	if !ok {
+		t.Fatalf("no hole decoded")
+	}
+	if absf(h.Diameter-1.71881) > 1e-3 {
+		t.Errorf("CapstainNut bore Ø%.5f cm, want ~Ø1.719 (not the Ø0.55 extrude thickness the old scan read)", h.Diameter)
+	}
+	if !h.ThroughAll {
+		t.Errorf("CapstainNut bore should be Through All")
 	}
 }
