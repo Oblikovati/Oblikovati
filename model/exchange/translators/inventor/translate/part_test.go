@@ -944,3 +944,46 @@ func TestFlangeReelMotorCutFitsItsScallops(t *testing.T) {
 		t.Errorf("FlangeReelMotor volume = %.0f mm³, want within 8%% of Inventor's %.0f", vol, oracle)
 	}
 }
+
+// TestHorizontalAxisRevolveBuildsSolids pins the horizontal-centreline revolve. A shaft/bushing
+// turned about a HORIZONTAL axis (an isolated line running along X, e.g. 1677K262's line at y=0)
+// was not recognised — revolveAxisIndex only accepted a vertical centreline — so the part fell back
+// to a 2x open-mesh SURFACE. Now an axis-aligned isolated line is a valid centreline and the profile
+// turns a full 360° (the partial-angle decode is unreliable about a horizontal axis). Corpus-gated;
+// set IPT_CORPUS.
+func TestHorizontalAxisRevolveBuildsSolids(t *testing.T) {
+	dir := os.Getenv("IPT_CORPUS")
+	if dir == "" {
+		dir = `P:\ReelToReel\Mechanical`
+	}
+	for _, tc := range []struct {
+		file   string
+		oracle float64
+	}{
+		{"1677K262.ipt", 2586},            // a turned bushing, full 360° about y=0
+		{"CapstainFrontBody.ipt", 114417}, // full turn about a horizontal axis (its 125° is a chamfer, not the sweep)
+	} {
+		data, err := os.ReadFile(filepath.Join(dir, tc.file))
+		if err != nil {
+			t.Skipf("corpus part not available (%v); set IPT_CORPUS", err)
+		}
+		out := filepath.Join(t.TempDir(), "r.opd")
+		if _, err := FromInventor(data, out); err != nil {
+			t.Fatalf("%s: FromInventor: %v", tc.file, err)
+		}
+		ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
+		reopened, err := ws.Open(out, true)
+		if err != nil {
+			t.Fatalf("%s: reopen: %v", tc.file, err)
+		}
+		def := reopened.Content().(*compdef.PartComponentDefinition)
+		bodies := def.SurfaceBodies().All()
+		if len(bodies) == 0 || !bodies[0].IsSolid() {
+			t.Fatalf("%s: want a SOLID revolve, got %d bodies (solid=%v)", tc.file, len(bodies), len(bodies) > 0 && bodies[0].IsSolid())
+		}
+		vol := analysis.MassPropertiesOf(bodies, 1, types.MassPropertiesLow).VolumeMm3
+		if math.Abs(vol-tc.oracle) > 0.05*tc.oracle {
+			t.Errorf("%s: volume = %.0f mm³, want within 5%% of Inventor's %.0f", tc.file, vol, tc.oracle)
+		}
+	}
+}

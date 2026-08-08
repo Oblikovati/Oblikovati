@@ -363,7 +363,13 @@ func revolveBinds(sketches []ipt.Sketch) bool {
 }
 
 // verticalLine reports whether a decoded line is vertical (a revolve centreline is drawn upright).
-func verticalLine(l ipt.Line) bool { return math.Abs(l.A.X-l.B.X) < 1e-4 }
+func verticalLine(l ipt.Line) bool   { return math.Abs(l.A.X-l.B.X) < 1e-4 }
+func horizontalLine(l ipt.Line) bool { return math.Abs(l.A.Y-l.B.Y) < 1e-4 }
+
+// axisAlignedLine reports whether a line runs along X or Y — the orientations a revolve centreline
+// takes in this corpus (a shaft turned about a vertical or a horizontal axis). An oblique axis is
+// not recognised (none observed), so it declines to the mesh rather than guess.
+func axisAlignedLine(l ipt.Line) bool { return verticalLine(l) || horizontalLine(l) }
 
 // revolveAxisIndex returns the centreline's index in s.Lines. It prefers the isolated line
 // RevolveAxisLine finds (both endpoints shared with no other line — the clean shaft encoding); when
@@ -371,12 +377,12 @@ func verticalLine(l ipt.Line) bool { return math.Abs(l.A.X-l.B.X) < 1e-4 }
 // isolated (PressureRoller's x=0.8 splitter) — it falls back to the single VERTICAL CONSTRUCTION
 // line, which a revolve draws as its centreline. ok=false when neither names one unambiguous axis.
 func revolveAxisIndex(s ipt.Sketch) (int, bool) {
-	if ai, ok := ipt.RevolveAxisLine(s); ok && ai < len(s.Lines) && verticalLine(s.Lines[ai]) {
+	if ai, ok := ipt.RevolveAxisLine(s); ok && ai < len(s.Lines) && axisAlignedLine(s.Lines[ai]) {
 		return ai, true
 	}
 	axis, n := -1, 0
 	for i, l := range s.Lines {
-		if s.LineIsConstruction(i) && verticalLine(l) {
+		if s.LineIsConstruction(i) && axisAlignedLine(l) {
 			axis, n = i, n+1
 		}
 	}
@@ -400,18 +406,27 @@ func graphRevolveCandidate(sketches []ipt.Sketch) bool {
 	return false
 }
 
-// profileOneSideOfAxis reports whether every profile-line endpoint lies on one side of the vertical
-// axis at axisIdx — a valid solid of revolution never crosses its axis. The ipt equivalent is
-// unexported; this handles the vertical-centreline case the kernel fallback needs.
+// profileOneSideOfAxis reports whether every profile-line endpoint lies on one side of the
+// axis-aligned centreline at axisIdx — a valid solid of revolution never crosses its axis. The signed
+// distance is measured perpendicular to the axis: across X for a vertical centreline, across Y for a
+// horizontal one (a shaft turned about the X axis, e.g. a bushing). The ipt equivalent is unexported.
 func profileOneSideOfAxis(lines []ipt.Line, axisIdx int) bool {
-	axisX := lines[axisIdx].A.X
+	ax := lines[axisIdx]
+	vertical := verticalLine(ax)
+	ref := ax.A.X
+	if !vertical {
+		ref = ax.A.Y
+	}
 	sign := 0
 	for i, l := range lines {
 		if i == axisIdx {
 			continue
 		}
 		for _, p := range []ipt.Point2D{l.A, l.B} {
-			d := p.X - axisX
+			d := p.X - ref
+			if !vertical {
+				d = p.Y - ref
+			}
 			if math.Abs(d) < 1e-6 {
 				continue
 			}
@@ -451,7 +466,16 @@ func tryKernelRevolve(def *compdef.PartComponentDefinition, seg []byte, placed [
 		if len(closed) == 0 || !profileOneSideOfAxis(s.Lines, ai) {
 			continue
 		}
-		return revolveClosedProfiles(def, emitted[i], ai, closed, revolveAngleFn(seg))
+		// A HORIZONTAL centreline forces a full turn: the partial-angle decode (soleSweepAngle) is
+		// unreliable about a horizontal axis — it mis-reads a profile chamfer's angle as the sweep
+		// (CapstainFrontBody's 125° is line[2]'s chamfer, not the extent), building a wrong pie-slice.
+		// A wrong full turn instead over-fills and is caught by the mesh gate; a mis-sized partial is
+		// not. Vertical-axis revolves keep the decoded angle (the 270° fixture depends on it).
+		angle := revolveAngleFn(seg)
+		if horizontalLine(s.Lines[ai]) {
+			angle = nil
+		}
+		return revolveClosedProfiles(def, emitted[i], ai, closed, angle)
 	}
 	return nil
 }
