@@ -71,12 +71,27 @@ func containedProfileIndices(sk *sketch.Sketch, region []ipt.RegionLoop) ([]int,
 			// fallback over-built it 7.6x.
 			continue
 		}
-		if insideRegion(q, outers, holes) {
-			out = append(out, i)
+		if !insideRegion(q, outers, holes) {
+			continue
 		}
+		// A cell belongs to the region only if it FITS the loop that holds its test point. A single
+		// interior point being inside a loop is necessary but not sufficient: a large cell can have a
+		// corner poke into a small loop while the rest lies far outside it. FlangeReelMotor's +-shaped
+		// keep cell (108 cm²) had its point land in a 13.7 cm² edge scallop, so a through-cut selected
+		// the whole + and gutted the flange. A cell far larger than its containing loop cannot be that
+		// loop's interior, so it is rejected (the generous 1.5x slack passes reconstruction noise while
+		// catching this 7.9x mismatch).
+		if a, ok := smallestContainingArea(q, outers); ok && polygonArea(p.OuterLoop().Polygon()) > cellFitSlack*a {
+			continue
+		}
+		out = append(out, i)
 	}
 	return out, true
 }
+
+// cellFitSlack is how much larger than its containing region loop a cell may be and still count as
+// inside it — headroom for arc-sampling and boundary-chaining noise, well below any real over-select.
+const cellFitSlack = 1.5
 
 // profileInteriorPoint returns a point inside the cell's MATERIAL — inside its outer loop and
 // outside its own holes.

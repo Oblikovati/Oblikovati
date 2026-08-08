@@ -119,6 +119,35 @@ func sampleWholeCircle(c ipt.Circle) []math.Point2 {
 	return out
 }
 
+// polygonArea is the absolute area a closed polygon encloses (shoelace).
+func polygonArea(poly []math.Point2) float64 {
+	a := 0.0
+	for i := range poly {
+		j := (i + 1) % len(poly)
+		a += float64(poly[i].X)*float64(poly[j].Y) - float64(poly[j].X)*float64(poly[i].Y)
+	}
+	if a < 0 {
+		a = -a
+	}
+	return a / 2
+}
+
+// smallestContainingArea returns the area of the smallest region outer loop that contains q, and
+// whether any does. The smallest (tightest) loop is the one a cell inside q must fit — where outer
+// loops overlap, a cell can belong to at most the smaller of them.
+func smallestContainingArea(q math.Point2, outers [][]math.Point2) (float64, bool) {
+	best, found := 0.0, false
+	for _, o := range outers {
+		if !pointInPoly(q, o) {
+			continue
+		}
+		if a := polygonArea(o); !found || a < best {
+			best, found = a, true
+		}
+	}
+	return best, found
+}
+
 // pointInPoly is the even-odd containment test.
 func pointInPoly(q math.Point2, poly []math.Point2) bool {
 	in := false

@@ -5,6 +5,7 @@ package translate
 import (
 	"testing"
 
+	m "oblikovati.org/math"
 	"oblikovati.org/model/exchange/translators/inventor/ipt"
 )
 
@@ -49,5 +50,29 @@ func TestRegionBoundariesDropsOpenMaterialSliver(t *testing.T) {
 func TestRegionBoundariesDeclinesOnOpenCut(t *testing.T) {
 	if _, _, ok := regionBoundaries([]ipt.RegionLoop{closedTriangle(), openSliver(true)}); ok {
 		t.Errorf("regionBoundaries accepted a region with an unreadable cut loop; want decline")
+	}
+}
+
+// TestSmallestContainingAreaPicksTightestLoop: a point inside two nested outer loops resolves to the
+// SMALLER loop's area (a cell there can belong to at most the tighter one), and polygonArea is the
+// enclosed area. This backs the containment area-fit guard that keeps a big keep-cell out of a small
+// cut loop (FlangeReelMotor).
+func TestSmallestContainingAreaPicksTightestLoop(t *testing.T) {
+	big := []m.Point2{m.P2(0, 0), m.P2(10, 0), m.P2(10, 10), m.P2(0, 10)} // 100
+	small := []m.Point2{m.P2(3, 3), m.P2(7, 3), m.P2(7, 7), m.P2(3, 7)}   // 16
+	if a := polygonArea(big); a != 100 {
+		t.Errorf("polygonArea(big) = %g, want 100", a)
+	}
+	// Point (5,5) is inside both; the tighter loop (16) wins.
+	if a, ok := smallestContainingArea(m.P2(5, 5), [][]m.Point2{big, small}); !ok || a != 16 {
+		t.Errorf("smallestContainingArea inside both = %g (ok=%v), want 16", a, ok)
+	}
+	// Point (1,1) is inside only the big loop.
+	if a, ok := smallestContainingArea(m.P2(1, 1), [][]m.Point2{big, small}); !ok || a != 100 {
+		t.Errorf("smallestContainingArea in big only = %g (ok=%v), want 100", a, ok)
+	}
+	// Point outside all loops.
+	if _, ok := smallestContainingArea(m.P2(20, 20), [][]m.Point2{big, small}); ok {
+		t.Errorf("smallestContainingArea outside all should be ok=false")
 	}
 }

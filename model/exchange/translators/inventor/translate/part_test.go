@@ -904,3 +904,43 @@ func TestCapstainNutBoreIsDrilledOnItsOwnFace(t *testing.T) {
 		t.Errorf("CapstainNut volume = %.0f mm³, want within 12%% of Inventor's %.0f", vol, oracle)
 	}
 }
+
+// TestFlangeReelMotorCutFitsItsScallops pins the containment area-fit guard. FlangeReelMotor's third
+// extrude is a through-all cut whose region is four ~13.7 cm² edge scallops. The +-shaped keep cell
+// (108 cm²) got a test point inside one scallop loop, so containment selected the whole + and the
+// through-cut gutted the flange (19468 mm³ = 0.11x). A cell far larger than the loop holding its
+// point cannot be that loop's interior, so it is now rejected; only the scallops are cut and the
+// flange survives (183104 vs Inventor's 175398 = 1.04x). Corpus-gated; set IPT_CORPUS.
+func TestFlangeReelMotorCutFitsItsScallops(t *testing.T) {
+	dir := os.Getenv("IPT_CORPUS")
+	if dir == "" {
+		dir = `P:\ReelToReel\Mechanical`
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "FlangeReelMotor.ipt"))
+	if err != nil {
+		t.Skipf("corpus part not available (%v); set IPT_CORPUS", err)
+	}
+	out := filepath.Join(t.TempDir(), "flange.opd")
+	if _, err := FromInventor(data, out); err != nil {
+		t.Fatalf("FromInventor: %v", err)
+	}
+	ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
+	reopened, err := ws.Open(out, true)
+	if err != nil {
+		t.Fatalf("reopen: %v", err)
+	}
+	def := reopened.Content().(*compdef.PartComponentDefinition)
+	bodies := def.SurfaceBodies().All()
+	if len(bodies) == 0 {
+		t.Fatalf("no body built")
+	}
+	vol := analysis.MassPropertiesOf(bodies, 1, types.MassPropertiesLow).VolumeMm3
+	const oracle = 175398.0 // Inventor STL volume, mm³
+	// Guard against a regression back to the gutted flange (19468 = 0.11x).
+	if vol < 0.5*oracle {
+		t.Errorf("FlangeReelMotor volume = %.0f mm³, want >= %.0f (the cut must not gut the flange)", vol, 0.5*oracle)
+	}
+	if math.Abs(vol-oracle) > 0.08*oracle {
+		t.Errorf("FlangeReelMotor volume = %.0f mm³, want within 8%% of Inventor's %.0f", vol, oracle)
+	}
+}
