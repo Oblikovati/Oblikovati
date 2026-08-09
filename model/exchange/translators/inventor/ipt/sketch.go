@@ -76,6 +76,7 @@ type Sketch struct {
 	Circles  []Circle
 	Arcs     []Arc
 	Ellipses []Ellipse
+	Splines  []Spline
 	// Resolved is true when the curve endpoints were reconstructed exactly from their entity
 	// references (a faithful loop), false when the convex-ordering fallback guessed the
 	// connectivity — which mangles a non-convex profile. Revolve gates on this: a scrambled
@@ -94,6 +95,15 @@ type Sketch struct {
 	LineConstruction   []bool
 	CircleConstruction []bool
 	ArcConstruction    []bool
+	SplineConstruction []bool
+}
+
+// Spline is a decoded 2D sketch spline: its fit points in order, and whether the curve closes
+// back to the first. Inventor stores an interpolating (fit) spline through these points, so the
+// points lie ON the curve (they are not off-curve control vertices).
+type Spline struct {
+	Points []Point2D
+	Closed bool
 }
 
 // LineIsConstruction reports whether line i is construction geometry, tolerating an absent flag
@@ -106,12 +116,23 @@ func (s Sketch) CircleIsConstruction(i int) bool { return flagAt(s.CircleConstru
 // ArcIsConstruction reports whether arc i is construction geometry.
 func (s Sketch) ArcIsConstruction(i int) bool { return flagAt(s.ArcConstruction, i) }
 
+// SplineIsConstruction reports whether spline i is construction geometry.
+func (s Sketch) SplineIsConstruction(i int) bool { return flagAt(s.SplineConstruction, i) }
+
 func flagAt(flags []bool, i int) bool { return i < len(flags) && flags[i] }
 
 type Line struct{ A, B Point2D }
 type Circle struct {
 	Center Point2D
 	Radius float64
+	// ArcStart/ArcEnd are the circle node's two on-rim endpoints, when it carries a distinct
+	// resolvable pair. Inventor serialises a sketch arc as a SketchCircle with an open-flag bit (see
+	// arcFlag); a few real arcs carry that pair yet leave the bit CLEAR, so they decode as full
+	// circles. These endpoints let the revolve path recover the arc where a full circle would cross
+	// the axis — an impossible revolve profile — without touching the global arc/circle discriminator.
+	// ArcEndsOK reports the pair is present and distinct.
+	ArcStart, ArcEnd Point2D
+	ArcEndsOK        bool
 }
 
 // Arc is a decoded circular arc: its centre, radius, and the two endpoints (start → end in

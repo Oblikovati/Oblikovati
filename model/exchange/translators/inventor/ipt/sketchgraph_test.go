@@ -2,7 +2,10 @@
 
 package ipt
 
-import "testing"
+import (
+	"math"
+	"testing"
+)
 
 // TestGraphSketchesExact pins the graph decode against parts whose sketches are known from how the
 // corpus was authored: 14_box_two draws Rect(0,0,4,2) then Rect(1,0.5,3,1.5), one per sketch.
@@ -92,9 +95,11 @@ func TestGraphSketchesMultiPointEdges(t *testing.T) {
 	nodes := dcNodes(d)
 	_, index := sketchOrdinals(nodes)
 
+	// Count circles too: this generation stores arcs as SketchCircle nodes (some with >2 point
+	// refs), so an arc-vs-circle split must not change the total curve count — no edge may be lost.
 	declared, multi := 0, 0
 	for _, n := range nodes {
-		if n.typ != line2DNodeType && n.typ != arc2DNodeType {
+		if n.typ != line2DNodeType && n.typ != arc2DNodeType && n.typ != circle2DNodeType {
 			continue
 		}
 		if _, ok := entityOwner(n, index); !ok {
@@ -110,11 +115,54 @@ func TestGraphSketchesMultiPointEdges(t *testing.T) {
 	}
 	decoded := 0
 	for _, s := range GraphSketches(d) {
-		decoded += len(s.Lines) + len(s.Arcs)
+		decoded += len(s.Lines) + len(s.Arcs) + len(s.Circles)
 	}
 	if decoded != declared {
-		t.Errorf("decoded %d line/arc curves from %d the file declares — %d dropped; an edge with "+
-			"more than two point refs must keep its FIRST TWO as endpoints, not be discarded",
+		t.Errorf("decoded %d line/arc/circle curves from %d the file declares — %d dropped; an edge "+
+			"with more than two point refs must keep its FIRST TWO as endpoints, not be discarded",
 			decoded, declared, declared-decoded)
+	}
+}
+
+// TestGraphSketchesArcsFromCircleNodes pins that arcs serialised as SketchCircle nodes with the
+// open bit (arcFlag) are emitted as arcs, while a full circle carrying tangent/coincidence points
+// is NOT. TorquimeterDisk (real_multipoint_disk) marks 14 of its corner rounds open; the linkage's
+// rounded ends are full circles touched by two tangent lines and must stay circles (matching
+// Inventor and TestLinkageProfileMatchesTheFile). See arcFlag.
+func TestGraphSketchesArcsFromCircleNodes(t *testing.T) {
+	countArcsCircles := func(file string) (arcs, circles int) {
+		for _, s := range GraphSketches(openDoc(t, file)) {
+			arcs += len(s.Arcs)
+			circles += len(s.Circles)
+		}
+		return
+	}
+	if a, c := countArcsCircles("real_multipoint_disk.ipt"); a != 14 || c != 61 {
+		t.Errorf("disk: got %d arcs / %d circles, want 14 / 61 (14 open corner rounds decode as arcs)", a, c)
+	}
+	if a, c := countArcsCircles("real_arc_linkage.ipt"); a != 0 || c != 4 {
+		t.Errorf("linkage: got %d arcs / %d circles, want 0 / 4 (tangent-point full circles are not arcs)", a, c)
+	}
+}
+
+// TestGraphSketchesSpline pins the SketchSpline decode (0xF9372FD4): ke_spline holds one fit
+// spline through four points, decoded in order from the entity's point-reference list.
+func TestGraphSketchesSpline(t *testing.T) {
+	var splines []Spline
+	for _, s := range GraphSketches(openDoc(t, "ke_spline.ipt")) {
+		splines = append(splines, s.Splines...)
+	}
+	if len(splines) != 1 {
+		t.Fatalf("decoded %d splines, want 1", len(splines))
+	}
+	want := []Point2D{{0, 8}, {6, 12}, {2, 11}, {4, 9}}
+	got := splines[0].Points
+	if len(got) != len(want) {
+		t.Fatalf("spline has %d fit points, want %d", len(got), len(want))
+	}
+	for i := range want {
+		if math.Abs(got[i].X-want[i].X) > 1e-4 || math.Abs(got[i].Y-want[i].Y) > 1e-4 {
+			t.Errorf("fit point %d = (%.4f,%.4f), want (%.1f,%.1f)", i, got[i].X, got[i].Y, want[i].X, want[i].Y)
+		}
 	}
 }

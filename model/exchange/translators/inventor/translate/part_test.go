@@ -4,6 +4,7 @@ package translate
 
 import (
 	"math"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -14,6 +15,7 @@ import (
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
+	"oblikovati.org/model/exchange/translators/inventor/ipt"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/sketch"
 	"oblikovati.org/persistence"
@@ -241,6 +243,45 @@ func TestCircPatternTranslationRebuildsSolid(t *testing.T) {
 	}
 }
 
+// TestCircPatternDoesNotReplicateBaseSolid guards the pattern-on-base fix: a Ø46 plate whose
+// only feature is the base extrude, with a circular pattern authored to replicate its bolt-hole
+// (already baked into the profile's inner loops), must NOT stamp the whole plate 5× — a centred
+// base disk rotated about its own axis makes 5 coincident copies, inflating the volume to 5×2098.
+// The pattern's source must be a cut/join, never the base, so with no such feature the pattern is
+// skipped and one plate stands (~2098 mm³ vs Inventor's 2122). Corpus-gated: this exact geometry
+// only exists in the real part (no generated fixture reproduces the centred-disk degeneracy), so
+// the test skips where the corpus is absent (CI) and runs on a dev checkout of the ReelToReel set.
+// Point IPT_CORPUS at the Mechanical directory to enable it.
+func TestCircPatternDoesNotReplicateBaseSolid(t *testing.T) {
+	dir := os.Getenv("IPT_CORPUS")
+	if dir == "" {
+		dir = `P:\ReelToReel\Mechanical`
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "SmartKnobConnectingPlate.ipt"))
+	if err != nil {
+		t.Skipf("corpus part not available (%v); set IPT_CORPUS to the ReelToReel Mechanical dir", err)
+	}
+	out := filepath.Join(t.TempDir(), "plate.opd")
+	if _, err := FromInventor(data, out); err != nil {
+		t.Fatalf("FromInventor: %v", err)
+	}
+	ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
+	reopened, err := ws.Open(out, true)
+	if err != nil {
+		t.Fatalf("reopen: %v", err)
+	}
+	def := reopened.Content().(*compdef.PartComponentDefinition)
+	bodies := def.SurfaceBodies().All()
+	if len(bodies) != 1 {
+		t.Fatalf("built %d bodies, want 1 (a circular pattern must not replicate the base solid)", len(bodies))
+	}
+	mp := analysis.MassPropertiesOf(bodies, 1, types.MassPropertiesLow)
+	const oracle = 2122.0 // Inventor STL volume, mm^3
+	if math.Abs(mp.VolumeMm3-oracle) > 0.05*oracle {
+		t.Errorf("plate volume = %.0f mm^3, want ~%.0f (within 5%%)", mp.VolumeMm3, oracle)
+	}
+}
+
 // TestAssemblyIsReportedNotMisTranslated confirms an .iam is detected and refused with a
 // structured message (component + occurrence count) rather than silently yielding an empty
 // part. Occurrence placement is the tracked follow-up.
@@ -300,6 +341,69 @@ func TestEllipseTranslationRoundTrips(t *testing.T) {
 	}
 	if math.Abs(e.Center.X-10) > 1e-9 || math.Abs(e.Center.Y-5) > 1e-9 {
 		t.Errorf("centre = (%.4g,%.4g), want (10,5)", e.Center.X, e.Center.Y)
+	}
+}
+
+// TestSplineTranslationRoundTrips checks the reopened .opd carries a native Oblikovati fit spline
+// with the four fit points ke_spline declares — the SketchSpline (0xF9372FD4) decode/emit path.
+func TestSplineTranslationRoundTrips(t *testing.T) {
+	def := reopenPart(t, "ke_spline.ipt")
+	if def.Sketches().Count() != 1 {
+		t.Fatalf("got %d sketches, want 1", def.Sketches().Count())
+	}
+	sk := def.Sketches().Item(0)
+	if n := sk.Splines().Count(); n != 1 {
+		t.Fatalf("got %d splines, want 1", n)
+	}
+	sp := sk.Splines().Item(0)
+	if !sp.IsFitType() {
+		t.Error("spline is not a fit (interpolating) type")
+	}
+	if n := sp.PointCount(); n != 4 {
+		t.Errorf("spline has %d fit points, want 4", n)
+	}
+}
+
+// TestEmitDroppedCurveSketchesKeepsSplines guards that the freeform-curve rescue (used by the
+// revolve/sweep/loft paths, whose line-only profile extraction drops splines and ellipses) emits a
+// spline-bearing sketch's spline. Without it a revolve part like Hose-Screen-Adapter loses every
+// sketch spline it carries. Uses ke_spline (one fit spline) driven through the rescue directly.
+func TestEmitDroppedCurveSketchesKeepsSplines(t *testing.T) {
+	d, err := ipt.Open(readCorpus(t, "ke_spline.ipt"))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
+	document, err := compdef.AddPart(ws, filepath.Join(t.TempDir(), "p.opd"), true)
+	if err != nil {
+		t.Fatalf("AddPart: %v", err)
+	}
+	def := document.Content().(*compdef.PartComponentDefinition)
+	emitDroppedCurveSketches(def, d)
+	splines := 0
+	for k := 0; k < def.Sketches().Count(); k++ {
+		splines += def.Sketches().Item(k).Splines().Count()
+	}
+	if splines != 1 {
+		t.Errorf("rescue emitted %d splines, want 1 (the curve a line-only profile decode would drop)", splines)
+	}
+}
+
+// TestHasBaseExtrude guards the base-detection that keeps a baseless extrude chain (all cut/join,
+// no New-Body — MainBaseSheet, whose base plate is a sheet-metal face this decoder doesn't produce)
+// from building a garbage sliver: without a New-Body extrude the chain has nothing to cut, so the
+// caller imports the real body instead.
+func TestHasBaseExtrude(t *testing.T) {
+	allCuts := []ipt.Extrude{{Operation: ipt.OpCut}, {Operation: ipt.OpJoin}, {Operation: ipt.OpCut}}
+	if hasBaseExtrude(allCuts) {
+		t.Error("an all-cut/join chain has no base and must report false")
+	}
+	withBase := []ipt.Extrude{{Operation: ipt.OpNewBody}, {Operation: ipt.OpCut}}
+	if !hasBaseExtrude(withBase) {
+		t.Error("a chain containing a New-Body extrude must report true")
+	}
+	if hasBaseExtrude(nil) {
+		t.Error("no extrudes must report false")
 	}
 }
 
@@ -759,5 +863,269 @@ func TestImportRoundTripsThroughOPD(t *testing.T) {
 	mp := analysis.MassPropertiesOf([]*topo.Body{bodies[0]}, 1, types.MassPropertiesHigh)
 	if math.Abs(mp.VolumeMm3-8000) > 1 {
 		t.Errorf("reopened box volume = %.3f mm^3, want 8000", mp.VolumeMm3)
+	}
+}
+
+// TestCapstainNutBoreIsDrilledOnItsOwnFace pins the hole-placement fix: CapstainNut's hex is
+// extruded along +X, so addHole's top-face fallback (XY-plane assumption) drilled in empty space and
+// the Ø1.7 bore removed nothing (a solid nut, 3663 mm³ = 1.62x). Using the hole's own placement
+// (its transform's point + axis) as the GeomFace AND the drill Center bores it correctly — 2420 mm³
+// vs Inventor's 2261 (1.07x; the residual is the two 45° chamfers this decoder does not build).
+// Corpus-gated: the non-XY-face bore only exists in the real part; skips without IPT_CORPUS.
+func TestCapstainNutBoreIsDrilledOnItsOwnFace(t *testing.T) {
+	dir := os.Getenv("IPT_CORPUS")
+	if dir == "" {
+		dir = `P:\ReelToReel\Mechanical`
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "CapstainNut.ipt"))
+	if err != nil {
+		t.Skipf("corpus part not available (%v); set IPT_CORPUS", err)
+	}
+	out := filepath.Join(t.TempDir(), "nut.opd")
+	if _, err := FromInventor(data, out); err != nil {
+		t.Fatalf("FromInventor: %v", err)
+	}
+	ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
+	reopened, err := ws.Open(out, true)
+	if err != nil {
+		t.Fatalf("reopen: %v", err)
+	}
+	def := reopened.Content().(*compdef.PartComponentDefinition)
+	bodies := def.SurfaceBodies().All()
+	if len(bodies) == 0 {
+		t.Fatalf("no body built")
+	}
+	vol := analysis.MassPropertiesOf(bodies, 1, types.MassPropertiesLow).VolumeMm3
+	const oracle = 2261.0 // Inventor STL volume, mm³
+	if vol > 1.2*oracle {
+		t.Errorf("CapstainNut volume = %.0f mm³, want <= %.0f (the bore must be drilled, not missing)", vol, 1.2*oracle)
+	}
+	if math.Abs(vol-oracle) > 0.12*oracle {
+		t.Errorf("CapstainNut volume = %.0f mm³, want within 12%% of Inventor's %.0f", vol, oracle)
+	}
+}
+
+// TestFlangeReelMotorCutFitsItsScallops pins the containment area-fit guard. FlangeReelMotor's third
+// extrude is a through-all cut whose region is four ~13.7 cm² edge scallops. The +-shaped keep cell
+// (108 cm²) got a test point inside one scallop loop, so containment selected the whole + and the
+// through-cut gutted the flange (19468 mm³ = 0.11x). A cell far larger than the loop holding its
+// point cannot be that loop's interior, so it is now rejected; only the scallops are cut and the
+// flange survives (183104 vs Inventor's 175398 = 1.04x). Corpus-gated; set IPT_CORPUS.
+func TestFlangeReelMotorCutFitsItsScallops(t *testing.T) {
+	dir := os.Getenv("IPT_CORPUS")
+	if dir == "" {
+		dir = `P:\ReelToReel\Mechanical`
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "FlangeReelMotor.ipt"))
+	if err != nil {
+		t.Skipf("corpus part not available (%v); set IPT_CORPUS", err)
+	}
+	out := filepath.Join(t.TempDir(), "flange.opd")
+	if _, err := FromInventor(data, out); err != nil {
+		t.Fatalf("FromInventor: %v", err)
+	}
+	ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
+	reopened, err := ws.Open(out, true)
+	if err != nil {
+		t.Fatalf("reopen: %v", err)
+	}
+	def := reopened.Content().(*compdef.PartComponentDefinition)
+	bodies := def.SurfaceBodies().All()
+	if len(bodies) == 0 {
+		t.Fatalf("no body built")
+	}
+	vol := analysis.MassPropertiesOf(bodies, 1, types.MassPropertiesLow).VolumeMm3
+	const oracle = 175398.0 // Inventor STL volume, mm³
+	// Guard against a regression back to the gutted flange (19468 = 0.11x).
+	if vol < 0.5*oracle {
+		t.Errorf("FlangeReelMotor volume = %.0f mm³, want >= %.0f (the cut must not gut the flange)", vol, 0.5*oracle)
+	}
+	if math.Abs(vol-oracle) > 0.08*oracle {
+		t.Errorf("FlangeReelMotor volume = %.0f mm³, want within 8%% of Inventor's %.0f", vol, oracle)
+	}
+}
+
+// TestHorizontalAxisRevolveBuildsSolids pins the horizontal-centreline revolve. A shaft/bushing
+// turned about a HORIZONTAL axis (an isolated line running along X, e.g. 1677K262's line at y=0)
+// was not recognised — revolveAxisIndex only accepted a vertical centreline — so the part fell back
+// to a 2x open-mesh SURFACE. Now an axis-aligned isolated line is a valid centreline and the profile
+// turns a full 360° (the partial-angle decode is unreliable about a horizontal axis). Corpus-gated;
+// set IPT_CORPUS.
+func TestHorizontalAxisRevolveBuildsSolids(t *testing.T) {
+	dir := os.Getenv("IPT_CORPUS")
+	if dir == "" {
+		dir = `P:\ReelToReel\Mechanical`
+	}
+	for _, tc := range []struct {
+		file   string
+		oracle float64
+	}{
+		{"1677K262.ipt", 2586},            // a turned bushing, full 360° about y=0
+		{"CapstainFrontBody.ipt", 114417}, // full turn about a horizontal axis (its 125° is a chamfer, not the sweep)
+	} {
+		data, err := os.ReadFile(filepath.Join(dir, tc.file))
+		if err != nil {
+			t.Skipf("corpus part not available (%v); set IPT_CORPUS", err)
+		}
+		out := filepath.Join(t.TempDir(), "r.opd")
+		if _, err := FromInventor(data, out); err != nil {
+			t.Fatalf("%s: FromInventor: %v", tc.file, err)
+		}
+		ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
+		reopened, err := ws.Open(out, true)
+		if err != nil {
+			t.Fatalf("%s: reopen: %v", tc.file, err)
+		}
+		def := reopened.Content().(*compdef.PartComponentDefinition)
+		bodies := def.SurfaceBodies().All()
+		if len(bodies) == 0 || !bodies[0].IsSolid() {
+			t.Fatalf("%s: want a SOLID revolve, got %d bodies (solid=%v)", tc.file, len(bodies), len(bodies) > 0 && bodies[0].IsSolid())
+		}
+		vol := analysis.MassPropertiesOf(bodies, 1, types.MassPropertiesLow).VolumeMm3
+		if math.Abs(vol-tc.oracle) > 0.05*tc.oracle {
+			t.Errorf("%s: volume = %.0f mm³, want within 5%% of Inventor's %.0f", tc.file, vol, tc.oracle)
+		}
+	}
+}
+
+// TestMachinedHolderRevolveWithCuts covers the ext,rev,hole path (buildRevolveDispatch's graph
+// branch): a turned base whose milled cut extrudes must be applied over it. The incidence line set
+// splits the revolve profile from its centreline, so the base is rebuilt from the node graph (which
+// keeps them whole) and the cuts are booleaned on top. Both parts reopen as a SOLID within 2% of
+// Inventor's STL volume (SpoolMotor 19441, CapstonMotor 17201). Corpus-gated; set IPT_CORPUS.
+func TestMachinedHolderRevolveWithCuts(t *testing.T) {
+	dir := os.Getenv("IPT_CORPUS")
+	if dir == "" {
+		dir = `P:\ReelToReel\Mechanical`
+	}
+	for _, tc := range []struct {
+		file   string
+		oracle float64
+	}{
+		{"SpoolMotorMachinedHolder.ipt", 19441},
+		{"CapstonMotorMachinedHolder.ipt", 17201},
+	} {
+		data, err := os.ReadFile(filepath.Join(dir, tc.file))
+		if err != nil {
+			t.Skipf("corpus part not available (%v); set IPT_CORPUS", err)
+		}
+		out := filepath.Join(t.TempDir(), "h.opd")
+		if _, err := FromInventor(data, out); err != nil {
+			t.Fatalf("%s: FromInventor: %v", tc.file, err)
+		}
+		ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
+		reopened, err := ws.Open(out, true)
+		if err != nil {
+			t.Fatalf("%s: reopen: %v", tc.file, err)
+		}
+		def := reopened.Content().(*compdef.PartComponentDefinition)
+		bodies := def.SurfaceBodies().All()
+		if len(bodies) == 0 || !bodies[0].IsSolid() {
+			t.Fatalf("%s: want a SOLID turned+milled body, got %d bodies (solid=%v)", tc.file, len(bodies), len(bodies) > 0 && bodies[0].IsSolid())
+		}
+		vol := analysis.MassPropertiesOf(bodies, 1, types.MassPropertiesLow).VolumeMm3
+		if math.Abs(vol-tc.oracle) > 0.02*tc.oracle {
+			t.Errorf("%s: volume = %.0f mm³, want within 2%% of Inventor's %.0f", tc.file, vol, tc.oracle)
+		}
+	}
+}
+
+// TestCapstainMotorCapRevolvesAboutItsEdge covers the axis-reference fallback (Phase 2): the revolve
+// turns about its y=0 top EDGE, which is neither isolated nor construction, so the geometric
+// heuristic returns nothing and the feature's decoded axis (ipt.RevolveAxis2D) supplies it. Reopens
+// as a SOLID within 3% of Inventor's STL volume (31223). Corpus-gated; set IPT_CORPUS.
+func TestCapstainMotorCapRevolvesAboutItsEdge(t *testing.T) {
+	dir := os.Getenv("IPT_CORPUS")
+	if dir == "" {
+		dir = `P:\ReelToReel\Mechanical`
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "CapstainMotorCap.ipt"))
+	if err != nil {
+		t.Skipf("corpus part not available (%v); set IPT_CORPUS", err)
+	}
+	out := filepath.Join(t.TempDir(), "cmc.opd")
+	if _, err := FromInventor(data, out); err != nil {
+		t.Fatalf("FromInventor: %v", err)
+	}
+	ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
+	reopened, err := ws.Open(out, true)
+	if err != nil {
+		t.Fatalf("reopen: %v", err)
+	}
+	def := reopened.Content().(*compdef.PartComponentDefinition)
+	bodies := def.SurfaceBodies().All()
+	if len(bodies) == 0 || !bodies[0].IsSolid() {
+		t.Fatalf("want a SOLID turned+milled cap, got %d bodies (solid=%v)", len(bodies), len(bodies) > 0 && bodies[0].IsSolid())
+	}
+	vol := analysis.MassPropertiesOf(bodies, 1, types.MassPropertiesLow).VolumeMm3
+	if math.Abs(vol-31223) > 0.03*31223 {
+		t.Errorf("volume = %.0f mm³, want within 3%% of Inventor's 31223", vol)
+	}
+}
+
+// TestSmartKnobFixedBaseCutsThroughStepped covers the through-cut retry: a blind/one-sided cut on
+// this turned knob lands its end face coincident with the stepped top and OPENS the body; applyRevolveCuts
+// retries such a cut as a symmetric through-all, which removes the full column and closes it. Reopens
+// as a SOLID within 2% of Inventor's STL volume (3549). Corpus-gated; set IPT_CORPUS.
+func TestSmartKnobFixedBaseCutsThroughStepped(t *testing.T) {
+	dir := os.Getenv("IPT_CORPUS")
+	if dir == "" {
+		dir = `P:\ReelToReel\Mechanical`
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "SmartKnobFixedBase.ipt"))
+	if err != nil {
+		t.Skipf("corpus part not available (%v); set IPT_CORPUS", err)
+	}
+	out := filepath.Join(t.TempDir(), "skfb.opd")
+	if _, err := FromInventor(data, out); err != nil {
+		t.Fatalf("FromInventor: %v", err)
+	}
+	ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
+	reopened, err := ws.Open(out, true)
+	if err != nil {
+		t.Fatalf("reopen: %v", err)
+	}
+	def := reopened.Content().(*compdef.PartComponentDefinition)
+	bodies := def.SurfaceBodies().All()
+	if len(bodies) == 0 || !bodies[0].IsSolid() {
+		t.Fatalf("want a SOLID turned+milled base, got %d bodies (solid=%v)", len(bodies), len(bodies) > 0 && bodies[0].IsSolid())
+	}
+	vol := analysis.MassPropertiesOf(bodies, 1, types.MassPropertiesLow).VolumeMm3
+	if math.Abs(vol-3549) > 0.02*3549 {
+		t.Errorf("volume = %.0f mm³, want within 2%% of Inventor's 3549", vol)
+	}
+}
+
+// TestKnobBottomDomeWallRecoversArc covers the revolve-scoped arc recovery: the knob's r≈20 dome
+// wall is stored as a full circle (its open-flag clear) that crosses the axis; reviseAxisCrossingCircles
+// rebuilds it as the arc its endpoints describe, so the profile closes instead of revolving a giant
+// circle into a blob. Reopens as a SOLID within 15% of Inventor's STL volume (4361 — the wall's minor
+// thickness overage). Corpus-gated; set IPT_CORPUS.
+func TestKnobBottomDomeWallRecoversArc(t *testing.T) {
+	dir := os.Getenv("IPT_CORPUS")
+	if dir == "" {
+		dir = `P:\ReelToReel\Mechanical`
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "KnobBottom.ipt"))
+	if err != nil {
+		t.Skipf("corpus part not available (%v); set IPT_CORPUS", err)
+	}
+	out := filepath.Join(t.TempDir(), "kb.opd")
+	if _, err := FromInventor(data, out); err != nil {
+		t.Fatalf("FromInventor: %v", err)
+	}
+	ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
+	reopened, err := ws.Open(out, true)
+	if err != nil {
+		t.Fatalf("reopen: %v", err)
+	}
+	def := reopened.Content().(*compdef.PartComponentDefinition)
+	bodies := def.SurfaceBodies().All()
+	if len(bodies) == 0 || !bodies[0].IsSolid() {
+		t.Fatalf("want a SOLID domed knob, got %d bodies (solid=%v)", len(bodies), len(bodies) > 0 && bodies[0].IsSolid())
+	}
+	vol := analysis.MassPropertiesOf(bodies, 1, types.MassPropertiesLow).VolumeMm3
+	if math.Abs(vol-4361) > 0.15*4361 {
+		t.Errorf("volume = %.0f mm³, want within 15%% of Inventor's 4361", vol)
 	}
 }

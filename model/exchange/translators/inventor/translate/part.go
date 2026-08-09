@@ -108,9 +108,24 @@ func buildPart(ws *doc.Workspace, outPath string, d *ipt.Document, meshFallback 
 			built = false
 		}
 	}
-	// Inventor's display mesh hides the sketch/feature history behind a single imported body,
-	// so it is imported ONLY on explicit opt-in — otherwise the partial parametric tree stands.
-	if meshFallback && (!built || !hasSolidBody(def)) {
+	// Inventor's display mesh hides the sketch/feature history behind a single imported body, so for
+	// a part that DID decode a partial parametric tree it is imported only on explicit opt-in — the
+	// tree stands. But a body-only .ipt (a derived/imported solid, or a downloaded vendor part) has
+	// NO sketches and NO features: there is no history to mask, and leaving it EMPTY discards the one
+	// thing it carries. So when nothing parametric decoded, import its body unconditionally, turning
+	// an empty translation into the real shape (31 of the corpus's ThirdParty + base-plate parts).
+	noParametric := def.Sketches().Count() == 0 && def.Features().Count() == 0
+	// A baseless extrude chain (extrudes exist but all cut/join, no New-Body — see
+	// buildExtrudeFeatures) also can't rebuild parametrically, so its real shape must come from the
+	// imported body too.
+	ex := ipt.DecodeExtrudes(d)
+	noBase := len(ex) > 0 && !hasBaseExtrude(ex)
+	// A parametric attempt that produced NO body at all — every extrude declined, or a revolve/
+	// loft/sweep base didn't reconstruct — leaves the def empty just like a body-only part. There is
+	// no partial parametric body to mask, so import the real shape rather than ship an empty part
+	// (HeadShield, CapstainFrontBody, MagneticShieldBlock and other decode-but-build-nothing parts).
+	noBody := len(def.SurfaceBodies().All()) == 0
+	if (meshFallback || noParametric || noBase || noBody) && (!built || !hasSolidBody(def)) {
 		warns = append(warns, addBodyIfPresent(def, d)...)
 		def.Recompute()
 	}
@@ -269,20 +284,24 @@ func addFeatures(def *compdef.PartComponentDefinition, d *ipt.Document) (bool, [
 	sketches := ipt.DecodeSketches(seg)
 	if heights, ok := ipt.LoftSectionHeights(seg, len(sketches)); ok {
 		if addLoft(def, sketches, heights) {
+			emitDroppedCurveSketches(def, d) // keep splines/ellipses the line-only loft profile drops
 			return true, nil
 		}
 	}
 	if sw, ok := ipt.DecodeSweep(seg); ok {
 		if addSweep(def, sw) {
+			emitDroppedCurveSketches(def, d) // keep splines/ellipses the line-only sweep profile drops
 			return true, nil
 		}
 	}
 	// Decoupled path: extract + emit all sketches unconditionally, then build features over them.
 	placed := extractSketches(d, seg)
-	emitted := emitSketches(def, placed)
 	if ipt.HasRevolve(seg) {
-		return buildRevolve(def, seg, placed, emitted)
+		// The revolve path owns its own emission: a machined revolve part is rebuilt from the node
+		// graph (profile+centreline+cuts kept whole) when the incidence line set can't close it.
+		return buildRevolveDispatch(def, d, seg, placed)
 	}
+	emitted := emitSketches(def, placed)
 	return buildExtrudeFeatures(def, d, seg, placed, emitted)
 }
 
@@ -297,7 +316,8 @@ func extractSketches(d *ipt.Document, seg []byte) []placedSketch {
 	// the byte-offset clustering, which both splits one sketch (Linkage1: 1 sketch decoded as 3)
 	// and loses most of the geometry (BigChunkyPlate: 2143 entities decoded as 19). Scoped to the
 	// extrude path: a revolve profile still goes through the incidence reconstruction below, whose
-	// closed-loop gate the revolve build depends on.
+	// closed-loop gate the revolve build depends on (RevolveProfile needs the centreline SPLIT into
+	// its own sketch, which the graph decode keeps in the profile sketch — see buildRevolve).
 	//
 	// Taken only when it actually decoded entities: some parts hold Sketch2D nodes whose entities
 	// this layout can't read (an older save generation, presumably), and an empty graph result must
@@ -313,7 +333,19 @@ func extractSketches(d *ipt.Document, seg []byte) []placedSketch {
 		if profiles := ipt.LineProfiles(seg); len(profiles) > 0 {
 			// Reunite a separate vertical centreline into the profile sketch (as Inventor authored
 			// it) so the revolve's radius dimensions can bind to the profile in one sketch.
-			decoded = ipt.ReuniteRevolveAxis(profiles)
+			lineSet := ipt.ReuniteRevolveAxis(profiles)
+			decoded = lineSet
+			// Incidence sometimes SPLITS the profile into isolated single-line sketches (EncoderWheel:
+			// a 13-line profile decoded as three 1-line sketches, none closed), so no revolve binds and
+			// the part falls back to its non-manifold display mesh. The node GRAPH keeps that profile
+			// whole; when the fragmented line set forms no valid revolve but the graph does (a vertical
+			// in-profile centreline, case A), revolve the graph instead. Preferring the line set first
+			// keeps every currently-building revolve — and the horizontal-axis test fixtures — unchanged.
+			if !revolveBinds(lineSet) {
+				if graph := ipt.GraphSketches(d); sketchEntityCount(graph) > 0 && (revolveBinds(graph) || graphRevolveCandidate(graph)) {
+					decoded = graph
+				}
+			}
 		}
 	}
 	placed := make([]placedSketch, len(decoded))
@@ -321,6 +353,192 @@ func extractSketches(d *ipt.Document, seg []byte) []placedSketch {
 		placed[i] = placedSketch{geom: decoded[i], plane: sketchPlaneOf(decoded[i])}
 	}
 	return placed
+}
+
+// revolveBinds reports whether RevolveProfile finds a valid closed profile + axis in this sketch
+// set — the gate that decides whether a revolve can be built from it at all.
+func revolveBinds(sketches []ipt.Sketch) bool {
+	_, ok := ipt.RevolveProfile(sketches)
+	return ok
+}
+
+// verticalLine reports whether a decoded line is vertical (a revolve centreline is drawn upright).
+func verticalLine(l ipt.Line) bool   { return math.Abs(l.A.X-l.B.X) < 1e-4 }
+func horizontalLine(l ipt.Line) bool { return math.Abs(l.A.Y-l.B.Y) < 1e-4 }
+
+// axisAlignedLine reports whether a line runs along X or Y — the orientations a revolve centreline
+// takes in this corpus (a shaft turned about a vertical or a horizontal axis). An oblique axis is
+// not recognised (none observed), so it declines to the mesh rather than guess.
+func axisAlignedLine(l ipt.Line) bool { return verticalLine(l) || horizontalLine(l) }
+
+// revolveAxisIndex returns the centreline's index in s.Lines. It prefers the isolated line
+// RevolveAxisLine finds (both endpoints shared with no other line — the clean shaft encoding); when
+// that is ambiguous — a real INTERNAL edge whose ends land on other edges' interiors also reads as
+// isolated (PressureRoller's x=0.8 splitter) — it falls back to the single VERTICAL CONSTRUCTION
+// line, which a revolve draws as its centreline. ok=false when neither names one unambiguous axis.
+func revolveAxisIndex(s ipt.Sketch) (int, bool) {
+	if ai, ok := ipt.RevolveAxisLine(s); ok && ai < len(s.Lines) && axisAlignedLine(s.Lines[ai]) {
+		return ai, true
+	}
+	axis, n := -1, 0
+	for i, l := range s.Lines {
+		if s.LineIsConstruction(i) && axisAlignedLine(l) {
+			axis, n = i, n+1
+		}
+	}
+	return axis, n == 1
+}
+
+// graphRevolveCandidate reports whether the node-graph sketches hold a plausible revolve the ipt
+// line-ring gate can't confirm: a vertical centreline inside a many-line profile. Such a profile
+// (a shaft with a keyway/notch, or a stepped roller split by an internal edge) is a valid region the
+// KERNEL arranges but ipt.isClosedRing (a naive head-to-tail line walk) rejects. When this holds,
+// extractSketches keeps the graph so buildRevolve's kernel fallback can try it.
+func graphRevolveCandidate(sketches []ipt.Sketch) bool {
+	for _, s := range sketches {
+		if !s.Resolved || len(s.Lines) < 4 {
+			continue
+		}
+		if _, ok := revolveAxisIndex(s); ok {
+			return true
+		}
+	}
+	return false
+}
+
+// profileOneSideOfAxis reports whether every profile-line endpoint lies on one side of the
+// axis-aligned centreline at axisIdx — a valid solid of revolution never crosses its axis. The signed
+// distance is measured perpendicular to the axis: across X for a vertical centreline, across Y for a
+// horizontal one (a shaft turned about the X axis, e.g. a bushing). The ipt equivalent is unexported.
+func profileOneSideOfAxis(lines []ipt.Line, axisIdx int) bool {
+	ax := lines[axisIdx]
+	vertical := verticalLine(ax)
+	ref := ax.A.X
+	if !vertical {
+		ref = ax.A.Y
+	}
+	sign := 0
+	for i, l := range lines {
+		if i == axisIdx {
+			continue
+		}
+		for _, p := range []ipt.Point2D{l.A, l.B} {
+			d := p.X - ref
+			if !vertical {
+				d = p.Y - ref
+			}
+			if math.Abs(d) < 1e-6 {
+				continue
+			}
+			s := 1
+			if d < 0 {
+				s = -1
+			}
+			if sign == 0 {
+				sign = s
+			} else if sign != s {
+				return false
+			}
+		}
+	}
+	return sign != 0
+}
+
+// tryKernelRevolve builds a revolve the ipt gate declined by trusting the KERNEL's arranged profiles
+// instead of the line-ring walk. It fires only after RevolveProfile fails, so no currently-building
+// revolve reaches it. Guards keep it honest: an unambiguous vertical centreline (see
+// revolveAxisIndex), at least one CLOSED arranged profile, and the profile geometry wholly one side
+// of the axis. Every closed profile one side of the axis is revolved and unioned (a stepped roller's
+// internal edge splits one region into two, both part of the same solid). Returns the ids of the
+// features it added (empty when no sketch qualifies) so the caller can drop them if they don't close
+// to a solid.
+// A preferred sketch index >= 0 (from ipt.RevolveProfileSketch — the profile the Revolution feature
+// actually names) revolves EXACTLY that sketch: a machined part's cut profiles are never revolved by
+// mistake. If the named profile can't form a revolve here, it declines rather than guess another
+// sketch. preferred < 0 keeps the scan (used on the incidence line set, whose indices don't map to
+// the node graph the reference is keyed on).
+func tryKernelRevolve(def *compdef.PartComponentDefinition, seg []byte, placed []placedSketch, emitted []emittedSketch, preferred int, axis revolveAxisRef) []feature.ID {
+	if preferred >= 0 {
+		if preferred < len(emitted) {
+			return revolveSketchAt(def, seg, placed, emitted, preferred, axis)
+		}
+		return nil
+	}
+	for i := range emitted {
+		if ids := revolveSketchAt(def, seg, placed, emitted, i, axis); ids != nil {
+			return ids
+		}
+	}
+	return nil
+}
+
+// revolveSketchAt revolves the single sketch at index i if it forms a valid revolve (an unambiguous
+// axis-aligned centreline, at least one closed arranged profile, all geometry one side of the axis),
+// returning the added feature ids or nil when it does not qualify. When the geometric heuristic can't
+// name the centreline but the feature's decoded axis reference (axis) can, the collinear profile edge
+// it points at is used — the case where the axis is an ordinary edge, neither isolated nor
+// construction (CapstainMotorCap turns about its y=0 top edge).
+func revolveSketchAt(def *compdef.PartComponentDefinition, seg []byte, placed []placedSketch, emitted []emittedSketch, i int, axis revolveAxisRef) []feature.ID {
+	if emitted[i].sk == nil || i >= len(placed) {
+		return nil
+	}
+	s := placed[i].geom
+	ai, ok := revolveAxisIndex(s)
+	if !ok && axis.ok {
+		ai, ok = axisLineFromReference(s, axis)
+	}
+	if !ok || ai >= len(emitted[i].lines) || emitted[i].lines[ai] == nil {
+		return nil
+	}
+	closed := closedProfileIndices(emitted[i].sk)
+	if len(closed) == 0 || !profileOneSideOfAxis(s.Lines, ai) {
+		return nil
+	}
+	// A HORIZONTAL centreline forces a full turn: the partial-angle decode (soleSweepAngle) is
+	// unreliable about a horizontal axis — it mis-reads a profile chamfer's angle as the sweep
+	// (CapstainFrontBody's 125° is line[2]'s chamfer, not the extent), building a wrong pie-slice.
+	// A wrong full turn instead over-fills and is caught by the mesh gate; a mis-sized partial is
+	// not. Vertical-axis revolves keep the decoded angle (the 270° fixture depends on it).
+	angle := revolveAngleFn(seg)
+	if horizontalLine(s.Lines[ai]) {
+		angle = nil
+	}
+	return revolveClosedProfiles(def, emitted[i], ai, closed, angle)
+}
+
+// closedProfileIndices returns the indices of the sketch's closed arranged profiles.
+func closedProfileIndices(sk *sketch.Sketch) []int {
+	var out []int
+	profs := sk.Profiles()
+	for p := 0; p < profs.Count(); p++ {
+		if profs.Item(p).IsClosed() {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+// revolveClosedProfiles turns each closed profile about the axis, the first starting the body and
+// the rest joining it (adjacent regions of one solid of revolution). Returns the added feature ids.
+func revolveClosedProfiles(def *compdef.PartComponentDefinition, e emittedSketch, axisLine int, closed []int, angle func() float64) []feature.ID {
+	var ids []feature.ID
+	for k, pi := range closed {
+		op := ops.NewBody
+		if k > 0 {
+			op = ops.Join
+		}
+		f := feature.NewRevolveFeatures(def.Features()).AddAboutCenterlineLine(e.sk, pi, e.sk, e.lines[axisLine], angle, op)
+		ids = append(ids, f.ID())
+	}
+	return ids
+}
+
+// revolveAngleFn returns the swept-angle accessor for a partial revolve, or nil for a full turn.
+func revolveAngleFn(seg []byte) func() float64 {
+	if a, ok := ipt.RevolveAngle(seg); ok {
+		return func() float64 { return a }
+	}
+	return nil
 }
 
 // sketchPlaneOf places a sketch where the file says it lives. A sketch's entity coordinates are 2D
@@ -358,6 +576,28 @@ func planeOf(pl ipt.SketchPlacement) (sketch.Plane, bool) {
 	return p, true
 }
 
+// emitDroppedCurveSketches re-emits the freeform curves — splines and ellipses — that a whole-part
+// feature build (revolve, sweep, loft) drops because its profile extraction is line-only. Those
+// features replace the emitted set with a reconstructed line profile, silently discarding every
+// spline/ellipse the part also carries (Hose-Screen-Adapter, a revolve, lost all 3 of its sketch
+// splines this way). Only the curves are emitted — never the co-resident lines — so nothing can
+// duplicate the feature's profile: a revolve/loft profile is line-only and never holds a spline or
+// ellipse, so these sketches are disjoint from it. The extrude path already emits the full graph
+// set, so this is called ONLY on the whole-part feature branches.
+func emitDroppedCurveSketches(def *compdef.PartComponentDefinition, d *ipt.Document) {
+	for _, s := range ipt.GraphSketches(d) {
+		if len(s.Splines) == 0 && len(s.Ellipses) == 0 {
+			continue
+		}
+		curves := ipt.Sketch{
+			Splines: s.Splines, SplineConstruction: s.SplineConstruction,
+			Ellipses: s.Ellipses,
+			Plane:    s.Plane, PlaneOK: s.PlaneOK,
+		}
+		emitSketchOn(def, curves, sketchPlaneOf(curves))
+	}
+}
+
 // emitSketches adds every extracted sketch to the document and returns the handles in the same
 // order (an empty sketch yields a nil handle so indices still line up with the decode). Runs
 // unconditionally, before any feature is attempted.
@@ -383,6 +623,22 @@ func buildRevolve(def *compdef.PartComponentDefinition, seg []byte, placed []pla
 	}
 	b, ok := ipt.RevolveProfile(geoms)
 	if !ok {
+		// The line-ring gate declined. A profile with a notch/keyway (a curve whose end lands on
+		// another edge's interior) is a valid closed region the kernel arranges but that walk can't
+		// close — try the kernel's own profile before falling back to the mesh. Keep the result ONLY
+		// if it closes to a solid: an open/self-intersecting revolve means a mis-decoded profile or
+		// axis, and the faithful display mesh is better than a wrong parametric body (a pre-2023
+		// PressureRoller copy built a half-open partial roller that way).
+		if ids := tryKernelRevolve(def, seg, placed, emitted, -1, revolveAxisRef{}); len(ids) > 0 {
+			def.Recompute()
+			if firstBodyIsSolid(def) {
+				return true, nil
+			}
+			for _, id := range ids {
+				def.Features().Remove(id)
+			}
+			return false, []string{"revolve: kernel profile did not close to a solid — imported body used"}
+		}
 		return false, []string{"revolve: no unambiguous closed profile + axis — sketches emitted, revolve not built"}
 	}
 	if b.ProfileSketch >= len(emitted) || emitted[b.ProfileSketch].sk == nil {
@@ -406,15 +662,40 @@ func buildRevolve(def *compdef.PartComponentDefinition, seg []byte, placed []pla
 // consumes the sketch at its index, then a hole cuts the base, then a pattern/mirror replicates
 // the last extrude. Each stage that is decoded but can't be built appends a note and is skipped;
 // whatever built stays. Returns whether any feature built.
+// hasBaseExtrude reports whether any extrude starts a body (New-Body). Without one the extrude chain
+// is all cut/join with nothing to act on, so it cannot rebuild a solid — its base is a feature type
+// this decoder does not produce.
+func hasBaseExtrude(extrudes []ipt.Extrude) bool {
+	for _, e := range extrudes {
+		if e.Operation == ipt.OpNewBody {
+			return true
+		}
+	}
+	return false
+}
+
 func buildExtrudeFeatures(def *compdef.PartComponentDefinition, d *ipt.Document, seg []byte, placed []placedSketch, emitted []emittedSketch) (bool, []string) {
 	built := false
 	var notes []string
 	extrudes := ipt.DecodeExtrudes(d)
+	// A part whose extrudes are ALL cut/join/intersect has no base body to apply them to: its base
+	// is a feature this decoder does not produce (a sheet-metal face on MainBaseSheet, say). Applying
+	// cuts to nothing builds a garbage sliver — 1% of the true volume — so build no extrude and leave
+	// the sketches standing; buildPart then imports the real body. Only a New-Body extrude starts a
+	// solid, so its absence means the whole extrude chain is baseless.
+	if len(extrudes) > 0 && !hasBaseExtrude(extrudes) {
+		return false, []string{fmt.Sprintf("%d extrude(s) but none starts a body — no parametric base; imported body used", len(extrudes))}
+	}
 	// Each extrude names the profile it consumes (see ipt.ExtrudeProfiles); "extrude i uses sketch
 	// i" only ever held for the generated corpus.
 	profiles := ipt.ExtrudeProfiles(d)
 	regions := ipt.ExtrudeRegions(d)
-	var lastExtrude *feature.PartFeature
+	// patternSource is the last feature a pattern/mirror may legitimately replicate: a cut or a
+	// secondary boss (join), NEVER the base solid. Inventor's PatternFeature always references a
+	// feature placed AFTER the base; replicating the base itself only stamps coincident duplicates
+	// of the whole body — a centred base disk rotated about its own axis stacks N identical copies,
+	// inflating the volume N× (SmartKnobConnectingPlate: a Ø46 plate patterned 5× → 5×2098 mm³).
+	var patternSource *feature.PartFeature
 	for i, ex := range extrudes {
 		p := profileIndex(profiles, i)
 		if p < 0 || p >= len(emitted) || emitted[p].sk == nil {
@@ -429,40 +710,45 @@ func buildExtrudeFeatures(def *compdef.PartComponentDefinition, d *ipt.Document,
 			notes = append(notes, fmt.Sprintf("extrude %d: could not match its region (%d loops) to any rebuilt profile — skipped", i, len(region)))
 			continue
 		}
-		lastExtrude = feature.NewExtrudeFeatures(def.Features()).AddExtrude(
+		fx := feature.NewExtrudeFeatures(def.Features()).AddExtrude(
 			emitted[p].sk, idx, operationOf(ex.Operation), extentOf(ex), 0)
+		if ex.Operation != ipt.OpNewBody {
+			patternSource = fx // only a cut/join extrude is a valid pattern target
+		}
 		built = true
 	}
 	// A drilled hole cuts the base solid: place it on the extrude's top face (analytic), drilling
 	// at the profile centroid. Needs the base extrude to have built the body first.
-	if h, ok := ipt.DecodeHole(seg); ok {
+	if h, ok := ipt.DecodeHole(d); ok {
 		if len(extrudes) > 0 && len(placed) > 0 && len(emitted) > 0 && emitted[0].sk != nil {
 			cx, cy := profileCentroid(placed[0].geom)
-			addHole(def, h, cx, cy, extrudes[0].Distance)
+			addHole(def, h, placed[0].plane, cx, cy, extrudes[0].Distance)
 			built = true
 		} else {
 			notes = append(notes, "hole decoded but no base extrude to cut — skipped")
 		}
 	}
-	// A pattern or mirror replicates the last feature; it must run after the source feature so its
-	// occurrences re-cut the running body. Rectangular / circular / mirror are mutually exclusive.
+	// A pattern or mirror replicates a cut/boss feature; it must run after that source so its
+	// occurrences re-cut the running body. When the only feature built is the base solid,
+	// patternSource is nil and the pattern is skipped rather than stamping N coincident bodies.
+	// Rectangular / circular / mirror are mutually exclusive.
 	if rp, ok := ipt.DecodeRectPattern(d); ok {
-		if lastExtrude != nil {
-			addRectPattern(def, lastExtrude, rp)
+		if patternSource != nil {
+			addRectPattern(def, patternSource, rp)
 			built = true
 		} else {
-			notes = append(notes, "rectangular pattern decoded but no source feature — skipped")
+			notes = append(notes, "rectangular pattern decoded but only a base solid to replicate — skipped")
 		}
 	} else if cp, ok := ipt.DecodeCircPattern(d); ok {
-		if lastExtrude != nil {
-			addCircPattern(def, lastExtrude, cp)
+		if patternSource != nil {
+			addCircPattern(def, patternSource, cp)
 			built = true
 		} else {
-			notes = append(notes, "circular pattern decoded but no source feature — skipped")
+			notes = append(notes, "circular pattern decoded but only a base solid to replicate — skipped")
 		}
 	} else if mir, ok := ipt.DecodeMirror(d); ok {
-		if lastExtrude != nil {
-			addMirror(def, lastExtrude, mir)
+		if patternSource != nil {
+			addMirror(def, patternSource, mir)
 			built = true
 		} else {
 			notes = append(notes, "mirror decoded but no source feature — skipped")
@@ -511,7 +797,7 @@ func addCircPattern(def *compdef.PartComponentDefinition, source *feature.PartFe
 // recompute (the externally-authored placement path, ADR-0040). Drilled, counterbore, and
 // countersink holes are built; v1 drills at the face centroid (explicit off-centre placement
 // is future work).
-func addHole(def *compdef.PartComponentDefinition, h ipt.Hole, cx, cy, thickness float64) {
+func addHole(def *compdef.PartComponentDefinition, h ipt.Hole, plane sketch.Plane, cx, cy, thickness float64) {
 	holes := feature.NewHoleFeatures(def.Features())
 	dia, depth := constF(h.Diameter), constF(h.Depth)
 	var pf *feature.PartFeature
@@ -529,7 +815,40 @@ func addHole(def *compdef.PartComponentDefinition, h ipt.Hole, cx, cy, thickness
 	}
 	hd := pf.Definition().(*feature.HoleFeature).Definition()
 	hd.ThroughAll = h.ThroughAll
-	hd.GeomFace = &topo.GeometricFaceRef{Centroid: m.P3(m.Scalar(cx), m.Scalar(cy), m.Scalar(thickness)), Normal: m.Vector3{X: 0, Y: 0, Z: 1}}
+	// A PLAIN drilled hole uses its OWN placement (its transform, decoded into h.Center/Axis): GeomFace
+	// finds the bored face and Center pins the exact drill point on it, so the bore lands where the
+	// file put it even when it is not centred on the base profile (CapstainNut's Ø1.7 bore sits at the
+	// origin with a +X axis, off the hex centroid — the profile-centroid guess missed it entirely). A
+	// plain bore is symmetric about its axis, so which face the placement resolves to is immaterial.
+	//
+	// The placement transform's translation is the hole's own coordinate-system ORIGIN, which equals
+	// the drill point only when the hole is centred there (as CapstainNut's is); on a hole offset from
+	// that datum (the generated box fixtures place a centred bore whose datum sits at a corner) it is
+	// NOT the bore centre. So the placement is used only where the top-face fallback is itself
+	// unreliable — a base sketch that is NOT the XY plane, the one case (CapstainNut, a hex extruded
+	// along +X) the fallback cannot place. XY-base holes (every fixture, MainFrame, WheelSlider) keep
+	// the fallback, which matches Inventor there. A plain bore is symmetric about its axis, so which
+	// face the placement resolves to is immaterial; a directional counterbore/countersink is excluded.
+	if h.Placed && h.Type == ipt.DrilledHole && !planeIsXY(plane) {
+		center := m.P3(m.Scalar(h.Center[0]), m.Scalar(h.Center[1]), m.Scalar(h.Center[2]))
+		hd.GeomFace = &topo.GeometricFaceRef{Centroid: center, Normal: m.Vector3{X: m.Scalar(h.Axis[0]), Y: m.Scalar(h.Axis[1]), Z: m.Scalar(h.Axis[2])}}
+		hd.Center = &center
+		return
+	}
+	// Fallback: drill on the base extrude's top face — the sketch-plane point (cx,cy) lifted into 3D
+	// and advanced along the plane normal by the extrude thickness. Hardcoding z=thickness / +Z drilled
+	// in empty space on any base sketch that was not the XY plane; this reduces to those old values on
+	// an XY sketch.
+	normal := plane.Normal()
+	top := plane.ToModel(m.P2(m.Scalar(cx), m.Scalar(cy)))
+	center := top.TranslateBy(normal.AsVector().Scale(m.Scalar(thickness)))
+	hd.GeomFace = &topo.GeometricFaceRef{Centroid: center, Normal: normal.AsVector()}
+}
+
+// planeIsXY reports whether a sketch plane is the world XY plane (its normal is ±Z), the case where
+// addHole's top-face fallback places a hole correctly.
+func planeIsXY(p sketch.Plane) bool {
+	return math.Abs(float64(p.Normal().AsVector().Z)) > 0.999
 }
 
 // constF returns a closure yielding the fixed value v — the func() float64 hole/pattern
@@ -616,7 +935,7 @@ func emitSketch(def *compdef.PartComponentDefinition, s ipt.Sketch) *sketch.Sket
 // per line (AddByTwoPoints) — gives the rebuilt sketch the same degrees of freedom as the original
 // (a closed N-gon: 2N free DOF, not 4N).
 func emitSketchOn(def *compdef.PartComponentDefinition, s ipt.Sketch, plane sketch.Plane) (*sketch.Sketch, []*sketch.Line) {
-	if len(s.Points) == 0 && len(s.Lines) == 0 && len(s.Circles) == 0 && len(s.Arcs) == 0 && len(s.Ellipses) == 0 {
+	if len(s.Points) == 0 && len(s.Lines) == 0 && len(s.Circles) == 0 && len(s.Arcs) == 0 && len(s.Ellipses) == 0 && len(s.Splines) == 0 {
 		return nil, nil
 	}
 	sk := def.Sketches().Add(plane)
@@ -646,6 +965,15 @@ func emitSketchOn(def *compdef.PartComponentDefinition, s ipt.Sketch, plane sket
 		// Share the centre with any coincident corner (pointAt), matching how Inventor stores an
 		// ellipse's centre by reference. The major-axis direction and both semi-axes are verbatim.
 		sk.Ellipses().AddWithCenter(pointAt(e.Center), m.V2(e.MajorAxis.X, e.MajorAxis.Y), m.Scalar(e.MajorR), m.Scalar(e.MinorR))
+	}
+	for i, sp := range s.Splines {
+		// Share the fit points with any coincident corner (pointAt), matching how Inventor references
+		// them. fit=true: Inventor's sketch spline interpolates these points rather than approximating.
+		pts := make([]*sketch.Point, len(sp.Points))
+		for j, p := range sp.Points {
+			pts[j] = pointAt(p)
+		}
+		sk.Splines().AddWithPoints(pts, sp.Closed, true).SetConstruction(s.SplineIsConstruction(i))
 	}
 	return sk, lines
 }
@@ -1327,7 +1655,10 @@ func operationOf(op int) ops.PartFeatureOperation {
 // tessellation (PmGraphicsSegment: curved faces and holes already meshed), and falls back to
 // the analytic ACIS planar reconstruction when the graphics mesh is absent/degenerate.
 func addBodyIfPresent(def *compdef.PartComponentDefinition, d *ipt.Document) []string {
-	if raw := SoupFromMesh(ipt.GraphicsMesh(d)); raw.TriangleCount() >= 4 {
+	// Prefer Inventor's display tessellation, but only when it is a real 3-D body — some parts store
+	// a flat footprint placeholder there and keep the true body in the SAB, so a degenerate mesh
+	// falls through to the B-rep (or to no body) rather than importing a wrong flat sheet.
+	if raw := SoupFromMesh(ipt.GraphicsMesh(d)); raw.TriangleCount() >= 4 && meshIsSpatial(raw) {
 		return importSoup(def, raw)
 	}
 	seg, ok := d.Segment("PmBRepSegment")
@@ -1401,7 +1732,7 @@ func profileIndex(profiles []int, i int) int {
 func sketchEntityCount(sketches []ipt.Sketch) int {
 	n := 0
 	for _, s := range sketches {
-		n += len(s.Points) + len(s.Lines) + len(s.Circles) + len(s.Arcs) + len(s.Ellipses)
+		n += len(s.Points) + len(s.Lines) + len(s.Circles) + len(s.Arcs) + len(s.Ellipses) + len(s.Splines)
 	}
 	return n
 }

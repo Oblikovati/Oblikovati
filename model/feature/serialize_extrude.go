@@ -26,6 +26,13 @@ type ExtrudeData struct {
 	Taper     float64 `yaml:"taper,omitempty"`
 	ToPlane   string  `yaml:"toPlane,omitempty"`   // WorkRef of the to-face / from-to end / distance-from-face target
 	FromPlane string  `yaml:"fromPlane,omitempty"` // WorkRef of the from-to start
+	// ToPlaneFixed / FromPlaneFixed carry the GEOMETRY of a fixed (keyless) to-face/from-face target
+	// — one authored from a plane rather than a datum in the part's work geometry (NewFixedWorkPlane,
+	// which the Inventor to-face translator uses). Such a target has no WorkRef, so without its
+	// geometry a to-face extrude lost its target on reopen (ext.ToPlane went nil, toPlaneSpan errored,
+	// the feature built nothing — ST3215Bracket's walls vanished on save/reopen).
+	ToPlaneFixed   *fixedPlaneData `yaml:"toPlaneFixed,omitempty"`
+	FromPlaneFixed *fixedPlaneData `yaml:"fromPlaneFixed,omitempty"`
 	// ProfilePoints selects the extruded region(s) by an interior seed point (sketch 2-D cm),
 	// one per region, instead of by index. An external author (e.g. the Inventor exporter) cannot
 	// predict the reader's DCEL region ordering, so it names regions by containment. When present
@@ -35,6 +42,43 @@ type ExtrudeData struct {
 	// whole-part fallback rebuilt without the dissolve reopens the same way — otherwise the reopened
 	// recipe would re-run with the dissolve on and regress to the open body again.
 	NoDissolve bool `yaml:"noDissolve,omitempty"`
+}
+
+// fixedPlaneData is a keyless work-plane target's geometry in model cm — origin and the two in-plane
+// axes, enough to rebuild the plane (its normal is X×Y). Serialized for a to-face/from-face target
+// authored as a fixed plane rather than a datum reference.
+type fixedPlaneData struct {
+	Origin [3]float64 `yaml:"origin"`
+	XAxis  [3]float64 `yaml:"xAxis"`
+	YAxis  [3]float64 `yaml:"yAxis"`
+}
+
+// fixedPlaneOf captures a plane's geometry for serialization.
+func fixedPlaneOf(p sketch.Plane) *fixedPlaneData {
+	o, x, y := p.Origin(), p.XAxis().AsVector(), p.YAxis().AsVector()
+	return &fixedPlaneData{
+		Origin: [3]float64{float64(o.X), float64(o.Y), float64(o.Z)},
+		XAxis:  [3]float64{float64(x.X), float64(x.Y), float64(x.Z)},
+		YAxis:  [3]float64{float64(y.X), float64(y.Y), float64(y.Z)},
+	}
+}
+
+// fixedWorkPlane rebuilds a keyless work-plane target from its serialized geometry, or an error when
+// the stored axes are not a valid orthonormal frame.
+func fixedWorkPlane(fp *fixedPlaneData) (*WorkPlane, error) {
+	x, err := math.NewUnitVector3(math.Scalar(fp.XAxis[0]), math.Scalar(fp.XAxis[1]), math.Scalar(fp.XAxis[2]))
+	if err != nil {
+		return nil, fmt.Errorf("to-face target: x axis: %w", err)
+	}
+	y, err := math.NewUnitVector3(math.Scalar(fp.YAxis[0]), math.Scalar(fp.YAxis[1]), math.Scalar(fp.YAxis[2]))
+	if err != nil {
+		return nil, fmt.Errorf("to-face target: y axis: %w", err)
+	}
+	pl, err := sketch.NewPlane(math.P3(math.Scalar(fp.Origin[0]), math.Scalar(fp.Origin[1]), math.Scalar(fp.Origin[2])), x, y)
+	if err != nil {
+		return nil, fmt.Errorf("to-face target: %w", err)
+	}
+	return NewFixedWorkPlane(pl), nil
 }
 
 // extrudeProfiles returns the region indices a payload selects, accepting both the
@@ -80,13 +124,27 @@ func serializeExtrude(def *ExtrudeDefinition, sk SketchIndexer) (*ExtrudeData, e
 		Distance: def.Extent.distance(), Distance2: def.Extent.distance2(), Taper: def.Taper,
 		NoDissolve: def.NoDissolve,
 	}
-	if def.Extent.ToPlane != nil {
-		d.ToPlane = string(def.Extent.ToPlane.Key())
-	}
-	if def.Extent.FromPlane != nil {
-		d.FromPlane = string(def.Extent.FromPlane.Key())
-	}
+	serializeExtentPlanes(def.Extent, d)
 	return d, nil
+}
+
+// serializeExtentPlanes records the extent's to-face/from-face targets: a datum target by its
+// WorkRef key, a fixed (keyless) target by its geometry so it survives reopen (see fixedPlaneData).
+func serializeExtentPlanes(ext Extent, d *ExtrudeData) {
+	if ext.ToPlane != nil {
+		if k := ext.ToPlane.Key(); k != "" {
+			d.ToPlane = string(k)
+		} else {
+			d.ToPlaneFixed = fixedPlaneOf(ext.ToPlane.Plane())
+		}
+	}
+	if ext.FromPlane != nil {
+		if k := ext.FromPlane.Key(); k != "" {
+			d.FromPlane = string(k)
+		} else {
+			d.FromPlaneFixed = fixedPlaneOf(ext.FromPlane.Plane())
+		}
+	}
 }
 
 // requireExtrude restores an extrude, erroring on a missing payload.
@@ -214,9 +272,21 @@ func restoreExtent(ed *ExtrudeData, work *WorkGeometry) (Extent, error) {
 			return Extent{}, err
 		}
 		ext.ToPlane = wp
+	} else if ed.ToPlaneFixed != nil {
+		wp, err := fixedWorkPlane(ed.ToPlaneFixed)
+		if err != nil {
+			return Extent{}, err
+		}
+		ext.ToPlane = wp
 	}
 	if ed.FromPlane != "" {
 		wp, err := resolvePlaneRef(work, ed.FromPlane)
+		if err != nil {
+			return Extent{}, err
+		}
+		ext.FromPlane = wp
+	} else if ed.FromPlaneFixed != nil {
+		wp, err := fixedWorkPlane(ed.FromPlaneFixed)
 		if err != nil {
 			return Extent{}, err
 		}
