@@ -987,3 +987,45 @@ func TestHorizontalAxisRevolveBuildsSolids(t *testing.T) {
 		}
 	}
 }
+
+// TestMachinedHolderRevolveWithCuts covers the ext,rev,hole path (buildRevolveDispatch's graph
+// branch): a turned base whose milled cut extrudes must be applied over it. The incidence line set
+// splits the revolve profile from its centreline, so the base is rebuilt from the node graph (which
+// keeps them whole) and the cuts are booleaned on top. Both parts reopen as a SOLID within 2% of
+// Inventor's STL volume (SpoolMotor 19441, CapstonMotor 17201). Corpus-gated; set IPT_CORPUS.
+func TestMachinedHolderRevolveWithCuts(t *testing.T) {
+	dir := os.Getenv("IPT_CORPUS")
+	if dir == "" {
+		dir = `P:\ReelToReel\Mechanical`
+	}
+	for _, tc := range []struct {
+		file   string
+		oracle float64
+	}{
+		{"SpoolMotorMachinedHolder.ipt", 19441},
+		{"CapstonMotorMachinedHolder.ipt", 17201},
+	} {
+		data, err := os.ReadFile(filepath.Join(dir, tc.file))
+		if err != nil {
+			t.Skipf("corpus part not available (%v); set IPT_CORPUS", err)
+		}
+		out := filepath.Join(t.TempDir(), "h.opd")
+		if _, err := FromInventor(data, out); err != nil {
+			t.Fatalf("%s: FromInventor: %v", tc.file, err)
+		}
+		ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
+		reopened, err := ws.Open(out, true)
+		if err != nil {
+			t.Fatalf("%s: reopen: %v", tc.file, err)
+		}
+		def := reopened.Content().(*compdef.PartComponentDefinition)
+		bodies := def.SurfaceBodies().All()
+		if len(bodies) == 0 || !bodies[0].IsSolid() {
+			t.Fatalf("%s: want a SOLID turned+milled body, got %d bodies (solid=%v)", tc.file, len(bodies), len(bodies) > 0 && bodies[0].IsSolid())
+		}
+		vol := analysis.MassPropertiesOf(bodies, 1, types.MassPropertiesLow).VolumeMm3
+		if math.Abs(vol-tc.oracle) > 0.02*tc.oracle {
+			t.Errorf("%s: volume = %.0f mm³, want within 2%% of Inventor's %.0f", tc.file, vol, tc.oracle)
+		}
+	}
+}

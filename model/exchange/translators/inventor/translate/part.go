@@ -296,12 +296,12 @@ func addFeatures(def *compdef.PartComponentDefinition, d *ipt.Document) (bool, [
 	}
 	// Decoupled path: extract + emit all sketches unconditionally, then build features over them.
 	placed := extractSketches(d, seg)
-	emitted := emitSketches(def, placed)
 	if ipt.HasRevolve(seg) {
-		built, notes := buildRevolve(def, seg, placed, emitted)
-		emitDroppedCurveSketches(def, d) // keep splines/ellipses the line-only revolve profile drops
-		return built, notes
+		// The revolve path owns its own emission: a machined revolve part is rebuilt from the node
+		// graph (profile+centreline+cuts kept whole) when the incidence line set can't close it.
+		return buildRevolveDispatch(def, d, seg, placed)
 	}
+	emitted := emitSketches(def, placed)
 	return buildExtrudeFeatures(def, d, seg, placed, emitted)
 }
 
