@@ -26,6 +26,9 @@ type SheetMetalContourFlangeDefinition struct {
 	EdgeKey []byte
 	Profile *sketch.Sketch
 	Flip    bool
+	// Width is how much of the edge the swept wall covers (#1958); the zero value is the whole
+	// edge, which is what this feature has always built.
+	Width FlangeWidth
 }
 
 // SheetMetalContourFlangeFeature sweeps the profile onto the sheet each recompute.
@@ -60,7 +63,7 @@ func (f *SheetMetalContourFlangeFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	wall, err := buildContourFlangeSolid(edges[0], profile, t, f.def.Flip, f.featName)
+	wall, err := buildContourFlangeSolid(edges[0], profile, t, f.def.Width, f.def.Flip, f.featName)
 	if err != nil {
 		return Output{}, err
 	}
@@ -73,13 +76,18 @@ func (f *SheetMetalContourFlangeFeature) Recompute(in Input) (Output, error) {
 
 // buildContourFlangeSolid builds the contour-flange solid: the profile band mapped onto the
 // edge's section frame and extruded along the edge.
-func buildContourFlangeSolid(edge *topo.Edge, profile []math.Point2, thickness float64, flip bool, feat string) (*topo.Body, error) {
+func buildContourFlangeSolid(edge *topo.Edge, profile []math.Point2, thickness float64,
+	width FlangeWidth, flip bool, feat string) (*topo.Body, error) {
 	v0, v1 := edge.StartVertex().Point(), edge.EndVertex().Point()
 	e, err := math.UnitVector3FromVector(v0.VectorTo(v1))
 	if err != nil {
 		return nil, fmt.Errorf("sheet-metal contour flange: degenerate edge")
 	}
 	up, out, err := flangeFrame(edge, v0.Midpoint(v1), e, flip)
+	if err != nil {
+		return nil, err
+	}
+	from, to, err := width.span(float64(v0.DistanceTo(v1)))
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +99,7 @@ func buildContourFlangeSolid(edge *topo.Edge, profile []math.Point2, thickness f
 		return math.P2(math.Scalar(w.Dot(u)), math.Scalar(w.Dot(v)))
 	}
 	band := contourBand(profile, thickness, at)
-	return buildPrism(band, plane, span{near: 0, far: v0.DistanceTo(v1)}, 0, feat), nil
+	return buildPrism(band, plane, span{near: from, far: to}, 0, feat), nil
 }
 
 // contourBand returns the closed cross-section band for the profile mapped into the section

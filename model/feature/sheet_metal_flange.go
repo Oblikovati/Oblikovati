@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/param"
+	"oblikovati.org/model/sketch"
 )
 
 // Sheet-metal Flange feature (M13-F02). A flange adds a wall on a straight edge of an
@@ -37,6 +38,9 @@ type SheetMetalFlangeDefinition struct {
 	Angle   func() float64 // bend angle (radians); nil ⇒ 90°
 	Radius  func() float64 // inside bend radius; nil ⇒ rule BendRadius
 	Flip    bool
+	// Width is how much of the picked edge the wall covers (#1958); the zero value is the whole
+	// edge, which is what this feature has always built.
+	Width FlangeWidth
 	// Position and HeightDatum decide where the wall LANDS (#1957): how far back from the picked
 	// edge the bend sits, and what the height is measured from. Both default to what this feature
 	// has always built — the bend at the edge, the height from its tangent. See
@@ -75,7 +79,7 @@ func (f *SheetMetalFlangeFeature) Recompute(in Input) (Output, error) {
 		return Output{}, err
 	}
 	wall, placement, err := buildFoldedSolidAt(edges[0], dims.thickness, f.flangeSteps(dims),
-		dims.setback, f.def.Flip, f.featName)
+		dims.setback, f.def.Width, f.def.Flip, f.featName)
 	if err != nil {
 		return Output{}, err
 	}
@@ -165,7 +169,7 @@ func (f *SheetMetalFlangeFeature) BendSpecs(_ float64) []BendSpec {
 // unfolds about; the developed length of any further folds is the caller's BendSpecs to report.
 func buildFoldedSolid(edge *topo.Edge, thickness float64, steps []bendRun, flip bool,
 	feat string) (*topo.Body, BendPlacement, error) {
-	return buildFoldedSolidAt(edge, thickness, steps, 0, flip, feat)
+	return buildFoldedSolidAt(edge, thickness, steps, 0, FlangeWidth{}, flip, feat)
 }
 
 // buildFoldedSolidAt is buildFoldedSolid with the section SHIFTED setback into the parent material
@@ -173,7 +177,7 @@ func buildFoldedSolid(edge *topo.Edge, thickness float64, steps []bendRun, flip 
 // sheet and the union absorbs the overlap; a backwards RUN cannot do this, because the bend that
 // follows it curls forward again and doubles the band over itself.
 func buildFoldedSolidAt(edge *topo.Edge, thickness float64, steps []bendRun, setback float64,
-	flip bool, feat string) (*topo.Body, BendPlacement, error) {
+	width FlangeWidth, flip bool, feat string) (*topo.Body, BendPlacement, error) {
 	if len(steps) == 0 {
 		return nil, BendPlacement{}, fmt.Errorf("sheet-metal %s: no bend steps to build", feat)
 	}
@@ -186,18 +190,33 @@ func buildFoldedSolidAt(edge *topo.Edge, thickness float64, steps []bendRun, set
 	if err != nil {
 		return nil, BendPlacement{}, err
 	}
+	from, to, err := width.span(float64(v0.DistanceTo(v1)))
+	if err != nil {
+		return nil, BendPlacement{}, err
+	}
 	plane := planePerp(v0, e)
-	u, v := plane.XAxis().AsVector(), plane.YAxis().AsVector()
-	proj := func(w math.Vector3) math.Point2 { return math.P2(w.Dot(u), w.Dot(v)) }
-	poly := bandPolygon(steps, out.AsVector(), up.AsVector(), thickness, func(w math.Vector3) math.Point2 {
-		return proj(w.Add(out.AsVector().Scale(-setback)))
-	})
+	poly := foldedSection(steps, out.AsVector(), up.AsVector(), thickness, setback, plane)
+	// The bend LINE is the covered sub-span, not the whole edge, so the flat pattern develops a
+	// partial wall as the partial tab it is (#1958).
+	along := e.AsVector()
 	placement := BendPlacement{
-		AxisStart: v0, AxisEnd: v1, Outward: out, Up: up,
+		AxisStart: v0.TranslateBy(along.Scale(from)), AxisEnd: v0.TranslateBy(along.Scale(to)),
+		Outward: out, Up: up,
 		Angle: steps[0].Angle, Radius: steps[0].Radius, Thickness: thickness,
 		Length: steps[0].Run, FoldDown: flip,
 	}
-	return buildPrism(poly, plane, span{near: 0, far: v0.DistanceTo(v1)}, 0, feat), placement, nil
+	return buildPrism(poly, plane, span{near: from, far: to}, 0, feat), placement, nil
+}
+
+// foldedSection projects the folded chain into the edge's section plane, shifted setback into the
+// parent material (#1957).
+func foldedSection(steps []bendRun, out, up math.Vector3, thickness, setback float64,
+	plane sketch.Plane) []math.Point2 {
+	u, v := plane.XAxis().AsVector(), plane.YAxis().AsVector()
+	return bandPolygon(steps, out, up, thickness, func(w math.Vector3) math.Point2 {
+		shifted := w.Add(out.Scale(-setback))
+		return math.P2(shifted.Dot(u), shifted.Dot(v))
+	})
 }
 
 // flangeFrame returns the parent face's outward normal (up) and the in-plane outward

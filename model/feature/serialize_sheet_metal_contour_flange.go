@@ -11,6 +11,8 @@ type SheetMetalContourFlangeData struct {
 	Edge    string `yaml:"edge"`
 	Profile int    `yaml:"profile"`
 	Flip    bool   `yaml:"flip,omitempty"`
+	// Width is how much of the edge the swept wall covers (#1958); absent ⇒ the whole edge.
+	Width *FlangeWidthData `yaml:"width,omitempty"`
 }
 
 // serializeSheetMetalContourFlange projects a contour-flange recipe to its persisted form,
@@ -20,7 +22,8 @@ func serializeSheetMetalContourFlange(def *SheetMetalContourFlangeDefinition, sk
 	if !ok {
 		return nil, fmt.Errorf("sheet-metal contour flange references a profile sketch that is not in the part")
 	}
-	return &SheetMetalContourFlangeData{Edge: encodeKey(def.EdgeKey), Profile: idx, Flip: def.Flip}, nil
+	return &SheetMetalContourFlangeData{Edge: encodeKey(def.EdgeKey), Profile: idx, Flip: def.Flip,
+		Width: serializeFlangeWidth(def.Width)}, nil
 }
 
 // restoreSheetMetalContourFlange rebuilds a contour-flange feature, erroring on a missing
@@ -37,7 +40,11 @@ func restoreSheetMetalContourFlange(fs *PartFeatures, d *SheetMetalContourFlange
 	if !ok {
 		return nil, fmt.Errorf("sheet-metal contour flange references sketch %d which is not in the part", d.Profile)
 	}
+	width, err := restoreFlangeWidth(d.Width)
+	if err != nil {
+		return nil, err
+	}
 	return NewSheetMetalContourFlangeFeatures(fs).Add(&SheetMetalContourFlangeDefinition{
-		EdgeKey: key, Profile: profile, Flip: d.Flip,
+		EdgeKey: key, Profile: profile, Flip: d.Flip, Width: width,
 	}), nil
 }

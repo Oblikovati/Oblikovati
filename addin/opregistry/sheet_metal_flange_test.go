@@ -94,3 +94,48 @@ func TestUnknownFlangePlacementIsRefused(t *testing.T) {
 		}
 	}
 }
+
+// TestFlangeWidthExtentReachesTheDefinition (#1958): the extent and its distances arrive, and the
+// distances are expressions like every other flange dimension.
+func TestFlangeWidthExtentReachesTheDefinition(t *testing.T) {
+	s, edge := seedSheetMetalSheet(t)
+	if _, err := applyMap(t, s, "sheetMetalFlange", map[string]any{
+		"edge": edge, "height": "10 mm",
+		"width": map[string]any{"type": "offsetWidth", "offset": "5 mm", "width": "20 mm"},
+	}); err != nil {
+		t.Fatalf("flange with a width extent: %v", err)
+	}
+	w := lastFlangeDef(t, s).Width
+	if w.Type != feature.WidthOffsetAndWidth {
+		t.Fatalf("width extent reached the definition as %d, want the offset+width extent", w.Type)
+	}
+	if got := w.Offset(); got < 0.4999 || got > 0.5001 {
+		t.Errorf("width offset resolved to %g cm, want 0.5 (5 mm)", got)
+	}
+	if got := w.Width(); got < 1.9999 || got > 2.0001 {
+		t.Errorf("width resolved to %g cm, want 2.0 (20 mm)", got)
+	}
+}
+
+// TestFlangeWithoutAWidthSpansTheEdge: omitting the block must leave the flange exactly as it was
+// before widths existed.
+func TestFlangeWithoutAWidthSpansTheEdge(t *testing.T) {
+	s, edge := seedSheetMetalSheet(t)
+	if _, err := applyMap(t, s, "sheetMetalFlange", map[string]any{"edge": edge, "height": "10 mm"}); err != nil {
+		t.Fatalf("plain flange: %v", err)
+	}
+	if w := lastFlangeDef(t, s).Width; w.Type != feature.WidthFullEdge || w.Width != nil {
+		t.Errorf("a plain flange carries a width extent: %+v", w)
+	}
+}
+
+// TestUnknownWidthExtentOverTheWireIsRefused: "fromTo" is Inventor's fifth extent and is not
+// offered, so asking for it must fail rather than quietly spanning the whole edge.
+func TestUnknownWidthExtentOverTheWireIsRefused(t *testing.T) {
+	s, edge := seedSheetMetalSheet(t)
+	if _, err := applyMap(t, s, "sheetMetalFlange", map[string]any{
+		"edge": edge, "height": "10 mm", "width": map[string]any{"type": "fromTo"},
+	}); err == nil {
+		t.Error("a fromTo width extent should be refused")
+	}
+}

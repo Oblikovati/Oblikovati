@@ -16,6 +16,7 @@ const sheetMetalContourFlangeSchema = `{
   "properties": {
     "edge": {"type": "string", "description": "Reference key of the straight sheet edge to sweep the profile along (from get_reference_keys)."},
     "profileSketch": {"type": "integer", "minimum": 0, "description": "Index of the sketch holding the open profile (the flange cross-section, a chain of lines starting at the edge)."},
+    "width": {"type": "object", "description": "Bound the swept wall to PART of the edge (#1958); absent = the whole edge.", "properties": {"type": {"type": "string", "enum": ["edge", "centered", "offsets", "offsetWidth"]}, "width": {"type": "string"}, "offset": {"type": "string"}, "offset2": {"type": "string"}}},
     "flip": {"type": "boolean", "default": false, "description": "Sweep toward the opposite side of the sheet."}
   },
   "required": ["edge", "profileSketch"]
@@ -48,6 +49,11 @@ func applySheetMetalContourFlange(s *app.Session, raw json.RawMessage) (json.Raw
 	if err != nil {
 		return nil, err
 	}
-	def := &feature.SheetMetalContourFlangeDefinition{EdgeKey: []byte(in.Edge), Profile: profile, Flip: in.Flip}
+	width, err := flangeWidthExtent(part, in.Width)
+	if err != nil {
+		return nil, err
+	}
+	def := &feature.SheetMetalContourFlangeDefinition{EdgeKey: []byte(in.Edge), Profile: profile,
+		Flip: in.Flip, Width: width}
 	return recomputeResult(part, feature.NewSheetMetalContourFlangeFeatures(part.Features()).Add(def))
 }

@@ -18,6 +18,48 @@ type SheetMetalFlangeData struct {
 	BendPosition   string  `yaml:"bendPosition,omitempty"`
 	PositionOffset float64 `yaml:"positionOffset,omitempty"`
 	HeightDatum    string  `yaml:"heightDatum,omitempty"`
+	// Width is how much of the edge the wall covers (#1958); absent ⇒ the whole edge.
+	Width *FlangeWidthData `yaml:"width,omitempty"`
+}
+
+// FlangeWidthData persists a flange's width extent and the distances it takes (#1958).
+type FlangeWidthData struct {
+	Type    string  `yaml:"type"`
+	Width   float64 `yaml:"width,omitempty"`
+	Offset  float64 `yaml:"offset,omitempty"`
+	Offset2 float64 `yaml:"offset2,omitempty"`
+}
+
+// serializeFlangeWidth persists a width extent, or nothing at all for the full-edge default so an
+// existing recipe is untouched.
+func serializeFlangeWidth(w FlangeWidth) *FlangeWidthData {
+	if w.Type == WidthFullEdge {
+		return nil
+	}
+	return &FlangeWidthData{Type: WidthExtentName(w.Type), Width: evalFloat(w.Width),
+		Offset: evalFloat(w.Offset), Offset2: evalFloat(w.Offset2)}
+}
+
+// restoreFlangeWidth rebuilds a width extent; an unknown type is an error rather than a silent
+// full-edge wall.
+func restoreFlangeWidth(d *FlangeWidthData) (FlangeWidth, error) {
+	if d == nil {
+		return FlangeWidth{}, nil
+	}
+	t, ok := ParseWidthExtent(d.Type)
+	if !ok {
+		return FlangeWidth{}, fmt.Errorf("sheet-metal flange: unknown width extent %q", d.Type)
+	}
+	w := FlangeWidth{Type: t}
+	for _, f := range []struct {
+		value float64
+		dst   *func() float64
+	}{{d.Width, &w.Width}, {d.Offset, &w.Offset}, {d.Offset2, &w.Offset2}} {
+		if f.value != 0 {
+			*f.dst = constFloat(f.value)
+		}
+	}
+	return w, nil
 }
 
 // serializeSheetMetalFlange projects a flange recipe to its persisted form, freezing the
@@ -33,6 +75,7 @@ func serializeSheetMetalFlange(def *SheetMetalFlangeDefinition) *SheetMetalFlang
 		BendPosition:   BendPositionName(def.Position),
 		PositionOffset: evalFloat(def.PositionOffset),
 		HeightDatum:    HeightDatumName(def.HeightDatum),
+		Width:          serializeFlangeWidth(def.Width),
 	}
 }
 
@@ -54,8 +97,13 @@ func restoreSheetMetalFlange(fs *PartFeatures, d *SheetMetalFlangeData) (*PartFe
 	if !ok {
 		return nil, fmt.Errorf("sheet-metal flange: unknown height datum %q", d.HeightDatum)
 	}
+	width, err := restoreFlangeWidth(d.Width)
+	if err != nil {
+		return nil, err
+	}
 	def := &SheetMetalFlangeDefinition{
 		EdgeKey:     key,
+		Width:       width,
 		Height:      constFloat(d.Height),
 		Flip:        d.Flip,
 		Position:    position,
