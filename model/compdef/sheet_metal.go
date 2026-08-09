@@ -164,6 +164,14 @@ func (d *PartComponentDefinition) bendTransition() types.BendTransition {
 	return d.sheetMetal.Transition().Kind
 }
 
+// miterGap is the style's gap between mitered walls (#1961) — the rule's GapSize.
+func (d *PartComponentDefinition) miterGap() float64 {
+	if d.sheetMetal == nil {
+		return 0
+	}
+	return d.sheetMetal.Gap()
+}
+
 // FlatOrientations returns the part's flat-pattern orientations (M13-F05), or nil when the
 // part is not in the sheet-metal environment.
 func (d *PartComponentDefinition) FlatOrientations() *sheetmetal.Orientations {

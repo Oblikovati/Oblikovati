@@ -70,6 +70,8 @@ type Input struct {
 	// Transition is the style's bend transition (#1959), which a feature's own bend options may
 	// override.
 	Transition types.BendTransition
+	// MiterGap is the style's gap between mitered walls (#1961), which a flange may override.
+	MiterGap float64
 }
 
 // OperationalFeature is a feature that applies a boolean operation against the running

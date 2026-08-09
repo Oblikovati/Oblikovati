@@ -44,6 +44,10 @@ type SheetMetalFlangeDefinition struct {
 	Width FlangeWidth
 	// Options overrides the style's bend properties for this bend alone (#1959); nil ⇒ the style.
 	Options *BendOptions
+	// AutoMiter extends this wall and the one it corners with until they meet, then cuts MiterGap
+	// between them (#1961). Off by default: an existing part's corners stay as they were built.
+	AutoMiter bool
+	MiterGap  func() float64
 	// Position and HeightDatum decide where the wall LANDS (#1957): how far back from the picked
 	// edge the bend sits, and what the height is measured from. Both default to what this feature
 	// has always built — the bend at the edge, the height from its tangent. See
@@ -106,7 +110,23 @@ func (f *SheetMetalFlangeFeature) relieve(bodies []*topo.Body, edge *topo.Edge, 
 	if err != nil {
 		return nil, err
 	}
+	if bodies, err = f.mitre(bodies, placement, in); err != nil {
+		return nil, err
+	}
 	return cutCornerRelief(bodies, placement, in, f.bendTransition(in), featOr(f.featName, "flange"))
+}
+
+// mitre fills the corner between this wall and the one it meets, when the flange asks for it
+// (#1961). The gap defaults to the style's, which is what the sheet-metal rule's GapSize carries.
+func (f *SheetMetalFlangeFeature) mitre(bodies []*topo.Body, placement BendPlacement, in Input) ([]*topo.Body, error) {
+	if !f.def.AutoMiter {
+		return bodies, nil
+	}
+	gap := in.MiterGap
+	if f.def.MiterGap != nil {
+		gap = f.def.MiterGap()
+	}
+	return mitreCorner(bodies, placement, in, gap, featOr(f.featName, "flange"))
 }
 
 // bendTransition is the transition this bend uses: its own override, or the style's when it defers.

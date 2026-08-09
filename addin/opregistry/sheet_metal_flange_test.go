@@ -192,3 +192,38 @@ func TestUnknownBendOptionNamesAreRefused(t *testing.T) {
 		}
 	}
 }
+
+// TestAutoMiterReachesTheDefinition (#1961): the miter flag and its gap arrive, and the gap is an
+// expression like every other flange dimension.
+func TestAutoMiterReachesTheDefinition(t *testing.T) {
+	s, edge := seedSheetMetalSheet(t)
+	if _, err := applyMap(t, s, "sheetMetalFlange", map[string]any{
+		"edge": edge, "height": "10 mm", "applyAutoMiter": true, "miterGap": "1 mm",
+	}); err != nil {
+		t.Fatalf("flange with auto-miter: %v", err)
+	}
+	def := lastFlangeDef(t, s)
+	if !def.AutoMiter {
+		t.Error("applyAutoMiter did not reach the definition")
+	}
+	if def.MiterGap == nil {
+		t.Fatal("miterGap did not reach the definition")
+	}
+	if got := def.MiterGap(); got < 0.0999 || got > 0.1001 {
+		t.Errorf("miter gap resolved to %g cm, want 0.1 (1 mm)", got)
+	}
+}
+
+// TestFlangeWithoutMiterDefersToTheStyleGap: no gap given means the style's GapSize decides, so
+// the definition carries no override.
+func TestFlangeWithoutMiterDefersToTheStyleGap(t *testing.T) {
+	s, edge := seedSheetMetalSheet(t)
+	if _, err := applyMap(t, s, "sheetMetalFlange", map[string]any{
+		"edge": edge, "height": "10 mm", "applyAutoMiter": true,
+	}); err != nil {
+		t.Fatalf("flange with auto-miter: %v", err)
+	}
+	if def := lastFlangeDef(t, s); def.MiterGap != nil {
+		t.Error("a flange with no miterGap carries an override; the style should decide it")
+	}
+}

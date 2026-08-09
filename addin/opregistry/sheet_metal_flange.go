@@ -24,6 +24,8 @@ const sheetMetalFlangeSchema = `{
     "flip": {"type": "boolean", "default": false, "description": "Fold toward the opposite side of the sheet."},
     "bendPosition": {"type": "string", "enum": ["adjacentFace", "outsideBaseFace", "insideBendFace", "outerEdgeOffset", "innerEdgeOffset"], "default": "adjacentFace", "description": "How far back from the picked edge the bend sits (Inventor BendPositionEnum). adjacentFace starts the bend AT the edge; outsideBaseFace and insideBendFace set it back until the wall's outer or inner face reaches the edge, so the wall does not overhang; the two ...EdgeOffset positions add positionOffset to those."},
     "positionOffset": {"type": "string", "description": "Explicit distance for the outerEdgeOffset / innerEdgeOffset positions, e.g. \"2 mm\"."},
+    "applyAutoMiter": {"type": "boolean", "default": false, "description": "Extend this wall and the one it corners with until they meet, then cut miterGap between them. Two walls each stop at their own bend line, so the corner between them is otherwise open."},
+    "miterGap": {"type": "string", "description": "Gap left on the miter line, e.g. \"1 mm\"; absent uses the style's GapSize."},
     "options": {"type": "object", "description": "Override the sheet-metal style's bend properties for THIS bend only (Inventor's BendOptions). An omitted field defers to the style.", "properties": {"reliefShape": {"type": "string", "enum": ["round", "straight", "tear"], "description": "Notch shape at this bend's ends; tear cuts nothing."}, "reliefWidth": {"type": "string"}, "reliefDepth": {"type": "string"}, "minimumRemnant": {"type": "string", "description": "Thinnest strip of parent material a relief may leave; a notch that would leave less takes the sliver with it."}, "transition": {"type": "string", "enum": ["none", "intersection", "straightLine", "arc", "trimToBend", "default"], "description": "How this bend meets the face beside it. Only \"none\" is built; the others are refused where they would apply."}, "transitionArcRadius": {"type": "string"}}},
     "width": {"type": "object", "description": "Bound the wall to PART of the edge (Inventor's flange width extents): a bracket tab on a long edge, or a wall that stops short of the corners. Absent = the whole edge.", "properties": {"type": {"type": "string", "enum": ["edge", "centered", "offsets", "offsetWidth"], "default": "edge", "description": "centered takes width; offsets takes offset (from the edge start) and offset2 (from its end); offsetWidth takes offset and width."}, "width": {"type": "string", "description": "Wall length, e.g. \"20 mm\"."}, "offset": {"type": "string", "description": "Distance from the edge's start."}, "offset2": {"type": "string", "description": "Distance from the edge's end (offsets type)."}}},
     "heightDatum": {"type": "string", "enum": ["tangent", "outer", "inner", "outerOrtho", "innerOrtho"], "default": "tangent", "description": "What height is measured FROM (Inventor HeightDatumTypeEnum). tangent measures the wall from where the bend ends; outer/inner measure from the sharp corner the outer/inner faces would make, the way a drawing dimensions it; the ortho pair measures those corners perpendicular to the base face."}
@@ -83,6 +85,12 @@ func flangeDef(part *compdef.PartComponentDefinition, in featureargs.SheetMetalF
 	def.Width = width
 	if def.Options, err = bendOptions(part, in.Options); err != nil {
 		return nil, err
+	}
+	def.AutoMiter = in.ApplyAutoMiter
+	if in.MiterGap != "" {
+		if def.MiterGap, err = lengthClosure(part, in.MiterGap, "sheetMetalFlange: miterGap"); err != nil {
+			return nil, err
+		}
 	}
 	return def, nil
 }

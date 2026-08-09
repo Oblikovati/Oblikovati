@@ -38,6 +38,7 @@ type PartFeatures struct {
 	relief       func() ReliefSpec           // the sheet-metal style's bend relief, read live (#2072)
 	corner       func() CornerReliefSpec     // and its corner relief
 	transition   func() types.BendTransition // and its bend transition (#1959)
+	miterGap     func() float64              // and the gap it mitres corners with (#1961)
 }
 
 // ResourceStore reads embedded imported-file bytes by their document resource UUID
@@ -64,6 +65,17 @@ func (fs *PartFeatures) bendTransition() types.BendTransition {
 		return types.NoBendTransition
 	}
 	return fs.transition()
+}
+
+// SetMiterGap wires the style's miter gap in, read live (#1961).
+func (fs *PartFeatures) SetMiterGap(f func() float64) { fs.miterGap = f }
+
+// miterGapOf reads the current miter gap; with no style there is none.
+func (fs *PartFeatures) miterGapOf() float64 {
+	if fs.miterGap == nil {
+		return 0
+	}
+	return fs.miterGap()
 }
 
 // cornerReliefSpec reads the current corner relief. With no style there is nothing to cut, which
@@ -310,7 +322,7 @@ func (fs *PartFeatures) evaluateBody(pf *PartFeature, bodies []*topo.Body, sick 
 	pf.recomputes++
 	rec := &diag.Recorder{}
 	out, err := safeRecompute(pf, Input{Bodies: bodies, Params: fs.params, SourceTool: fs.sourceTool,
-		Diag: rec, Relief: fs.reliefSpec(), Corner: fs.cornerReliefSpec(), Transition: fs.bendTransition(), PriorBends: fs.bendsBefore(pf)})
+		Diag: rec, Relief: fs.reliefSpec(), Corner: fs.cornerReliefSpec(), Transition: fs.bendTransition(), MiterGap: fs.miterGapOf(), PriorBends: fs.bendsBefore(pf)})
 	pf.diags = rec.Records()
 	return fs.classify(pf, bodies, out, err, sick)
 }
