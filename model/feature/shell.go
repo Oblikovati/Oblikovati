@@ -40,10 +40,21 @@ func ParseShellDirection(name string) (ops.ShellDirection, bool) {
 	}
 }
 
+// evalFaceThicknesses resolves the per-face wall overrides (#1864) to the plain values the kernel
+// takes, so a parameter change re-evaluates them like every other driven dimension.
+func evalFaceThicknesses(fts []ShellFaceThickness) []ops.ShellFaceThickness {
+	out := make([]ops.ShellFaceThickness, 0, len(fts))
+	for _, ft := range fts {
+		out = append(out, ops.ShellFaceThickness{FaceKey: ft.FaceKey, Thickness: callOrZero(ft.Thickness)})
+	}
+	return out
+}
+
 // shellBody hollows the running body to a wall thickness on the chosen side (inside/outside/both),
-// opening the removed faces, via ops.ShellDirected, and replaces it in the body list. A lost face
+// opening the removed faces, via ops.ShellVaried, and replaces it in the body list. A lost face
 // key or non-positive thickness is an error so the feature goes Sick. See kernel/ops/shell.go.
-func shellBody(in Input, removedFaceKeys [][]byte, thickness float64, dir ops.ShellDirection, feat string) (Output, error) {
+func shellBody(in Input, removedFaceKeys [][]byte, thickness float64, dir ops.ShellDirection,
+	faceThicknesses []ops.ShellFaceThickness, feat string) (Output, error) {
 	body, err := runningBody(in)
 	if err != nil {
 		return Output{}, err
@@ -51,7 +62,7 @@ func shellBody(in Input, removedFaceKeys [][]byte, thickness float64, dir ops.Sh
 	if thickness <= 0 {
 		return Output{}, fmt.Errorf("%s: thickness %g must be > 0", feat, thickness)
 	}
-	result, err := ops.ShellDirected(body, removedFaceKeys, thickness, dir)
+	result, err := ops.ShellVaried(body, removedFaceKeys, thickness, dir, faceThicknesses)
 	if err != nil {
 		return Output{}, err
 	}

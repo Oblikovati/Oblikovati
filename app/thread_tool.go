@@ -199,6 +199,10 @@ func (t *ThreadTool) addThread(dress *feature.DressUpFeatures) (*feature.PartFea
 	if err != nil {
 		return nil, err
 	}
+	// The tool always builds a RIGHT-hand thread: Designation() composes the designation from the
+	// standard/size/pitch tables, so the "-LH" spelling is not reachable here either, and the
+	// dialog has no handedness control yet. ThreadDefinition.LeftHanded (#1892) is authorable over
+	// /api today; the UI control is tracked as a follow-up.
 	return dress.AddThreadDef(&feature.ThreadDefinition{
 		FaceKey: t.face.Face.ReferenceKey(), Designation: designation, Cut: t.cut,
 		Class: t.class(), Tapered: t.tapered, ModelDiameter: threadModelDiameters[clampRange(t.modelDiaIdx, len(threadModelDiameters))],

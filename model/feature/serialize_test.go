@@ -351,8 +351,8 @@ func TestSolidFeaturesRoundTrip(t *testing.T) {
 		t.Errorf("boss = face %q height %v, want face-2 4", boss.PlacementFaceKey, boss.Height())
 	}
 	combine := fresh.Item(2).Definition().(*CombineFeature).Definition()
-	if combine.TargetIndex != 0 || combine.ToolIndex != 1 || combine.Operation != ops.Cut {
-		t.Errorf("combine = %+v, want target 0 tool 1 Cut", combine)
+	if combine.TargetIndex != 0 || len(combine.ToolIndices) != 1 || combine.ToolIndices[0] != 1 || combine.Operation != ops.Cut {
+		t.Errorf("combine = %+v, want target 0 tools [1] Cut", combine)
 	}
 }
 

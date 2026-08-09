@@ -228,6 +228,10 @@ func (t *CombineTool) combineOperands(s *Session) (int, int, error) {
 
 // addCombine builds the boolean into mods — the shared constructor used by both Commit
 // (the part's engine) and DraftFeature (a scratch engine), so the two cannot drift.
+//
+// The tool picks exactly two bodies and always consumes the second, so it authors the single-tool,
+// tool-consuming combine. The tool collection and keepToolBodies (#1894) are reachable over /api;
+// the pick loop and dialog control for them are a follow-up.
 func (t *CombineTool) addCombine(mods *feature.ModifyFeatures, target, tool int) *feature.PartFeature {
 	return mods.AddCombine(target, tool, t.op)
 }

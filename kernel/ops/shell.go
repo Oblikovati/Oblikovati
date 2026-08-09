@@ -38,6 +38,22 @@ func Shell(solid *topo.Body, removedKeys [][]byte, t float64) (*topo.Body, error
 //   - Outside: (kept faces offset outward t) − solid              — outer dimensions grow by t.
 //   - Both:    (kept faces offset outward t/2) − (offset inward t/2) — wall centred on the faces.
 func ShellDirected(solid *topo.Body, removedKeys [][]byte, t float64, dir ShellDirection) (*topo.Body, error) {
+	return ShellVaried(solid, removedKeys, t, dir, nil)
+}
+
+// ShellFaceThickness gives one RETAINED face its own wall thickness, overriding the shell's
+// default — Inventor's SetFaceThickness / unique-thickness face set (#1864).
+type ShellFaceThickness struct {
+	FaceKey   []byte
+	Thickness float64
+}
+
+// ShellVaried is [ShellDirected] with per-face wall thicknesses: a thickened boss wall or a thin
+// window in an otherwise uniform shell. Each override offsets only its own face, so the walls meet
+// at the ordinary mitre the offset planes already produce — there is no separate blend step.
+// Naming a REMOVED face is an error: an opening has no wall to be thick.
+func ShellVaried(solid *topo.Body, removedKeys [][]byte, t float64, dir ShellDirection,
+	overrides []ShellFaceThickness) (*topo.Body, error) {
 	if t <= 0 {
 		return nil, fmt.Errorf("shell: thickness %g must be > 0", t)
 	}
@@ -45,23 +61,80 @@ func ShellDirected(solid *topo.Body, removedKeys [][]byte, t float64, dir ShellD
 	if err != nil {
 		return nil, err
 	}
+	wall, err := resolveWallThickness(solid, overrides, removed, t)
+	if err != nil {
+		return nil, err
+	}
+	return shellByDirection(solid, removed, wall, dir)
+}
+
+// shellByDirection cuts the wall out of the region between the solid and its offset copies, on
+// whichever side of the original faces the direction names.
+func shellByDirection(solid *topo.Body, removed map[uint64]bool, wall faceThickness,
+	dir ShellDirection) (*topo.Body, error) {
 	switch dir {
 	case ShellInside:
-		return Boolean(Cut, solid, offsetShellSolid(solid, removed, -t))
+		return Boolean(Cut, solid, offsetShellSolid(solid, removed, wall.scaled(-1)))
 	case ShellOutside:
-		return Boolean(Cut, offsetShellSolid(solid, removed, t), solid)
+		return Boolean(Cut, offsetShellSolid(solid, removed, wall.scaled(1)), solid)
 	case ShellBoth:
-		return Boolean(Cut, offsetShellSolid(solid, removed, t/2), offsetShellSolid(solid, removed, -t/2))
+		return Boolean(Cut, offsetShellSolid(solid, removed, wall.scaled(0.5)),
+			offsetShellSolid(solid, removed, wall.scaled(-0.5)))
 	default:
 		return nil, fmt.Errorf("shell: unknown direction %d", dir)
 	}
 }
 
-// offsetShellSolid rebuilds the solid with every kept face's plane moved by d along its normal
-// (d<0 inward, d>0 outward); removed faces stay in place so the shell opens flush there.
-func offsetShellSolid(solid *topo.Body, removed map[uint64]bool, d float64) *topo.Body {
+// faceThickness is the wall thickness to build at each face: the shell default, with per-face
+// overrides applied.
+type faceThickness struct {
+	dflt  float64
+	perID map[uint64]float64
+}
+
+// at returns the wall thickness for face f.
+func (w faceThickness) at(f *topo.Face) float64 {
+	if t, ok := w.perID[f.ID()]; ok {
+		return t
+	}
+	return w.dflt
+}
+
+// scaled returns each face's offset distance for one side of the wall (s<0 inward).
+func (w faceThickness) scaled(s float64) func(*topo.Face) float64 {
+	return func(f *topo.Face) float64 { return s * w.at(f) }
+}
+
+// resolveWallThickness binds the overrides to face IDs, rejecting a lost key (via resolveFaceSet's
+// rules), a removed face, and a non-positive thickness — each of which would otherwise produce a
+// quietly wrong wall rather than a sick feature.
+func resolveWallThickness(solid *topo.Body, overrides []ShellFaceThickness, removed map[uint64]bool,
+	t float64) (faceThickness, error) {
+	wall := faceThickness{dflt: t, perID: make(map[uint64]float64, len(overrides))}
+	for _, o := range overrides {
+		if o.Thickness <= 0 {
+			return wall, fmt.Errorf("shell: face thickness %g must be > 0 (face %x)", o.Thickness, o.FaceKey)
+		}
+		ids, err := resolveFaceSet(solid, [][]byte{o.FaceKey})
+		if err != nil {
+			return wall, fmt.Errorf("shell: face thickness: %w", err)
+		}
+		for id := range ids {
+			if removed[id] {
+				return wall, fmt.Errorf("shell: face %x is removed, so it is an opening and has no "+
+					"wall; give a thickness for a RETAINED face", o.FaceKey)
+			}
+			wall.perID[id] = o.Thickness
+		}
+	}
+	return wall, nil
+}
+
+// offsetShellSolid rebuilds the solid with every kept face's plane moved by dist(f) along its
+// normal (negative inward); removed faces stay in place so the shell opens flush there.
+func offsetShellSolid(solid *topo.Body, removed map[uint64]bool, dist func(*topo.Face) float64) *topo.Body {
 	return rebuildWithPlanes(solid, "shell-offset", false, func(f *topo.Face) geom.Plane {
-		return shellFacePlane(f, removed, d)
+		return shellFacePlane(f, removed, dist(f))
 	})
 }
 

@@ -542,9 +542,11 @@ const splitSolidSchema = `{
   "properties": {
     "workPlaneIndex": {"type": "integer", "minimum": 0, "description": "Index of the work plane to split along (see list_work_planes)."},
     "keep": {"type": "string", "enum": ["both", "positive", "negative"], "default": "both", "description": "Which side(s) of the plane to keep (trim modes)."},
-    "type": {"type": "string", "enum": ["trimSolid", "splitFaces", "splitBody"], "description": "Split kind: trimSolid keeps one side (per keep, default positive); splitFaces imprints the plane onto the faces without removing material; splitBody keeps both pieces as separate solids. Absent: derived from keep."}
+    "type": {"type": "string", "enum": ["trimSolid", "splitFaces", "splitBody"], "description": "Split kind: trimSolid keeps one side (per keep, default positive); splitFaces imprints the plane onto the faces without removing material; splitBody keeps both pieces as separate solids. Absent: derived from keep."},
+    "tool": {"type": "string", "enum": ["workPlane", "workSurface", "surfaceBody", "path"], "default": "workPlane", "description": "What the split cuts WITH (Inventor's SplitToolTypeEnum), independent of type. workSurface and surfaceBody take toolIndex and cut along the sheet's plane extended, so a PLANAR sheet is required — a curved one is refused rather than approximated. path is not yet buildable: it is the split-face geometry."},
+    "toolIndex": {"type": "integer", "minimum": 0, "description": "The surface tool: a work-surface position for tool \"workSurface\", or a body index for \"surfaceBody\"."}
   },
-  "required": ["workPlaneIndex"]
+  "required": []
 }`
 
 func splitSolidDescriptor() *OperationDescriptor {
@@ -556,39 +558,63 @@ func applySplitSolid(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 	if err != nil {
 		return nil, err
 	}
-	planes := part.WorkPlanes()
-	if in.WorkPlaneIndex < 0 || in.WorkPlaneIndex >= planes.Count() {
-		return nil, fmt.Errorf("splitSolid: work plane %d out of range (part has %d)", in.WorkPlaneIndex, planes.Count())
+	tool, ok := feature.ParseSplitTool(strings.TrimSpace(in.Tool))
+	if !ok {
+		return nil, fmt.Errorf("splitSolid: unknown tool %q (want workPlane/workSurface/surfaceBody/path)", in.Tool)
 	}
-	pf, err := addSplitOfType(part, planes.Item(in.WorkPlaneIndex), in)
+	wp, err := splitWorkPlane(part, tool, in.WorkPlaneIndex)
+	if err != nil {
+		return nil, err
+	}
+	pf, err := addSplitOfType(part, wp, tool, in)
 	if err != nil {
 		return nil, err
 	}
 	return recomputeResult(part, pf)
 }
 
+// splitWorkPlane resolves the cutting plane for a work-plane split; a surface tool has none, and
+// asking for one would reject a perfectly good surface split on a part with no work planes.
+func splitWorkPlane(part *compdef.PartComponentDefinition, tool feature.SplitToolKind, i int) (*feature.WorkPlane, error) {
+	if tool != feature.SplitByWorkPlane {
+		return nil, nil
+	}
+	planes := part.WorkPlanes()
+	if i < 0 || i >= planes.Count() {
+		return nil, fmt.Errorf("splitSolid: work plane %d out of range (part has %d)", i, planes.Count())
+	}
+	return planes.Item(i), nil
+}
+
 // addSplitOfType dispatches on the frozen split-type spelling; absent keeps the original
-// keep-driven behavior (both sides by default).
-func addSplitOfType(part *compdef.PartComponentDefinition, wp *feature.WorkPlane, in featureargs.SplitSolid) (*feature.PartFeature, error) {
-	mods := feature.NewModifyFeatures(part.Features())
+// keep-driven behavior (both sides by default). The tool is orthogonal: it decides what the
+// split cuts with, the type decides what it does (#1891).
+func addSplitOfType(part *compdef.PartComponentDefinition, wp *feature.WorkPlane,
+	tool feature.SplitToolKind, in featureargs.SplitSolid) (*feature.PartFeature, error) {
+	def := &feature.SplitSolidDefinition{Tool: tool, Plane: wp, ToolIndex: in.ToolIndex, Keep: splitSide(in.Keep)}
 	if in.Type == "" {
-		return mods.AddSplitSolid(wp, splitSide(in.Keep)), nil
+		return feature.NewModifyFeatures(part.Features()).AddSplitByDefinition(def), nil
 	}
 	st, ok := types.ParseSplitType(in.Type)
 	if !ok {
 		return nil, fmt.Errorf("splitSolid: unknown type %q (want trimSolid/splitFaces/splitBody)", in.Type)
 	}
+	applySplitType(def, st)
+	return feature.NewModifyFeatures(part.Features()).AddSplitByDefinition(def), nil
+}
+
+// applySplitType sets what the split DOES: imprint faces, keep both pieces, or trim to one side
+// (where "both" makes no sense, so it defaults to the positive side).
+func applySplitType(def *feature.SplitSolidDefinition, st types.SplitType) {
 	switch st {
 	case types.SplitFacesSplit:
-		return mods.AddSplitFaces(wp), nil
+		def.FacesOnly = true
 	case types.SplitBodySplit:
-		return mods.AddSplitSolid(wp, feature.SplitBoth), nil
-	default: // trimSolid keeps one side; "both" makes no sense here, default positive
-		side := splitSide(in.Keep)
-		if side == feature.SplitBoth {
-			side = feature.SplitPositive
+		def.Keep = feature.SplitBoth
+	default:
+		if def.Keep == feature.SplitBoth {
+			def.Keep = feature.SplitPositive
 		}
-		return mods.AddSplitSolid(wp, side), nil
 	}
 }
 

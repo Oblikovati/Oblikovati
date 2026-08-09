@@ -234,6 +234,15 @@ type FaceDressData struct {
 	// ShellDirection is the wall side for a shell ("outside"/"both"; absent ⇒ inside). Unused by
 	// the other dress-ups. #1864.
 	ShellDirection string `yaml:"shellDirection,omitempty"`
+	// FaceThicknesses are a shell's per-face wall overrides, resolved at save time (#1864).
+	// Absent ⇒ every retained face carries the uniform Value.
+	FaceThicknesses []FaceThicknessData `yaml:"faceThicknesses,omitempty"`
+}
+
+// FaceThicknessData is one retained face's own wall thickness in a shell (#1864).
+type FaceThicknessData struct {
+	Face      string  `yaml:"face"`
+	Thickness float64 `yaml:"thickness"`
 }
 
 // GeomFaceRefData is the serialized form of a geometric face descriptor: the face's
@@ -289,8 +298,11 @@ type ThreadData struct {
 	ModelDiameter string `yaml:"modelDiameter,omitempty"`
 	// Offset and Length are the thread's axial window on the face (cm), resolved at save time
 	// (Inventor ThreadOffset / ThreadDepth). Absent/0 length ⇒ the thread runs the full face.
-	Offset      float64          `yaml:"offset,omitempty"`
-	Length      float64          `yaml:"length,omitempty"`
+	Offset float64 `yaml:"offset,omitempty"`
+	Length float64 `yaml:"length,omitempty"`
+	// LeftHanded reverses the thread sense (#1892). A flag, not a "handedness" name, so a
+	// document written before the option existed reads back as the right-hand thread it was.
+	LeftHanded  bool             `yaml:"leftHanded,omitempty"`
 	FaceAnchors []FaceAnchorData `yaml:"faceAnchors,omitempty"`
 }
 

@@ -57,11 +57,15 @@ type BossData struct {
 	FaceAnchors []FaceAnchorData `yaml:"faceAnchors,omitempty"`
 }
 
-// CombineData booleans two running bodies (by index) under an operation.
+// CombineData booleans running bodies (by index) under an operation. A single-tool combine keeps
+// writing the original `tool` scalar so the common recipe is unchanged; `tools` appears only for
+// the multi-tool form the scalar cannot express (#1894).
 type CombineData struct {
 	Target    int    `yaml:"target"`
 	Tool      int    `yaml:"tool"`
+	Tools     []int  `yaml:"tools,omitempty"`
 	Operation string `yaml:"operation"`
+	KeepTools bool   `yaml:"keepTools,omitempty"`
 }
 
 func serializeHole(def *HoleDefinition, sk SketchIndexer) (*HoleData, error) {
@@ -185,7 +189,25 @@ func restoreCombine(fs *PartFeatures, c *CombineData) (*PartFeature, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewModifyFeatures(fs).AddCombine(c.Target, c.Tool, op), nil
+	return NewModifyFeatures(fs).AddCombineTools(c.Target, combineToolList(c), op, c.KeepTools), nil
+}
+
+// combineToolList reads the tool set from whichever spelling the recipe used: `tools` when the
+// combine has several, else the original `tool` scalar (which is also what a document written
+// before #1894 carries).
+func combineToolList(c *CombineData) []int {
+	if len(c.Tools) > 0 {
+		return c.Tools
+	}
+	return []int{c.Tool}
+}
+
+// combineToolData renders the tool set back: the scalar alone for one tool, the list for several.
+func combineToolData(tools []int) (tool int, list []int) {
+	if len(tools) == 1 {
+		return tools[0], nil
+	}
+	return 0, tools
 }
 
 // holeTypeName / parseHoleType map the hole geometry type to/from a stable name.

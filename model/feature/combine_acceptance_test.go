@@ -92,8 +92,8 @@ func TestCombineCutRoundTrip(t *testing.T) {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
 	cd := fresh.Item(2).Definition().(*CombineFeature).Definition()
-	if cd.Operation != ops.Cut || cd.TargetIndex != 0 || cd.ToolIndex != 1 {
-		t.Fatalf("restored combine = op %v target %d tool %d; want Cut 0 1", cd.Operation, cd.TargetIndex, cd.ToolIndex)
+	if cd.Operation != ops.Cut || cd.TargetIndex != 0 || len(cd.ToolIndices) != 1 || cd.ToolIndices[0] != 1 {
+		t.Fatalf("restored combine = op %v target %d tools %v; want Cut 0 [1]", cd.Operation, cd.TargetIndex, cd.ToolIndices)
 	}
 	fresh.Recompute()
 	if v := ops.BodyGeometryProperties(fresh.Result()[0], ops.DefaultQuality()).Volume; relErr(v, 4) > 1e-6 {

@@ -26,10 +26,12 @@ const combineSchema = `{
   "type": "object",
   "properties": {
     "targetIndex": {"type": "integer", "minimum": 0, "description": "Body kept (index in model.tree body order)."},
-    "toolIndex": {"type": "integer", "minimum": 0, "description": "Body combined into the target."},
-    "operation": {"type": "string", "enum": ["join", "cut", "intersect"], "default": "join"}
+    "toolIndex": {"type": "integer", "minimum": 0, "description": "Body combined into the target. Give this or toolIndices."},
+    "toolIndices": {"type": "array", "items": {"type": "integer", "minimum": 0}, "minItems": 1, "description": "Several tool bodies combined into the target in ONE feature, the way Inventor's combine takes a collection — splitting them into N features changes both the tree and the boolean order. Takes precedence over toolIndex."},
+    "operation": {"type": "string", "enum": ["join", "cut", "intersect"], "default": "join"},
+    "keepToolBodies": {"type": "boolean", "default": false, "description": "Leave the tool bodies in the part after the boolean instead of consuming them, so one tool can go on to cut something else."}
   },
-  "required": ["targetIndex", "toolIndex", "operation"]
+  "required": ["targetIndex", "operation"]
 }`
 
 func combineDescriptor() *OperationDescriptor {
@@ -45,8 +47,18 @@ func applyCombine(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewModifyFeatures(part.Features()).AddCombine(in.TargetIndex, in.ToolIndex, op)
+	pf := feature.NewModifyFeatures(part.Features()).AddCombineTools(in.TargetIndex,
+		combineTools(in), op, in.KeepToolBodies)
 	return recomputeResult(part, pf)
+}
+
+// combineTools reads the tool set from whichever spelling the caller used — the list when given,
+// else the single index (#1894).
+func combineTools(in featureargs.Combine) []int {
+	if len(in.ToolIndices) > 0 {
+		return in.ToolIndices
+	}
+	return []int{in.ToolIndex}
 }
 
 // --- thicken ---------------------------------------------------------------

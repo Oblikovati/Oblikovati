@@ -183,6 +183,16 @@ type ShellDefinition struct {
 	Thickness       func() float64
 	GeomFaces       []topo.GeometricFaceRef // externally-authored removed faces by geometric descriptor (ADR-0040)
 	Direction       ops.ShellDirection      // which side the wall grows onto (default ShellInside) — #1864
+	// FaceThicknesses give named RETAINED faces their own wall thickness (Inventor's
+	// SetFaceThickness, #1864) — a thickened boss wall or a thin window in an otherwise uniform
+	// shell. Each is a closure so a parameter drives it, exactly like the default Thickness.
+	FaceThicknesses []ShellFaceThickness
+}
+
+// ShellFaceThickness overrides the wall thickness on one retained face of a shell (#1864).
+type ShellFaceThickness struct {
+	FaceKey   []byte
+	Thickness func() float64
 }
 
 // ShellFeature hollows a solid.
@@ -201,7 +211,8 @@ func (s *ShellFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	return shellBody(in, keys, callOrZero(s.def.Thickness), s.def.Direction, featOr(s.featName, "shell"))
+	return shellBody(in, keys, callOrZero(s.def.Thickness), s.def.Direction,
+		evalFaceThicknesses(s.def.FaceThicknesses), featOr(s.featName, "shell"))
 }
 
 // FaceDraftDefinition tapers selected faces by an angle about a pull direction. Neutral, when set, is
@@ -248,6 +259,11 @@ type ThreadDefinition struct {
 	// A double-ended stud threads only its two ends by giving each thread its own Offset+Length.
 	Offset func() float64
 	Length func() float64
+	// LeftHanded reverses the thread's sense (#1892). Named for the LEFT hand, not Inventor's
+	// RightHanded, for the same reason as HoleTap.LeftHanded: a definition built as a literal
+	// would otherwise default every thread to left-handed. A "-LH" designation says the same
+	// thing; either one alone makes the thread left-handed.
+	LeftHanded bool
 	// FaceAnchors maps FaceKey to its mint-time centroid for the geometric recovery tier
 	// (ADR-0043 P6 / #1579); see FilletDefinition.EdgeAnchors.
 	FaceAnchors map[string]math.Point3
@@ -277,6 +293,9 @@ func (t *ThreadFeature) Recompute(in Input) (Output, error) {
 		return Output{}, err
 	}
 	spec.Class, spec.Tapered = t.def.Class, t.def.Tapered
+	// The designation may already carry the handedness as an "-LH" suffix, so the flag can only
+	// take handedness AWAY from right — the two spellings agree rather than fight (#1892).
+	spec.RightHanded = spec.RightHanded && !t.def.LeftHanded
 	spec.ModelDiameter = t.def.ModelDiameter
 	if spec.ModelDiameter == 0 {
 		spec.ModelDiameter = types.ThreadMajorDiameter

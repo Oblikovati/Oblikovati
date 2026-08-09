@@ -70,7 +70,9 @@ func (r featureCodecSet) registerDressUpCodecs() {
 	r.register("shell", featureCodec{
 		encode: func(fd *FeatureData, f Feature, _ SketchIndexer, _ map[ID]int) error {
 			sf := f.(*ShellFeature)
-			fd.Shell = &FaceDressData{Faces: encodeKeys(sf.def.RemovedFaceKeys), Value: evalFloat(sf.def.Thickness), GeomFaces: encodeGeomFaces(sf.def.GeomFaces), ShellDirection: ShellDirectionName(sf.def.Direction)}
+			fd.Shell = &FaceDressData{Faces: encodeKeys(sf.def.RemovedFaceKeys), Value: evalFloat(sf.def.Thickness),
+				GeomFaces: encodeGeomFaces(sf.def.GeomFaces), ShellDirection: ShellDirectionName(sf.def.Direction),
+				FaceThicknesses: encodeFaceThicknesses(sf.def.FaceThicknesses)}
 			return nil
 		},
 		decode: decodeShell,
@@ -243,9 +245,37 @@ func decodeShell(rc *restoreContext, fd FeatureData) (*PartFeature, error) {
 	if !ok {
 		return nil, fmt.Errorf("shell: unknown direction %q", fd.Shell.ShellDirection)
 	}
+	fts, err := decodeFaceThicknesses(fd.Shell.FaceThicknesses)
+	if err != nil {
+		return nil, err
+	}
 	return NewDressUpFeatures(rc.fs).addShell(&ShellDefinition{
 		RemovedFaceKeys: d.keys, GeomFaces: d.geomFaces, Thickness: constFloat(d.value), Direction: dir,
+		FaceThicknesses: fts,
 	}), nil
+}
+
+// encodeFaceThicknesses / decodeFaceThicknesses carry a shell's per-face wall overrides through
+// the recipe (#1864), resolving each closure to the value it holds at save time — the same
+// treatment the uniform thickness gets.
+func encodeFaceThicknesses(fts []ShellFaceThickness) []FaceThicknessData {
+	var out []FaceThicknessData
+	for _, ft := range fts {
+		out = append(out, FaceThicknessData{Face: encodeKey(ft.FaceKey), Thickness: evalFloat(ft.Thickness)})
+	}
+	return out
+}
+
+func decodeFaceThicknesses(data []FaceThicknessData) ([]ShellFaceThickness, error) {
+	var out []ShellFaceThickness
+	for _, d := range data {
+		key, err := decodeKey(d.Face)
+		if err != nil {
+			return nil, fmt.Errorf("shell face thickness: %w", err)
+		}
+		out = append(out, ShellFaceThickness{FaceKey: key, Thickness: constFloat(d.Thickness)})
+	}
+	return out, nil
 }
 
 // decodeDraft rebuilds a face draft, re-binding its faces by key and its pull direction.
