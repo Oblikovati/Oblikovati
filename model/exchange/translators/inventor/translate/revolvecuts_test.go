@@ -67,30 +67,56 @@ func TestTryKernelRevolveBuildsSolidFromSyntheticProfile(t *testing.T) {
 	}
 }
 
-// TestApplyExtrudeCutsAndHoleCutsTheBase drives the cut path over a synthetic revolve base: a Ø1
-// bore cut through a cylinder, with the region named as a lone full circle. No corpus part.
-func TestApplyExtrudeCutsAndHoleCutsTheBase(t *testing.T) {
+// TestBuildGraphRevolveCutsBuildsBaseAndCuts drives the whole revolve-with-cuts orchestration
+// (graphRevolveCandidate → revolve base → applyExtrudeCutsAndHole with the through-all retry) on
+// synthetic graph sketches, with no corpus part: an annular base with a Ø0.6 bore cut, region named
+// as a lone full circle.
+func TestBuildGraphRevolveCutsBuildsBaseAndCuts(t *testing.T) {
 	def := newPart(t)
-	// Base annular tube (rectangle x∈[1,2], h=3 revolved about x=0); a bore profile is sketch #1.
-	base := rectAboutAxis(1, 2, 3)
-	bore := ipt.Sketch{Circles: []ipt.Circle{{Center: ipt.Point2D{X: 1.5}, Radius: 0.3}}, Resolved: true}
-	placed := placeGraphSketches([]ipt.Sketch{base, bore})
-	emitted := emitSketches(def, placed)
-	if ids := tryKernelRevolve(def, nil, placed[:1], emitted[:1], 0, revolveAxisRef{}); len(ids) == 0 {
-		t.Fatal("base revolve built nothing")
+	graph := []ipt.Sketch{
+		rectAboutAxis(1, 2, 3), // profile sketch #0 → annular tube base
+		{Circles: []ipt.Circle{{Center: ipt.Point2D{X: 1.5}, Radius: 0.3}}, Resolved: true}, // bore sketch #1
 	}
-	def.Recompute()
-	if !firstBodyIsSolid(def) {
-		t.Fatal("base did not close to a solid")
-	}
-	// Cut the bore (region named as a lone full circle) — exercises the region match + AddExtrude +
-	// the through-all retry; the through-all retry guarantees the body stays closed.
 	extrudes := []ipt.Extrude{{Operation: ipt.OpCut, ThroughAll: true}}
+	profiles := []int{1}
 	regions := [][]ipt.RegionLoop{{{Edges: []ipt.RegionEdge{{Kind: ipt.EdgeCircle, Circle: ipt.Circle{Center: ipt.Point2D{X: 1.5}, Radius: 0.3}}}}}}
-	notes := applyExtrudeCutsAndHole(def, extrudes, []int{1}, regions, ipt.Hole{}, false, placed, emitted)
-	def.Recompute()
+	solid, notes := buildGraphRevolveCuts(def, nil, graph, 0, revolveAxisRef{}, extrudes, profiles, regions, ipt.Hole{}, false)
+	if !solid {
+		t.Fatalf("expected a solid turned+milled body; notes=%v", notes)
+	}
 	if !firstBodyIsSolid(def) {
-		t.Fatalf("cut left an open body; notes=%v", notes)
+		t.Error("firstBodyIsSolid disagrees with the returned solid flag")
+	}
+}
+
+// TestRevolveCutBranches covers the remaining revolve/cut branches: the preferred=-1 SCAN path, the
+// axis-reference fallback (a profile turning about an ordinary y=0 edge the heuristic can't spot), and
+// applyExtrudeCutsAndHole's skip note for an unresolvable profile.
+func TestRevolveCutBranches(t *testing.T) {
+	// Scan path: preferred=-1 finds the revolve by scanning the emitted sketches.
+	def := newPart(t)
+	placed := placeGraphSketches([]ipt.Sketch{rectAboutAxis(1, 2, 3)})
+	emitted := emitSketches(def, placed)
+	if len(tryKernelRevolve(def, nil, placed, emitted, -1, revolveAxisRef{})) == 0 {
+		t.Error("scan path built no revolve")
+	}
+
+	// Axis-reference fallback: a rectangle below y=0 with its top edge ON y=0 — no isolated/construction
+	// centreline, so revolveAxisIndex declines and the decoded horizontal axis supplies the edge.
+	def2 := newPart(t)
+	edge := ipt.Sketch{Lines: []ipt.Line{
+		ln(-2, 0, -1, 0), ln(-1, 0, -1, -3), ln(-1, -3, -2, -3), ln(-2, -3, -2, 0),
+	}, Resolved: true}
+	pl2 := placeGraphSketches([]ipt.Sketch{edge})
+	em2 := emitSketches(def2, pl2)
+	if len(tryKernelRevolve(def2, nil, pl2, em2, 0, revolveAxisRef{ox: 0, oy: 0, dx: -1, dy: 0, ok: true})) == 0 {
+		t.Error("axis-reference revolve built nothing")
+	}
+
+	// applyExtrudeCutsAndHole skip note: an extrude whose profile index is out of range.
+	notes := applyExtrudeCutsAndHole(newPart(t), []ipt.Extrude{{Operation: ipt.OpCut}}, []int{9}, nil, ipt.Hole{}, false, pl2, em2)
+	if len(notes) == 0 {
+		t.Error("expected a skip note for an unresolvable profile")
 	}
 }
 

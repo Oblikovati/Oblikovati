@@ -135,11 +135,6 @@ func buildRevolveDispatch(def *compdef.PartComponentDefinition, d *ipt.Document,
 // The whole attempt is speculative and self-contained: nothing here reaches a part whose primary
 // revolve already produced a good solid.
 func graphRevolveWithCuts(def *compdef.PartComponentDefinition, d *ipt.Document, seg []byte) (bool, []string) {
-	graph := ipt.GraphSketches(d)
-	if !graphRevolveCandidate(graph) {
-		return false, nil
-	}
-	clearFeaturesAndSketches(def) // drop the primary attempt; build fresh from the graph
 	// Revolve the sketch the Revolution feature actually names (ipt.RevolveProfileSketch), not the
 	// first sketch that looks revolvable — the latter mis-picks a cut profile on a machined part and
 	// builds garbage. -1 (no reference decoded) keeps the scan.
@@ -153,6 +148,27 @@ func graphRevolveWithCuts(def *compdef.PartComponentDefinition, d *ipt.Document,
 	if ox, oy, dx, dy, ok := ipt.RevolveAxis2D(d); ok {
 		axis = revolveAxisRef{ox: ox, oy: oy, dx: dx, dy: dy, ok: true}
 	}
+	hole, hasHole := ipt.DecodeHole(d)
+	solid, notes := buildGraphRevolveCuts(def, seg, ipt.GraphSketches(d), preferred, axis,
+		ipt.DecodeExtrudes(d), ipt.ExtrudeProfiles(d), ipt.ExtrudeRegions(d), hole, hasHole)
+	// Commit only a solid that also fits Inventor's stored tessellation; else leave the def cleared for
+	// the caller to restore the primary state.
+	if solid && bodyFitsMesh(def, d) {
+		return true, notes
+	}
+	return false, notes
+}
+
+// buildGraphRevolveCuts is graphRevolveWithCuts' decode-free core: given the node-graph sketches, the
+// named profile index, the decoded axis, and the decoded extrudes/regions/hole, it revolves the base
+// and cuts the milled features over it, returning whether the result closed to a solid. Split out so
+// the whole orchestration can be unit-tested with synthetic sketches (the document wrapper adds the
+// mesh-fit gate).
+func buildGraphRevolveCuts(def *compdef.PartComponentDefinition, seg []byte, graph []ipt.Sketch, preferred int, axis revolveAxisRef, extrudes []ipt.Extrude, profiles []int, regions [][]ipt.RegionLoop, hole ipt.Hole, hasHole bool) (bool, []string) {
+	if !graphRevolveCandidate(graph) {
+		return false, nil
+	}
+	clearFeaturesAndSketches(def) // drop the primary attempt; build fresh from the graph
 	// A full circle in the profile that crosses the axis is an impossible revolve profile — a
 	// mis-flagged wall arc (KnobBottom's r20.3 dome edge). Rebuild it as the arc its endpoints
 	// describe before emitting, so the profile closes instead of revolving a giant circle into a blob.
@@ -168,26 +184,16 @@ func graphRevolveWithCuts(def *compdef.PartComponentDefinition, d *ipt.Document,
 	if !firstBodyIsSolid(def) {
 		return false, nil // the revolve base didn't close — not a machined-holder we can rebuild
 	}
-	notes := applyRevolveCuts(def, d, placed, emitted)
+	notes := applyExtrudeCutsAndHole(def, extrudes, profiles, regions, hole, hasHole, placed, emitted)
 	def.Recompute()
-	if firstBodyIsSolid(def) && bodyFitsMesh(def, d) {
-		return true, notes
-	}
-	return false, notes
+	return firstBodyIsSolid(def), notes
 }
 
-// applyRevolveCuts applies the part's cut/join extrudes and its drilled hole over the revolve base
-// already built into def. It mirrors buildExtrudeFeatures' per-extrude region match, but consumes an
-// existing base (the revolve) instead of requiring a New-Body extrude to start one. A stage that
-// can't resolve its profile or region is skipped with a note; whatever cuts do bind stay.
-func applyRevolveCuts(def *compdef.PartComponentDefinition, d *ipt.Document, placed []placedSketch, emitted []emittedSketch) []string {
-	hole, hasHole := ipt.DecodeHole(d)
-	return applyExtrudeCutsAndHole(def, ipt.DecodeExtrudes(d), ipt.ExtrudeProfiles(d), ipt.ExtrudeRegions(d), hole, hasHole, placed, emitted)
-}
-
-// applyExtrudeCutsAndHole is applyRevolveCuts' decode-free core: given the already-decoded extrudes,
-// profile indices, regions, and hole, it cuts each over the base and drills the hole. Split out so the
-// cut/retry logic can be unit-tested with synthetic inputs (applyRevolveCuts wires in the document).
+// applyExtrudeCutsAndHole applies the part's cut/join extrudes and its drilled hole over the revolve
+// base already built into def, from already-decoded data. It mirrors buildExtrudeFeatures' per-extrude
+// region match, but consumes an existing base (the revolve) instead of requiring a New-Body extrude to
+// start one. A stage that can't resolve its profile or region is skipped with a note; whatever cuts do
+// bind stay. Decode-free so the cut/retry logic can be unit-tested with synthetic inputs.
 func applyExtrudeCutsAndHole(def *compdef.PartComponentDefinition, extrudes []ipt.Extrude, profiles []int, regions [][]ipt.RegionLoop, hole ipt.Hole, hasHole bool, placed []placedSketch, emitted []emittedSketch) []string {
 	var notes []string
 	for i, ex := range extrudes {
