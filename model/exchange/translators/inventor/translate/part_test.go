@@ -1062,3 +1062,36 @@ func TestCapstainMotorCapRevolvesAboutItsEdge(t *testing.T) {
 		t.Errorf("volume = %.0f mm³, want within 3%% of Inventor's 31223", vol)
 	}
 }
+
+// TestSmartKnobFixedBaseCutsThroughStepped covers the through-cut retry: a blind/one-sided cut on
+// this turned knob lands its end face coincident with the stepped top and OPENS the body; applyRevolveCuts
+// retries such a cut as a symmetric through-all, which removes the full column and closes it. Reopens
+// as a SOLID within 2% of Inventor's STL volume (3549). Corpus-gated; set IPT_CORPUS.
+func TestSmartKnobFixedBaseCutsThroughStepped(t *testing.T) {
+	dir := os.Getenv("IPT_CORPUS")
+	if dir == "" {
+		dir = `P:\ReelToReel\Mechanical`
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "SmartKnobFixedBase.ipt"))
+	if err != nil {
+		t.Skipf("corpus part not available (%v); set IPT_CORPUS", err)
+	}
+	out := filepath.Join(t.TempDir(), "skfb.opd")
+	if _, err := FromInventor(data, out); err != nil {
+		t.Fatalf("FromInventor: %v", err)
+	}
+	ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
+	reopened, err := ws.Open(out, true)
+	if err != nil {
+		t.Fatalf("reopen: %v", err)
+	}
+	def := reopened.Content().(*compdef.PartComponentDefinition)
+	bodies := def.SurfaceBodies().All()
+	if len(bodies) == 0 || !bodies[0].IsSolid() {
+		t.Fatalf("want a SOLID turned+milled base, got %d bodies (solid=%v)", len(bodies), len(bodies) > 0 && bodies[0].IsSolid())
+	}
+	vol := analysis.MassPropertiesOf(bodies, 1, types.MassPropertiesLow).VolumeMm3
+	if math.Abs(vol-3549) > 0.02*3549 {
+		t.Errorf("volume = %.0f mm³, want within 2%% of Inventor's 3549", vol)
+	}
+}

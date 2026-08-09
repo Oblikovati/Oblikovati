@@ -145,8 +145,23 @@ func applyRevolveCuts(def *compdef.PartComponentDefinition, d *ipt.Document, pla
 			notes = append(notes, fmt.Sprintf("revolve cut %d: could not match its region (%d loops) — skipped", i, len(region)))
 			continue
 		}
-		feature.NewExtrudeFeatures(def.Features()).AddExtrude(
+		f := feature.NewExtrudeFeatures(def.Features()).AddExtrude(
 			emitted[p].sk, idx, operationOf(ex.Operation), extentOf(ex), 0)
+		// A cut on a machined revolve can OPEN the body: its end face lands coincident with the turned
+		// base's stepped top (a blind cut) or it runs one-sided the wrong way (a directional
+		// through-all), a boolean fault the kernel leaves as a non-manifold seam. A SYMMETRIC through
+		// cut removes the full column both ways and avoids it. Retry a cut that opened the body that
+		// way; a wrong retry (a real blind pocket) is still caught by the final solid + mesh-fit gate.
+		// Scoped to the revolve-cuts path, so no plain extrude part is touched.
+		if ex.Operation == ipt.OpCut {
+			def.Recompute()
+			if !firstBodyIsSolid(def) {
+				def.Features().Remove(f.ID())
+				feature.NewExtrudeFeatures(def.Features()).AddExtrude(
+					emitted[p].sk, idx, operationOf(ex.Operation),
+					feature.Extent{Type: feature.ThroughAllExtent, Direction: feature.SymmetricDir}, 0)
+			}
+		}
 	}
 	if h, ok := ipt.DecodeHole(d); ok && len(placed) > 0 && len(emitted) > 0 && emitted[0].sk != nil {
 		cx, cy := profileCentroid(placed[0].geom)
