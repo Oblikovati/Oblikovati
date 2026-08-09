@@ -4,9 +4,12 @@ package router
 
 import (
 	"encoding/json"
+	"fmt"
+	"math"
 	"testing"
 
 	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
 )
 
 // TestFlatPatternMapEntityOverWire a folded face maps to a flat face (and back) by reference
@@ -220,5 +223,102 @@ func TestFlatPatternRejectsPlainPart(t *testing.T) {
 		if _, err := r.Handle(s, m, []byte("{}")); err == nil {
 			t.Errorf("%s on a plain part must error", m)
 		}
+	}
+}
+
+// punchedSheet builds a flat sheet with a two-circle punch sketch stamped through it — two punch
+// instances from one feature, which is what the read-model has to report separately.
+func punchedSheet(t *testing.T) (*Router, *app.Session) {
+	t.Helper()
+	r, s := newSheetMetalPart(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"rectangle","points":[[0,0],[8,6]]}`, &struct{}{})
+	var face featureResult
+	call(t, r, s, "features.add", `{"kind":"sheetMetalFace","args":{"sketchIndex":0}}`, &face)
+	if !face.Healthy {
+		t.Fatal("base Face unhealthy")
+	}
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":1,"kind":"circle","points":[[2,2]],"radius":"5 mm"}`, &struct{}{})
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":1,"kind":"circle","points":[[6,4]],"radius":"5 mm"}`, &struct{}{})
+	var punch featureResult
+	call(t, r, s, "features.add", `{"kind":"sheetMetalPunch","args":{"sketchIndex":1}}`, &punch)
+	if !punch.Healthy {
+		t.Fatal("punch unhealthy")
+	}
+	return r, s
+}
+
+// TestFlatPatternListPunches (#1963): the punch geometry was already developed for the flat and
+// had no way out of the host. Each instance must come back with its own PLACEMENT — a list that
+// reported outlines alone would not tell a nest or a punch note where the tool goes.
+func TestFlatPatternListPunches(t *testing.T) {
+	r, s := punchedSheet(t)
+	var res wire.PunchesResult
+	call(t, r, s, wire.MethodFlatPatternListPunches, "{}", &res)
+	if len(res.Punches) != 2 {
+		t.Fatalf("listPunches returned %d punches, want 2 (one per sketched circle)", len(res.Punches))
+	}
+	seen := map[string]bool{}
+	for _, p := range res.Punches {
+		if len(p.Outline) < 3 {
+			t.Errorf("punch %q outline has %d points, want a closed profile", p.ID, len(p.Outline))
+		}
+		if !p.DirectionUp {
+			t.Errorf("punch %q reports directionUp=false, want the default punch side", p.ID)
+		}
+		if p.HasDepth {
+			t.Errorf("punch %q reports a depth; a punch through all the material has none", p.ID)
+		}
+		seen[centreKey(p.Position.X, p.Position.Y)] = true
+	}
+	// The two circles were sketched at (2,2) and (6,4); their developed positions must be those
+	// centres, not both the same point or the sheet's origin.
+	for _, want := range []string{centreKey(2, 2), centreKey(6, 4)} {
+		if !seen[want] {
+			t.Errorf("no punch placed at %s; got %v", want, seen)
+		}
+	}
+}
+
+// centreKey rounds a position to 0.01 so a centroid comparison is not chasing facet noise.
+func centreKey(x, y float64) string {
+	return fmt.Sprintf("%.2f,%.2f", math.Round(x*100)/100, math.Round(y*100)/100)
+}
+
+// TestPunchDepthIsReportedOnlyWhenItHasOne (#1963): a punch that stops short of the far face has a
+// depth, and one that goes clean through does not. Reporting a through punch as depth 0 would read
+// as a zero-deep punch — the opposite of what it is — so the two are told apart by the flag.
+func TestPunchDepthIsReportedOnlyWhenItHasOne(t *testing.T) {
+	r, s := newSheetMetalPart(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"rectangle","points":[[0,0],[8,6]]}`, &struct{}{})
+	call(t, r, s, "features.add", `{"kind":"sheetMetalFace","args":{"sketchIndex":0}}`, &featureResult{})
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":1,"kind":"circle","points":[[3,3]],"radius":"5 mm"}`, &struct{}{})
+	call(t, r, s, "features.add", `{"kind":"sheetMetalPunch","args":{"sketchIndex":1,"depth":"0.5 mm"}}`, &featureResult{})
+
+	var res wire.PunchesResult
+	call(t, r, s, wire.MethodFlatPatternListPunches, "{}", &res)
+	if len(res.Punches) != 1 {
+		t.Fatalf("listPunches returned %d punches, want 1", len(res.Punches))
+	}
+	p := res.Punches[0]
+	if !p.HasDepth {
+		t.Fatal("a punch given a depth reports hasDepth=false")
+	}
+	if p.Depth < 0.0499 || p.Depth > 0.0501 {
+		t.Errorf("punch depth = %g cm, want 0.05 (0.5 mm)", p.Depth)
+	}
+}
+
+// TestFlatInfoCarriesPunches: unfold's own reply carries the same list, so a caller that already
+// asked for the flat does not need a second round trip to find its punches.
+func TestFlatInfoCarriesPunches(t *testing.T) {
+	r, s := punchedSheet(t)
+	var res wire.UnfoldResult
+	call(t, r, s, wire.MethodSheetMetalUnfold, "{}", &res)
+	if len(res.Flat.Punches) != 2 {
+		t.Errorf("unfold reported %d punches, want 2", len(res.Flat.Punches))
 	}
 }

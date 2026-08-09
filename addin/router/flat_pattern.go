@@ -32,6 +32,7 @@ func (r *Router) registerFlatPatternHandlers() {
 	r.readOnly(wire.MethodFlatPatternFaces, ctxQuery(resolveSheetMetalPart, flatPatternFaces))
 	r.readOnly(wire.MethodFlatPatternMapEntity, typedCtx(resolveSheetMetalPart, flatPatternMapEntity))
 	r.readOnly(wire.MethodFlatPatternListPlates, ctxQuery(resolveSheetMetalPart, flatPatternListPlates))
+	r.readOnly(wire.MethodFlatPatternListPunches, ctxQuery(resolveSheetMetalPart, flatPatternListPunches))
 	r.readOnly(wire.MethodFlatPatternGetSettings, ctxQuery(resolveSheetMetalPart, flatPatternGetSettings))
 	r.mutating(wire.MethodFlatPatternSetSettings, "Edit Flat Pattern Settings", typedCtx(resolveSheetMetalPart, flatPatternSetSettings))
 	r.readOnly(wire.MethodFlatPatternListBendOrder, ctxQuery(resolveSheetMetalPart, flatPatternListBendOrder))
@@ -100,6 +101,17 @@ func flatPatternListPlates(_ *app.Session, ctx sheetMetalPart) (wire.PlatesResul
 		out.Plates[i] = wire.PlateInfo{Index: i, Length: p.Length, Width: p.Width, Area: p.Area}
 	}
 	return out, nil
+}
+
+// flatPatternListPunches reports every punch instance in the developed flat: where the tool goes,
+// how it is turned, which side it comes from and how deep (#1963) — what a nest, a DXF punch layer
+// or a punch note is placed from.
+func flatPatternListPunches(_ *app.Session, ctx sheetMetalPart) (wire.PunchesResult, error) {
+	flat, err := ctx.part.Unfold()
+	if err != nil {
+		return wire.PunchesResult{}, err
+	}
+	return wire.PunchesResult{Punches: punchInfos(flat)}, nil
 }
 
 func flatPatternGetSettings(_ *app.Session, ctx sheetMetalPart) (wire.SettingsResult, error) {

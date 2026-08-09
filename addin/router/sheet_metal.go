@@ -271,7 +271,26 @@ func flatInfo(flat *feature.FlatPattern) wire.FlatPatternInfo {
 			Start: point2d(b.A), End: point2d(b.B), Angle: b.Angle * degPerRad,
 		})
 	}
+	info.Punches = punchInfos(flat)
 	return info
+}
+
+// punchInfos projects the flat's developed punches onto the wire (#1963). The geometry was always
+// computed for the flat; it simply had no way out of the host.
+func punchInfos(flat *feature.FlatPattern) []wire.FlatPunchInfo {
+	out := make([]wire.FlatPunchInfo, 0, len(flat.Punches))
+	for _, p := range flat.Punches {
+		info := wire.FlatPunchInfo{
+			ID: p.Token, Position: point2d(p.Position), Angle: p.Angle * degPerRad,
+			DirectionUp: p.DirectionUp, HasDepth: p.HasDepth, Depth: p.Depth,
+			Outline: make([]types.Point2d, 0, len(p.Outline)),
+		}
+		for _, v := range p.Outline {
+			info.Outline = append(info.Outline, point2d(v))
+		}
+		out = append(out, info)
+	}
+	return out
 }
 
 // point2d converts a model 2D point to the wire value type.
