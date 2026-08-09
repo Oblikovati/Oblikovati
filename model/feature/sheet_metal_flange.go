@@ -145,6 +145,18 @@ func (f *SheetMetalFlangeFeature) BendSpecs(_ float64) []BendSpec {
 // returns the resolved [BendPlacement] (the bend line + outward direction + dims) so the
 // flat pattern can lay this flange out as a tab without re-resolving the edge.
 func buildFlangeSolid(edge *topo.Edge, thickness, radius, height, angle float64, flip bool, feat string) (*topo.Body, BendPlacement, error) {
+	return buildFoldedSolid(edge, thickness, []bendRun{{Angle: angle, Radius: radius, Run: height}}, flip, feat)
+}
+
+// buildFoldedSolid extrudes a folded-section chain (see sheet_metal_band.go) along the picked
+// edge — the shared body of the flange and every hem type (#1956). The reported placement
+// describes the FIRST bend, which is the one at the picked edge and so the one the flat pattern
+// unfolds about; the developed length of any further folds is the caller's BendSpecs to report.
+func buildFoldedSolid(edge *topo.Edge, thickness float64, steps []bendRun, flip bool,
+	feat string) (*topo.Body, BendPlacement, error) {
+	if len(steps) == 0 {
+		return nil, BendPlacement{}, fmt.Errorf("sheet-metal %s: no bend steps to build", feat)
+	}
 	v0, v1 := edge.StartVertex().Point(), edge.EndVertex().Point()
 	e, err := math.UnitVector3FromVector(v0.VectorTo(v1))
 	if err != nil {
@@ -157,10 +169,11 @@ func buildFlangeSolid(edge *topo.Edge, thickness, radius, height, angle float64,
 	plane := planePerp(v0, e)
 	u, v := plane.XAxis().AsVector(), plane.YAxis().AsVector()
 	proj := func(w math.Vector3) math.Point2 { return math.P2(w.Dot(u), w.Dot(v)) }
-	poly := flangeBandPolygon(out.AsVector(), up.AsVector(), thickness, radius, height, angle, proj)
+	poly := bandPolygon(steps, out.AsVector(), up.AsVector(), thickness, proj)
 	placement := BendPlacement{
 		AxisStart: v0, AxisEnd: v1, Outward: out, Up: up,
-		Angle: angle, Radius: radius, Thickness: thickness, Length: height, FoldDown: flip,
+		Angle: steps[0].Angle, Radius: steps[0].Radius, Thickness: thickness,
+		Length: steps[0].Run, FoldDown: flip,
 	}
 	return buildPrism(poly, plane, span{near: 0, far: v0.DistanceTo(v1)}, 0, feat), placement, nil
 }
@@ -197,36 +210,6 @@ func widerFace(a, b *topo.Face) *topo.Face {
 		return a
 	}
 	return b
-}
-
-// flangeBandPolygon returns the bend+wall cross-section as a closed 2D polygon in the section
-// plane (projected via proj). The inner arc has radius r about a centre offset up·r from the
-// edge; the outer arc has radius r+t; after the bend the wall runs straight for height h. The
-// loop is ordered inner-arc → inner-wall-end → outer-wall-end → outer-arc(reversed).
-func flangeBandPolygon(out, up math.Vector3, t, r, h, angle float64, proj func(math.Vector3) math.Point2) []math.Point2 {
-	centre := up.Scale(r) // bend-axis centre, relative to the edge origin
-	dir := func(phi float64) math.Vector3 {
-		return up.Scale(-stdmath.Cos(phi)).Add(out.Scale(stdmath.Sin(phi)))
-	}
-	steps := int(stdmath.Max(2, stdmath.Round(angle/flangeFacetStep)))
-	inner := make([]math.Point2, 0, steps+1)
-	outer := make([]math.Point2, 0, steps+1)
-	for k := 0; k <= steps; k++ {
-		phi := angle * float64(k) / float64(steps)
-		d := dir(phi)
-		inner = append(inner, proj(centre.Add(d.Scale(r))))
-		outer = append(outer, proj(centre.Add(d.Scale(r+t))))
-	}
-	wall := out.Scale(stdmath.Cos(angle)).Add(up.Scale(stdmath.Sin(angle))).Scale(h) // straight-run offset
-	innerEnd := proj(centre.Add(dir(angle).Scale(r)).Add(wall))
-	outerEnd := proj(centre.Add(dir(angle).Scale(r + t)).Add(wall))
-
-	poly := append([]math.Point2(nil), inner...) // inner arc, edge → bend end
-	poly = append(poly, innerEnd, outerEnd)      // across the wall's far end
-	for k := len(outer) - 1; k >= 0; k-- {       // outer arc back, bend end → edge
-		poly = append(poly, outer[k])
-	}
-	return poly
 }
 
 // polygonArea3 returns the area of a planar polygon in 3D (Newell's method).

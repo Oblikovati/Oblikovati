@@ -54,10 +54,14 @@ func (t *SheetMetalHemTool) Commit(s *Session) error {
 }
 
 // addHem builds the sheet-metal hem feature into engine fs — shared by Commit and preview.
+//
+// The tool authors the tight SINGLE hem: it takes a length and nothing else, so it has no way to
+// ask for a gap, and the double/rolled/teardrop shapes (#1956) have no control. They are reachable
+// over /api; the dialog is a follow-up.
 func (t *SheetMetalHemTool) addHem(fs *feature.PartFeatures) *feature.PartFeature {
 	length := t.length
 	return feature.NewSheetMetalHemFeatures(fs).Add(&feature.SheetMetalHemDefinition{
-		EdgeKey: t.edge.Edge.ReferenceKey(), Length: func() float64 { return length }, Type: feature.ClosedHem,
+		EdgeKey: t.edge.Edge.ReferenceKey(), Length: func() float64 { return length }, Type: feature.SingleHem,
 	})
 }
 
