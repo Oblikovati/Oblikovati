@@ -34,9 +34,10 @@ type PartFeatures struct {
 	result       []*topo.Body
 	resources    ResourceStore
 	fonts        text.FontResolver
-	workingScale func() float64          // ADR-0042 Phase 2: live working scale (cm per working unit) for re-import
-	relief       func() ReliefSpec       // the sheet-metal style's bend relief, read live (#2072)
-	corner       func() CornerReliefSpec // and its corner relief
+	workingScale func() float64              // ADR-0042 Phase 2: live working scale (cm per working unit) for re-import
+	relief       func() ReliefSpec           // the sheet-metal style's bend relief, read live (#2072)
+	corner       func() CornerReliefSpec     // and its corner relief
+	transition   func() types.BendTransition // and its bend transition (#1959)
 }
 
 // ResourceStore reads embedded imported-file bytes by their document resource UUID
@@ -53,6 +54,17 @@ func (fs *PartFeatures) SetReliefSpec(f func() ReliefSpec) { fs.relief = f }
 
 // SetCornerReliefSpec wires the style's CORNER relief in, read live like the bend relief (#2072).
 func (fs *PartFeatures) SetCornerReliefSpec(f func() CornerReliefSpec) { fs.corner = f }
+
+// SetBendTransition wires the style's bend transition in, read live (#1959).
+func (fs *PartFeatures) SetBendTransition(f func() types.BendTransition) { fs.transition = f }
+
+// bendTransition reads the current transition; with no style there is nothing to shape.
+func (fs *PartFeatures) bendTransition() types.BendTransition {
+	if fs.transition == nil {
+		return types.NoBendTransition
+	}
+	return fs.transition()
+}
 
 // cornerReliefSpec reads the current corner relief. With no style there is nothing to cut, which
 // the tear shape says exactly.
@@ -298,7 +310,7 @@ func (fs *PartFeatures) evaluateBody(pf *PartFeature, bodies []*topo.Body, sick 
 	pf.recomputes++
 	rec := &diag.Recorder{}
 	out, err := safeRecompute(pf, Input{Bodies: bodies, Params: fs.params, SourceTool: fs.sourceTool,
-		Diag: rec, Relief: fs.reliefSpec(), Corner: fs.cornerReliefSpec(), PriorBends: fs.bendsBefore(pf)})
+		Diag: rec, Relief: fs.reliefSpec(), Corner: fs.cornerReliefSpec(), Transition: fs.bendTransition(), PriorBends: fs.bendsBefore(pf)})
 	pf.diags = rec.Records()
 	return fs.classify(pf, bodies, out, err, sick)
 }

@@ -201,3 +201,103 @@ func TestReliefEndsSkipTheBoundary(t *testing.T) {
 		})
 	}
 }
+
+// Per-feature bend options (#1959). The style says what every bend does; one bend can say
+// otherwise. These matter now only because the relief actually cuts — an override on inert data
+// would have been unobservable.
+
+// TestBendOptionsOverrideTheStyleRelief: a flange with its own relief cuts ITS notch, not the
+// style's, and the difference is measurable.
+func TestBendOptionsOverrideTheStyleRelief(t *testing.T) {
+	deep := ReliefSpec{Shape: types.ReliefStraight, Width: 0.4, Depth: 0.3}
+	styled := smSolidVolume(relievedFlange(t, straightRelief, centredTab))
+	overridden := smSolidVolume(relievedFlangeWithOptions(t, straightRelief, &BendOptions{
+		ReliefWidth: constClosure(deep.Width), ReliefDepth: constClosure(deep.Depth),
+	}))
+	bare := smSolidVolume(relievedFlange(t, ReliefSpec{}, centredTab))
+	if want := 2 * deep.Width * deep.Depth * 0.2; stdmath.Abs(bare-overridden-want) > 1e-6 {
+		t.Errorf("the override cut %.6f cm³, want %.6f", bare-overridden, want)
+	}
+	if overridden >= styled {
+		t.Error("the override should cut more than the style's smaller notch")
+	}
+}
+
+// TestBendOptionsLeaveUnsetFieldsToTheStyle: an override is not a restatement — a flange that sets
+// only a depth keeps the style's shape and width.
+func TestBendOptionsLeaveUnsetFieldsToTheStyle(t *testing.T) {
+	got := straightRelief
+	got = (&BendOptions{ReliefDepth: constClosure(0.3)}).resolve(got)
+	if got.Shape != straightRelief.Shape || got.Width != straightRelief.Width {
+		t.Errorf("resolved relief = %+v, want the style's shape and width kept", got)
+	}
+	if got.Depth != 0.3 {
+		t.Errorf("resolved depth = %g, want the overridden 0.3", got.Depth)
+	}
+	if none := (*BendOptions)(nil).resolve(straightRelief); none != straightRelief {
+		t.Errorf("no options resolved to %+v, want the style unchanged", none)
+	}
+}
+
+// TestBendOptionsCanTearOneBend: a per-bend tear turns the cut off for that bend while the style
+// keeps relieving every other one.
+func TestBendOptionsCanTearOneBend(t *testing.T) {
+	tear := types.ReliefTear
+	relieved := smSolidVolume(relievedFlangeWithOptions(t, straightRelief, &BendOptions{ReliefShape: &tear}))
+	bare := smSolidVolume(relievedFlange(t, ReliefSpec{}, centredTab))
+	if stdmath.Abs(relieved-bare) > 1e-9 {
+		t.Errorf("a torn bend lost %.6f cm³, want none", bare-relieved)
+	}
+}
+
+// TestMinimumRemnantSwallowsTheSliver (#1959): a notch that would leave a strip of parent material
+// thinner than the remnant takes the strip with it. Leaving it is worse than removing it — a sliver
+// that thin tears off in handling, so the part that arrives is not the part that was drawn.
+func TestMinimumRemnantSwallowsTheSliver(t *testing.T) {
+	// A tab from 0.3 to 3.7 leaves 0.3 of material outside each bend end; a 0.2-wide notch would
+	// leave a 0.1 sliver beyond it.
+	tab := FlangeWidth{Type: WidthOffsets, Offset: constClosure(0.3), Offset2: constClosure(0.3)}
+	withRemnant := smSolidVolume(relievedFlangeWith(t, straightRelief, tab, &BendOptions{
+		MinimumRemnant: constClosure(0.25),
+	}))
+	without := smSolidVolume(relievedFlangeWith(t, straightRelief, tab, nil))
+	// Each notch grows from 0.2 to the full 0.3 remaining, so the cut grows by 0.1 per end.
+	if want := 2 * 0.1 * straightRelief.Depth * 0.2; stdmath.Abs(without-withRemnant-want) > 1e-6 {
+		t.Errorf("the remnant rule removed a further %.6f cm³, want %.6f (the two slivers)",
+			without-withRemnant, want)
+	}
+}
+
+// TestMinimumRemnantLeavesHealthyMaterialAlone: a strip thicker than the remnant survives, or the
+// rule would eat the part's edge on every relieved bend.
+func TestMinimumRemnantLeavesHealthyMaterialAlone(t *testing.T) {
+	generous := smSolidVolume(relievedFlangeWith(t, straightRelief, centredTab, &BendOptions{
+		MinimumRemnant: constClosure(0.25),
+	}))
+	plain := smSolidVolume(relievedFlangeWith(t, straightRelief, centredTab, nil))
+	if stdmath.Abs(generous-plain) > 1e-9 {
+		t.Errorf("the remnant rule removed %.6f cm³ from a tab with 0.8 of material to spare", plain-generous)
+	}
+}
+
+// relievedFlangeWithOptions folds the centred tab with per-feature bend options.
+func relievedFlangeWithOptions(t *testing.T, spec ReliefSpec, opts *BendOptions) *topo.Body {
+	t.Helper()
+	return relievedFlangeWith(t, spec, centredTab, opts)
+}
+
+// relievedFlangeWith folds a tab of the given width with the given style relief and overrides.
+func relievedFlangeWith(t *testing.T, spec ReliefSpec, width FlangeWidth, opts *BendOptions) *topo.Body {
+	t.Helper()
+	fs, edge := seedSheetMetalSheet(t, 4, nil)
+	fs.SetReliefSpec(func() ReliefSpec { return spec })
+	pf := NewSheetMetalFlangeFeatures(fs).Add(&SheetMetalFlangeDefinition{
+		EdgeKey: edge.ReferenceKey(), Height: constClosure(1.0), Radius: constClosure(0.3),
+		Width: width, Options: opts,
+	})
+	fs.Recompute()
+	if !pf.Health().OK() {
+		t.Fatalf("flange sick: %+v", pf.Health())
+	}
+	return fs.Result()[0]
+}

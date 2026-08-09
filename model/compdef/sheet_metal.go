@@ -84,6 +84,11 @@ func seededRule(thickness, bendRadius func() float64, roster map[string]func() f
 	rule := sheetmetal.NewRule("Default", thickness, bendRadius, roster[gapSizeParam], relief,
 		sheetmetal.KFactorMethod(0.44))
 	rule.SetCornerRelief(defaultCornerRelief(roster[cornerReliefSizeParam], bendRadius))
+	// Inventor's Default style makes no transition, and sizes the arc form at the bend radius —
+	// which is what the TransitionRadius parameter carries (#1959).
+	rule.SetTransition(sheetmetal.BendTransition{
+		Kind: types.NoBendTransition, ArcRadius: roster[transitionRadiusParam],
+	})
 	return rule
 }
 
@@ -151,6 +156,14 @@ func (d *PartComponentDefinition) cornerReliefSpec() feature.CornerReliefSpec {
 	return feature.CornerReliefSpec{Shape: d.sheetMetal.CornerRelief().Shape, Size: d.sheetMetal.CornerReliefSize()}
 }
 
+// bendTransition resolves the active style's bend transition for one recompute (#1959).
+func (d *PartComponentDefinition) bendTransition() types.BendTransition {
+	if d.sheetMetal == nil {
+		return types.NoBendTransition
+	}
+	return d.sheetMetal.Transition().Kind
+}
+
 // FlatOrientations returns the part's flat-pattern orientations (M13-F05), or nil when the
 // part is not in the sheet-metal environment.
 func (d *PartComponentDefinition) FlatOrientations() *sheetmetal.Orientations {
@@ -187,20 +200,23 @@ type sheetMetalRecipe struct {
 	ReliefDepth float64 `yaml:"reliefDepth,omitempty"`
 	Gap         float64 `yaml:"gap,omitempty"`
 	// The corner-relief block (#1960) — separate from the bend relief above.
-	CornerReliefShape     string               `yaml:"cornerReliefShape,omitempty"`
-	CornerReliefSize      float64              `yaml:"cornerReliefSize,omitempty"`
-	CornerReliefPlacement string               `yaml:"cornerReliefPlacement,omitempty"`
-	ThreeBendReliefShape  string               `yaml:"threeBendReliefShape,omitempty"`
-	ThreeBendReliefSize   float64              `yaml:"threeBendReliefSize,omitempty"`
-	UnfoldMethod          string               `yaml:"unfoldMethod,omitempty"`
-	KFactor               float64              `yaml:"kFactor,omitempty"`
-	Equation              string               `yaml:"equation,omitempty"`
-	BendTable             []bendTableRowRecipe `yaml:"bendTable,omitempty"`
-	Orientations          []orientationRecipe  `yaml:"orientations,omitempty"` // M13-F05
-	ActiveOrient          string               `yaml:"activeOrientation,omitempty"`
-	DeferUpdate           bool                 `yaml:"deferFlatUpdate,omitempty"` // M13-F05
-	BendOrder             []string             `yaml:"bendOrder,omitempty"`       // M13-F06
-	Centerlines           []centerlineRecipe   `yaml:"centerlines,omitempty"`     // M13-F06
+	CornerReliefShape     string  `yaml:"cornerReliefShape,omitempty"`
+	CornerReliefSize      float64 `yaml:"cornerReliefSize,omitempty"`
+	CornerReliefPlacement string  `yaml:"cornerReliefPlacement,omitempty"`
+	ThreeBendReliefShape  string  `yaml:"threeBendReliefShape,omitempty"`
+	ThreeBendReliefSize   float64 `yaml:"threeBendReliefSize,omitempty"`
+	// The bend transition (#1959); absent ⇒ none, which is what an older document meant.
+	BendTransition          string               `yaml:"bendTransition,omitempty"`
+	BendTransitionArcRadius float64              `yaml:"bendTransitionArcRadius,omitempty"`
+	UnfoldMethod            string               `yaml:"unfoldMethod,omitempty"`
+	KFactor                 float64              `yaml:"kFactor,omitempty"`
+	Equation                string               `yaml:"equation,omitempty"`
+	BendTable               []bendTableRowRecipe `yaml:"bendTable,omitempty"`
+	Orientations            []orientationRecipe  `yaml:"orientations,omitempty"` // M13-F05
+	ActiveOrient            string               `yaml:"activeOrientation,omitempty"`
+	DeferUpdate             bool                 `yaml:"deferFlatUpdate,omitempty"` // M13-F05
+	BendOrder               []string             `yaml:"bendOrder,omitempty"`       // M13-F06
+	Centerlines             []centerlineRecipe   `yaml:"centerlines,omitempty"`     // M13-F06
 }
 
 // centerlineRecipe is one persisted cosmetic centerline (flat 2D coordinates, cm).
@@ -237,19 +253,21 @@ func (d *PartComponentDefinition) sheetMetalRecipeOf() *sheetMetalRecipe {
 	}
 	r := d.sheetMetal
 	rec := &sheetMetalRecipe{
-		Name:                  r.Name(),
-		ReliefShape:           r.Relief().Shape.String(),
-		ReliefWidth:           r.ReliefWidth(),
-		ReliefDepth:           r.ReliefDepth(),
-		Gap:                   r.Gap(),
-		CornerReliefShape:     r.CornerRelief().Shape.String(),
-		CornerReliefSize:      r.CornerReliefSize(),
-		CornerReliefPlacement: r.CornerRelief().Placement.String(),
-		ThreeBendReliefShape:  r.CornerRelief().ThreeBendShape.String(),
-		ThreeBendReliefSize:   r.ThreeBendReliefSize(),
-		UnfoldMethod:          r.Unfold().Type.String(),
-		KFactor:               r.Unfold().KFactor,
-		Equation:              r.Unfold().EquationSource(),
+		Name:                    r.Name(),
+		ReliefShape:             r.Relief().Shape.String(),
+		ReliefWidth:             r.ReliefWidth(),
+		ReliefDepth:             r.ReliefDepth(),
+		Gap:                     r.Gap(),
+		CornerReliefShape:       r.CornerRelief().Shape.String(),
+		CornerReliefSize:        r.CornerReliefSize(),
+		CornerReliefPlacement:   r.CornerRelief().Placement.String(),
+		ThreeBendReliefShape:    r.CornerRelief().ThreeBendShape.String(),
+		ThreeBendReliefSize:     r.ThreeBendReliefSize(),
+		BendTransition:          r.Transition().Kind.String(),
+		BendTransitionArcRadius: r.TransitionArcRadius(),
+		UnfoldMethod:            r.Unfold().Type.String(),
+		KFactor:                 r.Unfold().KFactor,
+		Equation:                r.Unfold().EquationSource(),
 	}
 	if t := r.Unfold().Table; t != nil {
 		for _, row := range t.Rows() {
@@ -387,6 +405,24 @@ func (d *PartComponentDefinition) restoreCornerRelief(rule *sheetmetal.Rule, rec
 		corner.ThreeBendSize = sheetmetal.Constant(rec.ThreeBendReliefSize)
 	}
 	rule.SetCornerRelief(corner)
+	return restoreBendTransition(rule, rec)
+}
+
+// restoreBendTransition applies the persisted transition (#1959); an unknown name is an error
+// rather than a silent fallback to no transition at all.
+func restoreBendTransition(rule *sheetmetal.Rule, rec *sheetMetalRecipe) error {
+	t := rule.Transition()
+	if rec.BendTransition != "" {
+		kind, ok := types.ParseBendTransition(rec.BendTransition)
+		if !ok {
+			return fmt.Errorf("sheet-metal recipe: bad bend transition %q", rec.BendTransition)
+		}
+		t.Kind = kind
+	}
+	if rec.BendTransitionArcRadius != 0 {
+		t.ArcRadius = sheetmetal.Constant(rec.BendTransitionArcRadius)
+	}
+	rule.SetTransition(t)
 	return nil
 }
 

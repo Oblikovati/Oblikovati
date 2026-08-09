@@ -5,6 +5,7 @@ package opregistry
 import (
 	"testing"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
@@ -137,5 +138,57 @@ func TestUnknownWidthExtentOverTheWireIsRefused(t *testing.T) {
 		"edge": edge, "height": "10 mm", "width": map[string]any{"type": "fromTo"},
 	}); err == nil {
 		t.Error("a fromTo width extent should be refused")
+	}
+}
+
+// TestBendOptionsReachTheDefinition (#1959): a per-bend override arrives whole, and an omitted
+// field stays nil so the style still decides it.
+func TestBendOptionsReachTheDefinition(t *testing.T) {
+	s, edge := seedSheetMetalSheet(t)
+	if _, err := applyMap(t, s, "sheetMetalFlange", map[string]any{
+		"edge": edge, "height": "10 mm",
+		"options": map[string]any{"reliefShape": "tear", "reliefDepth": "3 mm", "minimumRemnant": "1 mm"},
+	}); err != nil {
+		t.Fatalf("flange with bend options: %v", err)
+	}
+	opts := lastFlangeDef(t, s).Options
+	if opts == nil || opts.ReliefShape == nil || *opts.ReliefShape != types.ReliefTear {
+		t.Fatalf("options reached the definition as %+v, want a tear relief", opts)
+	}
+	if got := opts.ReliefDepth(); got < 0.2999 || got > 0.3001 {
+		t.Errorf("relief depth resolved to %g cm, want 0.3 (3 mm)", got)
+	}
+	if opts.ReliefWidth != nil {
+		t.Error("an unset relief width arrived non-nil; the style should still decide it")
+	}
+	if opts.Transition != types.DefaultBendTransition {
+		t.Errorf("an unset transition arrived as %v, want the style's default", opts.Transition)
+	}
+}
+
+// TestFlangeWithoutOptionsDefersEntirely: no options block means the style decides everything.
+func TestFlangeWithoutOptionsDefersEntirely(t *testing.T) {
+	s, edge := seedSheetMetalSheet(t)
+	if _, err := applyMap(t, s, "sheetMetalFlange", map[string]any{"edge": edge, "height": "10 mm"}); err != nil {
+		t.Fatalf("plain flange: %v", err)
+	}
+	if opts := lastFlangeDef(t, s).Options; opts != nil {
+		t.Errorf("a plain flange carries bend options: %+v", opts)
+	}
+}
+
+// TestUnknownBendOptionNamesAreRefused: a misspelled shape or transition must not fall back to the
+// style and quietly cut something else.
+func TestUnknownBendOptionNamesAreRefused(t *testing.T) {
+	s, edge := seedSheetMetalSheet(t)
+	for _, opts := range []map[string]any{
+		{"reliefShape": "notched"},
+		{"transition": "spline"},
+	} {
+		if _, err := applyMap(t, s, "sheetMetalFlange", map[string]any{
+			"edge": edge, "height": "10 mm", "options": opts,
+		}); err == nil {
+			t.Errorf("flange options %v should be refused", opts)
+		}
 	}
 }

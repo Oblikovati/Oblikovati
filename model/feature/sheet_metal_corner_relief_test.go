@@ -65,9 +65,17 @@ func junctionOf(t *testing.T, fs *PartFeatures) math.Point3 {
 // one that closes the corner) and the engine.
 func corneredSheetFeature(t *testing.T, corner CornerReliefSpec) (*PartFeature, *PartFeatures) {
 	t.Helper()
+	return corneredSheetFeatureWith(t, corner, types.NoBendTransition)
+}
+
+// corneredSheetFeatureWith is corneredSheetFeature under a chosen bend transition.
+func corneredSheetFeatureWith(t *testing.T, corner CornerReliefSpec,
+	transition types.BendTransition) (*PartFeature, *PartFeatures) {
+	t.Helper()
 	fs, edgeX := seedSheetMetalSheet(t, 4, nil)
 	fs.SetReliefSpec(func() ReliefSpec { return ReliefSpec{} }) // isolate the CORNER cut
 	fs.SetCornerReliefSpec(func() CornerReliefSpec { return corner })
+	fs.SetBendTransition(func() types.BendTransition { return transition })
 	flanges := NewSheetMetalFlangeFeatures(fs)
 	flanges.Add(&SheetMetalFlangeDefinition{
 		EdgeKey: edgeX.ReferenceKey(), Height: constClosure(1.0), Radius: constClosure(0.3),
@@ -253,5 +261,64 @@ func TestParallelBendsShareNoCorner(t *testing.T) {
 	perpendicular := BendPlacement{AxisStart: math.P3(0, 0, 0), AxisEnd: math.P3(0, 3, 0)}
 	if _, ok := findBendJunction(a, []BendPlacement{perpendicular}); !ok {
 		t.Error("two bends meeting at a point and running different ways are a corner")
+	}
+}
+
+// TestBendTransitionOnlyMattersAtAJunction (#1959): a transition shapes where a bend runs into the
+// face beside it, so a part whose style names one it never reaches must build fine. Refusing on
+// the style alone would break every single-flange part the moment the style changed.
+func TestBendTransitionOnlyMattersAtAJunction(t *testing.T) {
+	fs, edge := seedSheetMetalSheet(t, 4, nil)
+	fs.SetReliefSpec(func() ReliefSpec { return ReliefSpec{} })
+	fs.SetBendTransition(func() types.BendTransition { return types.ArcBendTransition })
+	pf := NewSheetMetalFlangeFeatures(fs).Add(&SheetMetalFlangeDefinition{
+		EdgeKey: edge.ReferenceKey(), Height: constClosure(1.0), Radius: constClosure(0.3),
+	})
+	fs.Recompute()
+	if !pf.Health().OK() {
+		t.Errorf("a lone flange went sick over a transition it never reaches: %+v", pf.Health())
+	}
+}
+
+// TestUnbuiltBendTransitionsAreRefusedAtAJunction: the shaping transitions describe the FLAT
+// PATTERN's outline through the transition region, which this flat does not model. They are
+// refused where they would apply rather than silently ignored, which would report a part shaped one
+// way and build it another.
+func TestUnbuiltBendTransitionsAreRefusedAtAJunction(t *testing.T) {
+	for _, kind := range []types.BendTransition{
+		types.IntersectionBendTransition, types.StraightLineBendTransition,
+		types.ArcBendTransition, types.TrimToBendBendTransition,
+	} {
+		pf, _ := corneredSheetFeatureWith(t, CornerReliefSpec{Shape: types.CornerTear}, kind)
+		if pf.Health().OK() {
+			t.Errorf("bend transition %v should be refused at a junction until it is built", kind)
+		}
+	}
+}
+
+// TestNoTransitionBuildsTheJunction: "none" is Inventor's default and what this build makes, so a
+// junction under it is healthy.
+func TestNoTransitionBuildsTheJunction(t *testing.T) {
+	pf, _ := corneredSheetFeatureWith(t, CornerReliefSpec{Shape: types.CornerTear}, types.NoBendTransition)
+	if !pf.Health().OK() {
+		t.Errorf("a junction with no transition went sick: %+v", pf.Health())
+	}
+}
+
+// TestPerBendTransitionOverridesTheStyle: one bend can name its own transition, and "default"
+// defers — so a feature that sets other options does not accidentally opt out of the style's.
+func TestPerBendTransitionOverridesTheStyle(t *testing.T) {
+	f := &SheetMetalFlangeFeature{def: &SheetMetalFlangeDefinition{}}
+	style := Input{Transition: types.ArcBendTransition}
+	if got := f.bendTransition(style); got != types.ArcBendTransition {
+		t.Errorf("a flange with no options used %v, want the style's arc", got)
+	}
+	f.def.Options = &BendOptions{Transition: types.DefaultBendTransition}
+	if got := f.bendTransition(style); got != types.ArcBendTransition {
+		t.Errorf("an explicit default used %v, want the style's arc", got)
+	}
+	f.def.Options = &BendOptions{Transition: types.NoBendTransition}
+	if got := f.bendTransition(style); got != types.NoBendTransition {
+		t.Errorf("an overriding flange used %v, want its own none", got)
 	}
 }

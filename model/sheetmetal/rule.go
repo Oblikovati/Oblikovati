@@ -46,7 +46,14 @@ type Rule struct {
 	gap        func() float64
 	relief     Relief
 	corner     CornerRelief
+	transition BendTransition
 	unfold     UnfoldMethod
+}
+
+// BendTransition is the style's bend transition and the radius its arc form takes (#1959).
+type BendTransition struct {
+	Kind      types.BendTransition
+	ArcRadius func() float64
 }
 
 // NewRule builds a rule from parameter-backed closures. The caller (the compdef layer)
@@ -116,6 +123,13 @@ func (r *Rule) SetGap(f func() float64)        { r.gap = f }
 
 // SetRelief replaces the bend-relief geometry.
 func (r *Rule) SetRelief(relief Relief) { r.relief = relief }
+
+// Transition returns the rule's bend transition, and SetTransition replaces it (#1959).
+func (r *Rule) Transition() BendTransition     { return r.transition }
+func (r *Rule) SetTransition(t BendTransition) { r.transition = t }
+
+// TransitionArcRadius reports the arc transition's radius (cm).
+func (r *Rule) TransitionArcRadius() float64 { return call(r.transition.ArcRadius) }
 
 // CornerRelief returns the rule's corner-relief block, and SetCornerRelief replaces it (#1960).
 func (r *Rule) CornerRelief() CornerRelief     { return r.corner }

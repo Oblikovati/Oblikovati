@@ -27,6 +27,42 @@ type ReliefSpec struct {
 	Shape types.ReliefShape
 	Width float64
 	Depth float64
+	// Remnant is the thinnest strip of parent material this relief may leave standing (#1959). A
+	// notch that would leave less takes the sliver with it: a strip that thin tears off in handling
+	// and is not what anyone drew.
+	Remnant float64
+}
+
+// BendOptions overrides the style's bend properties for ONE feature (Inventor's BendOptions,
+// #1959). A nil field defers to the style, which is what makes it an override rather than a
+// restatement — a flange that sets only a relief depth keeps the style's shape and width.
+type BendOptions struct {
+	ReliefShape         *types.ReliefShape
+	ReliefWidth         func() float64
+	ReliefDepth         func() float64
+	MinimumRemnant      func() float64
+	Transition          types.BendTransition
+	TransitionArcRadius func() float64
+}
+
+// resolve folds the overrides onto the style's relief, leaving anything unset as the style has it.
+func (o *BendOptions) resolve(style ReliefSpec) ReliefSpec {
+	if o == nil {
+		return style
+	}
+	out := style
+	if o.ReliefShape != nil {
+		out.Shape = *o.ReliefShape
+	}
+	for _, f := range []struct {
+		src func() float64
+		dst *float64
+	}{{o.ReliefWidth, &out.Width}, {o.ReliefDepth, &out.Depth}, {o.MinimumRemnant, &out.Remnant}} {
+		if f.src != nil {
+			*f.dst = f.src()
+		}
+	}
+	return out
 }
 
 // cuts reports whether this relief removes material at all. A tear relief is the deliberate
@@ -59,7 +95,7 @@ func bendReliefEnds(from, to, edgeLength float64) reliefEnds {
 // cutBendRelief removes the styled relief notches from bodies at the ends of a bend that stop
 // short of the edge. It returns the bodies unchanged when the relief cuts nothing.
 func cutBendRelief(bodies []*topo.Body, edge *topo.Edge, ends reliefEnds, spec ReliefSpec,
-	thickness float64, flip bool, feat string) ([]*topo.Body, error) {
+	thickness, edgeLength float64, flip bool, feat string) ([]*topo.Body, error) {
 	if !spec.cuts() || (!ends.relieveFrom && !ends.relieveTo) {
 		return bodies, nil
 	}
@@ -68,7 +104,7 @@ func cutBendRelief(bodies []*topo.Body, edge *topo.Edge, ends reliefEnds, spec R
 		return nil, err
 	}
 	out := bodies
-	for _, n := range reliefNotches(ends, spec) {
+	for _, n := range reliefNotches(ends, spec, edgeLength) {
 		tool := reliefTool(frame, n, spec, thickness, feat)
 		if out, err = cutFrom(out, tool); err != nil {
 			return nil, err
@@ -81,16 +117,32 @@ func cutBendRelief(bodies []*topo.Body, edge *topo.Edge, ends reliefEnds, spec R
 type reliefNotch struct{ start, end float64 }
 
 // reliefNotches places a notch beside each end that needs relieving, running AWAY from the bend so
-// the cut never eats into the wall it protects.
-func reliefNotches(ends reliefEnds, spec ReliefSpec) []reliefNotch {
+// the cut never eats into the wall it protects. edgeLength lets a notch swallow a remnant too thin
+// to survive handling (#1959).
+func reliefNotches(ends reliefEnds, spec ReliefSpec, edgeLength float64) []reliefNotch {
 	var out []reliefNotch
 	if ends.relieveFrom {
-		out = append(out, reliefNotch{ends.from - spec.Width, ends.from})
+		out = append(out, swallowRemnant(reliefNotch{ends.from - spec.Width, ends.from}, spec, 0, edgeLength))
 	}
 	if ends.relieveTo {
-		out = append(out, reliefNotch{ends.to, ends.to + spec.Width})
+		out = append(out, swallowRemnant(reliefNotch{ends.to, ends.to + spec.Width}, spec, 0, edgeLength))
 	}
 	return out
+}
+
+// swallowRemnant widens a notch to the material's edge when the strip it would otherwise leave is
+// thinner than the minimum remnant. Leaving the sliver is worse than removing it: it tears off in
+// handling, and a part that arrives with a torn edge is not the part that was drawn.
+func swallowRemnant(n reliefNotch, spec ReliefSpec, low, high float64) reliefNotch {
+	// A zero or negative remnant leaves every strip standing, which falls out of the comparisons
+	// below rather than needing a guard of its own.
+	if n.start-low < spec.Remnant {
+		n.start = low
+	}
+	if high-n.end < spec.Remnant {
+		n.end = high
+	}
+	return n
 }
 
 // reliefFrame is the edge's own frame: where it starts, which way it runs, and the plane of the

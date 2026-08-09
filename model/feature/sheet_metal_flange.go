@@ -6,6 +6,7 @@ import (
 	"fmt"
 	stdmath "math"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -41,6 +42,8 @@ type SheetMetalFlangeDefinition struct {
 	// Width is how much of the picked edge the wall covers (#1958); the zero value is the whole
 	// edge, which is what this feature has always built.
 	Width FlangeWidth
+	// Options overrides the style's bend properties for this bend alone (#1959); nil ⇒ the style.
+	Options *BendOptions
 	// Position and HeightDatum decide where the wall LANDS (#1957): how far back from the picked
 	// edge the bend sits, and what the height is measured from. Both default to what this feature
 	// has always built — the bend at the edge, the height from its tangent. See
@@ -103,7 +106,15 @@ func (f *SheetMetalFlangeFeature) relieve(bodies []*topo.Body, edge *topo.Edge, 
 	if err != nil {
 		return nil, err
 	}
-	return cutCornerRelief(bodies, placement, in, featOr(f.featName, "flange"))
+	return cutCornerRelief(bodies, placement, in, f.bendTransition(in), featOr(f.featName, "flange"))
+}
+
+// bendTransition is the transition this bend uses: its own override, or the style's when it defers.
+func (f *SheetMetalFlangeFeature) bendTransition(in Input) types.BendTransition {
+	if f.def.Options != nil && f.def.Options.Transition != types.DefaultBendTransition {
+		return f.def.Options.Transition
+	}
+	return in.Transition
 }
 
 // relieveBend cuts the styled relief notches at the ends of this flange's bend that stop short of
@@ -116,8 +127,10 @@ func (f *SheetMetalFlangeFeature) relieveBend(bodies []*topo.Body, edge *topo.Ed
 	if err != nil {
 		return nil, err
 	}
-	ends := bendReliefEnds(from, to, float64(v0.DistanceTo(v1)))
-	return cutBendRelief(bodies, edge, ends, spec, dims.thickness, f.def.Flip, featOr(f.featName, "flange"))
+	length := float64(v0.DistanceTo(v1))
+	ends := bendReliefEnds(from, to, length)
+	return cutBendRelief(bodies, edge, ends, f.def.Options.resolve(spec), dims.thickness, length,
+		f.def.Flip, featOr(f.featName, "flange"))
 }
 
 // Placement returns the resolved bend geometry captured by the last successful recompute,

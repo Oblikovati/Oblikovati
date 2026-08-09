@@ -98,6 +98,9 @@ func applyStyleEdits(part *compdef.PartComponentDefinition, rule *sheetmetal.Rul
 	if err := applyCornerReliefEdits(part, rule, in); err != nil {
 		return err
 	}
+	if err := applyBendTransitionEdits(part, rule, in); err != nil {
+		return err
+	}
 	if in.MinimumGap != "" {
 		gap, err := resolveQuantity(part, in.MinimumGap, param.Length)
 		if err != nil {
@@ -184,6 +187,28 @@ func applyCornerReliefSizes(part *compdef.PartComponentDefinition, corner *sheet
 		}
 		*e.field = sheetmetal.Constant(v.Value)
 	}
+	return nil
+}
+
+// applyBendTransitionEdits updates how a bend meets the face beside it (#1959).
+func applyBendTransitionEdits(part *compdef.PartComponentDefinition, rule *sheetmetal.Rule, in wire.SetSheetMetalStyleArgs) error {
+	t := rule.Transition()
+	if in.BendTransition != "" {
+		kind, ok := types.ParseBendTransition(in.BendTransition)
+		if !ok {
+			return fmt.Errorf("sheetMetal bendTransition %q: want none|intersection|straightLine|arc|trimToBend",
+				in.BendTransition)
+		}
+		t.Kind = kind
+	}
+	if in.BendTransitionArcRadius != "" {
+		v, err := resolveQuantity(part, in.BendTransitionArcRadius, param.Length)
+		if err != nil {
+			return fmt.Errorf("sheetMetal bendTransitionArcRadius %q: %w", in.BendTransitionArcRadius, err)
+		}
+		t.ArcRadius = sheetmetal.Constant(v.Value)
+	}
+	rule.SetTransition(t)
 	return nil
 }
 
@@ -328,6 +353,9 @@ func styleInfo(part *compdef.PartComponentDefinition, rule *sheetmetal.Rule) wir
 		CornerReliefPlacement: rule.CornerRelief().Placement.String(),
 		ThreeBendReliefShape:  rule.CornerRelief().ThreeBendShape.String(),
 		ThreeBendReliefSize:   fmtLen(rule.ThreeBendReliefSize()),
+
+		BendTransition:          rule.Transition().Kind.String(),
+		BendTransitionArcRadius: fmtLen(rule.TransitionArcRadius()),
 	}
 }
 

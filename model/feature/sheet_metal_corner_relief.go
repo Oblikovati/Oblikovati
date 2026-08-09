@@ -36,6 +36,26 @@ type CornerReliefSpec struct {
 // cut, exactly as it is for a bend relief.
 func (c CornerReliefSpec) cuts() bool { return c.Shape != types.CornerTear }
 
+// checkBendTransition reports whether a transition can be built where two walls meet (#1959).
+//
+// Only "none" can, and that is Inventor's default. The other three shaping forms — intersection,
+// straight line and arc — describe the FLAT PATTERN's outline through the transition region, and
+// this flat pattern does not model that region at all: it lays each wall out as a tab from its bend
+// line and unions them. Trim-to-bend is a folded-model cut, but "perpendicular to the bent feature"
+// needs the bent feature's own outline, not just its bend line.
+//
+// They are refused rather than ignored, and refused only AT a junction — a part whose style names
+// a transition it never reaches builds fine, because there was nothing to shape.
+func checkBendTransition(t types.BendTransition) error {
+	if t == types.NoBendTransition || t == types.DefaultBendTransition {
+		return nil
+	}
+	return fmt.Errorf("sheet-metal bend transition %v is not built yet: the shaping transitions "+
+		"describe the FLAT PATTERN's outline through the transition region, which this flat does "+
+		"not model, and trim-to-bend needs the adjacent wall's outline rather than its bend line; "+
+		"use \"none\"", t)
+}
+
 // bendJunction is one corner: where the two bend lines meet, and the two bends that make it.
 type bendJunction struct {
 	at   math.Point3
@@ -83,11 +103,19 @@ func sharedEnd(a, b BendPlacement) (math.Point3, bool) {
 	return math.Point3{}, false
 }
 
-// cutCornerRelief removes the styled corner cut where this bend meets an earlier one. Bodies come
-// back unchanged when there is no junction, or when the style leaves the corner to tear.
-func cutCornerRelief(bodies []*topo.Body, bend BendPlacement, in Input, feat string) ([]*topo.Body, error) {
+// cutCornerRelief removes the styled corner cut where this bend meets an earlier one, and settles
+// the bend transition there. Bodies come back unchanged when there is no junction, or when the
+// style leaves the corner to tear.
+func cutCornerRelief(bodies []*topo.Body, bend BendPlacement, in Input, transition types.BendTransition,
+	feat string) ([]*topo.Body, error) {
 	junction, ok := findBendJunction(bend, in.PriorBends)
-	if !ok || !in.Corner.cuts() {
+	if !ok {
+		return bodies, nil // no junction: no corner to relieve and no transition to shape
+	}
+	if err := checkBendTransition(transition); err != nil {
+		return nil, err
+	}
+	if !in.Corner.cuts() {
 		return bodies, nil
 	}
 	reach, err := cornerReach(junction, in.Corner)

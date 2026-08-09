@@ -204,3 +204,27 @@ func TestUnknownCornerReliefIsRefused(t *testing.T) {
 		_ = res
 	}
 }
+
+// TestBendTransitionStyleRoundTrips (#1959): the transition and its arc radius are style
+// properties, so setStyle must carry them and getStyle report them back.
+func TestBendTransitionStyleRoundTrips(t *testing.T) {
+	r, s := newSheetMetalPart(t)
+	var res wire.SheetMetalStyleResult
+	call(t, r, s, wire.MethodSheetMetalGetStyle, "{}", &res)
+	if res.Style.BendTransition != "none" {
+		t.Errorf("default bend transition = %q, want none (Inventor's Default style)", res.Style.BendTransition)
+	}
+	call(t, r, s, wire.MethodSheetMetalSetStyle,
+		`{"bendTransition":"arc","bendTransitionArcRadius":"3 mm"}`, &res)
+	if res.Style.BendTransition != "arc" {
+		t.Errorf("bend transition after setStyle = %q, want arc", res.Style.BendTransition)
+	}
+	var got wire.SheetMetalStyleResult
+	call(t, r, s, wire.MethodSheetMetalGetStyle, "{}", &got)
+	if got.Style.BendTransition != "arc" {
+		t.Errorf("getStyle reported %q, want the arc transition just set", got.Style.BendTransition)
+	}
+	if _, err := r.Handle(s, wire.MethodSheetMetalSetStyle, []byte(`{"bendTransition":"spline"}`)); err == nil {
+		t.Error("an unknown bend transition should be refused")
+	}
+}

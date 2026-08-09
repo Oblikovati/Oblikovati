@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"sync/atomic"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
@@ -66,6 +67,9 @@ type Input struct {
 	PriorBends []BendPlacement
 	// Corner is the sheet-metal style's CORNER relief, resolved for this recompute (#2072).
 	Corner CornerReliefSpec
+	// Transition is the style's bend transition (#1959), which a feature's own bend options may
+	// override.
+	Transition types.BendTransition
 }
 
 // OperationalFeature is a feature that applies a boolean operation against the running
