@@ -88,12 +88,22 @@ func (f *SheetMetalFlangeFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	bodies, err = f.relieveBend(bodies, edges[0], dims, in.Relief)
-	if err != nil {
+	if bodies, err = f.relieve(bodies, edges[0], dims, placement, in); err != nil {
 		return Output{}, err
 	}
 	f.placement = &placement // record the resolved bend for the flat pattern (M13-F04)
 	return Output{Bodies: bodies, Heals: heals}, nil
+}
+
+// relieve cuts both styled reliefs this wall calls for (#2072): the notches at its own bend's ends,
+// and the corner cut where that bend meets one an earlier wall placed.
+func (f *SheetMetalFlangeFeature) relieve(bodies []*topo.Body, edge *topo.Edge, dims flangeDims,
+	placement BendPlacement, in Input) ([]*topo.Body, error) {
+	bodies, err := f.relieveBend(bodies, edge, dims, in.Relief)
+	if err != nil {
+		return nil, err
+	}
+	return cutCornerRelief(bodies, placement, in, featOr(f.featName, "flange"))
 }
 
 // relieveBend cuts the styled relief notches at the ends of this flange's bend that stop short of

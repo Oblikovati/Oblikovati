@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/ops"
@@ -33,8 +34,9 @@ type PartFeatures struct {
 	result       []*topo.Body
 	resources    ResourceStore
 	fonts        text.FontResolver
-	workingScale func() float64    // ADR-0042 Phase 2: live working scale (cm per working unit) for re-import
-	relief       func() ReliefSpec // the sheet-metal style's bend relief, read live (#2072)
+	workingScale func() float64          // ADR-0042 Phase 2: live working scale (cm per working unit) for re-import
+	relief       func() ReliefSpec       // the sheet-metal style's bend relief, read live (#2072)
+	corner       func() CornerReliefSpec // and its corner relief
 }
 
 // ResourceStore reads embedded imported-file bytes by their document resource UUID
@@ -48,6 +50,39 @@ type ResourceStore interface {
 // edit repropagates to every relieved bend (#2072). The owning content sets it when the part
 // enters the sheet-metal environment; a part that never does simply has none.
 func (fs *PartFeatures) SetReliefSpec(f func() ReliefSpec) { fs.relief = f }
+
+// SetCornerReliefSpec wires the style's CORNER relief in, read live like the bend relief (#2072).
+func (fs *PartFeatures) SetCornerReliefSpec(f func() CornerReliefSpec) { fs.corner = f }
+
+// cornerReliefSpec reads the current corner relief. With no style there is nothing to cut, which
+// the tear shape says exactly.
+func (fs *PartFeatures) cornerReliefSpec() CornerReliefSpec {
+	if fs.corner == nil {
+		return CornerReliefSpec{Shape: types.CornerTear}
+	}
+	return fs.corner()
+}
+
+// bendsBefore collects the bends every feature ahead of pf already placed (#2072). A wall only
+// meets another wall at a CORNER, and a corner needs both bends — so the feature that builds the
+// second one is the first point at which the junction exists to be relieved.
+func (fs *PartFeatures) bendsBefore(pf *PartFeature) []BendPlacement {
+	var out []BendPlacement
+	for _, item := range fs.items {
+		if item == pf {
+			return out
+		}
+		if item.suppress || !item.health.OK() {
+			continue
+		}
+		if placed, ok := item.Definition().(PlacedBend); ok {
+			if p, ok := placed.Placement(); ok {
+				out = append(out, p)
+			}
+		}
+	}
+	return out
+}
 
 // reliefSpec reads the current relief, or the zero spec (which cuts nothing) for a part with no
 // sheet-metal style.
@@ -262,7 +297,8 @@ func (fs *PartFeatures) evaluateBody(pf *PartFeature, bodies []*topo.Body, sick 
 	}
 	pf.recomputes++
 	rec := &diag.Recorder{}
-	out, err := safeRecompute(pf, Input{Bodies: bodies, Params: fs.params, SourceTool: fs.sourceTool, Diag: rec, Relief: fs.reliefSpec()})
+	out, err := safeRecompute(pf, Input{Bodies: bodies, Params: fs.params, SourceTool: fs.sourceTool,
+		Diag: rec, Relief: fs.reliefSpec(), Corner: fs.cornerReliefSpec(), PriorBends: fs.bendsBefore(pf)})
 	pf.diags = rec.Records()
 	return fs.classify(pf, bodies, out, err, sick)
 }

@@ -143,6 +143,14 @@ func (d *PartComponentDefinition) reliefSpec() feature.ReliefSpec {
 	return feature.ReliefSpec{Shape: r.Shape, Width: d.sheetMetal.ReliefWidth(), Depth: d.sheetMetal.ReliefDepth()}
 }
 
+// cornerReliefSpec resolves the active style's CORNER relief for one recompute (#2072).
+func (d *PartComponentDefinition) cornerReliefSpec() feature.CornerReliefSpec {
+	if d.sheetMetal == nil {
+		return feature.CornerReliefSpec{Shape: types.CornerTear} // no style: nothing to cut
+	}
+	return feature.CornerReliefSpec{Shape: d.sheetMetal.CornerRelief().Shape, Size: d.sheetMetal.CornerReliefSize()}
+}
+
 // FlatOrientations returns the part's flat-pattern orientations (M13-F05), or nil when the
 // part is not in the sheet-metal environment.
 func (d *PartComponentDefinition) FlatOrientations() *sheetmetal.Orientations {

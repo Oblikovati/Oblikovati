@@ -60,6 +60,12 @@ type Input struct {
 	// sizes could ride on parameters like the thickness does, but the SHAPE is not a number, so
 	// the whole spec arrives together rather than half here and half through Params.
 	Relief ReliefSpec
+	// PriorBends are the bends placed by the features ahead of this one (#2072). A wall meets
+	// another wall only at a corner, so relieving that corner needs both bends — and the feature
+	// building the second one is where they first both exist.
+	PriorBends []BendPlacement
+	// Corner is the sheet-metal style's CORNER relief, resolved for this recompute (#2072).
+	Corner CornerReliefSpec
 }
 
 // OperationalFeature is a feature that applies a boolean operation against the running
