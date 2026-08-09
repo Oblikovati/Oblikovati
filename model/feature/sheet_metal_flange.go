@@ -37,6 +37,13 @@ type SheetMetalFlangeDefinition struct {
 	Angle   func() float64 // bend angle (radians); nil ⇒ 90°
 	Radius  func() float64 // inside bend radius; nil ⇒ rule BendRadius
 	Flip    bool
+	// Position and HeightDatum decide where the wall LANDS (#1957): how far back from the picked
+	// edge the bend sits, and what the height is measured from. Both default to what this feature
+	// has always built — the bend at the edge, the height from its tangent. See
+	// sheet_metal_flange_position.go.
+	Position       BendPosition
+	PositionOffset func() float64 // explicit distance for the two edge-offset positions
+	HeightDatum    HeightDatum
 }
 
 // SheetMetalFlangeFeature folds a wall onto the sheet each recompute.
@@ -67,7 +74,8 @@ func (f *SheetMetalFlangeFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	wall, placement, err := buildFlangeSolid(edges[0], dims.thickness, dims.radius, dims.height, dims.angle, f.def.Flip, f.featName)
+	wall, placement, err := buildFoldedSolidAt(edges[0], dims.thickness, f.flangeSteps(dims),
+		dims.setback, f.def.Flip, f.featName)
 	if err != nil {
 		return Output{}, err
 	}
@@ -90,8 +98,16 @@ func (f *SheetMetalFlangeFeature) Placement() (BendPlacement, bool) {
 	return *f.placement, true
 }
 
-// flangeDims is the resolved, validated set of flange dimensions for one recompute.
-type flangeDims struct{ thickness, radius, height, angle float64 }
+// flangeDims is the resolved, validated set of flange dimensions for one recompute. run is the
+// straight wall length after the bend, which is the height once the datum's setback is taken off;
+// setback is how far back from the picked edge the section starts (#1957).
+type flangeDims struct{ thickness, radius, height, angle, run, setback float64 }
+
+// flangeSteps is the folded section a flange builds: its bend and the wall that follows. Where the
+// section STARTS is the bend position's business (d.setback), not a step.
+func (f *SheetMetalFlangeFeature) flangeSteps(d flangeDims) []bendRun {
+	return []bendRun{{Angle: d.angle, Radius: d.radius, Run: d.run}}
+}
 
 // resolveDims reads the live thickness, the bend radius (override or rule), the height, and
 // the angle, erroring if any is non-positive.
@@ -104,6 +120,10 @@ func (f *SheetMetalFlangeFeature) resolveDims(ps *param.Parameters) (flangeDims,
 	if d.radius <= 0 || d.height <= 0 || d.angle <= 0 {
 		return flangeDims{}, fmt.Errorf("sheet-metal flange: radius/height/angle must be positive (r=%g h=%g a=%g)", d.radius, d.height, d.angle)
 	}
+	if d.run, err = f.def.HeightDatum.wallRun(d.height, d.radius, d.thickness, d.angle); err != nil {
+		return flangeDims{}, err
+	}
+	d.setback = f.def.Position.setbackFor(d.radius, d.thickness, evalFloat(f.def.PositionOffset))
 	return d, nil
 }
 
@@ -139,21 +159,21 @@ func (f *SheetMetalFlangeFeature) BendSpecs(_ float64) []BendSpec {
 	return []BendSpec{{Angle: f.resolveAngle(), Radius: radius}}
 }
 
-// buildFlangeSolid constructs the bend+wall solid on edge: the cross-section band extruded
-// along the edge. up is the parent face's outward normal (the fold-toward side); out is the
-// in-plane direction away from the sheet. flip folds toward the opposite face. It also
-// returns the resolved [BendPlacement] (the bend line + outward direction + dims) so the
-// flat pattern can lay this flange out as a tab without re-resolving the edge.
-func buildFlangeSolid(edge *topo.Edge, thickness, radius, height, angle float64, flip bool, feat string) (*topo.Body, BendPlacement, error) {
-	return buildFoldedSolid(edge, thickness, []bendRun{{Angle: angle, Radius: radius, Run: height}}, flip, feat)
-}
-
 // buildFoldedSolid extrudes a folded-section chain (see sheet_metal_band.go) along the picked
 // edge — the shared body of the flange and every hem type (#1956). The reported placement
 // describes the FIRST bend, which is the one at the picked edge and so the one the flat pattern
 // unfolds about; the developed length of any further folds is the caller's BendSpecs to report.
 func buildFoldedSolid(edge *topo.Edge, thickness float64, steps []bendRun, flip bool,
 	feat string) (*topo.Body, BendPlacement, error) {
+	return buildFoldedSolidAt(edge, thickness, steps, 0, flip, feat)
+}
+
+// buildFoldedSolidAt is buildFoldedSolid with the section SHIFTED setback into the parent material
+// — how a flange sits back from its picked edge (#1957). The shifted section starts buried in the
+// sheet and the union absorbs the overlap; a backwards RUN cannot do this, because the bend that
+// follows it curls forward again and doubles the band over itself.
+func buildFoldedSolidAt(edge *topo.Edge, thickness float64, steps []bendRun, setback float64,
+	flip bool, feat string) (*topo.Body, BendPlacement, error) {
 	if len(steps) == 0 {
 		return nil, BendPlacement{}, fmt.Errorf("sheet-metal %s: no bend steps to build", feat)
 	}
@@ -169,7 +189,9 @@ func buildFoldedSolid(edge *topo.Edge, thickness float64, steps []bendRun, flip 
 	plane := planePerp(v0, e)
 	u, v := plane.XAxis().AsVector(), plane.YAxis().AsVector()
 	proj := func(w math.Vector3) math.Point2 { return math.P2(w.Dot(u), w.Dot(v)) }
-	poly := bandPolygon(steps, out.AsVector(), up.AsVector(), thickness, proj)
+	poly := bandPolygon(steps, out.AsVector(), up.AsVector(), thickness, func(w math.Vector3) math.Point2 {
+		return proj(w.Add(out.AsVector().Scale(-setback)))
+	})
 	placement := BendPlacement{
 		AxisStart: v0, AxisEnd: v1, Outward: out, Up: up,
 		Angle: steps[0].Angle, Radius: steps[0].Radius, Thickness: thickness,

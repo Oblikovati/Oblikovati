@@ -5,6 +5,7 @@ package opregistry
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"oblikovati.org/api/wire/featureargs"
 	"oblikovati.org/app"
@@ -19,7 +20,10 @@ const sheetMetalFlangeSchema = `{
     "height": {"type": "string", "description": "Flange wall length with units, e.g. \"15 mm\"."},
     "angle": {"type": "string", "description": "Bend angle, e.g. \"90 deg\" (default). The wall folds this far from the parent face."},
     "radius": {"type": "string", "description": "Inside bend radius (default: the rule's bend radius)."},
-    "flip": {"type": "boolean", "default": false, "description": "Fold toward the opposite side of the sheet."}
+    "flip": {"type": "boolean", "default": false, "description": "Fold toward the opposite side of the sheet."},
+    "bendPosition": {"type": "string", "enum": ["adjacentFace", "outsideBaseFace", "insideBendFace", "outerEdgeOffset", "innerEdgeOffset"], "default": "adjacentFace", "description": "How far back from the picked edge the bend sits (Inventor BendPositionEnum). adjacentFace starts the bend AT the edge; outsideBaseFace and insideBendFace set it back until the wall's outer or inner face reaches the edge, so the wall does not overhang; the two ...EdgeOffset positions add positionOffset to those."},
+    "positionOffset": {"type": "string", "description": "Explicit distance for the outerEdgeOffset / innerEdgeOffset positions, e.g. \"2 mm\"."},
+    "heightDatum": {"type": "string", "enum": ["tangent", "outer", "inner", "outerOrtho", "innerOrtho"], "default": "tangent", "description": "What height is measured FROM (Inventor HeightDatumTypeEnum). tangent measures the wall from where the bend ends; outer/inner measure from the sharp corner the outer/inner faces would make, the way a drawing dimensions it; the ortho pair measures those corners perpendicular to the base face."}
   },
   "required": ["edge", "height"]
 }`
@@ -77,5 +81,34 @@ func flangeDef(part *compdef.PartComponentDefinition, in featureargs.SheetMetalF
 		}
 		def.Radius = radius
 	}
+	if err := bindFlangePlacement(part, def, in); err != nil {
+		return nil, err
+	}
 	return def, nil
+}
+
+// bindFlangePlacement resolves where the wall lands (#1957): the bend position and its offset, and
+// the datum the height is measured from.
+func bindFlangePlacement(part *compdef.PartComponentDefinition, def *feature.SheetMetalFlangeDefinition,
+	in featureargs.SheetMetalFlange) error {
+	position, ok := feature.ParseBendPosition(strings.TrimSpace(in.BendPosition))
+	if !ok {
+		return fmt.Errorf("sheetMetalFlange: unknown bendPosition %q (want adjacentFace, "+
+			"outsideBaseFace, insideBendFace, outerEdgeOffset or innerEdgeOffset)", in.BendPosition)
+	}
+	datum, ok := feature.ParseHeightDatum(strings.TrimSpace(in.HeightDatum))
+	if !ok {
+		return fmt.Errorf("sheetMetalFlange: unknown heightDatum %q (want tangent, outer, inner, "+
+			"outerOrtho or innerOrtho)", in.HeightDatum)
+	}
+	def.Position, def.HeightDatum = position, datum
+	if in.PositionOffset == "" {
+		return nil
+	}
+	offset, err := lengthClosure(part, in.PositionOffset, "sheetMetalFlange: positionOffset")
+	if err != nil {
+		return err
+	}
+	def.PositionOffset = offset
+	return nil
 }

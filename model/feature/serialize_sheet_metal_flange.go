@@ -13,6 +13,11 @@ type SheetMetalFlangeData struct {
 	Angle  float64 `yaml:"angle,omitempty"`  // 0 ⇒ 90° default
 	Radius float64 `yaml:"radius,omitempty"` // 0 ⇒ use the rule's bend radius
 	Flip   bool    `yaml:"flip,omitempty"`
+	// BendPosition / HeightDatum place the wall (#1957); both absent ⇒ the bend at the picked edge
+	// with the height measured from its tangent, which is what an older document meant.
+	BendPosition   string  `yaml:"bendPosition,omitempty"`
+	PositionOffset float64 `yaml:"positionOffset,omitempty"`
+	HeightDatum    string  `yaml:"heightDatum,omitempty"`
 }
 
 // serializeSheetMetalFlange projects a flange recipe to its persisted form, freezing the
@@ -24,6 +29,10 @@ func serializeSheetMetalFlange(def *SheetMetalFlangeDefinition) *SheetMetalFlang
 		Angle:  evalFloat(def.Angle),
 		Radius: evalFloat(def.Radius),
 		Flip:   def.Flip,
+
+		BendPosition:   BendPositionName(def.Position),
+		PositionOffset: evalFloat(def.PositionOffset),
+		HeightDatum:    HeightDatumName(def.HeightDatum),
 	}
 }
 
@@ -37,10 +46,23 @@ func restoreSheetMetalFlange(fs *PartFeatures, d *SheetMetalFlangeData) (*PartFe
 	if err != nil {
 		return nil, fmt.Errorf("sheet-metal flange edge key: %w", err)
 	}
+	position, ok := ParseBendPosition(d.BendPosition)
+	if !ok {
+		return nil, fmt.Errorf("sheet-metal flange: unknown bend position %q", d.BendPosition)
+	}
+	datum, ok := ParseHeightDatum(d.HeightDatum)
+	if !ok {
+		return nil, fmt.Errorf("sheet-metal flange: unknown height datum %q", d.HeightDatum)
+	}
 	def := &SheetMetalFlangeDefinition{
-		EdgeKey: key,
-		Height:  constFloat(d.Height),
-		Flip:    d.Flip,
+		EdgeKey:     key,
+		Height:      constFloat(d.Height),
+		Flip:        d.Flip,
+		Position:    position,
+		HeightDatum: datum,
+	}
+	if d.PositionOffset != 0 {
+		def.PositionOffset = constFloat(d.PositionOffset)
 	}
 	if d.Angle != 0 {
 		def.Angle = constFloat(d.Angle)

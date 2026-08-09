@@ -23,7 +23,9 @@ import (
 
 // bendRun is one step of a folded section: a bend through Angle at inside radius Radius, followed
 // by a straight Run. Either part may be zero — a rolled hem is all bend, and a zero-angle step is a
-// plain straight run. A NEGATIVE angle curls the opposite way (see the double hem).
+// plain straight run. A NEGATIVE angle curls the opposite way (see the double hem). A run is never
+// negative: material that starts behind the edge is a SHIFTED section, not a backwards run, which
+// would double the band back over the bend that follows it (#1957).
 type bendRun struct {
 	Angle  float64
 	Radius float64
