@@ -89,6 +89,40 @@ func TestBuildGraphRevolveCutsBuildsBaseAndCuts(t *testing.T) {
 	}
 }
 
+// TestGraphRevolveWithCutsWrapperOnFixture drives the document wrapper (decode profile/axis/extrudes
+// → build core → mesh-fit gate) and bodyFitsMesh on the generated 16_revolve fixture — a CI-available
+// revolve part, so the document-bound glue runs in CI without a corpus.
+func TestGraphRevolveWithCutsWrapperOnFixture(t *testing.T) {
+	d, err := ipt.Open(readCorpus(t, "16_revolve.ipt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	seg, _ := d.Segment("PmDCSegment")
+	def := newPart(t)
+	ok, _ := graphRevolveWithCuts(def, d, seg)
+	if !ok || !firstBodyIsSolid(def) {
+		t.Fatalf("graph revolve wrapper did not build a solid from 16_revolve (ok=%v)", ok)
+	}
+	if !bodyFitsMesh(def, d) {
+		t.Error("a solid should fit a fixture that stores no tessellation")
+	}
+}
+
+// TestBuildRevolveDispatchGraphFallback covers buildRevolveDispatch's graph-fallback branch: with no
+// primary sketches the incidence revolve makes no solid, so it rebuilds from the fixture's node graph.
+func TestBuildRevolveDispatchGraphFallback(t *testing.T) {
+	d, err := ipt.Open(readCorpus(t, "16_revolve.ipt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	seg, _ := d.Segment("PmDCSegment")
+	def := newPart(t)
+	ok, _ := buildRevolveDispatch(def, d, seg, nil) // nil placed → primary fails → graph fallback
+	if !ok || !firstBodyIsSolid(def) {
+		t.Fatalf("graph fallback did not build a solid (ok=%v)", ok)
+	}
+}
+
 // TestRevolveCutBranches covers the remaining revolve/cut branches: the preferred=-1 SCAN path, the
 // axis-reference fallback (a profile turning about an ordinary y=0 edge the heuristic can't spot), and
 // applyExtrudeCutsAndHole's skip note for an unresolvable profile.
