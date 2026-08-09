@@ -24,7 +24,8 @@ func newSheetMetalPart(t *testing.T) (*Router, *app.Session) {
 }
 
 // TestSheetMetalGetStyleDefaults a part created with the sheet-metal subtype reports the
-// seeded default rule (1 mm thickness, round relief, K-factor unfold).
+// seeded default rule (1 mm thickness, straight relief per Inventor's Default style, K-factor
+// unfold).
 func TestSheetMetalGetStyleDefaults(t *testing.T) {
 	r, s := newSheetMetalPart(t)
 	var res wire.SheetMetalStyleResult
@@ -32,8 +33,8 @@ func TestSheetMetalGetStyleDefaults(t *testing.T) {
 	if res.Style.UnfoldMethod != types.KFactorUnfold.String() {
 		t.Errorf("unfold method = %q, want kFactor", res.Style.UnfoldMethod)
 	}
-	if res.Style.ReliefShape != types.ReliefRound.String() {
-		t.Errorf("relief shape = %q, want round", res.Style.ReliefShape)
+	if res.Style.ReliefShape != types.ReliefStraight.String() {
+		t.Errorf("relief shape = %q, want straight", res.Style.ReliefShape)
 	}
 	if math.Abs(res.Style.KFactor-0.44) > 1e-9 {
 		t.Errorf("K-factor = %v, want 0.44", res.Style.KFactor)
@@ -78,9 +79,11 @@ func TestSheetMetalSetStyleEditsRuleAndKFactor(t *testing.T) {
 func TestSheetMetalSetStyleRelief(t *testing.T) {
 	r, s := newSheetMetalPart(t)
 	var res wire.SheetMetalStyleResult
+	// "square" is the older spelling of the rectangular bend relief; it still sets the style and
+	// reads back under the canonical name (#1960).
 	call(t, r, s, wire.MethodSheetMetalSetStyle, `{"reliefShape":"square"}`, &res)
-	if res.Style.ReliefShape != types.ReliefSquare.String() {
-		t.Errorf("relief shape after setStyle = %q, want square", res.Style.ReliefShape)
+	if res.Style.ReliefShape != types.ReliefStraight.String() {
+		t.Errorf("relief shape after setStyle = %q, want straight", res.Style.ReliefShape)
 	}
 }
 
@@ -141,5 +144,63 @@ func TestSheetMetalBendAllowanceRejectsBadInput(t *testing.T) {
 		if _, err := r.Handle(s, wire.MethodSheetMetalBendAllowance, []byte(bad)); err == nil {
 			t.Errorf("bendAllowance(%s) should error", bad)
 		}
+	}
+}
+
+// TestCornerReliefStyleRoundTrips (#1960): the CORNER relief is a separate style property from the
+// bend relief — the cut where two flanges meet — with its own shape, size, placement and a
+// distinct three-bend pair. setStyle must carry all five and getStyle report them back.
+func TestCornerReliefStyleRoundTrips(t *testing.T) {
+	r, s := newSheetMetalPart(t)
+	var res wire.SheetMetalStyleResult
+	call(t, r, s, wire.MethodSheetMetalSetStyle, `{"cornerReliefShape":"square","cornerReliefSize":"3 mm",`+
+		`"cornerReliefPlacement":"bendIntersection","threeBendReliefShape":"fullRound","threeBendReliefSize":"1 mm"}`, &res)
+	if res.Style.CornerReliefShape != "square" || res.Style.CornerReliefPlacement != "bendIntersection" {
+		t.Errorf("corner relief = %q at %q, want square at bendIntersection",
+			res.Style.CornerReliefShape, res.Style.CornerReliefPlacement)
+	}
+	if res.Style.ThreeBendReliefShape != "fullRound" {
+		t.Errorf("three-bend relief shape = %q, want fullRound", res.Style.ThreeBendReliefShape)
+	}
+
+	var got wire.SheetMetalStyleResult
+	call(t, r, s, wire.MethodSheetMetalGetStyle, `{}`, &got)
+	if got.Style.CornerReliefShape != "square" || got.Style.ThreeBendReliefShape != "fullRound" {
+		t.Errorf("getStyle reported %+v, want the corner relief just set", got.Style)
+	}
+}
+
+// TestDefaultCornerReliefMatchesInventor (#1960): a fresh sheet-metal part reports Inventor's
+// Default-style corner relief, so a round-trip of an unedited part does not silently restyle it.
+func TestDefaultCornerReliefMatchesInventor(t *testing.T) {
+	r, s := newSheetMetalPart(t)
+	var res wire.SheetMetalStyleResult
+	call(t, r, s, wire.MethodSheetMetalGetStyle, `{}`, &res)
+	if res.Style.ReliefShape != "straight" {
+		t.Errorf("default bend relief = %q, want straight (Inventor's Default style)", res.Style.ReliefShape)
+	}
+	if res.Style.CornerReliefShape != "trimToBend" || res.Style.ThreeBendReliefShape != "roundWithRadius" {
+		t.Errorf("default corner relief = %q / three-bend %q, want trimToBend / roundWithRadius",
+			res.Style.CornerReliefShape, res.Style.ThreeBendReliefShape)
+	}
+	if res.Style.CornerReliefPlacement != "bendTangent" {
+		t.Errorf("default corner relief placement = %q, want bendTangent", res.Style.CornerReliefPlacement)
+	}
+}
+
+// TestUnknownCornerReliefIsRefused: an unrecognised shape or placement must not fall through to
+// the default and quietly cut a different corner.
+func TestUnknownCornerReliefIsRefused(t *testing.T) {
+	r, s := newSheetMetalPart(t)
+	for _, args := range []string{
+		`{"cornerReliefShape":"laserWeld"}`,
+		`{"cornerReliefPlacement":"middle"}`,
+		`{"threeBendReliefShape":"tearDrop"}`,
+	} {
+		var res wire.SheetMetalStyleResult
+		if _, err := r.Handle(s, wire.MethodSheetMetalSetStyle, []byte(args)); err == nil {
+			t.Errorf("setStyle %s should be refused", args)
+		}
+		_ = res
 	}
 }

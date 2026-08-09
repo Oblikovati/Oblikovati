@@ -43,7 +43,7 @@ func TestSheetMetalStyleCommit(t *testing.T) {
 	tool.Start(s)
 	tool.SetThickness(tool.Thickness() * 2) // double the gauge (display units)
 	tool.SetKFactor(0.33)
-	tool.SetReliefShapeIndex(int(types.ReliefSquare))
+	tool.SetReliefShapeIndex(int(types.ReliefStraight))
 	if !tool.CanCommit() {
 		t.Fatal("positive gauge/radius and 0<k<1 should allow commit")
 	}
@@ -57,8 +57,8 @@ func TestSheetMetalStyleCommit(t *testing.T) {
 	if got := rule.Unfold().KFactor; !nearly(got, 0.33) {
 		t.Errorf("K-factor after commit = %v, want 0.33", got)
 	}
-	if got := rule.Relief().Shape; got != types.ReliefSquare {
-		t.Errorf("relief shape after commit = %v, want square", got)
+	if got := rule.Relief().Shape; got != types.ReliefStraight {
+		t.Errorf("relief shape after commit = %v, want straight", got)
 	}
 }
 

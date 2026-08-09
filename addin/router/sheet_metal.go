@@ -95,6 +95,9 @@ func applyStyleEdits(part *compdef.PartComponentDefinition, rule *sheetmetal.Rul
 	if err := applyReliefEdits(part, rule, in); err != nil {
 		return err
 	}
+	if err := applyCornerReliefEdits(part, rule, in); err != nil {
+		return err
+	}
 	if in.MinimumGap != "" {
 		gap, err := resolveQuantity(part, in.MinimumGap, param.Length)
 		if err != nil {
@@ -111,7 +114,7 @@ func applyReliefEdits(part *compdef.PartComponentDefinition, rule *sheetmetal.Ru
 	if in.ReliefShape != "" {
 		shape, ok := types.ParseReliefShape(in.ReliefShape)
 		if !ok {
-			return fmt.Errorf("sheetMetal reliefShape %q: want round|square|tear", in.ReliefShape)
+			return fmt.Errorf("sheetMetal reliefShape %q: want round|straight|tear", in.ReliefShape)
 		}
 		relief.Shape = shape
 	}
@@ -129,6 +132,58 @@ func applyReliefEdits(part *compdef.PartComponentDefinition, rule *sheetmetal.Ru
 		*e.field = sheetmetal.Constant(v.Value)
 	}
 	rule.SetRelief(relief)
+	return nil
+}
+
+// applyCornerReliefEdits updates the CORNER relief block from the non-empty fields (#1960). It is
+// a separate property from the bend relief: the cut where two flanges meet, not the one at a
+// bend's ends.
+func applyCornerReliefEdits(part *compdef.PartComponentDefinition, rule *sheetmetal.Rule, in wire.SetSheetMetalStyleArgs) error {
+	corner := rule.CornerRelief()
+	for _, e := range []struct {
+		name  string
+		field *types.CornerReliefShape
+	}{{in.CornerReliefShape, &corner.Shape}, {in.ThreeBendReliefShape, &corner.ThreeBendShape}} {
+		if e.name == "" {
+			continue
+		}
+		shape, ok := types.ParseCornerReliefShape(e.name)
+		if !ok {
+			return fmt.Errorf("sheetMetal corner relief shape %q: want trimToBend|round|square|tear|"+
+				"fullRound|roundWithRadius|intersection", e.name)
+		}
+		*e.field = shape
+	}
+	if in.CornerReliefPlacement != "" {
+		placement, ok := types.ParseCornerReliefPlacement(in.CornerReliefPlacement)
+		if !ok {
+			return fmt.Errorf("sheetMetal cornerReliefPlacement %q: want bendTangent|bendIntersection|alongBend",
+				in.CornerReliefPlacement)
+		}
+		corner.Placement = placement
+	}
+	if err := applyCornerReliefSizes(part, &corner, in); err != nil {
+		return err
+	}
+	rule.SetCornerRelief(corner)
+	return nil
+}
+
+// applyCornerReliefSizes resolves the two corner-relief size expressions.
+func applyCornerReliefSizes(part *compdef.PartComponentDefinition, corner *sheetmetal.CornerRelief, in wire.SetSheetMetalStyleArgs) error {
+	for _, e := range []struct {
+		expr  string
+		field *func() float64
+	}{{in.CornerReliefSize, &corner.Size}, {in.ThreeBendReliefSize, &corner.ThreeBendSize}} {
+		if e.expr == "" {
+			continue
+		}
+		v, err := resolveQuantity(part, e.expr, param.Length)
+		if err != nil {
+			return fmt.Errorf("sheetMetal corner relief size %q: %w", e.expr, err)
+		}
+		*e.field = sheetmetal.Constant(v.Value)
+	}
 	return nil
 }
 
@@ -248,6 +303,12 @@ func styleInfo(part *compdef.PartComponentDefinition, rule *sheetmetal.Rule) wir
 		UnfoldMethod:  unfold.Type.String(),
 		KFactor:       unfold.KFactor,
 		BendAllowance: rule.BendAllowance(halfPi, 0),
+
+		CornerReliefShape:     rule.CornerRelief().Shape.String(),
+		CornerReliefSize:      fmtLen(rule.CornerReliefSize()),
+		CornerReliefPlacement: rule.CornerRelief().Placement.String(),
+		ThreeBendReliefShape:  rule.CornerRelief().ThreeBendShape.String(),
+		ThreeBendReliefSize:   fmtLen(rule.ThreeBendReliefSize()),
 	}
 }
 

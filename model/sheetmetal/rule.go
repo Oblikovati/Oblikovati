@@ -10,6 +10,8 @@ const (
 	defaultReliefWidthFactor = 0.5 // relief notch width = 0.5·thickness
 	defaultReliefDepthFactor = 0.5 // relief notch depth = 0.5·thickness
 	defaultGapFactor         = 0.0 // corner gap (0 = closed) until set
+	// defaultCornerReliefFactor is Inventor's Default-style corner relief size, Thickness*4.
+	defaultCornerReliefFactor = 4.0
 )
 
 // Relief describes the cut placed at the ends of a bend so the adjacent web folds without
@@ -19,6 +21,17 @@ type Relief struct {
 	Shape ReliefShape
 	Width func() float64
 	Depth func() float64
+}
+
+// CornerRelief is the cut made where two flanges MEET — a separate property from the bend
+// relief, with its own shape, size and placement, and a distinct shape/size for the three-bend
+// corner (Inventor's SheetMetalStyle corner-relief block, #1960).
+type CornerRelief struct {
+	Shape          types.CornerReliefShape
+	Size           func() float64
+	Placement      types.CornerReliefPlacement
+	ThreeBendShape types.CornerReliefShape
+	ThreeBendSize  func() float64
 }
 
 // Rule is the active sheet-metal style: the constant material thickness, the default bend
@@ -32,6 +45,7 @@ type Rule struct {
 	bendRadius func() float64
 	gap        func() float64
 	relief     Relief
+	corner     CornerRelief
 	unfold     UnfoldMethod
 }
 
@@ -44,16 +58,26 @@ func NewRule(name string, thickness, bendRadius, gap func() float64, relief Reli
 // Constant returns a closure that always reports v — for tests and constant defaults.
 func Constant(v float64) func() float64 { return func() float64 { return v } }
 
-// DefaultRule returns a rule with constant defaults (thickness/bendRadius supplied, relief
-// at half thickness, round relief, K-factor unfold). Used as the seed when a part enters
-// the sheet-metal environment before the user picks a style.
+// DefaultRule returns a rule with constant defaults, matching what Inventor's own Default style
+// ships with (#1960): a STRAIGHT bend relief at half thickness, the corner trimmed to the bend at
+// four times thickness, a three-bend corner rounded at the bend radius, and K-factor unfold. Used
+// as the seed when a part enters the sheet-metal environment before the user picks a style.
 func DefaultRule(thickness, bendRadius float64) *Rule {
 	relief := Relief{
-		Shape: types.ReliefRound,
+		Shape: types.ReliefStraight,
 		Width: Constant(defaultReliefWidthFactor * thickness),
 		Depth: Constant(defaultReliefDepthFactor * thickness),
 	}
-	return NewRule("Default", Constant(thickness), Constant(bendRadius), Constant(defaultGapFactor), relief, KFactorMethod(defaultKFactor))
+	corner := CornerRelief{
+		Shape:          types.CornerTrimToBend,
+		Size:           Constant(defaultCornerReliefFactor * thickness),
+		Placement:      types.CornerReliefAtBendTangent,
+		ThreeBendShape: types.CornerRoundWithRadius,
+		ThreeBendSize:  Constant(bendRadius),
+	}
+	r := NewRule("Default", Constant(thickness), Constant(bendRadius), Constant(defaultGapFactor), relief, KFactorMethod(defaultKFactor))
+	r.SetCornerRelief(corner)
+	return r
 }
 
 // Name returns the rule's style name.
@@ -90,8 +114,16 @@ func (r *Rule) SetThickness(f func() float64)  { r.thickness = f }
 func (r *Rule) SetBendRadius(f func() float64) { r.bendRadius = f }
 func (r *Rule) SetGap(f func() float64)        { r.gap = f }
 
-// SetRelief replaces the relief geometry.
+// SetRelief replaces the bend-relief geometry.
 func (r *Rule) SetRelief(relief Relief) { r.relief = relief }
+
+// CornerRelief returns the rule's corner-relief block, and SetCornerRelief replaces it (#1960).
+func (r *Rule) CornerRelief() CornerRelief     { return r.corner }
+func (r *Rule) SetCornerRelief(c CornerRelief) { r.corner = c }
+
+// CornerReliefSize and ThreeBendReliefSize report the corner cut sizes (cm).
+func (r *Rule) CornerReliefSize() float64    { return call(r.corner.Size) }
+func (r *Rule) ThreeBendReliefSize() float64 { return call(r.corner.ThreeBendSize) }
 
 // BendAllowance and BendDeduction develop a single bend under this rule's unfold method,
 // defaulting the radius to the rule's bend radius when a non-positive radius is passed.

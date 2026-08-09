@@ -89,7 +89,7 @@ func TestSheetMetalRecipeRoundTrips(t *testing.T) {
 	src := NewPartComponentDefinition()
 	rule, _ := src.EnableSheetMetal()
 	_ = src.SetSheetMetalLengthParam("Thickness", "2 mm")
-	rule.SetRelief(sheetmetal.Relief{Shape: types.ReliefSquare, Width: sheetmetal.Constant(0.05), Depth: sheetmetal.Constant(0.07)})
+	rule.SetRelief(sheetmetal.Relief{Shape: types.ReliefStraight, Width: sheetmetal.Constant(0.05), Depth: sheetmetal.Constant(0.07)})
 	eq, err := sheetmetal.EquationMethod("a * (r + 0.4 * t)")
 	if err != nil {
 		t.Fatalf("equation: %v", err)
@@ -112,8 +112,8 @@ func TestSheetMetalRecipeRoundTrips(t *testing.T) {
 	if math.Abs(got.Thickness()-0.2) > 1e-9 {
 		t.Errorf("restored thickness = %v cm, want 0.2", got.Thickness())
 	}
-	if got.Relief().Shape != types.ReliefSquare {
-		t.Errorf("restored relief shape = %v, want square", got.Relief().Shape)
+	if got.Relief().Shape != types.ReliefStraight {
+		t.Errorf("restored relief shape = %v, want straight", got.Relief().Shape)
 	}
 	if got.Unfold().Type != types.EquationUnfold {
 		t.Errorf("restored unfold type = %v, want equation", got.Unfold().Type)
@@ -178,5 +178,51 @@ func TestSheetMetalBendTableRecipeRoundTrips(t *testing.T) {
 	}
 	if ba := got.BendAllowance(math.Pi/2, 0.1); math.Abs(ba-0.31) > 1e-9 {
 		t.Errorf("restored table allowance = %v, want 0.31", ba)
+	}
+}
+
+// TestCornerReliefRecipeRoundTrips (#1960): the corner relief is a separate style property from
+// the bend relief, so a document that carries an edited one must reopen with the same corner cut
+// — falling back to the default would restyle the part silently.
+func TestCornerReliefRecipeRoundTrips(t *testing.T) {
+	src := NewPartComponentDefinition()
+	rule, _ := src.EnableSheetMetal()
+	rule.SetCornerRelief(sheetmetal.CornerRelief{
+		Shape:          types.CornerSquare,
+		Size:           sheetmetal.Constant(0.31),
+		Placement:      types.CornerReliefAtBendIntersection,
+		ThreeBendShape: types.CornerFullRound,
+		ThreeBendSize:  sheetmetal.Constant(0.12),
+	})
+	blob, err := src.MarshalRecipe()
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	dst := NewPartComponentDefinition()
+	if err := dst.ApplyRecipe(blob); err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	got := dst.SheetMetal().CornerRelief()
+	if got.Shape != types.CornerSquare || got.Placement != types.CornerReliefAtBendIntersection {
+		t.Errorf("restored corner relief = %v at %v, want square at bendIntersection", got.Shape, got.Placement)
+	}
+	if got.ThreeBendShape != types.CornerFullRound {
+		t.Errorf("restored three-bend shape = %v, want fullRound", got.ThreeBendShape)
+	}
+	if math.Abs(dst.SheetMetal().CornerReliefSize()-0.31) > 1e-9 {
+		t.Errorf("restored corner relief size = %v, want 0.31", dst.SheetMetal().CornerReliefSize())
+	}
+	if math.Abs(dst.SheetMetal().ThreeBendReliefSize()-0.12) > 1e-9 {
+		t.Errorf("restored three-bend size = %v, want 0.12", dst.SheetMetal().ThreeBendReliefSize())
+	}
+}
+
+// TestLegacySquareReliefStillReads: "square" was this enum's spelling for the rectangular BEND
+// relief before it was reconciled with Inventor's (#1960). A document written with it must reopen
+// with the same relief rather than failing to parse.
+func TestLegacySquareReliefStillReads(t *testing.T) {
+	shape, ok := types.ParseReliefShape("square")
+	if !ok || shape != types.ReliefStraight {
+		t.Fatalf(`ParseReliefShape("square") = (%v, %v), want ReliefStraight`, shape, ok)
 	}
 }

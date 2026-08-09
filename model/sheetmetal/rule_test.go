@@ -19,8 +19,18 @@ func TestDefaultRuleAccessors(t *testing.T) {
 	if math.Abs(r.Thickness()-0.1) > tol || math.Abs(r.BendRadius()-0.2) > tol {
 		t.Errorf("thickness/radius = %v/%v, want 0.1/0.2", r.Thickness(), r.BendRadius())
 	}
-	if r.Relief().Shape != types.ReliefRound {
-		t.Errorf("relief shape = %v, want round", r.Relief().Shape)
+	// The default rule mirrors Inventor's Default style, whose bend relief is STRAIGHT (#1960).
+	if r.Relief().Shape != types.ReliefStraight {
+		t.Errorf("relief shape = %v, want straight", r.Relief().Shape)
+	}
+	if c := r.CornerRelief(); c.Shape != types.CornerTrimToBend || c.ThreeBendShape != types.CornerRoundWithRadius {
+		t.Errorf("corner relief = %v/%v, want trimToBend and roundWithRadius", c.Shape, c.ThreeBendShape)
+	}
+	if math.Abs(r.CornerReliefSize()-4*0.1) > tol {
+		t.Errorf("corner relief size = %v, want 4x the 0.1 thickness", r.CornerReliefSize())
+	}
+	if math.Abs(r.ThreeBendReliefSize()-0.2) > tol {
+		t.Errorf("three-bend relief size = %v, want the 0.2 bend radius", r.ThreeBendReliefSize())
 	}
 	if math.Abs(r.ReliefWidth()-0.05) > tol || math.Abs(r.ReliefDepth()-0.05) > tol {
 		t.Errorf("relief size = %v/%v, want 0.05/0.05", r.ReliefWidth(), r.ReliefDepth())
