@@ -181,10 +181,15 @@ func graphRevolveWithCuts(def *compdef.PartComponentDefinition, d *ipt.Document,
 // existing base (the revolve) instead of requiring a New-Body extrude to start one. A stage that
 // can't resolve its profile or region is skipped with a note; whatever cuts do bind stay.
 func applyRevolveCuts(def *compdef.PartComponentDefinition, d *ipt.Document, placed []placedSketch, emitted []emittedSketch) []string {
+	hole, hasHole := ipt.DecodeHole(d)
+	return applyExtrudeCutsAndHole(def, ipt.DecodeExtrudes(d), ipt.ExtrudeProfiles(d), ipt.ExtrudeRegions(d), hole, hasHole, placed, emitted)
+}
+
+// applyExtrudeCutsAndHole is applyRevolveCuts' decode-free core: given the already-decoded extrudes,
+// profile indices, regions, and hole, it cuts each over the base and drills the hole. Split out so the
+// cut/retry logic can be unit-tested with synthetic inputs (applyRevolveCuts wires in the document).
+func applyExtrudeCutsAndHole(def *compdef.PartComponentDefinition, extrudes []ipt.Extrude, profiles []int, regions [][]ipt.RegionLoop, hole ipt.Hole, hasHole bool, placed []placedSketch, emitted []emittedSketch) []string {
 	var notes []string
-	extrudes := ipt.DecodeExtrudes(d)
-	profiles := ipt.ExtrudeProfiles(d)
-	regions := ipt.ExtrudeRegions(d)
 	for i, ex := range extrudes {
 		p := profileIndex(profiles, i)
 		if p < 0 || p >= len(emitted) || emitted[p].sk == nil {
@@ -215,9 +220,9 @@ func applyRevolveCuts(def *compdef.PartComponentDefinition, d *ipt.Document, pla
 			}
 		}
 	}
-	if h, ok := ipt.DecodeHole(d); ok && len(placed) > 0 && len(emitted) > 0 && emitted[0].sk != nil {
+	if hasHole && len(placed) > 0 && len(emitted) > 0 && emitted[0].sk != nil {
 		cx, cy := profileCentroid(placed[0].geom)
-		addHole(def, h, placed[0].plane, cx, cy, 0)
+		addHole(def, hole, placed[0].plane, cx, cy, 0)
 	}
 	return notes
 }

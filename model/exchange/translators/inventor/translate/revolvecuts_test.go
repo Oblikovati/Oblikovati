@@ -3,8 +3,11 @@
 package translate
 
 import (
+	"math"
 	"testing"
 
+	"oblikovati.org/api/types"
+	"oblikovati.org/model/analysis"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/contentset"
 	"oblikovati.org/model/doc"
@@ -12,6 +15,84 @@ import (
 	"oblikovati.org/model/sketch"
 	"oblikovati.org/persistence"
 )
+
+// newPart is a test helper: a fresh empty part definition.
+func newPart(t *testing.T) *compdef.PartComponentDefinition {
+	t.Helper()
+	ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
+	d, err := compdef.AddPart(ws, "t.opd", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return d.Content().(*compdef.PartComponentDefinition)
+}
+
+// rectAboutAxis is a closed rectangle profile at x∈[x0,x1], y∈[0,h] plus an isolated vertical
+// centreline at x=0 — a synthetic revolve profile (its 360° sweep is an annular tube).
+func rectAboutAxis(x0, x1, h float64) ipt.Sketch {
+	return ipt.Sketch{
+		Lines: []ipt.Line{
+			ln(x0, 0, x1, 0), ln(x1, 0, x1, h), ln(x1, h, x0, h), ln(x0, h, x0, 0),
+			ln(0, 0, 0, h+2), // isolated vertical axis
+		},
+		Resolved: true,
+	}
+}
+
+// TestTryKernelRevolveBuildsSolidFromSyntheticProfile drives the whole kernel-revolve chain
+// (revolveAxisIndex → closedProfileIndices → profileOneSideOfAxis → revolveClosedProfiles) on a
+// synthetic profile, with no corpus part: the rectangle x∈[1,2], h=3 revolved about x=0 is an
+// annular tube of volume π(2²−1²)·3 = 9π cm³.
+func TestTryKernelRevolveBuildsSolidFromSyntheticProfile(t *testing.T) {
+	profile := rectAboutAxis(1, 2, 3)
+	if !graphRevolveCandidate([]ipt.Sketch{profile}) {
+		t.Fatal("expected a revolve candidate")
+	}
+	if graphRevolveCandidate([]ipt.Sketch{{Lines: []ipt.Line{ln(0, 0, 1, 0)}, Resolved: true}}) {
+		t.Error("a 1-line sketch is not a revolve candidate")
+	}
+	def := newPart(t)
+	placed := placeGraphSketches([]ipt.Sketch{profile})
+	emitted := emitSketches(def, placed)
+	if ids := tryKernelRevolve(def, nil, placed, emitted, 0, revolveAxisRef{}); len(ids) == 0 {
+		t.Fatal("tryKernelRevolve built nothing")
+	}
+	def.Recompute()
+	if !firstBodyIsSolid(def) {
+		t.Fatal("revolve did not close to a solid")
+	}
+	vol := analysis.MassPropertiesOf(def.SurfaceBodies().All(), 1, types.MassPropertiesHigh).VolumeMm3
+	if want := 9 * math.Pi * 1000; math.Abs(vol-want) > 0.03*want {
+		t.Errorf("tube volume = %.0f mm³, want ~%.0f", vol, want)
+	}
+}
+
+// TestApplyExtrudeCutsAndHoleCutsTheBase drives the cut path over a synthetic revolve base: a Ø1
+// bore cut through a cylinder, with the region named as a lone full circle. No corpus part.
+func TestApplyExtrudeCutsAndHoleCutsTheBase(t *testing.T) {
+	def := newPart(t)
+	// Base annular tube (rectangle x∈[1,2], h=3 revolved about x=0); a bore profile is sketch #1.
+	base := rectAboutAxis(1, 2, 3)
+	bore := ipt.Sketch{Circles: []ipt.Circle{{Center: ipt.Point2D{X: 1.5}, Radius: 0.3}}, Resolved: true}
+	placed := placeGraphSketches([]ipt.Sketch{base, bore})
+	emitted := emitSketches(def, placed)
+	if ids := tryKernelRevolve(def, nil, placed[:1], emitted[:1], 0, revolveAxisRef{}); len(ids) == 0 {
+		t.Fatal("base revolve built nothing")
+	}
+	def.Recompute()
+	if !firstBodyIsSolid(def) {
+		t.Fatal("base did not close to a solid")
+	}
+	// Cut the bore (region named as a lone full circle) — exercises the region match + AddExtrude +
+	// the through-all retry; the through-all retry guarantees the body stays closed.
+	extrudes := []ipt.Extrude{{Operation: ipt.OpCut, ThroughAll: true}}
+	regions := [][]ipt.RegionLoop{{{Edges: []ipt.RegionEdge{{Kind: ipt.EdgeCircle, Circle: ipt.Circle{Center: ipt.Point2D{X: 1.5}, Radius: 0.3}}}}}}
+	notes := applyExtrudeCutsAndHole(def, extrudes, []int{1}, regions, ipt.Hole{}, false, placed, emitted)
+	def.Recompute()
+	if !firstBodyIsSolid(def) {
+		t.Fatalf("cut left an open body; notes=%v", notes)
+	}
+}
 
 // TestPlaceGraphSketchesPairsEachWithAPlane: every graph sketch comes back paired with a plane and
 // its geometry preserved; a sketch stating no readable placement lands on XY (sketchPlaneOf's
