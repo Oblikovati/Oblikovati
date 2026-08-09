@@ -33,7 +33,8 @@ type PartFeatures struct {
 	result       []*topo.Body
 	resources    ResourceStore
 	fonts        text.FontResolver
-	workingScale func() float64 // ADR-0042 Phase 2: live working scale (cm per working unit) for re-import
+	workingScale func() float64    // ADR-0042 Phase 2: live working scale (cm per working unit) for re-import
+	relief       func() ReliefSpec // the sheet-metal style's bend relief, read live (#2072)
 }
 
 // ResourceStore reads embedded imported-file bytes by their document resource UUID
@@ -41,6 +42,20 @@ type PartFeatures struct {
 // so an imported-body feature can re-derive its body from the document instead of from disk.
 type ResourceStore interface {
 	ResourceBytes(id string) ([]byte, bool)
+}
+
+// SetReliefSpec wires the sheet-metal style's bend relief into the engine, read live so a style
+// edit repropagates to every relieved bend (#2072). The owning content sets it when the part
+// enters the sheet-metal environment; a part that never does simply has none.
+func (fs *PartFeatures) SetReliefSpec(f func() ReliefSpec) { fs.relief = f }
+
+// reliefSpec reads the current relief, or the zero spec (which cuts nothing) for a part with no
+// sheet-metal style.
+func (fs *PartFeatures) reliefSpec() ReliefSpec {
+	if fs.relief == nil {
+		return ReliefSpec{}
+	}
+	return fs.relief()
 }
 
 // SetResourceStore wires the document's resource table into the engine so feature restore can
@@ -210,7 +225,7 @@ func (fs *PartFeatures) PreviewResult(candidate Feature) ([]*topo.Body, error) {
 		return nil, errors.New("feature: PreviewResult got a nil candidate")
 	}
 	bodies := fs.prefixBodies(fs.effectiveEnd())
-	out, err := candidate.Recompute(Input{Bodies: bodies, Params: fs.params, SourceTool: fs.sourceTool})
+	out, err := candidate.Recompute(Input{Bodies: bodies, Params: fs.params, SourceTool: fs.sourceTool, Relief: fs.reliefSpec()})
 	if err != nil {
 		return nil, err
 	}
@@ -247,7 +262,7 @@ func (fs *PartFeatures) evaluateBody(pf *PartFeature, bodies []*topo.Body, sick 
 	}
 	pf.recomputes++
 	rec := &diag.Recorder{}
-	out, err := safeRecompute(pf, Input{Bodies: bodies, Params: fs.params, SourceTool: fs.sourceTool, Diag: rec})
+	out, err := safeRecompute(pf, Input{Bodies: bodies, Params: fs.params, SourceTool: fs.sourceTool, Diag: rec, Relief: fs.reliefSpec()})
 	pf.diags = rec.Records()
 	return fs.classify(pf, bodies, out, err, sick)
 }

@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/api/types"
 	gmath "oblikovati.org/math"
+	"oblikovati.org/model/feature"
 	"oblikovati.org/model/param"
 	"oblikovati.org/model/sheetmetal"
 )
@@ -28,6 +29,15 @@ const (
 const (
 	thicknessParamName  = "Thickness"
 	bendRadiusParamName = "BendRadius"
+	// The rest of Inventor's standard sheet-metal parameter roster (#1962). Each is created with
+	// the EXPRESSION Inventor's Default style uses, not a frozen number, so editing the gauge
+	// moves the reliefs with it and a user can re-author any of them by expression.
+	bendReliefWidthParam  = "BendReliefWidth"
+	bendReliefDepthParam  = "BendReliefDepth"
+	cornerReliefSizeParam = "CornerReliefSize"
+	minimumRemnantParam   = "MinimumRemnant"
+	transitionRadiusParam = "TransitionRadius"
+	gapSizeParam          = "GapSize"
 )
 
 // IsSheetMetal reports whether this part is in the sheet-metal environment.
@@ -52,39 +62,85 @@ func (d *PartComponentDefinition) EnableSheetMetal() (*sheetmetal.Rule, error) {
 	if err != nil {
 		return nil, err
 	}
-	// The seeded rule mirrors Inventor's own Default style (#1960): a STRAIGHT bend relief at half
-	// thickness, the corner trimmed to the bend at four times thickness, and a three-bend corner
-	// rounded at the bend radius. The sizes are closures over the backing parameters, so a gauge
-	// edit moves the reliefs with every wall.
-	relief := sheetmetal.Relief{
-		Shape: types.ReliefStraight,
-		Width: func() float64 { return 0.5 * thickness.ModelValue() },
-		Depth: func() float64 { return 0.5 * thickness.ModelValue() },
+	roster, err := d.ensureSheetMetalRoster()
+	if err != nil {
+		return nil, err
 	}
-	d.sheetMetal = sheetmetal.NewRule(
-		"Default",
-		func() float64 { return thickness.ModelValue() },
-		func() float64 { return bendRadius.ModelValue() },
-		sheetmetal.Constant(0),
-		relief,
-		sheetmetal.KFactorMethod(0.44),
-	)
-	d.sheetMetal.SetCornerRelief(defaultCornerRelief(thickness.ModelValue, bendRadius.ModelValue))
+	d.sheetMetal = seededRule(thickness.ModelValue, bendRadius.ModelValue, roster)
 	d.flatOrientations = sheetmetal.NewOrientations()
 	return d.sheetMetal, nil
 }
 
+// seededRule is the rule a part gets on entering the sheet-metal environment: Inventor's own
+// Default style (#1960) — a STRAIGHT bend relief, the corner trimmed to the bend, a three-bend
+// corner rounded at the bend radius — with every size reading its own named parameter (#1962), so
+// a gauge edit moves the reliefs with every wall and any of them can be re-authored by expression.
+func seededRule(thickness, bendRadius func() float64, roster map[string]func() float64) *sheetmetal.Rule {
+	relief := sheetmetal.Relief{
+		Shape: types.ReliefStraight,
+		Width: roster[bendReliefWidthParam],
+		Depth: roster[bendReliefDepthParam],
+	}
+	rule := sheetmetal.NewRule("Default", thickness, bendRadius, roster[gapSizeParam], relief,
+		sheetmetal.KFactorMethod(0.44))
+	rule.SetCornerRelief(defaultCornerRelief(roster[cornerReliefSizeParam], bendRadius))
+	return rule
+}
+
 // defaultCornerRelief is Inventor's Default-style corner relief (#1960): the corner trimmed to the
 // bend at four times thickness, on the bend tangents, and a three-bend corner rounded at the bend
-// radius. The sizes read the backing parameters, so a gauge edit moves them with every wall.
-func defaultCornerRelief(thickness, bendRadius func() float64) sheetmetal.CornerRelief {
+// radius. The sizes read named parameters, so a gauge edit moves them with every wall.
+func defaultCornerRelief(cornerSize, bendRadius func() float64) sheetmetal.CornerRelief {
 	return sheetmetal.CornerRelief{
 		Shape:          types.CornerTrimToBend,
-		Size:           func() float64 { return 4 * thickness() },
+		Size:           cornerSize,
 		Placement:      types.CornerReliefAtBendTangent,
 		ThreeBendShape: types.CornerRoundWithRadius,
 		ThreeBendSize:  bendRadius,
 	}
+}
+
+// sheetMetalRosterExprs is the standard roster's default EXPRESSIONS, exactly as Inventor's
+// Default style states them (#1962). They reference Thickness and BendRadius rather than freezing
+// a number, which is what makes the whole style track the gauge.
+//
+// Inventor's roster also carries JacobiRadiusSize; it is left out rather than seeded with an
+// invented default, since nothing here develops the conical unfold it belongs to.
+var sheetMetalRosterExprs = map[string]string{
+	bendReliefWidthParam:  thicknessParamName,
+	bendReliefDepthParam:  thicknessParamName + " * 0.5",
+	cornerReliefSizeParam: thicknessParamName + " * 4",
+	minimumRemnantParam:   thicknessParamName + " * 2",
+	transitionRadiusParam: bendRadiusParamName,
+	gapSizeParam:          thicknessParamName,
+}
+
+// ensureSheetMetalRoster creates the standard parameters (idempotent) and returns a live reader
+// per name, so the rule's closures follow re-authored expressions.
+func (d *PartComponentDefinition) ensureSheetMetalRoster() (map[string]func() float64, error) {
+	out := make(map[string]func() float64, len(sheetMetalRosterExprs))
+	for name, expr := range sheetMetalRosterExprs {
+		p, ok := d.params.ByName(name)
+		if !ok {
+			created, err := d.params.AddUserParameter(name, expr)
+			if err != nil {
+				return nil, fmt.Errorf("sheet-metal %s parameter (%q): %w", name, expr, err)
+			}
+			p = created
+		}
+		out[name] = p.ModelValue
+	}
+	return out, nil
+}
+
+// reliefSpec resolves the active style's bend relief for one recompute (#2072). A part that is not
+// sheet metal has no style and so cuts no relief.
+func (d *PartComponentDefinition) reliefSpec() feature.ReliefSpec {
+	if d.sheetMetal == nil {
+		return feature.ReliefSpec{}
+	}
+	r := d.sheetMetal.Relief()
+	return feature.ReliefSpec{Shape: r.Shape, Width: d.sheetMetal.ReliefWidth(), Depth: d.sheetMetal.ReliefDepth()}
 }
 
 // FlatOrientations returns the part's flat-pattern orientations (M13-F05), or nil when the

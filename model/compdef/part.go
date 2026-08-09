@@ -107,6 +107,7 @@ func NewPartComponentDefinition() *PartComponentDefinition {
 	d.features.SetResourceStore(d)                                                       // re-derive imported bodies from the resource table on open
 	d.features.SetFontResolver(d)                                                        // resolve text/emboss fonts from embedded/app-provided resources
 	d.features.SetWorkingScaleResolver(func() float64 { return d.units.WorkingScale() }) // re-import scales into the doc working unit
+	d.features.SetReliefSpec(d.reliefSpec)                                               // the style's bend relief, read live (#2072)
 	d.sketches.ShareParameters(params)                                                   // dimension expressions resolve against user params (live + restore)
 	d.sketches3D.ShareParameters(params)                                                 // same for 3D sketches
 	d.work.SetFootprintTracker(params)                                                   // each work plane records its offset parameter, so an offset edit targets its hosted sketch (ADR-0044)

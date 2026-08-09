@@ -88,8 +88,26 @@ func (f *SheetMetalFlangeFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
+	bodies, err = f.relieveBend(bodies, edges[0], dims, in.Relief)
+	if err != nil {
+		return Output{}, err
+	}
 	f.placement = &placement // record the resolved bend for the flat pattern (M13-F04)
 	return Output{Bodies: bodies, Heals: heals}, nil
+}
+
+// relieveBend cuts the styled relief notches at the ends of this flange's bend that stop short of
+// the edge (#2072). A full-width flange reaches both ends of its edge and needs none, which is why
+// nothing was relieved before width extents existed (#1958).
+func (f *SheetMetalFlangeFeature) relieveBend(bodies []*topo.Body, edge *topo.Edge, dims flangeDims,
+	spec ReliefSpec) ([]*topo.Body, error) {
+	v0, v1 := edge.StartVertex().Point(), edge.EndVertex().Point()
+	from, to, err := f.def.Width.span(float64(v0.DistanceTo(v1)))
+	if err != nil {
+		return nil, err
+	}
+	ends := bendReliefEnds(from, to, float64(v0.DistanceTo(v1)))
+	return cutBendRelief(bodies, edge, ends, spec, dims.thickness, f.def.Flip, featOr(f.featName, "flange"))
 }
 
 // Placement returns the resolved bend geometry captured by the last successful recompute,

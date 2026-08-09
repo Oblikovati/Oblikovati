@@ -226,3 +226,68 @@ func TestLegacySquareReliefStillReads(t *testing.T) {
 		t.Fatalf(`ParseReliefShape("square") = (%v, %v), want ReliefStraight`, shape, ok)
 	}
 }
+
+// TestStandardParameterRoster (#1962): a sheet-metal part exposes Inventor's roster of named
+// parameters, each carrying the EXPRESSION Inventor's Default style states rather than a frozen
+// number — which is what makes the whole style track the gauge.
+func TestStandardParameterRoster(t *testing.T) {
+	d := NewPartComponentDefinition()
+	if _, err := d.EnableSheetMetal(); err != nil {
+		t.Fatalf("EnableSheetMetal: %v", err)
+	}
+	for name, want := range map[string]string{
+		"BendReliefWidth":  "Thickness",
+		"BendReliefDepth":  "Thickness * 0.5",
+		"CornerReliefSize": "Thickness * 4",
+		"MinimumRemnant":   "Thickness * 2",
+		"TransitionRadius": "BendRadius",
+		"GapSize":          "Thickness",
+	} {
+		p, ok := d.Parameters().ByName(name)
+		if !ok {
+			t.Errorf("no %s parameter on a sheet-metal part", name)
+			continue
+		}
+		if p.Expression() != want {
+			t.Errorf("%s = %q, want %q", name, p.Expression(), want)
+		}
+	}
+}
+
+// TestEditingReliefParameterRepropagates (#1962): the relief sizes are parameters, so re-authoring
+// one by expression has to move the rule — a rule holding a value captured when the part was
+// created would keep cutting the old notch.
+func TestEditingReliefParameterRepropagates(t *testing.T) {
+	d := NewPartComponentDefinition()
+	rule, err := d.EnableSheetMetal()
+	if err != nil {
+		t.Fatalf("EnableSheetMetal: %v", err)
+	}
+	before := rule.ReliefWidth()
+	p, _ := d.Parameters().ByName("BendReliefWidth")
+	if err := d.Parameters().SetExpression(p.ID(), "Thickness * 3"); err != nil {
+		t.Fatalf("SetExpression: %v", err)
+	}
+	if got := rule.ReliefWidth(); math.Abs(got-3*rule.Thickness()) > 1e-9 {
+		t.Errorf("relief width after the edit = %v, want 3x the %v thickness (was %v)", got, rule.Thickness(), before)
+	}
+}
+
+// TestReliefSizesFollowTheGauge (#1962): every roster size is stated against Thickness, so a gauge
+// change moves the reliefs with the walls instead of leaving them at the old part's dimensions.
+func TestReliefSizesFollowTheGauge(t *testing.T) {
+	d := NewPartComponentDefinition()
+	rule, err := d.EnableSheetMetal()
+	if err != nil {
+		t.Fatalf("EnableSheetMetal: %v", err)
+	}
+	if err := d.SetSheetMetalLengthParam("Thickness", "4 mm"); err != nil {
+		t.Fatalf("set thickness: %v", err)
+	}
+	if got := rule.ReliefWidth(); math.Abs(got-0.4) > 1e-9 {
+		t.Errorf("relief width at a 4 mm gauge = %v, want 0.4 cm", got)
+	}
+	if got := rule.CornerReliefSize(); math.Abs(got-1.6) > 1e-9 {
+		t.Errorf("corner relief size at a 4 mm gauge = %v, want 1.6 cm (4x)", got)
+	}
+}

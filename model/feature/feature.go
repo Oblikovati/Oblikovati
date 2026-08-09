@@ -56,6 +56,10 @@ type Input struct {
 	// a nil recorder is a valid sink (diag.Recorder is nil-safe), so preview paths that do not
 	// consume diagnostics pass nothing.
 	Diag *diag.Recorder
+	// Relief is the sheet-metal style's bend relief, resolved for this recompute (#2072). The
+	// sizes could ride on parameters like the thickness does, but the SHAPE is not a number, so
+	// the whole spec arrives together rather than half here and half through Params.
+	Relief ReliefSpec
 }
 
 // OperationalFeature is a feature that applies a boolean operation against the running
