@@ -4,11 +4,49 @@ package translate
 
 import (
 	"fmt"
+	"math"
 
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/exchange/translators/inventor/ipt"
 	"oblikovati.org/model/feature"
 )
+
+// revolveAxisRef is the revolve's centreline decoded from the feature's own axis reference
+// (ipt.RevolveAxis2D — the SketchLine3D at Revolution property 2), expressed in the profile sketch's
+// 2D coordinates. It is the fallback when the geometric heuristic (revolveAxisIndex) can't name the
+// centreline: an axis that is an ordinary profile EDGE, neither isolated nor construction, is invisible
+// to the heuristic but stated outright by this reference.
+type revolveAxisRef struct {
+	ox, oy, dx, dy float64
+	ok             bool
+}
+
+// axisLineFromReference returns the index of the profile line collinear with the decoded axis — the
+// centreline edge the heuristic missed. It requires exactly one axis-aligned line lying on the axis
+// (both endpoints on the infinite line): more than one is ambiguous, and a non-axis-aligned match is
+// rejected because the downstream one-sided/angle logic only handles vertical and horizontal axes.
+func axisLineFromReference(s ipt.Sketch, axis revolveAxisRef) (int, bool) {
+	n := math.Hypot(axis.dx, axis.dy)
+	if n < 1e-9 {
+		return -1, false
+	}
+	idx, found := -1, 0
+	for i, l := range s.Lines {
+		if !axisAlignedLine(l) {
+			continue
+		}
+		if pointOnAxis(l.A, axis, n) && pointOnAxis(l.B, axis, n) {
+			idx, found = i, found+1
+		}
+	}
+	return idx, found == 1
+}
+
+// pointOnAxis reports whether a sketch point lies on the infinite line through (ox,oy) with direction
+// (dx,dy) — the perpendicular distance is within 10 microns.
+func pointOnAxis(p ipt.Point2D, axis revolveAxisRef, n float64) bool {
+	return math.Abs(axis.dx*(p.Y-axis.oy)-axis.dy*(p.X-axis.ox))/n < 1e-3
+}
 
 // buildRevolveDispatch builds the revolve-based part. The common case — a plain turned shaft — is
 // the incidence/line-set path (buildRevolve), kept verbatim so every currently-solid revolve is
@@ -65,7 +103,13 @@ func graphRevolveWithCuts(def *compdef.PartComponentDefinition, d *ipt.Document,
 	if pi, ok := ipt.RevolveProfileSketch(d); ok {
 		preferred = pi
 	}
-	if len(tryKernelRevolve(def, seg, placed, emitted, preferred)) == 0 {
+	// The feature's axis reference is the fallback centreline for a profile whose axis is an ordinary
+	// edge the heuristic can't spot (CapstainMotorCap turns about its y=0 top edge).
+	var axis revolveAxisRef
+	if ox, oy, dx, dy, ok := ipt.RevolveAxis2D(d); ok {
+		axis = revolveAxisRef{ox: ox, oy: oy, dx: dx, dy: dy, ok: true}
+	}
+	if len(tryKernelRevolve(def, seg, placed, emitted, preferred, axis)) == 0 {
 		return false, nil
 	}
 	def.Recompute()

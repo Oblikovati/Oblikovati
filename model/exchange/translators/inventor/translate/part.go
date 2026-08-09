@@ -457,15 +457,15 @@ func profileOneSideOfAxis(lines []ipt.Line, axisIdx int) bool {
 // mistake. If the named profile can't form a revolve here, it declines rather than guess another
 // sketch. preferred < 0 keeps the scan (used on the incidence line set, whose indices don't map to
 // the node graph the reference is keyed on).
-func tryKernelRevolve(def *compdef.PartComponentDefinition, seg []byte, placed []placedSketch, emitted []emittedSketch, preferred int) []feature.ID {
+func tryKernelRevolve(def *compdef.PartComponentDefinition, seg []byte, placed []placedSketch, emitted []emittedSketch, preferred int, axis revolveAxisRef) []feature.ID {
 	if preferred >= 0 {
 		if preferred < len(emitted) {
-			return revolveSketchAt(def, seg, placed, emitted, preferred)
+			return revolveSketchAt(def, seg, placed, emitted, preferred, axis)
 		}
 		return nil
 	}
 	for i := range emitted {
-		if ids := revolveSketchAt(def, seg, placed, emitted, i); ids != nil {
+		if ids := revolveSketchAt(def, seg, placed, emitted, i, axis); ids != nil {
 			return ids
 		}
 	}
@@ -474,13 +474,19 @@ func tryKernelRevolve(def *compdef.PartComponentDefinition, seg []byte, placed [
 
 // revolveSketchAt revolves the single sketch at index i if it forms a valid revolve (an unambiguous
 // axis-aligned centreline, at least one closed arranged profile, all geometry one side of the axis),
-// returning the added feature ids or nil when it does not qualify.
-func revolveSketchAt(def *compdef.PartComponentDefinition, seg []byte, placed []placedSketch, emitted []emittedSketch, i int) []feature.ID {
+// returning the added feature ids or nil when it does not qualify. When the geometric heuristic can't
+// name the centreline but the feature's decoded axis reference (axis) can, the collinear profile edge
+// it points at is used — the case where the axis is an ordinary edge, neither isolated nor
+// construction (CapstainMotorCap turns about its y=0 top edge).
+func revolveSketchAt(def *compdef.PartComponentDefinition, seg []byte, placed []placedSketch, emitted []emittedSketch, i int, axis revolveAxisRef) []feature.ID {
 	if emitted[i].sk == nil || i >= len(placed) {
 		return nil
 	}
 	s := placed[i].geom
 	ai, ok := revolveAxisIndex(s)
+	if !ok && axis.ok {
+		ai, ok = axisLineFromReference(s, axis)
+	}
 	if !ok || ai >= len(emitted[i].lines) || emitted[i].lines[ai] == nil {
 		return nil
 	}
@@ -623,7 +629,7 @@ func buildRevolve(def *compdef.PartComponentDefinition, seg []byte, placed []pla
 		// if it closes to a solid: an open/self-intersecting revolve means a mis-decoded profile or
 		// axis, and the faithful display mesh is better than a wrong parametric body (a pre-2023
 		// PressureRoller copy built a half-open partial roller that way).
-		if ids := tryKernelRevolve(def, seg, placed, emitted, -1); len(ids) > 0 {
+		if ids := tryKernelRevolve(def, seg, placed, emitted, -1, revolveAxisRef{}); len(ids) > 0 {
 			def.Recompute()
 			if firstBodyIsSolid(def) {
 				return true, nil

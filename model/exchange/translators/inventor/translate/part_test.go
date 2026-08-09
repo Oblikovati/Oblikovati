@@ -1029,3 +1029,36 @@ func TestMachinedHolderRevolveWithCuts(t *testing.T) {
 		}
 	}
 }
+
+// TestCapstainMotorCapRevolvesAboutItsEdge covers the axis-reference fallback (Phase 2): the revolve
+// turns about its y=0 top EDGE, which is neither isolated nor construction, so the geometric
+// heuristic returns nothing and the feature's decoded axis (ipt.RevolveAxis2D) supplies it. Reopens
+// as a SOLID within 3% of Inventor's STL volume (31223). Corpus-gated; set IPT_CORPUS.
+func TestCapstainMotorCapRevolvesAboutItsEdge(t *testing.T) {
+	dir := os.Getenv("IPT_CORPUS")
+	if dir == "" {
+		dir = `P:\ReelToReel\Mechanical`
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "CapstainMotorCap.ipt"))
+	if err != nil {
+		t.Skipf("corpus part not available (%v); set IPT_CORPUS", err)
+	}
+	out := filepath.Join(t.TempDir(), "cmc.opd")
+	if _, err := FromInventor(data, out); err != nil {
+		t.Fatalf("FromInventor: %v", err)
+	}
+	ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
+	reopened, err := ws.Open(out, true)
+	if err != nil {
+		t.Fatalf("reopen: %v", err)
+	}
+	def := reopened.Content().(*compdef.PartComponentDefinition)
+	bodies := def.SurfaceBodies().All()
+	if len(bodies) == 0 || !bodies[0].IsSolid() {
+		t.Fatalf("want a SOLID turned+milled cap, got %d bodies (solid=%v)", len(bodies), len(bodies) > 0 && bodies[0].IsSolid())
+	}
+	vol := analysis.MassPropertiesOf(bodies, 1, types.MassPropertiesLow).VolumeMm3
+	if math.Abs(vol-31223) > 0.03*31223 {
+		t.Errorf("volume = %.0f mm³, want within 3%% of Inventor's 31223", vol)
+	}
+}

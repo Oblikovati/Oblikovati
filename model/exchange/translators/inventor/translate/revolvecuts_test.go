@@ -52,3 +52,23 @@ func TestClearFeaturesAndSketchesEmptiesBoth(t *testing.T) {
 		t.Errorf("after clear: sketches=%d features=%d, want 0/0", def.Sketches().Count(), def.Features().Count())
 	}
 }
+
+// TestAxisLineFromReferenceFindsTheEdge: given a decoded horizontal axis on y=0, the collinear
+// profile edge (the y=0 line) is selected, and an off-axis or oblique line is not. This is the
+// centreline the geometric heuristic misses when the axis is an ordinary profile edge.
+func TestAxisLineFromReferenceFindsTheEdge(t *testing.T) {
+	s := ipt.Sketch{Lines: []ipt.Line{
+		ln(0, 0, -1.29, 0), // on y=0 — the axis edge
+		ln(-1.29, 0, -1.29, -4.3),
+		ln(-1.29, -4.3, 0.3, -4.3),
+	}}
+	axis := revolveAxisRef{ox: 0, oy: 0, dx: -1.29, dy: 0, ok: true}
+	i, ok := axisLineFromReference(s, axis)
+	if !ok || i != 0 {
+		t.Fatalf("want the y=0 edge (index 0), got index %d ok=%v", i, ok)
+	}
+	// no line on a y=2 axis
+	if _, ok := axisLineFromReference(s, revolveAxisRef{ox: 0, oy: 2, dx: 1, dy: 0, ok: true}); ok {
+		t.Error("no profile edge lies on y=2, expected no match")
+	}
+}
