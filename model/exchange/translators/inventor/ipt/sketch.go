@@ -125,6 +125,14 @@ type Line struct{ A, B Point2D }
 type Circle struct {
 	Center Point2D
 	Radius float64
+	// ArcStart/ArcEnd are the circle node's two on-rim endpoints, when it carries a distinct
+	// resolvable pair. Inventor serialises a sketch arc as a SketchCircle with an open-flag bit (see
+	// arcFlag); a few real arcs carry that pair yet leave the bit CLEAR, so they decode as full
+	// circles. These endpoints let the revolve path recover the arc where a full circle would cross
+	// the axis — an impossible revolve profile — without touching the global arc/circle discriminator.
+	// ArcEndsOK reports the pair is present and distinct.
+	ArcStart, ArcEnd Point2D
+	ArcEndsOK        bool
 }
 
 // Arc is a decoded circular arc: its centre, radius, and the two endpoints (start → end in

@@ -247,7 +247,13 @@ func circle2DAt(nodes []dcNode, pay []byte) (Circle, bool) {
 	if !ok {
 		return Circle{}, false
 	}
-	return Circle{Center: c, Radius: r}, true
+	out := Circle{Center: c, Radius: r}
+	// Keep the on-rim endpoints when the node carries a distinct pair (a mis-flagged arc), so the
+	// revolve path can recover the arc; a genuine full circle has no distinct pair (start == end).
+	if s, e, ok := edgeEndpoints(nodes, pay); ok && s != e {
+		out.ArcStart, out.ArcEnd, out.ArcEndsOK = s, e, true
+	}
+	return out, true
 }
 
 // arc2DAt reads a SketchArc: centre + radius like a circle, with the endpoints from the edge's

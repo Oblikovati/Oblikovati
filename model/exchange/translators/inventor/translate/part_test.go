@@ -1095,3 +1095,37 @@ func TestSmartKnobFixedBaseCutsThroughStepped(t *testing.T) {
 		t.Errorf("volume = %.0f mm³, want within 2%% of Inventor's 3549", vol)
 	}
 }
+
+// TestKnobBottomDomeWallRecoversArc covers the revolve-scoped arc recovery: the knob's r≈20 dome
+// wall is stored as a full circle (its open-flag clear) that crosses the axis; reviseAxisCrossingCircles
+// rebuilds it as the arc its endpoints describe, so the profile closes instead of revolving a giant
+// circle into a blob. Reopens as a SOLID within 15% of Inventor's STL volume (4361 — the wall's minor
+// thickness overage). Corpus-gated; set IPT_CORPUS.
+func TestKnobBottomDomeWallRecoversArc(t *testing.T) {
+	dir := os.Getenv("IPT_CORPUS")
+	if dir == "" {
+		dir = `P:\ReelToReel\Mechanical`
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "KnobBottom.ipt"))
+	if err != nil {
+		t.Skipf("corpus part not available (%v); set IPT_CORPUS", err)
+	}
+	out := filepath.Join(t.TempDir(), "kb.opd")
+	if _, err := FromInventor(data, out); err != nil {
+		t.Fatalf("FromInventor: %v", err)
+	}
+	ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
+	reopened, err := ws.Open(out, true)
+	if err != nil {
+		t.Fatalf("reopen: %v", err)
+	}
+	def := reopened.Content().(*compdef.PartComponentDefinition)
+	bodies := def.SurfaceBodies().All()
+	if len(bodies) == 0 || !bodies[0].IsSolid() {
+		t.Fatalf("want a SOLID domed knob, got %d bodies (solid=%v)", len(bodies), len(bodies) > 0 && bodies[0].IsSolid())
+	}
+	vol := analysis.MassPropertiesOf(bodies, 1, types.MassPropertiesLow).VolumeMm3
+	if math.Abs(vol-4361) > 0.15*4361 {
+		t.Errorf("volume = %.0f mm³, want within 15%% of Inventor's 4361", vol)
+	}
+}

@@ -48,6 +48,52 @@ func pointOnAxis(p ipt.Point2D, axis revolveAxisRef, n float64) bool {
 	return math.Abs(axis.dx*(p.Y-axis.oy)-axis.dy*(p.X-axis.ox))/n < 1e-3
 }
 
+// reviseAxisCrossingCircles rebuilds, as arcs, the profile's non-construction full circles that CROSS
+// the revolve axis but carry a distinct on-rim endpoint pair BOTH on one side of it. Such a circle
+// can't belong to a real revolve profile (a solid of revolution never crosses its axis), so it is a
+// mis-flagged arc (Inventor left its open-flag clear — see ipt.arcFlag); revolving the full circle
+// makes a huge blob (KnobBottom's r20.3 dome edge → 143M mm³). Scoped to the revolve profile and
+// guarded by the crossing + one-sided test, so a genuine bore (no distinct endpoints, or centred on
+// the axis with straddling ends) is untouched; the built revolve is still gated by solid + mesh-fit.
+func reviseAxisCrossingCircles(s ipt.Sketch, axis revolveAxisRef) ipt.Sketch {
+	if !axis.ok {
+		return s
+	}
+	n := math.Hypot(axis.dx, axis.dy)
+	if n < 1e-9 {
+		return s
+	}
+	var circles []ipt.Circle
+	var cons []bool
+	for i, c := range s.Circles {
+		isCons := s.CircleIsConstruction(i)
+		if !isCons && c.ArcEndsOK && circleCrossesAxis(c, axis, n) && sameSideOfAxis(c.ArcStart, c.ArcEnd, axis) {
+			s.Arcs = append(s.Arcs, ipt.Arc{Center: c.Center, Radius: c.Radius, Start: c.ArcStart, End: c.ArcEnd})
+			s.ArcConstruction = append(s.ArcConstruction, false)
+			continue
+		}
+		circles = append(circles, c)
+		cons = append(cons, isCons)
+	}
+	s.Circles, s.CircleConstruction = circles, cons
+	return s
+}
+
+// circleCrossesAxis reports whether the full circle intersects the axis line — its centre is closer
+// to the axis than its radius.
+func circleCrossesAxis(c ipt.Circle, axis revolveAxisRef, n float64) bool {
+	d := math.Abs(axis.dx*(c.Center.Y-axis.oy)-axis.dy*(c.Center.X-axis.ox)) / n
+	return d < c.Radius-1e-6
+}
+
+// sameSideOfAxis reports whether two points lie on the same side of the axis line (the signed
+// perpendicular offsets share a sign, or one is on the axis) — a real arc's ends never straddle it.
+func sameSideOfAxis(p, q ipt.Point2D, axis revolveAxisRef) bool {
+	sp := axis.dx*(p.Y-axis.oy) - axis.dy*(p.X-axis.ox)
+	sq := axis.dx*(q.Y-axis.oy) - axis.dy*(q.X-axis.ox)
+	return sp*sq >= 0
+}
+
 // buildRevolveDispatch builds the revolve-based part. The common case — a plain turned shaft — is
 // the incidence/line-set path (buildRevolve), kept verbatim so every currently-solid revolve is
 // untouched. A MACHINED revolve part (a turned base with milled cut extrudes and drilled holes: the
@@ -94,8 +140,6 @@ func graphRevolveWithCuts(def *compdef.PartComponentDefinition, d *ipt.Document,
 		return false, nil
 	}
 	clearFeaturesAndSketches(def) // drop the primary attempt; build fresh from the graph
-	placed := placeGraphSketches(graph)
-	emitted := emitSketches(def, placed)
 	// Revolve the sketch the Revolution feature actually names (ipt.RevolveProfileSketch), not the
 	// first sketch that looks revolvable — the latter mis-picks a cut profile on a machined part and
 	// builds garbage. -1 (no reference decoded) keeps the scan.
@@ -109,6 +153,14 @@ func graphRevolveWithCuts(def *compdef.PartComponentDefinition, d *ipt.Document,
 	if ox, oy, dx, dy, ok := ipt.RevolveAxis2D(d); ok {
 		axis = revolveAxisRef{ox: ox, oy: oy, dx: dx, dy: dy, ok: true}
 	}
+	// A full circle in the profile that crosses the axis is an impossible revolve profile — a
+	// mis-flagged wall arc (KnobBottom's r20.3 dome edge). Rebuild it as the arc its endpoints
+	// describe before emitting, so the profile closes instead of revolving a giant circle into a blob.
+	if preferred >= 0 && preferred < len(graph) {
+		graph[preferred] = reviseAxisCrossingCircles(graph[preferred], axis)
+	}
+	placed := placeGraphSketches(graph)
+	emitted := emitSketches(def, placed)
 	if len(tryKernelRevolve(def, seg, placed, emitted, preferred, axis)) == 0 {
 		return false, nil
 	}

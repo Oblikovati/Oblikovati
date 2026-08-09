@@ -72,3 +72,30 @@ func TestAxisLineFromReferenceFindsTheEdge(t *testing.T) {
 		t.Error("no profile edge lies on y=2, expected no match")
 	}
 }
+
+// TestReviseAxisCrossingCirclesRecoversArc: a non-construction full circle that crosses the axis but
+// whose endpoints are one-sided is rebuilt as an arc; a genuine bore (no endpoints) and an
+// axis-straddling pair are left as circles.
+func TestReviseAxisCrossingCirclesRecoversArc(t *testing.T) {
+	s := ipt.Sketch{
+		Circles: []ipt.Circle{
+			{Center: ipt.Point2D{X: 17.779, Y: -0.001}, Radius: 20.329, // crosses x=0, ends one-sided → arc
+				ArcStart: ipt.Point2D{X: -2.466, Y: 1.85}, ArcEnd: ipt.Point2D{X: -2.55, Y: 0}, ArcEndsOK: true},
+			{Center: ipt.Point2D{X: 0, Y: 2.1}, Radius: 0.19}, // genuine bore, no endpoints → circle
+			{Center: ipt.Point2D{}, Radius: 1, // ends straddle x=0 → circle
+				ArcStart: ipt.Point2D{X: 1}, ArcEnd: ipt.Point2D{X: -1}, ArcEndsOK: true},
+		},
+		CircleConstruction: []bool{false, false, false},
+	}
+	axis := revolveAxisRef{ox: 0, oy: 0, dx: 0, dy: 1.7, ok: true}
+	got := reviseAxisCrossingCircles(s, axis)
+	if len(got.Arcs) != 1 {
+		t.Fatalf("want 1 recovered arc, got %d", len(got.Arcs))
+	}
+	if got.Arcs[0].Radius != 20.329 {
+		t.Errorf("recovered arc has radius %.3f, want 20.329", got.Arcs[0].Radius)
+	}
+	if len(got.Circles) != 2 {
+		t.Errorf("want 2 circles left (bore + straddling), got %d", len(got.Circles))
+	}
+}
