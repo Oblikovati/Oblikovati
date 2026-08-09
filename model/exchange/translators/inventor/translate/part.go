@@ -452,32 +452,52 @@ func profileOneSideOfAxis(lines []ipt.Line, axisIdx int) bool {
 // internal edge splits one region into two, both part of the same solid). Returns the ids of the
 // features it added (empty when no sketch qualifies) so the caller can drop them if they don't close
 // to a solid.
-func tryKernelRevolve(def *compdef.PartComponentDefinition, seg []byte, placed []placedSketch, emitted []emittedSketch) []feature.ID {
+// A preferred sketch index >= 0 (from ipt.RevolveProfileSketch — the profile the Revolution feature
+// actually names) revolves EXACTLY that sketch: a machined part's cut profiles are never revolved by
+// mistake. If the named profile can't form a revolve here, it declines rather than guess another
+// sketch. preferred < 0 keeps the scan (used on the incidence line set, whose indices don't map to
+// the node graph the reference is keyed on).
+func tryKernelRevolve(def *compdef.PartComponentDefinition, seg []byte, placed []placedSketch, emitted []emittedSketch, preferred int) []feature.ID {
+	if preferred >= 0 {
+		if preferred < len(emitted) {
+			return revolveSketchAt(def, seg, placed, emitted, preferred)
+		}
+		return nil
+	}
 	for i := range emitted {
-		if emitted[i].sk == nil || i >= len(placed) {
-			continue
+		if ids := revolveSketchAt(def, seg, placed, emitted, i); ids != nil {
+			return ids
 		}
-		s := placed[i].geom
-		ai, ok := revolveAxisIndex(s)
-		if !ok || ai >= len(emitted[i].lines) || emitted[i].lines[ai] == nil {
-			continue
-		}
-		closed := closedProfileIndices(emitted[i].sk)
-		if len(closed) == 0 || !profileOneSideOfAxis(s.Lines, ai) {
-			continue
-		}
-		// A HORIZONTAL centreline forces a full turn: the partial-angle decode (soleSweepAngle) is
-		// unreliable about a horizontal axis — it mis-reads a profile chamfer's angle as the sweep
-		// (CapstainFrontBody's 125° is line[2]'s chamfer, not the extent), building a wrong pie-slice.
-		// A wrong full turn instead over-fills and is caught by the mesh gate; a mis-sized partial is
-		// not. Vertical-axis revolves keep the decoded angle (the 270° fixture depends on it).
-		angle := revolveAngleFn(seg)
-		if horizontalLine(s.Lines[ai]) {
-			angle = nil
-		}
-		return revolveClosedProfiles(def, emitted[i], ai, closed, angle)
 	}
 	return nil
+}
+
+// revolveSketchAt revolves the single sketch at index i if it forms a valid revolve (an unambiguous
+// axis-aligned centreline, at least one closed arranged profile, all geometry one side of the axis),
+// returning the added feature ids or nil when it does not qualify.
+func revolveSketchAt(def *compdef.PartComponentDefinition, seg []byte, placed []placedSketch, emitted []emittedSketch, i int) []feature.ID {
+	if emitted[i].sk == nil || i >= len(placed) {
+		return nil
+	}
+	s := placed[i].geom
+	ai, ok := revolveAxisIndex(s)
+	if !ok || ai >= len(emitted[i].lines) || emitted[i].lines[ai] == nil {
+		return nil
+	}
+	closed := closedProfileIndices(emitted[i].sk)
+	if len(closed) == 0 || !profileOneSideOfAxis(s.Lines, ai) {
+		return nil
+	}
+	// A HORIZONTAL centreline forces a full turn: the partial-angle decode (soleSweepAngle) is
+	// unreliable about a horizontal axis — it mis-reads a profile chamfer's angle as the sweep
+	// (CapstainFrontBody's 125° is line[2]'s chamfer, not the extent), building a wrong pie-slice.
+	// A wrong full turn instead over-fills and is caught by the mesh gate; a mis-sized partial is
+	// not. Vertical-axis revolves keep the decoded angle (the 270° fixture depends on it).
+	angle := revolveAngleFn(seg)
+	if horizontalLine(s.Lines[ai]) {
+		angle = nil
+	}
+	return revolveClosedProfiles(def, emitted[i], ai, closed, angle)
 }
 
 // closedProfileIndices returns the indices of the sketch's closed arranged profiles.
@@ -603,7 +623,7 @@ func buildRevolve(def *compdef.PartComponentDefinition, seg []byte, placed []pla
 		// if it closes to a solid: an open/self-intersecting revolve means a mis-decoded profile or
 		// axis, and the faithful display mesh is better than a wrong parametric body (a pre-2023
 		// PressureRoller copy built a half-open partial roller that way).
-		if ids := tryKernelRevolve(def, seg, placed, emitted); len(ids) > 0 {
+		if ids := tryKernelRevolve(def, seg, placed, emitted, -1); len(ids) > 0 {
 			def.Recompute()
 			if firstBodyIsSolid(def) {
 				return true, nil

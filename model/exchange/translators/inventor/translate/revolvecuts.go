@@ -58,7 +58,14 @@ func graphRevolveWithCuts(def *compdef.PartComponentDefinition, d *ipt.Document,
 	clearFeaturesAndSketches(def) // drop the primary attempt; build fresh from the graph
 	placed := placeGraphSketches(graph)
 	emitted := emitSketches(def, placed)
-	if len(tryKernelRevolve(def, seg, placed, emitted)) == 0 {
+	// Revolve the sketch the Revolution feature actually names (ipt.RevolveProfileSketch), not the
+	// first sketch that looks revolvable — the latter mis-picks a cut profile on a machined part and
+	// builds garbage. -1 (no reference decoded) keeps the scan.
+	preferred := -1
+	if pi, ok := ipt.RevolveProfileSketch(d); ok {
+		preferred = pi
+	}
+	if len(tryKernelRevolve(def, seg, placed, emitted, preferred)) == 0 {
 		return false, nil
 	}
 	def.Recompute()

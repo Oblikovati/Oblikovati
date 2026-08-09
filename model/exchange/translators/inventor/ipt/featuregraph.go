@@ -397,6 +397,52 @@ func profileOf(pay []byte, patchToSketch map[int]int) int {
 	return -1
 }
 
+// revolveAxisNodeType is the node a Revolution feature names at property 2 (propDirection), in
+// place of an extrude's DirectionAxis: its own axis/centreline reference. It is what tells a revolve
+// feature apart from an extrude (which names 0xCE52DF40 there) — verified on the ReelToReel revolve
+// parts, where every revolve's property 2 resolves to this type and no extrude's does.
+const revolveAxisNodeType = 0x8EF06C89
+
+// RevolveProfileSketch returns the GraphSketches index of the sketch the part's Revolution feature
+// consumes as its profile, resolved through the feature's BoundaryPatch property — the SAME
+// patch -> FaceBound -> Sketch2D chain ExtrudeProfiles uses. This replaces GUESSING the revolve base
+// (the first sketch that merely looks revolvable), which mis-picks a CUT profile on a multi-feature
+// machined part and revolves garbage. A revolve feature is a generic Fx feature that is not an
+// extrude (no depth) and names its axis at property 2 as a revolveAxisNodeType node. ok=false when
+// the part has no such feature or its profile patch can't be mapped, so callers keep their fallback.
+func RevolveProfileSketch(d *Document) (int, bool) {
+	nodes := dcNodes(d)
+	_, sketchIndex := sketchOrdinals(nodes)
+	patchToSketch := boundPatchSketches(nodes, sketchIndex)
+	for _, n := range nodes {
+		if n.typ != featureNodeType {
+			continue
+		}
+		if _, isExtrude := extrudeDepth(nodes, n.payload); isExtrude {
+			continue
+		}
+		props, ok := featureProperties(n.payload)
+		if !ok || len(props) <= propProfile || !isRevolveFeature(nodes, props) {
+			continue
+		}
+		if i, ok := patchToSketch[props[propProfile]]; ok {
+			return i, true
+		}
+	}
+	return 0, false
+}
+
+// isRevolveFeature reports whether a feature's properties are a revolve's — property 2 (propDirection)
+// names a revolveAxisNodeType node, where an extrude names a DirectionAxis and a hole names its kind
+// at property 0.
+func isRevolveFeature(nodes []dcNode, props []int) bool {
+	if len(props) <= propDirection {
+		return false
+	}
+	ax, ok := nodeAt(nodes, props[propDirection])
+	return ok && ax.typ == revolveAxisNodeType
+}
+
 // boundPatchSketches maps each BoundaryPatch ordinal to the index of the sketch that bounds it,
 // by walking the FaceBound nodes that name the patch as their proxy.
 func boundPatchSketches(nodes []dcNode, sketchIndex map[int]int) map[int]int {
