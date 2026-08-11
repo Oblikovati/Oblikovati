@@ -585,10 +585,15 @@ func (c *CoilFeature) Recompute(in Input) (Output, error) {
 // body (no boolean).
 func (c *CoilFeature) coilTool(sections [][]math.Point3) (*topo.Body, error) {
 	feat := featOr(c.featName, "coil")
+	build := sweptSolid
 	if c.def.Operation == ops.Surface {
-		return sweptShell(sections, false, feat)
+		build = sweptShell
 	}
-	return sweptSolid(sections, false, feat)
+	body, err := build(sections, false, feat)
+	if err != nil {
+		return nil, err
+	}
+	return body, coilClearsItsOwnTurns(body, sections, c.def.Axis)
 }
 
 // CoilFeatures adds coils into the engine.
