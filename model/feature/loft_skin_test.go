@@ -185,7 +185,7 @@ func TestLoftG2MatchesFaceCurvature(t *testing.T) {
 	// second derivative a0, so the longitudinal track's geometric curvature at the seam is
 	// |m0×a0|/|m0|³ — this must equal the sphere's 1/R (true curvature continuity), per point.
 	tan := sectionTangents([][]math.Point3{sec0, sec1}, false, ends(LoftSmooth), 0)
-	a0, _ := faceContinuity(tan[0], sec0, sec1, sph, LoftEnd{Condition: LoftSmooth, Impact: 1})
+	a0, _ := faceContinuity(tan[0], sec0, sec1, sph, LoftEnd{Condition: LoftSmooth, Impact: 1}, true)
 	if a0 == nil {
 		t.Fatal("G2 face continuity produced no second-derivative data")
 	}
@@ -273,7 +273,7 @@ func TestLoftG3MatchesFaceCurvatureRate(t *testing.T) {
 	sec1 := ring(R*stdmath.Cos(v0)+1, R*stdmath.Sin(v0)+1)
 	ends := loftEnds{first: LoftEnd{Condition: LoftG3, Impact: 1}, firstN: math.V3(0, 0, 1).AsUnit(), lastN: math.V3(0, 0, 1).AsUnit(), firstSurf: sph}
 	tan := sectionTangents([][]math.Point3{sec0, sec1}, false, ends, 0)
-	second, third := faceContinuity(tan[0], sec0, sec1, sph, LoftEnd{Condition: LoftG3, Impact: 1})
+	second, third := faceContinuity(tan[0], sec0, sec1, sph, LoftEnd{Condition: LoftG3, Impact: 1}, true)
 	if second == nil || third == nil {
 		t.Fatal("G3 face continuity must produce both second- and third-derivative data")
 	}

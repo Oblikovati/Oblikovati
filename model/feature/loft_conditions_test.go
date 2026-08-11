@@ -42,25 +42,6 @@ func conditionedLoft(t *testing.T, sections []LoftSection, closed bool, first, l
 	return b
 }
 
-// conditionedLoftUngated is conditionedLoft WITHOUT the self-intersection gate. Only the reversed
-// undercut uses it: at a 45° reversed takeoff the side surface comes back through the end cap,
-// which is a real defect in the loft rather than in the fixture (#2082). Kept explicit and named,
-// so the gate stays on for every other case instead of being lowered for all of them.
-func conditionedLoftUngated(t *testing.T, sections []LoftSection, closed bool, first, last LoftEnd) *topo.Body {
-	t.Helper()
-	fs := NewPartFeatures(nil)
-	pf := NewLoftFeatures(fs).addConditioned(sections, closed, ops.NewBody, first, last)
-	fs.Recompute()
-	if !pf.Health().OK() {
-		t.Fatalf("conditioned loft went sick: %+v", pf.Health())
-	}
-	b := fs.Result()[0]
-	if r := ops.Validate(b); !r.Valid || !b.IsSolid() {
-		t.Fatalf("conditioned loft not a valid solid: valid=%v solid=%v issues=%v", r.Valid, b.IsSolid(), capIssues3(r.Issues))
-	}
-	return b
-}
-
 func twoCircles(r float64) []LoftSection {
 	return []LoftSection{sec(circleOn(sketch.XYPlane(), r)), sec(circleOn(planeAtZ(4), r))}
 }
@@ -112,8 +93,7 @@ func TestLoftConditionReversedUndercut(t *testing.T) {
 	end := LoftEnd{Condition: LoftAngle, Angle: rad(45)}
 	rev := LoftEnd{Condition: LoftAngle, Angle: rad(45), Reversed: true}
 	straight := conditionedLoft(t, twoCircles(2), false, end, end)
-	// Ungated: this case really does drive the side surface back through the end cap (#2082).
-	under := conditionedLoftUngated(t, twoCircles(2), false, rev, rev)
+	under := conditionedLoft(t, twoCircles(2), false, rev, rev)
 	if z := float64(straight.RangeBox().Min.Z); z < -0.01 {
 		t.Errorf("non-reversed loft dipped below the start plane: min z = %.3f, want ~0", z)
 	}
