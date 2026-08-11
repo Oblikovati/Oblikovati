@@ -57,7 +57,7 @@ func TestSelfIntersectBVHFindsRealCrossing(t *testing.T) {
 	crossing := [3]math.Point3{
 		{X: 3, Y: 3, Z: -1}, {X: 6, Y: 3, Z: -1}, {X: 4.5, Y: 3.5, Z: 1},
 	}
-	if _, hit := meshCrossesOffBoundary([][3]math.Point3{crossing}, bvh, nil, 1e-6); !hit {
+	if _, hit := meshCrossesOffBoundary([][3]math.Point3{crossing}, bvh, nil, 1e-6, 0); !hit {
 		t.Error("a triangle piercing the sheet was not detected through the BVH (false negative)")
 	}
 }
@@ -68,7 +68,7 @@ func TestSelfIntersectBVHIgnoresClearance(t *testing.T) {
 	b := gridTriangles(10, 0)
 	bvh := newTriBVH(b)
 	clear := [3]math.Point3{{X: 3, Y: 3, Z: 5}, {X: 6, Y: 3, Z: 5}, {X: 4.5, Y: 3.5, Z: 6}}
-	if _, hit := meshCrossesOffBoundary([][3]math.Point3{clear}, bvh, nil, 1e-6); hit {
+	if _, hit := meshCrossesOffBoundary([][3]math.Point3{clear}, bvh, nil, 1e-6, 0); hit {
 		t.Error("a triangle clear of the sheet was reported as crossing (false positive)")
 	}
 }
@@ -90,6 +90,6 @@ func BenchmarkSelfIntersectBVH(b *testing.B) {
 	aTris, bTris := gridTriangles(26, 0), gridTriangles(26, 5)
 	for i := 0; i < b.N; i++ {
 		bvh := newTriBVH(bTris)
-		meshCrossesOffBoundary(aTris, bvh, nil, 1e-6)
+		meshCrossesOffBoundary(aTris, bvh, nil, 1e-6, 0)
 	}
 }
