@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
 
@@ -20,6 +21,32 @@ func rad(deg float64) float64 { return deg * stdmath.Pi / 180 }
 
 // conditionedLoft builds a loft with explicit end conditions and asserts a single valid solid.
 func conditionedLoft(t *testing.T, sections []LoftSection, closed bool, first, last LoftEnd) *topo.Body {
+	t.Helper()
+	fs := NewPartFeatures(nil)
+	pf := NewLoftFeatures(fs).addConditioned(sections, closed, ops.NewBody, first, last)
+	fs.Recompute()
+	if !pf.Health().OK() {
+		t.Fatalf("conditioned loft went sick: %+v", pf.Health())
+	}
+	b := fs.Result()[0]
+	if r := ops.Validate(b); !r.Valid || !b.IsSolid() {
+		t.Fatalf("conditioned loft not a valid solid: valid=%v solid=%v issues=%v", r.Valid, b.IsSolid(), capIssues3(r.Issues))
+	}
+	// Validate is topology only. Without this, a fixture whose sections cannot bound a solid at all
+	// still passes — the closed loft over stacked coaxial circles did, with 1824 interpenetrating
+	// face pairs, because the test compared two volumes against each other (#2077).
+	if hits := ops.SelfIntersections(b, ops.DefaultQuality()); len(hits) > 0 {
+		t.Fatalf("conditioned loft passes through itself at %d place(s), first near %v — "+
+			"the sections cannot bound a solid as placed", len(hits), hits[0].Witness)
+	}
+	return b
+}
+
+// conditionedLoftUngated is conditionedLoft WITHOUT the self-intersection gate. Only the reversed
+// undercut uses it: at a 45° reversed takeoff the side surface comes back through the end cap,
+// which is a real defect in the loft rather than in the fixture (#2082). Kept explicit and named,
+// so the gate stays on for every other case instead of being lowered for all of them.
+func conditionedLoftUngated(t *testing.T, sections []LoftSection, closed bool, first, last LoftEnd) *topo.Body {
 	t.Helper()
 	fs := NewPartFeatures(nil)
 	pf := NewLoftFeatures(fs).addConditioned(sections, closed, ops.NewBody, first, last)
@@ -85,7 +112,8 @@ func TestLoftConditionReversedUndercut(t *testing.T) {
 	end := LoftEnd{Condition: LoftAngle, Angle: rad(45)}
 	rev := LoftEnd{Condition: LoftAngle, Angle: rad(45), Reversed: true}
 	straight := conditionedLoft(t, twoCircles(2), false, end, end)
-	under := conditionedLoft(t, twoCircles(2), false, rev, rev)
+	// Ungated: this case really does drive the side surface back through the end cap (#2082).
+	under := conditionedLoftUngated(t, twoCircles(2), false, rev, rev)
 	if z := float64(straight.RangeBox().Min.Z); z < -0.01 {
 		t.Errorf("non-reversed loft dipped below the start plane: min z = %.3f, want ~0", z)
 	}
@@ -127,15 +155,37 @@ func TestLoftConditionOrganicSpline(t *testing.T) {
 	conditionedLoft(t, secs, false, end, end)
 }
 
+// ringStationPlane is the section plane at angle phi around a ring of radius r, standing
+// perpendicular to the ring's tangent — the placement a CLOSED loft actually needs.
+func ringStationPlane(r, phi float64) sketch.Plane {
+	c, s := stdmath.Cos(phi), stdmath.Sin(phi)
+	p, err := sketch.NewPlane(math.P3(r*c, r*s, 0), math.V3(c, s, 0).AsUnit(), math.V3(0, 0, 1).AsUnit())
+	if err != nil {
+		panic(err) // fixed unit axes; a failure here is a broken fixture, not a test outcome
+	}
+	return p
+}
+
 // TestLoftConditionClosedIgnoresEnds: a closed loft has no end sections, so end conditions are
 // ignored — a closed loft with angle conditions matches the Free closed loft exactly.
 func TestLoftConditionClosedIgnoresEnds(t *testing.T) {
+	// The sections are placed AROUND a ring, not stacked. Three coaxial circles closed into a loop
+	// cannot be a solid — the closing leg runs back through the tube the others already occupy — and
+	// the old fixture did exactly that, delivering a body with 1824 interpenetrating face pairs. It
+	// passed only because it compares two volumes against each other, so an impossible premise was
+	// invisible (#2077). The ring's inradius 6·cos60° = 3 clears the 2 section radius.
+	// Six stations, not three. Each plane stands perpendicular to the ring TANGENT while the loft
+	// spans straight CHORDS, so a section is tilted by half the station spacing and its effective
+	// reach across the chord is r/cos(pi/n). That must stay inside the chord polygon's inradius
+	// R·cos(pi/n): at n=3 it is 2/cos60° = 4 against an inradius of 3, and the loft really does run
+	// into itself; at n=6 it is 2/cos30° = 2.31 against 5.20.
+	const ringR, secR, stations = 6.0, 2.0, 6
 	mk := func() []LoftSection {
-		return []LoftSection{
-			sec(circleOn(sketch.XYPlane(), 2)),
-			sec(circleOn(planeAtZ(3), 2)),
-			sec(circleOn(planeAtZ(6), 2)),
+		out := make([]LoftSection, stations)
+		for i := range out {
+			out[i] = sec(circleOn(ringStationPlane(ringR, 2*stdmath.Pi*float64(i)/stations), secR))
 		}
+		return out
 	}
 	end := LoftEnd{Condition: LoftAngle, Angle: rad(45)}
 	free := conditionedLoft(t, mk(), true, LoftEnd{}, LoftEnd{})
