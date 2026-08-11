@@ -48,10 +48,15 @@ type tangentStripe struct {
 	term        [2]stripeTerm // (open only) the two run-out terminals: [0]=entry of seg 0, [1]=exit of the last seg
 }
 
-// stripeTerm is one run-out end of an OPEN stripe — the tube's flat setback cap. The cap is the quarter
-// disk bounded by the end section arc (topA→apex→wallA) and the two lines back to the surviving corner
-// vertex; it lies in the section plane ⊥ the spine, so it never intrudes on the neighbouring geometry.
-// Mirrors OCCT's free-end ChFi3d_CoupeParPlan planar cut and our own arc-fillet setback end-cap.
+// stripeTerm is one run-out end of an OPEN stripe. Where the run stops part-way along a rim it becomes
+// the tube's flat setback cap: the quarter disk bounded by the end section arc (topA→apex→wallA) and
+// the two lines back to the surviving corner vertex, lying in the section plane ⊥ the spine. Mirrors
+// OCCT's free-end ChFi3d_CoupeParPlan planar cut and our own arc-fillet setback end-cap.
+//
+// This used to claim the section plane "never intrudes on the neighbouring geometry". It does when the
+// run stops at a SHARP CORNER — there the spine reaches the end of the rim, so the section plane is the
+// plane of the side face already at that corner, and the cap lands on it. resolveStripeEnds recognises
+// that case and the side face carries the run-out instead (#2083).
 type stripeTerm struct {
 	vertex      *topo.Vertex // the original corner vertex the tube ends at (survives; the cap's apex-of-triangle)
 	apex        math.Point3  // the section arc's exposed midpoint
