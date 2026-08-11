@@ -60,16 +60,36 @@ func TestPlanarPairKeepsAZeroAllowance(t *testing.T) {
 	}
 }
 
-// TestCoplanarOverlapSurvivesTheAllowance: a coplanar pair has no depth at all, so gating it on
-// depth would erase every coplanar overlap — including the real ones. The allowance applies to the
-// straddling branch only.
-func TestCoplanarOverlapSurvivesTheAllowance(t *testing.T) {
+// TestCoplanarOverlapIsJudgedByAreaNotDepth: a coplanar pair has no depth at all, so a DEPTH gate
+// would read zero and erase every coplanar overlap, real ones included. The allowance still applies
+// — as a length on the overlap's side, against its area — so a substantial overlap survives.
+func TestCoplanarOverlapIsJudgedByAreaNotDepth(t *testing.T) {
 	p := math.P3
 	a := [3]math.Point3{p(0, 0, 0), p(10, 0, 0), p(0, 10, 0)}
-	b := [3]math.Point3{p(1, 1, 0), p(9, 1, 0), p(1, 9, 0)} // same plane, large shared area
+	b := [3]math.Point3{p(1, 1, 0), p(9, 1, 0), p(1, 9, 0)} // same plane, ~32 of shared area
 	bvh := newTriBVH([][3]math.Point3{b})
-	if _, hit := meshCrossesOffBoundary([][3]math.Point3{a}, bvh, nil, 1e-9, 1e6); !hit {
-		t.Error("a coplanar overlap was erased by a depth allowance that cannot apply to it")
+	if _, hit := meshCrossesOffBoundary([][3]math.Point3{a}, bvh, nil, 1e-9, 0.05); !hit {
+		t.Error("a 32-area coplanar overlap was erased by a 0.05 faceting allowance")
+	}
+}
+
+// TestSliverCoplanarOverlapIsDiscarded is the #2077 residue. The ratio filter compares the overlap
+// to the smaller TRIANGLE, so a sliver passes it on an overlap of no consequence — a torus
+// tessellated against a plane it touches produced overlaps down to 1e-16 cm2 that way. An overlap
+// that does not span the faceting allowance on a side is noise.
+func TestSliverCoplanarOverlapIsDiscarded(t *testing.T) {
+	p := math.P3
+	// Two long, extremely thin coplanar slivers: each is 10 long and 1e-6 across, so the overlap is
+	// ~1e-5 of area while being a large FRACTION of either sliver.
+	a := [3]math.Point3{p(0, 0, 0), p(10, 0, 0), p(0, 1e-6, 0)}
+	b := [3]math.Point3{p(0.5, 0, 0), p(9.5, 0, 0), p(0.5, 1e-6, 0)}
+	bvh := newTriBVH([][3]math.Point3{b})
+	if _, hit := meshCrossesOffBoundary([][3]math.Point3{a}, bvh, nil, 1e-12, 0.05); hit {
+		t.Error("a sliver overlap far below the faceting allowance was reported")
+	}
+	// With no allowance — two PLANAR faces, tessellated exactly — the same overlap is real.
+	if _, hit := meshCrossesOffBoundary([][3]math.Point3{a}, bvh, nil, 1e-12, 0); !hit {
+		t.Error("an exact coplanar overlap was dropped even though neither face has faceting error")
 	}
 }
 
@@ -145,5 +165,86 @@ func TestCurvedFaceGetsTheChordTolerance(t *testing.T) {
 	}
 	if curved == 0 {
 		t.Fatal("the cylinder fixture produced no curved face, so the assertion proved nothing")
+	}
+}
+
+// coplanarPairOfArea returns two coplanar triangles sharing approximately the given area, scaled
+// about the origin by k.
+func coplanarPairOfArea(area, k float64) ([3]math.Point3, [3]math.Point3) {
+	p := math.P3
+	h := stdmath.Sqrt(2 * area) // a right isoceles overlap of legs h has area h²/2
+	a := [3]math.Point3{p(0, 0, 0), p(10*k, 0, 0), p(0, 10*k, 0)}
+	b := [3]math.Point3{p(0, 0, 0), p(h*k, 0, 0), p(0, h*k, 0)}
+	return a, b
+}
+
+// TestCoplanarAllowanceIsAnAreaNotALength pins the DIMENSION of the coplanar gate. The allowance is
+// a length (a faceting deviation), so an area must be compared against its square. Comparing the
+// area against the raw length instead happens to agree on the fixtures at either extreme, and only
+// an overlap BETWEEN the two thresholds can tell them apart: at allow = 0.05 the square is 0.0025,
+// so an overlap of 0.01 is real under the correct rule and noise under the dimensionally wrong one.
+func TestCoplanarAllowanceIsAnAreaNotALength(t *testing.T) {
+	a, b := coplanarPairOfArea(0.01, 1)
+	bvh := newTriBVH([][3]math.Point3{b})
+	if _, hit := meshCrossesOffBoundary([][3]math.Point3{a}, bvh, nil, 1e-12, 0.05); !hit {
+		t.Error("an overlap of 0.01 was discarded under a 0.05 allowance, whose square is only 0.0025")
+	}
+}
+
+// TestCoplanarAllowanceIsScaleFree is the same point as a property. Areas grow as k² and the
+// allowance as k, so area vs allow² holds its verdict at every scale while area vs allow does not
+// (ADR-0042).
+func TestCoplanarAllowanceIsScaleFree(t *testing.T) {
+	for _, k := range []float64{1e-2, 1, 1e2} {
+		real, noise := 0.01*k*k, 1e-6*k*k
+		for _, c := range []struct {
+			area float64
+			want bool
+		}{{real, true}, {noise, false}} {
+			a, b := coplanarPairOfArea(c.area/(k*k), k)
+			bvh := newTriBVH([][3]math.Point3{b})
+			if _, hit := meshCrossesOffBoundary([][3]math.Point3{a}, bvh, nil, 1e-12*k, 0.05*k); hit != c.want {
+				t.Errorf("at scale %g an overlap of area %g reported %v, want %v", k, c.area, hit, c.want)
+			}
+		}
+	}
+}
+
+// TestPlaneAxesAreOrthonormal is the guard for the scale bug #2075 left behind in this branch. The
+// axes used to be the raw cross products n×ref and n×(n×ref), whose magnitudes are |n| and |n|², so
+// the projected 2D space was scaled by the triangle's own area — and by a DIFFERENT factor on each
+// axis. Every length and area measured there was meaningless, including selfIntersectEps.
+func TestPlaneAxesAreOrthonormal(t *testing.T) {
+	for _, n := range []math.Vector3{
+		math.V3(0, 0, 1), math.V3(0, 0, 1e-6), math.V3(0, 0, 1e6), math.V3(3, -4, 12),
+	} {
+		u, v := planeAxes(n)
+		lu, lv := float64(u.Length()), float64(v.Length())
+		if stdmath.Abs(lu-1) > 1e-12 || stdmath.Abs(lv-1) > 1e-12 {
+			t.Errorf("planeAxes(%v) lengths = %g, %g, want 1 and 1", n, lu, lv)
+		}
+		if d := stdmath.Abs(float64(u.Dot(v))); d > 1e-12 {
+			t.Errorf("planeAxes(%v) axes are not perpendicular: u·v = %g", n, d)
+		}
+		if d := stdmath.Abs(float64(u.Dot(n))) + stdmath.Abs(float64(v.Dot(n))); d > 1e-9*float64(n.Length()) {
+			t.Errorf("planeAxes(%v) axes do not lie in the plane: |u·n|+|v·n| = %g", n, d)
+		}
+	}
+}
+
+// TestCoplanarAreaIsMeasuredInTrueUnits: the whole point of the orthonormal axes. The shared area
+// two coplanar triangles report must be the area they actually share, whatever the normal's
+// magnitude — which is proportional to the triangle's area and so varies wildly across a mesh.
+func TestCoplanarAreaIsMeasuredInTrueUnits(t *testing.T) {
+	p := math.P3
+	big := [3]math.Point3{p(0, 0, 0), p(10, 0, 0), p(0, 10, 0)}
+	small := [3]math.Point3{p(0, 0, 0), p(2, 0, 0), p(0, 2, 0)} // area 2, wholly inside big
+	n, _ := triPlaneEq(small)
+	_, area, hit := coplanarOverlap(big, small, n)
+	if !hit {
+		t.Fatal("a triangle wholly inside another did not report a coplanar overlap")
+	}
+	if stdmath.Abs(area-2) > 1e-9 {
+		t.Errorf("shared area = %g, want 2 (the small triangle's own area)", area)
 	}
 }
