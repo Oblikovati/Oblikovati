@@ -8,12 +8,18 @@ import (
 	"oblikovati.org/kernel/ops"
 )
 
-// SheetMetalLoftedFlangeData is the serialized form of a SheetMetalLoftedFlangeFeature: the
-// two profile sketch indices and the boolean operation. Thickness is read live from the rule.
+// SheetMetalLoftedFlangeData is the serialized form of a SheetMetalLoftedFlangeFeature: the two
+// profile sketch indices, the boolean operation, and the output settings (#1966) — how the
+// transition is calculated, the facet tolerance for the press-brake modes, whether the corners
+// converge, and the end-bend radius. Thickness is read live from the rule.
 type SheetMetalLoftedFlangeData struct {
-	ProfileA  int   `yaml:"profileA"`
-	ProfileB  int   `yaml:"profileB"`
-	Operation int32 `yaml:"operation,omitempty"`
+	ProfileA       int     `yaml:"profileA"`
+	ProfileB       int     `yaml:"profileB"`
+	Operation      int32   `yaml:"operation,omitempty"`
+	Output         int32   `yaml:"output,omitempty"`
+	FacetTolerance float64 `yaml:"facetTolerance,omitempty"`
+	Converge       bool    `yaml:"converge,omitempty"`
+	Radius         float64 `yaml:"radius,omitempty"`
 }
 
 // serializeSheetMetalLoftedFlange projects a lofted-flange recipe to its persisted form,
@@ -27,7 +33,10 @@ func serializeSheetMetalLoftedFlange(def *SheetMetalLoftedFlangeDefinition, sk S
 	if !ok {
 		return nil, fmt.Errorf("sheet-metal lofted flange references a profile B sketch not in the part")
 	}
-	return &SheetMetalLoftedFlangeData{ProfileA: a, ProfileB: b, Operation: int32(def.Operation)}, nil
+	return &SheetMetalLoftedFlangeData{
+		ProfileA: a, ProfileB: b, Operation: int32(def.Operation), Output: int32(def.Output),
+		FacetTolerance: def.FacetTolerance, Converge: def.Converge, Radius: evalFloat(def.Radius),
+	}, nil
 }
 
 // restoreSheetMetalLoftedFlange rebuilds a lofted-flange feature, erroring on a missing
@@ -44,7 +53,12 @@ func restoreSheetMetalLoftedFlange(fs *PartFeatures, d *SheetMetalLoftedFlangeDa
 	if !ok {
 		return nil, fmt.Errorf("sheet-metal lofted flange references sketch %d which is not in the part", d.ProfileB)
 	}
-	return NewSheetMetalLoftedFlangeFeatures(fs).Add(&SheetMetalLoftedFlangeDefinition{
+	def := &SheetMetalLoftedFlangeDefinition{
 		ProfileA: a, ProfileB: b, Operation: ops.PartFeatureOperation(d.Operation),
-	}), nil
+		Output: LoftedFlangeOutputType(d.Output), FacetTolerance: d.FacetTolerance, Converge: d.Converge,
+	}
+	if d.Radius != 0 {
+		def.Radius = constFloat(d.Radius)
+	}
+	return NewSheetMetalLoftedFlangeFeatures(fs).Add(def), nil
 }
