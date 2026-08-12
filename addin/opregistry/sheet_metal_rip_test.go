@@ -37,4 +37,13 @@ func TestSheetMetalRipApply(t *testing.T) {
 	if _, err := apply(t, s, "sheetMetalRip", `{"sketchIndex":1,"gap":"bad"}`); err == nil {
 		t.Error("rip with a bad gap must error")
 	}
+	if _, err := apply(t, s, "sheetMetalRip", `{"sketchIndex":1,"type":"zigzag"}`); err == nil {
+		t.Error("rip with an unknown type must error")
+	}
+	if _, err := apply(t, s, "sheetMetalRip", `{"sketchIndex":1,"gapSide":"sideways"}`); err == nil {
+		t.Error("rip with an unknown gapSide must error")
+	}
+	if _, err := apply(t, s, "sheetMetalRip", `{"type":"faceExtents"}`); err == nil {
+		t.Error("a face-extents rip with no faceKey must error")
+	}
 }
