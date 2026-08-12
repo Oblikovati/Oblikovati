@@ -88,6 +88,14 @@ type dimensionRecipe struct {
 	TextDX   float64 `yaml:"textDxMm,omitempty"` // user text nudge (drag-the-text)
 	TextDY   float64 `yaml:"textDyMm,omitempty"`
 	AxisHorz bool    `yaml:"axisHorizontal,omitempty"` // ordinate: measure the view-X offset, else view-Y
+	// Text metadata (#1990/#1992/#1993/#1996) — the decorated text re-derives from these on open.
+	Prefix       string                     `yaml:"prefix,omitempty"`
+	Suffix       string                     `yaml:"suffix,omitempty"`
+	OverrideText string                     `yaml:"overrideText,omitempty"`
+	HideValue    bool                       `yaml:"hideValue,omitempty"`
+	DualUnit     bool                       `yaml:"dualUnit,omitempty"`
+	Tolerance    *types.DimensionTolerance  `yaml:"tolerance,omitempty"`
+	Inspection   *types.InspectionDimension `yaml:"inspection,omitempty"`
 }
 
 // annotationRecipe is the YAML shape of one drawing annotation. A CoG marker's glyph re-derives
@@ -307,9 +315,28 @@ func dimensionRecipesOf(sh *Sheet) []dimensionRecipe {
 			KeyA: hex.EncodeToString(d.keyA), KeyB: hex.EncodeToString(d.keyB),
 			EdgeKey: hex.EncodeToString(d.edgeKey), EdgeKeyB: hex.EncodeToString(d.edgeKeyB),
 			Offset: d.offset, TextDX: d.textDX, TextDY: d.textDY, AxisHorz: d.axisHorizontal,
+			Prefix: d.prefix, Suffix: d.suffix, OverrideText: d.overrideText,
+			HideValue: d.hideValue, DualUnit: d.dualUnit,
+			Tolerance: nonZeroTolerance(d.tolerance), Inspection: nonZeroInspection(d.inspection),
 		})
 	}
 	return out
+}
+
+// nonZeroTolerance / nonZeroInspection return a pointer to persist only when the metadata is set,
+// so a plain dimension writes no tolerance/inspection block (#1990/#1996).
+func nonZeroTolerance(t types.DimensionTolerance) *types.DimensionTolerance {
+	if t.Type == types.NoTolerance {
+		return nil
+	}
+	return &t
+}
+
+func nonZeroInspection(i types.InspectionDimension) *types.InspectionDimension {
+	if i.Shape == types.NoInspectionBorder {
+		return nil
+	}
+	return &i
 }
 
 // viewRecipeOf snapshots one view's definition (its curves are re-projected on open).
@@ -403,6 +430,14 @@ func restoreDimensions(sh *Sheet, recs []dimensionRecipe) {
 			name: dr.Name, dimType: dimType, viewName: dr.ViewName,
 			keyA: keyA, keyB: keyB, edgeKey: edgeKey, edgeKeyB: edgeKeyB,
 			offset: dr.Offset, textDX: dr.TextDX, textDY: dr.TextDY, axisHorizontal: dr.AxisHorz,
+			prefix: dr.Prefix, suffix: dr.Suffix, overrideText: dr.OverrideText,
+			hideValue: dr.HideValue, dualUnit: dr.DualUnit,
+		}
+		if dr.Tolerance != nil {
+			d.tolerance = *dr.Tolerance
+		}
+		if dr.Inspection != nil {
+			d.inspection = *dr.Inspection
 		}
 		ds.recompute(d)
 		ds.items = append(ds.items, d)

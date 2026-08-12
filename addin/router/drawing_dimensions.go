@@ -27,6 +27,7 @@ func (r *Router) registerDrawingDimensionHandlers() {
 	r.mutating(wire.MethodDrawingDimensionsDelete, "Delete Dimension", typedCtx(activeSheetDimensions, drawingDimensionsDelete))
 	r.mutating(wire.MethodDrawingDimensionsSetTextStyle, "Edit Dimension", typedCtx(activeSheetDimensions, drawingDimensionsSetTextStyle))
 	r.mutating(wire.MethodDrawingDimensionsSetTolerance, "Edit Dimension", typedCtx(activeSheetDimensions, drawingDimensionsSetTolerance))
+	r.mutating(wire.MethodDrawingDimensionsSetInspection, "Edit Dimension", typedCtx(activeSheetDimensions, drawingDimensionsSetInspection))
 }
 
 // activeSheetDimensions returns the active drawing's active-sheet dimension collection.
@@ -206,7 +207,20 @@ func drawingDimensionInfo(d *drawing.DrawingDimension) wire.DrawingDimensionInfo
 		t := tol
 		info.Tolerance = &t
 	}
+	if ins := d.Inspection(); ins.Shape != types.NoInspectionBorder {
+		i := ins
+		info.Inspection = &i
+	}
 	return info
+}
+
+// drawingDimensionsSetInspection flags the named dimension as an inspection dimension (#1996).
+func drawingDimensionsSetInspection(s *app.Session, ds *drawing.DrawingDimensions, in wire.SetDimensionInspectionArgs) (wire.ListDrawingDimensionsResult, error) {
+	if err := ds.SetInspection(in.Name, in.Inspection); err != nil {
+		return wire.ListDrawingDimensionsResult{}, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return listDimensions(ds), nil
 }
 
 // drawingDimensionsSetTolerance sets the named dimension's engineering tolerance (#1990).

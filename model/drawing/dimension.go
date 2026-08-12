@@ -45,9 +45,10 @@ type DrawingDimension struct {
 	overrideText string
 	hideValue    bool
 	dualUnit     bool
-	tolerance    types.DimensionTolerance // engineering tolerance shown after the value (#1990)
-	text         string                   // displayed text (the decorated value)
-	anchorX      float64                  // text anchor (sheet mm), lifted off the dimension line by textGapMM
+	tolerance    types.DimensionTolerance  // engineering tolerance shown after the value (#1990)
+	inspection   types.InspectionDimension // inspection border + label + rate (#1996)
+	text         string                    // displayed text (the decorated value)
+	anchorX      float64                   // text anchor (sheet mm), lifted off the dimension line by textGapMM
 	anchorY      float64
 	textDX       float64 // user text nudge from the anchor (sheet mm) — drag the text to set it
 	textDY       float64
@@ -67,6 +68,12 @@ const mmPerInch = 25.4
 // for a dual-unit dimension, followed by the value in inches. It is the single point every
 // per-type formatter routes its value through, so the overrides apply uniformly.
 func (d *DrawingDimension) decorate(value string) string {
+	return d.inspectionWrap(d.decorateCore(value))
+}
+
+// decorateCore applies the text overrides (override / prefix-suffix / tolerance / dual-unit) to a
+// formatted value, before any inspection wrapping (#1992/#1993).
+func (d *DrawingDimension) decorateCore(value string) string {
 	if d.overrideText != "" {
 		return d.overrideText
 	}
@@ -77,6 +84,23 @@ func (d *DrawingDimension) decorate(value string) string {
 	out := d.prefix + core + d.toleranceNote() + d.suffix
 	if d.dualUnit {
 		out += " [" + strconv.FormatFloat(d.valueMM/mmPerInch, 'f', 3, 64) + " in]"
+	}
+	return out
+}
+
+// inspectionWrap prepends the inspection label and appends the sampling rate to the displayed text
+// when the dimension is an inspection dimension; the border shape is drawn separately by the head
+// (#1996). A non-inspection dimension is returned unchanged.
+func (d *DrawingDimension) inspectionWrap(body string) string {
+	if d.inspection.Shape == types.NoInspectionBorder {
+		return body
+	}
+	out := body
+	if d.inspection.Label != "" {
+		out = d.inspection.Label + " " + out
+	}
+	if d.inspection.Rate != "" {
+		out += " " + d.inspection.Rate
 	}
 	return out
 }
@@ -117,6 +141,21 @@ func (ds *DrawingDimensions) SetTolerance(name string, tol types.DimensionTolera
 
 // Tolerance exposes the dimension's engineering tolerance (#1990).
 func (d *DrawingDimension) Tolerance() types.DimensionTolerance { return d.tolerance }
+
+// SetInspection flags the named dimension as an inspection dimension (or clears it with a
+// NoInspectionBorder shape) and re-decorates its text (#1996).
+func (ds *DrawingDimensions) SetInspection(name string, ins types.InspectionDimension) error {
+	d, ok := ds.ByName(name)
+	if !ok {
+		return fmt.Errorf("drawing: no dimension named %q", name)
+	}
+	d.inspection = ins
+	ds.recompute(d)
+	return nil
+}
+
+// Inspection exposes the dimension's inspection annotation (#1996).
+func (d *DrawingDimension) Inspection() types.InspectionDimension { return d.inspection }
 
 var _ contract.DrawingDimension = (*DrawingDimension)(nil)
 

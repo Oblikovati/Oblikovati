@@ -357,6 +357,52 @@ func TestDimensionToleranceNotation(t *testing.T) {
 	}
 }
 
+// TestInspectionDimension flags a dimension as an inspection dimension: the label and rate wrap
+// its value, a NoInspectionBorder shape clears it, and the shape/label/rate round-trip through the
+// recipe (#1996).
+func TestInspectionDimension(t *testing.T) {
+	c := drawingWithBox(t)
+	views := c.Sheets().Active().Views()
+	frontBase(t, views)
+	dims := c.Sheets().Active().Dimensions()
+	d, err := dims.AddLinear("D1", "FRONT", types.HorizontalDimension, 88, 80, 112, 80, -12)
+	if err != nil {
+		t.Fatalf("AddLinear: %v", err)
+	}
+	value := d.Text()
+
+	ins := types.InspectionDimension{Shape: types.RoundedEndsInspectionBorder, Label: "A1", Rate: "100%"}
+	if err := dims.SetInspection("D1", ins); err != nil {
+		t.Fatalf("SetInspection: %v", err)
+	}
+	if got, want := d.Text(), "A1 "+value+" 100%"; got != want {
+		t.Errorf("inspection text = %q, want %q", got, want)
+	}
+	if d.Inspection() != ins {
+		t.Errorf("Inspection() = %+v, want %+v", d.Inspection(), ins)
+	}
+
+	// Round-trip through the recipe: the inspection annotation (and its wrapped text) must survive.
+	restored, ok := reopen(t, c).Sheets().Active().Dimensions().ByName("D1")
+	if !ok {
+		t.Fatal("reopened drawing lost dimension D1")
+	}
+	if restored.Inspection() != ins {
+		t.Errorf("restored inspection = %+v, want %+v", restored.Inspection(), ins)
+	}
+	if got, want := restored.Text(), "A1 "+value+" 100%"; got != want {
+		t.Errorf("restored inspection text = %q, want %q", got, want)
+	}
+
+	// Clearing with NoInspectionBorder returns the bare value.
+	if err := dims.SetInspection("D1", types.InspectionDimension{Shape: types.NoInspectionBorder}); err != nil {
+		t.Fatalf("SetInspection clear: %v", err)
+	}
+	if got := d.Text(); got != value {
+		t.Errorf("cleared inspection text = %q, want the bare value %q", got, value)
+	}
+}
+
 // TestMoveLineShiftsDimensionLine: dragging the dimension line moves it perpendicular to itself.
 func TestMoveLineShiftsDimensionLine(t *testing.T) {
 	c := drawingWithBox(t)
