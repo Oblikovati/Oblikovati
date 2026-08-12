@@ -142,6 +142,27 @@ func TestViewLabelDefaultAndOverrides(t *testing.T) {
 	}
 }
 
+// TestViewLabelRoundTrip checks a view's caption override and hidden-scale flag survive save +
+// reopen (#1983) — otherwise a customised label reverts to the default on open.
+func TestViewLabelRoundTrip(t *testing.T) {
+	c := drawingWithBox(t)
+	views := c.Sheets().Active().Views()
+	if _, err := views.AddBase(BaseViewSpec{Name: "FRONT", Orientation: types.BaseViewFront, Scale: 0.5, CenterX: 100, CenterY: 100}); err != nil {
+		t.Fatalf("AddBase: %v", err)
+	}
+	no := false
+	if err := views.SetLabel("FRONT", ViewLabelStyle{Text: strPtr("DETAIL A"), ShowScale: &no}); err != nil {
+		t.Fatalf("SetLabel: %v", err)
+	}
+	v, ok := reopen(t, c).Sheets().Active().Views().ByName("FRONT")
+	if !ok {
+		t.Fatal("reopened drawing lost view FRONT")
+	}
+	if got := v.Label(); got != "DETAIL A" {
+		t.Errorf("restored label = %q, want the DETAIL A override", got)
+	}
+}
+
 func strPtr(s string) *string { return &s }
 
 func TestAddBaseViewRequiresModel(t *testing.T) {

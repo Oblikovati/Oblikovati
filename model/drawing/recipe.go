@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/hlr"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/yamlcodec"
 )
@@ -152,6 +153,18 @@ type viewRecipe struct {
 	Style        string     `yaml:"style,omitempty"`
 	CenterX      float64    `yaml:"centerXmm,omitempty"`
 	CenterY      float64    `yaml:"centerYmm,omitempty"`
+	// Section options (#1982): the retained-slab depth (model cm; 0 ⇒ full), reverse flag and
+	// partial-cut type. SectionLine above carries the cut line.
+	SectionDepth   float64 `yaml:"sectionDepth,omitempty"`
+	SectionReverse bool    `yaml:"sectionReverse,omitempty"`
+	SectionType    string  `yaml:"sectionType,omitempty"`
+	// Label overrides (#1983): a caption override and the hide flags / caption position.
+	LabelText string  `yaml:"labelText,omitempty"`
+	HideLabel bool    `yaml:"hideLabel,omitempty"`
+	HideName  bool    `yaml:"hideName,omitempty"`
+	HideScale bool    `yaml:"hideScale,omitempty"`
+	LabelX    float64 `yaml:"labelXmm,omitempty"`
+	LabelY    float64 `yaml:"labelYmm,omitempty"`
 }
 
 // buildRecipe captures the drawing's full persisted state as a [drawingRecipe] value — the shared
@@ -351,6 +364,9 @@ func viewRecipeOf(v *DrawingView) viewRecipe {
 		BreakGap:     [2]float64{v.brk.sheetG0, v.brk.sheetG1},
 		DraftSize:    [2]float64{v.draftW, v.draftH},
 		Scale:        v.scale, Style: v.style.String(), CenterX: v.centerX, CenterY: v.centerY,
+		SectionDepth: v.sectionOpts.Depth, SectionReverse: v.sectionOpts.Reverse, SectionType: v.sectionType.String(),
+		LabelText: v.labelText, HideLabel: v.hideLabel, HideName: v.hideName, HideScale: v.hideScale,
+		LabelX: v.labelX, LabelY: v.labelY,
 	}
 }
 
@@ -513,14 +529,18 @@ func restoreView(vr viewRecipe) *DrawingView {
 	vt := restoredViewType(vr)
 	sl, dt, bg, ds := vr.SectionLine, vr.Detail, vr.BreakGap, vr.DraftSize
 	brkOrient, _ := types.ParseBreakOrientation(vr.BreakOrient)
+	sectionType, _ := types.ParseSectionViewType(vr.SectionType)
 	return &DrawingView{
 		name: vr.Name, viewType: vt, projected: vt == types.DrawingViewProjected, baseView: vr.BaseView,
 		foldAngle: vr.FoldAngleDeg * math.Pi / 180, section: sectionLine{sl[0], sl[1], sl[2], sl[3]},
+		sectionOpts: hlr.SectionOptions{Reverse: vr.SectionReverse, Depth: vr.SectionDepth}, sectionType: sectionType,
 		detail: detailBoundary{sheetCX: dt[0], sheetCY: dt[1], sheetR: dt[2]},
 		brk:    breakBand{orientation: brkOrient, sheetG0: bg[0], sheetG1: bg[1]},
 		draftW: ds[0], draftH: ds[1],
 		orientation: orient, direction: dir,
 		scale: positiveScale(vr.Scale), style: style, centerX: vr.CenterX, centerY: vr.CenterY,
+		labelText: vr.LabelText, hideLabel: vr.HideLabel, hideName: vr.HideName, hideScale: vr.HideScale,
+		labelX: vr.LabelX, labelY: vr.LabelY,
 	}
 }
 

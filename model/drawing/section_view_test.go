@@ -92,6 +92,29 @@ func TestSectionOptionsCarryThroughAddSection(t *testing.T) {
 	}
 }
 
+// TestSectionOptionsRoundTrip checks the section reverse/depth/type options survive save + reopen
+// (#1982) — a section that lost them on reopen would silently become a full forward cut.
+func TestSectionOptionsRoundTrip(t *testing.T) {
+	c := drawingWithBox(t)
+	views := c.Sheets().Active().Views()
+	frontBase(t, views)
+	front, _ := views.ByName("FRONT")
+	minX, _, maxX, _, _ := front.BoundsMM()
+	spec := SectionViewSpec{Name: "A-A", ParentView: "FRONT", X1: minX - 5, Y1: 100, X2: maxX + 5, Y2: 100, CenterX: 100, CenterY: 220}
+	spec.Reverse, spec.Depth, spec.Type = true, 5, types.HalfSectionView
+	if _, err := views.AddSection(spec); err != nil {
+		t.Fatalf("AddSection: %v", err)
+	}
+	v, ok := reopen(t, c).Sheets().Active().Views().ByName("A-A")
+	if !ok {
+		t.Fatal("reopened drawing lost section A-A")
+	}
+	if !v.SectionReverse() || v.SectionDepthMM() != 5 || v.SectionType() != types.HalfSectionView {
+		t.Errorf("restored section options = reverse %v depth %g type %v, want true/5/half",
+			v.SectionReverse(), v.SectionDepthMM(), v.SectionType())
+	}
+}
+
 // TestSectionUnknownTypeRejected checks a bad section type spelling is rejected at the router.
 func TestSectionUnknownTypeRejected(t *testing.T) {
 	if _, ok := types.ParseSectionViewType("octant"); ok {
