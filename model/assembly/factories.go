@@ -28,9 +28,22 @@ func (s *ConstraintSet) AddFlush(a, b Ref, offset float64) *FlushConstraint {
 	return f
 }
 
-// AddAngle adds an angle constraint holding angle (radians) between directions A and B.
+// AddAngle adds an angle constraint holding angle (radians) between directions A and B. Use it
+// for the undirected and directed solutions; reference-vector needs an explicit axis (AddAngleAbout).
 func (s *ConstraintSet) AddAngle(a, b Ref, angle float64, sol types.AngleConstraintSolutionType) *AngleConstraint {
 	c := &AngleConstraint{constraintBase: s.newBase(types.ConstraintAngle, a, b), angle: angle, solution: sol}
+	s.add(c)
+	return c
+}
+
+// AddAngleAbout adds a reference-vector angle constraint: the signed angle from A to B is measured
+// about the explicit refVec axis, so it can be held negative or past 180° (#1972).
+func (s *ConstraintSet) AddAngleAbout(a, b, refVec Ref, angle float64) *AngleConstraint {
+	an := toAnchor(refVec)
+	c := &AngleConstraint{
+		constraintBase: s.newBase(types.ConstraintAngle, a, b),
+		angle:          angle, solution: types.AngleSolutionReferenceVector, ref: &an,
+	}
 	s.add(c)
 	return c
 }

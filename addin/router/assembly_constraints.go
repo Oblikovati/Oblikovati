@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/model/assembly"
@@ -76,7 +77,23 @@ func assemblyAddAngle(s *app.Session, raw json.RawMessage) (json.RawMessage, err
 	if err != nil {
 		return nil, err
 	}
+	if angleSolution(in.Solution) == types.AngleSolutionReferenceVector {
+		return assemblyAddAngleReferenceVector(asm, in, a, b)
+	}
 	return solvedConstraint(asm, asm.Constraints().AddAngle(a, b, in.Angle, angleSolution(in.Solution)))
+}
+
+// assemblyAddAngleReferenceVector adds the reference-vector angle solution, which needs the
+// explicit third axis; a missing ReferenceVector is rejected with a clear error (#1972).
+func assemblyAddAngleReferenceVector(asm *compdef.AssemblyComponentDefinition, in wire.AddAngleArgs, a, b assembly.Ref) (json.RawMessage, error) {
+	if in.ReferenceVector.Occurrence == 0 && in.ReferenceVector.Entity == "" {
+		return nil, fmt.Errorf("%s: the reference-vector angle solution needs a referenceVector entity", wire.MethodAssemblyConstraintsAddAngle)
+	}
+	refVec, err := resolveConstraintRef(asm, in.ReferenceVector, wire.MethodAssemblyConstraintsAddAngle)
+	if err != nil {
+		return nil, err
+	}
+	return solvedConstraint(asm, asm.Constraints().AddAngleAbout(a, b, refVec, in.Angle))
 }
 
 func assemblyAddTangent(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {

@@ -126,6 +126,39 @@ func TestAssemblyConstraintUnknownKeyRejected(t *testing.T) {
 	}
 }
 
+// TestAssemblyReferenceVectorAngleNeedsThirdEntity: requesting the reference-vector angle solution
+// without a referenceVector entity is rejected with a clear error, while supplying one succeeds
+// (#1972).
+func TestAssemblyReferenceVectorAngleNeedsThirdEntity(t *testing.T) {
+	r, s, _, occs := assemblySessionWithBoxes(t, 0, 5)
+	occs[0].SetGrounded(true)
+	topKey := topBoxFaceKey(t, occs[0])
+	botKey := bottomBoxFaceKey(t, occs[1])
+
+	missing := mustJSON(t, wire.AddAngleArgs{
+		A:        wire.ConstraintGeomRef{Occurrence: occs[0].ID(), Entity: topKey},
+		B:        wire.ConstraintGeomRef{Occurrence: occs[1].ID(), Entity: botKey},
+		Angle:    stdmath.Pi / 4,
+		Solution: "reference-vector",
+	})
+	if _, err := r.Handle(s, "assemblyConstraints.addAngle", []byte(missing)); err == nil {
+		t.Error("reference-vector angle without a referenceVector entity should fail")
+	}
+
+	withAxis := mustJSON(t, wire.AddAngleArgs{
+		A:               wire.ConstraintGeomRef{Occurrence: occs[0].ID(), Entity: topKey},
+		B:               wire.ConstraintGeomRef{Occurrence: occs[1].ID(), Entity: botKey},
+		Angle:           stdmath.Pi / 4,
+		Solution:        "reference-vector",
+		ReferenceVector: wire.ConstraintGeomRef{Occurrence: occs[0].ID(), Entity: topKey},
+	})
+	var added wire.ConstraintResult
+	call(t, r, s, "assemblyConstraints.addAngle", withAxis, &added)
+	if added.Constraint.Type != "angle" {
+		t.Errorf("added = %+v, want an angle constraint", added.Constraint)
+	}
+}
+
 // dofOfOccurrence returns the reported DOF for an occurrence id in a health result.
 func dofOfOccurrence(h wire.AssemblyHealthResult, id uint64) int {
 	for _, o := range h.Occurrences {
