@@ -54,8 +54,9 @@ type DrawingView struct {
 	orientation types.BaseViewOrientation
 	direction   types.ProjectionDirection
 	scale       float64
-	style       types.DrawingViewStyle
-	centerX     float64 // sheet millimetres
+	style       types.DrawingViewStyle // authored style; FromBase resolves to the base at recompute
+	effStyle    types.DrawingViewStyle // the style actually rendered this recompute (FromBase resolved, #1985)
+	centerX     float64                // sheet millimetres
 	centerY     float64
 	curves      []DrawingCurve
 }
@@ -142,6 +143,12 @@ func (v *DrawingView) VisibleHidden() (visible, hidden int) {
 // clipped cut-away projection (cut outline + hatch); other views run plain HLR. In wireframe
 // style every edge is drawn visible (no hidden-line removal).
 func (v *DrawingView) recompute(body *topo.Body, basis hlr.View) {
+	// A concrete style sets the effective style here so it holds even when a view is recomputed on
+	// its own (e.g. right after AddBase); a FromBase style keeps whatever the collection pre-pass
+	// resolved it to (#1985).
+	if v.style != types.FromBaseViewStyle {
+		v.effStyle = v.style
+	}
 	segs := v.project(body, basis)
 	v.curves = make([]DrawingCurve, 0, len(segs))
 	switch v.viewType {
@@ -185,8 +192,32 @@ func (v *DrawingView) recomputeDraftFrame() {
 
 // appendCurve places a model-2D segment on the sheet and adds it to the view's curves.
 func (v *DrawingView) appendCurve(a, b math.Point2, visible bool, kind types.DrawingCurveKind, edgeKey []byte) {
+	// The hidden-line-removed style keeps only visible edges, so a hidden model edge produces no
+	// curve at all (#1985). Non-edge curves (section fills, break glyphs) are always kept.
+	if !visible && kind == types.DrawingEdgeCurve && v.effStyle.RemovesHiddenEdges() {
+		return
+	}
 	v.curves = append(v.curves, DrawingCurve{A: v.place(a), B: v.place(b), Visible: visible, kind: kind, edgeKey: edgeKey})
 }
+
+// resolveEffectiveStyle sets the view's effective render style for this recompute, following a
+// FromBase authored style to the named base view's style so a derived view tracks its parent
+// associatively (#1985) without overwriting the authored style. A base view (or a missing parent)
+// with FromBase falls back to the hidden-line default. lookup returns a view's authored style by name.
+func (v *DrawingView) resolveEffectiveStyle(lookup func(name string) (types.DrawingViewStyle, bool)) {
+	v.effStyle = v.style
+	if v.style != types.FromBaseViewStyle {
+		return
+	}
+	if s, ok := lookup(v.baseView); ok && s != types.FromBaseViewStyle {
+		v.effStyle = s
+		return
+	}
+	v.effStyle = types.HiddenLineViewStyle
+}
+
+// EffectiveStyle returns the style the view actually renders with (FromBase resolved), for reads.
+func (v *DrawingView) EffectiveStyle() types.DrawingViewStyle { return v.effStyle }
 
 // project runs the projection a view's type calls for: a section view's clipped cut-away, or
 // plain hidden-line projection for every other kind.

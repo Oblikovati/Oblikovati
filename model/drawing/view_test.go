@@ -72,6 +72,42 @@ func TestAddBaseViewIsoProjectsCube(t *testing.T) {
 	}
 }
 
+// TestHiddenLineRemovedDropsHiddenCurves the hidden-line-removed style keeps the same visible edges
+// as hidden-line but produces ZERO hidden curves (#1985): the same iso cube that shows 9/3 hidden-
+// line shows 9/0.
+func TestHiddenLineRemovedDropsHiddenCurves(t *testing.T) {
+	c := drawingWithBox(t)
+	v, err := c.Sheets().Active().Views().AddBase(BaseViewSpec{
+		Orientation: types.BaseViewIso, Scale: 1, CenterX: 150, CenterY: 100, Style: types.HiddenLineRemovedViewStyle,
+	})
+	if err != nil {
+		t.Fatalf("AddBase: %v", err)
+	}
+	if visible, hidden := v.VisibleHidden(); visible != 9 || hidden != 0 {
+		t.Errorf("hidden-line-removed iso cube = %d visible / %d hidden, want 9/0", visible, hidden)
+	}
+}
+
+// TestFromBaseResolvesToParentStyle a FromBase view renders with its base view's style, and falls
+// back to the hidden-line default when the base is missing (#1985).
+func TestFromBaseResolvesToParentStyle(t *testing.T) {
+	v := &DrawingView{style: types.FromBaseViewStyle, baseView: "FRONT"}
+	v.resolveEffectiveStyle(func(name string) (types.DrawingViewStyle, bool) {
+		if name == "FRONT" {
+			return types.HiddenLineRemovedViewStyle, true
+		}
+		return 0, false
+	})
+	if v.EffectiveStyle() != types.HiddenLineRemovedViewStyle {
+		t.Errorf("FromBase effective style = %v, want the base's hiddenLineRemoved", v.EffectiveStyle())
+	}
+	orphan := &DrawingView{style: types.FromBaseViewStyle, baseView: "GONE"}
+	orphan.resolveEffectiveStyle(func(string) (types.DrawingViewStyle, bool) { return 0, false })
+	if orphan.EffectiveStyle() != types.HiddenLineViewStyle {
+		t.Errorf("orphan FromBase effective style = %v, want the hidden-line default", orphan.EffectiveStyle())
+	}
+}
+
 func TestAddBaseViewRequiresModel(t *testing.T) {
 	c := NewContent() // no body resolver / reference
 	if _, err := c.Sheets().Active().Views().AddBase(BaseViewSpec{Orientation: types.BaseViewFront}); err == nil {

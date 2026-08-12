@@ -468,6 +468,7 @@ func (vs *DrawingViews) EditProjected(name string, dir types.ProjectionDirection
 // path after a model edit. Draft views (no model) refresh their frame regardless; the
 // model-backed views are left untouched when no model resolves.
 func (vs *DrawingViews) Recompute() {
+	vs.resolveEffectiveStyles()
 	body, ok := vs.resolveBody()
 	for _, v := range vs.items {
 		if v.viewType == types.DrawingViewDraft {
@@ -480,6 +481,20 @@ func (vs *DrawingViews) Recompute() {
 		if basis, ok := vs.basisFor(v, bodyCenter(body)); ok {
 			v.recompute(body, basis)
 		}
+	}
+}
+
+// resolveEffectiveStyles resolves each view's FromBase style to its base view's style before the
+// projection pass, so a derived view renders with its parent's style associatively (#1985).
+func (vs *DrawingViews) resolveEffectiveStyles() {
+	lookup := func(name string) (types.DrawingViewStyle, bool) {
+		if base, ok := vs.ByName(name); ok {
+			return base.style, true
+		}
+		return 0, false
+	}
+	for _, v := range vs.items {
+		v.resolveEffectiveStyle(lookup)
 	}
 }
 
