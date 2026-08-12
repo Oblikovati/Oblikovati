@@ -28,6 +28,11 @@ func jointInfo(j assembly.Joint) wire.JointInfo {
 		Limits:           jointLimitsInfo(j.Limits()),
 		Health:           j.Health().String(),
 		Suppressed:       j.Suppressed(),
+		Gap:              j.Gap(),
+		LinearPosition:   j.LinearPosition(),
+		AngularPosition:  j.AngularPosition(),
+		Locked:           j.Locked(),
+		Protected:        j.Protected(),
 	}
 }
 

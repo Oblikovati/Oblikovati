@@ -32,6 +32,7 @@ func (r *Router) registerAssemblyJointHandlers() {
 	r.mutating(wire.MethodAssemblyJointsDelete, "Delete Joint", typedAssembly(assemblyJointDelete))
 	r.mutating(wire.MethodAssemblyJointsSetLimits, "Edit Joint", typedAssembly(assemblyJointSetLimits))
 	r.mutating(wire.MethodAssemblyJointsSetFlip, "Edit Joint", typedAssembly(assemblyJointSetFlip))
+	r.mutating(wire.MethodAssemblyJointsSetState, "Edit Joint", typedAssembly(assemblyJointSetState))
 	r.readOnly(wire.MethodDSJointsList, assemblyQuery(dsJointsList))
 	r.mutating(wire.MethodDSJointsAdd, "Add Joint", dsJointAdd)
 	r.mutating(wire.MethodDSJointsSetImposedMotion, "Edit Joint Motion", typedAssembly(dsJointSetImposedMotion))
@@ -76,6 +77,9 @@ func jointAdder(add func(*assembly.JointSet, assembly.Ref, assembly.Ref) assembl
 		if in.Flip {
 			_ = asm.Joints().SetFlip(j.ID(), true)
 		}
+		if in.Gap != 0 {
+			_ = asm.Joints().SetGap(j.ID(), in.Gap)
+		}
 		asm.SolveConstraints()
 		return json.Marshal(wire.AssemblyJointResult{Joint: jointInfo(j)})
 	}
@@ -98,6 +102,53 @@ func assemblyJointSetLimits(_ *app.Session, asm *compdef.AssemblyComponentDefini
 		return wire.AssemblyJointResult{}, err
 	}
 	return jointResult(asm, in.ID), nil
+}
+
+// assemblyJointSetState applies any subset of a joint's seating and state (#1970/#1974) — gap,
+// linear/angular rest position, locked, protected — re-solves, and returns the joint's info.
+func assemblyJointSetState(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.SetJointStateArgs) (wire.AssemblyJointResult, error) {
+	joints := asm.Joints()
+	if err := applyJointState(joints, in); err != nil {
+		return wire.AssemblyJointResult{}, err
+	}
+	asm.SolveConstraints()
+	return jointResult(asm, in.ID), nil
+}
+
+// applyJointState sets each present state field onto the joint with id in.ID.
+func applyJointState(joints *assembly.JointSet, in wire.SetJointStateArgs) error {
+	if in.Gap != nil {
+		if err := joints.SetGap(in.ID, *in.Gap); err != nil {
+			return err
+		}
+	}
+	if in.LinearPosition != nil || in.AngularPosition != nil {
+		j := joints.ByID(in.ID)
+		if j == nil {
+			return fmt.Errorf("%s: no joint with id %d", wire.MethodAssemblyJointsSetState, in.ID)
+		}
+		lin, ang := valueOr(in.LinearPosition, j.LinearPosition()), valueOr(in.AngularPosition, j.AngularPosition())
+		if err := joints.SetPositions(in.ID, lin, ang); err != nil {
+			return err
+		}
+	}
+	if in.Locked != nil {
+		if err := joints.SetLocked(in.ID, *in.Locked); err != nil {
+			return err
+		}
+	}
+	if in.Protected != nil {
+		return joints.SetProtected(in.ID, *in.Protected)
+	}
+	return nil
+}
+
+// valueOr returns *p when set, else fallback.
+func valueOr(p *float64, fallback float64) float64 {
+	if p != nil {
+		return *p
+	}
+	return fallback
 }
 
 // assemblyJointSetFlip sets a joint's flip sense and returns its info.
