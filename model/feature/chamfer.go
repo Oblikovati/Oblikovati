@@ -211,20 +211,24 @@ func keyText(k []byte) string {
 // the first adjacent face, d2 along the second): equal distance, two distances, or a distance
 // plus the chamfer-face angle (d2 = d1·tan θ, exact for perpendicular faces, the box case).
 func chamferSetbacks(def *ChamferDefinition) (d1, d2 float64, err error) {
-	d1 = callOrZero(def.Distance)
-	switch def.Type {
+	return chamferSetbackValues(def.Type, callOrZero(def.Distance), callOrZero(def.Distance2), callOrZero(def.Angle))
+}
+
+// chamferSetbackValues maps a chamfer type and its raw inputs to the two face setbacks (d1, d2).
+// Shared by the part chamfer and the sheet-metal corner chamfer (#1967) so the distance /
+// two-distance / distance-and-angle rule lives in one place. angle is in radians.
+func chamferSetbackValues(ct types.ChamferType, d1, d2Raw, angle float64) (float64, float64, error) {
+	switch ct {
 	case types.ChamferTwoDistances:
-		d2 = callOrZero(def.Distance2)
+		return d1, d2Raw, nil
 	case types.ChamferDistanceAndAngle:
-		a := callOrZero(def.Angle)
-		if a <= 0 || a >= stdmath.Pi/2 {
-			return 0, 0, fmt.Errorf("chamfer: angle %g rad must be in (0, π/2)", a)
+		if angle <= 0 || angle >= stdmath.Pi/2 {
+			return 0, 0, fmt.Errorf("chamfer: angle %g rad must be in (0, π/2)", angle)
 		}
-		d2 = d1 * stdmath.Tan(a)
+		return d1, d1 * stdmath.Tan(angle), nil
 	default: // ChamferDistance (and the zero value): symmetric
-		d2 = d1
+		return d1, d1, nil
 	}
-	return d1, d2, nil
 }
 
 // chamferWedges builds a plain CUT wedge for each edge (setbacks d1, d2) — the convex-only path

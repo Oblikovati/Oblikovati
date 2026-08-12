@@ -40,6 +40,13 @@ func TestSheetMetalCornerApply(t *testing.T) {
 	}
 	expectMergedSolid(t, out, "corner")
 
+	// A distance-and-angle chamfer plumbs its angle through to a healthy solid.
+	if _, err := applyMap(t, s, "sheetMetalCorner", map[string]any{
+		"edges": []string{edge}, "treatment": "chamfer", "size": "3 mm", "chamferType": "distanceAndAngle", "angle": "30 deg",
+	}); err != nil {
+		t.Fatalf("distance-and-angle chamfer apply: %v", err)
+	}
+
 	// Error paths.
 	if _, err := apply(t, profiledPart(t), "sheetMetalCorner", `{"edges":["x"],"treatment":"round","size":"1 mm"}`); err == nil {
 		t.Error("corner on a non-sheet-metal part must error")
@@ -52,5 +59,8 @@ func TestSheetMetalCornerApply(t *testing.T) {
 	}
 	if _, err := applyMap(t, s, "sheetMetalCorner", map[string]any{"edges": []string{edge}, "treatment": "round", "size": "bad"}); err == nil {
 		t.Error("corner with a bad size must error")
+	}
+	if _, err := applyMap(t, s, "sheetMetalCorner", map[string]any{"edges": []string{edge}, "treatment": "chamfer", "size": "1 mm", "chamferType": "beveloid"}); err == nil {
+		t.Error("corner with an unknown chamferType must error")
 	}
 }

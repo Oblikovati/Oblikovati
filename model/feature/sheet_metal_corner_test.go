@@ -6,9 +6,26 @@ import (
 	"math"
 	"testing"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 )
+
+// verticalCornerEdges returns all through-thickness (Z-aligned) corner edges of the sheet.
+func verticalCornerEdges(t *testing.T, body *topo.Body) []*topo.Edge {
+	t.Helper()
+	var out []*topo.Edge
+	for _, e := range body.Edges() {
+		a, b := e.StartVertex().Point(), e.EndVertex().Point()
+		if math.Abs(a.X-b.X) < 1e-6 && math.Abs(a.Y-b.Y) < 1e-6 && math.Abs(a.Z-b.Z) > 1e-6 {
+			out = append(out, e)
+		}
+	}
+	if len(out) < 2 {
+		t.Fatalf("need ≥2 vertical corner edges, found %d", len(out))
+	}
+	return out
+}
 
 // verticalCornerEdge returns a through-thickness (Z-aligned) corner edge of the sheet — the
 // edge a sheet-metal corner treatment finishes.
@@ -79,6 +96,83 @@ func TestCornerRoundRemovesCorner(t *testing.T) {
 	}
 }
 
+// TestCornerChamferTwoDistances a two-distance chamfer cuts an ASYMMETRIC triangle (d1 on one
+// face, d2 on the other): the volume drops by d1·d2/2·thickness.
+func TestCornerChamferTwoDistances(t *testing.T) {
+	fs, _ := seedSheetMetalSheet(t, 4, nil)
+	edge := verticalCornerEdge(t, fs.Result()[0])
+	const d1, d2 = 1.0, 0.5
+	pf := NewSheetMetalCornerFeatures(fs).Add(&SheetMetalCornerDefinition{
+		EdgeKeys: [][]byte{edge.ReferenceKey()}, Treatment: CornerChamfer, ChamferType: types.ChamferTwoDistances,
+		Size: func() float64 { return d1 }, Distance2: func() float64 { return d2 },
+	})
+	fs.Recompute()
+	if !pf.Health().OK() {
+		t.Fatalf("two-distance corner chamfer sick: %+v", pf.Health())
+	}
+	body := fs.Result()[0]
+	if r := ops.Validate(body); !r.Valid {
+		t.Fatalf("two-distance chamfer invalid: %v", r.Issues)
+	}
+	want := flatSheetVolume - (d1*d2/2)*0.2
+	if got := sheetVolume(body); math.Abs(got-want) > 1e-4 {
+		t.Errorf("two-distance chamfer volume = %.5f, want %.5f", got, want)
+	}
+}
+
+// TestCornerChamferDistanceAndAngle a distance-and-angle chamfer sets the second setback from the
+// angle (d2 = d1·tan θ), so the volume drops by d1·(d1·tanθ)/2·thickness.
+func TestCornerChamferDistanceAndAngle(t *testing.T) {
+	fs, _ := seedSheetMetalSheet(t, 4, nil)
+	edge := verticalCornerEdge(t, fs.Result()[0])
+	const d1 = 1.0
+	angle := math.Pi / 6 // 30°, tan = 0.5773…
+	pf := NewSheetMetalCornerFeatures(fs).Add(&SheetMetalCornerDefinition{
+		EdgeKeys: [][]byte{edge.ReferenceKey()}, Treatment: CornerChamfer, ChamferType: types.ChamferDistanceAndAngle,
+		Size: func() float64 { return d1 }, Angle: func() float64 { return angle },
+	})
+	fs.Recompute()
+	if !pf.Health().OK() {
+		t.Fatalf("distance-and-angle corner chamfer sick: %+v", pf.Health())
+	}
+	body := fs.Result()[0]
+	if r := ops.Validate(body); !r.Valid {
+		t.Fatalf("distance-and-angle chamfer invalid: %v", r.Issues)
+	}
+	want := flatSheetVolume - (d1*(d1*math.Tan(angle))/2)*0.2
+	if got := sheetVolume(body); math.Abs(got-want) > 1e-4 {
+		t.Errorf("distance-and-angle chamfer volume = %.5f, want %.5f", got, want)
+	}
+}
+
+// TestCornerRoundMultipleRadii a corner round with two edge sets rolls a DIFFERENT radius on each
+// corner in one feature: the volume drops by both corner slivers.
+func TestCornerRoundMultipleRadii(t *testing.T) {
+	fs, _ := seedSheetMetalSheet(t, 4, nil)
+	edges := verticalCornerEdges(t, fs.Result()[0])
+	const r1, r2 = 1.0, 0.5
+	pf := NewSheetMetalCornerFeatures(fs).Add(&SheetMetalCornerDefinition{
+		Treatment: CornerRound,
+		RoundSets: []CornerRoundSet{
+			{EdgeKeys: [][]byte{edges[0].ReferenceKey()}, Radius: func() float64 { return r1 }},
+			{EdgeKeys: [][]byte{edges[1].ReferenceKey()}, Radius: func() float64 { return r2 }},
+		},
+	})
+	fs.Recompute()
+	if !pf.Health().OK() {
+		t.Fatalf("multi-radius corner round sick: %+v", pf.Health())
+	}
+	body := fs.Result()[0]
+	if r := ops.Validate(body); !r.Valid {
+		t.Fatalf("multi-radius round invalid: %v", r.Issues)
+	}
+	sliver := func(r float64) float64 { return (r*r - math.Pi*r*r/4) * 0.2 }
+	want := flatSheetVolume - sliver(r1) - sliver(r2)
+	if got := sheetVolume(body); math.Abs(got-want)/want > 0.02 {
+		t.Errorf("multi-radius round volume = %.5f, want ~%.5f (±2%%)", got, want)
+	}
+}
+
 // TestCornerRejectsBadInput a corner with no edges or a non-positive size goes sick.
 func TestCornerRejectsBadInput(t *testing.T) {
 	fs, _ := seedSheetMetalSheet(t, 4, nil)
@@ -136,6 +230,46 @@ func TestCornerRoundTrip(t *testing.T) {
 	}
 	if fresh.Count() != 1 || fresh.Item(0).Kind() != "sheet-metal-corner" {
 		t.Errorf("restored = %d features, want one corner", fresh.Count())
+	}
+}
+
+// TestCornerVariantRoundTrip a two-distance chamfer and a multi-set round both persist their
+// variant fields and restore them.
+func TestCornerVariantRoundTrip(t *testing.T) {
+	fs := NewPartFeatures(nil)
+	NewSheetMetalCornerFeatures(fs).Add(&SheetMetalCornerDefinition{
+		EdgeKeys: [][]byte{[]byte("k1")}, Treatment: CornerChamfer, ChamferType: types.ChamferTwoDistances,
+		Size: func() float64 { return 1 }, Distance2: func() float64 { return 0.5 }, FaceKey: []byte("f1"),
+	})
+	NewSheetMetalCornerFeatures(fs).Add(&SheetMetalCornerDefinition{
+		Treatment: CornerRound,
+		RoundSets: []CornerRoundSet{
+			{EdgeKeys: [][]byte{[]byte("a")}, Radius: func() float64 { return 1 }},
+			{EdgeKeys: [][]byte{[]byte("b")}, Radius: func() float64 { return 0.5 }},
+		},
+	})
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	ch := data[0].SheetMetalCorner
+	if ch.ChamferType != int32(types.ChamferTwoDistances) || ch.Distance2 != 0.5 || ch.FaceKey == "" {
+		t.Errorf("chamfer payload = %+v, want twoDistances / 0.5 / a face key", ch)
+	}
+	if rd := data[1].SheetMetalCorner; len(rd.RoundSets) != 2 || rd.RoundSets[1].Radius != 0.5 {
+		t.Errorf("round payload = %+v, want 2 sets / second radius 0.5", rd)
+	}
+	fresh := NewPartFeatures(nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	got := fresh.Item(0).Definition().(*SheetMetalCornerFeature).Definition()
+	if got.ChamferType != types.ChamferTwoDistances || evalFloat(got.Distance2) != 0.5 || string(got.FaceKey) != "f1" {
+		t.Errorf("restored chamfer = %+v, want twoDistances / 0.5 / f1", got)
+	}
+	round := fresh.Item(1).Definition().(*SheetMetalCornerFeature).Definition()
+	if len(round.RoundSets) != 2 || evalFloat(round.RoundSets[1].Radius) != 0.5 || string(round.RoundSets[0].EdgeKeys[0]) != "a" {
+		t.Errorf("restored round = %+v, want 2 sets / second radius 0.5 / first edge a", round)
 	}
 }
 

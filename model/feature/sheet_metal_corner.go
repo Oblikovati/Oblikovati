@@ -5,6 +5,7 @@ package feature
 import (
 	"fmt"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 )
@@ -38,10 +39,28 @@ func ParseCornerTreatment(s string) (CornerTreatment, bool) {
 
 // SheetMetalCornerDefinition is the corner recipe: the corner edges (through-thickness edge
 // reference keys), the treatment, and its size (chamfer setback / round radius).
+//
+// A chamfer takes its variant from ChamferType (#1967): the single Size (equal setbacks), Size plus
+// Angle (distance-and-angle), or Size plus Distance2 (two distances). A round may instead carry
+// RoundSets — several edge groups each with its own radius, one feature — in which case EdgeKeys/Size
+// are unused; a single-size round leaves RoundSets empty.
 type SheetMetalCornerDefinition struct {
 	EdgeKeys  [][]byte
 	Treatment CornerTreatment
 	Size      func() float64
+	// ChamferType / Distance2 / Angle / FaceKey shape the chamfer variant. Angle is in radians.
+	ChamferType types.ChamferType
+	Distance2   func() float64
+	Angle       func() float64
+	FaceKey     []byte
+	// RoundSets carries a multi-radius corner round; empty ⇒ the single EdgeKeys/Size round.
+	RoundSets []CornerRoundSet
+}
+
+// CornerRoundSet is one radius group of a multi-set corner round (#1967).
+type CornerRoundSet struct {
+	EdgeKeys [][]byte
+	Radius   func() float64
 }
 
 // SheetMetalCornerFeature finishes the sheet's corners each recompute.
@@ -62,42 +81,113 @@ func (f *SheetMetalCornerFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	size := evalFloat(f.def.Size)
-	if size <= 0 {
-		return Output{}, fmt.Errorf("sheet-metal corner: size must be positive, got %g", size)
-	}
-	if len(f.def.EdgeKeys) == 0 {
-		return Output{}, fmt.Errorf("sheet-metal corner: no corner edges selected")
-	}
 	if f.def.Treatment == CornerRound {
-		return f.roundCorners(in, body, size)
+		return f.roundCorners(in, body)
 	}
-	return f.chamferCorners(in, body, size)
+	return f.chamferCorners(in, body)
 }
 
-// roundCorners rolls a fillet of the given radius around the corner edges.
-func (f *SheetMetalCornerFeature) roundCorners(in Input, body *topo.Body, radius float64) (Output, error) {
-	// Heal the keys before the kernel pass (ops.FilletEdges re-resolves by exact key), so a
-	// recovered reference is addressed by its live key and the heal reaches the Output (P6).
-	edges, heals, err := resolveEdges(body, f.def.EdgeKeys, nil)
+// roundCorners rolls a fillet around each round edge set at that set's radius (#1967). A single set
+// takes the simple per-radius path (the analytic cylinder-rim blend); several sets round in ONE
+// kernel pass with per-edge radii, so the sets do not re-lineage each other's edges between passes.
+func (f *SheetMetalCornerFeature) roundCorners(in Input, body *topo.Body) (Output, error) {
+	sets := f.roundSets()
+	if len(sets) == 0 {
+		return Output{}, fmt.Errorf("sheet-metal corner: no corner edges selected")
+	}
+	if len(sets) == 1 {
+		res, heals, err := f.roundOneSet(body, sets[0])
+		if err != nil {
+			return Output{}, err
+		}
+		return Output{Bodies: replaceBody(in.Bodies, body, res), Heals: heals}, nil
+	}
+	return f.roundManySets(in, body, sets)
+}
+
+// roundManySets rounds every set's edges at its own radius in one FilletEdgesCorner pass, healing
+// each pick's key first (ADR-0043 P6) so a recovered reference reaches the kernel and the Output.
+func (f *SheetMetalCornerFeature) roundManySets(in Input, body *topo.Body, sets []CornerRoundSet) (Output, error) {
+	picks, err := cornerRoundPicks(sets)
 	if err != nil {
 		return Output{}, err
 	}
-	res, err := ops.FilletEdges(body, currentKeys(edges), radius)
+	heals, err := healPickKeys(body, picks)
+	if err != nil {
+		return Output{}, err
+	}
+	work := planarizeFilletPicks(body, picks, f.featName)
+	res, err := ops.FilletEdgesCornerDiag(work, picks, cornerStrategy(types.FilletCornerMiter), concaveFill(0), in.Diag)
 	if err != nil {
 		return Output{}, fmt.Errorf("sheet-metal corner round: %w", err)
 	}
 	return Output{Bodies: replaceBody(in.Bodies, body, res), Heals: heals}, nil
 }
 
-// chamferCorners cuts a flat bevel of the given setback across the corner edges.
-func (f *SheetMetalCornerFeature) chamferCorners(in Input, body *topo.Body, setback float64) (Output, error) {
+// cornerRoundPicks flattens the round edge sets into per-edge radius picks, erroring on a
+// non-positive radius.
+func cornerRoundPicks(sets []CornerRoundSet) ([]ops.EdgeFilletRadii, error) {
+	var picks []ops.EdgeFilletRadii
+	for _, set := range sets {
+		radius := evalFloat(set.Radius)
+		if radius <= 0 {
+			return nil, fmt.Errorf("sheet-metal corner round: radius must be positive, got %g", radius)
+		}
+		for _, k := range set.EdgeKeys {
+			picks = append(picks, ops.EdgeFilletRadii{Key: k, R0: radius, R1: radius})
+		}
+	}
+	return picks, nil
+}
+
+// roundSets returns the round's edge sets — the explicit RoundSets, or the single EdgeKeys/Size set.
+func (f *SheetMetalCornerFeature) roundSets() []CornerRoundSet {
+	if len(f.def.RoundSets) > 0 {
+		return f.def.RoundSets
+	}
+	if len(f.def.EdgeKeys) == 0 {
+		return nil
+	}
+	return []CornerRoundSet{{EdgeKeys: f.def.EdgeKeys, Radius: f.def.Size}}
+}
+
+// roundOneSet fillets one edge set on the running body at its radius. It heals the keys before the
+// kernel pass (ops.FilletEdges re-resolves by exact key) so a recovered reference reaches the Output.
+func (f *SheetMetalCornerFeature) roundOneSet(body *topo.Body, set CornerRoundSet) (*topo.Body, []ReferenceHeal, error) {
+	radius := evalFloat(set.Radius)
+	if radius <= 0 {
+		return nil, nil, fmt.Errorf("sheet-metal corner round: radius must be positive, got %g", radius)
+	}
+	edges, heals, err := resolveEdges(body, set.EdgeKeys, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	res, err := ops.FilletEdges(body, currentKeys(edges), radius)
+	if err != nil {
+		return nil, nil, fmt.Errorf("sheet-metal corner round: %w", err)
+	}
+	return res, heals, nil
+}
+
+// chamferCorners cuts a flat bevel across the corner edges, its two setbacks taken from the chamfer
+// variant — equal distance, distance-and-angle, or two distances (#1967).
+func (f *SheetMetalCornerFeature) chamferCorners(in Input, body *topo.Body) (Output, error) {
+	if len(f.def.EdgeKeys) == 0 {
+		return Output{}, fmt.Errorf("sheet-metal corner: no corner edges selected")
+	}
+	d1, d2, err := chamferSetbackValues(f.def.ChamferType, evalFloat(f.def.Size), evalFloat(f.def.Distance2), evalFloat(f.def.Angle))
+	if err != nil {
+		return Output{}, fmt.Errorf("sheet-metal corner chamfer: %w", err)
+	}
+	if d1 <= 0 || d2 <= 0 {
+		return Output{}, fmt.Errorf("sheet-metal corner chamfer: setbacks must be positive, got %g and %g", d1, d2)
+	}
 	edges, heals, err := resolveEdges(body, f.def.EdgeKeys, nil)
 	if err != nil {
 		return Output{}, err
 	}
 	work, edges := planarizeForEdges(body, edges, f.featName)
-	tools, err := chamferWedges(edges, setback, setback, chamferRun{}, f.featName)
+	tools, err := chamferWedges(edges, d1, d2, chamferRun{}, f.featName)
 	if err != nil {
 		return Output{}, fmt.Errorf("sheet-metal corner chamfer: %w", err)
 	}
