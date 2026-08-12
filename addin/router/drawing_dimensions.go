@@ -25,6 +25,7 @@ func (r *Router) registerDrawingDimensionHandlers() {
 	r.mutating(wire.MethodDrawingDimensionsAddOrdinate, "Add Dimension", typedCtx(activeSheetDimensions, drawingDimensionsAddOrdinate))
 	r.mutating(wire.MethodDrawingDimensionsAddArcLength, "Add Dimension", typedCtx(activeSheetDimensions, drawingDimensionsAddArcLength))
 	r.mutating(wire.MethodDrawingDimensionsDelete, "Delete Dimension", typedCtx(activeSheetDimensions, drawingDimensionsDelete))
+	r.mutating(wire.MethodDrawingDimensionsSetTextStyle, "Edit Dimension", typedCtx(activeSheetDimensions, drawingDimensionsSetTextStyle))
 }
 
 // activeSheetDimensions returns the active drawing's active-sheet dimension collection.
@@ -197,5 +198,20 @@ func drawingDimensionInfo(d *drawing.DrawingDimension) wire.DrawingDimensionInfo
 	return wire.DrawingDimensionInfo{
 		Name: d.Name(), Type: d.Type().String(), ViewName: d.ViewName(),
 		ValueMM: d.ValueMM(), ValueDeg: d.ValueDeg(), Text: d.Text(), CurveCount: d.CurveCount(),
+		Prefix: d.Prefix(), Suffix: d.Suffix(), OverrideText: d.OverrideText(),
+		HideValue: d.HideValue(), DualUnit: d.DualUnit(),
 	}
+}
+
+// drawingDimensionsSetTextStyle applies the named dimension's text overrides (#1992/#1993).
+func drawingDimensionsSetTextStyle(s *app.Session, ds *drawing.DrawingDimensions, in wire.SetDimensionTextStyleArgs) (wire.ListDrawingDimensionsResult, error) {
+	style := drawing.DimensionTextStyle{
+		Prefix: in.Prefix, Suffix: in.Suffix, OverrideText: in.OverrideText,
+		HideValue: in.HideValue, DualUnit: in.DualUnit,
+	}
+	if err := ds.SetTextStyle(in.Name, style); err != nil {
+		return wire.ListDrawingDimensionsResult{}, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return listDimensions(ds), nil
 }

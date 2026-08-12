@@ -37,18 +37,48 @@ type DrawingDimension struct {
 	axisHorizontal bool
 	valueMM        float64 // measured model distance (mm), scale-independent (0 for angular)
 	valueDeg       float64 // measured angle (degrees) for an angular dimension
-	text           string  // displayed text (the formatted value)
-	anchorX        float64 // text anchor (sheet mm), lifted off the dimension line by textGapMM
-	anchorY        float64
-	textDX         float64 // user text nudge from the anchor (sheet mm) — drag the text to set it
-	textDY         float64
-	nx             float64 // unit perpendicular of the dimension line — text-lift + line-drag direction
-	ny             float64
-	curves         []DrawingCurve
+	// Text overrides (#1992/#1993). overrideText replaces the whole label with free text; prefix and
+	// suffix wrap the value; hideValue drops the value (leaving only prefix/suffix); dualUnit appends
+	// the value converted to inches in brackets.
+	prefix       string
+	suffix       string
+	overrideText string
+	hideValue    bool
+	dualUnit     bool
+	text         string  // displayed text (the decorated value)
+	anchorX      float64 // text anchor (sheet mm), lifted off the dimension line by textGapMM
+	anchorY      float64
+	textDX       float64 // user text nudge from the anchor (sheet mm) — drag the text to set it
+	textDY       float64
+	nx           float64 // unit perpendicular of the dimension line — text-lift + line-drag direction
+	ny           float64
+	curves       []DrawingCurve
 }
 
 // textGapMM lifts the value text off the dimension line so it stays readable by default.
 const textGapMM = 5.0
+
+// mmPerInch converts the primary millimetre value to the dual-unit inch value.
+const mmPerInch = 25.4
+
+// decorate applies the dimension's text overrides to a formatted value (#1992/#1993): free-text
+// override replaces everything; otherwise the value (unless hidden) is wrapped by prefix/suffix and,
+// for a dual-unit dimension, followed by the value in inches. It is the single point every
+// per-type formatter routes its value through, so the overrides apply uniformly.
+func (d *DrawingDimension) decorate(value string) string {
+	if d.overrideText != "" {
+		return d.overrideText
+	}
+	core := value
+	if d.hideValue {
+		core = ""
+	}
+	out := d.prefix + core + d.suffix
+	if d.dualUnit {
+		out += " [" + strconv.FormatFloat(d.valueMM/mmPerInch, 'f', 3, 64) + " in]"
+	}
+	return out
+}
 
 var _ contract.DrawingDimension = (*DrawingDimension)(nil)
 
@@ -60,7 +90,14 @@ func (d *DrawingDimension) ValueMM() float64                 { return d.valueMM 
 func (d *DrawingDimension) ValueDeg() float64                { return d.valueDeg }
 func (d *DrawingDimension) Text() string                     { return d.text }
 func (d *DrawingDimension) CurveCount() int                  { return len(d.curves) }
-func (d *DrawingDimension) Curves() []DrawingCurve           { return d.curves }
+
+// Prefix, Suffix, OverrideText, HideValue and DualUnit expose the text overrides (#1992/#1993).
+func (d *DrawingDimension) Prefix() string         { return d.prefix }
+func (d *DrawingDimension) Suffix() string         { return d.suffix }
+func (d *DrawingDimension) OverrideText() string   { return d.overrideText }
+func (d *DrawingDimension) HideValue() bool        { return d.hideValue }
+func (d *DrawingDimension) DualUnit() bool         { return d.dualUnit }
+func (d *DrawingDimension) Curves() []DrawingCurve { return d.curves }
 
 // TextAnchorMM is the dimension line's midpoint (sheet mm) — where the value text is centred.
 func (d *DrawingDimension) TextAnchorMM() (x, y float64) {
@@ -95,6 +132,42 @@ func (ds *DrawingDimensions) decimals() int {
 		return p
 	}
 	return 0
+}
+
+// DimensionTextStyle carries the optional text overrides to apply to a dimension (#1992/#1993);
+// a nil field leaves that override unchanged.
+type DimensionTextStyle struct {
+	Prefix       *string
+	Suffix       *string
+	OverrideText *string
+	HideValue    *bool
+	DualUnit     *bool
+}
+
+// SetTextStyle applies the given text overrides to the named dimension and re-decorates its text
+// (#1992/#1993), erroring when no dimension carries that name.
+func (ds *DrawingDimensions) SetTextStyle(name string, style DimensionTextStyle) error {
+	d, ok := ds.ByName(name)
+	if !ok {
+		return fmt.Errorf("drawing: no dimension named %q", name)
+	}
+	if style.Prefix != nil {
+		d.prefix = *style.Prefix
+	}
+	if style.Suffix != nil {
+		d.suffix = *style.Suffix
+	}
+	if style.OverrideText != nil {
+		d.overrideText = *style.OverrideText
+	}
+	if style.HideValue != nil {
+		d.hideValue = *style.HideValue
+	}
+	if style.DualUnit != nil {
+		d.dualUnit = *style.DualUnit
+	}
+	ds.recompute(d)
+	return nil
 }
 
 // formatDimValue renders a dimension value at the active drafting standard's precision — fixed
@@ -429,7 +502,7 @@ func (ds *DrawingDimensions) recomputeOrdinate(d *DrawingDimension, view *Drawin
 	} else {
 		d.valueMM = math.Abs(float64(pp.Y-pd.Y)) * cmToMM
 	}
-	d.text = formatDimValue(d.valueMM, ds.decimals())
+	d.text = d.decorate(formatDimValue(d.valueMM, ds.decimals()))
 	curves, mx, my, nx, ny := ordinateDimensionCurves(view, view.place(pp), d.axisHorizontal)
 	d.curves = curves
 	d.setTextAnchor(mx, my, nx, ny, 1)
@@ -444,7 +517,7 @@ func (ds *DrawingDimensions) recomputeAngular(d *DrawingDimension, view *Drawing
 		return
 	}
 	d.valueDeg = angleBetweenDeg(a.dir, b.dir)
-	d.text = formatDimValue(d.valueDeg, ds.decimals()) + "°"
+	d.text = d.decorate(formatDimValue(d.valueDeg, ds.decimals()) + "°")
 	curves, mx, my, nx, ny := angularDimensionCurves(a, b)
 	d.curves = curves
 	d.setTextAnchor(mx, my, nx, ny, 1)
@@ -460,7 +533,7 @@ func (ds *DrawingDimensions) recomputeLinear(d *DrawingDimension, view *DrawingV
 	p1 := hlr.ProjectPoint(basis, va.Point())
 	p2 := hlr.ProjectPoint(basis, vb.Point())
 	d.valueMM = measureMM(d.dimType, p1, p2)
-	d.text = formatDimValue(d.valueMM, ds.decimals())
+	d.text = d.decorate(formatDimValue(d.valueMM, ds.decimals()))
 	s1, s2 := view.place(p1), view.place(p2)
 	ax, ay := dimensionAxis(d.dimType, s1, s2)
 	var mx, my float64
@@ -501,10 +574,10 @@ func (ds *DrawingDimensions) recomputeRadial(d *DrawingDimension, view *DrawingV
 		d.valueMM = 2 * radiusMM
 		// Ø (U+00D8) is the diameter prefix: it is in the head's Latin-1 font, unlike the
 		// typographic ⌀ (U+2300), which renders as a missing-glyph box.
-		d.text = "Ø" + formatDimValue(d.valueMM, ds.decimals())
+		d.text = d.decorate("Ø" + formatDimValue(d.valueMM, ds.decimals()))
 	} else {
 		d.valueMM = radiusMM
-		d.text = "R" + formatDimValue(d.valueMM, ds.decimals())
+		d.text = d.decorate("R" + formatDimValue(d.valueMM, ds.decimals()))
 	}
 	center := view.place(hlr.ProjectPoint(basis, circle.Center))
 	arc := view.place(hlr.ProjectPoint(basis, circle.PointAt(0)))
@@ -540,7 +613,7 @@ func (ds *DrawingDimensions) recomputeArcLength(d *DrawingDimension, view *Drawi
 		return
 	}
 	d.valueMM = lengthCM * cmToMM
-	d.text = formatDimValue(d.valueMM, ds.decimals())
+	d.text = d.decorate(formatDimValue(d.valueMM, ds.decimals()))
 	const samples = 32
 	pts := make([]gmath.Point2, 0, samples+1)
 	for i := 0; i <= samples; i++ {

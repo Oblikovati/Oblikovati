@@ -277,6 +277,47 @@ func TestDimensionTextLiftedAndDraggable(t *testing.T) {
 	}
 }
 
+// TestDimensionTextOverrides prefix/suffix wrap the value, hideValue drops it, a free-text override
+// replaces the whole label, and dual-unit appends the inch value (#1992/#1993).
+func TestDimensionTextOverrides(t *testing.T) {
+	c := drawingWithBox(t)
+	views := c.Sheets().Active().Views()
+	frontBase(t, views)
+	dims := c.Sheets().Active().Dimensions()
+	d, err := dims.AddLinear("D1", "FRONT", types.HorizontalDimension, 88, 80, 112, 80, -12)
+	if err != nil {
+		t.Fatalf("AddLinear: %v", err)
+	}
+	value := d.Text() // the bare formatted value, e.g. "24.00"
+	str := func(s string) *string { return &s }
+	yes := true
+
+	if err := dims.SetTextStyle("D1", DimensionTextStyle{Prefix: str("2x "), Suffix: str(" MAX")}); err != nil {
+		t.Fatalf("SetTextStyle: %v", err)
+	}
+	if got, want := d.Text(), "2x "+value+" MAX"; got != want {
+		t.Errorf("prefixed/suffixed text = %q, want %q", got, want)
+	}
+	if err := dims.SetTextStyle("D1", DimensionTextStyle{DualUnit: &yes}); err != nil {
+		t.Fatalf("SetTextStyle dual: %v", err)
+	}
+	if got := d.Text(); !strings.Contains(got, " in]") || !strings.HasPrefix(got, "2x ") {
+		t.Errorf("dual-unit text = %q, want the prefix kept and an inch suffix", got)
+	}
+	if err := dims.SetTextStyle("D1", DimensionTextStyle{HideValue: &yes}); err != nil {
+		t.Fatalf("SetTextStyle hide: %v", err)
+	}
+	if got := d.Text(); strings.Contains(got, value) {
+		t.Errorf("hidden-value text %q still shows the value %q", got, value)
+	}
+	if err := dims.SetTextStyle("D1", DimensionTextStyle{OverrideText: str("SEE NOTE 3")}); err != nil {
+		t.Fatalf("SetTextStyle override: %v", err)
+	}
+	if got := d.Text(); got != "SEE NOTE 3" {
+		t.Errorf("override text = %q, want the free text to replace everything", got)
+	}
+}
+
 // TestMoveLineShiftsDimensionLine: dragging the dimension line moves it perpendicular to itself.
 func TestMoveLineShiftsDimensionLine(t *testing.T) {
 	c := drawingWithBox(t)
