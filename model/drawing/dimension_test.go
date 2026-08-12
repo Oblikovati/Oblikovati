@@ -318,6 +318,45 @@ func TestDimensionTextOverrides(t *testing.T) {
 	}
 }
 
+// TestDimensionToleranceNotation the tolerance methods render after the value (#1990): symmetric a
+// single ±, deviation a +/− pair, and a fit class its class string; none leaves the value bare.
+func TestDimensionToleranceNotation(t *testing.T) {
+	c := drawingWithBox(t)
+	views := c.Sheets().Active().Views()
+	frontBase(t, views)
+	dims := c.Sheets().Active().Dimensions()
+	d, err := dims.AddLinear("D1", "FRONT", types.HorizontalDimension, 88, 80, 112, 80, -12)
+	if err != nil {
+		t.Fatalf("AddLinear: %v", err)
+	}
+	value := d.Text()
+
+	if err := dims.SetTolerance("D1", types.DimensionTolerance{Type: types.SymmetricTolerance, Plus: 0.1, Precision: 2}); err != nil {
+		t.Fatalf("SetTolerance symmetric: %v", err)
+	}
+	if got, want := d.Text(), value+" ±0.10"; got != want {
+		t.Errorf("symmetric tolerance text = %q, want %q", got, want)
+	}
+	if err := dims.SetTolerance("D1", types.DimensionTolerance{Type: types.DeviationTolerance, Plus: 0.2, Minus: 0.05, Precision: 2}); err != nil {
+		t.Fatalf("SetTolerance deviation: %v", err)
+	}
+	if got, want := d.Text(), value+" +0.20/-0.05"; got != want {
+		t.Errorf("deviation tolerance text = %q, want %q", got, want)
+	}
+	if err := dims.SetTolerance("D1", types.DimensionTolerance{Type: types.FitsTolerance, Fit: "H7"}); err != nil {
+		t.Fatalf("SetTolerance fits: %v", err)
+	}
+	if got, want := d.Text(), value+" H7"; got != want {
+		t.Errorf("fits tolerance text = %q, want %q", got, want)
+	}
+	if err := dims.SetTolerance("D1", types.DimensionTolerance{Type: types.NoTolerance}); err != nil {
+		t.Fatalf("SetTolerance none: %v", err)
+	}
+	if got := d.Text(); got != value {
+		t.Errorf("cleared tolerance text = %q, want the bare value %q", got, value)
+	}
+}
+
 // TestMoveLineShiftsDimensionLine: dragging the dimension line moves it perpendicular to itself.
 func TestMoveLineShiftsDimensionLine(t *testing.T) {
 	c := drawingWithBox(t)

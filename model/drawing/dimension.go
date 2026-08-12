@@ -45,8 +45,9 @@ type DrawingDimension struct {
 	overrideText string
 	hideValue    bool
 	dualUnit     bool
-	text         string  // displayed text (the decorated value)
-	anchorX      float64 // text anchor (sheet mm), lifted off the dimension line by textGapMM
+	tolerance    types.DimensionTolerance // engineering tolerance shown after the value (#1990)
+	text         string                   // displayed text (the decorated value)
+	anchorX      float64                  // text anchor (sheet mm), lifted off the dimension line by textGapMM
 	anchorY      float64
 	textDX       float64 // user text nudge from the anchor (sheet mm) — drag the text to set it
 	textDY       float64
@@ -73,12 +74,49 @@ func (d *DrawingDimension) decorate(value string) string {
 	if d.hideValue {
 		core = ""
 	}
-	out := d.prefix + core + d.suffix
+	out := d.prefix + core + d.toleranceNote() + d.suffix
 	if d.dualUnit {
 		out += " [" + strconv.FormatFloat(d.valueMM/mmPerInch, 'f', 3, 64) + " in]"
 	}
 	return out
 }
+
+// toleranceNote formats the dimension's engineering tolerance to append after the value (#1990):
+// a symmetric ±, an asymmetric +/− deviation, stacked max/min limits, or an ISO fit class.
+func (d *DrawingDimension) toleranceNote() string {
+	t := d.tolerance
+	prec := t.Precision
+	if prec < 0 {
+		prec = 0
+	}
+	f := func(v float64) string { return formatDimValue(v, prec) }
+	switch t.Type {
+	case types.SymmetricTolerance:
+		return " ±" + f(t.Plus)
+	case types.DeviationTolerance:
+		return " +" + f(t.Plus) + "/-" + f(t.Minus)
+	case types.LimitsTolerance:
+		return " " + f(d.valueMM+t.Plus) + "/" + f(d.valueMM-t.Minus)
+	case types.FitsTolerance:
+		return " " + t.Fit
+	default:
+		return ""
+	}
+}
+
+// SetTolerance sets the named dimension's engineering tolerance and re-decorates its text (#1990).
+func (ds *DrawingDimensions) SetTolerance(name string, tol types.DimensionTolerance) error {
+	d, ok := ds.ByName(name)
+	if !ok {
+		return fmt.Errorf("drawing: no dimension named %q", name)
+	}
+	d.tolerance = tol
+	ds.recompute(d)
+	return nil
+}
+
+// Tolerance exposes the dimension's engineering tolerance (#1990).
+func (d *DrawingDimension) Tolerance() types.DimensionTolerance { return d.tolerance }
 
 var _ contract.DrawingDimension = (*DrawingDimension)(nil)
 

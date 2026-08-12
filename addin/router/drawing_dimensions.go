@@ -26,6 +26,7 @@ func (r *Router) registerDrawingDimensionHandlers() {
 	r.mutating(wire.MethodDrawingDimensionsAddArcLength, "Add Dimension", typedCtx(activeSheetDimensions, drawingDimensionsAddArcLength))
 	r.mutating(wire.MethodDrawingDimensionsDelete, "Delete Dimension", typedCtx(activeSheetDimensions, drawingDimensionsDelete))
 	r.mutating(wire.MethodDrawingDimensionsSetTextStyle, "Edit Dimension", typedCtx(activeSheetDimensions, drawingDimensionsSetTextStyle))
+	r.mutating(wire.MethodDrawingDimensionsSetTolerance, "Edit Dimension", typedCtx(activeSheetDimensions, drawingDimensionsSetTolerance))
 }
 
 // activeSheetDimensions returns the active drawing's active-sheet dimension collection.
@@ -195,12 +196,26 @@ func listDimensions(ds *drawing.DrawingDimensions) wire.ListDrawingDimensionsRes
 
 // drawingDimensionInfo flattens a dimension into its wire DTO.
 func drawingDimensionInfo(d *drawing.DrawingDimension) wire.DrawingDimensionInfo {
-	return wire.DrawingDimensionInfo{
+	info := wire.DrawingDimensionInfo{
 		Name: d.Name(), Type: d.Type().String(), ViewName: d.ViewName(),
 		ValueMM: d.ValueMM(), ValueDeg: d.ValueDeg(), Text: d.Text(), CurveCount: d.CurveCount(),
 		Prefix: d.Prefix(), Suffix: d.Suffix(), OverrideText: d.OverrideText(),
 		HideValue: d.HideValue(), DualUnit: d.DualUnit(),
 	}
+	if tol := d.Tolerance(); tol.Type != types.NoTolerance {
+		t := tol
+		info.Tolerance = &t
+	}
+	return info
+}
+
+// drawingDimensionsSetTolerance sets the named dimension's engineering tolerance (#1990).
+func drawingDimensionsSetTolerance(s *app.Session, ds *drawing.DrawingDimensions, in wire.SetDimensionToleranceArgs) (wire.ListDrawingDimensionsResult, error) {
+	if err := ds.SetTolerance(in.Name, in.Tolerance); err != nil {
+		return wire.ListDrawingDimensionsResult{}, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return listDimensions(ds), nil
 }
 
 // drawingDimensionsSetTextStyle applies the named dimension's text overrides (#1992/#1993).
