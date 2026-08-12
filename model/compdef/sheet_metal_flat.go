@@ -74,12 +74,19 @@ func developPunch(pf *feature.PartFeature, punch *feature.SheetMetalPunchFeature
 // turned, which side it comes from, and how deep. A nil depth is a punch clean through, which is
 // reported as HAVING no depth rather than as a depth of zero.
 func punchResult(outline []math.Point2, token string, def *feature.SheetMetalPunchDefinition) feature.FlatPunch {
+	// The flat outline comes from the UNROTATED sketch, so add the die's own rotation to report the
+	// tool's true orientation in the flat (#1968); the cut solid is already turned by the same angle.
+	angle := longestRunAngle(outline)
+	if def.Angle != nil {
+		angle += def.Angle()
+	}
 	p := feature.FlatPunch{
-		Outline:     outline,
-		Token:       token,
-		Position:    polygonCentroid2(outline),
-		Angle:       longestRunAngle(outline),
-		DirectionUp: def.Direction != feature.NegativeDir,
+		Outline:        outline,
+		Token:          token,
+		Position:       polygonCentroid2(outline),
+		Angle:          angle,
+		DirectionUp:    def.Direction != feature.NegativeDir,
+		Representation: def.Representation,
 	}
 	if def.Depth != nil {
 		p.HasDepth, p.Depth = true, def.Depth()

@@ -308,7 +308,8 @@ func punchInfos(flat *feature.FlatPattern) []wire.FlatPunchInfo {
 		info := wire.FlatPunchInfo{
 			ID: p.Token, Position: point2d(p.Position), Angle: p.Angle * degPerRad,
 			DirectionUp: p.DirectionUp, HasDepth: p.HasDepth, Depth: p.Depth,
-			Outline: make([]types.Point2d, 0, len(p.Outline)),
+			RepresentationType: nonDefaultPunchRepresentation(p.Representation),
+			Outline:            make([]types.Point2d, 0, len(p.Outline)),
 		}
 		for _, v := range p.Outline {
 			info.Outline = append(info.Outline, point2d(v))
@@ -321,6 +322,15 @@ func punchInfos(flat *feature.FlatPattern) []wire.FlatPunchInfo {
 // point2d converts a model 2D point to the wire value type.
 func point2d(p gmath.Point2) types.Point2d {
 	return types.Point2d{X: float64(p.X), Y: float64(p.Y)}
+}
+
+// nonDefaultPunchRepresentation is the punch representation's wire spelling, or "" for the default
+// (which the wire omits), so a punch that just inherits the document setting carries no type (#1968).
+func nonDefaultPunchRepresentation(r types.PunchRepresentationType) string {
+	if r == types.DefaultPunchRepresentation {
+		return ""
+	}
+	return r.String()
 }
 
 // styleInfo renders the active rule as wire, formatting lengths in the document's units and

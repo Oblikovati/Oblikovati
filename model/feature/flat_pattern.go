@@ -5,6 +5,7 @@ package feature
 import (
 	"fmt"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -57,10 +58,12 @@ type FlatPunch struct {
 	Outline     []math.Point2
 	Token       string
 	Position    math.Point2 // the outline's centroid in the base plane — where the tool is placed
-	Angle       float64     // the tool's rotation in the flat (radians), from the outline's longest run
+	Angle       float64     // the tool's rotation in the flat (radians), from the outline plus the die angle
 	DirectionUp bool        // punched from the base face's side rather than through it from behind
 	HasDepth    bool
 	Depth       float64
+	// Representation is the punch's flat/drawing appearance (#1968), carried through to the results.
+	Representation types.PunchRepresentationType
 }
 
 // FlatPattern is the developed flat: the flat solid, its fold lines, punch representations, the
