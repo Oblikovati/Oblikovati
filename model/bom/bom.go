@@ -110,11 +110,18 @@ func (b *BOM) structuredRows(occs *occurrence.Occurrences) []*Row {
 }
 
 // walkParts accumulates flat part totals: it traverses expandable sub-assemblies and
+// bomOmitted reports whether an occurrence is left out of every BOM view: suppressed removes it
+// from the model, while excluded and reference keep it in the scene for context but drop it from
+// the bill of materials (and mass properties) — Inventor's per-occurrence excluded/reference (#1977).
+func bomOmitted(o *occurrence.Occurrence) bool {
+	return o.Suppressed() || o.Excluded() || o.Reference()
+}
+
 // counts everything else (leaf parts and opaque purchased/inseparable sub-assemblies)
 // once per instance, skipping suppressed and reference components.
 func (b *BOM) walkParts(occs *occurrence.Occurrences, index map[occurrence.Definition]int, rows *[]*Row) {
 	for _, o := range occs.All() {
-		if o.Suppressed() {
+		if bomOmitted(o) {
 			continue
 		}
 		comp := componentOf(o.Definition())
@@ -140,7 +147,7 @@ func (b *BOM) walkParts(occs *occurrence.Occurrences, index map[occurrence.Defin
 func (b *BOM) levelOccurrences(occs *occurrence.Occurrences) []*occurrence.Occurrence {
 	var out []*occurrence.Occurrence
 	for _, o := range occs.All() {
-		if o.Suppressed() {
+		if bomOmitted(o) {
 			continue
 		}
 		if componentOf(o.Definition()).BOMStructure() == Phantom {

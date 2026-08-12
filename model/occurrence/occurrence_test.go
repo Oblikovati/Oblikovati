@@ -52,6 +52,30 @@ func TestOccurrencesAddAssignsIdsAndCounts(t *testing.T) {
 	}
 }
 
+// TestOccurrenceStateDefaultsAndOverrides the display/state overrides (#1975/#1977) default to the
+// natural sense (visible, enabled, opaque, not excluded/reference/contact) and toggle independently.
+func TestOccurrenceStateDefaultsAndOverrides(t *testing.T) {
+	occ := NewOccurrences()
+	o := occ.AddByComponentDefinition("c:1", unitComponent(), math.Identity4())
+	if !o.Visible() || !o.Enabled() || o.Transparent() || o.Excluded() || o.Reference() || o.InContactSet() || o.Opacity() != 0 {
+		t.Fatalf("default occurrence state wrong: %+v", []bool{o.Visible(), o.Enabled(), o.Transparent(), o.Excluded(), o.Reference(), o.InContactSet()})
+	}
+	o.SetTransparent(true)
+	o.SetOpacity(0.4)
+	o.SetEnabled(false)
+	o.SetExcluded(true)
+	o.SetReference(true)
+	o.SetInContactSet(true)
+	if !o.Transparent() || o.Opacity() != 0.4 || o.Enabled() || !o.Excluded() || !o.Reference() || !o.InContactSet() {
+		t.Errorf("state overrides did not stick: %+v", o)
+	}
+	// Enabling again inverts the stored disabled flag back.
+	o.SetEnabled(true)
+	if !o.Enabled() {
+		t.Error("re-enabling did not restore Enabled")
+	}
+}
+
 func TestOccurrenceRangeBoxPlacesByTransform(t *testing.T) {
 	occ := NewOccurrences()
 	occ.AddByComponentDefinition("origin", unitComponent(), math.Identity4())
