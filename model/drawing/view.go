@@ -47,13 +47,15 @@ type DrawingView struct {
 	name        string
 	viewType    types.DrawingViewType
 	projected   bool
-	baseView    string         // the parent view a projected/auxiliary/section view derives from
-	foldAngle   float64        // auxiliary fold-line angle on the parent, radians
-	section     sectionLine    // section-view cut line on the parent (sheet mm)
-	detail      detailBoundary // detail-view circular boundary (parent model-2D)
-	brk         breakBand      // break-view removed band (parent model-2D, along the break axis)
-	draftW      float64        // draft-view frame width (sheet mm)
-	draftH      float64        // draft-view frame height (sheet mm)
+	baseView    string                // the parent view a projected/auxiliary/section view derives from
+	foldAngle   float64               // auxiliary fold-line angle on the parent, radians
+	section     sectionLine           // section-view cut line on the parent (sheet mm)
+	sectionOpts hlr.SectionOptions    // section reverse / limited-depth (#1982)
+	sectionType types.SectionViewType // section partial-cut kind (#1982)
+	detail      detailBoundary        // detail-view circular boundary (parent model-2D)
+	brk         breakBand             // break-view removed band (parent model-2D, along the break axis)
+	draftW      float64               // draft-view frame width (sheet mm)
+	draftH      float64               // draft-view frame height (sheet mm)
 	orientation types.BaseViewOrientation
 	direction   types.ProjectionDirection
 	scale       float64
@@ -104,6 +106,16 @@ func (v *DrawingView) FoldAngle() float64 { return v.foldAngle }
 func (v *DrawingView) SectionLineMM() (x1, y1, x2, y2 float64) {
 	return v.section.x1, v.section.y1, v.section.x2, v.section.y2
 }
+
+// SectionDepthMM is the retained-slab depth in millimetres, or 0 for a full through-cut. The
+// kernel stores it in model centimetres, so it converts back on the way out (#1982).
+func (v *DrawingView) SectionDepthMM() float64 { return v.sectionOpts.Depth * cmToMM }
+
+// SectionReverse reports whether the far half is kept instead of the near half (#1982).
+func (v *DrawingView) SectionReverse() bool { return v.sectionOpts.Reverse }
+
+// SectionType is the partial-cut kind (none/quarter/half/threeQuarter, #1982).
+func (v *DrawingView) SectionType() types.SectionViewType { return v.sectionType }
 
 // DetailBoundaryMM returns the detail view's circular boundary on its parent (sheet millimetres):
 // centre and radius, converted back from the parent's projection space.
@@ -284,7 +296,7 @@ func scaleNote(scale float64) string {
 // plain hidden-line projection for every other kind.
 func (v *DrawingView) project(body *topo.Body, basis hlr.View) []hlr.Segment {
 	if v.viewType == types.DrawingViewSection || v.viewType == types.DrawingViewSlice {
-		return hlr.ProjectSection(body, basis, ops.DefaultQuality())
+		return hlr.ProjectSectionOpts(body, basis, ops.DefaultQuality(), v.sectionOpts)
 	}
 	return hlr.Project(body, basis, ops.DefaultQuality())
 }

@@ -110,9 +110,21 @@ func drawingViewsAddAuxiliary(s *app.Session, views *drawing.DrawingViews, in wi
 }
 
 func drawingViewsAddSection(s *app.Session, views *drawing.DrawingViews, in wire.AddSectionViewArgs) (wire.ViewResult, error) {
+	sectionType, ok := types.ParseSectionViewType(in.SectionType)
+	if !ok {
+		return wire.ViewResult{}, fmt.Errorf("drawing: unknown section type %q (want none|quarter|half|threeQuarter)", in.SectionType)
+	}
+	// SectionDepthMM only limits the cut when FullDepth is off; a full-depth (default) section
+	// keeps everything behind the plane, matching Inventor's AddSectionView(FullDepth, SectionDepth)
+	// where the depth is read only when FullDepth is false (#1982).
+	depth := 0.0
+	if !in.FullDepth && in.SectionDepthMM > 0 {
+		depth = in.SectionDepthMM
+	}
 	v, err := views.AddSection(drawing.SectionViewSpec{
 		Name: in.Name, ParentView: in.ParentView, X1: in.X1, Y1: in.Y1, X2: in.X2, Y2: in.Y2,
 		CenterX: in.CenterXMM, CenterY: in.CenterYMM,
+		Depth: depth, Reverse: in.Reverse, Type: sectionType,
 	})
 	if err != nil {
 		return wire.ViewResult{}, err
@@ -244,6 +256,10 @@ func drawingViewInfo(v *drawing.DrawingView) wire.DrawingViewInfo {
 		info.Direction = v.Direction().String()
 	case types.DrawingViewAuxiliary:
 		info.FoldAngleDeg = v.FoldAngle() * 180 / math.Pi
+	case types.DrawingViewSection:
+		info.SectionDepthMM = v.SectionDepthMM()
+		info.SectionReverse = v.SectionReverse()
+		info.SectionType = v.SectionType().String()
 	}
 	return info
 }

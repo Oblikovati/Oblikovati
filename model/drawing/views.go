@@ -126,12 +126,17 @@ func (vs *DrawingViews) AddAuxiliary(spec AuxiliaryViewSpec) (*DrawingView, erro
 }
 
 // SectionViewSpec describes a section view cut from a parent view by a section line. The line
-// endpoints are in sheet millimetres, drawn on the parent view.
+// endpoints are in sheet millimetres, drawn on the parent view. Depth (>0, millimetres) limits
+// the retained half to a slab that deep; Reverse keeps the opposite half; Type selects a partial
+// cut (#1982).
 type SectionViewSpec struct {
 	Name             string
 	ParentView       string
 	X1, Y1, X2, Y2   float64 // section line on the parent (sheet mm)
 	CenterX, CenterY float64 // where the section view sits on the sheet
+	Depth            float64 // >0 ⇒ limited-depth slab (millimetres); 0 ⇒ full through-cut
+	Reverse          bool    // keep the far half instead of the near half
+	Type             types.SectionViewType
 }
 
 // AddSection adds a section view: the parent's referenced model cut by the plane through the
@@ -151,6 +156,9 @@ func (vs *DrawingViews) AddSection(spec SectionViewSpec) (*DrawingView, error) {
 		name: name, viewType: types.DrawingViewSection, baseView: spec.ParentView, section: line,
 		orientation: parent.orientation, style: parent.style, scale: parent.scale,
 		centerX: spec.CenterX, centerY: spec.CenterY,
+		// The kernel cuts in model centimetres; the request's depth is millimetres (#1982).
+		sectionOpts: hlr.SectionOptions{Reverse: spec.Reverse, Depth: spec.Depth / cmToMM},
+		sectionType: spec.Type,
 	}
 	origin := bodyCenter(body)
 	v.recompute(body, sectionBasis(baseBasis(parent.orientation, origin), line, parent.scale, parent.centerX, parent.centerY, origin))
