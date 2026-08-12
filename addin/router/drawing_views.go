@@ -31,6 +31,8 @@ func (r *Router) registerDrawingViewHandlers() {
 	r.mutating(wire.MethodDrawingViewsAddDraft, "Add View", typedCtx(activeSheetViews, drawingViewsAddDraft))
 	r.mutating(wire.MethodDrawingViewsDelete, "Delete View", typedCtx(activeSheetViews, drawingViewsDelete))
 	r.mutating(wire.MethodDrawingViewsSetLabel, "Edit View Label", typedCtx(activeSheetViews, drawingViewsSetLabel))
+	r.mutating(wire.MethodDrawingViewsAddCrop, "Crop View", typedCtx(activeSheetViews, drawingViewsAddCrop))
+	r.mutating(wire.MethodDrawingViewsRemoveCrop, "Remove Crop", typedCtx(activeSheetViews, drawingViewsRemoveCrop))
 	r.readOnly(wire.MethodDrawingViewsCurves, typedCtx(activeSheetViews, drawingViewsCurves))
 }
 
@@ -213,6 +215,36 @@ func drawingViewsSetLabel(s *app.Session, views *drawing.DrawingViews, in wire.S
 	return listDrawingViewsResult(views), nil
 }
 
+// drawingViewsAddCrop clips the named view to a rectangular or circular fence (#1987).
+func drawingViewsAddCrop(s *app.Session, views *drawing.DrawingViews, in wire.AddViewCropArgs) (wire.ListDrawingViewsResult, error) {
+	if in.Shape != "" && in.Shape != "rectangle" && in.Shape != "circle" {
+		return wire.ListDrawingViewsResult{}, fmt.Errorf("drawing: crop shape %q must be rectangle|circle", in.Shape)
+	}
+	mark, ok := types.ParseCropBreakMarkLineType(in.BreakMark)
+	if !ok {
+		return wire.ListDrawingViewsResult{}, fmt.Errorf("drawing: unknown crop break mark %q (want none|continuous|zigzag)", in.BreakMark)
+	}
+	spec := drawing.CropSpec{
+		View: in.View, Circle: in.Shape == "circle", BreakMark: mark,
+		X0: in.X0, Y0: in.Y0, X1: in.X1, Y1: in.Y1,
+		CircleX: in.CircleXMM, CircleY: in.CircleYMM, Radius: in.RadiusMM,
+	}
+	if _, err := views.AddCrop(spec); err != nil {
+		return wire.ListDrawingViewsResult{}, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return listDrawingViewsResult(views), nil
+}
+
+// drawingViewsRemoveCrop drops every crop on the named view (#1987).
+func drawingViewsRemoveCrop(s *app.Session, views *drawing.DrawingViews, in wire.RemoveViewCropArgs) (wire.ListDrawingViewsResult, error) {
+	if err := views.RemoveCrop(in.View); err != nil {
+		return wire.ListDrawingViewsResult{}, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return listDrawingViewsResult(views), nil
+}
+
 func drawingViewsDelete(s *app.Session, views *drawing.DrawingViews, in wire.DeleteViewArgs) (wire.ListDrawingViewsResult, error) {
 	if err := views.Remove(in.Name); err != nil {
 		return wire.ListDrawingViewsResult{}, err
@@ -249,6 +281,7 @@ func drawingViewInfo(v *drawing.DrawingView) wire.DrawingViewInfo {
 		BaseView:  v.BaseViewName(), // the parent of any derived view (projected/auxiliary/section)
 		Label:     v.Label(),
 		ShowLabel: v.ShowLabel(), ShowName: v.ShowName(), ShowScale: v.ShowScale(),
+		CropCount: v.CropCount(),
 	}
 	info.LabelXMM, info.LabelYMM = v.LabelPositionMM()
 	switch v.Type() {

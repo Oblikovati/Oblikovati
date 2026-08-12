@@ -165,6 +165,22 @@ type viewRecipe struct {
 	HideScale bool    `yaml:"hideScale,omitempty"`
 	LabelX    float64 `yaml:"labelXmm,omitempty"`
 	LabelY    float64 `yaml:"labelYmm,omitempty"`
+	// Crop fences clipping the view (#1987).
+	Crops []cropRecipe `yaml:"crops,omitempty"`
+}
+
+// cropRecipe is the YAML shape of one crop fence: a rectangle (X0,Y0)-(X1,Y1) or a circle
+// (CircleX,CircleY,Radius), all sheet mm, plus the break-mark boundary spelling (#1987).
+type cropRecipe struct {
+	Circle    bool    `yaml:"circle,omitempty"`
+	X0        float64 `yaml:"x0,omitempty"`
+	Y0        float64 `yaml:"y0,omitempty"`
+	X1        float64 `yaml:"x1,omitempty"`
+	Y1        float64 `yaml:"y1,omitempty"`
+	CircleX   float64 `yaml:"circleXmm,omitempty"`
+	CircleY   float64 `yaml:"circleYmm,omitempty"`
+	Radius    float64 `yaml:"radiusMm,omitempty"`
+	BreakMark string  `yaml:"breakMark,omitempty"`
 }
 
 // buildRecipe captures the drawing's full persisted state as a [drawingRecipe] value — the shared
@@ -366,7 +382,7 @@ func viewRecipeOf(v *DrawingView) viewRecipe {
 		Scale:        v.scale, Style: v.style.String(), CenterX: v.centerX, CenterY: v.centerY,
 		SectionDepth: v.sectionOpts.Depth, SectionReverse: v.sectionOpts.Reverse, SectionType: v.sectionType.String(),
 		LabelText: v.labelText, HideLabel: v.hideLabel, HideName: v.hideName, HideScale: v.hideScale,
-		LabelX: v.labelX, LabelY: v.labelY,
+		LabelX: v.labelX, LabelY: v.labelY, Crops: cropRecipesOf(v.crops),
 	}
 }
 
@@ -540,7 +556,7 @@ func restoreView(vr viewRecipe) *DrawingView {
 		orientation: orient, direction: dir,
 		scale: positiveScale(vr.Scale), style: style, centerX: vr.CenterX, centerY: vr.CenterY,
 		labelText: vr.LabelText, hideLabel: vr.HideLabel, hideName: vr.HideName, hideScale: vr.HideScale,
-		labelX: vr.LabelX, labelY: vr.LabelY,
+		labelX: vr.LabelX, labelY: vr.LabelY, crops: cropRegionsFrom(vr.Crops),
 	}
 }
 

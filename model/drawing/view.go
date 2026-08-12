@@ -72,6 +72,7 @@ type DrawingView struct {
 	hideScale bool
 	labelX    float64
 	labelY    float64
+	crops     []cropRegion // crop fences clipping this view (#1987)
 	curves    []DrawingCurve
 }
 
@@ -175,24 +176,30 @@ func (v *DrawingView) recompute(body *topo.Body, basis hlr.View) {
 	}
 	segs := v.project(body, basis)
 	v.curves = make([]DrawingCurve, 0, len(segs))
+	v.buildCurves(segs)
+	v.applyCrops() // clip the projected curves to any crop fences (#1987)
+}
+
+// buildCurves fills the view's curves from its projected segments, dispatched by view type: the
+// break/slice/breakout views run their own compression/clip logic; every other type runs the
+// plain per-segment placement (clipped to a detail boundary where present).
+func (v *DrawingView) buildCurves(segs []hlr.Segment) {
 	switch v.viewType {
 	case types.DrawingViewBreak:
 		v.recomputeBreak(segs)
-		return
 	case types.DrawingViewSlice:
 		v.recomputeSlice(segs)
-		return
 	case types.DrawingViewBreakout:
 		v.recomputeBreakout(segs)
-		return
-	}
-	wireframe := v.style == types.WireframeViewStyle
-	for _, s := range segs {
-		a, b, ok := v.clip(s.A, s.B)
-		if !ok {
-			continue
+	default:
+		wireframe := v.style == types.WireframeViewStyle
+		for _, s := range segs {
+			a, b, ok := v.clip(s.A, s.B)
+			if !ok {
+				continue
+			}
+			v.appendCurve(a, b, wireframe || s.Visible, curveKind(s.Kind), s.EdgeKey)
 		}
-		v.appendCurve(a, b, wireframe || s.Visible, curveKind(s.Kind), s.EdgeKey)
 	}
 }
 
