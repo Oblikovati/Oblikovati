@@ -5,40 +5,63 @@ package feature
 import (
 	"fmt"
 
+	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
 // Sheet-metal Corner Seam feature (M13-F02). Where two flange walls meet at a corner, the
-// seam controls the relief between them. The gap seam cuts a square notch of the given gap
-// along the shared corner edge — relieving the corner so the two walls leave a controlled
-// gap (no interference, room for welding/fastening). The cut removes a parallelogram
-// cross-section (gap along each adjacent face) swept along the edge, distinct from the corner
-// CHAMFER's triangular bevel. Overlap/edge seam types build on this and are a follow-up.
+// seam controls how they are finished — Inventor's four CornerTypeEnum styles (#1964). The GAP
+// seam cuts a square notch of the given gap along the shared corner edge, relieving the corner
+// so the two walls leave a controlled gap (no interference, room for welding/fastening). The cut
+// removes a parallelogram cross-section (gap along each adjacent face) swept along the edge,
+// distinct from the corner CHAMFER's triangular bevel.
+//
+// The OVERLAP / reverse-overlap / no-overlap styles lap or butt the two walls instead of gapping
+// them. On this single-body sheet only the gap style changes the solid — the others differ in
+// which wall laps over the other, which a watertight union cannot show — so their solid geometry
+// is carried here (type, percent, relief) but modelled in a follow-up (#2085); until then a
+// non-gap seam is recorded and reported, and leaves the corner unrelieved.
 
-// SeamType discriminates the corner-seam relief.
-type SeamType int
+// SeamType discriminates the corner-seam finish. It aliases the API's CornerSeamType so the enum
+// is defined once (ADR-0018); the long-standing GapSeam call sites keep working.
+type SeamType = types.CornerSeamType
 
 const (
-	// GapSeam cuts a square relief leaving a gap between the two corner walls (the default).
-	GapSeam SeamType = iota
+	// GapSeam leaves a gap between the two corner walls (the default) — Inventor's ripped corner.
+	GapSeam = types.CornerSeamGap
+	// OverlapSeam / ReverseOverlapSeam lap one wall over the other; NoOverlapSeam butts them.
+	OverlapSeam        = types.CornerSeamOverlap
+	ReverseOverlapSeam = types.CornerSeamReverseOverlap
+	NoOverlapSeam      = types.CornerSeamNoOverlap
 )
 
-// ParseSeamType resolves a wire spelling to a seam type.
+// codeCornerSeamUnmodeled marks a non-gap seam whose lap/miter solid is not modelled yet (#2085).
+const codeCornerSeamUnmodeled diag.Code = "sheet-metal.corner-seam-unmodeled"
+
+// ParseSeamType resolves a wire spelling to a seam type — gap/overlap/reverseOverlap/noOverlap,
+// with "" meaning gap. It delegates to the API enum so the vocabulary has one home.
 func ParseSeamType(s string) (SeamType, bool) {
-	switch s {
-	case "", "gap":
-		return GapSeam, true
-	}
-	return 0, false
+	return types.ParseCornerSeamType(s)
 }
 
 // SheetMetalCornerSeamDefinition is the corner-seam recipe: the corner edges (the shared
-// through-thickness edges where flanges meet), the gap, and the seam type.
+// through-thickness edges where flanges meet), the gap, the seam type, and — for the lap styles —
+// how far one wall laps (Overlap, a percentage), the seam-root relief, and how the gap is measured.
+// The overlap/relief/definition fields are recorded and round-tripped; their solid geometry is a
+// follow-up (#2085), so only the gap style cuts material today.
 type SheetMetalCornerSeamDefinition struct {
 	EdgeKeys [][]byte
 	Gap      func() float64
 	Type     SeamType
+	// Overlap is the lap percentage (0–100) for the overlap / reverse-overlap styles.
+	Overlap float64
+	// ReliefShape / ReliefSize describe the relief cut at the seam root; ReliefSize == nil ⇒ none.
+	ReliefShape types.CornerReliefShape
+	ReliefSize  func() float64
+	// DefinitionType is how the gap is measured — max-distance (default) or face-edge distance.
+	DefinitionType types.CornerSeamDefinitionType
 }
 
 // SheetMetalCornerSeamFeature relieves the sheet's corner seams each recompute.
@@ -72,6 +95,22 @@ func (f *SheetMetalCornerSeamFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
+	// Only the gap style removes material from this single-body sheet; the lap/butt styles differ
+	// in which wall laps over the other, which a watertight union cannot express (#2085). Record
+	// the seam and report honestly rather than pass off an unrelieved corner as an overlap.
+	if f.def.Type != GapSeam {
+		in.Diag.Recordf(codeCornerSeamUnmodeled, diag.Warning,
+			"corner seam %q leaves the corner unrelieved: its lap/butt solid is not modelled yet (#2085); recorded overlap %g%%",
+			f.def.Type, f.def.Overlap)
+		return Output{Bodies: in.Bodies, Heals: heals}, nil
+	}
+	return f.cutGapSeam(in, body, edges, gap, heals)
+}
+
+// cutGapSeam removes the square gap notch at each resolved corner edge and returns the relieved
+// body — the one seam style that changes this single-body sheet's solid.
+func (f *SheetMetalCornerSeamFeature) cutGapSeam(in Input, body *topo.Body, edges []*topo.Edge,
+	gap float64, heals []ReferenceHeal) (Output, error) {
 	work, edges := planarizeForEdges(body, edges, f.featName)
 	tools, err := seamCutters(edges, gap, f.featName)
 	if err != nil {

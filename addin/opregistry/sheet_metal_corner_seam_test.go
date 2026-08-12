@@ -24,6 +24,15 @@ func TestSheetMetalCornerSeamApply(t *testing.T) {
 	}
 	expectMergedSolid(t, out, "cornerSeam")
 
+	// An overlap seam is now accepted (recorded; its lap solid is a follow-up, #2085), and its
+	// lap fields plumb through to a healthy feature.
+	if _, err := applyMap(t, s, "sheetMetalCornerSeam", map[string]any{
+		"edges": []string{edge}, "gap": "1 mm", "type": "overlap", "overlap": 40,
+		"reliefShape": "round", "reliefSize": "1 mm", "definitionType": "faceEdgeDistance",
+	}); err != nil {
+		t.Fatalf("overlap corner seam apply: %v", err)
+	}
+
 	// Error paths.
 	if _, err := apply(t, profiledPart(t), "sheetMetalCornerSeam", `{"edges":["x"],"gap":"1 mm"}`); err == nil {
 		t.Error("corner seam on a non-sheet-metal part must error")
@@ -31,8 +40,14 @@ func TestSheetMetalCornerSeamApply(t *testing.T) {
 	if _, err := apply(t, s, "sheetMetalCornerSeam", `{"edges":[],"gap":"1 mm"}`); err == nil {
 		t.Error("corner seam with no edges must error")
 	}
-	if _, err := applyMap(t, s, "sheetMetalCornerSeam", map[string]any{"edges": []string{edge}, "gap": "1 mm", "type": "overlap"}); err == nil {
-		t.Error("corner seam with an unsupported type must error")
+	if _, err := applyMap(t, s, "sheetMetalCornerSeam", map[string]any{"edges": []string{edge}, "gap": "1 mm", "type": "welded"}); err == nil {
+		t.Error("corner seam with an unknown type must error")
+	}
+	if _, err := applyMap(t, s, "sheetMetalCornerSeam", map[string]any{"edges": []string{edge}, "gap": "1 mm", "definitionType": "byArea"}); err == nil {
+		t.Error("corner seam with an unknown definitionType must error")
+	}
+	if _, err := applyMap(t, s, "sheetMetalCornerSeam", map[string]any{"edges": []string{edge}, "gap": "1 mm", "reliefShape": "laser"}); err == nil {
+		t.Error("corner seam with an unknown reliefShape must error")
 	}
 	if _, err := applyMap(t, s, "sheetMetalCornerSeam", map[string]any{"edges": []string{edge}, "gap": "bad"}); err == nil {
 		t.Error("corner seam with a bad gap must error")
