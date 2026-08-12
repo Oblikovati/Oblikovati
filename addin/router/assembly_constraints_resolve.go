@@ -180,12 +180,11 @@ func statusLabel(rep assembly.SolveReport) string {
 	}
 }
 
-// mateSolution maps the wire solution string to the mate solution enum ("" ⇒ opposed).
+// mateSolution maps the wire solution string to the mate solution enum ("" ⇒ opposed). An unknown
+// spelling falls back to opposed so a stale client never fails a mate outright.
 func mateSolution(s string) types.MateConstraintSolutionType {
-	if s == "aligned" {
-		return types.MateSolutionAligned
-	}
-	return types.MateSolutionOpposed
+	sol, _ := types.ParseMateConstraintSolutionType(s)
+	return sol
 }
 
 // snapPrefer maps the optional grip-snap prefer spelling to a constraint type (empty ⇒ 0, auto-infer).

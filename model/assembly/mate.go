@@ -72,16 +72,34 @@ func mateResiduals(a, b Primitive, ma, mb math.Matrix4, offset float64, sol type
 	}
 }
 
-// planeMateResiduals aligns plane A's normal opposed (or aligned) to plane B's and holds
-// the two planes the offset apart along B's normal: two rotational residuals + one gap.
+// planeMateResiduals holds the two planes the offset apart along B's normal, and — for the directed
+// senses — aligns plane A's normal to the sense the solution selects: opposed (against B's normal),
+// aligned (with it), or undirected (whichever it already leans toward, so a drag never forces a
+// flip). The no-solution sense leaves the normal free and holds only the gap (#1971).
 func planeMateResiduals(a, b Primitive, ma, mb math.Matrix4, offset float64, sol types.MateConstraintSolutionType) []float64 {
 	nA, nB := worldDir(ma, a), worldDir(mb, b)
-	target := nB.Scale(-1) // opposed: A's normal points against B's
-	if sol == types.MateSolutionAligned {
-		target = nB
+	gap := gapResidual(worldPoint(ma, a), worldPoint(mb, b), nB, offset)
+	if sol == types.MateSolutionNoSolution {
+		return []float64{gap}
 	}
-	res := alignResiduals(nA, target)
-	return append(res, gapResidual(worldPoint(ma, a), worldPoint(mb, b), nB, offset))
+	return append(alignResiduals(nA, planeMateTarget(nA, nB, sol)), gap)
+}
+
+// planeMateTarget is the normal direction plane A is driven onto for a directed mate sense. The
+// undirected sense picks whichever of ±nB plane A already leans toward (its dot sign), so the mate
+// is already satisfied in the current orientation and never flips the component.
+func planeMateTarget(nA, nB math.Vector3, sol types.MateConstraintSolutionType) math.Vector3 {
+	switch sol {
+	case types.MateSolutionAligned:
+		return nB
+	case types.MateSolutionUndirected:
+		if nA.Dot(nB) < 0 {
+			return nB.Scale(-1)
+		}
+		return nB
+	default: // opposed
+		return nB.Scale(-1)
+	}
 }
 
 // axisMateResiduals makes two axes collinear: two rotational residuals aligning the
