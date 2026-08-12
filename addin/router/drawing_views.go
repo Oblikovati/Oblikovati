@@ -30,6 +30,7 @@ func (r *Router) registerDrawingViewHandlers() {
 	r.mutating(wire.MethodDrawingViewsAddBreakout, "Add View", typedCtx(activeSheetViews, drawingViewsAddBreakout))
 	r.mutating(wire.MethodDrawingViewsAddDraft, "Add View", typedCtx(activeSheetViews, drawingViewsAddDraft))
 	r.mutating(wire.MethodDrawingViewsDelete, "Delete View", typedCtx(activeSheetViews, drawingViewsDelete))
+	r.mutating(wire.MethodDrawingViewsSetLabel, "Edit View Label", typedCtx(activeSheetViews, drawingViewsSetLabel))
 	r.readOnly(wire.MethodDrawingViewsCurves, typedCtx(activeSheetViews, drawingViewsCurves))
 }
 
@@ -187,6 +188,19 @@ func drawingViewsAddDraft(s *app.Session, views *drawing.DrawingViews, in wire.A
 	return wire.ViewResult{View: drawingViewInfo(v)}, nil
 }
 
+// drawingViewsSetLabel applies the named view's label overrides (#1983).
+func drawingViewsSetLabel(s *app.Session, views *drawing.DrawingViews, in wire.SetViewLabelArgs) (wire.ListDrawingViewsResult, error) {
+	style := drawing.ViewLabelStyle{
+		Text: in.Text, ShowLabel: in.ShowLabel, ShowName: in.ShowName, ShowScale: in.ShowScale,
+		XMM: in.LabelXMM, YMM: in.LabelYMM,
+	}
+	if err := views.SetLabel(in.Name, style); err != nil {
+		return wire.ListDrawingViewsResult{}, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return listDrawingViewsResult(views), nil
+}
+
 func drawingViewsDelete(s *app.Session, views *drawing.DrawingViews, in wire.DeleteViewArgs) (wire.ListDrawingViewsResult, error) {
 	if err := views.Remove(in.Name); err != nil {
 		return wire.ListDrawingViewsResult{}, err
@@ -220,8 +234,11 @@ func drawingViewInfo(v *drawing.DrawingView) wire.DrawingViewInfo {
 		Name: v.Name(), Type: v.Type().String(), Projected: v.IsProjected(),
 		Orientation: v.Orientation().String(), Scale: v.Scale(), Style: v.Style().String(),
 		CenterXMM: x, CenterYMM: y, VisibleCount: visible, HiddenCount: hidden,
-		BaseView: v.BaseViewName(), // the parent of any derived view (projected/auxiliary/section)
+		BaseView:  v.BaseViewName(), // the parent of any derived view (projected/auxiliary/section)
+		Label:     v.Label(),
+		ShowLabel: v.ShowLabel(), ShowName: v.ShowName(), ShowScale: v.ShowScale(),
 	}
+	info.LabelXMM, info.LabelYMM = v.LabelPositionMM()
 	switch v.Type() {
 	case types.DrawingViewProjected:
 		info.Direction = v.Direction().String()

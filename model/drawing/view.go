@@ -3,6 +3,9 @@
 package drawing
 
 import (
+	"strconv"
+	"strings"
+
 	"oblikovati.org/api/contract"
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/hlr"
@@ -58,7 +61,16 @@ type DrawingView struct {
 	effStyle    types.DrawingViewStyle // the style actually rendered this recompute (FromBase resolved, #1985)
 	centerX     float64                // sheet millimetres
 	centerY     float64
-	curves      []DrawingCurve
+	// Label (#1983). labelText overrides the default caption; the hide* flags (zero ⇒ shown) drop
+	// the label, its name, or its scale note; labelX/Y position the caption (sheet mm, 0 ⇒ below the
+	// view center).
+	labelText string
+	hideLabel bool
+	hideName  bool
+	hideScale bool
+	labelX    float64
+	labelY    float64
+	curves    []DrawingCurve
 }
 
 var (
@@ -218,6 +230,55 @@ func (v *DrawingView) resolveEffectiveStyle(lookup func(name string) (types.Draw
 
 // EffectiveStyle returns the style the view actually renders with (FromBase resolved), for reads.
 func (v *DrawingView) EffectiveStyle() types.DrawingViewStyle { return v.effStyle }
+
+// Label is the view's caption (#1983): the explicit override when set, else a default built from the
+// view name and a scale note, each dropped by its show flag. An empty string means no label is drawn.
+func (v *DrawingView) Label() string {
+	if v.hideLabel {
+		return ""
+	}
+	if v.labelText != "" {
+		return v.labelText
+	}
+	parts := make([]string, 0, 2)
+	if !v.hideName {
+		parts = append(parts, v.name)
+	}
+	if !v.hideScale {
+		parts = append(parts, "SCALE "+scaleNote(v.scale))
+	}
+	return strings.Join(parts, "  ")
+}
+
+// ShowLabel / ShowName / ShowScale report whether the label, its name, and its scale note are drawn.
+func (v *DrawingView) ShowLabel() bool { return !v.hideLabel }
+func (v *DrawingView) ShowName() bool  { return !v.hideName }
+func (v *DrawingView) ShowScale() bool { return !v.hideScale }
+
+// SetShowLabel / SetShowName / SetShowScale toggle the label and its parts.
+func (v *DrawingView) SetShowLabel(show bool) { v.hideLabel = !show }
+func (v *DrawingView) SetShowName(show bool)  { v.hideName = !show }
+func (v *DrawingView) SetShowScale(show bool) { v.hideScale = !show }
+
+// SetLabelText overrides the default caption ("" restores the default).
+func (v *DrawingView) SetLabelText(text string) { v.labelText = text }
+
+// LabelPositionMM is where the caption is placed (sheet mm); (0,0) means below the view center.
+func (v *DrawingView) LabelPositionMM() (x, y float64) { return v.labelX, v.labelY }
+
+// SetLabelPositionMM places the caption (sheet mm).
+func (v *DrawingView) SetLabelPositionMM(x, y float64) { v.labelX, v.labelY = x, y }
+
+// scaleNote formats a view scale as a drafting ratio: 1 → "1:1", 0.5 → "1:2", 2 → "2:1".
+func scaleNote(scale float64) string {
+	if scale <= 0 {
+		return "1:1"
+	}
+	if scale >= 1 {
+		return strconv.FormatFloat(scale, 'g', -1, 64) + ":1"
+	}
+	return "1:" + strconv.FormatFloat(1/scale, 'g', -1, 64)
+}
 
 // project runs the projection a view's type calls for: a section view's clipped cut-away, or
 // plain hidden-line projection for every other kind.

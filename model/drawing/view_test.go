@@ -3,6 +3,7 @@
 package drawing
 
 import (
+	"strings"
 	"testing"
 
 	"oblikovati.org/api/types"
@@ -107,6 +108,41 @@ func TestFromBaseResolvesToParentStyle(t *testing.T) {
 		t.Errorf("orphan FromBase effective style = %v, want the hidden-line default", orphan.EffectiveStyle())
 	}
 }
+
+// TestViewLabelDefaultAndOverrides the default caption carries the view name and a scale note; the
+// show flags drop each part; a free-text override replaces it; hiding the label empties it (#1983).
+func TestViewLabelDefaultAndOverrides(t *testing.T) {
+	c := drawingWithBox(t)
+	views := c.Sheets().Active().Views()
+	v, err := views.AddBase(BaseViewSpec{Name: "FRONT", Orientation: types.BaseViewFront, Scale: 0.5, CenterX: 100, CenterY: 100})
+	if err != nil {
+		t.Fatalf("AddBase: %v", err)
+	}
+	if got := v.Label(); !strings.Contains(got, "FRONT") || !strings.Contains(got, "1:2") {
+		t.Errorf("default label = %q, want the name FRONT and scale 1:2", got)
+	}
+	no := false
+	if err := views.SetLabel("FRONT", ViewLabelStyle{ShowScale: &no}); err != nil {
+		t.Fatalf("SetLabel: %v", err)
+	}
+	if got := v.Label(); strings.Contains(got, "1:2") || !strings.Contains(got, "FRONT") {
+		t.Errorf("scale-hidden label = %q, want the name without the scale note", got)
+	}
+	if err := views.SetLabel("FRONT", ViewLabelStyle{Text: strPtr("DETAIL A")}); err != nil {
+		t.Fatalf("SetLabel override: %v", err)
+	}
+	if got := v.Label(); got != "DETAIL A" {
+		t.Errorf("override label = %q, want DETAIL A", got)
+	}
+	if err := views.SetLabel("FRONT", ViewLabelStyle{ShowLabel: &no}); err != nil {
+		t.Fatalf("SetLabel hide: %v", err)
+	}
+	if got := v.Label(); got != "" {
+		t.Errorf("hidden label = %q, want empty", got)
+	}
+}
+
+func strPtr(s string) *string { return &s }
 
 func TestAddBaseViewRequiresModel(t *testing.T) {
 	c := NewContent() // no body resolver / reference

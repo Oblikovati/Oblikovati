@@ -484,6 +484,42 @@ func (vs *DrawingViews) Recompute() {
 	}
 }
 
+// ViewLabelStyle carries the optional view-label overrides to apply (#1983); a nil field is left
+// unchanged. XMM and YMM are applied together (both must be set to reposition the caption).
+type ViewLabelStyle struct {
+	Text      *string
+	ShowLabel *bool
+	ShowName  *bool
+	ShowScale *bool
+	XMM       *float64
+	YMM       *float64
+}
+
+// SetLabel applies the given label overrides to the named view (#1983), erroring when no view
+// carries that name.
+func (vs *DrawingViews) SetLabel(name string, style ViewLabelStyle) error {
+	v, ok := vs.ByName(name)
+	if !ok {
+		return fmt.Errorf("drawing: no view named %q", name)
+	}
+	if style.Text != nil {
+		v.SetLabelText(*style.Text)
+	}
+	if style.ShowLabel != nil {
+		v.SetShowLabel(*style.ShowLabel)
+	}
+	if style.ShowName != nil {
+		v.SetShowName(*style.ShowName)
+	}
+	if style.ShowScale != nil {
+		v.SetShowScale(*style.ShowScale)
+	}
+	if style.XMM != nil && style.YMM != nil {
+		v.SetLabelPositionMM(*style.XMM, *style.YMM)
+	}
+	return nil
+}
+
 // resolveEffectiveStyles resolves each view's FromBase style to its base view's style before the
 // projection pass, so a derived view renders with its parent's style associatively (#1985).
 func (vs *DrawingViews) resolveEffectiveStyles() {
