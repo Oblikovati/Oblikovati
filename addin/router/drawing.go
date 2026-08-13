@@ -25,6 +25,134 @@ func (r *Router) registerDrawingHandlers() {
 	r.mutating(wire.MethodDrawingSetModelReference, "Set Model Reference", typedCtx(activeDrawing, drawingSetModelReference))
 	r.readOnly(wire.MethodDrawingTitleBlockFields, typedCtx(activeDrawing, drawingTitleBlockFields))
 	r.readOnly(wire.MethodDrawingExportDXF, typedCtx(activeDrawing, drawingExportDXF))
+	r.mutating(wire.MethodDrawingAddDefaultBorder, "Add Border", typedCtx(activeDrawing, drawingAddDefaultBorder))
+	r.mutating(wire.MethodDrawingSetTitleBlock, "Set Title Block", typedCtx(activeDrawing, drawingSetTitleBlock))
+	r.mutating(wire.MethodDrawingSetSheetRevision, "Set Sheet Revision", typedCtx(activeDrawing, drawingSetSheetRevision))
+	r.mutating(wire.MethodDrawingDefineSheetFormat, "Define Sheet Format", typedCtx(activeDrawing, drawingDefineSheetFormat))
+	r.mutating(wire.MethodDrawingAddSheetUsingFormat, "Add Sheet", typedCtx(activeDrawing, drawingAddSheetUsingFormat))
+}
+
+// drawingAddDefaultBorder gives a sheet a zoned border (#1989).
+func drawingAddDefaultBorder(s *app.Session, c *drawing.Content, in wire.AddDefaultBorderArgs) (wire.SheetResult, error) {
+	sh, err := sheetByNameOrActive(c, in.Sheet)
+	if err != nil {
+		return wire.SheetResult{}, err
+	}
+	hMode, ok := types.ParseBorderLabelMode(in.HLabelMode)
+	if !ok {
+		return wire.SheetResult{}, fmt.Errorf("drawing: unknown border label mode %q", in.HLabelMode)
+	}
+	vMode, ok := types.ParseBorderLabelMode(in.VLabelMode)
+	if !ok {
+		return wire.SheetResult{}, fmt.Errorf("drawing: unknown border label mode %q", in.VLabelMode)
+	}
+	if err := sh.SetZonedBorder(in.HZones, in.VZones, hMode, vMode); err != nil {
+		return wire.SheetResult{}, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return wire.SheetResult{Sheet: sheetInfo(c, sh)}, nil
+}
+
+// drawingSetTitleBlock moves a sheet's title block to a corner (#1989).
+func drawingSetTitleBlock(s *app.Session, c *drawing.Content, in wire.SetTitleBlockArgs) (wire.SheetResult, error) {
+	sh, err := sheetByNameOrActive(c, in.Sheet)
+	if err != nil {
+		return wire.SheetResult{}, err
+	}
+	loc, ok := types.ParseTitleBlockLocation(in.Location)
+	if !ok {
+		return wire.SheetResult{}, fmt.Errorf("drawing: unknown title-block location %q", in.Location)
+	}
+	sh.SetTitleBlockLocation(loc)
+	s.ActiveDocument().MarkDirty()
+	return wire.SheetResult{Sheet: sheetInfo(c, sh)}, nil
+}
+
+// drawingSetSheetRevision sets a sheet's revision string (#1989).
+func drawingSetSheetRevision(s *app.Session, c *drawing.Content, in wire.SetSheetRevisionArgs) (wire.SheetResult, error) {
+	sh, err := sheetByNameOrActive(c, in.Sheet)
+	if err != nil {
+		return wire.SheetResult{}, err
+	}
+	sh.SetRevision(in.Revision)
+	s.ActiveDocument().MarkDirty()
+	return wire.SheetResult{Sheet: sheetInfo(c, sh)}, nil
+}
+
+// drawingDefineSheetFormat registers a reusable sheet format (#1989).
+func drawingDefineSheetFormat(s *app.Session, c *drawing.Content, in wire.DefineSheetFormatArgs) (wire.ListSheetsResult, error) {
+	f, err := sheetFormatOf(in)
+	if err != nil {
+		return wire.ListSheetsResult{}, err
+	}
+	if err := c.Sheets().DefineFormat(f); err != nil {
+		return wire.ListSheetsResult{}, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return listSheetsResult(c), nil
+}
+
+// drawingAddSheetUsingFormat adds a sheet stamped from a registered format (#1989).
+func drawingAddSheetUsingFormat(s *app.Session, c *drawing.Content, in wire.AddSheetUsingFormatArgs) (wire.SheetResult, error) {
+	sh, err := c.Sheets().AddUsingFormat(in.Name, in.Format)
+	if err != nil {
+		return wire.SheetResult{}, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return wire.SheetResult{Sheet: sheetInfo(c, sh)}, nil
+}
+
+// sheetFormatOf converts a define-format request into a model SheetFormat, parsing the size,
+// orientation, label modes and title-block location spellings.
+func sheetFormatOf(in wire.DefineSheetFormatArgs) (drawing.SheetFormat, error) {
+	if in.Name == "" {
+		return drawing.SheetFormat{}, fmt.Errorf("drawing: a sheet format needs a name")
+	}
+	size := types.SheetSizeCustom
+	if in.Size != "" {
+		parsed, ok := types.ParseSheetSize(in.Size)
+		if !ok {
+			return drawing.SheetFormat{}, fmt.Errorf("drawing: unknown sheet size %q", in.Size)
+		}
+		size = parsed
+	}
+	orient, ok := types.ParseSheetOrientation(orientationOrPortrait(in.Orientation))
+	if !ok {
+		return drawing.SheetFormat{}, fmt.Errorf("drawing: unknown sheet orientation %q", in.Orientation)
+	}
+	hMode, vMode, loc, err := formatBorderAndTitle(in)
+	if err != nil {
+		return drawing.SheetFormat{}, err
+	}
+	return drawing.SheetFormat{
+		Name: in.Name, Size: size, Orientation: orient, WidthMM: in.WidthMM, HeightMM: in.HeightMM,
+		HZones: in.HZones, VZones: in.VZones, HLabelMode: hMode, VLabelMode: vMode, TitleBlockLocation: loc,
+	}, nil
+}
+
+// formatBorderAndTitle parses a format request's two border-label modes and its title-block corner.
+func formatBorderAndTitle(in wire.DefineSheetFormatArgs) (hMode, vMode types.BorderLabelMode, loc types.TitleBlockLocation, err error) {
+	hMode, ok := types.ParseBorderLabelMode(in.HLabelMode)
+	if !ok {
+		return 0, 0, 0, fmt.Errorf("drawing: unknown border label mode %q", in.HLabelMode)
+	}
+	vMode, ok = types.ParseBorderLabelMode(in.VLabelMode)
+	if !ok {
+		return 0, 0, 0, fmt.Errorf("drawing: unknown border label mode %q", in.VLabelMode)
+	}
+	loc, ok = types.ParseTitleBlockLocation(in.TitleBlockLocation)
+	if !ok {
+		return 0, 0, 0, fmt.Errorf("drawing: unknown title-block location %q", in.TitleBlockLocation)
+	}
+	return hMode, vMode, loc, nil
+}
+
+// orientationOrPortrait defaults an empty orientation spelling to portrait.
+func orientationOrPortrait(s string) string {
+	if s == "" {
+		return "portrait"
+	}
+	return s
 }
 
 // drawingExportDXF writes the active sheet (its views' visible/hidden edges, border and title
@@ -145,7 +273,7 @@ func listSheetsResult(c *drawing.Content) wire.ListSheetsResult {
 }
 
 func sheetInfo(c *drawing.Content, sh *drawing.Sheet) wire.SheetInfo {
-	return wire.SheetInfo{
+	info := wire.SheetInfo{
 		Name:          sh.Name(),
 		Size:          sh.Size().String(),
 		Orientation:   sh.Orientation().String(),
@@ -154,7 +282,17 @@ func sheetInfo(c *drawing.Content, sh *drawing.Sheet) wire.SheetInfo {
 		Active:        c.Sheets().Active() == sh,
 		HasBorder:     sh.Border() != nil,
 		HasTitleBlock: sh.TitleBlock() != nil,
+		Revision:      sh.Revision(),
 	}
+	if b := sh.Border(); b != nil {
+		if bd, ok := b.(*drawing.Border); ok {
+			info.BorderHZones, info.BorderVZones = bd.ZoneCounts()
+		}
+	}
+	if tb := sh.TitleBlockRef(); tb != nil {
+		info.TitleBlockLocation = tb.Location().String()
+	}
+	return info
 }
 
 func titleBlockFieldsResult(sh *drawing.Sheet) wire.TitleBlockFieldsResult {

@@ -2,7 +2,10 @@
 
 package drawing
 
-import "oblikovati.org/model/attr"
+import (
+	"oblikovati.org/api/types"
+	"oblikovati.org/model/attr"
+)
 
 // titleBlockField is one field of a title block: a label, and either a binding to a
 // referenced-model iProperty (set+prop) or a static literal (set==""). The value is
@@ -61,8 +64,9 @@ type ResolvedField struct {
 // TitleBlock is a sheet's title block — an instance of a [TitleBlockDefinition] that
 // resolves its fields against the drawing's referenced model via the lookup hook.
 type TitleBlock struct {
-	def    *TitleBlockDefinition
-	lookup propertyLookup
+	def      *TitleBlockDefinition
+	lookup   propertyLookup
+	location types.TitleBlockLocation // sheet corner it sits in (#1989); zero ⇒ bottom-right
 }
 
 func newTitleBlock(def *TitleBlockDefinition, lookup propertyLookup) *TitleBlock {
@@ -72,6 +76,12 @@ func newTitleBlock(def *TitleBlockDefinition, lookup propertyLookup) *TitleBlock
 // DefinitionName returns the name of the title-block definition this block instantiates
 // (contract.DrawingTitleBlock).
 func (t *TitleBlock) DefinitionName() string { return t.def.name }
+
+// Location returns the sheet corner the title block sits in (#1989).
+func (t *TitleBlock) Location() types.TitleBlockLocation { return t.location }
+
+// SetLocation moves the title block to a sheet corner (#1989).
+func (t *TitleBlock) SetLocation(l types.TitleBlockLocation) { t.location = l }
 
 // FieldValue resolves the named field against the referenced model, returning the value
 // and whether the field exists (contract.DrawingTitleBlock).

@@ -36,17 +36,24 @@ type drawingRecipe struct {
 // sheetRecipe is the YAML shape of one sheet. WidthMM/HeightMM are written only for a
 // custom size (a standard size's dimensions come from the size+orientation on open).
 type sheetRecipe struct {
-	Name        string             `yaml:"name"`
-	Size        string             `yaml:"size"`
-	Orientation string             `yaml:"orientation,omitempty"`
-	WidthMM     float64            `yaml:"widthMm,omitempty"`
-	HeightMM    float64            `yaml:"heightMm,omitempty"`
-	Border      bool               `yaml:"border"`
-	TitleBlock  string             `yaml:"titleBlock,omitempty"` // definition name; "" ⇒ no title block
-	Views       []viewRecipe       `yaml:"views,omitempty"`
-	Annotations []annotationRecipe `yaml:"annotations,omitempty"`
-	Dimensions  []dimensionRecipe  `yaml:"dimensions,omitempty"`
-	Sketches    []sketchRecipeItem `yaml:"sketches,omitempty"`
+	Name        string  `yaml:"name"`
+	Size        string  `yaml:"size"`
+	Orientation string  `yaml:"orientation,omitempty"`
+	WidthMM     float64 `yaml:"widthMm,omitempty"`
+	HeightMM    float64 `yaml:"heightMm,omitempty"`
+	Border      bool    `yaml:"border"`
+	TitleBlock  string  `yaml:"titleBlock,omitempty"` // definition name; "" ⇒ no title block
+	// Sheet authoring (#1989): revision string, zoned-border grid + label modes, title-block corner.
+	Revision     string             `yaml:"revision,omitempty"`
+	BorderHZones int                `yaml:"borderHZones,omitempty"`
+	BorderVZones int                `yaml:"borderVZones,omitempty"`
+	BorderHLabel string             `yaml:"borderHLabel,omitempty"`
+	BorderVLabel string             `yaml:"borderVLabel,omitempty"`
+	TitleBlockAt string             `yaml:"titleBlockAt,omitempty"`
+	Views        []viewRecipe       `yaml:"views,omitempty"`
+	Annotations  []annotationRecipe `yaml:"annotations,omitempty"`
+	Dimensions   []dimensionRecipe  `yaml:"dimensions,omitempty"`
+	Sketches     []sketchRecipeItem `yaml:"sketches,omitempty"`
 }
 
 // sketchRecipeItem is the YAML shape of one drawing sketch: its name, entities and hatch regions
@@ -259,6 +266,12 @@ func sheetRecipeOf(sh *Sheet) sheetRecipe {
 	}
 	if sh.titleBlock != nil {
 		rec.TitleBlock = sh.titleBlock.def.name
+		rec.TitleBlockAt = sh.titleBlock.location.String()
+	}
+	rec.Revision = sh.revision
+	if sh.border != nil && sh.border.def.hZones > 0 {
+		rec.BorderHZones, rec.BorderVZones = sh.border.def.hZones, sh.border.def.vZones
+		rec.BorderHLabel, rec.BorderVLabel = sh.border.def.hLabelMode.String(), sh.border.def.vLabelMode.String()
 	}
 	for _, v := range sh.views.items {
 		rec.Views = append(rec.Views, viewRecipeOf(v))
@@ -432,12 +445,14 @@ func (s *Sheets) restore(rec sheetRecipe) error {
 	if err != nil {
 		return err
 	}
-	sh := &Sheet{name: rec.Name, size: size, orientation: orient, width: w, height: h, views: newDrawingViews(s.bodyResolve), bomResolve: s.bomResolve, dimPrecision: s.dimPrecision}
+	sh := &Sheet{name: rec.Name, size: size, orientation: orient, width: w, height: h, views: newDrawingViews(s.bodyResolve), bomResolve: s.bomResolve, dimPrecision: s.dimPrecision, lookup: s.lookup, revision: rec.Revision}
 	if rec.Border {
-		sh.border = newBorder(DefaultBorderDefinition())
+		sh.border = restoreBorder(rec)
 	}
 	if rec.TitleBlock != "" {
 		sh.titleBlock = newTitleBlock(DefaultTitleBlockDefinition(), s.lookup)
+		loc, _ := types.ParseTitleBlockLocation(rec.TitleBlockAt)
+		sh.titleBlock.location = loc
 	}
 	restoreSheetContents(sh, rec)
 	s.items = append(s.items, sh)
@@ -620,6 +635,17 @@ func restoredViewType(vr viewRecipe) types.DrawingViewType {
 
 // restoreDims resolves a restored sheet's dimensions: the table value for a standard
 // size, or the persisted laid-out dimensions for a custom size.
+// restoreBorder rebuilds a sheet's border from its recipe — a zoned border when the recipe carries a
+// zone grid, otherwise the plain default (#1989).
+func restoreBorder(rec sheetRecipe) *Border {
+	if rec.BorderHZones <= 0 || rec.BorderVZones <= 0 {
+		return newBorder(DefaultBorderDefinition())
+	}
+	hMode, _ := types.ParseBorderLabelMode(rec.BorderHLabel)
+	vMode, _ := types.ParseBorderLabelMode(rec.BorderVLabel)
+	return newBorder(ZonedBorderDefinition(rec.BorderHZones, rec.BorderVZones, hMode, vMode))
+}
+
 func (s *Sheets) restoreDims(size types.SheetSize, orient types.SheetOrientation, rec sheetRecipe) (float64, float64, error) {
 	if size == types.SheetSizeCustom {
 		if rec.WidthMM <= 0 || rec.HeightMM <= 0 {

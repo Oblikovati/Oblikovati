@@ -25,6 +25,8 @@ type Sheet struct {
 	height       float64
 	border       *Border
 	titleBlock   *TitleBlock
+	revision     string         // the sheet's revision string (#1989)
+	lookup       propertyLookup // iProperty resolver for a (re)seeded title block (#1989)
 	views        *DrawingViews
 	annotations  *DrawingAnnotations
 	dimensions   *DrawingDimensions
@@ -89,6 +91,35 @@ func (s *Sheet) Border() contract.DrawingBorder {
 	return s.border
 }
 
+// Revision returns the sheet's revision string (#1989).
+func (s *Sheet) Revision() string { return s.revision }
+
+// SetRevision sets the sheet's revision string (#1989).
+func (s *Sheet) SetRevision(rev string) { s.revision = rev }
+
+// SetZonedBorder replaces the sheet's border with a zoned one: hZones columns × vZones rows, labelled
+// per the two modes (#1989).
+func (s *Sheet) SetZonedBorder(hZones, vZones int, hLabelMode, vLabelMode types.BorderLabelMode) error {
+	if hZones < 1 || vZones < 1 {
+		return fmt.Errorf("drawing: border zone counts must be ≥1, got %d×%d", hZones, vZones)
+	}
+	s.border = newBorder(ZonedBorderDefinition(hZones, vZones, hLabelMode, vLabelMode))
+	return nil
+}
+
+// SetTitleBlockLocation moves the sheet's title block to a corner, seeding the default title block
+// when the sheet has none (#1989).
+func (s *Sheet) SetTitleBlockLocation(loc types.TitleBlockLocation) {
+	if s.titleBlock == nil {
+		s.titleBlock = newTitleBlock(DefaultTitleBlockDefinition(), s.lookup)
+	}
+	s.titleBlock.SetLocation(loc)
+}
+
+// TitleBlockRef returns the sheet's concrete title block (nil when it has none) — the authoring
+// handle, distinct from the contract-typed TitleBlock accessor.
+func (s *Sheet) TitleBlockRef() *TitleBlock { return s.titleBlock }
+
 // TitleBlock returns the sheet's title block as a contract.DrawingTitleBlock, or nil if
 // it has none. Type-assert to *drawing.TitleBlock to enumerate its resolved fields.
 func (s *Sheet) TitleBlock() contract.DrawingTitleBlock {
@@ -102,10 +133,11 @@ func (s *Sheet) TitleBlock() contract.DrawingTitleBlock {
 type Sheets struct {
 	items        []*Sheet
 	active       int
-	lookup       propertyLookup // handed to each new title block; set by the owning Content
-	bodyResolve  bodyLookup     // handed to each sheet's views; set by the owning Content
-	bomResolve   bomLookup      // handed to each sheet's annotations (parts lists); set by Content
-	dimPrecision func() int     // handed to each sheet's dimensions (decimal places); set by Content
+	lookup       propertyLookup         // handed to each new title block; set by the owning Content
+	bodyResolve  bodyLookup             // handed to each sheet's views; set by the owning Content
+	bomResolve   bomLookup              // handed to each sheet's annotations (parts lists); set by Content
+	dimPrecision func() int             // handed to each sheet's dimensions (decimal places); set by Content
+	formats      map[string]SheetFormat // reusable sheet-format templates (#1989)
 }
 
 func newSheets() *Sheets { return &Sheets{} }
@@ -138,6 +170,7 @@ func (s *Sheets) Add(spec SheetSpec) (*Sheet, error) {
 		views:        newDrawingViews(s.bodyResolve),
 		bomResolve:   s.bomResolve,
 		dimPrecision: s.dimPrecision,
+		lookup:       s.lookup,
 	}
 	s.items = append(s.items, sh)
 	s.active = len(s.items) - 1
