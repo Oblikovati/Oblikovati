@@ -29,7 +29,8 @@ type DrawingAnnotation struct {
 	x, y     float64 // revision cloud: lower-left corner (sheet mm)
 	w, h     float64 // revision cloud: size (sheet mm)
 	tag      string  // revision cloud: revision label
-	edgeKey  []byte  // centre mark: the circular edge it marks (associativity anchor)
+	edgeKey  []byte  // centre mark: circular edge; chamfer note: edge A; bend note: the bend edge
+	edgeKeyB []byte  // chamfer note: edge B (the chamfer's opposite edge)
 	// feature control frame (GD&T): the geometric tolerance it states.
 	characteristic types.GeometricCharacteristic
 	tolerance      string
@@ -186,6 +187,10 @@ func (as *DrawingAnnotations) Recompute() {
 			as.recomputeHoleTable(a)
 		case types.HoleNoteAnnotation:
 			as.recomputeHoleNotes(a)
+		case types.ChamferNoteAnnotation:
+			as.recomputeChamferNote(a)
+		case types.BendNoteAnnotation:
+			as.recomputeBendNote(a)
 		}
 	}
 }

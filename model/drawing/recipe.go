@@ -110,7 +110,8 @@ type annotationRecipe struct {
 	W        float64 `yaml:"widthMm,omitempty"`
 	H        float64 `yaml:"heightMm,omitempty"`
 	Tag      string  `yaml:"tag,omitempty"`
-	EdgeKey  string  `yaml:"edgeKey,omitempty"` // centre mark: the circular edge it marks
+	EdgeKey  string  `yaml:"edgeKey,omitempty"`  // centre mark: circular edge; chamfer: edge A; bend: bend edge
+	EdgeKeyB string  `yaml:"edgeKeyB,omitempty"` // chamfer note: edge B
 	// feature control frame (GD&T):
 	Characteristic string   `yaml:"characteristic,omitempty"`
 	Tolerance      string   `yaml:"tolerance,omitempty"`
@@ -289,7 +290,8 @@ func annotationRecipesOf(sh *Sheet) []annotationRecipe {
 	for _, a := range sh.annotations.items {
 		out = append(out, annotationRecipe{
 			Name: a.name, Kind: a.kind.String(), ViewName: a.viewName,
-			X: a.x, Y: a.y, W: a.w, H: a.h, Tag: a.tag, EdgeKey: hex.EncodeToString(a.edgeKey),
+			X: a.x, Y: a.y, W: a.w, H: a.h, Tag: a.tag,
+			EdgeKey: hex.EncodeToString(a.edgeKey), EdgeKeyB: hex.EncodeToString(a.edgeKeyB),
 			Characteristic: a.characteristic.String(), Tolerance: a.tolerance, Datums: a.datums,
 			MaterialRemoval: a.materialRemoval.String(), Revisions: revisionRowRecipesOf(a.revisions),
 			Headers: a.headers, Rows: a.tableRows, HoleQuantity: holeQuantityString(a),
@@ -486,9 +488,10 @@ func restoreAnnotations(sh *Sheet, recs []annotationRecipe) {
 	for _, ar := range recs {
 		kind, _ := types.ParseDrawingAnnotationKind(ar.Kind)
 		edgeKey, _ := hex.DecodeString(ar.EdgeKey)
+		edgeKeyB, _ := hex.DecodeString(ar.EdgeKeyB)
 		characteristic, _ := types.ParseGeometricCharacteristic(ar.Characteristic)
 		holeQuantity, _ := types.ParseHoleNoteQuantity(ar.HoleQuantity)
-		a := &DrawingAnnotation{name: ar.Name, kind: kind, viewName: ar.ViewName, x: ar.X, y: ar.Y, w: ar.W, h: ar.H, tag: ar.Tag, edgeKey: edgeKey,
+		a := &DrawingAnnotation{name: ar.Name, kind: kind, viewName: ar.ViewName, x: ar.X, y: ar.Y, w: ar.W, h: ar.H, tag: ar.Tag, edgeKey: edgeKey, edgeKeyB: edgeKeyB,
 			characteristic: characteristic, tolerance: ar.Tolerance, datums: ar.Datums, revisions: revisionRowsOf(ar.Revisions),
 			headers: ar.Headers, tableRows: ar.Rows, holeQuantity: holeQuantity}
 		restoreAnnotationGeometry(a, ar)
