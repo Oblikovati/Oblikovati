@@ -32,6 +32,8 @@ func (r *Router) registerDrawingViewHandlers() {
 	r.mutating(wire.MethodDrawingViewsDelete, "Delete View", typedCtx(activeSheetViews, drawingViewsDelete))
 	r.mutating(wire.MethodDrawingViewsSetLabel, "Edit View Label", typedCtx(activeSheetViews, drawingViewsSetLabel))
 	r.mutating(wire.MethodDrawingViewsSetDisplay, "Edit View Display", typedCtx(activeSheetViews, drawingViewsSetDisplay))
+	r.mutating(wire.MethodDrawingViewsRotate, "Rotate View", typedCtx(activeSheetViews, drawingViewsRotate))
+	r.mutating(wire.MethodDrawingViewsAlign, "Align View", typedCtx(activeSheetViews, drawingViewsAlign))
 	r.mutating(wire.MethodDrawingViewsAddCrop, "Crop View", typedCtx(activeSheetViews, drawingViewsAddCrop))
 	r.mutating(wire.MethodDrawingViewsRemoveCrop, "Remove Crop", typedCtx(activeSheetViews, drawingViewsRemoveCrop))
 	r.readOnly(wire.MethodDrawingViewsCurves, typedCtx(activeSheetViews, drawingViewsCurves))
@@ -228,6 +230,36 @@ func drawingViewsSetDisplay(s *app.Session, views *drawing.DrawingViews, in wire
 	return listDrawingViewsResult(views), nil
 }
 
+// drawingViewsRotate sets a view's rotation about its centre (#1988).
+func drawingViewsRotate(s *app.Session, views *drawing.DrawingViews, in wire.RotateViewArgs) (wire.ListDrawingViewsResult, error) {
+	if err := views.Rotate(in.Name, in.AngleDeg); err != nil {
+		return wire.ListDrawingViewsResult{}, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return listDrawingViewsResult(views), nil
+}
+
+// drawingViewsAlign locks a view to an anchor view on a shared axis, or frees it (#1988).
+func drawingViewsAlign(s *app.Session, views *drawing.DrawingViews, in wire.AlignViewArgs) (wire.ListDrawingViewsResult, error) {
+	alignment, ok := types.ParseDrawingViewAlignment(in.Alignment)
+	if !ok {
+		return wire.ListDrawingViewsResult{}, fmt.Errorf("drawing: unknown alignment %q (want horizontal|vertical|inPosition)", in.Alignment)
+	}
+	var just *types.ViewJustification
+	if in.Justification != "" {
+		j, ok := types.ParseViewJustification(in.Justification)
+		if !ok {
+			return wire.ListDrawingViewsResult{}, fmt.Errorf("drawing: unknown justification %q (want centered|fixed)", in.Justification)
+		}
+		just = &j
+	}
+	if err := views.Align(in.Name, in.AnchorView, alignment, just); err != nil {
+		return wire.ListDrawingViewsResult{}, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return listDrawingViewsResult(views), nil
+}
+
 // drawingViewsAddCrop clips the named view to a rectangular or circular fence (#1987).
 func drawingViewsAddCrop(s *app.Session, views *drawing.DrawingViews, in wire.AddViewCropArgs) (wire.ListDrawingViewsResult, error) {
 	if in.Shape != "" && in.Shape != "rectangle" && in.Shape != "circle" {
@@ -293,6 +325,15 @@ func edgeTypeSpelling(t types.DrawingEdgeType) string {
 	return t.String()
 }
 
+// alignmentSpelling is the wire spelling of a view's alignment lock, or "" when the view is free so
+// the field is omitted (#1988).
+func alignmentSpelling(v *drawing.DrawingView) string {
+	if !v.IsAligned() {
+		return ""
+	}
+	return v.Alignment().String()
+}
+
 // drawingViewInfo flattens a drawing view into its wire DTO.
 func drawingViewInfo(v *drawing.DrawingView) wire.DrawingViewInfo {
 	visible, hidden := v.VisibleHidden()
@@ -305,6 +346,8 @@ func drawingViewInfo(v *drawing.DrawingView) wire.DrawingViewInfo {
 		Label:     v.Label(),
 		ShowLabel: v.ShowLabel(), ShowName: v.ShowName(), ShowScale: v.ShowScale(),
 		CropCount: v.CropCount(), DisplayTangentEdges: v.DisplayTangentEdges(),
+		RotationDeg: v.RotationDeg(), Aligned: v.IsAligned(), AlignedTo: v.AlignedTo(),
+		Alignment: alignmentSpelling(v), Justification: v.Justification().String(),
 	}
 	info.LabelXMM, info.LabelYMM = v.LabelPositionMM()
 	switch v.Type() {

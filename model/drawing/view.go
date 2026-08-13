@@ -3,6 +3,7 @@
 package drawing
 
 import (
+	stdmath "math"
 	"strconv"
 	"strings"
 
@@ -81,7 +82,14 @@ type DrawingView struct {
 	// hideTangentEdges drops smooth tangent edges (fillet/blend transitions) from the projection when
 	// set; the zero value shows them (the default), so no view constructor needs to opt in (#1984).
 	hideTangentEdges bool
-	curves           []DrawingCurve
+	// Placement (#1988). rotation turns the view's curves about its centre (radians, CCW). alignedTo
+	// locks the view to another view on alignment's axis (horizontal ⇒ shared Y, vertical ⇒ shared X);
+	// justification records the centring mode. The zero values are unrotated / free / centred.
+	rotation      float64
+	alignedTo     string
+	alignment     types.DrawingViewAlignment
+	justification types.ViewJustification
+	curves        []DrawingCurve
 }
 
 var (
@@ -366,7 +374,20 @@ func (v *DrawingView) SheetPointOfModelMM(p, origin math.Point3) math.Point2 {
 // scale and centre.
 func (v *DrawingView) place(p math.Point2) math.Point2 {
 	s := math.Scalar(cmToMM * v.scale)
-	return math.P2(math.Scalar(v.centerX)+p.X*s, math.Scalar(v.centerY)+p.Y*s)
+	rp := rotatePoint2(p, v.rotation) // view rotation turns the curves about the model-2D origin (#1988)
+	return math.P2(math.Scalar(v.centerX)+rp.X*s, math.Scalar(v.centerY)+rp.Y*s)
+}
+
+// rotatePoint2 rotates a model-2D point about the origin by angle (radians, CCW). The projection is
+// centred on the model-2D origin, which maps to the view centre, so this rotates the view's curves
+// about that centre.
+func rotatePoint2(p math.Point2, angle float64) math.Point2 {
+	if angle == 0 {
+		return p
+	}
+	sin, cos := stdmath.Sincos(angle)
+	x, y := float64(p.X), float64(p.Y)
+	return math.P2(math.Scalar(x*cos-y*sin), math.Scalar(x*sin+y*cos))
 }
 
 // baseBasis is the projection frame for a base view's standard orientation, centred on origin.

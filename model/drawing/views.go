@@ -477,6 +477,7 @@ func (vs *DrawingViews) EditProjected(name string, dir types.ProjectionDirection
 // model-backed views are left untouched when no model resolves.
 func (vs *DrawingViews) Recompute() {
 	vs.resolveEffectiveStyles()
+	vs.applyAlignments() // pull locked views onto their anchors before projecting (#1988)
 	body, ok := vs.resolveBody()
 	for _, v := range vs.items {
 		if v.viewType == types.DrawingViewDraft {

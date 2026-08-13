@@ -170,6 +170,12 @@ type viewRecipe struct {
 	Crops []cropRecipe `yaml:"crops,omitempty"`
 	// HideTangentEdges drops smooth tangent edges from the projection (#1984); default shows them.
 	HideTangentEdges bool `yaml:"hideTangentEdges,omitempty"`
+	// Placement (#1988): rotation about the view centre (degrees), alignment lock to another view,
+	// and centring mode.
+	RotationDeg   float64 `yaml:"rotationDeg,omitempty"`
+	AlignedTo     string  `yaml:"alignedTo,omitempty"`
+	Alignment     string  `yaml:"alignment,omitempty"`
+	Justification string  `yaml:"justification,omitempty"`
 }
 
 // cropRecipe is the YAML shape of one crop fence: a rectangle (X0,Y0)-(X1,Y1) or a circle
@@ -388,7 +394,26 @@ func viewRecipeOf(v *DrawingView) viewRecipe {
 		LabelText: v.labelText, HideLabel: v.hideLabel, HideName: v.hideName, HideScale: v.hideScale,
 		LabelX: v.labelX, LabelY: v.labelY, Crops: cropRecipesOf(v.crops),
 		HideTangentEdges: v.hideTangentEdges,
+		RotationDeg:      v.RotationDeg(), AlignedTo: v.alignedTo, Alignment: alignmentString(v),
+		Justification: justificationString(v),
 	}
+}
+
+// alignmentString persists a view's alignment lock, and only a real lock — "" for a free (in-position)
+// view so the common case stays out of the recipe.
+func alignmentString(v *DrawingView) string {
+	if !v.IsAligned() {
+		return ""
+	}
+	return v.alignment.String()
+}
+
+// justificationString persists a view's centring mode, and only a non-default one.
+func justificationString(v *DrawingView) string {
+	if v.justification == types.CenteredViewJustification {
+		return ""
+	}
+	return v.justification.String()
 }
 
 // restore rebuilds one sheet from its recipe and appends it. A standard size derives
@@ -564,7 +589,21 @@ func restoreView(vr viewRecipe) *DrawingView {
 		labelText: vr.LabelText, hideLabel: vr.HideLabel, hideName: vr.HideName, hideScale: vr.HideScale,
 		labelX: vr.LabelX, labelY: vr.LabelY, crops: cropRegionsFrom(vr.Crops),
 		hideTangentEdges: vr.HideTangentEdges,
+		rotation:         vr.RotationDeg * math.Pi / 180,
+		alignedTo:        vr.AlignedTo, alignment: parseAlignment(vr.Alignment), justification: parseJustification(vr.Justification),
 	}
+}
+
+// parseAlignment resolves a persisted alignment spelling, defaulting to in-position (free).
+func parseAlignment(s string) types.DrawingViewAlignment {
+	a, _ := types.ParseDrawingViewAlignment(s)
+	return a
+}
+
+// parseJustification resolves a persisted justification spelling, defaulting to centered.
+func parseJustification(s string) types.ViewJustification {
+	j, _ := types.ParseViewJustification(s)
+	return j
 }
 
 // restoredViewType resolves a recipe's view type, falling back to the Projected flag for
