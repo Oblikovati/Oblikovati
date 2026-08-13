@@ -45,3 +45,25 @@ func TestVirtualComponentSurvivesRoundTrip(t *testing.T) {
 		t.Errorf("reopened BOM = %+v, want one GREASE-9 (inseparable) row (virtual restored without a file)", rows)
 	}
 }
+
+// TestAssemblyOptionsSurviveRoundTrip: the assembly editing options (LOD/design-view/section) persist
+// through save/reopen (#1981).
+func TestAssemblyOptionsSurviveRoundTrip(t *testing.T) {
+	store, ws, dir := assemblyWorkspace(t)
+	asm, asmDef := newAssembly(t, ws, dir, "asm.obk")
+	asmDef.SetOptions(compdef.AssemblyOptions{
+		PlaceAndGroundFirstComponentAtOrigin: false,
+		SectionAllParts:                      true,
+		DefaultLevelOfDetail:                 "All Content Center",
+		DefaultDesignView:                    "Default",
+	})
+
+	def := reopenAssembly(t, store, ws, asm)
+	got := def.Options()
+	if got.PlaceAndGroundFirstComponentAtOrigin || !got.SectionAllParts {
+		t.Errorf("reopened options = %+v, want ground-first off / sectionAllParts on", got)
+	}
+	if got.DefaultLevelOfDetail != "All Content Center" || got.DefaultDesignView != "Default" {
+		t.Errorf("reopened LOD/design-view = %q/%q, want the saved values", got.DefaultLevelOfDetail, got.DefaultDesignView)
+	}
+}

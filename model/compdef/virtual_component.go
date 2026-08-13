@@ -51,6 +51,5 @@ func (v *VirtualComponentDefinition) CustomProperties() map[string]string {
 // AddVirtual places a new virtual component in the assembly: a named tree node with no geometry that
 // appears in the BOM with its part number and structure (#1979).
 func (a *AssemblyComponentDefinition) AddVirtual(name, partNumber string, structure bom.Structure, transform math.Matrix4) *occurrence.Occurrence {
-	def := NewVirtualComponent(name, partNumber, structure)
-	return a.occurrences.AddByComponentDefinition(name, def, transform)
+	return a.Place(name, NewVirtualComponent(name, partNumber, structure), transform)
 }

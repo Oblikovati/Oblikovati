@@ -39,6 +39,21 @@ type assemblyRecipe struct {
 	Sketches          []sketch.SketchData            `yaml:"sketches,omitempty"`   // assembly-space sketches (#785)
 	Features          []assemblyFeatureProgramRecipe `yaml:"features,omitempty"`   // the machining program (#785)
 	EndOfFeatures     *int                           `yaml:"endOfFeatures,omitempty"`
+	Options           *assemblyOptionsRecipe         `yaml:"options,omitempty"` // assembly editing options (#1981)
+}
+
+// assemblyOptionsRecipe persists the assembly editing options (#1981); the transient DeferUpdate flag
+// is not stored (a reopened assembly is never mid-defer).
+type assemblyOptionsRecipe struct {
+	PartFeaturesInitiallyAdaptive            bool   `yaml:"partFeaturesInitiallyAdaptive,omitempty"`
+	OnlyActiveComponentIsOpaque              bool   `yaml:"onlyActiveComponentIsOpaque,omitempty"`
+	PlaceAndGroundFirstComponentAtOrigin     bool   `yaml:"placeAndGroundFirstComponentAtOrigin"`
+	EnableConstraintRedundancyAnalysis       bool   `yaml:"enableConstraintRedundancyAnalysis"`
+	DeleteComponentPatternSources            bool   `yaml:"deleteComponentPatternSources,omitempty"`
+	SectionAllParts                          bool   `yaml:"sectionAllParts,omitempty"`
+	UseLastOccurrenceOrientationForPlacement bool   `yaml:"useLastOccurrenceOrientationForPlacement,omitempty"`
+	DefaultLevelOfDetail                     string `yaml:"defaultLevelOfDetail,omitempty"`
+	DefaultDesignView                        string `yaml:"defaultDesignView,omitempty"`
 }
 
 // assemblyFeatureProgramRecipe is the persisted form of one program entry: the feature's inputs
@@ -104,7 +119,42 @@ func (a *AssemblyComponentDefinition) buildRecipe() (assemblyRecipe, error) {
 	if eof := a.features.EndOfFeaturesPosition(); eof != endOfFeaturesAtEnd {
 		r.EndOfFeatures = &eof
 	}
+	r.Options = optionsRecipeOf(a.options)
 	return r, nil
+}
+
+// optionsRecipeOf snapshots the assembly editing options for persistence (#1981).
+func optionsRecipeOf(o AssemblyOptions) *assemblyOptionsRecipe {
+	return &assemblyOptionsRecipe{
+		PartFeaturesInitiallyAdaptive:            o.PartFeaturesInitiallyAdaptive,
+		OnlyActiveComponentIsOpaque:              o.OnlyActiveComponentIsOpaque,
+		PlaceAndGroundFirstComponentAtOrigin:     o.PlaceAndGroundFirstComponentAtOrigin,
+		EnableConstraintRedundancyAnalysis:       o.EnableConstraintRedundancyAnalysis,
+		DeleteComponentPatternSources:            o.DeleteComponentPatternSources,
+		SectionAllParts:                          o.SectionAllParts,
+		UseLastOccurrenceOrientationForPlacement: o.UseLastOccurrenceOrientationForPlacement,
+		DefaultLevelOfDetail:                     o.DefaultLevelOfDetail,
+		DefaultDesignView:                        o.DefaultDesignView,
+	}
+}
+
+// restoreOptions restores the assembly editing options from a recipe, keeping the defaults when the
+// recipe carries none (an older file) (#1981).
+func (a *AssemblyComponentDefinition) restoreOptions(rec *assemblyOptionsRecipe) {
+	if rec == nil {
+		return
+	}
+	a.options = AssemblyOptions{
+		PartFeaturesInitiallyAdaptive:            rec.PartFeaturesInitiallyAdaptive,
+		OnlyActiveComponentIsOpaque:              rec.OnlyActiveComponentIsOpaque,
+		PlaceAndGroundFirstComponentAtOrigin:     rec.PlaceAndGroundFirstComponentAtOrigin,
+		EnableConstraintRedundancyAnalysis:       rec.EnableConstraintRedundancyAnalysis,
+		DeleteComponentPatternSources:            rec.DeleteComponentPatternSources,
+		SectionAllParts:                          rec.SectionAllParts,
+		UseLastOccurrenceOrientationForPlacement: rec.UseLastOccurrenceOrientationForPlacement,
+		DefaultLevelOfDetail:                     rec.DefaultLevelOfDetail,
+		DefaultDesignView:                        rec.DefaultDesignView,
+	}
 }
 
 // featuresRecipe captures the machining program in order — each feature whose state is
@@ -235,6 +285,7 @@ func (a *AssemblyComponentDefinition) applyRecipeStruct(r assemblyRecipe) error 
 	if r.EndOfFeatures != nil {
 		a.features.SetEndOfFeatures(*r.EndOfFeatures)
 	}
+	a.restoreOptions(r.Options)
 	a.pending = r.Occurrences
 	a.pendingFeatures = r.Features // features bind after occurrences resolve (they snapshot participation)
 	return nil

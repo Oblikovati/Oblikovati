@@ -55,6 +55,10 @@ type AssemblyComponentDefinition struct {
 	pendingFeatures []assemblyFeatureProgramRecipe
 	// props are the assembly document's iProperties (metadata sets), like a part's (#156).
 	props *attr.PropertySets
+	// options are the assembly-editing defaults (#1981); updatePending records a recompute deferred
+	// while options.DeferUpdate was set, flushed when it is cleared.
+	options       AssemblyOptions
+	updatePending bool
 }
 
 // NewAssemblyComponentDefinition returns an empty assembly content object: no
@@ -73,6 +77,7 @@ func NewAssemblyComponentDefinition() *AssemblyComponentDefinition {
 		work:        feature.NewWorkGeometry(),
 		sketches:    sketch.NewSketches(),
 		props:       attr.NewPropertySets(),
+		options:     defaultAssemblyOptions(),
 	}
 	occ.SetListener(a.events)
 	a.features.SetBus(a.events.Bus())    // feature-program events ride the assembly's occurrence bus
@@ -132,7 +137,9 @@ func (a *AssemblyComponentDefinition) Occurrences() *occurrence.Occurrences {
 // same definition twice and both occurrences track its edits (the flyweight). To
 // place an open document's component, use [PlaceComponent].
 func (a *AssemblyComponentDefinition) Place(name string, def occurrence.Definition, transform math.Matrix4) *occurrence.Occurrence {
-	return a.occurrences.AddByComponentDefinition(name, def, transform)
+	o := a.occurrences.AddByComponentDefinition(name, def, transform)
+	a.groundFirstComponent(o) // #1981
+	return o
 }
 
 // PlaceComponent places the component held by componentDoc — an open part or assembly
@@ -176,6 +183,7 @@ func (a *AssemblyComponentDefinition) PlaceComponentFromFile(owner, componentDoc
 	}
 	componentName := componentDoc.FullDocumentName()
 	occ := a.occurrences.AddByComponentName(name, def, componentName, transform)
+	a.groundFirstComponent(occ) // #1981
 	// Record (and resolve to the already-open) reference so save snapshots the edge.
 	owner.OpenReference(componentName)
 	return occ, nil
@@ -314,6 +322,10 @@ func (a *AssemblyComponentDefinition) AddSketch(plane sketch.Plane, host func() 
 // up to the end-of-features marker. Solving first means a profile-based feature (an
 // extrude) reads an up-to-date profile. Read per-occurrence results with [AssemblyFeatures.Result].
 func (a *AssemblyComponentDefinition) RecomputeFeatures() {
+	if a.options.DeferUpdate {
+		a.updatePending = true // batched until DeferUpdate is cleared (#1981)
+		return
+	}
 	a.solveSketches()
 	a.work.Recompute(nil) // origin + offset planes need no body; tangent-to-face planes are part-only
 	a.refreshSketchPlanes()

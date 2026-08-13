@@ -118,3 +118,26 @@ func TestAssemblyAddVirtualOverWire(t *testing.T) {
 		t.Error("addVirtual without a name should fail")
 	}
 }
+
+// TestAssemblyOptionsOverWire reads the assembly editing options, sets a couple, and reads them back
+// (#1981).
+func TestAssemblyOptionsOverWire(t *testing.T) {
+	r, s, _, _ := assemblySessionWithBoxes(t)
+
+	var got wire.AssemblyOptionsResult
+	call(t, r, s, "assembly.optionsGet", `{}`, &got)
+	if !got.Options.PlaceAndGroundFirstComponentAtOrigin {
+		t.Fatalf("default options = %+v, want ground-first on", got.Options)
+	}
+
+	var set wire.AssemblyOptionsResult
+	call(t, r, s, "assembly.optionsSet", mustJSON(t, wire.SetAssemblyOptionsArgs{
+		Options: wire.AssemblyOptions{SectionAllParts: true, DefaultLevelOfDetail: "Master"},
+	}), &set)
+	if !set.Options.SectionAllParts || set.Options.DefaultLevelOfDetail != "Master" {
+		t.Errorf("set options = %+v, want sectionAllParts on / LOD Master", set.Options)
+	}
+	if set.Options.PlaceAndGroundFirstComponentAtOrigin {
+		t.Error("options were replaced, so ground-first should now be off (not in the set request)")
+	}
+}
