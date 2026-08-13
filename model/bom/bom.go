@@ -97,9 +97,11 @@ func (b *BOM) structuredRows(occs *occurrence.Occurrences) []*Row {
 	rows := make([]*Row, 0, len(groups))
 	for i, g := range groups {
 		comp := componentOf(g.def)
+		structure := groupStructure(g.occs)
 		row := newRow(comp, g.def, len(g.occs))
+		row.Structure = structure // per-occurrence override / Varies wins over the definition (#1978)
 		row.ItemNumber = i + 1
-		if comp.BOMStructure().expands() {
+		if structure.expands() {
 			if sub := compositeOccurrences(g.def); sub != nil {
 				row.Children = b.structuredRows(sub)
 			}
@@ -125,7 +127,7 @@ func (b *BOM) walkParts(occs *occurrence.Occurrences, index map[occurrence.Defin
 			continue
 		}
 		comp := componentOf(o.Definition())
-		structure := comp.BOMStructure()
+		structure := effectiveStructure(o)
 		switch {
 		case structure == Reference:
 			continue
@@ -136,7 +138,9 @@ func (b *BOM) walkParts(occs *occurrence.Occurrences, index map[occurrence.Defin
 				(*rows)[i].Quantity++
 			} else {
 				index[o.Definition()] = len(*rows)
-				*rows = append(*rows, newRow(comp, o.Definition(), 1))
+				row := newRow(comp, o.Definition(), 1)
+				row.Structure = structure // reflect a per-occurrence override in the flat view (#1978)
+				*rows = append(*rows, row)
 			}
 		}
 	}
@@ -150,7 +154,7 @@ func (b *BOM) levelOccurrences(occs *occurrence.Occurrences) []*occurrence.Occur
 		if bomOmitted(o) {
 			continue
 		}
-		if componentOf(o.Definition()).BOMStructure() == Phantom {
+		if effectiveStructure(o) == Phantom {
 			if sub := o.SubOccurrences(); sub != nil {
 				out = append(out, b.levelOccurrences(sub)...)
 				continue
@@ -203,6 +207,30 @@ func componentOf(def occurrence.Definition) Component {
 		return c
 	}
 	return defaultComponent{}
+}
+
+// effectiveStructure is an occurrence's BOM structure: its per-occurrence override when set,
+// otherwise the shared component definition's structure (#1978).
+func effectiveStructure(o *occurrence.Occurrence) Structure {
+	if st, ok := ParseStructure(o.BOMStructureOverride()); ok && st != Default {
+		return st
+	}
+	return componentOf(o.Definition()).BOMStructure()
+}
+
+// groupStructure is a structured-view row's structure: the shared effective structure of its grouped
+// occurrences, or Varies when they differ (iAssembly members with differing structure) (#1978).
+func groupStructure(occs []*occurrence.Occurrence) Structure {
+	if len(occs) == 0 {
+		return Normal
+	}
+	first := effectiveStructure(occs[0])
+	for _, o := range occs[1:] {
+		if effectiveStructure(o) != first {
+			return Varies
+		}
+	}
+	return first
 }
 
 // compositeOccurrences returns def's child occurrences when it is an assembly

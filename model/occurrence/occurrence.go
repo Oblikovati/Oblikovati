@@ -58,7 +58,10 @@ type Occurrence struct {
 	excluded    bool
 	reference   bool
 	contactSet  bool
-	definition  Definition
+	// bomStructureOverride is a per-occurrence BOM-structure override (the wire spelling, e.g.
+	// "phantom"); "" (or "default") defers to the component definition's structure (#1978).
+	bomStructureOverride string
+	definition           Definition
 	// childOverrides is a flexible occurrence's independent child placement: keyed by child
 	// instance name, it overrides the shared sub-assembly definition's default transform so THIS
 	// placement positions its components independently (M12-F06). Nil for a rigid occurrence.
@@ -164,6 +167,19 @@ func (o *Occurrence) SetReference(reference bool) { o.reference = reference }
 
 // InContactSet reports whether the occurrence is a member of the contact solver's set (#1977).
 func (o *Occurrence) InContactSet() bool { return o.contactSet }
+
+// BOMStructureOverride returns this occurrence's per-occurrence BOM-structure override (a wire
+// spelling), or "" when it defers to the component definition's structure (#1978).
+func (o *Occurrence) BOMStructureOverride() string { return o.bomStructureOverride }
+
+// SetBOMStructureOverride sets (or clears, with "" / "default") this occurrence's BOM-structure
+// override (#1978).
+func (o *Occurrence) SetBOMStructureOverride(structure string) {
+	if structure == "default" {
+		structure = ""
+	}
+	o.bomStructureOverride = structure
+}
 
 // SetInContactSet adds or removes the occurrence from the contact set.
 func (o *Occurrence) SetInContactSet(member bool) { o.contactSet = member }

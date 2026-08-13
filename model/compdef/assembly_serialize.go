@@ -63,6 +63,8 @@ type occurrenceRecipe struct {
 	// 16-cell row-major transform), persisting the M12-F06 independent solution per placement.
 	ChildTransforms map[string][]float64 `yaml:"childTransforms,omitempty"`
 	Substitute      bool                 `yaml:"substitute,omitempty"`
+	// BOMStructure is a per-occurrence BOM-structure override (wire spelling); "" ⇒ inherit (#1978).
+	BOMStructure string `yaml:"bomStructure,omitempty"`
 }
 
 // MarshalRecipe renders the assembly's recipe as YAML bytes (doc.RecipeContent).
@@ -158,6 +160,7 @@ func (a *AssemblyComponentDefinition) occurrencesRecipe() []occurrenceRecipe {
 			Flexible:        o.Flexible(),
 			ChildTransforms: marshalChildOverrides(o.ChildOverrides()),
 			Substitute:      o.IsSubstitute(),
+			BOMStructure:    o.BOMStructureOverride(),
 		})
 	}
 	return out
@@ -247,6 +250,7 @@ func (a *AssemblyComponentDefinition) ResolveReferences(owner *doc.Document) err
 		occ.SetFlexible(rec.Flexible)
 		occ.SetChildOverrides(parseChildOverrides(rec.ChildTransforms))
 		occ.SetSubstitute(rec.Substitute)
+		occ.SetBOMStructureOverride(rec.BOMStructure)
 	}
 	return a.restoreFeatures()
 }

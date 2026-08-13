@@ -58,3 +58,33 @@ func TestAssemblyBOMExportOverWire(t *testing.T) {
 		t.Error("an unknown view should fail")
 	}
 }
+
+// TestAssemblySetBOMStructureOverWire sets a per-occurrence BOM structure over the wire: marking one
+// of two placements Reference drops it from the parts-only view, and an invalid structure is rejected
+// (#1978).
+func TestAssemblySetBOMStructureOverWire(t *testing.T) {
+	r, s, asm, _ := assemblySessionWithBoxes(t)
+	part := blockPart(t, math.P3(0, 0, 0), math.P3(1, 1, 1))
+	asm.Place("box:1", part, math.Identity4())
+	o2 := asm.Place("box:2", part, math.Translation4(math.V3(2, 0, 0)))
+
+	var set wire.SetBOMStructureResult
+	call(t, r, s, "assembly.setBOMStructure", mustJSON(t, wire.SetBOMStructureArgs{
+		Occurrence: o2.ID(), Structure: types.BOMReference,
+	}), &set)
+	if set.Structure != types.BOMReference {
+		t.Errorf("set structure = %q, want reference", set.Structure)
+	}
+
+	var parts wire.BOMViewResult
+	call(t, r, s, "assembly.bomView", `{"view":"partsOnly"}`, &parts)
+	if len(parts.Rows) != 1 || parts.Rows[0].Quantity != 1 {
+		t.Fatalf("parts-only = %+v, want quantity 1 (the reference placement dropped)", parts.Rows)
+	}
+
+	if _, err := r.Handle(s, "assembly.setBOMStructure", []byte(mustJSON(t, wire.SetBOMStructureArgs{
+		Occurrence: o2.ID(), Structure: types.BOMStructure("varies"),
+	}))); err == nil {
+		t.Error("setBOMStructure with a computed value (varies) should fail")
+	}
+}
