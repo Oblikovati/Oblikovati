@@ -113,9 +113,11 @@ func buildReport(analysis solve.DOFAnalysis, converged bool, residuals []solve.R
 		DegreesOfFreedom: analysis.DOF,
 	}
 	for _, p := range order {
+		total := occurrenceDOF(p, residuals)
 		rep.Occurrences = append(rep.Occurrences, OccurrenceDOF{
 			Occurrence:       p.occ.ID(),
-			DegreesOfFreedom: occurrenceDOF(p, residuals),
+			DegreesOfFreedom: total,
+			Split:            occurrenceDOFSplit(p, residuals, total),
 		})
 	}
 	return rep

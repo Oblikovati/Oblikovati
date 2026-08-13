@@ -7,10 +7,12 @@ import (
 	"oblikovati.org/solve"
 )
 
-// OccurrenceDOF reports one occurrence's remaining free degrees of freedom after a solve.
+// OccurrenceDOF reports one occurrence's remaining free degrees of freedom after a solve: the scalar
+// total plus its translation/rotation split, the DOF centre and the free axes (#1980).
 type OccurrenceDOF struct {
 	Occurrence       uint64
 	DegreesOfFreedom int
+	Split            DOFSplit
 }
 
 // SolveReport is the outcome of positioning an assembly: overall health, whether the

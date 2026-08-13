@@ -168,3 +168,34 @@ func dofOfOccurrence(h wire.AssemblyHealthResult, id uint64) int {
 	}
 	return -1
 }
+
+// TestAssemblyDOFSplitOverWire: the solve report splits a free occurrence's six DOF into three
+// translational and three rotational, with a DOF centre (#1980).
+func TestAssemblyDOFSplitOverWire(t *testing.T) {
+	r, s, _, occs := assemblySessionWithBoxes(t, 0, 5)
+	occs[0].SetGrounded(true)
+
+	var health wire.AssemblyHealthResult
+	call(t, r, s, "assemblyConstraints.solve", `{}`, &health)
+	free := dofInfoOf(health, occs[1].ID())
+	if free.TranslationCount != 3 || free.RotationCount != 3 {
+		t.Fatalf("free box DOF split = %d/%d, want 3/3", free.TranslationCount, free.RotationCount)
+	}
+	if free.TranslationCount+free.RotationCount != free.DegreesOfFreedom {
+		t.Errorf("split %d+%d ≠ scalar DOF %d", free.TranslationCount, free.RotationCount, free.DegreesOfFreedom)
+	}
+	grounded := dofInfoOf(health, occs[0].ID())
+	if grounded.TranslationCount != 0 || grounded.RotationCount != 0 {
+		t.Errorf("grounded box split = %d/%d, want 0/0", grounded.TranslationCount, grounded.RotationCount)
+	}
+}
+
+// dofInfoOf returns the DOF info reported for an occurrence id.
+func dofInfoOf(h wire.AssemblyHealthResult, id uint64) wire.OccurrenceDOFInfo {
+	for _, o := range h.Occurrences {
+		if o.Occurrence == id {
+			return o
+		}
+	}
+	return wire.OccurrenceDOFInfo{}
+}

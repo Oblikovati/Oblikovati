@@ -11,6 +11,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
+	"oblikovati.org/math"
 	"oblikovati.org/model/assembly"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/occurrence"
@@ -151,12 +152,38 @@ func limitsInfo(l contract.ConstraintLimits) *wire.ConstraintLimits {
 	return out
 }
 
+// occurrenceDOFInfo renders one occurrence's DOF report — the scalar total plus its translation/
+// rotation split, DOF centre and free axes (#1980).
+func occurrenceDOFInfo(o assembly.OccurrenceDOF) wire.OccurrenceDOFInfo {
+	return wire.OccurrenceDOFInfo{
+		Occurrence:       o.Occurrence,
+		DegreesOfFreedom: o.DegreesOfFreedom,
+		TranslationCount: o.Split.TranslationCount,
+		RotationCount:    o.Split.RotationCount,
+		Center:           types.Point{X: float64(o.Split.Center.X), Y: float64(o.Split.Center.Y), Z: float64(o.Split.Center.Z)},
+		TranslationAxes:  dofVectors(o.Split.TranslationAxes),
+		RotationAxes:     dofVectors(o.Split.RotationAxes),
+	}
+}
+
+// dofVectors converts model axis vectors to the wire vector shape.
+func dofVectors(vs []math.Vector3) []types.Vector {
+	if len(vs) == 0 {
+		return nil
+	}
+	out := make([]types.Vector, len(vs))
+	for i, v := range vs {
+		out[i] = types.Vector{X: float64(v.X), Y: float64(v.Y), Z: float64(v.Z)}
+	}
+	return out
+}
+
 // healthResult renders an assembly solve/health report into its wire shape, deriving the
 // well/under/over-constrained status from the DOF and redundancy counts.
 func healthResult(rep assembly.SolveReport) wire.AssemblyHealthResult {
 	occs := make([]wire.OccurrenceDOFInfo, len(rep.Occurrences))
 	for i, o := range rep.Occurrences {
-		occs[i] = wire.OccurrenceDOFInfo{Occurrence: o.Occurrence, DegreesOfFreedom: o.DegreesOfFreedom}
+		occs[i] = occurrenceDOFInfo(o)
 	}
 	return wire.AssemblyHealthResult{
 		Status:           statusLabel(rep),
