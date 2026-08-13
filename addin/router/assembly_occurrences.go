@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/math"
+	"oblikovati.org/model/bom"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/occurrence"
 )
@@ -23,6 +24,7 @@ import (
 func (r *Router) registerAssemblyOccurrenceHandlers() {
 	r.readOnly(wire.MethodAssemblyOccurrences, assemblyQuery(assemblyOccurrences))
 	r.mutating(wire.MethodAssemblyPlace, "Place Component", typedAssembly(assemblyPlace))
+	r.mutating(wire.MethodAssemblyAddVirtual, "Add Virtual Component", typedAssembly(assemblyAddVirtual))
 	r.mutating(wire.MethodAssemblyPlaceByDefinition, "Place Component", typedAssembly(assemblyPlaceByDefinition))
 	r.mutating(wire.MethodAssemblyPlaceByDefinitionBatch, "Place Components", typedAssembly(assemblyPlaceByDefinitionBatch))
 	r.mutating(wire.MethodAssemblyTransform, "Move Component", typedAssembly(assemblyTransform))
@@ -55,6 +57,37 @@ func assemblyPlace(s *app.Session, asm *compdef.AssemblyComponentDefinition, in 
 		return wire.OccurrenceResult{}, fmt.Errorf("%s: %w", wire.MethodAssemblyPlace, err)
 	}
 	return occurrenceReply(o), nil
+}
+
+// assemblyAddVirtual adds a geometry-free, document-free virtual component to the assembly (#1979).
+func assemblyAddVirtual(s *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.AddVirtualArgs) (wire.OccurrenceResult, error) {
+	if in.Name == "" {
+		return wire.OccurrenceResult{}, fmt.Errorf("%s: a virtual component needs a name", wire.MethodAssemblyAddVirtual)
+	}
+	structure, ok := bom.ParseStructure(structureOrNormal(in.Structure))
+	if !ok || structure == bom.Varies || structure == bom.Default {
+		return wire.OccurrenceResult{}, fmt.Errorf("%s: invalid BOM structure %q", wire.MethodAssemblyAddVirtual, in.Structure)
+	}
+	o := asm.AddVirtual(in.Name, in.PartNumber, structure, transformOrIdentity(in.Transform))
+	s.ActiveDocument().MarkDirty()
+	return occurrenceReply(o), nil
+}
+
+// structureOrNormal defaults an empty BOM-structure spelling to normal.
+func structureOrNormal(s string) string {
+	if s == "" {
+		return "normal"
+	}
+	return s
+}
+
+// transformOrIdentity uses the wire transform, or the identity when it is the zero matrix (a virtual
+// component has no geometry, so an unset placement is harmless).
+func transformOrIdentity(m types.Matrix) math.Matrix4 {
+	if m.Cells == ([16]float64{}) {
+		return math.Identity4()
+	}
+	return matrixFromWire(m)
 }
 
 // assemblyPlaceByDefinition places another instance of an existing occurrence's component.
@@ -297,6 +330,9 @@ func occurrenceInfo(o *occurrence.Occurrence) wire.OccurrenceInfo {
 		Excluded:    o.Excluded(),
 		Reference:   o.Reference(),
 		ContactSet:  o.InContactSet(),
+	}
+	if v, ok := o.Definition().(*compdef.VirtualComponentDefinition); ok {
+		info.Virtual, info.PartNumber = true, v.PartNumber()
 	}
 	if subs := o.SubOccurrences(); subs != nil {
 		info.Children = occurrenceNodes(subs)

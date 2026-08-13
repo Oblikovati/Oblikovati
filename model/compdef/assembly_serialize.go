@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/math"
 	"oblikovati.org/model/attr"
+	"oblikovati.org/model/bom"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/occurrence"
@@ -65,6 +66,12 @@ type occurrenceRecipe struct {
 	Substitute      bool                 `yaml:"substitute,omitempty"`
 	// BOMStructure is a per-occurrence BOM-structure override (wire spelling); "" ⇒ inherit (#1978).
 	BOMStructure string `yaml:"bomStructure,omitempty"`
+	// Virtual marks a geometry-free, document-free component persisted inline (no Component to
+	// resolve); its part number/description/structure restore the VirtualComponentDefinition (#1979).
+	Virtual            bool   `yaml:"virtual,omitempty"`
+	VirtualPartNumber  string `yaml:"virtualPartNumber,omitempty"`
+	VirtualDescription string `yaml:"virtualDescription,omitempty"`
+	VirtualStructure   string `yaml:"virtualStructure,omitempty"`
 }
 
 // MarshalRecipe renders the assembly's recipe as YAML bytes (doc.RecipeContent).
@@ -146,6 +153,10 @@ func (a *AssemblyComponentDefinition) sketchSlice() []*sketch.Sketch {
 func (a *AssemblyComponentDefinition) occurrencesRecipe() []occurrenceRecipe {
 	var out []occurrenceRecipe
 	for _, o := range a.occurrences.All() {
+		if v, ok := o.Definition().(*VirtualComponentDefinition); ok {
+			out = append(out, virtualOccurrenceRecipe(o, v))
+			continue
+		}
 		if o.ComponentName() == "" {
 			continue
 		}
@@ -164,6 +175,23 @@ func (a *AssemblyComponentDefinition) occurrencesRecipe() []occurrenceRecipe {
 		})
 	}
 	return out
+}
+
+// virtualOccurrenceRecipe persists a virtual occurrence inline — its transform/state plus the virtual
+// definition's part number/description/structure — so it restores without a backing document (#1979).
+func virtualOccurrenceRecipe(o *occurrence.Occurrence, v *VirtualComponentDefinition) occurrenceRecipe {
+	cells := o.Transform().Cells()
+	return occurrenceRecipe{
+		Name:               o.Name(),
+		Transform:          cells[:],
+		Suppressed:         o.Suppressed(),
+		Grounded:           o.Grounded(),
+		BOMStructure:       o.BOMStructureOverride(),
+		Virtual:            true,
+		VirtualPartNumber:  v.PartNumber(),
+		VirtualDescription: v.Description(),
+		VirtualStructure:   v.BOMStructure().String(),
+	}
 }
 
 // ApplyRecipe restores the assembly's units and stashes its occurrence records as pending
@@ -242,6 +270,10 @@ func (a *AssemblyComponentDefinition) ResolveReferences(owner *doc.Document) err
 		if err != nil {
 			return err
 		}
+		if rec.Virtual {
+			a.restoreVirtualOccurrence(rec, transform)
+			continue
+		}
 		def, component := a.resolveComponent(owner, rec.Component)
 		occ := a.occurrences.AddByComponentName(rec.Name, def, component, transform)
 		occ.SetSuppressed(rec.Suppressed)
@@ -253,6 +285,18 @@ func (a *AssemblyComponentDefinition) ResolveReferences(owner *doc.Document) err
 		occ.SetBOMStructureOverride(rec.BOMStructure)
 	}
 	return a.restoreFeatures()
+}
+
+// restoreVirtualOccurrence rebuilds a geometry-free virtual occurrence from its inline recipe — no
+// component document to resolve (#1979).
+func (a *AssemblyComponentDefinition) restoreVirtualOccurrence(rec occurrenceRecipe, transform math.Matrix4) {
+	structure, _ := bom.ParseStructure(rec.VirtualStructure)
+	def := NewVirtualComponent(rec.Name, rec.VirtualPartNumber, structure)
+	def.description = rec.VirtualDescription
+	occ := a.occurrences.AddByComponentDefinition(rec.Name, def, transform)
+	occ.SetSuppressed(rec.Suppressed)
+	occ.SetGrounded(rec.Grounded)
+	occ.SetBOMStructureOverride(rec.BOMStructure)
 }
 
 // restoreFeatures reconstructs the machining program now that the occurrences are bound (each
