@@ -31,8 +31,9 @@ type Sheet struct {
 	annotations  *DrawingAnnotations
 	dimensions   *DrawingDimensions
 	sketches     *DrawingSketches
-	bomResolve   bomLookup  // parts-list BOM source, captured from the owning Sheets
-	dimPrecision func() int // active drafting-standard decimal places, captured from the owning Sheets
+	bomResolve   bomLookup      // parts-list BOM source, captured from the owning Sheets
+	modelDims    modelDimLookup // retrievable model dimensions, captured from the owning Sheets (#1991)
+	dimPrecision func() int     // active drafting-standard decimal places, captured from the owning Sheets
 }
 
 // Views returns the sheet's drawing views (projections of the referenced model).
@@ -57,7 +58,7 @@ func (s *Sheet) Sketches() *DrawingSketches {
 // Dimensions returns the sheet's drawing dimensions (associative linear measurements on views).
 func (s *Sheet) Dimensions() *DrawingDimensions {
 	if s.dimensions == nil {
-		s.dimensions = newDrawingDimensions(s.views, s.views.body, s.dimPrecision)
+		s.dimensions = newDrawingDimensions(s.views, s.views.body, s.modelDims, s.dimPrecision)
 	}
 	return s.dimensions
 }
@@ -131,13 +132,14 @@ func (s *Sheet) TitleBlock() contract.DrawingTitleBlock {
 
 // Sheets is a drawing's ordered, named sheet collection, tracking which sheet is active.
 type Sheets struct {
-	items        []*Sheet
-	active       int
-	lookup       propertyLookup         // handed to each new title block; set by the owning Content
-	bodyResolve  bodyLookup             // handed to each sheet's views; set by the owning Content
-	bomResolve   bomLookup              // handed to each sheet's annotations (parts lists); set by Content
-	dimPrecision func() int             // handed to each sheet's dimensions (decimal places); set by Content
-	formats      map[string]SheetFormat // reusable sheet-format templates (#1989)
+	items            []*Sheet
+	active           int
+	lookup           propertyLookup         // handed to each new title block; set by the owning Content
+	bodyResolve      bodyLookup             // handed to each sheet's views; set by the owning Content
+	bomResolve       bomLookup              // handed to each sheet's annotations (parts lists); set by Content
+	modelDimsResolve modelDimLookup         // handed to each sheet's dimensions (retrieve); set by Content (#1991)
+	dimPrecision     func() int             // handed to each sheet's dimensions (decimal places); set by Content
+	formats          map[string]SheetFormat // reusable sheet-format templates (#1989)
 }
 
 func newSheets() *Sheets { return &Sheets{} }
@@ -169,6 +171,7 @@ func (s *Sheets) Add(spec SheetSpec) (*Sheet, error) {
 		titleBlock:   newTitleBlock(DefaultTitleBlockDefinition(), s.lookup),
 		views:        newDrawingViews(s.bodyResolve),
 		bomResolve:   s.bomResolve,
+		modelDims:    s.modelDimsResolve,
 		dimPrecision: s.dimPrecision,
 		lookup:       s.lookup,
 	}

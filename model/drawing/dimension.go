@@ -54,7 +54,12 @@ type DrawingDimension struct {
 	textDY       float64
 	nx           float64 // unit perpendicular of the dimension line — text-lift + line-drag direction
 	ny           float64
-	curves       []DrawingCurve
+	// Retrieved model dimension (#1991): retrievedFrom is the source model-dimension (parameter) name
+	// ("" for an ordinary picked dimension); worldA/worldB are the model-space 3D endpoints it spans,
+	// re-fetched from the referenced model on recompute so the value tracks the parameter.
+	retrievedFrom  string
+	worldA, worldB gmath.Point3
+	curves         []DrawingCurve
 }
 
 // textGapMM lifts the value text off the dimension line so it stays readable by default.
@@ -188,11 +193,12 @@ type DrawingDimensions struct {
 	items     []*DrawingDimension
 	views     *DrawingViews
 	body      bodyLookup
-	precision func() int // active drafting standard's decimal places; set by the owning sheet
+	modelDims modelDimLookup // referenced model's retrievable parametric dimensions (#1991); nil ⇒ none
+	precision func() int     // active drafting standard's decimal places; set by the owning sheet
 }
 
-func newDrawingDimensions(views *DrawingViews, body bodyLookup, precision func() int) *DrawingDimensions {
-	return &DrawingDimensions{views: views, body: body, precision: precision}
+func newDrawingDimensions(views *DrawingViews, body bodyLookup, modelDims modelDimLookup, precision func() int) *DrawingDimensions {
+	return &DrawingDimensions{views: views, body: body, modelDims: modelDims, precision: precision}
 }
 
 // defaultDimDecimals is the fallback decimal places when no drafting-standard precision provider
@@ -545,6 +551,10 @@ func (ds *DrawingDimensions) recompute(d *DrawingDimension) {
 	if err != nil {
 		return
 	}
+	if d.retrievedFrom != "" {
+		ds.recomputeRetrieved(d, view, basis)
+		return
+	}
 	if isRadial(d.dimType) {
 		ds.recomputeRadial(d, view, body, basis)
 		return
@@ -609,8 +619,15 @@ func (ds *DrawingDimensions) recomputeLinear(d *DrawingDimension, view *DrawingV
 	}
 	p1 := hlr.ProjectPoint(basis, va.Point())
 	p2 := hlr.ProjectPoint(basis, vb.Point())
-	d.valueMM = measureMM(d.dimType, p1, p2)
-	d.text = d.decorate(formatDimValue(d.valueMM, ds.decimals()))
+	ds.buildLinearGlyph(d, view, p1, p2, measureMM(d.dimType, p1, p2))
+}
+
+// buildLinearGlyph measures the (already projected) endpoints, decorates the value and rebuilds the
+// linear dimension glyph and text anchor — the shared tail of a picked linear dimension and a
+// retrieved model dimension (#1991).
+func (ds *DrawingDimensions) buildLinearGlyph(d *DrawingDimension, view *DrawingView, p1, p2 gmath.Point2, valueMM float64) {
+	d.valueMM = valueMM
+	d.text = d.decorate(formatDimValue(valueMM, ds.decimals()))
 	s1, s2 := view.place(p1), view.place(p2)
 	ax, ay := dimensionAxis(d.dimType, s1, s2)
 	var mx, my float64

@@ -42,11 +42,12 @@ type BOMResolver interface {
 type Content struct {
 	sheets       *Sheets
 	styles       *StylesManager
-	modelRef     string          // full document name of the primary referenced model
-	props        ModelProperties // resolves modelRef's iProperties; nil ⇒ unresolved
-	bodies       BodyResolver    // resolves modelRef's body for view projection; nil ⇒ unresolved
-	bom          BOMResolver     // resolves modelRef's BOM for parts lists; nil ⇒ unresolved
-	lastViewBody *topo.Body      // body the views were last projected against (staleness check)
+	modelRef     string                 // full document name of the primary referenced model
+	props        ModelProperties        // resolves modelRef's iProperties; nil ⇒ unresolved
+	bodies       BodyResolver           // resolves modelRef's body for view projection; nil ⇒ unresolved
+	bom          BOMResolver            // resolves modelRef's BOM for parts lists; nil ⇒ unresolved
+	modelDims    ModelDimensionResolver // resolves modelRef's parametric dimensions (#1991); nil ⇒ none
+	lastViewBody *topo.Body             // body the views were last projected against (staleness check)
 }
 
 // NewContent creates a drawing with one default A3 landscape sheet (bordered, with the
@@ -57,6 +58,7 @@ func NewContent() *Content {
 	c.sheets.lookup = c.resolveProperty
 	c.sheets.bodyResolve = c.resolveBody
 	c.sheets.bomResolve = c.resolveBOM
+	c.sheets.modelDimsResolve = c.resolveModelDimensions
 	c.sheets.dimPrecision = c.dimDecimals
 	c.sheets.addDefault()
 	return c
@@ -94,6 +96,20 @@ func (c *Content) SetModelProperties(props ModelProperties) { c.props = props }
 // SetBodyResolver injects the resolver for the referenced model's body. The host calls it
 // after wiring the drawing to its workspace; until then, views cannot be projected.
 func (c *Content) SetBodyResolver(bodies BodyResolver) { c.bodies = bodies }
+
+// SetModelDimensionResolver injects the resolver for the referenced model's parametric dimensions
+// (#1991). The host calls it after wiring the drawing to its workspace; until then, no model
+// dimension is retrievable.
+func (c *Content) SetModelDimensionResolver(dims ModelDimensionResolver) { c.modelDims = dims }
+
+// resolveModelDimensions is the retrieve hook handed to the sheets: it resolves the referenced
+// model's parametric dimensions through the injected resolver, or (nil, false) when none is wired.
+func (c *Content) resolveModelDimensions() ([]ModelDimension, bool) {
+	if c.modelDims == nil || c.modelRef == "" {
+		return nil, false
+	}
+	return c.modelDims.ModelDimensions(c.modelRef)
+}
 
 // SetBOMResolver injects the resolver for the referenced assembly's BOM. The host calls it after
 // wiring the drawing to its workspace; until then, parts lists have no rows.

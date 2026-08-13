@@ -10,6 +10,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/hlr"
+	gmath "oblikovati.org/math"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/yamlcodec"
 )
@@ -104,6 +105,20 @@ type dimensionRecipe struct {
 	DualUnit     bool                       `yaml:"dualUnit,omitempty"`
 	Tolerance    *types.DimensionTolerance  `yaml:"tolerance,omitempty"`
 	Inspection   *types.InspectionDimension `yaml:"inspection,omitempty"`
+	// Retrieved model dimension (#1991): the source parameter name and the 3D world endpoints it
+	// spans (re-fetched from the model on open; the endpoints are the fallback when it is gone).
+	RetrievedFrom string     `yaml:"retrievedFrom,omitempty"`
+	WorldA        [3]float64 `yaml:"worldA,omitempty"`
+	WorldB        [3]float64 `yaml:"worldB,omitempty"`
+}
+
+// point3Cells / point3FromCells convert a 3D point to/from its persisted [x,y,z] cells (#1991).
+func point3Cells(p gmath.Point3) [3]float64 {
+	return [3]float64{float64(p.X), float64(p.Y), float64(p.Z)}
+}
+
+func point3FromCells(c [3]float64) gmath.Point3 {
+	return gmath.P3(gmath.Scalar(c[0]), gmath.Scalar(c[1]), gmath.Scalar(c[2]))
 }
 
 // annotationRecipe is the YAML shape of one drawing annotation. A CoG marker's glyph re-derives
@@ -370,6 +385,7 @@ func dimensionRecipesOf(sh *Sheet) []dimensionRecipe {
 			Prefix: d.prefix, Suffix: d.suffix, OverrideText: d.overrideText,
 			HideValue: d.hideValue, DualUnit: d.dualUnit,
 			Tolerance: nonZeroTolerance(d.tolerance), Inspection: nonZeroInspection(d.inspection),
+			RetrievedFrom: d.retrievedFrom, WorldA: point3Cells(d.worldA), WorldB: point3Cells(d.worldB),
 		})
 	}
 	return out
@@ -445,7 +461,7 @@ func (s *Sheets) restore(rec sheetRecipe) error {
 	if err != nil {
 		return err
 	}
-	sh := &Sheet{name: rec.Name, size: size, orientation: orient, width: w, height: h, views: newDrawingViews(s.bodyResolve), bomResolve: s.bomResolve, dimPrecision: s.dimPrecision, lookup: s.lookup, revision: rec.Revision}
+	sh := &Sheet{name: rec.Name, size: size, orientation: orient, width: w, height: h, views: newDrawingViews(s.bodyResolve), bomResolve: s.bomResolve, modelDims: s.modelDimsResolve, dimPrecision: s.dimPrecision, lookup: s.lookup, revision: rec.Revision}
 	if rec.Border {
 		sh.border = restoreBorder(rec)
 	}
@@ -509,6 +525,7 @@ func restoreDimensions(sh *Sheet, recs []dimensionRecipe) {
 			offset: dr.Offset, textDX: dr.TextDX, textDY: dr.TextDY, axisHorizontal: dr.AxisHorz,
 			prefix: dr.Prefix, suffix: dr.Suffix, overrideText: dr.OverrideText,
 			hideValue: dr.HideValue, dualUnit: dr.DualUnit,
+			retrievedFrom: dr.RetrievedFrom, worldA: point3FromCells(dr.WorldA), worldB: point3FromCells(dr.WorldB),
 		}
 		if dr.Tolerance != nil {
 			d.tolerance = *dr.Tolerance

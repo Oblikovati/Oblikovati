@@ -13,6 +13,7 @@ import (
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/drawing"
+	"oblikovati.org/model/sketch"
 )
 
 // The drawing environment (M14-F01, #384): creating a drawing document and reaching the
@@ -57,6 +58,7 @@ func ActiveDrawing(s *Session) (*drawing.Content, error) {
 	c.SetModelProperties(referencedModelProperties{ws: s.workspace, ref: c.ModelReference})
 	c.SetBodyResolver(referencedModelBodies{ws: s.workspace})
 	c.SetBOMResolver(referencedModelBOM{ws: s.workspace})
+	c.SetModelDimensionResolver(referencedModelDimensions{ws: s.workspace})
 	return c, nil
 }
 
@@ -102,7 +104,59 @@ func wireDrawingResolver(s *Session, d *doc.Document) {
 		c.SetModelProperties(referencedModelProperties{ws: s.workspace, ref: c.ModelReference})
 		c.SetBodyResolver(referencedModelBodies{ws: s.workspace})
 		c.SetBOMResolver(referencedModelBOM{ws: s.workspace})
+		c.SetModelDimensionResolver(referencedModelDimensions{ws: s.workspace})
 	}
+}
+
+// referencedModelDimensions resolves a drawing's referenced part document to its retrievable
+// parametric dimensions (#1991): each of the part's sketch distance-dimensions, resolved to its
+// parameter name, measured value and the two world endpoints it spans (via the sketch plane). Other
+// dimension kinds (radius/diameter/angle) are not retrieved this increment.
+type referencedModelDimensions struct {
+	ws *doc.Workspace
+}
+
+func (r referencedModelDimensions) ModelDimensions(fullDocumentName string) ([]drawing.ModelDimension, bool) {
+	d, ok := r.ws.ByName(fullDocumentName)
+	if !ok || d.Content() == nil {
+		return nil, false
+	}
+	src, ok := d.Content().(interface{ Sketches() *sketch.Sketches })
+	if !ok {
+		return nil, false
+	}
+	var out []drawing.ModelDimension
+	sketches := src.Sketches()
+	for i := 0; i < sketches.Count(); i++ {
+		out = append(out, sketchDistanceDimensions(sketches.Item(i))...)
+	}
+	return out, true
+}
+
+// sketchDistanceDimensions maps a sketch's distance dimensions to model dimensions, projecting each
+// point through the sketch plane to world space (#1991).
+func sketchDistanceDimensions(sk *sketch.Sketch) []drawing.ModelDimension {
+	plane := sk.Plane()
+	var out []drawing.ModelDimension
+	for _, dc := range sk.DimensionConstraints().All() {
+		if dc.Kind() != sketch.DistanceDim {
+			continue
+		}
+		refs := dc.Refs()
+		if len(refs) != 2 {
+			continue
+		}
+		a, aok := refs[0].(*sketch.Point)
+		b, bok := refs[1].(*sketch.Point)
+		if !aok || !bok {
+			continue
+		}
+		out = append(out, drawing.ModelDimension{
+			Name: dc.Parameter().Name(), Value: dc.Measured(),
+			A: plane.ToModel(a.Position()), B: plane.ToModel(b.Position()),
+		})
+	}
+	return out
 }
 
 // referencedModelBodies resolves a drawing's referenced model document to its body for view
