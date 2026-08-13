@@ -26,10 +26,11 @@ const cmToMM = 10.0
 // hidden, carrying the source model edge's reference key so the view stays associative across
 // model recompute.
 type DrawingCurve struct {
-	A, B    math.Point2
-	Visible bool
-	kind    types.DrawingCurveKind
-	edgeKey []byte
+	A, B     math.Point2
+	Visible  bool
+	kind     types.DrawingCurveKind
+	edgeKey  []byte
+	edgeType types.DrawingEdgeType // model-edge role (tangent/thread/…); zero ⇒ ordinary sharp edge
 }
 
 // Start, End and IsVisible expose the curve geometry; EdgeKey is the source model edge key;
@@ -39,6 +40,10 @@ func (c DrawingCurve) End() math.Point2             { return c.B }
 func (c DrawingCurve) IsVisible() bool              { return c.Visible }
 func (c DrawingCurve) Kind() types.DrawingCurveKind { return c.kind }
 func (c DrawingCurve) EdgeKey() []byte              { return c.edgeKey }
+
+// EdgeType is the model-edge role the curve came from (tangent/thread/bend…); zero ⇒ ordinary sharp
+// edge (#1984).
+func (c DrawingCurve) EdgeType() types.DrawingEdgeType { return c.edgeType }
 
 // DrawingView is one view on a sheet: a base view (standard orientation) or a projected view
 // (derived from a base view by a direction), at a scale/style/centre, holding the drawing
@@ -73,7 +78,10 @@ type DrawingView struct {
 	labelX    float64
 	labelY    float64
 	crops     []cropRegion // crop fences clipping this view (#1987)
-	curves    []DrawingCurve
+	// hideTangentEdges drops smooth tangent edges (fillet/blend transitions) from the projection when
+	// set; the zero value shows them (the default), so no view constructor needs to opt in (#1984).
+	hideTangentEdges bool
+	curves           []DrawingCurve
 }
 
 var (
@@ -176,14 +184,14 @@ func (v *DrawingView) recompute(body *topo.Body, basis hlr.View) {
 	}
 	segs := v.project(body, basis)
 	v.curves = make([]DrawingCurve, 0, len(segs))
-	v.buildCurves(segs)
+	v.buildCurves(segs, tangentEdgeKeys(body))
 	v.applyCrops() // clip the projected curves to any crop fences (#1987)
 }
 
 // buildCurves fills the view's curves from its projected segments, dispatched by view type: the
 // break/slice/breakout views run their own compression/clip logic; every other type runs the
 // plain per-segment placement (clipped to a detail boundary where present).
-func (v *DrawingView) buildCurves(segs []hlr.Segment) {
+func (v *DrawingView) buildCurves(segs []hlr.Segment, tangent map[string]bool) {
 	switch v.viewType {
 	case types.DrawingViewBreak:
 		v.recomputeBreak(segs)
@@ -194,13 +202,26 @@ func (v *DrawingView) buildCurves(segs []hlr.Segment) {
 	default:
 		wireframe := v.style == types.WireframeViewStyle
 		for _, s := range segs {
+			edgeType := segEdgeType(s, tangent)
+			if edgeType == types.TangentDrawingEdge && v.hideTangentEdges {
+				continue // tangent display suppressed for this view (#1984)
+			}
 			a, b, ok := v.clip(s.A, s.B)
 			if !ok {
 				continue
 			}
-			v.appendCurve(a, b, wireframe || s.Visible, curveKind(s.Kind), s.EdgeKey)
+			v.appendEdgeCurve(a, b, wireframe || s.Visible, curveKind(s.Kind), s.EdgeKey, edgeType)
 		}
 	}
+}
+
+// segEdgeType classifies a projected segment by the role of its source model edge — currently
+// tangent (a smooth fillet/blend transition) or ordinary; other roles are unknown for now (#1984).
+func segEdgeType(s hlr.Segment, tangent map[string]bool) types.DrawingEdgeType {
+	if len(s.EdgeKey) > 0 && tangent[string(s.EdgeKey)] {
+		return types.TangentDrawingEdge
+	}
+	return types.UnknownDrawingEdge
 }
 
 // DraftSizeMM returns a draft view's frame size (sheet millimetres).
@@ -223,12 +244,17 @@ func (v *DrawingView) recomputeDraftFrame() {
 
 // appendCurve places a model-2D segment on the sheet and adds it to the view's curves.
 func (v *DrawingView) appendCurve(a, b math.Point2, visible bool, kind types.DrawingCurveKind, edgeKey []byte) {
+	v.appendEdgeCurve(a, b, visible, kind, edgeKey, types.UnknownDrawingEdge)
+}
+
+// appendEdgeCurve is appendCurve carrying the source edge's role (#1984).
+func (v *DrawingView) appendEdgeCurve(a, b math.Point2, visible bool, kind types.DrawingCurveKind, edgeKey []byte, edgeType types.DrawingEdgeType) {
 	// The hidden-line-removed style keeps only visible edges, so a hidden model edge produces no
 	// curve at all (#1985). Non-edge curves (section fills, break glyphs) are always kept.
 	if !visible && kind == types.DrawingEdgeCurve && v.effStyle.RemovesHiddenEdges() {
 		return
 	}
-	v.curves = append(v.curves, DrawingCurve{A: v.place(a), B: v.place(b), Visible: visible, kind: kind, edgeKey: edgeKey})
+	v.curves = append(v.curves, DrawingCurve{A: v.place(a), B: v.place(b), Visible: visible, kind: kind, edgeKey: edgeKey, edgeType: edgeType})
 }
 
 // resolveEffectiveStyle sets the view's effective render style for this recompute, following a

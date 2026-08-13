@@ -31,6 +31,7 @@ func (r *Router) registerDrawingViewHandlers() {
 	r.mutating(wire.MethodDrawingViewsAddDraft, "Add View", typedCtx(activeSheetViews, drawingViewsAddDraft))
 	r.mutating(wire.MethodDrawingViewsDelete, "Delete View", typedCtx(activeSheetViews, drawingViewsDelete))
 	r.mutating(wire.MethodDrawingViewsSetLabel, "Edit View Label", typedCtx(activeSheetViews, drawingViewsSetLabel))
+	r.mutating(wire.MethodDrawingViewsSetDisplay, "Edit View Display", typedCtx(activeSheetViews, drawingViewsSetDisplay))
 	r.mutating(wire.MethodDrawingViewsAddCrop, "Crop View", typedCtx(activeSheetViews, drawingViewsAddCrop))
 	r.mutating(wire.MethodDrawingViewsRemoveCrop, "Remove Crop", typedCtx(activeSheetViews, drawingViewsRemoveCrop))
 	r.readOnly(wire.MethodDrawingViewsCurves, typedCtx(activeSheetViews, drawingViewsCurves))
@@ -215,6 +216,18 @@ func drawingViewsSetLabel(s *app.Session, views *drawing.DrawingViews, in wire.S
 	return listDrawingViewsResult(views), nil
 }
 
+// drawingViewsSetDisplay toggles a view's edge-display options — currently tangent-edge display (#1984).
+func drawingViewsSetDisplay(s *app.Session, views *drawing.DrawingViews, in wire.SetViewDisplayArgs) (wire.ListDrawingViewsResult, error) {
+	if in.DisplayTangentEdges == nil {
+		return listDrawingViewsResult(views), nil // nothing to change
+	}
+	if err := views.SetDisplayTangentEdges(in.Name, *in.DisplayTangentEdges); err != nil {
+		return wire.ListDrawingViewsResult{}, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return listDrawingViewsResult(views), nil
+}
+
 // drawingViewsAddCrop clips the named view to a rectangular or circular fence (#1987).
 func drawingViewsAddCrop(s *app.Session, views *drawing.DrawingViews, in wire.AddViewCropArgs) (wire.ListDrawingViewsResult, error) {
 	if in.Shape != "" && in.Shape != "rectangle" && in.Shape != "circle" {
@@ -265,9 +278,19 @@ func drawingViewsCurves(_ *app.Session, views *drawing.DrawingViews, in wire.Vie
 			AX: float64(c.Start().X), AY: float64(c.Start().Y),
 			BX: float64(c.End().X), BY: float64(c.End().Y),
 			Visible: c.IsVisible(), Kind: c.Kind().String(), EdgeKey: hex.EncodeToString(c.EdgeKey()),
+			EdgeType: edgeTypeSpelling(c.EdgeType()),
 		})
 	}
 	return out, nil
+}
+
+// edgeTypeSpelling is the wire spelling of a curve's edge role, or "" for an ordinary sharp edge so
+// the field is omitted on the common case (#1984).
+func edgeTypeSpelling(t types.DrawingEdgeType) string {
+	if t == types.UnknownDrawingEdge {
+		return ""
+	}
+	return t.String()
 }
 
 // drawingViewInfo flattens a drawing view into its wire DTO.
@@ -281,7 +304,7 @@ func drawingViewInfo(v *drawing.DrawingView) wire.DrawingViewInfo {
 		BaseView:  v.BaseViewName(), // the parent of any derived view (projected/auxiliary/section)
 		Label:     v.Label(),
 		ShowLabel: v.ShowLabel(), ShowName: v.ShowName(), ShowScale: v.ShowScale(),
-		CropCount: v.CropCount(),
+		CropCount: v.CropCount(), DisplayTangentEdges: v.DisplayTangentEdges(),
 	}
 	info.LabelXMM, info.LabelYMM = v.LabelPositionMM()
 	switch v.Type() {

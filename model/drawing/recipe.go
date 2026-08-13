@@ -168,6 +168,8 @@ type viewRecipe struct {
 	LabelY    float64 `yaml:"labelYmm,omitempty"`
 	// Crop fences clipping the view (#1987).
 	Crops []cropRecipe `yaml:"crops,omitempty"`
+	// HideTangentEdges drops smooth tangent edges from the projection (#1984); default shows them.
+	HideTangentEdges bool `yaml:"hideTangentEdges,omitempty"`
 }
 
 // cropRecipe is the YAML shape of one crop fence: a rectangle (X0,Y0)-(X1,Y1) or a circle
@@ -385,6 +387,7 @@ func viewRecipeOf(v *DrawingView) viewRecipe {
 		SectionDepth: v.sectionOpts.Depth, SectionReverse: v.sectionOpts.Reverse, SectionType: v.sectionType.String(),
 		LabelText: v.labelText, HideLabel: v.hideLabel, HideName: v.hideName, HideScale: v.hideScale,
 		LabelX: v.labelX, LabelY: v.labelY, Crops: cropRecipesOf(v.crops),
+		HideTangentEdges: v.hideTangentEdges,
 	}
 }
 
@@ -560,6 +563,7 @@ func restoreView(vr viewRecipe) *DrawingView {
 		scale: positiveScale(vr.Scale), style: style, centerX: vr.CenterX, centerY: vr.CenterY,
 		labelText: vr.LabelText, hideLabel: vr.HideLabel, hideName: vr.HideName, hideScale: vr.HideScale,
 		labelX: vr.LabelX, labelY: vr.LabelY, crops: cropRegionsFrom(vr.Crops),
+		hideTangentEdges: vr.HideTangentEdges,
 	}
 }
 

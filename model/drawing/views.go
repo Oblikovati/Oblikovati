@@ -528,6 +528,18 @@ func (vs *DrawingViews) SetLabel(name string, style ViewLabelStyle) error {
 	return nil
 }
 
+// SetDisplayTangentEdges shows/hides the named view's smooth tangent edges and re-projects it so the
+// change takes effect immediately (#1984).
+func (vs *DrawingViews) SetDisplayTangentEdges(name string, show bool) error {
+	v, ok := vs.ByName(name)
+	if !ok {
+		return fmt.Errorf("drawing: no view named %q", name)
+	}
+	v.SetDisplayTangentEdges(show)
+	vs.Recompute()
+	return nil
+}
+
 // resolveEffectiveStyles resolves each view's FromBase style to its base view's style before the
 // projection pass, so a derived view renders with its parent's style associatively (#1985).
 func (vs *DrawingViews) resolveEffectiveStyles() {
