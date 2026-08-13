@@ -33,6 +33,7 @@ func (r *Router) registerAssemblyJointHandlers() {
 	r.mutating(wire.MethodAssemblyJointsSetLimits, "Edit Joint", typedAssembly(assemblyJointSetLimits))
 	r.mutating(wire.MethodAssemblyJointsSetFlip, "Edit Joint", typedAssembly(assemblyJointSetFlip))
 	r.mutating(wire.MethodAssemblyJointsSetState, "Edit Joint", typedAssembly(assemblyJointSetState))
+	r.mutating(wire.MethodAssemblyJointsSetOrigin, "Edit Joint Origin", typedAssembly(assemblyJointSetOrigin))
 	r.readOnly(wire.MethodDSJointsList, assemblyQuery(dsJointsList))
 	r.mutating(wire.MethodDSJointsAdd, "Add Joint", dsJointAdd)
 	r.mutating(wire.MethodDSJointsSetImposedMotion, "Edit Joint Motion", typedAssembly(dsJointSetImposedMotion))
@@ -113,6 +114,66 @@ func assemblyJointSetState(_ *app.Session, asm *compdef.AssemblyComponentDefinit
 	}
 	asm.SolveConstraints()
 	return jointResult(asm, in.ID), nil
+}
+
+// assemblyJointSetOrigin defines one of a joint's two origins — inferred, offset, or the midplane
+// between two faces — and re-solves the assembly (#1973).
+func assemblyJointSetOrigin(_ *app.Session, asm *compdef.AssemblyComponentDefinition, in wire.SetJointOriginArgs) (wire.AssemblyJointResult, error) {
+	j := asm.Joints().ByID(in.ID)
+	if j == nil {
+		return wire.AssemblyJointResult{}, fmt.Errorf("%s: no joint with id %d", wire.MethodAssemblyJointsSetOrigin, in.ID)
+	}
+	if in.Which != 1 && in.Which != 2 {
+		return wire.AssemblyJointResult{}, fmt.Errorf("%s: which must be 1 or 2, got %d", wire.MethodAssemblyJointsSetOrigin, in.Which)
+	}
+	mode, ok := types.ParseAssemblyJointOriginMode(in.Mode)
+	if !ok {
+		return wire.AssemblyJointResult{}, fmt.Errorf("%s: unknown origin mode %q", wire.MethodAssemblyJointsSetOrigin, in.Mode)
+	}
+	if err := applyJointOrigin(asm, j, in, mode); err != nil {
+		return wire.AssemblyJointResult{}, err
+	}
+	asm.SolveConstraints()
+	return jointResult(asm, in.ID), nil
+}
+
+// applyJointOrigin dispatches the origin definition onto joint origin one or two (#1973).
+func applyJointOrigin(asm *compdef.AssemblyComponentDefinition, j assembly.Joint, in wire.SetJointOriginArgs, mode types.AssemblyJointOriginMode) error {
+	one := in.Which == 1
+	switch mode {
+	case types.JointOriginInfer:
+		pick(one, j.SetOriginOneAsInfer, j.SetOriginTwoAsInfer)()
+	case types.JointOriginOffset:
+		pick(one, func() { j.SetOriginOneAsOffset(in.XOffset, in.YOffset) }, func() { j.SetOriginTwoAsOffset(in.XOffset, in.YOffset) })()
+	case types.JointOriginBetweenTwoFaces:
+		fa, fb, err := resolveTwoFaces(asm, in)
+		if err != nil {
+			return err
+		}
+		pick(one, func() { j.SetOriginOneAsBetweenTwoFaces(fa, fb) }, func() { j.SetOriginTwoAsBetweenTwoFaces(fa, fb) })()
+	}
+	return nil
+}
+
+// pick returns whichOne when one is true, else whichTwo — a small dispatch helper for origin one/two.
+func pick(one bool, whichOne, whichTwo func()) func() {
+	if one {
+		return whichOne
+	}
+	return whichTwo
+}
+
+// resolveTwoFaces resolves the two face references of a between-two-faces origin.
+func resolveTwoFaces(asm *compdef.AssemblyComponentDefinition, in wire.SetJointOriginArgs) (assembly.Ref, assembly.Ref, error) {
+	fa, err := resolveConstraintRef(asm, in.FaceA, wire.MethodAssemblyJointsSetOrigin)
+	if err != nil {
+		return assembly.Ref{}, assembly.Ref{}, err
+	}
+	fb, err := resolveConstraintRef(asm, in.FaceB, wire.MethodAssemblyJointsSetOrigin)
+	if err != nil {
+		return assembly.Ref{}, assembly.Ref{}, err
+	}
+	return fa, fb, nil
 }
 
 // applyJointState sets each present state field onto the joint with id in.ID.

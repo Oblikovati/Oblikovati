@@ -31,6 +31,15 @@ type Joint interface {
 	setPositions(linear, angular float64)
 	setLocked(v bool)
 	setProtected(v bool)
+	// Joint origin definition (#1973): position each origin frame and read it back.
+	SetOriginOneAsInfer()
+	SetOriginTwoAsInfer()
+	SetOriginOneAsOffset(dx, dy float64)
+	SetOriginTwoAsOffset(dx, dy float64)
+	SetOriginOneAsBetweenTwoFaces(a, b Ref)
+	SetOriginTwoAsBetweenTwoFaces(a, b Ref)
+	OriginModes() (a, b types.AssemblyJointOriginMode)
+	OriginOffsets() (ax, ay, bx, by float64)
 }
 
 // jointBase adds the joint kind, flip sense, linear/angular limits, and the joint's seating and
@@ -50,6 +59,8 @@ type jointBase struct {
 	// relationships (#1974).
 	locked    bool
 	protected bool
+	// aOrigin and bOrigin position each joint origin's frame (infer / offset / between-two-faces, #1973).
+	aOrigin, bOrigin originDef
 }
 
 // Type returns the joint kind.
@@ -139,7 +150,7 @@ type assemblyJoint struct {
 func (j *assemblyJoint) bind(b binder) []solve.Residual {
 	return single(func() []float64 {
 		pa, pb := j.boundPlacements(b)
-		return jointResiduals(j.kind, j.a.prim, j.b.prim, pa.matrix(), pb.matrix(), j.flip, j.gap)
+		return jointResiduals(j.kind, j.effectiveA(), j.effectiveB(), pa.matrix(), pb.matrix(), j.flip, j.gap)
 	})
 }
 

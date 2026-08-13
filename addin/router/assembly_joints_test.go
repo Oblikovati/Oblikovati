@@ -108,3 +108,31 @@ func TestAssemblyJointUnknownKeyRejected(t *testing.T) {
 		t.Error("addRotational with an unknown reference key should fail")
 	}
 }
+
+// TestAssemblyJointSetOriginOverWire adds a joint, offsets its first origin over the wire, and checks
+// the joint info reports the offset mode and X/Y, and that an unknown mode is rejected (#1973).
+func TestAssemblyJointSetOriginOverWire(t *testing.T) {
+	r, s, _, occs := assemblySessionWithBoxes(t, 0, 5)
+	occs[0].SetGrounded(true)
+	edge := boxEdgeKey(t, occs[0])
+
+	var added wire.AssemblyJointResult
+	call(t, r, s, "assemblyJoints.addRigid", mustJSON(t, wire.AddJointArgs{
+		A: wire.ConstraintGeomRef{Occurrence: occs[0].ID(), Entity: edge},
+		B: wire.ConstraintGeomRef{Occurrence: occs[1].ID(), Entity: edge},
+	}), &added)
+
+	var offset wire.AssemblyJointResult
+	call(t, r, s, "assemblyJoints.setOrigin", mustJSON(t, wire.SetJointOriginArgs{
+		ID: added.Joint.ID, Which: 1, Mode: "offset", XOffset: 2, YOffset: 3,
+	}), &offset)
+	if offset.Joint.OriginOneMode != "offset" || offset.Joint.OriginOneXOffset != 2 || offset.Joint.OriginOneYOffset != 3 {
+		t.Errorf("offset origin = %+v, want mode offset (2,3)", offset.Joint)
+	}
+
+	if _, err := r.Handle(s, "assemblyJoints.setOrigin", []byte(mustJSON(t, wire.SetJointOriginArgs{
+		ID: added.Joint.ID, Which: 1, Mode: "midplane",
+	}))); err == nil {
+		t.Error("setOrigin with an unknown mode should fail")
+	}
+}
