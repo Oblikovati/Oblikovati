@@ -56,6 +56,7 @@ func assemblyPlace(s *app.Session, asm *compdef.AssemblyComponentDefinition, in 
 	if err != nil {
 		return wire.OccurrenceResult{}, fmt.Errorf("%s: %w", wire.MethodAssemblyPlace, err)
 	}
+	asm.GroundFirstComponentIfEnabled(o) // ground the first placed component (#1981)
 	return occurrenceReply(o), nil
 }
 

@@ -47,9 +47,11 @@ func (a *AssemblyComponentDefinition) SetOptions(opts AssemblyOptions) {
 	}
 }
 
-// groundFirstComponent grounds a freshly placed occurrence when it is the assembly's first and the
-// place-and-ground-first-component option is on (#1981).
-func (a *AssemblyComponentDefinition) groundFirstComponent(o *occurrence.Occurrence) {
+// GroundFirstComponentIfEnabled grounds a freshly placed occurrence when it is the assembly's first
+// and the place-and-ground-first-component option is on (#1981). The user place action calls it after
+// placing a component; the low-level Place methods do not, so internal placement (replication,
+// restore, tests) is never surprised by a grounding side effect.
+func (a *AssemblyComponentDefinition) GroundFirstComponentIfEnabled(o *occurrence.Occurrence) {
 	if a.options.PlaceAndGroundFirstComponentAtOrigin && a.occurrences.Count() == 1 {
 		o.SetGrounded(true)
 	}

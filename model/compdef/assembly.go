@@ -137,9 +137,7 @@ func (a *AssemblyComponentDefinition) Occurrences() *occurrence.Occurrences {
 // same definition twice and both occurrences track its edits (the flyweight). To
 // place an open document's component, use [PlaceComponent].
 func (a *AssemblyComponentDefinition) Place(name string, def occurrence.Definition, transform math.Matrix4) *occurrence.Occurrence {
-	o := a.occurrences.AddByComponentDefinition(name, def, transform)
-	a.groundFirstComponent(o) // #1981
-	return o
+	return a.occurrences.AddByComponentDefinition(name, def, transform)
 }
 
 // PlaceComponent places the component held by componentDoc — an open part or assembly
@@ -183,7 +181,6 @@ func (a *AssemblyComponentDefinition) PlaceComponentFromFile(owner, componentDoc
 	}
 	componentName := componentDoc.FullDocumentName()
 	occ := a.occurrences.AddByComponentName(name, def, componentName, transform)
-	a.groundFirstComponent(occ) // #1981
 	// Record (and resolve to the already-open) reference so save snapshots the edge.
 	owner.OpenReference(componentName)
 	return occ, nil

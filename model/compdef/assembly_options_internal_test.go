@@ -21,15 +21,21 @@ func TestOptionsDefaults(t *testing.T) {
 	}
 }
 
-// TestGroundFirstComponentOption: with the option on (default) the first placed component grounds;
-// with it off it does not (#1981).
+// TestGroundFirstComponentOption: the place-action grounding hook grounds the first component when the
+// option is on (default) and only the first; with the option off it grounds nothing. The low-level
+// Place itself never grounds (internal placement is not surprised) (#1981).
 func TestGroundFirstComponentOption(t *testing.T) {
 	on := NewAssemblyComponentDefinition()
 	first := on.Place("paint:1", NewVirtualComponent("paint", "P-1", bom.Normal), math.Identity4())
+	if first.Grounded() {
+		t.Error("the low-level Place must not ground on its own")
+	}
+	on.GroundFirstComponentIfEnabled(first)
 	if !first.Grounded() {
-		t.Error("with the option on, the first component should be grounded")
+		t.Error("with the option on, the place action should ground the first component")
 	}
 	second := on.Place("grease:1", NewVirtualComponent("grease", "G-1", bom.Normal), math.Identity4())
+	on.GroundFirstComponentIfEnabled(second)
 	if second.Grounded() {
 		t.Error("only the FIRST component grounds, not the second")
 	}
@@ -37,6 +43,7 @@ func TestGroundFirstComponentOption(t *testing.T) {
 	off := NewAssemblyComponentDefinition()
 	off.SetOptions(AssemblyOptions{PlaceAndGroundFirstComponentAtOrigin: false})
 	o := off.Place("paint:1", NewVirtualComponent("paint", "P-1", bom.Normal), math.Identity4())
+	off.GroundFirstComponentIfEnabled(o)
 	if o.Grounded() {
 		t.Error("with the option off, the first component should not be grounded")
 	}
