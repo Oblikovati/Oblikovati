@@ -41,6 +41,7 @@ type DrawingAnnotation struct {
 	headers         []string               // custom table: the column headers
 	tableRows       [][]string             // custom table: the data rows (cells aligned to headers)
 	holeQuantity    types.HoleNoteQuantity // hole notes: per-hole vs combined-by-diameter callouts
+	threadCount     int                    // hole notes: how many recovered holes are tapped (#1995)
 	labels          []AnnotationLabel
 	curves          []DrawingCurve
 }
@@ -69,6 +70,10 @@ func (a *DrawingAnnotation) Curves() []DrawingCurve            { return a.curves
 func (a *DrawingAnnotation) CurveCount() int                   { return len(a.curves) }
 func (a *DrawingAnnotation) Labels() []AnnotationLabel         { return a.labels }
 func (a *DrawingAnnotation) RowCount() int                     { return a.rowCount }
+
+// ThreadCount reports how many of a hole note's holes are tapped (carry a thread designation); 0 for
+// a plain-hole note or a non-hole-note annotation (#1995).
+func (a *DrawingAnnotation) ThreadCount() int { return a.threadCount }
 
 // DrawingAnnotations is a sheet's annotation collection. It holds the body-resolution hook and
 // the sheet's views so a CoG marker can find its view and the model's centre of mass.

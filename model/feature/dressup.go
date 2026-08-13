@@ -327,7 +327,8 @@ func (t *ThreadFeature) Recompute(in Input) (Output, error) {
 	// thread's offset/length so a partial cut thread grooves only its run.
 	threaded := geom.ThreadedCylinder{
 		Cylinder: cyl, Pitch: spec.Pitch / 10, Depth: (spec.MajorDiameter - spec.MinorDiameter) / 2 / 10,
-		Internal: spec.Internal, RightHanded: spec.RightHanded, VMin: vMin, VMax: vMax,
+		Designation: t.def.Designation, Internal: spec.Internal, RightHanded: spec.RightHanded,
+		VMin: vMin, VMax: vMax,
 	}
 	out := make([]*topo.Body, len(in.Bodies))
 	copy(out, in.Bodies)

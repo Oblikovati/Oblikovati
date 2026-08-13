@@ -41,25 +41,39 @@ func (as *DrawingAnnotations) AddHoleNotes(name, viewName string, quantity types
 	return a, nil
 }
 
-// formatHoleNote renders a hole callout: the format template with {d} (diameter, 2 decimals) and
-// {n} (count) substituted, or the built-in default when the template is empty ("Ø<d>", or
-// "<n>x Ø<d>" when count > 1).
-func formatHoleNote(format string, diameterMM float64, count int) string {
+// formatHoleNote renders a hole callout: the format template with {d} (diameter, 2 decimals),
+// {n} (count) and {thread} (thread designation, empty for plain holes) substituted, or the built-in
+// default when the template is empty. The default is the thread designation for a tapped hole and
+// "Ø<d>" for a plain hole, prefixed "<n>x " when the callout covers more than one hole (#1995).
+func formatHoleNote(format string, diameterMM float64, count int, thread string) string {
 	d := holeCoord(diameterMM)
 	if format == "" {
-		if count > 1 {
-			return strconv.Itoa(count) + "x Ø" + d
-		}
-		return "Ø" + d
+		return defaultHoleCallout(d, count, thread)
 	}
 	out := strings.ReplaceAll(format, "{d}", d)
-	return strings.ReplaceAll(out, "{n}", strconv.Itoa(count))
+	out = strings.ReplaceAll(out, "{n}", strconv.Itoa(count))
+	return strings.ReplaceAll(out, "{thread}", thread)
 }
 
-// projectedHoleNote is one hole's callout anchor: its centre on the sheet (mm) and radius (mm).
+// defaultHoleCallout is the built-in callout text: the thread designation for a tapped hole, else
+// "Ø<d>", with an "<n>x " count prefix when the callout groups more than one hole.
+func defaultHoleCallout(diameter string, count int, thread string) string {
+	callout := "Ø" + diameter
+	if thread != "" {
+		callout = thread
+	}
+	if count > 1 {
+		return strconv.Itoa(count) + "x " + callout
+	}
+	return callout
+}
+
+// projectedHoleNote is one hole's callout anchor: its centre on the sheet (mm), radius (mm), and
+// thread designation when the hole is tapped ("" for a plain hole).
 type projectedHoleNote struct {
 	sx, sy   float64
 	radiusMM float64
+	thread   string
 }
 
 // recomputeHoleNotes re-reads the view's holes and rebuilds a leadered Ø callout for each (or one
@@ -71,18 +85,32 @@ func (as *DrawingAnnotations) recomputeHoleNotes(a *DrawingAnnotation) {
 		return
 	}
 	holes := dedupedHoleNotes(view, body, basis)
+	a.threadCount = countThreadedHoles(holes)
 	if a.holeQuantity == types.HoleNoteCombined {
 		renderCombinedHoleNotes(a, holes, a.tag)
 		return
 	}
 	for _, h := range holes {
-		appendHoleNote(a, h, formatHoleNote(a.tag, h.radiusMM*2, 1))
+		appendHoleNote(a, h, formatHoleNote(a.tag, h.radiusMM*2, 1, h.thread))
 	}
 }
 
-// dedupedHoleNotes collects each distinct hole's sheet anchor + radius, fitting the view's
-// projection (so cut holes are found) and listing coincident rims once.
+// countThreadedHoles reports how many of the recovered holes are tapped (carry a thread designation).
+func countThreadedHoles(holes []projectedHoleNote) int {
+	n := 0
+	for _, h := range holes {
+		if h.thread != "" {
+			n++
+		}
+	}
+	return n
+}
+
+// dedupedHoleNotes collects each distinct hole's sheet anchor, radius and thread designation, fitting
+// the view's projection (so cut holes are found) and listing coincident rims once. A hole coaxial
+// with a machined-thread face is tagged with that thread's designation (#1995).
 func dedupedHoleNotes(view *DrawingView, body *topo.Body, basis hlr.View) []projectedHoleNote {
+	threads := threadCalloutsFrom(body, basis)
 	seen := map[string]bool{}
 	var out []projectedHoleNote
 	for _, c := range circlesFromProjection(body, basis) {
@@ -92,13 +120,17 @@ func dedupedHoleNotes(view *DrawingView, body *topo.Body, basis hlr.View) []proj
 			continue
 		}
 		seen[key] = true
-		out = append(out, projectedHoleNote{sx: float64(s.X), sy: float64(s.Y), radiusMM: c.radius * cmToMM})
+		out = append(out, projectedHoleNote{
+			sx: float64(s.X), sy: float64(s.Y), radiusMM: c.radius * cmToMM,
+			thread: threadAt(threads, c.center, c.radius),
+		})
 	}
 	return out
 }
 
-// renderCombinedHoleNotes groups holes by diameter and emits one "<n>x Ø<d>" callout per size
-// (or the format template), anchored at the first hole of each group (in encounter order).
+// renderCombinedHoleNotes groups holes by callout and emits one "<n>x <callout>" note per group
+// (or the format template), anchored at the first hole of each group (in encounter order). Threaded
+// holes group by their designation (so "M6x1" and "M8x1.25" stay apart), plain holes by diameter.
 func renderCombinedHoleNotes(a *DrawingAnnotation, holes []projectedHoleNote, format string) {
 	type group struct {
 		first projectedHoleNote
@@ -107,7 +139,7 @@ func renderCombinedHoleNotes(a *DrawingAnnotation, holes []projectedHoleNote, fo
 	order := []string{}
 	groups := map[string]*group{}
 	for _, h := range holes {
-		key := holeCoord(h.radiusMM * 2)
+		key := combinedHoleKey(h)
 		g, ok := groups[key]
 		if !ok {
 			g = &group{first: h}
@@ -118,8 +150,17 @@ func renderCombinedHoleNotes(a *DrawingAnnotation, holes []projectedHoleNote, fo
 	}
 	for _, key := range order {
 		g := groups[key]
-		appendHoleNote(a, g.first, formatHoleNote(format, g.first.radiusMM*2, g.count))
+		appendHoleNote(a, g.first, formatHoleNote(format, g.first.radiusMM*2, g.count, g.first.thread))
 	}
+}
+
+// combinedHoleKey groups a hole for the combined quantity mode: by thread designation when tapped,
+// else by diameter — so like tapped holes merge and never fold in with a plain hole of equal bore.
+func combinedHoleKey(h projectedHoleNote) string {
+	if h.thread != "" {
+		return "T:" + h.thread
+	}
+	return "D:" + holeCoord(h.radiusMM*2)
 }
 
 // appendHoleNote adds one hole's leadered callout (curves + label) to the annotation.

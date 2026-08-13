@@ -237,6 +237,6 @@ func drawingAnnotationsDelete(s *app.Session, an *drawing.DrawingAnnotations, in
 func drawingAnnotationInfo(a *drawing.DrawingAnnotation) wire.DrawingAnnotationInfo {
 	return wire.DrawingAnnotationInfo{
 		Name: a.Name(), Kind: a.Kind().String(), ViewName: a.ViewName(), Tag: a.Tag(),
-		CurveCount: a.CurveCount(), RowCount: a.RowCount(),
+		CurveCount: a.CurveCount(), RowCount: a.RowCount(), ThreadCount: a.ThreadCount(),
 	}
 }
