@@ -8,14 +8,18 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/param"
 	"oblikovati.org/model/sketch"
 )
 
-// codeLoftedFlangeUnmodeled marks a lofted flange whose converge / end-bend-radius solid is not
-// modelled yet (#2086).
+// codeLoftedFlangeUnmodeled marks a lofted flange whose converge input found nothing to model (#2086).
 const codeLoftedFlangeUnmodeled diag.Code = "sheet-metal.lofted-flange-unmodeled"
+
+// codeLoftedFlangeLipDropped marks an end-bend radius whose flat lip would self-intersect on this
+// profile, so only the rounded fold was kept (#2086).
+const codeLoftedFlangeLipDropped diag.Code = "sheet-metal.lofted-flange-lip-dropped"
 
 // Sheet-metal Lofted Flange feature (M13-F02). A lofted flange is a constant-thickness wall
 // that transitions between TWO open profiles on two sketch planes — the sheet-metal way to
@@ -89,8 +93,7 @@ func (f *SheetMetalLoftedFlangeFeature) Recompute(in Input) (Output, error) {
 		bandB = converged
 	}
 	nA, nB := f.def.ProfileA.Plane().Normal(), f.def.ProfileB.Plane().Normal()
-	sections := f.transitionSections(bandA, bandB, nA, nB)
-	wall, err := sweptSolid(sections, false, featOr(f.featName, "loftedFlange"))
+	wall, err := f.buildTransitionWall(bandA, bandB, nA, nB, in.Diag)
 	if err != nil {
 		return Output{}, fmt.Errorf("sheet-metal lofted flange: %w", err)
 	}
@@ -101,15 +104,31 @@ func (f *SheetMetalLoftedFlangeFeature) Recompute(in Input) (Output, error) {
 	return Output{Bodies: bodies}, nil
 }
 
-// transitionSections builds the loft sections between the two bands: a rounded end bend (lip + fold)
-// when a bend radius is set, otherwise the plain profile-to-profile die-formed / press-brake wall.
+// buildTransitionWall skins the wall between the two bands. Without a bend radius it is the plain
+// profile-to-profile die-formed / press-brake wall; with one it is the rounded end bend (lip + fold).
 // Converge, when on, has already retargeted bandB's corners.
-func (f *SheetMetalLoftedFlangeFeature) transitionSections(bandA, bandB []math.Point3,
-	nA, nB math.UnitVector3) [][]math.Point3 {
-	if r := evalFloat(f.def.Radius); r > 0 {
-		return endBendSections(bandA, bandB, nA, nB, r, f.def.Output, f.def.FacetTolerance)
+func (f *SheetMetalLoftedFlangeFeature) buildTransitionWall(bandA, bandB []math.Point3,
+	nA, nB math.UnitVector3, rec *diag.Recorder) (*topo.Body, error) {
+	feat := featOr(f.featName, "loftedFlange")
+	r := evalFloat(f.def.Radius)
+	if r <= 0 {
+		return sweptSolid(loftedFlangeSections(bandA, bandB, nA, nB, f.def.Output, f.def.FacetTolerance), false, feat)
 	}
-	return loftedFlangeSections(bandA, bandB, nA, nB, f.def.Output, f.def.FacetTolerance)
+	return f.buildRoundedWall(bandA, bandB, nA, nB, r, feat, rec)
+}
+
+// buildRoundedWall prefers the flat lip + fold, but the lip is an inward offset of the thickened
+// band, so at a tight radius it can self-intersect. When it does, the wall falls back to the fold
+// alone (always valid) and reports it, rather than ship a self-intersecting solid (#2086).
+func (f *SheetMetalLoftedFlangeFeature) buildRoundedWall(bandA, bandB []math.Point3,
+	nA, nB math.UnitVector3, r float64, feat string, rec *diag.Recorder) (*topo.Body, error) {
+	withLip, err := sweptSolid(endBendSections(bandA, bandB, nA, nB, r, r, f.def.Output, f.def.FacetTolerance), false, feat)
+	if err == nil && len(ops.SelfIntersections(withLip, ops.DefaultQuality())) == 0 {
+		return withLip, nil
+	}
+	rec.Recordf(codeLoftedFlangeLipDropped, diag.Warning,
+		"lofted flange: the flat end-bend lip would self-intersect at radius %g; kept the rounded fold without the lip (#2086)", r)
+	return sweptSolid(endBendSections(bandA, bandB, nA, nB, r, 0, f.def.Output, f.def.FacetTolerance), false, feat)
 }
 
 // loftBands thickens both profiles into their 3D bands, erroring when a profile cannot be read or

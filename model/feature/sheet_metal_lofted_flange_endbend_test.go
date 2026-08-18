@@ -65,7 +65,7 @@ func TestEndBendLipLiesInProfilePlane(t *testing.T) {
 	bandA := []math.Point3{math.P3(-1, -1, 0), math.P3(1, -1, 0), math.P3(1, 1, 0), math.P3(-1, 1, 0)}
 	bandB := []math.Point3{math.P3(-2, -2, 3), math.P3(2, -2, 3), math.P3(2, 2, 3), math.P3(-2, 2, 3)}
 	const r = 0.3
-	sections := endBendSections(bandA, bandB, up, up, r, DieFormedLoftedFlange, 0)
+	sections := endBendSections(bandA, bandB, up, up, r, r, DieFormedLoftedFlange, 0)
 	lipA := sections[0]
 	for i, p := range lipA {
 		if stdmath.Abs(float64(p.Z)) > 1e-9 {
@@ -85,8 +85,10 @@ func TestEndBendLipLiesInProfilePlane(t *testing.T) {
 }
 
 // loftedFlangeWall builds a square-to-larger-square lofted flange with the given end-bend radius and
-// returns its solid — the shared fixture for the end-bend tests.
-func loftedFlangeWall(t *testing.T, radius float64) *topo.Body {
+// returns its solid and feature. It gates on the SELF-INTERSECTION scan (CheckGeometry), not just
+// topology — a rounded end bend can be topologically valid yet interpenetrate, which the live test
+// caught and a topology-only check would miss.
+func loftedFlangeWall(t *testing.T, radius float64) (*topo.Body, *PartFeature) {
 	t.Helper()
 	planeB, _ := sketch.NewPlane(math.P3(0, 0, 3), math.V3(1, 0, 0).AsUnit(), math.V3(0, 1, 0).AsUnit())
 	def := &SheetMetalLoftedFlangeDefinition{
@@ -103,49 +105,40 @@ func loftedFlangeWall(t *testing.T, radius float64) *topo.Body {
 		t.Fatalf("lofted flange (radius %.2f) sick: %+v", radius, pf.Health())
 	}
 	body := fs.Result()[0]
-	if r := ops.Validate(body); !r.Valid {
-		t.Fatalf("lofted flange (radius %.2f) invalid: %v", radius, r.Issues)
+	if ok, probs := ops.ValidateBodyEntities(body, ops.CheckGeometry, ops.DefaultQuality()); !ok {
+		t.Fatalf("lofted flange (radius %.2f) self-intersects: %d problem(s)", radius, len(probs))
 	}
 	if open := ops.BoundaryEdges(body); len(open) != 0 {
 		t.Errorf("lofted flange (radius %.2f) not watertight: %d boundary edges", radius, len(open))
 	}
-	return body
+	return body, pf
 }
 
-// TestLoftedFlangeEndBendFlaresLip the flat lip extends the wall OUTWARD in the profile plane, so the
-// finished wall reaches farther than the sharp reference, and a larger bend radius flares farther. A
-// bend also insets the wall by its radius (bend allowance), so volume is NOT the measure here — the
-// outward reach is.
-func TestLoftedFlangeEndBendFlaresLip(t *testing.T) {
-	reach := func(b *topo.Body) float64 {
-		box := b.RangeBox()
-		return float64(box.Min.DistanceTo(box.Max)) // range-box diagonal
+// TestLoftedFlangeEndBendKeepsLipWhenItFits at a small radius the flat lip does not self-intersect,
+// so the wall keeps it: the solid is self-intersection-free, reports no lip-dropped fallback, and
+// flares OUTWARD past the sharp reference (the lip really extends the wall in the profile plane).
+func TestLoftedFlangeEndBendKeepsLipWhenItFits(t *testing.T) {
+	reach := func(b *topo.Body) float64 { box := b.RangeBox(); return float64(box.Min.DistanceTo(box.Max)) }
+	sharp, _ := loftedFlangeWall(t, 0)
+	body, pf := loftedFlangeWall(t, 0.05) // small enough that the lip fits the L-profile band
+	if hasDiagCode(pf.Diagnostics(), codeLoftedFlangeLipDropped) {
+		t.Errorf("a lip that fits must not be dropped: %v", pf.Diagnostics())
 	}
-	sharp := reach(loftedFlangeWall(t, 0))
-	small := reach(loftedFlangeWall(t, 0.2))
-	large := reach(loftedFlangeWall(t, 0.4))
-	if !(small > sharp) {
-		t.Errorf("a rounded end bend (reach %.4f) did not flare the lip past the sharp wall (%.4f)", small, sharp)
-	}
-	if !(large > small) {
-		t.Errorf("a larger bend radius does not flare farther: R=0.4 %.4f <= R=0.2 %.4f", large, small)
+	if !(reach(body) > reach(sharp)) {
+		t.Errorf("the kept lip did not flare the wall past the sharp reference (%.4f vs %.4f)", reach(body), reach(sharp))
 	}
 }
 
-// TestLoftedFlangeEndBendModelledNoWarning a bend radius alone (no converge) is modelled now, so the
-// feature no longer reports the unmodelled deferral.
-func TestLoftedFlangeEndBendModelledNoWarning(t *testing.T) {
-	planeB, _ := sketch.NewPlane(math.P3(0, 0, 3), math.V3(1, 0, 0).AsUnit(), math.V3(0, 1, 0).AsUnit())
-	fs := NewPartFeatures(thicknessParams(t))
-	pf := NewSheetMetalLoftedFlangeFeatures(fs).Add(&SheetMetalLoftedFlangeDefinition{
-		ProfileA: lProfileOnPlane(sketch.XYPlane(), 1, 1), ProfileB: lProfileOnPlane(planeB, 2, 2),
-		Operation: ops.NewBody, Radius: constFloat(0.3),
-	})
-	fs.Recompute()
-	if !pf.Health().OK() {
-		t.Fatalf("rounded lofted flange sick: %+v", pf.Health())
+// TestLoftedFlangeEndBendFallsBackOnTightRadius a large radius makes the flat lip self-intersect, so
+// the wall must fall back to the fold alone — still a valid (self-intersection-free) solid — and
+// report the lip-dropped diagnostic rather than ship an interpenetrating wall.
+func TestLoftedFlangeEndBendFallsBackOnTightRadius(t *testing.T) {
+	_, pf := loftedFlangeWall(t, 0.3) // fatals inside if the solid self-intersects
+	if !hasDiagCode(pf.Diagnostics(), codeLoftedFlangeLipDropped) {
+		t.Errorf("a self-intersecting lip must report %q so the fallback is visible: %v",
+			codeLoftedFlangeLipDropped, pf.Diagnostics())
 	}
 	if hasDiagCode(pf.Diagnostics(), codeLoftedFlangeUnmodeled) {
-		t.Errorf("a modelled end-bend radius must not report %q: %v", codeLoftedFlangeUnmodeled, pf.Diagnostics())
+		t.Errorf("the end-bend radius is modelled, not deferred: %v", pf.Diagnostics())
 	}
 }

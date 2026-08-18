@@ -68,8 +68,8 @@ func TestLoftedFlangeConvergeRemovesCornerMaterial(t *testing.T) {
 		if hasDiagCode(pf.Diagnostics(), codeLoftedFlangeUnmodeled) {
 			unmodelled = 1
 		}
-		return ops.BodyGeometryProperties(body, ops.Quality{ChordTolerance: 1e-3}).Volume,
-			ops.Validate(body).Valid, unmodelled
+		valid, _ := ops.ValidateBodyEntities(body, ops.CheckGeometry, ops.DefaultQuality())
+		return ops.BodyGeometryProperties(body, ops.Quality{ChordTolerance: 1e-3}).Volume, valid, unmodelled
 	}
 	ref, refValid, _ := build(false)
 	conv, convValid, unmodelled := build(true)

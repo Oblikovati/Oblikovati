@@ -20,11 +20,11 @@ import (
 const endBendFoldSamples = 6
 
 // endBendSections builds the loft sections for a lofted flange with a rounded end bend of radius r.
-// The middle keeps the die-formed / press-brake behaviour (its section count comes from the same
-// tolerance logic), sampled between the fold ends rather than the profiles.
-func endBendSections(bandA, bandB []math.Point3, nA, nB math.UnitVector3, r float64,
+// lipLen is how far the flat lip extends before the fold (0 ⇒ the fold alone, no lip). The middle
+// keeps the die-formed / press-brake behaviour (its section count comes from the same tolerance
+// logic), sampled between the fold ends rather than the profiles.
+func endBendSections(bandA, bandB []math.Point3, nA, nB math.UnitVector3, r, lipLen float64,
 	output LoftedFlangeOutputType, tol float64) [][]math.Point3 {
-	lipLen := r // a short lip, as long as the bend radius
 	cA, cB := centroid(bandA), centroid(bandB)
 	ends := make([]endBend, len(bandA))
 	for i := range bandA {
