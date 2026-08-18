@@ -80,15 +80,14 @@ func (f *SheetMetalLoftedFlangeFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	// The output type (die-formed / press-brake facets) IS modelled; converge and the end-bend
-	// radius are recorded but their solid is a follow-up (#2086), so report rather than pass off a
-	// sharp-cornered wall as converged.
-	if f.def.Converge || evalFloat(f.def.Radius) > 0 {
+	// Converge (corner pinch) is a follow-up increment (#2086); the end-bend radius IS modelled
+	// below, so only converge still reports here.
+	if f.def.Converge {
 		in.Diag.Recordf(codeLoftedFlangeUnmodeled, diag.Warning,
-			"lofted flange: converge=%v and end-bend radius are recorded but not modelled yet (#2086)", f.def.Converge)
+			"lofted flange: converge is recorded but its corner-pinch solid is not modelled yet (#2086)")
 	}
-	sections := loftedFlangeSections(bandA, bandB, f.def.ProfileA.Plane().Normal(),
-		f.def.ProfileB.Plane().Normal(), f.def.Output, f.def.FacetTolerance)
+	nA, nB := f.def.ProfileA.Plane().Normal(), f.def.ProfileB.Plane().Normal()
+	sections := f.transitionSections(bandA, bandB, nA, nB)
 	wall, err := sweptSolid(sections, false, featOr(f.featName, "loftedFlange"))
 	if err != nil {
 		return Output{}, fmt.Errorf("sheet-metal lofted flange: %w", err)
@@ -98,6 +97,16 @@ func (f *SheetMetalLoftedFlangeFeature) Recompute(in Input) (Output, error) {
 		return Output{}, err
 	}
 	return Output{Bodies: bodies}, nil
+}
+
+// transitionSections builds the loft sections between the two bands: a rounded end bend (lip + fold)
+// when a bend radius is set, otherwise the plain profile-to-profile die-formed / press-brake wall.
+func (f *SheetMetalLoftedFlangeFeature) transitionSections(bandA, bandB []math.Point3,
+	nA, nB math.UnitVector3) [][]math.Point3 {
+	if r := evalFloat(f.def.Radius); r > 0 {
+		return endBendSections(bandA, bandB, nA, nB, r, f.def.Output, f.def.FacetTolerance)
+	}
+	return loftedFlangeSections(bandA, bandB, nA, nB, f.def.Output, f.def.FacetTolerance)
 }
 
 // loftBands thickens both profiles into their 3D bands, erroring when a profile cannot be read or
